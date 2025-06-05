@@ -768,7 +768,7 @@ Rusticl OpenCL 2.0 -- all DONE:
   - from sRGB images                                    in progress
   clCreateSamplerWithProperties                         DONE
   Non-uniform work-group sizes                          not started
-  cl_khr_3d_image_writes                                DONE (iris, llvmpipe, nvc0, panfrost, radeonsi, zink)
+  cl_khr_3d_image_writes                                DONE (freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi, zink)
   OpenCL C 2.0                                          in progress
   - Work-group Collective Functions                     not started
   - Generic address space                               in progress
@@ -779,7 +779,7 @@ Rusticl OpenCL 2.1 -- all DONE:
   Sub groups                                            DONE (iris, llvmpipe, radeonsi)
   - cl_khr_subgroups                                    in progress
   cl_khr_il_program                                     DONE
-  Device and host timer synchronization                 DONE (iris, llvmpipe, radeonsi, zink)
+  Device and host timer synchronization                 DONE (freedreno, iris, llvmpipe, radeonsi, zink)
   clEnqueueSVMMigrateMem                                in progress (nvc0/gp100, broken)
   clCloneKernel                                         DONE
   Default device command queue                          not started
@@ -813,7 +813,7 @@ Rusticl extensions that are not part of any OpenCL version:
   cl_khr_async_copy_fence                               not started
   cl_khr_async_work_group_copy_fence                    not started
   cl_khr_device_enqueue_local_arg_types                 not started
-  cl_khr_device_uuid                                    DONE (iris, llvmpipe, radeonsi, zink)
+  cl_khr_device_uuid                                    DONE (freedreno, iris, llvmpipe, radeonsi, zink)
   cl_khr_egl_event                                      not started
   cl_khr_egl_image                                      not started
   cl_khr_expect_assume                                  in progress (hints are ignored)
