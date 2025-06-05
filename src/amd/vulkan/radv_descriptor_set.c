@@ -1151,9 +1151,6 @@ write_image_descriptor(unsigned *dst, unsigned size, VkDescriptorType descriptor
    case 80:
       memcpy(dst, descriptor, 80);
       break;
-   case 96:
-      memcpy(dst, descriptor, 96);
-      break;
    default:
       unreachable("Invalid size");
    }
