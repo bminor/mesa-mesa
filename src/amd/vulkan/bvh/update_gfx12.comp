@@ -33,18 +33,6 @@ layout(push_constant) uniform CONSTS
    update_gfx12_args args;
 };
 
-uint32_t
-read_bits(VOID_REF data, uint32_t start, uint32_t count)
-{
-   uint32_t shift = start % 32;
-   uint32_t lower = DEREF(INDEX(uint32_t, data, start / 32)) >> shift;
-   uint32_t upper = 0;
-   if (shift != 0 && shift + count > 32)
-      upper = DEREF(INDEX(uint32_t, data, start / 32 + 1)) << (32 - shift);
-   uint32_t total = lower | upper;
-   return count != 32 ? total & ((1u << count) - 1u) : total;
-}
-
 void
 main()
 {
@@ -109,9 +97,10 @@ main()
 
       if (is_leaf) {
          VOID_REF src_leaf_node = OFFSET(src_bvh, child_offset);
-         uint32_t indices_midpoint = read_bits(src_leaf_node, 42, 10);
-         uint32_t geometry_index = read_bits(src_leaf_node, indices_midpoint - 28, 28);
-         uint32_t primitive_index = read_bits(src_leaf_node, indices_midpoint, 28);
+         uint32_t geometry_index =
+            DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET)) >> 4;
+         uint32_t primitive_index =
+            DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET + 4)) & 0xfffffff;
 
          vk_bvh_geometry_data geom_data = DEREF(INDEX(vk_bvh_geometry_data, args.geom_data, geometry_index));
 
