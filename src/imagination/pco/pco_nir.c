@@ -958,6 +958,33 @@ lower_phi_with_undefs(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    return NIR_LOWER_INSTR_PROGRESS;
 }
 
+static bool
+remat_load_const(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+{
+   if (instr->type != nir_instr_type_load_const)
+      return false;
+
+   nir_load_const_instr *nconst = nir_instr_as_load_const(instr);
+
+   if (list_is_singular(&nconst->def.uses))
+      return false;
+
+   nir_foreach_use_safe (src, &nconst->def) {
+      nir_instr *use_instr = nir_src_parent_instr(src);
+      b->cursor = nir_before_instr(use_instr);
+
+      nir_def *remat_const = nir_build_imm(b,
+                                           nconst->def.num_components,
+                                           nconst->def.bit_size,
+                                           nconst->value);
+
+      nir_src_rewrite(src, remat_const);
+   }
+
+   nir_instr_remove(instr);
+
+   return true;
+}
 /**
  * \brief Runs post-processing passes on a NIR shader.
  *
@@ -993,6 +1020,13 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
       NIR_PASS(_, nir, nir_opt_dce);
 
    NIR_PASS(_, nir, nir_trivialize_registers);
+
+   if (!nir->info.internal) {
+      nir_shader_instructions_pass(nir,
+                                   remat_load_const,
+                                   nir_metadata_none,
+                                   NULL);
+   }
 
    /* Re-index everything. */
    nir_foreach_function_with_impl (_, impl, nir) {
