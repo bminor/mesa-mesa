@@ -523,26 +523,6 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
    }
    memcpy(props->deviceName, device_name, device_name_len + 1);
 
-   /* force prime blit on NV proprietary driver */
-   if (props->driverID == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
-      /* intentionally fail same_gpu check on x11 */
-      physical_dev->base.vk.supported_extensions.EXT_pci_bus_info = false;
-      props->pciDomain = 0;
-      props->pciBus = 0;
-      props->pciDevice = 0;
-      props->pciFunction = 0;
-
-      /* intentionally fail same_gpu check on wayland */
-      physical_dev->base.vk.supported_extensions.EXT_physical_device_drm =
-         false;
-      props->drmHasPrimary = false;
-      props->drmHasRender = false;
-      props->drmPrimaryMajor = 0;
-      props->drmPrimaryMinor = 0;
-      props->drmRenderMajor = 0;
-      props->drmRenderMinor = 0;
-   }
-
    /* store renderer VkDriverId for implementation specific workarounds */
    physical_dev->renderer_driver_id = props->driverID;
    props->driverID = VK_DRIVER_ID_MESA_VENUS;
