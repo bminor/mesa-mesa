@@ -92,18 +92,20 @@ $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so*
 $ADB shell rm -f /vendor/lib64/egl/libGLESv2_emulation.so*
 
-ANGLE_DEST_PATH=/vendor/lib64/egl
-if [ "$ANDROID_VERSION" -ge 15 ]; then
-  ANGLE_DEST_PATH=/system/lib64
+if [ -n "${ANGLE_TAG:-}" ]; then
+  ANGLE_DEST_PATH=/vendor/lib64/egl
+  if [ "$ANDROID_VERSION" -ge 15 ]; then
+    ANGLE_DEST_PATH=/system/lib64
+  fi
+
+  $ADB shell rm -f "$ANGLE_DEST_PATH/libEGL_angle.so"*
+  $ADB shell rm -f "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"*
+  $ADB shell rm -f "$ANGLE_DEST_PATH/libGLESv2_angle.so"*
+
+  $ADB push /angle/libEGL_angle.so "$ANGLE_DEST_PATH/libEGL_angle.so"
+  $ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
+  $ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 fi
-
-$ADB shell rm -f "$ANGLE_DEST_PATH/libEGL_angle.so"*
-$ADB shell rm -f "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"*
-$ADB shell rm -f "$ANGLE_DEST_PATH/libGLESv2_angle.so"*
-
-$ADB push /angle/libEGL_angle.so "$ANGLE_DEST_PATH/libEGL_angle.so"
-$ADB push /angle/libGLESv1_CM_angle.so "$ANGLE_DEST_PATH/libGLESv1_CM_angle.so"
-$ADB push /angle/libGLESv2_angle.so "$ANGLE_DEST_PATH/libGLESv2_angle.so"
 
 # Check what GLES & VK implementation is used after uploading the new libraries
 MESA_BUILD_VERSION=$(cat "$INSTALL/VERSION")
