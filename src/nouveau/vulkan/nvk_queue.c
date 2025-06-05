@@ -379,28 +379,14 @@ nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push)
    if (vk_queue_is_lost(&queue->vk))
       return VK_ERROR_DEVICE_LOST;
 
-   struct nvkmd_mem *push_mem;
-   result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &dev->vk.base,
-                                       nv_push_dw_count(push) * 4, 0,
-                                       NVKMD_MEM_GART,
-                                       NVKMD_MEM_MAP_WR, &push_mem);
-   if (result != VK_SUCCESS)
-      return result;
+   const bool sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
 
-   memcpy(push_mem->map, push->start, nv_push_dw_count(push) * 4);
-
-   const struct nvkmd_ctx_exec exec = {
-      .addr = push_mem->va->addr,
-      .size_B = nv_push_dw_count(push) * 4,
-   };
-   result = nvkmd_ctx_exec(queue->exec_ctx, &queue->vk.base, 1, &exec);
-   if (result == VK_SUCCESS)
+   result = nvk_mem_stream_push(dev, &queue->push_stream, queue->exec_ctx,
+                                push->start, nv_push_dw_count(push), NULL);
+   if (result == VK_SUCCESS && sync)
       result = nvkmd_ctx_sync(queue->exec_ctx, &queue->vk.base);
 
-   nvkmd_mem_unref(push_mem);
-
-   const bool debug_sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
-   if ((debug_sync && result != VK_SUCCESS) ||
+   if ((sync && result != VK_SUCCESS) ||
        (pdev->debug_flags & NVK_DEBUG_PUSH_DUMP))
       vk_push_print(stderr, push, &pdev->info);
 
@@ -537,14 +523,21 @@ nvk_queue_init(struct nvk_device *dev, struct nvk_queue *queue,
          goto fail_draw_cb0;
    }
 
-   result = nvk_queue_init_context_state(queue);
+   result = nvk_mem_stream_init(dev, &queue->push_stream);
    if (result != VK_SUCCESS)
       goto fail_bind_ctx;
+
+   result = nvk_queue_init_context_state(queue);
+   if (result != VK_SUCCESS)
+      goto fail_push_stream;
 
    queue->vk.driver_submit = nvk_queue_submit;
 
    return VK_SUCCESS;
 
+fail_push_stream:
+   nvk_mem_stream_sync(dev, &queue->push_stream, queue->exec_ctx);
+   nvk_mem_stream_finish(dev, &queue->push_stream);
 fail_bind_ctx:
    if (queue->bind_ctx != NULL)
       nvkmd_ctx_destroy(queue->bind_ctx);
@@ -564,6 +557,8 @@ fail_init:
 void
 nvk_queue_finish(struct nvk_device *dev, struct nvk_queue *queue)
 {
+   nvk_mem_stream_sync(dev, &queue->push_stream, queue->exec_ctx);
+   nvk_mem_stream_finish(dev, &queue->push_stream);
    if (queue->draw_cb0 != NULL) {
       nvk_upload_queue_sync(dev, &dev->upload);
       nvkmd_mem_unref(queue->draw_cb0);
