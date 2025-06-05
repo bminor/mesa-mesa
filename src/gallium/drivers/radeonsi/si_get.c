@@ -127,7 +127,7 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
          /* VPE 1st generation does not support orientation
           * Have to determine the version and features of VPE in future.
           */
-         return PIPE_VIDEO_VPP_ORIENTATION_DEFAULT;
+         return PIPE_VIDEO_VPP_FLIP_HORIZONTAL;
       case PIPE_VIDEO_CAP_VPP_BLEND_MODES:
          /* VPE 1st generation does not support blending.
           * Have to determine the version and features of VPE in future.
