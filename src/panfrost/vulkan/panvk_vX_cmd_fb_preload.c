@@ -477,8 +477,8 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
             cfg.push_uniforms = layer_ids.gpu + (sizeof(uint64_t) * l);
          };
 
-         pan_merge(dcd_layer, dcd_base, DRAW);
-	 dcds[(l * 3) + dcd_idx] = dcd_layer;
+         pan_merge(&dcd_layer, &dcd_base, DRAW);
+         dcds[(l * 3) + dcd_idx] = dcd_layer;
       }
    } else {
       dcds[dcd_idx] = dcd_base;

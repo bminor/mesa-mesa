@@ -466,7 +466,7 @@ pan_merge_empty_fs(struct mali_renderer_state_packed *rsd)
 #endif
    }
 
-   pan_merge((*rsd), empty_rsd, RENDERER_STATE);
+   pan_merge(rsd, &empty_rsd, RENDERER_STATE);
 }
 
 static void
@@ -631,7 +631,7 @@ panfrost_emit_frag_shader(struct panfrost_context *ctx,
       struct mali_renderer_state_packed *partial_rsd =
          (struct mali_renderer_state_packed *)&fs->partial_rsd;
       STATIC_ASSERT(sizeof(fs->partial_rsd) == sizeof(*partial_rsd));
-      pan_merge(rsd, *partial_rsd, RENDERER_STATE);
+      pan_merge(&rsd, partial_rsd, RENDERER_STATE);
    } else {
       pan_merge_empty_fs(&rsd);
    }
@@ -878,7 +878,7 @@ panfrost_emit_depth_stencil(struct panfrost_batch *batch)
                                 : MALI_DEPTH_CLAMP_MODE_0_1;
    }
 
-   pan_merge(dynamic, zsa->desc, DEPTH_STENCIL);
+   pan_merge(&dynamic, &zsa->desc, DEPTH_STENCIL);
    memcpy(T.cpu, &dynamic, pan_size(DEPTH_STENCIL));
 
    return T.gpu;
