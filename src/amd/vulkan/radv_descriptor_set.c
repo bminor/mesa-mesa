@@ -1645,43 +1645,32 @@ radv_GetDescriptorEXT(VkDevice _device, const VkDescriptorGetInfoEXT *pDescripto
       }
       break;
    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-      write_image_descriptor(pDescriptor, radv_get_sampled_image_desc_size(pdev), pDescriptorInfo->type,
-                             pDescriptorInfo->data.pInputAttachmentImage);
+   case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
+      const VkDescriptorImageInfo *image_info = pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT
+                                                   ? pDescriptorInfo->data.pInputAttachmentImage
+                                                   : pDescriptorInfo->data.pSampledImage;
+
+      write_image_descriptor(pDescriptor, radv_get_sampled_image_desc_size(pdev), pDescriptorInfo->type, image_info);
       break;
-   case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-      write_image_descriptor(pDescriptor, radv_get_sampled_image_desc_size(pdev), pDescriptorInfo->type,
-                             pDescriptorInfo->data.pSampledImage);
-      break;
+   }
    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
       write_image_descriptor(pDescriptor, 32, pDescriptorInfo->type, pDescriptorInfo->data.pStorageImage);
       break;
-   case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
-      const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->data.pUniformBuffer;
-
-      write_buffer_descriptor(device, pDescriptor, addr_info ? addr_info->address : 0,
-                              addr_info ? addr_info->range : 0);
-      break;
-   }
+   case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
-      const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->data.pStorageBuffer;
+      const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                                                       ? pDescriptorInfo->data.pUniformBuffer
+                                                       : pDescriptorInfo->data.pStorageBuffer;
 
       write_buffer_descriptor(device, pDescriptor, addr_info ? addr_info->address : 0,
                               addr_info ? addr_info->range : 0);
       break;
    }
-   case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: {
-      const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->data.pUniformTexelBuffer;
-
-      if (addr_info && addr_info->address) {
-         radv_make_texel_buffer_descriptor(device, addr_info->address, addr_info->format, addr_info->range,
-                                           pDescriptor);
-      } else {
-         memset(pDescriptor, 0, 4 * 4);
-      }
-      break;
-   }
+   case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
-      const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->data.pStorageTexelBuffer;
+      const VkDescriptorAddressInfoEXT *addr_info = pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+                                                       ? pDescriptorInfo->data.pUniformTexelBuffer
+                                                       : pDescriptorInfo->data.pStorageTexelBuffer;
 
       if (addr_info && addr_info->address) {
          radv_make_texel_buffer_descriptor(device, addr_info->address, addr_info->format, addr_info->range,
