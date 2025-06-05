@@ -9,7 +9,7 @@ set -uex
 section_start cuttlefish_setup "cuttlefish: setup"
 
 # Structured tagging check for angle
-if [ -n "$ANGLE_TAG" ]; then
+if [ -n "${ANGLE_TAG:-}" ]; then
     # Bail out if the ANGLE_TAG differs from what is offered in the system
     ci_tag_test_time_check "ANGLE_TAG"
 fi

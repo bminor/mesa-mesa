@@ -114,7 +114,7 @@ GLES_RUNTIME_VERSION="$(get_gles_runtime_version)"
 get_vk_runtime_device_name
 VK_RUNTIME_VERSION="$(get_vk_runtime_version)"
 
-if [ -n "$ANGLE_TAG" ]; then
+if [ -n "${ANGLE_TAG:-}" ]; then
   # Note: we are injecting the ANGLE libs too, so we need to check if the
   #       new ANGLE libs are being used.
   ANGLE_HASH=$(head -c 12 /angle/version)
