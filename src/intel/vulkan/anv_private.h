@@ -159,8 +159,14 @@ struct intel_perf_query_result;
 
 #define BINDING_TABLE_POOL_BLOCK_SIZE (65536)
 
-/* 3DSTATE_VERTEX_BUFFER supports 33 VBs, we use 2 for base & drawid SGVs */
-#define MAX_VBS         (33 - 2)
+#define HW_MAX_VBS 33
+
+/* 3DSTATE_VERTEX_BUFFER supports 33 VBs, but before Gen11 we used 2
+ * for base & drawid SGVs */
+static inline int
+get_max_vbs(const struct intel_device_info *devinfo) {
+   return devinfo->ver >= 11 ? HW_MAX_VBS : (HW_MAX_VBS - 2);
+}
 
 /* 3DSTATE_VERTEX_ELEMENTS supports up to 34 VEs, but our backend compiler
  * only supports the push model of VS inputs, and we only have 128 GRFs,
@@ -211,8 +217,11 @@ struct intel_perf_query_result;
  */
 #define MAX_BINDING_TABLE_SIZE 240
 
-#define ANV_SVGS_VB_INDEX    MAX_VBS
-#define ANV_DRAWID_VB_INDEX (MAX_VBS + 1)
+ /* 3DSTATE_VERTEX_BUFFER supports 33 VBs, but these limits are applied on Gen9
+  * graphics, where 2 VBs are reserved for base & drawid SGVs.
+  */
+#define ANV_SVGS_VB_INDEX   (HW_MAX_VBS - 2)
+#define ANV_DRAWID_VB_INDEX (ANV_SVGS_VB_INDEX + 1)
 
 /* We reserve this MI ALU register for the purpose of handling predication.
  * Other code which uses the MI ALU should leave it alone.
@@ -4082,8 +4091,8 @@ struct anv_cmd_graphics_state {
 
    struct anv_vb_cache_range ib_bound_range;
    struct anv_vb_cache_range ib_dirty_range;
-   struct anv_vb_cache_range vb_bound_ranges[33];
-   struct anv_vb_cache_range vb_dirty_ranges[33];
+   struct anv_vb_cache_range vb_bound_ranges[HW_MAX_VBS];
+   struct anv_vb_cache_range vb_dirty_ranges[HW_MAX_VBS];
 
    uint32_t restart_index;
 
@@ -4243,7 +4252,12 @@ struct anv_cmd_state {
       uint64_t                                  address[MAX_SETS];
    }                                            descriptor_buffers;
 
-   struct anv_vertex_binding                    vertex_bindings[MAX_VBS];
+   /* For Gen 9, this allocation is 2 greater than the maximum allowed
+    * number of vertex buffers; see comment on get_max_vbs definition.
+    * Specializing this allocation seems needlessly complicated when we can
+    * enforce the VB limit elsewhere.
+    */
+   struct anv_vertex_binding                    vertex_bindings[HW_MAX_VBS];
    bool                                         xfb_enabled;
    struct anv_xfb_binding                       xfb_bindings[MAX_XFB_BUFFERS];
    struct anv_state                             binding_tables[MESA_VULKAN_SHADER_STAGES];

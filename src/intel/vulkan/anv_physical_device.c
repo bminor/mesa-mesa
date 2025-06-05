@@ -1307,7 +1307,7 @@ get_properties(const struct anv_physical_device *pdevice,
       .maxDescriptorSetStorageImages            = desc_limits.max_images,
       .maxDescriptorSetInputAttachments         = MAX_DESCRIPTOR_SET_INPUT_ATTACHMENTS,
       .maxVertexInputAttributes                 = MAX_VES,
-      .maxVertexInputBindings                   = MAX_VBS,
+      .maxVertexInputBindings                   = get_max_vbs(devinfo),
       /* Broadwell PRMs: Volume 2d: Command Reference: Structures:
        *
        * VERTEX_ELEMENT_STATE::Source Element Offset: [0,2047]
