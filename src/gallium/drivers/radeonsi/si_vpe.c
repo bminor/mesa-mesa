@@ -807,13 +807,7 @@ si_vpe_set_stream_out_param(struct vpe_video_processor *vpeproc,
    build_param->bg_color.rgba.b    = 0;
    build_param->bg_color.rgba.a    = 0;
 
-   /* Studio color range not start from 0 */
-   if (!(background_color & 0xFFFFFF) && (build_param->dst_surface.cs.range == VPE_COLOR_RANGE_STUDIO)) {
-      build_param->bg_color.rgba.a = (float)((background_color & 0xFF000000) >> 24) / 255.0;
-      build_param->bg_color.rgba.r = 0.0628;
-      build_param->bg_color.rgba.g = 0.0628;
-      build_param->bg_color.rgba.b = 0.0628;
-   } else if (process_properties->background_color) {
+   if (process_properties->background_color) {
       build_param->bg_color.rgba.a = (float)((background_color & 0xFF000000) >> 24) / 255.0;
       build_param->bg_color.rgba.r = (float)((background_color & 0x00FF0000) >> 16) / 255.0;
       build_param->bg_color.rgba.g = (float)((background_color & 0x0000FF00) >>  8) / 255.0;
