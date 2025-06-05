@@ -2978,6 +2978,9 @@ panfrost_update_shader_state(struct panfrost_batch *batch,
    unsigned dirty_3d = ctx->dirty;
    unsigned dirty = ctx->dirty_shader[st];
 
+   if (ss->info.has_shader_clk_instr)
+      batch->need_job_req_cycle_count = true;
+
    if (dirty & (PAN_DIRTY_STAGE_TEXTURE | PAN_DIRTY_STAGE_SHADER)) {
       batch->textures[st] = panfrost_emit_texture_descriptors(batch, st);
    }

@@ -37,3 +37,4 @@ VK_EXT_load_store_op_none on panvk
 VK_EXT_scalar_block_layout on radv/gfx6
 VK_EXT_inline_uniform_block on panvk
 cl_khr_fp16 on asahi, freedreno, llvmpipe, panfrost, radeonsi and zink
+GL_ARB_shader_clock on panfrost/v6+
