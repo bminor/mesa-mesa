@@ -69,9 +69,6 @@ radv_create_buffer(struct radv_device *device, const VkBufferCreateInfo *pCreate
    if (replay_info && replay_info->opaqueCaptureAddress)
       replay_address = replay_info->opaqueCaptureAddress;
 
-   if (pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)
-      buffer->vk.device_address = replay_address;
-
    if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
       enum radeon_bo_flag flags = RADEON_FLAG_VIRTUAL;
       if (pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)
