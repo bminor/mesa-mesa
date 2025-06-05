@@ -193,13 +193,19 @@ struct vpe_plane_size {
 struct vpe_plane_dcc_param {
     bool enable;                     /**< Enable DCC */
 
-    uint32_t meta_pitch;             /**< DCC meta surface pitch in bytes */
-    bool     independent_64b_blks;   /**< DCC independent 64 byte blocks */
-    uint8_t  dcc_ind_blk;            /**< DCC independent block size */
+    union {
+        /** @brief DCC params for source, required for display DCC only */
+        struct {
+            uint32_t meta_pitch;           /**< DCC meta surface pitch in bytes */
+            bool     independent_64b_blks; /**< DCC independent 64 byte blocks */
+            uint8_t  dcc_ind_blk;          /**< DCC independent block size */
 
-    uint32_t meta_pitch_c;           /**< DCC meta surface pitch for chroma plane in bytes */
-    bool     independent_64b_blks_c; /**< DCC independent 64 byte blocks for chroma plane */
-    uint8_t  dcc_ind_blk_c;          /**< DCC independent block size for chroma plane */
+            uint32_t meta_pitch_c;         /**< DCC meta surface pitch for chroma plane in bytes */
+            bool     independent_64b_blks_c; /**< DCC independent 64 byte blocks for chroma plane */
+            uint8_t  dcc_ind_blk_c;          /**< DCC independent block size for chroma plane */
+        } src;
+
+    };
 };
 
 /** @enum vpe_surface_pixel_format
