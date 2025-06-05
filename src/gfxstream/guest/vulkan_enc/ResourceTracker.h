@@ -845,6 +845,7 @@ class ResourceTracker {
         bool hasExternalFormat = false;
         unsigned externalFourccFormat = 0;
         std::vector<int> pendingQsriSyncFds;
+        bool hasAnb = false;
 #endif
 #ifdef VK_USE_PLATFORM_FUCHSIA
         bool isSysmemBackedMemory = false;
