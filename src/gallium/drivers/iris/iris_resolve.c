@@ -1306,13 +1306,12 @@ iris_resource_prepare_render(struct iris_context *ice,
     *   blocks generated as a result of the render will be recoverable.
     *
     * - The clear color struct is uninitialized and potentially inconsistent
-    *   with itself. For non-32-bpc formats, the struct consists of different
-    *   fields for rendering and sampling. If rendering can generate
-    *   fast-cleared blocks, we want these to agree so that we can avoid
-    *   partially resolving prior to sampling. Images with modifiers can be
-    *   ignored. Either we will have already initialized their structs to
-    *   zero, or they will have already been consistent at the time of import
-    *   (as defined by drm_fourcc.h)
+    *   with itself. The struct consists of different fields for rendering and
+    *   sampling. If rendering can generate fast-cleared blocks, we want these
+    *   to agree so that we can avoid partially resolving prior to sampling.
+    *   Images with modifiers can be ignored. Either we will have already
+    *   initialized their structs to zero, or they will have already been
+    *   consistent at the time of import (as defined by drm_fourcc.h)
     *
     * The only aux usage which requires this process is FCV_CCS_E. Other aux
     * usages share a subset of these restrictions and benefit from only some
@@ -1324,7 +1323,7 @@ iris_resource_prepare_render(struct iris_context *ice,
                                              res->aux.clear_color,
                                              res->aux.clear_color_unknown) ||
        (res->aux.clear_color_unknown && !res->mod_info &&
-        isl_format_get_layout(render_format)->channels.r.bits != 32)) {
+        aux_usage == ISL_AUX_USAGE_FCV_CCS_E)) {
 
       /* Remove references to the clear color with resolves. */
       iris_resource_prepare_access(ice, res, 0, INTEL_REMAINING_LEVELS, 0,
