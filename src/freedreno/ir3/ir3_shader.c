@@ -1192,6 +1192,11 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
       type, so->shader_id, so->id, so->info.sstall, so->info.ss,
       so->info.systall, so->info.sy, so->loops);
 
+   fprintf(
+      out,
+      "; %s prog %d/%d: %u max_waves, %u double_threadsize\n",
+      type, so->shader_id, so->id, so->info.max_waves, so->info.double_threadsize);
+
    if (so->info.preamble_instrs_count) {
       fprintf(
          out, "; %u preamble-instr, %d early-preamble\n",
