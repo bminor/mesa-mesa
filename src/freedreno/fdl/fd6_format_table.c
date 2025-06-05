@@ -421,6 +421,13 @@ fd6_texture_format(enum pipe_format format, enum a6xx_tile_mode tile_mode,
    return formats[format].tex;
 }
 
+bool
+fd6_texture_format_supported(const struct fd_dev_info *info, enum pipe_format format,
+                             enum a6xx_tile_mode tile_mode, bool is_mutable)
+{
+   return fd6_texture_format(format, tile_mode, is_mutable) != FMT6_NONE;
+}
+
 enum a3xx_color_swap
 fd6_texture_swap(enum pipe_format format, enum a6xx_tile_mode tile_mode,
                  bool is_mutable)

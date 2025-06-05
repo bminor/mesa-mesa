@@ -46,6 +46,7 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
                                unsigned sample_count,
                                unsigned storage_sample_count, unsigned usage)
 {
+   struct fd_screen *screen = fd_screen(pscreen);
    unsigned retval = 0;
 
    if ((target >= PIPE_MAX_TEXTURE_TYPES) ||
@@ -64,7 +65,7 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
    }
 
    bool has_color = fd6_color_format(format, TILE6_LINEAR) != FMT6_NONE;
-   bool has_tex = fd6_texture_format(format, TILE6_LINEAR, false) != FMT6_NONE;
+   bool has_tex = fd6_texture_format_supported(screen->info, format, TILE6_LINEAR, false);
 
    if ((usage & (PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SHADER_IMAGE)) &&
        has_tex &&
