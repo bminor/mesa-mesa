@@ -34,7 +34,7 @@ nv_push_init(struct nv_push *push, uint32_t *start, size_t dw_count)
 }
 
 static inline size_t
-nv_push_dw_count(struct nv_push *push)
+nv_push_dw_count(const struct nv_push *push)
 {
    assert(push->start <= push->end);
    assert(push->end <= push->limit);

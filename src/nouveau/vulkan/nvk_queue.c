@@ -20,8 +20,7 @@
 #include "nv_push_clc397.h"
 
 static VkResult
-nvk_queue_submit_simple(struct nvk_queue *queue,
-                        uint32_t dw_count, const uint32_t *dw);
+nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push);
 
 static void
 nvk_queue_state_init(struct nvk_queue_state *qs)
@@ -212,7 +211,7 @@ nvk_queue_state_update(struct nvk_queue *queue,
     */
    P_IMMD(p, NV9097, SET_SHADER_LOCAL_MEMORY_WINDOW, 0xff << 24);
 
-   return nvk_queue_submit_simple(queue, nv_push_dw_count(p), push_data);
+   return nvk_queue_push(queue, p);
 }
 
 static VkResult
@@ -371,8 +370,7 @@ nvk_queue_submit(struct vk_queue *vk_queue,
 }
 
 static VkResult
-nvk_queue_submit_simple(struct nvk_queue *queue,
-                        uint32_t dw_count, const uint32_t *dw)
+nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
@@ -383,17 +381,17 @@ nvk_queue_submit_simple(struct nvk_queue *queue,
 
    struct nvkmd_mem *push_mem;
    result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &dev->vk.base,
-                                       dw_count * 4, 0,
+                                       nv_push_dw_count(push) * 4, 0,
                                        NVKMD_MEM_GART,
                                        NVKMD_MEM_MAP_WR, &push_mem);
    if (result != VK_SUCCESS)
       return result;
 
-   memcpy(push_mem->map, dw, dw_count * 4);
+   memcpy(push_mem->map, push->start, nv_push_dw_count(push) * 4);
 
    const struct nvkmd_ctx_exec exec = {
       .addr = push_mem->va->addr,
-      .size_B = dw_count * 4,
+      .size_B = nv_push_dw_count(push) * 4,
    };
    result = nvkmd_ctx_exec(queue->exec_ctx, &queue->vk.base, 1, &exec);
    if (result == VK_SUCCESS)
@@ -403,13 +401,8 @@ nvk_queue_submit_simple(struct nvk_queue *queue,
 
    const bool debug_sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
    if ((debug_sync && result != VK_SUCCESS) ||
-       (pdev->debug_flags & NVK_DEBUG_PUSH_DUMP)) {
-      struct nv_push push = {
-         .start = (uint32_t *)dw,
-         .end = (uint32_t *)dw + dw_count,
-      };
-      vk_push_print(stderr, &push, &pdev->info);
-   }
+       (pdev->debug_flags & NVK_DEBUG_PUSH_DUMP))
+      vk_push_print(stderr, push, &pdev->info);
 
    if (result != VK_SUCCESS)
       return vk_queue_set_lost(&queue->vk, "Submit failed");
@@ -453,7 +446,7 @@ nvk_queue_init_context_state(struct nvk_queue *queue)
          return result;
    }
 
-   return nvk_queue_submit_simple(queue, nv_push_dw_count(&push), push_data);
+   return nvk_queue_push(queue, &push);
 }
 
 static VkQueueGlobalPriority
