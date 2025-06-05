@@ -59,6 +59,8 @@ chmod +x vulkaninfo
 
 popd
 
+section_end android-tools
+
 ############### Downloading NDK for native builds for the guest ...
 
 section_start android-ndk "Downloading Android NDK"
