@@ -420,7 +420,8 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(R16_UNORM,               R16_UNORM,       R001, L, VTR_I),
    FMT(R8G8_UNORM,              RG8_UNORM,       RG01, L, VTR_I),
    FMT(R16G16_UNORM,            RG16_UNORM,      RG01, L, VTR_I),
-   FMT(R8G8B8_UNORM,            RGB8_UNORM,      RGB1, L, V____),
+   FMT(R8G8B8_UNORM,            RGB8_UNORM,      RGB1, L, VTR_I),
+   FMT(B8G8R8_UNORM,            RGB8_UNORM,      BGR1, L, VTR_I),
 
    /* 32-bit NORM is not texturable in v7 onwards. It's renderable
     * everywhere, but rendering without texturing is not useful.
@@ -483,8 +484,8 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(L8_SRGB,                 R8_UNORM,        RRR1, S, VTR_I),
    FMT(R8_SRGB,                 R8_UNORM,        R001, S, VTR_I),
    FMT(R8G8_SRGB,               RG8_UNORM,       RG01, S, VTR_I),
-   FMT(R8G8B8_SRGB,             RGB8_UNORM,      RGB1, S, V____),
-   FMT(B8G8R8_SRGB,             RGB8_UNORM,      BGR1, S, V____),
+   FMT(R8G8B8_SRGB,             RGB8_UNORM,      RGB1, S, VTR_I),
+   FMT(B8G8R8_SRGB,             RGB8_UNORM,      BGR1, S, VTR_I),
    FMT(R8G8B8A8_SRGB,           RGBA8_UNORM,     RGBA, S, VTR_I),
    FMT(A8B8G8R8_SRGB,           RGBA8_UNORM,     ABGR, S, VTR_I),
    FMT(X8B8G8R8_SRGB,           RGBA8_UNORM,     ABG1, S, VTR_I),

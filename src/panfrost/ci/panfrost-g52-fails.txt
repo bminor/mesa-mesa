@@ -545,6 +545,22 @@ dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.indexed_draw.draw_instanced_inde
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.indexed_draw.draw_instanced_indexed_triangle_strip_with_alloc_offset,Fail
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.indexed_draw.draw_instanced_indexed_triangle_strip_with_bind_offset_with_alloc_offset,Fail
 
+# CTS bug, see https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5700
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_linear,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_linear,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_linear,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_linear,Fail
+
+# CTS bug, see https://github.com/KhronosGroup/VK-GL-CTS/issues/523
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform_linear,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform_linear,Fail
+
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_4.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers,Crash
