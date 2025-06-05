@@ -218,6 +218,16 @@ enum vcn_version{
    VCN_5_0_1,
 };
 
+#define VPE_VERSION_VALUE(major, minor, rev) (((major) << 16) | ((minor) << 8) | (rev))
+
+enum vpe_version {
+   VPE_UNKNOWN = 0,
+   VPE_6_1_0   = VPE_VERSION_VALUE(6, 1, 0),
+   VPE_6_1_1   = VPE_VERSION_VALUE(6, 1, 1),
+   VPE_6_1_2   = VPE_VERSION_VALUE(6, 1, 2),
+   VPE_6_1_3   = VPE_VERSION_VALUE(6, 1, 3),
+};
+
 #define SDMA_VERSION_VALUE(major, minor) (((major) << 8) | (minor))
 
 enum sdma_version {

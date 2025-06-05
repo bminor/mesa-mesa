@@ -963,6 +963,12 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       break;
    }
 
+    if (info->ip[AMD_IP_VPE].num_queues)
+      info->vpe_ip_version = (enum vpe_version)VPE_VERSION_VALUE(
+                                                info->ip[AMD_IP_VPE].ver_major,
+                                                info->ip[AMD_IP_VPE].ver_minor,
+                                                info->ip[AMD_IP_VPE].ver_rev);
+
    /* Set which chips have dedicated VRAM. */
    info->has_dedicated_vram = !(device_info.ids_flags & AMDGPU_IDS_FLAGS_FUSION);
 
