@@ -844,7 +844,7 @@
         "description": "radv,radeonsi: fix emitting UPDATE_DB_SUMMARIZER_TIMEOUT on GFX12",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "47f5d25f93fd36224c112ee2d48e511ae078f8c2",
         "notes": null

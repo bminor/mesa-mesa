@@ -700,7 +700,7 @@ radv_emit_ge_rings(struct radv_device *device, struct radeon_cmdbuf *cs, struct 
                   S_0309AC_PAB_TEMPORAL(gfx12_load_last_use_discard) | S_0309AC_SPEC_DATA_READ(gfx12_spec_read_auto) |
                   S_0309AC_FORCE_SE_SCOPE(1) | S_0309AC_PAB_NOFILL(1)); /* R_0309AC_GE_PRIM_RING_SIZE */
 
-      if (pdev->info.gfx_level == GFX12) {
+      if (pdev->info.gfx_level == GFX12 && pdev->info.pfp_fw_version >= 2680) {
          /* Mitigate the HiZ GPU hang by increasing a timeout when BOTTOM_OF_PIPE_TS is used as the
           * workaround. This must be emitted when the gfx queue is idle.
           */

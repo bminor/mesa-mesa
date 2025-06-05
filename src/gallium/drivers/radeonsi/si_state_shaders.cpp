@@ -5161,7 +5161,7 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
                      S_0309AC_FORCE_SE_SCOPE(1) |
                      S_0309AC_PAB_NOFILL(1));         /* R_0309AC_GE_PRIM_RING_SIZE */
 
-         if (sctx->gfx_level == GFX12) {
+         if (sctx->gfx_level == GFX12 && sscreen->info.pfp_fw_version >= 2680) {
             /* Mitigate the HiZ GPU hang by increasing a timeout when
              * BOTTOM_OF_PIPE_TS is used as the workaround. This must be
              * emitted when the gfx queue is idle.
