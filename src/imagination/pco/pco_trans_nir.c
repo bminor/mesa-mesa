@@ -1699,8 +1699,8 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       bool does_discard = !nir_src_is_undef(intr->src[0]);
       bool does_depthf = !nir_src_is_undef(intr->src[1]);
 
-      assert(does_depthf == (tctx->shader->data.fs.uses.depth_feedback &&
-                             !tctx->shader->data.fs.uses.early_frag));
+      does_depthf &= (tctx->shader->data.fs.uses.depth_feedback &&
+                      !tctx->shader->data.fs.uses.early_frag);
 
       if (does_discard) {
          pco_tstz(&tctx->b,
