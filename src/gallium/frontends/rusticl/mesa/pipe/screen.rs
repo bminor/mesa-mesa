@@ -107,6 +107,14 @@ impl PipeScreen {
 
     pub fn resource_assign_vma(&self, res: &PipeResource, address: u64) -> bool {
         if let Some(resource_assign_vma) = self.screen().resource_assign_vma {
+            // Validate that we already acquired the vm range
+            if cfg!(debug_assertions) {
+                if let Some(address) = NonZeroU64::new(address) {
+                    debug_assert!(self
+                        .alloc_vm(address, NonZeroU64::new(1).unwrap())
+                        .is_none());
+                }
+            }
             unsafe { resource_assign_vma(self.screen.as_ptr(), res.pipe(), address) }
         } else {
             false
