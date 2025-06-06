@@ -2549,6 +2549,11 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                 * is present. This is sub-optimal, but it's simple :-). */
                cs_add32(b, multiplicand,
                         cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
+
+               /* Flush the loads here so that we don't get automatic flushes
+                * over and over again due to the divergent nature of the if/else
+                * in the loop below. */
+               cs_flush_loads(b);
                for (uint32_t i = 31; i > 0; i--) {
                   uint32_t add = stride << i;
 
