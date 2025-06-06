@@ -1713,6 +1713,11 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
       unsigned components = glsl_get_components(var->type);
 
       switch (var->data.interpolation) {
+      case INTERP_MODE_NONE:
+         /* pco_rev_link_nir didn't run; override here. */
+         var->data.interpolation = INTERP_MODE_SMOOTH;
+         FALLTHROUGH;
+
       case INTERP_MODE_SMOOTH:
          if (f16)
             data->vs.f16_smooth += components;
