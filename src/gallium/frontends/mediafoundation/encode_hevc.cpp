@@ -837,30 +837,10 @@ CDX12EncHMFT::CheckMediaTypeLevel(
 {
    HRESULT hr = S_OK;
    UINT32 uiLevel = (UINT32) -1;
-   int maxLumaPs = 0;
-   const int minCbSizeY = 1 << ( encoderCapabilities.m_HWSupportH265BlockSizes.bits.log2_min_luma_coding_block_size_minus3 + 3 );
-   const int alignedWidth = static_cast<UINT>( std::ceil( width / static_cast<double>( minCbSizeY ) ) * minCbSizeY );
-   const int alignedHeight = static_cast<UINT>( std::ceil( height / static_cast<double>( minCbSizeY ) ) * minCbSizeY );
-
+   
    uiLevel = MFGetAttributeUINT32( pmt, MF_MT_VIDEO_LEVEL, uiLevel );
    enum eAVEncH265VLevel AVEncLevel;
    CHECKHR_GOTO( ConvertLevelToAVEncH265VLevel( uiLevel, AVEncLevel ), done );
-
-   maxLumaPs = LevelToLumaPS( AVEncLevel );
-
-   // TODO: add more checks according to A.1
-   if( ( alignedHeight * alignedWidth > maxLumaPs ) || ( (double) alignedWidth > sqrt( (double) maxLumaPs * 8 ) ) ||
-       ( (double) alignedHeight > sqrt( (double) maxLumaPs * 8 ) ) )
-   {
-      debug_printf( "[dx12 hmft 0x%p] CheckMediaTypeLevel failed:  alignedWidth, alignedHeight combination exceeded max luma "
-                    "sample constraints "
-                    "(maxLumaPS). (alignedWidth = %d, alignedHeight = %d, maxLumaPS = %d)\n",
-                    this,
-                    alignedHeight,
-                    alignedWidth,
-                    maxLumaPs );
-      CHECKHR_GOTO( E_INVALIDARG, done );
-   }
 
    if( pLevel )
    {
