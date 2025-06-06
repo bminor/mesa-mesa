@@ -750,7 +750,7 @@ zink_verify_device_extensions(struct zink_screen *screen)
 <%helpers:guard ext="${ext}">
    if (screen->info.have_${ext.name_with_vendor()}) {
 %for cmd in registry.get_registry_entry(ext.name).device_commands:
-%if cmd.find("win32"):
+%if cmd.find("Win32") != -1:
 #ifdef _WIN32
 %endif
       if (!screen->vk.${cmd.lstrip("vk")}) {
@@ -760,7 +760,7 @@ zink_verify_device_extensions(struct zink_screen *screen)
          screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_function_not_loaded;
 #endif
       }
-%if cmd.find("win32"):
+%if cmd.find("Win32") != -1:
 #endif
 %endif
 %endfor
