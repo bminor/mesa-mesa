@@ -1553,7 +1553,7 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
       }
    } else {
       /* VALUReadSGPRHazard
-       * VALU reads SGPR and later written by SALU cannot safely be read by VALU/SALU.
+       * VALU reads SGPR and later written by VALU/SALU cannot safely be read by VALU/SALU.
        */
       if (instr->isVALU() || instr->isSALU()) {
          unsigned expiry_count = instr->isSALU() ? 10 : 11;
