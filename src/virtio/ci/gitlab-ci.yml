@@ -21,7 +21,7 @@ venus-lavapipe:
 venus-lavapipe-full:
   extends:
     - venus-lavapipe
-    - .venus-manual-rules
+    - .venus-lavapipe-manual-rules
   timeout: 3h
   variables:
     DEQP_FRACTION: 6  # 1 would take 12h so this is as close as we can get
@@ -29,7 +29,7 @@ venus-lavapipe-full:
 .android-venus-lavapipe:
   extends:
     - .test-android
-    - .venus-manual-rules
+    - .venus-lavapipe-manual-rules
   variables:
     ANDROID_GPU_MODE: venus
     GPU_VERSION: venus
@@ -39,7 +39,7 @@ venus-lavapipe-full:
 .android-venus-angle-lavapipe:
   extends:
     - .test-android
-    - .venus-manual-rules
+    - .venus-lavapipe-manual-rules
     - .test-angle
   variables:
     ANDROID_GPU_MODE: venus_guest_angle

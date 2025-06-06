@@ -1,27 +1,37 @@
 .venus-rules:
-  stage: layered-backends
   rules:
     - !reference [.test, rules]
-    - !reference [.lavapipe-rules, rules]
+    - !reference [.vulkan-rules, rules]
     - changes: &venus_file_list
         - src/virtio/**/*
       when: on_success
 
 .venus-manual-rules:
+  rules:
+    - !reference [.test, rules]
+    - !reference [.vulkan-manual-rules, rules]
+    - changes: *venus_file_list
+      when: manual
+
+.venus-lavapipe-rules:
+  stage: layered-backends
+  rules:
+    - !reference [.venus-rules, rules]
+    - !reference [.lavapipe-rules, rules]
+
+.venus-lavapipe-manual-rules:
   stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
-    - !reference [.test, rules]
+    - !reference [.venus-manual-rules, rules]
     - !reference [.lavapipe-manual-rules, rules]
-    - changes: *venus_file_list
-      when: manual
 
 
 .venus-lavapipe-test:
   extends:
     - .test-vk
     - .test-crosvm
-    - .venus-rules
+    - .venus-lavapipe-rules
   timeout: 15m
   variables:
     VK_DRIVER: virtio
