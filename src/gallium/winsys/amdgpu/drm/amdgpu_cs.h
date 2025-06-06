@@ -44,6 +44,7 @@ struct amdgpu_cs_buffer {
 enum ib_type {
    IB_PREAMBLE,
    IB_MAIN,
+   IB_GANG_MAIN,
    IB_NUM,
 };
 
@@ -113,6 +114,7 @@ struct amdgpu_cs_context {
 
 struct amdgpu_cs {
    struct amdgpu_ib main_ib; /* must be first because this is inherited */
+   struct amdgpu_ib gang_main_ib;
    struct amdgpu_winsys *aws;
    struct amdgpu_ctx *ctx;
 
