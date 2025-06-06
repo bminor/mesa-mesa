@@ -81,12 +81,6 @@
  *
  */
 
-#if USE_LIBGLVND
-#define EGLAPI
-#undef PUBLIC
-#define PUBLIC
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
