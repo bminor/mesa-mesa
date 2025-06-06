@@ -217,8 +217,6 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
           (devinfo->verx10 >= 110 && devinfo->verx10 <= 120 &&
            compiler->num_lowered_storage_formats == 3) ||
           devinfo->verx10 == 90);
-   fprintf(stderr, "num_lowered_storage_formats=%i\n",
-           compiler->num_lowered_storage_formats);
 
    return compiler;
 }
