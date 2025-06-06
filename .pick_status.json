@@ -1404,7 +1404,7 @@
         "description": "v3dv: fix swapchain bind info look up",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c672b2385742944d2843e9a2f4239c6cb8875d0a",
         "notes": null
