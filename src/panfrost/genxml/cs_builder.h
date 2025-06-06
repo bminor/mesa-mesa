@@ -180,6 +180,8 @@ struct cs_label {
 struct cs_if_else {
    struct cs_block block;
    struct cs_label end_label;
+   struct cs_load_store_tracker *orig_ls_state;
+   struct cs_load_store_tracker ls_state;
 };
 
 struct cs_maybe {
@@ -1071,6 +1073,11 @@ cs_if_start(struct cs_builder *b, struct cs_if_else *if_else,
    cs_block_start(b, &if_else->block);
    cs_label_init(&if_else->end_label);
    cs_branch_label(b, &if_else->end_label, cs_invert_cond(cond), val);
+
+   if_else->orig_ls_state = b->cur_ls_tracker;
+   if_else->ls_state = *if_else->orig_ls_state;
+   b->cur_ls_tracker = &if_else->ls_state;
+
    return if_else;
 }
 
@@ -1082,6 +1089,15 @@ cs_if_end(struct cs_builder *b, struct cs_if_else *if_else)
    b->blocks.pending_if.block.next = if_else->block.next;
    b->blocks.stack = &b->blocks.pending_if.block;
    b->blocks.pending_if.end_label = if_else->end_label;
+
+   b->blocks.pending_if.orig_ls_state = if_else->orig_ls_state;
+   b->blocks.pending_if.ls_state = if_else->ls_state;
+
+   BITSET_OR(if_else->orig_ls_state->pending_loads,
+             if_else->orig_ls_state->pending_loads,
+             if_else->ls_state.pending_loads);
+   if_else->orig_ls_state->pending_stores |= if_else->ls_state.pending_stores;
+   b->cur_ls_tracker = if_else->orig_ls_state;
 }
 
 static inline struct cs_if_else *
@@ -1097,14 +1113,27 @@ cs_else_start(struct cs_builder *b, struct cs_if_else *if_else)
    cs_set_label(b, &b->blocks.pending_if.end_label);
    cs_label_init(&b->blocks.pending_if.end_label);
 
+   /* Restore the ls_tracker state from before the if block. */
+   if_else->orig_ls_state = b->blocks.pending_if.orig_ls_state;
+   if_else->ls_state = *if_else->orig_ls_state;
+   b->cur_ls_tracker = &if_else->ls_state;
+
    return if_else;
 }
 
 static inline void
 cs_else_end(struct cs_builder *b, struct cs_if_else *if_else)
 {
+   struct cs_load_store_tracker if_ls_state = b->blocks.pending_if.ls_state;
+
    cs_set_label(b, &if_else->end_label);
    cs_block_end(b, &if_else->block);
+
+   BITSET_OR(if_else->orig_ls_state->pending_loads, if_ls_state.pending_loads,
+             if_else->ls_state.pending_loads);
+   if_else->orig_ls_state->pending_stores =
+      if_ls_state.pending_stores | if_else->ls_state.pending_stores;
+   b->cur_ls_tracker = if_else->orig_ls_state;
 }
 
 #define cs_if(__b, __cond, __val)                                              \
