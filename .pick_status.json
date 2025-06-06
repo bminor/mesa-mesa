@@ -3534,7 +3534,7 @@
         "description": "u_trace: Fix payload refcounting in u_trace_clone_append().",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "14e45cb21eaf253b571aa410de422cdc6f9bb647",
         "notes": null
