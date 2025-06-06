@@ -100,7 +100,10 @@ static const struct lima_format lima_texel_formats[] = {
    LIMA_TEXEL_FORMAT(ETC1_RGB8,          ETC1_RGB8, false, SWIZ(X, Y, Z, W)),
    LIMA_TEXEL_FORMAT(R8_UNORM,           L8,        false, SWIZ(X, 0, 0, 1)),
    LIMA_TEXEL_FORMAT(R8G8_UNORM,         L8A8,      false, SWIZ(X, W, 0, 1)),
+#if 0
+   /* TODO: re-enable this */
    LIMA_TEXEL_FORMAT(R16G16B16_FLOAT,    R16G16B16_FLOAT, true, SWIZ(X, Y, Z, W)),
+#endif
    LIMA_TEXEL_FORMAT(R16G16B16A16_FLOAT, R16G16B16A16_FLOAT, true, SWIZ(X, Y, Z, W)),
    LIMA_TEXEL_FORMAT(L16_FLOAT,          L16_FLOAT, false, SWIZ(X, Y, Z, W)),
    LIMA_TEXEL_FORMAT(A16_FLOAT,          A16_FLOAT, false, SWIZ(X, Y, Z, W)),
