@@ -259,11 +259,6 @@ dEQP-GLES3.functional.texture.filtering.cube.combinations.nearest_linear_repeat_
 dEQP-GLES3.functional.texture.filtering.cube.combinations.nearest_linear_repeat_mirror,Fail
 dEQP-GLES3.functional.texture.filtering.cube.combinations.nearest_linear_repeat_repeat,Fail
 
-# Weird vertical stripes instead of smooth gradient.
-dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgb16f_cube,Fail
-dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgb16i_cube,Fail
-dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgb16ui_cube,Fail
-
 # Looks like sub-pixel sampling errors or something.
 dEQP-GLES3.functional.texture.vertex.2d.filtering.linear_nearest_clamp,Fail
 dEQP-GLES3.functional.texture.vertex.2d.filtering.linear_nearest_mirror,Fail
@@ -716,11 +711,6 @@ dEQP-GLES31.functional.texture.gather.offsets.implementation_offset.2d_array.rgb
 dEQP-GLES31.functional.texture.gather.offsets.implementation_offset.2d_array.rgba8ui.texture_swizzle.blue_alpha_zero_one,Fail
 dEQP-GLES31.functional.texture.gather.offsets.implementation_offset.2d_array.rgba8ui.texture_swizzle.one_red_green_blue,Fail
 dEQP-GLES31.functional.texture.gather.offsets.implementation_offset.2d_array.rgba8ui.texture_swizzle.zero_one_red_green,Fail
-
-# Sampled wrong, see other rgb16 failures.
-dEQP-GLES31.functional.texture.specification.teximage3d_pbo.rgb16f_cube_array,Fail
-dEQP-GLES31.functional.texture.specification.teximage3d_pbo.rgb16i_cube_array,Fail
-dEQP-GLES31.functional.texture.specification.teximage3d_pbo.rgb16ui_cube_array,Fail
 
 shaders@glsl-bug-110796,Fail
 
