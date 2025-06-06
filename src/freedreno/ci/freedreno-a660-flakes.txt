@@ -71,3 +71,7 @@ dEQP-VK.subgroups.shuffle.framebuffer.subgroupshuffle_bool_tess_control
 bypass-dEQP-VK.renderpass2.fragment_density_map.2_views.render.divisible_density_size.2_samples.static_subsampled_1_2_multiviewport
 bypass-dEQP-VK.renderpass2.fragment_density_map.2_views.render.divisible_density_size.2_samples.static_subsampled_2_1_multiviewport
 gmem-dEQP-VK.spirv_assembly.instruction.graphics.image_sampler.imagefetch.sampled_image.optypeimage_mismatch.rgba32f.depth_property.unknown.shader_tessc
+
+# Random flakes, first time seen on job
+# https://gitlab.freedesktop.org/mesa/mesa/-/jobs/76075075
+dEQP-VK.clipping.user_defined.clip_cull_distance.vert_tess_geom.1_7
