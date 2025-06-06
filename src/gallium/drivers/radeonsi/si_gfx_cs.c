@@ -442,6 +442,19 @@ void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
    if (unlikely(radeon_uses_secure_bos(ctx->ws))) {
       is_secure = ctx->ws->cs_is_secure(&ctx->gfx_cs);
 
+      if (is_secure && !ctx->screen->attribute_pos_prim_ring_tmz) {
+         ctx->screen->attribute_pos_prim_ring_tmz =
+            si_aligned_buffer_create(&ctx->screen->b,
+                                     PIPE_RESOURCE_FLAG_UNMAPPABLE |
+                                     SI_RESOURCE_FLAG_32BIT |
+                                     SI_RESOURCE_FLAG_DRIVER_INTERNAL |
+                                     PIPE_RESOURCE_FLAG_ENCRYPTED |
+                                     SI_RESOURCE_FLAG_DISCARDABLE,
+                                     PIPE_USAGE_DEFAULT,
+                                     ctx->screen->info.total_attribute_pos_prim_ring_size,
+                                     2 * 1024 * 1024);
+      }
+
       si_install_draw_wrapper(ctx, si_draw_vbo_tmz_preamble,
                               si_draw_vstate_tmz_preamble);
    }
@@ -487,8 +500,12 @@ void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
    si_mark_atom_dirty(ctx, &ctx->atoms.s.barrier);
    si_mark_atom_dirty(ctx, &ctx->atoms.s.spi_ge_ring_state);
 
-   if (ctx->screen->attribute_pos_prim_ring) {
+   if (ctx->screen->attribute_pos_prim_ring && !is_secure) {
       radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, ctx->screen->attribute_pos_prim_ring,
+                                RADEON_USAGE_READWRITE | RADEON_PRIO_SHADER_RINGS);
+   }
+   if (ctx->screen->attribute_pos_prim_ring_tmz && is_secure) {
+      radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, ctx->screen->attribute_pos_prim_ring_tmz,
                                 RADEON_USAGE_READWRITE | RADEON_PRIO_SHADER_RINGS);
    }
    if (ctx->border_color_buffer) {

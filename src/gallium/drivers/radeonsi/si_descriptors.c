@@ -2255,7 +2255,9 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       if (sctx->gs_attribute_ring_pointer_dirty) {
          gfx12_push_gfx_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
                                GFX9_SGPR_ATTRIBUTE_RING_ADDR * 4,
-                               sctx->screen->attribute_pos_prim_ring->gpu_address);
+                               sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
+                                 sctx->screen->attribute_pos_prim_ring_tmz->gpu_address:
+                                 sctx->screen->attribute_pos_prim_ring->gpu_address);
          sctx->gs_attribute_ring_pointer_dirty = false;
       }
 
@@ -2283,7 +2285,9 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       if (sctx->gs_attribute_ring_pointer_dirty) {
          gfx11_push_gfx_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
                                GFX9_SGPR_ATTRIBUTE_RING_ADDR * 4,
-                               sctx->screen->attribute_pos_prim_ring->gpu_address);
+                               sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
+                                 sctx->screen->attribute_pos_prim_ring_tmz->gpu_address:
+                                 sctx->screen->attribute_pos_prim_ring->gpu_address);
          sctx->gs_attribute_ring_pointer_dirty = false;
       }
 
@@ -2313,7 +2317,9 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
          assert(sctx->gfx_level >= GFX11);
          radeon_set_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
                            GFX9_SGPR_ATTRIBUTE_RING_ADDR * 4,
-                           sctx->screen->attribute_pos_prim_ring->gpu_address);
+                           sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
+                              sctx->screen->attribute_pos_prim_ring_tmz->gpu_address:
+                              sctx->screen->attribute_pos_prim_ring->gpu_address);
          sctx->gs_attribute_ring_pointer_dirty = false;
       }
       radeon_end();

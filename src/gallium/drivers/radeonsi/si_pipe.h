@@ -661,6 +661,7 @@ struct si_screen {
    struct util_vertex_state_cache vertex_state_cache;
 
    struct si_resource *attribute_pos_prim_ring;
+   struct si_resource *attribute_pos_prim_ring_tmz;
 
    simple_mtx_t tess_ring_lock;
    struct pipe_resource *tess_rings;

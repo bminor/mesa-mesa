@@ -1001,6 +1001,7 @@ void si_destroy_screen(struct pipe_screen *pscreen)
    }
 
    si_resource_reference(&sscreen->attribute_pos_prim_ring, NULL);
+   si_resource_reference(&sscreen->attribute_pos_prim_ring_tmz, NULL);
    pipe_resource_reference(&sscreen->tess_rings, NULL);
    pipe_resource_reference(&sscreen->tess_rings_tmz, NULL);
 
