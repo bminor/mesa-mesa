@@ -5044,7 +5044,7 @@
         "description": "aco/gfx12: fix VALUReadSGPRHazard with carry-out",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "65f95ae74e9c0e30bd14bfca347caeedce486bba",
         "notes": null
