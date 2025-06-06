@@ -109,10 +109,10 @@ zink_verify_instance_extensions(struct zink_screen *screen);
 %for ext in extensions:
 %if registry.in_registry(ext.name):
 %for cmd in registry.get_registry_entry(ext.name).instance_commands:
-void VKAPI_PTR zink_stub_${cmd.lstrip("vk")}(void);
+void VKAPI_PTR zink_stub_${cmd.name()}(void);
 %endfor
 %for cmd in registry.get_registry_entry(ext.name).pdevice_commands:
-void VKAPI_PTR zink_stub_${cmd.lstrip("vk")}(void);
+void VKAPI_PTR zink_stub_${cmd.name()}(void);
 %endfor
 %endif
 %endfor
@@ -284,20 +284,20 @@ zink_verify_instance_extensions(struct zink_screen *screen)
 %endif
    if (screen->instance_info->have_${ext.name_with_vendor()}) {
 %for cmd in registry.get_registry_entry(ext.name).instance_commands:
-      if (!screen->vk.${cmd.lstrip("vk")}) {
+      if (!screen->vk.${cmd.name()}) {
 #ifndef NDEBUG
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_${cmd.lstrip("vk")};
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
 #else
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_function_not_loaded;
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
 #endif
       }
 %endfor
 %for cmd in registry.get_registry_entry(ext.name).pdevice_commands:
-      if (!screen->vk.${cmd.lstrip("vk")}) {
+      if (!screen->vk.${cmd.name()}) {
 #ifndef NDEBUG
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_${cmd.lstrip("vk")};
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
 #else
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_function_not_loaded;
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
 #endif
       }
 %endfor
@@ -317,18 +317,18 @@ zink_verify_instance_extensions(struct zink_screen *screen)
 %for ext in extensions:
 %if registry.in_registry(ext.name):
 %for cmd in registry.get_registry_entry(ext.name).instance_commands + registry.get_registry_entry(ext.name).pdevice_commands:
-%if cmd in generated_funcs:
+%if cmd.full_name in generated_funcs:
    <% continue %>
 %else:
-   <% generated_funcs.add(cmd) %>
+   <% generated_funcs.add(cmd.full_name) %>
 %endif
 %if ext.platform_guard:
 #ifdef ${ext.platform_guard}
 %endif
 void VKAPI_PTR
-zink_stub_${cmd.lstrip("vk")}()
+zink_stub_${cmd.name()}()
 {
-   mesa_loge("ZINK: ${cmd} is not loaded properly!");
+   mesa_loge("ZINK: ${cmd.full_name} is not loaded properly!");
    abort();
 }
 %if ext.platform_guard:

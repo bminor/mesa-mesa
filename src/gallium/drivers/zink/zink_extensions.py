@@ -182,6 +182,14 @@ class Extension:
 # Type aliases
 Layer = Extension
 
+class ExtensionRegistryCommand:
+    full_name         = ""
+    not_promoted      = False
+
+    # returns "CmdFoo" for "vkCmdFoo"
+    def name(self):
+        return self.full_name.lstrip("vk")
+
 class ExtensionRegistryEntry:
     # type of extension - right now it's either "instance" or "device"
     ext_type          = ""
@@ -262,13 +270,18 @@ class ExtensionRegistry:
 
             for cmd in ext.findall("require/command"):
                 cmd_name = cmd.get("name")
+                cmd_comment = cmd.get("comment")
                 if cmd_name:
+                    this_cmd = ExtensionRegistryCommand()
+                    this_cmd.full_name = cmd_name
+                    this_cmd.not_promoted = bool(cmd_comment) and "not promoted" in cmd_comment.lower()
+
                     if commands_type[cmd_name] in ("VkDevice", "VkCommandBuffer", "VkQueue"):
-                        entry.device_commands.append(cmd_name)
+                        entry.device_commands.append(this_cmd)
                     elif commands_type[cmd_name] in ("VkPhysicalDevice"):
-                        entry.pdevice_commands.append(cmd_name)
+                        entry.pdevice_commands.append(this_cmd)
                     else:
-                        entry.instance_commands.append(cmd_name)
+                        entry.instance_commands.append(this_cmd)
 
             entry.constants = []
             for enum in ext.findall("require/enum"):

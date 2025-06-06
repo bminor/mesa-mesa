@@ -450,7 +450,7 @@ zink_verify_device_extensions(struct zink_screen *screen);
 %for ext in extensions:
 %if registry.in_registry(ext.name):
 %for cmd in registry.get_registry_entry(ext.name).device_commands:
-void VKAPI_PTR zink_stub_${cmd.lstrip("vk")}(void);
+void VKAPI_PTR zink_stub_${cmd.name()}(void);
 %endfor
 %endif
 %endfor
@@ -770,26 +770,43 @@ zink_verify_device_extensions(struct zink_screen *screen)
 <%helpers:guard ext="${ext}">
    if (screen->info.have_${ext.name_with_vendor()}) {
 %for cmd in registry.get_registry_entry(ext.name).device_commands:
-%if cmd.find("Win32") != -1:
+%if cmd.name().find("Win32") != -1:
 #ifdef _WIN32
 %endif
 %if ext.is_promoted_to_khr:
-      if (!screen->vk.${cmd.lstrip("vk")}) {
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})screen->vk.${cmd.lstrip("vk").replace("EXT", "KHR")}; /* promoted from EXT */
+      if (!screen->vk.${cmd.name()}) {
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})screen->vk.${cmd.name().replace("EXT", "KHR")}; /* promoted from EXT */
       }
 %endif
-      if (!screen->vk.${cmd.lstrip("vk")}) {
+      if (!screen->vk.${cmd.name()}) {
 #ifndef NDEBUG
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_${cmd.lstrip("vk")};
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
 #else
-         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})zink_stub_function_not_loaded;
+         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
 #endif
       }
-%if cmd.find("Win32") != -1:
+%if cmd.name().find("Win32") != -1:
 #endif
 %endif
 %endfor
    }
+%if ext.core_since:
+   else if (screen->info.have_vulkan${ext.core_since.struct()}) {
+%for cmd in registry.get_registry_entry(ext.name).device_commands:
+%if cmd.name().find("Win32") != -1:
+#ifdef _WIN32
+%endif
+%if not cmd.not_promoted:
+      screen->vk.${cmd.name()} = (PFN_${cmd.full_name})screen->vk.${cmd.name().rstrip(ext.vendor())};
+%else:
+      /* ${cmd.full_name} is not promoted */
+%endif
+%if cmd.name().find("Win32") != -1:
+#endif
+%endif
+%endfor
+   }
+%endif
 </%helpers:guard>
 %endif
 %endfor
@@ -807,15 +824,15 @@ zink_verify_device_extensions(struct zink_screen *screen)
 ## some functions are added by multiple extensions, which creates duplication
 ## and thus redefinition of stubs (eg. vkCmdPushDescriptorSetWithTemplateKHR)
 ##
-%if cmd in generated_funcs:
+%if cmd.name() in generated_funcs:
    <% continue %>
 %else:
-   <% generated_funcs.add(cmd) %>
+   <% generated_funcs.add(cmd.name()) %>
 %endif
 void VKAPI_PTR
-zink_stub_${cmd.lstrip("vk")}()
+zink_stub_${cmd.name()}()
 {
-   mesa_loge("ZINK: ${cmd} is not loaded properly!");
+   mesa_loge("ZINK: ${cmd.full_name} is not loaded properly!");
    abort();
 }
 %endfor
