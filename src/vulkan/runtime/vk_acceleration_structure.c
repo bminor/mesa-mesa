@@ -259,7 +259,6 @@ struct bvh_state {
 
    uint32_t leaf_node_count;
    uint32_t internal_node_count;
-   uint32_t leaf_node_size;
 
    struct scratch_layout scratch;
    struct vk_build_config config;
