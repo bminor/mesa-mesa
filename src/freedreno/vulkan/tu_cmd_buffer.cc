@@ -7805,7 +7805,8 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
    }
 
    if (info->indirect) {
-      trace_start_compute_indirect(&cmd->trace, cs, cmd, info->unaligned);
+      trace_start_compute_indirect(&cmd->trace, cs, cmd, info->unaligned,
+                                   (char *)shader->variant->sha1_str);
 
       if (info->unaligned) {
          tu_cs_emit_pkt7(cs, CP_RUN_OPENCL, 1);
@@ -7830,7 +7831,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
       trace_start_compute(&cmd->trace, cs, cmd, info->indirect != 0,
                           info->unaligned, local_size[0], local_size[1],
                           local_size[2], info->blocks[0], info->blocks[1],
-                          info->blocks[2]);
+                          info->blocks[2], (char *)shader->variant->sha1_str);
 
       if (info->unaligned) {
          tu_cs_emit_pkt7(cs, CP_EXEC_CS, 4);
