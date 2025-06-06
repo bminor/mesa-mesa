@@ -78,6 +78,7 @@ EXTENSIONS = [
     Extension("VK_KHR_maintenance8",
               alias="maint8",
               features=True),
+    Extension("VK_KHR_unified_image_layouts", alias="unified_layouts", features=True),
     Extension("VK_KHR_external_memory"),
     Extension("VK_KHR_external_memory_fd"),
     Extension("VK_KHR_vulkan_memory_model"),
