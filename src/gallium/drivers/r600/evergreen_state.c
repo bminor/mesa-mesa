@@ -266,7 +266,10 @@ bool evergreen_is_format_supported(struct pipe_screen *screen,
 
 	if (usage & PIPE_BIND_SAMPLER_VIEW) {
 		if (target == PIPE_BUFFER) {
-			if (r600_is_buffer_format_supported(format, false))
+			if (r600_is_buffer_format_supported(format, false,
+							    rscreen->b.family >= CHIP_PALM ?
+							    R600_PBO_WORKAROUND_PALM_TO_ARUBA :
+							    R600_PBO_WORKAROUND_CEDAR_TO_HEMLOCK))
 				retval |= PIPE_BIND_SAMPLER_VIEW;
 		} else {
 			if (r600_is_sampler_format_supported(screen, format))
@@ -296,7 +299,10 @@ bool evergreen_is_format_supported(struct pipe_screen *screen,
 	}
 
 	if ((usage & PIPE_BIND_VERTEX_BUFFER) &&
-	    r600_is_buffer_format_supported(format, true)) {
+	    r600_is_buffer_format_supported(format, true,
+					    rscreen->b.family >= CHIP_PALM ?
+					    R600_PBO_WORKAROUND_PALM_TO_ARUBA :
+					    R600_PBO_WORKAROUND_CEDAR_TO_HEMLOCK)) {
 		retval |= PIPE_BIND_VERTEX_BUFFER;
 	}
 

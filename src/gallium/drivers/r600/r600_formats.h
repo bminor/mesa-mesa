@@ -84,9 +84,16 @@ static inline unsigned r600_endian_swap(unsigned size)
 	}
 }
 
+enum r600_pbo_workaround {
+	R600_PBO_NO_WORKAROUND_NEEDED,
+	R600_PBO_WORKAROUND_CEDAR_TO_HEMLOCK,
+	R600_PBO_WORKAROUND_PALM_TO_ARUBA,
+};
+
 static inline bool
 r600_is_buffer_format_supported(const enum pipe_format format,
-				const bool for_vbo)
+				const bool for_vbo,
+				const enum r600_pbo_workaround pbo_workaround)
 {
 	const struct util_format_description *desc = util_format_description(format);
 
@@ -116,6 +123,21 @@ r600_is_buffer_format_supported(const enum pipe_format format,
 		/* No 8 bit 3 channel formats for TBOs */
 		if (desc->channel[i].size == 8 && desc->nr_channels == 3)
 			return false;
+
+		switch (pbo_workaround) {
+		case R600_PBO_WORKAROUND_PALM_TO_ARUBA:
+			if (desc->channel[i].size == 16 && desc->nr_channels == 3)
+				return false;
+			break;
+		case R600_PBO_WORKAROUND_CEDAR_TO_HEMLOCK:
+			if (format == PIPE_FORMAT_B5G6R5_UNORM ||
+			    format == PIPE_FORMAT_A1B5G5R5_UNORM ||
+			    format == PIPE_FORMAT_A4B4G4R4_UNORM)
+				return false;
+			break;
+		default:
+			break;
+		}
 	}
 
 	return true;
