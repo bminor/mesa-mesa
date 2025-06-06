@@ -706,6 +706,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_shader_atomic_float = true,
       .EXT_shader_atomic_float2 = true,
       .EXT_shader_demote_to_helper_invocation = true,
+      .EXT_shader_float8 = pdev->info.gfx_level >= GFX12 && !pdev->use_llvm,
       .EXT_shader_image_atomic_int64 = true,
       .EXT_shader_module_identifier = true,
       .EXT_shader_object = !pdev->use_llvm && !(instance->debug_flags & RADV_DEBUG_NO_ESO),
@@ -1330,6 +1331,10 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       /* VK_KHR_unified_layouts */
       .unifiedImageLayouts = true,
       .unifiedImageLayoutsVideo = true,
+
+      /* VK_EXT_shader_float8 */
+      .shaderFloat8 = true,
+      .shaderFloat8CooperativeMatrix = radv_cooperative_matrix_enabled(pdev),
    };
 }
 
@@ -2892,6 +2897,30 @@ radv_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDe
 {
    VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkCooperativeMatrixPropertiesKHR, out, pProperties, pPropertyCount);
+
+   if (pdev->info.gfx_level >= GFX12) {
+      for (unsigned e5m2_a = 0; e5m2_a < 2; e5m2_a++) {
+         for (unsigned e5m2_b = 0; e5m2_b < 2; e5m2_b++) {
+            VkComponentTypeKHR a_type = e5m2_a ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+            VkComponentTypeKHR b_type = e5m2_b ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+
+            vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+            {
+               *p = (struct VkCooperativeMatrixPropertiesKHR){
+                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                  .MSize = 16,
+                  .NSize = 16,
+                  .KSize = 16,
+                  .AType = a_type,
+                  .BType = b_type,
+                  .CType = VK_COMPONENT_TYPE_FLOAT32_KHR,
+                  .ResultType = VK_COMPONENT_TYPE_FLOAT32_KHR,
+                  .saturatingAccumulation = false,
+                  .scope = VK_SCOPE_SUBGROUP_KHR};
+            }
+         }
+      }
+   }
 
    for (unsigned bfloat = 0; bfloat < 2; bfloat++) {
       for (unsigned fp32 = 0; fp32 < 2; fp32++) {
