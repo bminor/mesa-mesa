@@ -93,13 +93,6 @@ macro_rules! qmd_impl_common {
             set_field!(bv, $c, $s, CTA_THREAD_DIMENSION1, height);
             set_field!(bv, $c, $s, CTA_THREAD_DIMENSION2, depth);
         }
-
-        fn set_slm_size(&mut self, slm_size: u32) {
-            let mut bv = QMDBitView::new(&mut self.qmd);
-            let slm_size = slm_size.next_multiple_of(0x10);
-            set_field!(bv, $c, $s, SHADER_LOCAL_MEMORY_HIGH_SIZE, 0);
-            set_field!(bv, $c, $s, SHADER_LOCAL_MEMORY_LOW_SIZE, slm_size);
-        }
     };
 }
 
@@ -229,6 +222,38 @@ macro_rules! qmd_impl_set_register_count {
     };
 }
 
+macro_rules! qmd_impl_set_slm_size {
+    ($c:ident, $s:ident, $size_suffix:ident) => {
+        fn set_slm_size(&mut self, slm_size: u32) {
+            let mut bv = QMDBitView::new(&mut self.qmd);
+            let slm_size = slm_size.next_multiple_of(0x10);
+            let size_shift = suffix_shift!($size_suffix);
+            let slm_size_shifted = slm_size >> size_shift;
+            assert!(slm_size_shifted << size_shift == slm_size);
+            bv.set_field(
+                suffix_field2!(
+                    $c,
+                    $s,
+                    SHADER_LOCAL_MEMORY_HIGH,
+                    SIZE,
+                    $size_suffix
+                ),
+                0,
+            );
+            bv.set_field(
+                suffix_field2!(
+                    $c,
+                    $s,
+                    SHADER_LOCAL_MEMORY_LOW,
+                    SIZE,
+                    $size_suffix
+                ),
+                slm_size_shifted,
+            );
+        }
+    };
+}
+
 mod qmd_0_6 {
     use crate::qmd::*;
     use nvidia_headers::classes::cla0c0::qmd as cla0c0;
@@ -252,6 +277,7 @@ mod qmd_0_6 {
         qmd_impl_set_cbuf!(cla0c0, QMDV00_06, NONE, NONE);
         qmd_impl_set_prog_addr_32!(cla0c0, QMDV00_06);
         qmd_impl_set_register_count!(cla0c0, QMDV00_06, REGISTER_COUNT);
+        qmd_impl_set_slm_size!(cla0c0, QMDV00_06, NONE);
 
         fn set_smem_size(&mut self, smem_size: u32, _smem_max: u32) {
             let mut bv = QMDBitView::new(&mut self.qmd);
@@ -297,6 +323,7 @@ mod qmd_2_1 {
         qmd_impl_set_cbuf!(clc0c0, QMDV02_01, NONE, SHIFTED4);
         qmd_impl_set_prog_addr_32!(clc0c0, QMDV02_01);
         qmd_impl_set_register_count!(clc0c0, QMDV02_01, REGISTER_COUNT);
+        qmd_impl_set_slm_size!(clc0c0, QMDV02_01, NONE);
 
         fn set_smem_size(&mut self, smem_size: u32, _smem_max: u32) {
             let mut bv = QMDBitView::new(&mut self.qmd);
@@ -366,6 +393,7 @@ mod qmd_2_2 {
         qmd_impl_set_prog_addr_64!(clc3c0, QMDV02_02, NONE);
         qmd_impl_set_register_count!(clc3c0, QMDV02_02, REGISTER_COUNT_V);
         qmd_impl_set_smem_size_bounded!(clc3c0, QMDV02_02);
+        qmd_impl_set_slm_size!(clc3c0, QMDV02_02, NONE);
     }
 }
 use qmd_2_2::Qmd2_2;
@@ -398,6 +426,7 @@ mod qmd_3_0 {
         qmd_impl_set_prog_addr_64!(clc6c0, QMDV03_00, NONE);
         qmd_impl_set_register_count!(clc6c0, QMDV03_00, REGISTER_COUNT_V);
         qmd_impl_set_smem_size_bounded!(clc6c0, QMDV03_00);
+        qmd_impl_set_slm_size!(clc6c0, QMDV03_00, NONE);
     }
 }
 use qmd_3_0::Qmd3_0;
@@ -437,6 +466,7 @@ mod qmd_4_0 {
         qmd_impl_set_prog_addr_64!(clcbc0, QMDV04_00, NONE);
         qmd_impl_set_register_count!(clcbc0, QMDV04_00, REGISTER_COUNT);
         qmd_impl_set_smem_size_bounded!(clcbc0, QMDV04_00);
+        qmd_impl_set_slm_size!(clcbc0, QMDV04_00, NONE);
     }
 }
 use qmd_4_0::Qmd4_0;
