@@ -122,12 +122,8 @@ if [ -n "${ANGLE_TAG:-}" ]; then
     echo "Fatal: Android is loading a wrong version of the ANGLE libs: ${ANGLE_HASH}" 1>&2
     exit 1
   fi
-else
-  if ! printf "%s" "$GLES_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; then
-     echo "Fatal: Android is loading a wrong version of the Mesa3D GLES libs: ${GLES_RUNTIME_VERSION}" 1>&2
-     exit 1
-  fi
 fi
+
 if ! printf "%s" "$VK_RUNTIME_VERSION" | grep -Fq -- "${MESA_BUILD_VERSION}"; then
      echo "Fatal: Android is loading a wrong version of the Mesa3D Vulkan libs: ${VK_RUNTIME_VERSION}" 1>&2
      exit 1
