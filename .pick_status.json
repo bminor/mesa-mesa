@@ -1664,7 +1664,7 @@
         "description": "lvp: fix wsi platform swapchain image bind",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0dce939e6d8c8c32be8dd462eaf89d2e376ee214",
         "notes": null
