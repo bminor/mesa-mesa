@@ -66,6 +66,9 @@ class Extension:
     enable_conds   = None
     core_since     = None
 
+    # for extensions that are promoted to KHR verbatim
+    is_promoted_to_khr  = False
+
     # these are specific to zink_device_info.py:
     has_properties      = False
     has_features        = False
@@ -94,10 +97,18 @@ class Extension:
     # e.g.: "VK_EXT_robustness2" -> "robustness2"
     def pure_name(self):
         return '_'.join(self.name.split('_')[2:])
+
+    # e.g.: "VK_EXT_robustness2" with vendor="KHR" -> "VK_KHR_robustness2"
+    def with_vendor(self, vendor: str):
+            return "VK_" + vendor + "_" + self.pure_name()
     
     # e.g.: "VK_EXT_robustness2" -> "EXT_robustness2"
-    def name_with_vendor(self):
-        return self.name[3:]
+    # if a vendor is specified, returns the name with that vendor
+    def name_with_vendor(self, vendor: str = ""):
+        if not vendor:
+            return self.name[3:]
+        else:
+            return vendor + "_" + self.pure_name()
     
     # e.g.: "VK_EXT_robustness2" -> "Robustness2"
     def name_in_camel_case(self):
@@ -176,6 +187,8 @@ class ExtensionRegistryEntry:
     ext_type          = ""
     # the version in which the extension is promoted to core VK
     promoted_in       = None
+    # (only if the extension is EXT) whether a KHR version of it exists
+    promoted_to_khr   = False
     # functions added by the extension are referred to as "commands" in the registry
     device_commands   = None
     pdevice_commands  = None
@@ -238,6 +251,8 @@ class ExtensionRegistry:
             entry = ExtensionRegistryEntry()
             entry.ext_type = ext.attrib["type"]
             entry.promoted_in = self.parse_promotedto(ext.get("promotedto"))
+            entry.is_promoted_to_khr = ("VK_EXT_" in name
+                and name.replace("VK_EXT_", "VK_KHR_") == ext.get("promotedto"))
 
             entry.device_commands = []
             entry.pdevice_commands = []

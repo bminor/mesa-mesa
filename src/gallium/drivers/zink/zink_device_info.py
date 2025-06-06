@@ -473,6 +473,9 @@ zink_get_physical_device_info(struct zink_screen *screen)
 %for ext in extensions:
 <%helpers:guard ext="${ext}">
    bool support_${ext.name_with_vendor()} = false;
+%if ext.is_promoted_to_khr:
+   bool support_${ext.name_with_vendor("KHR")} = false; /* promoted from EXT */
+%endif
 </%helpers:guard>
 %endfor
    uint32_t num_extensions = 0;
@@ -498,11 +501,21 @@ zink_get_physical_device_info(struct zink_screen *screen)
          for (uint32_t i = 0; i < num_extensions; ++i) {
          %for ext in extensions:
          <%helpers:guard ext="${ext}">
+         %if ext.is_promoted_to_khr:
+            bool promoted_${ext.pure_name()} = !strcmp(extensions[i].extensionName, "${ext.with_vendor("KHR")}");
+            if (!strcmp(extensions[i].extensionName, "${ext.name}") || promoted_${ext.pure_name()}) {
+         %else:
             if (!strcmp(extensions[i].extensionName, "${ext.name}")) {
+         %endif
          %if not (ext.has_features or ext.has_properties):
                info->have_${ext.name_with_vendor()} = true;
          %else:
                support_${ext.name_with_vendor()} = true;
+         %endif
+         %if ext.is_promoted_to_khr:
+               if (promoted_${ext.pure_name()}) {
+                  support_${ext.name_with_vendor("KHR")} = true;
+               }
          %endif
             }
          </%helpers:guard>
@@ -694,7 +707,14 @@ zink_get_physical_device_info(struct zink_screen *screen)
 %for ext in extensions:
 <%helpers:guard ext="${ext}">
    if (info->have_${ext.name_with_vendor()}) {
-       info->extensions[num_extensions++] = "${ext.name}";
+%if ext.is_promoted_to_khr:
+      if (support_${ext.name_with_vendor("KHR")})
+         info->extensions[num_extensions++] = "${ext.with_vendor("KHR")}";
+      else
+         info->extensions[num_extensions++] = "${ext.name}";
+%else:
+      info->extensions[num_extensions++] = "${ext.name}";
+%endif
 %if ext.is_required:
    } else {
        debug_printf("ZINK: ${ext.name} required!\\n");
@@ -752,6 +772,11 @@ zink_verify_device_extensions(struct zink_screen *screen)
 %for cmd in registry.get_registry_entry(ext.name).device_commands:
 %if cmd.find("Win32") != -1:
 #ifdef _WIN32
+%endif
+%if ext.is_promoted_to_khr:
+      if (!screen->vk.${cmd.lstrip("vk")}) {
+         screen->vk.${cmd.lstrip("vk")} = (PFN_${cmd})screen->vk.${cmd.lstrip("vk").replace("EXT", "KHR")}; /* promoted from EXT */
+      }
 %endif
       if (!screen->vk.${cmd.lstrip("vk")}) {
 #ifndef NDEBUG
@@ -844,6 +869,8 @@ if __name__ == "__main__":
             error_count += 1
             print("The extension {} is {} extension - expected a device extension.".format(ext.name, entry.ext_type))
             continue
+
+        ext.is_promoted_to_khr = entry.is_promoted_to_khr
 
         if ext.has_features:
             if not (entry.features_struct and ext.physical_device_struct("Features") == entry.features_struct):
