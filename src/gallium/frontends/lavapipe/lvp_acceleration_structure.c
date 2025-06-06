@@ -145,16 +145,10 @@ lvp_cmd_fill_buffer_addr(VkCommandBuffer cmdbuf, VkDeviceAddress addr,
 }
 
 static void
-lvp_enqueue_encode_as(VkCommandBuffer commandBuffer,
-                      const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                      const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos,
-                      VkDeviceAddress intermediate_as_addr,
-                      VkDeviceAddress intermediate_header_addr,
-                      uint32_t leaf_count,
-                      uint32_t key,
-                      struct vk_acceleration_structure *dst)
+lvp_enqueue_encode_as(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst, state->build_info->dstAccelerationStructure);
 
    struct vk_cmd_queue_entry *entry =
       vk_zalloc(cmd_buffer->vk.cmd_queue.alloc, sizeof(struct vk_cmd_queue_entry),
@@ -172,11 +166,14 @@ lvp_enqueue_encode_as(VkCommandBuffer commandBuffer,
       return;
    }
 
+   uint64_t intermediate_header_addr = state->build_info->scratchData.deviceAddress + state->scratch.header_offset;
+   uint64_t intermediate_bvh_addr = state->build_info->scratchData.deviceAddress + state->scratch.ir_offset;
+
    cmd->dst = dst;
-   cmd->intermediate_as_addr = intermediate_as_addr;
+   cmd->intermediate_as_addr = intermediate_bvh_addr;
    cmd->intermediate_header_addr = intermediate_header_addr;
-   cmd->leaf_count = leaf_count;
-   cmd->geometry_type = vk_get_as_geometry_type(build_info);
+   cmd->leaf_count = state->leaf_node_count;
+   cmd->geometry_type = vk_get_as_geometry_type(state->build_info);
 
    entry->driver_data = cmd;
 
@@ -627,18 +624,16 @@ lvp_CopyAccelerationStructureToMemoryKHR(VkDevice _device, VkDeferredOperationKH
 }
 
 static VkDeviceSize
-lvp_get_as_size(VkDevice device,
-                const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                uint32_t leaf_count)
+lvp_get_as_size(VkDevice device, const struct vk_acceleration_structure_build_state *state)
 {
-   uint32_t internal_node_count = MAX2(leaf_count, 2) - 1;
+   uint32_t internal_node_count = MAX2(state->leaf_node_count, 2) - 1;
    uint32_t nodes_size = internal_node_count * sizeof(struct lvp_bvh_box_node);
 
    uint32_t ir_leaf_node_size = 0;
    uint32_t output_leaf_node_size = 0;
-   lvp_get_leaf_node_size(vk_get_as_geometry_type(build_info), &ir_leaf_node_size, &output_leaf_node_size);
+   lvp_get_leaf_node_size(vk_get_as_geometry_type(state->build_info), &ir_leaf_node_size, &output_leaf_node_size);
 
-   nodes_size += leaf_count * output_leaf_node_size;
+   nodes_size += state->leaf_node_count * output_leaf_node_size;
 
    nodes_size = util_align_npot(nodes_size, LVP_BVH_NODE_PREFETCH_SIZE);
 
@@ -646,8 +641,7 @@ lvp_get_as_size(VkDevice device,
 }
 
 static VkResult
-lvp_encode_bind_pipeline(VkCommandBuffer cmd_buffer,
-                         uint32_t key)
+lvp_encode_bind_pipeline(VkCommandBuffer cmd_buffer, const struct vk_acceleration_structure_build_state *state)
 {
    return VK_SUCCESS;
 }

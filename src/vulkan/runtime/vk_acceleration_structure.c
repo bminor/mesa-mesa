@@ -112,64 +112,38 @@ vk_common_GetAccelerationStructureDeviceAddressKHR(
 #define KEY_ID_PAIR_SIZE 8
 #define MORTON_BIT_SIZE  24
 
-struct scratch_layout {
-   uint32_t size;
-   uint32_t update_size;
-
-   uint32_t header_offset;
-
-   /* Used for BUILD only. */
-
-   uint32_t sort_buffer_offset[2];
-   uint32_t sort_internal_offset;
-
-   uint32_t ploc_prefix_sum_partition_offset;
-   uint32_t lbvh_node_offset;
-
-   uint32_t ir_offset;
-   uint32_t internal_node_offset;
-};
-
-static struct vk_build_config
-build_config(struct vk_device *device, uint32_t leaf_count,
-             const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-             const struct vk_acceleration_structure_build_ops *ops)
+static void
+vk_acceleration_structure_build_state_init(struct vk_acceleration_structure_build_state *state,
+                                           struct vk_device *device, uint32_t leaf_count,
+                                           const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
+                                           const struct vk_acceleration_structure_build_args *args)
 {
-   struct vk_build_config config = {0};
+   state->build_info = build_info;
+   state->leaf_node_count = leaf_count;
 
    if (leaf_count <= 4)
-      config.internal_type = VK_INTERNAL_BUILD_TYPE_LBVH;
+      state->config.internal_type = VK_INTERNAL_BUILD_TYPE_LBVH;
    else if (build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
-      config.internal_type = VK_INTERNAL_BUILD_TYPE_PLOC;
+      state->config.internal_type = VK_INTERNAL_BUILD_TYPE_PLOC;
    else if (!(build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR) &&
             !(build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR))
-      config.internal_type = VK_INTERNAL_BUILD_TYPE_PLOC;
+      state->config.internal_type = VK_INTERNAL_BUILD_TYPE_PLOC;
    else
-      config.internal_type = VK_INTERNAL_BUILD_TYPE_LBVH;
+      state->config.internal_type = VK_INTERNAL_BUILD_TYPE_LBVH;
 
    if (build_info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
        build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
-       ops->update_as[0])
-      config.internal_type = VK_INTERNAL_BUILD_TYPE_UPDATE;
+       device->as_build_ops->update_as[0])
+      state->config.internal_type = VK_INTERNAL_BUILD_TYPE_UPDATE;
 
    if ((build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR) &&
        build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
-       ops->update_as[0])
-      config.updateable = true;
+       device->as_build_ops->update_as[0])
+      state->config.updateable = true;
 
-   if (ops->get_build_config)
-      ops->get_build_config(device, &config, build_info);
+   if (device->as_build_ops->get_build_config)
+      device->as_build_ops->get_build_config(vk_device_to_handle(device), state);
 
-   return config;
-}
-
-static void
-get_scratch_layout(struct vk_device *device,
-                   uint32_t leaf_count,
-                   const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                   const struct vk_acceleration_structure_build_args *args,
-                   struct scratch_layout *scratch)
-{
    uint32_t internal_count = MAX2(leaf_count, 2) - 1;
 
    radix_sort_vk_memory_requirements_t requirements = {
@@ -193,75 +167,64 @@ get_scratch_layout(struct vk_device *device,
       unreachable("Unknown VkGeometryTypeKHR");
    }
 
-
    uint32_t offset = 0;
 
    uint32_t ploc_scratch_space = 0;
    uint32_t lbvh_node_space = 0;
 
-   struct vk_build_config config = build_config(device, leaf_count, build_info,
-                                                device->as_build_ops);
-
-   if (config.internal_type == VK_INTERNAL_BUILD_TYPE_PLOC)
+   if (state->config.internal_type == VK_INTERNAL_BUILD_TYPE_PLOC)
       ploc_scratch_space = DIV_ROUND_UP(leaf_count, PLOC_WORKGROUP_SIZE) * sizeof(struct ploc_prefix_scan_partition);
    else
       lbvh_node_space = sizeof(struct lbvh_node_info) * internal_count;
 
    uint32_t encode_scratch_size = 0;
-   if (device->as_build_ops->get_encode_scratch_size) {
-      for (uint32_t i = 0; i < MAX_ENCODE_PASSES; i++) {
-         uint32_t tmp_size = device->as_build_ops->get_encode_scratch_size(device, config.encode_key[i], leaf_count);
-         encode_scratch_size = MAX2(encode_scratch_size, tmp_size);
-      }
-   }
+   if (device->as_build_ops->get_encode_scratch_size)
+      encode_scratch_size = device->as_build_ops->get_encode_scratch_size(vk_device_to_handle(device), state);
 
-   scratch->header_offset = offset;
+   state->scratch.header_offset = offset;
    offset += sizeof(struct vk_ir_header);
 
    /* The encode passes should not need node sorting state. Reuse the space reserved for node sorting. */
    uint32_t encode_scratch_end = offset + encode_scratch_size;
 
-   scratch->sort_buffer_offset[0] = offset;
+   state->scratch.sort_buffer_offset[0] = offset;
    offset += requirements.keyvals_size;
 
-   scratch->sort_buffer_offset[1] = offset;
+   state->scratch.sort_buffer_offset[1] = offset;
    offset += requirements.keyvals_size;
 
-   scratch->sort_internal_offset = offset;
+   state->scratch.sort_internal_offset = offset;
    /* Internal sorting data is not needed when PLOC/LBVH are invoked,
     * save space by aliasing them */
-   scratch->ploc_prefix_sum_partition_offset = offset;
-   scratch->lbvh_node_offset = offset;
+   state->scratch.ploc_prefix_sum_partition_offset = offset;
+   state->scratch.lbvh_node_offset = offset;
    offset += MAX3(requirements.internal_size, ploc_scratch_space, lbvh_node_space);
 
    /* Make sure encode scratch space does not overlap the BVH. */
    offset = MAX2(offset, encode_scratch_end);
 
-   scratch->ir_offset = offset;
+   state->scratch.ir_offset = offset;
    offset += ir_leaf_size * leaf_count;
 
-   scratch->internal_node_offset = offset;
+   state->scratch.internal_node_offset = offset;
    offset += sizeof(struct vk_ir_box_node) * internal_count;
 
-   scratch->size = offset;
+   state->scratch.size = offset;
 
    if (build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
        device->as_build_ops->update_as[0]) {
-      scratch->update_size =
-         device->as_build_ops->get_update_scratch_size(device, build_info, leaf_count);
+      state->scratch.update_size = device->as_build_ops->get_update_scratch_size(vk_device_to_handle(device), state);
    } else {
-      scratch->update_size = offset;
+      state->scratch.update_size = offset;
    }
 }
 
 struct bvh_state {
+   struct vk_acceleration_structure_build_state vk;
+
    uint32_t scratch_offset;
 
-   uint32_t leaf_node_count;
    uint32_t internal_node_count;
-
-   struct scratch_layout scratch;
-   struct vk_build_config config;
 
    /* Radix sort state */
    uint32_t scatter_blocks;
@@ -548,15 +511,15 @@ build_leaves(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
-      if (bvh_states[i].config.updateable != updateable)
+      if (bvh_states[i].vk.config.updateable != updateable)
          continue;
 
       struct leaf_args leaf_consts = {
-         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
-         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.header_offset,
-         .ids = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0],
+         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.ir_offset,
+         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.header_offset,
+         .ids = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_buffer_offset[0],
       };
 
       for (unsigned j = 0; j < pInfos[i].geometryCount; ++j) {
@@ -568,13 +531,13 @@ build_leaves(VkCommandBuffer commandBuffer,
          if (build_range_info->primitiveCount == 0)
             continue;
 
-         leaf_consts.geom_data = vk_fill_geometry_data(pInfos[i].type, bvh_states[i].leaf_node_count, j, geom, build_range_info);
+         leaf_consts.geom_data = vk_fill_geometry_data(pInfos[i].type, bvh_states[i].vk.leaf_node_count, j, geom, build_range_info);
 
          disp->CmdPushConstants(commandBuffer, layout,
                                 VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(leaf_consts), &leaf_consts);
          device->cmd_dispatch_unaligned(commandBuffer, build_range_info->primitiveCount, 1, 1);
 
-         bvh_states[i].leaf_node_count += build_range_info->primitiveCount;
+         bvh_states[i].vk.leaf_node_count += build_range_info->primitiveCount;
       }
    }
 
@@ -617,17 +580,17 @@ morton_generate(VkCommandBuffer commandBuffer, struct vk_device *device,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
       const struct morton_args consts = {
-         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
-         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.header_offset,
-         .ids = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0],
+         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.ir_offset,
+         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.header_offset,
+         .ids = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_buffer_offset[0],
       };
 
       disp->CmdPushConstants(commandBuffer, layout,
                              VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(consts), &consts);
-      device->cmd_dispatch_unaligned(commandBuffer, bvh_states[i].leaf_node_count, 1, 1);
+      device->cmd_dispatch_unaligned(commandBuffer, bvh_states[i].vk.leaf_node_count, 1, 1);
    }
 
    if (args->emit_markers)
@@ -676,10 +639,10 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    uint32_t passes = (key_bits + RS_RADIX_LOG2 - 1) / RS_RADIX_LOG2;
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].leaf_node_count)
-         bvh_states[i].scratch_offset = bvh_states[i].scratch.sort_buffer_offset[passes & 1];
+      if (bvh_states[i].vk.leaf_node_count)
+         bvh_states[i].scratch_offset = bvh_states[i].vk.scratch.sort_buffer_offset[passes & 1];
       else
-         bvh_states[i].scratch_offset = bvh_states[i].scratch.sort_buffer_offset[0];
+         bvh_states[i].scratch_offset = bvh_states[i].vk.scratch.sort_buffer_offset[0];
    }
 
    /*
@@ -710,25 +673,25 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    uint32_t pass_idx = (keyval_bytes - passes);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (!bvh_states[i].leaf_node_count)
+      if (!bvh_states[i].vk.leaf_node_count)
          continue;
-      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
 
-      uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0];
-      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_internal_offset;
+      uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_buffer_offset[0];
+      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_internal_offset;
 
-      bvh_states[i].scatter_blocks = (bvh_states[i].leaf_node_count + scatter_block_kvs - 1) / scatter_block_kvs;
+      bvh_states[i].scatter_blocks = (bvh_states[i].vk.leaf_node_count + scatter_block_kvs - 1) / scatter_block_kvs;
       bvh_states[i].count_ru_scatter = bvh_states[i].scatter_blocks * scatter_block_kvs;
 
       bvh_states[i].histo_blocks = (bvh_states[i].count_ru_scatter + histo_block_kvs - 1) / histo_block_kvs;
       bvh_states[i].count_ru_histo = bvh_states[i].histo_blocks * histo_block_kvs;
 
       /* Fill with max values */
-      if (bvh_states[i].count_ru_histo > bvh_states[i].leaf_node_count) {
+      if (bvh_states[i].count_ru_histo > bvh_states[i].vk.leaf_node_count) {
          device->cmd_fill_buffer_addr(commandBuffer, keyvals_even_addr +
-                                      bvh_states[i].leaf_node_count * keyval_bytes,
-                                      (bvh_states[i].count_ru_histo - bvh_states[i].leaf_node_count) * keyval_bytes,
+                                      bvh_states[i].vk.leaf_node_count * keyval_bytes,
+                                      (bvh_states[i].count_ru_histo - bvh_states[i].vk.leaf_node_count) * keyval_bytes,
                                       0xFFFFFFFF);
       }
 
@@ -764,13 +727,13 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
                          rs->pipelines.named.histogram);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (!bvh_states[i].leaf_node_count)
+      if (!bvh_states[i].vk.leaf_node_count)
          continue;
-      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
 
-      uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0];
-      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_internal_offset;
+      uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_buffer_offset[0];
+      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_internal_offset;
 
       /* Dispatch histogram */
       struct rs_push_histogram push_histogram = {
@@ -796,12 +759,12 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
                          rs->pipelines.named.prefix);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (!bvh_states[i].leaf_node_count)
+      if (!bvh_states[i].vk.leaf_node_count)
          continue;
-      if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
+      if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
          continue;
 
-      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_internal_offset;
+      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_internal_offset;
 
       struct rs_push_prefix push_prefix = {
          .devaddr_histograms = internal_addr + rs->internal.histograms.offset,
@@ -819,9 +782,9 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    uint32_t histogram_offset = pass_idx * (RS_RADIX_SIZE * sizeof(uint32_t));
 
    for (uint32_t i = 0; i < infoCount; i++) {
-      uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[0];
-      uint64_t keyvals_odd_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_buffer_offset[1];
-      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.sort_internal_offset;
+      uint64_t keyvals_even_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_buffer_offset[0];
+      uint64_t keyvals_odd_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_buffer_offset[1];
+      uint64_t internal_addr = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.sort_internal_offset;
 
       bvh_states[i].push_scatter = (struct rs_push_scatter){
          .devaddr_keyvals_even = keyvals_even_addr,
@@ -846,9 +809,9 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
                                     : rs->pipeline_layouts.named.scatter[pass_dword].odd;
 
       for (uint32_t i = 0; i < infoCount; i++) {
-         if (!bvh_states[i].leaf_node_count)
+         if (!bvh_states[i].vk.leaf_node_count)
             continue;
-         if (bvh_states[i].config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
+         if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE)
             continue;
 
          bvh_states[i].push_scatter.pass_offset = (pass_idx & 3) * RS_RADIX_LOG2;
@@ -906,18 +869,18 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_LBVH)
+      if (bvh_states[i].vk.config.internal_type != VK_INTERNAL_BUILD_TYPE_LBVH)
          continue;
 
       uint32_t src_scratch_offset = bvh_states[i].scratch_offset;
-      uint32_t internal_node_count = MAX2(bvh_states[i].leaf_node_count, 2) - 1;
+      uint32_t internal_node_count = MAX2(bvh_states[i].vk.leaf_node_count, 2) - 1;
 
       const struct lbvh_main_args consts = {
-         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
+         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.ir_offset,
          .src_ids = pInfos[i].scratchData.deviceAddress + src_scratch_offset,
-         .node_info = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.lbvh_node_offset,
-         .id_count = bvh_states[i].leaf_node_count,
-         .internal_node_base = bvh_states[i].scratch.internal_node_offset - bvh_states[i].scratch.ir_offset,
+         .node_info = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.lbvh_node_offset,
+         .id_count = bvh_states[i].vk.leaf_node_count,
+         .internal_node_base = bvh_states[i].vk.scratch.internal_node_offset - bvh_states[i].vk.scratch.ir_offset,
       };
 
       disp->CmdPushConstants(commandBuffer, layout,
@@ -943,14 +906,14 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_LBVH)
+      if (bvh_states[i].vk.config.internal_type != VK_INTERNAL_BUILD_TYPE_LBVH)
          continue;
 
       const struct lbvh_generate_ir_args consts = {
-         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
-         .node_info = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.lbvh_node_offset,
-         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.header_offset,
-         .internal_node_base = bvh_states[i].scratch.internal_node_offset - bvh_states[i].scratch.ir_offset,
+         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.ir_offset,
+         .node_info = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.lbvh_node_offset,
+         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.header_offset,
+         .internal_node_base = bvh_states[i].vk.scratch.internal_node_offset - bvh_states[i].vk.scratch.ir_offset,
       };
 
       disp->CmdPushConstants(commandBuffer, layout,
@@ -995,27 +958,27 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
    for (uint32_t i = 0; i < infoCount; ++i) {
-      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_PLOC)
+      if (bvh_states[i].vk.config.internal_type != VK_INTERNAL_BUILD_TYPE_PLOC)
          continue;
 
       uint32_t src_scratch_offset = bvh_states[i].scratch_offset;
-      uint32_t dst_scratch_offset = (src_scratch_offset == bvh_states[i].scratch.sort_buffer_offset[0])
-                                       ? bvh_states[i].scratch.sort_buffer_offset[1]
-                                       : bvh_states[i].scratch.sort_buffer_offset[0];
+      uint32_t dst_scratch_offset = (src_scratch_offset == bvh_states[i].vk.scratch.sort_buffer_offset[0])
+                                       ? bvh_states[i].vk.scratch.sort_buffer_offset[1]
+                                       : bvh_states[i].vk.scratch.sort_buffer_offset[0];
 
       const struct ploc_args consts = {
-         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
-         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.header_offset,
+         .bvh = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.ir_offset,
+         .header = pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.header_offset,
          .ids_0 = pInfos[i].scratchData.deviceAddress + src_scratch_offset,
          .ids_1 = pInfos[i].scratchData.deviceAddress + dst_scratch_offset,
          .prefix_scan_partitions =
-            pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ploc_prefix_sum_partition_offset,
-         .internal_node_offset = bvh_states[i].scratch.internal_node_offset - bvh_states[i].scratch.ir_offset,
+            pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.ploc_prefix_sum_partition_offset,
+         .internal_node_offset = bvh_states[i].vk.scratch.internal_node_offset - bvh_states[i].vk.scratch.ir_offset,
       };
 
       disp->CmdPushConstants(commandBuffer, layout,
                              VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(consts), &consts);
-      disp->CmdDispatch(commandBuffer, MAX2(DIV_ROUND_UP(bvh_states[i].leaf_node_count, PLOC_WORKGROUP_SIZE), 1), 1, 1);
+      disp->CmdDispatch(commandBuffer, MAX2(DIV_ROUND_UP(bvh_states[i].vk.leaf_node_count, PLOC_WORKGROUP_SIZE), 1), 1, 1);
    }
 
    if (args->emit_markers)
@@ -1067,30 +1030,31 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          leaf_node_count += ppBuildRangeInfos[i][j].primitiveCount;
       }
 
-      get_scratch_layout(device, leaf_node_count, pInfos + i, args, &bvh_states[i].scratch);
+      vk_acceleration_structure_build_state_init(&bvh_states[i].vk, cmd_buffer->base.device, leaf_node_count,
+                                                 pInfos + i, args);
 
-      struct vk_build_config config = build_config(cmd_buffer->base.device, leaf_node_count, pInfos + i,
-                                                   device->as_build_ops);
-      bvh_states[i].config = config;
+      bvh_states[i].vk.build_range_infos = ppBuildRangeInfos[i];
+      /* The leaf node dispatch code uses leaf_node_count as a base index. */
+      bvh_states[i].vk.leaf_node_count = 0;
 
-      if (config.updateable)
+      if (bvh_states[i].vk.config.updateable)
          batch_state.any_updateable = true;
       else
          batch_state.any_non_updateable = true;
 
-      if (config.internal_type == VK_INTERNAL_BUILD_TYPE_PLOC) {
+      if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_PLOC) {
          batch_state.any_ploc = true;
-      } else if (config.internal_type == VK_INTERNAL_BUILD_TYPE_LBVH) {
+      } else if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_LBVH) {
          batch_state.any_lbvh = true;
-      } else if (config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE) {
+      } else if (bvh_states[i].vk.config.internal_type == VK_INTERNAL_BUILD_TYPE_UPDATE) {
          batch_state.any_update = true;
          /* For updates, the leaf node pass never runs, so set leaf_node_count here. */
-         bvh_states[i].leaf_node_count = leaf_node_count;
+         bvh_states[i].vk.leaf_node_count = leaf_node_count;
       } else {
          unreachable("Unknown internal_build_type");
       }
 
-      if (bvh_states[i].config.internal_type != VK_INTERNAL_BUILD_TYPE_UPDATE) {
+      if (bvh_states[i].vk.config.internal_type != VK_INTERNAL_BUILD_TYPE_UPDATE) {
          /* The internal node count is updated in lbvh_build_internal for LBVH
           * and from the PLOC shader for PLOC. */
          struct vk_ir_header header = {
@@ -1106,14 +1070,10 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                },
          };
 
-         device->write_buffer_cp(commandBuffer, pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.header_offset,
+         device->write_buffer_cp(commandBuffer, pInfos[i].scratchData.deviceAddress + bvh_states[i].vk.scratch.header_offset,
                                  &header, sizeof(header));
       } else {
-         VK_FROM_HANDLE(vk_acceleration_structure, src_as, pInfos[i].srcAccelerationStructure);
-         VK_FROM_HANDLE(vk_acceleration_structure, dst_as, pInfos[i].dstAccelerationStructure);
-
-         ops->init_update_scratch(commandBuffer, pInfos[i].scratchData.deviceAddress,
-                                  &pInfos[i], ppBuildRangeInfos[i], leaf_node_count, src_as, dst_as);
+         ops->init_update_scratch(commandBuffer, &bvh_states[i].vk);
       }
    }
 
@@ -1202,7 +1162,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
    uint32_t num_leaves = 0;
    uint32_t num_internal_node = 0;
    for ( uint32_t i = 0; i < infoCount; i++) {
-      num_leaves += bvh_states[i].leaf_node_count;
+      num_leaves += bvh_states[i].vk.leaf_node_count;
       num_internal_node += bvh_states[i].internal_node_count;
    }
 
@@ -1228,49 +1188,31 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                continue;
 
             if (!progress) {
-               update = (bvh_states[i].config.internal_type ==
+               update = (bvh_states[i].vk.config.internal_type ==
                          VK_INTERNAL_BUILD_TYPE_UPDATE);
                if (update && !ops->update_as[pass])
                   continue;
                if (!update && !ops->encode_as[pass])
                   continue;
-               encode_key = bvh_states[i].config.encode_key[pass];
-               update_key = bvh_states[i].config.update_key[pass];
+               encode_key = bvh_states[i].vk.config.encode_key[pass];
+               update_key = bvh_states[i].vk.config.update_key[pass];
                progress = true;
                if (update)
-                  ops->update_bind_pipeline[pass](commandBuffer, update_key);
+                  ops->update_bind_pipeline[pass](commandBuffer, &bvh_states[i].vk);
                else
-                  ops->encode_bind_pipeline[pass](commandBuffer, encode_key);
+                  ops->encode_bind_pipeline[pass](commandBuffer, &bvh_states[i].vk);
             } else {
-               if (update != (bvh_states[i].config.internal_type ==
+               if (update != (bvh_states[i].vk.config.internal_type ==
                               VK_INTERNAL_BUILD_TYPE_UPDATE) ||
-                   encode_key != bvh_states[i].config.encode_key[pass] ||
-                   update_key != bvh_states[i].config.update_key[pass])
+                   encode_key != bvh_states[i].vk.config.encode_key[pass] ||
+                   update_key != bvh_states[i].vk.config.update_key[pass])
                   continue;
             }
 
-            VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, pInfos[i].dstAccelerationStructure);
-
-            if (update) {
-               VK_FROM_HANDLE(vk_acceleration_structure, src, pInfos[i].srcAccelerationStructure);
-               ops->update_as[pass](commandBuffer,
-                                    &pInfos[i],
-                                    ppBuildRangeInfos[i],
-                                    bvh_states[i].leaf_node_count,
-                                    update_key,
-                                    src,
-                                    accel_struct);
-
-            } else {
-               ops->encode_as[pass](commandBuffer,
-                                    &pInfos[i],
-                                    ppBuildRangeInfos[i],
-                                    pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.ir_offset,
-                                    pInfos[i].scratchData.deviceAddress + bvh_states[i].scratch.header_offset,
-                                    bvh_states[i].leaf_node_count,
-                                    encode_key,
-                                    accel_struct);
-            }
+            if (update)
+               ops->update_as[pass](commandBuffer, &bvh_states[i].vk);
+            else
+               ops->encode_as[pass](commandBuffer, &bvh_states[i].vk);
 
             bvh_states[i].last_encode_pass = pass + 1;
          }
@@ -1299,14 +1241,12 @@ vk_get_as_build_sizes(VkDevice _device, VkAccelerationStructureBuildTypeKHR buil
    for (uint32_t i = 0; i < pBuildInfo->geometryCount; i++)
       leaf_count += pMaxPrimitiveCounts[i];
 
-   struct scratch_layout scratch;
+   struct vk_acceleration_structure_build_state state = { 0 };
+   vk_acceleration_structure_build_state_init(&state, device, leaf_count, pBuildInfo, args);
 
-   get_scratch_layout(device, leaf_count, pBuildInfo, args, &scratch);
-
-   pSizeInfo->accelerationStructureSize =
-      device->as_build_ops->get_as_size(_device, pBuildInfo, leaf_count);
-   pSizeInfo->updateScratchSize = scratch.update_size;
-   pSizeInfo->buildScratchSize = scratch.size;
+   pSizeInfo->accelerationStructureSize = device->as_build_ops->get_as_size(_device, &state);
+   pSizeInfo->updateScratchSize = state.scratch.update_size;
+   pSizeInfo->buildScratchSize = state.scratch.size;
 }
 
 /* Return true if the common framework supports using this format for loading

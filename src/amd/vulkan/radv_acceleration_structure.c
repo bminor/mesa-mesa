@@ -70,15 +70,15 @@ enum radv_encode_key_bits {
 };
 
 static void
-radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf_count,
-                                       const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
+radv_get_acceleration_structure_layout(struct radv_device *device,
+                                       const struct vk_acceleration_structure_build_state *state,
                                        struct acceleration_structure_layout *accel_struct)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   uint32_t internal_count = MAX2(leaf_count, 2) - 1;
+   uint32_t internal_count = MAX2(state->leaf_node_count, 2) - 1;
 
-   VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(build_info);
+   VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(state->build_info);
 
    uint32_t bvh_leaf_size;
    uint32_t bvh_node_size_gcd;
@@ -117,18 +117,18 @@ radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf
    uint32_t internal_node_size =
       radv_use_bvh8(pdev) ? sizeof(struct radv_gfx12_box_node) : sizeof(struct radv_bvh_box32_node);
 
-   uint64_t bvh_size = bvh_leaf_size * leaf_count + internal_node_size * internal_count;
+   uint64_t bvh_size = bvh_leaf_size * state->leaf_node_count + internal_node_size * internal_count;
    uint32_t offset = 0;
    offset += sizeof(struct radv_accel_struct_header);
 
    if (device->rra_trace.accel_structs) {
       accel_struct->geometry_info_offset = offset;
-      offset += sizeof(struct radv_accel_struct_geometry_info) * build_info->geometryCount;
+      offset += sizeof(struct radv_accel_struct_geometry_info) * state->build_info->geometryCount;
    }
 
    if (device->vk.enabled_features.rayTracingPositionFetch && geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
       accel_struct->primitive_base_indices_offset = offset;
-      offset += sizeof(uint32_t) * build_info->geometryCount;
+      offset += sizeof(uint32_t) * state->build_info->geometryCount;
    }
 
    /* On GFX12, we need additional space for leaf node offsets since they do not have the same
@@ -136,7 +136,7 @@ radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf
     */
    accel_struct->leaf_node_offsets_offset = offset;
    if (radv_use_bvh8(pdev))
-      offset += leaf_count * 4;
+      offset += state->leaf_node_count * 4;
 
    /* Parent links, which have to go directly before bvh_offset as we index them using negative
     * offsets from there. */
@@ -150,7 +150,7 @@ radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf
    offset += internal_node_size;
 
    accel_struct->leaf_nodes_offset = offset;
-   offset += bvh_leaf_size * leaf_count;
+   offset += bvh_leaf_size * state->leaf_node_count;
 
    accel_struct->internal_nodes_offset = offset;
    /* Factor out the root node. */
@@ -160,25 +160,24 @@ radv_get_acceleration_structure_layout(struct radv_device *device, uint32_t leaf
 }
 
 static void
-radv_get_update_scratch_layout(struct radv_device *device,
-                               const VkAccelerationStructureBuildGeometryInfoKHR *build_info, uint32_t leaf_count,
+radv_get_update_scratch_layout(struct radv_device *device, const struct vk_acceleration_structure_build_state *state,
                                struct update_scratch_layout *scratch)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   uint32_t internal_count = MAX2(leaf_count, 2) - 1;
+   uint32_t internal_count = MAX2(state->leaf_node_count, 2) - 1;
 
    uint32_t offset = 0;
 
    if (radv_use_bvh8(pdev)) {
       scratch->geometry_data_offset = offset;
-      offset += sizeof(struct vk_bvh_geometry_data) * build_info->geometryCount;
+      offset += sizeof(struct vk_bvh_geometry_data) * state->build_info->geometryCount;
 
       scratch->bounds_offsets = offset;
       offset += sizeof(vk_aabb) * internal_count;
    } else {
       scratch->bounds_offsets = offset;
-      offset += sizeof(vk_aabb) * leaf_count;
+      offset += sizeof(vk_aabb) * state->leaf_node_count;
    }
 
    scratch->internal_ready_count_offset = offset;
@@ -378,58 +377,46 @@ radv_device_init_null_accel_struct(struct radv_device *device)
 }
 
 static VkDeviceSize
-radv_get_as_size(VkDevice _device, const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo, uint32_t leaf_count)
+radv_get_as_size(VkDevice _device, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_device, device, _device);
 
    struct acceleration_structure_layout accel_struct;
-   radv_get_acceleration_structure_layout(device, leaf_count, pBuildInfo, &accel_struct);
+   radv_get_acceleration_structure_layout(device, state, &accel_struct);
    return accel_struct.size;
 }
 
 static VkDeviceSize
-radv_get_update_scratch_size(struct vk_device *vk_device, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                             uint32_t leaf_count)
+radv_get_update_scratch_size(VkDevice _device, const struct vk_acceleration_structure_build_state *state)
 {
-   struct radv_device *device = container_of(vk_device, struct radv_device, vk);
+   VK_FROM_HANDLE(radv_device, device, _device);
 
    struct update_scratch_layout scratch;
-   radv_get_update_scratch_layout(device, build_info, leaf_count, &scratch);
+   radv_get_update_scratch_layout(device, state, &scratch);
    return scratch.size;
 }
 
-static uint32_t
-radv_get_encode_key(struct vk_device *vk_device, const VkAccelerationStructureBuildGeometryInfoKHR *build_info)
+static void
+radv_get_build_config(VkDevice _device, struct vk_acceleration_structure_build_state *state)
 {
-   struct radv_device *device = container_of(vk_device, struct radv_device, vk);
+   VK_FROM_HANDLE(radv_device, device, _device);
    struct radv_physical_device *pdev = radv_device_physical(device);
 
+   uint32_t encode_key = 0;
    if (radv_use_bvh8(pdev))
-      return RADV_ENCODE_KEY_COMPACT;
+      encode_key |= RADV_ENCODE_KEY_COMPACT;
 
-   if (build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
-      return RADV_ENCODE_KEY_COMPACT;
+   if (state->build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
+      encode_key |= RADV_ENCODE_KEY_COMPACT;
 
-   return 0;
-}
+   state->config.encode_key[0] = encode_key;
+   state->config.encode_key[1] = encode_key;
 
-static uint32_t
-radv_get_update_key(struct vk_device *vk_device, bool in_place)
-{
-   return in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
-}
+   uint32_t update_key = 0;
+   if (state->build_info->srcAccelerationStructure == state->build_info->dstAccelerationStructure)
+      update_key |= RADV_BUILD_FLAG_UPDATE_IN_PLACE;
 
-static void
-radv_get_build_config(struct vk_device *vk_device, struct vk_build_config *config,
-                      const VkAccelerationStructureBuildGeometryInfoKHR *build_info)
-{
-   uint32_t encode_key = radv_get_encode_key(vk_device, build_info);
-   config->encode_key[0] = encode_key;
-   config->encode_key[1] = encode_key;
-
-   uint32_t update_key =
-      radv_get_update_key(vk_device, build_info->srcAccelerationStructure == build_info->dstAccelerationStructure);
-   config->update_key[0] = update_key;
+   state->config.update_key[0] = update_key;
 }
 
 static void
@@ -494,17 +481,18 @@ radv_build_flags(VkCommandBuffer commandBuffer, uint32_t key)
 }
 
 static VkResult
-radv_encode_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
+radv_encode_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    radv_bvh_build_bind_pipeline(commandBuffer, RADV_META_OBJECT_KEY_BVH_ENCODE, encode_spv, sizeof(encode_spv),
                                 sizeof(struct encode_args),
-                                radv_build_flags(commandBuffer, key));
+                                radv_build_flags(commandBuffer, state->config.encode_key[0]));
 
    return VK_SUCCESS;
 }
 
 static VkResult
-radv_encode_bind_pipeline_gfx12(VkCommandBuffer commandBuffer, uint32_t key)
+radv_encode_bind_pipeline_gfx12(VkCommandBuffer commandBuffer,
+                                const struct vk_acceleration_structure_build_state *state)
 {
    radv_bvh_build_bind_pipeline(commandBuffer, RADV_META_OBJECT_KEY_BVH_ENCODE, encode_gfx12_spv,
                                 sizeof(encode_gfx12_spv), sizeof(struct encode_gfx12_args), 0);
@@ -513,18 +501,19 @@ radv_encode_bind_pipeline_gfx12(VkCommandBuffer commandBuffer, uint32_t key)
 }
 
 static void
-radv_encode_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-               const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, VkDeviceAddress intermediate_as_addr,
-               VkDeviceAddress intermediate_header_addr, uint32_t leaf_count, uint32_t key,
-               struct vk_acceleration_structure *dst)
+radv_encode_as(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst, state->build_info->dstAccelerationStructure);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    struct acceleration_structure_layout layout;
-   radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
+   radv_get_acceleration_structure_layout(device, state, &layout);
 
-   if (key & RADV_ENCODE_KEY_COMPACT) {
+   uint64_t intermediate_header_addr = state->build_info->scratchData.deviceAddress + state->scratch.header_offset;
+   uint64_t intermediate_bvh_addr = state->build_info->scratchData.deviceAddress + state->scratch.ir_offset;
+
+   if (state->config.encode_key[0] & RADV_ENCODE_KEY_COMPACT) {
       uint32_t dst_offset = layout.internal_nodes_offset - layout.bvh_offset;
       radv_update_memory_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, dst_node_offset),
                             &dst_offset, sizeof(uint32_t));
@@ -533,35 +522,36 @@ radv_encode_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
    }
 
    const struct encode_args args = {
-      .intermediate_bvh = intermediate_as_addr,
+      .intermediate_bvh = intermediate_bvh_addr,
       .output_bvh = vk_acceleration_structure_get_va(dst) + layout.bvh_offset,
       .header = intermediate_header_addr,
       .output_bvh_offset = layout.bvh_offset,
-      .leaf_node_count = leaf_count,
-      .geometry_type = vk_get_as_geometry_type(build_info),
+      .leaf_node_count = state->leaf_node_count,
+      .geometry_type = vk_get_as_geometry_type(state->build_info),
    };
    radv_bvh_build_set_args(commandBuffer, &args, sizeof(args));
 
    struct radv_dispatch_info dispatch = {
       .unaligned = true,
       .ordered = true,
-      .blocks = {MAX2(leaf_count, 1), 1, 1},
+      .blocks = {MAX2(state->leaf_node_count, 1), 1, 1},
    };
 
    radv_compute_dispatch(cmd_buffer, &dispatch);
 }
 
 static void
-radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                     const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos,
-                     VkDeviceAddress intermediate_as_addr, VkDeviceAddress intermediate_header_addr,
-                     uint32_t leaf_count, uint32_t key, struct vk_acceleration_structure *dst)
+radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst, state->build_info->dstAccelerationStructure);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    struct acceleration_structure_layout layout;
-   radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
+   radv_get_acceleration_structure_layout(device, state, &layout);
+
+   uint64_t intermediate_header_addr = state->build_info->scratchData.deviceAddress + state->scratch.header_offset;
+   uint64_t intermediate_bvh_addr = state->build_info->scratchData.deviceAddress + state->scratch.ir_offset;
 
    struct vk_ir_header header = {
       .sync_data =
@@ -581,17 +571,17 @@ radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructur
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 
    const struct encode_gfx12_args args = {
-      .intermediate_bvh = intermediate_as_addr,
+      .intermediate_bvh = intermediate_bvh_addr,
       .output_base = vk_acceleration_structure_get_va(dst),
       .header = intermediate_header_addr,
       .output_bvh_offset = layout.bvh_offset,
       .leaf_node_offsets_offset = layout.leaf_node_offsets_offset,
-      .leaf_node_count = leaf_count,
-      .geometry_type = vk_get_as_geometry_type(build_info),
+      .leaf_node_count = state->leaf_node_count,
+      .geometry_type = vk_get_as_geometry_type(state->build_info),
    };
    radv_bvh_build_set_args(commandBuffer, &args, sizeof(args));
 
-   uint32_t internal_count = MAX2(leaf_count, 2) - 1;
+   uint32_t internal_count = MAX2(state->leaf_node_count, 2) - 1;
 
    struct radv_dispatch_info dispatch = {
       .ordered = true,
@@ -602,11 +592,11 @@ radv_encode_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructur
 }
 
 static VkResult
-radv_init_header_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
+radv_init_header_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
 
-   if (!(key & RADV_ENCODE_KEY_COMPACT))
+   if (!(state->config.encode_key[1] & RADV_ENCODE_KEY_COMPACT))
       return VK_SUCCESS;
 
    /* Wait for encoding to finish. */
@@ -623,22 +613,23 @@ radv_init_header_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
 }
 
 static void
-radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                 const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos,
-                 VkDeviceAddress intermediate_as_addr, VkDeviceAddress intermediate_header_addr, uint32_t leaf_count,
-                 uint32_t key, struct vk_acceleration_structure *dst)
+radv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst, state->build_info->dstAccelerationStructure);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+
+   uint64_t intermediate_header_addr = state->build_info->scratchData.deviceAddress + state->scratch.header_offset;
 
    size_t base = offsetof(struct radv_accel_struct_header, compacted_size);
 
-   uint64_t instance_count = build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? leaf_count : 0;
+   uint64_t instance_count =
+      state->build_info->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? state->leaf_node_count : 0;
 
    struct acceleration_structure_layout layout;
-   radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
+   radv_get_acceleration_structure_layout(device, state, &layout);
 
-   if (key & RADV_ENCODE_KEY_COMPACT) {
+   if (state->config.encode_key[1] & RADV_ENCODE_KEY_COMPACT) {
       base = offsetof(struct radv_accel_struct_header, geometry_type);
 
       struct header_args args = {
@@ -671,27 +662,27 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
    header.size = header.serialization_size - sizeof(struct radv_accel_struct_serialization_header) -
                  sizeof(uint64_t) * header.instance_count;
 
-   header.build_flags = build_info->flags;
-   header.geometry_type = vk_get_as_geometry_type(build_info);
-   header.geometry_count = build_info->geometryCount;
+   header.build_flags = state->build_info->flags;
+   header.geometry_type = vk_get_as_geometry_type(state->build_info);
+   header.geometry_count = state->build_info->geometryCount;
    header.primitive_base_indices_offset = layout.primitive_base_indices_offset;
 
    radv_update_memory_cp(cmd_buffer, vk_acceleration_structure_get_va(dst) + base, (const char *)&header + base,
                          sizeof(header) - base);
 
    if (device->rra_trace.accel_structs) {
-      uint64_t geometry_infos_size = build_info->geometryCount * sizeof(struct radv_accel_struct_geometry_info);
+      uint64_t geometry_infos_size = state->build_info->geometryCount * sizeof(struct radv_accel_struct_geometry_info);
 
       struct radv_accel_struct_geometry_info *geometry_infos = malloc(geometry_infos_size);
       if (!geometry_infos)
          return;
 
-      for (uint32_t i = 0; i < build_info->geometryCount; i++) {
+      for (uint32_t i = 0; i < state->build_info->geometryCount; i++) {
          const VkAccelerationStructureGeometryKHR *geometry =
-            build_info->pGeometries ? &build_info->pGeometries[i] : build_info->ppGeometries[i];
+            state->build_info->pGeometries ? &state->build_info->pGeometries[i] : state->build_info->ppGeometries[i];
          geometry_infos[i].type = geometry->geometryType;
          geometry_infos[i].flags = geometry->flags;
-         geometry_infos[i].primitive_count = build_range_infos[i].primitiveCount;
+         geometry_infos[i].primitive_count = state->build_range_infos[i].primitiveCount;
       }
 
       radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer), dst->offset + layout.geometry_info_offset,
@@ -700,9 +691,9 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
       free(geometry_infos);
    }
 
-   VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(build_info);
+   VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(state->build_info);
    if (device->vk.enabled_features.rayTracingPositionFetch && geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-      uint32_t base_indices_size = sizeof(uint32_t) * build_info->geometryCount;
+      uint32_t base_indices_size = sizeof(uint32_t) * state->build_info->geometryCount;
       uint32_t *base_indices = malloc(base_indices_size);
       if (!base_indices) {
          vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -710,9 +701,9 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
       }
 
       uint32_t base_index = 0;
-      for (uint32_t i = 0; i < build_info->geometryCount; i++) {
+      for (uint32_t i = 0; i < state->build_info->geometryCount; i++) {
          base_indices[i] = base_index;
-         base_index += build_range_infos[i].primitiveCount;
+         base_index += state->build_range_infos[i].primitiveCount;
       }
 
       radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer),
@@ -723,24 +714,23 @@ radv_init_header(VkCommandBuffer commandBuffer, const VkAccelerationStructureBui
 }
 
 static void
-radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                         const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                         const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, uint32_t leaf_count,
-                         struct vk_acceleration_structure *src_as, struct vk_acceleration_structure *dst_as)
+radv_init_update_scratch(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
+   uint64_t scratch = state->build_info->scratchData.deviceAddress;
+
    struct update_scratch_layout layout;
-   radv_get_update_scratch_layout(device, build_info, leaf_count, &layout);
+   radv_get_update_scratch_layout(device, state, &layout);
 
    /* Prepare ready counts for internal nodes */
    radv_fill_memory(cmd_buffer, scratch + layout.internal_ready_count_offset,
                     layout.size - layout.internal_ready_count_offset, 0x0, RADV_COPY_FLAGS_DEVICE_LOCAL);
 
    if (radv_use_bvh8(pdev)) {
-      uint32_t data_size = sizeof(struct vk_bvh_geometry_data) * build_info->geometryCount;
+      uint32_t data_size = sizeof(struct vk_bvh_geometry_data) * state->build_info->geometryCount;
       struct vk_bvh_geometry_data *data = malloc(data_size);
       if (!data) {
          vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -748,13 +738,13 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
       }
 
       uint32_t first_id = 0;
-      for (uint32_t i = 0; i < build_info->geometryCount; i++) {
+      for (uint32_t i = 0; i < state->build_info->geometryCount; i++) {
          const VkAccelerationStructureGeometryKHR *geom =
-            build_info->pGeometries ? &build_info->pGeometries[i] : build_info->ppGeometries[i];
+            state->build_info->pGeometries ? &state->build_info->pGeometries[i] : state->build_info->ppGeometries[i];
 
-         const VkAccelerationStructureBuildRangeInfoKHR *build_range_info = &build_range_infos[i];
+         const VkAccelerationStructureBuildRangeInfoKHR *build_range_info = &state->build_range_infos[i];
 
-         data[i] = vk_fill_geometry_data(build_info->type, first_id, i, geom, build_range_info);
+         data[i] = vk_fill_geometry_data(state->build_info->type, first_id, i, geom, build_range_info);
 
          first_id += build_range_info->primitiveCount;
       }
@@ -767,7 +757,7 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
 }
 
 static void
-radv_update_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
+radv_update_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -783,7 +773,7 @@ radv_update_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
    if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 
-   bool in_place = key & RADV_BUILD_FLAG_UPDATE_IN_PLACE;
+   bool in_place = state->config.update_key[0] & RADV_BUILD_FLAG_UPDATE_IN_PLACE;
    uint32_t flags = in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
 
    if (radv_use_bvh8(pdev)) {
@@ -806,16 +796,16 @@ pack_geometry_id_and_flags(uint32_t geometry_id, uint32_t flags)
 }
 
 static void
-radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-               const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, uint32_t leaf_count, uint32_t key,
-               struct vk_acceleration_structure *src, struct vk_acceleration_structure *dst)
+radv_update_as(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_acceleration_structure, src, state->build_info->srcAccelerationStructure);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst, state->build_info->dstAccelerationStructure);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    if (src != dst) {
       struct acceleration_structure_layout layout;
-      radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
+      radv_get_acceleration_structure_layout(device, state, &layout);
 
       /* Copy header/metadata */
       const uint64_t src_va = vk_acceleration_structure_get_va(src);
@@ -826,24 +816,24 @@ radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
    }
 
    struct update_scratch_layout layout;
-   radv_get_update_scratch_layout(device, build_info, leaf_count, &layout);
+   radv_get_update_scratch_layout(device, state, &layout);
 
    struct update_args update_consts = {
       .src = vk_acceleration_structure_get_va(src),
       .dst = vk_acceleration_structure_get_va(dst),
-      .leaf_bounds = build_info->scratchData.deviceAddress,
-      .internal_ready_count = build_info->scratchData.deviceAddress + layout.internal_ready_count_offset,
-      .leaf_node_count = leaf_count,
+      .leaf_bounds = state->build_info->scratchData.deviceAddress,
+      .internal_ready_count = state->build_info->scratchData.deviceAddress + layout.internal_ready_count_offset,
+      .leaf_node_count = state->leaf_node_count,
    };
 
    uint32_t first_id = 0;
-   for (uint32_t i = 0; i < build_info->geometryCount; i++) {
+   for (uint32_t i = 0; i < state->build_info->geometryCount; i++) {
       const VkAccelerationStructureGeometryKHR *geom =
-         build_info->pGeometries ? &build_info->pGeometries[i] : build_info->ppGeometries[i];
+         state->build_info->pGeometries ? &state->build_info->pGeometries[i] : state->build_info->ppGeometries[i];
 
-      const VkAccelerationStructureBuildRangeInfoKHR *build_range_info = &build_range_infos[i];
+      const VkAccelerationStructureBuildRangeInfoKHR *build_range_info = &state->build_range_infos[i];
 
-      update_consts.geom_data = vk_fill_geometry_data(build_info->type, first_id, i, geom, build_range_info);
+      update_consts.geom_data = vk_fill_geometry_data(state->build_info->type, first_id, i, geom, build_range_info);
 
       radv_bvh_build_set_args(commandBuffer, &update_consts, sizeof(update_consts));
 
@@ -854,16 +844,16 @@ radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuild
 }
 
 static void
-radv_update_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
-                     const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, uint32_t leaf_count,
-                     uint32_t key, struct vk_acceleration_structure *src, struct vk_acceleration_structure *dst)
+radv_update_as_gfx12(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(vk_acceleration_structure, src, state->build_info->srcAccelerationStructure);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst, state->build_info->dstAccelerationStructure);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    if (src != dst) {
       struct acceleration_structure_layout layout;
-      radv_get_acceleration_structure_layout(device, leaf_count, build_info, &layout);
+      radv_get_acceleration_structure_layout(device, state, &layout);
 
       /* Copy header/metadata */
       const uint64_t src_va = vk_acceleration_structure_get_va(src);
@@ -874,15 +864,15 @@ radv_update_as_gfx12(VkCommandBuffer commandBuffer, const VkAccelerationStructur
    }
 
    struct update_scratch_layout layout;
-   radv_get_update_scratch_layout(device, build_info, leaf_count, &layout);
+   radv_get_update_scratch_layout(device, state, &layout);
 
    struct update_gfx12_args update_consts = {
       .src = vk_acceleration_structure_get_va(src),
       .dst = vk_acceleration_structure_get_va(dst),
-      .geom_data = build_info->scratchData.deviceAddress + layout.geometry_data_offset,
-      .bounds = build_info->scratchData.deviceAddress + layout.bounds_offsets,
-      .internal_ready_count = build_info->scratchData.deviceAddress + layout.internal_ready_count_offset,
-      .leaf_node_count = leaf_count,
+      .geom_data = state->build_info->scratchData.deviceAddress + layout.geometry_data_offset,
+      .bounds = state->build_info->scratchData.deviceAddress + layout.bounds_offsets,
+      .internal_ready_count = state->build_info->scratchData.deviceAddress + layout.internal_ready_count_offset,
+      .leaf_node_count = state->leaf_node_count,
    };
 
    radv_bvh_build_set_args(commandBuffer, &update_consts, sizeof(update_consts));
