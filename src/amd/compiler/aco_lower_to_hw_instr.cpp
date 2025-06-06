@@ -2926,6 +2926,20 @@ lower_to_hw_instr(Program* program)
             ctx.instructions.emplace_back(std::move(instr));
 
             emit_set_mode(bld, block->fp_mode, set_round, false);
+         } else if (instr->opcode == aco_opcode::p_v_cvt_pk_fp8_f32_ovfl) {
+            /* FP8/BF8 uses FP16_OVFL(1) to clamp to max finite result. Temporarily set it for the
+             * instruction.
+             * "((size - 1) << 11 | (offset << 6) | register" (MODE is encoded as register 1, we
+             * want to set a single bit at offset 23)
+             */
+            bld.sopk(aco_opcode::s_setreg_imm32_b32, Operand::literal32(1),
+                     (0 << 11) | (23 << 6) | 1);
+
+            instr->opcode = aco_opcode::v_cvt_pk_fp8_f32;
+            ctx.instructions.emplace_back(std::move(instr));
+
+            bld.sopk(aco_opcode::s_setreg_imm32_b32, Operand::literal32(0),
+                     (0 << 11) | (23 << 6) | 1);
          } else if (instr->isMIMG() && instr->mimg().strict_wqm) {
             lower_image_sample(&ctx, instr);
             ctx.instructions.emplace_back(std::move(instr));

@@ -1448,6 +1448,7 @@ VOP3 = {
    ("v_permlane16_var_b32",    dst(U32), src(U32, U32), op(gfx12=0x30f)),
    ("v_permlanex16_var_b32",   dst(U32), src(U32, U32), op(gfx12=0x310)),
    ("v_cvt_pk_fp8_f32",        dst(PkF8), src(F32, F32), op(gfx12=0x369)),
+   ("p_v_cvt_pk_fp8_f32_ovfl", dst(PkF8), src(F32, F32), op(-1)),
    ("v_cvt_pk_bf8_f32",        dst(PkBF8), src(F32, F32), op(gfx12=0x36a)),
    ("v_cvt_sr_fp8_f32",        dst(F8), src(F32, U32), op(gfx12=0x36b)),
    ("v_cvt_sr_bf8_f32",        dst(BF8), src(F32, U32), op(gfx12=0x36c)),
