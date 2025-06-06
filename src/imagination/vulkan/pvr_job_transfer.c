@@ -5681,16 +5681,18 @@ pvr_submit_info_stream_init(struct pvr_transfer_ctx *ctx,
    /* Leave space for stream header. */
    stream_ptr += pvr_cmd_length(KMD_STREAM_HDR);
 
-   *(uint64_t *)stream_ptr = regs->pds_bgnd0_base;
+   memcpy(stream_ptr, &regs->pds_bgnd0_base, sizeof(regs->pds_bgnd0_base));
    stream_ptr += pvr_cmd_length(CR_PDS_BGRND0_BASE);
 
-   *(uint64_t *)stream_ptr = regs->pds_bgnd1_base;
+   memcpy(stream_ptr, &regs->pds_bgnd1_base, sizeof(regs->pds_bgnd1_base));
    stream_ptr += pvr_cmd_length(CR_PDS_BGRND1_BASE);
 
-   *(uint64_t *)stream_ptr = regs->pds_bgnd3_sizeinfo;
+   memcpy(stream_ptr,
+          &regs->pds_bgnd3_sizeinfo,
+          sizeof(regs->pds_bgnd3_sizeinfo));
    stream_ptr += pvr_cmd_length(CR_PDS_BGRND3_SIZEINFO);
 
-   *(uint64_t *)stream_ptr = regs->isp_mtile_base;
+   memcpy(stream_ptr, &regs->isp_mtile_base, sizeof(regs->isp_mtile_base));
    stream_ptr += pvr_cmd_length(CR_ISP_MTILE_BASE);
 
    STATIC_ASSERT(ARRAY_SIZE(regs->pbe_wordx_mrty) == 9U);
