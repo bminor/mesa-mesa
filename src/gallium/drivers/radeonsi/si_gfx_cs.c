@@ -677,6 +677,8 @@ void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
     */
    ctx->force_shader_coherency.with_cb = true;
    ctx->force_shader_coherency.with_db = true;
+
+   ctx->task_state_init_emitted = false;
 }
 
 void si_trace_emit(struct si_context *sctx)

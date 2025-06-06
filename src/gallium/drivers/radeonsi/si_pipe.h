@@ -1362,6 +1362,18 @@ struct si_context {
    struct si_ds_queue ds_queue;
    uint32_t *last_timestamp_cmd;
    unsigned int last_timestamp_cmd_cdw;
+
+   /* For mesh shader */
+   struct si_resource *task_wait_buf;
+   uint32_t task_wait_count;
+   uint32_t last_task_wait_count;
+   bool task_state_init_emitted;
+   struct si_resource *task_ring;
+   struct si_resource *task_scratch_buffer;
+   unsigned max_seen_task_scratch_bytes_per_wave;
+   uint32_t task_tmpring_size;
+   struct si_pm4_state *task_preamble_state;
+   struct si_resource *mesh_scratch_ring;
 };
 
 /* si_barrier.c */
