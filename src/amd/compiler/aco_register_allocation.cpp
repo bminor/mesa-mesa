@@ -694,7 +694,7 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
    if (instr->isVALU()) {
       assert(rc.bytes() <= 2);
 
-      if (can_use_SDWA(gfx_level, instr, false) || instr->opcode == aco_opcode::p_v_cvt_pk_u8_f32)
+      if (can_use_SDWA(gfx_level, instr, false))
          return;
 
       rc = instr_is_16bit(gfx_level, instr->opcode) ? v2b : v1;
@@ -770,9 +770,6 @@ add_subdword_definition(Program* program, aco_ptr<Instruction>& instr, PhysReg r
    if (instr->isVALU()) {
       amd_gfx_level gfx_level = program->gfx_level;
       assert(instr->definitions[0].bytes() <= 2);
-
-      if (instr->opcode == aco_opcode::p_v_cvt_pk_u8_f32)
-         return;
 
       if (reg.byte() == 0 && allow_16bit_write && instr_is_16bit(gfx_level, instr->opcode))
          return;
