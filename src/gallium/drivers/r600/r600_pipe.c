@@ -566,6 +566,8 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->viewport_subpixel_bits =
 	caps->rasterizer_subpixel_bits = 8;
 
+	caps->framebuffer_msaa_constraints = 2;
+
 	/* Timer queries, present when the clock frequency is non zero. */
 	caps->query_time_elapsed =
 	caps->query_timestamp = rscreen->b.info.clock_crystal_freq != 0;
