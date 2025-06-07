@@ -2744,7 +2744,7 @@
         "description": "util: fix OpenBSD/powerpc64 build",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "67333c2632beb04731d0b0456adb05e8590d786b",
         "notes": null
