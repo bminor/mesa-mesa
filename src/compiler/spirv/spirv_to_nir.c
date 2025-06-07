@@ -1024,6 +1024,35 @@ vtn_foreach_decoration(struct vtn_builder *b, struct vtn_value *value,
    _foreach_decoration_helper(b, value, -1, value, cb, data);
 }
 
+struct has_decoration_data {
+   SpvDecoration decoration;
+   bool result;
+};
+
+static void
+has_decoration_cb(struct vtn_builder *b, UNUSED struct vtn_value *val,
+                  UNUSED int member, const struct vtn_decoration *dec,
+                  void *_data)
+{
+   struct has_decoration_data *data = (struct has_decoration_data *)_data;
+   if (dec->decoration == data->decoration)
+      data->result = true;
+}
+
+bool
+vtn_has_decoration(struct vtn_builder *b, struct vtn_value *value,
+                   SpvDecoration decoration)
+{
+   struct has_decoration_data data = {
+      .decoration = decoration,
+      .result = false,
+   };
+
+   vtn_foreach_decoration(b, value, has_decoration_cb, &data);
+
+   return data.result;
+}
+
 void
 vtn_foreach_execution_mode(struct vtn_builder *b, struct vtn_value *value,
                            vtn_execution_mode_foreach_cb cb, void *data)
