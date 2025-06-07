@@ -60,6 +60,10 @@
 #include <spirv-tools/linker.hpp>
 #include <spirv-tools/optimizer.hpp>
 
+#if LLVM_VERSION_MAJOR >= 16
+#include <llvm/TargetParser/Triple.h>
+#endif
+
 #if LLVM_VERSION_MAJOR >= 20
 #include <llvm/Support/VirtualFileSystem.h>
 #endif
@@ -1139,7 +1143,12 @@ llvm_mod_to_spirv(std::unique_ptr<::llvm::Module> mod,
       auto target = TargetRegistry::lookupTarget(triple, error_msg);
       if (target) {
          auto TM = target->createTargetMachine(
-            triple, "", "", {}, std::nullopt, std::nullopt,
+#if LLVM_VERSION_MAJOR >= 21
+            llvm::Triple(triple),
+#else
+            triple,
+#endif
+            "", "", {}, std::nullopt, std::nullopt,
 #if LLVM_VERSION_MAJOR >= 18
             ::llvm::CodeGenOptLevel::None
 #else
