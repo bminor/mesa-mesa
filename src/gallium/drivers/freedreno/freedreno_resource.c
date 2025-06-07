@@ -197,11 +197,6 @@ realloc_bo(struct fd_resource *rsc, uint32_t size)
            FD_BO_CACHED_COHERENT) |
       COND(prsc->bind & PIPE_BIND_SHARED, FD_BO_SHARED) |
       COND(prsc->bind & PIPE_BIND_SCANOUT, FD_BO_SCANOUT);
-   /* TODO other flags? */
-
-   /* if we start using things other than write-combine,
-    * be sure to check for PIPE_RESOURCE_FLAG_MAP_COHERENT
-    */
 
    if (rsc->bo)
       fd_bo_del(rsc->bo);
