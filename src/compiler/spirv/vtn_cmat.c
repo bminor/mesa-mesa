@@ -201,6 +201,7 @@ vtn_handle_cooperative_alu(struct vtn_builder *b, struct vtn_value *dest_val,
       case SpvOpFConvert: {
          struct vtn_type *dst_type = vtn_get_type(b, w[1]);
          nir_deref_instr *src = vtn_get_cmat_deref(b, w[3]);
+         struct vtn_value *dest_val = vtn_untyped_value(b, w[2]);
 
          /* The Convert operations define whether integers are interpreted
           * as signed or unsigned regardless of their original type.  So take
@@ -210,9 +211,10 @@ vtn_handle_cooperative_alu(struct vtn_builder *b, struct vtn_value *dest_val,
             (vtn_convert_op_src_type(opcode) == nir_type_int ? NIR_CMAT_A_SIGNED : 0) |
             (vtn_convert_op_dst_type(opcode) == nir_type_int ? NIR_CMAT_RESULT_SIGNED : 0);
 
+         const bool saturate = vtn_has_decoration(b, dest_val, SpvDecorationSaturatedToLargestFloat8NormalConversionEXT);
 
          nir_deref_instr *dst = vtn_create_cmat_temporary(b, dst_type->type, "cmat_convert");
-         nir_cmat_convert(&b->nb, &dst->def, &src->def, .cmat_signed_mask = signed_mask);
+         nir_cmat_convert(&b->nb, &dst->def, &src->def, .saturate = saturate, .cmat_signed_mask = signed_mask);
          vtn_push_var_ssa(b, w[2], dst->var);
 
          break;
