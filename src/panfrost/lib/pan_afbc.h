@@ -260,6 +260,17 @@ pan_afbc_stride_blocks(uint64_t modifier, uint32_t row_stride_bytes)
           (AFBC_HEADER_BYTES_PER_TILE * pan_afbc_tile_size(modifier));
 }
 
+/* Returns a height in superblocks taking into account the tile alignment
+ * requirement coming from the modifier.
+ */
+static inline uint32_t
+pan_afbc_height_blocks(uint64_t modifier, uint32_t height_px)
+{
+   return ALIGN_POT(
+      DIV_ROUND_UP(height_px, pan_afbc_superblock_height(modifier)),
+      pan_afbc_tile_size(modifier));
+}
+
 static inline enum pipe_format
 pan_afbc_unswizzled_format(unsigned arch, enum pipe_format format)
 {

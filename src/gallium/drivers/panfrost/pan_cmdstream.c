@@ -3611,11 +3611,17 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
       .src = src->plane.base + slice->offset_B,
       .metadata = metadata->ptr.gpu + offset,
    };
+   unsigned stride_sb =
+      pan_afbc_stride_blocks(src->image.props.modifier, slice->row_stride_B);
+   unsigned nr_sblocks =
+      stride_sb * pan_afbc_height_blocks(
+                     src->image.props.modifier,
+                     u_minify(src->image.props.extent_px.height, level));
 
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 
-   LAUNCH_AFBC_CONV_SHADER(size, batch, src, consts, slice->afbc.nr_sblocks);
+   LAUNCH_AFBC_CONV_SHADER(size, batch, src, consts, nr_sblocks);
 }
 
 static void
@@ -3628,21 +3634,28 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
    MESA_TRACE_FUNC();
 
    struct pan_image_slice_layout *src_slice = &src->plane.layout.slices[level];
+   unsigned src_stride_sb =
+      pan_afbc_stride_blocks(src->image.props.modifier, src_slice->row_stride_B);
+   unsigned dst_stride_sb =
+      pan_afbc_stride_blocks(src->image.props.modifier, dst_slice->row_stride_B);
+   unsigned nr_sblocks =
+      src_stride_sb * pan_afbc_height_blocks(
+                         src->image.props.modifier,
+                         u_minify(src->image.props.extent_px.height, level));
    struct panfrost_afbc_pack_info consts = {
       .src = src->plane.base + src_slice->offset_B,
       .dst = dst->ptr.gpu + dst_slice->offset_B,
       .metadata = metadata->ptr.gpu + metadata_offset_B,
       .header_size = dst_slice->afbc.header_size_B,
-      .src_stride = src_slice->afbc.stride_sb,
-      .dst_stride = dst_slice->afbc.stride_sb,
+      .src_stride = src_stride_sb,
+      .dst_stride = dst_stride_sb,
    };
 
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, dst, PIPE_SHADER_COMPUTE);
    panfrost_batch_add_bo(batch, metadata, PIPE_SHADER_COMPUTE);
 
-   LAUNCH_AFBC_CONV_SHADER(pack, batch, src, consts,
-                           dst_slice->afbc.nr_sblocks);
+   LAUNCH_AFBC_CONV_SHADER(pack, batch, src, consts, nr_sblocks);
 }
 
 static void

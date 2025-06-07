@@ -472,12 +472,13 @@ pan_image_layout_init(
                                effective_height_el;
          }
 
-         slice->afbc.stride_sb =
+         const unsigned stride_sb =
             pan_afbc_stride_blocks(props->modifier, slice->row_stride_B);
-         slice->afbc.nr_sblocks = slice->afbc.stride_sb *
-                                  (effective_height_px / block_size_el.height);
+         const unsigned nr_sblocks =
+            stride_sb * (effective_height_px / block_size_el.height);
+
          slice->afbc.header_size_B =
-            ALIGN_POT(slice->afbc.nr_sblocks * AFBC_HEADER_BYTES_PER_TILE,
+            ALIGN_POT(nr_sblocks * AFBC_HEADER_BYTES_PER_TILE,
                       pan_afbc_body_align(arch, props->modifier));
 
          /* AFBC body size */

@@ -1946,7 +1946,13 @@ panfrost_get_afbc_superblock_sizes(struct panfrost_context *ctx,
 
    for (int level = first_level; level <= last_level; ++level) {
       struct pan_image_slice_layout *slice = &rsrc->plane.layout.slices[level];
-      unsigned sz = slice->afbc.nr_sblocks * sizeof(struct pan_afbc_block_info);
+      unsigned stride_sb =
+         pan_afbc_stride_blocks(rsrc->image.props.modifier, slice->row_stride_B);
+      unsigned nr_sblocks =
+         stride_sb * pan_afbc_height_blocks(
+                        rsrc->image.props.modifier,
+                        u_minify(rsrc->image.props.extent_px.height, level));
+      unsigned sz = nr_sblocks * sizeof(struct pan_afbc_block_info);
       out_offsets[level - first_level] = metadata_size;
       metadata_size += sz;
    }
@@ -2012,7 +2018,10 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       struct pan_image_slice_layout *dst_slice = &slice_infos[level];
       unsigned src_stride =
          pan_afbc_stride_blocks(src_modifier, src_slice->row_stride_B);
-
+      unsigned src_nr_sblocks =
+         src_stride *
+         pan_afbc_height_blocks(
+            src_modifier, u_minify(prsrc->image.props.extent_px.height, level));
       uint32_t offset = 0;
       struct pan_afbc_block_info *meta =
          metadata_bo->ptr.cpu + metadata_offsets[level];
@@ -2027,13 +2036,12 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       alignas(16) struct pan_afbc_block_info meta_chunk[64 * 16];
       unsigned nr_blocks_per_chunk = ARRAY_SIZE(meta_chunk);
 
-      for (unsigned i = 0; i < src_slice->afbc.nr_sblocks;
-           i += nr_blocks_per_chunk) {
-         unsigned nr_sblocks = MIN2(nr_blocks_per_chunk,
-                                   src_slice->afbc.nr_sblocks - i);
+      for (unsigned i = 0; i < src_nr_sblocks; i += nr_blocks_per_chunk) {
+         unsigned nr_sblocks = MIN2(nr_blocks_per_chunk, src_nr_sblocks - i);
 
-         util_streaming_load_memcpy(meta_chunk, &meta[i], nr_sblocks
-                                    * sizeof(struct pan_afbc_block_info));
+         util_streaming_load_memcpy(
+            meta_chunk, &meta[i],
+            nr_sblocks * sizeof(struct pan_afbc_block_info));
 
          for (unsigned j = 0; j < nr_sblocks; j++) {
             unsigned idx = j;
@@ -2055,8 +2063,6 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          unsigned dst_height =
             DIV_ROUND_UP(height, pan_afbc_superblock_height(dst_modifier));
 
-         dst_slice->afbc.stride_sb = dst_stride;
-         dst_slice->afbc.nr_sblocks = dst_stride * dst_height;
          dst_slice->afbc.header_size_B =
             ALIGN_POT(dst_stride * dst_height * AFBC_HEADER_BYTES_PER_TILE,
                       pan_afbc_body_align(dev->arch, dst_modifier));
