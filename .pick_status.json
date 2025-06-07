@@ -4434,7 +4434,7 @@
         "description": "aco: do not use v_cvt_pk_u8_f32 for f2u8",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9bb10b58f33668bd6c5b5210b29a9a6d2f3da9bc",
         "notes": null
