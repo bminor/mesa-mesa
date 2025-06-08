@@ -208,16 +208,6 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
          * VIVS_PE_COLOR_FORMAT_OVERWRITE comes from blend_state
          * but only if we set the bits above. */
          /* merged with depth_stencil_alpha */
-         if ((cbuf->offset & 63) ||
-            (((cbuf->level->stride * 4) & 63) && cbuf->level->height > 4)) {
-            /* XXX Must make temporary surface here.
-            * Need the same mechanism on gc2000 when we want to do mipmap
-            * generation by
-            * rendering to levels > 1 due to multitiled / tiled conversion. */
-            BUG("Alignment error, trying to render to offset %08x with tile "
-               "stride %i",
-               cbuf->offset, cbuf->level->stride * 4);
-         }
 
          cs->PE_COLOR_STRIDE = cbuf->level->stride;
 
