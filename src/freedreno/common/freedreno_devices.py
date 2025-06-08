@@ -1084,6 +1084,7 @@ add_gpus([
     ))
 
 add_gpus([
+        GPUId(chip_id=0xffff43030c00, name="Adreno X1-45"),
         GPUId(chip_id=0x43030B00, name="FD735")
     ], A6xxGPUInfo(
         CHIP.A7XX,
