@@ -145,7 +145,7 @@ etna_compile_rs_state(struct etna_context *ctx, struct compiled_rs_state *cs,
                         VIVS_RS_WINDOW_SIZE_HEIGHT(rs->height);
 
    /* use dual pipe mode when required */
-   if (!screen->specs.single_buffer && screen->specs.pixel_pipes == 2 &&
+   if (screen->specs.pe_multitiled &&
        !(rs->height & (rs->downsample_y ? 0xf : 0x7))) {
       cs->RS_WINDOW_SIZE = VIVS_RS_WINDOW_SIZE_WIDTH(rs->width) |
                               VIVS_RS_WINDOW_SIZE_HEIGHT(rs->height / 2);

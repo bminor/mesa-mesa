@@ -576,7 +576,7 @@ static int etna_get_num_modifiers(struct etna_screen *screen)
    int num = ARRAY_SIZE(supported_modifiers);
 
    /* don't advertise split tiled formats on single pipe/buffer GPUs */
-   if (screen->specs.pixel_pipes == 1 || screen->specs.single_buffer)
+   if (!screen->specs.pe_multitiled)
       num = 3;
 
    return num;
@@ -906,6 +906,8 @@ etna_get_specs(struct etna_screen *screen)
    screen->specs.single_buffer = VIV_FEATURE(screen, ETNA_FEATURE_SINGLE_BUFFER);
    if (screen->specs.single_buffer)
       DBG("etnaviv: Single buffer mode enabled with %d pixel pipes", screen->specs.pixel_pipes);
+   screen->specs.pe_multitiled = screen->specs.pixel_pipes > 1 &&
+                                 !screen->specs.single_buffer;
 
    screen->specs.tex_astc = VIV_FEATURE(screen, ETNA_FEATURE_TEXTURE_ASTC) &&
                             !VIV_FEATURE(screen, ETNA_FEATURE_NO_ASTC);

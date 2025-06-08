@@ -100,8 +100,7 @@ etna_resource_is_render_compatible(struct pipe_screen *pscreen,
       }
    }
 
-   if (screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer &&
-       !(rsc->layout & ETNA_LAYOUT_BIT_MULTI))
+   if (screen->specs.pe_multitiled && !(rsc->layout & ETNA_LAYOUT_BIT_MULTI))
       return false;
 
    return true;
@@ -524,7 +523,7 @@ etna_resource_create(struct pipe_screen *pscreen,
     *
     */
    if (templat->bind & PIPE_BIND_DEPTH_STENCIL) {
-      if (screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer)
+      if (screen->specs.pe_multitiled)
          layout |= ETNA_LAYOUT_BIT_MULTI;
       if (screen->specs.can_supertile)
          layout |= ETNA_LAYOUT_BIT_SUPER;
@@ -582,13 +581,13 @@ select_best_modifier(const struct etna_screen * screen,
    for (int i = 0; i < count; i++) {
       switch (modifiers[i] & ~VIVANTE_MOD_EXT_MASK) {
       case DRM_FORMAT_MOD_VIVANTE_SUPER_TILED:
-         if ((screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer) ||
+         if ((screen->specs.pe_multitiled) ||
              !screen->specs.can_supertile)
             break;
          prio = MAX2(prio, MODIFIER_PRIORITY_SUPER_TILED);
          break;
       case DRM_FORMAT_MOD_VIVANTE_TILED:
-         if (screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer)
+         if (screen->specs.pe_multitiled)
             break;
          prio = MAX2(prio, MODIFIER_PRIORITY_TILED);
          break;

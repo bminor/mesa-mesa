@@ -79,6 +79,8 @@ struct etna_specs {
    unsigned v4_compression : 1;
    /* supports single-buffer rendering with multiple pixel pipes */
    unsigned single_buffer : 1;
+   /* needs multitiled format for PE usage */
+   unsigned pe_multitiled : 1;
    /* has unified uniforms memory */
    unsigned has_unified_uniforms : 1;
    /* can load shader instructions from memory */

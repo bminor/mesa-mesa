@@ -212,8 +212,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
          if (screen->info->halti >= 0 && screen->info->model != 0x880) {
             /* Rendertargets on GPUs with more than a single pixel pipe must always
             * be multi-tiled, or single-buffer mode must be supported */
-            assert(screen->specs.pixel_pipes == 1 ||
-                  (res->layout & ETNA_LAYOUT_BIT_MULTI) || screen->specs.single_buffer);
+            assert(!screen->specs.pe_multitiled ||
+                   (res->layout & ETNA_LAYOUT_BIT_MULTI));
             for (int i = 0; i < screen->specs.pixel_pipes; i++) {
                cs->PE_PIPE_COLOR_ADDR[i] = cbuf->reloc[i];
                cs->PE_PIPE_COLOR_ADDR[i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;

@@ -45,7 +45,7 @@ etna_render_handle_incompatible(struct pipe_context *pctx,
    struct etna_context *ctx = etna_context(pctx);
    struct etna_screen *screen = ctx->screen;
    struct etna_resource *res = etna_resource(prsc);
-   bool need_multitiled = screen->specs.pixel_pipes > 1 && !screen->specs.single_buffer;
+   bool need_multitiled = screen->specs.pe_multitiled;
    bool want_supertiled = screen->specs.can_supertile;
 
    if (etna_resource_is_render_compatible(pctx->screen, res))
