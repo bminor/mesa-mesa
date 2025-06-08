@@ -98,9 +98,6 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    surf->base.last_layer = templat->last_layer;
    surf->level = lev;
 
-   /* XXX we don't really need a copy but it's convenient */
-   surf->offset = lev->offset + layer * lev->layer_stride;
-
    if (surf->level->ts_size) {
       assert(layer == 0);
 

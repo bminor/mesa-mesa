@@ -236,7 +236,7 @@ etna_blit_clear_color_blt(struct pipe_context *pctx, unsigned idx,
    struct etna_resource *res = etna_resource(surf->base.texture);
    struct blt_clear_op clr = {};
    clr.dest.addr.bo = res->bo;
-   clr.dest.addr.offset = surf->offset;
+   clr.dest.addr.offset = surf->level->offset + surf->base.first_layer * surf->level->layer_stride;
    clr.dest.addr.flags = ETNA_RELOC_WRITE;
    clr.dest.bpp = util_format_get_blocksize(surf->base.format);
    clr.dest.stride = surf->level->stride;
@@ -331,7 +331,7 @@ etna_blit_clear_zs_blt(struct pipe_context *pctx, struct pipe_surface *dst,
    struct etna_resource *res = etna_resource(surf->base.texture);
    struct blt_clear_op clr = {};
    clr.dest.addr.bo = res->bo;
-   clr.dest.addr.offset = surf->offset;
+   clr.dest.addr.offset = surf->level->offset + surf->base.first_layer * surf->level->layer_stride;
    clr.dest.addr.flags = ETNA_RELOC_WRITE;
    clr.dest.bpp = util_format_get_blocksize(surf->base.format);
    clr.dest.stride = surf->level->stride;
