@@ -183,8 +183,6 @@ struct compiled_framebuffer_state {
    uint32_t PE_HDEPTH_CONTROL;
    uint32_t PE_DEPTH_NORMALIZE;
    float depth_mrd;
-   struct etna_reloc PE_COLOR_ADDR;
-   struct etna_reloc PE_PIPE_COLOR_ADDR[ETNA_MAX_PIXELPIPES];
    uint32_t PE_COLOR_STRIDE;
    uint32_t PE_MEM_CONFIG;
    uint32_t RA_MULTISAMPLE_UNK00E04;
@@ -197,18 +195,16 @@ struct compiled_framebuffer_state {
    uint32_t TS_COLOR_CLEAR_VALUE;
    uint32_t TS_COLOR_CLEAR_VALUE_EXT;
    struct etna_reloc TS_COLOR_STATUS_BASE;
-   struct etna_reloc TS_COLOR_SURFACE_BASE;
    uint32_t PE_LOGIC_OP;
    uint32_t PS_CONTROL;
    uint32_t PS_CONTROL_EXT;
    uint32_t PS_OUTPUT_REG2;
-   struct etna_reloc PE_RT_PIPE_COLOR_ADDR[7][ETNA_MAX_PIXELPIPES];
+   struct etna_reloc PE_RT_PIPE_COLOR_ADDR[PIPE_MAX_COLOR_BUFS][ETNA_MAX_PIXELPIPES];
    uint32_t PE_RT_CONFIG[7];
    uint32_t RT_TS_MEM_CONFIG[7];
    uint32_t RT_TS_COLOR_CLEAR_VALUE[7];
    uint32_t RT_TS_COLOR_CLEAR_VALUE_EXT[7];
    struct etna_reloc RT_TS_COLOR_STATUS_BASE[7];
-   struct etna_reloc RT_TS_COLOR_SURFACE_BASE[7];
    bool msaa_mode; /* adds input (and possible temp) to PS */
 };
 

@@ -169,6 +169,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
       assert((res->layout & ETNA_LAYOUT_BIT_TILE) ||
              VIV_FEATURE(screen, ETNA_FEATURE_LINEAR_PE));
+      assert(!screen->specs.pe_multitiled ||
+             (res->layout & ETNA_LAYOUT_BIT_MULTI));
       etna_update_render_surface(pctx, cbuf);
 
       if (res->layout == ETNA_LAYOUT_LINEAR)
@@ -176,6 +178,11 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
       if (util_format_get_blocksize(cbuf->base.format) <= 2)
          target_16bpp = true;
+
+      for (int i = 0; i < screen->specs.pixel_pipes; i++) {
+         cs->PE_RT_PIPE_COLOR_ADDR[rt][i] = cbuf->reloc[i];
+         cs->PE_RT_PIPE_COLOR_ADDR[rt][i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
+      }
 
       if (rt == 0) {
          if (fmt >= PE_FORMAT_R16F)
@@ -209,20 +216,6 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
                cbuf->offset, cbuf->level->stride * 4);
          }
 
-         if (screen->info->halti >= 0 && screen->info->model != 0x880) {
-            /* Rendertargets on GPUs with more than a single pixel pipe must always
-            * be multi-tiled, or single-buffer mode must be supported */
-            assert(!screen->specs.pe_multitiled ||
-                   (res->layout & ETNA_LAYOUT_BIT_MULTI));
-            for (int i = 0; i < screen->specs.pixel_pipes; i++) {
-               cs->PE_PIPE_COLOR_ADDR[i] = cbuf->reloc[i];
-               cs->PE_PIPE_COLOR_ADDR[i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
-            }
-         } else {
-            cs->PE_COLOR_ADDR = cbuf->reloc[0];
-            cs->PE_COLOR_ADDR.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
-         }
-
          cs->PE_COLOR_STRIDE = cbuf->level->stride;
 
          if (cbuf->level->ts_size) {
@@ -231,9 +224,6 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
             cs->TS_COLOR_STATUS_BASE = cbuf->ts_reloc;
             cs->TS_COLOR_STATUS_BASE.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
-
-            cs->TS_COLOR_SURFACE_BASE = cbuf->reloc[0];
-            cs->TS_COLOR_SURFACE_BASE.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
 
             pe_mem_config |= VIVS_PE_MEM_CONFIG_COLOR_TS_MODE(cbuf->level->ts_mode);
 
@@ -251,8 +241,6 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
          if (util_format_is_srgb(cbuf->base.format))
             pe_logic_op |= VIVS_PE_LOGIC_OP_SRGB;
       } else {
-         cs->PE_RT_PIPE_COLOR_ADDR[rt - 1][0] = cbuf->reloc[0];
-         cs->PE_RT_PIPE_COLOR_ADDR[rt - 1][1] = cbuf->reloc[1];
          cs->PE_RT_CONFIG[rt - 1] =
             RT_CONFIG_STRIDE(cbuf->level->stride) |
             RT_CONFIG_FORMAT(fmt) |
@@ -271,9 +259,6 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
             cs->RT_TS_COLOR_STATUS_BASE[rt - 1] = cbuf->ts_reloc;
             cs->RT_TS_COLOR_STATUS_BASE[rt - 1].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
-
-            cs->RT_TS_COLOR_SURFACE_BASE[rt - 1] = cbuf->reloc[0];
-            cs->RT_TS_COLOR_SURFACE_BASE[rt - 1].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
          } else {
             if (VIV_FEATURE(screen, ETNA_FEATURE_CACHE128B256BPERLINE))
                cs->PE_RT_CONFIG[rt - 1] |= RT_CONFIG_UNK27;
@@ -331,11 +316,9 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
       cs->PE_COLOR_FORMAT = VIVS_PE_COLOR_FORMAT_OVERWRITE;
       cs->PE_COLOR_STRIDE = 0;
       cs->TS_COLOR_STATUS_BASE.bo = NULL;
-      cs->TS_COLOR_SURFACE_BASE.bo = NULL;
 
-      cs->PE_COLOR_ADDR = screen->dummy_rt_reloc;
       for (int i = 0; i < screen->specs.pixel_pipes; i++)
-         cs->PE_PIPE_COLOR_ADDR[i] = screen->dummy_rt_reloc;
+         cs->PE_RT_PIPE_COLOR_ADDR[0][i] = screen->dummy_rt_reloc;
    }
 
    if (fb->zsbuf.texture != NULL) {
