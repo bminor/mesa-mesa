@@ -41,7 +41,6 @@
 #include "etnaviv_screen.h"
 #include "etnaviv_shader.h"
 #include "etnaviv_state.h"
-#include "etnaviv_surface.h"
 #include "etnaviv_texture.h"
 #include "etnaviv_transfer.h"
 #include "etnaviv_translate.h"
@@ -722,7 +721,6 @@ etna_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    etna_clear_blit_init(pctx);
    etna_query_context_init(pctx);
    etna_state_init(pctx);
-   etna_surface_init(pctx);
    etna_shader_init(pctx);
    etna_texture_init(pctx);
    etna_transfer_init(pctx);

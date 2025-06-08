@@ -67,8 +67,6 @@ files_etnaviv = files(
   'etnaviv_shader.h',
   'etnaviv_state.c',
   'etnaviv_state.h',
-  'etnaviv_surface.c',
-  'etnaviv_surface.h',
   'etnaviv_texture.c',
   'etnaviv_texture.h',
   'etnaviv_texture_desc.c',

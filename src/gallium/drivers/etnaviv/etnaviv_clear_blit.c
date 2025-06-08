@@ -34,7 +34,6 @@
 #include "etnaviv_format.h"
 #include "etnaviv_resource.h"
 #include "etnaviv_rs.h"
-#include "etnaviv_surface.h"
 #include "etnaviv_translate.h"
 #include "etnaviv_yuv.h"
 
