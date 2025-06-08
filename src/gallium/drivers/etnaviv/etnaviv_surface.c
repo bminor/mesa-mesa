@@ -47,25 +47,28 @@ etna_render_handle_incompatible(struct pipe_context *pctx,
    struct etna_resource *res = etna_resource(prsc);
    bool need_multitiled = screen->specs.pe_multitiled;
    bool want_supertiled = screen->specs.can_supertile;
+   struct pipe_resource templat;
+   unsigned layout;
+
+   if (res->render)
+      return etna_resource(res->render);
 
    if (etna_resource_is_render_compatible(pctx->screen, res))
       return res;
 
-   if (!res->render) {
-      struct pipe_resource templat = *prsc;
-      unsigned layout = ETNA_LAYOUT_TILED;
-      if (need_multitiled)
-         layout |= ETNA_LAYOUT_BIT_MULTI;
-      if (want_supertiled)
-         layout |= ETNA_LAYOUT_BIT_SUPER;
+   layout = ETNA_LAYOUT_TILED;
+   if (need_multitiled)
+      layout |= ETNA_LAYOUT_BIT_MULTI;
+   if (want_supertiled)
+      layout |= ETNA_LAYOUT_BIT_SUPER;
 
-      templat.bind &= (PIPE_BIND_DEPTH_STENCIL | PIPE_BIND_RENDER_TARGET |
-                        PIPE_BIND_BLENDABLE);
-      res->render =
-         etna_resource_alloc(pctx->screen, layout,
-                             DRM_FORMAT_MOD_LINEAR, &templat);
-      assert(res->render);
-   }
+   templat = *prsc;
+   templat.bind &= (PIPE_BIND_DEPTH_STENCIL | PIPE_BIND_RENDER_TARGET |
+                    PIPE_BIND_BLENDABLE);
+   res->render = etna_resource_alloc(pctx->screen, layout,
+                                     DRM_FORMAT_MOD_LINEAR, &templat);
+   assert(res->render);
+
    return etna_resource(res->render);
 }
 
