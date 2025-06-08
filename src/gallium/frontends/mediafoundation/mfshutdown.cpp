@@ -28,7 +28,7 @@
 HRESULT
 CDX12EncHMFT::CheckShutdown( void )
 {
-   auto lock = m_lockShutdown.lock();
+   std::lock_guard<std::mutex> lock(m_lockShutdown);
    if( m_bShutdown )
    {
       return MF_E_SHUTDOWN;
@@ -58,7 +58,7 @@ HRESULT
 CDX12EncHMFT::Shutdown( void )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lockShutdown.lock();
+   std::lock_guard<std::mutex> lock(m_lockShutdown);
    debug_printf( "[dx12 hmft 0x%p] Shutdown called\n", this );
 
    if( !m_bShutdown )

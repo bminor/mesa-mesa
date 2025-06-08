@@ -30,7 +30,7 @@
 HRESULT
 CDX12EncHMFT::RegisterThreadsEx( DWORD *pdwTaskIndex, LPCWSTR wszClassName, LONG lBasePriority )
 {
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    if( !pdwTaskIndex )
    {
@@ -41,13 +41,6 @@ CDX12EncHMFT::RegisterThreadsEx( DWORD *pdwTaskIndex, LPCWSTR wszClassName, LONG
       return E_INVALIDARG;
    }
 
-   /* %%%TODO
-       return RegisterMmcssThreads (*pdwTaskIndex, wszClassName, lBasePriority);
-
-       --or--
-
-       return MF_E_TRANSFORM_TYPE_NOT_SET;
-       */
    return E_NOTIMPL;
 }
 
@@ -56,14 +49,6 @@ CDX12EncHMFT::RegisterThreadsEx( DWORD *pdwTaskIndex, LPCWSTR wszClassName, LONG
 HRESULT
 CDX12EncHMFT::UnregisterThreads()
 {
-   auto lock = m_lock.lock();
-   /* %%%TODO
-       return UnregisterMmcssThreads ();
-
-       --or--
-
-       return MF_E_TRANSFORM_TYPE_NOT_SET;
-       */
    return E_NOTIMPL;
 }
 

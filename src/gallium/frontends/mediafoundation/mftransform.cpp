@@ -624,16 +624,16 @@ HRESULT
 CDX12EncHMFT::OnDrain()
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::unique_lock<std::mutex> lock(m_lock);
    m_bDraining = true;
 
    if( m_EncodingQueue.unsafe_size() )
    {
       m_eventHaveInput.set();
-      lock.reset();
+      lock.unlock();
       m_eventInputDrained.wait();
       m_eventInputDrained.reset();
-      lock = m_lock.lock();
+      lock.lock();
    }
    CHECKHR_GOTO( QueueEvent( METransformDrainComplete, GUID_NULL, S_OK, nullptr ), done );
    // NOTE: Draining doesn't really complete here, it completes on next MFT_MESSAGE_NOTIFY_START_OF_STREAM
@@ -648,20 +648,20 @@ CDX12EncHMFT::OnFlush()
 {
    HRESULT hr = S_OK;
    IMFSample *pSample;
-   auto lock = m_lock.lock();
+   std::unique_lock<std::mutex> lock(m_lock);
    m_bFlushing = true;
    m_bDraining = true;
 
    if( m_EncodingQueue.unsafe_size() )
    {
       m_eventHaveInput.set();
-      lock.reset();
+      lock.unlock();
       m_eventInputDrained.wait();
       m_eventInputDrained.reset();
-      lock = m_lock.lock();
+      lock.lock();
    }
 
-   auto queuelock = m_OutputQueueLock.lock();
+   std::lock_guard<std::mutex> queue_lock(m_OutputQueueLock);
    while( m_OutputQueue.try_pop( pSample ) )
    {
       pSample->Release();
@@ -1016,7 +1016,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          LPDX12EncodeContext pDX12EncodeContext = nullptr;
          while( pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
          {
-            auto lock = pThis->m_encoderLock.lock();
+            std::lock_guard<std::mutex> lock(pThis->m_encoderLock);
             unsigned int encoded_bitstream_bytes = 0u;
 
             if( !bHasEncodingError )
@@ -1032,7 +1032,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          break;
       }
 
-      auto lock = pThis->m_lock.lock();
+      std::lock_guard<std::mutex> lock(pThis->m_lock);
       while( !bHasEncodingError && pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
       {
          pipe_enc_feedback_metadata metadata = { 0 };
@@ -1040,7 +1040,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          ComPtr<IMFSample> spOutputSample;
          MFCreateSample( &spOutputSample );
          {
-            auto lock = pThis->m_encoderLock.lock();
+            std::lock_guard<std::mutex> lock(pThis->m_encoderLock);
             // ... wait until resource is finished writing by the GPU encoder...
             dwReceivedInput++;
 
@@ -1435,7 +1435,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   std::min( MAX_NALU_LENGTH_INFO_ENTRIES, metadata.codec_unit_metadata_count ) * sizeof( DWORD ) );
                spOutputSample->SetUINT32( MF_NALU_LENGTH_SET, 1 );
                {
-                  auto lock = pThis->m_OutputQueueLock.lock();
+                  std::lock_guard<std::mutex> lock(pThis->m_OutputQueueLock);
                   HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
                   if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
                   {
@@ -1477,7 +1477,7 @@ HRESULT
 CDX12EncHMFT::GetAttributes( IMFAttributes **ppAttributes )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( CheckShutdown(), done );
    CHECKNULL_GOTO( ppAttributes, E_POINTER, done );
@@ -1503,7 +1503,7 @@ HRESULT
 CDX12EncHMFT::GetOutputStreamInfo( DWORD dwOutputStreamIndex, OUT MFT_OUTPUT_STREAM_INFO *pStreamInfo )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1531,7 +1531,7 @@ HRESULT
 CDX12EncHMFT::GetInputStreamInfo( DWORD dwInputStreamIndex, OUT MFT_INPUT_STREAM_INFO *pStreamInfo )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1578,7 +1578,7 @@ CDX12EncHMFT::GetStreamLimits( OUT DWORD *pdwInputMinimum,
                                OUT DWORD *pdwOutputMaximum )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1621,7 +1621,7 @@ HRESULT
 CDX12EncHMFT::GetInputAvailableType( DWORD dwInputStreamIndex, DWORD dwTypeIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    if( dwInputStreamIndex != 0 )
    {
@@ -1651,7 +1651,7 @@ HRESULT
 CDX12EncHMFT::GetOutputAvailableType( DWORD dwOutputStreamIndex, DWORD dwTypeIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1676,7 +1676,7 @@ HRESULT
 CDX12EncHMFT::SetInputType( DWORD dwInputStreamIndex, IN IMFMediaType *pType, DWORD dwFlags )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1708,7 +1708,7 @@ HRESULT
 CDX12EncHMFT::SetOutputType( DWORD dwOutputStreamIndex, IN IMFMediaType *pType, DWORD dwFlags )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKNULL_GOTO( m_spDeviceManager, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
    if( dwOutputStreamIndex != 0 )
@@ -1748,7 +1748,7 @@ HRESULT
 CDX12EncHMFT::GetInputCurrentType( DWORD dwInputStreamIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1767,7 +1767,7 @@ HRESULT
 CDX12EncHMFT::GetOutputCurrentType( DWORD dwOutputStreamIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( CheckShutdown(), done );
    CHECKBOOL_GOTO( dwOutputStreamIndex == 0, MF_E_INVALIDSTREAMNUMBER, done );
@@ -1793,7 +1793,7 @@ HRESULT
 CDX12EncHMFT::GetInputStatus( DWORD dwInputStreamIndex, OUT DWORD *pdwFlags )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1818,7 +1818,7 @@ HRESULT
 CDX12EncHMFT::GetOutputStatus( OUT DWORD *pdwFlags )
 {
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1828,7 +1828,7 @@ CDX12EncHMFT::GetOutputStatus( OUT DWORD *pdwFlags )
 
    *pdwFlags = 0;
    {
-      auto queuelock = m_OutputQueueLock.lock();
+      std::lock_guard<std::mutex> lock(m_OutputQueueLock);
       if( m_OutputQueue.unsafe_size() )
       {
          *pdwFlags = MFT_OUTPUT_STATUS_SAMPLE_READY;
@@ -1911,7 +1911,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
 {
    HRESULT hr = S_OK;
    {
-      auto lock = m_lock.lock();
+      std::lock_guard<std::mutex> lock(m_lock);
       CHECKHR_GOTO( IsUnlocked(), done );
       CHECKHR_GOTO( CheckShutdown(), done );
    }
@@ -1920,7 +1920,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
    {
       case MFT_MESSAGE_NOTIFY_START_OF_STREAM:
       {
-         auto lock = m_lock.lock();
+         std::lock_guard<std::mutex> lock(m_lock);
          CHECKNULL_GOTO( m_spDeviceManager, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
          m_bStreaming = true;
          m_bDraining = false;
@@ -1931,7 +1931,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
       }
       case MFT_MESSAGE_NOTIFY_END_OF_STREAM:
       {
-         auto lock = m_lock.lock();
+         std::lock_guard<std::mutex> lock(m_lock);
          m_dwNeedInputCount = 0;
          m_dwProcessInputCount = 0;
          m_bStreaming = false;
@@ -1949,7 +1949,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
       }
       case MFT_MESSAGE_SET_D3D_MANAGER:
       {
-         auto lock = m_lock.lock();
+         std::lock_guard<std::mutex> lock(m_lock);
          CleanupEncoder();
          CHECKHR_GOTO( xOnSetD3DManager( ulParam ), done );
          CHECKHR_GOTO( ConfigureSampleAllocator(), done );
@@ -1976,11 +1976,9 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 {
    HMFT_ETW_EVENT_START( "ProcessInput", this );
    HRESULT hr = S_OK;
-   wil::unique_cotaskmem_array_ptr<BYTE> pMBData = nullptr;
    UINT32 unChromaOnly = 0;
-   UINT32 cbMBData = 0;
    LPDX12EncodeContext pDX12EncodeContext = nullptr;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -2010,25 +2008,6 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
    //
    m_bEncodingStarted = TRUE;
 
-   //
-   if( SUCCEEDED( pSample->GetAllocatedBlob( MFSampleExtension_FeatureMap, &pMBData, &cbMBData ) ) )
-   {
-      // TODO%%% - this assumes 16x16 macroblocks
-      UINT32 uiMBRows = ( ( m_uiOutputHeight + 15 ) >> 4 );
-      UINT32 uiMBPerRow = ( ( m_uiOutputWidth + 15 ) >> 4 );
-      UINT32 cbMBDataExpected = uiMBRows * uiMBPerRow * sizeof( MACROBLOCK_DATA );
-      if( cbMBData < cbMBDataExpected )
-      {
-         CHECKHR_GOTO( MF_E_BUFFERTOOSMALL, done );
-      }
-      else
-      {
-         // %%%TODO
-         // SetFeatureMap(pMBData, cbMBData);
-         // SetFeatureMapFlag(true);
-      }
-   }
-
    (void) pSample->GetUINT32( MFSampleExtension_ChromaOnly, &unChromaOnly );
 
    // setup the source buffer
@@ -2036,7 +2015,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 
    // Submit work
    {
-      auto lock = m_encoderLock.lock();
+      std::lock_guard<std::mutex> lock(m_encoderLock);
 
       HMFT_ETW_EVENT_START( "PipeSubmitFrame", this );
 
@@ -2132,7 +2111,7 @@ CDX12EncHMFT::ProcessOutput( DWORD dwFlags, DWORD cOutputBufferCount, MFT_OUTPUT
    HMFT_ETW_EVENT_START( "ProcessOutput", this );
 
    HRESULT hr = S_OK;
-   auto lock = m_lock.lock();
+   std::lock_guard<std::mutex> lock(m_lock);
    IMFSample *pSample = nullptr;
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -2143,7 +2122,7 @@ CDX12EncHMFT::ProcessOutput( DWORD dwFlags, DWORD cOutputBufferCount, MFT_OUTPUT
    CHECKNULL_GOTO( m_spDeviceManager, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
 
    {
-      auto queuelock = m_OutputQueueLock.lock();
+      std::lock_guard<std::mutex> lock(m_OutputQueueLock);
       debug_printf( "[dx12 hmft 0x%p] ProcessOutput m_dwHaveOutputCount = %d, m_dwProcessOutputCount = %d\n",
                     this,
                     m_dwHaveOutputCount,

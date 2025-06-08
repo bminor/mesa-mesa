@@ -27,7 +27,6 @@ This folder contains the implementation of an async media foundation transform (
 | videobufferlock.cpp                 | utility for video buffer lock |
 | wpptrace.cpp                        | wpp trace |
 | wppconfig/                          | folder containing wpp trace config |
-| wil/                                | folder containing the Windows Implementation Library (https://github.com/microsoft/wil) |
 | IDL/                                | folder containing the IDL files for the MFT|
 | test/                               | folder containing the test code for the MFT|
 

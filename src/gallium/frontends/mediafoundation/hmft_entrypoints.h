@@ -47,8 +47,6 @@
 #include <mutex>
 #include <strmif.h>   // For ICodecAPI
 #include <wrl.h>
-#include "wil/com.h"
-#include "wil/resource.h"
 #include <wrl/client.h>
 #include <wrl/implements.h>
 #include "macros.h"
@@ -355,7 +353,7 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    concurrent_queue<LPDX12EncodeContext> m_EncodingQueue;   // (MFT_INPUT_QUEUE_DEPTH)
 
    concurrent_queue<IMFSample *> m_OutputQueue;
-   wil::critical_section m_OutputQueueLock;
+   std::mutex m_OutputQueueLock;
 
    HRESULT SetEncodingParameters( IMFAttributes *pMFAttributes );
    HRESULT GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LPDWORD lpdwSPSPPSDataLen );
@@ -526,9 +524,9 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    DWORD m_dwHaveOutputCount = 0;
    DWORD m_dwProcessOutputCount = 0;
 
-   class wil::critical_section m_lock;
-   class wil::critical_section m_lockShutdown;
-   class wil::critical_section m_encoderLock;
+   class std::mutex m_lock;
+   class std::mutex m_lockShutdown;
+   class std::mutex m_encoderLock;
    bool m_bExitThread = false;
    bool m_bUnlocked = false;
    HRESULT IsUnlocked( void );
