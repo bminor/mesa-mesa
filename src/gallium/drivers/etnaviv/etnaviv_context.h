@@ -182,8 +182,6 @@ struct etna_context {
    struct etna_index_buffer index_buffer;
    struct etna_shader_state shader;
 
-   PIPE_FB_SURFACES; //STOP USING THIS
-
    /* saved parameter-like state. these are mainly kept around for the blitter */
    struct pipe_framebuffer_state framebuffer_s;
    struct pipe_stencil_ref stencil_ref_s;
