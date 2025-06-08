@@ -347,14 +347,9 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
       /* VIVS_PE_DEPTH_CONFIG_ONLY_DEPTH */
       /* merged with depth_stencil_alpha */
 
-      if (screen->info->halti >= 0 && screen->info->model != 0x880) {
-         for (int i = 0; i < screen->specs.pixel_pipes; i++) {
-            cs->PE_PIPE_DEPTH_ADDR[i] = zsbuf->reloc[i];
-            cs->PE_PIPE_DEPTH_ADDR[i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
-         }
-      } else {
-         cs->PE_DEPTH_ADDR = zsbuf->reloc[0];
-         cs->PE_DEPTH_ADDR.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
+      for (int i = 0; i < screen->specs.pixel_pipes; i++) {
+         cs->PE_PIPE_DEPTH_ADDR[i] = zsbuf->reloc[i];
+         cs->PE_PIPE_DEPTH_ADDR[i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
       }
 
       cs->PE_DEPTH_STRIDE = zsbuf->level->stride;
@@ -366,9 +361,6 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
 
          cs->TS_DEPTH_STATUS_BASE = zsbuf->ts_reloc;
          cs->TS_DEPTH_STATUS_BASE.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
-
-         cs->TS_DEPTH_SURFACE_BASE = zsbuf->reloc[0];
-         cs->TS_DEPTH_SURFACE_BASE.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
 
          pe_mem_config |= VIVS_PE_MEM_CONFIG_DEPTH_TS_MODE(zsbuf->level->ts_mode);
 
@@ -386,10 +378,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
    } else {
       cs->depth_mrd = 0.0f;
       cs->PE_DEPTH_CONFIG = VIVS_PE_DEPTH_CONFIG_DEPTH_MODE_NONE;
-      cs->PE_DEPTH_ADDR.bo = NULL;
       cs->PE_DEPTH_STRIDE = 0;
       cs->TS_DEPTH_STATUS_BASE.bo = NULL;
-      cs->TS_DEPTH_SURFACE_BASE.bo = NULL;
 
       for (int i = 0; i < ETNA_MAX_PIXELPIPES; i++)
          cs->PE_PIPE_DEPTH_ADDR[i].bo = NULL;

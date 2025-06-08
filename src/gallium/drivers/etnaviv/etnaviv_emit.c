@@ -481,7 +481,7 @@ etna_emit_state(struct etna_context *ctx)
       /*0140C*/ EMIT_STATE(PE_DEPTH_NORMALIZE, ctx->framebuffer.PE_DEPTH_NORMALIZE);
 
       if (screen->info->halti < 0 || screen->info->model == 0x880) {
-         /*01410*/ EMIT_STATE_RELOC(PE_DEPTH_ADDR, &ctx->framebuffer.PE_DEPTH_ADDR);
+         /*01410*/ EMIT_STATE_RELOC(PE_DEPTH_ADDR, &ctx->framebuffer.PE_PIPE_DEPTH_ADDR[0]);
       }
 
       /*01414*/ EMIT_STATE(PE_DEPTH_STRIDE, ctx->framebuffer.PE_DEPTH_STRIDE);
@@ -566,7 +566,7 @@ etna_emit_state(struct etna_context *ctx)
       /*0165C*/ EMIT_STATE_RELOC(TS_COLOR_SURFACE_BASE, &ctx->framebuffer.PE_RT_PIPE_COLOR_ADDR[0][0]);
       /*01660*/ EMIT_STATE(TS_COLOR_CLEAR_VALUE, ctx->framebuffer.TS_COLOR_CLEAR_VALUE);
       /*01664*/ EMIT_STATE_RELOC(TS_DEPTH_STATUS_BASE, &ctx->framebuffer.TS_DEPTH_STATUS_BASE);
-      /*01668*/ EMIT_STATE_RELOC(TS_DEPTH_SURFACE_BASE, &ctx->framebuffer.TS_DEPTH_SURFACE_BASE);
+      /*01668*/ EMIT_STATE_RELOC(TS_DEPTH_SURFACE_BASE, &ctx->framebuffer.PE_PIPE_DEPTH_ADDR[0]);
       /*0166C*/ EMIT_STATE(TS_DEPTH_CLEAR_VALUE, ctx->framebuffer.TS_DEPTH_CLEAR_VALUE);
       /*016BC*/ EMIT_STATE(TS_COLOR_CLEAR_VALUE_EXT, ctx->framebuffer.TS_COLOR_CLEAR_VALUE_EXT);
    }

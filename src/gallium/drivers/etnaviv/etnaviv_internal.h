@@ -177,7 +177,6 @@ struct compiled_framebuffer_state {
    uint32_t GL_MULTI_SAMPLE_CONFIG;
    uint32_t PE_COLOR_FORMAT;
    uint32_t PE_DEPTH_CONFIG;
-   struct etna_reloc PE_DEPTH_ADDR;
    struct etna_reloc PE_PIPE_DEPTH_ADDR[ETNA_MAX_PIXELPIPES];
    uint32_t PE_DEPTH_STRIDE;
    uint32_t PE_HDEPTH_CONTROL;
@@ -191,7 +190,6 @@ struct compiled_framebuffer_state {
    uint32_t TS_MEM_CONFIG;
    uint32_t TS_DEPTH_CLEAR_VALUE;
    struct etna_reloc TS_DEPTH_STATUS_BASE;
-   struct etna_reloc TS_DEPTH_SURFACE_BASE;
    uint32_t TS_COLOR_CLEAR_VALUE;
    uint32_t TS_COLOR_CLEAR_VALUE_EXT;
    struct etna_reloc TS_COLOR_STATUS_BASE;
