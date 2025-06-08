@@ -202,7 +202,6 @@ struct compiled_framebuffer_state {
    uint32_t PS_CONTROL;
    uint32_t PS_CONTROL_EXT;
    uint32_t PS_OUTPUT_REG2;
-   struct etna_reloc PE_RT_COLOR_ADDR[7];
    struct etna_reloc PE_RT_PIPE_COLOR_ADDR[7][ETNA_MAX_PIXELPIPES];
    uint32_t PE_RT_CONFIG[7];
    uint32_t RT_TS_MEM_CONFIG[7];
