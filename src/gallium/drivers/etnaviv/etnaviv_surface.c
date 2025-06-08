@@ -101,26 +101,8 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    /* XXX we don't really need a copy but it's convenient */
    surf->offset = lev->offset + layer * lev->layer_stride;
 
-   /* Setup template relocations for this surface */
-   for (unsigned pipe = 0; pipe < screen->specs.pixel_pipes; ++pipe) {
-      surf->reloc[pipe].bo = rsc->bo;
-      surf->reloc[pipe].offset = surf->offset;
-      surf->reloc[pipe].flags = 0;
-   }
-
-   /* In single buffer mode, both pixel pipes must point to the same address,
-    * for multi-tiled surfaces on the other hand the second pipe is expected to
-    * point halfway the image vertically.
-    */
-   if (rsc->layout & ETNA_LAYOUT_BIT_MULTI)
-      surf->reloc[1].offset = surf->offset + lev->stride * lev->padded_height / 2;
-
    if (surf->level->ts_size) {
       assert(layer == 0);
-
-      surf->ts_reloc.bo = rsc->ts_bo;
-      surf->ts_reloc.offset = surf->level->ts_offset;
-      surf->ts_reloc.flags = 0;
 
       if (!screen->specs.use_blt) {
          /* This (ab)uses the RS as a plain buffer memset().

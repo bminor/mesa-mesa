@@ -180,7 +180,10 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
          target_16bpp = true;
 
       for (int i = 0; i < screen->specs.pixel_pipes; i++) {
-         cs->PE_RT_PIPE_COLOR_ADDR[rt][i] = cbuf->reloc[i];
+         cs->PE_RT_PIPE_COLOR_ADDR[rt][i].bo = res->bo;
+         cs->PE_RT_PIPE_COLOR_ADDR[rt][i].offset = cbuf->level->offset + fb->cbufs[i].first_layer * cbuf->level->layer_stride;
+         if (!screen->specs.single_buffer)
+            cs->PE_RT_PIPE_COLOR_ADDR[rt][i].offset += cbuf->level->layer_stride / screen->specs.pixel_pipes * i;
          cs->PE_RT_PIPE_COLOR_ADDR[rt][i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
       }
 
@@ -222,7 +225,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
             cs->TS_COLOR_CLEAR_VALUE = cbuf->level->clear_value;
             cs->TS_COLOR_CLEAR_VALUE_EXT = cbuf->level->clear_value >> 32;
 
-            cs->TS_COLOR_STATUS_BASE = cbuf->ts_reloc;
+            cs->TS_COLOR_STATUS_BASE.bo = res->ts_bo;
+            cs->TS_COLOR_STATUS_BASE.offset = cbuf->level->ts_offset;
             cs->TS_COLOR_STATUS_BASE.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
 
             pe_mem_config |= VIVS_PE_MEM_CONFIG_COLOR_TS_MODE(cbuf->level->ts_mode);
@@ -257,7 +261,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
             cs->RT_TS_COLOR_CLEAR_VALUE[rt - 1] = cbuf->level->clear_value;
             cs->RT_TS_COLOR_CLEAR_VALUE_EXT[rt - 1] = cbuf->level->clear_value >> 32;
 
-            cs->RT_TS_COLOR_STATUS_BASE[rt - 1] = cbuf->ts_reloc;
+            cs->RT_TS_COLOR_STATUS_BASE[rt - 1].bo = res->ts_bo;
+            cs->RT_TS_COLOR_STATUS_BASE[rt - 1].offset = cbuf->level->ts_offset;
             cs->RT_TS_COLOR_STATUS_BASE[rt - 1].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
          } else {
             if (VIV_FEATURE(screen, ETNA_FEATURE_CACHE128B256BPERLINE))
@@ -348,7 +353,10 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
       /* merged with depth_stencil_alpha */
 
       for (int i = 0; i < screen->specs.pixel_pipes; i++) {
-         cs->PE_PIPE_DEPTH_ADDR[i] = zsbuf->reloc[i];
+         cs->PE_PIPE_DEPTH_ADDR[i].bo = res->bo;
+         cs->PE_PIPE_DEPTH_ADDR[i].offset = zsbuf->level->offset + fb->zsbuf.first_layer * zsbuf->level->layer_stride;
+         if (!screen->specs.single_buffer)
+            cs->PE_PIPE_DEPTH_ADDR[i].offset += cbuf->level->layer_stride / screen->specs.pixel_pipes * i;
          cs->PE_PIPE_DEPTH_ADDR[i].flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
       }
 
@@ -359,7 +367,8 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
       if (zsbuf->level->ts_size) {
          cs->TS_DEPTH_CLEAR_VALUE = zsbuf->level->clear_value;
 
-         cs->TS_DEPTH_STATUS_BASE = zsbuf->ts_reloc;
+         cs->TS_DEPTH_STATUS_BASE.bo = res->ts_bo;
+         cs->TS_DEPTH_STATUS_BASE.offset = zsbuf->level->ts_offset;
          cs->TS_DEPTH_STATUS_BASE.flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE;
 
          pe_mem_config |= VIVS_PE_MEM_CONFIG_DEPTH_TS_MODE(zsbuf->level->ts_mode);
