@@ -6744,7 +6744,7 @@
         "description": "Revert \"zink: reject Imagination proprietary driver w/o geometryShader\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "ca087e202766872085d6d02363fd7f4961feba48",
         "notes": null
