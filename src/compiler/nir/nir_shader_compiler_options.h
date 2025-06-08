@@ -180,6 +180,13 @@ typedef enum {
     */
    nir_io_compaction_groups_tes_inputs_into_pos_and_var_groups = BITFIELD_BIT(9),
 
+   /**
+    * RADV expects that high 16 bits of outputs set component >= 4. That's not
+    * legal in NIR, but RADV unfortunately relies on it because it's not
+    * validated.
+    */
+   nir_io_radv_intrinsic_component_workaround = BITFIELD_BIT(10),
+
    /* Options affecting the GLSL compiler or Gallium are below. */
 
    /**

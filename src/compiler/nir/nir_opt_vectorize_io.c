@@ -131,6 +131,13 @@ typedef enum {
    vectorize_the_rest,
 } nir_vectorize_op_step;
 
+static bool
+apply_radv_workaround(nir_builder *b)
+{
+   return b->shader->options->io_options &
+          nir_io_radv_intrinsic_component_workaround;
+}
+
 static void
 vectorize_load(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
                nir_vectorize_op_step step)
@@ -158,7 +165,10 @@ vectorize_load(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
    memcpy(new_intr->src, first->src,
           nir_intrinsic_infos[first->intrinsic].num_srcs * sizeof(nir_src));
    nir_intrinsic_copy_const_indices(new_intr, first);
-   nir_intrinsic_set_component(new_intr, start & 0x3); /* Bits 4..7 should map to 0..3 */
+   if (apply_radv_workaround(&b))
+      nir_intrinsic_set_component(new_intr, start);
+   else
+      nir_intrinsic_set_component(new_intr, start & 0x3); /* Bits 4..7 should map to 0..3 */
    assert(start % 4 + count <= 4);
 
    nir_io_semantics sem = nir_intrinsic_io_semantics(new_intr);
@@ -308,14 +318,17 @@ vectorize_store(nir_intrinsic_instr *chan[8], unsigned start, unsigned count,
 
    /* TODO: Merge names? */
 
+   nir_builder b = nir_builder_at(nir_before_instr(&last->instr));
+
    /* Update the rest. */
    nir_intrinsic_set_io_semantics(last, sem);
-   nir_intrinsic_set_component(last, start & 0x3); /* Bits 4..7 should map to 0..3 */
+   if (apply_radv_workaround(&b))
+      nir_intrinsic_set_component(last, start);
+   else
+      nir_intrinsic_set_component(last, start & 0x3); /* Bits 4..7 should map to 0..3 */
    assert(start % 4 + count <= 4);
    nir_intrinsic_set_write_mask(last, BITFIELD_MASK(count));
    last->num_components = count;
-
-   nir_builder b = nir_builder_at(nir_before_instr(&last->instr));
 
    /* Replace the stored scalar with the vector. */
    if (step == merge_low_high_16_to_32) {
