@@ -34,9 +34,6 @@
 
 struct etna_surface {
    struct pipe_surface base;
-
-   struct compiled_rs_state clear_command;
-   struct compiled_rs_state ts_clear_command;
    /* Keep pointer to resource level, for fast clear */
    struct etna_resource_level *level;
    /* keep pointer to original resource (for when a render compatible resource is used) */

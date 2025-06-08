@@ -98,31 +98,6 @@ etna_create_surface(struct pipe_context *pctx, struct pipe_resource *prsc,
    surf->base.last_layer = templat->last_layer;
    surf->level = lev;
 
-   if (surf->level->ts_size) {
-      assert(layer == 0);
-
-      if (!screen->specs.use_blt) {
-         /* This (ab)uses the RS as a plain buffer memset().
-          * Currently uses a fixed row size of 64 bytes. Some benchmarking with
-          * different sizes may be in order. */
-         struct etna_bo *ts_bo = etna_resource(surf->base.texture)->ts_bo;
-         etna_compile_rs_state(ctx, &surf->ts_clear_command, &(struct rs_state) {
-            .source_format = RS_FORMAT_A8R8G8B8,
-            .dest_format = RS_FORMAT_A8R8G8B8,
-            .dest = ts_bo,
-            .dest_offset = surf->level->ts_offset,
-            .dest_stride = 0x40,
-            .dest_tiling = ETNA_LAYOUT_TILED,
-            .dither = {0xffffffff, 0xffffffff},
-            .width = 16,
-            .height = align(lev->ts_layer_stride / 0x40, 4),
-            .clear_value = {screen->specs.ts_clear_value},
-            .clear_mode = VIVS_RS_CLEAR_CONTROL_MODE_ENABLED1,
-            .clear_bits = 0xffff
-         });
-      }
-   }
-
    return &surf->base;
 }
 

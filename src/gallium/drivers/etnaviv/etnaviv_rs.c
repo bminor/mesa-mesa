@@ -181,24 +181,6 @@ etna_compile_rs_state(struct etna_context *ctx, struct compiled_rs_state *cs,
       cs->RS_KICKER_INPLACE = rs->tile_count;
    }
    cs->source_ts_valid = rs->source_ts_valid;
-   cs->valid = true;
-}
-
-/* modify the clear bits value in the compiled RS state */
-static void
-etna_modify_rs_clearbits(struct compiled_rs_state *cs, uint32_t clear_bits)
-{
-   cs->RS_CLEAR_CONTROL &= ~VIVS_RS_CLEAR_CONTROL_BITS__MASK;
-   cs->RS_CLEAR_CONTROL |= VIVS_RS_CLEAR_CONTROL_BITS(clear_bits);
-}
-
-static void
-etna_modify_rs_fill_value(struct compiled_rs_state *cs, uint64_t clear_value)
-{
-   cs->RS_FILL_VALUE[0] = clear_value;
-   cs->RS_FILL_VALUE[1] = clear_value >> 32;
-   cs->RS_FILL_VALUE[2] = clear_value;
-   cs->RS_FILL_VALUE[3] = clear_value >> 32;
 }
 
 #define EMIT_STATE(state_name, src_value) \
@@ -293,14 +275,16 @@ etna_submit_rs_state(struct etna_context *ctx,
 
 /* Generate clear command for a surface (non-fast clear case) */
 static void
-etna_rs_gen_clear_surface(struct etna_context *ctx, struct etna_surface *surf,
-                          uint64_t clear_value)
+etna_rs_gen_clear_cmd(struct etna_context *ctx,
+                      struct pipe_surface *psurf, struct etna_resource *res,
+                      uint64_t clear_value, uint32_t clear_bits,
+                      struct compiled_rs_state *rs_state)
 {
    ASSERTED struct etna_screen *screen = ctx->screen;
-   struct etna_resource *dst = etna_resource(surf->base.texture);
+   struct etna_resource_level *level = &res->levels[psurf->level];
    uint32_t format;
 
-   switch (util_format_get_blocksizebits(surf->base.format)) {
+   switch (util_format_get_blocksizebits(psurf->format)) {
    case 16:
       format = RS_FORMAT_A4R4G4B4;
       break;
@@ -317,21 +301,46 @@ etna_rs_gen_clear_surface(struct etna_context *ctx, struct etna_surface *surf,
    }
 
    /* use tiled clear if width is multiple of 16 */
-   bool tiled_clear = (surf->level->padded_width & ETNA_RS_WIDTH_MASK) == 0 &&
-                      (surf->level->padded_height & ETNA_RS_HEIGHT_MASK) == 0;
+   bool tiled_clear = (level->padded_width & ETNA_RS_WIDTH_MASK) == 0 &&
+                      (level->padded_height & ETNA_RS_HEIGHT_MASK) == 0;
 
-   etna_compile_rs_state( ctx, &surf->clear_command, &(struct rs_state) {
+   etna_compile_rs_state(ctx, rs_state, &(struct rs_state) {
       .source_format = format,
       .dest_format = format,
-      .dest = dst->bo,
-      .dest_offset = surf->level->offset + surf->base.first_layer * surf->level->layer_stride,
-      .dest_stride = surf->level->stride,
-      .dest_padded_height = surf->level->padded_height,
-      .dest_tiling = tiled_clear ? dst->layout : ETNA_LAYOUT_LINEAR,
+      .dest = res->bo,
+      .dest_offset = level->offset + psurf->first_layer * level->layer_stride,
+      .dest_stride = level->stride,
+      .dest_padded_height = level->padded_height,
+      .dest_tiling = tiled_clear ? res->layout : ETNA_LAYOUT_LINEAR,
       .dither = {0xffffffff, 0xffffffff},
-      .width = surf->level->padded_width, /* These must be padded to 16x4 if !LINEAR, otherwise RS will hang */
-      .height = surf->level->padded_height,
+      .width = level->padded_width, /* These must be padded to 16x4 if !LINEAR, otherwise RS will hang */
+      .height = level->padded_height,
       .clear_value = {clear_value, clear_value >> 32, clear_value, clear_value >> 32},
+      .clear_mode = VIVS_RS_CLEAR_CONTROL_MODE_ENABLED1,
+      .clear_bits = clear_bits
+   });
+}
+
+/* Generate TS clear command for a surface (fast clear case) */
+static void
+etna_rs_gen_ts_clear_cmd(struct etna_context *ctx,
+                         struct pipe_surface *psurf, struct etna_resource *res,
+                         struct compiled_rs_state *rs_state)
+{
+   ASSERTED struct etna_screen *screen = ctx->screen;
+   struct etna_resource_level *level = &res->levels[psurf->level];
+
+   etna_compile_rs_state(ctx, rs_state, &(struct rs_state) {
+      .source_format = RS_FORMAT_A8R8G8B8,
+      .dest_format = RS_FORMAT_A8R8G8B8,
+      .dest = res->ts_bo,
+      .dest_offset = level->ts_offset,
+      .dest_stride = 0x40,
+      .dest_tiling = ETNA_LAYOUT_TILED,
+      .dither = {0xffffffff, 0xffffffff},
+      .width = 16,
+      .height = align(level->ts_layer_stride / 0x40, 4),
+      .clear_value = {screen->specs.ts_clear_value},
       .clear_mode = VIVS_RS_CLEAR_CONTROL_MODE_ENABLED1,
       .clear_bits = 0xffff
    });
@@ -345,8 +354,9 @@ etna_blit_clear_color_rs(struct pipe_context *pctx, unsigned idx,
    struct pipe_surface *dst = ctx->fb_cbufs[idx];
    struct etna_surface *surf = etna_surface(dst);
    uint64_t new_clear_value = etna_clear_blit_pack_rgba(surf->base.format, color);
+   struct compiled_rs_state rs_state;
 
-   if (use_ts && surf->level->ts_size) { /* TS: use precompiled clear command */
+   if (use_ts && surf->level->ts_size) {
       if (idx == 0) {
          ctx->framebuffer.TS_COLOR_CLEAR_VALUE = new_clear_value;
          ctx->framebuffer.TS_COLOR_CLEAR_VALUE_EXT = new_clear_value >> 32;
@@ -367,23 +377,19 @@ etna_blit_clear_color_rs(struct pipe_context *pctx, unsigned idx,
           etna_resource_ext_ts(etna_resource(dst->texture))))
          surf->level->ts_meta->v0.clear_value = new_clear_value;
 
-      assert(surf->ts_clear_command.valid);
-      etna_submit_rs_state(ctx, &surf->ts_clear_command);
+      etna_rs_gen_ts_clear_cmd(ctx, dst, etna_resource(dst->texture), &rs_state);
 
       etna_resource_level_ts_mark_valid(surf->level);
       etna_resource_level_mark_unflushed(surf->level);
       ctx->dirty |= ETNA_DIRTY_TS;
    } else { /* Queue normal RS clear for non-TS surfaces */
-      /* If no valid command yet generate stored command, otherwise simply
-       * update the clear value. */
-      if (unlikely(!surf->clear_command.valid))
-         etna_rs_gen_clear_surface(ctx, surf, new_clear_value);
-      else
-         etna_modify_rs_fill_value(&surf->clear_command, new_clear_value);
+      etna_rs_gen_clear_cmd(ctx, dst, etna_resource(dst->texture),
+                                new_clear_value, 0xffff, &rs_state);
 
-      etna_submit_rs_state(ctx, &surf->clear_command);
       etna_resource_level_ts_mark_invalid(surf->level);
    }
+
+   etna_submit_rs_state(ctx, &rs_state);
 
    ctx->dirty |= ETNA_DIRTY_DERIVE_TS;
    surf->level->clear_value = new_clear_value;
@@ -399,6 +405,7 @@ etna_blit_clear_zs_rs(struct pipe_context *pctx, struct pipe_surface *dst,
    struct etna_surface *surf = etna_surface(dst);
    uint32_t new_clear_value = translate_clear_depth_stencil(surf->base.format, depth, stencil);
    uint32_t new_clear_bits = 0, clear_bits_depth, clear_bits_stencil;
+   struct compiled_rs_state rs_state;
 
    /* Get the channels to clear */
    switch (surf->base.format) {
@@ -431,8 +438,7 @@ etna_blit_clear_zs_rs(struct pipe_context *pctx, struct pipe_surface *dst,
          ctx->framebuffer.TS_MEM_CONFIG |= VIVS_TS_MEM_CONFIG_DEPTH_AUTO_DISABLE;
       }
 
-      assert(surf->ts_clear_command.valid);
-      etna_submit_rs_state(ctx, &surf->ts_clear_command);
+      etna_rs_gen_ts_clear_cmd(ctx, dst, etna_resource(dst->texture), &rs_state);
 
       etna_resource_level_ts_mark_valid(surf->level);
       etna_resource_level_mark_unflushed(surf->level);
@@ -443,20 +449,13 @@ etna_blit_clear_zs_rs(struct pipe_context *pctx, struct pipe_surface *dst,
       etna_copy_resource(pctx, surf->base.texture, surf->base.texture,
                          surf->base.level, surf->base.level);
 
-      /* If no valid command yet generate stored command, otherwise simply
-       * update clear value. */
-      if (unlikely(!surf->clear_command.valid))
-         etna_rs_gen_clear_surface(ctx, surf, new_clear_value);
-      else
-         etna_modify_rs_fill_value(&surf->clear_command, new_clear_value);
-
-      /* Update the channels to be cleared */
-      etna_modify_rs_clearbits(&surf->clear_command, new_clear_bits);
-
-      etna_submit_rs_state(ctx, &surf->clear_command);
+      etna_rs_gen_clear_cmd(ctx, dst, etna_resource(dst->texture),
+                                new_clear_value, new_clear_bits, &rs_state);
 
       etna_resource_level_ts_mark_invalid(surf->level);
    }
+
+   etna_submit_rs_state(ctx, &rs_state);
 
    surf->level->clear_value = new_clear_value;
    resource_written(ctx, surf->base.texture);
