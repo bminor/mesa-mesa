@@ -349,28 +349,59 @@ brw_lower_scan(brw_shader &s, brw_inst *inst)
    return true;
 }
 
+/**
+ * Initialize flags bits for non-executing lanes to known value.
+ *
+ * If flags have already be initlized in this block, a redundant
+ * initialization will not be emitted.
+ */
 static brw_reg
-brw_fill_flag(const brw_builder &bld, unsigned v)
+brw_fill_flag(const brw_builder &bld, unsigned v, brw_inst *inst)
 {
+   const intel_device_info *devinfo = bld.shader->devinfo;
    const brw_builder ubld1 = bld.uniform();
    brw_reg flag = brw_flag_reg(0, 0);
+   brw_reg value = bld.shader->dispatch_width == 32 ?
+      brw_imm_ud(v) : brw_imm_uw(v & 0xFFFF);
 
-   if (bld.shader->dispatch_width == 32) {
-      /* For SIMD32, we use a UD type so we fill both f0.0 and f0.1. */
+   /* For SIMD32, we use a UD type so we fill both f0.0 and f0.1. */
+   if (bld.shader->dispatch_width == 32)
       flag = retype(flag, BRW_TYPE_UD);
-      ubld1.MOV(flag, brw_imm_ud(v));
-   } else {
-      ubld1.MOV(flag, brw_imm_uw(v & 0xFFFF));
+
+   foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
+      /* If an instruction is found that will initialize the flags to the expected
+       * values, no additional initialization is necessary.
+       */
+      if (scan_inst->opcode == BRW_OPCODE_MOV &&
+          scan_inst->force_writemask_all &&
+          scan_inst->dst.equals(flag) &&
+          scan_inst->src[0].equals(value)) {
+         return flag;
+      }
+
+      /* If a flags write is encountered that might modify the bits that
+       * supposed to be initialized, stop the search.
+       */
+      if ((scan_inst->force_writemask_all &&
+           scan_inst->flags_written(devinfo) != 0) ||
+          brw_reg_is_arf(scan_inst->dst, BRW_ARF_FLAG)) {
+         break;
+      }
    }
+
+   ubld1.MOV(flag, value);
 
    return flag;
 }
 
 static void
-brw_lower_dispatch_width_vote(const brw_builder &bld, enum opcode opcode, brw_reg dst, brw_reg src)
+brw_lower_dispatch_width_vote(const brw_builder &bld, brw_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const unsigned dispatch_width = bld.shader->dispatch_width;
+   const enum opcode opcode = inst->opcode;
+   brw_reg dst = inst->dst;
+   brw_reg src = inst->src[0];
 
    assert(opcode == SHADER_OPCODE_VOTE_ANY ||
           opcode == SHADER_OPCODE_VOTE_ALL ||
@@ -385,7 +416,7 @@ brw_lower_dispatch_width_vote(const brw_builder &bld, enum opcode opcode, brw_re
     * dead channels from affecting the result, we initialize the flag with
     * with the identity value for the logical operation.
     */
-   brw_fill_flag(bld, any ? 0 : 0xFFFFFFFF);
+   brw_fill_flag(bld, any ? 0 : 0xFFFFFFFF, inst);
    bld.CMP(bld.null_reg_d(), src, ref, equal ? BRW_CONDITIONAL_Z
                                              : BRW_CONDITIONAL_NZ);
 
@@ -419,8 +450,12 @@ brw_lower_dispatch_width_vote(const brw_builder &bld, enum opcode opcode, brw_re
 }
 
 static void
-brw_lower_quad_vote_gfx9(const brw_builder &bld, enum opcode opcode, brw_reg dst, brw_reg src)
+brw_lower_quad_vote_gfx9(const brw_builder &bld, brw_inst *inst)
 {
+   const enum opcode opcode = inst->opcode;
+   brw_reg dst = inst->dst;
+   brw_reg src = inst->src[0];
+
    assert(opcode == SHADER_OPCODE_VOTE_ANY || opcode == SHADER_OPCODE_VOTE_ALL);
    const bool any = opcode == SHADER_OPCODE_VOTE_ANY;
 
@@ -428,7 +463,7 @@ brw_lower_quad_vote_gfx9(const brw_builder &bld, enum opcode opcode, brw_reg dst
     * dead channels from affecting the result, we initialize the flag with
     * with the identity value for the logical operation.
     */
-   brw_fill_flag(bld, any ? 0 : 0xFFFFFFFF);
+   brw_fill_flag(bld, any ? 0 : 0xFFFFFFFF, inst);
    bld.CMP(bld.null_reg_ud(), src, brw_imm_ud(0u), BRW_CONDITIONAL_NZ);
    bld.exec_all().MOV(retype(dst, BRW_TYPE_UD), brw_imm_ud(0));
 
@@ -441,15 +476,19 @@ brw_lower_quad_vote_gfx9(const brw_builder &bld, enum opcode opcode, brw_reg dst
 }
 
 static void
-brw_lower_quad_vote_gfx20(const brw_builder &bld, enum opcode opcode, brw_reg dst, brw_reg src)
+brw_lower_quad_vote_gfx20(const brw_builder &bld, brw_inst *inst)
 {
+   const enum opcode opcode = inst->opcode;
+   brw_reg dst = inst->dst;
+   brw_reg src = inst->src[0];
+
    assert(opcode == SHADER_OPCODE_VOTE_ANY || opcode == SHADER_OPCODE_VOTE_ALL);
    const bool any = opcode == SHADER_OPCODE_VOTE_ANY;
 
    /* This code is going to manipulate the results of flag mask, so clear it to
     * avoid any residual value from disabled channels.
     */
-   brw_reg flag = brw_fill_flag(bld, 0);
+   brw_reg flag = brw_fill_flag(bld, 0, inst);
 
    /* Mask of invocations where condition is true, note that mask is
     * replicated to each invocation.
@@ -490,9 +529,6 @@ brw_lower_vote(brw_shader &s, brw_inst *inst)
 {
    const brw_builder bld(inst);
 
-   brw_reg dst = inst->dst;
-   brw_reg src = inst->src[0];
-
    unsigned cluster_size;
    if (inst->sources > 1) {
       assert(inst->src[1].file == IMM);
@@ -502,13 +538,13 @@ brw_lower_vote(brw_shader &s, brw_inst *inst)
    }
 
    if (cluster_size == s.dispatch_width) {
-      brw_lower_dispatch_width_vote(bld, inst->opcode, dst, src);
+      brw_lower_dispatch_width_vote(bld, inst);
    } else {
       assert(cluster_size == 4);
       if (s.devinfo->ver < 20)
-         brw_lower_quad_vote_gfx9(bld, inst->opcode, dst, src);
+         brw_lower_quad_vote_gfx9(bld, inst);
       else
-         brw_lower_quad_vote_gfx20(bld, inst->opcode, dst, src);
+         brw_lower_quad_vote_gfx20(bld, inst);
    }
 
    inst->remove();
@@ -536,7 +572,7 @@ brw_lower_ballot(brw_shader &s, brw_inst *inst)
          xbld.MOV(dst, zero);
       }
    } else {
-      brw_reg flag = brw_fill_flag(bld, 0);
+      brw_reg flag = brw_fill_flag(bld, 0, inst);
       bld.CMP(bld.null_reg_ud(), value, brw_imm_ud(0u), BRW_CONDITIONAL_NZ);
       xbld.MOV(dst, flag);
    }
