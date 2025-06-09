@@ -270,6 +270,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .EXT_conditional_rendering = true,
       .EXT_conservative_rasterization = device->info->chip >= 7,
       .EXT_custom_border_color = true,
+      .EXT_custom_resolve = true,
       .EXT_depth_clamp_zero_one = true,
       .EXT_depth_clip_control = true,
       .EXT_depth_clip_enable = true,
@@ -821,6 +822,9 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_EXT_multisampled_render_to_single_sampled */
    features->multisampledRenderToSingleSampled = true;
+
+   /* VK_EXT_custom_resolve */
+   features->customResolve = true;
 }
 
 static void
@@ -955,8 +959,12 @@ tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,
    p->maxDescriptorSetUpdateAfterBindStorageImages       = max_descriptor_set_size;
    p->maxDescriptorSetUpdateAfterBindInputAttachments    = MAX_RTS;
 
-   p->supportedDepthResolveModes    = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
-   p->supportedStencilResolveModes  = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+   p->supportedDepthResolveModes    =
+      VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
+      VK_RESOLVE_MODE_CUSTOM_BIT_EXT;
+   p->supportedStencilResolveModes  =
+      VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
+      VK_RESOLVE_MODE_CUSTOM_BIT_EXT;
    p->independentResolveNone  = false;
    p->independentResolve      = false;
 

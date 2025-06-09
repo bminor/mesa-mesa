@@ -684,7 +684,7 @@ struct tu_cmd_buffer
    struct tu_image dynamic_msrtss_images[MAX_RTS + 1];
 
    struct tu_render_pass dynamic_pass;
-   struct tu_subpass dynamic_subpass;
+   struct tu_subpass dynamic_subpasses[2];
    struct tu_framebuffer dynamic_framebuffer;
 
    struct tu_cs cs;

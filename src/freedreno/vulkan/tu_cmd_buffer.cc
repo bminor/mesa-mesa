@@ -4400,7 +4400,7 @@ tu_BeginCommandBuffer(VkCommandBuffer commandBuffer,
          if (rendering_info) {
             tu_setup_dynamic_inheritance(cmd_buffer, rendering_info);
             cmd_buffer->state.pass = &cmd_buffer->dynamic_pass;
-            cmd_buffer->state.subpass = &cmd_buffer->dynamic_subpass;
+            cmd_buffer->state.subpass = &cmd_buffer->dynamic_subpasses[0];
 
             const VkRenderingAttachmentLocationInfoKHR *location_info =
                vk_find_struct_const(pBeginInfo->pInheritanceInfo->pNext,
@@ -6864,7 +6864,7 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
    tu_setup_dynamic_framebuffer(cmd, pRenderingInfo);
 
    cmd->state.pass = &cmd->dynamic_pass;
-   cmd->state.subpass = &cmd->dynamic_subpass;
+   cmd->state.subpass = &cmd->dynamic_subpasses[0];
    cmd->state.framebuffer = &cmd->dynamic_framebuffer;
    cmd->state.render_area = pRenderingInfo->renderArea;
    cmd->state.fdm_per_layer =
@@ -6877,7 +6877,7 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
    for (unsigned i = 0; i < pRenderingInfo->colorAttachmentCount; i++) {
       if (!pRenderingInfo->pColorAttachments[i].imageView)
          continue;
-      uint32_t a = cmd->dynamic_subpass.color_attachments[i].attachment;
+      uint32_t a = cmd->dynamic_subpasses[0].color_attachments[i].attachment;
 
       cmd->state.clear_values[a] =
          pRenderingInfo->pColorAttachments[i].clearValue;
@@ -6897,7 +6897,12 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
                      pRenderingInfo->pColorAttachments[i].imageView);
       cmd->state.attachments[a] = view;
 
-      a = cmd->dynamic_subpass.resolve_attachments[i].attachment;
+      if (cmd->dynamic_pass.subpass_count > 1) {
+         a = cmd->dynamic_subpasses[1].color_attachments[i].attachment;
+      } else {
+         a = cmd->dynamic_subpasses[0].resolve_attachments[i].attachment;
+      }
+
       if (!msrtss && a != VK_ATTACHMENT_UNUSED) {
          VK_FROM_HANDLE(tu_image_view, resolve_view,
                         pRenderingInfo->pColorAttachments[i].resolveImageView);
@@ -6905,7 +6910,7 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
       }
    }
 
-   uint32_t a = cmd->dynamic_subpass.depth_stencil_attachment.attachment;
+   uint32_t a = cmd->dynamic_subpasses[0].depth_stencil_attachment.attachment;
    if (pRenderingInfo->pDepthAttachment || pRenderingInfo->pStencilAttachment) {
       const struct VkRenderingAttachmentInfo *common_info =
          (pRenderingInfo->pDepthAttachment &&
@@ -6932,12 +6937,21 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
          cmd->state.attachments[a] = view;
 
-         if (!msrtss && cmd->dynamic_subpass.resolve_count >
-             cmd->dynamic_subpass.color_count) {
+         if (!msrtss && cmd->dynamic_subpasses[0].resolve_count >
+             cmd->dynamic_subpasses[0].color_count) {
             VK_FROM_HANDLE(tu_image_view, resolve_view,
                            common_info->resolveImageView);
-            a = cmd->dynamic_subpass.resolve_attachments[cmd->dynamic_subpass.color_count].attachment;
+            a = cmd->dynamic_subpasses[0].resolve_attachments[cmd->dynamic_subpasses[0].color_count].attachment;
             cmd->state.attachments[a] = resolve_view;
+         }
+
+         if (cmd->dynamic_pass.subpass_count > 1) {
+            a = cmd->dynamic_subpasses[1].depth_stencil_attachment.attachment;
+            if (a != VK_ATTACHMENT_UNUSED) {
+               VK_FROM_HANDLE(tu_image_view, resolve_view,
+                              common_info->resolveImageView);
+               cmd->state.attachments[a] = resolve_view;
+            }
          }
       }
    }
@@ -6959,7 +6973,7 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
    cmd->patchpoints_ctx = ralloc_context(NULL);
 
-   a = cmd->dynamic_subpass.fsr_attachment;
+   a = cmd->dynamic_subpasses[0].fsr_attachment;
    if (a != VK_ATTACHMENT_UNUSED) {
       const VkRenderingFragmentShadingRateAttachmentInfoKHR *fsr_info =
          vk_find_struct_const(pRenderingInfo->pNext,
@@ -7087,7 +7101,7 @@ tu_CmdSetRenderingInputAttachmentIndicesKHR(
    const struct vk_input_attachment_location_state *ial =
       &cmd->vk.dynamic_graphics_state.ial;
 
-   struct tu_subpass *subpass = &cmd->dynamic_subpass;
+   struct tu_subpass *subpass = &cmd->dynamic_subpasses[0];
 
    for (unsigned i = 0; i < ARRAY_SIZE(cmd->dynamic_input_attachments); i++) {
       subpass->input_attachments[i].attachment = VK_ATTACHMENT_UNUSED;
@@ -7128,7 +7142,23 @@ tu_CmdSetRenderingInputAttachmentIndicesKHR(
 
    subpass->input_count = input_count;
 
-   tu_set_input_attachments(cmd, cmd->state.subpass);
+   tu_set_input_attachments(cmd, subpass);
+}
+
+static void
+tu_next_subpass_lrz(struct tu_cmd_buffer *cmd,
+                    const struct tu_subpass *subpass,
+                    const struct tu_subpass *new_subpass)
+{
+   /* Track LRZ valid state
+    *
+    * TODO: Improve this tracking for keeping the state of the past depth/stencil images,
+    * so if they become active again, we reuse its old state.
+    */
+   if (new_subpass->depth_stencil_attachment.attachment != subpass->depth_stencil_attachment.attachment) {
+      cmd->state.lrz.valid = false;
+      cmd->state.dirty |= TU_CMD_DIRTY_LRZ;
+   }
 }
 
 template <chip CHIP>
@@ -7150,15 +7180,7 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
    const struct tu_subpass *subpass = cmd->state.subpass++;
    const struct tu_subpass *new_subpass = cmd->state.subpass;
 
-   /* Track LRZ valid state
-    *
-    * TODO: Improve this tracking for keeping the state of the past depth/stencil images,
-    * so if they become active again, we reuse its old state.
-    */
-   if (new_subpass->depth_stencil_attachment.attachment != subpass->depth_stencil_attachment.attachment) {
-      cmd->state.lrz.valid = false;
-      cmd->state.dirty |= TU_CMD_DIRTY_LRZ;
-   }
+   tu_next_subpass_lrz(cmd, subpass, new_subpass);
 
    if (cmd->state.tiling->possible) {
       if (cmd->state.pass->has_fdm)
@@ -7197,6 +7219,24 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
    tu_emit_subpass_begin<CHIP>(cmd);
 }
 TU_GENX(tu_CmdNextSubpass2);
+
+template <chip CHIP>
+VKAPI_ATTR void VKAPI_CALL
+tu_CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer,
+                            const VkBeginCustomResolveInfoEXT *pBeginShaderResolveInfo)
+{
+   VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
+
+   const struct tu_subpass *subpass = &cmd->dynamic_subpasses[0];
+
+   const struct tu_subpass *new_subpass = &cmd->dynamic_subpasses[1];
+   cmd->state.subpass = new_subpass;
+
+   tu_next_subpass_lrz(cmd, subpass, new_subpass);
+
+   tu_emit_subpass_begin<CHIP>(cmd);
+}
+TU_GENX(tu_CmdBeginCustomResolveEXT);
 
 static uint32_t
 tu6_user_consts_size(const struct tu_const_state *const_state,
