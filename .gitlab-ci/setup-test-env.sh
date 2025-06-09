@@ -352,7 +352,6 @@ function filter_env_vars() {
     env -0 | sort -z | while IFS= read -r -d '' line; do
         [[ "$line" == *=* ]] || continue
         local varname="${line%%=*}"
-        local value="${line#*=}"
 
         # Skip certain Mesa-specific variables
         if echo "$varname" | grep -qxE "$CI_EXCLUDE_ENV_VAR_REGEX"; then
@@ -369,7 +368,7 @@ function filter_env_vars() {
             continue
         fi
 
-        printf "export %s=%s\n" "$varname" "${value@Q}"
+        echo "${!varname@A}"
     done
     x_restore
 }
