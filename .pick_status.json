@@ -1,5 +1,405 @@
 [
     {
+        "sha": "19e494a461630c796b1c0a0cf29043e2efd04d0f",
+        "description": "panfrost/ci: smoke test AFBC-P in CI",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e19e8012e4ab712dd462574eef17093ce34b06b8",
+        "description": "docs: crnm: document token usage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "acebfc7a38ce7b1f498ded6bfae4cabc879bb8e8",
+        "description": "ci: disable Collabora's farm due to maintenance",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "870b8717b25eceadac8dd653debe8346826227cb",
+        "description": "Revert \"hasvk/elk: stop turning load_push_constants into load_uniform\"",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ac042d11789038eaf587cea13c1df0cbd568dd6d",
+        "description": "lima: Convert to use nir_shader_intrinsics_pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "52d028e06c35d86355b9fbaf409e961b2bb26338",
+        "description": "freedreno: Enable the X1-45",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1eef2a65c7aee0c2e5ef31c9cd22a64b426936af",
+        "description": "freedreno: Fold X1-85 back into existing dev table entry",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd7efb880534cfbed80b1e4c531f1ca063c8b719",
+        "description": "egl: export GL-CL interop functions from libEGL_mesa.so",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c8496e2f64ef4d98cf4d0c03c040d90e0960edd",
+        "description": "freedreno: Sort MRTs so output is stable",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2859fd34f343657c790b6cabed1db2a80cf16854",
+        "description": "r300: minor fix for backend writer/reader detection",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d279d019d45d9038356eb7b9747ef0b208a56d2c",
+        "description": "ac/nir/tess: remove parameter from and simplify hs_per_patch_output_vmem_offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5734a916d619487d66991e7a26b0beb06b984913",
+        "description": "ac: move tcs_offchip_layout into ac_shader_args",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5994e08f8bece743d8475486a5e92be57b86b006",
+        "description": "ac: set LDS limit for TCS to 32K for all chips",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa5e07d5f74ece0226d6bf86a00bb3254791e468",
+        "description": "ac/nir/tess: write TCS patch outputs to memory as vec4 stores at the end",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c732306c5aa2e3cce19002f2b02d4b394b11bba7",
+        "description": "ac/nir/tess: unify computing LDS output patch size, minimize LDS bank conflicts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37dc376395773b8ccde2e1e6db7a9c3c715a7e17",
+        "description": "ac/nir/tess: use if-ladder to determine valid tess level components for the vote",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f0d9495c5fa67f5281f97df0dae00d75923f12b",
+        "description": "ac/nir/tess: inline mask helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10ae5b2fbfdfdbc30f80f7167820dfa596074ec2",
+        "description": "ac/nir/tess: rewrite tess level tracking, don't use LDS for more cases",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "be44da1888c9550393c4178a0a1543dea4d481f4",
+        "description": "radeonsi: replace tess_levels_written_for_tes mask with a count",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d9cfd89da111f644fdd97382ee89818e92826d4",
+        "description": "ac/nir/tess: compute the number of remapped VRAM outputs in common code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea7006082678bee3123420d449f7a9bede38270d",
+        "description": "ac/nir/tess: stop using tes_inputs_read / tes_patch_inputs read for TCS & TES",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c38bc4824f3a59406a07bcfcf190235529acf7e3",
+        "description": "ac/nir/tess: apply no_varying to ac_nir_tess_io_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f2c48652da87162fd1d68323af0f5a3a518b4f33",
+        "description": "nir: add shader_info::tess::tcs_*outputs_read_by_tes*",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42445e271e1c2c9d508860b50c4854403094fd74",
+        "description": "radv,radeonsi: use ac_nir_tess_io_info for LDS size computation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c678844ccb0dfdccf344edfbe032102419ee9cf7",
+        "description": "ac/nir/tess: move LDS and VMEM output masks into a new info structure",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f9c2a01f6a95c8892d16a7f817b031dee2fec6a1",
+        "description": "ac/nir/tess: indent a block for nir_if",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d967266edda41abd21c04b55398950be8cc9c301",
+        "description": "ac/nir/tess: if all tess levels are 0, skip per-vertex TCS output stores",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1237256cb48f107d4d612e9e66954edbcbe476a",
+        "description": "ac/nir/tess: execute the tess level workgroup vote on all chips",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c16228359479f29d057c29302f5e916cc374ae4",
+        "description": "ac/nir/tess: write TCS per-vertex outputs to memory as vec4 stores at the end",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "509f0e62ad2ecc51c7d4dc3b9741b74bde57d4fb",
+        "description": "ac/nir/tess: allow passing explicit patch_offset to VMEM/LDS offset calculations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a59464b6e3bf7d79c3d2af2eb66f44383e6c2ae2",
+        "description": "radv,radeonsi: precompute and pass TCS per-vertex output stride via a user SGPR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "742227c65c878a0401d60bcd6ea02f132f9bc0d8",
+        "description": "radv,radeonsi: make TCS_OFFCHIP_LAYOUT_NUM_PATCHES not off by one",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8d3e3c72e07b42871da79077dfcb559f9f8f0872",
+        "description": "radv,radeonsi: merge PATCH_CONTROL_POINT & OUT_PATCH_CP into 1 field",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "534b2825737132021683991ea347694e1680dec4",
+        "description": "ac/nir/tess: adjust memory layout of TCS outputs to have aligned store offsets",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80236f236796d769d9808c28c9f71bf15cb6845b",
+        "description": "ac/nir/tess: add if/endif for HS threads in NIR instead of ACO/LLVM",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cd366b57d9cb0121cb446ed4dd182408b14388bf",
+        "description": "ac/nir: implement load_subgroup_id/local_invocation_index for TCS on gfx6-10.x",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b937d8be9df0c4116b8131ede634fc0aef17026d",
+        "description": "docs: add sha sum for 25.1.3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c25b090021ae8d25446328f37f05e47d1b2851d",
+        "description": "docs: add release notes for 25.1.3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f787ff64e0cde6b7d22cbebb3ecfe33d4bb3794",
+        "description": "docs: update calendar for 25.1.3",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8bd9ac7894af0059d9e268fb644833173934714",
+        "description": "brw: don't unconditionally print message on instance creation",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "52f73db5b78a4c105eb78c80487e6651d492ceb5",
+        "notes": null
+    },
+    {
         "sha": "16dbcd9b04456f6666be2e84d76d40c1d3564ff2",
         "description": "r300/ci: add two flakes",
         "nominated": false,
