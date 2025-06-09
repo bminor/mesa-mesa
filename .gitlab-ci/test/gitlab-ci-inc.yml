@@ -1,0 +1,525 @@
+.test:
+  # Cancel job if a newer commit is pushed to the same branch
+  interruptible: true
+  variables:
+    GIT_STRATEGY: none  # testing doesn't build anything from source
+  # `before_script:` is only used by test jobs on generic fdo runners
+  # it's overwritten by hardware test jobs
+  before_script:
+    - !reference [.download_s3, before_script]
+    - section_start ldd_section "Checking ldd on driver build"
+    - LD_LIBRARY_PATH=install/lib find install/lib -name "*.so" -print -exec ldd {} \;
+    - section_end ldd_section
+  artifacts:
+    when: always
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
+    paths:
+      - results/
+  rules:
+    - !reference [.common-rules, rules]
+    - !reference [.never-post-merge-rules, rules]
+
+.formatting-check:
+  # Cancel job if a newer commit is pushed to the same branch
+  interruptible: true
+  stage: code-validation
+  extends:
+    - .use-debian/arm64_build
+  variables:
+    GIT_STRATEGY: fetch
+  timeout: 10m
+  script:
+    - git diff --color=always --exit-code  # Fails if there are diffs
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
+
+.test-gl:
+  extends:
+    - .test
+    - .use-debian/x86_64_test-gl
+  needs:
+    - job: debian/x86_64_test-gl
+      optional: true
+    - job: debian-x86_64
+    - !reference [.required-for-hardware-jobs, needs]
+  variables:
+    DEBIAN_ARCH: amd64
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
+
+.test-vk:
+  extends:
+    - .test
+    - .use-debian/x86_64_test-vk
+  needs:
+    - job: debian-x86_64
+    - job: debian/x86_64_test-vk
+      optional: true
+    - !reference [.required-for-hardware-jobs, needs]
+  variables:
+    DEBIAN_ARCH: amd64
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
+
+.test-cl:
+  extends:
+    - .test
+    - .use-debian/x86_64_test-gl
+  needs:
+    - job: debian/x86_64_test-gl
+      optional: true
+    - !reference [.required-for-hardware-jobs, needs]
+  variables:
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
+
+.test-android:
+  extends:
+    - .test
+    - .use-debian/x86_64_test-android
+  variables:
+    # This is for the guest artifacts from debian-android which will be
+    # downloaded explicitly by cuttlefish-runner.sh
+    S3_ANDROID_ARTIFACT_NAME: mesa-x86_64-android-debug
+    S3_ARTIFACT_NAME: mesa-x86_64-default-debugoptimized
+    # Set the default Vulkan driver to lavapipe for some preliminary checks
+    # that Cuttlefish always performs before starting the VM. This can be
+    # overwritten depending on the physical machine running the job.
+    VK_DRIVER: "lvp"
+  needs:
+    - job: debian-x86_64
+      artifacts: true  # On the host we want the Linux build
+    - job: debian-android
+      artifacts: false  # The Android build will be downloaded later
+    - job: debian/x86_64_test-android
+      artifacts: false
+      optional: true
+    - !reference [.required-for-hardware-jobs, needs]
+  timeout: 20m
+  script:
+    - ./install/cuttlefish-runner.sh
+  artifacts:
+    paths:
+      - results/
+
+.test-android-cts:
+  variables:
+    ANDROID_CTS_TAG: ${CONDITIONAL_BUILD_ANDROID_CTS_TAG}
+
+.test-angle:
+  variables:
+    ANGLE_TAG: ${CONDITIONAL_BUILD_ANGLE_TAG}
+
+.test-crosvm:
+  variables:
+    CROSVM_TAG: ${CONDITIONAL_BUILD_CROSVM_TAG}
+
+.test-fluster:
+  variables:
+    FLUSTER_TAG: ${CONDITIONAL_BUILD_FLUSTER_TAG}
+    FLUSTER_RESULTS: "${GPU_VERSION}-${FLUSTER_CODEC}"
+    HWCI_TEST_SCRIPT: install/fluster-runner.sh
+
+.test-piglit:
+  variables:
+    PIGLIT_TAG: ${CONDITIONAL_BUILD_PIGLIT_TAG}
+
+.test-vkd3d-proton:
+  variables:
+    VKD3D_PROTON_TAG: ${CONDITIONAL_BUILD_VKD3D_PROTON_TAG}
+    HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
+
+.piglit-traces-test:
+  artifacts:
+    when: on_failure
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
+    reports:
+      junit: results/junit.xml
+    paths:
+      - results/
+    exclude:
+      - results/*.shader_cache
+  extends:
+    - .test-piglit
+  variables:
+    # until we overcome Infrastructure issues, give traces extra 5 min before timeout
+    DEVICE_HANGING_TIMEOUT_SEC: 600
+    PIGLIT_REPLAY_EXTRA_ARGS: --db-path ${CI_PROJECT_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PUBLIC_BUCKET} --jwt-file=${S3_JWT_FILE}
+    PIGLIT_NO_WINDOW: 1
+    HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
+  script:
+    - section_start variables "Variables passed through:"
+    - filter_env_vars
+    - section_end variables
+    - install/piglit/piglit-traces.sh
+
+.deqp-test:
+  script:
+    - rm -rf results  # Clear out old results if the docker container was cached
+    - ./install/deqp-runner.sh
+  artifacts:
+    exclude:
+      - results/*.shader_cache
+    reports:
+      junit: results/junit.xml
+
+.fossilize-test:
+  script:
+    - ./install/fossilize-runner.sh
+  artifacts:
+    when: on_failure
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
+    paths:
+      - results/
+
+.download_s3:
+  before_script:
+    - !reference [default, before_script]
+    # Use this instead of gitlab's artifacts download because it hits packet.net
+    # instead of fd.o.  Set FDO_HTTP_CACHE_URI to an http cache for your test lab to
+    # improve it even more (see https://docs.mesa3d.org/ci/bare-metal.html for
+    # setup).
+    - section_start artifacts_download "Downloading artifacts from s3"
+    # Note: Build dir (and thus install) may be dirty due to GIT_STRATEGY
+    - rm -rf install
+    - (set -x; curl -L --retry 4 -f --retry-all-errors --retry-delay 60 ${FDO_HTTP_CACHE_URI:-}https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}.tar.zst | tar --zstd -x)
+    - section_end artifacts_download
+
+.baremetal-test:
+  extends:
+    - .test
+  # Cancel job if a newer commit is pushed to the same branch
+  interruptible: true
+  before_script:
+    - !reference [.download_s3, before_script]
+  variables:
+    BM_ROOTFS: /rootfs-${DEBIAN_ARCH}
+  artifacts:
+    when: always
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
+    paths:
+      - results/
+      - serial*.txt
+    exclude:
+      - results/*.shader_cache
+    reports:
+      junit: results/junit.xml
+
+# ARM testing of bare-metal boards attached to an x86 gitlab-runner system
+.baremetal-test-arm32-gl:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm32_test-gl
+  variables:
+    DEBIAN_ARCH: armhf
+    S3_ARTIFACT_NAME: mesa-arm32-default-debugoptimized
+  needs:
+    - job: debian/baremetal_arm32_test-gl
+      optional: true
+    - job: debian-arm32
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+# ARM64 testing of bare-metal boards attached to an x86 gitlab-runner system
+.baremetal-test-arm64-gl:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test-gl
+  variables:
+    DEBIAN_ARCH: arm64
+    S3_ARTIFACT_NAME: mesa-arm64-default-debugoptimized
+  needs:
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+# ARM64 testing of bare-metal boards attached to an x86 gitlab-runner system
+.baremetal-test-arm64-vk:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test-vk
+  variables:
+    DEBIAN_ARCH: arm64
+    S3_ARTIFACT_NAME: mesa-arm64-default-debugoptimized
+  needs:
+    - job: debian/baremetal_arm64_test-vk
+      optional: true
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+# ARM32/64 testing of bare-metal boards attached to an x86 gitlab-runner system, using an asan mesa build
+.baremetal-arm32-asan-test-gl:
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm32-asan-debugoptimized
+    DEQP_FORCE_ASAN: 1
+  needs:
+    - job: debian/baremetal_arm32_test-gl
+      optional: true
+    - job: debian-arm32-asan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-arm64-asan-test-gl:
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
+    DEQP_FORCE_ASAN: 1
+  needs:
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
+    - job: debian-arm64-asan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-arm64-asan-test-vk:
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
+    DEQP_FORCE_ASAN: 1
+  needs:
+    - job: debian/baremetal_arm64_test-vk
+      optional: true
+    - job: debian-arm64-asan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-arm64-ubsan-test-gl:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test-gl
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
+  needs:
+    - job: debian/baremetal_arm64_test-gl
+      optional: true
+    - job: debian-arm64-ubsan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-arm64-ubsan-test-vk:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test-vk
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
+  needs:
+    - job: debian/baremetal_arm64_test-vk
+      optional: true
+    - job: debian-arm64-ubsan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
+.baremetal-deqp-test:
+  variables:
+    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
+    FDO_CI_CONCURRENT: 0  # Default to number of CPUs
+
+# For CI-tron based testing farm jobs.
+.ci-tron-test:
+  extends:
+    - .ci-tron-b2c-job-v1
+  variables:
+    GIT_STRATEGY: none
+    B2C_VERSION: v0.9.15.1  # Linux 6.13.7
+
+    SCRIPTS_DIR: install
+
+    CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: exit_code: 0\r$'
+    CI_TRON_PATTERN__SESSION_END__REGEX: '^.*It''s now safe to turn off your computer\r$'
+
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__MINUTES: 2
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__RETRIES: 3
+    CI_TRON_TIMEOUT__CONSOLE_ACTIVITY__MINUTES: 5
+
+    CI_TRON__B2C_ARTIFACT_EXCLUSION: "*.shader_cache,install/*,*/install/*,*/vkd3d-proton.cache*,vkd3d-proton.cache*,*.qpa"
+    CI_TRON_HTTP_ARTIFACT__INSTALL__PATH: "/install.tar.zst"
+    CI_TRON_HTTP_ARTIFACT__INSTALL__URL: "https://$PIPELINE_ARTIFACTS_BASE/$S3_ARTIFACT_NAME.tar.zst"
+
+    CI_TRON__B2C_MACHINE_REGISTRATION_CMD: "setup --tags $CI_TRON_DUT_SETUP_TAGS"
+    CI_TRON__B2C_IMAGE_UNDER_TEST: $MESA_IMAGE
+    CI_TRON__B2C_EXEC_CMD: "curl --silent --fail-with-body {{ job.http.url }}$CI_TRON_HTTP_ARTIFACT__INSTALL__PATH | tar --zstd --extract && $SCRIPTS_DIR/common/init-stage2.sh"
+
+    # Assume by default this is running deqp, as that's almost always true
+    HWCI_TEST_SCRIPT: install/deqp-runner.sh
+
+    # Keep the job script in the artifacts
+    CI_TRON_JOB_SCRIPT_PATH: results/job_script.sh
+  needs:
+    - !reference [.required-for-hardware-jobs, needs]
+  tags:
+    - farm:$RUNNER_FARM_LOCATION
+    - $CI_TRON_DUT_SETUP_TAGS
+
+  # Override the default before_script, as it is not compatible with the CI-tron environment. We just keep the clearing
+  # of the JWT token for security reasons
+  before_script:
+    - |
+      set -eu
+
+      eval "$S3_JWT_FILE_SCRIPT"
+
+      for var in CI_TRON_DUT_SETUP_TAGS; do
+        if [[ -z "$(eval echo \${$var:-})" ]]; then
+          echo "The required variable '$var' is missing"
+          exit 1
+        fi
+      done
+
+      # Open a section that will be closed by b2c
+      echo -e "\n\e[0Ksection_start:`date +%s`:b2c_kernel_boot[collapsed=true]\r\e[0K\e[0;36m[$(cut -d ' ' -f1 /proc/uptime)]: Submitting the CI-tron job and booting the DUT\e[0m\n"
+
+  # Anything our job places in results/ will be collected by the
+  # Gitlab coordinator for status presentation. results/junit.xml
+  # will be parsed by the UI for more detailed explanations of
+  # test execution.
+  artifacts:
+    when: always
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
+    paths:
+      - results
+    reports:
+      junit: results/**/junit.xml
+
+.ci-tron-x86_64-test:
+  extends:
+    - .ci-tron-test
+  variables:
+    CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_amd64.cpio.xz'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64'
+
+    # Set the following variables if you need AMD, Intel, or NVIDIA support
+    # CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
+    # CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
+    # CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: "(lib/(modules|firmware/amdgpu)/.*)"
+
+    S3_ARTIFACT_NAME: "mesa-x86_64-default-debugoptimized"
+
+.ci-tron-x86_64-test-vk:
+  extends:
+    - .use-debian/x86_64_test-vk
+    - .ci-tron-x86_64-test
+  needs:
+    - job: debian/x86_64_test-vk
+      artifacts: false
+      optional: true
+    - job: debian-x86_64
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-x86_64-test-vk-manual:
+  extends:
+    - .use-debian/x86_64_test-vk
+    - .ci-tron-x86_64-test
+  variables:
+    S3_ARTIFACT_NAME: "debian-build-x86_64"
+  needs:
+    - job: debian/x86_64_test-vk
+      artifacts: false
+      optional: true
+    - job: debian-build-x86_64
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-x86_64-test-gl:
+  extends:
+    - .use-debian/x86_64_test-gl
+    - .ci-tron-x86_64-test
+  needs:
+    - job: debian/x86_64_test-gl
+      artifacts: false
+      optional: true
+    - job: debian-x86_64
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-x86_64-test-gl-manual:
+  extends:
+    - .use-debian/x86_64_test-gl
+    - .ci-tron-x86_64-test
+  variables:
+    S3_ARTIFACT_NAME: "debian-build-x86_64"
+  needs:
+    - job: debian/x86_64_test-gl
+      artifacts: false
+      optional: true
+    - job: debian-build-x86_64
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-arm64-test:
+  extends:
+    - .ci-tron-test
+  variables:
+    CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_arm64.cpio.xz'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-arm64'
+    S3_ARTIFACT_NAME: "mesa-arm64-default-debugoptimized"
+
+.ci-tron-arm64-test-vk:
+  extends:
+    - .use-debian/arm64_test-vk
+    - .ci-tron-arm64-test
+  needs:
+    - job: debian/arm64_test-vk
+      artifacts: false
+      optional: true
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-arm64-test-gl:
+  extends:
+    - .use-debian/arm64_test-gl
+    - .ci-tron-arm64-test
+  needs:
+    - job: debian/arm64_test-gl
+      artifacts: false
+      optional: true
+    - job: debian-arm64
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-arm32-test:
+  extends:
+    - .ci-tron-test
+  variables:
+    CI_TRON_INITRAMFS__B2C__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/initramfs.linux_arm.cpio.xz'
+    CI_TRON_KERNEL__URL: 'https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-arm'
+    S3_ARTIFACT_NAME: "mesa-arm32-default-debugoptimized"
+
+.ci-tron-arm32-test-vk:
+  extends:
+    - .use-debian/arm32_test-vk
+    - .ci-tron-arm32-test
+  needs:
+    - job: debian/arm32_test-vk
+      artifacts: false
+      optional: true
+    - job: debian-arm32
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-arm32-test-gl:
+  extends:
+    - .use-debian/arm32_test-gl
+    - .ci-tron-arm32-test
+  needs:
+    - job: debian/arm32_test-gl
+      artifacts: false
+      optional: true
+    - job: debian-arm32
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
+.ci-tron-arm32-test-asan-gl:
+  extends:
+    - .use-debian/arm32_test-gl
+    - .ci-tron-arm32-test
+  variables:
+    S3_ARTIFACT_NAME: "mesa-arm32-asan-debugoptimized"
+    DEQP_FORCE_ASAN: 1
+  needs:
+    - job: debian/arm32_test-gl
+      artifacts: false
+      optional: true
+    - job: debian-arm32-asan
+      artifacts: false
+    - !reference [.ci-tron-test, needs]
+
