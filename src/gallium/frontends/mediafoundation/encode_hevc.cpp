@@ -439,7 +439,6 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
             {
                pPicInfo->slices_descriptors[i].slice_segment_address = slice_starting_mb;
                pPicInfo->slices_descriptors[i].num_ctu_in_slice = blocks_per_slice;
-               pPicInfo->slices_descriptors[i].slice_type = PIPE_H265_SLICE_TYPE_P;   // %%%TODO%%%
                slice_starting_mb += blocks_per_slice;
             }
          }
@@ -671,7 +670,6 @@ CDX12EncHMFT::GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LP
 
    h265_pic_desc.base.profile = m_outputPipeProfile;
 
-   // TODO: might not be needed for 265, check later, for now dup logic
    h265_pic_desc.pic_order_cnt_type = ( p_picture_period > 2 ) ? 0u : 2u;
    h265_pic_desc.pic_order_cnt = 0;                                // cur_frame_desc->gop_info->picture_order_count;
    h265_pic_desc.picture_type = PIPE_H2645_ENC_PICTURE_TYPE_IDR;   // cur_frame_desc->gop_info->frame_type;

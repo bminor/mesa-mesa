@@ -637,7 +637,6 @@ CDX12EncHMFT::OnDrain()
    }
    CHECKHR_GOTO( QueueEvent( METransformDrainComplete, GUID_NULL, S_OK, nullptr ), done );
    // NOTE: Draining doesn't really complete here, it completes on next MFT_MESSAGE_NOTIFY_START_OF_STREAM
-   // %%%TODO - consider using m_bStreaming as the control variable, instead of the additional m_bDraining?
 done:
    return hr;
 }
@@ -907,9 +906,6 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
                                                   m_hSharedFenceHandle,
                                                   NULL,
                                                   PIPE_FD_TYPE_TIMELINE_SEMAPHORE );
-
-      // TODO: CODECAPI_AVEncMPVDefaultBPictureCount > 0 not implemented fully (e.g frame batching by display order +
-      // reordered pipe submission in encode order from MF sample input frames queue)
 
       hr = S_OK;
    }
@@ -1282,36 +1278,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                UINT64 frameDuration = 0;
                GUID guidMajorType = { 0 };
                GUID guidSubType = { 0 };
-#if 0
-                        // to ensure DTS is always less than or equal to PTS for MPEG-2 TS/PS and MPEG-4 file format
-                        // an offset is added to PTS
-                        // ideally the offset shall be (frame duration) * (the max number of reordered frames)
-                        // MS H.264 encoder has a fixed GOP pattern of IPBPB... or IPBBPBB.. or IPBBBPBBB...
-                        // that is, the number of reordered frames is 1 currently
-                        if (m_uiBFrameCount)
-                        {
-                           hr = spOutputSample->SetSampleTime(qwOutputSamplePTS+qwOutputSamplePTSDuration);
-                        }
-                        else
-                        {
-                           hr = spOutputSample->SetSampleTime(qwOutputSamplePTS);
-                        }
 
-                        if (EncOutputInfo.m_pQPMap && EncOutputInfo.m_dwQPMapSize) {
-                           pOutputSamples[0].pSample->SetBlob (MFSampleExtension_VideoEncodeQPMap, EncOutputInfo.m_pQPMap, EncOutputInfo.m_dwQPMapSize);
-                        }
-                        pOutputSamples[0].pSample->SetUINT32( MFSampleExtension_LongTermReferenceFrameInfo, ( ( EncOutputInfo.m_dwUsedLTRIndex << 16 ) | 0x0000ffff ) & ( EncOutputInfo.m_dwLongTermFrameIdx | 0xffff0000 ) );
-                        if (m_uiMeanAbsoluteDifference)
-                        {
-                           UINT32 uiMeanSAD = EncOutputInfo.m_uiMeanSAD;
-                           CHECKHR_GOTO(pOutputSamples[0].pSample->SetUINT32(MFSampleExtension_MeanAbsoluteDifference, uiMeanSAD), done);
-                        }
-                        if (EncOutputInfo.m_bLastSlice)
-                        {
-                           (void)pOutputSamples[0].pSample->SetUINT32(MFSampleExtension_LastSlice, 1);
-                        }
-
-#endif
                pThis->m_spOutputType->GetMajorType( &guidMajorType );
                spOutputSample->SetGUID( MF_MT_MAJOR_TYPE, guidMajorType );
                pThis->m_spOutputType->GetGUID( MF_MT_SUBTYPE, &guidSubType );

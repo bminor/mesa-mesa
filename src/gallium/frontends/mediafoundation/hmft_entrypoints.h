@@ -220,8 +220,6 @@ typedef struct tVUInfo
 
    BOOL bEnableVST;
    VideoSignalType stVidSigType;
-
-   // TODO: This seems incomplete, more VUI params to fill and then plumb to DX12 backend VUI header writer
 } VUInfo;
 
 // Slice control modes supported by the encoder.
@@ -409,7 +407,6 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    MFRatio m_PixelAspectRatio = { 1, 1 };   // default to 1:1
    MFNominalRange m_eNominalRange = MFNominalRange_16_235;
 
-   // TODO%%% Convert this to a map based on CODECAPI_guidname...
    BOOL m_bForceKeyFrame = FALSE;
    UINT32 m_uiRateControlMode = eAVEncCommonRateControlMode_CBR;
    BOOL m_bRateControlModeSet = FALSE;

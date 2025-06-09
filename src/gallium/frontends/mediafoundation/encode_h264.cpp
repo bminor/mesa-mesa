@@ -403,100 +403,6 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       }
    }
 
-   //
-   // TODO: Just to test the backend, needs proper plumbing to CodecAPI
-   //
-#if 0   // TODO: Enable me
-   if (//(m_EncoderCapabilities.m_HWSupportMoveRects.bits.max_motion_hints > 0)
-      // (m_EncoderCapabilities.m_HWSupportMoveRects.bits.supports_precision_full_pixel) &&
-      (pPicInfo->dpb_size > 1) /*at least 1 ref frame*/)
-   {
-      pPicInfo->move_info.input_mode = PIPE_ENC_MOVE_INFO_INPUT_MODE_MAP;
-
-      if (pPicInfo->move_info.input_mode == PIPE_ENC_MOVE_INFO_INPUT_MODE_MAP)
-      {
-         pPicInfo->move_info.num_hints = 1u;
-         pPicInfo->move_info.map_mv_precision = PIPE_ENC_MOVE_MAP_MOTION_UNIT_PRECISION_FULL_PIXEL;
-
-         struct pipe_resource templ = {};
-         memset(&templ, 0, sizeof(templ));
-         templ.target = PIPE_TEXTURE_2D;
-         templ.usage = PIPE_USAGE_DEFAULT;
-         templ.depth0 = 1;
-         templ.array_size = 1;
-         templ.format = PIPE_FORMAT_R16G16_SINT;
-         templ.width0 = pDX12EncodeContext->pPipeVideoBuffer->width;
-         templ.height0 = static_cast<uint16_t>(pDX12EncodeContext->pPipeVideoBuffer->height);
-
-         CHECKNULL_GOTO(
-            pPicInfo->move_info.gpu_motion_vectors_map[0] = m_pVlScreen->pscreen->resource_create(m_pVlScreen->pscreen, &templ),
-            E_OUTOFMEMORY,
-            done);
-
-         templ.format = PIPE_FORMAT_R8_UINT;
-         CHECKNULL_GOTO(
-            pPicInfo->move_info.gpu_motion_metadata_map[0] = m_pVlScreen->pscreen->resource_create(m_pVlScreen->pscreen, &templ),
-            E_OUTOFMEMORY,
-            done);
-      }
-      else if (pPicInfo->move_info.input_mode == PIPE_ENC_MOVE_INFO_INPUT_MODE_RECTS)
-      {
-         pPicInfo->move_info.num_rects = 2;
-         pPicInfo->move_info.rects[0].source_point = {
-            //       uint32_t x;
-            0u,
-            //       uint32_t y;
-            0u,
-         };
-         pPicInfo->move_info.rects[0].dest_rect = {
-            //       uint32_t top;
-            20u,
-            //       uint32_t left;
-            20u,
-            //       uint32_t right;
-            36u,
-            //       uint32_t bottom;
-            36u,
-         };
-
-         pPicInfo->move_info.rects[1].source_point = {
-            //       uint32_t x;
-            40u,
-            //       uint32_t y;
-            40u,
-         };
-         pPicInfo->move_info.rects[1].dest_rect = {
-            //       uint32_t top;
-            50u,
-            //       uint32_t left;
-            50u,
-            //       uint32_t right;
-            66u,
-            //       uint32_t bottom;
-            66u,
-         };
-
-         // It's always the latest one in reference_frames_tracker_h264 for now, but better
-         // to set a new uint in from reference_frames_tracker_h264 or iterate on the dpb snap array
-         // and find the index that matches with current pic poc == dpb.poc
-         pPicInfo->move_info.dpb_reference_index = pPicInfo->dpb_size - 1;
-         pPicInfo->move_info.precision = PIPE_ENC_MOVE_INFO_PRECISION_UNIT_FULL_PIXEL;
-         pPicInfo->move_info.overlapping_rects = false;
-      }
-   }
-#endif
-
-
-   //
-   // TODO: Just to test the backend, needs proper plumbing to CodecAPI
-   //
-#if 0   // TODO: Enable me
-   pPicInfo->gpu_stats_qp_map = pDX12EncodeContext->pPipeResourceQPMapStats;
-   pPicInfo->gpu_stats_satd_map = pDX12EncodeContext->pPipeResourceSATDMapStats;
-   pPicInfo->gpu_stats_rc_bitallocation_map = pDX12EncodeContext->pPipeResourceRCBitAllocMapStats;
-   pPicInfo->gpu_stats_psnr = pDX12EncodeContext->pPipeResourcePSNRStats;
-#endif
-
    // Quality vs speed
    // PIPE: The quality level range is [1..m_uiMaxHWSupportedQualityVsSpeedLevel]
    // A lower value means higher quality (slower encoding speed), and a value of 1 represents the highest quality
@@ -535,7 +441,6 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
             {
                pPicInfo->slices_descriptors[i].macroblock_address = slice_starting_mb;
                pPicInfo->slices_descriptors[i].num_macroblocks = blocks_per_slice;
-               pPicInfo->slices_descriptors[i].slice_type = PIPE_H264_SLICE_TYPE_P;   // %%%TODO%%%
                slice_starting_mb += blocks_per_slice;
             }
          }
@@ -558,7 +463,6 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
             {
                pPicInfo->slices_descriptors[i].macroblock_address = slice_starting_mb;
                pPicInfo->slices_descriptors[i].num_macroblocks = blocks_per_slice;
-               pPicInfo->slices_descriptors[i].slice_type = PIPE_H264_SLICE_TYPE_P;   // %%%TODO%%%
                slice_starting_mb += blocks_per_slice;
             }
          }
