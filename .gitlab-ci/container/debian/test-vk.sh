@@ -33,6 +33,7 @@ EPHEMERAL=(
     libx11-xcb-dev
     libxcb-dri2-0-dev
     libxcb-ewmh-dev
+    libxcb-glx0-dev
     libxcb-keysyms1-dev
     libxkbcommon-dev
     libxrandr-dev
