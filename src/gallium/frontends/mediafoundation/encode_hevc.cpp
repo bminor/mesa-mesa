@@ -383,6 +383,11 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       }
    }
 
+   pPicInfo->gpu_stats_qp_map = pDX12EncodeContext->pPipeResourceQPMapStats;
+   pPicInfo->gpu_stats_satd_map = pDX12EncodeContext->pPipeResourceSATDMapStats;
+   pPicInfo->gpu_stats_rc_bitallocation_map = pDX12EncodeContext->pPipeResourceRCBitAllocMapStats;
+   pPicInfo->gpu_stats_psnr = pDX12EncodeContext->pPipeResourcePSNRStats;
+
    // Quality vs speed
    // PIPE: The quality level range is [1..m_uiMaxHWSupportedQualityVsSpeedLevel]
    // A lower value means higher quality (slower encoding speed), and a value of 1 represents the highest quality
