@@ -335,6 +335,10 @@ index("unsigned", "neg_hi_amd")
 index("unsigned", "systolic_depth")
 index("unsigned", "repeat_count")
 
+# For Intel convert_cmat_intel intrinsic.
+index("struct glsl_cmat_description", "dst_cmat_desc")
+index("struct glsl_cmat_description", "src_cmat_desc")
+
 # For an AGX tilebuffer intrinsics, whether the coordinates are implicit or
 # explicit. Implicit coordinates are used in fragment shaders, explicit
 # coordinates in compute.
@@ -2467,6 +2471,10 @@ system_value("ray_query_global_intel", 1, bit_sizes=[64])
 # component count of that matrix different than the others.
 intrinsic("dpas_intel", dest_comp=0, src_comp=[0, -1, -1],
           indices=[DEST_BASE_TYPE, SRC_BASE_TYPE, SATURATE, SYSTOLIC_DEPTH, REPEAT_COUNT],
+          flags=[CAN_ELIMINATE])
+
+intrinsic("convert_cmat_intel", dest_comp=0, src_comp=[-1],
+          indices=[DST_CMAT_DESC, SRC_CMAT_DESC],
           flags=[CAN_ELIMINATE])
 
 # NVIDIA-specific intrinsics
