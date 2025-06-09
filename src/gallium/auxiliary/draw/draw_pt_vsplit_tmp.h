@@ -113,7 +113,7 @@ CONCAT2(vsplit_primitive_, ELT_TYPE)(struct vsplit_frontend *vsplit,
 
    return vsplit->middle->run_linear_elts(vsplit->middle,
                                           fetch_start, fetch_count,
-                                          draw_elts, istart, icount, 0x0);
+                                          draw_elts, istart, icount);
 }
 
 
