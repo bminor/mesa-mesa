@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "virtio/virtio-gpu/virtgpu_gfxstream_protocol.h"
+#include "virtio/virtio-gpu/virgl_hw.h"
 
 #define PIPE_BUFFER 0
 #define PIPE_TEXTURE_2D 2
