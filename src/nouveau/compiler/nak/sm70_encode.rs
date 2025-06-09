@@ -1558,7 +1558,7 @@ impl SM70Op for OpIMnMx {
         );
         if e.sm >= 120 {
             e.set_bit(74, false); // 64-bit
-            e.set_pred_src(77..80, 80, &true.into());
+            e.set_pred_src(77..80, 80, &false.into());
             e.set_pred_dst(81..84, &Dst::None);
             e.set_pred_dst(84..87, &Dst::None);
         }
