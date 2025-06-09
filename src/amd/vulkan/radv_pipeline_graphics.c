@@ -2766,8 +2766,9 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    /* Optimize constant clip/cull distance after linking to operate on scalar io in the last
     * pre raster stage.
     */
-   radv_foreach_stage (i,
-                       active_nir_stages & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+   radv_foreach_stage (
+      i, active_nir_stages &
+            (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) {
       if (stages[i].key.optimisations_disabled)
          continue;
 
