@@ -476,6 +476,9 @@ lower_intrinsic_to_arg(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    case nir_intrinsic_load_subgroup_invocation:
       replacement = nir_mbcnt_amd(b, nir_imm_intN_t(b, ~0ull, s->wave_size), nir_imm_int(b, 0));
       break;
+   case nir_intrinsic_load_task_ring_entry_amd:
+      replacement = ac_nir_load_arg(b, s->args, s->args->task_ring_entry);
+      break;
    default:
       return false;
    }

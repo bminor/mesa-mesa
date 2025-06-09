@@ -212,9 +212,6 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       replacement = nir_imul_imm(b, nir_iand_imm(b, ac_nir_load_arg(b, &s->args->ac, s->args->ac.gs_tg_info), 0xfff),
                                  RADV_MESH_SCRATCH_ENTRY_BYTES);
       break;
-   case nir_intrinsic_load_task_ring_entry_amd:
-      replacement = ac_nir_load_arg(b, &s->args->ac, s->args->ac.task_ring_entry);
-      break;
    case nir_intrinsic_load_lshs_vertex_stride_amd: {
       if (stage == MESA_SHADER_VERTEX) {
          replacement = nir_imm_int(b, get_tcs_input_vertex_stride(s->info->vs.num_linked_outputs));
