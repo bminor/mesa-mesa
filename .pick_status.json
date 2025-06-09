@@ -3544,7 +3544,7 @@
         "description": "ac/nir: run nir_lower_vars_to_ssa after nir_lower_task_shader",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
