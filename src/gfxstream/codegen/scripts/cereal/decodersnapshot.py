@@ -348,6 +348,7 @@ def api_special_implementation_vkResetCommandBuffer(api, cgen):
 
 def api_special_implementation_vkQueueFlushCommandsGOOGLE(api, cgen):
     api_special_implementation_common(api, cgen, "Tag_VkCmdOp")
+    cgen.stmt("mReconstruction.removeDescendantsOfHandle((uint64_t)(uintptr_t)commandBuffer)")
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)commandBuffer)")
 
     cgen.line("// Track that `handle` depends on previously tracked dependencies (e.g. the handle for this `vkQueueFlushCommandsGOOGLE()` call depends on the `VkPipeline` handle from `vkCmdBindPipeline()`).")
