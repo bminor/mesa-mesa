@@ -8,6 +8,7 @@
 #include "panvk_buffer.h"
 #include "panvk_cmd_buffer.h"
 #include "panvk_cmd_meta.h"
+#include "panvk_device_memory.h"
 #include "panvk_entrypoints.h"
 
 #include "pan_desc.h"
@@ -66,7 +67,7 @@ render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
    state->render.color_attachments.samples[index] = img->vk.samples;
 
 #if PAN_ARCH < 9
-   state->render.fb.bos[state->render.fb.bo_count++] = img->bo;
+   state->render.fb.bos[state->render.fb.bo_count++] = img->mem->bo;
 #endif
 
    fbinfo->rts[index].view = &iview->pview;
@@ -107,7 +108,7 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
       container_of(iview->vk.image, struct panvk_image, vk);
 
 #if PAN_ARCH < 9
-   state->render.fb.bos[state->render.fb.bo_count++] = img->bo;
+   state->render.fb.bos[state->render.fb.bo_count++] = img->mem->bo;
 #endif
 
    state->render.z_attachment.fmt = iview->vk.format;
@@ -171,7 +172,7 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
       container_of(iview->vk.image, struct panvk_image, vk);
 
 #if PAN_ARCH < 9
-   state->render.fb.bos[state->render.fb.bo_count++] = img->bo;
+   state->render.fb.bos[state->render.fb.bo_count++] = img->mem->bo;
 #endif
 
    state->render.s_attachment.fmt = iview->vk.format;
