@@ -1106,7 +1106,7 @@ nak_postprocess_nir(nir_shader *nir,
 
    if (nak->sm >= 73) {
       OPT(nir, nak_nir_mark_lcssa_invariants);
-      if (OPT(nir, nak_nir_lower_non_uniform_ldcx)) {
+      if (OPT(nir, nak_nir_lower_non_uniform_ldcx, nak)) {
          OPT(nir, nir_copy_prop);
          OPT(nir, nir_opt_dce);
       }
