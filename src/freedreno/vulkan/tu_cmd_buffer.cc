@@ -2075,7 +2075,7 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
       const struct tu_image_view *iview = cmd->state.attachments[a];
       const struct tu_render_pass_attachment *att =
          &cmd->state.pass->attachments[a];
-      uint32_t *dst = &texture.map[A6XX_TEX_CONST_DWORDS * i];
+      uint32_t dst[A6XX_TEX_CONST_DWORDS];
       uint32_t gmem_offset = tu_attachment_gmem_offset(cmd, att, 0);
       uint32_t cpp = att->cpp;
 
@@ -2134,8 +2134,10 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
          gmem_offset = att->gmem_offset_stencil[cmd->state.gmem_layout];
       }
 
-      if (!gmem || !subpass->input_attachments[i / 2].patch_input_gmem)
+      if (!gmem || !subpass->input_attachments[i / 2].patch_input_gmem) {
+         memcpy(&texture.map[i * A6XX_TEX_CONST_DWORDS], dst, sizeof(dst));
          continue;
+      }
 
       /* patched for gmem */
       dst[0] = pkt_field_set(A6XX_TEX_CONST_0_TILE_MODE, dst[0], TILE6_2);
@@ -2166,6 +2168,8 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
       dst[5] &= A6XX_TEX_CONST_5_DEPTH__MASK;
       for (unsigned i = 6; i < A6XX_TEX_CONST_DWORDS; i++)
          dst[i] = 0;
+
+      memcpy(&texture.map[i * A6XX_TEX_CONST_DWORDS], dst, sizeof(dst));
    }
 
    struct tu_cs cs;
