@@ -125,6 +125,7 @@ panvk_per_arch(get_physical_device_extensions)(
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
 #endif
+      .EXT_descriptor_indexing = PAN_ARCH >= 9,
       .EXT_extended_dynamic_state = true,
       .EXT_extended_dynamic_state2 = true,
       .EXT_external_memory_dma_buf = true,
@@ -281,7 +282,10 @@ panvk_per_arch(get_physical_device_features)(
       .shaderFloat16 = PAN_ARCH >= 10,
       .shaderInt8 = true,
 
-      .descriptorIndexing = false,
+      /* In theory, update-after-bind is supported on bifrost, but the
+       * descriptor limits would be too low for the descriptorIndexing feature.
+       */
+      .descriptorIndexing = PAN_ARCH >= 9,
       .shaderInputAttachmentArrayDynamicIndexing = true,
       .shaderUniformTexelBufferArrayDynamicIndexing = true,
       .shaderStorageTexelBufferArrayDynamicIndexing = true,
@@ -292,14 +296,14 @@ panvk_per_arch(get_physical_device_features)(
       .shaderInputAttachmentArrayNonUniformIndexing = true,
       .shaderUniformTexelBufferArrayNonUniformIndexing = true,
       .shaderStorageTexelBufferArrayNonUniformIndexing = true,
-      .descriptorBindingUniformBufferUpdateAfterBind = false,
-      .descriptorBindingSampledImageUpdateAfterBind = false,
-      .descriptorBindingStorageImageUpdateAfterBind = false,
-      .descriptorBindingStorageBufferUpdateAfterBind = false,
-      .descriptorBindingUniformTexelBufferUpdateAfterBind = false,
-      .descriptorBindingStorageTexelBufferUpdateAfterBind = false,
-      .descriptorBindingUpdateUnusedWhilePending = false,
-      .descriptorBindingPartiallyBound = false,
+      .descriptorBindingUniformBufferUpdateAfterBind = PAN_ARCH >= 9,
+      .descriptorBindingSampledImageUpdateAfterBind = PAN_ARCH >= 9,
+      .descriptorBindingStorageImageUpdateAfterBind = PAN_ARCH >= 9,
+      .descriptorBindingStorageBufferUpdateAfterBind = PAN_ARCH >= 9,
+      .descriptorBindingUniformTexelBufferUpdateAfterBind = PAN_ARCH >= 9,
+      .descriptorBindingStorageTexelBufferUpdateAfterBind = PAN_ARCH >= 9,
+      .descriptorBindingUpdateUnusedWhilePending = PAN_ARCH >= 9,
+      .descriptorBindingPartiallyBound = PAN_ARCH >= 9,
       .descriptorBindingVariableDescriptorCount = true,
       .runtimeDescriptorArray = true,
 
@@ -769,30 +773,46 @@ panvk_per_arch(get_physical_device_properties)(
       .shaderRoundingModeRTZFloat16 = true,
       .shaderRoundingModeRTZFloat32 = true,
       .shaderRoundingModeRTZFloat64 = false,
-      /* XXX: VK_EXT_descriptor_indexing */
-      .maxUpdateAfterBindDescriptorsInAllPools = 0,
+      /* VK_EXT_descriptor_indexing */
+      .maxUpdateAfterBindDescriptorsInAllPools =
+         PAN_ARCH >= 9 ? UINT32_MAX : 0,
       .shaderUniformBufferArrayNonUniformIndexingNative = false,
       .shaderSampledImageArrayNonUniformIndexingNative = false,
       .shaderStorageBufferArrayNonUniformIndexingNative = false,
       .shaderStorageImageArrayNonUniformIndexingNative = false,
       .shaderInputAttachmentArrayNonUniformIndexingNative = false,
-      .robustBufferAccessUpdateAfterBind = false,
+      .robustBufferAccessUpdateAfterBind = PAN_ARCH >= 9,
       .quadDivergentImplicitLod = false,
-      .maxPerStageDescriptorUpdateAfterBindSamplers = 0,
-      .maxPerStageDescriptorUpdateAfterBindUniformBuffers = 0,
-      .maxPerStageDescriptorUpdateAfterBindStorageBuffers = 0,
-      .maxPerStageDescriptorUpdateAfterBindSampledImages = 0,
-      .maxPerStageDescriptorUpdateAfterBindStorageImages = 0,
-      .maxPerStageDescriptorUpdateAfterBindInputAttachments = 0,
-      .maxPerStageUpdateAfterBindResources = 0,
-      .maxDescriptorSetUpdateAfterBindSamplers = 0,
-      .maxDescriptorSetUpdateAfterBindUniformBuffers = 0,
-      .maxDescriptorSetUpdateAfterBindUniformBuffersDynamic = 0,
-      .maxDescriptorSetUpdateAfterBindStorageBuffers = 0,
-      .maxDescriptorSetUpdateAfterBindStorageBuffersDynamic = 0,
-      .maxDescriptorSetUpdateAfterBindSampledImages = 0,
-      .maxDescriptorSetUpdateAfterBindStorageImages = 0,
-      .maxDescriptorSetUpdateAfterBindInputAttachments = 0,
+      .maxPerStageDescriptorUpdateAfterBindSamplers =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_SAMPLERS : 0,
+      .maxPerStageDescriptorUpdateAfterBindUniformBuffers =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_UNIFORM_BUFFERS : 0,
+      .maxPerStageDescriptorUpdateAfterBindStorageBuffers =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_STORAGE_BUFFERS : 0,
+      .maxPerStageDescriptorUpdateAfterBindSampledImages =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_SAMPLED_IMAGES : 0,
+      .maxPerStageDescriptorUpdateAfterBindStorageImages =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_STORAGE_IMAGES : 0,
+      .maxPerStageDescriptorUpdateAfterBindInputAttachments =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_INPUT_ATTACHMENTS : 0,
+      .maxPerStageUpdateAfterBindResources =
+         PAN_ARCH >= 9 ? MAX_PER_STAGE_RESOURCES : 0,
+      .maxDescriptorSetUpdateAfterBindSamplers =
+         PAN_ARCH >= 9 ? MAX_PER_SET_SAMPLERS : 0,
+      .maxDescriptorSetUpdateAfterBindUniformBuffers =
+         PAN_ARCH >= 9 ? MAX_PER_SET_UNIFORM_BUFFERS : 0,
+      .maxDescriptorSetUpdateAfterBindUniformBuffersDynamic =
+         PAN_ARCH >= 9 ? MAX_DYNAMIC_UNIFORM_BUFFERS : 0,
+      .maxDescriptorSetUpdateAfterBindStorageBuffers =
+         PAN_ARCH >= 9 ? MAX_PER_SET_STORAGE_BUFFERS : 0,
+      .maxDescriptorSetUpdateAfterBindStorageBuffersDynamic =
+         PAN_ARCH >= 9 ? MAX_DYNAMIC_STORAGE_BUFFERS : 0,
+      .maxDescriptorSetUpdateAfterBindSampledImages =
+         PAN_ARCH >= 9 ? MAX_PER_SET_SAMPLED_IMAGES : 0,
+      .maxDescriptorSetUpdateAfterBindStorageImages =
+         PAN_ARCH >= 9 ? MAX_PER_SET_STORAGE_IMAGES : 0,
+      .maxDescriptorSetUpdateAfterBindInputAttachments =
+         PAN_ARCH >= 9 ? MAX_PER_SET_INPUT_ATTACHMENTS : 0,
       .filterMinmaxSingleComponentFormats = PAN_ARCH >= 10,
       .filterMinmaxImageComponentMapping = PAN_ARCH >= 10,
       .maxTimelineSemaphoreValueDifference = INT64_MAX,
