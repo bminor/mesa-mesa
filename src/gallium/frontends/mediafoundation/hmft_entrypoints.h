@@ -64,8 +64,8 @@ using namespace concurrency;
 using namespace Microsoft::WRL;
 using Microsoft::WRL::ComPtr;
 
-#define ENCODE_WITH_TWO_PASS 0
-#define ENCODE_WITH_TWO_PASS_LOWEST_RES 1
+#define ENCODE_WITH_TWO_PASS                          0
+#define ENCODE_WITH_TWO_PASS_LOWEST_RES               1
 #define ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE 1
 
 #define NUM_INPUT_TYPES 3
@@ -253,7 +253,19 @@ typedef enum IntraRefreshMode
 // AVEncVideoEnableFramePsnrYuv (BOOL)
 // Indicates whether to enable or disable reporting frame PSNR of YUV planes for video encoding.
 // VARIANT_FALSE: disable; VARIANT_TRUE: enable
-DEFINE_CODECAPI_GUID( AVEncVideoEnableFramePsnrYuv,"2BBCDD1D-BC47-430E-B2E8-64801B47F5F0", 0x2bbcdd1d, 0xbc47, 0x430e, 0xb2, 0xe8, 0x64, 0x80, 0x1b, 0x47, 0xf5, 0xf0 )
+DEFINE_CODECAPI_GUID( AVEncVideoEnableFramePsnrYuv,
+                      "2BBCDD1D-BC47-430E-B2E8-64801B47F5F0",
+                      0x2bbcdd1d,
+                      0xbc47,
+                      0x430e,
+                      0xb2,
+                      0xe8,
+                      0x64,
+                      0x80,
+                      0x1b,
+                      0x47,
+                      0xf5,
+                      0xf0 )
 #define CODECAPI_AVEncVideoEnableFramePsnrYuv DEFINE_CODECAPI_GUIDNAMED( AVEncVideoEnableFramePsnrYuv )
 #endif
 
@@ -261,8 +273,21 @@ DEFINE_CODECAPI_GUID( AVEncVideoEnableFramePsnrYuv,"2BBCDD1D-BC47-430E-B2E8-6480
 // AVEncVideoEnableSpatialAdaptiveQuantization (BOOL)
 // Indicates whether to enable or disable spatial adaptive quantization for video encoding.
 // VARIANT_FALSE: disable; VARIANT_TRUE: enable
-DEFINE_CODECAPI_GUID( AVEncVideoEnableSpatialAdaptiveQuantization,"659CB943-15CA-448D-B99A-875619DB4DE4", 0x659cb943, 0x15ca, 0x448d, 0xb9, 0x9a, 0x87, 0x56, 0x19, 0xdb, 0x4d, 0xe4 )
-#define CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization       DEFINE_CODECAPI_GUIDNAMED( AVEncVideoEnableSpatialAdaptiveQuantization )
+DEFINE_CODECAPI_GUID( AVEncVideoEnableSpatialAdaptiveQuantization,
+                      "659CB943-15CA-448D-B99A-875619DB4DE4",
+                      0x659cb943,
+                      0x15ca,
+                      0x448d,
+                      0xb9,
+                      0x9a,
+                      0x87,
+                      0x56,
+                      0x19,
+                      0xdb,
+                      0x4d,
+                      0xe4 )
+#define CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization                                                                       \
+   DEFINE_CODECAPI_GUIDNAMED( AVEncVideoEnableSpatialAdaptiveQuantization )
 #endif
 
 #ifndef CODECAPI_AVEncVideoOutputQPMapBlockSize
@@ -270,8 +295,20 @@ DEFINE_CODECAPI_GUID( AVEncVideoEnableSpatialAdaptiveQuantization,"659CB943-15CA
 // The block size used in reporting the output QP map for each block in an encoded video frame.
 // ulVal should be zero or power of 2, such as 16 or 32, etc.
 // Zero value is used to disable the QP map reporting.
-DEFINE_CODECAPI_GUID( AVEncVideoOutputQPMapBlockSize,"97038743-4AE3-44C3-A0F2-5BD58A4634EF", 0x97038743, 0x4ae3, 0x44c3, 0xa0, 0xf2, 0x5b, 0xd5, 0x8a, 0x46, 0x34, 0xef )
-#define CODECAPI_AVEncVideoOutputQPMapBlockSize       DEFINE_CODECAPI_GUIDNAMED( AVEncVideoOutputQPMapBlockSize )
+DEFINE_CODECAPI_GUID( AVEncVideoOutputQPMapBlockSize,
+                      "97038743-4AE3-44C3-A0F2-5BD58A4634EF",
+                      0x97038743,
+                      0x4ae3,
+                      0x44c3,
+                      0xa0,
+                      0xf2,
+                      0x5b,
+                      0xd5,
+                      0x8a,
+                      0x46,
+                      0x34,
+                      0xef )
+#define CODECAPI_AVEncVideoOutputQPMapBlockSize DEFINE_CODECAPI_GUIDNAMED( AVEncVideoOutputQPMapBlockSize )
 #endif
 
 #ifndef CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize
@@ -279,7 +316,19 @@ DEFINE_CODECAPI_GUID( AVEncVideoOutputQPMapBlockSize,"97038743-4AE3-44C3-A0F2-5B
 // The block size used in reporting the output bits used map for each block in an encoded video frame.
 // ulVal should be zero or power of 2, such as 16 or 32, etc.
 // Zero value is used to disable the bits used map reporting.
-DEFINE_CODECAPI_GUID( AVEncVideoOutputBitsUsedMapBlockSize,"6C2CD11A-CA3B-44BD-9A9E-93B03634C36E", 0x6c2cd11a, 0xca3b, 0x44bd, 0x9a, 0x9e, 0x93, 0xb0, 0x36, 0x34, 0xc3, 0x6e )
+DEFINE_CODECAPI_GUID( AVEncVideoOutputBitsUsedMapBlockSize,
+                      "6C2CD11A-CA3B-44BD-9A9E-93B03634C36E",
+                      0x6c2cd11a,
+                      0xca3b,
+                      0x44bd,
+                      0x9a,
+                      0x9e,
+                      0x93,
+                      0xb0,
+                      0x36,
+                      0x34,
+                      0xc3,
+                      0x6e )
 #define CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize DEFINE_CODECAPI_GUIDNAMED( AVEncVideoOutputBitsUsedMapBlockSize )
 #endif
 

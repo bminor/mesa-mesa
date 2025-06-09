@@ -300,17 +300,17 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       pPicInfo->dpb[i].is_ltr = cur_frame_desc->dpb_snapshot[i].is_ltr;
       pPicInfo->dpb[i].buffer = cur_frame_desc->dpb_snapshot[i].buffer;
       pPicInfo->dpb[i].downscaled_buffer = cur_frame_desc->dpb_snapshot[i].downscaled_buffer;
-      if (pPicInfo->dpb[i].pic_order_cnt == cur_frame_desc->gop_info->picture_order_count)
+      if( pPicInfo->dpb[i].pic_order_cnt == cur_frame_desc->gop_info->picture_order_count )
       {
-         pPicInfo->dpb_curr_pic = static_cast<uint8_t>(i);
+         pPicInfo->dpb_curr_pic = static_cast<uint8_t>( i );
       }
    }
 
    pDX12EncodeContext->longTermReferenceFrameInfo = cur_frame_desc->gop_info->long_term_reference_frame_info;
 
    pPicInfo->num_ref_idx_l0_active_minus1 = 0;
-   memset(&pPicInfo->ref_list0, PIPE_H2645_LIST_REF_INVALID_ENTRY, sizeof(pPicInfo->ref_list0));
-   memset(&pPicInfo->ref_list1, PIPE_H2645_LIST_REF_INVALID_ENTRY, sizeof(pPicInfo->ref_list1));
+   memset( &pPicInfo->ref_list0, PIPE_H2645_LIST_REF_INVALID_ENTRY, sizeof( pPicInfo->ref_list0 ) );
+   memset( &pPicInfo->ref_list1, PIPE_H2645_LIST_REF_INVALID_ENTRY, sizeof( pPicInfo->ref_list1 ) );
 
    if( ( pPicInfo->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_P ) || ( pPicInfo->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B ) )
    {
@@ -397,8 +397,7 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       static_cast<uint32_t>( std::ceil( ( static_cast<float>( 100 - m_uiQualityVsSpeed ) / 100.0f ) *
                                         static_cast<double>( m_EncoderCapabilities.m_uiMaxHWSupportedQualityVsSpeedLevel ) ) ) );
 
-   if (m_pPipeVideoCodec->two_pass.enable &&
-      (m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0))
+   if( m_pPipeVideoCodec->two_pass.enable && ( m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0 ) )
    {
       pPicInfo->twopass_frame_config.downscaled_source = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer;
       pPicInfo->twopass_frame_config.skip_1st_pass = false;
@@ -840,7 +839,7 @@ CDX12EncHMFT::CheckMediaTypeLevel(
 {
    HRESULT hr = S_OK;
    UINT32 uiLevel = (UINT32) -1;
-   
+
    uiLevel = MFGetAttributeUINT32( pmt, MF_MT_VIDEO_LEVEL, uiLevel );
    enum eAVEncH265VLevel AVEncLevel;
    CHECKHR_GOTO( ConvertLevelToAVEncH265VLevel( uiLevel, AVEncLevel ), done );
@@ -933,16 +932,16 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    assert( MaxHWL0Ref <= m_uiMaxNumRefFrame );
    assert( MaxHWL1Ref <= m_uiMaxNumRefFrame );
 
-   if (m_pPipeVideoCodec->two_pass.enable &&
-      (m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0))
+   if( m_pPipeVideoCodec->two_pass.enable && ( m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0 ) )
    {
       upTwoPassDPBManager = std::make_unique<dpb_buffer_manager>(
-        m_pPipeVideoCodec,
-        static_cast<unsigned>(std::ceil(textureWidth / (1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor))),
-        static_cast<unsigned>(std::ceil(textureHeight / (1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor))),
-        ConvertProfileToFormat( m_pPipeVideoCodec->profile ),
-        m_pPipeVideoCodec->max_references + 1 /*curr pic*/ +
-           ( m_bLowLatency ? 0 : MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/ );
+         m_pPipeVideoCodec,
+         static_cast<unsigned>( std::ceil( textureWidth / ( 1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor ) ) ),
+         static_cast<unsigned>( std::ceil( textureHeight / ( 1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor ) ) ),
+         ConvertProfileToFormat( m_pPipeVideoCodec->profile ),
+         m_pPipeVideoCodec->max_references + 1 /*curr pic*/ +
+            ( m_bLowLatency ? 0 :
+                              MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/ );
    }
 
    m_pGOPTracker = new reference_frames_tracker_hevc( m_pPipeVideoCodec,
@@ -957,7 +956,7 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
                                                       MaxHWL1Ref,
                                                       m_pPipeVideoCodec->max_references,
                                                       m_uiMaxLongTermReferences,
-                                                      std::move(upTwoPassDPBManager) );
+                                                      std::move( upTwoPassDPBManager ) );
    CHECKNULL_GOTO( m_pGOPTracker, MF_E_INVALIDMEDIATYPE, done );
 
 done:

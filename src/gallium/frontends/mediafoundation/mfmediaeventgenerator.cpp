@@ -28,7 +28,7 @@ HRESULT
 CDX12EncHMFT::BeginGetEvent( IMFAsyncCallback *pCallback, IUnknown *punkState )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( CheckShutdown(), done );
    CHECKHR_GOTO( m_spEventQueue->BeginGetEvent( pCallback, punkState ), done );
@@ -44,7 +44,7 @@ CDX12EncHMFT::EndGetEvent( IMFAsyncResult *pResult, IMFMediaEvent **ppEvent )
 {
    HRESULT hr = S_OK;
    MediaEventType met = MEUnknown;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( CheckShutdown(), done );
    CHECKHR_GOTO( m_spEventQueue->EndGetEvent( pResult, ppEvent ), done );

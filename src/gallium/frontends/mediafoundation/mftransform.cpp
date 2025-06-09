@@ -23,9 +23,9 @@
 
 #include <numeric>
 #include "hmft_entrypoints.h"
+#include "mfbufferhelp.h"
 #include "mfpipeinterop.h"
 #include "wpptrace.h"
-#include "mfbufferhelp.h"
 
 #include "mftransform.tmh"
 
@@ -624,7 +624,7 @@ HRESULT
 CDX12EncHMFT::OnDrain()
 {
    HRESULT hr = S_OK;
-   std::unique_lock<std::mutex> lock(m_lock);
+   std::unique_lock<std::mutex> lock( m_lock );
    m_bDraining = true;
 
    if( m_EncodingQueue.unsafe_size() )
@@ -647,7 +647,7 @@ CDX12EncHMFT::OnFlush()
 {
    HRESULT hr = S_OK;
    IMFSample *pSample;
-   std::unique_lock<std::mutex> lock(m_lock);
+   std::unique_lock<std::mutex> lock( m_lock );
    m_bFlushing = true;
    m_bDraining = true;
 
@@ -660,7 +660,7 @@ CDX12EncHMFT::OnFlush()
       lock.lock();
    }
 
-   std::lock_guard<std::mutex> queue_lock(m_OutputQueueLock);
+   std::lock_guard<std::mutex> queue_lock( m_OutputQueueLock );
    while( m_OutputQueue.try_pop( pSample ) )
    {
       pSample->Release();
@@ -865,27 +865,26 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
       encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.max_pow2_downscale_factor;
 #else
       encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.min_pow2_downscale_factor;
-#endif // ENCODE_WITH_TWO_PASS_LOWEST_RES
+#endif   // ENCODE_WITH_TWO_PASS_LOWEST_RES
 
 #if ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
       encoderSettings.two_pass.skip_1st_dpb_texture = m_EncoderCapabilities.m_TwoPassSupport.bits.supports_1pass_recon_writing_skip;
 #else
       encoderSettings.two_pass.skip_1st_dpb_texture = 0u;
-#endif // ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
+#endif   // ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
 
-   if (encoderSettings.two_pass.enable &&
-      (encoderSettings.two_pass.pow2_downscale_factor > 0))
-   {
-      struct pipe_video_codec blitterSettings = {};
-      blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
-      blitterSettings.width = Width;
-      blitterSettings.height = Height;
-      CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
-                      MF_E_UNEXPECTED,
-                      done );
-   }
+      if( encoderSettings.two_pass.enable && ( encoderSettings.two_pass.pow2_downscale_factor > 0 ) )
+      {
+         struct pipe_video_codec blitterSettings = {};
+         blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
+         blitterSettings.width = Width;
+         blitterSettings.height = Height;
+         CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
+                         MF_E_UNEXPECTED,
+                         done );
+      }
 
-#endif // ENCODE_WITH_TWO_PASS
+#endif   // ENCODE_WITH_TWO_PASS
 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,
@@ -1012,7 +1011,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          LPDX12EncodeContext pDX12EncodeContext = nullptr;
          while( pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
          {
-            std::lock_guard<std::mutex> lock(pThis->m_encoderLock);
+            std::lock_guard<std::mutex> lock( pThis->m_encoderLock );
             unsigned int encoded_bitstream_bytes = 0u;
 
             if( !bHasEncodingError )
@@ -1028,7 +1027,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          break;
       }
 
-      std::lock_guard<std::mutex> lock(pThis->m_lock);
+      std::lock_guard<std::mutex> lock( pThis->m_lock );
       while( !bHasEncodingError && pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
       {
          pipe_enc_feedback_metadata metadata = { 0 };
@@ -1036,13 +1035,13 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          ComPtr<IMFSample> spOutputSample;
          MFCreateSample( &spOutputSample );
          {
-            std::lock_guard<std::mutex> lock(pThis->m_encoderLock);
+            std::lock_guard<std::mutex> lock( pThis->m_encoderLock );
             // ... wait until resource is finished writing by the GPU encoder...
             dwReceivedInput++;
 
             metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;   // default to failure
 
-#if (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
             // If sliced fences supported, we asynchronously copy here every slice as it is ready
             // Otherwise, let's copy all the sliced together here after full frame completion (see below)
             if( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS )
@@ -1123,7 +1122,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
                spOutputSample->AddBuffer( spMemoryBuffer.Get() );
             }
-#endif // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
+#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
 
             // Still wait for pAsyncFence (full frame fence) before calling get_feedback for full frame stats
             // First wait on the D3D12 encoder_fence
@@ -1162,10 +1161,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                           &encoded_bitstream_bytes,
                                                           &metadata );
 
-#if (MFT_CODEC_H264ENC || MFT_CODEC_H265ENC)
-                  if (pThis->m_pPipeVideoCodec->two_pass.enable &&
-                     (pThis->m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0) &&
-                     (pThis->m_pPipeVideoCodec->two_pass.skip_1st_dpb_texture))
+#if ( MFT_CODEC_H264ENC || MFT_CODEC_H265ENC )
+                  if( pThis->m_pPipeVideoCodec->two_pass.enable &&
+                      ( pThis->m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0 ) &&
+                      ( pThis->m_pPipeVideoCodec->two_pass.skip_1st_dpb_texture ) )
                   {
                      // In this case, when two pass is enabled for a lower resolution 1st pass
                      // AND we select skip_1st_dpb_texture, that means that
@@ -1177,13 +1176,15 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      struct pipe_vpp_desc vpblit_params = {};
                      struct pipe_fence_handle *dst_surface_fence = nullptr;
 
-                     vpblit_params.src_surface_fence = NULL; // No need, we _just_ waited for completion above before get_feedback
-                     vpblit_params.base.fence = &dst_surface_fence; // Output surface fence (driver output)
+                     vpblit_params.src_surface_fence = NULL;   // No need, we _just_ waited for completion above before get_feedback
+                     vpblit_params.base.fence = &dst_surface_fence;   // Output surface fence (driver output)
 
 #if MFT_CODEC_H264ENC
-                     auto &cur_pic_dpb_entry = pDX12EncodeContext->encoderPicInfo.h264enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
+                     auto &cur_pic_dpb_entry =
+                        pDX12EncodeContext->encoderPicInfo.h264enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
 #elif MFT_CODEC_H265ENC
-                     auto &cur_pic_dpb_entry = pDX12EncodeContext->encoderPicInfo.h265enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
+                     auto &cur_pic_dpb_entry =
+                        pDX12EncodeContext->encoderPicInfo.h265enc.dpb[pDX12EncodeContext->encoderPicInfo.h265enc.dpb_curr_pic];
 #endif
 
                      vpblit_params.base.input_format = cur_pic_dpb_entry.buffer->buffer_format;
@@ -1198,11 +1199,13 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      vpblit_params.dst_region.x1 = cur_pic_dpb_entry.downscaled_buffer->width;
                      vpblit_params.dst_region.y1 = cur_pic_dpb_entry.downscaled_buffer->height;
 
-                     pThis->m_pPipeVideoBlitter->begin_frame(pThis->m_pPipeVideoBlitter,
-                                                             pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
-                                                             &vpblit_params.base);
+                     pThis->m_pPipeVideoBlitter->begin_frame( pThis->m_pPipeVideoBlitter,
+                                                              pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
+                                                              &vpblit_params.base );
 
-                     if (pThis->m_pPipeVideoBlitter->process_frame(pThis->m_pPipeVideoBlitter, cur_pic_dpb_entry.buffer, &vpblit_params) != 0)
+                     if( pThis->m_pPipeVideoBlitter->process_frame( pThis->m_pPipeVideoBlitter,
+                                                                    cur_pic_dpb_entry.buffer,
+                                                                    &vpblit_params ) != 0 )
                      {
                         assert( false );
                         pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
@@ -1211,7 +1214,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         break;   // break out of while try_pop
                      }
 
-                     if (pThis->m_pPipeVideoBlitter->end_frame(pThis->m_pPipeVideoBlitter, pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer, &vpblit_params.base) != 0)
+                     if( pThis->m_pPipeVideoBlitter->end_frame( pThis->m_pPipeVideoBlitter,
+                                                                pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
+                                                                &vpblit_params.base ) != 0 )
                      {
                         assert( false );
                         pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
@@ -1220,9 +1225,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         break;   // break out of while try_pop
                      }
 
-                     pThis->m_pPipeVideoBlitter->flush(pThis->m_pPipeVideoBlitter);
+                     pThis->m_pPipeVideoBlitter->flush( pThis->m_pPipeVideoBlitter );
 
-                     assert(*vpblit_params.base.fence); // Driver must have returned the completion fence
+                     assert( *vpblit_params.base.fence );   // Driver must have returned the completion fence
                      // Wait for downscaling completion before encode can proceed
 
                      // TODO: This can probably be done better later as plumbing
@@ -1230,17 +1235,17 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      // Instead of waiting on the CPU here for the fence, can probably
                      // queue the fence wait into the next frame's encode GPU fence wait
 
-                     ASSERTED bool finished = pThis->m_pPipeVideoCodec->context->screen->fence_finish(pThis->m_pPipeVideoCodec->context->screen,
-                                                                                                      NULL, /*passing non NULL resets GRFX context*/
-                                                                                                      *vpblit_params.base.fence,
-                                                                                                       OS_TIMEOUT_INFINITE );
-                     assert(finished);
+                     ASSERTED bool finished =
+                        pThis->m_pPipeVideoCodec->context->screen->fence_finish( pThis->m_pPipeVideoCodec->context->screen,
+                                                                                 NULL, /*passing non NULL resets GRFX context*/
+                                                                                 *vpblit_params.base.fence,
+                                                                                 OS_TIMEOUT_INFINITE );
+                     assert( finished );
                   }
-#endif // (MFT_CODEC_H264ENC || MFT_CODEC_H265ENC)
+#endif   // (MFT_CODEC_H264ENC || MFT_CODEC_H265ENC)
 
                   // Only release the reconpic AFTER working on it for two pass if needed
                   pThis->m_pGOPTracker->release_reconpic( pDX12EncodeContext->pAsyncDPBToken );
-
                }
             }
          }
@@ -1352,10 +1357,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
                // into spMemoryBuffer. Otherwise, let's copy all the sliced together here after full frame completion
-#if (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
                if( pDX12EncodeContext->sliceNotificationMode ==
                    D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME )
-#endif // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
+#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
                {
                   // Readback full encoded frame bitstream from GPU memory onto CPU buffer
                   struct pipe_box box = { 0 };
@@ -1402,7 +1407,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   std::min( MAX_NALU_LENGTH_INFO_ENTRIES, metadata.codec_unit_metadata_count ) * sizeof( DWORD ) );
                spOutputSample->SetUINT32( MF_NALU_LENGTH_SET, 1 );
                {
-                  std::lock_guard<std::mutex> lock(pThis->m_OutputQueueLock);
+                  std::lock_guard<std::mutex> lock( pThis->m_OutputQueueLock );
                   HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
                   if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
                   {
@@ -1444,7 +1449,7 @@ HRESULT
 CDX12EncHMFT::GetAttributes( IMFAttributes **ppAttributes )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( CheckShutdown(), done );
    CHECKNULL_GOTO( ppAttributes, E_POINTER, done );
@@ -1470,7 +1475,7 @@ HRESULT
 CDX12EncHMFT::GetOutputStreamInfo( DWORD dwOutputStreamIndex, OUT MFT_OUTPUT_STREAM_INFO *pStreamInfo )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1498,7 +1503,7 @@ HRESULT
 CDX12EncHMFT::GetInputStreamInfo( DWORD dwInputStreamIndex, OUT MFT_INPUT_STREAM_INFO *pStreamInfo )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1545,7 +1550,7 @@ CDX12EncHMFT::GetStreamLimits( OUT DWORD *pdwInputMinimum,
                                OUT DWORD *pdwOutputMaximum )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1588,7 +1593,7 @@ HRESULT
 CDX12EncHMFT::GetInputAvailableType( DWORD dwInputStreamIndex, DWORD dwTypeIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    if( dwInputStreamIndex != 0 )
    {
@@ -1618,7 +1623,7 @@ HRESULT
 CDX12EncHMFT::GetOutputAvailableType( DWORD dwOutputStreamIndex, DWORD dwTypeIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1643,7 +1648,7 @@ HRESULT
 CDX12EncHMFT::SetInputType( DWORD dwInputStreamIndex, IN IMFMediaType *pType, DWORD dwFlags )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1675,7 +1680,7 @@ HRESULT
 CDX12EncHMFT::SetOutputType( DWORD dwOutputStreamIndex, IN IMFMediaType *pType, DWORD dwFlags )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKNULL_GOTO( m_spDeviceManager, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
    if( dwOutputStreamIndex != 0 )
@@ -1715,7 +1720,7 @@ HRESULT
 CDX12EncHMFT::GetInputCurrentType( DWORD dwInputStreamIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1734,7 +1739,7 @@ HRESULT
 CDX12EncHMFT::GetOutputCurrentType( DWORD dwOutputStreamIndex, OUT IMFMediaType **ppType )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( CheckShutdown(), done );
    CHECKBOOL_GOTO( dwOutputStreamIndex == 0, MF_E_INVALIDSTREAMNUMBER, done );
@@ -1760,7 +1765,7 @@ HRESULT
 CDX12EncHMFT::GetInputStatus( DWORD dwInputStreamIndex, OUT DWORD *pdwFlags )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1785,7 +1790,7 @@ HRESULT
 CDX12EncHMFT::GetOutputStatus( OUT DWORD *pdwFlags )
 {
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1795,7 +1800,7 @@ CDX12EncHMFT::GetOutputStatus( OUT DWORD *pdwFlags )
 
    *pdwFlags = 0;
    {
-      std::lock_guard<std::mutex> lock(m_OutputQueueLock);
+      std::lock_guard<std::mutex> lock( m_OutputQueueLock );
       if( m_OutputQueue.unsafe_size() )
       {
          *pdwFlags = MFT_OUTPUT_STATUS_SAMPLE_READY;
@@ -1878,7 +1883,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
 {
    HRESULT hr = S_OK;
    {
-      std::lock_guard<std::mutex> lock(m_lock);
+      std::lock_guard<std::mutex> lock( m_lock );
       CHECKHR_GOTO( IsUnlocked(), done );
       CHECKHR_GOTO( CheckShutdown(), done );
    }
@@ -1887,7 +1892,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
    {
       case MFT_MESSAGE_NOTIFY_START_OF_STREAM:
       {
-         std::lock_guard<std::mutex> lock(m_lock);
+         std::lock_guard<std::mutex> lock( m_lock );
          CHECKNULL_GOTO( m_spDeviceManager, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
          m_bStreaming = true;
          m_bDraining = false;
@@ -1898,7 +1903,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
       }
       case MFT_MESSAGE_NOTIFY_END_OF_STREAM:
       {
-         std::lock_guard<std::mutex> lock(m_lock);
+         std::lock_guard<std::mutex> lock( m_lock );
          m_dwNeedInputCount = 0;
          m_dwProcessInputCount = 0;
          m_bStreaming = false;
@@ -1916,7 +1921,7 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
       }
       case MFT_MESSAGE_SET_D3D_MANAGER:
       {
-         std::lock_guard<std::mutex> lock(m_lock);
+         std::lock_guard<std::mutex> lock( m_lock );
          CleanupEncoder();
          CHECKHR_GOTO( xOnSetD3DManager( ulParam ), done );
          CHECKHR_GOTO( ConfigureSampleAllocator(), done );
@@ -1945,7 +1950,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
    HRESULT hr = S_OK;
    UINT32 unChromaOnly = 0;
    LPDX12EncodeContext pDX12EncodeContext = nullptr;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -1982,7 +1987,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 
    // Submit work
    {
-      std::lock_guard<std::mutex> lock(m_encoderLock);
+      std::lock_guard<std::mutex> lock( m_encoderLock );
 
       HMFT_ETW_EVENT_START( "PipeSubmitFrame", this );
 
@@ -1990,7 +1995,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                       pDX12EncodeContext->pPipeVideoBuffer,
                                       &pDX12EncodeContext->encoderPicInfo.base );
 
-#if (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
       if( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS )
       {
          m_pPipeVideoCodec->encode_bitstream_sliced( m_pPipeVideoCodec,
@@ -2001,7 +2006,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                      &pDX12EncodeContext->pAsyncCookie );
       }
       else
-#endif // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
+#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
       {
          m_pPipeVideoCodec->encode_bitstream( m_pPipeVideoCodec,
                                               pDX12EncodeContext->pPipeVideoBuffer,
@@ -2078,7 +2083,7 @@ CDX12EncHMFT::ProcessOutput( DWORD dwFlags, DWORD cOutputBufferCount, MFT_OUTPUT
    HMFT_ETW_EVENT_START( "ProcessOutput", this );
 
    HRESULT hr = S_OK;
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
    IMFSample *pSample = nullptr;
    CHECKHR_GOTO( IsUnlocked(), done );
    CHECKHR_GOTO( CheckShutdown(), done );
@@ -2089,7 +2094,7 @@ CDX12EncHMFT::ProcessOutput( DWORD dwFlags, DWORD cOutputBufferCount, MFT_OUTPUT
    CHECKNULL_GOTO( m_spDeviceManager, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
 
    {
-      std::lock_guard<std::mutex> lock(m_OutputQueueLock);
+      std::lock_guard<std::mutex> lock( m_OutputQueueLock );
       debug_printf( "[dx12 hmft 0x%p] ProcessOutput m_dwHaveOutputCount = %d, m_dwProcessOutputCount = %d\n",
                     this,
                     m_dwHaveOutputCount,

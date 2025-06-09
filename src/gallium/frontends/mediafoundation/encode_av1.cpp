@@ -40,7 +40,7 @@ HRESULT
 CDX12EncHMFT::GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LPDWORD lpdwSPSPPSDataLen )
 {
    HRESULT hr = S_OK;
-// done:
+   // done:
    return hr;
 }
 

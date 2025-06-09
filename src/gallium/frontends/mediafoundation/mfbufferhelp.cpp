@@ -289,7 +289,7 @@ MFAttachPipeResourceAsSampleExtension( struct pipe_context *pPipeContext,
                                        REFGUID guidExtension,
                                        IMFSample *pSample )
 {
-   if (!pPipeContext || !pPipeRes || !pSample)
+   if( !pPipeContext || !pPipeRes || !pSample )
    {
       return E_INVALIDARG;
    }

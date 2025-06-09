@@ -30,7 +30,7 @@
 HRESULT
 CDX12EncHMFT::RegisterThreadsEx( DWORD *pdwTaskIndex, LPCWSTR wszClassName, LONG lBasePriority )
 {
-   std::lock_guard<std::mutex> lock(m_lock);
+   std::lock_guard<std::mutex> lock( m_lock );
 
    if( !pdwTaskIndex )
    {

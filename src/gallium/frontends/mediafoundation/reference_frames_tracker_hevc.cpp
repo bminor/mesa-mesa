@@ -27,6 +27,7 @@
 #include <iterator>
 #include "hmft_entrypoints.h"
 #include "wpptrace.h"
+
 #include "reference_frames_tracker_hevc.tmh"
 
 reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_codec *codec,
@@ -41,7 +42,7 @@ reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_
                                                               uint32_t MaxL1References,
                                                               uint32_t MaxDPBCapacity,
                                                               uint32_t MaxLongTermReferences,
-                                                              std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager)
+                                                              std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager )
    : m_codec( codec ),
      m_MaxL0References( MaxL0References ),
      m_MaxL1References( MaxL1References ),
@@ -54,7 +55,7 @@ reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_
         ConvertProfileToFormat( m_codec->profile ),
         m_codec->max_references + 1 /*curr pic*/ +
            ( bLowLatency ? 0 : MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/ ),
-     m_upTwoPassDPBManager(std::move(upTwoPassDPBManager))
+     m_upTwoPassDPBManager( std::move( upTwoPassDPBManager ) )
 {
    assert( m_MaxL0References == 1 );
 
@@ -75,7 +76,7 @@ reference_frames_tracker_hevc::release_reconpic( reference_frames_tracker_dpb_as
       for( unsigned i = 0; i < pAsyncDPBToken->dpb_buffers_to_release.size(); i++ )
          m_DPBManager.release_dpb_buffer( pAsyncDPBToken->dpb_buffers_to_release[i] );
 
-      if (m_upTwoPassDPBManager)
+      if( m_upTwoPassDPBManager )
       {
          for( unsigned i = 0; i < pAsyncDPBToken->dpb_downscaled_buffers_to_release.size(); i++ )
             m_upTwoPassDPBManager->release_dpb_buffer( pAsyncDPBToken->dpb_downscaled_buffers_to_release[i] );
@@ -99,7 +100,8 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
                                             uint32_t dirtyRectFrameNum )
 {
    struct pipe_video_buffer *curframe_dpb_buffer = m_DPBManager.get_fresh_dpb_buffer();
-   struct pipe_video_buffer *curframe_dpb_downscaled_buffer = m_upTwoPassDPBManager ? m_upTwoPassDPBManager->get_fresh_dpb_buffer() : NULL;
+   struct pipe_video_buffer *curframe_dpb_downscaled_buffer =
+      m_upTwoPassDPBManager ? m_upTwoPassDPBManager->get_fresh_dpb_buffer() : NULL;
 
    if( markLTR )
    {
@@ -123,7 +125,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
       for( auto &i : m_PrevFramesInfos )
       {
          ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( i.buffer );
-         if (m_upTwoPassDPBManager)
+         if( m_upTwoPassDPBManager )
             ( pAsyncDPBToken )->dpb_downscaled_buffers_to_release.push_back( i.downscaled_buffer );
       }
       m_PrevFramesInfos.clear();
@@ -158,7 +160,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
             if( !is_ltr || ( is_ltr && !( useLTRBitmap & ( 1 << ltr_index ) ) ) )
             {
                ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( itr->buffer );
-               if (m_upTwoPassDPBManager)
+               if( m_upTwoPassDPBManager )
                   ( pAsyncDPBToken )->dpb_downscaled_buffers_to_release.push_back( itr->downscaled_buffer );
                itr = m_PrevFramesInfos.erase( itr );
             }
@@ -200,15 +202,13 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
    if( m_frame_state_descriptor.gop_info->reference_type != frame_descriptor_reference_type_none )
    {
       // Add current frame DPB info
-      m_frame_state_descriptor.dpb_snapshot.push_back( {
-         /*id*/ 0u,
-         /* frame_idx - ignored */ 0u,
-         m_frame_state_descriptor.gop_info->picture_order_count,
-         m_frame_state_descriptor.gop_info->temporal_id,
-         isLTR,
-         curframe_dpb_buffer,
-         curframe_dpb_downscaled_buffer
-      } );
+      m_frame_state_descriptor.dpb_snapshot.push_back( { /*id*/ 0u,
+                                                         /* frame_idx - ignored */ 0u,
+                                                         m_frame_state_descriptor.gop_info->picture_order_count,
+                                                         m_frame_state_descriptor.gop_info->temporal_id,
+                                                         isLTR,
+                                                         curframe_dpb_buffer,
+                                                         curframe_dpb_downscaled_buffer } );
       m_frame_state_descriptor.dirty_rect_frame_num.push_back( dirtyRectFrameNum );
 
       // if( m_frame_state_descriptor.gop_info->is_used_as_future_reference )
@@ -224,7 +224,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
             unreachable( "Unexpected zero STR" );
          }
          ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( entryToRemove->buffer );
-         if (m_upTwoPassDPBManager)
+         if( m_upTwoPassDPBManager )
             ( pAsyncDPBToken )->dpb_downscaled_buffers_to_release.push_back( entryToRemove->downscaled_buffer );
          m_PrevFramesInfos.erase( entryToRemove );
       }
@@ -248,7 +248,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
                unreachable( "Unexpected LTR replacement in Bitmap but not in PrevFramesInfos" );
             }
             ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( entryToRemove->buffer );
-            if (m_upTwoPassDPBManager)
+            if( m_upTwoPassDPBManager )
                ( pAsyncDPBToken )->dpb_downscaled_buffers_to_release.push_back( entryToRemove->downscaled_buffer );
             m_PrevFramesInfos.erase( entryToRemove );
          }
@@ -266,7 +266,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
    else
    {
       ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( curframe_dpb_buffer );
-      if (m_upTwoPassDPBManager)
+      if( m_upTwoPassDPBManager )
          ( pAsyncDPBToken )->dpb_downscaled_buffers_to_release.push_back( curframe_dpb_downscaled_buffer );
    }
 }

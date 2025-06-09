@@ -26,8 +26,8 @@
 #if MFT_CODEC_H265ENC
 
 #include <deque>
-#include <queue>
 #include <memory>
+#include <queue>
 
 #include "dpb_buffer_manager.h"
 #include "reference_frames_tracker.h"
