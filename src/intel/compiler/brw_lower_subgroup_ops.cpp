@@ -389,6 +389,26 @@ brw_fill_flag(const brw_builder &bld, unsigned v, brw_inst *inst)
       }
    }
 
+   /* Performing the initialization before an instruction that writes to
+    * inst->src[0] might help cmod propagation. The expectation is that
+    * inst->src[0] will be used to generate flags. If scan_inst could be used
+    * to generate the flags instead, an instruction and temporary register
+    * might be saved.
+    */
+   foreach_inst_in_block_reverse_starting_from(brw_inst, scan_inst, inst) {
+      if (scan_inst->flags_read(devinfo))
+         break;
+
+      if (regions_overlap(scan_inst->dst, scan_inst->size_written,
+                          inst->src[0], inst->size_read(devinfo, 0))) {
+         ubld1.before(scan_inst).MOV(flag, value);
+         return flag;
+      }
+
+      if (scan_inst->flags_written(devinfo))
+         break;
+   }
+
    ubld1.MOV(flag, value);
 
    return flag;
