@@ -1385,47 +1385,55 @@ gfx10_ngg_set_esgs_ring_itemsize(const struct radv_device *device, struct radv_s
 }
 
 static void
-radv_determine_ngg_settings(struct radv_device *device, struct radv_shader_stage *es_stage,
+radv_determine_ngg_settings(struct radv_device *device, struct radv_shader_stage *ngg_stage,
                             struct radv_shader_stage *fs_stage, const struct radv_graphics_state_key *gfx_state)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint64_t ps_inputs_read;
 
-   assert(es_stage->stage == MESA_SHADER_VERTEX || es_stage->stage == MESA_SHADER_TESS_EVAL);
+   assert(ngg_stage->info.is_ngg);
+   assert(ngg_stage->stage != MESA_SHADER_TESS_EVAL || !ngg_stage->info.tes.as_es);
+   assert(ngg_stage->stage != MESA_SHADER_VERTEX || (!ngg_stage->info.tes.as_es && !ngg_stage->info.vs.as_ls));
    assert(!fs_stage || fs_stage->stage == MESA_SHADER_FRAGMENT);
 
    if (fs_stage) {
       ps_inputs_read = fs_stage->nir->info.inputs_read;
    } else {
-      /* Rely on the number of VS/TES outputs when the FS is unknown (for fast-link or unlinked ESO)
+      /* Rely on the number of VS/TES/GS outputs when the FS is unknown (for fast-link or unlinked ESO)
        * because this should be a good approximation of the number of FS inputs.
        */
-      ps_inputs_read = es_stage->nir->info.outputs_written;
+      ps_inputs_read = ngg_stage->nir->info.outputs_written;
 
       /* Clear varyings that can't be PS inputs. */
       ps_inputs_read &= ~(VARYING_BIT_POS | VARYING_BIT_PSIZ);
    }
 
    unsigned num_vertices_per_prim = 0;
-   if (es_stage->stage == MESA_SHADER_VERTEX) {
+   if (ngg_stage->stage == MESA_SHADER_VERTEX) {
       num_vertices_per_prim = radv_get_num_vertices_per_prim(gfx_state);
-   } else if (es_stage->stage == MESA_SHADER_TESS_EVAL) {
-      num_vertices_per_prim = es_stage->nir->info.tess.point_mode                                   ? 1
-                              : es_stage->nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES ? 2
-                                                                                                    : 3;
+   } else if (ngg_stage->stage == MESA_SHADER_TESS_EVAL) {
+      num_vertices_per_prim = ngg_stage->nir->info.tess.point_mode                                   ? 1
+                              : ngg_stage->nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES ? 2
+                                                                                                     : 3;
+   } else {
+      assert(ngg_stage->stage == MESA_SHADER_GEOMETRY);
+      num_vertices_per_prim = mesa_vertices_per_prim(ngg_stage->nir->info.gs.output_primitive);
    }
 
-   es_stage->info.has_ngg_culling =
-      radv_consider_culling(pdev, es_stage->nir, ps_inputs_read, num_vertices_per_prim, &es_stage->info);
+   ngg_stage->info.has_ngg_culling =
+      radv_consider_culling(pdev, ngg_stage->nir, ps_inputs_read, num_vertices_per_prim, &ngg_stage->info);
 
-   nir_function_impl *impl = nir_shader_get_entrypoint(es_stage->nir);
-   es_stage->info.has_ngg_early_prim_export = pdev->info.gfx_level < GFX11 && exec_list_is_singular(&impl->body);
+   if (ngg_stage->stage != MESA_SHADER_GEOMETRY) {
+      nir_function_impl *impl = nir_shader_get_entrypoint(ngg_stage->nir);
+      ngg_stage->info.has_ngg_early_prim_export = pdev->info.gfx_level < GFX11 && exec_list_is_singular(&impl->body);
 
-   /* NGG passthrough mode should be disabled when culling and when the vertex shader
-    * exports the primitive ID.
-    */
-   es_stage->info.is_ngg_passthrough = !es_stage->info.has_ngg_culling && !(es_stage->stage == MESA_SHADER_VERTEX &&
-                                                                            es_stage->info.outinfo.export_prim_id);
+      /* NGG passthrough mode should be disabled when culling and when the vertex shader
+       * exports the primitive ID.
+       */
+      ngg_stage->info.is_ngg_passthrough =
+         !ngg_stage->info.has_ngg_culling &&
+         !(ngg_stage->stage == MESA_SHADER_VERTEX && ngg_stage->info.outinfo.export_prim_id);
+   }
 }
 
 static void
@@ -1465,9 +1473,8 @@ radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *sta
    if (prerast_stage && !ms_stage) {
       /* Compute NGG info (GFX10+) or GS info. */
       if (ngg_stage) {
-         /* Determine other NGG settings like culling for VS or TES without GS. */
-         if (!gs_stage)
-            radv_determine_ngg_settings(device, ngg_stage, fs_stage, gfx_state);
+         /* Determine other NGG settings like culling. */
+         radv_determine_ngg_settings(device, ngg_stage, fs_stage, gfx_state);
 
          if (es_stage) {
             gfx10_ngg_set_esgs_ring_itemsize(device, &es_stage->info, gs_stage ? &gs_stage->info : NULL,
