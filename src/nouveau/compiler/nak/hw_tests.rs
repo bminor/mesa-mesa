@@ -332,7 +332,11 @@ pub fn test_foldable_op_with(
                 fold_src.push(FoldData::U32(0));
             }
             SrcType::F64 => {
-                todo!("Double ops aren't tested yet");
+                let data = b.ld_test_data(comps * 4, MemType::B64);
+                comps += 2;
+
+                src.src_ref = data.into();
+                fold_src.push(FoldData::Vec2([0, 0]));
             }
             SrcType::Pred => {
                 let data = b.ld_test_data(comps * 4, MemType::B32);
@@ -686,6 +690,20 @@ fn test_op_iadd3x() {
             let mut a = Acorn::new();
             test_foldable_op_with(op, |_| get_iadd_int(&mut a));
         }
+    }
+}
+
+#[test]
+fn test_op_imnmx() {
+    for cmp_type in [IntCmpType::U32, IntCmpType::I32] {
+        let op = OpIMnMx {
+            dst: Dst::None,
+            srcs: [0.into(), 0.into()],
+            min: false.into(),
+            cmp_type,
+        };
+
+        test_foldable_op(op);
     }
 }
 
@@ -1176,6 +1194,41 @@ fn test_iadd64() {
             let dst = x.wrapping_add(y);
             assert_eq!(d[4], dst as u32);
             assert_eq!(d[5], (dst >> 32) as u32);
+        }
+    }
+}
+
+#[test]
+fn test_op_dsetp() {
+    let set_ops = [PredSetOp::And, PredSetOp::Or, PredSetOp::Xor];
+    let cmp_ops = [
+        FloatCmpOp::OrdEq,
+        FloatCmpOp::OrdNe,
+        FloatCmpOp::OrdLt,
+        FloatCmpOp::OrdLe,
+        FloatCmpOp::OrdGt,
+        FloatCmpOp::OrdGe,
+        FloatCmpOp::UnordEq,
+        FloatCmpOp::UnordNe,
+        FloatCmpOp::UnordLt,
+        FloatCmpOp::UnordLe,
+        FloatCmpOp::UnordGt,
+        FloatCmpOp::UnordGe,
+        FloatCmpOp::IsNum,
+        FloatCmpOp::IsNan,
+    ];
+
+    for set_op in set_ops {
+        for cmp_op in cmp_ops {
+            let op = OpDSetP {
+                dst: Dst::None,
+                set_op,
+                cmp_op,
+                srcs: [0.into(), 0.into()],
+                accum: true.into(),
+            };
+
+            test_foldable_op(op);
         }
     }
 }

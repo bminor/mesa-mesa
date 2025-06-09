@@ -3109,7 +3109,7 @@ impl DisplayOp for OpDMnMx {
 impl_display_for_op!(OpDMnMx);
 
 #[repr(C)]
-#[derive(SrcsAsSlice, DstsAsSlice)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpDSetP {
     #[dst_type(Pred)]
     pub dst: Dst,
@@ -3122,6 +3122,35 @@ pub struct OpDSetP {
 
     #[src_type(Pred)]
     pub accum: Src,
+}
+
+impl Foldable for OpDSetP {
+    fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
+        let a = f.get_f64_src(self, &self.srcs[0]);
+        let b = f.get_f64_src(self, &self.srcs[1]);
+        let accum = f.get_pred_src(self, &self.accum);
+
+        let ordered = !a.is_nan() && !b.is_nan();
+        let cmp_res = match self.cmp_op {
+            FloatCmpOp::OrdEq => ordered && a == b,
+            FloatCmpOp::OrdNe => ordered && a != b,
+            FloatCmpOp::OrdLt => ordered && a < b,
+            FloatCmpOp::OrdLe => ordered && a <= b,
+            FloatCmpOp::OrdGt => ordered && a > b,
+            FloatCmpOp::OrdGe => ordered && a >= b,
+            FloatCmpOp::UnordEq => !ordered || a == b,
+            FloatCmpOp::UnordNe => !ordered || a != b,
+            FloatCmpOp::UnordLt => !ordered || a < b,
+            FloatCmpOp::UnordLe => !ordered || a <= b,
+            FloatCmpOp::UnordGt => !ordered || a > b,
+            FloatCmpOp::UnordGe => !ordered || a >= b,
+            FloatCmpOp::IsNum => ordered,
+            FloatCmpOp::IsNan => !ordered,
+        };
+        let res = self.set_op.eval(cmp_res, accum);
+
+        f.set_pred_dst(self, &self.dst, res);
+    }
 }
 
 impl DisplayOp for OpDSetP {
@@ -3766,7 +3795,7 @@ impl DisplayOp for OpIMad64 {
 impl_display_for_op!(OpIMad64);
 
 #[repr(C)]
-#[derive(SrcsAsSlice, DstsAsSlice)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpIMnMx {
     #[dst_type(GPR)]
     pub dst: Dst,
@@ -3778,6 +3807,25 @@ pub struct OpIMnMx {
 
     #[src_type(Pred)]
     pub min: Src,
+}
+
+impl Foldable for OpIMnMx {
+    fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
+        let (a, b) = (
+            f.get_u32_bnot_src(self, &self.srcs[0]),
+            f.get_u32_bnot_src(self, &self.srcs[1]),
+        );
+        let min = f.get_pred_src(self, &self.min);
+
+        let res = match (min, self.cmp_type) {
+            (true, IntCmpType::U32) => a.min(b),
+            (true, IntCmpType::I32) => (a as i32).min(b as i32) as u32,
+            (false, IntCmpType::U32) => a.max(b),
+            (false, IntCmpType::I32) => (a as i32).max(b as i32) as u32,
+        };
+
+        f.set_u32_dst(self, &self.dst, res);
+    }
 }
 
 impl DisplayOp for OpIMnMx {
