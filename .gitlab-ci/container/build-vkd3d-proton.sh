@@ -30,12 +30,13 @@ git checkout "$VKD3D_PROTON_COMMIT"
 git submodule update --init --recursive
 git submodule update --recursive
 
-meson setup                              \
-      -D enable_tests=true               \
-      --buildtype release                \
-      --prefix "$VKD3D_PROTON_DST_DIR"   \
-      --strip                            \
-      --libdir "lib"                     \
+meson setup                                           \
+      -D c_args=-Wno-error=incompatible-pointer-types \
+      -D enable_tests=true                            \
+      --buildtype release                             \
+      --prefix "$VKD3D_PROTON_DST_DIR"                \
+      --strip                                         \
+      --libdir "lib"                                  \
       "$VKD3D_PROTON_BUILD_DIR/build"
 
 ninja -C "$VKD3D_PROTON_BUILD_DIR/build" install
