@@ -3353,13 +3353,23 @@ nvk_mme_bind_cbuf_desc(struct mme_builder *b)
       struct mme_value desc_lo = mme_load(b);
       struct mme_value desc_hi = mme_load(b);
 
-      /* The bottom 45 bits are addr >> 4 */
-      addr_lo = mme_merge(b, mme_zero(), desc_lo, 4, 28, 0);
-      addr_hi = mme_merge(b, mme_zero(), desc_lo, 0, 4, 28);
-      mme_merge_to(b, addr_hi, addr_hi, desc_hi, 4, 13, 0);
+      if (nvk_use_bindless_cbuf_2(b->devinfo)) {
+         /* The bottom 51 bits are addr >> 6 */
+         addr_lo = mme_merge(b, mme_zero(), desc_lo, 6, 26, 0);
+         addr_hi = mme_merge(b, mme_zero(), desc_lo, 0, 6, 26);
+         mme_merge_to(b, addr_hi, addr_hi, desc_hi, 6, 19, 0);
 
-      /* The top 19 bits are size >> 4 */
-      size = mme_merge(b, mme_zero(), desc_hi, 4, 19, 13);
+         /* The top 13 bits are size >> 4 */
+         size = mme_merge(b, mme_zero(), desc_hi, 4, 13, 19);
+      } else {
+         /* The bottom 45 bits are addr >> 4 */
+         addr_lo = mme_merge(b, mme_zero(), desc_lo, 4, 28, 0);
+         addr_hi = mme_merge(b, mme_zero(), desc_lo, 0, 4, 28);
+         mme_merge_to(b, addr_hi, addr_hi, desc_hi, 4, 13, 0);
+
+         /* The top 19 bits are size >> 4 */
+         size = mme_merge(b, mme_zero(), desc_hi, 4, 19, 13);
+      }
 
       mme_free_reg(b, desc_hi);
       mme_free_reg(b, desc_lo);

@@ -87,6 +87,17 @@ PRAGMA_DIAGNOSTIC_POP
 static_assert(sizeof(struct nvk_bindless_cbuf) == 8,
               "nvk_bindless_cbuf has no holes");
 
+/* Hopper+ uses a new cbuf format */
+PRAGMA_DIAGNOSTIC_PUSH
+PRAGMA_DIAGNOSTIC_ERROR(-Wpadded)
+struct nvk_bindless_cbuf_2 {
+   uint64_t base_addr_shift_6:51;
+   uint64_t size_shift_4:13;
+};
+PRAGMA_DIAGNOSTIC_POP
+static_assert(sizeof(struct nvk_bindless_cbuf_2) == 8,
+              "nvk_bindless_cbuf_2 has no holes");
+
 /* This has to match nir_address_format_64bit_bounded_global */
 PRAGMA_DIAGNOSTIC_PUSH
 PRAGMA_DIAGNOSTIC_ERROR(-Wpadded)
@@ -104,6 +115,7 @@ static_assert(sizeof(struct nvk_buffer_address) == 16,
 union nvk_buffer_descriptor {
    struct nvk_buffer_address addr;
    struct nvk_bindless_cbuf cbuf;
+   struct nvk_bindless_cbuf_2 cbuf2;
 };
 
 static inline bool
@@ -112,11 +124,22 @@ nvk_use_bindless_cbuf(const struct nv_device_info *info)
    return info->cls_eng3d >= 0xC597 /* TURING_A */;
 }
 
+static inline bool
+nvk_use_bindless_cbuf_2(const struct nv_device_info *info)
+{
+   return info->cls_eng3d >= 0xCB97 /* HOPPER_A */;
+}
+
 static inline struct nvk_buffer_address
 nvk_ubo_descriptor_addr(const struct nvk_physical_device *pdev,
                         union nvk_buffer_descriptor desc)
 {
-   if (nvk_use_bindless_cbuf(&pdev->info)) {
+   if (nvk_use_bindless_cbuf_2(&pdev->info)) {
+      return (struct nvk_buffer_address) {
+         .base_addr = desc.cbuf2.base_addr_shift_6 << 6,
+         .size = desc.cbuf2.size_shift_4 << 4,
+      };
+   } else if (nvk_use_bindless_cbuf(&pdev->info)) {
       return (struct nvk_buffer_address) {
          .base_addr = desc.cbuf.base_addr_shift_4 << 4,
          .size = desc.cbuf.size_shift_4 << 4,

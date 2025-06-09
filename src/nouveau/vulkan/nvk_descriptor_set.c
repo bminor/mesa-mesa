@@ -200,7 +200,12 @@ ubo_desc(const struct nvk_physical_device *pdev,
    addr_range.addr = ROUND_DOWN_TO(addr_range.addr, min_cbuf_alignment);
    addr_range.range = align(addr_range.range, min_cbuf_alignment);
 
-   if (nvk_use_bindless_cbuf(&pdev->info)) {
+   if (nvk_use_bindless_cbuf_2(&pdev->info)) {
+      return (union nvk_buffer_descriptor) { .cbuf2 = {
+         .base_addr_shift_6 = addr_range.addr >> 6,
+         .size_shift_4 = addr_range.range >> 4,
+      }};
+   } else if (nvk_use_bindless_cbuf(&pdev->info)) {
       return (union nvk_buffer_descriptor) { .cbuf = {
          .base_addr_shift_4 = addr_range.addr >> 4,
          .size_shift_4 = addr_range.range >> 4,

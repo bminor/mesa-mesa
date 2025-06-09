@@ -56,6 +56,7 @@ struct lower_descriptors_ctx {
    const struct nvk_descriptor_set_layout *set_layouts[NVK_MAX_SETS];
 
    bool use_bindless_cbuf;
+   bool use_bindless_cbuf_2;
    bool use_edb_buffer_views;
    bool clamp_desc_array_bounds;
    bool indirect_bind;
@@ -647,7 +648,12 @@ load_descriptor(nir_builder *b, unsigned num_components, unsigned bit_size,
       assert(binding_layout->stride == 1);
       const uint32_t binding_size = binding_layout->array_size;
 
-      if (ctx->use_bindless_cbuf) {
+      if (ctx->use_bindless_cbuf_2) {
+         assert(num_components == 1 && bit_size == 64);
+         const uint32_t size = align(binding_size, 16);
+         return nir_ior_imm(b, nir_ishr_imm(b, base_addr, 6),
+                               ((uint64_t)size >> 4) << 51);
+      } else if (ctx->use_bindless_cbuf) {
          assert(num_components == 1 && bit_size == 64);
          const uint32_t size = align(binding_size, 16);
          return nir_ior_imm(b, nir_ishr_imm(b, base_addr, 4),
@@ -1585,6 +1591,7 @@ nvk_nir_lower_descriptors(nir_shader *nir,
    struct lower_descriptors_ctx ctx = {
       .dev_info = &pdev->info,
       .use_bindless_cbuf = nvk_use_bindless_cbuf(&pdev->info),
+      .use_bindless_cbuf_2 = nvk_use_bindless_cbuf_2(&pdev->info),
       .use_edb_buffer_views = nvk_use_edb_buffer_views(pdev),
       .clamp_desc_array_bounds =
          rs->storage_buffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT ||

@@ -789,7 +789,11 @@ nvk_bind_descriptor_sets(struct nvk_cmd_buffer *cmd,
                if (BITSET_TEST(set_layout->dynamic_ubos, j) &&
                    nvk_use_bindless_cbuf(&pdev->info)) {
                   assert((offset & 0xf) == 0);
-                  db.cbuf.base_addr_shift_4 += offset >> 4;
+                  if (nvk_use_bindless_cbuf_2(&pdev->info)) {
+                     db.cbuf2.base_addr_shift_6 += offset >> 6;
+                  } else {
+                     db.cbuf.base_addr_shift_4 += offset >> 4;
+                  }
                } else {
                   db.addr.base_addr += offset;
                }
