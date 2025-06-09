@@ -6413,6 +6413,8 @@ struct anv_vid_mem {
 #define ANV_VIDEO_H265_MAX_NUM_REF_FRAME 16
 #define ANV_VIDEO_H265_HCP_NUM_REF_FRAME 8
 #define ANV_MAX_H265_CTB_SIZE 64
+#define ANV_MAX_VP9_CTB_SIZE 64
+#define ANV_VP9_SCALE_FACTOR_SHIFT 14
 
 enum anv_vid_mem_h264_types {
    ANV_VID_MEM_H264_INTRA_ROW_STORE,
@@ -6435,6 +6437,25 @@ enum anv_vid_mem_h265_types {
    ANV_VID_MEM_H265_DEC_MAX,
    ANV_VID_MEM_H265_SSE_SRC_PIX_ROW_STORE = ANV_VID_MEM_H265_DEC_MAX,
    ANV_VID_MEM_H265_ENC_MAX,
+};
+
+enum anv_vid_mem_vp9_types {
+   ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_LINE,
+   ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_TILE_LINE,
+   ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_TILE_COLUMN,
+   ANV_VID_MEM_VP9_METADATA_LINE,
+   ANV_VID_MEM_VP9_METADATA_TILE_LINE,
+   ANV_VID_MEM_VP9_METADATA_TILE_COLUMN,
+   ANV_VID_MEM_VP9_PROBABILITY_0,
+   ANV_VID_MEM_VP9_PROBABILITY_1,
+   ANV_VID_MEM_VP9_PROBABILITY_2,
+   ANV_VID_MEM_VP9_PROBABILITY_3,
+   ANV_VID_MEM_VP9_SEGMENT_ID,
+   ANV_VID_MEM_VP9_HVD_LINE_ROW_STORE,
+   ANV_VID_MEM_VP9_HVD_TILE_ROW_STORE,
+   ANV_VID_MEM_VP9_MV_1,
+   ANV_VID_MEM_VP9_MV_2,
+   ANV_VID_MEM_VP9_DEC_MAX,
 };
 
 enum anv_vid_mem_av1_types {
@@ -6482,14 +6503,49 @@ struct anv_av1_video_refs_info {
    uint8_t default_cdf_index;
 };
 
+struct anv_vp9_last_frame_info {
+   uint32_t width;
+   uint32_t height;
+   StdVideoVP9FrameType frame_type;
+   bool key_frame;
+   bool show_frame;
+   bool mv_in_turn;
+};
+
 struct anv_video_session {
    struct vk_video_session vk;
 
    bool cdf_initialized;
    VkVideoEncodeRateControlModeFlagBitsKHR rc_mode;
+
    /* the decoder needs some private memory allocations */
    struct anv_vid_mem vid_mem[ANV_VID_MEM_AV1_MAX];
    struct anv_av1_video_refs_info prev_refs[STD_VIDEO_AV1_NUM_REF_FRAMES];
+
+   /* For VP9 decoding from here */
+   struct anv_vp9_last_frame_info vp9_last_frame;
+   /* Indicate if there's pending partial reset for prob 0 */
+   bool pending_frame_partial_reset;
+   /* Indicate if inter probs saved for prob 0 */
+   bool saved_inter_probs;
+
+   /*
+    * The prob_tbl_set can have the following:
+    *
+    * 0: Reset all
+    * 1: Reset partially from INTER_MODE_PROBS_OFFSET to SEG_PROBS_OFFSET
+    * 2: Copy seg prob
+    * 3: Copy seg prob default
+    * 4: Save inter probs
+    * 5: Restore inter probs
+    */
+   BITSET_DECLARE(prob_tbl_set, 6);
+
+   /* Mask for resetting all each frame context */
+   BITSET_DECLARE(frame_ctx_reset_mask, 4);
+
+   /* Mask for copying seg probs each frame context */
+   BITSET_DECLARE(copy_seg_probs, 4);
 };
 
 struct anv_video_session_params {
@@ -6498,6 +6554,19 @@ struct anv_video_session_params {
 
 void anv_init_av1_cdf_tables(struct anv_cmd_buffer *cmd,
                              struct anv_video_session *vid);
+
+void anv_update_vp9_tables(struct anv_cmd_buffer *cmd,
+                           struct anv_video_session *video,
+                           uint32_t prob_id,
+                           bool key_frame,
+                           const StdVideoVP9Segmentation *seg);
+
+void anv_calculate_qmul(const struct VkVideoDecodeVP9PictureInfoKHR *vp9_pic,
+                        uint32_t seg_id,
+                        int16_t *ptr);
+
+void anv_vp9_reset_segment_id(struct anv_cmd_buffer *cmd,
+                              struct anv_video_session *vid);
 
 uint32_t anv_video_get_image_mv_size(struct anv_device *device,
                                      struct anv_image *image,

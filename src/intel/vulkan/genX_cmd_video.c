@@ -2568,6 +2568,666 @@ anv_av1_decode_video(struct anv_cmd_buffer *cmd_buffer,
 }
 #endif
 
+static uint8_t
+anv_vp9_get_ref_idx(const struct VkVideoDecodeInfoKHR *frame_info, int slot_id)
+{
+   for (unsigned i = 0; i < frame_info->referenceSlotCount; i++) {
+      if (slot_id == frame_info->pReferenceSlots[i].slotIndex)
+         return i;
+   }
+
+   return -1;
+}
+
+static void
+anv_vp9_decide_prob_tbl_set(struct anv_video_session *vid,
+                            const StdVideoDecodeVP9PictureInfo *std_pic)
+{
+   const bool key_frame = std_pic->frame_type == STD_VIDEO_VP9_FRAME_TYPE_KEY;
+   const bool key_frame_or_intra_only =
+      std_pic->flags.intra_only || std_pic->frame_type == STD_VIDEO_VP9_FRAME_TYPE_KEY;
+   const StdVideoVP9Segmentation *segmentation = std_pic->pSegmentation;
+
+   /* Probability table setting */
+   bool reset_all = key_frame || std_pic->flags.error_resilient_mode ||
+                    (std_pic->reset_frame_context == 3 && std_pic->flags.intra_only);
+
+   bool reset_specified = std_pic->reset_frame_context == 2 && std_pic->flags.intra_only;
+   bool copy_seg_prob = false;
+   bool copy_seg_prob_default = false;
+   bool do_save_interprobs = false;
+   bool do_restore_interprobs = false;
+
+   if (std_pic->flags.segmentation_enabled) {
+      if (segmentation->flags.segmentation_update_map) {
+         for (int i = 0; i < 4; i++)
+            BITSET_CLEAR(vid->copy_seg_probs, i);
+
+         copy_seg_prob = true;
+      } else if (!BITSET_TEST(vid->copy_seg_probs, std_pic->frame_context_idx)) {
+         copy_seg_prob_default = true;
+      }
+      /* Mask for indicating seg probs are copied */
+      BITSET_SET(vid->copy_seg_probs, std_pic->frame_context_idx);
+   }
+
+
+   /*
+    * The prob_tbl_set can have the following:
+    *
+    * 0: Reset all
+    * 1: Reset partially from INTER_MODE_PROBS_OFFSET to SEG_PROBS_OFFSET
+    * 2: Copy seg prob
+    * 3: Copy seg prob default
+    * 4: Save inter probs
+    * 5: Restore inter probs
+    */
+
+   if (reset_all) {
+      BITSET_SET(vid->prob_tbl_set, 0);
+      BITSET_SET(vid->frame_ctx_reset_mask, std_pic->frame_context_idx);
+
+      for (int i = 1; i < 4; i++)
+         BITSET_CLEAR(vid->frame_ctx_reset_mask, i);
+      vid->pending_frame_partial_reset = key_frame_or_intra_only;
+      vid->saved_inter_probs = false;
+   } else if (reset_specified) {
+      if (std_pic->frame_context_idx == 0) {
+         BITSET_SET(vid->prob_tbl_set, 0);
+         vid->pending_frame_partial_reset = true;
+      } else {
+         BITSET_CLEAR(vid->frame_ctx_reset_mask, std_pic->frame_context_idx);
+         if (!vid->pending_frame_partial_reset) {
+            if (!vid->saved_inter_probs) {
+               vid->saved_inter_probs = true;
+               do_save_interprobs = true;
+            }
+            BITSET_SET(vid->prob_tbl_set, 1);
+         }
+      }
+   } else if (std_pic->flags.intra_only) {
+      if (!vid->pending_frame_partial_reset) {
+         if (!vid->saved_inter_probs) {
+            vid->saved_inter_probs = true;
+            do_save_interprobs = true;
+         }
+         BITSET_SET(vid->prob_tbl_set, 1);
+      }
+   } else {
+      if (std_pic->frame_context_idx == 0) {
+         if (vid->pending_frame_partial_reset) {
+            BITSET_SET(vid->prob_tbl_set, 1);
+            vid->pending_frame_partial_reset = false;
+         } else if (vid->saved_inter_probs) {
+            vid->saved_inter_probs = false;
+            do_restore_interprobs = true;
+         }
+      } else {
+         if (!key_frame_or_intra_only &&
+             !BITSET_TEST(vid->frame_ctx_reset_mask, std_pic->frame_context_idx)) {
+            BITSET_SET(vid->frame_ctx_reset_mask, std_pic->frame_context_idx);
+            BITSET_SET(vid->prob_tbl_set, 0);
+         }
+      }
+   }
+
+   if (copy_seg_prob) {
+      BITSET_SET(vid->prob_tbl_set, 2);
+   } else if (copy_seg_prob_default) {
+      BITSET_SET(vid->prob_tbl_set, 3);
+   }
+
+   if (do_save_interprobs) {
+      BITSET_SET(vid->prob_tbl_set, 4);
+   } else if (do_restore_interprobs) {
+      BITSET_SET(vid->prob_tbl_set, 5);
+   }
+
+   return;
+}
+
+static void
+anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
+                     const VkVideoDecodeInfoKHR *frame_info)
+{
+   ANV_FROM_HANDLE(anv_buffer, src_buffer, frame_info->srcBuffer);
+   struct anv_video_session *vid = cmd_buffer->video.vid;
+
+   const struct VkVideoDecodeVP9PictureInfoKHR *vp9_pic_info =
+      vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_VP9_PICTURE_INFO_KHR);
+
+   const StdVideoDecodeVP9PictureInfo *std_pic = vp9_pic_info->pStdPictureInfo;
+   const StdVideoVP9Segmentation *segmentation = std_pic->pSegmentation;
+   const StdVideoVP9LoopFilter *loop_filter = std_pic->pLoopFilter;
+
+   const bool key_frame = std_pic->frame_type == STD_VIDEO_VP9_FRAME_TYPE_KEY;
+   const bool key_frame_or_intra_only =
+      std_pic->flags.intra_only || std_pic->frame_type == STD_VIDEO_VP9_FRAME_TYPE_KEY;
+
+   /* 12 bit doesn't support for the moment */
+   bool is_10bit = std_pic->pColorConfig->BitDepth > 8;
+   uint32_t prob_id = ANV_VID_MEM_VP9_PROBABILITY_0 + std_pic->frame_context_idx;
+   bool is_scaling = false;
+
+#if GFX_VER >= 12
+   anv_batch_emit(&cmd_buffer->batch, GENX(MI_FORCE_WAKEUP), wake) {
+      wake.HEVCPowerWellControl = 1;
+      wake.MaskBits = 768;
+   }
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(VD_CONTROL_STATE), cs) {
+      cs.PipelineInitialization = true;
+   }
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(MFX_WAIT), mfx) {
+      mfx.MFXSyncControlFlag = 1;
+   }
+#endif
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(HCP_PIPE_MODE_SELECT), sel) {
+      sel.CodecSelect = Decode;
+      sel.CodecStandardSelect = VP9;
+   }
+
+#if GFX_VER >= 12
+   anv_batch_emit(&cmd_buffer->batch, GENX(MFX_WAIT), mfx) {
+      mfx.MFXSyncControlFlag = 1;
+   }
+#endif
+
+   const struct anv_image_view *dst_iv =
+      anv_image_view_from_handle(frame_info->dstPictureResource.imageViewBinding);
+
+   const struct anv_image_view *iv = frame_info->pSetupReferenceSlot ?
+      anv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding) :
+      dst_iv;
+
+   const struct anv_image *img = iv->image;
+
+   uint32_t frame_width = frame_info->dstPictureResource.codedExtent.width;
+   uint32_t frame_height = frame_info->dstPictureResource.codedExtent.height;
+
+   if (vid->vp9_last_frame.width != 0 &&
+         (frame_width != vid->vp9_last_frame.width ||
+          frame_height != vid->vp9_last_frame.height)) {
+      is_scaling = true;
+   }
+
+   anv_vp9_decide_prob_tbl_set(vid, std_pic);
+   anv_update_vp9_tables(cmd_buffer, vid, prob_id, key_frame_or_intra_only, segmentation);
+
+   if (key_frame_or_intra_only || is_scaling || std_pic->flags.error_resilient_mode)
+      anv_vp9_reset_segment_id(cmd_buffer, vid);
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(HCP_SURFACE_STATE), ss) {
+      ss.SurfacePitch = img->planes[0].primary_surface.isl.row_pitch_B - 1;
+      ss.SurfaceID = HCP_CurrentDecodedPicture;
+      ss.SurfaceFormat = is_10bit ? P010 : PLANAR_420_8;
+
+      ss.YOffsetforUCb = img->planes[1].primary_surface.memory_range.offset /
+         img->planes[0].primary_surface.isl.row_pitch_B;
+
+#if GFX_VER >= 11
+      ss.DefaultAlphaValue = 0xffff;
+#endif
+   }
+
+   uint32_t last_frame_width = 0, last_frame_height = 0;
+   uint32_t golden_frame_width = 0, golden_frame_height = 0;
+   uint32_t altref_frame_width = 0, altref_frame_height = 0;
+
+   if (!key_frame_or_intra_only) {
+      for (uint8_t i = 0; i < 3; i++) {
+
+         uint8_t idx = anv_vp9_get_ref_idx(frame_info, vp9_pic_info->referenceNameSlotIndices[i]);
+
+         const struct anv_image_view *ref_iv =
+            anv_image_view_from_handle(frame_info->pReferenceSlots[idx].pPictureResource->imageViewBinding);
+         const struct anv_image *ref_img = ref_iv->image;
+
+         assert(frame_info->pReferenceSlots[idx].slotIndex == vp9_pic_info->referenceNameSlotIndices[i]);
+
+         if (i == 0) {
+            last_frame_width = frame_info->pReferenceSlots[idx].pPictureResource->codedExtent.width;
+            last_frame_height = frame_info->pReferenceSlots[idx].pPictureResource->codedExtent.height;
+         } else if (i == 1) {
+            golden_frame_width = frame_info->pReferenceSlots[idx].pPictureResource->codedExtent.width;
+            golden_frame_height = frame_info->pReferenceSlots[idx].pPictureResource->codedExtent.height;
+         } else if (i == 2) {
+            altref_frame_width = frame_info->pReferenceSlots[idx].pPictureResource->codedExtent.width;
+            altref_frame_height = frame_info->pReferenceSlots[idx].pPictureResource->codedExtent.height;
+         }
+
+         anv_batch_emit(&cmd_buffer->batch, GENX(HCP_SURFACE_STATE), ss) {
+            ss.SurfacePitch = ref_img->planes[0].primary_surface.isl.row_pitch_B - 1;
+            ss.SurfaceID = i + 2;
+            ss.SurfaceFormat = is_10bit ? P010 : PLANAR_420_8;
+
+            ss.YOffsetforUCb = ref_img->planes[1].primary_surface.memory_range.offset /
+               ref_img->planes[0].primary_surface.isl.row_pitch_B;
+
+#if GFX_VER >= 11
+            ss.DefaultAlphaValue = 0xffff;
+#endif
+         }
+      }
+   }
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(HCP_PIPE_BUF_ADDR_STATE), buf) {
+      buf.DecodedPictureAddress =
+         anv_image_address(img, &img->planes[0].primary_surface.memory_range);
+
+      buf.DecodedPictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.DecodedPictureAddress.bo, 0),
+      };
+
+      buf.DeblockingFilterLineBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_LINE].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_LINE].offset
+      };
+
+      buf.DeblockingFilterLineBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.DeblockingFilterLineBufferAddress.bo, 0),
+      };
+
+      buf.DeblockingFilterTileLineBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_TILE_LINE].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_TILE_LINE].offset
+      };
+
+      buf.DeblockingFilterTileLineBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.DeblockingFilterTileLineBufferAddress.bo, 0),
+      };
+
+      buf.DeblockingFilterTileColumnBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_TILE_COLUMN].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_DEBLOCK_FILTER_ROW_STORE_TILE_COLUMN].offset
+      };
+
+      buf.DeblockingFilterTileColumnBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.DeblockingFilterTileColumnBufferAddress.bo, 0),
+      };
+
+      buf.MetadataLineBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_METADATA_LINE].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_METADATA_LINE].offset
+      };
+
+      buf.MetadataLineBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.MetadataLineBufferAddress.bo, 0),
+      };
+
+      buf.MetadataTileLineBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_METADATA_TILE_LINE].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_METADATA_TILE_LINE].offset
+      };
+
+      buf.MetadataTileLineBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.MetadataTileLineBufferAddress.bo, 0),
+      };
+
+      buf.MetadataTileColumnBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_METADATA_TILE_COLUMN].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_METADATA_TILE_COLUMN].offset
+      };
+
+      buf.MetadataTileColumnBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.MetadataTileColumnBufferAddress.bo, 0),
+      };
+
+      buf.SAOLineBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.SAOTileLineBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.SAOTileColumnBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      /* For VP9 decoding, only 2 mv buffers are used alternately */
+      uint8_t cur_mv_idx = 0, col_mv_idx = 0;
+
+      if (!key_frame_or_intra_only) {
+         if (vid->vp9_last_frame.mv_in_turn) {
+            cur_mv_idx = ANV_VID_MEM_VP9_MV_1;
+            col_mv_idx = ANV_VID_MEM_VP9_MV_2;
+         } else {
+            cur_mv_idx = ANV_VID_MEM_VP9_MV_2;
+            col_mv_idx = ANV_VID_MEM_VP9_MV_1;
+         }
+      }
+
+      if (!key_frame_or_intra_only) {
+         buf.CurrentMVTemporalBufferAddress = (struct anv_address) {
+            vid->vid_mem[cur_mv_idx].mem->bo,
+            vid->vid_mem[cur_mv_idx].offset
+         };
+      }
+
+      buf.CurrentMVTemporalBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, vid->vid_mem[cur_mv_idx].mem->bo, 0),
+      };
+
+      if (!key_frame_or_intra_only) {
+         for (uint8_t i = 0; i < 3; i++) {
+            uint8_t idx = anv_vp9_get_ref_idx(frame_info, vp9_pic_info->referenceNameSlotIndices[i]);
+
+            const struct anv_image_view *ref_iv =
+               anv_image_view_from_handle(frame_info->pReferenceSlots[idx].pPictureResource->imageViewBinding);
+
+            assert(frame_info->pReferenceSlots[idx].slotIndex == vp9_pic_info->referenceNameSlotIndices[i]);
+
+            buf.ReferencePictureAddress[i] =
+               anv_image_address(ref_iv->image, &ref_iv->image->planes[0].primary_surface.memory_range);
+
+         }
+      }
+
+      buf.ReferencePictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.OriginalUncompressedPictureSourceMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.StreamOutDataDestinationMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.DecodedPictureStatusBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.LCUILDBStreamOutBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      if (!key_frame_or_intra_only) {
+         buf.CollocatedMVTemporalBufferAddress[0] = (struct anv_address) {
+            vid->vid_mem[col_mv_idx].mem->bo,
+            vid->vid_mem[col_mv_idx].offset
+         };
+      }
+
+      buf.CollocatedMVTemporalBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.CollocatedMVTemporalBufferAddress[0].bo, 0),
+      };
+
+      buf.VP9ProbabilityBufferAddress = (struct anv_address) {
+         vid->vid_mem[prob_id].mem->bo,
+         vid->vid_mem[prob_id].offset
+      };
+
+      buf.VP9ProbabilityBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.VP9ProbabilityBufferAddress.bo, 0),
+      };
+
+      buf.VP9SegmentIDBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_SEGMENT_ID].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_SEGMENT_ID].offset
+      };
+
+      buf.VP9SegmentIDBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      buf.VP9HVDLineRowStoreBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_HVD_LINE_ROW_STORE].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_HVD_LINE_ROW_STORE].offset
+      };
+
+      buf.VP9HVDLineRowStoreBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.VP9HVDLineRowStoreBufferAddress.bo, 0),
+      };
+
+      buf.VP9HVDTileRowStoreBufferAddress = (struct anv_address) {
+         vid->vid_mem[ANV_VID_MEM_VP9_HVD_TILE_ROW_STORE].mem->bo,
+         vid->vid_mem[ANV_VID_MEM_VP9_HVD_TILE_ROW_STORE].offset
+      };
+
+      buf.VP9HVDTileRowStoreBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, buf.VP9HVDTileRowStoreBufferAddress.bo, 0),
+      };
+
+#if GFX_VER >= 11
+      buf.SAOStreamOutDataDestinationBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.FrameStatisticsStreamOutDataDestinationBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.SSESourcePixelRowStoreBufferMemoryAddressAttributesReadWrite = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.HCPScalabilitySliceStateBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.HCPScalabilityCABACDecodedSyntaxElementsBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.MVUpperRightColumnStoreBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.IntraPredictionUpperRightColumnStoreBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      buf.IntraPredictionLeftReconColumnStoreBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+#endif
+   }
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(HCP_IND_OBJ_BASE_ADDR_STATE), indirect) {
+      indirect.HCPIndirectBitstreamObjectBaseAddress =
+         anv_address_add(src_buffer->address, frame_info->srcBufferOffset & ~4095);
+
+      indirect.HCPIndirectBitstreamObjectMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, src_buffer->address.bo, 0),
+      };
+
+      indirect.HCPIndirectCUObjectMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+      indirect.HCPPAKBSEObjectMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+
+#if GFX_VER >= 11
+      indirect.HCPVP9PAKCompressedHeaderSyntaxStreamInMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      indirect.HCPVP9PAKProbabilityCounterStreamOutMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      indirect.HCPVP9PAKProbabilityDeltasStreamInMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      indirect.HCPVP9PAKTileRecordStreamOutMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+      indirect.HCPVP9PAKCULevelStatisticStreamOutMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
+         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+      };
+#endif
+   }
+
+   uint32_t num_segments;
+   if (!std_pic->flags.segmentation_enabled)
+      num_segments = 1;
+   else
+      num_segments = 8;
+
+   uint8_t loop_filter_level = loop_filter->loop_filter_level;
+
+   for (uint32_t i = 0; i < num_segments; i++) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(HCP_VP9_SEGMENT_STATE), seg) {
+         seg.SegmentID = i;
+
+         int16_t qmul[2][2] = { 0, };
+         anv_calculate_qmul(vp9_pic_info, i, (int16_t *)qmul);
+
+         seg.LumaDCQuantScale = qmul[0][0];
+         seg.LumaACQuantScale = qmul[0][1];
+         seg.ChromaDCQuantScale = qmul[1][0];
+         seg.ChromaACQuantScale = qmul[1][1];
+
+         if (loop_filter->flags.loop_filter_delta_enabled) {
+            int shift = loop_filter->loop_filter_level >= 32;
+
+            if (loop_filter_level > 0) {
+               seg.FilterLevelRef0Mode0 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[0] * (1 << shift), 0, 63);
+               seg.FilterLevelRef0Mode1 = seg.FilterLevelRef0Mode0;
+
+               seg.FilterLevelRef1Mode0 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[1] * (1 <<shift) +
+                     loop_filter->loop_filter_mode_deltas[0] * (1 << shift), 0, 0x3f);
+               seg.FilterLevelRef1Mode1 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[1] * (1 <<shift)
+                     + loop_filter->loop_filter_mode_deltas[1] * (1 << shift), 0, 0x3f);
+
+               seg.FilterLevelRef2Mode0 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[2] * (1 <<shift) +
+                     loop_filter->loop_filter_mode_deltas[0] * (1 << shift), 0, 0x3f);
+
+               seg.FilterLevelRef2Mode1 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[2] * (1 <<shift) +
+                     loop_filter->loop_filter_mode_deltas[1] * (1 << shift), 0, 0x3f);
+
+               seg.FilterLevelRef3Mode0 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[3] * (1 <<shift) +
+                     loop_filter->loop_filter_mode_deltas[0] * (1 << shift), 0, 0x3f);
+
+               seg.FilterLevelRef3Mode1 = CLAMP(loop_filter_level +
+                     loop_filter->loop_filter_ref_deltas[3] * (1 <<shift) +
+                     loop_filter->loop_filter_mode_deltas[1] * (1 << shift), 0, 0x3f);
+            }
+         } else {
+            seg.FilterLevelRef0Mode0 = loop_filter_level;
+            seg.FilterLevelRef0Mode1 = loop_filter_level;
+            seg.FilterLevelRef1Mode0 = loop_filter_level;
+            seg.FilterLevelRef1Mode1 = loop_filter_level;
+            seg.FilterLevelRef2Mode0 = loop_filter_level;
+            seg.FilterLevelRef2Mode1 = loop_filter_level;
+            seg.FilterLevelRef3Mode0 = loop_filter_level;
+            seg.FilterLevelRef3Mode1 = loop_filter_level;
+         }
+      }
+   }
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(HCP_VP9_PIC_STATE), pic) {
+      if (std_pic->flags.segmentation_enabled)
+         assert(segmentation != NULL);
+      pic.FrameWidth = ALIGN(frame_width, 8) - 1;
+      pic.FrameHeight = ALIGN(frame_height, 8) - 1;
+      /* STD_VIDEO_VP9_FRAME_TYPE_KEY == VP9_Key_frmae
+       * STD_VIDEO_VP9_FRAME_TYPE_NON_KEY == VP9_InterFrame
+       */
+      pic.FrameType = std_pic->frame_type;
+      pic.AdaptProbabilities = !std_pic->flags.error_resilient_mode && !std_pic->flags.frame_parallel_decoding_mode;
+      pic.IntraOnly = std_pic->flags.intra_only;
+      pic.RefreshFrameContextEnable = std_pic->flags.refresh_frame_context;
+      pic.ErrorResilientModeEnable = std_pic->flags.error_resilient_mode;
+      pic.FrameParallelDecodingModeEnable = std_pic->flags.frame_parallel_decoding_mode;
+      pic.FilterLevel = std_pic->pLoopFilter->loop_filter_level;
+      pic.SharpnessLevel = std_pic->pLoopFilter->loop_filter_sharpness;
+      pic.SegmentationEnable = std_pic->flags.segmentation_enabled;
+      pic.SegmentationUpdateMap = segmentation && segmentation->flags.segmentation_update_map;
+      pic.LosslessMode = (std_pic->base_q_idx == 0) && (std_pic->delta_q_y_dc == 0) &&
+                         (std_pic->delta_q_uv_dc == 0) && (std_pic->delta_q_uv_ac == 0);
+      pic.SegmentIDStreamOutEnable = pic.SegmentationUpdateMap;
+
+
+      pic.SegmentIDStreamInEnable = key_frame_or_intra_only ||
+         (std_pic->flags.segmentation_enabled &&
+            (!segmentation->flags.segmentation_update_map || segmentation->flags.segmentation_temporal_update)) ||
+         std_pic->flags.error_resilient_mode ||
+         is_scaling;
+
+      pic.Log2TileColumn = std_pic->tile_cols_log2;
+      pic.Log2TileRow = std_pic->tile_rows_log2;
+
+      if (std_pic->pColorConfig->subsampling_x == 1 || std_pic->pColorConfig->subsampling_y == 1) {
+         pic.ChromaSamplingFormat = Format_420;
+      } else if (std_pic->pColorConfig->subsampling_x == 1 || std_pic->pColorConfig->subsampling_y == 0) {
+         pic.ChromaSamplingFormat = Format_422;
+      } else if (std_pic->pColorConfig->subsampling_x == 0 || std_pic->pColorConfig->subsampling_y == 0) {
+         pic.ChromaSamplingFormat = Format_444;
+      }
+
+      pic.BitDepth = is_10bit ? _10bit : _8bit;
+      pic.ProfileLevel = std_pic->profile;
+
+      pic.UncompressedHeaderLength = vp9_pic_info->compressedHeaderOffset - vp9_pic_info->uncompressedHeaderOffset;
+      pic.FirstPartitionSize = vp9_pic_info->tilesOffset - vp9_pic_info->compressedHeaderOffset;
+      pic.MotionCompScalingEnable = true;
+
+      if (!key_frame) {
+         pic.AllowHiPrecisionMV = std_pic->flags.allow_high_precision_mv;
+         pic.MotionCompensationFilterType = std_pic->interpolation_filter;
+         pic.SegmentationTemporalUpdate = key_frame_or_intra_only || !segmentation ? 0 : segmentation->flags.segmentation_temporal_update;
+
+         bool use_pre_frame_mvs = !((std_pic->flags.error_resilient_mode) ||
+                                   (frame_width != vid->vp9_last_frame.width) ||
+                                   (frame_height != vid->vp9_last_frame.height) ||
+                                   vid->vp9_last_frame.key_frame ||
+                                   !vid->vp9_last_frame.show_frame);
+
+         if (is_scaling)
+            use_pre_frame_mvs = false;
+
+         pic.ReferenceFrameSignBias  = std_pic->ref_frame_sign_bias_mask >> 1;
+         pic.LastFrameType = vid->vp9_last_frame.frame_type;
+         pic.UsePrevinFindMVReferences = use_pre_frame_mvs;
+
+         pic.HorizontalScaleFactorforLAST = (last_frame_width << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_width;
+         pic.VerticalScaleFactorforLAST = (last_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;
+         pic.HorizontalScaleFactorforGOLDEN = (golden_frame_width << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_width;
+         pic.VerticalScaleFactorforGOLDEN = (golden_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;;
+         pic.HorizontalScaleFactorforALTREF = (altref_frame_width << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_width;
+         pic.VerticalScaleFactorforALTREF = (altref_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;;
+
+         pic.LastFrameWidth = last_frame_width == 0 ? 0 : last_frame_width - 1;
+         pic.LastFrameHeight = last_frame_height == 0 ? 0 : last_frame_height - 1;
+         pic.GoldenFrameWidth = golden_frame_width == 0 ? 0 : golden_frame_width - 1;
+         pic.GoldenFrameHeight = golden_frame_height == 0 ? 0 : golden_frame_height - 1;
+         pic.AltrefFrameWidth = altref_frame_width == 0 ? 0 : altref_frame_width - 1;
+         pic.AltrefFrameHeight = altref_frame_height == 0 ? 0 : altref_frame_height - 1;
+
+      }
+
+   }
+
+   vid->vp9_last_frame.frame_type = std_pic->frame_type;
+   vid->vp9_last_frame.width = frame_width;
+   vid->vp9_last_frame.height = frame_height;
+   vid->vp9_last_frame.key_frame = key_frame_or_intra_only;
+   vid->vp9_last_frame.show_frame = std_pic->flags.show_frame;
+   vid->vp9_last_frame.mv_in_turn = !vid->vp9_last_frame.mv_in_turn;
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(HCP_BSD_OBJECT), bsd) {
+      bsd.IndirectBSDDataLength = frame_info->srcBufferRange - vp9_pic_info->compressedHeaderOffset;
+      bsd.IndirectBSDDataStartAddress = (frame_info->srcBufferOffset & 4095) + vp9_pic_info->compressedHeaderOffset;
+   }
+
+#if GFX_VER >= 12
+   anv_batch_emit(&cmd_buffer->batch, GENX(VD_CONTROL_STATE), cs) {
+      cs.MemoryImplicitFlush = true;
+   }
+#endif
+
+   anv_batch_emit(&cmd_buffer->batch, GENX(VD_PIPELINE_FLUSH), flush) {
+      flush.HEVCPipelineDone = true;
+      flush.HEVCPipelineCommandFlush = true;
+      flush.VDCommandMessageParserDone = true;
+   }
+}
+
 static void
 handle_inline_query_end(struct anv_cmd_buffer *cmd_buffer,
                         const VkVideoInlineQueryInfoKHR *inline_query)
@@ -2612,6 +3272,9 @@ genX(CmdDecodeVideoKHR)(VkCommandBuffer commandBuffer,
       anv_av1_decode_video(cmd_buffer, frame_info);
       break;
 #endif
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+      anv_vp9_decode_video(cmd_buffer, frame_info);
+      break;
    default:
       assert(0);
    }
