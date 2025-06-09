@@ -49,7 +49,6 @@ struct radv_vs_output_info {
    bool writes_primitive_shading_rate_per_primitive;
    bool export_prim_id;
    bool export_prim_id_per_primitive;
-   unsigned pos_exports;
 };
 
 struct radv_streamout_info {

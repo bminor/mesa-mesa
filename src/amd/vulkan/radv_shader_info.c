@@ -1123,19 +1123,6 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
       outinfo->writes_layer_per_primitive = per_prim_mask & VARYING_BIT_LAYER;
       outinfo->writes_primitive_shading_rate_per_primitive = per_prim_mask & VARYING_BIT_PRIMITIVE_SHADING_RATE;
       outinfo->export_prim_id_per_primitive = per_prim_mask & VARYING_BIT_PRIMITIVE_ID;
-
-      outinfo->pos_exports = 1;
-
-      if (outinfo->writes_pointsize || outinfo->writes_viewport_index || outinfo->writes_layer ||
-          outinfo->writes_primitive_shading_rate)
-         outinfo->pos_exports++;
-
-      unsigned clip_cull_mask = outinfo->clip_dist_mask | outinfo->cull_dist_mask;
-
-      if (clip_cull_mask & 0x0f)
-         outinfo->pos_exports++;
-      if (clip_cull_mask & 0xf0)
-         outinfo->pos_exports++;
    }
 
    info->vs.needs_draw_id |= BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID);

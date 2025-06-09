@@ -1426,11 +1426,31 @@ radv_open_rtld_binary(struct radv_device *device, const struct radv_shader_binar
 }
 #endif
 
+static unsigned
+radv_get_num_pos_exports(struct radv_shader_info *info)
+{
+   unsigned num = 1;
+
+   if (info->outinfo.writes_pointsize || info->outinfo.writes_viewport_index || info->outinfo.writes_layer ||
+       info->outinfo.writes_primitive_shading_rate)
+      num++;
+
+   unsigned clip_cull_mask = info->outinfo.clip_dist_mask | info->outinfo.cull_dist_mask;
+
+   if (clip_cull_mask & 0x0f)
+      num++;
+   if (clip_cull_mask & 0xf0)
+      num++;
+
+   return num;
+}
+
 static void
 radv_precompute_registers_hw_vs(struct radv_device *device, struct radv_shader_binary *binary)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_shader_info *info = &binary->info;
+   unsigned num_pos_exports = radv_get_num_pos_exports(info);
 
    /* VS is required to export at least one param. */
    const uint32_t nparams = MAX2(info->outinfo.param_exports, 1);
@@ -1441,11 +1461,9 @@ radv_precompute_registers_hw_vs(struct radv_device *device, struct radv_shader_b
 
    info->regs.spi_shader_pos_format =
       S_02870C_POS0_EXPORT_FORMAT(V_02870C_SPI_SHADER_4COMP) |
-      S_02870C_POS1_EXPORT_FORMAT(info->outinfo.pos_exports > 1 ? V_02870C_SPI_SHADER_4COMP
-                                                                : V_02870C_SPI_SHADER_NONE) |
-      S_02870C_POS2_EXPORT_FORMAT(info->outinfo.pos_exports > 2 ? V_02870C_SPI_SHADER_4COMP
-                                                                : V_02870C_SPI_SHADER_NONE) |
-      S_02870C_POS3_EXPORT_FORMAT(info->outinfo.pos_exports > 3 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE);
+      S_02870C_POS1_EXPORT_FORMAT(num_pos_exports > 1 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE) |
+      S_02870C_POS2_EXPORT_FORMAT(num_pos_exports > 2 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE) |
+      S_02870C_POS3_EXPORT_FORMAT(num_pos_exports > 3 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE);
 
    const bool misc_vec_ena = info->outinfo.writes_pointsize || info->outinfo.writes_layer ||
                              info->outinfo.writes_viewport_index || info->outinfo.writes_primitive_shading_rate;
@@ -1459,8 +1477,7 @@ radv_precompute_registers_hw_vs(struct radv_device *device, struct radv_shader_b
       S_02881C_USE_VTX_VIEWPORT_INDX(info->outinfo.writes_viewport_index) |
       S_02881C_USE_VTX_VRS_RATE(info->outinfo.writes_primitive_shading_rate) |
       S_02881C_VS_OUT_MISC_VEC_ENA(misc_vec_ena) |
-      S_02881C_VS_OUT_MISC_SIDE_BUS_ENA(misc_vec_ena ||
-                                        (pdev->info.gfx_level >= GFX10_3 && info->outinfo.pos_exports > 1)) |
+      S_02881C_VS_OUT_MISC_SIDE_BUS_ENA(misc_vec_ena || (pdev->info.gfx_level >= GFX10_3 && num_pos_exports > 1)) |
       S_02881C_VS_OUT_CCDIST0_VEC_ENA((total_mask & 0x0f) != 0) |
       S_02881C_VS_OUT_CCDIST1_VEC_ENA((total_mask & 0xf0) != 0) | total_mask << 8 | clip_dist_mask;
 
@@ -1606,16 +1623,15 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
    if (info->outinfo.writes_layer_per_primitive || info->outinfo.writes_viewport_index_per_primitive ||
        info->outinfo.writes_primitive_shading_rate_per_primitive)
       idx_format = V_028708_SPI_SHADER_2COMP;
+   unsigned num_pos_exports = radv_get_num_pos_exports(info);
 
    info->regs.ngg.spi_shader_idx_format = S_028708_IDX0_EXPORT_FORMAT(idx_format);
 
    info->regs.spi_shader_pos_format =
       S_02870C_POS0_EXPORT_FORMAT(V_02870C_SPI_SHADER_4COMP) |
-      S_02870C_POS1_EXPORT_FORMAT(info->outinfo.pos_exports > 1 ? V_02870C_SPI_SHADER_4COMP
-                                                                : V_02870C_SPI_SHADER_NONE) |
-      S_02870C_POS2_EXPORT_FORMAT(info->outinfo.pos_exports > 2 ? V_02870C_SPI_SHADER_4COMP
-                                                                : V_02870C_SPI_SHADER_NONE) |
-      S_02870C_POS3_EXPORT_FORMAT(info->outinfo.pos_exports > 3 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE);
+      S_02870C_POS1_EXPORT_FORMAT(num_pos_exports > 1 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE) |
+      S_02870C_POS2_EXPORT_FORMAT(num_pos_exports > 2 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE) |
+      S_02870C_POS3_EXPORT_FORMAT(num_pos_exports > 3 ? V_02870C_SPI_SHADER_4COMP : V_02870C_SPI_SHADER_NONE);
 
    const bool misc_vec_ena = info->outinfo.writes_pointsize || info->outinfo.writes_layer ||
                              info->outinfo.writes_viewport_index || info->outinfo.writes_primitive_shading_rate;
@@ -1629,8 +1645,7 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
       S_02881C_USE_VTX_VIEWPORT_INDX(info->outinfo.writes_viewport_index) |
       S_02881C_USE_VTX_VRS_RATE(info->outinfo.writes_primitive_shading_rate) |
       S_02881C_VS_OUT_MISC_VEC_ENA(misc_vec_ena) |
-      S_02881C_VS_OUT_MISC_SIDE_BUS_ENA(misc_vec_ena ||
-                                        (pdev->info.gfx_level >= GFX10_3 && info->outinfo.pos_exports > 1)) |
+      S_02881C_VS_OUT_MISC_SIDE_BUS_ENA(misc_vec_ena || (pdev->info.gfx_level >= GFX10_3 && num_pos_exports > 1)) |
       S_02881C_VS_OUT_CCDIST0_VEC_ENA((total_mask & 0x0f) != 0) |
       S_02881C_VS_OUT_CCDIST1_VEC_ENA((total_mask & 0xf0) != 0) | total_mask << 8 | clip_dist_mask;
 
