@@ -60,7 +60,7 @@ actions:
           steps:
           - |-
             echo test UBOOT
-            echo "eval \"$(echo ZWNobyB0ZXN0IFVCT09U | base64 -d)\"" >> /set-job-env-vars.sh
+            echo ZWNobyB0ZXN0IFVCT09U | base64 -d >> /set-job-env-vars.sh
             export CURRENT_SECTION=dut_boot
           - export -p > /dut-env-vars.sh
 - test:
