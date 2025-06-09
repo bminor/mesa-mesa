@@ -691,10 +691,6 @@ radv_consider_culling(const struct radv_physical_device *pdev, struct nir_shader
    if (is_meta_shader(nir))
       return false;
 
-   /* We don't support culling with multiple viewports yet. */
-   if (nir->info.outputs_written & (VARYING_BIT_VIEWPORT | VARYING_BIT_VIEWPORT_MASK))
-      return false;
-
    /* We don't support culling with vertex shader prologs. */
    if (info->vs.has_prolog)
       return false;
@@ -804,6 +800,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
    options.has_gs_invocations_query = pdev->info.gfx_level < GFX11;
    options.has_gs_primitives_query = pdev->info.gfx_level < GFX11;
    options.force_vrs = info->force_vrs_per_vertex;
+   options.skip_viewport_state_culling = nir->info.outputs_written & (VARYING_BIT_VIEWPORT | VARYING_BIT_VIEWPORT_MASK);
 
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL) {
       assert(info->is_ngg);
