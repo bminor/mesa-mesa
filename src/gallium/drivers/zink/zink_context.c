@@ -2928,6 +2928,7 @@ static unsigned
 begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
 {
    unsigned clear_buffers = 0;
+   struct zink_screen *screen = zink_screen(ctx->base.screen);
    zink_update_vk_sample_locations(ctx);
    bool has_swapchain = zink_render_update_swapchain(ctx);
    if (has_swapchain)
@@ -2937,7 +2938,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    bool changed_layout = false;
    bool changed_size = false;
    bool zsbuf_used = zink_is_zsbuf_used(ctx);
-   bool has_msrtss = zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled;
+   bool has_msrtss = screen->info.have_EXT_multisampled_render_to_single_sampled;
    bool use_tc_info = !ctx->blitting && ctx->track_renderpasses;
    uint32_t msaa_expand_mask = 0;
 
@@ -3133,7 +3134,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       }
       zink_batch_resource_usage_set(ctx->bs, res, true, false);
       VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-      zink_screen(ctx->base.screen)->image_barrier(ctx, res, layout, 0, 0);
+      screen->image_barrier(ctx, res, layout, 0, 0);
       res->obj->unordered_read = res->obj->unordered_write = false;
       ctx->dynamic_fb.attachments[0].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
       ctx->dynamic_fb.attachments[0].resolveImageLayout = zink_resource(surf->base.texture)->layout;
