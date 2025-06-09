@@ -27,6 +27,7 @@
    (MAX_DYNAMIC_UNIFORM_BUFFERS + MAX_DYNAMIC_STORAGE_BUFFERS)
 
 #if PAN_ARCH <= 7
+
 /* On Bifrost, this is a software limit. We pick the minimum required by
  * Vulkan, because Bifrost GPUs don't have unified descriptor tables,
  * which forces us to aggregate all descriptors from all sets and dispatch
@@ -34,12 +35,6 @@
  * more sets we support the more copies we are likely to have to do at
  * draw time. */
 #define MAX_SETS 4
-#else
-/* Valhall has native support for descriptor sets, and allows a maximum
- * of 16 sets, but we reserve one for our internal use, so we have 15
- * left. */
-#define MAX_SETS 15
-#endif
 
 /* MALI_RENDERER_STATE::sampler_count is 16-bit. */
 #define MAX_PER_SET_SAMPLERS UINT16_MAX
@@ -57,6 +52,27 @@
 /* MALI_ATTRIBUTE::buffer_index is 9-bit, and each image takes two
  * MALI_ATTRIBUTE_BUFFER slots, which gives a maximum of (1 << 8) images. */
 #define MAX_PER_SET_STORAGE_IMAGES (1 << 8)
+
+#else
+
+/* Valhall has native support for descriptor sets, and allows a maximum
+ * of 16 sets, but we reserve one for our internal use, so we have 15
+ * left. */
+#define MAX_SETS 15
+
+/* Hardware limit is 2^24 each of buffer, texture, and sampler descriptors. We
+ * use the same hardware descriptors for multiple kinds of vulkan descriptors,
+ * and may want to reorganize these in the future, so advertise a lower limit
+ * of 2^20. */
+#define MAX_DESCRIPTORS (1 << 20)
+#define MAX_PER_SET_SAMPLERS MAX_DESCRIPTORS
+#define MAX_PER_SET_SAMPLED_IMAGES MAX_DESCRIPTORS
+#define MAX_PER_SET_UNIFORM_BUFFERS MAX_DESCRIPTORS
+#define MAX_PER_SET_STORAGE_BUFFERS MAX_DESCRIPTORS
+#define MAX_PER_SET_STORAGE_IMAGES MAX_DESCRIPTORS
+
+#endif
+
 /* A maximum of 8 color render targets, and one depth-stencil render target. */
 #define MAX_PER_SET_INPUT_ATTACHMENTS (MAX_RTS + 1)
 
