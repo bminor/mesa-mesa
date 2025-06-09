@@ -146,6 +146,7 @@ modifier_is_supported(const struct intel_device_info *devinfo,
       return false;
    }
 
+   bool no_fc = INTEL_DEBUG(DEBUG_NO_FAST_CLEAR);
    bool no_ccs = INTEL_DEBUG(DEBUG_NO_CCS) || (bind & PIPE_BIND_CONST_BW);
 
    /* Check remaining requirements. */
@@ -169,13 +170,16 @@ modifier_is_supported(const struct intel_device_info *devinfo,
          return false;
       }
       break;
+   case I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC:
+   case I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC:
+   case I915_FORMAT_MOD_Y_TILED_GEN12_RC_CCS_CC:
+      if (no_fc)
+         return false;
+      FALLTHROUGH;
    case I915_FORMAT_MOD_4_TILED_LNL_CCS:
    case I915_FORMAT_MOD_4_TILED_BMG_CCS:
    case I915_FORMAT_MOD_4_TILED_MTL_RC_CCS:
-   case I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC:
-   case I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC:
    case I915_FORMAT_MOD_4_TILED_DG2_RC_CCS:
-   case I915_FORMAT_MOD_Y_TILED_GEN12_RC_CCS_CC:
    case I915_FORMAT_MOD_Y_TILED_GEN12_RC_CCS:
    case I915_FORMAT_MOD_Y_TILED_CCS: {
       if (no_ccs)
