@@ -729,6 +729,7 @@ static std::vector<VkWriteDescriptorSet> transformDescriptorSetList(
     const VkWriteDescriptorSet* pDescriptorSets, uint32_t descriptorSetCount,
     std::vector<std::vector<VkDescriptorBufferInfo>>& bufferInfos) {
     std::vector<VkWriteDescriptorSet> outDescriptorSets(descriptorSetCount);
+    bufferInfos.resize(descriptorSetCount);
     for (uint32_t i = 0; i < descriptorSetCount; ++i) {
         const auto& srcDescriptorSet = pDescriptorSets[i];
         const uint32_t descriptorCount = srcDescriptorSet.descriptorCount;
@@ -736,19 +737,20 @@ static std::vector<VkWriteDescriptorSet> transformDescriptorSetList(
         VkWriteDescriptorSet& outDescriptorSet = outDescriptorSets[i];
         outDescriptorSet = srcDescriptorSet;
 
-        bufferInfos.push_back(std::vector<VkDescriptorBufferInfo>());
-        bufferInfos[i].resize(descriptorCount);
-        memset(&bufferInfos[i][0], 0, sizeof(VkDescriptorBufferInfo) * descriptorCount);
+        std::vector<VkDescriptorBufferInfo>& bufferInfo = bufferInfos[i];
+        bufferInfo.resize(descriptorCount);
         for (uint32_t j = 0; j < descriptorCount; ++j) {
             const auto* srcBufferInfo = srcDescriptorSet.pBufferInfo;
             if (srcBufferInfo) {
-                bufferInfos[i][j] = srcBufferInfo[j];
-                bufferInfos[i][j].buffer = VK_NULL_HANDLE;
+                bufferInfo[j] = srcBufferInfo[j];
+                bufferInfo[j].buffer = VK_NULL_HANDLE;
                 if (vk_descriptor_type_has_descriptor_buffer(srcDescriptorSet.descriptorType) &&
                     srcBufferInfo[j].buffer) {
                     VK_FROM_HANDLE(gfxstream_vk_buffer, gfxstreamBuffer, srcBufferInfo[j].buffer);
-                    bufferInfos[i][j].buffer = gfxstreamBuffer->internal_object;
+                    bufferInfo[j].buffer = gfxstreamBuffer->internal_object;
                 }
+            } else {
+                memset(&bufferInfo[j], 0, sizeof(VkDescriptorBufferInfo));
             }
         }
         outDescriptorSet.pBufferInfo = bufferInfos[i].data();
