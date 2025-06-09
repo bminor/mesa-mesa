@@ -31,6 +31,7 @@
 #include "dev/intel_debug.h"
 #include "util/u_math.h"
 #include "util/bitscan.h"
+#include "compiler/glsl_types.h"
 
 #include <vector>
 
@@ -4840,6 +4841,53 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
          ->saturate = nir_intrinsic_saturate(instr);
 
       cs_prog_data->uses_systolic = true;
+      break;
+   }
+
+   case nir_intrinsic_convert_cmat_intel: {
+      struct glsl_cmat_description dst_cmat_desc =
+         nir_intrinsic_dst_cmat_desc(instr);
+      struct glsl_cmat_description src_cmat_desc =
+         nir_intrinsic_src_cmat_desc(instr);
+
+      brw_reg_type dst_type =
+         brw_type_for_base_type((enum glsl_base_type)dst_cmat_desc.element_type);
+      brw_reg_type src_type =
+         brw_type_for_base_type((enum glsl_base_type)src_cmat_desc.element_type);
+
+      const unsigned dst_element_bits =
+         brw_type_size_bits(dst_type);
+      const unsigned src_element_bits =
+         brw_type_size_bits(src_type);
+
+      const unsigned element_bits = 32;
+      const unsigned src_packing_factor = element_bits / src_element_bits;
+      const unsigned src_components = nir_src_num_components(instr->src[0]);
+      const unsigned elems = src_components * src_packing_factor;
+
+      brw_builder bldn = bld.exec_all();
+      const brw_reg src = retype(get_nir_src(ntb, instr->src[0], 0), src_type);
+      const brw_reg dst = retype(dest, dst_type);
+
+      assert(dst_cmat_desc.use == src_cmat_desc.use);
+
+      switch (src_cmat_desc.use) {
+      case GLSL_CMAT_USE_B:
+         assert(dst_element_bits == src_element_bits);
+         FALLTHROUGH;
+
+      case GLSL_CMAT_USE_A:
+      case GLSL_CMAT_USE_ACCUMULATOR: {
+         const unsigned width = bldn.dispatch_width();
+         for (unsigned c = 0; c < elems; c++) {
+            bldn.MOV(suboffset(dst, c * width),
+                     suboffset(src, c * width));
+         }
+         break;
+      }
+      default:
+         unreachable("not reached");
+      }
       break;
    }
 
