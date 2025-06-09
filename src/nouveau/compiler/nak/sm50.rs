@@ -147,15 +147,8 @@ impl ShaderModel for ShaderModel50 {
         instr_latency(self.sm, a, a_dst_idx)
     }
 
-    fn paw_latency(&self, write: &Op, _dst_idx: usize) -> u32 {
-        if self.sm == 70 {
-            match write {
-                Op::DSetP(_) | Op::HSetP2(_) => 15,
-                _ => 13,
-            }
-        } else {
-            13
-        }
+    fn paw_latency(&self, _write: &Op, _dst_idx: usize) -> u32 {
+        13
     }
 
     fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
