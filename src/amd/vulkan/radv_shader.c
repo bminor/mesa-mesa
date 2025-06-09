@@ -792,6 +792,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
    options.export_clipdist_mask = info->outinfo.clip_dist_mask | info->outinfo.cull_dist_mask;
    options.cull_clipdist_mask = options.export_clipdist_mask;
    options.dont_export_cull_distances = info->has_ngg_culling;
+   options.pack_clip_cull_distances = true;
    options.vs_output_param_offset = info->outinfo.vs_output_param_offset;
    options.has_param_exports = info->outinfo.param_exports || info->outinfo.prim_param_exports;
    options.can_cull = info->has_ngg_culling;
@@ -1428,7 +1429,7 @@ radv_open_rtld_binary(struct radv_device *device, const struct radv_shader_binar
 #endif
 
 static unsigned
-radv_get_num_pos_exports(struct radv_shader_info *info)
+radv_get_num_pos_exports(struct radv_shader_info *info, unsigned *clip_dist_mask, unsigned *cull_dist_mask)
 {
    unsigned num = 1;
 
@@ -1436,13 +1437,19 @@ radv_get_num_pos_exports(struct radv_shader_info *info)
        info->outinfo.writes_primitive_shading_rate)
       num++;
 
-   unsigned clip_cull_mask = info->outinfo.clip_dist_mask | (info->has_ngg_culling ? 0 : info->outinfo.cull_dist_mask);
+   /* Clip and cull distances are packed by ac_nir_export_position. */
+   unsigned num_clip_dist_comps = util_bitcount(info->outinfo.clip_dist_mask);
+   /* Cull distances are not exported if the shader culls against them. */
+   unsigned num_cull_dist_comps = info->has_ngg_culling ? 0 : util_bitcount(info->outinfo.cull_dist_mask);
+   unsigned clip_cull_mask = BITFIELD_MASK(num_clip_dist_comps + num_cull_dist_comps);
 
    if (clip_cull_mask & 0x0f)
       num++;
    if (clip_cull_mask & 0xf0)
       num++;
 
+   *clip_dist_mask = BITFIELD_MASK(num_clip_dist_comps);
+   *cull_dist_mask = BITFIELD_RANGE(num_clip_dist_comps, num_cull_dist_comps);
    return num;
 }
 
@@ -1451,7 +1458,8 @@ radv_precompute_registers_hw_vs(struct radv_device *device, struct radv_shader_b
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_shader_info *info = &binary->info;
-   unsigned num_pos_exports = radv_get_num_pos_exports(info);
+   unsigned clip_dist_mask, cull_dist_mask;
+   unsigned num_pos_exports = radv_get_num_pos_exports(info, &clip_dist_mask, &cull_dist_mask);
 
    /* VS is required to export at least one param. */
    const uint32_t nparams = MAX2(info->outinfo.param_exports, 1);
@@ -1468,8 +1476,6 @@ radv_precompute_registers_hw_vs(struct radv_device *device, struct radv_shader_b
 
    const bool misc_vec_ena = info->outinfo.writes_pointsize || info->outinfo.writes_layer ||
                              info->outinfo.writes_viewport_index || info->outinfo.writes_primitive_shading_rate;
-   const unsigned clip_dist_mask = info->outinfo.clip_dist_mask;
-   const unsigned cull_dist_mask = info->outinfo.cull_dist_mask;
    const unsigned total_mask = clip_dist_mask | cull_dist_mask;
 
    info->regs.pa_cl_vs_out_cntl =
@@ -1624,7 +1630,8 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
    if (info->outinfo.writes_layer_per_primitive || info->outinfo.writes_viewport_index_per_primitive ||
        info->outinfo.writes_primitive_shading_rate_per_primitive)
       idx_format = V_028708_SPI_SHADER_2COMP;
-   unsigned num_pos_exports = radv_get_num_pos_exports(info);
+   unsigned clip_dist_mask, cull_dist_mask;
+   unsigned num_pos_exports = radv_get_num_pos_exports(info, &clip_dist_mask, &cull_dist_mask);
 
    info->regs.ngg.spi_shader_idx_format = S_028708_IDX0_EXPORT_FORMAT(idx_format);
 
@@ -1636,8 +1643,6 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
 
    const bool misc_vec_ena = info->outinfo.writes_pointsize || info->outinfo.writes_layer ||
                              info->outinfo.writes_viewport_index || info->outinfo.writes_primitive_shading_rate;
-   const unsigned clip_dist_mask = info->outinfo.clip_dist_mask;
-   const unsigned cull_dist_mask = info->has_ngg_culling ? 0 : info->outinfo.cull_dist_mask;
    const unsigned total_mask = clip_dist_mask | cull_dist_mask;
 
    info->regs.pa_cl_vs_out_cntl =
