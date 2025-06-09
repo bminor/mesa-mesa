@@ -45,7 +45,6 @@ enum wait_event : uint32_t {
    event_gds = 1 << 2,
    event_vmem = 1 << 3,
    event_vmem_store = 1 << 4, /* GFX10+ */
-   event_flat = 1 << 5,
    event_exp_pos = 1 << 6,
    event_exp_param = 1 << 7,
    event_exp_mrt_null = 1 << 8,
@@ -102,9 +101,7 @@ struct wait_entry {
       counters &= ~(1 << type);
       imm[type] = wait_imm::unset_counter;
 
-      events &= ~type_events | event_flat;
-      if (!(counters & counter_lgkm) && !(counters & counter_vm))
-         events &= ~(type_events & event_flat);
+      events &= ~type_events;
 
       logical_events &= events;
       if (type == wait_type_vm)
@@ -144,8 +141,8 @@ struct target_info {
 
       events[wait_type_exp] = event_exp_pos | event_exp_param | event_exp_mrt_null |
                               event_gds_gpr_lock | event_vmem_gpr_lock | event_ldsdir;
-      events[wait_type_lgkm] = event_smem | event_lds | event_gds | event_flat | event_sendmsg;
-      events[wait_type_vm] = event_vmem | event_flat;
+      events[wait_type_lgkm] = event_smem | event_lds | event_gds | event_sendmsg;
+      events[wait_type_vm] = event_vmem;
       events[wait_type_vs] = event_vmem_store;
       if (gfx_level >= GFX12) {
          events[wait_type_sample] = event_vmem_sample;
@@ -159,7 +156,7 @@ struct target_info {
             counters[j] |= (1 << i);
       }
 
-      unordered_events = event_smem | (gfx_level < GFX10 ? event_flat : 0);
+      unordered_events = event_smem;
    }
 
    uint8_t get_counters_for_event(wait_event event) const { return counters[ffs(event) - 1]; }
@@ -317,7 +314,7 @@ get_imm(wait_ctx& ctx, PhysReg reg, wait_entry& entry)
        */
       if (ctx.gfx_level >= GFX11) {
          uint32_t ds_vmem_events =
-            event_lds | event_gds | event_vmem | event_vmem_sample | event_vmem_bvh | event_flat;
+            event_lds | event_gds | event_vmem | event_vmem_sample | event_vmem_bvh;
          events |= ds_vmem_events;
       }
 
@@ -523,11 +520,9 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
          for (unsigned j = 0; j < wait_type_num; j++) {
             if (bar[j] != wait_imm::unset_counter && imm[j] <= bar[j]) {
                bar[j] = wait_imm::unset_counter;
-               bar_ev &= ~ctx.info->events[j] | event_flat;
+               bar_ev &= ~ctx.info->events[j];
             }
          }
-         if (bar.vm == wait_imm::unset_counter && bar.lgkm == wait_imm::unset_counter)
-            bar_ev &= ~event_flat;
       }
 
       /* remove all gprs with higher counter from map */
@@ -587,11 +582,6 @@ update_counters(wait_ctx& ctx, wait_event event, memory_sync_info sync = memory_
    if (ctx.info->unordered_events & event)
       return;
 
-   if (ctx.pending_flat_lgkm)
-      counters &= ~counter_lgkm;
-   if (ctx.pending_flat_vm)
-      counters &= ~counter_vm;
-
    for (std::pair<const PhysReg, wait_entry>& e : ctx.gpr_map) {
       wait_entry& entry = e.second;
 
@@ -605,25 +595,6 @@ update_counters(wait_ctx& ctx, wait_event event, memory_sync_info sync = memory_
             entry.imm[i] = std::min<uint16_t>(entry.imm[i] + 1, ctx.info->max_cnt[i]);
       }
    }
-}
-
-void
-update_counters_for_flat_load(wait_ctx& ctx, memory_sync_info sync = memory_sync_info())
-{
-   assert(ctx.gfx_level < GFX10);
-
-   ctx.nonzero |= BITFIELD_BIT(wait_type_lgkm) | BITFIELD_BIT(wait_type_vm);
-
-   update_barrier_imm(ctx, counter_vm | counter_lgkm, event_flat, sync);
-
-   for (std::pair<PhysReg, wait_entry> e : ctx.gpr_map) {
-      if (e.second.counters & counter_vm)
-         e.second.imm.vm = 0;
-      if (e.second.counters & counter_lgkm)
-         e.second.imm.lgkm = 0;
-   }
-   ctx.pending_flat_lgkm = true;
-   ctx.pending_flat_vm = true;
 }
 
 void
@@ -693,13 +664,19 @@ gen(Instruction* instr, wait_ctx& ctx)
    }
    case Format::FLAT: {
       FLAT_instruction& flat = instr->flat();
-      if (ctx.gfx_level < GFX10 && !instr->definitions.empty())
-         update_counters_for_flat_load(ctx, flat.sync);
-      else
-         update_counters(ctx, event_flat, flat.sync);
+      wait_event vmem_ev = get_vmem_event(ctx, instr, vmem_nosampler);
+      update_counters(ctx, vmem_ev, flat.sync);
+      update_counters(ctx, event_lds, flat.sync);
 
-      if (!instr->definitions.empty())
-         insert_wait_entry(ctx, instr->definitions[0], event_flat);
+      if (!instr->definitions.empty()) {
+         insert_wait_entry(ctx, instr->definitions[0], vmem_ev, 0, get_vmem_mask(ctx, instr));
+         insert_wait_entry(ctx, instr->definitions[0], event_lds);
+      }
+
+      if (ctx.gfx_level < GFX10 && !instr->definitions.empty()) {
+         ctx.pending_flat_lgkm = true;
+         ctx.pending_flat_vm = true;
+      }
       break;
    }
    case Format::SMEM: {
