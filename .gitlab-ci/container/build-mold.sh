@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -ex
-
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
 # ALPINE_X86_64_BUILD_TAG
@@ -9,9 +7,11 @@ set -ex
 # DEBIAN_TEST_BASE_TAG
 # FEDORA_X86_64_BUILD_TAG
 
-uncollapsed_section_start mold "Building mold"
+set -ex
 
-MOLD_VERSION="2.32.0"
+section_start mold "Building mold"
+
+MOLD_VERSION="2.40.1"
 
 git clone -b v"$MOLD_VERSION" --single-branch --depth 1 https://github.com/rui314/mold.git
 pushd mold
