@@ -782,8 +782,8 @@ get_device_properties(const struct panvk_instance *instance,
       .maxPerStageDescriptorUniformBuffers = UINT8_MAX - 32,
       .maxDescriptorSetUniformBuffers = UINT8_MAX - 32,
       /* SSBOs are limited by the size of a uniform buffer which contains our
-       * panvk_ssbo_desc objects.
-       * panvk_ssbo_desc is 16-byte, and each uniform entry in the Mali UBO is
+       * panvk_ssbo_addr objects.
+       * panvk_ssbo_addr is 16-byte, and each uniform entry in the Mali UBO is
        * 16-byte too. The number of entries is encoded in a 12-bit field, with
        * a minus(1) modifier, which gives a maximum of 2^12 SSBO
        * descriptors.
