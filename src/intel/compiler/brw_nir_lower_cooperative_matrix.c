@@ -500,8 +500,16 @@ lower_cmat_convert(nir_builder *b, nir_intrinsic_instr *intrin,
       result = emit_packed_alu1(b, state, &float_info, dst_info, op2, tmp);
 
    } else {
-      nir_op op = get_cmat_conversion_op(src_element_type, dst_element_type);
-      result = emit_packed_alu1(b, state, src_info, dst_info, op, src);
+      const unsigned dst_components = glsl_get_vector_elements(dst_info->type);
+      const unsigned dst_bits = glsl_base_type_bit_size(dst_info->desc.element_type);
+
+      result =
+            nir_convert_cmat_intel(b,
+                                   dst_components,
+                                   dst_info->packing_factor * dst_bits,
+                                   src,
+                                   .dst_cmat_desc = dst_info->desc,
+                                   .src_cmat_desc = src_info->desc);
    }
 
    nir_store_deref(b, dst_slice, result, nir_component_mask(result->num_components));
