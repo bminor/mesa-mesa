@@ -552,6 +552,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_maintenance6 = true,
       .KHR_maintenance7 = true,
       .KHR_maintenance8 = true,
+      .KHR_maintenance9 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_performance_query = radv_perf_query_supported(pdev),
@@ -1319,6 +1320,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_video_decode_vp9 */
       .videoDecodeVP9 = true,
+
+      /* VK_KHR_maintenance9 */
+      .maintenance9 = true,
    };
 }
 
@@ -1955,6 +1959,10 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .supportedIndirectCommandsShaderStagesShaderBinding = VK_SHADER_STAGE_COMPUTE_BIT,
       .deviceGeneratedCommandsTransformFeedback = true,
       .deviceGeneratedCommandsMultiDrawIndirectCount = true,
+
+      /* VK_KHR_maintenance9 */
+      .image2DViewOf3DSparse = pdev->info.gfx_level >= GFX8,
+      .defaultVertexAttributeValue = VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR,
    };
 
    struct vk_properties *p = &pdev->vk.properties;
@@ -2577,6 +2585,11 @@ radv_GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, ui
                if (VIDEO_CODEC_H265ENC)
                   prop->videoCodecOperations |= VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR;
             }
+            break;
+         }
+         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OWNERSHIP_TRANSFER_PROPERTIES_KHR: {
+            VkQueueFamilyOwnershipTransferPropertiesKHR *prop = (VkQueueFamilyOwnershipTransferPropertiesKHR *)ext;
+            prop->optimalImageTransferToQueueFamilies = ~0;
             break;
          }
          default:
