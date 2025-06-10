@@ -693,8 +693,7 @@ static void evergreen_fill_buffer_resource_words(struct r600_context *rctx,
 
 static struct pipe_sampler_view *
 texture_buffer_sampler_view(struct r600_context *rctx,
-			    struct r600_pipe_sampler_view *view,
-			    unsigned width0, unsigned height0)
+			    struct r600_pipe_sampler_view *view)
 {
 	struct r600_texture *tmp = (struct r600_texture*)view->base.texture;
 	struct eg_buf_res_params params;
@@ -944,7 +943,7 @@ evergreen_create_sampler_view_custom(struct pipe_context *ctx,
 	view->base.context = ctx;
 
 	if (state->target == PIPE_BUFFER)
-		return texture_buffer_sampler_view(rctx, view, width0, height0);
+		return texture_buffer_sampler_view(rctx, view);
 
 	memset(&params, 0, sizeof(params));
 	params.pipe_format = state->format;

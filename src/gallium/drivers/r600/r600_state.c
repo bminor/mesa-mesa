@@ -615,12 +615,11 @@ static void *r600_create_sampler_state(struct pipe_context *ctx,
 }
 
 static struct pipe_sampler_view *
-texture_buffer_sampler_view(struct r600_pipe_sampler_view *view,
-			    unsigned width0, unsigned height0)
-
+texture_buffer_sampler_view(struct pipe_context *ctx,
+			    struct r600_pipe_sampler_view *view)
 {
 	struct r600_texture *tmp = (struct r600_texture*)view->base.texture;
-	int stride = util_format_get_blocksize(view->base.format);
+	const unsigned stride = util_format_get_blocksize(view->base.format);
 	unsigned format, num_format, format_comp, endian;
 	uint64_t offset = view->base.u.buf.offset;
 	unsigned size = view->base.u.buf.size;
@@ -678,7 +677,7 @@ r600_create_sampler_view_custom(struct pipe_context *ctx,
 	view->base.context = ctx;
 
 	if (texture->target == PIPE_BUFFER)
-		return texture_buffer_sampler_view(view, texture->width0, 1);
+		return texture_buffer_sampler_view(ctx, view);
 
 	swizzle[0] = state->swizzle_r;
 	swizzle[1] = state->swizzle_g;
