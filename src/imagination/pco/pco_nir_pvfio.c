@@ -108,6 +108,9 @@ to_pbe_format(nir_builder *b, enum pipe_format format, nir_def **input)
    /* For loadops. */
    case PIPE_FORMAT_Z32_FLOAT:
    case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
+   case PIPE_FORMAT_Z24_UNORM_S8_UINT:
+   case PIPE_FORMAT_Z16_UNORM:
+   case PIPE_FORMAT_Z24X8_UNORM:
       assert(b->shader->info.internal);
       return PIPE_FORMAT_R32_FLOAT;
 
