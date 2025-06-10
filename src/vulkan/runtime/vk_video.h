@@ -81,6 +81,8 @@ struct vk_video_session {
    struct vk_object_base base;
    VkVideoSessionCreateFlagsKHR flags;
    VkVideoCodecOperationFlagsKHR op;
+   VkVideoComponentBitDepthFlagsKHR luma_bit_depth;
+   VkVideoComponentBitDepthFlagsKHR chroma_bit_depth;
    VkExtent2D max_coded;
    VkFormat picture_format;
    VkFormat ref_format;
@@ -112,6 +114,8 @@ struct vk_video_session {
 struct vk_video_session_parameters {
    struct vk_object_base base;
    VkVideoCodecOperationFlagsKHR op;
+   VkVideoComponentBitDepthFlagsKHR luma_bit_depth;
+   VkVideoComponentBitDepthFlagsKHR chroma_bit_depth;
    union {
       struct {
          uint32_t max_h264_sps_count;

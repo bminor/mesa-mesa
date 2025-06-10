@@ -43,6 +43,8 @@ vk_video_session_init(struct vk_device *device,
    vid->ref_format = create_info->referencePictureFormat;
    vid->max_dpb_slots = create_info->maxDpbSlots;
    vid->max_active_ref_pics = create_info->maxActiveReferencePictures;
+   vid->luma_bit_depth = create_info->pVideoProfile->lumaBitDepth;
+   vid->chroma_bit_depth = create_info->pVideoProfile->chromaBitDepth;
 
    switch (vid->op) {
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
@@ -452,6 +454,8 @@ vk_video_session_parameters_init(struct vk_device *device,
    vk_object_base_init(device, &params->base, VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR);
 
    params->op = vid->op;
+   params->luma_bit_depth = vid->luma_bit_depth;
+   params->chroma_bit_depth = vid->chroma_bit_depth;
 
    switch (vid->op) {
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
