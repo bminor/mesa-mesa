@@ -3144,6 +3144,30 @@ optimizations += [
    (('iadd', ('msad_4x8', a, b, 0), c), ('msad_4x8', a, b, c)),
 ]
 
+# VKD3D-Proton patterns for FP16_OVFL=1 conversion to e4m3fn
+def vkd3d_proton_f2e4m3_ovfl(variant, x, nan):
+   if variant == 0:
+      cond = ('feq', ('fabs', x), float('inf'))
+   elif variant == 1:
+      cond = ('feq', f'{x}(is_not_negative)', float('inf'))
+   elif variant == 2:
+      cond = ('feq', f'{x}(is_not_positive)', -float('inf'))
+
+   return ('bcsel', cond, f'#{nan}(is_nan)', x)
+
+
+for var in range(3):
+   optimizations += [
+      (('f2e4m3fn_sat', vkd3d_proton_f2e4m3_ovfl(var, a, b)),
+       ('f2e4m3fn_satfn', a), 'options->has_f2e4m3fn_satfn'),
+   ]
+
+for var0, var1 in itertools.product(range(3), repeat=2):
+   optimizations += [
+      (('f2e4m3fn_sat', ('vec2', vkd3d_proton_f2e4m3_ovfl(var0, a, b),
+                                 vkd3d_proton_f2e4m3_ovfl(var1, c, d))),
+       ('f2e4m3fn_satfn', ('vec2', a, c)), 'options->has_f2e4m3fn_satfn'),
+   ]
 
 # "all_equal(eq(a, b), vec(~0))" is the same as "all_equal(a, b)"
 # "any_nequal(neq(a, b), vec(0))" is the same as "any_nequal(a, b)"

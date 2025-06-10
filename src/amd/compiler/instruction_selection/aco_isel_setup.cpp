@@ -417,6 +417,7 @@ init_context(isel_context* ctx, nir_shader* shader)
                   break;
                case nir_op_f2e4m3fn:
                case nir_op_f2e4m3fn_sat:
+               case nir_op_f2e4m3fn_satfn:
                case nir_op_f2e5m2:
                case nir_op_f2e5m2_sat:
                case nir_op_fmulz:

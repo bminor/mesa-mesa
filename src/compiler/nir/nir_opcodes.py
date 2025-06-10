@@ -1770,6 +1770,8 @@ opcode("bfdot2_bfadd", 1, tint16, [2, 2, 1], [tint16, tint16, tint16],
 unop_numeric_convert("e4m3fn2f", tfloat32, tuint8, "_mesa_e4m3fn_to_float(src0)")
 unop_numeric_convert("f2e4m3fn", tuint8, tfloat32, "_mesa_float_to_e4m3fn(src0)")
 unop_numeric_convert("f2e4m3fn_sat", tuint8, tfloat32, "_mesa_float_to_e4m3fn_sat(src0)")
+# AMD specific conversion that clamps finite values but not inf (GFX12 FP16_OVFL=1 behavior)
+unop_numeric_convert("f2e4m3fn_satfn", tuint8, tfloat32, "isinf(src0) ? 0x7f : _mesa_float_to_e4m3fn_sat(src0)")
 
 unop_numeric_convert("e5m22f", tfloat32, tuint8, "_mesa_e5m2_to_float(src0)")
 unop_numeric_convert("f2e5m2", tuint8, tfloat32, "_mesa_float_to_e5m2(src0)")

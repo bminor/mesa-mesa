@@ -2555,6 +2555,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
    }
    case nir_op_f2e4m3fn:
    case nir_op_f2e4m3fn_sat:
+   case nir_op_f2e4m3fn_satfn:
    case nir_op_f2e5m2:
    case nir_op_f2e5m2_sat: {
       Operand src[2];
@@ -2588,7 +2589,8 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
 
       aco_opcode opcode = instr->op == nir_op_f2e4m3fn || instr->op == nir_op_f2e4m3fn_sat
                              ? aco_opcode::v_cvt_pk_fp8_f32
-                             : aco_opcode::v_cvt_pk_bf8_f32;
+                          : instr->op == nir_op_f2e4m3fn_satfn ? aco_opcode::p_v_cvt_pk_fp8_f32_ovfl
+                                                               : aco_opcode::v_cvt_pk_bf8_f32;
       bld.vop3(opcode, Definition(dst), src[0], src[1]);
       if (instr->def.num_components == 2)
          emit_split_vector(ctx, dst, 2);

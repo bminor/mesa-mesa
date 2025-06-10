@@ -638,6 +638,9 @@ typedef struct nir_shader_compiler_options {
    /** Backend support msad_u4x8. */
    bool has_msad;
 
+   /** Backend supports f2e4m3fn_satfn */
+   bool has_f2e4m3fn_satfn;
+
    /**
     * Is this the Intel vec4 backend?
     *
