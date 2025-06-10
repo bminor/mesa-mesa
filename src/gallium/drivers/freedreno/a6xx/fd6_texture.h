@@ -112,6 +112,34 @@ struct fd6_texture_state {
 struct fd6_texture_state *
 fd6_texture_state(struct fd_context *ctx, enum pipe_shader_type type) assert_dt;
 
+
+static inline void
+fd6_layout_tex2d_from_buf(struct fdl_layout *layout,
+                          const struct fd_dev_info *info,
+                          enum pipe_format format,
+                          const struct pipe_tex2d_from_buf *tex2d_from_buf)
+{
+   unsigned block_size = util_format_get_blocksize(format);
+
+   struct fdl_explicit_layout explicit_layout = {
+      .offset = tex2d_from_buf->offset * block_size,
+      .pitch = tex2d_from_buf->row_stride * block_size,
+   };
+
+   *layout = (struct fdl_layout) {
+      .ubwc = false,
+      .tile_all = false,
+      .tile_mode = TILE6_LINEAR,
+   };
+
+   ASSERTED bool ret = fdl6_layout(layout, info, format, 1,
+                                   tex2d_from_buf->width,
+                                   tex2d_from_buf->height,
+                                   1, 1, 1, false, false,
+                                   false, &explicit_layout);
+   assert(ret);
+}
+
 ENDC;
 
 #endif /* FD6_TEXTURE_H_ */

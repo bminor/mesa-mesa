@@ -512,6 +512,11 @@ fd_init_screen_caps(struct fd_screen *screen)
    caps->shader_buffer_offset_alignment =
       is_a6xx(screen) ? 64 : (is_a5xx(screen) || is_a4xx(screen) ? 4 : 0);
 
+   if (is_a6xx(screen)) {
+      caps->linear_image_pitch_alignment = 64;
+      caps->linear_image_base_address_alignment = 64;
+   }
+
    caps->max_texture_gather_components =
       is_a4xx(screen) || is_a5xx(screen) || is_a6xx(screen) ? 4 : 0;
 

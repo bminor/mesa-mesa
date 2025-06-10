@@ -46,7 +46,36 @@ static void
 fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
                      uint32_t *descriptor)
 {
-   if (buf->resource->target == PIPE_BUFFER) {
+   if (buf->access & PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER) {
+      struct fdl_view_args args = {
+         .chip = ctx->screen->gen,
+
+         .iova = rsc_iova(buf->resource, 0),
+         .base_miplevel = 0,
+         .level_count = 1,
+         .base_array_layer = 0,
+         .layer_count = 1,
+         .swiz = {PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y, PIPE_SWIZZLE_Z,
+                  PIPE_SWIZZLE_W},
+         .format = buf->format,
+
+         .type = FDL_VIEW_TYPE_2D,
+         .chroma_offsets = {FDL_CHROMA_LOCATION_COSITED_EVEN,
+                            FDL_CHROMA_LOCATION_COSITED_EVEN},
+      };
+
+      struct fdl_layout layout;
+      const struct fdl_layout *layouts = &layout;
+
+      fd6_layout_tex2d_from_buf(&layout, ctx->screen->info, buf->format,
+                                &buf->u.tex2d_from_buf);
+
+      struct fdl6_view view;
+      fdl6_view_init(&view, &layouts, &args,
+                     ctx->screen->info->a6xx.has_z24uint_s8uint);
+
+      memcpy(descriptor, view.storage_descriptor, sizeof(view.storage_descriptor));
+   } else if (buf->resource->target == PIPE_BUFFER) {
       uint32_t size = fd_clamp_buffer_size(buf->format, buf->u.buf.size,
                                            A4XX_MAX_TEXEL_BUFFER_ELEMENTS_UINT);
 

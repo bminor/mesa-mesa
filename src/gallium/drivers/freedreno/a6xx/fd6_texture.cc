@@ -442,7 +442,37 @@ fd6_sampler_view_update(struct fd_context *ctx,
 
    so->ptr1 = rsc;
 
-   if (cso->target == PIPE_BUFFER) {
+   if (cso->is_tex2d_from_buf) {
+      struct fdl_view_args args = {
+         .chip = ctx->screen->gen,
+
+         /* Using relocs for addresses still */
+         .iova = 0,
+         .base_miplevel = 0,
+         .level_count = 1,
+         .base_array_layer = 0,
+         .layer_count = 1,
+         .swiz = {cso->swizzle_r, cso->swizzle_g, cso->swizzle_b,
+                  cso->swizzle_a},
+         .format = format,
+
+         .type = FDL_VIEW_TYPE_2D,
+         .chroma_offsets = {FDL_CHROMA_LOCATION_COSITED_EVEN,
+                            FDL_CHROMA_LOCATION_COSITED_EVEN},
+      };
+
+      struct fdl_layout layout;
+      const struct fdl_layout *layouts = &layout;
+
+      fd6_layout_tex2d_from_buf(&layout, ctx->screen->info, format,
+                                &cso->u.tex2d_from_buf);
+
+      struct fdl6_view view;
+      fdl6_view_init(&view, &layouts, &args,
+                     ctx->screen->info->a6xx.has_z24uint_s8uint);
+
+      memcpy(so->descriptor, view.descriptor, sizeof(so->descriptor));
+   } else if (cso->target == PIPE_BUFFER) {
       uint8_t swiz[4] = {cso->swizzle_r, cso->swizzle_g, cso->swizzle_b,
                          cso->swizzle_a};
 
