@@ -205,8 +205,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
 
    /* Handle immutable and embedded (compile-time) samplers
     * (VkDescriptorSetLayoutBinding::pImmutableSamplers) We can only do this for constant array
-    * index or if all samplers in the array are the same. Note that indexing is forbidden with
-    * embedded samplers.
+    * index. Note that indexing is forbidden with embedded samplers.
     */
    if (desc_type == AC_DESC_SAMPLER && binding->immutable_samplers_offset && !indirect) {
       unsigned constant_index = 0;
