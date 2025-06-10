@@ -160,17 +160,17 @@ static void si_dump_gfx_shader(struct si_context *ctx, const struct si_shader_ct
    u_log_chunk(log, &si_log_chunk_type_shader, chunk);
 }
 
-static void si_dump_compute_shader(struct si_context *ctx, struct u_log_context *log)
+static void si_dump_compute_shader(struct si_context *ctx,
+                                   struct si_compute *program,
+                                   struct u_log_context *log)
 {
-   const struct si_cs_shader_state *state = &ctx->cs_shader_state;
-
-   if (!state->program)
+   if (!program)
       return;
 
    struct si_log_chunk_shader *chunk = CALLOC_STRUCT(si_log_chunk_shader);
    chunk->ctx = ctx;
-   chunk->shader = &state->program->shader;
-   si_compute_reference(&chunk->program, state->program);
+   chunk->shader = &program->shader;
+   si_compute_reference(&chunk->program, program);
    u_log_chunk(log, &si_log_chunk_type_shader, chunk);
 }
 
@@ -402,6 +402,14 @@ void si_print_current_ib(struct si_context *sctx, FILE *f)
    si_parse_current_ib(f, &sctx->gfx_cs, 0, sctx->gfx_cs.prev_dw + sctx->gfx_cs.current.cdw,
                        NULL, 0, si_get_context_ip_type(sctx), sctx->gfx_level,
                        sctx->family);
+
+   struct radeon_cmdbuf *gang_cs = sctx->gfx_cs.gang_cs;
+   if (gang_cs) {
+      unsigned end = gang_cs->prev_dw + gang_cs->current.cdw;
+      if (end)
+         si_parse_current_ib(f, gang_cs, 0, end, NULL, 0, AMD_IP_COMPUTE,
+                             sctx->gfx_level, sctx->family);
+   }
 }
 
 static void si_log_chunk_type_cs_print(void *data, FILE *f)
@@ -815,12 +823,14 @@ static void si_dump_gfx_descriptors(struct si_context *sctx,
    si_dump_descriptors(sctx, state->cso->stage, &state->cso->info, log);
 }
 
-static void si_dump_compute_descriptors(struct si_context *sctx, struct u_log_context *log)
+static void si_dump_compute_descriptors(struct si_context *sctx,
+                                        const struct si_compute *program,
+                                        struct u_log_context *log)
 {
-   if (!sctx->cs_shader_state.program)
+   if (!program)
       return;
 
-   si_dump_descriptors(sctx, MESA_SHADER_COMPUTE, NULL, log);
+   si_dump_descriptors(sctx, program->sel.stage, NULL, log);
 }
 
 struct si_shader_inst {
@@ -1043,6 +1053,8 @@ void si_log_draw_state(struct si_context *sctx, struct u_log_context *log)
 
    si_dump_framebuffer(sctx, log);
 
+   si_dump_compute_shader(sctx, sctx->ts_shader_state.program, log);
+   si_dump_gfx_shader(sctx, &sctx->ms_shader_state, log);
    si_dump_gfx_shader(sctx, &sctx->shader.vs, log);
    si_dump_gfx_shader(sctx, &sctx->shader.tcs, log);
    si_dump_gfx_shader(sctx, &sctx->shader.tes, log);
@@ -1052,6 +1064,8 @@ void si_log_draw_state(struct si_context *sctx, struct u_log_context *log)
    si_dump_descriptor_list(sctx->screen, &sctx->descriptors[SI_DESCS_INTERNAL], "", "RW buffers",
                            4, sctx->descriptors[SI_DESCS_INTERNAL].num_active_slots, si_identity,
                            log);
+   si_dump_compute_descriptors(sctx, sctx->ts_shader_state.program, log);
+   si_dump_gfx_descriptors(sctx, &sctx->ms_shader_state, log);
    si_dump_gfx_descriptors(sctx, &sctx->shader.vs, log);
    si_dump_gfx_descriptors(sctx, &sctx->shader.tcs, log);
    si_dump_gfx_descriptors(sctx, &sctx->shader.tes, log);
@@ -1064,8 +1078,8 @@ void si_log_compute_state(struct si_context *sctx, struct u_log_context *log)
    if (!log)
       return;
 
-   si_dump_compute_shader(sctx, log);
-   si_dump_compute_descriptors(sctx, log);
+   si_dump_compute_shader(sctx, sctx->cs_shader_state.program, log);
+   si_dump_compute_descriptors(sctx, sctx->cs_shader_state.program, log);
 }
 
 void si_check_vm_faults(struct si_context *sctx, struct radeon_saved_cs *saved)
