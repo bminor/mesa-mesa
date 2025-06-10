@@ -18,6 +18,8 @@ dEQP-GLES3.functional.fbo.invalidate.whole.unbind_blit_stencil
 
 dEQP-GLES31.functional.blend_equation_advanced.basic.multiply
 
+KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test
+
 # MSAA dEQP-GLES31.functional.blend_equation_advanced exhibits different
 # failures based on the caselist test order.  This regex covers the different
 # results for the full test run.

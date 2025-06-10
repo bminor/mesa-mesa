@@ -5,6 +5,8 @@ KHR-GL46.explicit_uniform_location.subroutine-index-nondecimal
 KHR-GL46.explicit_uniform_location.subroutine-loc
 KHR-GL46.gl_spirv.spirv_glsl_to_spirv_builtin_functions_test
 KHR-GL46.gl_spirv.spirv_modules_positive_test
+KHR-GL46.gpu_shader_fp64.builtin.max_against_scalar_dvec4
+KHR-GL46.gpu_shader_fp64.builtin.notequal_dvec4
 KHR-GL46.layout_binding.buffer_layout_binding_atomicAdd_ComputeShader
 KHR-GL46.layout_binding.sampler2D_layout_binding_texture_ComputeShader
 KHR-GL46.layout_location.image_2d_array
@@ -19,6 +21,7 @@ KHR-GL46.shader_atomic_counter_ops_tests.ShaderAtomicCounterOpsBitwiseTestCase
 KHR-GL46.shader_storage_buffer_object.advanced-switchPrograms-cs
 KHR-GL46.sparse_buffer_tests.BufferStorageTest
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rgba16
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba8ui
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_r8i
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_rectangle_rg16i
 KHR-GL46.spirv_extensions.spirv_extensions_queries
