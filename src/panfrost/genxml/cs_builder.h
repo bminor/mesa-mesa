@@ -1217,22 +1217,37 @@ struct cs_loop {
    enum mali_cs_condition cond;
    struct cs_index val;
    struct cs_load_store_tracker *orig_ls_state;
+   /* On continue we need to compare the original loads to the current ones.
+    * orig_ls_state can get updated from inside the loop. */
+   struct cs_load_store_tracker orig_ls_state_copy;
    struct cs_load_store_tracker ls_state;
 };
 
 static inline void
 cs_loop_diverge_ls_update(struct cs_builder *b, struct cs_loop *loop)
 {
-   if (!loop->orig_ls_state) {
-      loop->orig_ls_state = b->cur_ls_tracker;
-      loop->ls_state = *loop->orig_ls_state;
-      b->cur_ls_tracker = &loop->ls_state;
-   } else {
-      BITSET_OR(loop->orig_ls_state->pending_loads,
-                loop->orig_ls_state->pending_loads,
-                loop->ls_state.pending_loads);
-      loop->orig_ls_state->pending_stores |= loop->ls_state.pending_stores;
-   }
+   assert(loop->orig_ls_state);
+
+   BITSET_OR(loop->orig_ls_state->pending_loads,
+             loop->orig_ls_state->pending_loads,
+             b->cur_ls_tracker->pending_loads);
+   loop->orig_ls_state->pending_stores |= b->cur_ls_tracker->pending_stores;
+}
+
+static inline bool
+cs_loop_continue_need_flush(struct cs_builder *b, struct cs_loop *loop)
+{
+   assert(loop->orig_ls_state);
+
+   /* We need to flush on continue/loop-again, if there are loads to registers
+    * that did not already have loads in-flight before the loop.
+    * Those would have already gotten WAITs inserted because they were marked
+    * already.
+    */
+   BITSET_DECLARE(new_pending_loads, 256);
+   BITSET_ANDNOT(new_pending_loads, b->cur_ls_tracker->pending_loads,
+                 loop->orig_ls_state_copy.pending_loads);
+   return !BITSET_IS_EMPTY(new_pending_loads);
 }
 
 static inline struct cs_loop *
@@ -1260,10 +1275,15 @@ cs_while_start(struct cs_builder *b, struct cs_loop *loop,
     * the end of the loop block. For 'while(true)' loops, skip the
     * conditional branch.
     */
-   if (cond != MALI_CS_CONDITION_ALWAYS) {
+   if (cond != MALI_CS_CONDITION_ALWAYS)
       cs_branch_label(b, &loop->end, cs_invert_cond(cond), val);
-      cs_loop_diverge_ls_update(b, loop);
-   }
+
+   /* The loops ls tracker only needs to track the actual loop body, not the
+    * check to skip the whole body. */
+   loop->orig_ls_state = b->cur_ls_tracker;
+   loop->orig_ls_state_copy = *loop->orig_ls_state;
+   loop->ls_state = *loop->orig_ls_state;
+   b->cur_ls_tracker = &loop->ls_state;
 
    cs_set_label(b, &loop->start);
 
@@ -1275,6 +1295,10 @@ cs_loop_conditional_continue(struct cs_builder *b, struct cs_loop *loop,
                              enum mali_cs_condition cond, struct cs_index val)
 {
    cs_flush_pending_if(b);
+
+   if (cs_loop_continue_need_flush(b, loop))
+      cs_flush_loads(b);
+
    cs_branch_label(b, &loop->start, cond, val);
    cs_loop_diverge_ls_update(b, loop);
 }
@@ -1292,6 +1316,10 @@ static inline void
 cs_while_end(struct cs_builder *b, struct cs_loop *loop)
 {
    cs_flush_pending_if(b);
+
+   if (cs_loop_continue_need_flush(b, loop))
+      cs_flush_loads(b);
+
    cs_branch_label(b, &loop->start, loop->cond, loop->val);
    cs_set_label(b, &loop->end);
    cs_block_end(b, &loop->block);
