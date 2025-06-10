@@ -172,9 +172,9 @@ zink-tu-a618-traces-performance:
   extends:
     - zink-tu-a618-traces
     - .zink-turnip-collabora-manual-rules
-    - .piglit-performance:arm64
+    - .piglit-performance-base
   rules:
-    - !reference [.piglit-performance:arm64, rules]
+    - !reference [.piglit-performance-base, rules]
     - !reference [.zink-turnip-collabora-manual-rules, rules]
   variables:
     # Always use the same device
@@ -182,7 +182,6 @@ zink-tu-a618-traces-performance:
     LAVA_TAGS: "cbg-1"
   needs:
     - !reference [zink-tu-a618-traces, needs]
-    - !reference [.piglit-performance:arm64, needs]
 
 zink-tu-a750:
   extends:

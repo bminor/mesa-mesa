@@ -128,13 +128,6 @@
   # longer to finish, as they don't block marge from merging an MR.
   parallel: null
 
-.piglit-performance:arm64:
-  extends:
-    - .piglit-performance-base
-  needs:
-    - debian/baremetal_arm64_test-gl
-    - debian-arm64-release
-
 # Mesa source file dependencies that may impact any GL driver test job.
 .gallium-core-rules:
   rules:

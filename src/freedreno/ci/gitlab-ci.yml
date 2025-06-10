@@ -227,15 +227,11 @@ a618-traces:
 a618-traces-performance:
   extends:
     - a618-traces
-    - .piglit-performance:arm64
     - .collabora-freedreno-rules-performance
   variables:
     # Always use the same device
     # a618 tag starts with cbg-1 (not cbg-0) for some reason
     LAVA_TAGS: "cbg-1"
-  needs:
-    - !reference [a618-traces, needs]
-    - !reference [.piglit-performance:arm64, needs]
 
 a660-angle:
   extends:
