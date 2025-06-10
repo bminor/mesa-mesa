@@ -893,8 +893,16 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    }
 
    case SpvOpIsInf: {
+      const bool save_exact = b->nb.exact;
+      const unsigned save_fast_math = b->nb.fp_fast_math;
+
+      b->nb.exact = true;
+      b->nb.fp_fast_math = 0;
       nir_def *inf = nir_imm_floatN_t(&b->nb, INFINITY, src[0]->bit_size);
-      dest->def = nir_ieq(&b->nb, nir_fabs(&b->nb, src[0]), inf);
+      dest->def = nir_feq(&b->nb, nir_fabs(&b->nb, src[0]), inf);
+
+      b->nb.exact = save_exact;
+      b->nb.fp_fast_math = save_fast_math;
       break;
    }
 
