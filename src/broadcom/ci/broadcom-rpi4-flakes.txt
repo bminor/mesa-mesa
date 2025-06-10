@@ -2,20 +2,26 @@ x11-dEQP-EGL.functional.sharing.gles2.multithread.random.programs.link.7
 
 KHR-GLES31.core.shader_atomic_counters.basic-usage-no-offset
 KHR-GLES31.core.shader_image_load_store.basic-glsl-earlyFragTests
+KHR-GLES31.core.shader_storage_buffer_object.advanced-indirectAddressing-case1-cs
 KHR-GLES31.core.shader_storage_buffer_object.advanced-unsizedArrayLength-cs-std430-vec
+KHR-GLES31.core.shader_storage_buffer_object.basic-matrixOperations-case2-cs
 dEQP-GLES3.functional.buffer.write.recreate_store.random_4
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.ivec4
+dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.row_major_mat3x2
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.17
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.column_major_lowp_mat3x4
 dEQP-GLES31.functional.synchronization.inter_invocation.image_overwrite
 dEQP-GLES31.functional.synchronization.inter_invocation.ssbo_atomic_read_write
 
 fast_color_clear@fcc-front-buffer-distraction
 glx@glx-multi-context-front
+glx@glx-swap-singlebuffer
 glx@glx-visuals-depth
 glx@glx-visuals-stencil
 glx@glx_arb_sync_control@waitformsc
 shaders@glsl-kwin-blur-2
+spec@!opengl 1.0@gl-1.0-drawbuffer-modes
 spec@!opengl 1.0@gl-1.0-front-invalidate-back
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=4
@@ -24,6 +30,8 @@ spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=4
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=4
 spec@!opengl 1.1@masked-clear
+spec@!opengl 1.1@teximage-colors gl_rg8_snorm
+spec@!opengl 1.1@teximage-colors gl_rgb16_snorm
 spec@!opengl 3.0@gl30basic
 spec@!opengl es 3.0@gles-3.0-transform-feedback-uniform-buffer-object
 spec@amd_performance_monitor@api
@@ -53,8 +61,10 @@ spec@ext_packed_depth_stencil@depthstencil-render-miplevels 585 ds=z24_s8
 spec@ext_transform_feedback@order arrays triangles
 spec@glsl-1.10@execution@built-in-functions@fs-op-div-mat2-float
 spec@glsl-1.10@execution@built-in-functions@vs-op-mult-int-ivec2
+spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 2darray
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 2dshadow
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 3d
+spec@glsl-1.30@execution@tex-miplevel-selection texturelod cube
 spec@glsl-1.30@execution@tex-miplevel-selection texturelod cubearray
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 1x129x9-98x129x9
 spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9
@@ -79,8 +89,11 @@ dEQP-VK.binding_model.descriptorset_random.sets4.constant.ubolimitlow.sbolimitlo
 dEQP-VK.clipping.clip_volume.inside.triangle_strip
 dEQP-VK.clipping.user_defined.clip_cull_distance.vert.8
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.4_samples
+dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.4_samples
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_mixed.max_draws.standard_stride.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_mixed.max_draws.standard_stride.10_instances.vert_only.multiview.offset_6_no_draw_id
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_mixed.max_draws.stride_extra_12.10_instances.vert_only.multiview.no_offset_no_draw_id
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_mixed.max_draws.stride_extra_4.10_instances.vert_only.multiview.offset_6_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_packed.max_draws.stride_extra_4.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_packed.max_draws.stride_extra_4.10_instances.vert_only.multiview.offset_6_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_random.max_draws.standard_stride.10_instances.vert_only.multiview.offset_6_no_draw_id
@@ -95,6 +108,7 @@ dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.max_draws.stride_extra_1
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.max_draws.stride_extra_4.10_instances.vert_only.multiview.offset_6_no_draw_id
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_random.max_draws.standard_stride.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_random.max_draws.standard_stride.10_instances.vert_only.multiview.offset_6_no_draw_id
+dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_random.max_draws.stride_extra_4.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_random.max_draws.stride_extra_4.10_instances.vert_only.multiview.offset_6_no_draw_id
 dEQP-VK.draw.renderpass.multi_draw.mosaic.normal.max_draws.stride_extra_12.10_instances.vert_only.multiview.no_offset_no_draw_id
 dEQP-VK.draw.renderpass.multiple_interpolation.separate.no_sample_decoration.4_samples
@@ -122,6 +136,7 @@ dEQP-VK.rasterization.provoking_vertex.draw.last.triangle_list_with_adjacency
 dEQP-VK.renderpass.suballocation.load_store_op_none.depthstencil_d24_unorm_s8_uint_load_op_depth_load_stencil_none_store_op_depth_store_stencil_none_stencil_write_off
 dEQP-VK.robustness.image_robustness.bind.notemplate.rg32f.unroll.volatile.storage_image.fmt_qual.img.samples_1.cube_array.vert
 dEQP-VK.synchronization.timeline_semaphore.device_host.write_ssbo_geometry_read_vertex_input.buffer_262144
+dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image.image_128x128_r16_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image.image_64x64x8_r32_sfloat
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_fragment_read_vertex_input.buffer_262144

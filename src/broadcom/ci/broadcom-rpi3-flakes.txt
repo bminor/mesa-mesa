@@ -5,6 +5,8 @@ dEQP-GLES2.functional.clipping.triangle_vertex.clip_three.clip_pos_x_and_neg_x_n
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.src_alpha_zero
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.zero_one_minus_src_alpha
 dEQP-GLES2.functional.fragment_ops.depth_stencil.random.17
+dEQP-GLES2.functional.fragment_ops.depth_stencil.random.3
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_less_no_depth
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_notequal_depth_notequal
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_wrap_invert_decr
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_wrap_zero_keep
@@ -18,15 +20,19 @@ dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.keep_incr_incr_wrap
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_decr_decr_wrap
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_decr_wrap_decr_wrap
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_incr_wrap_invert
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_replace_keep
 dEQP-GLES2.functional.fragment_ops.random.82
 dEQP-GLES2.functional.shaders.indexing.matrix_subscript.mat4_static_loop_write_static_read_vertex
 dEQP-GLES2.functional.shaders.operator.geometric.length.mediump_vec2_fragment
 dEQP-GLES2.functional.shaders.operator.int_compare.greaterThanEqual.mediump_ivec4_fragment
+dEQP-GLES2.functional.shaders.random.all_features.fragment.1
 dEQP-GLES2.functional.shaders.random.all_features.fragment.25
+dEQP-GLES2.functional.shaders.random.all_features.fragment.75
 dEQP-GLES2.functional.shaders.random.basic_expression.vertex.23
 dEQP-GLES2.functional.shaders.random.comparison_ops.fragment.22
 dEQP-GLES2.functional.shaders.random.conditionals.combined.95
 dEQP-GLES2.functional.shaders.random.conditionals.vertex.62
+dEQP-GLES2.functional.shaders.random.texture.fragment.2
 dEQP-GLES2.functional.shaders.random.trigonometric.fragment.50
 dEQP-GLES2.functional.shaders.random.trigonometric.fragment.79
 dEQP-GLES2.functional.texture.filtering.2d.linear_mipmap_linear_linear_mirror_rgba8888
@@ -38,6 +44,7 @@ dEQP-GLES2.functional.texture.mipmap.cube.generate.a8_fastest
 dEQP-GLES2.functional.texture.mipmap.cube.generate.a8_nicest
 dEQP-GLES2.functional.texture.mipmap.cube.generate.l8_fastest
 dEQP-GLES2.functional.texture.mipmap.cube.generate.l8_nicest
+dEQP-GLES2.functional.texture.mipmap.cube.generate.la88_nicest
 dEQP-GLES2.functional.texture.mipmap.cube.generate.rgb565_fastest
 dEQP-GLES2.functional.texture.mipmap.cube.generate.rgb565_nicest
 dEQP-GLES2.functional.texture.mipmap.cube.generate.rgb888_fastest
@@ -50,6 +57,7 @@ dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba8888_nicest
 dEQP-GLES2.functional.texture.specification.basic_copyteximage2d.cube_rgb
 dEQP-GLES2.functional.texture.specification.basic_copyteximage2d.cube_rgba
 dEQP-GLES2.functional.texture.specification.basic_copytexsubimage2d.cube_luminance
+dEQP-GLES2.functional.texture.specification.texsubimage2d_empty_tex.rgba8888_2d
 dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.basic_array.ivec4_vertex
 
 arm32-dEQP-GLES2.functional.shaders.random.texture.vertex.44
@@ -142,6 +150,7 @@ x11-dEQP-EGL.functional.wide_color.pbuffer_8888_colorspace_srgb
 x11-dEQP-EGL.functional.wide_color.pbuffer_888_colorspace_default
 x11-dEQP-EGL.functional.wide_color.pbuffer_888_colorspace_srgb
 x11-dEQP-EGL.functional.wide_color.window_8888_colorspace_srgb
+x11-dEQP-EGL.functional.wide_color.window_888_colorspace_srgb
 
 AbandonedContextImage
 AdvancedBlendTest

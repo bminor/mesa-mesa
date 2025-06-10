@@ -11,6 +11,7 @@ spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=4
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=2
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-float-and-ushort samples=4
 spec@!opengl 1.1@masked-clear
+spec@!opengl 1.1@teximage-colors gl_rg8_snorm
 spec@!opengl 1.1@teximage-colors gl_rgb16_snorm
 spec@!opengl 3.0@gl30basic
 spec@amd_performance_monitor@api
@@ -25,6 +26,7 @@ spec@arb_texture_multisample@texelfetch fs sampler2dms 4 1x130-501x130
 spec@ext_framebuffer_blit@fbo-blit-check-limits
 spec@ext_framebuffer_blit@fbo-sys-blit
 spec@ext_framebuffer_blit@fbo-sys-sub-blit
+spec@glsl-1.10@execution@vs-loop-array-index-unroll
 
 dEQP-VK.api.copy_and_blit.copy_commands2.blit_image.all_formats.color.2d.r8_sint.r16g16b16a16_sint.optimal_general_nearest
 dEQP-VK.api.copy_and_blit.copy_commands2.blit_image.simple_tests.mirror_y_3d.r32_sfloat_nearest
