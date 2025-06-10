@@ -5140,7 +5140,10 @@ fixup_io_locations(nir_shader *nir)
          }
       }
    }
-   return true;
+
+   nir_shader_preserve_all_metadata(nir);
+
+   return false;
 }
 
 static uint64_t
