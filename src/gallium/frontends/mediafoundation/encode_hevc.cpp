@@ -434,17 +434,24 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
          {
             pPicInfo->slice_mode = PIPE_VIDEO_SLICE_MODE_BLOCKS;
             uint32_t blocks_per_slice = m_uiSliceControlSize;
-            pPicInfo->num_slice_descriptors = ( height_in_blocks * width_in_blocks ) / blocks_per_slice;
+            pPicInfo->num_slice_descriptors = static_cast<uint32_t>(
+               std::ceil( ( height_in_blocks * width_in_blocks ) / static_cast<double>( blocks_per_slice ) ) );
             uint32_t slice_starting_mb = 0;
             CHECKBOOL_GOTO( pPicInfo->num_slice_descriptors <= m_EncoderCapabilities.m_uiMaxHWSupportedMaxSlices,
                             MF_E_UNEXPECTED,
                             done );
-            for( uint32_t i = 0; i < pPicInfo->num_slice_descriptors; i++ )
+            CHECKBOOL_GOTO( pPicInfo->num_slice_descriptors >= 1, MF_E_UNEXPECTED, done );
+
+            uint32_t total_blocks = height_in_blocks * width_in_blocks;
+            uint32_t i = 0;
+            for( i = 0; i < pPicInfo->num_slice_descriptors; i++ )
             {
                pPicInfo->slices_descriptors[i].slice_segment_address = slice_starting_mb;
                pPicInfo->slices_descriptors[i].num_ctu_in_slice = blocks_per_slice;
                slice_starting_mb += blocks_per_slice;
             }
+            pPicInfo->slices_descriptors[i].slice_segment_address = slice_starting_mb;
+            pPicInfo->slices_descriptors[i].num_ctu_in_slice = total_blocks - slice_starting_mb;
          }
          else if( SLICE_CONTROL_MODE_BITS == m_uiSliceControlMode )
          {

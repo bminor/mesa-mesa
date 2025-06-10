@@ -383,52 +383,39 @@ CDX12EncHMFT::GetParameterRange( const GUID *Api, VARIANT *ValueMin, VARIANT *Va
    }
    else if( *Api == CODECAPI_AVEncSliceControlMode )
    {
-      static_assert( PIPE_VIDEO_SLICE_MODE_BLOCKS == 0 );
-      static_assert( PIPE_VIDEO_SLICE_MODE_MAX_SLICE_SIZE == 1 );
-      static_assert( PIPE_VIDEO_SLICE_MODE_AUTO == 2 );
+      bool bSliceModeMB = m_EncoderCapabilities.m_bHWSupportSliceModeMB;
+      bool bSliceModeMBRow = m_EncoderCapabilities.m_bHWSupportSliceModeMBRow;
 
-      // If PIPE_VIDEO_SLICE_MODE_BLOCKS is not supported, return error.
-      if( m_EncoderCapabilities.m_HWSupportedSliceModes.HasAll( PIPE_VIDEO_SLICE_MODE_BLOCKS,
-                                                                PIPE_VIDEO_SLICE_MODE_MAX_SLICE_SIZE,
-                                                                PIPE_VIDEO_SLICE_MODE_AUTO ) )
+      if( !( bSliceModeMB || bSliceModeMBRow ) )
       {
-         ValueMin->vt = VT_UI4;
-         ValueMin->ulVal = 0;
-
-         ValueMax->vt = VT_UI4;
-         ValueMax->ulVal = 2;
-
-         SteppingDelta->vt = VT_UI4;
-         SteppingDelta->ulVal = 1;
-      }
-      else if( m_EncoderCapabilities.m_HWSupportedSliceModes.HasAll( PIPE_VIDEO_SLICE_MODE_BLOCKS,
-                                                                     PIPE_VIDEO_SLICE_MODE_MAX_SLICE_SIZE ) )
-      {
-         ValueMin->vt = VT_UI4;
-         ValueMin->ulVal = 0;
-
-         ValueMax->vt = VT_UI4;
-         ValueMax->ulVal = 1;
-
-         SteppingDelta->vt = VT_UI4;
-         SteppingDelta->ulVal = 1;
-      }
-      else if( m_EncoderCapabilities.m_HWSupportedSliceModes.HasAll( PIPE_VIDEO_SLICE_MODE_BLOCKS ) )
-      {
-         ValueMin->vt = VT_UI4;
-         ValueMin->ulVal = 0;
-
-         ValueMax->vt = VT_UI4;
-         ValueMax->ulVal = 0;
-
-         SteppingDelta->vt = VT_UI4;
-         SteppingDelta->ulVal = 0;
-      }
-      else
-      {
-         // Nothing is supported.
          return E_NOTIMPL;
       }
+
+      ULONG min = 0;
+      ULONG max = 2;
+      ULONG delta = 2;
+
+      if( bSliceModeMB && !bSliceModeMBRow )
+      {
+         min = 0;
+         max = 0;
+         delta = 1;
+      }
+      else if( !bSliceModeMB && bSliceModeMBRow )
+      {
+         min = 2;
+         max = 2;
+         delta = 1;
+      }
+
+      ValueMin->vt = VT_UI4;
+      ValueMin->ulVal = min;
+
+      ValueMax->vt = VT_UI4;
+      ValueMax->ulVal = max;
+
+      SteppingDelta->vt = VT_UI4;
+      SteppingDelta->ulVal = delta;
 
       return S_OK;
    }

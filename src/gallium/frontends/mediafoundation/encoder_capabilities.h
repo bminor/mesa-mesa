@@ -26,7 +26,6 @@
 
 #include <string>
 #include <wtypes.h>
-#include "enum_mask.h"
 #include "pipe_headers.h"
 
 class encoder_capabilities
@@ -126,7 +125,9 @@ class encoder_capabilities
    union pipe_enc_cap_motion_vector_map m_HWSupportMotionGPUMaps = {};
 
    // Supported slice mode
-   EnumMask<pipe_video_slice_mode> m_HWSupportedSliceModes {};
+   bool m_bHWSupportSliceModeMB = false;
+   bool m_bHWSupportSliceModeBits = false;
+   bool m_bHWSupportSliceModeMBRow = false;
 
    // Two pass encode
    union pipe_enc_cap_two_pass m_TwoPassSupport = {};

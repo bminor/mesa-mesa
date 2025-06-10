@@ -141,10 +141,12 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
    m_HWSupportMotionGPUMaps.value =
       pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS );
 
-   // TODO: We should get the supported slice mode from pipe, but currently, it doesn't support.
-   //       Currently, dx12MFT only support mode_blocks, so we initialize it like this.
-   m_HWSupportedSliceModes = EnumMask<pipe_video_slice_mode> { PIPE_VIDEO_SLICE_MODE_BLOCKS };
+   uint32_t supportedSliceStructures =
+      pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_SLICES_STRUCTURE );
 
+   m_bHWSupportSliceModeMB = ( ( supportedSliceStructures & PIPE_VIDEO_CAP_SLICE_STRUCTURE_ARBITRARY_MACROBLOCKS ) != 0 );
+   m_bHWSupportSliceModeBits = ( ( supportedSliceStructures & PIPE_VIDEO_CAP_SLICE_STRUCTURE_MAX_SLICE_SIZE ) != 0 );
+   m_bHWSupportSliceModeMBRow = ( ( supportedSliceStructures & PIPE_VIDEO_CAP_SLICE_STRUCTURE_EQUAL_MULTI_ROWS ) != 0 );
 
    m_TwoPassSupport.value =
       pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_TWO_PASS );
