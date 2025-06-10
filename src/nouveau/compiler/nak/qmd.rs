@@ -369,22 +369,6 @@ macro_rules! qmd_impl_set_smem_size_bounded {
     };
 }
 
-fn gb100_sm_config_smem_size(size: u32) -> u32 {
-    let size = if size > 64 * 1024 {
-        96 * 1024
-    } else if size > 32 * 1024 {
-        64 * 1024
-    } else if size > 16 * 1024 {
-        32 * 1024
-    } else if size > 8 * 1024 {
-        16 * 1024
-    } else {
-        8 * 1024
-    };
-
-    size / 4096 + 7
-}
-
 macro_rules! qmd_impl_set_smem_size_bounded_gb {
     ($c:ident, $s:ident) => {
         fn set_smem_size(&mut self, smem_size: u32, smem_max: u32) {
@@ -394,11 +378,17 @@ macro_rules! qmd_impl_set_smem_size_bounded_gb {
             let size_shift = 7;
             let smem_size_shifted = smem_size >> size_shift;
             assert!((smem_size_shifted << size_shift) == smem_size);
-            set_field!(bv, $c, $s, SHARED_MEMORY_SIZE_SHIFTED7, smem_size);
+            set_field!(
+                bv,
+                $c,
+                $s,
+                SHARED_MEMORY_SIZE_SHIFTED7,
+                smem_size_shifted
+            );
 
-            let max = gb100_sm_config_smem_size(smem_max);
-            let min = gb100_sm_config_smem_size(smem_size.into());
-            let target = gb100_sm_config_smem_size(smem_size.into());
+            let max = gv100_sm_config_smem_size(smem_max);
+            let min = gv100_sm_config_smem_size(smem_size.into());
+            let target = gv100_sm_config_smem_size(smem_size.into());
             set_field!(bv, $c, $s, MIN_SM_CONFIG_SHARED_MEM_SIZE, min);
             set_field!(bv, $c, $s, MAX_SM_CONFIG_SHARED_MEM_SIZE, max);
             set_field!(bv, $c, $s, TARGET_SM_CONFIG_SHARED_MEM_SIZE, target);
