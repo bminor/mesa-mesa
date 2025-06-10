@@ -300,8 +300,8 @@ panvk_per_arch(get_physical_device_features)(
       .descriptorBindingStorageTexelBufferUpdateAfterBind = false,
       .descriptorBindingUpdateUnusedWhilePending = false,
       .descriptorBindingPartiallyBound = false,
-      .descriptorBindingVariableDescriptorCount = false,
-      .runtimeDescriptorArray = false,
+      .descriptorBindingVariableDescriptorCount = true,
+      .runtimeDescriptorArray = true,
 
       .samplerFilterMinmax = PAN_ARCH >= 10,
       .scalarBlockLayout = true,

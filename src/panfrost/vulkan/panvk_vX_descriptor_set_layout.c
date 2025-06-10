@@ -243,12 +243,23 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
    VkDevice _device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
    VkDescriptorSetLayoutSupport *pSupport)
 {
+   const VkDescriptorSetLayoutBindingFlagsCreateInfo *binding_flags =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO);
+   VkDescriptorSetVariableDescriptorCountLayoutSupport *var_desc_count =
+      vk_find_struct(pSupport->pNext,
+                     DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT);
+
    pSupport->supported = false;
 
-   unsigned desc_count = 0, dyn_buf_count = 0;
+   unsigned desc_count = 0, dyn_buf_count = 0, non_variable_count = 0,
+            variable_stride = 0;
    for (unsigned i = 0; i < pCreateInfo->bindingCount; i++) {
       const VkDescriptorSetLayoutBinding *binding = &pCreateInfo->pBindings[i];
       VkDescriptorType type = binding->descriptorType;
+      VkDescriptorBindingFlags flags =
+         binding_flags && binding_flags->bindingCount > 0 ?
+         binding_flags->pBindingFlags[i] : 0;
 
       if (vk_descriptor_type_is_dynamic(type)) {
          dyn_buf_count += binding->descriptorCount;
@@ -279,7 +290,13 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
          .samplers_per_desc = samplers_per_desc,
       };
 
-      desc_count += panvk_get_desc_stride(&layout) * binding->descriptorCount;
+      unsigned stride = panvk_get_desc_stride(&layout);
+      unsigned count = stride * binding->descriptorCount;
+      desc_count += count;
+      if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
+         variable_stride = stride;
+      else
+         non_variable_count += count;
    }
 
    if (desc_count > PANVK_MAX_DESCS_PER_SET ||
@@ -287,4 +304,7 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
       return;
 
    pSupport->supported = true;
+   if (var_desc_count)
+      var_desc_count->maxVariableDescriptorCount = variable_stride != 0 ?
+         (PANVK_MAX_DESCS_PER_SET - non_variable_count) / variable_stride : 0;
 }
