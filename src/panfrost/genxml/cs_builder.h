@@ -905,6 +905,71 @@ cs_load_ip_to(struct cs_builder *b, struct cs_index dest)
 }
 
 static inline void
+cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   cs_emit(b, WAIT, I) {
+      I.wait_mask = wait_mask;
+   }
+
+   /* We don't do advanced tracking of cs_defer(), and assume that
+    * load/store will be flushed with an explicit wait on the load/store
+    * scoreboard. */
+   if (wait_mask & BITFIELD_BIT(b->conf.ls_sb_slot)) {
+      BITSET_CLEAR_RANGE(ls_tracker->pending_loads, 0, 255);
+      ls_tracker->pending_stores = false;
+   }
+}
+
+static inline void
+cs_wait_slot(struct cs_builder *b, unsigned slot)
+{
+   assert(slot < CS_MAX_SB_COUNT && "invalid slot");
+
+   cs_wait_slots(b, BITFIELD_BIT(slot));
+}
+
+static inline void
+cs_flush_load_to(struct cs_builder *b, struct cs_index to, uint16_t mask)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   unsigned count = util_last_bit(mask);
+   unsigned reg = cs_to_reg_tuple(to, count);
+
+   for (unsigned i = reg; i < reg + count; i++) {
+      if ((mask & BITFIELD_BIT(i - reg)) &&
+          BITSET_TEST(ls_tracker->pending_loads, i)) {
+         cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+         break;
+      }
+   }
+}
+
+static inline void
+cs_flush_loads(struct cs_builder *b)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   if (!BITSET_IS_EMPTY(ls_tracker->pending_loads))
+      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+}
+
+static inline void
+cs_flush_stores(struct cs_builder *b)
+{
+   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
+   assert(ls_tracker != NULL);
+
+   if (ls_tracker->pending_stores)
+      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+}
+
+static inline void
 cs_block_start(struct cs_builder *b, struct cs_block *block)
 {
    cs_flush_pending_if(b);
@@ -1337,71 +1402,6 @@ cs_move64_to(struct cs_builder *b, struct cs_index dest, uint64_t imm)
       cs_move32_to(b, cs_extract32(b, dest, 0), imm);
       cs_move32_to(b, cs_extract32(b, dest, 1), imm >> 32);
    }
-}
-
-static inline void
-cs_wait_slots(struct cs_builder *b, unsigned wait_mask)
-{
-   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
-   assert(ls_tracker != NULL);
-
-   cs_emit(b, WAIT, I) {
-      I.wait_mask = wait_mask;
-   }
-
-   /* We don't do advanced tracking of cs_defer(), and assume that
-    * load/store will be flushed with an explicit wait on the load/store
-    * scoreboard. */
-   if (wait_mask & BITFIELD_BIT(b->conf.ls_sb_slot)) {
-      BITSET_CLEAR_RANGE(ls_tracker->pending_loads, 0, 255);
-      ls_tracker->pending_stores = false;
-   }
-}
-
-static inline void
-cs_wait_slot(struct cs_builder *b, unsigned slot)
-{
-   assert(slot < CS_MAX_SB_COUNT && "invalid slot");
-
-   cs_wait_slots(b, BITFIELD_BIT(slot));
-}
-
-static inline void
-cs_flush_load_to(struct cs_builder *b, struct cs_index to, uint16_t mask)
-{
-   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
-   assert(ls_tracker != NULL);
-
-   unsigned count = util_last_bit(mask);
-   unsigned reg = cs_to_reg_tuple(to, count);
-
-   for (unsigned i = reg; i < reg + count; i++) {
-      if ((mask & BITFIELD_BIT(i - reg)) &&
-          BITSET_TEST(ls_tracker->pending_loads, i)) {
-         cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
-         break;
-      }
-   }
-}
-
-static inline void
-cs_flush_loads(struct cs_builder *b)
-{
-   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
-   assert(ls_tracker != NULL);
-
-   if (!BITSET_IS_EMPTY(ls_tracker->pending_loads))
-      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
-}
-
-static inline void
-cs_flush_stores(struct cs_builder *b)
-{
-   struct cs_load_store_tracker *ls_tracker = b->cur_ls_tracker;
-   assert(ls_tracker != NULL);
-
-   if (ls_tracker->pending_stores)
-      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
 }
 
 struct cs_shader_res_sel {
