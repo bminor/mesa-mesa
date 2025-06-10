@@ -185,6 +185,38 @@ static bool build_gsvs_ring_desc(nir_builder *b, struct lower_abi_state *s)
    return false;
 }
 
+static nir_def *build_task_ring_desc(nir_builder *b, struct lower_abi_state *s,
+                                     bool payload)
+{
+   struct si_screen *screen = s->shader->selector->screen;
+   struct ac_task_info *info = &screen->task_info;
+   unsigned entry_size = payload ? info->payload_entry_size : AC_TASK_DRAW_ENTRY_BYTES;
+
+   const struct ac_buffer_state ac_state = {
+      .va = (uint64_t)screen->info.address32_hi << 32,
+      .size = screen->task_info.num_entries * entry_size,
+      .format = PIPE_FORMAT_R32_FLOAT,
+      .swizzle = { PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y, PIPE_SWIZZLE_Z, PIPE_SWIZZLE_W },
+      .gfx10_oob_select = V_008F0C_OOB_SELECT_DISABLED,
+   };
+
+   unsigned desc[4];
+   ac_build_buffer_descriptor(screen->info.gfx_level, &ac_state, desc);
+
+   nir_def *addr = ac_nir_load_arg(b, &s->args->ac, s->args->task_ring_addr);
+   unsigned offset = payload ? info->payload_ring_offset : info->draw_ring_offset;
+   addr = nir_iadd_imm(b, addr, offset);
+
+   nir_def *comp[] = {
+      addr,
+      nir_imm_int(b, desc[1]),
+      nir_imm_int(b, desc[2]),
+      nir_imm_int(b, desc[3]),
+   };
+
+   return nir_vec(b, comp, 4);
+}
+
 static bool preload_reusable_variables(nir_builder *b, struct lower_abi_state *s)
 {
    const struct si_shader_selector *sel = s->shader->selector;
@@ -628,6 +660,12 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       break;
    case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
       replacement = nir_imul_imm(b, GET_FIELD_NIR(GS_STATE_GS_OUT_LDS_OFFSET_256B), 256);
+      break;
+   case nir_intrinsic_load_ring_task_draw_amd:
+      replacement = build_task_ring_desc(b, s, false);
+      break;
+   case nir_intrinsic_load_ring_task_payload_amd:
+      replacement = build_task_ring_desc(b, s, true);
       break;
    default:
       return false;
