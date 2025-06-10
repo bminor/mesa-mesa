@@ -19,12 +19,14 @@
 #include "vk_synchronization.h"
 
 #include "clb097.h"
+#include "clcb97.h"
 #include "nv_push_cl906f.h"
 #include "nv_push_cl90b5.h"
 #include "nv_push_cla097.h"
 #include "nv_push_cla0c0.h"
 #include "nv_push_clb1c0.h"
 #include "nv_push_clc597.h"
+#include "nv_push_clc86f.h"
 
 static void
 nvk_descriptor_state_fini(struct nvk_cmd_buffer *cmd,
@@ -600,7 +602,7 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
    if (!barriers)
       return;
 
-   struct nv_push *p = nvk_cmd_buffer_push(cmd, 10);
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, 16);
 
    if (barriers & NVK_BARRIER_INVALIDATE_TEX_DATA) {
       if (pdev->info.cls_eng3d >= MAXWELL_A) {
@@ -628,10 +630,21 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
    }
 
    if (barriers & (NVK_BARRIER_INVALIDATE_MME_DATA)) {
-      __push_immd(p, SUBC_NV9097, NV906F_SET_REFERENCE, 0);
+      if (pdev->info.cls_eng3d >= HOPPER_A) {
+         /* take from the open kernel watchdog handling, might be overkill */
+         P_IMMD(p, NVC86F, WFI, 0);
+         P_MTHD(p, NVC86F, MEM_OP_A);
+         P_NVC86F_MEM_OP_A(p, {});
+         P_NVC86F_MEM_OP_B(p, 0);
+         P_NVC86F_MEM_OP_C(p, { .membar_type = 0 });
+         P_NVC86F_MEM_OP_D(p, { .operation = OPERATION_MEMBAR });
 
-      if (pdev->info.cls_eng3d >= TURING_A)
-         P_IMMD(p, NVC597, MME_DMA_SYSMEMBAR, 0);
+      } else {
+         __push_immd(p, SUBC_NV9097, NV906F_SET_REFERENCE, 0);
+
+         if (pdev->info.cls_eng3d >= TURING_A)
+            P_IMMD(p, NVC597, MME_DMA_SYSMEMBAR, 0);
+      }
    }
 
    if ((barriers & NVK_BARRIER_INVALIDATE_QMD_DATA) &&
