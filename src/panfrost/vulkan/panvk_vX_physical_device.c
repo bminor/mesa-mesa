@@ -283,8 +283,8 @@ panvk_per_arch(get_physical_device_features)(
 
       .descriptorIndexing = false,
       .shaderInputAttachmentArrayDynamicIndexing = false,
-      .shaderUniformTexelBufferArrayDynamicIndexing = false,
-      .shaderStorageTexelBufferArrayDynamicIndexing = false,
+      .shaderUniformTexelBufferArrayDynamicIndexing = true,
+      .shaderStorageTexelBufferArrayDynamicIndexing = true,
       .shaderUniformBufferArrayNonUniformIndexing = false,
       .shaderSampledImageArrayNonUniformIndexing = false,
       .shaderStorageBufferArrayNonUniformIndexing = false,
