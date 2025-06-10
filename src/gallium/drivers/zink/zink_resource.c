@@ -1305,6 +1305,13 @@ create_image(struct zink_screen *screen, struct zink_resource_object *obj,
       ici.format = zink_get_format(screen, zink_format_get_emulated_alpha(templ->format));
       mod = eval_ici(screen, &ici, templ, templ->bind, ici_modifier_count, ici_modifiers, &success);
    }
+   /* images with modifiers MUST have a format list if they are mutable */
+   if (modifiers_count && ici.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) {
+      const VkImageFormatListCreateInfo *format_list = vk_find_struct_const(&ici, IMAGE_FORMAT_LIST_CREATE_INFO);
+      assert(format_list);
+      if (!format_list)
+         return roc_fail_and_free_object;
+   }
    if (!success)
       return roc_fail_and_free_object;
 
