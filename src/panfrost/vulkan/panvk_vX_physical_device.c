@@ -289,7 +289,7 @@ panvk_per_arch(get_physical_device_features)(
       .shaderSampledImageArrayNonUniformIndexing = true,
       .shaderStorageBufferArrayNonUniformIndexing = true,
       .shaderStorageImageArrayNonUniformIndexing = true,
-      .shaderInputAttachmentArrayNonUniformIndexing = false,
+      .shaderInputAttachmentArrayNonUniformIndexing = true,
       .shaderUniformTexelBufferArrayNonUniformIndexing = true,
       .shaderStorageTexelBufferArrayNonUniformIndexing = true,
       .descriptorBindingUniformBufferUpdateAfterBind = false,

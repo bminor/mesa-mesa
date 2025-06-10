@@ -895,14 +895,14 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
             load_ro_color = nir_load_readonly_output_pan(
                b, intr->def.num_components, intr->def.bit_size, target,
                intr->src[2].ssa, conversion, .dest_type = dest_type,
-               .io_semantics = iosem);
+               .access = nir_intrinsic_access(intr), .io_semantics = iosem);
          }
          nir_push_else(b, NULL);
          {
             load_rw_color = nir_load_converted_output_pan(
                b, intr->def.num_components, intr->def.bit_size, target,
                intr->src[2].ssa, conversion, .dest_type = dest_type,
-               .io_semantics = iosem);
+               .access = nir_intrinsic_access(intr), .io_semantics = iosem);
          }
          nir_pop_if(b, NULL);
          load_color = nir_if_phi(b, load_ro_color, load_rw_color);
@@ -935,7 +935,7 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
          load_zs = nir_load_converted_output_pan(
             b, intr->def.num_components, intr->def.bit_size, target,
             intr->src[2].ssa, conversion, .dest_type = dest_type,
-            .io_semantics = iosem);
+            .access = nir_intrinsic_access(intr), .io_semantics = iosem);
 
          /* If we loaded the stencil value, the upper 24 bits might contain
 	  * garbage, hence the masking done here. */

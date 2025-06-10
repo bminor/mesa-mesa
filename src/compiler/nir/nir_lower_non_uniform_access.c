@@ -412,6 +412,14 @@ nir_lower_non_uniform_access_impl(nir_function_impl *impl,
                   progress = true;
                break;
 
+            case nir_intrinsic_load_readonly_output_pan:
+            case nir_intrinsic_load_converted_output_pan:
+               /* render target can be nonuniform, but not conversion descriptor */
+               if ((options->types & nir_lower_non_uniform_image_access) &&
+                   lower_non_uniform_access_intrin(&state, intrin, 2, nir_lower_non_uniform_image_access))
+                  progress = true;
+               break;
+
             default:
                /* Nothing to do */
                break;
