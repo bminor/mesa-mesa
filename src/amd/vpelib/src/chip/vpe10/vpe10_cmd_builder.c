@@ -69,7 +69,11 @@ enum vpe_status vpe10_build_vpe_cmd(
     struct vpe_vector      *config_vector;
     struct config_record   *config;
     struct vpe_cmd_info    *cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
+    enum vpe_status         status   = VPE_STATUS_OK;
     VPE_ASSERT(cmd_info);
+
+    if (cmd_info == NULL)
+        return VPE_STATUS_ERROR;
 
     vpe_desc_writer->init(vpe_desc_writer, &cur_bufs->cmd_buf, cmd_info->cd);
 
@@ -94,6 +98,8 @@ enum vpe_status vpe10_build_vpe_cmd(
         // this would allow reuse of the previous register configs
         pipe_ctx = vpe_pipe_find_owner(vpe_priv, cmd_info->inputs[pipe_idx].stream_idx, &reuse);
         VPE_ASSERT(pipe_ctx);
+        if (!pipe_ctx)
+            continue;
 
         if (!reuse) {
             vpe_priv->resource.program_frontend(
@@ -115,7 +121,8 @@ enum vpe_status vpe10_build_vpe_cmd(
                 cmd_type = VPE_CMD_TYPE_BG_VSCF_OUTPUT;
             else {
                 VPE_ASSERT(0);
-                return VPE_STATUS_ERROR;
+                status = VPE_STATUS_ERROR;
+                break;
             }
 
             // follow the same order of config generation in "non-reuse" case
@@ -124,19 +131,34 @@ enum vpe_status vpe10_build_vpe_cmd(
             VPE_ASSERT(config_vector->num_elements);
             for (config_idx = 0; config_idx < config_vector->num_elements; config_idx++) {
                 config = (struct config_record *)vpe_vector_get(config_vector, config_idx);
-
+                VPE_ASSERT(config);
+                if (config == NULL) {
+                    status = VPE_STATUS_ERROR;
+                    break;
+                }
                 vpe_desc_writer->add_config_desc(
                     vpe_desc_writer, config->config_base_addr, reuse, (uint8_t)emb_buf->tmz);
             }
+
+            if (status != VPE_STATUS_OK)
+                break;
 
             // stream-op sharing
             config_vector = stream_ctx->stream_op_configs[pipe_idx][cmd_type];
             for (config_idx = 0; config_idx < config_vector->num_elements; config_idx++) {
                 config = (struct config_record *)vpe_vector_get(config_vector, config_idx);
+                VPE_ASSERT(config);
+                if (config == NULL) {
+                    status = VPE_STATUS_ERROR;
+                    break;
+                }
 
                 vpe_desc_writer->add_config_desc(
                     vpe_desc_writer, config->config_base_addr, reuse, (uint8_t)emb_buf->tmz);
             }
+
+            if (status != VPE_STATUS_OK)
+                break;
 
             // command specific
             vpe_priv->resource.program_frontend(
@@ -145,40 +167,52 @@ enum vpe_status vpe10_build_vpe_cmd(
     }
 
     VPE_ASSERT(pipe_ctx);
+    if (!pipe_ctx)
+        status = VPE_STATUS_ERROR;
 
     // If config writer has been crashed due to buffer overflow
-    if (vpe_priv->config_writer.status != VPE_STATUS_OK) {
-        return vpe_priv->config_writer.status;
+    if ((status == VPE_STATUS_OK) && (vpe_priv->config_writer.status != VPE_STATUS_OK)) {
+        status = vpe_priv->config_writer.status;
     }
 
-    // backend programming
-    output_ctx = &vpe_priv->output_ctx;
+    if (status == VPE_STATUS_OK) {
+        // backend programming
+        output_ctx = &vpe_priv->output_ctx;
 
-    config_vector = output_ctx->configs[0];
-    if (!config_vector->num_elements) {
-        vpe_priv->resource.program_backend(vpe_priv, pipe_ctx->pipe_idx, cmd_idx, false);
-    } else {
-        bool reuse = !vpe_priv->init.debug.disable_reuse_bit;
+        config_vector = output_ctx->configs[0];
+        if (!config_vector->num_elements) {
+            vpe_priv->resource.program_backend(vpe_priv, pipe_ctx->pipe_idx, cmd_idx, false);
+        } else {
+            bool reuse = !vpe_priv->init.debug.disable_reuse_bit;
 
-        // re-use output register configs
-        for (config_idx = 0; config_idx < config_vector->num_elements; config_idx++) {
-            config = (struct config_record *)vpe_vector_get(config_vector, config_idx);
+            // re-use output register configs
+            for (config_idx = 0; config_idx < config_vector->num_elements; config_idx++) {
+                config = (struct config_record *)vpe_vector_get(config_vector, config_idx);
+                VPE_ASSERT(config);
+                if (config == NULL) {
+                    status = VPE_STATUS_ERROR;
+                    break;
+                }
 
-            vpe_desc_writer->add_config_desc(
-                vpe_desc_writer, config->config_base_addr, reuse, (uint8_t)emb_buf->tmz);
+                vpe_desc_writer->add_config_desc(
+                    vpe_desc_writer, config->config_base_addr, reuse, (uint8_t)emb_buf->tmz);
+            }
+
+            if (status == VPE_STATUS_OK)
+                vpe_priv->resource.program_backend(vpe_priv, pipe_ctx->pipe_idx, cmd_idx, true);
         }
-
-        vpe_priv->resource.program_backend(vpe_priv, pipe_ctx->pipe_idx, cmd_idx, true);
     }
 
     /* If writer crashed due to buffer overflow */
-    if (vpe_desc_writer->status != VPE_STATUS_OK) {
-        return vpe_desc_writer->status;
+    if ((status == VPE_STATUS_OK) && (vpe_desc_writer->status != VPE_STATUS_OK)) {
+        status = vpe_desc_writer->status;
     }
 
-    vpe_desc_writer->complete(vpe_desc_writer);
+    if (status == VPE_STATUS_OK) {
+        vpe_desc_writer->complete(vpe_desc_writer);
+    }
 
-    return VPE_STATUS_OK;
+    return status;
 }
 
 enum vpe_status vpe10_build_plane_descriptor(
@@ -195,6 +229,8 @@ enum vpe_status vpe10_build_plane_descriptor(
     struct plane_desc_writer      *plane_desc_writer = &vpe_priv->plane_desc_writer;
     struct vpe_cmd_info           *cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
     VPE_ASSERT(cmd_info);
+    if (cmd_info == NULL)
+        return VPE_STATUS_ERROR;
 
     VPE_ASSERT(cmd_info->num_inputs == 1);
 

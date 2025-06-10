@@ -819,6 +819,8 @@ int32_t vpe10_program_frontend(struct vpe_priv *vpe_priv, uint32_t pipe_idx, uin
 {
     struct vpe_cmd_info *cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
     VPE_ASSERT(cmd_info);
+    if (!cmd_info)
+        return -1;
 
     struct vpe_cmd_input      *cmd_input    = &cmd_info->inputs[cmd_input_idx];
     struct stream_ctx         *stream_ctx   = &vpe_priv->stream_ctx[cmd_input->stream_idx];
@@ -1179,6 +1181,8 @@ void vpe10_get_bufs_req(struct vpe_priv *vpe_priv, struct vpe_bufs_req *req)
     for (i = 0; i < vpe_priv->vpe_cmd_vector->num_elements; i++) {
         cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, i);
         VPE_ASSERT(cmd_info);
+        if (!cmd_info)
+            continue;
 
         // each cmd consumes one VPE descriptor
         req->cmd_buf_size += VPE10_GENERAL_VPE_DESC_SIZE;

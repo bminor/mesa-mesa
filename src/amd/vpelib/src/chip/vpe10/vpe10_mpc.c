@@ -926,8 +926,9 @@ bool vpe10_mpc_program_3dlut_indirect(struct mpc *mpc,
     uint64_t                     lut3_gpuva;
     uint32_t                     lut_size0;
     uint32_t                     lut_size;
-    struct tetrahedral_17x17x17 *tetra17 = NULL;
-    struct tetrahedral_9x9x9    *tetra9  = NULL;
+    // see struct tetrahedral_17x17x17 / tetrahedral_9x9x9 definition
+    const uint32_t tetra17_lut_size = 1228;
+    const uint32_t tetra9_lut_size  = 182;
 
     // make sure it is in DIRECT type
     config_writer_set_type(config_writer, CONFIG_TYPE_DIRECT, mpc->inst);
@@ -949,15 +950,15 @@ bool vpe10_mpc_program_3dlut_indirect(struct mpc *mpc,
         lut1_gpuva = lut0_3_buf->gpu_va + (uint64_t)(offsetof(struct tetrahedral_17x17x17, lut1));
         lut2_gpuva = lut0_3_buf->gpu_va + (uint64_t)(offsetof(struct tetrahedral_17x17x17, lut2));
         lut3_gpuva = lut0_3_buf->gpu_va + (uint64_t)(offsetof(struct tetrahedral_17x17x17, lut3));
-        lut_size0  = sizeof(tetra17->lut0) / sizeof(tetra17->lut0[0]);
-        lut_size   = sizeof(tetra17->lut1) / sizeof(tetra17->lut1[0]);
+        lut_size0  = tetra17_lut_size + 1; // lut0 has an extra element (vertex (0,0,0))
+        lut_size   = tetra17_lut_size;
     } else {
         lut0_gpuva = lut0_3_buf->gpu_va;
         lut1_gpuva = lut0_3_buf->gpu_va + (uint64_t)(offsetof(struct tetrahedral_9x9x9, lut1));
         lut2_gpuva = lut0_3_buf->gpu_va + (uint64_t)(offsetof(struct tetrahedral_9x9x9, lut2));
         lut3_gpuva = lut0_3_buf->gpu_va + (uint64_t)(offsetof(struct tetrahedral_9x9x9, lut3));
-        lut_size0  = sizeof(tetra9->lut0) / sizeof(tetra9->lut0[0]);
-        lut_size   = sizeof(tetra9->lut1) / sizeof(tetra9->lut1[0]);
+        lut_size0  = tetra9_lut_size + 1; // lut0 has an extra element (vertex (0,0,0))
+        lut_size   = tetra9_lut_size;
     }
 
     vpe10_mpc_select_3dlut_ram(mpc, mode, is_12bits_color_channel);
