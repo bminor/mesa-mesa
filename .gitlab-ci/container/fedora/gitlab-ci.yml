@@ -1,4 +1,4 @@
-# Build the CI docker images.
+# Build the CI Fedora docker images.
 #
 # MESA_IMAGE_TAG is the tag of the docker image used by later stage jobs. If the
 # image doesn't exist yet, the container stage job generates it.
@@ -15,7 +15,26 @@
 # repository's container registry, so that the image from the main
 # repository's registry will be used there as well.
 
-include:
-  - local: '.gitlab-ci/container/gitlab-ci-inc.yml'
-  - local: '.gitlab-ci/container/*/gitlab-ci.yml'
+# Fedora based x86_64 build image
+fedora/x86_64_build:
+  extends:
+    - .fdo.container-build@fedora
+    - .container
+  variables:
+    FDO_DISTRIBUTION_VERSION: 42
+    MESA_IMAGE_TAG: &fedora-x86_64_build ${FEDORA_X86_64_BUILD_TAG}
+    LLVM_VERSION: &fedora-x86_64-llvm 20
+
+.use-fedora/x86_64_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
+  extends:
+    - .set-image
+  variables:
+    MESA_IMAGE_PATH: "fedora/x86_64_build"
+    MESA_IMAGE_TAG: *fedora-x86_64_build
+    LLVM_VERSION: *fedora-x86_64-llvm
+  needs:
+    - job: fedora/x86_64_build
+      optional: true
 
