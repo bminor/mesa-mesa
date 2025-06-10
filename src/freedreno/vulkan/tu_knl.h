@@ -151,8 +151,6 @@ tu_bo_init_new(struct tu_device *dev, struct vk_object_base *base,
                struct tu_bo **out_bo, uint64_t size,
                enum tu_bo_alloc_flags flags, const char *name)
 {
-   // TODO don't mark everything with HOST_VISIBLE !!! Anything that
-   // never gets CPU access should not have this bit set
    return tu_bo_init_new_explicit_iova(
       dev, base, out_bo, size, 0,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
