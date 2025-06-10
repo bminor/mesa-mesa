@@ -86,12 +86,19 @@ main()
    bounds.max = vec3(-INFINITY);
    if (is_leaf) {
       VOID_REF src_leaf_node = OFFSET(src_bvh, child_offset);
-      uint32_t geometry_index =
-         DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET)) >> 4;
+
+      uint32_t geometry_index = 0;
+      if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_SINGLE_GEOMETRY))
+         geometry_index = DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET)) >> 4;
+
       uint32_t primitive_index =
          DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET + 4)) & 0xfffffff;
 
-      vk_bvh_geometry_data geom_data = DEREF(INDEX(vk_bvh_geometry_data, args.geom_data, geometry_index));
+      vk_bvh_geometry_data geom_data;
+      if (VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_SINGLE_GEOMETRY))
+         geom_data = args.geom_data0;
+      else
+         geom_data = DEREF(INDEX(vk_bvh_geometry_data, args.geom_data, geometry_index));
 
       VOID_REF dst_leaf_node = OFFSET(dst_bvh, child_offset);
       if (geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {

@@ -23,6 +23,7 @@
 #define RADV_BUILD_FLAG_UPDATE_IN_PLACE         (1u << (VK_BUILD_FLAG_COUNT + 2))
 #define RADV_BUILD_FLAG_NO_INFS                 (1u << (VK_BUILD_FLAG_COUNT + 3))
 #define RADV_BUILD_FLAG_WRITE_LEAF_NODE_OFFSETS (1u << (VK_BUILD_FLAG_COUNT + 4))
+#define RADV_BUILD_FLAG_UPDATE_SINGLE_GEOMETRY  (1u << (VK_BUILD_FLAG_COUNT + 5))
 
 #define RADV_COPY_MODE_COPY        0
 #define RADV_COPY_MODE_SERIALIZE   1
@@ -78,6 +79,8 @@ struct update_gfx12_args {
    REF(vk_aabb) bounds;
    REF(uint32_t) internal_ready_count;
    uint32_t leaf_node_count;
+
+   vk_bvh_geometry_data geom_data0;
 };
 
 #endif /* BUILD_INTERFACE_H */

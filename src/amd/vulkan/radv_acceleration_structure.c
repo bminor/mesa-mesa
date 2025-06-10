@@ -274,6 +274,9 @@ radv_get_build_config(VkDevice _device, struct vk_acceleration_structure_build_s
    if (state->build_info->srcAccelerationStructure == state->build_info->dstAccelerationStructure)
       update_key |= RADV_BUILD_FLAG_UPDATE_IN_PLACE;
 
+   if (state->build_info->geometryCount == 1)
+      update_key |= RADV_BUILD_FLAG_UPDATE_SINGLE_GEOMETRY;
+
    state->config.update_key[0] = update_key;
 }
 
@@ -572,7 +575,8 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, const struct vk_accelera
    radv_fill_memory(cmd_buffer, scratch + layout.internal_ready_count_offset,
                     layout.size - layout.internal_ready_count_offset, 0x0, RADV_COPY_FLAGS_DEVICE_LOCAL);
 
-   if (radv_use_bvh8(pdev)) {
+   /* geometryCount == 1 passes the data as push constant. */
+   if (radv_use_bvh8(pdev) && !(state->config.update_key[0] & RADV_BUILD_FLAG_UPDATE_SINGLE_GEOMETRY)) {
       uint32_t data_size = sizeof(struct vk_bvh_geometry_data) * state->build_info->geometryCount;
       struct vk_bvh_geometry_data *data = malloc(data_size);
       if (!data) {
@@ -616,8 +620,7 @@ radv_update_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceler
    if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 
-   bool in_place = state->config.update_key[0] & RADV_BUILD_FLAG_UPDATE_IN_PLACE;
-   uint32_t flags = in_place ? RADV_BUILD_FLAG_UPDATE_IN_PLACE : 0;
+   uint32_t flags = state->config.update_key[0];
 
    if (radv_use_bvh8(pdev)) {
       radv_bvh_build_bind_pipeline(commandBuffer, RADV_META_OBJECT_KEY_BVH_UPDATE, update_gfx12_spv,
@@ -717,6 +720,12 @@ radv_update_as_gfx12(VkCommandBuffer commandBuffer, const struct vk_acceleration
       .internal_ready_count = state->build_info->scratchData.deviceAddress + layout.internal_ready_count_offset,
       .leaf_node_count = state->leaf_node_count,
    };
+
+   if (state->config.update_key[0] & RADV_BUILD_FLAG_UPDATE_SINGLE_GEOMETRY) {
+      const VkAccelerationStructureGeometryKHR *geom =
+         state->build_info->pGeometries ? &state->build_info->pGeometries[0] : state->build_info->ppGeometries[0];
+      update_consts.geom_data0 = vk_fill_geometry_data(state->build_info->type, 0, 0, geom, state->build_range_infos);
+   }
 
    radv_bvh_build_set_args(commandBuffer, &update_consts, sizeof(update_consts));
 
