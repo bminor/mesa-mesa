@@ -157,6 +157,7 @@ class FeatureStruct:
     c_type: str
     s_type: str
     features: typing.List[str]
+    guard: str
 
     def condition(self, physical_dev):
         conds = []
@@ -237,13 +238,22 @@ vk_physical_device_check_device_features(struct vk_physical_device *physical_dev
    };
 
 % for f in feature_structs:
+% if f.guard != None:
+#ifdef ${f.guard}
+% endif
    ${f.c_type} supported_${f.c_type} = { .pNext = NULL };
+% if f.guard != None:
+#endif
+% endif
 % endfor
 
    vk_foreach_struct_const(features, pCreateInfo->pNext) {
       VkBaseOutStructure *supported = NULL;
       switch (features->sType) {
 % for f in feature_structs:
+% if f.guard != None:
+#ifdef ${f.guard}
+% endif
       case ${f.s_type}:
 % if f.condition("physical_device") is not None:
          if (!${f.condition("physical_device")})
@@ -251,6 +261,9 @@ vk_physical_device_check_device_features(struct vk_physical_device *physical_dev
 % endif
          supported = (VkBaseOutStructure *) &supported_${f.c_type};
          break;
+% if f.guard != None:
+#endif
+% endif
 % endfor
       default:
          break;
@@ -305,6 +318,9 @@ vk_physical_device_check_device_features(struct vk_physical_device *physical_dev
         break;
       }
 % for f in feature_structs:
+% if f.guard != None:
+#ifdef ${f.guard}
+% endif
       case ${f.s_type}: {
 % if f.condition("physical_device") is not None:
          if (!${f.condition("physical_device")})
@@ -319,6 +335,9 @@ vk_physical_device_check_device_features(struct vk_physical_device *physical_dev
 % endfor
          break;
       }
+% if f.guard != None:
+#endif
+% endif
 % endfor
       default:
          break;
@@ -340,6 +359,9 @@ vk_common_GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
    vk_foreach_struct(ext, pFeatures) {
       switch (ext->sType) {
 % for f in feature_structs:
+% if f.guard != None:
+#ifdef ${f.guard}
+% endif
       case ${f.s_type}: {
          ${f.c_type} *features = (void *) ext;
 % for flag in f.features:
@@ -348,6 +370,9 @@ vk_common_GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
          break;
       }
 
+% if f.guard != None:
+#endif
+% endif
 % endfor
       default:
          break;
@@ -368,6 +393,9 @@ vk_set_physical_device_features(struct vk_features *all_features,
       }
 
 % for f in feature_structs:
+% if f.guard != None:
+#ifdef ${f.guard}
+% endif
       case ${f.s_type}: {
          const ${f.c_type} *features = (const void *) ext;
 % for flag in f.features:
@@ -377,6 +405,9 @@ vk_set_physical_device_features(struct vk_features *all_features,
          break;
       }
 
+% if f.guard != None:
+#endif
+% endif
 % endfor
       default:
          break;
@@ -424,9 +455,10 @@ def get_feature_structs(doc, api, beta):
             continue
 
         reqs = required[_type.attrib['name']]
-        # Skip extensions with a define for now
+        # Skip extensions with a define that isn't a platform define for now
         guard = reqs.guard
-        if guard is not None and (guard != "VK_ENABLE_BETA_EXTENSIONS" or beta != "true"):
+        if guard is not None and ((guard != "VK_ENABLE_BETA_EXTENSIONS" or beta != "true") and
+                                 (not guard.startswith("VK_USE_PLATFORM"))):
             continue
 
         # find Vulkan structure type
@@ -450,7 +482,7 @@ def get_feature_structs(doc, api, beta):
                 assert p.find('./type').text == 'VkBool32'
                 flags.append(m_name)
 
-        feature_struct = FeatureStruct(reqs=reqs, c_type=_type.attrib.get('name'), s_type=s_type, features=flags)
+        feature_struct = FeatureStruct(reqs=reqs, c_type=_type.attrib.get('name'), s_type=s_type, features=flags, guard=guard)
         feature_structs[feature_struct.c_type] = feature_struct
 
     return feature_structs.values()
