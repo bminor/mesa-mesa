@@ -616,5 +616,22 @@ tu_dump_bo_init(struct tu_device *dev, struct tu_bo *bo);
 void
 tu_dump_bo_del(struct tu_device *dev, struct tu_bo *bo);
 
+/* Use cached-coherent when available, for faster CPU readback.
+ */
+static inline VkResult
+tu_bo_init_new_cached(struct tu_device *dev, struct vk_object_base *base,
+                      struct tu_bo **out_bo, uint64_t size,
+                      enum tu_bo_alloc_flags flags, const char *name)
+{
+   return tu_bo_init_new_explicit_iova(
+      dev, base, out_bo, size, 0,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+         (dev->physical_device->has_cached_coherent_memory ? 
+          VK_MEMORY_PROPERTY_HOST_CACHED_BIT : 0),
+      flags, name);
+}
+
 
 #endif /* TU_DEVICE_H */
