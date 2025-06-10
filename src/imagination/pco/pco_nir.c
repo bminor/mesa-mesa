@@ -40,6 +40,8 @@ static const nir_shader_compiler_options nir_options = {
 
    .instance_id_includes_base_index = true,
 
+   .lower_device_index_to_zero = true,
+
    .lower_fdiv = true,
    .lower_ffract = true,
    .lower_find_lsb = true,
