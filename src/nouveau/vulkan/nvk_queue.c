@@ -343,10 +343,7 @@ nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push)
        (pdev->debug_flags & NVK_DEBUG_PUSH_DUMP))
       vk_push_print(stderr, push, &pdev->info);
 
-   if (result != VK_SUCCESS)
-      return vk_queue_set_lost(&queue->vk, "Submit failed");
-
-   return VK_SUCCESS;
+   return result;
 }
 
 static VkResult
