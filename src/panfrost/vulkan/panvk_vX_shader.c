@@ -822,6 +822,31 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
             nir_address_format_64bit_global);
 
+   /* nir_lower_non_uniform_access needs to run after lowering UBO and SSBO
+    * IO. This means we run it after nir_lower_descriptors, which reads the
+    * array indices, but it's okay because lower_descriptors treats all
+    * dynamic indices the same. */
+   enum nir_lower_non_uniform_access_type lower_non_uniform_access_types =
+      nir_lower_non_uniform_ubo_access |
+      nir_lower_non_uniform_ssbo_access |
+      nir_lower_non_uniform_texture_access |
+      nir_lower_non_uniform_image_access |
+      nir_lower_non_uniform_get_ssbo_size;
+#if PAN_ARCH <= 7
+   lower_non_uniform_access_types |=
+      nir_lower_non_uniform_texture_offset_access;
+#endif
+
+   /* In practice, most shaders do not have non-uniform-qualified accesses
+    * thus a cheaper and likely to fail check is run first. */
+   if (nir_has_non_uniform_access(nir, lower_non_uniform_access_types)) {
+      NIR_PASS(_, nir, nir_opt_non_uniform_access);
+      struct nir_lower_non_uniform_access_options opts = {
+         .types = lower_non_uniform_access_types,
+      };
+      NIR_PASS(_, nir, nir_lower_non_uniform_access, &opts);
+   }
+
 #if PAN_ARCH >= 9
    NIR_PASS(_, nir, nir_shader_intrinsics_pass, valhall_lower_get_ssbo_size,
             nir_metadata_control_flow, NULL);

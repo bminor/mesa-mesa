@@ -4412,7 +4412,7 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
 
       src0 = bi_imm_u32(packed_handle);
 
-      /* TODO: narrow offsetms */
+      /* TODO: narrow offsetms. (only when offsetms is dynamically uniform) */
       src1 = bi_zero();
    } else {
       src0 = sampler;
