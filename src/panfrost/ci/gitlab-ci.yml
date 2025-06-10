@@ -193,7 +193,7 @@ panfrost-g610-vk:arm64:
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     PANVK_DEBUG: "no_known_warn,sync,cs"
     DEQP_SUITE: panfrost-g610-vk
-    DEQP_FRACTION: 4
+    DEQP_FRACTION: 5
     HWCI_START_WESTON: 1
     LAVA_TAGS: at-least-8gb
 
