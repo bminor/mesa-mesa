@@ -31,6 +31,7 @@ struct ac_nir_context {
 
    struct ac_llvm_pointer scratch;
    struct ac_llvm_pointer constant_data;
+   struct ac_llvm_pointer lds;
 
    struct hash_table *defs;
    struct hash_table *phis;
@@ -57,10 +58,20 @@ static LLVMValueRef get_src(struct ac_nir_context *nir, nir_src src)
 
 static LLVMValueRef get_memory_ptr(struct ac_nir_context *ctx, nir_src src, unsigned c_off)
 {
+   if (!ctx->lds.value) {
+      unsigned lds_size = ctx->ac.gfx_level >= GFX7 ? 65536 : 32768;
+      LLVMTypeRef type = LLVMArrayType(ctx->ac.i32, lds_size / 4);
+      ctx->lds = (struct ac_llvm_pointer) {
+         .value = LLVMBuildIntToPtr(ctx->ac.builder, ctx->ac.i32_0,
+                     LLVMPointerType(type, AC_ADDR_SPACE_LDS), "lds"),
+         .pointee_type = type,
+      };
+   }
+
    LLVMValueRef ptr = get_src(ctx, src);
    ptr = LLVMBuildAdd(ctx->ac.builder, ptr, LLVMConstInt(ctx->ac.i32, c_off, 0), "");
    /* LDS is used here as a i8 pointer. */
-   return LLVMBuildGEP2(ctx->ac.builder, ctx->ac.i8, ctx->ac.lds.value, &ptr, 1, "");
+   return LLVMBuildGEP2(ctx->ac.builder, ctx->ac.i8, ctx->lds.value, &ptr, 1, "");
 }
 
 static LLVMBasicBlockRef get_block(struct ac_nir_context *nir, const struct nir_block *b)
@@ -4024,23 +4035,6 @@ static void setup_constant_data(struct ac_nir_context *ctx, struct nir_shader *s
    };
 }
 
-static void setup_shared(struct ac_nir_context *ctx, struct nir_shader *nir)
-{
-   if (ctx->ac.lds.value)
-      return;
-
-   LLVMTypeRef type = LLVMArrayType(ctx->ac.i8, nir->info.shared_size);
-
-   LLVMValueRef lds =
-      LLVMAddGlobalInAddressSpace(ctx->ac.module, type, "compute_lds", AC_ADDR_SPACE_LDS);
-   LLVMSetAlignment(lds, 64 * 1024);
-
-   ctx->ac.lds = (struct ac_llvm_pointer) {
-      .value = lds,
-      .pointee_type = type
-   };
-}
-
 static void setup_gds(struct ac_nir_context *ctx, nir_function_impl *impl)
 {
    bool has_gds_atomic = false;
@@ -4098,9 +4092,6 @@ bool ac_nir_translate(struct ac_llvm_context *ac, struct ac_shader_abi *abi,
    setup_scratch(&ctx, nir);
    setup_constant_data(&ctx, nir);
    setup_gds(&ctx, func->impl);
-
-   if (gl_shader_stage_is_compute(nir->info.stage))
-      setup_shared(&ctx, nir);
 
    if ((ret = visit_cf_list(&ctx, &func->impl->body)))
       phi_post_pass(&ctx);

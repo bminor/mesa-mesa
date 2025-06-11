@@ -196,23 +196,6 @@ static void si_llvm_create_main_func(struct si_shader_context *ctx)
       ac_llvm_add_target_dep_function_attr(
          ctx->main_fn.value, "InitialPSInputAddr", SI_SPI_PS_INPUT_ADDR_FOR_PROLOG);
    }
-
-
-   if (ctx->stage <= MESA_SHADER_GEOMETRY &&
-       (shader->key.ge.as_ls || ctx->stage == MESA_SHADER_TESS_CTRL ||
-        shader->key.ge.as_es || shader->key.ge.as_ngg)) {
-      /* The LSHS size is not known until draw time, so we append it
-       * at the end of whatever LDS use there may be in the rest of
-       * the shader (currently none, unless LLVM decides to do its
-       * own LDS-based lowering).
-       */
-      ctx->ac.lds = (struct ac_llvm_pointer) {
-         .value = LLVMAddGlobalInAddressSpace(ctx->ac.module, LLVMArrayType(ctx->ac.i32, 0),
-                                                "__lds_end", AC_ADDR_SPACE_LDS),
-         .pointee_type = LLVMArrayType(ctx->ac.i32, 0)
-      };
-      LLVMSetAlignment(ctx->ac.lds.value, 256);
-   }
 }
 
 static void si_llvm_optimize_module(struct si_shader_context *ctx)
@@ -312,27 +295,6 @@ LLVMValueRef si_unpack_param(struct si_shader_context *ctx, struct ac_arg param,
    LLVMValueRef value = ac_get_arg(&ctx->ac, param);
 
    return unpack_llvm_param(ctx, value, rshift, bitwidth);
-}
-
-static void si_llvm_declare_compute_memory(struct si_shader_context *ctx)
-{
-   struct si_shader_selector *sel = ctx->shader->selector;
-   unsigned lds_size = sel->info.base.shared_size;
-
-   LLVMTypeRef i8p = LLVMPointerType(ctx->ac.i8, AC_ADDR_SPACE_LDS);
-   LLVMValueRef var;
-
-   assert(!ctx->ac.lds.value);
-
-   LLVMTypeRef type = LLVMArrayType(ctx->ac.i8, lds_size);
-   var = LLVMAddGlobalInAddressSpace(ctx->ac.module, type,
-                                     "compute_lds", AC_ADDR_SPACE_LDS);
-   LLVMSetAlignment(var, 64 * 1024);
-
-   ctx->ac.lds = (struct ac_llvm_pointer) {
-      .value = LLVMBuildBitCast(ctx->ac.builder, var, i8p, ""),
-      .pointee_type = type,
-   };
 }
 
 /**
@@ -481,14 +443,8 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    si_llvm_create_main_func(ctx);
 
    switch (ctx->stage) {
-   case MESA_SHADER_VERTEX:
-      break;
-
    case MESA_SHADER_TESS_CTRL:
       si_llvm_init_tcs_callbacks(ctx);
-      break;
-
-   case MESA_SHADER_GEOMETRY:
       break;
 
    case MESA_SHADER_FRAGMENT: {
@@ -499,12 +455,6 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
           ctx->shader->selector->info.uses_persp_sample);
       break;
    }
-
-   case MESA_SHADER_COMPUTE:
-   case MESA_SHADER_KERNEL:
-      if (ctx->shader->selector->info.base.shared_size)
-         si_llvm_declare_compute_memory(ctx);
-      break;
 
    default:
       break;

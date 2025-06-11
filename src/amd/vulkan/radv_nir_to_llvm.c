@@ -108,13 +108,6 @@ create_function(struct radv_shader_context *ctx, gl_shader_stage stage, bool has
    ctx->main_function = create_llvm_function(&ctx->ac, ctx->ac.module, ctx->ac.builder, &ctx->args->ac,
                                              get_llvm_calling_convention(ctx->main_function.value, stage),
                                              ctx->max_workgroup_size, ctx->options);
-
-   if (stage == MESA_SHADER_TESS_CTRL || (stage == MESA_SHADER_VERTEX && ctx->shader_info->vs.as_ls) ||
-       ctx->shader_info->is_ngg ||
-       /* GFX9 has the ESGS ring buffer in LDS. */
-       (stage == MESA_SHADER_GEOMETRY && has_previous_stage)) {
-      ac_declare_lds_as_pointer(&ctx->ac);
-   }
 }
 
 static LLVMValueRef

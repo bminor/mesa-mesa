@@ -2243,17 +2243,6 @@ void ac_init_exec_full_mask(struct ac_llvm_context *ctx)
    ac_build_intrinsic(ctx, "llvm.amdgcn.init.exec", ctx->voidt, &full_mask, 1, 0);
 }
 
-void ac_declare_lds_as_pointer(struct ac_llvm_context *ctx)
-{
-   unsigned lds_size = ctx->gfx_level >= GFX7 ? 65536 : 32768;
-   LLVMTypeRef type = LLVMArrayType(ctx->i32, lds_size / 4);
-   ctx->lds = (struct ac_llvm_pointer) {
-      .value = LLVMBuildIntToPtr(ctx->builder, ctx->i32_0,
-                  LLVMPointerType(type, AC_ADDR_SPACE_LDS), "lds"),
-      .pointee_type = type
-   };
-}
-
 LLVMValueRef ac_find_lsb(struct ac_llvm_context *ctx, LLVMTypeRef dst_type, LLVMValueRef src0)
 {
    unsigned src0_bitsize = ac_get_elem_bits(ctx, LLVMTypeOf(src0));

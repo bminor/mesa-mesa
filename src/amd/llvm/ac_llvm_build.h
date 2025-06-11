@@ -142,8 +142,6 @@ struct ac_llvm_context {
    bool exports_color_null;
    bool exports_mrtz;
 
-   struct ac_llvm_pointer lds;
-
    LLVMValueRef ring_offsets;
    int ring_offsets_index;
 };
@@ -407,8 +405,6 @@ LLVMValueRef ac_build_sudot_4x8(struct ac_llvm_context *ctx, LLVMValueRef s0, LL
                                 LLVMValueRef s2, bool clamp, unsigned neg_lo);
 
 void ac_init_exec_full_mask(struct ac_llvm_context *ctx);
-
-void ac_declare_lds_as_pointer(struct ac_llvm_context *ac);
 
 LLVMValueRef ac_find_lsb(struct ac_llvm_context *ctx, LLVMTypeRef dst_type, LLVMValueRef src0);
 
