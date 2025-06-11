@@ -62,6 +62,7 @@ static const struct spirv_capabilities implemented_capabilities = {
    .BFloat16CooperativeMatrixKHR = true,
    .BFloat16DotProductKHR = true,
    .BFloat16TypeKHR = true,
+   .BitInstructions = true,
    .ClipDistance = true,
    .ComputeDerivativeGroupLinearKHR = true,
    .ComputeDerivativeGroupQuadsKHR = true,
