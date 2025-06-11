@@ -4978,8 +4978,7 @@ void si_init_screen_state_functions(struct si_screen *sscreen)
                                 si_create_vertex_state, si_vertex_state_destroy);
 }
 
-static void si_init_compute_preamble_state(struct si_context *sctx,
-                                           struct si_pm4_state *pm4)
+void si_init_compute_preamble_state(struct si_context *sctx, struct si_pm4_state *pm4)
 {
    uint64_t border_color_va =
       sctx->border_color_buffer ? sctx->border_color_buffer->gpu_address : 0;
