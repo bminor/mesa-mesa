@@ -689,6 +689,8 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
        */
       NIR_PASS(_, stage->nir, nir_opt_move, nir_move_comparisons);
    }
+
+   stage->info.nir_shared_size = stage->nir->info.shared_size;
 }
 
 bool

@@ -1396,22 +1396,6 @@ radv_open_rtld_binary(struct radv_device *device, const struct radv_shader_binar
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const char *elf_data = (const char *)((struct radv_shader_binary_rtld *)binary)->data;
    size_t elf_size = ((struct radv_shader_binary_rtld *)binary)->elf_size;
-   struct ac_rtld_symbol lds_symbols[3];
-   unsigned num_lds_symbols = 0;
-
-   if (pdev->info.gfx_level >= GFX9 && (binary->info.stage == MESA_SHADER_GEOMETRY || binary->info.is_ngg)) {
-      struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
-      sym->name = "esgs_ring";
-      sym->size = binary->info.ngg_info.esgs_ring_size;
-      sym->align = 64 * 1024;
-   }
-
-   if (binary->info.is_ngg && binary->info.stage == MESA_SHADER_GEOMETRY) {
-      struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
-      sym->name = "ngg_emit";
-      sym->size = binary->info.ngg_info.ngg_emit_size * 4;
-      sym->align = 4;
-   }
 
    struct ac_rtld_open_info open_info = {
       .info = &pdev->info,
@@ -1420,8 +1404,6 @@ radv_open_rtld_binary(struct radv_device *device, const struct radv_shader_binar
       .num_parts = 1,
       .elf_ptrs = &elf_data,
       .elf_sizes = &elf_size,
-      .num_shared_lds_symbols = num_lds_symbols,
-      .shared_lds_symbols = lds_symbols,
    };
 
    return ac_rtld_open(rtld_binary, open_info);
@@ -1966,14 +1948,18 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
          return false;
       }
 
-      if (rtld_binary.lds_size > 0) {
-         unsigned encode_granularity = pdev->info.lds_encode_granularity;
-         config->lds_size = DIV_ROUND_UP(rtld_binary.lds_size, encode_granularity);
-      }
-      if (!config->lds_size && binary->info.stage == MESA_SHADER_TESS_CTRL) {
-         /* This is used for reporting LDS statistics */
-         config->lds_size = binary->info.tcs.num_lds_blocks;
-      }
+      unsigned lds_size = 0;
+
+      if (binary->info.is_ngg)
+         lds_size = binary->info.ngg_info.lds_size;
+      else if (pdev->info.gfx_level >= GFX9 && binary->info.stage == MESA_SHADER_GEOMETRY)
+         lds_size = binary->info.gs_ring_info.lds_size;
+      else if (binary->info.stage == MESA_SHADER_TESS_CTRL)
+         lds_size = binary->info.tcs.num_lds_blocks * pdev->info.lds_encode_granularity; /* only used by stats */
+      else
+         lds_size = binary->info.nir_shared_size;
+
+      config->lds_size = DIV_ROUND_UP(lds_size, pdev->info.lds_encode_granularity);
 
       assert(!binary->info.has_ngg_culling || config->lds_size);
       ac_rtld_close(&rtld_binary);

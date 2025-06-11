@@ -190,22 +190,6 @@ ac_llvm_finalize_module(struct radv_shader_context *ctx, struct ac_midend_optimi
    ac_llvm_context_dispose(&ctx->ac);
 }
 
-/* Ensure that the esgs ring is declared.
- *
- * We declare it with 64KB alignment as a hint that the
- * pointer value will always be 0.
- */
-static void
-declare_esgs_ring(struct radv_shader_context *ctx)
-{
-   assert(!LLVMGetNamedGlobal(ctx->ac.module, "esgs_ring"));
-
-   LLVMValueRef esgs_ring =
-      LLVMAddGlobalInAddressSpace(ctx->ac.module, LLVMArrayType(ctx->ac.i32, 0), "esgs_ring", AC_ADDR_SPACE_LDS);
-   LLVMSetLinkage(esgs_ring, LLVMExternalLinkage);
-   LLVMSetAlignment(esgs_ring, 64 * 1024);
-}
-
 static LLVMModuleRef
 ac_translate_nir_to_llvm(struct ac_llvm_compiler *ac_llvm, const struct radv_nir_compiler_options *options,
                          const struct radv_shader_info *info, struct nir_shader *const *shaders, int shader_count,
@@ -271,19 +255,6 @@ ac_translate_nir_to_llvm(struct ac_llvm_compiler *ac_llvm, const struct radv_nir
       ac_init_exec_full_mask(&ctx.ac);
 
    if (is_ngg) {
-      if (!info->is_ngg_passthrough)
-         declare_esgs_ring(&ctx);
-
-      if (ctx.stage == MESA_SHADER_GEOMETRY) {
-         /* Vertex emit space used by NGG GS for storing all vertex attributes. */
-         LLVMTypeRef ai32 = LLVMArrayType(ctx.ac.i32, 8);
-         LLVMValueRef gs_ngg_emit =
-            LLVMAddGlobalInAddressSpace(ctx.ac.module, LLVMArrayType(ctx.ac.i32, 0), "ngg_emit", AC_ADDR_SPACE_LDS);
-         LLVMSetInitializer(gs_ngg_emit, LLVMGetUndef(ai32));
-         LLVMSetLinkage(gs_ngg_emit, LLVMExternalLinkage);
-         LLVMSetAlignment(gs_ngg_emit, 4);
-      }
-
       /* GFX10 hang workaround - there needs to be an s_barrier before gs_alloc_req always */
       if (ctx.ac.gfx_level == GFX10 && shader_count == 1)
          ac_build_s_barrier(&ctx.ac, shaders[0]->info.stage);
