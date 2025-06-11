@@ -310,6 +310,20 @@ struct pipe_screen {
                                unsigned usage);
 
    /**
+    * Tell the driver that manages a pipe resource about its label.
+    *
+    * For GL objects that contain one or more pipe resources, make the gallium
+    * driver that manages them aware of their label.
+    *
+    * \param label A NUL-terminated string. It will remain valid only until
+    * the end of the call, so its lifetime must be managed by the implementer.
+    *
+    */
+   void (*set_resource_label)(struct pipe_screen *pscreen,
+                              struct pipe_resource *presource,
+                              const char *label);
+
+   /**
     * Get info for the given pipe resource without the need to get a
     * winsys_handle.
     *

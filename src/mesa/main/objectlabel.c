@@ -38,15 +38,94 @@
 #include "transformfeedback.h"
 #include "api_exec_decl.h"
 
+#include "pipe/p_screen.h"
+
+/**
+ * Helper for set_object_label().
+ */
+static void
+set_resource_label(struct pipe_resource *rsc, const char *labelPtr)
+{
+   if (rsc) {
+      assert(rsc->screen->set_resource_label);
+      rsc->screen->set_resource_label(rsc->screen, rsc, labelPtr);
+   }
+}
+
+/**
+ * Helper for set_label().
+ */
+static void
+set_object_label(struct gl_context *ctx, GLenum identifier, GLuint name,
+                 const char *labelPtr,  const char *caller)
+{
+  switch (identifier) {
+  case GL_BUFFER:
+  case GL_BUFFER_OBJECT_EXT:
+    {
+      struct gl_buffer_object *bufObj = _mesa_lookup_bufferobj(ctx, name);
+      if (bufObj && bufObj->buffer)
+        set_resource_label(bufObj->buffer, labelPtr);
+    }
+    break;
+  case GL_VERTEX_ARRAY:
+  case GL_VERTEX_ARRAY_OBJECT_EXT:
+    {
+      struct gl_vertex_array_object *obj = _mesa_lookup_vao(ctx, name);
+      if (obj) {
+        for (int i = 0; i < VERT_ATTRIB_MAX; i++) {
+          GLuint bindingIndex = obj->VertexAttrib[i].BufferBindingIndex;
+          struct gl_buffer_object *bufObj = obj->BufferBinding[bindingIndex].BufferObj;
+
+          if (bufObj)
+            set_resource_label(bufObj->buffer, labelPtr);
+        }
+
+        if (obj->IndexBufferObj)
+          set_resource_label(obj->IndexBufferObj->buffer, labelPtr);
+      }
+    }
+    break;
+  case GL_TEXTURE:
+    {
+      struct gl_texture_object *texObj = _mesa_lookup_texture(ctx, name);
+      if (texObj) {
+        if (texObj->BufferObject)
+          set_resource_label(texObj->BufferObject->buffer, labelPtr);
+
+        for (unsigned i = 0; i < MAX_FACES-1; ++i) {
+          for (unsigned j = 0; j < MAX_TEXTURE_LEVELS; j++)
+            if (texObj->Image[i][j])
+              set_resource_label(texObj->Image[i][j]->pt, labelPtr);
+        }
+      }
+    }
+    break;
+  case GL_RENDERBUFFER:
+    {
+      struct gl_renderbuffer *rb = _mesa_lookup_renderbuffer(ctx, name);
+      if (rb) {
+        if (rb->TexImage)
+          set_resource_label(rb->TexImage->pt, labelPtr);
+
+        set_resource_label(rb->texture, labelPtr);
+        set_resource_label(rb->surface.texture, labelPtr);
+      }
+    }
+    break;
+  default:
+    return;
+  }
+}
 
 /**
  * Helper for _mesa_ObjectLabel() and _mesa_ObjectPtrLabel().
  */
 static void
-set_label(struct gl_context *ctx, char **labelPtr, const char *label,
-          int length, const char *caller, bool ext_length)
+set_label(struct gl_context *ctx, GLenum identifier, GLuint name, char **labelPtr,
+          const char *label, int length, const char *caller, bool ext_length)
 {
-   free(*labelPtr);
+   char *old_label = *labelPtr;
    *labelPtr = NULL;
 
    /* set new label string */
@@ -74,7 +153,7 @@ set_label(struct gl_context *ctx, char **labelPtr, const char *label,
             _mesa_error(ctx, GL_INVALID_VALUE,
                         "%s(label length=%d, is less than zero)", caller,
                         length);
-            return;
+            goto set_resource_label;
          }
 
          int len = strlen(label);
@@ -88,6 +167,12 @@ set_label(struct gl_context *ctx, char **labelPtr, const char *label,
          *labelPtr = strdup(label);
       }
    }
+
+set_resource_label:
+   if (identifier && name && ctx->screen->set_resource_label)
+     set_object_label(ctx, identifier, name, *labelPtr, caller);
+
+   free(old_label);
 }
 
 /**
@@ -276,7 +361,7 @@ _mesa_LabelObjectEXT(GLenum identifier, GLuint name, GLsizei length,
    if (!labelPtr)
       return;
 
-   set_label(ctx, labelPtr, label, length, callerstr, true);
+   set_label(ctx, identifier, name, labelPtr, label, length, callerstr, true);
 }
 
 void GLAPIENTRY
@@ -317,7 +402,7 @@ _mesa_ObjectLabel(GLenum identifier, GLuint name, GLsizei length,
    if (!labelPtr)
       return;
 
-   set_label(ctx, labelPtr, label, length, callerstr, false);
+   set_label(ctx, identifier, name, labelPtr, label, length, callerstr, false);
 }
 
 void GLAPIENTRY
@@ -369,7 +454,7 @@ _mesa_ObjectPtrLabel(const void *ptr, GLsizei length, const GLchar *label)
 
    labelPtr = &syncObj->Label;
 
-   set_label(ctx, labelPtr, label, length, callerstr, false);
+   set_label(ctx, 0, 0, labelPtr, label, length, callerstr, false);
    _mesa_unref_sync_object(ctx, syncObj, 1);
 }
 
