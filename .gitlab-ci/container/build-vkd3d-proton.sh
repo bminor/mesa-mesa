@@ -52,16 +52,16 @@ popd
 # Archive and upload vkd3d-proton for use as a LAVA overlay, if the archive doesn't exist yet
 ARTIFACT_PATH="${DATA_STORAGE_PATH}/vkd3d-proton/${VKD3D_PROTON_TAG}/${CI_JOB_NAME}/${VKD3D_PROTON_S3_ARTIFACT}"
 if FOUND_ARTIFACT_URL="$(find_s3_project_artifact "${ARTIFACT_PATH}")"; then
-    echo "Found vkd3d-proton at: ${FOUND_ARTIFACT_URL}, skipping upload"
+  echo "Found vkd3d-proton at: ${FOUND_ARTIFACT_URL}, skipping upload"
 else
-    echo "Uploaded vkd3d-proton not found, reuploading..."
-    tar --zstd -cf "$VKD3D_PROTON_S3_ARTIFACT" -C / "${VKD3D_PROTON_DST_DIR#/}" "${VKD3D_PROTON_WINE_DIR#/}"
-    ci-fairy s3cp --token-file "${S3_JWT_FILE}" "$VKD3D_PROTON_S3_ARTIFACT" \
-      "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
+  echo "Uploaded vkd3d-proton not found, reuploading..."
+  tar --zstd -cf "$VKD3D_PROTON_S3_ARTIFACT" -C / "${VKD3D_PROTON_DST_DIR#/}" "${VKD3D_PROTON_WINE_DIR#/}"
+  ci-fairy s3cp --token-file "${S3_JWT_FILE}" "$VKD3D_PROTON_S3_ARTIFACT" \
+    "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
+  rm "$VKD3D_PROTON_S3_ARTIFACT"
 fi
 
 rm -rf "$VKD3D_PROTON_BUILD_DIR"
 rm -rf "$VKD3D_PROTON_SRC_DIR"
-rm "$VKD3D_PROTON_S3_ARTIFACT"
 
 section_end vkd3d-proton
