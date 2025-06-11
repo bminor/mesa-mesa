@@ -443,6 +443,11 @@ static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shade
          DIV_ROUND_UP(size_in_dw * 4, get_lds_granularity(sscreen, stage));
    }
 
+   if (stage == MESA_SHADER_COMPUTE) {
+      shader->config.lds_size = DIV_ROUND_UP(shader->selector->info.base.shared_size,
+                                             sscreen->info.lds_encode_granularity);
+   }
+
    /* Check that the LDS size is within hw limits. */
    assert(shader->config.lds_size * get_lds_granularity(sscreen, stage) <=
           (sscreen->info.gfx_level == GFX6 ? 32 : 64) * 1024);
