@@ -667,6 +667,32 @@ public:
       return alu2(BRW_OPCODE_ADD, src0, src1, out);
    }
 
+   brw_inst *
+   BFN(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1,
+       const brw_reg &src2, unsigned table_byte) const
+   {
+      brw_inst *inst = brw_new_inst(*shader, BRW_OPCODE_BFN, dispatch_width(),
+                                    dst, 4);
+
+      inst->src[0] = fix_3src_operand(src0);
+      inst->src[1] = fix_3src_operand(src1);
+      inst->src[2] = fix_3src_operand(src2);
+      inst->src[3] = brw_imm_ud(table_byte);
+
+      return emit(inst);
+   }
+
+   brw_reg
+   BFN(const brw_reg &src0, const brw_reg &src1, const brw_reg &src2,
+       unsigned table_byte, brw_inst **out = NULL) const
+   {
+      brw_reg dst = vgrf(src0.type);
+      emit_undef_for_partial_reg(dst);
+      brw_inst *inst = BFN(dst, src0, src1, src2, table_byte);
+      if (out) *out = inst;
+      return inst->dst;
+   }
+
    /**
     * CMP: Sets the low bit of the destination channels with the result
     * of the comparison, while the upper bits are undefined, and updates
