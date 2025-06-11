@@ -242,7 +242,7 @@ emit_vs_attrib(struct panvk_cmd_buffer *cmdbuf,
          /* Per-instance, NPOT divisor */
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D_NPOT_DIVISOR;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_INSTANCE;
-         cfg.divisor_d = pan_compute_magic_divisor(
+         cfg.divisor_d = pan_compute_npot_divisor(
             buf_info->divisor, &cfg.divisor_r, &cfg.divisor_e);
       }
    }

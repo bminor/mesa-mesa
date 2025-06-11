@@ -2257,10 +2257,10 @@ panfrost_emit_vertex_data(struct panfrost_batch *batch, uint64_t *buffers)
          }
 
       } else {
-         unsigned shift = 0, extra_flags = 0;
+         unsigned divisor_r = 0, divisor_e = 0;
 
-         unsigned magic_divisor =
-            pan_compute_magic_divisor(hw_divisor, &shift, &extra_flags);
+         unsigned divisor_d =
+            pan_compute_npot_divisor(hw_divisor, &divisor_r, &divisor_e);
 
          /* Records with continuations must be aligned */
          k = ALIGN_POT(k, 2);
@@ -2272,13 +2272,13 @@ panfrost_emit_vertex_data(struct panfrost_batch *batch, uint64_t *buffers)
             cfg.stride = stride;
             cfg.size = size;
 
-            cfg.divisor_r = shift;
-            cfg.divisor_e = extra_flags;
+            cfg.divisor_r = divisor_r;
+            cfg.divisor_e = divisor_e;
          }
 
          pan_cast_and_pack(&bufs[k + 1], ATTRIBUTE_BUFFER_CONTINUATION_NPOT,
                            cfg) {
-            cfg.divisor_numerator = magic_divisor;
+            cfg.divisor_numerator = divisor_d;
             cfg.divisor = divisor;
          }
 
@@ -3841,7 +3841,7 @@ panfrost_pack_attribute(struct panfrost_device *dev,
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D_NPOT_DIVISOR;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_INSTANCE;
 
-         cfg.divisor_d = pan_compute_magic_divisor(
+         cfg.divisor_d = pan_compute_npot_divisor(
             el.instance_divisor, &cfg.divisor_r, &cfg.divisor_e);
       }
    }

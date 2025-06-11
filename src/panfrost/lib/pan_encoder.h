@@ -116,8 +116,8 @@ pan_padded_vertex_count(unsigned vertex_count)
 }
 
 static inline unsigned
-pan_compute_magic_divisor(unsigned hw_divisor, unsigned *divisor_r,
-                          unsigned *divisor_e)
+pan_compute_npot_divisor(unsigned hw_divisor, unsigned *divisor_r,
+                         unsigned *divisor_e)
 {
    unsigned r = util_logbase2(hw_divisor);
 
@@ -168,8 +168,8 @@ pan_instance_id(unsigned padded_count,
          /* Can't underflow since padded_count >= 2 */
          cfg.divisor_r = __builtin_ctz(padded_count) - 1;
       } else {
-         cfg.divisor_p = pan_compute_magic_divisor(padded_count, &cfg.divisor_r,
-                                                   &cfg.divisor_e);
+         cfg.divisor_p = pan_compute_npot_divisor(padded_count, &cfg.divisor_r,
+                                                  &cfg.divisor_e);
       }
    }
 }

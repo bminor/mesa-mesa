@@ -535,8 +535,8 @@ panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
       }
    } else {
       unsigned divisor_r = 0, divisor_e = 0;
-      unsigned divisor_num =
-         pan_compute_magic_divisor(divisor, &divisor_r, &divisor_e);
+      unsigned divisor_d =
+         pan_compute_npot_divisor(divisor, &divisor_r, &divisor_e);
       pan_pack(desc, ATTRIBUTE_BUFFER, cfg) {
          cfg.type = MALI_ATTRIBUTE_TYPE_1D_NPOT_DIVISOR;
          cfg.stride = stride;
@@ -547,7 +547,7 @@ panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
       }
 
       pan_cast_and_pack(buf_ext, ATTRIBUTE_BUFFER_CONTINUATION_NPOT, cfg) {
-         cfg.divisor_numerator = divisor_num;
+         cfg.divisor_numerator = divisor_d;
          cfg.divisor = buf_info->divisor;
       }
 
