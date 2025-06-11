@@ -35,6 +35,7 @@
 #include "util/bitset.h"
 #include "util/u_math.h"
 #include "util/rb_tree.h"
+#include "util/lut.h"
 #include "brw_shader.h"
 #include "brw_analysis.h"
 #include "brw_cfg.h"
@@ -1255,6 +1256,7 @@ try_constant_propagate_value(const intel_device_info *devinfo,
    case BRW_OPCODE_BFE:
    case BRW_OPCODE_BFI1:
    case BRW_OPCODE_BFI2:
+   case BRW_OPCODE_BFN:
    case BRW_OPCODE_ROL:
    case BRW_OPCODE_ROR:
    case BRW_OPCODE_SHL:
@@ -1359,6 +1361,24 @@ commute_immediates(brw_inst *inst)
             swap_srcs(inst, 0, 1);
          else if (inst->src[2].file != IMM)
             swap_srcs(inst, 1, 2);
+      }
+   }
+
+   /* Like ADD3, BFN can have the immediate as src0 or src2. Using one or the
+    * other consistently makes assembly dumps more readable, so we arbitrarily
+    * prefer src0.
+    */
+   if (inst->opcode == BRW_OPCODE_BFN) {
+      if (inst->src[1].file == IMM) {
+         const unsigned bfc = inst->src[3].ud;
+
+         if (inst->src[0].file != IMM) {
+            swap_srcs(inst, 0, 1);
+            inst->src[3] = brw_imm_ud(util_lut3_swap_sources(bfc, 0, 1));
+         } else if (inst->src[2].file != IMM) {
+            swap_srcs(inst, 1, 2);
+            inst->src[3] = brw_imm_ud(util_lut3_swap_sources(bfc, 1, 2));
+         }
       }
    }
 

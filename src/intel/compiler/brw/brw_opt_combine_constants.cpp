@@ -990,7 +990,8 @@ supports_src_as_imm(const struct intel_device_info *devinfo, const brw_inst *ins
 {
    switch (inst->opcode) {
    case BRW_OPCODE_ADD3:
-      /* ADD3 can use src0 or src2 in Gfx12.5. */
+   case BRW_OPCODE_BFN:
+      /* ADD3 and BFN can use src0 or src2 in Gfx12.5. */
       return src_idx != 1;
 
    case BRW_OPCODE_BFE:
@@ -1052,6 +1053,12 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, brw_inst *inst,
 {
    bool can_promote = false;
 
+   /* src[3] of BFN is special. It must be immediate. Don't mess with it. */
+   if (inst->opcode == BRW_OPCODE_BFN && src_idx == 3) {
+      assert(inst->src[src_idx].type == BRW_TYPE_UD);
+      return true;
+   }
+
    if (!supports_src_as_imm(devinfo, inst, src_idx))
       return false;
 
@@ -1067,10 +1074,11 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, brw_inst *inst,
    case BRW_TYPE_D:
    case BRW_TYPE_UD: {
       /* ADD3, CSEL, and MAD can mix signed and unsiged types. Only BFE
-       * cannot.
+       * cannot. BFN only supports unsigned types.
        */
       if (inst->src[src_idx].type == BRW_TYPE_D ||
-          inst->opcode != BRW_OPCODE_BFE) {
+          (inst->opcode != BRW_OPCODE_BFE &&
+           inst->opcode != BRW_OPCODE_BFN)) {
          int16_t w;
          if (representable_as_w(inst->src[src_idx].d, &w)) {
             inst->src[src_idx] = brw_imm_w(w);
@@ -1079,6 +1087,11 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, brw_inst *inst,
          }
       }
 
+      /* FINISHME: BFN handling could be better. If the bit-wise compliment of
+       * the constant is representable as UW, the constant and the function
+       * control value could be changed. This would probably make a good
+       * algebraic optimization.
+       */
       if (inst->src[src_idx].type == BRW_TYPE_UD ||
           inst->opcode != BRW_OPCODE_BFE) {
          uint16_t uw;
@@ -1330,6 +1343,7 @@ brw_opt_combine_constants(brw_shader &s)
        */
       case BRW_OPCODE_BFE:
       case BRW_OPCODE_ADD3:
+      case BRW_OPCODE_BFN:
       case BRW_OPCODE_CSEL:
       case BRW_OPCODE_MAD: {
          if (inst->opcode == BRW_OPCODE_MAD &&
