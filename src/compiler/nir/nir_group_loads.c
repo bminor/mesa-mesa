@@ -467,7 +467,7 @@ process_block(nir_block *block, nir_load_grouping grouping,
 /* max_distance is the maximum distance between the first and last instruction
  * in a group.
  */
-void
+bool
 nir_group_loads(nir_shader *shader, nir_load_grouping grouping,
                 unsigned max_distance)
 {
@@ -479,4 +479,6 @@ nir_group_loads(nir_shader *shader, nir_load_grouping grouping,
       nir_progress(true, impl,
                    nir_metadata_control_flow | nir_metadata_loop_analysis);
    }
+
+   return true;
 }

@@ -380,13 +380,13 @@ nir_find_inlinable_uniforms(nir_shader *shader)
    shader->info.num_inlinable_uniforms = num_offsets[0];
 }
 
-void
+bool
 nir_inline_uniforms(nir_shader *shader, unsigned num_uniforms,
                     const uint32_t *uniform_values,
                     const uint16_t *uniform_dw_offsets)
 {
    if (!num_uniforms)
-      return;
+      return false;
 
    nir_foreach_function_impl(impl, shader) {
       nir_builder b = nir_builder_create(impl);
@@ -465,4 +465,6 @@ nir_inline_uniforms(nir_shader *shader, unsigned num_uniforms,
          nir_progress(true, impl, nir_metadata_control_flow);
       }
    }
+
+   return true;
 }
