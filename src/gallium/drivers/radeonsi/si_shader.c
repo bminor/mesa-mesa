@@ -1045,23 +1045,23 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir)
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       if (key->ge.as_ls) {
-         NIR_PASS_V(nir, ac_nir_lower_ls_outputs_to_mem,
-                    is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
-                    sel->screen->info.gfx_level,
-                    key->ge.opt.same_patch_vertices,
-                    is_gfx9_mono_tcs ? next_sel->info.tcs_inputs_via_temp : 0,
-                    is_gfx9_mono_tcs ? next_sel->info.tcs_inputs_via_lds : ~0ull);
+         NIR_PASS(_, nir, ac_nir_lower_ls_outputs_to_mem,
+                  is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
+                  sel->screen->info.gfx_level,
+                  key->ge.opt.same_patch_vertices,
+                  is_gfx9_mono_tcs ? next_sel->info.tcs_inputs_via_temp : 0,
+                  is_gfx9_mono_tcs ? next_sel->info.tcs_inputs_via_lds : ~0ull);
          return true;
       } else if (key->ge.as_es) {
-         NIR_PASS_V(nir, ac_nir_lower_es_outputs_to_mem, si_map_io_driver_location,
-                    sel->screen->info.gfx_level, sel->info.esgs_vertex_stride, ~0ULL);
+         NIR_PASS(_, nir, ac_nir_lower_es_outputs_to_mem, si_map_io_driver_location,
+                  sel->screen->info.gfx_level, sel->info.esgs_vertex_stride, ~0ULL);
          return true;
       }
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-      NIR_PASS_V(nir, ac_nir_lower_hs_inputs_to_mem,
-                 is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
-                 sel->screen->info.gfx_level, key->ge.opt.same_patch_vertices,
-                 sel->info.tcs_inputs_via_temp, sel->info.tcs_inputs_via_lds);
+      NIR_PASS(_, nir, ac_nir_lower_hs_inputs_to_mem,
+               is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
+               sel->screen->info.gfx_level, key->ge.opt.same_patch_vertices,
+               sel->info.tcs_inputs_via_temp, sel->info.tcs_inputs_via_lds);
 
       /* Used by hs_emit_write_tess_factors() when monolithic shader. */
       if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_UNSPECIFIED)
@@ -1074,21 +1074,21 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir)
       ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, si_map_io_driver_location, false,
                               &tess_io_info);
 
-      NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, &tcs_info, &tess_io_info, si_map_io_driver_location,
-                 sel->screen->info.gfx_level, shader->wave_size);
+      NIR_PASS(_, nir, ac_nir_lower_hs_outputs_to_mem, &tcs_info, &tess_io_info, si_map_io_driver_location,
+               sel->screen->info.gfx_level, shader->wave_size);
       return true;
    } else if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
-      NIR_PASS_V(nir, ac_nir_lower_tes_inputs_to_mem, si_map_io_driver_location);
+      NIR_PASS(_, nir, ac_nir_lower_tes_inputs_to_mem, si_map_io_driver_location);
 
       if (key->ge.as_es) {
-         NIR_PASS_V(nir, ac_nir_lower_es_outputs_to_mem, si_map_io_driver_location,
-                    sel->screen->info.gfx_level, sel->info.esgs_vertex_stride, ~0ULL);
+         NIR_PASS(_, nir, ac_nir_lower_es_outputs_to_mem, si_map_io_driver_location,
+                  sel->screen->info.gfx_level, sel->info.esgs_vertex_stride, ~0ULL);
       }
 
       return true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      NIR_PASS_V(nir, ac_nir_lower_gs_inputs_to_mem, si_map_io_driver_location,
-                 sel->screen->info.gfx_level, key->ge.mono.u.gs_tri_strip_adj_fix);
+      NIR_PASS(_, nir, ac_nir_lower_gs_inputs_to_mem, si_map_io_driver_location,
+               sel->screen->info.gfx_level, key->ge.mono.u.gs_tri_strip_adj_fix);
       return true;
    }
 
@@ -1174,8 +1174,8 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       options.export_primitive_id = key->ge.mono.u.vs_export_prim_id;
       options.instance_rate_inputs = instance_rate_inputs;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size,
-                 &shader->info.ngg_lds_scratch_size);
+      NIR_PASS(_, nir, ac_nir_lower_ngg_nogs, &options, &shader->info.ngg_lds_vertex_size,
+               &shader->info.ngg_lds_scratch_size);
    } else {
       assert(nir->info.stage == MESA_SHADER_GEOMETRY);
 
@@ -1188,12 +1188,12 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       if (key->ge.part.gs.es)
          nir->info.writes_memory |= key->ge.part.gs.es->info.base.writes_memory;
 
-      NIR_PASS_V(nir, ac_nir_lower_ngg_gs, &options, &shader->info.ngg_lds_vertex_size,
-                 &shader->info.ngg_lds_scratch_size);
+      NIR_PASS(_, nir, ac_nir_lower_ngg_gs, &options, &shader->info.ngg_lds_vertex_size,
+               &shader->info.ngg_lds_scratch_size);
    }
 
    /* may generate some vector output store */
-   NIR_PASS_V(nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 }
 
 struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel)
@@ -1287,8 +1287,8 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
 
    /* This sets DEFAULT_VAL for constant outputs in vs_output_param_offset. */
    /* TODO: This doesn't affect GS. */
-   NIR_PASS_V(nir, ac_nir_optimize_outputs, false, slot_remap,
-              temp_info->vs_output_param_offset);
+   NIR_PASS(_, nir, ac_nir_optimize_outputs, false, slot_remap,
+            temp_info->vs_output_param_offset);
 
    /* Assign the non-constant outputs. */
    si_nir_assign_param_offsets(nir, shader, slot_remap, temp_info);
@@ -1365,8 +1365,8 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
        * TODO: The driver uses a linear search to find a shader variant. This
        * can be really slow if we get too many variants due to uniform inlining.
        */
-      NIR_PASS_V(nir, nir_inline_uniforms, nir->info.num_inlinable_uniforms,
-                 inlined_uniform_values, nir->info.inlinable_uniform_dw_offsets);
+      NIR_PASS(_, nir, nir_inline_uniforms, nir->info.num_inlinable_uniforms,
+               inlined_uniform_values, nir->info.inlinable_uniform_dw_offsets);
       progress = true;
    }
 
@@ -1459,7 +1459,7 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
       NIR_PASS(progress, nir, nir_opt_move_to_top, nir_move_to_top_input_loads);
 
    /* Remove dead temps before we lower indirect indexing. */
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
    /* Lower indirect indexing last.
     *
@@ -1545,15 +1545,15 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       } else if (nir->info.stage == MESA_SHADER_VERTEX ||
                  nir->info.stage == MESA_SHADER_TESS_EVAL) {
          /* Lower last VGT none-NGG VS/TES shader stage. */
-         NIR_PASS_V(nir, ac_nir_lower_legacy_vs,
-                    sel->screen->info.gfx_level,
-                    shader->info.clipdist_mask | shader->info.culldist_mask,
-                    shader->key.ge.mono.write_pos_to_clipvertex, true,
-                    ctx->temp_info.vs_output_param_offset,
-                    shader->info.nr_param_exports,
-                    shader->key.ge.mono.u.vs_export_prim_id,
-                    !shader->info.num_streamout_vec4s,
-                    sel->screen->options.vrs2x2);
+         NIR_PASS(_, nir, ac_nir_lower_legacy_vs,
+                  sel->screen->info.gfx_level,
+                  shader->info.clipdist_mask | shader->info.culldist_mask,
+                  shader->key.ge.mono.write_pos_to_clipvertex, true,
+                  ctx->temp_info.vs_output_param_offset,
+                  shader->info.nr_param_exports,
+                  shader->key.ge.mono.u.vs_export_prim_id,
+                  !shader->info.num_streamout_vec4s,
+                  sel->screen->options.vrs2x2);
       }
       progress = true;
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
@@ -1628,7 +1628,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    if (si_should_clear_lds(sel->screen, nir)) {
       const unsigned chunk_size = 16; /* max single store size */
       const unsigned shared_size = ALIGN(nir->info.shared_size, chunk_size);
-      NIR_PASS_V(nir, nir_clear_shared_memory, shared_size, chunk_size);
+      NIR_PASS(_, nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
    nir_divergence_analysis(nir); /* required by ac_nir_flag_smem_for_loads */
@@ -1717,7 +1717,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
       .buffer_max = ~0,
       .shared_max = ~0,
    };
-   NIR_PASS_V(nir, nir_opt_offsets, &offset_options);
+   NIR_PASS(_, nir, nir_opt_offsets, &offset_options);
 
    si_nir_late_opts(nir);
 
@@ -1738,7 +1738,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    /* This helps LLVM form VMEM clauses and thus get more GPU cache hits.
     * 200 is tuned for Viewperf. It should be done last.
     */
-   NIR_PASS_V(nir, nir_group_loads, nir_group_same_resource_only, 200);
+   NIR_PASS(_, nir, nir_group_loads, nir_group_same_resource_only, 200);
 }
 
 static void get_input_nir(struct si_shader *shader, struct si_nir_shader_ctx *ctx)
@@ -1815,7 +1815,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
     * monolithic PS.
     */
    if (shader->selector->stage == MESA_SHADER_FRAGMENT && shader->is_monolithic)
-      NIR_PASS_V(linked->consumer.nir, nir_recompute_io_bases, nir_var_shader_in);
+      NIR_PASS(_, linked->consumer.nir, nir_recompute_io_bases, nir_var_shader_in);
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
@@ -1860,14 +1860,14 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
 
    si_init_shader_args(shader, &linked.consumer.args, &gs_nir->info);
 
-   NIR_PASS_V(nir, si_nir_lower_abi, shader, &linked.consumer.args);
-   NIR_PASS_V(nir, ac_nir_lower_intrinsics_to_args, sscreen->info.gfx_level,
-              sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, 64, 64,
-              &linked.consumer.args.ac);
+   NIR_PASS(_, nir, si_nir_lower_abi, shader, &linked.consumer.args);
+   NIR_PASS(_, nir, ac_nir_lower_intrinsics_to_args, sscreen->info.gfx_level,
+            sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, 64, 64,
+            &linked.consumer.args.ac);
 
    si_nir_opts(gs_selector->screen, nir, false);
 
-   NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
    /* This pass must be last. */
    si_get_late_shader_variant_info(shader, &linked.consumer.args, nir);
 

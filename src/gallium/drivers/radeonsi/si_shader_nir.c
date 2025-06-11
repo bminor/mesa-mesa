@@ -74,10 +74,10 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
       NIR_PASS(progress, nir, nir_opt_dead_cf);
 
       if (lower_alu_to_scalar) {
-         NIR_PASS_V(nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
+         NIR_PASS(_, nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
       }
       if (lower_phis_to_scalar)
-         NIR_PASS_V(nir, nir_lower_phis_to_scalar, NULL, NULL);
+         NIR_PASS(_, nir, nir_lower_phis_to_scalar, NULL, NULL);
       progress |= lower_alu_to_scalar | lower_phis_to_scalar;
 
       NIR_PASS(progress, nir, nir_opt_cse);
@@ -126,13 +126,13 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
       }
 
       if (nir->info.stage == MESA_SHADER_FRAGMENT)
-         NIR_PASS_V(nir, nir_opt_move_discards_to_top);
+         NIR_PASS(_, nir, nir_opt_move_discards_to_top);
 
       if (sscreen->info.has_packed_math_16bit)
          NIR_PASS(progress, nir, nir_opt_vectorize, si_vectorize_callback, NULL);
    } while (progress);
 
-   NIR_PASS_V(nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
 }
 
 void si_nir_late_opts(nir_shader *nir)
@@ -141,18 +141,18 @@ void si_nir_late_opts(nir_shader *nir)
    while (more_late_algebraic) {
       more_late_algebraic = false;
       NIR_PASS(more_late_algebraic, nir, nir_opt_algebraic_late);
-      NIR_PASS_V(nir, nir_opt_constant_folding);
+      NIR_PASS(_, nir, nir_opt_constant_folding);
 
       /* We should run this after constant folding for stages that support indirect
        * inputs/outputs.
        */
       if (nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage) ||
           nir->options->support_indirect_outputs & BITFIELD_BIT(nir->info.stage))
-         NIR_PASS_V(nir, nir_io_add_const_offset_to_base, nir_var_shader_in | nir_var_shader_out);
+         NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in | nir_var_shader_out);
 
-      NIR_PASS_V(nir, nir_copy_prop);
-      NIR_PASS_V(nir, nir_opt_dce);
-      NIR_PASS_V(nir, nir_opt_cse);
+      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_dce);
+      NIR_PASS(_, nir, nir_opt_cse);
    }
 }
 
@@ -301,30 +301,30 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
       .lower_to_fragment_fetch_amd = sscreen->info.gfx_level < GFX11,
       .lower_1d = sscreen->info.gfx_level == GFX9,
    };
-   NIR_PASS_V(nir, nir_lower_tex, &lower_tex_options);
+   NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
 
    const struct nir_lower_image_options lower_image_options = {
       .lower_cube_size = true,
       .lower_to_fragment_mask_load_amd = sscreen->info.gfx_level < GFX11 &&
                                          !(sscreen->debug_flags & DBG(NO_FMASK)),
    };
-   NIR_PASS_V(nir, nir_lower_image, &lower_image_options);
+   NIR_PASS(_, nir, nir_lower_image, &lower_image_options);
 
-   NIR_PASS_V(nir, si_lower_intrinsics);
+   NIR_PASS(_, nir, si_lower_intrinsics);
 
-   NIR_PASS_V(nir, ac_nir_lower_sin_cos);
+   NIR_PASS(_, nir, ac_nir_lower_sin_cos);
 
    /* Lower load constants to scalar and then clean up the mess */
-   NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
-   NIR_PASS_V(nir, nir_lower_var_copies);
-   NIR_PASS_V(nir, nir_opt_intrinsics);
-   NIR_PASS_V(nir, nir_lower_system_values);
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_opt_intrinsics);
+   NIR_PASS(_, nir, nir_lower_system_values);
 
    /* si_nir_kill_outputs and ac_nir_optimize_outputs require outputs to be scalar. */
    if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
        nir->info.stage == MESA_SHADER_GEOMETRY)
-      NIR_PASS_V(nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+      NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
       unsigned flags = nir_lower_gs_intrinsics_per_stream;
@@ -334,7 +334,7 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
             nir_lower_gs_intrinsics_overwrite_incomplete;
       }
 
-      NIR_PASS_V(nir, nir_lower_gs_intrinsics, flags);
+      NIR_PASS(_, nir, nir_lower_gs_intrinsics, flags);
    }
 
    if (gl_shader_stage_is_compute(nir->info.stage)) {
@@ -353,7 +353,7 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
           nir->info.derivative_group == DERIVATIVE_GROUP_NONE &&
           (nir->info.workgroup_size_variable ||
            (nir->info.workgroup_size[0] % 2 == 0 && nir->info.workgroup_size[1] % 2 == 0)));
-      NIR_PASS_V(nir, nir_lower_compute_system_values, &options);
+      NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
 
       /* Gfx12 supports this in hw. */
       if (sscreen->info.gfx_level < GFX12 &&
@@ -361,7 +361,7 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
          nir_opt_cse(nir); /* CSE load_local_invocation_id */
          memset(&options, 0, sizeof(options));
          options.shuffle_local_ids_for_quad_derivatives = true;
-         NIR_PASS_V(nir, nir_lower_compute_system_values, &options);
+         NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
       }
    }
 
@@ -372,9 +372,9 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    if (sscreen->info.gfx_level >= GFX9)
       si_late_optimize_16bit_samplers(sscreen, nir);
 
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
-   NIR_PASS_V(nir, nir_lower_fp16_casts, nir_lower_fp16_split_fp64);
+   NIR_PASS(_, nir, nir_lower_fp16_casts, nir_lower_fp16_split_fp64);
 }
 
 char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
@@ -387,16 +387,16 @@ char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
       }
    } else {
       nir_lower_io_passes(nir, false);
-      NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_shader_in | nir_var_shader_out, NULL);
+      NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_in | nir_var_shader_out, NULL);
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS_V(nir, si_nir_lower_color_inputs_to_sysvals);
+      NIR_PASS(_, nir, si_nir_lower_color_inputs_to_sysvals);
 
-   NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_shared, nir_address_format_32bit_offset);
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared, nir_address_format_32bit_offset);
 
    /* Remove dead derefs, so that we can remove uniforms. */
-   NIR_PASS_V(nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_dce);
 
    /* Remove uniforms because those should have been lowered to UBOs already. */
    nir_foreach_variable_with_modes_safe(var, nir, nir_var_uniform) {
@@ -425,7 +425,7 @@ char *si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
     * nir_opt_large_constants may use op_amul (see nir_build_deref_offset),
     * or may create unneeded code, so run si_nir_opts if needed.
     */
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
    bool progress = false;
    NIR_PASS(progress, nir, nir_opt_large_constants, glsl_get_natural_size_align_bytes, 16);
    if (progress)
