@@ -1373,11 +1373,12 @@ preprocess_shader(const struct pipe_screen *screen,
    /* before buffers and vars_to_ssa */
    NIR_PASS(_, nir, gl_nir_lower_images, true);
 
-   if (prog->nir->info.stage == MESA_SHADER_COMPUTE) {
-      NIR_PASS(_, prog->nir, nir_lower_vars_to_explicit_types,
-                 nir_var_mem_shared, shared_type_info);
-      NIR_PASS(_, prog->nir, nir_lower_explicit_io,
-                 nir_var_mem_shared, nir_address_format_32bit_offset);
+   if (prog->nir->info.stage == MESA_SHADER_COMPUTE ||
+       prog->nir->info.stage == MESA_SHADER_TASK ||
+       prog->nir->info.stage == MESA_SHADER_MESH) {
+      nir_variable_mode modes = nir_var_mem_shared | nir_var_mem_task_payload;
+      NIR_PASS(_, prog->nir, nir_lower_vars_to_explicit_types, modes, shared_type_info);
+      NIR_PASS(_, prog->nir, nir_lower_explicit_io, modes, nir_address_format_32bit_offset);
    }
 
    /* Do a round of constant folding to clean up address calculations */
