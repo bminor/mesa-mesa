@@ -24,7 +24,7 @@ vmware-vmx-piglit:x86_64:
   extends:
     - .lava-x86_64-test-gl
     - .test-piglit
-    - .vmware-manual-rules
+    - .vmware-rules
   timeout: 30m
   parallel: 4
   variables:
