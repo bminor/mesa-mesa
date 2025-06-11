@@ -3286,13 +3286,14 @@ static void si_parse_next_shader_property(nir_shader *nir, union si_shader_key *
           * assume that it's a HW LS. (the next shader is TCS)
           * This heuristic is needed for separate shader objects.
           */
-         if (!writes_position && !nir->xfb_info)
+         if (next_shader == MESA_SHADER_NONE && !writes_position && !nir->xfb_info)
             key->ge.as_ls = 1;
       }
       break;
 
    case MESA_SHADER_TESS_EVAL:
-      if (next_shader == MESA_SHADER_GEOMETRY || !writes_position)
+      if (next_shader == MESA_SHADER_GEOMETRY ||
+          (next_shader == MESA_SHADER_NONE && !writes_position))
          key->ge.as_es = 1;
       break;
 
