@@ -476,8 +476,8 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       /* Since IO is lowered, we won't need the IO variables from now on.
        * nir_build_program_resource_list was the last pass that needed them.
        */
-      NIR_PASS_V(nir, nir_remove_dead_variables,
-                 nir_var_shader_in | nir_var_shader_out, NULL);
+      NIR_PASS(_, nir, nir_remove_dead_variables,
+               nir_var_shader_in | nir_var_shader_out, NULL);
 
       /* If there are forms of indirect addressing that the driver
        * cannot handle, perform the lowering pass.
