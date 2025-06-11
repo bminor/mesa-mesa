@@ -132,6 +132,9 @@ struct panvk_cs_deps {
 
    struct {
       uint32_t wait_subqueue_mask;
+      bool conditional;
+      enum mali_cs_condition cond;
+      struct cs_index cond_value;
    } dst[PANVK_SUBQUEUE_COUNT];
 };
 

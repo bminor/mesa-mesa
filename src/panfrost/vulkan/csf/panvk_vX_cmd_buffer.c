@@ -536,6 +536,27 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
+static void
+emit_barrier_insert_waits(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
+                          struct panvk_cs_deps *deps, enum panvk_subqueue_id i,
+                          struct cs_index tmp_regs)
+{
+   assert(tmp_regs.size == 4);
+   u_foreach_bit(j, deps->dst[i].wait_subqueue_mask) {
+      struct panvk_cs_state *cs_state = &cmdbuf->state.cs[j];
+      struct cs_index sync_addr = cs_reg64(b, tmp_regs.reg);
+      struct cs_index wait_val = cs_reg64(b, tmp_regs.reg + 2);
+
+      cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
+                   offsetof(struct panvk_cs_subqueue_context, syncobjs));
+      cs_add64(b, sync_addr, sync_addr, sizeof(struct panvk_cs_sync64) * j);
+
+      cs_add64(b, wait_val, cs_progress_seqno_reg(b, j),
+               cs_state->relative_sync_point);
+      cs_sync64_wait(b, false, MALI_CS_CONDITION_GREATER, wait_val, sync_addr);
+   }
+}
+
 void
 panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
                              struct panvk_cs_deps deps)
@@ -589,19 +610,16 @@ panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
-      u_foreach_bit(j, deps.dst[i].wait_subqueue_mask) {
-         struct panvk_cs_state *cs_state = &cmdbuf->state.cs[j];
-         struct cs_index sync_addr = cs_scratch_reg64(b, 0);
-         struct cs_index wait_val = cs_scratch_reg64(b, 2);
+      struct cs_index tmp_regs = cs_scratch_reg_tuple(b, 0, 4);
 
-         cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
-                      offsetof(struct panvk_cs_subqueue_context, syncobjs));
-         cs_add64(b, sync_addr, sync_addr, sizeof(struct panvk_cs_sync64) * j);
-
-         cs_add64(b, wait_val, cs_progress_seqno_reg(b, j),
-                  cs_state->relative_sync_point);
-         cs_sync64_wait(b, false, MALI_CS_CONDITION_GREATER, wait_val,
-                        sync_addr);
+      if (deps.dst[i].conditional) {
+         assert(deps.dst[i].cond_value.reg >= tmp_regs.reg + tmp_regs.size ||
+                deps.dst[i].cond_value.reg + deps.dst[i].cond_value.size <=
+                   tmp_regs.reg);
+         cs_if(b, deps.dst[i].cond, deps.dst[i].cond_value)
+            emit_barrier_insert_waits(b, cmdbuf, &deps, i, tmp_regs);
+      } else {
+         emit_barrier_insert_waits(b, cmdbuf, &deps, i, tmp_regs);
       }
    }
 }
