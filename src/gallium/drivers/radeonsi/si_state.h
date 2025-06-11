@@ -628,7 +628,7 @@ void si_make_texture_descriptor(struct si_screen *screen, struct si_texture *tex
 void si_init_state_compute_functions(struct si_context *sctx);
 void si_init_state_functions(struct si_context *sctx);
 void si_init_screen_state_functions(struct si_screen *sscreen);
-void si_init_gfx_preamble_state(struct si_context *sctx);
+bool si_init_gfx_preamble_state(struct si_context *sctx);
 void si_make_buffer_descriptor(struct si_screen *screen, struct si_resource *buf,
                                enum pipe_format format, unsigned offset, unsigned num_elements,
                                uint32_t *state);

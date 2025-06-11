@@ -1559,7 +1559,7 @@ void si_cp_copy_data(struct si_context *sctx, struct radeon_cmdbuf *cs, unsigned
                      struct si_resource *src, unsigned src_offset);
 
 /* si_cp_reg_shadowing.c */
-void si_init_cp_reg_shadowing(struct si_context *sctx);
+bool si_init_cp_reg_shadowing(struct si_context *sctx);
 
 /* si_cp_utils.c */
 void si_cp_release_mem_pws(struct si_context *sctx, struct radeon_cmdbuf *cs,

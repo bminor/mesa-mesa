@@ -5007,15 +5007,17 @@ static void si_init_graphics_preamble_state(struct si_context *sctx,
    }
 }
 
-static void gfx6_init_gfx_preamble_state(struct si_context *sctx)
+static bool gfx6_init_gfx_preamble_state(struct si_context *sctx)
 {
    struct si_screen *sscreen = sctx->screen;
    bool has_clear_state = sscreen->info.has_clear_state;
 
    /* We need more space because the preamble is large. */
    struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 214, sctx->has_graphics);
-   if (!pm4)
-      return;
+   if (!pm4) {
+      mesa_loge("failed to allocate memory for cs_preamble_state");
+      return false;
+   }
 
    if (sctx->has_graphics && !sctx->shadowing.registers) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
@@ -5070,31 +5072,38 @@ done:
    ac_pm4_finalize(&pm4->base);
    sctx->cs_preamble_state = pm4;
    sctx->cs_preamble_state_tmz = si_pm4_clone(sscreen, pm4); /* Make a copy of the preamble for TMZ. */
+   return true;
 }
 
-static void cdna_init_compute_preamble_state(struct si_context *sctx)
+static bool cdna_init_compute_preamble_state(struct si_context *sctx)
 {
    struct si_screen *sscreen = sctx->screen;
 
    struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 48, true);
-   if (!pm4)
-      return;
+   if (!pm4) {
+      mesa_loge("failed to allocate memory for cs_preamble_state");
+      return false;
+   }
 
    si_init_compute_preamble_state(sctx, pm4);
 
    ac_pm4_finalize(&pm4->base);
    sctx->cs_preamble_state = pm4;
    sctx->cs_preamble_state_tmz = si_pm4_clone(sscreen, pm4); /* Make a copy of the preamble for TMZ. */
+
+   return true;
 }
 
-static void gfx10_init_gfx_preamble_state(struct si_context *sctx)
+static bool gfx10_init_gfx_preamble_state(struct si_context *sctx)
 {
    struct si_screen *sscreen = sctx->screen;
 
    /* We need more space because the preamble is large. */
    struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 214, sctx->has_graphics);
-   if (!pm4)
-      return;
+   if (!pm4) {
+      mesa_loge("failed to allocate memory for cs_preamble_state");
+      return false;
+   }
 
    if (sctx->has_graphics && !sctx->shadowing.registers) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
@@ -5155,15 +5164,18 @@ done:
    ac_pm4_finalize(&pm4->base);
    sctx->cs_preamble_state = pm4;
    sctx->cs_preamble_state_tmz = si_pm4_clone(sscreen, pm4); /* Make a copy of the preamble for TMZ. */
+   return true;
 }
 
-static void gfx12_init_gfx_preamble_state(struct si_context *sctx)
+static bool gfx12_init_gfx_preamble_state(struct si_context *sctx)
 {
    struct si_screen *sscreen = sctx->screen;
 
    struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 300, sctx->has_graphics);
-   if (!pm4)
-      return;
+   if (!pm4) {
+      mesa_loge("failed to allocate memory for cs_preamble_state");
+      return false;
+   }
 
    if (sctx->has_graphics && !sctx->shadowing.registers) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
@@ -5211,16 +5223,21 @@ static void gfx12_init_gfx_preamble_state(struct si_context *sctx)
 done:
    sctx->cs_preamble_state = pm4;
    sctx->cs_preamble_state_tmz = si_pm4_clone(sscreen, pm4); /* Make a copy of the preamble for TMZ. */
+   return true;
 }
 
-void si_init_gfx_preamble_state(struct si_context *sctx)
+bool si_init_gfx_preamble_state(struct si_context *sctx)
 {
+   bool ret;
+
    if (!sctx->screen->info.has_graphics)
-      cdna_init_compute_preamble_state(sctx);
+      ret = cdna_init_compute_preamble_state(sctx);
    else if (sctx->gfx_level >= GFX12)
-      gfx12_init_gfx_preamble_state(sctx);
+      ret = gfx12_init_gfx_preamble_state(sctx);
    else if (sctx->gfx_level >= GFX10)
-      gfx10_init_gfx_preamble_state(sctx);
+      ret = gfx10_init_gfx_preamble_state(sctx);
    else
-      gfx6_init_gfx_preamble_state(sctx);
+      ret = gfx6_init_gfx_preamble_state(sctx);
+
+   return ret;
 }
