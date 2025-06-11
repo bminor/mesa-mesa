@@ -29,6 +29,7 @@ nv_classes = [
   'clc797',
   'clc7c0',
   'clc86f',
+  'clc9b5',
   'clcb97',
   'clcbc0',
   'clcd97',
