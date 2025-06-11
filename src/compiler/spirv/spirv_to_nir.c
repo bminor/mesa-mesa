@@ -3730,7 +3730,18 @@ vtn_handle_texture(struct vtn_builder *b, SpvOp opcode,
       dest_type = get_image_type(b, dest_type, operands);
    }
 
-   instr->dest_type = dest_type;
+   unsigned dest_bitsize = nir_alu_type_get_type_size(dest_type);
+
+   /* Not all drivers support smaller tex dest, so if needed promote the dest
+    * type to 32b, and then insert the appropriate conversion.  Drivers that
+    * support 16b dest should be using nir_opt_16bit_tex_image to fold the
+    * conversion back into the tex instruction.
+    */
+   if (dest_bitsize != 32) {
+      instr->dest_type = nir_alu_type_get_base_type(dest_type) | 32;
+   } else {
+      instr->dest_type = dest_type;
+   }
 
    nir_def_init(&instr->instr, &instr->def,
                 nir_tex_instr_dest_size(instr), 32);
@@ -3770,15 +3781,21 @@ vtn_handle_texture(struct vtn_builder *b, SpvOp opcode,
 
    nir_builder_instr_insert(&b->nb, &instr->instr);
 
+   nir_def *def = &instr->def;
+   if (dest_bitsize != 32) {
+      def = nir_type_convert(&b->nb, def, instr->dest_type, dest_type,
+                             nir_rounding_mode_undef);
+   }
+
    if (is_sparse) {
       struct vtn_ssa_value *dest = vtn_create_ssa_value(b, struct_type->type);
       unsigned result_size = glsl_get_vector_elements(ret_type->type);
-      dest->elems[0]->def = nir_channel(&b->nb, &instr->def, result_size);
-      dest->elems[1]->def = nir_trim_vector(&b->nb, &instr->def,
+      dest->elems[0]->def = nir_channel(&b->nb, def, result_size);
+      dest->elems[1]->def = nir_trim_vector(&b->nb, def,
                                               result_size);
       vtn_push_ssa_value(b, w[2], dest);
    } else {
-      vtn_push_nir_ssa(b, w[2], &instr->def);
+      vtn_push_nir_ssa(b, w[2], def);
    }
 }
 
