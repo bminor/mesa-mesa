@@ -88,8 +88,7 @@ get_alu_src(struct isel_context* ctx, nir_alu_src src, unsigned size = 1)
    if (as_uniform)
       vec = as_vgpr(ctx, vec);
 
-   RegClass elem_rc = elem_size < 4 ? RegClass(vec.type(), elem_size).as_subdword()
-                                    : RegClass(vec.type(), elem_size / 4);
+   RegClass elem_rc = RegClass::get(vec.type(), elem_size);
    if (size == 1) {
       return emit_extract_vector(ctx, vec, src.swizzle[0], elem_rc);
    } else {

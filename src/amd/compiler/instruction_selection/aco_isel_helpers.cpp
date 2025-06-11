@@ -141,18 +141,12 @@ emit_split_vector(isel_context* ctx, Temp vec_src, unsigned num_components)
       return;
    if (ctx->allocated_vec.find(vec_src.id()) != ctx->allocated_vec.end())
       return;
-   RegClass rc;
-   if (num_components > vec_src.size()) {
-      if (vec_src.type() == RegType::sgpr) {
-         /* should still help get_alu_src() */
-         emit_split_vector(ctx, vec_src, vec_src.size());
-         return;
-      }
-      /* sub-dword split */
-      rc = RegClass(RegType::vgpr, vec_src.bytes() / num_components).as_subdword();
-   } else {
-      rc = RegClass(vec_src.type(), vec_src.size() / num_components);
+   if (num_components > vec_src.size() && vec_src.type() == RegType::sgpr) {
+      /* sub-dword split: should still help get_alu_src() */
+      emit_split_vector(ctx, vec_src, vec_src.size());
+      return;
    }
+   RegClass rc = RegClass::get(vec_src.type(), vec_src.bytes() / num_components);
    aco_ptr<Instruction> split{
       create_instruction(aco_opcode::p_split_vector, Format::PSEUDO, 1, num_components)};
    split->operands[0] = Operand(vec_src);
@@ -241,12 +235,8 @@ convert_int(isel_context* ctx, Builder& bld, Temp src, unsigned src_bits, unsign
    assert(!(sign_extend && dst_bits < src_bits) &&
           "Shrinking integers is not supported for signed inputs");
 
-   if (!dst.id()) {
-      if (dst_bits % 32 == 0 || src.type() == RegType::sgpr)
-         dst = bld.tmp(src.type(), DIV_ROUND_UP(dst_bits, 32u));
-      else
-         dst = bld.tmp(RegClass(RegType::vgpr, dst_bits / 8u).as_subdword());
-   }
+   if (!dst.id())
+      dst = bld.tmp(RegClass::get(src.type(), dst_bits / 8u));
 
    assert(src.type() == RegType::sgpr || src_bits == src.bytes() * 8);
    assert(dst.type() == RegType::sgpr || dst_bits == dst.bytes() * 8);

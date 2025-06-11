@@ -324,14 +324,13 @@ struct RegClass {
    constexpr unsigned size() const { return (bytes() + 3) >> 2; }
    constexpr bool is_linear() const { return rc <= RC::s16 || is_linear_vgpr(); }
    constexpr RegClass as_linear() const { return RegClass((RC)(rc | (1 << 6))); }
-   constexpr RegClass as_subdword() const { return RegClass((RC)(rc | 1 << 7)); }
 
    static constexpr RegClass get(RegType type, unsigned bytes)
    {
       if (type == RegType::sgpr) {
          return RegClass(type, DIV_ROUND_UP(bytes, 4u));
       } else {
-         return bytes % 4u ? RegClass(type, bytes).as_subdword() : RegClass(type, bytes / 4u);
+         return bytes % 4u ? RegClass((RC)(1 << 5 | 1 << 7 | bytes)) : RegClass(type, bytes / 4u);
       }
    }
 
