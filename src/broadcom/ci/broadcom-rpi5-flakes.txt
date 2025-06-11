@@ -201,3 +201,5 @@ dEQP-VK.texture.shadow.cube.nearest_mipmap_nearest.not_equal_x8_d24_unorm_pack32
 dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
 spec@oes_texture_view@rendering-target
 spec@oes_texture_view@rendering-target@2D view rendering
+
+spec@!opengl 1.0@gl-1.0-drawbuffer-modes
