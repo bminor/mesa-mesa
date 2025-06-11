@@ -324,6 +324,9 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
    }
 
    if (new_handle == 0) {
+      if (res->dt)
+         vtws->sws->displaytarget_destroy (vtws->sws, res->dt);
+      align_free(res->ptr);
       FREE(res);
       return NULL;
    }
@@ -343,6 +346,8 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
       }
 
       if (fd < 0) {
+         if (res->dt)
+            vtws->sws->displaytarget_destroy (vtws->sws, res->dt);
          FREE(res);
          fprintf(stderr, "Unable to get a valid fd\n");
          return NULL;
@@ -354,6 +359,8 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
       if (res->ptr == MAP_FAILED) {
          fprintf(stderr, "Client failed to map shared memory region\n");
          close(fd);
+         if (res->dt)
+            vtws->sws->displaytarget_destroy (vtws->sws, res->dt);
          FREE(res);
          return NULL;
       }
