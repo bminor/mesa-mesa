@@ -1654,7 +1654,7 @@
         "description": "venus: fix maint7 layered vk props query",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8c6a5250ecd949208eaf3cb72731ccc6defa7813",
         "notes": null
