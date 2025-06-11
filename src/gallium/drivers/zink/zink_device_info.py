@@ -778,6 +778,17 @@ zink_verify_device_extensions(struct zink_screen *screen)
          screen->vk.${cmd.name()} = (PFN_${cmd.full_name})screen->vk.${cmd.name().replace("EXT", "KHR")}; /* promoted from EXT */
       }
 %endif
+%if ext.core_since:
+%if not cmd.not_promoted:
+      if (!screen->vk.${cmd.name().rstrip(ext.vendor())}) {
+         screen->vk.${cmd.name().rstrip(ext.vendor())} = screen->vk.${cmd.name()}; /* promoted to core */
+      }
+%else:
+
+      /* ${cmd.full_name} is not promoted */
+
+%endif
+%endif
       if (!screen->vk.${cmd.name()}) {
 #ifndef NDEBUG
          screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
