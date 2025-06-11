@@ -835,7 +835,7 @@ Rusticl extensions that are not part of any OpenCL version:
   cl_khr_kernel_clock                                   DONE (freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi, zink, needs llvm-19)
   cl_khr_mipmap_image                                   not started
   cl_khr_pci_bus_info                                   DONE (iris, nvc0, radeonsi, zink)
-  cl_khr_priority_hints                                 not started
+  cl_khr_priority_hints                                 DONE (asahi, freedreno, iris, panfrost, radeonsi)
   cl_khr_spirv_extended_debug_info                      not started
   cl_khr_spirv_linkonce_odr                             DONE
   cl_khr_spirv_no_integer_wrap_decoration               DONE

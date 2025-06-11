@@ -8,6 +8,7 @@ use crate::impl_cl_type_trait;
 
 use mesa_rust::compiler::nir::NirShader;
 use mesa_rust::pipe::context::PipeContext;
+use mesa_rust::pipe::context::PipeContextPrio;
 use mesa_rust_gen::*;
 use mesa_rust_util::properties::*;
 use rusticl_opencl_gen::*;
@@ -150,9 +151,17 @@ struct SendableQueueContext {
 }
 
 impl SendableQueueContext {
-    fn new(device: &'static Device) -> CLResult<Self> {
+    fn new(device: &'static Device, prio: cl_queue_priority_khr) -> CLResult<Self> {
+        let prio = if prio & CL_QUEUE_PRIORITY_HIGH_KHR != 0 {
+            PipeContextPrio::High
+        } else if prio & CL_QUEUE_PRIORITY_MED_KHR != 0 {
+            PipeContextPrio::Med
+        } else {
+            PipeContextPrio::Low
+        };
+
         Ok(Self {
-            ctx: ManuallyDrop::new(device.create_context().ok_or(CL_OUT_OF_HOST_MEMORY)?),
+            ctx: ManuallyDrop::new(device.create_context(prio).ok_or(CL_OUT_OF_HOST_MEMORY)?),
             dev: device,
         })
     }
@@ -222,9 +231,21 @@ impl Queue {
         props: cl_command_queue_properties,
         props_v2: Properties<cl_queue_properties>,
     ) -> CLResult<Arc<Queue>> {
+        // If CL_QUEUE_PRIORITY_KHR is not specified, the default priority CL_QUEUE_PRIORITY_MED_KHR
+        // is used.
+        let mut prio = *props_v2
+            .get(&CL_QUEUE_PRIORITY_KHR.into())
+            .unwrap_or(&CL_QUEUE_PRIORITY_MED_KHR.into())
+            as cl_queue_priority_khr;
+
+        // Fallback to the default priority if it's not supported by the device.
+        if device.context_priority_supported() & prio == 0 {
+            prio = CL_QUEUE_PRIORITY_MED_KHR;
+        }
+
         // we assume that memory allocation is the only possible failure. Any other failure reason
         // should be detected earlier (e.g.: checking for CAPs).
-        let ctx = SendableQueueContext::new(device)?;
+        let ctx = SendableQueueContext::new(device, prio)?;
         let (tx_q, rx_t) = mpsc::channel::<Vec<Arc<Event>>>();
         Ok(Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Queue),

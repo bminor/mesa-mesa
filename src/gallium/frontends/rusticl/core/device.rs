@@ -707,6 +707,10 @@ impl DeviceBase {
             add_ext(1, 0, 0, "cl_khr_pci_bus_info");
         }
 
+        if self.context_priority_supported() != 0 {
+            add_ext(1, 0, 0, "cl_khr_priority_hints");
+        }
+
         if self.screen().device_uuid().is_some() && self.screen().driver_uuid().is_some() {
             static_assert!(PIPE_UUID_SIZE == CL_UUID_SIZE_KHR);
             static_assert!(PIPE_LUID_SIZE == CL_LUID_SIZE_KHR);
@@ -912,6 +916,25 @@ impl DeviceBase {
         self.screen.caps().int64
     }
 
+    pub fn context_priority_supported(&self) -> cl_queue_priority_khr {
+        let mut res = 0;
+        let prio_mask = self.screen().caps().context_priority_mask;
+
+        if prio_mask & PIPE_CONTEXT_PRIORITY_LOW != 0 {
+            res |= CL_QUEUE_PRIORITY_LOW_KHR;
+        }
+        if prio_mask & PIPE_CONTEXT_PRIORITY_MEDIUM != 0 {
+            res |= CL_QUEUE_PRIORITY_MED_KHR;
+        }
+        if prio_mask & PIPE_CONTEXT_PRIORITY_HIGH != 0 {
+            res |= CL_QUEUE_PRIORITY_HIGH_KHR;
+        }
+
+        debug_assert!(prio_mask == 0 || prio_mask & CL_QUEUE_PRIORITY_MED_KHR != 0);
+
+        res
+    }
+
     pub fn global_mem_size(&self) -> cl_ulong {
         if let Some(memory_info) = self.screen.query_memory_info() {
             let memory: cl_ulong = if memory_info.total_device_memory != 0 {
@@ -1082,14 +1105,20 @@ impl DeviceBase {
         &self.screen
     }
 
-    pub fn create_context(&self) -> Option<PipeContext> {
-        self.reusable_ctx()
-            .pop()
-            .or_else(|| self.screen.create_context())
+    pub fn create_context(&self, prio: PipeContextPrio) -> Option<PipeContext> {
+        // We only cache for Med prio contexts for now.
+        let res = (prio == PipeContextPrio::Med)
+            .then(|| self.reusable_ctx().pop())
+            .flatten()
+            .or_else(|| self.screen.create_context(prio))?;
+
+        debug_assert_eq!(res.prio, prio);
+
+        Some(res)
     }
 
     pub fn recycle_context(&self, ctx: PipeContext) {
-        if Platform::dbg().reuse_context {
+        if Platform::dbg().reuse_context && ctx.prio == PipeContextPrio::Med {
             self.reusable_ctx().push(ctx);
         }
     }
@@ -1211,7 +1240,7 @@ impl Device {
         let screen = Arc::new(screen);
         // Create before loading libclc as llvmpipe only creates the shader cache with the first
         // context being created.
-        let helper_ctx = screen.create_context()?;
+        let helper_ctx = screen.create_context(PipeContextPrio::Med)?;
         let mut dev_base = DeviceBase {
             caps: DeviceCaps::new(&screen),
             helper_ctx: Mutex::new(helper_ctx),

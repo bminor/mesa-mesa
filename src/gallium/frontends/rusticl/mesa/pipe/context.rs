@@ -14,9 +14,24 @@ use std::ptr;
 use std::ptr::*;
 use std::sync::Arc;
 
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum PipeContextPrio {
+    Low = PIPE_CONTEXT_LOW_PRIORITY,
+    Med = 0,
+    High = PIPE_CONTEXT_HIGH_PRIORITY,
+}
+
+impl From<PipeContextPrio> for u32 {
+    fn from(value: PipeContextPrio) -> Self {
+        value as _
+    }
+}
+
 pub struct PipeContext {
     pipe: NonNull<pipe_context>,
     screen: Arc<PipeScreen>,
+    pub prio: PipeContextPrio,
 }
 
 unsafe impl Send for PipeContext {}
@@ -36,10 +51,15 @@ impl From<RWFlags> for pipe_map_flags {
 }
 
 impl PipeContext {
-    pub(super) fn new(context: *mut pipe_context, screen: &Arc<PipeScreen>) -> Option<Self> {
+    pub(super) fn new(
+        context: *mut pipe_context,
+        prio: PipeContextPrio,
+        screen: &Arc<PipeScreen>,
+    ) -> Option<Self> {
         let s = Self {
             pipe: NonNull::new(context)?,
             screen: Arc::clone(screen),
+            prio: prio,
         };
 
         if !has_required_cbs(unsafe { s.pipe.as_ref() }) {

@@ -83,15 +83,17 @@ impl PipeScreen {
         &self.screen().caps
     }
 
-    pub fn create_context(self: &Arc<Self>) -> Option<PipeContext> {
+    pub fn create_context(self: &Arc<Self>, prio: PipeContextPrio) -> Option<PipeContext> {
+        let flags: u32 = prio.into();
         PipeContext::new(
             unsafe {
                 self.screen().context_create.unwrap()(
                     self.screen.as_ptr(),
                     ptr::null_mut(),
-                    PIPE_CONTEXT_COMPUTE_ONLY | PIPE_CONTEXT_NO_LOD_BIAS,
+                    flags | PIPE_CONTEXT_COMPUTE_ONLY | PIPE_CONTEXT_NO_LOD_BIAS,
                 )
             },
+            prio,
             self,
         )
     }

@@ -129,12 +129,23 @@ fn create_command_queue_with_properties(
     properties: *const cl_queue_properties,
 ) -> CLResult<cl_command_queue> {
     let mut queue_properties = cl_command_queue_properties::default();
+    let d = Device::ref_from_raw(device)?;
 
     // SAFETY: properties is a 0 terminated array by spec.
     let properties = unsafe { Properties::new(properties) }.ok_or(CL_INVALID_PROPERTY)?;
     for (&key, &val) in properties.iter() {
         match u32::try_from(key).or(Err(CL_INVALID_PROPERTY))? {
             CL_QUEUE_PROPERTIES => queue_properties = val,
+            CL_QUEUE_PRIORITY_KHR if d.context_priority_supported() != 0 => {
+                let valid_props: cl_queue_properties = (CL_QUEUE_PRIORITY_LOW_KHR
+                    | CL_QUEUE_PRIORITY_MED_KHR
+                    | CL_QUEUE_PRIORITY_HIGH_KHR)
+                    .into();
+
+                if val & !valid_props != 0 {
+                    return Err(CL_INVALID_VALUE);
+                }
+            }
             // CL_INVALID_QUEUE_PROPERTIES if values specified in properties are valid but are not
             // supported by the device.
             CL_QUEUE_SIZE => return Err(CL_INVALID_QUEUE_PROPERTIES),
