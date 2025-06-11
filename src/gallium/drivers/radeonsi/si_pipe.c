@@ -1297,7 +1297,7 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
 
    /* Using the environment variable doesn't enable PAIRS packets for simplicity. */
    if (sscreen->debug_flags & DBG(SHADOW_REGS))
-      sscreen->info.register_shadowing_required = true;
+      sscreen->info.has_kernelq_reg_shadowing = true;
 
    bool support_aco = aco_is_gpu_supported(&sscreen->info);
 

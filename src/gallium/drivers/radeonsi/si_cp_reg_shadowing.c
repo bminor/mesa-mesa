@@ -12,7 +12,7 @@
 void si_init_cp_reg_shadowing(struct si_context *sctx)
 {
    if (sctx->has_graphics &&
-       sctx->screen->info.register_shadowing_required) {
+       sctx->screen->info.has_kernelq_reg_shadowing) {
       if (sctx->screen->info.has_fw_based_shadowing) {
          sctx->shadowing.registers =
                si_aligned_buffer_create(sctx->b.screen,

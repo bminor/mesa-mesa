@@ -1706,8 +1706,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    }
 
    /* WARNING: Register shadowing decreases performance by up to 50% on GFX11 with current FW. */
-   info->register_shadowing_required = device_info.ids_flags & AMDGPU_IDS_FLAGS_PREEMPTION &&
-                                       info->gfx_level < GFX11;
+   info->has_kernelq_reg_shadowing = device_info.ids_flags & AMDGPU_IDS_FLAGS_PREEMPTION &&
+                                     info->gfx_level < GFX11;
 
    if (info->gfx_level >= GFX12) {
       info->has_set_context_pairs = true;
@@ -1715,7 +1715,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->has_set_uconfig_pairs = true;
    } else if (info->gfx_level >= GFX11 && info->has_dedicated_vram) {
       info->has_set_context_pairs_packed = true;
-      info->has_set_sh_pairs_packed = info->register_shadowing_required;
+      info->has_set_sh_pairs_packed = info->has_kernelq_reg_shadowing;
    }
 
    /* This is the size of all TCS outputs in memory per workgroup.
@@ -2073,7 +2073,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    has_stable_pstate = %u\n", info->has_stable_pstate);
    fprintf(f, "    has_gang_submit = %u\n", info->has_gang_submit);
    fprintf(f, "    has_gpuvm_fault_query = %u\n", info->has_gpuvm_fault_query);
-   fprintf(f, "    register_shadowing_required = %u\n", info->register_shadowing_required);
+   fprintf(f, "    has_kernelq_reg_shadowing = %u\n", info->has_kernelq_reg_shadowing);
    fprintf(f, "    has_fw_based_shadowing = %u\n", info->has_fw_based_shadowing);
    if (info->has_fw_based_shadowing) {
       fprintf(f, "        * shadow size: %u (alignment: %u)\n",
