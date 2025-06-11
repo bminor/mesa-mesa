@@ -4315,9 +4315,9 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
    VkPipelineStageFlags2 src_stages = 0;
    VkPipelineStageFlags2 dst_stages = 0;
 
+   struct anv_device *device = cmd_buffer->device;
 #if GFX_VER < 20
    bool apply_sparse_flushes = false;
-   struct anv_device *device = cmd_buffer->device;
 #endif
    bool flush_query_copies = false;
 
@@ -4434,8 +4434,22 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
 
          uint32_t base_layer, layer_count;
          if (image->vk.image_type == VK_IMAGE_TYPE_3D) {
-            base_layer = 0;
-            layer_count = u_minify(image->vk.extent.depth, range->baseMipLevel);
+            /* VK_KHR_maintenance9:
+             *
+             *    "The effects of image memory barriers and image layout
+             *    transitions on 3D images created with
+             *    VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT are scoped to the
+             *    slices specified by the user-provided
+             *    VkImageSubresourceRange."
+             */
+            if ((image->vk.create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
+                device->vk.enabled_features.maintenance9) {
+               base_layer = range->baseArrayLayer;
+               layer_count = range->layerCount;
+            } else {
+               base_layer = 0;
+               layer_count = u_minify(image->vk.extent.depth, range->baseMipLevel);
+            }
          } else {
             base_layer = range->baseArrayLayer;
             layer_count = vk_image_subresource_layer_count(&image->vk, range);
