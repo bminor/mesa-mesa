@@ -237,7 +237,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
    case AC_DESC_SAMPLER:
       size = RADV_SAMPLER_DESC_SIZE / 4;
       if (binding->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-         offset += radv_combined_image_descriptor_sampler_offset(binding);
+         offset += RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;
       break;
    case AC_DESC_BUFFER:
       size = RADV_BUFFER_DESC_SIZE / 4;

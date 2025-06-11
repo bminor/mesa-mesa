@@ -150,7 +150,6 @@ struct radv_descriptor_update_template_entry {
 
    /* Only valid for combined image samplers and samplers */
    uint8_t has_sampler;
-   uint8_t sampler_offset;
 
    /* In bytes */
    size_t src_offset;
@@ -194,12 +193,6 @@ radv_immutable_samplers(const struct radv_descriptor_set_layout *set,
                         const struct radv_descriptor_set_binding_layout *binding)
 {
    return (const uint32_t *)((const char *)set + binding->immutable_samplers_offset);
-}
-
-static inline unsigned
-radv_combined_image_descriptor_sampler_offset(const struct radv_descriptor_set_binding_layout *binding)
-{
-   return binding->size - RADV_SAMPLER_DESC_SIZE;
 }
 
 static inline const struct vk_ycbcr_conversion_state *

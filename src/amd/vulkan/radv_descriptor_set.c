@@ -689,7 +689,7 @@ radv_descriptor_set_create(struct radv_device *device, struct radv_descriptor_po
 
          unsigned offset = layout->binding[i].offset / 4;
          if (layout->binding[i].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-            offset += radv_combined_image_descriptor_sampler_offset(layout->binding + i) / 4;
+            offset += RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET / 4;
 
          const uint32_t *samplers =
             (const uint32_t *)((const char *)layout + layout->binding[i].immutable_samplers_offset);
@@ -1288,7 +1288,8 @@ radv_update_descriptor_sets_impl(struct radv_device *device, struct radv_cmd_buf
                                         writeset->descriptorType, writeset->pImageInfo + j);
             break;
          case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-            unsigned sampler_offset = radv_combined_image_descriptor_sampler_offset(binding_layout);
+            const uint32_t sampler_offset = RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;
+
             write_combined_image_sampler_descriptor(device, cmd_buffer, sampler_offset, ptr, buffer_list,
                                                     writeset->descriptorType, writeset->pImageInfo + j,
                                                     !binding_layout->immutable_samplers_offset);
@@ -1494,7 +1495,6 @@ radv_CreateDescriptorUpdateTemplate(VkDevice _device, const VkDescriptorUpdateTe
          .dst_stride = dst_stride,
          .buffer_offset = buffer_offset,
          .has_sampler = !binding_layout->immutable_samplers_offset,
-         .sampler_offset = radv_combined_image_descriptor_sampler_offset(binding_layout),
          .immutable_samplers = immutable_samplers};
    }
 
@@ -1563,15 +1563,18 @@ radv_update_descriptor_set_with_template_impl(struct radv_device *device, struct
             write_image_descriptor_impl(device, cmd_buffer, radv_get_sampled_image_desc_size(pdev), pDst, buffer_list,
                                         templ->entry[i].descriptor_type, (struct VkDescriptorImageInfo *)pSrc);
             break;
-         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            write_combined_image_sampler_descriptor(device, cmd_buffer, templ->entry[i].sampler_offset, pDst,
-                                                    buffer_list, templ->entry[i].descriptor_type,
+         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
+            const uint32_t sampler_offset = RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;
+
+            write_combined_image_sampler_descriptor(device, cmd_buffer, sampler_offset, pDst, buffer_list,
+                                                    templ->entry[i].descriptor_type,
                                                     (struct VkDescriptorImageInfo *)pSrc, templ->entry[i].has_sampler);
             if (cmd_buffer && templ->entry[i].immutable_samplers) {
-               memcpy((char *)pDst + templ->entry[i].sampler_offset, templ->entry[i].immutable_samplers + 4 * j,
+               memcpy((char *)pDst + sampler_offset, templ->entry[i].immutable_samplers + 4 * j,
                       RADV_SAMPLER_DESC_SIZE);
             }
             break;
+         }
          case VK_DESCRIPTOR_TYPE_SAMPLER:
             if (templ->entry[i].has_sampler) {
                const VkDescriptorImageInfo *pImageInfo = (struct VkDescriptorImageInfo *)pSrc;
