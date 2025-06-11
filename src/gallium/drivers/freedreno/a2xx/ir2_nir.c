@@ -50,7 +50,7 @@ ir2_get_compiler_options(void)
       NIR_PASS(this_progress, nir, pass, ##__VA_ARGS__);                       \
       this_progress;                                                           \
    })
-#define OPT_V(nir, pass, ...) NIR_PASS_V(nir, pass, ##__VA_ARGS__)
+#define OPT_V(nir, pass, ...) NIR_PASS(_, nir, pass, ##__VA_ARGS__)
 
 static void
 ir2_optimize_loop(nir_shader *s)
