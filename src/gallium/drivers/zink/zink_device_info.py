@@ -671,9 +671,9 @@ zink_get_physical_device_info(struct zink_screen *screen)
    %if ext.properties_promoted:
       if (info->have_vulkan${ext.core_since.struct()}) {
       %for field in registry.get_registry_entry(ext.name).properties_fields:
-         memcpy(&info->${ext.field("props")}.${field},
-               &info->props${ext.core_since.struct()}.${field},
-               sizeof(info->${ext.field("props")}.${field}));
+         memcpy(&info->${ext.field("props")}.${field.name},
+               &info->props${ext.core_since.struct()}.${field.name},
+               sizeof(info->${ext.field("props")}.${field.name}));
       %endfor
       }
    %endif
@@ -699,6 +699,33 @@ zink_get_physical_device_info(struct zink_screen *screen)
          ${conditions};
 </%helpers:guard>
         %endfor
+   }
+
+   /* For extensions that require double-loading (first load for getting array
+    * length and malloc-ing, second load for getting array content)
+    */
+   if (screen->vk.GetPhysicalDeviceProperties2) {
+      VkPhysicalDeviceProperties2 second_load_props = {
+         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2
+      };
+
+   %for ext in extensions:
+      %if ext.needs_double_load:
+         if (screen->info.have_${ext.name_with_vendor()}) {
+            screen->info.${ext.field("props")}.pNext = second_load_props.pNext;
+            second_load_props.pNext = &screen->info.${ext.field("props")};
+         %for field in registry.get_registry_entry(ext.name).properties_fields:
+            %if field.len_field():
+            screen->info.${ext.field("props")}.${field.name} =
+               ralloc_array(screen, ${field.type_name}, screen->info.${ext.field("props")}.${field.len_field()});
+            %endif
+         %endfor
+         }
+      %endif
+   %endfor
+
+      if (second_load_props.pNext)
+         screen->vk.GetPhysicalDeviceProperties2(screen->pdev, &second_load_props);
    }
 
    // generate extension list
@@ -909,6 +936,7 @@ if __name__ == "__main__":
                 error_count += 1
                 print("The extension {} does not provide a properties struct.".format(ext.name))
             ext.properties_promoted = entry.properties_promoted
+            ext.needs_double_load = entry.needs_double_load
 
         if entry.promoted_in and entry.promoted_in <= versions[-1].struct_version:
             ext.core_since = Version((*entry.promoted_in, 0))
