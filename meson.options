@@ -179,7 +179,7 @@ option(
 option(
   'mediafoundation-store-dll',
   type : 'boolean',
-  value : 'false',
+  value : false,
   description : 'Selects whether the gallium mediafoundation DLL is built for the store. ',
 )
 
