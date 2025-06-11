@@ -35,10 +35,10 @@ if [ -n "$PIGLIT_TAG" ]; then
   # Are we using the right Piglit version?
   ci_tag_test_time_check "PIGLIT_TAG"
 elif [ -d "/piglit" ]; then
-  # The job does not inherit from .test-piglit, so we move it out of the way.
+  # The job does not inherit from .test-piglit, so we remove it.
   # This makes sure that we can both do the right version checks when needed,
   # and also optimise our dependencies so we don't pull unneeded stuff.
-  mv /piglit /piglit.unused
+  rm -r /piglit
 fi
 
 # Ensure Mesa Shader Cache resides on tmpfs.
