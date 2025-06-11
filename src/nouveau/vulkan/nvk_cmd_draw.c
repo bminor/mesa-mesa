@@ -29,6 +29,7 @@
 #include "nv_push_clc397.h"
 #include "nv_push_clc597.h"
 #include "nv_push_clcb97.h"
+#include "nv_push_clcd97.h"
 #include "clcb97.h"
 #include "clcd97.h"
 #include "drf.h"
@@ -954,11 +955,51 @@ nvk_rendering_linear(const struct nvk_rendering_state *render)
    return true;
 }
 
+static void
+get_depth_stencil_plane_params(struct nvk_image_view *iview,
+                               uint32_t plane,
+                               uint32_t layer_count,
+                               uint64_t *addr_out,
+                               uint32_t *base_array_layer_out,
+                               uint32_t *mip_level_out,
+                               struct nil_image *image_out)
+{
+   const struct nvk_image *image = (struct nvk_image *)iview->vk.image;
+   struct nil_image nil_image = image->planes[plane].nil;
+
+   uint64_t addr = nvk_image_base_address(image, plane);
+   uint32_t mip_level = iview->vk.base_mip_level;
+   uint32_t base_array_layer = iview->vk.base_array_layer;
+
+   if (nil_image.dim == NIL_IMAGE_DIM_3D) {
+      uint64_t level_offset_B;
+      nil_image = nil_image_3d_level_as_2d_array(&nil_image, mip_level,
+                                                 &level_offset_B);
+      addr += level_offset_B;
+      mip_level = 0;
+      base_array_layer = 0;
+      assert(layer_count <= iview->vk.extent.depth);
+   } else {
+      assert(layer_count <= iview->vk.layer_count);
+   }
+
+   const struct nil_image_level *level = &nil_image.levels[mip_level];
+   addr += level->offset_B;
+
+   *addr_out = addr;
+   *base_array_layer_out = base_array_layer;
+   *mip_level_out = mip_level;
+   *image_out = nil_image;
+}
+
+
 VKAPI_ATTR void VKAPI_CALL
 nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
                       const VkRenderingInfo *pRenderingInfo)
 {
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
+   struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_rendering_state *render = &cmd->state.gfx.render;
 
    memset(render, 0, sizeof(*render));
@@ -1006,7 +1047,7 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
    nvk_cmd_buffer_dirty_render_pass(cmd);
 
-   struct nv_push *p = nvk_cmd_buffer_push(cmd, NVK_MAX_RTS * 12 + 34);
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, NVK_MAX_RTS * 12 + 44);
 
    P_IMMD(p, NV9097, SET_MME_SHADOW_SCRATCH(NVK_MME_SCRATCH_VIEW_MASK),
           render->view_mask);
@@ -1161,31 +1202,17 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       struct nvk_image_view *iview = render->depth_att.iview ?
                                      render->depth_att.iview :
                                      render->stencil_att.iview;
+
       const struct nvk_image *image = (struct nvk_image *)iview->vk.image;
-      /* Depth/stencil are always single-plane */
-      assert(iview->plane_count == 1);
-      const uint8_t ip = iview->planes[0].image_plane;
-      struct nil_image nil_image = image->planes[ip].nil;
 
-      uint64_t addr = nvk_image_base_address(image, ip);
-      uint32_t mip_level = iview->vk.base_mip_level;
-      uint32_t base_array_layer = iview->vk.base_array_layer;
-
-      if (nil_image.dim == NIL_IMAGE_DIM_3D) {
-         uint64_t level_offset_B;
-         nil_image = nil_image_3d_level_as_2d_array(&nil_image, mip_level,
-                                                    &level_offset_B);
-         addr += level_offset_B;
-         mip_level = 0;
-         base_array_layer = 0;
-         assert(layer_count <= iview->vk.extent.depth);
-      } else {
-         assert(layer_count <= iview->vk.layer_count);
-      }
+      uint64_t addr;
+      uint32_t base_array_layer, mip_level;
+      struct nil_image nil_image;
+      get_depth_stencil_plane_params(iview, 0, layer_count, &addr,
+                                     &base_array_layer, &mip_level,
+                                     &nil_image);
 
       const struct nil_image_level *level = &nil_image.levels[mip_level];
-      addr += level->offset_B;
-
       assert(sample_layout == NIL_SAMPLE_LAYOUT_INVALID ||
              sample_layout == nil_image.sample_layout);
       sample_layout = nil_image.sample_layout;
@@ -1194,10 +1221,22 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       P_MTHD(p, NV9097, SET_ZT_A);
       P_NV9097_SET_ZT_A(p, addr >> 32);
       P_NV9097_SET_ZT_B(p, addr);
-      const enum pipe_format p_format =
+
+      /* We want the combined Z/S format for the SET_ZT_FORMAT packet */
+      const enum pipe_format zs_p_format =
          nvk_format_to_pipe_format(iview->vk.format);
-      const uint8_t zs_format = nil_format_to_depth_stencil(p_format);
-      P_NV9097_SET_ZT_FORMAT(p, zs_format);
+      const uint8_t zs_format = nil_format_to_depth_stencil(zs_p_format);
+
+      if (pdev->info.cls_eng3d >= BLACKWELL_A) {
+         P_NVCD97_SET_ZT_FORMAT(p, {
+            .v = zs_format,
+            .stencil_is_separate = image->separate_zs,
+         });
+      } else {
+         assert(!image->separate_zs);
+         P_NV9097_SET_ZT_FORMAT(p, zs_format);
+      }
+
       assert(level->tiling.gob_type != NIL_GOB_TYPE_LINEAR);
       assert(level->tiling.z_log2 == 0);
       P_NV9097_SET_ZT_BLOCK_SIZE(p, {
@@ -1216,6 +1255,7 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
        * has no concept of a tile width.  Instead, we just set the width to
        * the stride divided by bpp.
        */
+      enum pipe_format p_format = nil_image.format.p_format;
       const uint32_t row_stride_el =
          level->row_stride_B / util_format_get_blocksize(p_format);
 
@@ -1235,6 +1275,34 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
          P_IMMD(p, NVC597, SET_ZT_SPARSE, {
             .enable = ENABLE_FALSE,
          });
+      }
+
+      if (nvk_cmd_buffer_3d_cls(cmd) >= BLACKWELL_A &&
+          (image->separate_zs || image->vk.format == VK_FORMAT_S8_UINT)) {
+         get_depth_stencil_plane_params(iview, image->separate_zs, layer_count,
+                                        &addr, &base_array_layer, &mip_level,
+                                        &nil_image);
+         struct nil_Extent4D_Samples level_extent_sa =
+            nil_image_level_extent_sa(&nil_image, mip_level);
+         p_format = nil_image.format.p_format;
+         const uint32_t row_stride_el =
+            level->row_stride_B / util_format_get_blocksize(p_format);
+
+         P_MTHD(p, NVCD97, SET_ST_A);
+         P_NVCD97_SET_ST_A(p, addr >> 32);
+         P_NVCD97_SET_ST_B(p, addr);
+
+         P_MTHD(p, NVCD97, SET_ST_BLOCK_SIZE);
+         P_NVCD97_SET_ST_BLOCK_SIZE(p, {
+               .width = WIDTH_ONE_GOB,
+               .height = level->tiling.y_log2,
+               .depth = DEPTH_ONE_GOB,
+            });
+         P_NVCD97_SET_ST_ARRAY_PITCH(p, nil_image.array_stride_B >> 2);
+
+         P_MTHD(p, NVCD97, SET_ST_SIZE_A);
+         P_NVCD97_SET_ST_SIZE_A(p, row_stride_el);
+         P_NVCD97_SET_ST_SIZE_B(p, level_extent_sa.height);
       }
    } else {
       P_IMMD(p, NV9097, SET_ZT_SELECT, 0 /* target_count */);
