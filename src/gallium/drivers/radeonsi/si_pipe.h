@@ -1637,6 +1637,8 @@ uint64_t si_begin_counter(struct si_screen *sscreen, unsigned type);
 unsigned si_end_counter(struct si_screen *sscreen, unsigned type, uint64_t begin);
 
 /* si_compute.c */
+void *si_create_compute_state_for_nir(struct pipe_context *ctx, nir_shader *nir,
+                                      enum mesa_shader_stage stage);
 void si_init_compute_functions(struct si_context *sctx);
 
 /* si_pipe.c */

@@ -142,7 +142,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
                              S_00B84C_TIDIG_COMP_CNT(sel->info.uses_thread_id[2]
                                                         ? 2
                                                         : sel->info.uses_thread_id[1] ? 1 : 0) |
-                             S_00B84C_LDS_SIZE(ac_shader_encode_lds_size(shader->config.lds_size, sscreen->info.gfx_level, MESA_SHADER_COMPUTE));
+                             S_00B84C_LDS_SIZE(ac_shader_encode_lds_size(shader->config.lds_size, sscreen->info.gfx_level, sel->stage));
 
       /* COMPUTE_PGM_RSRC3 is only present on GFX10+ and GFX940+. */
       shader->config.rsrc3 = S_00B8A0_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8);
@@ -161,7 +161,8 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    sel->nir = NULL;
 }
 
-static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe_compute_state *cso)
+void *si_create_compute_state_for_nir(struct pipe_context *ctx, nir_shader *nir,
+                                      enum mesa_shader_stage stage)
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_screen *sscreen = (struct si_screen *)ctx->screen;
@@ -169,24 +170,16 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
    struct si_shader_selector *sel = &program->sel;
 
    pipe_reference_init(&sel->base.reference, 1);
-   sel->stage = MESA_SHADER_COMPUTE;
+   sel->stage = stage;
    sel->screen = sscreen;
    simple_mtx_init(&sel->mutex, mtx_plain);
    sel->const_and_shader_buf_descriptors_index =
-      si_const_and_shader_buffer_descriptors_idx(MESA_SHADER_COMPUTE);
+      si_const_and_shader_buffer_descriptors_idx(stage);
    sel->sampler_and_images_descriptors_index =
-      si_sampler_and_image_descriptors_idx(MESA_SHADER_COMPUTE);
+      si_sampler_and_image_descriptors_idx(stage);
    program->shader.selector = &program->sel;
 
-   if (cso->ir_type == PIPE_SHADER_IR_TGSI) {
-      sel->nir = tgsi_to_nir(cso->prog, ctx->screen, true);
-   } else {
-      assert(cso->ir_type == PIPE_SHADER_IR_NIR);
-      sel->nir = (struct nir_shader *)cso->prog;
-   }
-
-   sel->nir->info.shared_size = cso->static_shared_mem;
-
+   sel->nir = nir;
    if (si_can_dump_shader(sscreen, sel->stage, SI_DUMP_INIT_NIR))
       nir_print_shader(sel->nir, stderr);
 
@@ -194,9 +187,25 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
    sel->compiler_ctx_state.is_debug_context = sctx->is_debug;
    p_atomic_inc(&sscreen->num_shaders_created);
 
-   si_schedule_initial_compile(sctx, MESA_SHADER_COMPUTE, &sel->ready, &sel->compiler_ctx_state,
+   si_schedule_initial_compile(sctx, stage, &sel->ready, &sel->compiler_ctx_state,
                                program, si_create_compute_state_async);
    return program;
+}
+
+static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe_compute_state *cso)
+{
+   nir_shader *nir;
+
+   if (cso->ir_type == PIPE_SHADER_IR_TGSI) {
+      nir = tgsi_to_nir(cso->prog, ctx->screen, true);
+   } else {
+      assert(cso->ir_type == PIPE_SHADER_IR_NIR);
+      nir = (nir_shader *)cso->prog;
+   }
+
+   nir->info.shared_size = cso->static_shared_mem;
+
+   return si_create_compute_state_for_nir(ctx, nir, MESA_SHADER_COMPUTE);
 }
 
 static void si_get_compute_state_info(struct pipe_context *ctx, void *state,
