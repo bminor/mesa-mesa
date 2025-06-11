@@ -3771,7 +3771,7 @@ rebind_fb_state(struct zink_context *ctx, struct zink_resource *match_res, bool 
 }
 
 static void
-pre_sync_transfer_barrier(struct zink_context *ctx, struct zink_resource *res)
+pre_sync_transfer_barrier(struct zink_context *ctx, struct zink_resource *res, bool unsync)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    VkImageLayout layout = screen->driver_workarounds.general_layout ? VK_IMAGE_LAYOUT_GENERAL :
@@ -3780,7 +3780,10 @@ pre_sync_transfer_barrier(struct zink_context *ctx, struct zink_resource *res)
                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL :
                            /* assume that all color buffers which are not swapchain images will be used for sampling to avoid splitting renderpasses */
                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-   screen->image_barrier(ctx, res, layout, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+   if (unsync)
+      screen->image_barrier_unsync(ctx, res, layout, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+   else
+      screen->image_barrier(ctx, res, layout, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 }
 
 static void
@@ -3819,7 +3822,7 @@ unbind_fb_surface(struct zink_context *ctx, struct pipe_surface *surf, unsigned 
    /* this is called just before the resource loses a reference, so a refcount==1 means the resource will be destroyed */
    if (!res->fb_bind_count && res->base.b.reference.count > 1) {
       if (ctx->track_renderpasses && !ctx->blitting) {
-         pre_sync_transfer_barrier(ctx, res);
+         pre_sync_transfer_barrier(ctx, res, false);
       }
       if (res->sampler_bind_count[0]) {
          update_res_sampler_layouts(ctx, res);
@@ -4829,6 +4832,7 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
    struct zink_resource *buf = dst->base.b.target == PIPE_BUFFER ? dst : src;
    bool needs_present_readback = false;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
+   bool img_needs_transfer_barrier = false;
 
    bool buf2img = buf == src;
    bool unsync = !!(map_flags & PIPE_MAP_UNSYNCHRONIZED);
@@ -4846,6 +4850,9 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
       box.x = dstx;
       box.y = dsty;
       box.z = dstz;
+      /* hacky detection of sequential in-rp buf2img from tc */
+      if (ctx->track_renderpasses && img->obj->last_write == VK_ACCESS_TRANSFER_WRITE_BIT && box.y == u_minify(img->base.b.height0, dst_level) - 1)
+         img_needs_transfer_barrier = true;
       zink_resource_image_transfer_dst_barrier(ctx, img, dst_level, &box, unsync);
       if (!unsync)
          screen->buffer_barrier(ctx, buf, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -4987,6 +4994,9 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
       }
       zink_kopper_present_readback(ctx, img);
    }
+
+   if (img_needs_transfer_barrier)
+      pre_sync_transfer_barrier(ctx, img, unsync);
 
    if (ctx->oom_flush && !ctx->in_rp && !ctx->unordered_blitting && !unsync)
       flush_batch(ctx, false);
