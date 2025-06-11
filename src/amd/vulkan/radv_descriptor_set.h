@@ -33,6 +33,8 @@ struct radv_descriptor_set_binding_layout {
    /* Offset in the radv_descriptor_set_layout of the immutable samplers, or 0
     * if there are no immutable samplers. */
    uint32_t immutable_samplers_offset;
+
+   bool has_ycbcr_sampler;
 };
 
 struct radv_descriptor_set_layout {
@@ -150,6 +152,7 @@ struct radv_descriptor_update_template_entry {
 
    /* Only valid for combined image samplers and samplers */
    uint8_t has_sampler;
+   uint8_t has_ycbcr_sampler;
 
    /* In bytes */
    size_t src_offset;
