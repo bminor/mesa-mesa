@@ -111,6 +111,7 @@ common_per_arch_files = [
   'panvk_vX_descriptor_set.c',
   'panvk_vX_descriptor_set_layout.c',
   'panvk_vX_device.c',
+  'panvk_vX_physical_device.c',
   'panvk_vX_precomp_cache.c',
   'panvk_vX_query_pool.c',
   'panvk_vX_image_view.c',

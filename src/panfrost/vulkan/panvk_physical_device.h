@@ -10,6 +10,7 @@
 #include <sys/types.h>
 
 #include "panvk_instance.h"
+#include "panvk_macros.h"
 
 #include "vk_physical_device.h"
 #include "vk_sync.h"
@@ -81,5 +82,26 @@ VkResult panvk_physical_device_init(struct panvk_physical_device *device,
                                     drmDevicePtr drm_device);
 
 void panvk_physical_device_finish(struct panvk_physical_device *device);
+
+
+VkSampleCountFlags panvk_get_sample_counts(unsigned arch,
+                                           unsigned max_tib_size,
+                                           unsigned max_cbuf_atts,
+                                           unsigned format_size);
+
+#ifdef PAN_ARCH
+void panvk_per_arch(get_physical_device_extensions)(
+   const struct panvk_physical_device *device,
+   struct vk_device_extension_table *ext);
+
+void panvk_per_arch(get_physical_device_features)(
+   const struct panvk_instance *instance,
+   const struct panvk_physical_device *device, struct vk_features *features);
+
+void panvk_per_arch(get_physical_device_properties)(
+   const struct panvk_instance *instance,
+   const struct panvk_physical_device *device,
+   struct vk_properties *properties);
+#endif
 
 #endif

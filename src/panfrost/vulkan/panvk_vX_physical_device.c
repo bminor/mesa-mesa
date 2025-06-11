@@ -1,0 +1,947 @@
+/*
+ * Copyright © 2021 Collabora Ltd.
+ *
+ * Derived from tu_device.c which is:
+ * Copyright © 2016 Red Hat.
+ * Copyright © 2016 Bas Nieuwenhuizen
+ * Copyright © 2015 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <sys/sysmacros.h>
+
+#include "git_sha1.h"
+
+#include "vk_device.h"
+#include "vk_limits.h"
+#include "vk_shader_module.h"
+
+#include "panvk_instance.h"
+#include "panvk_physical_device.h"
+#include "panvk_wsi.h"
+
+#include "pan_format.h"
+#include "pan_props.h"
+#include "util/pan_ir.h"
+
+#define ARM_VENDOR_ID        0x13b5
+#define MAX_PUSH_DESCRIPTORS 32
+/* We reserve one ubo for push constant, one for sysvals and one per-set for the
+ * descriptor metadata  */
+#define RESERVED_UBO_COUNT                   6
+#define MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS 32 - RESERVED_UBO_COUNT
+#define MAX_INLINE_UNIFORM_BLOCK_SIZE        (1 << 16)
+
+void
+panvk_per_arch(get_physical_device_extensions)(
+   const struct panvk_physical_device *device,
+   struct vk_device_extension_table *ext)
+{
+   bool has_vk1_1 = PAN_ARCH >= 10;
+   bool has_vk1_2 = PAN_ARCH >= 10;
+
+   *ext = (struct vk_device_extension_table){
+      .KHR_8bit_storage = true,
+      .KHR_16bit_storage = true,
+      .KHR_bind_memory2 = true,
+      .KHR_buffer_device_address = true,
+      .KHR_copy_commands2 = true,
+      .KHR_create_renderpass2 = true,
+      .KHR_dedicated_allocation = true,
+      .KHR_descriptor_update_template = true,
+      .KHR_depth_clamp_zero_one = true,
+      .KHR_depth_stencil_resolve = true,
+      .KHR_device_group = true,
+      .KHR_draw_indirect_count = PAN_ARCH >= 10,
+      .KHR_driver_properties = true,
+      .KHR_dynamic_rendering = true,
+      .KHR_dynamic_rendering_local_read = true,
+      .KHR_external_fence = true,
+      .KHR_external_fence_fd = true,
+      .KHR_external_memory = true,
+      .KHR_external_memory_fd = true,
+      .KHR_external_semaphore = true,
+      .KHR_external_semaphore_fd = true,
+      .KHR_format_feature_flags2 = true,
+      .KHR_get_memory_requirements2 = true,
+      .KHR_global_priority = true,
+      .KHR_image_format_list = true,
+      .KHR_imageless_framebuffer = true,
+      .KHR_index_type_uint8 = true,
+      .KHR_line_rasterization = true,
+      .KHR_load_store_op_none = true,
+      .KHR_maintenance1 = true,
+      .KHR_maintenance2 = true,
+      .KHR_maintenance3 = true,
+      .KHR_maintenance4 = has_vk1_1,
+      .KHR_maintenance5 = has_vk1_1,
+      .KHR_map_memory2 = true,
+      .KHR_multiview = true,
+      .KHR_pipeline_executable_properties = true,
+      .KHR_pipeline_library = true,
+      .KHR_push_descriptor = true,
+      .KHR_relaxed_block_layout = true,
+      .KHR_sampler_mirror_clamp_to_edge = true,
+      .KHR_sampler_ycbcr_conversion = PAN_ARCH >= 10,
+      .KHR_separate_depth_stencil_layouts = true,
+      .KHR_shader_draw_parameters = true,
+      .KHR_shader_expect_assume = true,
+      .KHR_shader_float_controls = true,
+      .KHR_shader_float_controls2 = has_vk1_1,
+      .KHR_shader_float16_int8 = true,
+      .KHR_shader_integer_dot_product = true,
+      .KHR_shader_maximal_reconvergence = has_vk1_1,
+      .KHR_shader_non_semantic_info = true,
+      .KHR_shader_quad_control = has_vk1_2,
+      .KHR_shader_relaxed_extended_instruction = true,
+      .KHR_shader_subgroup_extended_types = has_vk1_1,
+      .KHR_shader_subgroup_rotate = true,
+      .KHR_shader_subgroup_uniform_control_flow = has_vk1_1,
+      .KHR_shader_terminate_invocation = true,
+      .KHR_spirv_1_4 = PAN_ARCH >= 10,
+      .KHR_storage_buffer_storage_class = true,
+#ifdef PANVK_USE_WSI_PLATFORM
+      .KHR_present_id2 = true,
+      .KHR_present_wait2 = true,
+      .KHR_swapchain = true,
+#endif
+      .KHR_synchronization2 = true,
+      .KHR_timeline_semaphore = true,
+      .KHR_uniform_buffer_standard_layout = true,
+      .KHR_variable_pointers = true,
+      .KHR_vertex_attribute_divisor = true,
+      .KHR_vulkan_memory_model = true,
+      .KHR_zero_initialize_workgroup_memory = true,
+      .EXT_4444_formats = true,
+      .EXT_border_color_swizzle = true,
+      .EXT_buffer_device_address = true,
+      .EXT_custom_border_color = true,
+      .EXT_depth_bias_control = true,
+      .EXT_depth_clamp_zero_one = true,
+      .EXT_depth_clip_enable = true,
+      .EXT_depth_clip_control = true,
+#ifdef VK_USE_PLATFORM_DISPLAY_KHR
+      .EXT_display_control = true,
+#endif
+      .EXT_extended_dynamic_state = true,
+      .EXT_extended_dynamic_state2 = true,
+      .EXT_external_memory_dma_buf = true,
+      .EXT_global_priority = true,
+      .EXT_global_priority_query = true,
+      .EXT_graphics_pipeline_library = true,
+      .EXT_hdr_metadata = true,
+      .EXT_host_query_reset = true,
+      .EXT_image_2d_view_of_3d = true,
+      /* EXT_image_drm_format_modifier depends on KHR_sampler_ycbcr_conversion */
+      .EXT_image_drm_format_modifier = PAN_ARCH >= 10,
+      .EXT_image_robustness = true,
+      .EXT_index_type_uint8 = true,
+      .EXT_line_rasterization = true,
+      .EXT_load_store_op_none = true,
+      .EXT_physical_device_drm = true,
+      .EXT_pipeline_creation_cache_control = true,
+      .EXT_pipeline_creation_feedback = true,
+      .EXT_pipeline_robustness = true,
+      .EXT_private_data = true,
+      .EXT_primitive_topology_list_restart = true,
+      .EXT_provoking_vertex = true,
+      .EXT_queue_family_foreign = true,
+      .EXT_sampler_filter_minmax = PAN_ARCH >= 10,
+      .EXT_scalar_block_layout = true,
+      .EXT_separate_stencil_usage = true,
+      .EXT_shader_module_identifier = true,
+      .EXT_shader_demote_to_helper_invocation = true,
+      .EXT_shader_replicated_composites = true,
+      .EXT_shader_subgroup_ballot = true,
+      .EXT_shader_subgroup_vote = true,
+      .EXT_subgroup_size_control = has_vk1_1,
+      .EXT_texel_buffer_alignment = true,
+      .EXT_texture_compression_astc_hdr = true,
+      .EXT_tooling_info = true,
+      .EXT_vertex_attribute_divisor = true,
+      .EXT_vertex_input_dynamic_state = true,
+      .EXT_ycbcr_2plane_444_formats = PAN_ARCH >= 10,
+      .EXT_ycbcr_image_arrays = PAN_ARCH >= 10,
+      .EXT_inline_uniform_block = true,
+      .GOOGLE_decorate_string = true,
+      .GOOGLE_hlsl_functionality1 = true,
+      .GOOGLE_user_type = true,
+   };
+}
+
+static bool
+has_compressed_formats(const struct panvk_physical_device *physical_device,
+                       const uint32_t required_formats)
+{
+   uint32_t supported_compr_fmts =
+      pan_query_compressed_formats(&physical_device->kmod.props);
+
+   return (supported_compr_fmts & required_formats) == required_formats;
+}
+
+static bool
+has_texture_compression_etc2(const struct panvk_physical_device *physical_device)
+{
+   return has_compressed_formats(physical_device,
+      BITFIELD_BIT(MALI_ETC2_RGB8) |
+      BITFIELD_BIT(MALI_ETC2_RGB8A1) | BITFIELD_BIT(MALI_ETC2_RGBA8) |
+      BITFIELD_BIT(MALI_ETC2_R11_UNORM) | BITFIELD_BIT(MALI_ETC2_R11_SNORM) |
+      BITFIELD_BIT(MALI_ETC2_RG11_UNORM) | BITFIELD_BIT(MALI_ETC2_RG11_SNORM));
+}
+
+static bool
+has_texture_compression_astc_ldr(const struct panvk_physical_device *physical_device)
+{
+   return has_compressed_formats(physical_device, BITFIELD_BIT(MALI_ASTC_2D_LDR));
+}
+
+static bool
+has_texture_compression_astc_hdr(const struct panvk_physical_device *physical_device)
+{
+   return has_compressed_formats(physical_device, BITFIELD_BIT(MALI_ASTC_2D_HDR));
+}
+
+static bool
+has_texture_compression_bc(const struct panvk_physical_device *physical_device)
+{
+   return has_compressed_formats(physical_device,
+      BITFIELD_BIT(MALI_BC1_UNORM) | BITFIELD_BIT(MALI_BC2_UNORM) |
+      BITFIELD_BIT(MALI_BC3_UNORM) | BITFIELD_BIT(MALI_BC4_UNORM) |
+      BITFIELD_BIT(MALI_BC4_SNORM) | BITFIELD_BIT(MALI_BC5_UNORM) |
+      BITFIELD_BIT(MALI_BC5_SNORM) | BITFIELD_BIT(MALI_BC6H_SF16) |
+      BITFIELD_BIT(MALI_BC6H_UF16) | BITFIELD_BIT(MALI_BC7_UNORM));
+}
+
+void
+panvk_per_arch(get_physical_device_features)(
+   const struct panvk_instance *instance,
+   const struct panvk_physical_device *device, struct vk_features *features)
+{
+   *features = (struct vk_features){
+      /* Vulkan 1.0 */
+      .depthClamp = true,
+      .depthBiasClamp = true,
+      .dualSrcBlend = true,
+      .robustBufferAccess = true,
+      .fullDrawIndexUint32 = true,
+      .imageCubeArray = true,
+      .independentBlend = true,
+      .sampleRateShading = true,
+      .logicOp = true,
+      .multiDrawIndirect = PAN_ARCH >= 10,
+      .wideLines = true,
+      .largePoints = true,
+      .occlusionQueryPrecise = true,
+      .samplerAnisotropy = true,
+      .textureCompressionETC2 = has_texture_compression_etc2(device),
+      .textureCompressionASTC_LDR = has_texture_compression_astc_ldr(device),
+      .textureCompressionBC = has_texture_compression_bc(device),
+      .fragmentStoresAndAtomics = PAN_ARCH >= 10,
+      .shaderImageGatherExtended = true,
+      .shaderStorageImageExtendedFormats = true,
+      .shaderStorageImageReadWithoutFormat = true,
+      .shaderStorageImageWriteWithoutFormat = true,
+      .shaderUniformBufferArrayDynamicIndexing = true,
+      .shaderSampledImageArrayDynamicIndexing = true,
+      .shaderStorageBufferArrayDynamicIndexing = true,
+      .shaderStorageImageArrayDynamicIndexing = true,
+      .shaderInt16 = true,
+      .shaderInt64 = true,
+      .drawIndirectFirstInstance = true,
+
+      /* On v13+, the hardware isn't speculatively referencing to invalid
+         indices anymore. */
+      .vertexPipelineStoresAndAtomics =
+         PAN_ARCH >= 13 && instance->enable_vertex_pipeline_stores_atomics,
+
+      /* Vulkan 1.1 */
+      .storageBuffer16BitAccess = true,
+      .uniformAndStorageBuffer16BitAccess = true,
+      .storagePushConstant16 = true,
+      .storageInputOutput16 = true,
+      .multiview = true,
+      .multiviewGeometryShader = false,
+      .multiviewTessellationShader = false,
+      .variablePointersStorageBuffer = true,
+      .variablePointers = true,
+      .protectedMemory = false,
+      .samplerYcbcrConversion = PAN_ARCH >= 10,
+      .shaderDrawParameters = true,
+
+      /* Vulkan 1.2 */
+      .samplerMirrorClampToEdge = true,
+      .drawIndirectCount = PAN_ARCH >= 10,
+      .storageBuffer8BitAccess = true,
+      .uniformAndStorageBuffer8BitAccess = true,
+      .storagePushConstant8 = true,
+      .shaderBufferInt64Atomics = false,
+      .shaderSharedInt64Atomics = false,
+      .shaderFloat16 = PAN_ARCH >= 10,
+      .shaderInt8 = true,
+
+      .descriptorIndexing = false,
+      .shaderInputAttachmentArrayDynamicIndexing = false,
+      .shaderUniformTexelBufferArrayDynamicIndexing = false,
+      .shaderStorageTexelBufferArrayDynamicIndexing = false,
+      .shaderUniformBufferArrayNonUniformIndexing = false,
+      .shaderSampledImageArrayNonUniformIndexing = false,
+      .shaderStorageBufferArrayNonUniformIndexing = false,
+      .shaderStorageImageArrayNonUniformIndexing = false,
+      .shaderInputAttachmentArrayNonUniformIndexing = false,
+      .shaderUniformTexelBufferArrayNonUniformIndexing = false,
+      .shaderStorageTexelBufferArrayNonUniformIndexing = false,
+      .descriptorBindingUniformBufferUpdateAfterBind = false,
+      .descriptorBindingSampledImageUpdateAfterBind = false,
+      .descriptorBindingStorageImageUpdateAfterBind = false,
+      .descriptorBindingStorageBufferUpdateAfterBind = false,
+      .descriptorBindingUniformTexelBufferUpdateAfterBind = false,
+      .descriptorBindingStorageTexelBufferUpdateAfterBind = false,
+      .descriptorBindingUpdateUnusedWhilePending = false,
+      .descriptorBindingPartiallyBound = false,
+      .descriptorBindingVariableDescriptorCount = false,
+      .runtimeDescriptorArray = false,
+
+      .samplerFilterMinmax = PAN_ARCH >= 10,
+      .scalarBlockLayout = true,
+      .imagelessFramebuffer = true,
+      .uniformBufferStandardLayout = true,
+      .shaderSubgroupExtendedTypes = true,
+      .separateDepthStencilLayouts = true,
+      .hostQueryReset = true,
+      .timelineSemaphore = true,
+      .bufferDeviceAddress = true,
+      .bufferDeviceAddressCaptureReplay = false,
+      .bufferDeviceAddressMultiDevice = false,
+      .vulkanMemoryModel = true,
+      .vulkanMemoryModelDeviceScope = true,
+      .vulkanMemoryModelAvailabilityVisibilityChains = true,
+      .shaderOutputViewportIndex = false,
+      .shaderOutputLayer = false,
+      .subgroupBroadcastDynamicId = true,
+
+      /* Vulkan 1.3 */
+      .robustImageAccess = true,
+      .inlineUniformBlock = true,
+      .descriptorBindingInlineUniformBlockUpdateAfterBind = true,
+      .extendedDynamicState = true,
+      .extendedDynamicState2 = true,
+      .extendedDynamicState2LogicOp = true,
+      .extendedDynamicState2PatchControlPoints = false,
+      .pipelineCreationCacheControl = true,
+      .privateData = true,
+      .shaderDemoteToHelperInvocation = true,
+      .shaderTerminateInvocation = true,
+      .subgroupSizeControl = true,
+      .computeFullSubgroups = true,
+      .synchronization2 = true,
+      .textureCompressionASTC_HDR = has_texture_compression_astc_hdr(device),
+      .shaderZeroInitializeWorkgroupMemory = true,
+      .dynamicRendering = true,
+      .dynamicRenderingLocalRead = true,
+      .shaderIntegerDotProduct = true,
+      .maintenance4 = true,
+      .maintenance5 = true,
+
+      /* Vulkan 1.4 */
+      .shaderSubgroupRotate = true,
+      .shaderSubgroupRotateClustered = true,
+
+      /* VK_KHR_depth_clamp_zero_one */
+      .depthClampZeroOne = true,
+
+      /* VK_KHR_line_rasterization */
+      .rectangularLines = true,
+      .bresenhamLines = true,
+
+      /* VK_EXT_graphics_pipeline_library */
+      .graphicsPipelineLibrary = true,
+
+      /* VK_KHR_global_priority */
+      .globalPriorityQuery = true,
+
+      /* VK_KHR_index_type_uint8 */
+      .indexTypeUint8 = true,
+
+      /* VK_KHR_vertex_attribute_divisor */
+      .vertexAttributeInstanceRateDivisor = true,
+      .vertexAttributeInstanceRateZeroDivisor = true,
+
+      /* VK_EXT_vertex_input_dynamic_state */
+      .vertexInputDynamicState = true,
+
+      /* VK_EXT_depth_bias_control */
+      .depthBiasControl = true,
+      .leastRepresentableValueForceUnormRepresentation = false,
+      .floatRepresentation = false,
+      .depthBiasExact = true,
+
+      /* VK_EXT_depth_clip_control */
+      .depthClipControl = true,
+
+      /* VK_EXT_depth_clip_enable */
+      .depthClipEnable = true,
+
+      /* VK_EXT_4444_formats */
+      .formatA4R4G4B4 = true,
+      .formatA4B4G4R4 = true,
+
+      /* VK_EXT_custom_border_color */
+      .customBorderColors = true,
+
+      /* VK_EXT_border_color_swizzle */
+      .borderColorSwizzle = true,
+      .borderColorSwizzleFromImage = true,
+
+      /* VK_EXT_image_2d_view_of_3d */
+      .image2DViewOf3D = true,
+      .sampler2DViewOf3D = true,
+
+      /* VK_EXT_primitive_topology_list_restart */
+      .primitiveTopologyListRestart = true,
+      .primitiveTopologyPatchListRestart = false,
+
+      /* VK_EXT_provoking_vertex */
+      .provokingVertexLast = true,
+      .transformFeedbackPreservesProvokingVertex = false,
+
+      /* v7 doesn't support AFBC(BGR). We need to tweak the texture swizzle to
+       * make it work, which forces us to apply the same swizzle on the border
+       * color, meaning we need to know the format when preparing the border
+       * color.
+       */
+      .customBorderColorWithoutFormat = PAN_ARCH != 7,
+
+      /* VK_KHR_pipeline_executable_properties */
+      .pipelineExecutableInfo = true,
+
+      /* VK_EXT_pipeline_robustness */
+      .pipelineRobustness = true,
+
+      /* VK_KHR_shader_float_controls2 */
+      .shaderFloatControls2 = true,
+
+      /* VK_KHR_shader_quad_control */
+      .shaderQuadControl = true,
+
+      /* VK_KHR_shader_relaxed_extended_instruction */
+      .shaderRelaxedExtendedInstruction = true,
+
+      /* VK_KHR_shader_maximal_reconvergence */
+      .shaderMaximalReconvergence = true,
+
+      /* VK_KHR_shader_subgroup_uniform_control_flow */
+      .shaderSubgroupUniformControlFlow = true,
+
+      /* VK_KHR_shader_expect_assume */
+      .shaderExpectAssume = true,
+
+      /* VK_EXT_shader_module_identifier */
+      .shaderModuleIdentifier = true,
+
+      /* VK_EXT_shader_replicated_composites */
+      .shaderReplicatedComposites = true,
+
+      /* VK_EXT_texel_buffer_alignment */
+      .texelBufferAlignment = true,
+
+      /* VK_EXT_ycbcr_2plane_444_formats */
+      .ycbcr2plane444Formats = PAN_ARCH >= 10,
+
+      /* VK_EXT_ycbcr_image_arrays */
+      .ycbcrImageArrays = PAN_ARCH >= 10,
+
+      /* VK_KHR_push_descriptor */
+      .pushDescriptor = true,
+   };
+}
+
+static uint32_t
+get_api_version()
+{
+   const uint32_t version_override = vk_get_version_override();
+   if (version_override)
+      return version_override;
+
+   if (PAN_ARCH >= 10)
+      return VK_MAKE_API_VERSION(0, 1, 3, VK_HEADER_VERSION);
+
+   return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
+}
+
+static VkConformanceVersion
+get_conformance_version()
+{
+   if (PAN_ARCH == 10)
+      return (VkConformanceVersion){1, 4, 1, 2};
+
+   return (VkConformanceVersion){0, 0, 0, 0};
+}
+
+void
+panvk_per_arch(get_physical_device_properties)(
+   const struct panvk_instance *instance,
+   const struct panvk_physical_device *device, struct vk_properties *properties)
+{
+   unsigned max_tib_size = pan_get_max_tib_size(PAN_ARCH, device->model);
+   const unsigned max_cbuf_format = 16; /* R32G32B32A32 */
+
+   unsigned max_cbuf_atts = pan_get_max_cbufs(PAN_ARCH, max_tib_size);
+   VkSampleCountFlags sample_counts =
+       panvk_get_sample_counts(PAN_ARCH, max_tib_size, max_cbuf_atts,
+                               max_cbuf_format);
+
+   uint64_t os_page_size = 4096;
+   os_get_page_size(&os_page_size);
+
+   /* Ensure that the max threads count per workgroup is valid for Bifrost */
+   assert(PAN_ARCH > 8 || device->kmod.props.max_threads_per_wg <= 1024);
+
+   float pointSizeRangeMin;
+   float pointSizeRangeMax;
+
+   /* On v13+, point size handling changed entirely */
+   if (PAN_ARCH >= 13) {
+      pointSizeRangeMin = 1.0;
+      pointSizeRangeMax = 1024.0;
+   } else {
+      pointSizeRangeMin = 0.125;
+      pointSizeRangeMax = 4095.9375;
+   }
+
+   *properties = (struct vk_properties){
+      .apiVersion = get_api_version(),
+      .driverVersion = vk_get_driver_version(),
+      .vendorID = instance->force_vk_vendor ? instance->force_vk_vendor :
+                                              ARM_VENDOR_ID,
+
+      /* Collect arch_major, arch_minor, arch_rev and product_major,
+       * as done by the Arm driver.
+       */
+      .deviceID = device->kmod.props.gpu_prod_id << 16,
+      .deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+
+      /* Vulkan 1.0 limits */
+      /* Maximum texture dimension is 2^16. */
+      .maxImageDimension1D = (1 << 16),
+      .maxImageDimension2D = (1 << 16),
+      .maxImageDimension3D = (1 << 16),
+      .maxImageDimensionCube = (1 << 16),
+      .maxImageArrayLayers = (1 << 16),
+      /* Currently limited by the 1D texture size, which is 2^16.
+       * TODO: If we expose buffer views as 2D textures, we can increase the
+       * limit.
+       */
+      .maxTexelBufferElements = (1 << 16),
+      /* Each uniform entry is 16-byte and the number of entries is encoded in a
+       * 12-bit field, with the minus(1) modifier, which gives 2^20.
+       */
+      .maxUniformBufferRange = 1 << 20,
+      /* Storage buffer access is lowered to globals, so there's no limit here,
+       * except for the SW-descriptor we use to encode storage buffer
+       * descriptors, where the size is a 32-bit field.
+       */
+      .maxStorageBufferRange = UINT32_MAX,
+      /* Vulkan 1.4 minimum. We currently implement push constants in terms of
+       * FAUs so we're limited by how many user-defined FAUs the hardware
+       * offers, minus driver-internal needs. If we ever need go to higher,
+       * we'll have to implement push constants in terms of both FAUs and global
+       * loads.
+       */
+      .maxPushConstantsSize = 256,
+      /* On our kernel drivers we're limited by the available memory rather
+       * than available allocations. This is better expressed through memory
+       * properties and budget queries, and by returning
+       * VK_ERROR_OUT_OF_DEVICE_MEMORY when applicable, rather than
+       * this limit.
+       */
+      .maxMemoryAllocationCount = UINT32_MAX,
+      /* On Mali, VkSampler objects do not use any resources other than host
+       * memory and host address space, availability of which can change
+       * significantly over time.
+       */
+      .maxSamplerAllocationCount = UINT32_MAX,
+      /* A cache line. */
+      .bufferImageGranularity = 64,
+      /* Sparse binding not supported yet. */
+      .sparseAddressSpaceSize = 0,
+      /* On Bifrost, this is a software limit. We pick the minimum required by
+       * Vulkan, because Bifrost GPUs don't have unified descriptor tables,
+       * which forces us to agregatte all descriptors from all sets and dispatch
+       * them to per-type descriptor tables emitted at draw/dispatch time. The
+       * more sets we support the more copies we are likely to have to do at
+       * draw time.
+       *
+       * Valhall has native support for descriptor sets, and allows a maximum
+       * of 16 sets, but we reserve one for our internal use, so we have 15
+       * left.
+       */
+      .maxBoundDescriptorSets = PAN_ARCH <= 7 ? 4 : 15,
+      /* MALI_RENDERER_STATE::sampler_count is 16-bit. */
+      .maxDescriptorSetSamplers = UINT16_MAX,
+      /* MALI_RENDERER_STATE::uniform_buffer_count is 8-bit. We reserve 32 slots
+       * for our internal UBOs.
+       */
+      .maxPerStageDescriptorUniformBuffers = UINT8_MAX - 32,
+      .maxDescriptorSetUniformBuffers = UINT8_MAX - 32,
+      /* SSBOs are limited by the size of a uniform buffer which contains our
+       * panvk_ssbo_addr objects.
+       * panvk_ssbo_addr is 16-byte, and each uniform entry in the Mali UBO is
+       * 16-byte too. The number of entries is encoded in a 12-bit field, with
+       * a minus(1) modifier, which gives a maximum of 2^12 SSBO
+       * descriptors.
+       */
+      .maxDescriptorSetStorageBuffers = 1 << 12,
+      /* MALI_RENDERER_STATE::sampler_count is 16-bit. */
+      .maxDescriptorSetSampledImages = UINT16_MAX,
+      /* MALI_ATTRIBUTE::buffer_index is 9-bit, and each image takes two
+       * MALI_ATTRIBUTE_BUFFER slots, which gives a maximum of (1 << 8) images.
+       */
+      .maxDescriptorSetStorageImages = 1 << 8,
+      /* A maximum of 8 color render targets, and one depth-stencil render
+       * target.
+       */
+      .maxDescriptorSetInputAttachments = 9,
+
+      /* We could theoretically use the maxDescriptor values here (except for
+       * UBOs where we're really limited to 256 on the shader side), but on
+       * Bifrost we have to copy some tables around, which comes at an extra
+       * memory/processing cost, so let's pick something smaller.
+       */
+      .maxPerStageDescriptorInputAttachments = 9,
+      .maxPerStageDescriptorSampledImages = 256,
+      .maxPerStageDescriptorSamplers = 128,
+      .maxPerStageDescriptorStorageBuffers = 64,
+      .maxPerStageDescriptorStorageImages = 32,
+      .maxPerStageDescriptorUniformBuffers = 64,
+      .maxPerStageResources = 9 + 256 + 128 + 64 + 32 + 64,
+
+      /* Software limits to keep VkCommandBuffer tracking sane. */
+      .maxDescriptorSetUniformBuffersDynamic = 16,
+      .maxDescriptorSetStorageBuffersDynamic = 8,
+      /* Software limit to keep VkCommandBuffer tracking sane. The HW supports
+       * up to 2^9 vertex attributes.
+       */
+      .maxVertexInputAttributes = 16,
+      .maxVertexInputBindings = 16,
+      /* MALI_ATTRIBUTE::offset is 32-bit. */
+      .maxVertexInputAttributeOffset = UINT32_MAX,
+      /* MALI_ATTRIBUTE_BUFFER::stride is 32-bit. */
+      .maxVertexInputBindingStride = MESA_VK_MAX_VERTEX_BINDING_STRIDE,
+      /* 32 vec4 varyings. */
+      .maxVertexOutputComponents = 128,
+      /* Tesselation shaders not supported. */
+      .maxTessellationGenerationLevel = 0,
+      .maxTessellationPatchSize = 0,
+      .maxTessellationControlPerVertexInputComponents = 0,
+      .maxTessellationControlPerVertexOutputComponents = 0,
+      .maxTessellationControlPerPatchOutputComponents = 0,
+      .maxTessellationControlTotalOutputComponents = 0,
+      .maxTessellationEvaluationInputComponents = 0,
+      .maxTessellationEvaluationOutputComponents = 0,
+      /* Geometry shaders not supported. */
+      .maxGeometryShaderInvocations = 0,
+      .maxGeometryInputComponents = 0,
+      .maxGeometryOutputComponents = 0,
+      .maxGeometryOutputVertices = 0,
+      .maxGeometryTotalOutputComponents = 0,
+      /* 32 vec4 varyings. */
+      .maxFragmentInputComponents = 128,
+      /* 8 render targets. */
+      .maxFragmentOutputAttachments = 8,
+      .maxFragmentDualSrcAttachments = max_cbuf_atts,
+      /* 8 render targets, 2^12 storage buffers and 2^8 storage images (see
+       * above).
+       */
+      .maxFragmentCombinedOutputResources = 8 + (1 << 12) + (1 << 8),
+      /* MALI_LOCAL_STORAGE::wls_size_{base,scale} allows us to have up to
+       * (7 << 30) bytes of shared memory, but we cap it to 32K as it doesn't
+       * really make sense to expose this amount of memory, especially since
+       * it's backed by global memory anyway.
+       */
+      .maxComputeSharedMemorySize = 32768,
+      /* Software limit to meet Vulkan 1.0 requirements. We split the
+       * dispatch in several jobs if it's too big.
+       */
+      .maxComputeWorkGroupCount = {65535, 65535, 65535},
+
+      /* We could also split into serveral jobs but this has many limitations.
+       * As such we limit to the max threads per workgroup supported by the GPU.
+       */
+      .maxComputeWorkGroupInvocations = device->kmod.props.max_threads_per_wg,
+      .maxComputeWorkGroupSize = {device->kmod.props.max_threads_per_wg,
+                                  device->kmod.props.max_threads_per_wg,
+                                  device->kmod.props.max_threads_per_wg},
+      /* 8-bit subpixel precision. */
+      .subPixelPrecisionBits = 8,
+      .subTexelPrecisionBits = 8,
+      .mipmapPrecisionBits = 8,
+      /* Software limit. */
+      .maxDrawIndexedIndexValue = UINT32_MAX,
+      .maxDrawIndirectCount = PAN_ARCH >= 10 ? UINT32_MAX : 1,
+      .maxSamplerLodBias = (float)INT16_MAX / 256.0f,
+      .maxSamplerAnisotropy = 16,
+      .maxViewports = 1,
+      /* Same as the framebuffer limit. */
+      .maxViewportDimensions = {(1 << 14), (1 << 14)},
+      /* Encoded in a 16-bit signed integer. */
+      .viewportBoundsRange = {INT16_MIN, INT16_MAX},
+      .viewportSubPixelBits = 0,
+      /* Align on a page. */
+      .minMemoryMapAlignment = os_page_size,
+      /* Some compressed texture formats require 128-byte alignment. */
+      .minTexelBufferOffsetAlignment = 64,
+      /* Always aligned on a uniform slot (vec4). */
+      .minUniformBufferOffsetAlignment = 16,
+      /* Lowered to global accesses, which happen at the 32-bit granularity. */
+      .minStorageBufferOffsetAlignment = 4,
+      /* Signed 4-bit value. */
+      .minTexelOffset = -8,
+      .maxTexelOffset = 7,
+      .minTexelGatherOffset = -8,
+      .maxTexelGatherOffset = 7,
+      .minInterpolationOffset = -0.5,
+      .maxInterpolationOffset = 0.5,
+      .subPixelInterpolationOffsetBits = 8,
+      .maxFramebufferWidth = (1 << 14),
+      .maxFramebufferHeight = (1 << 14),
+      .maxFramebufferLayers = 256,
+      .framebufferColorSampleCounts = sample_counts,
+      .framebufferDepthSampleCounts = sample_counts,
+      .framebufferStencilSampleCounts = sample_counts,
+      .framebufferNoAttachmentsSampleCounts = sample_counts,
+      .maxColorAttachments = max_cbuf_atts,
+      .sampledImageColorSampleCounts = sample_counts,
+      .sampledImageIntegerSampleCounts = sample_counts,
+      .sampledImageDepthSampleCounts = sample_counts,
+      .sampledImageStencilSampleCounts = sample_counts,
+      .storageImageSampleCounts = VK_SAMPLE_COUNT_1_BIT,
+      .maxSampleMaskWords = 1,
+      .timestampComputeAndGraphics = false,
+      .timestampPeriod = 0,
+      .maxClipDistances = 0,
+      .maxCullDistances = 0,
+      .maxCombinedClipAndCullDistances = 0,
+      .discreteQueuePriorities = 2,
+      .pointSizeRange = {pointSizeRangeMin, pointSizeRangeMax},
+      .lineWidthRange = {0.0, 7.9921875},
+      .pointSizeGranularity = (1.0 / 16.0),
+      .lineWidthGranularity = (1.0 / 128.0),
+      .strictLines = true,
+      .standardSampleLocations = true,
+      .optimalBufferCopyOffsetAlignment = 64,
+      .optimalBufferCopyRowPitchAlignment = 64,
+      .nonCoherentAtomSize = 64,
+
+      /* Vulkan 1.0 sparse properties */
+      .sparseResidencyNonResidentStrict = false,
+      .sparseResidencyAlignedMipSize = false,
+      .sparseResidencyStandard2DBlockShape = false,
+      .sparseResidencyStandard2DMultisampleBlockShape = false,
+      .sparseResidencyStandard3DBlockShape = false,
+
+      /* Vulkan 1.1 properties */
+      .subgroupSize = pan_subgroup_size(PAN_ARCH),
+      /* We only support VS, FS, and CS.
+       *
+       * The HW may spawn VS invocations for non-existing indices, which could
+       * be observed through subgroup ops (though the user can observe them
+       * through infinte loops anyway), so subgroup ops can't be supported in
+       * VS.
+       */
+      .subgroupSupportedStages =
+         VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+      .subgroupSupportedOperations =
+         VK_SUBGROUP_FEATURE_BASIC_BIT |
+         VK_SUBGROUP_FEATURE_VOTE_BIT |
+         VK_SUBGROUP_FEATURE_ARITHMETIC_BIT |
+         VK_SUBGROUP_FEATURE_BALLOT_BIT |
+         VK_SUBGROUP_FEATURE_SHUFFLE_BIT |
+         VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT |
+         VK_SUBGROUP_FEATURE_CLUSTERED_BIT |
+         VK_SUBGROUP_FEATURE_QUAD_BIT |
+         VK_SUBGROUP_FEATURE_ROTATE_BIT |
+         VK_SUBGROUP_FEATURE_ROTATE_CLUSTERED_BIT,
+      .subgroupQuadOperationsInAllStages = false,
+      .pointClippingBehavior = VK_POINT_CLIPPING_BEHAVIOR_ALL_CLIP_PLANES,
+      .maxMultiviewViewCount = 8,
+      .maxMultiviewInstanceIndex = UINT32_MAX,
+      .protectedNoFault = false,
+      .maxPerSetDescriptors = UINT16_MAX,
+      /* Our buffer size fields allow only this much */
+      .maxMemoryAllocationSize = UINT32_MAX,
+
+      /* Vulkan 1.2 properties */
+      .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
+                                    VK_RESOLVE_MODE_AVERAGE_BIT |
+                                    VK_RESOLVE_MODE_MIN_BIT |
+                                    VK_RESOLVE_MODE_MAX_BIT,
+      .supportedStencilResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT |
+                                      VK_RESOLVE_MODE_MIN_BIT |
+                                      VK_RESOLVE_MODE_MAX_BIT,
+      .independentResolveNone = true,
+      .independentResolve = true,
+      /* VK_KHR_driver_properties */
+      .driverID = VK_DRIVER_ID_MESA_PANVK,
+      .conformanceVersion = get_conformance_version(),
+      .denormBehaviorIndependence = PAN_ARCH >= 9 ?
+         VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE :
+         VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
+      .roundingModeIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
+      .shaderSignedZeroInfNanPreserveFloat16 = true,
+      .shaderSignedZeroInfNanPreserveFloat32 = true,
+      .shaderSignedZeroInfNanPreserveFloat64 = false,
+      .shaderDenormPreserveFloat16 = true,
+      .shaderDenormPreserveFloat32 = true,
+      .shaderDenormPreserveFloat64 = true,
+      .shaderDenormFlushToZeroFloat16 = true,
+      .shaderDenormFlushToZeroFloat32 = true,
+      .shaderDenormFlushToZeroFloat64 = true,
+      .shaderRoundingModeRTEFloat16 = true,
+      .shaderRoundingModeRTEFloat32 = true,
+      .shaderRoundingModeRTEFloat64 = false,
+      .shaderRoundingModeRTZFloat16 = true,
+      .shaderRoundingModeRTZFloat32 = true,
+      .shaderRoundingModeRTZFloat64 = false,
+      /* XXX: VK_EXT_descriptor_indexing */
+      .maxUpdateAfterBindDescriptorsInAllPools = 0,
+      .shaderUniformBufferArrayNonUniformIndexingNative = false,
+      .shaderSampledImageArrayNonUniformIndexingNative = false,
+      .shaderStorageBufferArrayNonUniformIndexingNative = false,
+      .shaderStorageImageArrayNonUniformIndexingNative = false,
+      .shaderInputAttachmentArrayNonUniformIndexingNative = false,
+      .robustBufferAccessUpdateAfterBind = false,
+      .quadDivergentImplicitLod = false,
+      .maxPerStageDescriptorUpdateAfterBindSamplers = 0,
+      .maxPerStageDescriptorUpdateAfterBindUniformBuffers = 0,
+      .maxPerStageDescriptorUpdateAfterBindStorageBuffers = 0,
+      .maxPerStageDescriptorUpdateAfterBindSampledImages = 0,
+      .maxPerStageDescriptorUpdateAfterBindStorageImages = 0,
+      .maxPerStageDescriptorUpdateAfterBindInputAttachments = 0,
+      .maxPerStageUpdateAfterBindResources = 0,
+      .maxDescriptorSetUpdateAfterBindSamplers = 0,
+      .maxDescriptorSetUpdateAfterBindUniformBuffers = 0,
+      .maxDescriptorSetUpdateAfterBindUniformBuffersDynamic = 0,
+      .maxDescriptorSetUpdateAfterBindStorageBuffers = 0,
+      .maxDescriptorSetUpdateAfterBindStorageBuffersDynamic = 0,
+      .maxDescriptorSetUpdateAfterBindSampledImages = 0,
+      .maxDescriptorSetUpdateAfterBindStorageImages = 0,
+      .maxDescriptorSetUpdateAfterBindInputAttachments = 0,
+      .filterMinmaxSingleComponentFormats = PAN_ARCH >= 10,
+      .filterMinmaxImageComponentMapping = PAN_ARCH >= 10,
+      .maxTimelineSemaphoreValueDifference = INT64_MAX,
+      .framebufferIntegerColorSampleCounts = sample_counts,
+
+      /* Vulkan 1.3 properties */
+      /* XXX: 1.3 support */
+
+      /* VK_EXT_subgroup_size_control */
+      .minSubgroupSize = pan_subgroup_size(PAN_ARCH),
+      .maxSubgroupSize = pan_subgroup_size(PAN_ARCH),
+      .maxComputeWorkgroupSubgroups =
+         device->kmod.props.max_threads_per_wg / pan_subgroup_size(PAN_ARCH),
+      .requiredSubgroupSizeStages = VK_SHADER_STAGE_COMPUTE_BIT,
+
+      /* XXX: VK_EXT_inline_uniform_block */
+      .maxInlineUniformBlockSize = MAX_INLINE_UNIFORM_BLOCK_SIZE,
+      .maxPerStageDescriptorInlineUniformBlocks =
+         MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS,
+      .maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks =
+         MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS,
+      .maxDescriptorSetInlineUniformBlocks =
+         MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS,
+      .maxDescriptorSetUpdateAfterBindInlineUniformBlocks =
+         MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS,
+      .maxInlineUniformTotalSize =
+         MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS * MAX_INLINE_UNIFORM_BLOCK_SIZE,
+
+      /* VK_KHR_shader_integer_dot_product */
+      .integerDotProduct8BitUnsignedAccelerated = true,
+      .integerDotProduct8BitSignedAccelerated = true,
+      .integerDotProduct4x8BitPackedUnsignedAccelerated = true,
+      .integerDotProduct4x8BitPackedSignedAccelerated = true,
+
+      /* XXX: VK_EXT_texel_buffer_alignment */
+      .storageTexelBufferOffsetAlignmentBytes = 64,
+      .storageTexelBufferOffsetSingleTexelAlignment = false,
+      .uniformTexelBufferOffsetAlignmentBytes = 64,
+      .uniformTexelBufferOffsetSingleTexelAlignment = false,
+
+      /* VK_KHR_maintenance4 */
+      .maxBufferSize = 1 << 30,
+
+      /* VK_KHR_line_rasterization */
+      .lineSubPixelPrecisionBits = 8,
+
+      /* VK_EXT_custom_border_color */
+      .maxCustomBorderColorSamplers = 32768,
+
+      /* VK_EXT_graphics_pipeline_library */
+      .graphicsPipelineLibraryFastLinking = true,
+      .graphicsPipelineLibraryIndependentInterpolationDecoration = true,
+
+      /* VK_EXT_pipeline_robustness */
+      .defaultRobustnessStorageBuffers =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
+      .defaultRobustnessUniformBuffers =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
+      .defaultRobustnessVertexInputs =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
+      .defaultRobustnessImages =
+         VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT,
+
+      /* VK_EXT_provoking_vertex */
+      .provokingVertexModePerPipeline = false,
+      .transformFeedbackPreservesTriangleFanProvokingVertex = false,
+
+      /* VK_KHR_vertex_attribute_divisor */
+      /* We will have to restrict this a bit for multiview */
+      .maxVertexAttribDivisor = UINT32_MAX,
+      .supportsNonZeroFirstInstance = true,
+
+      /* VK_KHR_push_descriptor */
+      .maxPushDescriptors = MAX_PUSH_DESCRIPTORS,
+   };
+
+   snprintf(properties->deviceName, sizeof(properties->deviceName), "%s",
+            device->name);
+
+   memcpy(properties->pipelineCacheUUID, device->cache_uuid, VK_UUID_SIZE);
+
+   const struct {
+      uint16_t vendor_id;
+      uint32_t device_id;
+      uint8_t pad[8];
+   } dev_uuid = {
+      .vendor_id = ARM_VENDOR_ID,
+      .device_id = device->model->gpu_id,
+   };
+
+   STATIC_ASSERT(sizeof(dev_uuid) == VK_UUID_SIZE);
+   memcpy(properties->deviceUUID, &dev_uuid, VK_UUID_SIZE);
+   STATIC_ASSERT(sizeof(instance->driver_build_sha) >= VK_UUID_SIZE);
+   memcpy(properties->driverUUID, instance->driver_build_sha, VK_UUID_SIZE);
+
+   snprintf(properties->driverName, VK_MAX_DRIVER_NAME_SIZE, "panvk");
+   snprintf(properties->driverInfo, VK_MAX_DRIVER_INFO_SIZE,
+            "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
+
+   /* VK_EXT_physical_device_drm */
+   if (device->drm.primary_rdev) {
+      properties->drmHasPrimary = true;
+      properties->drmPrimaryMajor = major(device->drm.primary_rdev);
+      properties->drmPrimaryMinor = minor(device->drm.primary_rdev);
+   }
+   if (device->drm.render_rdev) {
+      properties->drmHasRender = true;
+      properties->drmRenderMajor = major(device->drm.render_rdev);
+      properties->drmRenderMinor = minor(device->drm.render_rdev);
+   }
+
+   /* VK_EXT_shader_module_identifier */
+   STATIC_ASSERT(sizeof(vk_shaderModuleIdentifierAlgorithmUUID) ==
+                 sizeof(properties->shaderModuleIdentifierAlgorithmUUID));
+   memcpy(properties->shaderModuleIdentifierAlgorithmUUID,
+          vk_shaderModuleIdentifierAlgorithmUUID,
+          sizeof(properties->shaderModuleIdentifierAlgorithmUUID));
+}
