@@ -2854,7 +2854,7 @@
         "description": "panvk: Skip barrier QFOT if src_qfi equals dst_qfi",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "715d6e740a35b2d2d46ff40179390a87b161b814",
         "notes": null
