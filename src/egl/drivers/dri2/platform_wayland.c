@@ -1090,7 +1090,11 @@ create_dri_image(struct dri2_egl_surface *dri2_surf,
       }
 
       if (!implicit_mod_supported) {
-         return;
+         if (surf_modifiers_count > 0) {
+            u_vector_finish(&modifiers_subset);
+         }
+
+         goto cleanup_present;
       }
 
       num_modifiers = 0;
