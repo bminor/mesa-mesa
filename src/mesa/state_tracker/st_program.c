@@ -1242,6 +1242,7 @@ st_create_fp_variant(struct st_context *st,
    variant->base.driver_shader = st_create_nir_shader(st, &state);
    if (report_compile_error && state.error_message) {
       *error = state.error_message;
+      FREE(variant);
       return NULL;
    }
 
