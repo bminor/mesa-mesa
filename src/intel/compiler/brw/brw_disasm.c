@@ -1352,9 +1352,9 @@ src0_3src(FILE *file, const struct intel_device_info *devinfo,
 }
 
 static int
-src1_3src(FILE *file, const struct intel_device_info *devinfo,
-          const brw_eu_inst *inst)
+src1_3src(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
 {
+   const struct intel_device_info *devinfo = isa->devinfo;
    int err = 0;
    unsigned reg_nr, subreg_nr;
    enum brw_reg_file _file;
@@ -1401,9 +1401,11 @@ src1_3src(FILE *file, const struct intel_device_info *devinfo,
 
    subreg_nr /= brw_type_size_bytes(type);
 
-   err |= control(file, "negate", m_negate,
-                  brw_eu_inst_3src_src1_negate(devinfo, inst), NULL);
-   err |= control(file, "abs", _abs, brw_eu_inst_3src_src1_abs(devinfo, inst), NULL);
+   if (brw_eu_inst_opcode(isa, inst) != BRW_OPCODE_BFN) {
+      err |= control(file, "negate", m_negate,
+                     brw_eu_inst_3src_src1_negate(devinfo, inst), NULL);
+      err |= control(file, "abs", _abs, brw_eu_inst_3src_src1_abs(devinfo, inst), NULL);
+   }
 
    err |= reg(file, _file, reg_nr);
    if (err == -1)
@@ -1418,9 +1420,9 @@ src1_3src(FILE *file, const struct intel_device_info *devinfo,
 }
 
 static int
-src2_3src(FILE *file, const struct intel_device_info *devinfo,
-          const brw_eu_inst *inst)
+src2_3src(FILE *file, const struct brw_isa_info *isa, const brw_eu_inst *inst)
 {
+   const struct intel_device_info *devinfo = isa->devinfo;
    int err = 0;
    unsigned reg_nr, subreg_nr;
    enum brw_reg_file _file;
@@ -1484,9 +1486,11 @@ src2_3src(FILE *file, const struct intel_device_info *devinfo,
 
    subreg_nr /= brw_type_size_bytes(type);
 
-   err |= control(file, "negate", m_negate,
-                  brw_eu_inst_3src_src2_negate(devinfo, inst), NULL);
-   err |= control(file, "abs", _abs, brw_eu_inst_3src_src2_abs(devinfo, inst), NULL);
+   if (brw_eu_inst_opcode(isa, inst) != BRW_OPCODE_BFN) {
+      err |= control(file, "negate", m_negate,
+                     brw_eu_inst_3src_src2_negate(devinfo, inst), NULL);
+      err |= control(file, "abs", _abs, brw_eu_inst_3src_src2_abs(devinfo, inst), NULL);
+   }
 
    err |= reg(file, _file, reg_nr);
    if (err == -1)
@@ -2140,10 +2144,10 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
       err |= src0_3src(file, devinfo, inst);
 
       pad(file, 48);
-      err |= src1_3src(file, devinfo, inst);
+      err |= src1_3src(file, isa, inst);
 
       pad(file, 64);
-      err |= src2_3src(file, devinfo, inst);
+      err |= src2_3src(file, isa, inst);
    } else if (desc) {
       if (desc->ndst > 0) {
          pad(file, 16);
