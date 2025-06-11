@@ -1727,6 +1727,17 @@ static void si_fix_resource_usage(struct si_screen *sscreen, struct si_shader *s
    }
 }
 
+static void si_init_mesh_shader_ngg_info(struct si_shader *shader)
+{
+   struct si_shader_selector *sel = shader->selector;
+
+   shader->ngg.info.hw_max_esverts = 1;
+   shader->ngg.info.max_gsprims = 1;
+   shader->ngg.info.max_out_verts = sel->info.base.mesh.max_vertices_out;
+   shader->ngg.info.max_vert_out_per_gs_instance = false;
+   shader->ngg.info.ngg_out_lds_size = 0;
+}
+
 bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler *compiler,
                               struct si_shader *shader, struct util_debug_callback *debug)
 {
@@ -1897,6 +1908,8 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
                                          sel->info.base.gs.invocations,
                                          shader->previous_stage_sel->info.esgs_vertex_stride,
                                          &shader->gs_info);
+   } else if (sel->stage == MESA_SHADER_MESH) {
+      si_init_mesh_shader_ngg_info(shader);
    }
 
    si_fix_resource_usage(sscreen, shader);
