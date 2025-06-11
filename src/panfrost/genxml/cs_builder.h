@@ -1356,6 +1356,8 @@ cs_while_end(struct cs_builder *b, struct cs_loop *loop)
 struct cs_maybe_state {
    struct cs_block block;
    uint32_t patch_pos;
+   struct cs_load_store_tracker ls_state;
+   struct cs_load_store_tracker *orig_ls_state;
 };
 
 static inline struct cs_maybe_state *
@@ -1363,6 +1365,13 @@ cs_maybe_start(struct cs_builder *b, struct cs_maybe_state *state)
 {
    cs_block_start(b, &state->block);
    state->patch_pos = cs_block_next_pos(b);
+
+   /* store the original ls_tracker state so that we can revert to it after
+    * the maybe-block */
+   state->orig_ls_state = b->cur_ls_tracker;
+   state->ls_state = *b->cur_ls_tracker;
+   b->cur_ls_tracker = &state->ls_state;
+
    return state;
 }
 
@@ -1371,6 +1380,18 @@ cs_maybe_end(struct cs_builder *b, struct cs_maybe_state *state,
              struct cs_maybe **maybe)
 {
    assert(cs_cur_block(b) == &state->block);
+
+   /* Flush any new loads and stores */
+   BITSET_DECLARE(new_loads, 256);
+   BITSET_ANDNOT(new_loads, b->cur_ls_tracker->pending_loads,
+                 state->orig_ls_state->pending_loads);
+   bool new_stores =
+      b->cur_ls_tracker->pending_stores && !state->orig_ls_state->pending_stores;
+   if (!BITSET_IS_EMPTY(new_loads) || new_stores)
+      cs_wait_slots(b, BITFIELD_BIT(b->conf.ls_sb_slot));
+
+   /* Restore the original ls tracker state */
+   b->cur_ls_tracker = state->orig_ls_state;
 
    uint32_t num_instrs = cs_block_next_pos(b) - state->patch_pos;
    size_t size = num_instrs * sizeof(uint64_t);
