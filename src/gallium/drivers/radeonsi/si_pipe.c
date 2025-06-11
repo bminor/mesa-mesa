@@ -746,6 +746,9 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       }
    }
 
+   if (screen->caps.mesh_shader)
+      si_init_task_mesh_shader_functions(sctx);
+
    sctx->sample_mask = 0xffff;
 
    /* Initialize multimedia functions. */
