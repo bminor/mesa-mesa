@@ -73,6 +73,7 @@ impl Deref for Device {
 pub struct DeviceCaps {
     pub has_3d_image_writes: bool,
     pub has_depth_images: bool,
+    pub has_image_unorm_int_2_101010: bool,
     pub has_images: bool,
     pub has_rw_images: bool,
     pub has_timestamp: bool,
@@ -340,6 +341,16 @@ impl DeviceBase {
             .formats
             .iter()
             .filter_map(|(k, v)| (k.image_channel_order == CL_DEPTH).then_some(v.values()))
+            .flatten()
+            .any(|mask| *mask != 0);
+
+        // Got added to clang with 20.1
+        self.caps.has_image_unorm_int_2_101010 = self
+            .formats
+            .iter()
+            .filter_map(|(format, v)| {
+                (format.image_channel_data_type == CL_UNORM_INT_2_101010_EXT).then_some(v.values())
+            })
             .flatten()
             .any(|mask| *mask != 0);
 
@@ -703,6 +714,11 @@ impl DeviceBase {
 
             if self.caps.has_depth_images {
                 add_ext(1, 0, 0, "cl_khr_depth_images");
+            }
+
+            if self.caps.has_image_unorm_int_2_101010 {
+                add_ext(1, 0, 0, "cl_ext_image_unorm_int_2_101010");
+                add_feat(1, 0, 0, "__opencl_c_ext_image_unorm_int_2_101010");
             }
         }
 
@@ -1222,6 +1238,7 @@ impl DeviceBase {
             int64: self.int64_supported(),
             images: self.caps.has_images,
             images_depth: self.caps.has_depth_images,
+            images_unorm_int_2_101010: self.caps.has_image_unorm_int_2_101010,
             images_read_write: self.caps.has_rw_images,
             images_write_3d: self.caps.has_3d_image_writes,
             integer_dot_product: true,
