@@ -2,7 +2,7 @@
 # shellcheck disable=SC2086 # we want word splitting
 set -uex
 
-uncollapsed_section_start piglit "Building piglit"
+section_start piglit "Building piglit"
 
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
