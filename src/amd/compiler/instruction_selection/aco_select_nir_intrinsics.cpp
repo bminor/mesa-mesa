@@ -4991,12 +4991,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       ctx->block->instructions.emplace_back(std::move(vec));
       break;
    }
-   case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd: {
-      Temp dst = get_ssa_temp(ctx, &instr->def);
-      bld.sop1(aco_opcode::p_load_symbol, Definition(dst),
-               Operand::c32(aco_symbol_lds_ngg_gs_out_vertex_base));
-      break;
-   }
    case nir_intrinsic_store_scalar_arg_amd: {
       BITSET_SET(ctx->output_args, nir_intrinsic_base(instr));
       ctx->arg_temps[nir_intrinsic_base(instr)] =

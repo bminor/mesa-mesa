@@ -188,7 +188,6 @@ enum aco_symbol_id {
    aco_symbol_invalid,
    aco_symbol_scratch_addr_lo,
    aco_symbol_scratch_addr_hi,
-   aco_symbol_lds_ngg_gs_out_vertex_base,
    aco_symbol_const_data_addr,
 };
 
