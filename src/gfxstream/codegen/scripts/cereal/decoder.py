@@ -888,8 +888,12 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.beginBlock() # while loop
 
         self.cgen.stmt("const uint8_t* packet = (const uint8_t *)ptr")
-        self.cgen.stmt("uint32_t opcode = *(uint32_t *)ptr")
-        self.cgen.stmt("uint32_t packetLen = *(uint32_t *)(ptr + 4)")
+        self.cgen.stmt("uint32_t opcode")
+        self.cgen.stmt("std::memcpy(&opcode, ptr, sizeof(uint32_t))")
+        self.cgen.line("")
+        self.cgen.stmt("uint32_t packetLen")
+        self.cgen.stmt("std::memcpy(&packetLen, ptr + 4, sizeof(uint32_t))")
+        self.cgen.line("")
         self.cgen.line("""
         // packetLen should be at least 8 (op code and packet length) and should not be excessively large
         if (packetLen < 8 || packetLen > MAX_PACKET_LENGTH) {

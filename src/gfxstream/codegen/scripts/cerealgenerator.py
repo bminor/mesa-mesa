@@ -560,6 +560,7 @@ class BumpPool;
 #include "VulkanDispatch.h"
 #include "%s.h"
 
+#include <cstring>
 #include <functional>
 #include <optional>
 #include <unordered_map>
