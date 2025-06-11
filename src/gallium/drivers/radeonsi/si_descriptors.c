@@ -2166,7 +2166,7 @@ static void si_emit_global_shader_pointers(struct si_context *sctx, struct si_de
       radeon_emit_one_32bit_pointer(descs, R_00B130_SPI_SHADER_USER_DATA_VS_0);
       radeon_emit_one_32bit_pointer(descs, R_00B230_SPI_SHADER_USER_DATA_GS_0);
       radeon_emit_one_32bit_pointer(descs, R_00B430_SPI_SHADER_USER_DATA_HS_0);
-   } else if (sctx->gfx_level == GFX9 && sctx->shadowing.registers) {
+   } else if (sctx->gfx_level == GFX9 && sctx->uses_kernelq_reg_shadowing) {
       /* We can't use the COMMON registers with register shadowing. */
       radeon_emit_one_32bit_pointer(descs, R_00B030_SPI_SHADER_USER_DATA_PS_0);
       radeon_emit_one_32bit_pointer(descs, R_00B130_SPI_SHADER_USER_DATA_VS_0);

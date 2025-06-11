@@ -5019,7 +5019,7 @@ static bool gfx6_init_gfx_preamble_state(struct si_context *sctx)
       return false;
    }
 
-   if (sctx->is_gfx_queue && !sctx->shadowing.registers) {
+   if (sctx->is_gfx_queue && !sctx->uses_kernelq_reg_shadowing) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       ac_pm4_cmd_add(&pm4->base, CC0_UPDATE_LOAD_ENABLES(1));
       ac_pm4_cmd_add(&pm4->base, CC1_UPDATE_SHADOW_ENABLES(1));
@@ -5105,7 +5105,7 @@ static bool gfx10_init_gfx_preamble_state(struct si_context *sctx)
       return false;
    }
 
-   if (sctx->is_gfx_queue && !sctx->shadowing.registers) {
+   if (sctx->is_gfx_queue && !sctx->uses_kernelq_reg_shadowing) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       ac_pm4_cmd_add(&pm4->base, CC0_UPDATE_LOAD_ENABLES(1));
       ac_pm4_cmd_add(&pm4->base, CC1_UPDATE_SHADOW_ENABLES(1));
@@ -5177,7 +5177,7 @@ static bool gfx12_init_gfx_preamble_state(struct si_context *sctx)
       return false;
    }
 
-   if (sctx->is_gfx_queue && !sctx->shadowing.registers) {
+   if (sctx->is_gfx_queue && !sctx->uses_kernelq_reg_shadowing) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       ac_pm4_cmd_add(&pm4->base, CC0_UPDATE_LOAD_ENABLES(1));
       ac_pm4_cmd_add(&pm4->base, CC1_UPDATE_SHADOW_ENABLES(1));

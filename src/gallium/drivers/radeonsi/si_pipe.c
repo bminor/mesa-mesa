@@ -523,6 +523,9 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
                         !sscreen->info.ip[AMD_IP_COMPUTE].num_queues ||
                         !(flags & PIPE_CONTEXT_COMPUTE_ONLY);
 
+   if (sctx->is_gfx_queue)
+      sctx->uses_kernelq_reg_shadowing = sscreen->info.has_kernelq_reg_shadowing;
+
    if (flags & PIPE_CONTEXT_DEBUG)
       sscreen->record_llvm_ir = true; /* racy but not critical */
 
