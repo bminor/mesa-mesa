@@ -107,14 +107,14 @@ zink_verify_instance_extensions(struct zink_screen *screen);
  * properly loaded.
  */
 %for ext in extensions:
-%if registry.in_registry(ext.name):
-%for cmd in registry.get_registry_entry(ext.name).instance_commands:
-void VKAPI_PTR zink_stub_${cmd.name()}(void);
-%endfor
-%for cmd in registry.get_registry_entry(ext.name).pdevice_commands:
-void VKAPI_PTR zink_stub_${cmd.name()}(void);
-%endfor
-%endif
+   %if registry.in_registry(ext.name):
+      %for cmd in registry.get_registry_entry(ext.name).instance_commands:
+         void VKAPI_PTR zink_stub_${cmd.name()}(void);
+      %endfor
+      %for cmd in registry.get_registry_entry(ext.name).pdevice_commands:
+         void VKAPI_PTR zink_stub_${cmd.name()}(void);
+      %endfor
+   %endif
 %endfor
 
 struct pipe_screen;
@@ -278,34 +278,34 @@ void
 zink_verify_instance_extensions(struct zink_screen *screen)
 {
 %for ext in extensions:
-%if registry.in_registry(ext.name):
-%if ext.platform_guard:
-#ifdef ${ext.platform_guard}
-%endif
-   if (screen->instance_info->have_${ext.name_with_vendor()}) {
-%for cmd in registry.get_registry_entry(ext.name).instance_commands:
-      if (!screen->vk.${cmd.name()}) {
-#ifndef NDEBUG
-         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
-#else
-         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
-#endif
-      }
-%endfor
-%for cmd in registry.get_registry_entry(ext.name).pdevice_commands:
-      if (!screen->vk.${cmd.name()}) {
-#ifndef NDEBUG
-         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
-#else
-         screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
-#endif
-      }
-%endfor
-   }
-%endif
-%if ext.platform_guard:
-#endif
-%endif
+   %if registry.in_registry(ext.name):
+      %if ext.platform_guard:
+      #ifdef ${ext.platform_guard}
+      %endif
+         if (screen->instance_info->have_${ext.name_with_vendor()}) {
+      %for cmd in registry.get_registry_entry(ext.name).instance_commands:
+            if (!screen->vk.${cmd.name()}) {
+      #ifndef NDEBUG
+               screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
+      #else
+               screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
+      #endif
+            }
+      %endfor
+      %for cmd in registry.get_registry_entry(ext.name).pdevice_commands:
+            if (!screen->vk.${cmd.name()}) {
+      #ifndef NDEBUG
+               screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_${cmd.name()};
+      #else
+               screen->vk.${cmd.name()} = (PFN_${cmd.full_name})zink_stub_function_not_loaded;
+      #endif
+            }
+      %endfor
+         }
+      %if ext.platform_guard:
+         #endif
+      %endif
+   %endif
 %endfor
 }
 
@@ -315,27 +315,27 @@ zink_verify_instance_extensions(struct zink_screen *screen)
 <% generated_funcs = set() %>
 
 %for ext in extensions:
-%if registry.in_registry(ext.name):
-%for cmd in registry.get_registry_entry(ext.name).instance_commands + registry.get_registry_entry(ext.name).pdevice_commands:
-%if cmd.full_name in generated_funcs:
-   <% continue %>
-%else:
-   <% generated_funcs.add(cmd.full_name) %>
-%endif
-%if ext.platform_guard:
-#ifdef ${ext.platform_guard}
-%endif
-void VKAPI_PTR
-zink_stub_${cmd.name()}()
-{
-   mesa_loge("ZINK: ${cmd.full_name} is not loaded properly!");
-   abort();
-}
-%if ext.platform_guard:
-#endif
-%endif
-%endfor
-%endif
+   %if registry.in_registry(ext.name):
+      %for cmd in registry.get_registry_entry(ext.name).instance_commands + registry.get_registry_entry(ext.name).pdevice_commands:
+         %if cmd.name in generated_funcs:
+            <% continue %>
+         %else:
+            <% generated_funcs.add(cmd.full_name) %>
+         %endif
+         %if ext.platform_guard:
+         #ifdef ${ext.platform_guard}
+         %endif
+            void VKAPI_PTR
+            zink_stub_${cmd.name()}()
+            {
+               mesa_loge("ZINK: ${cmd.full_name} is not loaded properly!");
+               abort();
+            }
+         %if ext.platform_guard:
+         #endif
+         %endif
+      %endfor
+   %endif
 %endfor
 
 #endif
