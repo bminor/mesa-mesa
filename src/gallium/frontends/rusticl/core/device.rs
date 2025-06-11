@@ -601,6 +601,7 @@ impl DeviceBase {
         add_ext(1, 0, 0, "cl_khr_byte_addressable_store");
         add_ext(1, 0, 0, "cl_khr_create_command_queue");
         add_ext(1, 0, 0, "cl_khr_expect_assume");
+        add_ext(1, 0, 0, "cl_khr_extended_bit_ops");
         add_ext(1, 0, 0, "cl_khr_extended_versioning");
         add_ext(1, 0, 0, "cl_khr_global_int32_base_atomics");
         add_ext(1, 0, 0, "cl_khr_global_int32_extended_atomics");
@@ -620,12 +621,14 @@ impl DeviceBase {
             "__opencl_c_integer_dot_product_input_4x8bit_packed",
         );
 
+        add_spirv(c"SPV_KHR_bit_instructions");
         add_spirv(c"SPV_KHR_expect_assume");
         add_spirv(c"SPV_KHR_float_controls");
         add_spirv(c"SPV_KHR_integer_dot_product");
         add_spirv(c"SPV_KHR_no_integer_wrap_decoration");
 
         add_cap(SpvCapability::SpvCapabilityAddresses);
+        add_cap(SpvCapability::SpvCapabilityBitInstructions);
         add_cap(SpvCapability::SpvCapabilityDotProduct);
         add_cap(SpvCapability::SpvCapabilityDotProductInput4x8Bit);
         add_cap(SpvCapability::SpvCapabilityDotProductInput4x8BitPacked);
@@ -1213,6 +1216,7 @@ impl DeviceBase {
     pub fn cl_features(&self) -> clc_optional_features {
         let subgroups_supported = self.subgroups_supported();
         clc_optional_features {
+            extended_bit_ops: true,
             fp16: self.fp16_supported(),
             fp64: self.fp64_supported(),
             int64: self.int64_supported(),
