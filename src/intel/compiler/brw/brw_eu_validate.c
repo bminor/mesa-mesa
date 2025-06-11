@@ -44,6 +44,7 @@
 enum brw_hw_instr_format {
    FORMAT_BASIC,
    FORMAT_BASIC_THREE_SRC,
+   FORMAT_BFN_THREE_SRC,
    FORMAT_DPAS_THREE_SRC,
    FORMAT_SEND,
    FORMAT_BRANCH,
@@ -1961,6 +1962,17 @@ instruction_restrictions(const struct brw_isa_info *isa,
       }
    }
 
+   if (inst->opcode == BRW_OPCODE_BFN) {
+      ERROR_IF(inst->saturate,
+               "BFN cannot have saturate modifier");
+
+      for (unsigned i = 0; i < 3; i++) {
+         ERROR_IF(inst->src[i].type != BRW_TYPE_UD &&
+                  inst->src[i].type != BRW_TYPE_UW,
+                  "BFN source must be UD or UW type.");
+      }
+   }
+
    if (inst->opcode == BRW_OPCODE_OR ||
        inst->opcode == BRW_OPCODE_AND ||
        inst->opcode == BRW_OPCODE_XOR ||
@@ -2608,6 +2620,10 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
                    "Align16 mode doesn't exist on Gfx11+");
 
    switch (inst->opcode) {
+   case BRW_OPCODE_BFN:
+      inst->format = FORMAT_BFN_THREE_SRC;
+      break;
+
    case BRW_OPCODE_DPAS:
       inst->format = FORMAT_DPAS_THREE_SRC;
       break;
@@ -2804,6 +2820,47 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
       break;
    }
 
+   case FORMAT_BFN_THREE_SRC: {
+      assert(inst->num_sources == 3);
+      assert(inst->has_dst);
+
+      inst->dst.file = brw_eu_inst_3src_a1_dst_reg_file(devinfo, raw);
+      inst->dst.type = brw_eu_inst_3src_a1_dst_type(devinfo, raw);
+      inst->dst.nr = brw_eu_inst_3src_dst_reg_nr(devinfo, raw);
+      inst->dst.subnr = brw_eu_inst_3src_a1_dst_subreg_nr(devinfo, raw) * 8;
+      inst->dst.hstride = DST_STRIDE_3SRC(brw_eu_inst_3src_a1_dst_hstride(devinfo, raw));
+
+      inst->src[0].file = brw_eu_inst_3src_a1_src0_reg_file(devinfo, raw);
+      inst->src[0].type = brw_eu_inst_3src_a1_src0_type(devinfo, raw);
+      inst->src[0].negate = brw_eu_inst_3src_src0_negate(devinfo, raw);
+      inst->src[0].abs = brw_eu_inst_3src_src0_abs(devinfo, raw);
+      if (inst->src[0].file != IMM) {
+         inst->src[0].nr = brw_eu_inst_3src_src0_reg_nr(devinfo, raw);
+         inst->src[0].subnr = brw_eu_inst_3src_a1_src0_subreg_nr(devinfo, raw);
+         inst->src[0].vstride = VSTRIDE_3SRC(brw_eu_inst_3src_a1_src0_vstride(devinfo, raw));
+         inst->src[0].hstride = STRIDE(brw_eu_inst_3src_a1_src0_hstride(devinfo, raw));
+         inst->src[0].width = brw_implied_width_for_3src_a1(inst->src[0].vstride, inst->src[0].hstride);
+      }
+
+      inst->src[1].file = brw_eu_inst_3src_a1_src1_reg_file(devinfo, raw);
+      inst->src[1].type = brw_eu_inst_3src_a1_src1_type(devinfo, raw);
+      inst->src[1].nr = brw_eu_inst_3src_src1_reg_nr(devinfo, raw);
+      inst->src[1].subnr = brw_eu_inst_3src_a1_src1_subreg_nr(devinfo, raw);
+      inst->src[1].vstride = VSTRIDE_3SRC(brw_eu_inst_3src_a1_src1_vstride(devinfo, raw));
+      inst->src[1].hstride = STRIDE(brw_eu_inst_3src_a1_src1_hstride(devinfo, raw));
+      inst->src[1].width = brw_implied_width_for_3src_a1(inst->src[1].vstride, inst->src[1].hstride);
+
+      inst->src[2].file = brw_eu_inst_3src_a1_src2_reg_file(devinfo, raw);
+      inst->src[2].type = brw_eu_inst_3src_a1_src2_type(devinfo, raw);
+      if (inst->src[2].file != IMM) {
+         inst->src[2].nr = brw_eu_inst_3src_src2_reg_nr(devinfo, raw);
+         inst->src[2].subnr = brw_eu_inst_3src_a1_src2_subreg_nr(devinfo, raw);
+         inst->src[2].hstride = STRIDE(brw_eu_inst_3src_a1_src2_hstride(devinfo, raw));
+         inst->src[2].width = brw_implied_width_for_3src_a1(inst->src[2].vstride, inst->src[2].hstride);
+      }
+      break;
+   }
+
    case FORMAT_DPAS_THREE_SRC: {
       assert(inst->num_sources == 3);
       assert(inst->has_dst);
@@ -2894,14 +2951,16 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
 
    if ((inst->format == FORMAT_BASIC ||
         inst->format == FORMAT_BASIC_THREE_SRC ||
+        inst->format == FORMAT_BFN_THREE_SRC ||
         inst->format == FORMAT_DPAS_THREE_SRC) &&
        !inst_is_send(inst)) {
       inst->saturate = brw_eu_inst_saturate(devinfo, raw);
 
-      if (inst->num_sources > 1 ||
-          devinfo->ver < 12 ||
-          inst->src[0].file != IMM  ||
-          brw_type_size_bytes(inst->src[0].type) < 8) {
+      if (inst->opcode != BRW_OPCODE_BFN &&
+          (inst->num_sources > 1 ||
+           devinfo->ver < 12 ||
+           inst->src[0].file != IMM  ||
+           brw_type_size_bytes(inst->src[0].type) < 8)) {
          inst->cond_modifier = brw_eu_inst_cond_modifier(devinfo, raw);
       }
    }
