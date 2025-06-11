@@ -334,7 +334,7 @@ radv_fill_shader_rings(struct radv_device *device, uint32_t *desc, struct radeon
    desc += 8;
 
    if (mesh_scratch_ring_bo) {
-      radv_set_ring_buffer(pdev, mesh_scratch_ring_bo, 0, RADV_MESH_SCRATCH_NUM_ENTRIES * RADV_MESH_SCRATCH_ENTRY_BYTES,
+      radv_set_ring_buffer(pdev, mesh_scratch_ring_bo, 0, AC_MESH_SCRATCH_NUM_ENTRIES * AC_MESH_SCRATCH_ENTRY_BYTES,
                            false, false, false, 0, 0, &desc[0]);
    }
 
@@ -1043,13 +1043,13 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
    if (!queue->ring_info.mesh_scratch_ring && needs->mesh_scratch_ring) {
       assert(pdev->info.gfx_level >= GFX10_3);
       result =
-         radv_bo_create(device, NULL, RADV_MESH_SCRATCH_NUM_ENTRIES * RADV_MESH_SCRATCH_ENTRY_BYTES, 256,
+         radv_bo_create(device, NULL, AC_MESH_SCRATCH_NUM_ENTRIES * AC_MESH_SCRATCH_ENTRY_BYTES, 256,
                         RADEON_DOMAIN_VRAM, ring_bo_flags, RADV_BO_PRIORITY_SCRATCH, 0, true, &mesh_scratch_ring_bo);
 
       if (result != VK_SUCCESS)
          goto fail;
       radv_rmv_log_command_buffer_bo_create(device, mesh_scratch_ring_bo, 0, 0,
-                                            RADV_MESH_SCRATCH_NUM_ENTRIES * RADV_MESH_SCRATCH_ENTRY_BYTES);
+                                            AC_MESH_SCRATCH_NUM_ENTRIES * AC_MESH_SCRATCH_ENTRY_BYTES);
    }
 
    if (!queue->ring_info.ge_rings && needs->ge_rings) {
