@@ -33,21 +33,15 @@
  * exactly how the hardware calculates this (which is why the
  * algorithm is so weird) or else instancing will break. */
 
-/* Given an odd number (of the form 2k + 1), compute k */
-#define ODD(odd) ((odd - 1) >> 1)
-
-static unsigned
-pan_small_padded_vertex_count(unsigned idx)
+unsigned
+pan_padded_vertex_count(unsigned vertex_count)
 {
-   if (idx < 10)
-      return idx;
-   else
-      return (idx + 1) & ~1;
-}
+   if (vertex_count < 10)
+      return vertex_count;
 
-static unsigned
-pan_large_padded_vertex_count(uint32_t vertex_count)
-{
+   if (vertex_count < 20)
+      return (vertex_count + 1) & ~1;
+
    /* First, we have to find the highest set one */
    unsigned highest = 32 - __builtin_clz(vertex_count);
 
@@ -76,15 +70,6 @@ pan_large_padded_vertex_count(uint32_t vertex_count)
    default:
       return 0; /* unreachable */
    }
-}
-
-unsigned
-pan_padded_vertex_count(unsigned vertex_count)
-{
-   if (vertex_count < 20)
-      return pan_small_padded_vertex_count(vertex_count);
-   else
-      return pan_large_padded_vertex_count(vertex_count);
 }
 
 unsigned
