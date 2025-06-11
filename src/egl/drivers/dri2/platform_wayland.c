@@ -865,7 +865,7 @@ dri2_wl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
 
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
       if (dri2_surf->color_buffers[i].wayland_buffer.buffer)
-         wl_buffer_destroy(dri2_surf->color_buffers[i].wayland_buffer.buffer);
+         loader_wayland_buffer_destroy(&dri2_surf->color_buffers[i].wayland_buffer);
       if (dri2_surf->color_buffers[i].dri_image)
          dri2_destroy_image(dri2_surf->color_buffers[i].dri_image);
       if (dri2_surf->color_buffers[i].linear_copy)
@@ -1441,7 +1441,7 @@ update_buffers(struct dri2_egl_surface *dri2_surf,
       if (!dri2_surf->color_buffers[i].locked &&
           dri2_surf->color_buffers[i].wayland_buffer.buffer &&
           dri2_surf->color_buffers[i].age > BUFFER_TRIM_AGE_HYSTERESIS) {
-         wl_buffer_destroy(dri2_surf->color_buffers[i].wayland_buffer.buffer);
+         loader_wayland_buffer_destroy(&dri2_surf->color_buffers[i].wayland_buffer);
          dri2_destroy_image(dri2_surf->color_buffers[i].dri_image);
          if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu)
             dri2_destroy_image(
