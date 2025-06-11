@@ -45,6 +45,8 @@ void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
    options->lower_ineg = true;
    options->lower_bitfield_insert = true;
    options->lower_bitfield_extract = true;
+   options->lower_bitfield_extract16 = use_llvm;
+   options->lower_bitfield_extract8 = use_llvm;
    options->lower_pack_snorm_4x8 = true;
    options->lower_pack_unorm_4x8 = true;
    options->lower_pack_half_2x16 = true;
