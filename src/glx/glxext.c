@@ -1049,8 +1049,7 @@ __glXInitialize(Display * dpy)
       if (glx_driver & GLX_DRIVER_ZINK_YES) {
          /* only print error if zink was explicitly requested */
          CriticalErrorMessageF("DRI3 not available\n");
-         free(dpyPriv);
-         return NULL;
+         goto init_fail;
       }
       /* if no dri3 and not using dri2, disable zink */
       glx_driver &= ~GLX_DRIVER_ZINK_INFER;
@@ -1068,10 +1067,8 @@ __glXInitialize(Display * dpy)
 #endif
 
 #if defined(GLX_USE_APPLEGL) && !defined(GLX_USE_APPLE)
-   if (!applegl_create_display(dpyPriv)) {
-      free(dpyPriv);
-      return NULL;
-   }
+   if (!applegl_create_display(dpyPriv))
+      goto init_fail;
 #endif
 
    if (!AllocAndFetchScreenConfigs(dpy, dpyPriv, glx_driver, !env)) {
@@ -1081,10 +1078,8 @@ __glXInitialize(Display * dpy)
          fail = !AllocAndFetchScreenConfigs(dpy, dpyPriv, GLX_DRIVER_SW, true);
       }
 #endif
-      if (fail) {
-         free(dpyPriv);
-         return NULL;
-      }
+      if (fail)
+         goto init_fail;
    }
 
    glxSendClientInfo(dpyPriv, -1);
@@ -1107,6 +1102,14 @@ __glXInitialize(Display * dpy)
    _XUnlockMutex(_Xglobal_lock);
 
    return dpyPriv;
+init_fail:
+#if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
+   _mesa_set_destroy(dpyPriv->zombieGLXDrawable, free_zombie_glx_drawable);
+   __glxHashDestroy(dpyPriv->drawHash);
+#endif
+   __glxHashDestroy(dpyPriv->glXDrawHash);
+   free(dpyPriv);
+   return NULL;
 }
 
 /*
