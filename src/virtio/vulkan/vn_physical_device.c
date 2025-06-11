@@ -2874,11 +2874,10 @@ vn_GetPhysicalDeviceImageFormatProperties2(
     */
    if (wsi_info && physical_dev->renderer_driver_id ==
                       VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA) {
-      if (pImageFormatInfo != &local_info.format) {
-         local_info.format = *pImageFormatInfo;
-         pImageFormatInfo = &local_info.format;
-      }
+      assert(!external_info);
+      local_info.format = *pImageFormatInfo;
       local_info.format.flags &= ~VK_IMAGE_CREATE_ALIAS_BIT;
+      pImageFormatInfo = &local_info.format;
    }
 
    /* Check if image format props is in the cache. */
