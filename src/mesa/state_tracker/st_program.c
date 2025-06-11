@@ -877,6 +877,7 @@ st_create_common_variant(struct st_context *st,
 
    if (report_compile_error && state.error_message) {
       *error = state.error_message;
+      FREE(v);
       return NULL;
    }
 
