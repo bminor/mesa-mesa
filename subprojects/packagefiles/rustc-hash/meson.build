@@ -2,7 +2,7 @@ project(
   'rustc_hash',
   'rust',
   version : '2.1.1',
-  license :'MIT OR Apache-2.0',
+  license : 'MIT OR Apache-2.0',
 )
 
 rust_args = [

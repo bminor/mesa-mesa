@@ -2,7 +2,7 @@ project(
   'pest_derive',
   'rust',
   version : '2.8.0',
-  license :'MIT OR Apache-2.0',
+  license : 'MIT OR Apache-2.0',
 )
 
 pest = subproject('pest').get_variable('lib')

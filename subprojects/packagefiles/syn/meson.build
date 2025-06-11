@@ -2,7 +2,7 @@ project(
   'syn',
   'rust',
   version : '2.0.68',
-  license :'MIT OR Apache-2.0',
+  license : 'MIT OR Apache-2.0',
 )
 
 rc = meson.get_compiler('rust')

@@ -2,7 +2,7 @@ project(
   'indexmap',
   'rust',
   version : '2.2.6',
-  license :'MIT OR Apache-2.0',
+  license : 'MIT OR Apache-2.0',
 )
 
 dep_equivalent = subproject('equivalent').get_variable('dep_equivalent')

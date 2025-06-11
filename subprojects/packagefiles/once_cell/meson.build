@@ -2,7 +2,7 @@ project(
   'once_cell',
   'rust',
   version : '1.8.0',
-  license :'MIT OR Apache-2.0',
+  license : 'MIT OR Apache-2.0',
 )
 
 rust_args = [
