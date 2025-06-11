@@ -186,12 +186,28 @@ zink_get_cmdbuf(struct zink_context *ctx, struct zink_resource *src, struct zink
    return ctx->bs->cmdbuf;
 }
 
-static void
-resource_check_defer_image_barrier(struct zink_context *ctx, struct zink_resource *res, VkImageLayout layout, VkPipelineStageFlags pipeline)
+ALWAYS_INLINE static void
+resource_defer_image_barrier(struct zink_context *ctx, struct zink_resource *res, VkPipelineStageFlags pipeline)
 {
    assert(!res->obj->is_buffer);
    assert(!ctx->blitting);
 
+   bool is_compute = pipeline == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+   /* if this is a non-shader barrier and there are binds, always queue a shader barrier */
+   bool is_shader = is_shader_pipline_stage(pipeline);
+
+   /* queue a layout change if a layout change will be needed */
+   if (res->bind_count[!is_compute])
+      _mesa_set_add(ctx->need_barriers[!is_compute], res);
+   /* also queue a layout change if this is a non-shader layout */
+   if (res->bind_count[is_compute] && !is_shader)
+      _mesa_set_add(ctx->need_barriers[is_compute], res);
+
+}
+
+static void
+resource_check_defer_image_barrier(struct zink_context *ctx, struct zink_resource *res, VkImageLayout layout, VkPipelineStageFlags pipeline)
+{
    bool is_compute = pipeline == VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
    /* if this is a non-shader barrier and there are binds, always queue a shader barrier */
    bool is_shader = is_shader_pipline_stage(pipeline);
@@ -205,12 +221,7 @@ resource_check_defer_image_barrier(struct zink_context *ctx, struct zink_resourc
       if (layout == zink_descriptor_util_image_layout_eval(ctx, res, !is_compute))
          return;
    }
-   /* queue a layout change if a layout change will be needed */
-   if (res->bind_count[!is_compute])
-      _mesa_set_add(ctx->need_barriers[!is_compute], res);
-   /* also queue a layout change if this is a non-shader layout */
-   if (res->bind_count[is_compute] && !is_shader)
-      _mesa_set_add(ctx->need_barriers[is_compute], res);
+   resource_defer_image_barrier(ctx, res, pipeline);
 }
 
 enum barrier_type {
@@ -389,7 +400,7 @@ struct update_unordered_access_and_get_cmdbuf<false> {
    }
 };
 
-template <barrier_type BARRIER_API, bool UNSYNCHRONIZED>
+template <barrier_type BARRIER_API, bool UNSYNCHRONIZED, bool GENERAL>
 void
 zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res, VkImageLayout new_layout, VkAccessFlags flags, VkPipelineStageFlags pipeline)
 {
@@ -402,7 +413,9 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    enum zink_resource_access rw = is_write ? ZINK_RESOURCE_ACCESS_RW : ZINK_RESOURCE_ACCESS_WRITE;
    bool completed = zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, rw);
    bool usage_matches = !completed && zink_resource_usage_matches(res, ctx->bs);
-   VkCommandBuffer cmdbuf = update_unordered_access_and_get_cmdbuf<UNSYNCHRONIZED>::apply(ctx, res, usage_matches, is_write);
+   VkCommandBuffer cmdbuf = GENERAL && new_layout == VK_IMAGE_LAYOUT_GENERAL ?
+                            (is_write ? zink_get_cmdbuf(ctx, NULL, res) : zink_get_cmdbuf(ctx, res, NULL)) :
+                            update_unordered_access_and_get_cmdbuf<UNSYNCHRONIZED>::apply(ctx, res, usage_matches, is_write);
 
    assert(new_layout);
    bool marker = zink_cmd_debug_marker_begin(ctx, cmdbuf, "image_barrier(%s->%s)", vk_ImageLayout_to_str(res->layout), vk_ImageLayout_to_str(new_layout));
@@ -416,9 +429,33 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    if (is_write)
       res->obj->last_write = flags;
 
-   res->obj->access = flags;
-   res->obj->access_stage = pipeline;
    res->layout = new_layout;
+
+   if (is_write)
+      res->obj->last_write = flags;
+   if (GENERAL) {
+      bool unordered = ctx->unordered_blitting || cmdbuf == ctx->bs->reordered_cmdbuf;
+      if (unordered) {
+         /* these should get automatically emitted during submission */
+         res->obj->unordered_access = flags;
+         res->obj->unordered_access_stage = pipeline;
+         if (is_write) {
+            ctx->bs->unordered_write_access |= flags;
+            ctx->bs->unordered_write_stages |= pipeline;
+         }
+      } else {
+         res->obj->unordered_access = 0;
+         res->obj->unordered_access_stage = 0;
+      }
+      if (!unordered || !usage_matches || res->obj->ordered_access_is_copied) {
+         res->obj->access = flags;
+         res->obj->access_stage = pipeline;
+         res->obj->ordered_access_is_copied = unordered;
+      }
+   } else {
+      res->obj->access = flags;
+      res->obj->access_stage = pipeline;
+   }
 
    if (!(flags & VK_ACCESS_TRANSFER_WRITE_BIT))
       zink_resource_copies_reset(res);
@@ -635,14 +672,10 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
    }
 
    if (!UNSYNCHRONIZED) {
-      if (GENERAL_IMAGE) {
-         bool is_compute = (pipeline & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) == pipeline;
-         if (res->bind_count[!is_compute] || (is_compute && res->fb_bind_count))
-            /* compute rebind */
-            _mesa_set_add(ctx->need_barriers[is_compute], res);
-      } else {
+      if (GENERAL_IMAGE)
+         resource_defer_image_barrier(ctx, res, pipeline);
+      else
          resource_check_defer_buffer_barrier(ctx, res, pipeline);
-      }
    }
 
    if (is_write)
@@ -675,8 +708,8 @@ zink_resource_image_barrier_general(struct zink_context *ctx, struct zink_resour
    assert(new_layout == VK_IMAGE_LAYOUT_GENERAL || new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
    /* if this requires an actual image barrier, send it through to the image barrier handlers */
    if (res->obj->needs_zs_evaluate || res->obj->exportable || zink_is_swapchain(res) || res->layout != new_layout ||
-       res->queue != zink_screen(ctx->base.screen)->gfx_queue || res->queue != VK_QUEUE_FAMILY_IGNORED) {
-      zink_resource_image_barrier<barrier_KHR_synchronzation2, UNSYNCHRONIZED>(ctx, res, new_layout, flags, pipeline);
+       (res->queue != zink_screen(ctx->base.screen)->gfx_queue && res->queue != VK_QUEUE_FAMILY_IGNORED)) {
+      zink_resource_image_barrier<barrier_KHR_synchronzation2, UNSYNCHRONIZED, true>(ctx, res, new_layout, flags, pipeline);
       return;
    }
 
@@ -691,16 +724,16 @@ zink_synchronization_init(struct zink_screen *screen)
       screen->buffer_barrier = zink_resource_memory_barrier<barrier_KHR_synchronzation2, false, false>;
       screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_KHR_synchronzation2, true, false>;
       if (screen->driver_workarounds.general_layout) {
-         screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
-         screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
+         screen->image_barrier = zink_resource_image_barrier_general<false>;
+         screen->image_barrier_unsync = zink_resource_image_barrier_general<true>;
       } else {
-         screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false>;
-         screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true>;
+         screen->image_barrier = zink_resource_image_barrier<barrier_KHR_synchronzation2, false, false>;
+         screen->image_barrier_unsync = zink_resource_image_barrier<barrier_KHR_synchronzation2, true, false>;
       }
    } else {
       screen->buffer_barrier = zink_resource_memory_barrier<barrier_default, false, false>;
       screen->buffer_barrier_unsync = zink_resource_memory_barrier<barrier_default, true, false>;
-      screen->image_barrier = zink_resource_image_barrier<barrier_default, false>;
-      screen->image_barrier_unsync = zink_resource_image_barrier<barrier_default, true>;
+      screen->image_barrier = zink_resource_image_barrier<barrier_default, false, false>;
+      screen->image_barrier_unsync = zink_resource_image_barrier<barrier_default, true, false>;
    }
 }
