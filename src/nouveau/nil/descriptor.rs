@@ -254,7 +254,7 @@ fn normalize_extent(image: &Image, view: &View) -> Extent4D<units::Pixels> {
     extent
 }
 
-fn nv9097_fill_tic(
+fn nv9097_fill_image_view_desc(
     image: &Image,
     view: &View,
     base_address: u64,
@@ -363,7 +363,7 @@ fn nv9097_fill_tic(
     th.set_ufixed(cl9097::TEXHEADV2_MIN_LOD_CLAMP, min_lod_clamp);
 }
 
-fn nvb097_fill_tic(
+fn nvb097_fill_image_view_desc(
     dev: &nil_rs_bindings::nv_device_info,
     image: &Image,
     view: &View,
@@ -529,7 +529,7 @@ pub const IDENTITY_SWIZZLE: [nil_rs_bindings::pipe_swizzle; 4] = [
     nil_rs_bindings::PIPE_SWIZZLE_W,
 ];
 
-fn nv9097_nil_fill_buffer_tic(
+fn nv9097_nil_fill_buffer_desc(
     base_address: u64,
     format: Format,
     num_elements: u32,
@@ -552,7 +552,7 @@ fn nv9097_nil_fill_buffer_tic(
     set_enum!(th, cl9097, TEXHEADV2_TEXTURE_TYPE, ONE_D_BUFFER);
 }
 
-fn nvb097_nil_fill_buffer_tic(
+fn nvb097_nil_fill_buffer_desc(
     base_address: u64,
     format: Format,
     num_elements: u32,
@@ -584,62 +584,6 @@ fn nvb097_nil_fill_buffer_tic(
     set_enum!(th, clb097, TEXHEAD_1D_SECTOR_PROMOTION, PROMOTE_TO_2_V);
 }
 
-impl Image {
-    #[no_mangle]
-    pub extern "C" fn nil_image_fill_tic(
-        &self,
-        dev: &nil_rs_bindings::nv_device_info,
-        view: &View,
-        base_address: u64,
-        desc_out: &mut [u32; 8],
-    ) {
-        self.fill_tic(dev, view, base_address, desc_out);
-    }
-
-    pub fn fill_tic(
-        &self,
-        dev: &nil_rs_bindings::nv_device_info,
-        view: &View,
-        base_address: u64,
-        desc_out: &mut [u32; 8],
-    ) {
-        if dev.cls_eng3d >= MAXWELL_A {
-            nvb097_fill_tic(dev, self, view, base_address, desc_out);
-        } else if dev.cls_eng3d >= FERMI_A {
-            nv9097_fill_tic(self, view, base_address, desc_out);
-        } else {
-            panic!("Tesla and older not supported");
-        }
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn nil_buffer_fill_tic(
-    dev: &nil_rs_bindings::nv_device_info,
-    base_address: u64,
-    format: Format,
-    num_elements: u32,
-    desc_out: &mut [u32; 8],
-) {
-    fill_buffer_tic(dev, base_address, format, num_elements, desc_out);
-}
-
-pub fn fill_buffer_tic(
-    dev: &nil_rs_bindings::nv_device_info,
-    base_address: u64,
-    format: Format,
-    num_elements: u32,
-    desc_out: &mut [u32; 8],
-) {
-    if dev.cls_eng3d >= MAXWELL_A {
-        nvb097_nil_fill_buffer_tic(base_address, format, num_elements, desc_out)
-    } else if dev.cls_eng3d >= FERMI_A {
-        nv9097_nil_fill_buffer_tic(base_address, format, num_elements, desc_out)
-    } else {
-        panic!("Tesla and older not supported");
-    }
-}
-
 pub const ZERO_SWIZZLE: [nil_rs_bindings::pipe_swizzle; 4] = [
     nil_rs_bindings::PIPE_SWIZZLE_0,
     nil_rs_bindings::PIPE_SWIZZLE_0,
@@ -647,7 +591,7 @@ pub const ZERO_SWIZZLE: [nil_rs_bindings::pipe_swizzle; 4] = [
     nil_rs_bindings::PIPE_SWIZZLE_0,
 ];
 
-fn nv9097_fill_null_tic(zero_page_address: u64, desc_out: &mut [u32; 8]) {
+fn nv9097_fill_null_desc(zero_page_address: u64, desc_out: &mut [u32; 8]) {
     *desc_out = [0u32; 8];
     let mut th = BitMutView::new(desc_out);
 
@@ -669,7 +613,7 @@ fn nv9097_fill_null_tic(zero_page_address: u64, desc_out: &mut [u32; 8]) {
     th.set_field(cl9097::TEXHEADV2_RES_VIEW_MAX_MIP_LEVEL, 0_u8);
 }
 
-fn nvb097_fill_null_tic(zero_page_address: u64, desc_out: &mut [u32; 8]) {
+fn nvb097_fill_null_desc(zero_page_address: u64, desc_out: &mut [u32; 8]) {
     *desc_out = [0u32; 8];
     let mut th = BitMutView::new(desc_out);
 
@@ -703,28 +647,116 @@ fn nvb097_fill_null_tic(zero_page_address: u64, desc_out: &mut [u32; 8]) {
     th.set_field(clb097::TEXHEAD_BL_RESERVED7Y, 0x80_u8);
 }
 
-pub fn fill_null_tic(
-    dev: &nil_rs_bindings::nv_device_info,
-    zero_page_address: u64,
-    desc_out: &mut [u32; 8],
-) {
-    if dev.cls_eng3d >= VOLTA_A {
-        // On Volta+, we can just fill with zeros
-        *desc_out = [0; 8]
-    } else if dev.cls_eng3d >= MAXWELL_A {
-        nvb097_fill_null_tic(zero_page_address, desc_out)
-    } else if dev.cls_eng3d >= FERMI_A {
-        nv9097_fill_null_tic(zero_page_address, desc_out)
-    } else {
-        panic!("Tesla and older not supported");
+#[derive(Clone, Debug, Copy, PartialEq)]
+#[repr(C)]
+pub struct Descriptor {
+    pub bits: [u32; 8],
+}
+
+impl Descriptor {
+    pub fn image_view(
+        dev: &nil_rs_bindings::nv_device_info,
+        image: &Image,
+        view: &View,
+        base_address: u64,
+    ) -> Self {
+        let mut desc = Descriptor { bits: [0_u32; 8] };
+
+        if dev.cls_eng3d >= MAXWELL_A {
+            nvb097_fill_image_view_desc(
+                dev,
+                image,
+                view,
+                base_address,
+                &mut desc.bits,
+            );
+        } else if dev.cls_eng3d >= FERMI_A {
+            nv9097_fill_image_view_desc(
+                image,
+                view,
+                base_address,
+                &mut desc.bits,
+            );
+        } else {
+            panic!("Tesla and older not supported");
+        }
+
+        desc
+    }
+
+    pub fn buffer(
+        dev: &nil_rs_bindings::nv_device_info,
+        base_address: u64,
+        format: Format,
+        num_elements: u32,
+    ) -> Self {
+        let mut desc = Descriptor { bits: [0_u32; 8] };
+
+        if dev.cls_eng3d >= MAXWELL_A {
+            nvb097_nil_fill_buffer_desc(
+                base_address,
+                format,
+                num_elements,
+                &mut desc.bits,
+            )
+        } else if dev.cls_eng3d >= FERMI_A {
+            nv9097_nil_fill_buffer_desc(
+                base_address,
+                format,
+                num_elements,
+                &mut desc.bits,
+            )
+        } else {
+            panic!("Tesla and older not supported");
+        }
+
+        desc
+    }
+
+    pub fn null(
+        dev: &nil_rs_bindings::nv_device_info,
+        zero_page_address: u64,
+    ) -> Self {
+        let mut desc = Descriptor { bits: [0_u32; 8] };
+
+        if dev.cls_eng3d >= VOLTA_A {
+            // On Volta+, we can just use zeros
+        } else if dev.cls_eng3d >= MAXWELL_A {
+            nvb097_fill_null_desc(zero_page_address, &mut desc.bits)
+        } else if dev.cls_eng3d >= FERMI_A {
+            nv9097_fill_null_desc(zero_page_address, &mut desc.bits)
+        } else {
+            panic!("Tesla and older not supported");
+        }
+
+        desc
     }
 }
 
 #[no_mangle]
-pub extern "C" fn nil_fill_null_tic(
+pub extern "C" fn nil_image_view_descriptor(
+    dev: &nil_rs_bindings::nv_device_info,
+    image: &Image,
+    view: &View,
+    base_address: u64,
+) -> Descriptor {
+    Descriptor::image_view(dev, image, view, base_address)
+}
+
+#[no_mangle]
+pub extern "C" fn nil_buffer_descriptor(
+    dev: &nil_rs_bindings::nv_device_info,
+    base_address: u64,
+    format: Format,
+    num_elements: u32,
+) -> Descriptor {
+    Descriptor::buffer(dev, base_address, format, num_elements)
+}
+
+#[no_mangle]
+pub extern "C" fn nil_null_descriptor(
     dev: &nil_rs_bindings::nv_device_info,
     zero_page_address: u64,
-    desc_out: &mut [u32; 8],
-) {
-    fill_null_tic(dev, zero_page_address, desc_out);
+) -> Descriptor {
+    Descriptor::null(dev, zero_page_address)
 }

@@ -22,6 +22,7 @@ renaming_overrides_prefixing = true
 "MAX_DRM_FORMAT_MODS" = "NIL_MAX_DRM_FORMAT_MODS"
 
 # This is annoying. rename_types doesn't seem to work
+"Descriptor" = "nil_descriptor"
 "Format" = "nil_format"
 "GOBType" = "nil_gob_type"
 "Image" = "nil_image"

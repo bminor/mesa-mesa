@@ -69,14 +69,14 @@ nvk_CreateBufferView(VkDevice _device,
    } else {
       if (pdev->info.cls_eng3d >= MAXWELL_A ||
           (buffer->vk.usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
-         uint32_t desc[8];
-         nil_buffer_fill_tic(&pdev->info, addr, nil_format(format),
-                           view->vk.elements, &desc);
+         const struct nil_descriptor desc =
+            nil_buffer_descriptor(&pdev->info, addr, nil_format(format),
+                                  view->vk.elements);
 
          uint32_t desc_index;
          result = nvk_descriptor_table_add(dev, &dev->images,
-                                          desc, sizeof(desc),
-                                          &desc_index);
+                                           &desc, sizeof(desc),
+                                           &desc_index);
          if (result != VK_SUCCESS) {
             vk_buffer_view_destroy(&dev->vk, pAllocator, &view->vk);
             return result;

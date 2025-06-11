@@ -186,9 +186,9 @@ nvk_image_view_init(struct nvk_device *dev,
 
       if (view->vk.usage & (VK_IMAGE_USAGE_SAMPLED_BIT |
                            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
-         uint32_t tic[8];
-         nil_image_fill_tic(&nil_image, &pdev->info,
-                            &nil_view, base_addr, &tic);
+         const struct nil_descriptor desc =
+            nil_image_view_descriptor(&pdev->info, &nil_image,
+                                      &nil_view, base_addr);
 
          uint32_t desc_index = 0;
          if (cap_info != NULL) {
@@ -196,10 +196,12 @@ nvk_image_view_init(struct nvk_device *dev,
                ? cap.single_plane.sampled_desc_index
                : cap.ycbcr.planes[view_plane].desc_index;
             result = nvk_descriptor_table_insert(dev, &dev->images,
-                                                 desc_index, tic, sizeof(tic));
+                                                 desc_index,
+                                                 &desc, sizeof(desc));
          } else {
             result = nvk_descriptor_table_add(dev, &dev->images,
-                                              tic, sizeof(tic), &desc_index);
+                                              &desc, sizeof(desc),
+                                              &desc_index);
          }
          if (result != VK_SUCCESS) {
             nvk_image_view_finish(dev, view);
@@ -236,20 +238,20 @@ nvk_image_view_init(struct nvk_device *dev,
             if (image->vk.samples != VK_SAMPLE_COUNT_1_BIT)
                nil_image = nil_msaa_image_as_sa(&nil_image);
 
-            uint32_t tic[8];
-            nil_image_fill_tic(&nil_image, &pdev->info, &nil_view,
-                               base_addr, &tic);
+            const struct nil_descriptor desc =
+               nil_image_view_descriptor(&pdev->info, &nil_image,
+                                         &nil_view, base_addr);
 
             uint32_t desc_index = 0;
             if (cap_info != NULL) {
                assert(view->plane_count == 1);
                desc_index = cap.single_plane.storage_desc_index;
                result = nvk_descriptor_table_insert(dev, &dev->images,
-                                                    desc_index, tic,
-                                                    sizeof(tic));
+                                                    desc_index, &desc,
+                                                    sizeof(desc));
             } else {
                result = nvk_descriptor_table_add(dev, &dev->images,
-                                                 tic, sizeof(tic),
+                                                 &desc, sizeof(desc),
                                                  &desc_index);
             }
             if (result != VK_SUCCESS) {

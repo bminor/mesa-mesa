@@ -5,12 +5,12 @@ extern crate nil_rs_bindings;
 extern crate nvidia_headers;
 
 mod copy;
+mod descriptor;
 mod extent;
 mod format;
 mod image;
 mod modifiers;
 mod su_info;
-mod tic;
 mod tiling;
 
 pub trait ILog2Ceil {
