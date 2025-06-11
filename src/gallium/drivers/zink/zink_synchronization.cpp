@@ -673,7 +673,7 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
       res->obj->access_stage = pipeline;
       res->obj->ordered_access_is_copied = unordered;
    }
-   if (pipeline != VK_PIPELINE_STAGE_TRANSFER_BIT && is_write && !GENERAL_IMAGE)
+   if (!(flags & VK_ACCESS_TRANSFER_WRITE_BIT) && GENERAL_IMAGE)
       zink_resource_copies_reset(res);
 }
 
