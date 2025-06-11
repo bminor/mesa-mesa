@@ -199,6 +199,8 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
    nir_options->has_udot_4x8_sat = devinfo->ver >= 12;
    nir_options->has_sudot_4x8_sat = devinfo->ver >= 12;
 
+   nir_options->has_bitfield_select = devinfo->verx10 >= 125;
+
    nir_options->lower_int64_options = int64_options;
    nir_options->lower_doubles_options = fp64_options;
 
