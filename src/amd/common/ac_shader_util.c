@@ -1356,7 +1356,7 @@ ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, gl_shader_stage es_st
                              enum mesa_prim input_prim, unsigned gs_vertices_out, unsigned gs_invocations,
                              unsigned max_workgroup_size, unsigned wave_size, unsigned esgs_vertex_stride,
                              unsigned ngg_lds_vertex_size, unsigned ngg_lds_scratch_size, bool tess_turns_off_ngg,
-                             ac_ngg_subgroup_info *out)
+                             unsigned max_esgs_lds_padding, ac_ngg_subgroup_info *out)
 {
    const unsigned gs_num_invocations = MAX2(gs_invocations, 1);
    const bool use_adjacency = mesa_prim_has_adjacency(input_prim);
@@ -1365,7 +1365,7 @@ ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, gl_shader_stage es_st
 
    /* All these are in dwords. The maximum is 16K dwords (64KB) of LDS per workgroup. */
    /* The LDS scratch is at the beginning of LDS space. */
-   const unsigned max_lds_size = 16 * 1024 - ngg_lds_scratch_size / 4;
+   const unsigned max_lds_size = 16 * 1024 - ngg_lds_scratch_size / 4 - max_esgs_lds_padding / 4;
    const unsigned target_lds_size = max_lds_size;
    unsigned esvert_lds_size = 0;
    unsigned gsprim_lds_size = 0;

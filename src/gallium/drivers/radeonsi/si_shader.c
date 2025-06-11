@@ -196,15 +196,14 @@ static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *sh
         (sel->stage <= MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg))) {
       struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
       sym->name = "esgs_ring";
-      sym->size = (shader->key.ge.as_ngg ? shader->ngg.info.esgs_lds_size
-                                         : shader->gs_info.esgs_lds_size) * 4;
+      sym->size = 0;
       sym->align = 64 * 1024;
    }
 
    if (sel->stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg) {
       struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
       sym->name = "ngg_emit";
-      sym->size = shader->ngg.info.ngg_out_lds_size * 4;
+      sym->size = 0;
       sym->align = 4;
    }
 
@@ -464,6 +463,10 @@ static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shade
       shader->config.lds_size =
          DIV_ROUND_UP(size_in_dw * 4, get_lds_granularity(sscreen, stage));
    }
+
+   /* Check that the LDS size is within hw limits. */
+   assert(shader->config.lds_size * get_lds_granularity(sscreen, stage) <=
+          (sscreen->info.gfx_level == GFX6 ? 32 : 64) * 1024);
 }
 
 static int upload_binary_raw(struct si_screen *sscreen, struct si_shader *shader,
@@ -518,8 +521,6 @@ static int upload_binary_raw(struct si_screen *sscreen, struct si_shader *shader
 
    post_upload_binary(sscreen, shader, rx_ptr, code_size, code_size, dma_upload,
                       upload_ctx, staging, staging_offset);
-
-   calculate_needed_lds_size(sscreen, shader);
    return code_size;
 }
 
@@ -529,13 +530,17 @@ int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shad
    bool dma_upload = !(sscreen->debug_flags & DBG(NO_DMA_SHADERS)) && sscreen->info.has_cp_dma &&
                      sscreen->info.has_dedicated_vram && !sscreen->info.all_vram_visible &&
                      bo_offset < 0;
+   int r;
 
    if (shader->binary.type == SI_SHADER_BINARY_ELF) {
-      return upload_binary_elf(sscreen, shader, scratch_va, dma_upload, bo_offset);
+      r = upload_binary_elf(sscreen, shader, scratch_va, dma_upload, bo_offset);
    } else {
       assert(shader->binary.type == SI_SHADER_BINARY_RAW);
-      return upload_binary_raw(sscreen, shader, scratch_va, dma_upload, bo_offset);
+      r = upload_binary_raw(sscreen, shader, scratch_va, dma_upload, bo_offset);
    }
+
+   calculate_needed_lds_size(sscreen, shader);
+   return r;
 }
 
 int si_shader_binary_upload(struct si_screen *sscreen, struct si_shader *shader,
@@ -2583,10 +2588,16 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
                                         si_get_max_workgroup_size(shader), shader->wave_size,
                                         es_sel->info.esgs_vertex_stride, shader->info.ngg_lds_vertex_size,
                                         shader->info.ngg_lds_scratch_size, gs_sel->tess_turns_off_ngg,
-                                        &shader->ngg.info)) {
+                                        gs_sel->stage == MESA_SHADER_GEOMETRY ? 255 : 0, &shader->ngg.info)) {
          mesa_loge("Failed to compute subgroup info");
          return false;
       }
+
+      /* GS outputs in LDS must start at a multiple of 256B because GS_STATE_GS_OUT_LDS_OFFSET_256B
+       * doesn't store the low 8 bits.
+       */
+      if (sel->stage == MESA_SHADER_GEOMETRY)
+         shader->ngg.info.esgs_lds_size = align(shader->ngg.info.esgs_lds_size, 64); /* align to 256B in dword units */
    } else if (sscreen->info.gfx_level >= GFX9 && sel->stage == MESA_SHADER_GEOMETRY) {
       ac_legacy_gs_compute_subgroup_info(sel->info.base.gs.input_primitive,
                                          sel->info.base.gs.vertices_out,

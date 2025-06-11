@@ -344,7 +344,7 @@ ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, gl_shader_stage es_st
                              enum mesa_prim input_prim, unsigned gs_vertices_out, unsigned gs_invocations,
                              unsigned max_workgroup_size, unsigned wave_size, unsigned esgs_vertex_stride,
                              unsigned ngg_lds_vertex_size, unsigned ngg_lds_scratch_size, bool tess_turns_off_ngg,
-                             ac_ngg_subgroup_info *out);
+                             unsigned max_esgs_lds_padding, ac_ngg_subgroup_info *out);
 
 #ifdef __cplusplus
 }

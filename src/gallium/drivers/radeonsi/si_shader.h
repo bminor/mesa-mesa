@@ -238,6 +238,11 @@ enum
  * in the shader via vs_state_bits in legacy GS, the GS copy shader, and any NGG shader.
  */
 /* bit gap */
+/* The LDS size of ES outputs in bytes for NGG GS, in multiples of 256 (bits [8:15]).
+ * This is used to determine the LDS address of GS outputs, which is after ES outputs.
+ */
+#define GS_STATE_GS_OUT_LDS_OFFSET_256B__SHIFT  6
+#define GS_STATE_GS_OUT_LDS_OFFSET_256B__MASK   0xff
 /* The number of ES outputs is derived from the last output index of SI_UNIQUE_SLOT_* + 1, which
  * can be 55 at most. The ESGS vertex stride in dwords is: NUM_ES_OUTPUTS * 4 + 1
  * Only used by GFX9+ to compute LDS addresses of GS inputs.

@@ -154,6 +154,12 @@ static bool si_update_shaders(struct si_context *sctx)
       }
    }
 
+   if (NGG && HAS_GS) {
+      assert((sctx->shader.gs.current->ngg.info.esgs_lds_size * 4) % 256 == 0);
+      SET_FIELD(sctx->current_gs_state, GS_STATE_GS_OUT_LDS_OFFSET_256B,
+                ((uint32_t)sctx->shader.gs.current->ngg.info.esgs_lds_size * 4) >> 8);
+   }
+
    struct si_shader *api_vs = si_get_api_vs_inline(sctx, GFX_VERSION, HAS_TESS, HAS_GS);
    sctx->vs_uses_base_instance = api_vs->info.uses_base_instance;
    sctx->vs_uses_draw_id = api_vs->info.uses_draw_id;

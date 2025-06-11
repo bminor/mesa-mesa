@@ -606,6 +606,9 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_polygon_stipple_buffer_amd:
       replacement = si_nir_load_internal_binding(b, args, SI_PS_CONST_POLY_STIPPLE, 4);
       break;
+   case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
+      replacement = nir_imul_imm(b, GET_FIELD_NIR(GS_STATE_GS_OUT_LDS_OFFSET_256B), 256);
+      break;
    default:
       return false;
    }
