@@ -231,8 +231,10 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
    case AC_DESC_PLANE_0:
       break;
    case AC_DESC_FMASK:
-   case AC_DESC_PLANE_1:
       offset += 32;
+      break;
+   case AC_DESC_PLANE_1:
+      offset += RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE;
       break;
    case AC_DESC_SAMPLER:
       size = RADV_SAMPLER_DESC_SIZE / 4;
@@ -243,8 +245,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
       size = RADV_BUFFER_DESC_SIZE / 4;
       break;
    case AC_DESC_PLANE_2:
-      size = 4;
-      offset += 64;
+      offset += 2 * RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE;
       break;
    }
 
@@ -278,20 +279,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
    nir_def *addr = convert_pointer_to_64_bit(b, state, load_desc_ptr(b, state, desc_set));
    nir_def *desc = nir_load_smem_amd(b, size, addr, index_offset, .align_mul = size * 4u);
 
-   /* 3 plane formats always have same size and format for plane 1 & 2, so
-    * use the tail from plane 1 so that we can store only the first 16 bytes
-    * of the last plane. */
-   if (desc_type == AC_DESC_PLANE_2) {
-      nir_def *desc2 = get_sampler_desc(b, state, deref, AC_DESC_PLANE_1, non_uniform, tex, write);
-
-      nir_def *comp[8];
-      for (unsigned i = 0; i < 4; i++)
-         comp[i] = nir_channel(b, desc, i);
-      for (unsigned i = 4; i < 8; i++)
-         comp[i] = nir_channel(b, desc2, i);
-
-      return nir_vec(b, comp, 8);
-   } else if (desc_type == AC_DESC_IMAGE && state->has_image_load_dcc_bug && !tex && !write) {
+   if (desc_type == AC_DESC_IMAGE && state->has_image_load_dcc_bug && !tex && !write) {
       nir_def *comp[8];
       for (unsigned i = 0; i < 8; i++)
          comp[i] = nir_channel(b, desc, i);

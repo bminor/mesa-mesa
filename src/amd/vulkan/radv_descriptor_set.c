@@ -220,6 +220,7 @@ radv_CreateDescriptorSetLayout(VkDevice _device, const VkDescriptorSetLayoutCrea
          uint32_t alignment = radv_descriptor_alignment(binding->descriptorType);
          unsigned binding_buffer_count = radv_descriptor_type_buffer_count(binding->descriptorType);
          uint32_t descriptor_count = binding->descriptorCount;
+         uint32_t max_sampled_image_descriptors = 1;
          bool has_ycbcr_sampler = false;
 
          if (binding->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && binding->pImmutableSamplers) {
@@ -229,6 +230,8 @@ radv_CreateDescriptorSetLayout(VkDevice _device, const VkDescriptorSetLayoutCrea
 
                if (conversion) {
                   has_ycbcr_sampler = true;
+                  max_sampled_image_descriptors =
+                     MAX2(max_sampled_image_descriptors, vk_format_get_plane_count(conversion->state.format));
                }
             }
          }
@@ -257,8 +260,7 @@ radv_CreateDescriptorSetLayout(VkDevice _device, const VkDescriptorSetLayoutCrea
             set_layout->binding[b].size = radv_get_sampled_image_desc_size(pdev);
             break;
          case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            /* main descriptor + fmask descriptor + sampler */
-            set_layout->binding[b].size = RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE;
+            set_layout->binding[b].size = max_sampled_image_descriptors * RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE;
             break;
          case VK_DESCRIPTOR_TYPE_SAMPLER:
             set_layout->binding[b].size = RADV_SAMPLER_DESC_SIZE;
@@ -1193,18 +1195,22 @@ write_image_descriptor_impl(struct radv_device *device, struct radv_cmd_buffer *
 static ALWAYS_INLINE void
 write_image_descriptor_ycbcr(unsigned *dst, const VkDescriptorImageInfo *image_info)
 {
-   const uint32_t size = RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE - RADV_SAMPLER_DESC_SIZE;
    struct radv_image_view *iview = NULL;
 
    if (image_info)
       iview = radv_image_view_from_handle(image_info->imageView);
 
    if (!iview) {
-      memset(dst, 0, size);
+      memset(dst, 0, 32);
       return;
    }
 
-   memcpy(dst, iview->descriptor.plane_descriptors[0], size);
+   const uint32_t plane_count = vk_format_get_plane_count(iview->vk.format);
+
+   for (uint32_t i = 0; i < plane_count; i++) {
+      memcpy(dst, iview->descriptor.plane_descriptors[i], 32);
+      dst += RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE / 4;
+   }
 }
 
 static ALWAYS_INLINE void

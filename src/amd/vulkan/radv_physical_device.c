@@ -1686,7 +1686,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .nonStrictSinglePixelWideLinesUseParallelogram = true,
       .nonStrictWideLinesUseParallelogram = true,
       .blockTexelViewCompatibleMultipleLayers = true,
-      .maxCombinedImageSamplerDescriptorCount = 1,
+      .maxCombinedImageSamplerDescriptorCount = 3,
       .fragmentShadingRateClampCombinerInputs = true,
       .defaultRobustnessStorageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS,
       .defaultRobustnessUniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS,
