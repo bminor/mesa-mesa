@@ -72,6 +72,8 @@ update_tc_info(struct zink_context *ctx)
       const struct tc_renderpass_info *info = threaded_context_get_renderpass_info(ctx->tc);
       ctx->rp_changed |= ctx->dynamic_fb.tc_info.data != info->data;
       ctx->dynamic_fb.tc_info.data = info->data;
+      ctx->dynamic_fb.tc_info.resolve = info->resolve;
+      ctx->awaiting_resolve = ctx->dynamic_fb.tc_info.has_resolve;
    } else {
       struct tc_renderpass_info info = ctx->dynamic_fb.tc_info;
       bool zsbuf_used = !ctx->zsbuf_unused;
@@ -3204,22 +3206,37 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS + 1].resolveMode = 0;
       }
    }
-   if (ctx->fb_state.resolve && use_tc_info && ctx->dynamic_fb.tc_info.has_resolve) {
+   if (use_tc_info && ctx->dynamic_fb.tc_info.has_resolve) {
       struct zink_resource *res = zink_resource(ctx->fb_state.resolve);
-      zink_surface_resolve_init(screen, res, ctx->fb_state.resolve->format);
+      if (!res)
+         res = zink_resource(ctx->dynamic_fb.tc_info.resolve);
+      assert(res);
+      zink_batch_resource_usage_set(ctx->bs, res, true, false);
+      bool is_depth = util_format_is_depth_or_stencil(res->base.b.format);
+      enum pipe_format format = res->base.b.format;
+      if (!ctx->fb_state.resolve)
+         format = is_depth ? ctx->fb_state.zsbuf.format : ctx->fb_state.cbufs[0].format;
+      zink_surface_resolve_init(screen, res, format);
       struct zink_surface *surf = zink_surface(res->surface);
       if (zink_is_swapchain(res)) {
          if (!zink_kopper_acquire(ctx, res, UINT64_MAX))
             return 0;
          zink_surface_swapchain_update(ctx, surf);
       }
-      zink_batch_resource_usage_set(ctx->bs, res, true, false);
-      VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+      VkImageLayout layout = is_depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+      if (screen->driver_workarounds.general_layout)
+         layout = VK_IMAGE_LAYOUT_GENERAL;
+      unsigned idx = util_format_is_depth_or_stencil(res->base.b.format) ? PIPE_MAX_COLOR_BUFS : 0;
       screen->image_barrier(ctx, res, layout, 0, 0);
       res->obj->unordered_read = res->obj->unordered_write = false;
-      ctx->dynamic_fb.attachments[0].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-      ctx->dynamic_fb.attachments[0].resolveImageLayout = zink_resource(surf->base.texture)->layout;
-      ctx->dynamic_fb.attachments[0].resolveImageView = surf->image_view;
+      ctx->dynamic_fb.attachments[idx].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+      ctx->dynamic_fb.attachments[idx].resolveImageLayout = zink_resource(surf->base.texture)->layout;
+      ctx->dynamic_fb.attachments[idx].resolveImageView = surf->image_view;
+      if (idx == PIPE_MAX_COLOR_BUFS) {
+         ctx->dynamic_fb.attachments[idx + 1].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+         ctx->dynamic_fb.attachments[idx + 1].resolveImageLayout = zink_resource(surf->base.texture)->layout;
+         ctx->dynamic_fb.attachments[idx + 1].resolveImageView = surf->image_view;
+      }
    }
    ctx->zsbuf_unused = !zsbuf_used;
    assert(ctx->fb_state.width >= ctx->dynamic_fb.info.renderArea.extent.width);

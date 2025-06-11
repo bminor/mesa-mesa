@@ -1768,6 +1768,7 @@ struct zink_context {
    struct set rendering_state_cache[6]; //[util_logbase2_ceil(msrtss samplecount)]
    struct zink_resource *swapchain;
    VkExtent2D swapchain_size;
+   bool awaiting_resolve; //from tc info
    bool in_rp; //renderpass is currently active
    bool rp_changed; //force renderpass restart
    bool rp_layout_changed; //renderpass changed, maybe restart

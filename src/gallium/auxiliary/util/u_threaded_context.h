@@ -440,7 +440,7 @@ struct tc_renderpass_info {
          bool zsbuf_invalidate : 1;
          /* whether a draw occurs */
          bool has_draw : 1;
-         /* whether a framebuffer resolve occurs on cbuf[0] */
+         /* whether a framebuffer resolve occurs on cbuf[0] or zsbuf */
          bool has_resolve : 1;
          /* whether queries are ended during this renderpass */
          bool has_query_ends : 1;
@@ -468,6 +468,8 @@ struct tc_renderpass_info {
       /* zsbuf fb info is in data8[3] & BITFIELD_MASK(4) */
       uint8_t data8[8];
    };
+   /* only valid if has_resolve is true and the resolve member of pipe_framebuffer_state is NULL */
+   struct pipe_resource *resolve;
 };
 
 static inline bool
@@ -640,6 +642,9 @@ struct threaded_context {
    unsigned max_images;
    unsigned max_samplers;
    unsigned nr_cbufs;
+   unsigned fb_layers;
+   uint16_t fb_width;
+   uint16_t fb_height;
 
    unsigned last, next, next_buf_list;
 

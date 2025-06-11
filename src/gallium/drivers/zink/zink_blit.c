@@ -330,6 +330,18 @@ zink_blit(struct pipe_context *pctx,
    struct zink_resource *use_src = src;
    struct zink_resource *dst = zink_resource(info->dst.resource);
    bool needs_present_readback = false;
+
+   if (ctx->awaiting_resolve && ctx->in_rp && ctx->dynamic_fb.tc_info.has_resolve) {
+      struct pipe_resource *resolve = ctx->fb_state.resolve;
+      if (!resolve)
+         resolve = ctx->dynamic_fb.tc_info.resolve;
+      if (resolve == info->dst.resource) {
+         zink_batch_no_rp_safe(ctx);
+         ctx->awaiting_resolve = false;
+         return;
+      }
+   }
+
    if (zink_is_swapchain(dst)) {
       if (!zink_kopper_acquire(ctx, dst, UINT64_MAX))
          return;
