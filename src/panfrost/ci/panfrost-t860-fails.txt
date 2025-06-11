@@ -97,8 +97,8 @@ program@execute@atomic_int32_cmpxchg-local@simple int,Fail
 program@execute@atomic_int32_cmpxchg-local@simple uint,Fail
 program@execute@atomic_int32_xchg-global-return,Crash
 program@execute@atomic_xchg-global-return,Crash
-program@execute@builtin@builtin-char-abs-1.0.generated,Crash
 program@execute@builtin@builtin-char-abs_diff-1.0.generated,Crash
+program@execute@builtin@builtin-char-abs-1.0.generated,Crash
 program@execute@builtin@builtin-char-add_sat-1.0.generated,Crash
 program@execute@builtin@builtin-char-clamp-1.1.generated,Crash
 program@execute@builtin@builtin-char-clz-1.0.generated,Crash
@@ -132,18 +132,18 @@ program@execute@builtin@builtin-int-mad_sat-1.0.generated@mad_sat int16,Fail
 program@execute@builtin@builtin-int-mad_sat-1.0.generated@mad_sat int2,Fail
 program@execute@builtin@builtin-int-mad_sat-1.0.generated@mad_sat int4,Fail
 program@execute@builtin@builtin-int-mad_sat-1.0.generated@mad_sat int8,Fail
-program@execute@builtin@builtin-long-abs-1.0.generated,Fail
-program@execute@builtin@builtin-long-abs-1.0.generated@abs long1,Fail
-program@execute@builtin@builtin-long-abs-1.0.generated@abs long16,Fail
-program@execute@builtin@builtin-long-abs-1.0.generated@abs long2,Fail
-program@execute@builtin@builtin-long-abs-1.0.generated@abs long4,Fail
-program@execute@builtin@builtin-long-abs-1.0.generated@abs long8,Fail
 program@execute@builtin@builtin-long-abs_diff-1.0.generated,Fail
 program@execute@builtin@builtin-long-abs_diff-1.0.generated@abs_diff long1,Fail
 program@execute@builtin@builtin-long-abs_diff-1.0.generated@abs_diff long16,Fail
 program@execute@builtin@builtin-long-abs_diff-1.0.generated@abs_diff long2,Fail
 program@execute@builtin@builtin-long-abs_diff-1.0.generated@abs_diff long4,Fail
 program@execute@builtin@builtin-long-abs_diff-1.0.generated@abs_diff long8,Fail
+program@execute@builtin@builtin-long-abs-1.0.generated,Fail
+program@execute@builtin@builtin-long-abs-1.0.generated@abs long1,Fail
+program@execute@builtin@builtin-long-abs-1.0.generated@abs long16,Fail
+program@execute@builtin@builtin-long-abs-1.0.generated@abs long2,Fail
+program@execute@builtin@builtin-long-abs-1.0.generated@abs long4,Fail
+program@execute@builtin@builtin-long-abs-1.0.generated@abs long8,Fail
 program@execute@builtin@builtin-long-add_sat-1.0.generated,Fail
 program@execute@builtin@builtin-long-add_sat-1.0.generated@add_sat long1,Fail
 program@execute@builtin@builtin-long-add_sat-1.0.generated@add_sat long16,Fail
@@ -429,6 +429,39 @@ program@execute@vload@vload-uchar-private,Crash
 program@execute@vload@vload-ushort-constant,Crash
 program@execute@vload@vload-ushort-local,Crash
 program@execute@vload@vload-ushort-private,Crash
+program@execute@vstore@vstore_half-float-global,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global float16,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global float2,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global float3,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global float4,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global float8,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global offset float16,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global offset float2,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global offset float3,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global offset float4,Fail
+program@execute@vstore@vstore_half-float-global@vector store_half global offset float8,Fail
+program@execute@vstore@vstore_half-float-local,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local float16,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local float2,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local float3,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local float4,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local float8,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local offset float16,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local offset float2,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local offset float3,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local offset float4,Fail
+program@execute@vstore@vstore_half-float-local@vector store_half local offset float8,Fail
+program@execute@vstore@vstore_half-float-private,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private float16,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private float2,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private float3,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private float4,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private float8,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private offset float16,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private offset float2,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private offset float3,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private offset float4,Fail
+program@execute@vstore@vstore_half-float-private@vector store_half private offset float8,Fail
 program@execute@vstore@vstore-char-global,Fail
 program@execute@vstore@vstore-char-global@vector store global char16,Fail
 program@execute@vstore@vstore-char-global@vector store global char3,Fail
@@ -549,39 +582,6 @@ program@execute@vstore@vstore-ushort-private@vector store private ushort2,Fail
 program@execute@vstore@vstore-ushort-private@vector store private ushort3,Fail
 program@execute@vstore@vstore-ushort-private@vector store private ushort4,Fail
 program@execute@vstore@vstore-ushort-private@vector store private ushort8,Fail
-program@execute@vstore@vstore_half-float-global,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global float16,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global float2,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global float3,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global float4,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global float8,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global offset float16,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global offset float2,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global offset float3,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global offset float4,Fail
-program@execute@vstore@vstore_half-float-global@vector store_half global offset float8,Fail
-program@execute@vstore@vstore_half-float-local,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local float16,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local float2,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local float3,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local float4,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local float8,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local offset float16,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local offset float2,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local offset float3,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local offset float4,Fail
-program@execute@vstore@vstore_half-float-local@vector store_half local offset float8,Fail
-program@execute@vstore@vstore_half-float-private,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private float16,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private float2,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private float3,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private float4,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private float8,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private offset float16,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private offset float2,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private offset float3,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private offset float4,Fail
-program@execute@vstore@vstore_half-float-private@vector store_half private offset float8,Fail
 program@execute@vstore@vstorea_half-float-global,Fail
 program@execute@vstore@vstorea_half-float-global@vector storea_half global float16,Fail
 program@execute@vstore@vstorea_half-float-global@vector storea_half global float2,Fail
