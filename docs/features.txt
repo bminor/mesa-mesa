@@ -789,7 +789,7 @@ Rusticl OpenCL 2.1 -- all DONE:
   clEnqueueSVMMigrateMem                                in progress (nvc0/gp100, broken)
   clCloneKernel                                         DONE
   Default device command queue                          not started
-  CL_UNORM_INT_101010_2                                 not started
+  CL_UNORM_INT_101010_2                                 DONE
 
 
 Rusticl OpenCL 2.2 -- all DONE:

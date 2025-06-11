@@ -157,8 +157,7 @@ cl_format_table!([
     (CL_RGBA,      CL_SNORM_INT16)        => pipe_format::PIPE_FORMAT_R16G16B16A16_SNORM,
     (CL_RGBA,      CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_R8G8B8A8_UNORM,
     (CL_RGBA,      CL_UNORM_INT16)        => pipe_format::PIPE_FORMAT_R16G16B16A16_UNORM,
-// broken
-//  (CL_RGBA,      CL_UNORM_INT_101010_2) => pipe_format::PIPE_FORMAT_R10G10B10A2_UNORM,
+    (CL_RGBA,      CL_UNORM_INT_101010_2) => pipe_format::PIPE_FORMAT_A2B10G10R10_UNORM,
 
 // broken
 //  (CL_RGBx,      CL_HALF_FLOAT)         => pipe_format::PIPE_FORMAT_R16G16B16X16_FLOAT,
