@@ -222,6 +222,7 @@ program@execute@builtin@builtin-short-rotate-1.0.generated@rotate short2,Fail
 program@execute@builtin@builtin-short-rotate-1.0.generated@rotate short4,Fail
 program@execute@builtin@builtin-short-rotate-1.0.generated@rotate short8,Fail
 program@execute@builtin@builtin-shuffle-char-uchar,Crash
+program@execute@builtin@builtin-shuffle-half-ushort,Crash
 program@execute@builtin@builtin-shuffle-long-ulong,Fail
 program@execute@builtin@builtin-shuffle-long-ulong@shuffle long16 ulong16,Fail
 program@execute@builtin@builtin-shuffle-long-ulong@shuffle long16 ulong2,Fail
@@ -260,6 +261,7 @@ program@execute@builtin@builtin-shuffle-ulong-ulong@shuffle ulong8 ulong4,Fail
 program@execute@builtin@builtin-shuffle-ulong-ulong@shuffle ulong8 ulong8,Fail
 program@execute@builtin@builtin-shuffle-ushort-ushort,Crash
 program@execute@builtin@builtin-shuffle2-char-uchar,Crash
+program@execute@builtin@builtin-shuffle2-half-ushort,Crash
 program@execute@builtin@builtin-shuffle2-long-ulong,Fail
 program@execute@builtin@builtin-shuffle2-long-ulong@shuffle2 long16 ulong16,Fail
 program@execute@builtin@builtin-shuffle2-long-ulong@shuffle2 long16 ulong2,Fail
@@ -419,6 +421,9 @@ program@execute@vload@vload-char-constant,Crash
 program@execute@vload@vload-char-global,Crash
 program@execute@vload@vload-char-local,Crash
 program@execute@vload@vload-char-private,Crash
+program@execute@vload@vload-half-constant,Crash
+program@execute@vload@vload-half-local,Crash
+program@execute@vload@vload-half-private,Crash
 program@execute@vload@vload-short-constant,Crash
 program@execute@vload@vload-short-local,Crash
 program@execute@vload@vload-short-private,Crash
@@ -489,6 +494,39 @@ program@execute@vstore@vstore-char-private@vector store private offset char16,Fa
 program@execute@vstore@vstore-char-private@vector store private offset char3,Fail
 program@execute@vstore@vstore-char-private@vector store private offset char4,Fail
 program@execute@vstore@vstore-char-private@vector store private offset char8,Fail
+program@execute@vstore@vstore-half-global,Fail
+program@execute@vstore@vstore-half-global@vector store global half16,Fail
+program@execute@vstore@vstore-half-global@vector store global half2,Fail
+program@execute@vstore@vstore-half-global@vector store global half3,Fail
+program@execute@vstore@vstore-half-global@vector store global half4,Fail
+program@execute@vstore@vstore-half-global@vector store global half8,Fail
+program@execute@vstore@vstore-half-global@vector store global offset half16,Fail
+program@execute@vstore@vstore-half-global@vector store global offset half2,Fail
+program@execute@vstore@vstore-half-global@vector store global offset half3,Fail
+program@execute@vstore@vstore-half-global@vector store global offset half4,Fail
+program@execute@vstore@vstore-half-global@vector store global offset half8,Fail
+program@execute@vstore@vstore-half-local,Fail
+program@execute@vstore@vstore-half-local@vector store local half16,Fail
+program@execute@vstore@vstore-half-local@vector store local half2,Fail
+program@execute@vstore@vstore-half-local@vector store local half3,Fail
+program@execute@vstore@vstore-half-local@vector store local half4,Fail
+program@execute@vstore@vstore-half-local@vector store local half8,Fail
+program@execute@vstore@vstore-half-local@vector store local offset half16,Fail
+program@execute@vstore@vstore-half-local@vector store local offset half2,Fail
+program@execute@vstore@vstore-half-local@vector store local offset half3,Fail
+program@execute@vstore@vstore-half-local@vector store local offset half4,Fail
+program@execute@vstore@vstore-half-local@vector store local offset half8,Fail
+program@execute@vstore@vstore-half-private,Fail
+program@execute@vstore@vstore-half-private@vector store private half16,Fail
+program@execute@vstore@vstore-half-private@vector store private half2,Fail
+program@execute@vstore@vstore-half-private@vector store private half3,Fail
+program@execute@vstore@vstore-half-private@vector store private half4,Fail
+program@execute@vstore@vstore-half-private@vector store private half8,Fail
+program@execute@vstore@vstore-half-private@vector store private offset half16,Fail
+program@execute@vstore@vstore-half-private@vector store private offset half2,Fail
+program@execute@vstore@vstore-half-private@vector store private offset half3,Fail
+program@execute@vstore@vstore-half-private@vector store private offset half4,Fail
+program@execute@vstore@vstore-half-private@vector store private offset half8,Fail
 program@execute@vstore@vstore-short-global,Fail
 program@execute@vstore@vstore-short-global@vector store global offset short16,Fail
 program@execute@vstore@vstore-short-global@vector store global offset short2,Fail
