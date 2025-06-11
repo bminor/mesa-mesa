@@ -201,12 +201,6 @@ static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *sh
                                        .num_parts = num_parts,
                                        .elf_ptrs = part_elfs,
                                        .elf_sizes = part_sizes});
-
-   if (rtld->lds_size > 0) {
-      unsigned alloc_granularity = get_lds_granularity(screen, sel->stage);
-      shader->config.lds_size = DIV_ROUND_UP(rtld->lds_size, alloc_granularity);
-   }
-
    return ok;
 }
 

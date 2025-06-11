@@ -23,14 +23,6 @@ struct ac_rtld_part;
 struct ac_shader_config;
 struct radeon_info;
 
-struct ac_rtld_symbol {
-   const char *name;
-   uint32_t size;
-   uint32_t align;
-   uint64_t offset;   /* filled in by ac_rtld_open */
-   unsigned part_idx; /* shader part in which this symbol appears */
-};
-
 struct ac_rtld_options {
    /* Loader will insert an s_sethalt 1 instruction as the
     * first instruction. */
@@ -55,9 +47,6 @@ struct ac_rtld_binary {
 
    unsigned num_parts;
    struct ac_rtld_part *parts;
-
-   struct util_dynarray lds_symbols;
-   uint32_t lds_size;
 };
 
 /**
@@ -73,8 +62,7 @@ typedef bool (*ac_rtld_get_external_symbol_cb)(enum amd_gfx_level gfx_level, voi
                                                const char *symbol, uint64_t *value);
 
 /**
- * Lifetimes of \ref info, in-memory ELF objects, and the names of
- * \ref shared_lds_symbols must extend until \ref ac_rtld_close is called on
+ * Lifetimes of \ref info, in-memory ELF objects must extend until \ref ac_rtld_close is called on
  * the opened binary.
  */
 struct ac_rtld_open_info {
@@ -86,13 +74,6 @@ struct ac_rtld_open_info {
    unsigned num_parts;
    const char *const *elf_ptrs; /* in-memory ELF objects of each part */
    const size_t *elf_sizes;     /* sizes of corresponding in-memory ELF objects in bytes */
-
-   /* Shared LDS symbols are layouted such that they are accessible from
-    * all shader parts. Non-shared (private) LDS symbols of one part may
-    * overlap private LDS symbols of another shader part.
-    */
-   unsigned num_shared_lds_symbols;
-   const struct ac_rtld_symbol *shared_lds_symbols;
 };
 
 bool ac_rtld_open(struct ac_rtld_binary *binary, struct ac_rtld_open_info i);

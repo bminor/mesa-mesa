@@ -40,7 +40,6 @@ void ac_parse_shader_binary_config(const char *data, size_t nbytes, unsigned wav
          conf->rsrc1 = value;
          break;
       case R_00B02C_SPI_SHADER_PGM_RSRC2_PS:
-         conf->lds_size = MAX2(conf->lds_size, G_00B02C_EXTRA_LDS_SIZE(value));
          /* TODO: LLVM doesn't set SHARED_VGPR_CNT for all shader types */
          conf->num_shared_vgprs = G_00B02C_SHARED_VGPR_CNT(value);
          conf->rsrc2 = value;
@@ -58,7 +57,6 @@ void ac_parse_shader_binary_config(const char *data, size_t nbytes, unsigned wav
          conf->rsrc2 = value;
          break;
       case R_00B84C_COMPUTE_PGM_RSRC2:
-         conf->lds_size = MAX2(conf->lds_size, G_00B84C_LDS_SIZE(value));
          conf->rsrc2 = value;
          break;
       case R_00B8A0_COMPUTE_PGM_RSRC3:

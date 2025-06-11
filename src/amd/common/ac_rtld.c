@@ -24,14 +24,6 @@
 #define EM_AMDGPU 224
 #endif
 
-#ifndef STT_AMDGPU_LDS
-#define STT_AMDGPU_LDS 13 // this is deprecated -- remove
-#endif
-
-#ifndef SHN_AMDGPU_LDS
-#define SHN_AMDGPU_LDS 0xff00
-#endif
-
 #ifndef R_AMDGPU_NONE
 #define R_AMDGPU_NONE          0
 #define R_AMDGPU_ABS32_LO      1
@@ -97,133 +89,6 @@ static void report_elf_errorf(const char *fmt, ...)
 }
 
 /**
- * Find a symbol in a dynarray of struct ac_rtld_symbol by \p name and shader
- * \p part_idx.
- */
-static const struct ac_rtld_symbol *find_symbol(const struct util_dynarray *symbols,
-                                                const char *name, unsigned part_idx)
-{
-   util_dynarray_foreach (symbols, struct ac_rtld_symbol, symbol) {
-      if ((symbol->part_idx == ~0u || symbol->part_idx == part_idx) && !strcmp(name, symbol->name))
-         return symbol;
-   }
-   return NULL;
-}
-
-static int compare_symbol_by_align(const void *lhsp, const void *rhsp)
-{
-   const struct ac_rtld_symbol *lhs = lhsp;
-   const struct ac_rtld_symbol *rhs = rhsp;
-   if (rhs->align > lhs->align)
-      return 1;
-   if (rhs->align < lhs->align)
-      return -1;
-   return 0;
-}
-
-/**
- * Sort the given symbol list by decreasing alignment and assign offsets.
- */
-static bool layout_symbols(struct ac_rtld_symbol *symbols, unsigned num_symbols,
-                           uint64_t *ptotal_size)
-{
-   qsort(symbols, num_symbols, sizeof(*symbols), compare_symbol_by_align);
-
-   uint64_t total_size = *ptotal_size;
-
-   for (unsigned i = 0; i < num_symbols; ++i) {
-      struct ac_rtld_symbol *s = &symbols[i];
-      assert(util_is_power_of_two_nonzero(s->align));
-
-      total_size = align64(total_size, s->align);
-      s->offset = total_size;
-
-      if (total_size + s->size < total_size) {
-         report_errorf("%s: size overflow", __func__);
-         return false;
-      }
-
-      total_size += s->size;
-   }
-
-   *ptotal_size = total_size;
-   return true;
-}
-
-/**
- * Read LDS symbols from the given \p section of the ELF of \p part and append
- * them to the LDS symbols list.
- *
- * Shared LDS symbols are filtered out.
- */
-static bool read_private_lds_symbols(struct ac_rtld_binary *binary, unsigned part_idx,
-                                     Elf_Scn *section, uint32_t *lds_end_align)
-{
-#define report_if(cond)                                                                            \
-   do {                                                                                            \
-      if ((cond)) {                                                                                \
-         report_errorf(#cond);                                                                     \
-         return false;                                                                             \
-      }                                                                                            \
-   } while (false)
-#define report_elf_if(cond)                                                                        \
-   do {                                                                                            \
-      if ((cond)) {                                                                                \
-         report_elf_errorf(#cond);                                                                 \
-         return false;                                                                             \
-      }                                                                                            \
-   } while (false)
-
-   struct ac_rtld_part *part = &binary->parts[part_idx];
-   Elf64_Shdr *shdr = elf64_getshdr(section);
-   uint32_t strtabidx = shdr->sh_link;
-   Elf_Data *symbols_data = elf_getdata(section, NULL);
-   report_elf_if(!symbols_data);
-
-   const Elf64_Sym *symbol = symbols_data->d_buf;
-   size_t num_symbols = symbols_data->d_size / sizeof(Elf64_Sym);
-
-   for (size_t j = 0; j < num_symbols; ++j, ++symbol) {
-      struct ac_rtld_symbol s = {0};
-
-      if (ELF64_ST_TYPE(symbol->st_info) == STT_AMDGPU_LDS) {
-         /* old-style LDS symbols from initial prototype -- remove eventually */
-         s.align = MIN2(1u << (symbol->st_other >> 3), 1u << 16);
-      } else if (symbol->st_shndx == SHN_AMDGPU_LDS) {
-         s.align = MIN2(symbol->st_value, 1u << 16);
-         report_if(!util_is_power_of_two_nonzero(s.align));
-      } else
-         continue;
-
-      report_if(symbol->st_size > 1u << 29);
-
-      s.name = elf_strptr(part->elf, strtabidx, symbol->st_name);
-      s.size = symbol->st_size;
-      s.part_idx = part_idx;
-
-      if (!strcmp(s.name, "__lds_end")) {
-         report_elf_if(s.size != 0);
-         *lds_end_align = MAX2(*lds_end_align, s.align);
-         continue;
-      }
-
-      const struct ac_rtld_symbol *shared = find_symbol(&binary->lds_symbols, s.name, part_idx);
-      if (shared) {
-         report_elf_if(s.align > shared->align);
-         report_elf_if(s.size > shared->size);
-         continue;
-      }
-
-      util_dynarray_append(&binary->lds_symbols, struct ac_rtld_symbol, s);
-   }
-
-   return true;
-
-#undef report_if
-#undef report_elf_if
-}
-
-/**
  * Open a binary consisting of one or more shader parts.
  *
  * \param binary the uninitialized struct
@@ -266,42 +131,13 @@ bool ac_rtld_open(struct ac_rtld_binary *binary, struct ac_rtld_open_info i)
       }                                                                                            \
    } while (false)
 
-   /* Copy and layout shared LDS symbols. */
-   if (i.num_shared_lds_symbols) {
-      if (!util_dynarray_resize(&binary->lds_symbols, struct ac_rtld_symbol,
-                                i.num_shared_lds_symbols))
-         goto fail;
-
-      memcpy(binary->lds_symbols.data, i.shared_lds_symbols, binary->lds_symbols.size);
-   }
-
-   util_dynarray_foreach (&binary->lds_symbols, struct ac_rtld_symbol, symbol)
-      symbol->part_idx = ~0u;
-
-   unsigned max_lds_size = i.info->gfx_level == GFX6 ? 32 * 1024 : 64 * 1024;
-
-   uint64_t shared_lds_size = 0;
-   if (!layout_symbols(binary->lds_symbols.data, i.num_shared_lds_symbols, &shared_lds_size))
-      goto fail;
-
-   if (shared_lds_size > max_lds_size) {
-      fprintf(stderr, "ac_rtld error(1): too much LDS (used = %u, max = %u)\n",
-              (unsigned)shared_lds_size, max_lds_size);
-      goto fail;
-   }
-   binary->lds_size = shared_lds_size;
-
    /* First pass over all parts: open ELFs, pre-determine the placement of
-    * sections in the memory image, and collect and layout private LDS symbols. */
-   uint32_t lds_end_align = 0;
-
+    * sections in the memory image. */
    if (binary->options.halt_at_entry)
       pasted_text_size += 4;
 
    for (unsigned part_idx = 0; part_idx < i.num_parts; ++part_idx) {
       struct ac_rtld_part *part = &binary->parts[part_idx];
-      unsigned part_lds_symbols_begin =
-         util_dynarray_num_elements(&binary->lds_symbols, struct ac_rtld_symbol);
 
       part->elf = elf_memory((char *)i.elf_ptrs[part_idx], i.elf_sizes[part_idx]);
       report_elf_if(!part->elf);
@@ -364,46 +200,12 @@ bool ac_rtld_open(struct ac_rtld_binary *binary, struct ac_rtld_open_info i)
                s->offset = rx_size;
                rx_size += shdr->sh_size;
             }
-         } else if (shdr->sh_type == SHT_SYMTAB) {
-            if (!read_private_lds_symbols(binary, part_idx, section, &lds_end_align))
-               goto fail;
          }
       }
-
-      uint64_t part_lds_size = shared_lds_size;
-      if (!layout_symbols(util_dynarray_element(&binary->lds_symbols, struct ac_rtld_symbol,
-                                                part_lds_symbols_begin),
-                          util_dynarray_num_elements(&binary->lds_symbols, struct ac_rtld_symbol) -
-                             part_lds_symbols_begin,
-                          &part_lds_size))
-         goto fail;
-      binary->lds_size = MAX2(binary->lds_size, part_lds_size);
    }
 
    binary->rx_end_markers = pasted_text_size;
    pasted_text_size += 4 * DEBUGGER_NUM_MARKERS;
-
-   /* __lds_end is a special symbol that points at the end of the memory
-    * occupied by other LDS symbols. Its alignment is taken as the
-    * maximum of its alignment over all shader parts where it occurs.
-    */
-   if (lds_end_align) {
-      binary->lds_size = align(binary->lds_size, lds_end_align);
-
-      struct ac_rtld_symbol *lds_end =
-         util_dynarray_grow(&binary->lds_symbols, struct ac_rtld_symbol, 1);
-      lds_end->name = "__lds_end";
-      lds_end->size = 0;
-      lds_end->align = lds_end_align;
-      lds_end->offset = binary->lds_size;
-      lds_end->part_idx = ~0u;
-   }
-
-   if (binary->lds_size > max_lds_size) {
-      fprintf(stderr, "ac_rtld error(2): too much LDS (used = %u, max = %u)\n",
-              (unsigned)binary->lds_size, max_lds_size);
-      goto fail;
-   }
 
    /* Second pass: Adjust offsets of non-pasted text sections. */
    binary->rx_size = pasted_text_size;
@@ -442,7 +244,6 @@ void ac_rtld_close(struct ac_rtld_binary *binary)
       elf_end(part->elf);
    }
 
-   util_dynarray_fini(&binary->lds_symbols);
    free(binary->parts);
    binary->parts = NULL;
    binary->num_parts = 0;
@@ -507,9 +308,6 @@ bool ac_rtld_read_config(const struct radeon_info *info, struct ac_rtld_binary *
       config->spi_ps_input_ena = c.spi_ps_input_ena;
       config->spi_ps_input_addr = c.spi_ps_input_addr;
 
-      /* TODO: consistently use LDS symbols for this */
-      config->lds_size = MAX2(config->lds_size, c.lds_size);
-
       /* TODO: Should we combine these somehow? It's currently only
        * used for radeonsi's compute, where multiple parts aren't used. */
       assert(config->rsrc1 == 0 && config->rsrc2 == 0);
@@ -523,18 +321,7 @@ bool ac_rtld_read_config(const struct radeon_info *info, struct ac_rtld_binary *
 static bool resolve_symbol(const struct ac_rtld_upload_info *u, unsigned part_idx,
                            const Elf64_Sym *sym, const char *name, uint64_t *value)
 {
-   /* TODO: properly disentangle the undef and the LDS cases once
-    * STT_AMDGPU_LDS is retired. */
-   if (sym->st_shndx == SHN_UNDEF || sym->st_shndx == SHN_AMDGPU_LDS) {
-      const struct ac_rtld_symbol *lds_sym = find_symbol(&u->binary->lds_symbols, name, part_idx);
-
-      if (lds_sym) {
-         *value = lds_sym->offset;
-         return true;
-      }
-
-      /* TODO: resolve from other parts */
-
+   if (sym->st_shndx == SHN_UNDEF) {
       if (u->get_external_symbol(u->binary->gfx_level, u->cb_data, name, value))
          return true;
 
@@ -719,7 +506,7 @@ int ac_rtld_upload(struct ac_rtld_upload_info *u)
       *(uint32_t *)u->rx_ptr = util_cpu_to_le32(0xbf8d0001);
    }
 
-   /* First pass: upload raw section data and lay out private LDS symbols. */
+   /* First pass: upload raw section data. */
    for (unsigned i = 0; i < u->binary->num_parts; ++i) {
       struct ac_rtld_part *part = &u->binary->parts[i];
 
