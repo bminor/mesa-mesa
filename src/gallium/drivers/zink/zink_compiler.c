@@ -1366,6 +1366,13 @@ zink_screen_init_compiler(struct zink_screen *screen)
        !screen->driver_compiler_workarounds.broken_demote)
       screen->nir_options.discard_is_demote = true;
 
+   if (!screen->info.have_KHR_maintenance9) {
+      screen->nir_options.lower_bitfield_extract16 = true;
+      screen->nir_options.lower_bitfield_extract8 = true;
+      screen->nir_options.lower_int64_options |=
+         nir_lower_bitfield_reverse64 | nir_lower_bitfield_extract64;
+   }
+
    screen->nir_options.support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
    screen->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
 }
@@ -5732,6 +5739,8 @@ lower_vec816_alu(const nir_instr *instr, const void *cb_data)
 static unsigned
 zink_lower_bit_size_cb(const nir_instr *instr, void *data)
 {
+   struct zink_screen *screen = data;
+
    switch (instr->type) {
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
@@ -5741,6 +5750,11 @@ zink_lower_bit_size_cb(const nir_instr *instr, void *data)
       case nir_op_ifind_msb:
       case nir_op_ufind_msb:
          return alu->src[0].src.ssa->bit_size == 32 ? 0 : 32;
+      case nir_op_bitfield_insert:
+      case nir_op_bitfield_reverse:
+         if (!screen->info.have_KHR_maintenance9)
+            return alu->src[0].src.ssa->bit_size == 32 ? 0 : 32;
+         return 0;
       default:
          return 0;
       }
@@ -6192,7 +6206,7 @@ zink_shader_init(struct zink_screen *screen, struct zink_shader *zs)
          .cb_data = screen,
       };
       NIR_PASS(_, nir, nir_lower_mem_access_bit_sizes, &lower_mem_access_options);
-      NIR_PASS(_, nir, nir_lower_bit_size, zink_lower_bit_size_cb, NULL);
+      NIR_PASS(_, nir, nir_lower_bit_size, zink_lower_bit_size_cb, screen);
       NIR_PASS(_, nir, alias_scratch_memory);
       NIR_PASS(_, nir, nir_lower_alu_width, lower_vec816_alu, NULL);
       NIR_PASS(_, nir, nir_lower_alu_vec8_16_srcs);
