@@ -55,7 +55,7 @@ nouveau_copy_rect_buffer(struct nvk_buffer *buf,
                          struct vk_image_buffer_layout buffer_layout)
 {
    return (struct nouveau_copy_buffer) {
-      .base_addr = nvk_buffer_address(buf, offset),
+      .base_addr = vk_buffer_address(&buf->vk, offset),
       .image_type = VK_IMAGE_TYPE_2D,
       .bpp = buffer_layout.element_size_B,
       .row_stride = buffer_layout.row_stride_B,
@@ -341,8 +341,8 @@ nvk_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
    for (unsigned r = 0; r < pCopyBufferInfo->regionCount; r++) {
       const VkBufferCopy2 *region = &pCopyBufferInfo->pRegions[r];
 
-      uint64_t src_addr = nvk_buffer_address(src, region->srcOffset);
-      uint64_t dst_addr = nvk_buffer_address(dst, region->dstOffset);
+      uint64_t src_addr = vk_buffer_address(&src->vk, region->srcOffset);
+      uint64_t dst_addr = vk_buffer_address(&dst->vk, region->dstOffset);
       uint64_t size = region->size;
 
       while (size) {
@@ -739,7 +739,7 @@ nvk_CmdFillBuffer(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(nvk_buffer, dst_buffer, dstBuffer);
 
-   uint64_t dst_addr = nvk_buffer_address(dst_buffer, dstOffset);
+   uint64_t dst_addr = vk_buffer_address(&dst_buffer->vk, dstOffset);
    size = vk_buffer_range(&dst_buffer->vk, dstOffset, size);
 
    uint32_t max_dim = 1 << 15;
@@ -810,7 +810,7 @@ nvk_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(nvk_buffer, dst, dstBuffer);
 
-   uint64_t dst_addr = nvk_buffer_address(dst, dstOffset);
+   uint64_t dst_addr = vk_buffer_address(&dst->vk, dstOffset);
 
    uint64_t data_addr;
    nvk_cmd_buffer_upload_data(cmd, pData, dataSize, 64, &data_addr);

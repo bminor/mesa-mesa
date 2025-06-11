@@ -530,7 +530,7 @@ nvk_CmdDispatchIndirect(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(nvk_buffer, buffer, _buffer);
 
-   uint64_t dispatch_addr = nvk_buffer_address(buffer, offset);
+   uint64_t dispatch_addr = vk_buffer_address(&buffer->vk, offset);
 
    /* We set these through the MME */
    uint32_t base_workgroup[3] = { 0, 0, 0 };

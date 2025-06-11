@@ -828,7 +828,7 @@ nvk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer,
       }
    }
 
-   uint64_t dst_addr = nvk_buffer_address(dst_buffer, dstOffset);
+   uint64_t dst_addr = vk_buffer_address(&dst_buffer->vk, dstOffset);
    nvk_meta_copy_query_pool_results(cmd, pool, firstQuery, queryCount,
                                     dst_addr, stride, flags);
 }

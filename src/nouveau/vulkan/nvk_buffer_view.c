@@ -59,7 +59,7 @@ nvk_CreateBufferView(VkDevice _device,
    if (!view)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   const uint64_t addr = nvk_buffer_address(buffer, view->vk.offset);
+   const uint64_t addr = vk_buffer_address(&buffer->vk, view->vk.offset);
    enum pipe_format format = nvk_format_to_pipe_format(view->vk.format);
 
    if (nvk_use_edb_buffer_views(pdev)) {

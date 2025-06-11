@@ -289,7 +289,7 @@ nvk_GetBufferOpaqueCaptureAddress(UNUSED VkDevice device,
 {
    VK_FROM_HANDLE(nvk_buffer, buffer, pInfo->buffer);
 
-   return nvk_buffer_address(buffer, 0);
+   return vk_buffer_address(&buffer->vk, 0);
 }
 
 VkResult

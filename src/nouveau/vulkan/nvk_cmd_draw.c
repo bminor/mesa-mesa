@@ -4256,7 +4256,7 @@ nvk_CmdDrawIndirect(VkCommandBuffer commandBuffer,
    if (nvk_cmd_buffer_3d_cls(cmd) >= TURING_A) {
       struct nv_push *p = nvk_cmd_buffer_push(cmd, 5);
       P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_DRAW_INDIRECT));
-      uint64_t draw_addr = nvk_buffer_address(buffer, offset);
+      uint64_t draw_addr = vk_buffer_address(&buffer->vk, offset);
       P_INLINE_DATA(p, draw_addr >> 32);
       P_INLINE_DATA(p, draw_addr);
       P_INLINE_DATA(p, drawCount);
@@ -4265,7 +4265,7 @@ nvk_CmdDrawIndirect(VkCommandBuffer commandBuffer,
       const uint32_t max_draws_per_push =
          ((NV_PUSH_MAX_COUNT - 3) * 4) / stride;
 
-      uint64_t draw_addr = nvk_buffer_address(buffer, offset);
+      uint64_t draw_addr = vk_buffer_address(&buffer->vk, offset);
       while (drawCount) {
          const uint32_t count = MIN2(drawCount, max_draws_per_push);
 
@@ -4356,7 +4356,7 @@ nvk_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
    if (nvk_cmd_buffer_3d_cls(cmd) >= TURING_A) {
       struct nv_push *p = nvk_cmd_buffer_push(cmd, 5);
       P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_DRAW_INDEXED_INDIRECT));
-      uint64_t draw_addr = nvk_buffer_address(buffer, offset);
+      uint64_t draw_addr = vk_buffer_address(&buffer->vk, offset);
       P_INLINE_DATA(p, draw_addr >> 32);
       P_INLINE_DATA(p, draw_addr);
       P_INLINE_DATA(p, drawCount);
@@ -4365,7 +4365,7 @@ nvk_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
       const uint32_t max_draws_per_push =
          ((NV_PUSH_MAX_COUNT - 3) * 4) / stride;
 
-      uint64_t draw_addr = nvk_buffer_address(buffer, offset);
+      uint64_t draw_addr = vk_buffer_address(&buffer->vk, offset);
       while (drawCount) {
          const uint32_t count = MIN2(drawCount, max_draws_per_push);
 
@@ -4435,11 +4435,11 @@ nvk_CmdDrawIndirectCount(VkCommandBuffer commandBuffer,
 
    struct nv_push *p = nvk_cmd_buffer_push(cmd, 7);
    P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_DRAW_INDIRECT_COUNT));
-   uint64_t draw_addr = nvk_buffer_address(buffer, offset);
+   uint64_t draw_addr = vk_buffer_address(&buffer->vk, offset);
    P_INLINE_DATA(p, draw_addr >> 32);
    P_INLINE_DATA(p, draw_addr);
-   uint64_t draw_count_addr = nvk_buffer_address(count_buffer,
-                                                 countBufferOffset);
+   uint64_t draw_count_addr = vk_buffer_address(&count_buffer->vk,
+                                                countBufferOffset);
    P_INLINE_DATA(p, draw_count_addr >> 32);
    P_INLINE_DATA(p, draw_count_addr);
    P_INLINE_DATA(p, maxDrawCount);
@@ -4497,11 +4497,11 @@ nvk_CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer,
 
    struct nv_push *p = nvk_cmd_buffer_push(cmd, 7);
    P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_DRAW_INDEXED_INDIRECT_COUNT));
-   uint64_t draw_addr = nvk_buffer_address(buffer, offset);
+   uint64_t draw_addr = vk_buffer_address(&buffer->vk, offset);
    P_INLINE_DATA(p, draw_addr >> 32);
    P_INLINE_DATA(p, draw_addr);
-   uint64_t draw_count_addr = nvk_buffer_address(count_buffer,
-                                                 countBufferOffset);
+   uint64_t draw_count_addr = vk_buffer_address(&count_buffer->vk,
+                                                countBufferOffset);
    P_INLINE_DATA(p, draw_count_addr >> 32);
    P_INLINE_DATA(p, draw_count_addr);
    P_INLINE_DATA(p, maxDrawCount);
@@ -4600,8 +4600,8 @@ nvk_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer,
 
    nvk_cmd_flush_gfx_state(cmd);
 
-   uint64_t counter_addr = nvk_buffer_address(counter_buffer,
-                                              counterBufferOffset);
+   uint64_t counter_addr = vk_buffer_address(&counter_buffer->vk,
+                                             counterBufferOffset);
 
    if (nvk_cmd_buffer_3d_cls(cmd) >= TURING_A) {
       struct nv_push *p = nvk_cmd_buffer_push(cmd, 9);
@@ -4706,7 +4706,7 @@ nvk_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer,
       // index of counter buffer corresponts to index of transform buffer
       uint32_t cb_idx = firstCounterBuffer + i;
       uint64_t offset = pCounterBufferOffsets ? pCounterBufferOffsets[i] : 0;
-      uint64_t cb_addr = nvk_buffer_address(buffer, offset);
+      uint64_t cb_addr = vk_buffer_address(&buffer->vk, offset);
 
       if (nvk_cmd_buffer_3d_cls(cmd) >= TURING_A) {
          struct nv_push *p = nvk_cmd_buffer_push(cmd, 4);
@@ -4746,7 +4746,7 @@ nvk_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
       // index of counter buffer corresponts to index of transform buffer
       uint32_t cb_idx = firstCounterBuffer + i;
       uint64_t offset = pCounterBufferOffsets ? pCounterBufferOffsets[i] : 0;
-      uint64_t cb_addr = nvk_buffer_address(buffer, offset);
+      uint64_t cb_addr = vk_buffer_address(&buffer->vk, offset);
 
       P_MTHD(p, NV9097, SET_REPORT_SEMAPHORE_A);
       P_NV9097_SET_REPORT_SEMAPHORE_A(p, cb_addr >> 32);
@@ -4769,7 +4769,8 @@ nvk_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(nvk_buffer, buffer, pConditionalRenderingBegin->buffer);
 
-   uint64_t addr = nvk_buffer_address(buffer, pConditionalRenderingBegin->offset);
+   const uint64_t addr =
+      vk_buffer_address(&buffer->vk, pConditionalRenderingBegin->offset);
    bool inverted = pConditionalRenderingBegin->flags &
       VK_CONDITIONAL_RENDERING_INVERTED_BIT_EXT;
 
