@@ -717,7 +717,7 @@ agx_nir_fs_prolog(nir_builder *b, const void *key_)
    }
 
    if (key->polygon_stipple) {
-      NIR_PASS_V(b->shader, agx_nir_lower_poly_stipple);
+      NIR_PASS(_, b->shader, agx_nir_lower_poly_stipple);
    }
 
    /* Then, lower the prolog */
