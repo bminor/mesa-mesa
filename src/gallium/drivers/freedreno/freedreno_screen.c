@@ -313,6 +313,7 @@ fd_init_shader_caps(struct fd_screen *screen)
 static void
 fd_init_compute_caps(struct fd_screen *screen)
 {
+   const struct fd_dev_info *info = screen->info;
    struct pipe_compute_caps *caps =
       (struct pipe_compute_caps *)&screen->base.compute_caps;
 
@@ -333,7 +334,10 @@ fd_init_compute_caps(struct fd_screen *screen)
    caps->max_block_size[1] = 1024;
    caps->max_block_size[2] = 64;
 
-   caps->max_threads_per_block = 1024;
+   caps->max_threads_per_block = info->threadsize_base * info->max_waves;
+
+   if (is_a6xx(screen) && info->a6xx.supports_double_threadsize)
+      caps->max_threads_per_block *= 2;
 
    caps->max_global_size = screen->ram_size;
 
