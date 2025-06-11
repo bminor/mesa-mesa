@@ -2072,11 +2072,36 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
       const unsigned rcount = brw_eu_inst_dpas_3src_rcount(devinfo, inst) + 1;
 
       format(file, "x%d", rcount);
+   } else if (opcode == BRW_OPCODE_BFN) {
+      unsigned cc;
+
+      switch (brw_eu_inst_boolean_func_cond_modifier(devinfo, inst)) {
+      case 0:
+         cc = BRW_CONDITIONAL_NONE;
+         break;
+      case 1:
+         cc = BRW_CONDITIONAL_Z;
+         break;
+      case 2:
+         cc = BRW_CONDITIONAL_G;
+         break;
+      case 3:
+         cc = BRW_CONDITIONAL_L;
+         break;
+      }
+
+      err |= control(file, "conditional modifier", conditional_modifier,
+                     cc, NULL);
+
+      /* If we're using the conditional modifier, print which flags reg is
+       * used for it.
+       */
+      if (cc != BRW_CONDITIONAL_NONE) {
+         format(file, ".f%"PRIu64".%"PRIu64,
+                brw_eu_inst_flag_reg_nr(devinfo, inst),
+                brw_eu_inst_flag_subreg_nr(devinfo, inst));
+      }
    } else if (!is_send(opcode) &&
-              /* BFN has data in the place of the conditional modifier which
-               * is not a conditional modifer
-               */
-              opcode != BRW_OPCODE_BFN &&
               (devinfo->ver < 12 ||
                brw_eu_inst_src0_reg_file(devinfo, inst) != IMM ||
                brw_type_size_bytes(brw_eu_inst_src0_type(devinfo, inst)) < 8)) {

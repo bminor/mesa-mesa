@@ -1970,6 +1970,9 @@ instruction_restrictions(const struct brw_isa_info *isa,
          ERROR_IF(inst->src[i].type != BRW_TYPE_UD &&
                   inst->src[i].type != BRW_TYPE_UW,
                   "BFN source must be UD or UW type.");
+
+         ERROR_IF(inst->src[i].abs || inst->src[i].negate,
+                  "BFN does not support source modifiers.");
       }
    }
 
@@ -2832,8 +2835,6 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
 
       inst->src[0].file = brw_eu_inst_3src_a1_src0_reg_file(devinfo, raw);
       inst->src[0].type = brw_eu_inst_3src_a1_src0_type(devinfo, raw);
-      inst->src[0].negate = brw_eu_inst_3src_src0_negate(devinfo, raw);
-      inst->src[0].abs = brw_eu_inst_3src_src0_abs(devinfo, raw);
       if (inst->src[0].file != IMM) {
          inst->src[0].nr = brw_eu_inst_3src_src0_reg_nr(devinfo, raw);
          inst->src[0].subnr = brw_eu_inst_3src_a1_src0_subreg_nr(devinfo, raw);
@@ -2857,6 +2858,21 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
          inst->src[2].subnr = brw_eu_inst_3src_a1_src2_subreg_nr(devinfo, raw);
          inst->src[2].hstride = STRIDE(brw_eu_inst_3src_a1_src2_hstride(devinfo, raw));
          inst->src[2].width = brw_implied_width_for_3src_a1(inst->src[2].vstride, inst->src[2].hstride);
+      }
+
+      switch (brw_eu_inst_boolean_func_cond_modifier(devinfo, raw)) {
+      case 0:
+         inst->cond_modifier = BRW_CONDITIONAL_NONE;
+         break;
+      case 1:
+         inst->cond_modifier = BRW_CONDITIONAL_Z;
+         break;
+      case 2:
+         inst->cond_modifier = BRW_CONDITIONAL_G;
+         break;
+      case 3:
+         inst->cond_modifier = BRW_CONDITIONAL_L;
+         break;
       }
       break;
    }

@@ -329,6 +329,19 @@ brw_validate(const brw_shader &s)
             break;
          }
 
+         case BRW_OPCODE_BFN:
+            VAL_ASSERT(!inst->src[0].abs && !inst->src[0].negate);
+            VAL_ASSERT(!inst->src[1].abs && !inst->src[1].negate);
+            VAL_ASSERT(!inst->src[2].abs && !inst->src[2].negate);
+            VAL_ASSERT_EQ(inst->src[3].file, IMM);
+
+            /* BFN only supports a limited subset of conditions. */
+            VAL_ASSERT(inst->conditional_mod == BRW_CONDITIONAL_NONE ||
+                       inst->conditional_mod == BRW_CONDITIONAL_Z ||
+                       inst->conditional_mod == BRW_CONDITIONAL_G ||
+                       inst->conditional_mod == BRW_CONDITIONAL_L);
+            break;
+
          default:
             break;
          }

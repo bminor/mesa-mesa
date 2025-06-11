@@ -521,6 +521,7 @@ F(3src_a1_src2_is_imm,      /* 9+ */   -1,  -1,  /* 12+ */ 47, 47)
 F(3src_a1_src0_is_imm,      /* 9+ */   -1,  -1,  /* 12+ */ 46, 46)
 
 FDC(boolean_func_ctrl,      /* 9+ */   -1,  -1,  /* 12+ */ 95, 92, 87, 84, devinfo->verx10 >= 125)
+F(boolean_func_cond_modifier,/* 9+ */  -1,  -1,  /* 12+ */ 45, 44)
 
 /* Source Modifier fields same in align16 */
 FFC(3src_a1_dst_reg_file,   /* 9+ */    36,  36, /* 12+ */ 50, 50, devinfo->ver >= 10, .grf_or_acc = true)

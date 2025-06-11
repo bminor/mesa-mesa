@@ -336,6 +336,7 @@ brw_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
    case BRW_OPCODE_BFE:
    case BRW_OPCODE_BFI1:
    case BRW_OPCODE_BFI2:
+   case BRW_OPCODE_BFN:
    case BRW_OPCODE_BFREV:
    case BRW_OPCODE_CBIT:
    case BRW_OPCODE_FBH:
