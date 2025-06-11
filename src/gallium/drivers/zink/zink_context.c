@@ -3466,7 +3466,7 @@ zink_prep_fb_attachment(struct zink_context *ctx, struct zink_surface *surf, uns
    if (!(res->aspect & VK_IMAGE_ASPECT_COLOR_BIT))
       ctx->zsbuf_readonly = res->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
    res->obj->unordered_read = res->obj->unordered_write = false;
-   if (i == ctx->fb_state.nr_cbufs && res->sampler_bind_count[0])
+   if (!screen->driver_workarounds.general_layout && i == ctx->fb_state.nr_cbufs && res->sampler_bind_count[0])
       update_res_sampler_layouts(ctx, res);
    return surf->image_view;
 }
@@ -3824,7 +3824,7 @@ unbind_fb_surface(struct zink_context *ctx, struct pipe_surface *surf, unsigned 
       if (ctx->track_renderpasses && !ctx->blitting) {
          pre_sync_transfer_barrier(ctx, res, false);
       }
-      if (res->sampler_bind_count[0]) {
+      if (!general_layout && res->sampler_bind_count[0]) {
          update_res_sampler_layouts(ctx, res);
          if (res->layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && !ctx->blitting)
             _mesa_set_add(ctx->need_barriers[0], res);
@@ -5914,7 +5914,7 @@ zink_update_barriers(struct zink_context *ctx, bool is_compute,
             if (is_feedback || layout != VK_IMAGE_LAYOUT_GENERAL || res->image_bind_count[is_compute])
                zink_screen(ctx->base.screen)->image_barrier(ctx, res, layout, res->barrier_access[is_compute], pipeline);
             assert(!check_rp || check_rp == ctx->in_rp);
-            if (is_feedback)
+            if (!general_layout && is_feedback)
                update_res_sampler_layouts(ctx, res);
          }
          if (zink_resource_access_is_write(res->barrier_access[is_compute]) ||
