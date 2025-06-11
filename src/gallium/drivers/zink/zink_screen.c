@@ -2760,7 +2760,7 @@ static void
 init_driver_workarounds(struct zink_screen *screen)
 {
    /* enable implicit sync for all non-mesa drivers */
-   screen->driver_workarounds.implicit_sync = screen->info.driver_props.driverID != VK_DRIVER_ID_MESA_VENUS;
+   screen->driver_workarounds.implicit_sync = !zink_driver_is_venus(screen);
    switch (zink_driverid(screen)) {
    case VK_DRIVER_ID_MESA_RADV:
    case VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA:
@@ -2977,6 +2977,8 @@ init_driver_workarounds(struct zink_screen *screen)
    default:
       break;
    }
+   if (zink_driver_is_venus(screen))
+      screen->driver_workarounds.can_do_invalid_linear_modifier = true;
 
    /* these drivers have no difference between unoptimized and optimized shader compilation */
    switch (zink_driverid(screen)) {

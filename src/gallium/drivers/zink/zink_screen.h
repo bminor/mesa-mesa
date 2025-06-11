@@ -139,6 +139,12 @@ zink_driverid(const struct zink_screen *screen)
    return screen->info.vk_layered_driver_props.driverID;
 }
 
+static inline bool
+zink_driver_is_venus(const struct zink_screen *screen)
+{
+   return screen->info.driver_props.driverID == VK_DRIVER_ID_MESA_VENUS;
+}
+
 void
 zink_screen_lock_context(struct zink_screen *screen);
 void
