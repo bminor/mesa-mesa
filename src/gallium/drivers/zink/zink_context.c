@@ -2970,6 +2970,8 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
 
    /* TODO: if multiple fbfetch attachments or zsbuf fbfetch */
    bool had_fbfetch_info = !!ctx->dynamic_fb.attachments[0].pNext;
+   /* j/k this is super nonconformant */
+   bool very_legal_and_conformant_msaa_opt = ctx->dynamic_fb.tc_info.has_resolve && ctx->dynamic_fb.tc_info.ended && (zink_debug & ZINK_DEBUG_MSAAOPT);
    ctx->dynamic_fb.attachments[0].pNext = NULL;
    if (ctx->rp_changed || ctx->rp_layout_changed || (!ctx->in_rp && ctx->rp_loadop_changed)) {
       /* init imageviews, base loadOp, formats */
@@ -2978,13 +2980,12 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
          if (!surf)
             continue;
 
-         if (!zink_resource(surf->base.texture)->valid)
+         if (!zink_resource(surf->base.texture)->valid || very_legal_and_conformant_msaa_opt)
             ctx->dynamic_fb.attachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
          else
             ctx->dynamic_fb.attachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
          if (use_tc_info) {
-            /* can't skip stores if this is not a winsys resolve */
-            if ((!ctx->dynamic_fb.tc_info.has_resolve || ctx->fb_state.resolve) && ctx->dynamic_fb.tc_info.cbuf_invalidate & BITFIELD_BIT(i))
+            if (very_legal_and_conformant_msaa_opt || ctx->dynamic_fb.tc_info.cbuf_invalidate & BITFIELD_BIT(i))
                ctx->dynamic_fb.attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             else
                ctx->dynamic_fb.attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -3005,13 +3006,13 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
          has_stencil = util_format_has_stencil(util_format_description(ctx->fb_state.zsbuf.format));
 
          /* depth may or may not be used but init it anyway */
-         if (zink_resource(surf->base.texture)->valid)
+         if (zink_resource(surf->base.texture)->valid && !very_legal_and_conformant_msaa_opt)
             ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
          else
             ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
          if (use_tc_info) {
-            if (ctx->dynamic_fb.tc_info.zsbuf_invalidate)
+            if ((very_legal_and_conformant_msaa_opt && !ctx->fb_state.nr_cbufs) || ctx->dynamic_fb.tc_info.zsbuf_invalidate)
                ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             else
                ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].storeOp = VK_ATTACHMENT_STORE_OP_STORE;

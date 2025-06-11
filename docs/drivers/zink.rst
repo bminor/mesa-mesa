@@ -321,6 +321,8 @@ variable:
     Suppress probably-harmless warnings
   ``nopc``
     No precompilation
+  ``msaaopt``
+    Optimize out loads/stores of MSAA attachments (nonconformant)
 
 Vulkan Validation Layers
 ^^^^^^^^^^^^^^^^^^^^^^^^
