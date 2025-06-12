@@ -1407,7 +1407,8 @@ get_properties(const struct anv_physical_device *pdevice,
 
       /* Sparse: */
       .sparseResidencyStandard2DBlockShape = has_sparse_or_fake,
-      .sparseResidencyStandard2DMultisampleBlockShape = false,
+      .sparseResidencyStandard2DMultisampleBlockShape = has_sparse_or_fake &&
+                                                        pdevice->info.ver < 20,
       .sparseResidencyStandard3DBlockShape = has_sparse_or_fake,
       .sparseResidencyAlignedMipSize = false,
       .sparseResidencyNonResidentStrict = has_sparse_or_fake,
