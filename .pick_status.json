@@ -10784,7 +10784,7 @@
         "description": "pan/bi: rework memory barriers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f77a50e45e5070c7dfdc081e4dc9acfd206f863d",
         "notes": null
