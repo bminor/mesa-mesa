@@ -2105,7 +2105,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
           * scheduler from reordering memory operations around the barrier.
           * Avail and vis are trivially established.
           */
-         bi_memory_barrier(b);
+         bi_nop(b)->scheduling_barrier = true;
          break;
 
       case SCOPE_WORKGROUP:
