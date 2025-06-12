@@ -567,44 +567,20 @@ panvk_per_arch(get_physical_device_properties)(
       /* Sparse binding not supported yet. */
       .sparseAddressSpaceSize = 0,
       .maxBoundDescriptorSets = MAX_SETS,
-      /* MALI_RENDERER_STATE::sampler_count is 16-bit. */
-      .maxDescriptorSetSamplers = UINT16_MAX,
-      /* MALI_RENDERER_STATE::uniform_buffer_count is 8-bit. We reserve 32 slots
-       * for our internal UBOs.
-       */
-      .maxPerStageDescriptorUniformBuffers = UINT8_MAX - 32,
-      .maxDescriptorSetUniformBuffers = UINT8_MAX - 32,
-      /* SSBOs are limited by the size of a uniform buffer which contains our
-       * panvk_ssbo_addr objects.
-       * panvk_ssbo_addr is 16-byte, and each uniform entry in the Mali UBO is
-       * 16-byte too. The number of entries is encoded in a 12-bit field, with
-       * a minus(1) modifier, which gives a maximum of 2^12 SSBO
-       * descriptors.
-       */
-      .maxDescriptorSetStorageBuffers = 1 << 12,
-      /* MALI_RENDERER_STATE::sampler_count is 16-bit. */
-      .maxDescriptorSetSampledImages = UINT16_MAX,
-      /* MALI_ATTRIBUTE::buffer_index is 9-bit, and each image takes two
-       * MALI_ATTRIBUTE_BUFFER slots, which gives a maximum of (1 << 8) images.
-       */
-      .maxDescriptorSetStorageImages = 1 << 8,
-      /* A maximum of 8 color render targets, and one depth-stencil render
-       * target.
-       */
-      .maxDescriptorSetInputAttachments = MAX_RTS + 1,
+      .maxDescriptorSetSamplers = MAX_PER_SET_SAMPLERS,
+      .maxDescriptorSetSampledImages = MAX_PER_SET_SAMPLED_IMAGES,
+      .maxDescriptorSetUniformBuffers = MAX_PER_SET_UNIFORM_BUFFERS,
+      .maxDescriptorSetStorageBuffers = MAX_PER_SET_STORAGE_BUFFERS,
+      .maxDescriptorSetStorageImages = MAX_PER_SET_STORAGE_IMAGES,
+      .maxDescriptorSetInputAttachments = MAX_PER_SET_INPUT_ATTACHMENTS,
 
-      /* We could theoretically use the maxDescriptor values here (except for
-       * UBOs where we're really limited to 256 on the shader side), but on
-       * Bifrost we have to copy some tables around, which comes at an extra
-       * memory/processing cost, so let's pick something smaller.
-       */
-      .maxPerStageDescriptorInputAttachments = MAX_RTS + 1,
-      .maxPerStageDescriptorSampledImages = 256,
-      .maxPerStageDescriptorSamplers = 128,
-      .maxPerStageDescriptorStorageBuffers = 64,
-      .maxPerStageDescriptorStorageImages = 32,
-      .maxPerStageDescriptorUniformBuffers = 64,
-      .maxPerStageResources = MAX_RTS + 1 + 256 + 128 + 64 + 32 + 64,
+      .maxPerStageDescriptorSampledImages = MAX_PER_STAGE_SAMPLED_IMAGES,
+      .maxPerStageDescriptorSamplers = MAX_PER_STAGE_SAMPLERS,
+      .maxPerStageDescriptorUniformBuffers = MAX_PER_STAGE_UNIFORM_BUFFERS,
+      .maxPerStageDescriptorStorageBuffers = MAX_PER_STAGE_STORAGE_BUFFERS,
+      .maxPerStageDescriptorStorageImages = MAX_PER_STAGE_STORAGE_IMAGES,
+      .maxPerStageDescriptorInputAttachments = MAX_PER_STAGE_INPUT_ATTACHMENTS,
+      .maxPerStageResources = MAX_PER_STAGE_RESOURCES,
 
       /* Software limits to keep VkCommandBuffer tracking sane. */
       .maxDescriptorSetUniformBuffersDynamic = MAX_DYNAMIC_UNIFORM_BUFFERS,

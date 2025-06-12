@@ -28,6 +28,22 @@ extern const struct vk_device_shader_ops panvk_per_arch(device_shader_ops);
 
 #define MAX_VS_ATTRIBS 16
 
+
+/* We could theoretically use the MAX_PER_SET values here (except for UBOs
+ * where we're really limited to 256 on the shader side), but on Bifrost we
+ * have to copy some tables around, which comes at an extra memory/processing
+ * cost, so let's pick something smaller. */
+#define MAX_PER_STAGE_SAMPLED_IMAGES 256
+#define MAX_PER_STAGE_SAMPLERS 128
+#define MAX_PER_STAGE_UNIFORM_BUFFERS MAX_PER_SET_UNIFORM_BUFFERS
+#define MAX_PER_STAGE_STORAGE_BUFFERS 64
+#define MAX_PER_STAGE_STORAGE_IMAGES 32
+#define MAX_PER_STAGE_INPUT_ATTACHMENTS MAX_PER_SET_INPUT_ATTACHMENTS
+#define MAX_PER_STAGE_RESOURCES (                                              \
+   MAX_PER_STAGE_SAMPLED_IMAGES + MAX_PER_STAGE_SAMPLERS +                     \
+   MAX_PER_STAGE_UNIFORM_BUFFERS + MAX_PER_STAGE_STORAGE_BUFFERS +             \
+   MAX_PER_STAGE_STORAGE_IMAGES + MAX_PER_STAGE_INPUT_ATTACHMENTS)
+
 struct nir_shader;
 struct pan_blend_state;
 struct panvk_device;

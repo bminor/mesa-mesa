@@ -41,6 +41,25 @@
 #define MAX_SETS 15
 #endif
 
+/* MALI_RENDERER_STATE::sampler_count is 16-bit. */
+#define MAX_PER_SET_SAMPLERS UINT16_MAX
+/* MALI_RENDERER_STATE::sampler_count is 16-bit. */
+#define MAX_PER_SET_SAMPLED_IMAGES UINT16_MAX
+/* MALI_RENDERER_STATE::uniform_buffer_count is 8-bit. We reserve 32 slots for
+ * our internal UBOs. */
+#define MAX_PER_SET_UNIFORM_BUFFERS (UINT8_MAX - 32)
+/* SSBOs are limited by the size of a uniform buffer which contains our
+ * panvk_ssbo_addr objects. panvk_ssbo_addr is 16-byte, and each uniform entry
+ * in the Mali UBO is 16-byte too. The number of entries is encoded in a
+ * 12-bit field, with a minus(1) modifier, which gives a maximum of 2^12 SSBO
+ * descriptors. */
+#define MAX_PER_SET_STORAGE_BUFFERS (1 << 12)
+/* MALI_ATTRIBUTE::buffer_index is 9-bit, and each image takes two
+ * MALI_ATTRIBUTE_BUFFER slots, which gives a maximum of (1 << 8) images. */
+#define MAX_PER_SET_STORAGE_IMAGES (1 << 8)
+/* A maximum of 8 color render targets, and one depth-stencil render target. */
+#define MAX_PER_SET_INPUT_ATTACHMENTS (MAX_RTS + 1)
+
 struct panvk_descriptor_set_binding_layout {
    VkDescriptorType type;
    VkDescriptorBindingFlags flags;
