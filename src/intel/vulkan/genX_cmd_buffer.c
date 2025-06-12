@@ -4434,6 +4434,8 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
 
          uint32_t base_layer, layer_count;
          if (image->vk.image_type == VK_IMAGE_TYPE_3D) {
+            const uint32_t depth_at_base_mip =
+               u_minify(image->vk.extent.depth, range->baseMipLevel);
             /* VK_KHR_maintenance9:
              *
              *    "The effects of image memory barriers and image layout
@@ -4445,10 +4447,12 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
             if ((image->vk.create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
                 device->vk.enabled_features.maintenance9) {
                base_layer = range->baseArrayLayer;
-               layer_count = range->layerCount;
+               layer_count = range->layerCount == VK_REMAINING_ARRAY_LAYERS ?
+                             (depth_at_base_mip - range->baseArrayLayer) :
+                             range->layerCount;
             } else {
                base_layer = 0;
-               layer_count = u_minify(image->vk.extent.depth, range->baseMipLevel);
+               layer_count = depth_at_base_mip;
             }
          } else {
             base_layer = range->baseArrayLayer;
