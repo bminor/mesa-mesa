@@ -53,3 +53,4 @@ cl_khr_priority_hints
 VK_KHR_maintenance6 on panvk/v10+
 CL_sRGBA and CL_sBGRA images
 cl_khr_extended_bit_ops
+VK_KHR_shader_clock on panvk

@@ -87,6 +87,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_sampler_ycbcr_conversion = PAN_ARCH >= 10,
       .KHR_separate_depth_stencil_layouts = true,
+      .KHR_shader_clock = true,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_float_controls = true,
@@ -424,6 +425,10 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_EXT_pipeline_robustness */
       .pipelineRobustness = true,
+
+      /* VK_KHR_shader_clock */
+      .shaderSubgroupClock = device->kmod.props.gpu_can_query_timestamp,
+      .shaderDeviceClock = device->kmod.props.gpu_can_query_timestamp,
 
       /* VK_KHR_shader_float_controls2 */
       .shaderFloatControls2 = true,
