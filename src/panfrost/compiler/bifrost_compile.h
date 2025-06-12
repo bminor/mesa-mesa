@@ -107,6 +107,8 @@ void bifrost_compile_shader_nir(nir_shader *nir,
                                                                                \
       .lower_bitfield_insert = true,                                           \
       .lower_bitfield_extract = true,                                          \
+      .lower_bitfield_extract8 = true,                                         \
+      .lower_bitfield_extract16 = true,                                        \
       .lower_insert_byte = true,                                               \
                                                                                \
       .lower_pack_64_4x16 = true,                                              \
