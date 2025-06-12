@@ -1771,6 +1771,8 @@ optimizations.extend([
    #              = (b & a)               If a is odd, find_lsb(a) == 0
    (('bfi', '#a(is_odd)', b, 0), ('iand', a, b)),
 
+   (('bfi', '#a(is_odd)', b, c), ('bitfield_select', a, b, c), 'options->has_bitfield_select'),
+
    # Because 'a' is a positive power of two, the result of the bfi is either 0
    # or 'a' depending on whether or not 'b' is odd.  Use 'b&1' for the zero
    # value to help platforms that can't have two constants in a bcsel.
