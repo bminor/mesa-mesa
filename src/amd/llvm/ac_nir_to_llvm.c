@@ -2932,14 +2932,17 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_reduce:
       result = ac_build_reduce(&ctx->ac, get_src(ctx, instr->src[0]), instr->const_index[0],
                                instr->const_index[1]);
+      result = ac_to_integer(&ctx->ac, result);
       break;
    case nir_intrinsic_inclusive_scan:
       result =
          ac_build_inclusive_scan(&ctx->ac, get_src(ctx, instr->src[0]), instr->const_index[0]);
+      result = ac_to_integer(&ctx->ac, result);
       break;
    case nir_intrinsic_exclusive_scan:
       result =
          ac_build_exclusive_scan(&ctx->ac, get_src(ctx, instr->src[0]), instr->const_index[0]);
+      result = ac_to_integer(&ctx->ac, result);
       break;
    case nir_intrinsic_quad_broadcast: {
       unsigned lane = nir_src_as_uint(instr->src[1]);
