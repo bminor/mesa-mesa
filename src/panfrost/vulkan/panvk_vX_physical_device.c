@@ -18,6 +18,8 @@
 #include "vk_shader_module.h"
 
 #include "panvk_instance.h"
+#include "panvk_cmd_draw.h"
+#include "panvk_descriptor_set_layout.h"
 #include "panvk_physical_device.h"
 #include "panvk_wsi.h"
 
@@ -26,7 +28,6 @@
 #include "util/pan_ir.h"
 
 #define ARM_VENDOR_ID        0x13b5
-#define MAX_PUSH_DESCRIPTORS 32
 /* We reserve one ubo for push constant, one for sysvals and one per-set for the
  * descriptor metadata  */
 #define RESERVED_UBO_COUNT                   6
@@ -565,18 +566,7 @@ panvk_per_arch(get_physical_device_properties)(
       .bufferImageGranularity = 64,
       /* Sparse binding not supported yet. */
       .sparseAddressSpaceSize = 0,
-      /* On Bifrost, this is a software limit. We pick the minimum required by
-       * Vulkan, because Bifrost GPUs don't have unified descriptor tables,
-       * which forces us to agregatte all descriptors from all sets and dispatch
-       * them to per-type descriptor tables emitted at draw/dispatch time. The
-       * more sets we support the more copies we are likely to have to do at
-       * draw time.
-       *
-       * Valhall has native support for descriptor sets, and allows a maximum
-       * of 16 sets, but we reserve one for our internal use, so we have 15
-       * left.
-       */
-      .maxBoundDescriptorSets = PAN_ARCH <= 7 ? 4 : 15,
+      .maxBoundDescriptorSets = MAX_SETS,
       /* MALI_RENDERER_STATE::sampler_count is 16-bit. */
       .maxDescriptorSetSamplers = UINT16_MAX,
       /* MALI_RENDERER_STATE::uniform_buffer_count is 8-bit. We reserve 32 slots
@@ -601,29 +591,29 @@ panvk_per_arch(get_physical_device_properties)(
       /* A maximum of 8 color render targets, and one depth-stencil render
        * target.
        */
-      .maxDescriptorSetInputAttachments = 9,
+      .maxDescriptorSetInputAttachments = MAX_RTS + 1,
 
       /* We could theoretically use the maxDescriptor values here (except for
        * UBOs where we're really limited to 256 on the shader side), but on
        * Bifrost we have to copy some tables around, which comes at an extra
        * memory/processing cost, so let's pick something smaller.
        */
-      .maxPerStageDescriptorInputAttachments = 9,
+      .maxPerStageDescriptorInputAttachments = MAX_RTS + 1,
       .maxPerStageDescriptorSampledImages = 256,
       .maxPerStageDescriptorSamplers = 128,
       .maxPerStageDescriptorStorageBuffers = 64,
       .maxPerStageDescriptorStorageImages = 32,
       .maxPerStageDescriptorUniformBuffers = 64,
-      .maxPerStageResources = 9 + 256 + 128 + 64 + 32 + 64,
+      .maxPerStageResources = MAX_RTS + 1 + 256 + 128 + 64 + 32 + 64,
 
       /* Software limits to keep VkCommandBuffer tracking sane. */
-      .maxDescriptorSetUniformBuffersDynamic = 16,
-      .maxDescriptorSetStorageBuffersDynamic = 8,
+      .maxDescriptorSetUniformBuffersDynamic = MAX_DYNAMIC_UNIFORM_BUFFERS,
+      .maxDescriptorSetStorageBuffersDynamic = MAX_DYNAMIC_STORAGE_BUFFERS,
       /* Software limit to keep VkCommandBuffer tracking sane. The HW supports
        * up to 2^9 vertex attributes.
        */
-      .maxVertexInputAttributes = 16,
-      .maxVertexInputBindings = 16,
+      .maxVertexInputAttributes = MAX_VBS,
+      .maxVertexInputBindings = MAX_VBS,
       /* MALI_ATTRIBUTE::offset is 32-bit. */
       .maxVertexInputAttributeOffset = UINT32_MAX,
       /* MALI_ATTRIBUTE_BUFFER::stride is 32-bit. */
@@ -648,12 +638,12 @@ panvk_per_arch(get_physical_device_properties)(
       /* 32 vec4 varyings. */
       .maxFragmentInputComponents = 128,
       /* 8 render targets. */
-      .maxFragmentOutputAttachments = 8,
+      .maxFragmentOutputAttachments = MAX_RTS,
       .maxFragmentDualSrcAttachments = max_cbuf_atts,
       /* 8 render targets, 2^12 storage buffers and 2^8 storage images (see
        * above).
        */
-      .maxFragmentCombinedOutputResources = 8 + (1 << 12) + (1 << 8),
+      .maxFragmentCombinedOutputResources = MAX_RTS + (1 << 12) + (1 << 8),
       /* MALI_LOCAL_STORAGE::wls_size_{base,scale} allows us to have up to
        * (7 << 30) bytes of shared memory, but we cap it to 32K as it doesn't
        * really make sense to expose this amount of memory, especially since
@@ -900,7 +890,7 @@ panvk_per_arch(get_physical_device_properties)(
       .supportsNonZeroFirstInstance = true,
 
       /* VK_KHR_push_descriptor */
-      .maxPushDescriptors = MAX_PUSH_DESCRIPTORS,
+      .maxPushDescriptors = MAX_PUSH_DESCS,
    };
 
    snprintf(properties->deviceName, sizeof(properties->deviceName), "%s",

@@ -27,8 +27,17 @@
    (MAX_DYNAMIC_UNIFORM_BUFFERS + MAX_DYNAMIC_STORAGE_BUFFERS)
 
 #if PAN_ARCH <= 7
+/* On Bifrost, this is a software limit. We pick the minimum required by
+ * Vulkan, because Bifrost GPUs don't have unified descriptor tables,
+ * which forces us to aggregate all descriptors from all sets and dispatch
+ * them to per-type descriptor tables emitted at draw/dispatch time. The
+ * more sets we support the more copies we are likely to have to do at
+ * draw time. */
 #define MAX_SETS 4
 #else
+/* Valhall has native support for descriptor sets, and allows a maximum
+ * of 16 sets, but we reserve one for our internal use, so we have 15
+ * left. */
 #define MAX_SETS 15
 #endif
 
