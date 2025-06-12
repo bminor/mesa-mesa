@@ -829,11 +829,21 @@ ir3_nir_lower_preamble(nir_shader *nir, struct ir3_shader_variant *v)
          unsigned offset = preamble_base + nir_intrinsic_base(intrin);
          b->cursor = nir_before_instr(instr);
 
+         unsigned num_components = dest->num_components;
+
+         if (dest->bit_size == 64) {
+            num_components *= 2;
+         }
+
          nir_def *new_dest = nir_load_const_ir3(
-            b, dest->num_components, 32, nir_imm_int(b, 0), .base = offset);
+            b, num_components, 32, nir_imm_int(b, 0), .base = offset);
 
          if (dest->bit_size == 1) {
             new_dest = nir_i2b(b, new_dest);
+         } else if (dest->bit_size == 64) {
+            assert(num_components == 2);
+            new_dest = nir_pack_64_2x32_split(b, nir_channel(b, new_dest, 0),
+                                              nir_channel(b, new_dest, 1));
          } else if (dest->bit_size != 32) {
             if (all_uses_float(dest, true)) {
                assert(dest->bit_size == 16);
@@ -869,7 +879,9 @@ ir3_nir_lower_preamble(nir_shader *nir, struct ir3_shader_variant *v)
 
          if (src->bit_size == 1)
             src = nir_b2i32(b, src);
-         if (src->bit_size != 32) {
+         if (src->bit_size == 64) {
+            src = nir_unpack_64_2x32(b, src);
+         } else if (src->bit_size != 32) {
             if (BITSET_TEST(promoted_to_float, nir_intrinsic_base(intrin))){
                assert(src->bit_size == 16);
                src = nir_f2f32(b, src);
