@@ -39,6 +39,8 @@ ir3_nir_vectorize_filter(const nir_instr *instr, const void *data)
 
    struct nir_alu_instr *alu = nir_instr_as_alu(instr);
 
+   if (alu->def.bit_size == 64)
+      return 0;
    if (!ir3_supports_vectorized_nir_op(alu->op))
       return 0;
 
