@@ -2093,17 +2093,11 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
    case nir_intrinsic_barrier:
       switch (nir_intrinsic_execution_scope(instr)) {
       case SCOPE_NONE:
-         /*
-          * No execution barrier, and we don't have to do anything for memory
-          * barriers (see SCOPE_WORKGROUP case.)
-          */
-         break;
-
       case SCOPE_SUBGROUP:
          /*
-          * To implement a subgroup barrier, we only need to prevent the
-          * scheduler from reordering memory operations around the barrier.
-          * Avail and vis are trivially established.
+          * To implement none and subgroup barriers, we only need to prevent
+          * the scheduler from reordering operations with side-effects around
+          * the barrier. Avail and vis are trivially established.
           */
          bi_nop(b)->scheduling_barrier = true;
          break;
