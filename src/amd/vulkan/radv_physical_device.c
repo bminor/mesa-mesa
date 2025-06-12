@@ -997,9 +997,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .shaderSharedFloat64Atomics = true,
       .shaderSharedFloat64AtomicAdd = false,
       .shaderImageFloat32Atomics = true,
-      .shaderImageFloat32AtomicAdd = false,
+      .shaderImageFloat32AtomicAdd = pdev->info.gfx_level >= GFX12 && !pdev->use_llvm,
       .sparseImageFloat32Atomics = true,
-      .sparseImageFloat32AtomicAdd = false,
+      .sparseImageFloat32AtomicAdd = pdev->info.gfx_level >= GFX12 && !pdev->use_llvm,
 
       /* VK_EXT_4444_formats */
       .formatA4R4G4B4 = true,
