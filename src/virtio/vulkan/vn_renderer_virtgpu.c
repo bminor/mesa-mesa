@@ -158,6 +158,8 @@ sim_syncobj_create(struct virtgpu *gpu, bool signaled)
       sim.syncobjs = _mesa_pointer_hash_table_create(NULL);
       if (!sim.syncobjs) {
          mtx_unlock(&sim.mutex);
+         mtx_destroy(&syncobj->mutex);
+         free(syncobj);
          return 0;
       }
 
@@ -172,6 +174,8 @@ sim_syncobj_create(struct virtgpu *gpu, bool signaled)
          _mesa_hash_table_destroy(sim.syncobjs, NULL);
          sim.syncobjs = NULL;
          mtx_unlock(&sim.mutex);
+         mtx_destroy(&syncobj->mutex);
+         free(syncobj);
          return 0;
       }
 
