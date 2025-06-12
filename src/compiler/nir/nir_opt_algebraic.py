@@ -2801,7 +2801,7 @@ optimizations += [
    (('bitfield_insert', 'base@32', 'insert', 'offset', 'bits'),
     ('bcsel', ('ult', 31, 'bits'), 'insert',
               ('bitfield_select', ('bfm', 'bits', 'offset'), ('ishl', 'insert', 'offset'), 'base')),
-    'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select'),
+    'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select && !options->has_bfi'),
    (('bitfield_insert', 'base@32', 'insert', 'offset', 'bits'),
     ('bcsel', ('ult', 31, 'bits'), 'insert',
               ('bfi', ('bfm', 'bits', 'offset'), 'insert', 'base')),
@@ -2841,7 +2841,7 @@ for sz in [8, 16, 32, 64]:
          # Alternative 8-bit/16-bit lowerings that use bitfield_select/bfi.
          (('bitfield_insert', base, 'insert', 'offset', 'bits'),
           ('bitfield_select', (f'u2u{sz}', ('bfm', 'bits', 'offset')), ('ishl', 'insert', 'offset'), 'base'),
-          'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select'),
+          'options->lower_bitfield_insert && options->has_bfm && options->has_bitfield_select && !options->has_bfi'),
          (('bitfield_insert', base, 'insert', 'offset', 'bits'),
           (f'u2u{sz}', ('bfi', ('bfm', 'bits', 'offset'), ('u2u32', 'insert'), ('u2u32', 'base'))),
           'options->lower_bitfield_insert && options->has_bfm && options->has_bfi'),
