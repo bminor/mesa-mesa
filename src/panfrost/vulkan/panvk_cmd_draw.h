@@ -11,6 +11,7 @@
 #endif
 
 #include "panvk_blend.h"
+#include "panvk_cmd_desc_state.h"
 #include "panvk_cmd_oq.h"
 #include "panvk_entrypoints.h"
 #include "panvk_image.h"
