@@ -653,6 +653,12 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       dst = create_cov(ctx, dst_sz, src[0], bs[0], alu->op);
       break;
 
+   case nir_op_u2u64:
+      assert(dst_sz == 1);
+      dst.rpts[0] = ir3_64b(b, ir3_MOV(b, src[0].rpts[0], TYPE_U32),
+                            create_immed_shared(b, 0, use_shared));
+      break;
+
    case nir_op_fquantize2f16:
       dst = create_cov(ctx, dst_sz,
                        create_cov(ctx, dst_sz, src[0], 32, nir_op_f2f16_rtne),
