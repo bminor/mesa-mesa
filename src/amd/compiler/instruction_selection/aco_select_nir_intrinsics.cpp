@@ -2220,7 +2220,7 @@ translate_buffer_image_atomic_op(const nir_atomic_op op, aco_opcode* buf_op, aco
    case nir_atomic_op_fadd:
       *buf_op = aco_opcode::buffer_atomic_add_f32;
       *buf_op64 = aco_opcode::num_opcodes;
-      *image_op = aco_opcode::num_opcodes;
+      *image_op = aco_opcode::image_atomic_add_flt;
       break;
    case nir_atomic_op_fmin:
       *buf_op = aco_opcode::buffer_atomic_fmin;
