@@ -1101,6 +1101,34 @@ anv_sparse_calc_block_shape(struct anv_physical_device *pdevice,
    return block_shape_px;
 }
 
+static bool
+is_xe2_non_standard_msaa_block_shape(struct anv_physical_device *pdevice,
+                                     const VkSampleCountFlagBits samples,
+                                     const int bpb)
+{
+   if (pdevice->info.ver < 20)
+      return false;
+
+   switch (samples) {
+   case VK_SAMPLE_COUNT_2_BIT:
+      if (bpb == 128)
+         return true;
+      break;
+   case VK_SAMPLE_COUNT_8_BIT:
+      if (bpb == 8 || bpb == 32)
+         return true;
+      break;
+   case VK_SAMPLE_COUNT_16_BIT:
+      if (bpb == 64)
+         return true;
+      break;
+   default:
+      break;
+   }
+
+   return false;
+}
+
 VkSparseImageFormatProperties
 anv_sparse_calc_image_format_properties(struct anv_physical_device *pdevice,
                                         VkImageAspectFlags aspect,
@@ -1117,8 +1145,21 @@ anv_sparse_calc_image_format_properties(struct anv_physical_device *pdevice,
 
    VkExtent3D granularity = anv_sparse_calc_block_shape(pdevice, surf,
                                                         &tile_info);
-   bool is_standard = false;
-   bool is_known_nonstandard_format = false;
+
+   /* Block shape related flags: every case that passes through this function
+    * should be marked as being one and only one of the three cases below.
+    * Anything that is true for more than one case or is false for all is a
+    * bug in the driver and should be analyzed.
+    *
+    * - shape_is_standard: matches the Vulkan spec
+    * - shape_not_standard_fine: doesn't match the Vulkan spec, but is not an
+    *   issue since it doesn't need to match it
+    * - shape_not_standard_issue: does not match the Vulkan spec, but we
+    *   report as standard: see the comments for each case
+    */
+   bool shape_is_standard = false;
+   bool shape_not_standard_fine = false;
+   bool shape_not_standard_issue = false;
 
    /* We shouldn't be able to reach this function with a 1D image. */
    assert(vk_image_type != VK_IMAGE_TYPE_1D);
@@ -1138,28 +1179,36 @@ anv_sparse_calc_image_format_properties(struct anv_physical_device *pdevice,
     * isl_gfx125_filter_tiling().
     */
    if (pdevice->info.verx10 >= 125 && isl_format_is_yuv(surf->format))
-      is_known_nonstandard_format = true;
+      shape_not_standard_issue = true;
 
    /* The standard block shapes (and by extension, the tiling formats they
     * require) are simply incompatible with getting a 2D view of a 3D image.
     */
    if (surf->usage & ISL_SURF_USAGE_2D_3D_COMPATIBLE_BIT)
-      is_known_nonstandard_format = true;
+      shape_not_standard_issue = true;
 
-   is_standard = granularity.width == std_shape.width &&
-                 granularity.height == std_shape.height &&
-                 granularity.depth == std_shape.depth;
+   /* ISL_TILING_64_XE2_BIT's block shapes are not always Vulkan's standard
+    * block shapes: sometimes you get, for example, 64x32x1 instead of
+    * 32x64x1. This is not a problem since we properly advertise
+    * sparseResidencyStandard2DMultisampleBlockShape to be false.
+    */
+   if (is_xe2_non_standard_msaa_block_shape(pdevice, vk_samples, bpb))
+      shape_not_standard_fine = true;
+
+   shape_is_standard = granularity.width == std_shape.width &&
+                       granularity.height == std_shape.height &&
+                       granularity.depth == std_shape.depth;
 
    /* TODO: dEQP seems to care about the block shapes being standard even for
-    * the cases where is_known_nonstandard_format is true. Luckily as of today
+    * the cases where shape_not_standard_issue is true. Luckily as of today
     * all of those cases are NotSupported but sooner or later we may end up
     * getting a failure.
     * Notice that in practice we report these cases as having the mip tail
     * starting on mip level 0, so the reported block shapes are irrelevant
     * since non-opaque binds are not supported. Still, dEQP seems to care.
     */
-   assert(is_standard || is_known_nonstandard_format);
-   assert(!(is_standard && is_known_nonstandard_format));
+   assert(shape_is_standard + shape_not_standard_fine +
+          shape_not_standard_issue == 1);
 
    bool wrong_block_size = isl_calc_tile_size(&tile_info) !=
                            ANV_SPARSE_BLOCK_SIZE;
@@ -1167,7 +1216,7 @@ anv_sparse_calc_image_format_properties(struct anv_physical_device *pdevice,
    return (VkSparseImageFormatProperties) {
       .aspectMask = aspect,
       .imageGranularity = granularity,
-      .flags = ((is_standard || is_known_nonstandard_format) ? 0 :
+      .flags = ((shape_is_standard || shape_not_standard_issue) ? 0 :
                   VK_SPARSE_IMAGE_FORMAT_NONSTANDARD_BLOCK_SIZE_BIT) |
                (wrong_block_size ? VK_SPARSE_IMAGE_FORMAT_SINGLE_MIPTAIL_BIT :
                   0),
@@ -1614,28 +1663,6 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
           isl_layout->bpb != 32 && isl_layout->bpb != 64 &&
           isl_layout->bpb != 128)
          return VK_ERROR_FORMAT_NOT_SUPPORTED;
-
-      /* ISL_TILING_64_XE2_BIT's block shapes are not always Vulkan's standard
-       * block shapes, so exclude what's non-standard.
-       */
-      if (pdevice->info.ver >= 20) {
-         switch (samples) {
-         case VK_SAMPLE_COUNT_2_BIT:
-            if (isl_layout->bpb == 128)
-               return VK_ERROR_FORMAT_NOT_SUPPORTED;
-            break;
-         case VK_SAMPLE_COUNT_8_BIT:
-             if (isl_layout->bpb == 8 || isl_layout->bpb == 32)
-               return VK_ERROR_FORMAT_NOT_SUPPORTED;
-            break;
-         case VK_SAMPLE_COUNT_16_BIT:
-            if (isl_layout->bpb == 64)
-               return VK_ERROR_FORMAT_NOT_SUPPORTED;
-            break;
-         default:
-            break;
-         }
-      }
    }
 
    /* These YUV formats are considered by Vulkan to be compressed 2x1 blocks.
