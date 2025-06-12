@@ -1063,10 +1063,36 @@ ir3_create_collect(struct ir3_builder *build,
    assert(non_undef_src != -1);
    unsigned flags = dest_flags(arr[non_undef_src]);
 
-   collect = ir3_build_instr(build, OPC_META_COLLECT, 1, arrsz);
-   __ssa_dst(collect)->flags |= flags;
+   /* If any of the sources are themselves collects, flatten their sources into
+    * the new collect. This is mainly useful for collects used for 64b values,
+    * as we can treat them just like non-64b values when collecting them.
+    */
+   unsigned srcs_count = 0;
+
    for (unsigned i = 0; i < arrsz; i++) {
-      struct ir3_instruction *elem = arr[i];
+      if (arr[i] && arr[i]->opc == OPC_META_COLLECT) {
+         srcs_count += arr[i]->srcs_count;
+      } else {
+         srcs_count++;
+      }
+   }
+
+   struct ir3_instruction *srcs[srcs_count];
+
+   for (unsigned i = 0, s = 0; i < arrsz; i++) {
+      if (arr[i] && arr[i]->opc == OPC_META_COLLECT) {
+         foreach_src (collect_src, arr[i]) {
+            srcs[s++] = collect_src->def->instr;
+         }
+      } else {
+         srcs[s++] = arr[i];
+      }
+   }
+
+   collect = ir3_build_instr(build, OPC_META_COLLECT, 1, srcs_count);
+   __ssa_dst(collect)->flags |= flags;
+   for (unsigned i = 0; i < srcs_count; i++) {
+      struct ir3_instruction *elem = srcs[i];
 
       /* Since arrays are pre-colored in RA, we can't assume that
        * things will end up in the right place.  (Ie. if a collect
@@ -1105,7 +1131,7 @@ ir3_create_collect(struct ir3_builder *build,
       }
    }
 
-   collect->dsts[0]->wrmask = MASK(arrsz);
+   collect->dsts[0]->wrmask = MASK(srcs_count);
 
    return collect;
 }
