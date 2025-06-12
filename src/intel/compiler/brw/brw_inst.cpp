@@ -370,7 +370,7 @@ brw_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
 }
 
 bool
-brw_inst::can_do_cmod() const
+brw_inst::can_do_cmod(enum brw_conditional_mod cmod) const
 {
    switch (opcode) {
    case BRW_OPCODE_ADD:
@@ -406,6 +406,15 @@ brw_inst::can_do_cmod() const
    case BRW_OPCODE_SUBB:
    case BRW_OPCODE_XOR:
       break;
+
+   case BRW_OPCODE_BFN:
+      if (cmod != BRW_CONDITIONAL_Z &&
+          cmod != BRW_CONDITIONAL_G &&
+          cmod != BRW_CONDITIONAL_L)
+         return false;
+
+      break;
+
    default:
       return false;
    }

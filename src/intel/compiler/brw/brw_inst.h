@@ -90,7 +90,7 @@ struct brw_inst : brw_exec_node {
    unsigned components_read(unsigned i) const;
    unsigned size_read(const struct intel_device_info *devinfo, int arg) const;
    bool can_do_source_mods(const struct intel_device_info *devinfo) const;
-   bool can_do_cmod() const;
+   bool can_do_cmod(enum brw_conditional_mod cmod) const;
    bool can_change_types() const;
    bool has_source_and_destination_hazard() const;
 

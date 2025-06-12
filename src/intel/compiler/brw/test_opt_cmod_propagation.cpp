@@ -2467,3 +2467,151 @@ TEST_F(cmod_propagation_test, Boolean_size_conversion)
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
+
+TEST_F(cmod_propagation_test, BFN_CMP_Z)
+{
+   // BFN doesn't exist on earlier platforms.
+   set_gfx_verx10(125);
+
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dest1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg zero  = brw_imm_ud(0);
+
+   bld.BFN(dest1, src0, src1, src2, 0xfe);
+   bld.CMP(bld.null_reg_d(), dest1, zero, BRW_CONDITIONAL_Z);
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_Z;
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, BFN_Z_CMP_Z)
+{
+   // BFN doesn't exist on earlier platforms.
+   set_gfx_verx10(125);
+
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dest1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg zero  = brw_imm_ud(0);
+
+   bld.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_Z;
+   bld.CMP(bld.null_reg_d(), dest1, zero, BRW_CONDITIONAL_Z);
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_Z;
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, BFN_CMP_NZ)
+{
+   // BFN doesn't exist on earlier platforms.
+   set_gfx_verx10(125);
+
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dest1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg zero  = brw_imm_ud(0);
+
+   bld.BFN(dest1, src0, src1, src2, 0xfe);
+   bld.CMP(bld.null_reg_d(), dest1, zero, BRW_CONDITIONAL_NZ);
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_G;
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, BFN_CMP_D_NZ)
+{
+   // BFN doesn't exist on earlier platforms.
+   set_gfx_verx10(125);
+
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dest1 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg zero  = brw_imm_ud(0);
+
+   bld.BFN(dest1, src0, src1, src2, 0xfe);
+   bld.CMP(bld.null_reg_d(), dest1, zero, BRW_CONDITIONAL_NZ);
+
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+}
+
+TEST_F(cmod_propagation_test, BFN_G_CMP_NZ)
+{
+   // BFN doesn't exist on earlier platforms.
+   set_gfx_verx10(125);
+
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dest1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg zero  = brw_imm_ud(0);
+
+   bld.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_G;
+   bld.CMP(bld.null_reg_d(), dest1, zero, BRW_CONDITIONAL_NZ);
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_G;
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, BFN_G_CMP_D_G)
+{
+   // BFN doesn't exist on earlier platforms.
+   set_gfx_verx10(125);
+
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dest1 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_D);
+   brw_reg zero  = brw_imm_ud(0);
+
+   bld.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_G;
+   bld.CMP(bld.null_reg_d(), dest1, zero, BRW_CONDITIONAL_G);
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.BFN(dest1, src0, src1, src2, 0xfe)
+      ->conditional_mod = BRW_CONDITIONAL_G;
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}

@@ -210,7 +210,7 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
          }
 
          /* Otherwise, try propagating the conditional. */
-         if (scan_inst->can_do_cmod() &&
+         if (scan_inst->can_do_cmod(cond) &&
              ((!read_flag && scan_inst->conditional_mod == BRW_CONDITIONAL_NONE) ||
               scan_inst->conditional_mod == cond)) {
             scan_inst->conditional_mod = cond;
@@ -464,7 +464,8 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                   inst->remove();
                   progress = true;
                   break;
-               } else if (!read_flag && scan_inst->can_do_cmod()) {
+               } else if (!read_flag &&
+                          scan_inst->can_do_cmod(inst->conditional_mod)) {
                   scan_inst->conditional_mod = inst->conditional_mod;
                   scan_inst->flag_subreg = inst->flag_subreg;
                   inst->remove();
@@ -506,6 +507,16 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
                inst->src[0].negate ? brw_swap_cmod(inst->conditional_mod)
                                    : inst->conditional_mod;
 
+            /* BFN supports a limited subset of possible conditions. It
+             * notably lacks NZ. However, if the destination is unsigned, G
+             * and NZ are equivalent.
+             */
+            if (scan_inst->opcode == BRW_OPCODE_BFN &&
+                brw_type_is_uint(scan_inst->dst.type) &&
+                cond == BRW_CONDITIONAL_NZ) {
+               cond = BRW_CONDITIONAL_G;
+            }
+
             /* From the Kaby Lake PRM Vol. 7 "Assigning Conditional Flags":
              *
              *    * Note that the [post condition signal] bits generated at
@@ -524,7 +535,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
              */
 
             /* Otherwise, try propagating the conditional. */
-            if (scan_inst->can_do_cmod() &&
+            if (scan_inst->can_do_cmod(cond) &&
                 ((!read_flag && scan_inst->conditional_mod == BRW_CONDITIONAL_NONE) ||
                  scan_inst->conditional_mod == cond)) {
                scan_inst->conditional_mod = cond;

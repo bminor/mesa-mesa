@@ -4231,7 +4231,7 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
 
             cmp = (brw_inst *) s.instructions.get_tail();
             if (cmp->conditional_mod == BRW_CONDITIONAL_NONE) {
-               if (cmp->can_do_cmod())
+               if (cmp->can_do_cmod(BRW_CONDITIONAL_Z))
                   cmp->conditional_mod = BRW_CONDITIONAL_Z;
                else
                   cmp = NULL;
