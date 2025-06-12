@@ -409,6 +409,9 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
    NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
    NIR_PASS(_, nir, nir_opt_loop);
 
+   NIR_PASS(_, nir, nir_opt_barrier_modes);
+   NIR_PASS(_, nir, nir_opt_acquire_release_barriers, SCOPE_DEVICE);
+
    /* Do texture lowering here.  Yes, it's a duplication of the texture
     * lowering in bifrost_compile.  However, we need to lower texture stuff
     * now, before we call panvk_per_arch(nir_lower_descriptors)() because some
