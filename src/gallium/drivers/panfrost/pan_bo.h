@@ -140,4 +140,12 @@ struct panfrost_bo *panfrost_bo_import(struct panfrost_device *dev, int fd);
 int panfrost_bo_export(struct panfrost_bo *bo);
 void panfrost_bo_cache_evict_all(struct panfrost_device *dev);
 
+const char *panfrost_bo_replace_label(struct panfrost_bo *bo, const char *label,
+                                      bool set_kernel_label);
+static inline const char *
+panfrost_bo_set_label(struct panfrost_bo *bo, const char *label)
+{
+   return panfrost_bo_replace_label(bo, label, true);
+}
+
 #endif /* __PAN_BO_H__ */

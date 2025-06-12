@@ -112,8 +112,8 @@ panfrost_bo_alloc(struct panfrost_device *dev, size_t size, uint32_t flags,
    bo->ptr.gpu = vm_op.va.start;
    bo->flags = flags;
    bo->dev = dev;
-   bo->label = label;
    return bo;
+
 err_bind:
    pan_kmod_bo_put(kmod_bo);
    /* BO will be freed with the sparse array, but zero to indicate free */
@@ -243,7 +243,6 @@ panfrost_bo_cache_fetch(struct panfrost_device *dev, size_t size,
       }
       /* Let's go! */
       bo = entry;
-      bo->label = label;
       break;
    }
    pthread_mutex_unlock(&dev->bo_cache.lock);
@@ -309,7 +308,7 @@ panfrost_bo_cache_put(struct panfrost_bo *bo)
    panfrost_bo_cache_evict_stale_bos(dev);
 
    /* Update the label to help debug BO cache memory usage issues */
-   bo->label = "Unused (BO cache)";
+   panfrost_bo_set_label(bo, "Unused (BO cache)");
 
    /* Must be last */
    pthread_mutex_unlock(&dev->bo_cache.lock);
@@ -438,6 +437,8 @@ panfrost_bo_create(struct panfrost_device *dev, size_t size, uint32_t flags,
          pandecode_inject_mmap(dev->decode_ctx, bo->ptr.gpu, bo->ptr.cpu,
                                panfrost_bo_size(bo), NULL);
    }
+
+   panfrost_bo_set_label(bo, label);
 
    return bo;
 }
@@ -570,4 +571,18 @@ panfrost_bo_from_kmod_bo(struct panfrost_device *dev,
    assert(bo->kmod_bo == kmod_bo);
 
    return bo;
+}
+
+const char *
+panfrost_bo_replace_label(struct panfrost_bo *bo, const char *label,
+                          bool set_kernel_label)
+{
+   const char *old_label = bo->label;
+
+   bo->label = label;
+
+   if (set_kernel_label)
+      pan_kmod_set_bo_label(bo->dev->kmod.dev, bo->kmod_bo, label);
+
+   return old_label;
 }
