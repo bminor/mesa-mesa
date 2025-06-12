@@ -2739,7 +2739,8 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
          LLVMTypeRef src_type = LLVMIntTypeInContext(ctx->ac.context, ctx->ac.wave_size);
          src = LLVMBuildTrunc(ctx->ac.builder, src, src_type, "");
       }
-      result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.inverse.ballot", ctx->ac.i1, &src, 1, 0);
+      const char *intr_name = ctx->ac.wave_size == 64 ? "llvm.amdgcn.inverse.ballot.i64" : "llvm.amdgcn.inverse.ballot.i32";
+      result = ac_build_intrinsic(&ctx->ac, intr_name, ctx->ac.i1, &src, 1, 0);
       break;
    }
    case nir_intrinsic_read_invocation:
@@ -2947,7 +2948,8 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
 
          src = LLVMBuildZExt(ctx->ac.builder, src, ctx->ac.i32, "");
 
-         result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.readlane", ctx->ac.i32,
+         const char *intr_name = LLVM_VERSION_MAJOR >= 19 ? "llvm.amdgcn.readlane.i32" : "llvm.amdgcn.readlane";
+         result = ac_build_intrinsic(&ctx->ac, intr_name, ctx->ac.i32,
                                      (LLVMValueRef[]){src, index_val}, 2, 0);
 
          result = LLVMBuildTrunc(ctx->ac.builder, result, type, "");
@@ -3180,8 +3182,9 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = LLVMBuildICmp(ctx->ac.builder, LLVMIntEQ, visit_first_invocation(ctx),
                              ac_get_thread_id(&ctx->ac), "");
       break;
-   case nir_intrinsic_lane_permute_16_amd:
-      result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.permlane16", ctx->ac.i32,
+   case nir_intrinsic_lane_permute_16_amd: {
+      const char *intr_name = LLVM_VERSION_MAJOR >= 19 ? "llvm.amdgcn.permlane16.i32" : "llvm.amdgcn.permlane16";
+      result = ac_build_intrinsic(&ctx->ac, intr_name, ctx->ac.i32,
                                   (LLVMValueRef[]){get_src(ctx, instr->src[0]),
                                                    get_src(ctx, instr->src[0]),
                                                    get_src(ctx, instr->src[1]),
@@ -3189,6 +3192,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
                                                    ctx->ac.i1false,
                                                    ctx->ac.i1false}, 6, 0);
       break;
+   }
    case nir_intrinsic_load_scalar_arg_amd:
    case nir_intrinsic_load_vector_arg_amd: {
       assert(nir_intrinsic_base(instr) < AC_MAX_ARGS);
