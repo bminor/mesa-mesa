@@ -321,6 +321,11 @@ def api_special_implementation_vkCmdCopyBufferToImage(api, cgen):
     cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
     cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(dstImage))")
 
+def api_special_implementation_vkCmdCopyImageToBuffer(api, cgen):
+    cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImage(srcImage))")
+    cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(dstBuffer))")
+
 def api_special_implementation_vkCmdCopyBuffer(api, cgen):
     cgen.stmt("std::lock_guard<std::mutex> lock(mReconstructionMutex)")
     cgen.stmt("mReconstruction.addApiCallDependencyOnVkObject(apiCallHandle, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer(srcBuffer))")
@@ -385,6 +390,7 @@ apiSpecialImplementation = {
     "vkCmdBindVertexBuffers": api_special_implementation_vkCmdBindVertexBuffers,
     "vkCmdBindPipeline": api_special_implementation_vkCmdBindPipeline,
     "vkCmdCopyBufferToImage": api_special_implementation_vkCmdCopyBufferToImage,
+    "vkCmdCopyImageToBuffer": api_special_implementation_vkCmdCopyImageToBuffer,
     "vkCmdCopyBuffer": api_special_implementation_vkCmdCopyBuffer,
     "vkCmdPipelineBarrier": api_special_implementation_vkCmdPipelineBarrier,
     "vkCmdBeginRenderPass": api_special_implementation_vkCmdBeginRenderPass,
