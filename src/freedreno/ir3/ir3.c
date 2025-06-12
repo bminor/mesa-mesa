@@ -1174,6 +1174,25 @@ ir3_split_dest(struct ir3_builder *build, struct ir3_instruction **dst,
    }
 }
 
+/* Split off the first 1 (bit_size < 64) or 2 (bit_size == 64) components from
+ * src and create a new 32b or 64b value.
+ */
+struct ir3_instruction *
+ir3_split_off_scalar(struct ir3_builder *build, struct ir3_instruction *src,
+                     unsigned bit_size)
+{
+   unsigned num_comps = bit_size == 64 ? 2 : 1;
+   assert((src->dsts[0]->wrmask & MASK(num_comps)) == MASK(num_comps));
+
+   if (num_comps == 1 && src->dsts[0]->wrmask == 0x1) {
+      return src;
+   }
+
+   struct ir3_instruction *comps[num_comps];
+   ir3_split_dest(build, comps, src, 0, num_comps);
+   return bit_size == 64 ? ir3_64b(build, comps[0], comps[1]) : comps[0];
+}
+
 struct ir3_instruction *
 ir3_store_const(struct ir3_shader_variant *so, struct ir3_builder *build,
                 struct ir3_instruction *src, unsigned dst)

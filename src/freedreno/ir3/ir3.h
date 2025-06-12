@@ -2697,6 +2697,9 @@ struct ir3_instruction *ir3_create_collect(struct ir3_builder *build,
 
 void ir3_split_dest(struct ir3_builder *build, struct ir3_instruction **dst,
                     struct ir3_instruction *src, unsigned base, unsigned n);
+struct ir3_instruction *ir3_split_off_scalar(struct ir3_builder *build,
+                                             struct ir3_instruction *src,
+                                             unsigned bit_size);
 
 static inline struct ir3_instruction *
 ir3_64b(struct ir3_builder *build, struct ir3_instruction *lo,
