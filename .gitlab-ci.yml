@@ -213,7 +213,9 @@ include:
     ref: *ci-tron-template-commit
     file: '/.gitlab-ci/dut.yml'
   - local: '.gitlab-ci/image-tags.yml'
-  - local: '.gitlab-ci/lava/lava-gitlab-ci.yml'
+  - local: '.gitlab-ci/bare-metal/gitlab-ci.yml'
+  - local: '.gitlab-ci/ci-tron/gitlab-ci.yml'
+  - local: '.gitlab-ci/lava/gitlab-ci.yml'
   - local: '.gitlab-ci/container/gitlab-ci.yml'
   - local: '.gitlab-ci/build/gitlab-ci.yml'
   - local: '.gitlab-ci/test/gitlab-ci.yml'
