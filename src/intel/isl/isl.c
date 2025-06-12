@@ -511,7 +511,7 @@ isl_device_get_supported_tilings(const struct isl_device *dev)
 isl_sample_count_mask_t ATTRIBUTE_CONST
 isl_device_get_sample_counts(const struct isl_device *dev)
 {
-   if (ISL_GFX_VER(dev) >= 9) {
+   if (ISL_GFX_VER(dev) >= 9 && ISL_GFX_VER(dev) < 30) {
       return ISL_SAMPLE_COUNT_1_BIT |
              ISL_SAMPLE_COUNT_2_BIT |
              ISL_SAMPLE_COUNT_4_BIT |
