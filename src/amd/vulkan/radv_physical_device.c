@@ -603,6 +603,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
 #endif
       .KHR_synchronization2 = true,
       .KHR_timeline_semaphore = true,
+      .KHR_unified_image_layouts = pdev->info.gfx_level >= GFX11,
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_variable_pointers = true,
       .KHR_vertex_attribute_divisor = true,
@@ -841,8 +842,8 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .storagePushConstant8 = true,
       .shaderBufferInt64Atomics = true,
       .shaderSharedInt64Atomics = true,
-      .shaderFloat16 = pdev->info.has_packed_math_16bit ||
-                       (pdev->info.gfx_level == GFX8 && instance->drirc.expose_float16_gfx8),
+      .shaderFloat16 =
+         pdev->info.has_packed_math_16bit || (pdev->info.gfx_level == GFX8 && instance->drirc.expose_float16_gfx8),
       .shaderInt8 = true,
 
       .descriptorIndexing = true,
@@ -1323,6 +1324,10 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_maintenance9 */
       .maintenance9 = true,
+
+      /* VK_KHR_unified_layouts */
+      .unifiedImageLayouts = true,
+      .unifiedImageLayoutsVideo = true,
    };
 }
 

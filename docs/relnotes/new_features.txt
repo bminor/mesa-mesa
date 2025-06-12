@@ -45,3 +45,4 @@ VK_EXT_depth_clamp_zero_one on panvk
 VK_KHR_depth_clamp_zero_one on panvk
 VK_EXT_depth_clip_control on panvk
 VK_KHR_maintenance9 on RADV
+VK_KHR_unified_image_layouts on RADV (RDNA3+)
