@@ -257,6 +257,8 @@ ir3_lower_bit_size(const nir_instr *instr, UNUSED void *data)
       case nir_op_umin:
       case nir_op_ushr:
          return alu->def.bit_size == 8 ? 16 : 0;
+      case nir_op_bitfield_reverse:
+         return alu->def.bit_size < 32 ? 32 : 0;
       case nir_op_ieq:
       case nir_op_ige:
       case nir_op_ilt:
