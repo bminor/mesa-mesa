@@ -82,4 +82,7 @@ zink_surface_create_null(struct zink_context *ctx, enum pipe_texture_target targ
 
 void
 zink_surface_swapchain_update(struct zink_context *ctx, struct zink_surface *surface);
+void
+zink_surface_resolve_init(struct zink_screen *screen, struct zink_resource *res);
+
 #endif

@@ -4010,19 +4010,8 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       zink_resource(psurf->texture)->fb_binds |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
    }
 
-   if (ctx->fb_state.resolve) {
-      struct zink_resource *res = zink_resource(ctx->fb_state.resolve);
-      if (!res->surface) {
-         struct pipe_surface tmpl = {0};
-         tmpl.format = res->base.b.format;
-         zink_screen_lock_context(screen);
-         res->surface = screen->copy_context->base.create_surface(&screen->copy_context->base, &res->base.b, &tmpl);
-         zink_screen_unlock_context(screen);
-         /* delete extra ref: the resource controls the surface lifetime, not the other way around */
-         struct pipe_resource *pres = ctx->fb_state.resolve;
-         pipe_resource_reference(&pres, NULL);
-      }
-   }
+   if (ctx->fb_state.resolve)
+      zink_surface_resolve_init(screen, zink_resource(ctx->fb_state.resolve));
    rebind_fb_state(ctx, NULL, true);
    ctx->fb_state.samples = MAX2(samples, 1);
    if (ctx->fb_state.width != w || ctx->fb_state.height != h)

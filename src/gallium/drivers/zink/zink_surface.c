@@ -477,3 +477,18 @@ zink_surface_swapchain_update(struct zink_context *ctx, struct zink_surface *sur
    /* the current swapchain imageview is now the view for the current swapchain image */
    surface->image_view = surface->swapchain[res->obj->dt_idx];
 }
+
+void
+zink_surface_resolve_init(struct zink_screen *screen, struct zink_resource *res)
+{
+   if (res->surface)
+      return;
+   struct pipe_surface tmpl = {0};
+   tmpl.format = res->base.b.format;
+   zink_screen_lock_context(screen);
+   res->surface = screen->copy_context->base.create_surface(&screen->copy_context->base, &res->base.b, &tmpl);
+   zink_screen_unlock_context(screen);
+   /* delete extra ref: the resource controls the surface lifetime, not the other way around */
+   struct pipe_resource *pres = &res->base.b;
+   pipe_resource_reference(&pres, NULL);
+}
