@@ -2484,7 +2484,7 @@
         "description": "mesa: get correct src address for transferOps",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4b249d2eed686384d6d7c36f3232360891d5eeda",
         "notes": null
