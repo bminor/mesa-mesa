@@ -441,7 +441,8 @@ struct tc_renderpass_info {
          bool has_resolve : 1;
          /* whether queries are ended during this renderpass */
          bool has_query_ends : 1;
-         uint8_t pad : 1;
+         /* internal tc use; this renderpass has explicitly ended */
+         bool ended : 1;
          /* 32 bits offset */
          /* bitmask of color buffers using fbfetch */
          uint8_t cbuf_fbfetch;
