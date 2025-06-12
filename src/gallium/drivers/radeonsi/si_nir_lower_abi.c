@@ -217,6 +217,31 @@ static nir_def *build_task_ring_desc(nir_builder *b, struct lower_abi_state *s,
    return nir_vec(b, comp, 4);
 }
 
+static nir_def *build_mesh_scratch_ring_desc(nir_builder *b, struct lower_abi_state *s)
+{
+   struct si_screen *screen = s->shader->selector->screen;
+
+   const struct ac_buffer_state ac_state = {
+      .va = (uint64_t)screen->info.address32_hi << 32,
+      .size = AC_MESH_SCRATCH_NUM_ENTRIES * AC_MESH_SCRATCH_ENTRY_BYTES,
+      .format = PIPE_FORMAT_R32_FLOAT,
+      .swizzle = { PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y, PIPE_SWIZZLE_Z, PIPE_SWIZZLE_W },
+      .gfx10_oob_select = V_008F0C_OOB_SELECT_DISABLED,
+   };
+
+   unsigned desc[4];
+   ac_build_buffer_descriptor(screen->info.gfx_level, &ac_state, desc);
+
+   nir_def *comp[] = {
+      ac_nir_load_arg(b, &s->args->ac, s->args->mesh_scratch_ring_addr),
+      nir_imm_int(b, desc[1]),
+      nir_imm_int(b, desc[2]),
+      nir_imm_int(b, desc[3]),
+   };
+
+   return nir_vec(b, comp, 4);
+}
+
 static bool preload_reusable_variables(nir_builder *b, struct lower_abi_state *s)
 {
    const struct si_shader_selector *sel = s->shader->selector;
@@ -666,6 +691,9 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       break;
    case nir_intrinsic_load_ring_task_payload_amd:
       replacement = build_task_ring_desc(b, s, true);
+      break;
+   case nir_intrinsic_load_ring_mesh_scratch_amd:
+      replacement = build_mesh_scratch_ring_desc(b, s);
       break;
    default:
       return false;
