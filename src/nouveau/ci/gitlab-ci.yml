@@ -17,9 +17,9 @@ nvk-ga106-vkd3d-valve:
     - .nvk-vkcts
     - .nvk-ga106-valve
     - .nvk-valve-manual-rules
+    - .test-vkd3d-proton
   timeout: 15m
   variables:
-    HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 10  # usual run time: 5.5min
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
