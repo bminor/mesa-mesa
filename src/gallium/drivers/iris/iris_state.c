@@ -3787,7 +3787,8 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       ice->state.dirty |= IRIS_DIRTY_MULTISAMPLE;
 
       /* We need to toggle 3DSTATE_PS::32 Pixel Dispatch Enable */
-      if (GFX_VER >= 9 && (cso->samples == 16 || samples == 16))
+      if (GFX_VER >= 9 && GFX_VER < 30 &&
+          (cso->samples == 16 || samples == 16))
          ice->state.stage_dirty |= IRIS_STAGE_DIRTY_FS;
 
       /* We may need to emit blend state for Wa_14018912822. */

@@ -453,6 +453,7 @@ get_features(const struct anv_physical_device *pdevice,
       .sparseResidency8Samples                  = has_sparse_or_fake &&
                                                   pdevice->info.verx10 != 125,
       .sparseResidency16Samples                 = has_sparse_or_fake &&
+                                                  pdevice->info.ver < 30 &&
                                                   pdevice->info.verx10 != 125,
       .variableMultisampleRate                  = true,
       .inheritedQueries                         = true,
