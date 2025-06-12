@@ -506,9 +506,9 @@ a750-vkd3d:
     - .ci-tron-arm64-test-vk
     - .a750-mupuf
     - .valve-turnip-manual-rules
+    - .test-vkd3d-proton
   timeout: 15m  # base runtime 3min
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 12
-    HWCI_TEST_SCRIPT: install/vkd3d-runner.sh
     GPU_VERSION: freedreno-a750
     FDO_CI_CONCURRENT: 1
