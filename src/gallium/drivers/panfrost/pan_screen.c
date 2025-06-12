@@ -654,6 +654,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    /* Compile side is TODO for Midgard. */
    caps->shader_clock = dev->arch >= 6 &&
       dev->kmod.props.gpu_can_query_timestamp;
+   caps->shader_realtime_clock = dev->arch >= 6 &&
+      dev->kmod.props.gpu_can_query_timestamp;
 
    caps->vs_instanceid = true;
    caps->texture_multisample = true;
