@@ -55,6 +55,11 @@ workflow:
     - if: &is-merge-request $CI_PIPELINE_SOURCE == "merge_request_event"
     # Push to a branch on a fork
     - if: &is-push-to-fork $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
+    # a pipeline running within the upstream project
+    - if: &is-upstream-pipeline $CI_PROJECT_PATH == $FDO_UPSTREAM_REPO
+    # an MR pipeline running within the upstream project, usually true for
+    # those with the Developer role or above
+    - if: &is-upstream-mr-pipeline $CI_PROJECT_PATH == $FDO_UPSTREAM_REPO && $CI_PIPELINE_SOURCE == "merge_request_event"
     # Nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
@@ -245,16 +250,25 @@ include:
       changes: &image_tags_path
         - .gitlab-ci/image-tags.yml
       when: on_success
-    # Same as above, but for pre-merge pipelines
+    # Skip everything for pre-merge and merge pipelines which don't change
+    # anything in the build; we only do this for marge-bot and not user
+    # pipelines in a MR, because we might still need to run it to copy the
+    # container into the user's namespace.
+    - if: *is-merge-attempt
+      when: never
+    # Any MR pipeline which changes image-tags.yml needs to be able to
+    # rebuild the containers
     - if: *is-merge-request
       changes: *image_tags_path
       when: manual
-    # Skip everything for pre-merge and merge pipelines which don't change
-    # anything in the build
-    - if: *is-merge-attempt
+    # ... if the MR pipeline runs as mesa/mesa and does not need a container
+    # rebuild, we can skip it
+    - if: *is-upstream-mr-pipeline
       when: never
+    # ... however for MRs running inside the user namespace, we may need to
+    # run these jobs to copy the container images from upstream
     - if: *is-merge-request
-      when: never
+      when: manual
     # Build everything after someone bypassed the CI
     - if: *is-push-to-upstream-default-branch
       when: on_success
@@ -263,6 +277,9 @@ include:
       when: on_success
     # Scheduled pipelines reuse already-built containers
     - if: *is-scheduled-pipeline
+      when: never
+    # Any other pipeline in the upstream should reuse already-built containers
+    - if: *is-upstream-pipeline
       when: never
     # Allow building everything in fork pipelines, but build nothing unless
     # manually triggered
