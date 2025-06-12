@@ -256,6 +256,19 @@ static struct ir3_instruction *
 get_shared(struct ir3_builder *build, struct ir3_instruction *src, bool shared)
 {
    if (!!(src->dsts[0]->flags & IR3_REG_SHARED) != shared) {
+      if (src->opc == OPC_META_COLLECT) {
+         /* We can't mov the result of a collect so mov its sources and create a
+          * new collect.
+          */
+         struct ir3_instruction *new_srcs[src->srcs_count];
+
+         for (unsigned i = 0; i < src->srcs_count; i++) {
+            new_srcs[i] = get_shared(build, src->srcs[i]->def->instr, shared);
+         }
+
+         return ir3_create_collect(build, new_srcs, src->srcs_count);
+      }
+
       struct ir3_instruction *mov =
          ir3_MOV(build, src,
                  (src->dsts[0]->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32);
