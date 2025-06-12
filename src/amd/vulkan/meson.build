@@ -341,7 +341,7 @@ if with_radv_tests
         include_directories('.'),
       ],
       link_with  : [ libvulkan_radeon ],
-      dependencies : [dep_thread, idep_gtest, idep_nir, idep_mesautil, idep_vulkan_util_headers],
+      dependencies : [dep_llvm, dep_thread, idep_gtest, idep_nir, idep_mesautil, idep_vulkan_util_headers],
     ),
     suite : ['compiler', 'nir'],
     protocol : 'gtest',
