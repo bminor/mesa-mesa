@@ -252,17 +252,20 @@ panfrost_resource_type_str(struct panfrost_resource *rsrc)
 
 static char *
 panfrost_resource_new_label(struct panfrost_resource *rsrc,
-                            uint64_t modifier)
+                            uint64_t modifier,
+                            const char *user_label)
 {
    char *new_label = NULL;
 
    asprintf(&new_label,
-            "%s format=%s extent=%ux%ux%u array_size=%u mip_count=%u samples=%u modifier=0x%"PRIx64,
+            "%s format=%s extent=%ux%ux%u array_size=%u mip_count=%u samples=%u modifier=0x%"PRIx64"%s%s",
             panfrost_resource_type_str(rsrc),
             util_format_short_name(rsrc->base.format),
             rsrc->base.width0, rsrc->base.height0, rsrc->base.depth0,
             rsrc->base.array_size, rsrc->base.last_level,
-            rsrc->base.nr_storage_samples, modifier);
+            rsrc->base.nr_storage_samples, modifier,
+            user_label ? " user_label=" : "",
+            user_label ? : "");
 
    return new_label;
 }
@@ -368,6 +371,30 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    }
 
    return prsc;
+}
+
+static void
+panfrost_set_resource_label(UNUSED struct pipe_screen *pscreen,
+                            struct pipe_resource *presource,
+                            const char *user_label)
+
+{
+   struct panfrost_resource *rsrc = pan_resource(presource);
+   const char *new_label;
+
+   /* We don't manage labels for resources with imported BOs */
+   if (!rsrc->owns_label)
+      return;
+
+   new_label = panfrost_resource_new_label(rsrc,
+                                           rsrc->image.props.modifier,
+                                           user_label);
+   if (!new_label)
+      return;
+
+   char *old_label = (char *)panfrost_bo_set_label(rsrc->bo, new_label);
+   if (old_label)
+      free(old_label);
 }
 
 static bool
@@ -1025,7 +1052,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
          flags |= PAN_BO_SHAREABLE;
 
       char *res_label =
-         panfrost_resource_new_label(so, so->image.props.modifier);
+         panfrost_resource_new_label(so, so->image.props.modifier , NULL);
 
       so->bo =
          panfrost_bo_create(dev, so->plane.layout.data_size_B, flags, res_label);
@@ -2039,8 +2066,15 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    perf_debug(ctx, "%i%%: %i KB -> %i KB\n", ratio, old_size / 1024,
               new_size / 1024);
 
+   const char *old_user_label = NULL;
+   if (prsrc->bo->label) {
+      old_user_label = strstr(prsrc->bo->label, "user_label=");
+      if (old_user_label)
+         old_user_label += strlen("user_label=");
+   }
+
    char *new_label =
-      panfrost_resource_new_label(prsrc, dst_modifier);
+      panfrost_resource_new_label(prsrc, dst_modifier, old_user_label);
 
    struct panfrost_bo *dst =
       panfrost_bo_create(dev, new_size, 0, new_label);
@@ -2330,6 +2364,7 @@ panfrost_resource_screen_init(struct pipe_screen *pscreen)
    pscreen->resource_destroy = u_transfer_helper_resource_destroy;
    pscreen->resource_from_handle = panfrost_resource_from_handle;
    pscreen->resource_get_handle = panfrost_resource_get_handle;
+   pscreen->set_resource_label = panfrost_set_resource_label;
    pscreen->resource_get_param = panfrost_resource_get_param;
    pscreen->transfer_helper = u_transfer_helper_create(
       &transfer_vtbl,
