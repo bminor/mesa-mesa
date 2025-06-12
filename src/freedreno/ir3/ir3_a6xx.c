@@ -248,28 +248,15 @@ emit_intrinsic_atomic_ssbo(struct ir3_context *ctx, nir_intrinsic_instr *intr)
     *
     * Note that nir already multiplies the offset by four
     */
-   dummy = create_immed(b, 0);
+   dummy = intr->def.bit_size == 64 ? ir3_64b_immed(b, 0) : create_immed(b, 0);
 
    if (op == nir_atomic_op_cmpxchg) {
       src0 = ir3_get_src(ctx, &intr->src[4])[0];
       struct ir3_instruction *compare = ir3_get_src(ctx, &intr->src[3])[0];
-      if (intr->def.bit_size == 64) {
-         struct ir3_instruction *dummy2 = create_immed(b, 0);
-         struct ir3_instruction *compare2 = ir3_get_src(ctx, &intr->src[3])[1];
-         struct ir3_instruction *data2 = ir3_get_src(ctx, &intr->src[2])[1];
-         src1 = ir3_collect(b, dummy, dummy2, compare, compare2, data, data2);
-      } else {
-         src1 = ir3_collect(b, dummy, compare, data);
-      }
+      src1 = ir3_collect(b, dummy, compare, data);
    } else {
       src0 = ir3_get_src(ctx, &intr->src[3])[0];
-      if (intr->def.bit_size == 64) {
-         struct ir3_instruction *dummy2 = create_immed(b, 0);
-         struct ir3_instruction *data2 = ir3_get_src(ctx, &intr->src[2])[1];
-         src1 = ir3_collect(b, dummy, dummy2, data, data2);
-      } else {
-         src1 = ir3_collect(b, dummy, data);
-      }
+      src1 = ir3_collect(b, dummy, data);
    }
 
    atomic = emit_atomic(b, op, ibo, src0, src1);
@@ -286,12 +273,8 @@ emit_intrinsic_atomic_ssbo(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    atomic->dsts[0]->wrmask = src1->dsts[0]->wrmask;
    ir3_reg_tie(atomic->dsts[0], atomic->srcs[2]);
    ir3_handle_nonuniform(atomic, intr);
-
-   size_t num_results = intr->def.bit_size == 64 ? 2 : 1;
-   struct ir3_instruction *defs[num_results];
-   ir3_split_dest(b, defs, atomic, 0, num_results);
-   return ir3_create_collect(b, defs, num_results);
-  }
+   return ir3_split_off_scalar(b, atomic, intr->def.bit_size);
+}
 
 /* src[] = { deref, coord, sample_index }. const_index[] = {} */
 static void
@@ -530,20 +513,8 @@ emit_intrinsic_atomic_global(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    if (op == nir_atomic_op_cmpxchg) {
       struct ir3_instruction *compare = ir3_get_src(ctx, &intr->src[2])[0];
       src1 = ir3_collect(b, compare, value);
-      if (intr->def.bit_size == 64) {
-         struct ir3_instruction *compare2 = ir3_get_src(ctx, &intr->src[2])[1];
-         struct ir3_instruction *value2 = ir3_get_src(ctx, &intr->src[1])[1];
-         src1 = ir3_collect(b, compare, compare2, value, value2);
-      } else {
-         src1 = ir3_collect(b, compare, value);
-      }
    } else {
-      if (intr->def.bit_size == 64) {
-         struct ir3_instruction *value2 = ir3_get_src(ctx, &intr->src[1])[1];
-         src1 = ir3_collect(b, value, value2);
-      } else {
-         src1 = value;
-      }
+      src1 = ir3_collect(b, value);
    }
 
    switch (op) {
@@ -593,7 +564,7 @@ emit_intrinsic_atomic_global(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    /* even if nothing consume the result, we can't DCE the instruction: */
    array_insert(ctx->block, ctx->block->keeps, atomic);
 
-   return atomic;
+   return ir3_split_off_scalar(b, atomic, intr->def.bit_size);
 }
 
 const struct ir3_context_funcs ir3_a6xx_funcs = {
