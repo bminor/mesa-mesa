@@ -65,6 +65,11 @@ METHOD_IS_FLOAT = [
     'SET_Z_CLEAR_VALUE',
 ]
 
+# generator chokes on these in later files
+SKIP_FIELD = [
+    'CURRENT_SCG_TYPE'
+]
+
 TEMPLATE_H = Template("""\
 /* parsed class ${nvcl} */
 
@@ -467,7 +472,8 @@ def parse_header(nvcl, f):
                 if ":" in list[2]:
                     state = 1
                 elif teststr in list[1]:
-                    curfield.defs[list[1].removeprefix(teststr)] = list[2]
+                    if not SKIP_FIELD[0] in list[1]:
+                        curfield.defs[list[1].removeprefix(teststr)] = list[2]
                 else:
                     state = 1
 
