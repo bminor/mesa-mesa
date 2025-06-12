@@ -55,6 +55,18 @@ build_local_primitive_id(nir_builder *b, struct state *state)
                            63);
 }
 
+static nir_def *
+load_tess_param_base(nir_builder *b)
+{
+   return nir_pack_64_2x32(b, nir_load_tess_param_base_ir3(b));
+}
+
+static nir_def *
+load_tess_factor_base(nir_builder *b)
+{
+   return nir_pack_64_2x32(b, nir_load_tess_factor_base_ir3(b));
+}
+
 static bool
 is_tess_levels(gl_varying_slot slot)
 {
@@ -517,7 +529,7 @@ lower_tess_ctrl_block(nir_block *block, nir_builder *b, struct state *state)
 
          b->cursor = nir_before_instr(&intr->instr);
 
-         nir_def *address = nir_load_tess_param_base_ir3(b);
+         nir_def *address = load_tess_param_base(b);
          nir_def *offset = build_per_vertex_offset(
             b, state, intr->src[0].ssa,
             nir_intrinsic_io_semantics(intr).location,
@@ -538,7 +550,7 @@ lower_tess_ctrl_block(nir_block *block, nir_builder *b, struct state *state)
             util_is_power_of_two_nonzero(nir_intrinsic_write_mask(intr) + 1));
 
          nir_def *value = intr->src[0].ssa;
-         nir_def *address = nir_load_tess_param_base_ir3(b);
+         nir_def *address = load_tess_param_base(b);
          nir_def *offset = build_per_vertex_offset(
             b, state, intr->src[1].ssa,
             nir_intrinsic_io_semantics(intr).location,
@@ -565,11 +577,11 @@ lower_tess_ctrl_block(nir_block *block, nir_builder *b, struct state *state)
          gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
          if (is_tess_levels(location)) {
             assert(intr->def.num_components == 1);
-            address = nir_load_tess_factor_base_ir3(b);
+            address = load_tess_factor_base(b);
             offset = build_tessfactor_base(
                b, location, nir_intrinsic_component(intr), state);
          } else {
-            address = nir_load_tess_param_base_ir3(b);
+            address = load_tess_param_base(b);
             offset = build_patch_offset(b, state, location,
                                         nir_intrinsic_component(intr),
                                         intr->src[0].ssa);
@@ -620,14 +632,14 @@ lower_tess_ctrl_block(nir_block *block, nir_builder *b, struct state *state)
 
             replace_intrinsic(b, intr, nir_intrinsic_store_global_ir3,
                               intr->src[0].ssa,
-                              nir_load_tess_factor_base_ir3(b),
+                              load_tess_factor_base(b),
                               nir_iadd(b, intr->src[1].ssa, offset));
 
             if (location != VARYING_SLOT_PRIMITIVE_ID) {
                nir_pop_if(b, nif);
             }
          } else {
-            nir_def *address = nir_load_tess_param_base_ir3(b);
+            nir_def *address = load_tess_param_base(b);
             nir_def *offset = build_patch_offset(
                b, state, location, nir_intrinsic_component(intr),
                intr->src[1].ssa);
@@ -729,7 +741,7 @@ lower_tess_eval_block(nir_block *block, nir_builder *b, struct state *state)
 
          b->cursor = nir_before_instr(&intr->instr);
 
-         nir_def *address = nir_load_tess_param_base_ir3(b);
+         nir_def *address = load_tess_param_base(b);
          nir_def *offset = build_per_vertex_offset(
             b, state, intr->src[0].ssa,
             nir_intrinsic_io_semantics(intr).location,
@@ -755,11 +767,11 @@ lower_tess_eval_block(nir_block *block, nir_builder *b, struct state *state)
          gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
          if (is_tess_levels(location)) {
             assert(intr->def.num_components == 1);
-            address = nir_load_tess_factor_base_ir3(b);
+            address = load_tess_factor_base(b);
             offset = build_tessfactor_base(
                b, location, nir_intrinsic_component(intr), state);
          } else {
-            address = nir_load_tess_param_base_ir3(b);
+            address = load_tess_param_base(b);
             offset = build_patch_offset(b, state, location,
                                         nir_intrinsic_component(intr),
                                         intr->src[0].ssa);

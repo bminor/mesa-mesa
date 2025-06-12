@@ -569,8 +569,7 @@ lower_shader_clock(struct nir_builder *b, nir_intrinsic_instr *instr, void *data
    nir_push_if(b, nir_elect(b, 1));
    {
       /* ALWAYSON counter is mapped to this address. */
-      nir_def *base_addr =
-         nir_unpack_64_2x32(b, nir_imm_int64(b, uche_trap_base));
+      nir_def *base_addr = nir_imm_int64(b, uche_trap_base);
       /* Reading _LO first presumably latches _HI making the read atomic. */
       nir_def *clock_lo =
          nir_load_global_ir3(b, 1, 32, base_addr, nir_imm_int(b, 0));

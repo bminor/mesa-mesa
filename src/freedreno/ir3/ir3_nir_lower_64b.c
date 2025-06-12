@@ -36,8 +36,8 @@ lower_64b_intrinsics_filter(const nir_instr *instr, const void *unused)
    /* skip over ssbo atomics, we'll lower them later */
    if (intr->intrinsic == nir_intrinsic_ssbo_atomic ||
        intr->intrinsic == nir_intrinsic_ssbo_atomic_swap ||
-       intr->intrinsic == nir_intrinsic_global_atomic_ir3 ||
-       intr->intrinsic == nir_intrinsic_global_atomic_swap_ir3)
+       intr->intrinsic == nir_intrinsic_global_atomic ||
+       intr->intrinsic == nir_intrinsic_global_atomic_swap)
       return false;
 
    if (nir_intrinsic_dest_components(intr) == 0)
@@ -226,8 +226,6 @@ lower_64b_global_filter(const nir_instr *instr, const void *unused)
    case nir_intrinsic_load_global:
    case nir_intrinsic_load_global_constant:
    case nir_intrinsic_store_global:
-   case nir_intrinsic_global_atomic:
-   case nir_intrinsic_global_atomic_swap:
       return true;
    default:
       return false;
@@ -242,25 +240,12 @@ lower_64b_global(nir_builder *b, nir_instr *instr, void *unused)
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    bool load = intr->intrinsic != nir_intrinsic_store_global;
 
-   nir_def *addr64 = intr->src[load ? 0 : 1].ssa;
-   nir_def *addr = nir_unpack_64_2x32(b, addr64);
+   nir_def *addr = intr->src[load ? 0 : 1].ssa;
 
    /*
     * Note that we can get vec8/vec16 with OpenCL.. we need to split
     * those up into max 4 components per load/store.
     */
-
-   if (intr->intrinsic == nir_intrinsic_global_atomic) {
-      return nir_global_atomic_ir3(
-            b, intr->def.bit_size, addr,
-            intr->src[1].ssa,
-         .atomic_op = nir_intrinsic_atomic_op(intr));
-   } else if (intr->intrinsic == nir_intrinsic_global_atomic_swap) {
-      return nir_global_atomic_swap_ir3(
-         b, intr->def.bit_size, addr,
-         intr->src[1].ssa, intr->src[2].ssa,
-         .atomic_op = nir_intrinsic_atomic_op(intr));
-   }
 
    enum gl_access_qualifier access = nir_intrinsic_access(intr);
 

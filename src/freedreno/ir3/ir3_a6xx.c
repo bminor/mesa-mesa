@@ -416,8 +416,7 @@ emit_intrinsic_load_global_ir3(struct ir3_context *ctx,
    unsigned dest_components = nir_intrinsic_dest_components(intr);
    struct ir3_instruction *addr, *offset;
 
-   addr = ir3_collect(b, ir3_get_src(ctx, &intr->src[0])[0],
-                      ir3_get_src(ctx, &intr->src[0])[1]);
+   addr = ir3_collect(b, ir3_get_src(ctx, &intr->src[0])[0]);
 
    struct ir3_instruction *load;
 
@@ -459,8 +458,7 @@ emit_intrinsic_store_global_ir3(struct ir3_context *ctx,
    struct ir3_instruction *value, *addr, *offset;
    unsigned ncomp = nir_intrinsic_src_components(intr, 0);
 
-   addr = ir3_collect(b, ir3_get_src(ctx, &intr->src[1])[0],
-                      ir3_get_src(ctx, &intr->src[1])[1]);
+   addr = ir3_collect(b, ir3_get_src(ctx, &intr->src[1])[0]);
 
    value = ir3_create_collect(b, ir3_get_src(ctx, &intr->src[0]), ncomp);
 
@@ -507,8 +505,7 @@ emit_intrinsic_atomic_global(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       type = TYPE_ATOMIC_U64;
    }
 
-   addr = ir3_collect(b, ir3_get_src(ctx, &intr->src[0])[0],
-                      ir3_get_src(ctx, &intr->src[0])[1]);
+   addr = ir3_collect(b, ir3_get_src(ctx, &intr->src[0])[0]);
 
    if (op == nir_atomic_op_cmpxchg) {
       struct ir3_instruction *compare = ir3_get_src(ctx, &intr->src[2])[0];

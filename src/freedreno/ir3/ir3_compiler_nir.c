@@ -1246,9 +1246,8 @@ emit_intrinsic_copy_global_to_uniform(struct ir3_context *ctx,
    if (dst_hi)
       a1 = ir3_create_addr1(&ctx->build, dst_hi << 8);
 
-   struct ir3_instruction *addr_lo = ir3_get_src(ctx, &intr->src[0])[0];
-   struct ir3_instruction *addr_hi = ir3_get_src(ctx, &intr->src[0])[1];
-   struct ir3_instruction *addr = ir3_collect(b, addr_lo, addr_hi);
+   struct ir3_instruction *addr =
+      ir3_collect(b, ir3_get_src(ctx, &intr->src[0])[0]);
    struct ir3_instruction *ldg = ir3_LDG_K(b, create_immed(b, dst_lo), 0, addr, 0, 
                                            create_immed(b, addr_offset), 0,
                                            create_immed(b, size), 0);
@@ -3268,8 +3267,8 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_bindless_resource_ir3:
       dst[0] = ir3_get_src(ctx, &intr->src[0])[0];
       break;
-   case nir_intrinsic_global_atomic_ir3:
-   case nir_intrinsic_global_atomic_swap_ir3: {
+   case nir_intrinsic_global_atomic:
+   case nir_intrinsic_global_atomic_swap: {
       dst[0] = ctx->funcs->emit_intrinsic_atomic_global(ctx, intr);
       break;
    }
