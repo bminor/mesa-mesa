@@ -2698,6 +2698,36 @@ struct ir3_instruction *ir3_create_collect(struct ir3_builder *build,
 void ir3_split_dest(struct ir3_builder *build, struct ir3_instruction **dst,
                     struct ir3_instruction *src, unsigned base, unsigned n);
 
+static inline struct ir3_instruction *
+ir3_64b(struct ir3_builder *build, struct ir3_instruction *lo,
+        struct ir3_instruction *hi)
+{
+   assert((lo->dsts[0]->flags & IR3_REG_SHARED) ==
+          (hi->dsts[0]->flags & IR3_REG_SHARED));
+   return ir3_collect(build, lo, hi);
+}
+
+static inline struct ir3_instruction *
+ir3_64b_immed(struct ir3_builder *build, uint64_t val)
+{
+   return ir3_64b(build, create_immed(build, (uint32_t)val),
+                  create_immed(build, val >> 32));
+}
+
+static inline struct ir3_instruction *
+ir3_64b_get_lo(struct ir3_instruction *instr)
+{
+   assert(instr->opc == OPC_META_COLLECT && instr->srcs_count == 2);
+   return instr->srcs[0]->def->instr;
+}
+
+static inline struct ir3_instruction *
+ir3_64b_get_hi(struct ir3_instruction *instr)
+{
+   assert(instr->opc == OPC_META_COLLECT && instr->srcs_count == 2);
+   return instr->srcs[1]->def->instr;
+}
+
 struct ir3_instruction *ir3_store_const(struct ir3_shader_variant *so,
                                         struct ir3_builder *build,
                                         struct ir3_instruction *src,
