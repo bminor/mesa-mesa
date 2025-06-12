@@ -335,3 +335,68 @@ TEST_F(CsBuilderTest, loop_ls_tracker_load_same_inside_use_as_cond)
    EXPECT_U64_ARRAY_EQUAL(output, expected_patched,
                           ARRAY_SIZE(expected_patched));
 }
+
+/* If we flush a load/store from outside the cs_maybe block, it still needs
+ * to be flushed the next time it is accessed because the cs_maybe block may
+ * not have been executed */
+TEST_F(CsBuilderTest, maybe_flush_outer_load)
+{
+   struct cs_maybe *maybe;
+   struct cs_index addr = cs_reg64(&b, 0);
+   struct cs_index reg1 = cs_reg32(&b, 3);
+   struct cs_index reg2 = cs_reg32(&b, 4);
+
+   cs_load32_to(&b, reg1, addr, 0);
+   cs_maybe(&b, &maybe) {
+      /* This should flush the load to reg */
+      cs_add32(&b, reg2, reg1, 0);
+   }
+   /* This should also flush the load to reg */
+   cs_add32(&b, reg2, reg1, 0);
+   cs_patch_maybe(&b, maybe);
+   cs_finish(&b);
+
+   uint64_t expected_patched[] = {
+      0x1403000000010000, /* LOAD_MULTIPLE r3, [d0] */
+      /* inside maybe block */
+      0x0300000000010000, /* WAIT 1 */
+      0x1004030000000000, /* ADD_IMM32 r4, r3, 0 */
+      /* outside maybe block */
+      0x0300000000010000, /* WAIT 1 */
+      0x1004030000000000, /* ADD_IMM32 r4, r3, 0 */
+   };
+   EXPECT_EQ(b.root_chunk.size, ARRAY_SIZE(expected_patched));
+   EXPECT_U64_ARRAY_EQUAL(output, expected_patched, ARRAY_SIZE(expected_patched));
+}
+
+/* If we initiate a load/store inside the cs_maybe block, it needs to be
+ * flushed at the end of the block */
+TEST_F(CsBuilderTest, maybe_flush_inner_load)
+{
+   struct cs_maybe *maybe;
+   struct cs_index addr = cs_reg64(&b, 0);
+   struct cs_index reg1 = cs_reg32(&b, 3);
+   struct cs_index reg2 = cs_reg32(&b, 4);
+
+   cs_maybe(&b, &maybe) {
+      cs_load32_to(&b, reg1, addr, 0);
+      /* This should flush the load to reg */
+      cs_add32(&b, reg2, reg1, 0);
+   }
+   /* This should not flush the load to reg */
+   cs_add32(&b, reg2, reg1, 0);
+   cs_patch_maybe(&b, maybe);
+   cs_finish(&b);
+
+   uint64_t expected_patched[] = {
+      /* inside maybe block */
+      0x1403000000010000, /* LOAD_MULTIPLE r3, [d0] */
+      0x0300000000010000, /* WAIT 1 */
+      0x1004030000000000, /* ADD_IMM32 r4, r3, 0 */
+      /* outside maybe block */
+      0x1004030000000000, /* ADD_IMM32 r4, r3, 0 */
+   };
+   EXPECT_EQ(b.root_chunk.size, ARRAY_SIZE(expected_patched));
+   EXPECT_U64_ARRAY_EQUAL(output, expected_patched, ARRAY_SIZE(expected_patched));
+}
+
