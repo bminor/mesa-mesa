@@ -663,8 +663,10 @@ enum vpe_status vpe_check_support(
         status = vpe_validate_geometric_scaling_support(param);
     }
 
-    if (vpe_priv->init.debug.assert_when_not_support)
-        VPE_ASSERT(status == VPE_STATUS_OK);
+    if (vpe_priv->init.debug.assert_when_not_support && status != VPE_STATUS_OK) {
+        vpe_log("vpe_check_support failed with status %d\n", (int)status);
+        VPE_EXIT(1);
+    }
 
     vpe_event(VPE_EVENT_CHECK_SUPPORT, vpe_priv->num_streams, param->target_rect.width,
         param->target_rect.height, status);
@@ -900,8 +902,10 @@ enum vpe_status vpe_build_commands(
 
     vpe_priv->ops_support = false;
 
-    if (vpe_priv->init.debug.assert_when_not_support)
-        VPE_ASSERT(status == VPE_STATUS_OK);
+    if (vpe_priv->init.debug.assert_when_not_support && status != VPE_STATUS_OK) {
+        vpe_log("vpe_check_support failed with status %d\n", (int)status);
+        VPE_EXIT(1);
+    }
 
     return status;
 }
