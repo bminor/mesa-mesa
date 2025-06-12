@@ -1514,7 +1514,7 @@
         "description": "pan/lib: Rewrite npot divisor algorithm",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "467ae0d39da4238f8ac7b7674fa2f17bdfeb03e0",
         "notes": null
