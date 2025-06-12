@@ -1944,7 +1944,7 @@
         "description": "ac/virtio: fix alignment of metadata command",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "22263616ed1346aabbd4534f41f89dfcfca0f714",
         "notes": null
