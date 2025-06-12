@@ -2685,6 +2685,19 @@ ir3_BALLOT_MACRO(struct ir3_builder *build, struct ir3_instruction *src,
    return instr;
 }
 
+struct ir3_instruction *ir3_create_collect(struct ir3_builder *build,
+                                           struct ir3_instruction *const *arr,
+                                           unsigned arrsz);
+
+#define ir3_collect(build, ...)                                                \
+   ({                                                                          \
+      struct ir3_instruction *__arr[] = {__VA_ARGS__};                         \
+      ir3_create_collect(build, __arr, ARRAY_SIZE(__arr));                     \
+   })
+
+void ir3_split_dest(struct ir3_builder *build, struct ir3_instruction **dst,
+                    struct ir3_instruction *src, unsigned base, unsigned n);
+
 struct ir3_instruction *ir3_store_const(struct ir3_shader_variant *so,
                                         struct ir3_builder *build,
                                         struct ir3_instruction *src,
