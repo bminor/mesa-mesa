@@ -621,7 +621,7 @@ fn opt_nir(nir: &mut NirShader, dev: &Device, has_explicit_types: bool) {
             limit: 8,
             indirect_load_ok: true,
             expensive_alu_ok: true,
-            discard_ok: false,
+            ..Default::default()
         };
         progress |= nir_pass!(nir, nir_opt_peephole_select, &peephole_select_options);
         progress |= nir_pass!(
@@ -652,11 +652,6 @@ unsafe extern "C" fn can_remove_var(var: *mut nir_variable, _: *mut c_void) -> b
             && !glsl_type_is_sampler(var_type)
     }
 }
-
-const DV_OPTS: nir_remove_dead_variables_options = nir_remove_dead_variables_options {
-    can_remove_var: Some(can_remove_var),
-    can_remove_var_data: ptr::null_mut(),
-};
 
 fn compile_nir_to_args(
     dev: &Device,
@@ -703,9 +698,8 @@ fn compile_nir_to_args(
     nir_pass!(nir, nir_dedup_inline_samplers);
 
     let printf_opts = nir_lower_printf_options {
-        ptr_bit_size: 0,
-        hash_format_strings: false,
         max_buffer_size: dev.printf_buffer_size() as u32,
+        ..Default::default()
     };
     nir_pass!(nir, nir_lower_printf, &printf_opts);
 
@@ -748,6 +742,11 @@ fn compile_nir_prepare_for_variants(
         }
     }
 
+    let dv_opts = nir_remove_dead_variables_options {
+        can_remove_var: Some(can_remove_var),
+        ..Default::default()
+    };
+
     nir_pass!(
         nir,
         nir_remove_dead_variables,
@@ -756,7 +755,7 @@ fn compile_nir_prepare_for_variants(
             | nir_variable_mode::nir_var_mem_constant
             | nir_variable_mode::nir_var_mem_shared
             | nir_variable_mode::nir_var_function_temp,
-        &DV_OPTS,
+        &dv_opts,
     );
 
     nir_pass!(nir, nir_lower_readonly_images_to_tex, true);
@@ -961,6 +960,11 @@ fn compile_nir_variant(
     opt_nir(nir, dev, true);
     nir_pass!(nir, nir_lower_memcpy);
 
+    let dv_opts = nir_remove_dead_variables_options {
+        can_remove_var: Some(can_remove_var),
+        ..Default::default()
+    };
+
     // we might have got rid of more function_temp or shared memory
     nir.reset_scratch_size();
     nir.reset_shared_size();
@@ -968,7 +972,7 @@ fn compile_nir_variant(
         nir,
         nir_remove_dead_variables,
         nir_variable_mode::nir_var_function_temp | nir_variable_mode::nir_var_mem_shared,
-        &DV_OPTS,
+        &dv_opts,
     );
     nir_pass!(
         nir,
