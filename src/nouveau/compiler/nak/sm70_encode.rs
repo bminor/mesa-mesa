@@ -2873,7 +2873,7 @@ impl SM70Op for OpSuAtom {
         e.set_eviction_priority(&self.mem_eviction_priority);
 
         e.set_bit(72, false); // .BA
-        e.set_atom_type(self.atom_type);
+        e.set_atom_type(self.atom_type, true);
     }
 }
 
@@ -3069,8 +3069,8 @@ impl SM70Encoder<'_> {
         );
     }
 
-    fn set_atom_type(&mut self, atom_type: AtomType) {
-        if self.sm >= 90 {
+    fn set_atom_type(&mut self, atom_type: AtomType, su: bool) {
+        if self.sm >= 90 && !su {
             // Float/int is differentiated by opcode
             self.set_field(
                 73..77,
@@ -3194,7 +3194,7 @@ impl SM70Op for OpAtom {
         e.set_dst(&self.dst);
         e.set_reg_src(24..32, &self.addr);
         e.set_field(40..64, self.addr_offset);
-        e.set_atom_type(self.atom_type);
+        e.set_atom_type(self.atom_type, false);
     }
 }
 
