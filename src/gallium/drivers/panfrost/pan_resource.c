@@ -195,8 +195,15 @@ panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
       pipe_resource_reference(
          (struct pipe_resource **)&rsrc->shadow_image, NULL);
 
-   if (rsrc->bo)
+   if (rsrc->bo) {
+      if (rsrc->owns_label) {
+         /* The resource owns the label, which it dynamically allocated, so
+          * it is safe to discard the const qualifier */
+         char *rsrc_label = (char *)panfrost_bo_replace_label(rsrc->bo, "Destroyed resource", false);
+         free(rsrc_label);
+      }
       panfrost_bo_unreference(rsrc->bo);
+   }
 
    free(rsrc->index_cache);
    free(rsrc->damage.tile_map.data);
@@ -219,6 +226,45 @@ panfrost_resource_import_bo(struct panfrost_resource *rsc,
       return -1;
 
    return 0;
+}
+
+static const char *
+panfrost_resource_type_str(struct panfrost_resource *rsrc)
+{
+   /* Guess a label based on the bind */
+   unsigned bind = rsrc->base.bind;
+   const char *type = (bind & PIPE_BIND_INDEX_BUFFER)     ? "Index buffer"
+                      : (bind & PIPE_BIND_SCANOUT)        ? "Scanout"
+                      : (bind & PIPE_BIND_DISPLAY_TARGET) ? "Display target"
+                      : (bind & PIPE_BIND_SHARED)         ? "Shared resource"
+                      : (bind & PIPE_BIND_RENDER_TARGET)  ? "Render target"
+                      : (bind & PIPE_BIND_DEPTH_STENCIL)
+                         ? "Depth/stencil buffer"
+                      : (bind & PIPE_BIND_SAMPLER_VIEW)    ? "Texture"
+                      : (bind & PIPE_BIND_VERTEX_BUFFER)   ? "Vertex buffer"
+                      : (bind & PIPE_BIND_CONSTANT_BUFFER) ? "Constant buffer"
+                      : (bind & PIPE_BIND_GLOBAL)          ? "Global memory"
+                      : (bind & PIPE_BIND_SHADER_BUFFER)   ? "Shader buffer"
+                      : (bind & PIPE_BIND_SHADER_IMAGE)    ? "Shader image"
+                                                           : "Other resource";
+   return type;
+}
+
+static char *
+panfrost_resource_new_label(struct panfrost_resource *rsrc,
+                            uint64_t modifier)
+{
+   char *new_label = NULL;
+
+   asprintf(&new_label,
+            "%s format=%s extent=%ux%ux%u array_size=%u mip_count=%u samples=%u modifier=0x%"PRIx64,
+            panfrost_resource_type_str(rsrc),
+            util_format_short_name(rsrc->base.format),
+            rsrc->base.width0, rsrc->base.height0, rsrc->base.depth0,
+            rsrc->base.array_size, rsrc->base.last_level,
+            rsrc->base.nr_storage_samples, modifier);
+
+   return new_label;
 }
 
 static struct pipe_resource *
@@ -909,23 +955,6 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
 
    panfrost_resource_setup(screen, so, modifier, template->format, plane_idx);
 
-   /* Guess a label based on the bind */
-   unsigned bind = template->bind;
-   const char *label = (bind & PIPE_BIND_INDEX_BUFFER)     ? "Index buffer"
-                       : (bind & PIPE_BIND_SCANOUT)        ? "Scanout"
-                       : (bind & PIPE_BIND_DISPLAY_TARGET) ? "Display target"
-                       : (bind & PIPE_BIND_SHARED)         ? "Shared resource"
-                       : (bind & PIPE_BIND_RENDER_TARGET)  ? "Render target"
-                       : (bind & PIPE_BIND_DEPTH_STENCIL)
-                          ? "Depth/stencil buffer"
-                       : (bind & PIPE_BIND_SAMPLER_VIEW)    ? "Texture"
-                       : (bind & PIPE_BIND_VERTEX_BUFFER)   ? "Vertex buffer"
-                       : (bind & PIPE_BIND_CONSTANT_BUFFER) ? "Constant buffer"
-                       : (bind & PIPE_BIND_GLOBAL)          ? "Global memory"
-                       : (bind & PIPE_BIND_SHADER_BUFFER)   ? "Shader buffer"
-                       : (bind & PIPE_BIND_SHADER_IMAGE)    ? "Shader image"
-                                                            : "Other resource";
-
    if (dev->ro && (template->bind & PIPE_BIND_SCANOUT)) {
       struct winsys_handle handle;
       struct pan_image_block_size blocksize =
@@ -995,8 +1024,11 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
       if (template->bind & PIPE_BIND_SHARED)
          flags |= PAN_BO_SHAREABLE;
 
+      char *res_label =
+         panfrost_resource_new_label(so, so->image.props.modifier);
+
       so->bo =
-         panfrost_bo_create(dev, so->plane.layout.data_size_B, flags, label);
+         panfrost_bo_create(dev, so->plane.layout.data_size_B, flags, res_label);
 
       if (!so->bo) {
          panfrost_resource_destroy(screen, &so->base);
@@ -1006,6 +1038,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
       so->plane.base = so->bo->ptr.gpu;
 
       so->constant_stencil = true;
+      so->owns_label = true;
    }
 
    if (drm_is_afbc(so->modifier)) {
@@ -1734,11 +1767,18 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
                               modifier, tmp_rsrc->base.format, 0);
       rsrc->shadow_image = tmp_rsrc;
    } else {
+      if (rsrc->owns_label) {
+         char *old_label = (char *)panfrost_bo_replace_label(rsrc->bo, "Disposed old modifier BO", false);
+         free(old_label);
+      }
       panfrost_bo_unreference(rsrc->bo);
 
       rsrc->bo = tmp_rsrc->bo;
       rsrc->plane.base = rsrc->bo->ptr.gpu;
       panfrost_bo_reference(rsrc->bo);
+
+      rsrc->owns_label = tmp_rsrc->owns_label;
+      tmp_rsrc->owns_label = false;
 
       panfrost_resource_setup(ctx->base.screen, rsrc, modifier,
                               tmp_rsrc->base.format, 0);
@@ -1750,6 +1790,7 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
       struct pipe_resource *tmp_prsrc = &tmp_rsrc->base;
 
       pipe_resource_reference(&tmp_prsrc, NULL);
+
       perf_debug(ctx, "resource_modifier_convert required due to: %s", reason);
    }
 }
@@ -1998,12 +2039,16 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    perf_debug(ctx, "%i%%: %i KB -> %i KB\n", ratio, old_size / 1024,
               new_size / 1024);
 
+   char *new_label =
+      panfrost_resource_new_label(prsrc, dst_modifier);
+
    struct panfrost_bo *dst =
-      panfrost_bo_create(dev, new_size, 0, "AFBC compact texture");
+      panfrost_bo_create(dev, new_size, 0, new_label);
 
    if (!dst) {
       mesa_loge("panfrost_pack_afbc: failed to get afbc superblock sizes");
       panfrost_bo_unreference(metadata_bo);
+      free(new_label);
       return;
    }
 
@@ -2020,6 +2065,11 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    prsrc->plane.layout.data_size_B = new_size;
 
    panfrost_flush_batches_accessing_rsrc(ctx, prsrc, "AFBC compaction flush");
+
+   if (prsrc->owns_label) {
+      char *old_label = (char *)panfrost_bo_replace_label(prsrc->bo, "Disposed pre-AFBC compaction BO", false);
+      free(old_label);
+   }
 
    assert(!panfrost_is_emulated_mod(dst_modifier));
    prsrc->image.props.modifier = dst_modifier;
@@ -2058,6 +2108,10 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
       if (transfer->usage & PIPE_MAP_WRITE) {
          if (panfrost_should_linear_convert(ctx, prsrc, transfer)) {
 
+            if (prsrc->owns_label) {
+               char *old_label = (char *)panfrost_bo_replace_label(prsrc->bo, "Discarded ptr-unmap BO", false);
+               free(old_label);
+            }
             panfrost_bo_unreference(prsrc->bo);
 
             panfrost_resource_setup(screen, prsrc, DRM_FORMAT_MOD_LINEAR,
@@ -2066,6 +2120,9 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
             prsrc->bo = pan_resource(trans->staging.rsrc)->bo;
             prsrc->plane.base = prsrc->bo->ptr.gpu;
             panfrost_bo_reference(prsrc->bo);
+
+            prsrc->owns_label = pan_resource(trans->staging.rsrc)->owns_label;
+            pan_resource(trans->staging.rsrc)->owns_label = false;
          } else {
             bool discard = panfrost_can_discard(&prsrc->base, &transfer->box,
                                                 transfer->usage);

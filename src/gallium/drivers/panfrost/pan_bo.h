@@ -110,7 +110,10 @@ struct panfrost_bo {
     */
    uint32_t gpu_access;
 
-   /* Human readable description of the BO for debugging. */
+   /* Driver-provided human-readable description of the BO for debugging.
+    * Consists of a BO name and optional additional information, like
+    * pixel format or buffer modifiers.
+    */
    const char *label;
 };
 
