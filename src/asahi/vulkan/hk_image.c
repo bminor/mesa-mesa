@@ -78,17 +78,10 @@ hk_get_image_plane_format_features(struct hk_physical_device *pdev,
    }
 
    if (ail_pixel_format[p_format].renderable) {
-      /* For now, disable snorm rendering due to nir_lower_blend bugs.
-       *
-       * TODO: revisit.
-       */
-      if (!util_format_is_snorm(p_format)) {
-         features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT;
-         features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT;
-      }
-
-      features |= VK_FORMAT_FEATURE_2_BLIT_DST_BIT;
-      features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+      features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
+                  VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT |
+                  VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
+                  VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
                   VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT |
                   VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
    }
