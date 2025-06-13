@@ -137,6 +137,13 @@ nvk_preprocess_nir(struct vk_physical_device *vk_pdev,
       container_of(vk_pdev, struct nvk_physical_device, vk);
 
    nak_preprocess_nir(nir, pdev->nak);
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      nir_input_attachment_options ia_opts = {
+         .use_ia_coord_intrin = true,
+      };
+      NIR_PASS(_, nir, nir_lower_input_attachments, &ia_opts);
+   }
 }
 
 static void
@@ -337,13 +344,6 @@ nvk_lower_nir(struct nvk_device *dev, nir_shader *nir,
               struct nvk_cbuf_map *cbuf_map_out)
 {
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
-
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, nir_lower_input_attachments,
-               &(nir_input_attachment_options) {
-                  .use_ia_coord_intrin = true,
-               });
-   }
 
    if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
       NIR_PASS(_, nir, nir_lower_patch_vertices,
