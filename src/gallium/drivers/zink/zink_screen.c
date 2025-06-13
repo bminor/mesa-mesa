@@ -3284,12 +3284,13 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    if (++instance_refcount == 1) {
       instance_info.loader_version = zink_get_loader_version(screen);
       instance = zink_create_instance(screen, &instance_info);
-      if (!instance) {
-         simple_mtx_unlock(&instance_lock);
-         goto fail;
-      }
-   } else {
-      assert(instance);
+   }
+   if (!instance) {
+      /* We don't decrement instance_refcount here. This prevents us from trying
+       * to create another instance on subsequent calls.
+       */
+      simple_mtx_unlock(&instance_lock);
+      goto fail;
    }
    screen->instance = instance;
    screen->instance_info = &instance_info;
