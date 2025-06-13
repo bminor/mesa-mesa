@@ -5,6 +5,7 @@
 
 #include "nvkmd.h"
 #include "nouveau/nvkmd_nouveau.h"
+#include "nv_push.h"
 
 #include <inttypes.h>
 
@@ -255,6 +256,68 @@ nvkmd_va_unbind(struct nvkmd_va *va,
       log_va_unbind(va, va_offset_B, range_B);
 
    return va->ops->unbind(va, log_obj, va_offset_B, range_B);
+}
+
+static void
+nvkmd_ctx_exec_dump(struct nvkmd_dev *dev, struct vk_object_base *log_obj,
+                    FILE *fp, const struct nvkmd_ctx_exec *exec)
+{
+   uint64_t mem_offset_B = 0;
+   struct nvkmd_mem *mem =
+      nvkmd_dev_lookup_mem_by_va(dev, exec->addr, &mem_offset_B);
+   if (mem == NULL) {
+      fprintf(fp, "<%u B of DATA at UNKNOWN ADDRESS 0x%" PRIx64 ">\n",
+              exec->size_B, exec->addr);
+      return;
+   }
+
+   void *map;
+   VkResult map_result = nvkmd_mem_map(mem, log_obj,
+                                       NVKMD_MEM_MAP_RD, NULL, &map);
+   if (map_result != VK_SUCCESS) {
+      fprintf(fp, "<%u B of DATA at UNMAPPABLE ADDRESS 0x%" PRIx64 ">\n",
+              exec->size_B, exec->addr);
+      goto fail_lookup;
+   }
+
+   assert(mem_offset_B < mem->size_B);
+   uint32_t dump_size_B = MIN2(exec->size_B, mem->size_B - mem_offset_B);
+
+   struct nv_push push = {
+      .start = mem->map + mem_offset_B,
+      .end = mem->map + mem_offset_B + dump_size_B,
+   };
+   vk_push_print(fp, &push, &dev->pdev->dev_info);
+
+   if (dump_size_B < exec->size_B) {
+      fprintf(fp, "<%u B of DATA at UNKNOWN ADDRESS 0x%" PRIx64 ">\n",
+              exec->size_B - dump_size_B, exec->addr + dump_size_B);
+   }
+
+   nvkmd_mem_unmap(mem, 0);
+fail_lookup:
+   nvkmd_mem_unref(mem);
+}
+
+VkResult MUST_CHECK
+nvkmd_ctx_exec(struct nvkmd_ctx *ctx,
+               struct vk_object_base *log_obj,
+               uint32_t exec_count,
+               const struct nvkmd_ctx_exec *execs)
+{
+   const bool sync = ctx->dev->pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
+
+   VkResult result = ctx->ops->exec(ctx, log_obj, exec_count, execs);
+   if (result == VK_SUCCESS && sync)
+      result = ctx->ops->sync(ctx, log_obj);
+
+   if ((sync && result != VK_SUCCESS) ||
+       (ctx->dev->pdev->debug_flags & NVK_DEBUG_PUSH_DUMP)) {
+      for (uint32_t i = 0; i < exec_count; i++)
+         nvkmd_ctx_exec_dump(ctx->dev, log_obj, stderr, &execs[i]);
+   }
+
+   return result;
 }
 
 VkResult MUST_CHECK

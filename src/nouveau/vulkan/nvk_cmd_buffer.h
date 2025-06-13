@@ -391,8 +391,6 @@ void nvk_cmd_dispatch_shader(struct nvk_cmd_buffer *cmd,
 void nvk_meta_resolve_rendering(struct nvk_cmd_buffer *cmd,
                                 const VkRenderingInfo *pRenderingInfo);
 
-void nvk_cmd_buffer_dump(struct nvk_cmd_buffer *cmd, FILE *fp);
-
 void nvk_linear_render_copy(struct nvk_cmd_buffer *cmd,
                             const struct nvk_image_view *iview,
                             VkRect2D copy_rect,

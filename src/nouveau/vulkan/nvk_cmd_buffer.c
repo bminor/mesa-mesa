@@ -1198,47 +1198,6 @@ nvk_cmd_buffer_get_cbuf_descriptor_addr(struct nvk_cmd_buffer *cmd,
    }
 }
 
-void
-nvk_cmd_buffer_dump(struct nvk_cmd_buffer *cmd, FILE *fp)
-{
-   struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
-   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
-
-   util_dynarray_foreach(&cmd->pushes, struct nvk_cmd_push, p) {
-      if (p->map) {
-         struct nv_push push = {
-            .start = (uint32_t *)p->map,
-            .end = (uint32_t *)((char *)p->map + p->range),
-         };
-         vk_push_print(fp, &push, &pdev->info);
-      } else {
-         const uint64_t addr = p->addr;
-         fprintf(fp, "<%u B of INDIRECT DATA at 0x%" PRIx64 ">\n",
-                 p->range, addr);
-
-         uint64_t mem_offset = 0;
-         struct nvkmd_mem *mem =
-            nvkmd_dev_lookup_mem_by_va(dev->nvkmd, addr, &mem_offset);
-         if (mem != NULL) {
-            void *map;
-            VkResult map_result = nvkmd_mem_map(mem, &dev->vk.base,
-                                                NVKMD_MEM_MAP_RD, NULL,
-                                                &map);
-            if (map_result == VK_SUCCESS) {
-               struct nv_push push = {
-                  .start = mem->map + mem_offset,
-                  .end = mem->map + mem_offset + p->range,
-               };
-               vk_push_print(fp, &push, &pdev->info);
-               nvkmd_mem_unmap(mem, 0);
-            }
-
-            nvkmd_mem_unref(mem);
-         }
-      }
-   }
-}
-
 VKAPI_ATTR void VKAPI_CALL
 nvk_CmdPushDescriptorSetWithTemplate2KHR(
    VkCommandBuffer commandBuffer,

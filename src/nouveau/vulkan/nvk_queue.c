@@ -210,10 +210,7 @@ nvk_queue_submit_exec(struct nvk_queue *queue,
                       struct vk_queue_submit *submit)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
-
-   const bool sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
 
    if (submit->command_buffer_count > 0) {
       result = nvk_queue_state_update(queue, &queue->state);
@@ -277,23 +274,7 @@ nvk_queue_submit_exec(struct nvk_queue *queue,
    if (result != VK_SUCCESS)
       goto fail;
 
-   if (sync) {
-      result = nvkmd_ctx_sync(queue->exec_ctx, &queue->vk.base);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
 fail:
-   if ((sync && result != VK_SUCCESS) ||
-       (pdev->debug_flags & NVK_DEBUG_PUSH_DUMP)) {
-      for (unsigned i = 0; i < submit->command_buffer_count; i++) {
-         struct nvk_cmd_buffer *cmd =
-            container_of(submit->command_buffers[i], struct nvk_cmd_buffer, vk);
-
-         nvk_cmd_buffer_dump(cmd, stderr);
-      }
-   }
-
    return result;
 }
 
@@ -327,8 +308,6 @@ static VkResult
 nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push)
 {
    struct nvk_device *dev = nvk_queue_device(queue);
-   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
-   VkResult result;
 
    if (vk_queue_is_lost(&queue->vk))
       return VK_ERROR_DEVICE_LOST;
@@ -336,18 +315,8 @@ nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push)
    if (nv_push_dw_count(push) == 0)
       return VK_SUCCESS;
 
-   const bool sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
-
-   result = nvk_mem_stream_push(dev, &queue->push_stream, queue->exec_ctx,
-                                push->start, nv_push_dw_count(push), NULL);
-   if (result == VK_SUCCESS && sync)
-      result = nvkmd_ctx_sync(queue->exec_ctx, &queue->vk.base);
-
-   if ((sync && result != VK_SUCCESS) ||
-       (pdev->debug_flags & NVK_DEBUG_PUSH_DUMP))
-      vk_push_print(stderr, push, &pdev->info);
-
-   return result;
+   return nvk_mem_stream_push(dev, &queue->push_stream, queue->exec_ctx,
+                              push->start, nv_push_dw_count(push), NULL);
 }
 
 static VkResult

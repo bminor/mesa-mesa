@@ -546,14 +546,11 @@ nvkmd_ctx_wait(struct nvkmd_ctx *ctx,
    return ctx->ops->wait(ctx, log_obj, wait_count, waits);
 }
 
-static inline VkResult MUST_CHECK
+VkResult MUST_CHECK
 nvkmd_ctx_exec(struct nvkmd_ctx *ctx,
                struct vk_object_base *log_obj,
                uint32_t exec_count,
-               const struct nvkmd_ctx_exec *execs)
-{
-   return ctx->ops->exec(ctx, log_obj, exec_count, execs);
-}
+               const struct nvkmd_ctx_exec *execs);
 
 VkResult MUST_CHECK
 nvkmd_ctx_bind(struct nvkmd_ctx *ctx,
