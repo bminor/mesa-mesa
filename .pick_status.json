@@ -9914,7 +9914,7 @@
         "description": "panvk: return error when mmap fails in BindImageMemory2 and BindBufferMemory2",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "211aa201945b5fd93a9419bacf89e89be23d830c",
         "notes": null
