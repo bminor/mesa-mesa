@@ -56,3 +56,5 @@ cl_khr_extended_bit_ops
 VK_KHR_shader_clock on panvk
 GL_EXT_shader_realtime_clock on panfrost/v6+
 VK_KHR_shader_float8 on RADV (RDNA4+)
+GL_EXT_window_rectangles on r600
+GL_EXT_shader_image_load_store on r600/evergreen+
