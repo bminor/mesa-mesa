@@ -3206,6 +3206,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    }
    if (ctx->fb_state.resolve && use_tc_info && ctx->dynamic_fb.tc_info.has_resolve) {
       struct zink_resource *res = zink_resource(ctx->fb_state.resolve);
+      zink_surface_resolve_init(screen, res, ctx->fb_state.resolve->format);
       struct zink_surface *surf = zink_surface(res->surface);
       if (zink_is_swapchain(res)) {
          if (!zink_kopper_acquire(ctx, res, UINT64_MAX))
@@ -4010,8 +4011,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       zink_resource(psurf->texture)->fb_binds |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
    }
 
-   if (ctx->fb_state.resolve)
-      zink_surface_resolve_init(screen, zink_resource(ctx->fb_state.resolve), ctx->fb_state.resolve->format);
    rebind_fb_state(ctx, NULL, true);
    ctx->fb_state.samples = MAX2(samples, 1);
    if (ctx->fb_state.width != w || ctx->fb_state.height != h)
