@@ -3370,6 +3370,8 @@ tu6_emit_ds(struct tu_cs *cs,
     *
     * Given that the condition for avoiding stencil_read is fairly complicated,
     * we won't bother with the CPU overhead until we can see some win from it.
+    *
+    * https://gitlab.freedesktop.org/anholt/mesa/-/commits/tu-s-reads
     */
 
    tu_cs_emit_regs(cs, A6XX_RB_STENCIL_CONTROL(
