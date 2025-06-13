@@ -200,8 +200,10 @@ pan_afbc_header_align(unsigned arch, uint64_t modifier)
 {
    if (modifier & AFBC_FORMAT_MOD_TILED)
       return 4096;
-   else
+   else if (arch >= 6)
       return 128;
+   else
+      return 64;
 }
 
 /*
@@ -212,13 +214,8 @@ pan_afbc_header_align(unsigned arch, uint64_t modifier)
 static inline uint32_t
 pan_afbc_body_align(unsigned arch, uint64_t modifier)
 {
-   if (modifier & AFBC_FORMAT_MOD_TILED)
-      return 4096;
-
-   if (arch >= 6)
-      return 128;
-
-   return 64;
+   /* Body and header alignments are actually the same. */
+   return pan_afbc_header_align(arch, modifier);
 }
 
 /*
