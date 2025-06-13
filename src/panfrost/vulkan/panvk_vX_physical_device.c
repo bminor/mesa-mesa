@@ -77,6 +77,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_maintenance3 = true,
       .KHR_maintenance4 = has_vk1_1,
       .KHR_maintenance5 = has_vk1_1,
+      .KHR_maintenance6 = has_vk1_1,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -347,6 +348,7 @@ panvk_per_arch(get_physical_device_features)(
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
       .maintenance5 = true,
+      .maintenance6 = true,
 
       /* Vulkan 1.4 */
       .shaderSubgroupRotate = true,
@@ -855,6 +857,12 @@ panvk_per_arch(get_physical_device_properties)(
 
       /* VK_KHR_maintenance4 */
       .maxBufferSize = 1 << 30,
+
+      /* VK_KHR_maintenance6 */
+      .blockTexelViewCompatibleMultipleLayers = true,
+      /* We don't implement VK_KHR_fragment_shading_rate */
+      .fragmentShadingRateClampCombinerInputs = false,
+      .maxCombinedImageSamplerDescriptorCount = 1,
 
       /* VK_KHR_line_rasterization */
       .lineSubPixelPrecisionBits = 8,

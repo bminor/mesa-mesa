@@ -50,3 +50,4 @@ VK_KHR_vulkan_memory_model on panvk
 VK_KHR_present_wait2
 VK_EXT_descriptor_indexing on panvk/v10+
 cl_khr_priority_hints
+VK_KHR_maintenance6 on panvk/v10+
