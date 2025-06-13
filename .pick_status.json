@@ -4764,7 +4764,7 @@
         "description": "panfrost: Fix Panfrost BO leak in error handling path",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e3f2bc7963748096f7b4018cffe058a73081a760",
         "notes": null
