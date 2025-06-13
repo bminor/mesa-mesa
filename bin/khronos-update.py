@@ -212,6 +212,7 @@ SOURCES = [
             Source('include/vulkan/vulkan_ios.h',               'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_ios.h'),
             Source('include/vulkan/vulkan_macos.h',             'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_macos.h'),
             Source('include/vulkan/vulkan_metal.h',             'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_metal.h'),
+            Source('include/vulkan/vulkan_ohos.h',              'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_ohos.h'),
             Source('include/vulkan/vulkan_screen.h',            'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_screen.h'),
             Source('include/vulkan/vulkan_vi.h',                'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_vi.h'),
             Source('include/vulkan/vulkan_wayland.h',           'https://github.com/KhronosGroup/Vulkan-Headers/raw/main/include/vulkan/vulkan_wayland.h'),
