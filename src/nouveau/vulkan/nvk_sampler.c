@@ -55,23 +55,23 @@ __set_bool(uint32_t *o, bool b, unsigned lo, unsigned hi)
 #define MW(x) x
 
 #define SAMP_SET_U(o, NV, i, FIELD, val) \
-   __set_u32(&(o)[i], (val), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
+   __set_u32(&o.bits[i], (val), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
                              DRF_HI(NV##_TEXSAMP##i##_##FIELD))
 
 #define SAMP_SET_UF(o, NV, i, FIELD, val) \
-   __set_ufixed(&(o)[i], (val), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
+   __set_ufixed(&o.bits[i], (val), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
                                 DRF_HI(NV##_TEXSAMP##i##_##FIELD))
 
 #define SAMP_SET_SF(o, NV, i, FIELD, val) \
-   __set_sfixed(&(o)[i], (val), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
+   __set_sfixed(&o.bits[i], (val), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
                                 DRF_HI(NV##_TEXSAMP##i##_##FIELD))
 
 #define SAMP_SET_B(o, NV, i, FIELD, b) \
-   __set_bool(&(o)[i], (b), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
+   __set_bool(&o.bits[i], (b), DRF_LO(NV##_TEXSAMP##i##_##FIELD),\
                             DRF_HI(NV##_TEXSAMP##i##_##FIELD))
 
 #define SAMP_SET_E(o, NV, i, FIELD, E) \
-   SAMP_SET_U((o), NV, i, FIELD, NV##_TEXSAMP##i##_##FIELD##_##E)
+   SAMP_SET_U(o, NV, i, FIELD, NV##_TEXSAMP##i##_##FIELD##_##E)
 
 static inline uint32_t
 vk_to_9097_address_mode(VkSamplerAddressMode addr_mode)
@@ -143,12 +143,14 @@ vk_to_9097_trilin_opt(float max_anisotropy)
    return 0;
 }
 
-static void
-nvk_sampler_fill_header(const struct nvk_physical_device *pdev,
-                        const struct VkSamplerCreateInfo *info,
-                        const struct vk_sampler *vk_sampler,
-                        uint32_t *samp)
+
+static struct nvk_sampler_header
+nvk_sampler_get_header(const struct nvk_physical_device *pdev,
+                       const struct VkSamplerCreateInfo *info,
+                       const struct vk_sampler *vk_sampler)
 {
+   struct nvk_sampler_header samp = {};
+
    SAMP_SET_U(samp, NV9097, 0, ADDRESS_U,
               vk_to_9097_address_mode(info->addressModeU));
    SAMP_SET_U(samp, NV9097, 0, ADDRESS_V,
@@ -280,11 +282,12 @@ nvk_sampler_fill_header(const struct nvk_physical_device *pdev,
    SAMP_SET_U(samp, NV9097, 5, BORDER_COLOR_G, bc.uint32[1]);
    SAMP_SET_U(samp, NV9097, 6, BORDER_COLOR_B, bc.uint32[2]);
    SAMP_SET_U(samp, NV9097, 7, BORDER_COLOR_A, bc.uint32[3]);
+
+   return samp;
 }
 
-void
-nvk_fill_txf_sampler_header(const struct nvk_physical_device *pdev,
-                            uint32_t *samp)
+struct nvk_sampler_header
+nvk_txf_sampler_header(const struct nvk_physical_device *pdev)
 {
    const VkSamplerCreateInfo sampler_info = {
       .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -303,7 +306,7 @@ nvk_fill_txf_sampler_header(const struct nvk_physical_device *pdev,
    struct vk_sampler sampler;
    vk_sampler_init(&sampler_info, &sampler);
 
-   nvk_sampler_fill_header(pdev, &sampler_info, &sampler, samp);
+   return nvk_sampler_get_header(pdev, &sampler_info, &sampler);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -330,18 +333,18 @@ nvk_CreateSampler(VkDevice device,
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    {
-      uint32_t samp[8] = {};
       sampler->plane_count = 1;
-      nvk_sampler_fill_header(pdev, pCreateInfo, &sampler->vk, samp);
+      const struct nvk_sampler_header samp =
+         nvk_sampler_get_header(pdev, pCreateInfo, &sampler->vk);
 
       uint32_t desc_index = 0;
       if (cap_info != NULL) {
          desc_index = cap.planes[0].desc_index;
          result = nvk_descriptor_table_insert(dev, &dev->samplers,
-                                              desc_index, samp, sizeof(samp));
+                                              desc_index, &samp, sizeof(samp));
       } else {
          result = nvk_descriptor_table_add(dev, &dev->samplers,
-                                           samp, sizeof(samp), &desc_index);
+                                           &samp, sizeof(samp), &desc_index);
       }
       if (result != VK_SUCCESS) {
          vk_sampler_destroy(&dev->vk, pAllocator, &sampler->vk);
@@ -371,19 +374,19 @@ nvk_CreateSampler(VkDevice device,
          plane2_info.magFilter = chroma_filter;
          plane2_info.minFilter = chroma_filter;
 
-         uint32_t samp[8] = {};
          sampler->plane_count = 2;
-         nvk_sampler_fill_header(pdev, &plane2_info, &sampler->vk, samp);
+         const struct nvk_sampler_header samp =
+            nvk_sampler_get_header(pdev, &plane2_info, &sampler->vk);
 
          uint32_t desc_index = 0;
          if (cap_info != NULL) {
             desc_index = cap.planes[1].desc_index;
             result = nvk_descriptor_table_insert(dev, &dev->samplers,
                                                  desc_index,
-                                                 samp, sizeof(samp));
+                                                 &samp, sizeof(samp));
          } else {
             result = nvk_descriptor_table_add(dev, &dev->samplers,
-                                              samp, sizeof(samp),
+                                              &samp, sizeof(samp),
                                               &desc_index);
          }
          if (result != VK_SUCCESS) {

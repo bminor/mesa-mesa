@@ -13,6 +13,10 @@
 
 #include "vk_format.h"
 
+struct nvk_sampler_header {
+   uint32_t bits[8];
+};
+
 struct nvk_sampler {
    struct vk_sampler vk;
 
@@ -32,8 +36,7 @@ struct nvk_sampler_capture {
    } planes[NVK_MAX_SAMPLER_PLANES];
 };
 
-void
-nvk_fill_txf_sampler_header(const struct nvk_physical_device *pdev,
-                            uint32_t *samp);
+struct nvk_sampler_header
+nvk_txf_sampler_header(const struct nvk_physical_device *pdev);
 
 #endif
