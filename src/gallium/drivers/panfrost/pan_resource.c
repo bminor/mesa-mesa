@@ -205,6 +205,22 @@ panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
    free(rsrc);
 }
 
+static int
+panfrost_resource_import_bo(struct panfrost_resource *rsc,
+                            struct panfrost_device *dev, int fd)
+{
+   if (!rsc)
+      return -1;
+
+   rsc->owns_label = false;
+
+   rsc->bo = panfrost_bo_import(dev, fd);
+   if (!rsc->bo)
+      return -1;
+
+   return 0;
+}
+
 static struct pipe_resource *
 panfrost_resource_from_handle(struct pipe_screen *pscreen,
                               const struct pipe_resource *templat,
@@ -284,11 +300,11 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
 
    panfrost_resource_init_image(rsc, &iprops, whandle->plane);
 
-   rsc->bo = panfrost_bo_import(dev, whandle->handle);
+   int ret = panfrost_resource_import_bo(rsc, dev, whandle->handle);
    /* Sometimes an import can fail e.g. on an invalid buffer fd, out of
     * memory space to mmap it etc.
     */
-   if (!rsc->bo) {
+   if (ret) {
       panfrost_resource_destroy(pscreen, &rsc->base);
       return NULL;
    }
@@ -961,10 +977,10 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
          return NULL;
       }
       assert(handle.type == WINSYS_HANDLE_TYPE_FD);
-      so->bo = panfrost_bo_import(dev, handle.handle);
+      int ret = panfrost_resource_import_bo(so, dev, handle.handle);
       close(handle.handle);
 
-      if (!so->bo) {
+      if (ret) {
          panfrost_resource_destroy(screen, &so->base);
          return NULL;
       }

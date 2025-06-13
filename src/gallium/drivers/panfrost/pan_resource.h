@@ -91,6 +91,9 @@ struct panfrost_resource {
 
    /* Cached min/max values for index buffers */
    struct pan_minmax_cache *index_cache;
+
+   /* Whether the resource owns the backing BO's label */
+   bool owns_label;
 };
 
 static inline struct panfrost_resource *
