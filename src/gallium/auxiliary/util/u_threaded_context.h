@@ -461,7 +461,7 @@ struct tc_renderpass_info {
       uint32_t data32[2];
       /* cso info is in data16[2] */
       uint16_t data16[4];
-      /* zsbuf fb info is in data8[3] */
+      /* zsbuf fb info is in data8[3] & BITFIELD_MASK(4) */
       uint8_t data8[8];
    };
 };
