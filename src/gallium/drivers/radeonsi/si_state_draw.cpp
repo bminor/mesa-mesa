@@ -53,12 +53,7 @@ static bool si_update_shaders(struct si_context *sctx)
 
    struct pipe_context *ctx = (struct pipe_context *)sctx;
    struct si_shader *old_vs = si_get_vs_inline(sctx, HAS_TESS, HAS_GS)->current;
-   unsigned old_pa_cl_vs_out_cntl = old_vs ? old_vs->pa_cl_vs_out_cntl : 0;
-   bool old_uses_gs_state_provoking_vertex = old_vs ? old_vs->info.uses_gs_state_provoking_vtx_first : false;
-   bool old_uses_gs_state_outprim = old_vs ? old_vs->info.uses_gs_state_outprim : false;
    struct si_shader *old_ps = sctx->shader.ps.current;
-   unsigned old_spi_shader_col_format =
-      old_ps ? old_ps->key.ps.part.epilog.spi_shader_col_format : 0;
    int r;
 
    /* Update TCS and TES. */
@@ -264,15 +259,16 @@ static bool si_update_shaders(struct si_context *sctx)
       sctx->dirty_atoms |= SI_STATE_BIT(rasterizer);
    }
 
-   if (old_pa_cl_vs_out_cntl != hw_vs->pa_cl_vs_out_cntl ||
-       (!old_vs ||
-        old_vs->info.clipdist_mask != hw_vs->info.clipdist_mask ||
-        old_vs->info.culldist_mask != hw_vs->info.culldist_mask))
+   if (!old_vs ||
+       old_vs->pa_cl_vs_out_cntl != hw_vs->pa_cl_vs_out_cntl ||
+       old_vs->info.clipdist_mask != hw_vs->info.clipdist_mask ||
+       old_vs->info.culldist_mask != hw_vs->info.culldist_mask)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.clip_regs);
 
    /* If we start to use any of these, we need to update the SGPR. */
-   if ((hw_vs->info.uses_gs_state_provoking_vtx_first && !old_uses_gs_state_provoking_vertex) ||
-       (hw_vs->info.uses_gs_state_outprim && !old_uses_gs_state_outprim)) {
+   if (!old_vs ||
+       old_vs->info.uses_gs_state_provoking_vtx_first != hw_vs->info.uses_gs_state_provoking_vtx_first ||
+       old_vs->info.uses_gs_state_outprim != hw_vs->info.uses_gs_state_outprim) {
       si_update_ngg_sgpr_state_out_prim(sctx, hw_vs, NGG);
       si_update_ngg_sgpr_state_provoking_vtx(sctx, hw_vs, NGG);
    }
@@ -309,8 +305,9 @@ static bool si_update_shaders(struct si_context *sctx)
    if (is_ps_state_changed) {
       if ((GFX_VERSION >= GFX10_3 || (GFX_VERSION >= GFX9 && sctx->screen->info.rbplus_allowed)) &&
          si_pm4_state_changed(sctx, ps) &&
-         (!old_ps || old_spi_shader_col_format !=
-                        sctx->shader.ps.current->key.ps.part.epilog.spi_shader_col_format))
+         (!old_ps ||
+          old_ps->key.ps.part.epilog.spi_shader_col_format !=
+          sctx->shader.ps.current->key.ps.part.epilog.spi_shader_col_format))
          si_mark_atom_dirty(sctx, &sctx->atoms.s.cb_render_state);
 
       if (sctx->smoothing_enabled !=
