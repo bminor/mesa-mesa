@@ -620,12 +620,13 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
    pan_iview_get_surface(rt, 0, layer_idx, 0, &surf);
 
    if (drm_is_afbc(image->props.modifier)) {
-#if PAN_ARCH >= 9
-      if (image->props.modifier & AFBC_FORMAT_MOD_YTR)
-         cfg->afbc.yuv_transform = true;
-
+      cfg->afbc.yuv_transform = image->props.modifier & AFBC_FORMAT_MOD_YTR;
+#if PAN_ARCH >= 6
       cfg->afbc.wide_block = pan_afbc_is_wide(image->props.modifier);
       cfg->afbc.split_block = (image->props.modifier & AFBC_FORMAT_MOD_SPLIT);
+#endif
+
+#if PAN_ARCH >= 9
       cfg->afbc.header = surf.afbc.header;
       cfg->afbc.body_offset = surf.afbc.body - surf.afbc.header;
       assert(surf.afbc.body >= surf.afbc.header);
@@ -638,10 +639,6 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 #if PAN_ARCH >= 6
       cfg->afbc.row_stride =
          pan_afbc_stride_blocks(image->props.modifier, slice->row_stride_B);
-      cfg->afbc.afbc_wide_block_enable =
-         pan_afbc_is_wide(image->props.modifier);
-      cfg->afbc.afbc_split_block_enable =
-         (image->props.modifier & AFBC_FORMAT_MOD_SPLIT);
 #else
       cfg->afbc.chunk_size = 9;
       cfg->afbc.sparse = true;
@@ -650,9 +647,6 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 
       cfg->afbc.header = surf.afbc.header;
       cfg->afbc.body = surf.afbc.body;
-
-      if (image->props.modifier & AFBC_FORMAT_MOD_YTR)
-         cfg->afbc.yuv_transform_enable = true;
 #endif
 #if PAN_ARCH >= 10
    } else if (drm_is_afrc(image->props.modifier)) {
