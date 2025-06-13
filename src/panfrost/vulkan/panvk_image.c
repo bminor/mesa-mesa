@@ -576,6 +576,52 @@ panvk_image_plane_bind(struct panvk_device *dev,
    return VK_SUCCESS;
 }
 
+static VkResult
+panvk_image_bind(struct panvk_device *dev,
+                 const VkBindImageMemoryInfo *bind_info) {
+   VK_FROM_HANDLE(panvk_image, image, bind_info->image);
+   const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+      vk_find_struct_const(bind_info->pNext,
+                           BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+
+   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+      VkImage wsi_vk_image = wsi_common_get_image(swapchain_info->swapchain,
+                                                swapchain_info->imageIndex);
+      VK_FROM_HANDLE(panvk_image, wsi_image, wsi_vk_image);
+
+      assert(image->plane_count == 1);
+      assert(wsi_image->plane_count == 1);
+
+      image->bo = wsi_image->bo;
+      return panvk_image_plane_bind(
+         dev, &image->planes[0], image->bo, wsi_image->planes[0].plane.base, 0);
+   } else {
+      VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
+      assert(mem);
+      image->bo = mem->bo;
+      if (is_disjoint(image)) {
+         const VkBindImagePlaneMemoryInfo *plane_info =
+            vk_find_struct_const(bind_info->pNext,
+                                 BIND_IMAGE_PLANE_MEMORY_INFO);
+         const uint8_t plane =
+            panvk_plane_index(image->vk.format, plane_info->planeAspect);
+         return panvk_image_plane_bind(
+            dev, &image->planes[plane], image->bo, mem->addr.dev,
+            bind_info->memoryOffset);
+      } else {
+         for (unsigned plane = 0; plane < image->plane_count; plane++) {
+            VkResult result = panvk_image_plane_bind(
+               dev, &image->planes[plane], image->bo, mem->addr.dev,
+               bind_info->memoryOffset);
+            if (result != VK_SUCCESS)
+               return result;
+         }
+      }
+   }
+
+   return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                        const VkBindImageMemoryInfo *pBindInfos)
@@ -583,50 +629,9 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
    VK_FROM_HANDLE(panvk_device, dev, device);
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {
-      VK_FROM_HANDLE(panvk_image, image, pBindInfos[i].image);
-      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-         vk_find_struct_const(pBindInfos[i].pNext,
-                              BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
-
-      if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
-         VkImage wsi_vk_image = wsi_common_get_image(swapchain_info->swapchain,
-                                                   swapchain_info->imageIndex);
-         VK_FROM_HANDLE(panvk_image, wsi_image, wsi_vk_image);
-
-         assert(image->plane_count == 1);
-         assert(wsi_image->plane_count == 1);
-
-         image->bo = wsi_image->bo;
-         VkResult result = panvk_image_plane_bind(
-            dev, &image->planes[0], image->bo, wsi_image->planes[0].plane.base,
-            0);
-         if (result != VK_SUCCESS)
-            return result;
-      } else {
-         VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
-         assert(mem);
-         image->bo = mem->bo;
-         if (is_disjoint(image)) {
-            const VkBindImagePlaneMemoryInfo *plane_info =
-               vk_find_struct_const(pBindInfos[i].pNext,
-                                    BIND_IMAGE_PLANE_MEMORY_INFO);
-            const uint8_t plane =
-               panvk_plane_index(image->vk.format, plane_info->planeAspect);
-            VkResult result = panvk_image_plane_bind(
-               dev, &image->planes[plane], image->bo, mem->addr.dev,
-               pBindInfos[i].memoryOffset);
-            if (result != VK_SUCCESS)
-               return result;
-         } else {
-            for (unsigned plane = 0; plane < image->plane_count; plane++) {
-               VkResult result = panvk_image_plane_bind(
-                  dev, &image->planes[plane], image->bo, mem->addr.dev,
-                  pBindInfos[i].memoryOffset);
-               if (result != VK_SUCCESS)
-                  return result;
-            }
-         }
-      }
+      VkResult result = panvk_image_bind(dev, &pBindInfos[i]);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
    return VK_SUCCESS;
