@@ -198,13 +198,13 @@ etna_emit_alu(struct etna_compile *c, nir_op op, struct etna_inst_dst dst,
 }
 
 void
-etna_emit_tex(struct etna_compile *c, nir_texop op, unsigned texid, unsigned dst_swiz,
+etna_emit_tex(struct etna_compile *c, nir_tex_instr * tex, unsigned dst_swiz,
               struct etna_inst_dst dst, struct etna_inst_src coord,
               struct etna_inst_src src1, struct etna_inst_src src2)
 {
    struct etna_inst inst = {
       .dst = dst,
-      .tex.id = texid + (is_fs(c) ? 0 : c->specs->vertex_sampler_offset),
+      .tex.id = tex->sampler_index + (is_fs(c) ? 0 : c->specs->vertex_sampler_offset),
       .tex.swiz = dst_swiz,
       .src[0] = coord,
    };
@@ -215,7 +215,7 @@ etna_emit_tex(struct etna_compile *c, nir_texop op, unsigned texid, unsigned dst
    if (src2.use)
       inst.src[2] = src2;
 
-   switch (op) {
+   switch (tex->op) {
    case nir_texop_tex: inst.opcode = ISA_OPC_TEXLD; break;
    case nir_texop_txb: inst.opcode = ISA_OPC_TEXLDB; break;
    case nir_texop_txd: inst.opcode = ISA_OPC_TEXLDD; break;
@@ -225,7 +225,7 @@ etna_emit_tex(struct etna_compile *c, nir_texop op, unsigned texid, unsigned dst
       inst.src[2] = etna_immediate_int(0x1100);
       break;
    default:
-      compile_error(c, "Unhandled NIR tex type: %d\n", op);
+      compile_error(c, "Unhandled NIR tex type: %d\n", tex->op);
    }
 
    emit_inst(c, &inst);
