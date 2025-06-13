@@ -2202,12 +2202,22 @@ invalidate_buffer(struct zink_context *ctx, struct zink_resource *res)
 static void
 zink_resource_invalidate(struct pipe_context *pctx, struct pipe_resource *pres)
 {
+   struct zink_context *ctx = zink_context(pctx);
+   struct zink_resource *res = zink_resource(pres);
    if (pres->target == PIPE_BUFFER)
-      invalidate_buffer(zink_context(pctx), zink_resource(pres));
+      invalidate_buffer(ctx, res);
    else {
-      struct zink_resource *res = zink_resource(pres);
-      if (res->valid && res->fb_bind_count)
-         zink_context(pctx)->rp_loadop_changed = true;
+      if (res->valid && res->fb_bind_count) {
+         bool found = false;
+         if (res->aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+            found = pres == ctx->fb_state.zsbuf.texture;
+         } else {
+            for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++) {
+               found |= pres == ctx->fb_state.cbufs[i].texture;
+            }
+         }
+         ctx->rp_loadop_changed |= found;
+      }
       res->valid = false;
    }
 }
