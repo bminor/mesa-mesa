@@ -1624,7 +1624,7 @@
         "description": "nil: Don't use Fermi bits in the Maxwell null descriptor",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c8d8e2249a73ba455b34d3b8b67eb72cfc5fb554",
         "notes": null
