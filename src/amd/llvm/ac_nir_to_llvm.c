@@ -2773,9 +2773,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = ac_build_gather_values(&ctx->ac, values, 3);
       break;
    }
-   case nir_intrinsic_load_lds_ngg_gs_out_vertex_base_amd:
-      result = ctx->abi->intrinsic_load(ctx->abi, instr);
-      break;
    case nir_intrinsic_load_helper_invocation:
    case nir_intrinsic_is_helper_invocation:
       result = ac_build_load_helper_invocation(&ctx->ac);

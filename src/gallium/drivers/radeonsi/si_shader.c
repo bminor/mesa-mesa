@@ -188,25 +188,6 @@ static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *sh
 
 #undef add_part
 
-   struct ac_rtld_symbol lds_symbols[2];
-   unsigned num_lds_symbols = 0;
-
-   if (sel && screen->info.gfx_level >= GFX9 && !shader->is_gs_copy_shader &&
-       (sel->stage == MESA_SHADER_GEOMETRY ||
-        (sel->stage <= MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg))) {
-      struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
-      sym->name = "esgs_ring";
-      sym->size = 0;
-      sym->align = 64 * 1024;
-   }
-
-   if (sel->stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg) {
-      struct ac_rtld_symbol *sym = &lds_symbols[num_lds_symbols++];
-      sym->name = "ngg_emit";
-      sym->size = 0;
-      sym->align = 4;
-   }
-
    bool ok = ac_rtld_open(
       rtld, (struct ac_rtld_open_info){.info = &screen->info,
                                        .options =
@@ -219,9 +200,7 @@ static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *sh
                                        .wave_size = shader->wave_size,
                                        .num_parts = num_parts,
                                        .elf_ptrs = part_elfs,
-                                       .elf_sizes = part_sizes,
-                                       .num_shared_lds_symbols = num_lds_symbols,
-                                       .shared_lds_symbols = lds_symbols});
+                                       .elf_sizes = part_sizes});
 
    if (rtld->lds_size > 0) {
       unsigned alloc_granularity = get_lds_granularity(screen, sel->stage);

@@ -29,8 +29,6 @@ struct si_shader_context {
    LLVMTypeRef return_type;
 
    struct ac_llvm_compiler *compiler;
-
-   LLVMValueRef gs_ngg_emit;
    LLVMValueRef return_value;
 };
 
