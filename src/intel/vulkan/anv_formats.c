@@ -1301,62 +1301,70 @@ anv_formats_are_compatible(
    if (img_fmt == img_view_fmt)
       return true;
 
-   /* TODO: Handle multi-planar images that can have view of a plane with
-    * possibly different type.
-    */
-   if (img_fmt->n_planes != 1 || img_view_fmt->n_planes != 1)
+   if (img_view_fmt->n_planes != 1)
       return false;
 
-   const enum isl_format img_isl_fmt =
-      anv_get_format_plane(physical_device,
-                           img_fmt->vk_format, 0, tiling).isl_format;
-   const enum isl_format img_view_isl_fmt =
+   const enum isl_format img_view_isl_fmt0 =
       anv_get_format_plane(physical_device,
                            img_view_fmt->vk_format, 0, tiling).isl_format;
-   if (img_isl_fmt == ISL_FORMAT_UNSUPPORTED ||
-       img_view_isl_fmt == ISL_FORMAT_UNSUPPORTED)
+   if (img_view_isl_fmt0 == ISL_FORMAT_UNSUPPORTED)
       return false;
 
-   const struct isl_format_layout *img_fmt_layout =
-         isl_format_get_layout(img_isl_fmt);
-   const struct isl_format_layout *img_view_fmt_layout =
-         isl_format_get_layout(img_view_isl_fmt);
+   const struct isl_format_layout *img_view_fmt0_layout =
+      isl_format_get_layout(img_view_isl_fmt0);
+   const enum isl_format img_isl_fmt0 =
+      anv_get_format_plane(physical_device,
+                           img_view_fmt->vk_format, 0, tiling).isl_format;
+   const struct isl_format_layout *img_fmt0_layout =
+      isl_format_get_layout(img_isl_fmt0);
 
    /* From the Vulkan 1.3.230 spec "12.5. Image Views"
     *
     *    "If image was created with the
     *    VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT flag, format must be
-    *    compatible with the image’s format as described above; or must be
-    *    an uncompressed format, in which case it must be size-compatible
-    *    with the image’s format."
+    *    compatible with the image’s format as described above; or must be an
+    *    uncompressed format, in which case it must be size-compatible with
+    *    the image’s format."
     */
    if (allow_texel_compatible &&
-       isl_format_is_compressed(img_isl_fmt) &&
-       !isl_format_is_compressed(img_view_isl_fmt) &&
-       img_fmt_layout->bpb == img_view_fmt_layout->bpb)
+       img_fmt->n_planes == 1 &&
+       isl_format_is_compressed(img_isl_fmt0) !=
+       isl_format_is_compressed(img_view_isl_fmt0) &&
+       img_fmt0_layout->bpb == img_view_fmt0_layout->bpb) {
       return true;
-
-   if (isl_format_is_compressed(img_isl_fmt) !=
-       isl_format_is_compressed(img_view_isl_fmt))
-      return false;
-
-   if (!isl_format_is_compressed(img_isl_fmt)) {
-      /* From the Vulkan 1.3.224 spec "43.1.6. Format Compatibility Classes":
-       *
-       *    "Uncompressed color formats are compatible with each other if they
-       *    occupy the same number of bits per texel block."
-       */
-      return img_fmt_layout->bpb == img_view_fmt_layout->bpb;
    }
 
-   /* From the Vulkan 1.3.224 spec "43.1.6. Format Compatibility Classes":
-    *
-    *    "Compressed color formats are compatible with each other if the only
-    *    difference between them is the numerical type of the uncompressed
-    *    pixels (e.g. signed vs. unsigned, or SRGB vs. UNORM encoding)."
-    */
-   return img_fmt_layout->txc == img_view_fmt_layout->txc &&
-          isl_formats_have_same_bits_per_channel(img_isl_fmt, img_view_isl_fmt);
+   for (unsigned i = 0; i < img_fmt->n_planes; ++i) {
+      const enum isl_format img_isl_fmt =
+         anv_get_format_plane(physical_device,
+                              img_fmt->vk_format, i, tiling).isl_format;
+      assert(img_isl_fmt != ISL_FORMAT_UNSUPPORTED);
+      const struct isl_format_layout *img_fmt_layout =
+         isl_format_get_layout(img_isl_fmt);
+
+      if (!isl_format_is_compressed(img_isl_fmt)) {
+         /* From the Vulkan 1.3.224 spec "43.1.6. Format Compatibility Classes":
+          *
+          *    "Uncompressed color formats are compatible with each other if
+          *     they occupy the same number of bits per texel block."
+          */
+         if (img_fmt_layout->bpb == img_view_fmt0_layout->bpb)
+            return true;
+      } else {
+         /* From the Vulkan 1.3.224 spec "43.1.6. Format Compatibility Classes":
+          *
+          *    "Compressed color formats are compatible with each other if the
+          *     only difference between them is the numerical type of the
+          *     uncompressed pixels (e.g. signed vs. unsigned, or SRGB vs.
+          *     UNORM encoding)."
+          */
+         if (img_fmt_layout->txc == img_view_fmt0_layout->txc &&
+             isl_formats_have_same_bits_per_channel(img_isl_fmt, img_view_isl_fmt0))
+            return true;
+      }
+   }
+
+   return false;
 }
 
 /* Returns a set of feature flags supported by any of the VkFormat listed in
