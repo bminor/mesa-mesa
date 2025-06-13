@@ -536,7 +536,7 @@ panfrost_should_afbc(struct panfrost_device *dev,
       return false;
 
    /* Only a small selection of formats are AFBC'able */
-   if (!pan_format_supports_afbc(dev->arch, fmt))
+   if (!pan_afbc_supports_format(dev->arch, fmt))
       return false;
 
    /* AFBC does not support layered (GLES3 style) multisampling. Use
@@ -654,7 +654,7 @@ panfrost_should_afrc(struct panfrost_device *dev,
       return false;
 
    /* Only a small selection of formats are AFRC'able */
-   if (!pan_format_supports_afrc(fmt))
+   if (!pan_afrc_supports_format(fmt))
       return false;
 
    /* AFRC does not support layered (GLES3 style) multisampling. Use

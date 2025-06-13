@@ -335,12 +335,12 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
       for (unsigned i = 0; i < yuv_lowering.nres; i++) {
          enum pipe_format plane_format = yuv_lowering.res_formats[i];
 
-         afbc &= pan_format_supports_afbc(dev->arch, plane_format);
+         afbc &= pan_afbc_supports_format(dev->arch, plane_format);
       }
    } else {
-      afbc &= pan_format_supports_afbc(dev->arch, format);
+      afbc &= pan_afbc_supports_format(dev->arch, format);
       ytr &= pan_afbc_can_ytr(format);
-      afrc &= !is_yuv && pan_format_supports_afrc(format);
+      afrc &= !is_yuv && pan_afrc_supports_format(format);
    }
 
    PANFROST_EMULATED_MODIFIERS(emulated_mods);

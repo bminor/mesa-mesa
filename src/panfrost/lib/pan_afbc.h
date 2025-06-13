@@ -395,7 +395,7 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
 /* A format may be compressed as AFBC if it has an AFBC internal format */
 
 static inline bool
-pan_format_supports_afbc(unsigned arch, enum pipe_format format)
+pan_afbc_supports_format(unsigned arch, enum pipe_format format)
 {
    unsigned plane_count = util_format_get_num_planes(format);
 

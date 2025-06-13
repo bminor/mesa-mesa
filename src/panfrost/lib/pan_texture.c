@@ -753,7 +753,7 @@ GENX(pan_texture_afbc_reswizzle)(struct pan_image_view *iview)
     */
    assert(!util_format_is_depth_or_stencil(iview->format));
    assert(!pan_format_is_yuv(iview->format));
-   assert(pan_format_supports_afbc(PAN_ARCH, iview->format));
+   assert(pan_afbc_supports_format(PAN_ARCH, iview->format));
 
    uint32_t mali_format = GENX(pan_format_from_pipe_format)(iview->format)->hw;
 

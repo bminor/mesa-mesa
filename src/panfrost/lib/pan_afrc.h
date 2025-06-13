@@ -163,7 +163,7 @@ pan_afrc_clump_get_nr_components(enum pipe_format format, bool scan)
 }
 
 static inline bool
-pan_format_supports_afrc(enum pipe_format format)
+pan_afrc_supports_format(enum pipe_format format)
 {
    struct pan_afrc_format_info finfo = pan_afrc_get_format_info(format);
 
@@ -173,7 +173,7 @@ pan_format_supports_afrc(enum pipe_format format)
 static inline unsigned
 pan_afrc_query_rates(enum pipe_format format, unsigned max, uint32_t *rates)
 {
-   if (!pan_format_supports_afrc(format))
+   if (!pan_afrc_supports_format(format))
       return 0;
 
    unsigned clump_comps = pan_afrc_clump_get_nr_components(format, false);
@@ -216,7 +216,7 @@ static inline unsigned
 pan_afrc_get_modifiers(enum pipe_format format, uint32_t rate, unsigned max,
                        uint64_t *modifiers)
 {
-   if (!pan_format_supports_afrc(format))
+   if (!pan_afrc_supports_format(format))
       return 0;
 
    /* For now, the number of components in a clump is always the same no
@@ -272,7 +272,7 @@ pan_afrc_block_size_from_modifier(uint64_t modifier)
 static inline uint32_t
 pan_afrc_get_rate(enum pipe_format format, uint64_t modifier)
 {
-   if (!drm_is_afrc(modifier) || !pan_format_supports_afrc(format))
+   if (!drm_is_afrc(modifier) || !pan_afrc_supports_format(format))
       return PAN_AFRC_RATE_NONE;
 
    bool scan = pan_afrc_is_scan(modifier);

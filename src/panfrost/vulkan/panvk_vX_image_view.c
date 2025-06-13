@@ -106,7 +106,7 @@ prepare_tex_descs(struct panvk_image_view *view)
 #if PAN_ARCH == 7
    /* v7 requires AFBC reswizzle. */
    else if (!pan_format_is_yuv(view->pview.format) &&
-            pan_format_supports_afbc(PAN_ARCH, view->pview.format))
+            pan_afbc_supports_format(PAN_ARCH, view->pview.format))
       GENX(pan_texture_afbc_reswizzle)(&pview);
 #endif
 
