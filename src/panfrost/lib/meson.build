@@ -71,6 +71,19 @@ libpanfrost_dep = declare_dependency(
 
 if with_tests
   test(
+    'panfrost_attribute',
+    executable(
+      'panfrost_attribute_test',
+      files('tests/test-attribute.c'),
+      c_args : [c_msvc_compat_args, no_override_init_args],
+      gnu_symbol_visibility : 'hidden',
+      include_directories : [inc_include, inc_src],
+      dependencies: [libpanfrost_dep],
+    ),
+    suite : ['panfrost'],
+  )
+
+  test(
     'panfrost_blend',
     executable(
       'panfrost_blend_test',
