@@ -1476,7 +1476,7 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
       /* store existing zsbuf data for possible persistence */
       uint8_t zsbuf = tc->renderpass_info_recording->has_draw ?
                       0 :
-                      tc->renderpass_info_recording->data8[3];
+                      tc->renderpass_info_recording->data8[3] & BITFIELD_MASK(4);
       bool zsbuf_changed = tc->fb_resources[PIPE_MAX_COLOR_BUFS] !=
                            (fb->zsbuf ? fb->zsbuf->texture : NULL);
 
