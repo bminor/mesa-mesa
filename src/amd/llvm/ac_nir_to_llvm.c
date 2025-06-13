@@ -2933,7 +2933,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    }
    case nir_intrinsic_shuffle:
-      if (ctx->ac.gfx_level == GFX8 || ctx->ac.gfx_level == GFX9 ||
+      if (ctx->ac.gfx_level == GFX8 || ctx->ac.gfx_level == GFX9 || ctx->ac.gfx_level == GFX12 ||
           (ctx->ac.gfx_level >= GFX10 && ctx->ac.wave_size == 32)) {
          result =
             ac_build_shuffle(&ctx->ac, get_src(ctx, instr->src[0]), get_src(ctx, instr->src[1]));
