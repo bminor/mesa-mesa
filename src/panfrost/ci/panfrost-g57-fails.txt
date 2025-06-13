@@ -87,7 +87,6 @@ spec@ext_framebuffer_object@fbo-blending-formats@GL_INTENSITY,Fail
 spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE4,Fail
 spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE8,Fail
 spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE,Fail
-spec@ext_framebuffer_object@fbo-blending-snorm,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Fail
 spec@ext_transform_feedback2@draw-auto,Fail
@@ -416,7 +415,6 @@ afbcp-spec@ext_framebuffer_object@fbo-blending-formats@GL_INTENSITY,Fail
 afbcp-spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE4,Fail
 afbcp-spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE8,Fail
 afbcp-spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE,Fail
-afbcp-spec@ext_framebuffer_object@fbo-blending-snorm,Fail
 afbcp-spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Fail
 afbcp-spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Fail
 afbcp-spec@ext_transform_feedback2@draw-auto,Fail

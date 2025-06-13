@@ -97,7 +97,6 @@ spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE8_ALPHA8,Fail
 spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE8,Fail
 spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE_ALPHA,Fail
 spec@ext_framebuffer_object@fbo-blending-formats@GL_LUMINANCE,Fail
-spec@ext_framebuffer_object@fbo-blending-snorm,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Fail
 spec@ext_transform_feedback2@draw-auto,Fail
