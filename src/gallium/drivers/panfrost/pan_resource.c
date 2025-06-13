@@ -180,6 +180,31 @@ adjust_mtk_tiled_props(struct panfrost_resource *rsc,
    return true;
 }
 
+static void
+panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
+{
+   MESA_TRACE_FUNC();
+
+   struct panfrost_device *dev = pan_device(screen);
+   struct panfrost_resource *rsrc = (struct panfrost_resource *)pt;
+
+   if (rsrc->scanout)
+      renderonly_scanout_destroy(rsrc->scanout, dev->ro);
+
+   if (rsrc->shadow_image)
+      pipe_resource_reference(
+         (struct pipe_resource **)&rsrc->shadow_image, NULL);
+
+   if (rsrc->bo)
+      panfrost_bo_unreference(rsrc->bo);
+
+   free(rsrc->index_cache);
+   free(rsrc->damage.tile_map.data);
+
+   util_range_destroy(&rsrc->valid_buffer_range);
+   free(rsrc);
+}
+
 static struct pipe_resource *
 panfrost_resource_from_handle(struct pipe_screen *pscreen,
                               const struct pipe_resource *templat,
@@ -242,7 +267,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    if (drm_is_mtk_tiled(mod) &&
        !adjust_mtk_tiled_props(rsc, &iprops, whandle->plane,
                                &explicit_layout)) {
-      FREE(rsc);
+      panfrost_resource_destroy(pscreen, &rsc->base);
       return NULL;
    }
 
@@ -253,7 +278,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
                                       &explicit_layout, &rsc->plane.layout);
 
    if (!valid) {
-      FREE(rsc);
+      panfrost_resource_destroy(pscreen, &rsc->base);
       return NULL;
    }
 
@@ -264,7 +289,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
     * memory space to mmap it etc.
     */
    if (!rsc->bo) {
-      FREE(rsc);
+      panfrost_resource_destroy(pscreen, &rsc->base);
       return NULL;
    }
 
@@ -932,7 +957,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
 
       if (!so->scanout) {
          mesa_loge("Failed to create scanout resource\n");
-         FREE(so);
+         panfrost_resource_destroy(screen, &so->base);
          return NULL;
       }
       assert(handle.type == WINSYS_HANDLE_TYPE_FD);
@@ -940,7 +965,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
       close(handle.handle);
 
       if (!so->bo) {
-         FREE(so);
+         panfrost_resource_destroy(screen, &so->base);
          return NULL;
       }
 
@@ -958,7 +983,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
          panfrost_bo_create(dev, so->plane.layout.data_size_B, flags, label);
 
       if (!so->bo) {
-         FREE(so);
+         panfrost_resource_destroy(screen, &so->base);
          return NULL;
       }
 
@@ -969,7 +994,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
 
    if (drm_is_afbc(so->modifier)) {
       if (panfrost_resource_init_afbc_headers(so)) {
-         FREE(so);
+         panfrost_resource_destroy(screen, &so->base);
          return NULL;
       }
    }
@@ -1086,31 +1111,6 @@ panfrost_resource_restore_format(struct panfrost_resource *rsrc,
    rsrc->base.width0 = saved->base.width0;
    rsrc->image.props.extent_px.width = saved->image.props.extent_px.width;
    rsrc->image.props.extent_px.height = saved->image.props.extent_px.height;
-}
-
-static void
-panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
-{
-   MESA_TRACE_FUNC();
-
-   struct panfrost_device *dev = pan_device(screen);
-   struct panfrost_resource *rsrc = (struct panfrost_resource *)pt;
-
-   if (rsrc->scanout)
-      renderonly_scanout_destroy(rsrc->scanout, dev->ro);
-
-   if (rsrc->shadow_image)
-         pipe_resource_reference(
-            (struct pipe_resource **)&rsrc->shadow_image, NULL);
-
-   if (rsrc->bo)
-      panfrost_bo_unreference(rsrc->bo);
-
-   free(rsrc->index_cache);
-   free(rsrc->damage.tile_map.data);
-
-   util_range_destroy(&rsrc->valid_buffer_range);
-   free(rsrc);
 }
 
 /* Most of the time we can do CPU-side transfers, but sometimes we need to use
