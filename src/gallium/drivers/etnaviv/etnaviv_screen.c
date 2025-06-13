@@ -277,6 +277,7 @@ etna_init_screen_caps(struct etna_screen *screen)
 
    caps->min_texel_offset = -8;
    caps->max_texel_offset = 7;
+   caps->seamless_cube_map = screen->specs.seamless_cube_map;
    caps->seamless_cube_map_per_texture = screen->specs.seamless_cube_map;
 
    /* Render targets. */
