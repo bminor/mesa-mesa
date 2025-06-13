@@ -2940,21 +2940,34 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       } else {
          LLVMValueRef src = get_src(ctx, instr->src[0]);
          LLVMValueRef index = get_src(ctx, instr->src[1]);
-         LLVMTypeRef type = LLVMTypeOf(src);
-         struct waterfall_context wctx;
-         LLVMValueRef index_val;
+         LLVMValueRef active = ac_build_ballot(&ctx->ac, ctx->ac.i32_1);
+         LLVMValueRef undef = LLVMGetUndef(LLVMTypeOf(src));
 
-         index_val = enter_waterfall(ctx, &wctx, index, true);
+         LLVMBasicBlockRef preheader = LLVMGetInsertBlock(ctx->ac.builder);
+         ac_build_bgnloop(&ctx->ac, 7000);
+         LLVMValueRef active_phi = ac_build_phi(&ctx->ac, LLVMTypeOf(active), 1, &active, &preheader);
+         LLVMValueRef result_phi = ac_build_phi(&ctx->ac, LLVMTypeOf(src), 1, &undef, &preheader);
 
-         src = LLVMBuildZExt(ctx->ac.builder, src, ctx->ac.i32, "");
+         LLVMValueRef args[] = {active_phi, ctx->ac.i1true};
+         LLVMValueRef first = ac_build_intrinsic(&ctx->ac, "llvm.cttz.i64", ctx->ac.i64, args, 2, 0);
+         first = LLVMBuildTrunc(ctx->ac.builder, first, ctx->ac.i32, "");
 
-         const char *intr_name = LLVM_VERSION_MAJOR >= 19 ? "llvm.amdgcn.readlane.i32" : "llvm.amdgcn.readlane";
-         result = ac_build_intrinsic(&ctx->ac, intr_name, ctx->ac.i32,
-                                     (LLVMValueRef[]){src, index_val}, 2, 0);
+         LLVMValueRef scalar_index = ac_build_readlane_no_opt_barrier(&ctx->ac, index, first);
+         LLVMValueRef scalar_result = ac_build_readlane_no_opt_barrier(&ctx->ac, src, scalar_index);
+         LLVMValueRef equal = LLVMBuildICmp(ctx->ac.builder, LLVMIntEQ, index, scalar_index, "");
 
-         result = LLVMBuildTrunc(ctx->ac.builder, result, type, "");
+         result = LLVMBuildSelect(ctx->ac.builder, equal, scalar_result, result_phi, "");
+         LLVMValueRef remove = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.ballot.i64", ctx->ac.i64, &equal, 1, 0);
+         active = LLVMBuildXor(ctx->ac.builder, active_phi, remove, "");
 
-         result = exit_waterfall(ctx, &wctx, result);
+         ac_build_ifcc(&ctx->ac, LLVMBuildICmp(ctx->ac.builder, LLVMIntEQ, active, ctx->ac.i64_0, ""), 7001);
+         ac_build_break(&ctx->ac);
+         ac_build_endif(&ctx->ac, 7001);
+
+         LLVMBasicBlockRef cont = LLVMGetInsertBlock(ctx->ac.builder);
+         LLVMAddIncoming(active_phi, &active, &cont, 1);
+         LLVMAddIncoming(result_phi, &result, &cont, 1);
+         ac_build_endloop(&ctx->ac, 7000);
       }
       break;
    case nir_intrinsic_reduce:

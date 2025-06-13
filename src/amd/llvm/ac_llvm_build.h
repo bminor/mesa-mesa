@@ -432,6 +432,9 @@ LLVMValueRef ac_unpack_param(struct ac_llvm_context *ctx, LLVMValueRef param, un
 
 LLVMValueRef ac_build_ds_swizzle(struct ac_llvm_context *ctx, LLVMValueRef src, unsigned mask);
 
+LLVMValueRef ac_build_readlane_no_opt_barrier(struct ac_llvm_context *ctx, LLVMValueRef src,
+                                              LLVMValueRef lane);
+
 LLVMValueRef ac_build_readlane(struct ac_llvm_context *ctx, LLVMValueRef src, LLVMValueRef lane);
 
 LLVMValueRef ac_build_writelane(struct ac_llvm_context *ctx, LLVMValueRef src, LLVMValueRef value,

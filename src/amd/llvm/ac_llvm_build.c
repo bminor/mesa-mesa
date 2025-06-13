@@ -2607,6 +2607,12 @@ static LLVMValueRef ac_build_readlane_common(struct ac_llvm_context *ctx, LLVMVa
    return LLVMBuildBitCast(ctx->builder, ret, src_type, "");
 }
 
+LLVMValueRef ac_build_readlane_no_opt_barrier(struct ac_llvm_context *ctx, LLVMValueRef src,
+                                              LLVMValueRef lane)
+{
+   return ac_build_readlane_common(ctx, src, lane, false);
+}
+
 LLVMValueRef ac_build_readlane(struct ac_llvm_context *ctx, LLVMValueRef src, LLVMValueRef lane)
 {
    return ac_build_readlane_common(ctx, src, lane, true);
