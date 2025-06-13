@@ -312,9 +312,7 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
        *Api == CODECAPI_AVEncVideoMaxNumRefFrame || *Api == CODECAPI_AVEncVideoMeanAbsoluteDifference ||
        *Api == CODECAPI_AVEncVideoMaxQP || *Api == CODECAPI_AVEncVideoGradualIntraRefresh || *Api == CODECAPI_AVScenarioInfo ||
        *Api == CODECAPI_AVEncVideoROIEnabled || *Api == CODECAPI_AVEncVideoLTRBufferControl ||
-       *Api == CODECAPI_AVEncVideoMarkLTRFrame || *Api == CODECAPI_AVEncVideoUseLTRFrame ||
-       *Api == CODECAPI_AVEncVideoEnableFramePsnrYuv || *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization ||
-       *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize || *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
+       *Api == CODECAPI_AVEncVideoMarkLTRFrame || *Api == CODECAPI_AVEncVideoUseLTRFrame )
    {
       hr = S_OK;
       return hr;
@@ -337,6 +335,34 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
          return hr;
       }
    }
+
+   if( m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel )
+   {
+      if( *Api == CODECAPI_AVEncVideoEnableFramePsnrYuv )
+      {
+         hr = S_OK;
+         return hr;
+      }
+   }
+
+   if( m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported )
+   {
+      if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
+      {
+         hr = S_OK;
+         return hr;
+      }
+   }
+
+   if( m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported )
+   {
+      if( *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
+      {
+         hr = S_OK;
+         return hr;
+      }
+   }
+
 done:
    return hr;
 }
@@ -775,12 +801,17 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
    else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
    {
       Value->vt = VT_UI4;
-      Value->ulVal = m_uiVideoOutputQPMapBlockSize;
+      Value->ulVal = m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported ?
+                        (ULONG) ( 1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size ) :
+                        0;
    }
    else if( *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
    {
       Value->vt = VT_UI4;
-      Value->ulVal = m_uiVideoOutputBitsUsedMapBlockSize;
+      Value->ulVal =
+         m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported ?
+            (ULONG) ( 1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size ) :
+            0;
    }
    else
    {
@@ -1407,6 +1438,13 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
       {
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
+      if( !m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel && Value->ulVal )
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] User tried to enable CODECAPI_AVEncVideoEnableFramePsnrYuv, but this encoder does NOT "
+                    "support this feature.",
+                    this );
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
       m_bVideoEnableFramePsnrYuv = Value->ulVal ? TRUE : FALSE;
    }
    else if( *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization )
@@ -1421,8 +1459,25 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
    else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
    {
       debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncVideoOutputQPMapBlockSize - %u\n", this, Value->ulVal );
-      if( Value->vt != VT_UI4 || ( Value->ulVal & ( Value->ulVal - 1 ) ) )
+      if( Value->vt != VT_UI4 )
       {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      if( !m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported && Value->ulVal )
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] User tried to set CODECAPI_AVEncVideoOutputQPMapBlockSize as nonzero: %d, but this encoder "
+                    "does NOT support this feature.",
+                    this,
+                    Value->ulVal );
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      if( m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported && Value->ulVal &&
+          ( Value->ulVal != (ULONG) ( 1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size ) ) )
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] User MUST set CODECAPI_AVEncVideoOutputQPMapBlockSize as %d to enable this feature, or 0 to "
+                    "disable this feature.",
+                    this,
+                    ( 1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size ) );
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
       m_uiVideoOutputQPMapBlockSize = Value->ulVal;
@@ -1430,8 +1485,26 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
    else if( *Api == CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize )
    {
       debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize - %u\n", this, Value->ulVal );
-      if( Value->vt != VT_UI4 || ( Value->ulVal & ( Value->ulVal - 1 ) ) )
+      if( Value->vt != VT_UI4 )
       {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      if( !m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported && Value->ulVal )
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] User tried to set CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize as nonzero: %d, but this "
+                    "encoder does not support this feature.",
+                    this,
+                    Value->ulVal );
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+      if( m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported && Value->ulVal &&
+          ( Value->ulVal !=
+            (ULONG) ( 1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size ) ) )
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] User MUST set CODECAPI_AVEncVideoOutputBitsUsedMapBlockSize as %d to enable this feature, or "
+                    "0 to disable this feature.",
+                    this,
+                    ( 1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size ) );
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
       m_uiVideoOutputBitsUsedMapBlockSize = Value->ulVal;
