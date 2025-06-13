@@ -627,12 +627,17 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                        const VkBindImageMemoryInfo *pBindInfos)
 {
    VK_FROM_HANDLE(panvk_device, dev, device);
+   VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {
-      VkResult result = panvk_image_bind(dev, &pBindInfos[i]);
-      if (result != VK_SUCCESS)
-         return result;
+      const VkBindMemoryStatus *bind_status =
+         vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
+      VkResult bind_result = panvk_image_bind(dev, &pBindInfos[i]);
+      if (bind_status)
+         *bind_status->pResult = bind_result;
+      if (bind_result != VK_SUCCESS)
+         result = bind_result;
    }
 
-   return VK_SUCCESS;
+   return result;
 }

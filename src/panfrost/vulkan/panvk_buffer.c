@@ -58,10 +58,16 @@ panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
    const struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(device->vk.physical);
    const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {
       VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
       VK_FROM_HANDLE(panvk_buffer, buffer, pBindInfos[i].buffer);
+      const VkBindMemoryStatus *bind_status =
+         vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
+
+      if (bind_status)
+         *bind_status->pResult = VK_SUCCESS;
 
       assert(mem != NULL);
       assert(buffer->vk.device_address == 0);
@@ -84,13 +90,18 @@ panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
             pan_kmod_bo_mmap(mem->bo, map_start, map_end - map_start,
                              PROT_WRITE, MAP_SHARED, NULL);
 
-         if (map_addr == MAP_FAILED)
-            return panvk_errorf(device, VK_ERROR_OUT_OF_HOST_MEMORY,
-                                "Failed to CPU map index buffer");
+         if (map_addr == MAP_FAILED) {
+            result = panvk_errorf(device, VK_ERROR_OUT_OF_HOST_MEMORY,
+                                  "Failed to CPU map index buffer");
+            if (bind_status)
+               *bind_status->pResult = result;
+            continue;
+         }
+
          buffer->host_ptr = map_addr + (offset & pgsize);
       }
    }
-   return VK_SUCCESS;
+   return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
