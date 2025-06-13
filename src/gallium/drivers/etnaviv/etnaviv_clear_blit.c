@@ -212,6 +212,7 @@ void
 etna_copy_resource(struct pipe_context *pctx, struct pipe_resource *dst,
                    struct pipe_resource *src, int first_level, int last_level)
 {
+   struct etna_context *ctx = etna_context(pctx);
    struct etna_resource *src_priv = etna_resource(src);
    struct etna_resource *dst_priv = etna_resource(dst);
 
@@ -252,7 +253,7 @@ etna_copy_resource(struct pipe_context *pctx, struct pipe_resource *dst,
 
       for (int z = 0; z < depth; z++) {
          blit.src.box.z = blit.dst.box.z = z;
-         pctx->blit(pctx, &blit);
+         ctx->blit(pctx, &blit);
       }
 
       if (src == dst)
@@ -267,6 +268,7 @@ etna_copy_resource_box(struct pipe_context *pctx, struct pipe_resource *dst,
                        struct pipe_resource *src, int dst_level, int src_level,
                        struct pipe_box *box)
 {
+   struct etna_context *ctx = etna_context(pctx);
    struct etna_resource *src_priv = etna_resource(src);
    struct etna_resource *dst_priv = etna_resource(dst);
 
@@ -290,7 +292,7 @@ etna_copy_resource_box(struct pipe_context *pctx, struct pipe_resource *dst,
 
    for (int z = 0; z < box->depth; z++) {
       blit.src.box.z = blit.dst.box.z = box->z + z;
-      pctx->blit(pctx, &blit);
+      ctx->blit(pctx, &blit);
    }
 
    if (src == dst)
