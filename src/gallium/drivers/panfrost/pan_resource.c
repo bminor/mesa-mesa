@@ -146,6 +146,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    *prsc = *templat;
 
    pipe_reference_init(&prsc->reference, 1);
+   util_range_init(&rsc->valid_buffer_range);
    prsc->screen = pscreen;
 
    uint64_t mod = whandle->modifier == DRM_FORMAT_MOD_INVALID
