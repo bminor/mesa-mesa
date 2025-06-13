@@ -424,27 +424,20 @@ nvkmd_dev_get_drm_fd(struct nvkmd_dev *dev)
    return dev->ops->get_drm_fd(dev);
 }
 
-static inline VkResult MUST_CHECK
+VkResult MUST_CHECK
 nvkmd_dev_alloc_mem(struct nvkmd_dev *dev,
                     struct vk_object_base *log_obj,
                     uint64_t size_B, uint64_t align_B,
                     enum nvkmd_mem_flags flags,
-                    struct nvkmd_mem **mem_out)
-{
-   return dev->ops->alloc_mem(dev, log_obj, size_B, align_B, flags, mem_out);
-}
+                    struct nvkmd_mem **mem_out);
 
-static inline VkResult MUST_CHECK
+VkResult MUST_CHECK
 nvkmd_dev_alloc_tiled_mem(struct nvkmd_dev *dev,
                           struct vk_object_base *log_obj,
                           uint64_t size_B, uint64_t align_B,
                           uint8_t pte_kind, uint16_t tile_mode,
                           enum nvkmd_mem_flags flags,
-                          struct nvkmd_mem **mem_out)
-{
-   return dev->ops->alloc_tiled_mem(dev, log_obj, size_B, align_B,
-                                    pte_kind, tile_mode, flags, mem_out);
-}
+                          struct nvkmd_mem **mem_out);
 
 /* Implies NVKMD_MEM_CAN_MAP */
 VkResult MUST_CHECK
@@ -455,22 +448,15 @@ nvkmd_dev_alloc_mapped_mem(struct nvkmd_dev *dev,
                            enum nvkmd_mem_map_flags map_flags,
                            struct nvkmd_mem **mem_out);
 
-void
-nvkmd_dev_track_mem(struct nvkmd_dev *dev,
-                    struct nvkmd_mem *mem);
+VkResult MUST_CHECK
+nvkmd_dev_import_dma_buf(struct nvkmd_dev *dev,
+                         struct vk_object_base *log_obj,
+                         int fd, struct nvkmd_mem **mem_out);
 
 struct nvkmd_mem *
 nvkmd_dev_lookup_mem_by_va(struct nvkmd_dev *dev,
                            uint64_t addr,
                            uint64_t *offset_out);
-
-static inline VkResult MUST_CHECK
-nvkmd_dev_import_dma_buf(struct nvkmd_dev *dev,
-                         struct vk_object_base *log_obj,
-                         int fd, struct nvkmd_mem **mem_out)
-{
-   return dev->ops->import_dma_buf(dev, log_obj, fd, mem_out);
-}
 
 VkResult MUST_CHECK
 nvkmd_dev_alloc_va(struct nvkmd_dev *dev,

@@ -8,26 +8,22 @@
 
 #include <inttypes.h>
 
-void
-nvkmd_dev_track_mem(struct nvkmd_dev *dev,
-                    struct nvkmd_mem *mem)
+static void
+nvkmd_dev_add_mem(struct nvkmd_dev *dev,
+                  struct nvkmd_mem *mem)
 {
-   if (mem->link.next == NULL) {
-      simple_mtx_lock(&dev->mems_mutex);
-      list_addtail(&mem->link, &dev->mems);
-      simple_mtx_unlock(&dev->mems_mutex);
-   }
+   simple_mtx_lock(&dev->mems_mutex);
+   list_addtail(&mem->link, &dev->mems);
+   simple_mtx_unlock(&dev->mems_mutex);
 }
 
 static void
-nvkmd_dev_untrack_mem(struct nvkmd_dev *dev,
-                      struct nvkmd_mem *mem)
+nvkmd_dev_remove_mem(struct nvkmd_dev *dev,
+                     struct nvkmd_mem *mem)
 {
-   if (mem->link.next != NULL) {
-      simple_mtx_lock(&dev->mems_mutex);
-      list_del(&mem->link);
-      simple_mtx_unlock(&dev->mems_mutex);
-   }
+   simple_mtx_lock(&dev->mems_mutex);
+   list_del(&mem->link);
+   simple_mtx_unlock(&dev->mems_mutex);
 }
 
 static struct nvkmd_mem *
@@ -92,6 +88,38 @@ nvkmd_try_create_pdev_for_drm(struct _drmDevice *drm_device,
                                         debug_flags, pdev_out);
 }
 
+VkResult MUST_CHECK
+nvkmd_dev_alloc_mem(struct nvkmd_dev *dev,
+                    struct vk_object_base *log_obj,
+                    uint64_t size_B, uint64_t align_B,
+                    enum nvkmd_mem_flags flags,
+                    struct nvkmd_mem **mem_out)
+{
+   VkResult result = dev->ops->alloc_mem(dev, log_obj, size_B, align_B,
+                                         flags, mem_out);
+   if (result == VK_SUCCESS)
+      nvkmd_dev_add_mem(dev, *mem_out);
+
+   return result;
+}
+
+VkResult MUST_CHECK
+nvkmd_dev_alloc_tiled_mem(struct nvkmd_dev *dev,
+                          struct vk_object_base *log_obj,
+                          uint64_t size_B, uint64_t align_B,
+                          uint8_t pte_kind, uint16_t tile_mode,
+                          enum nvkmd_mem_flags flags,
+                          struct nvkmd_mem **mem_out)
+{
+   VkResult result = dev->ops->alloc_tiled_mem(dev, log_obj, size_B, align_B,
+                                               pte_kind, tile_mode,
+                                               flags, mem_out);
+   if (result == VK_SUCCESS)
+      nvkmd_dev_add_mem(dev, *mem_out);
+
+   return result;
+}
+
 VkResult
 nvkmd_dev_alloc_mapped_mem(struct nvkmd_dev *dev,
                            struct vk_object_base *log_obj,
@@ -118,6 +146,18 @@ nvkmd_dev_alloc_mapped_mem(struct nvkmd_dev *dev,
    *mem_out = mem;
 
    return VK_SUCCESS;
+}
+
+VkResult MUST_CHECK
+nvkmd_dev_import_dma_buf(struct nvkmd_dev *dev,
+                         struct vk_object_base *log_obj,
+                         int fd, struct nvkmd_mem **mem_out)
+{
+   VkResult result = dev->ops->import_dma_buf(dev, log_obj, fd, mem_out);
+   if (result == VK_SUCCESS)
+      nvkmd_dev_add_mem(dev, *mem_out);
+
+   return result;
 }
 
 VkResult MUST_CHECK
@@ -269,7 +309,7 @@ nvkmd_mem_unref(struct nvkmd_mem *mem)
    if (mem->map != NULL)
       mem->ops->unmap(mem, 0, mem->map);
 
-   nvkmd_dev_untrack_mem(mem->dev, mem);
+   nvkmd_dev_remove_mem(mem->dev, mem);
 
    mem->ops->free(mem);
 }
