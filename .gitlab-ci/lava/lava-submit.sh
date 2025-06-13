@@ -79,6 +79,32 @@ if [ -n "${VKD3D_PROTON_TAG:-}" ]; then
 		  --compression=zstd
 	)
 fi
+if [ -n "${S3_ANDROID_ARTIFACT_NAME:-}" ]; then
+	LAVA_EXTRA_OVERLAYS+=(
+		- append-overlay
+		  --name=android-cf-image
+		  --url="https://${S3_BASE_PATH}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/aosp_cf_${ARCH}_only_phone-img-${CUTTLEFISH_BUILD_NUMBER}.tar.zst"
+		  --path="/cuttlefish"
+		  --format=tar
+		  --compression=zstd
+		- append-overlay
+		  --name=android-cvd-host-package
+		  --url="https://${S3_BASE_PATH}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/cvd-host_package-${ARCH}.tar.zst"
+		  --path="/cuttlefish"
+		  --format=tar
+		  --compression=zstd
+		- append-overlay
+		  --name=android-kernel
+		  --url="https://${S3_BASE_PATH}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/bzImage"
+		  --path="/cuttlefish"
+		  --format=file
+		- append-overlay
+		  --name=android-initramfs
+		  --url="https://${S3_BASE_PATH}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/initramfs.img"
+		  --path="/cuttlefish"
+		  --format=file
+	)
+fi
 
 PYTHONPATH=/ /lava/lava_job_submitter.py \
 	--farm "${FARM}" \
