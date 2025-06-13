@@ -1384,7 +1384,7 @@
         "description": "ac/surface: fix aliasing DCC tilings with HiZ info on GFX12",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
