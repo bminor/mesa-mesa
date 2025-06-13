@@ -245,4 +245,7 @@ EGL_FUNCTIONS = (
 
     # EGL_EXT_surface_compression
     _eglFunc("eglQuerySupportedCompressionRatesEXT", "display"),
+
+    # EGL_EXT_device_persistent_id
+    _eglFunc("eglQueryDeviceBinaryEXT",              "device"),
 )

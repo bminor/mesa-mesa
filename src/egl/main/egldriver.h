@@ -76,6 +76,20 @@ struct mesa_glinterop_export_out;
 struct mesa_glinterop_flush_out;
 typedef struct __GLsync *GLsync;
 
+#define EGL_UUID_SIZE 16
+
+/**
+ * For use in EGL_EXT_device_query_name and EGL_EXT_device_persistent_id
+ */
+struct egl_device_info {
+   uint8_t device_uuid[EGL_UUID_SIZE];
+   uint8_t driver_uuid[EGL_UUID_SIZE];
+   /* Data below needs to be freed manually */
+   char *vendor_name;
+   char *renderer_name;
+   char *driver_name;
+};
+
 /**
  * The API dispatcher jumps through these functions
  */
@@ -190,6 +204,10 @@ struct _egl_driver {
    /* for EGL_MESA_query_driver */
    const char *(*QueryDriverName)(_EGLDisplay *disp);
    char *(*QueryDriverConfig)(_EGLDisplay *disp);
+
+   /* for EGL_EXT_device_query_name and EGL_EXT_device_persistent_id */
+   bool (*QueryDeviceInfo)(const void* driver_device_identifier,
+                           struct egl_device_info *device_info);
 
    /* for OpenGL-OpenCL interop; see include/GL/mesa_glinterop.h */
    int (*GLInteropQueryDeviceInfo)(_EGLDisplay *disp, _EGLContext *ctx,

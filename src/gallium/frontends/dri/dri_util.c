@@ -1055,3 +1055,46 @@ driGetDriInfoXML(const char* driverName)
 {
    return pipe_loader_get_driinfo_xml(driverName);
 }
+
+bool
+dri_get_drm_device_info(const char *device_name, uint8_t *device_uuid, uint8_t *driver_uuid,
+                        char **vendor_name, char **renderer_name, char **driver_name)
+{
+   struct pipe_loader_device *pldev;
+   struct pipe_screen *pscreen;
+   int fd;
+
+   fd = loader_open_device(device_name);
+   if (fd == -1) {
+      return false;
+   }
+   if (!pipe_loader_drm_probe_fd(&pldev, fd, false)) {
+      close(fd);
+      return false;
+   }
+   pscreen = pipe_loader_create_screen(pldev, true);
+   if (!pscreen) {
+      pipe_loader_release(&pldev, 1);
+      close(fd);
+      return false;
+   }
+   if (!pscreen->get_device_uuid || !pscreen->get_driver_uuid ||
+       !pscreen->get_device_vendor || !pscreen->get_name) {
+      pscreen->destroy(pscreen);
+      pipe_loader_release(&pldev, 1);
+      close(fd);
+      return false;
+   }
+
+   pscreen->get_device_uuid(pscreen, (char *)device_uuid);
+   pscreen->get_driver_uuid(pscreen, (char *)driver_uuid);
+   *vendor_name = strdup(pscreen->get_device_vendor(pscreen));
+   *renderer_name = strdup(pscreen->get_name(pscreen));
+   *driver_name = loader_get_driver_for_fd(fd);
+
+   pscreen->destroy(pscreen);
+   pipe_loader_release(&pldev, 1);
+   close(fd);
+
+   return true;
+}

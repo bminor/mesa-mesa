@@ -64,6 +64,8 @@ enum _egl_device_extension {
    _EGL_DEVICE_SOFTWARE,
    _EGL_DEVICE_DRM,
    _EGL_DEVICE_DRM_RENDER_NODE,
+   _EGL_DEVICE_QUERY_NAME,
+   _EGL_DEVICE_PERSISTENT_ID,
 };
 
 typedef enum _egl_device_extension _EGLDeviceExtension;
@@ -93,6 +95,13 @@ _eglQueryDeviceStringEXT(_EGLDevice *dev, EGLint name);
 EGLBoolean
 _eglQueryDevicesEXT(EGLint max_devices, _EGLDevice **devices,
                     EGLint *num_devices);
+
+EGLBoolean
+_eglQueryDeviceBinaryEXT(_EGLDevice* dev,
+                         EGLint name,
+                         EGLint max_size,
+                         void *value,
+                         EGLint *size);
 
 #ifdef __cplusplus
 }

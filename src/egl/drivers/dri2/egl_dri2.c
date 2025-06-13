@@ -595,6 +595,16 @@ dri2_query_driver_config(_EGLDisplay *disp)
    return ret;
 }
 
+static bool
+dri2_query_device_info(const void* driver_device_identifier,
+                       struct egl_device_info *device_info)
+{
+   const char* drm_device_name = (const char*)driver_device_identifier;
+   return dri_get_drm_device_info(
+      drm_device_name, device_info->device_uuid, device_info->driver_uuid,
+      &device_info->vendor_name, &device_info->renderer_name, &device_info->driver_name);
+}
+
 void
 dri2_setup_screen(_EGLDisplay *disp)
 {
@@ -3338,6 +3348,7 @@ const _EGLDriver _eglDriver = {
    .QuerySurface = dri2_query_surface,
    .QueryDriverName = dri2_query_driver_name,
    .QueryDriverConfig = dri2_query_driver_config,
+   .QueryDeviceInfo = dri2_query_device_info,
 #ifdef HAVE_LIBDRM
    .CreateDRMImageMESA = dri2_create_drm_image_mesa,
    .ExportDRMImageMESA = dri2_export_drm_image_mesa,
