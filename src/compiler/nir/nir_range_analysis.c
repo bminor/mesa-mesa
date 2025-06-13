@@ -1861,12 +1861,29 @@ get_alu_uub(struct analysis_state *state, struct uub_query q, uint32_t *result, 
       uint32_t src1 = MIN2(src[1], q.scalar.def->bit_size - 1u);
       if (util_last_bit64(src[0]) + src1 <= q.scalar.def->bit_size) /* check overflow */
          *result = src[0] << src1;
+
+      nir_scalar src1_scalar = nir_scalar_chase_alu_src(q.scalar, 1);
+      if (nir_scalar_is_const(src1_scalar)) {
+         uint32_t const_val = 1u << (nir_scalar_as_uint(src1_scalar) & (q.scalar.def->bit_size - 1u));
+         *result = MIN2(*result, max / const_val * const_val);
+      }
       break;
    }
-   case nir_op_imul:
+   case nir_op_imul: {
       if (src[0] == 0 || (src[0] * src[1]) / src[0] == src[1]) /* check overflow */
          *result = src[0] * src[1];
+
+      nir_scalar src0_scalar = nir_scalar_chase_alu_src(q.scalar, 0);
+      nir_scalar src1_scalar = nir_scalar_chase_alu_src(q.scalar, 1);
+      if (nir_scalar_is_const(src0_scalar)) {
+         uint32_t const_val = nir_scalar_as_uint(src0_scalar);
+         *result = MIN2(*result, max / const_val * const_val);
+      } else if (nir_scalar_is_const(src1_scalar)) {
+         uint32_t const_val = nir_scalar_as_uint(src1_scalar);
+         *result = MIN2(*result, max / const_val * const_val);
+      }
       break;
+   }
    case nir_op_ushr: {
       nir_scalar src1_scalar = nir_scalar_chase_alu_src(q.scalar, 1);
       uint32_t mask = q.scalar.def->bit_size - 1u;
