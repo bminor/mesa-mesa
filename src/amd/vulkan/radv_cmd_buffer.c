@@ -3153,7 +3153,17 @@ radv_get_depth_clamp_mode(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    enum radv_depth_clamp_mode mode;
 
-   mode = d->vk.vp.depth_clamp_mode;
+   switch (d->vk.vp.depth_clamp_mode) {
+   case VK_DEPTH_CLAMP_MODE_VIEWPORT_RANGE_EXT:
+      mode = RADV_DEPTH_CLAMP_MODE_VIEWPORT;
+      break;
+   case VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT:
+      mode = RADV_DEPTH_CLAMP_MODE_USER_DEFINED;
+      break;
+   default:
+      unreachable("invalid depth clamp mode\n");
+   }
+
    if (!d->vk.rs.depth_clamp_enable) {
       /* For optimal performance, depth clamping should always be enabled except if the application
        * disables clamping explicitly or uses depth values outside of the [0.0, 1.0] range.
