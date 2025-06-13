@@ -17,6 +17,7 @@ $ADB push /deqp-tools/* /data/deqp
 $ADB push /deqp-runner/deqp-runner /data/deqp
 
 $ADB push "$INSTALL/all-skips.txt" /data/deqp
+$ADB push "$INSTALL/android-skips.txt" /data/deqp
 $ADB push "$INSTALL/angle-skips.txt" /data/deqp
 if [ -e "$INSTALL/$GPU_VERSION-flakes.txt" ]; then
   $ADB push "$INSTALL/$GPU_VERSION-flakes.txt" /data/deqp

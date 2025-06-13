@@ -56,6 +56,7 @@ android-angle-venus-anv-cml:
     DEQP_SUITE: android-angle-venus-anv
     GPU_VERSION: android-angle-venus-anv
     HWCI_KERNEL_MODULES: "i915,vhost_vsock"
+  parallel: 3
 
 android-angle-venus-anv-cml-cts:
   extends:
@@ -77,6 +78,7 @@ android-angle-venus-anv-tgl:
     GPU_VERSION: android-angle-venus-anv
     HWCI_KERNEL_MODULES: "i915,vhost_vsock"
     DEVICE_HANGING_TIMEOUT_SEC: 5400  # Workaround until network configuration is updated
+  timeout: 1h 30m
 
 android-angle-venus-anv-adl:
   extends:
