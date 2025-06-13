@@ -18,3 +18,4 @@ GL_NV_shader_atomic_int64 on radeonsi and Panfrost V9+
 VK_KHR_maintenance7 on panvk/v10+
 VK_KHR_maintenance8 on panvk/v10+
 VK_KHR_maintenance9 on panvk
+VK_AMD_buffer_marker on NVK

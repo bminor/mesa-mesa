@@ -280,6 +280,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_ycbcr_2plane_444_formats = true,
       .EXT_ycbcr_image_arrays = true,
       .EXT_zero_initialize_device_memory = true,
+      .AMD_buffer_marker = true,
 #if DETECT_OS_ANDROID
       .ANDROID_native_buffer = vk_android_get_ugralloc() != NULL,
 #endif

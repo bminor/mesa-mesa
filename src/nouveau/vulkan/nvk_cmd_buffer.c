@@ -10,6 +10,7 @@
 #include "nvk_device.h"
 #include "nvk_device_memory.h"
 #include "nvk_entrypoints.h"
+#include "nvk_event.h"
 #include "nvk_mme.h"
 #include "nvk_physical_device.h"
 #include "nvk_shader.h"
@@ -21,6 +22,7 @@
 #include "clb097.h"
 #include "clcb97.h"
 #include "nv_push_cl906f.h"
+#include "nv_push_cl9097.h"
 #include "nv_push_cl90b5.h"
 #include "nv_push_cla097.h"
 #include "nv_push_cla0c0.h"
@@ -1256,4 +1258,26 @@ nvk_CmdPushDescriptorSetWithTemplate2KHR(
    nvk_cmd_dirty_cbufs_for_descriptors(cmd, NVK_VK_GRAPHICS_STAGE_BITS |
                                             VK_SHADER_STAGE_COMPUTE_BIT,
                                        set, set + 1);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+nvk_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer,
+                             VkPipelineStageFlags2 stage,
+                             VkBuffer _buffer,
+                             VkDeviceSize offset,
+                             uint32_t marker)
+{
+   VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
+   VK_FROM_HANDLE(nvk_buffer, buffer, _buffer);
+   const uint64_t marker_addr = vk_buffer_address(&buffer->vk, offset);
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, 5);
+
+   P_MTHD(p, NV9097, SET_REPORT_SEMAPHORE_A);
+   P_NV9097_SET_REPORT_SEMAPHORE_A(p, marker_addr >> 32);
+   P_NV9097_SET_REPORT_SEMAPHORE_B(p, marker_addr);
+   P_NV9097_SET_REPORT_SEMAPHORE_C(p, marker);
+   P_NV9097_SET_REPORT_SEMAPHORE_D(p, {
+      .pipeline_location = vk_stage_flags_to_nv9097_pipeline_location(stage),
+      .structure_size = STRUCTURE_SIZE_ONE_WORD,
+   });
 }
