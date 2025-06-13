@@ -541,8 +541,9 @@ panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
    *pSparseMemoryRequirementCount = 0;
 }
 
-static void
-panvk_image_plane_bind(struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
+static VkResult
+panvk_image_plane_bind(struct panvk_device *dev,
+                       struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
                        uint64_t base, uint64_t offset)
 {
    plane->plane.base = base + offset;
@@ -552,7 +553,9 @@ panvk_image_plane_bind(struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
       void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
                                        PROT_WRITE, MAP_SHARED, NULL);
 
-      assert(bo_base != MAP_FAILED);
+      if (bo_base == MAP_FAILED)
+         return panvk_errorf(dev, VK_ERROR_OUT_OF_HOST_MEMORY,
+                             "Failed to CPU map AFBC image plane");
 
       for (unsigned layer = 0; layer < plane->image.props.array_size;
            layer++) {
@@ -569,12 +572,16 @@ panvk_image_plane_bind(struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
       ASSERTED int ret = os_munmap(bo_base, pan_kmod_bo_size(bo));
       assert(!ret);
    }
+
+   return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                        const VkBindImageMemoryInfo *pBindInfos)
 {
+   VK_FROM_HANDLE(panvk_device, dev, device);
+
    for (uint32_t i = 0; i < bindInfoCount; i++) {
       VK_FROM_HANDLE(panvk_image, image, pBindInfos[i].image);
       const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
@@ -590,8 +597,11 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
          assert(wsi_image->plane_count == 1);
 
          image->bo = wsi_image->bo;
-         panvk_image_plane_bind(&image->planes[0], image->bo,
-                                wsi_image->planes[0].plane.base, 0);
+         VkResult result = panvk_image_plane_bind(
+            dev, &image->planes[0], image->bo, wsi_image->planes[0].plane.base,
+            0);
+         if (result != VK_SUCCESS)
+            return result;
       } else {
          VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
          assert(mem);
@@ -602,13 +612,18 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                     BIND_IMAGE_PLANE_MEMORY_INFO);
             const uint8_t plane =
                panvk_plane_index(image->vk.format, plane_info->planeAspect);
-            panvk_image_plane_bind(&image->planes[plane], image->bo,
-                                   mem->addr.dev, pBindInfos[i].memoryOffset);
+            VkResult result = panvk_image_plane_bind(
+               dev, &image->planes[plane], image->bo, mem->addr.dev,
+               pBindInfos[i].memoryOffset);
+            if (result != VK_SUCCESS)
+               return result;
          } else {
             for (unsigned plane = 0; plane < image->plane_count; plane++) {
-               panvk_image_plane_bind(&image->planes[plane], image->bo,
-                                      mem->addr.dev,
-                                      pBindInfos[i].memoryOffset);
+               VkResult result = panvk_image_plane_bind(
+                  dev, &image->planes[plane], image->bo, mem->addr.dev,
+                  pBindInfos[i].memoryOffset);
+               if (result != VK_SUCCESS)
+                  return result;
             }
          }
       }
