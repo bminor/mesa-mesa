@@ -105,9 +105,31 @@ etna_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info)
 {
    struct etna_context *ctx = etna_context(pctx);
    struct pipe_blit_info info = *blit_info;
+   struct etna_resource *src = etna_resource(info.src.resource);
+   struct etna_resource *dst = etna_resource(info.dst.resource);
 
    if (info.render_condition_enable && !etna_render_condition_check(pctx))
       return;
+
+   /* blit from most recent shadow of the source */
+   if (src->render &&
+       etna_resource_level_newer(&etna_resource(src->render)->levels[info.src.level],
+                                 &etna_resource(info.src.resource)->levels[info.src.level]))
+      info.src.resource = src->render;
+   if (src->texture &&
+      etna_resource_level_newer(&etna_resource(src->texture)->levels[info.src.level],
+                                &etna_resource(info.src.resource)->levels[info.src.level]))
+      info.src.resource = src->texture;
+
+   /* blit to the most recent shadow of the destination */
+   if (dst->render &&
+       etna_resource_level_newer(&etna_resource(dst->render)->levels[info.dst.level],
+                                 &etna_resource(info.dst.resource)->levels[info.dst.level]))
+      info.dst.resource = dst->render;
+   if (dst->texture &&
+       etna_resource_level_newer(&etna_resource(dst->texture)->levels[info.dst.level],
+                                 &etna_resource(info.dst.resource)->levels[info.dst.level]))
+      info.dst.resource = dst->texture;
 
    if (ctx->blit(pctx, &info))
       goto success;
