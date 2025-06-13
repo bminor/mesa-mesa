@@ -205,6 +205,7 @@ enum vpe_status vpe11_construct_resource(struct vpe_priv *vpe_priv, struct resou
     res->program_backend                   = vpe10_program_backend;
     res->get_bufs_req                      = vpe10_get_bufs_req;
     res->check_bg_color_support            = vpe10_check_bg_color_support;
+    res->bg_color_convert                  = vpe10_bg_color_convert;
     res->check_mirror_rotation_support     = vpe10_check_mirror_rotation_support;
     res->update_blnd_gamma                 = vpe10_update_blnd_gamma;
     res->update_output_gamma               = vpe10_update_output_gamma;

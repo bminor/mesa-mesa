@@ -433,6 +433,7 @@ enum vpe_status vpe10_construct_resource(struct vpe_priv *vpe_priv, struct resou
     res->program_backend                   = vpe10_program_backend;
     res->get_bufs_req                      = vpe10_get_bufs_req;
     res->check_bg_color_support            = vpe10_check_bg_color_support;
+    res->bg_color_convert                  = vpe10_bg_color_convert;
     res->check_mirror_rotation_support     = vpe10_check_mirror_rotation_support;
     res->update_blnd_gamma                 = vpe10_update_blnd_gamma;
     res->update_output_gamma               = vpe10_update_output_gamma;
@@ -1080,15 +1081,17 @@ void vpe10_create_stream_ops_config(struct vpe_priv *vpe_priv, uint32_t pipe_idx
     dpp->funcs->set_frame_scaler(dpp, &cmd_input->scaler_data);
 
     if (ops == VPE_CMD_OPS_BG_VSCF_INPUT) {
-        blndcfg.bg_color = vpe_get_visual_confirm_color(stream_ctx->stream.surface_info.format,
-            stream_ctx->stream.surface_info.cs, vpe_priv->output_ctx.cs,
-            vpe_priv->output_ctx.output_tf, vpe_priv->output_ctx.surface.format,
+        blndcfg.bg_color = vpe_get_visual_confirm_color(vpe_priv,
+            stream_ctx->stream.surface_info.format, stream_ctx->stream.surface_info.cs,
+            vpe_priv->output_ctx.cs, vpe_priv->output_ctx.output_tf,
+            vpe_priv->output_ctx.surface.format,
             (stream_ctx->stream.tm_params.UID != 0 || stream_ctx->stream.tm_params.enable_3dlut));
     } else if (ops == VPE_CMD_OPS_BG_VSCF_OUTPUT) {
-        blndcfg.bg_color = vpe_get_visual_confirm_color(vpe_priv->output_ctx.surface.format,
-            vpe_priv->output_ctx.surface.cs, vpe_priv->output_ctx.cs,
-            vpe_priv->output_ctx.output_tf, vpe_priv->output_ctx.surface.format,
-            false); // 3DLUT should only affect input visual confirm
+        blndcfg.bg_color =
+            vpe_get_visual_confirm_color(vpe_priv, vpe_priv->output_ctx.surface.format,
+                vpe_priv->output_ctx.surface.cs, vpe_priv->output_ctx.cs,
+                vpe_priv->output_ctx.output_tf, vpe_priv->output_ctx.surface.format,
+                false); // 3DLUT should only affect input visual confirm
     } else {
         blndcfg.bg_color = vpe_priv->output_ctx.mpc_bg_color;
     }
@@ -1458,6 +1461,26 @@ enum vpe_status vpe10_check_bg_color_support(struct vpe_priv *vpe_priv, struct v
         status = bg_color_outside_cs_gamut(vpe_priv, bg_color);
 
     return status;
+}
+
+// To understand the logic for background color conversion,
+// please refer to vpe_update_output_gamma_sequence in color.c
+void vpe10_bg_color_convert(enum color_space output_cs, struct transfer_func *output_tf,
+    enum vpe_surface_pixel_format pixel_format, struct vpe_color *mpc_bg_color,
+    struct vpe_color *opp_bg_color, bool enable_3dlut)
+{
+    if (mpc_bg_color->is_ycbcr)
+        vpe_inverse_output_csc(output_cs, mpc_bg_color);
+
+    if (output_tf->type != TF_TYPE_BYPASS) {
+        // inverse degam
+        if (output_tf->tf == TRANSFER_FUNC_PQ2084 && !vpe_is_limited_cs(output_cs))
+            vpe_bg_degam(output_tf, mpc_bg_color);
+        // inverse gamut remap
+        if (enable_3dlut)
+            vpe_bg_inverse_gamut_remap(output_cs, output_tf, mpc_bg_color);
+    }
+    // for TF_TYPE_BYPASS, bg color should be programmed to mpc as linear
 }
 
 const struct vpe_caps *vpe10_get_capability(void)

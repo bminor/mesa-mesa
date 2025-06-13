@@ -33,6 +33,7 @@
 #include "opp.h"
 #include "vector.h"
 #include "hw_shared.h"
+#include "color_bg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,6 +70,10 @@ struct resource {
         struct vpe_priv *vpe_priv, const struct vpe_build_param *params);
 
     enum vpe_status(*check_bg_color_support)(struct vpe_priv* vpe_priv, struct vpe_color* bg_color);
+
+    void (*bg_color_convert)(enum color_space output_cs, struct transfer_func *output_tf,
+        enum vpe_surface_pixel_format pixel_format, struct vpe_color *mpc_bg_color,
+        struct vpe_color *opp_bg_color, bool enable_3dlut);
 
     enum vpe_status (*set_num_segments)(struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx,
         struct scaler_data *scl_data, struct vpe_rect *src_rect, struct vpe_rect *dst_rect,
