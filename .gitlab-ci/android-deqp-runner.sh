@@ -49,6 +49,16 @@ fi
 AOSP_RESULTS=/data/deqp/results
 uncollapsed_section_switch cuttlefish_test "cuttlefish: testing"
 
+# Print the detailed version with the list of backports and local patches
+{ set +x; } 2>/dev/null
+for api in vk-main vk gl gles; do
+  deqp_version_log=/deqp-$api/deqp-$api-version
+  if [ -r "$deqp_version_log" ]; then
+    cat "$deqp_version_log"
+  fi
+done
+set -x
+
 set +e
 $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; \
   XDG_CACHE_HOME=/data/local/tmp \
