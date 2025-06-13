@@ -3160,22 +3160,6 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       }
       ctx->dynamic_fb.attachments[i].imageView = iv;
    }
-   if (ctx->fb_state.resolve && use_tc_info && ctx->dynamic_fb.tc_info.has_resolve) {
-      struct zink_resource *res = zink_resource(ctx->fb_state.resolve);
-      struct zink_surface *surf = zink_surface(res->surface);
-      if (zink_is_swapchain(res)) {
-         if (!zink_kopper_acquire(ctx, res, UINT64_MAX))
-            return 0;
-         zink_surface_swapchain_update(ctx, surf);
-      }
-      zink_batch_resource_usage_set(ctx->bs, res, true, false);
-      VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-      screen->image_barrier(ctx, res, layout, 0, 0);
-      res->obj->unordered_read = res->obj->unordered_write = false;
-      ctx->dynamic_fb.attachments[0].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-      ctx->dynamic_fb.attachments[0].resolveImageLayout = zink_resource(surf->base.texture)->layout;
-      ctx->dynamic_fb.attachments[0].resolveImageView = surf->image_view;
-   }
    if (has_swapchain) {
       ASSERTED struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[0].texture);
       zink_render_fixup_swapchain(ctx);
@@ -3219,6 +3203,22 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveMode = 0;
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS + 1].resolveMode = 0;
       }
+   }
+   if (ctx->fb_state.resolve && use_tc_info && ctx->dynamic_fb.tc_info.has_resolve) {
+      struct zink_resource *res = zink_resource(ctx->fb_state.resolve);
+      struct zink_surface *surf = zink_surface(res->surface);
+      if (zink_is_swapchain(res)) {
+         if (!zink_kopper_acquire(ctx, res, UINT64_MAX))
+            return 0;
+         zink_surface_swapchain_update(ctx, surf);
+      }
+      zink_batch_resource_usage_set(ctx->bs, res, true, false);
+      VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+      screen->image_barrier(ctx, res, layout, 0, 0);
+      res->obj->unordered_read = res->obj->unordered_write = false;
+      ctx->dynamic_fb.attachments[0].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+      ctx->dynamic_fb.attachments[0].resolveImageLayout = zink_resource(surf->base.texture)->layout;
+      ctx->dynamic_fb.attachments[0].resolveImageView = surf->image_view;
    }
    ctx->zsbuf_unused = !zsbuf_used;
    assert(ctx->fb_state.width >= ctx->dynamic_fb.info.renderArea.extent.width);
