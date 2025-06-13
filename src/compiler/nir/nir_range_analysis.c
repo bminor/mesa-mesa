@@ -1862,9 +1862,17 @@ get_alu_uub(struct analysis_state *state, struct uub_query q, uint32_t *result, 
       break;
    }
    case nir_op_ior:
-   case nir_op_ixor:
-      *result = bitmask(util_last_bit64(src[0])) | bitmask(util_last_bit64(src[1]));
+   case nir_op_ixor: {
+      nir_scalar src0_scalar = nir_scalar_chase_alu_src(q.scalar, 0);
+      nir_scalar src1_scalar = nir_scalar_chase_alu_src(q.scalar, 1);
+      if (nir_scalar_is_const(src0_scalar))
+         *result = bitmask(util_last_bit64(src[1])) | nir_scalar_as_uint(src0_scalar);
+      else if (nir_scalar_is_const(src1_scalar))
+         *result = bitmask(util_last_bit64(src[0])) | nir_scalar_as_uint(src1_scalar);
+      else
+         *result = bitmask(util_last_bit64(src[0])) | bitmask(util_last_bit64(src[1]));
       break;
+   }
    case nir_op_ishl: {
       uint32_t src1 = MIN2(src[1], q.scalar.def->bit_size - 1u);
       if (util_last_bit64(src[0]) + src1 <= q.scalar.def->bit_size) /* check overflow */
