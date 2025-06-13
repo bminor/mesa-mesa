@@ -6364,7 +6364,7 @@
         "description": "glx: Fix memory leak with software dri",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7930fe5f01790fe9777d5c94f55b703688c002c6",
         "notes": null
