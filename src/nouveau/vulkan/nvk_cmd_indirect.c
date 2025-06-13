@@ -13,12 +13,14 @@
 #include "nir_builder.h"
 #include "vk_pipeline.h"
 
+#include "clcb97.h"
 #include "nv_push.h"
 #include "nv_push_cl9097.h"
 #include "nv_push_cl906f.h"
 #include "nv_push_cla0c0.h"
 #include "nv_push_clb1c0.h"
 #include "nv_push_clc6c0.h"
+#include "nv_push_clc86f.h"
 
 struct nvk_indirect_commands_layout {
    struct vk_object_base base;
@@ -1035,7 +1037,7 @@ nvk_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
       nvk_cmd_flush_process_state(cmd, info);
       nvk_cmd_process_cmds(cmd, info, &cmd->state);
 
-      struct nv_push *p = nvk_cmd_buffer_push(cmd, 5);
+      struct nv_push *p = nvk_cmd_buffer_push(cmd, 6);
       P_IMMD(p, NVA0C0, INVALIDATE_SHADER_CACHES, {
          .data = DATA_TRUE,
          .constant = CONSTANT_TRUE,
@@ -1043,7 +1045,10 @@ nvk_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
       });
       if (pdev->info.cls_eng3d >= MAXWELL_COMPUTE_B)
          P_IMMD(p, NVB1C0, INVALIDATE_SKED_CACHES, 0);
-      __push_immd(p, SUBC_NV9097, NV906F_SET_REFERENCE, 0);
+      if (pdev->info.cls_eng3d >= HOPPER_A)
+         P_IMMD(p, NVC86F, WFI, 0);
+      else
+         __push_immd(p, SUBC_NV9097, NV906F_SET_REFERENCE, 0);
    }
 
    if (layout->stages & VK_SHADER_STAGE_COMPUTE_BIT) {
