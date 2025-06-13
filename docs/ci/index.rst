@@ -39,7 +39,11 @@ Under "CI / CD" → "General pipelines", make sure "Custom CI config path" is
 empty (or set to the default ``.gitlab-ci.yml``), and that the
 "Public pipelines" box is checked.
 
-If you're having issues with the GitLab CI, your best bet is to ask
+If a specific CI farm is failing for reasons unrelated to your changes, make an
+MR to disable the farm following the `farm management <#farm-management>`__
+instructions.
+
+If you're having other issues with the GitLab CI, your best bet is to ask
 about it on ``#freedesktop`` on OFTC and tag `Daniel Stone
 <https://gitlab.freedesktop.org/daniels>`__ (``daniels`` on IRC) or
 `Emma Anholt <https://gitlab.freedesktop.org/anholt>`__ (``anholt`` on
@@ -68,7 +72,12 @@ When the farm starts failing for any reason (power, network, out-of-space), it n
 
    git mv .ci-farms{,-disabled}/$farm_name
 
-After farm restore functionality can be enabled by pushing a new merge request, which contains
+Find the GitLab handle of the farm's admin in ``.gitlab-ci/farm-rules.yml`` and
+ping them on the MR. MRs to disable farms do not need to go through review, and
+can be assigned to ``Marge`` directly.
+
+After farm restore functionality can be enabled by pushing a new merge request,
+which contains
 
 .. code-block:: sh
 
