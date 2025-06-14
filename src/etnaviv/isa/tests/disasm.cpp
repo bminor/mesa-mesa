@@ -353,6 +353,17 @@ INSTANTIATE_TEST_SUITE_P(texldlpcf, DisasmTest,
 // clang-format on
 
 // clang-format off
+INSTANTIATE_TEST_SUITE_P(texldgpcf, DisasmTest,
+   testing::Values(
+      // taken from dEQP-GLES3.functional.shaders.texture_functions.texturegrad.sampler2dshadow_fragment (GC7000)
+      disasm_state{ {0x04011809, 0x00000004, 0x00000000, 0x003fc018}, "mov.sat           t1.___w, void, void, t1.wwww\n"},
+      disasm_state{ {0x00811030, 0x39001800, 0x01490140, 0x00290038}, "texldgpcf         t1.x___, tex0.xxxx, t1.xyzw, t2.xyzz, t3.xyzz\n"},
+      disasm_state{ {0x07011009, 0x00000004, 0x00000000, 0x20390018}, "mov               t1._yzw, void, void, u1.xyzw\n"}
+   )
+);
+// clang-format on
+
+// clang-format off
 INSTANTIATE_TEST_SUITE_P(LoadStoreVariants, DisasmTest,
    testing::Values(
       // seen on GC7000

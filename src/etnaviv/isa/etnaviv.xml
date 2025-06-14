@@ -1491,6 +1491,11 @@ SPDX-License-Identifier: MIT
 	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
 
+<bitset name="texldgpcf" extends="#instruction-tex-src0-src1-src2">
+	<pattern low="0" high="5">110000</pattern> <!-- OPC -->
+	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
+</bitset>
+
 <bitset name="conv" extends="#instruction-alu-src0-src1">
 	<pattern low="0" high="5">110010</pattern> <!-- OPC -->
 	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
