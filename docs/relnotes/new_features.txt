@@ -73,3 +73,4 @@ VK_KHR_shader_atomic_int64 on panvk/v10+
 VK_EXT_host_image_copy on RADV (RDNA1+)
 VK_KHR_cooperative_matrix on nvk/turing+
 VK_KHR_host_image_copy on panvk
+Vulkan 1.4 on panvk/v10+
