@@ -357,42 +357,17 @@ nir_build_vec3_mat_mult(nir_builder *b, nir_def *vec, nir_def *matrix[], bool tr
 }
 
 nir_def *
-radv_load_vertex_position(struct radv_device *device, nir_builder *b, nir_def *instance_addr, nir_def *geometry_id,
-                          nir_def *primitive_id, uint32_t index)
+radv_load_vertex_position(struct radv_device *device, nir_builder *b, nir_def *primitive_addr, uint32_t index)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (radv_use_bvh8(pdev)) {
-      nir_def *addr_offsets =
-         nir_build_load_global(b, 4, 32,
-                               nir_iadd_imm(b, instance_addr,
-                                            sizeof(struct radv_gfx12_instance_node) +
-                                               offsetof(struct radv_gfx12_instance_node_user_data, blas_addr)));
-      nir_def *bvh_offset =
-         nir_build_load_global(b, 1, 32,
-                               nir_iadd_imm(b, instance_addr,
-                                            sizeof(struct radv_gfx12_instance_node) +
-                                               offsetof(struct radv_gfx12_instance_node_user_data, bvh_offset)));
-
-      nir_def *addr = nir_pack_64_2x32(b, nir_channels(b, addr_offsets, 0x3));
-
-      nir_def *base_index_offset =
-         nir_iadd(b, nir_channel(b, addr_offsets, 2), nir_imul_imm(b, geometry_id, sizeof(uint32_t)));
-      nir_def *base_index = nir_build_load_global(b, 1, 32, nir_iadd(b, addr, nir_u2u64(b, base_index_offset)));
-
-      nir_def *offset_offset = nir_iadd(b, nir_channel(b, addr_offsets, 3),
-                                        nir_imul_imm(b, nir_iadd(b, base_index, primitive_id), sizeof(uint32_t)));
-      nir_def *offset = nir_build_load_global(b, 1, 32, nir_iadd(b, addr, nir_u2u64(b, offset_offset)));
-      offset = nir_iadd(b, offset, bvh_offset);
-
       /* Assume that vertices are uncompressed. */
-      offset = nir_iadd_imm(b, offset,
-                            ROUND_DOWN_TO(RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE / 8, 4) + index * 3 * sizeof(float));
-
+      uint32_t offset = ROUND_DOWN_TO(RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE / 8, 4) + index * 3 * sizeof(float);
       nir_def *data[4];
       for (uint32_t i = 0; i < ARRAY_SIZE(data); i++) {
-         data[i] = nir_build_load_global(b, 1, 32, nir_iadd(b, addr, nir_u2u64(b, offset)));
-         offset = nir_iadd_imm(b, offset, 4);
+         data[i] = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, primitive_addr, offset));
+         offset += 4;
       }
 
       uint32_t subdword_offset = RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE % 32;
@@ -407,23 +382,8 @@ radv_load_vertex_position(struct radv_device *device, nir_builder *b, nir_def *i
       return nir_vec3(b, vertices[0], vertices[1], vertices[2]);
    }
 
-   nir_def *bvh_addr_id =
-      nir_build_load_global(b, 1, 64, nir_iadd_imm(b, instance_addr, offsetof(struct radv_bvh_instance_node, bvh_ptr)));
-   nir_def *bvh_addr = build_node_to_addr(device, b, bvh_addr_id, true);
-
-   nir_def *bvh_offset = nir_build_load_global(
-      b, 1, 32, nir_iadd_imm(b, instance_addr, offsetof(struct radv_bvh_instance_node, bvh_offset)));
-   nir_def *accel_struct = nir_isub(b, bvh_addr, nir_u2u64(b, bvh_offset));
-   nir_def *base_indices_offset = nir_build_load_global(
-      b, 1, 32,
-      nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, primitive_base_indices_offset)));
-   nir_def *base_index_offset = nir_iadd(b, base_indices_offset, nir_imul_imm(b, geometry_id, sizeof(uint32_t)));
-   nir_def *base_index = nir_build_load_global(b, 1, 32, nir_iadd(b, accel_struct, nir_u2u64(b, base_index_offset)));
-
-   nir_def *offset = nir_imul_imm(b, nir_iadd(b, base_index, primitive_id), sizeof(struct radv_bvh_triangle_node));
-   offset = nir_iadd_imm(b, offset, sizeof(struct radv_bvh_box32_node) + index * 3 * sizeof(float));
-
-   return nir_build_load_global(b, 3, 32, nir_iadd(b, bvh_addr, nir_u2u64(b, offset)));
+   uint32_t offset = index * 3 * sizeof(float);
+   return nir_build_load_global(b, 3, 32, nir_iadd_imm(b, primitive_addr, offset));
 }
 
 void

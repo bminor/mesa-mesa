@@ -214,6 +214,7 @@ struct ac_shader_args {
       struct ac_arg accel_struct;
       struct ac_arg primitive_id;
       struct ac_arg instance_addr;
+      struct ac_arg primitive_addr;
       struct ac_arg geometry_id_and_flags;
       struct ac_arg hit_kind;
    } rt;

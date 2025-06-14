@@ -202,6 +202,7 @@ struct rt_variables {
    nir_variable *tmax;
 
    /* Properties of the primitive currently being visited. */
+   nir_variable *primitive_addr;
    nir_variable *primitive_id;
    nir_variable *geometry_id_and_flags;
    nir_variable *instance_addr;
@@ -253,6 +254,7 @@ create_rt_variables(nir_shader *shader, struct radv_device *device, const VkPipe
    vars.direction = nir_variable_create(shader, nir_var_shader_temp, vec3_type, "ray_direction");
    vars.tmax = nir_variable_create(shader, nir_var_shader_temp, glsl_float_type(), "ray_tmax");
 
+   vars.primitive_addr = nir_variable_create(shader, nir_var_shader_temp, glsl_uint64_t_type(), "primitive_addr");
    vars.primitive_id = nir_variable_create(shader, nir_var_shader_temp, glsl_uint_type(), "primitive_id");
    vars.geometry_id_and_flags =
       nir_variable_create(shader, nir_var_shader_temp, glsl_uint_type(), "geometry_id_and_flags");
@@ -299,6 +301,7 @@ map_rt_variables(struct hash_table *var_remap, struct rt_variables *src, const s
    _mesa_hash_table_insert(var_remap, src->direction, dst->direction);
    _mesa_hash_table_insert(var_remap, src->tmax, dst->tmax);
 
+   _mesa_hash_table_insert(var_remap, src->primitive_addr, dst->primitive_addr);
    _mesa_hash_table_insert(var_remap, src->primitive_id, dst->primitive_id);
    _mesa_hash_table_insert(var_remap, src->geometry_id_and_flags, dst->geometry_id_and_flags);
    _mesa_hash_table_insert(var_remap, src->instance_addr, dst->instance_addr);
@@ -322,6 +325,8 @@ create_inner_vars(nir_builder *b, const struct rt_variables *vars)
    inner_vars.idx = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "inner_idx");
    inner_vars.shader_record_ptr =
       nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint64_t_type(), "inner_shader_record_ptr");
+   inner_vars.primitive_addr =
+      nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint64_t_type(), "inner_primitive_addr");
    inner_vars.primitive_id =
       nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "inner_primitive_id");
    inner_vars.geometry_id_and_flags =
@@ -649,10 +654,11 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
    }
    case nir_intrinsic_execute_closest_hit_amd: {
       nir_store_var(b, vars->tmax, intr->src[1].ssa, 0x1);
-      nir_store_var(b, vars->primitive_id, intr->src[2].ssa, 0x1);
-      nir_store_var(b, vars->instance_addr, intr->src[3].ssa, 0x1);
-      nir_store_var(b, vars->geometry_id_and_flags, intr->src[4].ssa, 0x1);
-      nir_store_var(b, vars->hit_kind, intr->src[5].ssa, 0x1);
+      nir_store_var(b, vars->primitive_addr, intr->src[2].ssa, 0x1);
+      nir_store_var(b, vars->primitive_id, intr->src[3].ssa, 0x1);
+      nir_store_var(b, vars->instance_addr, intr->src[4].ssa, 0x1);
+      nir_store_var(b, vars->geometry_id_and_flags, intr->src[5].ssa, 0x1);
+      nir_store_var(b, vars->hit_kind, intr->src[6].ssa, 0x1);
       load_sbt_entry(b, vars, intr->src[0].ssa, SBT_HIT, SBT_RECURSIVE_PTR);
 
       nir_def *should_return =
@@ -689,11 +695,8 @@ radv_lower_rt_instruction(nir_builder *b, nir_instr *instr, void *_data)
       break;
    }
    case nir_intrinsic_load_ray_triangle_vertex_positions: {
-      nir_def *instance_node_addr = nir_load_var(b, vars->instance_addr);
-      nir_def *primitive_id = nir_load_var(b, vars->primitive_id);
-      nir_def *geometry_id = nir_iand_imm(b, nir_load_var(b, vars->geometry_id_and_flags), 0xFFFFFFF);
-      ret = radv_load_vertex_position(vars->device, b, instance_node_addr, geometry_id, primitive_id,
-                                      nir_intrinsic_column(intr));
+      nir_def *primitive_addr = nir_load_var(b, vars->primitive_addr);
+      ret = radv_load_vertex_position(vars->device, b, primitive_addr, nir_intrinsic_column(intr));
       break;
    }
    default:
@@ -1385,6 +1388,7 @@ handle_candidate_triangle(nir_builder *b, struct radv_triangle_intersection *int
    {
       struct rt_variables inner_vars = create_inner_vars(b, data->vars);
 
+      nir_store_var(b, inner_vars.primitive_addr, intersection->base.node_addr, 1);
       nir_store_var(b, inner_vars.primitive_id, intersection->base.primitive_id, 1);
       nir_store_var(b, inner_vars.geometry_id_and_flags, intersection->base.geometry_id_and_flags, 1);
       nir_store_var(b, inner_vars.tmax, intersection->t, 0x1);
@@ -1418,6 +1422,7 @@ handle_candidate_triangle(nir_builder *b, struct radv_triangle_intersection *int
 
    nir_push_if(b, nir_load_var(b, data->vars->ahit_accept));
    {
+      nir_store_var(b, data->vars->primitive_addr, intersection->base.node_addr, 1);
       nir_store_var(b, data->vars->primitive_id, intersection->base.primitive_id, 1);
       nir_store_var(b, data->vars->geometry_id_and_flags, intersection->base.geometry_id_and_flags, 1);
       nir_store_var(b, data->vars->tmax, intersection->t, 0x1);
@@ -1452,6 +1457,7 @@ handle_candidate_aabb(nir_builder *b, struct radv_leaf_intersection *intersectio
     * next closest hit candidate. */
    inner_vars.hit_kind = data->vars->hit_kind;
 
+   nir_store_var(b, inner_vars.primitive_addr, intersection->node_addr, 1);
    nir_store_var(b, inner_vars.primitive_id, intersection->primitive_id, 1);
    nir_store_var(b, inner_vars.geometry_id_and_flags, intersection->geometry_id_and_flags, 1);
    nir_store_var(b, inner_vars.tmax, nir_load_var(b, data->vars->tmax), 0x1);
@@ -1481,6 +1487,7 @@ handle_candidate_aabb(nir_builder *b, struct radv_leaf_intersection *intersectio
 
    nir_push_if(b, nir_load_var(b, data->vars->ahit_accept));
    {
+      nir_store_var(b, data->vars->primitive_addr, intersection->node_addr, 1);
       nir_store_var(b, data->vars->primitive_id, intersection->primitive_id, 1);
       nir_store_var(b, data->vars->geometry_id_and_flags, intersection->geometry_id_and_flags, 1);
       nir_store_var(b, data->vars->tmax, nir_load_var(b, inner_vars.tmax), 0x1);
@@ -1673,7 +1680,14 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       } else {
          for (int i = 0; i < ARRAY_SIZE(hit_attribs); ++i)
             nir_store_hit_attrib_amd(b, nir_load_var(b, hit_attribs[i]), .base = i);
-         nir_execute_closest_hit_amd(b, nir_load_var(b, vars->idx), nir_load_var(b, vars->tmax),
+
+         nir_def *primitive_addr;
+         if (info->has_position_fetch)
+            primitive_addr = nir_load_var(b, vars->primitive_addr);
+         else
+            primitive_addr = nir_undef(b, 1, 64);
+
+         nir_execute_closest_hit_amd(b, nir_load_var(b, vars->idx), nir_load_var(b, vars->tmax), primitive_addr,
                                      nir_load_var(b, vars->primitive_id), nir_load_var(b, vars->instance_addr),
                                      nir_load_var(b, vars->geometry_id_and_flags), nir_load_var(b, vars->hit_kind));
       }
@@ -1920,7 +1934,8 @@ void
 radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
                       const struct radv_shader_args *args, const struct radv_shader_info *info, uint32_t *stack_size,
                       bool resume_shader, struct radv_device *device, struct radv_ray_tracing_pipeline *pipeline,
-                      bool monolithic, const struct radv_ray_tracing_stage_info *traversal_info)
+                      bool monolithic, bool has_position_fetch,
+                      const struct radv_ray_tracing_stage_info *traversal_info)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
 
@@ -1999,6 +2014,8 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
    else
       nir_store_var(&b, vars.miss_index, ac_nir_load_arg(&b, &args->ac, args->ac.rt.miss_index), 0x1);
 
+   nir_def *primitive_addr = ac_nir_load_arg(&b, &args->ac, args->ac.rt.primitive_addr);
+   nir_store_var(&b, vars.primitive_addr, nir_pack_64_2x32(&b, primitive_addr), 1);
    nir_store_var(&b, vars.primitive_id, ac_nir_load_arg(&b, &args->ac, args->ac.rt.primitive_id), 1);
    nir_def *instance_addr = ac_nir_load_arg(&b, &args->ac, args->ac.rt.instance_addr);
    nir_store_var(&b, vars.instance_addr, nir_pack_64_2x32(&b, instance_addr), 1);
@@ -2070,6 +2087,9 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
       radv_store_arg(&b, args, traversal_info, args->ac.rt.ray_tmin, nir_load_var(&b, vars.tmin));
       radv_store_arg(&b, args, traversal_info, args->ac.rt.ray_direction, nir_load_var(&b, vars.direction));
       radv_store_arg(&b, args, traversal_info, args->ac.rt.ray_tmax, nir_load_var(&b, vars.tmax));
+
+      if (has_position_fetch)
+         radv_store_arg(&b, args, traversal_info, args->ac.rt.primitive_addr, nir_load_var(&b, vars.primitive_addr));
 
       radv_store_arg(&b, args, traversal_info, args->ac.rt.primitive_id, nir_load_var(&b, vars.primitive_id));
       radv_store_arg(&b, args, traversal_info, args->ac.rt.instance_addr, nir_load_var(&b, vars.instance_addr));

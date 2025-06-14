@@ -50,7 +50,6 @@ static const uint32_t leaf_spv[] = {
 
 struct acceleration_structure_layout {
    uint32_t geometry_info_offset;
-   uint32_t primitive_base_indices_offset;
    uint32_t leaf_node_offsets_offset;
    uint32_t bvh_offset;
    uint32_t leaf_nodes_offset;
@@ -124,11 +123,6 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
    if (device->rra_trace.accel_structs) {
       accel_struct->geometry_info_offset = offset;
       offset += sizeof(struct radv_accel_struct_geometry_info) * state->build_info->geometryCount;
-   }
-
-   if (device->vk.enabled_features.rayTracingPositionFetch && geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-      accel_struct->primitive_base_indices_offset = offset;
-      offset += sizeof(uint32_t) * state->build_info->geometryCount;
    }
 
    /* On GFX12, we need additional space for leaf node offsets since they do not have the same
@@ -667,7 +661,6 @@ radv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_str
    header.build_flags = state->build_info->flags;
    header.geometry_type = vk_get_as_geometry_type(state->build_info);
    header.geometry_count = state->build_info->geometryCount;
-   header.primitive_base_indices_offset = layout.primitive_base_indices_offset;
 
    radv_update_memory_cp(cmd_buffer, vk_acceleration_structure_get_va(dst) + base, (const char *)&header + base,
                          sizeof(header) - base);
@@ -691,27 +684,6 @@ radv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_str
                            geometry_infos_size, geometry_infos);
 
       free(geometry_infos);
-   }
-
-   VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(state->build_info);
-   if (device->vk.enabled_features.rayTracingPositionFetch && geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-      uint32_t base_indices_size = sizeof(uint32_t) * state->build_info->geometryCount;
-      uint32_t *base_indices = malloc(base_indices_size);
-      if (!base_indices) {
-         vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
-         return;
-      }
-
-      uint32_t base_index = 0;
-      for (uint32_t i = 0; i < state->build_info->geometryCount; i++) {
-         base_indices[i] = base_index;
-         base_index += state->build_range_infos[i].primitiveCount;
-      }
-
-      radv_CmdUpdateBuffer(commandBuffer, vk_buffer_to_handle(dst->buffer),
-                           dst->offset + layout.primitive_base_indices_offset, base_indices_size, base_indices);
-
-      free(base_indices);
    }
 }
 

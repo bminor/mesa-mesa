@@ -71,7 +71,6 @@ struct radv_accel_struct_header {
    /* Everything after this gets updated/copied from the CPU. */
    uint32_t geometry_type;
    uint32_t geometry_count;
-   uint32_t primitive_base_indices_offset;
    uint64_t instance_offset;
    uint64_t instance_count;
    uint32_t leaf_node_offsets_offset;
@@ -182,11 +181,8 @@ struct radv_gfx12_instance_node_user_data {
    uint32_t custom_instance;
    uint32_t instance_index;
    uint32_t bvh_offset;
-   uint32_t padding;
-   uint64_t blas_addr;
-   uint32_t primitive_base_indices_offset;
    uint32_t leaf_node_offsets_offset;
-   uint32_t unused[12];
+   uint32_t unused[16];
 };
 
 /* Size of the primitive header section in bits. */

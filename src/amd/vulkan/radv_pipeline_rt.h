@@ -74,6 +74,7 @@ struct radv_rt_const_arg_info {
 
 struct radv_ray_tracing_stage_info {
    bool can_inline;
+   bool has_position_fetch;
 
    BITSET_DECLARE(unused_args, AC_MAX_ARGS);
 

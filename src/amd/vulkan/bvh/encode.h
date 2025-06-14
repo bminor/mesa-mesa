@@ -309,8 +309,6 @@ radv_encode_instance_gfx12(VOID_REF dst, vk_ir_instance_node src)
    DEREF(user_data).custom_instance = src.custom_instance_and_mask & 0xffffff;
    DEREF(user_data).instance_index = src.instance_id;
    DEREF(user_data).bvh_offset = blas_header.bvh_offset;
-   DEREF(user_data).blas_addr = src.base_ptr;
-   DEREF(user_data).primitive_base_indices_offset = blas_header.primitive_base_indices_offset;
    DEREF(user_data).leaf_node_offsets_offset = blas_header.leaf_node_offsets_offset;
 }
 

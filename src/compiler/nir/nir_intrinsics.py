@@ -1897,11 +1897,12 @@ system_value("cull_mask_and_flags_amd", 1)
 
 #   0. SBT Index
 #   1. Ray Tmax
-#   2. Primitive Id
-#   3. Instance Addr
-#   4. Geometry Id and Flags
-#   5. Hit Kind
-intrinsic("execute_closest_hit_amd", src_comp=[1, 1, 1, 1, 1, 1])
+#   2. Primitive Addr
+#   3. Primitive Id
+#   4. Instance Addr
+#   5. Geometry Id and Flags
+#   6. Hit Kind
+intrinsic("execute_closest_hit_amd", src_comp=[1, 1, 1, 1, 1, 1, 1])
 
 #   0. Ray Tmax
 intrinsic("execute_miss_amd", src_comp=[1])
