@@ -7278,6 +7278,18 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    /* structurize the CFG */
    nir_lower_goto_ifs(b->shader);
 
+   /* Work around applications that declare shader_call_data variables inside
+    * ray generation shaders or multiple shader_call_data variables in callable
+    * shaders. This needs to happen before validation.
+    *
+    * https://gitlab.freedesktop.org/mesa/mesa/-/issues/5326
+    * https://gitlab.freedesktop.org/mesa/mesa/-/issues/11585
+    */
+   if (gl_shader_stage_is_rt(b->shader->info.stage)) {
+      NIR_PASS(_, b->shader, nir_remove_dead_variables, nir_var_shader_call_data,
+               NULL);
+   }
+
    nir_validate_shader(b->shader, "after spirv cfg");
 
    nir_lower_continue_constructs(b->shader);
@@ -7363,17 +7375,6 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
          }
       }
    }
-
-   /* Work around applications that declare shader_call_data variables inside
-    * ray generation shaders or multiple shader_call_data variables in callable
-    * shaders.
-    *
-    * https://gitlab.freedesktop.org/mesa/mesa/-/issues/5326
-    * https://gitlab.freedesktop.org/mesa/mesa/-/issues/11585
-    */
-   if (gl_shader_stage_is_rt(b->shader->info.stage))
-      NIR_PASS(_, b->shader, nir_remove_dead_variables, nir_var_shader_call_data,
-               NULL);
 
    /* Unparent the shader from the vtn_builder before we delete the builder */
    ralloc_steal(NULL, b->shader);
