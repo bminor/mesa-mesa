@@ -891,13 +891,23 @@ panvk_per_arch(CmdBindIndexBuffer2)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    VK_FROM_HANDLE(panvk_buffer, buf, buffer);
 
-   cmdbuf->state.gfx.ib.size = panvk_buffer_range(buf, offset, size);
-   assert(cmdbuf->state.gfx.ib.size <= UINT32_MAX);
-   cmdbuf->state.gfx.ib.dev_addr = panvk_buffer_gpu_ptr(buf, offset);
+   if (buf) {
+      cmdbuf->state.gfx.ib.size = panvk_buffer_range(buf, offset, size);
+      assert(cmdbuf->state.gfx.ib.size <= UINT32_MAX);
+      cmdbuf->state.gfx.ib.dev_addr = panvk_buffer_gpu_ptr(buf, offset);
 #if PAN_ARCH <= 7
-   cmdbuf->state.gfx.ib.host_addr =
-      buf && buf->host_ptr ? buf->host_ptr + offset : NULL;
+      cmdbuf->state.gfx.ib.host_addr =
+         buf && buf->host_ptr ? buf->host_ptr + offset : NULL;
 #endif
-   cmdbuf->state.gfx.ib.index_size = vk_index_type_to_bytes(indexType);
+      cmdbuf->state.gfx.ib.index_size = vk_index_type_to_bytes(indexType);
+   } else {
+      cmdbuf->state.gfx.ib.size = 0;
+      cmdbuf->state.gfx.ib.dev_addr = 0;
+#if PAN_ARCH <= 7
+      cmdbuf->state.gfx.ib.host_addr = 0;
+#endif
+      cmdbuf->state.gfx.ib.index_size = 0;
+   }
+
    gfx_state_set_dirty(cmdbuf, IB);
 }

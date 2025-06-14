@@ -2655,7 +2655,7 @@ panvk_per_arch(CmdDrawIndexedIndirect)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    VK_FROM_HANDLE(panvk_buffer, buffer, _buffer);
 
-   if (drawCount == 0)
+   if (drawCount == 0 || cmdbuf->state.gfx.ib.size == 0)
       return;
 
    struct panvk_draw_info draw = {
@@ -2708,7 +2708,7 @@ panvk_per_arch(CmdDrawIndexedIndirectCount)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_buffer, buffer, _buffer);
    VK_FROM_HANDLE(panvk_buffer, count_buffer, countBuffer);
 
-   if (maxDrawCount == 0)
+   if (maxDrawCount == 0 || cmdbuf->state.gfx.ib.size == 0)
       return;
 
    struct panvk_draw_info draw = {
