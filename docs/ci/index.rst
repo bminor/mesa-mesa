@@ -46,7 +46,7 @@ instructions.
 If you're having other issues with the GitLab CI, your best bet is to ask
 about it on ``#freedesktop`` on OFTC and tag `Daniel Stone
 <https://gitlab.freedesktop.org/daniels>`__ (``daniels`` on IRC) or
-`Emma Anholt <https://gitlab.freedesktop.org/anholt>`__ (``anholt`` on
+`Eric Engestrom <https://gitlab.freedesktop.org/eric>`__ (``eric_engestrom`` on
 IRC).
 
 The three GitLab CI systems currently integrated are:
