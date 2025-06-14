@@ -556,6 +556,7 @@ emit_tex(struct etna_compile *c, nir_tex_instr * tex)
          break;
       case nir_tex_src_comparator:
       case nir_tex_src_ddy:
+         assert(!src2);
          src2 = &tex->src[i].src;
          break;
       default:
