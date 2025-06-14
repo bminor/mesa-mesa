@@ -1539,18 +1539,21 @@ dump_bindless_descriptors(bool is_compute, int level)
       if (!contents)
          continue;
 
+      uint32_t empty_contents[16] = {};
+
       unsigned length = hostlen(ext_src_addr);
       unsigned desc_count = length / (16 * sizeof(uint32_t));
       for (unsigned desc_idx = 0; desc_idx < desc_count; desc_idx++) {
-         printl(2, "%sUBO[%u]:\n", levels[level + 1], desc_idx);
-         dump_domain(contents, 2, level + 2, "A6XX_UBO");
+         if (memcmp(contents, empty_contents, sizeof(empty_contents))) {
+            printl(2, "%sUBO[%u]:\n", levels[level + 1], desc_idx);
+            dump_domain(contents, 2, level + 2, "A6XX_UBO");
 
-         printl(2, "%sSTORAGE/TEXEL/IMAGE[%u]:\n", levels[level + 1], desc_idx);
-         dump_tex_const(contents, 1, level);
+            printl(2, "%sSTORAGE/TEXEL/IMAGE[%u]:\n", levels[level + 1], desc_idx);
+            dump_tex_const(contents, 1, level);
 
-         printl(2, "%sSAMPLER[%u]:\n", levels[level + 1], desc_idx);
-         dump_tex_samp(contents, STATE_SRC_BINDLESS, 1, level);
-
+            printl(2, "%sSAMPLER[%u]:\n", levels[level + 1], desc_idx);
+            dump_tex_samp(contents, STATE_SRC_BINDLESS, 1, level);
+         }
          contents += 16;
       }
    }
