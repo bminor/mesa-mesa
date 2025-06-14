@@ -305,7 +305,9 @@ update_shader_samplers(struct st_context *st,
          if (stObj->pt->format == PIPE_FORMAT_R8G8_R8B8_UNORM ||
              stObj->pt->format == PIPE_FORMAT_R8B8_R8G8_UNORM ||
              stObj->pt->format == PIPE_FORMAT_B8R8_G8R8_UNORM ||
-             stObj->pt->format == PIPE_FORMAT_G8R8_B8R8_UNORM) {
+             stObj->pt->format == PIPE_FORMAT_G8R8_B8R8_UNORM ||
+             stObj->pt->format == PIPE_FORMAT_R16G16_R16B16_422_UNORM ||
+             stObj->pt->format == PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM) {
             /* no additional views needed */
             break;
          }

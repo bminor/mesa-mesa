@@ -310,6 +310,11 @@ st_get_sampler_views(struct st_context *st,
       case PIPE_FORMAT_Y210:
       case PIPE_FORMAT_Y212:
       case PIPE_FORMAT_Y216:
+         if (stObj->pt->format == PIPE_FORMAT_R16G16_R16B16_422_UNORM ||
+             stObj->pt->format == PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM)
+            /* no additional views needed */
+            break;
+
          /* we need one additional R16G16B16A16 view: */
          tmpl.format = PIPE_FORMAT_R16G16B16A16_UNORM;
          tmpl.swizzle_b = PIPE_SWIZZLE_Z;

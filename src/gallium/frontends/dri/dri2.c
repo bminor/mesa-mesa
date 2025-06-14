@@ -562,6 +562,21 @@ static const struct dri2_format_mapping g8r8_b8r8_mapping = {
      { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR8888 } }
 };
 
+static const struct dri2_format_mapping r16g16_r16b16_mapping = {
+   DRM_FORMAT_Y216,
+   __DRI_IMAGE_FORMAT_NONE,
+   PIPE_FORMAT_R16G16_R16B16_422_UNORM, 2,
+   { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR1616 },
+     { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR16161616 } }
+};
+static const struct dri2_format_mapping r10g10_r10b10_mapping = {
+   DRM_FORMAT_Y210,
+   __DRI_IMAGE_FORMAT_NONE,
+   PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM, 2,
+   { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR1616 },
+     { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR16161616 } }
+};
+
 static const struct dri2_format_mapping r10_g10b10_mapping = {
    DRM_FORMAT_NV15,
    __DRI_IMAGE_FORMAT_NONE,
@@ -766,6 +781,18 @@ dri_create_image_from_winsys(struct dri_screen *screen,
        pscreen->is_format_supported(pscreen, PIPE_FORMAT_B8R8_G8R8_UNORM,
                                     screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
       map = &b8r8_g8r8_mapping;
+      tex_usage |= PIPE_BIND_SAMPLER_VIEW;
+   }
+   if (!tex_usage && map->pipe_format == PIPE_FORMAT_Y210 &&
+       pscreen->is_format_supported(pscreen, PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM,
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
+      map = &r10g10_r10b10_mapping;
+      tex_usage |= PIPE_BIND_SAMPLER_VIEW;
+   }
+   if (!tex_usage && map->pipe_format == PIPE_FORMAT_Y216 &&
+       pscreen->is_format_supported(pscreen, PIPE_FORMAT_R16G16_R16B16_422_UNORM,
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
+      map = &r16g16_r16b16_mapping;
       tex_usage |= PIPE_BIND_SAMPLER_VIEW;
    }
 
