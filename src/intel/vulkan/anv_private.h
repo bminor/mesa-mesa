@@ -52,7 +52,6 @@
 #include "dev/intel_device_info.h"
 #include "blorp/blorp.h"
 #include "compiler/brw_compiler.h"
-#include "compiler/brw_kernel.h"
 #include "compiler/brw_rt.h"
 #include "ds/intel_driver_ds.h"
 #include "util/bitset.h"
@@ -1277,9 +1276,6 @@ struct anv_physical_device {
     uint8_t                                     driver_uuid[VK_UUID_SIZE];
     uint8_t                                     device_uuid[VK_UUID_SIZE];
     uint8_t                                     rt_uuid[VK_UUID_SIZE];
-
-    /* Maximum amount of scratch space used by all the GRL kernels */
-    uint32_t                                    max_grl_scratch_size;
 
     struct vk_sync_type                         sync_syncobj_type;
     struct vk_sync_timeline_type                sync_timeline_type;
@@ -4768,14 +4764,11 @@ struct anv_pipeline_bind_map {
    uint32_t surface_count;
    uint32_t sampler_count;
    uint32_t embedded_sampler_count;
-   uint16_t kernel_args_size;
-   uint16_t kernel_arg_count;
 
    struct anv_pipeline_binding *                surface_to_descriptor;
    struct anv_pipeline_binding *                sampler_to_descriptor;
    struct anv_pipeline_embedded_sampler_binding* embedded_sampler_to_binding;
    BITSET_DECLARE(input_attachments, MAX_DESCRIPTOR_SET_INPUT_ATTACHMENTS + 1);
-   struct brw_kernel_arg_desc *                 kernel_args;
 
    struct anv_push_range                        push_ranges[4];
 };
@@ -5292,24 +5285,6 @@ anv_device_init_rt_shaders(struct anv_device *device);
 
 void
 anv_device_finish_rt_shaders(struct anv_device *device);
-
-struct anv_kernel_arg {
-   bool is_ptr;
-   uint16_t size;
-
-   union {
-      uint64_t u64;
-      void *ptr;
-   };
-};
-
-struct anv_kernel {
-#ifndef NDEBUG
-   const char *name;
-#endif
-   struct anv_shader_bin *bin;
-   const struct intel_l3_config *l3_config;
-};
 
 struct anv_format_plane {
    /* Main format */

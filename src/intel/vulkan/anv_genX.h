@@ -246,12 +246,6 @@ void genX(cmd_buffer_so_memcpy)(struct anv_cmd_buffer *cmd_buffer,
                                 struct anv_address dst, struct anv_address src,
                                 uint32_t size);
 
-void genX(cmd_buffer_dispatch_kernel)(struct anv_cmd_buffer *cmd_buffer,
-                                      struct anv_kernel *kernel,
-                                      const uint32_t *global_size, /* NULL for indirect */
-                                      uint32_t arg_count,
-                                      const struct anv_kernel_arg *args);
-
 void genX(blorp_init_dynamic_states)(struct blorp_context *context);
 
 void genX(blorp_exec)(struct blorp_batch *batch,
