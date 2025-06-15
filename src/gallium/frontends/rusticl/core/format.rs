@@ -176,10 +176,8 @@ cl_format_table!([
 //  (CL_RGBx,      CL_UNORM_SHORT_555)    => pipe_format::PIPE_FORMAT_R5G5B5X1_UNORM,
 //  (CL_RGBx,      CL_UNORM_INT_101010)   => pipe_format::PIPE_FORMAT_R10G10B10X2_UNORM,
 
-// broken
-//  (CL_sRGB,      CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_R8G8B8_SRGB,
-//  (CL_sRGBA,     CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_R8G8B8A8_SRGB,
-//  (CL_sBGRA,     CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_B8G8R8A8_SRGB,
+    (CL_sRGBA,     CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_R8G8B8A8_SRGB,
+    (CL_sBGRA,     CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_B8G8R8A8_SRGB,
 // broken
 //  (CL_sRGBx,     CL_UNORM_INT8)         => pipe_format::PIPE_FORMAT_R8G8B8X8_SRGB,
 

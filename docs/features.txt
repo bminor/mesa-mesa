@@ -769,7 +769,7 @@ Rusticl OpenCL 2.0 -- all DONE:
   - CL_ABGR                                             DONE
   - cl_khr_image2d_from_buffer                          DONE (freedreno, iris, llvmpipe)
   - cl_khr_depth_images                                 DONE
-  - from sRGB images                                    in progress
+  - from sRGB images                                    DONE
   clCreateSamplerWithProperties                         DONE
   Non-uniform work-group sizes                          not started
   cl_khr_3d_image_writes                                DONE (freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi, zink)
