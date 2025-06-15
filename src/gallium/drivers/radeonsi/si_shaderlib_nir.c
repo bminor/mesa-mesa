@@ -12,9 +12,21 @@
 #include "aco_interface.h"
 #include "nir_format_convert.h"
 #include "ac_nir_helpers.h"
+#include "nir/nir_serialize.h"
 
 void *si_create_shader_state(struct si_context *sctx, nir_shader *nir)
 {
+   static blake3_hash zeros;
+
+   if (!memcmp(nir->info.source_blake3, zeros, sizeof(blake3_hash))) {
+      struct blob blob = {};
+
+      blob_init(&blob);
+      nir_serialize(&blob, nir, false);
+      _mesa_blake3_compute(blob.data, blob.size, nir->info.source_blake3);
+      blob_finish(&blob);
+   }
+
    sctx->b.screen->finalize_nir(sctx->b.screen, nir);
    return pipe_shader_from_nir(&sctx->b, nir);
 }
