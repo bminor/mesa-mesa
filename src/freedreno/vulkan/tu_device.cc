@@ -258,6 +258,7 @@ get_device_extensions(const struct tu_physical_device *device,
 #endif
       .KHR_synchronization2 = true,
       .KHR_timeline_semaphore = true,
+      .KHR_unified_image_layouts = true,
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_variable_pointers = true,
       .KHR_vertex_attribute_divisor = true,
@@ -773,6 +774,10 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_EXT_fragment_density_map_offset */
    features->fragmentDensityMapOffset = true;
+
+   /* VK_KHR_unified_layouts */
+   features->unifiedImageLayouts = true;
+   features->unifiedImageLayoutsVideo = false;
 }
 
 static void
