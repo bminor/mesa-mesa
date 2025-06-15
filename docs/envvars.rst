@@ -1411,6 +1411,8 @@ RADV driver environment variables
       disable FMASK compression on MSAA images (GFX6-GFX10.3)
    ``nogpl``
       disable VK_EXT_graphics_pipeline_library
+   ``nogttspill``
+      disable GTT spilling when allocating memory
    ``nohiz``
       disable HIZ for depthstencil images
    ``noibs``

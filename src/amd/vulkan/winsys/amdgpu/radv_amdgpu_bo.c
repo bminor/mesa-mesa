@@ -470,7 +470,8 @@ radv_amdgpu_winsys_bo_create(struct radeon_winsys *_ws, uint64_t size, unsigned 
        * e.g. Horizon Zero Dawn allocates more memory than we have
        * VRAM.
        */
-      request.preferred_heap |= AMDGPU_GEM_DOMAIN_GTT;
+      if (!(ws->perftest & RADV_PERFTEST_NO_GTT_SPILL))
+          request.preferred_heap |= AMDGPU_GEM_DOMAIN_GTT;
    }
 
    if (initial_domain & RADEON_DOMAIN_GTT)
