@@ -56,7 +56,7 @@ static LLVMValueRef get_src(struct ac_nir_context *nir, nir_src src)
    return nir->ssa_defs[src.ssa->index];
 }
 
-static LLVMValueRef get_memory_ptr(struct ac_nir_context *ctx, nir_src src, unsigned c_off)
+static LLVMValueRef get_shared_mem_ptr(struct ac_nir_context *ctx, nir_src src, unsigned c_off)
 {
    if (!ctx->lds.value) {
       unsigned lds_size = ctx->ac.gfx_level >= GFX7 ? 65536 : 32768;
@@ -2516,7 +2516,7 @@ static LLVMValueRef visit_load_shared(struct ac_nir_context *ctx, const nir_intr
    unsigned const_off = nir_intrinsic_base(instr);
 
    LLVMTypeRef elem_type = LLVMIntTypeInContext(ctx->ac.context, instr->def.bit_size);
-   LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[0], const_off);
+   LLVMValueRef ptr = get_shared_mem_ptr(ctx, instr->src[0], const_off);
 
    for (int chan = 0; chan < instr->num_components; chan++) {
       index = LLVMConstInt(ctx->ac.i32, chan, 0);
@@ -2536,7 +2536,7 @@ static void visit_store_shared(struct ac_nir_context *ctx, const nir_intrinsic_i
 
    unsigned const_off = nir_intrinsic_base(instr);
    LLVMTypeRef elem_type = LLVMIntTypeInContext(ctx->ac.context, instr->src[0].ssa->bit_size);
-   LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[1], const_off);
+   LLVMValueRef ptr = get_shared_mem_ptr(ctx, instr->src[1], const_off);
    LLVMValueRef src = get_src(ctx, instr->src[0]);
 
    int writemask = nir_intrinsic_write_mask(instr);
@@ -2555,7 +2555,7 @@ static LLVMValueRef visit_load_shared2_amd(struct ac_nir_context *ctx,
                                            const nir_intrinsic_instr *instr)
 {
    LLVMTypeRef pointee_type = LLVMIntTypeInContext(ctx->ac.context, instr->def.bit_size);
-   LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[0], 0);
+   LLVMValueRef ptr = get_shared_mem_ptr(ctx, instr->src[0], 0);
 
    LLVMValueRef values[2];
    uint8_t offsets[] = {nir_intrinsic_offset0(instr), nir_intrinsic_offset1(instr)};
@@ -2573,7 +2573,7 @@ static LLVMValueRef visit_load_shared2_amd(struct ac_nir_context *ctx,
 static void visit_store_shared2_amd(struct ac_nir_context *ctx, const nir_intrinsic_instr *instr)
 {
    LLVMTypeRef pointee_type = LLVMIntTypeInContext(ctx->ac.context, instr->src[0].ssa->bit_size);
-   LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[1], 0);
+   LLVMValueRef ptr = get_shared_mem_ptr(ctx, instr->src[1], 0);
    LLVMValueRef src = get_src(ctx, instr->src[0]);
 
    uint8_t offsets[] = {nir_intrinsic_offset0(instr), nir_intrinsic_offset1(instr)};
@@ -2899,7 +2899,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_shared_atomic_swap: {
-      LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[0], nir_intrinsic_base(instr));
+      LLVMValueRef ptr = get_shared_mem_ptr(ctx, instr->src[0], nir_intrinsic_base(instr));
       result = visit_var_atomic(ctx, instr, ptr, 1);
       break;
    }
