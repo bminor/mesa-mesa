@@ -31,7 +31,7 @@
 /* We reserve one ubo for push constant, one for sysvals and one per-set for the
  * descriptor metadata  */
 #define RESERVED_UBO_COUNT                   6
-#define MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS 32 - RESERVED_UBO_COUNT
+#define MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS (32 - RESERVED_UBO_COUNT)
 #define MAX_INLINE_UNIFORM_BLOCK_SIZE        (1 << 16)
 
 void
