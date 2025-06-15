@@ -1084,7 +1084,7 @@
         "description": "intel/dev: update BMG device names",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1d3fa007cabdcb69f37acdfaa8154402cb6e760",
         "notes": null
