@@ -1831,12 +1831,24 @@ impl Image {
         }
 
         // If image is created from a buffer, use clear_image_buffer instead
-        if self.is_parent_buffer() {
+        if let Some(Mem::Buffer(parent)) = self.parent() {
             let strides = (
                 self.image_desc.row_pitch()? as usize,
                 self.image_desc.slice_pitch(),
             );
-            ctx.clear_image_buffer(res, &new_pattern, origin, region, strides, pixel_size);
+            let offset = parent.apply_offset(CLVec::calc_offset(
+                origin,
+                [pixel_size, strides.0, strides.1],
+            ))?;
+
+            ctx.clear_image_buffer(
+                res,
+                &new_pattern,
+                offset.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?,
+                region,
+                strides,
+                pixel_size,
+            );
         } else {
             let bx = create_pipe_box(*origin, *region, self.mem_type)?;
             ctx.clear_texture(res, &new_pattern, &bx);
@@ -1849,10 +1861,6 @@ impl Image {
         let mut maps = self.maps.lock().unwrap();
         let entry = maps.entry(ptr as usize);
         matches!(entry, Entry::Occupied(entry) if entry.get().count > 0)
-    }
-
-    pub fn is_parent_buffer(&self) -> bool {
-        matches!(self.parent(), Some(Mem::Buffer(_)))
     }
 
     pub fn map(
@@ -2116,12 +2124,23 @@ impl Image {
     pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c, '_>> {
         let res = self.get_res_for_access(ctx, RWFlags::RD)?;
 
-        let template = if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
-            res.pipe_sampler_view_template_2d_buffer(self.pipe_format, &self.buffer_2d_info()?)
+        let template = if let Some(Mem::Buffer(parent)) = self.parent() {
+            if self.mem_type == CL_MEM_OBJECT_IMAGE2D {
+                res.pipe_sampler_view_template_2d_buffer(
+                    self.pipe_format,
+                    &self.buffer_2d_info()?,
+                    parent.offset() as u32 / self.image_format.pixel_size().unwrap() as u32,
+                )
+            } else {
+                assert_eq!(self.mem_type, CL_MEM_OBJECT_IMAGE1D_BUFFER);
+                // we need to pass in the size of the buffer, not the width.
+                let size = self.size.try_into_with_err(CL_OUT_OF_RESOURCES)?;
+                let offset = parent.offset().try_into_with_err(CL_OUT_OF_RESOURCES)?;
+                res.pipe_sampler_view_template_1d_buffer(self.pipe_format, size, offset)
+            }
         } else if res.is_buffer() {
-            // we need to pass in the size of the buffer, not the width.
             let size = self.size.try_into_with_err(CL_OUT_OF_RESOURCES)?;
-            res.pipe_sampler_view_template_1d_buffer(self.pipe_format, size)
+            res.pipe_sampler_view_template_1d_buffer(self.pipe_format, size, 0)
         } else {
             res.pipe_sampler_view_template()
         };
@@ -2133,17 +2152,23 @@ impl Image {
         let rw = if read_write { RWFlags::RW } else { RWFlags::WR };
 
         let res = self.get_res_for_access(ctx, rw)?;
-        if res.is_buffer() && self.mem_type == CL_MEM_OBJECT_IMAGE2D {
-            Ok(
-                res.pipe_image_view_2d_buffer(
+        if let Some(Mem::Buffer(parent)) = self.parent() {
+            if self.mem_type == CL_MEM_OBJECT_IMAGE2D {
+                Ok(res.pipe_image_view_2d_buffer(
                     self.pipe_format,
                     read_write,
                     &self.buffer_2d_info()?,
-                ),
-            )
+                    parent.offset() as u32 / self.image_format.pixel_size().unwrap() as u32,
+                ))
+            } else {
+                assert_eq!(self.mem_type, CL_MEM_OBJECT_IMAGE1D_BUFFER);
+                let size = self.size.try_into_with_err(CL_OUT_OF_RESOURCES)?;
+                let offset = parent.offset().try_into_with_err(CL_OUT_OF_RESOURCES)?;
+                Ok(res.pipe_image_view_1d_buffer(self.pipe_format, read_write, size, offset))
+            }
         } else if res.is_buffer() {
             let size = self.size.try_into_with_err(CL_OUT_OF_RESOURCES)?;
-            Ok(res.pipe_image_view_1d_buffer(self.pipe_format, read_write, size))
+            Ok(res.pipe_image_view_1d_buffer(self.pipe_format, read_write, size, 0))
         } else {
             Ok(res.pipe_image_view(read_write))
         }
