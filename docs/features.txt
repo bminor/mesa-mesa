@@ -44,7 +44,7 @@ GL 3.0, GLSL 1.30 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe,
   GL_ARB_color_buffer_float (Clamping controls)         DONE (v3d, vc4, lima, etnaviv)
   GL_ARB_texture_float (Float textures, renderbuffers)  DONE (v3d)
   GL_EXT_packed_float                                   DONE (v3d, etnaviv/HALTI0)
-  GL_EXT_texture_shared_exponent                        DONE (v3d)
+  GL_EXT_texture_shared_exponent                        DONE (v3d, etnaviv/HALTI2)
   GL_ARB_depth_buffer_float (Float depth buffers)       DONE (v3d)
   GL_ARB_framebuffer_object (Framebuffer objects)       DONE (v3d, vc4, etnaviv)
   GL_ARB_half_float_pixel                               DONE (all drivers)
@@ -53,7 +53,7 @@ GL 3.0, GLSL 1.30 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe,
   GL_EXT_texture_array                                  DONE (v3d, etnaviv/HALTI0)
   GL_EXT_draw_buffers2 (Per-buffer blend and masks)     DONE (v3d, etnaviv/HALTI5)
   GL_EXT_texture_compression_rgtc                       DONE (all drivers that support GL_EXT_texture_snorm)
-  GL_ARB_texture_rg                                     DONE (v3d, lima, etnaviv/HALTI2)
+  GL_ARB_texture_rg                                     DONE (v3d, lima, etnaviv/HALTI5)
   GL_EXT_transform_feedback (Transform feedback)        DONE (v3d)
   GL_ARB_vertex_array_object (Vertex array objects)     DONE (v3d, vc4, lima)
   GL_EXT_framebuffer_sRGB (sRGB framebuffer format)     DONE (v3d, vc4, lima, etnaviv/HALTI3)
@@ -79,7 +79,7 @@ GL 3.1, GLSL 1.40 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe,
   GL_ARB_texture_buffer_object (Texture buffer objs)    DONE (v3d)
   GL_ARB_texture_rectangle (Rectangular textures)       DONE (v3d, vc4, lima, crocus, etnaviv)
   GL_ARB_uniform_buffer_object (Uniform buffer objs)    DONE (v3d, crocus)
-  GL_EXT_texture_snorm (Signed normalized textures)     DONE (v3d, crocus)
+  GL_EXT_texture_snorm (Signed normalized textures)     DONE (v3d, crocus, etnaviv/HALTI1)
 
 
 GL 3.2, GLSL 1.50 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe, softpipe, virgl, zink, d3d12, iris, crocus/gen6+, asahi
