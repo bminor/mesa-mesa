@@ -48,26 +48,26 @@
 
 #include <unistd.h>
 
-static struct u_gralloc *u_gralloc;
+static struct u_gralloc *_gralloc;
 
 struct u_gralloc *
 vk_android_get_ugralloc(void)
 {
-   return u_gralloc;
+   return _gralloc;
 }
 
 struct u_gralloc *
 vk_android_init_ugralloc(void)
 {
-   u_gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
+   _gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
 
-   return u_gralloc;
+   return _gralloc;
 }
 
 void
 vk_android_destroy_ugralloc(void)
 {
-   u_gralloc_destroy(&u_gralloc);
+   u_gralloc_destroy(&_gralloc);
 }
 
 /* If any bits in test_mask are set, then unset them and return true. */
