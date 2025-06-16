@@ -128,7 +128,16 @@ class VulkanReservedMarshalingCodegen(VulkanTypeIterator):
     def genStreamCall(self, vulkanType, toStreamExpr, sizeExpr):
         varname = self.ptrVar
         cast = self.makeCastExpr(self.getTypeForStreaming(vulkanType))
+
+        # Guard memcpy operations against zero-size arrays, to avoid undefined behavior
+        lenAccess = self.lenAccessor(vulkanType)
+        if not vulkanType.staticArrExpr and lenAccess is not None:
+            self.cgen.beginIf("%s > 0" % (lenAccess))
+
         self.genMemcpyAndIncr(varname, cast, toStreamExpr, sizeExpr)
+
+        if not vulkanType.staticArrExpr and lenAccess is not None:
+            self.cgen.endIf()
 
     def genPrimitiveStreamCall(self, vulkanType, access):
         varname = self.ptrVar
