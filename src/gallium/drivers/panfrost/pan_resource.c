@@ -106,30 +106,33 @@ panfrost_clear_render_target(struct pipe_context *pipe,
 
 static void
 panfrost_resource_init_image(struct panfrost_resource *rsc,
+                             const struct pan_mod_handler *mod_handler,
                              const struct pan_image_props *iprops,
                              unsigned plane_idx)
 {
-   if (util_format_get_num_planes(iprops->format) == 1) {
-      rsc->image.props = *iprops;
-      rsc->image.planes[0] = &rsc->plane;
-      return;
-   }
-
-   /* The resource props will be initialized when we hit the first plane. */
-   if (plane_idx > 0)
-      return;
-
+   rsc->image.mod_handler = mod_handler;
    rsc->image.props = *iprops;
-   for (struct panfrost_resource *plane = rsc;
+   rsc->image.planes[plane_idx] = &rsc->plane;
+
+   /* The rest of the resource planes will be initialized when we hit the first
+    * plane. */
+   if (plane_idx > 0 || util_format_get_num_planes(iprops->format) == 1)
+      return;
+
+   plane_idx = 1;
+   for (struct panfrost_resource *plane = pan_resource(rsc->base.next);
         plane && plane_idx < ARRAY_SIZE(rsc->image.planes);
         plane = pan_resource(plane->base.next))
       rsc->image.planes[plane_idx++] = &plane->plane;
 
    assert(plane_idx == util_format_get_num_planes(iprops->format));
 
+   plane_idx = 1;
    for (struct panfrost_resource *plane = pan_resource(rsc->base.next);
-        plane; plane = pan_resource(plane->base.next))
-      plane->image = rsc->image;
+        plane; plane = pan_resource(plane->base.next)) {
+      memcpy(plane->image.planes, rsc->image.planes,
+             plane_idx * sizeof(plane->image.planes[0]));
+   }
 }
 
 static bool
@@ -340,15 +343,18 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    unsigned format_plane =
       util_format_get_num_planes(iprops.format) > 1 ? whandle->plane : 0;
 
-   bool valid = pan_image_layout_init(dev->arch, &iprops, format_plane,
-                                      &explicit_layout, &rsc->plane.layout);
+   const struct pan_mod_handler *mod_handler =
+      pan_mod_get_handler(dev->arch, iprops.modifier);
+   bool valid =
+      pan_image_layout_init(dev->arch, mod_handler, &iprops, format_plane,
+                            &explicit_layout, &rsc->plane.layout);
 
    if (!valid) {
       panfrost_resource_destroy(pscreen, &rsc->base);
       return NULL;
    }
 
-   panfrost_resource_init_image(rsc, &iprops, whandle->plane);
+   panfrost_resource_init_image(rsc, mod_handler, &iprops, whandle->plane);
 
    int ret = panfrost_resource_import_bo(rsc, dev, whandle->handle);
    /* Sometimes an import can fail e.g. on an invalid buffer fd, out of
@@ -432,9 +438,7 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
       return false;
    }
 
-   handle->stride = pan_image_get_wsi_row_pitch(
-      &rsrc->image.props, handle->plane,
-      &rsrc->image.planes[handle->plane]->layout, 0);
+   handle->stride = pan_image_get_wsi_row_pitch(&rsrc->image, handle->plane, 0);
    handle->offset =
       pan_image_get_wsi_offset(&rsrc->image.planes[handle->plane]->layout, 0);
 
@@ -472,8 +476,7 @@ panfrost_resource_get_param(struct pipe_screen *pscreen,
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_STRIDE:
-      *value = pan_image_get_wsi_row_pitch(&rsrc->image.props, plane,
-                                           &rsrc->plane.layout, level);
+      *value = pan_image_get_wsi_row_pitch(&rsrc->image, plane, level);
       return true;
    case PIPE_RESOURCE_PARAM_OFFSET:
       *value = pan_image_get_wsi_offset(&rsrc->plane.layout, level);
@@ -805,11 +808,14 @@ panfrost_resource_try_setup(struct pipe_screen *screen,
     * want the real bitrate and not DEFAULT */
    pres->base.compression_rate = pan_afrc_get_rate(fmt, chosen_mod);
 
-   if (!pan_image_layout_init(dev->arch, &iprops, plane_idx, NULL,
+   const struct pan_mod_handler *mod_handler =
+      pan_mod_get_handler(dev->arch, iprops.modifier);
+
+   if (!pan_image_layout_init(dev->arch, mod_handler, &iprops, plane_idx, NULL,
                               &pres->plane.layout))
       return false;
 
-   panfrost_resource_init_image(pres, &iprops, plane_idx);
+   panfrost_resource_init_image(pres, mod_handler, &iprops, plane_idx);
    return true;
 }
 
@@ -1029,8 +1035,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
        * means you're working on WSI and so it's already too late for
        * you. I'm sorry.
        */
-      unsigned stride = pan_image_get_wsi_row_pitch(&so->image.props, plane_idx,
-                                                    &so->plane.layout, 0);
+      unsigned stride = pan_image_get_wsi_row_pitch(&so->image, plane_idx, 0);
       enum pipe_format plane_format =
          util_format_get_plane_format(template->format, plane_idx);
       unsigned width = stride / util_format_get_blocksize(plane_format);

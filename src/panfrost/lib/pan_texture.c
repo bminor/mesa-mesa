@@ -1007,7 +1007,7 @@ emit_afbc_multiplane_surface(const struct pan_image_view *iview,
 
 #if PAN_ARCH >= 9
 #define PAN_TEX_EMIT_HELPER(mod)                                               \
-   static void pan_tex_emit_##mod##_payload_entry(                             \
+   void GENX(pan_tex_emit_##mod##_payload_entry)(                              \
       const struct pan_image_view *iview, unsigned mip_level,                  \
       unsigned layer_or_z_slice, unsigned sample, void **payload)              \
    {                                                                           \
@@ -1031,7 +1031,7 @@ emit_afbc_multiplane_surface(const struct pan_image_view *iview,
    }
 #elif PAN_ARCH >= 7
 #define PAN_TEX_EMIT_HELPER(mod)                                               \
-   static void pan_tex_emit_##mod##_payload_entry(                             \
+   void GENX(pan_tex_emit_##mod##_payload_entry)(                              \
       const struct pan_image_view *iview, unsigned mip_level,                  \
       unsigned layer_or_z_slice, unsigned sample, void **payload)              \
    {                                                                           \
@@ -1047,7 +1047,7 @@ emit_afbc_multiplane_surface(const struct pan_image_view *iview,
    }
 #else
 #define PAN_TEX_EMIT_HELPER(mod)                                               \
-   static void pan_tex_emit_##mod##_payload_entry(                             \
+   void GENX(pan_tex_emit_##mod##_payload_entry)(                              \
       const struct pan_image_view *iview, unsigned mip_level,                  \
       unsigned layer_or_z_slice, unsigned sample, void **payload)              \
    {                                                                           \
@@ -1066,36 +1066,12 @@ PAN_TEX_EMIT_HELPER(afrc)
 #endif
 
 static void
-pan_tex_emit_payload_entry(const struct pan_image_view *iview,
-                           unsigned mip_level, unsigned layer_or_z_slice,
-                           unsigned sample, void **payload)
-{
-   const struct pan_image_plane_ref pref =
-      pan_image_view_get_first_plane(iview);
-   uint64_t mod = pref.image->props.modifier;
-
-   if (drm_is_afbc(mod)) {
-      pan_tex_emit_afbc_payload_entry(iview, mip_level, layer_or_z_slice,
-                                      sample, payload);
-#if PAN_ARCH >= 10
-   } else if (drm_is_afrc(mod)) {
-      pan_tex_emit_afrc_payload_entry(iview, mip_level, layer_or_z_slice,
-                                      sample, payload);
-#endif
-   } else if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
-      pan_tex_emit_u_tiled_payload_entry(iview, mip_level, layer_or_z_slice,
-                                         sample, payload);
-   } else {
-      assert(mod == DRM_FORMAT_MOD_LINEAR);
-      pan_tex_emit_linear_payload_entry(iview, mip_level, layer_or_z_slice,
-                                        sample, payload);
-   }
-}
-
-static void
 pan_emit_iview_texture_payload(const struct pan_image_view *iview,
                                void *payload)
 {
+   const struct pan_image_plane_ref pref =
+      pan_image_view_get_first_plane(iview);
+   const struct pan_mod_handler *mod_handler = pref.image->mod_handler;
    unsigned nr_samples =
       PAN_ARCH < 9 ? pan_image_view_get_nr_samples(iview) : 1;
 
@@ -1111,7 +1087,8 @@ pan_emit_iview_texture_payload(const struct pan_image_view *iview,
       for (int sample = 0; sample < nr_samples; ++sample) {
          for (int level = iview->first_level; level <= iview->last_level;
               ++level) {
-            pan_tex_emit_payload_entry(iview, level, layer, sample, &payload);
+            mod_handler->emit_tex_payload_entry(iview, level, layer, sample,
+                                                &payload);
          }
       }
    }
@@ -1134,7 +1111,7 @@ pan_emit_iview_texture_payload(const struct pan_image_view *iview,
           */
          for (int face = 0; face < face_count; ++face) {
             for (int sample = 0; sample < nr_samples; ++sample) {
-               pan_tex_emit_payload_entry(
+               mod_handler->emit_tex_payload_entry(
                   iview, level, (face_count * layer) + face, sample, &payload);
             }
          }

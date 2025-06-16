@@ -28,6 +28,7 @@ foreach ver : ['4', '5', '6', '7', '9', '10', '12', '13']
     [
       'pan_blend.c',
       'pan_desc.c',
+      'pan_mod.c',
       'pan_texture.c',
     ],
     include_directories : [inc_include, inc_src, inc_panfrost],

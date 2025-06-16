@@ -16,12 +16,15 @@
 #include "util/format/u_format.h"
 #include "pan_format.h"
 #include "pan_layout.h"
+#include "pan_mod.h"
 
 #include "util/log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct pan_mod_handler;
 
 struct pan_image_plane {
    struct pan_image_layout layout;
@@ -30,6 +33,7 @@ struct pan_image_plane {
 
 struct pan_image {
    struct pan_image_props props;
+   const struct pan_mod_handler *mod_handler;
    struct pan_image_plane *planes[MAX_IMAGE_PLANES];
 };
 
@@ -194,6 +198,19 @@ pan_image_view_check(const struct pan_image_view *iview)
              util_format_get_blocksize(img_format));
    }
 #endif
+}
+
+static inline unsigned
+pan_image_get_wsi_row_pitch(const struct pan_image *image, unsigned plane_idx,
+                            unsigned mip_level)
+{
+   assert(image->mod_handler);
+   assert(image->mod_handler->get_wsi_row_pitch);
+   assert(plane_idx < ARRAY_SIZE(image->planes) &&
+          plane_idx < util_format_get_num_planes(image->props.format));
+   assert(image->planes[plane_idx]);
+
+   return image->mod_handler->get_wsi_row_pitch(image, plane_idx, mip_level);
 }
 
 #ifdef __cplusplus

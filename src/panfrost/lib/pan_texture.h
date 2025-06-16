@@ -53,10 +53,42 @@ void GENX(pan_sampled_texture_emit)(const struct pan_image_view *iview,
                                     struct mali_texture_packed *out,
                                     const struct pan_ptr *payload);
 
+void GENX(pan_tex_emit_linear_payload_entry)(const struct pan_image_view *iview,
+                                             unsigned mip_level,
+                                             unsigned layer_or_z_slice,
+                                             unsigned sample, void **payload);
+
+void GENX(pan_tex_emit_u_tiled_payload_entry)(
+   const struct pan_image_view *iview, unsigned mip_level,
+   unsigned layer_or_z_slice, unsigned sample, void **payload);
+
+void
+GENX(pan_tex_emit_afbc_payload_entry)(const struct pan_image_view *iview,
+                                      unsigned mip_level, unsigned layer_or_z_slice,
+                                      unsigned sample, void **payload);
+
 #if PAN_ARCH >= 9
 void GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
                                     struct mali_texture_packed *out,
                                     const struct pan_ptr *payload);
+#endif
+
+void GENX(pan_tex_emit_linear_payload_entry)(const struct pan_image_view *iview,
+                                             unsigned mip_level,
+                                             unsigned layer_or_z_slice,
+                                             unsigned sample, void **payload);
+void GENX(pan_tex_emit_u_tiled_payload_entry)(
+   const struct pan_image_view *iview, unsigned mip_level,
+   unsigned layer_or_z_slice, unsigned sample, void **payload);
+void GENX(pan_tex_emit_afbc_payload_entry)(const struct pan_image_view *iview,
+                                           unsigned mip_level,
+                                           unsigned layer_or_z_slice,
+                                           unsigned sample, void **payload);
+
+#if PAN_ARCH >= 10
+void GENX(pan_tex_emit_afrc_payload_entry)(
+      const struct pan_image_view *iview, unsigned mip_level,
+      unsigned layer_or_z_slice, unsigned sample, void **payload);
 #endif
 
 void

@@ -233,9 +233,9 @@ get_afbc_att_mem_props(struct pan_image_plane_ref pref, unsigned mip_level,
    }
 }
 
-static void
-pan_emit_linear_s_attachment(const struct pan_fb_info *fb,
-                             unsigned layer_or_z_slice, void *payload)
+void
+GENX(pan_emit_linear_s_attachment)(const struct pan_fb_info *fb,
+                                   unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *s = fb->zs.view.s;
 
@@ -250,9 +250,9 @@ pan_emit_linear_s_attachment(const struct pan_fb_info *fb,
    }
 }
 
-static void
-pan_emit_afbc_s_attachment(const struct pan_fb_info *fb,
-                           unsigned layer_or_z_slice, void *payload)
+void
+GENX(pan_emit_afbc_s_attachment)(const struct pan_fb_info *fb,
+                                 unsigned layer_or_z_slice, void *payload)
 {
    assert(PAN_ARCH >= 9);
 
@@ -272,9 +272,9 @@ pan_emit_afbc_s_attachment(const struct pan_fb_info *fb,
 #endif
 }
 
-static void
-pan_emit_u_tiled_s_attachment(const struct pan_fb_info *fb,
-                              unsigned layer_or_z_slice, void *payload)
+void
+GENX(pan_emit_u_tiled_s_attachment)(const struct pan_fb_info *fb,
+                                    unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *s = fb->zs.view.s;
 
@@ -289,9 +289,9 @@ pan_emit_u_tiled_s_attachment(const struct pan_fb_info *fb,
    }
 }
 
-static void
-pan_emit_linear_zs_attachment(const struct pan_fb_info *fb,
-                              unsigned layer_or_z_slice, void *payload)
+void
+GENX(pan_emit_linear_zs_attachment)(const struct pan_fb_info *fb,
+                                    unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *zs = fb->zs.view.zs;
 
@@ -309,9 +309,9 @@ pan_emit_linear_zs_attachment(const struct pan_fb_info *fb,
    }
 }
 
-static void
-pan_emit_u_tiled_zs_attachment(const struct pan_fb_info *fb,
-                               unsigned layer_or_z_slice, void *payload)
+void
+GENX(pan_emit_u_tiled_zs_attachment)(const struct pan_fb_info *fb,
+                                     unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *zs = fb->zs.view.zs;
 
@@ -329,9 +329,9 @@ pan_emit_u_tiled_zs_attachment(const struct pan_fb_info *fb,
    }
 }
 
-static void
-pan_emit_afbc_zs_attachment(const struct pan_fb_info *fb,
-                            unsigned layer_or_z_slice, void *payload)
+void
+GENX(pan_emit_afbc_zs_attachment)(const struct pan_fb_info *fb,
+                                  unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *zs = fb->zs.view.zs;
    const struct pan_image_plane_ref pref = pan_image_view_get_zs_plane(zs);
@@ -395,40 +395,6 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
 }
 
 static void
-pan_emit_zs_att(const struct pan_fb_info *fb, unsigned layer_idx,
-                struct mali_zs_crc_extension_packed *desc)
-{
-   const struct pan_image_plane_ref pref =
-      pan_image_view_get_zs_plane(fb->zs.view.zs);
-   const uint64_t mod = pref.image->props.modifier;
-
-   if (drm_is_afbc(mod)) {
-      pan_emit_afbc_zs_attachment(fb, layer_idx, desc);
-   } else if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
-      pan_emit_u_tiled_zs_attachment(fb, layer_idx, desc);
-   } else {
-      assert(mod == DRM_FORMAT_MOD_LINEAR);
-      pan_emit_linear_zs_attachment(fb, layer_idx, desc);
-   }
-}
-
-static void
-pan_emit_s_att(const struct pan_fb_info *fb, unsigned layer_idx,
-               struct mali_zs_crc_extension_packed *desc)
-{
-   const struct pan_image_plane_ref pref =
-      pan_image_view_get_s_plane(fb->zs.view.s);
-   const uint64_t mod = pref.image->props.modifier;
-
-   if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
-      pan_emit_u_tiled_s_attachment(fb, layer_idx, desc);
-   } else {
-      assert(mod == DRM_FORMAT_MOD_LINEAR);
-      pan_emit_linear_s_attachment(fb, layer_idx, desc);
-   }
-}
-
-static void
 pan_emit_zs_crc_ext(const struct pan_fb_info *fb, unsigned layer_idx,
                     int rt_crc, struct mali_zs_crc_extension_packed *zs_crc_ext)
 {
@@ -440,16 +406,24 @@ pan_emit_zs_crc_ext(const struct pan_fb_info *fb, unsigned layer_idx,
    }
 
    if (fb->zs.view.zs) {
+      const struct pan_image_plane_ref pref =
+         pan_image_view_get_zs_plane(fb->zs.view.zs);
+      const struct pan_mod_handler *mod_handler = pref.image->mod_handler;
       struct mali_zs_crc_extension_packed zs_part;
 
-      pan_emit_zs_att(fb, layer_idx + fb->zs.view.zs->first_layer, &zs_part);
+      mod_handler->emit_zs_attachment(
+         fb, layer_idx + fb->zs.view.zs->first_layer, &zs_part);
       pan_merge(&desc, &zs_part, ZS_CRC_EXTENSION);
    }
 
    if (fb->zs.view.s) {
+      const struct pan_image_plane_ref pref =
+         pan_image_view_get_s_plane(fb->zs.view.s);
+      const struct pan_mod_handler *mod_handler = pref.image->mod_handler;
       struct mali_zs_crc_extension_packed s_part;
 
-      pan_emit_s_att(fb, layer_idx + fb->zs.view.s->first_layer, &s_part);
+      mod_handler->emit_s_attachment(fb, layer_idx + fb->zs.view.s->first_layer,
+                                     &s_part);
       pan_merge(&desc, &s_part, ZS_CRC_EXTENSION);
    }
 
@@ -682,10 +656,11 @@ pan_prepare_rt_common(const struct pan_fb_info *fb, unsigned rt_idx,
    }
 }
 
-static void
-pan_emit_afbc_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
-                               unsigned layer_or_z_slice, unsigned cbuf_offset,
-                               void *payload)
+void
+GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
+                                     unsigned rt_idx,
+                                     unsigned layer_or_z_slice,
+                                     unsigned cbuf_offset, void *payload)
 {
    const struct pan_image_view *iview = fb->rts[rt_idx].view;
    const unsigned mip_level = iview->first_level;
@@ -725,7 +700,7 @@ pan_emit_afbc_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
       const struct pan_image_slice_layout *slayout =
          &plane->layout.slices[mip_level];
 
-      cfg.afbc.body_size = slayout->afbc.body.size_B;
+      cfg.afbc.body_size = slayout->afbc.body.surface_stride_B;
       cfg.afbc.chunk_size = 9;
       cfg.afbc.sparse = true;
 #endif
@@ -733,10 +708,11 @@ pan_emit_afbc_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
    }
 }
 
-static void
-pan_emit_u_tiled_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
-                                  unsigned layer_or_z_slice,
-                                  unsigned cbuf_offset, void *payload)
+void
+GENX(pan_emit_u_tiled_color_attachment)(const struct pan_fb_info *fb,
+                                        unsigned rt_idx,
+                                        unsigned layer_or_z_slice,
+                                        unsigned cbuf_offset, void *payload)
 {
    const struct pan_image_view *iview = fb->rts[rt_idx].view;
 
@@ -752,10 +728,11 @@ pan_emit_u_tiled_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
    }
 }
 
-static void
-pan_emit_linear_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
-                                 unsigned layer_or_z_slice,
-                                 unsigned cbuf_offset, void *payload)
+void
+GENX(pan_emit_linear_color_attachment)(const struct pan_fb_info *fb,
+                                       unsigned rt_idx,
+                                       unsigned layer_or_z_slice,
+                                       unsigned cbuf_offset, void *payload)
 {
    const struct pan_image_view *iview = fb->rts[rt_idx].view;
 
@@ -772,10 +749,10 @@ pan_emit_linear_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
 }
 
 #if PAN_ARCH >= 10
-static void
-pan_emit_afrc_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
-                               unsigned layer_or_z_slice, unsigned cbuf_offset,
-                               void *payload)
+void
+GENX(pan_emit_afrc_color_attachment)(const struct pan_fb_info *fb,
+                                     unsigned rt_idx, unsigned layer_or_z_slice,
+                                     unsigned cbuf_offset, void *payload)
 {
    const struct pan_image_view *iview = fb->rts[rt_idx].view;
    const struct pan_image_plane_ref pref = pan_image_view_get_color_plane(iview);
@@ -874,29 +851,6 @@ pan_emit_midgard_tiler(const struct pan_fb_info *fb,
 
 #if PAN_ARCH >= 5
 static void
-pan_emit_color_att(const struct pan_fb_info *fb, unsigned idx,
-                   unsigned layer_idx, unsigned cbuf_offset,
-                   struct mali_render_target_packed *desc)
-{
-   const struct pan_image_plane_ref pref =
-      pan_image_view_get_first_plane(fb->rts[idx].view);
-   const uint64_t mod = pref.image->props.modifier;
-
-   if (drm_is_afbc(mod)) {
-      pan_emit_afbc_color_attachment(fb, idx, layer_idx, cbuf_offset, desc);
-#if PAN_ARCH >= 10
-   } else if (drm_is_afrc(mod)) {
-      pan_emit_afrc_color_attachment(fb, idx, layer_idx, cbuf_offset, desc);
-#endif
-   } else if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
-      pan_emit_u_tiled_color_attachment(fb, idx, layer_idx, cbuf_offset, desc);
-   } else {
-      assert(mod == DRM_FORMAT_MOD_LINEAR);
-      pan_emit_linear_color_attachment(fb, idx, layer_idx, cbuf_offset, desc);
-   }
-}
-
-static void
 pan_emit_rt(const struct pan_fb_info *fb, unsigned layer_idx, unsigned idx,
             unsigned cbuf_offset, struct mali_render_target_packed *out)
 {
@@ -918,6 +872,8 @@ pan_emit_rt(const struct pan_fb_info *fb, unsigned layer_idx, unsigned idx,
 
    struct pan_image_plane_ref pref = pan_image_view_get_color_plane(rt);
    assert(pref.image);
+   const struct pan_mod_handler *mod_handler = pref.image->mod_handler;
+   assert(mod_handler);
 
    ASSERTED unsigned layer_count = rt->dim == MALI_TEXTURE_DIMENSION_3D
                                       ? pref.image->props.extent_px.depth
@@ -926,7 +882,8 @@ pan_emit_rt(const struct pan_fb_info *fb, unsigned layer_idx, unsigned idx,
    assert(rt->last_level == rt->first_level);
    assert(layer_idx < layer_count);
 
-   pan_emit_color_att(fb, idx, layer_idx + rt->first_layer, cbuf_offset, out);
+   mod_handler->emit_color_attachment(fb, idx, layer_idx + rt->first_layer,
+                                      cbuf_offset, out);
 }
 
 #if PAN_ARCH >= 6

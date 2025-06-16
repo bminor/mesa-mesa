@@ -23,6 +23,8 @@ extern "C" {
 #define MAX_MIP_LEVELS   17
 #define MAX_IMAGE_PLANES 3
 
+struct pan_mod_handler;
+
 struct pan_afbc_image_slice_layout {
    struct {
       /* Number of bytes between two rows of AFBC headers. */
@@ -177,7 +179,8 @@ pan_image_mip_level_size(const struct pan_image_props *props,
 }
 
 bool pan_image_layout_init(
-   unsigned arch, const struct pan_image_props *props, unsigned plane_idx,
+   unsigned arch, const struct pan_mod_handler *mod_handler,
+   const struct pan_image_props *props, unsigned plane_idx,
    const struct pan_image_layout_constraints *layout_constraints,
    struct pan_image_layout *layout);
 
@@ -186,11 +189,6 @@ pan_image_get_wsi_offset(const struct pan_image_layout *layout, unsigned level)
 {
    return layout->slices[level].offset_B;
 }
-
-unsigned pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
-                                     unsigned plane_idx,
-                                     const struct pan_image_layout *layout,
-                                     unsigned level);
 
 static inline uint32_t
 pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,

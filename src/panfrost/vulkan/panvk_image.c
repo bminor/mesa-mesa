@@ -247,6 +247,8 @@ panvk_image_init_layouts(struct panvk_image *image,
    if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
       image->plane_count = 2;
 
+   const struct pan_mod_handler *mod_handler =
+      pan_mod_get_handler(arch, image->vk.drm_format_mod);
    struct pan_image_layout_constraints plane_layout = {
       .offset_B = 0,
    };
@@ -281,12 +283,13 @@ panvk_image_init_layouts(struct panvk_image *image,
             .nr_samples = image->vk.samples,
             .nr_slices = image->vk.mip_levels,
          },
+         .mod_handler = mod_handler,
          .planes = {&image->planes[plane].plane},
       };
 
-      if (!pan_image_layout_init(arch, &image->planes[plane].image.props, 0,
-                                 &plane_layout,
-                                 &image->planes[plane].plane.layout)) {
+      if (!pan_image_layout_init(
+             arch, mod_handler, &image->planes[plane].image.props, 0,
+             &plane_layout, &image->planes[plane].plane.layout)) {
          return panvk_error(image->vk.base.device,
                             VK_ERROR_INITIALIZATION_FAILED);
       }

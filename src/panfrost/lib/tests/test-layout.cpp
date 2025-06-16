@@ -26,6 +26,7 @@
 #include "pan_format.h"
 #include "pan_image.h"
 #include "pan_layout.h"
+#include "pan_mod.h"
 
 #include <gtest/gtest.h>
 
@@ -240,6 +241,21 @@ TEST(AFBCStride, Tiled)
    }
 }
 
+static bool
+layout_init(unsigned arch, const struct pan_image_props *props,
+            unsigned plane_idx,
+            const struct pan_image_layout_constraints *layout_constraints,
+            struct pan_image_layout *layout)
+{
+   /* Pick the first supported arch if it's zero. */
+   if (!arch)
+      arch = 4;
+
+   return pan_image_layout_init(arch,
+                                pan_mod_get_handler(arch, props->modifier),
+                                props, plane_idx, layout_constraints, layout);
+}
+
 /* dEQP-GLES3.functional.texture.format.compressed.etc1_2d_pot */
 TEST(Layout, ImplicitLayoutInterleavedETC2)
 {
@@ -260,7 +276,7 @@ TEST(Layout, ImplicitLayoutInterleavedETC2)
    unsigned offsets[9] = {0,     8192,  10240, 10752, 10880,
                           11008, 11136, 11264, 11392};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    for (unsigned i = 0; i < 8; ++i) {
       unsigned size = (offsets[i + 1] - offsets[i]);
@@ -289,7 +305,7 @@ TEST(Layout, ImplicitLayoutInterleavedASTC5x5)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    /* The image is 50x50 pixels, with 5x5 blocks. So it is a 10x10 grid of ASTC
     * blocks. 4x4 tiles of ASTC blocks are u-interleaved, so we have to round up
@@ -319,7 +335,7 @@ TEST(Layout, ImplicitLayoutLinearASTC5x5)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    /* The image is 50x50 pixels, with 5x5 blocks. So it is a 10x10 grid of ASTC
     * blocks. Each ASTC block is 16 bytes, so the row stride is 160 bytes,
@@ -352,7 +368,7 @@ TEST(AFBCLayout, Linear3D)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    /* AFBC Surface stride is bytes between consecutive surface headers, which is
     * the header size since this is a 3D texture. At superblock size 16x16, the
@@ -396,7 +412,7 @@ TEST(AFBCLayout, Tiled16x16)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    /* The image is 917x417. Superblocks are 16x16, so there are 58x27
     * superblocks. Superblocks are grouped into 8x8 tiles, so there are 8x4
@@ -438,7 +454,7 @@ TEST(AFBCLayout, Linear16x16Minimal)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
@@ -469,7 +485,7 @@ TEST(AFBCLayout, Linear16x16Minimalv6)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(6, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(6, &p, 0, NULL, &l));
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
@@ -501,7 +517,7 @@ TEST(AFBCLayout, Tiled16x16Minimal)
    };
    struct pan_image_layout l = {};
 
-   ASSERT_TRUE(pan_image_layout_init(0, &p, 0, NULL, &l));
+   ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
@@ -524,8 +540,8 @@ static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
 #define EXPECT_IMPORT_SUCCESS(__arch, __iprops, __plane, __wsi_layout,         \
                               __out_layout, __test_desc)                       \
    do {                                                                        \
-      bool __result = pan_image_layout_init(__arch, __iprops, __plane,         \
-                                            __wsi_layout, __out_layout);       \
+      bool __result =                                                          \
+         layout_init(__arch, __iprops, __plane, __wsi_layout, __out_layout);   \
       EXPECT_TRUE(__result)                                                    \
          << __test_desc                                                        \
          << " for <format=" << util_format_name((__iprops)->format)            \
@@ -536,8 +552,16 @@ static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
       if (!__result)                                                           \
          break;                                                                \
                                                                                \
+      struct pan_image_plane img_plane = {                                     \
+         .layout = *(__out_layout),                                            \
+      };                                                                       \
+      struct pan_image img = {                                                 \
+         .props = *(__iprops),                                                 \
+         .mod_handler = pan_mod_get_handler(__arch, (__iprops)->modifier),     \
+      };                                                                       \
+      img.planes[__plane] = &img_plane;                                        \
       unsigned __export_row_pitch_B =                                          \
-         pan_image_get_wsi_row_pitch(&iprops, __plane, &layout, 0);            \
+         pan_image_get_wsi_row_pitch(&img, __plane, 0);                        \
       unsigned __export_offset_B = pan_image_get_wsi_offset(&layout, 0);       \
       EXPECT_TRUE(__export_row_pitch_B == (__wsi_layout)->wsi_row_pitch_B &&   \
                   __export_offset_B == (__wsi_layout)->offset_B)               \
@@ -549,8 +573,8 @@ static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
 
 #define EXPECT_IMPORT_FAIL(__arch, __iprops, __plane, __wsi_layout,            \
                            __out_layout, __test_desc)                          \
-   EXPECT_FALSE(pan_image_layout_init(__arch, __iprops, __plane, __wsi_layout, \
-                                      __out_layout))                           \
+   EXPECT_FALSE(                                                               \
+      layout_init(__arch, __iprops, __plane, __wsi_layout, __out_layout))      \
       << __test_desc                                                           \
       << " for <format=" << util_format_name((__iprops)->format)               \
       << ",plane=" << __plane << ",mod=" << std::hex << (__iprops)->modifier   \
