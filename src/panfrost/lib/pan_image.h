@@ -169,61 +169,6 @@ pan_image_view_get_zs_plane(const struct pan_image_view *iview)
 }
 
 static inline void
-pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
-                      unsigned layer, unsigned sample,
-                      struct pan_image_surface *surf)
-{
-   const struct util_format_description *fdesc =
-      util_format_description(iview->format);
-
-   /* In case of multiplanar depth/stencil, the stencil is always on
-    * plane 1. Combined depth/stencil only has one plane, so depth
-    * will be on plane 0 in either case.
-    */
-   const struct pan_image_plane_ref pref =
-      util_format_has_stencil(fdesc) ? pan_image_view_get_s_plane(iview)
-                                     : pan_image_view_get_plane(iview, 0);
-   const struct pan_image *image = pref.image;
-
-   level += iview->first_level;
-   assert(level < image->props.nr_slices);
-
-   layer += iview->first_layer;
-
-   bool is_3d = image->props.dim == MALI_TEXTURE_DIMENSION_3D;
-   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
-   const struct pan_image_slice_layout *slice = &plane->layout.slices[level];
-   uint64_t base = plane->base;
-
-   memset(surf, 0, sizeof(*surf));
-
-   if (drm_is_afbc(image->props.modifier)) {
-      assert(!sample);
-
-      if (is_3d) {
-         ASSERTED unsigned depth =
-            u_minify(image->props.extent_px.depth, level);
-         assert(layer < depth);
-         surf->afbc.header =
-            base + slice->offset_B + (layer * slice->afbc.surface_stride_B);
-         surf->afbc.body = base + slice->offset_B + slice->afbc.header_size_B +
-                           (slice->surface_stride_B * layer);
-      } else {
-         assert(layer < image->props.array_size);
-         surf->afbc.header =
-            base + pan_image_surface_offset(&plane->layout, level, layer, 0);
-         surf->afbc.body = surf->afbc.header + slice->afbc.header_size_B;
-      }
-   } else {
-      unsigned array_idx = is_3d ? 0 : layer;
-      unsigned surface_idx = is_3d ? layer : sample;
-
-      surf->data = base + pan_image_surface_offset(&plane->layout, level,
-                                                   array_idx, surface_idx);
-   }
-}
-
-static inline void
 pan_image_view_check(const struct pan_image_view *iview)
 {
 #ifndef NDEBUG
