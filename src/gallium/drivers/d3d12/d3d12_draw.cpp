@@ -1258,6 +1258,7 @@ d3d12_draw_vbo(struct pipe_context *pctx,
          ctx->cmdlist->DrawInstanced(draws[0].count, dinfo->instance_count,
                                      draws[0].start, dinfo->start_instance);
    }
+   ctx->has_commands = true;
 
    ctx->state_dirty &= D3D12_DIRTY_COMPUTE_MASK;
    batch->pending_memory_barrier = false;
@@ -1404,6 +1405,7 @@ d3d12_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
    } else {
       ctx->cmdlist->Dispatch(info->grid[0], info->grid[1], info->grid[2]);
    }
+   ctx->has_commands = true;
 
    ctx->state_dirty &= D3D12_DIRTY_GFX_MASK;
    ctx->cmdlist_dirty &= D3D12_DIRTY_GFX_MASK;

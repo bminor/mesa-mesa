@@ -57,7 +57,7 @@ fail:
 }
 
 struct d3d12_fence *
-d3d12_create_fence(struct d3d12_screen *screen)
+d3d12_create_fence(struct d3d12_screen *screen, bool signal_new)
 {
    struct d3d12_fence *ret = CALLOC_STRUCT(d3d12_fence);
    if (!ret) {
@@ -65,9 +65,13 @@ d3d12_create_fence(struct d3d12_screen *screen)
       return NULL;
    }
 
-   if(!d3d12_reset_fence(ret, screen->fence, ++screen->fence_value))
-      goto fail;
-   if (FAILED(screen->cmdqueue->Signal(screen->fence, ret->value)))
+   uint64_t value = screen->fence_value;
+   if (signal_new) {
+      value = ++screen->fence_value;
+      if (FAILED(screen->cmdqueue->Signal(screen->fence, value)))
+         goto fail;
+   }
+   if(!d3d12_reset_fence(ret, screen->fence, value))
       goto fail;
 
    pipe_reference_init(&ret->reference, 1);

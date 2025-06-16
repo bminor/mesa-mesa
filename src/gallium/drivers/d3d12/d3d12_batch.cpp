@@ -310,7 +310,7 @@ d3d12_end_batch(struct d3d12_context *ctx, struct d3d12_batch *batch)
    }
    screen->cmdqueue->ExecuteCommandLists(count_to_execute, to_execute);
 
-   batch->fence = d3d12_create_fence(screen);
+   batch->fence = d3d12_create_fence(screen, true);
 
 #ifdef HAVE_GALLIUM_D3D12_GRAPHICS
    /* batch->queries is NULL when no grfx supported */

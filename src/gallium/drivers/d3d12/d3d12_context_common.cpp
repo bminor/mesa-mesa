@@ -136,9 +136,12 @@ d3d12_context_destroy(struct pipe_context *pctx)
    FREE(ctx);
 }
 
-void
+bool
 d3d12_flush_cmdlist(struct d3d12_context *ctx)
 {
+   if (!ctx->has_commands)
+      return false;
+
    d3d12_end_batch(ctx, d3d12_current_batch(ctx));
 
    ctx->current_batch_idx++;
@@ -146,6 +149,8 @@ d3d12_flush_cmdlist(struct d3d12_context *ctx)
       ctx->current_batch_idx = 0;
 
    d3d12_start_batch(ctx, d3d12_current_batch(ctx));
+   ctx->has_commands = false;
+   return true;
 }
 
 void
@@ -155,8 +160,8 @@ d3d12_flush_cmdlist_and_wait(struct d3d12_context *ctx)
 
    d3d12_foreach_submitted_batch(ctx, old_batch)
       d3d12_reset_batch(ctx, old_batch, OS_TIMEOUT_INFINITE);
-   d3d12_flush_cmdlist(ctx);
-   d3d12_reset_batch(ctx, batch, OS_TIMEOUT_INFINITE);
+   if (d3d12_flush_cmdlist(ctx))
+      d3d12_reset_batch(ctx, batch, OS_TIMEOUT_INFINITE);
 }
 
 static void
@@ -167,10 +172,14 @@ d3d12_flush(struct pipe_context *pipe,
    struct d3d12_context *ctx = d3d12_context(pipe);
    struct d3d12_batch *batch = d3d12_current_batch(ctx);
 
-   d3d12_flush_cmdlist(ctx);
+   bool flushed = d3d12_flush_cmdlist(ctx);
 
-   if (fence)
-      d3d12_fence_reference((struct d3d12_fence **)fence, batch->fence);
+   if (fence) {
+      if (flushed)
+         d3d12_fence_reference((struct d3d12_fence **)fence, batch->fence);
+      else
+         *fence = (pipe_fence_handle *)d3d12_create_fence(d3d12_screen(ctx->base.screen), false);
+   }
 }
 
 static void
@@ -275,6 +284,7 @@ d3d12_memory_barrier(struct pipe_context *pctx, unsigned flags)
       uavBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
       uavBarrier.UAV.pResource = nullptr;
       ctx->cmdlist->ResourceBarrier(1, &uavBarrier);
+      ctx->has_commands = true;
    }
 #endif // HAVE_GALLIUM_D3D12_GRAPHICS
 }
@@ -292,6 +302,7 @@ d3d12_texture_barrier(struct pipe_context *pctx, unsigned flags)
    aliasingBarrier.Aliasing.pResourceBefore = nullptr;
    aliasingBarrier.Aliasing.pResourceAfter = nullptr;
    ctx->cmdlist->ResourceBarrier(1, &aliasingBarrier);
+   ctx->has_commands = true;
 }
 
 static enum pipe_reset_status

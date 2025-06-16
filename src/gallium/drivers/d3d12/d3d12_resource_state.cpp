@@ -599,5 +599,6 @@ d3d12_apply_resource_states(struct d3d12_context *ctx, bool is_implicit_dispatch
       ctx->cmdlist->ResourceBarrier(util_dynarray_num_elements(&ctx->barrier_scratch, D3D12_RESOURCE_BARRIER),
                                     (D3D12_RESOURCE_BARRIER *) ctx->barrier_scratch.data);
       util_dynarray_clear(&ctx->barrier_scratch);
+      ctx->has_commands = true;
    }
 }

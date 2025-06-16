@@ -1999,6 +1999,7 @@ d3d12_clear_render_target(struct pipe_context *pctx,
                           (int)dsty + (int)height };
       ctx->cmdlist->ClearRenderTargetView(surf->desc_handle.cpu_handle,
                                           clear_color, 1, &rect);
+      ctx->has_commands = true;
       d3d12_batch_reference_surface_texture(d3d12_current_batch(ctx), surf);
       pipe_surface_unref(pctx, &tmpsurf);
    }
@@ -2043,6 +2044,7 @@ d3d12_clear_depth_stencil(struct pipe_context *pctx,
                        (int)dsty + (int)height };
    ctx->cmdlist->ClearDepthStencilView(surf->desc_handle.cpu_handle, flags,
                                        static_cast<float>(depth), static_cast<UINT8>(stencil), 1, &rect);
+   ctx->has_commands = true;
 
    d3d12_batch_reference_surface_texture(d3d12_current_batch(ctx), surf);
 

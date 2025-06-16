@@ -186,6 +186,7 @@ struct d3d12_context {
    struct blitter_context *blitter;
    uint flags;
    bool queries_disabled;
+   bool has_commands;
 
 #ifdef __cplusplus
    ResourceStateManager *resource_state_manager;
@@ -328,7 +329,7 @@ d3d12_enable_fake_so_buffers(struct d3d12_context *ctx, unsigned factor);
 bool
 d3d12_disable_fake_so_buffers(struct d3d12_context *ctx);
 
-void
+bool
 d3d12_flush_cmdlist(struct d3d12_context *ctx);
 
 void

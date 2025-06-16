@@ -120,6 +120,7 @@ blit_resolve(struct d3d12_context *ctx, const struct pipe_blit_info *info)
       d3d12_resource_resource(dst), info->dst.level,
       d3d12_resource_resource(src), info->src.level,
       dxgi_format);
+   ctx->has_commands = true;
 }
 
 static bool
@@ -571,6 +572,7 @@ blit_resolve_stencil(struct d3d12_context *ctx,
    ctx->cmdlist->CopyTextureRegion(&dst_loc, info->dst.box.x,
                                    info->dst.box.y, info->dst.box.z,
                                    &src_loc, &src_box);
+   ctx->has_commands = true;
 
    pipe_resource_reference(&tmp, NULL);
 }

@@ -456,6 +456,7 @@ begin_subquery(struct d3d12_context *ctx, struct d3d12_query *q_parent, unsigned
    }
 
    ctx->cmdlist->BeginQuery(q->query_heap, q->d3d12qtype, q->curr_query);
+   ctx->has_commands = true;
    q->active = true;
 }
 
@@ -493,6 +494,7 @@ begin_timer_query(struct d3d12_context *ctx, struct d3d12_query *q_parent, bool 
    }
 
    ctx->cmdlist->EndQuery(q->query_heap, q->d3d12qtype, query_index);
+   ctx->has_commands = true;
    q->active = true;
 }
 
@@ -543,6 +545,7 @@ end_subquery(struct d3d12_context *ctx, struct d3d12_query *q_parent, unsigned s
    d3d12_apply_resource_states(ctx, false);
    ctx->cmdlist->ResolveQueryData(q->query_heap, q->d3d12qtype, resolve_index,
       resolve_count, d3d12_res, offset);
+   ctx->has_commands = true;
 
    d3d12_batch_reference_object(batch, q->query_heap);
    d3d12_batch_reference_resource(batch, res, true);

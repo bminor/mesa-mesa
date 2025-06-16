@@ -46,6 +46,7 @@ copy_buffer_region_no_barriers(struct d3d12_context *ctx,
    ctx->cmdlist->CopyBufferRegion(dst_buf, dst_offset + dst_off,
                                   src_buf, src_offset + src_off,
                                   size);
+   ctx->has_commands = true;
 }
 
 inline static unsigned
@@ -133,6 +134,7 @@ copy_subregion_no_barriers(struct d3d12_context *ctx,
 
          ctx->cmdlist->CopyTextureRegion(&dst_loc, dstx, dsty, dstz,
                                          &src_loc, NULL);
+         ctx->has_commands = true;
 
       } else {
          D3D12_BOX src_box;
@@ -151,6 +153,7 @@ copy_subregion_no_barriers(struct d3d12_context *ctx,
 
          ctx->cmdlist->CopyTextureRegion(&dst_loc, dstx, dsty, dstz,
                                          &src_loc, &src_box);
+         ctx->has_commands = true;
       }
    }
 }
