@@ -584,27 +584,6 @@ format_can_do_mod(unsigned arch, enum pipe_format format, unsigned plane_idx,
 }
 
 static unsigned
-get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
-{
-   switch (format) {
-   case PIPE_FORMAT_R8_G8B8_420_UNORM:
-   case PIPE_FORMAT_R8_B8G8_420_UNORM:
-   case PIPE_FORMAT_R8_G8B8_422_UNORM:
-   case PIPE_FORMAT_R8_B8G8_422_UNORM:
-      return plane_idx ? 2 : 1;
-   case PIPE_FORMAT_R10_G10B10_420_UNORM:
-   case PIPE_FORMAT_R10_G10B10_422_UNORM:
-      return plane_idx ? 10 : 5;
-   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
-   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
-      return 1;
-   default:
-      assert(util_format_get_num_planes(format) == 1);
-      return util_format_get_blocksize(format);
-   }
-}
-
-static unsigned
 offset_align_for_mod(unsigned arch, const struct pan_image_props *iprops,
                      unsigned plane_idx)
 {
@@ -640,7 +619,8 @@ row_align_for_mod(unsigned arch, const struct pan_image_props *iprops,
       assert(pan_afbc_superblock_width(modifier) %
                 util_format_get_blockwidth(format) ==
              0);
-      return ntiles * sb_width_el * get_plane_blocksize(format, plane_idx);
+      return ntiles * sb_width_el *
+             pan_format_get_plane_blocksize(format, plane_idx);
    } else if (drm_is_afrc(modifier)) {
       unsigned row_align = pan_afrc_buffer_alignment_from_modifier(modifier);
       struct pan_image_block_size tile_size_px =
@@ -667,7 +647,7 @@ default_wsi_row_pitch(unsigned arch, const struct pan_image_props *iprops,
 {
    uint64_t modifier = iprops->modifier;
    enum pipe_format format = iprops->format;
-   unsigned fmt_blksz_B = get_plane_blocksize(format, plane_idx);
+   unsigned fmt_blksz_B = pan_format_get_plane_blocksize(format, plane_idx);
    unsigned width_px =
       util_format_get_plane_width(format, plane_idx, iprops->extent_px.width);
 

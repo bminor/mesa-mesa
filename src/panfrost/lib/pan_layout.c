@@ -138,27 +138,6 @@ init_slice_crc_info(unsigned arch, struct pan_image_slice_layout *slice,
    slice->crc.size_B = slice->crc.stride_B * tile_count_y;
 }
 
-static unsigned
-get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
-{
-   switch (format) {
-   case PIPE_FORMAT_R8_G8B8_420_UNORM:
-   case PIPE_FORMAT_R8_B8G8_420_UNORM:
-   case PIPE_FORMAT_R8_G8B8_422_UNORM:
-   case PIPE_FORMAT_R8_B8G8_422_UNORM:
-      return plane_idx ? 2 : 1;
-   case PIPE_FORMAT_R10_G10B10_420_UNORM:
-   case PIPE_FORMAT_R10_G10B10_422_UNORM:
-      return plane_idx ? 10 : 5;
-   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
-   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
-      return 1;
-   default:
-      assert(util_format_get_num_planes(format) == 1);
-      return util_format_get_blocksize(format);
-   }
-}
-
 unsigned
 pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
                             unsigned plane_idx,
@@ -174,7 +153,7 @@ pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
          pan_image_block_size_el(props->modifier, props->format, plane_idx);
       const unsigned afbc_tile_payload_size_B =
          afbc_tile_extent_el.width * afbc_tile_extent_el.height *
-         get_plane_blocksize(props->format, plane_idx);
+         pan_format_get_plane_blocksize(props->format, plane_idx);
       const unsigned afbc_tile_row_payload_size_B =
          pan_afbc_stride_blocks(props->modifier, row_stride_B) *
          afbc_tile_payload_size_B;
@@ -218,7 +197,7 @@ wsi_row_pitch_to_row_stride(
                                  afbc_tile_extent_px.height;
       unsigned blks_per_tile = pixels_per_tile / pixels_per_blk;
       unsigned afbc_tile_payload_size_B =
-         blks_per_tile * get_plane_blocksize(format, plane_idx);
+         blks_per_tile * pan_format_get_plane_blocksize(format, plane_idx);
       unsigned afbc_tile_payload_row_stride_B =
          wsi_row_pitch_B * afbc_tile_extent_px.height;
 
@@ -273,7 +252,7 @@ wsi_row_pitch_to_row_stride(
       }
 
       unsigned tile_size_B = block_size_el.width * block_size_el.height *
-                             get_plane_blocksize(format, plane_idx);
+                             pan_format_get_plane_blocksize(format, plane_idx);
 
       row_align_mask =
          pan_linear_or_tiled_row_align_req(arch, format, plane_idx) - 1;
@@ -352,7 +331,7 @@ pan_image_layout_init(
    }
 
    const unsigned fmt_blocksize_B =
-      get_plane_blocksize(props->format, plane_idx);
+      pan_format_get_plane_blocksize(props->format, plane_idx);
 
    /* MSAA is implemented as a 3D texture with z corresponding to the
     * sample #, horrifyingly enough */

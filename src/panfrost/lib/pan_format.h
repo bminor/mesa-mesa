@@ -95,6 +95,27 @@
 
 /* Formats */
 
+static inline unsigned
+pan_format_get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
+{
+   switch (format) {
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8G8_420_UNORM:
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+   case PIPE_FORMAT_R8_B8G8_422_UNORM:
+      return plane_idx ? 2 : 1;
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      return plane_idx ? 10 : 5;
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+      return 1;
+   default:
+      assert(util_format_get_num_planes(format) == 1);
+      return util_format_get_blocksize(format);
+   }
+}
+
 typedef uint32_t mali_pixel_format;
 
 /* pan bind flags */
