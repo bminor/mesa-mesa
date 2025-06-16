@@ -1730,7 +1730,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       }
 
 #if PAN_ARCH >= 9
-      unsigned payload_size = pan_size(PLANE);
+      unsigned payload_size = pan_size(NULL_PLANE);
 #elif PAN_ARCH >= 6
       unsigned payload_size = pan_size(SURFACE_WITH_STRIDE);
 #else

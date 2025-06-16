@@ -63,7 +63,7 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       };
 
 #if PAN_ARCH >= 9
-      view->mem = panvk_pool_alloc_desc(&device->mempools.rw, PLANE);
+      view->mem = panvk_pool_alloc_desc(&device->mempools.rw, NULL_PLANE);
 #else
       view->mem =
          panvk_pool_alloc_desc(&device->mempools.rw, SURFACE_WITH_STRIDE);

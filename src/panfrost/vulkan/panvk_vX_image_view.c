@@ -127,7 +127,7 @@ prepare_tex_descs(struct panvk_image_view *view)
                       ? pan_alignment(MULTIPLANAR_SURFACE)
                       : pan_alignment(SURFACE_WITH_STRIDE),
 #else
-      .alignment = pan_alignment(PLANE) * (plane_count > 1 ? 2 : 1),
+      .alignment = pan_alignment(NULL_PLANE) * (plane_count > 1 ? 2 : 1),
 #endif
 
       .size = tex_payload_size * (can_preload_other_aspect ? 2 : plane_count),
