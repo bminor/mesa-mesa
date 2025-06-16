@@ -15,3 +15,11 @@ dEQP-VK.video.synchronization.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization.decode_h265.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h265.basic.event.device_set_reset,Fail
+
+# CTS bug
+dEQP-VK.reconvergence.maximal.fragment.terminate_invocation,Fail
+
+# Likely a RADV bug on transfer queue
+dEQP-VK.api.copy_and_blit.copy_commands2.buffer_to_image_transfer_queue.2d_images.whole_unaligned_rgb32_sfloat_linear,Fail
+dEQP-VK.api.copy_and_blit.copy_commands2.image_to_buffer_transfer_queue.2d_images.whole_unaligned_r32g32b32_sfloat_linear,Fail
+dEQP-VK.api.copy_and_blit.copy_commands2.image_to_buffer_transfer_queue.2d_images.whole_unaligned_r32g32b32_uint_linear,Fail

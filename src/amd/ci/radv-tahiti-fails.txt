@@ -1,2 +1,5 @@
 # Video failures
 dEQP-VK.video.capabilities.queue_support_query,Fail
+
+# CTS bug
+dEQP-VK.reconvergence.maximal.fragment.terminate_invocation,Fail
