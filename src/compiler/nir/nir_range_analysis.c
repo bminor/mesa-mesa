@@ -1837,7 +1837,9 @@ get_alu_uub(struct analysis_state *state, struct scalar_query q, uint32_t *resul
    case nir_op_bcsel:
    case nir_op_b32csel:
    case nir_op_ubfe:
+   case nir_op_bfi:
    case nir_op_bfm:
+   case nir_op_bitfield_select:
    case nir_op_extract_u8:
    case nir_op_extract_i8:
    case nir_op_extract_u16:
@@ -1999,6 +2001,57 @@ get_alu_uub(struct analysis_state *state, struct scalar_query q, uint32_t *resul
       }
       break;
    }
+
+   case nir_op_bfi: {
+      nir_scalar src0_scalar = nir_scalar_chase_alu_src(q.scalar, 0);
+      const uint64_t s1 = bitmask(util_last_bit64(src[1]));
+      const uint64_t s2 = bitmask(util_last_bit64(src[2]));
+
+      if (nir_scalar_is_const(src0_scalar)) {
+         const uint64_t s0 = nir_scalar_as_uint(src0_scalar);
+
+         /* This case should be eliminated by opt_algebraic. */
+         if (s0 == 0) {
+            *result = s2;
+         } else {
+            const int x = ffsll(s0) - 1;
+            *result = (s0 & (s1 << x)) | (~s0 & s2);
+         }
+      } else {
+         const uint64_t s0 = bitmask(util_last_bit64(src[0]));
+
+         /* Due to the unpredictable shift, the true maximum value of (s0 &
+          * (s1 << x)) cannot be known. However, it cannot be larger than
+          * s0.
+          *
+          * inot doesn't work in get_alu_uub. It is known that (~s0 & s2)
+          * cannot be larger than s2, so just use s2 as a loose upper bound.
+          */
+         *result = s0 | s2;
+      }
+      break;
+   }
+
+   case nir_op_bitfield_select: {
+      nir_scalar src0_scalar = nir_scalar_chase_alu_src(q.scalar, 0);
+      const uint64_t s1 = bitmask(util_last_bit64(src[1]));
+      const uint64_t s2 = bitmask(util_last_bit64(src[2]));
+
+      if (nir_scalar_is_const(src0_scalar)) {
+         const uint64_t s0 = nir_scalar_as_uint(src0_scalar);
+
+         *result = (s0 & s1) | (~s0 & s2);
+      } else {
+         const uint64_t s0 = bitmask(util_last_bit64(src[0]));
+
+         /* inot doesn't work in get_alu_uub. It is known that (~s0 & s2)
+          * cannot be larger than s2, so just use s2 as a loose upper bound.
+          */
+         *result = (s0 & s1) | s2;
+      }
+      break;
+   }
+
    /* limited floating-point support for f2u32(fmul(load_input(), <constant>)) */
    case nir_op_f2i32:
    case nir_op_f2u32:
