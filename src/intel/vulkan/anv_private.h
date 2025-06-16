@@ -4159,6 +4159,10 @@ struct anv_cmd_compute_state {
    bool pipeline_dirty;
 
    uint32_t scratch_size;
+
+   uint8_t pixel_async_compute_thread_limit;
+   uint8_t z_pass_async_compute_thread_limit;
+   uint8_t np_z_async_throttle_settings;
 };
 
 struct anv_cmd_ray_tracing_state {

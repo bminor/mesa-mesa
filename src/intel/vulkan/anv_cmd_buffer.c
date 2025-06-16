@@ -53,6 +53,10 @@ anv_cmd_state_init(struct anv_cmd_buffer *cmd_buffer)
    state->gfx.object_preemption = true;
    state->gfx.dirty = 0;
 
+   state->compute.pixel_async_compute_thread_limit = UINT8_MAX;
+   state->compute.z_pass_async_compute_thread_limit = UINT8_MAX;
+   state->compute.np_z_async_throttle_settings = UINT8_MAX;
+
    memcpy(state->gfx.dyn_state.dirty,
           cmd_buffer->device->gfx_dirty_state,
           sizeof(state->gfx.dyn_state.dirty));
