@@ -1401,10 +1401,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateInstance(
 
    //   VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
-#if DETECT_OS_ANDROID
-   vk_android_init_ugralloc();
-#endif
-
    *pInstance = lvp_instance_to_handle(instance);
 
    return VK_SUCCESS;
@@ -1418,10 +1414,6 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyInstance(
 
    if (!instance)
       return;
-
-#if DETECT_OS_ANDROID
-   vk_android_destroy_ugralloc();
-#endif
 
    pipe_loader_release(&instance->devs, instance->num_devices);
 
