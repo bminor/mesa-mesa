@@ -1104,7 +1104,7 @@
         "description": "freedreno/a6xx: Fix buffer clears",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dafc4476f756f9f8e1a0f129cb22b329a52a96ad",
         "notes": null
