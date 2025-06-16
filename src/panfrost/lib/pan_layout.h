@@ -144,14 +144,6 @@ struct pan_image_block_size
 pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format,
                               unsigned plane_idx);
 
-unsigned pan_image_surface_stride(const struct pan_image_props *props,
-                                  const struct pan_image_layout *layout,
-                                  unsigned level);
-
-unsigned pan_image_surface_offset(const struct pan_image_layout *layout,
-                                  unsigned level, unsigned array_idx,
-                                  unsigned surface_idx);
-
 static inline uint64_t
 pan_image_mip_level_size(const struct pan_image_props *props,
                          const struct pan_image_layout *layout, unsigned level)

@@ -138,18 +138,6 @@ init_slice_crc_info(unsigned arch, struct pan_image_slice_layout *slice,
    slice->crc.size_B = slice->crc.stride_B * tile_count_y;
 }
 
-unsigned
-pan_image_surface_stride(const struct pan_image_props *props,
-                         const struct pan_image_layout *layout, unsigned level)
-{
-   if (props->dim != MALI_TEXTURE_DIMENSION_3D)
-      return layout->array_stride_B;
-   else if (drm_is_afbc(props->modifier))
-      return layout->slices[level].afbc.surface_stride_B;
-   else
-      return layout->slices[level].surface_stride_B;
-}
-
 static unsigned
 get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
 {
@@ -313,18 +301,6 @@ wsi_row_pitch_to_row_stride(
    }
 
    return true;
-}
-
-/* Computes the offset of an image surface at a particular level/face. Add to
- * the base address of a texture to get the address to that level/face */
-
-unsigned
-pan_image_surface_offset(const struct pan_image_layout *layout, unsigned level,
-                         unsigned array_idx, unsigned surface_idx)
-{
-   return layout->slices[level].offset_B +
-          (array_idx * layout->array_stride_B) +
-          (surface_idx * layout->slices[level].surface_stride_B);
 }
 
 bool

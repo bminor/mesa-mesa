@@ -1304,8 +1304,9 @@ panfrost_load_tiled_images(struct panfrost_transfer *transfer,
       return;
 
    struct panfrost_bo *bo = rsrc->bo;
-   unsigned stride =
-      pan_image_surface_stride(&rsrc->image.props, &rsrc->plane.layout, level);
+   unsigned stride = rsrc->image.props.dim == MALI_TEXTURE_DIMENSION_3D
+                        ? rsrc->plane.layout.slices[level].surface_stride_B
+                        : rsrc->plane.layout.array_stride_B;
 
    /* Otherwise, load each layer separately, required to load from 3D and
     * array textures.
@@ -1458,8 +1459,9 @@ panfrost_store_tiled_images(struct panfrost_transfer *transfer,
    struct panfrost_bo *bo = rsrc->bo;
    struct pipe_transfer *ptrans = &transfer->base;
    unsigned level = ptrans->level;
-   unsigned stride =
-      pan_image_surface_stride(&rsrc->image.props, &rsrc->plane.layout, level);
+   unsigned stride = rsrc->image.props.dim == MALI_TEXTURE_DIMENSION_3D
+                        ? rsrc->plane.layout.slices[level].surface_stride_B
+                        : rsrc->plane.layout.array_stride_B;
 
    /* Otherwise, store each layer separately, required to store to 3D and
     * array textures.
@@ -1541,8 +1543,10 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
        * on this LOD.
        */
       transfer->base.stride = staging->plane.layout.slices[0].row_stride_B;
-      transfer->base.layer_stride = pan_image_surface_stride(
-         &staging->image.props, &staging->plane.layout, 0);
+      transfer->base.layer_stride =
+         staging->image.props.dim == MALI_TEXTURE_DIMENSION_3D
+            ? staging->plane.layout.slices[0].surface_stride_B
+            : staging->plane.layout.array_stride_B;
 
       transfer->staging.rsrc = &staging->base;
 
@@ -1717,8 +1721,10 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
          return NULL;
 
       transfer->base.stride = rsrc->plane.layout.slices[level].row_stride_B;
-      transfer->base.layer_stride = pan_image_surface_stride(
-         &rsrc->image.props, &rsrc->plane.layout, level);
+      transfer->base.layer_stride =
+         rsrc->image.props.dim == MALI_TEXTURE_DIMENSION_3D
+            ? rsrc->plane.layout.slices[level].surface_stride_B
+            : rsrc->plane.layout.array_stride_B;
 
       /* By mapping direct-write, we're implicitly already
        * initialized (maybe), so be conservative */
