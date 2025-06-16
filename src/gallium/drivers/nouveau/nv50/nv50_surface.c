@@ -993,7 +993,7 @@ nv50_blitter_make_fp(struct pipe_context *pipe,
    nir_store_var(&b, out_var, out_ssa, out_mask);
 
    /* return shader */
-   NIR_PASS_V(b.shader, nir_lower_samplers);
+   NIR_PASS(_, b.shader, nir_lower_samplers);
 
    return pipe_shader_from_nir(pipe, b.shader);
 }

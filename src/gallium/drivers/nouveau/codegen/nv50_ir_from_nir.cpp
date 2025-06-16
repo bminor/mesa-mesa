@@ -3418,34 +3418,34 @@ Converter::run()
 
       if (lowered) {
          nir_function_impl *impl = nir_shader_get_entrypoint(nir);
-         NIR_PASS_V(nir, nir_lower_io_to_temporaries, impl, true, false);
-         NIR_PASS_V(nir, nir_lower_global_vars_to_local);
-         NIR_PASS_V(nir, nv50_nir_lower_load_user_clip_plane, info);
+         NIR_PASS(_, nir, nir_lower_io_to_temporaries, impl, true, false);
+         NIR_PASS(_, nir, nir_lower_global_vars_to_local);
+         NIR_PASS(_, nir, nv50_nir_lower_load_user_clip_plane, info);
       } else {
          info_out->io.genUserClip = -1;
       }
    }
 
    /* prepare for IO lowering */
-   NIR_PASS_V(nir, nir_lower_flrp, lower_flrp, false);
-   NIR_PASS_V(nir, nir_opt_deref);
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_lower_flrp, lower_flrp, false);
+   NIR_PASS(_, nir, nir_opt_deref);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
-   NIR_PASS_V(nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-              type_size, nir_lower_io_use_interpolated_input_intrinsics);
+   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
+               type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
-   NIR_PASS_V(nir, nir_lower_subgroups, &subgroup_options);
+   NIR_PASS(_, nir, nir_lower_subgroups, &subgroup_options);
 
    struct nir_lower_tex_options tex_options = {};
    tex_options.lower_txp = ~0;
 
-   NIR_PASS_V(nir, nir_lower_tex, &tex_options);
+   NIR_PASS(_, nir, nir_lower_tex, &tex_options);
 
-   NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
-   NIR_PASS_V(nir, nir_lower_alu_to_scalar, NULL, NULL);
-   NIR_PASS_V(nir, nir_lower_phis_to_scalar, false);
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
+   NIR_PASS(_, nir, nir_lower_phis_to_scalar, false);
 
-   NIR_PASS_V(nir, nir_lower_frexp);
+   NIR_PASS(_, nir, nir_lower_frexp);
 
    /*TODO: improve this lowering/optimisation loop so that we can use
     *      nir_opt_idiv_const effectively before this.
@@ -3453,17 +3453,17 @@ Converter::run()
    nir_lower_idiv_options idiv_options = {
       .allow_fp16 = true,
    };
-   NIR_PASS_V(nir, nir_lower_idiv, &idiv_options);
+   NIR_PASS(_, nir, nir_lower_idiv, &idiv_options);
 
    runOptLoop();
 
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-   NIR_PASS_V(nir, nir_lower_vars_to_explicit_types, nir_var_function_temp,
-              glsl_get_natural_size_align_bytes);
-   NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_function_temp, nir_address_format_32bit_offset);
-   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_function_temp,
+               glsl_get_natural_size_align_bytes);
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_function_temp, nir_address_format_32bit_offset);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
-   NIR_PASS_V(nir, nir_opt_constant_folding);  // Improves aliasing information
+   NIR_PASS(_, nir, nir_opt_constant_folding);  // Improves aliasing information
 
    nir_load_store_vectorize_options vectorize_opts = {};
    vectorize_opts.modes = nir_var_mem_global |
@@ -3472,7 +3472,7 @@ Converter::run()
                           nir_var_shader_temp;
    vectorize_opts.callback = Converter::memVectorizeCb;
    vectorize_opts.cb_data = this;
-   NIR_PASS_V(nir, nir_opt_load_store_vectorize, &vectorize_opts);
+   NIR_PASS(_, nir, nir_opt_load_store_vectorize, &vectorize_opts);
 
    nir_lower_mem_access_bit_sizes_options mem_bit_sizes = {};
    mem_bit_sizes.modes = nir_var_mem_global |
@@ -3482,33 +3482,33 @@ Converter::run()
                          nir_var_shader_temp | nir_var_function_temp;
    mem_bit_sizes.callback = Converter::getMemAccessSizeAlign;
    mem_bit_sizes.cb_data = this;
-   NIR_PASS_V(nir, nir_lower_mem_access_bit_sizes, &mem_bit_sizes);
+   NIR_PASS(_, nir, nir_lower_mem_access_bit_sizes, &mem_bit_sizes);
 
-   NIR_PASS_V(nir, nir_lower_alu_to_scalar, NULL, NULL);
-   NIR_PASS_V(nir, nir_lower_pack);
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
+   NIR_PASS(_, nir, nir_lower_pack);
 
    runOptLoop();
 
-   NIR_PASS_V(nir, nir_opt_combine_barriers, NULL, NULL);
+   NIR_PASS(_, nir, nir_opt_combine_barriers, NULL, NULL);
 
    nir_move_options move_options =
       (nir_move_options)(nir_move_const_undef |
                          nir_move_load_ubo |
                          nir_move_load_uniform |
                          nir_move_load_input);
-   NIR_PASS_V(nir, nir_opt_sink, move_options);
-   NIR_PASS_V(nir, nir_opt_move, move_options);
+   NIR_PASS(_, nir, nir_opt_sink, move_options);
+   NIR_PASS(_, nir, nir_opt_move, move_options);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS_V(nir, nv_nir_move_stores_to_end);
+      NIR_PASS(_, nir, nv_nir_move_stores_to_end);
 
-   NIR_PASS_V(nir, nir_opt_algebraic_late);
+   NIR_PASS(_, nir, nir_opt_algebraic_late);
 
-   NIR_PASS_V(nir, nir_lower_bool_to_int32);
-   NIR_PASS_V(nir, nir_lower_bit_size, Converter::lowerBitSizeCB, this);
+   NIR_PASS(_, nir, nir_lower_bool_to_int32);
+   NIR_PASS(_, nir, nir_lower_bit_size, Converter::lowerBitSizeCB, this);
 
    nir_divergence_analysis(nir);
-   NIR_PASS_V(nir, nir_convert_from_ssa, true, true);
+   NIR_PASS(_, nir, nir_convert_from_ssa, true, true);
 
    // Garbage collect dead instructions
    nir_sweep(nir);

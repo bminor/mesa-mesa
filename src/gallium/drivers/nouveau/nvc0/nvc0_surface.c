@@ -888,7 +888,7 @@ nvc0_blitter_make_vp(struct pipe_context *pipe)
    nir_copy_var(&b, opos, ipos);
    nir_copy_var(&b, otex, itex);
 
-   NIR_PASS_V(b.shader, nir_lower_var_copies);
+   NIR_PASS(_, b.shader, nir_lower_var_copies);
 
    return pipe_shader_from_nir(pipe, b.shader);
 }
