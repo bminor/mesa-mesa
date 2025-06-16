@@ -7914,7 +7914,7 @@
         "description": "nir/lower_input_attachments: Stop assuming tex src indices",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "84b08971fbdced78dbcb085d633298db7e4bfa7f",
         "notes": null
