@@ -65,17 +65,6 @@ vk_android_get_ugralloc(void)
    return _gralloc;
 }
 
-struct u_gralloc *
-vk_android_init_ugralloc(void)
-{
-   return vk_android_get_ugralloc();
-}
-
-void
-vk_android_destroy_ugralloc(void)
-{
-}
-
 /* If any bits in test_mask are set, then unset them and return true. */
 static inline bool
 unmask32(uint32_t *inout_mask, uint32_t test_mask)
