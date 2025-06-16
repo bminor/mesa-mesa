@@ -26,6 +26,7 @@
 
 #include "blorp_priv.h"
 #include "dev/intel_device_info.h"
+#include "common/intel_common.h"
 #include "common/intel_compute_slm.h"
 #include "common/intel_sample_positions.h"
 #include "common/intel_l3_config.h"
@@ -1717,6 +1718,39 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
    assert(cs_prog_data->local_size[2] == 1);
 
 #if GFX_VERx10 >= 125
+
+/* Not need with VRT enabled */
+#if GFX_VERx10 < 300
+   uint8_t pixel_async_compute_thread_limit, z_pass_async_compute_thread_limit,
+           np_z_async_throttle_settings;
+   bool slm_or_barrier_enabled = prog_data->total_shared != 0 || cs_prog_data->uses_barrier;
+
+   intel_compute_engine_async_threads_limit(devinfo, dispatch.threads,
+                                            slm_or_barrier_enabled,
+                                            &pixel_async_compute_thread_limit,
+                                            &z_pass_async_compute_thread_limit,
+                                            &np_z_async_throttle_settings);
+   blorp_emit(batch, GENX(STATE_COMPUTE_MODE), cm) {
+#if GFX_VER >= 20
+      cm.AsyncComputeThreadLimit = pixel_async_compute_thread_limit;
+      cm.ZPassAsyncComputeThreadLimit = z_pass_async_compute_thread_limit;
+      cm.ZAsyncThrottlesettings = np_z_async_throttle_settings;
+      cm.AsyncComputeThreadLimitMask = 0x7;
+      cm.ZPassAsyncComputeThreadLimitMask = 0x7;
+      cm.ZAsyncThrottlesettingsMask = 0x3;
+#else
+      cm.PixelAsyncComputeThreadLimit = pixel_async_compute_thread_limit;
+      cm.ZPassAsyncComputeThreadLimit = z_pass_async_compute_thread_limit;
+      cm.PixelAsyncComputeThreadLimitMask = 0x7;
+      cm.ZPassAsyncComputeThreadLimitMask = 0x7;
+      if (intel_device_info_is_mtl_or_arl(devinfo)) {
+         cm.ZAsyncThrottlesettings = np_z_async_throttle_settings;
+         cm.ZAsyncThrottlesettingsMask = 0x3;
+      }
+#endif
+   }
+#endif /* GFX_VERx10 < 300 */
+
    uint32_t surfaces_offset = blorp_setup_binding_table(batch, params);
 
    uint32_t samplers_offset =
