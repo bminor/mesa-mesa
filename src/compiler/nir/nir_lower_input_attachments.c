@@ -83,6 +83,29 @@ load_layer_id(nir_builder *b, const nir_input_attachment_options *options)
    return nir_load_var(b, layer_id);
 }
 
+static nir_def *
+load_coord(nir_builder *b, nir_deref_instr *deref,
+           const nir_input_attachment_options *options)
+{
+   if (options->use_ia_coord_intrin) {
+      nir_def *index;
+      if (deref->deref_type == nir_deref_type_array) {
+         ASSERTED nir_deref_instr *parent = nir_deref_instr_parent(deref);
+         assert(parent->deref_type == nir_deref_type_var);
+         index = deref->arr.index.ssa;
+      } else {
+         assert(deref->deref_type == nir_deref_type_var);
+         index = nir_imm_int(b, 0);
+      }
+
+      return nir_load_input_attachment_coord(b, index);
+   } else {
+      nir_def *pos = nir_f2i32(b, load_frag_coord(b, deref, options));
+      nir_def *layer = load_layer_id(b, options);
+      return nir_vec3(b, nir_channel(b, pos, 0), nir_channel(b, pos, 1), layer);
+   }
+}
+
 static bool
 try_lower_input_load(nir_builder *b, nir_intrinsic_instr *load,
                      const nir_input_attachment_options *options)
@@ -99,14 +122,10 @@ try_lower_input_load(nir_builder *b, nir_intrinsic_instr *load,
 
    b->cursor = nir_instr_remove(&load->instr);
 
-   nir_def *frag_coord = load_frag_coord(b, deref, options);
-   frag_coord = nir_f2i32(b, frag_coord);
-   nir_def *offset = nir_trim_vector(b, load->src[1].ssa, 2);
-   nir_def *pos = nir_iadd(b, frag_coord, offset);
-
-   nir_def *layer = load_layer_id(b, options);
-   nir_def *coord =
-      nir_vec3(b, nir_channel(b, pos, 0), nir_channel(b, pos, 1), layer);
+   nir_def *offset = nir_vec3(b, nir_channel(b, load->src[1].ssa, 0),
+                                 nir_channel(b, load->src[1].ssa, 1),
+                                 nir_imm_int(b, 0));
+   nir_def *coord = nir_iadd(b, load_coord(b, deref, options), offset);
 
    nir_tex_instr *tex = nir_tex_instr_create(b->shader, 3 + multisampled);
 
@@ -174,15 +193,11 @@ try_lower_input_texop(nir_builder *b, nir_tex_instr *tex,
 
    b->cursor = nir_before_instr(&tex->instr);
 
-   nir_def *frag_coord = load_frag_coord(b, deref, options);
-   frag_coord = nir_f2i32(b, frag_coord);
-
-   nir_def *offset = nir_trim_vector(b, tex->src[coord_src_idx].src.ssa, 2);
-   nir_def *pos = nir_iadd(b, frag_coord, offset);
-
-   nir_def *layer = load_layer_id(b, options);
-   nir_def *coord = nir_vec3(b, nir_channel(b, pos, 0),
-                             nir_channel(b, pos, 1), layer);
+   nir_def *offset = tex->src[coord_src_idx].src.ssa;
+   offset = nir_vec3(b, nir_channel(b, offset, 0),
+                        nir_channel(b, offset, 1),
+                        nir_imm_int(b, 0));
+   nir_def *coord = nir_iadd(b, load_coord(b, deref, options), offset);
 
    tex->coord_components = 3;
 

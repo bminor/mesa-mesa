@@ -5711,6 +5711,7 @@ typedef struct nir_lower_idiv_options {
 bool nir_lower_idiv(nir_shader *shader, const nir_lower_idiv_options *options);
 
 typedef struct nir_input_attachment_options {
+   bool use_ia_coord_intrin;
    bool use_fragcoord_sysval;
    bool use_layer_id_sysval;
    bool use_view_id_for_layer;
