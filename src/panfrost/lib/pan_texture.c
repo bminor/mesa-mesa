@@ -82,61 +82,58 @@ pan_astc_dim_3d(unsigned dim)
 }
 #endif
 
+#if PAN_ARCH >= 5 && PAN_ARCH <= 8
 /* Texture addresses are tagged with information about compressed formats.
  * AFBC uses a bit for whether the colorspace transform is enabled (RGB and
- * RGBA only).
- * For ASTC, this is a "stretch factor" encoding the block size. */
-
+ * RGBA only). */
 static unsigned
-pan_compression_tag(const struct util_format_description *desc,
-                    enum mali_texture_dimension dim, uint64_t modifier)
+afbc_compression_tag(enum mali_texture_dimension dim, uint64_t modifier)
 {
-#if PAN_ARCH >= 5 && PAN_ARCH <= 8
-   if (drm_is_afbc(modifier)) {
-      unsigned flags =
-         (modifier & AFBC_FORMAT_MOD_YTR) ? MALI_AFBC_SURFACE_FLAG_YTR : 0;
+   unsigned flags =
+      (modifier & AFBC_FORMAT_MOD_YTR) ? MALI_AFBC_SURFACE_FLAG_YTR : 0;
 
 #if PAN_ARCH >= 6
-      /* Prefetch enable */
-      flags |= MALI_AFBC_SURFACE_FLAG_PREFETCH;
+   /* Prefetch enable */
+   flags |= MALI_AFBC_SURFACE_FLAG_PREFETCH;
 
-      if (pan_afbc_is_wide(modifier))
-         flags |= MALI_AFBC_SURFACE_FLAG_WIDE_BLOCK;
+   if (pan_afbc_is_wide(modifier))
+      flags |= MALI_AFBC_SURFACE_FLAG_WIDE_BLOCK;
 
-      if (modifier & AFBC_FORMAT_MOD_SPLIT)
-         flags |= MALI_AFBC_SURFACE_FLAG_SPLIT_BLOCK;
+   if (modifier & AFBC_FORMAT_MOD_SPLIT)
+      flags |= MALI_AFBC_SURFACE_FLAG_SPLIT_BLOCK;
 #endif
 
 #if PAN_ARCH >= 7
-      /* Tiled headers */
-      if (modifier & AFBC_FORMAT_MOD_TILED)
-         flags |= MALI_AFBC_SURFACE_FLAG_TILED_HEADER;
+   /* Tiled headers */
+   if (modifier & AFBC_FORMAT_MOD_TILED)
+      flags |= MALI_AFBC_SURFACE_FLAG_TILED_HEADER;
 
-      /* Used to make sure AFBC headers don't point outside the AFBC
-       * body. HW is using the AFBC surface stride to do this check,
-       * which doesn't work for 3D textures because the surface
-       * stride does not cover the body. Only supported on v7+.
-       */
-      if (dim != MALI_TEXTURE_DIMENSION_3D)
-         flags |= MALI_AFBC_SURFACE_FLAG_CHECK_PAYLOAD_RANGE;
+   /* Used to make sure AFBC headers don't point outside the AFBC
+    * body. HW is using the AFBC surface stride to do this check,
+    * which doesn't work for 3D textures because the surface
+    * stride does not cover the body. Only supported on v7+.
+    */
+   if (dim != MALI_TEXTURE_DIMENSION_3D)
+      flags |= MALI_AFBC_SURFACE_FLAG_CHECK_PAYLOAD_RANGE;
 #endif
 
-      return flags;
-   } else if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
-      if (desc->block.depth > 1) {
-         return (pan_astc_dim_3d(desc->block.depth) << 4) |
-                (pan_astc_dim_3d(desc->block.height) << 2) |
-                pan_astc_dim_3d(desc->block.width);
-      } else {
-         return (pan_astc_dim_2d(desc->block.height) << 3) |
-                pan_astc_dim_2d(desc->block.width);
-      }
-   }
-#endif
-
-   /* Tags are not otherwise used */
-   return 0;
+   return flags;
 }
+
+/* For ASTC, this is a "stretch factor" encoding the block size. */
+static unsigned
+astc_compression_tag(const struct util_format_description *desc)
+{
+   if (desc->block.depth > 1) {
+      return (pan_astc_dim_3d(desc->block.depth) << 4) |
+             (pan_astc_dim_3d(desc->block.height) << 2) |
+             pan_astc_dim_3d(desc->block.width);
+   } else {
+      return (pan_astc_dim_2d(desc->block.height) << 3) |
+             pan_astc_dim_2d(desc->block.width);
+   }
+}
+#endif
 
 /* Following the texture descriptor is a number of descriptors. How many? */
 
@@ -162,7 +159,8 @@ GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview)
    size_t element_size;
 
 #if PAN_ARCH >= 9
-   element_size = pan_size(PLANE);
+   /* All plane descriptors are the same size. */
+   element_size = pan_size(NULL_PLANE);
 
    /* 2-plane and 3-plane YUV use two plane descriptors. */
    if (pan_format_is_yuv(iview->format) && iview->planes[1].image != NULL)
@@ -182,126 +180,25 @@ GENX(pan_texture_estimate_payload_size)(const struct pan_image_view *iview)
    return element_size * elements;
 }
 
-static void
-pan_get_surface_strides(const struct pan_image_props *props,
-                        const struct pan_image_layout *layout, unsigned l,
-                        int32_t *row_stride_B, int32_t *surf_stride_B)
-{
-   const struct pan_image_slice_layout *slice = &layout->slices[l];
-
-   if (drm_is_afbc(props->modifier)) {
-      /* Pre v7 don't have a row stride field. This field is
-       * repurposed as a Y offset which we don't use */
-      *row_stride_B = PAN_ARCH < 7 ? 0 : slice->row_stride_B;
-      *surf_stride_B = slice->afbc.surface_stride_B;
-   } else {
-      *row_stride_B = slice->row_stride_B;
-      *surf_stride_B = slice->surface_stride_B;
-   }
-}
-
-static uint64_t
-pan_get_surface_pointer(const struct pan_image_props *props,
-                        const struct pan_image_layout *layout,
-                        enum mali_texture_dimension dim, uint64_t base,
-                        unsigned l, unsigned i, unsigned s)
-{
-   unsigned offset;
-
-   if (props->dim == MALI_TEXTURE_DIMENSION_3D) {
-      assert(!s);
-      offset = layout->slices[l].offset_B +
-               i * pan_image_surface_stride(props, layout, l);
-   } else {
-      offset = pan_image_surface_offset(layout, l, i, s);
-   }
-
-   return base + offset;
-}
-
-struct pan_image_section_info {
-   uint64_t pointer;
-   int32_t row_stride;
-   int32_t surface_stride;
-};
-
-static struct pan_image_section_info
-get_image_section_info(const struct pan_image_view *iview,
-                       const struct pan_image_plane_ref pref, unsigned level,
-                       unsigned index, unsigned sample)
-{
-   const struct util_format_description *desc =
-      util_format_description(iview->format);
-   const struct pan_image *image = pref.image;
-   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
-   uint64_t base = plane->base;
-   struct pan_image_section_info info = {0};
-
-   /* v4 does not support compression */
-   assert(PAN_ARCH >= 5 || !drm_is_afbc(image->props.modifier));
-   assert(PAN_ARCH >= 5 || desc->layout != UTIL_FORMAT_LAYOUT_ASTC);
-
-   /* pan_compression_tag() wants the dimension of the resource, not the
-    * one of the image view (those might differ).
-    */
-   unsigned tag =
-      pan_compression_tag(desc, image->props.dim, image->props.modifier);
-
-   info.pointer =
-      pan_get_surface_pointer(&image->props, &plane->layout, iview->dim,
-                              base | tag, level, index, sample);
-   pan_get_surface_strides(&image->props, &plane->layout, level,
-                           &info.row_stride, &info.surface_stride);
-
-   return info;
-}
-
 #if PAN_ARCH < 9
 static void
 pan_emit_bview_surface_with_stride(const struct pan_buffer_view *bview,
                                    void *payload)
 {
+   uint64_t base = bview->base;
+
+#if PAN_ARCH >= 5
    const struct util_format_description *desc =
       util_format_description(bview->format);
-   unsigned tag = pan_compression_tag(desc, MALI_TEXTURE_DIMENSION_1D,
-                                      DRM_FORMAT_MOD_LINEAR);
+   if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC)
+      base |= astc_compression_tag(desc);
+#endif
 
    pan_cast_and_pack(payload, SURFACE_WITH_STRIDE, cfg) {
-      cfg.pointer = bview->base | tag;
+      cfg.pointer = base;
       cfg.row_stride = 0;
       cfg.surface_stride = 0;
    }
-}
-
-static void
-pan_emit_iview_surface_with_stride(const struct pan_image_section_info *section,
-                                   void **payload)
-{
-   pan_cast_and_pack(*payload, SURFACE_WITH_STRIDE, cfg) {
-      cfg.pointer = section->pointer;
-      cfg.row_stride = section->row_stride;
-      cfg.surface_stride = section->surface_stride;
-   }
-   *payload += pan_size(SURFACE_WITH_STRIDE);
-}
-#endif
-
-#if PAN_ARCH == 7
-static void
-pan_emit_iview_multiplanar_surface(
-   const struct pan_image_section_info *sections, void **payload)
-{
-   assert(sections[2].row_stride == 0 ||
-          sections[1].row_stride == sections[2].row_stride);
-
-   pan_cast_and_pack(*payload, MULTIPLANAR_SURFACE, cfg) {
-      cfg.plane_0_pointer = sections[0].pointer;
-      cfg.plane_0_row_stride = sections[0].row_stride;
-      cfg.plane_1_2_row_stride = sections[1].row_stride;
-      cfg.plane_1_pointer = sections[1].pointer;
-      cfg.plane_2_pointer = sections[2].pointer;
-   }
-   *payload += pan_size(MULTIPLANAR_SURFACE);
 }
 #endif
 
@@ -428,231 +325,769 @@ translate_superblock_size(uint64_t modifier)
    }
 }
 
+#if PAN_ARCH >= 10
+#define PLANE_SET_EXTENT(__cfg, w, h)                                          \
+   do {                                                                        \
+      (__cfg).width = w;                                                       \
+      (__cfg).height = h;                                                      \
+   } while (0)
+#else
+#define PLANE_SET_EXTENT(cfg, w, h)                                            \
+   do {                                                                        \
+   } while (0)
+#endif
+
 static void
 pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
 {
    const struct util_format_description *desc =
       util_format_description(bview->format);
 
-   pan_cast_and_pack(payload, PLANE, cfg) {
-      cfg.pointer = bview->base;
-      cfg.size = util_format_get_blocksize(bview->format) * bview->width_el;
-      cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
-#if PAN_ARCH >= 10
-      cfg.width = bview->width_el;
-      cfg.height = 1;
-#endif
+   if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
+      bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
+      /* sRGB formats decode to RGBA8 sRGB, which is narrow.
+       *
+       * Non-sRGB formats decode to RGBA16F which is wide except if decode
+       * precision is set to GL_RGBA8 for that texture.
+       */
+      bool wide = !srgb && !bview->astc.narrow;
 
-      if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
-         if (desc->block.depth > 1) {
-            cfg.plane_type = MALI_PLANE_TYPE_ASTC_3D;
-            cfg.astc._3d.block_width = pan_astc_dim_3d(desc->block.width);
-            cfg.astc._3d.block_height = pan_astc_dim_3d(desc->block.height);
-            cfg.astc._3d.block_depth = pan_astc_dim_3d(desc->block.depth);
-         } else {
-            cfg.plane_type = MALI_PLANE_TYPE_ASTC_2D;
-            cfg.astc._2d.block_width = pan_astc_dim_2d(desc->block.width);
-            cfg.astc._2d.block_height = pan_astc_dim_2d(desc->block.height);
+      if (desc->block.depth > 1) {
+         pan_cast_and_pack(payload, ASTC_3D_PLANE, cfg) {
+            cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
+            cfg.decode_hdr = bview->astc.hdr;
+            cfg.decode_wide = wide;
+            cfg.block_width = pan_astc_dim_3d(desc->block.width);
+            cfg.block_height = pan_astc_dim_3d(desc->block.height);
+            cfg.block_depth = pan_astc_dim_3d(desc->block.depth);
+            cfg.pointer = bview->base;
+            cfg.size =
+               util_format_get_blocksize(bview->format) * bview->width_el;
+            PLANE_SET_EXTENT(cfg, bview->width_el, 1);
          }
-
-         bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
-
-         cfg.astc.decode_hdr = bview->astc.hdr;
-
-         /* sRGB formats decode to RGBA8 sRGB, which is narrow.
-          *
-          * Non-sRGB formats decode to RGBA16F which is wide except if decode
-          * precision is set to GL_RGBA8 for that texture.
-          */
-         cfg.astc.decode_wide = !srgb && !bview->astc.narrow;
       } else {
-         cfg.plane_type = MALI_PLANE_TYPE_GENERIC;
+         pan_cast_and_pack(payload, ASTC_2D_PLANE, cfg) {
+            cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
+            cfg.decode_hdr = bview->astc.hdr;
+            cfg.decode_wide = wide;
+            cfg.block_width = pan_astc_dim_2d(desc->block.width);
+            cfg.block_height = pan_astc_dim_2d(desc->block.height);
+            cfg.size =
+               util_format_get_blocksize(bview->format) * bview->width_el;
+            cfg.pointer = bview->base;
+            PLANE_SET_EXTENT(cfg, bview->width_el, 1);
+         }
+      }
+   } else {
+      pan_cast_and_pack(payload, GENERIC_PLANE, cfg) {
+         cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
          cfg.clump_format = pan_clump_format(bview->format);
+         cfg.size = util_format_get_blocksize(bview->format) * bview->width_el;
+         cfg.pointer = bview->base;
+         cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
+         PLANE_SET_EXTENT(cfg, bview->width_el, 1);
       }
    }
 }
 
 static void
-pan_emit_iview_plane(const struct pan_image_view *iview,
-                     const struct pan_image_section_info *sections,
-                     int plane_index, unsigned level, void **payload)
+get_linear_or_u_tiled_plane_props(const struct pan_image_view *iview,
+                                  int plane_idx, unsigned mip_level,
+                                  unsigned layer_or_z_slice, uint64_t *pointer,
+                                  uint32_t *row_stride, uint32_t *slice_stride,
+                                  uint32_t *size)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
    const struct pan_image_plane_ref pref =
       util_format_has_stencil(desc)
          ? pan_image_view_get_s_plane(iview)
-         : pan_image_view_get_plane(iview, plane_index);
-   const struct pan_image *image = pref.image;
-   const struct pan_image_plane *plane = image->planes[pref.plane_idx];
-   const struct pan_image_layout *layout = &plane->layout;
-   const struct pan_image_props *props = &image->props;
-   int32_t row_stride = sections[plane_index].row_stride;
-   int32_t surface_stride = sections[plane_index].surface_stride;
-   uint64_t pointer = sections[plane_index].pointer;
+         : pan_image_view_get_plane(iview, plane_idx);
 
-   assert(row_stride >= 0 && surface_stride >= 0 && "negative stride");
+   assert(pref.image != NULL);
 
-   bool afbc = drm_is_afbc(props->modifier);
-   bool afrc = drm_is_afrc(props->modifier);
-   // TODO: this isn't technically guaranteed to be YUV, but it is in practice.
-   bool is_chroma_2p =
-      desc->layout == UTIL_FORMAT_LAYOUT_PLANAR3 && plane_index > 0;
+   const struct pan_image_plane *plane = pref.image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slayout =
+      &plane->layout.slices[mip_level];
 
-   pan_cast_and_pack(*payload, PLANE, cfg) {
-      cfg.pointer = pointer;
+   *pointer = plane->base + slayout->offset_B;
+   *size = slayout->size_B;
+   *row_stride = slayout->row_stride_B;
+
+   if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
+      *pointer += layer_or_z_slice * slayout->surface_stride_B;
+      *size -= layer_or_z_slice * slayout->surface_stride_B;
+      *slice_stride = slayout->surface_stride_B;
+   } else {
+      *pointer += layer_or_z_slice * plane->layout.array_stride_B;
+      *slice_stride =
+         pref.image->props.nr_samples > 1 ? slayout->surface_stride_B : 0;
+   }
+}
+
+static void
+emit_generic_plane(const struct pan_image_view *iview, int plane_idx,
+                   unsigned mip_level, unsigned layer_or_z_slice, void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(desc)
+         ? pan_image_view_get_s_plane(iview)
+         : pan_image_view_get_plane(iview, plane_idx);
+   const struct pan_image_props *props = &pref.image->props;
+   uint32_t plane_size, row_stride, slice_stride;
+   uint64_t plane_addr;
+
+   /* 3-planar formats must use Chroma 2p planes for the U V planes. */
+   assert(plane_idx == 0 || desc->layout != UTIL_FORMAT_LAYOUT_PLANAR3);
+   assert(props->modifier == DRM_FORMAT_MOD_LINEAR ||
+          props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+
+   get_linear_or_u_tiled_plane_props(iview, plane_idx, mip_level,
+                                     layer_or_z_slice, &plane_addr, &row_stride,
+                                     &slice_stride, &plane_size);
+
+   pan_cast_and_pack(payload, GENERIC_PLANE, cfg) {
+      cfg.clump_ordering =
+         props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED
+            ? MALI_CLUMP_ORDERING_TILED_U_INTERLEAVED
+            : MALI_CLUMP_ORDERING_LINEAR;
+      cfg.clump_format = pan_clump_format(iview->format);
+      cfg.size = plane_size;
+      cfg.pointer = plane_addr;
       cfg.row_stride = row_stride;
-      cfg.size = layout->slices[level].size_B;
-#if PAN_ARCH >= 10
-      struct pan_image_extent extent = {
-         .width = u_minify(props->extent_px.width, level),
-         .height = u_minify(props->extent_px.height, level),
-      };
+      cfg.slice_stride = slice_stride;
+      PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
+                       u_minify(props->extent_px.height, mip_level));
+   }
+}
 
-      if (is_chroma_2p) {
-         cfg.two_plane_yuv_chroma.width = extent.width;
-         cfg.two_plane_yuv_chroma.height = extent.height;
-      } else {
-         cfg.width = extent.width;
-         cfg.height = extent.height;
+static void
+emit_astc_plane(const struct pan_image_view *iview, int plane_idx,
+                unsigned mip_level, unsigned layer_or_z_slice, void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      pan_image_view_get_plane(iview, plane_idx);
+   const struct pan_image_props *props = &pref.image->props;
+   bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
+   uint32_t plane_size, row_stride, slice_stride;
+   uint64_t plane_addr;
+
+   /* sRGB formats decode to RGBA8 sRGB, which is narrow.
+    *
+    * Non-sRGB formats decode to RGBA16F which is wide except if decode
+    * precision is set to GL_RGBA8 for that texture.
+    */
+   bool wide = !srgb && !iview->astc.narrow;
+
+   assert(desc->layout == UTIL_FORMAT_LAYOUT_ASTC && desc->block.depth == 1);
+   assert(props->modifier == DRM_FORMAT_MOD_LINEAR ||
+          props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+
+   get_linear_or_u_tiled_plane_props(iview, plane_idx, mip_level,
+                                     layer_or_z_slice, &plane_addr, &row_stride,
+                                     &slice_stride, &plane_size);
+
+#define ASTC_PLANE_SET_COMMON_PROPS()                                          \
+   cfg.clump_ordering =                                                        \
+      props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED          \
+         ? MALI_CLUMP_ORDERING_TILED_U_INTERLEAVED                             \
+         : MALI_CLUMP_ORDERING_LINEAR;                                         \
+   cfg.decode_hdr = iview->astc.hdr;                                           \
+   cfg.decode_wide = wide;                                                     \
+   cfg.size = plane_size;                                                      \
+   cfg.pointer = plane_addr;                                                   \
+   cfg.row_stride = row_stride;                                                \
+   cfg.slice_stride = slice_stride;                                            \
+   PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),          \
+                    u_minify(props->extent_px.height, mip_level))
+
+   if (desc->block.depth > 1) {
+      pan_cast_and_pack(payload, ASTC_3D_PLANE, cfg) {
+         ASTC_PLANE_SET_COMMON_PROPS();
+         cfg.block_width = pan_astc_dim_3d(desc->block.width);
+         cfg.block_height = pan_astc_dim_3d(desc->block.height);
+         cfg.block_depth = pan_astc_dim_3d(desc->block.depth);
       }
-#endif
-
-      if (is_chroma_2p) {
-         cfg.two_plane_yuv_chroma.secondary_pointer =
-            sections[plane_index + 1].pointer;
-      } else if (!pan_format_is_yuv(props->format)) {
-         cfg.slice_stride = props->nr_samples > 1
-                               ? surface_stride
-                               : pan_image_surface_stride(props, layout, level);
-      }
-
-      if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
-         assert(!afbc);
-         assert(!afrc);
-
-         if (desc->block.depth > 1) {
-            cfg.plane_type = MALI_PLANE_TYPE_ASTC_3D;
-            cfg.astc._3d.block_width = pan_astc_dim_3d(desc->block.width);
-            cfg.astc._3d.block_height = pan_astc_dim_3d(desc->block.height);
-            cfg.astc._3d.block_depth = pan_astc_dim_3d(desc->block.depth);
-         } else {
-            cfg.plane_type = MALI_PLANE_TYPE_ASTC_2D;
-            cfg.astc._2d.block_width = pan_astc_dim_2d(desc->block.width);
-            cfg.astc._2d.block_height = pan_astc_dim_2d(desc->block.height);
-         }
-
-         bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
-
-         cfg.astc.decode_hdr = iview->astc.hdr;
-
-         /* sRGB formats decode to RGBA8 sRGB, which is narrow.
-          *
-          * Non-sRGB formats decode to RGBA16F which is wide except if decode
-          * precision is set to GL_RGBA8 for that texture.
-          */
-         cfg.astc.decode_wide = !srgb && !iview->astc.narrow;
-      } else if (afbc) {
-         cfg.plane_type = MALI_PLANE_TYPE_AFBC;
-         cfg.afbc.superblock_size = translate_superblock_size(props->modifier);
-         cfg.afbc.ytr = (props->modifier & AFBC_FORMAT_MOD_YTR);
-         cfg.afbc.split_block = (props->modifier & AFBC_FORMAT_MOD_SPLIT);
-         cfg.afbc.tiled_header = (props->modifier & AFBC_FORMAT_MOD_TILED);
-         cfg.afbc.prefetch = true;
-         cfg.afbc.compression_mode =
-            pan_afbc_compression_mode(iview->format, plane_index);
-         cfg.afbc.header_stride = layout->slices[level].afbc.header_size_B;
-      } else if (afrc) {
-#if PAN_ARCH >= 10
-         struct pan_afrc_format_info finfo =
-            pan_afrc_get_format_info(iview->format);
-
-         cfg.plane_type = MALI_PLANE_TYPE_AFRC;
-         cfg.afrc.block_size =
-            pan_afrc_block_size(props->modifier, plane_index);
-         cfg.afrc.format =
-            pan_afrc_format(finfo, props->modifier, plane_index);
-#endif
-      } else {
-         cfg.plane_type =
-            is_chroma_2p ? MALI_PLANE_TYPE_CHROMA_2P : MALI_PLANE_TYPE_GENERIC;
-         cfg.clump_format = pan_clump_format(iview->format);
-      }
-
-      if (!afbc && !afrc) {
-         if (props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED)
-            cfg.clump_ordering = MALI_CLUMP_ORDERING_TILED_U_INTERLEAVED;
-         else
-            cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
+   } else {
+      pan_cast_and_pack(payload, ASTC_2D_PLANE, cfg) {
+         ASTC_PLANE_SET_COMMON_PROPS();
+         cfg.block_width = pan_astc_dim_2d(desc->block.width);
+         cfg.block_height = pan_astc_dim_2d(desc->block.height);
       }
    }
-   *payload += pan_size(PLANE);
+
+#undef ASTC_PLANE_SET_COMMON_PROPS
+}
+
+static void
+emit_linear_or_u_tiled_plane(const struct pan_image_view *iview,
+                             int plane_index, unsigned mip_level,
+                             unsigned layer_or_z_slice, void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+
+   if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
+      emit_astc_plane(iview, plane_index, mip_level, layer_or_z_slice, payload);
+   } else {
+      emit_generic_plane(iview, plane_index, mip_level, layer_or_z_slice,
+                         payload);
+   }
+}
+
+#define emit_linear_plane  emit_linear_or_u_tiled_plane
+#define emit_u_tiled_plane emit_linear_or_u_tiled_plane
+
+static void
+emit_linear_or_u_tiled_chroma_2p_plane(const struct pan_image_view *iview,
+                                       unsigned mip_level,
+                                       unsigned layer_or_z_slice, void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref1 = pan_image_view_get_plane(iview, 1);
+   const struct pan_image_props *props = &pref1.image->props;
+   uint64_t cplane1_addr, cplane2_addr;
+   uint32_t cplane1_row_stride, cplane1_slice_stride, cplane1_size;
+   ASSERTED uint32_t cplane2_row_stride, cplane2_slice_stride, cplane2_size;
+
+   get_linear_or_u_tiled_plane_props(iview, 1, mip_level,
+                                     layer_or_z_slice, &cplane1_addr, &cplane1_row_stride,
+                                     &cplane1_slice_stride, &cplane1_size);
+   get_linear_or_u_tiled_plane_props(iview, 2, mip_level,
+                                     layer_or_z_slice, &cplane2_addr, &cplane2_row_stride,
+                                     &cplane2_slice_stride, &cplane2_size);
+
+   assert(cplane1_size == cplane2_size &&
+          cplane1_row_stride == cplane2_row_stride &&
+          cplane1_slice_stride == cplane2_slice_stride);
+
+   assert(desc->layout == UTIL_FORMAT_LAYOUT_PLANAR3);
+   assert(props->modifier == DRM_FORMAT_MOD_LINEAR ||
+          props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+
+   pan_cast_and_pack(payload, CHROMA_2P_PLANE, cfg) {
+      cfg.clump_ordering =
+         props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED
+            ? MALI_CLUMP_ORDERING_TILED_U_INTERLEAVED
+            : MALI_CLUMP_ORDERING_LINEAR;
+      cfg.clump_format = pan_clump_format(iview->format);
+      cfg.size = cplane1_size;
+      cfg.pointer = cplane1_addr;
+      cfg.row_stride = cplane1_row_stride;
+      PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
+                       u_minify(props->extent_px.height, mip_level));
+      cfg.secondary_pointer = cplane2_addr;
+   }
+}
+
+#define emit_linear_chroma_2p_plane  emit_linear_or_u_tiled_chroma_2p_plane
+#define emit_u_tiled_chroma_2p_plane emit_linear_or_u_tiled_chroma_2p_plane
+
+static void
+get_afbc_plane_props(const struct pan_image_view *iview, int plane_idx,
+                     unsigned mip_level, unsigned layer_or_z_slice,
+                     uint64_t *header_pointer, uint32_t *header_row_stride,
+                     uint32_t *header_slice_size, uint32_t *header_slice_stride,
+                     uint32_t *size)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(desc)
+         ? pan_image_view_get_s_plane(iview)
+         : pan_image_view_get_plane(iview, plane_idx);
+
+   assert(pref.image != NULL);
+
+   const struct pan_image_plane *plane = pref.image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slayout =
+      &plane->layout.slices[mip_level];
+
+   *header_pointer = plane->base + slayout->offset_B;
+   *header_row_stride = slayout->row_stride_B;
+   /* Header/body of 3D resources are not interleaved, so the header slice
+    * stride and header slice size are the same thing. */
+   *header_slice_size = slayout->afbc.surface_stride_B;
+   *header_slice_stride = 0;
+   *size = slayout->size_B;
+
+   if (iview->dim == MALI_TEXTURE_DIMENSION_3D) {
+      assert(pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D);
+      assert(layer_or_z_slice == 0);
+
+      *header_slice_stride = slayout->afbc.surface_stride_B;
+   } else if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
+      assert(iview->dim == MALI_TEXTURE_DIMENSION_2D);
+
+      /* When viewing 3D image as 2D-array, each plane describes a single Z
+       * slice. The header pointed it moved to the right slice, and the size is
+       * set to a single slice. */
+      *header_pointer += layer_or_z_slice * slayout->afbc.surface_stride_B;
+
+      /* We could narrow it down further but we currently lack body surface
+       * stride information to do that. Let's pass the total size minus the
+       * surface header offset for now. */
+      *size =
+         slayout->size_B - (layer_or_z_slice * slayout->afbc.surface_stride_B);
+   } else {
+      *header_pointer += layer_or_z_slice * plane->layout.array_stride_B;
+   }
+}
+
+static void
+emit_afbc_plane(const struct pan_image_view *iview, int plane_idx,
+                unsigned mip_level, unsigned layer_or_z_slice, void *payload)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(desc)
+         ? pan_image_view_get_s_plane(iview)
+         : pan_image_view_get_plane(iview, plane_idx);
+   const struct pan_image *image = pref.image;
+   const struct pan_image_props *props = &image->props;
+   uint32_t header_slice_size, header_row_stride, header_slice_stride;
+   uint32_t plane_size;
+   uint64_t header_addr;
+
+   get_afbc_plane_props(iview, plane_idx, mip_level, layer_or_z_slice,
+                        &header_addr, &header_row_stride, &header_slice_size,
+                        &header_slice_stride, &plane_size);
+
+   /* We can't do 3-planar formats with AFBC. */
+   assert(desc->layout != UTIL_FORMAT_LAYOUT_PLANAR3);
+   assert(drm_is_afbc(props->modifier));
+   assert(props->nr_samples == 1);
+
+   pan_cast_and_pack(payload, AFBC_PLANE, cfg) {
+      cfg.superblock_size = translate_superblock_size(props->modifier);
+      cfg.ytr = (props->modifier & AFBC_FORMAT_MOD_YTR);
+      cfg.split_block = (props->modifier & AFBC_FORMAT_MOD_SPLIT);
+      cfg.tiled_header = (props->modifier & AFBC_FORMAT_MOD_TILED);
+      cfg.prefetch = true;
+      cfg.compression_mode =
+         pan_afbc_compression_mode(iview->format, plane_idx);
+      cfg.size = plane_size;
+      cfg.pointer = header_addr;
+      cfg.header_row_stride = header_row_stride;
+      cfg.header_slice_size = header_slice_size;
+      cfg.header_slice_stride = header_slice_stride;
+      PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
+                       u_minify(props->extent_px.height, mip_level));
+   }
+}
+
+static void
+emit_afbc_chroma_2p_plane(const struct pan_image_view *iview,
+                          unsigned mip_level, unsigned layer_or_z_slice,
+                          void *payload)
+{
+   unreachable("AFBC chroma 2p plane not supported");
+}
+
+#if PAN_ARCH >= 10
+static void
+get_afrc_plane_props(const struct pan_image_view *iview, int plane_idx,
+                     unsigned mip_level, unsigned layer_or_z_slice,
+                     uint64_t *pointer, uint32_t *row_stride,
+                     uint32_t *slice_stride, uint32_t *size)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(desc)
+         ? pan_image_view_get_s_plane(iview)
+         : pan_image_view_get_plane(iview, plane_idx);
+
+   assert(pref.image != NULL);
+
+   const struct pan_image_plane *plane = pref.image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slayout =
+      &plane->layout.slices[mip_level];
+
+   *pointer = plane->base + slayout->offset_B;
+   *size = slayout->size_B;
+   *row_stride = slayout->row_stride_B;
+   *slice_stride = slayout->surface_stride_B;
+
+   if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
+      *pointer += layer_or_z_slice * slayout->surface_stride_B;
+      *size -= layer_or_z_slice * slayout->surface_stride_B;
+   } else {
+      *pointer += layer_or_z_slice * plane->layout.array_stride_B;
+   }
+}
+
+static void
+emit_afrc_plane(const struct pan_image_view *iview, int plane_index,
+                unsigned mip_level, unsigned layer_or_z_slice, void *payload)
+{
+   const struct pan_afrc_format_info finfo =
+      pan_afrc_get_format_info(iview->format);
+   const struct pan_image_plane_ref pref =
+      pan_image_view_get_plane(iview, plane_index);
+   const struct pan_image *image = pref.image;
+   const struct pan_image_props *props = &image->props;
+   uint32_t plane_size, plane_row_stride, plane_slice_stride;
+   uint64_t plane_addr;
+
+   get_afrc_plane_props(iview, plane_index, mip_level, layer_or_z_slice,
+                        &plane_addr, &plane_row_stride, &plane_slice_stride,
+                        &plane_size);
+
+   assert(drm_is_afrc(props->modifier));
+
+   pan_cast_and_pack(payload, AFRC_PLANE, cfg) {
+      cfg.block_size = pan_afrc_block_size(props->modifier, plane_index);
+      cfg.format = pan_afrc_format(finfo, props->modifier, plane_index);
+      cfg.size = plane_size;
+      cfg.pointer = plane_addr;
+      cfg.row_stride = plane_row_stride;
+      cfg.slice_stride = plane_slice_stride;
+      PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
+                       u_minify(props->extent_px.height, mip_level));
+   }
+}
+
+static void
+emit_afrc_chroma_2p_plane(const struct pan_image_view *iview,
+                          unsigned mip_level, unsigned layer_or_z_slice,
+                          void *payload)
+{
+   const struct pan_afrc_format_info finfo =
+      pan_afrc_get_format_info(iview->format);
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref1 =
+      pan_image_view_get_plane(iview, 1);
+   const struct pan_image_plane_ref pref2 =
+      pan_image_view_get_plane(iview, 2);
+
+   assert(pref1.image != NULL && pref2.image != NULL);
+
+   const struct pan_image_props *props = &pref1.image->props;
+   uint32_t cplane1_row_stride, cplane1_slice_stride, cplane1_size;
+   ASSERTED uint32_t cplane2_row_stride, cplane2_slice_stride, cplane2_size;
+   uint64_t cplane1_addr, cplane2_addr;
+
+   get_afrc_plane_props(iview, 1, mip_level, layer_or_z_slice, &cplane1_addr,
+                        &cplane1_row_stride, &cplane1_slice_stride,
+                        &cplane1_size);
+   get_afrc_plane_props(iview, 2, mip_level, layer_or_z_slice, &cplane2_addr,
+                        &cplane2_row_stride, &cplane2_slice_stride,
+                        &cplane2_size);
+
+   assert(cplane1_size == cplane2_size &&
+          cplane1_slice_stride == cplane2_slice_stride &&
+          cplane1_row_stride == cplane2_row_stride);
+
+   assert(desc->layout == UTIL_FORMAT_LAYOUT_PLANAR3);
+   assert(props->modifier == DRM_FORMAT_MOD_LINEAR ||
+          props->modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+
+   pan_cast_and_pack(payload, AFRC_CHROMA_2P_PLANE, cfg) {
+      cfg.block_size = pan_afrc_block_size(props->modifier, 1);
+      cfg.format = pan_afrc_format(finfo, props->modifier, 1);
+      cfg.size = cplane1_size;
+      cfg.pointer = cplane1_addr;
+      cfg.row_stride = cplane1_row_stride;
+      PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
+                       u_minify(props->extent_px.height, mip_level));
+      cfg.secondary_pointer = cplane2_addr;
+   }
 }
 #endif
 
+#else
 static void
-pan_emit_iview_surface(const struct pan_image_view *iview, unsigned level,
-                       unsigned index, unsigned sample, void **payload)
+get_linear_or_u_tiled_surface_props(const struct pan_image_view *iview,
+                                    unsigned plane_idx, unsigned mip_level,
+                                    unsigned layer_or_z_slice, unsigned sample,
+                                    uint64_t *pointer, uint32_t *row_stride,
+                                    uint32_t *surf_stride)
 {
-#if PAN_ARCH == 7 || PAN_ARCH >= 9
-   if (pan_format_is_yuv(iview->format)) {
-      struct pan_image_section_info sections[MAX_IMAGE_PLANES] = {0};
-      unsigned plane_count = 0;
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(desc)
+         ? pan_image_view_get_s_plane(iview)
+         : pan_image_view_get_plane(iview, plane_idx);
 
-      for (int i = 0; i < MAX_IMAGE_PLANES; i++) {
-         const struct pan_image_plane_ref pref =
-            pan_image_view_get_plane(iview, i);
+   assert(pref.image != NULL);
 
-         if (!pref.image)
-            break;
+   const struct pan_image_plane *plane = pref.image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slayout =
+      &plane->layout.slices[mip_level];
+   uint64_t plane_addr = plane->base + slayout->offset_B;
+   unsigned tag = 0;
 
-         sections[i] =
-            get_image_section_info(iview, pref, level, index, sample);
-         plane_count++;
-      }
+#if PAN_ARCH >= 5
+   if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC)
+      tag = astc_compression_tag(desc);
+#endif
+
+   if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
+      plane_addr +=
+         layer_or_z_slice * slayout->surface_stride_B;
+   } else {
+      plane_addr += (layer_or_z_slice * plane->layout.array_stride_B) +
+                    (sample * slayout->surface_stride_B);
+   }
+
+   *pointer = plane_addr | tag;
+   *row_stride = slayout->row_stride_B;
+   *surf_stride = slayout->surface_stride_B;
+}
+
+static void
+get_afbc_surface_props(const struct pan_image_view *iview,
+                       unsigned plane_idx, unsigned mip_level,
+                       unsigned layer_or_z_slice, unsigned sample,
+                       uint64_t *pointer, uint32_t *row_stride,
+                       uint32_t *surf_stride)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   const struct pan_image_plane_ref pref =
+      util_format_has_stencil(desc)
+         ? pan_image_view_get_s_plane(iview)
+         : pan_image_view_get_plane(iview, plane_idx);
+
+   assert(pref.image != NULL);
+
+   const struct pan_image_plane *plane = pref.image->planes[pref.plane_idx];
+   const struct pan_image_slice_layout *slayout =
+      &plane->layout.slices[mip_level];
+   uint64_t plane_header_addr = plane->base + slayout->offset_B;
+   unsigned tag = 0;
+
+#if PAN_ARCH >= 5
+   tag =
+      afbc_compression_tag(pref.image->props.dim, pref.image->props.modifier);
+#endif
+
+   assert(sample == 0);
+
+   if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
+      plane_header_addr += layer_or_z_slice * slayout->afbc.surface_stride_B;
+      *surf_stride = slayout->afbc.surface_stride_B;
+   } else {
+      plane_header_addr += layer_or_z_slice * plane->layout.array_stride_B;
+      /* Surface stride is used to do a bound check, and must cover the header
+       * and payload sections. */
+      *surf_stride = slayout->afbc.header_size_B + slayout->afbc.body_size_B;
+   }
+
+   *pointer = plane_header_addr | tag;
+   *row_stride = slayout->row_stride_B;
+}
+
+static void
+emit_linear_or_u_tiled_surface(const struct pan_image_view *iview,
+                               unsigned mip_level, unsigned layer_or_z_slice,
+                               unsigned sample, void *payload)
+{
+   uint32_t row_stride, surf_stride;
+   uint64_t pointer;
+
+   get_linear_or_u_tiled_surface_props(iview, 0, mip_level, layer_or_z_slice,
+                                       sample, &pointer, &row_stride,
+                                       &surf_stride);
+
+   pan_cast_and_pack(payload, SURFACE_WITH_STRIDE, cfg) {
+      cfg.pointer = pointer;
+      cfg.row_stride = row_stride;
+      cfg.surface_stride = surf_stride;
+   }
+}
+
+#define emit_linear_surface  emit_linear_or_u_tiled_surface
+#define emit_u_tiled_surface emit_linear_or_u_tiled_surface
+
+static void
+emit_afbc_surface(const struct pan_image_view *iview, unsigned mip_level,
+                  unsigned layer_or_z_slice, unsigned sample, void *payload)
+{
+   uint32_t row_stride, surf_stride;
+   uint64_t pointer;
+
+   get_afbc_surface_props(iview, 0, mip_level, layer_or_z_slice, sample,
+                          &pointer, &row_stride, &surf_stride);
+
+   pan_cast_and_pack(payload, SURFACE_WITH_STRIDE, cfg) {
+      cfg.pointer = pointer;
+      cfg.row_stride = row_stride;
+      cfg.surface_stride = surf_stride;
+   }
+}
+
+#if PAN_ARCH >= 7
+static void
+emit_linear_or_u_tiled_multiplane_surface(const struct pan_image_view *iview,
+                                          unsigned mip_level,
+                                          unsigned layer_or_z_slice,
+                                          unsigned sample, void *payload)
+{
+   uint64_t yplane_addr, cplane1_addr, cplane2_addr = 0;
+   uint32_t yplane_row_stride, cplane1_row_stride, cplane2_row_stride = 0;
+   uint32_t yplane_surf_stride, cplane1_surf_stride, cplane2_surf_stride = 0;
+   unsigned nplanes = util_format_get_num_planes(iview->format);
+
+   assert(nplanes == 2 || nplanes == 3);
+
+   get_linear_or_u_tiled_surface_props(iview, 0, mip_level, layer_or_z_slice,
+                                       sample, &yplane_addr, &yplane_row_stride,
+                                       &yplane_surf_stride);
+   get_linear_or_u_tiled_surface_props(iview, 1, mip_level, layer_or_z_slice,
+                                       sample, &cplane1_addr, &cplane1_row_stride,
+                                       &cplane1_surf_stride);
+   if (nplanes == 3) {
+      get_linear_or_u_tiled_surface_props(
+         iview, 2, mip_level, layer_or_z_slice, sample, &cplane2_addr,
+         &cplane2_row_stride, &cplane2_surf_stride);
+      assert(cplane2_row_stride == cplane1_row_stride);
+   }
+
+   pan_cast_and_pack(payload, MULTIPLANAR_SURFACE, cfg) {
+      cfg.plane_0_pointer = yplane_addr;
+      cfg.plane_0_row_stride = yplane_row_stride;
+      cfg.plane_1_2_row_stride = cplane1_row_stride;
+      cfg.plane_1_pointer = cplane1_addr;
+      cfg.plane_2_pointer = cplane2_addr;
+   }
+}
+
+#define emit_linear_multiplane_surface emit_linear_or_u_tiled_multiplane_surface
+#define emit_u_tiled_multiplane_surface                                        \
+   emit_linear_or_u_tiled_multiplane_surface
+
+static void
+emit_afbc_multiplane_surface(const struct pan_image_view *iview,
+                             unsigned mip_level, unsigned layer_or_z_slice,
+                             unsigned sample, void *payload)
+{
+   uint64_t yplane_addr, cplane1_addr, cplane2_addr = 0;
+   uint32_t yplane_row_stride, cplane1_row_stride, cplane2_row_stride = 0;
+   uint32_t yplane_surf_stride, cplane1_surf_stride, cplane2_surf_stride = 0;
+   unsigned nplanes = util_format_get_num_planes(iview->format);
+
+   assert(nplanes == 2 || nplanes == 3);
+
+   get_afbc_surface_props(iview, 0, mip_level, layer_or_z_slice, sample,
+                          &yplane_addr, &yplane_row_stride,
+                          &yplane_surf_stride);
+   get_afbc_surface_props(iview, 1, mip_level, layer_or_z_slice, sample,
+                          &cplane1_addr, &cplane1_row_stride,
+                          &cplane1_surf_stride);
+   if (nplanes == 3) {
+      get_afbc_surface_props(iview, 2, mip_level, layer_or_z_slice, sample,
+                             &cplane2_addr, &cplane2_row_stride,
+                             &cplane2_surf_stride);
+      assert(cplane2_row_stride == cplane1_row_stride);
+   }
+
+   pan_cast_and_pack(payload, MULTIPLANAR_SURFACE, cfg) {
+      cfg.plane_0_pointer = yplane_addr;
+      cfg.plane_0_row_stride = yplane_row_stride;
+      cfg.plane_1_2_row_stride = cplane1_row_stride;
+      cfg.plane_1_pointer = cplane1_addr;
+      cfg.plane_2_pointer = cplane2_addr;
+   }
+}
+#endif
+
+#endif
 
 #if PAN_ARCH >= 9
-      /* 3-plane YUV is submitted using two PLANE descriptors, where the
-       * second one is of type CHROMA_2P */
-      pan_emit_iview_plane(iview, sections, 0, level, payload);
-
-      if (plane_count > 1) {
-         /* 3-plane YUV requires equal stride for both chroma planes */
-         assert(plane_count == 2 ||
-                sections[1].row_stride == sections[2].row_stride);
-         pan_emit_iview_plane(iview, sections, 1, level, payload);
-      }
+#define PAN_TEX_EMIT_HELPER(mod)                                               \
+   static void pan_tex_emit_##mod##_payload_entry(                             \
+      const struct pan_image_view *iview, unsigned mip_level,                  \
+      unsigned layer_or_z_slice, unsigned sample, void **payload)              \
+   {                                                                           \
+      assert(sample == 0);                                                     \
+      const unsigned nplanes = util_format_get_num_planes(iview->format);      \
+                                                                               \
+      emit_##mod##_plane(iview, 0, mip_level, layer_or_z_slice, *payload);     \
+                                                                               \
+      /* We use NULL_PLANE here, but we could use any other kind of            \
+       * descriptor, since they are all the same size. */                      \
+      *payload += pan_size(NULL_PLANE);                                        \
+                                                                               \
+      if (nplanes == 2) {                                                      \
+         emit_##mod##_plane(iview, 1, mip_level, layer_or_z_slice, *payload);  \
+         *payload += pan_size(NULL_PLANE);                                     \
+      } else if (nplanes == 3) {                                               \
+         emit_##mod##_chroma_2p_plane(iview, mip_level, layer_or_z_slice,      \
+                                      *payload);                               \
+         *payload += pan_size(NULL_PLANE);                                     \
+      }                                                                        \
+   }
+#elif PAN_ARCH >= 7
+#define PAN_TEX_EMIT_HELPER(mod)                                               \
+   static void pan_tex_emit_##mod##_payload_entry(                             \
+      const struct pan_image_view *iview, unsigned mip_level,                  \
+      unsigned layer_or_z_slice, unsigned sample, void **payload)              \
+   {                                                                           \
+      if (util_format_get_num_planes(iview->format) == 1) {                    \
+         emit_##mod##_surface(iview, mip_level, layer_or_z_slice, sample,      \
+                              *payload);                                       \
+         *payload += pan_size(SURFACE_WITH_STRIDE);                            \
+      } else {                                                                 \
+         emit_##mod##_multiplane_surface(iview, mip_level, layer_or_z_slice,   \
+                                         sample, *payload);                    \
+         *payload += pan_size(MULTIPLANAR_SURFACE);                            \
+      }                                                                        \
+   }
 #else
-      if (plane_count > 1)
-         pan_emit_iview_multiplanar_surface(sections, payload);
-      else
-         pan_emit_iview_surface_with_stride(sections, payload);
-#endif
-      return;
+#define PAN_TEX_EMIT_HELPER(mod)                                               \
+   static void pan_tex_emit_##mod##_payload_entry(                             \
+      const struct pan_image_view *iview, unsigned mip_level,                  \
+      unsigned layer_or_z_slice, unsigned sample, void **payload)              \
+   {                                                                           \
+      assert(util_format_get_num_planes(iview->format) == 1);                  \
+      emit_##mod##_surface(iview, mip_level, layer_or_z_slice, sample,         \
+                           *payload);                                          \
+      *payload += pan_size(SURFACE_WITH_STRIDE);                               \
    }
 #endif
 
-   const struct util_format_description *fdesc =
-      util_format_description(iview->format);
-
-   /* In case of multiplanar depth/stencil, the stencil is always on
-    * plane 1. Combined depth/stencil only has one plane, so depth
-    * will be on plane 0 in either case.
-    */
-   const struct pan_image_plane_ref pref =
-      util_format_has_stencil(fdesc) ? pan_image_view_get_s_plane(iview)
-                                     : pan_image_view_get_plane(iview, 0);
-   assert(pref.image != NULL);
-
-   struct pan_image_section_info section[1] = {
-      get_image_section_info(iview, pref, level, index, sample),
-   };
-
-#if PAN_ARCH >= 9
-   pan_emit_iview_plane(iview, section, 0, level, payload);
-#else
-   pan_emit_iview_surface_with_stride(section, payload);
+PAN_TEX_EMIT_HELPER(linear)
+PAN_TEX_EMIT_HELPER(u_tiled)
+PAN_TEX_EMIT_HELPER(afbc)
+#if PAN_ARCH >= 10
+PAN_TEX_EMIT_HELPER(afrc)
 #endif
+
+static void
+pan_tex_emit_payload_entry(const struct pan_image_view *iview,
+                           unsigned mip_level, unsigned layer_or_z_slice,
+                           unsigned sample, void **payload)
+{
+   const struct pan_image_plane_ref pref =
+      pan_image_view_get_first_plane(iview);
+   uint64_t mod = pref.image->props.modifier;
+
+   if (drm_is_afbc(mod)) {
+      pan_tex_emit_afbc_payload_entry(iview, mip_level, layer_or_z_slice,
+                                      sample, payload);
+#if PAN_ARCH >= 10
+   } else if (drm_is_afrc(mod)) {
+      pan_tex_emit_afrc_payload_entry(iview, mip_level, layer_or_z_slice,
+                                      sample, payload);
+#endif
+   } else if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
+      pan_tex_emit_u_tiled_payload_entry(iview, mip_level, layer_or_z_slice,
+                                         sample, payload);
+   } else {
+      assert(mod == DRM_FORMAT_MOD_LINEAR);
+      pan_tex_emit_linear_payload_entry(iview, mip_level, layer_or_z_slice,
+                                        sample, payload);
+   }
 }
 
 static void
@@ -674,7 +1109,7 @@ pan_emit_iview_texture_payload(const struct pan_image_view *iview,
       for (int sample = 0; sample < nr_samples; ++sample) {
          for (int level = iview->first_level; level <= iview->last_level;
               ++level) {
-            pan_emit_iview_surface(iview, level, layer, sample, &payload);
+            pan_tex_emit_payload_entry(iview, level, layer, sample, &payload);
          }
       }
    }
@@ -697,8 +1132,8 @@ pan_emit_iview_texture_payload(const struct pan_image_view *iview,
           */
          for (int face = 0; face < face_count; ++face) {
             for (int sample = 0; sample < nr_samples; ++sample) {
-               pan_emit_iview_surface(iview, level, (face_count * layer) + face,
-                                      sample, &payload);
+               pan_tex_emit_payload_entry(
+                  iview, level, (face_count * layer) + face, sample, &payload);
             }
          }
       }
