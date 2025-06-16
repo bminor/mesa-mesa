@@ -568,9 +568,14 @@ class CodeGen(object):
         if lenExpr == "null-terminated":
             return "strlen(%s)" % vulkanType.paramName(), None
         else:
-            deref = "*" if lenExprInfo.pointerIndirectionLevels > 0 else ""
-            lenAccessGuardExpr = "%s" % lenExpr if deref else None
-            return "(%s(%s))" % (deref, lenExpr), lenAccessGuardExpr
+            retVal = "%s" % lenExpr
+            needDeref = (lenExprInfo.pointerIndirectionLevels > 0)
+            lenAccessGuardExpr = retVal if needDeref else None
+            if not retVal.isalnum():
+                retVal = "(%s)" % (retVal)
+            if needDeref > 0:
+                retVal = "(*%s)" % retVal
+            return retVal, lenAccessGuardExpr
 
     def accessParameter(self, param, asPtr=True):
         if asPtr:
