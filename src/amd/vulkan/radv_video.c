@@ -1754,8 +1754,8 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid,
    for (unsigned j = 0; j < STD_VIDEO_VP9_NUM_REF_FRAMES + 1; j++) {
       if ((used_slots & (1 << j)) == 0) {
          result.ref_frame_map[idx] = j;
-	 used_slots |= 1 << j;
-	 idx++;
+         used_slots |= 1 << j;
+         idx++;
       }
    }
 
