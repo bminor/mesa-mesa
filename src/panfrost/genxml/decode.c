@@ -313,6 +313,48 @@ pandecode_texture_payload(struct pandecode_context *ctx, uint64_t payload,
 }
 #endif
 
+#if PAN_ARCH >= 9
+static void
+pandecode_tex_plane(struct pandecode_context *ctx, uint64_t u, unsigned idx)
+{
+   const struct mali_plane_header_packed *cl =
+      pandecode_fetch_gpu_mem(ctx, u, pan_size(PLANE_HEADER));
+
+   pan_unpack(cl, PLANE_HEADER, temp);
+
+   switch (temp.plane_type) {
+   case MALI_PLANE_TYPE_NULL:
+      DUMP_ADDR(ctx, NULL_PLANE, u, "Plane %u:\n", idx);
+      break;
+   case MALI_PLANE_TYPE_GENERIC:
+      DUMP_ADDR(ctx, GENERIC_PLANE, u, "Plane %u:\n", idx);
+      break;
+   case MALI_PLANE_TYPE_CHROMA_2P:
+      DUMP_ADDR(ctx, CHROMA_2P_PLANE, u, "Plane %u:\n", idx);
+      break;
+   case MALI_PLANE_TYPE_ASTC_2D:
+      DUMP_ADDR(ctx, ASTC_2D_PLANE, u, "Plane %u:\n", idx);
+      break;
+   case MALI_PLANE_TYPE_ASTC_3D:
+      DUMP_ADDR(ctx, ASTC_3D_PLANE, u, "Plane %u:\n", idx);
+      break;
+   case MALI_PLANE_TYPE_AFBC:
+      DUMP_ADDR(ctx, AFBC_PLANE, u, "Plane %u:\n", idx);
+      break;
+#if PAN_ARCH >= 10
+   case MALI_PLANE_TYPE_AFRC:
+      DUMP_ADDR(ctx, AFRC_PLANE, u, "Plane %u:\n", idx);
+      break;
+   case MALI_PLANE_TYPE_AFRC_CHROMA_2P:
+      DUMP_ADDR(ctx, AFRC_CHROMA_2P_PLANE, u, "Plane %u:\n", idx);
+      break;
+#endif
+   default:
+      unreachable("Unknown plane type");
+   }
+}
+#endif
+
 #if PAN_ARCH <= 5
 void
 GENX(pandecode_texture)(struct pandecode_context *ctx, uint64_t u, unsigned tex)
@@ -345,8 +387,7 @@ GENX(pandecode_texture)(struct pandecode_context *ctx,
       plane_count *= 6;
 
    for (unsigned i = 0; i < plane_count; ++i)
-      DUMP_ADDR(ctx, PLANE, temp.surfaces + i * pan_size(PLANE), "Plane %u:\n",
-                i);
+      pandecode_tex_plane(ctx, temp.surfaces + i * pan_size(NULL_PLANE), i);
 #else
    pandecode_texture_payload(ctx, temp.surfaces, &temp);
 #endif

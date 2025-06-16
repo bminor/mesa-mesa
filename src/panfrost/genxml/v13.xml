@@ -1936,6 +1936,135 @@
     <field name="Depth" size="16" start="7:0" type="uint" modifier="minus(1)" default="1"/>
   </struct>
 
+  <struct name="Plane Header" size="1" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type"/>
+    <field name="Ignore" size="24" start="0:8" type="uint"/>
+  </struct>
+
+  <struct name="Null Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="Null"/>
+  </struct>
+
+  <struct name="Generic Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="Generic"/>
+    <field name="Clump ordering" size="4" start="0:8" type="Clump Ordering"/>
+    <field name="Clump format" size="8" start="0:24" type="Clump Format"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Row stride" size="27" start="4:0" type="uint"/>
+    <field name="Slice stride hi" size="5" start="4:27" type="uint"/>
+    <field name="Slice stride" size="32" start="6:0" type="uint"/>
+    <field name="Width" size="16" start="7:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="7:16" type="uint" modifier="minus(1)" default="1"/>
+  </struct>
+
+  <struct name="ASTC 2D Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="ASTC 2D"/>
+    <field name="Clump ordering" size="4" start="0:8" type="Clump Ordering"/>
+    <field name="Decode HDR" size="1" start="24" type="bool"/>
+    <field name="Decode Wide" size="1" start="25" type="bool"/>
+    <field name="Block width" size="3" start="26" type="ASTC 2D Dimension"/>
+    <field name="Block height" size="3" start="29" type="ASTC 2D Dimension"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Row stride" size="27" start="4:0" type="uint"/>
+    <field name="Slice stride hi" size="5" start="4:27" type="uint"/>
+    <field name="Slice stride" size="32" start="6:0" type="uint"/>
+    <field name="Width" size="16" start="7:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="7:16" type="uint" modifier="minus(1)" default="1"/>
+  </struct>
+
+  <struct name="ASTC 3D Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="ASTC 3D"/>
+    <field name="Clump ordering" size="4" start="0:8" type="Clump Ordering"/>
+    <field name="Decode HDR" size="1" start="24" type="bool"/>
+    <field name="Decode Wide" size="1" start="25" type="bool"/>
+    <field name="Block width" size="2" start="26" type="ASTC 3D Dimension"/>
+    <field name="Block height" size="2" start="28" type="ASTC 3D Dimension"/>
+    <field name="Block depth" size="2" start="30" type="ASTC 3D Dimension"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Row stride" size="27" start="4:0" type="uint"/>
+    <field name="Slice stride hi" size="5" start="4:27" type="uint"/>
+    <field name="Slice stride" size="32" start="6:0" type="uint"/>
+    <field name="Width" size="16" start="7:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="7:16" type="uint" modifier="minus(1)" default="1"/>
+  </struct>
+
+  <struct name="AFBC Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="AFBC"/>
+    <field name="Superblock size" size="3" start="0:8" type="AFBC Superblock Size"/>
+    <field name="YTR" size="1" start="0:16" type="bool"/>
+    <field name="Split block" size="1" start="0:17" type="bool"/>
+    <field name="Alpha hint" size="1" start="0:18" type="bool"/>
+    <field name="Tiled header" size="1" start="0:19" type="bool"/>
+    <field name="Prefetch" size="1" start="0:20" type="bool"/>
+    <field name="Compression mode" size="6" start="0:26" type="AFBC Compression Mode"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Header row stride" size="27" start="4:0" type="uint"/>
+    <field name="Header slice stride hi" size="5" start="4:27" type="uint"/>
+    <field name="Header slice size" size="32" start="5:0" type="uint"/>
+    <field name="Header slice stride" size="32" start="6:0" type="uint"/>
+    <field name="Width" size="16" start="7:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="7:16" type="uint" modifier="minus(1)" default="1"/>
+  </struct>
+
+  <struct name="Chroma 2p Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="Chroma 2p"/>
+    <field name="Clump ordering" size="4" start="0:8" type="Clump Ordering"/>
+    <field name="Clump format" size="8" start="0:24" type="Clump Format"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Row stride" size="27" start="4:0" type="uint"/>
+    <field name="Width" size="16" start="5:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="5:16" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Secondary Pointer" size="64" start="6:0" type="address"/>
+  </struct>
+
+  <struct name="AFRC Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="AFRC"/>
+    <field name="Codec arguments" size="8" start="0:8" type="uint"/>
+    <field name="Block size" size="4" start="0:20" type="AFRC Block Size"/>
+    <field name="Format" size="8" start="0:24" type="AFRC Format"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Row stride" size="27" start="4:0" type="uint"/>
+    <field name="Slice stride hi" size="5" start="4:27" type="uint"/>
+    <field name="Slice stride" size="32" start="6:0" type="uint"/>
+    <field name="Width" size="16" start="7:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="7:16" type="uint" modifier="minus(1)" default="1"/>
+  </struct>
+
+  <struct name="AFRC Chroma 2p Plane" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Plane"/>
+    <field name="Plane type" size="4" start="0:4" type="Plane Type" default="AFRC Chroma 2p"/>
+    <field name="Codec arguments" size="8" start="0:8" type="uint"/>
+    <field name="Block size" size="4" start="0:20" type="AFRC Block Size"/>
+    <field name="Format" size="8" start="0:24" type="AFRC Format"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Pointer" size="48" start="2:0" type="address"/>
+    <field name="Size hi" size="16" start="3:16" type="uint"/>
+    <field name="Row stride" size="27" start="4:0" type="uint"/>
+    <field name="Width" size="16" start="5:0" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Height" size="16" start="5:16" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Secondary Pointer" size="64" start="6:0" type="address"/>
+  </struct>
+
   <enum name="Shader Register Allocation">
     <value name="64 Per Thread" value="0"/>
     <value name="32 Per Thread" value="2"/>
