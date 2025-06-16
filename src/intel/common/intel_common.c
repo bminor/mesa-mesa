@@ -30,3 +30,198 @@ void intel_common_update_device_info(int fd, struct intel_device_info *devinfo)
 
    free(engine_info);
 }
+
+void
+intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo,
+                                         uint32_t hw_threads_in_wg,
+                                         bool slm_or_barrier_enabled,
+                                         uint8_t *ret_pixel_async_compute_thread_limit,
+                                         uint8_t *ret_z_pass_async_compute_thread_limit,
+                                         uint8_t *ret_np_z_async_throttle_settings)
+{
+   /* Spec recommended SW values.
+    * IMPORTANT: values set to this variables are HW values
+    */
+   uint8_t pixel_async_compute_thread_limit = 2;
+   uint8_t z_pass_async_compute_thread_limit = 0;
+   uint8_t np_z_async_throttle_settings = 0;
+   bool has_vrt = devinfo->verx10 >= 300;
+
+   /* When VRT is enabled async threads limits don't have effect */
+   if (!slm_or_barrier_enabled || has_vrt) {
+      *ret_pixel_async_compute_thread_limit = pixel_async_compute_thread_limit;
+      *ret_z_pass_async_compute_thread_limit = z_pass_async_compute_thread_limit;
+      *ret_np_z_async_throttle_settings = np_z_async_throttle_settings;
+      return;
+   }
+
+   if (devinfo->verx10 >= 200) {
+      /* Spec give us a table with Throttle value | SIMD | MAX API threads(LWS).
+       * HW threads = MAX API threads(LWS) / SIMD
+       */
+      switch (hw_threads_in_wg) {
+      case 0 ... 2:
+         /* Max 2 */
+         pixel_async_compute_thread_limit = 1;
+         break;
+      case 3 ... 8:
+         /* Max 8 */
+         pixel_async_compute_thread_limit = 2;
+         break;
+      case 9 ... 16:
+         /* Max 16 */
+         pixel_async_compute_thread_limit = 3;
+         break;
+      case 17 ... 24:
+         /* Max 24 */
+         pixel_async_compute_thread_limit = 4;
+         break;
+      case 25 ... 32:
+         /* Max 32 */
+         pixel_async_compute_thread_limit = 5;
+         break;
+      case 33 ... 40:
+         /* Max 40 */
+         pixel_async_compute_thread_limit = 6;
+         break;
+      case 41 ... 48:
+         /* Max 48 */
+         pixel_async_compute_thread_limit = 7;
+         break;
+      default:
+         /* No limit applied */
+         pixel_async_compute_thread_limit = 0;
+      }
+
+      switch (hw_threads_in_wg) {
+      case 0 ... 32:
+         /* Max 32 */
+         z_pass_async_compute_thread_limit = 5;
+         break;
+      case 33 ... 40:
+         /* Max 40 */
+         z_pass_async_compute_thread_limit = 4;
+         break;
+      case 41 ... 48:
+         /* Max 48 */
+         z_pass_async_compute_thread_limit = 3;
+         break;
+      case 49 ... 56:
+         /* Max 56 */
+         z_pass_async_compute_thread_limit = 2;
+         break;
+      case 57 ... 60:
+         /* Max 60 */
+         z_pass_async_compute_thread_limit = 0;
+         break;
+      default:
+         /* No limit applied */
+         z_pass_async_compute_thread_limit = 1;
+      }
+
+      switch (hw_threads_in_wg) {
+      case 0 ... 32:
+         /* Max 32 */
+         np_z_async_throttle_settings = 1;
+         break;
+      case 33 ... 40:
+         /* Max 40 */
+         np_z_async_throttle_settings = 2;
+         break;
+      case 41 ... 48:
+         /* Max 48 */
+         np_z_async_throttle_settings = 3;
+         break;
+      default:
+         /* Use the same settings as the Pixel shader Async compute setting,
+          * for values >= async compute settings disables the limits
+          */
+         np_z_async_throttle_settings = 0;
+      }
+   } else {
+      switch (hw_threads_in_wg) {
+      case 0 ... 4:
+         /* Max 2 */
+         pixel_async_compute_thread_limit = 1;
+         break;
+      case 5 ... 16:
+         /* Max 8 */
+         pixel_async_compute_thread_limit = 2;
+         break;
+      case 17 ... 32:
+         /* Max 16 */
+         pixel_async_compute_thread_limit = 3;
+         break;
+      case 33 ... 48:
+         /* Max 24 */
+         pixel_async_compute_thread_limit = 4;
+         break;
+      case 49 ... 64:
+         /* Max 32 */
+         pixel_async_compute_thread_limit = 5;
+         break;
+      case 65 ... 80:
+         /* Max 40 */
+         pixel_async_compute_thread_limit = 6;
+         break;
+      case 81 ... 96:
+         /* Max 48 */
+         pixel_async_compute_thread_limit = 7;
+         break;
+      default:
+         /* No limit applied */
+         pixel_async_compute_thread_limit = 0;
+      }
+
+      switch (hw_threads_in_wg) {
+      case 0 ... 64:
+         /* Max 32 */
+         z_pass_async_compute_thread_limit = 5;
+         break;
+      case 65 ... 80:
+         /* Max 40 */
+         z_pass_async_compute_thread_limit = 4;
+         break;
+      case 81 ... 96:
+         /* Max 48 */
+         z_pass_async_compute_thread_limit = 3;
+         break;
+      case 97 ... 112:
+         /* Max 56 */
+         z_pass_async_compute_thread_limit = 2;
+         break;
+      case 113 ... 120:
+         /* Max 60 */
+         z_pass_async_compute_thread_limit = 0;
+         break;
+      default:
+         /* Max 64/No limit applied */
+         z_pass_async_compute_thread_limit = 1;
+      }
+
+      switch (hw_threads_in_wg) {
+      case 0 ... 64:
+         /* Max 32 */
+         np_z_async_throttle_settings = 1;
+         break;
+      case 65 ... 80:
+         /* Max 40 */
+         np_z_async_throttle_settings = 2;
+         break;
+      case 81 ... 96:
+         /* Max 48 */
+         np_z_async_throttle_settings = 3;
+         break;
+      default:
+         /* Use the same settings as the Pixel shader Async compute setting,
+          * for values >= async compute settings disables the limits
+          */
+         np_z_async_throttle_settings = 0;
+      }
+   }
+
+   assert(np_z_async_throttle_settings != 0 || pixel_async_compute_thread_limit == 0);
+   *ret_pixel_async_compute_thread_limit = pixel_async_compute_thread_limit;
+   *ret_z_pass_async_compute_thread_limit = z_pass_async_compute_thread_limit;
+   *ret_np_z_async_throttle_settings = np_z_async_throttle_settings;
+}
