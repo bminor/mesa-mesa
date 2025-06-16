@@ -26,6 +26,7 @@
 
 #include "amd/common/ac_gpu_info.h"
 #include "amd/common/ac_surface.h"
+#include "amd/common/ac_pm4.h"
 #include "pipebuffer/pb_buffer.h"
 
 /* Tiling flags. */
@@ -798,6 +799,12 @@ struct radeon_winsys {
     */
    void (*cs_set_mcbp_reg_shadowing_va)(struct radeon_cmdbuf *rcs, uint64_t regs_va,
                                                                   uint64_t csa_va);
+   /**
+    * Submits the preamble IB, which is the IB that initializes immutable registers and states.
+    * This must be the first IB for that queue type, and it affects all current and future contexts.
+    * If the IB has been submitted already, the call is ignored.
+    */
+   bool (*userq_submit_cs_preamble_ib_once)(struct radeon_cmdbuf *rcs, struct ac_pm4_state *pm4);
 };
 
 static inline bool radeon_emitted(struct radeon_cmdbuf *rcs, unsigned num_dw)

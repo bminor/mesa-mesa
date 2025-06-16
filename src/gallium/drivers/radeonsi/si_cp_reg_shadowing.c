@@ -14,7 +14,11 @@ bool si_init_cp_reg_shadowing(struct si_context *sctx)
    if (!si_init_gfx_preamble_state(sctx))
       return false;
 
-   if (sctx->uses_kernelq_reg_shadowing) {
+   if (sctx->uses_userq_reg_shadowing) {
+      sctx->ws->userq_submit_cs_preamble_ib_once(&sctx->gfx_cs, &sctx->cs_preamble_state->base);
+      si_pm4_free_state(sctx, sctx->cs_preamble_state, ~0);
+      sctx->cs_preamble_state = NULL;
+   } else if (sctx->uses_kernelq_reg_shadowing) {
       if (sctx->screen->info.has_fw_based_shadowing) {
          sctx->shadowing.registers =
                si_aligned_buffer_create(sctx->b.screen,

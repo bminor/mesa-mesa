@@ -33,6 +33,7 @@ extern "C" {
 } while (0)
 
 struct amdgpu_winsys;
+struct amdgpu_screen_winsys;
 
 struct amdgpu_userq_gfx_data {
    struct pb_buffer_lean *csa_bo;
@@ -72,6 +73,8 @@ struct amdgpu_userq {
    struct pb_buffer_lean *doorbell_bo;
    uint64_t *doorbell_bo_map;
 
+   struct pb_buffer_lean *cs_preamble_ib_bo;
+   bool is_cs_preamble_ib_sent;
    uint32_t userq_handle;
    enum amd_ip_type ip_type;
    simple_mtx_t lock;
@@ -90,6 +93,8 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
                   unsigned queue_index);
 void
 amdgpu_userq_deinit(struct amdgpu_winsys *aws, struct amdgpu_userq *userq);
+
+void amdgpu_userq_init_functions(struct amdgpu_screen_winsys *sws);
 
 #ifdef __cplusplus
 }

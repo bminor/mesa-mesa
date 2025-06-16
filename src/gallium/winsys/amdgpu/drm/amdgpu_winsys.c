@@ -547,6 +547,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
 
    amdgpu_bo_init_functions(sws);
    amdgpu_cs_init_functions(sws);
+   amdgpu_userq_init_functions(sws);
    amdgpu_surface_init_functions(sws);
 
    simple_mtx_lock(&aws->sws_list_lock);
