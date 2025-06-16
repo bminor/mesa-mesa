@@ -23,6 +23,46 @@ extern "C" {
 #define MAX_MIP_LEVELS   17
 #define MAX_IMAGE_PLANES 3
 
+struct pan_afbc_image_slice_layout {
+   struct {
+      /* Number of bytes between two rows of AFBC headers. */
+      uint32_t row_stride_B;
+
+      /* For 3D textures, this is the stride in bytes between AFBC headers of two
+       * consecutive Z slices. For 2D textures, the utile AFBC header size
+       * (header_size_B without the padding).
+       */
+      uint32_t surface_stride_B;
+
+      /* AFBC header size. This contains padding to meet AFBC header alignment
+       * constraints, meaning it can't be used to determine the number of AFBC
+       * tiles in the image slice.
+       */
+      uint32_t size_B;
+   } header;
+
+   struct {
+      /* For 3D textures, this is the stride in bytes between AFBC data of two
+       * consecutive Z slices. For 2D textures, this is the same as body_size_B.
+       */
+      uint32_t surface_stride_B;
+
+      /* Size of the AFBC body. */
+      uint32_t size_B;
+   } body;
+};
+
+struct pan_tiled_or_linear_image_slice_layout {
+   /* Number of bytes between two rows of tiles/lines. */
+   uint32_t row_stride_B;
+
+   /* For 3D textures, this is the stride in bytes between two
+    * consecutive Z slices. For 2DMS textures, this is the stride in bytes
+    * between two sample planes.
+    */
+   uint32_t surface_stride_B;
+};
+
 struct pan_image_slice_layout {
    /* Offset in bytes relative to the base bo bound.
     *
@@ -39,40 +79,21 @@ struct pan_image_slice_layout {
    /* Size of the MIP level in bytes. */
    uint64_t size_B;
 
-   /* For AFBC images, the number of bytes between two rows of AFBC
-    * headers.
-    *
-    * For non-AFBC images, the number of bytes between two rows of texels.
-    * For linear images, this will equal the logical stride. For
-    * images that are compressed or interleaved, this will be greater than
-    * the logical stride.
-    */
-   unsigned row_stride_B;
-
-   unsigned surface_stride_B;
-
-   struct {
-      /* Size of the AFBC header preceding each slice */
-      unsigned header_size_B;
-
-      /* Size of the AFBC body */
-      unsigned body_size_B;
-
-      /* Stride between AFBC headers of two consecutive surfaces.
-       * For 3D textures, this must be set to header size since
-       * AFBC headers are allocated together, for 2D arrays this
-       * should be set to size0, since AFBC headers are placed at
-       * the beginning of each layer
-       */
-      unsigned surface_stride_B;
-   } afbc;
+   /* Some properties have a different meaning depending on the modifier.
+    * Those are placed in different structs under a union. */
+   union {
+      /* Used only for AFBC images. */
+      struct pan_afbc_image_slice_layout afbc;
+      /* Used for linear, u-tiled and AFRC images. */
+      struct pan_tiled_or_linear_image_slice_layout tiled_or_linear;
+   };
 
    /* If checksumming is enabled following the slice, what
     * is its offset/stride? */
    struct {
       uint64_t offset_B;
-      unsigned stride_B;
-      unsigned size_B;
+      uint32_t stride_B;
+      uint32_t size_B;
    } crc;
 };
 
@@ -113,7 +134,7 @@ struct pan_image_layout_constraints {
    uint64_t offset_B;
 
    /* Row pitch in bytes. Non-zero if layout is explicit. */
-   unsigned wsi_row_pitch_B;
+   uint32_t wsi_row_pitch_B;
 
    /* When true, AFBC/AFRC imports are stricter than they were when those
     * modifiers where introduced. */
@@ -171,7 +192,7 @@ unsigned pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
                                      const struct pan_image_layout *layout,
                                      unsigned level);
 
-static inline unsigned
+static inline uint32_t
 pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
                                   unsigned plane_idx)
 {

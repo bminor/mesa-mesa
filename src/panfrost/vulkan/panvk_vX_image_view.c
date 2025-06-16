@@ -249,9 +249,9 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
       &plane_layout->slices[view->pview.first_level];
    bool is_3d = plane_props->dim == MALI_TEXTURE_DIMENSION_3D;
    unsigned offset =
-      slayout->offset_B +
-      (view->pview.first_layer *
-       (is_3d ? slayout->surface_stride_B : plane_layout->array_stride_B));
+      slayout->offset_B + (view->pview.first_layer *
+                           (is_3d ? slayout->tiled_or_linear.surface_stride_B
+                                  : plane_layout->array_stride_B));
 
    pan_pack(&view->descs.img_attrib_buf[0], ATTRIBUTE_BUFFER, cfg) {
       /* The format is the only thing we lack to emit attribute descriptors
@@ -278,7 +278,6 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
 
    struct mali_attribute_buffer_packed *buf = &view->descs.img_attrib_buf[1];
    pan_cast_and_pack(buf, ATTRIBUTE_BUFFER_CONTINUATION_3D, cfg) {
-      unsigned level = view->pview.first_level;
       VkExtent3D extent = view->vk.extent;
 
       cfg.s_dimension = extent.width;
@@ -287,11 +286,10 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
          view->pview.dim == MALI_TEXTURE_DIMENSION_3D
             ? extent.depth
             : (view->pview.last_layer - view->pview.first_layer + 1);
-      cfg.row_stride =
-         image->planes[plane_idx].plane.layout.slices[level].row_stride_B;
+      cfg.row_stride = slayout->tiled_or_linear.row_stride_B;
       if (cfg.r_dimension > 1) {
          cfg.slice_stride = view->pview.dim == MALI_TEXTURE_DIMENSION_3D
-                               ? slayout->surface_stride_B
+                               ? slayout->tiled_or_linear.surface_stride_B
                                : plane_layout->array_stride_B;
       }
    }

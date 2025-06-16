@@ -193,9 +193,9 @@ get_tiled_or_linear_att_mem_props(struct pan_image_plane_ref pref,
 
    *base = plane->base + slayout->offset_B +
            (array_idx * plane->layout.array_stride_B) +
-           (surf_idx * slayout->surface_stride_B);
-   *row_stride = slayout->row_stride_B;
-   *surf_stride = slayout->surface_stride_B;
+           (surf_idx * slayout->tiled_or_linear.surface_stride_B);
+   *row_stride = slayout->tiled_or_linear.row_stride_B;
+   *surf_stride = slayout->tiled_or_linear.surface_stride_B;
 }
 
 static enum mali_block_format
@@ -220,14 +220,14 @@ get_afbc_att_mem_props(struct pan_image_plane_ref pref, unsigned mip_level,
    const struct pan_image_slice_layout *slayout =
       &plane->layout.slices[mip_level];
 
-   *row_stride = slayout->row_stride_B;
-   *body_offset = slayout->afbc.header_size_B;
+   *row_stride = slayout->afbc.header.row_stride_B;
+   *body_offset = slayout->afbc.header.size_B;
    *header = plane->base + slayout->offset_B;
    if (image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
-      *header += (layer_or_z_slice * slayout->afbc.surface_stride_B);
+      *header += (layer_or_z_slice * slayout->afbc.header.surface_stride_B);
       *body_offset +=
-         (layer_or_z_slice * slayout->surface_stride_B) -
-         (layer_or_z_slice * slayout->afbc.surface_stride_B);
+         (layer_or_z_slice * slayout->afbc.body.surface_stride_B) -
+         (layer_or_z_slice * slayout->afbc.header.surface_stride_B);
    } else {
       *header += (layer_or_z_slice * plane->layout.array_stride_B);
    }
@@ -725,7 +725,7 @@ pan_emit_afbc_color_attachment(const struct pan_fb_info *fb, unsigned rt_idx,
       const struct pan_image_slice_layout *slayout =
          &plane->layout.slices[mip_level];
 
-      cfg.afbc.body_size = slayout->afbc.body_size_B;
+      cfg.afbc.body_size = slayout->afbc.body.size_B;
       cfg.afbc.chunk_size = 9;
       cfg.afbc.sparse = true;
 #endif
@@ -1285,8 +1285,8 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          cfg.color_writeback.base =
             plane->base + slayout->offset_B +
             (array_idx * plane->layout.array_stride_B) +
-            (surf_idx * slayout->surface_stride_B);
-         cfg.color_writeback.row_stride = slayout->row_stride_B;
+            (surf_idx * slayout->tiled_or_linear.surface_stride_B);
+         cfg.color_writeback.row_stride = slayout->tiled_or_linear.row_stride_B;
 
          assert(image->props.modifier == DRM_FORMAT_MOD_LINEAR ||
                 image->props.modifier ==
@@ -1317,10 +1317,11 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
             image->props.dim == MALI_TEXTURE_DIMENSION_3D ? zs->first_layer : 0;
 
          cfg.zs_write_enable = !fb->zs.discard.z;
-         cfg.zs_writeback.base = plane->base + slayout->offset_B +
-                                 (array_idx * plane->layout.array_stride_B) +
-                                 (surf_idx * slayout->surface_stride_B);
-         cfg.zs_writeback.row_stride = slayout->row_stride_B;
+         cfg.zs_writeback.base =
+            plane->base + slayout->offset_B +
+            (array_idx * plane->layout.array_stride_B) +
+            (surf_idx * slayout->tiled_or_linear.surface_stride_B);
+         cfg.zs_writeback.row_stride = slayout->tiled_or_linear.row_stride_B;
          assert(image->props.modifier == DRM_FORMAT_MOD_LINEAR ||
                 image->props.modifier ==
                    DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);

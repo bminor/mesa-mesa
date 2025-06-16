@@ -38,16 +38,6 @@ struct pan_image_plane_ref {
    uint32_t plane_idx;
 };
 
-struct pan_image_surface {
-   union {
-      uint64_t data;
-      struct {
-         uint64_t header;
-         uint64_t body;
-      } afbc;
-   };
-};
-
 struct pan_image_view {
    /* Format, dimension and sample count of the view might differ from
     * those of the image (2D view of a 3D image surface for instance).

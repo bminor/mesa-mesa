@@ -82,7 +82,7 @@ static unsigned
 get_afbc_wsi_row_pitch(const struct pan_image_props *props, unsigned plane_idx,
                        const struct pan_image_slice_layout *slayout)
 {
-   const unsigned header_row_stride_B = slayout->row_stride_B;
+   const unsigned header_row_stride_B = slayout->afbc.header.row_stride_B;
    const struct pan_image_block_size tile_extent_el =
       pan_afbc_superblock_size_el(props->format, props->modifier);
    const unsigned tile_payload_size_B =
@@ -163,9 +163,9 @@ init_afbc_slice_layout(
          return false;
       }
 
-      slayout->row_stride_B =
+      slayout->afbc.header.row_stride_B =
          pan_afbc_row_stride(props->modifier, width_from_wsi_row_stride);
-      if (slayout->row_stride_B & row_align_mask) {
+      if (slayout->afbc.header.row_stride_B & row_align_mask) {
          mesa_loge("WSI pitch not properly aligned");
          return false;
       }
@@ -179,7 +179,7 @@ init_afbc_slice_layout(
       /* If this is not a strict import, ignore the WSI row pitch and use
        * the resource width to get the size. */
       if (!layout_constraints->strict) {
-         slayout->row_stride_B = ALIGN_POT(
+         slayout->afbc.header.row_stride_B = ALIGN_POT(
             pan_afbc_row_stride(props->modifier, aligned_extent_px.width),
             row_align_mask + 1);
       }
@@ -187,39 +187,47 @@ init_afbc_slice_layout(
       slayout->offset_B =
          ALIGN_POT(layout_constraints ? layout_constraints->offset_B : 0,
                    offset_align_mask + 1);
-      slayout->row_stride_B = ALIGN_POT(
+      slayout->afbc.header.row_stride_B = ALIGN_POT(
          pan_afbc_row_stride(props->modifier, aligned_extent_px.width),
          row_align_mask + 1);
    }
 
-   const unsigned row_stride_sb =
-      pan_afbc_stride_blocks(props->modifier, slayout->row_stride_B);
+   const unsigned row_stride_sb = pan_afbc_stride_blocks(
+      props->modifier, slayout->afbc.header.row_stride_B);
    const unsigned surface_stride_sb =
       row_stride_sb * (aligned_extent_px.height / afbc_tile_extent_px.height);
 
-   slayout->afbc.surface_stride_B =
-      surface_stride_sb * AFBC_HEADER_BYTES_PER_TILE;
-   slayout->afbc.surface_stride_B =
-      ALIGN_POT(slayout->afbc.surface_stride_B, offset_align_mask + 1);
+   uint64_t hdr_surface_stride_B = (uint64_t)surface_stride_sb *
+                                   AFBC_HEADER_BYTES_PER_TILE;
+   hdr_surface_stride_B =
+      ALIGN_POT(hdr_surface_stride_B, (uint64_t)(offset_align_mask + 1));
 
-   slayout->afbc.header_size_B =
-      ALIGN_POT(slayout->afbc.surface_stride_B * aligned_extent_px.depth,
-                pan_afbc_body_align(arch, props->modifier));
+   slayout->afbc.header.surface_stride_B = hdr_surface_stride_B;
 
-   slayout->surface_stride_B = surface_stride_sb * afbc_tile_payload_size_B;
-   slayout->afbc.body_size_B =
-      surface_stride_sb * afbc_tile_payload_size_B * aligned_extent_px.depth;
-   slayout->size_B =
-      (uint64_t)slayout->afbc.header_size_B + slayout->afbc.body_size_B;
+   uint64_t header_size_B = hdr_surface_stride_B * aligned_extent_px.depth;
+   header_size_B = ALIGN_POT(
+      header_size_B, (uint64_t)pan_afbc_body_align(arch, props->modifier));
 
-   if (props->dim != MALI_TEXTURE_DIMENSION_3D) {
-      /* FIXME: it doesn't make sense to have the header size counted in the
-       * surface stride. Will be fixed once we revisit the
-       * pan_image_slice_layout fields to make them mod-specific. */
-      slayout->surface_stride_B += slayout->afbc.header_size_B;
-      slayout->afbc.surface_stride_B = slayout->surface_stride_B;
-   }
+   slayout->afbc.header.size_B = header_size_B;
 
+   uint64_t body_surf_stride_B =
+      (uint64_t)surface_stride_sb * afbc_tile_payload_size_B;
+   uint64_t body_size_B = body_surf_stride_B * aligned_extent_px.depth;
+
+   /* Each AFBC header encodes the offset to its AFBC data in a 32-bit field.
+    * AFBC headers of all 3D slices are placed at the beginning, meaning the
+    * maximum offset that exists is between the last header, and the last
+    * tile. */
+   ASSERTED uint64_t max_body_offset = body_size_B - afbc_tile_payload_size_B +
+                                       header_size_B -
+                                       AFBC_HEADER_BYTES_PER_TILE;
+
+   if (max_body_offset > UINT32_MAX)
+      return false;
+
+   slayout->afbc.body.surface_stride_B = body_surf_stride_B;
+   slayout->afbc.body.size_B = body_size_B;
+   slayout->size_B = header_size_B + body_size_B;
    return true;
 }
 
@@ -230,7 +238,7 @@ get_afrc_wsi_row_pitch(const struct pan_image_props *props, unsigned plane_idx,
    const struct pan_image_block_size tile_extent_px =
       pan_afrc_tile_size(props->format, props->modifier);
 
-   return slayout->row_stride_B / tile_extent_px.height;
+   return slayout->tiled_or_linear.row_stride_B / tile_extent_px.height;
 }
 
 static bool
@@ -254,9 +262,9 @@ init_afrc_slice_layout(
    };
 
    if (use_explicit_layout) {
-      slayout->row_stride_B =
+      slayout->tiled_or_linear.row_stride_B =
          layout_constraints->wsi_row_pitch_B * tile_extent_px.height;
-      if (slayout->row_stride_B & align_mask) {
+      if (slayout->tiled_or_linear.row_stride_B & align_mask) {
          mesa_loge("WSI pitch not properly aligned");
          return false;
       }
@@ -271,7 +279,8 @@ init_afrc_slice_layout(
          pan_afrc_block_size_from_modifier(props->modifier) *
          AFRC_CLUMPS_PER_TILE;
       unsigned width_from_wsi_row_stride =
-         (slayout->row_stride_B / afrc_blk_size_B) * tile_extent_px.width;
+         (slayout->tiled_or_linear.row_stride_B / afrc_blk_size_B) *
+         tile_extent_px.width;
 
       if (width_from_wsi_row_stride < mip_extent_px.width) {
          mesa_loge("WSI pitch too small");
@@ -281,7 +290,7 @@ init_afrc_slice_layout(
       /* If this is not a strict import, ignore the WSI row pitch and use
        * the resource width to get the size. */
       if (!layout_constraints->strict) {
-         slayout->row_stride_B = pan_afrc_row_stride(
+         slayout->tiled_or_linear.row_stride_B = pan_afrc_row_stride(
             props->format, props->modifier, mip_extent_px.width);
       }
    } else {
@@ -289,17 +298,24 @@ init_afrc_slice_layout(
        * linear/tiled and as a requirement for AFBC */
       slayout->offset_B = ALIGN_POT(
          layout_constraints ? layout_constraints->offset_B : 0, align_mask + 1);
-      slayout->row_stride_B =
+      slayout->tiled_or_linear.row_stride_B =
          ALIGN_POT(pan_afrc_row_stride(props->format, props->modifier,
                                        mip_extent_px.width),
                    align_mask + 1);
    }
 
-   slayout->surface_stride_B =
-      slayout->row_stride_B *
+   uint64_t surf_stride_B =
+      (uint64_t)slayout->tiled_or_linear.row_stride_B *
       DIV_ROUND_UP(aligned_extent_px.height, aligned_extent_px.height);
-   slayout->size_B = (uint64_t)slayout->surface_stride_B *
-                     aligned_extent_px.depth * props->nr_samples;
+
+   /* Surface stride is passed as a 32-bit unsigned integer to RT/ZS and texture
+    * descriptors, make sure it fits. */
+   if (surf_stride_B > UINT32_MAX)
+      return false;
+
+   slayout->tiled_or_linear.surface_stride_B = surf_stride_B;
+   slayout->size_B =
+      surf_stride_B * aligned_extent_px.depth * props->nr_samples;
    return true;
 }
 
@@ -308,7 +324,7 @@ get_u_tiled_wsi_row_pitch(const struct pan_image_props *props,
                           unsigned plane_idx,
                           const struct pan_image_slice_layout *slayout)
 {
-   return slayout->row_stride_B /
+   return slayout->tiled_or_linear.row_stride_B /
           pan_u_interleaved_tile_size_el(props->format).height;
 }
 
@@ -355,15 +371,16 @@ init_u_tiled_slice_layout(
    }
 
    if (use_explicit_layout) {
-      slayout->row_stride_B =
+      slayout->tiled_or_linear.row_stride_B =
          layout_constraints->wsi_row_pitch_B * tile_extent_el.height;
-      if (slayout->row_stride_B & align_mask) {
+      if (slayout->tiled_or_linear.row_stride_B & align_mask) {
          mesa_loge("WSI pitch not properly aligned");
          return false;
       }
 
       const unsigned width_from_wsi_row_stride =
-         (slayout->row_stride_B / tile_size_B) * tile_extent_el.width;
+         (slayout->tiled_or_linear.row_stride_B / tile_size_B) *
+         tile_extent_el.width;
 
       if (width_from_wsi_row_stride < mip_extent_el.width) {
          mesa_loge("WSI pitch too small");
@@ -382,17 +399,22 @@ init_u_tiled_slice_layout(
       slayout->offset_B = ALIGN_POT(
          layout_constraints ? layout_constraints->offset_B : 0,
          MAX2(align_mask + 1, pan_image_slice_align(props->modifier)));
-      slayout->row_stride_B = ALIGN_POT(
+      slayout->tiled_or_linear.row_stride_B = ALIGN_POT(
          tile_size_B * DIV_ROUND_UP(mip_extent_el.width, tile_extent_el.width),
          align_mask + 1);
    }
 
    uint64_t surf_stride_B =
-      (uint64_t)slayout->row_stride_B *
+      (uint64_t)slayout->tiled_or_linear.row_stride_B *
       DIV_ROUND_UP(mip_extent_el.height, tile_extent_el.height);
    surf_stride_B = ALIGN_POT(surf_stride_B, (uint64_t)align_mask + 1);
 
-   slayout->surface_stride_B = surf_stride_B;
+   /* Surface stride is passed as a 32-bit unsigned integer to RT/ZS and texture
+    * descriptors, make sure it fits. */
+   if (surf_stride_B > UINT32_MAX)
+      return false;
+
+   slayout->tiled_or_linear.surface_stride_B = surf_stride_B;
    slayout->size_B = surf_stride_B * mip_extent_el.depth * props->nr_samples;
    return true;
 }
@@ -402,7 +424,7 @@ get_linear_wsi_row_pitch(const struct pan_image_props *props,
                          unsigned plane_idx,
                          const struct pan_image_slice_layout *slayout)
 {
-   return slayout->row_stride_B;
+   return slayout->tiled_or_linear.row_stride_B;
 }
 
 static bool
@@ -445,8 +467,9 @@ init_linear_slice_layout(
          return false;
       }
 
-      slayout->row_stride_B = layout_constraints->wsi_row_pitch_B;
-      if (slayout->row_stride_B & align_mask) {
+      slayout->tiled_or_linear.row_stride_B =
+         layout_constraints->wsi_row_pitch_B;
+      if (slayout->tiled_or_linear.row_stride_B & align_mask) {
          mesa_loge("WSI pitch not properly aligned");
          return false;
       }
@@ -463,14 +486,20 @@ init_linear_slice_layout(
       slayout->offset_B = ALIGN_POT(
          layout_constraints ? layout_constraints->offset_B : 0,
          MAX2(align_mask + 1, pan_image_slice_align(props->modifier)));
-      slayout->row_stride_B =
+      slayout->tiled_or_linear.row_stride_B =
          ALIGN_POT(mip_extent_el.width * fmt_blksize_B, align_mask + 1);
    }
 
-   uint64_t surf_stride_B = (uint64_t)mip_extent_el.height * slayout->row_stride_B;
+   uint64_t surf_stride_B =
+      (uint64_t)slayout->tiled_or_linear.row_stride_B * mip_extent_el.height;
    surf_stride_B = ALIGN_POT(surf_stride_B, (uint64_t)align_mask + 1);
 
-   slayout->surface_stride_B = surf_stride_B;
+   /* Surface stride is passed as a 32-bit unsigned integer to RT/ZS and texture
+    * descriptors, make sure it fits. */
+   if (surf_stride_B > UINT32_MAX)
+      return false;
+
+   slayout->tiled_or_linear.surface_stride_B = surf_stride_B;
    slayout->size_B = surf_stride_B * mip_extent_el.depth * props->nr_samples;
    return true;
 }

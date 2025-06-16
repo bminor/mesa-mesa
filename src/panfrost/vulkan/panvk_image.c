@@ -405,7 +405,7 @@ panvk_image_plane_bind(struct panvk_device *dev,
                            (layer * plane->plane.layout.array_stride_B) +
                            plane->plane.layout.slices[level].offset_B;
             memset(header, 0,
-                   plane->plane.layout.slices[level].afbc.header_size_B);
+                   plane->plane.layout.slices[level].afbc.header.size_B);
          }
       }
 
@@ -489,9 +489,18 @@ get_image_subresource_layout(const struct panvk_image *image,
       slice_layout->offset_B +
       (subres->arrayLayer * image->planes[plane].plane.layout.array_stride_B);
    layout->size = slice_layout->size_B;
-   layout->rowPitch = slice_layout->row_stride_B;
    layout->arrayPitch = image->planes[plane].plane.layout.array_stride_B;
-   layout->depthPitch = slice_layout->surface_stride_B;
+
+   if (drm_is_afbc(image->vk.drm_format_mod)) {
+      /* row/depth pitch expressed in AFBC superblocks. */
+      layout->rowPitch = pan_afbc_stride_blocks(
+         image->vk.drm_format_mod, slice_layout->afbc.header.row_stride_B);
+      layout->depthPitch = pan_afbc_stride_blocks(
+         image->vk.drm_format_mod, slice_layout->afbc.header.surface_stride_B);
+   } else {
+      layout->rowPitch = slice_layout->tiled_or_linear.row_stride_B;
+      layout->depthPitch = slice_layout->tiled_or_linear.surface_stride_B;
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL

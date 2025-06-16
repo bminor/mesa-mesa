@@ -298,8 +298,8 @@ TEST(Layout, ImplicitLayoutInterleavedASTC5x5)
     * 16 * 4 = 192 bytes.
     */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 768);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 2304);
+   EXPECT_EQ(l.slices[0].tiled_or_linear.row_stride_B, 768);
+   EXPECT_EQ(l.slices[0].tiled_or_linear.surface_stride_B, 2304);
    EXPECT_EQ(l.slices[0].size_B, 2304);
 }
 
@@ -327,8 +327,8 @@ TEST(Layout, ImplicitLayoutLinearASTC5x5)
     * 1920 bytes total.
     */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 192);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 1920);
+   EXPECT_EQ(l.slices[0].tiled_or_linear.row_stride_B, 192);
+   EXPECT_EQ(l.slices[0].tiled_or_linear.surface_stride_B, 1920);
    EXPECT_EQ(l.slices[0].size_B, 1920);
 }
 
@@ -368,12 +368,12 @@ TEST(AFBCLayout, Linear3D)
     * 16 superblocks in the image, so body size is 32768.
     */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 16);
-   EXPECT_EQ(l.slices[0].afbc.header_size_B, 1024);
-   EXPECT_EQ(l.slices[0].afbc.body_size_B, 32768);
-   EXPECT_EQ(l.slices[0].afbc.surface_stride_B, 64);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 2048); /* XXX: Not meaningful? */
-   EXPECT_EQ(l.slices[0].size_B, 33792); /* XXX: Not used by anything */
+   EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 64);
+   EXPECT_EQ(l.slices[0].afbc.header.size_B, 64 * 16);
+   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 2048);
+   EXPECT_EQ(l.slices[0].afbc.body.size_B, 2048 * 16);
+   EXPECT_EQ(l.slices[0].size_B, 2048 * 16 + 64 * 16);
 }
 
 TEST(AFBCLayout, Tiled16x16)
@@ -411,10 +411,11 @@ TEST(AFBCLayout, Tiled16x16)
     * In total, the AFBC surface is 32768 + 2097152 = 2129920 bytes.
     */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 8192);
-   EXPECT_EQ(l.slices[0].afbc.header_size_B, 32768);
-   EXPECT_EQ(l.slices[0].afbc.body_size_B, 2097152);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 2129920);
+   EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 8192);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 32768);
+   EXPECT_EQ(l.slices[0].afbc.header.size_B, 32768);
+   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 2097152);
+   EXPECT_EQ(l.slices[0].afbc.body.size_B, 2097152);
    EXPECT_EQ(l.slices[0].size_B, 2129920);
 }
 
@@ -441,10 +442,11 @@ TEST(AFBCLayout, Linear16x16Minimal)
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 16);
-   EXPECT_EQ(l.slices[0].afbc.header_size_B, 64);
-   EXPECT_EQ(l.slices[0].afbc.body_size_B, 32 * 8);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 64 + (32 * 8));
+   EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 64);
+   EXPECT_EQ(l.slices[0].afbc.header.size_B, 64);
+   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 32 * 8);
+   EXPECT_EQ(l.slices[0].afbc.body.size_B, 32 * 8);
    EXPECT_EQ(l.slices[0].size_B, 64 + (32 * 8));
 }
 
@@ -471,10 +473,11 @@ TEST(AFBCLayout, Linear16x16Minimalv6)
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 16);
-   EXPECT_EQ(l.slices[0].afbc.header_size_B, 128);
-   EXPECT_EQ(l.slices[0].afbc.body_size_B, 32 * 8);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 128 + (32 * 8));
+   EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 128);
+   EXPECT_EQ(l.slices[0].afbc.header.size_B, 128);
+   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 32 * 8);
+   EXPECT_EQ(l.slices[0].afbc.body.size_B, 32 * 8);
    EXPECT_EQ(l.slices[0].size_B, 128 + (32 * 8));
 }
 
@@ -502,10 +505,11 @@ TEST(AFBCLayout, Tiled16x16Minimal)
 
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
-   EXPECT_EQ(l.slices[0].row_stride_B, 16 * 8 * 8);
-   EXPECT_EQ(l.slices[0].afbc.header_size_B, 4096);
-   EXPECT_EQ(l.slices[0].afbc.body_size_B, 32 * 8 * 8 * 8);
-   EXPECT_EQ(l.slices[0].surface_stride_B, 4096 + (32 * 8 * 8 * 8));
+   EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16 * 8 * 8);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 4096);
+   EXPECT_EQ(l.slices[0].afbc.header.size_B, 4096);
+   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 32 * 8 * 8 * 8);
+   EXPECT_EQ(l.slices[0].afbc.body.size_B, 32 * 8 * 8 * 8);
    EXPECT_EQ(l.slices[0].size_B, 4096 + (32 * 8 * 8 * 8));
 }
 

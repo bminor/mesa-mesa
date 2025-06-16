@@ -412,16 +412,17 @@ get_linear_or_u_tiled_plane_props(const struct pan_image_view *iview,
 
    *pointer = plane->base + slayout->offset_B;
    *size = slayout->size_B;
-   *row_stride = slayout->row_stride_B;
+   *row_stride = slayout->tiled_or_linear.row_stride_B;
 
    if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
-      *pointer += layer_or_z_slice * slayout->surface_stride_B;
-      *size -= layer_or_z_slice * slayout->surface_stride_B;
-      *slice_stride = slayout->surface_stride_B;
+      *pointer += layer_or_z_slice * slayout->tiled_or_linear.surface_stride_B;
+      *size -= layer_or_z_slice * slayout->tiled_or_linear.surface_stride_B;
+      *slice_stride = slayout->tiled_or_linear.surface_stride_B;
    } else {
       *pointer += layer_or_z_slice * plane->layout.array_stride_B;
-      *slice_stride =
-         pref.image->props.nr_samples > 1 ? slayout->surface_stride_B : 0;
+      *slice_stride = pref.image->props.nr_samples > 1
+                         ? slayout->tiled_or_linear.surface_stride_B
+                         : 0;
    }
 }
 
@@ -609,10 +610,10 @@ get_afbc_plane_props(const struct pan_image_view *iview, int plane_idx,
       &plane->layout.slices[mip_level];
 
    *header_pointer = plane->base + slayout->offset_B;
-   *header_row_stride = slayout->row_stride_B;
+   *header_row_stride = slayout->afbc.header.row_stride_B;
    /* Header/body of 3D resources are not interleaved, so the header slice
-    * stride and header slice size are the same thing. */
-   *header_slice_size = slayout->afbc.surface_stride_B;
+    * size and header slice stride are the same thing. */
+   *header_slice_size = slayout->afbc.header.surface_stride_B;
    *header_slice_stride = 0;
    *size = slayout->size_B;
 
@@ -620,20 +621,20 @@ get_afbc_plane_props(const struct pan_image_view *iview, int plane_idx,
       assert(pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D);
       assert(layer_or_z_slice == 0);
 
-      *header_slice_stride = slayout->afbc.surface_stride_B;
+      *header_slice_stride = slayout->afbc.header.surface_stride_B;
    } else if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
       assert(iview->dim == MALI_TEXTURE_DIMENSION_2D);
-
       /* When viewing 3D image as 2D-array, each plane describes a single Z
-       * slice. The header pointed it moved to the right slice, and the size is
+       * slice. The header pointer is moved to the right slice, and the size is
        * set to a single slice. */
-      *header_pointer += layer_or_z_slice * slayout->afbc.surface_stride_B;
-
-      /* We could narrow it down further but we currently lack body surface
-       * stride information to do that. Let's pass the total size minus the
-       * surface header offset for now. */
-      *size =
-         slayout->size_B - (layer_or_z_slice * slayout->afbc.surface_stride_B);
+      *header_pointer +=
+         layer_or_z_slice * slayout->afbc.header.surface_stride_B;
+      *header_slice_stride = slayout->afbc.header.surface_stride_B;
+      /* Skip headers and bodies that fall outside the Z slice being
+       * addressed. */
+      *size = (slayout->afbc.header.size_B -
+               (layer_or_z_slice * slayout->afbc.header.surface_stride_B)) +
+              (slayout->afbc.body.surface_stride_B * (layer_or_z_slice + 1));
    } else {
       *header_pointer += layer_or_z_slice * plane->layout.array_stride_B;
    }
@@ -712,12 +713,12 @@ get_afrc_plane_props(const struct pan_image_view *iview, int plane_idx,
 
    *pointer = plane->base + slayout->offset_B;
    *size = slayout->size_B;
-   *row_stride = slayout->row_stride_B;
-   *slice_stride = slayout->surface_stride_B;
+   *row_stride = slayout->tiled_or_linear.row_stride_B;
+   *slice_stride = slayout->tiled_or_linear.surface_stride_B;
 
    if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
-      *pointer += layer_or_z_slice * slayout->surface_stride_B;
-      *size -= layer_or_z_slice * slayout->surface_stride_B;
+      *pointer += layer_or_z_slice * slayout->tiled_or_linear.surface_stride_B;
+      *size -= layer_or_z_slice * slayout->tiled_or_linear.surface_stride_B;
    } else {
       *pointer += layer_or_z_slice * plane->layout.array_stride_B;
    }
@@ -833,15 +834,15 @@ get_linear_or_u_tiled_surface_props(const struct pan_image_view *iview,
 
    if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
       plane_addr +=
-         layer_or_z_slice * slayout->surface_stride_B;
+         layer_or_z_slice * slayout->tiled_or_linear.surface_stride_B;
    } else {
       plane_addr += (layer_or_z_slice * plane->layout.array_stride_B) +
-                    (sample * slayout->surface_stride_B);
+                    (sample * slayout->tiled_or_linear.surface_stride_B);
    }
 
    *pointer = plane_addr | tag;
-   *row_stride = slayout->row_stride_B;
-   *surf_stride = slayout->surface_stride_B;
+   *row_stride = slayout->tiled_or_linear.row_stride_B;
+   *surf_stride = slayout->tiled_or_linear.surface_stride_B;
 }
 
 static void
@@ -874,17 +875,18 @@ get_afbc_surface_props(const struct pan_image_view *iview,
    assert(sample == 0);
 
    if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
-      plane_header_addr += layer_or_z_slice * slayout->afbc.surface_stride_B;
-      *surf_stride = slayout->afbc.surface_stride_B;
+      plane_header_addr +=
+         layer_or_z_slice * slayout->afbc.header.surface_stride_B;
+      *surf_stride = slayout->afbc.header.surface_stride_B;
    } else {
       plane_header_addr += layer_or_z_slice * plane->layout.array_stride_B;
       /* Surface stride is used to do a bound check, and must cover the header
        * and payload sections. */
-      *surf_stride = slayout->afbc.header_size_B + slayout->afbc.body_size_B;
+      *surf_stride = slayout->afbc.header.size_B + slayout->afbc.body.size_B;
    }
 
    *pointer = plane_header_addr | tag;
-   *row_stride = slayout->row_stride_B;
+   *row_stride = slayout->afbc.header.row_stride_B;
 }
 
 static void
