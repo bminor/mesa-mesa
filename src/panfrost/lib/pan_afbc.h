@@ -127,6 +127,22 @@ pan_afbc_superblock_size(uint64_t modifier)
    }
 }
 
+/* Same as pan_afbc_superblock_size_el() but counted in block elements
+ * instead of pixels. For anything non-YUV this is the same. */
+static inline struct pan_image_block_size
+pan_afbc_superblock_size_el(enum pipe_format format, uint64_t modifier)
+{
+   struct pan_image_block_size sb_size_px = pan_afbc_superblock_size(modifier);
+
+   assert(sb_size_px.width % util_format_get_blockwidth(format) == 0);
+   assert(sb_size_px.height % util_format_get_blockheight(format) == 0);
+
+   return (struct pan_image_block_size){
+      .width = sb_size_px.width / util_format_get_blockwidth(format),
+      .height = sb_size_px.height / util_format_get_blockheight(format),
+   };
+}
+
 /*
  * Given an AFBC modifier, return the render size.
  */
@@ -140,6 +156,23 @@ pan_afbc_renderblock_size(uint64_t modifier)
     */
    blk_size.height = ALIGN_POT(blk_size.height, 16);
    return blk_size;
+}
+
+
+/* Same as pan_afbc_renderblock_size() but counted in block elements
+ * instead of pixels. For anything non-YUV this is the same. */
+static inline struct pan_image_block_size
+pan_afbc_renderblock_size_el(enum pipe_format format, uint64_t modifier)
+{
+   struct pan_image_block_size rb_size_px = pan_afbc_renderblock_size(modifier);
+
+   assert(rb_size_px.width % util_format_get_blockwidth(format) == 0);
+   assert(rb_size_px.height % util_format_get_blockheight(format) == 0);
+
+   return (struct pan_image_block_size){
+      .width = rb_size_px.width / util_format_get_blockwidth(format),
+      .height = rb_size_px.height / util_format_get_blockheight(format),
+   };
 }
 
 /*
