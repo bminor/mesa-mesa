@@ -107,6 +107,26 @@ get_texture_size(const struct etna_context *ctx, bool frag,
    }
 }
 
+static uint32_t
+get_sampler_lod(const struct etna_context *ctx, bool frag,
+                enum etna_uniform_contents contents, uint32_t data)
+{
+   unsigned index = get_const_idx(ctx, frag, data);
+   const struct pipe_sampler_state *sampler = ctx->sampler[index];
+   const bool mipmap = sampler->min_mip_filter != PIPE_TEX_MIPFILTER_NONE;
+
+   switch (contents) {
+   case ETNA_UNIFORM_SAMPLER_LOD_MIN:
+      return mipmap ? fui(sampler->min_lod) : fui(0.0f);
+   case ETNA_UNIFORM_SAMPLER_LOD_MAX:
+      return mipmap ? fui(sampler->max_lod) : fui(0.0f);
+   case ETNA_UNIFORM_SAMPLER_LOD_BIAS:
+      return fui(sampler->lod_bias);
+   default:
+      unreachable("Bad sampler lod field");
+   }
+}
+
 void
 etna_uniforms_write(const struct etna_context *ctx,
                     const struct etna_shader_variant *sobj,
@@ -153,6 +173,13 @@ etna_uniforms_write(const struct etna_context *ctx,
             get_texture_size(ctx, frag, uinfo->contents[i], val));
          break;
 
+      case ETNA_UNIFORM_SAMPLER_LOD_MIN:
+      case ETNA_UNIFORM_SAMPLER_LOD_MAX:
+      case ETNA_UNIFORM_SAMPLER_LOD_BIAS:
+         etna_cmd_stream_emit(stream,
+            get_sampler_lod(ctx, frag, uinfo->contents[i], val));
+         break;
+
       case ETNA_UNIFORM_UBO_ADDR:
          etna_cmd_stream_reloc(stream, &(struct etna_reloc) {
             .bo = etna_buffer_resource(cb[val].buffer)->bo,
@@ -187,6 +214,12 @@ etna_set_shader_uniforms_dirty_flags(struct etna_shader_variant *sobj)
       case ETNA_UNIFORM_TEXTURE_HEIGHT:
       case ETNA_UNIFORM_TEXTURE_DEPTH:
          dirty |= ETNA_DIRTY_SAMPLER_VIEWS;
+         break;
+
+      case ETNA_UNIFORM_SAMPLER_LOD_MIN:
+      case ETNA_UNIFORM_SAMPLER_LOD_MAX:
+      case ETNA_UNIFORM_SAMPLER_LOD_BIAS:
+         dirty |= ETNA_DIRTY_SAMPLERS;
          break;
       }
    }
