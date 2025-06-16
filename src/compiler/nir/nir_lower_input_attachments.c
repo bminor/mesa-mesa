@@ -159,10 +159,18 @@ static bool
 try_lower_input_texop(nir_builder *b, nir_tex_instr *tex,
                       const nir_input_attachment_options *options)
 {
-   nir_deref_instr *deref = nir_src_as_deref(tex->src[0].src);
+   const int texture_src_idx =
+      nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
+   if (texture_src_idx < 0)
+      return false;
+
+   nir_deref_instr *deref = nir_src_as_deref(tex->src[texture_src_idx].src);
 
    if (glsl_get_sampler_dim(deref->type) != GLSL_SAMPLER_DIM_SUBPASS_MS)
       return false;
+
+   const int coord_src_idx = nir_tex_instr_src_index(tex, nir_tex_src_coord);
+   assert(coord_src_idx >= 0);
 
    b->cursor = nir_before_instr(&tex->instr);
 
@@ -175,7 +183,7 @@ try_lower_input_texop(nir_builder *b, nir_tex_instr *tex,
 
    tex->coord_components = 3;
 
-   nir_src_rewrite(&tex->src[1].src, coord);
+   nir_src_rewrite(&tex->src[coord_src_idx].src, coord);
 
    return true;
 }
