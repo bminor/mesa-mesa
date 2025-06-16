@@ -64,3 +64,13 @@
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: nvidia:codename:GA106
     GPU_FIRMWARE_KEEP_PATH_REGEX: '(lib/(modules|firmware/nvidia/ga10\d)/.*)'
+
+.nvk-ad106-valve:
+  extends:
+    - .nvk-ci-tron-common
+  variables:
+    GPU_VERSION: nvk-ad106
+    FDO_CI_CONCURRENT: 32
+    RUNNER_FARM_LOCATION: keywords
+    CI_TRON_DUT_SETUP_TAGS: nvidia:codename:AD106
+    GPU_FIRMWARE_KEEP_PATH_REGEX: '(lib/(modules|firmware/nvidia/(ga|ad)10\d)/.*)'
