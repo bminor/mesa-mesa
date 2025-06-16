@@ -54,6 +54,7 @@ static const struct debug_named_value radeonsi_debug_options[] = {
    {"check_vm", DBG(CHECK_VM), "Check VM faults and dump debug info."},
    {"reserve_vmid", DBG(RESERVE_VMID), "Force VMID reservation per context."},
    {"shadowregs", DBG(SHADOW_REGS), "Enable CP register shadowing."},
+   {"userqnoshadowregs", DBG(USERQ_NO_SHADOW_REGS), "Disable register shadowing in userqueue."},
    {"nofastdlist", DBG(NO_FAST_DISPLAY_LIST), "Disable fast display lists"},
    {"nodmashaders", DBG(NO_DMA_SHADERS), "Disable uploading shaders via CP DMA and map them directly."},
 
@@ -523,8 +524,12 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
                         !sscreen->info.ip[AMD_IP_COMPUTE].num_queues ||
                         !(flags & PIPE_CONTEXT_COMPUTE_ONLY);
 
-   if (sctx->is_gfx_queue)
-      sctx->uses_kernelq_reg_shadowing = sscreen->info.has_kernelq_reg_shadowing;
+   if (sctx->is_gfx_queue) {
+      if (sscreen->info.userq_ip_mask & (1 << AMD_IP_GFX))
+         sctx->uses_userq_reg_shadowing = !(sscreen->debug_flags & DBG(USERQ_NO_SHADOW_REGS));
+      else
+         sctx->uses_kernelq_reg_shadowing = sscreen->info.has_kernelq_reg_shadowing;
+   }
 
    if (flags & PIPE_CONTEXT_DEBUG)
       sscreen->record_llvm_ir = true; /* racy but not critical */

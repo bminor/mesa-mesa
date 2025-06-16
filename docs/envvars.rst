@@ -1744,6 +1744,10 @@ RadeonSI driver environment variables
       Enable DPBB. Enable DPBB for gfx9 dGPU. Default enabled for gfx9 APU and >= gfx10.
    ``extra_md``
       add extra information in bo metadata to help tools (umr)
+   ``shadowregs``
+      Enable CP register shadowing in kernel queue.
+   ``userqnoshadowregs``
+      Disable register shadowing in userqueue. This will also disable userqueue mcbp.
 
 r600 driver environment variables
 ---------------------------------

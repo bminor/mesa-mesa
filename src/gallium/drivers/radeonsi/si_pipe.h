@@ -182,6 +182,7 @@ enum
    DBG_CHECK_VM,
    DBG_RESERVE_VMID,
    DBG_SHADOW_REGS,
+   DBG_USERQ_NO_SHADOW_REGS,
    DBG_NO_FAST_DISPLAY_LIST,
    DBG_NO_DMA_SHADERS,
 
@@ -1002,6 +1003,7 @@ struct si_context {
    bool is_noop:1;
    bool is_gfx_queue:1;
    bool uses_kernelq_reg_shadowing:1;
+   bool uses_userq_reg_shadowing:1;
    bool gfx_flush_in_progress : 1;
    bool gfx_last_ib_is_busy : 1;
    bool compute_is_busy : 1;
