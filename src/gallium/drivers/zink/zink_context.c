@@ -4846,7 +4846,8 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
       assert(!(map_flags & PIPE_MAP_UNSYNCHRONIZED));
       if (zink_is_swapchain(img))
          needs_present_readback = zink_kopper_acquire_readback(ctx, img, &use_img);
-      screen->image_barrier(ctx, use_img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+      VkImageLayout layout = screen->driver_workarounds.general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+      screen->image_barrier(ctx, use_img, layout, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
       zink_resource_buffer_transfer_dst_barrier(ctx, buf, dstx, src_box->width);
    }
 
