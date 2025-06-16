@@ -86,8 +86,13 @@ nvk_hal_open(const struct hw_module_t *mod, const char *id,
 static int
 nvk_hal_close(struct hw_device_t *dev)
 {
-   /* hwvulkan.h claims that hw_device_t::close() is never called. */
-   return -1;
+   /* the hw_device_t::close() function is called upon driver unloading */
+   assert(dev->version == HWVULKAN_DEVICE_API_VERSION_0_1);
+   assert(dev->module == &HAL_MODULE_INFO_SYM.common);
+
+   hwvulkan_device_t *hal_dev = container_of(dev, hwvulkan_device_t, common);
+   free(hal_dev);
+   return 0;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
