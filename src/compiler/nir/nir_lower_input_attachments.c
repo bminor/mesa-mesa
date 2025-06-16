@@ -177,9 +177,12 @@ try_lower_input_texop(nir_builder *b, nir_tex_instr *tex,
    nir_def *frag_coord = load_frag_coord(b, deref, options);
    frag_coord = nir_f2i32(b, frag_coord);
 
+   nir_def *offset = nir_trim_vector(b, tex->src[coord_src_idx].src.ssa, 2);
+   nir_def *pos = nir_iadd(b, frag_coord, offset);
+
    nir_def *layer = load_layer_id(b, options);
-   nir_def *coord = nir_vec3(b, nir_channel(b, frag_coord, 0),
-                             nir_channel(b, frag_coord, 1), layer);
+   nir_def *coord = nir_vec3(b, nir_channel(b, pos, 0),
+                             nir_channel(b, pos, 1), layer);
 
    tex->coord_components = 3;
 
