@@ -772,6 +772,23 @@ try_lower_load_vulkan_descriptor(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+static nir_def *
+_load_root_table(nir_builder *b,
+                 unsigned num_components, unsigned bit_size,
+                 uint32_t root_table_offset,
+                 const struct lower_descriptors_ctx *ctx)
+{
+   unsigned align_mul = bit_size / 8;
+   return nir_ldc_nv(b, num_components, bit_size,
+                     nir_imm_int(b, 0), /* Root table */
+                     nir_imm_int(b, root_table_offset),
+                     .align_mul = align_mul,
+                     .align_offset = 0);
+}
+
+#define load_root_table(b, nc, bs, member, ctx) \
+   _load_root_table(b, nc, bs, nvk_root_descriptor_offset(member), ctx)
+
 static bool
 _lower_sysval_to_root_table(nir_builder *b, nir_intrinsic_instr *intrin,
                             uint32_t root_table_offset,
@@ -779,12 +796,9 @@ _lower_sysval_to_root_table(nir_builder *b, nir_intrinsic_instr *intrin,
 {
    b->cursor = nir_instr_remove(&intrin->instr);
 
-   nir_def *val = nir_ldc_nv(b, intrin->def.num_components,
-                             intrin->def.bit_size,
-                             nir_imm_int(b, 0), /* Root table */
-                             nir_imm_int(b, root_table_offset),
-                             .align_mul = 4,
-                             .align_offset = 0);
+   nir_def *val = _load_root_table(b, intrin->def.num_components,
+                                   intrin->def.bit_size,
+                                   root_table_offset, ctx);
 
    nir_def_rewrite_uses(&intrin->def, val);
 
@@ -1111,18 +1125,11 @@ static bool
 lower_interp_at_sample(nir_builder *b, nir_intrinsic_instr *interp,
                        const struct lower_descriptors_ctx *ctx)
 {
-   const uint32_t root_table_offset =
-      nvk_root_descriptor_offset(draw.sample_locations);
-
    nir_def *sample = interp->src[1].ssa;
 
    b->cursor = nir_before_instr(&interp->instr);
 
-   nir_def *loc = nir_ldc_nv(b, 1, 64,
-                             nir_imm_int(b, 0), /* Root table */
-                             nir_imm_int(b, root_table_offset),
-                             .align_mul = 8,
-                             .align_offset = 0);
+   nir_def *loc = load_root_table(b, 1, 64, draw.sample_locations, ctx);
 
    /* Yay little endian */
    loc = nir_ushr(b, loc, nir_imul_imm(b, sample, 8));
