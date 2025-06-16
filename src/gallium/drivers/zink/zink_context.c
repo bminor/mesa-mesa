@@ -4821,6 +4821,7 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
    struct zink_resource *use_img = img;
    struct zink_resource *buf = dst->base.b.target == PIPE_BUFFER ? dst : src;
    bool needs_present_readback = false;
+   struct zink_screen *screen = zink_screen(ctx->base.screen);
 
    bool buf2img = buf == src;
    bool unsync = !!(map_flags & PIPE_MAP_UNSYNCHRONIZED);
@@ -4840,12 +4841,12 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
       box.z = dstz;
       zink_resource_image_transfer_dst_barrier(ctx, img, dst_level, &box, unsync);
       if (!unsync)
-         zink_screen(ctx->base.screen)->buffer_barrier(ctx, buf, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+         screen->buffer_barrier(ctx, buf, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
    } else {
       assert(!(map_flags & PIPE_MAP_UNSYNCHRONIZED));
       if (zink_is_swapchain(img))
          needs_present_readback = zink_kopper_acquire_readback(ctx, img, &use_img);
-      zink_screen(ctx->base.screen)->image_barrier(ctx, use_img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+      screen->image_barrier(ctx, use_img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
       zink_resource_buffer_transfer_dst_barrier(ctx, buf, dstx, src_box->width);
    }
 
