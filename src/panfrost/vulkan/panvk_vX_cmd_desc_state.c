@@ -282,7 +282,8 @@ panvk_per_arch(cmd_prepare_shader_res_table)(
    }
 
    uint32_t first_unused_set = util_last_bit(shader->desc_info.used_set_mask);
-   uint32_t res_count = 1 + first_unused_set;
+   uint32_t res_count =
+      ALIGN_POT(1 + first_unused_set, MALI_RESOURCE_TABLE_SIZE_ALIGNMENT);
    struct pan_ptr ptr =
       panvk_cmd_alloc_desc_array(cmdbuf, res_count * repeat_count, RESOURCE);
    if (!ptr.gpu)
@@ -317,8 +318,15 @@ panvk_per_arch(cmd_prepare_shader_res_table)(
             }
          }
       }
+      for (uint32_t i = first_unused_set + 1; i < res_count; i++) {
+         pan_pack(&res_table[i], RESOURCE, cfg) {
+            cfg.address = 0;
+            cfg.contains_descriptors = false;
+            cfg.size = 0;
+         }
+      }
 
-      res_table += first_unused_set + 1;
+      res_table += res_count;
    }
 
    shader_desc_state->res_table = ptr.gpu | res_count;
