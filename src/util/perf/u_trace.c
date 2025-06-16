@@ -794,6 +794,16 @@ u_trace_init(struct u_trace *ut, struct u_trace_context *utctx)
 }
 
 void
+u_trace_move(struct u_trace *dst, struct u_trace *src)
+{
+   dst->utctx = src->utctx;
+   list_replace(&src->trace_chunks, &dst->trace_chunks);
+   dst->num_traces = src->num_traces;
+   src->num_traces = 0;
+   list_delinit(&src->trace_chunks);
+}
+
+void
 u_trace_fini(struct u_trace *ut)
 {
    /* Normally the list of trace-chunks would be empty, if they
