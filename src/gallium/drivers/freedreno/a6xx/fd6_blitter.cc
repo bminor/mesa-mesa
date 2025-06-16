@@ -186,6 +186,13 @@ can_do_blit(const struct pipe_blit_info *info)
    fail_if(!ok_format(info->src.format));
    fail_if(!ok_format(info->dst.format));
 
+   /* using the 2d path seems to canonicalize NaNs when the source format
+    * is a 16-bit floating point format, likely because it implicitly
+    * converts to 32 bits.
+    */
+   fail_if(util_format_is_float16(info->src.format) &&
+           util_format_is_float16(info->dst.format));
+
    assert(!util_format_is_compressed(info->src.format));
    assert(!util_format_is_compressed(info->dst.format));
 
