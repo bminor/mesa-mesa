@@ -90,5 +90,6 @@ void radv_video_get_enc_dpb_image(struct radv_device *device,
                                   const struct VkVideoProfileListInfoKHR *profile_list,
                                   struct radv_image *image,
                                   struct radv_image_create_info *create_info);
+bool radv_video_decode_vp9_supported(const struct radv_physical_device *pdev);
 
 #endif /* RADV_VIDEO_H */

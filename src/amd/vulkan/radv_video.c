@@ -43,6 +43,16 @@
 
 static void set_reg(struct radv_cmd_buffer *cmd_buffer, unsigned reg, uint32_t val);
 
+static inline bool
+radv_check_vcn_fw_version(const struct radv_physical_device *pdev, uint32_t dec, uint32_t enc, uint32_t rev)
+{
+   return pdev->info.vcn_dec_version > dec ||
+          pdev->info.vcn_enc_minor_version > enc ||
+          (pdev->info.vcn_dec_version == dec &&
+           pdev->info.vcn_enc_minor_version == enc &&
+           pdev->info.vcn_fw_revision >= rev);
+}
+
 static bool
 radv_enable_tier2(struct radv_physical_device *pdev)
 {
@@ -3133,4 +3143,19 @@ radv_video_get_profile_alignments(struct radv_physical_device *pdev, const VkVid
    uint32_t db_alignment = radv_video_get_db_alignment(pdev, 64, is_h265_main_10);
    *width_align_out = MAX2(*width_align_out, db_alignment);
    *height_align_out = MAX2(*height_align_out, db_alignment);
+}
+
+bool
+radv_video_decode_vp9_supported(const struct radv_physical_device *pdev)
+{
+   if (pdev->info.vcn_ip_version >= VCN_5_0_0)
+      return radv_check_vcn_fw_version(pdev, 9, 7, 18);
+   else if (pdev->info.vcn_ip_version >= VCN_4_0_0)
+      return radv_check_vcn_fw_version(pdev, 9, 23, 13);
+   else if (pdev->info.vcn_ip_version >= VCN_3_0_0)
+      return radv_check_vcn_fw_version(pdev, 4, 33, 7);
+   else if (pdev->info.vcn_ip_version >= VCN_2_0_0)
+      return radv_check_vcn_fw_version(pdev, 8, 24, 4);
+   else
+      return false;
 }
