@@ -135,6 +135,11 @@ svga_texture_copy_handle(struct svga_context *svga,
                          unsigned width, unsigned height, unsigned depth);
 
 
+struct pipe_surface *
+svga_create_surface(struct pipe_context *pipe,
+                    struct pipe_resource *pt,
+                    const struct pipe_surface *surf_tmpl);
+
 static inline struct svga_surface *
 svga_surface(struct pipe_surface *surface)
 {

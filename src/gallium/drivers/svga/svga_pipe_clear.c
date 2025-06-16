@@ -278,7 +278,7 @@ svga_clear_texture(struct pipe_context *pipe,
    tmpl.last_layer = box->z + box->depth - 1;
    tmpl.level = level;
 
-   surface = pipe->create_surface(pipe, res, &tmpl);
+   surface = svga_create_surface(pipe, res, &tmpl);
    if (surface == NULL) {
       debug_printf("failed to create surface\n");
       return;

@@ -110,7 +110,7 @@ svga_copy_framebuffer_state(struct svga_context *svga,
       }
 
       struct pipe_surface *psurf = src->cbufs[i].texture
-         ? pctx->create_surface(pctx, src->cbufs[i].texture, &src->cbufs[i])
+         ? svga_create_surface(pctx, src->cbufs[i].texture, &src->cbufs[i])
          : NULL;
       if (dst->cbufs[i]) {
          svga_surface_unref(pctx, &dst->cbufs[i]);
@@ -134,7 +134,7 @@ svga_copy_framebuffer_state(struct svga_context *svga,
    }
 
    struct pipe_surface *psurf = src->zsbuf.texture
-      ? pctx->create_surface(pctx, src->zsbuf.texture, &src->zsbuf)
+      ? svga_create_surface(pctx, src->zsbuf.texture, &src->zsbuf)
       : NULL;
    if (dst->zsbuf) {
       svga_surface_unref(pctx, &dst->zsbuf);

@@ -402,7 +402,7 @@ done:
 }
 
 
-static struct pipe_surface *
+struct pipe_surface *
 svga_create_surface(struct pipe_context *pipe,
                     struct pipe_resource *pt,
                     const struct pipe_surface *surf_tmpl)
