@@ -3535,7 +3535,7 @@ resolve_sysmem(struct tu_cmd_buffer *cmd,
 {
    const struct blit_ops *ops = &r2d_ops<CHIP>;
 
-   trace_start_sysmem_resolve(&cmd->trace, cs, cmd, vk_dst_format);
+   trace_start_sysmem_resolve(&cmd->rp_trace, cs, cmd, vk_dst_format);
 
    enum pipe_format src_format = vk_format_to_pipe_format(vk_src_format);
    enum pipe_format dst_format = vk_format_to_pipe_format(vk_dst_format);
@@ -3571,7 +3571,7 @@ resolve_sysmem(struct tu_cmd_buffer *cmd,
 
    ops->teardown(cmd, cs);
 
-   trace_end_sysmem_resolve(&cmd->trace, cs);
+   trace_end_sysmem_resolve(&cmd->rp_trace, cs);
 }
 
 template <chip CHIP>
@@ -4024,7 +4024,7 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
    bool z_clear = false;
    bool s_clear = false;
 
-   trace_start_sysmem_clear_all(&cmd->trace, cs, cmd, mrt_count, rect_count);
+   trace_start_sysmem_clear_all(&cmd->rp_trace, cs, cmd, mrt_count, rect_count);
 
    for (uint32_t i = 0; i < attachment_count; i++) {
       uint32_t a;
@@ -4201,7 +4201,7 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
    if (cmd->state.fdm_enabled)
       tu_cs_set_writeable(cs, false);
 
-   trace_end_sysmem_clear_all(&cmd->trace, cs);
+   trace_end_sysmem_clear_all(&cmd->rp_trace, cs);
 }
 
 template <chip CHIP>
@@ -4290,7 +4290,7 @@ tu_emit_clear_gmem_attachment(struct tu_cmd_buffer *cmd,
    const struct tu_render_pass_attachment *att =
       &cmd->state.pass->attachments[attachment];
 
-   trace_start_gmem_clear(&cmd->trace, cs, cmd, att->format, att->samples);
+   trace_start_gmem_clear(&cmd->rp_trace, cs, cmd, att->format, att->samples);
 
    tu_cs_emit_regs(cs,
                    A6XX_RB_BLIT_GMEM_MSAA_CNTL(tu_msaa_samples(att->samples)));
@@ -4326,7 +4326,7 @@ tu_emit_clear_gmem_attachment(struct tu_cmd_buffer *cmd,
 
    tu_flush_for_access(&cmd->state.renderpass_cache, TU_ACCESS_BLIT_WRITE_GMEM, TU_ACCESS_NONE);
 
-   trace_end_gmem_clear(&cmd->trace, cs);
+   trace_end_gmem_clear(&cmd->rp_trace, cs);
 }
 
 template <chip CHIP>
@@ -4575,13 +4575,13 @@ tu_clear_attachments_generic(struct tu_cmd_buffer *cmd,
       if (a != VK_ATTACHMENT_UNUSED) {
          const struct tu_render_pass_attachment *att = &cmd->state.pass->attachments[a];
          const struct tu_image_view *iview = cmd->state.attachments[a];
-         trace_start_generic_clear(&cmd->trace, cs, cmd, att->format,
+         trace_start_generic_clear(&cmd->rp_trace, cs, cmd, att->format,
                                    iview->view.ubwc_enabled, att->samples);
          for (unsigned j = 0; j < rectCount; j++) {
             tu7_clear_attachment_generic_single_rect(
                cmd, cs, &resolve_group, att, &pAttachments[i], a, &pRects[j]);
          }
-         trace_end_generic_clear(&cmd->trace, cs);
+         trace_end_generic_clear(&cmd->rp_trace, cs);
       }
    }
 
@@ -4638,7 +4638,7 @@ clear_sysmem_attachment(struct tu_cmd_buffer *cmd,
    if (cmd->state.pass->attachments[a].samples > 1)
       ops = &r3d_ops<CHIP>;
 
-   trace_start_sysmem_clear(&cmd->trace, cs, cmd, vk_format, ops == &r3d_ops<CHIP>,
+   trace_start_sysmem_clear(&cmd->rp_trace, cs, cmd, vk_format, ops == &r3d_ops<CHIP>,
                             cmd->state.pass->attachments[a].samples);
 
    ops->setup(cmd, cs, format, format, clear_mask, 0, true, iview->view.ubwc_enabled,
@@ -4662,7 +4662,7 @@ clear_sysmem_attachment(struct tu_cmd_buffer *cmd,
 
    ops->teardown(cmd, cs);
 
-   trace_end_sysmem_clear(&cmd->trace, cs);
+   trace_end_sysmem_clear(&cmd->rp_trace, cs);
 }
 
 template <chip CHIP>
@@ -4745,7 +4745,7 @@ tu7_generic_clear_attachment(struct tu_cmd_buffer *cmd,
    const VkClearValue *value = &cmd->state.clear_values[a];
    const struct tu_image_view *iview = cmd->state.attachments[a];
 
-   trace_start_generic_clear(&cmd->trace, cs, cmd, att->format,
+   trace_start_generic_clear(&cmd->rp_trace, cs, cmd, att->format,
                              iview->view.ubwc_enabled, att->samples);
 
    enum pipe_format format = vk_format_to_pipe_format(att->format);
@@ -4773,7 +4773,7 @@ tu7_generic_clear_attachment(struct tu_cmd_buffer *cmd,
    tu_flush_for_access(&cmd->state.renderpass_cache,
                        TU_ACCESS_BLIT_WRITE_GMEM, TU_ACCESS_NONE);
 
-   trace_end_generic_clear(&cmd->trace, cs);
+   trace_end_generic_clear(&cmd->rp_trace, cs);
 }
 
 template <chip CHIP>
@@ -5040,7 +5040,7 @@ tu_load_gmem_attachment(struct tu_cmd_buffer *cmd,
    if (!load_common && !load_stencil)
       return;
 
-   trace_start_gmem_load(&cmd->trace, cs, cmd, attachment->format, force_load);
+   trace_start_gmem_load(&cmd->rp_trace, cs, cmd, attachment->format, force_load);
 
    /* If attachment will be cleared by vkCmdClearAttachments - it is likely
     * that it would be partially cleared, and since it is done by 2d blit
@@ -5074,7 +5074,7 @@ tu_load_gmem_attachment(struct tu_cmd_buffer *cmd,
    if (cond_exec)
       tu_end_load_store_cond_exec(cmd, cs, true);
 
-   trace_end_gmem_load(&cmd->trace, cs);
+   trace_end_gmem_load(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_load_gmem_attachment);
 
@@ -5438,7 +5438,7 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
                         !resolve_d24s8_s8 &&
                         (a == gmem_a || blit_can_resolve(dst->format));
 
-   trace_start_gmem_store(&cmd->trace, cs, cmd, dst->format, use_fast_path, unaligned);
+   trace_start_gmem_store(&cmd->rp_trace, cs, cmd, dst->format, use_fast_path, unaligned);
 
    /* Unconditional store should happen only if attachment was cleared,
     * which could have happened either by load_op or via vkCmdClearAttachments.
@@ -5459,7 +5459,7 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
          tu_end_load_store_cond_exec(cmd, cs, false);
       }
 
-      trace_end_gmem_store(&cmd->trace, cs);
+      trace_end_gmem_store(&cmd->rp_trace, cs);
       return;
    }
 
@@ -5538,6 +5538,6 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
       tu_end_load_store_cond_exec(cmd, cs, false);
    }
 
-   trace_end_gmem_store(&cmd->trace, cs);
+   trace_end_gmem_store(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_store_gmem_attachment);

@@ -2142,38 +2142,6 @@ tu_trace_get_data(struct u_trace_context *utctx,
    return (char *) tu_suballoc_bo_map(bo) + offset_B;
 }
 
-/* Special helpers instead of u_trace_begin_iterator()/u_trace_end_iterator()
- * that ignore tracepoints at the beginning/end that are part of a
- * suspend/resume chain.
- */
-static struct u_trace_iterator
-tu_cmd_begin_iterator(struct tu_cmd_buffer *cmdbuf)
-{
-   switch (cmdbuf->state.suspend_resume) {
-   case SR_IN_PRE_CHAIN:
-      return cmdbuf->trace_rp_drawcalls_end;
-   case SR_AFTER_PRE_CHAIN:
-   case SR_IN_CHAIN_AFTER_PRE_CHAIN:
-      return cmdbuf->pre_chain.trace_rp_drawcalls_end;
-   default:
-      return u_trace_begin_iterator(&cmdbuf->trace);
-   }
-}
-
-static struct u_trace_iterator
-tu_cmd_end_iterator(struct tu_cmd_buffer *cmdbuf)
-{
-   switch (cmdbuf->state.suspend_resume) {
-   case SR_IN_PRE_CHAIN:
-      return cmdbuf->trace_rp_drawcalls_end;
-   case SR_IN_CHAIN:
-   case SR_IN_CHAIN_AFTER_PRE_CHAIN:
-      return cmdbuf->trace_rp_drawcalls_start;
-   default:
-      return u_trace_end_iterator(&cmdbuf->trace);
-   }
-}
-
 VkResult
 tu_create_copy_timestamp_cs(struct tu_u_trace_submission_data *submission_data,
                             struct tu_cmd_buffer **cmd_buffers,
@@ -2217,7 +2185,8 @@ tu_create_copy_timestamp_cs(struct tu_u_trace_submission_data *submission_data,
          continue;
 
       u_trace_clone_append(
-         tu_cmd_begin_iterator(cmdbuf), tu_cmd_end_iterator(cmdbuf),
+         u_trace_begin_iterator(&cmdbuf->trace),
+         u_trace_end_iterator(&cmdbuf->trace),
          &submission_data->timestamp_copy_data->trace, cs, tu_copy_buffer);
    }
 

@@ -144,14 +144,8 @@ tu_insert_dynamic_cmdbufs(struct tu_device *dev,
 
       case SR_AFTER_PRE_CHAIN:
       case SR_IN_CHAIN_AFTER_PRE_CHAIN:
-         cmd_buffer->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd_buffer->trace);
+         cmd_buffer->trace_renderpass_start = u_trace_end_iterator(&cmd_buffer->rp_trace);
          tu_append_pre_chain(cmd_buffer, old_cmds[i]);
-
-         if (!(old_cmds[i]->usage_flags &
-               VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
-            u_trace_disable_event_range(old_cmds[i]->pre_chain.trace_rp_drawcalls_start,
-                                        old_cmds[i]->pre_chain.trace_rp_drawcalls_end);
-         }
 
          const struct VkOffset2D *fdm_offsets =
             cmd_buffer->pre_chain.fdm_offset ?
@@ -199,12 +193,6 @@ tu_insert_dynamic_cmdbufs(struct tu_device *dev,
          assert(cmd_buffer);
 
          tu_append_pre_post_chain(cmd_buffer, old_cmds[i]);
-
-         if (old_cmds[i]->usage_flags &
-             VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) {
-            u_trace_disable_event_range(old_cmds[i]->trace_rp_drawcalls_start,
-                                        old_cmds[i]->trace_rp_drawcalls_end);
-         }
 
          /* When the command buffer is finally recorded, we need its state
           * to be the state of the command buffer before it. We need this

@@ -94,6 +94,7 @@ tu_cmd_buffer_status_gpu_write(struct tu_cmd_buffer *cmd_buffer,
 
 static void
 tu_clone_trace_range(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
+                     struct u_trace *dst,
                      struct u_trace_iterator begin, struct u_trace_iterator end)
 {
    if (u_trace_iterator_equal(begin, end))
@@ -106,10 +107,10 @@ tu_clone_trace_range(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
 static void
 tu_clone_trace(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
-               struct u_trace *trace)
+               struct u_trace *dst, struct u_trace *src)
 {
-   tu_clone_trace_range(cmd, cs, u_trace_begin_iterator(trace),
-         u_trace_end_iterator(trace));
+   tu_clone_trace_range(cmd, cs, dst, u_trace_begin_iterator(src),
+         u_trace_end_iterator(src));
 }
 
 template <chip CHIP>
@@ -2630,9 +2631,8 @@ tu6_render_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    tu_cs_emit_call(cs, &cmd->tile_store_cs);
 
-   tu_clone_trace_range(cmd, cs, cmd->trace_rp_drawcalls_start,
-         cmd->trace_rp_drawcalls_end);
-
+   tu_clone_trace_range(cmd, cs, &cmd->trace, cmd->trace_renderpass_start,
+                        u_trace_end_iterator(&cmd->rp_trace));
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
@@ -2986,7 +2986,7 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
    tu6_emit_tile_store_cs<CHIP>(cmd, &cmd->tile_store_cs);
    tu_cs_end(&cmd->tile_store_cs);
 
-   cmd->trace_rp_drawcalls_end = u_trace_end_iterator(&cmd->trace);
+   tu_trace_start_render_pass(cmd);
 
    tu6_tile_render_begin<CHIP>(cmd, &cmd->cs, autotune_result, fdm_offsets);
 
@@ -3051,11 +3051,6 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
    if (cmd->state.pass->has_fdm)
       cmd->state.dirty |= TU_CMD_DIRTY_FDM;
 
-   /* tu6_render_tile has cloned these tracepoints for each tile */
-   if (!u_trace_iterator_equal(cmd->trace_rp_drawcalls_start, cmd->trace_rp_drawcalls_end))
-      u_trace_disable_event_range(cmd->trace_rp_drawcalls_start,
-                                  cmd->trace_rp_drawcalls_end);
-
    /* Reset the gmem store CS entry lists so that the next render pass
     * does its own stores.
     */
@@ -3067,7 +3062,7 @@ static void
 tu_cmd_render_sysmem(struct tu_cmd_buffer *cmd,
                      struct tu_renderpass_result *autotune_result)
 {
-   cmd->trace_rp_drawcalls_end = u_trace_end_iterator(&cmd->trace);
+   tu_trace_start_render_pass(cmd);
 
    tu6_sysmem_render_begin<CHIP>(cmd, &cmd->cs, autotune_result);
 
@@ -3078,6 +3073,10 @@ tu_cmd_render_sysmem(struct tu_cmd_buffer *cmd,
    trace_end_draw_ib_sysmem(&cmd->trace, &cmd->cs);
 
    tu6_sysmem_render_end<CHIP>(cmd, &cmd->cs, autotune_result);
+
+   tu_clone_trace_range(cmd, &cmd->cs, &cmd->trace,
+                        cmd->trace_renderpass_start,
+                        u_trace_end_iterator(&cmd->rp_trace));
 
    tu_trace_end_render_pass<CHIP>(cmd, false);
 }
@@ -3129,6 +3128,12 @@ static void tu_reset_render_pass(struct tu_cmd_buffer *cmd_buffer)
    util_dynarray_clear(&cmd_buffer->fdm_bin_patchpoints);
    ralloc_free(cmd_buffer->patchpoints_ctx);
    cmd_buffer->patchpoints_ctx = NULL;
+
+   /* Discard RP trace contents */
+   u_trace_disable_event_range(cmd_buffer->trace_renderpass_start,
+                               u_trace_end_iterator(&cmd_buffer->rp_trace));
+   cmd_buffer->trace_renderpass_start =
+      u_trace_end_iterator(&cmd_buffer->rp_trace);
 }
 
 static VkResult
@@ -3157,6 +3162,9 @@ tu_create_cmd_buffer(struct vk_command_pool *pool,
    cmd_buffer->device = device;
 
    u_trace_init(&cmd_buffer->trace, &device->trace_context);
+   u_trace_init(&cmd_buffer->rp_trace, &device->trace_context);
+   cmd_buffer->trace_renderpass_start =
+      u_trace_begin_iterator(&cmd_buffer->rp_trace);
    list_inithead(&cmd_buffer->renderpass_autotune_results);
 
    if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS)) {
@@ -3204,6 +3212,7 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
    }
 
    u_trace_fini(&cmd_buffer->trace);
+   u_trace_fini(&cmd_buffer->rp_trace);
 
    tu_autotune_free_results(cmd_buffer->device, &cmd_buffer->renderpass_autotune_results);
 
@@ -3360,7 +3369,7 @@ tu_BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
       if (u_trace_enabled(&cmd_buffer->device->trace_context)) {
          trace_start_secondary_cmd_buffer(
-            &cmd_buffer->trace,
+            pass_continue ? &cmd_buffer->rp_trace : &cmd_buffer->trace,
             pass_continue ? &cmd_buffer->draw_cs : &cmd_buffer->cs,
             cmd_buffer);
       }
@@ -4258,30 +4267,11 @@ tu_EndCommandBuffer(VkCommandBuffer commandBuffer)
       tu_emit_cache_flush<CHIP>(cmd_buffer);
    }
 
-   /* If we called tu_trace_render_start as part of our suspended chain, and
-    * are going to reconstruct the renderpass setup at cmdbuf submit time,
-    * then disable the recorded tu_trace_render_start event now (we didn't
-    * know at the point of recording it whether this RP's our chain would end
-    * within this command buffer or not) in favor of the one created during
-    * submission.
-    */
-   if (cmd_buffer->state.suspending) {
-      cmd_buffer->trace_rp_drawcalls_end =
-         u_trace_end_iterator(&cmd_buffer->trace);
-
-      if (cmd_buffer->trace_rp_start.chunk != NULL &&
-          (cmd_buffer->state.suspend_resume == SR_IN_CHAIN ||
-           cmd_buffer->state.suspend_resume == SR_IN_CHAIN_AFTER_PRE_CHAIN)) {
-         u_trace_disable_event_range(cmd_buffer->trace_rp_start,
-                                     cmd_buffer->trace_rp_drawcalls_start);
-      }
-   }
-
    if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
       trace_end_cmd_buffer(&cmd_buffer->trace, &cmd_buffer->cs, cmd_buffer);
    } else {
       trace_end_secondary_cmd_buffer(
-         &cmd_buffer->trace,
+         cmd_buffer->state.pass ? &cmd_buffer->rp_trace : &cmd_buffer->trace,
          cmd_buffer->state.pass ? &cmd_buffer->draw_cs : &cmd_buffer->cs);
    }
 
@@ -5064,8 +5054,8 @@ tu_append_pre_chain(struct tu_cmd_buffer *cmd,
 
    tu_render_pass_state_merge(&cmd->state.rp,
                               &secondary->pre_chain.state);
-   tu_clone_trace_range(cmd, &cmd->draw_cs, secondary->pre_chain.trace_rp_drawcalls_start,
-         secondary->pre_chain.trace_rp_drawcalls_end);
+   tu_clone_trace(cmd, &cmd->draw_cs,
+                  &cmd->rp_trace, &secondary->pre_chain.rp_trace);
    util_dynarray_append_dynarray(&cmd->fdm_bin_patchpoints,
                                  &secondary->pre_chain.fdm_bin_patchpoints);
 
@@ -5086,8 +5076,7 @@ tu_append_post_chain(struct tu_cmd_buffer *cmd,
    tu_cs_add_entries(&cmd->draw_cs, &secondary->draw_cs);
    tu_cs_add_entries(&cmd->draw_epilogue_cs, &secondary->draw_epilogue_cs);
 
-   tu_clone_trace_range(cmd, &cmd->draw_cs, secondary->trace_rp_drawcalls_start,
-         secondary->trace_rp_drawcalls_end);
+   tu_clone_trace(cmd, &cmd->draw_cs, &cmd->rp_trace, &secondary->rp_trace);
    cmd->state.rp = secondary->state.rp;
    util_dynarray_append_dynarray(&cmd->fdm_bin_patchpoints,
                                  &secondary->fdm_bin_patchpoints);
@@ -5106,8 +5095,7 @@ tu_append_pre_post_chain(struct tu_cmd_buffer *cmd,
    tu_cs_add_entries(&cmd->draw_cs, &secondary->draw_cs);
    tu_cs_add_entries(&cmd->draw_epilogue_cs, &secondary->draw_epilogue_cs);
 
-   tu_clone_trace_range(cmd, &cmd->draw_cs, secondary->trace_rp_drawcalls_start,
-         secondary->trace_rp_drawcalls_end);
+   tu_clone_trace(cmd, &cmd->draw_cs, &cmd->rp_trace, &secondary->rp_trace);
    tu_render_pass_state_merge(&cmd->state.rp,
                               &secondary->state.rp);
    util_dynarray_append_dynarray(&cmd->fdm_bin_patchpoints,
@@ -5124,10 +5112,7 @@ tu_save_pre_chain(struct tu_cmd_buffer *cmd)
                      &cmd->draw_cs);
    tu_cs_add_entries(&cmd->pre_chain.draw_epilogue_cs,
                      &cmd->draw_epilogue_cs);
-   cmd->pre_chain.trace_rp_drawcalls_start =
-      cmd->trace_rp_drawcalls_start;
-   cmd->pre_chain.trace_rp_drawcalls_end =
-      cmd->trace_rp_drawcalls_end;
+   u_trace_move(&cmd->pre_chain.rp_trace, &cmd->rp_trace);
    cmd->pre_chain.state = cmd->state.rp;
    util_dynarray_append_dynarray(&cmd->pre_chain.fdm_bin_patchpoints,
                                  &cmd->fdm_bin_patchpoints);
@@ -5189,7 +5174,7 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
             cmd->state.lrz.prev_direction =
                secondary->state.lrz.prev_direction;
 
-         tu_clone_trace(cmd, &cmd->draw_cs, &secondary->trace);
+         tu_clone_trace(cmd, &cmd->draw_cs, &cmd->rp_trace, &secondary->rp_trace);
          tu_render_pass_state_merge(&cmd->state.rp, &secondary->state.rp);
          util_dynarray_append_dynarray(&cmd->fdm_bin_patchpoints,
                                        &secondary->fdm_bin_patchpoints);
@@ -5199,7 +5184,7 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
             assert(tu_cs_is_empty(&secondary->draw_cs));
             assert(tu_cs_is_empty(&secondary->draw_epilogue_cs));
             tu_cs_add_entries(&cmd->cs, &secondary->cs);
-            tu_clone_trace(cmd, &cmd->cs, &secondary->trace);
+            tu_clone_trace(cmd, &cmd->cs, &cmd->trace, &secondary->trace);
             break;
 
          case SR_IN_PRE_CHAIN:
@@ -5208,7 +5193,6 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
              */
             if (cmd->state.suspend_resume == SR_NONE) {
                cmd->state.suspend_resume = SR_IN_PRE_CHAIN;
-               cmd->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd->trace);
             }
 
             /* The secondary is just a continuous suspend/resume chain so we
@@ -5223,13 +5207,6 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
          case SR_IN_CHAIN_AFTER_PRE_CHAIN:
             if (secondary->state.suspend_resume == SR_AFTER_PRE_CHAIN ||
                 secondary->state.suspend_resume == SR_IN_CHAIN_AFTER_PRE_CHAIN) {
-               /* In thse cases there is a `pre_chain` in the secondary which
-                * ends that we need to append to the primary.
-                */
-
-               if (cmd->state.suspend_resume == SR_NONE)
-                  cmd->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd->trace);
-
                tu_append_pre_chain(cmd, secondary);
 
                /* We're about to render, so we need to end the command stream
@@ -5246,7 +5223,6 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
                    * started in the primary, so we have to move the state to
                    * `pre_chain`.
                    */
-                  cmd->trace_rp_drawcalls_end = u_trace_end_iterator(&cmd->trace);
                   tu_save_pre_chain(cmd);
                   cmd->state.suspend_resume = SR_AFTER_PRE_CHAIN;
                   break;
@@ -5286,9 +5262,7 @@ tu_CmdExecuteCommands(VkCommandBuffer commandBuffer,
                 * pre-chain) that we need to copy into the current command
                 * buffer.
                 */
-               cmd->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd->trace);
                tu_append_post_chain(cmd, secondary);
-               cmd->trace_rp_drawcalls_end = u_trace_end_iterator(&cmd->trace);
                cmd->state.suspended_pass = secondary->state.suspended_pass;
 
                switch (cmd->state.suspend_resume) {
@@ -5610,8 +5584,6 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 
    tu_choose_gmem_layout(cmd);
 
-   tu_trace_start_render_pass(cmd);
-
    /* Note: because this is external, any flushes will happen before draw_cs
     * gets called. However deferred flushes could have to happen later as part
     * of the subpass.
@@ -5628,8 +5600,6 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    }
 
    tu_lrz_begin_renderpass<CHIP>(cmd);
-
-   cmd->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd->trace);
 
    tu_emit_renderpass_begin(cmd);
    tu_emit_subpass_begin<CHIP>(cmd);
@@ -5770,15 +5740,6 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
       cmd->state.suspended_pass.attachments = cmd->state.attachments;
       cmd->state.suspended_pass.clear_values = cmd->state.clear_values;
       cmd->state.suspended_pass.gmem_layout = cmd->state.gmem_layout;
-   }
-
-   if (!resuming) {
-      cmd->trace_rp_start = u_trace_end_iterator(&cmd->trace);
-      tu_trace_start_render_pass(cmd);
-   }
-
-   if (!resuming || cmd->state.suspend_resume == SR_NONE) {
-      cmd->trace_rp_drawcalls_start = u_trace_end_iterator(&cmd->trace);
    }
 
    if (!resuming) {
@@ -8052,7 +8013,6 @@ tu_CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
       tu_cs_end(&cmd_buffer->draw_epilogue_cs);
 
       if (cmd_buffer->state.suspend_resume == SR_IN_PRE_CHAIN) {
-         cmd_buffer->trace_rp_drawcalls_end = u_trace_end_iterator(&cmd_buffer->trace);
          tu_save_pre_chain(cmd_buffer);
          cmd_buffer->pre_chain.fdm_offset = !!fdm_offsets;
          if (fdm_offsets) {
