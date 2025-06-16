@@ -260,6 +260,7 @@ struct LoadEmitInfo {
    unsigned align_mul = 0;
    unsigned align_offset = 0;
    pipe_format format;
+   nir_src* offset_src = NULL; /* should be equal to offset or NULL */
 
    ac_hw_cache_flags cache = {{0, 0, 0, 0, 0}};
    bool split_by_component_stride = true;
@@ -277,6 +278,15 @@ struct EmitLoadParameters {
    Callback callback;
    uint32_t max_const_offset;
 };
+
+bool
+add_might_overflow(isel_context* ctx, nir_src* offset, uint32_t const_offset)
+{
+   if (!offset)
+      return true;
+   return nir_addition_might_overflow(ctx->shader, ctx->range_ht, nir_get_scalar(offset->ssa, 0),
+                                      const_offset, &ctx->ub_config);
+}
 
 void
 emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
@@ -305,6 +315,7 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
       }
 
       /* reduce constant offset */
+      LoadEmitInfo new_info = info;
       Operand offset = info.offset;
       unsigned reduced_const_offset = const_offset;
       if (const_offset > params.max_const_offset) {
@@ -313,7 +324,12 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
          reduced_const_offset %= max_const_offset_plus_one;
 
          /* For global loads with a 32-bit offset, the resource is the 64-bit address. */
-         if (offset.isConstant()) {
+         bool offset_changed = true;
+         if (new_info.resource.id() && new_info.resource.size() == 2 &&
+             add_might_overflow(ctx, info.offset_src, to_add)) {
+            new_info.resource = add64_32(bld, new_info.resource, Operand::c32(to_add));
+            offset_changed = false;
+         } else if (offset.isConstant()) {
             offset = Operand::c32(offset.constantValue() + to_add);
          } else if (offset.isUndefined()) {
             offset = Operand::c32(to_add);
@@ -325,13 +341,15 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
          } else {
             offset = Operand(add64_32(bld, offset.getTemp(), Operand::c32(to_add)));
          }
+         if (offset_changed)
+            new_info.offset_src = NULL;
       }
 
       unsigned align = align_offset ? 1 << (ffs(align_offset) - 1) : align_mul;
       Temp offset_tmp = as_temp(bld, offset);
 
-      Temp val = params.callback(bld, info, offset_tmp, bytes_needed, align, reduced_const_offset,
-                                 info.dst);
+      Temp val = params.callback(bld, new_info, offset_tmp, bytes_needed, align,
+                                 reduced_const_offset, info.dst);
 
       /* the callback wrote directly to dst */
       if (val == info.dst) {
@@ -2447,6 +2465,7 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
    info.align_mul = nir_intrinsic_align_mul(instr);
    info.align_offset = nir_intrinsic_align_offset(instr);
    info.sync = get_memory_sync_info(instr, storage_buffer, 0);
+   info.offset_src = &instr->src[1];
 
    unsigned access = nir_intrinsic_access(instr) | ACCESS_TYPE_LOAD;
    if (access & ACCESS_SMEM_AMD) {
