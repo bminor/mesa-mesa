@@ -184,11 +184,6 @@ static unsigned
 get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
 {
    switch (format) {
-   case PIPE_FORMAT_R8G8_R8B8_UNORM:
-   case PIPE_FORMAT_G8R8_B8R8_UNORM:
-   case PIPE_FORMAT_R8B8_R8G8_UNORM:
-   case PIPE_FORMAT_B8R8_G8R8_UNORM:
-      return 2;
    case PIPE_FORMAT_R8_G8B8_420_UNORM:
    case PIPE_FORMAT_R8_B8G8_420_UNORM:
    case PIPE_FORMAT_R8_G8B8_422_UNORM:
