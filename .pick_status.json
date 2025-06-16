@@ -924,7 +924,7 @@
         "description": "gallium/dril: Add entrypoint for apple (asahi) kms driver",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "27d2bd59253cc545d460221d04293a913ee75cbb",
         "notes": null
