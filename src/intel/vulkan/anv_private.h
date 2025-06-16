@@ -6681,7 +6681,7 @@ anv_device_utrace_emit_gfx_copy_buffer(struct u_trace_context *utctx,
 static bool
 anv_has_cooperative_matrix(const struct anv_physical_device *device)
 {
-   return device->has_cooperative_matrix;
+   return device->has_cooperative_matrix && (device->info.has_systolic || debug_get_bool_option("INTEL_LOWER_DPAS", false));
 }
 
 #define ANV_FROM_HANDLE(__anv_type, __name, __handle) \
