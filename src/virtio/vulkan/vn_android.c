@@ -28,51 +28,18 @@
 #include "vn_queue.h"
 
 struct vn_android_gralloc {
-   struct u_gralloc *gralloc;
    uint64_t front_rendering_usage;
 };
 
 static struct vn_android_gralloc _vn_android_gralloc;
 
-static int
-vn_android_gralloc_init()
-{
-   assert(!_vn_android_gralloc.gralloc);
-
-   struct u_gralloc *gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
-   if (!gralloc) {
-      vn_log(NULL, "u_gralloc failed to create a gralloc module instance");
-      return -1;
-   }
-
-   const int gralloc_type = u_gralloc_get_type(gralloc);
-   if (gralloc_type != U_GRALLOC_TYPE_CROS &&
-       gralloc_type != U_GRALLOC_TYPE_GRALLOC4) {
-      u_gralloc_destroy(&gralloc);
-      vn_log(NULL, "only CrOS and IMapper v4 grallocs are supported for "
-                   "Venus Vulkan HAL");
-      return -1;
-   }
-
-   _vn_android_gralloc.gralloc = gralloc;
-
-   return 0;
-}
-
-static inline void
-vn_android_gralloc_fini()
-{
-   u_gralloc_destroy(&_vn_android_gralloc.gralloc);
-}
-
 static void
 vn_android_gralloc_shared_present_usage_init_once()
 {
-   assert(_vn_android_gralloc.gralloc);
+   assert(vk_android_get_ugralloc());
 
    int ret = u_gralloc_get_front_rendering_usage(
-      _vn_android_gralloc.gralloc,
-      &_vn_android_gralloc.front_rendering_usage);
+      vk_android_get_ugralloc(), &_vn_android_gralloc.front_rendering_usage);
 
    if (ret == 0)
       assert(_vn_android_gralloc.front_rendering_usage);
@@ -101,7 +68,7 @@ vn_android_gralloc_get_buffer_properties(
    buffer_handle_t handle,
    struct vn_android_gralloc_buffer_properties *out_props)
 {
-   struct u_gralloc *gralloc = _vn_android_gralloc.gralloc;
+   struct u_gralloc *gralloc = vk_android_get_ugralloc();
    struct u_gralloc_buffer_basic_info info;
 
    /*
@@ -203,7 +170,6 @@ PUBLIC struct hwvulkan_module_t HAL_MODULE_INFO_SYM = {
 static int
 vn_hal_close(UNUSED struct hw_device_t *dev)
 {
-   vn_android_gralloc_fini();
    return 0;
 }
 
@@ -224,14 +190,8 @@ vn_hal_open(const struct hw_module_t *mod,
             const char *id,
             struct hw_device_t **dev)
 {
-   int ret;
-
    assert(mod == &HAL_MODULE_INFO_SYM.common);
    assert(strcmp(id, HWVULKAN_DEVICE_0) == 0);
-
-   ret = vn_android_gralloc_init();
-   if (ret)
-      return ret;
 
    *dev = &vn_hal_dev.common;
 
