@@ -36,6 +36,15 @@
         *nvk_file_list
       when: manual
 
+.nvk-ci-tron-common:
+  variables:
+    CI_TRON_PATTERN__JOB_WARN__REGEX: 'nouveau .+ job timeout|NMI backtrace for cpu \d+'
+    CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
+    CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
+    CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: ${GPU_FIRMWARE_KEEP_PATH_REGEX}
+    CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=nouveau'
+    # GSP is not loaded by default
+    CI_TRON_KERNEL_CMDLINE__NOUVEAU_LOAD_GSP: 'nouveau.config=NvGspRm=1'
 
 .nvk-vkcts:
   variables:
@@ -46,15 +55,11 @@
     HWCI_TEST_SCRIPT: install/deqp-runner.sh
 
 .nvk-ga106-valve:
+  extends:
+    - .nvk-ci-tron-common
   variables:
     GPU_VERSION: nvk-ga106
     FDO_CI_CONCURRENT: 16
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: nvidia:codename:GA106
-    CI_TRON_PATTERN__JOB_WARN__REGEX: 'nouveau .+ job timeout|NMI backtrace for cpu \d+'
-    CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
-    CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
-    CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: '(lib/(modules|firmware/nvidia/ga10\d)/.*)'
-    CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=nouveau'
-    # GSP is not loaded by default
-    CI_TRON_KERNEL_CMDLINE__NOUVEAU_LOAD_GSP: 'nouveau.config=NvGspRm=1'
+    GPU_FIRMWARE_KEEP_PATH_REGEX: '(lib/(modules|firmware/nvidia/ga10\d)/.*)'
