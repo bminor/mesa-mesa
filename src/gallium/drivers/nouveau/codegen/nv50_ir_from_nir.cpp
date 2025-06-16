@@ -3275,12 +3275,13 @@ Converter::visit(nir_tex_instr *insn)
  * shader, so we need all the store_outputs to appear at the end of the shader
  * with no other instructions that might generate a temp value in between them.
  */
-static void
+static bool
 nv_nir_move_stores_to_end(nir_shader *s)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(s);
    nir_block *block = nir_impl_last_block(impl);
    nir_instr *first_store = NULL;
+   bool progress = false;
 
    nir_foreach_instr_safe(instr, block) {
       if (instr == first_store)
@@ -3294,9 +3295,11 @@ nv_nir_move_stores_to_end(nir_shader *s)
 
          if (!first_store)
             first_store = instr;
+
+         progress = true;
       }
    }
-   nir_progress(true, impl, nir_metadata_control_flow);
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }
 
 unsigned
