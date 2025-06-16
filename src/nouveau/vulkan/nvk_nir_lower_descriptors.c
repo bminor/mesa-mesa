@@ -834,6 +834,26 @@ lower_load_push_constant(nir_builder *b, nir_intrinsic_instr *load,
    return true;
 }
 
+static bool
+lower_load_input_attachment_coord(nir_builder *b, nir_intrinsic_instr *load,
+                                  const struct lower_descriptors_ctx *ctx)
+{
+   b->cursor = nir_before_instr(&load->instr);
+
+   nir_def *pos = nir_f2i32(b, nir_load_frag_coord(b));
+
+   nir_def *layer = nir_load_layer_id(b);
+   nir_def *view = load_root_table(b, 1, 32, draw.view_index, ctx);
+
+   nir_def *coord = nir_vec3(b, nir_channel(b, pos, 0),
+                                nir_channel(b, pos, 1),
+                                nir_iadd(b, layer, view));
+
+   nir_def_replace(&load->def, coord);
+
+   return true;
+}
+
 static void
 get_resource_deref_binding(nir_builder *b, nir_deref_instr *deref,
                            uint32_t *set, uint32_t *binding,
@@ -1181,6 +1201,9 @@ try_lower_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
 
    case nir_intrinsic_load_view_index:
       return lower_sysval_to_root_table(b, intrin, draw.view_index, ctx);
+
+   case nir_intrinsic_load_input_attachment_coord:
+      return lower_load_input_attachment_coord(b, intrin, ctx);
 
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_sparse_load:
