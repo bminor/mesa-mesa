@@ -164,12 +164,21 @@ int32_t LinuxVirtGpuDevice::init(int32_t descriptor) {
 #endif
 
     if (descriptor < 0) {
+#if DETECT_OS_ANDROID
+        // Somebody needs to modify CF's SELinux rules to account for the syscalls used by
+        // drmGetDevices2().
+        mDeviceHandle = static_cast<int64_t>(drmOpenRender(128));
+        if (mDeviceHandle < 0) {
+            mesa_loge("Failed to open rendernode: %s", strerror(errno));
+            return -EINVAL;
+        }
+#else
         ret = openDevice();
         if (ret < 0) {
             mesa_logd("no virtio_gpu devices found");
             return ret;
         }
-
+#endif
     } else {
         mDeviceHandle = dup(descriptor);
         if (mDeviceHandle < 0) {
