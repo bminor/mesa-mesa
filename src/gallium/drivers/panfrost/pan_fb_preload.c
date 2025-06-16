@@ -348,7 +348,7 @@ pan_preload_get_blend_shaders(struct pan_fb_preload_cache *cache,
 
 /*
  * Early Mali GPUs did not respect sampler LOD clamps or bias, so the Midgard
- * compiler inserts lowering code with a load_sampler_lod_parameters_pan sysval
+ * compiler inserts lowering code with a load_sampler_lod_parameters sysval
  * that we need to lower. Our samplers do not use LOD clamps or bias, so we
  * lower to the identity settings and let constant folding get rid of the
  * unnecessary lowering.
@@ -357,7 +357,7 @@ static bool
 lower_sampler_parameters(nir_builder *b, nir_intrinsic_instr *intr,
                          UNUSED void *data)
 {
-   if (intr->intrinsic != nir_intrinsic_load_sampler_lod_parameters_pan)
+   if (intr->intrinsic != nir_intrinsic_load_sampler_lod_parameters)
       return false;
 
    const nir_const_value constants[4] = {

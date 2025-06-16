@@ -1608,7 +1608,7 @@ intrinsic("load_frag_coord_zw_pan", [2], dest_comp=1, indices=[COMPONENT], flags
 
 # Loads the sampler paramaters <min_lod, max_lod, lod_bias>
 # src[] = { sampler_index }
-load("sampler_lod_parameters_pan", [1], flags=[CAN_ELIMINATE, CAN_REORDER])
+load("sampler_lod_parameters", [1], flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # Like load_output but using a specified render target and conversion descriptor
 # src[] = { target, sample, conversion }
