@@ -1006,8 +1006,6 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
 
    if (dev->ro && (template->bind & PIPE_BIND_SCANOUT)) {
       struct winsys_handle handle;
-      struct pan_image_block_size blocksize =
-         pan_image_renderblock_size_el(modifier, template->format, plane_idx);
 
       /* Block-based texture formats are only used for texture
        * compression (not framebuffer compression!), which doesn't
@@ -1031,9 +1029,11 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
        * means you're working on WSI and so it's already too late for
        * you. I'm sorry.
        */
-      unsigned width = ALIGN_POT(template->width0, blocksize.width);
-      unsigned stride = ALIGN_POT(template->width0, blocksize.width) *
-                        util_format_get_blocksize(template->format);
+      unsigned stride = pan_image_get_wsi_row_pitch(&so->image.props, plane_idx,
+                                                    &so->plane.layout, 0);
+      enum pipe_format plane_format =
+         util_format_get_plane_format(template->format, plane_idx);
+      unsigned width = stride / util_format_get_blocksize(plane_format);
       unsigned size = so->plane.layout.data_size_B;
       unsigned effective_rows = DIV_ROUND_UP(size, stride);
 

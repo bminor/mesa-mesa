@@ -18,6 +18,8 @@ extern "C" {
 
 #include "genxml/gen_macros.h"
 
+#include "util/format/u_format.h"
+
 #define MAX_MIP_LEVELS   17
 #define MAX_IMAGE_PLANES 3
 
@@ -136,14 +138,6 @@ pan_image_slice_align(uint64_t modifier)
    return 64;
 }
 
-struct pan_image_block_size pan_image_block_size_el(uint64_t modifier,
-                                                    enum pipe_format format,
-                                                    unsigned plane_idx);
-
-struct pan_image_block_size
-pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format,
-                              unsigned plane_idx);
-
 static inline uint64_t
 pan_image_mip_level_size(const struct pan_image_props *props,
                          const struct pan_image_layout *layout, unsigned level)
@@ -233,6 +227,26 @@ pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
       return 1;
    default:
       return 64;
+   }
+}
+
+/*
+ * Given a format, determine the tile size used for u-interleaving. For formats
+ * that are already block compressed, this is 4x4. For all other formats, this
+ * is 16x16, hence the modifier name.
+ */
+static inline struct pan_image_block_size
+pan_u_interleaved_tile_size_el(enum pipe_format format)
+{
+   if (util_format_is_compressed(format)) {
+      return (struct pan_image_block_size){4, 4};
+   } else {
+      assert(16 % util_format_get_blockwidth(format) == 0);
+      assert(16 % util_format_get_blockheight(format) == 0);
+      return (struct pan_image_block_size){
+         .width = 16 / util_format_get_blockwidth(format),
+         .height = 16 / util_format_get_blockheight(format),
+      };
    }
 }
 

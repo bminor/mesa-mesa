@@ -60,21 +60,6 @@ TEST(Align, UTiledLinear)
    }
 }
 
-TEST(BlockSize, Linear)
-{
-   enum pipe_format format[] = {PIPE_FORMAT_R32G32B32_FLOAT,
-                                PIPE_FORMAT_R8G8B8_UNORM, PIPE_FORMAT_ETC2_RGB8,
-                                PIPE_FORMAT_ASTC_5x5};
-
-   for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_image_block_size blk =
-         pan_image_block_size_el(DRM_FORMAT_MOD_LINEAR, format[i], 0);
-
-      EXPECT_EQ(blk.width, 1);
-      EXPECT_EQ(blk.height, 1);
-   }
-}
-
 TEST(BlockSize, UInterleavedRegular)
 {
    enum pipe_format format[] = {
@@ -83,8 +68,8 @@ TEST(BlockSize, UInterleavedRegular)
    };
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_image_block_size blk = pan_image_block_size_el(
-         DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED, format[i], 0);
+      struct pan_image_block_size blk =
+         pan_u_interleaved_tile_size_el(format[i]);
 
       EXPECT_EQ(blk.width, 16);
       EXPECT_EQ(blk.height, 16);
@@ -96,8 +81,8 @@ TEST(BlockSize, UInterleavedBlockCompressed)
    enum pipe_format format[] = {PIPE_FORMAT_ETC2_RGB8, PIPE_FORMAT_ASTC_5x5};
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
-      struct pan_image_block_size blk = pan_image_block_size_el(
-         DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED, format[i], 0);
+      struct pan_image_block_size blk =
+         pan_u_interleaved_tile_size_el(format[i]);
 
       EXPECT_EQ(blk.width, 4);
       EXPECT_EQ(blk.height, 4);
@@ -115,7 +100,7 @@ TEST(BlockSize, AFBCFormatInvariant16x16)
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
       struct pan_image_block_size blk =
-         pan_image_block_size_el(modifier, format[i], 0);
+         pan_afbc_superblock_size_el(format[i], modifier);
 
       EXPECT_EQ(blk.width, 16);
       EXPECT_EQ(blk.height, 16);
@@ -133,7 +118,7 @@ TEST(BlockSize, AFBCFormatInvariant32x8)
 
    for (unsigned i = 0; i < ARRAY_SIZE(format); ++i) {
       struct pan_image_block_size blk =
-         pan_image_block_size_el(modifier, format[i], 0);
+         pan_afbc_superblock_size_el(format[i], modifier);
 
       EXPECT_EQ(blk.width, 32);
       EXPECT_EQ(blk.height, 8);
