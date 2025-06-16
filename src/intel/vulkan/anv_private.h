@@ -74,6 +74,7 @@
 #include "util/xmlconfig.h"
 #include "vk_acceleration_structure.h"
 #include "vk_alloc.h"
+#include "vk_android.h"
 #include "vk_buffer.h"
 #include "vk_buffer_view.h"
 #include "vk_command_buffer.h"
@@ -2136,9 +2137,6 @@ struct anv_device {
 
     uint32_t                                    draw_call_count;
     struct anv_state                            breakpoint;
-#if DETECT_OS_ANDROID
-    struct u_gralloc                            *u_gralloc;
-#endif
 
     /** Precompute all dirty graphics bits
      *

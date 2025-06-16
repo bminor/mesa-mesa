@@ -331,10 +331,11 @@ anv_android_get_tiling(struct anv_device *device,
                        struct u_gralloc_buffer_handle *gr_handle,
                        enum isl_tiling *tiling_out)
 {
-   assert(device->u_gralloc);
+   struct u_gralloc *gralloc = vk_android_get_ugralloc();
+   assert(gralloc);
 
    struct u_gralloc_buffer_basic_info buf_info;
-   if (u_gralloc_get_buffer_basic_info(device->u_gralloc, gr_handle, &buf_info))
+   if (u_gralloc_get_buffer_basic_info(gralloc, gr_handle, &buf_info))
       return vk_errorf(device, VK_ERROR_INVALID_EXTERNAL_HANDLE,
                        "failed to get tiling from gralloc buffer info");
 
@@ -385,7 +386,7 @@ anv_image_init_from_gralloc(struct anv_device *device,
    }
 
    enum isl_tiling tiling;
-   if (device->u_gralloc) {
+   if (vk_android_get_ugralloc()) {
       struct u_gralloc_buffer_handle gr_handle = {
          .handle = gralloc_info->handle,
          .hal_format = gralloc_info->format,
@@ -644,10 +645,11 @@ VkResult anv_GetSwapchainGrallocUsage2ANDROID(
       *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_HWCOMPOSER;
    }
 
+   struct u_gralloc *gralloc = vk_android_get_ugralloc();
    if ((swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID) &&
-       device->u_gralloc != NULL) {
+       gralloc) {
       uint64_t front_rendering_usage = 0;
-      u_gralloc_get_front_rendering_usage(device->u_gralloc, &front_rendering_usage);
+      u_gralloc_get_front_rendering_usage(gralloc, &front_rendering_usage);
       *grallocProducerUsage |= front_rendering_usage;
    }
 

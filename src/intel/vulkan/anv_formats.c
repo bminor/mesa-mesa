@@ -23,7 +23,6 @@
 
 #include "anv_private.h"
 #include "drm-uapi/drm_fourcc.h"
-#include "vk_android.h"
 #include "vk_enum_defines.h"
 #include "vk_enum_to_str.h"
 #include "vk_format.h"

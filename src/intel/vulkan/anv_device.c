@@ -36,9 +36,6 @@
 #include "util/os_file.h"
 #include "util/os_misc.h"
 #include "util/u_atomic.h"
-#if DETECT_OS_ANDROID
-#include "util/u_gralloc/u_gralloc.h"
-#endif
 #include "util/u_string.h"
 #include "vk_common_entrypoints.h"
 #include "vk_util.h"
@@ -912,10 +909,6 @@ VkResult anv_CreateDevice(
          goto fail_internal_cache;
    }
 
-#if DETECT_OS_ANDROID
-   device->u_gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
-#endif
-
    device->robust_buffer_access =
       device->vk.enabled_features.robustBufferAccess ||
       device->vk.enabled_features.nullDescriptor;
@@ -1156,10 +1149,6 @@ void anv_DestroyDevice(
 
    if (!device)
       return;
-
-#if DETECT_OS_ANDROID
-   u_gralloc_destroy(&device->u_gralloc);
-#endif
 
    anv_memory_trace_finish(device);
 

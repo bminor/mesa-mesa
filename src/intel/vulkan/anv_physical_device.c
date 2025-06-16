@@ -1266,11 +1266,9 @@ get_properties(const struct anv_physical_device *pdevice,
 #if DETECT_OS_ANDROID
    /* Used to fill struct VkPhysicalDevicePresentationPropertiesANDROID */
    uint64_t front_rendering_usage = 0;
-   struct u_gralloc *gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
-   if (gralloc != NULL) {
+   struct u_gralloc *gralloc = vk_android_get_ugralloc();
+   if (gralloc != NULL)
       u_gralloc_get_front_rendering_usage(gralloc, &front_rendering_usage);
-      u_gralloc_destroy(&gralloc);
-   }
 #endif /* DETECT_OS_ANDROID */
 
    struct anv_descriptor_limits desc_limits;
