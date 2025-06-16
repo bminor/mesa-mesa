@@ -83,11 +83,6 @@ if tu_wsi
   libtu_files += 'tu_wsi.cc'
 endif
 
-if with_platform_android
-  libtu_files += files('tu_android.cc')
-  tu_deps += [dep_android]
-endif
-
 if with_xlib_lease
   tu_deps += [dep_xlib_xrandr]
 endif
