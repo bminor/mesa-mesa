@@ -114,6 +114,9 @@ struct pan_image_layout_constraints {
 
    /* Row pitch in bytes. Non-zero if layout is explicit. */
    unsigned wsi_row_pitch_B;
+
+   /* When true, AFBC/AFRC imports are stricter than they were when those
+    * modifiers where introduced. */
    bool strict;
 };
 
