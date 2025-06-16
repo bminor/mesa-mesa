@@ -806,7 +806,7 @@ const EmitLoadParameters scratch_mubuf_load_params{mubuf_load_callback, 4095};
 const EmitLoadParameters scratch_flat_load_params{scratch_load_callback, 2047};
 
 Temp
-get_gfx6_global_rsrc(Builder& bld, Temp addr)
+get_mubuf_global_rsrc(Builder& bld, Temp addr)
 {
    uint32_t desc[4];
    ac_build_raw_buffer_descriptor(bld.program->gfx_level, 0, 0xffffffff, desc);
@@ -816,6 +816,20 @@ get_gfx6_global_rsrc(Builder& bld, Temp addr)
                         Operand::c32(desc[2]), Operand::c32(desc[3]));
    return bld.pseudo(aco_opcode::p_create_vector, bld.def(s4), addr, Operand::c32(desc[2]),
                      Operand::c32(desc[3]));
+}
+
+Temp
+add64_const64(Builder& bld, Temp addr, uint64_t offset)
+{
+   /* This could be more efficient if offset>UINT32_MAX by doing a full 64-bit addition,
+    * but that should be really rare.
+    */
+   while (offset) {
+      uint32_t src2 = MIN2(offset, UINT32_MAX);
+      addr = add64_32(bld, addr, Operand::c32(src2));
+      offset -= src2;
+   }
+   return addr;
 }
 
 Format
@@ -829,7 +843,7 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
    Format format = Format::MUBUF;
    if (bld.program->gfx_level >= GFX9)
       format = Format::GLOBAL;
-   else if (bld.program->gfx_level >= GFX7)
+   else if (bld.program->gfx_level >= GFX7 && address.type() == RegType::vgpr)
       format = Format::FLAT;
 
    uint64_t max_const_offset_plus_one =
@@ -842,24 +856,15 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
    const_offset %= max_const_offset_plus_one;
 
    if (!offset.id()) {
-      while (unlikely(excess_offset > UINT32_MAX)) {
-         address = add64_32(bld, address, Operand::c32(UINT32_MAX));
-         excess_offset -= UINT32_MAX;
-      }
-      if (excess_offset)
-         offset = bld.copy(bld.def(s1), Operand::c32(excess_offset));
+      address = add64_const64(bld, address, excess_offset / UINT32_MAX * UINT32_MAX);
+      if (excess_offset % UINT32_MAX)
+         offset = bld.copy(bld.def(s1), Operand::c32(excess_offset % UINT32_MAX));
    } else {
       /* If we add to "offset", we would transform the indended
        * "address + u2u64(offset) + u2u64(const_offset)" into
        * "address + u2u64(offset + const_offset)", so add to the address.
-       * This could be more efficient if excess_offset>UINT32_MAX by doing a full 64-bit addition,
-       * but that should be really rare.
        */
-      while (excess_offset) {
-         uint32_t src2 = MIN2(excess_offset, UINT32_MAX);
-         address = add64_32(bld, address, Operand::c32(src2));
-         excess_offset -= src2;
-      }
+      address = add64_const64(bld, address, excess_offset);
    }
 
    if (format == Format::MUBUF) {
@@ -869,8 +874,14 @@ lower_global_address(isel_context* ctx, Builder& bld, uint32_t offset_in, Temp* 
       if (offset.id() &&
           (address.type() == RegType::vgpr ? offset.type() != RegType::sgpr
                                            : add_might_overflow(ctx, offset_src, const_offset))) {
-         address = add64_32(bld, address, Operand(offset));
-         offset = Temp();
+         if (offset.type() == RegType::vgpr && bld.program->gfx_level > GFX6) {
+            assert(address.type() == RegType::sgpr);
+            address = add64_const64(bld, address, const_offset);
+            const_offset = 0;
+         } else {
+            address = add64_32(bld, address, Operand(offset));
+            offset = Temp();
+         }
       }
       offset = offset.id() ? offset : bld.copy(bld.def(s1), Operand::zero());
    } else if (format == Format::FLAT) {
@@ -950,8 +961,10 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
    Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    if (use_mubuf) {
+      assert(bld.program->gfx_level == GFX6 || addr.type() != RegType::vgpr);
+
       aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3, 1)};
-      mubuf->operands[0] = Operand(get_gfx6_global_rsrc(bld, addr));
+      mubuf->operands[0] = Operand(get_mubuf_global_rsrc(bld, addr));
       if (addr.type() == RegType::vgpr)
          mubuf->operands[1] = Operand(addr);
       else if (offset.type() == RegType::vgpr)
@@ -2576,11 +2589,11 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
          ctx->program->needs_exact = true;
          ctx->block->instructions.emplace_back(std::move(flat));
       } else {
-         assert(ctx->options->gfx_level == GFX6);
+         assert(ctx->options->gfx_level == GFX6 || write_address.type() != RegType::vgpr);
 
          aco_opcode op = get_buffer_store_op(write_datas[i].bytes());
 
-         Temp rsrc = get_gfx6_global_rsrc(bld, write_address);
+         Temp rsrc = get_mubuf_global_rsrc(bld, write_address);
 
          aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 4, 0)};
          mubuf->operands[0] = Operand(rsrc);
@@ -2713,12 +2726,12 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       ctx->program->needs_exact = true;
       ctx->block->instructions.emplace_back(std::move(flat));
    } else {
-      assert(ctx->options->gfx_level == GFX6);
+      assert(ctx->options->gfx_level == GFX6 || addr.type() != RegType::vgpr);
 
       UNUSED aco_opcode image_op;
       translate_buffer_image_atomic_op(nir_op, &op32, &op64, &image_op);
 
-      Temp rsrc = get_gfx6_global_rsrc(bld, addr);
+      Temp rsrc = get_mubuf_global_rsrc(bld, addr);
 
       aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
 
