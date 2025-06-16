@@ -925,21 +925,26 @@ if __name__ == "__main__":
 
         ext.is_promoted_to_khr = entry.is_promoted_to_khr
 
+        if ext.is_promoted_to_khr:
+            latest_entry = registry.get_registry_entry(ext.name.replace("VK_EXT_", "VK_KHR_"))
+        else:
+            latest_entry = entry
+
         if ext.has_features:
             if not (entry.features_struct and ext.physical_device_struct("Features") == entry.features_struct):
                 error_count += 1
                 print("The extension {} does not provide a features struct.".format(ext.name))
-            ext.features_promoted = entry.features_promoted
+            ext.features_promoted = latest_entry.features_promoted
 
         if ext.has_properties:
             if not (entry.properties_struct and ext.physical_device_struct("Properties") == entry.properties_struct):
                 error_count += 1
                 print("The extension {} does not provide a properties struct.".format(ext.name))
-            ext.properties_promoted = entry.properties_promoted
-            ext.needs_double_load = entry.needs_double_load
+            ext.properties_promoted = latest_entry.properties_promoted
+            ext.needs_double_load = latest_entry.needs_double_load
 
-        if entry.promoted_in and entry.promoted_in <= versions[-1].struct_version:
-            ext.core_since = Version((*entry.promoted_in, 0))
+        if latest_entry.promoted_in and latest_entry.promoted_in <= versions[-1].struct_version:
+            ext.core_since = Version((*latest_entry.promoted_in, 0))
         else:
             # even if the ext is promoted in a newer VK version, consider it
             # unpromoted until there's an entry for that VK version in VERSIONS
