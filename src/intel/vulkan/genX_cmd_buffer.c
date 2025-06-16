@@ -947,6 +947,8 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
       dw[4] = clear_color.u32[1];
       dw[5] = clear_color.u32[2];
       dw[6] = clear_color.u32[3];
+      dw[7] = 0;
+      dw[8] = 0;
       dw[3 + sampler_offset / 4] = pixel[0];
       dw[4 + sampler_offset / 4] = pixel[1];
 #else
