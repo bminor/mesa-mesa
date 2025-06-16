@@ -8564,7 +8564,7 @@
         "description": "panfrost, panvk: The size of resource tables needs to be a multiple of 4.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "713f5c3600f2e09beb6457fdca9295bfc1411413",
         "notes": null
