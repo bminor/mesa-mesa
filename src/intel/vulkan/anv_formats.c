@@ -2116,7 +2116,8 @@ void anv_GetPhysicalDeviceSparseImageFormatProperties2(
                                       pFormatInfo->tiling,
                                       pFormatInfo->samples,
                                       pFormatInfo->type,
-                                      pFormatInfo->format) != VK_SUCCESS) {
+                                      pFormatInfo->format,
+                                      NULL /* valid_samples_out */) != VK_SUCCESS) {
       return;
    }
 

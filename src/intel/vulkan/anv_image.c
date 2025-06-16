@@ -2047,7 +2047,8 @@ anv_image_init_from_create_info(struct anv_device *device,
                                         pCreateInfo->tiling,
                                         pCreateInfo->samples,
                                         pCreateInfo->imageType,
-                                        pCreateInfo->format);
+                                        pCreateInfo->format,
+                                        NULL /* valid_samples_out */);
       if (result != VK_SUCCESS)
          return result;
    }

@@ -3526,7 +3526,8 @@ VkResult anv_sparse_image_check_support(struct anv_physical_device *pdevice,
                                         VkImageTiling tiling,
                                         VkSampleCountFlagBits samples,
                                         VkImageType type,
-                                        VkFormat format);
+                                        VkFormat format,
+                                        VkSampleCountFlagBits *valid_samples_out);
 
 struct anv_buffer {
    struct vk_buffer vk;

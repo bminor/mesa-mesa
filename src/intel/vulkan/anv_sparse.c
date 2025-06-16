@@ -1543,14 +1543,23 @@ anv_sparse_bind_image_memory(struct anv_queue *queue,
    return VK_SUCCESS;
 }
 
+/* Checks if we support sparse images with the support parameters.
+ *
+ * We also return in the optional pointer 'valid_samples_out' a subset of the
+ * 'samples' argument containing only the sample counts supported, in case
+ * more than one flag is passed.
+ */
 VkResult
 anv_sparse_image_check_support(struct anv_physical_device *pdevice,
                                VkImageCreateFlags flags,
                                VkImageTiling tiling,
                                VkSampleCountFlagBits samples,
                                VkImageType type,
-                               VkFormat vk_format)
+                               VkFormat vk_format,
+                               VkSampleCountFlagBits *valid_samples_out)
 {
+   VkSampleCountFlagBits valid_samples = samples;
+
    assert(flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT);
 
    /* The spec says:
@@ -1594,17 +1603,24 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
    if (tiling == VK_IMAGE_TILING_LINEAR)
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
-   if ((samples & VK_SAMPLE_COUNT_2_BIT &&
-        !pdevice->vk.supported_features.sparseResidency2Samples) ||
-       (samples & VK_SAMPLE_COUNT_4_BIT &&
-        !pdevice->vk.supported_features.sparseResidency4Samples) ||
-       (samples & VK_SAMPLE_COUNT_8_BIT &&
-        !pdevice->vk.supported_features.sparseResidency8Samples) ||
-       (samples & VK_SAMPLE_COUNT_16_BIT &&
-        !pdevice->vk.supported_features.sparseResidency16Samples) ||
-       samples & VK_SAMPLE_COUNT_32_BIT ||
-       samples & VK_SAMPLE_COUNT_64_BIT)
+   if (!pdevice->vk.supported_features.sparseResidency2Samples)
+      valid_samples &= ~VK_SAMPLE_COUNT_2_BIT;
+   if (!pdevice->vk.supported_features.sparseResidency4Samples)
+      valid_samples &= ~VK_SAMPLE_COUNT_4_BIT;
+   if (!pdevice->vk.supported_features.sparseResidency8Samples)
+      valid_samples &= ~VK_SAMPLE_COUNT_8_BIT;
+   if (!pdevice->vk.supported_features.sparseResidency16Samples)
+      valid_samples &= ~VK_SAMPLE_COUNT_16_BIT;
+   valid_samples &= ~(VK_SAMPLE_COUNT_32_BIT | VK_SAMPLE_COUNT_64_BIT);
+
+   /* Here we return NOT_PRESENT since the user is asking for sample counts we
+    * already reported we don't support with sparse.
+    */
+   if (!valid_samples) {
+      if (valid_samples_out)
+         *valid_samples_out = 0;
       return VK_ERROR_FEATURE_NOT_PRESENT;
+   }
 
    /* While the Vulkan spec allows us to support depth/stencil sparse images
     * everywhere, sometimes we're not able to have them with the tiling
@@ -1623,8 +1639,7 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
        * depth/stencil are different, and only the color layout is compatible
        * with the standard block shapes.
        */
-      if (samples != VK_SAMPLE_COUNT_1_BIT)
-         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+      valid_samples &= VK_SAMPLE_COUNT_1_BIT;
 
       /* For 125+, isl_gfx125_filter_tiling() claims 3D is not supported.
        * For the previous platforms, isl_gfx6_filter_tiling() says only 2D is
@@ -1675,6 +1690,12 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
     */
    if (vk_format == VK_FORMAT_G8B8G8R8_422_UNORM ||
        vk_format == VK_FORMAT_B8G8R8G8_422_UNORM)
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   if (valid_samples_out)
+      *valid_samples_out = valid_samples;
+
+   if (!valid_samples)
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
    return VK_SUCCESS;
