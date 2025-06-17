@@ -67,14 +67,14 @@ def safe_name(name):
     return name
 
 TYPE_MAP = {
-    'i8': ('uint8_t', 'i64', 'd'),
-    'u8': ('int8_t', 'u64', 'u'),
-    'i16': ('uint16_t', 'i64', 'd'),
-    'u16': ('int16_t', 'u64', 'u'),
-    'i32': ('uint32_t', 'i64', 'd'),
-    'u32': ('int32_t', 'u64', 'u'),
-    'i64': ('uint64_t', 'i64', 'd'),
-    'u64': ('int64_t', 'u64', 'u'),
+    'i8': ('int8_t', 'i64', 'd'),
+    'u8': ('uint8_t', 'u64', 'u'),
+    'i16': ('int16_t', 'i64', 'd'),
+    'u16': ('uint16_t', 'u64', 'u'),
+    'i32': ('int32_t', 'i64', 'd'),
+    'u32': ('uint32_t', 'u64', 'u'),
+    'i64': ('int64_t', 'i64', 'd'),
+    'u64': ('uint64_t', 'u64', 'u'),
     'float': ('float', 'f64', 'f'),
     'bool': ('bool', 'bool', 'u')
 }
