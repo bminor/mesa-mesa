@@ -1008,7 +1008,7 @@ get_buffer_view(struct zink_context *ctx, struct zink_resource *res, VkBufferVie
          goto out;
       }
       pipe_reference_init(&buffer_view->reference, 1);
-      pipe_resource_reference(&buffer_view->pres, &res->base.b);
+      buffer_view->pres = &res->base.b;
       buffer_view->bvci = *bvci;
       buffer_view->buffer_view = view;
       buffer_view->hash = hash;
@@ -1306,7 +1306,6 @@ zink_destroy_buffer_view(struct zink_screen *screen, struct zink_buffer_view *bu
    simple_mtx_lock(&res->obj->view_lock);
    util_dynarray_append(&res->obj->views, VkBufferView, buffer_view->buffer_view);
    simple_mtx_unlock(&res->obj->view_lock);
-   pipe_resource_reference(&buffer_view->pres, NULL);
    FREE(buffer_view);
 }
 
