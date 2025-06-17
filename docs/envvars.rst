@@ -1523,6 +1523,8 @@ RADV driver environment variables
       enable NGG culling for GFX11+
    ``nircache``
       cache per-stage NIR for graphics pipelines
+   ``nogttspill``
+      disable GTT spilling when allocating memory
    ``nosam``
       disable optimizations that get enabled when all VRAM is CPU visible.
    ``pswave32``
