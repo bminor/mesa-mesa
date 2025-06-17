@@ -162,19 +162,33 @@ section_end cuttlefish
 
 section_start android-cts "Downloading Android CTS"
 
+# xtrace is getting lost with the section switching
+set -x
+
 ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
 ANDROID_CTS_DEVICE_ARCH="x86"
 
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip" \
-  "https://dl.google.com/dl/android/cts/android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
-unzip -q -d / "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
-rm "android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}.zip"
+# Download the stripped CTS from S3, because the CTS download from Google can take 20 minutes
+CTS_FILENAME="android-cts-${ANDROID_CTS_VERSION}-linux_x86-${ANDROID_CTS_DEVICE_ARCH}"
+ARTIFACT_PATH="${DATA_STORAGE_PATH}/android-cts/${DEBIAN_TEST_ANDROID_TAG}--${CTS_FILENAME}.tar.zst"
 
-# Keep only the interesting tests to save space
-# shellcheck disable=SC2086 # we want word splitting
-ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
-find /android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
+if FOUND_ARTIFACT_URL="$(find_s3_project_artifact "${ARTIFACT_PATH}")"; then
+    echo "Found Android CTS at: ${FOUND_ARTIFACT_URL}"
+    curl-with-retry "${FOUND_ARTIFACT_URL}" | tar --zstd -x -C /
+else
+    echo "No cached CTS found, downloading from Google and uploading to S3..."
+    curl-with-retry --remote-name "https://dl.google.com/dl/android/cts/${CTS_FILENAME}.zip"
+    unzip -q -d / "${CTS_FILENAME}.zip"
+    rm "${CTS_FILENAME}.zip"
+
+    # Keep only the interesting tests to save space
+    # shellcheck disable=SC2086 # we want word splitting
+    ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
+    find /android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
+    tar --zstd -cf "${CTS_FILENAME}.tar.zst" /android-cts
+    ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${CTS_FILENAME}.tar.zst" \
+        "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
+fi
 
 section_end android-cts
 
