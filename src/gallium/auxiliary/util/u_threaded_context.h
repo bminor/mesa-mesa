@@ -418,6 +418,9 @@ struct tc_unflushed_batch_token {
    struct threaded_context *tc;
 };
 
+/* to determine whether a draw/clear/invalidate/resolve has been triggered */
+#define TC_RENDERPASS_INFO_HAS_WORK(data32) (data32 & BITFIELD_MASK(30))
+
 struct tc_renderpass_info {
    union {
       struct {
@@ -512,8 +515,8 @@ struct tc_batch {
    struct tc_call_base *last_mergeable_call;
 
    struct util_queue_fence fence;
-   /* whether the first set_framebuffer_state call has been seen by this batch */
-   bool first_set_fb;
+   /* whether the first set_framebuffer_state call will increment the rp info in batch_execute */
+   bool increment_rp_info_on_fb;
    int8_t batch_idx;
    struct tc_unflushed_batch_token *token;
    uint64_t slots[TC_SLOTS_PER_BATCH];

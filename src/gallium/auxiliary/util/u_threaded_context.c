@@ -522,7 +522,6 @@ tc_batch_flush(struct threaded_context *tc, bool full_copy)
     * renderpass info can only be accessed by its owner batch during execution
     */
    if (tc->renderpass_info_recording) {
-      tc->batch_slots[next_id].first_set_fb |= full_copy;
       tc_batch_increment_renderpass_info(tc, next_id, full_copy);
    }
 
@@ -541,7 +540,7 @@ tc_batch_flush(struct threaded_context *tc, bool full_copy)
  */
 static void *
 tc_add_sized_call(struct threaded_context *tc, enum tc_call_id id,
-                  unsigned num_slots)
+                  unsigned num_slots, bool full_copy)
 {
    TC_TRACE_SCOPE(id);
    struct tc_batch *next = &tc->batch_slots[tc->next];
@@ -550,7 +549,8 @@ tc_add_sized_call(struct threaded_context *tc, enum tc_call_id id,
 
    if (unlikely(next->num_total_slots + num_slots > TC_SLOTS_PER_BATCH - 1)) {
       /* copy existing renderpass info during flush */
-      tc_batch_flush(tc, true);
+      tc_batch_flush(tc, full_copy);
+      tc->seen_fb_state = false;
       next = &tc->batch_slots[tc->next];
       tc_assert(next->num_total_slots == 0);
       tc_assert(next->last_mergeable_call == NULL);
@@ -579,11 +579,14 @@ tc_add_sized_call(struct threaded_context *tc, enum tc_call_id id,
 }
 
 #define tc_add_call(tc, execute, type) \
-   ((struct type*)tc_add_sized_call(tc, execute, call_size(type)))
+   ((struct type*)tc_add_sized_call(tc, execute, call_size(type), true))
+
+#define tc_add_call_no_copy(tc, execute, type) \
+   ((struct type*)tc_add_sized_call(tc, execute, call_size(type), false))
 
 #define tc_add_slot_based_call(tc, execute, type, num_slots) \
    ((struct type*)tc_add_sized_call(tc, execute, \
-                                    call_size_with_slots(type, num_slots)))
+                                    call_size_with_slots(type, num_slots), true))
 
 /* Returns the last mergeable call that was added to the unflushed
  * batch, or NULL if the address of that call is not currently known
@@ -708,15 +711,14 @@ _tc_sync(struct threaded_context *tc, UNUSED const char *info, UNUSED const char
    if (tc->options.parse_renderpass_info) {
       int renderpass_info_idx = next->renderpass_info_idx;
       /* don't reset if fb state is unflushed */
-      bool fb_no_draw = !tc->renderpass_info_recording->has_draw && !tc->renderpass_info_recording->ended;
-      tc->batch_slots[tc->next].first_set_fb |= fb_no_draw;
+      bool fb_has_work = TC_RENDERPASS_INFO_HAS_WORK(tc->renderpass_info_recording->data32[0]);
       if (renderpass_info_idx > 0) {
          uint32_t fb_info = tc->renderpass_info_recording->data32[0];
          next->renderpass_info_idx = -1;
          tc_batch_increment_renderpass_info(tc, tc->next, false);
-         if (fb_no_draw && tc->seen_fb_state)
+         if (fb_has_work && tc->seen_fb_state && !tc->renderpass_info_recording->ended)
             tc->renderpass_info_recording->data32[0] = fb_info;
-      } else if (tc->renderpass_info_recording->has_draw) {
+      } else if (!fb_has_work) {
          tc->renderpass_info_recording->data32[0] = 0;
       }
       tc->renderpass_info_recording->ended = false;
@@ -1445,9 +1447,16 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
                          const struct pipe_framebuffer_state *fb)
 {
    struct threaded_context *tc = threaded_context(_pipe);
+   unsigned next = tc->next;
+   /* always skip incrementing if this is the first call on a batch */
+   bool set_skip_first_increment = !tc->batch_slots[tc->next].num_total_slots;
    struct tc_framebuffer *p =
-      tc_add_call(tc, TC_CALL_set_framebuffer_state, tc_framebuffer);
+      tc_add_call_no_copy(tc, TC_CALL_set_framebuffer_state, tc_framebuffer);
    unsigned nr_cbufs = fb->nr_cbufs;
+   /* skip if this call overflowed the previous batch */
+   set_skip_first_increment |= tc->next != next;
+   if (set_skip_first_increment)
+      tc->batch_slots[tc->next].increment_rp_info_on_fb = false;
 
    p->state = *fb;
 
@@ -1469,24 +1478,14 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
    }
    tc->nr_cbufs = nr_cbufs;
    if (tc->options.parse_renderpass_info) {
-      /* ensure this is treated as the first fb set if no fb activity has occurred */
-      bool no_fb_ops = !tc->renderpass_info_recording->has_draw &&
-                       !tc->renderpass_info_recording->cbuf_clear &&
-                       !tc->renderpass_info_recording->cbuf_load &&
-                       !tc->renderpass_info_recording->zsbuf_load &&
-                       !tc->renderpass_info_recording->zsbuf_clear &&
-                       !tc->renderpass_info_recording->zsbuf_clear_partial;
-      if (tc->renderpass_info_recording->ended && !tc->seen_fb_state)
-         tc->batch_slots[tc->next].first_set_fb = true;
-      else if (no_fb_ops)
-         tc->batch_slots[tc->next].first_set_fb = false;
       /* store existing zsbuf data for possible persistence */
       uint8_t zsbuf = tc->renderpass_info_recording->has_draw ?
                       0 :
                       tc->renderpass_info_recording->data8[3] & BITFIELD_MASK(4);
       bool zsbuf_changed = tc->fb_resources[PIPE_MAX_COLOR_BUFS] != fb->zsbuf.texture;
 
-      if (tc->seen_fb_state || tc->renderpass_info_recording->ended || !no_fb_ops) {
+      /* always increment unless explicitly skipping */
+      if (!set_skip_first_increment) {
          tc->renderpass_info_recording->ended = true;
          tc_signal_renderpass_info_ready(tc);
          /* this is the end of a renderpass, so increment the renderpass info */
@@ -1502,7 +1501,6 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
           */
          tc->batch_slots[tc->next].renderpass_info_idx = 0;
       }
-      /* future fb state changes will increment the index */
       tc->seen_fb_state = true;
    }
    /* ref for cmd */
@@ -2751,7 +2749,7 @@ tc_texture_map(struct pipe_context *_pipe,
    struct threaded_resource *tres = threaded_resource(resource);
    struct pipe_context *pipe = tc->pipe;
 
-   if (tc->options.parse_renderpass_info && tc->in_renderpass)
+   if (tc->options.parse_renderpass_info && TC_RENDERPASS_INFO_HAS_WORK(tc->renderpass_info_recording->data32[0]))
       tc_check_fb_access(tc, NULL, resource);
 
    tc_sync_msg(tc, "texture");
@@ -4662,10 +4660,13 @@ tc_invalidate_resource(struct pipe_context *_pipe,
    if (info) {
       if (tc->fb_resources[PIPE_MAX_COLOR_BUFS] == resource) {
          info->zsbuf_invalidate = true;
+         tc->seen_fb_state = true;
       } else {
          for (unsigned i = 0; i < PIPE_MAX_COLOR_BUFS; i++) {
-            if (tc->fb_resources[i] == resource)
+            if (tc->fb_resources[i] == resource) {
                info->cbuf_invalidate |= BITFIELD_BIT(i);
+               tc->seen_fb_state = true;
+            }
          }
       }
    }
@@ -4699,6 +4700,7 @@ tc_clear(struct pipe_context *_pipe, unsigned buffers, const struct pipe_scissor
    struct tc_clear *p = tc_add_call(tc, TC_CALL_clear, tc_clear);
 
    p->buffers = buffers;
+   tc->seen_fb_state = true;
    if (scissor_state) {
       p->scissor_state = *scissor_state;
       struct tc_renderpass_info *info = tc_get_renderpass_info(tc);
@@ -5115,7 +5117,7 @@ batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
    /* if the framebuffer state is persisting from a previous batch,
     * begin incrementing renderpass info on the first set_framebuffer_state call
     */
-   bool first = !batch->first_set_fb;
+   bool increment_rp_info_on_fb = batch->increment_rp_info_on_fb;
    uint64_t *iter = batch->slots;
 
    while (1) {
@@ -5143,24 +5145,19 @@ batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
          if (call->call_id == TC_CALL_flush) {
             /* always increment renderpass info for non-deferred flushes */
             batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
-            /* if a flush happens, renderpass info is always incremented after */
-            first = false;
          } else if (call->call_id == TC_CALL_set_framebuffer_state) {
             /* the renderpass info pointer is already set at the start of the batch,
              * so don't increment on the first set_framebuffer_state call
              */
-            if (!first)
+            if (increment_rp_info_on_fb)
                batch->tc->renderpass_info = incr_rp_info(batch->tc->renderpass_info);
-            first = false;
+            /* only ever keep base rp info if set_framebuffer_state is the literal first call in a batch */
+            increment_rp_info_on_fb = true;
          } else if (call->call_id == TC_CALL_draw_single ||
                     call->call_id == TC_CALL_draw_multi ||
                     call->call_id == TC_CALL_clear ||
                     (call->call_id >= TC_CALL_draw_single_drawid &&
                      call->call_id <= TC_CALL_draw_vstate_multi)) {
-            /* if a draw happens before a set_framebuffer_state on this batch,
-             * begin incrementing renderpass data
-             */
-            first = false;
          }
       }
    }
@@ -5220,7 +5217,7 @@ tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
    tc_batch_check(batch);
    batch->num_total_slots = 0;
    batch->last_mergeable_call = NULL;
-   batch->first_set_fb = false;
+   batch->increment_rp_info_on_fb = true;
    batch->max_renderpass_info_idx = 0;
    batch->tc->last_completed = batch->batch_idx;
 #if !defined(NDEBUG)
@@ -5530,6 +5527,10 @@ threaded_context_create(struct pipe_context *pipe,
    tc_begin_next_buffer_list(tc);
    if (tc->options.parse_renderpass_info)
       tc_batch_increment_renderpass_info(tc, tc->next, false);
+   /* all batches initially increment rp info on fb set */
+   for (unsigned i = 0; i < ARRAY_SIZE(tc->batch_slots); i++)
+      tc->batch_slots[i].increment_rp_info_on_fb = true;
+
    return &tc->base;
 
 fail:
