@@ -311,7 +311,9 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf,
             emit_vs_attrib(cmdbuf, i, vb_offset,
                            (struct mali_attribute_packed *)(&descs[i]));
          } else {
-            memset(&descs[i], 0, sizeof(descs[0]));
+            /* Write a NullDescriptor and rely on OOB behavior */
+            pan_cast_and_pack(&descs[i], NULL_DESCRIPTOR, cfg)
+               ;
          }
       }
 
@@ -326,15 +328,17 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf,
 
       for (uint32_t i = 0; i < vb_count; i++) {
          const struct panvk_attrib_buf *vb = &cmdbuf->state.gfx.vb.bufs[i];
+         const bool nulldesc = (vb->address == 0 && vb->size == 0);
 
-         pan_cast_and_pack(&descs[vb_offset + i], BUFFER, cfg) {
-            if (vi->bindings_valid & BITFIELD_BIT(i)) {
+         if ((vi->bindings_valid & BITFIELD_BIT(i)) && !nulldesc) {
+            pan_cast_and_pack(&descs[vb_offset + i], BUFFER, cfg) {
                cfg.address = vb->address;
                cfg.size = vb->size;
-            } else {
-               cfg.address = 0;
-               cfg.size = 0;
             }
+         } else {
+            /* Write a NullDescriptor and rely on OOB behavior */
+            pan_cast_and_pack(&descs[vb_offset + i], NULL_DESCRIPTOR, cfg)
+               ;
          }
       }
 
@@ -2634,7 +2638,7 @@ panvk_per_arch(CmdDrawIndexedIndirect)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    VK_FROM_HANDLE(panvk_buffer, buffer, _buffer);
 
-   if (drawCount == 0 || cmdbuf->state.gfx.ib.size == 0)
+   if (drawCount == 0)
       return;
 
    struct panvk_draw_info draw = {
@@ -2687,7 +2691,7 @@ panvk_per_arch(CmdDrawIndexedIndirectCount)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_buffer, buffer, _buffer);
    VK_FROM_HANDLE(panvk_buffer, count_buffer, countBuffer);
 
-   if (maxDrawCount == 0 || cmdbuf->state.gfx.ib.size == 0)
+   if (maxDrawCount == 0)
       return;
 
    struct panvk_draw_info draw = {
