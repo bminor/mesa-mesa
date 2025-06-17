@@ -178,9 +178,18 @@ vk_sampler_state_init(struct vk_sampler_state *state,
    }
 }
 
-void
-vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampler)
+void *
+vk_sampler_create(struct vk_device *device,
+                  const VkSamplerCreateInfo *pCreateInfo,
+                  const VkAllocationCallbacks *alloc,
+                  size_t size)
 {
+   struct vk_sampler *sampler;
+
+   sampler = vk_object_zalloc(device, alloc, size, VK_OBJECT_TYPE_SAMPLER);
+   if (!sampler)
+      return NULL;
+
    struct vk_sampler_state state;
    vk_sampler_state_init(&state, pCreateInfo);
 
@@ -200,22 +209,6 @@ vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampl
       assert(state.format == conversion->state.format);
       sampler->ycbcr_conversion = conversion;
    }
-}
-
-void *
-vk_sampler_create(struct vk_device *device,
-                  const VkSamplerCreateInfo *pCreateInfo,
-                  const VkAllocationCallbacks *alloc,
-                  size_t size)
-{
-   struct vk_sampler *sampler;
-
-   sampler = vk_object_zalloc(device, alloc, size, VK_OBJECT_TYPE_SAMPLER);
-   if (!sampler)
-      return NULL;
-
-   assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
-   vk_sampler_init(pCreateInfo, sampler);
 
    return sampler;
 }

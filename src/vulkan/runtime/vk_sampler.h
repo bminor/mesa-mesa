@@ -161,9 +161,6 @@ void vk_sampler_destroy(struct vk_device *device,
                         const VkAllocationCallbacks *alloc,
                         struct vk_sampler *sampler);
 
-void
-vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampler);
-
 #ifdef __cplusplus
 }
 #endif
