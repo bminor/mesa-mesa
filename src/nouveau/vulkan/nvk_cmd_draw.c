@@ -1286,6 +1286,8 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
          level->row_stride_B / util_format_get_blocksize(p_format);
       P_NVC597_SET_SHADING_RATE_INDEX_SURFACE_ALLOCATED_SIZE(p, 0,
          row_stride_el);
+
+      P_IMMD(p, NVC597, INVALIDATE_RASTER_CACHE_NO_WFI, 0);
    } else {
       P_MTHD(p, NVC597, SET_SHADING_RATE_INDEX_SURFACE_ADDRESS_A(0));
       P_NVC597_SET_SHADING_RATE_INDEX_SURFACE_ADDRESS_A(p, 0, 0);
