@@ -322,7 +322,7 @@ bool si_init_sqtt(struct si_context *sctx)
       return false;
    }
 
-   if (sctx->gfx_level > GFX11) {
+   if (sctx->gfx_level > GFX12) {
       fprintf(stderr, "radeonsi: Thread trace is not supported "
                       "for that GPU!\n");
       return false;
