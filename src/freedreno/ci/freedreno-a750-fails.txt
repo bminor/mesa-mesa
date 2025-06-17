@@ -3,18 +3,17 @@ KHR-GL46.shader_draw_parameters_tests.ShaderMultiDrawElementsIndirectParameters,
 KHR-GL46.shader_image_load_store.basic-allTargets-loadStoreTES,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-store,Fail
 KHR-GL46.shader_image_load_store.multiple-uniforms,Fail
-KHR-GL46.shader_image_size.advanced-nonMS-tes-float,Fail
-KHR-GL46.shader_image_size.advanced-nonMS-tes-int,Fail
 KHR-GL46.shader_image_size.basic-nonMS-tes-int,Fail
-KHR-GL46.shader_image_size.basic-nonMS-tes-uint,Fail
 KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_tessLevel,Fail
 KHR-GL46.tessellation_shader.tessellation_shader_tessellation.TES,Fail
-KHR-GL46.texture_cube_map_array.color_depth_attachments,Fail
 KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
+KHR-GL46.texture_stencil8.multisample,Fail
 KHR-GL46.vertex_attrib_binding.advanced-iterations,Fail
 
 KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Fail
+KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,Fail
+KHR-GLES31.core.texture_stencil8.multisample,Fail
 KHR-GLES31.core.vertex_attrib_binding.advanced-iterations,Fail
 dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 dEQP-GLES3.functional.polygon_offset.fixed16_render_with_units,Fail
