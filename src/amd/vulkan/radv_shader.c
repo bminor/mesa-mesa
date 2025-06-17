@@ -454,8 +454,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       if (nir->info.stage == MESA_SHADER_FRAGMENT)
          NIR_PASS(_, nir, nir_lower_input_attachments,
                   &(nir_input_attachment_options){
-                     .use_fragcoord_sysval = true,
-                     .use_layer_id_sysval = true,
+                     .use_ia_coord_intrin = true,
                   });
 
       nir_remove_dead_variables_options dead_vars_opts = {

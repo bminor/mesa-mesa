@@ -48,6 +48,8 @@ bool radv_nir_lower_primitive_shading_rate(nir_shader *nir, enum amd_gfx_level g
 bool radv_nir_lower_fs_intrinsics(nir_shader *nir, const struct radv_shader_stage *fs_stage,
                                   const struct radv_graphics_state_key *gfx_state);
 
+bool radv_nir_lower_fs_input_attachment(nir_shader *nir);
+
 bool radv_nir_lower_fs_barycentric(nir_shader *shader, const struct radv_graphics_state_key *gfx_state,
                                    unsigned rast_prim);
 
