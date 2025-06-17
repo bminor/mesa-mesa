@@ -305,7 +305,7 @@ d3d12_surface_update_pre_draw(struct pipe_context *pctx,
                               struct d3d12_surface *surface,
                               DXGI_FORMAT format)
 {
-   struct d3d12_screen *screen = d3d12_screen(surface->base.context->screen);
+   struct d3d12_screen *screen = d3d12_screen(pctx->screen);
    struct d3d12_resource *res = d3d12_resource(surface->base.texture);
    DXGI_FORMAT dxgi_format = d3d12_get_resource_rt_format(surface->base.format);
    enum d3d12_surface_conversion_mode mode;
@@ -343,7 +343,7 @@ d3d12_surface_update_pre_draw(struct pipe_context *pctx,
    }
 
    if (!d3d12_descriptor_handle_is_allocated(&surface->uint_rtv_handle)) {
-      initialize_rtv(surface->base.context, &res->base.b, &surface->base,
+      initialize_rtv(pctx, &res->base.b, &surface->base,
                      &surface->uint_rtv_handle, DXGI_FORMAT_R8G8B8A8_UINT);
    }
 
