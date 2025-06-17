@@ -108,7 +108,7 @@ cmd_get_push_desc_set(struct vk_command_buffer *vk_cmdbuf,
    return set;
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 VkResult
 panvk_per_arch(cmd_prepare_dyn_ssbos)(
    struct panvk_cmd_buffer *cmdbuf,

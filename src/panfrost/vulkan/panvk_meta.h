@@ -144,7 +144,7 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img)
    return props;
 }
 
-#if defined(PAN_ARCH) && PAN_ARCH <= 7
+#if defined(PAN_ARCH) && PAN_ARCH < 9
 struct panvk_cmd_buffer;
 struct panvk_descriptor_state;
 struct panvk_device;

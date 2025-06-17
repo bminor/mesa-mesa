@@ -256,7 +256,7 @@ get_image_section_info(const struct pan_image_view *iview,
    return info;
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static void
 pan_emit_bview_surface_with_stride(const struct pan_buffer_view *bview,
                                    void *payload)
@@ -660,7 +660,7 @@ pan_emit_iview_texture_payload(const struct pan_image_view *iview,
                                void *payload)
 {
    unsigned nr_samples =
-      PAN_ARCH <= 7 ? pan_image_view_get_nr_samples(iview) : 1;
+      PAN_ARCH < 9 ? pan_image_view_get_nr_samples(iview) : 1;
 
    /* Inject the addresses in, interleaving array indices, mip levels,
     * cube faces, and strides in that order. On Bifrost and older, each
@@ -706,7 +706,7 @@ pan_emit_iview_texture_payload(const struct pan_image_view *iview,
 #endif
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 /* Map modifiers to mali_texture_layout for packing in a texture descriptor */
 
 static enum mali_texture_layout

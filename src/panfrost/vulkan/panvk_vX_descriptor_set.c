@@ -121,7 +121,7 @@ write_buffer_desc(struct panvk_descriptor_set *set,
    const uint64_t range = panvk_buffer_range(buffer, info->offset, info->range);
    assert(range <= UINT32_MAX);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
       struct panvk_ssbo_addr desc = {
          .base_addr = panvk_buffer_gpu_ptr(buffer, info->offset),
@@ -180,7 +180,7 @@ write_buffer_view_desc(struct panvk_descriptor_set *set,
    if (bufferView != VK_NULL_HANDLE) {
       VK_FROM_HANDLE(panvk_buffer_view, view, bufferView);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
          write_desc(set, binding, elem, &view->descs.img_attrib_buf,
                     NO_SUBDESC);
@@ -364,7 +364,7 @@ panvk_init_iub(struct panvk_descriptor_set *set, uint32_t binding)
    uint32_t iub_size_dev =
       (binding_layout->desc_count - 1) * PANVK_DESCRIPTOR_SIZE;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct {
       struct mali_uniform_buffer_packed ubo;
       uint32_t pad[6];

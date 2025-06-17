@@ -43,7 +43,7 @@ texel_fetch(nir_builder *b, VkImageViewType view_type,
    if (sample_id)
       tex->src[2] = nir_tex_src_for_ssa(nir_tex_src_ms_index, sample_id);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    tex->sampler_index = 0;
    tex->texture_index = tex_idx;
 #else
@@ -82,7 +82,7 @@ color_output_var(nir_builder *b, VkImageViewType view_type,
 static nir_def *
 get_layer_id(nir_builder *b)
 {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    return nir_load_push_constant(b, 1, 32, nir_imm_int(b, 0));
 #else
    return nir_load_layer_id(b);
@@ -217,7 +217,7 @@ alloc_pre_post_dcds(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo)
       return VK_SUCCESS;
 
    uint32_t dcd_count =
-      3 * (PAN_ARCH <= 7 ? cmdbuf->state.gfx.render.layer_count : 1);
+      3 * (PAN_ARCH < 9 ? cmdbuf->state.gfx.render.layer_count : 1);
 
    fbinfo->bifrost.pre_post.dcds = panvk_cmd_alloc_desc_array(cmdbuf, dcd_count, DRAW);
    if (!fbinfo->bifrost.pre_post.dcds.cpu)
@@ -315,7 +315,7 @@ fill_bds(struct pan_fb_info *fbinfo,
          cfg.internal.fixed_function.conversion.memory_format =
             GENX(pan_dithered_format_from_pipe_format)(pview->format, false);
          cfg.internal.fixed_function.rt = i;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
          cfg.internal.fixed_function.conversion.register_format =
             get_reg_fmt(key->color[i].type);
 #endif
@@ -323,7 +323,7 @@ fill_bds(struct pan_fb_info *fbinfo,
    }
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static VkResult
 cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
              const struct panvk_fb_preload_shader_key *key)

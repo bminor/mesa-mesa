@@ -108,7 +108,7 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       val = load_sysval(b, graphics, bit_size, vs.noperspective_varyings);
       break;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    case nir_intrinsic_load_raw_vertex_offset_pan:
       val = load_sysval(b, graphics, bit_size, vs.raw_vertex_offset);
       break;
@@ -211,7 +211,7 @@ panvk_lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin,
    b->cursor = nir_before_instr(&intrin->instr);
    nir_def *ld_attr = nir_load_attribute_pan(
       b, intrin->def.num_components, intrin->def.bit_size,
-      PAN_ARCH <= 7 ?
+      PAN_ARCH < 9 ?
          nir_load_raw_vertex_id_pan(b) :
          nir_load_vertex_id(b),
       nir_load_instance_id(b),
@@ -244,7 +244,7 @@ panvk_lower_load_fs_input(nir_builder *b, nir_intrinsic_instr *intrin,
    return false;
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static bool
 lower_gl_pos_layer_writes(nir_builder *b, nir_instr *instr, void *data)
 {
@@ -339,7 +339,7 @@ panvk_buffer_ubo_addr_format(VkPipelineRobustnessBufferBehaviorEXT robustness)
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT:
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT:
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT:
-      return PAN_ARCH <= 7 ? nir_address_format_32bit_index_offset
+      return PAN_ARCH < 9 ? nir_address_format_32bit_index_offset
                            : nir_address_format_vec2_index_32bit_offset;
    default:
       unreachable("Invalid robust buffer access behavior");
@@ -351,11 +351,11 @@ panvk_buffer_ssbo_addr_format(VkPipelineRobustnessBufferBehaviorEXT robustness)
 {
    switch (robustness) {
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT:
-      return PAN_ARCH <= 7 ? nir_address_format_64bit_global_32bit_offset
+      return PAN_ARCH < 9 ? nir_address_format_64bit_global_32bit_offset
                            : nir_address_format_vec2_index_32bit_offset;
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT:
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT:
-      return PAN_ARCH <= 7 ? nir_address_format_64bit_bounded_global
+      return PAN_ARCH < 9 ? nir_address_format_64bit_bounded_global
                            : nir_address_format_vec2_index_32bit_offset;
    default:
       unreachable("Invalid robust buffer access behavior");
@@ -396,7 +396,7 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
    NIR_PASS(_, nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir),
             true, true);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    /* This needs to be done just after the io_to_temporaries pass, because we
     * rely on in/out temporaries to collect the final layer_id value. */
    NIR_PASS(_, nir, lower_layer_writes);
@@ -832,7 +832,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       nir_lower_non_uniform_texture_access |
       nir_lower_non_uniform_image_access |
       nir_lower_non_uniform_get_ssbo_size;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    lower_non_uniform_access_types |=
       nir_lower_non_uniform_texture_offset_access;
 #endif
@@ -991,7 +991,7 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
       shader->asm_str = asm_str;
    }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    /* Patch the descriptor count */
    shader->info.ubo_count =
       shader->desc_info.others.count[PANVK_BIFROST_DESC_TABLE_UBO] +
@@ -1074,7 +1074,7 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
 {
    shader->code_mem = (struct panvk_priv_mem){0};
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    shader->rsd = (struct panvk_priv_mem){0};
 #else
    shader->spd = (struct panvk_priv_mem){0};
@@ -1088,7 +1088,7 @@ panvk_shader_upload(struct panvk_device *dev, struct panvk_shader *shader,
    if (!panvk_priv_mem_dev_addr(shader->code_mem))
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    if (shader->info.stage == MESA_SHADER_FRAGMENT)
       return VK_SUCCESS;
 
@@ -1232,7 +1232,7 @@ panvk_shader_destroy(struct vk_device *vk_dev, struct vk_shader *vk_shader,
 
    panvk_pool_free_mem(&shader->code_mem);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    panvk_pool_free_mem(&shader->rsd);
    panvk_pool_free_mem(&shader->desc_info.others.map);
 #else
@@ -1426,7 +1426,7 @@ shader_desc_info_deserialize(struct blob_reader *blob,
 {
    shader->desc_info.used_set_mask = blob_read_uint32(blob);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    shader->desc_info.dyn_ubos.count = blob_read_uint32(blob);
    blob_copy_bytes(blob, shader->desc_info.dyn_ubos.map,
                    shader->desc_info.dyn_ubos.count);
@@ -1550,7 +1550,7 @@ shader_desc_info_serialize(struct blob *blob, const struct panvk_shader *shader)
 {
    blob_write_uint32(blob, shader->desc_info.used_set_mask);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    blob_write_uint32(blob, shader->desc_info.dyn_ubos.count);
    blob_write_bytes(blob, shader->desc_info.dyn_ubos.map,
                     sizeof(*shader->desc_info.dyn_ubos.map) *
@@ -1731,7 +1731,7 @@ panvk_shader_get_executable_internal_representations(
    return incomplete_text ? VK_INCOMPLETE : vk_outarray_status(&out);
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static mali_pixel_format
 get_varying_format(gl_shader_stage stage, gl_varying_slot loc,
                    enum pipe_format pfmt)
@@ -2024,7 +2024,7 @@ panvk_internal_shader_destroy(struct vk_device *vk_dev,
 
    panvk_pool_free_mem(&shader->code_mem);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    panvk_pool_free_mem(&shader->rsd);
 #else
    panvk_pool_free_mem(&shader->spd);

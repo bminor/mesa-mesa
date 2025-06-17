@@ -154,7 +154,7 @@ const struct pan_blendable_format
    }
 #endif
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 #define FMTC(pipe, texfeat, interchange, swizzle, srgb)                        \
    [PIPE_FORMAT_##pipe] = {                                                    \
       .hw = MALI_PACK_FMT(texfeat, swizzle, srgb),                             \

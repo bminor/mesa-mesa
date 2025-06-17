@@ -222,7 +222,7 @@ prepare_tex_descs(struct panvk_image_view *view)
    return VK_SUCCESS;
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static void
 prepare_attr_buf_descs(struct panvk_image_view *view)
 {
@@ -380,7 +380,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
          goto err_destroy_iview;
    }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
       prepare_attr_buf_descs(view);
 #endif

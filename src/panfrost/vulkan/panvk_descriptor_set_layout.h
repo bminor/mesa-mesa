@@ -26,7 +26,7 @@
 #define MAX_DYNAMIC_BUFFERS                                                    \
    (MAX_DYNAMIC_UNIFORM_BUFFERS + MAX_DYNAMIC_STORAGE_BUFFERS)
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 
 /* On Bifrost, this is a software limit. We pick the minimum required by
  * Vulkan, because Bifrost GPUs don't have unified descriptor tables,

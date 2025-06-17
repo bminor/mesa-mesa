@@ -105,7 +105,7 @@ pan_depth_source(const struct pan_shader_info *info)
                                 : MALI_DEPTH_SOURCE_FIXED_FUNCTION;
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 #if PAN_ARCH <= 5
 static inline void
 pan_shader_prepare_midgard_rsd(const struct pan_shader_info *info,

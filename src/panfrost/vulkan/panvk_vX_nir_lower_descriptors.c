@@ -54,7 +54,7 @@ struct panvk_shader_desc_map {
 
 struct panvk_shader_desc_info {
    uint32_t used_set_mask;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct panvk_shader_desc_map dyn_ubos;
    struct panvk_shader_desc_map dyn_ssbos;
    struct panvk_shader_desc_map others[PANVK_BIFROST_DESC_TABLE_COUNT];
@@ -119,7 +119,7 @@ struct desc_id {
    };
 };
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static enum panvk_bifrost_desc_table_type
 desc_type_to_table_type(
    const struct panvk_descriptor_set_binding_layout *binding_layout,
@@ -166,7 +166,7 @@ shader_desc_idx(uint32_t set, uint32_t binding,
       return pan_res_handle(set + 1, bind_layout->desc_idx + subdesc_idx);
 
    /* On Bifrost, the SSBO descriptors are read directly from the set. */
-   if (PAN_ARCH <= 7 && bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+   if (PAN_ARCH < 9 && bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
       return bind_layout->desc_idx;
 
    struct desc_id src = {
@@ -181,7 +181,7 @@ shader_desc_idx(uint32_t set, uint32_t binding,
 
    const struct panvk_shader_desc_map *map;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    if (bind_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
       map = &ctx->desc_info.dyn_ubos;
    } else if (bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
@@ -200,7 +200,7 @@ shader_desc_idx(uint32_t set, uint32_t binding,
 
    uint32_t idx = entry - map->map;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    /* Adjust the destination index for all dynamic UBOs, which are laid out
     * just after the regular UBOs in the UBO table. */
    if (bind_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
@@ -233,7 +233,7 @@ addr_format_for_type(VkDescriptorType type, const struct lower_desc_ctx *ctx)
    }
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static uint32_t
 shader_ssbo_table(nir_builder *b, unsigned set, unsigned binding,
                   const struct lower_desc_ctx *ctx)
@@ -298,7 +298,7 @@ build_res_index(nir_builder *b, uint32_t set, uint32_t binding,
    uint32_t desc_idx = shader_desc_idx(set, binding, NO_SUBDESC, ctx);
 
    switch (addr_fmt) {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    case nir_address_format_32bit_index_offset: {
       const uint32_t packed_desc_idx_array_size =
          (array_size - 1) << 16 | desc_idx;
@@ -339,7 +339,7 @@ build_res_reindex(nir_builder *b, nir_def *orig, nir_def *delta,
                   nir_address_format addr_format)
 {
    switch (addr_format) {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    case nir_address_format_32bit_index_offset:
       return nir_vec2(b, nir_channel(b, orig, 0),
                       nir_iadd(b, nir_channel(b, orig, 1), delta));
@@ -374,7 +374,7 @@ build_buffer_addr_for_res_index(nir_builder *b, nir_def *res_index,
                                 const struct lower_desc_ctx *ctx)
 {
    switch (addr_format) {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    case nir_address_format_32bit_index_offset: {
       nir_def *packed = nir_channel(b, res_index, 0);
       nir_def *array_index = nir_channel(b, res_index, 1);
@@ -541,7 +541,7 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
 
    set_offset = nir_iadd_imm(b, set_offset, desc_offset);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    nir_def *set_base_addr =
       b->shader->info.stage == MESA_SHADER_COMPUTE
          ? load_sysval_entry(b, compute, 64, desc.sets, nir_imm_int(b, set))
@@ -613,7 +613,7 @@ load_img_size(nir_builder *b, nir_deref_instr *deref, enum glsl_sampler_dim dim,
       nir_def *tex_sz = load_resource_deref_desc(
          b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 18, 3, 16, ctx);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       if (is_array && dim == GLSL_SAMPLER_DIM_CUBE)
          tex_sz =
             nir_vector_insert_imm(b, tex_sz,
@@ -909,7 +909,7 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
       }
       nir_push_else(b, NULL);
       {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
          /* On v7, we need to pass the depth format around. If we use a
           * conversion of zero, like we do on v9+, the GPU reports an
           * INVALID_INSTR_ENC. */
@@ -1141,7 +1141,7 @@ record_binding(struct lower_desc_ctx *ctx, unsigned set, unsigned binding,
 
    /* SSBOs are accessed directly from the sets, no need to record accesses
     * to such resources. */
-   if (PAN_ARCH <= 7 &&
+   if (PAN_ARCH < 9 &&
        binding_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
       return;
 
@@ -1167,7 +1167,7 @@ record_binding(struct lower_desc_ctx *ctx, unsigned set, unsigned binding,
 
    uint32_t desc_count_diff = new_desc_count - old_desc_count;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    if (binding_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
       ctx->desc_info.dyn_ubos.count += desc_count_diff;
    } else if (binding_layout->type ==
@@ -1205,7 +1205,7 @@ fill_copy_descs_for_binding(struct lower_desc_ctx *ctx, unsigned set,
          binding_layout->desc_idx + (i * desc_stride) + subdesc_idx;
       struct panvk_shader_desc_map *map;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       if (binding_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
          map = &ctx->desc_info.dyn_ubos;
       } else if (binding_layout->type ==
@@ -1237,7 +1237,7 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
    struct panvk_shader_desc_info *desc_info = &ctx->desc_info;
    uint32_t copy_count;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    copy_count = desc_info->dyn_ubos.count + desc_info->dyn_ssbos.count;
    for (uint32_t i = 0; i < PANVK_BIFROST_DESC_TABLE_COUNT; i++)
       copy_count += desc_info->others[i].count;
@@ -1266,7 +1266,7 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
    if (copy_count == 0)
       return;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    uint32_t *copy_table = rzalloc_array(ctx->ht, uint32_t, copy_count);
 
    assert(copy_table);
@@ -1417,7 +1417,7 @@ static void
 upload_shader_desc_info(struct panvk_device *dev, struct panvk_shader *shader,
                         const struct panvk_shader_desc_info *desc_info)
 {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    unsigned copy_count = 0;
    for (unsigned i = 0; i < ARRAY_SIZE(shader->desc_info.others.count); i++) {
       shader->desc_info.others.count[i] = desc_info->others[i].count;
@@ -1470,7 +1470,7 @@ panvk_per_arch(nir_lower_descriptors)(
    };
    bool progress = false;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    ctx.ubo_addr_format = nir_address_format_32bit_index_offset;
    ctx.ssbo_addr_format =
       rs->storage_buffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT

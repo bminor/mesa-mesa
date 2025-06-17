@@ -65,7 +65,7 @@ render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
    state->render.color_attachments.fmts[index] = iview->vk.format;
    state->render.color_attachments.samples[index] = img->vk.samples;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    state->render.fb.bos[state->render.fb.bo_count++] = img->bo;
 #endif
 
@@ -106,7 +106,7 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
    struct panvk_image *img =
       container_of(iview->vk.image, struct panvk_image, vk);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    state->render.fb.bos[state->render.fb.bo_count++] = img->bo;
 #endif
 
@@ -170,7 +170,7 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
    struct panvk_image *img =
       container_of(iview->vk.image, struct panvk_image, vk);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    state->render.fb.bos[state->render.fb.bo_count++] = img->bo;
 #endif
 
@@ -257,7 +257,7 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
 
    BITSET_SET(state->dirty, PANVK_CMD_GRAPHICS_DIRTY_RENDER_STATE);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    state->render.fb.bo_count = 0;
    memset(state->render.fb.bos, 0, sizeof(state->render.fb.bos));
 #endif
@@ -644,7 +644,7 @@ prepare_iam_sysvals(struct panvk_cmd_buffer *cmdbuf, BITSET_WORD *dirty_sysvals)
       pan_pack(&conv, INTERNAL_CONVERSION, cfg) {
          cfg.memory_format =
             GENX(pan_dithered_format_from_pipe_format)(pfmt, false);
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
          cfg.register_format =
             vk_format_is_uint(fmt)   ? MALI_REGISTER_FILE_FORMAT_U32
             : vk_format_is_sint(fmt) ? MALI_REGISTER_FILE_FORMAT_I32
@@ -662,7 +662,7 @@ prepare_iam_sysvals(struct panvk_cmd_buffer *cmdbuf, BITSET_WORD *dirty_sysvals)
       assert(ia_idx < ARRAY_SIZE(iam));
       iam[ia_idx].target = PANVK_ZS_ATTACHMENT;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       /* On v7, we need to pass the depth format around. If we use a conversion
        * of zero, like we do on v9+, the GPU reports an INVALID_INSTR_ENC. */
       VkFormat fmt = cmdbuf->state.gfx.render.z_attachment.fmt;
@@ -712,7 +712,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
    set_gfx_sysval(cmdbuf, dirty_sysvals, vs.first_vertex, info->vertex.base);
    set_gfx_sysval(cmdbuf, dirty_sysvals, vs.base_instance, info->instance.base);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    set_gfx_sysval(cmdbuf, dirty_sysvals, vs.raw_vertex_offset,
                   info->vertex.raw_offset);
    set_gfx_sysval(cmdbuf, dirty_sysvals, layer_id, info->layer_id);
@@ -802,7 +802,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
 
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct panvk_descriptor_state *desc_state = &cmdbuf->state.gfx.desc_state;
    struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
    struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
@@ -895,7 +895,7 @@ panvk_per_arch(CmdBindIndexBuffer2)(VkCommandBuffer commandBuffer,
       cmdbuf->state.gfx.ib.size = panvk_buffer_range(buf, offset, size);
       assert(cmdbuf->state.gfx.ib.size <= UINT32_MAX);
       cmdbuf->state.gfx.ib.dev_addr = panvk_buffer_gpu_ptr(buf, offset);
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       cmdbuf->state.gfx.ib.host_addr =
          buf && buf->host_ptr ? buf->host_ptr + offset : NULL;
 #endif
@@ -903,7 +903,7 @@ panvk_per_arch(CmdBindIndexBuffer2)(VkCommandBuffer commandBuffer,
    } else {
       cmdbuf->state.gfx.ib.size = 0;
       cmdbuf->state.gfx.ib.dev_addr = 0;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       cmdbuf->state.gfx.ib.host_addr = 0;
 #endif
       cmdbuf->state.gfx.ib.index_size = 0;

@@ -28,7 +28,7 @@
 struct panvk_cmd_buffer;
 
 struct panvk_shader_desc_state {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    uint64_t tables[PANVK_BIFROST_DESC_TABLE_COUNT];
    uint64_t img_attrib_table;
    uint64_t dyn_ssbos;
@@ -55,7 +55,7 @@ struct panvk_descriptor_state {
    uint32_t dyn_buf_offsets[MAX_SETS][MAX_DYNAMIC_BUFFERS];
 };
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 VkResult panvk_per_arch(cmd_prepare_dyn_ssbos)(
    struct panvk_cmd_buffer *cmdbuf,
    const struct panvk_descriptor_state *desc_state,

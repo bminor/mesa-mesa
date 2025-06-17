@@ -70,7 +70,7 @@ struct panvk_rendering_state {
       /* nr_samples to be used before framebuffer / tiler descriptor are emitted */
       uint32_t nr_samples;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       uint32_t bo_count;
       struct pan_kmod_bo *bos[MAX_RTS + 2];
 #endif
@@ -128,7 +128,7 @@ struct panvk_cmd_graphics_state {
    struct panvk_occlusion_query_state occlusion_query;
    struct panvk_graphics_sysvals sysvals;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct panvk_shader_link link;
 #endif
 
@@ -137,7 +137,7 @@ struct panvk_cmd_graphics_state {
       struct panvk_shader_desc_state desc;
       uint64_t push_uniforms;
       bool required;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       uint64_t rsd;
 #endif
    } fs;
@@ -146,7 +146,7 @@ struct panvk_cmd_graphics_state {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
       uint64_t push_uniforms;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       uint64_t attribs;
       uint64_t attrib_bufs;
 #endif
@@ -166,7 +166,7 @@ struct panvk_cmd_graphics_state {
    /* Index buffer */
    struct {
       uint64_t dev_addr;
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       void *host_addr;
 #endif
       uint64_t size;
@@ -181,7 +181,7 @@ struct panvk_cmd_graphics_state {
 
    bool vk_meta;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    uint64_t vpd;
 #endif
 
@@ -377,7 +377,7 @@ struct panvk_draw_info {
    } index;
 
    struct {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       int32_t raw_offset;
 #endif
       int32_t base;
@@ -396,7 +396,7 @@ struct panvk_draw_info {
       uint32_t stride;
    } indirect;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    uint32_t layer_id;
 #endif
 };

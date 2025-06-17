@@ -45,7 +45,7 @@ panvk_per_arch(cmd_prepare_dispatch_sysvals)(
    set_compute_sysval(cmdbuf, dirty_sysvals, printf_buffer_address,
                       dev->printf.bo->addr.dev);
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.compute.desc_state;
    struct panvk_shader_desc_state *cs_desc_state =

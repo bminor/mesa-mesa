@@ -307,7 +307,7 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       device->kmod.dev, PANVK_VA_RESERVE_BOTTOM);
    uint64_t user_va_end =
       pan_clamp_to_usable_va_range(device->kmod.dev, 1ull << 32);
-   uint32_t vm_flags = PAN_ARCH <= 7 ? PAN_KMOD_VM_FLAG_AUTO_VA : 0;
+   uint32_t vm_flags = PAN_ARCH < 9 ? PAN_KMOD_VM_FLAG_AUTO_VA : 0;
 
    device->kmod.vm =
       pan_kmod_vm_create(device->kmod.dev, vm_flags,

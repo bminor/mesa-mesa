@@ -228,7 +228,7 @@ GENX(pandecode_blend)(struct pandecode_context *ctx,
 }
 #endif
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static bool
 pan_is_yuv_format(uint32_t packed)
 {

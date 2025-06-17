@@ -782,7 +782,7 @@ GENX(pan_inline_rt_conversion)(nir_shader *s, enum pipe_format *formats)
                                      nir_metadata_control_flow, formats);
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 enum mali_register_file_format
 GENX(pan_fixup_blend_type)(nir_alu_type T_size, enum pipe_format format)
 {

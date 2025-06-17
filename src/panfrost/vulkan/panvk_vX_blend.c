@@ -152,7 +152,7 @@ emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
          cfg.internal.mode = MALI_BLEND_MODE_SHADER;
          cfg.internal.shader.pc = (uint32_t)blend_shader;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
          uint32_t ret_offset = fs_info->bifrost.blend[blend_idx].return_offset;
 
          /* If ret_offset is zero, we assume the BLEND is a terminal
@@ -192,7 +192,7 @@ emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
 
          cfg.internal.fixed_function.rt = rt_idx;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
          if (fs_info->fs.untyped_color_outputs) {
             nir_alu_type type = fs_info->bifrost.blend[blend_idx].type;
 

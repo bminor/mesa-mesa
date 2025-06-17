@@ -36,7 +36,7 @@ pandecode_primitive(struct pandecode_context *ctx,
    pan_unpack(p, PRIMITIVE, primitive);
    DUMP_UNPACKED(ctx, PRIMITIVE, primitive, "Primitive:\n");
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    /* Validate an index buffer is present if we need one. TODO: verify
     * relationship between invocation_count and index_count */
 
@@ -60,7 +60,7 @@ pandecode_primitive(struct pandecode_context *ctx,
 #endif
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static void
 pandecode_attributes(struct pandecode_context *ctx, uint64_t addr, int count,
                      bool varying, enum mali_job_type job_type)
@@ -448,7 +448,7 @@ pandecode_tiler_job(struct pandecode_context *ctx,
    pandecode_log(ctx, "Tiler Job Payload:\n");
    ctx->indent++;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    pandecode_invocation(ctx, pan_section_ptr(p, TILER_JOB, INVOCATION));
 #endif
 
@@ -637,7 +637,7 @@ GENX(pandecode_jc)(struct pandecode_context *ctx, uint64_t jc_gpu_va,
          pandecode_tiler_job(ctx, &h, jc_gpu_va, gpu_id);
          break;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       case MALI_JOB_TYPE_VERTEX:
       case MALI_JOB_TYPE_COMPUTE:
          pandecode_vertex_compute_geometry_job(ctx, &h, jc_gpu_va, gpu_id);

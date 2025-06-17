@@ -28,7 +28,7 @@ extern const struct vk_device_shader_ops panvk_per_arch(device_shader_ops);
 
 #define MAX_VS_ATTRIBS 16
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 
 /* We could theoretically use the MAX_PER_SET values here (except for UBOs
  * where we're really limited to 256 on the shader side), but on Bifrost we
@@ -70,7 +70,7 @@ enum panvk_varying_buf_id {
    PANVK_VARY_BUF_MAX,
 };
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 enum panvk_desc_table_id {
    PANVK_DESC_TABLE_USER = 0,
    PANVK_DESC_TABLE_CS_DYN_SSBOS = MAX_SETS,
@@ -109,7 +109,7 @@ struct panvk_graphics_sysvals {
    } viewport;
 
    struct {
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       int32_t raw_vertex_offset;
 #endif
       int32_t first_vertex;
@@ -123,7 +123,7 @@ struct panvk_graphics_sysvals {
 
    struct panvk_input_attachment_info iam[INPUT_ATTACHMENT_MAP_SIZE];
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    /* gl_Layer on Bifrost is a bit of hack. We have to issue one draw per
     * layer, and filter primitives at the VS level.
     */
@@ -140,7 +140,7 @@ static_assert((sizeof(struct panvk_graphics_sysvals) % FAU_WORD_SIZE) == 0,
 static_assert((offsetof(struct panvk_graphics_sysvals, push_uniforms) %
                FAU_WORD_SIZE) == 0,
               "panvk_graphics_sysvals::push_uniforms must be 8-byte aligned");
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static_assert((offsetof(struct panvk_graphics_sysvals, desc) % FAU_WORD_SIZE) ==
                  0,
               "panvk_graphics_sysvals::desc must be 8-byte aligned");
@@ -161,7 +161,7 @@ struct panvk_compute_sysvals {
    aligned_u64 push_uniforms;
    aligned_u64 printf_buffer_address;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct {
       aligned_u64 sets[PANVK_DESC_TABLE_COMPUTE_COUNT];
    } desc;
@@ -173,7 +173,7 @@ static_assert((sizeof(struct panvk_compute_sysvals) % FAU_WORD_SIZE) == 0,
 static_assert((offsetof(struct panvk_compute_sysvals, push_uniforms) %
                FAU_WORD_SIZE) == 0,
               "panvk_compute_sysvals::push_uniforms must be 8-byte aligned");
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 static_assert((offsetof(struct panvk_compute_sysvals, desc) % FAU_WORD_SIZE) ==
                  0,
               "panvk_compute_sysvals::desc must be 8-byte aligned");
@@ -260,7 +260,7 @@ static_assert((offsetof(struct panvk_compute_sysvals, desc) % FAU_WORD_SIZE) ==
       .base = SYSVALS_PUSH_CONST_BASE + sysval_offset(__ptype, __name),        \
       .range = sysval_size(__ptype, __name))
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 enum panvk_bifrost_desc_table_type {
    PANVK_BIFROST_DESC_TABLE_INVALID = -1,
 
@@ -315,7 +315,7 @@ struct panvk_shader {
    struct {
       uint32_t used_set_mask;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
       struct {
          uint32_t map[MAX_DYNAMIC_UNIFORM_BUFFERS];
          uint32_t count;
@@ -345,7 +345,7 @@ struct panvk_shader {
 
    struct panvk_priv_mem code_mem;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct panvk_priv_mem rsd;
 #else
    union {
@@ -373,7 +373,7 @@ panvk_shader_get_dev_addr(const struct panvk_shader *shader)
    return shader != NULL ? panvk_priv_mem_dev_addr(shader->code_mem) : 0;
 }
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
 struct panvk_shader_link {
    struct {
       struct panvk_priv_mem attribs;
@@ -408,7 +408,7 @@ struct panvk_internal_shader {
    struct pan_shader_info info;
    struct panvk_priv_mem code_mem;
 
-#if PAN_ARCH <= 7
+#if PAN_ARCH < 9
    struct panvk_priv_mem rsd;
 #else
    struct panvk_priv_mem spd;
