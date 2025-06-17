@@ -19,7 +19,7 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250611-rust"
+  DEBIAN_BASE_TAG: "20250618-crosvmvirgl"
 
   DEBIAN_BUILD_TAG: "20250611-rust"
 
