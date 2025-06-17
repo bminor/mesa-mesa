@@ -479,12 +479,12 @@ zink_surface_swapchain_update(struct zink_context *ctx, struct zink_surface *sur
 }
 
 void
-zink_surface_resolve_init(struct zink_screen *screen, struct zink_resource *res)
+zink_surface_resolve_init(struct zink_screen *screen, struct zink_resource *res, enum pipe_format format)
 {
    if (res->surface)
       return;
    struct pipe_surface tmpl = {0};
-   tmpl.format = res->base.b.format;
+   tmpl.format = format;
    zink_screen_lock_context(screen);
    res->surface = screen->copy_context->base.create_surface(&screen->copy_context->base, &res->base.b, &tmpl);
    zink_screen_unlock_context(screen);

@@ -4011,7 +4011,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    }
 
    if (ctx->fb_state.resolve)
-      zink_surface_resolve_init(screen, zink_resource(ctx->fb_state.resolve));
+      zink_surface_resolve_init(screen, zink_resource(ctx->fb_state.resolve), ctx->fb_state.resolve->format);
    rebind_fb_state(ctx, NULL, true);
    ctx->fb_state.samples = MAX2(samples, 1);
    if (ctx->fb_state.width != w || ctx->fb_state.height != h)
