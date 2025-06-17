@@ -1868,8 +1868,6 @@ unbind_shader_image(struct zink_context *ctx, gl_shader_stage stage, unsigned sl
       unbind_buffer_descriptor_stage(res, stage);
       unbind_buffer_descriptor_reads(res, stage == MESA_SHADER_COMPUTE);
       zink_buffer_view_reference(zink_screen(ctx->base.screen), &image_view->buffer_view, NULL);
-      if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB)
-         pipe_resource_reference(&image_view->base.resource, NULL);
    } else {
       unbind_descriptor_stage(res, stage);
       unbind_descriptor_reads(res, stage == MESA_SHADER_COMPUTE);
@@ -1877,6 +1875,7 @@ unbind_shader_image(struct zink_context *ctx, gl_shader_stage stage, unsigned sl
          check_for_layout_update(ctx, res, is_compute);
       zink_surface_reference(zink_screen(ctx->base.screen), &image_view->surface, NULL);
    }
+   pipe_resource_reference(&image_view->base.resource, NULL);
    image_view->base.resource = NULL;
    image_view->surface = NULL;
    image_view->import2d = NULL;
@@ -2026,12 +2025,6 @@ zink_set_shader_images(struct pipe_context *pctx,
             changed = true;
             unbind_shader_image(ctx, shader_type, start_slot + i);
             bind_shaderimage_resource_stage(ctx, b, res, is_compute);
-            if (b->resource->target == PIPE_BUFFER &&
-                 /* db mode refcounts these */
-                (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB ||
-                 /* this path refcounts the import2d resource but not the base */
-                 tex2d_from_buf))
-               pipe_resource_reference(&a->base.resource, b->resource);
          } else {
             /* resource matches: check for write flag change and partial rebind */
 
@@ -2120,7 +2113,7 @@ zink_set_shader_images(struct pipe_context *pctx,
             zink_batch_resource_usage_set(ctx->bs, res,
                                           zink_resource_access_is_write(access), false);
          }
-         memcpy(&a->base, images + i, sizeof(struct pipe_image_view));
+         util_copy_image_view(&a->base, images + i);
          if (b->resource->target == PIPE_BUFFER && !tex2d_from_buf) {
             /* always enforce limit clamping */
             unsigned blocksize = util_format_get_blocksize(a->base.format);
