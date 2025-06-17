@@ -50,6 +50,7 @@ enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_LOAD_PAYLOAD,
    BRW_KIND_URB,
    BRW_KIND_FB_WRITE,
+   BRW_KIND_SCRATCH,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -82,6 +83,7 @@ struct brw_inst : brw_exec_node {
    KIND_HELPERS(as_load_payload, brw_load_payload_inst, BRW_KIND_LOAD_PAYLOAD);
    KIND_HELPERS(as_urb, brw_urb_inst, BRW_KIND_URB);
    KIND_HELPERS(as_fb_write, brw_fb_write_inst, BRW_KIND_FB_WRITE);
+   KIND_HELPERS(as_scratch, brw_scratch_inst, BRW_KIND_SCRATCH);
 
 #undef KIND_HELPERS
 
@@ -368,6 +370,18 @@ struct brw_fb_write_inst : brw_inst {
    uint8_t target;
    bool null_rt;
    bool last_rt;
+};
+
+struct brw_scratch_inst : brw_inst {
+   /** Offset in scratch space for the load or store. */
+   unsigned offset;
+
+   /**
+    * Should a LSC transpose message be used for the fill?
+    *
+    * Currently this must be false for spills.
+    */
+   bool use_transpose;
 };
 
 /**

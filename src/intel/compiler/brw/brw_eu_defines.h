@@ -549,6 +549,9 @@ enum ENUM_PACKED opcode {
     * Acts as a scheduling barrier.
     */
    SHADER_OPCODE_LOAD_REG,
+
+   SHADER_OPCODE_LSC_FILL,
+   SHADER_OPCODE_LSC_SPILL,
 };
 
 enum send_srcs {
@@ -712,6 +715,23 @@ enum interpolator_logical_srcs {
    INTERP_SRC_NOPERSPECTIVE,
 
    INTERP_NUM_SRCS
+};
+
+enum spill_srcs {
+   /** Register used for the address in scratch space. */
+   SPILL_SRC_PAYLOAD1,
+
+   /** Register to be spilled. */
+   SPILL_SRC_PAYLOAD2,
+
+   SPILL_NUM_SRCS
+};
+
+enum fill_srcs {
+   /** Register used for the address in scratch space. */
+   FILL_SRC_PAYLOAD1,
+
+   FILL_NUM_SRCS
 };
 
 enum brw_reduce_op {

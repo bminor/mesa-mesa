@@ -328,6 +328,7 @@ bool brw_lower_constant_loads(brw_shader &s);
 bool brw_lower_csel(brw_shader &s);
 bool brw_lower_derivatives(brw_shader &s);
 bool brw_lower_dpas(brw_shader &s);
+bool brw_lower_fill_and_spill(brw_shader &s);
 bool brw_lower_find_live_channel(brw_shader &s);
 bool brw_lower_indirect_mov(brw_shader &s);
 bool brw_lower_integer_multiplication(brw_shader &s);

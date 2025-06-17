@@ -269,6 +269,11 @@ brw_instruction_name(const struct brw_isa_info *isa, const brw_inst *inst)
 
    case SHADER_OPCODE_FLOW:
       return "flow";
+
+   case SHADER_OPCODE_LSC_FILL:
+      return "fill_lsc";
+   case SHADER_OPCODE_LSC_SPILL:
+      return "spill_lsc";
    }
 
    UNREACHABLE("not reached");

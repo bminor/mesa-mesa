@@ -296,8 +296,6 @@ private:
 
    bool build_interference_graph(bool allow_spilling);
 
-   brw_reg build_ex_desc(const brw_builder &bld, unsigned reg_size, bool unspill);
-
    brw_reg build_lane_offsets(const brw_builder &bld,
                               uint32_t spill_offset, int ip);
    brw_reg build_single_offset(const brw_builder &bld,
@@ -505,6 +503,10 @@ brw_inst_has_source_and_destination_hazard(const struct intel_device_info *devin
        * be overly conservative.
        */
       return inst->as_dpas()->rcount > 1;
+
+   case SHADER_OPCODE_LSC_FILL:
+      return false;
+
    default:
       /* The SIMD16 compressed instruction
        *
@@ -631,6 +633,13 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
       ra_add_node_interference(g,
          first_vgrf_node + inst->src[SEND_SRC_PAYLOAD1].nr,
          first_vgrf_node + inst->src[SEND_SRC_PAYLOAD2].nr);
+   } else if (inst->opcode == SHADER_OPCODE_LSC_SPILL &&
+              inst->src[SPILL_SRC_PAYLOAD1].file == VGRF &&
+              inst->src[SPILL_SRC_PAYLOAD2].file == VGRF &&
+              inst->src[SPILL_SRC_PAYLOAD1].nr != inst->src[SPILL_SRC_PAYLOAD2].nr) {
+      ra_add_node_interference(g,
+         first_vgrf_node + inst->src[SPILL_SRC_PAYLOAD1].nr,
+         first_vgrf_node + inst->src[SPILL_SRC_PAYLOAD2].nr);
    }
 
    /* When we do send-from-GRF for FB writes, we need to ensure that the last
@@ -775,43 +784,6 @@ brw_reg_alloc::build_single_offset(const brw_builder &bld, uint32_t spill_offset
 }
 
 brw_reg
-brw_reg_alloc::build_ex_desc(const brw_builder &bld, unsigned reg_size, bool unspill)
-{
-   /* Use a different area of the address register than what is used in
-    * brw_lower_logical_sends.c (brw_address_reg(2)) so we don't have
-    * interactions between the spill/fill instructions and the other send
-    * messages.
-    */
-   brw_reg ex_desc = bld.vaddr(BRW_TYPE_UD,
-                               BRW_ADDRESS_SUBREG_INDIRECT_SPILL_DESC);
-
-   brw_builder ubld = bld.uniform();
-
-   brw_inst *inst = ubld.AND(ex_desc,
-                             retype(brw_vec1_grf(0, 5), BRW_TYPE_UD),
-                             brw_imm_ud(INTEL_MASK(31, 10)));
-   _mesa_set_add(spill_insts, inst);
-
-   const intel_device_info *devinfo = bld.shader->devinfo;
-   if (devinfo->verx10 >= 200) {
-      inst = ubld.SHR(ex_desc, ex_desc, brw_imm_ud(4));
-      _mesa_set_add(spill_insts, inst);
-   } else {
-      if (unspill) {
-         inst = ubld.OR(ex_desc, ex_desc, brw_imm_ud(BRW_SFID_UGM));
-         _mesa_set_add(spill_insts, inst);
-      } else {
-         inst = ubld.OR(ex_desc,
-                        ex_desc,
-                        brw_imm_ud(brw_message_ex_desc(devinfo, reg_size) | BRW_SFID_UGM));
-         _mesa_set_add(spill_insts, inst);
-      }
-   }
-
-   return ex_desc;
-}
-
-brw_reg
 brw_reg_alloc::build_lane_offsets(const brw_builder &bld, uint32_t spill_offset, int ip)
 {
    assert(bld.dispatch_width() <= 16 * reg_unit(bld.shader->devinfo));
@@ -905,7 +877,6 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
    for (unsigned i = 0; i < DIV_ROUND_UP(count, reg_size); i++) {
       ++stats->fill_count;
 
-      brw_send_inst *unspill_inst;
       if (devinfo->verx10 >= 125) {
          /* LSC is limited to SIMD16 (SIMD32 on Xe2) load/store but we can
           * load more using transpose messages.
@@ -921,46 +892,26 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
             offset = build_lane_offsets(ubld, spill_offset, ip);
          }
 
-         uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
-                                      LSC_ADDR_SURFTYPE_SS,
-                                      LSC_ADDR_SIZE_A32,
-                                      LSC_DATA_SIZE_D32,
-                                      use_transpose ? reg_size * 8 : 1 /* num_channels */,
-                                      use_transpose,
-                                      LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
-
-         const brw_reg ex_desc_reg = build_ex_desc(bld, reg_size, true);
-
-         unspill_inst = ubld.SEND();
+         const bool exec_all = use_transpose || bld.has_writemask_all();
+         brw_scratch_inst *unspill_inst = bld.exec_all(exec_all).FILL();
          unspill_inst->dst = dst;
 
-         unspill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
-         unspill_inst->src[SEND_SRC_EX_DESC]  = ex_desc_reg;
-         unspill_inst->src[SEND_SRC_PAYLOAD1] = offset;
-         unspill_inst->src[SEND_SRC_PAYLOAD2] = brw_reg();
+         unspill_inst->src[FILL_SRC_PAYLOAD1] = offset;
 
-         unspill_inst->sfid = BRW_SFID_UGM;
-         unspill_inst->header_size = 0;
-         unspill_inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32,
-                                               unspill_inst->exec_size);
-         unspill_inst->ex_mlen = 0;
+         unspill_inst->offset = spill_offset;
+         unspill_inst->use_transpose = use_transpose;
          unspill_inst->size_written =
             lsc_msg_dest_len(devinfo, LSC_DATA_SIZE_D32, bld.dispatch_width()) * REG_SIZE;
-         unspill_inst->has_side_effects = false;
-         unspill_inst->is_volatile = true;
+         assert(unspill_inst->size_written == (reg_size * REG_SIZE));
 
-         unspill_inst->src[0] = brw_imm_ud(
-            desc |
-            brw_message_desc(devinfo,
-                             unspill_inst->mlen,
-                             unspill_inst->size_written / REG_SIZE,
-                             unspill_inst->header_size));
+         _mesa_set_add(spill_insts, unspill_inst);
+         assert(unspill_inst->force_writemask_all || count % reg_size == 0);
       } else {
          brw_reg header = build_legacy_scratch_header(bld, spill_offset, ip);
 
          const unsigned bti = GFX8_BTI_STATELESS_NON_COHERENT;
 
-         unspill_inst = bld.SEND();
+         brw_send_inst *unspill_inst = bld.SEND();
          unspill_inst->dst = dst;
 
          unspill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
@@ -983,9 +934,10 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
                              unspill_inst->mlen,
                              unspill_inst->size_written / REG_SIZE,
                              unspill_inst->header_size));
+
+         _mesa_set_add(spill_insts, unspill_inst);
+         assert(unspill_inst->force_writemask_all || count % reg_size == 0);
       }
-      _mesa_set_add(spill_insts, unspill_inst);
-      assert(unspill_inst->force_writemask_all || count % reg_size == 0);
 
       dst.offset += reg_size * REG_SIZE;
       spill_offset += reg_size * REG_SIZE;
@@ -1005,48 +957,26 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
    for (unsigned i = 0; i < DIV_ROUND_UP(count, reg_size); i++) {
       ++stats->spill_count;
 
-      brw_send_inst *spill_inst;
       if (devinfo->verx10 >= 125) {
          brw_reg offset = build_lane_offsets(bld, spill_offset, ip);
 
-         const brw_reg ex_desc_reg = build_ex_desc(bld, reg_size, false);
-
-         spill_inst = bld.SEND();
+         brw_scratch_inst *spill_inst = bld.SPILL();
          spill_inst->dst = bld.null_reg_f();
 
-         spill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
-         spill_inst->src[SEND_SRC_EX_DESC]  = ex_desc_reg;
-         spill_inst->src[SEND_SRC_PAYLOAD1] = offset;
-         spill_inst->src[SEND_SRC_PAYLOAD2] = src;
+         spill_inst->src[SPILL_SRC_PAYLOAD1] = offset;
+         spill_inst->src[SPILL_SRC_PAYLOAD2] = src;
 
-         spill_inst->sfid = BRW_SFID_UGM;
-         uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_STORE,
-                                      LSC_ADDR_SURFTYPE_SS,
-                                      LSC_ADDR_SIZE_A32,
-                                      LSC_DATA_SIZE_D32,
-                                      1 /* num_channels */,
-                                      false /* transpose */,
-                                      LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
-         spill_inst->header_size = 0;
-         spill_inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32,
-                                             bld.dispatch_width());
-         spill_inst->ex_mlen = reg_size;
-         spill_inst->size_written = 0;
-         spill_inst->has_side_effects = true;
-         spill_inst->is_volatile = false;
+         spill_inst->offset = spill_offset;
+         spill_inst->use_transpose = false;
 
-         spill_inst->src[0] = brw_imm_ud(
-            desc |
-            brw_message_desc(devinfo,
-                             spill_inst->mlen,
-                             spill_inst->size_written / REG_SIZE,
-                             spill_inst->header_size));
+         _mesa_set_add(spill_insts, spill_inst);
+         assert(spill_inst->force_writemask_all || count % reg_size == 0);
       } else {
          brw_reg header = build_legacy_scratch_header(bld, spill_offset, ip);
 
          const unsigned bti = GFX8_BTI_STATELESS_NON_COHERENT;
 
-         spill_inst = bld.SEND();
+         brw_send_inst *spill_inst = bld.SEND();
          spill_inst->dst = bld.null_reg_f();
 
          spill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
@@ -1072,9 +1002,10 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
                              spill_inst->header_size));
          spill_inst->src[1] = brw_imm_ud(
             brw_message_ex_desc(devinfo, spill_inst->ex_mlen));
+
+         _mesa_set_add(spill_insts, spill_inst);
+         assert(spill_inst->force_writemask_all || count % reg_size == 0);
       }
-      _mesa_set_add(spill_insts, spill_inst);
-      assert(spill_inst->force_writemask_all || count % reg_size == 0);
 
       src.offset += reg_size * REG_SIZE;
       spill_offset += reg_size * REG_SIZE;

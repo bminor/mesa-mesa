@@ -473,6 +473,9 @@ hash_inst(const void *v)
    case BRW_KIND_BASE:
       /* Nothing else to do. */
       break;
+
+   case BRW_KIND_SCRATCH:
+      UNREACHABLE("Spill and fills should not exist yet.");
    }
 
    if (inst->opcode == BRW_OPCODE_MAD) {

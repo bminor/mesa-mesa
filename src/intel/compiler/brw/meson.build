@@ -43,6 +43,7 @@ libintel_compiler_brw_files = files(
   'brw_load_reg.cpp',
   'brw_lower.cpp',
   'brw_lower_dpas.cpp',
+  'brw_lower_fill_spill.cpp',
   'brw_lower_integer_multiplication.cpp',
   'brw_lower_logical_sends.cpp',
   'brw_lower_pack.cpp',

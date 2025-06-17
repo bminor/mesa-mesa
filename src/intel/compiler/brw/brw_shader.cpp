@@ -1277,6 +1277,10 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
 
    s.debug_optimizer(nir, "post_ra_alloc", iteration, pass_num);
 
+   if (s.spilled_any_registers) {
+      OPT(brw_lower_fill_and_spill);
+   }
+
    OPT(brw_opt_bank_conflicts);
    OPT_V(brw_schedule_instructions_post_ra);
 

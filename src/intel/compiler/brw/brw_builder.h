@@ -638,6 +638,18 @@ public:
       return emit(SHADER_OPCODE_SEND, SEND_NUM_SRCS)->as_send();
    }
 
+   brw_scratch_inst *
+   FILL() const
+   {
+      return emit(SHADER_OPCODE_LSC_FILL, FILL_NUM_SRCS)->as_scratch();
+   }
+
+   brw_scratch_inst *
+   SPILL() const
+   {
+      return emit(SHADER_OPCODE_LSC_SPILL, SPILL_NUM_SRCS)->as_scratch();
+   }
+
    brw_urb_inst *
    URB_WRITE(const brw_reg srcs[], unsigned num_srcs) const
    {
