@@ -133,6 +133,19 @@ vk_android_hal_open(const struct hw_module_t *mod, const char *id,
    return 0;
 }
 
+uint64_t
+vk_android_get_front_buffer_usage(void)
+{
+   struct u_gralloc *gralloc = vk_android_get_ugralloc();
+   if (gralloc) {
+      uint64_t usage = 0;
+      int ret = u_gralloc_get_front_rendering_usage(gralloc, &usage);
+      if (!ret)
+         return usage;
+   }
+   return 0;
+}
+
 /* If any bits in test_mask are set, then unset them and return true. */
 static inline bool
 unmask32(uint32_t *inout_mask, uint32_t test_mask)
@@ -257,13 +270,8 @@ vk_common_GetSwapchainGrallocUsage2ANDROID(
       *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_HWCOMPOSER;
    }
 
-   if ((swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID) &&
-       vk_android_get_ugralloc() != NULL) {
-      uint64_t front_rendering_usage = 0;
-      u_gralloc_get_front_rendering_usage(vk_android_get_ugralloc(),
-                                          &front_rendering_usage);
-      *grallocProducerUsage |= front_rendering_usage;
-   }
+   if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
+      *grallocProducerUsage |= vk_android_get_front_buffer_usage();
 
    return VK_SUCCESS;
 }
