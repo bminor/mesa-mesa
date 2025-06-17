@@ -1,4 +1,5 @@
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write_depth_clear_stencil_write
+dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_write
 dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_clear_stencil_write
 dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_write
 dEQP-GLES3.functional.occlusion_query.conservative_stencil_write_stencil_clear
@@ -15,6 +16,7 @@ KHR-GLES31.core.tessellation_shader.tessellation_control_to_tessellation_evaluat
 KHR-GLES31.core.tessellation_shader.vertex.vertex_ordering
 
 KHR-GL46.pipeline_statistics_query_tests_ARB.functional_primitives_vertices_submitted_and_clipping_input_output_primitives
+KHR-GL46.shader_image_load_store.basic-allTargets-atomic
 KHR-GL46.texture_swizzle.functional
 
 KHR-Single-GL46.arrays_of_arrays_gl.ConstructorsAndUnsizedDeclConstructors1

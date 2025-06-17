@@ -55,3 +55,7 @@ spec@glsl-1.30@execution@tex-miplevel-selection texturegrad 2darrayshadow
 spec@glsl-1.30@execution@tex-miplevel-selection texturegradoffset 2d
 spec@glsl-1.30@execution@tex-miplevel-selection texturelodoffset 1d
 spec@glsl-4.30@execution@built-in-functions@cs-op-bitxor-uvec3-uint
+spec@glsl-1.30@execution@tex-miplevel-selection textureproj\(bias\) 1d_projvec4
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32f_rgba16ui.texture3d_to_renderbuffer
+dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.at_sample_id.multisample_rbo_2
+spec@ext_framebuffer_multisample@accuracy all_samples depth_draw small depthstencil
