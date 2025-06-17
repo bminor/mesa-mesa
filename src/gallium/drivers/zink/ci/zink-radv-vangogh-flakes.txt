@@ -139,3 +139,15 @@ dEQP-GLES31.functional.synchronization.inter_call.with_memory_barrier.image_over
 
 # glcts: ../src/vulkan/runtime/vk_pipeline_cache.c:666: vk_pipeline_cache_destroy: Assertion `cache->object_cache->entries == 0' failed.
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.texture3d_to_cubemap
+KHR-GL46.gpu_shader5_gl.function_overloading
+KHR-GL46.packed_pixels.rectangle.r8_format_rgb
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_rectangle_rgba32f
+KHR-GL46.texture_lod_bias.texture_lod_bias_all
+KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-one-buffer-per-stream
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_r16i
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba16f
+KHR-GL46.sparse_texture_tests.SparseTextureAllocation_texture_2d_array_r16f
+spec@arb_gpu_shader5@texturegather@vs-rgba-3-unorm-2d
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_r8_snorm
+KHR-GL46.packed_pixels.varied_rectangle.rgb8_format_rgb
+shaders@glsl-fs-loop
