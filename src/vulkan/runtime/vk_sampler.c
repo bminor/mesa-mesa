@@ -88,16 +88,38 @@ vk_sampler_border_color_value(const VkSamplerCreateInfo *pCreateInfo,
 }
 
 void
-vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampler)
+vk_sampler_state_init(struct vk_sampler_state *state,
+                      const VkSamplerCreateInfo *pCreateInfo)
 {
-   sampler->format = VK_FORMAT_UNDEFINED;
-   sampler->border_color = pCreateInfo->borderColor;
-   sampler->reduction_mode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+   memset(state, 0, sizeof(*state));
 
-   if (!vk_border_color_is_custom(pCreateInfo->borderColor)) {
-      sampler->border_color_value =
-         vk_border_color_value(pCreateInfo->borderColor);
-   }
+   assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
+
+   /* Copy all the pCreateInfo fields */
+   state->flags = pCreateInfo->flags;
+   state->mag_filter = pCreateInfo->magFilter;
+   state->min_filter = pCreateInfo->minFilter;
+   state->mipmap_mode = pCreateInfo->mipmapMode;
+   state->address_mode_u = pCreateInfo->addressModeU;
+   state->address_mode_v = pCreateInfo->addressModeV;
+   state->address_mode_w = pCreateInfo->addressModeW;
+   state->mip_lod_bias = pCreateInfo->mipLodBias;
+   state->anisotropy_enable = pCreateInfo->anisotropyEnable;
+   state->max_anisotropy = pCreateInfo->anisotropyEnable ?
+                           pCreateInfo->maxAnisotropy : 1.0;
+   state->compare_enable = pCreateInfo->compareEnable;
+   if (pCreateInfo->compareEnable)
+      state->compare_op = pCreateInfo->compareOp;
+   state->min_lod = pCreateInfo->minLod;
+   state->max_lod = pCreateInfo->maxLod;
+   state->border_color = pCreateInfo->borderColor;
+   state->unnormalized_coordinates = pCreateInfo->unnormalizedCoordinates;
+
+   /* Defaults for if we don't find extensions */
+   state->format = VK_FORMAT_UNDEFINED;
+   if (!vk_border_color_is_custom(pCreateInfo->borderColor))
+      state->border_color_value = vk_border_color_value(pCreateInfo->borderColor);
+   state->reduction_mode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
 
    vk_foreach_struct_const(ext, pCreateInfo->pNext) {
       switch (ext->sType) {
@@ -106,15 +128,15 @@ vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampl
          if (!vk_border_color_is_custom(pCreateInfo->borderColor))
             break;
 
-         sampler->border_color_value = cbc_info->customBorderColor;
+         state->border_color_value = cbc_info->customBorderColor;
          if (cbc_info->format != VK_FORMAT_UNDEFINED)
-            sampler->format = cbc_info->format;
+            state->format = cbc_info->format;
          break;
       }
 
       case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO: {
          const VkSamplerReductionModeCreateInfo *rm_info = (void *)ext;
-         sampler->reduction_mode = rm_info->reductionMode;
+         state->reduction_mode = rm_info->reductionMode;
          break;
       }
 
@@ -137,13 +159,39 @@ vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampl
          if (vk_format_get_ycbcr_info(conversion->state.format) == NULL)
             break;
 
-         sampler->ycbcr_conversion = conversion;
-         sampler->format = conversion->state.format;
+         state->has_ycbcr_conversion = true;
+         state->ycbcr_conversion = conversion->state;
+         state->format = conversion->state.format;
          break;
       }
+
       default:
          break;
       }
+   }
+}
+
+void
+vk_sampler_init(const VkSamplerCreateInfo *pCreateInfo, struct vk_sampler *sampler)
+{
+   struct vk_sampler_state state;
+   vk_sampler_state_init(&state, pCreateInfo);
+
+   sampler->format = state.format;
+   sampler->border_color = state.border_color;
+   sampler->border_color_value = state.border_color_value;
+   sampler->reduction_mode = state.reduction_mode;
+
+   sampler->ycbcr_conversion = NULL;
+   if (state.has_ycbcr_conversion) {
+      /* The vk_sampler has an object pointer. */
+      const VkSamplerYcbcrConversionInfo *yc_info =
+         vk_find_struct_const(pCreateInfo->pNext,
+                              SAMPLER_YCBCR_CONVERSION_INFO);
+      VK_FROM_HANDLE(vk_ycbcr_conversion, conversion, yc_info->conversion);
+
+      assert(state.format == conversion->state.format);
+      sampler->ycbcr_conversion = conversion;
    }
 }
 

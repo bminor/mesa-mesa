@@ -29,6 +29,9 @@
 extern "C" {
 #endif
 
+/* This struct needs to be hashable mem-comparable */
+PRAGMA_DIAGNOSTIC_PUSH
+PRAGMA_DIAGNOSTIC_ERROR(-Wpadded)
 struct vk_ycbcr_conversion_state {
    VkFormat format;
    VkSamplerYcbcrModelConversion ycbcr_model;
@@ -37,7 +40,9 @@ struct vk_ycbcr_conversion_state {
    VkChromaLocation chroma_offsets[2];
    VkFilter chroma_filter;
    bool chroma_reconstruction;
+   uint8_t _pad[3];
 };
+PRAGMA_DIAGNOSTIC_POP
 
 struct vk_ycbcr_conversion {
    struct vk_object_base base;
