@@ -1005,7 +1005,10 @@ ac_init_gfx12_ds_surface(const struct radeon_info *info, const struct ac_ds_stat
 
    ds->db_depth_view = S_028004_SLICE_START(state->first_layer) |
                        S_028004_SLICE_MAX(state->last_layer);
-   ds->u.gfx12.db_depth_view1 = S_028008_MIPID_GFX12(state->level);
+   ds->u.gfx12.db_depth_view1 = S_028008_MIPID_GFX12(state->level) |
+                                S_028008_Z_READ_ONLY(state->z_read_only) |
+                                S_028008_STENCIL_READ_ONLY(state->stencil_read_only);
+
    ds->db_depth_size = S_028014_X_MAX(state->width - 1) |
                        S_028014_Y_MAX(state->height - 1);
    ds->db_z_info = S_028018_FORMAT(db_format) |
