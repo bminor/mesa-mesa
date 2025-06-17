@@ -74,3 +74,11 @@ dEQP-VK.tessellation.misc_draw.triangles_instances
 dEQP-VK.texture.filtering.cube.combinations.nearest.linear.clamp_to_edge.mirrored_repeat.non_seamless
 dEQP-VK.texture.filtering.cube.sizes.64x64.nearest
 dEQP-VK.texture.mipmap.cubemap.projected.linear_nearest_nearest_mirror
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_indexed_vk_primitive_topology_line_list_attrib_divisor_1_multiview
+dEQP-VK.pipeline.fast_linked_library.sampler.separate_stencil_usage.view_type.cube_array.format.d32_sfloat_s8_uint.mipmap.linear.lod.select_max_4
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_vk_primitive_topology_line_list_attrib_divisor_4
+dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r32_sfloat.min_filter.nearest
+dEQP-VK.glsl.opaque_type_indexing.sampler.dynamically_uniform.vertex.isamplercube
+dEQP-VK.synchronization.global_priority_transition.low.no_sync.no_modifiers.from_compute_to_graphics
+dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.non_seamless_less_or_equal_d16_unorm_s8_uint
+dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.triangle_list_with_adjacency.no_clip.struct.ivec3.per_vertex_flat.vertex_shader
