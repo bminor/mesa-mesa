@@ -980,7 +980,7 @@ class ResourceTracker {
 
     std::unique_ptr<gfxstream::SyncHelper> mSyncHelper = nullptr;
 
-    struct VirtGpuCaps mCaps;
+    struct VirtGpuCaps mCaps = {};
     std::vector<VkExtensionProperties> mHostInstanceExtensions;
     std::vector<VkExtensionProperties> mHostDeviceExtensions;
 

@@ -1407,7 +1407,9 @@ bool ResourceTracker::isValidMemoryRange(const VkMappedMemoryRange& range) {
 
 void ResourceTracker::setupCaps(uint32_t& noRenderControlEnc) {
     VirtGpuDevice* instance = VirtGpuDevice::getInstance(kCapsetGfxStreamVulkan);
-    mCaps = instance->getCaps();
+    if (instance) {
+        mCaps = instance->getCaps();
+    }
 
     // Delete once goldfish Linux drivers are gone
     if (mCaps.vulkanCapset.protocolVersion == 0) {
@@ -1501,7 +1503,7 @@ void ResourceTracker::setupFeatures(const struct GfxStreamVkFeatureInfo* feature
 void ResourceTracker::setupPlatformHelpers() {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VirtGpuDevice* instance = VirtGpuDevice::getInstance(kCapsetGfxStreamVulkan);
-    auto deviceHandle = instance->getDeviceHandle();
+    auto deviceHandle = instance ? instance->getDeviceHandle() : INVALID_DESCRIPTOR;
     if (mGralloc == nullptr) {
         mGralloc.reset(gfxstream::createPlatformGralloc(deviceHandle));
     }
@@ -2152,12 +2154,13 @@ void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                                                         VkPhysicalDeviceProperties2* pProperties) {
     if (pProperties) {
         on_vkGetPhysicalDeviceProperties(context, physicalDevice, &pProperties->properties);
-
+        VirtGpuDevice* instance = VirtGpuDevice::getInstance();
         VkPhysicalDeviceDrmPropertiesEXT* drmProps =
             vk_find_struct(pProperties, PHYSICAL_DEVICE_DRM_PROPERTIES_EXT);
-        if (drmProps) {
+
+        if (instance && drmProps) {
             VirtGpuDrmInfo drmInfo;
-            if (VirtGpuDevice::getInstance()->getDrmInfo(&drmInfo)) {
+            if (instance->getDrmInfo(&drmInfo)) {
                 drmProps->hasPrimary = drmInfo.hasPrimary;
                 drmProps->hasRender = drmInfo.hasRender;
                 drmProps->primaryMajor = drmInfo.primaryMajor;
@@ -2174,9 +2177,9 @@ void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
 
         VkPhysicalDevicePCIBusInfoPropertiesEXT* pciBusInfoProps =
             vk_find_struct(pProperties, PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT);
-        if (pciBusInfoProps) {
+        if (instance && pciBusInfoProps) {
             VirtGpuPciBusInfo pciBusInfo;
-            if (VirtGpuDevice::getInstance()->getPciBusInfo(&pciBusInfo)) {
+            if (instance->getPciBusInfo(&pciBusInfo)) {
                 pciBusInfoProps->pciDomain = pciBusInfo.domain;
                 pciBusInfoProps->pciBus = pciBusInfo.bus;
                 pciBusInfoProps->pciDevice = pciBusInfo.device;
