@@ -23,7 +23,7 @@ program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float2,F
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float4,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float8,Fail
 
-# RUSTICL_FEATURES="fp16,fp64" bugs
+# RUSTICL_FEATURES="fp64" bugs
 program@execute@amdgcn-f32-inline-immediates,Crash
 program@execute@amdgcn-f64-inline-immediates,Crash
 program@execute@fdiv-modifiers-f64,Crash

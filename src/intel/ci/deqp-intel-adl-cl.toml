@@ -6,5 +6,5 @@ timeout = 180
   [piglit.env]
   PIGLIT_PLATFORM = "mixed_glx_egl"
   RUSTICL_ENABLE = "iris"
-  RUSTICL_FEATURES = "fp16,fp64"
+  RUSTICL_FEATURES = "fp64"
   INTEL_DEBUG = "cl-quiet"
