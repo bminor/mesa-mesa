@@ -17,18 +17,6 @@
  * as below:
  *
  * Wave32:
- * A&B:
- *         0..15  | 16..31 (lanes)
- * v0 lo:  row 0  | row 4
- * v0 hi:  row 1  | row 5
- * v1 lo:  row 2  | row 6
- * v1 hi:  row 3  | row 7
- * v2 lo:  row 8  | row 12
- * v2 hi:  row 9  | row 13
- * v3 lo:  row 10 | row 14
- * v3 hi:  row 11 | row 15
- *
- * C:
  *         0..15  | 16..31 (lanes)
  * v0 lo:  row 0  | row 8
  * v0 hi:  row 1  | row 9
@@ -40,19 +28,16 @@
  * v3 hi:  row 7  | row 15
  *
  * Wave64:
- * A&B:
- *         0..15 | 16..31 | 32..47 | 48..63 (lanes)
- * v0 lo:  row 0 | row 4  | row 8  | row 12
- * v0 hi:  row 1 | row 5  | row 9  | row 13
- * v1 lo:  row 2 | row 6  | row 10 | row 14
- * v1 hi:  row 3 | row 7  | row 11 | row 15
- *
- * C:
  *         0..15 | 16..31 | 32..47 | 48..63 (lanes)
  * v0 lo:  row 0 | row 8  | row 4  | row 12
  * v0 hi:  row 1 | row 9  | row 5  | row 13
  * v1 lo:  row 2 | row 10 | row 6  | row 14
  * v1 hi:  row 3 | row 11 | row 7  | row 15
+ *
+ * Note that the GFX12 ISA doc describes other layouts for A/B, but they are identical
+ * to the C layout with the exception of the order of the rows (columns for A).
+ * And as long as these are swapped in the same way for both A and B, the muladd
+ * result will be the same. So we use the C layout for all uses.
  */
 
 typedef struct {
@@ -166,13 +151,13 @@ radv_get_base_row(nir_builder *b, struct glsl_cmat_description desc, const lower
    if (params->gfx_level >= GFX12) {
       base_row = nir_udiv_imm(b, local_idx, 16);
 
-      if (desc.use == GLSL_CMAT_USE_ACCUMULATOR && params->wave_size == 64) {
+      if (params->wave_size == 64) {
          /* Switch rows from lanes 16..31 to 32..47, offset right shift by -2
           * to get implicit * 4.
           */
          base_row = nir_ushr_imm(b, nir_bitfield_reverse(b, base_row), 30 - 2);
       } else {
-         base_row = nir_imul_imm(b, base_row, desc.use == GLSL_CMAT_USE_ACCUMULATOR && params->wave_size == 32 ? 8 : 4);
+         base_row = nir_imul_imm(b, base_row, 8);
       }
    } else {
       base_row = desc.use == GLSL_CMAT_USE_ACCUMULATOR ? nir_udiv_imm(b, local_idx, 16) : nir_imm_int(b, 0);
@@ -328,7 +313,7 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                   uint32_t row_iter;
 
                   if (gfx_level >= GFX12) {
-                     row_iter = desc.use != GLSL_CMAT_USE_ACCUMULATOR && wave_size == 32 ? i + (i & 4) : i;
+                     row_iter = i;
                   } else {
                      row_iter = i * lanes_per_iter / 16;
                   }
@@ -399,7 +384,7 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                   uint32_t row_iter;
 
                   if (gfx_level >= GFX12) {
-                     row_iter = desc.use != GLSL_CMAT_USE_ACCUMULATOR && wave_size == 32 ? i + (i & 4) : i;
+                     row_iter = i;
                   } else {
                      row_iter = i * lanes_per_iter / 16;
                   }
