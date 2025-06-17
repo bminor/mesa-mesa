@@ -584,12 +584,8 @@ VkResult anv_GetSwapchainGrallocUsage2ANDROID(
       *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_HWCOMPOSER;
    }
 
-   struct u_gralloc *gralloc = vk_android_get_ugralloc();
-   if ((swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID) &&
-       gralloc) {
-      uint64_t front_rendering_usage = 0;
-      u_gralloc_get_front_rendering_usage(gralloc, &front_rendering_usage);
-      *grallocProducerUsage |= front_rendering_usage;
+   if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID) {
+      *grallocProducerUsage |= vk_android_get_front_buffer_usage();
    }
 
    return VK_SUCCESS;

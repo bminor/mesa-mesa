@@ -1263,14 +1263,6 @@ get_properties(const struct anv_physical_device *pdevice,
    VkSampleCountFlags sample_counts =
       isl_device_get_sample_counts(&pdevice->isl_dev);
 
-#if DETECT_OS_ANDROID
-   /* Used to fill struct VkPhysicalDevicePresentationPropertiesANDROID */
-   uint64_t front_rendering_usage = 0;
-   struct u_gralloc *gralloc = vk_android_get_ugralloc();
-   if (gralloc != NULL)
-      u_gralloc_get_front_rendering_usage(gralloc, &front_rendering_usage);
-#endif /* DETECT_OS_ANDROID */
-
    struct anv_descriptor_limits desc_limits;
    get_device_descriptor_limits(pdevice, &desc_limits);
 
@@ -2001,7 +1993,7 @@ get_properties(const struct anv_physical_device *pdevice,
    /* VK_ANDROID_native_buffer */
 #if DETECT_OS_ANDROID
    {
-      props->sharedImage = front_rendering_usage ? VK_TRUE : VK_FALSE;
+      props->sharedImage = !!vk_android_get_front_buffer_usage();
    }
 #endif /* DETECT_OS_ANDROID */
 
