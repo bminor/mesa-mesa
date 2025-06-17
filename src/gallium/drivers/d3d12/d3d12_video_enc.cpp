@@ -1010,7 +1010,7 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
          }
       }
       else
-#else // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
       {
          D3D12_VIDEO_ENCODER_HEAP_DESC heapDesc = { pD3D12Enc->m_NodeMask,
                                                    D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE,
@@ -1027,7 +1027,6 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
          hr = pD3D12Enc->m_spD3D12VideoDevice->CreateVideoEncoderHeap(&heapDesc,
                                                                               IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap.GetAddressOf()));
       }
-#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
       if (FAILED(hr)) {
          debug_printf("CreateVideoEncoderHeap failed with HR %x\n", hr);
