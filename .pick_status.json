@@ -8524,7 +8524,7 @@
         "description": "nir/opt_intrinsic: fix inclusive scan rewrite with multiple uses",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c70a55bf3fbc5f32e81843a0d49e137f35a30b6",
         "notes": null
