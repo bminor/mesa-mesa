@@ -108,15 +108,34 @@ legalize_txd_comparator(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
    return true;
 }
 
+static bool
+lower_offset_filter(const nir_instr *instr, const void *data)
+{
+   const struct shader_info *info = data;
+
+   assert(instr->type == nir_instr_type_tex);
+   nir_tex_instr *tex = nir_instr_as_tex(instr);
+
+   if (tex->op == nir_texop_tex && info->stage == MESA_SHADER_VERTEX)
+      return true;
+
+   if (tex->op == nir_texop_txf)
+      return true;
+
+   return false;
+}
+
 bool
 etna_nir_lower_texture(nir_shader *s, struct etna_shader_key *key)
 {
    bool progress = false;
 
    nir_lower_tex_options lower_tex_options = {
+      .callback_data = &s->info,
       .lower_txp = ~0u,
       .lower_txs_lod = true,
       .lower_invalid_implicit_lod = true,
+      .lower_offset_filter = lower_offset_filter,
    };
 
    NIR_PASS(progress, s, nir_lower_tex, &lower_tex_options);
