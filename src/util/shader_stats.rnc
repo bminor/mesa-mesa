@@ -19,7 +19,7 @@ isa = element isa {
     attribute more { "better" | "worse" }?,
     attribute hash { xsd:boolean }?,
     [ a:defaultValue = "u32" ] attribute type
-      { "u8" | "s8" | "u16" | "s16" | "u32" | "s32" | "float" | "bool" }?,
+      { "u8" | "i8" | "u16" | "i16" | "u32" | "i32" | "u64" | "i64" | "float" | "bool" }?,
 
     text
   }+
