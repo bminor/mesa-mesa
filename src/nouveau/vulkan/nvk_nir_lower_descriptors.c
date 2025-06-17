@@ -196,20 +196,13 @@ static void
 record_tex_descriptor_cbuf_use(nir_tex_instr *tex,
                                struct lower_descriptors_ctx *ctx)
 {
-   const int texture_src_idx =
-      nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
-   const int sampler_src_idx =
-      nir_tex_instr_src_index(tex, nir_tex_src_sampler_deref);
+   nir_deref_instr *texture = nir_get_tex_deref(tex, nir_tex_src_texture_deref);
+   if (texture != NULL)
+      record_deref_descriptor_cbuf_use(texture, ctx);
 
-   if (texture_src_idx >= 0) {
-      nir_deref_instr *deref = nir_src_as_deref(tex->src[texture_src_idx].src);
-      record_deref_descriptor_cbuf_use(deref, ctx);
-   }
-
-   if (sampler_src_idx >= 0) {
-      nir_deref_instr *deref = nir_src_as_deref(tex->src[sampler_src_idx].src);
-      record_deref_descriptor_cbuf_use(deref, ctx);
-   }
+   nir_deref_instr *sampler = nir_get_tex_deref(tex, nir_tex_src_sampler_deref);
+   if (sampler != NULL)
+      record_deref_descriptor_cbuf_use(sampler, ctx);
 }
 
 static struct nvk_cbuf
@@ -1227,20 +1220,12 @@ try_lower_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
 
 static void
 lower_edb_buffer_tex_instr(nir_builder *b, nir_tex_instr *tex,
+                           nir_deref_instr *texture,
                            const struct lower_descriptors_ctx *ctx)
 {
    assert(tex->sampler_dim == GLSL_SAMPLER_DIM_BUF);
 
    b->cursor = nir_before_instr(&tex->instr);
-
-   const int texture_src_idx =
-      nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
-   nir_deref_instr *texture = nir_src_as_deref(tex->src[texture_src_idx].src);
-
-   nir_def *plane_ssa = nir_steal_tex_src(tex, nir_tex_src_plane);
-   ASSERTED const uint32_t plane =
-      plane_ssa ? nir_src_as_uint(nir_src_for_ssa(plane_ssa)) : 0;
-   assert(plane == 0);
 
    nir_def *desc = load_resource_deref_desc(b, 4, 32, texture, 0, ctx);
 
@@ -1301,30 +1286,27 @@ static bool
 lower_tex(nir_builder *b, nir_tex_instr *tex,
           const struct lower_descriptors_ctx *ctx)
 {
-   const int texture_src_idx =
-      nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
-   const int sampler_src_idx =
-      nir_tex_instr_src_index(tex, nir_tex_src_sampler_deref);
-   if (texture_src_idx < 0) {
-      assert(sampler_src_idx < 0);
+   nir_deref_instr *texture =
+      nir_steal_tex_deref(tex, nir_tex_src_texture_deref);
+   nir_deref_instr *sampler =
+      nir_steal_tex_deref(tex, nir_tex_src_sampler_deref);
+   if (texture == NULL) {
+      assert(sampler == NULL);
       return false;
    }
 
-   nir_deref_instr *texture = nir_src_as_deref(tex->src[texture_src_idx].src);
-   nir_deref_instr *sampler = sampler_src_idx < 0 ? NULL :
-                              nir_src_as_deref(tex->src[sampler_src_idx].src);
-   assert(texture);
+   nir_def *plane_ssa = nir_steal_tex_src(tex, nir_tex_src_plane);
+   const uint32_t plane =
+      plane_ssa ? nir_src_as_uint(nir_src_for_ssa(plane_ssa)) : 0;
 
    if (is_edb_buffer_view(texture, ctx)) {
-      lower_edb_buffer_tex_instr(b, tex, ctx);
+      assert(plane == 0);
+      lower_edb_buffer_tex_instr(b, tex, texture, ctx);
       return true;
    }
 
    b->cursor = nir_before_instr(&tex->instr);
 
-   nir_def *plane_ssa = nir_steal_tex_src(tex, nir_tex_src_plane);
-   const uint32_t plane =
-      plane_ssa ? nir_src_as_uint(nir_src_for_ssa(plane_ssa)) : 0;
    const uint64_t plane_offset_B =
       plane * sizeof(struct nvk_sampled_image_descriptor);
 
@@ -1362,12 +1344,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
       }
    }
 
-   nir_src_rewrite(&tex->src[texture_src_idx].src, combined_handle);
-   tex->src[texture_src_idx].src_type = nir_tex_src_texture_handle;
-
-   /* NAK doesn't care about the sampler handle at all */
-   if (sampler_src_idx >= 0)
-      nir_tex_instr_remove_src(tex, sampler_src_idx);
+   nir_tex_instr_add_src(tex, nir_tex_src_texture_handle, combined_handle);
 
    /* On pre-Volta hardware, we don't have real null descriptors.  Null
     * descriptors work well enough for sampling but they may not return the
