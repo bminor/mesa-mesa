@@ -291,10 +291,10 @@ radeonsi-vangogh-glcts:
   extends:
     - radeonsi-vangogh-glcts-full
     - .radeonsi-valve-rules
-  timeout: 30m
+  timeout: 20m
   variables:
-    DEQP_FRACTION: 4
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 29
+    DEQP_FRACTION: 6
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 19
 
 radv-raphael-vkcts:
   extends:
