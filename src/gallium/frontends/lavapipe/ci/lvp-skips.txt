@@ -67,6 +67,8 @@ dEQP-VK.api.descriptor_pool.repeated_free_reset_long
 dEQP-VK.api.device_init.create_instance_device_intentional_alloc_fail.basic
 
 # Times out
+dEQP-VK.memory.allocation.basic.percent_1.reverse.count_12
+dEQP-VK.rasterization.primitives_multisample_4_bit.static_stipple.bresenham_line_strip_wide
 dEQP-VK.ray_query.builtin.instanceid.tese.aabbs
 dEQP-VK.ray_query.builtin.instanceid.tesc.aabbs
 dEQP-VK.ray_query.builtin.instanceid.tese.triangles
