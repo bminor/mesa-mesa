@@ -123,6 +123,13 @@ vk_sampler_state_init(struct vk_sampler_state *state,
 
    vk_foreach_struct_const(ext, pCreateInfo->pNext) {
       switch (ext->sType) {
+      case VK_STRUCTURE_TYPE_SAMPLER_BORDER_COLOR_COMPONENT_MAPPING_CREATE_INFO_EXT: {
+         const VkSamplerBorderColorComponentMappingCreateInfoEXT *bccm_info = (void *)ext;
+         state->border_color_component_mapping = bccm_info->components;
+         state->image_view_is_srgb = bccm_info->srgb;
+         break;
+      }
+
       case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT: {
          const VkSamplerCustomBorderColorCreateInfoEXT *cbc_info = (void *)ext;
          if (!vk_border_color_is_custom(pCreateInfo->borderColor))

@@ -67,7 +67,12 @@ struct vk_sampler_state {
    bool anisotropy_enable;
    bool compare_enable;
    bool unnormalized_coordinates;
+
+   /** VkSamplerBorderColorComponentMappingCreateInfoEXT::srgb */
+   bool image_view_is_srgb;
+
    bool has_ycbcr_conversion;
+   bool _pad[3];
 
    /** Format of paired image views or VK_FORMAT_UNDEFINED
     *
@@ -84,6 +89,9 @@ struct vk_sampler_state {
     * this is VkSamplerCustomBorderColorCreateInfoEXT::customBorderColor.
     */
    VkClearColorValue border_color_value;
+
+   /** VkSamplerBorderColorComponentMappingCreateInfoEXT::components */
+   VkComponentMapping border_color_component_mapping;
 
    /**
     * VkSamplerReductionModeCreateInfo::reductionMode or
