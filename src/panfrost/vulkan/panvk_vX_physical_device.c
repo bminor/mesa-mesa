@@ -150,6 +150,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .EXT_primitive_topology_list_restart = true,
       .EXT_provoking_vertex = true,
       .EXT_queue_family_foreign = true,
+      .EXT_robustness2 = PAN_ARCH >= 10,
       .EXT_sampler_filter_minmax = PAN_ARCH >= 10,
       .EXT_scalar_block_layout = true,
       .EXT_separate_stencil_usage = true,
@@ -424,6 +425,11 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_EXT_pipeline_robustness */
       .pipelineRobustness = true,
+
+      /* VK_EXT_robustness2 */
+      .robustBufferAccess2 = false,
+      .robustImageAccess2 = false,
+      .nullDescriptor = PAN_ARCH >= 10,
 
       /* VK_KHR_shader_clock */
       .shaderSubgroupClock = device->kmod.props.gpu_can_query_timestamp,
@@ -869,6 +875,10 @@ panvk_per_arch(get_physical_device_properties)(
       .storageTexelBufferOffsetSingleTexelAlignment = false,
       .uniformTexelBufferOffsetAlignmentBytes = 64,
       .uniformTexelBufferOffsetSingleTexelAlignment = false,
+
+      /* VK_EXT_robustness2 */
+      .robustStorageBufferAccessSizeAlignment = 1,
+      .robustUniformBufferAccessSizeAlignment = 1,
 
       /* VK_KHR_maintenance4 */
       .maxBufferSize = 1 << 30,
