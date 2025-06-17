@@ -73,7 +73,6 @@ spec@glsl-1.30@execution@vs-loop-uint-induction-var-subtraction
 # This test works alone, but fails when executing all the tests together
 # https://gitlab.freedesktop.org/mesa/mesa/-/issues/8684
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32f_cube
-dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube
 
 # Seem reliable on arm64, but they flake on armhf
 dEQP-VK.glsl.builtin.function.integer.findMSB.ivec2_mediump_geometry
@@ -161,3 +160,7 @@ arm32-KHR-GLES31.core.shader_image_load_store.advanced-copyImage-cs
 dEQP-VK.synchronization2.basic.timeline_semaphore.chain
 dEQP-VK.synchronization2.op.single_queue.binary_semaphore.write_ssbo_compute_read_vertex_input.buffer_262144_specialized_access_flag
 hiz@hiz-stencil-test-fbo-d24-s8
+dEQP-VK.fragment_operations.occlusion_query.precise_test_depth_write_stencil_clear
+dEQP-VK.synchronization.op.single_queue.barrier.write_ssbo_compute_read_vertex_input.buffer_262144
+spec@ext_transform_feedback@tessellation quads wireframe
+spec@nv_primitive_restart@primitive-restart-draw-mode-line_strip

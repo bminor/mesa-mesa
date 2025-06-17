@@ -191,5 +191,11 @@ gles_multipicturedraw_sierpinski_tiled
 gles_scaledemojipos
 
 # New failures ES CTS 3.2.11.0
-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba4444_nicest
-x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.programs.link.19
+dEQP-GLES2.functional.shaders.random.basic_expression.fragment.68
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_replace_incr
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.incr_incr_wrap_decr_wrap
+dEQP-GLES2.functional.texture.filtering.cube.nearest_mipmap_linear_linear_mirror_rgba8888
+dEQP-GLES2.functional.texture.size.cube.64x64_rgb888_mipmap
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.keep_incr_decr
+dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.add_zero_zero
+dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.zero_dst_alpha

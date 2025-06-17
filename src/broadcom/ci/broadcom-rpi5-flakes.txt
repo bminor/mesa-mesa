@@ -203,3 +203,4 @@ spec@oes_texture_view@rendering-target
 spec@oes_texture_view@rendering-target@2D view rendering
 
 spec@!opengl 1.0@gl-1.0-drawbuffer-modes
+x11-dEQP-EGL.functional.preserve_swap.no_preserve.read_before_swap.pre_clear_post_render
