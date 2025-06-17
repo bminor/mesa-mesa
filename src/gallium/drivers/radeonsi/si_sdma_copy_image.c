@@ -405,8 +405,10 @@ bool si_sdma_copy_image(struct si_context *sctx, struct si_texture *dst, struct 
          return false;
 
       sctx->sdma_cs = CALLOC_STRUCT(radeon_cmdbuf);
-      if (ws->cs_create(sctx->sdma_cs, sctx->ctx, AMD_IP_SDMA, NULL, NULL))
+      if (!ws->cs_create(sctx->sdma_cs, sctx->ctx, AMD_IP_SDMA, NULL, NULL)) {
+         sctx->screen->debug_flags |= DBG(NO_DMA);
          return false;
+      }
    }
 
    if (!si_prepare_for_sdma_copy(sctx, dst, src))
