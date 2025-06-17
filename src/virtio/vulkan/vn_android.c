@@ -25,32 +25,6 @@
 #include "vn_physical_device.h"
 #include "vn_queue.h"
 
-struct vn_android_gralloc {
-   uint64_t front_rendering_usage;
-};
-
-static struct vn_android_gralloc _vn_android_gralloc;
-
-static void
-vn_android_gralloc_shared_present_usage_init_once()
-{
-   assert(vk_android_get_ugralloc());
-
-   int ret = u_gralloc_get_front_rendering_usage(
-      vk_android_get_ugralloc(), &_vn_android_gralloc.front_rendering_usage);
-
-   if (ret == 0)
-      assert(_vn_android_gralloc.front_rendering_usage);
-}
-
-uint64_t
-vn_android_gralloc_get_shared_present_usage()
-{
-   static once_flag once = ONCE_FLAG_INIT;
-   call_once(&once, vn_android_gralloc_shared_present_usage_init_once);
-   return _vn_android_gralloc.front_rendering_usage;
-}
-
 struct vn_android_gralloc_buffer_properties {
    uint32_t drm_fourcc;
    uint32_t num_planes;
@@ -246,7 +220,7 @@ vn_GetSwapchainGrallocUsage2ANDROID(
       *grallocProducerUsage |= AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
 
    if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
-      *grallocProducerUsage |= vn_android_gralloc_get_shared_present_usage();
+      *grallocProducerUsage |= vk_android_get_front_buffer_usage();
 
    vn_tls_set_async_pipeline_create();
 

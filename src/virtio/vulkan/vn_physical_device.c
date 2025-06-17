@@ -840,7 +840,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
 #if DETECT_OS_ANDROID
    /* VK_ANDROID_native_buffer */
-   if (vn_android_gralloc_get_shared_present_usage())
+   if (vk_android_get_front_buffer_usage())
       props->sharedImage = true;
 #endif
 
