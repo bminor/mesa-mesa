@@ -1138,7 +1138,6 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
 
    if (input && (input->buffer || input->user_buffer)) {
       struct pipe_resource *buffer = NULL;
-      uint64_t va;
       unsigned buffer_offset;
 
       /* Upload the user buffer if needed. */
@@ -1159,12 +1158,9 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
          buffer_offset = input->buffer_offset;
       }
 
-      va = si_resource(buffer)->gpu_address + buffer_offset;
-
       /* Set the descriptor. */
       uint32_t *desc = descs->list + slot * 4;
-      desc[0] = va;
-      desc[1] = S_008F04_BASE_ADDRESS_HI(va >> 32) | S_008F04_STRIDE(0);
+      si_set_buf_desc_address(si_resource(buffer), buffer_offset, desc);
       desc[2] = input->buffer_size;
 
       buffers->buffers[slot] = buffer;
@@ -1315,11 +1311,8 @@ static void si_set_shader_buffer(struct si_context *sctx, struct si_buffer_resou
     * granularity than 4 bytes.
     */
    assert(sbuffer->buffer_offset + sbuffer->buffer_size <= align(buf->bo_size, 4));
-   uint64_t va = buf->gpu_address + sbuffer->buffer_offset;
 
-   assert(va);
-   desc[0] = va;
-   desc[1] = S_008F04_BASE_ADDRESS_HI(va >> 32) | S_008F04_STRIDE(0);
+   si_set_buf_desc_address(buf, sbuffer->buffer_offset, desc);
    desc[2] = sbuffer->buffer_size;
 
    pipe_resource_reference(&buffers->buffers[slot], &buf->b.b);
