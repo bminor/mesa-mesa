@@ -2563,6 +2563,23 @@ void nir_tex_instr_add_src(nir_tex_instr *tex,
 /** Removes a source from a texture instruction */
 void nir_tex_instr_remove_src(nir_tex_instr *tex, unsigned src_idx);
 
+/*
+ * Find a texture source, remove it, and return its nir_def. If the texture
+ * source does not exist, return NULL. This is useful for texture lowering pass
+ * that consume their input sources and produce a new lowered source.
+ */
+static inline nir_def *
+nir_steal_tex_src(nir_tex_instr *tex, nir_tex_src_type type_)
+{
+   int idx = nir_tex_instr_src_index(tex, type_);
+   if (idx < 0)
+      return NULL;
+
+   nir_def *ssa = tex->src[idx].src.ssa;
+   nir_tex_instr_remove_src(tex, idx);
+   return ssa;
+}
+
 bool nir_tex_instr_has_explicit_tg4_offsets(nir_tex_instr *tex);
 
 typedef struct nir_load_const_instr {
