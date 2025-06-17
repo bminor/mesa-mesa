@@ -57,6 +57,7 @@ cl_args = [
 
   # Declare supported clang builtins since we don't autodetect for OpenCL
   '-DHAVE___BUILTIN_FFS',
+  '-DHAVE___BUILTIN_CLZ',
 ]
 
 if with_mesa_ndebug
