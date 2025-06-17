@@ -630,6 +630,9 @@ struct fd_context {
     */
    struct fd_vertex_state blit_vbuf_state;
 
+   /* Custom f16 blit shader: */
+   void *f16_blit_fs[PIPE_MAX_TEXTURE_TYPES] dt;
+
    /*
     * Info about state of previous draw, for state that comes from
     * pipe_draw_info (ie. not part of a CSO).  This allows us to

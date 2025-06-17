@@ -380,6 +380,10 @@ fd_context_destroy(struct pipe_context *pctx)
 
    DBG("");
 
+   for (unsigned i = 0; i < ARRAY_SIZE(ctx->f16_blit_fs); i++)
+      if (ctx->f16_blit_fs[i])
+         pctx->delete_fs_state(pctx, ctx->f16_blit_fs[i]);
+
    fd_screen_lock(ctx->screen);
    list_del(&ctx->node);
    fd_screen_unlock(ctx->screen);

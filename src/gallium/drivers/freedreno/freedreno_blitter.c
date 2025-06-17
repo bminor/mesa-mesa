@@ -7,7 +7,13 @@
  */
 
 #include "util/u_blitter.h"
+#include "util/u_resource.h"
 #include "util/u_surface.h"
+
+#include "nir.h"
+#include "nir_builder.h"
+
+#include "nir/pipe_nir.h"
 
 #include "freedreno_blitter.h"
 #include "freedreno_context.h"
@@ -138,6 +144,83 @@ fd_blitter_prep(struct fd_context *ctx, const struct pipe_blit_info *info)
    fd_blitter_pipe_begin(ctx, info->render_condition_enable);
 }
 
+static nir_shader *
+build_f16_copy_fs_shader(struct pipe_screen *pscreen, enum pipe_texture_target target)
+{
+   static const enum glsl_sampler_dim dim[] = {
+      [PIPE_TEXTURE_1D]         = GLSL_SAMPLER_DIM_1D,
+      [PIPE_TEXTURE_2D]         = GLSL_SAMPLER_DIM_2D,
+      [PIPE_TEXTURE_3D]         = GLSL_SAMPLER_DIM_3D,
+      [PIPE_TEXTURE_CUBE]       = GLSL_SAMPLER_DIM_CUBE,
+      [PIPE_TEXTURE_RECT]       = GLSL_SAMPLER_DIM_RECT,
+      [PIPE_TEXTURE_1D_ARRAY]   = GLSL_SAMPLER_DIM_1D,
+      [PIPE_TEXTURE_2D_ARRAY]   = GLSL_SAMPLER_DIM_2D,
+      [PIPE_TEXTURE_CUBE_ARRAY] = GLSL_SAMPLER_DIM_CUBE,
+   };
+
+   const nir_shader_compiler_options *options =
+      pscreen->get_compiler_options(pscreen, PIPE_SHADER_IR_NIR, PIPE_SHADER_FRAGMENT);
+   nir_builder _b =
+      nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,
+                                     "f16 copy %s fs",
+                                     util_str_tex_target(target, true));
+   nir_builder *b = &_b;
+
+   nir_variable *out_color =
+      nir_variable_create(b->shader, nir_var_shader_out,
+                          glsl_f16vec_type(4),
+                          "color0");
+   out_color->data.location = FRAG_RESULT_DATA0;
+   b->shader->num_outputs++;
+   b->shader->num_inputs++;
+
+   unsigned ncoord = glsl_get_sampler_dim_coordinate_components(dim[target]);
+   if (util_texture_is_array(target))
+      ncoord++;
+
+   nir_tex_instr *tex = nir_tex_instr_create(b->shader, 2);
+
+   tex->op = nir_texop_txf;
+
+   /* Note: since we're just copying data, we rely on the HW ignoring the
+    * dest_type.  Use isaml.3d so that a single shader can handle both 2D
+    * and 3D cases.
+    */
+   tex->dest_type = nir_type_float16;
+   tex->is_array = util_texture_is_array(target);
+   tex->is_shadow = false;
+   tex->sampler_dim = dim[target];
+   tex->coord_components = ncoord;
+
+   tex->texture_index = 0;
+   tex->sampler_index = 0;
+
+   b->shader->info.num_textures = 1;
+   BITSET_SET(b->shader->info.textures_used, 0);
+   BITSET_SET(b->shader->info.textures_used_by_txf, 0);
+
+   unsigned swiz[4] = { 0, 1, 2 };
+
+   /* tex coords are in components x/y/z, lod in w */
+   nir_def *zero = nir_imm_int(b, 0);
+   nir_def *baryc = nir_load_barycentric_pixel(
+      b, 32, .interp_mode = INTERP_MODE_NOPERSPECTIVE);
+   nir_def *input = nir_load_interpolated_input(b, 4, 32, baryc, zero,
+                                                .io_semantics.location = VARYING_SLOT_VAR0);
+   nir_def *lod   = nir_channel(b, nir_f2i32(b, input), 3);
+   nir_def *coord = nir_swizzle(b, nir_f2i32(b, input), swiz, ncoord);
+
+   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord, coord);
+   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_lod, lod);
+
+   nir_def_init(&tex->instr, &tex->def, 4, 16);
+   nir_builder_instr_insert(b, &tex->instr);
+
+   nir_store_var(b, out_color, &tex->def, 0xf);
+
+   return b->shader;
+}
+
 bool
 fd_blitter_blit(struct fd_context *ctx, const struct pipe_blit_info *info)
 {
@@ -146,6 +229,7 @@ fd_blitter_blit(struct fd_context *ctx, const struct pipe_blit_info *info)
    struct pipe_context *pipe = &ctx->base;
    struct pipe_surface *dst_view, dst_templ;
    struct pipe_sampler_view src_templ, *src_view;
+   void *fs = NULL;
 
    fd_blitter_prep(ctx, info);
 
@@ -159,12 +243,29 @@ fd_blitter_blit(struct fd_context *ctx, const struct pipe_blit_info *info)
    src_templ.format = info->src.format;
    src_view = pipe->create_sampler_view(pipe, src, &src_templ);
 
+   /* Note: a2xx does not support fp16: */
+   if (util_format_is_float16(info->src.format) &&
+       util_format_is_float16(info->dst.format) &&
+       util_blitter_blit_with_txf(ctx->blitter, &info->dst.box,
+                                  src_view, &info->src.box,
+                                  src->width0, src->height0,
+                                  info->filter) &&
+       (src->nr_samples <= 1) &&
+       !is_a2xx(ctx->screen)) {
+      enum pipe_texture_target target = src_templ.target;
+      if (!ctx->f16_blit_fs[target]) {
+         ctx->f16_blit_fs[target] = pipe_shader_from_nir(
+            pipe, build_f16_copy_fs_shader(pipe->screen, target));
+      }
+      fs = ctx->f16_blit_fs[target];
+   }
+
    /* Copy. */
    util_blitter_blit_generic(
       ctx->blitter, dst_view, &info->dst.box, src_view, &info->src.box,
       src->width0, src->height0, info->mask, info->filter,
       info->scissor_enable ? &info->scissor : NULL, info->alpha_blend, false, 0,
-      NULL);
+      fs);
 
    pipe_surface_reference(&dst_view, NULL);
    pipe_sampler_view_reference(&src_view, NULL);
