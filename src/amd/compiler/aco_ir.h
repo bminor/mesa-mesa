@@ -12,6 +12,7 @@
 #include "aco_util.h"
 
 #include "util/compiler.h"
+#include "util/shader_stats.h"
 
 #include "ac_binary.h"
 #include "ac_hw_stage.h"
@@ -2162,7 +2163,7 @@ public:
    CompilationProgress progress;
 
    bool collect_statistics = false;
-   uint32_t statistics[aco_num_statistics];
+   amd_stats statistics;
 
    float_mode next_fp_mode;
    unsigned next_loop_depth = 0;

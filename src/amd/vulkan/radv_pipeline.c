@@ -814,44 +814,41 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
 
    VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableStatisticKHR, out, pStatistics, pStatisticCount);
 
-   vk_add_exec_statistic_u64(out, "Driver pipeline hash", "Driver pipeline hash used by RGP", pipeline->pipeline_hash);
-   vk_add_exec_statistic_u64(out, "SGPRs", "Number of SGPR registers allocated per subgroup", shader->config.num_sgprs);
-   vk_add_exec_statistic_u64(out, "VGPRs", "Number of VGPR registers allocated per subgroup", shader->config.num_vgprs);
-   vk_add_exec_statistic_u64(out, "Spilled SGPRs", "Number of SGPR registers spilled per subgroup",
-                             shader->config.spilled_sgprs);
-   vk_add_exec_statistic_u64(out, "Spilled VGPRs", "Number of VGPR registers spilled per subgroup",
-                             shader->config.spilled_vgprs);
-   vk_add_exec_statistic_u64(out, "Code size", "Code size in bytes", shader->exec_size);
-   vk_add_exec_statistic_u64(out, "LDS size", "LDS size in bytes per workgroup",
-                             shader->config.lds_size * lds_increment);
-   vk_add_exec_statistic_u64(out, "Scratch size", "Private memory in bytes per subgroup",
-                             shader->config.scratch_bytes_per_wave);
-   vk_add_exec_statistic_u64(out, "Subgroups per SIMD", "The maximum number of subgroups in flight on a SIMD unit",
-                             shader->max_waves);
+   struct amd_stats stats = {};
+   if (shader->statistics)
+      stats = *shader->statistics;
+   stats.driverhash = pipeline->pipeline_hash;
+   stats.sgprs = shader->config.num_sgprs;
+   stats.vgprs = shader->config.num_vgprs;
+   stats.spillsgprs = shader->config.spilled_sgprs;
+   stats.spillvgprs = shader->config.spilled_vgprs;
+   stats.codesize = shader->exec_size;
+   stats.lds = shader->config.lds_size * lds_increment;
+   stats.scratch = shader->config.scratch_bytes_per_wave;
+   stats.maxwaves = shader->max_waves;
 
-   uint64_t inputs = 0;
    switch (stage) {
    case MESA_SHADER_VERTEX:
       if (gfx_level <= GFX8 || (!shader->info.vs.as_es && !shader->info.vs.as_ls)) {
          /* VS inputs when VS is a separate stage */
-         inputs += util_bitcount(shader->info.vs.input_slot_usage_mask);
+         stats.inputs += util_bitcount(shader->info.vs.input_slot_usage_mask);
       }
       break;
 
    case MESA_SHADER_TESS_CTRL:
       if (gfx_level >= GFX9) {
          /* VS inputs when pipeline has tess */
-         inputs += util_bitcount(shader->info.vs.input_slot_usage_mask);
+         stats.inputs += util_bitcount(shader->info.vs.input_slot_usage_mask);
       }
 
       /* VS -> TCS inputs */
-      inputs += shader->info.tcs.num_linked_inputs;
+      stats.inputs += shader->info.tcs.num_linked_inputs;
       break;
 
    case MESA_SHADER_TESS_EVAL:
       if (gfx_level <= GFX8 || !shader->info.tes.as_es) {
          /* TCS -> TES inputs when TES is a separate stage */
-         inputs += shader->info.tes.num_linked_inputs + shader->info.tes.num_linked_patch_inputs;
+         stats.inputs += shader->info.tes.num_linked_inputs + shader->info.tes.num_linked_patch_inputs;
       }
       break;
 
@@ -863,60 +860,57 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
       if (gfx_level >= GFX9) {
          if (shader->info.gs.es_type == MESA_SHADER_VERTEX) {
             /* VS inputs when pipeline has GS but no tess */
-            inputs += util_bitcount(shader->info.vs.input_slot_usage_mask);
+            stats.inputs += util_bitcount(shader->info.vs.input_slot_usage_mask);
          } else if (shader->info.gs.es_type == MESA_SHADER_TESS_EVAL) {
             /* TCS -> TES inputs when pipeline has GS */
-            inputs += shader->info.tes.num_linked_inputs + shader->info.tes.num_linked_patch_inputs;
+            stats.inputs += shader->info.tes.num_linked_inputs + shader->info.tes.num_linked_patch_inputs;
          }
       }
 
       /* VS -> GS or TES -> GS inputs */
-      inputs += shader->info.gs.num_linked_inputs;
+      stats.inputs += shader->info.gs.num_linked_inputs;
       break;
 
    case MESA_SHADER_FRAGMENT:
-      inputs += shader->info.ps.num_inputs;
+      stats.inputs += shader->info.ps.num_inputs;
       break;
 
    default:
       /* Other stages don't have IO or we are not interested in them. */
       break;
    }
-   vk_add_exec_statistic_u64(out, "Combined inputs",
-                             "Number of input slots reserved for the shader (including merged stages)", inputs);
 
-   uint64_t outputs = 0;
    switch (stage) {
    case MESA_SHADER_VERTEX:
       if (!shader->info.vs.as_ls && !shader->info.vs.as_es) {
          /* VS -> FS outputs. */
-         outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                    shader->info.outinfo.prim_param_exports;
+         stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
+                          shader->info.outinfo.prim_param_exports;
       } else if (gfx_level <= GFX8) {
          /* VS -> TCS, VS -> GS outputs on GFX6-8 */
-         outputs += shader->info.vs.num_linked_outputs;
+         stats.outputs += shader->info.vs.num_linked_outputs;
       }
       break;
 
    case MESA_SHADER_TESS_CTRL:
       if (gfx_level >= GFX9) {
          /* VS -> TCS outputs on GFX9+ */
-         outputs += shader->info.vs.num_linked_outputs;
+         stats.outputs += shader->info.vs.num_linked_outputs;
       }
 
       /* TCS -> TES outputs */
-      outputs += shader->info.tcs.io_info.highest_remapped_vram_output +
-                 shader->info.tcs.io_info.highest_remapped_vram_patch_output;
+      stats.outputs += shader->info.tcs.io_info.highest_remapped_vram_output +
+                       shader->info.tcs.io_info.highest_remapped_vram_patch_output;
       break;
 
    case MESA_SHADER_TESS_EVAL:
       if (!shader->info.tes.as_es) {
          /* TES -> FS outputs */
-         outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                    shader->info.outinfo.prim_param_exports;
+         stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
+                          shader->info.outinfo.prim_param_exports;
       } else if (gfx_level <= GFX8) {
          /* TES -> GS outputs on GFX6-8 */
-         outputs += shader->info.tes.num_linked_outputs;
+         stats.outputs += shader->info.tes.num_linked_outputs;
       }
       break;
 
@@ -928,48 +922,41 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
       if (gfx_level >= GFX9) {
          if (shader->info.gs.es_type == MESA_SHADER_VERTEX) {
             /* VS -> GS outputs on GFX9+ */
-            outputs += shader->info.vs.num_linked_outputs;
+            stats.outputs += shader->info.vs.num_linked_outputs;
          } else if (shader->info.gs.es_type == MESA_SHADER_TESS_EVAL) {
             /* TES -> GS outputs on GFX9+ */
-            outputs += shader->info.tes.num_linked_outputs;
+            stats.outputs += shader->info.tes.num_linked_outputs;
          }
       }
 
       if (shader->info.is_ngg) {
          /* GS -> FS outputs (GFX10+ NGG) */
-         outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                    shader->info.outinfo.prim_param_exports;
+         stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
+                          shader->info.outinfo.prim_param_exports;
       } else {
          /* GS -> FS outputs (GFX6-10.3 legacy) */
-         outputs += shader->info.gs.gsvs_vertex_size / 16;
+         stats.outputs += shader->info.gs.gsvs_vertex_size / 16;
       }
       break;
 
    case MESA_SHADER_MESH:
       /* MS -> FS outputs */
-      outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                 shader->info.outinfo.prim_param_exports;
+      stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
+                       shader->info.outinfo.prim_param_exports;
       break;
 
    case MESA_SHADER_FRAGMENT:
-      outputs += DIV_ROUND_UP(util_bitcount(shader->info.ps.colors_written), 4) + !!shader->info.ps.writes_z +
-                 !!shader->info.ps.writes_stencil + !!shader->info.ps.writes_sample_mask +
-                 !!shader->info.ps.writes_mrt0_alpha;
+      stats.outputs += DIV_ROUND_UP(util_bitcount(shader->info.ps.colors_written), 4) + !!shader->info.ps.writes_z +
+                       !!shader->info.ps.writes_stencil + !!shader->info.ps.writes_sample_mask +
+                       !!shader->info.ps.writes_mrt0_alpha;
       break;
 
    default:
       /* Other stages don't have IO or we are not interested in them. */
       break;
    }
-   vk_add_exec_statistic_u64(out, "Combined outputs",
-                             "Number of output slots reserved for the shader (including merged stages)", outputs);
 
-   if (shader->statistics) {
-      for (unsigned i = 0; i < aco_num_statistics; i++) {
-         const struct aco_compiler_statistic_info *info = &aco_statistic_infos[i];
-         vk_add_exec_statistic_u64(out, info->name, info->desc, shader->statistics[i]);
-      }
-   }
+   vk_add_amd_stats(out, &stats);
 
    return vk_outarray_status(&out);
 }

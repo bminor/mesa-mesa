@@ -95,7 +95,7 @@ radv_shader_cache_deserialize(struct vk_pipeline_cache *cache, const void *key_d
 void
 radv_shader_serialize(struct radv_shader *shader, struct blob *blob)
 {
-   size_t stats_size = shader->statistics ? aco_num_statistics * sizeof(uint32_t) : 0;
+   size_t stats_size = shader->statistics ? sizeof(struct amd_stats) : 0;
    size_t code_size = shader->code_size;
    uint32_t total_size = sizeof(struct radv_shader_binary_legacy) + code_size + stats_size;
 

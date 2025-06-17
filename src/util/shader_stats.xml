@@ -90,4 +90,33 @@
       <stat name="TMU Fills" display="Fills">Number of times a register was filled from memory</stat>
       <stat name="QPU Read Stalls" display="Read Stalls">Number of cycles the QPU stalls for a register read dependency</stat>
    </isa>
+
+   <isa name="AMD">
+      <stat name="Driver pipeline hash" display="DriverHash" hash="true" type="u64">Driver pipeline hash used by RGP</stat>
+      <stat name="SGPRs">Number of SGPR registers allocated per subgroup</stat>
+      <stat name="VGPRs">Number of VGPR registers allocated per subgroup</stat>
+      <stat name="Spilled SGPRs" display="SpillSGPRs">Number of SGPR registers spilled per subgroup</stat>
+      <stat name="Spilled VGPRs" display="SpillVGPRs">Number of VGPR registers spilled per subgroup</stat>
+      <stat name="Code size" display="CodeSize">Code size in bytes</stat>
+      <stat name="LDS size" display="LDS">LDS size in bytes per workgroup</stat>
+      <stat name="Scratch size" display="Scratch">Private memory in bytes per subgroup</stat>
+      <stat name="Subgroups per SIMD" display="MaxWaves" more="better">The maximum number of subgroups in flight on a SIMD unit</stat>
+      <stat name="Combined inputs" display="Inputs">Number of input slots reserved for the shader (including merged stages)</stat>
+      <stat name="Combined outputs" display="Outputs">Number of output slots reserved for the shader (including merged stages)</stat>
+      <stat name="Hash" hash="true">CRC32 hash of code and constant data</stat>
+      <stat name="Instructions" display="Instrs">Instruction count</stat>
+      <stat name="Copies">Copy instructions created for pseudo-instructions</stat>
+      <stat name="Branches">Branch instructions</stat>
+      <stat name="Latency">Issue cycles plus stall cycles</stat>
+      <stat name="Inverse Throughput" display="InvThroughput">Estimated busy cycles to execute one wave</stat>
+      <stat name="VMEM Clause" display="VClause">Number of VMEM clauses (includes 1-sized clauses)</stat>
+      <stat name="SMEM Clause" display="SClause">Number of SMEM clauses (includes 1-sized clauses)</stat>
+      <stat name="Pre-Sched SGPRs" display="PreSGPRs">SGPR usage before scheduling</stat>
+      <stat name="Pre-Sched VGPRs" display="PreVGPRs">VGPR usage before scheduling</stat>
+      <stat name="VALU">Number of VALU instructions</stat>
+      <stat name="SALU">Number of SALU instructions</stat>
+      <stat name="VMEM">Number of VMEM instructions</stat>
+      <stat name="SMEM">Number of SMEM instructions</stat>
+      <stat name="VOPD" more="better">Number of VOPD instructions</stat>
+   </isa>
 </shaderdb>

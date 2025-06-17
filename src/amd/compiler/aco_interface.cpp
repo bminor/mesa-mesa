@@ -20,36 +20,6 @@ using namespace aco;
 
 namespace {
 
-static const std::array<aco_compiler_statistic_info, aco_num_statistics> statistic_infos = []()
-{
-   std::array<aco_compiler_statistic_info, aco_num_statistics> ret{};
-   ret[aco_statistic_hash] =
-      aco_compiler_statistic_info{"Hash", "CRC32 hash of code and constant data"};
-   ret[aco_statistic_instructions] =
-      aco_compiler_statistic_info{"Instructions", "Instruction count"};
-   ret[aco_statistic_copies] =
-      aco_compiler_statistic_info{"Copies", "Copy instructions created for pseudo-instructions"};
-   ret[aco_statistic_branches] = aco_compiler_statistic_info{"Branches", "Branch instructions"};
-   ret[aco_statistic_latency] =
-      aco_compiler_statistic_info{"Latency", "Issue cycles plus stall cycles"};
-   ret[aco_statistic_inv_throughput] = aco_compiler_statistic_info{
-      "Inverse Throughput", "Estimated busy cycles to execute one wave"};
-   ret[aco_statistic_vmem_clauses] = aco_compiler_statistic_info{
-      "VMEM Clause", "Number of VMEM clauses (includes 1-sized clauses)"};
-   ret[aco_statistic_smem_clauses] = aco_compiler_statistic_info{
-      "SMEM Clause", "Number of SMEM clauses (includes 1-sized clauses)"};
-   ret[aco_statistic_sgpr_presched] =
-      aco_compiler_statistic_info{"Pre-Sched SGPRs", "SGPR usage before scheduling"};
-   ret[aco_statistic_vgpr_presched] =
-      aco_compiler_statistic_info{"Pre-Sched VGPRs", "VGPR usage before scheduling"};
-   ret[aco_statistic_valu] = aco_compiler_statistic_info{"VALU", "Number of VALU instructions"};
-   ret[aco_statistic_salu] = aco_compiler_statistic_info{"SALU", "Number of SALU instructions"};
-   ret[aco_statistic_vmem] = aco_compiler_statistic_info{"VMEM", "Number of VMEM instructions"};
-   ret[aco_statistic_smem] = aco_compiler_statistic_info{"SMEM", "Number of SMEM instructions"};
-   ret[aco_statistic_vopd] = aco_compiler_statistic_info{"VOPD", "Number of VOPD instructions"};
-   return ret;
-}();
-
 static void
 validate(Program* program)
 {
@@ -222,8 +192,7 @@ aco_compile_shader_part(const struct aco_compiler_options* options,
    std::unique_ptr<Program> program{new Program};
 
    program->collect_statistics = options->record_stats;
-   if (program->collect_statistics)
-      memset(program->statistics, 0, sizeof(program->statistics));
+   memset(&program->statistics, 0, sizeof(program->statistics));
 
    program->debug.func = options->debug.func;
    program->debug.private_data = options->debug.private_data;
@@ -262,8 +231,7 @@ aco_compile_shader(const struct aco_compiler_options* options, const struct aco_
    std::unique_ptr<Program> program{new Program};
 
    program->collect_statistics = options->record_stats;
-   if (program->collect_statistics)
-      memset(program->statistics, 0, sizeof(program->statistics));
+   memset(&program->statistics, 0, sizeof(program->statistics));
 
    program->debug.func = options->debug.func;
    program->debug.private_data = options->debug.private_data;
@@ -289,14 +257,9 @@ aco_compile_shader(const struct aco_compiler_options* options, const struct aco_
    if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
-   size_t stats_size = 0;
-   if (program->collect_statistics)
-      stats_size = aco_num_statistics * sizeof(uint32_t);
-
    (*build_binary)(binary, &config, llvm_ir.c_str(), llvm_ir.size(), disasm.c_str(), disasm.size(),
-                   program->statistics, stats_size, exec_size, code.data(), code.size(),
-                   symbols.data(), symbols.size(), program->debug_info.data(),
-                   program->debug_info.size());
+                   &program->statistics, exec_size, code.data(), code.size(), symbols.data(),
+                   symbols.size(), program->debug_info.data(), program->debug_info.size());
 }
 
 void
@@ -337,8 +300,8 @@ aco_compile_rt_prolog(const struct aco_compiler_options* options,
    if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
-   (*build_prolog)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), program->statistics, 0,
-                   exec_size, code.data(), code.size(), NULL, 0, NULL, 0);
+   (*build_prolog)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), NULL, exec_size,
+                   code.data(), code.size(), NULL, 0, NULL, 0);
 }
 
 void
@@ -437,8 +400,8 @@ aco_compile_trap_handler(const struct aco_compiler_options* options,
    if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
-   (*build_binary)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), program->statistics, 0,
-                   exec_size, code.data(), code.size(), NULL, 0, NULL, 0);
+   (*build_binary)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), NULL, exec_size,
+                   code.data(), code.size(), NULL, 0, NULL, 0);
 }
 
 uint64_t
@@ -513,8 +476,6 @@ aco_nir_op_supports_packed_math_16bit(const nir_alu_instr* alu)
    default: return false;
    }
 }
-
-const aco_compiler_statistic_info* aco_statistic_infos = statistic_infos.data();
 
 void
 aco_print_asm(const struct radeon_info *info, unsigned wave_size,

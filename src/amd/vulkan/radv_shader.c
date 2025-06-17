@@ -2984,14 +2984,15 @@ radv_dump_nir_shaders(const struct radv_instance *instance, struct nir_shader *c
 
 static void
 radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, const char *llvm_ir_str,
-                             unsigned llvm_ir_size, const char *disasm_str, unsigned disasm_size, uint32_t *statistics,
-                             uint32_t stats_size, uint32_t exec_size, const uint32_t *code, uint32_t code_dw,
+                             unsigned llvm_ir_size, const char *disasm_str, unsigned disasm_size,
+                             struct amd_stats *statistics, uint32_t exec_size, const uint32_t *code, uint32_t code_dw,
                              const struct aco_symbol *symbols, unsigned num_symbols,
                              const struct ac_shader_debug_info *debug_info, unsigned debug_info_count)
 {
    struct radv_shader_binary **binary = (struct radv_shader_binary **)bin;
 
    uint32_t debug_info_size = debug_info_count * sizeof(struct ac_shader_debug_info);
+   uint32_t stats_size = statistics ? sizeof(struct amd_stats) : 0;
 
    size_t size = llvm_ir_size;
 
@@ -3019,7 +3020,7 @@ radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, 
    struct radv_shader_binary_layout layout = radv_shader_binary_get_layout(legacy_binary);
 
    if (stats_size)
-      memcpy(layout.stats, statistics, stats_size);
+      amd_stats_serialize(layout.stats, statistics);
 
    memcpy(layout.code, code, code_dw * sizeof(uint32_t));
 

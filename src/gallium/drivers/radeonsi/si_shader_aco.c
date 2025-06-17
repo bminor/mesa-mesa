@@ -105,7 +105,7 @@ si_fill_aco_shader_info(struct si_shader *shader, struct aco_shader_info *info,
 static void
 si_aco_build_shader_binary(void **data, const struct ac_shader_config *config,
                            const char *llvm_ir_str, unsigned llvm_ir_size, const char *disasm_str,
-                           unsigned disasm_size, uint32_t *statistics, uint32_t stats_size,
+                           unsigned disasm_size, struct amd_stats *statistics,
                            uint32_t exec_size, const uint32_t *code, uint32_t code_dw,
                            const struct aco_symbol *symbols, unsigned num_symbols,
                            const struct ac_shader_debug_info *debug_info, unsigned debug_info_count)

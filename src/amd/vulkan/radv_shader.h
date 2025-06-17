@@ -12,6 +12,7 @@
 #define RADV_SHADER_H
 
 #include "util/mesa-blake3.h"
+#include "util/shader_stats.h"
 #include "util/u_math.h"
 #include "vulkan/vulkan.h"
 #include "ac_binary.h"
@@ -460,7 +461,7 @@ struct radv_shader {
    char *nir_string;
    char *disasm_string;
    char *ir_string;
-   uint32_t *statistics;
+   struct amd_stats *statistics;
    struct ac_shader_debug_info *debug_info;
    uint32_t debug_info_count;
 };

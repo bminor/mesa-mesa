@@ -470,8 +470,8 @@ collect_presched_stats(Program* program)
    RegisterDemand presched_demand;
    for (Block& block : program->blocks)
       presched_demand.update(block.register_demand);
-   program->statistics[aco_statistic_sgpr_presched] = presched_demand.sgpr;
-   program->statistics[aco_statistic_vgpr_presched] = presched_demand.vgpr;
+   program->statistics.presgprs = presched_demand.sgpr;
+   program->statistics.prevgprs = presched_demand.vgpr;
 }
 
 /* instructions/branches/vmem_clauses/smem_clauses/cycles */
@@ -482,31 +482,31 @@ collect_preasm_stats(Program* program)
       std::set<Instruction*> vmem_clause;
       std::set<Instruction*> smem_clause;
 
-      program->statistics[aco_statistic_instructions] += block.instructions.size();
+      program->statistics.instrs += block.instructions.size();
 
       for (aco_ptr<Instruction>& instr : block.instructions) {
          const bool is_branch =
             instr->isSOPP() && instr_info.classes[(int)instr->opcode] == instr_class::branch;
          if (is_branch)
-            program->statistics[aco_statistic_branches]++;
+            program->statistics.branches++;
 
          if (instr->isVALU() || instr->isVINTRP())
-            program->statistics[aco_statistic_valu]++;
+            program->statistics.valu++;
          if (instr->isSALU() && !instr->isSOPP() &&
              instr_info.classes[(int)instr->opcode] != instr_class::waitcnt)
-            program->statistics[aco_statistic_salu]++;
+            program->statistics.salu++;
          if (instr->isVOPD())
-            program->statistics[aco_statistic_vopd]++;
+            program->statistics.vopd++;
 
          if ((instr->isVMEM() || instr->isScratch() || instr->isGlobal()) &&
              !instr->operands.empty()) {
             if (std::none_of(vmem_clause.begin(), vmem_clause.end(),
                              [&](Instruction* other)
                              { return should_form_clause(instr.get(), other); }))
-               program->statistics[aco_statistic_vmem_clauses]++;
+               program->statistics.vclause++;
             vmem_clause.insert(instr.get());
 
-            program->statistics[aco_statistic_vmem]++;
+            program->statistics.vmem++;
          } else {
             vmem_clause.clear();
          }
@@ -515,10 +515,10 @@ collect_preasm_stats(Program* program)
             if (std::none_of(smem_clause.begin(), smem_clause.end(),
                              [&](Instruction* other)
                              { return should_form_clause(instr.get(), other); }))
-               program->statistics[aco_statistic_smem_clauses]++;
+               program->statistics.sclause++;
             smem_clause.insert(instr.get());
 
-            program->statistics[aco_statistic_smem]++;
+            program->statistics.smem++;
          } else {
             smem_clause.clear();
          }
@@ -598,8 +598,8 @@ collect_preasm_stats(Program* program)
          program->workgroup_size / (double)align(program->workgroup_size, program->wave_size);
    wave64_per_cycle *= max_utilization;
 
-   program->statistics[aco_statistic_latency] = round(latency);
-   program->statistics[aco_statistic_inv_throughput] = round(1.0 / wave64_per_cycle);
+   program->statistics.latency = round(latency);
+   program->statistics.invthroughput = round(1.0 / wave64_per_cycle);
 
    if (debug_flags & DEBUG_PERF_INFO) {
       aco_print_program(program, stderr, print_no_ssa | print_perf_info);
@@ -624,7 +624,7 @@ collect_preasm_stats(Program* program)
 void
 collect_postasm_stats(Program* program, const std::vector<uint32_t>& code)
 {
-   program->statistics[aco_statistic_hash] = util_hash_crc32(code.data(), code.size() * 4);
+   program->statistics.hash = util_hash_crc32(code.data(), code.size() * 4);
 }
 
 Instruction_cycle_info
