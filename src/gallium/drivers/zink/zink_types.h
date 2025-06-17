@@ -1643,6 +1643,7 @@ struct zink_descriptor_surface {
 
 struct zink_bindless_descriptor {
    struct zink_descriptor_surface ds;
+   struct pipe_resource *pres;
    struct zink_sampler_state *sampler;
    uint32_t handle;
    uint32_t access; //PIPE_ACCESS_...

@@ -2385,9 +2385,9 @@ zink_create_texture_handle(struct pipe_context *pctx, struct pipe_sampler_view *
    }
 
    bd->ds.is_buffer = res->base.b.target == PIPE_BUFFER;
+   pipe_resource_reference(&bd->pres, view->texture);
    if (res->base.b.target == PIPE_BUFFER) {
       if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
-         pipe_resource_reference(&bd->ds.db.pres, view->texture);
          bd->ds.db.format = view->format;
          bd->ds.db.offset = view->u.buf.offset;
          bd->ds.db.size = view->u.buf.size;
@@ -2418,10 +2418,9 @@ zink_delete_texture_handle(struct pipe_context *pctx, uint64_t handle)
    uint32_t h = handle;
    util_dynarray_append(&ctx->bs->bindless_releases[0], uint32_t, h);
 
+   pipe_resource_reference(&bd->pres, NULL);
    if (ds->is_buffer) {
-      if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
-         pipe_resource_reference(&ds->db.pres, NULL);
-      } else {
+      if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB) {
          zink_buffer_view_reference(zink_screen(pctx->screen), &ds->bufferview, NULL);
       }
    } else {
@@ -2581,9 +2580,9 @@ zink_create_image_handle(struct pipe_context *pctx, const struct pipe_image_view
    bd->sampler = NULL;
 
    bd->ds.is_buffer = res->base.b.target == PIPE_BUFFER;
+   pipe_resource_reference(&bd->pres, view->resource);
    if (res->base.b.target == PIPE_BUFFER)
       if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
-         pipe_resource_reference(&bd->ds.db.pres, view->resource);
          bd->ds.db.format = view->format;
          bd->ds.db.offset = view->u.buf.offset;
          bd->ds.db.size = view->u.buf.size;
@@ -2607,15 +2606,15 @@ zink_delete_image_handle(struct pipe_context *pctx, uint64_t handle)
    bool is_buffer = ZINK_BINDLESS_IS_BUFFER(handle);
    struct hash_entry *he = _mesa_hash_table_search(&ctx->di.bindless[is_buffer].img_handles, (void*)(uintptr_t)handle);
    assert(he);
-   struct zink_descriptor_surface *ds = he->data;
+   struct zink_bindless_descriptor *bd = he->data;
+   struct zink_descriptor_surface *ds = &bd->ds;
    _mesa_hash_table_remove(&ctx->di.bindless[is_buffer].img_handles, he);
    uint32_t h = handle;
    util_dynarray_append(&ctx->bs->bindless_releases[1], uint32_t, h);
 
+   pipe_resource_reference(&bd->pres, NULL);
    if (ds->is_buffer) {
-      if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
-         pipe_resource_reference(&ds->db.pres, NULL);
-      } else {
+      if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB) {
          zink_buffer_view_reference(zink_screen(pctx->screen), &ds->bufferview, NULL);
       }
    } else {
