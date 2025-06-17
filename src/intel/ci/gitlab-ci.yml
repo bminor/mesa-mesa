@@ -8,7 +8,6 @@ anv-jsl-vk:
     - .lava-acer-cb317-1h-c3z6-dedede:x86_64
   variables:
     DEQP_SUITE: anv-jsl
-    VK_DRIVER: intel
   parallel: 5
 
 anv-jsl-vk-full:
@@ -27,7 +26,6 @@ anv-adl-vk:
     - .lava-acer-cbv514-1h-34uz-brya:x86_64
   variables:
     DEQP_SUITE: anv-adl
-    VK_DRIVER: intel
   timeout: 30m
   parallel: 4
 
@@ -47,7 +45,6 @@ anv-tgl-vk:
     - .lava-acer-cp514-2h-1160g7-volteer:x86_64
   variables:
     DEQP_SUITE: anv-tgl
-    VK_DRIVER: intel
   parallel: 5  # 5 - 5 # -1 for zink, but it's disabled now
 
 anv-tgl-vk-full:
@@ -121,6 +118,16 @@ anv-tgl-angle:
     DEQP_SUITE: anv-tgl-angle
     GPU_VERSION: angle-anv-tgl
   parallel: 2
+
+anv-adl-vkd3d:
+  extends:
+    - .lava-x86_64-test-vk
+    - .anv-test
+    - .test-vkd3d-proton
+    - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
+  variables:
+    # Random tests fail/crash when trying to run them in parallel
+    FDO_CI_CONCURRENT: 1
 
 anv-tgl-angle-full:
   extends:

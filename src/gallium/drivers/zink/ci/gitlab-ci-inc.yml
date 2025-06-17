@@ -190,7 +190,6 @@
     - .zink-anv-rules
     - .zink-test
   variables:
-    VK_DRIVER: intel
     GPU_VERSION: zink-anv-adl
 
 .zink-anv-adl-trace-test:
@@ -201,7 +200,6 @@
     - .zink-anv-rules
     - .zink-trace-test
   variables:
-    VK_DRIVER: intel
     GPU_VERSION: zink-anv-adl
 
 .zink-anv-tgl-test:
@@ -212,7 +210,6 @@
     - .zink-anv-rules
     - .zink-test
   variables:
-    VK_DRIVER: intel
     GPU_VERSION: zink-anv-tgl
 
 .zink-anv-tgl-trace-test:
@@ -223,7 +220,6 @@
     - .zink-anv-rules
     - .zink-trace-test
   variables:
-    VK_DRIVER: intel
     GPU_VERSION: zink-anv-tgl
 
 .zink-nvk-test-valve:

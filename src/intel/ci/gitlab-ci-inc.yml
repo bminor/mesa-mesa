@@ -351,6 +351,7 @@
     - .anv-rules
   variables:
     DRIVER_NAME: anv
+    VK_DRIVER: intel
     ANV_DEBUG: "video-decode,video-encode"
 
 .iris-test:
