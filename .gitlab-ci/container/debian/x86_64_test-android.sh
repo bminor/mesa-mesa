@@ -178,13 +178,20 @@ if FOUND_ARTIFACT_URL="$(find_s3_project_artifact "${ARTIFACT_PATH}")"; then
 else
     echo "No cached CTS found, downloading from Google and uploading to S3..."
     curl-with-retry --remote-name "https://dl.google.com/dl/android/cts/${CTS_FILENAME}.zip"
-    unzip -q -d / "${CTS_FILENAME}.zip"
+
+    # Disable zipbomb detection, because the CTS zip file is too big
+    # At least locally, it is detected as a zipbomb
+    UNZIP_DISABLE_ZIPBOMB_DETECTION=TRUE \
+        unzip -q -d / "${CTS_FILENAME}.zip"
     rm "${CTS_FILENAME}.zip"
 
     # Keep only the interesting tests to save space
     # shellcheck disable=SC2086 # we want word splitting
     ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
     find /android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
+
+    # Using zstd compressed tarball instead of zip, the compression ratio is almost the same, but
+    # the extraction is faster, also LAVA overlays don't support zip compression.
     tar --zstd -cf "${CTS_FILENAME}.tar.zst" /android-cts
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${CTS_FILENAME}.tar.zst" \
         "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
