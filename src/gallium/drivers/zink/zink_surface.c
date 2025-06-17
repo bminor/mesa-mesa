@@ -186,13 +186,12 @@ hash_ivci(const void *key)
 }
 
 static struct zink_surface *
-do_create_surface(struct pipe_context *pctx, struct pipe_resource *pres, const struct pipe_surface *templ, VkImageViewCreateInfo *ivci, uint32_t hash, bool actually)
+do_create_surface(struct pipe_context *pctx, struct pipe_resource *pres, const struct pipe_surface *templ, VkImageViewCreateInfo *ivci, bool actually)
 {
    /* create a new surface */
    struct zink_surface *surface = create_surface(pctx, pres, templ, ivci, actually);
    /* only transient surfaces have nr_samples set */
    surface->base.nr_samples = zink_screen(pctx->screen)->info.have_EXT_multisampled_render_to_single_sampled ? templ->nr_samples : 0;
-   surface->hash = hash;
    surface->ivci = *ivci;
    return surface;
 }
@@ -216,7 +215,7 @@ zink_get_surface(struct zink_context *ctx,
        * mutable will be set later and the imageview will be filled in
        */
       bool actually = !zink_format_needs_mutable(pres->format, templ->format) || (pres->bind & ZINK_BIND_MUTABLE);
-      surface = do_create_surface(&ctx->base, pres, templ, ivci, hash, actually);
+      surface = do_create_surface(&ctx->base, pres, templ, ivci, actually);
       entry = _mesa_hash_table_insert_pre_hashed(&res->surface_cache, hash, &surface->ivci, surface);
       if (!entry) {
          simple_mtx_unlock(&res->surface_mtx);
@@ -283,7 +282,7 @@ zink_create_surface(struct pipe_context *pctx,
    struct zink_surface *surface = NULL;
    if (res->obj->dt) {
       /* don't cache swapchain surfaces. that's weird. */
-      surface = do_create_surface(pctx, pres, templ, &ivci, 0, false);
+      surface = do_create_surface(pctx, pres, templ, &ivci, false);
       if (unlikely(!surface)) {
          mesa_loge("ZINK: failed do_create_surface!");
          return NULL;
@@ -338,7 +337,8 @@ zink_destroy_surface(struct zink_screen *screen, struct pipe_surface *psurface)
          simple_mtx_unlock(&res->surface_mtx);
          return;
       }
-      struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&res->surface_cache, surface->hash, &surface->ivci);
+      uint32_t hash = hash_ivci(&surface->ivci);
+      struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&res->surface_cache, hash, &surface->ivci);
       assert(he);
       assert(he->data == surface);
       _mesa_hash_table_remove(&res->surface_cache, he);
@@ -381,7 +381,8 @@ zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface)
       pipe_surface_reference(psurface, &new_surface->base);
       return true;
    }
-   struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(&res->surface_cache, surface->hash, &surface->ivci);
+   uint32_t old_hash = hash_ivci(&surface->ivci);
+   struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(&res->surface_cache, old_hash, &surface->ivci);
    assert(entry);
    _mesa_hash_table_remove(&res->surface_cache, entry);
    VkImageView image_view;
@@ -392,9 +393,8 @@ zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface)
       simple_mtx_unlock(&res->surface_mtx);
       return false;
    }
-   surface->hash = hash;
    surface->ivci = ivci;
-   entry = _mesa_hash_table_insert_pre_hashed(&res->surface_cache, surface->hash, &surface->ivci, surface);
+   entry = _mesa_hash_table_insert_pre_hashed(&res->surface_cache, hash, &surface->ivci, surface);
    assert(entry);
    simple_mtx_lock(&res->obj->view_lock);
    util_dynarray_append(&res->obj->views, VkImageView, surface->image_view);
