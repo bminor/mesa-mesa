@@ -1542,7 +1542,6 @@ struct zink_surface {
    struct pipe_surface base;
    /* all the info for creating a new imageview */
    VkImageViewCreateInfo ivci;
-   VkImageViewUsageCreateInfo usage_info;
    bool is_swapchain;
    /* the current imageview */
    VkImageView image_view;
