@@ -6366,55 +6366,68 @@ void dxil_fill_validation_state(struct ntd_context *ctx,
       sizeof(struct dxil_resource_v1) : sizeof(struct dxil_resource_v0);
    state->num_resources = ctx->resources.size / resource_element_size;
    state->resources.v0 = (struct dxil_resource_v0*)ctx->resources.data;
+   struct dxil_psv_runtime_info_3 *psv3 = &state->state;
+   struct dxil_psv_runtime_info_2 *psv2 = &psv3->psv2;
+   struct dxil_psv_runtime_info_1 *psv1 = &psv2->psv1;
+   struct dxil_psv_runtime_info_0 *psv0 = &psv1->psv0;
    if (ctx->shader->info.subgroup_size >= SUBGROUP_SIZE_REQUIRE_4) {
-      state->state.psv1.psv0.max_expected_wave_lane_count = ctx->shader->info.subgroup_size;
-      state->state.psv1.psv0.min_expected_wave_lane_count = ctx->shader->info.subgroup_size;
+      psv0->max_expected_wave_lane_count = ctx->shader->info.subgroup_size;
+      psv0->min_expected_wave_lane_count = ctx->shader->info.subgroup_size;
    } else {
-      state->state.psv1.psv0.max_expected_wave_lane_count = UINT_MAX;
+      psv0->max_expected_wave_lane_count = UINT_MAX;
    }
-   state->state.psv1.shader_stage = (uint8_t)ctx->mod.shader_kind;
-   state->state.psv1.uses_view_id = (uint8_t)ctx->mod.feats.view_id;
-   state->state.psv1.sig_input_elements = (uint8_t)ctx->mod.num_sig_inputs;
-   state->state.psv1.sig_output_elements = (uint8_t)ctx->mod.num_sig_outputs;
-   state->state.psv1.sig_patch_const_or_prim_elements = (uint8_t)ctx->mod.num_sig_patch_consts;
+   psv1->shader_stage = (uint8_t)ctx->mod.shader_kind;
+   psv1->uses_view_id = (uint8_t)ctx->mod.feats.view_id;
+   psv1->sig_input_elements = (uint8_t)ctx->mod.num_sig_inputs;
+   psv1->sig_output_elements = (uint8_t)ctx->mod.num_sig_outputs;
+   psv1->sig_patch_const_or_prim_elements = (uint8_t)ctx->mod.num_sig_patch_consts;
 
    switch (ctx->mod.shader_kind) {
    case DXIL_VERTEX_SHADER:
-      state->state.psv1.psv0.vs.output_position_present = ctx->mod.info.has_out_position;
+      psv0->vs.output_position_present = ctx->mod.info.has_out_position;
       break;
    case DXIL_PIXEL_SHADER:
       /* TODO: handle depth outputs */
-      state->state.psv1.psv0.ps.depth_output = ctx->mod.info.has_out_depth;
-      state->state.psv1.psv0.ps.sample_frequency =
-         ctx->mod.info.has_per_sample_input;
+      psv0->ps.depth_output = ctx->mod.info.has_out_depth;
+      psv0->ps.sample_frequency = ctx->mod.info.has_per_sample_input;
       break;
    case DXIL_COMPUTE_SHADER:
-      state->state.num_threads_x = MAX2(ctx->shader->info.workgroup_size[0], 1);
-      state->state.num_threads_y = MAX2(ctx->shader->info.workgroup_size[1], 1);
-      state->state.num_threads_z = MAX2(ctx->shader->info.workgroup_size[2], 1);
+      psv2->num_threads_x = MAX2(ctx->shader->info.workgroup_size[0], 1);
+      psv2->num_threads_y = MAX2(ctx->shader->info.workgroup_size[1], 1);
+      psv2->num_threads_z = MAX2(ctx->shader->info.workgroup_size[2], 1);
       break;
    case DXIL_GEOMETRY_SHADER:
-      state->state.psv1.max_vertex_count = ctx->shader->info.gs.vertices_out;
-      state->state.psv1.psv0.gs.input_primitive = dxil_get_input_primitive(ctx->shader->info.gs.input_primitive);
-      state->state.psv1.psv0.gs.output_toplology = dxil_get_primitive_topology(ctx->shader->info.gs.output_primitive);
-      state->state.psv1.psv0.gs.output_stream_mask = MAX2(ctx->shader->info.gs.active_stream_mask, 1);
-      state->state.psv1.psv0.gs.output_position_present = ctx->mod.info.has_out_position;
+      psv1->max_vertex_count = ctx->shader->info.gs.vertices_out;
+      psv0->gs.input_primitive = dxil_get_input_primitive(ctx->shader->info.gs.input_primitive);
+      psv0->gs.output_toplology = dxil_get_primitive_topology(ctx->shader->info.gs.output_primitive);
+      psv0->gs.output_stream_mask = MAX2(ctx->shader->info.gs.active_stream_mask, 1);
+      psv0->gs.output_position_present = ctx->mod.info.has_out_position;
       break;
    case DXIL_HULL_SHADER:
-      state->state.psv1.psv0.hs.input_control_point_count = ctx->tess_input_control_point_count;
-      state->state.psv1.psv0.hs.output_control_point_count = ctx->shader->info.tess.tcs_vertices_out;
-      state->state.psv1.psv0.hs.tessellator_domain = get_tessellator_domain(ctx->shader->info.tess._primitive_mode);
-      state->state.psv1.psv0.hs.tessellator_output_primitive = get_tessellator_output_primitive(&ctx->shader->info);
-      state->state.psv1.sig_patch_const_or_prim_vectors = ctx->mod.num_psv_patch_consts;
+      psv0->hs.input_control_point_count = ctx->tess_input_control_point_count;
+      psv0->hs.output_control_point_count = ctx->shader->info.tess.tcs_vertices_out;
+      psv0->hs.tessellator_domain = get_tessellator_domain(ctx->shader->info.tess._primitive_mode);
+      psv0->hs.tessellator_output_primitive = get_tessellator_output_primitive(&ctx->shader->info);
+      psv1->sig_patch_const_or_prim_vectors = ctx->mod.num_psv_patch_consts;
       break;
    case DXIL_DOMAIN_SHADER:
-      state->state.psv1.psv0.ds.input_control_point_count = ctx->shader->info.tess.tcs_vertices_out;
-      state->state.psv1.psv0.ds.tessellator_domain = get_tessellator_domain(ctx->shader->info.tess._primitive_mode);
-      state->state.psv1.psv0.ds.output_position_present = ctx->mod.info.has_out_position;
-      state->state.psv1.sig_patch_const_or_prim_vectors = ctx->mod.num_psv_patch_consts;
+      psv0->ds.input_control_point_count = ctx->shader->info.tess.tcs_vertices_out;
+      psv0->ds.tessellator_domain = get_tessellator_domain(ctx->shader->info.tess._primitive_mode);
+      psv0->ds.output_position_present = ctx->mod.info.has_out_position;
+      psv1->sig_patch_const_or_prim_vectors = ctx->mod.num_psv_patch_consts;
       break;
    default:
       assert(0 && "Shader type not (yet) supported");
+   }
+
+   if (ctx->mod.minor_validator >= 8) {
+      nir_function_impl *impl = nir_shader_get_entrypoint(ctx->shader);
+      if (impl && impl->function->name) {
+         psv3->entry_function_name = ctx->mod.sem_string_table->length;
+         _mesa_string_buffer_append_len(ctx->mod.sem_string_table, impl->function->name, strlen(impl->function->name) + 1);
+      } else {
+         psv3->entry_function_name = 0;
+      }
    }
 }
 

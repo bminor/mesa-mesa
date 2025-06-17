@@ -200,13 +200,17 @@ dxil_container_add_state_validation(struct dxil_container *c,
                                     const struct dxil_module *m,
                                     struct dxil_validation_state *state)
 {
-   uint32_t psv_size = m->minor_validator >= 6 ?
-      sizeof(struct dxil_psv_runtime_info_2) :
-      sizeof(struct dxil_psv_runtime_info_1);
+   uint32_t psv_size = m->minor_validator >= 8 ?
+      sizeof(struct dxil_psv_runtime_info_3) : m->minor_validator >= 6 ?
+      sizeof(struct dxil_psv_runtime_info_2) : sizeof(struct dxil_psv_runtime_info_1);
    uint32_t resource_bind_info_size = m->minor_validator >= 6 ?
       sizeof(struct dxil_resource_v1) : sizeof(struct dxil_resource_v0);
    uint32_t dxil_pvs_sig_size = sizeof(struct dxil_psv_signature_element);
    uint32_t resource_count = state->num_resources;
+
+   struct dxil_psv_runtime_info_3 *psv3 = &state->state;
+   struct dxil_psv_runtime_info_2 *psv2 = &psv3->psv2;
+   struct dxil_psv_runtime_info_1 *psv1 = &psv2->psv1;
 
    uint32_t size = psv_size + 2 * sizeof(uint32_t);
    if (resource_count > 0) {
@@ -226,12 +230,12 @@ dxil_container_add_state_validation(struct dxil_container *c,
    size += dxil_pvs_sig_size * m->num_sig_outputs;
    size += dxil_pvs_sig_size * m->num_sig_patch_consts;
 
-   state->state.psv1.sig_input_vectors = (uint8_t)m->num_psv_inputs;
+   psv1->sig_input_vectors = (uint8_t)m->num_psv_inputs;
 
    for (unsigned i = 0; i < 4; ++i)
-      state->state.psv1.sig_output_vectors[i] = (uint8_t)m->num_psv_outputs[i];
+      psv1->sig_output_vectors[i] = (uint8_t)m->num_psv_outputs[i];
 
-   if (state->state.psv1.uses_view_id) {
+   if (psv1->uses_view_id) {
       for (unsigned i = 0; i < 4; ++i)
          size += m->dependency_table_dwords_per_input[i] * sizeof(uint32_t);
    }
@@ -297,7 +301,7 @@ dxil_container_add_state_validation(struct dxil_container *c,
    if (m->shader_kind == DXIL_GEOMETRY_SHADER && m->minor_validator < 8) {
       bool zero_view_id_deps = false, zero_io_deps = false;
       for (int i = 3; i >= 0; --i) {
-         if (state->state.psv1.uses_view_id && m->dependency_table_dwords_per_input[i]) {
+         if (psv1->uses_view_id && m->dependency_table_dwords_per_input[i]) {
             if (zero_view_id_deps)
                memset(m->viewid_dependency_table[i], 0, sizeof(uint32_t) * m->dependency_table_dwords_per_input[i]);
             zero_view_id_deps = true;
@@ -310,7 +314,7 @@ dxil_container_add_state_validation(struct dxil_container *c,
       }
    }
 
-   if (state->state.psv1.uses_view_id) {
+   if (psv1->uses_view_id) {
       for (unsigned i = 0; i < 4; ++i)
          if (!blob_write_bytes(&c->parts, m->viewid_dependency_table[i],
                                sizeof(uint32_t) * m->dependency_table_dwords_per_input[i]))

@@ -88,7 +88,7 @@ struct dxil_resource_v1 {
 };
 
 struct dxil_validation_state {
-   struct dxil_psv_runtime_info_2 state;
+   struct dxil_psv_runtime_info_3 state;
    union {
       const struct dxil_resource_v0 *v0;
       const struct dxil_resource_v1 *v1;
