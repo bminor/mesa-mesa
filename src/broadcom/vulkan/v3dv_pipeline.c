@@ -252,6 +252,42 @@ lookup_ycbcr_conversion(const void *_pipeline_layout, uint32_t set,
    }
 }
 
+static bool
+try_lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
+{
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_load_input_attachment_coord: {
+      b->cursor = nir_before_instr(&intrin->instr);
+
+      nir_variable *pos_var =
+         nir_get_variable_with_location(b->shader, nir_var_shader_in,
+                                        VARYING_SLOT_POS, glsl_vec4_type());
+      nir_def *pos = nir_f2i32(b, nir_load_var(b, pos_var));
+
+      nir_variable *layer_var =
+         nir_get_variable_with_location(b->shader, nir_var_shader_in,
+                                        VARYING_SLOT_LAYER, glsl_int_type());
+      layer_var->data.interpolation = INTERP_MODE_FLAT;
+      nir_def *layer = nir_load_var(b, layer_var);
+
+      nir_def *coord = nir_vec3(b, nir_channel(b, pos, 0),
+                                   nir_channel(b, pos, 1),
+                                   layer);
+      nir_def_replace(&intrin->def, coord);
+      return true;
+   }
+   default:
+      return false;
+   }
+}
+
+static bool
+lower_intrinsics(nir_shader *s)
+{
+   return nir_shader_intrinsics_pass(s, try_lower_intrinsic,
+                                       nir_metadata_control_flow, NULL);
+}
+
 static void
 preprocess_nir(nir_shader *nir)
 {
@@ -273,9 +309,11 @@ preprocess_nir(nir_shader *nir)
       NIR_PASS(_, nir, nir_lower_io_to_vector, nir_var_shader_out);
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_input_attachments,
-                 &(nir_input_attachment_options) {
-                    .use_fragcoord_sysval = false,
-                       });
+               &(nir_input_attachment_options) {
+                  .use_ia_coord_intrin = true,
+               });
+
+      NIR_PASS(_, nir, lower_intrinsics);
    }
 
    NIR_PASS(_, nir, nir_lower_io_to_temporaries,
