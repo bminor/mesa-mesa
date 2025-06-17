@@ -9,6 +9,8 @@
 
 #include "intel_engine.h"
 
+#include "util/compiler.h"
+
 /* Updates intel_device_info fields that has dependencies on intel/common
  * functions.
  */
@@ -61,9 +63,8 @@ intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo
        */
       switch (hw_threads_in_wg) {
       case 0 ... 2:
-         /* Max 2 */
-         pixel_async_compute_thread_limit = 1;
-         break;
+         /* Minimum is Max 2 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 3 ... 8:
          /* Max 8 */
          pixel_async_compute_thread_limit = 2;
@@ -95,21 +96,17 @@ intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo
 
       switch (hw_threads_in_wg) {
       case 0 ... 32:
-         /* Max 32 */
-         z_pass_async_compute_thread_limit = 5;
-         break;
+         /* Minimum is Max 32 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 33 ... 40:
-         /* Max 40 */
-         z_pass_async_compute_thread_limit = 4;
-         break;
+         /* Minimum is Max 40 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 41 ... 48:
-         /* Max 48 */
-         z_pass_async_compute_thread_limit = 3;
-         break;
+         /* Minimum is Max 48 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 49 ... 56:
-         /* Max 56 */
-         z_pass_async_compute_thread_limit = 2;
-         break;
+         /* Minimum is Max 56 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 57 ... 60:
          /* Max 60 */
          z_pass_async_compute_thread_limit = 0;
@@ -141,9 +138,8 @@ intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo
    } else {
       switch (hw_threads_in_wg) {
       case 0 ... 4:
-         /* Max 2 */
-         pixel_async_compute_thread_limit = 1;
-         break;
+         /* Minimum is Max 2 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 5 ... 16:
          /* Max 8 */
          pixel_async_compute_thread_limit = 2;
@@ -175,21 +171,17 @@ intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo
 
       switch (hw_threads_in_wg) {
       case 0 ... 64:
-         /* Max 32 */
-         z_pass_async_compute_thread_limit = 5;
-         break;
+         /* Minimum is Max 32 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 65 ... 80:
-         /* Max 40 */
-         z_pass_async_compute_thread_limit = 4;
-         break;
+         /* Minimum is Max 40 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 81 ... 96:
-         /* Max 48 */
-         z_pass_async_compute_thread_limit = 3;
-         break;
+         /* Minimum is Max 48 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 97 ... 112:
-         /* Max 56 */
-         z_pass_async_compute_thread_limit = 2;
-         break;
+         /* Minimum is Max 56 but lets use spec recommended value below */
+         FALLTHROUGH;
       case 113 ... 120:
          /* Max 60 */
          z_pass_async_compute_thread_limit = 0;
