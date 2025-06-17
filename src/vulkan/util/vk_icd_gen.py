@@ -46,6 +46,8 @@ if __name__ == '__main__':
                         help='Vulkan API version.')
     parser.add_argument('--xml', required=False,
                         help='Vulkan registry XML for patch version')
+    parser.add_argument('--sizeof-pointer', required=False, type=int,
+                        help='sizeof(void*) on the host cpu')
     parser.add_argument('--lib-path', required=True,
                         help='Path to installed library')
     parser.add_argument('--out', required=False,
@@ -66,12 +68,17 @@ if __name__ == '__main__':
         lib_path = lib_path.replace('/', '\\')
 
     json_data = {
-        'file_format_version': '1.0.0',
+        'file_format_version': '1.0.1',
         'ICD': {
             'library_path': lib_path,
             'api_version': version,
         },
     }
+
+    if args.sizeof_pointer:
+        bit_width = args.sizeof_pointer * 8
+        if bit_width in [32, 64]:
+            json_data['ICD']['library_arch'] = str(bit_width)
 
     json_params = {
         'indent': 4,

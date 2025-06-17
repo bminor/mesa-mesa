@@ -22,6 +22,7 @@ virtio_icd = custom_target(
   command : [
     prog_python, '@INPUT0@',
     '--api-version', '1.3', '--xml', '@INPUT1@',
+    '--sizeof-pointer', sizeof_pointer,
     '--lib-path', join_paths(get_option('prefix'), get_option('libdir'),
                              'libvulkan_virtio.so'),
     '--out', '@OUTPUT@',
@@ -40,6 +41,7 @@ _dev_icd = custom_target(
   command : [
     prog_python, '@INPUT0@',
     '--api-version', '1.3', '--xml', '@INPUT1@',
+    '--sizeof-pointer', sizeof_pointer,
     '--lib-path', meson.current_build_dir() / 'libvulkan_virtio.so',
     '--out', '@OUTPUT@',
   ],

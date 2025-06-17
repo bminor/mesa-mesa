@@ -29,6 +29,7 @@ endif
 icd_command = [
   prog_python, '@INPUT0@',
   '--api-version', '1.4', '--xml', '@INPUT1@',
+  '--sizeof-pointer', sizeof_pointer,
   '--lib-path', join_paths(icd_lib_path, icd_file_name),
   '--out', '@OUTPUT@',
 ]
@@ -55,6 +56,7 @@ _dev_icd = custom_target(
   command : [
     prog_python, '@INPUT0@',
     '--api-version', '1.4', '--xml', '@INPUT1@',
+    '--sizeof-pointer', sizeof_pointer,
     '--lib-path', meson.current_build_dir() / icd_file_name,
     '--out', '@OUTPUT@',
   ],
