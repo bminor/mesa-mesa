@@ -302,7 +302,6 @@ intel-adl-cl:
     VK_DRIVER: intel
     HWCI_START_WESTON: 1
   timeout: 20m
-  parallel: 2
 
 intel-adl-skqp:
   extends:
