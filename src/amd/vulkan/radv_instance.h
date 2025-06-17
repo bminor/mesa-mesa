@@ -43,7 +43,6 @@ struct radv_drirc {
       bool disable_dcc_mips;
       bool disable_dcc_stores;
       bool disable_depth_storage;
-      bool disable_hiz_his_gfx12;
       bool disable_shrink_image_store;
       bool disable_sinking_load_input_fs;
       bool disable_tc_compat_htile_in_general;

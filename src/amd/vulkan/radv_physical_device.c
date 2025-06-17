@@ -2309,8 +2309,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->use_fmask = pdev->info.gfx_level < GFX11 && !(instance->debug_flags & RADV_DEBUG_NO_FMASK);
 
    pdev->use_hiz = !(instance->debug_flags & RADV_DEBUG_NO_HIZ);
-   if (pdev->info.gfx_level == GFX12 && instance->drirc.debug.disable_hiz_his_gfx12)
-      pdev->use_hiz = false;
 
    if (pdev->info.gfx_level == GFX12) {
       const char *gfx12_hiz_wa_str = instance->drirc.performance.gfx12_hiz_wa;
