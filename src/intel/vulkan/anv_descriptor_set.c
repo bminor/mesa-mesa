@@ -1048,7 +1048,7 @@ sha1_update_immutable_sampler(struct mesa_sha1 *ctx,
     * their embedded samplers parameters are identical.
     */
    if (embedded_sampler)
-      SHA1_UPDATE_VALUE(ctx, sampler->sha1);
+      SHA1_UPDATE_VALUE(ctx, sampler->embedded_key);
 }
 
 static void

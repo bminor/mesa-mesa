@@ -6332,13 +6332,13 @@ struct gfx8_border_color {
    uint32_t _pad[12];
 };
 
+extern const struct gfx8_border_color anv_default_border_colors[];
+
 struct anv_sampler {
    struct vk_sampler            vk;
 
-   /* Hash of the sampler state + border color, useful for embedded samplers
-    * and included in the descriptor layout hash.
-    */
-   unsigned char                sha1[20];
+   /* Hashing key for embedded samplers */
+   struct anv_embedded_sampler_key embedded_key;
 
    uint32_t                     state[3][4];
    /* Packed SAMPLER_STATE without the border color pointer. */
@@ -6350,7 +6350,7 @@ struct anv_sampler {
     */
    struct anv_state             bindless_state;
 
-   struct anv_state             custom_border_color;
+   struct anv_state             custom_border_color_state;
 };
 
 
