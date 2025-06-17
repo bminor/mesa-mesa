@@ -120,8 +120,9 @@ init_pipe_surface_info(struct pipe_context *pctx, struct pipe_surface *psurf, co
 }
 
 static void
-apply_view_usage_for_format(struct zink_screen *screen, struct zink_resource *res, struct zink_surface *surface, enum pipe_format format, VkImageViewCreateInfo *ivci)
+apply_view_usage_for_format(struct zink_screen *screen, struct zink_surface *surface, enum pipe_format format, VkImageViewCreateInfo *ivci)
 {
+   struct zink_resource *res = zink_resource(surface->base.texture);
    VkFormatFeatureFlags feats = res->linear ?
                                 zink_get_format_props(screen, format)->linearTilingFeatures :
                                 zink_get_format_props(screen, format)->optimalTilingFeatures;
@@ -150,7 +151,6 @@ create_surface(struct pipe_context *pctx,
                bool actually)
 {
    struct zink_screen *screen = zink_screen(pctx->screen);
-   struct zink_resource *res = zink_resource(pres);
 
    struct zink_surface *surface = CALLOC_STRUCT(zink_surface);
    if (!surface)
@@ -158,7 +158,7 @@ create_surface(struct pipe_context *pctx,
 
    surface->usage_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO;
    surface->usage_info.pNext = NULL;
-   apply_view_usage_for_format(screen, res, surface, templ->format, ivci);
+   apply_view_usage_for_format(screen, surface, templ->format, ivci);
 
    pipe_resource_reference(&surface->base.texture, pres);
    pipe_reference_init(&surface->base.reference, 1);
@@ -386,7 +386,7 @@ zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface)
    assert(entry);
    _mesa_hash_table_remove(&res->surface_cache, entry);
    VkImageView image_view;
-   apply_view_usage_for_format(screen, res, surface, surface->base.format, &ivci);
+   apply_view_usage_for_format(screen, surface, surface->base.format, &ivci);
    VkResult result = VKSCR(CreateImageView)(screen->dev, &ivci, NULL, &image_view);
    if (result != VK_SUCCESS) {
       mesa_loge("ZINK: failed to create new imageview (%s)", vk_Result_to_str(result));
