@@ -1482,8 +1482,10 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
    }
    tc->nr_cbufs = nr_cbufs;
    tc->fb_layers = util_framebuffer_get_num_layers(fb);
+#if TC_RESOLVE_STRICT
    tc->fb_width = fb->width;
    tc->fb_height = fb->height;
+#endif
    if (tc->options.parse_renderpass_info) {
       /* store existing zsbuf data for possible persistence */
       uint8_t zsbuf = tc->renderpass_info_recording->has_draw ?
@@ -4553,8 +4555,10 @@ tc_blit(struct pipe_context *_pipe, const struct pipe_blit_info *info)
        info->src.box.width != info->dst.box.width ||
        info->src.box.height != info->dst.box.height ||
        info->src.box.depth != info->dst.box.depth ||
+#if TC_RESOLVE_STRICT
        info->src.box.width != tc->fb_width ||
        info->src.box.height != tc->fb_height ||
+#endif
        tc->renderpass_info_recording->ended ||
        (info->dst.resource->array_size && info->dst.resource->array_size != tc->fb_layers) ||
        (!tc->renderpass_info_recording->has_draw && !tc->renderpass_info_recording->cbuf_clear && !tc->renderpass_info_recording->zsbuf_clear)) {

@@ -217,6 +217,13 @@ struct tc_unflushed_batch_token;
 /* 0 = disabled, 1 = assertions, 2 = printfs, 3 = logging */
 #define TC_DEBUG 0
 
+/* disabling this (nonzero to enable) is technically out of spec, but:
+ * - it's conformant
+ * - doesn't cause any known issues
+ * - massively improves performance
+ */
+#define TC_RESOLVE_STRICT 0
+
 /* This is an internal flag not sent to the driver. */
 #define TC_TRANSFER_MAP_UPLOAD_CPU_STORAGE   (1u << 28)
 /* These are map flags sent to drivers. */
@@ -643,8 +650,11 @@ struct threaded_context {
    unsigned max_samplers;
    unsigned nr_cbufs;
    unsigned fb_layers;
+
+#if TC_RESOLVE_STRICT
    uint16_t fb_width;
    uint16_t fb_height;
+#endif
 
    unsigned last, next, next_buf_list;
 
