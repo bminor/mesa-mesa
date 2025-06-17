@@ -418,6 +418,7 @@ debian-android:
       -D platforms=android
     FORCE_FALLBACK_FOR: llvm
     EXTRA_OPTION: >
+      -D amd-use-llvm=false
       -D android-stub=true
       -D platform-sdk-version=${ANDROID_SDK_VERSION}
       -D cpp_rtti=false
@@ -446,11 +447,9 @@ debian-android:
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
     # x86_64 build:
-    # Can't do AMD drivers because they require LLVM, which is currently
-    # problematic in our Android builds.
     - export CROSS=x86_64-linux-android
-    - export GALLIUM_DRIVERS=iris,virgl,zink,softpipe
-    - export VULKAN_DRIVERS=intel,virtio,swrast
+    - export GALLIUM_DRIVERS=iris,radeonsi,softpipe,virgl,zink
+    - export VULKAN_DRIVERS=amd,intel,swrast,virtio
     - .gitlab-ci/create-llvm-meson-wrap-file.sh
     - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
