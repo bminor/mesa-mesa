@@ -815,6 +815,9 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats.r8g8b8a8_unorm.
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats.r8g8b8a8_unorm.input.load.dont_care.clear_draw,Fail
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.unused_attachment.loadopclear.storeopdontcare.stencilloadopdontcare.stencilstoreopdontcare,Fail
 
+# deqp-vk: pthread_mutex_lock.c:450: __pthread_mutex_lock_full: Assertion `e != ESRCH || !robust' failed.
+dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.1d_array.rg8ui.512_1_64,Crash
+
 nir-stress=dEQP-VK.dynamic_rendering.graphics_pipeline_library.dedicated_allocation.attachment_allocation.input_output_chain.66,Fail
 nir-stress=dEQP-VK.dynamic_rendering.graphics_pipeline_library.dedicated_allocation.formats.a2b10g10r10_uint_pack32.input.dont_care.dont_care.clear_draw,Fail
 nir-stress=dEQP-VK.dynamic_rendering.graphics_pipeline_library.dedicated_allocation.formats.a8b8g8r8_sint_pack32.input.load.dont_care.clear_draw,Fail
