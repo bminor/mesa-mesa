@@ -870,19 +870,6 @@ get_device_properties(const struct v3dv_physical_device *device,
                       VK_SUBGROUP_FEATURE_QUAD_BIT;
    }
 
-#if DETECT_OS_ANDROID
-   /* Used to determine the sharedImage prop in
-    * VkPhysicalDevicePresentationPropertiesANDROID
-    */
-   uint64_t front_rendering_usage = 0;
-   struct u_gralloc *gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
-   if (gralloc != NULL) {
-      u_gralloc_get_front_rendering_usage(gralloc, &front_rendering_usage);
-      u_gralloc_destroy(&gralloc);
-   }
-   VkBool32 shared_image = front_rendering_usage ? VK_TRUE : VK_FALSE;
-#endif
-
    /* FIXME: this will probably require an in-depth review */
    *properties = (struct vk_properties) {
       /* VkPhysicalDeviceProperties, limits and sparse props below */
@@ -1182,7 +1169,7 @@ get_device_properties(const struct v3dv_physical_device *device,
 
 #if DETECT_OS_ANDROID
       /* VkPhysicalDevicePresentationPropertiesANDROID */
-      .sharedImage = shared_image,
+      .sharedImage = !!vk_android_get_front_buffer_usage(),
 #endif
 
       /* VkPhysicalDeviceDrmPropertiesEXT */
