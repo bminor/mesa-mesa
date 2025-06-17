@@ -155,38 +155,6 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
    cs_wait_slot(b, SB_ID(IMM_FLUSH));
 
-   /* If we're in sync/trace more, we signal the debug object. */
-   if (instance->debug_flags & (PANVK_DEBUG_SYNC | PANVK_DEBUG_TRACE)) {
-      struct cs_index debug_sync_addr = cs_scratch_reg64(b, 0);
-      struct cs_index one = cs_scratch_reg32(b, 2);
-      struct cs_index error = cs_scratch_reg32(b, 3);
-      struct cs_index cmp_scratch = cs_scratch_reg32(b, 2);
-
-      cs_move32_to(b, one, 1);
-      cs_load64_to(b, debug_sync_addr, cs_subqueue_ctx_reg(b),
-                   offsetof(struct panvk_cs_subqueue_context, debug.syncobjs));
-      cs_add64(b, debug_sync_addr, debug_sync_addr,
-               sizeof(struct panvk_cs_sync32) * subqueue);
-      cs_load32_to(b, error, debug_sync_addr,
-                   offsetof(struct panvk_cs_sync32, error));
-      cs_wait_slots(b, dev->csf.sb.all_mask);
-      if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-         cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, one,
-                       debug_sync_addr, cs_now());
-      cs_match(b, error, cmp_scratch) {
-         cs_case(b, 0) {
-            /* Do nothing. */
-         }
-
-         cs_default(b) {
-            /* Overwrite the sync error with the first error we encountered. */
-            cs_store32(b, error, debug_sync_addr,
-                       offsetof(struct panvk_cs_sync32, error));
-            cs_flush_stores(b);
-         }
-      }
-   }
-
    /* If this is a secondary command buffer, we don't poison the reg file to
     * preserve the render pass context. We also don't poison the reg file if the
     * last render pass was suspended. In practice we could preserve only the

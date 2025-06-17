@@ -124,7 +124,6 @@ struct panvk_cs_subqueue_context {
       uint32_t layer_count;
    } tiler_oom_ctx;
    struct {
-      uint64_t syncobjs;
       struct {
          uint64_t cs;
       } tracebuf;

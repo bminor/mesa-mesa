@@ -73,7 +73,6 @@ struct panvk_gpu_queue {
    struct panvk_tiler_heap tiler_heap;
    struct panvk_desc_ringbuf render_desc_ringbuf;
    struct panvk_priv_mem syncobjs;
-   struct panvk_priv_mem debug_syncobjs;
 
    struct {
       struct vk_sync *sync;
