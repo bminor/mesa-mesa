@@ -1510,6 +1510,7 @@ anv_get_image_format_properties(
    VkImageCompressionPropertiesEXT *comp_props = NULL;
    VkHostImageCopyDevicePerformanceQueryEXT *host_props = NULL;
    bool from_wsi = false;
+   const bool is_sparse = info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
    /* Extract input structs */
    vk_foreach_struct_const(s, info->pNext) {
@@ -1818,6 +1819,20 @@ anv_get_image_format_properties(
        !devinfo->has_coarse_pixel_primitive_and_cb)
       goto unsupported;
 
+   if (is_sparse) {
+      if (anv_sparse_image_check_support(physical_device,
+                                         info->flags,
+                                         info->tiling,
+                                         sampleCounts,
+                                         info->type,
+                                         info->format,
+                                         &sampleCounts) != VK_SUCCESS) {
+         goto unsupported;
+      }
+   }
+
+   assert(sampleCounts != 0);
+
    /* From the bspec section entitled "Surface Layout and Tiling",
     * Gfx9 has a 256 GB limitation and Gfx11+ has a 16 TB limitation.
     */
@@ -2109,17 +2124,6 @@ void anv_GetPhysicalDeviceSparseImageFormatProperties2(
    if ((pFormatInfo->samples &
         img_props.imageFormatProperties.sampleCounts) == 0)
       return;
-
-   if (anv_sparse_image_check_support(physical_device,
-                                      VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
-                                      VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT,
-                                      pFormatInfo->tiling,
-                                      pFormatInfo->samples,
-                                      pFormatInfo->type,
-                                      pFormatInfo->format,
-                                      NULL /* valid_samples_out */) != VK_SUCCESS) {
-      return;
-   }
 
    VkExtent3D ds_granularity = {};
    VkSparseImageFormatProperties2 *ds_props_ptr = NULL;
