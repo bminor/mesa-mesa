@@ -43,6 +43,7 @@ dEQP-GLES31.functional.ssbo.layout.random.arrays_of_arrays.4
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_arrays.14
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.11
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.12
+dEQP-GLES31.functional.ssbo.layout.single_basic_array.packed.bvec3
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.mediump_uint
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.row_major_mediump_mat4
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.highp_mat3
