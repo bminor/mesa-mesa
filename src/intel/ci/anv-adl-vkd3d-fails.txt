@@ -1,5 +1,4 @@
 test_fence_wait_robustness,Crash
-test_planar_video_formats,Crash
 test_sampler_feedback_min_mip_level_array,Fail
 test_sampler_rounding,Fail
 test_sm67_dynamic_texture_offset,Fail

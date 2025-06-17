@@ -6104,6 +6104,7 @@ anv_can_hiz_clear_image(struct anv_cmd_buffer *cmd_buffer,
 bool
 anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
                          const struct anv_image *image,
+                         VkImageAspectFlags clear_aspect,
                          unsigned level,
                          const struct VkClearRect *clear_rect,
                          VkImageLayout layout,
