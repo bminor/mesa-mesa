@@ -696,7 +696,7 @@ llvm_pipeline_generic(struct draw_pt_middle_end *middle,
                    vert_info, prim_info);
 
    if (prim_info->count == 0) {
-      debug_printf("GS/IA didn't emit any vertices!\n");
+//      debug_printf("GS/IA didn't emit any vertices!\n");
    } else {
       draw_stats_clipper_primitives(draw, prim_info);
 
