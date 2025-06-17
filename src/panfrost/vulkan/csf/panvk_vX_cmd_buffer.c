@@ -122,6 +122,27 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       to_panvk_instance(dev->vk.physical->instance);
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
 
+   cs_wait_slots(b, dev->csf.sb.all_mask);
+
+   /* save CS error if non-zero */
+   if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+      struct cs_index sync_addr = cs_scratch_reg64(b, 0);
+      struct cs_index error = cs_scratch_reg32(b, 2);
+
+      cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
+                   offsetof(struct panvk_cs_subqueue_context, syncobjs));
+      cs_load32_to(b, error, sync_addr,
+                   sizeof(struct panvk_cs_sync64) * subqueue +
+                      offsetof(struct panvk_cs_sync64, error));
+      cs_flush_loads(b);
+
+      cs_if(b, MALI_CS_CONDITION_NEQUAL, error) {
+         cs_store32(b, error, cs_subqueue_ctx_reg(b),
+                    offsetof(struct panvk_cs_subqueue_context, last_error));
+         cs_flush_stores(b);
+      }
+   }
+
    /* We need a clean because descriptor/CS memory can be returned to the
     * command pool where they get recycled. If we don't clean dirty cache lines,
     * those cache lines might get evicted asynchronously and their content
@@ -129,7 +150,6 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
    struct cs_index flush_id = cs_scratch_reg32(b, 0);
 
    cs_move32_to(b, flush_id, 0);
-   cs_wait_slots(b, dev->csf.sb.all_mask);
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
                    MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));

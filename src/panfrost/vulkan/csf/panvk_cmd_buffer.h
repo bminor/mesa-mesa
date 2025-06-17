@@ -101,9 +101,12 @@ struct panvk_cs_occlusion_query {
 struct panvk_cs_subqueue_context {
    uint64_t syncobjs;
 #if PAN_ARCH == 10
+   /* must follow syncobjs immediately for cs_load_to */
    uint32_t iter_sb;
+#else
    uint32_t pad;
 #endif
+   uint32_t last_error;
    uint64_t reg_dump_addr;
    struct {
       struct panvk_cs_desc_ringbuf desc_ringbuf;

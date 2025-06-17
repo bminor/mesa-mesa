@@ -1333,6 +1333,14 @@ panvk_per_arch(gpu_queue_check_status)(struct vk_queue *vk_queue)
       .group_handle = queue->group_handle,
    };
 
+   /* check for CS error and treat it as device lost */
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+      const struct panvk_cs_subqueue_context *subq_ctx =
+         panvk_priv_mem_host_addr(queue->subqueues[i].context);
+      if (subq_ctx->last_error != 0)
+         return vk_queue_set_lost(&queue->vk, "CS_FAULT");
+   }
+
    int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE,
                             &state);
    if (!ret && !state.state)
