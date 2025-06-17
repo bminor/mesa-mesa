@@ -30,6 +30,7 @@
 #include "zink_format.h"
 #include "zink_program.h"
 #include "zink_screen.h"
+#include "zink_surface.h"
 #include "zink_kopper.h"
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -179,15 +180,6 @@ image_hic_transition(struct zink_screen *screen, struct zink_resource *res, VkIm
 }
 
 static bool
-equals_ivci(const void *a, const void *b)
-{
-   const uint8_t *pa = a;
-   const uint8_t *pb = b;
-   size_t offset = offsetof(VkImageViewCreateInfo, flags);
-   return memcmp(pa + offset, pb + offset, sizeof(VkImageViewCreateInfo) - offset) == 0;
-}
-
-static bool
 equals_bvci(const void *a, const void *b)
 {
    const uint8_t *pa = a;
@@ -208,18 +200,33 @@ debug_describe_zink_resource_object(char *buf, const struct zink_resource_object
 }
 
 void
+zink_destroy_resource_surface_cache(struct zink_screen *screen, struct hash_table *ht, bool is_buffer)
+{
+   if (is_buffer) {
+      hash_table_foreach_remove(ht, he) {
+         struct zink_buffer_view *bv = he->data;
+         VKSCR(DestroyBufferView)(screen->dev, bv->buffer_view, NULL);
+         FREE(bv);
+      }
+      ralloc_free(ht->table);
+   } else {
+      hash_table_foreach_remove(ht, he) {
+         struct zink_surface *surf = he->data;
+         VKSCR(DestroyImageView)(screen->dev, surf->image_view, NULL);
+         FREE(surf);
+      }
+      ralloc_free(ht->table);
+   }
+}
+
+void
 zink_destroy_resource_object(struct zink_screen *screen, struct zink_resource_object *obj)
 {
-   if (obj->is_buffer) {
-      while (util_dynarray_contains(&obj->views, VkBufferView))
-         VKSCR(DestroyBufferView)(screen->dev, util_dynarray_pop(&obj->views, VkBufferView), NULL);
-   } else {
-      while (util_dynarray_contains(&obj->views, VkImageView))
-         VKSCR(DestroyImageView)(screen->dev, util_dynarray_pop(&obj->views, VkImageView), NULL);
-   }
+   if (!obj->dt)
+      zink_destroy_resource_surface_cache(screen, &obj->surface_cache, obj->is_buffer);
+   simple_mtx_destroy(&obj->surface_mtx);
    if (!obj->dt && zink_debug & ZINK_DEBUG_MEM)
       zink_debug_mem_del(screen, obj->bo);
-   util_dynarray_fini(&obj->views);
    for (unsigned i = 0; i < ARRAY_SIZE(obj->copies); i++)
       util_dynarray_fini(&obj->copies[i]);
    if (obj->is_buffer) {
@@ -235,7 +242,6 @@ zink_destroy_resource_object(struct zink_screen *screen, struct zink_resource_ob
 #endif
    }
 
-   simple_mtx_destroy(&obj->view_lock);
    if (obj->dt) {
       FREE(obj->bo); //this is a dummy struct
    } else
@@ -254,16 +260,7 @@ zink_resource_destroy(struct pipe_screen *pscreen,
    if (pres->target == PIPE_BUFFER) {
       util_range_destroy(&res->valid_buffer_range);
       util_idalloc_mt_free(&screen->buffer_ids, res->base.buffer_id_unique);
-      assert(!_mesa_hash_table_num_entries(&res->bufferview_cache));
-      simple_mtx_destroy(&res->bufferview_mtx);
-      ralloc_free(res->bufferview_cache.table);
-   } else {
-      pipe_surface_reference(&res->surface, NULL);
-      assert(!_mesa_hash_table_num_entries(&res->surface_cache));
-      simple_mtx_destroy(&res->surface_mtx);
-      ralloc_free(res->surface_cache.table);
    }
-   /* no need to do anything for the caches, these objects own the resource lifetimes */
 
    free(res->modifiers);
    struct pipe_resource *pres_transient = res->transient ? &res->transient->base.b : NULL;
@@ -1252,6 +1249,7 @@ create_buffer(struct zink_screen *screen, struct zink_resource_object *obj,
          return roc_fail_and_cleanup_all;
       }
    }
+   _mesa_hash_table_init(&obj->surface_cache, NULL, NULL, equals_bvci);
    return roc_success;
 }
 
@@ -1483,7 +1481,7 @@ create_image(struct zink_screen *screen, struct zink_resource_object *obj,
             return roc_fail_and_cleanup_all;
          }
    }
-
+   _mesa_hash_table_init(&obj->surface_cache, NULL, NULL, equals_ivci);
    return roc_success;
 }
 
@@ -1495,8 +1493,6 @@ resource_object_create(struct zink_screen *screen, const struct pipe_resource *t
    unsigned max_level = 0;
    if (!obj)
       return NULL;
-   simple_mtx_init(&obj->view_lock, mtx_plain);
-   util_dynarray_init(&obj->views, NULL);
    u_rwlock_init(&obj->copy_lock);
    obj->unordered_read = true;
    obj->unordered_write = true;
@@ -1711,14 +1707,10 @@ resource_create(struct pipe_screen *pscreen,
       res->base.b.flags |= PIPE_RESOURCE_FLAG_DONT_MAP_DIRECTLY;
       res->base.allow_cpu_storage = false;
    }
+   simple_mtx_init(&res->obj->surface_mtx, mtx_plain);
    if (res->obj->is_buffer) {
       res->base.buffer_id_unique = util_idalloc_mt_alloc(&screen->buffer_ids);
-      _mesa_hash_table_init(&res->bufferview_cache, NULL, NULL, equals_bvci);
-      simple_mtx_init(&res->bufferview_mtx, mtx_plain);
    } else {
-      _mesa_hash_table_init(&res->surface_cache, NULL, NULL, equals_ivci);
-      simple_mtx_init(&res->surface_mtx, mtx_plain);
-
       /* immediately switch to GENERAL layout if possible to avoid extra sync */
       if (res->obj->image && res->queue != VK_QUEUE_FAMILY_FOREIGN_EXT && (res->obj->vkusage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) &&
           screen->driver_workarounds.general_layout)

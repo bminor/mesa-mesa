@@ -29,21 +29,17 @@
 void
 zink_destroy_surface(struct zink_screen *screen, struct pipe_surface *psurface);
 
-static inline void
-zink_surface_reference(struct zink_screen *screen, struct zink_surface **dst, struct zink_surface *src)
-{
-   struct zink_surface *old_dst = *dst;
-
-   if (pipe_reference_described(old_dst ? &old_dst->base.reference : NULL,
-                                src ? &src->base.reference : NULL,
-                                (debug_reference_descriptor)
-                                debug_describe_surface))
-      zink_destroy_surface(screen, &old_dst->base);
-   *dst = src;
-}
-
 void
 zink_context_surface_init(struct pipe_context *context);
+
+static inline bool
+equals_ivci(const void *a, const void *b)
+{
+   const uint8_t *pa = a;
+   const uint8_t *pb = b;
+   size_t offset = offsetof(VkImageViewCreateInfo, flags);
+   return memcmp(pa + offset, pb + offset, sizeof(VkImageViewCreateInfo) - offset) == 0;
+}
 
 VkImageViewCreateInfo
 create_ivci(struct zink_screen *screen,
@@ -56,6 +52,11 @@ zink_get_surface(struct zink_context *ctx,
             struct pipe_resource *pres,
             const struct pipe_surface *templ,
             VkImageViewCreateInfo *ivci);
+
+struct pipe_surface *
+zink_create_fb_surface(struct pipe_context *pctx,
+                       struct pipe_resource *pres,
+                       const struct pipe_surface *templ);
 
 struct zink_surface *
 zink_create_transient_surface(struct zink_context *ctx, struct zink_surface *surf, unsigned nr_samples);
@@ -74,12 +75,7 @@ zink_surface_clamp_viewtype(VkImageViewType viewType, unsigned first_layer, unsi
    return viewType;
 }
 
-bool
-zink_rebind_surface(struct zink_context *ctx, struct pipe_surface **psurface);
-
-void
-zink_surface_swapchain_update(struct zink_context *ctx, struct zink_surface *surface);
-void
-zink_surface_resolve_init(struct zink_screen *screen, struct zink_resource *res, enum pipe_format format);
+struct zink_surface *
+zink_surface_swapchain_update(struct zink_context *ctx, struct pipe_surface *psurf);
 
 #endif

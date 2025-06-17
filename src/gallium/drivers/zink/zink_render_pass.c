@@ -268,7 +268,7 @@ zink_render_update_swapchain(struct zink_context *ctx)
       if (zink_is_swapchain(res)) {
          has_swapchain = true;
          if (zink_kopper_acquire(ctx, res, UINT64_MAX))
-            zink_surface_swapchain_update(ctx, zink_surface(ctx->fb_cbufs[i]));
+            ctx->fb_cbufs[i] = (struct pipe_surface*)zink_surface_swapchain_update(ctx, &ctx->fb_state.cbufs[i]);
       }
    }
    return has_swapchain;

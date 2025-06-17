@@ -154,6 +154,7 @@ destroy_swapchain(struct zink_screen *screen, struct kopper_swapchain *cswap)
       util_dynarray_append(&screen->semaphores, VkSemaphore, cswap->images[i].acquire);
       simple_mtx_unlock(&screen->semaphores_lock);
       pipe_resource_reference(&cswap->images[i].readback, NULL);
+      zink_destroy_resource_surface_cache(screen, &cswap->images[i].surface_cache, false);
    }
    free(cswap->images);
    hash_table_foreach(cswap->presents, he) {
@@ -367,8 +368,10 @@ kopper_GetSwapchainImages(struct zink_screen *screen, struct kopper_swapchain *c
    error = VKSCR(GetSwapchainImagesKHR)(screen->dev, cswap->swapchain, &cswap->num_images, images);
    assert(cswap->num_images <= ARRAY_SIZE(images));
    if (zink_screen_handle_vkresult(screen, error)) {
-      for (unsigned i = 0; i < cswap->num_images; i++)
+      for (unsigned i = 0; i < cswap->num_images; i++) {
          cswap->images[i].image = images[i];
+         _mesa_hash_table_init(&cswap->images[i].surface_cache, NULL, NULL, equals_ivci);
+      }
    }
    cswap->max_acquires = cswap->num_images - cswap->scci.minImageCount + 1;
    return error;
@@ -1134,8 +1137,7 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx)
    res->base.b.height0 = ctx->fb_state.height;
    pipe_resource_reference(&pz, NULL);
 
-   pipe_surface_unref(&ctx->base, &ctx->fb_zsbuf);
-   ctx->fb_zsbuf = ctx->base.create_surface(&ctx->base, &res->base.b, &ctx->fb_state.zsbuf);
+   ctx->fb_zsbuf = zink_create_fb_surface(&ctx->base, &res->base.b, &ctx->fb_state.zsbuf);
 }
 
 bool

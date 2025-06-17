@@ -1192,16 +1192,15 @@ struct zink_resource_object {
    struct util_dynarray copies[16]; //regions being copied to; for barrier omission
 
    VkBuffer storage_buffer;
-   simple_mtx_t view_lock;
-   uint32_t view_prune_count; //how many views to prune
-   uint32_t view_prune_timeline; //when to prune
-   struct util_dynarray views;
 
    union {
       VkBuffer buffer;
       VkImage image;
    };
    VkDeviceAddress bda;
+
+   struct hash_table surface_cache;
+   simple_mtx_t surface_mtx;
 
    VkSampleLocationsInfoEXT zs_evaluate;
    bool needs_zs_evaluate;
@@ -1247,7 +1246,6 @@ struct zink_resource {
    enum pipe_format internal_format:16;
 
    struct zink_resource_object *obj;
-   struct pipe_surface *surface; //for swapchain images
    struct zink_resource *transient; //for msrtt without EXT_multisampled_render_to_single_sampled
    uint32_t queue;
    union {
@@ -1291,17 +1289,6 @@ struct zink_resource {
 
    VkPipelineStageFlagBits gfx_barrier;
    VkAccessFlagBits barrier_access[2]; //gfx, compute
-
-   union {
-      struct {
-         struct hash_table bufferview_cache;
-         simple_mtx_t bufferview_mtx;
-      };
-      struct {
-         struct hash_table surface_cache;
-         simple_mtx_t surface_mtx;
-      };
-   };
 
    VkRect2D damage;
    bool use_damage;
@@ -1542,14 +1529,8 @@ struct zink_surface {
    struct pipe_surface base;
    /* all the info for creating a new imageview */
    VkImageViewCreateInfo ivci;
-   bool is_swapchain;
    /* the current imageview */
    VkImageView image_view;
-   /* array of imageviews for swapchains, one for each image */
-   VkImageView *swapchain;
-   unsigned swapchain_size;
-   void *obj; //backing resource object; used to determine rebinds
-   void *dt_swapchain; //current swapchain object; used to determine swapchain rebinds
 };
 
 /* use this cast for internal surfaces */
@@ -1569,7 +1550,6 @@ struct zink_sampler_state {
 };
 
 struct zink_buffer_view {
-   struct pipe_reference reference;
    struct pipe_resource *pres;
    VkBufferViewCreateInfo bvci;
    VkBufferView buffer_view;
@@ -1578,6 +1558,8 @@ struct zink_buffer_view {
 
 struct zink_sampler_view {
    struct pipe_sampler_view base;
+   VkImageViewCreateInfo ivci;
+   struct zink_resource_object *obj;
    union {
       struct zink_surface *image_view;
       struct zink_buffer_view *buffer_view;
@@ -1592,6 +1574,7 @@ struct zink_sampler_view {
 
 struct zink_image_view {
    struct pipe_image_view base;
+   struct zink_resource_object *obj;
    union {
       struct zink_surface *surface;
       struct zink_buffer_view *buffer_view;

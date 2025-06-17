@@ -27,6 +27,7 @@
 #include "zink_format.h"
 #include "zink_inlines.h"
 #include "zink_query.h"
+#include "zink_surface.h"
 
 #include "util/u_blitter.h"
 #include "util/format/u_format.h"
@@ -448,7 +449,7 @@ zink_clear_texture_dynamic(struct pipe_context *pctx,
                      0 <= box->z && u_minify(pres->target == PIPE_TEXTURE_3D ? pres->depth0 : pres->array_size, level) >= box->z + box->depth;
 
    struct pipe_surface psurf = create_clear_surface(pctx, pres, level, box);
-   struct pipe_surface *surf = pctx->create_surface(pctx, pres, &psurf);
+   struct pipe_surface *surf = zink_create_fb_surface(pctx, pres, &psurf);
 
    VkRenderingAttachmentInfo att = {0};
    att.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -512,7 +513,6 @@ zink_clear_texture_dynamic(struct pipe_context *pctx,
    }
    VKCTX(CmdEndRendering)(cmdbuf);
    zink_batch_reference_resource_rw(ctx, res, true);
-   pctx->surface_destroy(pctx, surf);
 }
 
 void

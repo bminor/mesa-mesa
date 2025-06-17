@@ -29,6 +29,7 @@
 
 #include "kopper_interface.h"
 #include "util/u_queue.h"
+#include "util/hash_table.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +50,8 @@ struct kopper_swapchain_image {
    struct pipe_resource *readback;
    VkSemaphore acquire;
    VkImageLayout layout;
+
+   struct hash_table surface_cache;
 };
 
 struct kopper_swapchain {
