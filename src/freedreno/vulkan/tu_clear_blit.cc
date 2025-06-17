@@ -1600,7 +1600,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
    enum r3d_type type;
    if (clear) {
       type = R3D_CLEAR;
-   } else if ((blit_param & R3D_COPY) && tu_pipe_format_is_float16(src_format)) {
+   } else if ((blit_param & R3D_COPY) && util_format_is_float16(src_format)) {
       /* Avoid canonicalizing NaNs in copies by using the special half-float
        * path that uses half regs.
        */
@@ -2446,7 +2446,7 @@ tu_copy_buffer_to_image(struct tu_cmd_buffer *cmd,
    bool has_unaligned = CHIP >= A7XX; /* If unaligned buffer copies are supported. */
    unsigned blit_param = 0;
    if (src_format == PIPE_FORMAT_Y8_UNORM ||
-       tu_pipe_format_is_float16(src_format)) {
+       util_format_is_float16(src_format)) {
       ops = &r3d_ops<CHIP>;
       blit_param = R3D_COPY;
       has_unaligned = false;
@@ -2643,7 +2643,7 @@ tu_copy_image_to_buffer(struct tu_cmd_buffer *cmd,
    /* note: could use "R8_UNORM" when no UBWC */
    unsigned blit_param = 0;
    if (dst_format == PIPE_FORMAT_Y8_UNORM ||
-       tu_pipe_format_is_float16(src_format)) {
+       util_format_is_float16(src_format)) {
       ops = &r3d_ops<CHIP>;
       blit_param = R3D_COPY;
    }
@@ -2873,8 +2873,8 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
    unsigned blit_param = 0;
    if (dst_format == PIPE_FORMAT_Y8_UNORM ||
        src_format == PIPE_FORMAT_Y8_UNORM ||
-       tu_pipe_format_is_float16(src_format) ||
-       tu_pipe_format_is_float16(dst_format)) {
+       util_format_is_float16(src_format) ||
+       util_format_is_float16(dst_format)) {
       ops = &r3d_ops<CHIP>;
       blit_param = R3D_COPY;
    }
