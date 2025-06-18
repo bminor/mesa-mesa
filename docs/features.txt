@@ -735,8 +735,6 @@ Rusticl OpenCL 1.1 -- all DONE:
 Rusticl OpenCL 1.2 -- all DONE:
 
   Custom devices                                        DONE
-  Built-in kernels                                      in progress
-  Device partitioning                                   not started
   Separate compilation and linking of programs          DONE
   Extend cl_mem_flags                                   DONE
   clEnqueueFillBuffer, clEnqueueFillImage               DONE
@@ -749,7 +747,6 @@ Rusticl OpenCL 1.2 -- all DONE:
   clEnqueueMarkerWithWaitList                           DONE
   clEnqueueBarrierWithWaitList                          DONE
   clUnloadPlatformCompiler                              DONE
-  cl_khr_fp64                                           in progress (iris, llvmpipe, nvc0, radeonsi, zink, Available with environment variable RUSTICL_FEATURES=fp64, device dependent.)
   printf                                                DONE
   CL_KERNEL_ATTRIBUTES for clGetKernelInfo              DONE
   OpenCL C 1.2                                          DONE
@@ -818,6 +815,10 @@ Rusticl Optional Core Features:
   - CL_Rx                                               not started
   - CL_RGx                                              not started
   - CL_RGBx                                             not started
+  Optional features for OpenCL 1.2                      in progress
+  - Built-in kernels                                    in progress
+  - Device partitioning                                 not started
+  - cl_khr_fp64                                         in progress (iris, llvmpipe, nvc0, radeonsi, zink, Available with environment variable RUSTICL_FEATURES=fp64, device dependent.)
 
 
 Rusticl extensions that are not part of any OpenCL version:
