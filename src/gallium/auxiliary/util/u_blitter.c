@@ -1926,6 +1926,65 @@ static void do_blits(struct blitter_context_priv *ctx,
    }
 }
 
+bool util_blitter_blit_with_txf(struct blitter_context *blitter,
+                                const struct pipe_box *dstbox,
+                                struct pipe_sampler_view *src,
+                                const struct pipe_box *srcbox,
+                                unsigned src_width0, unsigned src_height0,
+                                unsigned filter)
+{
+   struct blitter_context_priv *ctx = (struct blitter_context_priv*)blitter;
+   const struct util_format_description *src_desc =
+         util_format_description(src->format);
+   bool src_has_stencil = util_format_has_stencil(src_desc);
+
+   bool is_scaled = dstbox->width != abs(srcbox->width) ||
+                    dstbox->height != abs(srcbox->height) ||
+                    dstbox->depth != abs(srcbox->depth);
+
+   if (src_has_stencil || !is_scaled)
+      filter = PIPE_TEX_FILTER_NEAREST;
+
+   bool use_txf = false;
+
+   /* Don't support scaled blits. The TXF shader uses F2I for rounding. */
+   if (ctx->has_txf_txq &&
+       !is_scaled &&
+       filter == PIPE_TEX_FILTER_NEAREST &&
+       src->target != PIPE_TEXTURE_CUBE &&
+       src->target != PIPE_TEXTURE_CUBE_ARRAY) {
+      int src_width = u_minify(src_width0, src->u.tex.first_level);
+      int src_height = u_minify(src_height0, src->u.tex.first_level);
+      int src_depth = src->u.tex.last_layer + 1;
+      struct pipe_box box = *srcbox;
+
+      /* Eliminate negative width/height/depth. */
+      if (box.width < 0) {
+         box.x += box.width;
+         box.width *= -1;
+      }
+      if (box.height < 0) {
+         box.y += box.height;
+         box.height *= -1;
+      }
+      if (box.depth < 0) {
+         box.z += box.depth;
+         box.depth *= -1;
+      }
+
+      /* See if srcbox is in bounds. TXF doesn't clamp the coordinates. */
+      use_txf =
+         box.x >= 0 && box.x < src_width &&
+         box.y >= 0 && box.y < src_height &&
+         box.z >= 0 && box.z < src_depth &&
+         box.x + box.width > 0 && box.x + box.width <= src_width &&
+         box.y + box.height > 0 && box.y + box.height <= src_height &&
+         box.z + box.depth > 0 && box.z + box.depth <= src_depth;
+   }
+
+   return use_txf;
+}
+
 void util_blitter_blit_generic(struct blitter_context *blitter,
                                struct pipe_surface *dst,
                                const struct pipe_box *dstbox,
@@ -1974,42 +2033,8 @@ void util_blitter_blit_generic(struct blitter_context *blitter,
    if (src_has_stencil || !is_scaled)
       filter = PIPE_TEX_FILTER_NEAREST;
 
-   bool use_txf = false;
-
-   /* Don't support scaled blits. The TXF shader uses F2I for rounding. */
-   if (ctx->has_txf_txq &&
-       !is_scaled &&
-       filter == PIPE_TEX_FILTER_NEAREST &&
-       src->target != PIPE_TEXTURE_CUBE &&
-       src->target != PIPE_TEXTURE_CUBE_ARRAY) {
-      int src_width = u_minify(src_width0, src->u.tex.first_level);
-      int src_height = u_minify(src_height0, src->u.tex.first_level);
-      int src_depth = src->u.tex.last_layer + 1;
-      struct pipe_box box = *srcbox;
-
-      /* Eliminate negative width/height/depth. */
-      if (box.width < 0) {
-         box.x += box.width;
-         box.width *= -1;
-      }
-      if (box.height < 0) {
-         box.y += box.height;
-         box.height *= -1;
-      }
-      if (box.depth < 0) {
-         box.z += box.depth;
-         box.depth *= -1;
-      }
-
-      /* See if srcbox is in bounds. TXF doesn't clamp the coordinates. */
-      use_txf =
-         box.x >= 0 && box.x < src_width &&
-         box.y >= 0 && box.y < src_height &&
-         box.z >= 0 && box.z < src_depth &&
-         box.x + box.width > 0 && box.x + box.width <= src_width &&
-         box.y + box.height > 0 && box.y + box.height <= src_height &&
-         box.z + box.depth > 0 && box.z + box.depth <= src_depth;
-   }
+   bool use_txf = util_blitter_blit_with_txf(blitter, dstbox, src, srcbox,
+                                             src_width0, src_height0, filter);
 
    /* Check whether the states are properly saved. */
    util_blitter_set_running_flag(blitter);

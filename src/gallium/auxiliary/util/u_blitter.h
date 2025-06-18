@@ -243,6 +243,18 @@ void util_blitter_copy_texture(struct blitter_context *blitter,
                                const struct pipe_box *srcbox);
 
 /**
+ * Helper to determine if util_blitter_blit_generic() will use txf.  If
+ * the driver is providing an fs_override, it needs to know whether
+ * txf will be used.
+ */
+bool util_blitter_blit_with_txf(struct blitter_context *blitter,
+                                const struct pipe_box *dstbox,
+                                struct pipe_sampler_view *src,
+                                const struct pipe_box *srcbox,
+                                unsigned src_width0, unsigned src_height0,
+                                unsigned filter);
+
+/**
  * This is a generic implementation of pipe->blit, which accepts
  * sampler/surface views instead of resources.
  *
