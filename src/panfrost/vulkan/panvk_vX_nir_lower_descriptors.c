@@ -71,6 +71,7 @@ struct lower_desc_ctx {
    struct panvk_shader_desc_info desc_info;
    struct hash_table_u64 *ht;
    bool add_bounds_checks;
+   bool null_descriptor_support;
    nir_address_format ubo_addr_format;
    nir_address_format ssbo_addr_format;
    struct panvk_shader *shader;
@@ -563,16 +564,29 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
 }
 
 static nir_def *
+is_nulldesc(nir_builder *b, nir_deref_instr *deref,
+            enum VkDescriptorType desc_type, const struct lower_desc_ctx *ctx)
+{
+   nir_def *desc_header =
+      load_resource_deref_desc(b, deref, desc_type, 0, 1, 16, ctx);
+   /* If the first 16 bits are all zero (specifically the descriptor type),
+    * this is a nulldescriptor, in which case we need to avoid the "add 1"
+    * when loading the size from the descriptor. */
+   return nir_ieq_imm(b, desc_header, 0);
+}
+
+static nir_def *
 load_tex_size(nir_builder *b, nir_deref_instr *deref, enum glsl_sampler_dim dim,
               bool is_array, const struct lower_desc_ctx *ctx)
 {
+   nir_def *loaded_size;
    if (dim == GLSL_SAMPLER_DIM_BUF) {
       nir_def *tex_w = load_resource_deref_desc(
          b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, 1, 16, ctx);
 
       /* S dimension is 16 bits wide. We don't support combining S,T dimensions
        * to allow large buffers yet. */
-      return nir_iadd_imm(b, nir_u2u32(b, tex_w), 1);
+      loaded_size = nir_iadd_imm(b, nir_u2u32(b, tex_w), 1);
    } else {
       nir_def *tex_w_h = load_resource_deref_desc(
          b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, 2, 16, ctx);
@@ -591,8 +605,17 @@ load_tex_size(nir_builder *b, nir_deref_instr *deref, enum glsl_sampler_dim dim,
       /* The sizes are provided as 16-bit values with 1 subtracted so
        * convert to 32-bit and add 1.
        */
-      return nir_iadd_imm(b, nir_u2u32(b, tex_sz), 1);
+      loaded_size = nir_iadd_imm(b, nir_u2u32(b, tex_sz), 1);
    }
+
+   if (PAN_ARCH >= 9 && ctx->null_descriptor_support) {
+      nir_def *nulldesc =
+         is_nulldesc(b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, ctx);
+      return nir_bcsel(b, nulldesc, nir_u2u32(b, nir_imm_int(b, 0)),
+                       loaded_size);
+   }
+
+   return loaded_size;
 }
 
 static nir_def *
@@ -645,7 +668,15 @@ load_tex_levels(nir_builder *b, nir_deref_instr *deref,
    nir_def *tex_word2 = load_resource_deref_desc(
       b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 8, 1, 32, ctx);
    nir_def *lod_count = nir_iand_imm(b, nir_ushr_imm(b, tex_word2, 16), 0x1f);
-   return nir_iadd_imm(b, lod_count, 1);
+   nir_def *loaded_levels = nir_iadd_imm(b, lod_count, 1);
+
+   if (PAN_ARCH >= 9 && ctx->null_descriptor_support) {
+      nir_def *nulldesc =
+         is_nulldesc(b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, ctx);
+      return nir_bcsel(b, nulldesc, nir_imm_int(b, 0), loaded_levels);
+   }
+
+   return loaded_levels;
 }
 
 static nir_def *
@@ -658,7 +689,15 @@ load_tex_samples(nir_builder *b, nir_deref_instr *deref,
    nir_def *tex_word3 = load_resource_deref_desc(
       b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 12, 1, 32, ctx);
    nir_def *sample_count = nir_iand_imm(b, nir_ushr_imm(b, tex_word3, 13), 0x7);
-   return nir_ishl(b, nir_imm_int(b, 1), sample_count);
+   nir_def *loaded_samples = nir_ishl(b, nir_imm_int(b, 1), sample_count);
+
+   if (PAN_ARCH >= 9 && ctx->null_descriptor_support) {
+      nir_def *nulldesc =
+         is_nulldesc(b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, ctx);
+      return nir_bcsel(b, nulldesc, nir_imm_int(b, 0), loaded_samples);
+   }
+
+   return loaded_samples;
 }
 
 static nir_def *
@@ -1467,6 +1506,7 @@ panvk_per_arch(nir_lower_descriptors)(
          rs->uniform_buffers !=
             VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT ||
          rs->images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT,
+      .null_descriptor_support = dev->vk.enabled_features.nullDescriptor,
    };
    bool progress = false;
 
