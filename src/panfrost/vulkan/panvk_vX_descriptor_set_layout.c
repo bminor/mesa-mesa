@@ -158,9 +158,8 @@ panvk_per_arch(CreateDescriptorSetLayout)(
       }
 
       if (binding_layout->type & VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-         /* One extra descriptor at the start to use as a buffer descriptor. */
          binding_layout->desc_count =
-            DIV_ROUND_UP(binding->descriptorCount, PANVK_DESCRIPTOR_SIZE) + 1;
+            panvk_get_iub_desc_count(binding->descriptorCount);
       } else {
          binding_layout->desc_count = binding->descriptorCount;
       }

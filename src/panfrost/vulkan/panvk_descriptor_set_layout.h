@@ -126,6 +126,22 @@ panvk_get_desc_stride(const struct panvk_descriptor_set_binding_layout *layout)
       ? layout->textures_per_desc + layout->samplers_per_desc : 1;
 }
 
+static inline const uint32_t
+panvk_get_iub_desc_count(uint32_t size)
+{
+   /* Each inline uniform block contains an internal buffer descriptor, in
+    * addition to as many descriptors as needed to contain the requested size
+    * in bytes. */
+   return DIV_ROUND_UP(size, PANVK_DESCRIPTOR_SIZE) + 1;
+}
+
+static inline const uint32_t
+panvk_get_iub_size(uint32_t desc_count)
+{
+   assert(desc_count >= 1);
+   return (desc_count - 1) * PANVK_DESCRIPTOR_SIZE;
+}
+
 struct panvk_subdesc_info {
    VkDescriptorType type;
    uint8_t plane;

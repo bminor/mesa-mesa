@@ -361,8 +361,7 @@ panvk_init_iub(struct panvk_descriptor_set *set, uint32_t binding)
       panvk_get_desc_index(binding_layout, 1, NO_SUBDESC) *
       PANVK_DESCRIPTOR_SIZE;
    uint64_t iub_data_dev = set->descs.dev + iub_data_offset;
-   uint32_t iub_size_dev =
-      (binding_layout->desc_count - 1) * PANVK_DESCRIPTOR_SIZE;
+   uint32_t iub_size_dev = panvk_get_iub_size(binding_layout->desc_count);
 
 #if PAN_ARCH < 9
    struct {
