@@ -1,0 +1,31 @@
+# First test run details: https://gallo.pages.freedesktop.org/-/mesa/-/jobs/78930621/artifacts/results/test_result.html
+
+## First run result==fail
+
+x86_64 CtsGraphicsTestCases android.graphics.cts.VulkanFeaturesTest#testVulkanHardwareFeatures
+
+### Must support the core Vulkan 1.1
+x86_64 CtsGraphicsTestCases android.graphics.cts.VulkanFeaturesTest#testVulkanApplicationBinaryInterfaceRequirements
+
+### no support for ABP 2021
+x86_64 CtsGraphicsTestCases android.graphics.cts.VulkanFeaturesTest#testAndroidBaselineProfile2021Support
+
+### crashes with GL error 1282
+x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferVertexBuffer_BLOB
+x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuWrite_BLOB
+x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuRead_BLOB
+
+### assertion error
+x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferVertexBuffer_BLOB
+x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuWrite_BLOB
+x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuRead_BLOB
+
+### org.junit.AssumptionViolatedException: AVIF is not supported on this device, skip this test.
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[0]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[1]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[2]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[3]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[4]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[5]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[6]
+x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[7]
