@@ -3780,7 +3780,7 @@ framebuffer_surface_init_transient(struct zink_context *ctx, struct pipe_surface
 {
    unsigned nr_samples = idx == PIPE_MAX_COLOR_BUFS ? ctx->fb_state.zsbuf.nr_samples : ctx->fb_state.cbufs[idx].nr_samples;
    if (!zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled)
-      ctx->transients[idx] = zink_create_transient_surface(ctx, zink_surface(psurf), nr_samples);
+      ctx->transients[idx] = zink_create_transient_surface(ctx, psurf, nr_samples);
 }
 
 static void

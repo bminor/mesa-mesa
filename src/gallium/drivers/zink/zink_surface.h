@@ -59,7 +59,7 @@ zink_create_fb_surface(struct pipe_context *pctx,
                        const struct pipe_surface *templ);
 
 struct zink_surface *
-zink_create_transient_surface(struct zink_context *ctx, struct zink_surface *surf, unsigned nr_samples);
+zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surface *psurf, unsigned nr_samples);
 
 /* cube image types are clamped by gallium rules to 2D or 2D_ARRAY viewtypes if not using all layers */
 static inline VkImageViewType

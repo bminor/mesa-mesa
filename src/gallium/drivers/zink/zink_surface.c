@@ -277,14 +277,14 @@ zink_create_surface(struct pipe_context *pctx,
 }
 
 struct zink_surface *
-zink_create_transient_surface(struct zink_context *ctx, struct zink_surface *surf, unsigned nr_samples)
+zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surface *psurf, unsigned nr_samples)
 {
-   struct zink_resource *res = zink_resource(surf->base.texture);
+   struct zink_resource *res = zink_resource(psurf->texture);
    struct zink_resource *transient = res->transient;
    assert(nr_samples > 1);
    if (!res->transient) {
       /* transient fb attachment: not cached */
-      struct pipe_resource rtempl = *surf->base.texture;
+      struct pipe_resource rtempl = *psurf->texture;
       rtempl.nr_samples = nr_samples;
       rtempl.bind |= ZINK_BIND_TRANSIENT;
       res->transient = zink_resource(ctx->base.screen->resource_create(ctx->base.screen, &rtempl));
@@ -295,10 +295,10 @@ zink_create_transient_surface(struct zink_context *ctx, struct zink_surface *sur
       }
    }
 
-   VkImageViewCreateInfo ivci = surf->ivci;
+   VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(ctx->base.screen), res, psurf);
    ivci.image = transient->obj->image;
    ivci.pNext = NULL;
-   return zink_get_surface(ctx, &transient->base.b, &surf->base, &ivci);
+   return zink_get_surface(ctx, &transient->base.b, psurf, &ivci);
 }
 
 void
