@@ -750,6 +750,13 @@ update_descriptor_state_ssbo_lazy(struct zink_context *ctx, gl_shader_stage shad
    return res;
 }
 
+ALWAYS_INLINE static bool
+sampler_surface_needs_clamped(const struct zink_surface *surface)
+{
+   return (surface->base.format == PIPE_FORMAT_Z24X8_UNORM && util_format_get_depth_only(surface->base.texture->format) == PIPE_FORMAT_Z32_FLOAT) ||
+          (surface->base.format == PIPE_FORMAT_Z24_UNORM_S8_UINT && util_format_get_depth_only(surface->base.texture->format) == PIPE_FORMAT_Z32_FLOAT);
+}
+
 ALWAYS_INLINE static struct zink_resource *
 update_descriptor_state_sampler(struct zink_context *ctx, gl_shader_stage shader, unsigned slot, struct zink_resource *res)
 {
@@ -773,8 +780,7 @@ update_descriptor_state_sampler(struct zink_context *ctx, gl_shader_stage shader
          if (!screen->have_D24_UNORM_S8_UINT &&
              ctx->sampler_states[shader][slot] && ctx->sampler_states[shader][slot]->sampler_clamped) {
             struct zink_sampler_state *state = ctx->sampler_states[shader][slot];
-            VkSampler sampler = (surface->base.format == PIPE_FORMAT_Z24X8_UNORM && surface->ivci.format == VK_FORMAT_D32_SFLOAT) ||
-                                (surface->base.format == PIPE_FORMAT_Z24_UNORM_S8_UINT && surface->ivci.format == VK_FORMAT_D32_SFLOAT_S8_UINT) ?
+            VkSampler sampler = sampler_surface_needs_clamped(surface) ?
                                 state->sampler_clamped :
                                 state->sampler;
             if (ctx->di.textures[shader][slot].sampler != sampler) {
@@ -869,9 +875,7 @@ zink_bind_sampler_states(struct pipe_context *pctx,
          ctx->di.textures[shader][start_slot + i].sampler = state->sampler;
          if (state->sampler_clamped && !screen->have_D24_UNORM_S8_UINT) {
             struct zink_surface *surface = get_imageview_for_binding(ctx, shader, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, start_slot + i);
-            if (surface &&
-                ((surface->base.format == PIPE_FORMAT_Z24X8_UNORM && surface->ivci.format == VK_FORMAT_D32_SFLOAT) ||
-                 (surface->base.format == PIPE_FORMAT_Z24_UNORM_S8_UINT && surface->ivci.format == VK_FORMAT_D32_SFLOAT_S8_UINT)))
+            if (surface && sampler_surface_needs_clamped(surface))
                ctx->di.textures[shader][start_slot + i].sampler = state->sampler_clamped;
          }
       } else {
