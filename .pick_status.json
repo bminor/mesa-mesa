@@ -6884,7 +6884,7 @@
         "description": "u_gralloc/mapper4: fill u_gralloc_buffer_color_info properly",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ee42e2166d836251603b2b3e4801705d42d8f83d",
         "notes": null
