@@ -585,9 +585,6 @@ lima_surface_create(struct pipe_context *pctx,
    psurf->first_layer = surf_tmpl->first_layer;
    psurf->last_layer = surf_tmpl->last_layer;
 
-   surf->tiled_w = align(u_minify(pres->width0, level), 16) >> 4;
-   surf->tiled_h = align(u_minify(pres->height0, level), 16) >> 4;
-
    surf->reload = 0;
    if (util_format_has_stencil(util_format_description(psurf->format)))
       surf->reload |= PIPE_CLEAR_STENCIL;
