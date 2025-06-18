@@ -2909,13 +2909,7 @@ update_res_sampler_layouts(struct zink_context *ctx, struct zink_resource *res)
 static VkImageView
 prep_fb_attachment(struct zink_context *ctx, struct zink_surface *surf, unsigned i)
 {
-   struct zink_resource *res;
-   if (!surf) {
-      return VK_NULL_HANDLE;
-   } else {
-      res = zink_resource(surf->base.texture);
-      zink_batch_resource_usage_set(ctx->bs, res, true, false);
-   }
+   struct zink_resource *res = zink_resource(surf->base.texture);
 
    VkAccessFlags access;
    VkPipelineStageFlags pipeline;
@@ -2926,6 +2920,7 @@ prep_fb_attachment(struct zink_context *ctx, struct zink_surface *surf, unsigned
       if (!i)
          zink_update_fbfetch(ctx);
    }
+   zink_batch_resource_usage_set(ctx->bs, res, true, false);
    if (ctx->blitting)
       return surf->image_view;
    VkImageLayout layout;
