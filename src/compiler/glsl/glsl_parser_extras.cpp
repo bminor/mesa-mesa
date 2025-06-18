@@ -2507,9 +2507,6 @@ do_common_optimization(exec_list *ir, bool linked,
    OPT(do_if_simplification, ir);
    OPT(opt_flatten_nested_if_blocks, ir);
 
-   if (options->OptimizeForAOS && !linked)
-      OPT(opt_flip_matrices, ir);
-
    OPT(do_dead_code_unlinked, ir);
    OPT(do_tree_grafting, ir);
    OPT(do_minmax_prune, ir);

@@ -857,9 +857,7 @@ prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
 
    /* ARB_vp: */
    if (prog->arb.IsPositionInvariant) {
-      NIR_PASS(_, s, st_nir_lower_position_invariant,
-                 ctx->Const.ShaderCompilerOptions[MESA_SHADER_VERTEX].OptimizeForAOS,
-                 prog->Parameters);
+      NIR_PASS(_, s, st_nir_lower_position_invariant, prog->Parameters);
    }
 
    /* Add OPTION ARB_fog_exp code */

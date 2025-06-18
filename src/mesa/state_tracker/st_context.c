@@ -71,8 +71,6 @@
 #include "compiler/glsl/glsl_parser_extras.h"
 #include "nir.h"
 
-DEBUG_GET_ONCE_BOOL_OPTION(mesa_mvp_dp4, "MESA_MVP_DP4", false)
-
 void
 st_invalidate_buffers(struct st_context *st)
 {
@@ -832,12 +830,6 @@ st_create_context(gl_api api, struct pipe_context *pipe,
 
    if (pipe->screen->get_disk_shader_cache)
       ctx->Cache = pipe->screen->get_disk_shader_cache(pipe->screen);
-
-   /* XXX: need a capability bit in gallium to query if the pipe
-    * driver prefers DP4 or MUL/MAD for vertex transformation.
-    */
-   if (debug_get_option_mesa_mvp_dp4())
-      ctx->Const.ShaderCompilerOptions[MESA_SHADER_VERTEX].OptimizeForAOS = GL_TRUE;
 
    if (pipe->screen->caps.invalidate_buffer)
       ctx->has_invalidate_buffer = true;

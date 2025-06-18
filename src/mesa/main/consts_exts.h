@@ -353,15 +353,6 @@ struct gl_shader_compiler_options
 
    GLuint MaxIfDepth;               /**< Maximum nested IF blocks */
 
-   /**
-    * Optimize code for array of structures backends.
-    *
-    * This is a proxy for:
-    *   - preferring DP4 instructions (rather than MUL/MAD) for
-    *     matrix * vector operations, such as position transformation.
-    */
-   GLboolean OptimizeForAOS;
-
    /** Clamp UBO and SSBO block indices so they don't go out-of-bounds. */
    GLboolean ClampBlockIndicesToArrayBounds;
 

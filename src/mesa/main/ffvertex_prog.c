@@ -281,7 +281,6 @@ static void make_state_key( struct gl_context *ctx, struct state_key *key )
 struct tnl_program {
    const struct state_key *state;
    struct gl_program_parameter_list *state_params;
-   GLboolean mvp_with_dp4;
 
    nir_builder *b;
 
@@ -457,18 +456,11 @@ get_eye_position(struct tnl_program *p)
    if (!p->eye_position) {
       nir_def *pos =
          load_input_vec4(p, VERT_ATTRIB_POS);
-      if (p->mvp_with_dp4) {
-         nir_def *modelview[4];
-         load_state_mat4(p, modelview, STATE_MODELVIEW_MATRIX, 0);
-         p->eye_position =
-            emit_matrix_transform_vec4(p->b, modelview, pos);
-      } else {
-         nir_def *modelview[4];
-         load_state_mat4(p, modelview,
-                         STATE_MODELVIEW_MATRIX_TRANSPOSE, 0);
-         p->eye_position =
-            emit_transpose_matrix_transform_vec4(p->b, modelview, pos);
-      }
+      nir_def *modelview[4];
+      load_state_mat4(p, modelview,
+                      STATE_MODELVIEW_MATRIX_TRANSPOSE, 0);
+      p->eye_position =
+         emit_transpose_matrix_transform_vec4(p->b, modelview, pos);
    }
 
    return p->eye_position;
@@ -1216,17 +1208,11 @@ static void build_texture_transform( struct tnl_program *p )
 
       if (p->state->unit[i].texmat_enabled) {
          nir_def *texmat[4];
-         if (p->mvp_with_dp4) {
-            load_state_mat4(p, texmat, STATE_TEXTURE_MATRIX, i);
-            texcoord =
-               emit_matrix_transform_vec4(p->b, texmat, texcoord);
-         } else {
-            load_state_mat4(p, texmat,
-                            STATE_TEXTURE_MATRIX_TRANSPOSE, i);
-            texcoord =
-               emit_transpose_matrix_transform_vec4(p->b, texmat,
-                                                      texcoord);
-         }
+         load_state_mat4(p, texmat,
+                         STATE_TEXTURE_MATRIX_TRANSPOSE, i);
+         texcoord =
+            emit_transpose_matrix_transform_vec4(p->b, texmat,
+                                                 texcoord);
       }
 
       store_output_vec4(p, VARYING_SLOT_TEX0 + i, texcoord);
@@ -1321,14 +1307,12 @@ static void build_tnl_program( struct tnl_program *p )
 static nir_shader *
 create_new_program( const struct state_key *key,
                     struct gl_program *program,
-                    GLboolean mvp_with_dp4,
                     const nir_shader_compiler_options *options)
 {
    struct tnl_program p;
 
    memset(&p, 0, sizeof(p));
    p.state = key;
-   p.mvp_with_dp4 = mvp_with_dp4;
 
    program->Parameters = _mesa_new_parameter_list();
    p.state_params = _mesa_new_parameter_list();
@@ -1349,7 +1333,7 @@ create_new_program( const struct state_key *key,
    nir_validate_shader(b.shader, "after generating ff-vertex shader");
 
    /* Emit the MVP position transformation */
-   NIR_PASS(_, b.shader, st_nir_lower_position_invariant, mvp_with_dp4, p.state_params);
+   NIR_PASS(_, b.shader, st_nir_lower_position_invariant, p.state_params);
 
    _mesa_add_separate_state_parameters(program, p.state_params);
    _mesa_free_parameter_list(p.state_params);
@@ -1394,7 +1378,6 @@ _mesa_get_fixed_func_vertex_program(struct gl_context *ctx)
 
       nir_shader *s =
          create_new_program( &key, prog,
-                             ctx->Const.ShaderCompilerOptions[MESA_SHADER_VERTEX].OptimizeForAOS,
                              options);
 
       prog->state.type = PIPE_SHADER_IR_NIR;
