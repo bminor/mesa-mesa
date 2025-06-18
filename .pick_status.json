@@ -7614,7 +7614,7 @@
         "description": "anv: only use compressed memory types on Xe2+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "252cac1e5c4a4197d49ae29123e78ffe602a5ac9",
         "notes": null
