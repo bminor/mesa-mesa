@@ -526,6 +526,15 @@ blorp_fast_clear(struct blorp_batch *batch,
                                           &start_tile_B, &end_tile_B)) {
          size_B = end_tile_B - start_tile_B;
          addr.offset += start_tile_B;
+      } else if (isl_tiling_is_64(surf->surf->tiling)) {
+         /* If not supported above, clear the range without redescription. If
+          * the image is 3D, redescription is not possible because multiple
+          * depth slices are non-trivially interleaved into one plane. If the
+          * image is part of a miptail, there should be no benefit from
+          * redescription.
+          */
+         assert(surf->surf->logical_level0_px.d > 1 ||
+                level <= surf->surf->miptail_start_level);
       } else if (level == 0 && start_layer == 0 && num_layers == 1) {
          assert(surf->surf->tiling == ISL_TILING_4 ||
                 surf->surf->tiling == ISL_TILING_Y0);
