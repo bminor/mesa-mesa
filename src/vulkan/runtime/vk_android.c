@@ -698,9 +698,11 @@ get_ahb_buffer_format_properties2(
    };
 
    struct u_gralloc_buffer_basic_info info;
-
-   if (u_gralloc_get_buffer_basic_info(vk_android_get_ugralloc(), &gr_handle, &info) != 0)
+   if (u_gralloc_get_buffer_basic_info(vk_android_get_ugralloc(), &gr_handle,
+                                       &info) != 0) {
+      mesa_loge("Failed to get u_gralloc_buffer_basic_info");
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
+   }
 
    switch (info.drm_fourcc) {
    case DRM_FORMAT_YVU420:
@@ -710,37 +712,43 @@ get_ahb_buffer_format_properties2(
    case DRM_FORMAT_NV12:
       external_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
       break;
-   default:;
+   default:
       mesa_loge("Unsupported external DRM format: %d", info.drm_fourcc);
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
    }
 
    struct u_gralloc_buffer_color_info color_info;
-   if (u_gralloc_get_buffer_color_info(vk_android_get_ugralloc(), &gr_handle, &color_info) == 0) {
-      switch (color_info.yuv_color_space) {
-      case __DRI_YUV_COLOR_SPACE_ITU_REC601:
-         p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
-         break;
-      case __DRI_YUV_COLOR_SPACE_ITU_REC709:
-         p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
-         break;
-      case __DRI_YUV_COLOR_SPACE_ITU_REC2020:
-         p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
-         break;
-      default:
-         break;
-      }
-
-      p->suggestedYcbcrRange = (color_info.sample_range == __DRI_YUV_NARROW_RANGE) ?
-         VK_SAMPLER_YCBCR_RANGE_ITU_NARROW : VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-      p->suggestedXChromaOffset = (color_info.horizontal_siting == __DRI_YUV_CHROMA_SITING_0_5) ?
-         VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN;
-      p->suggestedYChromaOffset = (color_info.vertical_siting == __DRI_YUV_CHROMA_SITING_0_5) ?
-         VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN;
-   } else {
-      p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
-      p->suggestedYcbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
+   if (u_gralloc_get_buffer_color_info(vk_android_get_ugralloc(), &gr_handle,
+                                       &color_info) != 0) {
+      mesa_loge("Failed to get u_gralloc_buffer_color_info");
+      return VK_ERROR_INVALID_EXTERNAL_HANDLE;
    }
+
+   switch (color_info.yuv_color_space) {
+   case __DRI_YUV_COLOR_SPACE_ITU_REC601:
+      p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
+      break;
+   case __DRI_YUV_COLOR_SPACE_ITU_REC709:
+      p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
+      break;
+   case __DRI_YUV_COLOR_SPACE_ITU_REC2020:
+      p->suggestedYcbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
+      break;
+   default:
+      break;
+   }
+
+   p->suggestedYcbcrRange = (color_info.sample_range == __DRI_YUV_NARROW_RANGE)
+                               ? VK_SAMPLER_YCBCR_RANGE_ITU_NARROW
+                               : VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+   p->suggestedXChromaOffset =
+      (color_info.horizontal_siting == __DRI_YUV_CHROMA_SITING_0_5)
+         ? VK_CHROMA_LOCATION_MIDPOINT
+         : VK_CHROMA_LOCATION_COSITED_EVEN;
+   p->suggestedYChromaOffset =
+      (color_info.vertical_siting == __DRI_YUV_CHROMA_SITING_0_5)
+         ? VK_CHROMA_LOCATION_MIDPOINT
+         : VK_CHROMA_LOCATION_COSITED_EVEN;
 
 finish:
 
