@@ -455,9 +455,14 @@ pandecode_resources(struct pandecode_context *ctx, uint64_t addr, unsigned size)
    assert((size % 0x20) == 0);
 
    for (unsigned i = 0; i < size; i += 0x20) {
-      unsigned type = (cl[i] & 0xF);
-
-      switch (type) {
+      pan_unpack((const struct mali_descriptor_header_packed *)&cl[i],
+                 DESCRIPTOR_HEADER, header)
+         ;
+      switch (header.type) {
+      case MALI_DESCRIPTOR_TYPE_NULL:
+         DUMP_CL(ctx, NULL_DESCRIPTOR, cl + i, "NullDescriptor @%" PRIx64 "\n",
+                 addr + i);
+         break;
       case MALI_DESCRIPTOR_TYPE_SAMPLER:
          DUMP_CL(ctx, SAMPLER, cl + i, "Sampler @%" PRIx64 ":\n", addr + i);
          break;
@@ -472,7 +477,7 @@ pandecode_resources(struct pandecode_context *ctx, uint64_t addr, unsigned size)
          DUMP_CL(ctx, BUFFER, cl + i, "Buffer @%" PRIx64 ":\n", addr + i);
          break;
       default:
-         fprintf(ctx->dump_stream, "Unknown descriptor type %X\n", type);
+         fprintf(ctx->dump_stream, "Unknown descriptor type %X\n", header.type);
          break;
       }
    }

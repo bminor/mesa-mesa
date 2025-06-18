@@ -35,6 +35,7 @@
   </enum>
 
   <enum name="Descriptor Type">
+    <value name="Null" value="0"/>
     <value name="Sampler" value="1"/>
     <value name="Texture" value="2"/>
     <value name="Attribute" value="5"/>
@@ -1155,6 +1156,15 @@
     <value name="ITER_TRACE_ID0" value="62"/>
     <value name="ITER_TRACE_ID1" value="63"/>
   </enum>
+
+  <struct name="Descriptor Header" size="1" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Null"/>
+    <field name="Ignore" size="28" start="0:4" type="uint"/>
+  </struct>
+
+  <struct name="Null Descriptor" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Null"/>
+  </struct>
 
   <struct name="Attribute" size="8" align="32">
     <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Attribute"/>
