@@ -1261,7 +1261,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
       assert(ivci.format);
 
       sampler_view->image_view = zink_get_surface(ctx, pres, &templ, &ivci);
-      if (!screen->info.have_EXT_non_seamless_cube_map && viewtype_is_cube(&sampler_view->image_view->ivci)) {
+      if (!screen->info.have_EXT_non_seamless_cube_map && viewtype_is_cube(&ivci)) {
          ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
          sampler_view->cube_array = zink_get_surface(ctx, pres, &templ, &ivci);
       } else if (red_depth_sampler_view) {
@@ -3945,7 +3945,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
          if (!samples)
             samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, psurf->texture->nr_samples, 1);
          struct zink_resource *res = zink_resource(psurf->texture);
-         if (zink_surface(psurf)->ivci.subresourceRange.layerCount > layers)
+         if (psurf->last_layer - psurf->first_layer > layers)
             ctx->fb_layer_mismatch |= BITFIELD_BIT(i);
          if (res->obj->dt) {
             /* #6274 */
@@ -3974,7 +3974,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       }
       if (!samples)
          samples = MAX3(ctx->fb_state.zsbuf.nr_samples, psurf->texture->nr_samples, 1);
-      if (zink_surface(psurf)->ivci.subresourceRange.layerCount > layers)
+      if (psurf->last_layer - psurf->first_layer > layers)
          ctx->fb_layer_mismatch |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
       zink_resource(psurf->texture)->fb_bind_count++;
       zink_resource(psurf->texture)->fb_binds |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
