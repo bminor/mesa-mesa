@@ -72,6 +72,7 @@ avalon_files = []
 jm_archs = [6, 7]
 jm_inc_dir = ['jm']
 jm_files = [
+  'jm/panvk_vX_bind_queue.c',
   'jm/panvk_vX_cmd_buffer.c',
   'jm/panvk_vX_cmd_dispatch.c',
   'jm/panvk_vX_cmd_draw.c',
@@ -85,6 +86,7 @@ jm_files = [
 csf_archs = [10, 12, 13]
 csf_inc_dir = ['csf']
 csf_files = [
+  'csf/panvk_vX_bind_queue.c',
   'csf/panvk_vX_cmd_buffer.c',
   'csf/panvk_vX_cmd_dispatch.c',
   'csf/panvk_vX_cmd_draw.c',

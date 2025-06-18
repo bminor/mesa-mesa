@@ -212,15 +212,29 @@ check_global_priority(const struct panvk_physical_device *phys_dev,
       priority_info ? priority_info->globalPriority
                     : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
 
-   enum pan_kmod_group_allow_priority_flags requested_prio =
-      global_priority_to_group_allow_priority_flag(priority);
-   enum pan_kmod_group_allow_priority_flags allowed_prio_mask =
-      phys_dev->kmod.props.allowed_group_priorities_mask;
+   switch (create_info->queueFamilyIndex) {
+   case PANVK_QUEUE_FAMILY_GPU: {
+      enum pan_kmod_group_allow_priority_flags requested_prio =
+         global_priority_to_group_allow_priority_flag(priority);
+      enum pan_kmod_group_allow_priority_flags allowed_prio_mask =
+         phys_dev->kmod.props.allowed_group_priorities_mask;
 
-   if (requested_prio & allowed_prio_mask)
-      return VK_SUCCESS;
+      if (requested_prio & allowed_prio_mask)
+         return VK_SUCCESS;
 
-   return VK_ERROR_NOT_PERMITTED_KHR;
+      return VK_ERROR_NOT_PERMITTED_KHR;
+   }
+
+   case PANVK_QUEUE_FAMILY_BIND: {
+      if (priority == VK_QUEUE_GLOBAL_PRIORITY_MEDIUM)
+         return VK_SUCCESS;
+
+      return VK_ERROR_NOT_PERMITTED_KHR;
+   }
+
+   default:
+      UNREACHABLE("Unknown queue family");
+   }
 }
 
 static VkResult
@@ -229,8 +243,10 @@ panvk_queue_check_status(struct vk_queue *queue)
    switch (queue->queue_family_index) {
    case PANVK_QUEUE_FAMILY_GPU:
       return panvk_per_arch(gpu_queue_check_status)(queue);
+   case PANVK_QUEUE_FAMILY_BIND:
+      return panvk_per_arch(bind_queue_check_status)(queue);
    default:
-      return VK_SUCCESS;
+      UNREACHABLE("Unknown queue family");
    }
 }
 
@@ -280,6 +296,9 @@ panvk_queue_create(struct panvk_device *dev,
    case PANVK_QUEUE_FAMILY_GPU:
       return panvk_per_arch(create_gpu_queue)(
          dev, create_info, queue_idx, out_queue);
+   case PANVK_QUEUE_FAMILY_BIND:
+      return panvk_per_arch(create_bind_queue)(
+         dev, create_info, queue_idx, out_queue);
    default:
       return panvk_error(dev, VK_ERROR_INITIALIZATION_FAILED);
    }
@@ -291,6 +310,9 @@ panvk_queue_destroy(struct vk_queue *queue)
    switch (queue->queue_family_index) {
    case PANVK_QUEUE_FAMILY_GPU:
       panvk_per_arch(destroy_gpu_queue)(queue);
+      break;
+   case PANVK_QUEUE_FAMILY_BIND:
+      panvk_per_arch(destroy_bind_queue)(queue);
       break;
    default:
       UNREACHABLE("Unknown queue family");

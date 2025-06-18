@@ -366,23 +366,32 @@ fail:
 
 static void
 panvk_fill_global_priority(const struct panvk_physical_device *physical_device,
+                           uint32_t family_idx,
                            VkQueueFamilyGlobalPriorityPropertiesKHR *prio)
 {
-   enum pan_kmod_group_allow_priority_flags prio_mask =
-      physical_device->kmod.props.allowed_group_priorities_mask;
    uint32_t prio_idx = 0;
+   switch (family_idx) {
+   case PANVK_QUEUE_FAMILY_GPU: {
+      enum pan_kmod_group_allow_priority_flags prio_mask =
+         physical_device->kmod.props.allowed_group_priorities_mask;
+      if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_LOW)
+         prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
+      if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM)
+         prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+      if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH)
+         prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
+      if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_REALTIME)
+         prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR;
+      break;
+   }
 
-   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_LOW)
-      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
+   case PANVK_QUEUE_FAMILY_BIND:
+      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;
+      break;
 
-   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM)
-      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
-
-   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH)
-      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
-
-   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_REALTIME)
-      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR;
+   default:
+      UNREACHABLE("Unknown queue family");
+   }
 
    prio->priorityCount = prio_idx;
 }
@@ -397,11 +406,10 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
                           pQueueFamilyPropertyCount);
    unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
 
-   vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p)
-   {
-      p->queueFamilyProperties = (VkQueueFamilyProperties){
-         .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
-                       VK_QUEUE_TRANSFER_BIT,
+   const VkQueueFamilyProperties qfamily_props[PANVK_QUEUE_FAMILY_COUNT] = {
+      [PANVK_QUEUE_FAMILY_GPU] = {
+         .queueFlags =
+            VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
          /* On v10+ we can support up to 127 queues but this causes timeout on
             some CTS tests */
          .queueCount = arch >= 10 ? 2 : 1,
@@ -409,13 +417,27 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
             arch >= 10 && physical_device->kmod.props.gpu_can_query_timestamp
                ? 64
                : 0,
-         .minImageTransferGranularity = (VkExtent3D){1, 1, 1},
-      };
+         .minImageTransferGranularity = {1, 1, 1},
+      },
+      [PANVK_QUEUE_FAMILY_BIND] = {
+         .queueFlags = VK_QUEUE_SPARSE_BINDING_BIT,
+         .queueCount = 1,
+      },
+   };
 
-      VkQueueFamilyGlobalPriorityPropertiesKHR *prio =
-         vk_find_struct(p->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR);
-      if (prio)
-         panvk_fill_global_priority(physical_device, prio);
+   for (uint32_t family = 0; family < ARRAY_SIZE(qfamily_props); family++) {
+      if (family == PANVK_QUEUE_FAMILY_BIND &&
+          !physical_device->vk.supported_features.sparseBinding)
+         break;
+
+      vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p) {
+         p->queueFamilyProperties = qfamily_props[family];
+
+         VkQueueFamilyGlobalPriorityPropertiesKHR *prio =
+            vk_find_struct(p->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR);
+         if (prio)
+            panvk_fill_global_priority(physical_device, family, prio);
+      }
    }
 }
 

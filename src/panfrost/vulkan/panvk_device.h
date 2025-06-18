@@ -45,6 +45,7 @@ struct panvk_device_draw_context;
 
 enum panvk_queue_family {
    PANVK_QUEUE_FAMILY_GPU,
+   PANVK_QUEUE_FAMILY_BIND,
    PANVK_QUEUE_FAMILY_COUNT,
 };
 
