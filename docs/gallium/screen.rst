@@ -348,6 +348,9 @@ Capability about the features and limits of the driver/GPU.
   non-compressed surface whose texels are the same number of bits as the
   compressed blocks, and vice versa. The width and height of the surface is
   adjusted appropriately.
+* ``pipe_caps.compressed_surface_reinterpret_blocks_layered``: Same as
+  ``pipe_caps.surface_reinterpret_blocks`` but for supporting multiple layers
+  of a compressed texture.
 * ``pipe_caps.query_buffer_object``: Driver supports
   context::get_query_result_resource callback.
 * ``pipe_caps.pci_group``: Return the PCI segment group number.

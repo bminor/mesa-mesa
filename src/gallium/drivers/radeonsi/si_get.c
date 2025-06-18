@@ -1095,6 +1095,7 @@ void si_init_screen_caps(struct si_screen *sscreen)
    caps->fs_face_is_integer_sysval = true;
    caps->invalidate_buffer = true;
    caps->surface_reinterpret_blocks = true;
+   caps->compressed_surface_reinterpret_blocks_layered = true;
    caps->query_buffer_object = true;
    caps->query_memory_info = true;
    caps->shader_pack_half_float = true;

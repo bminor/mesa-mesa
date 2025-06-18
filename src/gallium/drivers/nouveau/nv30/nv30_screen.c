@@ -221,6 +221,7 @@ nv30_init_screen_caps(struct nv30_screen *screen)
    caps->string_marker = false;
    caps->buffer_sampler_view_rgba_only = false;
    caps->surface_reinterpret_blocks = false;
+   caps->compressed_surface_reinterpret_blocks_layered = false;
    caps->query_buffer_object = false;
    caps->framebuffer_no_attachment = false;
    caps->robust_buffer_access_behavior = false;

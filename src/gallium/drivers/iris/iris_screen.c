@@ -369,6 +369,7 @@ iris_init_screen_caps(struct iris_screen *screen)
    caps->compute_shader_derivatives = true;
    caps->invalidate_buffer = true;
    caps->surface_reinterpret_blocks = true;
+   caps->compressed_surface_reinterpret_blocks_layered = devinfo->ver >= 9;
    caps->texture_shadow_lod = true;
    caps->shader_samples_identical = true;
    caps->gl_spirv = true;
