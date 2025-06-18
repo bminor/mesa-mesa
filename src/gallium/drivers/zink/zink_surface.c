@@ -217,11 +217,10 @@ zink_get_surface(struct zink_context *ctx,
    struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(&res->surface_cache, hash, ivci);
 
    if (!entry) {
-      /* create a new surface, but don't actually create the imageview if mutable isn't set and the format is different;
-       * mutable will be set later and the imageview will be filled in
-       */
-      bool actually = !zink_format_needs_mutable(pres->format, templ->format) || (pres->bind & ZINK_BIND_MUTABLE);
-      surface = do_create_surface(&ctx->base, pres, templ, ivci, actually);
+      surface = create_surface(&ctx->base, pres, templ, ivci, true);
+      /* only transient surfaces have nr_samples set */
+      surface->base.nr_samples = zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled ? templ->nr_samples : 0;
+      surface->ivci = *ivci;
       entry = _mesa_hash_table_insert_pre_hashed(&res->surface_cache, hash, &surface->ivci, surface);
       if (!entry) {
          simple_mtx_unlock(&res->surface_mtx);
