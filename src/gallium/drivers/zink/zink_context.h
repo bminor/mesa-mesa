@@ -149,8 +149,6 @@ zink_batch_no_rp(struct zink_context *ctx);
 void
 zink_batch_no_rp_safe(struct zink_context *ctx);
 
-VkImageView
-zink_prep_fb_attachment(struct zink_context *ctx, struct zink_surface *surf, unsigned i);
 void
 zink_update_vk_sample_locations(struct zink_context *ctx);
 
