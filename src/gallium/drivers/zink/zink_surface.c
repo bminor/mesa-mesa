@@ -248,19 +248,23 @@ zink_surface_destroy(struct pipe_context *pctx,
       res->transient->valid = false;
 }
 
+static VkImageViewCreateInfo
+create_fb_ivci(struct zink_screen *screen, struct zink_resource *res, const struct pipe_surface *templ)
+{
+   bool is_array = templ->last_layer != templ->first_layer;
+   enum pipe_texture_target target_2d[] = {PIPE_TEXTURE_2D, PIPE_TEXTURE_2D_ARRAY};
+
+   return create_ivci(screen, res, templ, res->base.b.target == PIPE_TEXTURE_3D ? target_2d[is_array] : res->base.b.target);
+}
+
 struct pipe_surface *
 zink_create_fb_surface(struct pipe_context *pctx,
                        struct pipe_resource *pres,
                        const struct pipe_surface *templ)
 {
    struct zink_resource *res = zink_resource(pres);
-   struct zink_screen *screen = zink_screen(pctx->screen);
-   bool is_array = templ->last_layer != templ->first_layer;
-   enum pipe_texture_target target_2d[] = {PIPE_TEXTURE_2D, PIPE_TEXTURE_2D_ARRAY};
 
-   VkImageViewCreateInfo ivci = create_ivci(screen, res, templ,
-                                            pres->target == PIPE_TEXTURE_3D ? target_2d[is_array] : pres->target);
-
+   VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(pctx->screen), res, templ);
    return (struct pipe_surface*)zink_get_surface(zink_context(pctx), pres, templ, &ivci);
 }
 
