@@ -399,11 +399,17 @@ panvk_desc_pool_allocate_set(struct panvk_descriptor_pool *pool,
       if ((layout->bindings[last_binding].flags &
            VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT) &&
           !vk_descriptor_type_is_dynamic(layout->bindings[last_binding].type)) {
-         uint32_t desc_stride =
-            panvk_get_desc_stride(&layout->bindings[last_binding]);
+         if (layout->bindings[last_binding].type ==
+             VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+            num_descs -= layout->bindings[last_binding].desc_count;
+            num_descs += panvk_get_iub_desc_count(variable_count);
+         } else {
+            uint32_t desc_stride =
+               panvk_get_desc_stride(&layout->bindings[last_binding]);
 
-         num_descs -= layout->bindings[last_binding].desc_count * desc_stride;
-         num_descs += variable_count * desc_stride;
+            num_descs -= layout->bindings[last_binding].desc_count * desc_stride;
+            num_descs += variable_count * desc_stride;
+         }
       }
    }
 
