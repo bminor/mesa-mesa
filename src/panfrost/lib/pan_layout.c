@@ -120,7 +120,7 @@ pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format,
 
 static void
 init_slice_crc_info(unsigned arch, struct pan_image_slice_layout *slice,
-                    unsigned width_px, unsigned height_px, unsigned offset_B)
+                    unsigned width_px, unsigned height_px, uint64_t offset_B)
 {
    unsigned checksum_region_size_px = pan_meta_tile_size(arch);
    unsigned checksum_x_tile_per_region =

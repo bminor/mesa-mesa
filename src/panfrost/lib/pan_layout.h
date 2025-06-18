@@ -32,7 +32,10 @@ struct pan_image_slice_layout {
     * - report image subres layout and memory requirement
     * - bind image memory
     */
-   unsigned offset_B;
+   uint64_t offset_B;
+
+   /* Size of the MIP level in bytes. */
+   uint64_t size_B;
 
    /* For AFBC images, the number of bytes between two rows of AFBC
     * headers.
@@ -71,12 +74,10 @@ struct pan_image_slice_layout {
    /* If checksumming is enabled following the slice, what
     * is its offset/stride? */
    struct {
-      unsigned offset_B;
+      uint64_t offset_B;
       unsigned stride_B;
       unsigned size_B;
    } crc;
-
-   unsigned size_B;
 };
 
 struct pan_image_extent {
@@ -113,7 +114,7 @@ struct pan_image_layout_constraints {
     * To be noted, this offset might be adjusted to choose an optimal alignment,
     * unless the layout constraints are explicit (wsi_row_patch_B != 0).
     */
-   unsigned offset_B;
+   uint64_t offset_B;
 
    /* Row pitch in bytes. Non-zero if layout is explicit. */
    unsigned wsi_row_pitch_B;
@@ -176,7 +177,7 @@ bool pan_image_layout_init(
    const struct pan_image_layout_constraints *layout_constraints,
    struct pan_image_layout *layout);
 
-static inline unsigned
+static inline uint64_t
 pan_image_get_wsi_offset(const struct pan_image_layout *layout, unsigned level)
 {
    return layout->slices[level].offset_B;
