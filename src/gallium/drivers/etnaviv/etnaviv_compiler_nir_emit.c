@@ -219,7 +219,7 @@ etna_emit_tex(struct etna_compile *c, nir_tex_instr * tex, unsigned dst_swiz,
    case nir_texop_tex: inst.opcode = ISA_OPC_TEXLD; break;
    case nir_texop_txb: inst.opcode = ISA_OPC_TEXLDB; break;
    case nir_texop_txd: inst.opcode = tex->is_shadow ? ISA_OPC_TEXLDGPCF : ISA_OPC_TEXLDD; break;
-   case nir_texop_txl: inst.opcode = ISA_OPC_TEXLDL; break;
+   case nir_texop_txl: inst.opcode = tex->is_shadow ? ISA_OPC_TEXLDLPCF : ISA_OPC_TEXLDL; break;
    case nir_texop_txf:
       inst.opcode = ISA_OPC_TXF;
       inst.src[2] = etna_immediate_int(0x1100);
