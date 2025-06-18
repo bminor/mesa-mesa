@@ -407,27 +407,24 @@ static void si_build_wrapper_function(struct si_shader_context *ctx,
       assert(num_params == LLVMCountParams(parts[1].value));
 
       for (unsigned i = 0; i < num_params; i++) {
-         params[i] = LLVMBuildExtractValue(builder, ret, i, "");
-
-         /* Convert return value to same type as next shader's input param. */
-         LLVMTypeRef ret_type = LLVMTypeOf(params[i]);
+         LLVMValueRef ret_value = LLVMBuildExtractValue(builder, ret, i, "");;
+         LLVMTypeRef ret_type = LLVMTypeOf(ret_value);
          LLVMTypeRef param_type = LLVMTypeOf(LLVMGetParam(parts[1].value, i));
+
          assert(ac_get_type_size(ret_type) == 4);
          assert(ac_get_type_size(param_type) == 4);
 
-         if (ret_type != param_type) {
-            if (LLVMGetTypeKind(param_type) == LLVMPointerTypeKind) {
-               assert(LLVMGetPointerAddressSpace(param_type) == AC_ADDR_SPACE_CONST_32BIT);
-               assert(ret_type == ctx->ac.i32);
-
-               params[i] = LLVMBuildIntToPtr(builder, params[i], param_type, "");
-            } else {
-               params[i] = LLVMBuildBitCast(builder, params[i], param_type, "");
-            }
+         if (ret_type == ctx->ac.f32) {
+            /* Returned VGPRs only: Pass the returned value to the next shader. */
+            params[i] = LLVMBuildBitCast(builder, ret_value, param_type, "");
+         } else {
+            /* Use input SGPRs from the wrapper function params instead of the return value of
+             * the previous shader.
+             */
+            assert(ret_type == ctx->ac.i32);
          }
       }
    } else {
-
       /* The second half of the merged shader should use
        * the inputs from the toplevel (wrapper) function,
        * not the return value from the last call.
