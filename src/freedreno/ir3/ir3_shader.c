@@ -394,7 +394,14 @@ assemble_variant(struct ir3_shader_variant *v, bool internal)
    v->bin = ir3_shader_assemble(v);
 
    unsigned char sha1[21];
-   _mesa_sha1_compute(v->bin, v->info.size, sha1);
+
+   struct mesa_sha1 ctx;
+
+   _mesa_sha1_init(&ctx);
+   _mesa_sha1_update(&ctx, v->bin, v->info.size);
+   _mesa_sha1_update(&ctx, &v->info.double_threadsize,
+                     sizeof(v->info.double_threadsize));
+   _mesa_sha1_final(&ctx, sha1);
    _mesa_sha1_format(v->sha1_str, sha1);
 
    bool dbg_enabled = shader_debug_enabled(v->type, internal);
