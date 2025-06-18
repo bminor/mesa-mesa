@@ -377,6 +377,9 @@ init_context(isel_context* ctx, nir_shader* shader)
    /* we'll need these for isel */
    nir_metadata_require(impl, nir_metadata_block_index);
 
+   /* Our definition of divergence is slightly different, but we still want nir to print it. */
+   impl->valid_metadata |= nir_metadata_divergence;
+
    if (ctx->options->dump_preoptir) {
       fprintf(stderr, "NIR shader before instruction selection:\n");
       nir_print_shader(shader, stderr);
