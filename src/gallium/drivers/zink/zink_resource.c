@@ -213,6 +213,7 @@ zink_destroy_resource_surface_cache(struct zink_screen *screen, struct hash_tabl
       hash_table_foreach_remove(ht, he) {
          struct zink_surface *surf = he->data;
          VKSCR(DestroyImageView)(screen->dev, surf->image_view, NULL);
+         free((void*)he->key);
          FREE(surf);
       }
       ralloc_free(ht->table);

@@ -222,7 +222,7 @@ zink_get_surface(struct zink_context *ctx,
       /* only transient surfaces have nr_samples set */
       surface->base.nr_samples = zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled ? templ->nr_samples : 0;
       surface->ivci = *ivci;
-      entry = _mesa_hash_table_insert_pre_hashed(ht, hash, &surface->ivci, surface);
+      entry = _mesa_hash_table_insert_pre_hashed(ht, hash, mem_dup(ivci, sizeof(*ivci)), surface);
       if (!entry) {
          simple_mtx_unlock(&res->obj->surface_mtx);
          return NULL;
