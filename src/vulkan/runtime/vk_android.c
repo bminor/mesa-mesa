@@ -34,6 +34,7 @@
 
 #include "vk_enum_defines.h"
 
+#include "c11/threads.h"
 #include "drm-uapi/drm_fourcc.h"
 #include "util/libsync.h"
 #include "util/os_file.h"
@@ -50,24 +51,29 @@
 
 static struct u_gralloc *_gralloc;
 
+static void
+vk_android_init_ugralloc_once(void)
+{
+   _gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
+}
+
 struct u_gralloc *
 vk_android_get_ugralloc(void)
 {
+   static once_flag once = ONCE_FLAG_INIT;
+   call_once(&once, vk_android_init_ugralloc_once);
    return _gralloc;
 }
 
 struct u_gralloc *
 vk_android_init_ugralloc(void)
 {
-   _gralloc = u_gralloc_create(U_GRALLOC_TYPE_AUTO);
-
-   return _gralloc;
+   return vk_android_get_ugralloc();
 }
 
 void
 vk_android_destroy_ugralloc(void)
 {
-   u_gralloc_destroy(&_gralloc);
 }
 
 /* If any bits in test_mask are set, then unset them and return true. */
