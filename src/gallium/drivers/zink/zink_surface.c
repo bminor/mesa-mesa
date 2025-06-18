@@ -205,6 +205,12 @@ zink_get_surface(struct zink_context *ctx,
 {
    struct zink_surface *surface = NULL;
    struct zink_resource *res = zink_resource(pres);
+
+   if (!res->obj->dt && zink_format_needs_mutable(pres->format, templ->format))
+      /* mutable not set by default */
+      zink_resource_object_init_mutable(ctx, res);
+   /* reset for mutable obj switch */
+   ivci->image = res->obj->image;
    uint32_t hash = hash_ivci(ivci);
 
    simple_mtx_lock(&res->surface_mtx);
@@ -250,16 +256,10 @@ zink_create_surface(struct pipe_context *pctx,
                     struct pipe_resource *pres,
                     const struct pipe_surface *templ)
 {
-   struct zink_context *ctx = zink_context(pctx);
    struct zink_resource *res = zink_resource(pres);
    struct zink_screen *screen = zink_screen(pctx->screen);
    bool is_array = templ->last_layer != templ->first_layer;
    enum pipe_texture_target target_2d[] = {PIPE_TEXTURE_2D, PIPE_TEXTURE_2D_ARRAY};
-   if (!res->obj->dt && zink_format_needs_mutable(pres->format, templ->format)) {
-      /* mutable not set by default */
-      if (!(res->base.b.bind & ZINK_BIND_MUTABLE))
-         zink_resource_object_init_mutable(ctx, res);
-   }
 
    if (!zink_get_format(screen, templ->format))
       return NULL;
