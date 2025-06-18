@@ -1805,6 +1805,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         "VK_KHR_storage_buffer_storage_class",
         "VK_KHR_variable_pointers",
         "VK_EXT_color_write_enable",
+        "VK_EXT_memory_budget",
         "VK_KHR_multiview",
 
         // Vulkan 1.2

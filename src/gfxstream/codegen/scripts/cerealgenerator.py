@@ -69,6 +69,7 @@ SUPPORTED_FEATURES = [
     "VK_KHR_external_fence",
     "VK_KHR_external_fence_fd",
     "VK_EXT_device_memory_report",
+    "VK_EXT_memory_budget",
     "VK_KHR_create_renderpass2",
     "VK_KHR_imageless_framebuffer",
     "VK_KHR_descriptor_update_template",
