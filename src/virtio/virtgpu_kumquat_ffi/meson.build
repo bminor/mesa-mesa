@@ -25,3 +25,8 @@ libvirtgpu_kumquat_ffi = static_library(
   link_with: [libmesa_protocols, libmesa_rust_util, libvirtgpu_kumquat],
   dependencies: [dep_mesa3d_util, dep_log]
 )
+
+dep_virtgpu_kumquat_ffi = declare_dependency(
+  include_directories : [inc_virtgpu_kumquat_ffi],
+  link_with : [libvirtgpu_kumquat_ffi]
+)
