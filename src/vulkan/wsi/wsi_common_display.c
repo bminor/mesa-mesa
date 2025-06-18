@@ -1327,6 +1327,13 @@ static const struct wsi_display_surface_format
    {
       .surface_format = {
          .format = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+         .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+      },
+      .drm_format = DRM_FORMAT_XBGR2101010
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
          .colorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
       },
       .drm_format = DRM_FORMAT_XBGR2101010
@@ -1334,9 +1341,44 @@ static const struct wsi_display_surface_format
    {
       .surface_format = {
          .format = VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+         .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+      },
+      .drm_format = DRM_FORMAT_XRGB2101010
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_A2R10G10B10_UNORM_PACK32,
          .colorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
       },
       .drm_format = DRM_FORMAT_XRGB2101010
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_R16G16B16A16_UNORM,
+         .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+      },
+      .drm_format = DRM_FORMAT_XBGR16161616
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_R16G16B16A16_UNORM,
+         .colorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
+      },
+      .drm_format = DRM_FORMAT_XBGR16161616
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+         .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+      },
+      .drm_format = DRM_FORMAT_XBGR16161616F
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+         .colorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
+      },
+      .drm_format = DRM_FORMAT_XBGR16161616F
    },
 };
 
