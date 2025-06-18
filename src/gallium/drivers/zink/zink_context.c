@@ -2785,21 +2785,19 @@ unsigned
 zink_update_rendering_info(struct zink_context *ctx)
 {
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      struct zink_surface *surf = zink_surface(ctx->fb_cbufs[i]);
-      ctx->gfx_pipeline_state.rendering_formats[i] = surf ? surf->ivci.format : VK_FORMAT_UNDEFINED;
+      ctx->gfx_pipeline_state.rendering_formats[i] = ctx->fb_formats[i];
    }
    ctx->gfx_pipeline_state.rendering_info.viewMask = ctx->fb_state.viewmask;
    ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
    ctx->gfx_pipeline_state.rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
    if (ctx->fb_state.zsbuf.texture && zink_is_zsbuf_used(ctx)) {
-      struct zink_surface *surf = zink_surface(ctx->fb_zsbuf);
       bool has_depth = util_format_has_depth(util_format_description(ctx->fb_state.zsbuf.format));
       bool has_stencil = util_format_has_stencil(util_format_description(ctx->fb_state.zsbuf.format));
 
       if (has_depth)
-         ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat = surf->ivci.format;
+         ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat = ctx->fb_formats[PIPE_MAX_COLOR_BUFS];
       if (has_stencil)
-         ctx->gfx_pipeline_state.rendering_info.stencilAttachmentFormat = surf->ivci.format;
+         ctx->gfx_pipeline_state.rendering_info.stencilAttachmentFormat = ctx->fb_formats[PIPE_MAX_COLOR_BUFS];
    }
    return find_rp_state(ctx);
 }
@@ -3871,6 +3869,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    ctx->void_clears = 0;
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
       struct pipe_surface *psurf = ctx->fb_cbufs[i];
+      ctx->fb_formats[i] = zink_get_format(screen, ctx->fb_state.cbufs[i].format);
       if (psurf) {
          if (ctx->fb_state.cbufs[i].nr_samples) {
             ctx->transient_attachments |= BITFIELD_BIT(i);
@@ -3902,6 +3901,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    }
    if (ctx->fb_state.zsbuf.texture) {
       struct pipe_surface *psurf = ctx->fb_zsbuf;
+      ctx->fb_formats[PIPE_MAX_COLOR_BUFS] = zink_get_format(screen, ctx->fb_state.zsbuf.format);
       if (ctx->fb_state.zsbuf.nr_samples) {
          ctx->transient_attachments |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
          framebuffer_surface_init_transient(ctx, psurf, PIPE_MAX_COLOR_BUFS);

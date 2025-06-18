@@ -147,13 +147,12 @@ void
 zink_init_color_attachment(struct zink_context *ctx, unsigned i, struct zink_rt_attrib *rt)
 {
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
-   struct pipe_surface *psurf = ctx->fb_cbufs[i];
-   if (psurf) {
-      struct zink_surface *surf = zink_surface(psurf);
-      rt->format = surf->ivci.format;
+   struct zink_resource *res = zink_resource(fb->cbufs[i].texture);
+   if (res) {
+      rt->format = ctx->fb_formats[i];
       rt->samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, ctx->fb_state.cbufs[i].texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
-      rt->invalid = !zink_resource(psurf->texture)->valid;
+      rt->invalid = !res->valid;
       rt->fbfetch = (ctx->fbfetch_outputs & BITFIELD_BIT(i)) > 0;
       rt->feedback_loop = (ctx->feedback_loops & BITFIELD_BIT(i)) > 0;
    } else {
@@ -167,13 +166,12 @@ void
 zink_tc_init_color_attachment(struct zink_context *ctx, const struct tc_renderpass_info *info, unsigned i, struct zink_rt_attrib *rt)
 {
    const struct pipe_framebuffer_state *fb = &ctx->fb_state;
-   struct pipe_surface *psurf = ctx->fb_cbufs[i];
-   if (psurf) {
-      struct zink_surface *surf = zink_surface(psurf);
-      rt->format = surf->ivci.format;
+   struct zink_resource *res = zink_resource(fb->cbufs[i].texture);
+   if (res) {
+      rt->format = ctx->fb_formats[i];
       rt->samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, ctx->fb_state.cbufs[i].texture->nr_samples, 1);
       rt->clear_color = zink_fb_clear_enabled(ctx, i) && !zink_fb_clear_first_needs_explicit(&ctx->fb_clears[i]);
-      rt->invalid = !zink_resource(psurf->texture)->valid;
+      rt->invalid = !res->valid;
       rt->fbfetch = (info->cbuf_fbfetch & BITFIELD_BIT(i)) > 0;
       rt->feedback_loop = (ctx->feedback_loops & BITFIELD_BIT(i)) > 0;
    } else {

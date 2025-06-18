@@ -1708,6 +1708,7 @@ struct zink_context {
    struct pipe_framebuffer_state fb_state;
    PIPE_FB_SURFACES; //STOP USING THIS
    struct zink_surface *transients[PIPE_MAX_COLOR_BUFS + 1]; //AND THIS (probably)
+   VkFormat fb_formats[PIPE_MAX_COLOR_BUFS + 1];
 
    struct zink_vertex_elements_state *element_state;
    struct zink_rasterizer_state *rast_state;
