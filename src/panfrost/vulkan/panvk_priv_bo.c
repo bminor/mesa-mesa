@@ -59,10 +59,8 @@ panvk_priv_bo_create(struct panvk_device *dev, size_t size, uint32_t flags,
    };
 
    if (!(dev->kmod.vm->flags & PAN_KMOD_VM_FLAG_AUTO_VA)) {
-      simple_mtx_lock(&dev->as.lock);
-      op.va.start = util_vma_heap_alloc(
-         &dev->as.heap, op.va.size, op.va.size > 0x200000 ? 0x200000 : 0x1000);
-      simple_mtx_unlock(&dev->as.lock);
+      op.va.start = panvk_as_alloc(dev,
+         op.va.size, op.va.size > 0x200000 ? 0x200000 : 0x1000);
       if (!op.va.start) {
          result = panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
          goto err_munmap_bo;
@@ -90,9 +88,7 @@ panvk_priv_bo_create(struct panvk_device *dev, size_t size, uint32_t flags,
 
 err_return_va:
    if (!(dev->kmod.vm->flags & PAN_KMOD_VM_FLAG_AUTO_VA)) {
-      simple_mtx_lock(&dev->as.lock);
-      util_vma_heap_free(&dev->as.heap, op.va.start, op.va.size);
-      simple_mtx_unlock(&dev->as.lock);
+      panvk_as_free(dev, op.va.start, op.va.size);
    }
 
 err_munmap_bo:
@@ -131,9 +127,7 @@ panvk_priv_bo_destroy(struct panvk_priv_bo *priv_bo)
    assert(!ret);
 
    if (!(dev->kmod.vm->flags & PAN_KMOD_VM_FLAG_AUTO_VA)) {
-      simple_mtx_lock(&dev->as.lock);
-      util_vma_heap_free(&dev->as.heap, op.va.start, op.va.size);
-      simple_mtx_unlock(&dev->as.lock);
+      panvk_as_free(dev, op.va.start, op.va.size);
    }
 
    if (priv_bo->addr.host) {

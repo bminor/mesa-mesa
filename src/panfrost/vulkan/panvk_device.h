@@ -133,6 +133,23 @@ panvk_device_adjust_bo_flags(const struct panvk_device *device,
    return bo_flags;
 }
 
+static inline uint64_t
+panvk_as_alloc(struct panvk_device *device, uint64_t size, uint64_t alignment)
+{
+   simple_mtx_lock(&device->as.lock);
+   uint64_t address = util_vma_heap_alloc(&device->as.heap, size, alignment);
+   simple_mtx_unlock(&device->as.lock);
+   return address;
+}
+
+static inline void
+panvk_as_free(struct panvk_device *device, uint64_t address, uint64_t size)
+{
+   simple_mtx_lock(&device->as.lock);
+   util_vma_heap_free(&device->as.heap, address, size);
+   simple_mtx_unlock(&device->as.lock);
+}
+
 #if PAN_ARCH
 VkResult
 panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
