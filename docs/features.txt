@@ -706,12 +706,10 @@ Khronos extensions that are not part of any Vulkan version:
 
 
 Rusticl OpenCL 1.0 -- all DONE:
-
   Image support                                         DONE
 
 
 Rusticl OpenCL 1.1 -- all DONE:
-
   Additional queries for clGetDeviceInfo                DONE
   CL_CONTEXT_NUM_DEVICES for clGetContextInfo           DONE
   clCreateSubBuffer                                     DONE
@@ -733,7 +731,6 @@ Rusticl OpenCL 1.1 -- all DONE:
 
 
 Rusticl OpenCL 1.2 -- all DONE:
-
   Custom devices                                        DONE
   Separate compilation and linking of programs          DONE
   Extend cl_mem_flags                                   DONE
@@ -752,49 +749,12 @@ Rusticl OpenCL 1.2 -- all DONE:
   OpenCL C 1.2                                          DONE
 
 
-Rusticl OpenCL 2.0 -- all DONE:
-
-  Shared virtual memory                                 DONE (iris, nvc0, llvmpipe, radeonsi)
-  Device queues                                         not started
-  - cl_khr_create_command_queue                         DONE
+Rusticl OpenCL 3.0 -- all DONE:
+  Required OpenCL 2.0 features                          DONE
   - Additional queries for clGetDeviceInfo              DONE
-  Pipes                                                 not started
-  Extended 2D images creation                           in progress
-  - CL_ABGR                                             DONE
-  - cl_khr_image2d_from_buffer                          DONE (freedreno, iris, llvmpipe)
-  - cl_khr_depth_images                                 DONE
-  - from sRGB images                                    DONE
-  clCreateSamplerWithProperties                         DONE
-  Non-uniform work-group sizes                          not started
-  cl_khr_3d_image_writes                                DONE (freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi, zink)
-  OpenCL C 2.0                                          in progress
-  - Work-group Collective Functions                     not started
-  - Generic address space                               in progress
-
-
-Rusticl OpenCL 2.1 -- all DONE:
-
-  Sub groups                                            DONE (iris, llvmpipe, radeonsi)
-  - cl_khr_subgroups                                    in progress
-  cl_khr_il_program                                     DONE
-  Device and host timer synchronization                 DONE (freedreno, iris, llvmpipe, radeonsi, zink)
-  clEnqueueSVMMigrateMem                                in progress (nvc0/gp100, broken)
-  clCloneKernel                                         DONE
-  Default device command queue                          not started
-  CL_UNORM_INT_101010_2                                 DONE
-
-
-Rusticl OpenCL 2.2 -- all DONE:
-
-  clSetProgramSpecializationConstant                    DONE
-  clSetProgramReleaseCallback                           not started
-  Initialization and clean-up kernels                   not started
-  CL_MAX_SIZE_RESTRICTION_EXCEEDED for clSetKernelArg   not started
-  Support SPIR-V 1.1 and 1.2                            DONE
-
-
-Rusticl OpenCL 3.0 -- all DONE: asahi, iris/gen12, zink
-
+  - clCloneKernel                                       DONE
+  - clCreateSamplerWithProperties                       DONE
+  - cl_khr_create_command_queue                         DONE
   Optional device capabilities queries                  DONE
   cl_khr_extended_versioning                            DONE
   clSetContextDestructorCallback                        DONE
@@ -804,21 +764,52 @@ Rusticl OpenCL 3.0 -- all DONE: asahi, iris/gen12, zink
   Supported OpenCL C versions and features queries      DONE
   CL_COMMAND_SVM_MIGRATE_MEM for clGetEventInfo         DONE
   OpenCL C 3.0                                          DONE
-  Latest conformance version passed for devices         DONE ()
 
 
 Rusticl Optional Core Features:
   Optional features for OpenCL 1.0                      in progress
   - Optional image formats                              in progress
   Optional features for OpenCL 1.1                      not started
-  - New optional image formats                          not started
   - CL_Rx                                               not started
   - CL_RGx                                              not started
   - CL_RGBx                                             not started
   Optional features for OpenCL 1.2                      in progress
-  - Built-in kernels                                    in progress
+  - Built-in kernels                                    in progress (reports 0 built-in kernels)
   - Device partitioning                                 not started
   - cl_khr_fp64                                         in progress (iris, llvmpipe, nvc0, radeonsi, zink, Available with environment variable RUSTICL_FEATURES=fp64, device dependent.)
+  Latest conformance version passed for devices         DONE (asahi, iris, zink)
+
+
+Rusticl Optional OpenCL 2.x Features:
+  Shared virtual memory                                 in progress
+  - Coarse Grain Buffer                                 DONE (iris, radeonsi, llvmpipe)
+  - Fine Grain Buffer                                   in progress
+  - System                                              DONE (nvc0, llvmpipe)
+  - clEnqueueSVMMigrateMem                              DONE
+  Device-Side Enqueue                                   not started
+  Pipes                                                 not started
+  Program Scope Global Variables                        in progress
+  Non-Uniform Work-groups                               not started
+  Images                                                in progress
+  - Read-Write Images                                   DONE
+  - sRGB Images                                         DONE
+  - CL_ABGR                                             DONE
+  - CL_UNORM_INT_101010_2                               DONE
+  - cl_khr_depth_images                                 DONE
+  - cl_khr_image2d_from_buffer                          DONE (freedreno, iris, llvmpipe)
+  - cl_khr_3d_image_writes                              DONE (freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi, zink)
+  Device and host timer synchronization                 DONE (freedreno, iris, llvmpipe, radeonsi, zink)
+  OpenCL C 2.0                                          in progress
+  - Memory Consistency Model (atomics)                  not started
+  - Sub-groups                                          DONE (iris, llvmpipe, radeonsi)
+  - Work-group Collective Functions                     not started
+  - Generic Address Space                               in progress
+  cl_khr_il_program                                     DONE
+  - Support SPIR-V 1.1 and 1.2                          DONE
+  - clSetProgramSpecializationConstant                  DONE
+  Program Initialization and Clean-Up Kernels           not started
+  - clSetProgramReleaseCallback                         not started
+  CL_MAX_SIZE_RESTRICTION_EXCEEDED for clSetKernelArg   not started
 
 
 Rusticl extensions:
