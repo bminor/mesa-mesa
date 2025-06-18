@@ -351,17 +351,24 @@ desc_set_write_immutable_samplers(struct panvk_descriptor_set *set,
 }
 
 static void
-panvk_init_iub(struct panvk_descriptor_set *set, uint32_t binding)
+panvk_init_iub(struct panvk_descriptor_set *set, uint32_t binding,
+               uint32_t variable_count)
 {
    const struct panvk_descriptor_set_binding_layout *binding_layout =
       &set->layout->bindings[binding];
+
+   bool has_variable_count =
+      binding_layout->flags &
+      VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
 
    /* The first element is the buffer descriptor. */
    uint32_t iub_data_offset =
       panvk_get_desc_index(binding_layout, 1, NO_SUBDESC) *
       PANVK_DESCRIPTOR_SIZE;
    uint64_t iub_data_dev = set->descs.dev + iub_data_offset;
-   uint32_t iub_size_dev = panvk_get_iub_size(binding_layout->desc_count);
+   uint32_t iub_desc_count = has_variable_count ?
+      panvk_get_iub_desc_count(variable_count) : binding_layout->desc_count;
+   uint32_t iub_size_dev = panvk_get_iub_size(iub_desc_count);
 
 #if PAN_ARCH < 9
    struct {
@@ -443,7 +450,7 @@ panvk_desc_pool_allocate_set(struct panvk_descriptor_pool *pool,
 
    for (uint32_t b = 0; b < layout->binding_count; ++b) {
       if (layout->bindings[b].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
-         panvk_init_iub(set, b);
+         panvk_init_iub(set, b, variable_count);
    }
 
    *out = set;
