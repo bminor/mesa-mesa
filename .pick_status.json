@@ -5584,7 +5584,7 @@
         "description": "freedreno/a2xx: Disable interpolated input intrinsics.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "25d4943481d5b9297c174f0b29d1520ca83c1459",
         "notes": null
