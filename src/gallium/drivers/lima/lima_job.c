@@ -341,7 +341,7 @@ lima_fb_cbuf_needs_reload(struct lima_job *job)
       //   return true;
       return true;
    }
-   else if (surf->reload & PIPE_CLEAR_COLOR0)
+   else if (res->reload & PIPE_CLEAR_COLOR0)
          return true;
 
    return false;
@@ -354,7 +354,8 @@ lima_fb_zsbuf_needs_reload(struct lima_job *job)
       return false;
 
    struct lima_surface *surf = lima_surface(job->key.zsbuf);
-   if (surf->reload & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL))
+   struct lima_resource *res = lima_resource(surf->base.texture);
+   if (res->reload & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL))
          return true;
 
    return false;
@@ -1011,12 +1012,14 @@ lima_do_job(struct lima_job *job)
    /* Set reload flags for next draw. It'll be unset if buffer is cleared */
    if (job->key.cbuf && (job->resolve & PIPE_CLEAR_COLOR0)) {
       struct lima_surface *surf = lima_surface(job->key.cbuf);
-      surf->reload |= PIPE_CLEAR_COLOR0;
+      struct lima_resource *res = lima_resource(surf->base.texture);
+      res->reload |= PIPE_CLEAR_COLOR0;
    }
 
    if (job->key.zsbuf && (job->resolve & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL))) {
       struct lima_surface *surf = lima_surface(job->key.zsbuf);
-      surf->reload |= (job->resolve & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL));
+      struct lima_resource *res = lima_resource(surf->base.texture);
+      res->reload |= (job->resolve & (PIPE_CLEAR_DEPTH | PIPE_CLEAR_STENCIL));
    }
 
    if (ctx->job == job)

@@ -58,13 +58,13 @@ struct lima_resource {
    bool tiled;
    bool modifier_constant;
    unsigned full_updates;
+   unsigned reload;
 
    struct lima_resource_level levels[LIMA_MAX_MIP_LEVELS];
 };
 
 struct lima_surface {
    struct pipe_surface base;
-   unsigned reload;
 };
 
 struct lima_transfer {

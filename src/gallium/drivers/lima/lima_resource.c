@@ -245,6 +245,14 @@ _lima_resource_create_with_modifiers(struct pipe_screen *pscreen,
       struct lima_resource *res = lima_resource(pres);
       res->tiled = should_tile;
 
+      res->reload = 0;
+      if (util_format_has_stencil(util_format_description(pres->format)))
+         res->reload |= PIPE_CLEAR_STENCIL;
+      if (util_format_has_depth(util_format_description(pres->format)))
+         res->reload |= PIPE_CLEAR_DEPTH;
+      if (!util_format_is_depth_or_stencil(pres->format))
+         res->reload |= PIPE_CLEAR_COLOR0;
+
       if (templat->bind & PIPE_BIND_INDEX_BUFFER)
          res->index_cache = CALLOC_STRUCT(pan_minmax_cache);
 
@@ -584,14 +592,6 @@ lima_surface_create(struct pipe_context *pctx,
    psurf->level = level;
    psurf->first_layer = surf_tmpl->first_layer;
    psurf->last_layer = surf_tmpl->last_layer;
-
-   surf->reload = 0;
-   if (util_format_has_stencil(util_format_description(psurf->format)))
-      surf->reload |= PIPE_CLEAR_STENCIL;
-   if (util_format_has_depth(util_format_description(psurf->format)))
-      surf->reload |= PIPE_CLEAR_DEPTH;
-   if (!util_format_is_depth_or_stencil(psurf->format))
-      surf->reload |= PIPE_CLEAR_COLOR0;
 
    return &surf->base;
 }

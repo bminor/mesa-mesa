@@ -44,10 +44,10 @@ lima_pack_blit_cmd(struct lima_job *job,
    #define lima_blit_buffer_size         0x0140
 
    struct lima_context *ctx = job->ctx;
-   struct lima_surface *surf = lima_surface(psurf);
    int level = psurf->level;
    unsigned first_layer = psurf->first_layer;
    float fb_width = dst->width, fb_height = dst->height;
+   struct lima_resource *res = lima_resource(psurf->texture);
 
    uint32_t va;
    void *cpu = lima_job_create_stream_bo(
@@ -88,9 +88,9 @@ lima_pack_blit_cmd(struct lima_job *job,
       reload_render_state.alpha_blend &= 0x0fffffff;
       if (psurf->format != PIPE_FORMAT_Z16_UNORM)
          reload_render_state.depth_test |= 0x400;
-      if (surf->reload & PIPE_CLEAR_DEPTH)
+      if (res->reload & PIPE_CLEAR_DEPTH)
          reload_render_state.depth_test |= 0x801;
-      if (surf->reload & PIPE_CLEAR_STENCIL) {
+      if (res->reload & PIPE_CLEAR_STENCIL) {
          reload_render_state.depth_test |= 0x1000;
          reload_render_state.stencil_front = 0x0000024f;
          reload_render_state.stencil_back = 0x0000024f;
@@ -259,7 +259,6 @@ lima_do_blit(struct pipe_context *pctx,
 
    struct pipe_surface *dst_surf =
          lima_get_blit_surface(pctx, info->dst.resource, info->dst.level);
-   struct lima_surface *lima_dst_surf = lima_surface(dst_surf);
 
    struct pipe_surface *src_surf =
          lima_get_blit_surface(pctx, info->src.resource, info->src.level);
@@ -297,8 +296,8 @@ lima_do_blit(struct pipe_context *pctx,
 
    bool tile_aligned = false;
    if (info->dst.box.x == 0 && info->dst.box.y == 0 &&
-       info->dst.box.width == pipe_surface_width(&lima_dst_surf->base) &&
-       info->dst.box.height == pipe_surface_height(&lima_dst_surf->base))
+       info->dst.box.width == pipe_surface_width(dst_surf) &&
+       info->dst.box.height == pipe_surface_height(dst_surf))
       tile_aligned = true;
 
    if (info->dst.box.x % 16 == 0 && info->dst.box.y % 16 == 0 &&
@@ -307,9 +306,9 @@ lima_do_blit(struct pipe_context *pctx,
 
    /* Reload if dest is not aligned to tile boundaries */
    if (!tile_aligned)
-      lima_dst_surf->reload = reload_flags;
+      dst_res->reload = reload_flags;
    else
-      lima_dst_surf->reload = 0;
+      dst_res->reload = 0;
 
    job->resolve = reload_flags;
 
