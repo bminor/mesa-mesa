@@ -3887,8 +3887,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    zink_batch_no_rp_safe(ctx);
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
       struct pipe_surface *psurf = ctx->fb_cbufs[i];
-      if (i < state->nr_cbufs && !screen->info.have_EXT_multisampled_render_to_single_sampled)
-         ctx->rp_changed |= !!ctx->fb_state.cbufs[i].nr_samples != !!state->cbufs[i].nr_samples;
       unbind_fb_surface(ctx, psurf, i, i >= state->nr_cbufs || !pipe_surface_equal(&ctx->fb_state.cbufs[i], &state->cbufs[i]));
       if (psurf && ctx->needs_present == zink_resource(psurf->texture))
          zink_resource_reference(&ctx->needs_present, NULL);
@@ -3898,8 +3896,6 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       struct zink_resource *res = zink_resource(psurf->texture);
       bool changed = zsbuf_changed;
       unbind_fb_surface(ctx, psurf, PIPE_MAX_COLOR_BUFS, changed);
-      if (!changed && !screen->info.have_EXT_multisampled_render_to_single_sampled)
-         ctx->rp_changed |= !!ctx->fb_state.zsbuf.nr_samples != !!state->zsbuf.nr_samples;
       if (changed && unlikely(res->obj->needs_zs_evaluate))
          /* have to flush zs eval while the sample location data still exists,
           * so just throw some random barrier */
