@@ -3738,6 +3738,10 @@ unbind_fb_surface(struct zink_context *ctx, struct pipe_surface *surf, unsigned 
    struct zink_resource *res = zink_resource(surf->texture);
    if (changed) {
       ctx->rp_changed = true;
+      if (ctx->transients[idx]) {
+         zink_resource(ctx->transients[idx]->base.texture)->valid = false;
+         pipe_resource_reference(&ctx->transients[idx]->base.texture, NULL);
+      }
    }
    res->fb_bind_count--;
    if (!res->fb_bind_count && !res->bind_count[0])
