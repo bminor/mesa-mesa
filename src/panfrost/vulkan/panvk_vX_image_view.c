@@ -272,7 +272,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
                     : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
       cfg.pointer = image->planes[plane_idx].plane.base + offset;
       cfg.stride = fmt_blksize | (hw_fmt << 10);
-      cfg.size = pan_image_mip_level_size(plane_props, plane_layout,
+      cfg.size = pan_image_mip_level_size(&image->planes[plane_idx].image, 0,
                                           view->pview.first_level);
    }
 

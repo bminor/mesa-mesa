@@ -200,7 +200,27 @@ pan_image_view_check(const struct pan_image_view *iview)
 #endif
 }
 
-static inline unsigned
+static inline uint64_t
+pan_image_mip_level_size(const struct pan_image *image, unsigned plane_idx,
+                         unsigned mip_level)
+{
+   assert(plane_idx < ARRAY_SIZE(image->planes) &&
+          plane_idx < util_format_get_num_planes(image->props.format));
+   assert(mip_level < image->props.nr_slices);
+   assert(image->planes[plane_idx]);
+
+   uint64_t size = image->planes[plane_idx]->layout.slices[mip_level].size_B;
+
+   /* If this is an array, we need to cover the whole array. */
+   if (image->props.array_size > 1) {
+      size += image->planes[plane_idx]->layout.array_stride_B *
+              (image->props.array_size - 1);
+   }
+
+   return size;
+}
+
+static inline uint32_t
 pan_image_get_wsi_row_pitch(const struct pan_image *image, unsigned plane_idx,
                             unsigned mip_level)
 {
@@ -212,6 +232,22 @@ pan_image_get_wsi_row_pitch(const struct pan_image *image, unsigned plane_idx,
 
    return image->mod_handler->get_wsi_row_pitch(image, plane_idx, mip_level);
 }
+
+static inline uint64_t
+pan_image_get_wsi_offset(const struct pan_image *image, unsigned plane_idx,
+                         unsigned mip_level)
+{
+   assert(plane_idx < ARRAY_SIZE(image->planes) &&
+          plane_idx < util_format_get_num_planes(image->props.format));
+   assert(mip_level < image->props.nr_slices);
+   assert(image->planes[plane_idx]);
+
+   return image->planes[plane_idx]->layout.slices[mip_level].offset_B;
+}
+
+bool pan_image_layout_init(
+   unsigned arch, struct pan_image *image, unsigned plane_idx,
+   const struct pan_image_layout_constraints *explicit_layout_constraints);
 
 #ifdef __cplusplus
 } /* extern C */

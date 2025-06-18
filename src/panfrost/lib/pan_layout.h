@@ -164,32 +164,6 @@ pan_image_slice_align(uint64_t modifier)
    return 64;
 }
 
-static inline uint64_t
-pan_image_mip_level_size(const struct pan_image_props *props,
-                         const struct pan_image_layout *layout, unsigned level)
-{
-   assert(level < props->nr_slices);
-   uint64_t size = layout->slices[level].size_B;
-
-   /* If this is an array, we need to cover the whole array. */
-   if (props->array_size > 1)
-      size += layout->array_stride_B * (props->array_size - 1);
-
-   return size;
-}
-
-bool pan_image_layout_init(
-   unsigned arch, const struct pan_mod_handler *mod_handler,
-   const struct pan_image_props *props, unsigned plane_idx,
-   const struct pan_image_layout_constraints *layout_constraints,
-   struct pan_image_layout *layout);
-
-static inline uint64_t
-pan_image_get_wsi_offset(const struct pan_image_layout *layout, unsigned level)
-{
-   return layout->slices[level].offset_B;
-}
-
 static inline uint32_t
 pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
                                   unsigned plane_idx)

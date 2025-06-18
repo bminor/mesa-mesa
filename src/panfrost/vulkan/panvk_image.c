@@ -287,9 +287,8 @@ panvk_image_init_layouts(struct panvk_image *image,
          .planes = {&image->planes[plane].plane},
       };
 
-      if (!pan_image_layout_init(
-             arch, mod_handler, &image->planes[plane].image.props, 0,
-             &plane_layout, &image->planes[plane].plane.layout)) {
+      if (!pan_image_layout_init(arch, &image->planes[plane].image, 0,
+                                 &plane_layout)) {
          return panvk_error(image->vk.base.device,
                             VK_ERROR_INITIALIZATION_FAILED);
       }

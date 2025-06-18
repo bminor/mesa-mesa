@@ -23,12 +23,13 @@
  *
  */
 
+#include "pan_layout.h"
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/u_math.h"
 #include "pan_afbc.h"
 #include "pan_afrc.h"
-#include "pan_layout.h"
+#include "pan_image.h"
 #include "pan_mod.h"
 #include "pan_props.h"
 
@@ -81,11 +82,18 @@ get_mip_level_extent(const struct pan_image_props *props, unsigned plane_idx,
 
 bool
 pan_image_layout_init(
-   unsigned arch, const struct pan_mod_handler *mod_handler,
-   const struct pan_image_props *props, unsigned plane_idx,
-   const struct pan_image_layout_constraints *explicit_layout_constraints,
-   struct pan_image_layout *layout)
+   unsigned arch, struct pan_image *image, unsigned plane_idx,
+   const struct pan_image_layout_constraints *explicit_layout_constraints)
 {
+   assert(image->mod_handler);
+   assert(plane_idx < ARRAY_SIZE(image->planes) &&
+          plane_idx < util_format_get_num_planes(image->props.format));
+   assert(image->planes[plane_idx]);
+
+   const struct pan_mod_handler *mod_handler = image->mod_handler;
+   const struct pan_image_props *props = &image->props;
+   struct pan_image_layout *layout = &image->planes[plane_idx]->layout;
+
    /* Use explicit layout only when wsi_row_pitch_B is non-zero */
    struct pan_image_layout_constraints layout_constraints = {0};
    if (explicit_layout_constraints)

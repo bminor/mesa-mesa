@@ -104,20 +104,34 @@ panfrost_clear_render_target(struct pipe_context *pipe,
                                     height);
 }
 
-static void
-panfrost_resource_init_image(struct panfrost_resource *rsc,
-                             const struct pan_mod_handler *mod_handler,
-                             const struct pan_image_props *iprops,
-                             unsigned plane_idx)
+static bool
+panfrost_resource_init_image(
+   struct pipe_screen *screen, struct panfrost_resource *rsc,
+   const struct pan_image_props *iprops, unsigned plane_idx,
+   const struct pan_image_layout_constraints *explicit_layout)
 {
-   rsc->image.mod_handler = mod_handler;
-   rsc->image.props = *iprops;
+   struct panfrost_device *dev = pan_device(screen);
+   const unsigned format_plane_count = util_format_get_num_planes(iprops->format);
+
+   /* Some planar formats are lowered by the frontend, assume each plane is
+    * independent in that case. */
+   if (format_plane_count == 1)
+      plane_idx = 0;
+
+   rsc->image = (struct pan_image){
+      .mod_handler = pan_mod_get_handler(dev->arch, iprops->modifier),
+      .props = *iprops,
+   };
    rsc->image.planes[plane_idx] = &rsc->plane;
+
+   if (!pan_image_layout_init(dev->arch, &rsc->image, plane_idx,
+                              explicit_layout))
+      return false;
 
    /* The rest of the resource planes will be initialized when we hit the first
     * plane. */
-   if (plane_idx > 0 || util_format_get_num_planes(iprops->format) == 1)
-      return;
+   if (plane_idx > 0 || format_plane_count == 1)
+      return true;
 
    plane_idx = 1;
    for (struct panfrost_resource *plane = pan_resource(rsc->base.next);
@@ -133,6 +147,8 @@ panfrost_resource_init_image(struct panfrost_resource *rsc,
       memcpy(plane->image.planes, rsc->image.planes,
              plane_idx * sizeof(plane->image.planes[0]));
    }
+
+   return true;
 }
 
 static bool
@@ -340,21 +356,12 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
       return NULL;
    }
 
-   unsigned format_plane =
-      util_format_get_num_planes(iprops.format) > 1 ? whandle->plane : 0;
-
-   const struct pan_mod_handler *mod_handler =
-      pan_mod_get_handler(dev->arch, iprops.modifier);
-   bool valid =
-      pan_image_layout_init(dev->arch, mod_handler, &iprops, format_plane,
-                            &explicit_layout, &rsc->plane.layout);
-
+   bool valid = panfrost_resource_init_image(pscreen, rsc, &iprops,
+                                             whandle->plane, &explicit_layout);
    if (!valid) {
       panfrost_resource_destroy(pscreen, &rsc->base);
       return NULL;
    }
-
-   panfrost_resource_init_image(rsc, mod_handler, &iprops, whandle->plane);
 
    int ret = panfrost_resource_import_bo(rsc, dev, whandle->handle);
    /* Sometimes an import can fail e.g. on an invalid buffer fd, out of
@@ -439,8 +446,7 @@ panfrost_resource_get_handle(struct pipe_screen *pscreen,
    }
 
    handle->stride = pan_image_get_wsi_row_pitch(&rsrc->image, handle->plane, 0);
-   handle->offset =
-      pan_image_get_wsi_offset(&rsrc->image.planes[handle->plane]->layout, 0);
+   handle->offset = pan_image_get_wsi_offset(&rsrc->image, handle->plane, 0);
 
    /* SW detiling on MTK_TILED resources. This forces us to treat such
     * resources as linear images with:
@@ -479,7 +485,7 @@ panfrost_resource_get_param(struct pipe_screen *pscreen,
       *value = pan_image_get_wsi_row_pitch(&rsrc->image, plane, level);
       return true;
    case PIPE_RESOURCE_PARAM_OFFSET:
-      *value = pan_image_get_wsi_offset(&rsrc->plane.layout, level);
+      *value = pan_image_get_wsi_offset(&rsrc->image, plane, level);
       return true;
    case PIPE_RESOURCE_PARAM_MODIFIER:
       *value = rsrc->modifier;
@@ -808,15 +814,7 @@ panfrost_resource_try_setup(struct pipe_screen *screen,
     * want the real bitrate and not DEFAULT */
    pres->base.compression_rate = pan_afrc_get_rate(fmt, chosen_mod);
 
-   const struct pan_mod_handler *mod_handler =
-      pan_mod_get_handler(dev->arch, iprops.modifier);
-
-   if (!pan_image_layout_init(dev->arch, mod_handler, &iprops, plane_idx, NULL,
-                              &pres->plane.layout))
-      return false;
-
-   panfrost_resource_init_image(pres, mod_handler, &iprops, plane_idx);
-   return true;
+   return panfrost_resource_init_image(screen, pres, &iprops, plane_idx, NULL);
 }
 
 static void

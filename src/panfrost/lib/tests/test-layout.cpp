@@ -251,9 +251,20 @@ layout_init(unsigned arch, const struct pan_image_props *props,
    if (!arch)
       arch = 4;
 
-   return pan_image_layout_init(arch,
-                                pan_mod_get_handler(arch, props->modifier),
-                                props, plane_idx, layout_constraints, layout);
+   struct pan_image_plane plane = {
+   };
+   struct pan_image img = {
+      .props = *props,
+      .mod_handler = pan_mod_get_handler(arch, props->modifier),
+   };
+
+   img.planes[plane_idx] = &plane;
+
+   if (!pan_image_layout_init(arch, &img, plane_idx, layout_constraints))
+      return false;
+
+   *layout = plane.layout;
+   return true;
 }
 
 /* dEQP-GLES3.functional.texture.format.compressed.etc1_2d_pot */
@@ -562,7 +573,7 @@ static unsigned archs[] = {4, 5, 6, 7, 9, 12, 13};
       img.planes[__plane] = &img_plane;                                        \
       unsigned __export_row_pitch_B =                                          \
          pan_image_get_wsi_row_pitch(&img, __plane, 0);                        \
-      unsigned __export_offset_B = pan_image_get_wsi_offset(&layout, 0);       \
+      unsigned __export_offset_B = pan_image_get_wsi_offset(&img, __plane, 0); \
       EXPECT_TRUE(__export_row_pitch_B == (__wsi_layout)->wsi_row_pitch_B &&   \
                   __export_offset_B == (__wsi_layout)->offset_B)               \
          << " mismatch between import and export for <format="                 \
