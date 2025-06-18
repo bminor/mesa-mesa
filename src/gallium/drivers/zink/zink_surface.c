@@ -256,18 +256,6 @@ zink_create_surface(struct pipe_context *pctx,
    bool is_array = templ->last_layer != templ->first_layer;
    enum pipe_texture_target target_2d[] = {PIPE_TEXTURE_2D, PIPE_TEXTURE_2D_ARRAY};
    if (!res->obj->dt && zink_format_needs_mutable(pres->format, templ->format)) {
-      /*
-         VUID-VkImageViewCreateInfo-image-07072
-         If image was created with the VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT flag and
-         format is a non-compressed format, the levelCount and layerCount members of
-         subresourceRange must both be 1
-
-         ...but this is allowed with a maintenance6 property
-       */
-      if (util_format_is_compressed(pres->format) && templ->first_layer != templ->last_layer &&
-          (!screen->info.have_KHR_maintenance6 || !screen->info.maint6_props.blockTexelViewCompatibleMultipleLayers))
-         return NULL;
-      
       /* mutable not set by default */
       if (!(res->base.b.bind & ZINK_BIND_MUTABLE))
          zink_resource_object_init_mutable(ctx, res);
