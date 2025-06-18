@@ -264,7 +264,7 @@
         "description": "hasvk: use narrow range to match up with mesa EGL",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
