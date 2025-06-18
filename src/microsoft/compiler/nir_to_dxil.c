@@ -5494,8 +5494,14 @@ emit_tex(struct ntd_context *ctx, nir_tex_instr *instr)
 
       case nir_tex_src_bias:
          assert(instr->op == nir_texop_txb);
-         assert(nir_src_num_components(instr->src[i].src) == 1);
-         params.bias = get_src(ctx, &instr->src[i].src, 0, nir_type_float);
+         if (nir_src_is_const(instr->src[i].src)) {
+            float bias = nir_src_as_float(instr->src[i].src);
+            bias = fmax(fmin(bias, 15.99f), -16.f);
+            params.bias = dxil_module_get_float_const(&ctx->mod, bias);
+         } else {
+            assert(instr->src[i].src.ssa->num_components == 1);
+            params.bias = get_src(ctx, &instr->src[i].src, 0, nir_type_float);
+         }
          if (!params.bias)
             return false;
          break;
