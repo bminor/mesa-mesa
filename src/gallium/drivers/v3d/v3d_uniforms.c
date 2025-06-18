@@ -263,11 +263,6 @@ v3d_write_uniforms(struct v3d_context *v3d, struct v3d_job *job,
                         cl_aligned_f(&uniforms, v3d->viewport.scale[2]);
                         break;
 
-                case QUNIFORM_USER_CLIP_PLANE:
-                        cl_aligned_f(&uniforms,
-                                     v3d->clip.ucp[data / 4][data % 4]);
-                        break;
-
                 case QUNIFORM_TMU_CONFIG_P0:
                         write_tmu_p0(job, &uniforms, texstate, data);
                         break;
@@ -444,10 +439,6 @@ v3d_set_shader_uniform_dirty_flags(struct v3d_compiled_shader *shader)
                 case QUNIFORM_VIEWPORT_Z_OFFSET:
                 case QUNIFORM_VIEWPORT_Z_SCALE:
                         dirty |= V3D_DIRTY_VIEWPORT;
-                        break;
-
-                case QUNIFORM_USER_CLIP_PLANE:
-                        dirty |= V3D_DIRTY_CLIP;
                         break;
 
                 case QUNIFORM_TMU_CONFIG_P0:

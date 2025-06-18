@@ -1119,41 +1119,29 @@ v3d_nir_lower_fs_early(struct v3d_compile *c)
 static void
 v3d_nir_lower_gs_late(struct v3d_compile *c)
 {
-        if (c->key->ucp_enables) {
-                NIR_PASS(_, c->s, nir_lower_clip_gs, c->key->ucp_enables,
-                         true, NULL);
-        }
-
-        /* Note: GS output scalarizing must happen after nir_lower_clip_gs. */
         NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 }
 
 static void
 v3d_nir_lower_vs_late(struct v3d_compile *c)
 {
-        if (c->key->ucp_enables) {
-                NIR_PASS(_, c->s, nir_lower_clip_vs, c->key->ucp_enables,
-                         false, true, NULL);
-                NIR_PASS(_, c->s, nir_lower_io_to_scalar,
-                         nir_var_shader_out, NULL, NULL);
-        }
-
-        /* Note: VS output scalarizing must happen after nir_lower_clip_vs. */
         NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 }
 
 static void
 v3d_nir_lower_fs_late(struct v3d_compile *c)
 {
-        /* In OpenGL the fragment shader can't read gl_ClipDistance[], but
-         * Vulkan allows it, in which case the SPIR-V compiler will declare
-         * VARING_SLOT_CLIP_DIST0 as compact array variable. Pass true as
-         * the last parameter to always operate with a compact array in both
-         * OpenGL and Vulkan so we do't have to care about the API we
-         * are using.
+        /* If there are clip distance writes (either GL/Vulkan
+         * gl_ClipDistance[], or lowered user clip planes for desktop GL),
+         * then we need to emit the discards for them at the top of the fragment
+         * shader.
+         *
+         * The SPIR-V compiler will declare VARING_SLOT_CLIP_DIST0 as compact
+         * array variable, so we have GL's clip lowering follow suit
+         * (PIPE_CAP_NIR_COMPACT_ARRAYS).
          */
-        if (c->key->ucp_enables)
-                NIR_PASS(_, c->s, nir_lower_clip_fs, c->key->ucp_enables, true, false);
+        if (c->fs_key->ucp_enables)
+                NIR_PASS(_, c->s, nir_lower_clip_fs, c->fs_key->ucp_enables, true, false);
 
         NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
 }

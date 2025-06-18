@@ -369,6 +369,7 @@ v3d_init_screen_caps(struct v3d_screen *screen)
 
         caps->native_fence_fd = true;
 
+        caps->clip_planes = 0;
         caps->depth_clip_disable = screen->devinfo.ver >= 71;
 
         caps->min_line_width =

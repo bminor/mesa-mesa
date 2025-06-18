@@ -3536,15 +3536,6 @@ ntq_emit_intrinsic(struct v3d_compile *c, nir_intrinsic_instr *instr)
                                           nir_src_comp_as_uint(instr->src[0], 0)));
                 break;
 
-        case nir_intrinsic_load_user_clip_plane:
-                for (int i = 0; i < nir_intrinsic_dest_components(instr); i++) {
-                        ntq_store_def(c, &instr->def, i,
-                                      vir_uniform(c, QUNIFORM_USER_CLIP_PLANE,
-                                                  nir_intrinsic_ucp_id(instr) *
-                                                  4 + i));
-                }
-                break;
-
         case nir_intrinsic_load_viewport_x_scale:
                 ntq_store_def(c, &instr->def, 0,
                               vir_uniform(c, QUNIFORM_VIEWPORT_X_SCALE, 0));

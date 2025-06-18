@@ -987,8 +987,7 @@ shader_debug_output(const char *message, void *data)
 
 static void
 pipeline_populate_v3d_key(struct v3d_key *key,
-                          const struct v3dv_pipeline_stage *p_stage,
-                          uint32_t ucp_enables)
+                          const struct v3dv_pipeline_stage *p_stage)
 {
    assert(p_stage->pipeline->shared_data &&
           p_stage->pipeline->shared_data->maps[p_stage->stage]);
@@ -1023,18 +1022,6 @@ pipeline_populate_v3d_key(struct v3d_key *key,
    default:
       unreachable("unsupported shader stage");
    }
-
-   /* Vulkan doesn't have fixed function state for user clip planes. Instead,
-    * shaders can write to gl_ClipDistance[], in which case the SPIR-V compiler
-    * takes care of adding a single compact array variable at
-    * VARYING_SLOT_CLIP_DIST0, so we don't need any user clip plane lowering.
-    *
-    * The only lowering we are interested is specific to the fragment shader,
-    * where we want to emit discards to honor writes to gl_ClipDistance[] in
-    * previous stages. This is done via nir_lower_clip_fs() so we only set up
-    * the ucp enable mask for that stage.
-    */
-   key->ucp_enables = ucp_enables;
 
    const VkPipelineRobustnessBufferBehaviorEXT robust_buffer_enabled =
       VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
@@ -1204,7 +1191,19 @@ pipeline_populate_v3d_fs_key(struct v3d_fs_key *key,
    struct v3dv_device *device = p_stage->pipeline->device;
    assert(device);
 
-   pipeline_populate_v3d_key(&key->base, p_stage, ucp_enables);
+   pipeline_populate_v3d_key(&key->base, p_stage);
+
+   /* Vulkan doesn't have fixed function state for user clip planes. Instead,
+    * shaders can write to gl_ClipDistance[], in which case the SPIR-V compiler
+    * takes care of adding a single compact array variable at
+    * VARYING_SLOT_CLIP_DIST0, so we don't need any user clip plane lowering.
+    *
+    * The only lowering we are interested is specific to the fragment shader,
+    * where we want to emit discards to honor writes to gl_ClipDistance[] in
+    * previous stages. This is done via nir_lower_clip_fs() so we only set up
+    * the ucp enable mask for that stage.
+    */
+   key->ucp_enables = ucp_enables;
 
    const VkPipelineInputAssemblyStateCreateInfo *ia_info =
       pCreateInfo->pInputAssemblyState;
@@ -1293,7 +1292,7 @@ pipeline_populate_v3d_gs_key(struct v3d_gs_key *key,
 
    memset(key, 0, sizeof(*key));
 
-   pipeline_populate_v3d_key(&key->base, p_stage, 0);
+   pipeline_populate_v3d_key(&key->base, p_stage);
 
    struct v3dv_pipeline *pipeline = p_stage->pipeline;
 
@@ -1336,7 +1335,7 @@ pipeline_populate_v3d_vs_key(struct v3d_vs_key *key,
    assert(device);
 
    memset(key, 0, sizeof(*key));
-   pipeline_populate_v3d_key(&key->base, p_stage, 0);
+   pipeline_populate_v3d_key(&key->base, p_stage);
 
    struct v3dv_pipeline *pipeline = p_stage->pipeline;
 
@@ -3272,7 +3271,7 @@ pipeline_compile_compute(struct v3dv_pipeline *pipeline,
 
    struct v3d_key key;
    memset(&key, 0, sizeof(key));
-   pipeline_populate_v3d_key(&key, p_stage, 0);
+   pipeline_populate_v3d_key(&key, p_stage);
    pipeline->shared_data->variants[BROADCOM_SHADER_COMPUTE] =
       pipeline_compile_shader_variant(p_stage, &key, sizeof(key),
                                       alloc, &result);
