@@ -708,17 +708,12 @@ Khronos extensions that are not part of any Vulkan version:
 Rusticl OpenCL 1.0 -- all DONE:
 
   Image support                                         DONE
-  - Optional image formats                              in progress
 
 
 Rusticl OpenCL 1.1 -- all DONE:
 
   Additional queries for clGetDeviceInfo                DONE
   CL_CONTEXT_NUM_DEVICES for clGetContextInfo           DONE
-  New optional image formats                            not started
-  - CL_Rx                                               not started
-  - CL_RGx                                              not started
-  - CL_RGBx                                             not started
   clCreateSubBuffer                                     DONE
   Read from, write to, copy rectangular regions         DONE
   clSetMemObjectDestructorCallback                      DONE
@@ -813,6 +808,16 @@ Rusticl OpenCL 3.0 -- all DONE: asahi, iris/gen12, zink
   CL_COMMAND_SVM_MIGRATE_MEM for clGetEventInfo         DONE
   OpenCL C 3.0                                          DONE
   Latest conformance version passed for devices         DONE ()
+
+
+Rusticl Optional Core Features:
+  Optional features for OpenCL 1.0                      in progress
+  - Optional image formats                              in progress
+  Optional features for OpenCL 1.1                      not started
+  - New optional image formats                          not started
+  - CL_Rx                                               not started
+  - CL_RGx                                              not started
+  - CL_RGBx                                             not started
 
 
 Rusticl extensions that are not part of any OpenCL version:
