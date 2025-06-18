@@ -600,7 +600,7 @@ zink_clear_depth_stencil(struct pipe_context *pctx, struct pipe_surface *dst,
       zink_stop_conditional_render(ctx);
       ctx->render_condition_active = false;
    }
-   bool cur_attachment = ctx->fb_zsbuf == dst;
+   bool cur_attachment = pipe_surface_equal(&ctx->fb_state.zsbuf, dst);
    if (dstx > ctx->fb_state.width || dsty > ctx->fb_state.height ||
        dstx + width > ctx->fb_state.width ||
        dsty + height > ctx->fb_state.height)
