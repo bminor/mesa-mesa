@@ -43,6 +43,7 @@
 #include "util/u_prim.h"
 
 #include <dxguids/dxguids.h>
+#include <cstdlib>
 
 struct d3d12_gfx_pso_entry {
    struct d3d12_gfx_pipeline_state key;
@@ -388,23 +389,24 @@ create_gfx_pipeline_state(struct d3d12_context *ctx)
 
    ID3D12PipelineState *ret;
 
+   HRESULT hr;
    if (screen->opts14.IndependentFrontAndBackStencilRefMaskSupported) {
       D3D12_PIPELINE_STATE_STREAM_DESC pso_stream_desc{
           sizeof(pso_desc),
           &pso_desc
       };
 
-      if (FAILED(screen->dev->CreatePipelineState(&pso_stream_desc,
-                                                  IID_PPV_ARGS(&ret)))) {
-         debug_printf("D3D12: CreateGraphicsPipelineState failed!\n");
+      if (FAILED(hr = screen->dev->CreatePipelineState(&pso_stream_desc,
+                                                       IID_PPV_ARGS(&ret)))) {
+         std::_Exit(hr);
          return NULL;
       }
    } 
    else {
       D3D12_GRAPHICS_PIPELINE_STATE_DESC v0desc = pso_desc.GraphicsDescV0();
-      if (FAILED(screen->dev->CreateGraphicsPipelineState(&v0desc,
-                                                       IID_PPV_ARGS(&ret)))) {
-         debug_printf("D3D12: CreateGraphicsPipelineState failed!\n");
+      if (FAILED(hr = screen->dev->CreateGraphicsPipelineState(&v0desc,
+                                                               IID_PPV_ARGS(&ret)))) {
+         std::_Exit(hr);
          return NULL;
       }
    }
