@@ -126,18 +126,15 @@ u_gralloc_get_buffer_color_info(struct u_gralloc *gralloc,
                                 struct u_gralloc_buffer_handle *hnd,
                                 struct u_gralloc_buffer_color_info *out)
 {
-   struct u_gralloc_buffer_color_info info = {0};
-   int ret;
+   if (gralloc->ops.get_buffer_color_info)
+      return gralloc->ops.get_buffer_color_info(gralloc, hnd, out);
 
-   if (!gralloc->ops.get_buffer_color_info)
-      return -ENOTSUP;
-
-   ret = gralloc->ops.get_buffer_color_info(gralloc, hnd, &info);
-
-   if (ret)
-      return ret;
-
-   *out = info;
+   *out = (struct u_gralloc_buffer_color_info){
+      .yuv_color_space = __DRI_YUV_COLOR_SPACE_ITU_REC601,
+      .sample_range = __DRI_YUV_NARROW_RANGE,
+      .horizontal_siting = __DRI_YUV_CHROMA_SITING_0_5,
+      .vertical_siting = __DRI_YUV_CHROMA_SITING_0_5,
+   };
 
    return 0;
 }
