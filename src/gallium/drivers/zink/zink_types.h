@@ -1527,8 +1527,6 @@ zink_screen(struct pipe_screen *pipe)
  */
 struct zink_surface {
    struct pipe_surface base;
-   /* all the info for creating a new imageview */
-   VkImageViewCreateInfo ivci;
    /* the current imageview */
    VkImageView image_view;
 };
