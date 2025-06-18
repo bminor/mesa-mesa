@@ -2788,12 +2788,6 @@ zink_set_stencil_ref(struct pipe_context *pctx,
 }
 
 static void
-zink_set_clip_state(struct pipe_context *pctx,
-                    const struct pipe_clip_state *pcs)
-{
-}
-
-static void
 zink_set_tess_state(struct pipe_context *pctx,
                     const float default_outer_level[4],
                     const float default_inner_level[2])
@@ -5475,7 +5469,6 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    ctx->base.set_shader_images = zink_set_shader_images;
    ctx->base.set_framebuffer_state = zink_set_framebuffer_state;
    ctx->base.set_stencil_ref = zink_set_stencil_ref;
-   ctx->base.set_clip_state = zink_set_clip_state;
    ctx->base.set_blend_color = zink_set_blend_color;
    ctx->base.set_tess_state = zink_set_tess_state;
    ctx->base.set_patch_vertices = zink_set_patch_vertices;

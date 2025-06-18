@@ -1484,12 +1484,6 @@ d3d12_set_stencil_ref(struct pipe_context *pctx,
    ctx->state_dirty |= D3D12_DIRTY_STENCIL_REF;
 }
 
-static void
-d3d12_set_clip_state(struct pipe_context *pctx,
-                     const struct pipe_clip_state *pcs)
-{
-}
-
 static struct pipe_stream_output_target *
 d3d12_create_stream_output_target(struct pipe_context *pctx,
                                   struct pipe_resource *pres,
@@ -2298,7 +2292,6 @@ d3d12_init_graphics_context_functions(struct d3d12_context *ctx)
    ctx->base.set_scissor_states = d3d12_set_scissor_states;
    ctx->base.set_constant_buffer = d3d12_set_constant_buffer;
    ctx->base.set_framebuffer_state = d3d12_set_framebuffer_state;
-   ctx->base.set_clip_state = d3d12_set_clip_state;
    ctx->base.set_blend_color = d3d12_set_blend_color;
    ctx->base.set_sample_mask = d3d12_set_sample_mask;
    ctx->base.set_stencil_ref = d3d12_set_stencil_ref;

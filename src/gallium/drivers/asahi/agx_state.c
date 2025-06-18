@@ -858,12 +858,6 @@ agx_sampler_view_destroy(struct pipe_context *ctx,
 }
 
 static void
-agx_set_clip_state(struct pipe_context *ctx,
-                   const struct pipe_clip_state *state)
-{
-}
-
-static void
 agx_set_polygon_stipple(struct pipe_context *pctx,
                         const struct pipe_poly_stipple *state)
 {
@@ -5550,7 +5544,6 @@ agx_init_state_functions(struct pipe_context *ctx)
    ctx->delete_tcs_state = agx_delete_shader_state;
    ctx->delete_tes_state = agx_delete_shader_state;
    ctx->set_blend_color = agx_set_blend_color;
-   ctx->set_clip_state = agx_set_clip_state;
    ctx->set_constant_buffer = agx_set_constant_buffer;
    ctx->set_shader_buffers = agx_set_shader_buffers;
    ctx->set_shader_images = agx_set_shader_images;

@@ -480,13 +480,6 @@ panfrost_set_min_samples(struct pipe_context *pipe, unsigned min_samples)
 }
 
 static void
-panfrost_set_clip_state(struct pipe_context *pipe,
-                        const struct pipe_clip_state *clip)
-{
-   // struct panfrost_context *panfrost = pan_context(pipe);
-}
-
-static void
 panfrost_set_viewport_states(struct pipe_context *pipe, unsigned start_slot,
                              unsigned num_viewports,
                              const struct pipe_viewport_state *viewports)
@@ -1045,7 +1038,6 @@ panfrost_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
    gallium->set_sample_mask = panfrost_set_sample_mask;
    gallium->set_min_samples = panfrost_set_min_samples;
 
-   gallium->set_clip_state = panfrost_set_clip_state;
    gallium->set_viewport_states = panfrost_set_viewport_states;
    gallium->set_scissor_states = panfrost_set_scissor_states;
    gallium->set_polygon_stipple = panfrost_set_polygon_stipple;

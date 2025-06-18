@@ -68,12 +68,6 @@ vc4_set_stencil_ref(struct pipe_context *pctx,
 }
 
 static void
-vc4_set_clip_state(struct pipe_context *pctx,
-                   const struct pipe_clip_state *clip)
-{
-}
-
-static void
 vc4_set_sample_mask(struct pipe_context *pctx, unsigned sample_mask)
 {
         struct vc4_context *vc4 = vc4_context(pctx);
@@ -672,7 +666,6 @@ vc4_state_init(struct pipe_context *pctx)
 {
         pctx->set_blend_color = vc4_set_blend_color;
         pctx->set_stencil_ref = vc4_set_stencil_ref;
-        pctx->set_clip_state = vc4_set_clip_state;
         pctx->set_sample_mask = vc4_set_sample_mask;
         pctx->set_constant_buffer = vc4_set_constant_buffer;
         pctx->set_framebuffer_state = vc4_set_framebuffer_state;
