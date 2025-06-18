@@ -24,6 +24,7 @@
 #include "util/perf/u_trace.h"
 
 #include "util/simple_mtx.h"
+#include "util/u_call_once.h"
 #include "util/u_printf.h"
 #include "util/vma.h"
 
@@ -82,6 +83,11 @@ struct panvk_device {
       struct panvk_pool rw_nc;
       struct panvk_pool exec;
    } mempools;
+
+   struct {
+      util_once_flag blackhole_once;
+      struct pan_kmod_bo *blackhole;
+   } sparse_mem;
 
    /* For each subqueue, maximum size of the register dump region needed by
     * exception handlers or functions */
@@ -172,6 +178,11 @@ panvk_as_free(struct panvk_device *device, uint64_t address, uint64_t size)
    util_vma_heap_free(&device->as.heap, address, size);
    simple_mtx_unlock(&device->as.lock);
 }
+
+VkResult panvk_map_to_blackhole(struct panvk_device *device,
+                                uint64_t address, uint64_t size);
+
+struct pan_kmod_bo *panvk_get_blackhole(struct panvk_device *device);
 
 #if PAN_ARCH
 VkResult

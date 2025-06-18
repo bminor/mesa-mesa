@@ -601,6 +601,7 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
    panvk_per_arch(device_draw_context_cleanup)(device);
 #endif
    panvk_meta_cleanup(device);
+   pan_kmod_bo_put(device->sparse_mem.blackhole);
    u_printf_destroy(&device->printf.ctx);
    panvk_priv_bo_unref(device->printf.bo);
    panvk_priv_bo_unref(device->tiler_oom.handlers_bo);

@@ -38,6 +38,7 @@ panvk_tracepoints = custom_target(
 libpanvk_files = files(
   'panvk_buffer.c',
   'panvk_cmd_pool.c',
+  'panvk_device.c',
   'panvk_device_memory.c',
   'panvk_host_copy.c',
   'panvk_image.c',
