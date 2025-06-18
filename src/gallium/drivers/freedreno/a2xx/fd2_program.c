@@ -23,20 +23,10 @@
 #include "fd2_util.h"
 #include "ir2.h"
 
-static struct fd2_shader_stateobj *
-create_shader(struct pipe_context *pctx, gl_shader_stage type)
-{
-   struct fd2_shader_stateobj *so = CALLOC_STRUCT(fd2_shader_stateobj);
-   if (!so)
-      return NULL;
-   so->type = type;
-   so->is_a20x = is_a20x(fd_context(pctx)->screen);
-   return so;
-}
-
 static void
-delete_shader(struct fd2_shader_stateobj *so)
+fd2_shader_state_delete(struct pipe_context *pctx, void *hwcso)
 {
+   struct fd2_shader_stateobj *so = hwcso;
    if (!so)
       return;
    ralloc_free(so->nir);
@@ -72,16 +62,18 @@ ir2_glsl_type_size(const struct glsl_type *type, bool bindless)
 }
 
 static void *
-fd2_fp_state_create(struct pipe_context *pctx,
-                    const struct pipe_shader_state *cso)
+fd2_shader_state_create(struct pipe_context *pctx,
+                        const struct pipe_shader_state *cso)
 {
-   struct fd2_shader_stateobj *so = create_shader(pctx, MESA_SHADER_FRAGMENT);
+   struct fd2_shader_stateobj *so = CALLOC_STRUCT(fd2_shader_stateobj);
    if (!so)
       return NULL;
 
    so->nir = (cso->type == PIPE_SHADER_IR_NIR)
                 ? cso->ir.nir
                 : tgsi_to_nir(cso->tokens, pctx->screen, false);
+   so->type = so->nir->info.stage;
+   so->is_a20x = is_a20x(fd_context(pctx)->screen);
 
    NIR_PASS(_, so->nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
               ir2_glsl_type_size, 0);
@@ -93,57 +85,19 @@ fd2_fp_state_create(struct pipe_context *pctx,
 
    ir2_compile(so, 0, NULL);
 
-   ralloc_free(so->nir);
-   so->nir = NULL;
-   return so;
-
-fail:
-   delete_shader(so);
-   return NULL;
-}
-
-static void
-fd2_fp_state_delete(struct pipe_context *pctx, void *hwcso)
-{
-   struct fd2_shader_stateobj *so = hwcso;
-   delete_shader(so);
-}
-
-static void *
-fd2_vp_state_create(struct pipe_context *pctx,
-                    const struct pipe_shader_state *cso)
-{
-   struct fd2_shader_stateobj *so = create_shader(pctx, MESA_SHADER_VERTEX);
-   if (!so)
-      return NULL;
-
-   so->nir = (cso->type == PIPE_SHADER_IR_NIR)
-                ? cso->ir.nir
-                : tgsi_to_nir(cso->tokens, pctx->screen, false);
-
-   NIR_PASS(_, so->nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-              ir2_glsl_type_size, (nir_lower_io_options)0);
-
-   if (ir2_optimize_nir(so->nir, true))
-      goto fail;
-
-   so->first_immediate = so->nir->num_uniforms;
-
-   /* compile binning variant now */
-   ir2_compile(so, 0, NULL);
+   /* Free FS NIR now.  VS NIR will need to stick around for the draw variant
+    * later.
+    */
+   if (so->nir->info.stage == MESA_SHADER_FRAGMENT) {
+      ralloc_free(so->nir);
+      so->nir = NULL;
+   }
 
    return so;
 
 fail:
-   delete_shader(so);
+   fd2_shader_state_delete(pctx, so);
    return NULL;
-}
-
-static void
-fd2_vp_state_delete(struct pipe_context *pctx, void *hwcso)
-{
-   struct fd2_shader_stateobj *so = hwcso;
-   delete_shader(so);
 }
 
 static void
@@ -272,11 +226,11 @@ fd2_prog_init(struct pipe_context *pctx)
    struct ir2_shader_info *info;
    instr_fetch_vtx_t *instr;
 
-   pctx->create_fs_state = fd2_fp_state_create;
-   pctx->delete_fs_state = fd2_fp_state_delete;
+   pctx->create_fs_state = fd2_shader_state_create;
+   pctx->delete_fs_state = fd2_shader_state_delete;
 
-   pctx->create_vs_state = fd2_vp_state_create;
-   pctx->delete_vs_state = fd2_vp_state_delete;
+   pctx->create_vs_state = fd2_shader_state_create;
+   pctx->delete_vs_state = fd2_shader_state_delete;
 
    fd_prog_init(pctx);
 
