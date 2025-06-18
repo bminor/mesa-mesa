@@ -187,6 +187,68 @@ unsigned pan_image_get_wsi_row_pitch(const struct pan_image_props *props,
                                      const struct pan_image_layout *layout,
                                      unsigned level);
 
+static inline unsigned
+pan_linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
+                                  unsigned plane_idx)
+{
+   if (arch < 7) {
+      unsigned nplanes = util_format_get_num_planes(format);
+
+      /* If this is a planar format, align on the plane blocksize. */
+      if (nplanes > 1) {
+         enum pipe_format plane_format =
+            util_format_get_plane_format(format, plane_idx);
+
+         return util_next_power_of_two(util_format_get_blocksize(plane_format));
+      }
+
+      /* Align on blocksize if the format is compressed. */
+      if (util_format_is_compressed(format))
+         return util_next_power_of_two(util_format_get_blocksize(format));
+
+      const struct util_format_description *fdesc =
+         util_format_description(format);
+      unsigned comp_sz_bits = 0;
+      for (unsigned i = 0; i < ARRAY_SIZE(fdesc->channel); i++) {
+         if (!fdesc->channel[0].size)
+            continue;
+
+         /* Align on a pixel if any component is not 8-bit aligned or not a
+          * power of two. */
+         if (fdesc->channel[0].size % 8 != 0 ||
+             !util_is_power_of_two_nonzero(fdesc->channel[0].size))
+            return util_next_power_of_two(util_format_get_blocksize(format));
+
+         /* Align on a pixel if not all components have the same size. */
+         if (comp_sz_bits != 0 && comp_sz_bits != fdesc->channel[0].size)
+            return util_next_power_of_two(util_format_get_blocksize(format));
+
+         comp_sz_bits = fdesc->channel[0].size;
+      }
+
+      /* If all components are the same size, 8-bit aligned and a power of two,
+       * align on a component. */
+      return comp_sz_bits / 8;
+   }
+
+   switch (format) {
+   /* For v7+, NV12/NV21/I420 have a looser alignment requirement of 16 bytes */
+   case PIPE_FORMAT_R8_G8B8_420_UNORM:
+   case PIPE_FORMAT_G8_B8R8_420_UNORM:
+   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
+   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+   case PIPE_FORMAT_R8_B8G8_422_UNORM:
+      return 16;
+   /* the 10 bit formats have even looser alignment */
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      return 1;
+   default:
+      return 64;
+   }
+}
+
 #ifdef __cplusplus
 } /* extern C */
 #endif

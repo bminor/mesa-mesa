@@ -29,6 +29,37 @@
 
 #include <gtest/gtest.h>
 
+TEST(Align, UTiledLinear)
+{
+   struct {
+      unsigned arch;
+      enum pipe_format format;
+      unsigned plane_idx;
+      unsigned alignment;
+   } cases[] = {
+      { 6, PIPE_FORMAT_ETC2_RGB8, 0, 8 },
+      { 6, PIPE_FORMAT_R32G32B32_FLOAT, 0, 4 },
+      { 6, PIPE_FORMAT_R8G8B8A8_UNORM, 0, 1 },
+      { 6, PIPE_FORMAT_R5G6B5_UNORM, 0, 2 },
+      { 6, PIPE_FORMAT_R8_G8B8_420_UNORM, 0, 1 },
+      { 6, PIPE_FORMAT_R8_G8B8_420_UNORM, 1, 2 },
+      { 7, PIPE_FORMAT_ETC2_RGB8, 0, 64 },
+      { 7, PIPE_FORMAT_R32G32B32_FLOAT, 0, 64 },
+      { 7, PIPE_FORMAT_R8G8B8A8_UNORM, 0, 64 },
+      { 7, PIPE_FORMAT_R5G6B5_UNORM, 0, 64 },
+      { 7, PIPE_FORMAT_R8_G8B8_420_UNORM, 0, 16 },
+      { 7, PIPE_FORMAT_R8_G8B8_420_UNORM, 1, 16 },
+      { 7, PIPE_FORMAT_R10_G10B10_420_UNORM, 0, 1 },
+      { 7, PIPE_FORMAT_R10_G10B10_420_UNORM, 1, 1 },
+   };
+   for (unsigned i = 0; i < ARRAY_SIZE(cases); ++i) {
+      unsigned align = pan_linear_or_tiled_row_align_req(
+         cases[i].arch, cases[i].format, cases[i].plane_idx);
+
+      EXPECT_EQ(align, cases[i].alignment);
+   }
+}
+
 TEST(BlockSize, Linear)
 {
    enum pipe_format format[] = {PIPE_FORMAT_R32G32B32_FLOAT,
@@ -588,26 +619,7 @@ offset_align_for_mod(unsigned arch, const struct pan_image_props *iprops,
       assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
              modifier == DRM_FORMAT_MOD_LINEAR);
 
-      if (arch < 7)
-         return 64;
-
-      switch (format) {
-      /* For v7+, NV12/NV21/I420 have a looser alignment requirement of 16 bytes
-       */
-      case PIPE_FORMAT_R8_G8B8_420_UNORM:
-      case PIPE_FORMAT_G8_B8R8_420_UNORM:
-      case PIPE_FORMAT_R8_G8_B8_420_UNORM:
-      case PIPE_FORMAT_R8_B8_G8_420_UNORM:
-      case PIPE_FORMAT_R8_G8B8_422_UNORM:
-      case PIPE_FORMAT_R8_B8G8_422_UNORM:
-         return 16;
-      /* the 10 bit formats have even looser alignment */
-      case PIPE_FORMAT_R10_G10B10_420_UNORM:
-      case PIPE_FORMAT_R10_G10B10_422_UNORM:
-         return 1;
-      default:
-         return 64;
-      }
+      return pan_linear_or_tiled_row_align_req(arch, format, plane_idx);
    }
 }
 

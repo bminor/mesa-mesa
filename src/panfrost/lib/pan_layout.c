@@ -106,36 +106,6 @@ pan_image_renderblock_size_el(uint64_t modifier, enum pipe_format format,
    };
 }
 
-static unsigned
-linear_or_tiled_row_align_req(unsigned arch, enum pipe_format format,
-                              uint64_t modifier)
-{
-   assert(modifier == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
-          modifier == DRM_FORMAT_MOD_LINEAR);
-
-   /* Prior to v7 we assume a cacheline alignment, though this could be relaxed
-    * on some formats if we have to, like we do on v7+. */
-   if (arch < 7)
-      return 64;
-
-   switch (format) {
-   /* For v7+, NV12/NV21/I420 have a looser alignment requirement of 16 bytes */
-   case PIPE_FORMAT_R8_G8B8_420_UNORM:
-   case PIPE_FORMAT_G8_B8R8_420_UNORM:
-   case PIPE_FORMAT_R8_G8_B8_420_UNORM:
-   case PIPE_FORMAT_R8_B8_G8_420_UNORM:
-   case PIPE_FORMAT_R8_G8B8_422_UNORM:
-   case PIPE_FORMAT_R8_B8G8_422_UNORM:
-      return 16;
-   /* the 10 bit formats have even looser alignment */
-   case PIPE_FORMAT_R10_G10B10_420_UNORM:
-   case PIPE_FORMAT_R10_G10B10_422_UNORM:
-      return 1;
-   default:
-      return 64;
-   }
-}
-
 /*
  * Computes sizes for checksumming, which is 8 bytes per 16x16 tile.
  * Checksumming is believed to be a CRC variant (CRC64 based on the size?).
@@ -318,7 +288,7 @@ wsi_row_pitch_to_row_stride(
                              get_plane_blocksize(format, plane_idx);
 
       row_align_mask =
-         linear_or_tiled_row_align_req(arch, format, modifier) - 1;
+         pan_linear_or_tiled_row_align_req(arch, format, plane_idx) - 1;
       offset_align_mask = row_align_mask;
       *row_stride_B = wsi_row_pitch_B * block_size_el.height;
       width_px = (*row_stride_B / tile_size_B) *
@@ -381,12 +351,21 @@ pan_image_layout_init(
 
    const bool afbc = drm_is_afbc(props->modifier);
    const bool afrc = drm_is_afrc(props->modifier);
-   const int align_req_B =
-      afbc ? pan_afbc_header_row_stride_align(arch, props->format,
-                                              props->modifier)
-           : (afrc ? pan_afrc_buffer_alignment_from_modifier(props->modifier)
-                   : linear_or_tiled_row_align_req(arch, props->format,
-                                                   props->modifier));
+   int align_req_B;
+
+   if (afbc) {
+      align_req_B =
+         pan_afbc_header_row_stride_align(arch, props->format, props->modifier);
+   } else if (afrc) {
+      align_req_B = pan_afrc_buffer_alignment_from_modifier(props->modifier);
+   } else {
+      /* This is the alignment for non-explicit layout, and we want things
+       * aligned on at least a cacheline for performance reasons in that case.
+       */
+      align_req_B =
+         pan_linear_or_tiled_row_align_req(arch, props->format, plane_idx);
+      align_req_B = MAX2(align_req_B, 64);
+   }
 
    /* Mandate alignment */
    unsigned wsi_row_stride_B = 0;
