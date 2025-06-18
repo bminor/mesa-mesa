@@ -260,9 +260,6 @@ zink_create_surface(struct pipe_context *pctx,
    bool is_array = templ->last_layer != templ->first_layer;
    enum pipe_texture_target target_2d[] = {PIPE_TEXTURE_2D, PIPE_TEXTURE_2D_ARRAY};
 
-   if (!zink_get_format(screen, templ->format))
-      return NULL;
-
    VkImageViewCreateInfo ivci = create_ivci(screen, res, templ,
                                             pres->target == PIPE_TEXTURE_3D ? target_2d[is_array] : pres->target);
 
