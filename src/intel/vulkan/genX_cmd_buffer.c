@@ -4907,7 +4907,10 @@ genX(flush_pipeline_select)(struct anv_cmd_buffer *cmd_buffer,
        intel_needs_workaround(cmd_buffer->device->info, 16013063087))
       bits |= ANV_PIPE_STATE_CACHE_INVALIDATE_BIT;
 
-   anv_add_pending_pipe_bits(cmd_buffer, bits, "flush/invalidate PIPELINE_SELECT");
+   anv_add_pending_pipe_bits(cmd_buffer, bits,
+		             pipeline == _3D ?
+			     "flush/invalidate PIPELINE_SELECT 3D" :
+			     "flush/invalidate PIPELINE_SELECT GPGPU");
    genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
 #if GFX_VER == 9
