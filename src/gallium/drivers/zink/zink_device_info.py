@@ -715,6 +715,7 @@ zink_get_physical_device_info(struct zink_screen *screen)
    %for ext in extensions:
       %if ext.needs_double_load:
          if (screen->info.have_${ext.name_with_vendor()}) {
+            screen->info.${ext.field("props")}.sType = ${ext.stype("PROPERTIES")};
             screen->info.${ext.field("props")}.pNext = second_load_props.pNext;
             second_load_props.pNext = &screen->info.${ext.field("props")};
          %for field in registry.get_registry_entry(ext.name).properties_fields:
