@@ -1610,7 +1610,6 @@ struct zink_descriptor_db_info {
    unsigned offset;
    unsigned size;
    enum pipe_format format;
-   struct pipe_resource *pres;
 };
 
 struct zink_descriptor_surface {

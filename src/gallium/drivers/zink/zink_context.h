@@ -54,14 +54,6 @@ struct zink_vertex_elements_state;
    util_debug_message(&ctx->dbg, PERF_INFO, __VA_ARGS__); \
 } while(0)
 
-static inline struct zink_resource *
-zink_descriptor_surface_resource(struct zink_descriptor_surface *ds)
-{
-   return ds->is_buffer ?
-          zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB ? zink_resource(ds->db.pres) : zink_resource(ds->bufferview->pres) :
-          (struct zink_resource*)ds->surface->base.texture;
-}
-
 static inline bool
 zink_fb_clear_enabled(const struct zink_context *ctx, unsigned idx)
 {

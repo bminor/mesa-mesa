@@ -2425,7 +2425,7 @@ zink_make_texture_handle_resident(struct pipe_context *pctx, uint64_t handle, bo
    assert(he);
    struct zink_bindless_descriptor *bd = he->data;
    struct zink_descriptor_surface *ds = &bd->ds;
-   struct zink_resource *res = zink_descriptor_surface_resource(ds);
+   struct zink_resource *res = zink_resource(bd->pres);
    if (is_buffer)
       handle -= ZINK_MAX_BINDLESS_HANDLES;
    if (resident) {
@@ -2546,7 +2546,7 @@ zink_make_image_handle_resident(struct pipe_context *pctx, uint64_t handle, unsi
    struct zink_bindless_descriptor *bd = he->data;
    struct zink_descriptor_surface *ds = &bd->ds;
    bd->access = paccess;
-   struct zink_resource *res = zink_descriptor_surface_resource(ds);
+   struct zink_resource *res = zink_resource(bd->pres);
    VkAccessFlags access = 0;
    if (paccess & PIPE_IMAGE_ACCESS_WRITE) {
       if (resident) {
@@ -3501,7 +3501,7 @@ zink_update_descriptor_refs(struct zink_context *ctx, bool compute)
       ctx->di.bindless_refs_dirty = false;
       for (unsigned i = 0; i < 2; i++) {
          util_dynarray_foreach(&ctx->di.bindless[i].resident, struct zink_bindless_descriptor*, bd) {
-            struct zink_resource *res = zink_descriptor_surface_resource(&(*bd)->ds);
+            struct zink_resource *res = zink_resource((*bd)->pres);
             zink_batch_resource_usage_set(ctx->bs, res, (*bd)->access & PIPE_IMAGE_ACCESS_WRITE, res->obj->is_buffer);
             if (!ctx->unordered_blitting) {
                if ((*bd)->access & PIPE_IMAGE_ACCESS_WRITE || !res->obj->is_buffer)
