@@ -129,7 +129,7 @@ _eglPrintConfig(_EGLConfig *const conf, const int chosenIndex)
 
    /* If one of chosen configs, print its index in the returned config array */
    if (chosenIndex >= 0)
-      _strnAppend(printMsg, sizeof(printMsg), "%*d ", strlen(padding),
+      _strnAppend(printMsg, sizeof(printMsg), "%*d ", (int)strlen(padding),
                   chosenIndex);
    else
       _strnAppend(printMsg, sizeof(printMsg), "%s ", &padding[0]);
