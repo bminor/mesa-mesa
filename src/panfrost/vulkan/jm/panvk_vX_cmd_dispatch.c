@@ -203,12 +203,12 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    unsigned copy_desc_dep =
       copy_desc_job.gpu
          ? pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_COMPUTE, false,
-                          indirect, 0, 0, &copy_desc_job, false)
+                          indirect, 0, indirect_dep, &copy_desc_job, false)
          : indirect_dep;
 
    pan_jc_add_job(&batch->vtc_jc,
                   indirect ? MALI_JOB_TYPE_NOT_STARTED : MALI_JOB_TYPE_COMPUTE,
-                  indirect, false, 0, copy_desc_dep, &job, false);
+                  false, false, 0, copy_desc_dep, &job, false);
 
    panvk_per_arch(cmd_close_batch)(cmdbuf);
    clear_dirty_after_dispatch(cmdbuf);
