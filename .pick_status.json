@@ -8114,7 +8114,7 @@
         "description": "radv: stop disabling the alpha optimization with E5B9G9R9 and RB+",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
