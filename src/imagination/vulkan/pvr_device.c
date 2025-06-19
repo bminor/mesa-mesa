@@ -1044,6 +1044,20 @@ pvr_physical_device_setup_uuids(struct pvr_physical_device *const pdevice)
           sizeof(pdevice->vk.properties.shaderBinaryUUID));
 }
 
+static bool pvr_device_is_conformant(const struct pvr_device_info *info)
+{
+   const uint64_t bvnc = pvr_get_packed_bvnc(info);
+   switch (bvnc) {
+   case PVR_BVNC_PACK(36, 53, 104, 796):
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
                                          struct pvr_instance *instance,
                                          drmDevicePtr drm_render_device,
@@ -1104,16 +1118,6 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    if (result != VK_SUCCESS)
       goto err_vk_free_display_path;
 
-   if (!getenv("PVR_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
-      result = vk_errorf(instance,
-                         VK_ERROR_INCOMPATIBLE_DRIVER,
-                         "WARNING: powervr is not a conformant Vulkan "
-                         "implementation. Pass "
-                         "PVR_I_WANT_A_BROKEN_VULKAN_DRIVER=1 if you know "
-                         "what you're doing.");
-      goto err_pvr_winsys_destroy;
-   }
-
    pdevice->instance = instance;
    pdevice->render_path = render_path;
    pdevice->display_path = display_path;
@@ -1124,6 +1128,21 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
                                       &pdevice->dev_runtime_info);
    if (result != VK_SUCCESS)
       goto err_pvr_winsys_destroy;
+
+   if (!pvr_device_is_conformant(&pdevice->dev_info)) {
+      if (!getenv("PVR_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
+         result = vk_errorf(instance,
+                            VK_ERROR_INCOMPATIBLE_DRIVER,
+                            "WARNING: powervr is not a conformant Vulkan "
+                            "implementation for %s. Pass "
+                            "PVR_I_WANT_A_BROKEN_VULKAN_DRIVER=1 if you know "
+                            "what you're doing.",
+                            pdevice->dev_info.ident.public_name);
+         goto err_pvr_winsys_destroy;
+      }
+
+      vk_warn_non_conformant_implementation("powervr");
+   }
 
    /* Setup available memory heaps and types */
    pdevice->memory.memoryHeapCount = 1;
