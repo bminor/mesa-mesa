@@ -46,11 +46,13 @@ public:
 
    static void set_chipclass(r600_chip_class chip_class);
 
-   int free_slots() const;
-
    auto addr() const { return std::make_pair(m_addr_used, m_addr_is_index); }
 
    uint32_t slots() const override;
+   uint8_t free_slot_mask() const
+   {
+      return m_free_slots;
+   }
 
    AluInstr::SrcValues get_kconsts() const;
 
@@ -105,6 +107,8 @@ private:
    bool m_addr_for_src{false};
    bool m_has_kill_op{false};
    AluInstr *m_origin{nullptr};
+
+   uint8_t m_free_slots;
 };
 
 } // namespace r600

@@ -15,7 +15,11 @@
 
 namespace r600 {
 
-AluGroup::AluGroup() { std::fill(m_slots.begin(), m_slots.end(), nullptr); }
+AluGroup::AluGroup()
+{
+   std::fill(m_slots.begin(), m_slots.end(), nullptr);
+   m_free_slots = has_t() ? 0x1f : 0xf;
+}
 
 bool
 AluGroup::add_instruction(AluInstr *instr)
@@ -114,6 +118,7 @@ AluGroup::add_trans_instructions(AluInstr *instr)
           update_indirect_access(instr)) {
          m_readports_evaluator = readports_evaluator;
          m_slots[4] = instr;
+         m_free_slots &= ~0x10;
          instr->pin_sources_to_chan();
          sfn_log << SfnLog::schedule << "T: " << *instr << "\n";
 
@@ -125,17 +130,6 @@ AluGroup::add_trans_instructions(AluInstr *instr)
       }
    }
    return false;
-}
-
-int
-AluGroup::free_slots() const
-{
-   int free_mask = 0;
-   for (int i = 0; i < s_max_slots; ++i) {
-      if (!m_slots[i])
-         free_mask |= 1 << i;
-   }
-   return free_mask;
 }
 
 bool
@@ -261,6 +255,7 @@ AluGroup::try_readport(AluInstr *instr, AluBankSwizzle cycle)
        update_indirect_access(instr)) {
       m_readports_evaluator = readports_evaluator;
       m_slots[preferred_chan] = instr;
+      m_free_slots &= ~(1 << preferred_chan);
       m_has_lds_op |= instr->has_lds_access();
       sfn_log << SfnLog::schedule << "V: " << *instr << "\n";
       auto dest = instr->dest();

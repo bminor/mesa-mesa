@@ -591,7 +591,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
 
    assert(group);
 
-   int free_slots = group->free_slots();
+   int free_slots = group->free_slot_mask();
 
    while (free_slots && has_alu_ready) {
       if (!alu_vec_ready.empty())
