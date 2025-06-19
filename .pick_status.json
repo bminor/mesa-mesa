@@ -4824,7 +4824,7 @@
         "description": "panvk: fix bi_emit_alu calling bi_make_vec_to",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3cc6a4c5d033ae0ca6d53a53aa87a909988e3515",
         "notes": null

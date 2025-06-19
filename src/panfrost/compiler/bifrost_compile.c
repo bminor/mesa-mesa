@@ -2893,11 +2893,14 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
       bi_index idx = bi_src_index(&instr->src[0].src);
       unsigned factor = src_sz / 8;
       unsigned chan[4] = {0};
+      bi_index idxs[4];
 
-      for (unsigned i = 0; i < comps; ++i)
+      for (unsigned i = 0; i < comps; ++i) {
+         idxs[i] = idx;
          chan[i] = instr->src[0].swizzle[i] * factor;
+      }
 
-      bi_make_vec_to(b, dst, &idx, chan, comps, 8);
+      bi_make_vec_to(b, dst, idxs, chan, comps, 8);
       return;
    }
 
