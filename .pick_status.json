@@ -8104,7 +8104,7 @@
         "description": "radv: disable RB+ with E5B9G9R9 to workaround failures on GFX10.3-GFX11.5",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
