@@ -584,8 +584,9 @@ tu_render_pass_cond_config(struct tu_device *device,
 /**
  * Checks if the pass should allow IB2 skipping.
  *
- * If any stores would be emitted in a non-final subpass, then we need to turn
- * off IB2 skipping to make sure that we don't early-return before they happen.
+ * If any stores or resolves would be emitted in a non-final subpass, then we
+ * need to turn off IB2 skipping to make sure that we don't early-return before
+ * they happen.
  */
 static void
 tu_render_pass_check_ib2_skip(struct tu_render_pass *pass)
@@ -594,8 +595,20 @@ tu_render_pass_check_ib2_skip(struct tu_render_pass *pass)
    for (int i = 0; i < pass->attachment_count; i++) {
       struct tu_render_pass_attachment *att = &pass->attachments[i];
       if ((att->store || att->store_stencil) &&
-          att->last_subpass_idx != pass->subpass_count - 1)
+          att->last_subpass_idx != pass->subpass_count - 1) {
          pass->allow_ib2_skipping = false;
+         return;
+      }
+   }
+
+   for (int i = 0; i < pass->subpass_count - 1; i++) {
+      struct tu_subpass *subpass = &pass->subpasses[i];
+      for (int j = 0; j < subpass->resolve_count; j++) {
+         if (subpass->resolve_attachments[j].attachment != VK_ATTACHMENT_UNUSED) {
+            pass->allow_ib2_skipping = false;
+            return;
+         }
+      }
    }
 }
 
