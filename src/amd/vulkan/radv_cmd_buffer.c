@@ -1944,8 +1944,20 @@ radv_emit_rbplus_state(struct radv_cmd_buffer *cmd_buffer)
          }
          break;
       case V_028C70_COLOR_5_9_9_9:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR)
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (i * 4);
+         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
+            if (pdev->info.gfx_level >= GFX12) {
+               sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (i * 4);
+            } else if (pdev->info.gfx_level >= GFX10_3) {
+               if (colormask == 0xf) {
+                  sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (i * 4);
+               } else {
+                  /* On GFX10_3+, RB+ with E5B9G9R9 seems broken in the hardware when not all
+                   * channels are written. Disable RB+ to workaround it.
+                   */
+                  sx_ps_downconvert |= V_028754_SX_RT_EXPORT_NO_CONVERSION << (i * 4);
+               }
+            }
+         }
          break;
       }
    }
