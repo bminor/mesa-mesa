@@ -253,6 +253,7 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
 
    unsigned desc_count = 0, dyn_buf_count = 0, non_variable_count = 0,
             variable_stride = 0;
+   VkDescriptorType variable_type = {0};
    for (unsigned i = 0; i < pCreateInfo->bindingCount; i++) {
       const VkDescriptorSetLayoutBinding *binding = &pCreateInfo->pBindings[i];
       VkDescriptorType type = binding->descriptorType;
@@ -321,6 +322,7 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
                type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK ? 4 : 1;
          }
 
+         variable_type = type;
          variable_stride = stride;
          assert(variable_stride);
       }
@@ -340,7 +342,24 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
       return;
 
    pSupport->supported = true;
-   if (var_desc_count)
-      var_desc_count->maxVariableDescriptorCount = variable_stride != 0 ?
-         (PANVK_MAX_DESCS_PER_SET - non_variable_count) / variable_stride : 0;
+
+   if (!var_desc_count)
+      return;
+
+   var_desc_count->maxVariableDescriptorCount = 0;
+
+   if (!variable_stride)
+      return;
+
+   if (variable_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+      /* Maximum byte size for inline uniform block */
+      unsigned available_size =
+         panvk_get_iub_size(PANVK_MAX_DESCS_PER_SET - non_variable_count);
+      var_desc_count->maxVariableDescriptorCount =
+         MIN2(available_size, MAX_INLINE_UNIFORM_BLOCK_SIZE);
+   } else {
+      /* Maximum descriptor count for any other descriptor type */
+      var_desc_count->maxVariableDescriptorCount =
+         (PANVK_MAX_DESCS_PER_SET - non_variable_count) / variable_stride;
+   }
 }

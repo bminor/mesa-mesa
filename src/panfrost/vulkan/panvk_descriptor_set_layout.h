@@ -19,10 +19,11 @@
 
 #include "genxml/gen_macros.h"
 
-#define PANVK_DESCRIPTOR_SIZE       32
-#define MAX_DYNAMIC_UNIFORM_BUFFERS 16
-#define MAX_DYNAMIC_STORAGE_BUFFERS 8
-#define MAX_PUSH_DESCS              32
+#define PANVK_DESCRIPTOR_SIZE         32
+#define MAX_DYNAMIC_UNIFORM_BUFFERS   16
+#define MAX_DYNAMIC_STORAGE_BUFFERS   8
+#define MAX_PUSH_DESCS                32
+#define MAX_INLINE_UNIFORM_BLOCK_SIZE (1 << 16)
 #define MAX_DYNAMIC_BUFFERS                                                    \
    (MAX_DYNAMIC_UNIFORM_BUFFERS + MAX_DYNAMIC_STORAGE_BUFFERS)
 

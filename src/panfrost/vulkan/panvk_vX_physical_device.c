@@ -32,7 +32,6 @@
  * descriptor metadata  */
 #define RESERVED_UBO_COUNT                   6
 #define MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS (32 - RESERVED_UBO_COUNT)
-#define MAX_INLINE_UNIFORM_BLOCK_SIZE        (1 << 16)
 
 void
 panvk_per_arch(get_physical_device_extensions)(
