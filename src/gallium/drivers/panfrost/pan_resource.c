@@ -568,6 +568,14 @@ panfrost_should_afbc(struct panfrost_device *dev,
    if (pres->base.width0 <= 16 && pres->base.height0 <= 16)
       return false;
 
+   /* AFBC headers point to their tile with a 32-bit offset, so we can't
+    * have a body size that's bigger than UINT32_MAX. */
+   uint64_t body_size = (uint64_t)pres->base.width0 * pres->base.height0 *
+                        pres->base.depth0 *
+                        util_format_get_blocksize(pres->base.format);
+   if (body_size > UINT32_MAX)
+      return false;
+
    /* Otherwise, we'd prefer AFBC as it is dramatically more efficient
     * than linear or usually even u-interleaved */
    return true;
