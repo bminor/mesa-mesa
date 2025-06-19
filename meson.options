@@ -751,6 +751,14 @@ option(
 )
 
 option(
+  'radeonsi-build-id',
+  type : 'string',
+  value : '',
+  description : 'Override build id for shader cache keys (hex string). ' +
+                'Can be extracted with readelf -x .note.gnu.build-id'
+)
+
+option(
   'min-windows-version',
   type : 'integer',
   min : 7,

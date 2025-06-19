@@ -1108,6 +1108,18 @@ static void si_test_vmfault(struct si_screen *sscreen, uint64_t test_flags)
    exit(0);
 }
 
+static void
+parse_hex(char *out, const char *in, unsigned length)
+{
+   for (unsigned i = 0; i < length; ++i)
+      out[i] = 0;
+
+   for (unsigned i = 0; i < 2 * length; ++i) {
+      unsigned v = in[i] <= '9' ? in[i] - '0' : (in[i] >= 'a' ? (in[i] - 'a' + 10) : (in[i] - 'A' + 10));
+      out[i / 2] |= v << (4 * (1 - i % 2));
+   }
+}
+
 static void si_disk_cache_create(struct si_screen *sscreen)
 {
    /* Don't use the cache if shader dumping is enabled. */
@@ -1120,8 +1132,17 @@ static void si_disk_cache_create(struct si_screen *sscreen)
 
    _mesa_sha1_init(&ctx);
 
+#ifdef RADEONSI_BUILD_ID_OVERRIDE
+   {
+      unsigned size = strlen(RADEONSI_BUILD_ID_OVERRIDE) / 2;
+      char *data = alloca(size);
+      parse_hex(data, RADEONSI_BUILD_ID_OVERRIDE, size);
+      _mesa_sha1_update(&ctx, data, size);
+   }
+#else
    if (!disk_cache_get_function_identifier(si_disk_cache_create, &ctx))
       return;
+#endif
 
 #if AMD_LLVM_AVAILABLE
    if (!disk_cache_get_function_identifier(LLVMInitializeAMDGPUTargetInfo, &ctx))

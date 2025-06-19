@@ -154,6 +154,11 @@ if with_amdgpu_virtio
   libradeonsi_cflags += ['-DHAVE_AMDGPU_VIRTIO']
 endif
 
+radeonsi_build_id = get_option('radeonsi-build-id')
+if radeonsi_build_id != ''
+  libradeonsi_cflags += '-DRADEONSI_BUILD_ID_OVERRIDE="' + radeonsi_build_id + '"'
+endif
+
 libradeonsi = static_library(
   'radeonsi',
   [files_libradeonsi, sid_tables_h],
