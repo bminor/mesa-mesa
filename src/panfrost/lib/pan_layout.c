@@ -534,7 +534,13 @@ pan_image_layout_init(
       /* Compute AFBC sizes if necessary */
 
       offset_B += slice_full_size_B;
-      slice->size_B = slice_full_size_B;
+
+      /* We can't use slice_full_size_B for AFBC(3D), otherwise the headers are
+       * not counted. */
+      if (afbc)
+         slice->size_B = slice->afbc.body_size_B + slice->afbc.header_size_B;
+      else
+         slice->size_B = slice_full_size_B;
 
       /* Add a checksum region if necessary */
       if (props->crc) {
