@@ -152,7 +152,7 @@ if [ "$OLD_SF_PID" == "$NEW_SF_PID" ]; then
      exit 1
 fi
 
-if [ -n "${USE_ANDROID_CTS:-}" ]; then
+if [ -n "${ANDROID_CTS_TAG:-}" ]; then
   # The script sets EXIT_CODE
   . "$(dirname "$0")/android-cts-runner.sh"
 else

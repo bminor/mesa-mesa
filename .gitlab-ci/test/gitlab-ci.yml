@@ -187,6 +187,10 @@ yaml-toml-shell-py-test:
     paths:
       - results/
 
+.test-android-cts:
+  variables:
+    ANDROID_CTS_TAG: ${CONDITIONAL_BUILD_ANDROID_CTS_TAG}
+
 .test-angle:
   variables:
     ANGLE_TAG: ${CONDITIONAL_BUILD_ANGLE_TAG}

@@ -4,6 +4,8 @@
 
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
+ci_tag_test_time_check "ANDROID_CTS_TAG"
+
 export PATH=/android-cts/jdk/bin/:$PATH
 export JAVA_HOME=/android-cts/jdk
 

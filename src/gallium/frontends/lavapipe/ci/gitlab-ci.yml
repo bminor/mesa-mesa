@@ -74,12 +74,12 @@ android-angle-lavapipe:
 
 android-angle-lavapipe-cts:
   variables:
-    USE_ANDROID_CTS: 1
     ANDROID_GPU_MODE: mesa_swrast_guest_angle
     GPU_VERSION: lvp-android-angle
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
   timeout: 15m
   extends:
     - .test-android
+    - .test-android-cts
     - .lavapipe-rules
     - .test-angle

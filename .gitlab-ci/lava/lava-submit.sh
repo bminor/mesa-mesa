@@ -69,6 +69,16 @@ if [ -n "${HWCI_KERNEL_MODULES:-}" ]; then
 		  --format=tar
 	)
 fi
+if [ -n "${ANDROID_CTS_TAG:-}" ]; then
+	LAVA_EXTRA_OVERLAYS+=(
+		- append-overlay
+		  --name=android-cts
+		  --url="$(find_s3_project_artifact "${DATA_STORAGE_PATH}/android-cts/${ANDROID_CTS_TAG}.tar.zst")"
+		  --path="/"
+		  --format=tar
+		  --compression=zstd
+	)
+fi
 if [ -n "${VKD3D_PROTON_TAG:-}" ]; then
 	LAVA_EXTRA_OVERLAYS+=(
 		- append-overlay
