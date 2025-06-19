@@ -739,7 +739,7 @@ static void si_dump_descriptor_list(struct si_screen *screen, struct si_descript
    }
 
    struct si_log_chunk_desc_list *chunk =
-      CALLOC_VARIANT_LENGTH_STRUCT(si_log_chunk_desc_list, 4 * element_dw_size * num_elements);
+      CALLOC_VARIANT_LENGTH_STRUCT(si_log_chunk_desc_list, 4 * (size_t)element_dw_size * num_elements);
    chunk->shader_name = shader_name;
    chunk->elem_name = elem_name;
    chunk->element_dw_size = element_dw_size;

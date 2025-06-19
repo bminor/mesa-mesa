@@ -1545,7 +1545,7 @@ bool si_texture_commit(struct si_context *ctx, struct si_resource *res, unsigned
    for (int i = 0; i < d; i++) {
       uint64_t base = commit_base + i * depth_pitch;
       for (int j = 0; j < h; j++) {
-         uint64_t offset = base + j * row_pitch;
+         uint64_t offset = base + j * (uint64_t)row_pitch;
          if (!ctx->ws->buffer_commit(ctx->ws, res->buf, offset, size, commit))
             return false;
       }

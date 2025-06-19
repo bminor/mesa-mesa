@@ -1586,7 +1586,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
          if (increment_draw_id) {
             if (index_bias_varies) {
                for (unsigned i = 0; i < num_draws; i++) {
-                  uint64_t va = index_va + draws[i].start * index_size;
+                  uint64_t va = index_va + (uint64_t)draws[i].start * index_size;
 
                   if (i > 0) {
                      radeon_set_sh_reg_seq(sh_base_reg + SI_SGPR_BASE_VERTEX * 4, 2);
@@ -1610,7 +1610,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
             } else {
                /* Only DrawID varies. */
                for (unsigned i = 0; i < num_draws; i++) {
-                  uint64_t va = index_va + draws[i].start * index_size;
+                  uint64_t va = index_va + (uint64_t)draws[i].start * index_size;
 
                   if (i > 0)
                      radeon_set_sh_reg(sh_base_reg + SI_SGPR_DRAWID * 4, drawid_base + i);
@@ -1632,7 +1632,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
             if (index_bias_varies) {
                /* Only BaseVertex varies. */
                for (unsigned i = 0; i < num_draws; i++) {
-                  uint64_t va = index_va + draws[i].start * index_size;
+                  uint64_t va = index_va + (uint64_t)draws[i].start * index_size;
 
                   if (i > 0)
                      radeon_set_sh_reg(sh_base_reg + SI_SGPR_BASE_VERTEX * 4, draws[i].index_bias);
@@ -1662,7 +1662,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
                }
 
                for (unsigned i = 0; i < num_draws; i++) {
-                  uint64_t va = index_va + draws[i].start * index_size;
+                  uint64_t va = index_va + (uint64_t)draws[i].start * index_size;
 
                   radeon_emit(PKT3(PKT3_DRAW_INDEX_2, 4, render_cond_bit));
                   radeon_emit(index_max_size);

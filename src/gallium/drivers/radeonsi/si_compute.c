@@ -294,7 +294,7 @@ static bool si_setup_compute_scratch_buffer(struct si_context *sctx, struct si_s
 {
    uint64_t scratch_bo_size =
       sctx->compute_scratch_buffer ? sctx->compute_scratch_buffer->b.b.width0 : 0;
-   uint64_t scratch_needed = sctx->max_seen_compute_scratch_bytes_per_wave *
+   uint64_t scratch_needed = (uint64_t)sctx->max_seen_compute_scratch_bytes_per_wave *
                              sctx->screen->info.max_scratch_waves;
    assert(scratch_needed);
 

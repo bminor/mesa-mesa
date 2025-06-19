@@ -670,7 +670,7 @@ void si_test_blit_perf(struct si_screen *sscreen)
                                  ctx->destroy_query(ctx, q);
 
                                  double sec = (double)result.u64 / (1000 * 1000 * 1000);
-                                 uint64_t pixels_per_surf = num_repeats * dst_box.width *
+                                 uint64_t pixels_per_surf = num_repeats * (uint64_t) dst_box.width *
                                                             dst_box.height * dst_box.depth;
                                  uint64_t bytes;
 
