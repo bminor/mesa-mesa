@@ -647,6 +647,9 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
          ctx->bs->unordered_write_access |= flags;
          ctx->bs->unordered_write_stages |= pipeline;
       }
+   } else {
+      res->obj->unordered_access = 0;
+      res->obj->unordered_access_stage = 0;
    }
    if (!unordered || !usage_matches || res->obj->ordered_access_is_copied) {
       res->obj->access = flags;
