@@ -3183,13 +3183,16 @@ tc_texture_subdata(struct pipe_context *_pipe,
 {
    struct threaded_context *tc = threaded_context(_pipe);
    uint64_t size;
+   uint32_t last_row_stride;
 
    assert(box->height >= 1);
    assert(box->depth >= 1);
 
+   last_row_stride = box->width * util_format_get_blocksize(resource->format);
+
    size = (box->depth - 1) * layer_stride +
           (box->height - 1) * (uint64_t)stride +
-          box->width * util_format_get_blocksize(resource->format);
+          last_row_stride;
    if (!size)
       return;
 
