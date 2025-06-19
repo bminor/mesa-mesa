@@ -37,6 +37,7 @@ tu_bo_init_new_explicit_iova(struct tu_device *dev,
                              VkMemoryPropertyFlags mem_property,
                              enum tu_bo_alloc_flags flags, const char *name)
 {
+   MESA_TRACE_FUNC();
    struct tu_instance *instance = dev->physical_device->instance;
 
    VkResult result =
@@ -88,6 +89,7 @@ tu_bo_export_dmabuf(struct tu_device *dev, struct tu_bo *bo)
 void
 tu_bo_finish(struct tu_device *dev, struct tu_bo *bo)
 {
+   MESA_TRACE_FUNC();
    struct tu_instance *instance = dev->physical_device->instance;
 
    vk_address_binding_report(&instance->vk, bo->base ? bo->base : &dev->vk.base,

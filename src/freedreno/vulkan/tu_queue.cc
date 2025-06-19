@@ -66,6 +66,7 @@ submit_add_entries(struct tu_device *dev, void *submit,
 static VkResult
 queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 {
+   MESA_TRACE_FUNC();
    struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
    struct tu_device *device = queue->device;
    bool u_trace_enabled = u_trace_should_process(&queue->device->trace_context);

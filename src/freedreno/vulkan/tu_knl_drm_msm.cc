@@ -351,6 +351,7 @@ tu_wait_fence(struct tu_device *dev,
               int fence,
               uint64_t timeout_ns)
 {
+   MESA_TRACE_FUNC();
    /* fence was created when no work was yet submitted */
    if (fence < 0)
       return VK_SUCCESS;
@@ -389,6 +390,8 @@ tu_free_zombie_vma_locked(struct tu_device *dev, bool wait)
 {
    if (!u_vector_length(&dev->zombie_vmas))
       return VK_SUCCESS;
+
+   MESA_TRACE_FUNC();
 
    if (wait) {
       struct tu_zombie_vma *vma = (struct tu_zombie_vma *)
@@ -654,6 +657,7 @@ msm_bo_init(struct tu_device *dev,
             enum tu_bo_alloc_flags flags,
             const char *name)
 {
+   MESA_TRACE_FUNC();
    struct drm_msm_gem_new req = {
       .size = size,
       .flags = 0
@@ -946,9 +950,12 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       .syncobj_stride = sizeof(struct drm_msm_gem_submit_syncobj),
    };
 
-   ret = drmCommandWriteRead(queue->device->fd,
-                             DRM_MSM_GEM_SUBMIT,
-                             &req, sizeof(req));
+   {
+      MESA_TRACE_SCOPE("DRM_MSM_GEM_SUBMIT");
+      ret = drmCommandWriteRead(queue->device->fd,
+                              DRM_MSM_GEM_SUBMIT,
+                              &req, sizeof(req));
+   }
 
    mtx_unlock(&queue->device->bo_mutex);
 

@@ -2234,6 +2234,7 @@ tu_u_trace_submission_data_create(
    uint32_t cmd_buffer_count,
    struct tu_u_trace_submission_data **submission_data)
 {
+   MESA_TRACE_FUNC();
    *submission_data = (struct tu_u_trace_submission_data *)
       vk_zalloc(&device->vk.alloc,
                 sizeof(struct tu_u_trace_submission_data), 8,
