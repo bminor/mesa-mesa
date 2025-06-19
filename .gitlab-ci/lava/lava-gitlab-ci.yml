@@ -89,6 +89,7 @@ variables:
     - !reference [.lava-test, needs]
     - job: debian/x86_64_test-android
       artifacts: false
+      optional: true
     - job: debian-x86_64 # The generic Linux build for the host will be downloaded later
       artifacts: false
     - job: debian-android # The Android build for the guest will be downloaded later and installed via adb
