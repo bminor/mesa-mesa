@@ -290,7 +290,11 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
       };
 
       unsigned stride = panvk_get_desc_stride(&layout);
-      unsigned count = stride * binding->descriptorCount;
+      unsigned binding_desc_count = binding->descriptorCount;
+      unsigned count = type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK
+                          ? panvk_get_iub_desc_count(binding_desc_count)
+                          : stride * binding_desc_count;
+
       desc_count += count;
       if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
          variable_stride = stride;
