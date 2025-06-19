@@ -7924,7 +7924,7 @@
         "description": "tu: Fixes missing sse2 flags",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7231eef6304eb356611f947fe3a0429160a67097",
         "notes": null
