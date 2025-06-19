@@ -442,6 +442,7 @@ struct tu_device
    uint64_t fault_count;
 
    struct u_trace_context trace_context;
+   struct list_head copy_timestamp_cs_pool;
 
    #ifdef HAVE_PERFETTO
    struct tu_perfetto_state perfetto;
@@ -557,16 +558,16 @@ tu_copy_buffer(struct u_trace_context *utctx, void *cmdstream,
                void *ts_to, uint64_t to_offset_B,
                uint64_t size_B);
 
-
 VkResult
-tu_create_copy_timestamp_cs(struct tu_cmd_buffer *cmdbuf, struct tu_cs** cs,
-                            struct u_trace **trace_copy);
+tu_create_copy_timestamp_cs(struct tu_u_trace_submission_data *submission_data,
+                            struct tu_cmd_buffer **cmd_buffers,
+                            uint32_t cmd_buffer_count,
+                            uint32_t trace_chunks_to_copy);
 
-/* If we copy trace and timestamps we will have to free them. */
-struct tu_u_trace_cmd_data
-{
-   struct tu_cs *timestamp_copy_cs;
-   struct u_trace *trace;
+struct tu_copy_timestamp_data {
+   struct list_head node;
+   struct tu_cs cs;
+   struct u_trace trace;
 };
 
 /* Data necessary to retrieve timestamps and clean all
@@ -584,7 +585,9 @@ struct tu_u_trace_submission_data
 
    uint32_t cmd_buffer_count;
    uint32_t last_buffer_with_tracepoints;
-   struct tu_u_trace_cmd_data *cmd_trace_data;
+   void *mem_ctx;
+   struct u_trace **trace_per_cmd_buffer;
+   struct tu_copy_timestamp_data *timestamp_copy_data;
 
    /* GPU time is reset on GPU power cycle and the GPU time
     * offset may change between submissions due to power cycle.
