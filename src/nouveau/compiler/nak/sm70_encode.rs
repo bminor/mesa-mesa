@@ -2317,36 +2317,39 @@ impl SM70Encoder<'_> {
 
     fn set_tex_lod_mode(&mut self, range: Range<usize>, lod_mode: TexLodMode) {
         assert!(range.len() == 3);
-        if self.sm >= 100 {
-            self.set_field(
-                range,
-                match lod_mode {
-                    TexLodMode::Auto => 0_u8,
-                    TexLodMode::Bias => 1_u8,
-                    TexLodMode::Clamp => 2_u8,
-                    // ulb => 0x3
-                    // ulc => 0x4
-                    // lb.ulc => 0x5
-                    TexLodMode::BiasClamp => todo!(),
+        assert!(self.sm <= 100);
 
-                    TexLodMode::Zero => 0_u8,
-                    TexLodMode::Lod => 1_u8,
-                    // ull => 3
-                },
-            );
-        } else {
-            self.set_field(
-                range,
-                match lod_mode {
-                    TexLodMode::Auto => 0_u8,
-                    TexLodMode::Zero => 1_u8,
-                    TexLodMode::Bias => 2_u8,
-                    TexLodMode::Lod => 3_u8,
-                    TexLodMode::Clamp => 4_u8,
-                    TexLodMode::BiasClamp => 5_u8,
-                },
-            );
-        }
+        self.set_field(
+            range,
+            match lod_mode {
+                TexLodMode::Auto => 0_u8,
+                TexLodMode::Zero => 1_u8,
+                TexLodMode::Bias => 2_u8,
+                TexLodMode::Lod => 3_u8,
+                TexLodMode::Clamp => 4_u8,
+                TexLodMode::BiasClamp => 5_u8,
+            },
+        );
+    }
+
+    fn set_tex_lod_mode2(
+        &mut self,
+        range1: Range<usize>,
+        range2: Range<usize>,
+        lod_mode: TexLodMode,
+    ) {
+        self.set_field2(
+            range1,
+            range2,
+            match lod_mode {
+                TexLodMode::Auto => 0_u8,
+                TexLodMode::Zero => 1_u8,
+                TexLodMode::Bias => 2_u8,
+                TexLodMode::Lod => 3_u8,
+                TexLodMode::Clamp => 4_u8,
+                TexLodMode::BiasClamp => 5_u8,
+            },
+        );
     }
 
     fn set_image_dim(&mut self, range: Range<usize>, dim: ImageDim) {
@@ -2451,7 +2454,11 @@ impl SM70Op for OpTex {
         e.set_bit(77, false); // ToDo: NDV
         e.set_bit(78, self.z_cmpr);
         e.set_eviction_priority(&self.mem_eviction_priority);
-        e.set_tex_lod_mode(87..90, self.lod_mode);
+        if e.sm >= 100 {
+            e.set_tex_lod_mode2(59..60, 87..90, self.lod_mode);
+        } else {
+            e.set_tex_lod_mode(87..90, self.lod_mode);
+        }
         e.set_bit(90, self.nodep);
     }
 }
@@ -2506,7 +2513,11 @@ impl SM70Op for OpTld {
         // bits 79..81: .F16
         e.set_eviction_priority(&self.mem_eviction_priority);
         assert!(self.lod_mode.is_explicit_lod());
-        e.set_tex_lod_mode(87..90, self.lod_mode);
+        if e.sm >= 100 {
+            e.set_tex_lod_mode2(59..60, 87..90, self.lod_mode);
+        } else {
+            e.set_tex_lod_mode(87..90, self.lod_mode);
+        }
         e.set_bit(90, self.nodep);
     }
 }
