@@ -83,6 +83,7 @@ libintel_compiler_brw_files = files(
   'brw_opt_copy_propagation.cpp',
   'brw_opt_cse.cpp',
   'brw_opt_dead_code_eliminate.cpp',
+  'brw_opt_fill_spill.cpp',
   'brw_opt_register_coalesce.cpp',
   'brw_opt_saturate_propagation.cpp',
   'brw_opt_txf_combiner.cpp',

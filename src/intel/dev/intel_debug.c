@@ -75,6 +75,7 @@ static const struct debug_control_bitset debug_control[] = {
    OPT1("ann",               DEBUG_ANNOTATION),
    OPT1("no8",               DEBUG_NO8),
    OPT1("no-oaconfig",       DEBUG_NO_OACONFIG),
+   OPT1("no-fill-opt",       DEBUG_NO_FILL_OPT),
    OPT1("spill_fs",          DEBUG_SPILL_FS),
    OPT1("spill_vec4",        DEBUG_SPILL_VEC4),
    OPT1("cs",                DEBUG_CS),

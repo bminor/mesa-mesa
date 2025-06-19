@@ -280,6 +280,7 @@ brw_get_compiler_config_value(const struct brw_compiler *compiler)
       DEBUG_SOFT64,
       DEBUG_NO_SEND_GATHER,
       DEBUG_NO_VRT,
+      DEBUG_NO_FILL_OPT,
    };
    for (uint32_t i = 0; i < ARRAY_SIZE(debug_bits); i++) {
       insert_u64_bit(&config, INTEL_DEBUG(debug_bits[i]));

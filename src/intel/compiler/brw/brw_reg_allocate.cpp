@@ -1200,6 +1200,10 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
              * scratch space and the scratch read message, which operates on
              * 32 bit channels.  It shouldn't hurt in any case because the
              * unspill destination is a block-local temporary.
+             *
+             * FINIHSME: However, this will prevent brw_opt_fill_and_spill
+             * from making progress if the lsc_fill is NoMask and the
+             * lsc_spill is not.
              */
             emit_unspill(ibld.exec_all().group(width, 0), &fs->shader_stats,
                          unspill_dst, subset_spill_offset, count, ip);
