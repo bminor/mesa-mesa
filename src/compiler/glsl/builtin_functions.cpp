@@ -720,13 +720,15 @@ supports_nv_fragment_shader_interlock(const _mesa_glsl_parse_state *state)
 static bool
 shader_clock(const _mesa_glsl_parse_state *state)
 {
-   return state->ARB_shader_clock_enable;
+   return state->ARB_shader_clock_enable ||
+          state->EXT_shader_clock_enable;
 }
 
 static bool
 shader_clock_int64(const _mesa_glsl_parse_state *state)
 {
-   return state->ARB_shader_clock_enable &&
+   return (state->ARB_shader_clock_enable ||
+           state->EXT_shader_clock_enable) &&
           (state->ARB_gpu_shader_int64_enable ||
            state->AMD_gpu_shader_int64_enable);
 }

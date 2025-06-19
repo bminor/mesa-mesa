@@ -880,6 +880,8 @@ struct _mesa_glsl_parse_state {
    bool EXT_primitive_bounding_box_warn;
    bool EXT_separate_shader_objects_enable;
    bool EXT_separate_shader_objects_warn;
+   bool EXT_shader_clock_enable;
+   bool EXT_shader_clock_warn;
    bool EXT_shader_framebuffer_fetch_enable;
    bool EXT_shader_framebuffer_fetch_warn;
    bool EXT_shader_framebuffer_fetch_non_coherent_enable;

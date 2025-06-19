@@ -332,6 +332,7 @@ Khronos, ARB, and OES extensions that are not part of any OpenGL or OpenGL ES ve
   GL_EXT_semaphore                                      DONE (radeonsi, zink, d3d12, iris, crocus)
   GL_EXT_semaphore_fd                                   DONE (radeonsi, zink, iris, crocus)
   GL_EXT_semaphore_win32                                DONE (zink, d3d12)
+  GL_EXT_shader_clock                                   DONE (all drivers that support GL_ARB_shader_clock)
   GL_EXT_shader_group_vote                              DONE (all drivers that support GL_ARB_shader_group_vote)
   GL_EXT_shader_realtime_clock                          DONE (panfrost/v6+)
   GL_EXT_sRGB_write_control                             DONE (all drivers that support GLES 3.0+)

@@ -1053,7 +1053,6 @@ void st_init_extensions(struct pipe_screen *screen,
    EXT_CAP(ARB_sample_locations,             programmable_sample_locations);
    EXT_CAP(ARB_seamless_cube_map,            seamless_cube_map);
    EXT_CAP(ARB_shader_ballot,                shader_ballot);
-   EXT_CAP(ARB_shader_clock,                 shader_clock);
    EXT_CAP(ARB_shader_draw_parameters,       draw_parameters);
    EXT_CAP(ARB_shader_group_vote,            shader_group_vote);
    EXT_CAP(EXT_shader_image_load_formatted,  image_load_formatted);
