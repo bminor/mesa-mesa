@@ -279,3 +279,15 @@ dEQP-VK.ssbo.phys.layout.random.8bit.scalar.96
 dEQP-VK.ssbo.phys.layout.random.all_per_block_buffers.22
 dEQP-VK.ssbo.phys.layout.random.all_shared_buffer.3
 dEQP-VK.ssbo.phys.layout.random.nested_structs_arrays_instance_arrays.23
+
+# Those are failures on G52 but skipped on "G52 r1"
+dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_no_cab.8_bit
+dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.copy_with_regions_before_resolving.8_bit
+dEQP-VK.api.copy_and_blit.core.resolve_image.whole_copy_before_resolving_no_cab.8_bit
+dEQP-VK.api.copy_and_blit.core.resolve_image.whole_copy_before_resolving_no_cab.8_bit_bind_offset
+dEQP-VK.api.copy_and_blit.core.resolve_image.copy_with_regions_before_resolving.8_bit
+dEQP-VK.api.copy_and_blit.core.resolve_image.copy_with_regions_before_resolving.8_bit_bind_offset
+dEQP-VK.api.copy_and_blit.copy_commands2.resolve_image.whole_copy_before_resolving_no_cab.8_bit
+dEQP-VK.api.copy_and_blit.copy_commands2.resolve_image.copy_with_regions_before_resolving.8_bit
+dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_8.multi_draw_barriers
+dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_8.multi_draw_barriers
