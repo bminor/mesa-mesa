@@ -440,7 +440,7 @@ SAMPLE_instruction: SAMPLE_OP maskedDstReg ',' swizzleSrcReg ',' texImageUnit ',
       if ($$ != NULL) {
          const GLbitfield tex_mask = (1U << $6);
          GLbitfield shadow_tex = 0;
-         GLbitfield target_mask = 0;
+         GLbitfield target_mask;
 
 
          $$->Base.TexSrcUnit = $6;
@@ -492,7 +492,7 @@ TXD_instruction: TXD_OP maskedDstReg ',' swizzleSrcReg ',' swizzleSrcReg ',' swi
       if ($$ != NULL) {
          const GLbitfield tex_mask = (1U << $10);
          GLbitfield shadow_tex = 0;
-         GLbitfield target_mask = 0;
+         GLbitfield target_mask;
 
 
          $$->Base.TexSrcUnit = $10;
