@@ -291,14 +291,47 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
 
       unsigned stride = panvk_get_desc_stride(&layout);
       unsigned binding_desc_count = binding->descriptorCount;
+      bool has_variable_count =
+         flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+
+      if (has_variable_count) {
+         /* From the Vulkan 1.4.318 spec for
+          * VkDescriptorSetLayoutBindingFlagsCreateInfo:
+          *
+          *    "If an element of pBindingFlags includes
+          *    VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT, then it
+          *    must be the element with the highest binding number"
+          *
+          * Which implies only a single binding can have a variable count.
+          */
+         assert(!variable_stride);
+
+         if (binding_desc_count == 0) {
+            /* From the Vulkan 1.4.318 spec for
+             * VkDescriptorSetVariableDescriptorCountLayoutSupport:
+             *
+             *    "For the purposes of this command, a variable-sized
+             *    descriptor binding with a descriptorCount of zero is treated
+             *    as having a descriptorCount of four if descriptorType is
+             *    VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, or one otherwise,
+             *    and thus the binding is not ignored and the maximum
+             *    descriptor count will be returned."
+             */
+            binding_desc_count =
+               type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK ? 4 : 1;
+         }
+
+         variable_stride = stride;
+         assert(variable_stride);
+      }
+
       unsigned count = type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK
                           ? panvk_get_iub_desc_count(binding_desc_count)
                           : stride * binding_desc_count;
 
       desc_count += count;
-      if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)
-         variable_stride = stride;
-      else
+
+      if (!has_variable_count)
          non_variable_count += count;
    }
 
