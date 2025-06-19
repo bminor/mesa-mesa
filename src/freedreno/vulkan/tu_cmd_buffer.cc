@@ -1443,25 +1443,43 @@ tu6_emit_gmem_resolves(struct tu_cmd_buffer *cmd,
    }
 }
 
+/* Emits any tile stores at the end of a subpass.
+ *
+ * These are emitted into draw_cs for non-final subpasses, and tile_store_cs for
+ * the final subpass. The draw_cs ones mean that we have to disable IB2 skipping
+ * for the draw_cs so we don't exit before storing.  The separate tile_store_cs
+ * lets us leave IB2 skipping enabled in the common case of a single-subpass
+ * renderpass (or dynamic rendering).
+ *
+ * To do better in the multi-subpass case, we'd need the individual CS entries
+ * of draw_cs to have a flag for whether they can be skipped or not, and
+ * interleave drawing cs entries with store cs entries.
+ *
+ * This is independent of cond_store_allowed, which is about "can we skip doing
+ * the store if no other rendering happened in the tile?"  We can only skip if
+ * the cond that we set up at the start of the tile (or reset just before
+ * calling tile_store_cs) is still in place.
+ */
 template <chip CHIP>
 static void
-tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+tu6_emit_gmem_stores(struct tu_cmd_buffer *cmd,
+                     struct tu_cs *cs,
+                     struct tu_resolve_group *resolve_group,
+                     const struct tu_subpass *subpass)
 {
    const struct tu_render_pass *pass = cmd->state.pass;
-   const struct tu_subpass *subpass = &pass->subpasses[pass->subpass_count-1];
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, cmd->state.tiling);
+   uint32_t subpass_idx = subpass - cmd->state.pass->subpasses;
+   const bool cond_exec_allowed = vsc->binning_possible &&
+                                  cmd->state.pass->has_cond_load_store &&
+                                  (!cmd->state.rp.draw_cs_writes_to_cond_pred ||
+                                  cs != &cmd->draw_cs);
 
    if (pass->has_fdm)
       tu_cs_set_writeable(cs, true);
 
-   tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
-   tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM6_BIN_RESOLVE) |
-                  A6XX_CP_SET_MARKER_0_USES_GMEM);
-
-   tu6_emit_blit_scissor(cmd, cs, true, false);
-
-   struct tu_resolve_group resolve_group = {};
+   bool scissor_emitted = false;
 
    /* Resolve should happen before store in case BLIT_EVENT_STORE_AND_CLEAR is
     * used for a store.
@@ -1471,22 +1489,50 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
     * been generated).  a7xx has HW conditional resolve support that may skip
     * the resolve if geometry didn't cover it, anyway.
     */
-   tu6_emit_gmem_resolves<CHIP>(cmd, subpass, &resolve_group, cs);
+   if (subpass->resolve_attachments) {
+      if (!scissor_emitted) {
+         tu6_emit_blit_scissor(cmd, cs, true, false);
+         scissor_emitted = true;
+      }
+      tu6_emit_gmem_resolves<CHIP>(cmd, subpass, resolve_group, cs);
+   }
 
    for (uint32_t a = 0; a < pass->attachment_count; ++a) {
-      if (pass->attachments[a].gmem) {
-         const bool cond_exec_allowed = vsc->binning_possible &&
-                                        cmd->state.pass->has_cond_load_store;
-         tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, a,
+      const struct tu_render_pass_attachment *att = &pass->attachments[a];
+      /* Note: att->cond_store_allowed implies at least one of att->store_* set */
+      if (pass->attachments[a].gmem && att->last_subpass_idx == subpass_idx) {
+         if (!scissor_emitted) {
+            tu6_emit_blit_scissor(cmd, cs, true, false);
+            scissor_emitted = true;
+         }
+         tu_store_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, a,
                                   fb->layers, subpass->multiview_mask,
                                   cond_exec_allowed);
       }
    }
+}
+
+template <chip CHIP>
+static void
+tu6_emit_tile_store_cs(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+{
+   const struct tu_render_pass *pass = cmd->state.pass;
+   uint32_t subpass_idx = pass->subpass_count - 1;
+   const struct tu_subpass *subpass = &pass->subpasses[subpass_idx];
+
+   /* We believe setting the marker affects what state HW blocks save/restore
+    * during preemption.  So we only emit it before the stores at the end of the
+    * last subpass, not other resolves.
+    */
+   tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+   tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM6_BIN_RESOLVE) |
+                  A6XX_CP_SET_MARKER_0_USES_GMEM);
+
+   struct tu_resolve_group resolve_group = {};
+
+   tu6_emit_gmem_stores<CHIP>(cmd, cs, &resolve_group, subpass);
 
    tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
-
-   if (pass->has_fdm)
-      tu_cs_set_writeable(cs, false);
 }
 
 void
@@ -2444,6 +2490,8 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    struct tu_physical_device *phys_dev = cmd->device->physical_device;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, tiling);
+   const struct tu_render_pass *pass = cmd->state.pass;
+
    tu_lrz_tiling_begin<CHIP>(cmd, cs);
 
    tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
@@ -2497,10 +2545,18 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                         A6XX_VFD_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
       }
 
-      tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
-      tu_cs_emit(cs, 0x1);
-      tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_LOCAL, 1);
-      tu_cs_emit(cs, 0x1);
+      /* Enable early return from CP_INDIRECT_BUFFER once the visibility stream
+       * is done.  We don't enable this if there are stores in a non-final
+       * subpass, because it's more important to be able to share gmem space
+       * between attachments by storing early, than it is to do IB2 skipping
+       * (which has an effect we struggle to even measure).
+       */
+      if (pass->allow_ib2_skipping) {
+         tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
+         tu_cs_emit(cs, 0x1);
+         tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_LOCAL, 1);
+         tu_cs_emit(cs, 0x1);
+      }
    } else {
       if (vsc->binning_possible) {
          /* Mark all tiles as visible for tu6_emit_cond_for_load_stores(), since
@@ -2563,8 +2619,14 @@ tu6_render_tile(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       tu6_emit_cond_for_load_stores(cmd, cs, tile->pipe, slot, false);
    }
 
-   tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
-   tu_cs_emit(cs, 0x0);
+   if (cmd->state.pass->allow_ib2_skipping) {
+      /* Disable CP_INDIRECT_BUFFER/CP_DRAW skipping again at the end of the
+       * pass -- tile_store_cs is for stores that can't be skipped based on
+       * visibility.
+       */
+      tu_cs_emit_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1);
+      tu_cs_emit(cs, 0x0);
+   }
 
    tu_cs_emit_call(cs, &cmd->tile_store_cs);
 
@@ -2921,7 +2983,7 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
     * called from tu6_render_tile().
     */
    tu_cs_begin(&cmd->tile_store_cs);
-   tu6_emit_tile_store<CHIP>(cmd, &cmd->tile_store_cs);
+   tu6_emit_tile_store_cs<CHIP>(cmd, &cmd->tile_store_cs);
    tu_cs_end(&cmd->tile_store_cs);
 
    cmd->trace_rp_drawcalls_end = u_trace_end_iterator(&cmd->trace);
@@ -5866,19 +5928,21 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
 
       tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_GMEM);
 
+      struct tu_resolve_group resolve_group = {};
+
       if (subpass->resolve_attachments) {
          tu6_emit_blit_scissor(cmd, cs, true, false);
-
-         struct tu_resolve_group resolve_group = {};
 
          /* TODO: we're emitting the resolves into the draw CS, which is conditionally
           * executed based on geometry being present.  That's not actually correct
           * unless the resolve is generating geometry into the vis stream.
           */
          tu6_emit_gmem_resolves<CHIP>(cmd, subpass, &resolve_group, cs);
-
-         tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
       }
+
+      tu6_emit_gmem_stores<CHIP>(cmd, &cmd->draw_cs, &resolve_group, subpass);
+
+      tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
 
       tu_cond_exec_end(cs);
 

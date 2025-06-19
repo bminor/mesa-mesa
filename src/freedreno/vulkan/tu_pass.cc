@@ -581,6 +581,24 @@ tu_render_pass_cond_config(struct tu_device *device,
    }
 }
 
+/**
+ * Checks if the pass should allow IB2 skipping.
+ *
+ * If any stores would be emitted in a non-final subpass, then we need to turn
+ * off IB2 skipping to make sure that we don't early-return before they happen.
+ */
+static void
+tu_render_pass_check_ib2_skip(struct tu_render_pass *pass)
+{
+   pass->allow_ib2_skipping = true;
+   for (int i = 0; i < pass->attachment_count; i++) {
+      struct tu_render_pass_attachment *att = &pass->attachments[i];
+      if ((att->store || att->store_stencil) &&
+          att->last_subpass_idx != pass->subpass_count - 1)
+         pass->allow_ib2_skipping = false;
+   }
+}
+
 static void
 tu_render_pass_gmem_config(struct tu_render_pass *pass,
                            const struct tu_physical_device *phys_dev)
@@ -803,11 +821,8 @@ tu_subpass_use_attachment(struct tu_render_pass *pass, int i, uint32_t a, const 
    /* Loads and clears are emitted at the start of the subpass that needs them. */
    att->first_subpass_idx = MIN2(i, att->first_subpass_idx);
 
-   /* Stores are emitted at vkEndRenderPass() time. */
-   if (att->store || att->store_stencil)
-      att->last_subpass_idx = pass->subpass_count - 1;
-   else
-      att->last_subpass_idx = MAX2(i, att->last_subpass_idx);
+   /* Stores are emitted after the last subpass using them. */
+   att->last_subpass_idx = MAX2(i, att->last_subpass_idx);
 }
 
 static void
@@ -1044,6 +1059,7 @@ tu_CreateRenderPass2(VkDevice _device,
       }
    }
 
+   tu_render_pass_check_ib2_skip(pass);
    tu_render_pass_cond_config(device, pass);
    tu_render_pass_gmem_config(pass, device->physical_device);
    tu_render_pass_bandwidth_config(pass);
@@ -1289,6 +1305,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
 
    pass->attachment_count = a;
 
+   tu_render_pass_check_ib2_skip(pass);
    tu_render_pass_cond_config(device, pass);
    tu_render_pass_gmem_config(pass, device->physical_device);
    tu_render_pass_bandwidth_config(pass);
