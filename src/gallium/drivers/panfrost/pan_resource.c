@@ -754,10 +754,10 @@ panfrost_should_checksum(const struct panfrost_device *dev,
           pres->base.last_level == 0 && !(dev->debug & PAN_DBG_NO_CRC);
 }
 
-static void
-panfrost_resource_setup(struct pipe_screen *screen,
-                        struct panfrost_resource *pres, uint64_t modifier,
-                        enum pipe_format fmt, unsigned plane_idx)
+static bool
+panfrost_resource_try_setup(struct pipe_screen *screen,
+                            struct panfrost_resource *pres, uint64_t modifier,
+                            enum pipe_format fmt, unsigned plane_idx)
 {
    struct panfrost_device *dev = pan_device(screen);
    uint64_t chosen_mod = modifier != DRM_FORMAT_MOD_INVALID
@@ -805,11 +805,23 @@ panfrost_resource_setup(struct pipe_screen *screen,
     * want the real bitrate and not DEFAULT */
    pres->base.compression_rate = pan_afrc_get_rate(fmt, chosen_mod);
 
-   ASSERTED bool valid = pan_image_layout_init(dev->arch, &iprops, plane_idx,
-                                               NULL, &pres->plane.layout);
-   assert(valid);
+   if (!pan_image_layout_init(dev->arch, &iprops, plane_idx, NULL,
+                              &pres->plane.layout))
+      return false;
 
    panfrost_resource_init_image(pres, &iprops, plane_idx);
+   return true;
+}
+
+static void
+panfrost_resource_setup(struct pipe_screen *screen,
+                        struct panfrost_resource *pres, uint64_t modifier,
+                        enum pipe_format fmt, unsigned plane_idx)
+{
+   ASSERTED bool valid =
+      panfrost_resource_try_setup(screen, pres, modifier, fmt, plane_idx);
+
+   assert(valid);
 }
 
 static int
@@ -940,8 +952,9 @@ panfrost_can_create_resource(struct pipe_screen *screen,
    struct panfrost_resource tmp;
    tmp.base = *template;
 
-   panfrost_resource_setup(screen, &tmp, DRM_FORMAT_MOD_INVALID,
-                           template->format, 0);
+   if (!panfrost_resource_try_setup(screen, &tmp, DRM_FORMAT_MOD_INVALID,
+                                    template->format, 0))
+      return false;
 
    uint64_t system_memory;
    if (!os_get_total_physical_memory(&system_memory))
