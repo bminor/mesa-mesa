@@ -254,17 +254,13 @@ struct emit_memory_barrier {
                           bool unordered,
                           bool usage_matches,
                           VkPipelineStageFlags stages,
+                          VkAccessFlags src_flags,
                           VkCommandBuffer cmdbuf)
    {
       VkMemoryBarrier bmb;
       bmb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
       bmb.pNext = NULL;
-      if (unordered) {
-         stages = usage_matches ? res->obj->unordered_access_stage : stages;
-         bmb.srcAccessMask = usage_matches ? res->obj->unordered_access : res->obj->access;
-      } else {
-         bmb.srcAccessMask = res->obj->access;
-      }
+      bmb.srcAccessMask = src_flags;
       bmb.dstAccessMask = flags;
       VKCTX(CmdPipelineBarrier)(
           cmdbuf,
@@ -317,18 +313,14 @@ struct emit_memory_barrier<barrier_KHR_synchronzation2> {
                           bool unordered,
                           bool usage_matches,
                           VkPipelineStageFlags stages,
+                          VkAccessFlags src_flags,
                           VkCommandBuffer cmdbuf)
    {
       VkMemoryBarrier2 bmb;
       bmb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
       bmb.pNext = NULL;
-      if (unordered) {
-         bmb.srcStageMask = usage_matches ? res->obj->unordered_access_stage : stages;
-         bmb.srcAccessMask = usage_matches ? res->obj->unordered_access : res->obj->access;
-      } else {
-         bmb.srcStageMask = stages;
-         bmb.srcAccessMask = res->obj->access;
-      }
+      bmb.srcStageMask = stages;
+      bmb.srcAccessMask = src_flags;
       bmb.dstStageMask = pipeline;
       bmb.dstAccessMask = flags;
       VkDependencyInfo dep = {
@@ -551,21 +543,6 @@ zink_pipeline_flags_from_stage(VkShaderStageFlagBits stage)
    }
 }
 
-ALWAYS_INLINE static VkPipelineStageFlags
-pipeline_access_stage(VkAccessFlags flags)
-{
-   if (flags & (VK_ACCESS_UNIFORM_READ_BIT |
-                VK_ACCESS_SHADER_READ_BIT |
-                VK_ACCESS_SHADER_WRITE_BIT))
-      return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-             VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-             VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-             VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-   return flags ? VK_PIPELINE_STAGE_TRANSFER_BIT : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-}
-
 ALWAYS_INLINE static bool
 resource_needs_barrier(struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline, bool unordered)
 {
@@ -640,8 +617,11 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
          marker = zink_cmd_debug_marker_begin(ctx, cmdbuf, "memory_barrier(%s)", buf);
       }
 
-      VkPipelineStageFlags stages = res->obj->access_stage ? res->obj->access_stage : pipeline_access_stage(res->obj->access);;
-      emit_memory_barrier<BARRIER_API>::for_buffer(ctx, res, pipeline, flags, unordered,usage_matches, stages, cmdbuf);
+      VkPipelineStageFlags stages = unordered_usage_matches ? res->obj->unordered_access_stage : res->obj->access_stage;
+      if (BARRIER_API == barrier_default && !stages)
+         stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+      VkAccessFlags src_flags = unordered_usage_matches ? res->obj->unordered_access : res->obj->access;
+      emit_memory_barrier<BARRIER_API>::for_buffer(ctx, res, pipeline, flags, unordered,usage_matches, stages, src_flags, cmdbuf);
 
       zink_cmd_debug_marker_end(ctx, cmdbuf, marker);
    }
