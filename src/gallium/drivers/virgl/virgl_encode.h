@@ -40,22 +40,12 @@ struct virgl_video_codec;
 struct virgl_video_buffer;
 struct virgl_vertex_elements_state;
 
-struct virgl_surface {
-   struct pipe_surface base;
-   uint32_t handle;
-};
-
 struct virgl_indexbuf {
    unsigned offset;
    unsigned index_size;  /**< size of an index, in bytes */
    struct pipe_resource *buffer; /**< the actual buffer */
    const void *user_buffer;  /**< pointer to a user buffer if buffer == NULL */
 };
-
-static inline struct virgl_surface *virgl_surface(struct pipe_surface *surf)
-{
-   return (struct virgl_surface *)surf;
-}
 
 static inline void virgl_encoder_write_dword(struct virgl_cmd_buf *state,
                                             uint32_t dword)
@@ -344,7 +334,7 @@ void virgl_encode_end_frame(struct virgl_context *ctx,
                             struct virgl_video_buffer *buf);
 
 int virgl_encode_clear_surface(struct virgl_context *ctx,
-                               struct pipe_surface *surf,
+                               uint32_t surface_handle,
                                unsigned buffers,
                                const union pipe_color_union *color,
                                unsigned dstx, unsigned dsty,
