@@ -8,3 +8,6 @@ KHR-GLES31.core.shader_image_load_store.basic-allFormats-store-fs
 # 60s timeout
 KHR-GLES31.core.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_MaxPatchVertices_Position_PointSize
 KHR-GL46.copy_image.functional
+
+# Flaky when run in parallel due to DRM control node acquisition.
+dEQP-VK.wsi.*display.*
