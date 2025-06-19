@@ -37,13 +37,13 @@ fd_reg_stomp_allowed(chip CHIP, uint16_t reg)
       /* Faults in
        * dEQP-VK.conditional_rendering.draw.condition_host_memory_expect_noop.draw
        */
-      case REG_A6XX_HLSQ_VS_CNTL ... REG_A6XX_HLSQ_GS_CNTL:
-      case REG_A6XX_HLSQ_FS_CNTL:
+      case REG_A6XX_SP_VS_CONST_CONFIG ... REG_A6XX_SP_GS_CONST_CONFIG:
+      case REG_A6XX_SP_PS_CONST_CONFIG:
       /* Faults in
        * dEQP-VK.memory_model.message_passing.ext.u32.coherent.atomic_atomic.atomicrmw.device.payload_local.image.guard_local.image.comp
        * while there is even no fragment shaders.
        */
-      case REG_A6XX_SP_FS_OBJ_START ... REG_A6XX_SP_FS_OBJ_START + 1:
+      case REG_A6XX_SP_PS_BASE ... REG_A6XX_SP_PS_BASE + 1:
          return false;
       /* Not used on A6XX but causes failures when set */
       case REG_A6XX_TPL1_DBG_ECO_CNTL1:
@@ -54,24 +54,24 @@ fd_reg_stomp_allowed(chip CHIP, uint16_t reg)
    case A7XX: {
       switch (reg) {
       case REG_A6XX_RB_DEPTH_PLANE_CNTL:
-      case REG_A7XX_HLSQ_VS_CNTL:
-      case REG_A7XX_HLSQ_HS_CNTL:
-      case REG_A7XX_HLSQ_DS_CNTL:
-      case REG_A7XX_HLSQ_GS_CNTL:
-      case REG_A7XX_HLSQ_FS_CNTL:
-      case REG_A6XX_SP_VS_OBJ_START ... REG_A6XX_SP_VS_OBJ_START + 1:
-      case REG_A6XX_SP_FS_OBJ_START ... REG_A6XX_SP_FS_OBJ_START + 1:
+      case REG_A7XX_SP_VS_CONST_CONFIG:
+      case REG_A7XX_SP_HS_CONST_CONFIG:
+      case REG_A7XX_SP_DS_CONST_CONFIG:
+      case REG_A7XX_SP_GS_CONST_CONFIG:
+      case REG_A7XX_SP_PS_CONST_CONFIG:
+      case REG_A6XX_SP_VS_BASE ... REG_A6XX_SP_VS_BASE + 1:
+      case REG_A6XX_SP_PS_BASE ... REG_A6XX_SP_PS_BASE + 1:
       /* There is a guess that GPU may not be able to handle different values of
        * certain debug register between BR/BV. This one causes GPU to hang.
        */
       case REG_A7XX_SP_UNKNOWN_AE73:
       case REG_A7XX_RB_UNKNOWN_8E79:
-      case REG_A7XX_SP_UNKNOWN_AE09:
+      case REG_A7XX_SP_CHICKEN_BITS_2:
       case REG_A6XX_TPL1_DBG_ECO_CNTL:
          return false;
-      case REG_A7XX_SP_GS_VGPR_CONFIG:
-      case REG_A7XX_SP_FS_VGPR_CONFIG:
-      case REG_A7XX_SP_CS_VGPR_CONFIG:
+      case REG_A7XX_SP_GS_VGS_CNTL:
+      case REG_A7XX_SP_PS_VGS_CNTL:
+      case REG_A7XX_SP_CS_VGS_CNTL:
          return false;
       }
       break;

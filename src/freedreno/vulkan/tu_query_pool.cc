@@ -27,7 +27,7 @@
 
 #define NSEC_PER_SEC 1000000000ull
 #define WAIT_TIMEOUT 5
-#define STAT_COUNT ((REG_A6XX_RBBM_PRIMCTR_10 - REG_A6XX_RBBM_PRIMCTR_0) / 2 + 1)
+#define STAT_COUNT ((REG_A6XX_RBBM_PIPESTAT_CSINVOCATIONS - REG_A6XX_RBBM_PIPESTAT_IAVERTICES) / 2 + 1)
 
 struct PACKED query_slot {
    uint64_t available;
@@ -1045,11 +1045,11 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
    uint64_t begin_iova = occlusion_query_iova(pool, query, begin);
 
    tu_cs_emit_regs(cs,
-                   A6XX_RB_SAMPLE_COUNT_CONTROL(.copy = true));
+                   A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
 
    if (!cmdbuf->device->physical_device->info->a7xx.has_event_write_sample_count) {
       tu_cs_emit_regs(cs,
-                        A6XX_RB_SAMPLE_COUNT_ADDR(.qword = begin_iova));
+                        A6XX_RB_SAMPLE_COUNTER_BASE(.qword = begin_iova));
       tu_cs_emit_pkt7(cs, CP_EVENT_WRITE, 1);
       tu_cs_emit(cs, ZPASS_DONE);
       if (CHIP == A7XX) {
@@ -1130,7 +1130,7 @@ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_0) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PIPESTAT_IAVERTICES) |
                   CP_REG_TO_MEM_0_CNT(STAT_COUNT * 2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, begin_iova);
@@ -1304,7 +1304,7 @@ emit_begin_xfb_query(struct tu_cmd_buffer *cmdbuf,
    struct tu_cs *cs = cmdbuf->state.pass ? &cmdbuf->draw_cs : &cmdbuf->cs;
    uint64_t begin_iova = primitive_query_iova(pool, query, begin, 0, 0);
 
-   tu_cs_emit_regs(cs, A6XX_VPC_SO_STREAM_COUNTS(.qword = begin_iova));
+   tu_cs_emit_regs(cs, A6XX_VPC_SO_QUERY_BASE(.qword = begin_iova));
    tu_emit_event_write<CHIP>(cmdbuf, cs, FD_WRITE_PRIMITIVE_COUNTS);
 }
 
@@ -1339,7 +1339,7 @@ emit_begin_prim_generated_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_7) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PIPESTAT_CINVOCATIONS) |
                   CP_REG_TO_MEM_0_CNT(2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, begin_iova);
@@ -1440,11 +1440,11 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
    }
 
    tu_cs_emit_regs(cs,
-                   A6XX_RB_SAMPLE_COUNT_CONTROL(.copy = true));
+                   A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
 
    if (!cmdbuf->device->physical_device->info->a7xx.has_event_write_sample_count) {
       tu_cs_emit_regs(cs,
-                        A6XX_RB_SAMPLE_COUNT_ADDR(.qword = end_iova));
+                        A6XX_RB_SAMPLE_COUNTER_BASE(.qword = end_iova));
       tu_cs_emit_pkt7(cs, CP_EVENT_WRITE, 1);
       tu_cs_emit(cs, ZPASS_DONE);
       if (CHIP == A7XX) {
@@ -1592,7 +1592,7 @@ emit_end_stat_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_0) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PIPESTAT_IAVERTICES) |
                   CP_REG_TO_MEM_0_CNT(STAT_COUNT * 2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, end_iova);
@@ -1814,7 +1814,7 @@ emit_end_xfb_query(struct tu_cmd_buffer *cmdbuf,
    uint64_t end_generated_iova = primitive_query_iova(pool, query, end, stream_id, 1);
    uint64_t available_iova = query_available_iova(pool, query);
 
-   tu_cs_emit_regs(cs, A6XX_VPC_SO_STREAM_COUNTS(.qword = end_iova));
+   tu_cs_emit_regs(cs, A6XX_VPC_SO_QUERY_BASE(.qword = end_iova));
    tu_emit_event_write<CHIP>(cmdbuf, cs, FD_WRITE_PRIMITIVE_COUNTS);
 
    tu_cs_emit_wfi(cs);
@@ -1872,7 +1872,7 @@ emit_end_prim_generated_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_7) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PIPESTAT_CINVOCATIONS) |
                   CP_REG_TO_MEM_0_CNT(2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, end_iova);

@@ -316,16 +316,16 @@ struct fdl6_view {
    uint32_t FLAG_BUFFER_PITCH;
 
    uint32_t RB_MRT_BUF_INFO;
-   uint32_t SP_FS_MRT_REG;
+   uint32_t SP_PS_MRT_REG;
 
-   uint32_t SP_PS_2D_SRC_INFO;
-   uint32_t SP_PS_2D_SRC_SIZE;
+   uint32_t TPL1_A2D_SRC_TEXTURE_INFO;
+   uint32_t TPL1_A2D_SRC_TEXTURE_SIZE;
 
-   uint32_t RB_2D_DST_INFO;
+   uint32_t RB_A2D_DEST_BUFFER_INFO;
 
-   uint32_t RB_BLIT_DST_INFO;
+   uint32_t RB_RESOLVE_SYSTEM_BUFFER_INFO;
 
-   uint32_t GRAS_LRZ_DEPTH_VIEW;
+   uint32_t GRAS_LRZ_VIEW_INFO;
 };
 
 void

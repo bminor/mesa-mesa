@@ -68,7 +68,7 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
            A6XX_GRAS_SU_POLY_OFFSET_OFFSET_CLAMP(cso->offset_clamp));
 
    OUT_REG(ring,
-           A6XX_PC_PRIMITIVE_CNTL_0(
+           A6XX_PC_CNTL(
                  .primitive_restart = primitive_restart,
                  .provoking_vtx_last = !cso->flatshade_first,
            ),
@@ -76,7 +76,7 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
 
    if (CHIP >= A7XX) {
       OUT_REG(ring,
-              A7XX_VPC_PRIMITIVE_CNTL_0(
+              A7XX_VPC_PC_CNTL(
                     .primitive_restart = primitive_restart,
                     .provoking_vtx_last = !cso->flatshade_first,
               ),
@@ -96,12 +96,12 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
       break;
    }
 
-   OUT_REG(ring, A6XX_VPC_POLYGON_MODE(mode));
-   OUT_REG(ring, PC_POLYGON_MODE(CHIP, mode));
+   OUT_REG(ring, A6XX_VPC_RAST_CNTL(mode));
+   OUT_REG(ring, PC_DGEN_RAST_CNTL(CHIP, mode));
 
    if (CHIP == A7XX ||
        (CHIP == A6XX && ctx->screen->info->a6xx.is_a702)) {
-      OUT_REG(ring, A6XX_VPC_POLYGON_MODE2(mode));
+      OUT_REG(ring, A6XX_VPC_PS_RAST_CNTL(mode));
    }
 
    /* With a7xx the hw doesn't do the clamping for us.  When depth clamp
@@ -115,15 +115,15 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
       /* We must assume the max: */
       const unsigned num_viewports = 16;
 
-      OUT_PKT4(ring, REG_A6XX_GRAS_CL_Z_CLAMP(0), num_viewports * 2);
+      OUT_PKT4(ring, REG_A6XX_GRAS_CL_VIEWPORT_ZCLAMP(0), num_viewports * 2);
       for (unsigned i = 0; i < num_viewports; i++) {
          OUT_RING(ring, fui(0.0f));
          OUT_RING(ring, fui(1.0f));
       }
 
       OUT_REG(ring,
-         A6XX_RB_Z_CLAMP_MIN(0.0f),
-         A6XX_RB_Z_CLAMP_MAX(1.0),
+         A6XX_RB_VIEWPORT_ZCLAMP_MIN(0.0f),
+         A6XX_RB_VIEWPORT_ZCLAMP_MAX(1.0),
       );
    }
 

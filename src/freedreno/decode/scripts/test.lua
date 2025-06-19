@@ -8,7 +8,7 @@ end
 
 function draw(primtype, nindx)
   io.write("DRAW: " .. primtype .. ", " .. nindx .. "\n")
-  -- io.write("GRAS_CL_VPORT_XOFFSET: " .. r.GRAS_CL_VPORT_XOFFSET .. "\n")
+  -- io.write("GRAS_CL_VIEWPORT[0].XOFFSET: " .. r.GRAS_CL_VIEWPORT[0].XOFFSET .. "\n")
   io.write("RB_MRT[0].CONTROL.ROP_CODE: " .. r.RB_MRT[0].CONTROL.ROP_CODE .. "\n")
   io.write("SP_VS_OUT[0].A_COMPMASK: " .. r.SP_VS_OUT[0].A_COMPMASK .. "\n")
   --io.write("RB_DEPTH_CONTROL.Z_TEST_ENABLE: " .. tostring(r.RB_DEPTH_CONTROL.Z_TEST_ENABLE) .. "\n")

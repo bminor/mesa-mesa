@@ -168,15 +168,15 @@ fd6_zsa_state_create(struct pipe_context *pctx,
       update_lrz_stencil(so, (enum pipe_compare_func)s->func, util_writes_stencil(s));
 
       so->rb_stencil_control |=
-         A6XX_RB_STENCIL_CONTROL_STENCIL_READ |
-         A6XX_RB_STENCIL_CONTROL_STENCIL_ENABLE |
-         A6XX_RB_STENCIL_CONTROL_FUNC((enum adreno_compare_func)s->func) | /* maps 1:1 */
-         A6XX_RB_STENCIL_CONTROL_FAIL(fd_stencil_op(s->fail_op)) |
-         A6XX_RB_STENCIL_CONTROL_ZPASS(fd_stencil_op(s->zpass_op)) |
-         A6XX_RB_STENCIL_CONTROL_ZFAIL(fd_stencil_op(s->zfail_op));
+         A6XX_RB_STENCIL_CNTL_STENCIL_READ |
+         A6XX_RB_STENCIL_CNTL_STENCIL_ENABLE |
+         A6XX_RB_STENCIL_CNTL_FUNC((enum adreno_compare_func)s->func) | /* maps 1:1 */
+         A6XX_RB_STENCIL_CNTL_FAIL(fd_stencil_op(s->fail_op)) |
+         A6XX_RB_STENCIL_CNTL_ZPASS(fd_stencil_op(s->zpass_op)) |
+         A6XX_RB_STENCIL_CNTL_ZFAIL(fd_stencil_op(s->zfail_op));
 
-      so->rb_stencilmask = A6XX_RB_STENCILMASK_MASK(s->valuemask);
-      so->rb_stencilwrmask = A6XX_RB_STENCILWRMASK_WRMASK(s->writemask);
+      so->rb_stencilmask = A6XX_RB_STENCIL_MASK_MASK(s->valuemask);
+      so->rb_stencilwrmask = A6XX_RB_STENCIL_WRITE_MASK_WRMASK(s->writemask);
 
       if (cso->stencil[1].enabled) {
          const struct pipe_stencil_state *bs = &cso->stencil[1];
@@ -184,14 +184,14 @@ fd6_zsa_state_create(struct pipe_context *pctx,
          update_lrz_stencil(so, (enum pipe_compare_func)bs->func, util_writes_stencil(bs));
 
          so->rb_stencil_control |=
-            A6XX_RB_STENCIL_CONTROL_STENCIL_ENABLE_BF |
-            A6XX_RB_STENCIL_CONTROL_FUNC_BF((enum adreno_compare_func)bs->func) | /* maps 1:1 */
-            A6XX_RB_STENCIL_CONTROL_FAIL_BF(fd_stencil_op(bs->fail_op)) |
-            A6XX_RB_STENCIL_CONTROL_ZPASS_BF(fd_stencil_op(bs->zpass_op)) |
-            A6XX_RB_STENCIL_CONTROL_ZFAIL_BF(fd_stencil_op(bs->zfail_op));
+            A6XX_RB_STENCIL_CNTL_STENCIL_ENABLE_BF |
+            A6XX_RB_STENCIL_CNTL_FUNC_BF((enum adreno_compare_func)bs->func) | /* maps 1:1 */
+            A6XX_RB_STENCIL_CNTL_FAIL_BF(fd_stencil_op(bs->fail_op)) |
+            A6XX_RB_STENCIL_CNTL_ZPASS_BF(fd_stencil_op(bs->zpass_op)) |
+            A6XX_RB_STENCIL_CNTL_ZFAIL_BF(fd_stencil_op(bs->zfail_op));
 
-         so->rb_stencilmask |= A6XX_RB_STENCILMASK_BFMASK(bs->valuemask);
-         so->rb_stencilwrmask |= A6XX_RB_STENCILWRMASK_BFWRMASK(bs->writemask);
+         so->rb_stencilmask |= A6XX_RB_STENCIL_MASK_BFMASK(bs->valuemask);
+         so->rb_stencilwrmask |= A6XX_RB_STENCIL_WRITE_MASK_BFWRMASK(bs->writemask);
       }
    }
 
@@ -206,9 +206,9 @@ fd6_zsa_state_create(struct pipe_context *pctx,
 
       uint32_t ref = cso->alpha_ref_value * 255.0f;
       so->rb_alpha_control =
-         A6XX_RB_ALPHA_CONTROL_ALPHA_TEST |
-         A6XX_RB_ALPHA_CONTROL_ALPHA_REF(ref) |
-         A6XX_RB_ALPHA_CONTROL_ALPHA_TEST_FUNC(
+         A6XX_RB_ALPHA_TEST_CNTL_ALPHA_TEST |
+         A6XX_RB_ALPHA_TEST_CNTL_ALPHA_REF(ref) |
+         A6XX_RB_ALPHA_TEST_CNTL_ALPHA_TEST_FUNC(
                (enum adreno_compare_func)cso->alpha_func);
    }
 
@@ -223,13 +223,13 @@ fd6_zsa_state_create(struct pipe_context *pctx,
       struct fd_ringbuffer *ring = fd_ringbuffer_new_object(ctx->pipe, 16 * 4);
       bool depth_clamp_enable = (i & FD6_ZSA_DEPTH_CLAMP);
 
-      OUT_PKT4(ring, REG_A6XX_RB_ALPHA_CONTROL, 1);
+      OUT_PKT4(ring, REG_A6XX_RB_ALPHA_TEST_CNTL, 1);
       OUT_RING(ring,
                (i & FD6_ZSA_NO_ALPHA)
-                  ? so->rb_alpha_control & ~A6XX_RB_ALPHA_CONTROL_ALPHA_TEST
+                  ? so->rb_alpha_control & ~A6XX_RB_ALPHA_TEST_CNTL_ALPHA_TEST
                   : so->rb_alpha_control);
 
-      OUT_PKT4(ring, REG_A6XX_RB_STENCIL_CONTROL, 1);
+      OUT_PKT4(ring, REG_A6XX_RB_STENCIL_CNTL, 1);
       OUT_RING(ring, so->rb_stencil_control);
 
       OUT_REG(ring, A6XX_GRAS_SU_STENCIL_CNTL(cso->stencil[0].enabled));
@@ -241,19 +241,19 @@ fd6_zsa_state_create(struct pipe_context *pctx,
 
       OUT_REG(ring, A6XX_GRAS_SU_DEPTH_CNTL(cso->depth_enabled));
 
-      OUT_PKT4(ring, REG_A6XX_RB_STENCILMASK, 2);
+      OUT_PKT4(ring, REG_A6XX_RB_STENCIL_MASK, 2);
       OUT_RING(ring, so->rb_stencilmask);
       OUT_RING(ring, so->rb_stencilwrmask);
 
       if (CHIP >= A7XX && !depth_clamp_enable) {
          OUT_REG(ring,
-            A6XX_RB_Z_BOUNDS_MIN(0.0f),
-            A6XX_RB_Z_BOUNDS_MAX(1.0f),
+            A6XX_RB_DEPTH_BOUND_MIN(0.0f),
+            A6XX_RB_DEPTH_BOUND_MAX(1.0f),
          );
       } else {
          OUT_REG(ring,
-            A6XX_RB_Z_BOUNDS_MIN(cso->depth_bounds_min),
-            A6XX_RB_Z_BOUNDS_MAX(cso->depth_bounds_max),
+            A6XX_RB_DEPTH_BOUND_MIN(cso->depth_bounds_min),
+            A6XX_RB_DEPTH_BOUND_MAX(cso->depth_bounds_max),
          );
       }
 

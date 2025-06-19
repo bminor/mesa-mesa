@@ -31,12 +31,12 @@ stages = {
 
 -- maps shader stage to HLSQ_xS_CNTL register name:
 cntl_regs = {
-	["SB6_VS_SHADER"] = "HLSQ_VS_CNTL",
-	["SB6_HS_SHADER"] = "HLSQ_HS_CNTL",
-	["SB6_DS_SHADER"] = "HLSQ_DS_CNTL",
-	["SB6_GS_SHADER"] = "HLSQ_GS_CNTL",
-	["SB6_FS_SHADER"] = "HLSQ_FS_CNTL",
-	["SB6_CS_SHADER"] = "HLSQ_CS_CNTL",
+	["SB6_VS_SHADER"] = "SP_VS_CONST_CONFIG",
+	["SB6_HS_SHADER"] = "SP_HS_CONST_CONFIG",
+	["SB6_DS_SHADER"] = "SP_DS_CONST_CONFIG",
+	["SB6_GS_SHADER"] = "SP_GS_CONST_CONFIG",
+	["SB6_FS_SHADER"] = "SP_PS_CONST_CONFIG",
+	["SB6_CS_SHADER"] = "SP_CS_CONST_CONFIG",
 }
 
 -- initialize constant updated ranges:

@@ -54,46 +54,46 @@ struct xs_config {
 template <chip CHIP>
 static const struct xs_config<CHIP> xs_configs[] = {
    [MESA_SHADER_VERTEX] = {
-      REG_A6XX_SP_VS_INSTRLEN,
-      CHIP == A6XX ? REG_A6XX_HLSQ_VS_CNTL : REG_A7XX_HLSQ_VS_CNTL,
-      REG_A6XX_SP_VS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_VS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_VS_VGPR_CONFIG,
+      REG_A6XX_SP_VS_INSTR_SIZE,
+      CHIP == A6XX ? REG_A6XX_SP_VS_CONST_CONFIG : REG_A7XX_SP_VS_CONST_CONFIG,
+      REG_A6XX_SP_VS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_VS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_VS_VGS_CNTL,
    },
    [MESA_SHADER_TESS_CTRL] = {
-      REG_A6XX_SP_HS_INSTRLEN,
-      CHIP == A6XX ? REG_A6XX_HLSQ_HS_CNTL : REG_A7XX_HLSQ_HS_CNTL,
-      REG_A6XX_SP_HS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_HS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_HS_VGPR_CONFIG,
+      REG_A6XX_SP_HS_INSTR_SIZE,
+      CHIP == A6XX ? REG_A6XX_SP_HS_CONST_CONFIG : REG_A7XX_SP_HS_CONST_CONFIG,
+      REG_A6XX_SP_HS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_HS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_HS_VGS_CNTL,
    },
    [MESA_SHADER_TESS_EVAL] = {
-      REG_A6XX_SP_DS_INSTRLEN,
-      CHIP == A6XX ? REG_A6XX_HLSQ_DS_CNTL : REG_A7XX_HLSQ_DS_CNTL,
-      REG_A6XX_SP_DS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_DS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_DS_VGPR_CONFIG,
+      REG_A6XX_SP_DS_INSTR_SIZE,
+      CHIP == A6XX ? REG_A6XX_SP_DS_CONST_CONFIG : REG_A7XX_SP_DS_CONST_CONFIG,
+      REG_A6XX_SP_DS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_DS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_DS_VGS_CNTL,
    },
    [MESA_SHADER_GEOMETRY] = {
-      REG_A6XX_SP_GS_INSTRLEN,
-      CHIP == A6XX ? REG_A6XX_HLSQ_GS_CNTL : REG_A7XX_HLSQ_GS_CNTL,
-      REG_A6XX_SP_GS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_GS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_GS_VGPR_CONFIG,
+      REG_A6XX_SP_GS_INSTR_SIZE,
+      CHIP == A6XX ? REG_A6XX_SP_GS_CONST_CONFIG : REG_A7XX_SP_GS_CONST_CONFIG,
+      REG_A6XX_SP_GS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_GS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_GS_VGS_CNTL,
    },
    [MESA_SHADER_FRAGMENT] = {
-      REG_A6XX_SP_FS_INSTRLEN,
-      CHIP == A6XX ? REG_A6XX_HLSQ_FS_CNTL : REG_A7XX_HLSQ_FS_CNTL,
-      REG_A6XX_SP_FS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_FS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_FS_VGPR_CONFIG,
+      REG_A6XX_SP_PS_INSTR_SIZE,
+      CHIP == A6XX ? REG_A6XX_SP_PS_CONST_CONFIG : REG_A7XX_SP_PS_CONST_CONFIG,
+      REG_A6XX_SP_PS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_PS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_PS_VGS_CNTL,
    },
    [MESA_SHADER_COMPUTE] = {
-      REG_A6XX_SP_CS_INSTRLEN,
-      CHIP == A6XX ? REG_A6XX_HLSQ_CS_CNTL : REG_A7XX_HLSQ_CS_CNTL,
-      REG_A6XX_SP_CS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_CS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_CS_VGPR_CONFIG,
+      REG_A6XX_SP_CS_INSTR_SIZE,
+      CHIP == A6XX ? REG_A6XX_SP_CS_CONST_CONFIG : REG_A7XX_SP_CS_CONST_CONFIG,
+      REG_A6XX_SP_CS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_CS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_CS_VGS_CNTL,
    },
 };
 
@@ -123,7 +123,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
    switch (type) {
    case MESA_SHADER_VERTEX:
-      OUT_REG(ring, A6XX_SP_VS_CTRL_REG0(
+      OUT_REG(ring, A6XX_SP_VS_CNTL_0(
                .halfregfootprint = so->info.max_half_reg + 1,
                .fullregfootprint = so->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(so),
@@ -132,7 +132,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       ));
       break;
    case MESA_SHADER_TESS_CTRL:
-      OUT_REG(ring, A6XX_SP_HS_CTRL_REG0(
+      OUT_REG(ring, A6XX_SP_HS_CNTL_0(
                .halfregfootprint = so->info.max_half_reg + 1,
                .fullregfootprint = so->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(so),
@@ -140,7 +140,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       ));
       break;
    case MESA_SHADER_TESS_EVAL:
-      OUT_REG(ring, A6XX_SP_DS_CTRL_REG0(
+      OUT_REG(ring, A6XX_SP_DS_CNTL_0(
                .halfregfootprint = so->info.max_half_reg + 1,
                .fullregfootprint = so->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(so),
@@ -148,7 +148,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       ));
       break;
    case MESA_SHADER_GEOMETRY:
-      OUT_REG(ring, A6XX_SP_GS_CTRL_REG0(
+      OUT_REG(ring, A6XX_SP_GS_CNTL_0(
                .halfregfootprint = so->info.max_half_reg + 1,
                .fullregfootprint = so->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(so),
@@ -156,7 +156,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       ));
       break;
    case MESA_SHADER_FRAGMENT:
-      OUT_REG(ring, A6XX_SP_FS_CTRL_REG0(
+      OUT_REG(ring, A6XX_SP_PS_CNTL_0(
                .halfregfootprint = so->info.max_half_reg + 1,
                .fullregfootprint = so->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(so),
@@ -171,7 +171,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       break;
    case MESA_SHADER_COMPUTE:
       thrsz = ctx->screen->info->a6xx.supports_double_threadsize ? thrsz : THREAD128;
-      OUT_REG(ring, A6XX_SP_CS_CTRL_REG0(
+      OUT_REG(ring, A6XX_SP_CS_CNTL_0(
                .halfregfootprint = so->info.max_half_reg + 1,
                .fullregfootprint = so->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(so),
@@ -214,7 +214,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
                           A6XX_SP_VS_PVT_MEM_SIZE_PERWAVEMEMLAYOUT));
 
    OUT_PKT4(ring, cfg->reg_sp_xs_pvt_mem_hw_stack_offset, 1);
-   OUT_RING(ring, A6XX_SP_VS_PVT_MEM_HW_STACK_OFFSET_OFFSET(per_sp_size));
+   OUT_RING(ring, A6XX_SP_VS_PVT_MEM_STACK_OFFSET_OFFSET(per_sp_size));
 
    if (CHIP >= A7XX) {
       OUT_PKT4(ring, cfg->reg_sp_xs_vgpr_config, 1);
@@ -255,13 +255,13 @@ setup_stream_out_disable(struct fd_context *ctx)
       fd_ringbuffer_new_object(ctx->pipe, (1 + sizedw) * 4);
 
    OUT_PKT7(ring, CP_CONTEXT_REG_BUNCH, sizedw);
-   OUT_RING(ring, REG_A6XX_VPC_SO_CNTL);
+   OUT_RING(ring, REG_A6XX_VPC_SO_MAPPING_WPTR);
    OUT_RING(ring, 0);
-   OUT_RING(ring, REG_A6XX_VPC_SO_STREAM_CNTL);
+   OUT_RING(ring, REG_A6XX_VPC_SO_CNTL);
    OUT_RING(ring, 0);
 
    if (ctx->screen->info->a6xx.tess_use_shared) {
-      OUT_RING(ring, REG_A6XX_PC_SO_STREAM_CNTL);
+      OUT_RING(ring, REG_A6XX_PC_DGEN_SO_CNTL);
       OUT_RING(ring, 0);
    }
 
@@ -305,13 +305,13 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
 
          unsigned dword = out->stream * A6XX_SO_PROG_DWORDS + loc/2;
          if (loc & 1) {
-            prog[dword] |= A6XX_VPC_SO_PROG_B_EN |
-                           A6XX_VPC_SO_PROG_B_BUF(out->output_buffer) |
-                           A6XX_VPC_SO_PROG_B_OFF(off * 4);
+            prog[dword] |= A6XX_VPC_SO_MAPPING_PORT_B_EN |
+                           A6XX_VPC_SO_MAPPING_PORT_B_BUF(out->output_buffer) |
+                           A6XX_VPC_SO_MAPPING_PORT_B_OFF(off * 4);
          } else {
-            prog[dword] |= A6XX_VPC_SO_PROG_A_EN |
-                           A6XX_VPC_SO_PROG_A_BUF(out->output_buffer) |
-                           A6XX_VPC_SO_PROG_A_OFF(off * 4);
+            prog[dword] |= A6XX_VPC_SO_MAPPING_PORT_A_EN |
+                           A6XX_VPC_SO_MAPPING_PORT_A_BUF(out->output_buffer) |
+                           A6XX_VPC_SO_MAPPING_PORT_A_OFF(off * 4);
          }
          BITSET_SET(valid_dwords, dword);
       }
@@ -336,17 +336,17 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
       fd_ringbuffer_new_object(ctx->pipe, (1 + sizedw) * 4);
 
    OUT_PKT7(ring, CP_CONTEXT_REG_BUNCH, sizedw);
-   OUT_RING(ring, REG_A6XX_VPC_SO_STREAM_CNTL);
+   OUT_RING(ring, REG_A6XX_VPC_SO_CNTL);
    OUT_RING(ring,
-            A6XX_VPC_SO_STREAM_CNTL_STREAM_ENABLE(strmout->streams_written) |
+            A6XX_VPC_SO_CNTL_STREAM_ENABLE(strmout->streams_written) |
             COND(strmout->stride[0] > 0,
-                 A6XX_VPC_SO_STREAM_CNTL_BUF0_STREAM(1 + strmout->output[0].stream)) |
+                 A6XX_VPC_SO_CNTL_BUF0_STREAM(1 + strmout->output[0].stream)) |
             COND(strmout->stride[1] > 0,
-                 A6XX_VPC_SO_STREAM_CNTL_BUF1_STREAM(1 + strmout->output[1].stream)) |
+                 A6XX_VPC_SO_CNTL_BUF1_STREAM(1 + strmout->output[1].stream)) |
             COND(strmout->stride[2] > 0,
-                 A6XX_VPC_SO_STREAM_CNTL_BUF2_STREAM(1 + strmout->output[2].stream)) |
+                 A6XX_VPC_SO_CNTL_BUF2_STREAM(1 + strmout->output[2].stream)) |
             COND(strmout->stride[3] > 0,
-                 A6XX_VPC_SO_STREAM_CNTL_BUF3_STREAM(1 + strmout->output[3].stream)));
+                 A6XX_VPC_SO_CNTL_BUF3_STREAM(1 + strmout->output[3].stream)));
    OUT_RING(ring, REG_A6XX_VPC_SO_BUFFER_STRIDE(0));
    OUT_RING(ring, strmout->stride[0]);
    OUT_RING(ring, REG_A6XX_VPC_SO_BUFFER_STRIDE(1));
@@ -359,11 +359,11 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
    bool first = true;
    BITSET_FOREACH_RANGE (start, end, valid_dwords,
                          A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS) {
-      OUT_RING(ring, REG_A6XX_VPC_SO_CNTL);
-      OUT_RING(ring, COND(first, A6XX_VPC_SO_CNTL_RESET) |
-                     A6XX_VPC_SO_CNTL_ADDR(start));
+      OUT_RING(ring, REG_A6XX_VPC_SO_MAPPING_WPTR);
+      OUT_RING(ring, COND(first, A6XX_VPC_SO_MAPPING_WPTR_RESET) |
+                     A6XX_VPC_SO_MAPPING_WPTR_ADDR(start));
       for (unsigned i = start; i < end; i++) {
-         OUT_RING(ring, REG_A6XX_VPC_SO_PROG);
+         OUT_RING(ring, REG_A6XX_VPC_SO_MAPPING_PORT);
          OUT_RING(ring, prog[i]);
       }
       first = false;
@@ -373,8 +373,8 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
       /* Possibly not tess_use_shared related, but the combination of
        * tess + xfb fails some tests if we don't emit this.
        */
-      OUT_RING(ring, REG_A6XX_PC_SO_STREAM_CNTL);
-      OUT_RING(ring, A6XX_PC_SO_STREAM_CNTL_STREAM_ENABLE(0x1));
+      OUT_RING(ring, REG_A6XX_PC_DGEN_SO_CNTL);
+      OUT_RING(ring, A6XX_PC_DGEN_SO_CNTL_STREAM_ENABLE(0x1));
    }
 
    state->streamout_stateobj = ring;
@@ -402,34 +402,34 @@ setup_config_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
 {
    struct fd_ringbuffer *ring = fd_ringbuffer_new_object(ctx->pipe, 100 * 4);
 
-   OUT_REG(ring, HLSQ_INVALIDATE_CMD(CHIP, .vs_state = true, .hs_state = true,
+   OUT_REG(ring, SP_UPDATE_CNTL(CHIP, .vs_state = true, .hs_state = true,
                                           .ds_state = true, .gs_state = true,
                                           .fs_state = true, .cs_state = true,
                                           .cs_uav = true, .gfx_uav = true, ));
 
    assert(state->vs->constlen >= state->bs->constlen);
 
-   OUT_REG(ring, HLSQ_VS_CNTL(
+   OUT_REG(ring, SP_VS_CONST_CONFIG(
          CHIP,
          .constlen = state->vs->constlen,
          .enabled = true,
    ));
-   OUT_REG(ring, HLSQ_HS_CNTL(
+   OUT_REG(ring, SP_HS_CONST_CONFIG(
          CHIP,
          .constlen = COND(state->hs, state->hs->constlen),
          .enabled = COND(state->hs, true),
    ));
-   OUT_REG(ring, HLSQ_DS_CNTL(
+   OUT_REG(ring, SP_DS_CONST_CONFIG(
          CHIP,
          .constlen = COND(state->ds, state->ds->constlen),
          .enabled = COND(state->ds, true),
    ));
-   OUT_REG(ring, HLSQ_GS_CNTL(
+   OUT_REG(ring, SP_GS_CONST_CONFIG(
          CHIP,
          .constlen = COND(state->gs, state->gs->constlen),
          .enabled = COND(state->gs, true),
    ));
-   OUT_REG(ring, HLSQ_FS_CNTL(
+   OUT_REG(ring, SP_PS_CONST_CONFIG(
          CHIP,
          .constlen = state->fs->constlen,
          .enabled = true,
@@ -447,10 +447,10 @@ setup_config_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
    OUT_PKT4(ring, REG_A6XX_SP_GS_CONFIG, 1);
    OUT_RING(ring, sp_xs_config(state->gs));
 
-   OUT_PKT4(ring, REG_A6XX_SP_FS_CONFIG, 1);
+   OUT_PKT4(ring, REG_A6XX_SP_PS_CONFIG, 1);
    OUT_RING(ring, sp_xs_config(state->fs));
 
-   OUT_PKT4(ring, REG_A6XX_SP_UAV_COUNT, 1);
+   OUT_PKT4(ring, REG_A6XX_SP_GFX_USIZE, 1);
    OUT_RING(ring, ir3_shader_num_uavs(state->fs));
 
    state->config_stateobj = ring;
@@ -491,7 +491,7 @@ emit_vfd_dest(struct fd_ringbuffer *ring, const struct ir3_shader_variant *vs)
       if (!vs->inputs[i].sysval)
          attr_count++;
 
-   OUT_REG(ring, A6XX_VFD_CONTROL_0(
+   OUT_REG(ring, A6XX_VFD_CNTL_0(
                      .fetch_cnt = attr_count, /* decode_cnt for binning pass ? */
                      .decode_cnt = attr_count));
 
@@ -537,21 +537,21 @@ emit_vs_system_values(struct fd_ringbuffer *ring,
     */
    const uint32_t viewid_regid = INVALID_REG;
 
-   OUT_PKT4(ring, REG_A6XX_VFD_CONTROL_1, 6);
-   OUT_RING(ring, A6XX_VFD_CONTROL_1_REGID4VTX(vertexid_regid) |
-                  A6XX_VFD_CONTROL_1_REGID4INST(instanceid_regid) |
-                  A6XX_VFD_CONTROL_1_REGID4PRIMID(vs_primitiveid_regid) |
-                  A6XX_VFD_CONTROL_1_REGID4VIEWID(viewid_regid));
-   OUT_RING(ring, A6XX_VFD_CONTROL_2_REGID_HSRELPATCHID(hs_rel_patch_regid) |
-                  A6XX_VFD_CONTROL_2_REGID_INVOCATIONID(hs_invocation_regid));
-   OUT_RING(ring, A6XX_VFD_CONTROL_3_REGID_DSRELPATCHID(ds_rel_patch_regid) |
-                  A6XX_VFD_CONTROL_3_REGID_TESSX(tess_coord_x_regid) |
-                  A6XX_VFD_CONTROL_3_REGID_TESSY(tess_coord_y_regid) |
-                  A6XX_VFD_CONTROL_3_REGID_DSPRIMID(ds_primitiveid_regid));
-   OUT_RING(ring, 0x000000fc); /* VFD_CONTROL_4 */
-   OUT_RING(ring, A6XX_VFD_CONTROL_5_REGID_GSHEADER(gsheader_regid) |
-                  0xfc00); /* VFD_CONTROL_5 */
-   OUT_RING(ring, COND(b->fs->reads_primid, A6XX_VFD_CONTROL_6_PRIMID4PSEN)); /* VFD_CONTROL_6 */
+   OUT_PKT4(ring, REG_A6XX_VFD_CNTL_1, 6);
+   OUT_RING(ring, A6XX_VFD_CNTL_1_REGID4VTX(vertexid_regid) |
+                  A6XX_VFD_CNTL_1_REGID4INST(instanceid_regid) |
+                  A6XX_VFD_CNTL_1_REGID4PRIMID(vs_primitiveid_regid) |
+                  A6XX_VFD_CNTL_1_REGID4VIEWID(viewid_regid));
+   OUT_RING(ring, A6XX_VFD_CNTL_2_REGID_HSRELPATCHID(hs_rel_patch_regid) |
+                  A6XX_VFD_CNTL_2_REGID_INVOCATIONID(hs_invocation_regid));
+   OUT_RING(ring, A6XX_VFD_CNTL_3_REGID_DSRELPATCHID(ds_rel_patch_regid) |
+                  A6XX_VFD_CNTL_3_REGID_TESSX(tess_coord_x_regid) |
+                  A6XX_VFD_CNTL_3_REGID_TESSY(tess_coord_y_regid) |
+                  A6XX_VFD_CNTL_3_REGID_DSPRIMID(ds_primitiveid_regid));
+   OUT_RING(ring, 0x000000fc); /* VFD_CNTL_4 */
+   OUT_RING(ring, A6XX_VFD_CNTL_5_REGID_GSHEADER(gsheader_regid) |
+                  0xfc00); /* VFD_CNTL_5 */
+   OUT_RING(ring, COND(b->fs->reads_primid, A6XX_VFD_CNTL_6_PRIMID4PSEN)); /* VFD_CNTL_6 */
 }
 
 template <chip CHIP>
@@ -575,17 +575,17 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
       uint16_t reg_gras_xs_layer_cntl;
    } reg_config[] = {
       [MESA_SHADER_VERTEX] = {
-         REG_A6XX_SP_VS_OUT_REG(0),
-         REG_A6XX_SP_VS_VPC_DST_REG(0),
-         REG_A6XX_VPC_VS_PACK,
-         REG_A6XX_VPC_VS_CLIP_CNTL,
-         REG_A6XX_VPC_VS_CLIP_CNTL_V2,
-         REG_A6XX_GRAS_VS_CL_CNTL,
-         REG_A6XX_PC_VS_OUT_CNTL,
-         REG_A6XX_SP_VS_PRIMITIVE_CNTL,
-         REG_A6XX_VPC_VS_LAYER_CNTL,
-         REG_A6XX_VPC_VS_LAYER_CNTL_V2,
-         REG_A6XX_GRAS_VS_LAYER_CNTL
+         REG_A6XX_SP_VS_OUTPUT_REG(0),
+         REG_A6XX_SP_VS_VPC_DEST_REG(0),
+         REG_A6XX_VPC_VS_CNTL,
+         REG_A6XX_VPC_VS_CLIP_CULL_CNTL,
+         REG_A6XX_VPC_VS_CLIP_CULL_CNTL_V2,
+         REG_A6XX_GRAS_CL_VS_CLIP_CULL_DISTANCE,
+         REG_A6XX_PC_VS_CNTL,
+         REG_A6XX_SP_VS_OUTPUT_CNTL,
+         REG_A6XX_VPC_VS_SIV_CNTL,
+         REG_A6XX_VPC_VS_SIV_CNTL_V2,
+         REG_A6XX_GRAS_SU_VS_SIV_CNTL,
       },
       [MESA_SHADER_TESS_CTRL] = {
          0,
@@ -594,37 +594,37 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
          0,
          0,
          0,
-         REG_A6XX_PC_HS_OUT_CNTL,
+         REG_A6XX_PC_HS_CNTL,
          0,
          0,
          0,
          0
       },
       [MESA_SHADER_TESS_EVAL] = {
-         REG_A6XX_SP_DS_OUT_REG(0),
-         REG_A6XX_SP_DS_VPC_DST_REG(0),
-         REG_A6XX_VPC_DS_PACK,
-         REG_A6XX_VPC_DS_CLIP_CNTL,
-         REG_A6XX_VPC_DS_CLIP_CNTL_V2,
-         REG_A6XX_GRAS_DS_CL_CNTL,
-         REG_A6XX_PC_DS_OUT_CNTL,
-         REG_A6XX_SP_DS_PRIMITIVE_CNTL,
-         REG_A6XX_VPC_DS_LAYER_CNTL,
-         REG_A6XX_VPC_DS_LAYER_CNTL_V2,
-         REG_A6XX_GRAS_DS_LAYER_CNTL
+         REG_A6XX_SP_DS_OUTPUT_REG(0),
+         REG_A6XX_SP_DS_VPC_DEST_REG(0),
+         REG_A6XX_VPC_DS_CNTL,
+         REG_A6XX_VPC_DS_CLIP_CULL_CNTL,
+         REG_A6XX_VPC_DS_CLIP_CULL_CNTL_V2,
+         REG_A6XX_GRAS_CL_DS_CLIP_CULL_DISTANCE,
+         REG_A6XX_PC_DS_CNTL,
+         REG_A6XX_SP_DS_OUTPUT_CNTL,
+         REG_A6XX_VPC_DS_SIV_CNTL,
+         REG_A6XX_VPC_DS_SIV_CNTL_V2,
+         REG_A6XX_GRAS_SU_DS_SIV_CNTL,
       },
       [MESA_SHADER_GEOMETRY] = {
-         REG_A6XX_SP_GS_OUT_REG(0),
-         REG_A6XX_SP_GS_VPC_DST_REG(0),
-         REG_A6XX_VPC_GS_PACK,
-         REG_A6XX_VPC_GS_CLIP_CNTL,
-         REG_A6XX_VPC_GS_CLIP_CNTL_V2,
-         REG_A6XX_GRAS_GS_CL_CNTL,
-         REG_A6XX_PC_GS_OUT_CNTL,
-         REG_A6XX_SP_GS_PRIMITIVE_CNTL,
-         REG_A6XX_VPC_GS_LAYER_CNTL,
-         REG_A6XX_VPC_GS_LAYER_CNTL_V2,
-         REG_A6XX_GRAS_GS_LAYER_CNTL
+         REG_A6XX_SP_GS_OUTPUT_REG(0),
+         REG_A6XX_SP_GS_VPC_DEST_REG(0),
+         REG_A6XX_VPC_GS_CNTL,
+         REG_A6XX_VPC_GS_CLIP_CULL_CNTL,
+         REG_A6XX_VPC_GS_CLIP_CULL_CNTL_V2,
+         REG_A6XX_GRAS_CL_GS_CLIP_CULL_DISTANCE,
+         REG_A6XX_PC_GS_CNTL,
+         REG_A6XX_SP_GS_OUTPUT_CNTL,
+         REG_A6XX_VPC_GS_SIV_CNTL,
+         REG_A6XX_VPC_GS_SIV_CNTL_V2,
+         REG_A6XX_GRAS_SU_GS_SIV_CNTL,
       },
    };
    const struct reg_config *cfg = &reg_config[b->last_shader->type];
@@ -652,7 +652,7 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
 
    emit_vs_system_values(ring, b);
 
-   OUT_PKT4(ring, REG_A6XX_VPC_VAR_DISABLE(0), 4);
+   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_0_DISABLE(0), 4);
    OUT_RING(ring, ~linkage.varmask[0]);
    OUT_RING(ring, ~linkage.varmask[1]);
    OUT_RING(ring, ~linkage.varmask[2]);
@@ -755,10 +755,10 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
    uint8_t sp_vpc_dst[32] = {0};
    for (uint32_t i = 0; i < linkage.cnt; i++) {
       sp_out[i] =
-         A6XX_SP_VS_OUT_REG_A_REGID(linkage.var[i].regid) |
-         A6XX_SP_VS_OUT_REG_A_COMPMASK(linkage.var[i].compmask);
+         A6XX_SP_VS_OUTPUT_REG_A_REGID(linkage.var[i].regid) |
+         A6XX_SP_VS_OUTPUT_REG_A_COMPMASK(linkage.var[i].compmask);
       sp_vpc_dst[i] =
-         A6XX_SP_VS_VPC_DST_REG_OUTLOC0(linkage.var[i].loc);
+         A6XX_SP_VS_VPC_DEST_REG_OUTLOC0(linkage.var[i].loc);
    }
 
    OUT_PKT4(ring, cfg->reg_sp_xs_out_reg, sp_out_count);
@@ -768,23 +768,23 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
    OUT_BUF(ring, sp_vpc_dst, sp_vpc_dst_count);
 
    OUT_PKT4(ring, cfg->reg_vpc_xs_pack, 1);
-   OUT_RING(ring, A6XX_VPC_VS_PACK_POSITIONLOC(position_loc) |
-                  A6XX_VPC_VS_PACK_PSIZELOC(pointsize_loc) |
-                  A6XX_VPC_VS_PACK_STRIDE_IN_VPC(linkage.max_loc));
+   OUT_RING(ring, A6XX_VPC_VS_CNTL_POSITIONLOC(position_loc) |
+                  A6XX_VPC_VS_CNTL_PSIZELOC(pointsize_loc) |
+                  A6XX_VPC_VS_CNTL_STRIDE_IN_VPC(linkage.max_loc));
 
    OUT_PKT4(ring, cfg->reg_vpc_xs_clip_cntl, 1);
-   OUT_RING(ring, A6XX_VPC_VS_CLIP_CNTL_CLIP_MASK(clip_cull_mask) |
-                  A6XX_VPC_VS_CLIP_CNTL_CLIP_DIST_03_LOC(clip0_loc) |
-                  A6XX_VPC_VS_CLIP_CNTL_CLIP_DIST_47_LOC(clip1_loc));
+   OUT_RING(ring, A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_MASK(clip_cull_mask) |
+                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_03_LOC(clip0_loc) |
+                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_47_LOC(clip1_loc));
 
    OUT_PKT4(ring, cfg->reg_vpc_xs_clip_cntl_v2, 1);
-   OUT_RING(ring, A6XX_VPC_VS_CLIP_CNTL_CLIP_MASK(clip_cull_mask) |
-                  A6XX_VPC_VS_CLIP_CNTL_CLIP_DIST_03_LOC(clip0_loc) |
-                  A6XX_VPC_VS_CLIP_CNTL_CLIP_DIST_47_LOC(clip1_loc));
+   OUT_RING(ring, A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_MASK(clip_cull_mask) |
+                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_03_LOC(clip0_loc) |
+                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_47_LOC(clip1_loc));
 
    OUT_PKT4(ring, cfg->reg_gras_xs_cl_cntl, 1);
-   OUT_RING(ring, A6XX_GRAS_VS_CL_CNTL_CLIP_MASK(clip_mask) |
-                  A6XX_GRAS_VS_CL_CNTL_CULL_MASK(cull_mask));
+   OUT_RING(ring, A6XX_GRAS_CL_VS_CLIP_CULL_DISTANCE_CLIP_MASK(clip_mask) |
+                  A6XX_GRAS_CL_VS_CLIP_CULL_DISTANCE_CULL_MASK(cull_mask));
 
    const struct ir3_shader_variant *geom_stages[] = { b->vs, b->hs, b->ds, b->gs };
 
@@ -798,15 +798,15 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
 
       OUT_PKT4(ring, reg_config[shader->type].reg_pc_xs_out_cntl, 1);
       if (shader == last_shader) {
-         OUT_RING(ring, A6XX_PC_VS_OUT_CNTL_STRIDE_IN_VPC(linkage.max_loc) |
-                        CONDREG(pointsize_regid, A6XX_PC_VS_OUT_CNTL_PSIZE) |
-                        CONDREG(layer_regid, A6XX_PC_VS_OUT_CNTL_LAYER) |
-                        CONDREG(view_regid, A6XX_PC_VS_OUT_CNTL_VIEW) |
-                        COND(primid, A6XX_PC_VS_OUT_CNTL_PRIMITIVE_ID) |
-                        COND(primid, A6XX_PC_GS_OUT_CNTL_PRIMITIVE_ID) |
-                        A6XX_PC_VS_OUT_CNTL_CLIP_MASK(clip_cull_mask));
+         OUT_RING(ring, A6XX_PC_VS_CNTL_STRIDE_IN_VPC(linkage.max_loc) |
+                        CONDREG(pointsize_regid, A6XX_PC_VS_CNTL_PSIZE) |
+                        CONDREG(layer_regid, A6XX_PC_VS_CNTL_LAYER) |
+                        CONDREG(view_regid, A6XX_PC_VS_CNTL_VIEW) |
+                        COND(primid, A6XX_PC_VS_CNTL_PRIMITIVE_ID) |
+                        COND(primid, A6XX_PC_GS_CNTL_PRIMITIVE_ID) |
+                        A6XX_PC_VS_CNTL_CLIP_MASK(clip_cull_mask));
       } else {
-         OUT_RING(ring, COND(primid, A6XX_PC_VS_OUT_CNTL_PRIMITIVE_ID));
+         OUT_RING(ring, COND(primid, A6XX_PC_VS_CNTL_PRIMITIVE_ID));
       }
    }
 
@@ -814,38 +814,38 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
    assert(flags_regid != INVALID_REG);
 
    OUT_PKT4(ring, cfg->reg_sp_xs_primitive_cntl, 1);
-   OUT_RING(ring, A6XX_SP_VS_PRIMITIVE_CNTL_OUT(linkage.cnt) |
-                  A6XX_SP_GS_PRIMITIVE_CNTL_FLAGS_REGID(flags_regid));
+   OUT_RING(ring, A6XX_SP_VS_OUTPUT_CNTL_OUT(linkage.cnt) |
+                  A6XX_SP_GS_OUTPUT_CNTL_FLAGS_REGID(flags_regid));
 
    OUT_PKT4(ring, cfg->reg_vpc_xs_layer_cntl, 1);
-   OUT_RING(ring, A6XX_VPC_VS_LAYER_CNTL_LAYERLOC(layer_loc) |
-                  A6XX_VPC_VS_LAYER_CNTL_VIEWLOC(view_loc) |
-                  A6XX_VPC_VS_LAYER_CNTL_SHADINGRATELOC(0xff));
+   OUT_RING(ring, A6XX_VPC_VS_SIV_CNTL_LAYERLOC(layer_loc) |
+                  A6XX_VPC_VS_SIV_CNTL_VIEWLOC(view_loc) |
+                  A6XX_VPC_VS_SIV_CNTL_SHADINGRATELOC(0xff));
 
    OUT_PKT4(ring, cfg->reg_vpc_xs_layer_cntl_v2, 1);
-   OUT_RING(ring, A6XX_VPC_VS_LAYER_CNTL_LAYERLOC(layer_loc) |
-                  A6XX_VPC_VS_LAYER_CNTL_VIEWLOC(view_loc) |
-                  A6XX_VPC_VS_LAYER_CNTL_SHADINGRATELOC(0xff));
+   OUT_RING(ring, A6XX_VPC_VS_SIV_CNTL_LAYERLOC(layer_loc) |
+                  A6XX_VPC_VS_SIV_CNTL_VIEWLOC(view_loc) |
+                  A6XX_VPC_VS_SIV_CNTL_SHADINGRATELOC(0xff));
 
    OUT_PKT4(ring, cfg->reg_gras_xs_layer_cntl, 1);
-   OUT_RING(ring, CONDREG(layer_regid, A6XX_GRAS_GS_LAYER_CNTL_WRITES_LAYER) |
-                  CONDREG(view_regid, A6XX_GRAS_GS_LAYER_CNTL_WRITES_VIEW));
+   OUT_RING(ring, CONDREG(layer_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_LAYER) |
+                  CONDREG(view_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_VIEW));
 
    OUT_REG(ring, A6XX_PC_PS_CNTL(b->fs->reads_primid));
 
    if (CHIP >= A7XX) {
       OUT_REG(ring, A6XX_GRAS_UNKNOWN_8110(0x2));
-      OUT_REG(ring, A7XX_HLSQ_FS_UNKNOWN_A9AA(.fs_disable = false));
+      OUT_REG(ring, A7XX_SP_RENDER_CNTL(.fs_disable = false));
    }
 
-   OUT_PKT4(ring, REG_A6XX_VPC_CNTL_0, 1);
-   OUT_RING(ring, A6XX_VPC_CNTL_0_NUMNONPOSVAR(b->fs->total_in) |
-                  COND(b->fs->total_in, A6XX_VPC_CNTL_0_VARYING) |
-                  A6XX_VPC_CNTL_0_PRIMIDLOC(linkage.primid_loc) |
-                  A6XX_VPC_CNTL_0_VIEWIDLOC(linkage.viewid_loc));
+   OUT_PKT4(ring, REG_A6XX_VPC_PS_CNTL, 1);
+   OUT_RING(ring, A6XX_VPC_PS_CNTL_NUMNONPOSVAR(b->fs->total_in) |
+                  COND(b->fs->total_in, A6XX_VPC_PS_CNTL_VARYING) |
+                  A6XX_VPC_PS_CNTL_PRIMIDLOC(linkage.primid_loc) |
+                  A6XX_VPC_PS_CNTL_VIEWIDLOC(linkage.viewid_loc));
 
    if (b->hs) {
-      OUT_PKT4(ring, REG_A6XX_PC_TESS_NUM_VERTEX, 1);
+      OUT_PKT4(ring, REG_A6XX_PC_HS_PARAM_0, 1);
       OUT_RING(ring, b->hs->tess.tcs_vertices_out);
 
       fd6_emit_link_map<CHIP>(b->ctx, b->vs, b->hs, ring);
@@ -871,15 +871,15 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
       vec4_size = b->gs->gs.vertices_in *
                   DIV_ROUND_UP(prev_stage_output_size, 4);
 
-      OUT_PKT4(ring, REG_A6XX_PC_PRIMITIVE_CNTL_5, 1);
+      OUT_PKT4(ring, REG_A6XX_PC_GS_PARAM_0, 1);
       OUT_RING(ring,
-            A6XX_PC_PRIMITIVE_CNTL_5_GS_VERTICES_OUT(vertices_out) |
-            A6XX_PC_PRIMITIVE_CNTL_5_GS_OUTPUT(output) |
-            A6XX_PC_PRIMITIVE_CNTL_5_GS_INVOCATIONS(invocations));
+            A6XX_PC_GS_PARAM_0_GS_VERTICES_OUT(vertices_out) |
+            A6XX_PC_GS_PARAM_0_GS_OUTPUT(output) |
+            A6XX_PC_GS_PARAM_0_GS_INVOCATIONS(invocations));
 
       if (CHIP >= A7XX) {
          OUT_REG(ring,
-            A7XX_VPC_PRIMITIVE_CNTL_5(
+            A7XX_VPC_GS_PARAM_0(
                .gs_vertices_out = vertices_out,
                .gs_invocations = invocations,
                .gs_output = output,
@@ -901,7 +901,7 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
       else if (prim_size == 64)
          prim_size = 63;
 
-      OUT_PKT4(ring, REG_A6XX_SP_GS_PRIM_SIZE, 1);
+      OUT_PKT4(ring, REG_A6XX_SP_GS_CNTL_1, 1);
       OUT_RING(ring, prim_size);
    }
 }
@@ -943,20 +943,20 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
              ij_regid[fs->prefetch_bary_type] == regid(0, 0));
    }
 
-   OUT_PKT4(ring, REG_A6XX_SP_FS_PREFETCH_CNTL, 1 + fs->num_sampler_prefetch);
-   OUT_RING(ring, A6XX_SP_FS_PREFETCH_CNTL_COUNT(fs->num_sampler_prefetch) |
-                     COND(CHIP >= A7XX, A6XX_SP_FS_PREFETCH_CNTL_CONSTSLOTID(0x1ff)) |
-                     COND(CHIP >= A7XX, A6XX_SP_FS_PREFETCH_CNTL_CONSTSLOTID4COORD(0x1ff)) |
+   OUT_PKT4(ring, REG_A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL, 1 + fs->num_sampler_prefetch);
+   OUT_RING(ring, A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_COUNT(fs->num_sampler_prefetch) |
+                     COND(CHIP >= A7XX, A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_CONSTSLOTID(0x1ff)) |
+                     COND(CHIP >= A7XX, A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_CONSTSLOTID4COORD(0x1ff)) |
                      COND(!VALIDREG(ij_regid[IJ_PERSP_PIXEL]),
-                          A6XX_SP_FS_PREFETCH_CNTL_IJ_WRITE_DISABLE) |
+                          A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_IJ_WRITE_DISABLE) |
                      COND(fs->prefetch_end_of_quad,
-                          A6XX_SP_FS_PREFETCH_CNTL_ENDOFQUAD));
+                          A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_ENDOFQUAD));
    for (int i = 0; i < fs->num_sampler_prefetch; i++) {
       const struct ir3_sampler_prefetch *prefetch = &fs->sampler_prefetch[i];
-      OUT_RING(ring, SP_FS_PREFETCH_CMD(
+      OUT_RING(ring, SP_PS_INITIAL_TEX_LOAD_CMD(
             CHIP, i,
             .src = prefetch->src,
-            /* For a7xx, samp_id/tex_id is always in SP_FS_BINDLESS_PREFETCH_CMD[n]
+            /* For a7xx, samp_id/tex_id is always in SP_PS_INITIAL_TEX_INDEX_CMD[n]
              * even in the non-bindless case (which probably makes the reg name
              * wrong)
              */
@@ -975,7 +975,7 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
       for (int i = 0; i < fs->num_sampler_prefetch; i++) {
          const struct ir3_sampler_prefetch *prefetch = &fs->sampler_prefetch[i];
          OUT_REG(ring,
-            A6XX_SP_FS_BINDLESS_PREFETCH_CMD(i,
+            A6XX_SP_PS_INITIAL_TEX_INDEX_CMD(i,
                .samp_id = prefetch->samp_id,
                .tex_id = prefetch->tex_id,
             )
@@ -984,30 +984,30 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
    }
 
    OUT_REG(ring,
-           HLSQ_CONTROL_1_REG(CHIP,
+           SP_LB_PARAM_LIMIT(CHIP,
             b->ctx->screen->info->a6xx.prim_alloc_threshold),
-           HLSQ_CONTROL_2_REG(
+           SP_REG_PROG_ID_0(
                  CHIP,
                  .faceregid = face_regid,
                  .sampleid = samp_id_regid,
                  .samplemask = smask_in_regid,
                  .centerrhw = ij_regid[IJ_PERSP_CENTER_RHW],
            ),
-           HLSQ_CONTROL_3_REG(
+           SP_REG_PROG_ID_1(
                  CHIP,
                  .ij_persp_pixel = ij_regid[IJ_PERSP_PIXEL],
                  .ij_linear_pixel = ij_regid[IJ_LINEAR_PIXEL],
                  .ij_persp_centroid = ij_regid[IJ_PERSP_CENTROID],
                  .ij_linear_centroid = ij_regid[IJ_LINEAR_CENTROID],
            ),
-           HLSQ_CONTROL_4_REG(
+           SP_REG_PROG_ID_2(
                  CHIP,
                  .ij_persp_sample = ij_regid[IJ_PERSP_SAMPLE],
                  .ij_linear_sample = ij_regid[IJ_LINEAR_SAMPLE],
                  .xycoordregid = coord_regid,
                  .zwcoordregid = zwcoord_regid,
            ),
-           HLSQ_CONTROL_5_REG(
+           SP_REG_PROG_ID_3(
                  CHIP,
                  .linelengthregid = INVALID_REG,
                  .foveationqualityregid = INVALID_REG,
@@ -1036,7 +1036,7 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
       }
 
       OUT_REG(ring,
-         A7XX_HLSQ_UNKNOWN_A9AE(
+         A7XX_SP_PS_CNTL_1(
             .sysval_regs_count = sysval_regs,
             .unk8 = 1,
             .unk9 = 1,
@@ -1046,7 +1046,7 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
 
    enum a6xx_threadsize thrsz = fs->info.double_threadsize ? THREAD128 : THREAD64;
    OUT_REG(ring,
-           HLSQ_FS_CNTL_0(
+           SP_PS_WAVE_CNTL(
                  CHIP,
                  .threadsize = thrsz,
                  .varyings = enable_varyings,
@@ -1062,43 +1062,43 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
          need_size = true;
    }
 
-   OUT_PKT4(ring, REG_A6XX_GRAS_CNTL, 1);
+   OUT_PKT4(ring, REG_A6XX_GRAS_CL_INTERP_CNTL, 1);
    OUT_RING(ring,
-         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_GRAS_CNTL_IJ_PERSP_PIXEL) |
-         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_GRAS_CNTL_IJ_PERSP_CENTROID) |
-         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_GRAS_CNTL_IJ_PERSP_SAMPLE) |
-         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_GRAS_CNTL_IJ_LINEAR_PIXEL) |
-         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_GRAS_CNTL_IJ_LINEAR_CENTROID) |
-         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_GRAS_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(need_size, A6XX_GRAS_CNTL_IJ_LINEAR_PIXEL) |
-         COND(need_size_persamp, A6XX_GRAS_CNTL_IJ_LINEAR_SAMPLE) |
+         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_PIXEL) |
+         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_CENTROID) |
+         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_SAMPLE) |
+         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_CENTROID) |
+         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
+         COND(need_size, A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         COND(need_size_persamp, A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
          COND(fs->fragcoord_compmask != 0,
-              A6XX_GRAS_CNTL_COORD_MASK(fs->fragcoord_compmask)));
+              A6XX_GRAS_CL_INTERP_CNTL_COORD_MASK(fs->fragcoord_compmask)));
 
-   OUT_PKT4(ring, REG_A6XX_RB_RENDER_CONTROL0, 2);
+   OUT_PKT4(ring, REG_A6XX_RB_INTERP_CNTL, 2);
    OUT_RING(ring,
-         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_RB_RENDER_CONTROL0_IJ_PERSP_PIXEL) |
-         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_RB_RENDER_CONTROL0_IJ_PERSP_CENTROID) |
-         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_RB_RENDER_CONTROL0_IJ_PERSP_SAMPLE) |
-         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_PIXEL) |
-         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_CENTROID) |
-         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_SAMPLE) |
-         COND(need_size, A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_PIXEL) |
-         COND(enable_varyings, A6XX_RB_RENDER_CONTROL0_UNK10) |
-         COND(need_size_persamp, A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_SAMPLE) |
+         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_RB_INTERP_CNTL_IJ_PERSP_PIXEL) |
+         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_RB_INTERP_CNTL_IJ_PERSP_CENTROID) |
+         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_RB_INTERP_CNTL_IJ_PERSP_SAMPLE) |
+         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_RB_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_RB_INTERP_CNTL_IJ_LINEAR_CENTROID) |
+         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_RB_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
+         COND(need_size, A6XX_RB_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         COND(enable_varyings, A6XX_RB_INTERP_CNTL_UNK10) |
+         COND(need_size_persamp, A6XX_RB_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
          COND(fs->fragcoord_compmask != 0,
-              A6XX_RB_RENDER_CONTROL0_COORD_MASK(fs->fragcoord_compmask)));
+              A6XX_RB_INTERP_CNTL_COORD_MASK(fs->fragcoord_compmask)));
    OUT_RING(ring,
-         A6XX_RB_RENDER_CONTROL1_FRAGCOORDSAMPLEMODE(
+         A6XX_RB_PS_INPUT_CNTL_FRAGCOORDSAMPLEMODE(
             sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER) |
-         CONDREG(smask_in_regid, A6XX_RB_RENDER_CONTROL1_SAMPLEMASK) |
-         CONDREG(samp_id_regid, A6XX_RB_RENDER_CONTROL1_SAMPLEID) |
-         CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_RENDER_CONTROL1_CENTERRHW) |
-         COND(fs->post_depth_coverage, A6XX_RB_RENDER_CONTROL1_POSTDEPTHCOVERAGE) |
-         COND(fs->frag_face, A6XX_RB_RENDER_CONTROL1_FACENESS));
+         CONDREG(smask_in_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEMASK) |
+         CONDREG(samp_id_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEID) |
+         CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_PS_INPUT_CNTL_CENTERRHW) |
+         COND(fs->post_depth_coverage, A6XX_RB_PS_INPUT_CNTL_POSTDEPTHCOVERAGE) |
+         COND(fs->frag_face, A6XX_RB_PS_INPUT_CNTL_FACENESS));
 
-   OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_CNTL, 1);
-   OUT_RING(ring, COND(sample_shading, A6XX_RB_SAMPLE_CNTL_PER_SAMP_MODE));
+   OUT_PKT4(ring, REG_A6XX_RB_PS_SAMPLEFREQ_CNTL, 1);
+   OUT_RING(ring, COND(sample_shading, A6XX_RB_PS_SAMPLEFREQ_CNTL_PER_SAMP_MODE));
 
    OUT_PKT4(ring, REG_A6XX_GRAS_LRZ_PS_INPUT_CNTL, 1);
    OUT_RING(ring,
@@ -1106,8 +1106,8 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
          A6XX_GRAS_LRZ_PS_INPUT_CNTL_FRAGCOORDSAMPLEMODE(
             sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER));
 
-   OUT_PKT4(ring, REG_A6XX_GRAS_SAMPLE_CNTL, 1);
-   OUT_RING(ring, COND(sample_shading, A6XX_GRAS_SAMPLE_CNTL_PER_SAMP_MODE));
+   OUT_PKT4(ring, REG_A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL, 1);
+   OUT_RING(ring, COND(sample_shading, A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL_PER_SAMP_MODE));
 }
 
 template<chip CHIP>
@@ -1153,17 +1153,17 @@ emit_fs_outputs(struct fd_ringbuffer *ring, const struct program_builder *b)
       }
    }
 
-   OUT_PKT4(ring, REG_A6XX_SP_FS_OUTPUT_CNTL0, 1);
-   OUT_RING(ring, A6XX_SP_FS_OUTPUT_CNTL0_DEPTH_REGID(posz_regid) |
-                  A6XX_SP_FS_OUTPUT_CNTL0_SAMPMASK_REGID(smask_regid) |
-                  A6XX_SP_FS_OUTPUT_CNTL0_STENCILREF_REGID(stencilref_regid) |
-                  COND(fs->dual_src_blend, A6XX_SP_FS_OUTPUT_CNTL0_DUAL_COLOR_IN_ENABLE));
+   OUT_PKT4(ring, REG_A6XX_SP_PS_OUTPUT_CNTL, 1);
+   OUT_RING(ring, A6XX_SP_PS_OUTPUT_CNTL_DEPTH_REGID(posz_regid) |
+                  A6XX_SP_PS_OUTPUT_CNTL_SAMPMASK_REGID(smask_regid) |
+                  A6XX_SP_PS_OUTPUT_CNTL_STENCILREF_REGID(stencilref_regid) |
+                  COND(fs->dual_src_blend, A6XX_SP_PS_OUTPUT_CNTL_DUAL_COLOR_IN_ENABLE));
 
-   OUT_PKT4(ring, REG_A6XX_SP_FS_OUTPUT_REG(0), output_reg_count);
+   OUT_PKT4(ring, REG_A6XX_SP_PS_OUTPUT_REG(0), output_reg_count);
    for (uint32_t i = 0; i < output_reg_count; i++) {
-      OUT_RING(ring, A6XX_SP_FS_OUTPUT_REG_REGID(fragdata_regid[i]) |
+      OUT_RING(ring, A6XX_SP_PS_OUTPUT_REG_REGID(fragdata_regid[i]) |
                      COND(fragdata_regid[i] & HALF_REG_ID,
-                             A6XX_SP_FS_OUTPUT_REG_HALF_PRECISION));
+                             A6XX_SP_PS_OUTPUT_REG_HALF_PRECISION));
 
       if (VALIDREG(fragdata_regid[i]) ||
           (fragdata_aliased_components & (0xf << (i * 4)))) {
@@ -1174,9 +1174,9 @@ emit_fs_outputs(struct fd_ringbuffer *ring, const struct program_builder *b)
    if (CHIP >= A7XX) {
       OUT_REG(
          ring,
-         A7XX_SP_PS_ALIASED_COMPONENTS_CONTROL(
+         A7XX_SP_PS_OUTPUT_CONST_CNTL(
                .enabled = fragdata_aliased_components != 0),
-         A7XX_SP_PS_ALIASED_COMPONENTS(.dword = fragdata_aliased_components));
+         A7XX_SP_PS_OUTPUT_CONST_MASK(.dword = fragdata_aliased_components));
    } else {
       assert(fragdata_aliased_components == 0);
    }
@@ -1194,7 +1194,7 @@ setup_stateobj(struct fd_ringbuffer *ring, const struct program_builder *b)
    if (!b->binning_pass)
       fd6_emit_shader<CHIP>(b->ctx, ring, b->fs);
 
-   OUT_PKT4(ring, REG_A6XX_PC_MULTIVIEW_CNTL, 1);
+   OUT_PKT4(ring, REG_A6XX_PC_STEREO_RENDERING_CNTL, 1);
    OUT_RING(ring, 0);
 
    emit_vfd_dest(ring, b->vs);
@@ -1211,7 +1211,7 @@ setup_stateobj(struct fd_ringbuffer *ring, const struct program_builder *b)
          patch_control_points * b->vs->output_size / 4;
 
       /* Total attribute slots in HS incoming patch. */
-      OUT_PKT4(ring, REG_A6XX_PC_HS_INPUT_SIZE, 1);
+      OUT_PKT4(ring, REG_A6XX_PC_HS_PARAM_1, 1);
       OUT_RING(ring, patch_local_mem_size_16b);
 
       const uint32_t wavesize = 64;
@@ -1239,7 +1239,7 @@ setup_stateobj(struct fd_ringbuffer *ring, const struct program_builder *b)
       uint32_t wave_input_size = DIV_ROUND_UP(
          patches_per_wave * patch_local_mem_size_16b * 16, 256);
 
-      OUT_PKT4(ring, REG_A6XX_SP_HS_WAVE_INPUT_SIZE, 1);
+      OUT_PKT4(ring, REG_A6XX_SP_HS_CNTL_1, 1);
       OUT_RING(ring, wave_input_size);
 
       enum a6xx_tess_output output;
@@ -1252,10 +1252,10 @@ setup_stateobj(struct fd_ringbuffer *ring, const struct program_builder *b)
       else
          output = TESS_CW_TRIS;
 
-      OUT_PKT4(ring, REG_A6XX_PC_TESS_CNTL, 1);
-      OUT_RING(ring, A6XX_PC_TESS_CNTL_SPACING(
+      OUT_PKT4(ring, REG_A6XX_PC_DS_PARAM, 1);
+      OUT_RING(ring, A6XX_PC_DS_PARAM_SPACING(
                         fd6_gl2spacing(b->ds->tess.spacing)) |
-                        A6XX_PC_TESS_CNTL_OUTPUT(output));
+                        A6XX_PC_DS_PARAM_OUTPUT(output));
    }
 }
 
@@ -1372,21 +1372,21 @@ emit_interp_state(struct fd_ringbuffer *ring, const struct fd6_program_state *st
       }
    }
 
-   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_INTERP_MODE(0), 8);
+   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_INTERP_MODE_MODE(0), 8);
    for (int i = 0; i < 8; i++)
-      OUT_RING(ring, vinterp[i]); /* VPC_VARYING_INTERP[i].MODE */
+      OUT_RING(ring, vinterp[i]); /* VPC_VARYING_INTERP_MODE[i].MODE */
 
-   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_PS_REPL_MODE(0), 8);
+   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_REPLACE_MODE_0_MODE(0), 8);
    for (int i = 0; i < 8; i++)
-      OUT_RING(ring, vpsrepl[i]); /* VPC_VARYING_PS_REPL[i] */
+      OUT_RING(ring, vpsrepl[i]); /* VPC_VARYING_REPLACE_MODE_0[i] */
 }
 
 template <chip CHIP>
 static struct ir3_program_state *
 fd6_program_create(void *data, const struct ir3_shader_variant *bs,
-                   const struct ir3_shader_variant *vs, 
+                   const struct ir3_shader_variant *vs,
                    const struct ir3_shader_variant *hs,
-                   const struct ir3_shader_variant *ds, 
+                   const struct ir3_shader_variant *ds,
                    const struct ir3_shader_variant *gs,
                    const struct ir3_shader_variant *fs,
                    const struct ir3_cache_key *key) in_dt

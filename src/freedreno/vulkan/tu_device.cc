@@ -2420,58 +2420,58 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
    struct tu_cs sub_cs;
    tu_cs_begin_sub_stream(&device->sub_cs, 47, &sub_cs);
 
-   tu_cs_emit_regs(&sub_cs, HLSQ_INVALIDATE_CMD(A7XX,
+   tu_cs_emit_regs(&sub_cs, SP_UPDATE_CNTL(A7XX,
             .vs_state = true, .hs_state = true, .ds_state = true,
             .gs_state = true, .fs_state = true, .gfx_uav = true,
             .cs_bindless = 0xff, .gfx_bindless = 0xff));
-   tu_cs_emit_regs(&sub_cs, HLSQ_CS_CNTL(A7XX,
+   tu_cs_emit_regs(&sub_cs, SP_CS_CONST_CONFIG(A7XX,
             .constlen = 4,
             .enabled = true));
    tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_CONFIG(.enabled = true));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_CTRL_REG0(
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_CNTL_0(
             .threadmode = MULTI,
             .threadsize = THREAD128,
             .mergedregs = true));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_CTRL_REG1(.shared_size = 1));
-   tu_cs_emit_regs(&sub_cs, HLSQ_CS_KERNEL_GROUP_X(A7XX, 1),
-                     HLSQ_CS_KERNEL_GROUP_Y(A7XX, 1),
-                     HLSQ_CS_KERNEL_GROUP_Z(A7XX, 1));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_INSTRLEN(.sp_cs_instrlen = 1));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_TEX_COUNT(0));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_UAV_COUNT(0));
-   tu_cs_emit_regs(&sub_cs, HLSQ_CS_CNTL_1(A7XX,
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_CNTL_1(.shared_size = 1));
+   tu_cs_emit_regs(&sub_cs, SP_CS_KERNEL_GROUP_X(A7XX, 1),
+                     SP_CS_KERNEL_GROUP_Y(A7XX, 1),
+                     SP_CS_KERNEL_GROUP_Z(A7XX, 1));
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_INSTR_SIZE(.sp_cs_instr_size = 1));
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_TSIZE(0));
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_USIZE(0));
+   tu_cs_emit_regs(&sub_cs, SP_CS_WGE_CNTL(A7XX,
             .linearlocalidregid = regid(63, 0),
             .threadsize = THREAD128,
             .workgrouprastorderzfirsten = true,
             .wgtilewidth = 4,
             .wgtileheight = 17));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_CNTL_0(
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_WIE_CNTL_0(
             .wgidconstid = regid(51, 3),
             .wgsizeconstid = regid(48, 0),
             .wgoffsetconstid = regid(63, 0),
             .localidregid = regid(63, 0)));
-   tu_cs_emit_regs(&sub_cs, SP_CS_CNTL_1(A7XX,
+   tu_cs_emit_regs(&sub_cs, SP_CS_WIE_CNTL_1(A7XX,
             .linearlocalidregid = regid(63, 0),
             .threadsize = THREAD128,
             .workitemrastorder = WORKITEMRASTORDER_TILED));
    tu_cs_emit_regs(&sub_cs, A7XX_SP_CS_UNKNOWN_A9BE(0));
 
    tu_cs_emit_regs(&sub_cs,
-                  HLSQ_CS_NDRANGE_0(A7XX, .kerneldim = 3,
+                  SP_CS_NDRANGE_0(A7XX, .kerneldim = 3,
                                           .localsizex = 255,
                                           .localsizey = 1,
                                           .localsizez = 1),
-                  HLSQ_CS_NDRANGE_1(A7XX, .globalsize_x = 3072),
-                  HLSQ_CS_NDRANGE_2(A7XX, .globaloff_x = 0),
-                  HLSQ_CS_NDRANGE_3(A7XX, .globalsize_y = 1),
-                  HLSQ_CS_NDRANGE_4(A7XX, .globaloff_y = 0),
-                  HLSQ_CS_NDRANGE_5(A7XX, .globalsize_z = 1),
-                  HLSQ_CS_NDRANGE_6(A7XX, .globaloff_z = 0));
-   tu_cs_emit_regs(&sub_cs, A7XX_HLSQ_CS_LAST_LOCAL_SIZE(
+                  SP_CS_NDRANGE_1(A7XX, .globalsize_x = 3072),
+                  SP_CS_NDRANGE_2(A7XX, .globaloff_x = 0),
+                  SP_CS_NDRANGE_3(A7XX, .globalsize_y = 1),
+                  SP_CS_NDRANGE_4(A7XX, .globaloff_y = 0),
+                  SP_CS_NDRANGE_5(A7XX, .globalsize_z = 1),
+                  SP_CS_NDRANGE_6(A7XX, .globaloff_z = 0));
+   tu_cs_emit_regs(&sub_cs, A7XX_SP_CS_NDRANGE_7(
             .localsizex = 255,
             .localsizey = 0,
             .localsizez = 0));
-   tu_cs_emit_pkt4(&sub_cs, REG_A6XX_SP_CS_OBJ_FIRST_EXEC_OFFSET, 3);
+   tu_cs_emit_pkt4(&sub_cs, REG_A6XX_SP_CS_PROGRAM_COUNTER_OFFSET, 3);
    tu_cs_emit(&sub_cs, 0);
    tu_cs_emit_qw(&sub_cs, shader_iova);
 

@@ -174,7 +174,7 @@ struct fd_dev_info {
       /* see enum a6xx_ccu_cache_size */
       uint32_t gmem_ccu_color_cache_fraction;
 
-      /* Corresponds to HLSQ_CONTROL_1_REG::PRIMALLOCTHRESHOLD */
+      /* Corresponds to SP_LB_PARAM_LIMIT::PRIMALLOCTHRESHOLD */
       uint32_t prim_alloc_threshold;
 
       uint32_t vs_max_inputs_count;
@@ -239,7 +239,7 @@ struct fd_dev_info {
          uint32_t VPC_DBG_ECO_CNTL;
          uint32_t UCHE_UNKNOWN_0E12;
 
-         uint32_t RB_UNKNOWN_8E06;
+         uint32_t RB_CCU_DBG_ECO_CNTL;
       } magic;
 
       struct {

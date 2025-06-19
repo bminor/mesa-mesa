@@ -317,21 +317,21 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
 
    view->pitch = pitch;
 
-   view->SP_PS_2D_SRC_INFO =
-      A6XX_SP_PS_2D_SRC_INFO_COLOR_FORMAT(storage_format) |
-      A6XX_SP_PS_2D_SRC_INFO_TILE_MODE(tile_mode) |
-      A6XX_SP_PS_2D_SRC_INFO_COLOR_SWAP(swap) |
-      COND(ubwc_enabled, A6XX_SP_PS_2D_SRC_INFO_FLAGS) |
-      COND(util_format_is_srgb(args->format), A6XX_SP_PS_2D_SRC_INFO_SRGB) |
-      A6XX_SP_PS_2D_SRC_INFO_SAMPLES(util_logbase2(layout->nr_samples)) |
-      COND(samples_average, A6XX_SP_PS_2D_SRC_INFO_SAMPLES_AVERAGE) |
-      A6XX_SP_PS_2D_SRC_INFO_UNK20 |
-      A6XX_SP_PS_2D_SRC_INFO_UNK22 |
-      COND(is_mutable, A6XX_SP_PS_2D_SRC_INFO_MUTABLEEN);
+   view->TPL1_A2D_SRC_TEXTURE_INFO =
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_COLOR_FORMAT(storage_format) |
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_TILE_MODE(tile_mode) |
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_COLOR_SWAP(swap) |
+      COND(ubwc_enabled, A6XX_TPL1_A2D_SRC_TEXTURE_INFO_FLAGS) |
+      COND(util_format_is_srgb(args->format), A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SRGB) |
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SAMPLES(util_logbase2(layout->nr_samples)) |
+      COND(samples_average, A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SAMPLES_AVERAGE) |
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_UNK20 |
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_UNK22 |
+      COND(is_mutable, A6XX_TPL1_A2D_SRC_TEXTURE_INFO_MUTABLEEN);
 
-   view->SP_PS_2D_SRC_SIZE =
-      A6XX_SP_PS_2D_SRC_SIZE_WIDTH(width) |
-      A6XX_SP_PS_2D_SRC_SIZE_HEIGHT(height);
+   view->TPL1_A2D_SRC_TEXTURE_SIZE =
+      A6XX_TPL1_A2D_SRC_TEXTURE_SIZE_WIDTH(width) |
+      A6XX_TPL1_A2D_SRC_TEXTURE_SIZE_HEIGHT(height);
 
    /* note: these have same encoding for MRT and 2D (except 2D PITCH src) */
    view->FLAG_BUFFER_PITCH =
@@ -341,10 +341,10 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
    const struct util_format_description *format_desc =
       util_format_description(args->format);
    if (util_format_has_depth(format_desc)) {
-      view->GRAS_LRZ_DEPTH_VIEW =
-         A6XX_GRAS_LRZ_DEPTH_VIEW_BASE_LAYER(args->base_array_layer) |
-         A6XX_GRAS_LRZ_DEPTH_VIEW_LAYER_COUNT(args->layer_count) |
-         A6XX_GRAS_LRZ_DEPTH_VIEW_BASE_MIP_LEVEL(args->base_miplevel);
+      view->GRAS_LRZ_VIEW_INFO =
+         A6XX_GRAS_LRZ_VIEW_INFO_BASE_LAYER(args->base_array_layer) |
+         A6XX_GRAS_LRZ_VIEW_INFO_LAYER_COUNT(args->layer_count) |
+         A6XX_GRAS_LRZ_VIEW_INFO_BASE_MIP_LEVEL(args->base_miplevel);
    }
 
    view->base_addr = base_addr;
@@ -412,26 +412,26 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
       A6XX_RB_MRT_BUF_INFO_COLOR_SWAP(color_swap) |
       COND(is_mutable, A7XX_RB_MRT_BUF_INFO_MUTABLEEN);
 
-   view->SP_FS_MRT_REG =
-      A6XX_SP_FS_MRT_REG_COLOR_FORMAT(color_format) |
-      COND(util_format_is_pure_sint(args->format), A6XX_SP_FS_MRT_REG_COLOR_SINT) |
-      COND(util_format_is_pure_uint(args->format), A6XX_SP_FS_MRT_REG_COLOR_UINT);
+   view->SP_PS_MRT_REG =
+      A6XX_SP_PS_MRT_REG_COLOR_FORMAT(color_format) |
+      COND(util_format_is_pure_sint(args->format), A6XX_SP_PS_MRT_REG_COLOR_SINT) |
+      COND(util_format_is_pure_uint(args->format), A6XX_SP_PS_MRT_REG_COLOR_UINT);
 
-   view->RB_2D_DST_INFO =
-      A6XX_RB_2D_DST_INFO_COLOR_FORMAT(color_format) |
-      A6XX_RB_2D_DST_INFO_TILE_MODE(tile_mode) |
-      A6XX_RB_2D_DST_INFO_COLOR_SWAP(color_swap) |
-      COND(ubwc_enabled, A6XX_RB_2D_DST_INFO_FLAGS) |
-      COND(util_format_is_srgb(args->format), A6XX_RB_2D_DST_INFO_SRGB) |
-      COND(is_mutable, A6XX_RB_2D_DST_INFO_MUTABLEEN);;
+   view->RB_A2D_DEST_BUFFER_INFO =
+      A6XX_RB_A2D_DEST_BUFFER_INFO_COLOR_FORMAT(color_format) |
+      A6XX_RB_A2D_DEST_BUFFER_INFO_TILE_MODE(tile_mode) |
+      A6XX_RB_A2D_DEST_BUFFER_INFO_COLOR_SWAP(color_swap) |
+      COND(ubwc_enabled, A6XX_RB_A2D_DEST_BUFFER_INFO_FLAGS) |
+      COND(util_format_is_srgb(args->format), A6XX_RB_A2D_DEST_BUFFER_INFO_SRGB) |
+      COND(is_mutable, A6XX_RB_A2D_DEST_BUFFER_INFO_MUTABLEEN);;
 
-   view->RB_BLIT_DST_INFO =
-      A6XX_RB_BLIT_DST_INFO_TILE_MODE(tile_mode) |
-      A6XX_RB_BLIT_DST_INFO_SAMPLES(util_logbase2(layout->nr_samples)) |
-      A6XX_RB_BLIT_DST_INFO_COLOR_FORMAT(blit_format) |
-      A6XX_RB_BLIT_DST_INFO_COLOR_SWAP(color_swap) |
-      COND(ubwc_enabled, A6XX_RB_BLIT_DST_INFO_FLAGS) |
-      COND(is_mutable, A6XX_RB_BLIT_DST_INFO_MUTABLEEN);
+   view->RB_RESOLVE_SYSTEM_BUFFER_INFO =
+      A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_TILE_MODE(tile_mode) |
+      A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_SAMPLES(util_logbase2(layout->nr_samples)) |
+      A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_COLOR_FORMAT(blit_format) |
+      A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_COLOR_SWAP(color_swap) |
+      COND(ubwc_enabled, A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_FLAGS) |
+      COND(is_mutable, A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_MUTABLEEN);
 }
 
 void

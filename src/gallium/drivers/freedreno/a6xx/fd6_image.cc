@@ -271,7 +271,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
 
    if (shader == PIPE_SHADER_COMPUTE) {
       OUT_REG(ring,
-         HLSQ_INVALIDATE_CMD(
+         SP_UPDATE_CNTL(
             CHIP,
             .cs_bindless = CHIP == A6XX ? 0x1f : 0xff,
          )
@@ -321,12 +321,12 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
       }
    } else {
       OUT_REG(ring,
-         HLSQ_INVALIDATE_CMD(
+         SP_UPDATE_CNTL(
             CHIP,
             .gfx_bindless = CHIP == A6XX ? 0x1f : 0xff,
          )
       );
-      OUT_REG(ring, SP_BINDLESS_BASE_DESCRIPTOR(CHIP,
+      OUT_REG(ring, SP_GFX_BINDLESS_BASE_DESCRIPTOR(CHIP,
             idx, .desc_size = BINDLESS_DESCRIPTOR_64B, .bo = set->bo,
       ));
       if (CHIP == A6XX) {

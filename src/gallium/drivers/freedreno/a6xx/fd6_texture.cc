@@ -613,44 +613,44 @@ build_texture_state(struct fd_context *ctx, enum pipe_shader_type type,
    case PIPE_SHADER_VERTEX:
       sb = SB6_VS_TEX;
       opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_VS_TEX_SAMP;
-      tex_const_reg = REG_A6XX_SP_VS_TEX_CONST;
-      tex_count_reg = REG_A6XX_SP_VS_TEX_COUNT;
+      tex_samp_reg = REG_A6XX_SP_VS_SAMPLER_BASE;
+      tex_const_reg = REG_A6XX_SP_VS_TEXMEMOBJ_BASE;
+      tex_count_reg = REG_A6XX_SP_VS_TSIZE;
       break;
    case PIPE_SHADER_TESS_CTRL:
       sb = SB6_HS_TEX;
       opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_HS_TEX_SAMP;
-      tex_const_reg = REG_A6XX_SP_HS_TEX_CONST;
-      tex_count_reg = REG_A6XX_SP_HS_TEX_COUNT;
+      tex_samp_reg = REG_A6XX_SP_HS_SAMPLER_BASE;
+      tex_const_reg = REG_A6XX_SP_HS_TEXMEMOBJ_BASE;
+      tex_count_reg = REG_A6XX_SP_HS_TSIZE;
       break;
    case PIPE_SHADER_TESS_EVAL:
       sb = SB6_DS_TEX;
       opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_DS_TEX_SAMP;
-      tex_const_reg = REG_A6XX_SP_DS_TEX_CONST;
-      tex_count_reg = REG_A6XX_SP_DS_TEX_COUNT;
+      tex_samp_reg = REG_A6XX_SP_DS_SAMPLER_BASE;
+      tex_const_reg = REG_A6XX_SP_DS_TEXMEMOBJ_BASE;
+      tex_count_reg = REG_A6XX_SP_DS_TSIZE;
       break;
    case PIPE_SHADER_GEOMETRY:
       sb = SB6_GS_TEX;
       opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_GS_TEX_SAMP;
-      tex_const_reg = REG_A6XX_SP_GS_TEX_CONST;
-      tex_count_reg = REG_A6XX_SP_GS_TEX_COUNT;
+      tex_samp_reg = REG_A6XX_SP_GS_SAMPLER_BASE;
+      tex_const_reg = REG_A6XX_SP_GS_TEXMEMOBJ_BASE;
+      tex_count_reg = REG_A6XX_SP_GS_TSIZE;
       break;
    case PIPE_SHADER_FRAGMENT:
       sb = SB6_FS_TEX;
       opcode = CP_LOAD_STATE6_FRAG;
-      tex_samp_reg = REG_A6XX_SP_FS_TEX_SAMP;
-      tex_const_reg = REG_A6XX_SP_FS_TEX_CONST;
-      tex_count_reg = REG_A6XX_SP_FS_TEX_COUNT;
+      tex_samp_reg = REG_A6XX_SP_PS_SAMPLER_BASE;
+      tex_const_reg = REG_A6XX_SP_PS_TEXMEMOBJ_BASE;
+      tex_count_reg = REG_A6XX_SP_PS_TSIZE;
       break;
    case PIPE_SHADER_COMPUTE:
       sb = SB6_CS_TEX;
       opcode = CP_LOAD_STATE6_FRAG;
-      tex_samp_reg = REG_A6XX_SP_CS_TEX_SAMP;
-      tex_const_reg = REG_A6XX_SP_CS_TEX_CONST;
-      tex_count_reg = REG_A6XX_SP_CS_TEX_COUNT;
+      tex_samp_reg = REG_A6XX_SP_CS_SAMPLER_BASE;
+      tex_const_reg = REG_A6XX_SP_CS_TEXMEMOBJ_BASE;
+      tex_count_reg = REG_A6XX_SP_CS_TSIZE;
       break;
    default:
       unreachable("bad state block");

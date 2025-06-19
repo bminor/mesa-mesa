@@ -41,16 +41,16 @@ function draw(primtype, nindx)
 
   -- Just in case, filter out anything that isn't starting
   -- at 0,0
-  if r.GRAS_2D_DST_TL.X ~= 0 or r.GRAS_2D_DST_TL.Y ~= 0 then
+  if r.GRAS_A2D_DEST_TL.X ~= 0 or r.GRAS_A2D_DEST_TL.Y ~= 0 then
     return
   end
 
   local blit = {}
   
-  blit.width   = r.GRAS_2D_DST_BR.X + 1
-  blit.height  = r.GRAS_2D_DST_BR.Y + 1
-  blit.pitch   = r.RB_2D_DST_SIZE.PITCH
-  blit.addr    = r.RB_2D_DST_LO | (r.RB_2D_DST_HI << 32)
+  blit.width   = r.GRAS_A2D_DEST_BR.X + 1
+  blit.height  = r.GRAS_A2D_DEST_BR.Y + 1
+  blit.pitch   = r.RB_A2D_DEST_BUFFER_BASE_SIZE.PITCH
+  blit.addr    = r.RB_A2D_DEST_BUFFER_BASE_LO | (r.RB_A2D_DEST_BUFFER_BASE_HI << 32)
   blit.base    = bos.base(blit.addr)
   blit.endaddr = 0  -- filled in later
   --printf("Found blit: 0x%x (0x%x)\n", blit.addr, blit.base)

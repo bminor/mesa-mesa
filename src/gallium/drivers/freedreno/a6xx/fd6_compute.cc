@@ -30,7 +30,7 @@ cs_program_emit_local_size(struct fd_context *ctx, struct fd_ringbuffer *ring,
 {
    /*
     * Devices that do not support double threadsize take the threadsize from
-    * A6XX_HLSQ_FS_CNTL_0_THREADSIZE instead of A6XX_HLSQ_CS_CNTL_1_THREADSIZE
+    * A6XX_SP_PS_WAVE_CNTL_THREADSIZE instead of A6XX_SP_CS_WGE_CNTL_THREADSIZE
     * which is always set to THREAD128.
     */
    enum a6xx_threadsize thrsz = v->info.double_threadsize ? THREAD128 : THREAD64;
@@ -44,7 +44,7 @@ cs_program_emit_local_size(struct fd_context *ctx, struct fd_ringbuffer *ring,
                                                            : 17;
 
       OUT_REG(ring,
-         HLSQ_CS_CNTL_1(
+         SP_CS_WGE_CNTL(
             CHIP,
             .linearlocalidregid = INVALID_REG,
             .threadsize = thrsz_cs,
@@ -55,7 +55,7 @@ cs_program_emit_local_size(struct fd_context *ctx, struct fd_ringbuffer *ring,
       );
 
       OUT_REG(ring,
-         A7XX_HLSQ_CS_LAST_LOCAL_SIZE(
+         A7XX_SP_CS_NDRANGE_7(
             .localsizex = local_size[0] - 1,
             .localsizey = local_size[1] - 1,
             .localsizez = local_size[2] - 1,
@@ -70,12 +70,12 @@ cs_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
                 struct ir3_shader_variant *v)
    assert_dt
 {
-   OUT_REG(ring, HLSQ_INVALIDATE_CMD(CHIP, .vs_state = true, .hs_state = true,
+   OUT_REG(ring, SP_UPDATE_CNTL(CHIP, .vs_state = true, .hs_state = true,
                                           .ds_state = true, .gs_state = true,
                                           .fs_state = true, .cs_state = true,
                                           .cs_uav = true, .gfx_uav = true, ));
 
-   OUT_REG(ring, HLSQ_CS_CNTL(
+   OUT_REG(ring, SP_CS_CONST_CONFIG(
          CHIP,
          .constlen = v->constlen,
          .enabled = true,
@@ -96,7 +96,7 @@ cs_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
    /*
     * Devices that do not support double threadsize take the threadsize from
-    * A6XX_HLSQ_FS_CNTL_0_THREADSIZE instead of A6XX_HLSQ_CS_CNTL_1_THREADSIZE
+    * A6XX_SP_PS_WAVE_CNTL_THREADSIZE instead of A6XX_SP_CS_WGE_CNTL_THREADSIZE
     * which is always set to THREAD128.
     */
    enum a6xx_threadsize thrsz = v->info.double_threadsize ? THREAD128 : THREAD64;
@@ -104,31 +104,31 @@ cs_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
       .supports_double_threadsize ? thrsz : THREAD128;
 
    if (CHIP == A6XX) {
-      OUT_PKT4(ring, REG_A6XX_HLSQ_CS_CNTL_0, 2);
-      OUT_RING(ring, A6XX_HLSQ_CS_CNTL_0_WGIDCONSTID(work_group_id) |
-                        A6XX_HLSQ_CS_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                        A6XX_HLSQ_CS_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                        A6XX_HLSQ_CS_CNTL_0_LOCALIDREGID(local_invocation_id));
-      OUT_RING(ring, A6XX_HLSQ_CS_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
-                        A6XX_HLSQ_CS_CNTL_1_THREADSIZE(thrsz_cs));
+      OUT_PKT4(ring, REG_A6XX_SP_CS_CONST_CONFIG_0, 2);
+      OUT_RING(ring, A6XX_SP_CS_CONST_CONFIG_0_WGIDCONSTID(work_group_id) |
+                        A6XX_SP_CS_CONST_CONFIG_0_WGSIZECONSTID(regid(63, 0)) |
+                        A6XX_SP_CS_CONST_CONFIG_0_WGOFFSETCONSTID(regid(63, 0)) |
+                        A6XX_SP_CS_CONST_CONFIG_0_LOCALIDREGID(local_invocation_id));
+      OUT_RING(ring, A6XX_SP_CS_WGE_CNTL_LINEARLOCALIDREGID(regid(63, 0)) |
+                        A6XX_SP_CS_WGE_CNTL_THREADSIZE(thrsz_cs));
       if (!ctx->screen->info->a6xx.supports_double_threadsize) {
-         OUT_PKT4(ring, REG_A6XX_HLSQ_FS_CNTL_0, 1);
-         OUT_RING(ring, A6XX_HLSQ_FS_CNTL_0_THREADSIZE(thrsz));
+         OUT_PKT4(ring, REG_A6XX_SP_PS_WAVE_CNTL, 1);
+         OUT_RING(ring, A6XX_SP_PS_WAVE_CNTL_THREADSIZE(thrsz));
       }
 
       if (ctx->screen->info->a6xx.has_lpac) {
-         OUT_PKT4(ring, REG_A6XX_SP_CS_CNTL_0, 2);
-         OUT_RING(ring, A6XX_SP_CS_CNTL_0_WGIDCONSTID(work_group_id) |
-                           A6XX_SP_CS_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                           A6XX_SP_CS_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                           A6XX_SP_CS_CNTL_0_LOCALIDREGID(local_invocation_id));
-         OUT_RING(ring, A6XX_SP_CS_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
-                           A6XX_SP_CS_CNTL_1_THREADSIZE(thrsz));
+         OUT_PKT4(ring, REG_A6XX_SP_CS_WIE_CNTL_0, 2);
+         OUT_RING(ring, A6XX_SP_CS_WIE_CNTL_0_WGIDCONSTID(work_group_id) |
+                           A6XX_SP_CS_WIE_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
+                           A6XX_SP_CS_WIE_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
+                           A6XX_SP_CS_WIE_CNTL_0_LOCALIDREGID(local_invocation_id));
+         OUT_RING(ring, A6XX_SP_CS_WIE_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
+                           A6XX_SP_CS_WIE_CNTL_1_THREADSIZE(thrsz));
       }
    } else {
-      OUT_REG(ring, HLSQ_FS_CNTL_0(CHIP, .threadsize = THREAD64));
+      OUT_REG(ring, SP_PS_WAVE_CNTL(CHIP, .threadsize = THREAD64));
       OUT_REG(ring,
-         A6XX_SP_CS_CNTL_0(
+         A6XX_SP_CS_WIE_CNTL_0(
             .wgidconstid = work_group_id,
             .wgsizeconstid = INVALID_REG,
             .wgoffsetconstid = INVALID_REG,
@@ -136,7 +136,7 @@ cs_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
          )
       );
       OUT_REG(ring,
-         SP_CS_CNTL_1(
+         SP_CS_WIE_CNTL_1(
             CHIP,
             .linearlocalidregid = INVALID_REG,
             .threadsize = thrsz_cs,
@@ -191,10 +191,10 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
     * affects all known gens. Based on various experiments it appears that the
     * issue is that when prefetching a branch destination and there is a cache
     * miss, when fetching from memory the HW bounds-checks the fetch against
-    * SP_CS_INSTRLEN, except when one of the two register contexts is active
-    * it accidentally fetches SP_FS_INSTRLEN from the other (inactive)
+    * SP_CS_INSTR_SIZE, except when one of the two register contexts is active
+    * it accidentally fetches SP_PS_INSTR_SIZE from the other (inactive)
     * context. To workaround it we set the FS instrlen here and do a dummy
-    * event to roll the context (because it fetches SP_FS_INSTRLEN from the
+    * event to roll the context (because it fetches SP_PS_INSTR_SIZE from the
     * "wrong" context). Because the bug seems to involve cache misses, we
     * don't emit this if the entire CS program fits in cache, which will
     * hopefully be the majority of cases.
@@ -202,7 +202,7 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
     * See https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/19023
     */
    if (emit_instrlen_workaround) {
-      OUT_REG(ring, A6XX_SP_FS_INSTRLEN(cs->v->instrlen));
+      OUT_REG(ring, A6XX_SP_PS_INSTR_SIZE(cs->v->instrlen));
       fd6_event_write<CHIP>(ctx, ring, FD_LABEL);
    }
 
@@ -224,9 +224,9 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
       cs->v->constlen > 256 ? CONSTLEN_512 :
       (cs->v->constlen > 192 ? CONSTLEN_256 :
       (cs->v->constlen > 128 ? CONSTLEN_192 : CONSTLEN_128));
-   OUT_PKT4(ring, REG_A6XX_SP_CS_CTRL_REG1, 1);
-   OUT_RING(ring, A6XX_SP_CS_CTRL_REG1_SHARED_SIZE(shared_size) |
-                     A6XX_SP_CS_CTRL_REG1_CONSTANTRAMMODE(mode));
+   OUT_PKT4(ring, REG_A6XX_SP_CS_CNTL_1, 1);
+   OUT_RING(ring, A6XX_SP_CS_CNTL_1_SHARED_SIZE(shared_size) |
+                     A6XX_SP_CS_CNTL_1_CONSTANTRAMMODE(mode));
 
    if (CHIP == A6XX && ctx->screen->info->a6xx.has_lpac) {
       OUT_PKT4(ring, REG_A6XX_HLSQ_CS_CTRL_REG1, 1);
@@ -246,34 +246,34 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
    }
 
    OUT_REG(ring,
-           HLSQ_CS_NDRANGE_0(
+           SP_CS_NDRANGE_0(
                  CHIP,
                  .kerneldim = work_dim,
                  .localsizex = local_size[0] - 1,
                  .localsizey = local_size[1] - 1,
                  .localsizez = local_size[2] - 1,
            ),
-           HLSQ_CS_NDRANGE_1(
+           SP_CS_NDRANGE_1(
                  CHIP,
                  .globalsize_x = local_size[0] * num_groups[0],
            ),
-           HLSQ_CS_NDRANGE_2(CHIP, .globaloff_x = 0),
-           HLSQ_CS_NDRANGE_3(
+           SP_CS_NDRANGE_2(CHIP, .globaloff_x = 0),
+           SP_CS_NDRANGE_3(
                  CHIP,
                  .globalsize_y = local_size[1] * num_groups[1],
            ),
-           HLSQ_CS_NDRANGE_4(CHIP, .globaloff_y = 0),
-           HLSQ_CS_NDRANGE_5(
+           SP_CS_NDRANGE_4(CHIP, .globaloff_y = 0),
+           SP_CS_NDRANGE_5(
                  CHIP,
                  .globalsize_z = local_size[2] * num_groups[2],
            ),
-           HLSQ_CS_NDRANGE_6(CHIP, .globaloff_z = 0),
+           SP_CS_NDRANGE_6(CHIP, .globaloff_z = 0),
    );
 
    OUT_REG(ring,
-           HLSQ_CS_KERNEL_GROUP_X(CHIP, 1),
-           HLSQ_CS_KERNEL_GROUP_Y(CHIP, 1),
-           HLSQ_CS_KERNEL_GROUP_Z(CHIP, 1),
+           SP_CS_KERNEL_GROUP_X(CHIP, 1),
+           SP_CS_KERNEL_GROUP_Y(CHIP, 1),
+           SP_CS_KERNEL_GROUP_Z(CHIP, 1),
    );
 
    if (info->indirect) {

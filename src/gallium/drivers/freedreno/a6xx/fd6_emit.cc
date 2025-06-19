@@ -58,7 +58,7 @@ build_vbo_state(struct fd6_emit *emit) assert_dt
       emit->ctx->batch->submit, 4 * dwords, FD_RINGBUFFER_STREAMING);
 
    for (int32_t j = 0; j < cnt; j++) {
-      OUT_PKT4(ring, REG_A6XX_VFD_FETCH(j), 3);
+      OUT_PKT4(ring, REG_A6XX_VFD_VERTEX_BUFFER(j), 3);
       const struct pipe_vertex_buffer *vb = &vtx->vertexbuf.vb[j];
       struct fd_resource *rsc = fd_resource(vb->buffer.resource);
       if (rsc == NULL) {
@@ -70,7 +70,7 @@ build_vbo_state(struct fd6_emit *emit) assert_dt
          uint32_t size = vb->buffer.resource->width0 - off;
 
          OUT_RELOC(ring, rsc->bo, off, 0, 0);
-         OUT_RING(ring, size);       /* VFD_FETCH[j].SIZE */
+         OUT_RING(ring, size);       /* VFD_VERTEX_BUFFER[j].SIZE */
       }
    }
 
@@ -314,18 +314,18 @@ build_prog_fb_rast(struct fd6_emit *emit) assert_dt
    if (blend->use_dual_src_blend)
       nr++;
 
-   OUT_PKT4(ring, REG_A6XX_RB_FS_OUTPUT_CNTL0, 2);
-   OUT_RING(ring, COND(fs->writes_pos, A6XX_RB_FS_OUTPUT_CNTL0_FRAG_WRITES_Z) |
+   OUT_PKT4(ring, REG_A6XX_RB_PS_OUTPUT_CNTL, 2);
+   OUT_RING(ring, COND(fs->writes_pos, A6XX_RB_PS_OUTPUT_CNTL_FRAG_WRITES_Z) |
                      COND(fs->writes_smask && pfb->samples > 1,
-                          A6XX_RB_FS_OUTPUT_CNTL0_FRAG_WRITES_SAMPMASK) |
+                          A6XX_RB_PS_OUTPUT_CNTL_FRAG_WRITES_SAMPMASK) |
                      COND(fs->writes_stencilref,
-                          A6XX_RB_FS_OUTPUT_CNTL0_FRAG_WRITES_STENCILREF) |
+                          A6XX_RB_PS_OUTPUT_CNTL_FRAG_WRITES_STENCILREF) |
                      COND(blend->use_dual_src_blend,
-                          A6XX_RB_FS_OUTPUT_CNTL0_DUAL_COLOR_IN_ENABLE));
-   OUT_RING(ring, A6XX_RB_FS_OUTPUT_CNTL1_MRT(nr));
+                          A6XX_RB_PS_OUTPUT_CNTL_DUAL_COLOR_IN_ENABLE));
+   OUT_RING(ring, A6XX_RB_PS_MRT_CNTL_MRT(nr));
 
-   OUT_PKT4(ring, REG_A6XX_SP_FS_OUTPUT_CNTL1, 1);
-   OUT_RING(ring, A6XX_SP_FS_OUTPUT_CNTL1_MRT(nr));
+   OUT_PKT4(ring, REG_A6XX_SP_PS_MRT_CNTL, 1);
+   OUT_RING(ring, A6XX_SP_PS_MRT_CNTL_MRT(nr));
 
    unsigned mrt_components = 0;
    for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
@@ -340,8 +340,8 @@ build_prog_fb_rast(struct fd6_emit *emit) assert_dt
 
    mrt_components &= prog->mrt_components;
 
-   OUT_REG(ring, A6XX_SP_FS_RENDER_COMPONENTS(.dword = mrt_components));
-   OUT_REG(ring, A6XX_RB_RENDER_COMPONENTS(.dword = mrt_components));
+   OUT_REG(ring, A6XX_SP_PS_OUTPUT_MASK(.dword = mrt_components));
+   OUT_REG(ring, A6XX_RB_PS_OUTPUT_MASK(.dword = mrt_components));
 
    return ring;
 }
@@ -354,10 +354,10 @@ build_blend_color(struct fd6_emit *emit) assert_dt
    struct fd_ringbuffer *ring = fd_submit_new_ringbuffer(
       ctx->batch->submit, 5 * 4, FD_RINGBUFFER_STREAMING);
 
-   OUT_REG(ring, A6XX_RB_BLEND_RED_F32(bcolor->color[0]),
-           A6XX_RB_BLEND_GREEN_F32(bcolor->color[1]),
-           A6XX_RB_BLEND_BLUE_F32(bcolor->color[2]),
-           A6XX_RB_BLEND_ALPHA_F32(bcolor->color[3]));
+   OUT_REG(ring, A6XX_RB_BLEND_CONSTANT_RED_FP32(bcolor->color[0]),
+           A6XX_RB_BLEND_CONSTANT_GREEN_FP32(bcolor->color[1]),
+           A6XX_RB_BLEND_CONSTANT_BLUE_FP32(bcolor->color[2]),
+           A6XX_RB_BLEND_CONSTANT_ALPHA_FP32(bcolor->color[3]));
 
    return ring;
 }
@@ -385,18 +385,18 @@ build_sample_locations(struct fd6_emit *emit)
       y = CLAMP(y, 0.0f, 0.9375f);
 
       sample_locations |=
-         (A6XX_RB_SAMPLE_LOCATION_0_SAMPLE_0_X(x) |
-          A6XX_RB_SAMPLE_LOCATION_0_SAMPLE_0_Y(y)) << i*8;
+         (A6XX_RB_PROGRAMMABLE_MSAA_POS_0_SAMPLE_0_X(x) |
+          A6XX_RB_PROGRAMMABLE_MSAA_POS_0_SAMPLE_0_Y(y)) << i*8;
    }
 
-   OUT_REG(ring, A6XX_GRAS_SAMPLE_CONFIG(.location_enable = true),
-                 A6XX_GRAS_SAMPLE_LOCATION_0(.dword = sample_locations));
+   OUT_REG(ring, A6XX_GRAS_SC_MSAA_SAMPLE_POS_CNTL(.location_enable = true),
+                 A6XX_GRAS_SC_PROGRAMMABLE_MSAA_POS_0(.dword = sample_locations));
 
-   OUT_REG(ring, A6XX_RB_SAMPLE_CONFIG(.location_enable = true),
-                 A6XX_RB_SAMPLE_LOCATION_0(.dword = sample_locations));
+   OUT_REG(ring, A6XX_RB_MSAA_SAMPLE_POS_CNTL(.location_enable = true),
+                 A6XX_RB_PROGRAMMABLE_MSAA_POS_0(.dword = sample_locations));
 
-   OUT_REG(ring, A6XX_SP_TP_SAMPLE_CONFIG(.location_enable = true),
-                 A6XX_SP_TP_SAMPLE_LOCATION_0(.dword = sample_locations));
+   OUT_REG(ring, A6XX_TPL1_MSAA_SAMPLE_POS_CNTL(.location_enable = true),
+                 A6XX_TPL1_PROGRAMMABLE_MSAA_POS_0(.dword = sample_locations));
 
    return ring;
 }
@@ -501,9 +501,9 @@ fd6_emit_non_ring(struct fd_ringbuffer *ring, struct fd6_emit *emit) assert_dt
    if (dirty & FD_DIRTY_STENCIL_REF) {
       struct pipe_stencil_ref *sr = &ctx->stencil_ref;
 
-      OUT_PKT4(ring, REG_A6XX_RB_STENCILREF, 1);
-      OUT_RING(ring, A6XX_RB_STENCILREF_REF(sr->ref_value[0]) |
-                        A6XX_RB_STENCILREF_BFREF(sr->ref_value[1]));
+      OUT_PKT4(ring, REG_A6XX_RB_STENCIL_REF_CNTL, 1);
+      OUT_RING(ring, A6XX_RB_STENCIL_REF_CNTL_REF(sr->ref_value[0]) |
+                        A6XX_RB_STENCIL_REF_CNTL_BFREF(sr->ref_value[1]));
    }
 
    if (dirty & (FD_DIRTY_VIEWPORT | FD_DIRTY_PROG)) {
@@ -511,12 +511,12 @@ fd6_emit_non_ring(struct fd_ringbuffer *ring, struct fd6_emit *emit) assert_dt
          struct pipe_scissor_state *scissor = &ctx->viewport_scissor[i];
          struct pipe_viewport_state *vp = & ctx->viewport[i];
 
-         OUT_REG(ring, A6XX_GRAS_CL_VPORT_XOFFSET(i, vp->translate[0]),
-                 A6XX_GRAS_CL_VPORT_XSCALE(i, vp->scale[0]),
-                 A6XX_GRAS_CL_VPORT_YOFFSET(i, vp->translate[1]),
-                 A6XX_GRAS_CL_VPORT_YSCALE(i, vp->scale[1]),
-                 A6XX_GRAS_CL_VPORT_ZOFFSET(i, vp->translate[2]),
-                 A6XX_GRAS_CL_VPORT_ZSCALE(i, vp->scale[2]));
+         OUT_REG(ring, A6XX_GRAS_CL_VIEWPORT_XOFFSET(i, vp->translate[0]),
+                 A6XX_GRAS_CL_VIEWPORT_XSCALE(i, vp->scale[0]),
+                 A6XX_GRAS_CL_VIEWPORT_YOFFSET(i, vp->translate[1]),
+                 A6XX_GRAS_CL_VIEWPORT_YSCALE(i, vp->scale[1]),
+                 A6XX_GRAS_CL_VIEWPORT_ZOFFSET(i, vp->translate[2]),
+                 A6XX_GRAS_CL_VIEWPORT_ZSCALE(i, vp->scale[2]));
 
          OUT_REG(
                ring,
@@ -544,12 +544,12 @@ fd6_emit_non_ring(struct fd_ringbuffer *ring, struct fd6_emit *emit) assert_dt
          util_viewport_zmin_zmax(vp, ctx->rasterizer->clip_halfz,
                                  &zmin, &zmax);
 
-         OUT_REG(ring, A6XX_GRAS_CL_Z_CLAMP_MIN(i, zmin),
-                 A6XX_GRAS_CL_Z_CLAMP_MAX(i, zmax));
+         OUT_REG(ring, A6XX_GRAS_CL_VIEWPORT_ZCLAMP_MIN(i, zmin),
+                 A6XX_GRAS_CL_VIEWPORT_ZCLAMP_MAX(i, zmax));
 
          /* TODO: what to do about this and multi viewport ? */
          if (i == 0)
-            OUT_REG(ring, A6XX_RB_Z_CLAMP_MIN(zmin), A6XX_RB_Z_CLAMP_MAX(zmax));
+            OUT_REG(ring, A6XX_RB_VIEWPORT_ZCLAMP_MIN(zmin), A6XX_RB_VIEWPORT_ZCLAMP_MAX(zmax));
       }
    }
 }
@@ -804,7 +804,7 @@ fd6_emit_ccu_cntl(struct fd_ringbuffer *ring, struct fd_screen *screen, bool gme
 
    if (CHIP == A7XX) {
       OUT_REG(ring,
-         A7XX_RB_CCU_CNTL2(
+         A7XX_RB_CCU_CACHE_CNTL(
             .depth_offset_hi = depth_offset_hi,
             .color_offset_hi = color_offset_hi,
             .depth_cache_size = CCU_CACHE_SIZE_FULL,
@@ -816,11 +816,11 @@ fd6_emit_ccu_cntl(struct fd_ringbuffer *ring, struct fd_screen *screen, bool gme
 
       if (screen->info->a7xx.has_gmem_vpc_attr_buf) {
          OUT_REG(ring,
-            A7XX_VPC_ATTR_BUF_SIZE_GMEM(.size_gmem = cfg->vpc_attr_buf_size),
-            A7XX_VPC_ATTR_BUF_BASE_GMEM(.base_gmem = cfg->vpc_attr_buf_offset)
+            A7XX_VPC_ATTR_BUF_GMEM_SIZE(.size_gmem = cfg->vpc_attr_buf_size),
+            A7XX_VPC_ATTR_BUF_GMEM_BASE(.base_gmem = cfg->vpc_attr_buf_offset)
          );
          OUT_REG(ring,
-            A7XX_PC_ATTR_BUF_SIZE_GMEM(.size_gmem = cfg->vpc_attr_buf_size)
+            A7XX_PC_ATTR_BUF_GMEM_SIZE(.size_gmem = cfg->vpc_attr_buf_size)
          );
       }
    } else {
@@ -865,7 +865,7 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    if (CHIP >= A7XX) {
       /* On A7XX, RB_CCU_CNTL was broken into two registers, RB_CCU_CNTL which has
        * static properties that can be set once, this requires a WFI to take effect.
-       * While the newly introduced register RB_CCU_CNTL2 has properties that may
+       * While the newly introduced register RB_CCU_CACHE_CNTL has properties that may
        * change per-RP and don't require a WFI to take effect, only CCU inval/flush
        * events are required.
        */
@@ -897,9 +897,9 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    }
 
    WRITE(REG_A6XX_RB_DBG_ECO_CNTL, screen->info->a6xx.magic.RB_DBG_ECO_CNTL);
-   WRITE(REG_A6XX_SP_FLOAT_CNTL, A6XX_SP_FLOAT_CNTL_F16_NO_INF);
+   WRITE(REG_A6XX_SP_NC_MODE_CNTL_2, A6XX_SP_NC_MODE_CNTL_2_F16_NO_INF);
    WRITE(REG_A6XX_SP_DBG_ECO_CNTL, screen->info->a6xx.magic.SP_DBG_ECO_CNTL);
-   WRITE(REG_A6XX_SP_PERFCTR_ENABLE, 0x3f);
+   WRITE(REG_A6XX_SP_PERFCTR_SHADER_MASK, 0x3f);
    if (CHIP == A6XX && !screen->info->a6xx.is_a702)
       WRITE(REG_A6XX_TPL1_UNKNOWN_B605, 0x44);
    WRITE(REG_A6XX_TPL1_DBG_ECO_CNTL, screen->info->a6xx.magic.TPL1_DBG_ECO_CNTL);
@@ -913,7 +913,7 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    if (CHIP == A6XX)
       WRITE(REG_A6XX_HLSQ_DBG_ECO_CNTL, screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL);
    WRITE(REG_A6XX_SP_CHICKEN_BITS, screen->info->a6xx.magic.SP_CHICKEN_BITS);
-   WRITE(REG_A6XX_SP_UAV_COUNT, 0);
+   WRITE(REG_A6XX_SP_GFX_USIZE, 0);
    WRITE(REG_A6XX_SP_UNKNOWN_B182, 0);
    if (CHIP == A6XX)
       WRITE(REG_A6XX_HLSQ_SHARED_CONSTS, 0);
@@ -922,19 +922,19 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    WRITE(REG_A6XX_RB_UNKNOWN_8E01, screen->info->a6xx.magic.RB_UNKNOWN_8E01);
    WRITE(REG_A6XX_SP_UNKNOWN_A9A8, 0);
    OUT_REG(ring,
-      A6XX_SP_MODE_CONTROL(
+      A6XX_SP_MODE_CNTL(
          .constant_demotion_enable = true,
          .isammode = ISAMMODE_GL,
          .shared_consts_enable = false,
       )
    );
-   OUT_REG(ring, A6XX_VFD_ADD_OFFSET(.vertex = true, .instance = true));
+   OUT_REG(ring, A6XX_VFD_MODE_CNTL(.vertex = true, .instance = true));
    WRITE(REG_A6XX_VPC_UNKNOWN_9107, 0);
    WRITE(REG_A6XX_RB_UNKNOWN_8811, 0x00000010);
    WRITE(REG_A6XX_PC_MODE_CNTL, screen->info->a6xx.magic.PC_MODE_CNTL);
 
    WRITE(REG_A6XX_GRAS_LRZ_PS_INPUT_CNTL, 0);
-   WRITE(REG_A6XX_GRAS_SAMPLE_CNTL, 0);
+   WRITE(REG_A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL, 0);
    WRITE(REG_A6XX_GRAS_UNKNOWN_8110, 0x2);
 
    WRITE(REG_A6XX_RB_UNKNOWN_8818, 0);
@@ -950,22 +950,22 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
 
    WRITE(REG_A6XX_RB_UNKNOWN_88F0, 0);
 
-   WRITE(REG_A6XX_VPC_POINT_COORD_INVERT, A6XX_VPC_POINT_COORD_INVERT(0).value);
+   WRITE(REG_A6XX_VPC_REPLACE_MODE_CNTL, A6XX_VPC_REPLACE_MODE_CNTL(0).value);
    WRITE(REG_A6XX_VPC_UNKNOWN_9300, 0);
 
-   WRITE(REG_A6XX_VPC_SO_DISABLE, A6XX_VPC_SO_DISABLE(true).value);
+   WRITE(REG_A6XX_VPC_SO_OVERRIDE, A6XX_VPC_SO_OVERRIDE(true).value);
 
-   OUT_REG(ring, PC_RASTER_CNTL(CHIP));
+   OUT_REG(ring, VPC_RAST_STREAM_CNTL(CHIP));
 
    if (CHIP == A7XX)
-      OUT_REG(ring, A7XX_PC_RASTER_CNTL_V2());
+      OUT_REG(ring, A7XX_VPC_RAST_STREAM_CNTL_V2());
 
-   WRITE(REG_A6XX_PC_MULTIVIEW_CNTL, 0);
+   WRITE(REG_A6XX_PC_STEREO_RENDERING_CNTL, 0);
 
    WRITE(REG_A6XX_SP_UNKNOWN_B183, 0);
 
    WRITE(REG_A6XX_GRAS_SU_CONSERVATIVE_RAS_CNTL, 0);
-   WRITE(REG_A6XX_GRAS_VS_LAYER_CNTL, 0);
+   WRITE(REG_A6XX_GRAS_SU_VS_SIV_CNTL, 0);
    WRITE(REG_A6XX_GRAS_SC_CNTL, A6XX_GRAS_SC_CNTL_CCUSINGLECACHELINESIZE(2));
    WRITE(REG_A6XX_GRAS_UNKNOWN_80AF, 0);
    if (CHIP == A6XX) {
@@ -974,17 +974,17 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    }
    WRITE(REG_A6XX_VPC_UNKNOWN_9602, 0);
    WRITE(REG_A6XX_PC_UNKNOWN_9E72, 0);
-   /* NOTE blob seems to (mostly?) use 0xb2 for SP_TP_MODE_CNTL
+   /* NOTE blob seems to (mostly?) use 0xb2 for TPL1_MODE_CNTL
     * but this seems to kill texture gather offsets.
     */
    OUT_REG(ring,
-      A6XX_SP_TP_MODE_CNTL(
+      A6XX_TPL1_MODE_CNTL(
          .isammode = ISAMMODE_GL,
          .texcoordroundmode = COORD_TRUNCATE,
          .nearestmipsnap = CLAMP_ROUND_TRUNCATE,
          .destdatatypeoverride = true));
 
-   OUT_REG(ring, HLSQ_CONTROL_5_REG(
+   OUT_REG(ring, SP_REG_PROG_ID_3(
          CHIP,
          .linelengthregid = INVALID_REG,
          .foveationqualityregid = INVALID_REG,
@@ -992,9 +992,9 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
 
    emit_marker6(ring, 7);
 
-   OUT_REG(ring, A6XX_VFD_MODE_CNTL(RENDERING_PASS));
+   OUT_REG(ring, A6XX_VFD_RENDER_MODE(RENDERING_PASS));
 
-   WRITE(REG_A6XX_VFD_MULTIVIEW_CNTL, 0);
+   WRITE(REG_A6XX_VFD_STEREO_RENDERING_CNTL, 0);
 
    /* Clear any potential pending state groups to be safe: */
    OUT_PKT7(ring, CP_SET_DRAW_STATE, 3);
@@ -1004,8 +1004,8 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    OUT_RING(ring, CP_SET_DRAW_STATE__1_ADDR_LO(0));
    OUT_RING(ring, CP_SET_DRAW_STATE__2_ADDR_HI(0));
 
-   OUT_PKT4(ring, REG_A6XX_VPC_SO_STREAM_CNTL, 1);
-   OUT_RING(ring, 0x00000000); /* VPC_SO_STREAM_CNTL */
+   OUT_PKT4(ring, REG_A6XX_VPC_SO_CNTL, 1);
+   OUT_RING(ring, 0x00000000); /* VPC_SO_CNTL */
 
    if (CHIP >= A7XX) {
       OUT_REG(ring, A6XX_GRAS_LRZ_CNTL());
@@ -1024,22 +1024,22 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    OUT_PKT4(ring, REG_A6XX_RB_LRZ_CNTL, 1);
    OUT_RING(ring, 0x00000000);
 
-   /* Initialize VFD_FETCH[n].SIZE to zero to avoid iova faults trying
-    * to fetch from a VFD_FETCH[n].BASE which we've potentially inherited
+   /* Initialize VFD_VERTEX_BUFFER[n].SIZE to zero to avoid iova faults trying
+    * to fetch from a VFD_VERTEX_BUFFER[n].BASE which we've potentially inherited
     * from another process:
     */
    for (int32_t i = 0; i < 32; i++) {
-      OUT_PKT4(ring, REG_A6XX_VFD_FETCH_SIZE(i), 1);
+      OUT_PKT4(ring, REG_A6XX_VFD_VERTEX_BUFFER_SIZE(i), 1);
       OUT_RING(ring, 0);
    }
 
    struct fd6_context *fd6_ctx = fd6_context(ctx);
    struct fd_bo *bcolor_mem = fd6_ctx->bcolor_mem;
 
-   OUT_PKT4(ring, REG_A6XX_SP_TP_BORDER_COLOR_BASE_ADDR, 2);
+   OUT_PKT4(ring, REG_A6XX_TPL1_GFX_BORDER_COLOR_BASE, 2);
    OUT_RELOC(ring, bcolor_mem, 0, 0, 0);
 
-   OUT_PKT4(ring, REG_A6XX_SP_PS_TP_BORDER_COLOR_BASE_ADDR, 2);
+   OUT_PKT4(ring, REG_A6XX_TPL1_CS_BORDER_COLOR_BASE, 2);
    OUT_RELOC(ring, bcolor_mem, 0, 0, 0);
 
    OUT_REG(ring, A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL());
@@ -1057,12 +1057,12 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
 
    if (CHIP >= A7XX) {
       /* Blob sets these two per draw. */
-      OUT_REG(ring, A7XX_PC_TESS_PARAM_SIZE(FD6_TESS_PARAM_SIZE));
+      OUT_REG(ring, A7XX_PC_HS_BUFFER_SIZE(FD6_TESS_PARAM_SIZE));
       /* Blob adds a bit more space ({0x10, 0x20, 0x30, 0x40} bytes)
        * but the meaning of this additional space is not known,
        * so we play safe and don't add it.
        */
-      OUT_REG(ring, A7XX_PC_TESS_FACTOR_SIZE(FD6_TESS_FACTOR_SIZE));
+      OUT_REG(ring, A7XX_PC_TF_BUFFER_SIZE(FD6_TESS_FACTOR_SIZE));
    }
 
    /* There is an optimization to skip executing draw states for draws with no
@@ -1070,18 +1070,18 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
     * sets a bit in PC_DRAW_INITIATOR that seemingly skips the draw. However
     * there is a hardware bug where this bit does not always cause the FS
     * early preamble to be skipped. Because the draw states were skipped,
-    * SP_FS_CTRL_REG0, SP_FS_OBJ_START and so on are never updated and a
+    * SP_PS_CNTL_0, SP_PS_BASE and so on are never updated and a
     * random FS preamble from the last draw is executed. If the last visible
     * draw is from the same submit, it shouldn't be a problem because we just
     * re-execute the same preamble and preambles don't have side effects, but
     * if it's from another process then we could execute a garbage preamble
     * leading to hangs and faults. To make sure this doesn't happen, we reset
-    * SP_FS_CTRL_REG0 here, making sure that the EARLYPREAMBLE bit isn't set
+    * SP_PS_CNTL_0 here, making sure that the EARLYPREAMBLE bit isn't set
     * so any leftover early preamble doesn't get executed. Other stages don't
     * seem to be affected.
     */
    if (screen->info->a6xx.has_early_preamble) {
-      WRITE(REG_A6XX_SP_FS_CTRL_REG0, 0);
+      WRITE(REG_A6XX_SP_PS_CNTL_0, 0);
    }
 }
 FD_GENX(fd6_emit_static_regs);
@@ -1126,7 +1126,7 @@ fd6_emit_restore(struct fd_batch *batch, struct fd_ringbuffer *ring)
    }
 
    OUT_REG(ring,
-      HLSQ_INVALIDATE_CMD(CHIP,
+      SP_UPDATE_CNTL(CHIP,
          .vs_state = true, .hs_state = true,
          .ds_state = true, .gs_state = true,
          .fs_state = true, .cs_state = true,

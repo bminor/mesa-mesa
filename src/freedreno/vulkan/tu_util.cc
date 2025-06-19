@@ -240,7 +240,7 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
    uint32_t layers = MAX2(fb->layers, pass->num_views);
 
    /* If there is more than one layer, we need to make sure that the layer
-    * stride is expressible as an offset in RB_BLIT_BASE_GMEM which ignores
+    * stride is expressible as an offset in RB_RESOLVE_GMEM_BUFFER_BASE which ignores
     * the low 12 bits. The layer stride seems to be implicitly calculated from
     * the tile width and height so we need to adjust one of them.
     */

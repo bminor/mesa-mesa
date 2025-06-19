@@ -31,8 +31,8 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<value name="STAT_EVENT" value="16" variants="A2XX-A4XX"/>
 	<value name="CACHE_FLUSH_AND_INV_TS_EVENT" value="20" variants="A2XX-A4XX"/>
 	<doc>
-		If A6XX_RB_SAMPLE_COUNT_CONTROL.copy is true, writes OQ Z passed
-		sample counts to RB_SAMPLE_COUNT_ADDR.  This writes to main
+		If A6XX_RB_SAMPLE_COUNTER_CNTL.copy is true, writes OQ Z passed
+		sample counts to RB_SAMPLE_COUNTER_BASE.  This writes to main
 		memory, skipping UCHE.
 	</doc>
 	<value name="ZPASS_DONE" value="21"/>
@@ -1946,9 +1946,9 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 			If concurrent binning is disabled then BR also does binning so it will also
 			write the "real" registers in BR.
 		-->
-		<value value="8" name="DRAW_STRM_ADDRESS"/>
-		<value value="9" name="DRAW_STRM_SIZE_ADDRESS"/>
-		<value value="10" name="PRIM_STRM_ADDRESS"/>
+		<value value="8" name="VSC_PIPE_DATA_DRAW_BASE"/>
+		<value value="9" name="VSC_SIZE_BASE"/>
+		<value value="10" name="VSC_PIPE_DATA_PRIM_BASE"/>
 		<value value="11" name="UNK_STRM_ADDRESS"/>
 		<value value="12" name="UNK_STRM_SIZE_ADDRESS"/>
 
@@ -2201,12 +2201,12 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<value name="UNK_EVENT_WRITE" value="0x4"/>
 		<doc>
 			Tracks GRAS_LRZ_CNTL::GREATER, GRAS_LRZ_CNTL::DIR, and
-			GRAS_LRZ_DEPTH_VIEW with previous values, and if one of
+			GRAS_LRZ_VIEW_INFO with previous values, and if one of
 			the following is true:
 			- GRAS_LRZ_CNTL::GREATER has changed
 			- GRAS_LRZ_CNTL::DIR has changed, the old value is not
 			  CUR_DIR_GE, and the new value is not CUR_DIR_DISABLED
-			- GRAS_LRZ_DEPTH_VIEW has changed
+			- GRAS_LRZ_VIEW_INFO has changed
 			then it does a LRZ_FLUSH with GRAS_LRZ_CNTL::ENABLE
 			forced to 1.
 			Only exists in a650_sqe.fw.
@@ -2321,7 +2321,7 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 
 <domain name="CP_MEM_TO_SCRATCH_MEM" width="32">
 	<doc>
-		Best guess is that it is a faster way to fetch all the VSC_STATE registers
+		Best guess is that it is a faster way to fetch all the VSC_CHANNEL_VISIBILITY registers
 		and keep them in a local scratch memory instead of fetching every time
 		when skipping IBs.
 	</doc>

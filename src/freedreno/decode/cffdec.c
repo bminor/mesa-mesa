@@ -682,34 +682,34 @@ static struct {
       REG(CP_SCRATCH[0x6].REG, reg_dump_scratch),
       REG(CP_SCRATCH[0x7].REG, reg_dump_scratch),
 
-      REG64(SP_VS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_HS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_DS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_GS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_FS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_CS_OBJ_START, reg_disasm_gpuaddr64),
+      REG64(SP_VS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_HS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_DS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_GS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_PS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_CS_BASE, reg_disasm_gpuaddr64),
 
-      REG64(SP_VS_TEX_CONST, reg_dump_gpuaddr64),
-      REG64(SP_VS_TEX_SAMP, reg_dump_gpuaddr64),
-      REG64(SP_HS_TEX_CONST, reg_dump_gpuaddr64),
-      REG64(SP_HS_TEX_SAMP, reg_dump_gpuaddr64),
-      REG64(SP_DS_TEX_CONST, reg_dump_gpuaddr64),
-      REG64(SP_DS_TEX_SAMP, reg_dump_gpuaddr64),
-      REG64(SP_GS_TEX_CONST, reg_dump_gpuaddr64),
-      REG64(SP_GS_TEX_SAMP, reg_dump_gpuaddr64),
-      REG64(SP_FS_TEX_CONST, reg_dump_gpuaddr64),
-      REG64(SP_FS_TEX_SAMP, reg_dump_gpuaddr64),
-      REG64(SP_CS_TEX_CONST, reg_dump_gpuaddr64),
-      REG64(SP_CS_TEX_SAMP, reg_dump_gpuaddr64),
+      REG64(SP_VS_TEXMEMOBJ_BASE, reg_dump_gpuaddr64),
+      REG64(SP_VS_SAMPLER_BASE, reg_dump_gpuaddr64),
+      REG64(SP_HS_TEXMEMOBJ_BASE, reg_dump_gpuaddr64),
+      REG64(SP_HS_SAMPLER_BASE, reg_dump_gpuaddr64),
+      REG64(SP_DS_TEXMEMOBJ_BASE, reg_dump_gpuaddr64),
+      REG64(SP_DS_SAMPLER_BASE, reg_dump_gpuaddr64),
+      REG64(SP_GS_TEXMEMOBJ_BASE, reg_dump_gpuaddr64),
+      REG64(SP_GS_SAMPLER_BASE, reg_dump_gpuaddr64),
+      REG64(SP_PS_TEXMEMOBJ_BASE, reg_dump_gpuaddr64),
+      REG64(SP_PS_SAMPLER_BASE, reg_dump_gpuaddr64),
+      REG64(SP_CS_TEXMEMOBJ_BASE, reg_dump_gpuaddr64),
+      REG64(SP_CS_SAMPLER_BASE, reg_dump_gpuaddr64),
 
       {NULL},
 }, reg_a7xx[] = {
-      REG64(SP_VS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_HS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_DS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_GS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_FS_OBJ_START, reg_disasm_gpuaddr64),
-      REG64(SP_CS_OBJ_START, reg_disasm_gpuaddr64),
+      REG64(SP_VS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_HS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_DS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_GS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_PS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_CS_BASE, reg_disasm_gpuaddr64),
 
       {NULL},
 }, *type0_reg;
@@ -1508,7 +1508,7 @@ dump_bindless_descriptors(bool is_compute, int level)
       if (is_compute) {
          sprintf(reg_name, "SP_CS_BINDLESS_BASE[%u].DESCRIPTOR", i);
       } else {
-         sprintf(reg_name, "SP_BINDLESS_BASE[%u].DESCRIPTOR", i);
+         sprintf(reg_name, "SP_GFX_BINDLESS_BASE[%u].DESCRIPTOR", i);
       }
       const unsigned base_reg = regbase(reg_name);
       if (!base_reg)

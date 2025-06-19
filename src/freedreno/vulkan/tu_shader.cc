@@ -866,7 +866,7 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
       /* Disable pushing constants for this stage if none were loaded in the
        * shader.  If all stages don't load their declared push constants, as
        * is often the case under zink, then we could additionally skip
-       * emitting REG_A7XX_HLSQ_SHARED_CONSTS_IMM entirely.
+       * emitting REG_A7XX_SP_SHARED_CONSTANT_GFX_0 entirely.
        */
       if (!shader_uses_push_consts(shader))
          const_state->push_consts = (struct tu_push_constant_range) {};
@@ -1238,45 +1238,45 @@ static const struct xs_config {
 } xs_config[] = {
    [MESA_SHADER_VERTEX] = {
       REG_A6XX_SP_VS_CONFIG,
-      REG_A6XX_SP_VS_INSTRLEN,
-      REG_A6XX_SP_VS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_VS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_VS_VGPR_CONFIG,
+      REG_A6XX_SP_VS_INSTR_SIZE,
+      REG_A6XX_SP_VS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_VS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_VS_VGS_CNTL,
    },
    [MESA_SHADER_TESS_CTRL] = {
       REG_A6XX_SP_HS_CONFIG,
-      REG_A6XX_SP_HS_INSTRLEN,
-      REG_A6XX_SP_HS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_HS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_HS_VGPR_CONFIG,
+      REG_A6XX_SP_HS_INSTR_SIZE,
+      REG_A6XX_SP_HS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_HS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_HS_VGS_CNTL,
    },
    [MESA_SHADER_TESS_EVAL] = {
       REG_A6XX_SP_DS_CONFIG,
-      REG_A6XX_SP_DS_INSTRLEN,
-      REG_A6XX_SP_DS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_DS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_DS_VGPR_CONFIG,
+      REG_A6XX_SP_DS_INSTR_SIZE,
+      REG_A6XX_SP_DS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_DS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_DS_VGS_CNTL,
    },
    [MESA_SHADER_GEOMETRY] = {
       REG_A6XX_SP_GS_CONFIG,
-      REG_A6XX_SP_GS_INSTRLEN,
-      REG_A6XX_SP_GS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_GS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_GS_VGPR_CONFIG,
+      REG_A6XX_SP_GS_INSTR_SIZE,
+      REG_A6XX_SP_GS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_GS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_GS_VGS_CNTL,
    },
    [MESA_SHADER_FRAGMENT] = {
-      REG_A6XX_SP_FS_CONFIG,
-      REG_A6XX_SP_FS_INSTRLEN,
-      REG_A6XX_SP_FS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_FS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_FS_VGPR_CONFIG,
+      REG_A6XX_SP_PS_CONFIG,
+      REG_A6XX_SP_PS_INSTR_SIZE,
+      REG_A6XX_SP_PS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_PS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_PS_VGS_CNTL,
    },
    [MESA_SHADER_COMPUTE] = {
       REG_A6XX_SP_CS_CONFIG,
-      REG_A6XX_SP_CS_INSTRLEN,
-      REG_A6XX_SP_CS_OBJ_FIRST_EXEC_OFFSET,
-      REG_A6XX_SP_CS_PVT_MEM_HW_STACK_OFFSET,
-      REG_A7XX_SP_CS_VGPR_CONFIG,
+      REG_A6XX_SP_CS_INSTR_SIZE,
+      REG_A6XX_SP_CS_PROGRAM_COUNTER_OFFSET,
+      REG_A6XX_SP_CS_PVT_MEM_STACK_OFFSET,
+      REG_A7XX_SP_CS_VGS_CNTL,
    },
 };
 
@@ -1298,7 +1298,7 @@ tu6_emit_xs(struct tu_cs *cs,
       xs->info.double_threadsize ? THREAD128 : THREAD64;
    switch (stage) {
    case MESA_SHADER_VERTEX:
-      tu_cs_emit_regs(cs, A6XX_SP_VS_CTRL_REG0(
+      tu_cs_emit_regs(cs, A6XX_SP_VS_CNTL_0(
                .halfregfootprint = xs->info.max_half_reg + 1,
                .fullregfootprint = xs->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(xs),
@@ -1307,7 +1307,7 @@ tu6_emit_xs(struct tu_cs *cs,
       ));
       break;
    case MESA_SHADER_TESS_CTRL:
-      tu_cs_emit_regs(cs, A6XX_SP_HS_CTRL_REG0(
+      tu_cs_emit_regs(cs, A6XX_SP_HS_CNTL_0(
                .halfregfootprint = xs->info.max_half_reg + 1,
                .fullregfootprint = xs->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(xs),
@@ -1315,7 +1315,7 @@ tu6_emit_xs(struct tu_cs *cs,
       ));
       break;
    case MESA_SHADER_TESS_EVAL:
-      tu_cs_emit_regs(cs, A6XX_SP_DS_CTRL_REG0(
+      tu_cs_emit_regs(cs, A6XX_SP_DS_CNTL_0(
                .halfregfootprint = xs->info.max_half_reg + 1,
                .fullregfootprint = xs->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(xs),
@@ -1323,7 +1323,7 @@ tu6_emit_xs(struct tu_cs *cs,
       ));
       break;
    case MESA_SHADER_GEOMETRY:
-      tu_cs_emit_regs(cs, A6XX_SP_GS_CTRL_REG0(
+      tu_cs_emit_regs(cs, A6XX_SP_GS_CNTL_0(
                .halfregfootprint = xs->info.max_half_reg + 1,
                .fullregfootprint = xs->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(xs),
@@ -1331,7 +1331,7 @@ tu6_emit_xs(struct tu_cs *cs,
       ));
       break;
    case MESA_SHADER_FRAGMENT:
-      tu_cs_emit_regs(cs, A6XX_SP_FS_CTRL_REG0(
+      tu_cs_emit_regs(cs, A6XX_SP_PS_CNTL_0(
                .halfregfootprint = xs->info.max_half_reg + 1,
                .fullregfootprint = xs->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(xs),
@@ -1350,7 +1350,7 @@ tu6_emit_xs(struct tu_cs *cs,
    case MESA_SHADER_COMPUTE:
       thrsz = cs->device->physical_device->info->a6xx
             .supports_double_threadsize ? thrsz : THREAD128;
-      tu_cs_emit_regs(cs, A6XX_SP_CS_CTRL_REG0(
+      tu_cs_emit_regs(cs, A6XX_SP_CS_CNTL_0(
                .halfregfootprint = xs->info.max_half_reg + 1,
                .fullregfootprint = xs->info.max_reg + 1,
                .branchstack = ir3_shader_branchstack_hw(xs),
@@ -1383,7 +1383,7 @@ tu6_emit_xs(struct tu_cs *cs,
                   COND(pvtmem->per_wave, A6XX_SP_VS_PVT_MEM_SIZE_PERWAVEMEMLAYOUT));
 
    tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_pvt_mem_hw_stack_offset, 1);
-   tu_cs_emit(cs, A6XX_SP_VS_PVT_MEM_HW_STACK_OFFSET_OFFSET(pvtmem->per_sp_size));
+   tu_cs_emit(cs, A6XX_SP_VS_PVT_MEM_STACK_OFFSET_OFFSET(pvtmem->per_sp_size));
 
    if (cs->device->physical_device->info->chip >= A7XX) {
       tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_vgpr_config, 1);
@@ -1524,7 +1524,7 @@ tu6_emit_cs_config(struct tu_cs *cs,
       ir3_const_state(v)->push_consts_type == IR3_PUSH_CONSTS_SHARED;
    tu6_emit_shared_consts_enable<CHIP>(cs, shared_consts_enable);
 
-   tu_cs_emit_regs(cs, HLSQ_INVALIDATE_CMD(CHIP,
+   tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP,
          .cs_state = true,
          .cs_uav = true,
          .cs_shared_const = shared_consts_enable));
@@ -1537,9 +1537,9 @@ tu6_emit_cs_config(struct tu_cs *cs,
       v->constlen > 256 ? CONSTLEN_512 :
       (v->constlen > 192 ? CONSTLEN_256 :
       (v->constlen > 128 ? CONSTLEN_192 : CONSTLEN_128));
-   tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CTRL_REG1, 1);
-   tu_cs_emit(cs, A6XX_SP_CS_CTRL_REG1_SHARED_SIZE(shared_size) |
-                  A6XX_SP_CS_CTRL_REG1_CONSTANTRAMMODE(mode));
+   tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CNTL_1, 1);
+   tu_cs_emit(cs, A6XX_SP_CS_CNTL_1_SHARED_SIZE(shared_size) |
+                  A6XX_SP_CS_CNTL_1_CONSTANTRAMMODE(mode));
 
    if (CHIP == A6XX && cs->device->physical_device->info->a6xx.has_lpac) {
       tu_cs_emit_pkt4(cs, REG_A6XX_HLSQ_CS_CTRL_REG1, 1);
@@ -1554,35 +1554,35 @@ tu6_emit_cs_config(struct tu_cs *cs,
 
    /*
     * Devices that do not support double threadsize take the threadsize from
-    * A6XX_HLSQ_FS_CNTL_0_THREADSIZE instead of A6XX_HLSQ_CS_CNTL_1_THREADSIZE
+    * A6XX_SP_PS_WAVE_CNTL_THREADSIZE instead of A6XX_SP_CS_WGE_CNTL_THREADSIZE
     * which is always set to THREAD128.
     */
    enum a6xx_threadsize thrsz = v->info.double_threadsize ? THREAD128 : THREAD64;
    enum a6xx_threadsize thrsz_cs = cs->device->physical_device->info->a6xx
       .supports_double_threadsize ? thrsz : THREAD128;
    if (CHIP == A6XX) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_HLSQ_CS_CNTL_0, 2);
+      tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CONST_CONFIG_0, 2);
       tu_cs_emit(cs,
-                 A6XX_HLSQ_CS_CNTL_0_WGIDCONSTID(work_group_id) |
-                 A6XX_HLSQ_CS_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                 A6XX_HLSQ_CS_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                 A6XX_HLSQ_CS_CNTL_0_LOCALIDREGID(local_invocation_id));
-      tu_cs_emit(cs, A6XX_HLSQ_CS_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
-                     A6XX_HLSQ_CS_CNTL_1_THREADSIZE(thrsz_cs));
+                 A6XX_SP_CS_CONST_CONFIG_0_WGIDCONSTID(work_group_id) |
+                 A6XX_SP_CS_CONST_CONFIG_0_WGSIZECONSTID(regid(63, 0)) |
+                 A6XX_SP_CS_CONST_CONFIG_0_WGOFFSETCONSTID(regid(63, 0)) |
+                 A6XX_SP_CS_CONST_CONFIG_0_LOCALIDREGID(local_invocation_id));
+      tu_cs_emit(cs, A6XX_SP_CS_WGE_CNTL_LINEARLOCALIDREGID(regid(63, 0)) |
+                     A6XX_SP_CS_WGE_CNTL_THREADSIZE(thrsz_cs));
       if (!cs->device->physical_device->info->a6xx.supports_double_threadsize) {
-         tu_cs_emit_pkt4(cs, REG_A6XX_HLSQ_FS_CNTL_0, 1);
-         tu_cs_emit(cs, A6XX_HLSQ_FS_CNTL_0_THREADSIZE(thrsz));
+         tu_cs_emit_pkt4(cs, REG_A6XX_SP_PS_WAVE_CNTL, 1);
+         tu_cs_emit(cs, A6XX_SP_PS_WAVE_CNTL_THREADSIZE(thrsz));
       }
 
       if (cs->device->physical_device->info->a6xx.has_lpac) {
-         tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CNTL_0, 2);
+         tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_WIE_CNTL_0, 2);
          tu_cs_emit(cs,
-                    A6XX_SP_CS_CNTL_0_WGIDCONSTID(work_group_id) |
-                    A6XX_SP_CS_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                    A6XX_SP_CS_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                    A6XX_SP_CS_CNTL_0_LOCALIDREGID(local_invocation_id));
-         tu_cs_emit(cs, A6XX_SP_CS_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
-                  A6XX_SP_CS_CNTL_1_THREADSIZE(thrsz));
+                    A6XX_SP_CS_WIE_CNTL_0_WGIDCONSTID(work_group_id) |
+                    A6XX_SP_CS_WIE_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
+                    A6XX_SP_CS_WIE_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
+                    A6XX_SP_CS_WIE_CNTL_0_LOCALIDREGID(local_invocation_id));
+         tu_cs_emit(cs, A6XX_SP_CS_WIE_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
+                  A6XX_SP_CS_WIE_CNTL_1_THREADSIZE(thrsz));
       }
    } else {
       unsigned tile_height = (v->local_size[1] % 8 == 0)   ? 3
@@ -1590,21 +1590,21 @@ tu6_emit_cs_config(struct tu_cs *cs,
                              : (v->local_size[1] % 2 == 0) ? 9
                                                            : 17;
       tu_cs_emit_regs(
-         cs, HLSQ_CS_CNTL_1(CHIP,
+         cs, SP_CS_WGE_CNTL(CHIP,
                    .linearlocalidregid = regid(63, 0), .threadsize = thrsz_cs,
                    .workgrouprastorderzfirsten = true,
                    .wgtilewidth = 4, .wgtileheight = tile_height));
 
-      tu_cs_emit_regs(cs, HLSQ_FS_CNTL_0(CHIP, .threadsize = THREAD64));
+      tu_cs_emit_regs(cs, SP_PS_WAVE_CNTL(CHIP, .threadsize = THREAD64));
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CNTL_0, 1);
-      tu_cs_emit(cs, A6XX_SP_CS_CNTL_0_WGIDCONSTID(work_group_id) |
-                        A6XX_SP_CS_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                        A6XX_SP_CS_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                        A6XX_SP_CS_CNTL_0_LOCALIDREGID(local_invocation_id));
+      tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_WIE_CNTL_0, 1);
+      tu_cs_emit(cs, A6XX_SP_CS_WIE_CNTL_0_WGIDCONSTID(work_group_id) |
+                        A6XX_SP_CS_WIE_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
+                        A6XX_SP_CS_WIE_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
+                        A6XX_SP_CS_WIE_CNTL_0_LOCALIDREGID(local_invocation_id));
 
       tu_cs_emit_regs(cs,
-                      SP_CS_CNTL_1(CHIP,
+                      SP_CS_WIE_CNTL_1(CHIP,
                         .linearlocalidregid = regid(63, 0),
                         .threadsize = thrsz_cs,
                         .workitemrastorder =
@@ -1639,7 +1639,7 @@ tu6_emit_vfd_dest(struct tu_cs *cs,
    }
 
    tu_cs_emit_regs(cs,
-                   A6XX_VFD_CONTROL_0(
+                   A6XX_VFD_CNTL_0(
                      .fetch_cnt = attr_count, /* decode_cnt for binning pass ? */
                      .decode_cnt = attr_count));
 
@@ -1697,18 +1697,18 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
              ij_regid[fs->prefetch_bary_type] == regid(0, 0));
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_SP_FS_PREFETCH_CNTL, 1 + fs->num_sampler_prefetch);
-   tu_cs_emit(cs, A6XX_SP_FS_PREFETCH_CNTL_COUNT(fs->num_sampler_prefetch) |
-                     COND(CHIP >= A7XX, A6XX_SP_FS_PREFETCH_CNTL_CONSTSLOTID(0x1ff)) |
-                     COND(CHIP >= A7XX, A6XX_SP_FS_PREFETCH_CNTL_CONSTSLOTID4COORD(0x1ff)) |
+   tu_cs_emit_pkt4(cs, REG_A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL, 1 + fs->num_sampler_prefetch);
+   tu_cs_emit(cs, A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_COUNT(fs->num_sampler_prefetch) |
+                     COND(CHIP >= A7XX, A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_CONSTSLOTID(0x1ff)) |
+                     COND(CHIP >= A7XX, A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_CONSTSLOTID4COORD(0x1ff)) |
                      COND(!VALIDREG(ij_regid[IJ_PERSP_PIXEL]),
-                          A6XX_SP_FS_PREFETCH_CNTL_IJ_WRITE_DISABLE) |
+                          A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_IJ_WRITE_DISABLE) |
                      COND(fs->prefetch_end_of_quad,
-                          A6XX_SP_FS_PREFETCH_CNTL_ENDOFQUAD));
+                          A6XX_SP_PS_INITIAL_TEX_LOAD_CNTL_ENDOFQUAD));
    for (int i = 0; i < fs->num_sampler_prefetch; i++) {
       const struct ir3_sampler_prefetch *prefetch = &fs->sampler_prefetch[i];
       tu_cs_emit(
-         cs, SP_FS_PREFETCH_CMD(
+         cs, SP_PS_INITIAL_TEX_LOAD_CMD(
                 CHIP, i, .src = prefetch->src, .samp_id = prefetch->samp_id,
                 .tex_id = prefetch->tex_id, .dst = prefetch->dst,
                 .wrmask = prefetch->wrmask, .half = prefetch->half_precision,
@@ -1717,32 +1717,32 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
    }
 
    if (fs->num_sampler_prefetch > 0) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_SP_FS_BINDLESS_PREFETCH_CMD(0), fs->num_sampler_prefetch);
+      tu_cs_emit_pkt4(cs, REG_A6XX_SP_PS_INITIAL_TEX_INDEX_CMD(0), fs->num_sampler_prefetch);
       for (int i = 0; i < fs->num_sampler_prefetch; i++) {
          const struct ir3_sampler_prefetch *prefetch = &fs->sampler_prefetch[i];
          tu_cs_emit(cs,
-                    A6XX_SP_FS_BINDLESS_PREFETCH_CMD_SAMP_ID(prefetch->samp_bindless_id) |
-                    A6XX_SP_FS_BINDLESS_PREFETCH_CMD_TEX_ID(prefetch->tex_bindless_id));
+                    A6XX_SP_PS_INITIAL_TEX_INDEX_CMD_SAMP_ID(prefetch->samp_bindless_id) |
+                    A6XX_SP_PS_INITIAL_TEX_INDEX_CMD_TEX_ID(prefetch->tex_bindless_id));
       }
    }
 
    tu_cs_emit_regs(cs,
-      HLSQ_CONTROL_1_REG(CHIP,
+      SP_LB_PARAM_LIMIT(CHIP,
          .primallocthreshold =
             cs->device->physical_device->info->a6xx.prim_alloc_threshold),
-      HLSQ_CONTROL_2_REG(CHIP, .faceregid = face_regid,
+      SP_REG_PROG_ID_0(CHIP, .faceregid = face_regid,
                          .sampleid = samp_id_regid,
                          .samplemask = smask_in_regid,
                          .centerrhw = ij_regid[IJ_PERSP_CENTER_RHW]),
-      HLSQ_CONTROL_3_REG(CHIP, .ij_persp_pixel = ij_regid[IJ_PERSP_PIXEL],
+      SP_REG_PROG_ID_1(CHIP, .ij_persp_pixel = ij_regid[IJ_PERSP_PIXEL],
                          .ij_linear_pixel = ij_regid[IJ_LINEAR_PIXEL],
                          .ij_persp_centroid = ij_regid[IJ_PERSP_CENTROID],
                          .ij_linear_centroid = ij_regid[IJ_LINEAR_CENTROID]),
-      HLSQ_CONTROL_4_REG(CHIP, .ij_persp_sample = ij_regid[IJ_PERSP_SAMPLE],
+      SP_REG_PROG_ID_2(CHIP, .ij_persp_sample = ij_regid[IJ_PERSP_SAMPLE],
                          .ij_linear_sample = ij_regid[IJ_LINEAR_SAMPLE],
                          .xycoordregid = coord_regid,
                          .zwcoordregid = zwcoord_regid),
-      HLSQ_CONTROL_5_REG(CHIP, .linelengthregid = 0xfc,
+      SP_REG_PROG_ID_3(CHIP, .linelengthregid = 0xfc,
                          .foveationqualityregid = shading_rate_regid), );
 
    if (CHIP >= A7XX) {
@@ -1767,13 +1767,13 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
             sysval_regs += 2;
       }
 
-      tu_cs_emit_regs(cs, A7XX_HLSQ_UNKNOWN_A9AE(.sysval_regs_count = sysval_regs,
+      tu_cs_emit_regs(cs, A7XX_SP_PS_CNTL_1(.sysval_regs_count = sysval_regs,
                                                  .unk8 = 1,
                                                  .unk9 = 1));
    }
 
    enum a6xx_threadsize thrsz = fs->info.double_threadsize ? THREAD128 : THREAD64;
-   tu_cs_emit_regs(cs, HLSQ_FS_CNTL_0(CHIP, .threadsize = thrsz, .varyings = enable_varyings));
+   tu_cs_emit_regs(cs, SP_PS_WAVE_CNTL(CHIP, .threadsize = thrsz, .varyings = enable_varyings));
 
    bool need_size = fs->frag_face || fs->fragcoord_compmask != 0;
    bool need_size_persamp = false;
@@ -1784,51 +1784,51 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
          need_size = true;
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_CNTL, 1);
+   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_CL_INTERP_CNTL, 1);
    tu_cs_emit(cs,
-         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_GRAS_CNTL_IJ_PERSP_PIXEL) |
-         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_GRAS_CNTL_IJ_PERSP_CENTROID) |
-         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_GRAS_CNTL_IJ_PERSP_SAMPLE) |
-         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_GRAS_CNTL_IJ_LINEAR_PIXEL) |
-         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_GRAS_CNTL_IJ_LINEAR_CENTROID) |
-         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_GRAS_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(need_size, A6XX_GRAS_CNTL_IJ_LINEAR_PIXEL) |
-         COND(need_size_persamp, A6XX_GRAS_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(fs->fragcoord_compmask != 0, A6XX_GRAS_CNTL_COORD_MASK(fs->fragcoord_compmask)));
+         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_PIXEL) |
+         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_CENTROID) |
+         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_SAMPLE) |
+         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_CENTROID) |
+         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
+         COND(need_size, A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         COND(need_size_persamp, A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
+         COND(fs->fragcoord_compmask != 0, A6XX_GRAS_CL_INTERP_CNTL_COORD_MASK(fs->fragcoord_compmask)));
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_RENDER_CONTROL0, 2);
+   tu_cs_emit_pkt4(cs, REG_A6XX_RB_INTERP_CNTL, 2);
    tu_cs_emit(cs,
-         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_RB_RENDER_CONTROL0_IJ_PERSP_PIXEL) |
-         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_RB_RENDER_CONTROL0_IJ_PERSP_CENTROID) |
-         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_RB_RENDER_CONTROL0_IJ_PERSP_SAMPLE) |
-         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_PIXEL) |
-         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_CENTROID) |
-         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_SAMPLE) |
-         COND(need_size, A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_PIXEL) |
-         COND(enable_varyings, A6XX_RB_RENDER_CONTROL0_UNK10) |
-         COND(need_size_persamp, A6XX_RB_RENDER_CONTROL0_IJ_LINEAR_SAMPLE) |
+         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_RB_INTERP_CNTL_IJ_PERSP_PIXEL) |
+         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_RB_INTERP_CNTL_IJ_PERSP_CENTROID) |
+         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_RB_INTERP_CNTL_IJ_PERSP_SAMPLE) |
+         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_RB_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_RB_INTERP_CNTL_IJ_LINEAR_CENTROID) |
+         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_RB_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
+         COND(need_size, A6XX_RB_INTERP_CNTL_IJ_LINEAR_PIXEL) |
+         COND(enable_varyings, A6XX_RB_INTERP_CNTL_UNK10) |
+         COND(need_size_persamp, A6XX_RB_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
          COND(fs->fragcoord_compmask != 0,
-                           A6XX_RB_RENDER_CONTROL0_COORD_MASK(fs->fragcoord_compmask)));
+                           A6XX_RB_INTERP_CNTL_COORD_MASK(fs->fragcoord_compmask)));
    tu_cs_emit(cs,
-         A6XX_RB_RENDER_CONTROL1_FRAGCOORDSAMPLEMODE(
+         A6XX_RB_PS_INPUT_CNTL_FRAGCOORDSAMPLEMODE(
             sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER) |
-         CONDREG(smask_in_regid, A6XX_RB_RENDER_CONTROL1_SAMPLEMASK) |
-         CONDREG(samp_id_regid, A6XX_RB_RENDER_CONTROL1_SAMPLEID) |
-         CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_RENDER_CONTROL1_CENTERRHW) |
-         COND(fs->post_depth_coverage, A6XX_RB_RENDER_CONTROL1_POSTDEPTHCOVERAGE)  |
-         COND(fs->frag_face, A6XX_RB_RENDER_CONTROL1_FACENESS) |
-         CONDREG(shading_rate_regid, A6XX_RB_RENDER_CONTROL1_FOVEATION));
+         CONDREG(smask_in_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEMASK) |
+         CONDREG(samp_id_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEID) |
+         CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_PS_INPUT_CNTL_CENTERRHW) |
+         COND(fs->post_depth_coverage, A6XX_RB_PS_INPUT_CNTL_POSTDEPTHCOVERAGE)  |
+         COND(fs->frag_face, A6XX_RB_PS_INPUT_CNTL_FACENESS) |
+         CONDREG(shading_rate_regid, A6XX_RB_PS_INPUT_CNTL_FOVEATION));
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_SAMPLE_CNTL, 1);
-   tu_cs_emit(cs, COND(sample_shading, A6XX_RB_SAMPLE_CNTL_PER_SAMP_MODE));
+   tu_cs_emit_pkt4(cs, REG_A6XX_RB_PS_SAMPLEFREQ_CNTL, 1);
+   tu_cs_emit(cs, COND(sample_shading, A6XX_RB_PS_SAMPLEFREQ_CNTL_PER_SAMP_MODE));
 
    tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_LRZ_PS_INPUT_CNTL, 1);
    tu_cs_emit(cs, CONDREG(samp_id_regid, A6XX_GRAS_LRZ_PS_INPUT_CNTL_SAMPLEID) |
               A6XX_GRAS_LRZ_PS_INPUT_CNTL_FRAGCOORDSAMPLEMODE(
                  sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER));
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SAMPLE_CNTL, 1);
-   tu_cs_emit(cs, COND(sample_shading, A6XX_GRAS_SAMPLE_CNTL_PER_SAMP_MODE));
+   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL, 1);
+   tu_cs_emit(cs, COND(sample_shading, A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL_PER_SAMP_MODE));
 
    uint32_t varmask[4] = { 0 };
 
@@ -1844,7 +1844,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
       }
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VAR_DISABLE(0), 4);
+   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_0_DISABLE(0), 4);
    tu_cs_emit(cs, ~varmask[0]);
    tu_cs_emit(cs, ~varmask[1]);
    tu_cs_emit(cs, ~varmask[2]);
@@ -1853,11 +1853,11 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
    unsigned primid_loc = ir3_find_input_loc(fs, VARYING_SLOT_PRIMITIVE_ID);
    unsigned viewid_loc = ir3_find_input_loc(fs, VARYING_SLOT_VIEW_INDEX);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_CNTL_0, 1);
-   tu_cs_emit(cs, A6XX_VPC_CNTL_0_NUMNONPOSVAR(fs->total_in) |
-                  COND(fs && fs->total_in, A6XX_VPC_CNTL_0_VARYING) |
-                  A6XX_VPC_CNTL_0_PRIMIDLOC(primid_loc) |
-                  A6XX_VPC_CNTL_0_VIEWIDLOC(viewid_loc));
+   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_PS_CNTL, 1);
+   tu_cs_emit(cs, A6XX_VPC_PS_CNTL_NUMNONPOSVAR(fs->total_in) |
+                  COND(fs && fs->total_in, A6XX_VPC_PS_CNTL_VARYING) |
+                  A6XX_VPC_PS_CNTL_PRIMIDLOC(primid_loc) |
+                  A6XX_VPC_PS_CNTL_VIEWIDLOC(viewid_loc));
 }
 
 template <chip CHIP>
@@ -1899,11 +1899,11 @@ tu6_emit_fs_outputs(struct tu_cs *cs,
       }
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_SP_FS_OUTPUT_CNTL0, 1);
-   tu_cs_emit(cs, A6XX_SP_FS_OUTPUT_CNTL0_DEPTH_REGID(posz_regid) |
-                  A6XX_SP_FS_OUTPUT_CNTL0_SAMPMASK_REGID(smask_regid) |
-                  A6XX_SP_FS_OUTPUT_CNTL0_STENCILREF_REGID(stencilref_regid) |
-                  COND(fs->dual_src_blend, A6XX_SP_FS_OUTPUT_CNTL0_DUAL_COLOR_IN_ENABLE));
+   tu_cs_emit_pkt4(cs, REG_A6XX_SP_PS_OUTPUT_CNTL, 1);
+   tu_cs_emit(cs, A6XX_SP_PS_OUTPUT_CNTL_DEPTH_REGID(posz_regid) |
+                  A6XX_SP_PS_OUTPUT_CNTL_SAMPMASK_REGID(smask_regid) |
+                  A6XX_SP_PS_OUTPUT_CNTL_STENCILREF_REGID(stencilref_regid) |
+                  COND(fs->dual_src_blend, A6XX_SP_PS_OUTPUT_CNTL_DUAL_COLOR_IN_ENABLE));
 
    /* There is no point in having component enabled which is not written
     * by the shader. Per VK spec it is an UB, however a few apps depend on
@@ -1911,11 +1911,11 @@ tu6_emit_fs_outputs(struct tu_cs *cs,
     */
    uint32_t fs_render_components = 0;
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_SP_FS_OUTPUT_REG(0), output_reg_count);
+   tu_cs_emit_pkt4(cs, REG_A6XX_SP_PS_OUTPUT_REG(0), output_reg_count);
    for (uint32_t i = 0; i < output_reg_count; i++) {
-      tu_cs_emit(cs, A6XX_SP_FS_OUTPUT_REG_REGID(fragdata_regid[i]) |
+      tu_cs_emit(cs, A6XX_SP_PS_OUTPUT_REG_REGID(fragdata_regid[i]) |
                      (COND(fragdata_regid[i] & HALF_REG_ID,
-                           A6XX_SP_FS_OUTPUT_REG_HALF_PRECISION)));
+                           A6XX_SP_PS_OUTPUT_REG_HALF_PRECISION)));
 
       if (VALIDREG(fragdata_regid[i]) ||
                    (fragdata_aliased_components & (0xf << (i * 4)))) {
@@ -1924,26 +1924,26 @@ tu6_emit_fs_outputs(struct tu_cs *cs,
    }
 
    tu_cs_emit_regs(cs,
-                   A6XX_SP_FS_RENDER_COMPONENTS(.dword = fs_render_components));
+                   A6XX_SP_PS_OUTPUT_MASK(.dword = fs_render_components));
 
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(
          cs,
-         A7XX_SP_PS_ALIASED_COMPONENTS_CONTROL(
+         A7XX_SP_PS_OUTPUT_CONST_CNTL(
                .enabled = fragdata_aliased_components != 0),
-         A7XX_SP_PS_ALIASED_COMPONENTS(.dword = fragdata_aliased_components));
+         A7XX_SP_PS_OUTPUT_CONST_MASK(.dword = fragdata_aliased_components));
    } else {
       assert(fragdata_aliased_components == 0);
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_FS_OUTPUT_CNTL0, 1);
-   tu_cs_emit(cs, COND(fs->writes_pos, A6XX_RB_FS_OUTPUT_CNTL0_FRAG_WRITES_Z) |
-                  COND(fs->writes_smask, A6XX_RB_FS_OUTPUT_CNTL0_FRAG_WRITES_SAMPMASK) |
-                  COND(fs->writes_stencilref, A6XX_RB_FS_OUTPUT_CNTL0_FRAG_WRITES_STENCILREF) |
-                  COND(fs->dual_src_blend, A6XX_RB_FS_OUTPUT_CNTL0_DUAL_COLOR_IN_ENABLE));
+   tu_cs_emit_pkt4(cs, REG_A6XX_RB_PS_OUTPUT_CNTL, 1);
+   tu_cs_emit(cs, COND(fs->writes_pos, A6XX_RB_PS_OUTPUT_CNTL_FRAG_WRITES_Z) |
+                  COND(fs->writes_smask, A6XX_RB_PS_OUTPUT_CNTL_FRAG_WRITES_SAMPMASK) |
+                  COND(fs->writes_stencilref, A6XX_RB_PS_OUTPUT_CNTL_FRAG_WRITES_STENCILREF) |
+                  COND(fs->dual_src_blend, A6XX_RB_PS_OUTPUT_CNTL_DUAL_COLOR_IN_ENABLE));
 
    tu_cs_emit_regs(cs,
-                   A6XX_RB_RENDER_COMPONENTS(.dword = fs_render_components));
+                   A6XX_RB_PS_OUTPUT_MASK(.dword = fs_render_components));
 }
 
 template <chip CHIP>
@@ -1956,9 +1956,9 @@ tu6_emit_vs(struct tu_cs *cs,
 
    uint32_t multiview_views = util_logbase2(view_mask) + 1;
    uint32_t multiview_cntl = view_mask ?
-      A6XX_PC_MULTIVIEW_CNTL_ENABLE |
-      A6XX_PC_MULTIVIEW_CNTL_VIEWS(multiview_views) |
-      COND(!multi_pos_output, A6XX_PC_MULTIVIEW_CNTL_DISABLEMULTIPOS)
+      A6XX_PC_STEREO_RENDERING_CNTL_ENABLE |
+      A6XX_PC_STEREO_RENDERING_CNTL_VIEWS(multiview_views) |
+      COND(!multi_pos_output, A6XX_PC_STEREO_RENDERING_CNTL_DISABLEMULTIPOS)
       : 0;
 
    /* Copy what the blob does here. This will emit an extra 0x3f
@@ -1968,26 +1968,26 @@ tu6_emit_vs(struct tu_cs *cs,
    if (cs->device->physical_device->info->a6xx.has_cp_reg_write) {
       tu_cs_emit_pkt7(cs, CP_REG_WRITE, 3);
       tu_cs_emit(cs, CP_REG_WRITE_0_TRACKER(UNK_EVENT_WRITE));
-      tu_cs_emit(cs, REG_A6XX_PC_MULTIVIEW_CNTL);
+      tu_cs_emit(cs, REG_A6XX_PC_STEREO_RENDERING_CNTL);
    } else {
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_MULTIVIEW_CNTL, 1);
+      tu_cs_emit_pkt4(cs, REG_A6XX_PC_STEREO_RENDERING_CNTL, 1);
    }
    tu_cs_emit(cs, multiview_cntl);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_MULTIVIEW_CNTL, 1);
+   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_STEREO_RENDERING_CNTL, 1);
    tu_cs_emit(cs, multiview_cntl);
 
    if (multiview_cntl &&
        cs->device->physical_device->info->a6xx.supports_multiview_mask) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_MULTIVIEW_MASK, 1);
+      tu_cs_emit_pkt4(cs, REG_A6XX_PC_STEREO_RENDERING_VIEWMASK, 1);
       tu_cs_emit(cs, view_mask);
    }
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_pkt4(cs, REG_A7XX_VPC_MULTIVIEW_CNTL, 1);
+      tu_cs_emit_pkt4(cs, REG_A7XX_VPC_STEREO_RENDERING_CNTL, 1);
       tu_cs_emit(cs, multiview_cntl);
 
-      tu_cs_emit_pkt4(cs, REG_A7XX_VPC_MULTIVIEW_MASK, 1);
+      tu_cs_emit_pkt4(cs, REG_A7XX_VPC_STEREO_RENDERING_VIEWMASK, 1);
       tu_cs_emit(cs, view_mask);
    }
 
@@ -2008,11 +2008,11 @@ tu6_emit_vs(struct tu_cs *cs,
    const uint32_t vs_primitiveid_regid =
       ir3_find_sysval_regid(vs, SYSTEM_VALUE_PRIMITIVE_ID);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CONTROL_1, 1);
-   tu_cs_emit(cs, A6XX_VFD_CONTROL_1_REGID4VTX(vertexid_regid) |
-                  A6XX_VFD_CONTROL_1_REGID4INST(instanceid_regid) |
-                  A6XX_VFD_CONTROL_1_REGID4PRIMID(vs_primitiveid_regid) |
-                  A6XX_VFD_CONTROL_1_REGID4VIEWID(viewid_regid));
+   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CNTL_1, 1);
+   tu_cs_emit(cs, A6XX_VFD_CNTL_1_REGID4VTX(vertexid_regid) |
+                  A6XX_VFD_CNTL_1_REGID4INST(instanceid_regid) |
+                  A6XX_VFD_CNTL_1_REGID4PRIMID(vs_primitiveid_regid) |
+                  A6XX_VFD_CNTL_1_REGID4VIEWID(viewid_regid));
 }
 TU_GENX(tu6_emit_vs);
 
@@ -2026,12 +2026,12 @@ tu6_emit_hs(struct tu_cs *cs,
    const uint32_t hs_invocation_regid =
          ir3_find_sysval_regid(hs, SYSTEM_VALUE_TCS_HEADER_IR3);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CONTROL_2, 1);
-   tu_cs_emit(cs, A6XX_VFD_CONTROL_2_REGID_HSRELPATCHID(hs_rel_patch_regid) |
-                  A6XX_VFD_CONTROL_2_REGID_INVOCATIONID(hs_invocation_regid));
+   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CNTL_2, 1);
+   tu_cs_emit(cs, A6XX_VFD_CNTL_2_REGID_HSRELPATCHID(hs_rel_patch_regid) |
+                  A6XX_VFD_CNTL_2_REGID_INVOCATIONID(hs_invocation_regid));
 
    if (hs) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_TESS_NUM_VERTEX, 1);
+      tu_cs_emit_pkt4(cs, REG_A6XX_PC_HS_PARAM_0, 1);
       tu_cs_emit(cs, hs->tess.tcs_vertices_out);
    }
 }
@@ -2052,12 +2052,12 @@ tu6_emit_ds(struct tu_cs *cs,
    const uint32_t ds_primitiveid_regid =
          ir3_find_sysval_regid(ds, SYSTEM_VALUE_PRIMITIVE_ID);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CONTROL_3, 2);
-   tu_cs_emit(cs, A6XX_VFD_CONTROL_3_REGID_DSRELPATCHID(ds_rel_patch_regid) |
-                  A6XX_VFD_CONTROL_3_REGID_TESSX(tess_coord_x_regid) |
-                  A6XX_VFD_CONTROL_3_REGID_TESSY(tess_coord_y_regid) |
-                  A6XX_VFD_CONTROL_3_REGID_DSPRIMID(ds_primitiveid_regid));
-   tu_cs_emit(cs, 0x000000fc); /* VFD_CONTROL_4 */
+   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CNTL_3, 2);
+   tu_cs_emit(cs, A6XX_VFD_CNTL_3_REGID_DSRELPATCHID(ds_rel_patch_regid) |
+                  A6XX_VFD_CNTL_3_REGID_TESSX(tess_coord_x_regid) |
+                  A6XX_VFD_CNTL_3_REGID_TESSY(tess_coord_y_regid) |
+                  A6XX_VFD_CNTL_3_REGID_DSPRIMID(ds_primitiveid_regid));
+   tu_cs_emit(cs, 0x000000fc); /* VFD_CNTL_4 */
 }
 TU_GENX(tu6_emit_ds);
 
@@ -2083,8 +2083,8 @@ tu6_emit_gs(struct tu_cs *cs,
    const uint32_t gsheader_regid =
          ir3_find_sysval_regid(gs, SYSTEM_VALUE_GS_HEADER_IR3);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CONTROL_5, 1);
-   tu_cs_emit(cs, A6XX_VFD_CONTROL_5_REGID_GSHEADER(gsheader_regid) |
+   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CNTL_5, 1);
+   tu_cs_emit(cs, A6XX_VFD_CNTL_5_REGID_GSHEADER(gsheader_regid) |
                   0xfc00);
 
    if (gs) {
@@ -2095,15 +2095,15 @@ tu6_emit_gs(struct tu_cs *cs,
       invocations = gs->gs.invocations - 1;
 
       uint32_t primitive_cntl =
-         A6XX_PC_PRIMITIVE_CNTL_5(.gs_vertices_out = vertices_out,
+         A6XX_PC_GS_PARAM_0(.gs_vertices_out = vertices_out,
                                   .gs_invocations = invocations,
                                   .gs_output = output,).value;
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_PRIMITIVE_CNTL_5, 1);
+      tu_cs_emit_pkt4(cs, REG_A6XX_PC_GS_PARAM_0, 1);
       tu_cs_emit(cs, primitive_cntl);
 
       if (CHIP >= A7XX) {
-         tu_cs_emit_pkt4(cs, REG_A7XX_VPC_PRIMITIVE_CNTL_5, 1);
+         tu_cs_emit_pkt4(cs, REG_A7XX_VPC_GS_PARAM_0, 1);
          tu_cs_emit(cs, primitive_cntl);
       } else {
          tu_cs_emit_pkt4(cs, REG_A6XX_VPC_GS_PARAM, 1);
@@ -2118,8 +2118,8 @@ void
 tu6_emit_fs(struct tu_cs *cs,
             const struct ir3_shader_variant *fs)
 {
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CONTROL_6, 1);
-   tu_cs_emit(cs, COND(fs && fs->reads_primid, A6XX_VFD_CONTROL_6_PRIMID4PSEN));
+   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CNTL_6, 1);
+   tu_cs_emit(cs, COND(fs && fs->reads_primid, A6XX_VFD_CNTL_6_PRIMID4PSEN));
 
    tu_cs_emit_regs(cs, A6XX_PC_PS_CNTL(.primitiveiden = fs && fs->reads_primid));
 

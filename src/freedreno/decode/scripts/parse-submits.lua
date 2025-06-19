@@ -202,25 +202,25 @@ function CP_EVENT_WRITE(pkt, size)
 	local m = tostring(mode)
 	if m == "RM6_BIN_RENDER_START" then
 		-- either clear or restore:
-		if r.RB_BLIT_INFO.CLEAR_MASK == 0 then
-			restored[r.RB_BLIT_BASE_GMEM] = 1
+		if r.RB_RESOLVE_OPERATION.CLEAR_MASK == 0 then
+			restored[r.RB_RESOLVE_GMEM_BUFFER_BASE] = 1
 		else
-			cleared[r.RB_BLIT_BASE_GMEM] = 1
+			cleared[r.RB_RESOLVE_GMEM_BUFFER_BASE] = 1
 		end
 		-- push_mrt() because we could have GMEM
 		-- passes with only a clear and no draws:
 		local flag = 0
 		local sysmem = 0;
 		-- try to match up the GMEM addr with the MRT/DEPTH state,
-		-- to avoid relying on RB_BLIT_DST also getting written:
-		for n = 0,r.RB_FS_OUTPUT_CNTL1.MRT-1 do
-			if r.RB_MRT[n].BASE_GMEM == r.RB_BLIT_BASE_GMEM then
+		-- to avoid relying on RB_RESOLVE_SYSTEM_BUFFER_BASE also getting written:
+		for n = 0,r.RB_PS_MRT_CNTL.MRT-1 do
+			if r.RB_MRT[n].BASE_GMEM == r.RB_RESOLVE_GMEM_BUFFER_BASE then
 				sysmem = r.RB_MRT[n].BASE
-				flag = r.RB_MRT_FLAG_BUFFER[n].ADDR
+				flag = r.RB_COLOR_FLAG_BUFFER[n].ADDR
 				break
 			end
 		end
-		if sysmem == 0 and r.RB_BLIT_BASE_GMEM == r.RB_DEPTH_BUFFER_BASE_GMEM then
+		if sysmem == 0 and r.RB_RESOLVE_GMEM_BUFFER_BASE == r.RB_DEPTH_GMEM_BASE then
 			sysmem = r.RB_DEPTH_BUFFER_BASE
 			flag = r.RB_DEPTH_FLAG_BUFFER_BASE
 
@@ -228,24 +228,24 @@ function CP_EVENT_WRITE(pkt, size)
 		--NOTE this can get confused by previous blits:
 		--if sysmem == 0 then
 		--	-- fallback:
-		--	sysmem = r.RB_BLIT_DST
-		--	flag = r.RB_BLIT_FLAG_DST
+		--	sysmem = r.RB_RESOLVE_SYSTEM_BUFFER_BASE
+		--	flag = r.RB_RESOLVE_SYSTEM_FLAG_BUFFER_BASE
 		--end
-		if not r.RB_BLIT_DST_INFO.FLAGS then
+		if not r.RB_RESOLVE_SYSTEM_BUFFER_INFO.FLAGS then
 			flag = 0
 		end
-		-- TODO maybe just emit RB_BLIT_DST/HI for clears.. otherwise
+		-- TODO maybe just emit RB_RESOLVE_SYSTEM_BUFFER_BASE/HI for clears.. otherwise
 		-- we get confused by stale values in registers.. not sure
 		-- if this is a problem w/ blob
-		push_mrt(r.RB_BLIT_DST_INFO.COLOR_FORMAT,
-			r.RB_BLIT_SCISSOR_BR.X + 1,
-			r.RB_BLIT_SCISSOR_BR.Y + 1,
-			r.RB_BLIT_DST_INFO.SAMPLES,
+		push_mrt(r.RB_RESOLVE_SYSTEM_BUFFER_INFO.COLOR_FORMAT,
+			r.RB_RESOLVE_CNTL_2.X + 1,
+			r.RB_RESOLVE_CNTL_2.Y + 1,
+			r.RB_RESOLVE_SYSTEM_BUFFER_INFO.SAMPLES,
 			sysmem,
 			flag,
-			r.RB_BLIT_BASE_GMEM)
+			r.RB_RESOLVE_GMEM_BUFFER_BASE)
 	elseif m == "RM6_BIN_RESOLVE" then
-		resolved[r.RB_BLIT_BASE_GMEM] = 1
+		resolved[r.RB_RESOLVE_GMEM_BUFFER_BASE] = 1
 	else
 		printf("I am confused!!!\n")
 	end
@@ -263,7 +263,7 @@ function handle_blit()
 	-- blob sometimes uses CP_BLIT for resolves, so filter those out:
 	-- TODO it would be nice to not hard-code GMEM addr:
 	-- TODO I guess the src can be an offset from GMEM addr..
-	if r.SP_PS_2D_SRC == 0x100000 and not r.RB_2D_BLIT_CNTL.SOLID_COLOR then
+	if r.TPL1_A2D_SRC_TEXTURE_BASE == 0x100000 and not r.RB_A2D_BLT_CNTL.SOLID_COLOR then
 		resolved[0] = 1
 		return
 	end
@@ -275,23 +275,23 @@ function handle_blit()
 	-- This kinda assumes that we are doing full img blits, which is maybe
 	-- Not completely legit.  We could perhaps instead just track pitch and
 	-- size/pitch??  Or maybe the size doesn't matter much
-	push_mrt(r.RB_2D_DST_INFO.COLOR_FORMAT,
-		r.GRAS_2D_DST_BR.X + 1,
-		r.GRAS_2D_DST_BR.Y + 1,
+	push_mrt(r.RB_A2D_DEST_BUFFER_INFO.COLOR_FORMAT,
+		r.GRAS_A2D_DEST_BR.X + 1,
+		r.GRAS_A2D_DEST_BR.Y + 1,
 		"MSAA_ONE",
-		r.RB_2D_DST,
-		r.RB_2D_DST_FLAGS,
+		r.RB_A2D_DEST_BUFFER_BASE,
+		r.RB_A2D_DEST_FLAG_BUFFER_BASE,
 		-1)
-	if r.RB_2D_BLIT_CNTL.SOLID_COLOR then
-		dbg("CLEAR=%x\n", r.RB_2D_DST)
-		cleared[r.RB_2D_DST] = 1
+	if r.RB_A2D_BLT_CNTL.SOLID_COLOR then
+		dbg("CLEAR=%x\n", r.RB_A2D_DEST_BUFFER_BASE)
+		cleared[r.RB_A2D_DEST_BUFFER_BASE] = 1
 	else
 		push_source(r.SP_2D_SRC_FORMAT.COLOR_FORMAT,
-			r.GRAS_2D_SRC_BR_X.X + 1,
-			r.GRAS_2D_SRC_BR_Y.Y + 1,
+			r.GRAS_A2D_SRC_XMAX.X + 1,
+			r.GRAS_A2D_SRC_YMAX.Y + 1,
 			"MSAA_ONE",
-			r.SP_PS_2D_SRC,
-			r.SP_PS_2D_SRC_FLAGS)
+			r.TPL1_A2D_SRC_TEXTURE_BASE,
+			r.TPL1_A2D_SRC_TEXTURE_FLAG_BASE)
 	end
 	blits = blits + 1
 	finish()
@@ -356,22 +356,22 @@ function draw(primtype, nindx)
 
 	drawmode = m
 	local render_components = {}
-	render_components[0] = r.RB_RENDER_COMPONENTS.RT0;
-	render_components[1] = r.RB_RENDER_COMPONENTS.RT1;
-	render_components[2] = r.RB_RENDER_COMPONENTS.RT2;
-	render_components[3] = r.RB_RENDER_COMPONENTS.RT3;
-	render_components[4] = r.RB_RENDER_COMPONENTS.RT4;
-	render_components[5] = r.RB_RENDER_COMPONENTS.RT5;
-	render_components[6] = r.RB_RENDER_COMPONENTS.RT6;
-	render_components[7] = r.RB_RENDER_COMPONENTS.RT7;
-	for n = 0,r.RB_FS_OUTPUT_CNTL1.MRT-1 do
+	render_components[0] = r.RB_PS_OUTPUT_MASK.RT0;
+	render_components[1] = r.RB_PS_OUTPUT_MASK.RT1;
+	render_components[2] = r.RB_PS_OUTPUT_MASK.RT2;
+	render_components[3] = r.RB_PS_OUTPUT_MASK.RT3;
+	render_components[4] = r.RB_PS_OUTPUT_MASK.RT4;
+	render_components[5] = r.RB_PS_OUTPUT_MASK.RT5;
+	render_components[6] = r.RB_PS_OUTPUT_MASK.RT6;
+	render_components[7] = r.RB_PS_OUTPUT_MASK.RT7;
+	for n = 0,r.RB_PS_MRT_CNTL.MRT-1 do
 		if render_components[n] ~= 0 then
 			push_mrt(r.RB_MRT[n].BUF_INFO.COLOR_FORMAT,
 				r.GRAS_SC_SCREEN_SCISSOR[0].BR.X + 1,
 				r.GRAS_SC_SCREEN_SCISSOR[0].BR.Y + 1,
-				r.RB_BLIT_GMEM_MSAA_CNTL.SAMPLES,
+				r.RB_RESOLVE_GMEM_BUFFER_INFO.SAMPLES,
 				r.RB_MRT[n].BASE,
-				r.RB_MRT_FLAG_BUFFER[n].ADDR,
+				r.RB_COLOR_FLAG_BUFFER[n].ADDR,
 				r.RB_MRT[n].BASE_GMEM)
 		end
 	end
@@ -382,10 +382,10 @@ function draw(primtype, nindx)
 		push_mrt(r.RB_DEPTH_BUFFER_INFO.DEPTH_FORMAT,
 			r.GRAS_SC_SCREEN_SCISSOR[0].BR.X + 1,
 			r.GRAS_SC_SCREEN_SCISSOR[0].BR.Y + 1,
-			r.RB_BLIT_GMEM_MSAA_CNTL.SAMPLES,
+			r.RB_RESOLVE_GMEM_BUFFER_INFO.SAMPLES,
 			depthbase,
 			r.RB_DEPTH_FLAG_BUFFER_BASE,
-			r.RB_DEPTH_BUFFER_BASE_GMEM)
+			r.RB_DEPTH_GMEM_BASE)
 	end
 
 	if r.RB_DEPTH_CNTL.Z_WRITE_ENABLE then
@@ -397,11 +397,11 @@ function draw(primtype, nindx)
 	end
 
 	-- clearly 0 != false.. :-/
-	if r.RB_STENCILWRMASK.WRMASK ~= 0 then
+	if r.RB_STENCIL_WRITE_MASK.WRMASK ~= 0 then
 		stencilwrite = true
 	end
 
-	if r.RB_STENCIL_CONTROL.STENCIL_ENABLE then
+	if r.RB_STENCIL_CNTL.STENCIL_ENABLE then
 		stenciltest = true
 	end
 
@@ -410,7 +410,7 @@ function draw(primtype, nindx)
 	if m == "RM6_BIN_RENDER_START" then
 		binw = r.VSC_BIN_SIZE.WIDTH
 		binh = r.VSC_BIN_SIZE.HEIGHT
-		nbins = r.VSC_BIN_COUNT.NX * r.VSC_BIN_COUNT.NY
+		nbins = r.VSC_EXPANDED_BIN_CNTL.NX * r.VSC_EXPANDED_BIN_CNTL.NY
 	end
 
 	draws = draws + 1

@@ -29,7 +29,7 @@
 struct PACKED fd6_query_sample {
    struct fd_acc_query_sample base;
 
-   /* The RB_SAMPLE_COUNT_ADDR destination needs to be 16-byte aligned: */
+   /* The RB_SAMPLE_COUNTER_BASE destination needs to be 16-byte aligned: */
    uint64_t pad;
 
    uint64_t start;
@@ -64,11 +64,11 @@ occlusion_resume(struct fd_acc_query *aq, struct fd_batch *batch)
 
    ASSERT_ALIGNED(struct fd6_query_sample, start, 16);
 
-   OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNT_CONTROL, 1);
-   OUT_RING(ring, A6XX_RB_SAMPLE_COUNT_CONTROL_COPY);
+   OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNTER_CNTL, 1);
+   OUT_RING(ring, A6XX_RB_SAMPLE_COUNTER_CNTL_COPY);
 
    if (!ctx->screen->info->a7xx.has_event_write_sample_count) {
-      OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNT_ADDR, 2);
+      OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNTER_BASE, 2);
       OUT_RELOC(ring, query_sample(aq, start));
 
       fd6_event_write<CHIP>(ctx, ring, FD_ZPASS_DONE);
@@ -120,13 +120,13 @@ occlusion_pause(struct fd_acc_query *aq, struct fd_batch *batch) assert_dt
       OUT_PKT7(ring, CP_WAIT_MEM_WRITES, 0);
    }
 
-   OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNT_CONTROL, 1);
-   OUT_RING(ring, A6XX_RB_SAMPLE_COUNT_CONTROL_COPY);
+   OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNTER_CNTL, 1);
+   OUT_RING(ring, A6XX_RB_SAMPLE_COUNTER_CNTL_COPY);
 
    ASSERT_ALIGNED(struct fd6_query_sample, stop, 16);
 
    if (!ctx->screen->info->a7xx.has_event_write_sample_count) {
-      OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNT_ADDR, 2);
+      OUT_PKT4(ring, REG_A6XX_RB_SAMPLE_COUNTER_BASE, 2);
       OUT_RELOC(ring, query_sample(aq, stop));
 
       fd6_event_write<CHIP>(batch->ctx, ring, FD_ZPASS_DONE);
@@ -497,7 +497,7 @@ pipeline_stats_resume(struct fd_acc_query *aq, struct fd_batch *batch)
    struct fd_ringbuffer *ring = batch->draw;
    enum stats_type type = get_stats_type(aq);
    unsigned idx = stats_counter_index(aq);
-   unsigned reg = REG_A6XX_RBBM_PRIMCTR_0 + (2 * idx);
+   unsigned reg = REG_A6XX_RBBM_PIPESTAT_IAVERTICES + (2 * idx);
 
    OUT_WFI5(ring);
 
@@ -522,7 +522,7 @@ pipeline_stats_pause(struct fd_acc_query *aq, struct fd_batch *batch)
    struct fd_ringbuffer *ring = batch->draw;
    enum stats_type type = get_stats_type(aq);
    unsigned idx = stats_counter_index(aq);
-   unsigned reg = REG_A6XX_RBBM_PRIMCTR_0 + (2 * idx);
+   unsigned reg = REG_A6XX_RBBM_PIPESTAT_IAVERTICES + (2 * idx);
 
    OUT_WFI5(ring);
 
@@ -595,7 +595,7 @@ static const struct fd_acc_sample_provider pipeline_statistics_single = {
 struct PACKED fd6_primitives_sample {
    struct fd_acc_query_sample base;
 
-   /* VPC_SO_STREAM_COUNTS dest address must be 32b aligned: */
+   /* VPC_SO_QUERY_BASE dest address must be 32b aligned: */
    uint64_t pad[3];
 
    struct {
@@ -640,7 +640,7 @@ primitives_emitted_resume(struct fd_acc_query *aq,
 
    ASSERT_ALIGNED(struct fd6_primitives_sample, start[0], 32);
 
-   OUT_PKT4(ring, REG_A6XX_VPC_SO_STREAM_COUNTS, 2);
+   OUT_PKT4(ring, REG_A6XX_VPC_SO_QUERY_BASE, 2);
    primitives_reloc(ring, aq, start[0]);
 
    fd6_event_write<CHIP>(batch->ctx, ring, FD_WRITE_PRIMITIVE_COUNTS);
@@ -685,7 +685,7 @@ primitives_emitted_pause(struct fd_acc_query *aq,
 
    ASSERT_ALIGNED(struct fd6_primitives_sample, stop[0], 32);
 
-   OUT_PKT4(ring, REG_A6XX_VPC_SO_STREAM_COUNTS, 2);
+   OUT_PKT4(ring, REG_A6XX_VPC_SO_QUERY_BASE, 2);
    primitives_reloc(ring, aq, stop[0]);
 
    fd6_event_write<CHIP>(batch->ctx, ring, FD_WRITE_PRIMITIVE_COUNTS);

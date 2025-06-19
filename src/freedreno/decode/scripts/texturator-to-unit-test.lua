@@ -61,24 +61,24 @@ function draw(primtype, nindx)
   if primtype == "BLIT_OP_SCALE" then
     -- Just in case, filter out anything that isn't starting
     -- at 0,0
-    if r.GRAS_2D_DST_TL.X ~= 0 or r.GRAS_2D_DST_TL.Y ~= 0 then
+    if r.GRAS_A2D_DEST_TL.X ~= 0 or r.GRAS_A2D_DEST_TL.Y ~= 0 then
       return
     end
 
-    blit.width   = r.GRAS_2D_DST_BR.X + 1
-    blit.height  = r.GRAS_2D_DST_BR.Y + 1
-    blit.pitch   = r.RB_2D_DST_PITCH
-    blit.addr    = r.RB_2D_DST
-    blit.ubwc_addr = r.RB_2D_DST_FLAGS
-    blit.ubwc_pitch = r.RB_2D_DST_FLAGS_PITCH
+    blit.width   = r.GRAS_A2D_DEST_BR.X + 1
+    blit.height  = r.GRAS_A2D_DEST_BR.Y + 1
+    blit.pitch   = r.RB_A2D_DEST_BUFFER_PITCH
+    blit.addr    = r.RB_A2D_DEST_BUFFER_BASE
+    blit.ubwc_addr = r.RB_A2D_DEST_FLAG_BUFFER_BASE
+    blit.ubwc_pitch = r.RB_A2D_DEST_FLAG_BUFFER_PITCH
     type="blit";
   else
     blit.width   = r.GRAS_SC_WINDOW_SCISSOR_BR.X + 1
     blit.height  = r.GRAS_SC_WINDOW_SCISSOR_BR.Y + 1
     blit.pitch = r.RB_MRT[0].PITCH
     blit.addr = r.RB_MRT[0].BASE
-    blit.ubwc_addr = r.RB_MRT_FLAG_BUFFER[0].ADDR
-    blit.ubwc_pitch = r.RB_MRT_FLAG_BUFFER[0].PITCH.PITCH
+    blit.ubwc_addr = r.RB_COLOR_FLAG_BUFFER[0].ADDR
+    blit.ubwc_pitch = r.RB_COLOR_FLAG_BUFFER[0].PITCH.PITCH
     type="draw"
   end
   blit.base    = bos.base(blit.addr)
