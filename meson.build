@@ -270,7 +270,7 @@ elif _vulkan_drivers.contains('all')
    # Build every vulkan driver regardless of architecture.
    _vulkan_drivers = ['amd', 'intel', 'intel_hasvk', 'swrast',
                       'freedreno', 'panfrost', 'virtio', 'broadcom',
-                      'imagination-experimental', 'microsoft-experimental',
+                      'imagination', 'microsoft-experimental',
                       'nouveau', 'asahi', 'gfxstream']
 endif
 
@@ -282,7 +282,7 @@ with_panfrost_vk = _vulkan_drivers.contains('panfrost')
 with_swrast_vk = _vulkan_drivers.contains('swrast')
 with_virtio_vk = _vulkan_drivers.contains('virtio')
 with_broadcom_vk = _vulkan_drivers.contains('broadcom')
-with_imagination_vk = _vulkan_drivers.contains('imagination-experimental')
+with_imagination_vk = _vulkan_drivers.contains('imagination')
 with_imagination_srv = get_option('imagination-srv')
 with_microsoft_vk = _vulkan_drivers.contains('microsoft-experimental')
 with_nouveau_vk = _vulkan_drivers.contains('nouveau')

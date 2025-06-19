@@ -207,7 +207,7 @@ option(
   type : 'array',
   value : ['auto'],
   choices : ['auto', 'amd', 'broadcom', 'freedreno', 'intel', 'intel_hasvk',
-             'panfrost', 'swrast', 'virtio', 'imagination-experimental',
+             'panfrost', 'swrast', 'virtio', 'imagination',
              'microsoft-experimental', 'nouveau', 'asahi', 'gfxstream',
              'all'],
   description : 'List of vulkan drivers to build. If this is set to auto ' +
