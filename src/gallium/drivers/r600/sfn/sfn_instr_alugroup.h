@@ -65,10 +65,13 @@ public:
 
    bool has_lds_group_end() const;
 
-   const auto& readport_reserer() const { return m_readports_evaluator; }
-   void set_readport_reserer(const AluReadportReservation& rr)
+   const auto& readport_reserver() const
    {
-      m_readports_evaluator = rr;
+      return m_readports_reserver;
+   }
+   void readport_reserver(const AluReadportReservation& rr)
+   {
+      m_readports_reserver = rr;
    };
 
    void update_readport_reserver();
@@ -92,7 +95,7 @@ private:
 
    Slots m_slots;
 
-   AluReadportReservation m_readports_evaluator;
+   AluReadportReservation m_readports_reserver;
 
    static int s_max_slots;
    static r600_chip_class s_chip_class;

@@ -112,10 +112,10 @@ AluGroup::add_trans_instructions(AluInstr *instr)
       return false;
 
    for (AluBankSwizzle i = sq_alu_scl_201; i != sq_alu_scl_unknown; ++i) {
-      AluReadportReservation readports_evaluator = m_readports_evaluator;
+      AluReadportReservation readports_evaluator = m_readports_reserver;
       if (readports_evaluator.schedule_trans_instruction(*instr, i) &&
           update_indirect_access(instr)) {
-         m_readports_evaluator = readports_evaluator;
+         m_readports_reserver = readports_evaluator;
          m_slots[4] = instr;
          m_free_slots &= ~0x10;
          instr->pin_sources_to_chan();
@@ -249,10 +249,10 @@ bool
 AluGroup::try_readport(AluInstr *instr, AluBankSwizzle cycle)
 {
    int preferred_chan = instr->dest_chan();
-   AluReadportReservation readports_evaluator = m_readports_evaluator;
+   AluReadportReservation readports_evaluator = m_readports_reserver;
    if (readports_evaluator.schedule_vec_instruction(*instr, cycle) &&
        update_indirect_access(instr)) {
-      m_readports_evaluator = readports_evaluator;
+      m_readports_reserver = readports_evaluator;
       m_slots[preferred_chan] = instr;
       m_free_slots &= ~(1 << preferred_chan);
       m_has_lds_op |= instr->has_lds_access();
@@ -322,7 +322,7 @@ bool AluGroup::replace_source(PRegister old_src, PVirtualValue new_src)
       }
    }
 
-   m_readports_evaluator = rpr_sum;
+   m_readports_reserver = rpr_sum;
    return success;
 }
 
@@ -453,7 +453,7 @@ AluGroup::forward_set_blockid(int id, int index)
 uint32_t
 AluGroup::slots() const
 {
-   uint32_t result = (m_readports_evaluator.m_nliterals + 1) >> 1;
+   uint32_t result = (m_readports_reserver.m_nliterals + 1) >> 1;
    for (int i = 0; i < s_max_slots; ++i) {
       if (m_slots[i])
          ++result;
