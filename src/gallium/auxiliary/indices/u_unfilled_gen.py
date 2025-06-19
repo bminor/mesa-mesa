@@ -124,7 +124,6 @@ def preamble(f: 'T.TextIO', intype, outtype, prim):
         f.write('  const ' + intype + '_t *in = (const ' + intype + '_t*)_in;\n')
     f.write('  ' + outtype + '_t *out = (' + outtype + '_t*)_out;\n')
     f.write('  unsigned i, j;\n')
-    f.write('  (void)j;\n')
 
 def postamble(f: 'T.TextIO'):
     f.write('}\n')

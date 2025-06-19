@@ -176,7 +176,6 @@ def preamble(f: 'T.TextIO', intype, outtype, inpv, outpv, pr, prim, out_prim):
         f.write('  const ' + intype + '_t* restrict in = (const ' + intype + '_t* restrict)_in;\n')
     f.write('  ' + outtype + '_t * restrict out = (' + outtype + '_t* restrict)_out;\n')
     f.write('  unsigned i, j;\n')
-    f.write('  (void)j;\n')
 
 def postamble(f: 'T.TextIO'):
     f.write('}\n')
