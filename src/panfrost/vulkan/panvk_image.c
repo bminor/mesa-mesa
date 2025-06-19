@@ -97,6 +97,14 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
       if ((mod & AFBC_FORMAT_MOD_YTR) && (!is_rgb || fdesc->nr_channels >= 3))
          return false;
 
+      /* AFBC headers point to their tile with a 32-bit offset, so we can't
+       * have a body size that's bigger than UINT32_MAX. */
+      uint64_t body_size = (uint64_t)image->vk.extent.width *
+                           image->vk.extent.height * image->vk.extent.depth *
+                           util_format_get_blocksize(pfmt);
+      if (body_size > UINT32_MAX)
+         return false;
+
       /* We assume all other unsupported AFBC modes have been filtered out
        * through pan_best_modifiers[]. */
       return true;
