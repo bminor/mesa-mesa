@@ -75,7 +75,8 @@ optimize(nir_shader *nir)
          .limit = 64,
          .expensive_alu_ok = true,
       };
-      NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_select_options);
+      NIR_PASS(progress, nir, nir_opt_peephole_select,
+               &peephole_select_options);
       NIR_PASS(progress, nir, nir_opt_phi_precision);
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
@@ -145,49 +146,11 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size, unsigned arch)
             nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared |
                nir_var_mem_global | nir_var_mem_constant);
 
-   /* We assign explicit types early so that the optimizer can take advantage
-    * of that information and hopefully get rid of some of our memcpys.
-    */
-   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
-            nir_var_uniform | nir_var_shader_temp | nir_var_function_temp |
-               nir_var_mem_shared | nir_var_mem_global,
+   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_uniform,
             glsl_get_cl_type_size_align);
-
-   optimize(nir);
-
-   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_all, NULL);
-
-   /* Lower again, this time after dead-variables to get more compact variable
-    * layouts.
-    */
-   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
-            nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared |
-               nir_var_mem_global | nir_var_mem_constant,
-            glsl_get_cl_type_size_align);
-   assert(nir->constant_data_size == 0);
-
-   NIR_PASS(_, nir, nir_lower_memcpy);
-
-   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_constant,
-            nir_address_format_64bit_global);
 
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_uniform,
             nir_address_format_32bit_offset_as_64bit);
-
-   NIR_PASS(_, nir, nir_lower_convert_alu_types, NULL);
-   NIR_PASS(_, nir, nir_opt_if, 0);
-   NIR_PASS(_, nir, nir_opt_idiv_const, 16);
-
-   /* Lower explicit IO here to ensure that we will not clash with different
-    * address formats inside shaders */
-   NIR_PASS(_, nir, nir_opt_deref);
-   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
-   NIR_PASS(_, nir, nir_lower_explicit_io,
-            nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared |
-               nir_var_mem_global,
-            nir_address_format_62bit_generic);
-
-   optimize(nir);
 
    return nir;
 }
@@ -374,11 +337,6 @@ main(int argc, const char **argv)
             libfunc, v, get_compiler_options(target_arch), &opt,
             load_kernel_input);
 
-         /* Because we do nir_lower_explicit_io on temp variable early on, we
-          * lose the scratch_size when we build the shader variant so we need
-          * to readjust it here. */
-         s->scratch_size = MAX2(s->scratch_size, nir->scratch_size);
-
          struct pan_compile_inputs inputs = {
             .gpu_id = target_arch << 12,
          };
@@ -391,6 +349,50 @@ main(int argc, const char **argv)
          NIR_PASS(_, s, nir_remove_dead_derefs);
          NIR_PASS(_, s, nir_remove_dead_variables,
                   nir_var_function_temp | nir_var_shader_temp, NULL);
+
+         /* We assign explicit types early so that the optimizer can take
+          * advantage of that information and hopefully get rid of some of our
+          * memcpys.
+          */
+         NIR_PASS(_, s, nir_lower_vars_to_explicit_types,
+                  nir_var_shader_temp | nir_var_function_temp |
+                     nir_var_mem_shared | nir_var_mem_global,
+                  glsl_get_cl_type_size_align);
+
+         optimize(s);
+
+         NIR_PASS(_, s, nir_remove_dead_variables, nir_var_all, NULL);
+
+         /* Lower again, this time after dead-variables to get more compact
+          * variable layouts.
+          */
+         NIR_PASS(_, s, nir_lower_vars_to_explicit_types,
+                  nir_var_shader_temp | nir_var_function_temp |
+                     nir_var_mem_shared | nir_var_mem_global |
+                     nir_var_mem_constant,
+                  glsl_get_cl_type_size_align);
+         assert(nir->constant_data_size == 0);
+
+         NIR_PASS(_, s, nir_lower_memcpy);
+
+         NIR_PASS(_, s, nir_lower_explicit_io, nir_var_mem_constant,
+                  nir_address_format_64bit_global);
+
+         NIR_PASS(_, s, nir_lower_convert_alu_types, NULL);
+         NIR_PASS(_, s, nir_opt_if, 0);
+         NIR_PASS(_, s, nir_opt_idiv_const, 16);
+
+         /* Lower explicit IO here to ensure that we will not clash with
+          * different address formats inside shaders */
+         NIR_PASS(_, s, nir_opt_deref);
+         NIR_PASS(_, s, nir_lower_vars_to_ssa);
+         NIR_PASS(_, s, nir_lower_explicit_io,
+                  nir_var_shader_temp | nir_var_function_temp |
+                     nir_var_mem_shared | nir_var_mem_global,
+                  nir_address_format_62bit_generic);
+
+         optimize(s);
+
          NIR_PASS(_, s, nir_lower_vars_to_explicit_types,
                   nir_var_shader_temp | nir_var_function_temp,
                   glsl_get_cl_type_size_align);
@@ -422,8 +424,7 @@ main(int argc, const char **argv)
          struct util_dynarray shader_binary;
          struct pan_shader_info shader_info = {0};
          util_dynarray_init(&shader_binary, NULL);
-         pan_shader_compile(clone, &inputs, &shader_binary,
-                            &shader_info);
+         pan_shader_compile(clone, &inputs, &shader_binary, &shader_info);
 
          assert(shader_info.push.count * 4 <=
                    BIFROST_PRECOMPILED_KERNEL_ARGS_SIZE &&
