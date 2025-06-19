@@ -877,6 +877,7 @@ spec@ext_texture_srgb@fbo-generatemipmap-formats-s3tc@GL_COMPRESSED_SRGB_S3TC_DX
 spec@ext_texture_srgb@fbo-generatemipmap-formats-s3tc@GL_COMPRESSED_SRGB_S3TC_DXT1_EXT NPOT,Fail
 
 # uprev Piglit in Mesa
+spec@!opengl 1.1@teximage-scale-bias,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples color depthstencil linear,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples color depthstencil,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples color small depthstencil linear,Fail

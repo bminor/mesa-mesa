@@ -395,16 +395,6 @@ spec@!opengl 3.2@gl-3.2-adj-prims line cull-back pv-last,Fail
 spec@!opengl 3.2@gl-3.2-adj-prims line cull-front pv-last,Fail
 spec@!opengl 3.2@gl-3.2-adj-prims pv-last,Fail
 
-# Device lost - only happens on Linux 6.6
-# https://gitlab.freedesktop.org/mesa/mesa/-/jobs/78968197#L6834
-spec@arb_shader_image_load_store@invalid,Crash
-spec@arb_shader_image_load_store@invalid@imageStore/incompatible format test,Fail
-spec@arb_shader_image_load_store@invalid@imageStore/incompatible format test/imageBuffer,Fail
-spec@arb_shader_image_load_store@invalid@imageStore/incomplete image test,Fail
-spec@arb_shader_image_load_store@invalid@imageStore/invalid format test,Fail
-spec@arb_shader_image_load_store@invalid@imageStore/level bounds test,Fail
-spec@arb_shader_image_load_store@invalid@imageStore/unbound image test,Fail
-
 # The first vertex should get default point size = 1, but RADV doesn't set it.
 #   EmitVertex
 #   gl_PointSize = 13;

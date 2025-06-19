@@ -503,7 +503,6 @@ shaders@glsl-fs-loop,Fail
 shaders@glsl-fs-loop-nested,Fail
 shaders@glsl-fwidth,Fail
 shaders@glsl-lod-bias,Fail
-shaders@glsl-max-varyings >max_varying_components,Fail
 shaders@glsl-uniform-interstage-limits@subdivide 5,Fail
 shaders@glsl-uniform-interstage-limits@subdivide 5- statechanges,Fail
 shaders@glsl-vs-loop,Fail
@@ -1344,3 +1343,7 @@ spec@ext_texture_srgb@fbo-generatemipmap-formats-s3tc@GL_COMPRESSED_SRGB_ALPHA_S
 spec@ext_texture_srgb@fbo-generatemipmap-formats-s3tc@GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT NPOT,Fail
 spec@ext_texture_srgb@fbo-generatemipmap-formats-s3tc@GL_COMPRESSED_SRGB_S3TC_DXT1_EXT,Fail
 spec@ext_texture_srgb@fbo-generatemipmap-formats-s3tc@GL_COMPRESSED_SRGB_S3TC_DXT1_EXT NPOT,Fail
+
+# uprev Piglit in Mesa
+spec@!opengl 1.1@teximage-scale-bias,Fail
+
