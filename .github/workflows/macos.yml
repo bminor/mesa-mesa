@@ -42,7 +42,7 @@ jobs:
         [binaries]
         llvm-config = '/usr/local/opt/llvm/bin/llvm-config'
         EOL
-        $MESON_EXEC . build --native-file=native_config -Dmoltenvk-dir=$(brew --prefix molten-vk) -Dbuild-tests=true -Dosmesa=true -Dgallium-drivers=swrast,zink -Dglx=${{ matrix.glx_option }}
+        $MESON_EXEC . build --native-file=native_config -Dmoltenvk-dir=$(brew --prefix molten-vk) -Dbuild-tests=true -Dgallium-drivers=swrast,zink -Dglx=${{ matrix.glx_option }}
     - name: Build
       run: $MESON_EXEC compile -C build
     - name: Test

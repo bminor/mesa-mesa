@@ -534,14 +534,6 @@ option(
 )
 
 option(
-  'osmesa',
-  type : 'boolean',
-  value : false,
-  deprecated : true,
-  description : 'Does nothing, left here for a while to avoid build breakages.',
-)
-
-option(
   'tools',
   type : 'array',
   value : [],
