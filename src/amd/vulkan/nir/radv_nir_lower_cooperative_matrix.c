@@ -459,6 +459,21 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                unsigned idx_bits = deref->def.bit_size;
                nir_def *base_row = radv_get_base_row(&b, desc, &params, local_idx);
 
+               /* VUID-RuntimeSpirv-OpCooperativeMatrixLoadKHR-08986:
+                * For OpCooperativeMatrixLoadKHR and OpCooperativeMatrixStoreKHR instructions,
+                * the Pointer and Stride operands must be aligned to at least the lesser of 16 bytes
+                * or the natural alignment of a row or column (depending on ColumnMajor) of the matrix
+                * (where the natural alignment is the number of columns/rows multiplied by the component size).
+                */
+               unsigned align_mul = 0;
+               if (layout == GLSL_MATRIX_LAYOUT_COLUMN_MAJOR)
+                  align_mul = MIN2(16, radv_nir_cmat_bits(desc) * desc.rows / 8);
+
+               if (gfx_level >= GFX12)
+                  align_mul /= wave_size / 16;
+               else if (desc.use == GLSL_CMAT_USE_ACCUMULATOR)
+                  align_mul = 0;
+
                for (unsigned i = 0; i < length / mul; ++i) {
                   nir_def *col_offset = inner_idx;
                   nir_def *row_offset;
@@ -487,6 +502,13 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                   iter_deref = nir_build_deref_cast(&b, &iter_deref->def, deref->modes,
                                                     glsl_scalar_type(desc.element_type), radv_nir_cmat_bits(desc) / 8);
                   iter_deref = nir_build_deref_ptr_as_array(&b, iter_deref, row_offset);
+
+                  if (align_mul) {
+                     unsigned align_offset = row_iter * radv_nir_cmat_bits(desc) / 8 % align_mul;
+                     iter_deref =
+                        nir_build_deref_cast_with_alignment(&b, &iter_deref->def, deref->modes, iter_deref->type,
+                                                            iter_deref->cast.ptr_stride, align_mul, align_offset);
+                  }
 
                   if (is_load) {
                      vars[i * mul] = nir_load_deref(&b, iter_deref);
