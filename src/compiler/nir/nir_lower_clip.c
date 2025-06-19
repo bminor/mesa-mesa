@@ -34,7 +34,7 @@
  * for fragment shaders to insert conditional kills based on the inter-
  * polated CLIPDIST
  *
- * NOTE: should be run after nir_lower_outputs_to_temporaries() (or at
+ * NOTE: should be run after nir_lower_io_var_to_temporaries() (or at
  * least in scenarios where you can count on each output written once
  * and only once).
  */
