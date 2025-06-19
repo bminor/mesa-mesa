@@ -1410,6 +1410,41 @@ tu6_emit_sysmem_resolves(struct tu_cmd_buffer *cmd,
 
 template <chip CHIP>
 static void
+tu6_emit_gmem_resolves(struct tu_cmd_buffer *cmd,
+                       const struct tu_subpass *subpass,
+                       struct tu_resolve_group *resolve_group,
+                       struct tu_cs *cs)
+{
+   const struct tu_render_pass *pass = cmd->state.pass;
+   const struct tu_framebuffer *fb = cmd->state.framebuffer;
+
+   if (subpass->resolve_attachments) {
+      for (unsigned i = 0; i < subpass->resolve_count; i++) {
+         uint32_t a = subpass->resolve_attachments[i].attachment;
+         if (a == VK_ATTACHMENT_UNUSED)
+            continue;
+
+         uint32_t gmem_a = tu_subpass_get_attachment_to_resolve(subpass, i);
+
+         tu_store_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, gmem_a,
+                                        fb->layers, subpass->multiview_mask,
+                                        false);
+
+         if (pass->attachments[a].gmem) {
+            /* check if the resolved attachment is needed by later subpasses,
+             * if it is, should be doing a GMEM->GMEM resolve instead of
+             * GMEM->MEM->GMEM..
+             */
+            perf_debug(cmd->device,
+                       "TODO: missing GMEM->GMEM resolve path\n");
+            tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, false, true);
+         }
+      }
+   }
+}
+
+template <chip CHIP>
+static void
 tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
    const struct tu_render_pass *pass = cmd->state.pass;
@@ -1430,17 +1465,13 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
    /* Resolve should happen before store in case BLIT_EVENT_STORE_AND_CLEAR is
     * used for a store.
+    *
+    * Note that we're emitting the resolves into the tile store CS, which is
+    * unconditionally executed (unlike draw_cs which depends on geometry having
+    * been generated).  a7xx has HW conditional resolve support that may skip
+    * the resolve if geometry didn't cover it, anyway.
     */
-   if (subpass->resolve_attachments) {
-      for (unsigned i = 0; i < subpass->resolve_count; i++) {
-         uint32_t a = subpass->resolve_attachments[i].attachment;
-         if (a != VK_ATTACHMENT_UNUSED) {
-            uint32_t gmem_a = tu_subpass_get_attachment_to_resolve(subpass, i);
-            tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, gmem_a,
-                                           fb->layers, subpass->multiview_mask, false);
-         }
-      }
-   }
+   tu6_emit_gmem_resolves<CHIP>(cmd, subpass, &resolve_group, cs);
 
    for (uint32_t a = 0; a < pass->attachment_count; ++a) {
       if (pass->attachments[a].gmem) {
@@ -5814,8 +5845,6 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
       return;
    }
 
-   const struct tu_render_pass *pass = cmd->state.pass;
-   const struct tu_framebuffer *fb = cmd->state.framebuffer;
    struct tu_cs *cs = &cmd->draw_cs;
 
    const struct tu_subpass *subpass = cmd->state.subpass++;
@@ -5842,25 +5871,11 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
 
          struct tu_resolve_group resolve_group = {};
 
-         for (unsigned i = 0; i < subpass->resolve_count; i++) {
-            uint32_t a = subpass->resolve_attachments[i].attachment;
-            if (a == VK_ATTACHMENT_UNUSED)
-               continue;
-
-            uint32_t gmem_a = tu_subpass_get_attachment_to_resolve(subpass, i);
-
-            tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, gmem_a,
-                                           fb->layers, subpass->multiview_mask, false);
-
-            if (!pass->attachments[a].gmem)
-               continue;
-
-            /* check if the resolved attachment is needed by later subpasses,
-            * if it is, should be doing a GMEM->GMEM resolve instead of GMEM->MEM->GMEM..
-            */
-            perf_debug(cmd->device, "TODO: missing GMEM->GMEM resolve path\n");
-            tu_load_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, false, true);
-         }
+         /* TODO: we're emitting the resolves into the draw CS, which is conditionally
+          * executed based on geometry being present.  That's not actually correct
+          * unless the resolve is generating geometry into the vis stream.
+          */
+         tu6_emit_gmem_resolves<CHIP>(cmd, subpass, &resolve_group, cs);
 
          tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
       }
