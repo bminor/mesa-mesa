@@ -143,8 +143,10 @@ template = Template("""\
 #ifndef __SHADER_STATS_H
 #define __SHADER_STATS_H
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "util/u_debug.h"
 
 % for isa in isas:
@@ -181,6 +183,21 @@ ${isa.c_name}_stats_util_debug(struct util_debug_callback *debug, const char *pr
 % endfor
 % endfor
 } while(0)
+
+static inline void
+${isa.c_name}_stats_serialize(uint8_t *dest, const ${isa.c_struct_name} *stats)
+{
+    memset(dest, 0, sizeof(*stats)); /* zero initialize any padding */
+% for stat in isa.stats:
+% for i in range(stat.count):
+% if stat.count > 1:
+    memcpy(dest + offsetof(${isa.c_struct_name}, ${stat.c_name}) + ${i} * sizeof(${stat.c_type}), &stats->${stat.c_name}[${i}], sizeof(${stat.c_type}));
+% else:
+    memcpy(dest + offsetof(${isa.c_struct_name}, ${stat.c_name}), &stats->${stat.c_name}, sizeof(${stat.c_type}));
+% endif
+% endfor
+% endfor
+}
 
 %endfor
 
@@ -222,6 +239,15 @@ ${family.c_name}_stats_util_debug(struct util_debug_callback *debug, const char 
 % for isa in family.isas:
     if (stats->isa == ${family.isa_tag(isa)})
        ${isa.c_name}_stats_util_debug(debug, prefix, &stats->${isa.name.lower()});
+% endfor
+}
+
+static inline void
+${family.c_name}_stats_serialize(uint8_t *dest, const ${family.c_struct_name} *stats)
+{
+% for isa in family.isas:
+    if (stats->isa == ${family.isa_tag(isa)})
+       ${isa.c_name}_stats_serialize(dest, &stats->${isa.name.lower()});
 % endfor
 }
 
