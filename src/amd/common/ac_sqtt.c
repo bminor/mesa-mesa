@@ -28,7 +28,7 @@ ac_sqtt_get_data_offset(const struct radeon_info *rad_info, const struct ac_sqtt
    uint64_t data_offset;
 
    data_offset = align64(sizeof(struct ac_sqtt_data_info) * max_se, 1ull << SQTT_BUFFER_ALIGN_SHIFT);
-   data_offset += data->buffer_size * se;
+   data_offset += (size_t)data->buffer_size * se;
 
    return data_offset;
 }

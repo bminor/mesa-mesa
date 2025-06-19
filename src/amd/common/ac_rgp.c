@@ -940,7 +940,7 @@ static void ac_sqtt_dump_spm(const struct ac_spm_trace *spm_trace,
    spm_data_ptr += 32;
 
    /* SPM timestamps. */
-   uint32_t sample_size_in_qwords = sample_size_in_bytes / sizeof(uint64_t);
+   uint64_t sample_size_in_qwords = sample_size_in_bytes / sizeof(uint64_t);
    uint64_t *timestamp_ptr = (uint64_t *)spm_data_ptr;
 
    for (uint32_t s = 0; s < num_samples; s++) {
