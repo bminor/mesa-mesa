@@ -909,6 +909,7 @@ ir3_nir_post_finalize(struct ir3_shader *shader)
          options.lower_vote_trivial = true;
       }
 
+      OPT(s, nir_opt_uniform_subgroup, &options);
       OPT(s, nir_lower_subgroups, &options);
       OPT(s, ir3_nir_lower_shuffle, shader);
    }
