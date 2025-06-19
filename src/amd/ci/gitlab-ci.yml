@@ -149,6 +149,17 @@ radeonsi-raven-vaapi-fluster:
   variables:
     FLUSTER_CODECS: VP9 H.264 H.265
 
+radeonsi-mendocino-glcts-piglit:
+  extends:
+    - .lava-x86_64-test-gl
+    - .lava-dell-latitude-3445-7520c-skyrim:x86_64
+    - .test-piglit
+    - .radeonsi-collabora-rules
+  parallel: 8
+  variables:
+    DEQP_SUITE: radeonsi-mendocino
+    GPU_VERSION: radeonsi-mendocino
+    HWCI_START_WESTON: 1
 
 ############### VKCTS tests ###############
 
