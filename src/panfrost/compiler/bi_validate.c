@@ -204,7 +204,7 @@ bi_validate(bi_context *ctx, const char *after)
    }
 
    if (!bi_validate_width(ctx)) {
-      fprintf(stderr, "Unexpected vector with after %s\n", after);
+      fprintf(stderr, "Unexpected vector width after %s\n", after);
       fail = true;
    }
 
