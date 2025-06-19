@@ -258,3 +258,16 @@ zink-radv-navi31-valve:
     GPU_VERSION: zink-radv-navi31
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
     ZINK_DEBUG: vvl
+
+zink-radv-cezanne:
+  extends:
+    - .lava-x86_64-test-gl
+    - .zink-test
+    - .test-piglit
+    - .lava-acer-cp514-3wh-r0qs-guybrush:x86_64
+    - .zink-radv-collabora-rules
+  parallel: 4
+  variables:
+    DEQP_SUITE: zink-radv
+    GPU_VERSION: zink-radv-cezanne
+    HWCI_START_WESTON: 1

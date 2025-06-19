@@ -112,6 +112,21 @@
     - !reference [.valve-turnip-manual-rules, rules]
     - !reference [.zink-common-manual-rules, rules]
 
+.zink-radv-collabora-rules:
+  stage: layered-backends
+  rules:
+    - !reference [.test, rules]
+    - !reference [.radv-collabora-rules, rules]
+    - !reference [.zink-common-rules, rules]
+
+.zink-radv-collabora-manual-rules:
+  stage: layered-backends-nightly
+  extends: .no-auto-retry
+  rules:
+    - !reference [.test, rules]
+    - !reference [.radv-collabora-manual-rules, rules]
+    - !reference [.zink-common-manual-rules, rules]
+
 .zink-radv-valve-rules:
   stage: layered-backends
   rules:

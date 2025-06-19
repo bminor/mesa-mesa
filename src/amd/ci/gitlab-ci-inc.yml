@@ -254,6 +254,23 @@
     VK_DRIVER: radeon
     LAVA_FIRMWARE: amdgpu
 
+# Status: https://lava.collabora.dev/scheduler/device_type/acer-cp514-3wh-r0qs-guybrush
+.lava-acer-cp514-3wh-r0qs-guybrush:x86_64:
+  variables:
+    BOOT_METHOD: depthcharge
+    DEVICE_TYPE: acer-cp514-3wh-r0qs-guybrush
+    DTB: ""
+    FARM: collabora
+    FDO_CI_CONCURRENT: 4
+    HWCI_FREQ_MAX: "true"
+    HWCI_KERNEL_MODULES: amdgpu
+    KERNEL_IMAGE_TYPE: ""
+    RUNNER_TAG: mesa-ci-x86-64-lava-acer-cp514-3wh-r0qs-guybrush
+    VK_DRIVER: radeon
+    LAVA_FIRMWARE: amdgpu
+    # Force fixed 6.6 kernel
+    KERNEL_TAG: "v6.6.21-mesa-1978"
+
 
 ############### LAVA
 # job prefixes: radeonsi (OpenGL), radv (Vulkan), amd (radeonsi+radv)
