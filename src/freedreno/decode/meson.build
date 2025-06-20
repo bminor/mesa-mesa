@@ -233,6 +233,24 @@ crashdec = executable(
   install: install_fd_decode_tools,
 )
 
+dumpregs = executable(
+  'dumpregs',
+  [ 'dumpregs.c' ],
+  include_directories: [
+    inc_freedreno,
+    inc_freedreno_rnn,
+    inc_include,
+    inc_src,
+  ],
+  gnu_symbol_visibility: 'hidden',
+  dependencies: [],
+  link_with: [
+    libfreedreno_cffdec,
+  ],
+  build_by_default: with_tools.contains('freedreno'),
+  install: false,
+)
+
 if with_tests
   crashdec_tests = [
     ['crash', ['-sf']],
