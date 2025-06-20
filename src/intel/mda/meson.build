@@ -11,6 +11,9 @@ _libmda = static_library(
     'tar.h',
     'tar.c',
   ],
+  dependencies: [
+    idep_mesautil
+  ],
   include_directories: [inc_src],
   c_args: [c_msvc_compat_args],
   gnu_symbol_visibility: 'hidden',

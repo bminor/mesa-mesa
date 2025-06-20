@@ -886,6 +886,15 @@ Intel driver environment variables
    If none of widths for particular shader stage was specified, then all
    widths are allowed.
 
+.. envvar:: MDA_OUTPUT_DIR
+
+   Directory where the mda.tar files generated when using INTEL_DEBUG=mda are
+   going to be written to.  If not set, use the current directory.
+
+.. envvar:: MDA_PREFIX
+
+   Prefix added to the mda.tar filenames generated when using INTEL_DEBUG=mda.
+
 Anvil(ANV) driver environment variables
 ---------------------------------------
 

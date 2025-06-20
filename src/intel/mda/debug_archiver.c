@@ -7,15 +7,36 @@
 
 #include "tar.h"
 #include "util/ralloc.h"
+#include "util/u_debug.h"
 
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 struct debug_archiver
 {
    FILE *f;
    tar_writer *tw;
    char prefix[128];
+   char *archive_path;
 };
+
+DEBUG_GET_ONCE_OPTION(mda_output_dir, "MDA_OUTPUT_DIR", ".")
+DEBUG_GET_ONCE_OPTION(mda_prefix, "MDA_PREFIX", NULL)
+
+static bool
+ensure_output_dir(const char *dir)
+{
+   if (!dir || !*dir || !strcmp(dir, "."))
+      return true;
+
+   struct stat st;
+   if (stat(dir, &st) == 0)
+      return S_ISDIR(st.st_mode);
+
+   return mkdir(dir, 0755) == 0;
+}
 
 debug_archiver *
 debug_archiver_open(void *mem_ctx, const char *name, const char *info)
@@ -23,7 +44,34 @@ debug_archiver_open(void *mem_ctx, const char *name, const char *info)
    debug_archiver *da = rzalloc(mem_ctx, debug_archiver);
 
    char *filename = ralloc_asprintf(mem_ctx, "%s.mda.tar", name);
-   da->f = fopen(filename, "wb+");
+
+   const char *output_dir = debug_get_option_mda_output_dir();
+   const char *prefix     = debug_get_option_mda_prefix();
+
+   if (!ensure_output_dir(output_dir)) {
+      /* Fallback to current directory on failure. */
+      output_dir = ".";
+   }
+
+   if (prefix) {
+      /* Prefix shouldn't have any `/` characters. */
+      if (strchr(prefix, '/')) {
+         char *safe_prefix = ralloc_strdup(da, prefix);
+         for (char *p = safe_prefix; *p; p++) {
+            if (*p == '/')
+               *p = '_';
+         }
+         prefix = safe_prefix;
+      }
+   }
+
+   da->archive_path = ralloc_asprintf(da, "%s/%s%s%s",
+                                      output_dir,
+                                      prefix ? prefix : "",
+                                      prefix ? "."    : "",
+                                      filename);
+
+   da->f = fopen(da->archive_path, "wb+");
 
    da->tw = rzalloc(da, tar_writer);
    tar_writer_init(da->tw, da->f);
