@@ -999,7 +999,7 @@ const struct vpe_engine *vpe_create_engine(struct vpe_init_data *params)
     if (!params)
         return NULL;
     engine_priv = (struct vpe_engine_priv *)params->funcs.zalloc(
-        params->funcs.mem_ctx, sizeof(struct vpe_engine));
+        params->funcs.mem_ctx, sizeof(struct vpe_engine_priv));
     if (engine_priv == NULL)
         return NULL;
     /* setup public data */
