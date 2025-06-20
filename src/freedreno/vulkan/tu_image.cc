@@ -385,7 +385,7 @@ ubwc_possible(struct tu_device *device,
     * and we can't change the descriptor so we can't do this.
     */
    if (((usage | stencil_usage) & VK_IMAGE_USAGE_STORAGE_BIT) &&
-       !info->a7xx.supports_ibo_ubwc) {
+       !info->a7xx.supports_uav_ubwc) {
       return false;
    }
 

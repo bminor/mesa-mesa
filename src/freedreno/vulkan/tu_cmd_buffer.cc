@@ -1622,7 +1622,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    }
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_CHICKEN_BITS,
                         phys_dev->info->a6xx.magic.SP_CHICKEN_BITS);
-   tu_cs_emit_write_reg(cs, REG_A6XX_SP_IBO_COUNT, 0); // 2 on a740 ???
+   tu_cs_emit_write_reg(cs, REG_A6XX_SP_UAV_COUNT, 0); // 2 on a740 ???
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_UNKNOWN_B182, 0);
    if (CHIP == A6XX)
       tu_cs_emit_regs(cs, A6XX_HLSQ_SHARED_CONSTS(.enable = false));
@@ -1839,8 +1839,8 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
          .gs_state = true,
          .fs_state = true,
          .cs_state = true,
-         .cs_ibo = true,
-         .gfx_ibo = true,
+         .cs_uav = true,
+         .gfx_uav = true,
          .cs_shared_const = true,
          .gfx_shared_const = true,
          .cs_bindless = CHIP == A6XX ? 0x1f : 0xff,
@@ -6089,7 +6089,7 @@ tu6_emit_shared_consts(struct tu_cs *cs,
       tu_cs_emit(cs, CP_LOAD_STATE6_0_DST_OFF(offset) |
             CP_LOAD_STATE6_0_STATE_TYPE(st) |
             CP_LOAD_STATE6_0_STATE_SRC(SS6_DIRECT) |
-            CP_LOAD_STATE6_0_STATE_BLOCK(SB6_IBO) |
+            CP_LOAD_STATE6_0_STATE_BLOCK(SB6_UAV) |
             CP_LOAD_STATE6_0_NUM_UNIT(num_units));
       tu_cs_emit(cs, 0);
       tu_cs_emit(cs, 0);

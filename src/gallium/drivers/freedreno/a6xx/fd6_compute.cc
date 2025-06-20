@@ -73,7 +73,7 @@ cs_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
    OUT_REG(ring, HLSQ_INVALIDATE_CMD(CHIP, .vs_state = true, .hs_state = true,
                                           .ds_state = true, .gs_state = true,
                                           .fs_state = true, .cs_state = true,
-                                          .cs_ibo = true, .gfx_ibo = true, ));
+                                          .cs_uav = true, .gfx_uav = true, ));
 
    OUT_REG(ring, HLSQ_CS_CNTL(
          CHIP,
@@ -85,9 +85,9 @@ cs_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
    OUT_RING(ring, A6XX_SP_CS_CONFIG_ENABLED |
                      COND(v->bindless_tex, A6XX_SP_CS_CONFIG_BINDLESS_TEX) |
                      COND(v->bindless_samp, A6XX_SP_CS_CONFIG_BINDLESS_SAMP) |
-                     COND(v->bindless_ibo, A6XX_SP_CS_CONFIG_BINDLESS_IBO) |
+                     COND(v->bindless_ibo, A6XX_SP_CS_CONFIG_BINDLESS_UAV) |
                      COND(v->bindless_ubo, A6XX_SP_CS_CONFIG_BINDLESS_UBO) |
-                     A6XX_SP_CS_CONFIG_NIBO(ir3_shader_nibo(v)) |
+                     A6XX_SP_CS_CONFIG_NUAV(ir3_shader_num_uavs(v)) |
                      A6XX_SP_CS_CONFIG_NTEX(v->num_samp) |
                      A6XX_SP_CS_CONFIG_NSAMP(v->num_samp)); /* SP_CS_CONFIG */
 

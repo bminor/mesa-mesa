@@ -27,7 +27,7 @@
 #define IR3_BINDLESS_DESC_COUNT   (IR3_BINDLESS_IMAGE_OFFSET + IR3_BINDLESS_IMAGE_COUNT)
 
 /**
- * When using bindless descriptor sets for IBO/etc, each shader stage gets
+ * When using bindless descriptor sets for UAV/etc, each shader stage gets
  * it's own descriptor set, avoiding the need to merge image/ssbo state
  * across shader stages.
  */

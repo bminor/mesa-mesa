@@ -902,7 +902,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
          .ds_state = true,
          .gs_state = true,
          .fs_state = true,
-         .gfx_ibo = true,
+         .gfx_uav = true,
          .gfx_shared_const = true,
          .cs_bindless = CHIP == A6XX ? 0x1f : 0xff,
          .gfx_bindless = CHIP == A6XX ? 0x1f : 0xff,));

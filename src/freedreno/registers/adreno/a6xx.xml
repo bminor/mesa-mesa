@@ -4664,7 +4664,7 @@ to upconvert to 32b float internally?
 		-->
 		<bitfield name="BINDLESS_TEX" pos="0" type="boolean"/>
 		<bitfield name="BINDLESS_SAMP" pos="1" type="boolean"/>
-		<bitfield name="BINDLESS_IBO" pos="2" type="boolean"/>
+		<bitfield name="BINDLESS_UAV" pos="2" type="boolean"/>
 		<bitfield name="BINDLESS_UBO" pos="3" type="boolean"/>
 
 		<bitfield name="ENABLED" pos="8" type="boolean"/>
@@ -4674,7 +4674,7 @@ to upconvert to 32b float internally?
 		 -->
 		<bitfield name="NTEX" low="9" high="16" type="uint"/>
 		<bitfield name="NSAMP" low="17" high="21" type="uint"/>
-		<bitfield name="NIBO" low="22" high="28" type="uint"/>
+		<bitfield name="NUAV" low="22" high="28" type="uint"/>
 	</bitset>
 
 	<bitset name="a6xx_sp_xs_prim_cntl" inline="yes">
@@ -5210,11 +5210,11 @@ to upconvert to 32b float internally?
 	</array>
 
 	<!--
-	IBO state for compute shader:
+	UAV state for compute shader:
 	 -->
-	<reg64 offset="0xa9f2" name="SP_CS_IBO" type="address" align="16" variants="A6XX"/>
-	<reg64 offset="0xa9f8" name="SP_CS_IBO" type="address" align="16" variants="A7XX"/>
-	<reg32 offset="0xaa00" name="SP_CS_IBO_COUNT" low="0" high="6" type="uint"/>
+	<reg64 offset="0xa9f2" name="SP_CS_UAV" type="address" align="16" variants="A6XX"/>
+	<reg64 offset="0xa9f8" name="SP_CS_UAV" type="address" align="16" variants="A7XX"/>
+	<reg32 offset="0xaa00" name="SP_CS_UAV_COUNT" low="0" high="6" type="uint"/>
 
 	<!-- Correlated with avgs/uvgs usage in FS -->
 	<reg32 offset="0xaa01" name="SP_FS_VGPR_CONFIG" type="uint" variants="A7XX-" usage="cmd"/>
@@ -5292,11 +5292,11 @@ to upconvert to 32b float internally?
 	</array>
 
 	<!--
-	Combined IBO state for 3d pipe, used for Image and SSBO write/atomic
-	instructions VS/HS/DS/GS/FS.  See SP_CS_IBO_* for compute shaders.
+	Combined UAV state for 3d pipe, used for Image and SSBO write/atomic
+	instructions VS/HS/DS/GS/FS.  See SP_CS_UAV_* for compute shaders.
 	 -->
-	<reg64 offset="0xab1a" name="SP_IBO" type="address" align="16" usage="cmd"/>
-	<reg32 offset="0xab20" name="SP_IBO_COUNT" low="0" high="6" type="uint" usage="cmd"/>
+	<reg64 offset="0xab1a" name="SP_UAV" type="address" align="16" usage="cmd"/>
+	<reg32 offset="0xab20" name="SP_UAV_COUNT" low="0" high="6" type="uint" usage="cmd"/>
 
 	<reg32 offset="0xab22" name="SP_UNKNOWN_AB22" variants="A7XX-" usage="cmd"/>
 
@@ -5781,8 +5781,8 @@ to upconvert to 32b float internally?
 		<bitfield name="FS_STATE" pos="4" type="boolean"/>
 		<bitfield name="CS_STATE" pos="5" type="boolean"/>
 
-		<bitfield name="CS_IBO" pos="6" type="boolean"/>
-		<bitfield name="GFX_IBO" pos="7" type="boolean"/>
+		<bitfield name="CS_UAV" pos="6" type="boolean"/>
+		<bitfield name="GFX_UAV" pos="7" type="boolean"/>
 
 		<!-- Note: these only do something when HLSQ_SHARED_CONSTS is set to 1 -->
 		<bitfield name="CS_SHARED_CONST" pos="19" type="boolean"/>
@@ -5821,8 +5821,8 @@ to upconvert to 32b float internally?
 		<bitfield name="FS_STATE" pos="4" type="boolean"/>
 		<bitfield name="CS_STATE" pos="5" type="boolean"/>
 
-		<bitfield name="CS_IBO" pos="6" type="boolean"/>
-		<bitfield name="GFX_IBO" pos="7" type="boolean"/>
+		<bitfield name="CS_UAV" pos="6" type="boolean"/>
+		<bitfield name="GFX_UAV" pos="7" type="boolean"/>
 
 		<!-- SS6_BINDLESS: one bit per bindless base -->
 		<bitfield name="CS_BINDLESS" low="9" high="16" type="hex"/>
@@ -5841,7 +5841,7 @@ to upconvert to 32b float internally?
 			const pool and 16 in the geometry const pool although
 			only 8 are actually used (why?) and they are mapped to
 			c504-c511 in each stage. Both VS and FS shared consts
-			are written using ST6_CONSTANTS/SB6_IBO, so that both
+			are written using ST6_CONSTANTS/SB6_UAV, so that both
 			the geometry and FS shared consts can be written at once
 			by using CP_LOAD_STATE6 rather than
 			CP_LOAD_STATE6_FRAG/CP_LOAD_STATE6_GEOM. In addition
@@ -5850,7 +5850,7 @@ to upconvert to 32b float internally?
 
 			There is also a separate shared constant pool for CS,
 			which is loaded through CP_LOAD_STATE6_FRAG with
-			ST6_UBO/ST6_IBO. However the only real difference for CS
+			ST6_UBO/ST6_UAV. However the only real difference for CS
 			is the dword units.
 		</doc>
 		<bitfield name="ENABLE" pos="0" type="boolean"/>

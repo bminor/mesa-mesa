@@ -546,7 +546,7 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<value name="CP_LOAD_STATE6_GEOM" value="0x32" variants="A6XX-"/>
 	<value name="CP_LOAD_STATE6_FRAG" value="0x34" variants="A6XX-"/>
 	<!--
-	Note: For IBO state (Image/SSBOs) which have shared state across
+	Note: For UAV state (Image/SSBOs) which have shared state across
 	shader stages, for 3d pipeline CP_LOAD_STATE6 is used.  But for
 	compute shaders, CP_LOAD_STATE6_FRAG is used.  Possibly they are
 	interchangable.
@@ -805,14 +805,14 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<value name="SB6_GS_SHADER" value="0xb"/>
 		<value name="SB6_FS_SHADER" value="0xc"/>
 		<value name="SB6_CS_SHADER" value="0xd"/>
-		<value name="SB6_IBO"       value="0xe"/>
-		<value name="SB6_CS_IBO"    value="0xf"/>
+		<value name="SB6_UAV"       value="0xe"/>
+		<value name="SB6_CS_UAV"    value="0xf"/>
 	</enum>
 	<enum name="a6xx_state_type">
 		<value name="ST6_SHADER" value="0"/>
 		<value name="ST6_CONSTANTS" value="1"/>
 		<value name="ST6_UBO" value="2"/>
-		<value name="ST6_IBO" value="3"/>
+		<value name="ST6_UAV" value="3"/>
 	</enum>
 	<enum name="a6xx_state_src">
 		<value name="SS6_DIRECT" value="0"/>

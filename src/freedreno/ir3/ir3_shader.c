@@ -549,7 +549,7 @@ alloc_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
    }
 
    v->num_ssbos = info->num_ssbos;
-   v->num_ibos = info->num_ssbos + info->num_images;
+   v->num_uavs = info->num_ssbos + info->num_images;
    v->shader_options = shader->options;
 
    if (!v->binning_pass) {

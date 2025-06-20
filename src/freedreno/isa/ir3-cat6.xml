@@ -1293,7 +1293,7 @@ SOFTWARE.
 
 <bitset name="#instruction-cat6-a6xx-ibo-base" extends="#instruction-cat6-a6xx-base">
 	<doc>
-		IBO (ie. Image/SSBO) instructions
+		UAV (ie. Image/SSBO) instructions
 	</doc>
 	<display>
 		{SY}{JP}{NAME}.{TYPED}.{D}d.{TYPE}.{TYPE_SIZE}.{MODE}{BASE} {TYPE_HALF}{SRC1}, {SRC2}{OFFSET}, {SSBO}

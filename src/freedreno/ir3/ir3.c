@@ -1804,7 +1804,7 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
             return false;
 
          /* as with atomics, these cat6 instrs can only have an immediate
-          * for SSBO/IBO slot argument
+          * for SSBO/UAV slot argument
           */
          switch (instr->opc) {
          case OPC_LDIB:

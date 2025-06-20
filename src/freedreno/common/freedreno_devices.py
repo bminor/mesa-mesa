@@ -924,7 +924,7 @@ a7xx_base = A6XXProps(
     )
 
 a7xx_gen1 = A7XXProps(
-        supports_ibo_ubwc = True,
+        supports_uav_ubwc = True,
         fs_must_have_non_zero_constlen_quirk = True,
         enable_tp_ubwc_flag_hint = True,
         reading_shading_rate_requires_smask_quirk = True,
@@ -934,7 +934,7 @@ a7xx_gen2 = A7XXProps(
         stsc_duplication_quirk = True,
         has_event_write_sample_count = True,
         ubwc_unorm_snorm_int_compatible = True,
-        supports_ibo_ubwc = True,
+        supports_uav_ubwc = True,
         fs_must_have_non_zero_constlen_quirk = True,
         # Most devices with a740 have blob v6xx which doesn't have
         # this hint set. Match them for better compatibility by default.
@@ -953,7 +953,7 @@ a7xx_gen3 = A7XXProps(
         sysmem_vpc_attr_buf_size = 0x20000,
         gmem_vpc_attr_buf_size = 0xc000,
         ubwc_unorm_snorm_int_compatible = True,
-        supports_ibo_ubwc = True,
+        supports_uav_ubwc = True,
         has_generic_clear = True,
         r8g8_faulty_fast_clear_quirk = True,
         gs_vpc_adjacency_quirk = True,

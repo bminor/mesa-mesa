@@ -913,7 +913,7 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    if (CHIP == A6XX)
       WRITE(REG_A6XX_HLSQ_DBG_ECO_CNTL, screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL);
    WRITE(REG_A6XX_SP_CHICKEN_BITS, screen->info->a6xx.magic.SP_CHICKEN_BITS);
-   WRITE(REG_A6XX_SP_IBO_COUNT, 0);
+   WRITE(REG_A6XX_SP_UAV_COUNT, 0);
    WRITE(REG_A6XX_SP_UNKNOWN_B182, 0);
    if (CHIP == A6XX)
       WRITE(REG_A6XX_HLSQ_SHARED_CONSTS, 0);
@@ -1130,7 +1130,7 @@ fd6_emit_restore(struct fd_batch *batch, struct fd_ringbuffer *ring)
          .vs_state = true, .hs_state = true,
          .ds_state = true, .gs_state = true,
          .fs_state = true, .cs_state = true,
-         .cs_ibo = true,   .gfx_ibo = true,
+         .cs_uav = true,   .gfx_uav = true,
          .cs_shared_const = true,
          .gfx_shared_const = true,
          .cs_bindless = CHIP == A6XX ? 0x1f : 0xff,

@@ -2422,7 +2422,7 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
 
    tu_cs_emit_regs(&sub_cs, HLSQ_INVALIDATE_CMD(A7XX,
             .vs_state = true, .hs_state = true, .ds_state = true,
-            .gs_state = true, .fs_state = true, .gfx_ibo = true,
+            .gs_state = true, .fs_state = true, .gfx_uav = true,
             .cs_bindless = 0xff, .gfx_bindless = 0xff));
    tu_cs_emit_regs(&sub_cs, HLSQ_CS_CNTL(A7XX,
             .constlen = 4,
@@ -2438,7 +2438,7 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
                      HLSQ_CS_KERNEL_GROUP_Z(A7XX, 1));
    tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_INSTRLEN(.sp_cs_instrlen = 1));
    tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_TEX_COUNT(0));
-   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_IBO_COUNT(0));
+   tu_cs_emit_regs(&sub_cs, A6XX_SP_CS_UAV_COUNT(0));
    tu_cs_emit_regs(&sub_cs, HLSQ_CS_CNTL_1(A7XX,
             .linearlocalidregid = regid(63, 0),
             .threadsize = THREAD128,

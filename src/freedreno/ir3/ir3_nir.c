@@ -951,7 +951,7 @@ ir3_nir_post_finalize(struct ir3_shader *shader)
       OPT(s, ir3_nir_lower_ssbo_size, 2);
 
    /* The resinfo opcode we have for getting the SSBO size on a6xx returns a
-    * byte length divided by IBO_0_FMT, while the NIR intrinsic coming in is a
+    * byte length divided by UAV_0_FMT, while the NIR intrinsic coming in is a
     * number of bytes. Switch things so the NIR intrinsic in our backend means
     * dwords.
     */

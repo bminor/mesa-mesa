@@ -280,11 +280,11 @@ struct fd_dev_info {
       uint32_t sysmem_vpc_attr_buf_size;
       uint32_t gmem_vpc_attr_buf_size;
 
-      /* Whether UBWC is supported on all IBOs. Prior to this, only readonly
-       * or writeonly IBOs could use UBWC and mixing reads and writes was not
+      /* Whether UBWC is supported on all UAVs. Prior to this, only readonly
+       * or writeonly UAVs could use UBWC and mixing reads and writes was not
        * permitted.
        */
-      bool supports_ibo_ubwc;
+      bool supports_uav_ubwc;
 
       /* Whether the UBWC fast-clear values for snorn, unorm, and int formats
        * are the same. This is the case from a740 onwards. These formats were
@@ -329,7 +329,7 @@ struct fd_dev_info {
       /* Whether r8g8 UBWC fast-clear work correctly. */
       bool r8g8_faulty_fast_clear_quirk;
 
-      /* a750 has a bug where writing and then reading a UBWC-compressed IBO
+      /* a750 has a bug where writing and then reading a UBWC-compressed UAV
        * requires flushing UCHE. This is reproducible in many CTS tests, for
        * example dEQP-VK.image.load_store.with_format.2d.*.
        */

@@ -389,9 +389,9 @@ sp_xs_config(const struct ir3_shader_variant *v)
    return A6XX_SP_VS_CONFIG_ENABLED |
          COND(v->bindless_tex, A6XX_SP_VS_CONFIG_BINDLESS_TEX) |
          COND(v->bindless_samp, A6XX_SP_VS_CONFIG_BINDLESS_SAMP) |
-         COND(v->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_IBO) |
+         COND(v->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_UAV) |
          COND(v->bindless_ubo, A6XX_SP_VS_CONFIG_BINDLESS_UBO) |
-         A6XX_SP_VS_CONFIG_NIBO(ir3_shader_nibo(v)) |
+         A6XX_SP_VS_CONFIG_NUAV(ir3_shader_num_uavs(v)) |
          A6XX_SP_VS_CONFIG_NTEX(v->num_samp) |
          A6XX_SP_VS_CONFIG_NSAMP(v->num_samp);
 }
@@ -405,7 +405,7 @@ setup_config_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
    OUT_REG(ring, HLSQ_INVALIDATE_CMD(CHIP, .vs_state = true, .hs_state = true,
                                           .ds_state = true, .gs_state = true,
                                           .fs_state = true, .cs_state = true,
-                                          .cs_ibo = true, .gfx_ibo = true, ));
+                                          .cs_uav = true, .gfx_uav = true, ));
 
    assert(state->vs->constlen >= state->bs->constlen);
 
@@ -450,8 +450,8 @@ setup_config_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
    OUT_PKT4(ring, REG_A6XX_SP_FS_CONFIG, 1);
    OUT_RING(ring, sp_xs_config(state->fs));
 
-   OUT_PKT4(ring, REG_A6XX_SP_IBO_COUNT, 1);
-   OUT_RING(ring, ir3_shader_nibo(state->fs));
+   OUT_PKT4(ring, REG_A6XX_SP_UAV_COUNT, 1);
+   OUT_RING(ring, ir3_shader_num_uavs(state->fs));
 
    state->config_stateobj = ring;
 }

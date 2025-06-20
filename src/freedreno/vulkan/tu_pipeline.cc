@@ -81,7 +81,7 @@ tu6_load_state_size(struct tu_pipeline *pipeline,
          case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
          case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
          case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            /* IBO-backed resources only need one packet for all graphics stages */
+            /* UAV-backed resources only need one packet for all graphics stages */
             if (stage_count)
                count += 1;
             break;
@@ -179,13 +179,13 @@ tu6_emit_load_state(struct tu_device *device,
          case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
          case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
             unsigned mul = binding->size / (A6XX_TEX_CONST_DWORDS * 4);
-            /* IBO-backed resources only need one packet for all graphics stages */
+            /* UAV-backed resources only need one packet for all graphics stages */
             if (stages & ~VK_SHADER_STAGE_COMPUTE_BIT) {
-               emit_load_state(&cs, CP_LOAD_STATE6, ST6_SHADER, SB6_IBO,
+               emit_load_state(&cs, CP_LOAD_STATE6, ST6_SHADER, SB6_UAV,
                                base, offset, count * mul);
             }
             if (stages & VK_SHADER_STAGE_COMPUTE_BIT) {
-               emit_load_state(&cs, CP_LOAD_STATE6_FRAG, ST6_IBO, SB6_CS_SHADER,
+               emit_load_state(&cs, CP_LOAD_STATE6_FRAG, ST6_UAV, SB6_CS_SHADER,
                                base, offset, count * mul);
             }
             break;
@@ -392,7 +392,7 @@ tu6_emit_xs_config(struct tu_cs *cs,
    tu_cs_emit(cs, A6XX_SP_VS_CONFIG_ENABLED |
                   COND(xs->bindless_tex, A6XX_SP_VS_CONFIG_BINDLESS_TEX) |
                   COND(xs->bindless_samp, A6XX_SP_VS_CONFIG_BINDLESS_SAMP) |
-                  COND(xs->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_IBO) |
+                  COND(xs->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_UAV) |
                   COND(xs->bindless_ubo, A6XX_SP_VS_CONFIG_BINDLESS_UBO) |
                   A6XX_SP_VS_CONFIG_NTEX(xs->num_samp) |
                   A6XX_SP_VS_CONFIG_NSAMP(xs->num_samp));
@@ -1287,7 +1287,7 @@ tu6_emit_program_config(struct tu_cs *cs,
          .ds_state = true,
          .gs_state = true,
          .fs_state = true,
-         .gfx_ibo = true,
+         .gfx_uav = true,
          .gfx_shared_const = shared_consts_enable));
    for (size_t stage_idx = MESA_SHADER_VERTEX;
         stage_idx <= MESA_SHADER_FRAGMENT; stage_idx++) {

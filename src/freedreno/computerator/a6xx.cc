@@ -149,7 +149,7 @@ cs_program_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
       .gs_state = true,
       .fs_state = true,
       .cs_state = true,
-      .gfx_ibo = true,
+      .gfx_uav = true,
    ));
 
    unsigned constlen = align(v->constlen, 4);
@@ -157,7 +157,7 @@ cs_program_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
 
    OUT_PKT4(ring, REG_A6XX_SP_CS_CONFIG, 2);
    OUT_RING(ring, A6XX_SP_CS_CONFIG_ENABLED |
-                     A6XX_SP_CS_CONFIG_NIBO(kernel->num_bufs) |
+                     A6XX_SP_CS_CONFIG_NUAV(kernel->num_bufs) |
                      A6XX_SP_CS_CONFIG_NTEX(v->num_samp) |
                      A6XX_SP_CS_CONFIG_NSAMP(v->num_samp)); /* SP_VS_CONFIG */
    OUT_RING(ring, v->instrlen);                             /* SP_VS_INSTRLEN */
@@ -395,20 +395,20 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
 
    OUT_PKT7(ring, CP_LOAD_STATE6_FRAG, 3);
    OUT_RING(ring, CP_LOAD_STATE6_0_DST_OFF(0) |
-                     CP_LOAD_STATE6_0_STATE_TYPE(ST6_IBO) |
+                     CP_LOAD_STATE6_0_STATE_TYPE(ST6_UAV) |
                      CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
                      CP_LOAD_STATE6_0_STATE_BLOCK(SB6_CS_SHADER) |
                      CP_LOAD_STATE6_0_NUM_UNIT(kernel->num_bufs));
    OUT_RB(ring, state);
 
    if (CHIP == A6XX) {
-      OUT_PKT4(ring, REG_A6XX_SP_CS_IBO, 2);
+      OUT_PKT4(ring, REG_A6XX_SP_CS_UAV, 2);
    } else {
-      OUT_PKT4(ring, REG_A7XX_SP_CS_IBO, 2);
+      OUT_PKT4(ring, REG_A7XX_SP_CS_UAV, 2);
    }
    OUT_RB(ring, state);
 
-   OUT_PKT4(ring, REG_A6XX_SP_CS_IBO_COUNT, 1);
+   OUT_PKT4(ring, REG_A6XX_SP_CS_UAV_COUNT, 1);
    OUT_RING(ring, kernel->num_bufs);
 
    fd_ringbuffer_del(state);

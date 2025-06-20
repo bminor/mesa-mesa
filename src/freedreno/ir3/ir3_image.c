@@ -9,13 +9,13 @@
 #include "ir3_image.h"
 
 /*
- * SSBO/Image to/from IBO/tex hw mapping table:
+ * SSBO/Image to/from UAV/tex hw mapping table:
  */
 
 void
 ir3_ibo_mapping_init(struct ir3_ibo_mapping *mapping, unsigned num_textures)
 {
-   memset(mapping, IBO_INVALID, sizeof(*mapping));
+   memset(mapping, UAV_INVALID, sizeof(*mapping));
    mapping->num_tex = 0;
    mapping->tex_base = num_textures;
 }
@@ -31,10 +31,10 @@ ir3_ssbo_to_ibo(struct ir3_context *ctx, nir_src src)
 unsigned
 ir3_ssbo_to_tex(struct ir3_ibo_mapping *mapping, unsigned ssbo)
 {
-   if (mapping->ssbo_to_tex[ssbo] == IBO_INVALID) {
+   if (mapping->ssbo_to_tex[ssbo] == UAV_INVALID) {
       unsigned tex = mapping->num_tex++;
       mapping->ssbo_to_tex[ssbo] = tex;
-      mapping->tex_to_image[tex] = IBO_SSBO | ssbo;
+      mapping->tex_to_image[tex] = UAV_SSBO | ssbo;
    }
    return mapping->ssbo_to_tex[ssbo] + mapping->tex_base;
 }
@@ -64,7 +64,7 @@ ir3_image_to_ibo(struct ir3_context *ctx, nir_src src)
 unsigned
 ir3_image_to_tex(struct ir3_ibo_mapping *mapping, unsigned image)
 {
-   if (mapping->image_to_tex[image] == IBO_INVALID) {
+   if (mapping->image_to_tex[image] == UAV_INVALID) {
       unsigned tex = mapping->num_tex++;
       mapping->image_to_tex[image] = tex;
       mapping->tex_to_image[tex] = image;

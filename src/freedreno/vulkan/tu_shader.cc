@@ -1526,7 +1526,7 @@ tu6_emit_cs_config(struct tu_cs *cs,
 
    tu_cs_emit_regs(cs, HLSQ_INVALIDATE_CMD(CHIP,
          .cs_state = true,
-         .cs_ibo = true,
+         .cs_uav = true,
          .cs_shared_const = shared_consts_enable));
 
    tu6_emit_xs_config<CHIP>(cs, MESA_SHADER_COMPUTE, v);

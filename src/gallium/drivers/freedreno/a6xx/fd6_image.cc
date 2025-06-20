@@ -140,7 +140,7 @@ clear_descriptor(struct fd6_descriptor_set *set, unsigned slot)
    /* The 2nd dword of the descriptor contains the width and height.
     * so a non-zero value means the slot was previously valid and
     * must be cleared.  We can't leave dangling descriptors as the
-    * shader could use variable indexing into the set of IBOs to
+    * shader could use variable indexing into the set of UAVs to
     * get at them.  See piglit arb_shader_image_load_store-invalid.
     */
    if (!set->descriptor[slot][1])
@@ -261,7 +261,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
     * set and CP_LOAD_STATE packets to preload the state.
     *
     * Note that unless the app is using the max # of SSBOs there will
-    * be a gap between the IBO descriptors used for SSBOs and for images,
+    * be a gap between the UAV descriptors used for SSBOs and for images,
     * so emit this as two CP_LOAD_STATE packets:
     */
 
@@ -290,7 +290,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
          OUT_PKT(ring, CP_LOAD_STATE6_FRAG,
             CP_LOAD_STATE6_0(
                   .dst_off     = IR3_BINDLESS_SSBO_OFFSET,
-                  .state_type  = ST6_IBO,
+                  .state_type  = ST6_UAV,
                   .state_src   = SS6_BINDLESS,
                   .state_block = SB6_CS_SHADER,
                   .num_unit    = util_last_bit(bufso->enabled_mask),
@@ -307,7 +307,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
          OUT_PKT(ring, CP_LOAD_STATE6_FRAG,
             CP_LOAD_STATE6_0(
                   .dst_off     = IR3_BINDLESS_IMAGE_OFFSET,
-                  .state_type  = ST6_IBO,
+                  .state_type  = ST6_UAV,
                   .state_src   = SS6_BINDLESS,
                   .state_block = SB6_CS_SHADER,
                   .num_unit    = util_last_bit(imgso->enabled_mask),
@@ -341,7 +341,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
                   .dst_off     = IR3_BINDLESS_SSBO_OFFSET,
                   .state_type  = ST6_SHADER,
                   .state_src   = SS6_BINDLESS,
-                  .state_block = SB6_IBO,
+                  .state_block = SB6_UAV,
                   .num_unit    = util_last_bit(bufso->enabled_mask),
             ),
             CP_LOAD_STATE6_EXT_SRC_ADDR(
@@ -358,7 +358,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
                   .dst_off     = IR3_BINDLESS_IMAGE_OFFSET,
                   .state_type  = ST6_SHADER,
                   .state_src   = SS6_BINDLESS,
-                  .state_block = SB6_IBO,
+                  .state_block = SB6_UAV,
                   .num_unit    = util_last_bit(imgso->enabled_mask),
             ),
             CP_LOAD_STATE6_EXT_SRC_ADDR(
