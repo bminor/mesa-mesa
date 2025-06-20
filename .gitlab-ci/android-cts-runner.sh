@@ -32,7 +32,19 @@ eval "/android-cts/tools/cts-tradefed" run commandAndExit cts-dev \
   $INCLUDE_FILTERS \
   $EXCLUDE_FILTERS
 
-[ "$(grep "^FAILED" /android-cts/results/latest/invocation_summary.txt | tr -d ' ' | cut -d ':' -f 2)" = "0" ]
+SUMMARY_FILE=/android-cts/results/latest/invocation_summary.txt
+
+# Parse a line like `x/y modules completed` to check that all modules completed
+COMPLETED_MODULES=$(sed -n -e '/modules completed/s/^\([0-9]\+\)\/\([0-9]\+\) .*$/\1/p' "$SUMMARY_FILE")
+AVAILABLE_MODULES=$(sed -n -e '/modules completed/s/^\([0-9]\+\)\/\([0-9]\+\) .*$/\2/p' "$SUMMARY_FILE")
+[ "$COMPLETED_MODULES" = "$AVAILABLE_MODULES" ]
+MODULES_FAILED=$?
+
+# Parse a line like `FAILED            : x` to check that no tests failed
+[ "$(grep "^FAILED" "$SUMMARY_FILE" | tr -d ' ' | cut -d ':' -f 2)" = "0" ]
+TESTS_FAILED=$?
+
+[ "$MODULES_FAILED" = "0" ] && [ "$TESTS_FAILED" = "0" ]
 
 # shellcheck disable=SC2034 # EXIT_CODE is used by the script that sources this one
 EXIT_CODE=$?
