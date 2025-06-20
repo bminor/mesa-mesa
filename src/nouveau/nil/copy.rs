@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::extent::{units, Extent4D, Offset4D};
-use crate::tiling::Tiling;
+use crate::tiling::{GOBType, Tiling};
 
 use std::ffi::c_void;
 use std::ops::Range;
@@ -551,14 +551,19 @@ pub unsafe extern "C" fn nil_copy_linear_to_tiled(
         linear_plane_stride_B,
     );
 
-    copy_tiled::<CopyGOBTuring2D<RawCopyToTiled>>(
-        *tiling,
-        level_extent_B,
-        tiled_dst,
-        linear_pointer,
-        offset_B,
-        end_B,
-    );
+    match tiling.gob_type {
+        GOBType::TuringColor2D => {
+            copy_tiled::<CopyGOBTuring2D<RawCopyToTiled>>(
+                *tiling,
+                level_extent_B,
+                tiled_dst,
+                linear_pointer,
+                offset_B,
+                end_B,
+            );
+        }
+        _ => panic!("Unsupported GOB type"),
+    }
 }
 
 #[no_mangle]
@@ -583,12 +588,17 @@ pub unsafe extern "C" fn nil_copy_tiled_to_linear(
         linear_plane_stride_B,
     );
 
-    copy_tiled::<CopyGOBTuring2D<RawCopyToLinear>>(
-        *tiling,
-        level_extent_B,
-        tiled_src,
-        linear_pointer,
-        offset_B,
-        end_B,
-    );
+    match tiling.gob_type {
+        GOBType::TuringColor2D => {
+            copy_tiled::<CopyGOBTuring2D<RawCopyToLinear>>(
+                *tiling,
+                level_extent_B,
+                tiled_src,
+                linear_pointer,
+                offset_B,
+                end_B,
+            );
+        }
+        _ => panic!("Unsupported GOB type"),
+    }
 }
