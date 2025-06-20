@@ -1,6 +1,0 @@
-[wrap-file]
-directory = linux-raw-sys-0.7.0
-source_url = https://crates.io/api/v1/crates/linux-raw-sys/0.7.0/download
-source_filename = linux-raw-sys-0.7.0.tar.gz
-source_hash = 51bafc0bb5cbecb9ed381e75b803040302fd678b5d9faa04f01eaa280bc8c029
-patch_directory = linux-raw-sys

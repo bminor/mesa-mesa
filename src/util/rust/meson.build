@@ -53,14 +53,7 @@ if host_machine.system() == 'linux'
     required: true,
   )
   
-  dep_linux_raw_sys = dependency('linux-raw-sys',
-    version: '>= 0.4.12',
-    fallback: ['linux-raw-sys', 'dep_linux_raw_sys'],
-    required: true,
-  )
-
-  dep_mesa3d_util += [dep_rustix, dep_bitflags, dep_errno,
-                      dep_linux_raw_sys]
+  dep_mesa3d_util += [dep_rustix, dep_bitflags, dep_errno]
 endif
 
 libmesa_rust_util = static_library(

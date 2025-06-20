@@ -10,14 +10,15 @@ project(
 
 errno = subproject('errno').get_variable('lib')
 libc = subproject('libc').get_variable('lib')
-linux_raw_sys = subproject('linux-raw-sys').get_variable('lib')
 bitflags = subproject('bitflags').get_variable('lib')
 
 rustix_args = []
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   rustix_args += [
-  '--cfg', 'linux_raw',
+  '--cfg', 'linux_like',
   '--cfg', 'linux_kernel',
+  '--cfg', 'libc',
+  '--cfg', 'feature="use-libc"',
   '--cfg', 'feature="std"',
   '--cfg', 'feature="alloc"',
   '--cfg', 'feature="event"',
@@ -33,12 +34,12 @@ lib = static_library(
   'rustix',
   'src/lib.rs',
   override_options : ['rust_std=2021', 'build.rust_std=2021'],
-  link_with : [errno, libc, linux_raw_sys, bitflags],
+  link_with : [errno, libc, bitflags],
   rust_abi : 'rust',
   native : true,
   rust_args: rustix_args,
 )
 
 dep_rustix = declare_dependency(
-  link_with : [lib, errno, libc, linux_raw_sys, bitflags]
+  link_with : [lib, errno, libc, bitflags]
 )
