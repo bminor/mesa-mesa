@@ -774,7 +774,7 @@
         "description": "r600/sfn: check number of fsat64 source uses properly",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "255eee10ace253d61570d9b97b44158082ae8de4",
         "notes": null
