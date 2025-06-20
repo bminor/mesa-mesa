@@ -1193,6 +1193,9 @@
     <field name="Size" size="32" start="1:0" type="uint"/>
     <field name="Address" size="64" start="2:0" type="address"/>
 
+    <!-- Not for Tiler heap -->
+    <field name="Size hi" size="32" start="5:0" type="uint"/>
+
     <!-- Structured buffer only -->
     <field name="Stride" size="32" start="4:0" type="uint"/>
 
