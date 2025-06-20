@@ -12664,7 +12664,7 @@
         "description": "panvk: Lower maxImageDimension{2D,3D,Cube} to match the HW caps",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d5ed77800e04fee670dbc1091d98490e4fa470ce",
         "notes": null
