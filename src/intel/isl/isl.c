@@ -2402,9 +2402,23 @@ isl_calc_array_pitch_el_rows_gfx4_2d(
 
    switch (array_pitch_span) {
    case ISL_ARRAY_PITCH_SPAN_COMPACT:
-      pitch_sa_rows = isl_align_npot(phys_slice0_sa->h, image_align_sa->h);
+      /* If we have a request for a particular array pitch, inflate the physical
+       * image size to accomodate that pitch.
+       */
+      if (info->array_pitch_B) {
+         assert(ISL_GFX_VER(dev) >= 8);
+         uint32_t tiled_aligned_row_pitch_B =
+            align((fmtl->bpb / 8) * phys_slice0_sa->w, tile_info->phys_extent_B.width);
+         assert(info->array_pitch_B % tiled_aligned_row_pitch_B == 0);
+         pitch_sa_rows = DIV_ROUND_UP(
+            info->array_pitch_B, tiled_aligned_row_pitch_B);
+         assert(pitch_sa_rows % image_align_sa->h == 0);
+      } else {
+         pitch_sa_rows = isl_align_npot(phys_slice0_sa->h, image_align_sa->h);
+      }
       break;
    case ISL_ARRAY_PITCH_SPAN_FULL: {
+      assert(!info->array_pitch_B);
       /* The QPitch equation is found in the Broadwell PRM >> Volume 5:
        * Memory Views >> Common Surface Formats >> Surface Layout >> 2D
        * Surfaces >> Surface Arrays.
@@ -3323,8 +3337,20 @@ isl_calc_base_alignment(const struct isl_device *dev,
        *
        *     "For Linear memory, this field specifies the stride in chunks of
        *     64 bytes (1 cache line)."
+       *
+       * From the ATSM PRM Vol 2d,
+       * MFX_REFERENCE_PICTURE_BASE_ADDR::MFXReferencePictureAddress:
+       *
+       *     "Specifies the 64 byte aligned reference frame buffer addresses"
+       *
+       * From the ATSM PRM Vol 2a,
+       * HCP_PIPE_BUF_ADDR_STATE::ReferencePictureBaseAddress,
+       * AVP_PIPE_BUF_ADDR_STATE::ReferenceFrameBufferBaseAddress:
+       *
+       *     "Format: SplitBaseAddress64ByteAligned"
        */
-      if (isl_surf_usage_is_display(info->usage))
+      if (isl_surf_usage_is_display(info->usage) ||
+          (info->usage & ISL_SURF_USAGE_VIDEO_DECODE_BIT))
          base_alignment_B = MAX(base_alignment_B, 64);
    } else {
       const uint32_t tile_size_B = tile_info->phys_extent_B.width *
@@ -3382,6 +3408,14 @@ isl_calc_base_alignment(const struct isl_device *dev,
     */
    if (info->usage & ISL_SURF_USAGE_SPARSE_BIT)
       base_alignment_B = MAX(base_alignment_B, 64 * 1024);
+
+   /* ATS-M PRM Vol 2d, MFX_PIPE_BUF_ADDR_STATE::PostDeblockingDestinationAddress:
+    *
+    *     "Specifies the 4K byte aligned frame buffer address for outputting
+    *      the post-loop filtered reconstructed YUV picture"
+    */
+   if (info->usage & ISL_SURF_USAGE_VIDEO_DECODE_BIT)
+      base_alignment_B = MAX(base_alignment_B, 4 * 1024);
 
    return base_alignment_B;
 }
@@ -3483,6 +3517,101 @@ isl_surf_init_s(const struct isl_device *dev,
    };
 
    return true;
+}
+
+bool
+isl_surf_init_interleaved_arrays(const struct isl_device *dev,
+                                 uint32_t total_surf,
+                                 struct isl_surf **surfs,
+                                 uint32_t *surfs_offsets,
+                                 const struct isl_surf_init_info *infos)
+{
+   /* Adjusting the array pitch is only supported on GFX 8+ */
+   assert(ISL_GFX_VER(dev) >= 8);
+   assert(total_surf <= ISL_SURF_MAX_INTERLEAVED_ARRAYS);
+
+   /* Do a first pass to gather uninterleave surface layouts */
+   bool result = true;
+   struct isl_surf uninterleaved_surfs[ISL_SURF_MAX_INTERLEAVED_ARRAYS];
+   uint32_t offset_align_B[ISL_SURF_MAX_INTERLEAVED_ARRAYS];
+   for (uint32_t i = 0; i < total_surf; i++)
+      result &= isl_surf_init_s(dev, &uninterleaved_surfs[i], &infos[i]);
+
+   if (!result)
+      return result;
+
+   /* Compute a single slice pitch by adding up each of the surface's slice
+    * size. Take care to align the each surface to its alignment requirement
+    * and align the size of each slice to a full tile.
+    */
+   uint64_t array_pitch_B = 0;
+   for (uint32_t i = 0; i < total_surf; i++) {
+      struct isl_tile_info tile_info;
+      isl_surf_get_tile_info(&uninterleaved_surfs[i], &tile_info);
+
+      if (i > 0) {
+         /* Combining surfaces with different alignments, row pitches, or tiling
+          * is not handled properly, as NV12+TileY is the only layout currently
+          * supported by the driver in this type of surface.
+          *
+          * See this commit for a version that doesn't have this restriction:
+          * https://gitlab.freedesktop.org/mesa/mesa/-/commit/3c37183265f11e2ee6bc6d4d95e1580a41673636
+          */
+         assert(uninterleaved_surfs[0].alignment_B == uninterleaved_surfs[i].alignment_B);
+         assert(uninterleaved_surfs[0].row_pitch_B == uninterleaved_surfs[i].row_pitch_B);
+         assert(uninterleaved_surfs[0].tiling == uninterleaved_surfs[i].tiling);
+
+         offset_align_B[i] = uninterleaved_surfs[i].alignment_B;
+
+         /* If its a multi-planar video coding surface, make sure each offset
+          * is also aligned to a multiple of 16 * row_pitch_B relative to the
+          * first surface.
+          *
+          * SKL PRM Vol 2a, MFX_SURFACE_STATE::YOffsetForUCb:
+          *
+          *     "For PLANAR_420 and PLANAR_422 surface formats, this field
+          *      must be multiple of 16 pixels"
+          */
+         if (uninterleaved_surfs[i].usage & ISL_SURF_USAGE_VIDEO_DECODE_BIT) {
+            offset_align_B[i] =
+               isl_lcm_u32(offset_align_B[i],
+                           uninterleaved_surfs[0].row_pitch_B * 16);
+         }
+
+         array_pitch_B = isl_align_npot(array_pitch_B, offset_align_B[i]);
+      }
+
+      array_pitch_B +=
+         uninterleaved_surfs[i].row_pitch_B *
+         align(uninterleaved_surfs[i].array_pitch_el_rows, tile_info.logical_extent_el.h);
+   }
+   for (uint32_t i = 0; i < total_surf; i++) {
+      array_pitch_B = align(array_pitch_B, uninterleaved_surfs[i].alignment_B);
+   }
+
+   /* Recreate the surfaces using the computed interleaved array pitch. */
+   uint64_t offset = 0;
+   for (uint32_t i = 0; i < total_surf; i++) {
+      struct isl_surf_init_info interleaved_info = infos[i];
+      interleaved_info.array_pitch_B = array_pitch_B;
+
+      result &= isl_surf_init_s(dev, surfs[i], &interleaved_info);
+
+      struct isl_tile_info tile_info;
+      isl_surf_get_tile_info(&uninterleaved_surfs[i], &tile_info);
+
+      if (i > 0) {
+         offset = isl_align_npot(offset, offset_align_B[i]);
+      }
+
+      surfs_offsets[i] = offset;
+
+      offset += uninterleaved_surfs[i].row_pitch_B *
+         align(uninterleaved_surfs[i].array_pitch_el_rows,
+               tile_info.logical_extent_el.h);
+   }
+
+   return result;
 }
 
 /* Returns divisor+1 if divisor >= num. */

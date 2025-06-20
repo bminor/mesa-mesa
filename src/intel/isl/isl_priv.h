@@ -186,6 +186,38 @@ isl_minify(uint32_t n, uint32_t levels)
       return MAX(n >> levels, 1);
 }
 
+/**
+ * Returns the greatest common divisor of a and b using Stein's algorithm.
+ */
+static uint32_t
+isl_gcd_u32(uint32_t a, uint32_t b)
+{
+   assert(a > 0 || b > 0);
+   uint32_t k;
+   for (k = 0; ((a | b) & 1) == 0; ++k) {
+      a >>= 1;
+      b >>= 1;
+   }
+   while ((a & 1) == 0)
+      a >>= 1;
+   do {
+      while ((b & 1) == 0)
+         b >>= 1;
+      if (a > b) {
+         uint32_t tmp = a;
+         a = b;
+         b = tmp;
+      }
+      b = (b - a);
+   } while (b != 0);
+   return a << k;
+}
+
+static inline uint32_t
+isl_lcm_u32(uint32_t a, uint32_t b) {
+   return a / isl_gcd_u32(a, b) * b;
+}
+
 static inline struct isl_extent3d
 isl_extent3d_sa_to_el(enum isl_format fmt, struct isl_extent3d extent_sa)
 {
