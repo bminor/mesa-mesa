@@ -6695,7 +6695,8 @@ enum anv_vid_mem_av1_types {
 };
 
 struct anv_av1_video_refs_info {
-   const struct anv_image *img;
+   const struct anv_image_view *iv;
+   uint32_t array_layer;
    uint8_t default_cdf_index;
 };
 
