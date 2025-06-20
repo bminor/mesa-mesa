@@ -255,8 +255,8 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
                    ISL_SURF_USAGE_DISABLE_AUX_BIT;
 
    if (vk_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR ||
-       vk_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR ||
        vk_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR ||
+       vk_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR ||
        vk_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)
       isl_usage |= ISL_SURF_USAGE_VIDEO_DECODE_BIT;
 
@@ -907,17 +907,35 @@ add_video_buffers(struct anv_device *device,
    if (size == 0)
       return VK_SUCCESS;
 
+   if (image->vk.array_layers > 1) {
+      image->vid_dmv_top_surface_pitch_B = align(size, 64);
+      size = image->vid_dmv_top_surface_pitch_B *
+               (image->vk.array_layers - 1) + size;
+   } else {
+      image->vid_dmv_top_surface_pitch_B = size;
+   }
+
    ok = image_binding_grow(device, image, ANV_IMAGE_MEMORY_BINDING_PRIVATE,
-                           ANV_OFFSET_IMPLICIT, size, 65536, &image->vid_dmv_top_surface);
+                           ANV_OFFSET_IMPLICIT, size, 64, &image->vid_dmv_top_surface);
    if (ok != VK_SUCCESS)
       return ok;
+
+   size = av1_cdf_max_num_bytes;
+
+   if (image->vk.array_layers > 1) {
+      image->av1_cdf_table_pitch_B = align(size, 64);
+      size = image->av1_cdf_table_pitch_B *
+               (image->vk.array_layers - 1) + size;
+   } else {
+      image->av1_cdf_table_pitch_B = size;
+   }
 
    /* Doesn't work for av1 without provided profiles */
    if (!independent_profile) {
       for (unsigned i = 0; i < profile_list->profileCount; i++) {
          if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR) {
             ok = image_binding_grow(device, image, ANV_IMAGE_MEMORY_BINDING_PRIVATE,
-                                    ANV_OFFSET_IMPLICIT, av1_cdf_max_num_bytes, 4096, &image->av1_cdf_table);
+                                    ANV_OFFSET_IMPLICIT, size, 4096, &image->av1_cdf_table);
          }
       }
    } else {
@@ -925,7 +943,7 @@ add_video_buffers(struct anv_device *device,
        * tables all the time.
        */
       ok = image_binding_grow(device, image, ANV_IMAGE_MEMORY_BINDING_PRIVATE,
-                              ANV_OFFSET_IMPLICIT, av1_cdf_max_num_bytes, 4096, &image->av1_cdf_table);
+                              ANV_OFFSET_IMPLICIT, size, 4096, &image->av1_cdf_table);
    }
 
    return ok;
@@ -1027,7 +1045,6 @@ check_memory_range_s(const struct check_memory_range_params *p)
       &p->accum_ranges[p->expect_binding];
 
    assert(test_range->binding == p->expect_binding);
-   assert(test_range->offset >= memory_range_end(*accum_range));
    assert(memory_range_is_aligned(*test_range));
 
    if (p->test_surface) {
@@ -1072,7 +1089,8 @@ check_memory_bindings(const struct anv_device *device,
 
       /* Aliasing is incompatible with the private binding because it does not
        * live in a VkDeviceMemory.  The exception is either swapchain images or
-       * that the private binding is for a video motion vector buffer.
+       * that the private binding is for a video motion vector buffer or a
+       * video CDF table.
        */
       assert(!(image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT) ||
              image->from_wsi ||
@@ -1219,6 +1237,112 @@ check_drm_format_mod(const struct anv_device *device,
 
 /**
  * Use when the app does not provide
+ * VkImageDrmFormatModifierExplicitCreateInfoEXT and
+ * creates a multi-planar layered surface that needs
+ * its slices to be addressable to the media engine.
+ */
+static VkResult MUST_CHECK
+add_all_surfaces_implicit_interleaved_arrays_layout(
+   struct anv_device *device,
+   struct anv_image *image,
+   const VkImageFormatListCreateInfo *format_list_info,
+   unsigned num_aspects,
+   const VkImageAspectFlagBits *aspects,
+   isl_tiling_flags_t isl_tiling_flags,
+   isl_surf_usage_flags_t isl_extra_usage_flags)
+{
+   VkResult result;
+
+   const struct vk_format_ycbcr_info *ycbcr_info =
+      vk_format_get_ycbcr_info(image->vk.format);
+
+   assert(num_aspects <= 3);
+
+   uint32_t surfs_offsets[3];
+   struct isl_surf *surfs[3];
+   struct isl_surf_init_info infos[3];
+   struct anv_format_plane plane_format[3];
+
+   /* Configure the surfaces that need their slices to be interleaved */
+   for (unsigned i = 0; i < num_aspects; i++) {
+      VkImageAspectFlagBits aspect = aspects[i];
+      const uint32_t plane = anv_image_aspect_to_plane(image, aspect);
+      plane_format[i] = anv_get_format_plane(device->physical, image->vk.format,
+                                             plane, image->vk.tiling);
+
+      assert(plane_format[i].isl_format != ISL_FORMAT_UNSUPPORTED);
+
+      VkImageUsageFlags vk_usage = vk_image_usage(&image->vk, aspect);
+      isl_surf_usage_flags_t isl_usage =
+         anv_image_choose_isl_surf_usage(device->physical,
+                                         image->vk.format,
+                                         image->vk.create_flags, vk_usage,
+                                         isl_extra_usage_flags, aspect,
+                                         image->vk.compr_flags);
+
+      uint32_t width = image->vk.extent.width;
+      uint32_t height = image->vk.extent.height;
+      if (ycbcr_info) {
+         assert(plane < ycbcr_info->n_planes);
+         width /= ycbcr_info->planes[plane].denominator_scales[0];
+         height /= ycbcr_info->planes[plane].denominator_scales[1];
+      }
+
+      surfs[i] = &image->planes[plane].primary_surface.isl;
+
+      infos[i] = (struct isl_surf_init_info) {
+         .dim = vk_to_isl_surf_dim[image->vk.image_type],
+         .format = plane_format[i].isl_format,
+         .width = width,
+         .height = height,
+         .depth = image->vk.extent.depth,
+         .levels = image->vk.mip_levels,
+         .array_len = image->vk.array_layers,
+         .samples = image->vk.samples,
+         .min_alignment_B = 0,
+         .row_pitch_B = 0,
+         .usage = isl_usage,
+         .tiling_flags = isl_tiling_flags
+      };
+   }
+
+   /* Calculate the pitches and offsets to interleave the surfaces
+    * with the correct alignments for the media engine
+    */
+   if (!isl_surf_init_interleaved_arrays(&device->isl_dev, num_aspects, surfs,
+                                         surfs_offsets, infos))
+      return vk_errorf(device, VK_ERROR_UNKNOWN, "Unable to create interleaved arrayed image");
+
+   /* Add the interleaved surfaces to the image */
+   for (unsigned i = 0; i < num_aspects; i++) {
+      VkImageAspectFlagBits aspect = aspects[i];
+      const uint32_t plane = anv_image_aspect_to_plane(image, aspect);
+      image->planes[plane].aux_usage = ISL_AUX_USAGE_NONE;
+      result = add_surface(device, image,
+                           &image->planes[plane].primary_surface,
+                           ANV_IMAGE_MEMORY_BINDING_PLANE_0 + plane,
+                           surfs_offsets[i]);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   /* Add any required aux surfaces to the image */
+   for (unsigned i = 0; i < num_aspects; i++) {
+      const uint32_t plane = anv_image_aspect_to_plane(image, aspects[i]);
+      result = add_aux_surface_if_supported(device, image, plane,
+                                            plane_format[i],
+                                            format_list_info,
+                                            ANV_OFFSET_IMPLICIT, 0,
+                                            ANV_OFFSET_IMPLICIT);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   return VK_SUCCESS;
+}
+
+/**
+ * Use when the app does not provide
  * VkImageDrmFormatModifierExplicitCreateInfoEXT.
  */
 static VkResult MUST_CHECK
@@ -1256,6 +1380,22 @@ add_all_surfaces_implicit_layout(
       assert(aspects[2] == VK_IMAGE_ASPECT_PLANE_2_BIT);
       aspects[1] = VK_IMAGE_ASPECT_PLANE_2_BIT;
       aspects[2] = VK_IMAGE_ASPECT_PLANE_1_BIT;
+   }
+
+   /* If the image is a multi-planar layered surface and will be used for
+    * video coding, we need to apply a special layout where the slices
+    * of each plane are interleaved to make them addressable to the
+    * media engine.
+    */
+   if (ycbcr_info && num_aspects > 1 && image->vk.array_layers > 1 &&
+       image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+      assert(stride == 0);
+      return add_all_surfaces_implicit_interleaved_arrays_layout(device,
+                  image, format_list_info, num_aspects, aspects,
+                  isl_tiling_flags, isl_extra_usage_flags);
    }
 
    for (unsigned i = 0; i < num_aspects; i++) {

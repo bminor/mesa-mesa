@@ -5847,6 +5847,10 @@ struct anv_image {
       } aux_tt;
    } planes[3];
 
+   /* Array pitch of video coding private surfaces */
+   uint32_t vid_dmv_top_surface_pitch_B;
+   uint32_t av1_cdf_table_pitch_B;
+
    struct anv_image_memory_range vid_dmv_top_surface;
 
    /* Link in the anv_device.image_private_objects list */
@@ -6759,6 +6763,66 @@ void anv_vp9_reset_segment_id(struct anv_cmd_buffer *cmd,
 uint32_t anv_video_get_image_mv_size(struct anv_device *device,
                                      struct anv_image *image,
                                      const struct VkVideoProfileListInfoKHR *profile_list);
+
+static inline struct anv_address MUST_CHECK
+anv_image_dpb_address(const struct anv_image_view *iv,
+                      uint32_t arrayLayer)
+{
+   assert(iv->vk.base_mip_level == 0);
+   assert(iv->vk.layer_count > arrayLayer);
+
+   struct anv_address addr =
+      anv_image_address(iv->image, &iv->image->planes[0].primary_surface.memory_range);
+
+   if (anv_address_is_null(addr))
+      return addr;
+
+   /* Will assert if the intra-tile offsets are not zero */
+   uint64_t offset_B;
+   isl_surf_get_image_offset_B_tile_sa(&iv->image->planes[0].primary_surface.isl,
+                                       0,
+                                       iv->vk.base_array_layer + arrayLayer,
+                                       0,
+                                       &offset_B,
+                                       NULL,
+                                       NULL);
+
+   return anv_address_add(addr, offset_B);
+}
+
+static inline struct anv_address MUST_CHECK
+anv_image_dmv_top_address(const struct anv_image_view *iv,
+                          uint32_t arrayLayer)
+{
+   assert(iv->vk.base_mip_level == 0);
+   assert(iv->vk.layer_count > arrayLayer);
+
+   struct anv_address addr = anv_image_address(iv->image,
+                                               &iv->image->vid_dmv_top_surface);
+
+   if (anv_address_is_null(addr))
+      return addr;
+
+   return anv_address_add(addr, iv->image->vid_dmv_top_surface_pitch_B *
+                                    (iv->vk.base_array_layer + arrayLayer));
+}
+
+static inline struct anv_address MUST_CHECK
+anv_image_av1_table_address(const struct anv_image_view *iv,
+                            uint32_t arrayLayer)
+{
+   assert(iv->vk.base_mip_level == 0);
+   assert(iv->vk.layer_count > arrayLayer);
+
+   struct anv_address addr = anv_image_address(iv->image,
+                                               &iv->image->av1_cdf_table);
+
+   if (anv_address_is_null(addr))
+      return addr;
+
+   return anv_address_add(addr, iv->image->av1_cdf_table_pitch_B *
+                                    (iv->vk.base_array_layer + arrayLayer));
+}
 
 void
 anv_dump_pipe_bits(enum anv_pipe_bits bits, FILE *f);
