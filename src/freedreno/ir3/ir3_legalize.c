@@ -367,6 +367,8 @@ ir3_merge_pred_legalize_states(struct ir3_legalize_state *state,
       regmask_or(&state->needs_sy, &state->needs_sy, &pstate->needs_sy);
       state->needs_ss_for_const |= pstate->needs_ss_for_const;
       state->needs_sy_for_const |= pstate->needs_sy_for_const;
+      state->force_ss |= pstate->force_ss;
+      state->force_sy |= pstate->force_sy;
 
       /* Our nop state is the max of the predecessor blocks. The predecessor nop
        * state contains the cycle offset from the start of its block when each
