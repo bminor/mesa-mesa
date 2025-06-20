@@ -878,10 +878,10 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
           * with the ones included in g0.3 bits 4:0.  Mask them out.
           */
          if (devinfo->ver >= 11) {
-            sampler_state_ptr = ubld1.vgrf(BRW_TYPE_UD);
-            ubld1.AND(sampler_state_ptr,
-                      retype(brw_vec1_grf(0, 3), BRW_TYPE_UD),
-                      brw_imm_ud(INTEL_MASK(31, 5)));
+            sampler_state_ptr = ubld.vgrf(BRW_TYPE_UD);
+            ubld.AND(sampler_state_ptr,
+                     retype(brw_vec1_grf(0, 3), BRW_TYPE_UD),
+                     brw_imm_ud(INTEL_MASK(31, 5)));
          }
 
          if (sampler.file == IMM) {
@@ -891,9 +891,9 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
             ubld1.ADD(component(header, 3), sampler_state_ptr,
                       brw_imm_ud(16 * (sampler.ud / 16) * sampler_state_size));
          } else {
-            brw_reg tmp = ubld1.vgrf(BRW_TYPE_UD);
-            ubld1.AND(tmp, sampler, brw_imm_ud(0x0f0));
-            ubld1.SHL(tmp, tmp, brw_imm_ud(4));
+            brw_reg tmp = ubld.vgrf(BRW_TYPE_UD);
+            ubld.AND(tmp, component(sampler, 0), brw_imm_ud(0x0f0));
+            ubld.SHL(tmp, tmp, brw_imm_ud(4));
             ubld1.ADD(component(header, 3), sampler_state_ptr, tmp);
          }
       } else if (devinfo->ver >= 11 && shader_opcode_uses_sampler(op)) {
