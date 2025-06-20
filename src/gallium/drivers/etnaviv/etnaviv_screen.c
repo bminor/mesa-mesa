@@ -244,6 +244,8 @@ etna_init_screen_caps(struct etna_screen *screen)
    caps->primitive_restart =
    caps->primitive_restart_fixed_index = VIV_FEATURE(screen, ETNA_FEATURE_HALTI0);
 
+   caps->anisotropic_filter &= !VIV_FEATURE(screen, ETNA_FEATURE_NO_ANISO);
+
    caps->alpha_test = !VIV_FEATURE(screen, ETNA_FEATURE_PE_NO_ALPHA_TEST);
 
    caps->draw_indirect = VIV_FEATURE(screen, ETNA_FEATURE_HALTI5);
