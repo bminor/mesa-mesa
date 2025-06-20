@@ -17,6 +17,7 @@
 #include "util/u_dual_blend.h"
 #include "evergreen_compute.h"
 #include "util/u_math.h"
+#include "util/u_upload_mgr.h"
 
 #include <assert.h>
 
@@ -1713,6 +1714,96 @@ static void evergreen_emit_msaa_state(struct r600_context *rctx, int nr_samples,
 	}
 }
 
+static void
+evergreen_emit_arb_shader_image_load_store_incomplete(struct r600_context *rctx,
+						      struct radeon_cmdbuf *cs,
+						      const uint32_t pkt_flags,
+						      const int immed_id_base,
+						      const int res_id_base,
+						      const int k)
+{
+	static const uint32_t immed_resource_words[] = {
+		0x00000000,
+		0x0000ffff,
+		0x00000000,
+		S_03000C_UNCACHED(0) |
+		S_03000C_DST_SEL_X(PIPE_SWIZZLE_0) |
+		S_03000C_DST_SEL_Y(PIPE_SWIZZLE_0) |
+		S_03000C_DST_SEL_Z(PIPE_SWIZZLE_0) |
+		S_03000C_DST_SEL_W(PIPE_SWIZZLE_0),
+		0x00000000,
+		0x00000000,
+		0x00000000,
+		S_03001C_DATA_FORMAT(FMT_INVALID) |
+		S_03001C_TYPE(V_03001C_SQ_TEX_VTX_VALID_BUFFER),
+	};
+	static const uint32_t resource_words[] = {
+		0x00000000,
+		0x0000ffff,
+		0x00000000,
+		S_03000C_UNCACHED(0) |
+		S_03000C_DST_SEL_X(PIPE_SWIZZLE_0) |
+		S_03000C_DST_SEL_Y(PIPE_SWIZZLE_0) |
+		S_03000C_DST_SEL_Z(PIPE_SWIZZLE_0) |
+		S_03000C_DST_SEL_W(PIPE_SWIZZLE_0),
+		0x00000000,
+		0x00000000,
+		S_030018_TILE_SPLIT(4),
+		S_03001C_DATA_FORMAT(FMT_32) |
+		S_03001C_MACRO_TILE_ASPECT(3) |
+		S_03001C_BANK_WIDTH(0) |
+		S_03001C_BANK_HEIGHT(0) |
+		S_03001C_DEPTH_SAMPLE_ORDER(0) |
+		S_03001C_NUM_BANKS(2) |
+		S_03001C_TYPE(V_03001C_SQ_TEX_VTX_VALID_TEXTURE),
+	};
+	struct pipe_resource *dummy = NULL;
+	unsigned dummy_reloc;
+	unsigned dummy_offset;
+	void *ptr;
+
+	assert(ARRAY_SIZE(immed_resource_words) == 8);
+	assert(ARRAY_SIZE(resource_words) == 8);
+
+	u_upload_alloc(rctx->b.b.stream_uploader, 0,
+		       4,
+		       256,
+		       &dummy_offset,
+		       &dummy, &ptr);
+
+	if (!ptr)
+		return;
+
+	dummy_reloc = radeon_add_to_buffer_list(&rctx->b,
+						&rctx->b.gfx,
+						r600_resource(dummy),
+						RADEON_USAGE_READ |
+						RADEON_PRIO_SHADER_RW_BUFFER);
+
+	{
+		radeon_emit(cs, PKT3(PKT3_SET_RESOURCE, ARRAY_SIZE(immed_resource_words), 0) | pkt_flags);
+		radeon_emit(cs, (immed_id_base + k) * 8);
+		radeon_emit_array(cs, immed_resource_words, ARRAY_SIZE(immed_resource_words));
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0) | pkt_flags);
+		radeon_emit(cs, dummy_reloc);
+	}
+
+	{
+		radeon_emit(cs, PKT3(PKT3_SET_RESOURCE, ARRAY_SIZE(resource_words), 0) | pkt_flags);
+		radeon_emit(cs, (res_id_base + k) * 8);
+		radeon_emit_array(cs, resource_words, ARRAY_SIZE(resource_words));
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0) | pkt_flags);
+		radeon_emit(cs, dummy_reloc);
+
+		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0) | pkt_flags);
+		radeon_emit(cs, dummy_reloc);
+	}
+
+	pipe_resource_reference(&dummy, NULL);
+}
+
 static void evergreen_emit_image_state(struct r600_context *rctx, struct r600_atom *atom,
 				       int immed_id_base, int res_id_base, int offset, uint32_t pkt_flags)
 {
@@ -1723,6 +1814,8 @@ static void evergreen_emit_image_state(struct r600_context *rctx, struct r600_at
 	struct r600_resource *resource;
 	int i;
 
+	assert(!(state->enabled_mask & state->incomplete_mask));
+
 	for (i = 0; i < R600_MAX_IMAGES; i++) {
 		struct r600_image_view *image = &state->views[i];
 		unsigned reloc, immed_reloc;
@@ -1730,8 +1823,17 @@ static void evergreen_emit_image_state(struct r600_context *rctx, struct r600_at
 
 		if (!pkt_flags)
 			idx += fb_state->nr_cbufs + (rctx->dual_src_blend ? 1 : 0);
-		if (!image->base.resource)
+		if (!image->base.resource) {
+			if (state->incomplete_mask & (1<<i)) {
+				evergreen_emit_arb_shader_image_load_store_incomplete(rctx,
+										      cs,
+										      pkt_flags,
+										      immed_id_base,
+										      res_id_base,
+										      i + offset);
+			}
 			continue;
+		}
 
 		resource = (struct r600_resource *)image->base.resource;
 		if (resource->b.b.target != PIPE_BUFFER)
@@ -4408,6 +4510,7 @@ static void evergreen_set_shader_buffers(struct pipe_context *ctx,
 						     rview->resource_words);
 
 		istate->enabled_mask |= (1 << i);
+		istate->incomplete_mask &= ~(1 << i);
 	}
 
 	istate->atom.num_dw = util_bitcount(istate->enabled_mask) * 46;
@@ -4464,6 +4567,22 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 			istate->enabled_mask &= ~(1 << i);
 			istate->compressed_colortex_mask &= ~(1 << i);
 			istate->compressed_depthtex_mask &= ~(1 << i);
+
+			if (unlikely(images && images[idx].format == PIPE_FORMAT_NONE)) {
+				const unsigned old_incomplete = istate->incomplete_mask;
+
+				istate->incomplete_mask |= (1 << i);
+
+				if (rctx->cb_misc_state.image_rat_enabled_mask != istate->enabled_mask) {
+					rctx->cb_misc_state.image_rat_enabled_mask = istate->enabled_mask;
+					r600_mark_atom_dirty(rctx, &rctx->cb_misc_state.atom);
+				}
+
+				if (old_incomplete != istate->incomplete_mask)
+					r600_mark_atom_dirty(rctx, &istate->atom);
+			} else {
+				istate->incomplete_mask &= ~(1 << i);
+			}
 			continue;
 		}
 
@@ -4585,6 +4704,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 							     rview->resource_words);
 		}
 		istate->enabled_mask |= (1 << i);
+		istate->incomplete_mask &= ~(1 << i);
 	}
 
 	for (i = start_slot + count, idx = 0;

@@ -454,6 +454,7 @@ struct r600_image_state {
 	uint32_t                        dirty_mask;
 	uint32_t			compressed_depthtex_mask;
 	uint32_t			compressed_colortex_mask;
+	uint32_t			incomplete_mask;
 	bool				dirty_buffer_constants;
 	struct r600_image_view views[R600_MAX_IMAGES];
 };
