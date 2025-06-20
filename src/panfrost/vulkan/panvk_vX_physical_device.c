@@ -533,11 +533,22 @@ panvk_per_arch(get_physical_device_properties)(
       .deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
 
       /* Vulkan 1.0 limits */
-      /* Maximum texture dimension is 2^16. */
+      /* Maximum texture dimension is 2^16, but we're limited by the
+       * size/surface-stride fields. The size/surface_stride field is 32-bit
+       * on v10-, so let's take that as a reference for now.
+       * The following limits are chosen so we don't overflow these
+       * size/surface_stride fields. We choose them so they are a power-of-two,
+       * except for 2D/Cube dimensions where taking a power-of-two would be
+       * too limiting, so we pick power-of-two-minus-one, which makes things
+       * fit exactly in our 32-bit budget.
+       *
+       * TODO: increase the limit on v11+ once we have all the necessary bits
+       * patched to handle the size/stride field extension.
+       */
       .maxImageDimension1D = (1 << 16),
-      .maxImageDimension2D = (1 << 16),
-      .maxImageDimension3D = (1 << 16),
-      .maxImageDimensionCube = (1 << 16),
+      .maxImageDimension2D = (1 << 14) - 1,
+      .maxImageDimension3D = (1 << 9),
+      .maxImageDimensionCube = (1 << 14) - 1,
       .maxImageArrayLayers = (1 << 16),
       /* Currently limited by the 1D texture size, which is 2^16.
        * TODO: If we expose buffer views as 2D textures, we can increase the

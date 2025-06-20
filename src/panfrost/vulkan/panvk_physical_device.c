@@ -759,6 +759,52 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
    }
 }
 
+#define MAX_IMAGE_SIZE_PX (1 << 16)
+
+static VkExtent3D
+get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
+{
+   const uint32_t max_img_size_B = UINT32_MAX;
+   const enum pipe_format pfmt = vk_format_to_pipe_format(format);
+   const uint32_t fmt_blksize = util_format_get_blocksize(pfmt);
+   /* Evenly split blocks across all axis. */
+   const uint32_t max_size_el = floor(sqrt(max_img_size_B / fmt_blksize));
+   const VkExtent3D ret = {
+      .width = MIN2(max_size_el * util_format_get_blockwidth(pfmt),
+                    MAX_IMAGE_SIZE_PX),
+      .height = MIN2(max_size_el * util_format_get_blockheight(pfmt),
+                     MAX_IMAGE_SIZE_PX),
+      .depth = 1,
+   };
+
+   assert(ret.width >= phys_dev->vk.properties.maxImageDimension2D);
+   assert(ret.height >= phys_dev->vk.properties.maxImageDimension2D);
+   return ret;
+}
+
+static VkExtent3D
+get_max_3d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
+{
+   const uint32_t max_img_size_B = UINT32_MAX;
+   enum pipe_format pfmt = vk_format_to_pipe_format(format);
+   uint32_t fmt_blksize = util_format_get_blocksize(pfmt);
+   /* Evenly split blocks across each axis. */
+   const uint32_t max_size_el = floor(cbrt(max_img_size_B / fmt_blksize));
+   const VkExtent3D ret = {
+      .width = MIN2(max_size_el * util_format_get_blockwidth(pfmt),
+                    MAX_IMAGE_SIZE_PX),
+      .height = MIN2(max_size_el * util_format_get_blockheight(pfmt),
+                     MAX_IMAGE_SIZE_PX),
+      .depth = MIN2(max_size_el * util_format_get_blockdepth(pfmt),
+                    MAX_IMAGE_SIZE_PX),
+   };
+
+   assert(ret.width >= phys_dev->vk.properties.maxImageDimension3D);
+   assert(ret.height >= phys_dev->vk.properties.maxImageDimension3D);
+   assert(ret.depth >= phys_dev->vk.properties.maxImageDimension3D);
+   return ret;
+}
+
 static VkResult
 get_image_format_properties(struct panvk_physical_device *physical_device,
                             const VkPhysicalDeviceImageFormatInfo2 *info,
@@ -838,17 +884,13 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       maxArraySize = 1 << 16;
       break;
    case VK_IMAGE_TYPE_2D:
-      maxExtent.width = 1 << 16;
-      maxExtent.height = 1 << 16;
-      maxExtent.depth = 1;
-      maxMipLevels = 17; /* log2(maxWidth) + 1 */
+      maxExtent = get_max_2d_image_size(physical_device, info->format);
+      maxMipLevels = util_logbase2(maxExtent.width) + 1;
       maxArraySize = 1 << 16;
       break;
    case VK_IMAGE_TYPE_3D:
-      maxExtent.width = 1 << 16;
-      maxExtent.height = 1 << 16;
-      maxExtent.depth = 1 << 16;
-      maxMipLevels = 17; /* log2(maxWidth) + 1 */
+      maxExtent = get_max_3d_image_size(physical_device, info->format);
+      maxMipLevels = util_logbase2(maxExtent.width) + 1;
       maxArraySize = 1;
       break;
    }
