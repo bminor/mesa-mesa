@@ -5880,18 +5880,6 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
     */
    IR3_PASS(ir, ir3_legalize, so, &max_bary);
 
-   /* Set (ss)(sy) on first TCS and GEOMETRY instructions, since we don't
-    * know what we might have to wait on when coming in from VS chsh.
-    */
-   if (so->type == MESA_SHADER_TESS_CTRL || so->type == MESA_SHADER_GEOMETRY) {
-      struct ir3_block *first_block = ir3_start_block(ir);
-      if (!list_is_empty(&first_block->instr_list)) {
-         struct ir3_instruction *first_instr = list_first_entry(
-            &first_block->instr_list, struct ir3_instruction, node);
-         first_instr->flags |= IR3_INSTR_SS | IR3_INSTR_SY;
-      }
-   }
-
    if (ctx->compiler->gen >= 7 && so->type == MESA_SHADER_COMPUTE) {
       struct ir3_instruction *end = ir3_find_end(so->ir);
       struct ir3_instruction *lock =

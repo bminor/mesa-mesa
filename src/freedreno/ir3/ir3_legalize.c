@@ -423,6 +423,15 @@ ir3_merge_pred_legalize_states(struct ir3_legalize_state *state,
                         &state->needs_ss_or_sy_scalar_war,
                         &pstate->needs_ss_or_sy_scalar_war);
    }
+
+   gl_shader_stage stage = block->shader->type;
+
+   if (stage == MESA_SHADER_TESS_CTRL || stage == MESA_SHADER_GEOMETRY) {
+      if (block == ir3_start_block(block->shader)) {
+         state->force_ss = true;
+         state->force_sy = true;
+      }
+   }
 }
 
 static bool
