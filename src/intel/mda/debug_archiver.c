@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 struct debug_archiver
@@ -54,6 +55,21 @@ debug_archiver_open(void *mem_ctx, const char *name, const char *info)
    }
 
    if (prefix) {
+      if (!strcmp(prefix, "timestamp")) {
+         time_t now = time(NULL);
+         struct tm *tm_info = localtime(&now);
+
+         if (tm_info) {
+            prefix = ralloc_asprintf(da, "%04d%02d%02d-%02d%02d%02d",
+                                     tm_info->tm_year + 1900,
+                                     tm_info->tm_mon + 1,
+                                     tm_info->tm_mday,
+                                     tm_info->tm_hour,
+                                     tm_info->tm_min,
+                                     tm_info->tm_sec);
+         }
+      }
+
       /* Prefix shouldn't have any `/` characters. */
       if (strchr(prefix, '/')) {
          char *safe_prefix = ralloc_strdup(da, prefix);
