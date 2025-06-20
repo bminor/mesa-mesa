@@ -586,8 +586,7 @@ static unsigned st_ref_pic_set(unsigned index,
          rps->delta_idx_minus1 = vl_rbsp_ue(rbsp);
       rps->delta_rps_sign = vl_rbsp_u(rbsp, 1);
       rps->abs_delta_rps_minus1 = vl_rbsp_ue(rbsp);
-      ref_rps = st_rps + index +
-         (1 - 2 * rps->delta_rps_sign) * (st_rps->delta_idx_minus1 + 1);
+      ref_rps = &st_rps[index - (rps->delta_idx_minus1 + 1)];
       for (i = 0; i <= (ref_rps->num_negative_pics + ref_rps->num_positive_pics); i++) {
          rps->used_by_curr_pic_flag[i] = vl_rbsp_u(rbsp, 1);
          if (!rps->used_by_curr_pic_flag[i])
@@ -602,7 +601,7 @@ static unsigned st_ref_pic_set(unsigned index,
          if (rps->used_by_curr_pic_s0_flag[i])
             num_pic_total_curr++;
       }
-      for (i = 0; i < st_rps->num_positive_pics; i++) {
+      for (i = 0; i < rps->num_positive_pics; i++) {
          rps->delta_poc_s1_minus1[i] = vl_rbsp_ue(rbsp);
          rps->used_by_curr_pic_s1_flag[i] = vl_rbsp_u(rbsp, 1);
          if (rps->used_by_curr_pic_s1_flag[i])
