@@ -23,7 +23,7 @@ vmw_svga_winsys_shader_reference(struct vmw_svga_winsys_shader **pdst,
    struct pipe_reference *dst_ref;
    struct vmw_svga_winsys_shader *dst;
 
-   if(pdst == NULL || *pdst == src)
+   if (pdst == NULL || *pdst == src)
       return;
 
    dst = *pdst;

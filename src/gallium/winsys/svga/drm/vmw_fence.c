@@ -122,7 +122,7 @@ vmw_fences_signal(struct pb_fence_ops *fence_ops,
    if (!has_emitted) {
       emitted = ops->last_emitted;
       if (emitted - signaled > (1 << 30))
-	emitted = signaled;
+        emitted = signaled;
    }
 
    if (signaled == ops->last_signaled && emitted == ops->last_emitted)
@@ -234,8 +234,8 @@ void vmw_fence_destroy(struct vmw_fence *vfence)
  */
 void
 vmw_fence_reference(struct vmw_winsys_screen *vws,
-		    struct pipe_fence_handle **ptr,
-		    struct pipe_fence_handle *fence)
+                    struct pipe_fence_handle **ptr,
+                    struct pipe_fence_handle *fence)
 {
    if (*ptr) {
       struct vmw_fence *vfence = vmw_fence(*ptr);
@@ -277,8 +277,8 @@ vmw_fence_reference(struct vmw_winsys_screen *vws,
  */
 int
 vmw_fence_signalled(struct vmw_winsys_screen *vws,
-		   struct pipe_fence_handle *fence,
-		   unsigned flag)
+                   struct pipe_fence_handle *fence,
+                   unsigned flag)
 {
    struct vmw_fence *vfence;
    int32_t vflags = SVGA_FENCE_FLAG_EXEC;
@@ -326,9 +326,9 @@ vmw_fence_signalled(struct vmw_winsys_screen *vws,
  */
 int
 vmw_fence_finish(struct vmw_winsys_screen *vws,
-		 struct pipe_fence_handle *fence,
-		 uint64_t timeout,
-		 unsigned flag)
+                 struct pipe_fence_handle *fence,
+                 uint64_t timeout,
+                 unsigned flag)
 {
    struct vmw_fence *vfence;
    int32_t vflags = SVGA_FENCE_FLAG_EXEC;
@@ -361,8 +361,8 @@ vmw_fence_finish(struct vmw_winsys_screen *vws,
       int32_t prev = old;
 
       do {
-	 old = prev;
-	 prev = p_atomic_cmpxchg(&vfence->signalled, old, old | vflags);
+         old = prev;
+         prev = p_atomic_cmpxchg(&vfence->signalled, old, old | vflags);
       } while (prev != old);
    }
 
@@ -460,12 +460,12 @@ vmw_fence_ops_destroy(struct pb_fence_ops *ops)
  * Returns NULL on failure.
  */
 struct pb_fence_ops *
-vmw_fence_ops_create(struct vmw_winsys_screen *vws) 
+vmw_fence_ops_create(struct vmw_winsys_screen *vws)
 {
    struct vmw_fence_ops *ops;
 
    ops = CALLOC_STRUCT(vmw_fence_ops);
-   if(!ops)
+   if (!ops)
       return NULL;
 
    (void) mtx_init(&ops->mutex, mtx_plain);

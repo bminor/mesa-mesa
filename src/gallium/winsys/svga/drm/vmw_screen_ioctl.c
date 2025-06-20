@@ -71,7 +71,7 @@ vmw_ioctl_context_create(struct vmw_winsys_screen *vws)
    VMW_FUNC;
 
    ret = drmCommandRead(vws->ioctl.drm_fd, DRM_VMW_CREATE_CONTEXT,
-			&c_arg, sizeof(c_arg));
+                        &c_arg, sizeof(c_arg));
 
    if (ret)
       return -1;
@@ -112,7 +112,7 @@ vmw_ioctl_context_destroy(struct vmw_winsys_screen *vws, uint32 cid)
    c_arg.cid = cid;
 
    (void)drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_UNREF_CONTEXT,
-			 &c_arg, sizeof(c_arg));
+                         &c_arg, sizeof(c_arg));
 
 }
 
@@ -129,7 +129,7 @@ vmw_ioctl_surface_create(struct vmw_winsys_screen *vws,
    struct drm_vmw_surface_create_req *req = &s_arg.req;
    struct drm_vmw_surface_arg *rep = &s_arg.rep;
    struct drm_vmw_size sizes[DRM_VMW_MAX_SURFACE_FACES*
-			     DRM_VMW_MAX_MIP_LEVELS];
+                             DRM_VMW_MAX_MIP_LEVELS];
    struct drm_vmw_size *cur_size;
    uint32_t iFace;
    uint32_t iMipLevel;
@@ -144,20 +144,20 @@ vmw_ioctl_surface_create(struct vmw_winsys_screen *vws,
    req->shareable = true;
 
    assert(numFaces * numMipLevels < DRM_VMW_MAX_SURFACE_FACES*
-	  DRM_VMW_MAX_MIP_LEVELS);
+          DRM_VMW_MAX_MIP_LEVELS);
    cur_size = sizes;
    for (iFace = 0; iFace < numFaces; ++iFace) {
       SVGA3dSize mipSize = size;
 
       req->mip_levels[iFace] = numMipLevels;
       for (iMipLevel = 0; iMipLevel < numMipLevels; ++iMipLevel) {
-	 cur_size->width = mipSize.width;
-	 cur_size->height = mipSize.height;
-	 cur_size->depth = mipSize.depth;
-	 mipSize.width = MAX2(mipSize.width >> 1, 1);
-	 mipSize.height = MAX2(mipSize.height >> 1, 1);
-	 mipSize.depth = MAX2(mipSize.depth >> 1, 1);
-	 cur_size++;
+         cur_size->width = mipSize.width;
+         cur_size->height = mipSize.height;
+         cur_size->depth = mipSize.depth;
+         mipSize.width = MAX2(mipSize.width >> 1, 1);
+         mipSize.height = MAX2(mipSize.height >> 1, 1);
+         mipSize.depth = MAX2(mipSize.depth >> 1, 1);
+         cur_size++;
       }
    }
    for (iFace = numFaces; iFace < SVGA3D_MAX_SURFACE_FACES; ++iFace) {
@@ -167,7 +167,7 @@ vmw_ioctl_surface_create(struct vmw_winsys_screen *vws,
    req->size_addr = (unsigned long)&sizes;
 
    ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_CREATE_SURFACE,
-			     &s_arg, sizeof(s_arg));
+                             &s_arg, sizeof(s_arg));
 
    if (ret)
       return -1;
@@ -243,7 +243,7 @@ vmw_ioctl_gb_surface_create(struct vmw_winsys_screen *vws,
          req->base.multisample_count = sampleCount;
       } else {
          assert(numFaces * numMipLevels < DRM_VMW_MAX_SURFACE_FACES*
-	        DRM_VMW_MAX_MIP_LEVELS);
+                DRM_VMW_MAX_MIP_LEVELS);
          req->base.array_size = 0;
       }
 
@@ -281,7 +281,7 @@ vmw_ioctl_gb_surface_create(struct vmw_winsys_screen *vws,
          req->multisample_count = sampleCount;
       } else {
          assert(numFaces * numMipLevels < DRM_VMW_MAX_SURFACE_FACES*
-	        DRM_VMW_MAX_MIP_LEVELS);
+                DRM_VMW_MAX_MIP_LEVELS);
          req->array_size = 0;
       }
 
@@ -289,7 +289,7 @@ vmw_ioctl_gb_surface_create(struct vmw_winsys_screen *vws,
          buffer_handle : SVGA3D_INVALID_ID;
 
       ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_GB_SURFACE_CREATE,
-			        &s_arg.arg, sizeof(s_arg.arg));
+                                &s_arg.arg, sizeof(s_arg.arg));
 
       if (ret)
          goto out_fail_create;
@@ -332,7 +332,7 @@ vmw_ioctl_surface_req(const struct vmw_winsys_screen *vws,
 {
    int ret;
 
-   switch(whandle->type) {
+   switch (whandle->type) {
    case WINSYS_HANDLE_TYPE_SHARED:
    case WINSYS_HANDLE_TYPE_KMS:
       *needs_unref = false;
@@ -412,7 +412,7 @@ vmw_ioctl_gb_surface_ref(struct vmw_winsys_screen *vws,
 
       *handle = req->sid;
       ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_GB_SURFACE_REF_EXT,
-			        &s_arg, sizeof(s_arg));
+                                &s_arg, sizeof(s_arg));
 
       if (ret)
          goto out_fail_ref;
@@ -440,7 +440,7 @@ vmw_ioctl_gb_surface_ref(struct vmw_winsys_screen *vws,
 
       *handle = req->sid;
       ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_GB_SURFACE_REF,
-			        &s_arg, sizeof(s_arg));
+                                &s_arg, sizeof(s_arg));
 
       if (ret)
          goto out_fail_ref;
@@ -482,7 +482,7 @@ vmw_ioctl_surface_destroy(struct vmw_winsys_screen *vws, uint32 sid)
    s_arg.sid = sid;
 
    (void)drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_UNREF_SURFACE,
-			 &s_arg, sizeof(s_arg));
+                         &s_arg, sizeof(s_arg));
 }
 
 void
@@ -550,7 +550,7 @@ vmw_ioctl_command(struct vmw_winsys_screen *vws, int32_t cid,
        ret = drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_EXECBUF, &arg, argsize);
        if (ret == -EBUSY)
           usleep(1000);
-   } while(ret == -ERESTART || ret == -EBUSY);
+   } while (ret == -ERESTART || ret == -EBUSY);
    if (ret) {
       vmw_error("%s error %s.\n", __func__, strerror(-ret));
       abort();
@@ -562,7 +562,7 @@ vmw_ioctl_command(struct vmw_winsys_screen *vws, int32_t cid,
        * Kernel has already synced, or caller requested no fence.
        */
       if (pfence)
-	 *pfence = NULL;
+         *pfence = NULL;
    } else {
       if (pfence) {
          vmw_fences_signal(vws->fence_ops, rep.passed_seqno, rep.seqno,
@@ -606,7 +606,7 @@ vmw_ioctl_region_create(struct vmw_winsys_screen *vws, uint32_t size)
    req->size = size;
    do {
       ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_ALLOC_DMABUF, &arg,
-				sizeof(arg));
+                                sizeof(arg));
    } while (ret == -ERESTART);
 
    if (ret) {
@@ -668,10 +668,10 @@ vmw_ioctl_region_map(struct vmw_region *region)
 
    if (region->data == NULL) {
       map = os_mmap(NULL, region->size, PROT_READ | PROT_WRITE, MAP_SHARED,
-		 region->drm_fd, region->map_handle);
+                 region->drm_fd, region->map_handle);
       if (map == MAP_FAILED) {
-	 vmw_error("%s: Map failed.\n", __func__);
-	 return NULL;
+         vmw_error("%s: Map failed.\n", __func__);
+         return NULL;
       }
 
 // MADV_HUGEPAGE only exists on Linux
@@ -772,16 +772,16 @@ vmw_ioctl_releasefromcpu(struct vmw_region *region,
 
 void
 vmw_ioctl_fence_unref(struct vmw_winsys_screen *vws,
-		      uint32_t handle)
+                      uint32_t handle)
 {
    struct drm_vmw_fence_arg arg;
    int ret;
-   
+
    memset(&arg, 0, sizeof(arg));
    arg.handle = handle;
 
    ret = drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_FENCE_UNREF,
-			 &arg, sizeof(arg));
+                         &arg, sizeof(arg));
    if (ret != 0)
       vmw_error("%s Failed\n", __func__);
 }
@@ -792,9 +792,9 @@ vmw_drm_fence_flags(uint32_t flags)
     uint32_t dflags = 0;
 
     if (flags & SVGA_FENCE_FLAG_EXEC)
-	dflags |= DRM_VMW_FENCE_FLAG_EXEC;
+        dflags |= DRM_VMW_FENCE_FLAG_EXEC;
     if (flags & SVGA_FENCE_FLAG_QUERY)
-	dflags |= DRM_VMW_FENCE_FLAG_QUERY;
+        dflags |= DRM_VMW_FENCE_FLAG_QUERY;
 
     return dflags;
 }
@@ -802,8 +802,8 @@ vmw_drm_fence_flags(uint32_t flags)
 
 int
 vmw_ioctl_fence_signalled(struct vmw_winsys_screen *vws,
-			  uint32_t handle,
-			  uint32_t flags)
+                          uint32_t handle,
+                          uint32_t flags)
 {
    struct drm_vmw_fence_signaled_arg arg;
    uint32_t vflags = vmw_drm_fence_flags(flags);
@@ -814,7 +814,7 @@ vmw_ioctl_fence_signalled(struct vmw_winsys_screen *vws,
    arg.flags = vflags;
 
    ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_FENCE_SIGNALED,
-			     &arg, sizeof(arg));
+                             &arg, sizeof(arg));
 
    if (ret != 0)
       return ret;
@@ -829,7 +829,7 @@ vmw_ioctl_fence_signalled(struct vmw_winsys_screen *vws,
 int
 vmw_ioctl_fence_finish(struct vmw_winsys_screen *vws,
                        uint32_t handle,
-		       uint32_t flags)
+                       uint32_t flags)
 {
    struct drm_vmw_fence_wait_arg arg;
    uint32_t vflags = vmw_drm_fence_flags(flags);
@@ -843,18 +843,18 @@ vmw_ioctl_fence_finish(struct vmw_winsys_screen *vws,
    arg.flags = vflags;
 
    ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_FENCE_WAIT,
-			     &arg, sizeof(arg));
+                             &arg, sizeof(arg));
 
    if (ret != 0)
       vmw_error("%s Failed\n", __func__);
-   
+
    return 0;
 }
 
 uint32
 vmw_ioctl_shader_create(struct vmw_winsys_screen *vws,
-			SVGA3dShaderType type,
-			uint32 code_len)
+                        SVGA3dShaderType type,
+                        uint32 code_len)
 {
    struct drm_vmw_shader_create_arg sh_arg;
    int ret;
@@ -879,7 +879,7 @@ vmw_ioctl_shader_create(struct vmw_winsys_screen *vws,
    }
 
    ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_CREATE_SHADER,
-			     &sh_arg, sizeof(sh_arg));
+                             &sh_arg, sizeof(sh_arg));
 
    if (ret)
       return SVGA3D_INVALID_ID;
@@ -898,25 +898,25 @@ vmw_ioctl_shader_destroy(struct vmw_winsys_screen *vws, uint32 shid)
    sh_arg.handle = shid;
 
    (void)drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_UNREF_SHADER,
-			 &sh_arg, sizeof(sh_arg));
+                         &sh_arg, sizeof(sh_arg));
 
 }
 
 struct svga_3d_compat_cap {
-	SVGA3dFifoCapsRecordHeader header;
-	SVGA3dFifoCapPair pairs[SVGA3D_DEVCAP_MAX];
+        SVGA3dFifoCapsRecordHeader header;
+        SVGA3dFifoCapPair pairs[SVGA3D_DEVCAP_MAX];
 };
 
 static int
 vmw_ioctl_parse_caps(struct vmw_winsys_screen *vws,
-		     const uint32_t *cap_buffer)
+                     const uint32_t *cap_buffer)
 {
    int i;
 
    if (vws->base.have_gb_objects) {
       for (i = 0; i < vws->ioctl.num_cap_3d; ++i) {
-	 vws->ioctl.cap_3d[i].has_cap = true;
-	 vws->ioctl.cap_3d[i].result.u = cap_buffer[i];
+         vws->ioctl.cap_3d[i].has_cap = true;
+         vws->ioctl.cap_3d[i].result.u = cap_buffer[i];
       }
       return 0;
    } else {
@@ -931,34 +931,34 @@ vmw_ioctl_parse_caps(struct vmw_winsys_screen *vws,
        */
       capsBlock = cap_buffer;
       for (offset = 0; capsBlock[offset] != 0; offset += capsBlock[offset]) {
-	 const struct svga_3d_compat_cap *record;
-	 assert(offset < SVGA_FIFO_3D_CAPS_SIZE);
-	 record = (const struct svga_3d_compat_cap *) (capsBlock + offset);
-	 if ((record->header.type >= 0) &&
-	     (record->header.type <= SVGA3D_DEVCAP_MAX) &&
-	     (!capsRecord || (record->header.type > capsRecord->header.type))) {
-	    capsRecord = record;
-	 }
+         const struct svga_3d_compat_cap *record;
+         assert(offset < SVGA_FIFO_3D_CAPS_SIZE);
+         record = (const struct svga_3d_compat_cap *) (capsBlock + offset);
+         if ((record->header.type >= 0) &&
+             (record->header.type <= SVGA3D_DEVCAP_MAX) &&
+             (!capsRecord || (record->header.type > capsRecord->header.type))) {
+            capsRecord = record;
+         }
       }
 
-      if(!capsRecord)
-	 return -1;
+      if (!capsRecord)
+         return -1;
 
       /*
        * Calculate the number of caps from the size of the record.
        */
       capArray = (const SVGA3dFifoCapPair *) capsRecord->pairs;
       numCaps = (int) ((capsRecord->header.length * sizeof(uint32) -
-			sizeof capsRecord->header) / (2 * sizeof(uint32)));
+                        sizeof capsRecord->header) / (2 * sizeof(uint32)));
 
       for (i = 0; i < numCaps; i++) {
-	 index = capArray[i][0];
-	 if (index < vws->ioctl.num_cap_3d) {
-	    vws->ioctl.cap_3d[index].has_cap = true;
-	    vws->ioctl.cap_3d[index].result.u = capArray[i][1];
-	 } else {
-	    debug_printf("Unknown devcaps seen: %d\n", index);
-	 }
+         index = capArray[i][0];
+         if (index < vws->ioctl.num_cap_3d) {
+            vws->ioctl.cap_3d[index].has_cap = true;
+            vws->ioctl.cap_3d[index].result.u = capArray[i][1];
+         } else {
+            debug_printf("Unknown devcaps seen: %d\n", index);
+         }
       }
    }
    return 0;
@@ -1009,7 +1009,7 @@ vmw_ioctl_init(struct vmw_winsys_screen *vws)
    memset(&gp_arg, 0, sizeof(gp_arg));
    gp_arg.param = DRM_VMW_PARAM_3D;
    ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_GET_PARAM,
-			     &gp_arg, sizeof(gp_arg));
+                             &gp_arg, sizeof(gp_arg));
    if (ret || gp_arg.value == 0) {
       vmw_error("No 3D enabled (%i, %s).\n", ret, strerror(-ret));
       goto out_no_3d;
@@ -1018,7 +1018,7 @@ vmw_ioctl_init(struct vmw_winsys_screen *vws)
    memset(&gp_arg, 0, sizeof(gp_arg));
    gp_arg.param = DRM_VMW_PARAM_FIFO_HW_VERSION;
    ret = drmCommandWriteRead(vws->ioctl.drm_fd, DRM_VMW_GET_PARAM,
-			     &gp_arg, sizeof(gp_arg));
+                             &gp_arg, sizeof(gp_arg));
    if (ret) {
       vmw_error("Failed to get fifo hw version (%i, %s).\n",
                 ret, strerror(-ret));
@@ -1206,8 +1206,8 @@ vmw_ioctl_init(struct vmw_winsys_screen *vws)
       goto out_no_3d;
    }
 
-   vws->ioctl.cap_3d = calloc(vws->ioctl.num_cap_3d, 
-			      sizeof(*vws->ioctl.cap_3d));
+   vws->ioctl.cap_3d = calloc(vws->ioctl.num_cap_3d,
+                              sizeof(*vws->ioctl.cap_3d));
    if (!vws->ioctl.cap_3d) {
       debug_printf("Failed alloc fifo 3D caps buffer.\n");
       goto out_no_caparray;
@@ -1223,18 +1223,18 @@ vmw_ioctl_init(struct vmw_winsys_screen *vws)
     * driver sends the supported cap.
     */
    ret = drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_GET_3D_CAP,
-			 &cap_arg, sizeof(cap_arg));
+                         &cap_arg, sizeof(cap_arg));
 
    if (ret) {
       debug_printf("Failed to get 3D capabilities"
-		   " (%i, %s).\n", ret, strerror(-ret));
+                   " (%i, %s).\n", ret, strerror(-ret));
       goto out_no_caps;
    }
 
    ret = vmw_ioctl_parse_caps(vws, cap_buffer);
    if (ret) {
       debug_printf("Failed to parse 3D capabilities"
-		   " (%i, %s).\n", ret, strerror(-ret));
+                   " (%i, %s).\n", ret, strerror(-ret));
       goto out_no_caps;
    }
 
@@ -1256,13 +1256,13 @@ vmw_ioctl_init(struct vmw_winsys_screen *vws)
    drmFreeVersion(version);
    vmw_printf("%s OK\n", __func__);
    return true;
-  out_no_caps:
+out_no_caps:
    free(vws->ioctl.cap_3d);
-  out_no_caparray:
+out_no_caparray:
    free(cap_buffer);
-  out_no_3d:
+out_no_3d:
    drmFreeVersion(version);
-  out_no_version:
+out_no_version:
    vws->ioctl.num_cap_3d = 0;
    debug_printf("%s Failed\n", __func__);
    return false;

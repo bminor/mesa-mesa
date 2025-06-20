@@ -41,7 +41,7 @@ vmw_svga_winsys_query_get_result(struct svga_winsys_screen *sws,
                        void *result, uint32 resultLen);
 
 enum pipe_error
-vmw_swc_query_bind(struct svga_winsys_context *swc, 
+vmw_swc_query_bind(struct svga_winsys_context *swc,
                    struct svga_winsys_gb_query *query,
                    unsigned flags);
 

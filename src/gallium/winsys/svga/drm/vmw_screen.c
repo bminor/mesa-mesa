@@ -152,7 +152,7 @@ vmw_winsys_create( int fd )
    if (!vws->fence_ops)
       goto out_no_fence_ops;
 
-   if(!vmw_pools_init(vws))
+   if (!vmw_pools_init(vws))
       goto out_no_pools;
 
    if (!vmw_winsys_screen_init_svga(vws))

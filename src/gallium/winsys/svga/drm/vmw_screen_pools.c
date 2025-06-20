@@ -74,7 +74,7 @@ vmw_query_pools_init(struct vmw_winsys_screen *vws)
    vws->pools.query_fenced = simple_fenced_bufmgr_create(
       vws->pools.query_mm, vws->fence_ops);
 
-   if(!vws->pools.query_fenced)
+   if (!vws->pools.query_fenced)
       goto out_no_query_fenced;
 
    return true;
@@ -104,7 +104,7 @@ vmw_pools_init(struct vmw_winsys_screen *vws)
    vws->pools.dma_mm = mm_bufmgr_create(vws->pools.dma_base,
                                         VMW_GMR_POOL_SIZE,
                                         12 /* 4096 alignment */);
-   if(!vws->pools.dma_mm)
+   if (!vws->pools.dma_mm)
       goto error;
 
    vws->pools.dma_cache =
@@ -118,8 +118,8 @@ vmw_pools_init(struct vmw_winsys_screen *vws)
    vws->pools.dma_fenced =
       simple_fenced_bufmgr_create(vws->pools.dma_cache,
                                   vws->fence_ops);
-   
-   if(!vws->pools.dma_fenced)
+
+   if (!vws->pools.dma_fenced)
       goto error;
 
    /*
@@ -139,12 +139,12 @@ vmw_pools_init(struct vmw_winsys_screen *vws)
                                    8192,
                                    16384,
                                    &desc);
-   if(!vws->pools.dma_slab)
+   if (!vws->pools.dma_slab)
      goto error;
 
    vws->pools.dma_slab_fenced =
       simple_fenced_bufmgr_create(vws->pools.dma_slab,
-		                  vws->fence_ops);
+                                  vws->fence_ops);
    if (!vws->pools.dma_slab_fenced)
       goto error;
 
