@@ -317,10 +317,11 @@ impl Image {
                 .clamp(info.extent_px.to_B(info.format, sample_layout))
         } else if (info.usage & IMAGE_USAGE_SPARSE_RESIDENCY_BIT) != 0 {
             assert!((info.usage & IMAGE_USAGE_VIDEO_BIT) == 0);
-            Tiling::sparse(info.format, info.dim)
+            Tiling::sparse(dev, info.format, info.dim)
         } else if (info.usage & IMAGE_USAGE_VIDEO_BIT) != 0 {
             assert!((info.usage & IMAGE_USAGE_SPARSE_RESIDENCY_BIT) == 0);
             let mut min_tiling = Tiling::choose(
+                dev,
                 info.extent_px,
                 info.format,
                 sample_layout,
@@ -329,6 +330,7 @@ impl Image {
             );
             for p in 0..infos.len() {
                 let plane_tiling = Tiling::choose(
+                    dev,
                     infos[p].extent_px,
                     infos[p].format,
                     sample_layout,
@@ -345,6 +347,7 @@ impl Image {
             min_tiling
         } else {
             Tiling::choose(
+                dev,
                 info.extent_px,
                 info.format,
                 sample_layout,

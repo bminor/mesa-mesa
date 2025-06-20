@@ -9,19 +9,49 @@ use crate::image::{
 };
 use crate::ILog2Ceil;
 
+use nvidia_headers::classes::{cl9097, clc597};
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum GOBType {
     #[default]
+    /// Indicates a linear (not tiled) image
     Linear,
-    Fermi8,
+
+    /// A grab-bag GOB format for all pre-Turing hardware
+    Fermi,
+
+    /// A grab-bag GOB format for all Turing+ depth/stencil surfaces
+    TuringZS,
+
+    /// The Turing 2D GOB format for color images
+    TuringColor2D,
 }
 
 impl GOBType {
+    pub fn choose(
+        dev: &nil_rs_bindings::nv_device_info,
+        format: Format,
+    ) -> GOBType {
+        if dev.cls_eng3d >= clc597::TURING_A {
+            if format.is_depth_or_stencil() {
+                GOBType::TuringZS
+            } else {
+                GOBType::TuringColor2D
+            }
+        } else if dev.cls_eng3d >= cl9097::FERMI_A {
+            GOBType::Fermi
+        } else {
+            panic!("Unsupported 3d engine class")
+        }
+    }
+
     pub fn extent_B(&self) -> Extent4D<units::Bytes> {
         match self {
             GOBType::Linear => Extent4D::new(1, 1, 1, 1),
-            GOBType::Fermi8 => Extent4D::new(64, 8, 1, 1),
+            GOBType::Fermi | GOBType::TuringZS | GOBType::TuringColor2D => {
+                Extent4D::new(64, 8, 1, 1)
+            }
         }
     }
 
@@ -152,14 +182,18 @@ pub extern "C" fn nil_sparse_block_extent_px(
 }
 
 impl Tiling {
-    pub fn sparse(format: Format, dim: ImageDim) -> Self {
+    pub fn sparse(
+        dev: &nil_rs_bindings::nv_device_info,
+        format: Format,
+        dim: ImageDim,
+    ) -> Self {
         let sparse_block_extent_B = sparse_block_extent_B(format, dim);
 
         assert!(sparse_block_extent_B.width.is_power_of_two());
         assert!(sparse_block_extent_B.height.is_power_of_two());
         assert!(sparse_block_extent_B.depth.is_power_of_two());
 
-        let gob_type = GOBType::Fermi8;
+        let gob_type = GOBType::choose(dev, format);
         let sparse_block_extent_gob = sparse_block_extent_B.to_GOB(gob_type);
 
         Self {
@@ -171,6 +205,7 @@ impl Tiling {
     }
 
     pub fn choose(
+        dev: &nil_rs_bindings::nv_device_info,
         extent_px: Extent4D<units::Pixels>,
         format: Format,
         sample_layout: SampleLayout,
@@ -180,7 +215,7 @@ impl Tiling {
         assert!((usage & IMAGE_USAGE_LINEAR_BIT) == 0);
 
         let mut tiling = Tiling {
-            gob_type: GOBType::Fermi8,
+            gob_type: GOBType::choose(dev, format),
             x_log2: 0,
             y_log2: 5,
             z_log2: 5,

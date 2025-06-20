@@ -284,7 +284,7 @@ fn nv9097_fill_image_view_desc(
     if tiling.is_tiled() {
         set_enum!(th, cl9097, TEXHEADV2_MEMORY_LAYOUT, BLOCKLINEAR);
 
-        assert!(tiling.gob_type == GOBType::Fermi8);
+        assert!(tiling.gob_type == GOBType::Fermi);
         assert!(tiling.x_log2 == 0);
         set_enum!(th, cl9097, TEXHEADV2_GOBS_PER_BLOCK_WIDTH, ONE_GOB);
         th.set_field(cl9097::TEXHEADV2_GOBS_PER_BLOCK_HEIGHT, tiling.y_log2);
@@ -412,8 +412,6 @@ fn nvb097_fill_image_view_desc(
             addr.get_bit_range_u64(32..48),
         );
         assert!(addr.get_bit_range_u64(48..64) == 0);
-
-        assert!(tiling.gob_type == GOBType::Fermi8);
 
         set_enum!(th, clb097, TEXHEAD_BL_GOBS_PER_BLOCK_WIDTH, ONE_GOB);
         th.set_field(clb097::TEXHEAD_BL_GOBS_PER_BLOCK_HEIGHT, tiling.y_log2);

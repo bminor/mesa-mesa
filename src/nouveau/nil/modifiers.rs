@@ -169,10 +169,18 @@ impl BlockLinearModifier {
         bv.get_bit_range_u64(23..26).try_into().unwrap()
     }
 
+    pub fn gob_type(&self) -> GOBType {
+        assert!(self.sector_layout() == SectorLayout::Desktop);
+        match self.gob_kind_version() {
+            GOBKindVersion::Fermi => GOBType::Fermi,
+            GOBKindVersion::G80 => todo!("Unsupported GOB kind"),
+            GOBKindVersion::Turing => GOBType::TuringColor2D,
+        }
+    }
+
     pub fn tiling(&self) -> Tiling {
-        assert!(self.gob_kind_version() != GOBKindVersion::G80);
         Tiling {
-            gob_type: GOBType::Fermi8,
+            gob_type: self.gob_type(),
             x_log2: 0,
             y_log2: self.height_log2(),
             z_log2: 0,
