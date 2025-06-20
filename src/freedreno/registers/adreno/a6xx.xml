@@ -5223,7 +5223,8 @@ to upconvert to 32b float internally?
 	<!--
 	IBO state for compute shader:
 	 -->
-	<reg64 offset="0xa9f2" name="SP_CS_IBO" type="address" align="16"/>
+	<reg64 offset="0xa9f2" name="SP_CS_IBO" type="address" align="16" variants="A6XX"/>
+	<reg64 offset="0xa9f8" name="SP_CS_IBO" type="address" align="16" variants="A7XX"/>
 	<reg32 offset="0xaa00" name="SP_CS_IBO_COUNT" low="0" high="6" type="uint"/>
 
 	<!-- Correlated with avgs/uvgs usage in FS -->

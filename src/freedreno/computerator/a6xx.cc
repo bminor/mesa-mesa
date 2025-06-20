@@ -401,7 +401,11 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
                      CP_LOAD_STATE6_0_NUM_UNIT(kernel->num_bufs));
    OUT_RB(ring, state);
 
-   OUT_PKT4(ring, REG_A6XX_SP_CS_IBO, 2);
+   if (CHIP == A6XX) {
+      OUT_PKT4(ring, REG_A6XX_SP_CS_IBO, 2);
+   } else {
+      OUT_PKT4(ring, REG_A7XX_SP_CS_IBO, 2);
+   }
    OUT_RB(ring, state);
 
    OUT_PKT4(ring, REG_A6XX_SP_CS_IBO_COUNT, 1);
