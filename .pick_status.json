@@ -3644,7 +3644,7 @@
         "description": "v3d: Avoid fast TLB blit if reused job doesn't store the color buffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "66de8b4b5cbbb317130dde765201b5720394ed00",
         "notes": null
