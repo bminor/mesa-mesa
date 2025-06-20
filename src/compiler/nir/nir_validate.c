@@ -2148,6 +2148,7 @@ dump_errors(validate_state *state, const char *when)
          fprintf(stderr, "%s\n", (char *)entry->data);
       }
    }
+   fflush(stderr);
 
    simple_mtx_unlock(&fail_dump_mutex);
 
