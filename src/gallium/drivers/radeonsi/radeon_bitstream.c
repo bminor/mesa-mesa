@@ -321,8 +321,7 @@ uint32_t radeon_bs_hevc_st_ref_pic_set(struct radeon_bitstream *bs,
          radeon_bs_code_ue(bs, rps->delta_idx_minus1);
       radeon_bs_code_fixed_bits(bs, rps->delta_rps_sign, 1);
       radeon_bs_code_ue(bs, rps->abs_delta_rps_minus1);
-      ref_rps = st_rps + index +
-         (1 - 2 * rps->delta_rps_sign) * (st_rps->delta_idx_minus1 + 1);
+      ref_rps = &st_rps[index - (rps->delta_idx_minus1 + 1)];
       for (i = 0; i <= (ref_rps->num_negative_pics + ref_rps->num_positive_pics); i++) {
          radeon_bs_code_fixed_bits(bs, rps->used_by_curr_pic_flag[i], 1);
          if (!rps->used_by_curr_pic_flag[i])
