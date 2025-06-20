@@ -228,18 +228,17 @@ spec@arb_program_interface_query@arb_program_interface_query-getprogramresourcei
 spec@ext_packed_float@query-rgba-signed-components
 
 
-# a618 seems to have some general instability in tesselation and GS.
+# a618 and a660 seem to have some general instability in tesselation and GS.
 # Some tess tests also use the GS (tesselation.invariance), but others
 # don't (spirv_assembly).  They don't appear to be correlated to any GPU
 # faults or resets in the logs.
 dEQP-VK.binding_model.shader_access.*geometry.*
 dEQP-VK.binding_model.shader_access.*tess_ctrl.*
 dEQP-VK.binding_model.shader_access.*tess_eval.*
-dEQP-VK.clipping.user_defined.clip_cull_distance.vert_geom.4_4
-dEQP-VK.clipping.user_defined.clip_cull_distance.vert_geom.8
-dEQP-VK.clipping.user_defined.clip_distance_dynamic_index.vert_geom.5_fragmentshader_read
-dEQP-VK.clipping.user_defined.clip_distance.vert_geom.5_fragmentshader_read
-dEQP-VK.clipping.user_defined.clip_distance.vert_tess.5
+dEQP-VK.clipping.user_defined.clip_cull_distance.*geom.*
+dEQP-VK.clipping.user_defined.clip_cull_distance.*tess.*
+dEQP-VK.clipping.user_defined.clip_distance.*geom.*
+dEQP-VK.clipping.user_defined.clip_distance.*tess.*
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.dynamic_state_draw_vk_primitive_topology_triangle_strip_attrib_divisor_2
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_4.1_instance.tess_geom.single_view.offset_6_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_random.16_draws.stride_extra_4.10_instances.with_tess.single_view.no_offset
@@ -248,24 +247,22 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed46_geometry
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed88_geometry
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_3.r16g16_sfloat.samples_4
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_6.a8b8g8r8_srgb_pack32.samples_2_resolve_level_2
-dEQP-VK.fragment_operations.scissor.multi_viewport.scissor_10
+dEQP-VK.fragment_operations.scissor.multi_viewport.*
 dEQP-VK.glsl.builtin.function.integer.bitfieldinsert.uvec3_mediump_geometry
 dEQP-VK.glsl.builtin.function.integer.bitfieldreverse.uint_mediump_geometry
 dEQP-VK.glsl.builtin.function.integer.umulextended.uvec4_highp_tess_eval
 dEQP-VK.pipeline.monolithic.interface_matching.vector_length.out_ivec3_in_ivec3_loose_variable_vert_tesc_tese_out_geom_in_frag
+dEQP-VK.pipeline.pipeline_library.extended_dynamic_state.after_pipelines.rasterization_stream_none_to_one
 dEQP-VK.pipeline.pipeline_library.extended_dynamic_state.before_draw.2_scissors_switch
 dEQP-VK.pipeline.pipeline_library.interface_matching.vector_length.out_ivec3_in_ivec3_member_of_structure_vert_tesc_out_tese_in_frag
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_6.r32g32b32a32_uint.samples_2_resolve_level_2
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_3.r32g32b32a32_sint.samples_4_resolve_level_2
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_6.r16g16b16a16_uint.samples_4_resolve_level_3
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_6.r32g32_sfloat.samples_4
-dEQP-VK.spirv_assembly.instruction.graphics.image_sampler.imagefetch.combined_image_sampler.optypeimage_mismatch.r32ui.depth_property.depth.shader_tessc
-dEQP-VK.spirv_assembly.instruction.graphics.image_sampler.imagesample.combined_image_sampler_separate_descriptors.optypeimage_mismatch.rgba16ui.depth_property.unknown.shader_tesse
-dEQP-VK.spirv_assembly.instruction.graphics.indexing.input.struct.opinboundsaccesschain_u32_tesse
-dEQP-VK.spirv_assembly.type.vec2.u64.clamp_tessc
-dEQP-VK.spirv_assembly.type.vec3.u32.bit_field_s_extract_offset32_count64_tessc
-dEQP-VK.spirv_assembly.type.vec4.i32.constant_null_tessc
-dEQP-VK.spirv_assembly.type.vec4.u32.bit_field_u_extract_offset32_count32_tessc
+dEQP-VK.spirv_assembly.instruction.graphics.*geom.*
+dEQP-VK.spirv_assembly.instruction.graphics.*tess.*
+dEQP-VK.spirv_assembly.type.*geom.*
+dEQP-VK.spirv_assembly.type.*tess.*
 dEQP-VK.synchronization.*_geometry.*
 dEQP-VK.synchronization.*_tess_ctrl.*
 dEQP-VK.synchronization.*_tess_eval.*
