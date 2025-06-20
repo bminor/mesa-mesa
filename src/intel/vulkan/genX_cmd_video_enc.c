@@ -401,10 +401,13 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
    uint8_t dpb_idx[ANV_VIDEO_H264_MAX_NUM_REF_FRAME] = { 0,};
 
    const struct anv_image_view *base_ref_iv;
+   uint32_t base_ref_array_layer;
    if (enc_info->pSetupReferenceSlot) {
       base_ref_iv = anv_image_view_from_handle(enc_info->pSetupReferenceSlot->pPictureResource->imageViewBinding);
+      base_ref_array_layer = enc_info->pSetupReferenceSlot->pPictureResource->baseArrayLayer;
    } else {
       base_ref_iv = iv;
+      base_ref_array_layer = enc_info->srcPictureResource.baseArrayLayer;
    }
 
    const struct anv_image *base_ref_img = base_ref_iv->image;
@@ -466,10 +469,10 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
    anv_batch_emit(&cmd->batch, GENX(MFX_PIPE_BUF_ADDR_STATE), buf) {
       if (post_deblock_enable) {
          buf.PostDeblockingDestinationAddress =
-            anv_image_address(base_ref_img, &base_ref_img->planes[0].primary_surface.memory_range);
+            anv_image_dpb_address(base_ref_iv, base_ref_array_layer);
       } else {
          buf.PreDeblockingDestinationAddress =
-            anv_image_address(base_ref_img, &base_ref_img->planes[0].primary_surface.memory_range);
+            anv_image_dpb_address(base_ref_iv, base_ref_array_layer);
       }
       buf.PreDeblockingDestinationAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd->device, buf.PreDeblockingDestinationAddress.bo, 0),
@@ -479,7 +482,7 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       };
 
       buf.OriginalUncompressedPictureSourceAddress =
-         anv_image_address(src_img, &src_img->planes[0].primary_surface.memory_range);
+         anv_image_dpb_address(iv, enc_info->srcPictureResource.baseArrayLayer);
       buf.OriginalUncompressedPictureSourceAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd->device, buf.OriginalUncompressedPictureSourceAddress.bo, 0),
       };
@@ -515,7 +518,7 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
          dpb_idx[slot_idx] = i;
 
          buf.ReferencePictureAddress[i] =
-            anv_image_address(ref_iv->image, &ref_iv->image->planes[0].primary_surface.memory_range);
+            anv_image_dpb_address(ref_iv, enc_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
 
          if (i == 0)
             ref_bo = ref_iv->image->bindings[0].address.bo;
@@ -643,7 +646,7 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       };
 
       vdenc_buf.OriginalUncompressedPicture.Address =
-         anv_image_address(src_img, &src_img->planes[0].primary_surface.memory_range);
+         anv_image_dpb_address(iv, enc_info->srcPictureResource.baseArrayLayer);
       vdenc_buf.OriginalUncompressedPicture.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
          .MOCS = anv_mocs(cmd->device, vdenc_buf.OriginalUncompressedPicture.Address.bo, 0),
       };
@@ -667,9 +670,9 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
       if (ref_iv[0]) {
          vdenc_buf.ColocatedMVReadBuffer.Address =
-               anv_image_address(ref_iv[0]->image, &ref_iv[0]->image->vid_dmv_top_surface);
+               anv_image_dmv_top_address(ref_iv[0], enc_info->pReferenceSlots[0].pPictureResource->baseArrayLayer);
          vdenc_buf.FWDREF0.Address =
-               anv_image_address(ref_iv[0]->image, &ref_iv[0]->image->planes[0].primary_surface.memory_range);
+               anv_image_dpb_address(ref_iv[0], enc_info->pReferenceSlots[0].pPictureResource->baseArrayLayer);
       }
 
       vdenc_buf.ColocatedMVReadBuffer.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
@@ -682,7 +685,7 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
       if (ref_iv[1])
          vdenc_buf.FWDREF1.Address =
-               anv_image_address(ref_iv[1]->image, &ref_iv[1]->image->planes[0].primary_surface.memory_range);
+               anv_image_dpb_address(ref_iv[1], enc_info->pReferenceSlots[1].pPictureResource->baseArrayLayer);
 
       vdenc_buf.FWDREF1.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
          .MOCS = anv_mocs(cmd->device, vdenc_buf.FWDREF1.Address.bo, 0),
@@ -1412,13 +1415,16 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
    const struct anv_image *src_img = iv->image;
 
    const struct anv_image_view *base_ref_iv;
+   uint32_t base_ref_array_layer;
 
    bool rc_disable = cmd->video.vid->rc_mode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR;
 
    if (enc_info->pSetupReferenceSlot) {
       base_ref_iv = anv_image_view_from_handle(enc_info->pSetupReferenceSlot->pPictureResource->imageViewBinding);
+      base_ref_array_layer = enc_info->pSetupReferenceSlot->pPictureResource->baseArrayLayer;
    } else {
       base_ref_iv = iv;
+      base_ref_array_layer = enc_info->srcPictureResource.baseArrayLayer;
    }
 
    const struct anv_image *base_ref_img = base_ref_iv->image;
@@ -1491,7 +1497,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
    anv_batch_emit(&cmd->batch, GENX(HCP_PIPE_BUF_ADDR_STATE), buf) {
       buf.DecodedPictureAddress =
-         anv_image_address(base_ref_img, &base_ref_img->planes[0].primary_surface.memory_range);
+         anv_image_dpb_address(base_ref_iv, base_ref_array_layer);
 
       buf.DecodedPictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd->device, buf.DecodedPictureAddress.bo, 0),
@@ -1581,7 +1587,8 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
          .MOCS = anv_mocs(cmd->device, buf.SAOTileColumnBufferAddress.bo, 0),
       };
 
-      buf.CurrentMVTemporalBufferAddress = anv_image_address(src_img, &src_img->vid_dmv_top_surface);
+      buf.CurrentMVTemporalBufferAddress =
+         anv_image_dmv_top_address(iv, enc_info->srcPictureResource.baseArrayLayer);
 
       buf.CurrentMVTemporalBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd->device, buf.CurrentMVTemporalBufferAddress.bo, 0),
@@ -1596,7 +1603,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
          dpb_idx[slot_idx] = i;
 
          buf.ReferencePictureAddress[i] =
-            anv_image_address(ref_iv->image, &ref_iv->image->planes[0].primary_surface.memory_range);
+            anv_image_dpb_address(ref_iv, enc_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
       }
 
       buf.ReferencePictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
@@ -1607,7 +1614,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       };
 
       buf.OriginalUncompressedPictureSourceAddress =
-         anv_image_address(src_img, &src_img->planes[0].primary_surface.memory_range);
+         anv_image_dpb_address(iv, enc_info->srcPictureResource.baseArrayLayer);
       buf.OriginalUncompressedPictureSourceMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd->device, buf.OriginalUncompressedPictureSourceAddress.bo, 0),
       };
@@ -1629,7 +1636,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
             anv_image_view_from_handle(enc_info->pReferenceSlots[i].pPictureResource->imageViewBinding);
 
          buf.CollocatedMVTemporalBufferAddress[i] =
-            anv_image_address(ref_iv->image, &ref_iv->image->vid_dmv_top_surface);
+            anv_image_dmv_top_address(ref_iv, enc_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
       }
 
       buf.CollocatedMVTemporalBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
@@ -1833,7 +1840,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       };
 
       vdenc_buf.OriginalUncompressedPicture.Address =
-         anv_image_address(src_img, &src_img->planes[0].primary_surface.memory_range);
+         anv_image_dpb_address(iv, enc_info->srcPictureResource.baseArrayLayer);
       vdenc_buf.OriginalUncompressedPicture.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
          .MOCS = anv_mocs(cmd->device, vdenc_buf.OriginalUncompressedPicture.Address.bo, 0),
       };
@@ -1853,9 +1860,9 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
       if (ref_iv[0]) {
          vdenc_buf.ColocatedMVReadBuffer.Address =
-               anv_image_address(ref_iv[0]->image, &ref_iv[0]->image->vid_dmv_top_surface);
+               anv_image_dmv_top_address(ref_iv[0], enc_info->pReferenceSlots[0].pPictureResource->baseArrayLayer);
          vdenc_buf.FWDREF0.Address =
-               anv_image_address(ref_iv[0]->image, &ref_iv[0]->image->planes[0].primary_surface.memory_range);
+               anv_image_dpb_address(ref_iv[0], enc_info->pReferenceSlots[0].pPictureResource->baseArrayLayer);
       }
 
       vdenc_buf.ColocatedMVReadBuffer.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
@@ -1868,7 +1875,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
       if (ref_iv[1])
          vdenc_buf.FWDREF1.Address =
-               anv_image_address(ref_iv[1]->image, &ref_iv[1]->image->planes[0].primary_surface.memory_range);
+               anv_image_dpb_address(ref_iv[1], enc_info->pReferenceSlots[1].pPictureResource->baseArrayLayer);
 
       vdenc_buf.FWDREF1.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
          .MOCS = anv_mocs(cmd->device, vdenc_buf.FWDREF1.Address.bo, 0),
@@ -1876,7 +1883,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
       if (ref_iv[2])
          vdenc_buf.FWDREF2.Address =
-               anv_image_address(ref_iv[2]->image, &ref_iv[2]->image->planes[0].primary_surface.memory_range);
+               anv_image_dpb_address(ref_iv[2], enc_info->pReferenceSlots[2].pPictureResource->baseArrayLayer);
 
       vdenc_buf.FWDREF2.PictureFields = (struct GENX(VDENC_SURFACE_CONTROL_BITS)) {
          .MOCS = anv_mocs(cmd->device, vdenc_buf.FWDREF2.Address.bo, 0),

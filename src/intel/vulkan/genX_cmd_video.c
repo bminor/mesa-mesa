@@ -251,7 +251,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
 
    anv_batch_emit(&cmd_buffer->batch, GENX(HCP_PIPE_BUF_ADDR_STATE), buf) {
       buf.DecodedPictureAddress =
-         anv_image_address(img, &img->planes[0].primary_surface.memory_range);
+         anv_image_dpb_address(iv, frame_info->dstPictureResource.baseArrayLayer);
 
       buf.DecodedPictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, buf.DecodedPictureAddress.bo, 0),
@@ -341,7 +341,8 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
          .MOCS = anv_mocs(cmd_buffer->device, buf.SAOTileColumnBufferAddress.bo, 0),
       };
 
-      buf.CurrentMVTemporalBufferAddress = anv_image_address(img, &img->vid_dmv_top_surface);
+      buf.CurrentMVTemporalBufferAddress =
+         anv_image_dmv_top_address(iv, frame_info->dstPictureResource.baseArrayLayer);
 
       buf.CurrentMVTemporalBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, buf.CurrentMVTemporalBufferAddress.bo, 0),
@@ -359,7 +360,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
          dpb_idx[slot_idx] = i;
 
          buf.ReferencePictureAddress[i] =
-            anv_image_address(ref_iv->image, &ref_iv->image->planes[0].primary_surface.memory_range);
+            anv_image_dpb_address(ref_iv, frame_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
       }
 
       buf.ReferencePictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
@@ -390,7 +391,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
             anv_image_view_from_handle(frame_info->pReferenceSlots[i].pPictureResource->imageViewBinding);
 
          buf.CollocatedMVTemporalBufferAddress[i] =
-            anv_image_address(ref_iv->image, &ref_iv->image->vid_dmv_top_surface);
+            anv_image_dmv_top_address(ref_iv, frame_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
       }
 
       buf.CollocatedMVTemporalBufferMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
@@ -952,11 +953,11 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
    anv_batch_emit(&cmd_buffer->batch, GENX(MFX_PIPE_BUF_ADDR_STATE), buf) {
       bool use_pre_deblock = false;
       if (use_pre_deblock) {
-         buf.PreDeblockingDestinationAddress = anv_image_address(img,
-                                                                 &img->planes[0].primary_surface.memory_range);
+         buf.PreDeblockingDestinationAddress =
+            anv_image_dpb_address(iv, frame_info->dstPictureResource.baseArrayLayer);
       } else {
-         buf.PostDeblockingDestinationAddress = anv_image_address(img,
-                                                                  &img->planes[0].primary_surface.memory_range);
+         buf.PostDeblockingDestinationAddress =
+            anv_image_dpb_address(iv, frame_info->dstPictureResource.baseArrayLayer);
       }
       buf.PreDeblockingDestinationAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, buf.PreDeblockingDestinationAddress.bo, 0),
@@ -1004,8 +1005,8 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
 
          dpb_slots[idx] = i;
 
-         buf.ReferencePictureAddress[i] = anv_image_address(ref_iv->image,
-                                                            &ref_iv->image->planes[0].primary_surface.memory_range);
+         buf.ReferencePictureAddress[i] =
+            anv_image_dpb_address(ref_iv, frame_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
 
          if (i == 0) {
             ref_bo = ref_iv->image->bindings[0].address.bo;
@@ -1174,8 +1175,8 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
             vk_find_struct_const(frame_info->pReferenceSlots[i].pNext, VIDEO_DECODE_H264_DPB_SLOT_INFO_KHR);
          const struct anv_image_view *ref_iv = anv_image_view_from_handle(frame_info->pReferenceSlots[i].pPictureResource->imageViewBinding);
          const StdVideoDecodeH264ReferenceInfo *ref_info = dpb_slot->pStdReferenceInfo;
-         avc_directmode.DirectMVBufferAddress[idx] = anv_image_address(ref_iv->image,
-                                                                     &ref_iv->image->vid_dmv_top_surface);
+         avc_directmode.DirectMVBufferAddress[idx] =
+            anv_image_dmv_top_address(ref_iv, frame_info->pReferenceSlots[i].pPictureResource->baseArrayLayer);
          if (i == 0) {
             dmv_bo = ref_iv->image->bindings[0].address.bo;
          }
@@ -1186,8 +1187,8 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
          .MOCS = anv_mocs(cmd_buffer->device, dmv_bo, 0),
       };
 
-      avc_directmode.DirectMVBufferWriteAddress = anv_image_address(img,
-                                                                    &img->vid_dmv_top_surface);
+      avc_directmode.DirectMVBufferWriteAddress =
+         anv_image_dmv_top_address(iv, frame_info->dstPictureResource.baseArrayLayer);
       avc_directmode.DirectMVBufferWriteAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, img->bindings[0].address.bo, 0),
       };
