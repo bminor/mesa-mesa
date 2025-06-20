@@ -1621,7 +1621,7 @@ cs_finish_fragment(struct cs_builder *b, bool increment_frag_completed,
 
 static inline void
 cs_add32(struct cs_builder *b, struct cs_index dest, struct cs_index src,
-         unsigned imm)
+         int32_t imm)
 {
    cs_emit(b, ADD_IMM32, I) {
       I.destination = cs_dst32(b, dest);
@@ -1632,7 +1632,7 @@ cs_add32(struct cs_builder *b, struct cs_index dest, struct cs_index src,
 
 static inline void
 cs_add64(struct cs_builder *b, struct cs_index dest, struct cs_index src,
-         unsigned imm)
+         int32_t imm)
 {
    cs_emit(b, ADD_IMM64, I) {
       I.destination = cs_dst64(b, dest);

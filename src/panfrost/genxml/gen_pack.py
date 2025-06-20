@@ -196,10 +196,10 @@ class Field(object):
             type = 'bool'
         elif self.type in ['float', 'ulod', 'slod']:
             type = 'float'
-        elif self.type in ['uint', 'hex'] and self.end - self.start > 32:
+        elif self.type in ['uint', 'hex'] and self.end - self.start >= 31:
             type = 'uint64_t'
         elif self.type == 'int':
-            type = 'int32_t'
+            type = 'int64_t' if self.end - self.start >= 31 else 'int32_t'
         elif self.type in ['uint', 'hex', 'uint/float', 'padded', 'Pixel Format', 'Component Swizzle']:
             type = 'uint32_t'
         elif self.type in self.parser.structs:
@@ -488,12 +488,12 @@ class Group(object):
             elif field.type in self.parser.enums:
                 print('   fprintf(fp, "%*s{}: %s\\n", indent, "", {}_as_str({}));'.format(name, enum_name(field.type), val))
             elif field.type == "int":
-                print('   fprintf(fp, "%*s{}: %d\\n", indent, "", {});'.format(name, val))
+                print('   fprintf(fp, "%*s{}: %" PRId64 "\\n", indent, "", (int64_t){});'.format(name, val))
             elif field.type == "bool":
                 print('   fprintf(fp, "%*s{}: %s\\n", indent, "", {} ? "true" : "false");'.format(name, val))
             elif field.type in ["float", "ulod", "slod"]:
                 print('   fprintf(fp, "%*s{}: %f\\n", indent, "", {});'.format(name, val))
-            elif field.type in ["uint", "hex"] and (field.end - field.start) >= 32:
+            elif field.type in ["uint", "hex"] and (field.end - field.start) >= 31:
                 print('   fprintf(fp, "%*s{}: 0x%" PRIx64 "\\n", indent, "", {});'.format(name, val))
             elif field.type == "hex":
                 print('   fprintf(fp, "%*s{}: 0x%x\\n", indent, "", {});'.format(name, val))

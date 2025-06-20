@@ -856,7 +856,7 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
          cfg.index_count = draw->info.vertex.count;
          cfg.indices = draw->indices;
          cfg.base_vertex_offset =
-            draw->info.vertex.base - draw->info.vertex.raw_offset;
+            (int64_t)draw->info.vertex.base - draw->info.vertex.raw_offset;
 
          switch (draw->info.index.size) {
          case 4:

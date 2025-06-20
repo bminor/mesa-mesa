@@ -524,8 +524,8 @@
     <field name="Clean Fragment Write" size="1" start="0:11" type="bool"/>
     <field name="Instance Size" size="8" start="0:16" type="padded" default="1"/>
     <field name="Instance Primitive Size" size="8" start="0:24" type="padded" default="1"/>
-    <field name="Offset start" size="32" start="1:0" type="uint"/>
-    <field name="Primitive Index Base" size="32" start="2:0" type="uint"/>
+    <field name="Offset start" size="32" start="1:0" type="int"/>
+    <field name="Primitive Index Base" size="32" start="2:0" type="int"/>
     <field name="Position" size="64" start="4:0" type="address"/>
     <field name="Uniform buffers" size="64" start="6:0" type="address"/>
     <field name="Textures" size="64" start="8:0" type="address"/>

@@ -737,7 +737,7 @@ jm_emit_primitive(struct panfrost_batch *batch,
           * on Valhall, so we don't need to set that here
           */
       } else if (cfg.index_type) {
-         cfg.base_vertex_offset = draw->index_bias - ctx->offset_start;
+         cfg.base_vertex_offset = (int64_t)draw->index_bias - ctx->offset_start;
 
 #if PAN_ARCH <= 7
          cfg.indices = batch->indices;

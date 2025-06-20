@@ -116,7 +116,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
 
    case MALI_CS_OPCODE_MOVE32: {
       cs_unpack(instr, CS_MOVE32, I);
-      fprintf(fp, "MOVE32 r%u, #0x%X", I.destination, I.immediate);
+      fprintf(fp, "MOVE32 r%u, #0x%" PRIX64, I.destination, I.immediate);
       break;
    }
 
@@ -156,7 +156,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       cs_unpack(instr, CS_RUN_IDVS, I);
       fprintf(
          fp,
-         "RUN_IDVS%s%s%s.varying_srt%d.varying_fau%d.varying_tsd%d.frag_srt%d.frag_tsd%d r%u, #%x",
+         "RUN_IDVS%s%s%s.varying_srt%d.varying_fau%d.varying_tsd%d.frag_srt%d.frag_tsd%d r%u, #%" PRIx64,
          I.progress_increment ? ".progress_inc" : "",
          I.malloc_enable ? "" : ".no_malloc",
          I.draw_id_register_enable ? ".draw_id_enable" : "",
@@ -176,7 +176,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          ".INVALID",
       };
 
-      fprintf(fp, "RUN_IDVS2%s%s%s%s r%u, #%x",
+      fprintf(fp, "RUN_IDVS2%s%s%s%s r%u, #%" PRIx64,
               I.progress_increment ? ".progress_inc" : "",
               I.malloc_enable ? "" : ".no_malloc",
               I.draw_id_register_enable ? ".draw_id_enable" : "",
@@ -195,8 +195,8 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          "BFEXT_U32", "BFEXT_S32",    "BFINS_IMM32",    "UMIN_IMM32",
       };
 
-      fprintf(fp, "%s r%u, r%u, #%d", instr_name[I.sub_opcode], I.destination,
-              I.source, I.immediate);
+      fprintf(fp, "%s r%u, r%u, #%" PRId64, instr_name[I.sub_opcode],
+              I.destination, I.source, I.immediate);
       break;
    }
 
@@ -208,8 +208,8 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          "BFEXT_U64", "BFEXT_S64",    "BFINS_IMM64",    "UMIN_IMM64",
       };
 
-      fprintf(fp, "%s d%u, d%u, #%d", instr_name[I.sub_opcode], I.destination,
-              I.source, I.immediate);
+      fprintf(fp, "%s d%u, d%u, #%" PRId64, instr_name[I.sub_opcode],
+              I.destination, I.source, I.immediate);
       break;
    }
 
@@ -309,7 +309,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       const char *state =
          I.state <= sizeof(state_name) ? state_name[I.state] : ".INVALID";
 
-      fprintf(fp, "SET_STATE_IMM32%s #%u", state, I.value);
+      fprintf(fp, "SET_STATE_IMM32%s #%" PRIu64, state, I.value);
       break;
    }
 
@@ -364,7 +364,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
 
    case MALI_CS_OPCODE_RUN_FULLSCREEN: {
       cs_unpack(instr, CS_RUN_FULLSCREEN, I);
-      fprintf(fp, "RUN_FULLSCREEN%s r%u, #%x",
+      fprintf(fp, "RUN_FULLSCREEN%s r%u, #%" PRIx64,
               I.progress_increment ? ".progress_inc" : "", I.dcd,
               I.flags_override);
       break;
@@ -390,16 +390,16 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
    case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
       cs_unpack(instr, CS_ADD_IMM32, I);
 
-      fprintf(fp, "ADD_IMMEDIATE32 r%u, r%u, #%d", I.destination, I.source,
-              I.immediate);
+      fprintf(fp, "ADD_IMMEDIATE32 r%u, r%u, #%" PRId64, I.destination,
+              I.source, I.immediate);
       break;
    }
 
    case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
       cs_unpack(instr, CS_ADD_IMM64, I);
 
-      fprintf(fp, "ADD_IMMEDIATE64 d%u, d%u, #%d", I.destination, I.source,
-              I.immediate);
+      fprintf(fp, "ADD_IMMEDIATE64 d%u, d%u, #%" PRId64, I.destination,
+              I.source, I.immediate);
       break;
    }
 
