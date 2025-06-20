@@ -210,8 +210,6 @@ sync_update(struct ir3_legalize_state *state, struct ir3_compiler *compiler,
    if (is_barrier(n)) {
       state->force_ss = true;
       state->force_sy = true;
-   } else if (n->opc == OPC_PREDT) {
-      state->force_ss = true;
    } else {
       state->force_ss = false;
       state->force_sy = false;
