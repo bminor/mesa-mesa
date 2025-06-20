@@ -426,6 +426,7 @@
     <value name="1D" value="1"/>
     <value name="2D" value="2"/>
     <value name="3D" value="3"/>
+    <value name="2D Image Crop" value="4"/>
   </enum>
 
   <enum name="Wrap Mode">
@@ -1860,7 +1861,7 @@
 
   <struct name="Texture" size="8" align="32">
     <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Texture"/>
-    <field name="Dimension" size="2" start="0:4" type="Texture Dimension"/>
+    <field name="Dimension" size="3" start="0:4" type="Texture Dimension"/>
     <field name="Sample corner position" size="1" start="0:8" type="bool" default="false"/>
     <field name="Normalize coordinates" size="1" start="0:9" type="bool" default="false"/>
     <field name="Format" size="22" start="0:10" type="Pixel Format"/>

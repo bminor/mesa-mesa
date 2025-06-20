@@ -83,7 +83,7 @@ enum pan_preload_resource_table {
 struct pan_preload_surface {
    gl_frag_result loc              : 4;
    nir_alu_type type               : 8;
-   enum mali_texture_dimension dim : 2;
+   enum mali_texture_dimension dim : 3;
    bool array                      : 1;
    unsigned samples                : 5;
 };
@@ -105,7 +105,7 @@ struct pan_preload_rsd_key {
       enum pipe_format format;
       nir_alu_type type               : 8;
       unsigned samples                : 5;
-      enum mali_texture_dimension dim : 2;
+      enum mali_texture_dimension dim : 3;
       bool array                      : 1;
    } rts[8], z, s;
 };
@@ -492,6 +492,8 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
       case MALI_TEXTURE_DIMENSION_CUBE:
          sampler_dim = GLSL_SAMPLER_DIM_CUBE;
          break;
+      default:
+         unreachable("Invalid dimension");
       }
 
       nir_tex_instr *tex = nir_tex_instr_create(b.shader, ms ? 3 : 1);
