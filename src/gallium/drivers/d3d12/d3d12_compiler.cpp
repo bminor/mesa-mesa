@@ -141,6 +141,7 @@ compile_nir(struct d3d12_context *ctx, struct d3d12_shader_selector *sel,
    opts.input_clip_size = key->input_clip_size;
    opts.environment = DXIL_ENVIRONMENT_GL;
    opts.shader_model_max = screen->max_shader_model;
+   opts.advanced_texture_ops = screen->opts14.AdvancedTextureOpsSupported;
 #ifdef _WIN32
    opts.validator_version_max = dxil_get_validator_version(ctx->dxil_validator);
 #endif

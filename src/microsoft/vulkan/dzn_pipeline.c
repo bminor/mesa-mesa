@@ -427,6 +427,7 @@ dzn_pipeline_compile_shader(struct dzn_device *device,
           device->vk.enabled_features.shaderInt16),
       .shader_model_max = dzn_get_shader_model(pdev),
       .input_clip_size = input_clip_size,
+      .advanced_texture_ops = pdev->options14.AdvancedTextureOpsSupported,
 #ifdef _WIN32
       .validator_version_max = dxil_get_validator_version(instance->dxil_validator),
 #endif
