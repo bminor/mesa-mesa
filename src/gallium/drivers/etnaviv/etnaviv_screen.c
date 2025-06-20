@@ -277,8 +277,8 @@ etna_init_screen_caps(struct etna_screen *screen)
 
    caps->min_texel_offset = -8;
    caps->max_texel_offset = 7;
-   caps->seamless_cube_map = screen->specs.seamless_cube_map;
-   caps->seamless_cube_map_per_texture = screen->specs.seamless_cube_map;
+   caps->seamless_cube_map_per_texture =
+   caps->seamless_cube_map = VIV_FEATURE(screen, ETNA_FEATURE_SEAMLESS_CUBE_MAP);
 
    /* Render targets. */
    caps->max_render_targets = VIV_FEATURE(screen, ETNA_FEATURE_HALTI2) ?
@@ -826,9 +826,6 @@ etna_get_specs(struct etna_screen *screen)
       VIV_FEATURE(screen, ETNA_FEATURE_SH_NO_ONECONST_LIMIT);
    screen->specs.v4_compression =
       VIV_FEATURE(screen, ETNA_FEATURE_V4_COMPRESSION);
-   screen->specs.seamless_cube_map =
-      (screen->info->model != 0x880) && /* Seamless cubemap is broken on GC880? */
-      VIV_FEATURE(screen, ETNA_FEATURE_SEAMLESS_CUBE_MAP);
 
    if (screen->info->halti >= 5) {
       /* GC7000 - this core must load shaders from memory. */
