@@ -3,6 +3,7 @@
 
 use std::io::IoSlice;
 use std::io::IoSliceMut;
+use std::mem::MaybeUninit;
 use std::os::fd::AsFd;
 use std::path::Path;
 
@@ -10,8 +11,8 @@ use rustix::cmsg_space;
 use rustix::fs::fcntl_setfl;
 use rustix::fs::OFlags;
 use rustix::net::accept;
-use rustix::net::bind_unix;
-use rustix::net::connect_unix;
+use rustix::net::bind;
+use rustix::net::connect;
 use rustix::net::listen;
 use rustix::net::recvmsg;
 use rustix::net::sendmsg;
@@ -58,7 +59,7 @@ impl Tube {
         };
 
         let unix_addr = SocketAddrUnix::new(path)?;
-        connect_unix(&socket, &unix_addr)?;
+        connect(&socket, &unix_addr)?;
 
         Ok(Tube {
             socket: socket.into(),
@@ -66,7 +67,7 @@ impl Tube {
     }
 
     pub fn send(&self, opaque_data: &[u8], descriptors: &[OwnedDescriptor]) -> MesaResult<usize> {
-        let mut space = [0; cmsg_space!(ScmRights(MAX_IDENTIFIERS))];
+        let mut space = [MaybeUninit::<u8>::uninit(); cmsg_space!(ScmRights(MAX_IDENTIFIERS))];
         let mut cmsg_buffer = SendAncillaryBuffer::new(&mut space);
 
         let borrowed_fds: Vec<_> = descriptors.iter().map(AsFd::as_fd).collect();
@@ -87,7 +88,7 @@ impl Tube {
     pub fn receive(&self, opaque_data: &mut [u8]) -> MesaResult<(usize, Vec<OwnedDescriptor>)> {
         let mut iovecs = [IoSliceMut::new(opaque_data)];
 
-        let mut space = [0; cmsg_space!(ScmRights(MAX_IDENTIFIERS))];
+        let mut space = [MaybeUninit::<u8>::uninit(); cmsg_space!(ScmRights(MAX_IDENTIFIERS))];
         let mut cmsg_buffer = RecvAncillaryBuffer::new(&mut space);
         let r = recvmsg(
             &self.socket,
@@ -134,7 +135,7 @@ impl Listener {
         )?;
 
         let unix_addr = SocketAddrUnix::new(path)?;
-        bind_unix(&socket, &unix_addr)?;
+        bind(&socket, &unix_addr)?;
         listen(&socket, 128)?;
 
         fcntl_setfl(&socket, OFlags::NONBLOCK)?;

@@ -1,6 +1,6 @@
 [wrap-file]
-directory = rustix-0.38.31
-source_url = https://crates.io/api/v1/crates/rustix/0.38.31/download
-source_filename = rustix-0.38.31.tar.gz
-source_hash = 6ea3e1a662af26cd7a3ba09c0297a31af215563ecf42817c98df621387f4e949
+directory = rustix-1.0.7
+source_url = https://crates.io/api/v1/crates/rustix/1.0.7/download
+source_filename = rustix-1.0.7.tar.gz
+source_hash = c71e83d6afe7ff64890ec6b71d6a69bb8a610ab78ce364b3352876bb4c801266
 patch_directory = rustix

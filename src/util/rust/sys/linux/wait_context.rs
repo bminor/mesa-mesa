@@ -5,9 +5,10 @@ use std::os::fd::OwnedFd;
 
 use rustix::event::epoll;
 use rustix::event::epoll::CreateFlags;
+use rustix::event::epoll::Event;
 use rustix::event::epoll::EventData;
 use rustix::event::epoll::EventFlags;
-use rustix::event::epoll::EventVec;
+use rustix::event::Timespec;
 use rustix::io::Errno;
 
 use crate::MesaResult;
@@ -37,20 +38,24 @@ impl WaitContext {
     }
 
     pub fn wait(&mut self, timeout: WaitTimeout) -> MesaResult<Vec<WaitEvent>> {
-        let mut event_vec = EventVec::with_capacity(WAIT_CONTEXT_MAX);
-        let epoll_timeout = match timeout {
-            WaitTimeout::Finite(duration) => duration.as_millis().try_into()?,
-            WaitTimeout::NoTimeout => -1,
+        let mut events_buffer: [epoll::Event; WAIT_CONTEXT_MAX] = [Event {
+            flags: EventFlags::IN,
+            data: EventData::new_u64(0),
+        }; WAIT_CONTEXT_MAX];
+
+        let epoll_timeout: Option<Timespec> = match timeout {
+            WaitTimeout::Finite(duration) => Some(duration.try_into()?),
+            WaitTimeout::NoTimeout => None, // Indefinite wait
         };
 
-        loop {
-            match epoll::wait(&self.epoll_ctx, &mut event_vec, epoll_timeout) {
+        let num_events = loop {
+            match epoll::wait(&self.epoll_ctx, &mut events_buffer, epoll_timeout.as_ref()) {
                 Err(Errno::INTR) => (), // Continue loop on EINTR
                 result => break result?,
             }
-        }
+        };
 
-        let events = event_vec
+        let events = events_buffer[..num_events]
             .iter()
             .map(|e| {
                 let flags: EventFlags = e.flags;
