@@ -67,6 +67,9 @@ impl GOBType {
                 panic!("Modifiers are not supported for Z/S images");
             }
             GOBType::TuringColor2D => GOBKindVersion::Turing,
+            GOBType::Blackwell8Bit | GOBType::Blackwell16Bit => {
+                todo!("We need new modifiers for Blackwell+")
+            }
         }
     }
 

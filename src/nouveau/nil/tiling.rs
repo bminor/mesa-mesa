@@ -9,7 +9,7 @@ use crate::image::{
 };
 use crate::ILog2Ceil;
 
-use nvidia_headers::classes::{cl9097, clc597};
+use nvidia_headers::classes::{cl9097, clc597, clcd97};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -26,6 +26,12 @@ pub enum GOBType {
 
     /// The Turing 2D GOB format for color images
     TuringColor2D,
+
+    /// The Blackwell+ GOB format for 8bit images
+    Blackwell8Bit,
+
+    /// The Blackwell+ GOB format for 16bit images
+    Blackwell16Bit,
 }
 
 impl GOBType {
@@ -33,7 +39,17 @@ impl GOBType {
         dev: &nil_rs_bindings::nv_device_info,
         format: Format,
     ) -> GOBType {
-        if dev.cls_eng3d >= clc597::TURING_A {
+        if dev.cls_eng3d >= clcd97::BLACKWELL_A {
+            if format.is_depth_or_stencil() {
+                GOBType::TuringZS
+            } else {
+                match format.el_size_B() {
+                    1 => GOBType::Blackwell8Bit,
+                    2 => GOBType::Blackwell16Bit,
+                    _ => GOBType::TuringColor2D,
+                }
+            }
+        } else if dev.cls_eng3d >= clc597::TURING_A {
             if format.is_depth_or_stencil() {
                 GOBType::TuringZS
             } else {
@@ -49,9 +65,11 @@ impl GOBType {
     pub fn extent_B(&self) -> Extent4D<units::Bytes> {
         match self {
             GOBType::Linear => Extent4D::new(1, 1, 1, 1),
-            GOBType::Fermi | GOBType::TuringZS | GOBType::TuringColor2D => {
-                Extent4D::new(64, 8, 1, 1)
-            }
+            GOBType::Fermi
+            | GOBType::TuringZS
+            | GOBType::TuringColor2D
+            | GOBType::Blackwell8Bit
+            | GOBType::Blackwell16Bit => Extent4D::new(64, 8, 1, 1),
         }
     }
 
