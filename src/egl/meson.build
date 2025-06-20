@@ -163,10 +163,8 @@ else
   deps_for_egl += dep_glvnd
   files_egl += [g_egldispatchstubs_h, g_egldispatchstubs_c]
   files_egl += files('main/eglglvnd.c', 'main/egldispatchstubs.c')
-  glvnd_config = configuration_data()
-  glvnd_config.set('glvnd_vendor_name', get_option('glvnd-vendor-name'))
   configure_file(
-    configuration: glvnd_config,
+    configuration: {'glvnd_vendor_name' : get_option('glvnd-vendor-name')},
     input : 'main/50_mesa.json',
     output: '50_@0@.json'.format(glvnd_vendor_name),
     install : true,
