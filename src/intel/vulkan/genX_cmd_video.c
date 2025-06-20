@@ -2805,6 +2805,9 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
    const struct anv_image_view *iv = frame_info->pSetupReferenceSlot ?
       anv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding) :
       dst_iv;
+   const uint32_t array_layer = frame_info->pSetupReferenceSlot ?
+      frame_info->pSetupReferenceSlot->pPictureResource->baseArrayLayer :
+      frame_info->dstPictureResource.baseArrayLayer;
 
    const struct anv_image *img = iv->image;
 
@@ -2878,8 +2881,7 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
    }
 
    anv_batch_emit(&cmd_buffer->batch, GENX(HCP_PIPE_BUF_ADDR_STATE), buf) {
-      buf.DecodedPictureAddress =
-         anv_image_address(img, &img->planes[0].primary_surface.memory_range);
+      buf.DecodedPictureAddress = anv_image_dpb_address(iv, array_layer);
 
       buf.DecodedPictureMemoryAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, buf.DecodedPictureAddress.bo, 0),
@@ -2988,8 +2990,7 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
             assert(frame_info->pReferenceSlots[idx].slotIndex == vp9_pic_info->referenceNameSlotIndices[i]);
 
             buf.ReferencePictureAddress[i] =
-               anv_image_address(ref_iv->image, &ref_iv->image->planes[0].primary_surface.memory_range);
-
+               anv_image_dpb_address(ref_iv, frame_info->pReferenceSlots[idx].pPictureResource->baseArrayLayer);
          }
       }
 
