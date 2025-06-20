@@ -226,7 +226,7 @@ is_disjoint(const struct panvk_image *image)
    return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
 }
 
-static void
+static VkResult
 panvk_image_init_layouts(struct panvk_image *image,
                          const VkImageCreateInfo *pCreateInfo)
 {
@@ -284,12 +284,18 @@ panvk_image_init_layouts(struct panvk_image *image,
          .planes = {&image->planes[plane].plane},
       };
 
-      pan_image_layout_init(arch, &image->planes[plane].image.props, 0,
-                            &plane_layout, &image->planes[plane].plane.layout);
+      if (!pan_image_layout_init(arch, &image->planes[plane].image.props, 0,
+                                 &plane_layout,
+                                 &image->planes[plane].plane.layout)) {
+         return panvk_error(image->vk.base.device,
+                            VK_ERROR_INITIALIZATION_FAILED);
+      }
 
       if (!is_disjoint(image) && !explicit_info)
          plane_layout.offset_B += image->planes[plane].plane.layout.data_size_B;
    }
+
+   return VK_SUCCESS;
 }
 
 static void
@@ -360,7 +366,7 @@ panvk_image_get_total_size(const struct panvk_image *image)
    return size;
 }
 
-static void
+static VkResult
 panvk_image_init(struct panvk_image *image,
                  const VkImageCreateInfo *pCreateInfo)
 {
@@ -372,7 +378,7 @@ panvk_image_init(struct panvk_image *image,
    /* Now that we've patched the create/usage flags, we can proceed with the
     * modifier selection. */
    image->vk.drm_format_mod = panvk_image_get_mod(image, pCreateInfo);
-   panvk_image_init_layouts(image, pCreateInfo);
+   return panvk_image_init_layouts(image, pCreateInfo);
 }
 
 static VkResult
@@ -432,7 +438,11 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    if (!image)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   panvk_image_init(image, pCreateInfo);
+   VkResult result = panvk_image_init(image, pCreateInfo);
+   if (result != VK_SUCCESS) {
+      vk_image_destroy(&dev->vk, pAllocator, &image->vk);
+      return result;
+   }
 
    /*
     * From the Vulkan spec:
