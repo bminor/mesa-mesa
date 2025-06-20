@@ -430,6 +430,10 @@ v3d_tlb_blit_fast(struct pipe_context *pctx, struct pipe_blit_info *info)
         if (idx < 0)
                 return;
 
+        /* We can't use this blit path if the color buffer is not stored */
+        if (!(job->store & (PIPE_CLEAR_COLOR0 << idx)))
+                return;
+
         struct pipe_surface dbuf;
         v3d_set_blit_surface(&dbuf, pctx, info->dst.resource,
                              info->dst.format, info->dst.level,
