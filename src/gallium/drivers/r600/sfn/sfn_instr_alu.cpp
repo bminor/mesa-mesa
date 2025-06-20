@@ -1979,6 +1979,9 @@ emit_alu_abs64(const nir_alu_instr& alu, Shader& shader)
 static bool
 try_propagat_fsat64(const nir_alu_instr& alu, Shader& shader)
 {
+   if (list_length(&alu.src[0].src.ssa->uses) > 1)
+      return false;
+
    auto& value_factory = shader.value_factory();
    auto src0 = value_factory.src64(alu.src[0], 0, 0);
    auto reg0 = src0->as_register();
@@ -1986,12 +1989,6 @@ try_propagat_fsat64(const nir_alu_instr& alu, Shader& shader)
       return false;
 
    if (!reg0->has_flag(Register::ssa))
-      return false;
-
-   if (reg0->parents().size() != 1)
-      return false;
-
-   if (!reg0->uses().empty())
       return false;
 
    auto parent = (*reg0->parents().begin())->as_alu();
