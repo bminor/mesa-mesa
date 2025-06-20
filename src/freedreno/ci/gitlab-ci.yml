@@ -281,6 +281,7 @@ a660-vk:
   parallel: 5
   variables:
     DEQP_SUITE: freedreno-a660-vk
+    FLAKES_CHANNEL: "#freedreno-ci"
     DEQP_FRACTION: 6
 
 a660-vk-full:
