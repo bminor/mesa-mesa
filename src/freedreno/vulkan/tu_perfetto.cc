@@ -263,6 +263,11 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
    if (!stage)
       return;
 
+   uint64_t duration = ts_ns - stage->start_ts;
+   /* Zero duration can only happen when tracepoints did not happen on GPU. */
+   if (duration == 0)
+      return;
+
    if (stage->stage_id != stage_id) {
       PERFETTO_ELOG("stage %d ended while stage %d is expected",
             stage_id, stage->stage_id);
