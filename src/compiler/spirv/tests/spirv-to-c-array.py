@@ -47,7 +47,7 @@ disassembled_source = ret.stdout
 
 generated_check = os.path.splitext(generated)[0] + '.check.spv'
 
-ret = subprocess.run(assembler_cmd + ['-o', generated_check],
+ret = subprocess.run(assembler_cmd + ['-', '-o', generated_check],
                      input=disassembled_source, capture_output=True)
 if ret.returncode != 0:
     print(ret.stderr.decode('ascii'))
