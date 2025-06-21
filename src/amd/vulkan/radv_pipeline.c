@@ -814,7 +814,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
 
    VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableStatisticKHR, out, pStatistics, pStatisticCount);
 
-   struct amd_stats stats = {};
+   struct amd_stats stats = {0};
    if (shader->statistics)
       stats = *shader->statistics;
    stats.driverhash = pipeline->pipeline_hash;
