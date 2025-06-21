@@ -229,8 +229,11 @@ impl QueueEvent {
         unsafe { mem::transmute(self) }
     }
 
-    fn queue(&self) -> &Option<Arc<Queue>> {
-        &self.0.queue
+    fn has_same_queue_as(&self, ev: &Event) -> bool {
+        match (&self.0.queue, &ev.queue) {
+            (Some(a), Some(b)) => Weak::ptr_eq(a, b),
+            _ => false,
+        }
     }
 
     fn set_user_status(self, status: cl_int) {
@@ -349,7 +352,7 @@ impl Queue {
                         for e in new_events {
                             // If we hit any deps from another queue, flush so we don't risk a dead
                             // lock.
-                            if e.deps().iter().any(|ev| &ev.queue != e.queue()) {
+                            if e.deps().iter().any(|ev| !e.has_same_queue_as(&ev)) {
                                 let dep_err = flush_events(&mut flushed, &ctx);
                                 last_err = cmp::min(last_err, dep_err);
                             }
@@ -357,7 +360,7 @@ impl Queue {
                             // check if any dependency has an error
                             for dep in e.deps() {
                                 // We have to wait on user events or events from other queues.
-                                let dep_err = if dep.is_user() || &dep.queue != e.queue() {
+                                let dep_err = if dep.is_user() || !e.has_same_queue_as(&dep) {
                                     dep.wait()
                                 } else {
                                     dep.status()

@@ -11,6 +11,7 @@ use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::ptr;
 use std::sync::Arc;
+use std::sync::Weak;
 
 #[cl_info_entrypoint(clGetEventInfo)]
 unsafe impl CLInfo<cl_event_info> for cl_event {
@@ -26,7 +27,7 @@ unsafe impl CLInfo<cl_event_info> for cl_event {
             CL_EVENT_COMMAND_QUEUE => {
                 let ptr = match event.queue.as_ref() {
                     // Note we use as_ptr here which doesn't increase the reference count.
-                    Some(queue) => Arc::as_ptr(queue),
+                    Some(queue) => Weak::as_ptr(queue),
                     None => ptr::null_mut(),
                 };
                 v.write::<cl_command_queue>(cl_command_queue::from_ptr(ptr))

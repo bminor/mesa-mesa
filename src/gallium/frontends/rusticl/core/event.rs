@@ -15,6 +15,7 @@ use std::sync::Arc;
 use std::sync::Condvar;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
+use std::sync::Weak;
 use std::time::Duration;
 
 // we assert that those are a continous range of numbers so we won't have to use HashMaps
@@ -46,7 +47,7 @@ struct EventMutState {
 pub struct Event {
     pub base: CLObjectBase<CL_INVALID_EVENT>,
     pub context: Arc<Context>,
-    pub queue: Option<Arc<Queue>>,
+    pub queue: Option<Weak<Queue>>,
     pub cmd_type: cl_command_type,
     pub deps: Vec<Arc<Event>>,
     state: Mutex<EventMutState>,
@@ -65,7 +66,7 @@ impl Event {
         Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Event),
             context: Arc::clone(&queue.context),
-            queue: Some(Arc::clone(queue)),
+            queue: Some(Arc::downgrade(queue)),
             cmd_type: cmd_type,
             deps: deps,
             state: Mutex::new(EventMutState {
@@ -290,7 +291,9 @@ impl Event {
     pub fn deep_unflushed_queues(events: &[Arc<Event>]) -> HashSet<Arc<Queue>> {
         Event::deep_unflushed_deps(events)
             .iter()
-            .filter_map(|e| e.queue.clone())
+            .filter_map(|e| e.queue.as_ref())
+            // We don't have to do anything for destroyed queues as they already flush on drop.
+            .filter_map(Weak::upgrade)
             .collect()
     }
 }
