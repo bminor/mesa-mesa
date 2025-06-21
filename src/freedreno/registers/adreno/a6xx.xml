@@ -2622,28 +2622,17 @@ to upconvert to 32b float internally?
 	    vertices in, number of primnitives assembled etc.
 	-->
 
-	<reg32 offset="0x0540" name="RBBM_PRIMCTR_0_LO"/>  <!-- IA_VERTICES -->
-	<reg32 offset="0x0541" name="RBBM_PRIMCTR_0_HI"/>
-	<reg32 offset="0x0542" name="RBBM_PRIMCTR_1_LO"/>  <!-- IA_PRIMITIVES -->
-	<reg32 offset="0x0543" name="RBBM_PRIMCTR_1_HI"/>
-	<reg32 offset="0x0544" name="RBBM_PRIMCTR_2_LO"/>  <!-- VS_INVOCATIONS -->
-	<reg32 offset="0x0545" name="RBBM_PRIMCTR_2_HI"/>
-	<reg32 offset="0x0546" name="RBBM_PRIMCTR_3_LO"/>  <!-- HS_INVOCATIONS -->
-	<reg32 offset="0x0547" name="RBBM_PRIMCTR_3_HI"/>
-	<reg32 offset="0x0548" name="RBBM_PRIMCTR_4_LO"/>  <!-- DS_INVOCATIONS -->
-	<reg32 offset="0x0549" name="RBBM_PRIMCTR_4_HI"/>
-	<reg32 offset="0x054a" name="RBBM_PRIMCTR_5_LO"/>  <!-- GS_INVOCATIONS -->
-	<reg32 offset="0x054b" name="RBBM_PRIMCTR_5_HI"/>
-	<reg32 offset="0x054c" name="RBBM_PRIMCTR_6_LO"/>  <!-- GS_PRIMITIVES -->
-	<reg32 offset="0x054d" name="RBBM_PRIMCTR_6_HI"/>
-	<reg32 offset="0x054e" name="RBBM_PRIMCTR_7_LO"/>  <!-- C_INVOCATIONS -->
-	<reg32 offset="0x054f" name="RBBM_PRIMCTR_7_HI"/>
-	<reg32 offset="0x0550" name="RBBM_PRIMCTR_8_LO"/>  <!-- C_PRIMITIVES -->
-	<reg32 offset="0x0551" name="RBBM_PRIMCTR_8_HI"/>
-	<reg32 offset="0x0552" name="RBBM_PRIMCTR_9_LO"/>  <!-- PS_INVOCATIONS -->
-	<reg32 offset="0x0553" name="RBBM_PRIMCTR_9_HI"/>
-	<reg32 offset="0x0554" name="RBBM_PRIMCTR_10_LO"/> <!-- CS_INVOCATIONS -->
-	<reg32 offset="0x0555" name="RBBM_PRIMCTR_10_HI"/>
+	<reg64 offset="0x0540" name="RBBM_PRIMCTR_0"/>  <!-- IA_VERTICES -->
+	<reg64 offset="0x0542" name="RBBM_PRIMCTR_1"/>  <!-- IA_PRIMITIVES -->
+	<reg64 offset="0x0544" name="RBBM_PRIMCTR_2"/>  <!-- VS_INVOCATIONS -->
+	<reg64 offset="0x0546" name="RBBM_PRIMCTR_3"/>  <!-- HS_INVOCATIONS -->
+	<reg64 offset="0x0548" name="RBBM_PRIMCTR_4"/>  <!-- DS_INVOCATIONS -->
+	<reg64 offset="0x054a" name="RBBM_PRIMCTR_5"/>  <!-- GS_INVOCATIONS -->
+	<reg64 offset="0x054c" name="RBBM_PRIMCTR_6"/>  <!-- GS_PRIMITIVES -->
+	<reg64 offset="0x054e" name="RBBM_PRIMCTR_7"/>  <!-- C_INVOCATIONS -->
+	<reg64 offset="0x0550" name="RBBM_PRIMCTR_8"/>  <!-- C_PRIMITIVES -->
+	<reg64 offset="0x0552" name="RBBM_PRIMCTR_9"/>  <!-- PS_INVOCATIONS -->
+	<reg64 offset="0x0554" name="RBBM_PRIMCTR_10"/> <!-- CS_INVOCATIONS -->
 
 	<reg32 offset="0xF400" name="RBBM_SECVID_TRUST_CNTL"/>
 	<reg64 offset="0xF800" name="RBBM_SECVID_TSB_TRUSTED_BASE"/>

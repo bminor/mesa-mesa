@@ -497,7 +497,7 @@ pipeline_stats_resume(struct fd_acc_query *aq, struct fd_batch *batch)
    struct fd_ringbuffer *ring = batch->draw;
    enum stats_type type = get_stats_type(aq);
    unsigned idx = stats_counter_index(aq);
-   unsigned reg = REG_A6XX_RBBM_PRIMCTR_0_LO + (2 * idx);
+   unsigned reg = REG_A6XX_RBBM_PRIMCTR_0 + (2 * idx);
 
    OUT_WFI5(ring);
 
@@ -522,7 +522,7 @@ pipeline_stats_pause(struct fd_acc_query *aq, struct fd_batch *batch)
    struct fd_ringbuffer *ring = batch->draw;
    enum stats_type type = get_stats_type(aq);
    unsigned idx = stats_counter_index(aq);
-   unsigned reg = REG_A6XX_RBBM_PRIMCTR_0_LO + (2 * idx);
+   unsigned reg = REG_A6XX_RBBM_PRIMCTR_0 + (2 * idx);
 
    OUT_WFI5(ring);
 

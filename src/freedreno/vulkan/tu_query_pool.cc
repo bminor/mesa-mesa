@@ -27,7 +27,7 @@
 
 #define NSEC_PER_SEC 1000000000ull
 #define WAIT_TIMEOUT 5
-#define STAT_COUNT ((REG_A6XX_RBBM_PRIMCTR_10_LO - REG_A6XX_RBBM_PRIMCTR_0_LO) / 2 + 1)
+#define STAT_COUNT ((REG_A6XX_RBBM_PRIMCTR_10 - REG_A6XX_RBBM_PRIMCTR_0) / 2 + 1)
 
 struct PACKED query_slot {
    uint64_t available;
@@ -1130,7 +1130,7 @@ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_0_LO) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_0) |
                   CP_REG_TO_MEM_0_CNT(STAT_COUNT * 2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, begin_iova);
@@ -1339,7 +1339,7 @@ emit_begin_prim_generated_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_7_LO) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_7) |
                   CP_REG_TO_MEM_0_CNT(2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, begin_iova);
@@ -1592,7 +1592,7 @@ emit_end_stat_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_0_LO) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_0) |
                   CP_REG_TO_MEM_0_CNT(STAT_COUNT * 2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, end_iova);
@@ -1872,7 +1872,7 @@ emit_end_prim_generated_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_REG_TO_MEM, 3);
-   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_7_LO) |
+   tu_cs_emit(cs, CP_REG_TO_MEM_0_REG(REG_A6XX_RBBM_PRIMCTR_7) |
                   CP_REG_TO_MEM_0_CNT(2) |
                   CP_REG_TO_MEM_0_64B);
    tu_cs_emit_qw(cs, end_iova);
