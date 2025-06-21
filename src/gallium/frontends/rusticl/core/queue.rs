@@ -203,7 +203,68 @@ pub struct Queue {
     pub props: cl_command_queue_properties,
     pub props_v2: Properties<cl_queue_properties>,
     state: Mutex<QueueState>,
-    thrd: JoinHandle<()>,
+    _thrd: JoinHandle<()>,
+}
+
+/// Wrapper around Event to set it to an error state on drop. This is useful for dealing with panics
+/// inside the worker thread, so all not yet processed events will bet put into an error state, so
+/// Event::wait won't infinitely spin on the status to change.
+#[repr(transparent)]
+struct QueueEvent(Arc<Event>);
+
+impl QueueEvent {
+    fn call(self, ctx: &QueueContext) -> (cl_int, Arc<Event>) {
+        let res = self.0.call(ctx);
+        (res, self.to_inner())
+    }
+
+    fn deps(&self) -> &[Arc<Event>] {
+        &self.0.deps
+    }
+
+    fn to_inner(self) -> Arc<Event> {
+        // SAFETY: QueueEvent is transparent wrapper so it's safe to transmute the value. We want to
+        //         prevent drop from running on it. Alternatively we could use ManuallyDrop, but
+        //         that also requires an unsafe call (ManuallyDrop::take).
+        unsafe { mem::transmute(self) }
+    }
+
+    fn queue(&self) -> &Option<Arc<Queue>> {
+        &self.0.queue
+    }
+
+    fn set_user_status(self, status: cl_int) {
+        self.to_inner().set_user_status(status);
+    }
+}
+
+impl Drop for QueueEvent {
+    fn drop(&mut self) {
+        // Make sure the status isn't an error or success.
+        debug_assert!(self.0.status() > CL_RUNNING as cl_int);
+        self.0.set_user_status(CL_OUT_OF_HOST_MEMORY)
+    }
+}
+
+/// Wrapper around received events, so they automatically go into an error state whenever the queue
+/// thread panics. We should use panic::catch_unwind, but that requires things to be UnwindSafe and
+/// that's not easily doable.
+#[repr(transparent)]
+struct QueueEvents(Vec<QueueEvent>);
+
+impl QueueEvents {
+    fn new(events: Vec<Arc<Event>>) -> Self {
+        Self(events.into_iter().map(QueueEvent).collect())
+    }
+}
+
+impl IntoIterator for QueueEvents {
+    type Item = QueueEvent;
+    type IntoIter = <Vec<QueueEvent> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
 }
 
 impl_cl_type_trait!(cl_command_queue, Queue, CL_INVALID_COMMAND_QUEUE);
@@ -258,7 +319,7 @@ impl Queue {
                 last: Weak::new(),
                 chan_in: tx_q,
             }),
-            thrd: thread::Builder::new()
+            _thrd: thread::Builder::new()
                 .name("rusticl queue thread".into())
                 .spawn(move || {
                     // Track the error of all executed events. This is only needed for in-order
@@ -282,21 +343,21 @@ impl Queue {
                             break;
                         }
 
-                        let new_events = r.unwrap();
+                        let new_events = QueueEvents::new(r.unwrap());
                         let mut flushed = Vec::new();
 
                         for e in new_events {
                             // If we hit any deps from another queue, flush so we don't risk a dead
                             // lock.
-                            if e.deps.iter().any(|ev| ev.queue != e.queue) {
+                            if e.deps().iter().any(|ev| &ev.queue != e.queue()) {
                                 let dep_err = flush_events(&mut flushed, &ctx);
                                 last_err = cmp::min(last_err, dep_err);
                             }
 
                             // check if any dependency has an error
-                            for dep in &e.deps {
+                            for dep in e.deps() {
                                 // We have to wait on user events or events from other queues.
-                                let dep_err = if dep.is_user() || dep.queue != e.queue {
+                                let dep_err = if dep.is_user() || &dep.queue != e.queue() {
                                     dep.wait()
                                 } else {
                                     dep.status()
@@ -314,7 +375,8 @@ impl Queue {
                             // if there is an execution error don't bother signaling it as the  context
                             // might be in a broken state. How queues behave after any event hit an
                             // error is entirely implementation defined.
-                            last_err = e.call(&ctx);
+                            let (err, e) = e.call(&ctx);
+                            last_err = err;
                             if last_err < 0 {
                                 continue;
                             }
@@ -392,10 +454,6 @@ impl Queue {
             }
         }
         Ok(())
-    }
-
-    pub fn is_dead(&self) -> bool {
-        self.thrd.is_finished()
     }
 
     pub fn is_profiling_enabled(&self) -> bool {
