@@ -77,6 +77,13 @@ etna_blend_state_create(struct pipe_context *pctx,
                      rt->alpha_dst_factor == PIPE_BLENDFACTOR_ZERO &&
                      rt->alpha_func == PIPE_BLEND_ADD);
 
+      /* Dithering together with alpha blending and without feature
+       * ETNA_FEATURE_PE_DITHER_FIX leads to visibly altered colors.
+       */
+      if (co->rt[i].alpha_enable &&
+          !VIV_FEATURE(ctx->screen, ETNA_FEATURE_PE_DITHER_FIX))
+         co->base.dither = 0;
+
       /* Enable separate alpha if
       * - Blending enabled (see above)
       * - NOT source/destination factor and eq is same for both rgb and alpha
@@ -92,23 +99,9 @@ etna_blend_state_create(struct pipe_context *pctx,
 
    co->PE_LOGIC_OP =
          VIVS_PE_LOGIC_OP_OP(logicop_enable ? so->logicop_func : LOGIC_OP_COPY) |
-         VIVS_PE_LOGIC_OP_DITHER_MODE(3) | /* TODO: related to dithering, sometimes 2 */
          0x000E4000 /* ??? */;
 
    /* XXX alpha_to_coverage / alpha_to_one? */
-   /* Set dither registers based on dither status. These registers set the
-    * dither pattern,
-    * for now, set the same values as the blob.
-    */
-   if (so->dither &&
-       (!co->rt[0].alpha_enable ||
-        VIV_FEATURE(ctx->screen, ETNA_FEATURE_PE_DITHER_FIX))) {
-      co->PE_DITHER[0] = 0x6e4ca280;
-      co->PE_DITHER[1] = 0x5d7f91b3;
-   } else {
-      co->PE_DITHER[0] = 0xffffffff;
-      co->PE_DITHER[1] = 0xffffffff;
-   }
 
    return co;
 }
@@ -120,6 +113,7 @@ etna_update_blend(struct etna_context *ctx)
    struct pipe_blend_state *pblend = ctx->blend;
    struct etna_blend_state *blend = etna_blend_state(pblend);
    unsigned current_rt = 0;
+   bool dither_allow = true;
 
    for (unsigned i = 0; i < pfb->nr_cbufs; i++) {
       if (!pfb->cbufs[i].texture)
@@ -142,6 +136,13 @@ etna_update_blend(struct etna_context *ctx)
       } else {
          colormask = rt->colormask;
       }
+
+      /* Dithering a 4bpc format leads to visible artifacts due to the low
+       * precision of the color channels.
+       */
+      if (pfb->cbufs[i].format == PIPE_FORMAT_B4G4R4A4_UNORM ||
+          pfb->cbufs[i].format == PIPE_FORMAT_B4G4R4X4_UNORM)
+         dither_allow = false;
 
       /* If the complete render target is written, set full_overwrite:
       * - The color mask covers all channels of the render target
@@ -180,6 +181,17 @@ etna_update_blend(struct etna_context *ctx)
 
    if (current_rt == 0)
       blend->rt[0].PE_COLOR_FORMAT = VIVS_PE_COLOR_FORMAT_OVERWRITE;
+
+   /* Use same dither pattern as the blob */
+   if (blend->base.dither && dither_allow) {
+      blend->PE_DITHER[0] = 0x6e4ca280;
+      blend->PE_DITHER[1] = 0x5d7f91b3;
+      blend->PE_LOGIC_OP |= VIVS_PE_LOGIC_OP_DITHER_MODE(3); /* TODO: sometimes 2 */
+   } else {
+      blend->PE_DITHER[0] = 0xffffffff;
+      blend->PE_DITHER[1] = 0xffffffff;
+      blend->PE_LOGIC_OP &= ~VIVS_PE_LOGIC_OP_DITHER_MODE__MASK;
+   }
 
    return true;
 }
