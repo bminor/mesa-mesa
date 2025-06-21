@@ -2334,7 +2334,7 @@
         "description": "spirv: Fix cooperative matrix in OpVariable initializer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7e6cd395c785c41d807fd164f7374a1ad0eca742",
         "notes": null
