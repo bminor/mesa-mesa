@@ -2449,17 +2449,17 @@ fn enqueue_svm_free_impl(
     let cb_opt = unsafe { SVMFreeCb::new(pfn_free_func, user_data) }.ok();
 
     create_and_queue(
-        q,
+        Arc::clone(&q),
         cmd_type,
         evs,
         event,
         false,
-        Box::new(move |q, _| {
+        Box::new(move |cl_ctx, _| {
             if let Some(cb) = cb_opt {
-                cb.call(q, &mut svm_pointers);
+                cb.call(&q, &mut svm_pointers);
             } else {
                 for ptr in svm_pointers {
-                    q.context.remove_svm_ptr(ptr);
+                    cl_ctx.remove_svm_ptr(ptr);
                 }
             }
 
@@ -2558,7 +2558,7 @@ fn enqueue_svm_memcpy_impl(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| q.context.copy_svm(ctx, src_ptr, dst_ptr, size)),
+        Box::new(move |cl_ctx, ctx| cl_ctx.copy_svm(ctx, src_ptr, dst_ptr, size)),
     )
 }
 
@@ -2702,7 +2702,7 @@ fn enqueue_svm_mem_fill_impl(
             let pattern = unsafe { pattern_ptr.read_unaligned() };
             let svm_ptr = svm_ptr as usize;
 
-            Box::new(move |q, ctx| q.context.clear_svm(ctx, svm_ptr, size, pattern.0))
+            Box::new(move |cl_ctx, ctx| cl_ctx.clear_svm(ctx, svm_ptr, size, pattern.0))
         }};
     }
 
@@ -2814,7 +2814,7 @@ fn enqueue_svm_map_impl(
         evs,
         event,
         block,
-        Box::new(move |q, ctx| q.context.copy_svm_to_host(ctx, svm_ptr, flags)),
+        Box::new(move |cl_ctx, ctx| cl_ctx.copy_svm_to_host(ctx, svm_ptr, flags)),
     )
 }
 
@@ -2999,9 +2999,8 @@ fn enqueue_svm_migrate_mem(
         evs,
         event,
         false,
-        Box::new(move |q, ctx| {
-            q.context
-                .migrate_svm(ctx, svm_pointers, sizes, to_device, content_undefined)
+        Box::new(move |cl_ctx, ctx| {
+            cl_ctx.migrate_svm(ctx, svm_pointers, sizes, to_device, content_undefined)
         }),
     )
 }

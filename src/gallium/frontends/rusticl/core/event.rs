@@ -23,7 +23,7 @@ static_assert!(CL_RUNNING == 1);
 static_assert!(CL_SUBMITTED == 2);
 static_assert!(CL_QUEUED == 3);
 
-pub type EventSig = Box<dyn FnOnce(&Arc<Queue>, &QueueContext) -> CLResult<()> + Send + Sync>;
+pub type EventSig = Box<dyn FnOnce(&Context, &QueueContext) -> CLResult<()> + Send + Sync>;
 
 pub enum EventTimes {
     Queued = CL_PROFILING_COMMAND_QUEUED as isize,
@@ -240,7 +240,7 @@ impl Event {
                             PipeQueryGen::<{ pipe_query_type::PIPE_QUERY_TIMESTAMP }>::new(ctx);
                     }
 
-                    let res = w(queue, ctx).err().map_or(
+                    let res = w(&self.context, ctx).err().map_or(
                         // return the error if there is one
                         CL_SUBMITTED as cl_int,
                         |e| e,
