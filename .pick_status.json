@@ -1974,7 +1974,7 @@
         "description": "vulkan: don't destroy vk_sync_timeline if a point is still pending",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

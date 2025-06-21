@@ -69,6 +69,8 @@ struct vk_sync_timeline_state {
    uint64_t highest_past;
    uint64_t highest_pending;
 
+   uint32_t refcount;
+
    struct list_head pending_points;
    struct list_head free_points;
 };
