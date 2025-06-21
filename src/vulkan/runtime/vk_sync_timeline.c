@@ -60,6 +60,38 @@ vk_sync_timeline_type_validate(const struct vk_sync_timeline_type *ttype)
    assert(!(req_features & ~ttype->point_sync_type->features));
 }
 
+static void
+vk_sync_timeline_state_ref(struct vk_sync_timeline_state *state)
+{
+   p_atomic_inc(&state->refcount);
+}
+
+static void
+vk_sync_timeline_state_unref(struct vk_device *device,
+                             struct vk_sync_timeline_state *state)
+{
+   if (p_atomic_dec_return(&state->refcount))
+      return;
+
+   list_for_each_entry_safe(struct vk_sync_timeline_point, point,
+                            &state->free_points, link) {
+      list_del(&point->link);
+      vk_sync_finish(device, &point->sync);
+      vk_free(&device->alloc, point);
+   }
+
+   list_for_each_entry_safe(struct vk_sync_timeline_point, point,
+                            &state->pending_points, link) {
+      list_del(&point->link);
+      vk_sync_finish(device, &point->sync);
+      vk_free(&device->alloc, point);
+   }
+
+   u_cnd_monotonic_destroy(&state->cond);
+   mtx_destroy(&state->mutex);
+   vk_free(&device->alloc, state);
+}
+
 VkResult
 vk_sync_timeline_init(struct vk_device *device,
                       struct vk_sync *sync,
@@ -95,10 +127,17 @@ vk_sync_timeline_init(struct vk_device *device,
    list_inithead(&state->pending_points);
    list_inithead(&state->free_points);
 
+   p_atomic_set(&state->refcount, 1);
+
    timeline->state = state;
 
    return VK_SUCCESS;
 }
+
+static VkResult
+vk_sync_timeline_gc_locked(struct vk_device *device,
+                           struct vk_sync_timeline_state *state,
+                           bool drain);
 
 static void
 vk_sync_timeline_finish(struct vk_device *device,
@@ -106,22 +145,19 @@ vk_sync_timeline_finish(struct vk_device *device,
 {
    struct vk_sync_timeline_state *state = to_vk_sync_timeline_state(sync);
 
-   list_for_each_entry_safe(struct vk_sync_timeline_point, point,
-                            &state->free_points, link) {
-      list_del(&point->link);
-      vk_sync_finish(device, &point->sync);
-      vk_free(&device->alloc, point);
-   }
-   list_for_each_entry_safe(struct vk_sync_timeline_point, point,
-                            &state->pending_points, link) {
-      list_del(&point->link);
-      vk_sync_finish(device, &point->sync);
-      vk_free(&device->alloc, point);
-   }
+   /* We need to garbage collect to get rid of any pending points so that the
+    * vk_sync_timeline_state_unref() at the end drops the final reference
+    * held by the vk_sync_timeline. It's up to the client to ensure that
+    * there are no vk_sync in-flight when this is called so this should get
+    * rid of all pending time points. The only time point references left are
+    * those held by waits or vk_queue_submit().
+    */
+   mtx_lock(&state->mutex);
+   vk_sync_timeline_gc_locked(device, state, true);
+   assert(list_is_empty(&state->pending_points));
+   mtx_unlock(&state->mutex);
 
-   u_cnd_monotonic_destroy(&state->cond);
-   mtx_destroy(&state->mutex);
-   vk_free(&device->alloc, state);
+   vk_sync_timeline_state_unref(device, state);
 }
 
 static struct vk_sync_timeline_point *
@@ -136,11 +172,6 @@ vk_sync_timeline_first_point(struct vk_sync_timeline_state *state)
 
    return point;
 }
-
-static VkResult
-vk_sync_timeline_gc_locked(struct vk_device *device,
-                           struct vk_sync_timeline_state *state,
-                           bool drain);
 
 static VkResult
 vk_sync_timeline_alloc_point_locked(struct vk_device *device,
@@ -197,6 +228,8 @@ vk_sync_timeline_alloc_point_locked(struct vk_device *device,
 
    *point_out = point;
 
+   vk_sync_timeline_state_ref(state);
+
    return VK_SUCCESS;
 }
 
@@ -221,21 +254,66 @@ vk_sync_timeline_ref_point_locked(struct vk_sync_timeline_point *point)
    point->refcount++;
 }
 
-static void
-vk_sync_timeline_unref_point_locked(struct vk_sync_timeline_state *state,
-                                    struct vk_sync_timeline_point *point)
+/* Returns true if this was the last reference to point.
+ *
+ * DO NOT call this helper directly. You should call vk_sync_timeline_unref_point_locked()
+ * or vk_sync_timeline_point_unref() instead.
+ */
+static bool
+vk_sync_timeline_unref_point_no_unref_state_locked(struct vk_sync_timeline_point *point)
 {
+   struct vk_sync_timeline_state *state = point->timeline_state;
+
    assert(point->refcount > 0);
    point->refcount--;
-   if (point->refcount == 0) {
-      /* The pending list also takes a reference so this can't be pending */
-      assert(!point->pending);
-      list_add(&point->link, &state->free_points);
-   }
+
+   if (point->refcount > 0)
+      return false;
+
+   assert(point->refcount == 0);
+
+   /* The pending list also takes a reference so this can't be pending */
+   assert(!point->pending);
+   list_add(&point->link, &state->free_points);
+
+   return true;
 }
 
 static void
-vk_sync_timeline_complete_point_locked(struct vk_sync_timeline_state *state,
+vk_sync_timeline_unref_point_locked(struct vk_device *device,
+                                    struct vk_sync_timeline_state *state,
+                                    struct vk_sync_timeline_point *point)
+{
+   /* The caller needs to have its own reference to the state, not just the
+    * one implicit in point, because it's also holding the lock.
+    */
+   assert(p_atomic_read(&state->refcount) > 1);
+
+   if (vk_sync_timeline_unref_point_no_unref_state_locked(point))
+      vk_sync_timeline_state_unref(device, state);
+}
+
+void
+vk_sync_timeline_point_unref(struct vk_device *device,
+                             struct vk_sync_timeline_point *point)
+{
+   struct vk_sync_timeline_state *state = point->timeline_state;
+
+   mtx_lock(&state->mutex);
+   const bool last_ref =
+      vk_sync_timeline_unref_point_no_unref_state_locked(point);
+   mtx_unlock(&state->mutex);
+
+   /* Drop the state reference outside the mutex so we don't free the state
+    * and then try to unlock the mutex.
+    */
+   if (last_ref)
+      vk_sync_timeline_state_unref(device, state);
+}
+
+static void
+vk_sync_timeline_complete_point_locked(struct vk_device *device,
+                                       struct vk_sync_timeline_state *state,
                                        struct vk_sync_timeline_point *point)
 {
    if (!point->pending)
@@ -248,7 +326,7 @@ vk_sync_timeline_complete_point_locked(struct vk_sync_timeline_state *state,
    list_del(&point->link);
 
    /* Drop the pending reference */
-   vk_sync_timeline_unref_point_locked(state, point);
+   vk_sync_timeline_unref_point_locked(device, state, point);
 }
 
 static VkResult
@@ -290,7 +368,7 @@ vk_sync_timeline_gc_locked(struct vk_device *device,
          return result;
       }
 
-      vk_sync_timeline_complete_point_locked(state, point);
+      vk_sync_timeline_complete_point_locked(device, state, point);
    }
 
    return VK_SUCCESS;
@@ -362,17 +440,6 @@ vk_sync_timeline_get_point(struct vk_device *device,
    mtx_unlock(&state->mutex);
 
    return result;
-}
-
-void
-vk_sync_timeline_point_unref(struct vk_device *device,
-                             struct vk_sync_timeline_point *point)
-{
-   struct vk_sync_timeline_state *state = point->timeline_state;
-
-   mtx_lock(&state->mutex);
-   vk_sync_timeline_unref_point_locked(state, point);
-   mtx_unlock(&state->mutex);
 }
 
 static VkResult
@@ -476,13 +543,13 @@ vk_sync_timeline_wait_locked(struct vk_device *device,
 
       /* Pick the mutex back up */
       mtx_lock(&state->mutex);
-      vk_sync_timeline_unref_point_locked(state, point);
+      vk_sync_timeline_unref_point_locked(device, state, point);
 
       /* This covers both VK_TIMEOUT and VK_ERROR_DEVICE_LOST */
       if (result != VK_SUCCESS)
          return result;
 
-      vk_sync_timeline_complete_point_locked(state, point);
+      vk_sync_timeline_complete_point_locked(device, state, point);
    }
 
    return VK_SUCCESS;
