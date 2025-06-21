@@ -2782,7 +2782,7 @@ to upconvert to 32b float internally?
 	<reg32 offset="0x0011f" name="RBBM_CGC_P2S_TRIG_CMD" variants="A7XX-"/>
 	<reg32 offset="0x00120" name="RBBM_CLOCK_CNTL_TEX_FCHE"/>
 	<reg32 offset="0x00121" name="RBBM_CLOCK_DELAY_TEX_FCHE"/>
-	<reg32 offset="0x00122" name="RBBM_CLOCK_HYST_TEX_FCHE"/>
+	<reg32 offset="0x00122" name="RBBM_CLOCK_HYST_TEX_FCHE" variants="A6XX"/>
 	<reg32 offset="0x00122" name="RBBM_CGC_P2S_STATUS" variants="A7XX-">
 		<bitfield name="TXDONE" pos="0" type="boolean"/>
 	</reg32>
@@ -2843,7 +2843,7 @@ to upconvert to 32b float internally?
 	</reg32>
 	<reg32 offset="0x062f" name="DBGC_CFG_DBGBUS_TRACE_BUF1"/>
 	<reg32 offset="0x0630" name="DBGC_CFG_DBGBUS_TRACE_BUF2"/>
-	<array offset="0x0CD8" name="VSC_PERFCTR_VSC_SEL" stride="1" length="2"/>
+	<array offset="0x0CD8" name="VSC_PERFCTR_VSC_SEL" stride="1" length="2" variants="A6XX"/>
 	<reg32 offset="0x0CD8" name="VSC_UNKNOWN_0CD8" variants="A7XX">
 		<doc>
 			Set to true when binning, isn't changed afterwards
