@@ -222,12 +222,11 @@ impl Event {
     pub fn call(&self, ctx: &QueueContext) -> cl_int {
         let mut lock = self.state();
         let mut status = lock.status;
-        let queue = self.queue.as_ref().unwrap();
-        let profiling_enabled = queue.is_profiling_enabled();
+        let profiling_enabled = lock.time_queued != 0;
         if status == CL_QUEUED as cl_int {
             if profiling_enabled {
                 // We already have the lock so can't call set_time on the event
-                lock.time_submit = queue.device.screen().get_timestamp();
+                lock.time_submit = ctx.dev.screen().get_timestamp();
             }
             let mut query_start = None;
             let mut query_end = None;
