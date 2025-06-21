@@ -466,11 +466,8 @@ impl Queue {
 
 impl Drop for Queue {
     fn drop(&mut self) {
-        // when deleting the application side object, we have to flush
-        // From the OpenCL spec:
-        // clReleaseCommandQueue performs an implicit flush to issue any previously queued OpenCL
-        // commands in command_queue.
-        // TODO: maybe we have to do it on every release?
-        let _ = self.flush(true);
+        // When reaching this point the queue should have been flushed already, but do it here once
+        // again just to be sure.
+        let _ = self.flush(false);
     }
 }
