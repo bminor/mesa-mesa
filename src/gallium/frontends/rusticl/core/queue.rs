@@ -340,14 +340,15 @@ impl Queue {
                     //       GPU contexts
                     let mut last_err = CL_SUCCESS as cl_int;
                     let ctx = ctx.ctx();
+                    let mut flushed = Vec::new();
                     loop {
+                        debug_assert!(flushed.is_empty());
+
                         let Ok(new_events) = rx_t.recv() else {
                             break;
                         };
 
                         let new_events = QueueEvents::new(new_events);
-                        let mut flushed = Vec::new();
-
                         for e in new_events {
                             // If we hit any deps from another queue, flush so we don't risk a dead
                             // lock.
