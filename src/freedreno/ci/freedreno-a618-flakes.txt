@@ -239,12 +239,14 @@ dEQP-VK.clipping.user_defined.clip_cull_distance.*geom.*
 dEQP-VK.clipping.user_defined.clip_cull_distance.*tess.*
 dEQP-VK.clipping.user_defined.clip_distance.*geom.*
 dEQP-VK.clipping.user_defined.clip_distance.*tess.*
+dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multi_draw.mosaic.normal.one_draw.stride_extra_12.1_instance.with_geom.single_view.no_offset_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.dynamic_state_draw_vk_primitive_topology_triangle_strip_attrib_divisor_2
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_4.1_instance.tess_geom.single_view.offset_6_no_draw_id
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_random.16_draws.stride_extra_4.10_instances.with_tess.single_view.no_offset
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.shader_layer.tessellation_shader_4
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed46_geometry
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed88_geometry
+dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_3.a8b8g8r8_unorm_pack32.samples_2_resolve_level_2
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_3.r16g16_sfloat.samples_4
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.layers_6.a8b8g8r8_srgb_pack32.samples_2_resolve_level_2
 dEQP-VK.fragment_operations.scissor.multi_viewport.*
@@ -266,7 +268,7 @@ dEQP-VK.spirv_assembly.type.*tess.*
 dEQP-VK.synchronization.*_geometry.*
 dEQP-VK.synchronization.*_tess_ctrl.*
 dEQP-VK.synchronization.*_tess_eval.*
-dEQP-VK.tesselation.invariance.*
+dEQP-VK.tessellation.invariance.*
 
 # Updated by ci-collate
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-wrong-type-setter
