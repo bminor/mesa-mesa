@@ -1609,37 +1609,56 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          }
       }
 
+      offset = 0;
+      for (unsigned i = 0; i < ops.size(); i++) {
+         if (ops[i].isTemp()) {
+            if (ctx.info[ops[i].tempId()].is_temp() &&
+                ops[i].regClass() == ctx.info[ops[i].tempId()].temp.regClass()) {
+               ops[i].setTemp(ctx.info[ops[i].tempId()].temp);
+            }
+
+            /* If this and the following operands make up all definitions of a `p_split_vector`,
+             * replace them with the operand of the `p_split_vector` instruction.
+             */
+            Instruction* parent = ctx.info[ops[i].tempId()].parent_instr;
+            if (parent->opcode == aco_opcode::p_split_vector &&
+                (offset % 4 == 0 || parent->operands[0].bytes() < 4) &&
+                parent->definitions.size() <= ops.size() - i) {
+               copy_prop = true;
+               for (unsigned j = 0; copy_prop && j < parent->definitions.size(); j++) {
+                  copy_prop &= ops[i + j].isTemp() &&
+                               ops[i + j].getTemp() == parent->definitions[j].getTemp();
+               }
+
+               if (copy_prop) {
+                  ops.erase(ops.begin() + i + 1, ops.begin() + i + parent->definitions.size());
+                  ops[i] = parent->operands[0];
+               }
+            }
+         }
+
+         offset += ops[i].bytes();
+      }
+
       /* combine expanded operands to new vector */
-      if (ops.size() != instr->operands.size()) {
-         assert(ops.size() > instr->operands.size());
+      if (ops.size() <= instr->operands.size()) {
+         while (instr->operands.size() > ops.size())
+            instr->operands.pop_back();
+
+         if (ops.size() == 1) {
+            instr->opcode = aco_opcode::p_parallelcopy;
+            if (ops[0].isTemp())
+               ctx.info[instr->definitions[0].tempId()].set_temp(ops[0].getTemp());
+         }
+      } else {
          Definition def = instr->definitions[0];
          instr.reset(
             create_instruction(aco_opcode::p_create_vector, Format::PSEUDO, ops.size(), 1));
-         for (unsigned i = 0; i < ops.size(); i++) {
-            if (ops[i].isTemp() && ctx.info[ops[i].tempId()].is_temp() &&
-                ops[i].regClass() == ctx.info[ops[i].tempId()].temp.regClass())
-               ops[i].setTemp(ctx.info[ops[i].tempId()].temp);
-            instr->operands[i] = ops[i];
-         }
          instr->definitions[0] = def;
-      } else {
-         for (unsigned i = 0; i < ops.size(); i++) {
-            assert(instr->operands[i] == ops[i]);
-         }
       }
 
-      if (instr->operands.size() == 2 && instr->operands[1].isTemp()) {
-         /* check if this is created from split_vector */
-         ssa_info& info = ctx.info[instr->operands[1].tempId()];
-         if (info.parent_instr->opcode == aco_opcode::p_split_vector) {
-            Instruction* split = info.parent_instr;
-            if (instr->operands[0].isTemp() &&
-                instr->operands[0].getTemp() == split->definitions[0].getTemp() &&
-                instr->operands[1].getTemp() == split->definitions[1].getTemp() &&
-                instr->definitions[0].regClass() == split->operands[0].regClass())
-               ctx.info[instr->definitions[0].tempId()].set_temp(split->operands[0].getTemp());
-         }
-      }
+      for (unsigned i = 0; i < ops.size(); i++)
+         instr->operands[i] = ops[i];
       break;
    }
    case aco_opcode::p_split_vector: {
