@@ -341,12 +341,11 @@ impl Queue {
                     let mut last_err = CL_SUCCESS as cl_int;
                     let ctx = ctx.ctx();
                     loop {
-                        let r = rx_t.recv();
-                        if r.is_err() {
+                        let Ok(new_events) = rx_t.recv() else {
                             break;
-                        }
+                        };
 
-                        let new_events = QueueEvents::new(r.unwrap());
+                        let new_events = QueueEvents::new(new_events);
                         let mut flushed = Vec::new();
 
                         for e in new_events {
