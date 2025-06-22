@@ -82,6 +82,19 @@ vectorize_vec2_16bit(const nir_instr *instr, const void *_)
       return 0;
 
    const nir_alu_instr *alu = nir_instr_as_alu(instr);
+   switch (alu->op) {
+   case nir_op_f2e4m3fn:
+   case nir_op_f2e4m3fn_sat:
+   case nir_op_f2e4m3fn_satfn:
+   case nir_op_f2e5m2:
+   case nir_op_f2e5m2_sat:
+   case nir_op_e4m3fn2f:
+   case nir_op_e5m22f:
+      return 2;
+   default:
+      break;
+   }
+
    const unsigned bit_size = alu->def.bit_size;
    if (bit_size == 16)
       return 2;
