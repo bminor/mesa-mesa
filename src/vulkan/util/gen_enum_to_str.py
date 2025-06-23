@@ -190,7 +190,8 @@ H_TEMPLATE = Template(textwrap.dedent(u"""\
     } /* extern "C" */
     #endif
 
-    #endif"""))
+    #endif
+    """))
 
 
 H_DEFINE_TEMPLATE = Template(textwrap.dedent(u"""\
@@ -253,7 +254,8 @@ H_DEFINE_TEMPLATE = Template(textwrap.dedent(u"""\
     } /* extern "C" */
     #endif
 
-    #endif"""))
+    #endif
+    """))
 
 
 class NamedFactory(object):

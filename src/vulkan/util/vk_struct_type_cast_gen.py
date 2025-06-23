@@ -42,7 +42,8 @@ H_TEMPLATE = Template(textwrap.dedent(u"""\
     } /* extern "C" */
     #endif
 
-    #endif"""))
+    #endif
+    """))
 
 
 class VkStruct(object):
