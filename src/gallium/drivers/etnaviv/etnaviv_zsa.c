@@ -120,6 +120,5 @@ etna_zsa_state_create(struct pipe_context *pctx,
          VIVS_PE_STENCIL_CONFIG_EXT2_WRITE_MASK_BACK(stencil_back->writemask);
    }
 
-   /* XXX does alpha/stencil test affect PE_COLOR_FORMAT_OVERWRITE? */
    return cs;
 }
