@@ -112,23 +112,20 @@
     - !reference [.valve-turnip-manual-rules, rules]
     - !reference [.zink-common-manual-rules, rules]
 
-.zink-radv-rules:
+.zink-radv-valve-rules:
   stage: layered-backends
   rules:
     - !reference [.test, rules]
     - !reference [.radv-valve-rules, rules]
     - !reference [.zink-common-rules, rules]
 
-.zink-radv-manual-rules:
+.zink-radv-valve-manual-rules:
   stage: layered-backends-nightly
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
     - !reference [.radv-valve-manual-rules, rules]
     - !reference [.zink-common-manual-rules, rules]
-    - changes:
-        - .gitlab-ci/container/build-piglit.sh
-      when: manual
 
 .zink-test:
   timeout: 30m

@@ -211,7 +211,7 @@ zink-radv-polaris10-valve:
   extends:
     - .radv-zink-test-valve
     - .polaris10-test-valve-kws
-    - .zink-radv-manual-rules
+    - .zink-radv-valve-manual-rules
   timeout: 40m
   variables:
     GPU_VERSION: zink-radv-polaris10
@@ -222,7 +222,7 @@ zink-radv-navi10-valve:
   extends:
     - .radv-zink-test-valve
     - .navi10-test-valve-mupuf
-    - .zink-radv-manual-rules
+    - .zink-radv-valve-manual-rules
   timeout: 40m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
@@ -234,7 +234,7 @@ zink-radv-vangogh-valve:
   extends:
     - .radv-zink-test-valve
     - .vangogh-test-valve
-    - .zink-radv-rules
+    - .zink-radv-valve-rules
   variables:
     GPU_VERSION: zink-radv-vangogh
     CI_TRON_PATTERN__SESSION_REBOOT__REGEX: 'BUG: kernel NULL pointer dereference, address'
@@ -252,7 +252,7 @@ zink-radv-navi31-valve:
   extends:
     - .radv-zink-test-valve
     - .navi31-test-valve
-    - .zink-radv-manual-rules
+    - .zink-radv-valve-manual-rules
   timeout: 1h 20m
   variables:
     GPU_VERSION: zink-radv-navi31
