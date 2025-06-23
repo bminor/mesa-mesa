@@ -106,7 +106,7 @@ radeonsi-raven-piglit:
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
   parallel: 2
   rules:
-    - !reference [.radeonsi-rules, rules]
+    - !reference [.radeonsi-collabora-rules, rules]
     - !reference [.rusticl-rules, rules]
   variables:
     DEQP_SUITE: radeonsi-raven

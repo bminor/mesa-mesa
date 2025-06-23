@@ -1,4 +1,4 @@
-.radeonsi-rules:
+.radeonsi-collabora-rules:
   stage: amd
   rules:
     - !reference [.test, rules]
@@ -34,7 +34,7 @@
         - src/amd/vpelib/**/*
       when: on_success
 
-.radeonsi-manual-rules:
+.radeonsi-collabora-manual-rules:
   stage: amd-nightly
   extends: .no-auto-retry
   rules:
@@ -115,14 +115,14 @@
   stage: amd
   rules:
     - !reference [.test, rules]
-    - !reference [.radeonsi-rules, rules]
+    - !reference [.radeonsi-collabora-rules, rules]
     - !reference [.radv-rules, rules]
 
 .radeonsi-vaapi-rules:
   stage: amd
   rules:
     - !reference [.test, rules]
-    - !reference [.radeonsi-rules, rules]
+    - !reference [.radeonsi-collabora-rules, rules]
     - changes: &radeon_vcn_file_list
         - src/gallium/frontends/va/**/*
         - src/gallium/targets/va/**/*
@@ -143,7 +143,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.valve-farm-rules, rules]
-    - !reference [.radeonsi-rules, rules]
+    - !reference [.radeonsi-collabora-rules, rules]
 
 .radeonsi-valve-manual-rules:
   stage: amd-nightly
@@ -251,7 +251,7 @@
   extends:
     - .stoney-test:x86_64
     - .lava-acer-R721T-grunt:x86_64
-    - .radeonsi-rules
+    - .radeonsi-collabora-rules
   variables:
     GPU_VERSION: radeonsi-stoney
     DRIVER_NAME: radeonsi
@@ -268,7 +268,7 @@
 
 .radeonsi-raven-test:x86_64:
   extends:
-    - .radeonsi-rules
+    - .radeonsi-collabora-rules
   variables:
     GPU_VERSION: radeonsi-raven
     DRIVER_NAME: radeonsi
