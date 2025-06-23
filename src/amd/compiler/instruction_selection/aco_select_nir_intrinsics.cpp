@@ -3272,7 +3272,8 @@ visit_load_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
       info.resource = load_scratch_resource(
          ctx->program, bld, ctx->program->private_segment_buffers.size() - 1, false);
       info.offset = Operand(as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa)));
-      info.soffset = ctx->program->scratch_offsets.back();
+      if (!ctx->program->scratch_offsets.empty())
+         info.soffset = ctx->program->scratch_offsets.back();
       emit_load(ctx, bld, info, scratch_mubuf_load_params);
    }
 }
