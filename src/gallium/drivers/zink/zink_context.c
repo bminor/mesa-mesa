@@ -5636,6 +5636,11 @@ zink_tc_context_unwrap(struct pipe_context *pctx)
    return zink_context(pctx);
 }
 
+struct feedback_loop_surface {
+   uint16_t first_layer;
+   uint16_t last_layer;
+   uint16_t level;
+};
 
 static bool
 add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
@@ -5649,16 +5654,21 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
       return false;
 
    /* build attachment array for miplevel/layer checks */
-   const struct pipe_surface *psurfs[PIPE_MAX_COLOR_BUFS];
+   struct feedback_loop_surface psurfs[PIPE_MAX_COLOR_BUFS];
    unsigned surf_idx = 0;
    u_foreach_bit(idx, res->fb_binds) {
       const struct pipe_surface *psurf;
       if (idx == PIPE_MAX_COLOR_BUFS)
-         psurf = ctx->fb_zsbuf;
+         psurf = &ctx->fb_state.zsbuf;
       else
-         psurf = ctx->fb_cbufs[idx];
-      if (psurf->texture == &res->base.b)
-         psurfs[surf_idx++] = psurf;
+         psurf = &ctx->fb_state.cbufs[idx];
+      if (psurf->texture == &res->base.b) {
+         psurfs[surf_idx++] = (struct feedback_loop_surface){
+            .first_layer = psurf->first_layer,
+            .last_layer = psurf->last_layer,
+            .level = psurf->level,
+         };
+      }
    }
 
    bool is_feedback = false;
@@ -5684,9 +5694,9 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
          struct pipe_sampler_view *sv = ctx->sampler_views[stage][slot];
 
          for (unsigned i = 0; i < surf_idx; i++) {
-            if (sv->u.tex.first_level > psurfs[i]->level || sv->u.tex.last_level < psurfs[i]->level)
+            if (sv->u.tex.first_level > psurfs[i].level || sv->u.tex.last_level < psurfs[i].level)
                continue;
-            if (sv->u.tex.first_layer > psurfs[i]->last_layer || sv->u.tex.last_layer < psurfs[i]->first_layer)
+            if (sv->u.tex.first_layer > psurfs[i].last_layer || sv->u.tex.last_layer < psurfs[i].first_layer)
                continue;
             is_feedback = true;
             break;
