@@ -145,20 +145,23 @@ trait CopyGOB {
 }
 
 /// Copies at most 16B of data to/from linear
-trait Copy16B {
+trait CopyBytes {
     const X_DIVISOR: u32;
 
     unsafe fn copy(tiled: *mut u8, linear: *mut u8, bytes: usize);
     unsafe fn copy_16b(tiled: *mut [u8; 16], linear: *mut [u8; 16]) {
         Self::copy(tiled as *mut _, linear as *mut _, 16);
     }
+    unsafe fn copy_8b(tiled: *mut [u8; 8], linear: *mut [u8; 8]) {
+        Self::copy(tiled as *mut _, linear as *mut _, 8);
+    }
 }
 
-struct CopyGOBTuring2D<C: Copy16B> {
+struct CopyGOBTuring2D<C: CopyBytes> {
     phantom: std::marker::PhantomData<C>,
 }
 
-impl<C: Copy16B> CopyGOBTuring2D<C> {
+impl<C: CopyBytes> CopyGOBTuring2D<C> {
     fn for_each_16b(mut f: impl FnMut(u32, u32, u32)) {
         for i in 0..2 {
             f(i * 0x100 + 0x00, i * 32 + 0, 0);
@@ -184,7 +187,7 @@ impl<C: Copy16B> CopyGOBTuring2D<C> {
     }
 }
 
-impl<C: Copy16B> CopyGOB for CopyGOBTuring2D<C> {
+impl<C: CopyBytes> CopyGOB for CopyGOBTuring2D<C> {
     const GOB_EXTENT_B: Extent4D<units::Bytes> = Extent4D::new(64, 8, 1, 1);
     const X_DIVISOR: u32 = C::X_DIVISOR;
 
@@ -509,7 +512,7 @@ unsafe fn copy_tiled<CG: CopyGOB>(
 
 struct RawCopyToTiled {}
 
-impl Copy16B for RawCopyToTiled {
+impl CopyBytes for RawCopyToTiled {
     const X_DIVISOR: u32 = 1;
 
     unsafe fn copy(tiled: *mut u8, linear: *mut u8, bytes: usize) {
@@ -520,7 +523,7 @@ impl Copy16B for RawCopyToTiled {
 
 struct RawCopyToLinear {}
 
-impl Copy16B for RawCopyToLinear {
+impl CopyBytes for RawCopyToLinear {
     const X_DIVISOR: u32 = 1;
 
     unsafe fn copy(tiled: *mut u8, linear: *mut u8, bytes: usize) {
