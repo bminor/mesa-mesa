@@ -46,6 +46,23 @@ get_loop_var(nir_def *value, loop_info_state *state)
       return NULL;
 }
 
+/* If a condition is a comparision between a constant and
+ * a basic induction variable we know that it will be eliminated once
+ * the loop is unrolled.
+ */
+static bool
+condition_can_constant_fold(loop_info_state *state, nir_scalar cond_scalar)
+{
+   nir_scalar lhs = nir_scalar_chase_alu_src(cond_scalar, 0);
+   nir_scalar rhs = nir_scalar_chase_alu_src(cond_scalar, 1);
+
+   if (nir_scalar_is_const(lhs) && get_loop_var(rhs.def, state))
+      return true;
+   if (nir_scalar_is_const(rhs) && get_loop_var(lhs.def, state))
+      return true;
+   return false;
+}
+
 /** Calculate an estimated cost in number of instructions
  *
  * We do this so that we don't unroll loops which will later get massively
@@ -70,32 +87,22 @@ instr_cost(loop_info_state *state, nir_instr *instr,
 
    if (nir_op_is_selection(alu->op)) {
       nir_scalar cond_scalar = { alu->src[0].src.ssa, 0 };
-      if (nir_is_terminator_condition_with_two_inputs(cond_scalar)) {
-         nir_instr *sel_cond = alu->src[0].src.ssa->parent_instr;
-         nir_alu_instr *sel_alu = nir_instr_as_alu(sel_cond);
-
-         nir_scalar rhs, lhs;
-         lhs = nir_scalar_chase_alu_src(cond_scalar, 0);
-         rhs = nir_scalar_chase_alu_src(cond_scalar, 1);
-
-         /* If the selects condition is a comparision between a constant and
-          * a basic induction variable we know that it will be eliminated once
-          * the loop is unrolled so here we assign it a cost of 0.
-          */
-         if ((nir_src_is_const(sel_alu->src[0].src) &&
-              get_loop_var(rhs.def, state)) ||
-             (nir_src_is_const(sel_alu->src[1].src) &&
-              get_loop_var(lhs.def, state))) {
-            /* Also if the selects condition is only used by the select then
-             * remove that alu instructons cost from the cost total also.
-             */
-            if (!list_is_singular(&sel_alu->def.uses) ||
-                nir_def_used_by_if(&sel_alu->def))
-               return 0;
-            else
-               return -1;
-         }
+      if (nir_is_terminator_condition_with_two_inputs(cond_scalar) &&
+          condition_can_constant_fold(state, cond_scalar)) {
+         /* If the condition can be constant folded after the loop is unrolled,
+          * so can the selection. */
+         return 0;
       }
+   } else if (nir_alu_instr_is_comparison(alu) &&
+              nir_op_infos[alu->op].num_inputs == 2) {
+      bool can_constant_fold = true;
+      for (unsigned i = 0; can_constant_fold && i < alu->def.num_components; i++) {
+         nir_scalar cond_scalar = nir_get_scalar(&alu->def, i);
+         can_constant_fold &= condition_can_constant_fold(state, cond_scalar);
+      }
+
+      if (can_constant_fold)
+         return 0;
    }
 
    if (alu->op == nir_op_flrp) {
