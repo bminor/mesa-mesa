@@ -234,15 +234,18 @@ GENX(pan_emit_linear_s_attachment)(const struct pan_fb_info *fb,
                                    unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *s = fb->zs.view.s;
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, ZS_CRC_EXTENSION, cfg) {
-      cfg.s_msaa = mali_sampling_mode(s);
-      cfg.s_write_format = translate_s_format(s->format);
-      cfg.s_block_format = MALI_BLOCK_FORMAT_LINEAR;
-      get_tiled_or_linear_att_mem_props(
-         pan_image_view_get_s_plane(s), s->first_level, layer_or_z_slice,
-         &cfg.s_writeback_base, &cfg.s_writeback_row_stride,
-         &cfg.s_writeback_surface_stride);
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_s_plane(s),
+                                     s->first_level, layer_or_z_slice, &base,
+                                     &row_stride, &surf_stride);
+   pan_cast_and_pack(payload, S_TARGET, cfg) {
+      cfg.msaa = mali_sampling_mode(s);
+      cfg.write_format = translate_s_format(s->format);
+      cfg.block_format = MALI_BLOCK_FORMAT_LINEAR;
+      cfg.base = base;
+      cfg.row_stride = row_stride;
+      cfg.surface_stride = surf_stride;
    }
 }
 
@@ -255,15 +258,17 @@ GENX(pan_emit_afbc_s_attachment)(const struct pan_fb_info *fb,
 #if PAN_ARCH >= 9
    const struct pan_image_view *s = fb->zs.view.s;
    const struct pan_image_plane_ref pref = pan_image_view_get_s_plane(s);
+   uint64_t header, body_offset, hdr_row_stride;
 
-   pan_cast_and_pack(payload, ZS_CRC_EXTENSION, cfg) {
-      cfg.s_msaa = mali_sampling_mode(s);
-      cfg.s_write_format = translate_zs_format(s->format);
-      cfg.s_block_format = get_afbc_block_format(pref.image->props.modifier);
-
-      get_afbc_att_mem_props(pref, s->first_level, layer_or_z_slice,
-                             &cfg.s_writeback_base, &cfg.s_afbc_body_offset,
-                             &cfg.s_writeback_row_stride);
+   get_afbc_att_mem_props(pref, s->first_level, layer_or_z_slice, &header,
+                          &body_offset, &hdr_row_stride);
+   pan_cast_and_pack(payload, AFBC_S_TARGET, cfg) {
+      cfg.msaa = mali_sampling_mode(s);
+      cfg.write_format = translate_zs_format(s->format);
+      cfg.block_format = get_afbc_block_format(pref.image->props.modifier);
+      cfg.header = header;
+      cfg.body_offset = body_offset;
+      cfg.header_row_stride = hdr_row_stride;
    }
 #endif
 }
@@ -273,15 +278,18 @@ GENX(pan_emit_u_tiled_s_attachment)(const struct pan_fb_info *fb,
                                     unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *s = fb->zs.view.s;
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, ZS_CRC_EXTENSION, cfg) {
-      cfg.s_msaa = mali_sampling_mode(s);
-      cfg.s_write_format = translate_s_format(s->format);
-      cfg.s_block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
-      get_tiled_or_linear_att_mem_props(
-         pan_image_view_get_s_plane(s), s->first_level, layer_or_z_slice,
-         &cfg.s_writeback_base, &cfg.s_writeback_row_stride,
-         &cfg.s_writeback_surface_stride);
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_s_plane(s),
+                                     s->first_level, layer_or_z_slice, &base,
+                                     &row_stride, &surf_stride);
+   pan_cast_and_pack(payload, S_TARGET, cfg) {
+      cfg.msaa = mali_sampling_mode(s);
+      cfg.write_format = translate_s_format(s->format);
+      cfg.block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
+      cfg.base = base;
+      cfg.row_stride = row_stride;
+      cfg.surface_stride = surf_stride;
    }
 }
 
@@ -290,18 +298,18 @@ GENX(pan_emit_linear_zs_attachment)(const struct pan_fb_info *fb,
                                     unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *zs = fb->zs.view.zs;
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, ZS_CRC_EXTENSION, cfg) {
-      cfg.zs_msaa = mali_sampling_mode(zs);
-      cfg.zs_write_format = translate_zs_format(zs->format);
-      cfg.zs_block_format = MALI_BLOCK_FORMAT_LINEAR;
-      get_tiled_or_linear_att_mem_props(
-         pan_image_view_get_zs_plane(zs), zs->first_level, layer_or_z_slice,
-         &cfg.zs_writeback_base, &cfg.zs_writeback_row_stride,
-         &cfg.zs_writeback_surface_stride);
-
-      if (cfg.zs_write_format == MALI_ZS_FORMAT_D24S8)
-         cfg.s_writeback_base = cfg.zs_writeback_base;
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_zs_plane(zs),
+                                     zs->first_level, layer_or_z_slice, &base,
+                                     &row_stride, &surf_stride);
+   pan_cast_and_pack(payload, ZS_TARGET, cfg) {
+      cfg.msaa = mali_sampling_mode(zs);
+      cfg.write_format = translate_zs_format(zs->format);
+      cfg.block_format = MALI_BLOCK_FORMAT_LINEAR;
+      cfg.base = base;
+      cfg.row_stride = row_stride;
+      cfg.surface_stride = surf_stride;
    }
 }
 
@@ -310,18 +318,18 @@ GENX(pan_emit_u_tiled_zs_attachment)(const struct pan_fb_info *fb,
                                      unsigned layer_or_z_slice, void *payload)
 {
    const struct pan_image_view *zs = fb->zs.view.zs;
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, ZS_CRC_EXTENSION, cfg) {
-      cfg.zs_msaa = mali_sampling_mode(zs);
-      cfg.zs_write_format = translate_zs_format(zs->format);
-      cfg.zs_block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
-      get_tiled_or_linear_att_mem_props(
-         pan_image_view_get_zs_plane(zs), zs->first_level, layer_or_z_slice,
-         &cfg.zs_writeback_base, &cfg.zs_writeback_row_stride,
-         &cfg.zs_writeback_surface_stride);
-
-      if (cfg.zs_write_format == MALI_ZS_FORMAT_D24S8)
-         cfg.s_writeback_base = cfg.zs_writeback_base;
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_zs_plane(zs),
+                                     zs->first_level, layer_or_z_slice, &base,
+                                     &row_stride, &surf_stride);
+   pan_cast_and_pack(payload, ZS_TARGET, cfg) {
+      cfg.msaa = mali_sampling_mode(zs);
+      cfg.write_format = translate_zs_format(zs->format);
+      cfg.block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
+      cfg.base = base;
+      cfg.row_stride = row_stride;
+      cfg.surface_stride = surf_stride;
    }
 }
 
@@ -331,30 +339,31 @@ GENX(pan_emit_afbc_zs_attachment)(const struct pan_fb_info *fb,
 {
    const struct pan_image_view *zs = fb->zs.view.zs;
    const struct pan_image_plane_ref pref = pan_image_view_get_zs_plane(zs);
+   uint64_t header, body_offset, hdr_row_stride;
 
-   pan_cast_and_pack(payload, ZS_CRC_EXTENSION, cfg) {
-      cfg.zs_msaa = mali_sampling_mode(zs);
-      cfg.zs_write_format = translate_zs_format(zs->format);
-      cfg.zs_block_format = get_afbc_block_format(pref.image->props.modifier);
+   get_afbc_att_mem_props(pref, zs->first_level, layer_or_z_slice, &header,
+                          &body_offset, &hdr_row_stride);
+
+   pan_cast_and_pack(payload, AFBC_ZS_TARGET, cfg) {
+      cfg.msaa = mali_sampling_mode(zs);
+      cfg.write_format = translate_zs_format(zs->format);
+      cfg.block_format = get_afbc_block_format(pref.image->props.modifier);
 
 #if PAN_ARCH >= 9
-      get_afbc_att_mem_props(pref, zs->first_level, layer_or_z_slice,
-                             &cfg.zs_writeback_base, &cfg.zs_afbc_body_offset,
-                             &cfg.zs_writeback_row_stride);
+      cfg.header = header;
+      cfg.body_offset = body_offset;
+      cfg.header_row_stride = hdr_row_stride;
 #else
-      uint64_t body_offset, row_stride;
-
-      get_afbc_att_mem_props(pref, zs->first_level, layer_or_z_slice,
-                             &cfg.zs_afbc_header, &body_offset, &row_stride);
-      cfg.zs_afbc_body = cfg.zs_afbc_header + body_offset;
+      cfg.header = header;
+      cfg.body = header + body_offset;
 
 #if PAN_ARCH >= 6
-      cfg.zs_afbc_row_stride =
-         pan_afbc_stride_blocks(pref.image->props.modifier, row_stride);
+      cfg.header_row_stride =
+         pan_afbc_stride_blocks(pref.image->props.modifier, hdr_row_stride);
 #else
-      cfg.zs_afbc_body_size = 0x1000;
-      cfg.zs_afbc_chunk_size = 9;
-      cfg.zs_afbc_sparse = true;
+      cfg.body_size = 0x1000;
+      cfg.chunk_size = 9;
+      cfg.sparse = true;
 #endif
 #endif
    }
@@ -362,7 +371,7 @@ GENX(pan_emit_afbc_zs_attachment)(const struct pan_fb_info *fb,
 
 static void
 pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
-                struct MALI_ZS_CRC_EXTENSION *ext)
+                struct MALI_CRC *crc)
 {
    if (rt_crc < 0)
       return;
@@ -376,16 +385,16 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
    const struct pan_image_slice_layout *slice =
       &plane->layout.slices[rt->first_level];
 
-   ext->crc_base = plane->base + slice->crc.offset_B;
-   ext->crc_row_stride = slice->crc.stride_B;
+   crc->base = plane->base + slice->crc.offset_B;
+   crc->row_stride = slice->crc.stride_B;
 
 #if PAN_ARCH >= 7
-   ext->crc_render_target = rt_crc;
+   crc->render_target = rt_crc;
 
    if (fb->rts[rt_crc].clear) {
       uint32_t clear_val = fb->rts[rt_crc].clear_value[0];
-      ext->crc_clear_color = clear_val | 0xc000000000000000 |
-                             (((uint64_t)clear_val & 0xffff) << 32);
+      crc->clear_color = clear_val | 0xc000000000000000 |
+                         (((uint64_t)clear_val & 0xffff) << 32);
    }
 #endif
 }
@@ -397,8 +406,8 @@ pan_emit_zs_crc_ext(const struct pan_fb_info *fb, unsigned layer_idx,
    struct mali_zs_crc_extension_packed desc;
 
    pan_pack(&desc, ZS_CRC_EXTENSION, cfg) {
-      pan_prepare_crc(fb, rt_crc, &cfg);
-      cfg.zs_clean_pixel_write_enable = fb->zs.clear.z || fb->zs.clear.s;
+      pan_prepare_crc(fb, rt_crc, &cfg.crc);
+      cfg.zs.clean_pixel_write_enable = fb->zs.clear.z || fb->zs.clear.s;
    }
 
    if (fb->zs.view.zs) {
@@ -572,17 +581,14 @@ pan_mfbd_raw_format(unsigned bits)
    /* clang-format on */
 }
 
-static unsigned
-pan_rt_init_format(const struct pan_image_view *rt,
-                   struct MALI_RENDER_TARGET *cfg)
+static void
+get_rt_formats(enum pipe_format pfmt, uint32_t *writeback, uint32_t *internal,
+               uint32_t *pswizzle)
 {
    /* Explode details on the format */
-
-   const struct util_format_description *desc =
-      util_format_description(rt->format);
+   const struct util_format_description *desc = util_format_description(pfmt);
 
    /* The swizzle for rendering is inverted from texturing */
-
    unsigned char swizzle[4] = {
       PIPE_SWIZZLE_X,
       PIPE_SWIZZLE_Y,
@@ -590,18 +596,12 @@ pan_rt_init_format(const struct pan_image_view *rt,
       PIPE_SWIZZLE_W,
    };
 
-   /* Fill in accordingly, defaulting to 8-bit UNORM */
+   const struct pan_blendable_format *bfmt =
+      GENX(pan_blendable_format_from_pipe_format)(pfmt);
 
-   if (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB)
-      cfg->srgb = true;
-
-   struct pan_blendable_format fmt =
-      *GENX(pan_blendable_format_from_pipe_format)(rt->format);
-   enum mali_color_format writeback_format;
-
-   if (fmt.internal) {
-      cfg->internal_format = fmt.internal;
-      writeback_format = fmt.writeback;
+   if (bfmt->internal) {
+      *internal = bfmt->internal;
+      *writeback = bfmt->writeback;
       pan_invert_swizzle(desc->swizzle, swizzle);
    } else {
       /* Construct RAW internal/writeback, where internal is
@@ -613,44 +613,58 @@ pan_rt_init_format(const struct pan_image_view *rt,
       unsigned offset = util_logbase2_ceil(bits) - 3;
       assert(offset <= 4);
 
-      cfg->internal_format = MALI_COLOR_BUFFER_INTERNAL_FORMAT_RAW8 + offset;
-      writeback_format = pan_mfbd_raw_format(bits);
+      *internal = MALI_COLOR_BUFFER_INTERNAL_FORMAT_RAW8 + offset;
+      *writeback = pan_mfbd_raw_format(bits);
    }
 
-   cfg->swizzle = pan_translate_swizzle_4(swizzle);
-
-   return writeback_format;
+   *pswizzle = pan_translate_swizzle_4(swizzle);
 }
 
 /* forward declaration */
 static bool pan_force_clean_write_on(const struct pan_image *img, unsigned tile_size);
 
-static void
-pan_prepare_rt_common(const struct pan_fb_info *fb, unsigned rt_idx,
-                      unsigned cbuf_offset, struct MALI_RENDER_TARGET *cfg)
+static struct MALI_RT_CLEAR
+rt_clear(const struct pan_fb_color_attachment *rt)
 {
-   cfg->clean_pixel_write_enable = fb->rts[rt_idx].clear;
-   cfg->internal_buffer_offset = cbuf_offset;
-   if (fb->rts[rt_idx].clear) {
-      cfg->clear.color_0 = fb->rts[rt_idx].clear_value[0];
-      cfg->clear.color_1 = fb->rts[rt_idx].clear_value[1];
-      cfg->clear.color_2 = fb->rts[rt_idx].clear_value[2];
-      cfg->clear.color_3 = fb->rts[rt_idx].clear_value[3];
-   }
-   cfg->dithering_enable = true;
+   if (!rt->clear)
+      return (struct MALI_RT_CLEAR){0};
 
-   if (fb->rts[rt_idx].view) {
-      cfg->writeback_msaa = mali_sampling_mode(fb->rts[rt_idx].view);
+   return (struct MALI_RT_CLEAR){
+      .color_0 = rt->clear_value[0],
+      .color_1 = rt->clear_value[1],
+      .color_2 = rt->clear_value[2],
+      .color_3 = rt->clear_value[3],
+   };
+}
+
+static bool
+rt_clean_pixel_write(const struct pan_fb_color_attachment *rt,
+                     unsigned tile_size)
+{
+   if (rt->clear)
+      return true;
 
 #if PAN_ARCH >= 6
-      const struct pan_image_plane_ref pref =
-         pan_image_view_get_color_plane(fb->rts[rt_idx].view);
+   const struct pan_image_plane_ref pref =
+      pan_image_view_get_color_plane(rt->view);
 
-      cfg->clean_pixel_write_enable |=
-         pan_force_clean_write_on(pref.image, fb->tile_size);
+   if (pan_force_clean_write_on(pref.image, tile_size))
+      return true;
 #endif
-   }
+
+   return false;
 }
+
+#define rt_common_cfg(rt__, cbuf_offset__, tile_size__, cfg__)                 \
+   do {                                                                        \
+      assert((rt__)->view != NULL);                                            \
+      (cfg__).clean_pixel_write_enable =                                       \
+         rt_clean_pixel_write(rt__, tile_size__);                              \
+      (cfg__).internal_buffer_offset = cbuf_offset__;                          \
+      (cfg__).clear = rt_clear(rt__);                                          \
+      (cfg__).dithering_enable = true;                                         \
+      (cfg__).writeback_msaa = mali_sampling_mode((rt__)->view);               \
+   } while (0)
 
 void
 GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
@@ -658,50 +672,52 @@ GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
                                      unsigned layer_or_z_slice,
                                      unsigned cbuf_offset, void *payload)
 {
-   const struct pan_image_view *iview = fb->rts[rt_idx].view;
-   const unsigned mip_level = iview->first_level;
+   const struct pan_fb_color_attachment *rt = &fb->rts[rt_idx];
+   const struct pan_image_view *iview = rt->view;
    const struct pan_image_plane_ref pref = pan_image_view_get_color_plane(iview);
    const struct pan_image *image = pref.image;
+   uint64_t header, body_offset, hdr_row_stride;
 
-   pan_cast_and_pack(payload, RENDER_TARGET, cfg) {
-      pan_prepare_rt_common(fb, rt_idx, cbuf_offset, &cfg);
+   get_afbc_att_mem_props(pref, iview->first_level, layer_or_z_slice, &header,
+                          &body_offset, &hdr_row_stride);
+
+   /* TODO: YUV RT. */
+   assert(!pan_format_is_yuv(iview->format));
+   pan_cast_and_pack(payload, AFBC_RGB_RENDER_TARGET, cfg) {
+      rt_common_cfg(rt, cbuf_offset, fb->tile_size, cfg);
       cfg.write_enable = true;
-      cfg.writeback_format = pan_rt_init_format(iview, &cfg);
+      get_rt_formats(iview->format, &cfg.writeback_format, &cfg.internal_format,
+                     &cfg.swizzle);
+      cfg.srgb = util_format_is_srgb(iview->format);
       cfg.writeback_block_format = get_afbc_block_format(image->props.modifier);
-      cfg.afbc.yuv_transform = image->props.modifier & AFBC_FORMAT_MOD_YTR;
-
+      cfg.yuv_transform = image->props.modifier & AFBC_FORMAT_MOD_YTR;
 #if PAN_ARCH >= 6
-      cfg.afbc.wide_block = pan_afbc_is_wide(image->props.modifier);
-      cfg.afbc.split_block = (image->props.modifier & AFBC_FORMAT_MOD_SPLIT);
+      cfg.wide_block = pan_afbc_is_wide(image->props.modifier);
+      cfg.split_block = (image->props.modifier & AFBC_FORMAT_MOD_SPLIT);
 #endif
 
 #if PAN_ARCH >= 9
-      get_afbc_att_mem_props(pref, mip_level, layer_or_z_slice,
-                             &cfg.afbc.header, &cfg.afbc.body_offset,
-                             &cfg.afbc.row_stride);
-      cfg.afbc.compression_mode = pan_afbc_compression_mode(iview->format, 0);
+      cfg.header = header;
+      cfg.body_offset = body_offset;
+      cfg.row_stride = hdr_row_stride;
+      cfg.compression_mode = pan_afbc_compression_mode(iview->format, 0);
 #else
-      uint64_t body_offset, row_stride;
-
-      get_afbc_att_mem_props(pref, mip_level, layer_or_z_slice,
-                             &cfg.afbc.header, &body_offset,
-                             &row_stride);
-      cfg.afbc.body = cfg.afbc.header + body_offset;
+      cfg.header = header;
+      cfg.body = header + body_offset;
 
 #if PAN_ARCH >= 6
-      cfg.afbc.row_stride =
-         pan_afbc_stride_blocks(image->props.modifier, row_stride);
+      cfg.row_stride =
+         pan_afbc_stride_blocks(image->props.modifier, hdr_row_stride);
 #else
       const struct pan_image_plane *plane = image->planes[pref.plane_idx];
       const struct pan_image_slice_layout *slayout =
-         &plane->layout.slices[mip_level];
+         &plane->layout.slices[iview->first_level];
 
-      cfg.afbc.body_size =
-         slayout->afbc.surface_stride_B -
-         pan_afbc_body_offset(PAN_ARCH, image->props.modifier,
-                              slayout->afbc.header.surface_size_B);
-      cfg.afbc.chunk_size = 9;
-      cfg.afbc.sparse = true;
+      cfg.body_size = slayout->afbc.surface_stride_B -
+                      pan_afbc_body_offset(PAN_ARCH, image->props.modifier,
+                                           slayout->afbc.header.surface_size_B);
+      cfg.chunk_size = 9;
+      cfg.sparse = true;
 #endif
 #endif
    }
@@ -713,17 +729,26 @@ GENX(pan_emit_u_tiled_color_attachment)(const struct pan_fb_info *fb,
                                         unsigned layer_or_z_slice,
                                         unsigned cbuf_offset, void *payload)
 {
-   const struct pan_image_view *iview = fb->rts[rt_idx].view;
+   const struct pan_fb_color_attachment *rt = &fb->rts[rt_idx];
+   const struct pan_image_view *iview = rt->view;
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, RENDER_TARGET, cfg) {
-      pan_prepare_rt_common(fb, rt_idx, cbuf_offset, &cfg);
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_color_plane(iview),
+                                     iview->first_level, layer_or_z_slice,
+                                     &base, &row_stride, &surf_stride);
+
+   /* TODO: YUV RT. */
+   assert(!pan_format_is_yuv(iview->format));
+   pan_cast_and_pack(payload, RGB_RENDER_TARGET, cfg) {
+      rt_common_cfg(rt, cbuf_offset, fb->tile_size, cfg);
       cfg.write_enable = true;
       cfg.writeback_block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
-      cfg.writeback_format = pan_rt_init_format(iview, &cfg);
-      get_tiled_or_linear_att_mem_props(pan_image_view_get_color_plane(iview),
-                                        iview->first_level, layer_or_z_slice,
-                                        &cfg.rgb.base, &cfg.rgb.row_stride,
-                                        &cfg.rgb.surface_stride);
+      get_rt_formats(iview->format, &cfg.writeback_format, &cfg.internal_format,
+                     &cfg.swizzle);
+      cfg.srgb = util_format_is_srgb(iview->format);
+      cfg.writeback_buffer.base = base;
+      cfg.writeback_buffer.row_stride = row_stride;
+      cfg.writeback_buffer.surface_stride = surf_stride;
    }
 }
 
@@ -733,17 +758,26 @@ GENX(pan_emit_linear_color_attachment)(const struct pan_fb_info *fb,
                                        unsigned layer_or_z_slice,
                                        unsigned cbuf_offset, void *payload)
 {
-   const struct pan_image_view *iview = fb->rts[rt_idx].view;
+   const struct pan_fb_color_attachment *rt = &fb->rts[rt_idx];
+   const struct pan_image_view *iview = rt->view;
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, RENDER_TARGET, cfg) {
-      pan_prepare_rt_common(fb, rt_idx, cbuf_offset, &cfg);
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_color_plane(iview),
+                                     iview->first_level, layer_or_z_slice,
+                                     &base, &row_stride, &surf_stride);
+
+   /* TODO: YUV RT. */
+   assert(!pan_format_is_yuv(iview->format));
+   pan_cast_and_pack(payload, RGB_RENDER_TARGET, cfg) {
+      rt_common_cfg(rt, cbuf_offset, fb->tile_size, cfg);
       cfg.write_enable = true;
       cfg.writeback_block_format = MALI_BLOCK_FORMAT_LINEAR;
-      cfg.writeback_format = pan_rt_init_format(iview, &cfg);
-      get_tiled_or_linear_att_mem_props(pan_image_view_get_color_plane(iview),
-                                        iview->first_level, layer_or_z_slice,
-                                        &cfg.rgb.base, &cfg.rgb.row_stride,
-                                        &cfg.rgb.surface_stride);
+      get_rt_formats(iview->format, &cfg.writeback_format, &cfg.internal_format,
+                     &cfg.swizzle);
+      cfg.srgb = util_format_is_srgb(iview->format);
+      cfg.writeback_buffer.base = base;
+      cfg.writeback_buffer.row_stride = row_stride;
+      cfg.writeback_buffer.surface_stride = surf_stride;
    }
 }
 
@@ -753,21 +787,30 @@ GENX(pan_emit_afrc_color_attachment)(const struct pan_fb_info *fb,
                                      unsigned rt_idx, unsigned layer_or_z_slice,
                                      unsigned cbuf_offset, void *payload)
 {
-   const struct pan_image_view *iview = fb->rts[rt_idx].view;
+   const struct pan_fb_color_attachment *rt = &fb->rts[rt_idx];
+   const struct pan_image_view *iview = rt->view;
    const struct pan_image_plane_ref pref = pan_image_view_get_color_plane(iview);
    const struct pan_image *image = pref.image;
    struct pan_afrc_format_info finfo =
       pan_afrc_get_format_info(image->props.format);
+   uint64_t base, row_stride, surf_stride;
 
-   pan_cast_and_pack(payload, RENDER_TARGET, cfg) {
-      pan_prepare_rt_common(fb, rt_idx, cbuf_offset, &cfg);
+   get_tiled_or_linear_att_mem_props(pan_image_view_get_s_plane(iview),
+                                     iview->first_level, layer_or_z_slice,
+                                     &base, &row_stride, &surf_stride);
+
+   /* TODO: YUV RT. */
+   assert(!pan_format_is_yuv(iview->format));
+   pan_cast_and_pack(payload, AFRC_RGB_RENDER_TARGET, cfg) {
+      rt_common_cfg(rt, cbuf_offset, fb->tile_size, cfg);
       cfg.writeback_mode = MALI_WRITEBACK_MODE_AFRC_RGB;
-      cfg.afrc.block_size = pan_afrc_block_size(image->props.modifier, 0);
-      cfg.afrc.format = pan_afrc_format(finfo, image->props.modifier, 0);
-      cfg.afrc.writeback_format = pan_rt_init_format(iview, &cfg);
-      get_tiled_or_linear_att_mem_props(
-         pref, iview->first_level, layer_or_z_slice, &cfg.rgb.base,
-         &cfg.rgb.row_stride, &cfg.rgb.surface_stride);
+      cfg.afrc_block_size = pan_afrc_block_size(image->props.modifier, 0);
+      cfg.afrc_format = pan_afrc_format(finfo, image->props.modifier, 0);
+      get_rt_formats(iview->format, &cfg.writeback_format, &cfg.internal_format,
+                     &cfg.swizzle);
+      cfg.writeback_buffer.base = base;
+      cfg.writeback_buffer.row_stride = row_stride;
+      cfg.writeback_buffer.surface_stride = surf_stride;
    }
 }
 #endif
@@ -856,8 +899,11 @@ pan_emit_rt(const struct pan_fb_info *fb, unsigned layer_idx, unsigned idx,
    const struct pan_image_view *rt = fb->rts[idx].view;
 
    if (!rt || fb->rts[idx].discard) {
-      pan_pack(out, RENDER_TARGET, cfg) {
-         pan_prepare_rt_common(fb, idx, cbuf_offset, &cfg);
+      pan_cast_and_pack(out, RGB_RENDER_TARGET, cfg) {
+         cfg.clean_pixel_write_enable = fb->rts[idx].clear;
+         cfg.internal_buffer_offset = cbuf_offset;
+         cfg.clear = rt_clear(&fb->rts[idx]);
+         cfg.dithering_enable = true;
          cfg.internal_format = MALI_COLOR_BUFFER_INTERNAL_FORMAT_R8G8B8A8;
          cfg.internal_buffer_offset = cbuf_offset;
 #if PAN_ARCH >= 7

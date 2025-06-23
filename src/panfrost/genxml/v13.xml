@@ -2163,7 +2163,8 @@
 
   <struct name="RT Buffer">
     <field name="Base" size="64" start="0:0" type="address"/>
-    <field name="Row Stride" size="32" start="2:0" type="uint"/>
+    <field name="Row Stride" size="27" start="2:0" type="uint"/>
+    <field name="Surface Stride hi" size="5" start="2:27" type="uint"/>
     <field name="Surface Stride" size="32" start="3:0" type="uint"/>
   </struct>
 
@@ -2260,33 +2261,72 @@
     <field name="VRS Image Plane" size="59" start="16:5" type="address"/>
   </struct>
 
-  <struct name="ZS CRC Extension" align="64" size="16">
-    <field name="ZS Write Format" size="4" start="0:0" type="ZS Format"/>
-    <field name="ZS Block Format" size="4" start="0:4" type="Block Format"/>
-    <field name="ZS MSAA" size="2" start="0:8" default="Single" type="MSAA"/>
-    <field name="CRC Render Target" size="4" start="0:13" type="uint"/>
-    <field name="S Write Format" size="4" start="0:16" type="S Format"/>
-    <field name="S Block Format" size="4" start="0:20" type="Block Format"/>
-    <field name="S MSAA" size="2" start="0:24" default="Single" type="MSAA"/>
+  <struct name="CRC" align="64" size="16">
+    <field name="Render Target" size="3" start="0:13" type="uint"/>
+    <field name="Row Stride" size="27" start="1:0" type="uint"/>
+    <field name="Clear Color" size="64" start="2:0" type="hex"/>
+    <field name="Base" size="64" start="4:0" type="address"/>
+  </struct>
 
-    <field name="AFBC Reverse Issue Order" size="1" start="0:30" type="bool"/>
+  <struct name="ZS Target" align="64" size="16">
+    <field name="Write Format" size="4" start="0:0" type="ZS Format"/>
+    <field name="Block Format" size="4" start="0:4" type="Block Format"/>
+    <field name="MSAA" size="2" start="0:8" default="Single" type="MSAA"/>
+    <field name="Clean Pixel Write Enable" size="1" start="0:31" type="bool"/>
+
+    <field name="Base" size="64" start="8:0" type="address"/>
+    <field name="Row Stride" size="27" start="10:0" type="uint"/>
+    <field name="Surface Stride hi" size="5" start="10:27" type="uint"/>
+    <field name="Surface Stride" size="32" start="11:0" type="uint"/>
+  </struct>
+
+  <struct name="AFBC ZS Target" align="64" size="16">
+    <field name="Write Format" size="4" start="0:0" type="ZS Format"/>
+    <field name="Block Format" size="4" start="0:4" type="Block Format"/>
+    <field name="MSAA" size="2" start="0:8" default="Single" type="MSAA"/>
+
+    <field name="Reverse Issue Order" size="1" start="0:30" type="bool"/>
     <!-- Note: Must be set if AFBC is enabled and effective_tile_size is not 16x16 -->
-    <field name="ZS Clean Pixel Write Enable" size="1" start="0:31" type="bool"/>
+    <field name="Clean Pixel Write Enable" size="1" start="0:31" type="bool"/>
 
-    <field name="CRC Row Stride" size="32" start="1:0" type="uint"/>
-    <field name="CRC Clear Color" size="64" start="2:0" type="hex"/>
-    <field name="CRC Base" size="64" start="4:0" type="address"/>
-
-    <field name="ZS Writeback Base" size="64" start="8:0" type="address"/>
+    <field name="Header" size="64" start="8:0" type="address"/>
     <!-- Header clumps per row (different than Bifrost's AFBC line stride) -->
-    <field name="ZS Writeback Row Stride" size="32" start="10:0" type="uint"/>
-    <field name="ZS Writeback Surface Stride" size="32" start="11:0" type="uint"/>
-    <field name="ZS AFBC Body Offset" size="32" start="11:0" type="uint"/>
+    <field name="Header Row Stride" size="27" start="10:0" type="uint"/>
+    <field name="Body Offset" size="32" start="11:0" type="uint"/>
+  </struct>
 
-    <field name="S Writeback Base" size="64" start="12:0" type="address"/>
-    <field name="S Writeback Row Stride" size="32" start="14:0" type="uint"/>
-    <field name="S Writeback Surface Stride" size="32" start="15:0" type="uint"/>
-    <field name="S AFBC Body Offset" size="32" start="15:0" type="uint"/>
+  <struct name="S Target" align="64" size="16">
+    <field name="Write Format" size="4" start="0:16" type="S Format"/>
+    <field name="Block Format" size="4" start="0:20" type="Block Format"/>
+    <field name="MSAA" size="2" start="0:24" default="Single" type="MSAA"/>
+    <field name="Clean Pixel Write Enable" size="1" start="0:31" type="bool"/>
+
+    <field name="Base" size="64" start="12:0" type="address"/>
+    <field name="Row Stride" size="27" start="14:0" type="uint"/>
+    <field name="Surface Stride hi" size="5" start="14:27" type="uint"/>
+    <field name="Surface Stride" size="32" start="15:0" type="uint"/>
+  </struct>
+
+  <struct name="AFBC S Target" align="64" size="16">
+    <field name="Write Format" size="4" start="0:16" type="S Format"/>
+    <field name="Block Format" size="4" start="0:20" type="Block Format"/>
+    <field name="MSAA" size="2" start="0:24" default="Single" type="MSAA"/>
+
+    <field name="Reverse Issue Order" size="1" start="0:30" type="bool"/>
+    <!-- Note: Must be set if AFBC is enabled and effective_tile_size is not 16x16 -->
+    <field name="Clean Pixel Write Enable" size="1" start="0:31" type="bool"/>
+
+    <field name="Header" size="64" start="12:0" type="address"/>
+    <field name="Header Row Stride" size="27" start="14:0" type="uint"/>
+    <field name="Body Offset" size="32" start="15:0" type="uint"/>
+  </struct>
+
+  <struct name="ZS CRC Extension" align="64" size="16">
+    <field name="CRC" size="512" start="0" type="CRC"/>
+    <field name="AFBC ZS" size="512" start="0" type="AFBC ZS Target"/>
+    <field name="ZS" size="512" start="0" type="ZS Target"/>
+    <field name="AFBC S" size="512" start="0" type="AFBC S Target"/>
+    <field name="S" size="512" start="0" type="S Target"/>
   </struct>
 
   <enum name="YUV Conv K6">
@@ -2306,39 +2346,6 @@
     <value name="256" value="1"/>
   </enum>
 
-  <struct name="Render Target YUV Overlay" size="16">
-    <field name="Swizzle" size="3" start="2:16" type="YUV Swizzle"/>
-    <field name="Full Range" size="1" start="2:20" type="bool"/>
-    <field name="Conversion Mode" size="4" start="2:21" type="YUV Conversion Mode"/>
-    <field name="Cr Siting" size="3" start="2:25" type="YUV Cr Siting"/>
-    <field name="Unsigned Cr Range" size="1" start="2:28" type="bool"/>
-    <field name="Plane 0 Base" size="64" start="4:0" type="address"/>
-    <field name="Plane 1 Base" size="64" start="6:0" type="address"/>
-    <field name="Plane 2 Base" size="64" start="8:0" type="address"/>
-    <field name="Plane 0 Stride" size="32" start="10:0" type="uint"/>
-    <field name="Plane 1 2 Stride" size="32" start="11:0" type="uint"/>
-  </struct>
-
-  <struct name="Render Target AFBC Overlay" size="16">
-    <field name="YUV Transform" size="1" start="2:0" type="bool"/>
-    <field name="Split block" size="1" start="2:1" type="bool"/>
-    <field name="Wide block" size="1" start="2:2" type="bool"/>
-    <field name="Reverse issue order" size="1" start="2:3" type="bool"/>
-    <field name="Front buffer" size="1" start="2:4" type="bool"/>
-    <field name="Alpha hint" size="1" start="2:5" type="bool"/>
-    <field name="Compression mode" size="6" start="2:10" type="AFBC Compression Mode"/>
-
-    <field name="Header" size="64" start="8:0" type="address"/>
-    <field name="Row stride" size="32" start="10:0" type="uint"/>
-    <field name="Body offset" size="32" start="11:0" type="uint"/>
-  </struct>
-
-  <struct name="Render Target AFRC Overlay" size="16">
-    <field name="Writeback Format" size="8" start="1:0" type="Color Format"/>
-    <field name="Block Size" size="4" start="2:4" type="AFRC Block Size"/>
-    <field name="Format" size="8" start="2:8" type="AFRC Format"/>
-  </struct>
-
   <struct name="RT Clear">
     <field name="Color 0" size="32" start="0:0" type="uint"/>
     <field name="Color 1" size="32" start="1:0" type="uint"/>
@@ -2346,13 +2353,10 @@
     <field name="Color 3" size="32" start="3:0" type="uint"/>
   </struct>
 
-  <struct name="Render Target" align="64">
-    <field name="YUV" size="512" start="0:0" type="Render Target YUV Overlay"/>
-    <field name="AFBC" size="512" start="0:0" type="Render Target AFBC Overlay"/>
-    <field name="AFRC" size="512" start="0:0" type="Render Target AFRC Overlay"/>
+  <struct name="RGB Render Target" align="64">
     <field name="Writeback Mode" size="4" start="0:0" type="Writeback Mode" default="Compat"/>
     <field name="Internal Buffer Offset" size="12" start="0:4" type="uint" modifier="shr(4)"/>
-    <field name="YUV Enable" size="1" start="0:24" type="bool"/>
+    <field name="YUV Enable" size="1" start="0:24" type="bool" default="false"/>
     <field name="Dithered Clear" size="1" start="0:25" type="bool"/>
     <field name="Internal Format" size="6" start="0:26" type="Color Buffer Internal Format"/>
     <field name="Write Enable" size="1" start="1:0" type="bool"/>
@@ -2363,8 +2367,155 @@
     <field name="Dithering Enable" size="1" start="1:15" type="bool"/>
     <field name="Swizzle" size="12" start="1:16" type="Component Swizzle"/>
     <field name="Clean Pixel Write Enable" size="1" start="1:31" type="bool"/>
-    <field name="RGB" size="128" start="8:0" type="RT Buffer"/>
+    <field name="Writeback buffer" size="128" start="8:0" type="RT Buffer"/>
     <field name="Clear" size="128" start="12:0" type="RT Clear"/>
+  </struct>
+
+  <struct name="YUV Render Target" align="64">
+    <field name="Writeback Mode" size="4" start="0:0" type="Writeback Mode" default="Compat"/>
+    <field name="Internal Buffer Offset" size="12" start="0:4" type="uint" modifier="shr(4)"/>
+    <field name="YUV Enable" size="1" start="0:24" type="bool" default="true"/>
+    <field name="Dithered Clear" size="1" start="0:25" type="bool"/>
+    <field name="Internal Format" size="6" start="0:26" type="Color Buffer Internal Format"/>
+    <field name="Write Enable" size="1" start="1:0" type="bool"/>
+    <field name="Writeback Format" size="5" start="1:3" type="Color Format"/>
+    <field name="Writeback Block Format" size="4" start="1:8" type="Block Format"/>
+    <field name="Writeback MSAA" size="2" start="1:12" type="MSAA"/>
+    <field name="sRGB" size="1" start="1:14" type="bool"/>
+    <field name="Dithering Enable" size="1" start="1:15" type="bool"/>
+    <field name="Swizzle" size="12" start="1:16" type="Component Swizzle"/>
+    <field name="Clean Pixel Write Enable" size="1" start="1:31" type="bool"/>
+    <field name="YUV Swizzle" size="3" start="2:16" type="YUV Swizzle"/>
+    <field name="Full Range" size="1" start="2:20" type="bool"/>
+    <field name="Conversion Mode" size="4" start="2:21" type="YUV Conversion Mode"/>
+    <field name="Cr Siting" size="3" start="2:25" type="YUV Cr Siting"/>
+    <field name="Unsigned Cr Range" size="1" start="2:28" type="bool"/>
+    <field name="Plane 0 Base" size="64" start="4:0" type="address"/>
+    <field name="Plane 1 Base" size="64" start="6:0" type="address"/>
+    <field name="Plane 2 Base" size="64" start="8:0" type="address"/>
+    <field name="Plane 0 Stride" size="27" start="10:0" type="uint"/>
+    <field name="Plane 1 2 Stride" size="27" start="11:0" type="uint"/>
+    <field name="Clear" size="128" start="12:0" type="RT Clear"/>
+  </struct>
+
+  <struct name="AFBC RGB Render Target" align="64">
+    <field name="Writeback Mode" size="4" start="0:0" type="Writeback Mode" default="Compat"/>
+    <field name="Internal Buffer Offset" size="12" start="0:4" type="uint" modifier="shr(4)"/>
+    <field name="YUV Enable" size="1" start="0:24" type="bool" default="false"/>
+    <field name="Dithered Clear" size="1" start="0:25" type="bool"/>
+    <field name="Internal Format" size="6" start="0:26" type="Color Buffer Internal Format"/>
+    <field name="Write Enable" size="1" start="1:0" type="bool"/>
+    <field name="Writeback Format" size="5" start="1:3" type="Color Format"/>
+    <field name="Writeback Block Format" size="4" start="1:8" type="Block Format"/>
+    <field name="Writeback MSAA" size="2" start="1:12" type="MSAA"/>
+    <field name="sRGB" size="1" start="1:14" type="bool"/>
+    <field name="Dithering Enable" size="1" start="1:15" type="bool"/>
+    <field name="Swizzle" size="12" start="1:16" type="Component Swizzle"/>
+    <field name="Clean Pixel Write Enable" size="1" start="1:31" type="bool"/>
+    <field name="YUV Transform" size="1" start="2:0" type="bool"/>
+    <field name="Split block" size="1" start="2:1" type="bool"/>
+    <field name="Wide block" size="1" start="2:2" type="bool"/>
+    <field name="Reverse issue order" size="1" start="2:3" type="bool"/>
+    <field name="Front buffer" size="1" start="2:4" type="bool"/>
+    <field name="Alpha hint" size="1" start="2:5" type="bool"/>
+    <field name="Compression mode" size="6" start="2:10" type="AFBC Compression Mode"/>
+
+    <field name="Header" size="64" start="8:0" type="address"/>
+    <field name="Row stride" size="27" start="10:0" type="uint"/>
+    <field name="Body offset" size="32" start="11:0" type="uint"/>
+    <field name="Clear" size="128" start="12:0" type="RT Clear"/>
+  </struct>
+
+  <struct name="AFBC YUV Render Target" align="64">
+    <field name="Writeback Mode" size="4" start="0:0" type="Writeback Mode" default="Compat"/>
+    <field name="Internal Buffer Offset" size="12" start="0:4" type="uint" modifier="shr(4)"/>
+    <field name="YUV Enable" size="1" start="0:24" type="bool" default="true"/>
+    <field name="Dithered Clear" size="1" start="0:25" type="bool"/>
+    <field name="Internal Format" size="6" start="0:26" type="Color Buffer Internal Format"/>
+    <field name="Write Enable" size="1" start="1:0" type="bool"/>
+    <field name="Writeback Format" size="5" start="1:3" type="Color Format"/>
+    <field name="Writeback Block Format" size="4" start="1:8" type="Block Format"/>
+    <field name="Writeback MSAA" size="2" start="1:12" type="MSAA"/>
+    <field name="sRGB" size="1" start="1:14" type="bool"/>
+    <field name="Dithering Enable" size="1" start="1:15" type="bool"/>
+    <field name="Swizzle" size="12" start="1:16" type="Component Swizzle"/>
+    <field name="Clean Pixel Write Enable" size="1" start="1:31" type="bool"/>
+    <field name="YUV Transform" size="1" start="2:0" type="bool" default="false"/>
+    <field name="Split block" size="1" start="2:1" type="bool"/>
+    <field name="Wide block" size="1" start="2:2" type="bool"/>
+    <field name="Reverse issue order" size="1" start="2:3" type="bool"/>
+    <field name="Front buffer" size="1" start="2:4" type="bool"/>
+    <field name="Alpha hint" size="1" start="2:5" type="bool"/>
+    <field name="Compression mode" size="6" start="2:10" type="AFBC Compression Mode"/>
+    <field name="YUV Swizzle" size="3" start="2:16" type="YUV Swizzle"/>
+    <field name="Full Range" size="1" start="2:20" type="bool"/>
+    <field name="Conversion Mode" size="4" start="2:21" type="YUV Conversion Mode"/>
+    <field name="Cr Siting" size="3" start="2:25" type="YUV Cr Siting"/>
+    <field name="Unsigned Cr Range" size="1" start="2:28" type="bool"/>
+
+    <field name="Header" size="64" start="8:0" type="address"/>
+    <field name="Row stride" size="27" start="10:0" type="uint"/>
+    <field name="Body offset" size="32" start="11:0" type="uint"/>
+    <field name="Clear" size="128" start="12:0" type="RT Clear"/>
+  </struct>
+
+  <struct name="AFRC RGB Render Target" align="64">
+    <field name="Writeback Mode" size="4" start="0:0" type="Writeback Mode" default="AFRC RGB"/>
+    <field name="Internal Buffer Offset" size="12" start="0:4" type="uint" modifier="shr(4)"/>
+    <field name="YUV Enable" size="1" start="0:24" type="bool" default="true"/>
+    <field name="Dithered Clear" size="1" start="0:25" type="bool"/>
+    <field name="Internal Format" size="6" start="0:26" type="Color Buffer Internal Format"/>
+    <field name="Writeback Format" size="8" start="1:0" type="Color Format"/>
+    <field name="Writeback MSAA" size="2" start="1:12" type="MSAA"/>
+    <field name="sRGB" size="1" start="1:14" type="bool"/>
+    <field name="Dithering Enable" size="1" start="1:15" type="bool"/>
+    <field name="Swizzle" size="12" start="1:16" type="Component Swizzle"/>
+    <field name="Clean Pixel Write Enable" size="1" start="1:31" type="bool"/>
+    <field name="AFRC Block Size" size="4" start="2:4" type="AFRC Block Size"/>
+    <field name="AFRC Format" size="8" start="2:8" type="AFRC Format"/>
+    <field name="Codec args" size="8" start="3:0" type="uint"/>
+    <field name="Writeback buffer" size="128" start="8:0" type="RT Buffer"/>
+    <field name="Clear" size="128" start="12:0" type="RT Clear"/>
+  </struct>
+
+  <struct name="AFRC YUV Render Target" align="64">
+    <field name="Writeback Mode" size="4" start="0:0" type="Writeback Mode" default="AFRC YUV"/>
+    <field name="Internal Buffer Offset" size="12" start="0:4" type="uint" modifier="shr(4)"/>
+    <field name="YUV Enable" size="1" start="0:24" type="bool" default="true"/>
+    <field name="Dithered Clear" size="1" start="0:25" type="bool"/>
+    <field name="Internal Format" size="6" start="0:26" type="Color Buffer Internal Format"/>
+    <field name="Writeback Format" size="8" start="1:0" type="Color Format"/>
+    <field name="Writeback MSAA" size="2" start="1:12" type="MSAA"/>
+    <field name="sRGB" size="1" start="1:14" type="bool"/>
+    <field name="Dithering Enable" size="1" start="1:15" type="bool"/>
+    <field name="Swizzle" size="12" start="1:16" type="Component Swizzle"/>
+    <field name="Clean Pixel Write Enable" size="1" start="1:31" type="bool"/>
+    <field name="AFRC Luma Block Size" size="4" start="2:4" type="AFRC Block Size"/>
+    <field name="AFRC Luma Format" size="8" start="2:8" type="AFRC Format"/>
+    <field name="YUV Swizzle" size="3" start="2:16" type="YUV Swizzle"/>
+    <field name="Full Range" size="1" start="2:20" type="bool"/>
+    <field name="Conversion Mode" size="4" start="2:21" type="YUV Conversion Mode"/>
+    <field name="Cr Siting" size="3" start="2:25" type="YUV Cr Siting"/>
+    <field name="Unsigned Cr Range" size="1" start="2:28" type="bool"/>
+    <field name="AFRC Luma codec args" size="8" start="3:0" type="uint"/>
+    <field name="AFRC Chroma codec args" size="8" start="3:8" type="uint"/>
+    <field name="AFRC Chroma Block Size" size="4" start="3:20" type="AFRC Block Size"/>
+    <field name="AFRC Chroma Format" size="8" start="3:24" type="AFRC Format"/>
+    <field name="Plane 0 Base" size="64" start="4:0" type="address"/>
+    <field name="Plane 1 Base" size="64" start="6:0" type="address"/>
+    <field name="Plane 2 Base" size="64" start="8:0" type="address"/>
+    <field name="Plane 0 Stride" size="27" start="10:0" type="uint"/>
+    <field name="Plane 1 2 Stride" size="27" start="11:0" type="uint"/>
+    <field name="Clear" size="128" start="12:0" type="RT Clear"/>
+  </struct>
+
+  <struct name="Render Target" align="64">
+    <field name="RGB" size="512" start="0:0" type="RGB Render Target"/>
+    <field name="YUV" size="512" start="0:0" type="YUV Render Target"/>
+    <field name="AFBC RGB" size="512" start="0:0" type="AFBC RGB Render Target"/>
+    <field name="AFBC YUV" size="512" start="0:0" type="AFBC YUV Render Target"/>
+    <field name="AFRC RGB" size="512" start="0:0" type="AFRC RGB Render Target"/>
+    <field name="AFRC YUV" size="512" start="0:0" type="AFRC YUV Render Target"/>
   </struct>
 
   <enum name="Chunk Size">
