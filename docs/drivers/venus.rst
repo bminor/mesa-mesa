@@ -12,10 +12,14 @@ Requirements
 
 The Venus renderer requires
 
-- Vulkan 1.1
-- :ext:`VK_EXT_external_memory_dma_buf`
-- :ext:`VK_EXT_image_drm_format_modifier`
-- :ext:`VK_EXT_queue_family_foreign`
+- Linux platform
+   - Vulkan 1.1
+   - :ext:`VK_KHR_external_memory_fd`
+- Android platform
+   - Vulkan 1.1
+   - :ext:`VK_EXT_external_memory_dma_buf`
+   - :ext:`VK_EXT_image_drm_format_modifier`
+   - :ext:`VK_EXT_queue_family_foreign`
 
 from the host driver.  However, it violates the spec and relies on
 implementation-defined behaviors to support ``vkMapMemory`` (see `below
@@ -24,29 +28,24 @@ drivers meeting the requirements.  It has only been tested with:
 
 - ANV 21.1 or later
 - RADV 21.1 or later
-   - Note: you need 6.13 or later kernel that already has `this KVM series
-     <https://lore.kernel.org/all/20241010182427.1434605-1-seanjc@google.com/>`__,
-     or prior kernel patched with `this prior art
-     <https://lore.kernel.org/all/20240229025759.1187910-1-stevensd@google.com/>`__.
-   - Note: for dGPU with Intel CPU, you need 6.11 or later kernel patched with
-     `this KVM change
-     <https://lore.kernel.org/all/20240309010929.1403984-6-seanjc@google.com/>`__
-     (it was `temporarily reverted
-     <https://lore.kernel.org/all/20240915073010.5860-1-pbonzini@redhat.com/>`__
-     due to a Bochs DRM driver regression that has already been `fixed
-     <https://lore.kernel.org/all/20240909131643.28915-1-yan.y.zhao@intel.com/>`__).
+   - Note: you need 6.13+ kernel that already has
+     `KVM: Stop grabbing references to PFNMAP'd pages
+     <https://lore.kernel.org/all/20241010182427.1434605-1-seanjc@google.com/>`__.
+   - Note: for dGPU paired with Intel CPU, you need 6.11+ kernel patched with
+     `KVM: VMX: Always honor guest PAT on CPUs that support self-snoop
+     <https://lore.kernel.org/all/20240309010929.1403984-6-seanjc@google.com/>`__,
+     or 6.16+ kernel with VMM to opt-out ``KVM_X86_QUIRK_IGNORE_GUEST_PAT`` (QEMU
+     request is `here <https://gitlab.com/qemu-project/qemu/-/issues/2943>`__).
 - Turnip 22.0 or later
 - PanVK 25.1 or later
 - Lavapipe 22.1 or later
 - Mali (Proprietary) r32p0 or later
 - NVIDIA (Proprietary) 570.86 or later
-   - Note: if with Intel CPU, you need 6.11 or later kernel patched with
-     `this KVM change
-     <https://lore.kernel.org/all/20240309010929.1403984-6-seanjc@google.com/>`__
-     (it was `temporarily reverted
-     <https://lore.kernel.org/all/20240915073010.5860-1-pbonzini@redhat.com/>`__
-     due to a Bochs DRM driver regression that has already been `fixed
-     <https://lore.kernel.org/all/20240909131643.28915-1-yan.y.zhao@intel.com/>`__).
+   - Note: if paired with Intel CPU, you need 6.11+ kernel patched with
+     `KVM: VMX: Always honor guest PAT on CPUs that support self-snoop
+     <https://lore.kernel.org/all/20240309010929.1403984-6-seanjc@google.com/>`__,
+     or 6.16+ kernel with VMM to opt-out ``KVM_X86_QUIRK_IGNORE_GUEST_PAT`` (QEMU
+     request is `here <https://gitlab.com/qemu-project/qemu/-/issues/2943>`__).
 
 The Venus driver requires supports for
 
@@ -54,7 +53,6 @@ The Venus driver requires supports for
 - ``VIRTGPU_PARAM_CAPSET_QUERY_FIX``
 - ``VIRTGPU_PARAM_RESOURCE_BLOB``
 - ``VIRTGPU_PARAM_HOST_VISIBLE``
-- ``VIRTGPU_PARAM_CROSS_DEVICE``
 - ``VIRTGPU_PARAM_CONTEXT_INIT``
 
 from the virtio-gpu kernel driver, unless vtest is used.  That usually means
