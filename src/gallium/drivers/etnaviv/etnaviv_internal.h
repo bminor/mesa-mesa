@@ -89,6 +89,8 @@ struct etna_specs {
    unsigned tex_astc : 1;
    /* has BLT engine instead of RS */
    unsigned use_blt : 1;
+   /* has correct stencil 0 valuemask */
+   unsigned correct_stencil_valuemask : 1;
    /* number of bits per TS tile */
    unsigned bits_per_tile;
    /* clear value for TS (dependent on bits_per_tile) */

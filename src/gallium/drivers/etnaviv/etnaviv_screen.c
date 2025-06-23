@@ -829,6 +829,9 @@ etna_get_specs(struct etna_screen *screen)
    screen->specs.v4_compression =
       VIV_FEATURE(screen, ETNA_FEATURE_V4_COMPRESSION);
 
+   /* XXX: The feature bit gating the bugfix is an educated guess */
+   screen->specs.correct_stencil_valuemask = VIV_FEATURE(screen, ETNA_FEATURE_PE_DITHER_FIX);
+
    if (screen->info->halti >= 5) {
       /* GC7000 - this core must load shaders from memory. */
       screen->specs.vs_offset = 0;

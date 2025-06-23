@@ -532,7 +532,8 @@ etna_emit_state(struct etna_context *ctx)
    }
    if (unlikely(dirty & (ETNA_DIRTY_STENCIL_REF | ETNA_DIRTY_RASTERIZER | ETNA_DIRTY_ZSA))) {
       uint32_t val = etna_zsa_state(ctx->zsa)->PE_STENCIL_CONFIG_EXT;
-      if (!ctx->zsa->stencil[1].enabled && ctx->zsa->stencil[0].valuemask)
+      if (!ctx->zsa->stencil[1].enabled &&
+          (screen->specs.correct_stencil_valuemask || ctx->zsa->stencil[0].valuemask))
          val |= ctx->stencil_ref.PE_STENCIL_CONFIG_EXT[!ccw];
       else
          val |= ctx->stencil_ref.PE_STENCIL_CONFIG_EXT[ccw];

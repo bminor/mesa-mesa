@@ -100,8 +100,16 @@ etna_zsa_state_create(struct pipe_context *pctx,
       VIVS_PE_ALPHA_OP_ALPHA_REF(float_to_ubyte(so->alpha_ref_value));
 
    for (unsigned i = 0; i < 2; i++) {
-      const struct pipe_stencil_state *stencil_front = (so->stencil[1].enabled && so->stencil[1].valuemask) ? &so->stencil[i] : &so->stencil[0];
-      const struct pipe_stencil_state *stencil_back = (so->stencil[1].enabled && so->stencil[1].valuemask) ? &so->stencil[!i] : &so->stencil[0];
+      const struct pipe_stencil_state *stencil_front, *stencil_back;
+
+      if (so->stencil[1].enabled &&
+          (screen->specs.correct_stencil_valuemask || so->stencil[1].valuemask)) {
+         stencil_front = &so->stencil[i];
+         stencil_back = &so->stencil[!i];
+      } else {
+         stencil_front = stencil_back = &so->stencil[0];
+      }
+
       cs->PE_STENCIL_OP[i] =
          VIVS_PE_STENCIL_OP_FUNC_FRONT(stencil_front->func) |
          VIVS_PE_STENCIL_OP_FUNC_BACK(stencil_back->func) |
