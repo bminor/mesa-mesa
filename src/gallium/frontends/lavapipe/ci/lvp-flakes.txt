@@ -24,6 +24,7 @@ dEQP-VK.ray_query.stress.fragment_shader.triangles
 dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_AABB_12
 dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_tri_13
 
+dEQP-VK.sparse_resources.buffer.vertex_buffer.sparse_binding_aliased
 dEQP-VK.sparse_resources.device_group_image_sparse_binding.cube_array.rg16i.256_256_6
 dEQP-VK.sparse_resources.device_group_image_sparse_binding.multiple_bind_sparse_info.cube_array.r32ui.256_256_6
 dEQP-VK.sparse_resources.device_group_image_sparse_binding.multiple_sparse_image_opaque_memory_bind_info.1d.r8_snorm.1024_1_1
@@ -80,6 +81,7 @@ dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgb
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba8_snorm.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube.rg32ui.137_137_1
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube.rgba16_snorm.128_128_1
+dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube.rgba32i.256_256_1
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube_array.r8ui.256_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.cube_array.rgba32i.137_137_3
 dEQP-VK.sparse_resources.image_sparse_residency.2d.rg8.1024_128_1
