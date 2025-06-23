@@ -1,3 +1,4 @@
+KHR-GL46.es_31_compatibility.shader_storage_buffer_object.basic-operations-case2-vs
 KHR-GL46.explicit_uniform_location.subroutine-index-all-stages
 KHR-GL46.explicit_uniform_location.subroutine-index-mix-implicit
 KHR-GL46.explicit_uniform_location.subroutine-index-non-continuous
@@ -20,8 +21,11 @@ KHR-GL46.shader_atomic_counter_ops_tests.ShaderAtomicCounterOpsAdditionSubstract
 KHR-GL46.shader_atomic_counter_ops_tests.ShaderAtomicCounterOpsBitwiseTestCase
 KHR-GL46.shader_storage_buffer_object.advanced-switchPrograms-cs
 KHR-GL46.sparse_buffer_tests.BufferStorageTest
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rg8i
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rgba16
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_r16ui
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba8ui
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_array_rgb10_a2
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_r8i
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_rectangle_rg16i
 KHR-GL46.spirv_extensions.spirv_extensions_queries
@@ -89,6 +93,7 @@ spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_RGB9_E5
 spec@arb_timer_query@timestamp-get
 spec@ext_framebuffer_object@fbo-depth-sample-compare
+spec@ext_texture_array@texsubimage array
 spec@ext_texture_lod_bias@lodbias
 spec@ext_texture_srgb@texwrap formats
 spec@ext_texture_srgb@texwrap formats bordercolor
