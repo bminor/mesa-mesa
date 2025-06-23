@@ -5,8 +5,6 @@ dEQP-GLES2.functional.fbo.completeness.renderable.renderbuffer.depth.rg16f,Fail
 dEQP-GLES2.functional.fbo.completeness.renderable.renderbuffer.stencil.r16f,Fail
 dEQP-GLES2.functional.fbo.completeness.renderable.renderbuffer.stencil.rg16f,Fail
 dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.rgb_half_float_oes,Fail
-dEQP-GLES2.functional.fragment_ops.random.3,Fail
-dEQP-GLES2.functional.fragment_ops.random.36,Fail
 dEQP-GLES2.functional.shaders.invariance.highp.loop_2,Fail
 dEQP-GLES2.functional.shaders.invariance.highp.subexpression_precision_lowp,Fail
 dEQP-GLES2.functional.shaders.invariance.lowp.loop_2,Fail

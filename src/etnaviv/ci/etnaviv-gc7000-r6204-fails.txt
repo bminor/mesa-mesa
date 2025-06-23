@@ -1,6 +1,4 @@
 dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.rgb_half_float_oes,Fail
-dEQP-GLES2.functional.fragment_ops.random.36,Fail
-dEQP-GLES2.functional.fragment_ops.random.3,Fail
 dEQP-GLES2.functional.shaders.operator.selection.highp_float_fragment,Fail
 dEQP-GLES2.functional.shaders.operator.selection.highp_int_fragment,Fail
 dEQP-GLES2.functional.shaders.operator.selection.highp_ivec2_fragment,Fail
