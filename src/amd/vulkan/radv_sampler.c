@@ -152,31 +152,31 @@ radv_get_max_anisotropy(struct radv_device *device, const VkSamplerCreateInfo *p
 static uint32_t
 radv_register_border_color(struct radv_device *device, VkClearColorValue value)
 {
-   uint32_t slot;
+   uint32_t index;
 
    mtx_lock(&device->border_color_data.mutex);
 
-   for (slot = 0; slot < RADV_BORDER_COLOR_COUNT; slot++) {
-      if (!device->border_color_data.used[slot]) {
+   for (index = 0; index < RADV_BORDER_COLOR_COUNT; index++) {
+      if (!device->border_color_data.used[index]) {
          /* Copy to the GPU wrt endian-ness. */
-         util_memcpy_cpu_to_le32(&device->border_color_data.colors_gpu_ptr[slot], &value, sizeof(VkClearColorValue));
+         util_memcpy_cpu_to_le32(&device->border_color_data.colors_gpu_ptr[index], &value, sizeof(VkClearColorValue));
 
-         device->border_color_data.used[slot] = true;
+         device->border_color_data.used[index] = true;
          break;
       }
    }
 
    mtx_unlock(&device->border_color_data.mutex);
 
-   return slot;
+   return index;
 }
 
 static void
-radv_unregister_border_color(struct radv_device *device, uint32_t slot)
+radv_unregister_border_color(struct radv_device *device, uint32_t index)
 {
    mtx_lock(&device->border_color_data.mutex);
 
-   device->border_color_data.used[slot] = false;
+   device->border_color_data.used[index] = false;
 
    mtx_unlock(&device->border_color_data.mutex);
 }
@@ -203,14 +203,14 @@ radv_init_sampler(struct radv_device *device, struct radv_sampler *sampler, cons
    if (pCreateInfo->compareEnable)
       depth_compare_func = radv_tex_compare(pCreateInfo->compareOp);
 
-   sampler->border_color_slot = RADV_BORDER_COLOR_COUNT;
+   sampler->border_color_index = RADV_BORDER_COLOR_COUNT;
 
    if (vk_border_color_is_custom(border_color)) {
-      sampler->border_color_slot = radv_register_border_color(device, sampler->vk.border_color_value);
+      sampler->border_color_index = radv_register_border_color(device, sampler->vk.border_color_value);
    }
 
    /* If we don't have a custom color, set the ptr to 0 */
-   border_color_ptr = sampler->border_color_slot != RADV_BORDER_COLOR_COUNT ? sampler->border_color_slot : 0;
+   border_color_ptr = sampler->border_color_index != RADV_BORDER_COLOR_COUNT ? sampler->border_color_index : 0;
 
    struct ac_sampler_state ac_state = {
       .address_mode_u = radv_tex_wrap(pCreateInfo->addressModeU),
@@ -263,8 +263,8 @@ radv_DestroySampler(VkDevice _device, VkSampler _sampler, const VkAllocationCall
    if (!sampler)
       return;
 
-   if (sampler->border_color_slot != RADV_BORDER_COLOR_COUNT)
-      radv_unregister_border_color(device, sampler->border_color_slot);
+   if (sampler->border_color_index != RADV_BORDER_COLOR_COUNT)
+      radv_unregister_border_color(device, sampler->border_color_index);
 
    vk_sampler_destroy(&device->vk, pAllocator, &sampler->vk);
 }
