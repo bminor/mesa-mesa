@@ -268,7 +268,6 @@ ac_nir_export_position(nir_builder *b,
                        uint32_t export_clipdist_mask,
                        bool dont_export_cull_distances,
                        bool write_pos_to_clipvertex,
-                       bool pack_clip_cull_distances,
                        bool no_param_export,
                        bool force_vrs,
                        uint64_t outputs_written,
@@ -326,14 +325,11 @@ ac_nir_export_position(nir_builder *b,
    }
 
    /* If clip/cull distances are sparsely populated or some components are >= 0, pack them. */
-   if (pack_clip_cull_distances) {
-      unsigned num = 0;
-
-      u_foreach_bit(i, export_clipdist_mask) {
-         clip_dist[num++] = clip_dist[i];
-      }
-      export_clipdist_mask = BITFIELD_MASK(num);
+   unsigned num = 0;
+   u_foreach_bit(i, export_clipdist_mask) {
+      clip_dist[num++] = clip_dist[i];
    }
+   export_clipdist_mask = BITFIELD_MASK(num);
 
    if (outputs_written & VARYING_BIT_POS) {
       /* GFX10 (Navi1x) skip POS0 exports if EXEC=0 and DONE=0, causing a hang.

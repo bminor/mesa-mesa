@@ -67,9 +67,8 @@ ac_nir_create_gs_copy_shader(const nir_shader *gs_nir, ac_nir_lower_legacy_gs_op
 
       if (stream == 0) {
          ac_nir_export_position(&b, options->gfx_level, options->export_clipdist_mask, false,
-                                options->write_pos_to_clipvertex, options->pack_clip_cull_distances,
-                                !options->has_param_exports, options->force_vrs,
-                                b.shader->info.outputs_written | VARYING_BIT_POS,
+                                options->write_pos_to_clipvertex,  !options->has_param_exports,
+                                options->force_vrs, b.shader->info.outputs_written | VARYING_BIT_POS,
                                 out, NULL);
 
          if (options->has_param_exports) {

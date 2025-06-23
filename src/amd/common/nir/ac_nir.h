@@ -165,7 +165,13 @@ typedef struct {
 
    unsigned max_workgroup_size;
    unsigned wave_size;
-   /* The mask of clip and cull distances that the shader should export. */
+   /* The mask of clip and cull distances that the shader should export.
+    *
+    * Clip/cull distance components that are missing in export_clipdist_mask are removed, improving
+    * throughput by up to 50% (3 pos exports -> 2 pos exports). The caller shouldn't set no-op
+    * components (>= 0) in export_clipdist_mask to remove those completely. No-op components
+    * should be determined by nir_opt_clip_cull_const before this.
+    */
    uint8_t export_clipdist_mask;
    /* The mask of clip and cull distances that the shader should cull against.
     * If no clip and cull distance outputs are present, it will load clip planes and cull
@@ -179,12 +185,6 @@ typedef struct {
     */
    bool dont_export_cull_distances;
    bool write_pos_to_clipvertex;
-   /* Remove clip/cull distance components that are missing in export_clipdist_mask, improving
-    * throughput by up to 50% (3 pos exports -> 2 pos exports). The caller shouldn't set no-op
-    * components (>= 0) in export_clipdist_mask to remove those completely. No-op components
-    * should be determined by nir_opt_clip_cull_const before this.
-    */
-   bool pack_clip_cull_distances;
    const uint8_t *vs_output_param_offset; /* GFX11+ */
    bool has_param_exports;
    bool can_cull;
@@ -255,7 +255,6 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
                        uint32_t export_clipdist_mask,
                        bool write_pos_to_clipvertex,
-                       bool pack_clip_cull_distances,
                        const uint8_t *param_offsets,
                        bool has_param_exports,
                        bool export_primitive_id,
@@ -269,7 +268,6 @@ typedef struct {
    enum amd_gfx_level gfx_level;
    uint32_t export_clipdist_mask;
    bool write_pos_to_clipvertex;
-   bool pack_clip_cull_distances;
    const uint8_t *param_offsets;
    bool has_param_exports;
    bool disable_streamout;

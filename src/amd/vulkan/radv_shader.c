@@ -792,7 +792,6 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
    options.export_clipdist_mask = info->outinfo.clip_dist_mask | info->outinfo.cull_dist_mask;
    options.cull_clipdist_mask = options.export_clipdist_mask;
    options.dont_export_cull_distances = info->has_ngg_culling;
-   options.pack_clip_cull_distances = true;
    options.vs_output_param_offset = info->outinfo.vs_output_param_offset;
    options.has_param_exports = info->outinfo.param_exports || info->outinfo.prim_param_exports;
    options.can_cull = info->has_ngg_culling;

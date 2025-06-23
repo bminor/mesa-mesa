@@ -37,7 +37,6 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
                        enum amd_gfx_level gfx_level,
                        uint32_t export_clipdist_mask,
                        bool write_pos_to_clipvertex,
-                       bool pack_clip_cull_distances,
                        const uint8_t *param_offsets,
                        bool has_param_exports,
                        bool export_primitive_id,
@@ -71,8 +70,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
    ac_nir_clamp_vertex_color_outputs(&b, &out);
 
    ac_nir_export_position(&b, gfx_level, export_clipdist_mask, false, write_pos_to_clipvertex,
-                          pack_clip_cull_distances, !has_param_exports, force_vrs,
-                          nir->info.outputs_written | VARYING_BIT_POS,
+                          !has_param_exports, force_vrs, nir->info.outputs_written | VARYING_BIT_POS,
                           &out, NULL);
 
    if (has_param_exports) {

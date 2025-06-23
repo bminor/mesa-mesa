@@ -406,7 +406,6 @@ ngg_gs_emit_output(nir_builder *b, nir_def *max_num_out_vtx, nir_def *max_num_ou
                              s->options->export_clipdist_mask,
                              s->options->dont_export_cull_distances,
                              s->options->write_pos_to_clipvertex,
-                             s->options->pack_clip_cull_distances,
                              !s->options->has_param_exports,
                              s->options->force_vrs,
                              b->shader->info.outputs_written | VARYING_BIT_POS, &s->out, NULL);
