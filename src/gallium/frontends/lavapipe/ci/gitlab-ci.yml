@@ -9,6 +9,7 @@ lavapipe:
   extends:
     - .deqp-test
     - .lavapipe-test
+    - .lavapipe-rules
 
 lavapipe-full:
   extends:
@@ -22,6 +23,7 @@ lavapipe-vk-asan:
   extends:
     - .deqp-test
     - .lavapipe-test
+    - .lavapipe-rules
   variables:
     DEQP_SUITE: lvp-asan
     GPU_VERSION: lvp-asan
