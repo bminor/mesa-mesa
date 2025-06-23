@@ -686,8 +686,7 @@ lower_compute_system_value_instr(nir_builder *b,
       }
 
    case nir_intrinsic_load_global_invocation_id: {
-      if ((options && options->has_base_workgroup_id) ||
-          !b->shader->options->has_cs_global_id) {
+      if (!b->shader->options->has_cs_global_id) {
          nir_def *group_size = nir_load_workgroup_size(b);
          nir_def *group_id = nir_load_workgroup_id(b);
          nir_def *base_group_id = nir_load_base_workgroup_id(b, bit_size);
@@ -695,6 +694,16 @@ lower_compute_system_value_instr(nir_builder *b,
 
          return nir_iadd(b, nir_imul(b, nir_iadd(b, nir_u2uN(b, group_id, bit_size), base_group_id), nir_u2uN(b, group_size, bit_size)),
                          nir_u2uN(b, local_id, bit_size));
+      } else if (options && options->has_base_workgroup_id &&
+                 _mesa_set_search(state->lower_once_list, instr) == NULL) {
+
+         nir_def *global_id = nir_load_global_invocation_id(b, bit_size);
+         nir_def *group_size = nir_u2uN(b, nir_load_workgroup_size(b), bit_size);
+         nir_def *base_group_id = nir_load_base_workgroup_id(b, bit_size);
+
+         _mesa_set_add(state->lower_once_list, global_id->parent_instr);
+
+         return nir_iadd(b, global_id, nir_imul(b, base_group_id, group_size));
       } else if (options && options->global_id_is_32bit && bit_size > 32) {
          return nir_u2uN(b, nir_load_global_invocation_id(b, 32), bit_size);
       } else {
