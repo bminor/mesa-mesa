@@ -86,13 +86,18 @@ instr_cost(loop_info_state *state, nir_instr *instr,
    unsigned cost = 1;
 
    if (nir_op_is_selection(alu->op)) {
-      nir_scalar cond_scalar = { alu->src[0].src.ssa, 0 };
-      if (nir_is_terminator_condition_with_two_inputs(cond_scalar) &&
-          condition_can_constant_fold(state, cond_scalar)) {
-         /* If the condition can be constant folded after the loop is unrolled,
-          * so can the selection. */
-         return 0;
+      bool can_constant_fold = true;
+      for (unsigned i = 0; can_constant_fold && i < alu->def.num_components; i++) {
+         nir_scalar cond_scalar = nir_scalar_chase_alu_src(nir_get_scalar(&alu->def, i), 0);
+         can_constant_fold &= nir_is_terminator_condition_with_two_inputs(cond_scalar) &&
+                              condition_can_constant_fold(state, cond_scalar);
       }
+
+      /* If the condition can be constant folded after the loop is unrolled,
+       * so can the selection.
+       */
+      if (can_constant_fold)
+         return 0;
    } else if (nir_alu_instr_is_comparison(alu) &&
               nir_op_infos[alu->op].num_inputs == 2) {
       bool can_constant_fold = true;
