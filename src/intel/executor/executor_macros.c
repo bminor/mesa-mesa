@@ -149,14 +149,14 @@ executor_macro_eot(executor_context *ec, char **src, char *line)
       ralloc_strcat(src,
          "mov(8)          g127<1>UD  g0<8;8,1>UD    { align1 WE_all 1Q };\n"
          "send(8)         null<1>UW  g127<0,1,0>UD  0x82000010\n"
-         "    thread_spawner MsgDesc: mlen 1 rlen 0 { align1 WE_all 1Q EOT };\n");
+         "    ts/btd MsgDesc: mlen 1 rlen 0 { align1 WE_all 1Q EOT };\n");
       break;
    }
    case 120: {
       ralloc_strcat(src,
          "mov(8)          g127<1>UD  g0<8;8,1>UD  { align1 WE_all 1Q };\n"
          "send(8)         nullUD     g127UD       nullUD  0x02000000  0x00000000\n"
-         "    thread_spawner MsgDesc:  mlen 1 ex_mlen 0 rlen 0 { align1 WE_all 1Q @1 EOT };\n");
+         "    ts/btd MsgDesc:  mlen 1 ex_mlen 0 rlen 0 { align1 WE_all 1Q @1 EOT };\n");
       break;
    }
 
@@ -241,7 +241,7 @@ executor_macro_write(executor_context *ec, char **src, char *line)
          "mul(8)          g127<1>UD  %s<8;8,1>UD    0x4UW     { align1 @1 1Q };\n"
          "add(8)          g127<1>UD  g127<8;8,1>UD  0x%08xUD  { align1 @1 1Q };\n"
          "send%s(8)       nullUD     g127UD         %sUD      0x2026efd   0x00000040\n"
-         "    dp data 1 MsgDesc: (DC untyped surface write, Surface = 253, "
+         "    hdc1 MsgDesc: (DC untyped surface write, Surface = 253, "
          "                        SIMD8, Mask = 0xe) mlen 1 ex_mlen 1 rlen 0 "
          "    { align1 1Q @1 $1 };\n",
          offset_reg, base_addr, send_suffix, data_reg);
@@ -306,7 +306,7 @@ executor_macro_read(executor_context *ec, char **src, char *line)
          "mul(8)          g127<1>UD  %s<8;8,1>UD    0x4UW     { align1 @1 1Q };\n"
          "add(8)          g127<1>UD  g127<8;8,1>UD  0x%08xUD  { align1 @1 1Q };\n"
          "send%s(8)       %sUD       g127UD         nullUD    0x2106efd   0x00000000\n"
-         "    dp data 1 MsgDesc: (DC untyped surface read, Surface = 253, "
+         "    hdc1 MsgDesc: (DC untyped surface read, Surface = 253, "
          "                        SIMD8, Mask = 0xe) mlen 1 ex_mlen 0 rlen 1 "
          "    { align1 1Q @1 $1 };\n",
          offset_reg, base_addr, send_suffix, data_reg);
