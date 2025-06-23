@@ -8,105 +8,15 @@ use std::ffi::c_void;
 use std::ops::Range;
 
 // This file is dedicated to the internal tiling layout, mainly in the context
-// of CPU-based tiled memcpy implementations (and helpers) for VK_EXT_host_image_copy
+// of CPU-based tiled memcpy implementations (and helpers) for
+// VK_EXT_host_image_copy
 //
-// Work here is based on isl_tiled_memcpy, fd6_tiled_memcpy, old work by Rebecca Mckeever,
-// and https://fgiesen.wordpress.com/2011/01/17/texture-tiling-and-swizzling/
+// Details on the NVIDIA tiling format can be found in the documentaiton for
+// the [`Tiling`] struct.
 //
-// On NVIDIA, the tiling system is a two-tier one, and images are first tiled in
-// a grid of rows of tiles (called "Blocks") with one or more columns:
-//
-// +----------+----------+----------+----------+
-// | Block 0  | Block 1  | Block 2  | Block 3  |
-// +----------+----------+----------+----------+
-// | Block 4  | Block 5  | Block 6  | Block 7  |
-// +----------+----------+----------+----------+
-// | Block 8  | Block 9  | Block 10 | Block 11 |
-// +----------+----------+----------+----------+
-//
-// The blocks themselves are ordered linearly as can be seen above, which is
-// where the "Block Linear" naming comes from for NVIDIA's tiling scheme.
-//
-// For 3D images, each block continues in the Z direction such that tiles
-// contain multiple Z slices. If the image depth is longer than the
-// block depth, there will be more than one layer of blocks, where a layer is
-// made up of 1 or more Z slices. For example, if the above tile pattern was
-// the first layer of a multilayer arrangement, the second layer would be:
-//
-// +----------+----------+----------+----------+
-// | Block 12 | Block 13 | Block 14 | Block 15 |
-// +----------+----------+----------+----------+
-// | Block 16 | Block 17 | Block 18 | Block 19 |
-// +----------+----------+----------+----------+
-// | Block 20 | Block 21 | Block 22 | Block 23 |
-// +----------+----------+----------+----------+
-//
-// The number of rows, columns, and layers of tiles can thus be deduced to be:
-//    rows    >= ceiling(image_height / block_height)
-//    columns >= ceiling(image_width  / block_width)
-//    layers  >= ceiling(image_depth  / block_depth)
-//
-// Where block_width is a constant 64B (unless for sparse) and block_height
-// can be either 8 or 16 GOBs tall (more on GOBs below). For us, block_depth
-// is one for now.
-//
-// The >= is in case the blocks around the edges are partial.
-//
-// Now comes the second tier. Each block is composed of GOBs (Groups of Bytes)
-// arranged in ascending order in a single column:
-//
-// +---------------------------+
-// |           GOB 0           |
-// +---------------------------+
-// |           GOB 1           |
-// +---------------------------+
-// |           GOB 2           |
-// +---------------------------+
-// |           GOB 3           |
-// +---------------------------+
-//
-// The number of GOBs in a full block is
-//    block_height * block_depth
-//
-// An Ampere GOB is 512 bytes, arranged in a 64x8 layout and split into Sectors.
-// Each Sector is 32 Bytes, and the Sectors in a GOB are arranged in a 16x2
-// layout (i.e., two 16B lines on top of each other). It's then arranged into
-// two columns that are 2 sectors by 4, leading to a 4x4 grid of sectors:
-//
-// +----------+----------+----------+----------+
-// | Sector 0 | Sector 1 | Sector 0 | Sector 1 |
-// +----------+----------+----------+----------+
-// | Sector 2 | Sector 3 | Sector 2 | Sector 3 |
-// +----------+----------+----------+----------+
-// | Sector 4 | Sector 5 | Sector 4 | Sector 5 |
-// +----------+----------+----------+----------+
-// | Sector 6 | Sector 7 | Sector 6 | Sector 7 |
-// +----------+----------+----------+----------+
-//
-// From the given pixel address equations in the Orin manual, we arrived at
-// the following bit interleave pattern for the pixel address:
-//
-//      b8 b7 b6 b5 b4 b3 b2 b1 b0
-//      --------------------------
-//      x5 y2 y1 x4 y0 x3 x2 x1 x0
-//
-// Which would look something like this:
-// fn get_pixel_offset(
-//      x: usize,
-//      y: usize,
-//  ) -> usize {
-//      (x & 15)       |
-//      (y & 1)  << 4  |
-//      (x & 16) << 1  |
-//      (y & 2)  << 5  |
-//      (x & 32) << 3
-//  }
-//
-//
-
-// The way our implementation will work is by splitting an image into tiles, then
-// each tile will be broken into its GOBs, and finally each GOB into sectors,
-// where each sector will be copied into its position.
+// The way our implementation will work is by splitting an image into tiles,
+// then each tile will be broken into its GOBs, and finally each GOB into 16B
+// or 8B sectors, where each sector will be copied into its position.
 //
 // For code sharing and cleanliness, we write everything to be very generic,
 // so as to be shared between Linear <-> Tiled and Tiled <-> Linear paths, and
@@ -211,6 +121,7 @@ trait CopyBytes {
     }
 }
 
+/// Implements copies for [`GOBType::TuringColor2D`]
 struct CopyGOBTuring2D<C: CopyBytes> {
     phantom: std::marker::PhantomData<C>,
 }
@@ -254,6 +165,7 @@ impl<C: CopyBytes> CopyGOBLines for CopyGOBTuring2D<C> {
     }
 }
 
+/// Implements copies for [`GOBType::Blackwell16Bit`]
 struct CopyGOBBlackwell2D2BPP<C: CopyBytes> {
     phantom: std::marker::PhantomData<C>,
 }
@@ -297,6 +209,7 @@ impl<C: CopyBytes> CopyGOBLines for CopyGOBBlackwell2D2BPP<C> {
     }
 }
 
+/// Implements copies for [`GOBType::Blackwell8Bit`]
 struct CopyGOBBlackwell2D1BPP<C: CopyBytes> {
     phantom: std::marker::PhantomData<C>,
 }

@@ -25,12 +25,57 @@ pub enum GOBType {
     TuringZS,
 
     /// The Turing 2D GOB format for color images
+    ///
+    /// A `TuringColor2D` GOB is 512 bytes, arranged in a 64x8 layout and split
+    /// into Sectors. Each Sector is 32 Bytes, and the Sectors in a GOB are
+    /// arranged in a 16x2 layout (i.e., two 16B lines on top of each other).
+    /// It's then arranged into two columns that are 2 sectors by 4, leading to
+    /// a 4x4 grid of sectors:
+    ///
+    /// |           |           |           |           |
+    /// |-----------|-----------|-----------|-----------|
+    /// | Sector  0 | Sector  1 | Sector  8 | Sector  9 |
+    /// | Sector  2 | Sector  3 | Sector 10 | Sector 11 |
+    /// | Sector  4 | Sector  5 | Sector 12 | Sector 13 |
+    /// | Sector  6 | Sector  7 | Sector 14 | Sector 15 |
+    ///
+    /// `CopyGOBTuring2D` implements CPU copies for Turing color 2D GOBs.
     TuringColor2D,
 
     /// The Blackwell+ GOB format for 8bit images
+    ///
+    /// A `Blackwell8Bit` GOB is 512 bytes, arranged in a 64x8 layout and split
+    /// into Sectors. Each Sector is 32 Bytes, and the Sectors in a GOB are
+    /// arranged in a 8x4 layout (i.e., four 8B lines on top of each other).
+    /// It's then arranged into two columns that are 4 sectors by 2, leading to
+    /// a 2x8 grid of sectors:
+    ///
+    /// |           |           |           |           |           |           |           |           |
+    /// |-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+    /// | Sector  0 | Sector  2 | Sector  4 | Sector  6 | Sector  8 | Sector 10 | Sector 12 | Sector 14 |
+    /// | Sector  1 | Sector  3 | Sector  5 | Sector  7 | Sector  9 | Sector 11 | Sector 13 | Sector 15 |
+    ///
+    /// `CopyGOBBlackwell2D1BPP` implements CPU copies for 8-bit Blackwell
+    /// color 2D GOBs.
     Blackwell8Bit,
 
     /// The Blackwell+ GOB format for 16bit images
+    ///
+    /// A `Blackwell16Bit` GOB is 512 bytes, arranged in a 64x8 layout and split
+    /// into Sectors. Each Sector is 32 Bytes, and the Sectors in a GOB are
+    /// arranged in a 16x2 layout (i.e., two 16B lines on top of each other).
+    /// It's then arranged into two columns that are 2 sectors by 4, leading to
+    /// a 4x4 grid of sectors:
+    ///
+    /// |           |           |           |           |
+    /// |-----------|-----------|-----------|-----------|
+    /// | Sector  0 | Sector  1 | Sector  8 | Sector  9 |
+    /// | Sector  2 | Sector  3 | Sector 10 | Sector 11 |
+    /// | Sector  4 | Sector  5 | Sector 12 | Sector 13 |
+    /// | Sector  6 | Sector  7 | Sector 14 | Sector 15 |
+    ///
+    /// `CopyGOBBlackwell2D2BPP` implements CPU copies for 16-bit Blackwell
+    /// color 2D GOBs.
     Blackwell16Bit,
 }
 
@@ -79,6 +124,61 @@ impl GOBType {
     }
 }
 
+/// NVIDIA hardware employs a semi-programmable multi-tier image tiling scheme.
+///
+/// ## Images as arrays of tiles (or blocks)
+///
+/// Images are first tiled in a grid of rows of tiles (which NVIDIA calls
+/// "Blocks"), with one or more columns:
+///
+/// |         |         |         |         |
+/// |---------|---------|---------|---------|
+/// | Tile 0  | Tile 1  | Tile 2  | Tile 3  |
+/// | Tile 4  | Tile 5  | Tile 6  | Tile 7  |
+/// | Tile 8  | Tile 9  | Tile 10 | Tile 11 |
+///
+/// The tiles (or blocks) themselves are ordered linearly as can be seen above,
+/// which is where the "Block Linear" naming comes from for NVIDIA's tiling
+/// scheme.
+///
+/// For 3D images, each tile continues in the Z direction such that tiles
+/// contain multiple Z slices. If the image depth is longer than the tile depth,
+/// there will be more than one layer of tiles, where a layer is made up of 1 or
+/// more Z slices. For example, if the above tile pattern was the first layer of
+/// a multilayer arrangement, the second layer would be:
+///
+/// |         |         |         |         |
+/// |---------|---------|---------|---------|
+/// | Tile 12 | Tile 13 | Tile 14 | Tile 15 |
+/// | Tile 16 | Tile 17 | Tile 18 | Tile 19 |
+/// | Tile 20 | Tile 21 | Tile 22 | Tile 23 |
+///
+/// The number of rows, columns, and layers of tiles can thus be deduced to be:
+/// ```
+///    rows    = ceiling(image_height / tile_height)
+///    columns = ceiling(image_width  / tile_width)
+///    layers  = ceiling(image_depth  / tile_depth)
+/// ```
+/// Where `tile_width`, `tile_height`, and `tile_depth` come from
+/// [`Tiling::extent_B`].
+///
+/// ## Tiles as arrays of GOBs
+///
+/// Now comes the second tier. Each tile (or block) is composed of GOBs (Groups
+/// of Bytes) arranged in linear order, just like tiles are within the image
+/// itself.  In the common case, each tile is just vertical column of GOBs.
+/// However, for 3D or sparse images, a tile may be fully 3-dimensional.
+///
+/// The number of GOBs per tiles is controllable by software.  Image
+/// descriptors, color target bind methods, and DMA methods all allow
+/// programming tile dimensions in units of a power of two number of GOBs.  In
+/// NIL, these dimensions are given by [`Tiling::x_log2'], [`Tiling::y_log2'],
+/// and [`Tiling::y_log2'].
+///
+/// ## GOBs as arrays of bytes
+///
+/// The data may be further swizzled within a GOB.  The swizzling of data within
+/// a GOB is determined by the [`GOBType`].
 #[derive(Clone, Debug, Default, Copy, PartialEq)]
 #[repr(C)]
 pub struct Tiling {
