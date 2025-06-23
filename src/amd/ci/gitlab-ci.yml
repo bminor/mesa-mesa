@@ -39,14 +39,6 @@ radeonsi-stoney-glcts-piglit:
   variables:
     DEQP_SUITE: radeonsi-stoney
     HWCI_START_WESTON: 1
-    DEQP_FRACTION: 2
-
-radeonsi-stoney-glcts-piglit-full:
-  extends:
-    - radeonsi-stoney-glcts-piglit
-    - .radeonsi-manual-rules
-  variables:
-    DEQP_FRACTION: 1
 
 radeonsi-stoney-traces:
   extends:
