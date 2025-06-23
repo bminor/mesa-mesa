@@ -1899,7 +1899,7 @@ finalize_image_bind(struct zink_context *ctx, struct zink_resource *res, bool is
 }
 
 static struct zink_surface *
-create_image_surface(struct zink_context *ctx, const struct pipe_image_view *view, bool is_compute)
+create_image_surface(struct zink_context *ctx, const struct pipe_image_view *view, bool is_compute, struct zink_resource **import2d)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct pipe_resource *pres = view->resource;
@@ -1914,6 +1914,7 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
       assert(import);
       res = zink_resource(import);
       pres = import;
+      *import2d = res;
    } else {
       tmpl.level = view->u.tex.level;
       tmpl.first_layer = view->u.tex.first_layer;
@@ -2043,9 +2044,10 @@ zink_set_shader_images(struct pipe_context *pctx,
                   a->buffer_view = bv;
                }
             } else {
-               struct zink_surface *surface = create_image_surface(ctx, b, is_compute);
+               struct zink_resource *import2d = NULL;
+               struct zink_surface *surface = create_image_surface(ctx, b, is_compute, &import2d);
                if (tex2d_from_buf) {
-                  a->import2d = zink_resource(surface->base.texture);
+                  a->import2d = import2d;
                   bind_shaderimage_resource_stage(ctx, b, a->import2d, is_compute);
                }
                a->obj = res->obj;
@@ -2515,8 +2517,11 @@ zink_create_image_handle(struct pipe_context *pctx, const struct pipe_image_view
       } else {
          bd->ds.bufferview = create_image_bufferview(ctx, view);
       }
-   else
-      bd->ds.surface = create_image_surface(ctx, view, false);
+   else {
+      struct zink_resource *import2d = NULL;
+      bd->ds.surface = create_image_surface(ctx, view, false, &import2d);
+      assert(!import2d);
+   }
    uint64_t handle = util_idalloc_alloc(&ctx->di.bindless[bd->ds.is_buffer].img_slots);
    if (bd->ds.is_buffer)
       handle += ZINK_MAX_BINDLESS_HANDLES;
@@ -5146,7 +5151,9 @@ zink_rebind_all_images(struct zink_context *ctx)
          if (!res || res->base.b.target == PIPE_BUFFER)
             continue;
          if (ctx->image_views[i][j].obj != res->obj) {
-            image_view->surface = create_image_surface(ctx, &image_view->base, i == MESA_SHADER_COMPUTE);
+            struct zink_resource *import2d = NULL;
+            image_view->surface = create_image_surface(ctx, &image_view->base, i == MESA_SHADER_COMPUTE, &import2d);
+            assert(!import2d);
             image_view->obj = res->obj;
             ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_IMAGE, j, 1);
             update_descriptor_state_image(ctx, i, j, res);
