@@ -121,9 +121,9 @@ init_pipe_surface_info(struct pipe_context *pctx, struct pipe_surface *psurf, co
 }
 
 static void
-apply_view_usage_for_format(struct zink_screen *screen, struct zink_surface *surface, enum pipe_format format, VkImageViewCreateInfo *ivci, VkImageViewUsageCreateInfo *usage_info)
+apply_view_usage_for_format(struct zink_screen *screen, struct pipe_resource *pres, enum pipe_format format, VkImageViewCreateInfo *ivci, VkImageViewUsageCreateInfo *usage_info)
 {
-   struct zink_resource *res = zink_resource(surface->base.texture);
+   struct zink_resource *res = zink_resource(pres);
    VkFormatFeatureFlags feats = res->linear ?
                                 zink_get_format_props(screen, format)->linearTilingFeatures :
                                 zink_get_format_props(screen, format)->optimalTilingFeatures;
@@ -167,7 +167,7 @@ create_surface(struct pipe_context *pctx,
       return surface;
    assert(ivci->image);
    VkImageViewUsageCreateInfo usage_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO };
-   apply_view_usage_for_format(screen, surface, templ->format, ivci, &usage_info);
+   apply_view_usage_for_format(screen, pres, templ->format, ivci, &usage_info);
    VkResult result = VKSCR(CreateImageView)(screen->dev, ivci, NULL,
                                             &surface->image_view);
    if (result != VK_SUCCESS) {

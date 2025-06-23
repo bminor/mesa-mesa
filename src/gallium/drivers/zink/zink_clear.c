@@ -471,7 +471,7 @@ zink_clear_texture_dynamic(struct pipe_context *pctx,
    uint8_t stencil = 0;
    if (res->aspect & VK_IMAGE_ASPECT_COLOR_BIT) {
       util_format_unpack_rgba(pres->format, tmp.ui, data, 1);
-      zink_convert_color(screen, surf->format, &color, &tmp);
+      zink_convert_color(screen, psurf.format, &color, &tmp);
    } else {
       if (res->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
          util_format_unpack_z_float(pres->format, &depth, data, 1);

@@ -198,7 +198,7 @@ zink_render_msaa_expand(struct zink_context *ctx, uint32_t msaa_expand_mask)
       }
       if (transient->valid)
          continue;
-      struct pipe_surface dst_view = *ctx->fb_cbufs[i];
+      struct pipe_surface dst_view = ctx->fb_state.cbufs[i];
       dst_view.texture = &transient->base.b;
       dst_view.nr_samples = 0;
       struct pipe_sampler_view src_templ, *src_view;
