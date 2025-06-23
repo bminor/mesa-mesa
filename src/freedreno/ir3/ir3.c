@@ -107,6 +107,96 @@ collect_reg_info(struct ir3_shader_variant *v,
    }
 }
 
+/* Returns whether the shader uses a significant amount of 16-bit ALU ops, for
+ * the purposes of double_threadsize heuristics.
+ */
+static bool
+uses_significant_16bit_alu(struct ir3_shader_variant *v)
+{
+   uint32_t full = 0, half = 0;
+
+   foreach_block (block, &v->ir->block_list) {
+      foreach_instr (instr, &block->instr_list) {
+         /* Consider only ALU and EFU opcodes, not tex/buffer or most importantly meta ,*/
+         if (opc_cat(instr->opc) <= 4) {
+            bool is_half = false;
+
+            /* The size of the operation is determined by the src sizes (which
+             * must match) and there's an implicit conversion after the
+             * operation to the dest size. But cwabbott thinks a 32-bit
+             * upconversion does limit the throughput to being single-wide,
+             * since the HW can't write a 32-bit register in a single cycle in
+             * double-wide mode.
+             */
+            foreach_dst(dst, instr) {
+               if (dst->flags & IR3_REG_HALF) {
+                  foreach_src(src, instr) {
+                     if (src->flags & IR3_REG_HALF) {
+                        is_half = true;
+                        break;
+                     }
+                  }
+               }
+            }
+
+            if (is_half)
+               half++;
+            else
+               full++;
+         }
+      }
+   }
+
+   /* We don't just check for nonzero 16-bit, because comparisons produce HALF
+    * results, so mostly-fp32 shaders will have a nonzero amount.  So check if
+    * we have 1/5 half ALUs as a compromise.  The number didn't matter much,
+    * because shaders in testing tended to be mostly fp16 for GLES2 and mostly
+    * fp32 otherwise.
+    */
+   return full < (half * 4);
+}
+
+/**
+ * Use compiled shader parameters to determine if the shader should be run with
+ * double_threadsize, where the instructions and footprint in the register file
+ * expand to operate on (e.g. for a6xx+) 128 instead of 64 instances of the
+ * shader at a time.  Sometimes doubling threadsize is impossible (when we run
+ * up against HW limits), and sometimes it is required to hit API requirements
+ * (large CS workgroup sizes), but most of the time we can choose.
+ *
+ * Doubling threadsize doesn't change the compiled shader instructions, but it
+ * has complicated effects on performance:
+ *
+ * - Non-16bit ALU instructions go from 1 cycle per ALU op to 2, while 16-bit
+ *   instructions run at double rate and still take 1 cycle.
+ *
+ * - Increasing threadsize increases the latency of requests to the EFU or
+ *   memory accesses.
+ *
+ * - Increasing threadsize can reduce the number of waves executing in parallel
+ *   when we exceed the register file size, reducing the ability to hide latency
+ *   by switching waves.
+ *
+ * - Increasing threadsize can increase the cost of dynamic branching because it
+ *   increases the likelihood that the wave executes both sides of a branch.
+ *   (this effect is expected to be tiny, see
+ *   https://gfxstrand.net/faith/blog/2020/10/does-subgroup-wave-size-matter/)
+ *
+ * - Increasing threadsize reduces icache missees for large shaders by executing
+ *   half the waves.
+ *
+ * - Increasing threadsize reduces the overhead of scalar operations, uniform
+ *   branching, and uniform memory accesses that may exist in a shader by
+ *   running those instructions half as often.
+ *
+ * - Increasing threadsize increases the overhead of small waves when the second
+ *   half of the wave is unused -- we can detect this in compute shaders
+ *   sometimes (small workgroup size set), but it is workload-dependent in pixel
+ *   shaders.
+ *
+ * Thus, the performance impact of doubling threadsize is quite complicated, and
+ * we use heuristics when the choice is available to us.
+ */
 bool
 ir3_should_double_threadsize(struct ir3_shader_variant *v, unsigned regs_count)
 {
@@ -157,8 +247,24 @@ ir3_should_double_threadsize(struct ir3_shader_variant *v, unsigned regs_count)
    }
       FALLTHROUGH;
    case MESA_SHADER_FRAGMENT: {
-      /* Check that doubling the threadsize wouldn't exceed the regfile size */
-      return regs_count * 2 <= compiler->reg_size_vec4;
+      /* One of the limits on maximum waves of the shader running in parallel is
+       * the register count used in the shader compared to the hardware's
+       * register file size.  The absolute limit is if doubling the threadsize
+       * would exceed regfile size (regs*2 <= reg_size_vec4, producing just
+       * wave_granularity max_waves).  However, testing on X1-85 found that the
+       * sweet spot for non-fp16 apps was when max_waves would still be >= 8
+       * (4*wave_granularity) -- presumably reduced waves meant less ability to
+       * hide latency through switching to another wave (and the increased
+       * shader complexity that comes with low max_waves probably also
+       * correlated with dynamic branching).  For fp16 apps, the increased ALU
+       * rate made it worth it regardless.
+       */
+      if (uses_significant_16bit_alu(v)) {
+         /* Check that doubling the threadsize wouldn't exceed the regfile size */
+         return regs_count * 2 <= compiler->reg_size_vec4;
+      } else {
+         return regs_count * 2 <= compiler->reg_size_vec4 / 4;
+      }
    }
 
    default:
