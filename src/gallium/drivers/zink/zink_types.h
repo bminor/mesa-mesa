@@ -1627,6 +1627,8 @@ struct zink_bindless_descriptor {
    struct zink_sampler_state *sampler;
    uint32_t handle;
    uint32_t access; //PIPE_ACCESS_...
+   uint16_t first_layer;
+   uint16_t last_layer;
 };
 
 struct zink_rendering_info {

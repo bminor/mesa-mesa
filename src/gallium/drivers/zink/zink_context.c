@@ -2348,6 +2348,8 @@ zink_create_texture_handle(struct pipe_context *pctx, struct pipe_sampler_view *
       bd->ds.db.size = view->u.buf.size;
    } else {
       bd->ds.surface = sv->image_view;
+      bd->first_layer = view->u.tex.first_layer;
+      bd->last_layer = view->u.tex.last_layer;
    }
    uint64_t handle = util_idalloc_alloc(&ctx->di.bindless[bd->ds.is_buffer].tex_slots);
    if (bd->ds.is_buffer)
@@ -2458,7 +2460,7 @@ zink_make_texture_handle_resident(struct pipe_context *pctx, uint64_t handle, bo
          ii->sampler = bd->sampler->sampler;
          ii->imageView = ds->surface->image_view;
          ii->imageLayout = zink_descriptor_util_image_layout_eval(ctx, res, false);
-         flush_pending_clears(ctx, res, ds->surface->base.first_layer, ds->surface->base.last_layer - ds->surface->base.first_layer + 1);
+         flush_pending_clears(ctx, res, bd->first_layer, bd->last_layer - bd->first_layer + 1);
          if (general_layout) {
             res->obj->unordered_read = false;
             zink_screen(ctx->base.screen)->image_barrier(ctx, res, VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
