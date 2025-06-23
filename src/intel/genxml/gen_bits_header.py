@@ -129,7 +129,8 @@ ${emit_per_gen_prop_func(field, 'start', False)}
 }
 #endif
 
-#endif /* ${guard} */""")
+#endif /* ${guard} */
+""")
 
 class Gen(object):
 
