@@ -622,13 +622,14 @@ get_layout_for_binding(const struct zink_context *ctx, struct zink_resource *res
 }
 
 ALWAYS_INLINE static struct zink_surface *
-get_imageview_for_binding(struct zink_context *ctx, gl_shader_stage stage, enum zink_descriptor_type type, unsigned idx)
+get_imageview_for_binding(struct zink_context *ctx, gl_shader_stage stage, enum zink_descriptor_type type, unsigned idx, enum pipe_format *format)
 {
    switch (type) {
    case ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW: {
       struct zink_sampler_view *sampler_view = zink_sampler_view(ctx->sampler_views[stage][idx]);
       if (!sampler_view || !sampler_view->base.texture)
          return NULL;
+      *format = sampler_view->base.format;
       /* if this is a non-seamless cube sampler, return the cube array view */
       if (ctx->di.emulate_nonseamless[stage] & ctx->di.cubes[stage] & BITFIELD_BIT(idx))
          return sampler_view->cube_array;
@@ -642,6 +643,7 @@ get_imageview_for_binding(struct zink_context *ctx, gl_shader_stage stage, enum 
    }
    case ZINK_DESCRIPTOR_TYPE_IMAGE: {
       struct zink_image_view *image_view = &ctx->image_views[stage][idx];
+      *format = image_view->base.format;
       return image_view->base.resource ? image_view->surface : NULL;
    }
    default:
@@ -745,10 +747,10 @@ update_descriptor_state_ssbo_lazy(struct zink_context *ctx, gl_shader_stage shad
 }
 
 ALWAYS_INLINE static bool
-sampler_surface_needs_clamped(const struct zink_surface *surface)
+sampler_surface_needs_clamped(enum pipe_format format)
 {
-   return (surface->base.format == PIPE_FORMAT_Z24X8_UNORM && util_format_get_depth_only(surface->base.texture->format) == PIPE_FORMAT_Z32_FLOAT) ||
-          (surface->base.format == PIPE_FORMAT_Z24_UNORM_S8_UINT && util_format_get_depth_only(surface->base.texture->format) == PIPE_FORMAT_Z32_FLOAT);
+   return (format == PIPE_FORMAT_Z24X8_UNORM && util_format_get_depth_only(format) == PIPE_FORMAT_Z32_FLOAT) ||
+          (format == PIPE_FORMAT_Z24_UNORM_S8_UINT && util_format_get_depth_only(format) == PIPE_FORMAT_Z32_FLOAT);
 }
 
 ALWAYS_INLINE static struct zink_resource *
@@ -768,13 +770,14 @@ update_descriptor_state_sampler(struct zink_context *ctx, gl_shader_stage shader
             ctx->di.t.tbos[shader][slot] = bv->buffer_view;
          }
       } else {
-         struct zink_surface *surface = get_imageview_for_binding(ctx, shader, type, slot);
+         enum pipe_format format;
+         struct zink_surface *surface = get_imageview_for_binding(ctx, shader, type, slot, &format);
          ctx->di.textures[shader][slot].imageLayout = ctx->blitting ? res->layout : get_layout_for_binding(ctx, res, type, shader == MESA_SHADER_COMPUTE);
          ctx->di.textures[shader][slot].imageView = surface->image_view;
          if (!screen->have_D24_UNORM_S8_UINT &&
              ctx->sampler_states[shader][slot] && ctx->sampler_states[shader][slot]->sampler_clamped) {
             struct zink_sampler_state *state = ctx->sampler_states[shader][slot];
-            VkSampler sampler = sampler_surface_needs_clamped(surface) ?
+            VkSampler sampler = sampler_surface_needs_clamped(format) ?
                                 state->sampler_clamped :
                                 state->sampler;
             if (ctx->di.textures[shader][slot].sampler != sampler) {
@@ -820,7 +823,8 @@ update_descriptor_state_image(struct zink_context *ctx, gl_shader_stage shader, 
             ctx->di.t.texel_images[shader][slot] = bv->buffer_view;
          }
       } else {
-         struct zink_surface *surface = get_imageview_for_binding(ctx, shader, type, slot);
+         enum pipe_format format;
+         struct zink_surface *surface = get_imageview_for_binding(ctx, shader, type, slot, &format);
          ctx->di.images[shader][slot].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
          ctx->di.images[shader][slot].imageView = surface->image_view;
       }
@@ -868,8 +872,9 @@ zink_bind_sampler_states(struct pipe_context *pctx,
       if (state) {
          ctx->di.textures[shader][start_slot + i].sampler = state->sampler;
          if (state->sampler_clamped && !screen->have_D24_UNORM_S8_UINT) {
-            struct zink_surface *surface = get_imageview_for_binding(ctx, shader, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, start_slot + i);
-            if (surface && sampler_surface_needs_clamped(surface))
+            enum pipe_format format;
+            struct zink_surface *surface = get_imageview_for_binding(ctx, shader, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, start_slot + i, &format);
+            if (surface && sampler_surface_needs_clamped(format))
                ctx->di.textures[shader][start_slot + i].sampler = state->sampler_clamped;
          }
       } else {
@@ -898,7 +903,8 @@ zink_bind_sampler_states_nonseamless(struct pipe_context *pctx,
       if (state->emulate_nonseamless)
          ctx->di.emulate_nonseamless[shader] |= bit;
       if (state->emulate_nonseamless != (old_mask & bit) && (ctx->di.cubes[shader] & bit)) {
-         struct zink_surface *surface = get_imageview_for_binding(ctx, shader, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, start_slot + i);
+         enum pipe_format format;
+         struct zink_surface *surface = get_imageview_for_binding(ctx, shader, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, start_slot + i, &format);
          if (surface && ctx->di.images[shader][start_slot + i].imageView != surface->image_view) {
             ctx->di.images[shader][start_slot + i].imageView = surface->image_view;
             update_descriptor_state_sampler(ctx, shader, start_slot + i, zink_resource(surface->base.texture));
