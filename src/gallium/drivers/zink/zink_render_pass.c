@@ -254,20 +254,3 @@ zink_render_fixup_swapchain(struct zink_context *ctx)
       ctx->swapchain_size.width = ctx->swapchain_size.height = 0;
    }
 }
-
-bool
-zink_render_update_swapchain(struct zink_context *ctx)
-{
-   bool has_swapchain = false;
-   for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      if (!ctx->fb_state.cbufs[i].texture)
-         continue;
-      struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[i].texture);
-      if (zink_is_swapchain(res)) {
-         has_swapchain = true;
-         if (zink_kopper_acquire(ctx, res, UINT64_MAX))
-            ctx->fb_cbufs[i] = (struct pipe_surface*)zink_surface_swapchain_update(ctx, &ctx->fb_state.cbufs[i]);
-      }
-   }
-   return has_swapchain;
-}

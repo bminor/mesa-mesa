@@ -259,8 +259,6 @@ bool
 zink_resource_rebind(struct zink_context *ctx, struct zink_resource *res);
 
 void
-zink_rebind_framebuffer(struct zink_context *ctx, struct zink_resource *res);
-void
 zink_set_null_fs(struct zink_context *ctx);
 
 void

@@ -108,19 +108,6 @@ create_ivci(struct zink_screen *screen,
 }
 
 static void
-init_pipe_surface_info(struct pipe_context *pctx, struct pipe_surface *psurf, const struct pipe_surface *templ, const struct pipe_resource *pres)
-{
-   unsigned int level = templ->level;
-   psurf->reference.count = 10000000;
-   psurf->context = pctx;
-   psurf->format = templ->format;
-   psurf->nr_samples = templ->nr_samples;
-   psurf->level = level;
-   psurf->first_layer = templ->first_layer;
-   psurf->last_layer = templ->last_layer;
-}
-
-static void
 apply_view_usage_for_format(struct zink_screen *screen, struct pipe_resource *pres, enum pipe_format format, VkImageViewCreateInfo *ivci, VkImageViewUsageCreateInfo *usage_info)
 {
    struct zink_resource *res = zink_resource(pres);
@@ -150,8 +137,7 @@ static struct zink_surface *
 create_surface(struct pipe_context *pctx,
                struct pipe_resource *pres,
                const struct pipe_surface *templ,
-               VkImageViewCreateInfo *ivci,
-               bool actually)
+               VkImageViewCreateInfo *ivci)
 {
    struct zink_screen *screen = zink_screen(pctx->screen);
 
@@ -159,12 +145,6 @@ create_surface(struct pipe_context *pctx,
    if (!surface)
       return NULL;
 
-   surface->base.texture = pres;
-   pipe_reference_init(&surface->base.reference, 1);
-   init_pipe_surface_info(pctx, &surface->base, templ, pres);
-
-   if (!actually)
-      return surface;
    assert(ivci->image);
    VkImageViewUsageCreateInfo usage_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO };
    apply_view_usage_for_format(screen, pres, templ->format, ivci, &usage_info);
@@ -218,9 +198,7 @@ zink_get_surface(struct zink_context *ctx,
    struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(ht, hash, ivci);
 
    if (!entry) {
-      surface = create_surface(&ctx->base, pres, templ, ivci, true);
-      /* only transient surfaces have nr_samples set */
-      surface->base.nr_samples = zink_screen(ctx->base.screen)->info.have_EXT_multisampled_render_to_single_sampled ? templ->nr_samples : 0;
+      surface = create_surface(&ctx->base, pres, templ, ivci);
       entry = _mesa_hash_table_insert_pre_hashed(ht, hash, mem_dup(ivci, sizeof(*ivci)), surface);
       if (!entry) {
          simple_mtx_unlock(&res->obj->surface_mtx);
@@ -236,17 +214,6 @@ zink_get_surface(struct zink_context *ctx,
    return surface;
 }
 
-/* this is the context hook, so only zink_ctx_surfaces will reach it */
-static void
-zink_surface_destroy(struct pipe_context *pctx,
-                     struct pipe_surface *psurface)
-{
-   /* ensure this gets repopulated if another transient surface is created */
-   struct zink_resource *res = zink_resource(psurface->texture);
-   if (res->transient)
-      res->transient->valid = false;
-}
-
 static VkImageViewCreateInfo
 create_fb_ivci(struct zink_screen *screen, struct zink_resource *res, const struct pipe_surface *templ)
 {
@@ -256,7 +223,7 @@ create_fb_ivci(struct zink_screen *screen, struct zink_resource *res, const stru
    return create_ivci(screen, res, templ, res->base.b.target == PIPE_TEXTURE_3D ? target_2d[is_array] : res->base.b.target);
 }
 
-struct pipe_surface *
+struct zink_surface *
 zink_create_fb_surface(struct pipe_context *pctx,
                        struct pipe_resource *pres,
                        const struct pipe_surface *templ)
@@ -264,15 +231,7 @@ zink_create_fb_surface(struct pipe_context *pctx,
    struct zink_resource *res = zink_resource(pres);
 
    VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(pctx->screen), res, templ);
-   return (struct pipe_surface*)zink_get_surface(zink_context(pctx), pres, templ, &ivci);
-}
-
-static struct pipe_surface *
-zink_create_surface(struct pipe_context *pctx,
-                    struct pipe_resource *pres,
-                    const struct pipe_surface *templ)
-{
-   return zink_create_fb_surface(pctx, pres, templ);
+   return zink_get_surface(zink_context(pctx), pres, templ, &ivci);
 }
 
 struct zink_surface *
@@ -298,25 +257,4 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
    ivci.image = transient->obj->image;
    ivci.pNext = NULL;
    return zink_get_surface(ctx, &transient->base.b, psurf, &ivci);
-}
-
-void
-zink_context_surface_init(struct pipe_context *context)
-{
-   context->create_surface = zink_create_surface;
-   context->surface_destroy = zink_surface_destroy;
-}
-
-/* must be called before a swapchain image is used to ensure correct imageview is used */
-struct zink_surface *
-zink_surface_swapchain_update(struct zink_context *ctx, struct pipe_surface *psurf)
-{
-   struct zink_screen *screen = zink_screen(ctx->base.screen);
-   struct zink_resource *res = zink_resource(psurf->texture);
-   struct kopper_displaytarget *cdt = res->obj->dt;
-   if (!cdt)
-      return NULL; //dead swapchain
-
-   VkImageViewCreateInfo ivci = create_ivci(screen, res, psurf, psurf->first_layer != psurf->last_layer ? PIPE_TEXTURE_2D_ARRAY : PIPE_TEXTURE_2D);
-   return zink_get_surface(ctx, &res->base.b, psurf, &ivci);
 }

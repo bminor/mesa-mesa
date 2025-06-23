@@ -1136,8 +1136,6 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx)
    res->base.b.width0 = ctx->fb_state.width;
    res->base.b.height0 = ctx->fb_state.height;
    pipe_resource_reference(&pz, NULL);
-
-   ctx->fb_zsbuf = zink_create_fb_surface(&ctx->base, &res->base.b, &ctx->fb_state.zsbuf);
 }
 
 bool

@@ -26,12 +26,6 @@
 
 #include "zink_types.h"
 
-void
-zink_destroy_surface(struct zink_screen *screen, struct pipe_surface *psurface);
-
-void
-zink_context_surface_init(struct pipe_context *context);
-
 static inline bool
 equals_ivci(const void *a, const void *b)
 {
@@ -53,7 +47,7 @@ zink_get_surface(struct zink_context *ctx,
             const struct pipe_surface *templ,
             VkImageViewCreateInfo *ivci);
 
-struct pipe_surface *
+struct zink_surface *
 zink_create_fb_surface(struct pipe_context *pctx,
                        struct pipe_resource *pres,
                        const struct pipe_surface *templ);
@@ -74,8 +68,5 @@ zink_surface_clamp_viewtype(VkImageViewType viewType, unsigned first_layer, unsi
    }
    return viewType;
 }
-
-struct zink_surface *
-zink_surface_swapchain_update(struct zink_context *ctx, struct pipe_surface *psurf);
 
 #endif

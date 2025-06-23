@@ -449,11 +449,11 @@ zink_clear_texture_dynamic(struct pipe_context *pctx,
                      0 <= box->z && u_minify(pres->target == PIPE_TEXTURE_3D ? pres->depth0 : pres->array_size, level) >= box->z + box->depth;
 
    struct pipe_surface psurf = create_clear_surface(pctx, pres, level, box);
-   struct pipe_surface *surf = zink_create_fb_surface(pctx, pres, &psurf);
+   struct zink_surface *surf = zink_create_fb_surface(pctx, pres, &psurf);
 
    VkRenderingAttachmentInfo att = {0};
    att.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-   att.imageView = zink_surface(surf)->image_view;
+   att.imageView = surf->image_view;
    att.imageLayout = res->aspect & VK_IMAGE_ASPECT_COLOR_BIT ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
    att.loadOp = full_clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
    att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

@@ -1519,24 +1519,11 @@ zink_screen(struct pipe_screen *pipe)
 }
 
 /** surface types */
-
-/* an imageview for a zink_resource:
-   - may be a fb attachment, samplerview, or shader image
-   - cached on the parent zink_resource_object
-   - also handles swapchains
- */
+ 
+/* this type only exists for compat with 32bit builds because vk types are 64bit */
 struct zink_surface {
-   struct pipe_surface base;
-   /* the current imageview */
    VkImageView image_view;
 };
-
-/* use this cast for internal surfaces */
-static inline struct zink_surface *
-zink_surface(struct pipe_surface *psurface)
-{
-   return (struct zink_surface *)psurface;
-}
 
 
 /** context types */
@@ -1705,8 +1692,6 @@ struct zink_context {
 
    uint32_t transient_attachments;
    struct pipe_framebuffer_state fb_state;
-   PIPE_FB_SURFACES; //STOP USING THIS
-   struct zink_surface *transients[PIPE_MAX_COLOR_BUFS + 1]; //AND THIS (probably)
    VkFormat fb_formats[PIPE_MAX_COLOR_BUFS + 1];
 
    struct zink_vertex_elements_state *element_state;
