@@ -7,7 +7,6 @@ lavapipe:
     GPU_VERSION: lvp
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     DEQP_FRACTION: 9
-  stage: software-renderer
   extends:
     - .deqp-test
     - .lavapipe-test
@@ -35,7 +34,6 @@ lavapipe-vk-asan:
     - job: debian-x86_64-asan
 
 lavapipe-vkd3d:
-  stage: software-renderer-nightly
   extends:
     - .lavapipe-test
     - .lavapipe-manual-rules

@@ -34,7 +34,6 @@
       when: manual
 
 .lavapipe-test:
-  stage: software-renderer
   extends:
     - .test-vk
     - .lavapipe-rules
