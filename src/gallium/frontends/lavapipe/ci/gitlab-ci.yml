@@ -1,7 +1,7 @@
 include:
   - local: 'src/gallium/frontends/lavapipe/ci/gitlab-ci-inc.yml'
 
-lavapipe:
+lavapipe-vkcts:
   timeout: 15m
   variables:
     DEQP_SUITE: lvp
@@ -12,15 +12,15 @@ lavapipe:
     - .lavapipe-test
     - .lavapipe-rules
 
-lavapipe-full:
+lavapipe-vkcts-full:
   extends:
-    - lavapipe
+    - lavapipe-vkcts
     - .lavapipe-manual-rules
   timeout: 2h  # base runtime = 1h15m
   variables:
     DEQP_FRACTION: 1
 
-lavapipe-vk-asan:
+lavapipe-vkcts-asan:
   timeout: 15m
   extends:
     - .deqp-test
