@@ -39,6 +39,7 @@ spec@!opengl 2.0@vertex-program-two-side enabled front front2 back2
 spec@amd_shader_trinary_minmax@execution@built-in-functions@tcs-max3-int-int-int
 spec@arb_shader_atomic_counters@semantics
 spec@arb_tessellation_shader@execution@variable-indexing@vs-output-array-vec2-index-wr-before-tcs
+spec@arb_texture_view@rendering-r32ui
 spec@egl_nok_texture_from_pixmap@basic
 spec@ext_disjoint_timer_query@simple
 spec@ext_framebuffer_blit@fbo-sys-blit
