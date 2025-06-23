@@ -223,18 +223,29 @@ check_global_priority(const struct panvk_physical_device *phys_dev,
 }
 
 static VkResult
+panvk_queue_check_status(struct vk_queue *queue)
+{
+   switch (queue->queue_family_index) {
+   case PANVK_QUEUE_FAMILY_GPU:
+      return panvk_per_arch(gpu_queue_check_status)(queue);
+   default:
+      return VK_SUCCESS;
+   }
+}
+
+static VkResult
 panvk_device_check_status(struct vk_device *vk_dev)
 {
    struct panvk_device *dev = to_panvk_device(vk_dev);
    VkResult result = vk_check_printf_status(&dev->vk, &dev->printf.ctx);
 
-   for (uint32_t qfi = 0; qfi < PANVK_MAX_QUEUE_FAMILIES; qfi++) {
+   for (uint32_t qfi = 0; qfi < PANVK_QUEUE_FAMILY_COUNT; qfi++) {
       struct panvk_device_queue_family *qf = &dev->queue_families[qfi];
 
       for (uint32_t q = 0; q < qf->queue_count; q++) {
          struct vk_queue *queue = qf->queues[q];
 
-         if (panvk_per_arch(queue_check_status)(queue) != VK_SUCCESS)
+         if (panvk_queue_check_status(queue) != VK_SUCCESS)
             result = VK_ERROR_DEVICE_LOST;
       }
    }
@@ -245,6 +256,33 @@ panvk_device_check_status(struct vk_device *vk_dev)
    }
 
    return result;
+}
+
+static VkResult
+panvk_queue_create(struct panvk_device *dev,
+                   const VkDeviceQueueCreateInfo *create_info,
+                   uint32_t queue_idx,
+                   struct vk_queue **out_queue)
+{
+   switch (create_info->queueFamilyIndex) {
+   case PANVK_QUEUE_FAMILY_GPU:
+      return panvk_per_arch(create_gpu_queue)(
+         dev, create_info, queue_idx, out_queue);
+   default:
+      return panvk_error(dev, VK_ERROR_INITIALIZATION_FAILED);
+   }
+}
+
+static void
+panvk_queue_destroy(struct vk_queue *queue)
+{
+   switch (queue->queue_family_index) {
+   case PANVK_QUEUE_FAMILY_GPU:
+      panvk_per_arch(destroy_gpu_queue)(queue);
+      break;
+   default:
+      unreachable("Unknown queue family");
+   }
 }
 
 VkResult
@@ -452,8 +490,7 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       }
 
       for (unsigned q = 0; q < queue_create->queueCount; q++) {
-         result = panvk_per_arch(queue_create)(device, qfi, q, queue_create,
-                                               &qf->queues[q]);
+         result = panvk_queue_create(device, queue_create, q, &qf->queues[q]);
          if (result != VK_SUCCESS)
             goto err_finish_queues;
 
@@ -472,11 +509,11 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    return VK_SUCCESS;
 
 err_finish_queues:
-   for (unsigned i = 0; i < PANVK_MAX_QUEUE_FAMILIES; i++) {
+   for (unsigned i = 0; i < PANVK_QUEUE_FAMILY_COUNT; i++) {
       struct panvk_device_queue_family *qf = &device->queue_families[i];
 
       for (unsigned q = 0; q < qf->queue_count; q++)
-         panvk_per_arch(queue_destroy)(qf->queues[q]);
+         panvk_queue_destroy(qf->queues[q]);
 
       if (qf->queues)
          vk_free(&device->vk.alloc, qf->queues);
@@ -523,11 +560,11 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
 
    panvk_per_arch(utrace_context_fini)(device);
 
-   for (unsigned i = 0; i < PANVK_MAX_QUEUE_FAMILIES; i++) {
+   for (unsigned i = 0; i < PANVK_QUEUE_FAMILY_COUNT; i++) {
       struct panvk_device_queue_family *qf = &device->queue_families[i];
 
       for (unsigned q = 0; q < qf->queue_count; q++)
-         panvk_per_arch(queue_destroy)(qf->queues[q]);
+         panvk_queue_destroy(qf->queues[q]);
 
       if (qf->queues)
          vk_free(&device->vk.alloc, qf->queues);

@@ -30,7 +30,7 @@
 #include "drm-uapi/panfrost_drm.h"
 
 static void
-panvk_queue_submit_batch(struct panvk_queue *queue, struct panvk_batch *batch,
+panvk_queue_submit_batch(struct panvk_gpu_queue *queue, struct panvk_batch *batch,
                          uint32_t *bos, unsigned nr_bos, uint32_t *in_fences,
                          unsigned nr_in_fences)
 {
@@ -135,7 +135,7 @@ panvk_queue_submit_batch(struct panvk_queue *queue, struct panvk_batch *batch,
 }
 
 static void
-panvk_queue_transfer_sync(struct panvk_queue *queue, uint32_t syncobj)
+panvk_queue_transfer_sync(struct panvk_gpu_queue *queue, uint32_t syncobj)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
    int ret;
@@ -179,7 +179,7 @@ panvk_add_wait_event_syncobjs(struct panvk_batch *batch, uint32_t *in_fences,
 }
 
 static void
-panvk_signal_event_syncobjs(struct panvk_queue *queue,
+panvk_signal_event_syncobjs(struct panvk_gpu_queue *queue,
                             struct panvk_batch *batch)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
@@ -211,10 +211,10 @@ panvk_signal_event_syncobjs(struct panvk_queue *queue,
    }
 }
 
-static VkResult
-panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
+VkResult
+panvk_per_arch(gpu_queue_submit)(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
-   struct panvk_queue *queue = container_of(vk_queue, struct panvk_queue, vk);
+   struct panvk_gpu_queue *queue = container_of(vk_queue, struct panvk_gpu_queue, vk);
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
 
    unsigned nr_semaphores = submit->wait_count + 1;
@@ -307,10 +307,10 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 }
 
 VkResult
-panvk_per_arch(queue_create)(struct panvk_device *device, uint32_t family_idx,
-			     uint32_t queue_idx,
-                             const VkDeviceQueueCreateInfo *create_info,
-                             struct vk_queue **out_queue)
+panvk_per_arch(create_gpu_queue)(struct panvk_device *device,
+                                 const VkDeviceQueueCreateInfo *create_info,
+                                 uint32_t queue_idx,
+                                 struct vk_queue **out_queue)
 {
    ASSERTED const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(create_info->pNext,
@@ -322,7 +322,7 @@ panvk_per_arch(queue_create)(struct panvk_device *device, uint32_t family_idx,
    /* XXX: Panfrost kernel module doesn't support priorities so far */
    assert(priority == VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR);
 
-   struct panvk_queue *queue = vk_zalloc(&device->vk.alloc, sizeof(*queue), 8,
+   struct panvk_gpu_queue *queue = vk_zalloc(&device->vk.alloc, sizeof(*queue), 8,
                                          VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
    if (!queue)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -339,7 +339,7 @@ panvk_per_arch(queue_create)(struct panvk_device *device, uint32_t family_idx,
       goto err_finish_queue;
    }
 
-   queue->vk.driver_submit = panvk_queue_submit;
+   queue->vk.driver_submit = panvk_per_arch(gpu_queue_submit);
    *out_queue = &queue->vk;
    return VK_SUCCESS;
 
@@ -351,9 +351,9 @@ err_free_queue:
    return result;
 }
 
-void panvk_per_arch(queue_destroy)(struct vk_queue *vk_queue)
+void panvk_per_arch(destroy_gpu_queue)(struct vk_queue *vk_queue)
 {
-   struct panvk_queue *queue = container_of(vk_queue, struct panvk_queue, vk);
+   struct panvk_gpu_queue *queue = container_of(vk_queue, struct panvk_gpu_queue, vk);
    struct panvk_device *dev = to_panvk_device(vk_queue->base.device);
 
    vk_queue_finish(&queue->vk);
@@ -362,7 +362,7 @@ void panvk_per_arch(queue_destroy)(struct vk_queue *vk_queue)
 }
 
 VkResult
-panvk_per_arch(queue_check_status)(struct vk_queue *vk_queue)
+panvk_per_arch(gpu_queue_check_status)(struct vk_queue *vk_queue)
 {
    return VK_SUCCESS;
 }
@@ -370,7 +370,7 @@ panvk_per_arch(queue_check_status)(struct vk_queue *vk_queue)
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_per_arch(QueueWaitIdle)(VkQueue _queue)
 {
-   VK_FROM_HANDLE(panvk_queue, queue, _queue);
+   VK_FROM_HANDLE(panvk_gpu_queue, queue, _queue);
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
 
    /* we need to use vk_common_QueueWaitIdle if we ever go threaded */
