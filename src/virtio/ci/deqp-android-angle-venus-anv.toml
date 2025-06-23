@@ -3,6 +3,7 @@
 deqp = "/data/deqp/deqp-vk"
 caselists = ["/data/deqp/vk-main.txt"]
 include = ["dEQP-VK.api.external.memory.android_hardware_buffer.*"]
+timeout = 120
 renderer_check = "Virtio-GPU Venus.*Intel"
 
 # Basic EGL test set
