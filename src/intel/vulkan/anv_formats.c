@@ -702,7 +702,8 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
 
    assert(aspects & VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV);
 
-   if (anv_format->flags & ANV_FORMAT_FLAG_CAN_VIDEO) {
+   if (anv_format->flags & ANV_FORMAT_FLAG_CAN_VIDEO &&
+         !(create_flags & VK_IMAGE_CREATE_DISJOINT_BIT)) {
       flags |= (physical_device->instance->debug & ANV_DEBUG_VIDEO_DECODE) ?
                   VK_FORMAT_FEATURE_2_VIDEO_DECODE_OUTPUT_BIT_KHR |
                   VK_FORMAT_FEATURE_2_VIDEO_DECODE_DPB_BIT_KHR : 0;
@@ -914,7 +915,14 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
          }
       }
 
-      if (anv_format->n_planes > 1)
+      /* Report disjoint for multi-planar formats, unless the video usage
+       * bits are set, the media engines do not support disjoint.
+       */
+      if (anv_format->n_planes > 1 &&
+            !(usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+                       VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                       VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                       VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)))
          flags |= VK_FORMAT_FEATURE_2_DISJOINT_BIT;
 
       flags &= ~disallowed_ycbcr_image_features;

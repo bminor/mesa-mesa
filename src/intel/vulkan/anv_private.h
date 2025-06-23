@@ -6771,6 +6771,7 @@ anv_image_dpb_address(const struct anv_image_view *iv,
 {
    assert(iv->vk.base_mip_level == 0);
    assert(iv->vk.layer_count > arrayLayer);
+   assert(!iv->image->disjoint);
 
    struct anv_address addr =
       anv_image_address(iv->image, &iv->image->planes[0].primary_surface.memory_range);
