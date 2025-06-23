@@ -207,12 +207,6 @@ radv_init_sampler(struct radv_device *device, struct radv_sampler *sampler, cons
 
    if (vk_border_color_is_custom(border_color)) {
       sampler->border_color_slot = radv_register_border_color(device, sampler->vk.border_color_value);
-
-      /* Did we fail to find a slot? */
-      if (sampler->border_color_slot == RADV_BORDER_COLOR_COUNT) {
-         fprintf(stderr, "WARNING: no free border color slots, defaulting to TRANS_BLACK.\n");
-         border_color = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-      }
    }
 
    /* If we don't have a custom color, set the ptr to 0 */
