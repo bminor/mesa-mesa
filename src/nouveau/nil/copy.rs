@@ -144,6 +144,60 @@ trait CopyGOB {
     }
 }
 
+/// An often simpler trait to implement than CopyGOB
+trait CopyGOBLines {
+    const GOB_EXTENT_B: Extent4D<units::Bytes>;
+    const LINE_WIDTH_B: u32;
+    const X_DIVISOR: u32;
+
+    unsafe fn copy(tiled: *mut u8, linear: *mut u8, bytes: usize);
+    unsafe fn copy_whole_line(tiled: *mut u8, linear: *mut u8);
+
+    /// Iterate over the lines of a GOB, calling `f` once for each line.  The
+    /// first parameter to f is the offset in the GOB in bytes.  The following
+    /// parameters are an (x, y, z) coordinate.
+    fn for_each_gob_line(f: impl FnMut(u32, u32, u32, u32));
+}
+
+impl<C: CopyGOBLines> CopyGOB for C {
+    const GOB_EXTENT_B: Extent4D<units::Bytes> = C::GOB_EXTENT_B;
+    const X_DIVISOR: u32 = C::X_DIVISOR;
+
+    unsafe fn copy_gob(
+        tiled: usize,
+        linear: LinearPointer,
+        start: Offset4D<units::Bytes>,
+        end: Offset4D<units::Bytes>,
+    ) {
+        C::for_each_gob_line(|offset, x, y, z| {
+            if y >= start.y && y < end.y && z >= start.z && z < end.z {
+                let tiled = tiled + (offset as usize);
+                let linear = linear.at(Offset4D::new(x, y, z, 0));
+                if x >= start.x && x + C::LINE_WIDTH_B <= end.x {
+                    C::copy_whole_line(tiled as *mut _, linear as *mut _);
+                } else if x + C::LINE_WIDTH_B >= start.x && x < end.x {
+                    let start = (std::cmp::max(x, start.x) - x) as usize;
+                    let end =
+                        std::cmp::min(end.x - x, C::LINE_WIDTH_B) as usize;
+                    C::copy(
+                        (tiled + start) as *mut _,
+                        (linear + start) as *mut _,
+                        end - start,
+                    );
+                }
+            }
+        });
+    }
+
+    unsafe fn copy_whole_gob(tiled: usize, linear: LinearPointer) {
+        Self::for_each_gob_line(|offset, x, y, z| {
+            let tiled = tiled + (offset as usize);
+            let linear = linear.at(Offset4D::new(x, y, z, 0));
+            C::copy_whole_line(tiled as *mut _, linear as *mut _);
+        });
+    }
+}
+
 /// Copies at most 16B of data to/from linear
 trait CopyBytes {
     const X_DIVISOR: u32;
@@ -161,67 +215,42 @@ struct CopyGOBTuring2D<C: CopyBytes> {
     phantom: std::marker::PhantomData<C>,
 }
 
-impl<C: CopyBytes> CopyGOBTuring2D<C> {
-    fn for_each_16b(mut f: impl FnMut(u32, u32, u32)) {
-        for i in 0..2 {
-            f(i * 0x100 + 0x00, i * 32 + 0, 0);
-            f(i * 0x100 + 0x10, i * 32 + 0, 1);
-            f(i * 0x100 + 0x20, i * 32 + 0, 2);
-            f(i * 0x100 + 0x30, i * 32 + 0, 3);
-
-            f(i * 0x100 + 0x40, i * 32 + 16, 0);
-            f(i * 0x100 + 0x50, i * 32 + 16, 1);
-            f(i * 0x100 + 0x60, i * 32 + 16, 2);
-            f(i * 0x100 + 0x70, i * 32 + 16, 3);
-
-            f(i * 0x100 + 0x80, i * 32 + 0, 4);
-            f(i * 0x100 + 0x90, i * 32 + 0, 5);
-            f(i * 0x100 + 0xa0, i * 32 + 0, 6);
-            f(i * 0x100 + 0xb0, i * 32 + 0, 7);
-
-            f(i * 0x100 + 0xc0, i * 32 + 16, 4);
-            f(i * 0x100 + 0xd0, i * 32 + 16, 5);
-            f(i * 0x100 + 0xe0, i * 32 + 16, 6);
-            f(i * 0x100 + 0xf0, i * 32 + 16, 7);
-        }
-    }
-}
-
-impl<C: CopyBytes> CopyGOB for CopyGOBTuring2D<C> {
+impl<C: CopyBytes> CopyGOBLines for CopyGOBTuring2D<C> {
     const GOB_EXTENT_B: Extent4D<units::Bytes> = Extent4D::new(64, 8, 1, 1);
+    const LINE_WIDTH_B: u32 = 16;
     const X_DIVISOR: u32 = C::X_DIVISOR;
 
-    unsafe fn copy_gob(
-        tiled: usize,
-        linear: LinearPointer,
-        start: Offset4D<units::Bytes>,
-        end: Offset4D<units::Bytes>,
-    ) {
-        Self::for_each_16b(|offset, x, y| {
-            if y >= start.y && y < end.y {
-                let tiled = tiled + (offset as usize);
-                let linear = linear.at(Offset4D::new(x, y, 0, 0));
-                if x >= start.x && x + 16 <= end.x {
-                    C::copy_16b(tiled as *mut _, linear as *mut _);
-                } else if x + 16 >= start.x && x < end.x {
-                    let start = (std::cmp::max(x, start.x) - x) as usize;
-                    let end = std::cmp::min(end.x - x, 16) as usize;
-                    C::copy(
-                        (tiled + start) as *mut _,
-                        (linear + start) as *mut _,
-                        end - start,
-                    );
-                }
-            }
-        });
+    unsafe fn copy(tiled: *mut u8, linear: *mut u8, bytes: usize) {
+        C::copy(tiled, linear, bytes);
     }
 
-    unsafe fn copy_whole_gob(tiled: usize, linear: LinearPointer) {
-        Self::for_each_16b(|offset, x, y| {
-            let tiled = tiled + (offset as usize);
-            let linear = linear.at(Offset4D::new(x, y, 0, 0));
-            C::copy_16b(tiled as *mut _, linear as *mut _);
-        });
+    unsafe fn copy_whole_line(tiled: *mut u8, linear: *mut u8) {
+        C::copy_16b(tiled as *mut _, linear as *mut _);
+    }
+
+    #[inline(always)]
+    fn for_each_gob_line(mut f: impl FnMut(u32, u32, u32, u32)) {
+        for i in 0..2 {
+            f(i * 0x100 + 0x00, i * 32 + 0, 0, 0);
+            f(i * 0x100 + 0x10, i * 32 + 0, 1, 0);
+            f(i * 0x100 + 0x20, i * 32 + 0, 2, 0);
+            f(i * 0x100 + 0x30, i * 32 + 0, 3, 0);
+
+            f(i * 0x100 + 0x40, i * 32 + 16, 0, 0);
+            f(i * 0x100 + 0x50, i * 32 + 16, 1, 0);
+            f(i * 0x100 + 0x60, i * 32 + 16, 2, 0);
+            f(i * 0x100 + 0x70, i * 32 + 16, 3, 0);
+
+            f(i * 0x100 + 0x80, i * 32 + 0, 4, 0);
+            f(i * 0x100 + 0x90, i * 32 + 0, 5, 0);
+            f(i * 0x100 + 0xa0, i * 32 + 0, 6, 0);
+            f(i * 0x100 + 0xb0, i * 32 + 0, 7, 0);
+
+            f(i * 0x100 + 0xc0, i * 32 + 16, 4, 0);
+            f(i * 0x100 + 0xd0, i * 32 + 16, 5, 0);
+            f(i * 0x100 + 0xe0, i * 32 + 16, 6, 0);
+            f(i * 0x100 + 0xf0, i * 32 + 16, 7, 0);
+        }
     }
 }
 
