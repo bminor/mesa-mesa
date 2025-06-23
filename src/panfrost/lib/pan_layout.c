@@ -528,6 +528,10 @@ pan_image_layout_init(
 
    assert(props->extent_px.depth == 1 || props->nr_samples == 1);
 
+   /* Make sure the extent/sample_count is not zero. */
+   assert(props->extent_px.width && props->extent_px.height &&
+          props->extent_px.depth && props->nr_samples);
+
    struct pan_image_extent mip_extent_px = {
       .width = util_format_get_plane_width(props->format, plane_idx,
                                            props->extent_px.width),

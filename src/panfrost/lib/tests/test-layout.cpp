@@ -716,6 +716,7 @@ TEST(WSI, Import)
                .extent_px = {
                   .width = IMAGE_WIDTH,
                   .height = IMAGE_HEIGHT,
+                  .depth = 1,
                },
                .nr_samples = 1,
                .dim = MALI_TEXTURE_DIMENSION_2D,
