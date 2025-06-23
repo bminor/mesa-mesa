@@ -49,6 +49,7 @@ struct panvk_instance {
    uint32_t force_vk_vendor;
 
    bool enable_vertex_pipeline_stores_atomics;
+   bool force_enable_shader_atomics;
 
    struct {
       struct pan_kmod_allocator allocator;

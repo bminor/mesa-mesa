@@ -611,6 +611,10 @@
    DRI_CONF_OPT_B(pan_enable_vertex_pipeline_stores_atomics, def, \
                   "Enable vertexPipelineStoresAndAtomics on v13+ (This cannot work on older generation because of speculative behaviors around vertices)")
 
+#define DRI_CONF_PAN_FORCE_ENABLE_SHADER_ATOMICS(def) \
+   DRI_CONF_OPT_B(pan_force_enable_shader_atomics, def, \
+                  "Enable fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics on any architecture. (This may not work reliably and is for debug purposes only!)")
+
 /**
  * \brief Turnip specific configuration options
  */

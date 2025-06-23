@@ -241,7 +241,8 @@ panvk_per_arch(get_physical_device_features)(
       .textureCompressionETC2 = has_texture_compression_etc2(device),
       .textureCompressionASTC_LDR = has_texture_compression_astc_ldr(device),
       .textureCompressionBC = has_texture_compression_bc(device),
-      .fragmentStoresAndAtomics = PAN_ARCH >= 10,
+      .fragmentStoresAndAtomics = (PAN_ARCH >= 10) ||
+          instance->force_enable_shader_atomics,
       .shaderImageGatherExtended = true,
       .shaderStorageImageExtendedFormats = true,
       .shaderStorageImageReadWithoutFormat = true,
@@ -257,7 +258,8 @@ panvk_per_arch(get_physical_device_features)(
       /* On v13+, the hardware isn't speculatively referencing to invalid
          indices anymore. */
       .vertexPipelineStoresAndAtomics =
-         PAN_ARCH >= 13 && instance->enable_vertex_pipeline_stores_atomics,
+         (PAN_ARCH >= 13 && instance->enable_vertex_pipeline_stores_atomics) ||
+         instance->force_enable_shader_atomics,
 
       /* Vulkan 1.1 */
       .storageBuffer16BitAccess = true,
