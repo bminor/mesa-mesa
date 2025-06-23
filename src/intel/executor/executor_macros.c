@@ -24,6 +24,13 @@ skip_prefix(char *prefix, char *start)
    return c;
 }
 
+static bool
+is_comment(const char *c)
+{
+   assert(c);
+   return c[0] && c[0] == '/' && c[1] == '/';
+}
+
 typedef struct {
    char **args;
    int    count;
@@ -38,12 +45,12 @@ parse_args(void *mem_ctx, char *c)
       /* Skip spaces. */
       while (*c && isspace(*c))
          c++;
-      if (!*c)
+
+      if (!*c || is_comment(c))
          break;
 
-      /* Copy non-spaces. */
       char *start = c;
-      while (*c && !isspace(*c))
+      while (*c && !isspace(*c) && !is_comment(c))
          c++;
       r.args = reralloc_array_size(mem_ctx, r.args, sizeof(char *), r.count + 1);
       r.args[r.count++] = ralloc_strndup(mem_ctx, start, c - start);
@@ -360,7 +367,7 @@ match_macro_name(const char *name, const char *line)
    if (!startswith(name, line))
       return false;
    line += strlen(name);
-   return !*line || isspace(*line);
+   return !*line || isspace(*line) || is_comment(line);
 }
 
 const char *
