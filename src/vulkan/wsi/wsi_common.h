@@ -327,11 +327,6 @@ wsi_device_setup_syncobj_fd(struct wsi_device *wsi_device,
 
 ICD_DEFINE_NONDISP_HANDLE_CASTS(VkIcdSurfaceBase, VkSurfaceKHR)
 
-VkResult
-wsi_common_get_images(VkSwapchainKHR _swapchain,
-                      uint32_t *pSwapchainImageCount,
-                      VkImage *pSwapchainImages);
-
 VkImage
 wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index);
 

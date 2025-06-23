@@ -1120,23 +1120,6 @@ wsi_ReleaseSwapchainImagesEXT(VkDevice _device,
    return VK_SUCCESS;
 }
 
-VkResult
-wsi_common_get_images(VkSwapchainKHR _swapchain,
-                      uint32_t *pSwapchainImageCount,
-                      VkImage *pSwapchainImages)
-{
-   VK_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
-   VK_OUTARRAY_MAKE_TYPED(VkImage, images, pSwapchainImages, pSwapchainImageCount);
-
-   for (uint32_t i = 0; i < swapchain->image_count; i++) {
-      vk_outarray_append_typed(VkImage, &images, image) {
-         *image = swapchain->get_wsi_image(swapchain, i)->image;
-      }
-   }
-
-   return vk_outarray_status(&images);
-}
-
 VkImage
 wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index)
 {
@@ -1147,14 +1130,21 @@ wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index)
 
 VKAPI_ATTR VkResult VKAPI_CALL
 wsi_GetSwapchainImagesKHR(VkDevice device,
-                          VkSwapchainKHR swapchain,
+                          VkSwapchainKHR _swapchain,
                           uint32_t *pSwapchainImageCount,
                           VkImage *pSwapchainImages)
 {
    MESA_TRACE_FUNC();
-   return wsi_common_get_images(swapchain,
-                                pSwapchainImageCount,
-                                pSwapchainImages);
+   VK_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
+   VK_OUTARRAY_MAKE_TYPED(VkImage, images, pSwapchainImages, pSwapchainImageCount);
+
+   for (uint32_t i = 0; i < swapchain->image_count; i++) {
+      vk_outarray_append_typed(VkImage, &images, image) {
+         *image = swapchain->get_wsi_image(swapchain, i)->image;
+      }
+   }
+
+   return vk_outarray_status(&images);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
