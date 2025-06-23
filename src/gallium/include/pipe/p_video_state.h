@@ -720,6 +720,10 @@ struct pipe_h264_enc_rate_control
 
    /* Used with PIPE_H2645_ENC_RATE_CONTROL_METHOD_QUALITY_VARIABLE */
    unsigned vbr_quality_factor;
+
+   /* See PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION */
+   /* value 0 indicates SAQ is disabled */
+   unsigned spatial_adaptive_quantization_strength;
 };
 
 struct pipe_h264_enc_motion_estimation
@@ -1341,6 +1345,10 @@ struct pipe_h265_enc_rate_control
 
    /* Used with PIPE_H2645_ENC_RATE_CONTROL_METHOD_QUALITY_VARIABLE */
    unsigned vbr_quality_factor;
+
+   /* See PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION */
+   /* value 0 indicates SAQ is disabled */
+   unsigned spatial_adaptive_quantization_strength;
 };
 
 struct pipe_h265_enc_dpb_entry
@@ -2972,6 +2980,15 @@ union pipe_enc_cap_motion_vector_map {
        * passed to the driver
        */
       uint32_t pipe_pixel_vectors_metadata_map_format: 9; /* 9 bits for pipe_format < PIPE_FORMAT_COUNT */
+   } bits;
+  uint32_t value;
+};
+
+/* Used with PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION */
+union pipe_enc_cap_spatial_adaptive_quantization {
+   struct {
+      /* value 0 indicates no support for SAQ */
+      uint32_t max_spatial_adaptive_quantization_strength: 8;
    } bits;
   uint32_t value;
 };

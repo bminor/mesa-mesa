@@ -253,6 +253,13 @@ enum pipe_video_cap
     * data layout
     */
    PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR = 67,
+   /*
+    * Support for the gallium driver to enable spatial adaptive quantization
+    * based on the rate control param spatial_adaptive_quantization_strength
+    *
+    * The returned value is pipe_enc_cap_spatial_adaptive_quantization
+    */
+   PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION = 68,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
