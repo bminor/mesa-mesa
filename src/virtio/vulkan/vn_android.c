@@ -222,8 +222,6 @@ vn_GetSwapchainGrallocUsage2ANDROID(
    if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
       *grallocProducerUsage |= vk_android_get_front_buffer_usage();
 
-   vn_tls_set_async_pipeline_create();
-
    return VK_SUCCESS;
 }
 

@@ -1125,6 +1125,8 @@ vn_QueueSubmit(VkQueue queue,
 {
    VN_TRACE_FUNC();
 
+   vn_tls_set_async_pipeline_create();
+
    struct vn_queue_submission submit = {
       .batch_type = VK_STRUCTURE_TYPE_SUBMIT_INFO,
       .queue_handle = queue,
@@ -1143,6 +1145,8 @@ vn_QueueSubmit2(VkQueue queue,
                 VkFence fence)
 {
    VN_TRACE_FUNC();
+
+   vn_tls_set_async_pipeline_create();
 
    struct vn_queue_submission submit = {
       .batch_type = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
