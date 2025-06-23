@@ -1838,10 +1838,7 @@ struct zink_context {
       uint64_t render_passes;
    } hud;
 
-   struct pipe_resource *dummy_vertex_buffer;
    struct pipe_resource *dummy_xfb_buffer;
-   struct pipe_surface *dummy_surface[7];
-   struct zink_buffer_view *dummy_bufferview;
 
    unsigned buffer_rebind_counter;
    unsigned image_rebind_counter;
