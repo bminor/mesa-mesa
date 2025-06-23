@@ -69,7 +69,8 @@ nir_intrinsic_has_${name}(const nir_intrinsic_instr *instr)
 }
 % endfor
 
-#endif /* _NIR_INTRINSICS_INDICES_ */"""
+#endif /* _NIR_INTRINSICS_INDICES_ */
+"""
 
 from nir_intrinsics import INTR_INDICES
 from mako.template import Template
