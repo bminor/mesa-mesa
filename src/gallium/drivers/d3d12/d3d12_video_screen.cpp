@@ -627,7 +627,8 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
                                 D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS &resolutionDepCaps,
 #endif
                                 uint32_t &maxQualityLevels,
-                                struct d3d12_encode_support_cap_allocations &cap_allocations)
+                                struct d3d12_encode_support_cap_allocations &cap_allocations,
+                                union pipe_enc_cap_spatial_adaptive_quantization &saqSupport)
 {
    capEncoderSupportData1.NodeIndex = 0;
    capEncoderSupportData1.Codec = argTargetCodec;
@@ -771,6 +772,13 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
    // The quality level setting is used as a trade-off between quality and speed/power 
    // consumption, with higher quality corresponds to lower speed and higher power consumption.
    maxQualityLevels = capEncoderSupportData1.MaxQualityVsSpeed + 1; // VA range starts from 1, D3D12 starts from 0
+
+   saqSupport.bits.max_spatial_adaptive_quantization_strength = 0u;
+
+   if ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_SPATIAL_ADAPTIVE_QP_AVAILABLE) != 0)
+   {
+      saqSupport.bits.max_spatial_adaptive_quantization_strength = 1u;
+   }
 
    bool configSupported =
       (((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_GENERAL_SUPPORT_OK) != 0) &&
@@ -1491,7 +1499,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                union pipe_enc_cap_qpmap &qpmap_support,
                                union pipe_enc_cap_motion_vector_map &gpu_motion_input_support,
                                union pipe_enc_cap_two_pass &two_pass_support,
-                               union pipe_enc_cap_gpu_stats_psnr& psnr_support)
+                               union pipe_enc_cap_gpu_stats_psnr& psnr_support,
+                               union pipe_enc_cap_spatial_adaptive_quantization &saqSupport)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1574,7 +1583,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                                                                  capEncoderSupportData1,
                                                                                  resolutionDepCaps,
                                                                                  maxQualityLevels,
-                                                                                 cap_allocations);
+                                                                                 cap_allocations,
+                                                                                 saqSupport);
             bVideoEncodeRequiresTextureArray = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
             if (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE)
                maxSlices = 0;
@@ -1915,7 +1925,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                                                                     capEncoderSupportData1,
                                                                                     resolutionDepCaps,
                                                                                     maxQualityLevels,
-                                                                                    cap_allocations);
+                                                                                    cap_allocations,
+                                                                                    saqSupport);
                bVideoEncodeRequiresTextureArray = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
                if (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE)
                   maxSlices = 0;
@@ -2219,7 +2230,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                                                                     capEncoderSupportData1,
                                                                                     resolutionDepCaps,
                                                                                     maxQualityLevels,
-                                                                                    cap_allocations);
+                                                                                    cap_allocations,
+                                                                                    saqSupport);
                bVideoEncodeRequiresTextureArray = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;                                                                                 
                if (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE)
                   maxSlices = 0;
@@ -2474,6 +2486,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    union pipe_enc_cap_two_pass two_pass_support = {};
    union pipe_enc_cap_gpu_stats_psnr psnr_support = {};
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
+   union pipe_enc_cap_spatial_adaptive_quantization saqSupport = {};
    switch (param) {
       case PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME:
          return 1;
@@ -2546,6 +2559,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_MOTION_VECTOR_MAPS:
       case PIPE_VIDEO_CAP_ENC_TWO_PASS:
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR:
+      case PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2576,7 +2590,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             gpu_qpmap_input,
                                             gpu_motion_input,
                                             two_pass_support,
-                                            psnr_support)) {
+                                            psnr_support,
+                                            saqSupport)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2685,6 +2700,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return two_pass_support.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR ) {
                   return psnr_support.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION ) {
+                  return saqSupport.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2760,6 +2777,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_motion_vector_map gpu_motion_input = {};
    union pipe_enc_cap_two_pass two_pass_support = {};
    union pipe_enc_cap_gpu_stats_psnr psnr_support = {};
+   union pipe_enc_cap_spatial_adaptive_quantization saqSupport = {};
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2789,7 +2807,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       gpu_qpmap_input,
                                       gpu_motion_input,
                                       two_pass_support,
-                                      psnr_support))
+                                      psnr_support,
+                                      saqSupport))
    {
       return bVideoEncodeRequiresTextureArray;
    }

@@ -424,7 +424,7 @@ d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
    // Clear QPDelta context for this frame
    //
    memset(&pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc, 0, sizeof(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc));
-   pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags = D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_NONE;
+   pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags &= ~D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_DELTA_QP;
 
    //
    // Check if CPU/GPU QP Maps are enabled and store it in the context
@@ -476,6 +476,23 @@ d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
       }
    }
 #endif
+}
+
+void
+d3d12_video_encoder_update_rate_control_saq(struct d3d12_video_encoder *pD3D12Enc,
+                                            uint32_t saq_strength,
+                                            uint32_t temporal_id)
+{
+   //
+   // Clear SAQ flag for this frame and only enable it below if saq_strength > 0
+   //
+   pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags &= ~D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_SPATIAL_ADAPTIVE_QP;
+
+   if (saq_strength > 0)
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags |=
+         D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_SPATIAL_ADAPTIVE_QP;
+   }
 }
 
 /*
@@ -2310,6 +2327,9 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->roi,
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->pic_ctrl.temporal_id);
          d3d12_video_encoder_update_two_pass_frame_settings(pD3D12Enc, codec, picture);
+         d3d12_video_encoder_update_rate_control_saq(pD3D12Enc,
+                                                     ((struct pipe_h264_enc_picture_desc *)picture)->rate_ctrl[((struct pipe_h264_enc_picture_desc *)picture)->pic_ctrl.temporal_id].spatial_adaptive_quantization_strength,
+                                                     ((struct pipe_h264_enc_picture_desc *)picture)->pic_ctrl.temporal_id);
          // ...encoder_config_state_h264 calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_h264(pD3D12Enc, srcTextureDesc, picture);
       } break;
@@ -2329,6 +2349,9 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->roi,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->pic.temporal_id);
          d3d12_video_encoder_update_two_pass_frame_settings(pD3D12Enc, codec, picture);
+         d3d12_video_encoder_update_rate_control_saq(pD3D12Enc,
+                                                    ((struct pipe_h265_enc_picture_desc *)picture)->rc[((struct pipe_h265_enc_picture_desc *)picture)->pic.temporal_id].spatial_adaptive_quantization_strength,
+                                                    ((struct pipe_h265_enc_picture_desc *)picture)->pic.temporal_id);
          // ...encoder_config_state_hevc calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_hevc(pD3D12Enc, srcTextureDesc, picture);
       } break;
