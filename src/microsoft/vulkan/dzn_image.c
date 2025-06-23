@@ -791,24 +791,6 @@ dzn_DestroyImage(VkDevice device, VkImage image,
    dzn_image_destroy(dzn_image_from_handle(image), pAllocator);
 }
 
-static struct dzn_image *
-dzn_swapchain_get_image(struct dzn_device *device,
-                        VkSwapchainKHR swapchain,
-                        uint32_t index)
-{
-   uint32_t n_images = index + 1;
-   STACK_ARRAY(VkImage, images, n_images);
-   struct dzn_image *image = NULL;
-
-   VkResult result = wsi_common_get_images(swapchain, &n_images, images);
-
-   if (result == VK_SUCCESS || result == VK_INCOMPLETE)
-      image = dzn_image_from_handle(images[index]);
-
-   STACK_ARRAY_FINISH(images);
-   return image;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL
 dzn_BindImageMemory2(VkDevice dev,
                      uint32_t bindInfoCount,
