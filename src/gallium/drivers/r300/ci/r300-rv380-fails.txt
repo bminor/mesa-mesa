@@ -7,6 +7,7 @@ dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.rgb_half_float_
 dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgb,Fail
 dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgba,Fail
 dEQP-GLES2.functional.polygon_offset.fixed16_displacement_with_units,Fail
+dEQP-GLES2.functional.polygon_offset.fixed16_render_with_units,Fail
 dEQP-GLES2.functional.rasterization.primitives.line_loop_wide,Fail
 dEQP-GLES2.functional.rasterization.primitives.line_strip_wide,Fail
 dEQP-GLES2.functional.shaders.builtin_variable.frontfacing,Fail
@@ -90,6 +91,9 @@ dEQP-GLES2.functional.texture.specification.teximage2d_align.cube_rgba8888_47_1,
 dEQP-GLES2.functional.texture.specification.teximage2d_align.cube_rgba8888_47_2,Fail
 dEQP-GLES2.functional.texture.specification.teximage2d_align.cube_rgba8888_47_4,Fail
 dEQP-GLES2.functional.texture.specification.teximage2d_align.cube_rgba8888_47_8,Fail
+dEQP-GLES2.functional.uniform_api.info_query.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.nested_structs_arrays.mat4_mat2_both,Fail
+dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_structs_arrays.mat4_mat2_both,Fail
 
 dEQP-GLES2.functional.uniform_api.info_query.array_in_struct.mat4_mat2_both,Fail
 dEQP-GLES2.functional.uniform_api.info_query.array_in_struct.mat4_mat2_fragment,Fail
@@ -530,6 +534,7 @@ swtcl-dEQP-GLES2.functional.draw.random.8,Fail
 swtcl-dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgb,Fail
 swtcl-dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgba,Fail
 swtcl-dEQP-GLES2.functional.polygon_offset.fixed16_displacement_with_units,Fail
+swtcl-dEQP-GLES2.functional.polygon_offset.fixed16_render_with_units,Fail
 swtcl-dEQP-GLES2.functional.rasterization.primitives.line_loop_wide,Fail
 swtcl-dEQP-GLES2.functional.rasterization.primitives.line_strip_wide,Fail
 swtcl-dEQP-GLES2.functional.rasterization.primitives.points,Fail
@@ -538,6 +543,7 @@ swtcl-dEQP-GLES2.functional.shaders.builtin_variable.pointcoord,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.random.81,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.info_query.array_in_struct.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.info_query.multiple_nested_structs_arrays.both,Fail
+swtcl-dEQP-GLES2.functional.uniform_api.info_query.nested_structs_arrays.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.info_query.struct_in_array.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.random.13,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.random.20,Fail
@@ -547,9 +553,11 @@ swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.basic_array_assign_full.a
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.basic_array_assign_partial.array_in_struct.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.array_in_struct.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.multiple_nested_structs_arrays.both,Fail
+swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.nested_structs_arrays.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.get_uniform.struct_in_array.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.array_in_struct.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.multiple_nested_structs_arrays.both,Fail
+swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_structs_arrays.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.struct_in_array.mat4_mat2_both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.multiple_nested_structs_arrays.both,Fail
 swtcl-dEQP-GLES2.functional.uniform_api.value.assigned.by_value.get_uniform.multiple_nested_structs_arrays.both,Fail
