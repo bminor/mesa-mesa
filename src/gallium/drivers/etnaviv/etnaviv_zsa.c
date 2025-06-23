@@ -48,8 +48,6 @@ etna_zsa_state_create(struct pipe_context *pctx,
    cs->z_test_enabled = so->depth_enabled && so->depth_func != PIPE_FUNC_ALWAYS;
    cs->z_write_enabled = so->depth_writemask;
 
-   /* XXX does stencil[0] / stencil[1] order depend on rs->front_ccw? */
-
 /* Set operations to KEEP if write mask is 0.
  * When we don't do this, the depth buffer is written for the entire primitive
  * instead of just where the stencil condition holds (GC600 rev 0x0019, without
