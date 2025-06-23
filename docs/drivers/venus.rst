@@ -129,46 +129,6 @@ This is how one might want to start crosvm
 assuming a working system is installed to partition 1 of ``disk.img``.
 ``sudo`` or ``CAP_NET_ADMIN`` is needed to set up the TAP network device.
 
-Virtio-GPU and Virtio-WL
-------------------------
-
-In this setup, the guest userspace uses Xwayland and a special Wayland
-compositor to connect guest X11/Wayland clients to the host Wayland
-compositor, using Virtio-WL as the transport.  This setup is more tedious, but
-that should hopefully change over time.
-
-For now, the guest kernel must be built from the ``chromeos-5.10`` branch of
-the `Chrome OS kernel
-<https://chromium.googlesource.com/chromiumos/third_party/kernel>`__.
-
-To build minigbm and to enable minigbm support in virglrenderer,
-
-.. code-block:: sh
-
- $ git clone https://chromium.googlesource.com/chromiumos/platform/minigbm
- $ cd minigbm
- $ CFLAGS=-DDRV_<I915-or-your-driver> OUT=out DESTDIR=out/install make install
- $ cd ../virglrenderer
- $ meson configure out -Dminigbm_allocation=true
- $ meson compile -C out
-
-Make sure a host Wayland compositor is running.  Replace
-``--display-window-keyboard --display-window-mouse`` by
-``--wayland-sock=<path-to-wayland-socket>`` when starting crosvm.
-
-In the guest, build and start Sommelier, the special Wayland compositor,
-
-.. code-block:: sh
-
- $ git clone https://chromium.googlesource.com/chromiumos/platform2
- $ cd platform2/vm_tools/sommelier
- $ meson out -Dxwayland_path=/usr/bin/Xwayland -Dxwayland_gl_driver_path=/usr/lib/dri
- $ meson compile -C out
- $ sudo chmod 777 /dev/wl0
- $ ./out/sommelier -X --glamor
-       --xwayland-gl-driver-path=<path-to-locally-built-gl-driver> \
-       sleep infinity
-
 Optional Requirements
 ---------------------
 
