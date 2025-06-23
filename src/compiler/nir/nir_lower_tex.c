@@ -1509,7 +1509,11 @@ lower_sampler_lod_bias(nir_builder *b, nir_tex_instr *tex)
 
       nir_def *orig = nir_steal_tex_src(tex, src);
       if (orig) {
-         bias = nir_fadd(b, bias, nir_f2f16(b, orig));
+         /* If bias is 16-bit but orig is 32-bit, we do a 32-bit add so the
+          * float conversions can fold away (which could not happen with a
+          * 16-bit add.)
+          */
+         bias = nir_f2f16(b, nir_fadd(b, nir_f2fN(b, bias, orig->bit_size), orig));
       }
 
       nir_tex_instr_add_src(tex, src, bias);
