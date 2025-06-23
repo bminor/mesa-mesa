@@ -108,6 +108,9 @@ instr_cost(loop_info_state *state, nir_instr *instr,
 
       if (can_constant_fold)
          return 0;
+   } else if (nir_op_is_vec_or_mov(alu->op)) {
+      /* movs and vecs are likely free. */
+      return 0;
    }
 
    if (alu->op == nir_op_flrp) {
