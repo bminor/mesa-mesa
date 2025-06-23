@@ -1836,10 +1836,7 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       genx_batch_emit_pipe_control_write(batch, device->info, current_pipeline,
                                          sync_op, addr, 0, bits);
 
-      enum intel_engine_class engine_class =
-         current_pipeline == GPGPU ? INTEL_ENGINE_CLASS_COMPUTE :
-                                     INTEL_ENGINE_CLASS_RENDER;
-      genX(invalidate_aux_map)(batch, device, engine_class, bits);
+      genX(invalidate_aux_map)(batch, device, batch->engine_class, bits);
 
       bits &= ~ANV_PIPE_INVALIDATE_BITS;
    }
