@@ -92,11 +92,10 @@ dEQP-VK.sparse_resources.shader_intrinsics.2d_array_sparse_gather.rgba8_snorm.51
 dEQP-VK.sparse_resources.shader_intrinsics.2d_sparse_gather.r12x4g12x4b12x4a12x4_unorm_4pack16.128_128_1
 dEQP-VK.sparse_resources.transfer_queue.2d.r10x6g10x6_unorm_2pack16.1024_128_1
 
-dEQP-VK.synchronization2?.implicit.timeline_semaphore..*.buffer_16384.[0-9]{4}
 dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
 dEQP-VK.synchronization2.op.single_queue.fence.write_ssbo_geometry_read_ubo_fragment.buffer_16384_specialized_access_flag
 dEQP-VK.synchronization2.op.single_queue.fence.write_ssbo_tess_control_read_ssbo_geometry.buffer_262144
-dEQP-VK\.synchronization2\.timeline_semaphore\..*
+dEQP-VK\.synchronization2?\.timeline_semaphore\..*
 
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.isolines_fractional_even_spacing_ccw_point_mode
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.triangles_equal_spacing_ccw
