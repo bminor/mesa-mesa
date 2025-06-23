@@ -86,7 +86,7 @@ get_fbd_size(bool has_zs_ext, uint32_t rt_count)
     (PANVK_IR_##_pass##_PASS * sizeof(uint64_t)))
 
 struct panvk_cs_occlusion_query {
-   uint64_t next;
+   struct cs_single_link_list_node node;
    uint64_t syncobj;
 };
 
@@ -101,7 +101,7 @@ struct panvk_cs_subqueue_context {
       struct panvk_cs_desc_ringbuf desc_ringbuf;
       uint64_t tiler_heap;
       uint64_t geom_buf;
-      uint64_t oq_chain;
+      struct cs_single_link_list oq_chain;
    } render;
    struct {
       uint32_t counter;
