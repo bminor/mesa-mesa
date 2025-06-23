@@ -2,6 +2,7 @@ include:
   - local: 'src/gallium/frontends/lavapipe/ci/gitlab-ci-inc.yml'
 
 lavapipe:
+  timeout: 15m
   variables:
     DEQP_SUITE: lvp
     GPU_VERSION: lvp
@@ -20,6 +21,7 @@ lavapipe-full:
     DEQP_FRACTION: 1
 
 lavapipe-vk-asan:
+  timeout: 15m
   extends:
     - .deqp-test
     - .lavapipe-test
@@ -48,6 +50,7 @@ lavapipe-vkd3d:
 
 # Disabled due to only running a single trace which was using old Wine.
 .lavapipe-traces:
+  timeout: 15m
   variables:
     PIGLIT_TRACES_FILE: traces-lavapipe.yml
     PIGLIT_REPLAY_DEVICE_NAME: "vk-lvp"

@@ -1,6 +1,5 @@
 .lavapipe-rules:
   stage: software-renderer
-  timeout: 15m
   rules:
     - !reference [.test, rules]
     - !reference [.vulkan-rules, rules]
