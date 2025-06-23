@@ -367,6 +367,41 @@ panvk_image_init(struct panvk_image *image,
    panvk_image_init_layouts(image, pCreateInfo);
 }
 
+static VkResult
+panvk_image_plane_bind(struct panvk_device *dev,
+                       struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
+                       uint64_t base, uint64_t offset)
+{
+   plane->plane.base = base + offset;
+   /* Reset the AFBC headers */
+   if (drm_is_afbc(plane->image.props.modifier)) {
+      /* Transient CPU mapping */
+      void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
+                                       PROT_WRITE, MAP_SHARED, NULL);
+
+      if (bo_base == MAP_FAILED)
+         return panvk_errorf(dev, VK_ERROR_OUT_OF_HOST_MEMORY,
+                             "Failed to CPU map AFBC image plane");
+
+      for (unsigned layer = 0; layer < plane->image.props.array_size;
+           layer++) {
+         for (unsigned level = 0; level < plane->image.props.nr_slices;
+              level++) {
+            void *header = bo_base + offset +
+                           (layer * plane->plane.layout.array_stride_B) +
+                           plane->plane.layout.slices[level].offset_B;
+            memset(header, 0,
+                   plane->plane.layout.slices[level].afbc.header_size_B);
+         }
+      }
+
+      ASSERTED int ret = os_munmap(bo_base, pan_kmod_bo_size(bo));
+      assert(!ret);
+   }
+
+   return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                   const VkAllocationCallbacks *pAllocator, VkImage *pImage)
@@ -539,41 +574,6 @@ panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
 {
    /* Sparse images are not yet supported. */
    *pSparseMemoryRequirementCount = 0;
-}
-
-static VkResult
-panvk_image_plane_bind(struct panvk_device *dev,
-                       struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
-                       uint64_t base, uint64_t offset)
-{
-   plane->plane.base = base + offset;
-   /* Reset the AFBC headers */
-   if (drm_is_afbc(plane->image.props.modifier)) {
-      /* Transient CPU mapping */
-      void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
-                                       PROT_WRITE, MAP_SHARED, NULL);
-
-      if (bo_base == MAP_FAILED)
-         return panvk_errorf(dev, VK_ERROR_OUT_OF_HOST_MEMORY,
-                             "Failed to CPU map AFBC image plane");
-
-      for (unsigned layer = 0; layer < plane->image.props.array_size;
-           layer++) {
-         for (unsigned level = 0; level < plane->image.props.nr_slices;
-              level++) {
-            void *header = bo_base + offset +
-                           (layer * plane->plane.layout.array_stride_B) +
-                           plane->plane.layout.slices[level].offset_B;
-            memset(header, 0,
-                   plane->plane.layout.slices[level].afbc.header_size_B);
-         }
-      }
-
-      ASSERTED int ret = os_munmap(bo_base, pan_kmod_bo_size(bo));
-      assert(!ret);
-   }
-
-   return VK_SUCCESS;
 }
 
 static VkResult
