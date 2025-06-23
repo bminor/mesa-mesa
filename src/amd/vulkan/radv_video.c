@@ -1053,6 +1053,18 @@ radv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device, VkVideoSessionKHR vi
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    uint32_t memory_type_bits = (1u << pdev->memory_properties.memoryTypeCount) - 1;
+   uint32_t memory_type_bits_visible = 0;
+
+   /* These buffers are only mapped once during session reset, for performance reasons
+    * we should prefer visible VRAM when available.
+    */
+   for (unsigned i = 0; i < pdev->memory_properties.memoryTypeCount; i++) {
+      VkMemoryPropertyFlags flags = pdev->memory_properties.memoryTypes[i].propertyFlags;
+
+      if ((flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
+          (flags & (VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT)))
+         memory_type_bits_visible |= (1 << i);
+   }
 
    if (vid->encode) {
       return radv_video_get_encode_session_memory_requirements(device, vid, pMemoryRequirementsCount,
@@ -1099,10 +1111,7 @@ radv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device, VkVideoSessionKHR vi
          m->memoryBindIndex = RADV_BIND_DECODER_CTX;
          m->memoryRequirements.size = align(calc_ctx_size_vp9(pdev, vid), 4096);
          m->memoryRequirements.alignment = 0;
-         m->memoryRequirements.memoryTypeBits = 0;
-         for (unsigned i = 0; i < pdev->memory_properties.memoryTypeCount; i++)
-            if (pdev->memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-              m->memoryRequirements.memoryTypeBits |= (1 << i);
+         m->memoryRequirements.memoryTypeBits = memory_type_bits_visible;
       }
 
       if (vid->vk.max_dpb_slots == 0) {
@@ -1120,10 +1129,7 @@ radv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device, VkVideoSessionKHR vi
          m->memoryBindIndex = RADV_BIND_DECODER_CTX;
          m->memoryRequirements.size = align(calc_ctx_size_av1(device, vid), 4096);
          m->memoryRequirements.alignment = 0;
-         m->memoryRequirements.memoryTypeBits = 0;
-         for (unsigned i = 0; i < pdev->memory_properties.memoryTypeCount; i++)
-            if (pdev->memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-               m->memoryRequirements.memoryTypeBits |= (1 << i);
+         m->memoryRequirements.memoryTypeBits = memory_type_bits_visible;
       }
    }
    return vk_outarray_status(&out);
