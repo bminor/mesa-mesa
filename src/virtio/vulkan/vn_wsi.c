@@ -222,65 +222,6 @@ vn_wsi_create_image_from_swapchain(
 
 /* swapchain commands */
 
-VkResult
-vn_CreateSwapchainKHR(VkDevice device,
-                      const VkSwapchainCreateInfoKHR *pCreateInfo,
-                      const VkAllocationCallbacks *pAllocator,
-                      VkSwapchainKHR *pSwapchain)
-{
-   struct vn_device *dev = vn_device_from_handle(device);
-
-   VkResult result =
-      wsi_CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-   if (VN_DEBUG(WSI) && result == VK_SUCCESS) {
-      vn_log(dev->instance,
-             "swapchain %p: created with surface %p, min count %d, size "
-             "%dx%d, mode %s, old %p",
-             VN_WSI_PTR(*pSwapchain), VN_WSI_PTR(pCreateInfo->surface),
-             pCreateInfo->minImageCount, pCreateInfo->imageExtent.width,
-             pCreateInfo->imageExtent.height,
-             vk_PresentModeKHR_to_str(pCreateInfo->presentMode),
-             VN_WSI_PTR(pCreateInfo->oldSwapchain));
-   }
-
-   return vn_result(dev->instance, result);
-}
-
-void
-vn_DestroySwapchainKHR(VkDevice device,
-                       VkSwapchainKHR swapchain,
-                       const VkAllocationCallbacks *pAllocator)
-{
-   struct vn_device *dev = vn_device_from_handle(device);
-
-   wsi_DestroySwapchainKHR(device, swapchain, pAllocator);
-   if (VN_DEBUG(WSI))
-      vn_log(dev->instance, "swapchain %p: destroyed", VN_WSI_PTR(swapchain));
-}
-
-VkResult
-vn_QueuePresentKHR(VkQueue _queue, const VkPresentInfoKHR *pPresentInfo)
-{
-   VN_TRACE_FUNC();
-   struct vk_queue *queue_vk = vk_queue_from_handle(_queue);
-   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
-
-   VkResult result = wsi_common_queue_present(
-      &dev->physical_device->wsi_device, vn_device_to_handle(dev), _queue,
-      queue_vk->queue_family_index, pPresentInfo);
-   if (VN_DEBUG(WSI) && result != VK_SUCCESS) {
-      for (uint32_t i = 0; i < pPresentInfo->swapchainCount; i++) {
-         const VkResult r =
-            pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
-         vn_log(dev->instance, "swapchain %p: presented image %d: %s",
-                VN_WSI_PTR(pPresentInfo->pSwapchains[i]),
-                pPresentInfo->pImageIndices[i], vk_Result_to_str(r));
-      }
-   }
-
-   return vn_result(dev->instance, result);
-}
-
 static int
 vn_wsi_export_sync_file(struct vn_device *dev, struct vn_renderer_bo *bo)
 {
