@@ -2898,8 +2898,8 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    unsigned clear_buffers = 0;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    zink_update_vk_sample_locations(ctx);
-   bool has_swapchain = zink_render_update_swapchain(ctx);
-   if (has_swapchain)
+   zink_render_update_swapchain(ctx);
+   if (ctx->has_swapchain)
       zink_render_fixup_swapchain(ctx);
    bool has_depth = false;
    bool has_stencil = false;
@@ -3111,7 +3111,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       }
       ctx->dynamic_fb.attachments[i].imageView = iv;
    }
-   if (has_swapchain) {
+   if (ctx->has_swapchain) {
       ASSERTED struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[0].texture);
       zink_render_fixup_swapchain(ctx);
       if (res->use_damage) {
@@ -3867,17 +3867,19 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
    ctx->gfx_pipeline_state.rendering_info.colorAttachmentCount = ctx->fb_state.nr_cbufs;
 
    ctx->void_clears = 0;
+   ctx->has_swapchain = false;
    for (int i = 0; i < ctx->fb_state.nr_cbufs; i++) {
-      struct pipe_surface *psurf = ctx->fb_cbufs[i];
+      struct pipe_surface *psurf = &ctx->fb_state.cbufs[i];
+      struct zink_resource *res = zink_resource(psurf->texture);
       ctx->fb_formats[i] = zink_get_format(screen, ctx->fb_state.cbufs[i].format);
-      if (psurf) {
+      if (res) {
+         ctx->has_swapchain |= zink_is_swapchain(res);
          if (ctx->fb_state.cbufs[i].nr_samples) {
             ctx->transient_attachments |= BITFIELD_BIT(i);
             framebuffer_surface_init_transient(ctx, psurf, i);
          }
          if (!samples)
             samples = MAX3(ctx->fb_state.cbufs[i].nr_samples, psurf->texture->nr_samples, 1);
-         struct zink_resource *res = zink_resource(psurf->texture);
          if (psurf->last_layer - psurf->first_layer > layers)
             ctx->fb_layer_mismatch |= BITFIELD_BIT(i);
          if (res->obj->dt) {
@@ -3900,7 +3902,7 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       }
    }
    if (ctx->fb_state.zsbuf.texture) {
-      struct pipe_surface *psurf = ctx->fb_zsbuf;
+      struct pipe_surface *psurf = &ctx->fb_state.zsbuf;
       ctx->fb_formats[PIPE_MAX_COLOR_BUFS] = zink_get_format(screen, ctx->fb_state.zsbuf.format);
       if (ctx->fb_state.zsbuf.nr_samples) {
          ctx->transient_attachments |= BITFIELD_BIT(PIPE_MAX_COLOR_BUFS);
