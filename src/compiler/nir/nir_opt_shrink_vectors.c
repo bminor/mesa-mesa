@@ -181,19 +181,13 @@ shrink_intrinsic_to_non_sparse(nir_intrinsic_instr *instr)
 }
 
 static bool
-opt_shrink_vector(nir_builder *b, nir_alu_instr *instr)
+create_smaller_vec(nir_builder *b, nir_alu_instr *vec, nir_component_mask_t mask)
 {
-   nir_def *def = &instr->def;
-   unsigned mask = nir_def_components_read(def);
-
-   /* If nothing was read, leave it up to DCE. */
-   if (mask == 0)
+   /* Leave these for copy propagation. */
+   if (util_is_power_of_two_or_zero(mask))
       return false;
 
-   /* don't remove any channels if used by non-ALU */
-   if (!is_only_used_by_alu(def))
-      return false;
-
+   nir_def *def = &vec->def;
    uint8_t reswizzle[NIR_MAX_VEC_COMPONENTS] = { 0 };
    nir_scalar srcs[NIR_MAX_VEC_COMPONENTS] = { 0 };
    unsigned num_components = 0;
@@ -201,7 +195,7 @@ opt_shrink_vector(nir_builder *b, nir_alu_instr *instr)
       if (!((mask >> i) & 0x1))
          continue;
 
-      nir_scalar scalar = nir_get_scalar(instr->src[i].src.ssa, instr->src[i].swizzle[0]);
+      nir_scalar scalar = nir_scalar_resolved(def, i);
 
       /* Try reuse a component with the same value */
       unsigned j;
@@ -229,10 +223,59 @@ opt_shrink_vector(nir_builder *b, nir_alu_instr *instr)
 
    /* create new vecN and replace uses */
    nir_def *new_vec = nir_vec_scalars(b, srcs, num_components);
-   nir_def_rewrite_uses(def, new_vec);
+
+   nir_foreach_use_safe(src, def) {
+      if (nir_src_components_read(src) & mask)
+         nir_src_rewrite(src, new_vec);
+   }
    reswizzle_alu_uses(new_vec, reswizzle);
 
    return true;
+}
+
+static bool
+opt_shrink_or_split_vector(nir_builder *b, nir_alu_instr *vec)
+{
+   /* Try to split vec into multiple distinct smaller vecs. */
+   nir_component_mask_t use_masks[NIR_MAX_VEC_COMPONENTS] = { 0 };
+   unsigned use_mask_count = 0;
+
+   nir_foreach_use_including_if(src, &vec->def) {
+      /* don't remove any channels if used by non-ALU */
+      if (nir_src_is_if(src) || nir_src_parent_instr(src)->type != nir_instr_type_alu)
+         return false;
+
+      nir_component_mask_t read = nir_src_components_read(src);
+      bool mask_found = false;
+      for (unsigned i = 0; i < use_mask_count; i++) {
+         if (!(use_masks[i] & read))
+            continue;
+
+         use_masks[i] |= read;
+
+         /* Merge overlapping use_masks. */
+         unsigned k = i + 1;
+         for (unsigned j = i + 1; j < use_mask_count; j++) {
+            if (use_masks[i] & use_masks[j])
+               use_masks[i] |= use_masks[j];
+            else
+               use_masks[k++] = use_masks[j];
+         }
+         use_mask_count = k;
+
+         mask_found = true;
+         break;
+      }
+
+      if (!mask_found)
+         use_masks[use_mask_count++] = read;
+   }
+
+   bool progress = false;
+   for (unsigned i = 0; i < use_mask_count; i++)
+      progress |= create_smaller_vec(b, vec, use_masks[i]);
+
+   return progress;
 }
 
 static bool
@@ -245,7 +288,7 @@ opt_shrink_vectors_alu(nir_builder *b, nir_alu_instr *instr)
       return false;
 
    if (nir_op_is_vec(instr->op))
-      return opt_shrink_vector(b, instr);
+      return opt_shrink_or_split_vector(b, instr);
    if (nir_op_infos[instr->op].output_size != 0)
       return false;
 
