@@ -76,6 +76,7 @@ struct panvk_draw_data {
    struct {
       uint64_t attribs;
       uint64_t attrib_bufs;
+      uint64_t varying_bufs;
    } indirect_info;
 };
 
@@ -441,6 +442,7 @@ static VkResult
 panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
                             struct panvk_draw_data *draw)
 {
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    const struct panvk_shader_variant *vs =
       panvk_shader_hw_variant(cmdbuf->state.gfx.vs.shader);
    const struct panvk_shader_link *link = &cmdbuf->state.gfx.link;
@@ -455,17 +457,43 @@ panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
    bool writes_point_size =
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-   unsigned vertex_count =
-      draw->padded_vertex_count * draw->info.instance.count;
    uint64_t psiz_buf = 0;
 
-   for (unsigned i = 0; i < PANVK_VARY_BUF_MAX; i++) {
-      unsigned buf_size = vertex_count * link->buf_strides[i];
-      uint64_t buf_addr =
-         buf_size ? panvk_cmd_alloc_dev_mem(cmdbuf, varying, buf_size, 64).gpu
-                  : 0;
-      if (buf_size && !buf_addr)
+   if (is_indirect_draw(draw) &&
+       !cmdbuf->state.gfx.vs.indirect_varying_bufs_infos) {
+      struct pan_ptr bufs_info_storage = panvk_cmd_alloc_dev_mem(
+         cmdbuf, desc, sizeof(struct libpan_draw_helper_varying_buf_info), 8);
+
+      if (!bufs_info_storage.gpu)
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+
+      cmdbuf->state.gfx.vs.indirect_varying_bufs_infos = bufs_info_storage.gpu;
+
+      struct libpan_draw_helper_varying_buf_info *vary_bufs_info =
+         bufs_info_storage.cpu;
+      vary_bufs_info->address = dev->indirect_varying_buffer->addr.dev;
+      vary_bufs_info->size = PANVK_JM_MAX_PER_VTX_ATTRIBUTES_INDIRECT_SIZE *
+                             PANVK_JM_MAX_VERTICES_INDIRECT;
+      vary_bufs_info->offset = 0;
+   }
+
+   for (unsigned i = 0; i < PANVK_VARY_BUF_MAX; i++) {
+      uint32_t buf_size;
+      uint64_t buf_addr;
+      if (is_indirect_draw(draw)) {
+         buf_addr = dev->indirect_varying_buffer->addr.dev;
+         buf_size = 0;
+      } else {
+         buf_size = draw->padded_vertex_count * draw->info.instance.count *
+                    link->buf_strides[i];
+         buf_addr =
+            buf_size
+               ? panvk_cmd_alloc_dev_mem(cmdbuf, varying, buf_size, 64).gpu
+               : 0;
+
+         if (buf_size && !buf_addr)
+            return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+      }
 
       pan_pack(&buf_descs[i], ATTRIBUTE_BUFFER, cfg) {
          cfg.stride = link->buf_strides[i];
@@ -493,6 +521,8 @@ panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
       draw->line_width = 1.0f;
 
    draw->varying_bufs = bufs.gpu;
+   draw->indirect_info.varying_bufs =
+      cmdbuf->state.gfx.vs.indirect_varying_bufs_infos;
    draw->vs.varyings = panvk_priv_mem_dev_addr(link->vs.attribs);
    draw->fs.varyings = panvk_priv_mem_dev_addr(link->fs.attribs);
    return VK_SUCCESS;

@@ -27,6 +27,18 @@
 #include "util/u_printf.h"
 #include "util/vma.h"
 
+/* On JM hardware, we need to allocate a buffer depending on vertex count.
+ *
+ * As a result, for indirect and indexed draw we allocate a large buffer with
+ * alloc on fault set.
+ *
+ * The size of that buffer is calculated assuming a max of 2 millions vertices
+ * and 18 attributes per vertex (16 user attributes, 2 specials)
+ */
+
+#define PANVK_JM_MAX_VERTICES_INDIRECT                (2000000)
+#define PANVK_JM_MAX_PER_VTX_ATTRIBUTES_INDIRECT_SIZE (18 * 4)
+
 struct panvk_precomp_cache;
 struct panvk_device_draw_context;
 
@@ -55,6 +67,7 @@ struct panvk_device {
    } kmod;
 
    struct panvk_priv_bo *tiler_heap;
+   struct panvk_priv_bo *indirect_varying_buffer;
    struct panvk_priv_bo *sample_positions;
 
    struct {

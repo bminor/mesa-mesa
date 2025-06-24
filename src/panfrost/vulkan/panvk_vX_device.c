@@ -426,6 +426,14 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &device->tiler_heap);
    if (result != VK_SUCCESS)
       goto err_free_priv_bos;
+
+   result = panvk_priv_bo_create(
+      device,
+      PANVK_JM_MAX_VERTICES_INDIRECT * PANVK_JM_MAX_PER_VTX_ATTRIBUTES_INDIRECT_SIZE,
+      PAN_KMOD_BO_FLAG_NO_MMAP | PAN_KMOD_BO_FLAG_ALLOC_ON_FAULT,
+      VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &device->indirect_varying_buffer);
+   if (result != VK_SUCCESS)
+      goto err_free_priv_bos;
 #endif
 
    result = panvk_priv_bo_create(
@@ -533,6 +541,7 @@ err_free_priv_bos:
    panvk_priv_bo_unref(device->printf.bo);
    panvk_priv_bo_unref(device->tiler_oom.handlers_bo);
    panvk_priv_bo_unref(device->sample_positions);
+   panvk_priv_bo_unref(device->indirect_varying_buffer);
    panvk_priv_bo_unref(device->tiler_heap);
    panvk_device_cleanup_mempools(device);
    vk_free(&device->vk.alloc, device->dump_region_size);
@@ -578,6 +587,7 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
    u_printf_destroy(&device->printf.ctx);
    panvk_priv_bo_unref(device->printf.bo);
    panvk_priv_bo_unref(device->tiler_oom.handlers_bo);
+   panvk_priv_bo_unref(device->indirect_varying_buffer);
    panvk_priv_bo_unref(device->tiler_heap);
    panvk_priv_bo_unref(device->sample_positions);
    panvk_device_cleanup_mempools(device);

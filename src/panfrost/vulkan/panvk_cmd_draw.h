@@ -151,6 +151,7 @@ struct panvk_cmd_graphics_state {
       uint64_t attrib_bufs;
       uint64_t indirect_attribs_infos;
       uint64_t indirect_attrib_bufs_infos;
+      uint64_t indirect_varying_bufs_infos;
       bool previous_draw_was_indirect;
 #endif
    } vs;
