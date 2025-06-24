@@ -986,19 +986,20 @@ create_bvci(struct zink_context *ctx, struct zink_resource *res, enum pipe_forma
 }
 
 static struct zink_buffer_view *
-get_buffer_view(struct zink_context *ctx, struct zink_resource *res, VkBufferViewCreateInfo *bvci)
+get_buffer_view(struct zink_context *ctx, struct zink_resource *res, enum pipe_format format, unsigned offset, unsigned size)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_buffer_view *buffer_view = NULL;
+   VkBufferViewCreateInfo bvci = create_bvci(ctx, res, format, offset, size);
 
-   uint32_t hash = hash_bufferview(bvci);
+   uint32_t hash = hash_bufferview(&bvci);
    simple_mtx_lock(&res->obj->surface_mtx);
-   struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&res->obj->surface_cache, hash, bvci);
+   struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&res->obj->surface_cache, hash, &bvci);
    if (he) {
       buffer_view = he->data;
    } else {
       VkBufferView view;
-      VkResult result = VKSCR(CreateBufferView)(screen->dev, bvci, NULL, &view);
+      VkResult result = VKSCR(CreateBufferView)(screen->dev, &bvci, NULL, &view);
       if (result != VK_SUCCESS) {
          mesa_loge("ZINK: vkCreateBufferView failed (%s)", vk_Result_to_str(result));
          goto out;
@@ -1009,7 +1010,7 @@ get_buffer_view(struct zink_context *ctx, struct zink_resource *res, VkBufferVie
          goto out;
       }
       buffer_view->pres = &res->base.b;
-      buffer_view->bvci = *bvci;
+      buffer_view->bvci = bvci;
       buffer_view->buffer_view = view;
       buffer_view->hash = hash;
       _mesa_hash_table_insert_pre_hashed(&res->obj->surface_cache, hash, &buffer_view->bvci, buffer_view);
@@ -1288,8 +1289,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
          sampler_view->tbo_size = MIN2(state->u.buf.size / blocksize, screen->info.props.limits.maxTexelBufferElements) * blocksize;
          return &sampler_view->base;
       }
-      VkBufferViewCreateInfo bvci = create_bvci(ctx, res, state->format, state->u.buf.offset, state->u.buf.size);
-      sampler_view->buffer_view = get_buffer_view(ctx, res, &bvci);
+      sampler_view->buffer_view = get_buffer_view(ctx, res, state->format, state->u.buf.offset, state->u.buf.size);
       err = !sampler_view->buffer_view;
    }
    if (err) {
@@ -1863,8 +1863,7 @@ static struct zink_buffer_view *
 create_image_bufferview(struct zink_context *ctx, const struct pipe_image_view *view)
 {
    struct zink_resource *res = zink_resource(view->resource);
-   VkBufferViewCreateInfo bvci = create_bvci(ctx, res, view->format, view->u.buf.offset, view->u.buf.size);
-   struct zink_buffer_view *buffer_view = get_buffer_view(ctx, res, &bvci);
+   struct zink_buffer_view *buffer_view = get_buffer_view(ctx, res, view->format, view->u.buf.offset, view->u.buf.size);
    if (!buffer_view)
       return NULL;
    util_range_add(&res->base.b, &res->valid_buffer_range, view->u.buf.offset,
@@ -2243,8 +2242,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
                   * its backing resource will have changed and thus we need to update
                   * the bufferview
                   */
-                  VkBufferViewCreateInfo bvci = create_bvci(ctx, res, b->base.format, b->base.u.buf.offset, b->base.u.buf.size);
-                  b->buffer_view = get_buffer_view(ctx, res, &bvci);
+                  b->buffer_view = get_buffer_view(ctx, res, b->base.format, b->base.u.buf.offset, b->base.u.buf.size);
                   update = true;
                } else if (!a || a->buffer_view->buffer_view != b->buffer_view->buffer_view)
                      update = true;
@@ -2448,8 +2446,7 @@ zink_make_texture_handle_resident(struct pipe_context *pctx, uint64_t handle, bo
             ctx->di.bindless[0].db.buffer_infos[handle].range = ds->db.size;
             ctx->di.bindless[0].db.buffer_infos[handle].format = zink_get_format(zink_screen(ctx->base.screen), ds->db.format);
          } else {
-            VkBufferViewCreateInfo bvci = create_bvci(ctx, res, ds->db.format, ds->db.offset, ds->db.size);
-            struct zink_buffer_view *bv = get_buffer_view(ctx, res, &bvci);
+            struct zink_buffer_view *bv = get_buffer_view(ctx, res, ds->db.format, ds->db.offset, ds->db.size);
             ctx->di.bindless[0].t.buffer_infos[handle] = bv->buffer_view;
          }
          zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -2588,8 +2585,7 @@ zink_make_image_handle_resident(struct pipe_context *pctx, uint64_t handle, unsi
             ctx->di.bindless[0].db.buffer_infos[handle].range = ds->db.size;
             ctx->di.bindless[0].db.buffer_infos[handle].format = zink_get_format(zink_screen(ctx->base.screen), ds->db.format);
          } else {
-            VkBufferViewCreateInfo bvci = create_bvci(ctx, res, ds->db.format, ds->db.offset, ds->db.size);
-            struct zink_buffer_view *bv = get_buffer_view(ctx, res, &bvci);
+            struct zink_buffer_view *bv = get_buffer_view(ctx, res, ds->db.format, ds->db.offset, ds->db.size);
             ctx->di.bindless[1].t.buffer_infos[handle] = bv->buffer_view;
          }
          zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, access, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -4442,8 +4438,7 @@ rebind_tbo(struct zink_context *ctx, gl_shader_stage shader, unsigned slot)
       return NULL;
    struct zink_resource *res = zink_resource(sampler_view->base.texture);
    if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB) {
-      VkBufferViewCreateInfo bvci = create_bvci(ctx, res, sampler_view->base.format, sampler_view->base.u.buf.offset, sampler_view->base.u.buf.size);
-      sampler_view->buffer_view = get_buffer_view(ctx, res, &bvci);
+      sampler_view->buffer_view = get_buffer_view(ctx, res, sampler_view->base.format, sampler_view->base.u.buf.offset, sampler_view->base.u.buf.size);
    }
    update_descriptor_state_sampler(ctx, shader, slot, res);
    if (res) {
@@ -4466,8 +4461,7 @@ rebind_ibo(struct zink_context *ctx, gl_shader_stage shader, unsigned slot)
       return NULL;
    }
    if (zink_descriptor_mode != ZINK_DESCRIPTOR_MODE_DB) {
-      VkBufferViewCreateInfo bvci = create_bvci(ctx, res, image_view->base.format, image_view->base.u.buf.offset, image_view->base.u.buf.size);
-      image_view->buffer_view = get_buffer_view(ctx, res, &bvci);
+      image_view->buffer_view = get_buffer_view(ctx, res, image_view->base.format, image_view->base.u.buf.offset, image_view->base.u.buf.size);
    }
    if (res) {
       res->obj->unordered_read = false;
