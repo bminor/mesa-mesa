@@ -219,6 +219,10 @@ opt_shrink_vector(nir_builder *b, nir_alu_instr *instr)
       }
    }
 
+   /* Don't create unsupported vector sizes. */
+   if (!nir_num_components_valid(num_components))
+      return false;
+
    /* return if no component was removed */
    if (num_components == def->num_components)
       return false;
@@ -240,17 +244,10 @@ opt_shrink_vectors_alu(nir_builder *b, nir_alu_instr *instr)
    if (def->num_components == 1)
       return false;
 
-   switch (instr->op) {
-   /* don't use nir_op_is_vec() as not all vector sizes are supported. */
-   case nir_op_vec4:
-   case nir_op_vec3:
-   case nir_op_vec2:
+   if (nir_op_is_vec(instr->op))
       return opt_shrink_vector(b, instr);
-   default:
-      if (nir_op_infos[instr->op].output_size != 0)
-         return false;
-      break;
-   }
+   if (nir_op_infos[instr->op].output_size != 0)
+      return false;
 
    /* don't remove any channels if used by non-ALU */
    if (!is_only_used_by_alu(def))
