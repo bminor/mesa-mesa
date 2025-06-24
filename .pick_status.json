@@ -3654,7 +3654,7 @@
         "description": "radeonsi: transition to TC-compatible HTILE on full clears",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "75a03d733ad55829527d6e43c5511d1fc46fcb5a",
         "notes": null
