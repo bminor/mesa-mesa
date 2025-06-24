@@ -7424,7 +7424,7 @@
         "description": "anv: Flush before invalidate aux map in copy and video engines",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "46f5359238ed410d7af7a058f46a954f5c5912aa",
         "notes": null
