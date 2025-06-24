@@ -45,7 +45,7 @@ no_load_scratch_base_ptr_intrinsic(nir_shader *shader)
 }
 
 /** Insert the appropriate return instruction at the end of the shader */
-void
+bool
 brw_nir_lower_shader_returns(nir_shader *shader)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
@@ -113,11 +113,15 @@ brw_nir_lower_shader_returns(nir_shader *shader)
          break;
 
       default:
+        {
          unreachable("Invalid callable shader stage");
+         return false;
+        }
       }
    }
 
    nir_progress(true, impl, nir_metadata_control_flow);
+   return true;
 }
 
 static void
@@ -331,7 +335,7 @@ brw_nir_create_trivial_return_shader(const struct brw_compiler *compiler,
    ralloc_steal(mem_ctx, b->shader);
    nir_shader *nir = b->shader;
 
-   NIR_PASS_V(nir, brw_nir_lower_shader_returns);
+   NIR_PASS(_, nir, brw_nir_lower_shader_returns);
 
    return nir;
 }

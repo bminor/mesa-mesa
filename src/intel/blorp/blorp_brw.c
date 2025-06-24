@@ -134,7 +134,7 @@ blorp_compile_cs_brw(struct blorp_context *blorp, void *mem_ctx,
    brw_preprocess_nir(compiler, nir, &opts);
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   NIR_PASS_V(nir, nir_lower_io, nir_var_uniform, type_size_scalar_bytes,
+   NIR_PASS(_, nir, nir_lower_io, nir_var_uniform, type_size_scalar_bytes,
               (nir_lower_io_options)0);
 
    STATIC_ASSERT(offsetof(struct blorp_wm_inputs, subgroup_id) + 4 ==
@@ -146,9 +146,9 @@ blorp_compile_cs_brw(struct blorp_context *blorp, void *mem_ctx,
    cs_prog_data->base.nr_params = nr_params;
    cs_prog_data->base.param = rzalloc_array(NULL, uint32_t, nr_params);
 
-   NIR_PASS_V(nir, brw_nir_lower_cs_intrinsics, compiler->devinfo,
+   NIR_PASS(_, nir, brw_nir_lower_cs_intrinsics, compiler->devinfo,
               cs_prog_data);
-   NIR_PASS_V(nir, nir_shader_intrinsics_pass, lower_base_workgroup_id,
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_base_workgroup_id,
               nir_metadata_control_flow, NULL);
 
    struct brw_cs_prog_key cs_key;

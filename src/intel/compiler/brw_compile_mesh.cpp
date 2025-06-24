@@ -772,7 +772,7 @@ brw_nir_lower_mue_outputs(nir_shader *nir, const struct brw_mue_map *map)
             remap_io_to_dwords, nir_metadata_control_flow, NULL);
 }
 
-static void
+static bool
 brw_nir_initialize_mue(nir_shader *nir,
                        const struct brw_mue_map *map,
                        unsigned dispatch_width)
@@ -852,6 +852,7 @@ brw_nir_initialize_mue(nir_shader *nir,
    } else {
       nir_progress(true, entrypoint, nir_metadata_control_flow);
    }
+   return true;
 }
 
 static void
@@ -1241,7 +1242,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
        * fields, so let's initialize everything.
        */
       if (prog_data->map.has_per_primitive_header)
-         NIR_PASS_V(shader, brw_nir_initialize_mue, &prog_data->map, dispatch_width);
+         NIR_PASS(_, shader, brw_nir_initialize_mue, &prog_data->map, dispatch_width);
 
       brw_nir_apply_key(shader, compiler, &key->base, dispatch_width);
 

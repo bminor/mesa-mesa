@@ -145,7 +145,7 @@ build_accept_ray(nir_builder *b)
    nir_accept_ray_intersection(b);
 }
 
-void
+bool
 brw_nir_lower_intersection_shader(nir_shader *intersection,
                                   const nir_shader *any_hit,
                                   const struct intel_device_info *devinfo)
@@ -156,7 +156,7 @@ brw_nir_lower_intersection_shader(nir_shader *intersection,
    struct hash_table *any_hit_var_remap = NULL;
    if (any_hit) {
       nir_shader *any_hit_tmp = nir_shader_clone(dead_ctx, any_hit);
-      NIR_PASS_V(any_hit_tmp, nir_opt_dce);
+      NIR_PASS(_, any_hit_tmp, nir_opt_dce);
       any_hit_impl = lower_any_hit_for_intersection(any_hit_tmp);
       any_hit_var_remap = _mesa_pointer_hash_table_create(dead_ctx);
    }
@@ -314,4 +314,5 @@ brw_nir_lower_intersection_shader(nir_shader *intersection,
    nir_index_ssa_defs(impl);
 
    ralloc_free(dead_ctx);
+   return true;
 }

@@ -200,19 +200,19 @@ lower_rt_io_and_scratch(nir_shader *nir, const struct intel_device_info *devinfo
     * these are shader-internal and don't come in from outside, they don't
     * have an explicit memory layout and we have to assign them one.
     */
-   NIR_PASS_V(nir, nir_lower_vars_to_explicit_types,
+   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
               nir_var_function_temp |
               nir_var_shader_call_data |
               nir_var_ray_hit_attrib,
               glsl_get_natural_size_align_bytes);
 
    /* Now patch any derefs to I/O vars */
-   NIR_PASS_V(nir, lower_rt_io_derefs, devinfo);
+   NIR_PASS(_, nir, lower_rt_io_derefs, devinfo);
 
    /* Finally, lower any remaining function_temp, mem_constant, or
     * ray_hit_attrib access to 64-bit global memory access.
     */
-   NIR_PASS_V(nir, nir_lower_explicit_io,
+   NIR_PASS(_, nir, nir_lower_explicit_io,
               nir_var_function_temp |
               nir_var_mem_constant |
               nir_var_ray_hit_attrib,
@@ -343,7 +343,7 @@ void
 brw_nir_lower_raygen(nir_shader *nir, const struct intel_device_info *devinfo)
 {
    assert(nir->info.stage == MESA_SHADER_RAYGEN);
-   NIR_PASS_V(nir, brw_nir_lower_shader_returns);
+   NIR_PASS(_, nir, brw_nir_lower_shader_returns);
    lower_rt_io_and_scratch(nir, devinfo);
 }
 
@@ -351,8 +351,8 @@ void
 brw_nir_lower_any_hit(nir_shader *nir, const struct intel_device_info *devinfo)
 {
    assert(nir->info.stage == MESA_SHADER_ANY_HIT);
-   NIR_PASS_V(nir, brw_nir_lower_shader_returns);
-   NIR_PASS_V(nir, lower_ray_walk_intrinsics, devinfo);
+   NIR_PASS(_, nir, brw_nir_lower_shader_returns);
+   NIR_PASS(_, nir, lower_ray_walk_intrinsics, devinfo);
    lower_rt_io_and_scratch(nir, devinfo);
 }
 
@@ -360,7 +360,7 @@ void
 brw_nir_lower_closest_hit(nir_shader *nir, const struct intel_device_info *devinfo)
 {
    assert(nir->info.stage == MESA_SHADER_CLOSEST_HIT);
-   NIR_PASS_V(nir, brw_nir_lower_shader_returns);
+   NIR_PASS(_, nir, brw_nir_lower_shader_returns);
    lower_rt_io_and_scratch(nir, devinfo);
 }
 
@@ -368,7 +368,7 @@ void
 brw_nir_lower_miss(nir_shader *nir, const struct intel_device_info *devinfo)
 {
    assert(nir->info.stage == MESA_SHADER_MISS);
-   NIR_PASS_V(nir, brw_nir_lower_shader_returns);
+   NIR_PASS(_, nir, brw_nir_lower_shader_returns);
    lower_rt_io_and_scratch(nir, devinfo);
 }
 
@@ -376,7 +376,7 @@ void
 brw_nir_lower_callable(nir_shader *nir, const struct intel_device_info *devinfo)
 {
    assert(nir->info.stage == MESA_SHADER_CALLABLE);
-   NIR_PASS_V(nir, brw_nir_lower_shader_returns);
+   NIR_PASS(_, nir, brw_nir_lower_shader_returns);
    lower_rt_io_and_scratch(nir, devinfo);
 }
 
@@ -387,10 +387,10 @@ brw_nir_lower_combined_intersection_any_hit(nir_shader *intersection,
 {
    assert(intersection->info.stage == MESA_SHADER_INTERSECTION);
    assert(any_hit == NULL || any_hit->info.stage == MESA_SHADER_ANY_HIT);
-   NIR_PASS_V(intersection, brw_nir_lower_shader_returns);
-   NIR_PASS_V(intersection, brw_nir_lower_intersection_shader,
+   NIR_PASS(_, intersection, brw_nir_lower_shader_returns);
+   NIR_PASS(_, intersection, brw_nir_lower_intersection_shader,
               any_hit, devinfo);
-   NIR_PASS_V(intersection, lower_ray_walk_intrinsics, devinfo);
+   NIR_PASS(_, intersection, lower_ray_walk_intrinsics, devinfo);
    lower_rt_io_and_scratch(intersection, devinfo);
 }
 
@@ -495,7 +495,7 @@ brw_nir_create_raygen_trampoline(const struct brw_compiler *compiler,
    brw_preprocess_nir(compiler, nir, &opts);
 
    struct brw_cs_prog_key key = {};
-   NIR_PASS_V(nir, brw_nir_lower_rt_intrinsics, &key.base, devinfo);
+   NIR_PASS(_, nir, brw_nir_lower_rt_intrinsics, &key.base, devinfo);
 
    b = nir_builder_create(nir_shader_get_entrypoint(b.shader));
    /* brw_nir_lower_rt_intrinsics will leave us with a btd_global_arg_addr
@@ -519,7 +519,7 @@ brw_nir_create_raygen_trampoline(const struct brw_compiler *compiler,
       }
    }
 
-   NIR_PASS_V(nir, brw_nir_lower_cs_intrinsics, devinfo, NULL);
+   NIR_PASS(_, nir, brw_nir_lower_cs_intrinsics, devinfo, NULL);
 
    brw_nir_optimize(nir, devinfo);
 

@@ -62,7 +62,7 @@ build_leaf_is_procedural(nir_builder *b, struct brw_nir_rt_mem_hit_defs *hit)
    }
 }
 
-static void
+static bool
 lower_rt_intrinsics_impl(nir_function_impl *impl,
                          const struct brw_base_prog_key *key,
                          const struct intel_device_info *devinfo)
@@ -390,6 +390,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
 
    nir_progress(true, impl,
                 progress ? nir_metadata_none : (nir_metadata_control_flow));
+   return progress;
 }
 
 /** Lower ray-tracing system values and intrinsics
@@ -414,12 +415,14 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
  * argument pointer system values for BTD dispatch: btd_local_arg_addr and
  * btd_global_arg_addr.
  */
-void
+bool
 brw_nir_lower_rt_intrinsics(nir_shader *nir,
                             const struct brw_base_prog_key *key,
                             const struct intel_device_info *devinfo)
 {
+   bool progress = false;
    nir_foreach_function_impl(impl, nir) {
-      lower_rt_intrinsics_impl(impl, key, devinfo);
+      progress |= lower_rt_intrinsics_impl(impl, key, devinfo);
    }
+   return progress;
 }
