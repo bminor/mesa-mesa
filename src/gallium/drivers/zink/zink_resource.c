@@ -776,6 +776,8 @@ init_ici(struct zink_screen *screen, VkImageCreateInfo *ici, const struct pipe_r
       ici->imageType = VK_IMAGE_TYPE_3D;
       if (!(templ->flags & PIPE_RESOURCE_FLAG_SPARSE)) {
          ici->flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+      }
+      if (!(templ->flags & PIPE_RESOURCE_FLAG_SPARSE) || screen->info.maint9_props.image2DViewOf3DSparse) {
          if (screen->info.have_EXT_image_2d_view_of_3d)
             ici->flags |= VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
       }
