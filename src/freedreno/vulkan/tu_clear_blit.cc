@@ -719,7 +719,7 @@ build_blit_fs_shader(bool zscale)
  * variant for them.
  */
 static nir_shader *
-build_ms_copy_fs_shader(bool half_float)
+build_ms_copy_fs_shader(void)
 {
    nir_builder _b =
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, NULL,
@@ -728,8 +728,7 @@ build_ms_copy_fs_shader(bool half_float)
    b->shader->info.internal = true;
 
    nir_variable *out_color =
-      nir_variable_create(b->shader, nir_var_shader_out,
-                          half_float ? glsl_f16vec_type(4) : glsl_vec4_type(),
+      nir_variable_create(b->shader, nir_var_shader_out, glsl_vec4_type(),
                           "color0");
    out_color->data.location = FRAG_RESULT_DATA0;
 
@@ -746,7 +745,7 @@ build_ms_copy_fs_shader(bool half_float)
    /* Note: since we're just copying data, we rely on the HW ignoring the
     * dest_type.
     */
-   tex->dest_type = half_float ? nir_type_float16 : nir_type_int32;
+   tex->dest_type = nir_type_int32;
    tex->is_array = false;
    tex->is_shadow = false;
    tex->sampler_dim = GLSL_SAMPLER_DIM_MS;
@@ -766,7 +765,7 @@ build_ms_copy_fs_shader(bool half_float)
    tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_ms_index,
                                      nir_load_sample_id(b));
 
-   nir_def_init(&tex->instr, &tex->def, 4, half_float ? 16 : 32);
+   nir_def_init(&tex->instr, &tex->def, 4, 32);
    nir_builder_instr_insert(b, &tex->instr);
 
    nir_store_var(b, out_color, &tex->def, 0xf);
@@ -847,8 +846,7 @@ tu_init_clear_blit_shaders(struct tu_device *dev)
    compile_shader(dev, build_clear_vs_shader(), 2, &offset, GLOBAL_SH_VS_CLEAR);
    compile_shader(dev, build_blit_fs_shader(false), 0, &offset, GLOBAL_SH_FS_BLIT);
    compile_shader(dev, build_blit_fs_shader(true), 0, &offset, GLOBAL_SH_FS_BLIT_ZSCALE);
-   compile_shader(dev, build_ms_copy_fs_shader(false), 0, &offset, GLOBAL_SH_FS_COPY_MS);
-   compile_shader(dev, build_ms_copy_fs_shader(true), 0, &offset, GLOBAL_SH_FS_COPY_MS_HALF);
+   compile_shader(dev, build_ms_copy_fs_shader(), 0, &offset, GLOBAL_SH_FS_COPY_MS);
 
    for (uint32_t num_rts = 0; num_rts <= MAX_RTS; num_rts++) {
       compile_shader(dev, build_clear_fs_shader(num_rts), num_rts, &offset,
@@ -868,7 +866,6 @@ tu_destroy_clear_blit_shaders(struct tu_device *dev)
 enum r3d_type {
    R3D_CLEAR,
    R3D_BLIT,
-   R3D_COPY_HALF,
 };
 
 template <chip CHIP>
@@ -884,18 +881,10 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
 
    enum global_shader fs_id = GLOBAL_SH_FS_BLIT;
 
-   if (z_scale) {
+   if (z_scale)
       fs_id = GLOBAL_SH_FS_BLIT_ZSCALE;
-   } else if (type == R3D_COPY_HALF) {
-      /* Avoid canonicalizing NaNs due to implicit conversions in the shader.
-       *
-       * TODO: Add a half-float blit shader that uses texture() but with half
-       * registers to avoid NaN canonicaliztion for the single-sampled case.
-       */
-      fs_id = GLOBAL_SH_FS_COPY_MS_HALF;
-   } else if (samples != VK_SAMPLE_COUNT_1_BIT) {
+   else if (samples != VK_SAMPLE_COUNT_1_BIT)
       fs_id = GLOBAL_SH_FS_COPY_MS;
-   }
 
    unsigned num_rts = util_bitcount(rts_mask);
    if (type == R3D_CLEAR)
@@ -989,9 +978,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
          unsigned regid = 0;
          if (rts_mask & (1u << i))
             regid = ir3_find_output_regid(fs, FRAG_RESULT_DATA0 + rt++);
-         tu_cs_emit(cs, A6XX_SP_PS_OUTPUT_REG_REGID(regid) |
-                        COND(regid & HALF_REG_ID,
-                             A6XX_SP_PS_OUTPUT_REG_HALF_PRECISION));
+         tu_cs_emit(cs, A6XX_SP_PS_OUTPUT_REG_REGID(regid));
       }
    }
 
@@ -1605,18 +1592,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
       }
    }
 
-   enum r3d_type type;
-   if (clear) {
-      type = R3D_CLEAR;
-   } else if ((blit_param & R3D_COPY) && util_format_is_float16(src_format)) {
-      /* Avoid canonicalizing NaNs in copies by using the special half-float
-       * path that uses half regs.
-       */
-      type = R3D_COPY_HALF;
-   } else {
-      type = R3D_BLIT;
-   }
-
+   const enum r3d_type type = (clear) ? R3D_CLEAR : R3D_BLIT;
    r3d_common<CHIP>(cmd, cs, type, 1, blit_param & R3D_Z_SCALE, samples);
 
    tu_cs_emit_regs(cs, A6XX_SP_PS_MRT_CNTL(.mrt = 1));
