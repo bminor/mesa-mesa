@@ -764,7 +764,9 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
 static VkExtent3D
 get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 {
-   const uint32_t max_img_size_B = UINT32_MAX;
+   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   const uint64_t max_img_size_B =
+      arch <= 10 ? u_uintN_max(32) : u_uintN_max(48);
    const enum pipe_format pfmt = vk_format_to_pipe_format(format);
    const uint32_t fmt_blksize = util_format_get_blocksize(pfmt);
    /* Evenly split blocks across all axis. */
@@ -785,7 +787,9 @@ get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 static VkExtent3D
 get_max_3d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 {
-   const uint32_t max_img_size_B = UINT32_MAX;
+   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   const uint64_t max_img_size_B =
+      arch <= 10 ? u_uintN_max(32) : u_uintN_max(48);
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
    uint32_t fmt_blksize = util_format_get_blocksize(pfmt);
    /* Evenly split blocks across each axis. */

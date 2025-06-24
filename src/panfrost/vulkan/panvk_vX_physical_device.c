@@ -552,9 +552,9 @@ panvk_per_arch(get_physical_device_properties)(
        * patched to handle the size/stride field extension.
        */
       .maxImageDimension1D = (1 << 16),
-      .maxImageDimension2D = (1 << 14) - 1,
-      .maxImageDimension3D = (1 << 9),
-      .maxImageDimensionCube = (1 << 14) - 1,
+      .maxImageDimension2D = PAN_ARCH <= 10 ? (1 << 14) - 1 : (1 << 16),
+      .maxImageDimension3D = PAN_ARCH <= 10 ? (1 << 9) : (1 << 14),
+      .maxImageDimensionCube = PAN_ARCH <= 10 ? (1 << 14) - 1 : (1 << 16),
       .maxImageArrayLayers = (1 << 16),
       /* Currently limited by the 1D texture size, which is 2^16.
        * TODO: If we expose buffer views as 2D textures, we can increase the
