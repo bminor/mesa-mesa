@@ -265,10 +265,10 @@ convert_use(nir_builder *b, nir_def *src, enum glsl_cmat_use src_use, enum glsl_
       for (unsigned keep32 = 0; keep32 < ((params->wave_size == 64) ? 2 : 1); keep32++) {
          nir_def *ballot = nir_imm_intN_t(b, keep32 ? UINT32_MAX : 0xffff0000ffffull, params->wave_size);
          nir_def *keep = nir_inverse_ballot(b, 1, ballot);
-         for (unsigned i = 0; i < num_comps; i++) {
-            components[i] = nir_bcsel(b, keep, components[i], components[i + 1]);
-         }
          num_comps /= 2;
+         for (unsigned i = 0; i < num_comps; i++) {
+            components[i] = nir_bcsel(b, keep, components[i * 2], components[i * 2 + 1]);
+         }
       }
    } else if ((src_use == GLSL_CMAT_USE_A && dst_use == GLSL_CMAT_USE_B) ||
               (src_use == GLSL_CMAT_USE_B && dst_use == GLSL_CMAT_USE_A)) {
