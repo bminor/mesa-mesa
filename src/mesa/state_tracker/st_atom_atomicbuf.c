@@ -157,12 +157,15 @@ st_bind_hw_atomic_buffers(struct st_context *st)
 {
    struct pipe_shader_buffer buffers[PIPE_MAX_HW_ATOMIC_BUFFERS];
    int i;
+   unsigned count;
 
    if (!st->has_hw_atomics)
       return;
 
-   for (i = 0; i < st->ctx->Const.MaxAtomicBufferBindings; i++)
+   count = MIN2(st->ctx->Const.MaxAtomicBufferBindings, PIPE_MAX_HW_ATOMIC_BUFFERS);
+
+   for (i = 0; i < count; i++)
       st_binding_to_sb(&st->ctx->AtomicBufferBindings[i], &buffers[i], 1);
 
-   st->pipe->set_hw_atomic_buffers(st->pipe, 0, st->ctx->Const.MaxAtomicBufferBindings, buffers);
+   st->pipe->set_hw_atomic_buffers(st->pipe, 0, count, buffers);
 }
