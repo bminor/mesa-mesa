@@ -22,6 +22,21 @@ pub enum GOBType {
     FermiZS,
 
     /// The Fermi GOB format for color images
+    ///
+    /// A `FermiColor` GOB is 512 bytes, arranged in a 64x8 layout and split
+    /// into Sectors. Each Sector is 32 Bytes, and the Sectors in a GOB are
+    /// arranged in a 16x2 layout (i.e., two 16B lines on top of each other).
+    /// It's then arranged into two columns that are 2 sectors by 4, leading to
+    /// a 4x4 grid of sectors:
+    ///
+    /// |           |           |           |           |
+    /// |-----------|-----------|-----------|-----------|
+    /// | Sector  1 | Sector  2 | Sector  9 | Sector 10 |
+    /// | Sector  0 | Sector  3 | Sector  8 | Sector 11 |
+    /// | Sector  5 | Sector  6 | Sector 13 | Sector 14 |
+    /// | Sector  4 | Sector  7 | Sector 12 | Sector 15 |
+    ///
+    /// `CopyGOBFermi` implements CPU copies for Fermi color GOBs.
     FermiColor,
 
     /// The Turing 2D GOB format for color images
