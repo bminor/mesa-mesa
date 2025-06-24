@@ -124,10 +124,6 @@ static void radeon_enc_spec_misc_av1(struct radeon_encoder *enc)
 
    num_of_tiles = num_tiles_cols * num_tiles_rows;
 
-   /* in case of multiple tiles, it should be an obu frame */
-   if (num_of_tiles > 1)
-      enc->enc_pic.is_obu_frame = 1;
-
    RADEON_ENC_BEGIN(enc->cmd.spec_misc_av1);
    RADEON_ENC_CS(enc->enc_pic.av1_spec_misc.palette_mode_enable);
    RADEON_ENC_CS(enc->enc_pic.av1_spec_misc.mv_precision);
