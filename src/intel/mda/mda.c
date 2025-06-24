@@ -46,6 +46,11 @@ typedef struct mesa_archive {
    const char *info;
 } mesa_archive;
 
+enum diff_mode {
+   DIFF_UNIFIED,
+   DIFF_SIDE_BY_SIDE,
+};
+
 typedef struct context {
    const char *cmd_name;
 
@@ -54,6 +59,11 @@ typedef struct context {
 
    mesa_archive **archives;
    int            archives_count;
+
+   struct {
+      enum diff_mode mode;
+      int            param;
+   } diff;
 } context;
 
 #define foreach_object(OBJ, MA)                            \
@@ -65,8 +75,6 @@ typedef struct context {
    for (content *CONTENT = (OBJ)->versions;                \
         CONTENT < (OBJ)->versions + (OBJ)->versions_count; \
         CONTENT++)
-
-const char DEFAULT_DIFF_COMMAND[] = "git diff --no-index --color-words -- %s %s | tail -n +5";
 
 static void PRINTFLIKE(1, 2)
 failf(const char *fmt, ...)
@@ -104,7 +112,7 @@ make_temp_file(void *mem_ctx)
 }
 
 static void
-diff(slice a, slice b)
+diff(context *ctx, slice a, slice b)
 {
    void *mem_ctx = ralloc_context(NULL);
 
@@ -117,11 +125,13 @@ diff(slice a, slice b)
    fclose(file_a.f);
    fclose(file_b.f);
 
-   static const char *diff_cmd = NULL;
+   const char *diff_cmd = getenv("MDA_DIFF_COMMAND");
    if (!diff_cmd) {
-      diff_cmd = getenv("MDA_DIFF_COMMAND");
-      if (!diff_cmd)
-         diff_cmd = DEFAULT_DIFF_COMMAND;
+      if (ctx->diff.mode == DIFF_UNIFIED) {
+         diff_cmd = ralloc_asprintf(mem_ctx, "git diff --no-index --color-words -U%d -- %%s %%s | tail -n +5", ctx->diff.param);
+      } else {
+         diff_cmd = ralloc_asprintf(mem_ctx, "diff -y -W%d %%s %%s", ctx->diff.param);
+      }
    }
 
    char *cmd = ralloc_asprintf(mem_ctx, diff_cmd, file_a.path, file_b.path);
@@ -498,12 +508,12 @@ cmd_diff(context *ctx)
    if (!b.content)
       b.content = last_version(b.object);
 
-   int x = printf("# A: %.*s\n", SLICE_FMT(a.content->fullname)) + 4 + a.content->fullname.len;
-   int y = printf("# B: %.*s\n", SLICE_FMT(b.content->fullname)) + 4 + b.content->fullname.len;
+   int x = printf("# A: %.*s\n", SLICE_FMT(a.content->fullname));
+   int y = printf("# B: %.*s\n", SLICE_FMT(b.content->fullname));
    print_repeated('#', MAX2(x, y) - 1);
    printf("\n\n");
 
-   diff(a.content->data, b.content->data);
+   diff(ctx, a.content->data, b.content->data);
    printf("\n");
 
    return 0;
@@ -577,7 +587,7 @@ cmd_log(context *ctx)
          print_repeated('#', MAX2(x, y) - 1);
          printf("\n\n");
 
-         diff(c->data, next->data);
+         diff(ctx, c->data, next->data);
          printf("\n");
       }
    }
@@ -865,7 +875,7 @@ open_manual()
       "",
       ".SH SYNOPSIS",
       "",
-      "mda [[-f FILE]...] COMMAND [args]",
+      "mda [[-f FILE]... [-U[nnn]] [-Y[nnn]]] COMMAND [args]",
       "",
       ".SH DESCRIPTION",
       "",
@@ -913,13 +923,25 @@ open_manual()
       "",
       "    info                           print metadata about the archive",
       "",
+      ".SH OPTIONS",
+      "",
+      "    -f FILENAME                    read from specific archive file",
+      "",
+      "    -U[nnn]                        use unified diff (default: 5 context lines)",
+      "",
+      "    -Y[nnn]                        use side-by-side diff (default: 240 width)",
+      "",
+      "The -U and -Y options are mutually exclusive. If neither is specified,",
+      "-U5 is used by default.",
+      "",
       ".SH ENVIRONMENT VARIABLES",
       "",
       "The diff program used by mda can be configured by setting",
-      "the MDA_DIFF_COMMAND environment variable.  By default it",
-      "uses git-diff -- that works even without a git repository:",
+      "the MDA_DIFF_COMMAND environment variable, which overrides",
+      "the -U and -Y options. Without MDA_DIFF_COMMAND:",
       "",
-      DEFAULT_DIFF_COMMAND,
+      "    -U uses: git diff --no-index --color-words -Unnn -- %s %s | tail -n +5",
+      "    -Y uses: diff -y -Wnnn %s %s",
       "",
       "When showing SPIR-V files, spirv-dis tool is used.",
       ""
@@ -947,7 +969,13 @@ open_manual()
 static void
 print_help()
 {
-   printf("mda [[-f FILENAME]...] CMD [ARGS...]\n"
+   printf("mda [[-f FILENAME]... [-U[nnn]] [-Y[nnn]]] CMD [ARGS...]\n"
+          "\n"
+          "OPTIONS\n"
+          "\n"
+          "    -f FILENAME                    read from specific archive file\n"
+          "    -U[nnn]                        use unified diff (default: 5 context lines)\n"
+          "    -Y[nnn]                        use side-by-side diff (default: 240 width)\n"
           "\n"
           "COMMANDS\n"
           "\n"
@@ -964,12 +992,12 @@ print_help()
           "    searchall   STRING [PATTERN]   search all versions for string\n"
           "    info                           print metadata about the archive\n"
           "\n"
-          "ENVIRONMENT VARIABLES DEFAULTS\n"
+          "ENVIRONMENT VARIABLES\n"
           "\n"
-          "    MDA_DIFF_COMMAND=\"%s\"\n"
+          "    MDA_DIFF_COMMAND               custom diff command (overrides -U/-Y)\n"
           "\n"
-          "For more details, use 'mda help' to open the manual.\n"
-          , DEFAULT_DIFF_COMMAND);
+          "Default diff mode is -U5 (unified diff with 5 context lines).\n"
+          "For more details, use 'mda help' to open the manual.\n");
 }
 
 static bool
@@ -1001,10 +1029,14 @@ main(int argc, char *argv[])
    }
 
    context *ctx = rzalloc(NULL, context);
+   ctx->diff.mode = DIFF_UNIFIED;
+   ctx->diff.param = 5;
 
+   bool diff_set = false;
    int cur_arg = 1;
 
-   while (cur_arg < argc && !strcmp(argv[cur_arg], "-f")) {
+   while (cur_arg < argc && argv[cur_arg][0] == '-') {
+      if (!strcmp(argv[cur_arg], "-f")) {
       if (argc == cur_arg + 1)
          failf("mda: missing filename after -f flag\n");
 
@@ -1023,6 +1055,24 @@ main(int argc, char *argv[])
 
       if (filename && !load_archive(ctx, filename))
          failf("mda: failed to parse file: %s\n", filename);
+      } else if (argv[cur_arg][1] == 'U' || argv[cur_arg][1] == 'Y') {
+         if (diff_set)
+            failf("mda: -U and -Y options are mutually exclusive\n");
+
+         diff_set = true;
+         ctx->diff.mode = (argv[cur_arg][1] == 'U') ? DIFF_UNIFIED : DIFF_SIDE_BY_SIDE;
+
+         /* Parse optional numeric parameter. */
+         if (argv[cur_arg][2] != '\0')
+            ctx->diff.param = atoi(&argv[cur_arg][2]);
+         else
+            ctx->diff.param = ctx->diff.mode == DIFF_UNIFIED ? 5 : 240;
+
+         cur_arg++;
+      } else {
+         /* Unknown flag, stop parsing flags */
+         break;
+      }
    }
 
    if (ctx->archives_count == 0) {
