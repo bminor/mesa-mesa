@@ -176,17 +176,16 @@ get_surface_cache(struct zink_resource *res)
 /* get a cached surface for a shader descriptor */
 struct zink_surface *
 zink_get_surface(struct zink_context *ctx,
-            struct pipe_resource *pres,
             const struct pipe_surface *templ,
             VkImageViewCreateInfo *ivci)
 {
    struct zink_surface *surface = NULL;
-   struct zink_resource *res = zink_resource(pres);
+   struct zink_resource *res = zink_resource(templ->texture);
 
    /* not acquired */
    if (res->obj->dt && res->obj->dt_idx == UINT32_MAX)
       return NULL;
-   if (!res->obj->dt && zink_format_needs_mutable(pres->format, templ->format))
+   if (!res->obj->dt && zink_format_needs_mutable(res->base.b.format, templ->format))
       /* mutable not set by default */
       zink_resource_object_init_mutable(ctx, res);
    /* reset for mutable obj switch */
@@ -198,7 +197,7 @@ zink_get_surface(struct zink_context *ctx,
    struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(ht, hash, ivci);
 
    if (!entry) {
-      surface = create_surface(&ctx->base, pres, templ, ivci);
+      surface = create_surface(&ctx->base, &res->base.b, templ, ivci);
       entry = _mesa_hash_table_insert_pre_hashed(ht, hash, mem_dup(ivci, sizeof(*ivci)), surface);
       if (!entry) {
          simple_mtx_unlock(&res->obj->surface_mtx);
@@ -225,13 +224,12 @@ create_fb_ivci(struct zink_screen *screen, struct zink_resource *res, const stru
 
 struct zink_surface *
 zink_create_fb_surface(struct pipe_context *pctx,
-                       struct pipe_resource *pres,
                        const struct pipe_surface *templ)
 {
-   struct zink_resource *res = zink_resource(pres);
+   struct zink_resource *res = zink_resource(templ->texture);
 
    VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(pctx->screen), res, templ);
-   return zink_get_surface(zink_context(pctx), pres, templ, &ivci);
+   return zink_get_surface(zink_context(pctx), templ, &ivci);
 }
 
 struct zink_surface *
@@ -258,5 +256,5 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
    ivci.pNext = NULL;
    struct pipe_surface templ = *psurf;
    templ.texture = &transient->base.b;
-   return zink_get_surface(ctx, &transient->base.b, &templ, &ivci);
+   return zink_get_surface(ctx, &templ, &ivci);
 }

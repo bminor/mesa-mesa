@@ -43,13 +43,11 @@ create_ivci(struct zink_screen *screen,
 
 struct zink_surface *
 zink_get_surface(struct zink_context *ctx,
-            struct pipe_resource *pres,
             const struct pipe_surface *templ,
             VkImageViewCreateInfo *ivci);
 
 struct zink_surface *
 zink_create_fb_surface(struct pipe_context *pctx,
-                       struct pipe_resource *pres,
                        const struct pipe_surface *templ);
 
 struct zink_surface *

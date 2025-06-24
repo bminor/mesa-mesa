@@ -1266,10 +1266,10 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
       assert(ivci.format);
 
       sampler_view->ivci = ivci;
-      sampler_view->image_view = zink_get_surface(ctx, pres, &templ, &ivci);
+      sampler_view->image_view = zink_get_surface(ctx, &templ, &ivci);
       if (!screen->info.have_EXT_non_seamless_cube_map && viewtype_is_cube(&ivci)) {
          ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-         sampler_view->cube_array = zink_get_surface(ctx, pres, &templ, &ivci);
+         sampler_view->cube_array = zink_get_surface(ctx, &templ, &ivci);
       } else if (red_depth_sampler_view) {
          /* there is only one component, and real swizzling can't be done here,
           * so ensure the shader gets the sampled data
@@ -1278,7 +1278,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
          ivci.components.g = VK_COMPONENT_SWIZZLE_R;
          ivci.components.b = VK_COMPONENT_SWIZZLE_R;
          ivci.components.a = VK_COMPONENT_SWIZZLE_R;
-         sampler_view->zs_view = zink_get_surface(ctx, pres, &templ, &ivci);
+         sampler_view->zs_view = zink_get_surface(ctx, &templ, &ivci);
       }
       err = !sampler_view->image_view;
    } else {
@@ -1945,7 +1945,7 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
    default: break;
    }
    VkImageViewCreateInfo ivci = create_ivci(screen, res, &tmpl, target);
-   struct zink_surface *surface = zink_get_surface(ctx, pres, &tmpl, &ivci);
+   struct zink_surface *surface = zink_get_surface(ctx, &tmpl, &ivci);
    if (!surface)
       return NULL;
    if (is_compute)
@@ -2257,7 +2257,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
                if (res->obj != b->obj) {
                   b->obj = res->obj;
                   struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&b->base, &res->base.b, b->base.target);
-                  b->image_view = zink_get_surface(ctx, &res->base.b, &tmpl, &b->ivci);
+                  b->image_view = zink_get_surface(ctx, &tmpl, &b->ivci);
                   update = true;
                } else  if (a != b)
                   update = true;
@@ -2727,7 +2727,7 @@ zink_update_fbfetch(struct zink_context *ctx)
 
    bool changed = !had_fbfetch;
    if (ctx->fb_state.cbufs[0].texture) {
-      struct zink_surface *surf = zink_create_fb_surface(&ctx->base, ctx->fb_state.cbufs[0].texture, &ctx->fb_state.cbufs[0]);
+      struct zink_surface *surf = zink_create_fb_surface(&ctx->base, &ctx->fb_state.cbufs[0]);
       if (!surf)
          /* swapchain image: retry later */
          return false;
@@ -3097,7 +3097,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
          /* swapchain acquire can fail */
          if (prep_fb_attachment(ctx, res, i))
             /* swapchain acquire can change this surface */
-            iv = zink_create_fb_surface(&ctx->base, ctx->fb_state.cbufs[i].texture, &ctx->fb_state.cbufs[i])->image_view;
+            iv = zink_create_fb_surface(&ctx->base, &ctx->fb_state.cbufs[i])->image_view;
          if (ctx->fb_state.cbufs[i].nr_samples && !has_msrtss) {
             ctx->dynamic_fb.attachments[i].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
             ctx->dynamic_fb.attachments[i].resolveImageView = iv;
@@ -3142,7 +3142,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    if (ctx->fb_state.zsbuf.texture && zsbuf_used) {
       struct zink_resource *res = zink_resource(ctx->fb_state.zsbuf.texture);
       prep_fb_attachment(ctx, res, ctx->fb_state.nr_cbufs);
-      VkImageView iv = zink_create_fb_surface(&ctx->base, ctx->fb_state.zsbuf.texture, &ctx->fb_state.zsbuf)->image_view;
+      VkImageView iv = zink_create_fb_surface(&ctx->base, &ctx->fb_state.zsbuf)->image_view;
       if (ctx->fb_state.zsbuf.nr_samples && !has_msrtss) {
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageView = iv;
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageLayout = res->layout;
@@ -3190,7 +3190,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
             return 0;
       }
       VkImageViewCreateInfo ivci = create_ivci(screen, res, &tmpl, ctx->dynamic_fb.info.layerCount > 1 ? PIPE_TEXTURE_2D_ARRAY : PIPE_TEXTURE_2D);
-      struct zink_surface *surf = zink_get_surface(ctx, &res->base.b, &tmpl, &ivci);
+      struct zink_surface *surf = zink_get_surface(ctx, &tmpl, &ivci);
       VkImageLayout layout = is_depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
       if (screen->driver_workarounds.general_layout)
          layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -5016,7 +5016,7 @@ rebind_image(struct zink_context *ctx, struct zink_resource *res)
             if (sv && sv->base.texture == &res->base.b) {
                sv->obj = res->obj;
                struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, &res->base.b, sv->base.target);
-               sv->image_view = zink_get_surface(ctx, &res->base.b, &tmpl, &sv->ivci);
+               sv->image_view = zink_get_surface(ctx, &tmpl, &sv->ivci);
                ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, j, 1);
                update_descriptor_state_sampler(ctx, i, j, res);
             }
@@ -5089,7 +5089,7 @@ zink_rebind_all_images(struct zink_context *ctx)
          if (!ctx->fb_state.cbufs[i].texture)
             continue;
          struct zink_resource *res = zink_resource(ctx->fb_state.cbufs[i].texture);
-         struct zink_surface *surf = zink_create_fb_surface(&ctx->base, &res->base.b, &ctx->fb_state.cbufs[i]);
+         struct zink_surface *surf = zink_create_fb_surface(&ctx->base, &ctx->fb_state.cbufs[i]);
          VkImageView iv = surf ? surf->image_view : VK_NULL_HANDLE;
          if (res->transient) {
             changed |= ctx->dynamic_fb.attachments[i].resolveImageView != iv;
@@ -5099,7 +5099,7 @@ zink_rebind_all_images(struct zink_context *ctx)
       }
       if (ctx->fb_state.zsbuf.texture) {
          struct zink_resource *res = zink_resource(ctx->fb_state.zsbuf.texture);
-         struct zink_surface *surf = zink_create_fb_surface(&ctx->base, &res->base.b, &ctx->fb_state.zsbuf);
+         struct zink_surface *surf = zink_create_fb_surface(&ctx->base, &ctx->fb_state.zsbuf);
          VkImageView iv = surf ? surf->image_view : VK_NULL_HANDLE;
          if (res->transient) {
             changed |= ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageView != iv;
@@ -5122,7 +5122,7 @@ zink_rebind_all_images(struct zink_context *ctx)
          if (res->obj != sv->obj) {
             sv->obj = res->obj;
             struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, &res->base.b, sv->base.target);
-            sv->image_view = zink_get_surface(ctx, &res->base.b, &tmpl, &sv->ivci);
+            sv->image_view = zink_get_surface(ctx, &tmpl, &sv->ivci);
             ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, j, 1);
             update_descriptor_state_sampler(ctx, i, j, res);
          }
