@@ -396,9 +396,6 @@ dEQP-VK.api.device_init.create_device_global_priority_khr.basic,Fail
 dEQP-VK.api.device_init.create_device_global_priority_query.basic,Fail
 dEQP-VK.api.device_init.create_device_global_priority_query_khr.basic,Fail
 
-# CmdDrawIndirect not supported yet
-dEQP-VK.api.command_buffers.many_indirect_draws_on_secondary,Crash
-
 dEQP-VK.device_group.afr,Fail
 dEQP-VK.device_group.afr_dedicated,Fail
 dEQP-VK.device_group.afr_sys,Fail
