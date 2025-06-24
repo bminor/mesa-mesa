@@ -2348,12 +2348,8 @@ emit_alu_op2(const nir_alu_instr& alu,
    const nir_alu_src *src0 = &alu.src[0];
    const nir_alu_src *src1 = &alu.src[1];
 
-   int idx0 = 0;
-   int idx1 = 1;
-   if (opts & AluInstr::op2_opt_reverse) {
+   if (opts & AluInstr::op2_opt_reverse)
       std::swap(src0, src1);
-      std::swap(idx0, idx1);
-   }
 
    bool src1_negate = (opts & AluInstr::op2_opt_neg_src1);
 
