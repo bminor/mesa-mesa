@@ -25,6 +25,7 @@
 #include "panvk_priv_bo.h"
 #include "panvk_shader.h"
 
+#include "draw_helper.h"
 #include "pan_desc.h"
 #include "pan_earlyzs.h"
 #include "pan_encoder.h"
@@ -72,7 +73,17 @@ struct panvk_draw_data {
          struct pan_ptr idvs;
       };
    } jobs;
+   struct {
+      uint64_t attribs;
+      uint64_t attrib_bufs;
+   } indirect_info;
 };
+
+static bool
+is_indirect_draw(const struct panvk_draw_data *draw)
+{
+   return draw->info.indirect.buffer_dev_addr != 0;
+}
 
 static bool
 has_depth_att(struct panvk_cmd_buffer *cmdbuf)
@@ -488,11 +499,12 @@ panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
 }
 
 static void
-panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
-                           const struct vk_vertex_binding_state *buf_info,
-                           uint32_t stride,
-                           const struct panvk_attrib_buf *buf,
-                           struct mali_attribute_buffer_packed *desc)
+panvk_draw_emit_attrib_buf(
+   const struct panvk_draw_data *draw,
+   const struct vk_vertex_binding_state *buf_info, uint32_t stride,
+   const struct panvk_attrib_buf *buf,
+   struct mali_attribute_buffer_packed *desc,
+   struct libpan_draw_helper_attrib_buf_info *helper_buf_info)
 {
    uint64_t addr = buf->address & ~63ULL;
    unsigned size = buf->size + (buf->address & 63);
@@ -500,8 +512,18 @@ panvk_draw_emit_attrib_buf(const struct panvk_draw_data *draw,
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;
    struct mali_attribute_buffer_packed *buf_ext = &desc[1];
 
-   /* TODO: support instanced arrays */
-   if (draw->info.instance.count <= 1) {
+   /* In case of indirect draw, the descriptor will be patched at runtime */
+   if (helper_buf_info != NULL) {
+      pan_pack(desc, ATTRIBUTE_BUFFER, cfg) {
+         cfg.type = MALI_ATTRIBUTE_TYPE_1D;
+         cfg.pointer = addr;
+         cfg.size = size;
+      }
+
+      helper_buf_info->divisor = buf_info->divisor;
+      helper_buf_info->stride = stride;
+      helper_buf_info->per_instance = per_instance;
+   } else if (draw->info.instance.count <= 1) {
       pan_pack(desc, ATTRIBUTE_BUFFER, cfg) {
          cfg.type = MALI_ATTRIBUTE_TYPE_1D;
          cfg.stride = per_instance ? 0 : stride;
@@ -565,7 +587,8 @@ panvk_draw_emit_attrib(const struct panvk_draw_data *draw,
                        const struct vk_vertex_attribute_state *attrib_info,
                        const struct vk_vertex_binding_state *buf_info,
                        const struct panvk_attrib_buf *buf,
-                       struct mali_attribute_packed *desc)
+                       struct mali_attribute_packed *desc,
+                       struct libpan_draw_helper_attrib_info *helper_attrib_info)
 {
    bool per_instance = buf_info->input_rate == VK_VERTEX_INPUT_RATE_INSTANCE;
    enum pipe_format f = vk_format_to_pipe_format(attrib_info->format);
@@ -573,13 +596,20 @@ panvk_draw_emit_attrib(const struct panvk_draw_data *draw,
 
    pan_pack(desc, ATTRIBUTE, cfg) {
       cfg.buffer_index = buf_idx * 2;
-      cfg.offset = attrib_info->offset + (buf->address & 63);
       cfg.offset_enable = true;
-
-      if (per_instance)
-         cfg.offset += draw->info.instance.base * buf_info->stride;
-
       cfg.format = GENX(pan_format_from_pipe_format)(f)->hw;
+
+      uint32_t offset = attrib_info->offset + (buf->address & 63);
+
+      /* In case of indirect draw, the descriptor will be patched at runtime */
+      if (helper_attrib_info != NULL) {
+         helper_attrib_info->base_offset = offset;
+         helper_attrib_info->stride = per_instance ? buf_info->stride : 0;
+      } else {
+         cfg.offset = offset;
+         if (per_instance)
+            cfg.offset += draw->info.instance.base * buf_info->stride;
+      }
    }
 }
 
@@ -601,8 +631,8 @@ panvk_draw_prepare_vs_attribs(struct panvk_cmd_buffer *cmdbuf,
       dyn_gfx_state_dirty(cmdbuf, VI) ||
       dyn_gfx_state_dirty(cmdbuf, VI_BINDINGS_VALID) ||
       dyn_gfx_state_dirty(cmdbuf, VI_BINDING_STRIDES) ||
-      gfx_state_dirty(cmdbuf, VB) ||
-      gfx_state_dirty(cmdbuf, DESC_STATE);
+      gfx_state_dirty(cmdbuf, VB) || gfx_state_dirty(cmdbuf, DESC_STATE) ||
+      is_indirect_draw(draw) != cmdbuf->state.gfx.vs.previous_draw_was_indirect;
 
    if (!dirty)
       return VK_SUCCESS;
@@ -618,12 +648,35 @@ panvk_draw_prepare_vs_attribs(struct panvk_cmd_buffer *cmdbuf,
    if (!bufs.gpu || (attrib_count && !attribs.gpu))
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
+   struct libpan_draw_helper_attrib_buf_info *bufs_infos = NULL;
+   struct libpan_draw_helper_attrib_info *attribs_infos = NULL;
+
+   if (is_indirect_draw(draw)) {
+      struct pan_ptr bufs_infos_storage = panvk_cmd_alloc_dev_mem(
+         cmdbuf, desc,
+         num_vbs * sizeof(struct libpan_draw_helper_attrib_buf_info), 8);
+      struct pan_ptr attribs_infos_storage = panvk_cmd_alloc_dev_mem(
+         cmdbuf, desc,
+         num_vs_attribs * sizeof(struct libpan_draw_helper_attrib_info), 8);
+
+      if (!bufs_infos_storage.gpu ||
+          (num_vs_attribs && !attribs_infos_storage.gpu))
+         return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+
+      cmdbuf->state.gfx.vs.indirect_attrib_bufs_infos = bufs_infos_storage.gpu;
+      cmdbuf->state.gfx.vs.indirect_attribs_infos = attribs_infos_storage.gpu;
+      bufs_infos = bufs_infos_storage.cpu;
+      attribs_infos = attribs_infos_storage.cpu;
+   }
+
    for (unsigned i = 0; i < num_vbs; i++) {
       if (vi->bindings_valid & BITFIELD_BIT(i)) {
+         struct libpan_draw_helper_attrib_buf_info *helper_buf_info =
+            bufs_infos ? &bufs_infos[i] : NULL;
          panvk_draw_emit_attrib_buf(draw, &vi->bindings[i],
                                     dyns->vi_binding_strides[i],
                                     &cmdbuf->state.gfx.vb.bufs[i],
-                                    &attrib_buf_descs[i * 2]);
+                                    &attrib_buf_descs[i * 2], helper_buf_info);
       } else {
          memset(&attrib_buf_descs[i * 2], 0, sizeof(*attrib_buf_descs) * 2);
       }
@@ -632,9 +685,12 @@ panvk_draw_prepare_vs_attribs(struct panvk_cmd_buffer *cmdbuf,
    for (unsigned i = 0; i < num_vs_attribs; i++) {
       if (vi->attributes_valid & BITFIELD_BIT(i)) {
          unsigned buf_idx = vi->attributes[i].binding;
-         panvk_draw_emit_attrib(
-            draw, &vi->attributes[i], &vi->bindings[buf_idx],
-            &cmdbuf->state.gfx.vb.bufs[buf_idx], &attrib_descs[i]);
+         struct libpan_draw_helper_attrib_info *helper_attrib_info =
+            attribs_infos ? &attribs_infos[i] : NULL;
+         panvk_draw_emit_attrib(draw, &vi->attributes[i],
+                                &vi->bindings[buf_idx],
+                                &cmdbuf->state.gfx.vb.bufs[buf_idx],
+                                &attrib_descs[i], helper_attrib_info);
       } else {
          memset(&attrib_descs[i], 0, sizeof(attrib_descs[0]));
       }
@@ -664,6 +720,9 @@ panvk_draw_prepare_attributes(struct panvk_cmd_buffer *cmdbuf,
    panvk_draw_prepare_vs_attribs(cmdbuf, draw);
    draw->vs.attributes = cmdbuf->state.gfx.vs.attribs;
    draw->vs.attribute_bufs = cmdbuf->state.gfx.vs.attrib_bufs;
+   draw->indirect_info.attribs = cmdbuf->state.gfx.vs.indirect_attribs_infos;
+   draw->indirect_info.attrib_bufs =
+      cmdbuf->state.gfx.vs.indirect_attrib_bufs_infos;
 }
 
 static void
@@ -1430,6 +1489,7 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    }
 
    clear_dirty_after_draw(cmdbuf);
+   cmdbuf->state.gfx.vs.previous_draw_was_indirect = false;
 }
 
 static unsigned
