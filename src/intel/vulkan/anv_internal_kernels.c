@@ -68,19 +68,19 @@ compile_shader(struct anv_device *device,
 
    nir_shader *nir = b.shader;
 
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
-   NIR_PASS_V(nir, nir_opt_cse);
-   NIR_PASS_V(nir, nir_opt_gcm, true);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_opt_cse);
+   NIR_PASS(_, nir, nir_opt_gcm, true);
 
    nir_opt_peephole_select_options peephole_select_options = {
       .limit = 1,
    };
-   NIR_PASS_V(nir, nir_opt_peephole_select, &peephole_select_options);
+   NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
 
-   NIR_PASS_V(nir, nir_lower_variable_initializers, ~0);
+   NIR_PASS(_, nir, nir_lower_variable_initializers, ~0);
 
-   NIR_PASS_V(nir, nir_split_var_copies);
-   NIR_PASS_V(nir, nir_split_per_member_structs);
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_split_per_member_structs);
 
    if (stage == MESA_SHADER_COMPUTE) {
       nir->info.workgroup_size[0] = 16;
@@ -92,10 +92,10 @@ compile_shader(struct anv_device *device,
    struct brw_nir_compiler_opts opts = {};
    brw_preprocess_nir(compiler, nir, &opts);
 
-   NIR_PASS_V(nir, nir_propagate_invariant, false);
+   NIR_PASS(_, nir, nir_propagate_invariant, false);
 
    if (stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS_V(nir, nir_lower_input_attachments,
+      NIR_PASS(_, nir, nir_lower_input_attachments,
                  &(nir_input_attachment_options) {
                     .use_fragcoord_sysval = true,
                     .use_layer_id_sysval = true,
@@ -106,8 +106,8 @@ compile_shader(struct anv_device *device,
          .lower_cs_local_id_to_index = true,
          .lower_workgroup_id_to_index = gl_shader_stage_is_mesh(stage),
       };
-      NIR_PASS_V(nir, nir_lower_compute_system_values, &options);
-      NIR_PASS_V(nir, nir_shader_intrinsics_pass, lower_base_workgroup_id,
+      NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_base_workgroup_id,
                  nir_metadata_control_flow, NULL);
    }
 
@@ -117,9 +117,9 @@ compile_shader(struct anv_device *device,
    nir->info.shared_size = 0;
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   NIR_PASS_V(nir, nir_copy_prop);
-   NIR_PASS_V(nir, nir_opt_constant_folding);
-   NIR_PASS_V(nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+   NIR_PASS(_, nir, nir_opt_dce);
 
    union brw_any_prog_key key;
    memset(&key, 0, sizeof(key));
@@ -128,7 +128,7 @@ compile_shader(struct anv_device *device,
    memset(&prog_data, 0, sizeof(prog_data));
 
    if (stage == MESA_SHADER_COMPUTE) {
-      NIR_PASS_V(nir, brw_nir_lower_cs_intrinsics,
+      NIR_PASS(_, nir, brw_nir_lower_cs_intrinsics,
                  device->info, &prog_data.cs);
    }
 
@@ -140,7 +140,7 @@ compile_shader(struct anv_device *device,
       .callback = brw_nir_should_vectorize_mem,
       .robust_modes = (nir_variable_mode)0,
    };
-   NIR_PASS_V(nir, nir_opt_load_store_vectorize, &options);
+   NIR_PASS(_, nir, nir_opt_load_store_vectorize, &options);
 
    nir->num_uniforms = uniform_size;
 

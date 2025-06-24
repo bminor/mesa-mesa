@@ -1224,7 +1224,7 @@ compare_binding_infos(const void *_a, const void *_b)
    return a->binding - b->binding;
 }
 
-void
+bool
 anv_nir_apply_pipeline_layout(nir_shader *shader,
                               const struct anv_physical_device *pdevice,
                               enum elk_robustness_flags robust_flags,
@@ -1474,4 +1474,5 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
    _mesa_sha1_compute(map->sampler_to_descriptor,
                       map->sampler_count * sizeof(struct anv_pipeline_binding),
                       map->sampler_sha1);
+   return true;
 }

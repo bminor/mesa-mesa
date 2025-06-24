@@ -89,7 +89,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
       nir_print_shader(nir, stderr);
    }
 
-   NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries,
+   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
               nir_shader_get_entrypoint(nir), true, false);
 
    const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
@@ -511,7 +511,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
             nir_address_format_32bit_offset);
 
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */
-   NIR_PASS_V(nir, anv_nir_apply_pipeline_layout,
+   NIR_PASS(_, nir, anv_nir_apply_pipeline_layout,
               pdevice, stage->key.base.robust_flags,
               layout, &stage->bind_map);
 
@@ -550,7 +550,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
                });
    }
 
-   NIR_PASS_V(nir, anv_nir_compute_push_layout,
+   NIR_PASS(_, nir, anv_nir_compute_push_layout,
               pdevice, stage->key.base.robust_flags,
               prog_data, &stage->bind_map, mem_ctx);
 

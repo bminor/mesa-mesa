@@ -670,9 +670,9 @@ anv_load_fp64_shader(struct anv_device *device)
 
    nir_validate_shader(nir, "after spirv_to_nir");
 
-   NIR_PASS_V(nir, nir_lower_variable_initializers, nir_var_function_temp);
-   NIR_PASS_V(nir, nir_lower_returns);
-   NIR_PASS_V(nir, nir_inline_functions);
+   NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
+   NIR_PASS(_, nir, nir_lower_returns);
+   NIR_PASS(_, nir, nir_inline_functions);
 
    anv_device_upload_nir(device, device->internal_cache,
                          nir, sha1);

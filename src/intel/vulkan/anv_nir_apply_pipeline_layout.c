@@ -2551,7 +2551,7 @@ build_packed_binding_table(struct apply_pipeline_layout_state *state,
    }
 }
 
-void
+bool
 anv_nir_apply_pipeline_layout(nir_shader *shader,
                               const struct anv_physical_device *pdevice,
                               enum brw_robustness_flags robust_flags,
@@ -2561,6 +2561,7 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
                               struct anv_pipeline_push_map *push_map,
                               void *push_map_mem_ctx)
 {
+   bool progress = false;
 #ifndef NDEBUG
    /* We should not have have any reference to a descriptor set that is not
     * given through the pipeline layout (layout->set[set].layout = NULL).
@@ -2596,7 +2597,7 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
    }
 
    /* Find all use sets/bindings */
-   nir_shader_instructions_pass(shader, get_used_bindings,
+   progress |= nir_shader_instructions_pass(shader, get_used_bindings,
                                 nir_metadata_all, &state);
 
    /* Build the binding table */
@@ -2632,16 +2633,16 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
     *     information by the time we get to the load/store/atomic
     *     intrinsics in that pass.
     */
-   nir_shader_instructions_pass(shader, lower_direct_buffer_instr,
+   progress |= nir_shader_instructions_pass(shader, lower_direct_buffer_instr,
                                 nir_metadata_control_flow,
                                 &state);
 
    /* We just got rid of all the direct access.  Delete it so it's not in the
     * way when we do our indirect lowering.
     */
-   nir_opt_dce(shader);
+   progress |= nir_opt_dce(shader);
 
-   nir_shader_instructions_pass(shader, apply_pipeline_layout,
+   progress |=  nir_shader_instructions_pass(shader, apply_pipeline_layout,
                                 nir_metadata_none,
                                 &state);
 
@@ -2683,4 +2684,5 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
    _mesa_sha1_compute(map->sampler_to_descriptor,
                       map->sampler_count * sizeof(struct anv_pipeline_binding),
                       map->sampler_sha1);
+   return progress;
 }

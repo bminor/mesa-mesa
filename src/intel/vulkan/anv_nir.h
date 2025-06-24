@@ -101,7 +101,7 @@ anv_nir_ubo_addr_format(const struct anv_physical_device *pdevice,
 
 bool anv_nir_lower_ubo_loads(nir_shader *shader);
 
-void anv_nir_apply_pipeline_layout(nir_shader *shader,
+bool anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    const struct anv_physical_device *pdevice,
                                    enum brw_robustness_flags robust_flags,
                                    bool independent_sets,
@@ -110,7 +110,7 @@ void anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    struct anv_pipeline_push_map *push_map,
                                    void *push_map_mem_ctx);
 
-void anv_nir_compute_push_layout(nir_shader *nir,
+bool anv_nir_compute_push_layout(nir_shader *nir,
                                  const struct anv_physical_device *pdevice,
                                  enum brw_robustness_flags robust_flags,
                                  bool fragment_dynamic,

@@ -26,7 +26,7 @@
 #include "compiler/brw_nir.h"
 #include "util/mesa-sha1.h"
 
-void
+bool
 anv_nir_compute_push_layout(nir_shader *nir,
                             const struct anv_physical_device *pdevice,
                             enum brw_robustness_flags robust_flags,
@@ -387,6 +387,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
    _mesa_sha1_compute(map->push_ranges,
                       sizeof(map->push_ranges),
                       map->push_sha1);
+   return false;
 }
 
 void

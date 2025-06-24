@@ -98,7 +98,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
       }
    }
 
-   NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries,
+   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
               nir_shader_get_entrypoint(nir), true, false);
 
    return nir;
@@ -1005,7 +1005,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    if (nir->info.stage == MESA_SHADER_COMPUTE && nir->info.cs.has_cooperative_matrix) {
       anv_fixup_subgroup_size(pipeline->device, &nir->info);
       NIR_PASS(_, nir, brw_nir_lower_cmat, nir->info.subgroup_size);
-      NIR_PASS_V(nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
+      NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
    }
 
    /* The patch control points are delivered through a push constant when
@@ -1064,7 +1064,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    struct anv_pipeline_push_map push_map = {};
 
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */
-   NIR_PASS_V(nir, anv_nir_apply_pipeline_layout,
+   NIR_PASS(_, nir, anv_nir_apply_pipeline_layout,
               pdevice, stage->key.base.robust_flags,
               layout->independent_sets,
               layout, &stage->bind_map, &push_map, mem_ctx);
@@ -1127,16 +1127,16 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
       NIR_PASS(_, nir, nir_opt_dce);
    }
 
-   NIR_PASS_V(nir, anv_nir_update_resource_intel_block);
+   NIR_PASS(_, nir, anv_nir_update_resource_intel_block);
 
-   NIR_PASS_V(nir, anv_nir_compute_push_layout,
+   NIR_PASS(_, nir, anv_nir_compute_push_layout,
               pdevice, stage->key.base.robust_flags,
               anv_graphics_pipeline_stage_fragment_dynamic(stage),
               anv_graphics_pipeline_stage_mesh_dynamic(stage),
               prog_data, &stage->bind_map, &push_map,
               pipeline->layout.type, mem_ctx);
 
-   NIR_PASS_V(nir, anv_nir_lower_resource_intel, pdevice,
+   NIR_PASS(_, nir, anv_nir_lower_resource_intel, pdevice,
               pipeline->layout.type);
 
    if (gl_shader_stage_uses_workgroup(nir->info.stage)) {
@@ -3408,12 +3408,12 @@ compile_upload_rt_shader(struct anv_ray_tracing_pipeline *pipeline,
       NIR_PASS(_, nir, nir_lower_shader_calls, &opts,
                &resume_shaders, &num_resume_shaders, mem_ctx);
       NIR_PASS(_, nir, brw_nir_lower_shader_calls, &lowering_state);
-      NIR_PASS_V(nir, brw_nir_lower_rt_intrinsics, &stage->key.base, devinfo);
+      NIR_PASS(_, nir, brw_nir_lower_rt_intrinsics, &stage->key.base, devinfo);
    }
 
    for (unsigned i = 0; i < num_resume_shaders; i++) {
       NIR_PASS(_,resume_shaders[i], brw_nir_lower_shader_calls, &lowering_state);
-      NIR_PASS_V(resume_shaders[i], brw_nir_lower_rt_intrinsics, &stage->key.base, devinfo);
+      NIR_PASS(_, resume_shaders[i], brw_nir_lower_rt_intrinsics, &stage->key.base, devinfo);
    }
 
    struct brw_compile_bs_params params = {
@@ -3949,7 +3949,7 @@ anv_device_init_rt_shaders(struct anv_device *device)
       nir_shader *trivial_return_nir =
          brw_nir_create_trivial_return_shader(device->physical->compiler, tmp_ctx);
 
-      NIR_PASS_V(trivial_return_nir, brw_nir_lower_rt_intrinsics,
+      NIR_PASS(_, trivial_return_nir, brw_nir_lower_rt_intrinsics,
                  &return_key.key.base, device->info);
 
       struct brw_bs_prog_data return_prog_data = { 0, };
@@ -4007,7 +4007,7 @@ anv_device_init_rt_shaders(struct anv_device *device)
       nir_shader *null_ahs_nir =
          brw_nir_create_null_ahs_shader(device->physical->compiler, tmp_ctx);
 
-      NIR_PASS_V(null_ahs_nir, brw_nir_lower_rt_intrinsics,
+      NIR_PASS(_, null_ahs_nir, brw_nir_lower_rt_intrinsics,
                  &null_return_key.key.base, device->info);
 
       struct brw_bs_prog_data return_prog_data = { 0, };
