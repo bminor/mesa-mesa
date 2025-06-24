@@ -10,6 +10,8 @@ deqp_args = [
 ]
 timeout = 180.0
 renderer_check = "zink.*RADV"
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles3/deqp-gles3"
@@ -22,6 +24,8 @@ deqp_args = [
     "--deqp-visibility=hidden"
 ]
 timeout = 180.0
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
@@ -35,6 +39,8 @@ deqp_args = [
 ]
 timeout = 180.0
 renderer_check = "zink.*RADV"
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[deqp]]
 deqp = "/deqp-gl/external/openglcts/modules/glcts"
@@ -49,6 +55,8 @@ deqp_args = [
     "--deqp-visibility=hidden"
 ]
 timeout = 180.0
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[piglit]]
 piglit_folder = "/piglit"

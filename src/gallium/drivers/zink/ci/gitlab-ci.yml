@@ -256,7 +256,6 @@ zink-radv-vangogh-valve:
     CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 30
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     FDO_CI_CONCURRENT: 6
-    ZINK_DEBUG: vvl
     RADV_PERFTEST: hic
   # Override the list of tags to drop `ci-tron:priority:low`
   tags:
@@ -272,7 +271,6 @@ zink-radv-navi31-valve:
   variables:
     GPU_VERSION: zink-radv-navi31
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
-    ZINK_DEBUG: vvl
     RADV_PERFTEST: hic
 
 zink-radv-cezanne:
