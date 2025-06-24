@@ -53,7 +53,6 @@ struct panvk_draw_data {
    } fs;
    uint64_t varying_bufs;
    uint64_t position;
-   uint64_t indices;
    union {
       uint64_t psiz;
       float line_width;
@@ -860,7 +859,8 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
 
       if (draw->info.index.size) {
          cfg.index_count = draw->info.vertex.count;
-         cfg.indices = draw->indices;
+         cfg.indices = cmdbuf->state.gfx.ib.dev_addr +
+                       draw->info.index.offset * draw->info.index.size;
          cfg.base_vertex_offset =
             (int64_t)draw->info.vertex.base - draw->info.vertex.raw_offset;
 
@@ -1569,8 +1569,6 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
       .vertex_range = vertex_range,
       .padded_vertex_count =
          padded_vertex_count(cmdbuf, vertex_range, instanceCount),
-      .indices = cmdbuf->state.gfx.ib.dev_addr +
-                 (firstIndex * cmdbuf->state.gfx.ib.index_size),
    };
 
    panvk_cmd_draw(cmdbuf, &draw);
