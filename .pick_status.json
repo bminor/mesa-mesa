@@ -7414,7 +7414,7 @@
         "description": "anv: Do not emit batch_emit_fast_color_dummy_blit() for video engine",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec43c20182b3742934defbe67ea1f0fc902e85d7",
         "notes": null
