@@ -1883,7 +1883,7 @@ genX(cmd_buffer_apply_pipe_flushes)(struct anv_cmd_buffer *cmd_buffer)
          if (bits & ANV_PIPE_AUX_TABLE_INVALIDATE_BIT) {
             if (anv_cmd_buffer_is_video_queue(cmd_buffer) || GFX_VERx10 == 125) {
                /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-               if (intel_needs_workaround(cmd_buffer->device->info, 16018063123) &&
+               if (INTEL_WA_16018063123_GFX_VER &&
                    anv_cmd_buffer_is_blitter_queue(cmd_buffer))
                   genX(batch_emit_fast_color_dummy_blit)(&cmd_buffer->batch, cmd_buffer->device);
 
@@ -4257,7 +4257,7 @@ cmd_buffer_barrier_blitter(struct anv_cmd_buffer *cmd_buffer,
 
    if (flush_ccs || flush_llc) {
       /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-      if (intel_needs_workaround(cmd_buffer->device->info, 16018063123)) {
+      if (INTEL_WA_16018063123_GFX_VER) {
          genX(batch_emit_fast_color_dummy_blit)(&cmd_buffer->batch,
                                                 cmd_buffer->device);
       }
@@ -6332,8 +6332,8 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
       if ((batch->engine_class == INTEL_ENGINE_CLASS_COPY) ||
           (batch->engine_class == INTEL_ENGINE_CLASS_VIDEO)) {
          /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-         if (intel_needs_workaround(device->info, 16018063123) &&
-             (batch->engine_class == INTEL_ENGINE_CLASS_COPY))
+         if (INTEL_WA_16018063123_GFX_VER &&
+             batch->engine_class == INTEL_ENGINE_CLASS_COPY)
             genX(batch_emit_fast_color_dummy_blit)(batch, device);
          anv_batch_emit(batch, GENX(MI_FLUSH_DW), fd) {
             fd.PostSyncOperation = WriteTimestamp;
@@ -6476,15 +6476,10 @@ ALWAYS_INLINE void
 genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
                                       struct anv_device *device)
 {
-#if GFX_VERx10 >= 125
+#if INTEL_WA_16018063123_GFX_VER
    anv_batch_emit(batch, GENX(XY_FAST_COLOR_BLT), blt) {
       blt.DestinationBaseAddress = device->workaround_address;
-#if GFX_VERx10 >= 200
-      blt.DestinationMOCSindex = MOCS_GET_INDEX(device->isl_dev.mocs.blitter_dst);
-      blt.DestinationEncryptEn = MOCS_GET_ENCRYPT_EN(device->isl_dev.mocs.blitter_dst);
-#else
       blt.DestinationMOCS = device->isl_dev.mocs.blitter_dst;
-#endif
       blt.DestinationPitch = 63;
       blt.DestinationX2 = 1;
       blt.DestinationY2 = 4;
@@ -6494,6 +6489,8 @@ genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
       blt.DestinationSurfaceQPitch = 4;
       blt.DestinationTiling = XY_TILE_LINEAR;
    }
+#else
+   unreachable("Not implemented");
 #endif
 }
 
@@ -6529,7 +6526,7 @@ genX(cmd_buffer_begin_companion_rcs_syncpoint)(
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
    } else if (anv_cmd_buffer_is_blitter_queue(cmd_buffer)) {
       /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-      if (intel_needs_workaround(cmd_buffer->device->info, 16018063123)) {
+      if (INTEL_WA_16018063123_GFX_VER) {
          genX(batch_emit_fast_color_dummy_blit)(&cmd_buffer->batch,
                                                 cmd_buffer->device);
       }
