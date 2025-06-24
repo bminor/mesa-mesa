@@ -715,6 +715,132 @@ cmd_print(context *ctx)
    return 0;
 }
 
+static int
+print_search_matches(slice content, slice search_string, slice fullname)
+{
+#define CONTEXT_SIZE 2
+   int match_count = 0;
+
+   /* Keep track of previous non-matching lines in case a matching line
+    * is found, so that context can be printed.
+    */
+   slice prev_lines[CONTEXT_SIZE];
+   int unprinted_prev_lines = 0;
+
+   /* Allow to "merge" multiple matches that are near to each other
+    * in a single block of output.
+    */
+   int lines_since_match = -1;
+
+   slice remaining = content;
+   int line_num = 1;
+
+   while (!slice_is_empty(remaining)) {
+      slice_cut_result cut = slice_cut(remaining, '\n');
+      slice line = cut.found ? cut.before : remaining;
+
+      if (slice_contains_str(line, search_string)) {
+         if (match_count == 0)
+            printf("=== %.*s ===\n", SLICE_FMT(fullname));
+
+         for (int i = 0; i < unprinted_prev_lines; i++) {
+            int prev_line_num = line_num - unprinted_prev_lines + i;
+            printf("%5d: %.*s\n", prev_line_num, SLICE_FMT(prev_lines[i]));
+         }
+         unprinted_prev_lines = 0;
+
+         printf("%5d: %.*s\n", line_num, SLICE_FMT(line));
+
+         match_count++;
+         lines_since_match = 0;
+
+      } else {
+         /* Print context after a match. */
+         if (lines_since_match >= 0) {
+            if (lines_since_match < CONTEXT_SIZE) {
+               printf("%5d: %.*s\n", line_num, SLICE_FMT(line));
+               lines_since_match++;
+            } else {
+               printf("\n");
+               lines_since_match = -1;
+            }
+         }
+
+         /* Maintain the sliding window of previous lines only
+          * if haven't printed them right above.
+          */
+         if (lines_since_match < 0) {
+            if (unprinted_prev_lines < CONTEXT_SIZE) {
+               prev_lines[unprinted_prev_lines++] = line;
+            } else {
+               /* Shift. */
+               for (int i = 0; i < CONTEXT_SIZE - 1; i++)
+                  prev_lines[i] = prev_lines[i + 1];
+               prev_lines[CONTEXT_SIZE - 1] = line;
+            }
+         }
+      }
+
+      line_num++;
+      remaining = cut.after;
+   }
+
+   if (match_count > 0)
+      printf("\n");
+
+   return match_count;
+}
+
+static int
+cmd_search(context *ctx)
+{
+   bool search_all = !strcmp(ctx->cmd_name, "searchall");
+
+   if (ctx->args_count < 1 || ctx->args_count > 2) {
+      fprintf(stderr, "mda: %s requires 1-2 arguments\n", ctx->cmd_name);
+      return 1;
+   }
+
+   slice search_string = slice_from_cstr(ctx->args[0]);
+   const char *pattern = ctx->args_count > 1 ? ctx->args[1] : "";
+
+   find_all_result matches = find_all(ctx, pattern);
+   int found_count = 0;
+
+   for (int i = 0; i < matches.matches_count; i++) {
+      match *m = &matches.matches[i];
+
+      /* SPIR-V object has only one version.  We probably could clean up
+       * handling of it here and elsewhere to something more general
+       * if we ever get another "special" object.
+       */
+      const bool is_spirv = slice_equal_cstr(m->object->name, "SPV");
+
+      if (search_all && !is_spirv) {
+         foreach_version(c, m->object)
+            found_count += print_search_matches(c->data, search_string, c->fullname);
+
+      } else {
+         content *latest = last_version(m->object);
+
+         slice search_data;
+         if (is_spirv)
+            search_data = get_spirv_disassembly(m->object->ma, m->object);
+         else
+            search_data = latest->data;
+
+         found_count += print_search_matches(search_data, search_string, latest->fullname);
+      }
+   }
+
+   if (found_count == 0)
+      printf("No matches found\n");
+   else
+      printf("Found %d match%s\n", found_count, found_count == 1 ? "" : "es");
+
+   return 0;
+}
+
 static void
 open_manual()
 {
@@ -781,6 +907,10 @@ open_manual()
       "",
       "    diff        PATTERN PATTERN    compare two objects",
       "",
+      "    search      STRING [PATTERN]   search latest versions for string",
+      "",
+      "    searchall   STRING [PATTERN]   search all versions for string",
+      "",
       "    info                           print metadata about the archive",
       "",
       ".SH ENVIRONMENT VARIABLES",
@@ -830,6 +960,8 @@ print_help()
           "    logfull     PATTERN [PATTERN]  print full contents of versions of an object\n"
           "    log1        PATTERN [PATTERN]  print names of the versions of an object\n"
           "    diff        PATTERN PATTERN    compare two objects\n"
+          "    search      STRING [PATTERN]   search latest versions for string\n"
+          "    searchall   STRING [PATTERN]   search all versions for string\n"
           "    info                           print metadata about the archive\n"
           "\n"
           "ENVIRONMENT VARIABLES DEFAULTS\n"
@@ -939,6 +1071,8 @@ main(int argc, char *argv[])
       { "logfull",    cmd_log },
       { "print",      cmd_print },
       { "printraw",   cmd_print },
+      { "search",     cmd_search },
+      { "searchall",  cmd_search },
    };
 
    const struct command *cmd = NULL;
