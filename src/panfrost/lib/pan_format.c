@@ -84,6 +84,7 @@ const struct pan_blendable_format
       BFMT_SRGB(R8, R8),
       BFMT_SRGB(R8G8, R8G8),
       BFMT_SRGB(R8G8B8, R8G8B8),
+      BFMT_SRGB(B8G8R8, R8G8B8),
 
       BFMT_SRGB(B8G8R8A8, R8G8B8A8),
       BFMT_SRGB(B8G8R8X8, R8G8B8A8),
