@@ -5,6 +5,7 @@
  */
 
 #include "si_build_pm4.h"
+#include "si_query.h"
 
 static struct si_resource *si_get_wait_mem_scratch_bo(struct si_context *ctx,
                                                       struct radeon_cmdbuf *cs, bool is_secure)
@@ -118,18 +119,28 @@ static void si_handle_common_barrier_events(struct si_context *ctx, struct radeo
 {
    radeon_begin(cs);
 
+   bool pipeline_stats_changed = false;
    if (flags & SI_BARRIER_EVENT_PIPELINESTAT_START && ctx->pipeline_stats_enabled != 1) {
       radeon_event_write(V_028A90_PIPELINESTAT_START);
       ctx->pipeline_stats_enabled = 1;
+      pipeline_stats_changed = true;
    } else if (flags & SI_BARRIER_EVENT_PIPELINESTAT_STOP && ctx->pipeline_stats_enabled != 0) {
       radeon_event_write(V_028A90_PIPELINESTAT_STOP);
       ctx->pipeline_stats_enabled = 0;
+      pipeline_stats_changed = true;
    }
 
    if (flags & SI_BARRIER_EVENT_VGT_FLUSH)
       radeon_event_write(V_028A90_VGT_FLUSH);
 
    radeon_end();
+
+   if (si_need_emit_task_shader_query(ctx, cs) && pipeline_stats_changed) {
+      radeon_begin(cs->gang_cs);
+      radeon_set_sh_reg(R_00B828_COMPUTE_PIPELINESTAT_ENABLE,
+                        S_00B828_PIPELINESTAT_ENABLE(ctx->pipeline_stats_enabled));
+      radeon_end();
+   }
 }
 
 static void gfx10_emit_barrier(struct si_context *ctx, struct radeon_cmdbuf *cs)

@@ -627,9 +627,9 @@ static unsigned si_query_pipestat_dw_offset(enum pipe_statistics_query_index ind
    case PIPE_STAT_QUERY_HS_INVOCATIONS: return 16;
    case PIPE_STAT_QUERY_DS_INVOCATIONS: return 18;
    case PIPE_STAT_QUERY_CS_INVOCATIONS: return 20;
-   /* gfx11: MS_INVOCATIONS */
-   /* gfx11: MS_PRIMITIVES */
-   /* gfx11: TS_INVOCATIONS */
+   case PIPE_STAT_QUERY_MS_INVOCATIONS: return 22;
+   case PIPE_STAT_QUERY_MS_PRIMITIVES: return 24;
+   case PIPE_STAT_QUERY_TS_INVOCATIONS: return 26;
    default:
       assert(false);
    }
@@ -854,6 +854,21 @@ static void si_query_hw_do_emit_start(struct si_context *sctx, struct si_query_h
          radeon_emit(va);
          radeon_emit(va >> 32);
          radeon_end();
+
+         if (si_need_emit_task_shader_query(sctx, cs)) {
+            bool ret = sctx->ws->cs_check_space(cs->gang_cs, 4);
+            assert(ret);
+
+            uint64_t ts_va =
+               va + si_query_pipestat_dw_offset(PIPE_STAT_QUERY_TS_INVOCATIONS) * 4;
+
+            radeon_begin(cs->gang_cs);
+            radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
+            radeon_emit(EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
+            radeon_emit(ts_va);
+            radeon_emit(ts_va >> 32);
+            radeon_end();
+         }
       }
       break;
    }
@@ -984,6 +999,21 @@ static void si_query_hw_do_emit_stop(struct si_context *sctx, struct si_query_hw
          radeon_emit(EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
          radeon_emit(va);
          radeon_emit(va >> 32);
+
+         if (si_need_emit_task_shader_query(sctx, cs)) {
+            bool ret = sctx->ws->cs_check_space(cs->gang_cs, 4);
+            assert(ret);
+
+            uint64_t ts_va =
+               va + si_query_pipestat_dw_offset(PIPE_STAT_QUERY_TS_INVOCATIONS) * 4;
+
+            radeon_begin(cs->gang_cs);
+            radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
+            radeon_emit(EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
+            radeon_emit(ts_va);
+            radeon_emit(ts_va >> 32);
+            radeon_end();
+         }
       }
       radeon_end();
       break;
@@ -1396,7 +1426,7 @@ static void si_query_hw_add_result(struct si_screen *sscreen, struct si_query_hw
       }
       break;
    case PIPE_QUERY_PIPELINE_STATISTICS:
-      for (int i = 0; i < 11; i++) {
+      for (int i = 0; i < si_query_pipestats_num_results(sscreen); i++) {
          result->pipeline_statistics.counters[i] +=
             si_query_read_result(buffer, si_query_pipestat_dw_offset(i),
                                  si_query_pipestat_end_dw_offset(sscreen, i), false);
@@ -1952,4 +1982,41 @@ void si_init_screen_query_functions(struct si_screen *sscreen)
 {
    sscreen->b.get_driver_query_info = si_get_driver_query_info;
    sscreen->b.get_driver_query_group_info = si_get_driver_query_group_info;
+}
+
+bool si_need_emit_task_shader_query(struct si_context *sctx, struct radeon_cmdbuf *cs)
+{
+   return sctx->screen->b.caps.mesh.pipeline_statistic_queries &&
+      radeon_emitted(cs->gang_cs, 0);
+}
+
+void si_emit_task_shader_query_state(struct si_context *sctx)
+{
+   struct radeon_cmdbuf *cs = sctx->gfx_cs.gang_cs;
+
+   radeon_begin(cs);
+
+   if (sctx->pipeline_stats_enabled >= 0) {
+      radeon_set_sh_reg(R_00B828_COMPUTE_PIPELINESTAT_ENABLE,
+                        S_00B828_PIPELINESTAT_ENABLE(sctx->pipeline_stats_enabled));
+   }
+
+   struct si_query *query;
+   LIST_FOR_EACH_ENTRY (query, &sctx->active_queries, active_list) {
+      if (query->type != PIPE_QUERY_PIPELINE_STATISTICS)
+         continue;
+
+      struct si_query_hw *hw_query = (struct si_query_hw *)query;
+
+      uint64_t va =
+         hw_query->buffer.buf->gpu_address + hw_query->buffer.results_end +
+         si_query_pipestat_dw_offset(PIPE_STAT_QUERY_TS_INVOCATIONS) * 4;
+
+      radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
+      radeon_emit(EVENT_TYPE(V_028A90_SAMPLE_PIPELINESTAT) | EVENT_INDEX(2));
+      radeon_emit(va);
+      radeon_emit(va >> 32);
+   }
+
+   radeon_end();
 }
