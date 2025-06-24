@@ -255,11 +255,6 @@ debian/s390x_build:
     ANDROID_VERSION: 14
     ANDROID_NDK_VERSION: "r27c"
     ANDROID_SDK_VERSION: 34
-    # Space-separated list of interesting CTS modules
-    ANDROID_CTS_MODULES: >-
-      CtsGraphicsTestCases
-      CtsNativeHardwareTestCases
-      CtsSkQPTestCases
     ANDROID_LLVM_VERSION: llvmorg-19.1.7
     ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20250324
     # This can be confusing: LLVM_VERSION refers to the host LLVM toolchain

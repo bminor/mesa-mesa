@@ -22,6 +22,15 @@ set -x
 # setting up the environment variables locally
 ci_tag_build_time_check "ANDROID_CTS_TAG"
 
+# List of all CTS modules we might want to run in CI
+# This should be the union of all modules required by our CI jobs
+# Specific modules to run are selected via the ${GPU_VERSION}-android-cts-include.txt files
+ANDROID_CTS_MODULES=(
+    "CtsGraphicsTestCases"
+    "CtsNativeHardwareTestCases"
+    "CtsSkQPTestCases"
+)
+
 ANDROID_CTS_VERSION="${ANDROID_VERSION}_r1"
 ANDROID_CTS_DEVICE_ARCH="x86"
 
@@ -44,7 +53,7 @@ else
 
     # Keep only the interesting tests to save space
     # shellcheck disable=SC2086 # we want word splitting
-    ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" $ANDROID_CTS_MODULES | sed -e 's/|$//g')
+    ANDROID_CTS_MODULES_KEEP_EXPRESSION=$(printf "%s|" "${ANDROID_CTS_MODULES[@]}" | sed -e 's/|$//g')
     find /android-cts/testcases/ -mindepth 1 -type d | grep -v -E "$ANDROID_CTS_MODULES_KEEP_EXPRESSION" | xargs rm -rf
 
     # Using zstd compressed tarball instead of zip, the compression ratio is almost the same, but
