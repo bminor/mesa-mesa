@@ -77,7 +77,7 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
 
       /* Assuming that constants do not contribute to register pressure, it is
        * beneficial to sink ALU instructions where all non constant sources
-       * are the same.
+       * are the same and the source bit size is not larger than the destination.
        */
       if (!(options & nir_move_alu))
          return false;
@@ -92,6 +92,13 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
             non_const = i;
          else if (!nir_alu_srcs_equal(alu, alu, non_const, i))
             return false;
+      }
+
+      if (non_const >= 0) {
+         unsigned src_bits = nir_ssa_alu_instr_src_components(alu, non_const) *
+                             alu->src[non_const].src.ssa->bit_size;
+         unsigned dest_bits = alu->def.num_components * alu->def.bit_size;
+         return src_bits <= dest_bits;
       }
 
       return true;
