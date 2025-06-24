@@ -1105,7 +1105,7 @@ si_vpe_processor_check_and_build_settins(struct vpe_video_processor *vpeproc,
                                     USE_SRC_SURFACE,
                                     &build_param->streams[0].surface_info);
    if (VPE_STATUS_OK != result) {
-      SIVPE_ERR("Set Src surface failed with result: %d\n", result);
+      SIVPE_WARN(vpeproc->log_level, "Set Src surface failed with result: %d\n", result);
       return result;
    }
 
@@ -1122,7 +1122,7 @@ si_vpe_processor_check_and_build_settins(struct vpe_video_processor *vpeproc,
                                     USE_DST_SURFACE,
                                     &build_param->dst_surface);
    if (VPE_STATUS_OK != result) {
-      SIVPE_ERR("Set Dst surface failed with result: %d\n", result);
+      SIVPE_WARN(vpeproc->log_level, "Set Dst surface failed with result: %d\n", result);
       return result;
    }
 
@@ -1386,7 +1386,7 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
    /* Geometric Scaling #1: decide how many passes and scaling ratios in each pass */
    result = si_vpe_decide_substage_scal_ratios(vpeproc, scaling_ratio);
    if (VPE_STATUS_OK != result) {
-      SIVPE_ERR("Failed in deciding geometric scaling ratios\n");
+      SIVPE_WARN(vpeproc->log_level, "Failed in deciding geometric scaling ratios\n");
       return result;
    }
    pHrSr = vpeproc->geometric_scaling_ratios;
