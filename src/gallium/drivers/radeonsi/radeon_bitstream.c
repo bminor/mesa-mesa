@@ -156,14 +156,14 @@ void radeon_bs_code_ns(struct radeon_bitstream *bs, uint32_t value, uint32_t max
    uint32_t m;
    uint32_t max_num = max;
 
+   assert(value < max);
+
    while ( max_num ) {
       max_num >>= 1;
       w++;
    }
 
    m = (1 << w) - max;
-
-   assert(w > 1);
 
    if (value < m) {
       radeon_bs_code_fixed_bits(bs, value, (w - 1));
