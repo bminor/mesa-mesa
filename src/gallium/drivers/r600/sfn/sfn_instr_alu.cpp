@@ -1384,8 +1384,6 @@ emit_alu_op3(const nir_alu_instr& alu,
              Shader& shader,
              const std::array<int, 3>& src_shuffle = {0, 1, 2});
 static bool
-emit_alu_comb_with_zero(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
-static bool
 emit_unpack_64_2x32_split(const nir_alu_instr& alu, int comp, Shader& shader);
 static bool
 emit_pack_64_2x32(const nir_alu_instr& alu, Shader& shader);
@@ -1750,8 +1748,6 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
       return emit_alu_op2_int(*alu, op2_setne_int, shader);
    case nir_op_ine:
       return emit_alu_op2_int(*alu, op2_setne_int, shader);
-   case nir_op_ineg:
-      return emit_alu_comb_with_zero(*alu, op2_sub_int, shader);
    case nir_op_inot:
       return emit_alu_op1(*alu, op1_not_int, shader);
    case nir_op_ior:
@@ -2505,26 +2501,6 @@ emit_create_vec(const nir_alu_instr& instr, unsigned nc, Shader& shader)
 
    if (ir)
       ir->set_alu_flag(alu_last_instr);
-   return true;
-}
-
-static bool
-emit_alu_comb_with_zero(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
-{
-   auto& value_factory = shader.value_factory();
-   AluInstr *ir = nullptr;
-   auto pin = pin_for_components(alu);
-   for (unsigned i = 0; i < alu.def.num_components; ++i) {
-      ir = new AluInstr(opcode,
-                        value_factory.dest(alu.def, i, pin),
-                        value_factory.zero(),
-                        value_factory.src(alu.src[0], i),
-                        AluInstr::write);
-      shader.emit_instruction(ir);
-   }
-   if (ir)
-      ir->set_alu_flag(alu_last_instr);
-
    return true;
 }
 
