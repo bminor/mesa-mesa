@@ -641,6 +641,9 @@ typedef struct nir_shader_compiler_options {
    /** Backend supports f2e4m3fn_satfn */
    bool has_f2e4m3fn_satfn;
 
+   /** Backend supports load_global_bounded intrinsics. */
+   bool has_load_global_bounded;
+
    /**
     * Is this the Intel vec4 backend?
     *

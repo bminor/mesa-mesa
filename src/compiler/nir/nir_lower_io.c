@@ -1525,7 +1525,10 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
             op = nir_intrinsic_load_ubo;
          break;
       case nir_var_mem_ssbo:
-         if (addr_format_is_global(addr_format, mode))
+         if (addr_format == nir_address_format_64bit_bounded_global &&
+             b->shader->options->has_load_global_bounded)
+            op = nir_intrinsic_load_global_bounded;
+         else if (addr_format_is_global(addr_format, mode))
             op = nir_intrinsic_load_global;
          else
             op = nir_intrinsic_load_ssbo;
@@ -1608,7 +1611,8 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
       load->src[0] = nir_src_for_ssa(
          nir_pack_64_2x32(b, nir_trim_vector(b, addr, 2)));
       load->src[1] = nir_src_for_ssa(nir_channel(b, addr, 3));
-   } else if (op == nir_intrinsic_load_global_constant_bounded) {
+   } else if (op == nir_intrinsic_load_global_bounded ||
+              op == nir_intrinsic_load_global_constant_bounded) {
       assert(addr_format == nir_address_format_64bit_bounded_global);
       load->src[0] = nir_src_for_ssa(
          nir_pack_64_2x32(b, nir_trim_vector(b, addr, 2)));
@@ -1665,8 +1669,9 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
 
    nir_def *result;
    if (addr_format_needs_bounds_check(addr_format) &&
-       op != nir_intrinsic_load_global_constant_bounded) {
-      /* We don't need to bounds-check global_constant_bounded because bounds
+       op != nir_intrinsic_load_global_constant_bounded &&
+       op != nir_intrinsic_load_global_bounded) {
+      /* We don't need to bounds-check global_(constant_)bounded because bounds
        * checking is handled by the intrinsic itself.
        *
        * The Vulkan spec for robustBufferAccess gives us quite a few options
@@ -2079,7 +2084,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
     * is to just split any loads and stores into individual components here.
     *
     * TODO: At some point in the future we may want to add more ops similar to
-    * nir_intrinsic_load_global_constant_bounded and make bouds checking the
+    * nir_intrinsic_load_global_(constant_)bounded and make bouds checking the
     * back-end's problem.  Another option would be to somehow plumb more of
     * that information through to nir_lower_explicit_io.  For now, however,
     * scalarizing is at least correct.
