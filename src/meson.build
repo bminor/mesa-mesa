@@ -69,7 +69,7 @@ endif
 if with_any_intel
   subdir('intel')
 endif
-if system_has_kms_drm or with_gallium_virgl or with_virtio_vk
+if with_vdrm or with_gallium_virgl or with_virtio_vk
   subdir('virtio')
 endif
 if with_gallium_radeonsi or with_amd_vk or with_gallium_r300 or with_gallium_r600
