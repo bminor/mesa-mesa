@@ -127,6 +127,16 @@ opt_selects.extend([
         (('ior', 'a@1', b), ('bcsel', a, True, b)),
 ])
 
+# Rewriting fneg to ixor costs a uniform but lets us CSE the bcsel if this is
+# applied to a whole vector, hence the has_multiple_uses heuristic.
+opt_selects.extend([
+        (('bcsel', 'a(has_multiple_uses)', ('fneg(is_used_once)', 'b@32'), b),
+         ('ixor', b, ('bcsel', a, 1 << 31, 0))),
+
+        (('bcsel', 'a(has_multiple_uses)', b, ('fneg(is_used_once)', 'b@32')),
+         ('ixor', b, ('bcsel', a, 0, 1 << 31))),
+])
+
 fuse_extr = []
 for start in range(32):
     fuse_extr.extend([
