@@ -70,8 +70,13 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
 
-      if (nir_op_is_vec_or_mov(alu->op) || alu->op == nir_op_b2i32)
+      if (nir_op_is_vec_or_mov(alu->op) || alu->op == nir_op_b2i32) {
+         if (nir_op_is_vec(alu->op) && alu->def.bit_size < 32 &&
+             (options & nir_dont_move_byte_word_vecs)) {
+            return false;
+         }
          return options & nir_move_copies;
+      }
       if (nir_alu_instr_is_comparison(alu))
          return options & nir_move_comparisons;
 

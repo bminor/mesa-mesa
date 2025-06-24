@@ -416,7 +416,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
 
    NIR_PASS(_, stage->nir, nir_lower_alu_width, opt_vectorize_callback, device);
 
-   nir_move_options sink_opts = nir_move_const_undef | nir_move_copies;
+   nir_move_options sink_opts = nir_move_const_undef | nir_move_copies | nir_dont_move_byte_word_vecs;
 
    if (!stage->key.optimisations_disabled) {
       NIR_PASS(_, stage->nir, nir_opt_licm);
@@ -424,7 +424,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
          sink_opts |= nir_move_load_input;
 
       NIR_PASS(_, stage->nir, nir_opt_sink, sink_opts);
-      NIR_PASS(_, stage->nir, nir_opt_move, nir_move_load_input | nir_move_const_undef | nir_move_copies);
+      NIR_PASS(_, stage->nir, nir_opt_move, sink_opts | nir_move_load_input);
    }
 
    /* Lower VS inputs. We need to do this after nir_opt_sink, because
@@ -625,7 +625,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(_, stage->nir, nir_opt_sink, sink_opts);
 
       nir_move_options move_opts = nir_move_const_undef | nir_move_load_ubo | nir_move_load_input |
-                                   nir_move_comparisons | nir_move_copies | nir_move_alu;
+                                   nir_move_comparisons | nir_move_copies | nir_dont_move_byte_word_vecs | nir_move_alu;
       NIR_PASS(_, stage->nir, nir_opt_move, move_opts);
 
       /* Run nir_opt_move again to make sure that comparision are as close as possible to the first use to prevent SCC
