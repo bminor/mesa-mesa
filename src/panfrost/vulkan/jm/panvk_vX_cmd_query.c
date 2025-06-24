@@ -56,6 +56,7 @@ panvk_emit_write_job(struct panvk_cmd_buffer *cmd, struct panvk_batch *batch,
 
    pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_WRITE_VALUE, true, false, 0, 0,
                   &job, false);
+   util_dynarray_append(&batch->jobs, void *, job.cpu);
 }
 
 static struct panvk_batch *
