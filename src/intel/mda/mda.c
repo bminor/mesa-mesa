@@ -1069,6 +1069,55 @@ load_archive(context *ctx, const char *filename)
    return true;
 }
 
+static pid_t
+setup_pager()
+{
+   if (!isatty(STDOUT_FILENO) ||
+       getenv("NO_PAGER"))
+      return 0;
+
+   const char *term = getenv("TERM");
+   if (!term || !strcmp(term, "dumb"))
+      return 0;
+
+   int pipefd[2];
+   if (pipe(pipefd) == -1) {
+      fprintf(stderr, "mda: couldn't create pipe for pager\n");
+      return 0;
+   }
+
+   pid_t pid = fork();
+   if (pid == -1) {
+      close(pipefd[0]);
+      close(pipefd[1]);
+      fprintf(stderr, "mda: couldn't open pager\n");
+      return 0;
+   }
+
+   if (pid == 0) {
+      /* Child stdin will read from pipe. */
+      close(pipefd[1]);
+      dup2(pipefd[0], STDIN_FILENO);
+      close(pipefd[0]);
+
+      const char *pager = getenv("PAGER");
+      if (pager && *pager)
+         execlp(pager, pager, NULL);
+
+      execlp("less", "less", "-FSRi", NULL);
+      execlp("more", "more", NULL);
+      execlp("cat", "cat", NULL);
+      exit(1);
+   }
+
+   /* Parent stdout will point to pipe. */
+   close(pipefd[0]);
+   dup2(pipefd[1], STDOUT_FILENO);
+   close(pipefd[1]);
+
+   return pid;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1163,11 +1212,12 @@ main(int argc, char *argv[])
    struct command {
       const char *name;
       int (*func)(context *ctx);
+      bool skip_pager;
    };
 
    static const struct command cmds[] = {
       { "diff",       cmd_diff },
-      { "info",       cmd_info },
+      { "info",       cmd_info, .skip_pager = true },
       { "list",       cmd_list },
       { "listall",    cmd_list },
       { "listraw",    cmd_listraw },
@@ -1175,7 +1225,7 @@ main(int argc, char *argv[])
       { "log1",       cmd_log },
       { "logfull",    cmd_log },
       { "print",      cmd_print },
-      { "printraw",   cmd_print },
+      { "printraw",   cmd_print, .skip_pager = true },
       { "search",     cmd_search },
       { "searchall",  cmd_search },
    };
@@ -1194,8 +1244,16 @@ main(int argc, char *argv[])
       return 1;
    }
 
+   pid_t pid = cmd->skip_pager ? -1 : setup_pager();
+
    int r = cmd->func(ctx);
    ralloc_free(ctx);
+
+   if (pid > 0) {
+      fflush(stdout);
+      fclose(stdout);
+      waitpid(pid, NULL, 0);
+   }
 
    return r;
 }
