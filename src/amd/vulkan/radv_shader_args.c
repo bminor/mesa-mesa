@@ -68,9 +68,9 @@ add_ud_arg(struct radv_shader_args *args, unsigned size, enum ac_arg_type type, 
 }
 
 static void
-add_descriptor_set(struct radv_shader_args *args, enum ac_arg_type type, struct ac_arg *arg, uint32_t set)
+add_descriptor_set(struct radv_shader_args *args, uint32_t set)
 {
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, type, arg);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_PTR, &args->descriptor_sets[set]);
 
    struct radv_userdata_info *ud_info = &args->user_sgprs_locs.descriptor_sets[set];
    ud_info->sgpr_idx = args->num_user_sgprs;
@@ -92,7 +92,7 @@ declare_global_input_sgprs(const enum amd_gfx_level gfx_level, const struct radv
          while (mask) {
             int i = u_bit_scan(&mask);
 
-            add_descriptor_set(args, AC_ARG_CONST_PTR, &args->descriptor_sets[i], i);
+            add_descriptor_set(args, i);
          }
       } else {
          add_ud_arg(args, 1, AC_ARG_CONST_PTR_PTR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTOR_SETS);
