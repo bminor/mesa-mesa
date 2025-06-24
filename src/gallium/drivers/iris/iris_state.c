@@ -6248,19 +6248,14 @@ iris_viewport_zmin_zmax(const struct pipe_viewport_state *vp, bool halfz,
 static inline void
 batch_emit_fast_color_dummy_blit(struct iris_batch *batch)
 {
-#if GFX_VERx10 >= 125
+#if INTEL_WA_16018063123_GFX_VER
    iris_emit_cmd(batch, GENX(XY_FAST_COLOR_BLT), blt) {
       uint32_t mocs = iris_mocs(batch->screen->workaround_address.bo,
                                 &batch->screen->isl_dev,
                                 ISL_SURF_USAGE_BLITTER_DST_BIT);
 
       blt.DestinationBaseAddress = batch->screen->workaround_address;
-#if GFX_VERx10 >= 200
-      blt.DestinationMOCSindex = MOCS_GET_INDEX(mocs);
-      blt.DestinationEncryptEn = MOCS_GET_ENCRYPT_EN(mocs);
-#else
       blt.DestinationMOCS = mocs;
-#endif
       blt.DestinationPitch = 63;
       blt.DestinationX2 = 1;
       blt.DestinationY2 = 4;
@@ -6270,6 +6265,8 @@ batch_emit_fast_color_dummy_blit(struct iris_batch *batch)
       blt.DestinationSurfaceQPitch = 4;
       blt.DestinationTiling = XY_TILE_LINEAR;
    }
+#else
+   unreachable("Not implemented");
 #endif
 }
 
@@ -6327,7 +6324,7 @@ invalidate_aux_map_state_per_engine(struct iris_batch *batch)
    case IRIS_BATCH_BLITTER: {
 #if GFX_VERx10 >= 125
       /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-      if (intel_needs_workaround(batch->screen->devinfo, 16018063123))
+      if (INTEL_WA_16018063123_GFX_VER)
          batch_emit_fast_color_dummy_blit(batch);
 
       /*
@@ -9850,7 +9847,7 @@ iris_emit_raw_pipe_control(struct iris_batch *batch,
       assert(!(flags & PIPE_CONTROL_WRITE_DEPTH_COUNT));
 
       /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-      if (intel_needs_workaround(batch->screen->devinfo, 16018063123))
+      if (INTEL_WA_16018063123_GFX_VER)
          batch_emit_fast_color_dummy_blit(batch);
 
       /* The blitter doesn't actually use PIPE_CONTROL; rather it uses the
