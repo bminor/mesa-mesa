@@ -499,6 +499,15 @@ is_not_const_and_not_fsign(struct hash_table *ht, const nir_alu_instr *instr,
 }
 
 static inline bool
+has_multiple_uses(struct hash_table *ht, const nir_alu_instr *instr,
+                  unsigned src, unsigned num_components,
+                  const uint8_t *swizzle)
+{
+   return !list_is_empty(&instr->def.uses) &&
+          !list_is_singular(&instr->def.uses);
+}
+
+static inline bool
 is_used_once(const nir_alu_instr *instr)
 {
    return list_is_singular(&instr->def.uses);
