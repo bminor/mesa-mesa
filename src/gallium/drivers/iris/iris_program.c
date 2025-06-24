@@ -798,10 +798,10 @@ iris_lower_storage_image_derefs_instr(nir_builder *b,
    }
 }
 
-static void
+static bool
 iris_lower_storage_image_derefs(nir_shader *nir)
 {
-   nir_shader_intrinsics_pass(nir, iris_lower_storage_image_derefs_instr,
+   return nir_shader_intrinsics_pass(nir, iris_lower_storage_image_derefs_instr,
                               nir_metadata_control_flow,
                               NULL);
 }
@@ -3011,10 +3011,10 @@ iris_compile_cs(struct iris_screen *screen,
    const struct iris_cs_prog_key *const key = &shader->key.cs;
 
    if (screen->brw)
-      NIR_PASS_V(nir, brw_nir_lower_cs_intrinsics, devinfo, NULL);
+      NIR_PASS(_, nir, brw_nir_lower_cs_intrinsics, devinfo, NULL);
    else
 #ifdef INTEL_USE_ELK
-      NIR_PASS_V(nir, elk_nir_lower_cs_intrinsics, devinfo, NULL);
+      NIR_PASS(_, nir, elk_nir_lower_cs_intrinsics, devinfo, NULL);
 #else
       unreachable("no elk support");
 #endif
@@ -3774,13 +3774,13 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 {
    struct iris_screen *screen = (struct iris_screen *)_screen;
 
-   NIR_PASS_V(nir, iris_fix_edge_flags);
+   NIR_PASS(_, nir, iris_fix_edge_flags);
 
    if (screen->brw) {
       struct brw_nir_compiler_opts opts = {};
       brw_preprocess_nir(screen->brw, nir, &opts);
 
-      NIR_PASS_V(nir, brw_nir_lower_storage_image,
+      NIR_PASS(_, nir, brw_nir_lower_storage_image,
                  screen->brw,
                  &(struct brw_nir_lower_storage_image_opts) {
                     .lower_loads  = true,
@@ -3794,7 +3794,7 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
       struct elk_nir_compiler_opts opts = {};
       elk_preprocess_nir(screen->elk, nir, &opts);
 
-      NIR_PASS_V(nir, elk_nir_lower_storage_image,
+      NIR_PASS(_, nir, elk_nir_lower_storage_image,
                  &(struct elk_nir_lower_storage_image_opts) {
                     .devinfo        = devinfo,
                     .lower_loads    = true,
@@ -3810,7 +3810,7 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 #endif
    }
 
-   NIR_PASS_V(nir, iris_lower_storage_image_derefs);
+   NIR_PASS(_, nir, iris_lower_storage_image_derefs);
 
    nir_sweep(nir);
 
