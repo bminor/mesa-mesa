@@ -613,9 +613,7 @@ get_afbc_plane_props(const struct pan_image_view *iview, int plane_idx,
 
    *header_pointer = plane->base + slayout->offset_B;
    *header_row_stride = slayout->afbc.header.row_stride_B;
-   /* Header/body of 3D resources are not interleaved, so the header slice
-    * size and header slice stride are the same thing. */
-   *header_slice_size = slayout->afbc.header.surface_stride_B;
+   *header_slice_size = slayout->afbc.header.surface_size_B;
    *header_slice_stride = 0;
    *size = slayout->size_B;
 
@@ -623,20 +621,15 @@ get_afbc_plane_props(const struct pan_image_view *iview, int plane_idx,
       assert(pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D);
       assert(layer_or_z_slice == 0);
 
-      *header_slice_stride = slayout->afbc.header.surface_stride_B;
+      *header_slice_stride = slayout->afbc.surface_stride_B;
    } else if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
       assert(iview->dim == MALI_TEXTURE_DIMENSION_2D);
       /* When viewing 3D image as 2D-array, each plane describes a single Z
        * slice. The header pointer is moved to the right slice, and the size is
        * set to a single slice. */
-      *header_pointer +=
-         layer_or_z_slice * slayout->afbc.header.surface_stride_B;
-      *header_slice_stride = slayout->afbc.header.surface_stride_B;
-      /* Skip headers and bodies that fall outside the Z slice being
-       * addressed. */
-      *size = (slayout->afbc.header.size_B -
-               (layer_or_z_slice * slayout->afbc.header.surface_stride_B)) +
-              (slayout->afbc.body.surface_stride_B * (layer_or_z_slice + 1));
+      *header_pointer += layer_or_z_slice * slayout->afbc.surface_stride_B;
+      *header_slice_stride = slayout->afbc.surface_stride_B;
+      *size = slayout->afbc.surface_stride_B;
    } else {
       *header_pointer += layer_or_z_slice * plane->layout.array_stride_B;
    }
@@ -866,7 +859,11 @@ get_afbc_surface_props(const struct pan_image_view *iview,
    const struct pan_image_plane *plane = pref.image->planes[pref.plane_idx];
    const struct pan_image_slice_layout *slayout =
       &plane->layout.slices[mip_level];
-   uint64_t plane_header_addr = plane->base + slayout->offset_B;
+   uint64_t stride_B = pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D
+                          ? slayout->afbc.surface_stride_B
+                          : plane->layout.array_stride_B;
+   uint64_t plane_header_addr =
+      plane->base + slayout->offset_B + (stride_B * layer_or_z_slice);
    unsigned tag = 0;
 
 #if PAN_ARCH >= 5
@@ -876,17 +873,10 @@ get_afbc_surface_props(const struct pan_image_view *iview,
 
    assert(sample == 0);
 
-   if (pref.image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
-      plane_header_addr +=
-         layer_or_z_slice * slayout->afbc.header.surface_stride_B;
-      *surf_stride = slayout->afbc.header.surface_stride_B;
-   } else {
-      plane_header_addr += layer_or_z_slice * plane->layout.array_stride_B;
-      /* Surface stride is used to do a bound check, and must cover the header
-       * and payload sections. */
-      *surf_stride = slayout->afbc.header.size_B + slayout->afbc.body.size_B;
-   }
-
+   /* On 2D views, surface stride is used to do a bound check, so we can't set
+    * it to zero.
+    */
+   *surf_stride = slayout->afbc.surface_stride_B;
    *pointer = plane_header_addr | tag;
    *row_stride = slayout->afbc.header.row_stride_B;
 }

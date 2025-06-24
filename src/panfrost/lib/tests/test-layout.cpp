@@ -381,10 +381,12 @@ TEST(AFBCLayout, Linear3D)
 
    ASSERT_TRUE(layout_init(0, &p, 0, NULL, &l));
 
-   /* AFBC Surface stride is bytes between consecutive surface headers, which is
-    * the header size since this is a 3D texture. At superblock size 16x16, the
-    * 8x32 layer has 1x2 superblocks, so the header size is 2 * 16 = 32 bytes,
-    * rounded up to cache line 64.
+   /* AFBC Surface size is the size of headers for a single surface. At superblock
+    * size 16x16, the 8x32 layer has 1x2 superblocks, so the header size is 2 *
+    * 16 = 32 bytes. Body offset needs to be aligned on 64 bytes on v6-.
+    * Header/body sections of a 3D image are interleaved, so the surface stride is
+    * is the header size, aligned to meet body offset alignment constraints, plus
+    * the body of a single surface.
     *
     * There is only 1 superblock per row, so the row stride is the bytes per 1
     * header block = 16.
@@ -396,11 +398,9 @@ TEST(AFBCLayout, Linear3D)
     */
    EXPECT_EQ(l.slices[0].offset_B, 0);
    EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16);
-   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 64);
-   EXPECT_EQ(l.slices[0].afbc.header.size_B, 64 * 16);
-   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 2048);
-   EXPECT_EQ(l.slices[0].afbc.body.size_B, 2048 * 16);
-   EXPECT_EQ(l.slices[0].size_B, 2048 * 16 + 64 * 16);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_size_B, 32);
+   EXPECT_EQ(l.slices[0].afbc.surface_stride_B, 64 + 2048);
+   EXPECT_EQ(l.slices[0].size_B, (64 + 2048) * 16);
 }
 
 TEST(AFBCLayout, Tiled16x16)
@@ -439,10 +439,8 @@ TEST(AFBCLayout, Tiled16x16)
     */
    EXPECT_EQ(l.slices[0].offset_B, 0);
    EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 8192);
-   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 32768);
-   EXPECT_EQ(l.slices[0].afbc.header.size_B, 32768);
-   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 2097152);
-   EXPECT_EQ(l.slices[0].afbc.body.size_B, 2097152);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_size_B, 32768);
+   EXPECT_EQ(l.slices[0].afbc.surface_stride_B, 2129920);
    EXPECT_EQ(l.slices[0].size_B, 2129920);
 }
 
@@ -470,10 +468,8 @@ TEST(AFBCLayout, Linear16x16Minimal)
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
    EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16);
-   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 64);
-   EXPECT_EQ(l.slices[0].afbc.header.size_B, 64);
-   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 32 * 8);
-   EXPECT_EQ(l.slices[0].afbc.body.size_B, 32 * 8);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_size_B, 16);
+   EXPECT_EQ(l.slices[0].afbc.surface_stride_B, 64 + (32 * 8));
    EXPECT_EQ(l.slices[0].size_B, 64 + (32 * 8));
 }
 
@@ -501,10 +497,8 @@ TEST(AFBCLayout, Linear16x16Minimalv6)
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
    EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16);
-   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 128);
-   EXPECT_EQ(l.slices[0].afbc.header.size_B, 128);
-   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 32 * 8);
-   EXPECT_EQ(l.slices[0].afbc.body.size_B, 32 * 8);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_size_B, 16);
+   EXPECT_EQ(l.slices[0].afbc.surface_stride_B, 128 + (32 * 8));
    EXPECT_EQ(l.slices[0].size_B, 128 + (32 * 8));
 }
 
@@ -533,10 +527,8 @@ TEST(AFBCLayout, Tiled16x16Minimal)
    /* Image is 1x1 to test for correct alignment everywhere. */
    EXPECT_EQ(l.slices[0].offset_B, 0);
    EXPECT_EQ(l.slices[0].afbc.header.row_stride_B, 16 * 8 * 8);
-   EXPECT_EQ(l.slices[0].afbc.header.surface_stride_B, 4096);
-   EXPECT_EQ(l.slices[0].afbc.header.size_B, 4096);
-   EXPECT_EQ(l.slices[0].afbc.body.surface_stride_B, 32 * 8 * 8 * 8);
-   EXPECT_EQ(l.slices[0].afbc.body.size_B, 32 * 8 * 8 * 8);
+   EXPECT_EQ(l.slices[0].afbc.header.surface_size_B, 16 * 8 * 8);
+   EXPECT_EQ(l.slices[0].afbc.surface_stride_B, 4096 + (32 * 8 * 8 * 8));
    EXPECT_EQ(l.slices[0].size_B, 4096 + (32 * 8 * 8 * 8));
 }
 

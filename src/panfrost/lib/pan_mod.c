@@ -150,37 +150,21 @@ pan_mod_afbc_init_slice_layout(
    const unsigned surface_stride_sb =
       row_stride_sb * (aligned_extent_px.height / afbc_tile_extent_px.height);
 
-   uint64_t hdr_surface_stride_B = (uint64_t)surface_stride_sb *
-                                   AFBC_HEADER_BYTES_PER_TILE;
-   hdr_surface_stride_B =
-      ALIGN_POT(hdr_surface_stride_B, (uint64_t)(offset_align_mask + 1));
+   uint64_t hdr_surf_size_B =
+      (uint64_t)surface_stride_sb * AFBC_HEADER_BYTES_PER_TILE;
+   uint64_t body_offset_B =
+      pan_afbc_body_offset(PAN_ARCH, props->modifier, hdr_surf_size_B);
+   uint64_t surf_stride_B =
+      body_offset_B + ((uint64_t)surface_stride_sb * afbc_tile_payload_size_B);
 
-   slayout->afbc.header.surface_stride_B = hdr_surface_stride_B;
+   slayout->afbc.header.surface_size_B = hdr_surf_size_B;
+   slayout->afbc.surface_stride_B = surf_stride_B;
+   slayout->size_B = surf_stride_B * mip_extent_px.depth;
 
-   uint64_t header_size_B = hdr_surface_stride_B * aligned_extent_px.depth;
-   header_size_B = ALIGN_POT(
-      header_size_B, (uint64_t)pan_afbc_body_align(PAN_ARCH, props->modifier));
-
-   slayout->afbc.header.size_B = header_size_B;
-
-   uint64_t body_surf_stride_B =
-      (uint64_t)surface_stride_sb * afbc_tile_payload_size_B;
-   uint64_t body_size_B = body_surf_stride_B * aligned_extent_px.depth;
-
-   /* Each AFBC header encodes the offset to its AFBC data in a 32-bit field.
-    * AFBC headers of all 3D slices are placed at the beginning, meaning the
-    * maximum offset that exists is between the last header, and the last
-    * tile. */
-   ASSERTED uint64_t max_body_offset = body_size_B - afbc_tile_payload_size_B +
-                                       header_size_B -
-                                       AFBC_HEADER_BYTES_PER_TILE;
-
-   if (max_body_offset > UINT32_MAX)
+   if (hdr_surf_size_B > UINT32_MAX || surf_stride_B > UINT32_MAX ||
+       slayout->size_B > UINT32_MAX)
       return false;
 
-   slayout->afbc.body.surface_stride_B = body_surf_stride_B;
-   slayout->afbc.body.size_B = body_size_B;
-   slayout->size_B = header_size_B + body_size_B;
    return true;
 }
 

@@ -407,11 +407,18 @@ panvk_image_plane_bind(struct panvk_device *dev,
            layer++) {
          for (unsigned level = 0; level < plane->image.props.nr_slices;
               level++) {
-            void *header = bo_base + offset +
-                           (layer * plane->plane.layout.array_stride_B) +
-                           plane->plane.layout.slices[level].offset_B;
-            memset(header, 0,
-                   plane->plane.layout.slices[level].afbc.header.size_B);
+            const struct pan_image_slice_layout *slayout =
+               &plane->plane.layout.slices[level];
+            uint32_t z_slice_count =
+               u_minify(plane->image.props.extent_px.depth, level);
+
+            for (unsigned z = 0; z < z_slice_count; z++) {
+               void *header = bo_base + offset +
+                              ((uint64_t)slayout->afbc.surface_stride_B * z) +
+                              (layer * plane->plane.layout.array_stride_B) +
+                              plane->plane.layout.slices[level].offset_B;
+               memset(header, 0, slayout->afbc.header.surface_size_B);
+            }
          }
       }
 
@@ -502,7 +509,7 @@ get_image_subresource_layout(const struct panvk_image *image,
       layout->rowPitch = pan_afbc_stride_blocks(
          image->vk.drm_format_mod, slice_layout->afbc.header.row_stride_B);
       layout->depthPitch = pan_afbc_stride_blocks(
-         image->vk.drm_format_mod, slice_layout->afbc.header.surface_stride_B);
+         image->vk.drm_format_mod, slice_layout->afbc.header.surface_size_B);
    } else {
       layout->rowPitch = slice_layout->tiled_or_linear.row_stride_B;
       layout->depthPitch = slice_layout->tiled_or_linear.surface_stride_B;

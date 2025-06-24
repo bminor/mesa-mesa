@@ -834,22 +834,21 @@ panfrost_resource_init_afbc_headers(struct panfrost_resource *pres)
    if (panfrost_bo_mmap(pres->bo))
       return -1;
 
-   unsigned nr_samples = MAX2(pres->base.nr_samples, 1);
-
    for (unsigned i = 0; i < pres->base.array_size; ++i) {
       for (unsigned l = 0; l <= pres->base.last_level; ++l) {
          struct pan_image_slice_layout *slice = &pres->plane.layout.slices[l];
+         unsigned z_slice_count = u_minify(pres->base.depth0, l);
 
-         for (unsigned s = 0; s < nr_samples; ++s) {
-            void *ptr =
-               pres->bo->ptr.cpu + (i * pres->plane.layout.array_stride_B) +
-               slice->offset_B + (s * slice->afbc.header.surface_stride_B);
+         for (unsigned z = 0; z < z_slice_count; ++z) {
+            void *ptr = pres->bo->ptr.cpu +
+                        (i * pres->plane.layout.array_stride_B) +
+                        slice->offset_B + (z * slice->afbc.surface_stride_B);
 
             /* Zero-ed AFBC headers seem to encode a plain
              * black. Let's use this pattern to keep the
              * initialization simple.
              */
-            memset(ptr, 0, slice->afbc.header.size_B);
+            memset(ptr, 0, slice->afbc.header.surface_size_B);
          }
       }
    }
@@ -2038,6 +2037,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          src_stride *
          pan_afbc_height_blocks(
             src_modifier, u_minify(prsrc->image.props.extent_px.height, level));
+      uint32_t body_offset_B = pan_afbc_body_offset(
+         dev->arch, dst_modifier, src_slice->afbc.header.surface_size_B);
       uint32_t offset = 0;
       struct pan_afbc_block_info *meta =
          metadata_bo->ptr.cpu + metadata_offsets[level];
@@ -2073,25 +2074,11 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       total_size =
          ALIGN_POT(total_size, pan_afbc_header_align(dev->arch, dst_modifier));
       {
-         unsigned width = u_minify(prsrc->base.width0, level);
-         unsigned height = u_minify(prsrc->base.height0, level);
-         unsigned dst_stride =
-            DIV_ROUND_UP(width, pan_afbc_superblock_width(dst_modifier));
-         unsigned dst_height =
-            DIV_ROUND_UP(height, pan_afbc_superblock_height(dst_modifier));
-
-         dst_slice->afbc.header.surface_stride_B =
-            dst_stride * dst_height * AFBC_HEADER_BYTES_PER_TILE;
-         dst_slice->afbc.header.size_B =
-            ALIGN_POT(dst_slice->afbc.header.surface_stride_B,
-                      pan_afbc_body_align(dev->arch, dst_modifier));
-         dst_slice->afbc.body.surface_stride_B = offset;
-         dst_slice->afbc.body.size_B = offset;
-
+         /* Header layout is exactly the same, only the body is shrunk. */
+         dst_slice->afbc.header = src_slice->afbc.header;
+         dst_slice->afbc.surface_stride_B = body_offset_B + offset;
+         dst_slice->size_B = dst_slice->afbc.surface_stride_B;
          dst_slice->offset_B = total_size;
-         dst_slice->afbc.header.row_stride_B = dst_stride * AFBC_HEADER_BYTES_PER_TILE;
-         dst_slice->afbc.header.surface_stride_B = dst_slice->afbc.header.surface_stride_B;
-         dst_slice->size_B = dst_slice->afbc.header.size_B + dst_slice->afbc.body.size_B;
 
          /* We can't write to AFBC-packed resource, so there is no reason to
           * keep CRC data around */

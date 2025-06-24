@@ -251,6 +251,13 @@ pan_afbc_body_align(unsigned arch, uint64_t modifier)
    return pan_afbc_header_align(arch, modifier);
 }
 
+/* Get the body offset for a given AFBC header size. */
+static inline uint32_t
+pan_afbc_body_offset(unsigned arch, uint64_t modifier, uint32_t header_size)
+{
+   return ALIGN_POT(header_size, pan_afbc_body_align(arch, modifier));
+}
+
 /*
  * Determine the tile size used by AFBC. This tiles superblocks themselves.
  * Current GPUs support either 8x8 tiling or no tiling (1x1)

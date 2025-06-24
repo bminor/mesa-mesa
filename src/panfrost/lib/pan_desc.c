@@ -219,18 +219,14 @@ get_afbc_att_mem_props(struct pan_image_plane_ref pref, unsigned mip_level,
    const struct pan_image_plane *plane = image->planes[pref.plane_idx];
    const struct pan_image_slice_layout *slayout =
       &plane->layout.slices[mip_level];
+   const uint64_t stride_B = image->props.dim == MALI_TEXTURE_DIMENSION_3D
+                                ? slayout->afbc.surface_stride_B
+                                : plane->layout.array_stride_B;
 
    *row_stride = slayout->afbc.header.row_stride_B;
-   *body_offset = slayout->afbc.header.size_B;
-   *header = plane->base + slayout->offset_B;
-   if (image->props.dim == MALI_TEXTURE_DIMENSION_3D) {
-      *header += (layer_or_z_slice * slayout->afbc.header.surface_stride_B);
-      *body_offset +=
-         (layer_or_z_slice * slayout->afbc.body.surface_stride_B) -
-         (layer_or_z_slice * slayout->afbc.header.surface_stride_B);
-   } else {
-      *header += (layer_or_z_slice * plane->layout.array_stride_B);
-   }
+   *body_offset = pan_afbc_body_offset(PAN_ARCH, image->props.modifier,
+                                       slayout->afbc.header.surface_size_B);
+   *header = plane->base + slayout->offset_B + (stride_B * layer_or_z_slice);
 }
 
 void
@@ -700,7 +696,10 @@ GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
       const struct pan_image_slice_layout *slayout =
          &plane->layout.slices[mip_level];
 
-      cfg.afbc.body_size = slayout->afbc.body.surface_stride_B;
+      cfg.afbc.body_size =
+         slayout->afbc.surface_stride_B -
+         pan_afbc_body_offset(PAN_ARCH, image->props.modifier,
+                              slayout->afbc.header.surface_size_B);
       cfg.afbc.chunk_size = 9;
       cfg.afbc.sparse = true;
 #endif

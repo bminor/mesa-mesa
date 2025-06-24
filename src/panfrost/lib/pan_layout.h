@@ -30,28 +30,19 @@ struct pan_afbc_image_slice_layout {
       /* Number of bytes between two rows of AFBC headers. */
       uint32_t row_stride_B;
 
-      /* For 3D textures, this is the stride in bytes between AFBC headers of two
-       * consecutive Z slices. For 2D textures, the utile AFBC header size
-       * (header_size_B without the padding).
+      /* For 3D textures, this is the size in bytes of AFBC headers covering
+       * a single Z slice. For 2D this is the total header size. This size is
+       * the utile header size, it doesn't count the padding needed to meet the
+       * body alignment constraints. Pass this to pan_afbc_body_offset() to get
+       * the body offset.
        */
-      uint32_t surface_stride_B;
-
-      /* AFBC header size. This contains padding to meet AFBC header alignment
-       * constraints, meaning it can't be used to determine the number of AFBC
-       * tiles in the image slice.
-       */
-      uint32_t size_B;
+      uint32_t surface_size_B;
    } header;
 
-   struct {
-      /* For 3D textures, this is the stride in bytes between AFBC data of two
-       * consecutive Z slices. For 2D textures, this is the same as body_size_B.
-       */
-      uint32_t surface_stride_B;
-
-      /* Size of the AFBC body. */
-      uint32_t size_B;
-   } body;
+   /* For 3D textures, this is the stride in bytes between AFBC headers of two
+    * consecutive Z slices. For 2D, this is the total size of the 2D level.
+    */
+   uint32_t surface_stride_B;
 };
 
 struct pan_tiled_or_linear_image_slice_layout {

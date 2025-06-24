@@ -3640,6 +3640,7 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
 {
    MESA_TRACE_FUNC();
 
+   struct panfrost_device *dev = pan_device(src->base.screen);
    struct pan_image_slice_layout *src_slice = &src->plane.layout.slices[level];
    unsigned src_stride_sb = pan_afbc_stride_blocks(
       src->image.props.modifier, src_slice->afbc.header.row_stride_B);
@@ -3653,7 +3654,9 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
       .src = src->plane.base + src_slice->offset_B,
       .dst = dst->ptr.gpu + dst_slice->offset_B,
       .metadata = metadata->ptr.gpu + metadata_offset_B,
-      .header_size = dst_slice->afbc.header.size_B,
+      .header_size =
+         pan_afbc_body_offset(dev->arch, src->image.props.modifier,
+                              src_slice->afbc.header.surface_size_B),
       .src_stride = src_stride_sb,
       .dst_stride = dst_stride_sb,
    };
