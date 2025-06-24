@@ -1248,8 +1248,8 @@ panvk_cmd_prepare_draw_link_shaders(struct panvk_cmd_buffer *cmd)
    return VK_SUCCESS;
 }
 
-static void
-panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
+static VkResult
+prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
 {
    struct panvk_batch *batch = cmdbuf->cur_batch;
    const struct panvk_shader_variant *vs =
@@ -1257,21 +1257,9 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
    struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
    struct panvk_descriptor_state *desc_state = &cmdbuf->state.gfx.desc_state;
-   uint32_t layer_count = cmdbuf->state.gfx.render.layer_count;
    const struct vk_rasterization_state *rs =
       &cmdbuf->vk.dynamic_graphics_state.rs;
-   bool idvs = vs->info.vs.idvs;
    VkResult result;
-
-   /* If there's no vertex shader, we can skip the draw. */
-   if (!panvk_priv_mem_dev_addr(vs->rsd))
-      return;
-
-   /* Needs to be done before get_fs() is called because it depends on
-    * fs.required being initialized. */
-   cmdbuf->state.gfx.fs.required =
-      fs_required(&cmdbuf->state.gfx, &cmdbuf->vk.dynamic_graphics_state);
-
    const struct panvk_shader_variant *fs =
       panvk_shader_only_variant(get_fs(cmdbuf));
 
@@ -1279,7 +1267,8 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
     * pilot shader dealing with descriptor copies, and we need one
     * <vertex,tiler> pair per draw.
     */
-   if (batch->vtc_jc.job_index + (4 * layer_count) >= UINT16_MAX) {
+   if (batch->vtc_jc.job_index + (4 * cmdbuf->state.gfx.render.layer_count) >=
+       UINT16_MAX) {
       panvk_per_arch(cmd_close_batch)(cmdbuf);
       panvk_per_arch(cmd_preload_fb_after_batch_split)(cmdbuf);
       batch = panvk_per_arch(cmd_open_batch)(cmdbuf);
@@ -1288,12 +1277,8 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    if (fs_user_dirty(cmdbuf)) {
       result = panvk_cmd_prepare_draw_link_shaders(cmdbuf);
       if (result != VK_SUCCESS)
-         return;
+         return result;
    }
-
-   bool active_occlusion =
-      cmdbuf->state.gfx.occlusion_query.mode != MALI_OCCLUSION_MODE_DISABLED;
-   bool needs_tiling = !rs->rasterizer_discard_enable || active_occlusion;
 
    if (cmdbuf->state.gfx.vk_meta) {
       /* vk_meta doesn't care about the provoking vertex mode, we should use
@@ -1332,14 +1317,14 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
 
       result = panvk_per_arch(cmd_alloc_fb_desc)(cmdbuf);
       if (result != VK_SUCCESS)
-         return;
+         return result;
    }
 
    panvk_per_arch(cmd_select_tile_size)(cmdbuf);
 
    result = panvk_per_arch(cmd_alloc_tls_desc)(cmdbuf, true);
    if (result != VK_SUCCESS)
-      return;
+      return result;
 
    panvk_draw_prepare_attributes(cmdbuf, draw);
 
@@ -1351,57 +1336,37 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
       result = panvk_per_arch(cmd_prepare_push_descs)(cmdbuf, desc_state,
                                                       used_set_mask);
       if (result != VK_SUCCESS)
-         return;
+         return result;
    }
 
    if (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, VS)) {
       result = panvk_per_arch(cmd_prepare_shader_desc_tables)(
-         cmdbuf, &cmdbuf->state.gfx.desc_state, vs, vs_desc_state);
+         cmdbuf, desc_state, vs, vs_desc_state);
       if (result != VK_SUCCESS)
-         return;
+         return result;
 
       panvk_draw_prepare_vs_copy_desc_job(cmdbuf, draw);
    }
-
-   unsigned copy_desc_job_id =
-      draw->jobs.vertex_copy_desc.gpu
-         ? pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_COMPUTE, false, false,
-                          0, 0, &draw->jobs.vertex_copy_desc, false)
-         : 0;
 
    /* No need to setup the FS desc tables if the FS is not executed. */
    if (fs &&
        (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, FS))) {
       result = panvk_per_arch(cmd_prepare_shader_desc_tables)(
-         cmdbuf, &cmdbuf->state.gfx.desc_state, fs, fs_desc_state);
+         cmdbuf, desc_state, fs, fs_desc_state);
       if (result != VK_SUCCESS)
-         return;
+         return result;
 
       result = panvk_draw_prepare_fs_copy_desc_job(cmdbuf, draw);
       if (result != VK_SUCCESS)
-         return;
-
-      if (draw->jobs.frag_copy_desc.gpu) {
-         /* We don't need to add frag_copy_desc as a dependency because the
-          * tiler job doesn't execute the fragment shader, the fragment job
-          * will, and the tiler/fragment synchronization happens at the batch
-          * level. */
-         pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_COMPUTE, false, false, 0,
-                        0, &draw->jobs.frag_copy_desc, false);
-      }
+         return result;
    }
 
-   /* TODO: indexed draws */
    draw->tls = batch->tls.gpu;
    draw->fb = batch->fb.desc.gpu;
 
-   pan_pack_work_groups_compute(&draw->invocation, 1, draw->vertex_range,
-                                draw->info.instance.count, 1, 1, 1, true,
-                                false);
-
    result = panvk_draw_prepare_fs_rsd(cmdbuf, draw);
    if (result != VK_SUCCESS)
-      return;
+      return result;
 
    batch->tlsinfo.tls.size = MAX3(vs->info.tls_size, fs ? fs->info.tls_size : 0,
                                   batch->tlsinfo.tls.size);
@@ -1410,14 +1375,14 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
       VkResult result = panvk_per_arch(cmd_prepare_dyn_ssbos)(
          cmdbuf, desc_state, vs, vs_desc_state);
       if (result != VK_SUCCESS)
-         return;
+         return result;
    }
 
    if (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, FS)) {
       VkResult result = panvk_per_arch(cmd_prepare_dyn_ssbos)(
          cmdbuf, desc_state, fs, fs_desc_state);
       if (result != VK_SUCCESS)
-         return;
+         return result;
    }
 
    panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, &draw->info);
@@ -1428,14 +1393,57 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
     */
    result = panvk_draw_prepare_viewport(cmdbuf, draw);
    if (result != VK_SUCCESS)
+      return result;
+
+   return VK_SUCCESS;
+}
+
+static void
+panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
+{
+   const struct panvk_shader_variant *vs = panvk_shader_hw_variant(cmdbuf->state.gfx.vs.shader);
+   VkResult result;
+
+   /* If there's no vertex shader, we can skip the draw. */
+   if (!panvk_priv_mem_dev_addr(vs->rsd))
       return;
 
+   /* Needs to be done before get_fs() is called because it depends on
+    * fs.required being initialized. */
+   cmdbuf->state.gfx.fs.required =
+      fs_required(&cmdbuf->state.gfx, &cmdbuf->vk.dynamic_graphics_state);
+
+   result = prepare_draw(cmdbuf, draw);
+   if (result != VK_SUCCESS)
+      return;
+
+   pan_pack_work_groups_compute(&draw->invocation, 1, draw->vertex_range,
+                                draw->info.instance.count, 1, 1, 1, true,
+                                false);
+
+   struct panvk_batch *batch = cmdbuf->cur_batch;
+
+   unsigned copy_desc_job_id =
+      draw->jobs.vertex_copy_desc.gpu
+         ? pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_COMPUTE, false, false,
+                          0, 0, &draw->jobs.vertex_copy_desc, false)
+         : 0;
+
+   if (draw->jobs.frag_copy_desc.gpu) {
+      /* We don't need to add frag_copy_desc as a dependency because the
+       * tiler job doesn't execute the fragment shader, the fragment job
+       * will, and the tiler/fragment synchronization happens at the batch
+       * level. */
+      pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_COMPUTE, false, false, 0, 0,
+                     &draw->jobs.frag_copy_desc, false);
+   }
 
    uint32_t view_mask = cmdbuf->state.gfx.render.view_mask;
    assert(view_mask == 0 || util_bitcount(view_mask) <= batch->fb.layer_count);
-   uint32_t enabled_layer_count = view_mask ?
-     util_bitcount(view_mask) :
-     cmdbuf->state.gfx.render.layer_count;
+   uint32_t enabled_layer_count = view_mask
+                                     ? util_bitcount(view_mask)
+                                     : cmdbuf->state.gfx.render.layer_count;
+   const struct panvk_shader_variant *fs = panvk_shader_only_variant(get_fs(cmdbuf));
 
    for (uint32_t i = 0; i < enabled_layer_count; i++) {
       result = panvk_draw_prepare_varyings(cmdbuf, draw);
@@ -1464,7 +1472,7 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
       if (result != VK_SUCCESS)
          return;
 
-      if (idvs) {
+      if (vs->info.vs.idvs) {
          result = panvk_draw_prepare_idvs_job(cmdbuf, draw);
          if (result != VK_SUCCESS)
             return;
@@ -1479,6 +1487,11 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
          unsigned vjob_id =
             pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_VERTEX, false, false,
                            0, copy_desc_job_id, &draw->jobs.vertex, false);
+
+         bool needs_tiling =
+            !cmdbuf->vk.dynamic_graphics_state.rs.rasterizer_discard_enable ||
+            cmdbuf->state.gfx.occlusion_query.mode !=
+               MALI_OCCLUSION_MODE_DISABLED;
 
          if (needs_tiling) {
             panvk_draw_prepare_tiler_job(cmdbuf, draw);
