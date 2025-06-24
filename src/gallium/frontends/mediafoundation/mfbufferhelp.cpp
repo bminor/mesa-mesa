@@ -273,6 +273,7 @@ done:
 // Parameters:
 //     pPipeContext   - Pointer to the Gallium pipe context.
 //     pPipeRes       - Pointer to the pipe_resource to be wrapped.
+//     pSyncObjectQueue - Pointer to the sync object command queue.
 //     guidExtension  - The GUID of the Media Foundation sample extension to attach the buffer as.
 //     pSample        - The output IMFSample to attach the media buffer to.
 //
@@ -286,10 +287,11 @@ done:
 HRESULT
 MFAttachPipeResourceAsSampleExtension( struct pipe_context *pPipeContext,
                                        struct pipe_resource *pPipeRes,
+                                       ID3D12CommandQueue *pSyncObjectQueue,
                                        REFGUID guidExtension,
                                        IMFSample *pSample )
 {
-   if( !pPipeContext || !pPipeRes || !pSample )
+   if( !pPipeContext || !pPipeRes || !pSample || !pSyncObjectQueue )
    {
       return E_INVALIDARG;
    }
@@ -312,6 +314,29 @@ MFAttachPipeResourceAsSampleExtension( struct pipe_context *pPipeContext,
    HRESULT hr = MFCreateDXGISurfaceBuffer( __uuidof( ID3D12Resource ), pD3D12Res, 0, FALSE, &spMediaBuffer );
 
    if( FAILED( hr ) )
+   {
+      return hr;
+   }
+
+   // Tell MF that this buffer is ready to use.
+   ComPtr<IMFD3D12SynchronizationObjectCommands> spOutputSync;   // needed to call Lock() for IMFMediaBuffer.
+   ComPtr<IMFDXGIBuffer> spDxgiBuffer;
+   hr = spMediaBuffer->QueryInterface( IID_PPV_ARGS( &spDxgiBuffer ) );
+   if( SUCCEEDED( hr ) )
+   {
+      hr = spDxgiBuffer->GetUnknown( MF_D3D12_SYNCHRONIZATION_OBJECT, IID_PPV_ARGS( &spOutputSync ) );
+      if( SUCCEEDED( hr ) )
+      {
+         hr = spOutputSync->EnqueueResourceReady( pSyncObjectQueue );
+         if( FAILED( hr ) )
+            return hr;
+      }
+      else
+      {
+         return hr;
+      }
+   }
+   else
    {
       return hr;
    }

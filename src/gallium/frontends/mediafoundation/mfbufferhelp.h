@@ -22,6 +22,7 @@
  */
 
 #pragma once
+#include <d3d12.h>
 #include <mfidl.h>
 
 // Given a media type report plane information
@@ -50,5 +51,6 @@ MFCopySample( IMFSample *dest, IMFSample *src, IMFMediaType *pmt );
 HRESULT
 MFAttachPipeResourceAsSampleExtension( struct pipe_context *pPipeContext,
                                        struct pipe_resource *pPipeRes,
+                                       ID3D12CommandQueue *pSyncObjectQueue,
                                        REFGUID guidExtension,
                                        IMFSample *pSample );

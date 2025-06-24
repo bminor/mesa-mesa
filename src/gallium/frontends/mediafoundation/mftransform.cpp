@@ -1318,6 +1318,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                {
                   HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
                                                                       pDX12EncodeContext->pPipeResourcePSNRStats,
+                                                                      pDX12EncodeContext->pSyncObjectQueue,
                                                                       MFSampleExtension_FramePsnrYuv,
                                                                       spOutputSample.Get() );
 
@@ -1332,6 +1333,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                {
                   HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
                                                                       pDX12EncodeContext->pPipeResourceQPMapStats,
+                                                                      pDX12EncodeContext->pSyncObjectQueue,
                                                                       MFSampleExtension_VideoEncodeQPMap,
                                                                       spOutputSample.Get() );
 
@@ -1346,6 +1348,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                {
                   HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
                                                                       pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                                                                      pDX12EncodeContext->pSyncObjectQueue,
                                                                       MFSampleExtension_VideoEncodeBitsUsedMap,
                                                                       spOutputSample.Get() );
 
