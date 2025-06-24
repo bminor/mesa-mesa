@@ -5354,7 +5354,7 @@
         "description": "panvk: track oq write jobs in JM",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d1934e44fc8e5fccc31a0ffcc5357461466f3d81",
         "notes": null
