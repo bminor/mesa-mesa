@@ -847,9 +847,14 @@ panvk_emit_vertex_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.varyings = draw->vs.varyings;
       cfg.varying_buffers = draw->varying_bufs;
       cfg.thread_storage = draw->tls;
-      cfg.offset_start = draw->info.vertex.raw_offset;
-      cfg.instance_size =
-         draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
+
+      /* In case of indirect draw, the descriptor will be patched at runtime */
+      if (!is_indirect_draw(draw)) {
+         cfg.offset_start = draw->info.vertex.raw_offset;
+         cfg.instance_size =
+            draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
+      }
+
       cfg.uniform_buffers = vs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_UBO];
       cfg.push_uniforms = cmdbuf->state.gfx.vs.push_uniforms;
       cfg.textures = vs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];
@@ -947,12 +952,6 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
       cfg.job_task_split = 6;
 
       if (draw->info.index.size) {
-         cfg.index_count = draw->info.vertex.count;
-         cfg.indices = cmdbuf->state.gfx.ib.dev_addr +
-                       draw->info.index.offset * draw->info.index.size;
-         cfg.base_vertex_offset =
-            (int64_t)draw->info.vertex.base - draw->info.vertex.raw_offset;
-
          switch (draw->info.index.size) {
          case 4:
             cfg.index_type = MALI_INDEX_TYPE_UINT32;
@@ -966,9 +965,21 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
          default:
             UNREACHABLE("Invalid index size");
          }
-      } else {
+      }
+
+      /* In case of indirect draw, the descriptor will be patched at runtime */
+      /* XXX: Use indirect draw path for indexed draw */
+      if (!is_indirect_draw(draw)) {
          cfg.index_count = draw->info.vertex.count;
-         cfg.index_type = MALI_INDEX_TYPE_NONE;
+
+         if (draw->info.index.size) {
+            cfg.indices = cmdbuf->state.gfx.ib.dev_addr +
+                          draw->info.index.offset * draw->info.index.size;
+            cfg.base_vertex_offset =
+               (int64_t)draw->info.vertex.base - draw->info.vertex.raw_offset;
+         }
+      } else {
+         cfg.index_count = 1;
       }
 
       cfg.low_depth_cull = cfg.high_depth_cull =
@@ -1051,17 +1062,21 @@ panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
           ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP)
          cfg.flat_shading_vertex = true;
 
-      cfg.offset_start = draw->info.vertex.raw_offset;
-      cfg.instance_size =
-         draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
-      uint32_t primitives_per_instance =
-         DIV_ROUND_UP(draw->padded_vertex_count,
-                      primitive_vertex_count(
-                         translate_prim_topology(ia->primitive_topology)));
-      /* instance_primitive_size has the same restrictions as
-       * padded_vertex_count, so we can use pan_padded_vertex_count here. */
-      cfg.instance_primitive_size =
-         pan_padded_vertex_count(primitives_per_instance);
+      /* In case of indirect draw, the descriptor will be patched at runtime */
+      if (!is_indirect_draw(draw)) {
+         cfg.offset_start = draw->info.vertex.raw_offset;
+         cfg.instance_size =
+            draw->info.instance.count > 1 ? draw->padded_vertex_count : 1;
+         uint32_t primitives_per_instance =
+            DIV_ROUND_UP(draw->padded_vertex_count,
+                         primitive_vertex_count(
+                            translate_prim_topology(ia->primitive_topology)));
+         /* instance_primitive_size has the same restrictions as
+          * padded_vertex_count, so we can use pan_padded_vertex_count here. */
+         cfg.instance_primitive_size =
+            pan_padded_vertex_count(primitives_per_instance);
+      }
+
       cfg.uniform_buffers = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_UBO];
       cfg.push_uniforms = cmdbuf->state.gfx.fs.push_uniforms;
       cfg.textures = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];
