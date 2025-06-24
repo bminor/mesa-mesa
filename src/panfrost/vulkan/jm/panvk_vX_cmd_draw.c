@@ -84,7 +84,8 @@ struct panvk_draw_data {
 static bool
 is_indirect_draw(const struct panvk_draw_data *draw)
 {
-   return draw->info.indirect.buffer_dev_addr != 0;
+   return draw->info.indirect.buffer_dev_addr != 0 ||
+          draw->info.index.size != 0;
 }
 
 static bool
@@ -969,19 +970,7 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
       }
 
       /* In case of indirect draw, the descriptor will be patched at runtime */
-      /* XXX: Use indirect draw path for indexed draw */
-      if (!is_indirect_draw(draw)) {
-         cfg.index_count = draw->info.vertex.count;
-
-         if (draw->info.index.size) {
-            cfg.indices = cmdbuf->state.gfx.ib.dev_addr +
-                          draw->info.index.offset * draw->info.index.size;
-            cfg.base_vertex_offset =
-               (int64_t)draw->info.vertex.base - draw->info.vertex.raw_offset;
-         }
-      } else {
-         cfg.index_count = 1;
-      }
+      cfg.index_count = is_indirect_draw(draw) ? 1 : draw->info.vertex.count;
 
       cfg.low_depth_cull = cfg.high_depth_cull =
          vk_rasterization_state_depth_clip_enable(rs);
@@ -1865,50 +1854,6 @@ panvk_per_arch(CmdDraw)(VkCommandBuffer commandBuffer, uint32_t vertexCount,
    panvk_cmd_draw(cmdbuf, &draw);
 }
 
-static void
-panvk_index_minmax_search(struct panvk_cmd_buffer *cmdbuf, uint32_t start,
-                          uint32_t count, bool restart, uint32_t *min,
-                          uint32_t *max)
-{
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
-   void *ptr = cmdbuf->state.gfx.ib.host_addr;
-
-   assert(PAN_ARCH < 9 && ptr);
-
-   if (!(instance->debug_flags & PANVK_DEBUG_NO_KNOWN_WARN)) {
-      mesa_logw("Crawling index buffers from the CPU isn't valid in Vulkan\n");
-   }
-
-   *max = 0;
-
-   /* TODO: Use pan_minmax_cache */
-   /* TODO: Read full cacheline of data to mitigate the uncached
-    * mapping slowness.
-    */
-   switch (cmdbuf->state.gfx.ib.index_size * 8) {
-#define MINMAX_SEARCH_CASE(sz)                                                 \
-   case sz: {                                                                  \
-      uint##sz##_t *indices = ptr;                                             \
-      *min = UINT##sz##_MAX;                                                   \
-      for (uint32_t i = 0; i < count; i++) {                                   \
-         if (restart && indices[i + start] == UINT##sz##_MAX)                  \
-            continue;                                                          \
-         *min = MIN2(indices[i + start], *min);                                \
-         *max = MAX2(indices[i + start], *max);                                \
-      }                                                                        \
-      break;                                                                   \
-   }
-      MINMAX_SEARCH_CASE(32)
-      MINMAX_SEARCH_CASE(16)
-      MINMAX_SEARCH_CASE(8)
-#undef MINMAX_SEARCH_CASE
-   default:
-      UNREACHABLE("Invalid index size");
-   }
-}
-
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
                                uint32_t indexCount, uint32_t instanceCount,
@@ -1916,7 +1861,6 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
                                uint32_t firstInstance)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   uint32_t min_vertex, max_vertex;
 
    if (instanceCount == 0 || indexCount == 0)
       return;
@@ -1925,30 +1869,18 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
     * firstInstnace. */
    assert(firstInstance < INT32_MAX);
 
-   const struct vk_input_assembly_state *ia =
-      &cmdbuf->vk.dynamic_graphics_state.ia;
-   bool primitive_restart = ia->primitive_restart_enable;
-
-   panvk_index_minmax_search(cmdbuf, firstIndex, indexCount, primitive_restart,
-                             &min_vertex, &max_vertex);
-
-   unsigned vertex_range = max_vertex - min_vertex + 1;
    struct panvk_draw_data draw = {
       .info = {
          .index.size = cmdbuf->state.gfx.ib.index_size,
          .index.offset = firstIndex,
          .vertex.base = vertexOffset,
-         .vertex.raw_offset = min_vertex + vertexOffset,
          .vertex.count = indexCount,
          .instance.base = firstInstance,
          .instance.count = instanceCount,
       },
-      .vertex_range = vertex_range,
-      .padded_vertex_count =
-         padded_vertex_count(cmdbuf, vertex_range, instanceCount),
    };
 
-   panvk_cmd_draw(cmdbuf, &draw);
+   panvk_cmd_draw_indirect(cmdbuf, &draw);
 }
 
 VKAPI_ATTR void VKAPI_CALL
