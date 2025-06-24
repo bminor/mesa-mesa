@@ -16,6 +16,14 @@
 
 #include "util/format/u_format.h"
 
+#if PAN_ARCH <= 10
+#define MAX_SIZE_B         u_uintN_max(32)
+#define MAX_SLICE_STRIDE_B u_uintN_max(32)
+#else
+#define MAX_SIZE_B         u_uintN_max(48)
+#define MAX_SLICE_STRIDE_B u_uintN_max(37)
+#endif
+
 static bool
 pan_mod_afbc_match(uint64_t mod)
 {
@@ -267,14 +275,15 @@ pan_mod_afrc_init_slice_layout(
       (uint64_t)slayout->tiled_or_linear.row_stride_B *
       DIV_ROUND_UP(aligned_extent_px.height, aligned_extent_px.height);
 
-   /* Surface stride is passed as a 32-bit unsigned integer to RT/ZS and texture
-    * descriptors, make sure it fits. */
-   if (surf_stride_B > UINT32_MAX)
-      return false;
-
    slayout->tiled_or_linear.surface_stride_B = surf_stride_B;
    slayout->size_B =
       surf_stride_B * aligned_extent_px.depth * props->nr_samples;
+
+   /* Make sure the stride/size fits in the descriptor fields. */
+   if (slayout->size_B > MAX_SIZE_B ||
+       slayout->tiled_or_linear.surface_stride_B > MAX_SLICE_STRIDE_B)
+      return false;
+
    return true;
 }
 
@@ -389,13 +398,14 @@ pan_mod_u_tiled_init_slice_layout(
       DIV_ROUND_UP(mip_extent_el.height, tile_extent_el.height);
    surf_stride_B = ALIGN_POT(surf_stride_B, (uint64_t)align_mask + 1);
 
-   /* Surface stride is passed as a 32-bit unsigned integer to RT/ZS and texture
-    * descriptors, make sure it fits. */
-   if (surf_stride_B > UINT32_MAX)
-      return false;
-
    slayout->tiled_or_linear.surface_stride_B = surf_stride_B;
    slayout->size_B = surf_stride_B * mip_extent_el.depth * props->nr_samples;
+
+   /* Make sure the stride/size fits in the descriptor fields. */
+   if (slayout->size_B > MAX_SIZE_B ||
+       slayout->tiled_or_linear.surface_stride_B > MAX_SLICE_STRIDE_B)
+      return false;
+
    return true;
 }
 

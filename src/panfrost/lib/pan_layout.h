@@ -42,7 +42,7 @@ struct pan_afbc_image_slice_layout {
    /* For 3D textures, this is the stride in bytes between AFBC headers of two
     * consecutive Z slices. For 2D, this is the total size of the 2D level.
     */
-   uint32_t surface_stride_B;
+   uint64_t surface_stride_B;
 };
 
 struct pan_tiled_or_linear_image_slice_layout {
@@ -53,7 +53,7 @@ struct pan_tiled_or_linear_image_slice_layout {
     * consecutive Z slices. For 2DMS textures, this is the stride in bytes
     * between two sample planes.
     */
-   uint32_t surface_stride_B;
+   uint64_t surface_stride_B;
 };
 
 struct pan_image_slice_layout {

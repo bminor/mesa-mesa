@@ -229,6 +229,16 @@ get_afbc_att_mem_props(struct pan_image_plane_ref pref, unsigned mip_level,
    *header = plane->base + slayout->offset_B + (stride_B * layer_or_z_slice);
 }
 
+#if PAN_ARCH <= 10
+#define SET_SURFACE_STRIDE(cfg__, val__) (cfg__).surface_stride = val__
+#else
+#define SET_SURFACE_STRIDE(cfg__, val__)                                       \
+   do {                                                                        \
+      (cfg__).surface_stride = val__ & BITFIELD_MASK(32);                      \
+      (cfg__).surface_stride_hi = val__ >> 32;                                 \
+   } while (0)
+#endif
+
 void
 GENX(pan_emit_linear_s_attachment)(const struct pan_fb_info *fb,
                                    unsigned layer_or_z_slice, void *payload)
@@ -245,7 +255,7 @@ GENX(pan_emit_linear_s_attachment)(const struct pan_fb_info *fb,
       cfg.block_format = MALI_BLOCK_FORMAT_LINEAR;
       cfg.base = base;
       cfg.row_stride = row_stride;
-      cfg.surface_stride = surf_stride;
+      SET_SURFACE_STRIDE(cfg, surf_stride);
    }
 }
 
@@ -289,7 +299,7 @@ GENX(pan_emit_u_tiled_s_attachment)(const struct pan_fb_info *fb,
       cfg.block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
       cfg.base = base;
       cfg.row_stride = row_stride;
-      cfg.surface_stride = surf_stride;
+      SET_SURFACE_STRIDE(cfg, surf_stride);
    }
 }
 
@@ -309,7 +319,7 @@ GENX(pan_emit_linear_zs_attachment)(const struct pan_fb_info *fb,
       cfg.block_format = MALI_BLOCK_FORMAT_LINEAR;
       cfg.base = base;
       cfg.row_stride = row_stride;
-      cfg.surface_stride = surf_stride;
+      SET_SURFACE_STRIDE(cfg, surf_stride);
    }
 }
 
@@ -329,7 +339,7 @@ GENX(pan_emit_u_tiled_zs_attachment)(const struct pan_fb_info *fb,
       cfg.block_format = MALI_BLOCK_FORMAT_TILED_U_INTERLEAVED;
       cfg.base = base;
       cfg.row_stride = row_stride;
-      cfg.surface_stride = surf_stride;
+      SET_SURFACE_STRIDE(cfg, surf_stride);
    }
 }
 

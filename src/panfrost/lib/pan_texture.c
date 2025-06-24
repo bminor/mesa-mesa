@@ -339,11 +339,30 @@ translate_superblock_size(uint64_t modifier)
    } while (0)
 #endif
 
+#if PAN_ARCH > 10
+#define PLANE_SET_SIZE(cfg__, size__)                                          \
+   do {                                                                        \
+      (cfg__).size = size__ & BITFIELD_MASK(32);                               \
+      (cfg__).size_hi = size__ >> 32;                                          \
+   } while (0)
+#define PLANE_SET_SLICE_STRIDE(cfg__, size__)                                  \
+   do {                                                                        \
+      (cfg__).slice_stride = size__ & BITFIELD_MASK(32);                       \
+      (cfg__).slice_stride_hi = size__ >> 32;                                  \
+   } while (0)
+#elif PAN_ARCH >= 9
+#define PLANE_SET_SIZE(cfg__, size__) (cfg__).size = size__
+#define PLANE_SET_SLICE_STRIDE(cfg__, size__)                                  \
+   (cfg__).slice_stride = size__
+#endif
+
 static void
 pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
 {
    const struct util_format_description *desc =
       util_format_description(bview->format);
+   uint64_t size =
+      (uint64_t)util_format_get_blocksize(bview->format) * bview->width_el;
 
    if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
       bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
@@ -363,8 +382,7 @@ pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
             cfg.block_height = pan_astc_dim_3d(desc->block.height);
             cfg.block_depth = pan_astc_dim_3d(desc->block.depth);
             cfg.pointer = bview->base;
-            cfg.size =
-               util_format_get_blocksize(bview->format) * bview->width_el;
+            PLANE_SET_SIZE(cfg, size);
             PLANE_SET_EXTENT(cfg, bview->width_el, 1);
          }
       } else {
@@ -374,8 +392,7 @@ pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
             cfg.decode_wide = wide;
             cfg.block_width = pan_astc_dim_2d(desc->block.width);
             cfg.block_height = pan_astc_dim_2d(desc->block.height);
-            cfg.size =
-               util_format_get_blocksize(bview->format) * bview->width_el;
+            PLANE_SET_SIZE(cfg, size);
             cfg.pointer = bview->base;
             PLANE_SET_EXTENT(cfg, bview->width_el, 1);
          }
@@ -384,7 +401,7 @@ pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
       pan_cast_and_pack(payload, GENERIC_PLANE, cfg) {
          cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
          cfg.clump_format = pan_clump_format(bview->format);
-         cfg.size = util_format_get_blocksize(bview->format) * bview->width_el;
+         PLANE_SET_SIZE(cfg, size);
          cfg.pointer = bview->base;
          cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
          PLANE_SET_EXTENT(cfg, bview->width_el, 1);
@@ -396,8 +413,8 @@ static void
 get_linear_or_u_tiled_plane_props(const struct pan_image_view *iview,
                                   int plane_idx, unsigned mip_level,
                                   unsigned layer_or_z_slice, uint64_t *pointer,
-                                  uint32_t *row_stride, uint32_t *slice_stride,
-                                  uint32_t *size)
+                                  uint32_t *row_stride, uint64_t *slice_stride,
+                                  uint64_t *size)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
@@ -439,8 +456,8 @@ emit_generic_plane(const struct pan_image_view *iview, int plane_idx,
          ? pan_image_view_get_s_plane(iview)
          : pan_image_view_get_plane(iview, plane_idx);
    const struct pan_image_props *props = &pref.image->props;
-   uint32_t plane_size, row_stride, slice_stride;
-   uint64_t plane_addr;
+   uint64_t plane_addr, plane_size, slice_stride;
+   uint32_t row_stride;
 
    /* 3-planar formats must use Chroma 2p planes for the U V planes. */
    assert(plane_idx == 0 || desc->layout != UTIL_FORMAT_LAYOUT_PLANAR3);
@@ -457,10 +474,10 @@ emit_generic_plane(const struct pan_image_view *iview, int plane_idx,
             ? MALI_CLUMP_ORDERING_TILED_U_INTERLEAVED
             : MALI_CLUMP_ORDERING_LINEAR;
       cfg.clump_format = pan_clump_format(iview->format);
-      cfg.size = plane_size;
+      PLANE_SET_SIZE(cfg, plane_size);
       cfg.pointer = plane_addr;
       cfg.row_stride = row_stride;
-      cfg.slice_stride = slice_stride;
+      PLANE_SET_SLICE_STRIDE(cfg, slice_stride);
       PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
                        u_minify(props->extent_px.height, mip_level));
    }
@@ -476,8 +493,8 @@ emit_astc_plane(const struct pan_image_view *iview, int plane_idx,
       pan_image_view_get_plane(iview, plane_idx);
    const struct pan_image_props *props = &pref.image->props;
    bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
-   uint32_t plane_size, row_stride, slice_stride;
-   uint64_t plane_addr;
+   uint64_t plane_addr, plane_size, slice_stride;
+   uint32_t row_stride;
 
    /* sRGB formats decode to RGBA8 sRGB, which is narrow.
     *
@@ -501,10 +518,10 @@ emit_astc_plane(const struct pan_image_view *iview, int plane_idx,
          : MALI_CLUMP_ORDERING_LINEAR;                                         \
    cfg.decode_hdr = iview->astc.hdr;                                           \
    cfg.decode_wide = wide;                                                     \
-   cfg.size = plane_size;                                                      \
+   PLANE_SET_SIZE(cfg, plane_size);                                            \
    cfg.pointer = plane_addr;                                                   \
    cfg.row_stride = row_stride;                                                \
-   cfg.slice_stride = slice_stride;                                            \
+   PLANE_SET_SLICE_STRIDE(cfg, slice_stride);                                  \
    PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),          \
                     u_minify(props->extent_px.height, mip_level))
 
@@ -554,9 +571,10 @@ emit_linear_or_u_tiled_chroma_2p_plane(const struct pan_image_view *iview,
       util_format_description(iview->format);
    const struct pan_image_plane_ref pref1 = pan_image_view_get_plane(iview, 1);
    const struct pan_image_props *props = &pref1.image->props;
-   uint64_t cplane1_addr, cplane2_addr;
-   uint32_t cplane1_row_stride, cplane1_slice_stride, cplane1_size;
-   ASSERTED uint32_t cplane2_row_stride, cplane2_slice_stride, cplane2_size;
+   uint64_t cplane1_addr, cplane2_addr, cplane1_slice_stride, cplane1_size;
+   ASSERTED uint64_t cplane2_slice_stride, cplane2_size;
+   ASSERTED uint32_t cplane2_row_stride;
+   uint32_t cplane1_row_stride;
 
    get_linear_or_u_tiled_plane_props(iview, 1, mip_level,
                                      layer_or_z_slice, &cplane1_addr, &cplane1_row_stride,
@@ -579,7 +597,7 @@ emit_linear_or_u_tiled_chroma_2p_plane(const struct pan_image_view *iview,
             ? MALI_CLUMP_ORDERING_TILED_U_INTERLEAVED
             : MALI_CLUMP_ORDERING_LINEAR;
       cfg.clump_format = pan_clump_format(iview->format);
-      cfg.size = cplane1_size;
+      PLANE_SET_SIZE(cfg, cplane1_size);
       cfg.pointer = cplane1_addr;
       cfg.row_stride = cplane1_row_stride;
       PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
@@ -595,8 +613,8 @@ static void
 get_afbc_plane_props(const struct pan_image_view *iview, int plane_idx,
                      unsigned mip_level, unsigned layer_or_z_slice,
                      uint64_t *header_pointer, uint32_t *header_row_stride,
-                     uint32_t *header_slice_size, uint32_t *header_slice_stride,
-                     uint32_t *size)
+                     uint32_t *header_slice_size, uint64_t *header_slice_stride,
+                     uint64_t *size)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
@@ -647,9 +665,8 @@ emit_afbc_plane(const struct pan_image_view *iview, int plane_idx,
          : pan_image_view_get_plane(iview, plane_idx);
    const struct pan_image *image = pref.image;
    const struct pan_image_props *props = &image->props;
-   uint32_t header_slice_size, header_row_stride, header_slice_stride;
-   uint32_t plane_size;
-   uint64_t header_addr;
+   uint64_t header_slice_stride, plane_size, header_addr;
+   uint32_t header_slice_size, header_row_stride;
 
    get_afbc_plane_props(iview, plane_idx, mip_level, layer_or_z_slice,
                         &header_addr, &header_row_stride, &header_slice_size,
@@ -668,11 +685,16 @@ emit_afbc_plane(const struct pan_image_view *iview, int plane_idx,
       cfg.prefetch = true;
       cfg.compression_mode =
          pan_afbc_compression_mode(iview->format, plane_idx);
-      cfg.size = plane_size;
+      PLANE_SET_SIZE(cfg, plane_size);
       cfg.pointer = header_addr;
       cfg.header_row_stride = header_row_stride;
       cfg.header_slice_size = header_slice_size;
+#if PAN_ARCH <= 10
       cfg.header_slice_stride = header_slice_stride;
+#else
+      cfg.header_slice_stride = header_slice_stride & BITFIELD_MASK(32);
+      cfg.header_slice_stride_hi = header_slice_stride >> 32;
+#endif
       PLANE_SET_EXTENT(cfg, u_minify(props->extent_px.width, mip_level),
                        u_minify(props->extent_px.height, mip_level));
    }
