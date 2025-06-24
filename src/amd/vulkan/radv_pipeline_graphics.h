@@ -15,6 +15,7 @@
 
 #include "radv_descriptor_set.h"
 #include "radv_pipeline.h"
+#include "radv_pipeline_layout.h"
 #include "radv_shader.h"
 
 #include "vk_graphics_state.h"

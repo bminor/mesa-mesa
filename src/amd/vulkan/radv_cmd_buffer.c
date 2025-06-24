@@ -15,6 +15,7 @@
 #include "radv_debug.h"
 #include "radv_dgc.h"
 #include "radv_event.h"
+#include "radv_pipeline_layout.h"
 #include "radv_pipeline_rt.h"
 #include "radv_radeon_winsys.h"
 #include "radv_rmv.h"

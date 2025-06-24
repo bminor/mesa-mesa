@@ -11,15 +11,16 @@
 #include "vk_shader_module.h"
 
 #include "nir/radv_nir.h"
+#include "ac_nir.h"
 #include "radv_debug.h"
 #include "radv_descriptor_set.h"
 #include "radv_entrypoints.h"
 #include "radv_pipeline_binary.h"
 #include "radv_pipeline_cache.h"
+#include "radv_pipeline_layout.h"
 #include "radv_pipeline_rt.h"
 #include "radv_rmv.h"
 #include "radv_shader.h"
-#include "ac_nir.h"
 
 struct rt_handle_hash_entry {
    uint32_t key;

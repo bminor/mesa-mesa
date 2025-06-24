@@ -137,6 +137,8 @@ libradv_files = files(
   'radv_pipeline_compute.c',
   'radv_pipeline_compute.h',
   'radv_pipeline_graphics.c',
+  'radv_pipeline_layout.c',
+  'radv_pipeline_layout.h',
   'radv_pipeline_rt.c',
   'radv_pipeline_rt.h',
   'radv_printf.c',
