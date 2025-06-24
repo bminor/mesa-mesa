@@ -947,10 +947,9 @@ sampler_aspect_from_format(enum pipe_format fmt)
 }
 
 static uint32_t
-hash_bufferview(void *bvci)
+hash_bufferview_key(void *key)
 {
-   size_t offset = offsetof(VkBufferViewCreateInfo, flags);
-   return _mesa_hash_data((char*)bvci + offset, sizeof(VkBufferViewCreateInfo) - offset);
+   return _mesa_hash_data(key, sizeof(struct zink_bufferview_key));
 }
 
 static VkBufferViewCreateInfo
@@ -990,30 +989,37 @@ get_buffer_view(struct zink_context *ctx, struct zink_resource *res, enum pipe_f
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_buffer_view *buffer_view = NULL;
+   struct zink_bufferview_key key = {
+      format,
+      offset,
+      size
+   };
    VkBufferViewCreateInfo bvci = create_bvci(ctx, res, format, offset, size);
 
-   uint32_t hash = hash_bufferview(&bvci);
+   uint32_t hash = hash_bufferview_key(&key);
    simple_mtx_lock(&res->obj->surface_mtx);
-   struct hash_entry *he = _mesa_hash_table_search_pre_hashed(&res->obj->surface_cache, hash, &bvci);
-   if (he) {
-      buffer_view = he->data;
+   bool found = false;
+   struct set_entry *he = _mesa_set_search_or_add_pre_hashed(&res->obj->surface_cache, hash, &key, &found);
+   if (found) {
+      buffer_view = (void*)he->key;
    } else {
       VkBufferView view;
       VkResult result = VKSCR(CreateBufferView)(screen->dev, &bvci, NULL, &view);
       if (result != VK_SUCCESS) {
+         _mesa_set_remove(&res->obj->surface_cache, he);
          mesa_loge("ZINK: vkCreateBufferView failed (%s)", vk_Result_to_str(result));
          goto out;
       }
       buffer_view = CALLOC_STRUCT(zink_buffer_view);
       if (!buffer_view) {
+         _mesa_set_remove(&res->obj->surface_cache, he);
          VKSCR(DestroyBufferView)(screen->dev, view, NULL);
          goto out;
       }
       buffer_view->pres = &res->base.b;
-      buffer_view->bvci = bvci;
+      buffer_view->key = key;
       buffer_view->buffer_view = view;
-      buffer_view->hash = hash;
-      _mesa_hash_table_insert_pre_hashed(&res->obj->surface_cache, hash, &buffer_view->bvci, buffer_view);
+      he->key = buffer_view;
    }
 out:
    simple_mtx_unlock(&res->obj->surface_mtx);

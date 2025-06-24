@@ -1199,7 +1199,7 @@ struct zink_resource_object {
    };
    VkDeviceAddress bda;
 
-   struct hash_table surface_cache;
+   struct set surface_cache;
    simple_mtx_t surface_mtx;
 
    VkSampleLocationsInfoEXT zs_evaluate;
@@ -1519,9 +1519,32 @@ zink_screen(struct pipe_screen *pipe)
 }
 
 /** surface types */
- 
+
+enum zink_surface_type {
+   ZINK_SURFACE_NORMAL,
+   ZINK_SURFACE_LAYERED,
+   ZINK_SURFACE_ARRAYED,
+};
+
+/* compact hash table key based on pipe_surface */
+struct zink_surface_key {
+   enum pipe_format format:12;      /**< typed PIPE_FORMAT_x */
+   unsigned swizzle_r:3;         /**< PIPE_SWIZZLE_x for red component */
+   unsigned swizzle_g:3;         /**< PIPE_SWIZZLE_x for green component */
+   unsigned swizzle_b:3;         /**< PIPE_SWIZZLE_x for blue component */
+   unsigned swizzle_a:3;         /**< PIPE_SWIZZLE_x for alpha component */
+   unsigned first_level:4;   /**< first mipmap level to use */
+   unsigned level_count:4;
+   enum zink_surface_type viewtype:2;      /**< layered view of an array/3d iamge */
+   unsigned stencil:1;           /**< stencil-only view */
+   unsigned pad:29;
+   unsigned first_layer:16;  /**< first layer to use for array textures */
+   unsigned last_layer:16;   /**< last layer to use for array textures */
+};
+
 /* this type only exists for compat with 32bit builds because vk types are 64bit */
 struct zink_surface {
+   struct zink_surface_key key;
    VkImageView image_view;
 };
 
@@ -1534,11 +1557,16 @@ struct zink_sampler_state {
    bool emulate_nonseamless;
 };
 
+struct zink_bufferview_key {
+   enum pipe_format format:12;
+   unsigned offset;
+   unsigned size;
+};
+
 struct zink_buffer_view {
    struct pipe_resource *pres;
-   VkBufferViewCreateInfo bvci;
+   struct zink_bufferview_key key;
    VkBufferView buffer_view;
-   uint32_t hash;
 };
 
 struct zink_sampler_view {

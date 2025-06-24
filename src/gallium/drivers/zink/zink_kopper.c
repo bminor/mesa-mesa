@@ -370,7 +370,7 @@ kopper_GetSwapchainImages(struct zink_screen *screen, struct kopper_swapchain *c
    if (zink_screen_handle_vkresult(screen, error)) {
       for (unsigned i = 0; i < cswap->num_images; i++) {
          cswap->images[i].image = images[i];
-         _mesa_hash_table_init(&cswap->images[i].surface_cache, NULL, NULL, equals_ivci);
+         _mesa_set_init(&cswap->images[i].surface_cache, NULL, NULL, equals_surface_key);
       }
    }
    cswap->max_acquires = cswap->num_images - cswap->scci.minImageCount + 1;

@@ -32,6 +32,38 @@
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
 
+static VkImageViewType
+vkviewtype_from_pipe(enum pipe_texture_target target, bool need_2D)
+{
+   switch (target) {
+   case PIPE_TEXTURE_1D:
+      return need_2D ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_1D;
+
+   case PIPE_TEXTURE_1D_ARRAY:
+      return need_2D ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+
+   case PIPE_TEXTURE_2D:
+   case PIPE_TEXTURE_RECT:
+      return VK_IMAGE_VIEW_TYPE_2D;
+
+   case PIPE_TEXTURE_2D_ARRAY:
+      return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+
+   case PIPE_TEXTURE_CUBE:
+      return VK_IMAGE_VIEW_TYPE_CUBE;
+
+   case PIPE_TEXTURE_CUBE_ARRAY:
+      return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+      break;
+
+   case PIPE_TEXTURE_3D:
+      return VK_IMAGE_VIEW_TYPE_3D;
+
+   default:
+      unreachable("unsupported target");
+   }
+}
+
 VkImageViewCreateInfo
 create_ivci(struct zink_screen *screen,
             struct zink_resource *res,
@@ -43,41 +75,7 @@ create_ivci(struct zink_screen *screen,
    memset(&ivci, 0, sizeof(VkImageViewCreateInfo));
    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    ivci.image = res->obj->image;
-
-   switch (target) {
-   case PIPE_TEXTURE_1D:
-      ivci.viewType = res->need_2D ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_1D;
-      break;
-
-   case PIPE_TEXTURE_1D_ARRAY:
-      ivci.viewType = res->need_2D ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-      break;
-
-   case PIPE_TEXTURE_2D:
-   case PIPE_TEXTURE_RECT:
-      ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-      break;
-
-   case PIPE_TEXTURE_2D_ARRAY:
-      ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-      break;
-
-   case PIPE_TEXTURE_CUBE:
-      ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-      break;
-
-   case PIPE_TEXTURE_CUBE_ARRAY:
-      ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-      break;
-
-   case PIPE_TEXTURE_3D:
-      ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-      break;
-
-   default:
-      unreachable("unsupported target");
-   }
-
+   ivci.viewType = vkviewtype_from_pipe(target, res->need_2D);
    ivci.format = res->base.b.format == PIPE_FORMAT_A8_UNORM ? res->format : zink_get_format(screen, templ->format);
    assert(ivci.format != VK_FORMAT_UNDEFINED);
 
@@ -136,7 +134,7 @@ apply_view_usage_for_format(struct zink_screen *screen, struct pipe_resource *pr
 static struct zink_surface *
 create_surface(struct pipe_context *pctx,
                struct pipe_resource *pres,
-               const struct pipe_surface *templ,
+               const struct zink_surface_key *templ,
                VkImageViewCreateInfo *ivci)
 {
    struct zink_screen *screen = zink_screen(pctx->screen);
@@ -155,22 +153,76 @@ create_surface(struct pipe_context *pctx,
       FREE(surface);
       return NULL;
    }
+   surface->key = *templ;
 
    return surface;
 }
 
 static uint32_t
-hash_ivci(const void *key)
+hash_key(const void *key)
 {
-   return _mesa_hash_data((char*)key + offsetof(VkImageViewCreateInfo, flags), sizeof(VkImageViewCreateInfo) - offsetof(VkImageViewCreateInfo, flags));
+   return _mesa_hash_data(key, sizeof(struct zink_surface_key));
 }
 
-static struct hash_table *
+static struct set *
 get_surface_cache(struct zink_resource *res)
 {
    struct kopper_displaytarget *cdt = res->obj->dt;
    assert(!res->obj->dt || res->obj->dt_idx != UINT32_MAX);
    return res->obj->dt ? &cdt->swapchain->images[res->obj->dt_idx].surface_cache : &res->obj->surface_cache;
+}
+
+static unsigned
+componentmapping_to_pipe(VkComponentSwizzle c)
+{
+   switch (c) {
+   case VK_COMPONENT_SWIZZLE_ZERO:
+      return PIPE_SWIZZLE_0;
+   case VK_COMPONENT_SWIZZLE_ONE:
+      return PIPE_SWIZZLE_1;
+   case VK_COMPONENT_SWIZZLE_R:
+      return PIPE_SWIZZLE_X;
+   case VK_COMPONENT_SWIZZLE_G:
+      return PIPE_SWIZZLE_Y;
+   case VK_COMPONENT_SWIZZLE_B:
+      return PIPE_SWIZZLE_Z;
+   case VK_COMPONENT_SWIZZLE_A:
+      return PIPE_SWIZZLE_W;
+   default:
+      unreachable("unknown swizzle");
+   }
+}
+
+static struct zink_surface_key
+templ_to_key(const struct pipe_surface *templ, const VkImageViewCreateInfo *ivci)
+{
+   VkImageViewType baseviewtype = vkviewtype_from_pipe(templ->texture->target, zink_resource(templ->texture)->need_2D);
+   enum zink_surface_type type = ZINK_SURFACE_NORMAL;
+   if (baseviewtype != ivci->viewType) {
+      switch (ivci->viewType) {
+      case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+      case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+         type = ZINK_SURFACE_ARRAYED;
+         break;
+      default:
+         type = ZINK_SURFACE_LAYERED;
+         break;
+      }
+   }
+   struct zink_surface_key key = {
+      .format = templ->format,
+      .viewtype = type,
+      .stencil = ivci->subresourceRange.aspectMask == VK_IMAGE_ASPECT_STENCIL_BIT,
+      .swizzle_r = componentmapping_to_pipe(ivci->components.r),
+      .swizzle_g = componentmapping_to_pipe(ivci->components.g),
+      .swizzle_b = componentmapping_to_pipe(ivci->components.b),
+      .swizzle_a = componentmapping_to_pipe(ivci->components.a),
+      .first_level = ivci->subresourceRange.baseMipLevel,
+      .level_count = ivci->subresourceRange.levelCount,
+      .first_layer = templ->first_layer,
+      .last_layer = templ->last_layer,
+   };
+   return key;
 }
 
 /* get a cached surface for a shader descriptor */
@@ -190,23 +242,24 @@ zink_get_surface(struct zink_context *ctx,
       zink_resource_object_init_mutable(ctx, res);
    /* reset for mutable obj switch */
    ivci->image = res->obj->image;
-   uint32_t hash = hash_ivci(ivci);
+   struct zink_surface_key key = templ_to_key(templ, ivci);
+   uint32_t hash = hash_key(&key);
 
    simple_mtx_lock(&res->obj->surface_mtx);
-   struct hash_table *ht = get_surface_cache(res);
-   struct hash_entry *entry = _mesa_hash_table_search_pre_hashed(ht, hash, ivci);
+   struct set *ht = get_surface_cache(res);
+   bool found = false;
+   struct set_entry *entry = _mesa_set_search_or_add_pre_hashed(ht, hash, &key, &found);
 
-   if (!entry) {
-      surface = create_surface(&ctx->base, &res->base.b, templ, ivci);
-      entry = _mesa_hash_table_insert_pre_hashed(ht, hash, mem_dup(ivci, sizeof(*ivci)), surface);
-      if (!entry) {
+   if (!found) {
+      surface = create_surface(&ctx->base, &res->base.b, &key, ivci);
+      if (!surface) {
+         _mesa_set_remove(ht, entry);
          simple_mtx_unlock(&res->obj->surface_mtx);
          return NULL;
       }
-
-      surface = entry->data;
+      entry->key = surface;
    } else {
-      surface = entry->data;
+      surface = (void*)entry->key;
    }
    simple_mtx_unlock(&res->obj->surface_mtx);
 

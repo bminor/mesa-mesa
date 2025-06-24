@@ -27,12 +27,9 @@
 #include "zink_types.h"
 
 static inline bool
-equals_ivci(const void *a, const void *b)
+equals_surface_key(const void *a, const void *b)
 {
-   const uint8_t *pa = a;
-   const uint8_t *pb = b;
-   size_t offset = offsetof(VkImageViewCreateInfo, flags);
-   return memcmp(pa + offset, pb + offset, sizeof(VkImageViewCreateInfo) - offset) == 0;
+   return memcmp(a, b, sizeof(struct zink_surface_key)) == 0;
 }
 
 VkImageViewCreateInfo

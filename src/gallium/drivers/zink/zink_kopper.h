@@ -29,7 +29,7 @@
 
 #include "kopper_interface.h"
 #include "util/u_queue.h"
-#include "util/hash_table.h"
+#include "util/set.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +51,7 @@ struct kopper_swapchain_image {
    VkSemaphore acquire;
    VkImageLayout layout;
 
-   struct hash_table surface_cache;
+   struct set surface_cache;
 };
 
 struct kopper_swapchain {

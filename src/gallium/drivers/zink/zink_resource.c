@@ -180,12 +180,9 @@ image_hic_transition(struct zink_screen *screen, struct zink_resource *res, VkIm
 }
 
 static bool
-equals_bvci(const void *a, const void *b)
+equals_bufferview_key(const void *a, const void *b)
 {
-   const uint8_t *pa = a;
-   const uint8_t *pb = b;
-   size_t offset = offsetof(VkBufferViewCreateInfo, flags);
-   return memcmp(pa + offset, pb + offset, sizeof(VkBufferViewCreateInfo) - offset) == 0;
+   return memcmp(a, b, sizeof(struct zink_bufferview_key)) == 0;
 }
 
 static void
@@ -200,20 +197,19 @@ debug_describe_zink_resource_object(char *buf, const struct zink_resource_object
 }
 
 void
-zink_destroy_resource_surface_cache(struct zink_screen *screen, struct hash_table *ht, bool is_buffer)
+zink_destroy_resource_surface_cache(struct zink_screen *screen, struct set *ht, bool is_buffer)
 {
    if (is_buffer) {
-      hash_table_foreach_remove(ht, he) {
-         struct zink_buffer_view *bv = he->data;
+      set_foreach_remove(ht, he) {
+         struct zink_buffer_view *bv = (void*)he->key;
          VKSCR(DestroyBufferView)(screen->dev, bv->buffer_view, NULL);
          FREE(bv);
       }
       ralloc_free(ht->table);
    } else {
-      hash_table_foreach_remove(ht, he) {
-         struct zink_surface *surf = he->data;
+      set_foreach_remove(ht, he) {
+         struct zink_surface *surf = (void*)he->key;
          VKSCR(DestroyImageView)(screen->dev, surf->image_view, NULL);
-         free((void*)he->key);
          FREE(surf);
       }
       ralloc_free(ht->table);
@@ -1250,7 +1246,7 @@ create_buffer(struct zink_screen *screen, struct zink_resource_object *obj,
          return roc_fail_and_cleanup_all;
       }
    }
-   _mesa_hash_table_init(&obj->surface_cache, NULL, NULL, equals_bvci);
+   _mesa_set_init(&obj->surface_cache, NULL, NULL, equals_bufferview_key);
    return roc_success;
 }
 
@@ -1482,7 +1478,7 @@ create_image(struct zink_screen *screen, struct zink_resource_object *obj,
             return roc_fail_and_cleanup_all;
          }
    }
-   _mesa_hash_table_init(&obj->surface_cache, NULL, NULL, equals_ivci);
+   _mesa_set_init(&obj->surface_cache, NULL, NULL, equals_surface_key);
    return roc_success;
 }
 
