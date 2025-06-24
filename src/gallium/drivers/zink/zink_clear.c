@@ -411,6 +411,7 @@ create_clear_surface(struct pipe_context *pctx, struct pipe_resource *pres, unsi
    tmpl.first_layer = box->z;
    tmpl.last_layer = box->z + box->depth - 1;
    tmpl.level = level;
+   tmpl.texture = pres;
    return tmpl;
 }
 

@@ -1119,19 +1119,20 @@ rebind_buffer_as_image(struct pipe_context *pctx, struct pipe_resource *pres, en
 }
 
 static struct pipe_surface
-pipe_surface_templ_from_sampler_view(const struct pipe_sampler_view *state, enum pipe_format format, enum pipe_texture_target target)
+pipe_surface_templ_from_sampler_view(const struct pipe_sampler_view *state, struct pipe_resource *pres, enum pipe_texture_target target)
 {
    struct pipe_surface templ = {0};
    if (!state->is_tex2d_from_buf)
       templ.level = state->u.tex.first_level;
    templ.format = state->format;
    /* avoid needing mutable for depth/stencil sampling */
-   if (util_format_is_depth_and_stencil(format))
-      templ.format = format;
+   if (util_format_is_depth_and_stencil(pres->format))
+      templ.format = pres->format;
    if (target != PIPE_TEXTURE_3D && !state->is_tex2d_from_buf) {
       templ.first_layer = state->u.tex.first_layer;
       templ.last_layer = state->u.tex.last_layer;
    }
+   templ.texture = pres;
    return templ;
 }
 
@@ -1168,7 +1169,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
          res = sampler_view->import2d;
          pres = import;
       }
-      struct pipe_surface templ = pipe_surface_templ_from_sampler_view(state, pres->format, target);
+      struct pipe_surface templ = pipe_surface_templ_from_sampler_view(state, pres, target);
 
       if (zink_is_swapchain(res)) {
          if (!zink_kopper_acquire(ctx, res, UINT64_MAX)) {
@@ -1920,6 +1921,7 @@ create_image_surface(struct zink_context *ctx, const struct pipe_image_view *vie
       depth += tmpl.last_layer - tmpl.first_layer;
       z = tmpl.first_layer;
    }
+   tmpl.texture = pres;
    switch (target) {
    case PIPE_TEXTURE_3D:
       if (depth < u_minify(res->base.b.depth0, view->u.tex.level)) {
@@ -2254,7 +2256,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
             } else {
                if (res->obj != b->obj) {
                   b->obj = res->obj;
-                  struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&b->base, res->base.b.format, b->base.target);
+                  struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&b->base, &res->base.b, b->base.target);
                   b->image_view = zink_get_surface(ctx, &res->base.b, &tmpl, &b->ivci);
                   update = true;
                } else  if (a != b)
@@ -5013,7 +5015,7 @@ rebind_image(struct zink_context *ctx, struct zink_resource *res)
             struct zink_sampler_view *sv = zink_sampler_view(ctx->sampler_views[i][j]);
             if (sv && sv->base.texture == &res->base.b) {
                sv->obj = res->obj;
-               struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, res->base.b.format, sv->base.target);
+               struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, &res->base.b, sv->base.target);
                sv->image_view = zink_get_surface(ctx, &res->base.b, &tmpl, &sv->ivci);
                ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, j, 1);
                update_descriptor_state_sampler(ctx, i, j, res);
@@ -5119,7 +5121,7 @@ zink_rebind_all_images(struct zink_context *ctx)
          struct zink_resource *res = zink_resource(sv->base.texture);
          if (res->obj != sv->obj) {
             sv->obj = res->obj;
-            struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, res->base.b.format, sv->base.target);
+            struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, &res->base.b, sv->base.target);
             sv->image_view = zink_get_surface(ctx, &res->base.b, &tmpl, &sv->ivci);
             ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, j, 1);
             update_descriptor_state_sampler(ctx, i, j, res);

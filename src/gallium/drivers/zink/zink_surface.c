@@ -256,5 +256,7 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
    VkImageViewCreateInfo ivci = create_fb_ivci(zink_screen(ctx->base.screen), res, psurf);
    ivci.image = transient->obj->image;
    ivci.pNext = NULL;
-   return zink_get_surface(ctx, &transient->base.b, psurf, &ivci);
+   struct pipe_surface templ = *psurf;
+   templ.texture = &transient->base.b;
+   return zink_get_surface(ctx, &transient->base.b, &templ, &ivci);
 }
