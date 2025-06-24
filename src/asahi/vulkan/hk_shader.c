@@ -364,12 +364,17 @@ lower_load_global_bounded(nir_builder *b, nir_intrinsic_instr *intr)
    base = nir_bcsel(b, valid, base, nir_imm_int64(b, AGX_ZERO_PAGE_ADDRESS));
    offset = bound_offset(b, valid, nir_scalar_resolved(offset, 0));
 
-   nir_def *val =
-      nir_build_load_global(b, intr->def.num_components, intr->def.bit_size,
-                            nir_iadd(b, base, nir_u2u64(b, offset)),
-                            .align_mul = nir_intrinsic_align_mul(intr),
-                            .align_offset = nir_intrinsic_align_offset(intr),
-                            .access = nir_intrinsic_access(intr));
+   enum gl_access_qualifier access = nir_intrinsic_access(intr);
+
+   if (intr->intrinsic == nir_intrinsic_load_global_constant_bounded) {
+      access |= ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER;
+   }
+
+   nir_def *val = nir_build_load_global(
+      b, intr->def.num_components, intr->def.bit_size,
+      nir_iadd(b, base, nir_u2u64(b, offset)),
+      .align_mul = nir_intrinsic_align_mul(intr),
+      .align_offset = nir_intrinsic_align_offset(intr), .access = access);
 
    nir_def_replace(&intr->def, val);
 }
@@ -378,7 +383,12 @@ static bool
 lower_load_global_constant_offset_instr(nir_builder *b,
                                         nir_intrinsic_instr *intrin, void *data)
 {
-   if (intrin->intrinsic == nir_intrinsic_load_global_bounded) {
+   bool *has_soft_fault = data;
+
+   if (intrin->intrinsic == nir_intrinsic_load_global_bounded ||
+       (intrin->intrinsic == nir_intrinsic_load_global_constant_bounded &&
+        !(*has_soft_fault))) {
+
       lower_load_global_bounded(b, intrin);
       return true;
    }
@@ -388,12 +398,10 @@ lower_load_global_constant_offset_instr(nir_builder *b,
       return false;
 
    b->cursor = nir_before_instr(&intrin->instr);
-   bool *has_soft_fault = data;
 
    nir_def *base_addr = intrin->src[0].ssa;
    nir_def *offset = intrin->src[1].ssa;
    nir_def *bound = NULL;
-   nir_def *zero = NULL;
 
    unsigned bit_size = intrin->def.bit_size;
    assert(bit_size >= 8 && bit_size % 8 == 0);
@@ -402,15 +410,6 @@ lower_load_global_constant_offset_instr(nir_builder *b,
 
    if (intrin->intrinsic == nir_intrinsic_load_global_constant_bounded) {
       bound = intrin->src[2].ssa;
-      zero = nir_imm_zero(b, intrin->num_components, bit_size);
-
-      /* If we do not have soft fault, we branch to bounds check. This is slow,
-       * fortunately we always have soft fault for release drivers.
-       *
-       * With soft fault, we speculatively load and smash to zero at the end.
-       */
-      if (!(*has_soft_fault))
-         nir_push_if(b, check_in_bounds(b, intrin));
    }
 
    unsigned align_mul = nir_intrinsic_align_mul(intrin);
@@ -422,47 +421,41 @@ lower_load_global_constant_offset_instr(nir_builder *b,
       .align_offset = align_offset, .access = nir_intrinsic_access(intrin));
 
    if (intrin->intrinsic == nir_intrinsic_load_global_constant_bounded) {
-      if (*has_soft_fault) {
-         nir_scalar offs = nir_scalar_resolved(offset, 0);
-         if (nir_scalar_is_const(offs)) {
-            /* Calculate last byte loaded */
-            unsigned offs_imm = nir_scalar_as_uint(offs) + load_size;
+      nir_scalar offs = nir_scalar_resolved(offset, 0);
+      if (nir_scalar_is_const(offs)) {
+         /* Calculate last byte loaded */
+         unsigned offs_imm = nir_scalar_as_uint(offs) + load_size;
 
-            /* Simplify the bounds check. Uniform buffers are bounds checked at
-             * 64B granularity, so `bound` is a multiple of K = 64. Then
-             *
-             * offs_imm < bound <==> round_down(offs_imm, K) < bound. Proof:
-             *
-             * "=>" round_down(offs_imm, K) <= offs_imm < bound.
-             *
-             * "<=" Let a, b be integer s.t. offs_imm = K a + b with b < K.
-             *      Note round_down(offs_imm, K) = Ka.
-             *
-             *      Let c be integer s.t. bound = Kc.
-             *      We have Ka < Kc => a < c.
-             *      b < K => Ka + b < K(a + 1).
-             *
-             *      a < c with integers => a + 1 <= c.
-             *      offs_imm < K(a + 1) <= Kc = bound.
-             *      Hence offs_imm < bound.
-             */
-            assert(align_mul == 64);
-            offs_imm &= ~(align_mul - 1);
+         /* Simplify the bounds check. Uniform buffers are bounds checked at
+          * 64B granularity, so `bound` is a multiple of K = 64. Then
+          *
+          * offs_imm < bound <==> round_down(offs_imm, K) < bound. Proof:
+          *
+          * "=>" round_down(offs_imm, K) <= offs_imm < bound.
+          *
+          * "<=" Let a, b be integer s.t. offs_imm = K a + b with b < K.
+          *      Note round_down(offs_imm, K) = Ka.
+          *
+          *      Let c be integer s.t. bound = Kc.
+          *      We have Ka < Kc => a < c.
+          *      b < K => Ka + b < K(a + 1).
+          *
+          *      a < c with integers => a + 1 <= c.
+          *      offs_imm < K(a + 1) <= Kc = bound.
+          *      Hence offs_imm < bound.
+          */
+         assert(align_mul == 64);
+         offs_imm &= ~(align_mul - 1);
 
-            /* Bounds checks are `offset > bound ? 0 : val` so if offset = 0,
-             * the bounds check is useless.
-             */
-            if (offs_imm) {
-               val = bounds_check(b, val, nir_imm_int(b, offs_imm), bound);
-            }
-         } else {
-            offset = nir_iadd_imm(b, offset, load_size);
-            val = bounds_check(b, val, offset, bound);
+         /* Bounds checks are `offset > bound ? 0 : val` so if offset = 0,
+          * the bounds check is useless.
+          */
+         if (offs_imm) {
+            val = bounds_check(b, val, nir_imm_int(b, offs_imm), bound);
          }
-
       } else {
-         nir_pop_if(b, NULL);
-         val = nir_if_phi(b, val, zero);
+         offset = nir_iadd_imm(b, offset, load_size);
+         val = bounds_check(b, val, offset, bound);
       }
    }
 
