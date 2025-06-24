@@ -846,6 +846,9 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
       NIR_PASS(progress, nir, nir_opt_dce);
    } while (progress);
 
+   NIR_PASS(progress, nir, nir_opt_sink, nir_move_load_ssbo);
+   NIR_PASS(progress, nir, nir_opt_move, nir_move_load_ssbo);
+
    bool soft_fault = agx_has_soft_fault(&dev->dev);
    NIR_PASS(_, nir, nir_shader_intrinsics_pass,
             lower_load_global_constant_offset_instr, nir_metadata_none,
