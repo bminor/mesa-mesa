@@ -1289,6 +1289,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
          sampler_view->tbo_size = MIN2(state->u.buf.size / blocksize, screen->info.props.limits.maxTexelBufferElements) * blocksize;
          return &sampler_view->base;
       }
+      sampler_view->obj = res->obj;
       sampler_view->buffer_view = get_buffer_view(ctx, res, state->format, state->u.buf.offset, state->u.buf.size);
       err = !sampler_view->buffer_view;
    }
@@ -2237,12 +2238,13 @@ zink_set_sampler_views(struct pipe_context *pctx,
                   if (!a || a->base.texture != b->base.texture || zink_resource(a->base.texture)->obj != res->obj ||
                      memcmp(&a->base.u.buf, &b->base.u.buf, sizeof(b->base.u.buf)))
                      update = true;
-               } else if (b->buffer_view->bvci.buffer != res->obj->buffer) {
+               } else if (b->obj != res->obj) {
                   /* if this resource has been rebound while it wasn't set here,
                   * its backing resource will have changed and thus we need to update
                   * the bufferview
                   */
                   b->buffer_view = get_buffer_view(ctx, res, b->base.format, b->base.u.buf.offset, b->base.u.buf.size);
+                  b->obj = res->obj;
                   update = true;
                } else if (!a || a->buffer_view->buffer_view != b->buffer_view->buffer_view)
                      update = true;
