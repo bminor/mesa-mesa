@@ -265,7 +265,7 @@ void radeon_bs_hevc_hrd_parameters(struct radeon_bitstream *bs,
          if (hrd->sub_pic_hrd_params_present_flag) {
             radeon_bs_code_fixed_bits(bs, hrd->tick_divisor_minus2, 8);
             radeon_bs_code_fixed_bits(bs, hrd->du_cpb_removal_delay_increment_length_minus1, 5);
-            radeon_bs_code_fixed_bits(bs, hrd->sub_pic_hrd_params_present_flag, 1);
+            radeon_bs_code_fixed_bits(bs, hrd->sub_pic_cpb_params_in_pic_timing_sei_flag, 1);
             radeon_bs_code_fixed_bits(bs, hrd->dpb_output_delay_du_length_minus1, 5);
          }
          radeon_bs_code_fixed_bits(bs, hrd->bit_rate_scale, 4);
@@ -336,7 +336,7 @@ uint32_t radeon_bs_hevc_st_ref_pic_set(struct radeon_bitstream *bs,
          if (rps->used_by_curr_pic_s0_flag[i])
             num_pic_total_curr++;
       }
-      for (i = 0; i < st_rps->num_positive_pics; i++) {
+      for (i = 0; i < rps->num_positive_pics; i++) {
          radeon_bs_code_ue(bs, rps->delta_poc_s1_minus1[i]);
          radeon_bs_code_fixed_bits(bs, rps->used_by_curr_pic_s1_flag[i], 1);
          if (rps->used_by_curr_pic_s1_flag[i])
