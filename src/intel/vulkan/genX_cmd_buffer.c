@@ -6332,7 +6332,8 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
       if ((batch->engine_class == INTEL_ENGINE_CLASS_COPY) ||
           (batch->engine_class == INTEL_ENGINE_CLASS_VIDEO)) {
          /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
-         if (intel_needs_workaround(device->info, 16018063123))
+         if (intel_needs_workaround(device->info, 16018063123) &&
+             (batch->engine_class == INTEL_ENGINE_CLASS_COPY))
             genX(batch_emit_fast_color_dummy_blit)(batch, device);
          anv_batch_emit(batch, GENX(MI_FLUSH_DW), fd) {
             fd.PostSyncOperation = WriteTimestamp;
