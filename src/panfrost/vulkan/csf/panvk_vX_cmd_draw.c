@@ -28,6 +28,7 @@
 #include "panvk_image_view.h"
 #include "panvk_instance.h"
 #include "panvk_priv_bo.h"
+#include "panvk_query_pool.h"
 #include "panvk_shader.h"
 
 #include "pan_desc.h"
@@ -1797,29 +1798,36 @@ wrap_prev_oq(struct panvk_cmd_buffer *cmdbuf)
    if (!last_syncobj)
       return VK_SUCCESS;
 
-   struct pan_ptr new_oq_node = panvk_cmd_alloc_dev_mem(
-      cmdbuf, desc, sizeof(struct panvk_cs_occlusion_query), 8);
+   /* We need to signal n_views consecutive queries for multiview. */
+   const uint32_t n_views =
+      MAX2(1, util_bitcount(cmdbuf->state.gfx.render.view_mask));
 
-   if (!new_oq_node.gpu)
-      return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+   for (uint32_t view_idx = 0; view_idx < n_views; ++view_idx) {
+      struct pan_ptr new_oq_node = panvk_cmd_alloc_dev_mem(
+         cmdbuf, desc, sizeof(struct panvk_cs_occlusion_query), 8);
 
-   cmdbuf->state.gfx.render.oq.chain = new_oq_node.gpu;
 
-   struct panvk_cs_occlusion_query *oq = new_oq_node.cpu;
+      if (!new_oq_node.gpu)
+         return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   *oq = (struct panvk_cs_occlusion_query){
-      .node = {.next = 0},
-      .syncobj = last_syncobj,
-   };
+      cmdbuf->state.gfx.render.oq.chain = new_oq_node.gpu;
 
-   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
-   struct cs_index new_node_ptr = cs_scratch_reg64(b, 0);
-   cs_move64_to(b, new_node_ptr, new_oq_node.gpu);
-   cs_single_link_list_add_tail(
-      b, cs_subqueue_ctx_reg(b),
-      offsetof(struct panvk_cs_subqueue_context, render.oq_chain), new_node_ptr,
-      offsetof(struct panvk_cs_occlusion_query, node),
-      cs_scratch_reg_tuple(b, 10, 4));
+      struct panvk_cs_occlusion_query *oq = new_oq_node.cpu;
+
+      *oq = (struct panvk_cs_occlusion_query){
+         .node = {.next = 0},
+         .syncobj = last_syncobj + view_idx * sizeof(struct panvk_query_available_obj),
+      };
+
+      struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
+      struct cs_index new_node_ptr = cs_scratch_reg64(b, 0);
+      cs_move64_to(b, new_node_ptr, new_oq_node.gpu);
+      cs_single_link_list_add_tail(
+         b, cs_subqueue_ctx_reg(b),
+         offsetof(struct panvk_cs_subqueue_context, render.oq_chain), new_node_ptr,
+         offsetof(struct panvk_cs_occlusion_query, node),
+         cs_scratch_reg_tuple(b, 10, 4));
+   }
 
    return VK_SUCCESS;
 }

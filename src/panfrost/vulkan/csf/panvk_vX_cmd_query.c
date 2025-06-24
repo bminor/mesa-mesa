@@ -172,6 +172,12 @@ panvk_cmd_end_occlusion_query(struct panvk_cmd_buffer *cmd,
    if (cmd->state.gfx.render.oq.last == syncobj_addr)
       return;
 
+   /* Multiview can only be active inside of a renderpass.
+    * A query that begins in a subpass, must end in the same subpass.
+    * Therefore, if the occlusion query ends outside of a render pass, multiview
+    * should not be active. */
+   assert(cmd->state.gfx.render.view_mask == 0);
+
    struct cs_builder *b = panvk_get_cs_builder(cmd, PANVK_SUBQUEUE_FRAGMENT);
    struct cs_index oq_syncobj = cs_scratch_reg64(b, 0);
    struct cs_index val = cs_scratch_reg32(b, 2);
