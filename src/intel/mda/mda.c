@@ -187,60 +187,115 @@ parse_mesa_archive(void *mem_ctx, const char *filename)
    tar_reader tr = {0};
    tar_reader_init_from_bytes(&tr, ma->contents.data, ma->contents.len);
 
-   object *cur_object = NULL;
-
    tar_reader_entry entry = {0};
 
-   {
-      if (!tar_reader_next(&tr, &entry) || entry.error) {
-         fprintf(stderr, "mda: wrong archive, missing mesa.txt\n");
-         return NULL;
+   bool found_mesa_txt = false;
+   while (tar_reader_next(&tr, &entry)) {
+      slice fullpath;
+      if (!slice_is_empty(entry.prefix)) {
+         char *fullpath_str = ralloc_asprintf(ma, "%.*s/%.*s",
+                                              SLICE_FMT(entry.prefix),
+                                              SLICE_FMT(entry.name));
+         fullpath = slice_from_cstr(fullpath_str);
+      } else {
+         fullpath = entry.name;
       }
 
-      const char *mesa_txt = slice_to_cstr(ma, entry.name);
-      if (strcmp(mesa_txt, "mesa.txt")) {
-         fprintf(stderr, "mda: wrong archive, missing mesa.txt\n");
-         return NULL;
+      slice mda_mesa_txt = slice_from_cstr("mda/mesa.txt");
+      if (slice_equal(fullpath, mda_mesa_txt)) {
+         ma->info = slice_to_cstr(ma, entry.contents);
+         found_mesa_txt = true;
+         break;
       }
-
-      ma->info = slice_to_cstr(ma, entry.contents);
    }
 
+   if (!found_mesa_txt) {
+      fprintf(stderr, "mda: wrong archive, missing mesa.txt\n");
+      return NULL;
+   }
+
+   /* Now that we found mesa. Reset header. */
+   tar_reader_init_from_bytes(&tr, ma->contents.data, ma->contents.len);
+
+   struct hash_table *lookup = slice_hash_table_create(ma);
+
    while (tar_reader_next(&tr, &entry)) {
-      slice prefix = entry.prefix;
-      slice name   = entry.name;
-
-      slice_cut_result cut = slice_cut(name, '/');
-      slice version_name;
-      if (cut.found) {
-         name = cut.before;
-         version_name = cut.after;
+      slice fullpath;
+      if (!slice_is_empty(entry.prefix)) {
+         char *fullpath_str = ralloc_asprintf(ma, "%.*s/%.*s",
+                                              SLICE_FMT(entry.prefix),
+                                              SLICE_FMT(entry.name));
+         fullpath = slice_from_cstr(fullpath_str);
       } else {
-         version_name = slice_from_cstr("");
+         fullpath = entry.name;
       }
 
-      assert(prefix.len > 4);
-      assert(slice_starts_with(prefix, slice_from_cstr("mda/")));
-      prefix = slice_strip_prefix(prefix, slice_from_cstr("mda/"));
+      /* Ignore directory entries. */
+      if (slice_is_empty(entry.contents))
+         continue;
 
-      if (!cur_object || !slice_equal(prefix, cur_object->prefix) || !slice_equal(name, cur_object->name)) {
+      /* Already processed this before. */
+      if (slice_equal_cstr(fullpath, "mda/mesa.txt"))
+         continue;
+
+      /* Normalize path: strip leading "mda/" if present */
+      slice mda_prefix = slice_from_cstr("mda/");
+      fullpath = slice_strip_prefix(fullpath, mda_prefix);
+
+      slice_cut_result first_cut = slice_cut(fullpath, '/');
+      if (!first_cut.found)
+         continue;
+
+      slice prefix_normalized = first_cut.before;
+      slice_cut_result second_cut = slice_cut(first_cut.after, '/');
+
+      slice key_slice, object_name, version_name;
+
+      if (second_cut.found) {
+         /* Normal format: "0/OBJECT-NAME/version-name". */
+         object_name = second_cut.before;
+         version_name = second_cut.after;
+         key_slice = slice_substr_to(fullpath,
+                                     second_cut.before.data + second_cut.before.len - fullpath.data);
+      } else {
+         /* Single version format: "0/SPIRV". */
+         object_name = first_cut.after;
+         version_name = slice_from_cstr("binary");
+         key_slice = fullpath;
+      }
+
+      struct hash_entry *hash_entry = slice_hash_table_search(lookup, key_slice);
+      int obj_index = hash_entry ? (intptr_t)hash_entry->data : -1;
+      object *obj;
+
+      if (obj_index == -1) {
          ma->objects = rerzalloc(ma, ma->objects, object, ma->objects_count, ma->objects_count + 1);
-         cur_object = &ma->objects[ma->objects_count++];
-         cur_object->prefix = prefix;
-         cur_object->name = name;
-         cur_object->ma = ma;
-         cur_object->fullname = slice_from_cstr(ralloc_asprintf(ma, "%.*s/%.*s/%.*s", SLICE_FMT(ma->filename), SLICE_FMT(prefix), SLICE_FMT(name)));
+         obj_index = ma->objects_count++;
+         obj = &ma->objects[obj_index];
+         obj->prefix = prefix_normalized;
+         obj->name = object_name;
+         obj->ma = ma;
+         char *fullname_str = ralloc_asprintf(ma, "%.*s/%.*s/%.*s",
+                                              SLICE_FMT(ma->filename),
+                                              SLICE_FMT(prefix_normalized),
+                                              SLICE_FMT(object_name));
+         obj->fullname = slice_from_cstr(fullname_str);
+         obj->versions = NULL;
+         obj->versions_count = 0;
+
+         slice_hash_table_insert(lookup, key_slice, (void *)(intptr_t)obj_index);
+      } else {
+         obj = &ma->objects[obj_index];
       }
 
-      /* Add version to object (same for new or existing) */
-      cur_object->versions = rerzalloc(ma, cur_object->versions, content,
-                               cur_object->versions_count, cur_object->versions_count + 1);
-      int s = cur_object->versions_count++;
+      obj->versions = rerzalloc(ma, obj->versions, content,
+                               obj->versions_count, obj->versions_count + 1);
+      int s = obj->versions_count++;
 
-      cur_object->versions[s].name = version_name;
-      cur_object->versions[s].data = entry.contents;
-      char *version_fullname_str = ralloc_asprintf(ma, "%.*s/%.*s", SLICE_FMT(cur_object->fullname), SLICE_FMT(version_name));
-      cur_object->versions[s].fullname = slice_from_cstr(version_fullname_str);
+      obj->versions[s].name = version_name;
+      obj->versions[s].data = entry.contents;
+      char *version_fullname_str = ralloc_asprintf(ma, "%.*s/%.*s", SLICE_FMT(obj->fullname), SLICE_FMT(version_name));
+      obj->versions[s].fullname = slice_from_cstr(version_fullname_str);
    }
 
    return ma;
