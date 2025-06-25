@@ -44,6 +44,7 @@ typedef struct mesa_archive {
    object *objects;
 
    const char *info;
+   slice detected_mda_prefix;
 } mesa_archive;
 
 enum diff_mode {
@@ -190,6 +191,7 @@ parse_mesa_archive(void *mem_ctx, const char *filename)
    tar_reader_entry entry = {0};
 
    bool found_mesa_txt = false;
+   ma->detected_mda_prefix = (slice){};
    while (tar_reader_next(&tr, &entry)) {
       slice fullpath;
       if (!slice_is_empty(entry.prefix)) {
@@ -202,10 +204,16 @@ parse_mesa_archive(void *mem_ctx, const char *filename)
       }
 
       slice mda_mesa_txt = slice_from_cstr("mda/mesa.txt");
-      if (slice_equal(fullpath, mda_mesa_txt)) {
-         ma->info = slice_to_cstr(ma, entry.contents);
-         found_mesa_txt = true;
-         break;
+
+      if (slice_ends_with(fullpath, mda_mesa_txt)) {
+         slice_cut_result cut = slice_cut(fullpath, '/');
+         if (cut.found && slice_equal_cstr(cut.after, "mesa.txt")) {
+            /* Cut was succesful, so can extend to include the separator. */
+            ma->detected_mda_prefix = (slice){ cut.before.data, cut.before.len+1 };
+            ma->info = slice_to_cstr(ma, entry.contents);
+            found_mesa_txt = true;
+            break;
+         }
       }
    }
 
@@ -234,13 +242,24 @@ parse_mesa_archive(void *mem_ctx, const char *filename)
       if (slice_is_empty(entry.contents))
          continue;
 
-      /* Already processed this before. */
-      if (slice_equal_cstr(fullpath, "mda/mesa.txt"))
+      if (!slice_starts_with(fullpath, ma->detected_mda_prefix)) {
+         fprintf(stderr, "mda: ignoring unexpected file with wrong prefix: %.*s\n", SLICE_FMT(fullpath));
          continue;
+      }
 
-      /* Normalize path: strip leading "mda/" if present */
-      slice mda_prefix = slice_from_cstr("mda/");
-      fullpath = slice_strip_prefix(fullpath, mda_prefix);
+      /* Remove the detected prefix from paths.  We'll use the filename later
+       * on since is more visible to the user.  Most of the time is going to
+       * be the same.
+       */
+      {
+         slice_cut_result cut = slice_cut(fullpath, '/');
+         assert(cut.found);
+         fullpath = cut.after;
+      }
+
+      /* Already processed this before. */
+      if (slice_equal_cstr(fullpath, "mesa.txt"))
+         continue;
 
       slice_cut_result first_cut = slice_cut(fullpath, '/');
       if (!first_cut.found)
