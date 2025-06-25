@@ -1222,16 +1222,22 @@
 
   <enum name="AFBC Compression Mode">
     <value name="R8" value="0"/>
+    <value name="R16" value="1"/>
     <value name="R8G8" value="3"/>
     <value name="R5G6B5" value="4"/>
     <value name="R4G4B4A4" value="5"/>
     <value name="R5G5B5A1" value="6"/>
+    <value name="R16G16" value="8"/>
     <value name="R8G8B8" value="9"/>
     <value name="R8G8B8A8" value="10"/>
     <value name="R10G10B10A2" value="11"/>
     <value name="R11G11B10" value="12"/>
     <value name="S8" value="14"/>
     <value name="X24S8" value="15"/>
+    <value name="R16G16B16" value="16"/>
+    <value name="R16G16B16A16" value="17"/>
+
+    <value name="R10G10B10A10" value="23"/>
 
     <value name="YUV420 6c8" value="32"/>
     <value name="YUV420 2c8" value="34"/>

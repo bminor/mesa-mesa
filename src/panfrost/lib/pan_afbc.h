@@ -80,6 +80,12 @@ enum pan_afbc_mode {
    PAN_AFBC_MODE_R10G10B10A2,
    PAN_AFBC_MODE_R11G11B10,
 
+   /* 16 bit modes, available on v10+ */
+   PAN_AFBC_MODE_R16,
+   PAN_AFBC_MODE_R16G16,
+   PAN_AFBC_MODE_R16G16B16,
+   PAN_AFBC_MODE_R16G16B16A16,
+
    /* YUV special modes */
    PAN_AFBC_MODE_YUV420_6C8,
    PAN_AFBC_MODE_YUV420_2C8,
@@ -538,12 +544,21 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
       format = util_format_any_to_unorm(format);
 
    /* Luminance-alpha not supported for AFBC on v7+ */
+   /* 16 bit modes only available for AFBC on v10 and later */
    switch (format) {
    case PIPE_FORMAT_A8_UNORM:
    case PIPE_FORMAT_L8_UNORM:
    case PIPE_FORMAT_I8_UNORM:
    case PIPE_FORMAT_L8A8_UNORM:
       if (arch >= 7)
+         return PAN_AFBC_MODE_INVALID;
+      else
+         break;
+   case PIPE_FORMAT_R16_UNORM:
+   case PIPE_FORMAT_R16G16_UNORM:
+   case PIPE_FORMAT_R16G16B16_UNORM:
+   case PIPE_FORMAT_R16G16B16A16_UNORM:
+      if (arch < 10)
          return PAN_AFBC_MODE_INVALID;
       else
          break;
@@ -575,6 +590,12 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
    /* AFBC(S8) only supported on v9+ */
    case PIPE_FORMAT_S8_UINT:
       return arch >= 9 ? PAN_AFBC_MODE_R8 : PAN_AFBC_MODE_INVALID;
+
+   case PIPE_FORMAT_R16_UNORM:         return PAN_AFBC_MODE_R16;
+   case PIPE_FORMAT_R16G16_UNORM:      return PAN_AFBC_MODE_R16G16;
+   case PIPE_FORMAT_R16G16B16_UNORM:   return PAN_AFBC_MODE_R16G16B16;
+   case PIPE_FORMAT_R16G16B16A16_UNORM:
+                                       return PAN_AFBC_MODE_R16G16B16A16;
 
    default:                            return PAN_AFBC_MODE_INVALID;
    }
@@ -676,6 +697,16 @@ pan_afbc_compression_mode(enum pan_afbc_mode mode)
       return MALI_AFBC_COMPRESSION_MODE_R10G10B10A2;
    case PAN_AFBC_MODE_R11G11B10:
       return MALI_AFBC_COMPRESSION_MODE_R11G11B10;
+#if PAN_ARCH >= 10
+   case PAN_AFBC_MODE_R16:
+      return MALI_AFBC_COMPRESSION_MODE_R16;
+   case PAN_AFBC_MODE_R16G16:
+      return MALI_AFBC_COMPRESSION_MODE_R16G16;
+   case PAN_AFBC_MODE_R16G16B16:
+      return MALI_AFBC_COMPRESSION_MODE_R16G16B16;
+   case PAN_AFBC_MODE_R16G16B16A16:
+      return MALI_AFBC_COMPRESSION_MODE_R16G16B16A16;
+#endif
    case PAN_AFBC_MODE_YUV420_6C8:
       return MALI_AFBC_COMPRESSION_MODE_YUV420_6C8;
    case PAN_AFBC_MODE_YUV420_2C8:
@@ -700,6 +731,12 @@ pan_afbc_compression_mode(enum pan_afbc_mode mode)
       return MALI_AFBC_COMPRESSION_MODE_YUV422_2C10;
    case PAN_AFBC_MODE_YUV422_1C10:
       return MALI_AFBC_COMPRESSION_MODE_YUV422_1C10;
+#if PAN_ARCH == 9
+   case PAN_AFBC_MODE_R16:
+   case PAN_AFBC_MODE_R16G16:
+   case PAN_AFBC_MODE_R16G16B16:
+   case PAN_AFBC_MODE_R16G16B16A16:
+#endif
    case PAN_AFBC_MODE_INVALID:
       UNREACHABLE("Invalid AFBC format");
    }
