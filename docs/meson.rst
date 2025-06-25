@@ -9,8 +9,6 @@ website <https://mesonbuild.com/>`__.
 
 .. note::
 
-   Mesa requires Meson >= 0.60.0 to build.
-
    If your distribution doesn't have something recent enough in its
    repositories, you can `try the methods suggested here
    <https://mesonbuild.com/Getting-meson.html>`__ to install the
