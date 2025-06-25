@@ -5891,9 +5891,6 @@ bool nir_lower_mediump_vars(nir_shader *nir, nir_variable_mode modes);
 bool nir_lower_mediump_io(nir_shader *nir, nir_variable_mode modes,
                           uint64_t varying_mask, bool use_16bit_slots);
 bool nir_clear_mediump_io_flag(nir_shader *nir);
-bool nir_force_mediump_io(nir_shader *nir, nir_variable_mode modes,
-                          nir_alu_type types);
-bool nir_unpack_16bit_varying_slots(nir_shader *nir, nir_variable_mode modes);
 
 typedef struct nir_opt_tex_srcs_options {
    unsigned sampler_dims;
