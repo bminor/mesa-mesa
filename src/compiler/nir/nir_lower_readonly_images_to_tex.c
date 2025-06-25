@@ -169,7 +169,8 @@ lower_readonly_image_instr_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin
       }
 
       tex->dest_type = nir_intrinsic_dest_type(intrin);
-      nir_def_init(&tex->instr, &tex->def, 4, 32);
+      unsigned bit_size = nir_alu_type_get_type_size(tex->dest_type);
+      nir_def_init(&tex->instr, &tex->def, 4, bit_size);
       break;
    }
 
