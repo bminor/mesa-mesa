@@ -49,14 +49,10 @@ venus-lavapipe-full:
 
 android-angle-venus-anv-cml:
   extends:
-    - .lava-x86_64-test-android
-    - .anv-test
-    - .test-angle
+    - .android-angle-venus-anv-test
     - .lava-asus-C436FA-Flip-hatch:x86_64
     - .venus-anv-rules
   variables:
-    ANDROID_GPU_MODE: venus_guest_angle
     DEQP_SUITE: android-angle-venus-anv
     GPU_VERSION: android-angle-venus-anv
     HWCI_KERNEL_MODULES: "i915,vhost_vsock"
-    VK_DRIVER: intel

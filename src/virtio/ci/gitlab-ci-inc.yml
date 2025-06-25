@@ -53,3 +53,12 @@
     CROSVM_GPU_ARGS: "vulkan=true,gles=false,backend=virglrenderer,egl=true,surfaceless=true,fixed-blob-mapping=false"
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
+
+.android-angle-venus-anv-test:
+  extends:
+    - .lava-x86_64-test-android
+    - .anv-test
+    - .test-angle
+  variables:
+    ANDROID_GPU_MODE: venus_guest_angle
+    VK_DRIVER: intel
