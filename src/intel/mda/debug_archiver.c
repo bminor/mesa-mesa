@@ -21,6 +21,7 @@ struct debug_archiver
    tar_writer *tw;
    char prefix[128];
    char *archive_path;
+   char *mda_dir_in_archive;
 };
 
 DEBUG_GET_ONCE_OPTION(mda_output_dir, "MDA_OUTPUT_DIR", ".")
@@ -92,6 +93,18 @@ debug_archiver_open(void *mem_ctx, const char *name, const char *info)
    da->tw = rzalloc(da, tar_writer);
    tar_writer_init(da->tw, da->f);
 
+   {
+      const char *filename_start = strrchr(da->archive_path, '/');
+      filename_start = filename_start ? filename_start + 1 : da->archive_path;
+
+      char *filename_copy = ralloc_strdup(da, filename_start);
+      char *tar_ext = strstr(filename_copy, ".tar");
+      if (tar_ext) {
+         *tar_ext = '\0';
+      }
+      da->mda_dir_in_archive = filename_copy;
+   }
+
    debug_archiver_set_prefix(da, "");
 
    tar_writer_start_file(da->tw, "mesa.txt");
@@ -105,9 +118,9 @@ void
 debug_archiver_set_prefix(debug_archiver *da, const char *prefix)
 {
    if (!prefix || !*prefix) {
-      strcpy(da->prefix, "mda");
+      snprintf(da->prefix, ARRAY_SIZE(da->prefix) - 1, "%s", da->mda_dir_in_archive);
    } else {
-      snprintf(da->prefix, ARRAY_SIZE(da->prefix) - 1, "mda/%s", prefix);
+      snprintf(da->prefix, ARRAY_SIZE(da->prefix) - 1, "%s/%s", da->mda_dir_in_archive, prefix);
    }
 
    da->tw->prefix = da->prefix;
