@@ -122,6 +122,8 @@ static const struct lima_format lima_pixel_formats[] = {
    LIMA_PIXEL_FORMAT(B5G5R5A1_UNORM,     B5G5R5A1, false, LAYOUT(8, 5, 6, 5)),
    LIMA_PIXEL_FORMAT(B4G4R4A4_UNORM,     B4G4R4A4, false, LAYOUT(8, 4, 4, 4)),
    LIMA_PIXEL_FORMAT(R8_UNORM,           B8,       true,  LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(L8_UNORM,           B8,       true,  LAYOUT(8, 8, 8, 8)),
+   LIMA_PIXEL_FORMAT(I8_UNORM,           B8,       true,  LAYOUT(8, 8, 8, 8)),
    LIMA_PIXEL_FORMAT(R8G8_UNORM,         G8B8,     true,  LAYOUT(0, 0, 0, 0)),
    LIMA_PIXEL_FORMAT(Z16_UNORM,          Z16,      false, LAYOUT(0, 0, 0, 0)),
    LIMA_PIXEL_FORMAT(Z24_UNORM_S8_UINT,  Z24S8,    false, LAYOUT(0, 0, 0, 0)),
