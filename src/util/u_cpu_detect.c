@@ -173,7 +173,7 @@ check_os_altivec_support(void)
    char *env_vsx = getenv("GALLIVM_VSX");
    uint64_t hwcap = getauxval(AT_HWCAP);
    util_cpu_caps.has_altivec = (hwcap >> 28) & 1;
-   if (!env_vsx || env_vsx[0] != '0') {
+   if (!env_vsx || env_vsx[0] != '0')
       util_cpu_caps.has_vsx  = (hwcap >>  7) & 1;
 #else /* !DETECT_OS_APPLE && !DETECT_OS_BSD && !DETECT_OS_LINUX */
    /* not on Apple/Darwin or Linux, do it the brute-force way */
