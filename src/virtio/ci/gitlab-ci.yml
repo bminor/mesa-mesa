@@ -56,3 +56,26 @@ android-angle-venus-anv-cml:
     DEQP_SUITE: android-angle-venus-anv
     GPU_VERSION: android-angle-venus-anv
     HWCI_KERNEL_MODULES: "i915,vhost_vsock"
+
+android-angle-venus-anv-tgl:
+  extends:
+    - .android-angle-venus-anv-test
+    - .lava-acer-cp514-2h-1130g7-volteer:x86_64
+    - .venus-anv-manual-rules
+  variables:
+    DEQP_SUITE: android-angle-venus-anv
+    GPU_VERSION: android-angle-venus-anv
+    HWCI_KERNEL_MODULES: "i915,vhost_vsock"
+    DEVICE_HANGING_TIMEOUT_SEC: 5400  # Workaround until network configuration is updated
+
+android-angle-venus-anv-adl:
+  extends:
+    - .android-angle-venus-anv-test
+    - .lava-acer-cbv514-1h-34uz-brya:x86_64
+    - .venus-anv-manual-rules
+  variables:
+    DEQP_SUITE: android-angle-venus-anv
+    GPU_VERSION: android-angle-venus-anv
+    HWCI_KERNEL_MODULES: "i915,vhost_vsock"
+    LAVA_CMDLINE: null  # Override the default cmdline to use i915 instead of Xe
+    DEVICE_HANGING_TIMEOUT_SEC: 5400  # Workaround until network configuration is updated
