@@ -1,8 +1,22 @@
+dEQP-GLES3.functional.occlusion_query.conservative_all_occluders
+dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_clear
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_write_stencil_clear
+dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_clear_stencil_clear
+dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_write
 dEQP-GLES3.functional.occlusion_query.conservative_scissor_stencil_clear
+dEQP-GLES3.functional.occlusion_query.conservative_stencil_write
+dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear_stencil_write
+dEQP-GLES3.functional.occlusion_query.scissor
+dEQP-GLES3.functional.occlusion_query.scissor_depth_write_stencil_clear
+dEQP-GLES3.functional.occlusion_query.scissor_stencil_write
+dEQP-GLES3.functional.occlusion_query.stencil_clear
 dEQP-GLES31.functional.geometry_shading.basic.output_max
+
 KHR-GL46.direct_state_access.framebuffers_texture_layer_attachment
 KHR-GL46.pipeline_statistics_query_tests_ARB.functional_primitives_vertices_submitted_and_clipping_input_output_primitives
+
+glx@glx-visuals-depth
+glx@glx-visuals-stencil
 
 spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50
 spec@egl_chromium_sync_control@conformance
