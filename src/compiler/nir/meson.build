@@ -306,6 +306,7 @@ else
   'nir_propagate_invariant.c',
   'nir_range_analysis.c',
   'nir_range_analysis.h',
+  'nir_recompute_io_bases.c',
   'nir_remove_dead_variables.c',
   'nir_remove_tex_shadow.c',
   'nir_repair_ssa.c',
