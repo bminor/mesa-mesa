@@ -20,12 +20,8 @@ x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareB
 x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuWrite_BLOB
 x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuRead_BLOB
 
-### org.junit.AssumptionViolatedException: AVIF is not supported on this device, skip this test.
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[0]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[1]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[2]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[3]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[4]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[5]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[6]
-x86_64 CtsGraphicsTestCases android.graphics.cts.AImageDecoderTest#testDecode10BitAvif[7]
+# First test run details for dEQP: https://mesa.pages.freedesktop.org/-/mesa/-/jobs/79050820/artifacts/results/test_result.html
+
+### Fail: vkd.mapMemory(device, mem, offset, size, flags, &amp;hostPtr): VK_ERROR_MEMORY_MAP_FAILED at vkMemUtil.cpp:326
+x86_64 CtsDeqpTestCases dEQP-VK.api.external.memory.android_hardware_buffer.suballocated.host_visible#import_twice
+x86_64 CtsDeqpTestCases dEQP-VK.api.external.memory.android_hardware_buffer.dedicated.host_visible#import_twice
