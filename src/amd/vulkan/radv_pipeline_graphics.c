@@ -1196,8 +1196,8 @@ radv_link_shaders(const struct radv_device *device, struct radv_shader_stage *pr
    nir_validate_shader(producer, "after nir_lower_io_arrays_to_elements");
    nir_validate_shader(consumer, "after nir_lower_io_arrays_to_elements");
 
-   radv_nir_lower_io_to_scalar_early(producer, nir_var_shader_out);
-   radv_nir_lower_io_to_scalar_early(consumer, nir_var_shader_in);
+   radv_nir_lower_io_vars_to_scalar(producer, nir_var_shader_out);
+   radv_nir_lower_io_vars_to_scalar(consumer, nir_var_shader_in);
 
    /* Remove PSIZ from shaders when it's not needed.
     * This is typically produced by translation layers like Zink or D9VK.

@@ -22,11 +22,11 @@ type_size_vec4(const struct glsl_type *type, bool bindless)
 }
 
 void
-radv_nir_lower_io_to_scalar_early(nir_shader *nir, nir_variable_mode mask)
+radv_nir_lower_io_vars_to_scalar(nir_shader *nir, nir_variable_mode mask)
 {
    bool progress = false;
 
-   NIR_PASS(progress, nir, nir_lower_io_to_scalar_early, mask);
+   NIR_PASS(progress, nir, nir_lower_io_vars_to_scalar, mask);
    if (progress) {
       /* Optimize the new vector code and then remove dead vars */
       NIR_PASS(_, nir, nir_copy_prop);

@@ -493,7 +493,7 @@ struct io_to_scalar_early_state {
 };
 
 static bool
-nir_lower_io_to_scalar_early_instr(nir_builder *b, nir_instr *instr, void *data)
+nir_lower_io_vars_to_scalar_instr(nir_builder *b, nir_instr *instr, void *data)
 {
    struct io_to_scalar_early_state *state = data;
 
@@ -580,7 +580,7 @@ nir_lower_io_to_scalar_early_instr(nir_builder *b, nir_instr *instr, void *data)
  * i.e. before nir_lower_io() is called.
  */
 bool
-nir_lower_io_to_scalar_early(nir_shader *shader, nir_variable_mode mask)
+nir_lower_io_vars_to_scalar(nir_shader *shader, nir_variable_mode mask)
 {
    struct io_to_scalar_early_state state = {
       .split_inputs = _mesa_pointer_hash_table_create(NULL),
@@ -589,7 +589,7 @@ nir_lower_io_to_scalar_early(nir_shader *shader, nir_variable_mode mask)
    };
 
    bool progress = nir_shader_instructions_pass(shader,
-                                                nir_lower_io_to_scalar_early_instr,
+                                                nir_lower_io_vars_to_scalar_instr,
                                                 nir_metadata_control_flow,
                                                 &state);
 

@@ -4008,8 +4008,8 @@ link_shader_opts(struct varying_matches *vm,
     */
    if (producer->options->lower_to_scalar && !vm->disable_varying_packing &&
       !vm->disable_xfb_packing) {
-      NIR_PASS(_, producer, nir_lower_io_to_scalar_early, nir_var_shader_out);
-      NIR_PASS(_, consumer, nir_lower_io_to_scalar_early, nir_var_shader_in);
+      NIR_PASS(_, producer, nir_lower_io_vars_to_scalar, nir_var_shader_out);
+      NIR_PASS(_, consumer, nir_lower_io_vars_to_scalar, nir_var_shader_in);
    }
 
    gl_nir_opts(producer);

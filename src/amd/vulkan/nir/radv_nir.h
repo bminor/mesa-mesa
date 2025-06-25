@@ -61,7 +61,7 @@ bool radv_nir_lower_viewport_to_zero(nir_shader *nir);
 
 bool radv_nir_export_multiview(nir_shader *nir);
 
-void radv_nir_lower_io_to_scalar_early(nir_shader *nir, nir_variable_mode mask);
+void radv_nir_lower_io_vars_to_scalar(nir_shader *nir, nir_variable_mode mask);
 
 unsigned radv_map_io_driver_location(unsigned semantic);
 

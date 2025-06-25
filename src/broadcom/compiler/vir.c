@@ -1018,7 +1018,7 @@ v3d_nir_lower_vs_early(struct v3d_compile *c)
         /* Split our I/O vars and dead code eliminate the unused
          * components.
          */
-        NIR_PASS(_, c->s, nir_lower_io_to_scalar_early,
+        NIR_PASS(_, c->s, nir_lower_io_vars_to_scalar,
                  nir_var_shader_in | nir_var_shader_out);
         uint64_t used_outputs[4] = {0};
         for (int i = 0; i < c->vs_key->num_used_outputs; i++) {
@@ -1060,7 +1060,7 @@ v3d_nir_lower_gs_early(struct v3d_compile *c)
         /* Split our I/O vars and dead code eliminate the unused
          * components.
          */
-        NIR_PASS(_, c->s, nir_lower_io_to_scalar_early,
+        NIR_PASS(_, c->s, nir_lower_io_vars_to_scalar,
                  nir_var_shader_in | nir_var_shader_out);
         uint64_t used_outputs[4] = {0};
         for (int i = 0; i < c->gs_key->num_used_outputs; i++) {
