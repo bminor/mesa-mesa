@@ -1144,7 +1144,7 @@ elk_nir_link_shaders(const struct elk_compiler *compiler,
 {
    const struct intel_device_info *devinfo = compiler->devinfo;
 
-   nir_lower_io_arrays_to_elements(producer, consumer);
+   nir_lower_io_array_vars_to_elements(producer, consumer);
    nir_validate_shader(producer, "after nir_lower_io_arrays_to_elements");
    nir_validate_shader(consumer, "after nir_lower_io_arrays_to_elements");
 

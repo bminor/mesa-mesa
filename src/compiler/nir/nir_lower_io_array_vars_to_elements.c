@@ -25,7 +25,7 @@
 #include "nir_builder.h"
 #include "nir_deref.h"
 
-/** @file nir_lower_io_arrays_to_elements.c
+/** @file nir_lower_io_array_vars_to_elements.c
  *
  * Split arrays/matrices with direct indexing into individual elements. This
  * will allow optimisation passes to better clean up unused elements.
@@ -356,8 +356,8 @@ lower_io_arrays_to_elements(nir_shader *shader, nir_variable_mode mask,
 }
 
 bool
-nir_lower_io_arrays_to_elements_no_indirects(nir_shader *shader,
-                                             bool outputs_only)
+nir_lower_io_array_vars_to_elements_no_indirects(nir_shader *shader,
+                                                 bool outputs_only)
 {
    struct hash_table *split_inputs = _mesa_pointer_hash_table_create(NULL);
    struct hash_table *split_outputs = _mesa_pointer_hash_table_create(NULL);
@@ -396,7 +396,7 @@ nir_lower_io_arrays_to_elements_no_indirects(nir_shader *shader,
 }
 
 void
-nir_lower_io_arrays_to_elements(nir_shader *producer, nir_shader *consumer)
+nir_lower_io_array_vars_to_elements(nir_shader *producer, nir_shader *consumer)
 {
    struct hash_table *split_inputs = _mesa_pointer_hash_table_create(NULL);
    struct hash_table *split_outputs = _mesa_pointer_hash_table_create(NULL);
