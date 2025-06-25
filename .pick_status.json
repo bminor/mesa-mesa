@@ -3724,7 +3724,7 @@
         "description": "freedreno/a6xx: Fix max_threads to account for reg footprint",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6d85cd6a3ba39b30a49735189ad7e07835e2395d",
         "notes": null
