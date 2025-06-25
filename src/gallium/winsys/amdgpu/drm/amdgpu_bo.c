@@ -11,6 +11,7 @@
 
 #include "util/os_drm.h"
 #include "util/hash_table.h"
+#include "util/log.h"
 #include "util/os_time.h"
 #include "util/u_hash_table.h"
 #include "util/u_process.h"
@@ -112,7 +113,7 @@ static bool amdgpu_bo_wait(struct radeon_winsys *rws,
 
       r = ac_drm_bo_wait_for_idle(aws->dev, get_real_bo(bo)->bo, timeout, &buffer_busy);
       if (r)
-         fprintf(stderr, "%s: amdgpu_bo_wait_for_idle failed %i\n", __func__, r);
+         mesa_loge("%s: amdgpu_bo_wait_for_idle failed %i\n", __func__, r);
 
       if (!buffer_busy)
          get_real_bo(bo)->slab_has_busy_alt_fences = false;
@@ -660,11 +661,11 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
 
    r = ac_drm_bo_alloc(aws->dev, &request, &buf_handle);
    if (r) {
-      fprintf(stderr, "amdgpu: Failed to allocate a buffer:\n");
-      fprintf(stderr, "amdgpu:    size      : %"PRIu64" bytes\n", size);
-      fprintf(stderr, "amdgpu:    alignment : %u bytes\n", alignment);
-      fprintf(stderr, "amdgpu:    domains   : %u\n", initial_domain);
-      fprintf(stderr, "amdgpu:    flags   : %" PRIx64 "\n", request.flags);
+      mesa_loge("amdgpu: Failed to allocate a buffer:\n");
+      mesa_loge("amdgpu:    size      : %"PRIu64" bytes\n", size);
+      mesa_loge("amdgpu:    alignment : %u bytes\n", alignment);
+      mesa_loge("amdgpu:    domains   : %u\n", initial_domain);
+      mesa_loge("amdgpu:    flags   : %" PRIx64 "\n", request.flags);
       goto error_bo_alloc;
    }
 
@@ -680,8 +681,8 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
                                 (flags & RADEON_FLAG_32BIT ? AMDGPU_VA_RANGE_32_BIT : 0) |
                                 AMDGPU_VA_RANGE_HIGH);
       if (r) {
-         fprintf(stderr, "amdgpu: failed to allocate %"PRIu64" bytes from the %u-bit address space\n",
-                 size + va_gap_size, flags & RADEON_FLAG_32BIT ? 32 : 64);
+         mesa_loge("amdgpu: failed to allocate %"PRIu64" bytes from the %u-bit address space\n",
+                   size + va_gap_size, flags & RADEON_FLAG_32BIT ? 32 : 64);
          goto error_va_alloc;
       }
 
@@ -1138,7 +1139,7 @@ static void amdgpu_bo_sparse_destroy(struct radeon_winsys *rws, struct pb_buffer
                               (uint64_t)bo->num_va_pages * RADEON_SPARSE_PAGE_SIZE,
                               amdgpu_va_get_start_addr(bo->va_handle), 0, AMDGPU_VA_OP_CLEAR);
    if (r) {
-      fprintf(stderr, "amdgpu: clearing PRT VA region on destroy failed (%d)\n", r);
+      mesa_loge("amdgpu: clearing PRT VA region on destroy failed (%d)\n", r);
    }
 
    while (!list_is_empty(&bo->backing)) {
@@ -1336,7 +1337,7 @@ amdgpu_bo_sparse_commit(struct radeon_winsys *rws, struct pb_buffer_lean *buf,
 
          if (!sparse_backing_free(aws, bo, backing, backing_start, span_pages)) {
             /* Couldn't allocate tracking data structures, so we have to leak */
-            fprintf(stderr, "amdgpu: leaking PRT backing memory\n");
+            mesa_loge("amdgpu: leaking PRT backing memory\n");
             ok = false;
          }
       }

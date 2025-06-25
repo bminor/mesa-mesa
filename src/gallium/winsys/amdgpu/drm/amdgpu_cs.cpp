@@ -8,6 +8,7 @@
 
 #include "amdgpu_cs.h"
 #include "util/detect_os.h"
+#include "util/log.h"
 #include "amdgpu_winsys.h"
 #include "util/os_time.h"
 #include <inttypes.h>
@@ -278,7 +279,7 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws, un
       break;
    }
    if (r) {
-      fprintf(stderr, "amdgpu: amdgpu_cs_ctx_create2 failed. (%i)\n", r);
+      mesa_loge("amdgpu: amdgpu_cs_ctx_create2 failed. (%i)\n", r);
       goto error_create;
    }
 
@@ -288,14 +289,14 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws, un
 
    r = ac_drm_bo_alloc(dev, &alloc_buffer, &buf_handle);
    if (r) {
-      fprintf(stderr, "amdgpu: amdgpu_bo_alloc failed. (%i)\n", r);
+      mesa_loge("amdgpu: amdgpu_bo_alloc failed. (%i)\n", r);
       goto error_user_fence_alloc;
    }
 
    ctx->user_fence_cpu_address_base = NULL;
    r = ac_drm_bo_cpu_map(dev, buf_handle, (void**)&ctx->user_fence_cpu_address_base);
    if (r) {
-      fprintf(stderr, "amdgpu: amdgpu_bo_cpu_map failed. (%i)\n", r);
+      mesa_loge("amdgpu: amdgpu_bo_cpu_map failed. (%i)\n", r);
       goto error_user_fence_map;
    }
 
@@ -514,7 +515,7 @@ amdgpu_ctx_query_reset_status(struct radeon_winsys_ctx *rwctx, bool full_reset_o
             }
          }
       } else {
-         fprintf(stderr, "amdgpu: amdgpu_cs_query_reset_state2 failed. (%i)\n", r);
+         mesa_loge("amdgpu: amdgpu_cs_query_reset_state2 failed. (%i)\n", r);
       }
 
       /* Return a failure due to SW issues. */
@@ -600,7 +601,7 @@ amdgpu_do_add_buffer(struct amdgpu_cs_context *csc, struct amdgpu_winsys_bo *bo,
                     REALLOC(list->buffers, list->max_buffers * sizeof(*new_buffers),
                             new_max * sizeof(*new_buffers));
       if (!new_buffers) {
-         fprintf(stderr, "amdgpu_do_add_buffer: allocation failed\n");
+         mesa_loge("amdgpu_do_add_buffer: allocation failed\n");
          return NULL;
       }
 
@@ -699,7 +700,7 @@ static bool amdgpu_ib_new_buffer(struct amdgpu_winsys *aws,
                          aws->info.gart_page_size,
                          domain, (radeon_bo_flag)flags);
    if (!pb) {
-      fprintf(stderr, "amdgpu: failed to create IB buffer: size=%u\n", buffer_size);
+      mesa_loge("amdgpu: failed to create IB buffer: size=%u\n", buffer_size);
       return false;
    }
 
@@ -1434,7 +1435,7 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_userq *userq,
       amdgpu_pkt_add_dw(PKT3(PKT3_PROTECTED_FENCE_SIGNAL, 0, 0));
       amdgpu_pkt_add_dw(0);
    } else {
-      fprintf(stderr, "amdgpu: unsupported userq ip submission = %d\n", userq->ip_type);
+      mesa_loge("amdgpu: unsupported userq ip submission = %d\n", userq->ip_type);
    }
 
    amdgpu_pkt_end();
@@ -1513,7 +1514,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
     */
    r = ac_drm_userq_wait(aws->dev, &userq_wait_data);
    if (r)
-      fprintf(stderr, "amdgpu: getting wait num_fences failed\n");
+      mesa_loge("amdgpu: getting wait num_fences failed\n");
 
    fence_info = (struct drm_amdgpu_userq_fence_info*)
       alloca(userq_wait_data.num_fences * sizeof(struct drm_amdgpu_userq_fence_info));
@@ -1521,7 +1522,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
 
    r = ac_drm_userq_wait(aws->dev, &userq_wait_data);
    if (r)
-      fprintf(stderr, "amdgpu: getting wait fences failed\n");
+      mesa_loge("amdgpu: getting wait fences failed\n");
 
    simple_mtx_lock(&userq->lock);
    amdgpu_cs_add_userq_packets(userq, csc, userq_wait_data.num_fences, fence_info);
@@ -1722,7 +1723,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
          struct amdgpu_cs_buffer *real_buffer =
             amdgpu_do_add_buffer(csc, &backing->bo->b, &csc->buffer_lists[AMDGPU_BO_REAL], true);
          if (!real_buffer) {
-            fprintf(stderr, "%s: failed to add sparse backing buffer\n", __func__);
+            mesa_loge("%s: failed to add sparse backing buffer\n", __func__);
             simple_mtx_unlock(&sparse_bo->commit_lock);
             r = -ENOMEM;
             out_of_memory = true;
