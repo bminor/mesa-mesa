@@ -528,6 +528,15 @@ panfrost_is_dmabuf_modifier_supported(struct pipe_screen *screen,
    return count > 0;
 }
 
+static unsigned int
+panfrost_get_dmabuf_modifier_planes(struct pipe_screen *pscreen, uint64_t modifier,
+                                    enum pipe_format format)
+{
+   unsigned int planes = util_format_get_num_planes(format);
+
+   return planes;
+}
+
 static void
 panfrost_init_shader_caps(struct panfrost_screen *screen)
 {
@@ -1100,7 +1109,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    screen->base.query_compression_rates = panfrost_query_compression_rates;
    screen->base.query_compression_modifiers =
       panfrost_query_compression_modifiers;
-
+   screen->base.get_dmabuf_modifier_planes =
+      panfrost_get_dmabuf_modifier_planes;
    panfrost_resource_screen_init(&screen->base);
 
    panfrost_init_shader_caps(screen);
