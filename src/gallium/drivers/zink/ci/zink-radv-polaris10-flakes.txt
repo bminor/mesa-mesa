@@ -1,6 +1,8 @@
 KHR-GL46.sparse_buffer_tests.BufferStorageTest
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rgb10_a2ui
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rg8
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba16ui
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba32i
 
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_4
@@ -15,6 +17,7 @@ dEQP-GLES3.functional.texture.shadow.2d_array.linear_mipmap_nearest.not_equal_de
 dEQP-GLES3.functional.texture.shadow.2d_array.nearest_mipmap_nearest.not_equal_depth24_stencil8
 dEQP-GLES3.functional.texture.specification.texstorage2d.format.depth24_stencil8_cube
 dEQP-GLES31.functional.draw_base_vertex.draw_elements_base_vertex.points.multiple_attributes
+dEQP-GLES31.functional.draw_base_vertex.draw_elements_base_vertex.triangle_strip.single_attribute
 dEQP-GLES31.functional.fbo.no_attachments.npot_size.15x15
 dEQP-GLES31.functional.fbo.no_attachments.npot_size.17x17
 dEQP-GLES31.functional.fbo.no_attachments.npot_size.1x1

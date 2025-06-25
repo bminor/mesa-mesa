@@ -15,7 +15,9 @@ KHR-GL46.layout_binding.sampler2D_layout_binding_texture_ComputeShader
 KHR-GL46.layout_location.usampler_buffer
 KHR-GL46.limits.max_integer_samples
 KHR-GL46.sparse_buffer_tests.BufferStorageTest
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rg8
 
+dEQP-GLES3.functional.default_vertex_attrib.mat3x2.vertex_attrib_4f
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
@@ -67,6 +69,8 @@ spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_RGB9_E5
 spec@arb_texture_rg@texture-rg
 spec@arb_timer_query@timestamp-get
+spec@ext_framebuffer_multisample@clip-and-scissor-blit 6 normal
+spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 downsample
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
 spec@ext_transform_feedback@discard-bitmap
 spec@glsl-1.50@execution@geometry@point-size-out
