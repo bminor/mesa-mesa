@@ -714,6 +714,15 @@ print_constant(nir_constant *c, const struct glsl_type *type, print_state *state
       }
       break;
 
+   case GLSL_TYPE_COOPERATIVE_MATRIX:
+      // This occurs as the constant initializer for a cmat variable.
+      // In this case it's a scalar constant, and its word value is
+      // c->values[0], but we have to interpet it via the component type.
+      fprintf(fp, "%s(", glsl_get_type_name(type));
+      print_constant(c, glsl_get_cmat_element(type), state);
+      fprintf(fp, ")");
+      break;
+
    default:
       unreachable("not reached");
    }

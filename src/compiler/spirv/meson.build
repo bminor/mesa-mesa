@@ -103,6 +103,7 @@ if with_tests
         'tests/helpers.h',
         'tests/avail_vis.cpp',
         'tests/volatile.cpp',
+        'tests/cmat.cpp',
         'tests/control_flow_tests.cpp',
         'tests/non_semantic.cpp',
         'tests/workarounds.cpp',
