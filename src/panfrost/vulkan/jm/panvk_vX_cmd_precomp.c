@@ -78,5 +78,6 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
       (barrier & PANLIB_BARRIER_JM_SUPPRESS_PREFETCH) != 0;
 
    pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_COMPUTE, job_barrier,
-                  suppress_prefetch, 0, 0, &job, false);
+                  suppress_prefetch, grid.jm.local_dep, grid.jm.global_dep,
+                  &job, false);
 }
