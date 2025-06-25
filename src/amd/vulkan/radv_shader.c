@@ -565,9 +565,9 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
 
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_GEOMETRY ||
        nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir), true, true);
+      NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir), true, true);
    } else if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
-      NIR_PASS(_, nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir), true, false);
+      NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir), true, false);
    }
 
    NIR_PASS(_, nir, nir_split_var_copies);

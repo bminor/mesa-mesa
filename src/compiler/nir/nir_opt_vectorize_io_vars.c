@@ -30,7 +30,7 @@
  *
  * Merges compatible input/output variables residing in different components
  * of the same location. It's expected that further passes such as
- * nir_lower_io_to_temporaries will combine loads and stores of the merged
+ * nir_lower_io_vars_to_temporaries will combine loads and stores of the merged
  * variables, producing vector nir_load_input/nir_store_output instructions
  * when all is said and done.
  */
@@ -436,7 +436,7 @@ nir_opt_vectorize_io_vars_impl(nir_function_impl *impl, nir_variable_mode modes)
    /* Actually lower all the IO load/store intrinsics.  Load instructions are
     * lowered to a vector load and an ALU instruction to grab the channels we
     * want.  Outputs are lowered to a write-masked store of the vector output.
-    * For non-TCS outputs, we then run nir_lower_io_to_temporaries at the end
+    * For non-TCS outputs, we then run nir_lower_io_vars_to_temporaries at the end
     * to clean up the partial writes.
     */
    nir_foreach_block(block, impl) {
@@ -567,7 +567,7 @@ nir_opt_vectorize_io_vars_impl(nir_function_impl *impl, nir_variable_mode modes)
    }
 
    /* Demote the old var to a global, so that things like
-    * nir_lower_io_to_temporaries() don't trigger on it.
+    * nir_lower_io_vars_to_temporaries() don't trigger on it.
     */
    util_dynarray_foreach(&demote_vars, nir_variable *, varp) {
       (*varp)->data.mode = nir_var_shader_temp;

@@ -393,7 +393,7 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       NIR_PASS(_, nir, nir_opt_vectorize_io_vars, nir_var_shader_out);
 
-   NIR_PASS(_, nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir),
+   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir),
             true, true);
 
 #if PAN_ARCH < 9
@@ -782,7 +782,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       NIR_PASS(_, nir, nir_lower_multiview, options);
       /* Pull output writes out of the loop and give them constant offsets for
        * pan_lower_store_components */
-      NIR_PASS(_, nir, nir_lower_io_to_temporaries,
+      NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
                nir_shader_get_entrypoint(nir), true, false);
    }
 #endif

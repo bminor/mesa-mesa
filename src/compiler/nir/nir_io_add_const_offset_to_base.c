@@ -26,7 +26,7 @@
  * intrinsics, and resets the offset source to 0.  Non-constant offsets remain
  * unchanged - since we don't know what part of a compound variable is
  * accessed, we allocate storage for the entire thing. For drivers that use
- * nir_lower_io_to_temporaries() before nir_lower_io(), this guarantees that
+ * nir_lower_io_vars_to_temporaries() before nir_lower_io(), this guarantees that
  * the offset source will be 0, so that they don't have to add it in manually.
  */
 

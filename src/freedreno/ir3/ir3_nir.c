@@ -465,7 +465,7 @@ ir3_nir_lower_ssbo_size(nir_shader *s, uint8_t ssbo_size_to_bytes_shift)
 }
 
 void
-ir3_nir_lower_io_to_temporaries(nir_shader *s)
+ir3_nir_lower_io_vars_to_temporaries(nir_shader *s)
 {
    /* Outputs consumed by the VPC, VS inputs, and FS outputs are all handled
     * by the hardware pre-loading registers at the beginning and then reading
@@ -474,7 +474,7 @@ ir3_nir_lower_io_to_temporaries(nir_shader *s)
     * indirect accesses on those. Other i/o is lowered in ir3_nir_lower_tess,
     * and indirects work just fine for those. GS outputs may be consumed by
     * VPC, but have their own lowering in ir3_nir_lower_gs() which does
-    * something similar to nir_lower_io_to_temporaries so we shouldn't need
+    * something similar to nir_lower_io_vars_to_temporaries so we shouldn't need
     * to lower them.
     *
     * Note: this might be a little inefficient for VS or TES outputs which are
@@ -492,10 +492,10 @@ ir3_nir_lower_io_to_temporaries(nir_shader *s)
    bool lower_output = s->info.stage != MESA_SHADER_TESS_CTRL &&
                        s->info.stage != MESA_SHADER_GEOMETRY;
    if (lower_input || lower_output) {
-      NIR_PASS(_, s, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(s),
+      NIR_PASS(_, s, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(s),
                lower_output, lower_input);
 
-      /* nir_lower_io_to_temporaries() creates global variables and copy
+      /* nir_lower_io_vars_to_temporaries() creates global variables and copy
        * instructions which need to be cleaned up.
        */
       NIR_PASS(_, s, nir_split_var_copies);
@@ -511,7 +511,7 @@ ir3_nir_lower_io_to_temporaries(nir_shader *s)
     * in 0 modes.
     *
     * Using temporaries would be slightly better but
-    * nir_lower_io_to_temporaries currently doesn't support TCS i/o.
+    * nir_lower_io_vars_to_temporaries currently doesn't support TCS i/o.
     */
    NIR_PASS(_, s, nir_lower_indirect_derefs, 0, UINT32_MAX);
 }

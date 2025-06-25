@@ -11,7 +11,7 @@
  * we know that it will never cause clipping/culling.
  * Remove the sysval_output in that case.
  *
- * Assumes that nir_lower_io_to_temporaries was run,
+ * Assumes that nir_lower_io_vars_to_temporaries was run,
  * and works best with scalar store_outputs.
  */
 

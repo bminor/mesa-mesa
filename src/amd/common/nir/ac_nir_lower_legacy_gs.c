@@ -25,7 +25,7 @@ lower_legacy_gs_store_output(nir_builder *b, nir_intrinsic_instr *intrin,
                              lower_legacy_gs_state *s)
 {
    /* Assume:
-    * - the shader used nir_lower_io_to_temporaries
+    * - the shader used nir_lower_io_vars_to_temporaries
     * - 64-bit outputs are lowered
     * - no indirect indexing is present
     */

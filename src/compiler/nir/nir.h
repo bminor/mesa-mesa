@@ -480,7 +480,7 @@ typedef struct nir_variable {
       /**
        * Can this variable be coalesced with another?
        *
-       * This is set by nir_lower_io_to_temporaries to say that any
+       * This is set by nir_lower_io_vars_to_temporaries to say that any
        * copies involving this variable should stay put. Propagating it can
        * duplicate the resulting load/store, which is not wanted, and may
        * result in a load/store of the variable with an indirect offset which
@@ -4934,9 +4934,9 @@ bool nir_lower_indirect_var_derefs(nir_shader *shader,
 
 bool nir_lower_locals_to_regs(nir_shader *shader, uint8_t bool_bitsize);
 
-bool nir_lower_io_to_temporaries(nir_shader *shader,
-                                 nir_function_impl *entrypoint,
-                                 bool outputs, bool inputs);
+bool nir_lower_io_vars_to_temporaries(nir_shader *shader,
+                                      nir_function_impl *entrypoint,
+                                      bool outputs, bool inputs);
 
 bool nir_lower_vars_to_scratch(nir_shader *shader,
                                nir_variable_mode modes,

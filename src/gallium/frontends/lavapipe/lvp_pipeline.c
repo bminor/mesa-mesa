@@ -381,7 +381,7 @@ lvp_shader_lower(struct lvp_device *pdevice, nir_shader *nir, struct lvp_pipelin
    optimize(nir);
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   NIR_PASS_V(nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir), true, true);
+   NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir), true, true);
    NIR_PASS_V(nir, nir_split_var_copies);
    NIR_PASS_V(nir, nir_lower_global_vars_to_local);
 

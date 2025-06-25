@@ -13,7 +13,7 @@ static void
 gather_outputs(nir_builder *b, nir_function_impl *impl, ac_nir_prerast_out *out)
 {
    /* Assume:
-    * - the shader used nir_lower_io_to_temporaries
+    * - the shader used nir_lower_io_vars_to_temporaries
     * - 64-bit outputs are lowered
     * - no indirect indexing is present
     */

@@ -82,7 +82,7 @@ ac_nir_calc_io_off(nir_builder *b, unsigned component, nir_def *io_offset, nir_d
  * Meant to be used for VS/TES/GS when they are the last pre-rasterization stage.
  *
  * Assumptions:
- * - We called nir_lower_io_to_temporaries on the shader
+ * - We called nir_lower_io_vars_to_temporaries on the shader
  * - 64-bit outputs are lowered
  * - no indirect indexing is present
  */

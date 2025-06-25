@@ -2584,7 +2584,7 @@ tu_shader_create(struct tu_device *dev,
     * store at the end instead of having to rewrite every store specified by
     * the user.
     */
-   ir3_nir_lower_io_to_temporaries(nir);
+   ir3_nir_lower_io_vars_to_temporaries(nir);
 
    if (nir->info.stage == MESA_SHADER_VERTEX && key->multiview_mask) {
       tu_nir_lower_multiview(nir, key->multiview_mask, dev);

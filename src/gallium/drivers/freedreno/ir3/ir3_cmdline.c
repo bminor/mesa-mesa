@@ -127,11 +127,11 @@ load_glsl(unsigned num_files, char *const *files, gl_shader_stage stage)
    if (nir_options->lower_all_io_to_temps ||
        nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_GEOMETRY) {
-      NIR_PASS_V(nir, nir_lower_io_to_temporaries,
+      NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries,
                  nir_shader_get_entrypoint(nir), true, true);
    } else if (nir->info.stage == MESA_SHADER_TESS_EVAL ||
               nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS_V(nir, nir_lower_io_to_temporaries,
+      NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries,
                  nir_shader_get_entrypoint(nir), true, false);
    }
 
@@ -419,7 +419,7 @@ main(int argc, char **argv)
 
    const struct ir3_shader_nir_options options = {};
 
-   ir3_nir_lower_io_to_temporaries(nir);
+   ir3_nir_lower_io_vars_to_temporaries(nir);
    ir3_finalize_nir(compiler, &options, nir);
 
    struct ir3_shader *shader = rzalloc_size(NULL, sizeof(*shader));

@@ -630,7 +630,7 @@ lower_interpolate_at(nir_intrinsic_instr *intrin, struct lower_io_state *state,
 static nir_def *
 uncompact_view_index(nir_builder *b, nir_src compact_index_src)
 {
-   /* We require nir_lower_io_to_temporaries when using absolute view indices,
+   /* We require nir_lower_io_vars_to_temporaries when using absolute view indices,
     * which ensures index is constant */
    assert(nir_src_is_const(compact_index_src));
    unsigned compact_index = nir_src_as_uint(compact_index_src);
@@ -1039,7 +1039,7 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       nir->xfb_info == NULL;
 
    /* TODO: Sorting variables by location is required due to some bug
-    * in nir_lower_io_to_temporaries. If variables are not sorted,
+    * in nir_lower_io_vars_to_temporaries. If variables are not sorted,
     * dEQP-GLES31.functional.separate_shader.random.0 fails.
     *
     * This isn't needed if nir_assign_io_var_locations is called because it
@@ -1052,7 +1052,7 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
    nir_sort_variables_by_location(nir, varying_var_mask);
 
    if (!has_indirect_inputs || !has_indirect_outputs) {
-      NIR_PASS(_, nir, nir_lower_io_to_temporaries,
+      NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
                nir_shader_get_entrypoint(nir), !has_indirect_outputs,
                !has_indirect_inputs);
 
@@ -1063,8 +1063,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       NIR_PASS(_, nir, nir_lower_var_copies);
       NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
-      /* This is partially redundant with nir_lower_io_to_temporaries.
-       * The problem is that nir_lower_io_to_temporaries doesn't handle TCS.
+      /* This is partially redundant with nir_lower_io_vars_to_temporaries.
+       * The problem is that nir_lower_io_vars_to_temporaries doesn't handle TCS.
        */
       if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
          NIR_PASS(_, nir, nir_lower_indirect_derefs,

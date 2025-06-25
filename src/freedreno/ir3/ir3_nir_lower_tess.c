@@ -254,7 +254,7 @@ lower_block_to_explicit_output(nir_block *block, nir_builder *b,
       case nir_intrinsic_store_output: {
          // src[] = { value, offset }.
 
-         /* nir_lower_io_to_temporaries replaces all access to output
+         /* nir_lower_io_vars_to_temporaries replaces all access to output
           * variables with temp variables and then emits a nir_copy_var at
           * the end of the shader.  Thus, we should always get a full wrmask
           * here.

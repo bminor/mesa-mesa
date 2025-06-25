@@ -98,7 +98,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
       }
    }
 
-   NIR_PASS_V(nir, nir_lower_io_to_temporaries,
+   NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries,
               nir_shader_get_entrypoint(nir), true, false);
 
    return nir;

@@ -19,7 +19,7 @@
  * known at compile-time (for example, with monolithic pipelines in vulkan),
  * this may be lowered to a constant.
  *
- * This pass is expected to run after nir_lower_io_to_temporaries and
+ * This pass is expected to run after nir_lower_io_vars_to_temporaries and
  * nir_lower_io, so each IO location must have at most one read or write.
  * These properties are preserved.
  *
@@ -31,7 +31,7 @@
 static nir_intrinsic_instr *
 find_pos_store(nir_function_impl *impl)
 {
-   /* nir_lower_io_to_temporaries ensures all stores are in the exit block */
+   /* nir_lower_io_vars_to_temporaries ensures all stores are in the exit block */
    nir_block *block = nir_impl_last_block(impl);
    nir_foreach_instr_safe(instr, block) {
       if (instr->type != nir_instr_type_intrinsic)
@@ -64,7 +64,7 @@ is_noperspective_load(nir_intrinsic_instr* intrin)
 static bool
 has_noperspective_load(nir_function_impl *impl)
 {
-   /* nir_lower_io_to_temporaries ersures all loads are in the first block */
+   /* nir_lower_io_vars_to_temporaries ersures all loads are in the first block */
    nir_block *block = nir_start_block(impl);
    nir_foreach_instr(instr, block) {
       if (instr->type != nir_instr_type_intrinsic)
@@ -93,7 +93,7 @@ get_maybe_noperspective_outputs(nir_function_impl *impl)
    uint32_t used_outputs = 0;
    uint32_t integer_outputs = 0;
 
-   /* nir_lower_io_to_temporaries ensures all stores are in the exit block */
+   /* nir_lower_io_vars_to_temporaries ensures all stores are in the exit block */
    nir_block *block = nir_impl_last_block(impl);
    nir_foreach_instr_safe(instr, block) {
       if (instr->type != nir_instr_type_intrinsic)

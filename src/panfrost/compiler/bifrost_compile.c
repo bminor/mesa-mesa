@@ -1278,7 +1278,7 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
 
    /* Only look at the total components needed. In effect, we fill in all
     * the intermediate "holes" in the write mask, since we can't mask off
-    * stores. Since nir_lower_io_to_temporaries ensures each varying is
+    * stores. Since nir_lower_io_vars_to_temporaries ensures each varying is
     * written at most once, anything that's masked out is undefined, so it
     * doesn't matter what we write there. So we may as well do the
     * simplest thing possible. */
@@ -5083,7 +5083,7 @@ glsl_type_size(const struct glsl_type *type, bool bindless)
 }
 
 /* Split stores to memory. We don't split stores to vertex outputs, since
- * nir_lower_io_to_temporaries will ensure there's only a single write.
+ * nir_lower_io_vars_to_temporaries will ensure there's only a single write.
  */
 
 static bool

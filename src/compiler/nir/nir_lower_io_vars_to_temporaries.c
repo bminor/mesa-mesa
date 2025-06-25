@@ -331,8 +331,8 @@ move_variables_to_list(nir_shader *shader, nir_variable_mode mode,
 }
 
 bool
-nir_lower_io_to_temporaries(nir_shader *shader, nir_function_impl *entrypoint,
-                            bool outputs, bool inputs)
+nir_lower_io_vars_to_temporaries(nir_shader *shader, nir_function_impl *entrypoint,
+                                 bool outputs, bool inputs)
 {
    struct lower_io_state state;
 

@@ -102,7 +102,7 @@ brw_nir_lower_alpha_to_coverage(nir_shader *shader)
          if (intrin->intrinsic != nir_intrinsic_store_output)
             continue;
 
-         /* We call nir_lower_io_to_temporaries to lower FS outputs to
+         /* We call nir_lower_io_vars_to_temporaries to lower FS outputs to
           * temporaries with a copy at the end so this should be the last
           * block in the shader.
           */

@@ -1524,7 +1524,7 @@ static void
 ngg_nogs_gather_outputs(nir_builder *b, struct exec_list *cf_list, lower_ngg_nogs_state *s)
 {
    /* Assume:
-    * - the shader used nir_lower_io_to_temporaries
+    * - the shader used nir_lower_io_vars_to_temporaries
     * - 64-bit outputs are lowered
     * - no indirect indexing is present
     */
