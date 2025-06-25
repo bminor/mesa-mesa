@@ -60,11 +60,9 @@ get_vk_runtime_device_name
 get_vk_runtime_version
 
 # download Android Mesa from S3
-MESA_ANDROID_ARTIFACT_URL=https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -o ${S3_ANDROID_ARTIFACT_NAME}.tar.zst ${MESA_ANDROID_ARTIFACT_URL}
+curl-with-retry -O "${FDO_HTTP_CACHE_URI:-}https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst"
 mkdir /mesa-android
 tar -C /mesa-android -xvf ${S3_ANDROID_ARTIFACT_NAME}.tar.zst
-rm "${S3_ANDROID_ARTIFACT_NAME}.tar.zst" &
 
 INSTALL="/mesa-android/install"
 
