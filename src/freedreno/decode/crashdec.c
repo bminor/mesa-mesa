@@ -30,6 +30,7 @@ struct rnn *rnn_pipe;
 
 static uint64_t fault_iova;
 static bool has_fault_iova;
+static int lookback = 20;
 
 struct cffdec_options options = {
    .draw_filter = -1,
@@ -426,7 +427,6 @@ dump_cmdstream(void)
        * to be less reliable on a4xx and before (pkt0/pkt3),
        * compared to pkt4/pkt7 with parity bits
        */
-      const int lookback = 20;
       unsigned rptr = mod_add(rb_rptr, -lookback);
 
       for (int idx = 0; idx < lookback; idx++) {
@@ -1008,7 +1008,7 @@ main(int argc, char **argv)
    /* default to read from stdin: */
    in = stdin;
 
-   while ((c = getopt_long(argc, argv, "acf:hmsv", opts, NULL)) != -1) {
+   while ((c = getopt_long(argc, argv, "acf:l:hmsv", opts, NULL)) != -1) {
       switch (c) {
       case 'a':
          options.allregs = true;
@@ -1018,6 +1018,9 @@ main(int argc, char **argv)
          break;
       case 'f':
          in = fopen(optarg, "r");
+         break;
+      case 'l':
+         lookback = atoi(optarg);
          break;
       case 'm':
          options.decode_markers = true;
