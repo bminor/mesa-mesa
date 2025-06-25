@@ -465,7 +465,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       NIR_PASS(_, nir, nir_split_per_member_structs);
 
       if (nir->info.stage == MESA_SHADER_FRAGMENT)
-         NIR_PASS(_, nir, nir_lower_io_to_vector, nir_var_shader_out);
+         NIR_PASS(_, nir, nir_opt_vectorize_io_vars, nir_var_shader_out);
       if (nir->info.stage == MESA_SHADER_FRAGMENT)
          NIR_PASS(_, nir, nir_lower_input_attachments,
                   &(nir_input_attachment_options){

@@ -306,7 +306,7 @@ preprocess_nir(nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_shader_out);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS(_, nir, nir_lower_io_to_vector, nir_var_shader_out);
+      NIR_PASS(_, nir, nir_opt_vectorize_io_vars, nir_var_shader_out);
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_input_attachments,
                &(nir_input_attachment_options) {

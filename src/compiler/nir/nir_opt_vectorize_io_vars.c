@@ -26,7 +26,7 @@
 #include "nir_builder.h"
 #include "nir_deref.h"
 
-/** @file nir_lower_io_to_vector.c
+/** @file nir_opt_vectorize_io_vars.c
  *
  * Merges compatible input/output variables residing in different components
  * of the same location. It's expected that further passes such as
@@ -390,7 +390,7 @@ build_array_deref_of_new_var_flat(nir_shader *shader,
 }
 
 static bool
-nir_lower_io_to_vector_impl(nir_function_impl *impl, nir_variable_mode modes)
+nir_opt_vectorize_io_vars_impl(nir_function_impl *impl, nir_variable_mode modes)
 {
    assert(!(modes & ~(nir_var_shader_in | nir_var_shader_out)));
 
@@ -579,12 +579,12 @@ nir_lower_io_to_vector_impl(nir_function_impl *impl, nir_variable_mode modes)
 }
 
 bool
-nir_lower_io_to_vector(nir_shader *shader, nir_variable_mode modes)
+nir_opt_vectorize_io_vars(nir_shader *shader, nir_variable_mode modes)
 {
    bool progress = false;
 
    nir_foreach_function_impl(impl, shader) {
-      progress |= nir_lower_io_to_vector_impl(impl, modes);
+      progress |= nir_opt_vectorize_io_vars_impl(impl, modes);
    }
 
    return progress;

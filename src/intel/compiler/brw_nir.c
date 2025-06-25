@@ -1522,14 +1522,14 @@ brw_nir_link_shaders(const struct brw_compiler *compiler,
       }
    }
 
-   NIR_PASS(_, producer, nir_lower_io_to_vector, nir_var_shader_out);
+   NIR_PASS(_, producer, nir_opt_vectorize_io_vars, nir_var_shader_out);
 
    if (producer->info.stage == MESA_SHADER_TESS_CTRL &&
        producer->options->vectorize_tess_levels)
    NIR_PASS_V(producer, nir_vectorize_tess_levels);
 
    NIR_PASS(_, producer, nir_opt_combine_stores, nir_var_shader_out);
-   NIR_PASS(_, consumer, nir_lower_io_to_vector, nir_var_shader_in);
+   NIR_PASS(_, consumer, nir_opt_vectorize_io_vars, nir_var_shader_in);
 
    if (producer->info.stage != MESA_SHADER_TESS_CTRL &&
        producer->info.stage != MESA_SHADER_MESH &&

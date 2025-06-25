@@ -890,7 +890,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
 {
    glsl_type_singleton_init_or_ref();
 
-   NIR_PASS_V(nir, nir_lower_io_to_vector,
+   NIR_PASS_V(nir, nir_opt_vectorize_io_vars,
               nir_var_shader_out |
               (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0));
    NIR_PASS_V(nir, nir_opt_combine_stores, nir_var_shader_out);

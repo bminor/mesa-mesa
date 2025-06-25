@@ -5313,7 +5313,7 @@ bool nir_lower_io_arrays_to_elements_no_indirects(nir_shader *shader,
                                                   bool outputs_only);
 bool nir_lower_io_to_scalar(nir_shader *shader, nir_variable_mode mask, nir_instr_filter_cb filter, void *filter_data);
 bool nir_lower_io_vars_to_scalar(nir_shader *shader, nir_variable_mode mask);
-bool nir_lower_io_to_vector(nir_shader *shader, nir_variable_mode mask);
+bool nir_opt_vectorize_io_vars(nir_shader *shader, nir_variable_mode mask);
 bool nir_vectorize_tess_levels(nir_shader *shader);
 nir_shader *nir_create_passthrough_tcs_impl(const nir_shader_compiler_options *options,
                                             unsigned *locations, unsigned num_locations,

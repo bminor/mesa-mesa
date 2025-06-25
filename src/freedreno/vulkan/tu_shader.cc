@@ -2867,8 +2867,8 @@ tu_link_shaders(nir_shader **shaders, unsigned shaders_count)
          nir_lower_global_vars_to_local(consumer);
       }
 
-      NIR_PASS(_, producer, nir_lower_io_to_vector, nir_var_shader_out);
-      NIR_PASS(_, consumer, nir_lower_io_to_vector, nir_var_shader_in);
+      NIR_PASS(_, producer, nir_opt_vectorize_io_vars, nir_var_shader_out);
+      NIR_PASS(_, consumer, nir_opt_vectorize_io_vars, nir_var_shader_in);
       consumer = producer;
    }
 

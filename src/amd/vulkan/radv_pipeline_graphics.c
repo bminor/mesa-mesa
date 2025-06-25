@@ -1236,7 +1236,7 @@ radv_link_shaders(const struct radv_device *device, struct radv_shader_stage *pr
    if (producer->info.stage == MESA_SHADER_TESS_CTRL || producer->info.stage == MESA_SHADER_MESH ||
        (producer->info.stage == MESA_SHADER_VERTEX && has_geom_or_tess) ||
        (producer->info.stage == MESA_SHADER_TESS_EVAL && merged_gs)) {
-      NIR_PASS(_, producer, nir_lower_io_to_vector, nir_var_shader_out);
+      NIR_PASS(_, producer, nir_opt_vectorize_io_vars, nir_var_shader_out);
 
       if (producer->info.stage == MESA_SHADER_TESS_CTRL)
          NIR_PASS(_, producer, nir_vectorize_tess_levels);
@@ -1246,7 +1246,7 @@ radv_link_shaders(const struct radv_device *device, struct radv_shader_stage *pr
 
    if (consumer->info.stage == MESA_SHADER_GEOMETRY || consumer->info.stage == MESA_SHADER_TESS_CTRL ||
        consumer->info.stage == MESA_SHADER_TESS_EVAL) {
-      NIR_PASS(_, consumer, nir_lower_io_to_vector, nir_var_shader_in);
+      NIR_PASS(_, consumer, nir_opt_vectorize_io_vars, nir_var_shader_in);
    }
 }
 
