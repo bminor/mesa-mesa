@@ -3814,7 +3814,7 @@
         "description": "freedreno/drm: fix libvdrm inclusion logic",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0e3584df44d71636ff4d5b9150a936e9296afb18",
         "notes": null
