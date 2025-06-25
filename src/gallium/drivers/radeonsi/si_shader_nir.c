@@ -369,6 +369,22 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
       }
    }
 
+   if (nir->info.stage == MESA_SHADER_MESH && !sscreen->info.mesh_fast_launch_2) {
+      nir_lower_compute_system_values_options options = {
+         /* Mesh shaders run as NGG which can implement local_invocation_index from
+          * the wave ID in merged_wave_info, but they don't have local_invocation_ids
+          * in FAST_LAUNCH=1 mode (the default on GFX10.3, deprecated on GFX11).
+          */
+         .lower_cs_local_id_to_index = true,
+         /* Mesh shaders only have a 1D "vertex index" which we use
+          * as "workgroup index" to emulate the 3D workgroup ID.
+          */
+         .lower_workgroup_id_to_index = true,
+         .shortcut_1d_workgroup_id = true,
+      };
+      NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
+   }
+
    si_nir_opts(sscreen, nir, true);
    /* Run late optimizations to fuse ffma and eliminate 16-bit conversions. */
    si_nir_late_opts(nir);
