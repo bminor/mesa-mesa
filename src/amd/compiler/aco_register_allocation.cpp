@@ -979,8 +979,9 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
             /* Copy-kill or precolored operand parallelcopies are only added when setting up
              * operands.
              */
-            bool is_reg_file_before_instr = fill_operands || op.isPrecolored() || is_copy_kill;
-            fill = !op.isKillBeforeDef() || is_reg_file_before_instr;
+            assert(!op.isPrecolored() || fill_operands);
+            assert(!is_copy_kill || fill_operands);
+            fill = !op.isKillBeforeDef() || fill_operands;
          }
       }
 
@@ -2319,7 +2320,7 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
    }
 
    get_regs_for_copies(ctx, tmp_file, parallelcopy, blocking_vars, instr, PhysRegInterval());
-   update_renames(ctx, register_file, parallelcopy, instr);
+   update_renames(ctx, register_file, parallelcopy, instr, true);
 }
 
 void
@@ -2336,8 +2337,7 @@ get_reg_for_operand(ra_ctx& ctx, RegisterFile& register_file,
    pc_op.setFixed(src);
    Definition pc_def = Definition(dst, pc_op.regClass());
    parallelcopy.emplace_back(pc_op, pc_def);
-   update_renames(ctx, register_file, parallelcopy, instr);
-   register_file.fill(Definition(operand.getTemp(), dst));
+   update_renames(ctx, register_file, parallelcopy, instr, true);
    operand.setFixed(dst);
 }
 
@@ -2421,7 +2421,7 @@ resolve_vector_operands(ra_ctx& ctx, RegisterFile& reg_file,
    ctx.vector_operands.clear();
 
    /* Update operand temporaries and fill non-killed operands. */
-   update_renames(ctx, reg_file, parallelcopies, instr, false, false);
+   update_renames(ctx, reg_file, parallelcopies, instr, true, false);
 }
 
 PhysReg
@@ -3280,14 +3280,14 @@ handle_operands_tied_to_definitions(ra_ctx& ctx, std::vector<parallelcopy>& para
          PhysReg reg = get_reg(ctx, reg_file, op.getTemp(), parallelcopies, instr, op_idx);
 
          /* update_renames() in case we moved this operand. */
-         update_renames(ctx, reg_file, parallelcopies, instr);
+         update_renames(ctx, reg_file, parallelcopies, instr, true);
 
          Operand pc_op(op.getTemp());
          pc_op.setFixed(ctx.assignments[op.tempId()].reg);
          Definition pc_def(reg, op.regClass());
          parallelcopies.emplace_back(pc_op, pc_def, op_idx);
 
-         update_renames(ctx, reg_file, parallelcopies, instr);
+         update_renames(ctx, reg_file, parallelcopies, instr, true);
       }
 
       /* Flag the operand's temporary as lateKill. This serves as placeholder
