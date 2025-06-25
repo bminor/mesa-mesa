@@ -31,6 +31,10 @@ fi
 
 INCLUDE_FILTERS="$(grep -v -E "(^#|^[[:space:]]*$)" "$INCLUDE_FILE" | sed -e 's/\s*$//g' -e 's/.*/--include-filter "\0" /g')"
 
+if [ -n "${ANDROID_CTS_PREPARE_COMMAND:-}" ]; then
+  eval "$ANDROID_CTS_PREPARE_COMMAND"
+fi
+
 set +e
 eval "/android-cts/tools/cts-tradefed" run commandAndExit cts-dev \
   $INCLUDE_FILTERS \
