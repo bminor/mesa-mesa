@@ -18,11 +18,11 @@ pub enum GOBType {
     /// Indicates a linear (not tiled) image
     Linear,
 
-    /// A grab-bag GOB format for all pre-Turing hardware
-    Fermi,
+    /// A grab-bag GOB format for all depth/stencil surfaces
+    FermiZS,
 
-    /// A grab-bag GOB format for all Turing+ depth/stencil surfaces
-    TuringZS,
+    /// The Fermi GOB format for color images
+    FermiColor,
 
     /// The Turing 2D GOB format for color images
     ///
@@ -84,34 +84,30 @@ impl GOBType {
         dev: &nil_rs_bindings::nv_device_info,
         format: Format,
     ) -> GOBType {
-        if dev.cls_eng3d >= clcd97::BLACKWELL_A {
-            if format.is_depth_or_stencil() {
-                GOBType::TuringZS
-            } else {
+        if format.is_depth_or_stencil() {
+            GOBType::FermiZS
+        } else {
+            if dev.cls_eng3d >= clcd97::BLACKWELL_A {
                 match format.el_size_B() {
                     1 => GOBType::Blackwell8Bit,
                     2 => GOBType::Blackwell16Bit,
                     _ => GOBType::TuringColor2D,
                 }
-            }
-        } else if dev.cls_eng3d >= clc597::TURING_A {
-            if format.is_depth_or_stencil() {
-                GOBType::TuringZS
-            } else {
+            } else if dev.cls_eng3d >= clc597::TURING_A {
                 GOBType::TuringColor2D
+            } else if dev.cls_eng3d >= cl9097::FERMI_A {
+                GOBType::FermiColor
+            } else {
+                panic!("Unsupported 3d engine class")
             }
-        } else if dev.cls_eng3d >= cl9097::FERMI_A {
-            GOBType::Fermi
-        } else {
-            panic!("Unsupported 3d engine class")
         }
     }
 
     pub fn extent_B(&self) -> Extent4D<units::Bytes> {
         match self {
             GOBType::Linear => Extent4D::new(1, 1, 1, 1),
-            GOBType::Fermi
-            | GOBType::TuringZS
+            GOBType::FermiZS
+            | GOBType::FermiColor
             | GOBType::TuringColor2D
             | GOBType::Blackwell8Bit
             | GOBType::Blackwell16Bit => Extent4D::new(64, 8, 1, 1),

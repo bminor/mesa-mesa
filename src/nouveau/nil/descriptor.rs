@@ -25,7 +25,6 @@ use crate::image::ImageDim;
 use crate::image::SampleLayout;
 use crate::image::View;
 use crate::image::ViewType;
-use crate::tiling::GOBType;
 
 macro_rules! set_enum {
     ($th:expr, $cls:ident, $field:ident, $enum:ident) => {
@@ -284,7 +283,6 @@ fn nv9097_fill_image_view_desc(
     if tiling.is_tiled() {
         set_enum!(th, cl9097, TEXHEADV2_MEMORY_LAYOUT, BLOCKLINEAR);
 
-        assert!(tiling.gob_type == GOBType::Fermi);
         assert!(tiling.x_log2 == 0);
         set_enum!(th, cl9097, TEXHEADV2_GOBS_PER_BLOCK_WIDTH, ONE_GOB);
         th.set_field(cl9097::TEXHEADV2_GOBS_PER_BLOCK_HEIGHT, tiling.y_log2);

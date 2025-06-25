@@ -53,7 +53,7 @@ impl GOBType {
     fn supports_modifiers(&self) -> bool {
         matches!(
             self,
-            GOBType::Linear | GOBType::Fermi | GOBType::TuringColor2D
+            GOBType::Linear | GOBType::FermiColor | GOBType::TuringColor2D
         )
     }
 
@@ -62,10 +62,10 @@ impl GOBType {
             GOBType::Linear => {
                 panic!("Linear modifierss are handled elsewhere");
             }
-            GOBType::Fermi => GOBKindVersion::Fermi,
-            GOBType::TuringZS => {
+            GOBType::FermiZS => {
                 panic!("Modifiers are not supported for Z/S images");
             }
+            GOBType::FermiColor => GOBKindVersion::Fermi,
             GOBType::TuringColor2D => GOBKindVersion::Turing,
             GOBType::Blackwell8Bit | GOBType::Blackwell16Bit => {
                 todo!("We need new modifiers for Blackwell+")
@@ -182,7 +182,7 @@ impl BlockLinearModifier {
     pub fn gob_type(&self) -> GOBType {
         assert!(self.sector_layout() == SectorLayout::Desktop);
         match self.gob_kind_version() {
-            GOBKindVersion::Fermi => GOBType::Fermi,
+            GOBKindVersion::Fermi => GOBType::FermiColor,
             GOBKindVersion::G80 => todo!("Unsupported GOB kind"),
             GOBKindVersion::Turing => GOBType::TuringColor2D,
         }
