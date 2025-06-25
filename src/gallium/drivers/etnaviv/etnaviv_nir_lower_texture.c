@@ -185,6 +185,73 @@ lower_txl_offset(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
 }
 
 static bool
+lower_txd_offset(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
+{
+   if (tex->op != nir_texop_txd)
+      return false;
+
+   nir_def *offset = nir_steal_tex_src(tex, nir_tex_src_offset);
+   if (!offset)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   int coord_index = nir_tex_instr_src_index(tex, nir_tex_src_coord);
+   int ddx_index = nir_tex_instr_src_index(tex, nir_tex_src_ddx);
+   int ddy_index = nir_tex_instr_src_index(tex, nir_tex_src_ddy);
+
+   assert(coord_index >= 0);
+   assert(ddx_index >= 0);
+   assert(ddy_index >= 0);
+
+   nir_def *coord = tex->src[coord_index].src.ssa;
+   nir_def *ddx = tex->src[ddx_index].src.ssa;
+   nir_def *ddy = tex->src[ddy_index].src.ssa;
+   nir_def *sampler = nir_imm_int(b, tex->texture_index);
+
+   /* Load the base level texture size and convert to float for gradient scaling */
+   nir_def *base_size_int = nir_load_texture_size_etna(b, 32, sampler);
+   base_size_int = nir_trim_vector(b, base_size_int, tex->coord_components);
+   nir_def *base_size_float = nir_i2f32(b, base_size_int);
+
+   /* Scale gradients from normalized space to texel space */
+   nir_def *scaled_ddx = nir_fmul(b, ddx, base_size_float);
+   nir_def *scaled_ddy = nir_fmul(b, ddy, base_size_float);
+
+   /* Compute the absolute values of scaled gradients */
+   nir_def *abs_ddx = nir_fabs(b, scaled_ddx);
+   nir_def *abs_ddy = nir_fabs(b, scaled_ddy);
+
+   /* Take the component-wise maximum of |ddx| and |ddy| */
+   nir_def *max_grad = nir_fmax(b, abs_ddx, abs_ddy);
+
+   /* Reduce to scalar max (for 2D: max(x,y); for 3D: max(x,y,z)) */
+   nir_def *max_grad_scalar;
+   if (tex->sampler_dim == GLSL_SAMPLER_DIM_3D) {
+      nir_def *max_xy = nir_fmax(b, nir_channel(b, max_grad, 0),
+                                    nir_channel(b, max_grad, 1));
+      max_grad_scalar = nir_fmax(b, max_xy, nir_channel(b, max_grad, 2));
+   } else {
+      max_grad_scalar = nir_fmax(b, nir_channel(b, max_grad, 0),
+                                    nir_channel(b, max_grad, 1));
+   }
+
+   /* Compute log2(max_grad) for LOD */
+   nir_def *lod = nir_flog2(b, max_grad_scalar);
+
+   /* Round LOD to nearest integer using floor(lod + 0.5) */
+   lod = nir_fadd_imm(b, lod, 0.5f);
+   lod = nir_ffloor(b, lod);
+   lod = clamp_lod(b, sampler, lod);
+
+   coord = calculate_coord(b, tex, coord, base_size_int, lod, offset);
+
+   nir_src_rewrite(&tex->src[coord_index].src, coord);
+
+   return true;
+}
+
+static bool
 legalize_txf_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
 {
    if (tex->op != nir_texop_txf)
@@ -355,6 +422,9 @@ etna_nir_lower_texture(nir_shader *s, struct etna_shader_key *key, const struct 
       nir_metadata_control_flow, NULL);
 
    NIR_PASS(progress, s, nir_shader_tex_pass, lower_txl_offset,
+      nir_metadata_control_flow, NULL);
+
+   NIR_PASS(progress, s, nir_shader_tex_pass, lower_txd_offset,
       nir_metadata_control_flow, NULL);
 
    NIR_PASS(progress, s, nir_shader_tex_pass, legalize_txf_lod,
