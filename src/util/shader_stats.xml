@@ -34,6 +34,7 @@
       <stat name="Loops">Number of hardware loops</stat>
       <stat name="Spills">Number of spill (stack store) instructions</stat>
       <stat name="Fills">Number of fill (stack load) instructions</stat>
+      <stat name="Preamble instructions" display="Preamble inst">Preamble instruction count</stat>
     </isa>
 
    <family name="Pan">

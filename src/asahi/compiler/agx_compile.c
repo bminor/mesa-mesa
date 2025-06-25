@@ -2769,6 +2769,7 @@ static void
 agx_calc_stats(agx_context *ctx, unsigned size, struct agx2_stats *stats)
 {
    struct agx_cycle_estimate cycles = agx_estimate_cycles(ctx);
+   uint32_t old_preamble_inst = stats->preamble_inst;
 
    *stats = (struct agx2_stats){
       .alu = cycles.alu,
@@ -2780,6 +2781,7 @@ agx_calc_stats(agx_context *ctx, unsigned size, struct agx2_stats *stats)
       .scratch = ctx->scratch_size_B,
       .threads = agx_occupancy_for_register_count(ctx->max_reg).max_threads,
       .loops = ctx->loop_count,
+      .preamble_inst = old_preamble_inst,
    };
 
    /* Count instructions */
@@ -3653,15 +3655,15 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
    else
       out->nr_gprs = nr_gprs;
 
-   /* Don't dump statistics for preambles, since they're not worth optimizing */
-   if (!impl->function->is_preamble) {
-      agx_calc_stats(ctx, binary->size, &ctx->out->stats);
-
-      if (agx_should_dump(nir, AGX_DBG_SHADERDB)) {
-         agx2_stats_fprintf(stderr,
-                            _mesa_shader_stage_to_abbrev(nir->info.stage),
-                            &ctx->out->stats);
+   if (impl->function->is_preamble) {
+      uint32_t instrs = 0;
+      agx_foreach_instr_global(ctx, I) {
+         instrs++;
       }
+
+      ctx->out->stats.preamble_inst = instrs;
+   } else {
+      agx_calc_stats(ctx, binary->size, &ctx->out->stats);
    }
 
    /*
@@ -3912,6 +3914,11 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
       } else {
          unreachable("General functions not yet supported");
       }
+   }
+
+   if (agx_should_dump(nir, AGX_DBG_SHADERDB)) {
+      agx2_stats_fprintf(stderr, _mesa_shader_stage_to_abbrev(nir->info.stage),
+                         &out->info.stats);
    }
 
    info->stage = nir->info.stage;
