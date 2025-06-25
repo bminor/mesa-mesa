@@ -8,6 +8,7 @@
 #include "radv_descriptor_pool.h"
 #include "radv_buffer.h"
 #include "radv_descriptor_set.h"
+#include "radv_descriptors.h"
 #include "radv_device.h"
 #include "radv_entrypoints.h"
 #include "radv_physical_device.h"

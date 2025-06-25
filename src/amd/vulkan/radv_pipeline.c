@@ -18,6 +18,7 @@
 #include "util/u_atomic.h"
 #include "radv_cs.h"
 #include "radv_debug.h"
+#include "radv_descriptors.h"
 #include "radv_pipeline_rt.h"
 #include "radv_rmv.h"
 #include "radv_shader.h"

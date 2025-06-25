@@ -16,6 +16,10 @@
 
 #include <vulkan/vulkan.h>
 
+struct radv_cmd_buffer;
+struct radv_descriptor_pool;
+struct radv_device;
+
 struct radv_descriptor_set_binding_layout {
    VkDescriptorType type;
 
@@ -122,23 +126,12 @@ radv_immutable_ycbcr_samplers(const struct radv_descriptor_set_layout *set, unsi
    return (const struct vk_ycbcr_conversion_state *)((const char *)set + offsets[binding_index]);
 }
 
-struct radv_device;
-struct radv_cmd_buffer;
-
 void radv_cmd_update_descriptor_sets(struct radv_device *device, struct radv_cmd_buffer *cmd_buffer,
                                      VkDescriptorSet overrideSet, uint32_t descriptorWriteCount,
                                      const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                      const VkCopyDescriptorSet *pDescriptorCopies);
 
-struct radv_descriptor_pool;
-
 void radv_descriptor_set_destroy(struct radv_device *device, struct radv_descriptor_pool *pool,
                                  struct radv_descriptor_set *set, bool free_bo);
-
-unsigned radv_descriptor_type_buffer_count(VkDescriptorType type);
-
-bool radv_mutable_descriptor_type_size_alignment(const struct radv_device *device,
-                                                 const VkMutableDescriptorTypeListEXT *list, uint64_t *out_size,
-                                                 uint64_t *out_align);
 
 #endif /* RADV_DESCRIPTOR_SET_H */

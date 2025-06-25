@@ -8,6 +8,7 @@
 #include "nir.h"
 #include "nir_builder.h"
 #include "radv_descriptor_set.h"
+#include "radv_descriptors.h"
 #include "radv_device.h"
 #include "radv_nir.h"
 #include "radv_physical_device.h"

@@ -16,6 +16,14 @@
 
 #include <vulkan/vulkan.h>
 
+unsigned radv_descriptor_type_buffer_count(VkDescriptorType type);
+
+uint32_t radv_descriptor_alignment(VkDescriptorType type);
+
+bool radv_mutable_descriptor_type_size_alignment(const struct radv_device *device,
+                                                 const VkMutableDescriptorTypeListEXT *list, uint64_t *out_size,
+                                                 uint64_t *out_align);
+
 static ALWAYS_INLINE void
 radv_write_texel_buffer_descriptor(struct radv_device *device, struct radv_cmd_buffer *cmd_buffer, unsigned *dst,
                                    struct radeon_winsys_bo **buffer_list, const VkBufferView _buffer_view)
