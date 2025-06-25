@@ -2,6 +2,8 @@ dEQP-VK.binding_model.shader_access.secondary_cmd_buf.with_template.storage_imag
 
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.multi_draw.mosaic.normal.one_draw.standard_stride.1_instance.tess_geom.multiview.no_offset
 dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.scissor.dynamic_scissor_updates_between_draws
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_indexed_vk_primitive_topology_line_list_attrib_divisor_1_multiview
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_vk_primitive_topology_line_list_attrib_divisor_4
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_vk_primitive_topology_line_list_attrib_divisor_20
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_12.1_instance.with_tess.multiview.offset_6
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_packed.one_draw.stride_extra_12.1_instance.with_tess.single_view.offset_6_no_draw_id
@@ -10,6 +12,7 @@ dEQP-VK.draw.renderpass.output_location.array.r32g32b32a32-sfloat-highp
 
 dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.line_list_with_adjacency.no_clip.struct.vec4.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.triangle_list.clip.type.uint.per_vertex_flat.vertex_shader
+dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.triangle_list_with_adjacency.no_clip.struct.ivec3.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.data.provoking_last.static.line_strip_with_adjacency.no_clip.type.ivec2.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_first.static.triangle_list.no_clip.array2.uint.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_last.dynamic.line_list_with_adjacency.no_clip.type.double.per_vertex_flat.vertex_shader
@@ -17,6 +20,7 @@ dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static.line_strip.no_clip.array2.vec2.per_vertex_interp.vertex_shader
 
 dEQP-VK.glsl.builtin.function.integer.imulextended.ivec3_highp_fragment
+dEQP-VK.glsl.opaque_type_indexing.sampler.dynamically_uniform.vertex.isamplercube
 
 dEQP-VK.memory.allocation.basic.size_4KiB.forward.count_4000
 dEQP-VK.memory.allocation.basic.size_4KiB.reverse.count_4000
@@ -25,12 +29,14 @@ dEQP-VK.memory.allocation.basic.size_8KiB.reverse.count_4000
 
 dEQP-VK.pipeline.fast_linked_library.attachment_feedback_loop_layout.sampler.combined_image_sampler.image_type.2d_unnormalized.format.s8_uint_stencil_read_write_different_areas
 dEQP-VK.pipeline.fast_linked_library.image_view.view_type.1d_array.format.a1b5g5r5_unorm_pack16_khr.subresource_range.lod_mip_levels
+dEQP-VK.pipeline.fast_linked_library.sampler.separate_stencil_usage.view_type.cube_array.format.d32_sfloat_s8_uint.mipmap.linear.lod.select_max_4
 dEQP-VK.pipeline.monolithic.depth.nocolor.format.d16_unorm_s8_uint_separate_layouts.compare_ops.line_list_equal_never_less_or_equal_greater_or_equal
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type.1d.format.r16g16_sfloat.count_8.size.512x1
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type.3d.format.r8g8b8a8_sint.count_1.size.5x5x5
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type.cube_array.format.r4g4b4a4_unorm_pack16.count_1.size.13x13_array_of_36
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.separate.view_type.3d.format.b10g11r11_ufloat_pack32.count_1.size.32x16x8
 dEQP-VK.pipeline.monolithic.sampler.separate_stencil_usage.view_type.cube_array.format.d32_sfloat_s8_uint.mipmap.nearest.lod.equal_min_3_max_3
+dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r32_sfloat.min_filter.nearest
 dEQP-VK.pipeline.pipeline_library.render_to_image.dedicated_allocation.2d.mipmap.a1r5g5b5_unorm_pack16_d16_unorm
 dEQP-VK.pipeline.shader_object_linked_binary.image.suballocation.sampling_type.separate.view_type.1d_array.format.r8_srgb.count_1.size.443x1_array_of_3
 dEQP-VK.pipeline.shader_object_linked_binary.render_to_image.dedicated_allocation.cube_array.mipmap.a2b10g10r10_unorm_pack32_s8_uint
@@ -80,6 +86,7 @@ dEQP-VK.subgroups.arithmetic.framebuffer.subgroupinclusivexor_u8vec3_tess_eval
 dEQP-VK.subgroups.ballot_broadcast.framebuffer.subgroupbroadcast_nonconst_u16vec3tess_eval
 dEQP-VK.subgroups.clustered.framebuffer.subgroupclusteredmin_int8_t_tess_control
 
+dEQP-VK.synchronization.global_priority_transition.low.no_sync.no_modifiers.from_compute_to_graphics
 dEQP-VK.synchronization.global_priority_transition.low.no_sync.sparse.from_graphics_to_compute
 dEQP-VK.synchronization.global_priority_transition.low.semaphore.no_modifiers.from_compute_to_graphics
 
@@ -89,12 +96,4 @@ dEQP-VK.texture.filtering.cube.combinations.nearest.linear.clamp_to_edge.mirrore
 dEQP-VK.texture.filtering.cube.sizes.64x64.nearest
 dEQP-VK.texture.mipmap.cubemap.basic.nearest_linear_linear_mirror
 dEQP-VK.texture.mipmap.cubemap.projected.linear_nearest_nearest_mirror
-
-dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_indexed_vk_primitive_topology_line_list_attrib_divisor_1_multiview
-dEQP-VK.pipeline.fast_linked_library.sampler.separate_stencil_usage.view_type.cube_array.format.d32_sfloat_s8_uint.mipmap.linear.lod.select_max_4
-dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_vk_primitive_topology_line_list_attrib_divisor_4
-dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r32_sfloat.min_filter.nearest
-dEQP-VK.glsl.opaque_type_indexing.sampler.dynamically_uniform.vertex.isamplercube
-dEQP-VK.synchronization.global_priority_transition.low.no_sync.no_modifiers.from_compute_to_graphics
 dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.non_seamless_less_or_equal_d16_unorm_s8_uint
-dEQP-VK.fragment_shading_barycentric.data.provoking_first.dynamic.triangle_list_with_adjacency.no_clip.struct.ivec3.per_vertex_flat.vertex_shader
