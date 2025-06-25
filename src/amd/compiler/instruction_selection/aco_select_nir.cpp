@@ -113,11 +113,11 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
    bool a16 = false, g16 = false;
 
    int coord_idx = nir_tex_instr_src_index(instr, nir_tex_src_coord);
-   if (coord_idx > 0)
+   if (coord_idx >= 0)
       a16 = instr->src[coord_idx].src.ssa->bit_size == 16;
 
    int ddx_idx = nir_tex_instr_src_index(instr, nir_tex_src_ddx);
-   if (ddx_idx > 0)
+   if (ddx_idx >= 0)
       g16 = instr->src[ddx_idx].src.ssa->bit_size == 16;
 
    for (unsigned i = 0; i < instr->num_srcs; i++) {
