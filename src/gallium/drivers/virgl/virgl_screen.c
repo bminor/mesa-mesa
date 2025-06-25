@@ -254,7 +254,7 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
       caps->max_hw_atomic_counters =
          VIRGL_SHADER_STAGE_CAP_V2(max_atomic_counters, i);
       caps->max_hw_atomic_counter_buffers =
-         VIRGL_SHADER_STAGE_CAP_V2(max_atomic_counter_buffers, i);
+         MIN2(VIRGL_SHADER_STAGE_CAP_V2(max_atomic_counter_buffers, i), PIPE_MAX_HW_ATOMIC_BUFFERS);
    }
 }
 
