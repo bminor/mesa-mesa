@@ -53,6 +53,7 @@ libaco_files = files(
   'aco_form_hard_clauses.cpp',
   'aco_insert_delay_alu.cpp',
   'aco_insert_exec_mask.cpp',
+  'aco_insert_fp_mode.cpp',
   'aco_insert_NOPs.cpp',
   'aco_insert_waitcnt.cpp',
   'aco_reduce_assign.cpp',

@@ -1908,6 +1908,8 @@ unsigned get_vopd_opy_start(const Instruction* instr);
 
 bool should_form_clause(const Instruction* a, const Instruction* b);
 
+bool instr_is_vmem_fp_atomic(Instruction* instr);
+
 enum vmem_type : uint8_t {
    vmem_nosampler = 1 << 0,
    vmem_sampler = 1 << 1,
@@ -2286,6 +2288,7 @@ void lower_to_hw_instr(Program* program);
 void schedule_program(Program* program);
 void schedule_ilp(Program* program);
 void schedule_vopd(Program* program);
+void insert_fp_mode(Program* program);
 void spill(Program* program);
 void insert_waitcnt(Program* program);
 void insert_delay_alu(Program* program);

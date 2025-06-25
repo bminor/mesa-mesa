@@ -2124,46 +2124,6 @@ handle_operands_linear_vgpr(std::map<PhysReg, copy_operation>& copy_map, lower_c
 }
 
 void
-emit_set_mode(Builder& bld, float_mode new_mode, bool set_round, bool set_denorm)
-{
-   if (bld.program->gfx_level >= GFX10) {
-      if (set_round)
-         bld.sopp(aco_opcode::s_round_mode, new_mode.round);
-      if (set_denorm)
-         bld.sopp(aco_opcode::s_denorm_mode, new_mode.denorm);
-   } else if (set_round || set_denorm) {
-      /* "((size - 1) << 11) | register" (MODE is encoded as register 1) */
-      bld.sopk(aco_opcode::s_setreg_imm32_b32, Operand::literal32(new_mode.val), (7 << 11) | 1);
-   }
-}
-
-void
-emit_set_mode_from_block(Builder& bld, Program& program, Block* block)
-{
-   float_mode initial;
-   initial.val = program.config->float_mode;
-
-   bool inital_unknown =
-      (program.info.merged_shader_compiled_separately && program.stage.sw == SWStage::GS) ||
-      (program.info.merged_shader_compiled_separately && program.stage.sw == SWStage::TCS);
-   bool is_start = block->index == 0;
-   bool set_round = is_start && (inital_unknown || block->fp_mode.round != initial.round);
-   bool set_denorm = is_start && (inital_unknown || block->fp_mode.denorm != initial.denorm);
-   if (block->kind & block_kind_top_level) {
-      for (unsigned pred : block->linear_preds) {
-         if (program.blocks[pred].fp_mode.round != block->fp_mode.round)
-            set_round = true;
-         if (program.blocks[pred].fp_mode.denorm != block->fp_mode.denorm)
-            set_denorm = true;
-      }
-   }
-   /* only allow changing modes at top-level blocks so this doesn't break
-    * the "jump over empty blocks" optimization */
-   assert((!set_round && !set_denorm) || (block->kind & block_kind_top_level));
-   emit_set_mode(bld, block->fp_mode, set_round, set_denorm);
-}
-
-void
 lower_image_sample(lower_context* ctx, aco_ptr<Instruction>& instr)
 {
    Operand linear_vgpr = instr->operands[3];
@@ -2278,8 +2238,6 @@ lower_to_hw_instr(Program* program)
       ctx.block = block;
       ctx.instructions.reserve(block->instructions.size());
       Builder bld(program, &ctx.instructions);
-
-      emit_set_mode_from_block(bld, *program, block);
 
       for (size_t instr_idx = 0; instr_idx < block->instructions.size(); instr_idx++) {
          aco_ptr<Instruction>& instr = block->instructions[instr_idx];
@@ -2927,35 +2885,6 @@ lower_to_hw_instr(Program* program)
             } else if (emit_s_barrier) {
                bld.sopp(aco_opcode::s_barrier);
             }
-         } else if (instr->opcode == aco_opcode::p_v_cvt_f16_f32_rtne ||
-                    instr->opcode == aco_opcode::p_s_cvt_f16_f32_rtne) {
-            float_mode new_mode = block->fp_mode;
-            new_mode.round16_64 = fp_round_ne;
-            bool set_round = new_mode.round != block->fp_mode.round;
-
-            emit_set_mode(bld, new_mode, set_round, false);
-
-            if (instr->opcode == aco_opcode::p_v_cvt_f16_f32_rtne)
-               instr->opcode = aco_opcode::v_cvt_f16_f32;
-            else
-               instr->opcode = aco_opcode::s_cvt_f16_f32;
-            ctx.instructions.emplace_back(std::move(instr));
-
-            emit_set_mode(bld, block->fp_mode, set_round, false);
-         } else if (instr->opcode == aco_opcode::p_v_cvt_pk_fp8_f32_ovfl) {
-            /* FP8/BF8 uses FP16_OVFL(1) to clamp to max finite result. Temporarily set it for the
-             * instruction.
-             * "((size - 1) << 11 | (offset << 6) | register" (MODE is encoded as register 1, we
-             * want to set a single bit at offset 23)
-             */
-            bld.sopk(aco_opcode::s_setreg_imm32_b32, Operand::literal32(1),
-                     (0 << 11) | (23 << 6) | 1);
-
-            instr->opcode = aco_opcode::v_cvt_pk_fp8_f32;
-            ctx.instructions.emplace_back(std::move(instr));
-
-            bld.sopk(aco_opcode::s_setreg_imm32_b32, Operand::literal32(0),
-                     (0 << 11) | (23 << 6) | 1);
          } else if (instr->isMIMG() && instr->mimg().strict_wqm) {
             lower_image_sample(&ctx, instr);
             ctx.instructions.emplace_back(std::move(instr));

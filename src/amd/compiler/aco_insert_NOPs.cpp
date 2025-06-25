@@ -870,50 +870,6 @@ instr_is_branch(const aco_ptr<Instruction>& instr)
           instr->opcode == aco_opcode::s_getpc_b64 || instr->opcode == aco_opcode::s_call_b64;
 }
 
-bool
-instr_is_vmem_fp_atomic(const aco_ptr<Instruction>& instr)
-{
-   if (!instr->isVMEM() && !instr->isFlatLike())
-      return false;
-
-   switch (instr->opcode) {
-   case aco_opcode::buffer_atomic_fcmpswap:
-   case aco_opcode::buffer_atomic_fmin:
-   case aco_opcode::buffer_atomic_fmax:
-   case aco_opcode::buffer_atomic_fcmpswap_x2:
-   case aco_opcode::buffer_atomic_fmin_x2:
-   case aco_opcode::buffer_atomic_fmax_x2:
-   case aco_opcode::buffer_atomic_add_f32:
-   case aco_opcode::buffer_atomic_pk_add_f16:
-   case aco_opcode::buffer_atomic_pk_add_bf16:
-   case aco_opcode::image_atomic_fcmpswap:
-   case aco_opcode::image_atomic_fmin:
-   case aco_opcode::image_atomic_fmax:
-   case aco_opcode::image_atomic_pk_add_f16:
-   case aco_opcode::image_atomic_pk_add_bf16:
-   case aco_opcode::image_atomic_add_flt:
-   case aco_opcode::flat_atomic_fcmpswap:
-   case aco_opcode::flat_atomic_fmin:
-   case aco_opcode::flat_atomic_fmax:
-   case aco_opcode::flat_atomic_fcmpswap_x2:
-   case aco_opcode::flat_atomic_fmin_x2:
-   case aco_opcode::flat_atomic_fmax_x2:
-   case aco_opcode::flat_atomic_add_f32:
-   case aco_opcode::flat_atomic_pk_add_f16:
-   case aco_opcode::flat_atomic_pk_add_bf16:
-   case aco_opcode::global_atomic_fcmpswap:
-   case aco_opcode::global_atomic_fmin:
-   case aco_opcode::global_atomic_fmax:
-   case aco_opcode::global_atomic_fcmpswap_x2:
-   case aco_opcode::global_atomic_fmin_x2:
-   case aco_opcode::global_atomic_fmax_x2:
-   case aco_opcode::global_atomic_add_f32:
-   case aco_opcode::global_atomic_pk_add_f16:
-   case aco_opcode::global_atomic_pk_add_bf16: return true;
-   default: return false;
-   }
-}
-
 void
 handle_instruction_gfx10(State& state, NOP_ctx_gfx10& ctx, aco_ptr<Instruction>& instr,
                          std::vector<aco_ptr<Instruction>>& new_instructions)
@@ -944,7 +900,7 @@ handle_instruction_gfx10(State& state, NOP_ctx_gfx10& ctx, aco_ptr<Instruction>&
               instr->opcode == aco_opcode::s_waitcnt_lgkmcnt ||
               instr->opcode == aco_opcode::s_wait_idle) {
       ctx.waits_since_fp_atomic = 3;
-   } else if (instr_is_vmem_fp_atomic(instr)) {
+   } else if (instr_is_vmem_fp_atomic(instr.get())) {
       ctx.waits_since_fp_atomic = 0;
    } else {
       ctx.waits_since_fp_atomic += get_wait_states(instr);
