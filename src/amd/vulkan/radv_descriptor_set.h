@@ -107,35 +107,6 @@ struct radv_push_descriptor_set {
    uint32_t capacity;
 };
 
-struct radv_descriptor_pool_entry {
-   uint32_t offset;
-   uint32_t size;
-   struct radv_descriptor_set *set;
-};
-
-struct radv_descriptor_pool {
-   struct vk_object_base base;
-   struct radeon_winsys_bo *bo;
-   uint8_t *host_bo;
-   uint8_t *mapped_ptr;
-   uint64_t current_offset;
-   uint64_t size;
-
-   uint8_t *host_memory_base;
-   uint8_t *host_memory_ptr;
-   uint8_t *host_memory_end;
-
-   uint32_t entry_count;
-   uint32_t max_entry_count;
-
-   union {
-      struct radv_descriptor_set *sets[0];
-      struct radv_descriptor_pool_entry entries[0];
-   };
-};
-
-VK_DEFINE_NONDISP_HANDLE_CASTS(radv_descriptor_pool, base, VkDescriptorPool, VK_OBJECT_TYPE_DESCRIPTOR_POOL)
-
 struct radv_descriptor_update_template_entry {
    VkDescriptorType descriptor_type;
 
@@ -204,5 +175,16 @@ void radv_cmd_update_descriptor_set_with_template(struct radv_device *device, st
                                                   struct radv_descriptor_set *set,
                                                   VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                   const void *pData);
+
+struct radv_descriptor_pool;
+
+void radv_descriptor_set_destroy(struct radv_device *device, struct radv_descriptor_pool *pool,
+                                 struct radv_descriptor_set *set, bool free_bo);
+
+unsigned radv_descriptor_type_buffer_count(VkDescriptorType type);
+
+bool radv_mutable_descriptor_type_size_alignment(const struct radv_device *device,
+                                                 const VkMutableDescriptorTypeListEXT *list, uint64_t *out_size,
+                                                 uint64_t *out_align);
 
 #endif /* RADV_DESCRIPTOR_SET_H */

@@ -112,6 +112,8 @@ libradv_files = files(
   'radv_device.h',
   'radv_device_memory.c',
   'radv_device_memory.h',
+  'radv_descriptor_pool.c',
+  'radv_descriptor_pool.h',
   'radv_descriptor_set.c',
   'radv_descriptor_set.h',
   'radv_dgc.c',

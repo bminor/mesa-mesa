@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "ac_gpu_info.h"
 #include "radv_buffer.h"
+#include "radv_descriptor_pool.h"
 #include "radv_descriptor_set.h"
 #include "radv_device_memory.h"
 #include "radv_event.h"
