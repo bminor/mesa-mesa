@@ -34,10 +34,10 @@ pub enum GOBType {
     ///
     /// |           |           |           |           |
     /// |-----------|-----------|-----------|-----------|
-    /// | Sector  0 | Sector  1 | Sector  8 | Sector  9 |
-    /// | Sector  2 | Sector  3 | Sector 10 | Sector 11 |
-    /// | Sector  4 | Sector  5 | Sector 12 | Sector 13 |
-    /// | Sector  6 | Sector  7 | Sector 14 | Sector 15 |
+    /// | Sector  0 | Sector  2 | Sector  8 | Sector 10 |
+    /// | Sector  1 | Sector  3 | Sector  9 | Sector 11 |
+    /// | Sector  4 | Sector  6 | Sector 12 | Sector 14 |
+    /// | Sector  5 | Sector  7 | Sector 13 | Sector 15 |
     ///
     /// `CopyGOBTuring2D` implements CPU copies for Turing color 2D GOBs.
     TuringColor2D,
