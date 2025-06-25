@@ -192,6 +192,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_synchronization2                  = true,
    .KHR_timeline_semaphore                = true,
    .KHR_uniform_buffer_standard_layout    = true,
+   .KHR_unified_image_layouts             = true,
    .KHR_variable_pointers                 = true,
    .KHR_vertex_attribute_divisor          = true,
    .KHR_vulkan_memory_model               = true,
@@ -792,6 +793,10 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .workgroupMemoryExplicitLayoutScalarBlockLayout = true,
       .workgroupMemoryExplicitLayout8BitAccess = true,
       .workgroupMemoryExplicitLayout16BitAccess = true,
+
+      /* VK_KHR_unified_image_layouts */
+      .unifiedImageLayouts = true,
+      .unifiedImageLayoutsVideo = true,
    };
 }
 
