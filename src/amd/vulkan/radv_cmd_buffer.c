@@ -13,6 +13,7 @@
 #include "radv_cp_dma.h"
 #include "radv_cs.h"
 #include "radv_debug.h"
+#include "radv_descriptor_update_template.h"
 #include "radv_dgc.h"
 #include "radv_event.h"
 #include "radv_pipeline_layout.h"
