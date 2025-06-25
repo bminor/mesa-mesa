@@ -51,58 +51,72 @@
 #include "nir.h"
 
 static nir_instr *
-get_intrinsic_resource(nir_intrinsic_instr *intr)
+get_load_resource(nir_instr *instr)
 {
-   /* This is also the list of intrinsics that are grouped. */
-   switch (intr->intrinsic) {
-   /* Image loads. */
-   case nir_intrinsic_image_load:
-   case nir_intrinsic_image_deref_load:
-   case nir_intrinsic_bindless_image_load:
-   case nir_intrinsic_image_sparse_load:
-   case nir_intrinsic_image_deref_sparse_load:
-   case nir_intrinsic_bindless_image_sparse_load:
-   /* Fragment mask loads. (samples_identical also loads it) */
-   case nir_intrinsic_image_fragment_mask_load_amd:
-   case nir_intrinsic_image_deref_fragment_mask_load_amd:
-   case nir_intrinsic_bindless_image_fragment_mask_load_amd:
-   case nir_intrinsic_image_samples_identical:
-   case nir_intrinsic_image_deref_samples_identical:
-   case nir_intrinsic_bindless_image_samples_identical:
-   /* Queries */
-   case nir_intrinsic_image_size:
-   case nir_intrinsic_image_deref_size:
-   case nir_intrinsic_bindless_image_size:
-   case nir_intrinsic_image_samples:
-   case nir_intrinsic_image_deref_samples:
-   case nir_intrinsic_bindless_image_samples:
-   case nir_intrinsic_image_levels:
-   case nir_intrinsic_image_deref_levels:
-   case nir_intrinsic_bindless_image_levels:
-   /* Other loads. */
-   /* load_ubo is ignored because it's usually cheap. */
-   case nir_intrinsic_load_ssbo:
-   case nir_intrinsic_load_global:
-      return intr->src[0].ssa->parent_instr;
-   default:
-      return NULL;
+   if (instr->type == nir_instr_type_tex) {
+      nir_tex_instr *tex = nir_instr_as_tex(instr);
+
+      for (unsigned i = 0; i < tex->num_srcs; i++) {
+         switch (tex->src[i].src_type) {
+         case nir_tex_src_texture_deref:
+         case nir_tex_src_texture_handle:
+            return tex->src[i].src.ssa->parent_instr;
+         default:
+            break;
+         }
+      }
+      unreachable("tex instr should have a resource");
    }
+
+   if (instr->type == nir_instr_type_intrinsic) {
+      /* This is also the list of intrinsics that are grouped. */
+      switch (nir_instr_as_intrinsic(instr)->intrinsic) {
+      /* Image loads. */
+      case nir_intrinsic_image_load:
+      case nir_intrinsic_image_deref_load:
+      case nir_intrinsic_bindless_image_load:
+      case nir_intrinsic_image_sparse_load:
+      case nir_intrinsic_image_deref_sparse_load:
+      case nir_intrinsic_bindless_image_sparse_load:
+      /* Fragment mask loads. (samples_identical also loads it) */
+      case nir_intrinsic_image_fragment_mask_load_amd:
+      case nir_intrinsic_image_deref_fragment_mask_load_amd:
+      case nir_intrinsic_bindless_image_fragment_mask_load_amd:
+      case nir_intrinsic_image_samples_identical:
+      case nir_intrinsic_image_deref_samples_identical:
+      case nir_intrinsic_bindless_image_samples_identical:
+      /* Queries */
+      case nir_intrinsic_image_size:
+      case nir_intrinsic_image_deref_size:
+      case nir_intrinsic_bindless_image_size:
+      case nir_intrinsic_image_samples:
+      case nir_intrinsic_image_deref_samples:
+      case nir_intrinsic_bindless_image_samples:
+      case nir_intrinsic_image_levels:
+      case nir_intrinsic_image_deref_levels:
+      case nir_intrinsic_bindless_image_levels:
+      /* Other loads. */
+      /* load_ubo is ignored because it's usually cheap. */
+      case nir_intrinsic_load_ssbo:
+      case nir_intrinsic_load_global:
+         return nir_instr_as_intrinsic(instr)->src[0].ssa->parent_instr;
+      default:
+         return NULL;
+      }
+   }
+
+   return NULL;
 }
 
 /* Track only those that we want to group. */
 static bool
 is_grouped_load(nir_instr *instr)
 {
-   /* Count texture_size too because it has the same latency as cache hits. */
-   if (instr->type == nir_instr_type_tex)
-      return true;
+   if (instr->type == nir_instr_type_intrinsic &&
+       !nir_intrinsic_can_reorder(nir_instr_as_intrinsic(instr)))
+      return false;
 
-   if (instr->type == nir_instr_type_intrinsic) {
-      return get_intrinsic_resource(nir_instr_as_intrinsic(instr)) != NULL &&
-             nir_intrinsic_can_reorder(nir_instr_as_intrinsic(instr));
-   }
-
-   return false;
+   return get_load_resource(instr) != NULL;
 }
 
 static bool
@@ -119,33 +133,6 @@ is_part_of_group(nir_instr *instr, uint8_t current_indirection_level)
     * instructions.
     */
    return is_grouped_load(instr) && instr->pass_flags == current_indirection_level;
-}
-
-static nir_instr *
-get_uniform_inst_resource(nir_instr *instr)
-{
-   if (instr->type == nir_instr_type_tex) {
-      nir_tex_instr *tex = nir_instr_as_tex(instr);
-
-      if (tex->texture_non_uniform)
-         return NULL;
-
-      for (unsigned i = 0; i < tex->num_srcs; i++) {
-         switch (tex->src[i].src_type) {
-         case nir_tex_src_texture_deref:
-         case nir_tex_src_texture_handle:
-            return tex->src[i].src.ssa->parent_instr;
-         default:
-            break;
-         }
-      }
-      return NULL;
-   }
-
-   if (instr->type == nir_instr_type_intrinsic)
-      return get_intrinsic_resource(nir_instr_as_intrinsic(instr));
-
-   return NULL;
 }
 
 struct check_sources_state {
@@ -426,7 +413,7 @@ process_block(nir_block *block, nir_load_grouping grouping,
                break;
 
             case nir_group_same_resource_only:
-               current_resource = get_uniform_inst_resource(current);
+               current_resource = get_load_resource(current);
 
                if (current_resource) {
                   if (!first_load) {
