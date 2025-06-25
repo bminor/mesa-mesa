@@ -795,7 +795,7 @@ static void amdgpu_ib_finalize(struct amdgpu_winsys *aws, struct radeon_cmdbuf *
    ib->max_ib_bytes = MAX2(ib->max_ib_bytes, (rcs->prev_dw + rcs->current.cdw) * 4);
 }
 
-static bool amdgpu_init_cs_context(struct amdgpu_winsys *aws,
+static void amdgpu_init_cs_context(struct amdgpu_winsys *aws,
                                    struct amdgpu_cs_context *csc,
                                    enum amd_ip_type ip_type)
 {
@@ -817,7 +817,6 @@ static bool amdgpu_init_cs_context(struct amdgpu_winsys *aws,
 
    csc->chunk_ib[IB_PREAMBLE].flags |= AMDGPU_IB_FLAG_PREAMBLE;
    csc->last_added_bo = NULL;
-   return true;
 }
 
 static void cleanup_fence_list(struct amdgpu_fence_list *fences)
@@ -954,12 +953,7 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    memset(acs->buffer_indices_hashlist, -1, sizeof(acs->buffer_indices_hashlist));
 
    for (unsigned i = 0; i < ARRAY_SIZE(acs->csc); i++) {
-      if (!amdgpu_init_cs_context(ctx->aws, &acs->csc[i], ip_type)) {
-         if (i)
-            amdgpu_destroy_cs_context(ctx->aws, &acs->csc[0]);
-         FREE(acs);
-         return false;
-      }
+      amdgpu_init_cs_context(ctx->aws, &acs->csc[i], ip_type);
 
      /* only csc will use for buffer_indices_hashlist. */
       acs->csc[i].buffer_indices_hashlist = acs->buffer_indices_hashlist;
