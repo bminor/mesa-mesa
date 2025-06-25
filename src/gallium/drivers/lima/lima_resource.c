@@ -568,43 +568,6 @@ lima_resource_set_damage_region(struct pipe_screen *pscreen,
    damage->num_region = nrects;
 }
 
-static struct pipe_surface *
-lima_surface_create(struct pipe_context *pctx,
-                    struct pipe_resource *pres,
-                    const struct pipe_surface *surf_tmpl)
-{
-   struct lima_surface *surf = CALLOC_STRUCT(lima_surface);
-
-   if (!surf)
-      return NULL;
-
-   assert(surf_tmpl->first_layer == surf_tmpl->last_layer);
-
-   struct pipe_surface *psurf = &surf->base;
-   unsigned level = surf_tmpl->level;
-
-   pipe_reference_init(&psurf->reference, 1);
-   pipe_resource_reference(&psurf->texture, pres);
-
-   psurf->context = pctx;
-   psurf->format = surf_tmpl->format;
-   psurf->nr_samples = surf_tmpl->nr_samples;
-   psurf->level = level;
-   psurf->first_layer = surf_tmpl->first_layer;
-   psurf->last_layer = surf_tmpl->last_layer;
-
-   return &surf->base;
-}
-
-static void
-lima_surface_destroy(struct pipe_context *pctx, struct pipe_surface *psurf)
-{
-   struct lima_surface *surf = lima_surface(psurf);
-
-   pipe_resource_reference(&psurf->texture, NULL);
-   FREE(surf);
-}
-
 static void *
 lima_transfer_map(struct pipe_context *pctx,
                   struct pipe_resource *pres,
@@ -971,9 +934,6 @@ lima_resource_screen_destroy(struct lima_screen *screen)
 void
 lima_resource_context_init(struct lima_context *ctx)
 {
-   ctx->base.create_surface = lima_surface_create;
-   ctx->base.surface_destroy = lima_surface_destroy;
-
    ctx->base.buffer_subdata = u_default_buffer_subdata;
    ctx->base.texture_subdata = lima_texture_subdata;
    /* TODO: optimize resource_copy_region to do copy directly
