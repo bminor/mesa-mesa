@@ -18,6 +18,7 @@ panfrost-t760-gles:arm32:
     - .panfrost-midgard-manual-rules
     - .panfrost-test
     - .lava-rk3288-veyron-jaq:arm32
+  timeout: 1h 30m
 
 panfrost-t760-traces:arm32:
   extends:
