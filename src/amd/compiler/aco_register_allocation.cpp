@@ -852,7 +852,7 @@ adjust_max_used_regs(ra_ctx& ctx, RegClass rc, unsigned reg)
 
 void
 update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& parallelcopies,
-               aco_ptr<Instruction>& instr, bool clear_operands = true)
+               aco_ptr<Instruction>& instr, bool fill_operands = false, bool clear_operands = true)
 {
    /* clear operands */
    if (clear_operands) {
@@ -925,7 +925,7 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
                   // FIXME: ensure that the operand can use this reg
                   if (op.isFixed())
                      op.setFixed(other.def.physReg());
-                  fill = !op.isKillBeforeDef();
+                  fill = !op.isKillBeforeDef() || fill_operands;
                }
             }
             if (fill)
@@ -979,7 +979,7 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
             /* Copy-kill or precolored operand parallelcopies are only added when setting up
              * operands.
              */
-            bool is_reg_file_before_instr = op.isPrecolored() || is_copy_kill;
+            bool is_reg_file_before_instr = fill_operands || op.isPrecolored() || is_copy_kill;
             fill = !op.isKillBeforeDef() || is_reg_file_before_instr;
          }
       }
@@ -2382,7 +2382,7 @@ handle_vector_operands(ra_ctx& ctx, RegisterFile& register_file,
    for (unsigned i = operand_index; i < operand_index + num_operands; i++)
       instr->operands[i].setFixed(ctx.assignments[instr->operands[i].tempId()].reg);
 
-   update_renames(ctx, register_file, parallelcopies, instr);
+   update_renames(ctx, register_file, parallelcopies, instr, true);
    ctx.vector_operands.emplace_back(
       vector_operand{vec->definitions[0], operand_index, num_operands});
    register_file.fill(vec->definitions[0]);
@@ -2421,7 +2421,7 @@ resolve_vector_operands(ra_ctx& ctx, RegisterFile& reg_file,
    ctx.vector_operands.clear();
 
    /* Update operand temporaries and fill non-killed operands. */
-   update_renames(ctx, reg_file, parallelcopies, instr, false);
+   update_renames(ctx, reg_file, parallelcopies, instr, false, false);
 }
 
 PhysReg
