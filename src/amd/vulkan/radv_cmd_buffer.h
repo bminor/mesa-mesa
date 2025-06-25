@@ -216,6 +216,11 @@ struct radv_rendering_state {
    VkExtent2D vrs_texel_size;
 };
 
+struct radv_push_descriptor_set {
+   struct radv_descriptor_set_header set;
+   uint32_t capacity;
+};
+
 struct radv_descriptor_state {
    struct radv_descriptor_set *sets[MAX_SETS];
    uint32_t dirty;

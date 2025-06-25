@@ -102,11 +102,6 @@ struct radv_descriptor_set {
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_descriptor_set, header.base, VkDescriptorSet, VK_OBJECT_TYPE_DESCRIPTOR_SET)
 
-struct radv_push_descriptor_set {
-   struct radv_descriptor_set_header set;
-   uint32_t capacity;
-};
-
 static inline const uint32_t *
 radv_immutable_samplers(const struct radv_descriptor_set_layout *set,
                         const struct radv_descriptor_set_binding_layout *binding)
