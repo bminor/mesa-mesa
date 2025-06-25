@@ -137,16 +137,22 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
    layout->layer_first = !is_3d;
    layout->is_mutable = is_mutable;
 
-   fdl6_get_ubwc_blockwidth(layout, &ubwc_blockwidth, &ubwc_blockheight);
-
-   /* For simplicity support UBWC only for 3D images without mipmaps,
-    * most d3d11 games don't use mipmaps for 3D images.
-    */
-   if (depth0 > 1 && mip_levels > 1)
+   if (!util_is_power_of_two_or_zero(layout->cpp)) {
+      /* R8G8B8 and other 3 component formats don't get UBWC: */
+      ubwc_blockwidth = ubwc_blockheight = 0;
       layout->ubwc = false;
+   } else {
+      fdl6_get_ubwc_blockwidth(layout, &ubwc_blockwidth, &ubwc_blockheight);
 
-   if (ubwc_blockwidth == 0)
-      layout->ubwc = false;
+      /* For simplicity support UBWC only for 3D images without mipmaps,
+       * most d3d11 games don't use mipmaps for 3D images.
+       */
+      if (depth0 > 1 && mip_levels > 1)
+         layout->ubwc = false;
+
+      if (ubwc_blockwidth == 0)
+         layout->ubwc = false;
+   }
 
    assert(!force_ubwc || layout->ubwc);
 
@@ -178,19 +184,28 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
    } else {
       layout->base_align = 64;
       layout->pitchalign = 0;
-      /* align pitch to at least 16 pixels:
-       * both turnip and galium assume there is enough alignment for 16x4
-       * aligned gmem store. turnip can use CP_BLIT to work without this
-       * extra alignment, but gallium driver doesn't implement it yet
-       */
-      if (layout->cpp > 4)
-         layout->pitchalign = fdl_cpp_shift(layout) - 2;
 
-      /* when possible, use a bit more alignment than necessary
-       * presumably this is better for performance?
-       */
-      if (!explicit_layout)
-         layout->pitchalign = fdl_cpp_shift(layout);
+      if (util_is_power_of_two_or_zero(layout->cpp)) {
+         /* align pitch to at least 16 pixels:
+          * both turnip and galium assume there is enough alignment for 16x4
+          * aligned gmem store. turnip can use CP_BLIT to work without this
+          * extra alignment, but gallium driver doesn't implement it yet
+          */
+         if (layout->cpp > 4)
+            layout->pitchalign = fdl_cpp_shift(layout) - 2;
+
+         /* when possible, use a bit more alignment than necessary
+          * presumably this is better for performance?
+          */
+         if (!explicit_layout)
+            layout->pitchalign = fdl_cpp_shift(layout);
+      } else {
+         /* 3 component formats have pitch aligned as their counterpart
+          * 4 component formats
+          */
+         layout->cpp_shift = ffs(util_next_power_of_two(layout->cpp)) - 1;
+         layout->pitchalign = layout->cpp_shift;
+      }
 
       /* not used, avoid "may be used uninitialized" warning */
       heightalign = 1;
