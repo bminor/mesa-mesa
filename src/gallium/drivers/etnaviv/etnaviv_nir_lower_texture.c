@@ -21,6 +21,133 @@ lower_txs(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
    return true;
 }
 
+static nir_def *
+clamp_lod(nir_builder *b, nir_def *sampler, nir_def *lod)
+{
+   nir_def *params = nir_load_sampler_lod_parameters(b, 2, 32, sampler);
+   nir_def *min_lod = nir_channel(b, params, 0);
+   nir_def *max_lod = nir_channel(b, params, 1);
+
+   return nir_fclamp(b, lod, min_lod, max_lod);
+}
+
+static nir_def *
+calculate_coord(nir_builder *b, nir_tex_instr *tex, nir_def *coord, nir_def *base_size_int, nir_def *lod, nir_def *offset)
+{
+   lod = nir_f2i32(b, lod);
+
+   /* Calculate mipmap level dimensions by right-shifting base size by LOD */
+   nir_def *mip_size = nir_ushr(b, base_size_int, lod);
+
+   /* Ensure minimum size of 1 pixel - mipmaps can't be smaller than 1x1 */
+   mip_size = nir_imax(b, mip_size, nir_imm_int(b, 1));
+
+   /* Convert mip size to float and calculate reciprocal to scale texel offsets into normalized coordinates */
+   nir_def *mip_size_float = nir_i2f32(b, mip_size);
+   nir_def *inv_mip_size = nir_frcp(b, mip_size_float);
+
+   offset = nir_i2f32(b, offset);
+
+   if (tex->is_array) {
+      const unsigned array_index = tex->coord_components - 1;
+
+      /* Split coordinate into spatial part and array layer */
+      nir_def *spatial_coord = nir_trim_vector(b, coord, array_index);
+      nir_def *array_layer = nir_channel(b, coord, array_index);
+
+      /* Apply offset only to spatial coordinates */
+      nir_def *spatial_inv_level_size = nir_trim_vector(b, inv_mip_size, array_index);
+      spatial_coord = nir_fadd(b, spatial_coord,
+                              nir_fmul(b, nir_trim_vector(b, offset, array_index),
+                                       spatial_inv_level_size));
+
+      /* Reconstruct full coordinate with original array layer */
+      coord = nir_vec3(b, nir_channel(b, spatial_coord, 0),
+                        nir_channel(b, spatial_coord, 1),
+                        array_layer);
+   } else {
+      coord = nir_fadd(b, coord, nir_fmul(b, offset, inv_mip_size));
+   }
+
+   return coord;
+}
+
+static bool
+lower_tex_offset(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
+{
+   if (tex->op != nir_texop_tex)
+      return false;
+
+   nir_def *offset = nir_steal_tex_src(tex, nir_tex_src_offset);
+   if (!offset)
+      return false;
+
+   assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   int coord_index = nir_tex_instr_src_index(tex, nir_tex_src_coord);
+   nir_def *coord = tex->src[coord_index].src.ssa;
+   nir_def *sampler = nir_imm_int(b, tex->texture_index);
+   nir_def *lod = NULL;
+
+   /* Load the base level texture size as int */
+   nir_def *base_size_int = nir_load_texture_size_etna(b, 32, sampler);
+   base_size_int = nir_trim_vector(b, base_size_int, tex->coord_components);
+
+   nir_def *base_size = nir_i2f32(b, base_size_int);
+
+   /* Compute texture coordinate derivatives */
+   nir_def *ddx = nir_ddx(b, coord);
+   nir_def *ddy = nir_ddy(b, coord);
+
+   /* Scale derivatives by texture size */
+   nir_def *scaled_ddx = nir_fmul(b, ddx, base_size);
+   nir_def *scaled_ddy = nir_fmul(b, ddy, base_size);
+
+   /* Calculate LOD using scaled derivatives with fdot calls */
+   nir_def *ddx_squared = nir_fdot(b, scaled_ddx, scaled_ddx);
+   nir_def *ddy_squared = nir_fdot(b, scaled_ddy, scaled_ddy);
+
+   nir_def *max_derivative = nir_fmax(b, ddx_squared, ddy_squared);
+
+   /* Hardware-specific LOD quantization using IEEE 754 float manipulation.
+    * By multiplying by 0.5 and adding 393216.0f (2^18 + 2^17), we force a
+    * specific exponent that traps the fractional LOD bits in the mantissa.
+    * This creates a float where the mantissa behaves like a 4.4 fixed-point
+    * value, matching the expected behaviour of Vivante GPU.
+    */
+   nir_def *lod_raw = nir_flog2(b, max_derivative);
+   nir_def *lod_fixed_point = nir_ffma(b, lod_raw, nir_imm_float(b, 0.5f),
+                                       nir_imm_float(b, 393216.0f));
+
+   /* Extract 16-bit fractional part */
+   nir_def *lod_masked = nir_iand_imm(b, lod_fixed_point, 0xFFFF);
+
+   /* Handle sign extension for negative LODs */
+   nir_def *sign_bit = nir_iand_imm(b, lod_masked, 0x8000);
+   nir_def *lod_or_magic = nir_ior_imm(b, lod_masked, 0xFFFF0000);
+
+   /* Select sign-extended version for negative, original for positive */
+   nir_def *lod_quantized = nir_bcsel(b, nir_ine_imm(b, sign_bit, 0), lod_or_magic, lod_masked);
+
+   /* Convert back from fixed-point: scale by 1/32 and add 0.5 offset
+    * This reverses the fixed-point encoding to get final LOD value
+    */
+   nir_def *lod_float = nir_u2f32(b, lod_quantized);
+   lod = nir_ffma(b, lod_float, nir_imm_float(b, 1.0f/32.0f), nir_imm_float(b, 0.5f));
+
+   /* floor and convert to int */
+   lod = nir_ffloor(b, lod);
+   lod = clamp_lod(b, sampler, lod);
+
+   coord = calculate_coord(b, tex, coord, base_size_int, lod, offset);
+
+   nir_src_rewrite(&tex->src[coord_index].src, coord);
+
+   return true;
+}
+
 static bool
 legalize_txf_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
 {
@@ -187,6 +314,9 @@ etna_nir_lower_texture(nir_shader *s, struct etna_shader_key *key, const struct 
 
    NIR_PASS(progress, s, nir_shader_tex_pass, lower_txs,
          nir_metadata_control_flow, NULL);
+
+   NIR_PASS(progress, s, nir_shader_tex_pass, lower_tex_offset,
+      nir_metadata_control_flow, NULL);
 
    NIR_PASS(progress, s, nir_shader_tex_pass, legalize_txf_lod,
       nir_metadata_control_flow, NULL);
