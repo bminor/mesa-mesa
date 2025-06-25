@@ -269,10 +269,6 @@ with_asahi_vk = _vulkan_drivers.contains('asahi')
 with_gfxstream_vk = _vulkan_drivers.contains('gfxstream')
 with_any_vk = _vulkan_drivers.length() != 0
 
-if with_any_vk and host_machine.system() == 'windows' and meson.version().version_compare('< 1.3')
-  error('Vulkan drivers on Windows require meson 1.3 or newer')
-endif
-
 with_any_llvmpipe = with_gallium_llvmpipe or with_swrast_vk
 with_gallium_or_lvp = with_gallium or with_swrast_vk
 
