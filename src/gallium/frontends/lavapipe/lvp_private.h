@@ -98,6 +98,7 @@ typedef uint32_t xcb_window_t;
 extern "C" {
 #endif
 
+#define LVP_NUM_QUEUES 1
 #define MAX_SETS         8
 #define MAX_DESCRIPTORS 1000000 /* Required by vkd3d-proton */
 #define MAX_PUSH_CONSTANTS_SIZE 256

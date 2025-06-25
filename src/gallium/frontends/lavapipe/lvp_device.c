@@ -157,6 +157,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_maintenance6                      = true,
    .KHR_maintenance7                      = true,
    .KHR_maintenance8                      = true,
+   .KHR_maintenance9                      = true,
    .KHR_map_memory2                       = true,
    .KHR_multiview                         = true,
    .KHR_push_descriptor                   = true,
@@ -755,6 +756,8 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .maintenance7 = true,
       /* maintenance8 */
       .maintenance8 = true,
+      /* maintenance9 */
+      .maintenance9 = true,
 
       /* VK_KHR_shader_maximal_reconvergence */
       .shaderMaximalReconvergence = true,
@@ -1275,6 +1278,10 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
    p->maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic = MAX_DESCRIPTORS / 2;
    p->maxDescriptorSetUpdateAfterBindTotalBuffersDynamic = MAX_DESCRIPTORS;
 
+   /* maintenance9 */
+   p->image2DViewOf3DSparse = true;
+   p->defaultVertexAttributeValue = VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR;
+
    /* VK_EXT_shader_object */
    /* this is basically unsupported */
    lvp_device_get_cache_uuid(p->shaderBinaryUUID);
@@ -1526,6 +1533,9 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceQueueFamilyProperties2(
       prio->priorities[2] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
       prio->priorities[3] = VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR;
    }
+   VkQueueFamilyOwnershipTransferPropertiesKHR *prop = vk_find_struct(pQueueFamilyProperties, QUEUE_FAMILY_OWNERSHIP_TRANSFER_PROPERTIES_KHR);
+   if (prop)
+      prop->optimalImageTransferToQueueFamilies = ~0;
 
    vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p) {
       p->queueFamilyProperties = (VkQueueFamilyProperties) {
@@ -1782,9 +1792,11 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDevice(
 
    device->pscreen = physical_device->pscreen;
 
-   assert(pCreateInfo->queueCreateInfoCount == 1);
-   assert(pCreateInfo->pQueueCreateInfos[0].queueFamilyIndex == 0);
-   assert(pCreateInfo->pQueueCreateInfos[0].queueCount == 1);
+   assert(pCreateInfo->queueCreateInfoCount <= LVP_NUM_QUEUES);
+   if (pCreateInfo->queueCreateInfoCount) {
+      assert(pCreateInfo->pQueueCreateInfos[0].queueFamilyIndex == 0);
+      assert(pCreateInfo->pQueueCreateInfos[0].queueCount == 1);
+   }
    result = lvp_queue_init(device, &device->queue, pCreateInfo->pQueueCreateInfos, 0);
    if (result != VK_SUCCESS) {
       vk_free(&device->vk.alloc, device);
