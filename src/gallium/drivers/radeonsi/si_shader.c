@@ -1127,7 +1127,6 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .cull_clipdist_mask = si_shader_culling_enabled(shader) ?
                                  SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(key->ge.opt.ngg_culling) |
                                  shader->info.culldist_mask : 0,
-      .dont_export_cull_distances = si_shader_culling_enabled(shader),
       .write_pos_to_clipvertex = shader->key.ge.mono.write_pos_to_clipvertex,
       .force_vrs = sel->screen->options.vrs2x2,
       .use_gfx12_xfb_intrinsic = !nir->info.use_aco_amd,
@@ -1135,7 +1134,8 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
       .use_point_tri_intersection = sel->screen->info.num_cu / sel->screen->info.num_se >= 12,
    };
 
-   if (options.dont_export_cull_distances)
+   /* Cull distances are not exported if the shader culls against them. */
+   if (options.can_cull)
       shader->info.culldist_mask = 0;
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
