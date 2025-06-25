@@ -1913,7 +1913,7 @@ endif
 
 # ThreadSanitizer can't deal with futexes, and reports races for cases we don't care about
 # so add a define to work silence these issues.
-if get_option('b_sanitize') == 'thread'
+if get_option('b_sanitize').contains('thread')
   pre_args += '-DTHREAD_SANITIZER=1'
   tsan_blacklist = '-fsanitize-blacklist=@0@'.format(join_paths(meson.project_source_root(), 'build-support', 'tsan-blacklist.txt'))
   if cc.has_argument(tsan_blacklist)
