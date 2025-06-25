@@ -149,6 +149,42 @@ lower_tex_offset(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
 }
 
 static bool
+lower_txl_offset(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
+{
+   if (tex->op != nir_texop_txl)
+      return false;
+
+   nir_def *offset = nir_steal_tex_src(tex, nir_tex_src_offset);
+   if (!offset)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   int coord_index = nir_tex_instr_src_index(tex, nir_tex_src_coord);
+   nir_def *lod = nir_get_tex_src(tex, nir_tex_src_lod);
+
+   assert(coord_index >= 0);
+   assert(lod);
+
+   nir_def *coord = tex->src[coord_index].src.ssa;
+   nir_def *sampler = nir_imm_int(b, tex->texture_index);
+
+   nir_def *base_size_int = nir_load_texture_size_etna(b, 32, sampler);
+   base_size_int = nir_trim_vector(b, base_size_int, tex->coord_components);
+
+   /* Round LOD to nearest integer using floor(lod + 0.5) */
+   lod = nir_fadd_imm(b, lod, 0.5f);
+   lod = nir_ffloor(b, lod);
+   lod = clamp_lod(b, sampler, lod);
+
+   coord = calculate_coord(b, tex, coord, base_size_int, lod, offset);
+
+   nir_src_rewrite(&tex->src[coord_index].src, coord);
+
+   return true;
+}
+
+static bool
 legalize_txf_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *data)
 {
    if (tex->op != nir_texop_txf)
@@ -316,6 +352,9 @@ etna_nir_lower_texture(nir_shader *s, struct etna_shader_key *key, const struct 
          nir_metadata_control_flow, NULL);
 
    NIR_PASS(progress, s, nir_shader_tex_pass, lower_tex_offset,
+      nir_metadata_control_flow, NULL);
+
+   NIR_PASS(progress, s, nir_shader_tex_pass, lower_txl_offset,
       nir_metadata_control_flow, NULL);
 
    NIR_PASS(progress, s, nir_shader_tex_pass, legalize_txf_lod,
