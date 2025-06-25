@@ -40,8 +40,8 @@ struct lima_dump;
 struct pipe_surface;
 
 struct lima_job_key {
-   struct pipe_surface *cbuf;
-   struct pipe_surface *zsbuf;
+   struct pipe_surface cbuf;
+   struct pipe_surface zsbuf;
 };
 
 struct lima_job_clear {

@@ -50,7 +50,6 @@ lima_set_framebuffer_state(struct pipe_context *pctx,
 
    struct lima_context_framebuffer *fb = &ctx->framebuffer;
 
-   util_framebuffer_init(pctx, framebuffer, fb->fb_cbufs, &fb->fb_zsbuf);
    util_copy_framebuffer_state(&fb->base, framebuffer);
 
    ctx->job = NULL;

@@ -164,8 +164,8 @@ lima_clear(struct pipe_context *pctx, unsigned buffers, const struct pipe_scisso
 
    /* no need to reload if cleared */
    if (ctx->framebuffer.base.nr_cbufs && (buffers & PIPE_CLEAR_COLOR0)) {
-      struct lima_surface *surf = lima_surface(ctx->framebuffer.fb_cbufs[0]);
-      struct lima_resource *res = lima_resource(surf->base.texture);
+      struct pipe_surface *psurf = &ctx->framebuffer.base.cbufs[0];
+      struct lima_resource *res = lima_resource(psurf->texture);
       res->reload &= ~PIPE_CLEAR_COLOR0;
    }
 
@@ -179,21 +179,21 @@ lima_clear(struct pipe_context *pctx, unsigned buffers, const struct pipe_scisso
       clear->color[3] = color->f[3];
    }
 
-   struct lima_surface *zsbuf = lima_surface(ctx->framebuffer.fb_zsbuf);
-
    if (buffers & PIPE_CLEAR_DEPTH) {
+      struct pipe_surface *psurf = &ctx->framebuffer.base.zsbuf;
       clear->depth = util_pack_z(PIPE_FORMAT_Z24X8_UNORM, depth);
-      if (zsbuf) {
-         struct lima_resource *res = lima_resource(zsbuf->base.texture);
+      if (psurf->texture) {
+         struct lima_resource *res = lima_resource(psurf->texture);
          res->reload &= ~PIPE_CLEAR_DEPTH;
       }
    }
 
    if (buffers & PIPE_CLEAR_STENCIL) {
+      struct pipe_surface *psurf = &ctx->framebuffer.base.zsbuf;
       // the provided stencil value seems to be 16 bit, truncate
       clear->stencil = stencil & 0xFF;
-      if (zsbuf) {
-         struct lima_resource *res = lima_resource(zsbuf->base.texture);
+      if (psurf->texture) {
+         struct lima_resource *res = lima_resource(psurf->texture);
          res->reload &= ~PIPE_CLEAR_STENCIL;
       }
    }

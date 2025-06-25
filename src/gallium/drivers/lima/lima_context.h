@@ -35,7 +35,6 @@
 
 struct lima_context_framebuffer {
    struct pipe_framebuffer_state base;
-   PIPE_FB_SURFACES; //STOP USING THIS
 };
 
 struct lima_depth_stencil_alpha_state {
