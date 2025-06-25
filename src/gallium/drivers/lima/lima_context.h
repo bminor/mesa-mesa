@@ -36,10 +36,6 @@
 struct lima_context_framebuffer {
    struct pipe_framebuffer_state base;
    PIPE_FB_SURFACES; //STOP USING THIS
-   int tiled_w, tiled_h;
-   int shift_w, shift_h;
-   int block_w, block_h;
-   int shift_min;
 };
 
 struct lima_depth_stencil_alpha_state {
