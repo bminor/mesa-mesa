@@ -197,6 +197,7 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    /* special internal formats */
    FMT_YUV(R8G8B8_420_UNORM_PACKED, Y8_UV8_420, YUVA, NO_SWAP, CENTER, _T___),
    FMT_YUV(R10G10B10_420_UNORM_PACKED, Y10_UV10_420, YUVA, NO_SWAP, CENTER, _T___),
+   FMT_YUV(X6R10X6G10_X6R10X6B10_422_UNORM, YUYV10, UVYA, NO_SWAP, CENTER_422, _T___),
 #endif
 
    FMTC(ETC1_RGB8,               ETC2_RGB8,       RGBA8_UNORM, RGB1, L),

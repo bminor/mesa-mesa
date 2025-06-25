@@ -281,6 +281,7 @@ pan_clump_format(enum pipe_format format)
       case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
          return MALI_CLUMP_FORMAT_Y10_UV10_420;
       case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      case PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM:
          return MALI_CLUMP_FORMAT_Y10_UV10_422;
       default:
          UNREACHABLE("unhandled clump format");

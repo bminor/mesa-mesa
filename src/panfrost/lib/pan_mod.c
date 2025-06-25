@@ -586,8 +586,8 @@ pan_mod_linear_test_props(const struct pan_kmod_dev_props *dprops,
    /* AFBC-only formats. */
    case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
    case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
+   case PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM:
       return PAN_MOD_NOT_SUPPORTED;
-
    default:
       /* We assume that all "better" mods have been tested before linear, and
        * declare it as optimal so it's always picked when tested, unless it's

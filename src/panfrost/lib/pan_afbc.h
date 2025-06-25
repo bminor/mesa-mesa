@@ -524,6 +524,11 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
       return PAN_AFBC_MODE_YUV420_6C8;
    case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
       return PAN_AFBC_MODE_YUV420_6C10;
+   case PIPE_FORMAT_R8G8_R8B8_UNORM:
+   case PIPE_FORMAT_R8B8_R8G8_UNORM:
+      return PAN_AFBC_MODE_YUV422_4C8;
+   case PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM:
+      return PAN_AFBC_MODE_YUV422_4C10;
    default:
       break;
    }
@@ -758,6 +763,18 @@ pan_afbc_decompression_mode(enum pipe_format view_format,
    return pan_afbc_compression_mode(img_mode);
 }
 #endif
+
+static inline bool
+format_requires_afbc(enum pipe_format format) {
+   switch (format) {
+   case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
+   case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
+   case PIPE_FORMAT_X6R10X6G10_X6R10X6B10_422_UNORM:
+      return true;
+   default:
+      return false;
+   }
+}
 
 #ifdef __cplusplus
 } /* extern C */
