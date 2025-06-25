@@ -84,6 +84,24 @@ fixup_varying_slots(nir_shader *nir, nir_variable_mode mode)
    }
 }
 
+static void
+assign_var_locations(nir_shader *shader, nir_variable_mode mode,
+                     unsigned *size,
+                     int (*type_size)(const struct glsl_type *, bool))
+{
+   unsigned location = 0;
+
+   nir_foreach_variable_with_modes(var, shader, mode) {
+      var->data.driver_location = location;
+      bool bindless_type_size = var->data.mode == nir_var_shader_in ||
+                                var->data.mode == nir_var_shader_out ||
+                                var->data.bindless;
+      location += type_size(var->type, bindless_type_size);
+   }
+
+   *size = location;
+}
+
 static struct ir3_compiler *compiler;
 
 static nir_shader *
@@ -131,23 +149,23 @@ load_glsl(unsigned num_files, char *const *files, gl_shader_stage stage)
 
    switch (stage) {
    case MESA_SHADER_VERTEX:
-      nir_assign_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
+      assign_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
                                ir3_glsl_type_size);
 
       /* Re-lower global vars, to deal with any dead VS inputs. */
       NIR_PASS_V(nir, nir_lower_global_vars_to_local);
 
       sort_varyings(nir, nir_var_shader_out);
-      nir_assign_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
+      assign_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
                                ir3_glsl_type_size);
       fixup_varying_slots(nir, nir_var_shader_out);
       break;
    case MESA_SHADER_FRAGMENT:
       sort_varyings(nir, nir_var_shader_in);
-      nir_assign_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
+      assign_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
                                ir3_glsl_type_size);
       fixup_varying_slots(nir, nir_var_shader_in);
-      nir_assign_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
+      assign_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
                                ir3_glsl_type_size);
       break;
    case MESA_SHADER_COMPUTE:
@@ -157,7 +175,7 @@ load_glsl(unsigned num_files, char *const *files, gl_shader_stage stage)
       errx(1, "unhandled shader stage: %d", stage);
    }
 
-   nir_assign_var_locations(nir, nir_var_uniform, &nir->num_uniforms,
+   assign_var_locations(nir, nir_var_uniform, &nir->num_uniforms,
                             ir3_glsl_type_size);
 
    NIR_PASS_V(nir, nir_lower_system_values);

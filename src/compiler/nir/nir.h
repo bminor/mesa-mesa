@@ -4954,10 +4954,6 @@ void nir_gather_types(nir_function_impl *impl,
                       BITSET_WORD *float_types,
                       BITSET_WORD *int_types);
 
-void nir_assign_var_locations(nir_shader *shader, nir_variable_mode mode,
-                              unsigned *size,
-                              int (*type_size)(const struct glsl_type *, bool));
-
 /* Some helpers to do very simple linking */
 bool nir_remove_unused_varyings(nir_shader *producer, nir_shader *consumer);
 bool nir_remove_unused_io_vars(nir_shader *shader, nir_variable_mode mode,

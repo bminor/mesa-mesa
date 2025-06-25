@@ -115,24 +115,6 @@ task_payload_atomic_for_deref(nir_intrinsic_op deref_op)
    }
 }
 
-void
-nir_assign_var_locations(nir_shader *shader, nir_variable_mode mode,
-                         unsigned *size,
-                         int (*type_size)(const struct glsl_type *, bool))
-{
-   unsigned location = 0;
-
-   nir_foreach_variable_with_modes(var, shader, mode) {
-      var->data.driver_location = location;
-      bool bindless_type_size = var->data.mode == nir_var_shader_in ||
-                                var->data.mode == nir_var_shader_out ||
-                                var->data.bindless;
-      location += type_size(var->type, bindless_type_size);
-   }
-
-   *size = location;
-}
-
 /**
  * Some inputs and outputs are arrayed, meaning that there is an extra level
  * of array indexing to handle mismatches between the shader interface and the
