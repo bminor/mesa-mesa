@@ -448,6 +448,7 @@ lvp_shader_lower(struct lvp_device *pdevice, nir_shader *nir, struct lvp_pipelin
       .lower_txd = true,
    };
    NIR_PASS(_, nir, nir_lower_tex, &tex_options);
+   NIR_PASS(_, nir, nir_lower_int64);
 
    NIR_PASS(_, nir, lvp_nir_lower_sparse_residency);
 
