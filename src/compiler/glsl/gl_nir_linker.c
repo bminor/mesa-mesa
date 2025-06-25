@@ -1436,7 +1436,7 @@ prelink_lowering(const struct gl_constants *consts,
        */
       if (!(nir->options->io_options &
             nir_io_separate_clip_cull_distance_arrays))
-         NIR_PASS(_, nir, nir_lower_clip_cull_distance_arrays);
+         NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
    }
 
    return true;

@@ -196,7 +196,7 @@ vk_spirv_to_nir(struct vk_device *device,
     * insert dead clip/cull vars and we don't want to clip/cull based on
     * uninitialized garbage.
     */
-   NIR_PASS(_, nir, nir_lower_clip_cull_distance_arrays);
+   NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL ||

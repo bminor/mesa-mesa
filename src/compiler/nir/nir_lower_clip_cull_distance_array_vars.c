@@ -28,7 +28,7 @@
 /**
  * This file contains two different lowering passes.
  *
- * 1. nir_lower_clip_cull_distance_arrays()
+ * 1. nir_lower_clip_cull_distance_array_vars()
  *
  *    This pass combines clip and cull distance arrays in separate locations
  *    and colocates them both in VARYING_SLOT_CLIP_DIST0.  It does so by
@@ -495,7 +495,7 @@ combine_clip_cull(nir_shader *nir,
 }
 
 bool
-nir_lower_clip_cull_distance_arrays(nir_shader *nir)
+nir_lower_clip_cull_distance_array_vars(nir_shader *nir)
 {
    bool progress = false;
 

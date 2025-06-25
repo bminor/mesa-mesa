@@ -1020,7 +1020,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
 
    NIR_PASS_V(nir, dxil_nir_lower_int_cubemaps, false);
 
-   NIR_PASS_V(nir, nir_lower_clip_cull_distance_arrays);
+   NIR_PASS_V(nir, nir_lower_clip_cull_distance_array_vars);
    NIR_PASS_V(nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir), true, true);
    NIR_PASS_V(nir, nir_lower_global_vars_to_local);
    NIR_PASS_V(nir, nir_split_var_copies);

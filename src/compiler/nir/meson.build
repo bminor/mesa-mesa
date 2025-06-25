@@ -153,7 +153,7 @@ else
   'nir_lower_cl_images.c',
   'nir_lower_clamp_color_outputs.c',
   'nir_lower_clip.c',
-  'nir_lower_clip_cull_distance_arrays.c',
+  'nir_lower_clip_cull_distance_array_vars.c',
   'nir_lower_clip_disable.c',
   'nir_lower_clip_halfz.c',
   'nir_lower_const_arrays_to_uniforms.c',
