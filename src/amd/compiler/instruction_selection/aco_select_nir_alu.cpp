@@ -2051,9 +2051,11 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       break;
    }
    case nir_op_cube_amd: {
-      Temp in = get_alu_src(ctx, instr->src[0], 3);
-      Temp src[3] = {emit_extract_vector(ctx, in, 0, v1), emit_extract_vector(ctx, in, 1, v1),
-                     emit_extract_vector(ctx, in, 2, v1)};
+      Temp in = get_ssa_temp(ctx, instr->src[0].src.ssa);
+      Temp src[3];
+      for (unsigned i = 0; i < 3; i++)
+         src[i] = emit_extract_vector(ctx, in, instr->src[0].swizzle[i], v1);
+
       Temp ma = bld.vop3(aco_opcode::v_cubema_f32, bld.def(v1), src[0], src[1], src[2]);
       Temp sc = bld.vop3(aco_opcode::v_cubesc_f32, bld.def(v1), src[0], src[1], src[2]);
       Temp tc = bld.vop3(aco_opcode::v_cubetc_f32, bld.def(v1), src[0], src[1], src[2]);
@@ -3150,10 +3152,11 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       /* Only support 16 and 32bit. */
       assert(bit_size == 32 || bit_size == 16);
 
-      RegClass src_rc = bit_size == 32 ? v1 : v2b;
-      Temp src = get_alu_src(ctx, instr->src[0], 2);
-      Temp src0 = emit_extract_vector(ctx, src, 0, src_rc);
-      Temp src1 = emit_extract_vector(ctx, src, 1, src_rc);
+      Temp src = get_ssa_temp(ctx, instr->src[0].src.ssa);
+
+      RegClass src_rc = bit_size == 32 ? RegClass::get(src.type(), 4) : v2b;
+      Temp src0 = emit_extract_vector(ctx, src, instr->src[0].swizzle[0], src_rc);
+      Temp src1 = emit_extract_vector(ctx, src, instr->src[0].swizzle[1], src_rc);
 
       /* Work around for pre-GFX9 GPU which don't have fp16 pknorm instruction. */
       if (bit_size == 16 && ctx->program->gfx_level < GFX9) {
@@ -3170,17 +3173,19 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          opcode = instr->op == nir_op_pack_unorm_2x16 ? aco_opcode::v_cvt_pknorm_u16_f16
                                                       : aco_opcode::v_cvt_pknorm_i16_f16;
       }
-      bld.vop3(opcode, Definition(dst), src0, src1);
+
+      bld.vop3(opcode, Definition(dst), src0, as_vgpr(ctx, src1));
       break;
    }
    case nir_op_pack_uint_2x16:
    case nir_op_pack_sint_2x16: {
-      Temp src = get_alu_src(ctx, instr->src[0], 2);
-      Temp src0 = emit_extract_vector(ctx, src, 0, v1);
-      Temp src1 = emit_extract_vector(ctx, src, 1, v1);
+      Temp src = get_ssa_temp(ctx, instr->src[0].src.ssa);
+      RegClass src_rc = RegClass::get(src.type(), 4);
+      Temp src0 = emit_extract_vector(ctx, src, instr->src[0].swizzle[0], src_rc);
+      Temp src1 = emit_extract_vector(ctx, src, instr->src[0].swizzle[1], src_rc);
       aco_opcode opcode = instr->op == nir_op_pack_uint_2x16 ? aco_opcode::v_cvt_pk_u16_u32
                                                              : aco_opcode::v_cvt_pk_i16_i32;
-      bld.vop3(opcode, Definition(dst), src0, src1);
+      bld.vop3(opcode, Definition(dst), src0, as_vgpr(ctx, src1));
       break;
    }
    case nir_op_unpack_half_2x16_split_x: {
