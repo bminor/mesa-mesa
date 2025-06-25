@@ -146,7 +146,7 @@ radv_nir_lower_io(struct radv_device *device, nir_shader *nir)
             nir_lower_direct_array_deref_of_vec_store | nir_lower_indirect_array_deref_of_vec_store);
 
    if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-      NIR_PASS(_, nir, nir_vectorize_tess_levels);
+      NIR_PASS(_, nir, nir_lower_tess_level_array_vars_to_vec);
    }
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {

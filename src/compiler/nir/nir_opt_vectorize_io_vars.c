@@ -601,7 +601,7 @@ is_tess_level_variable(nir_variable *var)
  * can be combined by nir_opt_cse()/nir_opt_combine_stores().
  */
 bool
-nir_vectorize_tess_levels(nir_shader *shader)
+nir_lower_tess_level_array_vars_to_vec(nir_shader *shader)
 {
    nir_variable_mode mode;
    if (shader->info.stage == MESA_SHADER_TESS_CTRL)
