@@ -3689,23 +3689,38 @@ impl<'a> ShaderFromNir<'a> {
             nir_intrinsic_vote_all
             | nir_intrinsic_vote_any
             | nir_intrinsic_vote_ieq => {
-                assert!(srcs[0].bit_size() == 1);
                 let src = self.get_src(&srcs[0]);
+                let src_bits = srcs[0].bit_size() * srcs[0].num_components();
 
                 assert!(intrin.def.bit_size() == 1);
                 let dst = b.alloc_ssa(RegFile::Pred);
 
-                b.push_op(OpVote {
-                    op: match intrin.intrinsic {
-                        nir_intrinsic_vote_all => VoteOp::All,
-                        nir_intrinsic_vote_any => VoteOp::Any,
-                        nir_intrinsic_vote_ieq => VoteOp::Eq,
-                        _ => panic!("Unknown vote intrinsic"),
-                    },
-                    ballot: Dst::None,
-                    vote: dst.into(),
-                    pred: src,
-                });
+                if src_bits == 1 {
+                    b.push_op(OpVote {
+                        op: match intrin.intrinsic {
+                            nir_intrinsic_vote_all => VoteOp::All,
+                            nir_intrinsic_vote_any => VoteOp::Any,
+                            nir_intrinsic_vote_ieq => VoteOp::Eq,
+                            _ => panic!("Unknown vote intrinsic"),
+                        },
+                        ballot: Dst::None,
+                        vote: dst.into(),
+                        pred: src,
+                    });
+                } else {
+                    assert_eq!(intrin.intrinsic, nir_intrinsic_vote_ieq);
+                    b.push_op(OpMatch {
+                        op: MatchOp::All,
+                        mask: Dst::None,
+                        pred: dst.into(),
+                        src,
+                        u64: match src_bits {
+                            32 => false,
+                            64 => true,
+                            _ => panic!("Unsupported vote_ieq bit size"),
+                        },
+                    });
+                }
                 self.set_dst(&intrin.def, dst.into());
             }
             nir_intrinsic_is_sparse_texels_resident => {
