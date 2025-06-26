@@ -4825,6 +4825,29 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
 }
 
 static void
+zink_image_copy_buffer(struct pipe_context *pctx,
+                       struct pipe_resource *pdst,
+                       struct pipe_resource *psrc,
+                       unsigned buffer_offset,
+                       unsigned buffer_stride,
+                       unsigned buffer_layer_stride,
+                       unsigned level,
+                       const struct pipe_box *box)
+{
+   /* convert bytes to texels */
+   struct pipe_resource *img = pdst->target != PIPE_BUFFER ? pdst : psrc;
+   unsigned stride = buffer_stride ?
+                     buffer_stride / util_format_get_blocksize(img->format) * util_format_get_blockwidth(img->format) :
+                     util_format_get_nblocksx(img->format, box->width);
+   unsigned layer_stride = buffer_layer_stride ?
+                           buffer_layer_stride / buffer_stride * util_format_get_blockheight(img->format) :
+                           util_format_get_nblocksy(img->format, box->height);
+
+   zink_copy_image_buffer(zink_context(pctx), zink_resource(pdst), zink_resource(psrc),
+                          buffer_offset, stride, layer_stride, level, box, 0);
+}
+
+static void
 zink_resource_copy_region(struct pipe_context *pctx,
                           struct pipe_resource *pdst,
                           unsigned dst_level, unsigned dstx, unsigned dsty, unsigned dstz,
@@ -5355,6 +5378,7 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
 
    ctx->base.resource_commit = zink_resource_commit;
    ctx->base.resource_copy_region = zink_resource_copy_region;
+   ctx->base.image_copy_buffer = zink_image_copy_buffer;
    ctx->base.blit = zink_blit;
    ctx->base.create_stream_output_target = zink_create_stream_output_target;
    ctx->base.stream_output_target_destroy = zink_stream_output_target_destroy;
