@@ -3231,44 +3231,44 @@ tc_texture_subdata(struct pipe_context *_pipe,
 
          struct pipe_resource *pres = pipe_buffer_create(pipe->screen, 0, PIPE_USAGE_STREAM, layer_stride * box->depth);
          pipe->buffer_subdata(pipe, pres, unsync_usage, 0, layer_stride * box->depth, data);
-         struct pipe_box src_box = *box;
-         src_box.x = src_box.y = src_box.z = 0;
 
          if (fmt_stride == stride && fmt_layer_stride == layer_stride) {
             /* if stride matches, single copy is fine*/
-            tc->base.resource_copy_region(&tc->base, resource, level, box->x, box->y, box->z, pres, 0, &src_box);
+            tc->base.image_copy_buffer(&tc->base, resource, pres, 0, 0, 0, level, box);
          } else {
             /* if stride doesn't match, inline util_copy_box on the GPU and assume the driver will optimize */
-            src_box.depth = 1;
-            for (unsigned z = 0; z < box->depth; ++z, src_box.x = z * layer_stride) {
-               unsigned dst_x = box->x, dst_y = box->y, width = box->width, height = box->height, dst_z = box->z + z;
+            struct pipe_box dst_box = *box;
+            dst_box.depth = 1;
+            for (unsigned z = 0; z < box->depth; ++z, dst_box.z = box->z + z) {
+               unsigned width = box->width, height = box->height;
+               unsigned offset = z * layer_stride;
                int blocksize = util_format_get_blocksize(format);
                int blockwidth = util_format_get_blockwidth(format);
                int blockheight = util_format_get_blockheight(format);
-
+ 
                assert(blocksize > 0);
                assert(blockwidth > 0);
                assert(blockheight > 0);
-
-               dst_x /= blockwidth;
-               dst_y /= blockheight;
+ 
+               dst_box.x /= blockwidth;
+               dst_box.y /= blockheight;
                width = DIV_ROUND_UP(width, blockwidth);
                height = DIV_ROUND_UP(height, blockheight);
-
+ 
                width *= blocksize;
-
+ 
                if (width == fmt_stride && width == (unsigned)stride) {
                   ASSERTED uint64_t size = (uint64_t)height * width;
-
+ 
                   assert(size <= SIZE_MAX);
-                  assert(dst_x + src_box.width < u_minify(pres->width0, level));
-                  assert(dst_y + src_box.height < u_minify(pres->height0, level));
-                  assert(pres->target != PIPE_TEXTURE_3D ||  z + src_box.depth < u_minify(pres->depth0, level));
-                  tc->base.resource_copy_region(&tc->base, resource, level, dst_x, dst_y, dst_z, pres, 0, &src_box);
+                  assert(dst_box.x + dst_box.width < u_minify(pres->width0, level));
+                  assert(dst_box.y + dst_box.height < u_minify(pres->height0, level));
+                  assert(pres->target != PIPE_TEXTURE_3D ||  z + dst_box.depth < u_minify(pres->depth0, level));
+                  tc->base.image_copy_buffer(&tc->base, resource, pres, offset, 0, 0, level, &dst_box);
                } else {
-                  src_box.height = 1;
-                  for (unsigned i = 0; i < height; i++, dst_y++, src_box.x += stride)
-                     tc->base.resource_copy_region(&tc->base, resource, level, dst_x, dst_y, dst_z, pres, 0, &src_box);
+                  dst_box.height = 1;
+                  for (unsigned i = 0; i < height; i++, dst_box.y++, offset += stride)
+                     tc->base.image_copy_buffer(&tc->base, resource, pres, offset, 0, 0, level, &dst_box);
                }
             }
          }
@@ -5442,6 +5442,8 @@ threaded_context_create(struct pipe_context *pipe,
    if (options) {
       /* this is unimplementable */
       assert(!(options->parse_renderpass_info && options->driver_calls_flush_notify));
+      /* this is required */
+      assert(!options->parse_renderpass_info || pipe->image_copy_buffer);
       tc->options = *options;
    }
 
