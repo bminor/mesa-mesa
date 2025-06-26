@@ -110,6 +110,10 @@ impl ShaderModel for ShaderModel20 {
         15
     }
 
+    fn max_instr_delay(&self) -> u8 {
+        32
+    }
+
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
         as_sm20_op_mut(op).legalize(b);
     }

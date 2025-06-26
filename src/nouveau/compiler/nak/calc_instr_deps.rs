@@ -437,14 +437,15 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
         min_num_static_cycles += cycle;
     }
 
+    let max_instr_delay = sm.max_instr_delay();
     f.map_instrs(|mut instr, _| {
-        if instr.deps.delay > MAX_INSTR_DELAY {
-            let mut delay = instr.deps.delay - MAX_INSTR_DELAY;
-            instr.deps.set_delay(MAX_INSTR_DELAY);
+        if instr.deps.delay > max_instr_delay {
+            let mut delay = instr.deps.delay - max_instr_delay;
+            instr.deps.set_delay(max_instr_delay);
             let mut instrs = vec![instr];
             while delay > 0 {
                 let mut nop = Instr::new_boxed(OpNop { label: None });
-                nop.deps.set_delay(delay.min(MAX_INSTR_DELAY));
+                nop.deps.set_delay(delay.min(max_instr_delay));
                 delay -= nop.deps.delay;
                 instrs.push(nop);
             }

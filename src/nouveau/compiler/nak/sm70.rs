@@ -259,6 +259,10 @@ impl ShaderModel for ShaderModel70 {
         }
     }
 
+    fn max_instr_delay(&self) -> u8 {
+        15
+    }
+
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
         legalize_sm70_op(self, b, op);
     }

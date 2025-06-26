@@ -155,6 +155,10 @@ impl ShaderModel for ShaderModel50 {
         instr_latency(self.sm, write, dst_idx)
     }
 
+    fn max_instr_delay(&self) -> u8 {
+        15
+    }
+
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
         as_sm50_op_mut(op).legalize(b);
     }
