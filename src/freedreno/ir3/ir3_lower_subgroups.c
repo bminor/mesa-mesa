@@ -273,7 +273,8 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
        */
       assert(instr->dsts[0]->flags & IR3_REG_SHARED);
       instr->opc = OPC_MOV;
-      instr->cat1.dst_type = TYPE_U32;
+      instr->cat1.dst_type =
+         (instr->dsts[0]->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32;
       instr->cat1.src_type =
          (instr->srcs[0]->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32;
       return false;
@@ -487,7 +488,8 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
          struct ir3_register *new_src = ir3_src_create(mov, 0, 0);
          unsigned idx = instr->opc == OPC_READ_COND_MACRO ? 1 : 0;
          *new_src = *instr->srcs[idx];
-         mov->cat1.dst_type = TYPE_U32;
+         mov->cat1.dst_type =
+            (instr->dsts[0]->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32;
          mov->cat1.src_type =
             (new_src->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32;
          mov->flags |= IR3_INSTR_NEEDS_HELPERS;
