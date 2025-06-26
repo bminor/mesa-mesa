@@ -384,10 +384,6 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
       if (drm_is_afrc(native_mods[i]) && !afrc)
          continue;
 
-      if (drm_is_mtk_tiled(native_mods[i]) &&
-          !panfrost_format_supports_mtk_tiled(format))
-         continue;
-
       /* If the format is still YUV after lowering, the SW emulation might
        * involve plane aliasing which we can't do with U_TILED. */
       if (util_format_is_yuv(format) &&
