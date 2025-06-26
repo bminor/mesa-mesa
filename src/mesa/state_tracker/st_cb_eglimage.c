@@ -48,6 +48,13 @@ is_format_supported(struct pipe_screen *screen, enum pipe_format format,
    bool supported = screen->is_format_supported(screen, format, PIPE_TEXTURE_2D,
                                                 nr_samples, nr_storage_samples,
                                                 usage);
+
+   if (!supported && (usage & PIPE_BIND_SAMPLER_VIEW)) {
+      supported = screen->is_format_supported(screen, format, PIPE_TEXTURE_2D,
+                                              nr_samples, nr_storage_samples,
+                                              usage | PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL);
+   }
+
    *native_supported = supported;
 
    /* for sampling, some formats can be emulated.. it doesn't matter that

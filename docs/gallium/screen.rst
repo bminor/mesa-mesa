@@ -815,6 +815,9 @@ resources might be created and handled quite differently.
   pipe_screen::flush_front_buffer must have this flag set.
 * ``PIPE_BIND_SAMPLER_VIEW``: A texture that may be sampled from in a fragment
   or vertex shader.
+* ``PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL``: A hint to go along with ``PIPE_BIND_SAMPLER_VIEW``
+  that we'd like to use a particular format (ie. for zero-copy import) even if
+  it is not optimal from a hw standpoint.
 * ``PIPE_BIND_VERTEX_BUFFER``: A vertex buffer.
 * ``PIPE_BIND_INDEX_BUFFER``: An vertex index/element buffer.
 * ``PIPE_BIND_CONSTANT_BUFFER``: A buffer of shader constants.

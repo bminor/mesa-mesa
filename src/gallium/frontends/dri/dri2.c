@@ -865,7 +865,9 @@ dri_create_image_from_winsys(struct dri_screen *screen,
                                     PIPE_BIND_RENDER_TARGET))
       tex_usage |= PIPE_BIND_RENDER_TARGET;
    if (pscreen->is_format_supported(pscreen, map->pipe_format, screen->target, 0, 0,
-                                    PIPE_BIND_SAMPLER_VIEW))
+                                    PIPE_BIND_SAMPLER_VIEW) ||
+       pscreen->is_format_supported(pscreen, map->pipe_format, screen->target, 0, 0,
+                                    PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL))
       tex_usage |= PIPE_BIND_SAMPLER_VIEW;
 
    /* For NV12, see if we have support for sampling r8_g8b8 */
@@ -1518,7 +1520,9 @@ dri_query_dma_buf_modifiers(struct dri_screen *screen, int fourcc, int max,
    format = map->pipe_format;
 
    bool native_sampling = pscreen->is_format_supported(pscreen, format, screen->target, 0, 0,
-                                                       PIPE_BIND_SAMPLER_VIEW);
+                                                       PIPE_BIND_SAMPLER_VIEW) ||
+                          pscreen->is_format_supported(pscreen, format, screen->target, 0, 0,
+                                                       PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL);
    if (pscreen->is_format_supported(pscreen, format, screen->target, 0, 0,
                                     PIPE_BIND_RENDER_TARGET) ||
        native_sampling ||
