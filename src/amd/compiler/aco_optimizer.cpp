@@ -3910,7 +3910,8 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                         (mad32 && !legacy && !mad_mix && ctx.program->dev.has_fast_fma32) ||
                         (mad_mix && ctx.program->dev.fused_mad_mix);
          bool has_mad = mad_mix ? !ctx.program->dev.fused_mad_mix
-                                : ((mad32 && ctx.program->gfx_level < GFX10_3) ||
+                                : ((mad32 && ctx.program->gfx_level < GFX10_3 &&
+                                    ctx.program->family != CHIP_GFX940) ||
                                    (mad16 && ctx.program->gfx_level <= GFX9));
          bool can_use_fma = has_fma && (!(info.parent_instr->definitions[0].isPrecise() ||
                                           instr->definitions[0].isPrecise()) ||
