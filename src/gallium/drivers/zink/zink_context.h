@@ -263,8 +263,10 @@ zink_set_null_fs(struct zink_context *ctx);
 
 void
 zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zink_resource *src,
-                       unsigned dst_level, unsigned dstx, unsigned dsty, unsigned dstz,
-                       unsigned src_level, const struct pipe_box *src_box, enum pipe_map_flags map_flags);
+                       unsigned buffer_offset,
+                       unsigned buffer_stride,
+                       unsigned buffer_layer_stride,
+                       unsigned level, const struct pipe_box *src_box, enum pipe_map_flags map_flags);
 
 #endif
 

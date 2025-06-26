@@ -4648,8 +4648,10 @@ zink_copy_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zin
 
 void
 zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, struct zink_resource *src,
-                       unsigned dst_level, unsigned dstx, unsigned dsty, unsigned dstz,
-                       unsigned src_level, const struct pipe_box *src_box, enum pipe_map_flags map_flags)
+                       unsigned buffer_offset,
+                       unsigned buffer_stride,
+                       unsigned buffer_layer_stride,
+                       unsigned level, const struct pipe_box *box, enum pipe_map_flags map_flags)
 {
    struct zink_resource *img = dst->base.b.target == PIPE_BUFFER ? src : dst;
    struct zink_resource *use_img = img;
@@ -4670,14 +4672,10 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
          if (!zink_kopper_acquire(ctx, img, UINT64_MAX))
             return;
       }
-      struct pipe_box box = *src_box;
-      box.x = dstx;
-      box.y = dsty;
-      box.z = dstz;
       /* hacky detection of sequential in-rp buf2img from tc */
-      if (ctx->track_renderpasses && img->obj->last_write == VK_ACCESS_TRANSFER_WRITE_BIT && box.y == u_minify(img->base.b.height0, dst_level) - 1)
+      if (ctx->track_renderpasses && img->obj->last_write == VK_ACCESS_TRANSFER_WRITE_BIT && box->y == u_minify(img->base.b.height0, level) - 1)
          img_needs_transfer_barrier = true;
-      zink_resource_image_transfer_dst_barrier(ctx, img, dst_level, &box, unsync);
+      zink_resource_image_transfer_dst_barrier(ctx, img, level, box, unsync);
       if (!unsync)
          screen->buffer_barrier(ctx, buf, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
    } else {
@@ -4686,14 +4684,14 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
          needs_present_readback = zink_kopper_acquire_readback(ctx, img, &use_img);
       VkImageLayout layout = screen->driver_workarounds.general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
       screen->image_barrier(ctx, use_img, layout, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-      zink_resource_buffer_transfer_dst_barrier(ctx, buf, dstx, src_box->width);
+      zink_resource_buffer_transfer_dst_barrier(ctx, buf, box->x, box->width);
    }
 
    VkBufferImageCopy region = {0};
-   region.bufferOffset = buf2img ? src_box->x : dstx;
-   region.bufferRowLength = 0;
-   region.bufferImageHeight = 0;
-   region.imageSubresource.mipLevel = buf2img ? dst_level : src_level;
+   region.bufferOffset = buffer_offset;
+   region.bufferRowLength = buffer_stride;
+   region.bufferImageHeight = buffer_layer_stride;
+   region.imageSubresource.mipLevel = level;
    enum pipe_texture_target img_target = img->base.b.target;
    if (img->need_2D)
       img_target = img_target == PIPE_TEXTURE_1D ? PIPE_TEXTURE_2D : PIPE_TEXTURE_2D_ARRAY;
@@ -4703,8 +4701,8 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
    case PIPE_TEXTURE_2D_ARRAY:
    case PIPE_TEXTURE_1D_ARRAY:
       /* these use layer */
-      region.imageSubresource.baseArrayLayer = buf2img ? dstz : src_box->z;
-      region.imageSubresource.layerCount = src_box->depth;
+      region.imageSubresource.baseArrayLayer = box->z;
+      region.imageSubresource.layerCount = box->depth;
       region.imageOffset.z = 0;
       region.imageExtent.depth = 1;
       break;
@@ -4712,8 +4710,8 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
       /* this uses depth */
       region.imageSubresource.baseArrayLayer = 0;
       region.imageSubresource.layerCount = 1;
-      region.imageOffset.z = buf2img ? dstz : src_box->z;
-      region.imageExtent.depth = src_box->depth;
+      region.imageOffset.z = box->z;
+      region.imageExtent.depth = box->depth;
       break;
    default:
       /* these must only copy one layer */
@@ -4722,11 +4720,11 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
       region.imageOffset.z = 0;
       region.imageExtent.depth = 1;
    }
-   region.imageOffset.x = buf2img ? dstx : src_box->x;
-   region.imageOffset.y = buf2img ? dsty : src_box->y;
+   region.imageOffset.x = box->x;
+   region.imageOffset.y = box->y;
 
-   region.imageExtent.width = src_box->width;
-   region.imageExtent.height = src_box->height;
+   region.imageExtent.width = box->width;
+   region.imageExtent.height = box->height;
 
    VkCommandBuffer cmdbuf = unsync ?
                             ctx->bs->unsynchronized_cmdbuf :
@@ -4958,8 +4956,18 @@ zink_resource_copy_region(struct pipe_context *pctx,
    } else if (dst->base.b.target == PIPE_BUFFER &&
               src->base.b.target == PIPE_BUFFER) {
       zink_copy_buffer(ctx, dst, src, dstx, src_box->x, src_box->width, false);
-   } else
-      zink_copy_image_buffer(ctx, dst, src, dst_level, dstx, dsty, dstz, src_level, src_box, 0);
+   } else {
+      bool buf2img = psrc->target == PIPE_BUFFER;
+      struct pipe_box box = *src_box;
+      unsigned buffer_offset = buf2img ? src_box->x : dstx;
+      unsigned level = buf2img ? dst_level : src_level;
+      if (buf2img) {
+         box.x = dstx;
+         box.y = dsty;
+         box.z = dstz;
+      }
+      zink_copy_image_buffer(ctx, dst, src, buffer_offset, 0, 0, level, &box, 0);
+   }
    if (ctx->oom_flush && !ctx->in_rp && !ctx->unordered_blitting)
       flush_batch(ctx, false);
 }

@@ -2224,14 +2224,9 @@ zink_transfer_copy_bufimage(struct zink_context *ctx,
 
    bool buf2img = src->base.b.target == PIPE_BUFFER;
 
-   struct pipe_box box = trans->base.b.box;
-   int x = box.x;
-   if (buf2img)
-      box.x = trans->offset;
-
+   int x = buf2img ? trans->offset : 0;
    assert(dst->obj->transfer_dst);
-   zink_copy_image_buffer(ctx, dst, src, trans->base.b.level, buf2img ? x : 0,
-                           box.y, box.z, trans->base.b.level, &box, trans->base.b.usage);
+   zink_copy_image_buffer(ctx, dst, src, x, 0, 0, trans->base.b.level, &trans->base.b.box, trans->base.b.usage);
 }
 
 ALWAYS_INLINE static void
