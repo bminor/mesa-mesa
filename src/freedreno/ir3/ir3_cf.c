@@ -6,6 +6,7 @@
 #include "util/ralloc.h"
 
 #include "ir3.h"
+#include "ir3_shader.h"
 
 static bool
 is_safe_conv(struct ir3_instruction *instr, type_t src_type, opc_t *src_opc)
@@ -91,6 +92,33 @@ all_uses_safe_conv(struct ir3_instruction *conv_src, type_t src_type)
    return true;
 }
 
+static bool
+all_uses_same_cov(struct ir3_instruction *movs)
+{
+   type_t src_type;
+   type_t dst_type;
+   bool first = true;
+
+   foreach_ssa_use (use, movs) {
+      if (use->opc != OPC_MOV) {
+         return false;
+      }
+
+      if (first) {
+         src_type = use->cat1.src_type;
+         dst_type = use->cat1.dst_type;
+         first = false;
+         continue;
+      }
+
+      if (use->cat1.src_type != src_type || use->cat1.dst_type != dst_type) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
 /* For an instruction which has a conversion folded in, re-write the
  * uses of *all* conv's that used that src to be a simple mov that
  * cp can eliminate.  This avoids invalidating the SSA uses, it just
@@ -113,7 +141,8 @@ rewrite_src_uses(struct ir3_instruction *src)
 }
 
 static bool
-try_conversion_folding(struct ir3_instruction *conv)
+try_conversion_folding(struct ir3_instruction *conv,
+                       struct ir3_compiler *compiler)
 {
    struct ir3_instruction *src;
 
@@ -144,12 +173,39 @@ try_conversion_folding(struct ir3_instruction *conv)
    /* Avoid cases where we've already folded in a conversion. We assume that
     * if there is a chain of conversions that's foldable then it's been
     * folded in NIR already.
+    * This also prevents a sequence like `movs.u32u16; cov.f16f32` to be
+    * incorrectly folded into `movs.u32f32`.
     */
    if (src_type != dst_type)
       return false;
 
-   if (!all_uses_safe_conv(src, src_type))
+   /* movs supports the same conversions as cov which means that any cov of its
+    * dst can be folded into the movs if all uses of its dst are the same type
+    * of cov.
+    */
+   if (src->opc == OPC_MOVS) {
+      if (conv->cat1.src_type == TYPE_U8) {
+         /* movs.u8... does not seem to work. */
+         return false;
+      }
+
+      /* Don't fold in a conversion to a half register on gens where that is
+       * broken.
+       */
+      if (compiler->mov_half_shared_quirk &&
+          (conv->dsts[0]->flags & IR3_REG_HALF)) {
+         return false;
+      }
+
+      if (!all_uses_same_cov(src)) {
+         return false;
+      }
+
+      src->cat1.src_type = conv->cat1.src_type;
+      src->cat1.dst_type = conv->cat1.dst_type;
+   } else if (!all_uses_safe_conv(src, src_type)) {
       return false;
+   }
 
    ir3_set_dst_type(src, is_half(conv));
    rewrite_src_uses(src);
@@ -158,7 +214,7 @@ try_conversion_folding(struct ir3_instruction *conv)
 }
 
 bool
-ir3_cf(struct ir3 *ir)
+ir3_cf(struct ir3 *ir, struct ir3_shader_variant *so)
 {
    void *mem_ctx = ralloc_context(NULL);
    bool progress = false;
@@ -167,7 +223,7 @@ ir3_cf(struct ir3 *ir)
 
    foreach_block (block, &ir->block_list) {
       foreach_instr (instr, &block->instr_list) {
-         progress |= try_conversion_folding(instr);
+         progress |= try_conversion_folding(instr, so->compiler);
       }
    }
 

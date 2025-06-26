@@ -1861,6 +1861,9 @@ ir3_output_conv_type(struct ir3_instruction *instr, bool *can_fold)
    case OPC_MAD_S24:
       return TYPE_S32;
 
+   case OPC_MOVS:
+      return full_type(instr->cat1.src_type);
+
    /* We assume that any move->move folding that could be done was done by
     * NIR.
     */
@@ -2310,7 +2313,7 @@ struct ir3_shader_variant;
 bool ir3_dce(struct ir3 *ir, struct ir3_shader_variant *so);
 
 /* fp16 conversion folding */
-bool ir3_cf(struct ir3 *ir);
+bool ir3_cf(struct ir3 *ir, struct ir3_shader_variant *so);
 
 /* shared mov folding */
 bool ir3_shared_fold(struct ir3 *ir);
