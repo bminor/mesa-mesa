@@ -12,6 +12,7 @@
 #include "pan_format.h"
 #include "pan_image.h"
 #include "pan_layout.h"
+#include "pan_props.h"
 #include "pan_texture.h"
 
 #include "util/format/u_format.h"
@@ -28,12 +29,6 @@ static bool
 pan_mod_afbc_match(uint64_t mod)
 {
    return drm_is_afbc(mod);
-}
-
-static bool
-pan_mod_afbc_supports_format(uint64_t mod, enum pipe_format format)
-{
-   return pan_afbc_supports_format(PAN_ARCH, format);
 }
 
 static uint32_t
@@ -176,6 +171,52 @@ pan_mod_afbc_init_slice_layout(
    return true;
 }
 
+static bool
+pan_mod_afbc_test_props(const struct pan_kmod_dev_props *dprops,
+                        const struct pan_image_props *iprops)
+{
+   /* AFBC not supported. */
+   if (!pan_query_afbc(dprops))
+      return false;
+
+   /* Check if the format is supported first. */
+   if (!pan_afbc_supports_format(PAN_ARCH, iprops->format))
+      return false;
+
+   /* AFBC can't do multisampling. */
+   if (iprops->nr_samples > 1)
+      return false;
+
+   /* AFBC(2D) or AFBC(3D) on v7+ only. */
+   if ((iprops->dim == MALI_TEXTURE_DIMENSION_3D && PAN_ARCH < 7) ||
+       iprops->dim != MALI_TEXTURE_DIMENSION_2D)
+      return false;
+
+   unsigned plane_count = util_format_get_num_planes(iprops->format);
+   const struct util_format_description *fdesc =
+      util_format_description(iprops->format);
+
+   /* YTR is only useful on RGB formats. */
+   if ((iprops->modifier & AFBC_FORMAT_MOD_YTR) &&
+       (pan_format_is_yuv(iprops->format) || fdesc->nr_channels < 3))
+      return false;
+
+   /* Make sure all planes support split mode. */
+   if ((iprops->modifier & AFBC_FORMAT_MOD_SPLIT)) {
+      for (unsigned p = 0; p < plane_count; p++) {
+         if (!pan_afbc_can_split(PAN_ARCH, iprops->format, iprops->modifier, p))
+            return false;
+      }
+   }
+
+   /* Make sure tiled mode is supported. */
+   if ((iprops->modifier & AFBC_FORMAT_MOD_TILED) &&
+       !pan_afbc_can_tile(PAN_ARCH))
+      return false;
+
+   return true;
+}
+
 #define pan_mod_afbc_emit_tex_payload_entry                                    \
    GENX(pan_tex_emit_afbc_payload_entry)
 #define pan_mod_afbc_emit_color_attachment GENX(pan_emit_afbc_color_attachment)
@@ -190,9 +231,18 @@ pan_mod_afrc_match(uint64_t mod)
 }
 
 static bool
-pan_mod_afrc_supports_format(uint64_t mod, enum pipe_format format)
+pan_mod_afrc_test_props(const struct pan_kmod_dev_props *dprops,
+                        const struct pan_image_props *iprops)
 {
-   return pan_afrc_supports_format(format);
+   /* AFRC not supported. */
+   if (!pan_query_afrc(dprops))
+      return false;
+
+   /* Format not AFRC-able. */
+   if (!pan_afrc_supports_format(iprops->format))
+      return false;
+
+   return true;
 }
 
 static uint32_t
@@ -301,9 +351,16 @@ pan_mod_u_tiled_match(uint64_t mod)
 }
 
 static bool
-pan_mod_u_tiled_supports_format(uint64_t mod, enum pipe_format format)
+pan_mod_u_tiled_test_props(const struct pan_kmod_dev_props *dprops,
+                           const struct pan_image_props *iprops)
 {
-   return pan_u_tiled_or_linear_supports_format(format);
+   assert(GENX(pan_format_from_pipe_format)(iprops->format)->hw);
+
+   /* YUV not supported. */
+   if (pan_format_is_yuv(iprops->format))
+      return false;
+
+   return true;
 }
 
 static uint32_t
@@ -423,9 +480,20 @@ pan_mod_linear_match(uint64_t mod)
 }
 
 static bool
-pan_mod_linear_supports_format(uint64_t mod, enum pipe_format format)
+pan_mod_linear_test_props(const struct pan_kmod_dev_props *dprops,
+                          const struct pan_image_props *iprops)
 {
-   return pan_u_tiled_or_linear_supports_format(format);
+   assert(GENX(pan_format_from_pipe_format)(iprops->format)->hw);
+
+   switch (iprops->format) {
+   /* AFBC-only formats. */
+   case PIPE_FORMAT_R8G8B8_420_UNORM_PACKED:
+   case PIPE_FORMAT_R10G10B10_420_UNORM_PACKED:
+      return false;
+
+   default:
+      return true;
+   }
 }
 
 static uint32_t
@@ -535,7 +603,7 @@ pan_mod_linear_init_slice_layout(
 #define PAN_MOD_DEF(__name)                                                    \
    {                                                                           \
       .match = pan_mod_##__name##_match,                                       \
-      .supports_format = pan_mod_##__name##_supports_format,                   \
+      .test_props = pan_mod_##__name##_test_props,                             \
       .get_wsi_row_pitch = pan_mod_##__name##_get_wsi_row_pitch,               \
       .init_slice_layout = pan_mod_##__name##_init_slice_layout,               \
       .emit_tex_payload_entry = pan_mod_##__name##_emit_tex_payload_entry,     \

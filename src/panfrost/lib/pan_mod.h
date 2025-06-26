@@ -18,11 +18,15 @@ extern "C" {
 struct pan_fb_info;
 struct pan_image;
 struct pan_image_view;
+struct pan_kmod_dev_props;
 struct pan_mod_handler;
 
 struct pan_mod_handler {
    bool (*match)(uint64_t mod);
-   bool (*supports_format)(uint64_t mod, enum pipe_format format);
+
+   /* Used to check if a set of image properties is valid. */
+   bool (*test_props)(const struct pan_kmod_dev_props *dprops,
+                      const struct pan_image_props *iprops);
 
    bool (*init_slice_layout)(
       const struct pan_image_props *props, unsigned plane_idx,
