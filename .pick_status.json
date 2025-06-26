@@ -844,7 +844,7 @@
         "description": "nir/lower_bit_size: fix bitz/bitnz",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6585209cdd938b24418b606b1c4de68753f89dc7",
         "notes": null
