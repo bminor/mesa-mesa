@@ -492,12 +492,16 @@ fn nvb097_fill_image_view_desc(
     th.set_field(clb097::TEXHEAD_BL_WIDTH_MINUS_ONE, extent.width - 1);
 
     if dev.cls_eng3d >= PASCAL_A {
-        let height_1 = extent.height - 1;
-        let depth_1 = extent.depth - 1;
-        th.set_field(clc097::TEXHEAD_BL_HEIGHT_MINUS_ONE, height_1 & 0xffff);
-        th.set_field(clc097::TEXHEAD_BL_HEIGHT_MINUS_ONE_BIT16, height_1 >> 16);
-        th.set_field(clc097::TEXHEAD_BL_DEPTH_MINUS_ONE, depth_1 & 0x3fff);
-        th.set_field(clc097::TEXHEAD_BL_DEPTH_MINUS_ONE_BIT14, depth_1 >> 14);
+        th.set_field2(
+            clc097::TEXHEAD_BL_HEIGHT_MINUS_ONE,
+            clc097::TEXHEAD_BL_HEIGHT_MINUS_ONE_BIT16,
+            extent.height - 1,
+        );
+        th.set_field2(
+            clc097::TEXHEAD_BL_DEPTH_MINUS_ONE,
+            clc097::TEXHEAD_BL_DEPTH_MINUS_ONE_BIT14,
+            extent.depth - 1,
+        );
     } else {
         th.set_field(clb097::TEXHEAD_BL_HEIGHT_MINUS_ONE, extent.height - 1);
         th.set_field(clb097::TEXHEAD_BL_DEPTH_MINUS_ONE, extent.depth - 1);
@@ -772,18 +776,18 @@ fn nvb097_nil_fill_buffer_desc(
     assert!(format.supports_buffer());
     nvb097_set_th_bl_0(&mut th, &format, IDENTITY_SWIZZLE);
 
-    th.set_field(clb097::TEXHEAD_1D_ADDRESS_BITS31TO0, base_address as u32);
-    th.set_field(clb097::TEXHEAD_1D_ADDRESS_BITS47TO32, base_address >> 32);
+    th.set_field2(
+        clb097::TEXHEAD_1D_ADDRESS_BITS31TO0,
+        clb097::TEXHEAD_1D_ADDRESS_BITS47TO32,
+        base_address,
+    );
 
     set_enum!(th, clb097, TEXHEAD_1D_HEADER_VERSION, SELECT_ONE_D_BUFFER);
 
-    th.set_field(
+    th.set_field2(
         clb097::TEXHEAD_1D_WIDTH_MINUS_ONE_BITS15TO0,
-        (num_elements - 1) & 0xffff,
-    );
-    th.set_field(
         clb097::TEXHEAD_1D_WIDTH_MINUS_ONE_BITS31TO16,
-        (num_elements - 1) >> 16,
+        num_elements - 1,
     );
 
     set_enum!(th, clb097, TEXHEAD_1D_TEXTURE_TYPE, ONE_D_BUFFER);
@@ -804,13 +808,10 @@ fn nvcb97_nil_fill_buffer_desc(
     assert!(format.supports_buffer());
     nvcb97_set_th_bl_0(&mut th, &format, IDENTITY_SWIZZLE);
 
-    th.set_field(
+    th.set_field2(
         clcb97::TEXHEAD_V2_1DRT_ADDRESS_BITS31TO0,
-        base_address as u32,
-    );
-    th.set_field(
         clcb97::TEXHEAD_V2_1DRT_ADDRESS_BITS63TO32,
-        base_address >> 32,
+        base_address,
     );
 
     set_enum!(
