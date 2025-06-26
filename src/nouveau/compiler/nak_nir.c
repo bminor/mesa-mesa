@@ -130,7 +130,7 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
 
       OPT(nir, nir_lower_alu_width, vectorize_filter_cb, NULL);
       OPT(nir, nir_opt_vectorize, vectorize_filter_cb, NULL);
-      OPT(nir, nir_lower_phis_to_scalar, false);
+      OPT(nir, nir_lower_phis_to_scalar, NULL, NULL);
       OPT(nir, nir_lower_frexp);
       OPT(nir, nir_copy_prop);
       OPT(nir, nir_opt_dce);

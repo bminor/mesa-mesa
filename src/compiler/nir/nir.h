@@ -5303,7 +5303,8 @@ bool nir_lower_alu_conversion_to_intrinsic(nir_shader *shader);
 bool nir_lower_int_to_float(nir_shader *shader);
 bool nir_lower_load_const_to_scalar(nir_shader *shader);
 bool nir_lower_read_invocation_to_scalar(nir_shader *shader);
-bool nir_lower_phis_to_scalar(nir_shader *shader, bool lower_all);
+bool nir_lower_phis_to_scalar(nir_shader *shader, nir_vectorize_cb cb, const void *data);
+bool nir_lower_all_phis_to_scalar(nir_shader *shader);
 void nir_lower_io_array_vars_to_elements(nir_shader *producer, nir_shader *consumer);
 bool nir_lower_io_array_vars_to_elements_no_indirects(nir_shader *shader,
                                                       bool outputs_only);

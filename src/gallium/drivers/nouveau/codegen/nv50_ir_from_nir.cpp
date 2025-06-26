@@ -3443,7 +3443,7 @@ Converter::run()
 
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
    NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
-   NIR_PASS(_, nir, nir_lower_phis_to_scalar, false);
+   NIR_PASS(_, nir, nir_lower_phis_to_scalar, NULL, NULL);
 
    NIR_PASS(_, nir, nir_lower_frexp);
 

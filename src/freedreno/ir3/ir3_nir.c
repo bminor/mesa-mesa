@@ -324,7 +324,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
 
       OPT(s, nir_lower_vars_to_ssa);
       progress |= OPT(s, nir_lower_alu_to_scalar, NULL, NULL);
-      progress |= OPT(s, nir_lower_phis_to_scalar, false);
+      progress |= OPT(s, nir_lower_phis_to_scalar, NULL, NULL);
 
       progress |= OPT(s, nir_copy_prop);
       progress |= OPT(s, nir_opt_deref);

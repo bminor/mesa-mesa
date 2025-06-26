@@ -861,7 +861,7 @@ r600_finalize_nir_common(nir_shader *nir, enum amd_gfx_level gfx_level)
    NIR_PASS(_, nir, nir_lower_idiv, &idiv_options);
 
    NIR_PASS(_, nir, r600_nir_lower_trigen, gfx_level);
-   NIR_PASS(_, nir, nir_lower_phis_to_scalar, false);
+   NIR_PASS(_, nir, nir_lower_phis_to_scalar, NULL, NULL);
    NIR_PASS(_, nir, nir_lower_undef_to_zero);
 
    struct nir_lower_tex_options lower_tex_options = {0};
@@ -957,11 +957,11 @@ r600_lower_and_optimize_nir(nir_shader *sh,
    NIR_PASS(_, sh, nir_io_add_const_offset_to_base, io_modes);
 
    NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
-   NIR_PASS(_, sh, nir_lower_phis_to_scalar, false);
+   NIR_PASS(_, sh, nir_lower_phis_to_scalar, NULL, NULL);
    if (lower_64bit)
       NIR_PASS(_, sh, r600::r600_nir_split_64bit_io);
    NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
-   NIR_PASS(_, sh, nir_lower_phis_to_scalar, false);
+   NIR_PASS(_, sh, nir_lower_phis_to_scalar, NULL, NULL);
    NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
    NIR_PASS(_, sh, nir_copy_prop);
    NIR_PASS(_, sh, nir_opt_dce);
@@ -989,7 +989,7 @@ r600_lower_and_optimize_nir(nir_shader *sh,
    }
 
    NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
-   NIR_PASS(_, sh, nir_lower_phis_to_scalar, false);
+   NIR_PASS(_, sh, nir_lower_phis_to_scalar, NULL, NULL);
    NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
    NIR_PASS(_, sh, r600_nir_lower_int_tg4);
    NIR_PASS(_, sh, r600::r600_nir_lower_tex_to_backend, gfx_level);

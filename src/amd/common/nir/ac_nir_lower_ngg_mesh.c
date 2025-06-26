@@ -1429,7 +1429,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
    nir_lower_vars_to_ssa(shader);
    nir_remove_dead_variables(shader, nir_var_function_temp, NULL);
    nir_lower_alu_to_scalar(shader, NULL, NULL);
-   nir_lower_phis_to_scalar(shader, true);
+   nir_lower_all_phis_to_scalar(shader);
 
    /* Optimize load_local_invocation_index. When the API workgroup is smaller than the HW workgroup,
     * local_invocation_id isn't initialized for all lanes and we can't perform this optimization for

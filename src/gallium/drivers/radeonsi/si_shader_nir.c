@@ -53,7 +53,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
 
       NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
       NIR_PASS(progress, nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
-      NIR_PASS(progress, nir, nir_lower_phis_to_scalar, false);
+      NIR_PASS(progress, nir, nir_lower_phis_to_scalar, NULL, NULL);
 
       if (has_array_temps) {
          NIR_PASS(progress, nir, nir_split_array_vars, nir_var_function_temp);
@@ -77,7 +77,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
          NIR_PASS_V(nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
       }
       if (lower_phis_to_scalar)
-         NIR_PASS_V(nir, nir_lower_phis_to_scalar, false);
+         NIR_PASS_V(nir, nir_lower_phis_to_scalar, NULL, NULL);
       progress |= lower_alu_to_scalar | lower_phis_to_scalar;
 
       NIR_PASS(progress, nir, nir_opt_cse);

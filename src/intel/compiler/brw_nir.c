@@ -1007,7 +1007,7 @@ brw_nir_optimize(nir_shader *nir,
 
       LOOP_OPT(nir_copy_prop);
 
-      LOOP_OPT(nir_lower_phis_to_scalar, false);
+      LOOP_OPT(nir_lower_phis_to_scalar, NULL, NULL);
 
       LOOP_OPT(nir_copy_prop);
       LOOP_OPT(nir_opt_dce);

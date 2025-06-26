@@ -1624,7 +1624,7 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
    NIR_PASS(_, shader, nir_lower_vars_to_ssa);
    NIR_PASS(_, shader, nir_remove_dead_variables, nir_var_function_temp, NULL);
    NIR_PASS(_, shader, nir_lower_alu_to_scalar, NULL, NULL);
-   NIR_PASS(_, shader, nir_lower_phis_to_scalar, true);
+   NIR_PASS(_, shader, nir_lower_all_phis_to_scalar);
 
    return true;
 }

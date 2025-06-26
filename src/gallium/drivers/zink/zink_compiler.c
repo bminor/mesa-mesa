@@ -1568,7 +1568,7 @@ optimize_nir(struct nir_shader *s, struct zink_shader *zs, bool can_shrink)
       }
       NIR_PASS(progress, s, nir_opt_dce);
       NIR_PASS(progress, s, nir_opt_dead_cf);
-      NIR_PASS(progress, s, nir_lower_phis_to_scalar, false);
+      NIR_PASS(progress, s, nir_lower_phis_to_scalar, NULL, NULL);
       NIR_PASS(progress, s, nir_opt_cse);
 
       nir_opt_peephole_select_options peephole_select_options = {
@@ -3284,7 +3284,7 @@ lower_64bit_vars(nir_shader *shader, bool doubles_only)
    ralloc_free(derefs);
    if (progress) {
       nir_lower_alu_to_scalar(shader, filter_64_bit_instr, NULL);
-      nir_lower_phis_to_scalar(shader, false);
+      nir_lower_phis_to_scalar(shader, NULL, NULL);
       optimize_nir(shader, NULL, true);
    }
    return progress;

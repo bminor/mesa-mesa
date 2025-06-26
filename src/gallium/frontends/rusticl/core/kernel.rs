@@ -590,7 +590,7 @@ fn opt_nir(nir: &mut NirShader, dev: &Device, has_explicit_types: bool) {
                 nir_options.lower_to_scalar_filter,
                 ptr::null(),
             );
-            nir_pass!(nir, nir_lower_phis_to_scalar, false);
+            nir_pass!(nir, nir_lower_phis_to_scalar, None, ptr::null());
         }
 
         progress |= nir_pass!(nir, nir_opt_deref);

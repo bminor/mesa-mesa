@@ -6126,7 +6126,7 @@ lp_build_nir_soa_prepasses(struct nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
 
    NIR_PASS(_, nir, nir_convert_to_lcssa, false, false);
-   NIR_PASS(_, nir, nir_lower_phis_to_scalar, true);
+   NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
 
    bool progress;
    do {

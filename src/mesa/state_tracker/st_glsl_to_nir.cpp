@@ -275,7 +275,7 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
           * vectorize them afterwards again */
          if (!nir->options->lower_to_scalar) {
             NIR_PASS(revectorize, nir, nir_lower_alu_to_scalar, filter_64_bit_instr, nullptr);
-            NIR_PASS(revectorize, nir, nir_lower_phis_to_scalar, false);
+            NIR_PASS(revectorize, nir, nir_lower_phis_to_scalar, NULL, NULL);
          }
          /* doubles lowering requires frexp to be lowered first if it will be,
           * since the pass generates other 64-bit ops.  Most backends lower

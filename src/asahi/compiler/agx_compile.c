@@ -3205,7 +3205,7 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
 
    NIR_PASS(_, nir, nir_opt_sink, move_all);
    NIR_PASS(_, nir, nir_opt_move, move_all);
-   NIR_PASS(_, nir, nir_lower_phis_to_scalar, true);
+   NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
 }
 
 /*
@@ -3782,7 +3782,7 @@ agx_preprocess_nir(nir_shader *nir)
    NIR_PASS(_, nir, nir_shader_intrinsics_pass, agx_lower_front_face,
             nir_metadata_control_flow, NULL);
    NIR_PASS(_, nir, agx_nir_lower_subgroups);
-   NIR_PASS(_, nir, nir_lower_phis_to_scalar, true);
+   NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
    NIR_PASS(_, nir, nir_shader_alu_pass, agx_nir_lower_fdiv,
             nir_metadata_control_flow, NULL);
 
