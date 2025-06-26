@@ -171,7 +171,8 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
 
    program->dev.fused_mad_mix = program->gfx_level >= GFX10;
    if (program->family == CHIP_VEGA12 || program->family == CHIP_VEGA20 ||
-       program->family == CHIP_MI100 || program->family == CHIP_MI200)
+       program->family == CHIP_MI100 || program->family == CHIP_MI200 ||
+       program->family == CHIP_GFX940)
       program->dev.fused_mad_mix = true;
 
    if (program->gfx_level >= GFX12) {
