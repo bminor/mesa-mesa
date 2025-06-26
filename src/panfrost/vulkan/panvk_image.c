@@ -230,6 +230,20 @@ is_disjoint(const struct panvk_image *image)
    return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
 }
 
+static bool
+strict_import(struct panvk_image *image, uint32_t plane)
+{
+   /* We can't do strict imports for AFBC because a Vulkan-based compositor
+    * might be importing buffers from clients that are relying on the old
+    * behavior. The only exception is AFBC(YUV) because support for these
+    * formats was added after we started enforcing WSI pitch. */
+   if (drm_is_afbc(image->vk.drm_format_mod) &&
+       !pan_format_is_yuv(image->planes[plane].image.props.format))
+      return false;
+
+   return true;
+}
+
 static VkResult
 panvk_image_init_layouts(struct panvk_image *image,
                          const VkImageCreateInfo *pCreateInfo)
@@ -291,6 +305,7 @@ panvk_image_init_layouts(struct panvk_image *image,
          .planes = {&image->planes[plane].plane},
       };
 
+      plane_layout.strict = strict_import(image, plane);
       if (!pan_image_layout_init(arch, &image->planes[plane].image, 0,
                                  &plane_layout)) {
          return panvk_error(image->vk.base.device,
