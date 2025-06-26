@@ -620,41 +620,42 @@ static VkResult
 panvk_image_bind(struct panvk_device *dev,
                  const VkBindImageMemoryInfo *bind_info) {
    VK_FROM_HANDLE(panvk_image, image, bind_info->image);
-   const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-      vk_find_struct_const(bind_info->pNext,
-                           BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+   VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
 
-   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+   if (!mem) {
+#ifdef ANDROID
+      /* TODO handle VkNativeBufferANDROID when we support ANB */
+      unreachable("VkBindImageMemoryInfo with no memory");
+#else
+      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+         vk_find_struct_const(bind_info->pNext,
+                              BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+      assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
+
       VkImage wsi_vk_image = wsi_common_get_image(swapchain_info->swapchain,
                                                 swapchain_info->imageIndex);
       VK_FROM_HANDLE(panvk_image, wsi_image, wsi_vk_image);
 
-      assert(image->plane_count == 1);
-      assert(wsi_image->plane_count == 1);
+      mem = wsi_image->mem;
+#endif
+   }
 
-      image->mem = wsi_image->mem;
-      return panvk_image_plane_bind(dev, &image->planes[0], image->mem->bo,
-                                    wsi_image->planes[0].plane.base, 0);
+   assert(mem);
+   image->mem = mem;
+   if (is_disjoint(image)) {
+      const VkBindImagePlaneMemoryInfo *plane_info =
+         vk_find_struct_const(bind_info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
+      const uint8_t plane =
+         panvk_plane_index(image->vk.format, plane_info->planeAspect);
+      return panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
+                                    mem->addr.dev, bind_info->memoryOffset);
    } else {
-      VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
-      assert(mem);
-      image->mem = mem;
-      if (is_disjoint(image)) {
-         const VkBindImagePlaneMemoryInfo *plane_info =
-            vk_find_struct_const(bind_info->pNext,
-                                 BIND_IMAGE_PLANE_MEMORY_INFO);
-         const uint8_t plane =
-            panvk_plane_index(image->vk.format, plane_info->planeAspect);
-         return panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                       mem->addr.dev, bind_info->memoryOffset);
-      } else {
-         for (unsigned plane = 0; plane < image->plane_count; plane++) {
-            VkResult result =
-               panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                      mem->addr.dev, bind_info->memoryOffset);
-            if (result != VK_SUCCESS)
-               return result;
-         }
+      for (unsigned plane = 0; plane < image->plane_count; plane++) {
+         VkResult result =
+            panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
+                                   mem->addr.dev, bind_info->memoryOffset);
+         if (result != VK_SUCCESS)
+            return result;
       }
    }
 
