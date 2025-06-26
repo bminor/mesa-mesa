@@ -4443,6 +4443,70 @@ tc_launch_grid(struct pipe_context *_pipe,
       tc_add_all_compute_bindings_to_buffer_list(tc);
 }
 
+struct tc_image_copy_buffer {
+   struct tc_call_base base;
+   unsigned buffer_stride;
+   unsigned buffer_layer_stride;
+   unsigned level;
+   unsigned buffer_offset;
+   struct pipe_box box;
+   struct pipe_resource *dst;
+   struct pipe_resource *src;
+};
+
+static uint16_t ALWAYS_INLINE
+tc_call_image_copy_buffer(struct pipe_context *pipe, void *call)
+{
+   struct tc_image_copy_buffer *p = to_call(call, tc_image_copy_buffer);
+
+   pipe->image_copy_buffer(pipe, p->dst, p->src, p->buffer_offset, p->buffer_stride,
+                           p->buffer_layer_stride, p->level, &p->box);
+   tc_drop_resource_reference(p->dst);
+   tc_drop_resource_reference(p->src);
+   return call_size(tc_image_copy_buffer);
+}
+
+static void
+tc_image_copy_buffer(struct pipe_context *_pipe,
+                     struct pipe_resource *dst,
+                     struct pipe_resource *src,
+                     unsigned buffer_offset,
+                     unsigned buffer_stride,
+                     unsigned buffer_layer_stride,
+                     unsigned level,
+                     const struct pipe_box *box)
+{
+   struct threaded_context *tc = threaded_context(_pipe);
+   struct threaded_resource *tbuf = dst->target == PIPE_BUFFER ? threaded_resource(dst) : threaded_resource(src);
+   struct threaded_resource *timg = dst->target == PIPE_BUFFER ? threaded_resource(src) : threaded_resource(dst);
+   struct tc_image_copy_buffer *p =
+      tc_add_call(tc, TC_CALL_image_copy_buffer,
+                  tc_image_copy_buffer);
+
+   if (dst->target == PIPE_BUFFER)
+      tc_buffer_disable_cpu_storage(&tbuf->b);
+   if (tc->options.parse_renderpass_info && tc->in_renderpass)
+      tc_check_fb_access(tc, NULL, &timg->b);
+
+   tc_set_resource_batch_usage(tc, dst);
+   tc_set_resource_reference(&p->dst, dst);
+   p->buffer_offset = buffer_offset;
+   p->buffer_stride = buffer_stride;
+   p->buffer_layer_stride = buffer_layer_stride;
+   p->level = level;
+   p->box = *box;
+   tc_set_resource_batch_usage(tc, src);
+   tc_set_resource_reference(&p->src, src);
+
+   struct tc_buffer_list *next = &tc->buffer_lists[tc->next_buf_list];
+
+   tc_add_to_buffer_list(next, &tbuf->b);
+
+   if (dst->target == PIPE_BUFFER)
+      util_range_add(&tbuf->b, &tbuf->valid_buffer_range,
+                     buffer_offset, buffer_offset + box->width);
+}
+
 static uint16_t ALWAYS_INLINE
 tc_call_resource_copy_region(struct pipe_context *pipe, void *call)
 {
@@ -5456,6 +5520,7 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(draw_vertex_state);
    CTX_INIT(launch_grid);
    CTX_INIT(resource_copy_region);
+   CTX_INIT(image_copy_buffer);
    CTX_INIT(blit);
    CTX_INIT(clear);
    CTX_INIT(clear_render_target);

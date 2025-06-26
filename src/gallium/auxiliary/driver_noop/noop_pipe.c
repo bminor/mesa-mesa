@@ -312,6 +312,17 @@ static void noop_resource_copy_region(struct pipe_context *ctx,
 {
 }
 
+static void noop_image_copy_buffer(struct pipe_context *pipe,
+                                   struct pipe_resource *dst,
+                                   struct pipe_resource *src,
+                                   unsigned buffer_offset,
+                                   unsigned buffer_stride,
+                                   unsigned buffer_layer_stride,
+                                   unsigned level,
+                                   const struct pipe_box *box)
+{
+}
+
 
 static void noop_blit(struct pipe_context *ctx,
                       const struct pipe_blit_info *info)
@@ -427,6 +438,7 @@ static struct pipe_context *noop_create_context(struct pipe_screen *screen,
    ctx->clear_render_target = noop_clear_render_target;
    ctx->clear_depth_stencil = noop_clear_depth_stencil;
    ctx->resource_copy_region = noop_resource_copy_region;
+   ctx->image_copy_buffer = noop_image_copy_buffer;
    ctx->generate_mipmap = noop_generate_mipmap;
    ctx->blit = noop_blit;
    ctx->flush_resource = noop_flush_resource;

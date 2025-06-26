@@ -466,6 +466,21 @@ dd_dump_resource_copy_region(struct dd_draw_state *dstate,
 }
 
 static void
+dd_dump_image_copy_buffer(struct dd_draw_state *dstate,
+                             struct call_image_copy_buffer *info,
+                             FILE *f)
+{
+   fprintf(f, "%s:\n", __func__+8);
+   DUMP_M(resource, info, dst);
+   DUMP_M(resource, info, src);
+   DUMP_M(uint, info, buffer_offset);
+   DUMP_M(uint, info, buffer_stride);
+   DUMP_M(uint, info, buffer_layer_stride);
+   DUMP_M(uint, info, level);
+   DUMP_M_ADDR(box, info, box);
+}
+
+static void
 dd_dump_blit(struct dd_draw_state *dstate, struct pipe_blit_info *info, FILE *f)
 {
    fprintf(f, "%s:\n", __func__+8);
@@ -652,6 +667,10 @@ dd_dump_call(FILE *f, struct dd_draw_state *state, struct dd_call *call)
       dd_dump_resource_copy_region(state,
                                    &call->info.resource_copy_region, f);
       break;
+   case CALL_IMAGE_COPY_BUFFER:
+      dd_dump_image_copy_buffer(state,
+                                   &call->info.image_copy_buffer, f);
+      break;
    case CALL_BLIT:
       dd_dump_blit(state, &call->info.blit, f);
       break;
@@ -731,6 +750,10 @@ dd_unreference_copy_of_call(struct dd_call *dst)
    case CALL_RESOURCE_COPY_REGION:
       pipe_resource_reference(&dst->info.resource_copy_region.dst, NULL);
       pipe_resource_reference(&dst->info.resource_copy_region.src, NULL);
+      break;
+   case CALL_IMAGE_COPY_BUFFER:
+      pipe_resource_reference(&dst->info.image_copy_buffer.dst, NULL);
+      pipe_resource_reference(&dst->info.image_copy_buffer.src, NULL);
       break;
    case CALL_BLIT:
       pipe_resource_reference(&dst->info.blit.dst.resource, NULL);
@@ -1428,6 +1451,36 @@ dd_context_resource_copy_region(struct pipe_context *_pipe,
 }
 
 static void
+dd_context_image_copy_buffer(struct pipe_context *_pipe,
+                             struct pipe_resource *dst,
+                             struct pipe_resource *src,
+                             unsigned buffer_offset,
+                             unsigned buffer_stride,
+                             unsigned buffer_layer_stride,
+                             unsigned level,
+                             const struct pipe_box *box)
+{
+   struct dd_context *dctx = dd_context(_pipe);
+   struct pipe_context *pipe = dctx->pipe;
+   struct dd_draw_record *record = dd_create_record(dctx);
+
+   record->call.type = CALL_IMAGE_COPY_BUFFER;
+   record->call.info.image_copy_buffer.dst = NULL;
+   pipe_resource_reference(&record->call.info.image_copy_buffer.dst, dst);
+   pipe_resource_reference(&record->call.info.image_copy_buffer.src, src);
+   record->call.info.image_copy_buffer.buffer_offset = buffer_offset;
+   record->call.info.image_copy_buffer.buffer_stride = buffer_stride;
+   record->call.info.image_copy_buffer.buffer_layer_stride = buffer_layer_stride;
+   record->call.info.image_copy_buffer.level = level;
+   record->call.info.image_copy_buffer.box = *box;
+
+   dd_before_draw(dctx, record);
+   pipe->image_copy_buffer(pipe,
+                           dst, src, buffer_offset, buffer_stride, buffer_layer_stride, level, box);
+   dd_after_draw(dctx, record);
+}
+
+static void
 dd_context_blit(struct pipe_context *_pipe, const struct pipe_blit_info *info)
 {
    struct dd_context *dctx = dd_context(_pipe);
@@ -1843,6 +1896,7 @@ dd_init_draw_functions(struct dd_context *dctx)
    CTX_INIT(draw_vbo);
    CTX_INIT(launch_grid);
    CTX_INIT(resource_copy_region);
+   CTX_INIT(image_copy_buffer);
    CTX_INIT(blit);
    CTX_INIT(clear);
    CTX_INIT(clear_render_target);

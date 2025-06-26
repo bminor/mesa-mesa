@@ -101,3 +101,4 @@ CALL(delete_tes_state)
 
 CALL(begin_intel_perf_query)
 CALL(end_intel_perf_query)
+CALL(image_copy_buffer)

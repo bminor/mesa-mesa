@@ -693,6 +693,20 @@ struct pipe_context {
                                 unsigned src_level,
                                 const struct pipe_box *src_box);
 
+   /**
+    * Perform a copy between an image and a buffer in either direction.
+    * buffer_stride=0 or buffer_layer_stride=0 means tightly packed on that axis
+    * Resources with nr_samples > 1 are not allowed.
+    */
+   void (*image_copy_buffer)(struct pipe_context *pipe,
+                             struct pipe_resource *dst,
+                             struct pipe_resource *src,
+                             unsigned buffer_offset,
+                             unsigned buffer_stride,
+                             unsigned buffer_layer_stride,
+                             unsigned level,
+                             const struct pipe_box *box);
+
    /* Optimal hardware path for blitting pixels.
     * Scaling, format conversion, up- and downsampling (resolve) are allowed.
     */

@@ -64,6 +64,7 @@ enum call_type
    CALL_DRAW_VBO,
    CALL_LAUNCH_GRID,
    CALL_RESOURCE_COPY_REGION,
+   CALL_IMAGE_COPY_BUFFER,
    CALL_BLIT,
    CALL_FLUSH_RESOURCE,
    CALL_CLEAR,
@@ -88,6 +89,17 @@ struct call_resource_copy_region
    struct pipe_resource *src;
    unsigned src_level;
    struct pipe_box src_box;
+};
+
+struct call_image_copy_buffer
+{
+   struct pipe_resource *dst;
+   struct pipe_resource *src;
+   unsigned buffer_offset;
+   unsigned buffer_stride;
+   unsigned buffer_layer_stride;
+   unsigned level;
+   struct pipe_box box;
 };
 
 struct call_clear
@@ -182,6 +194,7 @@ struct dd_call
       struct call_draw_info draw_vbo;
       struct pipe_grid_info launch_grid;
       struct call_resource_copy_region resource_copy_region;
+      struct call_image_copy_buffer image_copy_buffer;
       struct pipe_blit_info blit;
       struct pipe_resource *flush_resource;
       struct call_clear clear;
