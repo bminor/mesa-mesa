@@ -153,13 +153,14 @@ has_only_sources_less_than(nir_src *src, void *data)
 static void
 group_loads(nir_instr *first, nir_instr *last)
 {
+   assert(nir_is_grouped_load(first));
+   assert(nir_is_grouped_load(last));
+
    /* Walk the instruction range between the first and last backward, and
     * move those that have no uses within the range after the last one.
     */
-   for (nir_instr *instr = exec_node_data_backward(nir_instr,
-                                                   last->node.prev, node);
-        instr != first;
-        instr = exec_node_data_backward(nir_instr, instr->node.prev, node)) {
+   for (nir_instr *instr = nir_instr_prev(last); instr != first;
+        instr = nir_instr_prev(instr)) {
       if (is_part_of_group(instr, first->pass_flags))
          continue;
 
@@ -181,7 +182,7 @@ group_loads(nir_instr *first, nir_instr *last)
          /* Set the iterator to the next instruction because we'll move
           * the current one.
           */
-         instr = exec_node_data_forward(nir_instr, instr->node.next, node);
+         instr = nir_instr_next(instr);
 
          /* Move the instruction after the last and update its index to
           * indicate that it's after it.
@@ -198,10 +199,8 @@ group_loads(nir_instr *first, nir_instr *last)
    /* Walk the instruction range between the first and last forward, and move
     * those that have no sources within the range before the first one.
     */
-   for (nir_instr *instr = exec_node_data_forward(nir_instr,
-                                                  first->node.next, node);
-        instr != last;
-        instr = exec_node_data_forward(nir_instr, instr->node.next, node)) {
+   for (nir_instr *instr = nir_instr_next(first); instr != last;
+        instr = nir_instr_next(instr)) {
       /* Only move instructions without side effects. */
       if (is_part_of_group(instr, first->pass_flags))
          continue;
@@ -209,7 +208,7 @@ group_loads(nir_instr *first, nir_instr *last)
       if (nir_foreach_src(instr, has_only_sources_less_than, &state)) {
          nir_instr *move_instr = instr;
          /* Set the last instruction because we'll delete the current one. */
-         instr = exec_node_data_backward(nir_instr, instr->node.prev, node);
+         instr = nir_instr_prev(instr);
 
          /* Move the instruction before the first and update its index
           * to indicate that it's before it.
