@@ -1452,8 +1452,10 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
 {
    struct threaded_context *tc = threaded_context(_pipe);
    unsigned next = tc->next;
-   /* always skip incrementing if this is the first call on a batch */
-   bool set_skip_first_increment = !tc->batch_slots[tc->next].num_total_slots;
+   /* always skip incrementing if this is the first call on a batch AND there is no pending work from previous batch */
+   bool set_skip_first_increment = !tc->batch_slots[tc->next].num_total_slots &&
+                                   (!tc->renderpass_info_recording ||
+                                    !TC_RENDERPASS_INFO_HAS_WORK(tc->renderpass_info_recording->data32[0]));
    struct tc_framebuffer *p =
       tc_add_call_no_copy(tc, TC_CALL_set_framebuffer_state, tc_framebuffer);
    unsigned nr_cbufs = fb->nr_cbufs;
