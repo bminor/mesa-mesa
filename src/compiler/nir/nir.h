@@ -5356,7 +5356,8 @@ typedef struct nir_lower_subgroups_options {
    uint8_t ballot_components;
    bool lower_to_scalar : 1;
    bool lower_vote_trivial : 1;
-   bool lower_vote_eq : 1;
+   bool lower_vote_feq : 1;
+   bool lower_vote_ieq : 1;
    bool lower_vote_bool_eq : 1;
    bool lower_first_invocation_to_ballot : 1;
    bool lower_read_first_invocation : 1;

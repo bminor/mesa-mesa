@@ -1035,7 +1035,11 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
          if (options->lower_vote_bool_eq)
             return lower_vote_eq(b, intrin);
       } else {
-         if (options->lower_vote_eq)
+         if (intrin->intrinsic == nir_intrinsic_vote_feq &&
+             options->lower_vote_feq)
+            return lower_vote_eq(b, intrin);
+         if (intrin->intrinsic == nir_intrinsic_vote_ieq &&
+             options->lower_vote_ieq)
             return lower_vote_eq(b, intrin);
       }
 
