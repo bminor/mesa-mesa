@@ -3381,7 +3381,6 @@ impl SM70Encoder<'_> {
 
     fn set_rel_offset(&mut self, range: Range<usize>, label: &Label) {
         let rel_offset = self.get_rel_offset(label);
-
         self.set_field(range, rel_offset);
     }
 
@@ -3392,9 +3391,7 @@ impl SM70Encoder<'_> {
         label: &Label,
     ) {
         let rel_offset = self.get_rel_offset(label);
-        let shift = range1.len();
-        self.set_field(range1, (rel_offset as u64) & ((1 << shift) - 1));
-        self.set_field(range2, rel_offset >> shift);
+        self.set_field2(range1, range2, rel_offset);
     }
 }
 

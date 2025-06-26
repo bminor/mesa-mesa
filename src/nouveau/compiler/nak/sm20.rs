@@ -5,9 +5,7 @@ use crate::ir::*;
 use crate::legalize::{
     src_is_reg, swap_srcs_if_not_reg, LegalizeBuildHelpers, LegalizeBuilder,
 };
-use bitview::{
-    BitMutView, BitMutViewable, BitView, BitViewable, SetBit, SetField,
-};
+use bitview::*;
 
 use rustc_hash::FxHashMap;
 use std::fmt;
@@ -251,18 +249,14 @@ impl SM20Encoder<'_> {
         range2: Range<usize>,
         dst: &Dst,
     ) {
-        assert!(range1.len() == 2);
-        assert!(range2.len() == 1);
         let reg = match dst {
             Dst::None => true_reg(),
             Dst::Reg(reg) => *reg,
             _ => panic!("Dst is not pred {dst}"),
         };
         assert!(reg.file() == RegFile::Pred);
-        assert!(reg.base_idx() <= 7);
         assert!(reg.comps() == 1);
-        self.set_field(range1, reg.base_idx() & 0x3);
-        self.set_field(range2, reg.base_idx() >> 2);
+        self.set_field2(range1, range2, reg.base_idx());
     }
 
     fn set_pred(&mut self, pred: &Pred) {
