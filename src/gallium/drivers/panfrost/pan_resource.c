@@ -289,6 +289,24 @@ panfrost_resource_new_label(struct panfrost_resource *rsrc,
    return new_label;
 }
 
+static bool
+strict_import(struct panfrost_device *dev, uint64_t mod,
+              enum pipe_format format)
+{
+   if (dev->debug & PAN_DBG_STRICT_IMPORT)
+      return true;
+
+   /* AFBC(YUV) has been introduced after the stricter import rules, let's
+    * make them strict by default. */
+   if (drm_is_afbc(mod) && pan_format_is_yuv(format) && !dev->relaxed_afbc_yuv_imports)
+      return true;
+
+   /* Linear and u-tiled imports have always been strict. The only ones that
+    * were lax are AFBC, AFRC and MTK_TILED. Make sure we encourage new
+    * modifiers to enforce strict rules by default. */
+   return !(drm_is_afbc(mod) || drm_is_afrc(mod) || drm_is_mtk_tiled(mod));
+}
+
 static struct pipe_resource *
 panfrost_resource_from_handle(struct pipe_screen *pscreen,
                               const struct pipe_resource *templat,
@@ -320,7 +338,7 @@ panfrost_resource_from_handle(struct pipe_screen *pscreen,
    struct pan_image_layout_constraints explicit_layout = {
       .offset_B = whandle->offset,
       .wsi_row_pitch_B = whandle->stride,
-      .strict = dev->debug & PAN_DBG_STRICT_IMPORT,
+      .strict = strict_import(dev, mod, templat->format),
    };
 
    rsc->modifier = mod;

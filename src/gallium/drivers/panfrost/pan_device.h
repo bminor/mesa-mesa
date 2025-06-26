@@ -119,6 +119,7 @@ struct panfrost_device {
    const struct pan_model *model;
    bool has_afbc;
    bool has_afrc;
+   bool relaxed_afbc_yuv_imports;
 
    /* Table of formats, indexed by a PIPE format */
    const struct pan_format *formats;

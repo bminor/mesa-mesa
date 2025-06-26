@@ -984,6 +984,9 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    if (dev->debug & PAN_DBG_NO_AFBC)
       dev->has_afbc = false;
 
+   dev->relaxed_afbc_yuv_imports =
+      driQueryOptionb(config->options, "pan_relax_afbc_yuv_imports");
+
    /* Bail early on unsupported hardware */
    if (dev->model == NULL) {
       debug_printf("panfrost: Unsupported model %X",
