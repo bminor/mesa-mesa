@@ -17,6 +17,9 @@
 #include "pan_format.h"
 #include "pan_layout.h"
 #include "pan_mod.h"
+#include "pan_props.h"
+
+#include "kmod/pan_kmod.h"
 
 #include "util/log.h"
 
@@ -248,6 +251,62 @@ pan_image_get_wsi_offset(const struct pan_image *image, unsigned plane_idx,
 bool pan_image_layout_init(
    unsigned arch, struct pan_image *image, unsigned plane_idx,
    const struct pan_image_layout_constraints *explicit_layout_constraints);
+
+static inline bool
+pan_image_test_props(const struct pan_kmod_dev_props *dprops,
+                     const struct pan_image_props *iprops)
+{
+   const unsigned arch = pan_arch(dprops->gpu_id);
+   struct pan_image image = {
+      .props = *iprops,
+      .mod_handler = pan_mod_get_handler(arch, iprops->modifier),
+   };
+
+   if (!image.mod_handler)
+      return false;
+
+   if (!image.mod_handler->test_props(dprops, &image.props))
+      return false;
+
+   /* Now make sure the layout can be properly initialized on all planes. */
+   uint32_t plane_count = util_format_get_num_planes(image.props.format);
+   for (uint32_t p = 0; p < plane_count; p++) {
+      struct pan_image_plane plane;
+
+      memset(&plane, 0, sizeof(plane));
+      image.planes[p] = &plane;
+
+      if (!pan_image_layout_init(arch, &image, p, NULL))
+         return false;
+   }
+
+   return true;
+}
+
+static inline bool
+pan_image_test_modifier_with_format(const struct pan_kmod_dev_props *dprops,
+                                    uint64_t modifier, enum pipe_format format)
+{
+   /* To check if a <modifier,format> pair is supported, we define the smallest
+    * possible 2D image (or 3D image if this is a 3D compressed format). */
+   const struct pan_image_props iprops = {
+      .modifier = modifier,
+      .format = format,
+      .extent_px = {
+            .width = util_format_get_blockwidth(format),
+            .height = util_format_get_blockheight(format),
+            .depth = util_format_get_blockdepth(format),
+      },
+      .nr_samples = 1,
+      .dim = util_format_get_blockdepth(format) > 1 ? MALI_TEXTURE_DIMENSION_3D
+                                                    : MALI_TEXTURE_DIMENSION_2D,
+      .nr_slices = 1,
+      .array_size = 1,
+   };
+
+   return pan_image_test_props(dprops, &iprops);
+}
+
 
 #ifdef __cplusplus
 } /* extern C */
