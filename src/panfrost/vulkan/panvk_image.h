@@ -20,6 +20,9 @@ struct panvk_device_memory;
 struct panvk_image_plane {
    struct pan_image image;
    struct pan_image_plane plane;
+
+   /* Plane offset inside the image BO */
+   uint64_t offset;
 };
 
 struct panvk_image {

@@ -408,6 +408,7 @@ panvk_image_plane_bind(struct panvk_device *dev,
                        uint64_t base, uint64_t offset)
 {
    plane->plane.base = base + offset;
+   plane->offset = offset;
    /* Reset the AFBC headers */
    if (drm_is_afbc(plane->image.props.modifier)) {
       /* Transient CPU mapping */
