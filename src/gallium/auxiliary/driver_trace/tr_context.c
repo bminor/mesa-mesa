@@ -118,9 +118,9 @@ trace_context_draw_vbo(struct pipe_context *_pipe,
 
    trace_dump_trace_flush();
 
-   pipe->draw_vbo(pipe, info, drawid_offset, indirect, draws, num_draws);
-
    trace_dump_call_end();
+
+   pipe->draw_vbo(pipe, info, drawid_offset, indirect, draws, num_draws);
 }
 
 static void
@@ -139,9 +139,9 @@ trace_context_draw_mesh_tasks(struct pipe_context *_pipe,
 
    trace_dump_trace_flush();
 
-   pipe->draw_mesh_tasks(pipe, drawid_offset, info);
-
    trace_dump_call_end();
+
+   pipe->draw_mesh_tasks(pipe, drawid_offset, info);
 }
 
 
@@ -172,9 +172,9 @@ trace_context_draw_vertex_state(struct pipe_context *_pipe,
 
    trace_dump_trace_flush();
 
+   trace_dump_call_end();
    pipe->draw_vertex_state(pipe, state, partial_velem_mask, info, draws,
                            num_draws);
-   trace_dump_call_end();
 }
 
 
@@ -2231,9 +2231,9 @@ static void trace_context_launch_grid(struct pipe_context *_pipe,
 
    trace_dump_trace_flush();
 
-   pipe->launch_grid(pipe, info);
-
    trace_dump_call_end();
+
+   pipe->launch_grid(pipe, info);
 }
 
 static void trace_context_get_compute_state_info(struct pipe_context *_pipe, void *cso,
