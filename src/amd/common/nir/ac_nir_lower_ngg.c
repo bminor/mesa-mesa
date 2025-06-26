@@ -1797,7 +1797,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    nir_lower_vars_to_ssa(shader);
    nir_remove_dead_variables(shader, nir_var_function_temp, NULL);
    nir_lower_alu_to_scalar(shader, NULL, NULL);
-   nir_lower_all_phis_to_scalar(shader);
+   nir_lower_phis_to_scalar(shader, ac_nir_lower_phis_to_scalar_cb, NULL);
 
    if (options->can_cull) {
       /* It's beneficial to redo these opts after splitting the shader. */

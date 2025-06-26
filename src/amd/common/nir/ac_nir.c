@@ -879,3 +879,13 @@ ac_nir_repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
          nir_mbcnt_amd(b, input_mask[i], wg_repacked_index_base);
    }
 }
+
+uint8_t
+ac_nir_lower_phis_to_scalar_cb(const nir_instr *instr, const void *_)
+{
+   nir_phi_instr *phi = nir_instr_as_phi(instr);
+   if (phi->def.bit_size == 1 || phi->def.bit_size >= 32)
+      return 1;
+
+   return 32 / phi->def.bit_size;
+}

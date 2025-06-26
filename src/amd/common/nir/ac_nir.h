@@ -434,6 +434,9 @@ ac_nir_scalarize_overfetching_loads_callback(const nir_instr *instr, const void 
 enum gl_access_qualifier
 ac_nir_get_mem_access_flags(const nir_intrinsic_instr *instr);
 
+uint8_t
+ac_nir_lower_phis_to_scalar_cb(const nir_instr *instr, const void *_);
+
 #ifdef __cplusplus
 }
 #endif

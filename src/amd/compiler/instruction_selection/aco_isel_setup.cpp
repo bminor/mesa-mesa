@@ -249,7 +249,7 @@ void
 setup_nir(isel_context* ctx, nir_shader* nir)
 {
    nir_convert_to_lcssa(nir, true, false);
-   if (nir_lower_all_phis_to_scalar(nir)) {
+   if (nir_lower_phis_to_scalar(nir, ac_nir_lower_phis_to_scalar_cb, NULL)) {
       nir_copy_prop(nir);
       nir_opt_dce(nir);
    }
