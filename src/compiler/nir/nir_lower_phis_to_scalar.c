@@ -32,7 +32,6 @@
 struct lower_phis_to_scalar_state {
    nir_shader *shader;
    nir_builder builder;
-   struct exec_list dead_instrs;
 
    bool lower_all;
 };
@@ -219,7 +218,6 @@ lower_phis_to_scalar_block(nir_block *block,
       nir_def *vec = nir_vec(&state->builder, vec_srcs, phi->def.num_components);
 
       nir_def_replace(&phi->def, vec);
-      exec_list_push_tail(&state->dead_instrs, &phi->instr.node);
 
       progress = true;
 
@@ -244,7 +242,6 @@ lower_phis_to_scalar_impl(nir_function_impl *impl, bool lower_all)
 
    state.shader = impl->function->shader;
    state.builder = nir_builder_create(impl);
-   exec_list_make_empty(&state.dead_instrs);
    state.lower_all = lower_all;
 
    nir_foreach_block(block, impl) {
@@ -252,8 +249,6 @@ lower_phis_to_scalar_impl(nir_function_impl *impl, bool lower_all)
    }
 
    nir_progress(true, impl, nir_metadata_control_flow);
-
-   nir_instr_free_list(&state.dead_instrs);
 
    return progress;
 }
