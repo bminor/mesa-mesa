@@ -272,6 +272,30 @@ impl<T: SetFieldU64, F: ToFieldBits> SetField<F> for T {
     }
 }
 
+pub trait SetField2<F> {
+    fn set_field2(
+        &mut self,
+        range1: Range<usize>,
+        range2: Range<usize>,
+        val: F,
+    );
+}
+
+impl<T: SetFieldU64, F: ToFieldBits> SetField2<F> for T {
+    fn set_field2(
+        &mut self,
+        range1: Range<usize>,
+        range2: Range<usize>,
+        val: F,
+    ) {
+        let bits1 = range1.len();
+        let bits2 = range2.len();
+        let val = val.to_field_bits(bits1 + bits2);
+        self.set_field_u64(range1, val & u64_mask_for_bits(bits1));
+        self.set_field_u64(range2, val >> bits1);
+    }
+}
+
 macro_rules! impl_to_field_bits_for_uN {
     ($typ: ident) => {
         impl ToFieldBits for $typ {
