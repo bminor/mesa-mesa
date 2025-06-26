@@ -39,6 +39,7 @@ struct query {
 typedef struct queue_context {
    VkQueue queue;
    uint32_t queue_family_idx;
+   bool latency_sensitive;
    VkCommandPool cmdPool;
    VkQueryPool queryPool;
    VkSemaphore semaphore;
@@ -74,6 +75,7 @@ typedef struct device_context {
       DECLARE_HOOK(DestroySemaphore);
       DECLARE_HOOK(GetSemaphoreCounterValue);
       DECLARE_HOOK(WaitSemaphores);
+      DECLARE_HOOK(QueuePresentKHR);
 #undef DECLARE_HOOK
    } vtable;
 
@@ -105,6 +107,7 @@ VkResult anti_lag_QueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubm
                                VkFence fence);
 VkResult anti_lag_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                               VkFence fence);
+VkResult anti_lag_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo);
 
 VkResult anti_lag_NegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface *pVersionStruct);
 

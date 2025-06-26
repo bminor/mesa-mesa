@@ -8,6 +8,7 @@
 #include <string.h>
 #include "util/os_time.h"
 #include "util/simple_mtx.h"
+#include "util/u_atomic.h"
 #include "vulkan/vulkan_core.h"
 #include "ringbuffer.h"
 #include "vk_alloc.h"
@@ -400,7 +401,11 @@ get_commandbuffer(device_context *ctx, queue_context *queue_ctx, VkCommandBuffer
    /* Begin critical section. */
    ringbuffer_lock(ctx->frames);
    ringbuffer_lock(queue_ctx->queries);
-   struct query *query = allocate_query(ctx, queue_ctx);
+
+   /* Don't record timestamps for queues that are not deemed sensitive to latency. */
+   struct query *query =
+      p_atomic_read(&queue_ctx->latency_sensitive) ? allocate_query(ctx, queue_ctx) : NULL;
+
    if (query == NULL) {
       ringbuffer_unlock(queue_ctx->queries);
       ringbuffer_unlock(ctx->frames);
@@ -587,4 +592,21 @@ anti_lag_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pS
       *(VkTimelineSemaphoreSubmitInfo *)tlssi = *semaphore_info; /* restore */
    vk_free(&ctx->alloc, buf);
    return res;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+anti_lag_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo)
+{
+   /* When multiple queues are in flight, the min-delay approach
+    * has problems. An async compute queue could be submitted to
+    * with very low delay while the main graphics queue would be swamped with work.
+    * If we take a global min-delay over all queues, the algorithm would
+    * assume that there is very low delay and thus sleeps are disabled, but
+    * unless the graphics work depends directly on the async compute work,
+    * this is a false assumption. */
+   device_context *ctx = get_device_context(queue);
+   queue_context *queue_ctx = get_queue_context(ctx, queue);
+   p_atomic_set(&queue_ctx->latency_sensitive, true);
+
+   return ctx->vtable.QueuePresentKHR(queue, pPresentInfo);
 }

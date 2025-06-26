@@ -194,6 +194,7 @@ init_device_vtable(device_context *ctx, PFN_vkGetDeviceProcAddr gpa, PFN_vkSetDe
    INIT_HOOK(CmdWriteTimestamp);
    INIT_HOOK(CreateSemaphore);
    INIT_HOOK(DestroySemaphore);
+   INIT_HOOK(QueuePresentKHR);
    INIT_HOOK_ALIAS(GetSemaphoreCounterValue, GetSemaphoreCounterValueKHR, timeline_semaphore_khr);
    INIT_HOOK_ALIAS(WaitSemaphores, WaitSemaphoresKHR, timeline_semaphore_khr);
 #undef INIT_HOOK
@@ -833,6 +834,7 @@ static const struct {
    ADD_HOOK(QueueSubmit),
    ADD_HOOK(QueueSubmit2),
    ADD_HOOK(QueueSubmit2KHR),
+   ADD_HOOK(QueuePresentKHR),
 };
 #undef ADD_HOOK
 
