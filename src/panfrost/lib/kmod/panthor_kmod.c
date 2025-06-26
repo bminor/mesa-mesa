@@ -153,7 +153,7 @@ panthor_kmod_dev_create(int fd, uint32_t flags, drmVersionPtr version,
    }
 
    /* Map the LATEST_FLUSH_ID register at device creation time. */
-   if (version->version_major > 1 || version->version_minor >= 5) {
+   if (version->version_major > 1 || version->version_minor >= 10) {
       struct drm_panthor_set_user_mmio_offset user_mmio_offset = {
          .offset = DRM_PANTHOR_USER_MMIO_OFFSET,
       };
