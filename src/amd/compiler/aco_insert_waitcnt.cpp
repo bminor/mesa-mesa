@@ -668,12 +668,12 @@ gen(Instruction* instr, wait_ctx& ctx)
       update_counters(ctx, vmem_ev, flat.sync);
       update_counters(ctx, event_lds, flat.sync);
 
-      if (!instr->definitions.empty()) {
+      if (!instr->definitions.empty())
          insert_wait_entry(ctx, instr->definitions[0], vmem_ev, 0, get_vmem_mask(ctx, instr));
+      if (!instr->definitions.empty() && flat.may_use_lds)
          insert_wait_entry(ctx, instr->definitions[0], event_lds);
-      }
 
-      if (ctx.gfx_level < GFX10 && !instr->definitions.empty()) {
+      if (ctx.gfx_level < GFX10 && !instr->definitions.empty() && flat.may_use_lds) {
          ctx.pending_flat_lgkm = true;
          ctx.pending_flat_vm = true;
       }

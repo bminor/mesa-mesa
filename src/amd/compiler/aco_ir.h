@@ -1712,7 +1712,8 @@ struct FLAT_instruction : public Instruction {
    uint32_t lds : 1;
    uint32_t nv : 1;
    uint32_t disable_wqm : 1; /* Require an exec mask without helper invocations */
-   uint32_t padding0 : 5;
+   uint32_t may_use_lds : 1; /* FLAT only: indicates that it might access LDS */
+   uint32_t padding0 : 4;
 };
 static_assert(sizeof(FLAT_instruction) == sizeof(Instruction) + 8, "Unexpected padding");
 

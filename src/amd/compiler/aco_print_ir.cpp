@@ -640,6 +640,8 @@ print_instr_format_specific(enum amd_gfx_level gfx_level, const Instruction* ins
          fprintf(output, " nv");
       if (flat.disable_wqm)
          fprintf(output, " disable_wqm");
+      if (flat.may_use_lds)
+         fprintf(output, " may_use_lds");
       print_sync(flat.sync, output);
       break;
    }
