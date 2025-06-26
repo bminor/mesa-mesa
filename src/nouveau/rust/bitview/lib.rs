@@ -257,45 +257,75 @@ impl<'a, BS: BitMutViewable> SetFieldU64 for BS {
     }
 }
 
-pub trait SetField<T> {
-    fn set_field(&mut self, range: Range<usize>, val: T);
+pub trait SetField<F> {
+    fn set_field(&mut self, range: Range<usize>, val: F);
 }
 
-impl<T: SetFieldU64> SetField<u64> for T {
-    fn set_field(&mut self, range: Range<usize>, val: u64) {
-        self.set_field_u64(range, val);
+pub trait ToFieldBits {
+    fn to_field_bits(self, bits: usize) -> u64;
+}
+
+impl<T: SetFieldU64, F: ToFieldBits> SetField<F> for T {
+    fn set_field(&mut self, range: Range<usize>, val: F) {
+        let bits = range.len();
+        self.set_field_u64(range, val.to_field_bits(bits));
     }
 }
 
-impl<T: SetFieldU64> SetField<u32> for T {
-    fn set_field(&mut self, range: Range<usize>, val: u32) {
-        self.set_field(range, u64::from(val));
+macro_rules! impl_to_field_bits_for_uN {
+    ($typ: ident) => {
+        impl ToFieldBits for $typ {
+            fn to_field_bits(self, bits: usize) -> u64 {
+                let val = u64::from(self);
+                assert!((val & u64_mask_for_bits(bits)) == val);
+                val
+            }
+        }
+    };
+}
+
+impl_to_field_bits_for_uN!(u8);
+impl_to_field_bits_for_uN!(u16);
+impl_to_field_bits_for_uN!(u32);
+impl_to_field_bits_for_uN!(u64);
+
+macro_rules! impl_to_field_bits_for_iN {
+    ($typ: ident) => {
+        impl ToFieldBits for $typ {
+            fn to_field_bits(self, bits: usize) -> u64 {
+                let mask = u64_mask_for_bits(bits);
+
+                // It's easier to work with a u64
+                let val = i64::from(self) as u64;
+
+                // Check that it fits in the bitfield, taking sign into account
+                let sign_mask = !(mask >> 1);
+                assert!(
+                    (val & sign_mask) == 0 || (val & sign_mask) == sign_mask
+                );
+
+                val & mask
+            }
+        }
+    };
+}
+
+impl_to_field_bits_for_iN!(i8);
+impl_to_field_bits_for_iN!(i16);
+impl_to_field_bits_for_iN!(i32);
+impl_to_field_bits_for_iN!(i64);
+
+impl ToFieldBits for bool {
+    fn to_field_bits(self, bits: usize) -> u64 {
+        assert!(bits == 1);
+        u64::from(self)
     }
 }
 
-impl<T: SetFieldU64> SetField<u16> for T {
-    fn set_field(&mut self, range: Range<usize>, val: u16) {
-        self.set_field(range, u64::from(val));
-    }
-}
-
-impl<T: SetFieldU64> SetField<u8> for T {
-    fn set_field(&mut self, range: Range<usize>, val: u8) {
-        self.set_field(range, u64::from(val));
-    }
-}
-
-impl<T: SetFieldU64> SetField<bool> for T {
-    fn set_field(&mut self, range: Range<usize>, val: bool) {
-        assert!(range.len() == 1);
-        self.set_field(range, u64::from(val));
-    }
-}
-
-impl<T: SetFieldU64> SetField<f32> for T {
-    fn set_field(&mut self, range: Range<usize>, val: f32) {
-        assert!(range.len() == 32);
-        self.set_field(range, val.to_bits());
+impl ToFieldBits for f32 {
+    fn to_field_bits(self, bits: usize) -> u64 {
+        assert!(bits == 32);
+        u64::from(self.to_bits())
     }
 }
 
@@ -306,39 +336,5 @@ pub trait SetBit {
 impl<T: SetFieldU64> SetBit for T {
     fn set_bit(&mut self, bit: usize, val: bool) {
         self.set_field(bit..(bit + 1), val);
-    }
-}
-
-impl<T: SetFieldU64> SetField<i64> for T {
-    fn set_field(&mut self, range: Range<usize>, val: i64) {
-        let bits = range.end - range.start;
-        let mask = u64_mask_for_bits(bits);
-
-        /* It's easier to work with a u64 */
-        let val = val as u64;
-
-        /* Check that it fits in the bitfield, taking sign into account */
-        let sign_mask = !(mask >> 1);
-        assert!((val & sign_mask) == 0 || (val & sign_mask) == sign_mask);
-
-        self.set_field_u64(range, val & mask);
-    }
-}
-
-impl<T: SetFieldU64> SetField<i32> for T {
-    fn set_field(&mut self, range: Range<usize>, val: i32) {
-        self.set_field(range, i64::from(val));
-    }
-}
-
-impl<T: SetFieldU64> SetField<i16> for T {
-    fn set_field(&mut self, range: Range<usize>, val: i16) {
-        self.set_field(range, i64::from(val));
-    }
-}
-
-impl<T: SetFieldU64> SetField<i8> for T {
-    fn set_field(&mut self, range: Range<usize>, val: i8) {
-        self.set_field(range, i64::from(val));
     }
 }
