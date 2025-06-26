@@ -1150,7 +1150,10 @@ write_accel_struct(struct radv_device *device, void *ptr, VkDeviceAddress va)
       va = vk_acceleration_structure_get_va(accel_struct);
    }
 
-   memcpy(ptr, &va, sizeof(va));
+   uint64_t desc[2] = {va, 0};
+
+   assert(sizeof(desc) == RADV_ACCEL_STRUCT_DESC_SIZE);
+   memcpy(ptr, desc, RADV_ACCEL_STRUCT_DESC_SIZE);
 }
 
 static ALWAYS_INLINE void
