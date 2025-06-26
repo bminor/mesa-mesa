@@ -784,7 +784,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_MOD_RUP
 %token <tok> T_MOD_RDOWN
 
-%type <num> integer offset uoffset
+%type <num> integer uinteger offset uoffset
 %type <num> flut_immed
 %type <flt> float
 %type <reg> dst const src_gpr src_a0 src_a1 src_p0 cat0_src1 cat0_src2
@@ -1709,10 +1709,11 @@ flut_immed:        T_FLUT_0_0
 |                  T_FLUT_LOG2_10
 |                  T_FLUT_4_0
 
-integer:           T_INT       { $$ = $1; }
-|                  '-' T_INT   { $$ = -$2; }
+uinteger:          T_INT       { $$ = $1; }
 |                  T_HEX       { $$ = $1; }
-|                  '-' T_HEX   { $$ = -$2; }
+
+integer:           uinteger     { $$ = $1; }
+|                  '-' uinteger { $$ = -$2; }
 
 float:             T_FLOAT     { $$ = $1; }
 |                  '-' T_FLOAT { $$ = -$2; }
