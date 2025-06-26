@@ -957,6 +957,7 @@ nak_postprocess_nir(nir_shader *nir,
       .lower_inverse_ballot = true,
       .lower_rotate_to_shuffle = true
    };
+   OPT(nir, nir_opt_uniform_subgroup, &subgroups_options);
    OPT(nir, nir_lower_subgroups, &subgroups_options);
    if (nak->sm >= 50) {
       // On Maxwell+ we need to lower shared 64-bit atomics into
