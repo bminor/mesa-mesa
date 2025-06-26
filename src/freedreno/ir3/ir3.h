@@ -2658,6 +2658,29 @@ ir3_COV_rpt(struct ir3_builder *build, unsigned nrpt,
 }
 
 static inline struct ir3_instruction *
+ir3_MOVS(struct ir3_builder *build, struct ir3_instruction *src,
+         struct ir3_instruction *invocation, type_t type)
+{
+   bool use_a0 = writes_addr0(invocation);
+   struct ir3_instruction *instr =
+      ir3_build_instr(build, OPC_MOVS, 1, use_a0 ? 1 : 2);
+   ir3_register_flags flags = type_flags(type);
+
+   __ssa_dst(instr)->flags |= flags | IR3_REG_SHARED;
+   __ssa_src(instr, src, 0);
+
+   if (use_a0) {
+      ir3_instr_set_address(instr, invocation);
+   } else {
+      __ssa_src(instr, invocation, 0);
+   }
+
+   instr->cat1.src_type = type;
+   instr->cat1.dst_type = type;
+   return instr;
+}
+
+static inline struct ir3_instruction *
 ir3_MOVMSK(struct ir3_builder *build, unsigned components)
 {
    struct ir3_instruction *instr = ir3_build_instr(build, OPC_MOVMSK, 1, 0);

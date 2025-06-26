@@ -2604,7 +2604,21 @@ apply_mov_half_shared_quirk(struct ir3_context *ctx,
     * adding an extra mov here so that the original destination stays full.
     */
    if (src->dsts[0]->flags & IR3_REG_HALF) {
-      dst = ir3_MOV(&ctx->build, dst, TYPE_U32);
+      if (dst->opc == OPC_MOVS) {
+         /* For movs, we have to fix up its dst_type and then convert back to
+          * its original dst_type. Note that this might generate movs.u8u32
+          * which doesn't work correctly, but since we convert back using
+          * cov.u32u8, the end result will be correct.
+          */
+         type_t dst_type = dst->cat1.dst_type;
+         assert(type_uint(dst_type));
+
+         dst->cat1.dst_type = TYPE_U32;
+         dst->dsts[0]->flags &= ~IR3_REG_HALF;
+         dst = ir3_COV(&ctx->build, dst, dst->cat1.dst_type, dst_type);
+      } else {
+         dst = ir3_MOV(&ctx->build, dst, TYPE_U32);
+      }
       if (!ctx->compiler->has_scalar_alu)
          dst->dsts[0]->flags &= ~IR3_REG_SHARED;
    }
@@ -3163,6 +3177,25 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       dst[0]->dsts[0]->flags |= IR3_REG_SHARED;
       dst[0]->srcs[0]->flags |= IR3_REG_PREDICATE;
       dst[0] = apply_mov_half_shared_quirk(ctx, src, dst[0]);
+      break;
+   }
+
+   case nir_intrinsic_read_invocation: {
+      struct ir3_instruction *const *srcs = ir3_get_src(ctx, &intr->src[0]);
+      nir_src *nir_invocation = &intr->src[1];
+      struct ir3_instruction *invocation = ir3_get_src(ctx, nir_invocation)[0];
+
+      if (!nir_src_is_const(*nir_invocation)) {
+         invocation = ir3_get_addr0(ctx, invocation, 1);
+      }
+
+      for (unsigned i = 0; i < intr->def.num_components; i++) {
+         dst[i] = ir3_MOVS(b, srcs[i], invocation,
+                           type_uint_size(intr->def.bit_size));
+         dst[i] = apply_mov_half_shared_quirk(ctx, srcs[i], dst[i]);
+      }
+
+      create_rpt = true;
       break;
    }
 
