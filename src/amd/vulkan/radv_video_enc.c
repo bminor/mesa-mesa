@@ -2965,6 +2965,92 @@ radv_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR *pQualityLevelInfo,
    VkVideoEncodeQualityLevelPropertiesKHR *pQualityLevelProperties)
 {
+   VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
+   pQualityLevelProperties->preferredRateControlMode = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR;
+   pQualityLevelProperties->preferredRateControlLayerCount = 0;
+
+   switch (pQualityLevelInfo->pVideoProfile->videoCodecOperation) {
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+      struct VkVideoEncodeH264QualityLevelPropertiesKHR *ext =
+         (struct VkVideoEncodeH264QualityLevelPropertiesKHR *)vk_find_struct(
+            pQualityLevelProperties->pNext, VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_KHR);
+      if (ext) {
+         ext->preferredRateControlFlags = VK_VIDEO_ENCODE_H264_RATE_CONTROL_ATTEMPT_HRD_COMPLIANCE_BIT_KHR;
+         ext->preferredGopFrameCount = 60;
+         ext->preferredIdrPeriod = 60;
+         ext->preferredConsecutiveBFrameCount = 0;
+         ext->preferredTemporalLayerCount = 1;
+         ext->preferredConstantQp.qpI = 26;
+         ext->preferredConstantQp.qpP = 26;
+         ext->preferredConstantQp.qpB = 26;
+         ext->preferredMaxL0ReferenceCount = 1;
+         ext->preferredMaxL1ReferenceCount = 0;
+         ext->preferredStdEntropyCodingModeFlag = 1;
+      }
+      break;
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+      struct VkVideoEncodeH265QualityLevelPropertiesKHR *ext =
+         (struct VkVideoEncodeH265QualityLevelPropertiesKHR *)vk_find_struct(
+            pQualityLevelProperties->pNext, VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_KHR);
+      if (ext) {
+         ext->preferredRateControlFlags = VK_VIDEO_ENCODE_H265_RATE_CONTROL_ATTEMPT_HRD_COMPLIANCE_BIT_KHR;
+         ext->preferredGopFrameCount = 60;
+         ext->preferredIdrPeriod = 60;
+         ext->preferredConsecutiveBFrameCount = 0;
+         ext->preferredSubLayerCount = 1;
+         ext->preferredConstantQp.qpI = 26;
+         ext->preferredConstantQp.qpP = 26;
+         ext->preferredConstantQp.qpB = 26;
+         ext->preferredMaxL0ReferenceCount = 1;
+         ext->preferredMaxL1ReferenceCount = 0;
+      }
+      break;
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+      struct VkVideoEncodeAV1QualityLevelPropertiesKHR *ext =
+         (struct VkVideoEncodeAV1QualityLevelPropertiesKHR *)vk_find_struct(
+            pQualityLevelProperties->pNext, VIDEO_ENCODE_AV1_QUALITY_LEVEL_PROPERTIES_KHR);
+      if (ext) {
+         ext->preferredRateControlFlags =
+            0; // https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/35767#note_2979437
+         ext->preferredGopFrameCount = 60;
+         ext->preferredKeyFramePeriod = 60;
+         ext->preferredConsecutiveBipredictiveFrameCount = 0;
+         ext->preferredTemporalLayerCount = 1;
+         ext->preferredConstantQIndex.intraQIndex = 128;
+         ext->preferredConstantQIndex.predictiveQIndex = 128;
+         ext->preferredConstantQIndex.bipredictiveQIndex = 128;
+         ext->preferredMaxSingleReferenceCount = 1;
+         ext->preferredSingleReferenceNameMask =
+            (1 << (STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME));
+         if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
+            ext->preferredMaxUnidirectionalCompoundReferenceCount = 2;
+            ext->preferredMaxUnidirectionalCompoundGroup1ReferenceCount = 2;
+            ext->preferredUnidirectionalCompoundReferenceNameMask =
+               (1 << (STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME)) |
+               (1 << (STD_VIDEO_AV1_REFERENCE_NAME_GOLDEN_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME));
+            ext->preferredMaxBidirectionalCompoundReferenceCount = 2;
+            ext->preferredMaxBidirectionalCompoundGroup1ReferenceCount = 1;
+            ext->preferredMaxBidirectionalCompoundGroup2ReferenceCount = 1;
+            ext->preferredBidirectionalCompoundReferenceNameMask =
+               (1 << (STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME)) |
+               (1 << (STD_VIDEO_AV1_REFERENCE_NAME_ALTREF_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME));
+         } else {
+            ext->preferredMaxUnidirectionalCompoundReferenceCount = 0;
+            ext->preferredMaxUnidirectionalCompoundGroup1ReferenceCount = 0;
+            ext->preferredUnidirectionalCompoundReferenceNameMask = 0;
+            ext->preferredMaxBidirectionalCompoundReferenceCount = 0;
+            ext->preferredMaxBidirectionalCompoundGroup1ReferenceCount = 0;
+            ext->preferredMaxBidirectionalCompoundGroup2ReferenceCount = 0;
+            ext->preferredBidirectionalCompoundReferenceNameMask = 0;
+         }
+      }
+      break;
+   }
+   default:
+      break;
+   }
    return VK_SUCCESS;
 }
 
