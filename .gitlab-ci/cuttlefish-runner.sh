@@ -88,6 +88,14 @@ sleep 1
 
 popd
 
+# download Android Mesa from S3
+curl-with-retry -O "${FDO_HTTP_CACHE_URI:-}https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst"
+mkdir /mesa-android
+tar -C /mesa-android -xvf ${S3_ANDROID_ARTIFACT_NAME}.tar.zst
+
+# shellcheck disable=SC2034 # used externally
+INSTALL="/mesa-android/install"
+
 # shellcheck disable=SC2034 # used externally
 ADB=adb
 
