@@ -107,6 +107,7 @@ if with_tools.contains('all')
     'lima',
     'nir',
     'nouveau',
+    'panfrost',
   ]
 endif
 
