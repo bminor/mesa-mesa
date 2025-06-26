@@ -216,6 +216,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
       compiler->tess_use_shared = dev_info->a6xx.tess_use_shared;
 
       compiler->has_getfiberid = dev_info->a6xx.has_getfiberid;
+      compiler->mov_half_shared_quirk = dev_info->a6xx.mov_half_shared_quirk;
 
       compiler->has_dp2acc = dev_info->a6xx.has_dp2acc;
       compiler->has_dp4acc = dev_info->a6xx.has_dp4acc;

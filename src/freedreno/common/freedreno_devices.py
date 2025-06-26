@@ -343,6 +343,7 @@ a6xx_base = A6XXProps(
         max_sets = 5,
         line_width_min = 1.0,
         line_width_max = 1.0,
+        mov_half_shared_quirk = True,
     )
 
 

@@ -134,6 +134,7 @@ struct fd_dev_info {
       bool has_lpac;
 
       bool has_getfiberid;
+      bool mov_half_shared_quirk;
 
       bool has_dp2acc;
       bool has_dp4acc;
