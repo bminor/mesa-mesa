@@ -366,13 +366,9 @@ get_queue_context(device_context *ctx, VkQueue queue)
 }
 
 static struct query *
-allocate_query(device_context *ctx, queue_context *queue_ctx)
+allocate_query(queue_context *queue_ctx, uint32_t frame_idx)
 {
-   if (!ctx->active_frame)
-      return NULL;
-
    /* Allow for a single frame to use at most half of the query pool. */
-   uint32_t frame_idx = ringbuffer_index(ctx->frames, ctx->active_frame);
    if (queue_ctx->submissions_per_frame[frame_idx] > MAX_QUERIES / 2)
       return NULL;
 
@@ -394,7 +390,8 @@ allocate_query(device_context *ctx, queue_context *queue_ctx)
 }
 
 static bool
-get_commandbuffer(device_context *ctx, queue_context *queue_ctx, VkCommandBuffer *cmdbuffer)
+get_commandbuffer(device_context *ctx, queue_context *queue_ctx, VkCommandBuffer *cmdbuffer,
+                  bool has_command_buffer, bool has_wait_before_cmdbuffer, bool *early_submit)
 {
    uint64_t now = os_time_get_nano();
 
@@ -403,8 +400,24 @@ get_commandbuffer(device_context *ctx, queue_context *queue_ctx, VkCommandBuffer
    ringbuffer_lock(queue_ctx->queries);
 
    /* Don't record timestamps for queues that are not deemed sensitive to latency. */
-   struct query *query =
-      p_atomic_read(&queue_ctx->latency_sensitive) ? allocate_query(ctx, queue_ctx) : NULL;
+   bool need_query = ctx->active_frame && p_atomic_read(&queue_ctx->latency_sensitive);
+   uint32_t frame_idx;
+   struct query *query = NULL;
+
+   if (need_query) {
+      assert(ctx->active_frame->state == FRAME_SUBMIT);
+      frame_idx = ringbuffer_index(ctx->frames, ctx->active_frame);
+
+      /* For the very first submissions in a frame (until we observe real GPU work happening),
+       * we would want to submit a timestamp before anything else, including waits.
+       * This allows us to detect a sensitive queue going idle before we can submit work to it.
+       * If the queue in question depends on semaphores from other unrelated queues,
+       * we may not easily be able to detect that situation without adding a lot more complexity.
+       */
+      *early_submit = has_wait_before_cmdbuffer && queue_ctx->submissions_per_frame[frame_idx] == 0;
+      if (has_command_buffer || *early_submit)
+         query = allocate_query(queue_ctx, frame_idx);
+   }
 
    if (query == NULL) {
       ringbuffer_unlock(queue_ctx->queries);
@@ -421,8 +434,6 @@ get_commandbuffer(device_context *ctx, queue_context *queue_ctx, VkCommandBuffer
    queue_ctx->semaphore_value++;
 
    /* Add new submission entry for the current frame */
-   assert(ctx->active_frame->state == FRAME_SUBMIT);
-   uint32_t frame_idx = ringbuffer_index(ctx->frames, ctx->active_frame);
    queue_ctx->submissions_per_frame[frame_idx]++;
 
    ringbuffer_unlock(queue_ctx->queries);
@@ -435,13 +446,17 @@ queue_submit2(device_context *ctx, VkQueue queue, uint32_t submitCount,
               const VkSubmitInfo2 *pSubmits, VkFence fence, PFN_vkQueueSubmit2 queueSubmit2)
 {
    queue_context *queue_ctx = get_queue_context(ctx, queue);
-   if (!ctx->active_frame || !queue_ctx)
+   if (!ctx->active_frame || !queue_ctx || !submitCount)
       return queueSubmit2(queue, submitCount, pSubmits, fence);
 
+   bool has_wait_before_cmdbuffer = false;
    int first = -1;
    VkCommandBuffer timestamp_cmdbuffer;
    /* Check if any submission contains commandbuffers. */
    for (unsigned i = 0; i < submitCount; i++) {
+      if (pSubmits[i].waitSemaphoreInfoCount != 0)
+         has_wait_before_cmdbuffer = true;
+
       if (pSubmits[i].commandBufferInfoCount) {
          first = i;
          break;
@@ -449,23 +464,42 @@ queue_submit2(device_context *ctx, VkQueue queue, uint32_t submitCount,
    }
 
    /* Get timestamp commandbuffer. */
-   if (first == -1 || !get_commandbuffer(ctx, queue_ctx, &timestamp_cmdbuffer))
+   bool early_submit;
+   if (!get_commandbuffer(ctx, queue_ctx, &timestamp_cmdbuffer, first >= 0,
+                          has_wait_before_cmdbuffer, &early_submit)) {
       return queueSubmit2(queue, submitCount, pSubmits, fence);
+   }
 
    VkSubmitInfo2 *submits;
    VkCommandBufferSubmitInfo *cmdbuffers;
    VkSemaphoreSubmitInfo *semaphores;
    VK_MULTIALLOC(ma);
-   vk_multialloc_add(&ma, &submits, VkSubmitInfo2, submitCount);
-   vk_multialloc_add(&ma, &cmdbuffers, VkCommandBufferSubmitInfo,
-                     pSubmits[first].commandBufferInfoCount + 1);
-   vk_multialloc_add(&ma, &semaphores, VkSemaphoreSubmitInfo,
-                     pSubmits[first].signalSemaphoreInfoCount + 1);
+
+   if (early_submit) {
+      vk_multialloc_add(&ma, &submits, VkSubmitInfo2, submitCount + 1);
+      vk_multialloc_add(&ma, &cmdbuffers, VkCommandBufferSubmitInfo, 1);
+      vk_multialloc_add(&ma, &semaphores, VkSemaphoreSubmitInfo, 1);
+      first = 0;
+   } else {
+      vk_multialloc_add(&ma, &submits, VkSubmitInfo2, submitCount);
+      vk_multialloc_add(&ma, &cmdbuffers, VkCommandBufferSubmitInfo,
+                        pSubmits[first].commandBufferInfoCount + 1);
+      vk_multialloc_add(&ma, &semaphores, VkSemaphoreSubmitInfo,
+                        pSubmits[first].signalSemaphoreInfoCount + 1);
+   }
+
    void *buf = vk_multialloc_zalloc(&ma, &ctx->alloc, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
    if (!buf)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   memcpy(submits, pSubmits, sizeof(VkSubmitInfo2) * submitCount);
+   if (early_submit) {
+      memcpy(submits + 1, pSubmits, sizeof(VkSubmitInfo2) * submitCount);
+      submits[0] = (VkSubmitInfo2){.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
+      submitCount++;
+   } else {
+      memcpy(submits, pSubmits, sizeof(VkSubmitInfo2) * submitCount);
+   }
+
    VkSubmitInfo2 *submit_info = &submits[first];
 
    /* Add commandbuffer to submission. */
@@ -518,13 +552,17 @@ anti_lag_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pS
 {
    device_context *ctx = get_device_context(queue);
    queue_context *queue_ctx = get_queue_context(ctx, queue);
-   if (!ctx->active_frame || !queue_ctx)
+   if (!ctx->active_frame || !queue_ctx || !submitCount)
       return ctx->vtable.QueueSubmit(queue, submitCount, pSubmits, fence);
 
+   bool has_wait_before_cmdbuffer = false;
    int first = -1;
    VkCommandBuffer timestamp_cmdbuffer;
-   /* Check if any submission contains commandbuffers. */
+   /* Check if any submission contains commandbuffers or waits before those. */
    for (unsigned i = 0; i < submitCount; i++) {
+      if (pSubmits[i].waitSemaphoreCount != 0)
+         has_wait_before_cmdbuffer = true;
+
       if (pSubmits[i].commandBufferCount) {
          first = i;
          break;
@@ -532,8 +570,11 @@ anti_lag_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pS
    }
 
    /* Get timestamp commandbuffer. */
-   if (first == -1 || !get_commandbuffer(ctx, queue_ctx, &timestamp_cmdbuffer))
+   bool early_submit;
+   if (!get_commandbuffer(ctx, queue_ctx, &timestamp_cmdbuffer, first >= 0,
+                          has_wait_before_cmdbuffer, &early_submit)) {
       return ctx->vtable.QueueSubmit(queue, submitCount, pSubmits, fence);
+   }
 
    VkSubmitInfo *submits;
    VkCommandBuffer *cmdbuffers;
@@ -541,16 +582,33 @@ anti_lag_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pS
    VkTimelineSemaphoreSubmitInfo *semaphore_info;
    uint64_t *semaphore_values;
    VK_MULTIALLOC(ma);
-   vk_multialloc_add(&ma, &submits, VkSubmitInfo, submitCount);
-   vk_multialloc_add(&ma, &cmdbuffers, VkCommandBuffer, pSubmits[first].commandBufferCount + 1);
-   vk_multialloc_add(&ma, &semaphores, VkSemaphore, pSubmits[first].signalSemaphoreCount + 1);
-   vk_multialloc_add(&ma, &semaphore_info, VkTimelineSemaphoreSubmitInfo, 1);
-   vk_multialloc_add(&ma, &semaphore_values, uint64_t, pSubmits[first].signalSemaphoreCount + 1);
+
+   if (early_submit) {
+      vk_multialloc_add(&ma, &submits, VkSubmitInfo, submitCount + 1);
+      vk_multialloc_add(&ma, &cmdbuffers, VkCommandBuffer, 1);
+      vk_multialloc_add(&ma, &semaphores, VkSemaphore, 1);
+      vk_multialloc_add(&ma, &semaphore_info, VkTimelineSemaphoreSubmitInfo, 1);
+      vk_multialloc_add(&ma, &semaphore_values, uint64_t, 1);
+      first = 0;
+   } else {
+      vk_multialloc_add(&ma, &submits, VkSubmitInfo, submitCount);
+      vk_multialloc_add(&ma, &cmdbuffers, VkCommandBuffer, pSubmits[first].commandBufferCount + 1);
+      vk_multialloc_add(&ma, &semaphores, VkSemaphore, pSubmits[first].signalSemaphoreCount + 1);
+      vk_multialloc_add(&ma, &semaphore_info, VkTimelineSemaphoreSubmitInfo, 1);
+      vk_multialloc_add(&ma, &semaphore_values, uint64_t, pSubmits[first].signalSemaphoreCount + 1);
+   }
    void *buf = vk_multialloc_zalloc(&ma, &ctx->alloc, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
    if (!buf)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   memcpy(submits, pSubmits, sizeof(VkSubmitInfo) * submitCount);
+   if (early_submit) {
+      memcpy(submits + 1, pSubmits, sizeof(VkSubmitInfo) * submitCount);
+      submits[0] = (VkSubmitInfo){.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO};
+      submitCount++;
+   } else {
+      memcpy(submits, pSubmits, sizeof(VkSubmitInfo) * submitCount);
+   }
+
    VkSubmitInfo *submit_info = &submits[first];
 
    /* Add commandbuffer to submission. */
@@ -562,7 +620,7 @@ anti_lag_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pS
 
    /* Add timeline semaphore to submission. */
    const VkTimelineSemaphoreSubmitInfo *tlssi =
-      vk_find_struct_const(pSubmits[first].pNext, TIMELINE_SEMAPHORE_SUBMIT_INFO);
+      vk_find_struct_const(submit_info->pNext, TIMELINE_SEMAPHORE_SUBMIT_INFO);
    semaphores[0] = queue_ctx->semaphore;
    memcpy(&semaphores[1], submit_info->pSignalSemaphores,
           sizeof(VkSemaphore) * submit_info->signalSemaphoreCount);
