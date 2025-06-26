@@ -7052,6 +7052,46 @@ impl DisplayOp for OpVote {
 }
 impl_display_for_op!(OpVote);
 
+#[allow(dead_code)]
+#[derive(Copy, Clone)]
+pub enum MatchOp {
+    All,
+    Any,
+}
+
+impl fmt::Display for MatchOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MatchOp::All => write!(f, ".all"),
+            MatchOp::Any => write!(f, ".any"),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(SrcsAsSlice, DstsAsSlice)]
+pub struct OpMatch {
+    #[dst_type(Pred)]
+    pub pred: Dst,
+
+    #[dst_type(GPR)]
+    pub mask: Dst,
+
+    #[src_type(GPR)]
+    pub src: Src,
+
+    pub op: MatchOp,
+    pub u64: bool,
+}
+
+impl DisplayOp for OpMatch {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let u64_str = if self.u64 { ".u64" } else { "" };
+        write!(f, "match{}{} {}", self.op, u64_str, self.src)
+    }
+}
+impl_display_for_op!(OpMatch);
+
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpUndef {
@@ -7689,6 +7729,7 @@ pub enum Op {
     PixLd(OpPixLd),
     S2R(OpS2R),
     Vote(OpVote),
+    Match(OpMatch),
     Undef(OpUndef),
     SrcBar(OpSrcBar),
     PhiSrcs(OpPhiSrcs),
@@ -7866,7 +7907,8 @@ impl Op {
             | Op::ViLd(_)
             | Op::Kill(_)
             | Op::PixLd(_)
-            | Op::S2R(_) => false,
+            | Op::S2R(_)
+            | Op::Match(_) => false,
             Op::Nop(_) | Op::Vote(_) => true,
 
             // Virtual ops

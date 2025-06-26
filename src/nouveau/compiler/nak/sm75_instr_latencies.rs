@@ -134,6 +134,7 @@ impl RegLatencySM75 {
             Op::Prmt(_) => CoupledAlu,
             Op::Nop(_) => CoupledDisp,
             Op::Vote(_) => CoupledDisp,
+            Op::Match(_) => Decoupled,
             Op::S2R(_) => Decoupled,
             // S2UR  => Decoupled,
             Op::R2UR(_) => {

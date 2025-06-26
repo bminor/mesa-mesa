@@ -211,7 +211,7 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::ViLd(_)
         | Op::Kill(_)
         | Op::S2R(_) => SideEffect::Barrier,
-        Op::PixLd(_) | Op::Vote(_) => SideEffect::None,
+        Op::PixLd(_) | Op::Vote(_) | Op::Match(_) => SideEffect::None,
         Op::Nop(OpNop { label, .. }) => {
             if label.is_none() {
                 SideEffect::None
@@ -316,7 +316,8 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
         | Op::ViLd(_)
         | Op::Kill(_)
         | Op::PixLd(_)
-        | Op::S2R(_) => 16,
+        | Op::S2R(_)
+        | Op::Match(_) => 16,
 
         _ => panic!("Unknown variable latency op {op}"),
     }

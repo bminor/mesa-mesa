@@ -723,3 +723,34 @@ pub fn test_redux() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_match() {
+    let r3 = RegRef::new(RegFile::GPR, 3, 1);
+    let p1 = RegRef::new(RegFile::Pred, 1, 1);
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+
+        for (op, pred, pred_str) in [
+            (MatchOp::All, Dst::Reg(p1), "p1, "),
+            (MatchOp::Any, Dst::None, ""),
+        ] {
+            for (src_comps, u64_str) in [(1, ""), (2, ".u64")] {
+                let src = RegRef::new(RegFile::GPR, 4, src_comps);
+                let instr = OpMatch {
+                    pred: pred.clone(),
+                    mask: Dst::Reg(r3),
+
+                    src: SrcRef::Reg(src).into(),
+                    op,
+                    u64: src_comps == 2,
+                };
+                let disasm = format!("match{op}{u64_str} {pred_str}r3, r4;");
+                c.push(instr, disasm);
+            }
+        }
+
+        c.check(sm);
+    }
+}

@@ -3791,6 +3791,33 @@ impl SM70Op for OpVote {
     }
 }
 
+impl SM70Op for OpMatch {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        e.set_opcode(0x3a1);
+
+        e.set_dst(&self.mask);
+        e.set_reg_src(24..32, &self.src);
+        e.set_bit(73, self.u64);
+
+        e.set_bit(
+            79,
+            match self.op {
+                MatchOp::Any => {
+                    assert!(matches!(self.pred, Dst::None));
+                    true
+                }
+                MatchOp::All => false,
+            },
+        );
+
+        e.set_pred_dst(81..84, &self.pred);
+    }
+}
+
 macro_rules! as_sm70_op_match {
     ($op: expr) => {
         match $op {
@@ -3878,6 +3905,7 @@ macro_rules! as_sm70_op_match {
             Op::Out(op) => op,
             Op::OutFinal(op) => op,
             Op::Vote(op) => op,
+            Op::Match(op) => op,
             _ => panic!("Unsupported op: {}", $op),
         }
     };
