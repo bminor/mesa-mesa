@@ -223,6 +223,7 @@ static int parse_reg(const char *str)
 "swz"                             return TOKEN(T_OP_SWZ);
 "gat"                             return TOKEN(T_OP_GAT);
 "sct"                             return TOKEN(T_OP_SCT);
+"movs"                            return TOKEN(T_OP_MOVS);
 
 ("f16"|"f32"|"u16"|"u32"|"s16"|"s32"|"u8"|"u8_32"|"u64"){2} ir3_yylval.str = yytext; return T_CAT1_TYPE_TYPE;
                                   /* category 2: */

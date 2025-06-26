@@ -93,6 +93,9 @@ static const struct test {
 
    INSTR_7XX(2004c005_00000405, "cov.f32u32 r1.y, (last)r1.y"),
 
+   INSTR_7XX(200440c0_ae800004, "movs.f32f32 r48.x, r1.x, 93"),
+   INSTR_7XX(201100c0_c000040b, "movs.s16s16 hr48.x, (last)hr2.w, a0.x"),
+
    /* cat2 */
    INSTR_6XX(40104002_0c210001, "add.f hr0.z, r0.y, c<a0.x + 33>"),
    INSTR_6XX(40b80804_10408004, "(nop3) cmps.f.lt r1.x, (abs)r1.x, c16.x"),

@@ -277,7 +277,7 @@ SOFTWARE.
 	<pattern low="53" high="54">01</pattern>
 </bitset>
 
-<bitset name="mov-gpr" extends="#instruction-cat1-mov">
+<bitset name="#instruction-cat1-mov-gpr" extends="#instruction-cat1-mov">
 	<field name="SRC" low="0" high="7" type="#cat1-gpr-src">
 		<param name="LAST"/>
 		<param name="SRC_R"/>
@@ -285,12 +285,55 @@ SOFTWARE.
 	</field>
 	<pattern low="8" high="9">00</pattern>
 	<field name="LAST" pos="10" type="bool" display="(last)"/>
-	<pattern low="11" high="31">000000000000000000000</pattern>
 	<field name="SRC_R" pos="43" type="bool" display="(r)"/>
 	<pattern low="53" high="54">00</pattern>
 	<encode>
 		<map name="LAST">!!(src->srcs[0]->flags &amp; IR3_REG_LAST_USE)</map>
 	</encode>
+</bitset>
+
+<bitset name="mov-gpr" extends="#instruction-cat1-mov-gpr">
+	<pattern low="11" high="31">000000000000000000000</pattern>
+</bitset>
+
+<bitset name="#instruction-cat1-movs" extends="#instruction-cat1-mov-gpr">
+	<doc>
+		movs works like subgroupBroadcast/OpGroupNonUniformBroadcast.
+		The fiber id can either be an immediate or a value in a0.x. In
+		the latter case, the value has to be dynamically uniform or else
+		the behavior is undefined. The dst register has to be shared or
+		else the behavior seems to be equivalent to a normal mov (i.e.,
+		the fiber id is not taken into account anymore).
+
+		movs can do a cov on the broadcasted value. It works exactly
+		like a normal cov except that using u8 as the src type does not
+		seem to work at all.
+	</doc>
+
+	<pattern low="11" high="22">000000000000</pattern>
+	<pattern pos="31">1</pattern> <!-- movs -->
+</bitset>
+
+<bitset name="movs-immed" extends="#instruction-cat1-movs">
+	<display>
+		{SY}{SS}{JP}{REPEAT}{UL}movs.{SRC_TYPE}{DST_TYPE} {ROUND}{DST_HALF}{DST}, {SRC}, {INVOCATION}
+	</display>
+
+	<field name="INVOCATION" low="23" high="29" type="uint"/>
+	<pattern pos="30">0</pattern> <!-- invocation in immed -->
+
+	<encode>
+		<map name="INVOCATION">extract_reg_uim(src->srcs[1])</map>
+	</encode>
+</bitset>
+
+<bitset name="movs-a0" extends="#instruction-cat1-movs">
+	<display>
+		{SY}{SS}{JP}{REPEAT}{UL}movs.{SRC_TYPE}{DST_TYPE} {ROUND}{DST_HALF}{DST}, {SRC}, a0.x
+	</display>
+
+	<pattern low="23" high="29">0000000</pattern>
+	<pattern pos="30">1</pattern> <!-- invocation in a0.x -->
 </bitset>
 
 <bitset name="#instruction-cat1-relative" extends="#instruction-cat1-mov">

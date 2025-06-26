@@ -82,6 +82,7 @@ typedef enum {
    /* category 1: */
    OPC_MOV             = _OPC(1, 0),
    OPC_MOVP            = _OPC(1, 1),
+   OPC_MOVS            = _OPC(1, 2),
    /* swz, gat, sct */
    OPC_MOVMSK          = _OPC(1, 3),
 
@@ -98,6 +99,8 @@ typedef enum {
    OPC_MOV_GPR         = _OPC(1, 42),
    OPC_MOV_RELGPR      = _OPC(1, 43),
    OPC_MOV_RELCONST    = _OPC(1, 44),
+   OPC_MOVS_IMMED      = _OPC(1, 45),
+   OPC_MOVS_A0         = _OPC(1, 46),
 
    /* Macros that expand to an if statement + move */
    OPC_BALLOT_MACRO    = _OPC(1, 50),

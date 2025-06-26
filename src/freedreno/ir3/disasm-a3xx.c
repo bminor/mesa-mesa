@@ -185,6 +185,7 @@ static const struct opc_info {
    OPC(1, OPC_SWZ,          swz),
    OPC(1, OPC_SCT,          sct),
    OPC(1, OPC_GAT,          gat),
+   OPC(1, OPC_MOVS,         movs),
    OPC(1, OPC_BALLOT_MACRO, ballot.macro),
    OPC(1, OPC_ANY_MACRO,    any.macro),
    OPC(1, OPC_ALL_MACRO,    all.macro),

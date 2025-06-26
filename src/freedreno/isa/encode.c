@@ -79,6 +79,12 @@ __instruction_case(struct encode_state *s, const struct ir3_instruction *instr)
 		} else {
 			return OPC_MOV_GPR;
 		}
+	} else if (instr->opc == OPC_MOVS) {
+		if (instr->srcs[1]->flags & IR3_REG_IMMED) {
+			return OPC_MOVS_IMMED;
+		} else {
+			return OPC_MOVS_A0;
+		}
 	} else if (instr->opc == OPC_DEMOTE) {
 		return OPC_KILL;
 	} else if (s->compiler->gen >= 6) {
