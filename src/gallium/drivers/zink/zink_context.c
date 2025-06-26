@@ -4658,9 +4658,8 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
    struct zink_resource *buf = dst->base.b.target == PIPE_BUFFER ? dst : src;
    bool needs_present_readback = false;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
-   bool img_needs_transfer_barrier = false;
-
    bool buf2img = buf == src;
+   bool img_needs_transfer_barrier = !screen->driver_workarounds.general_layout && buf2img && ctx->track_renderpasses;
    bool unsync = !!(map_flags & PIPE_MAP_UNSYNCHRONIZED);
    if (unsync) {
       util_queue_fence_wait(&ctx->flush_fence);
@@ -4672,9 +4671,6 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
          if (!zink_kopper_acquire(ctx, img, UINT64_MAX))
             return;
       }
-      /* hacky detection of sequential in-rp buf2img from tc */
-      if (ctx->track_renderpasses && img->obj->last_write == VK_ACCESS_TRANSFER_WRITE_BIT && box->y == u_minify(img->base.b.height0, level) - 1)
-         img_needs_transfer_barrier = true;
       zink_resource_image_transfer_dst_barrier(ctx, img, level, box, unsync);
       if (!unsync)
          screen->buffer_barrier(ctx, buf, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -4744,6 +4740,10 @@ zink_copy_image_buffer(struct zink_context *ctx, struct zink_resource *dst, stru
    } else {
       zink_batch_reference_resource_rw(ctx, use_img, buf2img);
       zink_batch_reference_resource_rw(ctx, buf, !buf2img);
+
+      /* hacky detection of pre-rp buf2img from tc; reordered/unsync versions get their own sync */
+      if (buf2img && cmdbuf == ctx->bs->cmdbuf)
+         img_needs_transfer_barrier = ctx->track_renderpasses;
    }
 
    /* we're using u_transfer_helper_deinterleave, which means we'll be getting PIPE_MAP_* usage
