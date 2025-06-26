@@ -606,8 +606,12 @@ dump_value(const nir_algebraic_table *table, const nir_search_value *val)
          CASE(b2f)
          CASE(b2i)
          CASE(i2i)
+         CASE(u2u)
+         CASE(f2f)
          CASE(f2i)
+         CASE(f2u)
          CASE(i2f)
+         CASE(u2f)
 #undef CASE
       default:
          fprintf(stderr, "%s", nir_op_infos[expr->opcode].name);
