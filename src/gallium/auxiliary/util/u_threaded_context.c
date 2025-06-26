@@ -3219,60 +3219,10 @@ tc_texture_subdata(struct pipe_context *_pipe,
 
       if (!can_unsync && resource->usage != PIPE_USAGE_STAGING &&
           tc->options.parse_renderpass_info && tc->in_renderpass) {
-         enum pipe_format format = resource->format;
-         if (usage & PIPE_MAP_DEPTH_ONLY)
-            format = util_format_get_depth_only(format);
-         else if (usage & PIPE_MAP_STENCIL_ONLY)
-            format = PIPE_FORMAT_S8_UINT;
-
-         unsigned fmt_stride = util_format_get_stride(format, box->width);
-         uint64_t fmt_layer_stride = util_format_get_2d_size(format, stride, box->height);
-         assert(fmt_layer_stride * box->depth <= UINT32_MAX);
-
+         /* upload to staging buffer and then buf2img copy */
          struct pipe_resource *pres = pipe_buffer_create(pipe->screen, 0, PIPE_USAGE_STREAM, layer_stride * box->depth);
          pipe->buffer_subdata(pipe, pres, unsync_usage, 0, layer_stride * box->depth, data);
-
-         if (fmt_stride == stride && fmt_layer_stride == layer_stride) {
-            /* if stride matches, single copy is fine*/
-            tc->base.image_copy_buffer(&tc->base, resource, pres, 0, 0, 0, level, box);
-         } else {
-            /* if stride doesn't match, inline util_copy_box on the GPU and assume the driver will optimize */
-            struct pipe_box dst_box = *box;
-            dst_box.depth = 1;
-            for (unsigned z = 0; z < box->depth; ++z, dst_box.z = box->z + z) {
-               unsigned width = box->width, height = box->height;
-               unsigned offset = z * layer_stride;
-               int blocksize = util_format_get_blocksize(format);
-               int blockwidth = util_format_get_blockwidth(format);
-               int blockheight = util_format_get_blockheight(format);
- 
-               assert(blocksize > 0);
-               assert(blockwidth > 0);
-               assert(blockheight > 0);
- 
-               dst_box.x /= blockwidth;
-               dst_box.y /= blockheight;
-               width = DIV_ROUND_UP(width, blockwidth);
-               height = DIV_ROUND_UP(height, blockheight);
- 
-               width *= blocksize;
- 
-               if (width == fmt_stride && width == (unsigned)stride) {
-                  ASSERTED uint64_t size = (uint64_t)height * width;
- 
-                  assert(size <= SIZE_MAX);
-                  assert(dst_box.x + dst_box.width < u_minify(pres->width0, level));
-                  assert(dst_box.y + dst_box.height < u_minify(pres->height0, level));
-                  assert(pres->target != PIPE_TEXTURE_3D ||  z + dst_box.depth < u_minify(pres->depth0, level));
-                  tc->base.image_copy_buffer(&tc->base, resource, pres, offset, 0, 0, level, &dst_box);
-               } else {
-                  dst_box.height = 1;
-                  for (unsigned i = 0; i < height; i++, dst_box.y++, offset += stride)
-                     tc->base.image_copy_buffer(&tc->base, resource, pres, offset, 0, 0, level, &dst_box);
-               }
-            }
-         }
-
+         tc->base.image_copy_buffer(&tc->base, resource, pres, 0, stride, layer_stride, level, box);
          pipe_resource_reference(&pres, NULL);
       } else {
          if (can_unsync) {
