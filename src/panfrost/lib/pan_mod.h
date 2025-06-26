@@ -47,6 +47,13 @@ struct pan_mod_handler {
 
 #ifdef PAN_ARCH
 const struct pan_mod_handler *GENX(pan_mod_get_handler)(uint64_t modifier);
+
+static inline const struct pan_mod_handler *
+pan_mod_get_handler(unsigned arch, uint64_t modifier)
+{
+   assert(arch == PAN_ARCH);
+   return GENX(pan_mod_get_handler)(modifier);
+}
 #else
 const struct pan_mod_handler *pan_mod_get_handler_v4(uint64_t modifier);
 const struct pan_mod_handler *pan_mod_get_handler_v5(uint64_t modifier);
