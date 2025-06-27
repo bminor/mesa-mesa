@@ -71,9 +71,7 @@ static void
 generate_discard_break(nir_builder *b, nir_variable *discarded)
 {
    nir_deref_instr *condition = nir_build_deref_var(b, discarded);
-   nir_if *nif = nir_push_if(b, nir_load_deref(b, condition));
-   nir_jump(b, nir_jump_break);
-   nir_pop_if(b, nif);
+   nir_break_if(b, nir_load_deref(b, condition));
 }
 
 static void

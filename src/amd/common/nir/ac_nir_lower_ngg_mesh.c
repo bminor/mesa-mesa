@@ -963,11 +963,7 @@ emit_ms_outputs(nir_builder *b, nir_def *invocation_index, nir_def *row_start,
          nir_phi_instr_add_src(index, preheader, invocation_index);
          nir_phi_instr_add_src(row, preheader, row_start);
 
-         nir_if *if_break = nir_push_if(b, nir_uge(b, &index->def, count));
-         {
-            nir_jump(b, nir_jump_break);
-         }
-         nir_pop_if(b, if_break);
+         nir_break_if(b, nir_uge(b, &index->def, count));
 
          cb(b, &index->def, &row->def, exports, parameters, mask, s);
 
@@ -1204,11 +1200,7 @@ handle_smaller_ms_api_workgroup(nir_builder *b,
                                      .memory_modes = nir_var_shader_out | nir_var_mem_shared);
 
                nir_def *loaded = nir_load_shared(b, 1, 32, zero, .base = api_waves_in_flight_addr);
-               nir_if *if_break = nir_push_if(b, nir_ieq_imm(b, loaded, 0));
-               {
-                  nir_jump(b, nir_jump_break);
-               }
-               nir_pop_if(b, if_break);
+               nir_break_if(b, nir_ieq_imm(b, loaded, 0));
             }
             nir_pop_loop(b, loop);
          }

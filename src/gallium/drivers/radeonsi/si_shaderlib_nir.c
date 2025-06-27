@@ -489,10 +489,7 @@ void *si_create_query_result_cs(struct si_context *sctx)
             nir_def *result_index = nir_load_var(&b, outer_loop_iter);
             nir_def *is_result_index_out_of_bound =
                nir_uge(&b, result_index, nir_channel(&b, buff_0, 2));
-            nir_if *if_out_of_bound = nir_push_if(&b, is_result_index_out_of_bound); {
-               nir_jump(&b, nir_jump_break);
-            }
-            nir_pop_if(&b, if_out_of_bound);
+            nir_break_if(&b, is_result_index_out_of_bound);
 
             /* Load fence and check result availability.
              *    pitch = i * result_stride;
@@ -511,10 +508,7 @@ void *si_create_query_result_cs(struct si_context *sctx)
              *       break;
              *    }
              */
-            nir_if *if_result_available = nir_push_if(&b, nir_i2b(&b, bitmask)); {
-               nir_jump(&b, nir_jump_break);
-            }
-            nir_pop_if(&b, if_result_available);
+            nir_break_if(&b, nir_i2b(&b, bitmask));
 
             /* Inner loop iterator.
              *    uint32_t i = 0;
@@ -591,10 +585,7 @@ void *si_create_query_result_cs(struct si_context *sctx)
                /* } while (i < pair_count);
                */
                nir_def *is_pair_count_exceeded = nir_uge(&b, i, nir_channel(&b, buff_1, 2));
-               nir_if *if_pair_count_exceeded = nir_push_if(&b, is_pair_count_exceeded); {
-                  nir_jump(&b, nir_jump_break);
-               }
-               nir_pop_if(&b, if_pair_count_exceeded);
+               nir_break_if(&b, is_pair_count_exceeded);
             }
             nir_pop_loop(&b, loop_inner);
 
@@ -817,10 +808,7 @@ void *gfx11_create_sh_query_result_cs(struct si_context *sctx)
     */
    nir_loop *loop_outer = nir_push_loop(&b); {
       nir_def *condition = nir_load_var(&b, result_remaining);
-      nir_if *if_not_condition = nir_push_if(&b, nir_ieq(&b, condition, zero)); {
-         nir_jump(&b, nir_jump_break);
-      }
-      nir_pop_if(&b, if_not_condition);
+      nir_break_if(&b, nir_ieq(&b, condition, zero));
 
       /* result_remaining--; */
       condition = nir_iadd(&b, condition, minus_one);
@@ -840,10 +828,7 @@ void *gfx11_create_sh_query_result_cs(struct si_context *sctx)
       nir_def *is_zero = nir_ieq(&b, fence, zero);
       nir_def *y_value = nir_isub(&b, zero, nir_b2i32(&b, is_zero));
       nir_store_var(&b, acc_missing, y_value, 0x1);
-      nir_if *if_ssbo_zero = nir_push_if(&b, is_zero); {
-         nir_jump(&b, nir_jump_break);
-      }
-      nir_pop_if(&b, if_ssbo_zero);
+      nir_break_if(&b, is_zero);
 
       /* stream_offset = base_offset + offset; */
       nir_def *s_offset = nir_iadd(&b, b_offset, nir_channel(&b, buff_0, 1));
@@ -912,10 +897,7 @@ void *gfx11_create_sh_query_result_cs(struct si_context *sctx)
             loop_count = nir_iadd(&b, loop_count, minus_one);
             nir_store_var(&b, count, loop_count, 0x1);
 
-            nir_if *if_zero = nir_push_if(&b, nir_ieq(&b, loop_count, zero)); {
-               nir_jump(&b, nir_jump_break);
-            }
-            nir_pop_if(&b, if_zero);
+            nir_break_if(&b, nir_ieq(&b, loop_count, zero));
          }
          nir_pop_loop(&b, loop_inner); /* Inner loop end */
       }

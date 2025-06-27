@@ -70,9 +70,7 @@ get_wait_event_cs(const nir_shader_compiler_options *options)
          nir_load_ssbo(&b, 1, 8, buf, offset, .access = 0, .align_mul = 4);
       nir_def *value = nir_i2i32(&b, load);
 
-      nir_if *if_stmt = nir_push_if(&b, nir_ieq_imm(&b, value, 1));
-      nir_jump(&b, nir_jump_break);
-      nir_pop_if(&b, if_stmt);
+      nir_break_if(&b, nir_ieq_imm(&b, value, 1));
    nir_pop_loop(&b, loop);
 
    return b.shader;

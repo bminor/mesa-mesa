@@ -316,9 +316,7 @@ get_query_resolve(const nir_shader_compiler_options *options, const d3d12_comput
       nir_loop *loop = nir_push_loop(&b);
 
       nir_def *loop_counter_value = nir_load_var(&b, loop_counter);
-      nir_if *nif = nir_push_if(&b, nir_ieq(&b, loop_counter_value, num_results));
-      nir_jump(&b, nir_jump_break);
-      nir_pop_if(&b, nif);
+      nir_break_if(&b, nir_ieq(&b, loop_counter_value, num_results));
 
       /* For each field in the query result, accumulate */
       nir_def *array_index = nir_iadd(&b, nir_imul_imm(&b, loop_counter_value, stride), base_array_index);

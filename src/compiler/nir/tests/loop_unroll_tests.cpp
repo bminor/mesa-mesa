@@ -142,9 +142,7 @@ loop_unroll_test_helper(nir_builder *bld, nir_def *init,
                                   (reverse ? limit : &phi->def),
                                   (reverse ? &phi->def : limit));
 
-   nir_if *nif = nir_push_if(bld, cond);
-   nir_jump(bld, nir_jump_break);
-   nir_pop_if(bld, nif);
+   nir_break_if(bld, cond);
 
    nir_def *var = incr_instr(bld, &phi->def, step);
 

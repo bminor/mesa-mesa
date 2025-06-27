@@ -296,9 +296,7 @@ d3d12_begin_emit_primitives_gs(struct emit_primitives_context *emit_ctx,
 
    emit_ctx->loop_index = nir_load_deref(b, emit_ctx->loop_index_deref);
    nir_def *cmp = nir_ige_imm(b, emit_ctx->loop_index, 3);
-   nir_if *loop_check = nir_push_if(b, cmp);
-   nir_jump(b, nir_jump_break);
-   nir_pop_if(b, loop_check);
+   nir_break_if(b, cmp);
 
    if (edgeflag_var) {
       nir_def *edge_flag =

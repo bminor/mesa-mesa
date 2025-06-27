@@ -942,9 +942,7 @@ dzn_nir_polygon_point_mode_gs(const nir_shader *previous_shader, struct dzn_nir_
    nir_def *loop_index = nir_load_deref(b, loop_index_deref);
    nir_def *cmp = nir_ige(b, loop_index,
                               nir_imm_int(b, 3));
-   nir_if *loop_check = nir_push_if(b, cmp);
-   nir_jump(b, nir_jump_break);
-   nir_pop_if(b, loop_check);
+   nir_break_if(b, cmp);
 
    /**
     *        [...] // Copy all variables

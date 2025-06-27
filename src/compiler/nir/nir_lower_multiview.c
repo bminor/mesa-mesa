@@ -251,9 +251,7 @@ nir_lower_multiview(nir_shader *shader, nir_lower_multiview_options options)
 
    nir_def *loop_index = nir_load_deref(&b, loop_index_deref);
    nir_def *cmp = nir_ige_imm(&b, loop_index, view_count);
-   nir_if *loop_check = nir_push_if(&b, cmp);
-   nir_jump(&b, nir_jump_break);
-   nir_pop_if(&b, loop_check);
+   nir_break_if(&b, cmp);
 
    nir_def *view_index =
       nir_load_deref(&b, nir_build_deref_array(&b, view_index_deref, loop_index));
