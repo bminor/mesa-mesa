@@ -629,13 +629,17 @@ panfrost_should_pack_afbc(struct panfrost_device *dev,
                                   PIPE_BIND_RENDER_TARGET |
                                   PIPE_BIND_SAMPLER_VIEW;
 
+   BITSET_WORD mask = BITSET_MASK(prsrc->base.last_level + 1);
+   const bool mipmap_chain_valid = BITSET_EQUAL(prsrc->valid.data, &mask);
+
    return pan_afbc_can_pack(prsrc->base.format) && panfrost_is_2d(prsrc) &&
           drm_is_afbc(prsrc->modifier) &&
           (prsrc->modifier & AFBC_FORMAT_MOD_SPARSE) &&
           !(prsrc->modifier & AFBC_FORMAT_MOD_SPLIT) &&
           (prsrc->base.bind & ~valid_binding) == 0 &&
           !prsrc->modifier_constant && prsrc->base.array_size == 1 &&
-          prsrc->base.width0 >= 32 && prsrc->base.height0 >= 32 ;
+          prsrc->base.width0 >= 32 && prsrc->base.height0 >= 32 &&
+          mipmap_chain_valid;
 }
 
 static bool
@@ -2016,13 +2020,6 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    unsigned last_level = prsrc->base.last_level;
    struct pan_image_slice_layout slice_infos[PIPE_MAX_TEXTURE_LEVELS] = {0};
    unsigned total_size = 0;
-
-   /* It doesn't make sense to pack everything if we need to unpack right
-    * away to upload data to another level */
-   for (int i = 0; i <= last_level; i++) {
-      if (!BITSET_TEST(prsrc->valid.data, i))
-         return;
-   }
 
    layout_bo = panfrost_get_afbc_payload_sizes(ctx, prsrc, 0, last_level,
                                                layout_offsets);
