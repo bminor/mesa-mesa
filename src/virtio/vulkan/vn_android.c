@@ -193,40 +193,6 @@ vn_android_drm_format_is_yuv(uint32_t format)
    }
 }
 
-VkResult
-vn_GetSwapchainGrallocUsage2ANDROID(
-   VkDevice device,
-   VkFormat format,
-   VkImageUsageFlags imageUsage,
-   VkSwapchainImageUsageFlagsANDROID swapchainImageUsage,
-   uint64_t *grallocConsumerUsage,
-   uint64_t *grallocProducerUsage)
-{
-   struct vn_device *dev = vn_device_from_handle(device);
-
-   if (VN_DEBUG(WSI)) {
-      vn_log(dev->instance,
-             "format=%d, imageUsage=0x%x, swapchainImageUsage=0x%x", format,
-             imageUsage, swapchainImageUsage);
-   }
-
-   *grallocConsumerUsage = 0;
-   *grallocProducerUsage = 0;
-   if (imageUsage & (VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT))
-      *grallocProducerUsage |= AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
-
-   if (imageUsage &
-       (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT))
-      *grallocProducerUsage |= AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
-
-   if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
-      *grallocProducerUsage |= vk_android_get_front_buffer_usage();
-
-   return VK_SUCCESS;
-}
-
 static VkResult
 vn_android_get_modifier_properties(struct vn_device *dev,
                                    VkFormat format,
