@@ -28,7 +28,7 @@ static struct pb_buffer_lean *radeon_jpeg_get_decode_param(struct radeon_decoder
    struct si_texture *chroma, *chromav;
 
    dec->jpg.bsd_size = align(dec->bs_size, 128);
-   dec->jpg.dt_luma_top_offset = luma->surface.u.gfx9.surf_offset;
+   dec->jpg.dt_luma_top_offset = luma->surface.u.gfx9.surf_offset | (luma->surface.tile_swizzle << 8);
    dec->jpg.dt_chroma_top_offset = 0;
    dec->jpg.dt_chromav_top_offset = 0;
    dec->jpg.dt_swizzle_mode = luma->surface.u.gfx9.swizzle_mode;
@@ -80,12 +80,14 @@ static struct pb_buffer_lean *radeon_jpeg_get_decode_param(struct radeon_decoder
          chromav = (struct si_texture *)((struct vl_video_buffer *)target)->resources[2];
          dec->jpg.dt_chromav_top_offset = chromav->surface.u.gfx9.surf_offset;
          chroma = (struct si_texture *)((struct vl_video_buffer*)target)->resources[1];
-         dec->jpg.dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset;
+         dec->jpg.dt_chroma_top_offset =
+            chroma->surface.u.gfx9.surf_offset | (chroma->surface.tile_swizzle << 8);
          dec->jpg.dt_uv_pitch = chroma->surface.u.gfx9.surf_pitch * chroma->surface.bpe;
          break;
       case PIPE_FORMAT_NV12:
          chroma = (struct si_texture *)((struct vl_video_buffer*)target)->resources[1];
-         dec->jpg.dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset;
+         dec->jpg.dt_chroma_top_offset =
+            chroma->surface.u.gfx9.surf_offset | (chroma->surface.tile_swizzle << 8);
          dec->jpg.dt_uv_pitch = chroma->surface.u.gfx9.surf_pitch * chroma->surface.bpe;
          break;
       case PIPE_FORMAT_YUYV:
