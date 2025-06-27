@@ -8174,7 +8174,7 @@
         "description": "brw: Use the right width in brw_nir_apply_key for BS shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "23c7142cd670d9634d53e3a9c03fc42ce6b32c51",
         "notes": null
