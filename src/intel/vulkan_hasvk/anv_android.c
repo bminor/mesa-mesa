@@ -34,11 +34,6 @@
 /* See i915_private_android_types.h in minigbm. */
 #define HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL 0x100
 
-enum {
-   /* Usage bit equal to GRALLOC_USAGE_HW_CAMERA_MASK */
-   BUFFER_USAGE_CAMERA_MASK = 0x00060000U,
-};
-
 inline VkFormat
 vk_format_from_android(unsigned android_format, unsigned android_usage)
 {
@@ -49,7 +44,7 @@ vk_format_from_android(unsigned android_format, unsigned android_usage)
    case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
       return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
    case AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED:
-      if (android_usage & BUFFER_USAGE_CAMERA_MASK)
+      if (android_usage & AHARDWAREBUFFER_USAGE_CAMERA_MASK)
          return VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
       else
          return VK_FORMAT_R8G8B8_UNORM;
