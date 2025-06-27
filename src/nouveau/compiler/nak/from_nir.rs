@@ -2342,6 +2342,14 @@ impl<'a> ShaderFromNir<'a> {
                         op: ShflOp::Bfly,
                     });
 
+                    // Starting with Blackwell, the shader stage now affects
+                    // fswzadd so we need to use fswzadd.ndv
+                    let deriv_mode = if self.sm.sm() >= 100 {
+                        TexDerivMode::NonDivergent
+                    } else {
+                        TexDerivMode::Auto
+                    };
+
                     b.push_op(OpFSwzAdd {
                         dst: dst.into(),
                         srcs: [scratch.into(), self.get_src(&srcs[0])],
@@ -2353,7 +2361,7 @@ impl<'a> ShaderFromNir<'a> {
                         ],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                         ftz: self.float_ctl[ftype].ftz,
-                        deriv_mode: TexDerivMode::Auto,
+                        deriv_mode,
                     });
                 } else {
                     b.push_op(OpFSwz {
@@ -2395,6 +2403,14 @@ impl<'a> ShaderFromNir<'a> {
                         op: ShflOp::Bfly,
                     });
 
+                    // Starting with Blackwell, the shader stage now affects
+                    // fswzadd so we need to use fswzadd.ndv
+                    let deriv_mode = if self.sm.sm() >= 100 {
+                        TexDerivMode::NonDivergent
+                    } else {
+                        TexDerivMode::Auto
+                    };
+
                     b.push_op(OpFSwzAdd {
                         dst: dst.into(),
                         srcs: [scratch.into(), self.get_src(&srcs[0])],
@@ -2406,7 +2422,7 @@ impl<'a> ShaderFromNir<'a> {
                         ],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                         ftz: self.float_ctl[ftype].ftz,
-                        deriv_mode: TexDerivMode::Auto,
+                        deriv_mode,
                     });
                 } else {
                     b.push_op(OpFSwz {
