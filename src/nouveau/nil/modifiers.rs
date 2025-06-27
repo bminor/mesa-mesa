@@ -62,7 +62,7 @@ impl GOBType {
             GOBType::Linear => {
                 panic!("Linear modifierss are handled elsewhere");
             }
-            GOBType::FermiZS => {
+            GOBType::FermiZS | GOBType::BlackwellZ24 => {
                 panic!("Modifiers are not supported for Z/S images");
             }
             GOBType::FermiColor => GOBKindVersion::Fermi,
