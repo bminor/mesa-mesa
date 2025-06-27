@@ -65,9 +65,9 @@ vue_layout(bool separate_shader)
    .prefix.program_string_id = ish->program_id,            \
    .prefix.limit_trig_input_range =                        \
       screen->driconf.limit_trig_input_range
-#define BRW_KEY_INIT(gen, prog_id, limit_trig_input, _vue_layout) \
-   .base.program_string_id = prog_id,                      \
-   .base.limit_trig_input_range = limit_trig_input,        \
+#define BRW_KEY_INIT(base_key, _vue_layout) \
+   .base.program_string_id = (base_key).program_string_id,     \
+   .base.limit_trig_input_range = (base_key).limit_trig_input_range, \
    .base.vue_layout = _vue_layout
 
 #ifdef INTEL_USE_ELK
@@ -532,9 +532,7 @@ iris_to_brw_vs_key(const struct iris_screen *screen,
                    const struct iris_vs_prog_key *key)
 {
    return (struct brw_vs_prog_key) {
-      BRW_KEY_INIT(screen->devinfo->ver, key->vue.base.program_string_id,
-                   key->vue.base.limit_trig_input_range,
-                   key->vue.layout),
+      BRW_KEY_INIT(key->vue.base, key->vue.layout),
    };
 }
 
@@ -543,9 +541,7 @@ iris_to_brw_tcs_key(const struct iris_screen *screen,
                     const struct iris_tcs_prog_key *key)
 {
    return (struct brw_tcs_prog_key) {
-      BRW_KEY_INIT(screen->devinfo->ver, key->vue.base.program_string_id,
-                   key->vue.base.limit_trig_input_range,
-                   key->vue.layout),
+      BRW_KEY_INIT(key->vue.base, key->vue.layout),
       ._tes_primitive_mode = key->_tes_primitive_mode,
       .input_vertices = key->input_vertices,
       .patch_outputs_written = key->patch_outputs_written,
@@ -558,9 +554,7 @@ iris_to_brw_tes_key(const struct iris_screen *screen,
                     const struct iris_tes_prog_key *key)
 {
    return (struct brw_tes_prog_key) {
-      BRW_KEY_INIT(screen->devinfo->ver, key->vue.base.program_string_id,
-                   key->vue.base.limit_trig_input_range,
-                   key->vue.layout),
+      BRW_KEY_INIT(key->vue.base, key->vue.layout),
       .patch_inputs_read = key->patch_inputs_read,
       .inputs_read = key->inputs_read,
    };
@@ -571,9 +565,7 @@ iris_to_brw_gs_key(const struct iris_screen *screen,
                    const struct iris_gs_prog_key *key)
 {
    return (struct brw_gs_prog_key) {
-      BRW_KEY_INIT(screen->devinfo->ver, key->vue.base.program_string_id,
-                   key->vue.base.limit_trig_input_range,
-                   key->vue.layout),
+      BRW_KEY_INIT(key->vue.base, key->vue.layout),
    };
 }
 
@@ -582,9 +574,7 @@ iris_to_brw_fs_key(const struct iris_screen *screen,
                    const struct iris_fs_prog_key *key)
 {
    return (struct brw_wm_prog_key) {
-      BRW_KEY_INIT(screen->devinfo->ver, key->base.program_string_id,
-                   key->base.limit_trig_input_range,
-                   key->vue_layout),
+      BRW_KEY_INIT(key->base, key->vue_layout),
       .nr_color_regions = key->nr_color_regions,
       .flat_shade = key->flat_shade,
       .alpha_test_replicate_alpha = key->alpha_test_replicate_alpha,
@@ -607,9 +597,7 @@ iris_to_brw_cs_key(const struct iris_screen *screen,
                    const struct iris_cs_prog_key *key)
 {
    return (struct brw_cs_prog_key) {
-      BRW_KEY_INIT(screen->devinfo->ver, key->base.program_string_id,
-                   key->base.limit_trig_input_range,
-                   INTEL_VUE_LAYOUT_SEPARATE),
+      BRW_KEY_INIT(key->base, INTEL_VUE_LAYOUT_SEPARATE),
    };
 }
 
