@@ -1317,9 +1317,8 @@ get_subdword_bytes_written(Program* program, const aco_ptr<Instruction>& instr, 
 
    if (instr->isPseudo())
       return gfx_level >= GFX8 ? def.bytes() : def.size() * 4u;
-   if (instr->isVALU() || instr->isVINTRP()) {
-      assert(def.bytes() <= 2);
 
+   if (instr->isVALU() || instr->isVINTRP()) {
       if (instr->isSDWA())
          return instr->sdwa().dst_sel.size();
 

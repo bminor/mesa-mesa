@@ -692,7 +692,8 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
    }
 
    if (instr->isVALU()) {
-      assert(rc.bytes() <= 2);
+      if (rc.bytes() == 3)
+         rc = v1;
 
       if (can_use_SDWA(gfx_level, instr, false))
          return;

@@ -424,8 +424,8 @@ emit_bitwise_logic(isel_context* ctx, nir_alu_instr* instr, Temp dst,
                    Builder::WaveSpecificOpcode op, aco_opcode v32_op)
 {
    Builder bld(ctx->program, ctx->block);
-   Temp src0 = get_alu_src(ctx, instr->src[0]);
-   Temp src1 = get_alu_src(ctx, instr->src[1]);
+   Temp src0 = get_alu_src(ctx, instr->src[0], instr->def.num_components);
+   Temp src1 = get_alu_src(ctx, instr->src[1], instr->def.num_components);
 
    if (instr->def.bit_size == 1) {
       bld.sop2(op, Definition(dst), bld.def(s1, scc), src0, src1);
@@ -460,8 +460,8 @@ emit_bcsel(isel_context* ctx, nir_alu_instr* instr, Temp dst)
 {
    Builder bld(ctx->program, ctx->block);
    Temp cond = get_alu_src(ctx, instr->src[0]);
-   Temp then = get_alu_src(ctx, instr->src[1]);
-   Temp els = get_alu_src(ctx, instr->src[2]);
+   Temp then = get_alu_src(ctx, instr->src[1], instr->def.num_components);
+   Temp els = get_alu_src(ctx, instr->src[2], instr->def.num_components);
 
    assert(cond.regClass() == bld.lm);
 
@@ -877,9 +877,9 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       break;
    }
    case nir_op_inot: {
-      Temp src = get_alu_src(ctx, instr->src[0]);
-      if (dst.regClass() == v1 || dst.regClass() == v2b || dst.regClass() == v1b) {
-         emit_vop1_instruction(ctx, instr, aco_opcode::v_not_b32, dst);
+      Temp src = get_alu_src(ctx, instr->src[0], instr->def.num_components);
+      if (dst.regClass().type() == RegType::vgpr && dst.size() == 1) {
+         bld.vop1(aco_opcode::v_not_b32, Definition(dst), src);
       } else if (dst.regClass() == v2) {
          Temp lo = bld.tmp(v1), hi = bld.tmp(v1);
          bld.pseudo(aco_opcode::p_split_vector, Definition(lo), Definition(hi), src);
