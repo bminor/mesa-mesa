@@ -162,6 +162,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_maintenance7                      = true,
    .KHR_maintenance8                      = true,
    .KHR_maintenance9                      = true,
+   .KHR_maintenance10                     = true,
    .KHR_map_memory2                       = true,
    .KHR_multiview                         = true,
    .KHR_push_descriptor                   = true,
@@ -811,6 +812,8 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .maintenance8 = true,
       /* maintenance9 */
       .maintenance9 = true,
+      /* maintenance10 */
+      .maintenance10 = true,
 
       /* VK_KHR_shader_maximal_reconvergence */
       .shaderMaximalReconvergence = true,
@@ -1348,6 +1351,10 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
    /* maintenance9 */
    p->image2DViewOf3DSparse = true;
    p->defaultVertexAttributeValue = VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR;
+
+   /* maintenance10 */
+   p->rgba4OpaqueBlackSwizzled = true;
+   p->resolveSrgbFormatAppliesTransferFunction = true;
 
    /* VK_EXT_shader_object */
    /* this is basically unsupported */

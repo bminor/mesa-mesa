@@ -4854,7 +4854,7 @@ void lvp_add_enqueue_cmd_entrypoints(struct vk_device_dispatch_table *disp)
    ENQUEUE_CMD(CmdSetRasterizerDiscardEnable)
    ENQUEUE_CMD(CmdSetColorWriteEnableEXT)
    ENQUEUE_CMD(CmdBeginRendering)
-   ENQUEUE_CMD(CmdEndRendering)
+   ENQUEUE_CMD(CmdEndRendering2KHR)
    ENQUEUE_CMD(CmdSetDeviceMask)
    ENQUEUE_CMD(CmdPipelineBarrier2)
    ENQUEUE_CMD(CmdResetEvent2)
@@ -5201,7 +5201,7 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
       case VK_CMD_BEGIN_RENDERING:
          handle_begin_rendering(cmd, state);
          break;
-      case VK_CMD_END_RENDERING:
+      case VK_CMD_END_RENDERING2_KHR:
          handle_end_rendering(cmd, state);
          break;
       case VK_CMD_SET_DEVICE_MASK:
