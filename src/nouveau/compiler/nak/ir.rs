@@ -2880,6 +2880,7 @@ pub struct OpFSwzAdd {
 
     pub rnd_mode: FRndMode,
     pub ftz: bool,
+    pub deriv_mode: TexDerivMode,
 
     pub ops: [FSwzAddOp; 4],
 }
@@ -2893,6 +2894,7 @@ impl DisplayOp for OpFSwzAdd {
         if self.ftz {
             write!(f, ".ftz")?;
         }
+        write!(f, "{}", self.deriv_mode)?;
         write!(
             f,
             " {} {} [{}, {}, {}, {}]",
@@ -2953,6 +2955,7 @@ pub struct OpFSwz {
 
     pub rnd_mode: FRndMode,
     pub ftz: bool,
+    pub deriv_mode: TexDerivMode,
     pub shuffle: FSwzShuffle,
 
     pub ops: [FSwzAddOp; 4],
@@ -2964,6 +2967,7 @@ impl DisplayOp for OpFSwz {
         if self.rnd_mode != FRndMode::NearestEven {
             write!(f, "{}", self.rnd_mode)?;
         }
+        write!(f, "{}", self.deriv_mode)?;
         if self.ftz {
             write!(f, ".ftz")?;
         }

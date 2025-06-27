@@ -930,7 +930,7 @@ impl SM50Op for OpFSwzAdd {
             );
         }
 
-        e.set_bit(38, false); /* .NDV */
+        e.set_tex_ndv(38, self.deriv_mode);
         e.set_bit(44, self.ftz);
         e.set_bit(47, false); /* dst.CC */
     }

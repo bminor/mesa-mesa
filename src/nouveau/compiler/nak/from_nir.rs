@@ -2353,6 +2353,7 @@ impl<'a> ShaderFromNir<'a> {
                         ],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                         ftz: self.float_ctl[ftype].ftz,
+                        deriv_mode: TexDerivMode::Auto,
                     });
                 } else {
                     b.push_op(OpFSwz {
@@ -2366,6 +2367,7 @@ impl<'a> ShaderFromNir<'a> {
                         ],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                         ftz: self.float_ctl[ftype].ftz,
+                        deriv_mode: TexDerivMode::Auto,
                         shuffle: FSwzShuffle::SwapHorizontal,
                     });
                 }
@@ -2404,6 +2406,7 @@ impl<'a> ShaderFromNir<'a> {
                         ],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                         ftz: self.float_ctl[ftype].ftz,
+                        deriv_mode: TexDerivMode::Auto,
                     });
                 } else {
                     b.push_op(OpFSwz {
@@ -2417,6 +2420,7 @@ impl<'a> ShaderFromNir<'a> {
                         ],
                         rnd_mode: self.float_ctl[ftype].rnd_mode,
                         ftz: self.float_ctl[ftype].ftz,
+                        deriv_mode: TexDerivMode::Auto,
                         shuffle: FSwzShuffle::SwapVertical,
                     });
                 }

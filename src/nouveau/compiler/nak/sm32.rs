@@ -896,7 +896,7 @@ impl SM32Op for OpFSwz {
             },
         );
 
-        e.set_bit(41, false); // .NDV
+        e.set_tex_ndv(41, self.deriv_mode);
         e.set_bit(47, self.ftz); // .FTZ
         e.set_bit(50, false); // .CC
     }

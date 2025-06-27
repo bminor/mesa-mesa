@@ -868,7 +868,7 @@ impl SM20Op for OpFSwz {
                 FSwzShuffle::SwapVertical => 5_u8,
             },
         );
-        e.set_bit(9, false); // .ndv
+        e.set_tex_ndv(9, self.deriv_mode);
 
         for (i, op) in self.ops.iter().enumerate() {
             e.set_field(

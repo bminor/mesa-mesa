@@ -912,7 +912,7 @@ impl SM70Op for OpFSwzAdd {
 
         e.set_field(32..40, subop);
 
-        e.set_bit(77, false); // NDV
+        e.set_tex_ndv(77, self.deriv_mode);
         e.set_rnd_mode(78..80, self.rnd_mode);
         e.set_bit(80, self.ftz);
     }
