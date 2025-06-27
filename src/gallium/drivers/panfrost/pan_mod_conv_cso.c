@@ -125,20 +125,20 @@ get_superblock_size(nir_builder *b, unsigned arch, nir_def *hdr,
 }
 
 static nir_def *
-get_packed_offset(nir_builder *b, nir_def *metadata, nir_def *idx,
+get_packed_offset(nir_builder *b, nir_def *layout, nir_def *idx,
                   nir_def **out_size)
 {
-   nir_def *metadata_offset =
-      nir_u2u64(b, nir_imul_imm(b, idx, sizeof(struct pan_afbc_block_info)));
-   nir_def *range_ptr = nir_iadd(b, metadata, metadata_offset);
+   nir_def *layout_offset =
+      nir_u2u64(b, nir_imul_imm(b, idx, sizeof(struct pan_afbc_payload_extent)));
+   nir_def *range_ptr = nir_iadd(b, layout, layout_offset);
    nir_def *entry = nir_load_global(b, range_ptr, 4,
-                                    sizeof(struct pan_afbc_block_info) / 4, 32);
+                                    sizeof(struct pan_afbc_payload_extent) / 4, 32);
    nir_def *offset =
-      nir_channel(b, entry, offsetof(struct pan_afbc_block_info, offset) / 4);
+      nir_channel(b, entry, offsetof(struct pan_afbc_payload_extent, offset) / 4);
 
    if (out_size)
       *out_size =
-         nir_channel(b, entry, offsetof(struct pan_afbc_block_info, size) / 4);
+         nir_channel(b, entry, offsetof(struct pan_afbc_payload_extent, size) / 4);
 
    return nir_u2u64(b, offset);
 }
@@ -147,14 +147,14 @@ get_packed_offset(nir_builder *b, nir_def *metadata, nir_def *idx,
 
 static void
 copy_superblock(nir_builder *b, nir_def *dst, nir_def *hdr_sz, nir_def *src,
-                nir_def *metadata, nir_def *idx, unsigned align)
+                nir_def *layout, nir_def *idx, unsigned align)
 {
    nir_def *hdr = read_afbc_header(b, src, idx);
    nir_def *src_body_base_ptr = nir_u2u64(b, nir_channel(b, hdr, 0));
    nir_def *src_bodyptr = nir_iadd(b, src, src_body_base_ptr);
 
    nir_def *size;
-   nir_def *dst_offset = get_packed_offset(b, metadata, idx, &size);
+   nir_def *dst_offset = get_packed_offset(b, layout, idx, &size);
    nir_def *dst_body_base_ptr = nir_iadd(b, dst_offset, hdr_sz);
    nir_def *dst_bodyptr = nir_iadd(b, dst, dst_body_base_ptr);
 
@@ -208,7 +208,7 @@ panfrost_create_afbc_size_shader(struct panfrost_screen *screen,
    nir_def *coord = nir_load_global_invocation_id(&b, 32);
    nir_def *block_idx = nir_channel(&b, coord, 0);
    nir_def *src = panfrost_afbc_size_get_info_field(&b, src);
-   nir_def *metadata = panfrost_afbc_size_get_info_field(&b, metadata);
+   nir_def *layout = panfrost_afbc_size_get_info_field(&b, layout);
    nir_def *uncompressed_size = nir_imm_int(&b, 4 * 4 * bpp / 8); /* bytes */
 
    nir_def *hdr = read_afbc_header(&b, src, block_idx);
@@ -219,9 +219,9 @@ panfrost_create_afbc_size_shader(struct panfrost_screen *screen,
    nir_def *offset = nir_u2u64(
       &b,
       nir_iadd(&b,
-               nir_imul_imm(&b, block_idx, sizeof(struct pan_afbc_block_info)),
-               nir_imm_int(&b, offsetof(struct pan_afbc_block_info, size))));
-   nir_store_global(&b, nir_iadd(&b, metadata, offset), 4, size, 0x1);
+               nir_imul_imm(&b, block_idx, sizeof(struct pan_afbc_payload_extent)),
+               nir_imm_int(&b, offsetof(struct pan_afbc_payload_extent, size))));
+   nir_store_global(&b, nir_iadd(&b, layout, offset), 4, size, 0x1);
 
    return b.shader;
 }
@@ -247,9 +247,9 @@ panfrost_create_afbc_pack_shader(struct panfrost_screen *screen,
    nir_def *dst = panfrost_afbc_pack_get_info_field(&b, dst);
    nir_def *header_size =
       nir_u2u64(&b, panfrost_afbc_pack_get_info_field(&b, header_size));
-   nir_def *metadata = panfrost_afbc_pack_get_info_field(&b, metadata);
+   nir_def *layout = panfrost_afbc_pack_get_info_field(&b, layout);
 
-   copy_superblock(&b, dst, header_size, src, metadata, idx, align);
+   copy_superblock(&b, dst, header_size, src, layout, idx, align);
 
    return b.shader;
 }

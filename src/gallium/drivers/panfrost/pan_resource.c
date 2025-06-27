@@ -1956,43 +1956,45 @@ panfrost_should_linear_convert(struct panfrost_context *ctx,
 }
 
 static struct panfrost_bo *
-panfrost_get_afbc_superblock_sizes(struct panfrost_context *ctx,
-                                   struct panfrost_resource *rsrc,
-                                   unsigned first_level, unsigned last_level,
-                                   unsigned *out_offsets)
+panfrost_get_afbc_payload_sizes(struct panfrost_context *ctx,
+                                struct panfrost_resource *rsrc,
+                                unsigned first_level, unsigned last_level,
+                                unsigned *out_offsets)
 {
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    struct panfrost_batch *batch;
    struct panfrost_bo *bo;
-   unsigned metadata_size = 0;
+   unsigned layout_size = 0;
 
    for (int level = first_level; level <= last_level; ++level) {
       struct pan_image_slice_layout *slice = &rsrc->plane.layout.slices[level];
-      unsigned stride_sb = pan_afbc_stride_blocks(
+      unsigned stride_blocks = pan_afbc_stride_blocks(
          rsrc->image.props.modifier, slice->afbc.header.row_stride_B);
-      unsigned nr_sblocks =
-         stride_sb * pan_afbc_height_blocks(
+      unsigned nr_blocks =
+         stride_blocks * pan_afbc_height_blocks(
                         rsrc->image.props.modifier,
                         u_minify(rsrc->image.props.extent_px.height, level));
-      unsigned sz = nr_sblocks * sizeof(struct pan_afbc_block_info);
-      out_offsets[level - first_level] = metadata_size;
-      metadata_size += sz;
+      unsigned sz = nr_blocks * sizeof(struct pan_afbc_payload_extent);
+      out_offsets[level - first_level] = layout_size;
+      layout_size += sz;
    }
 
-   bo = panfrost_bo_create(dev, metadata_size, 0, "AFBC superblock sizes");
+   bo = panfrost_bo_create(dev, layout_size, 0, "AFBC-P payload layout");
    if (!bo)
       return NULL;
 
-   panfrost_flush_batches_accessing_rsrc(ctx, rsrc, "AFBC before size flush");
-   batch = panfrost_get_fresh_batch_for_fbo(ctx, "AFBC superblock sizes");
+   panfrost_flush_batches_accessing_rsrc(ctx, rsrc,
+                                         "AFBC-P payload layout pre-flush");
+   batch = panfrost_get_fresh_batch_for_fbo(ctx, "AFBC-P payload layout");
 
    for (int level = first_level; level <= last_level; ++level) {
       unsigned offset = out_offsets[level - first_level];
       screen->vtbl.afbc_size(batch, rsrc, bo, offset, level);
    }
 
-   panfrost_flush_batches_accessing_rsrc(ctx, rsrc, "AFBC after size flush");
+   panfrost_flush_batches_accessing_rsrc(ctx, rsrc,
+                                         "AFBC-P payload layout post-flush");
 
    return bo;
 }
@@ -2005,8 +2007,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
-   struct panfrost_bo *metadata_bo;
-   unsigned metadata_offsets[PIPE_MAX_TEXTURE_LEVELS];
+   struct panfrost_bo *layout_bo;
+   unsigned layout_offsets[PIPE_MAX_TEXTURE_LEVELS];
 
    assert(prsrc->base.array_size == 1);
 
@@ -2022,21 +2024,22 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          return;
    }
 
-   metadata_bo = panfrost_get_afbc_superblock_sizes(ctx, prsrc, 0, last_level,
-                                                    metadata_offsets);
+   layout_bo = panfrost_get_afbc_payload_sizes(ctx, prsrc, 0, last_level,
+                                               layout_offsets);
 
-   if (!metadata_bo) {
-      mesa_loge("panfrost_pack_afbc: failed to get afbc superblock sizes");
+   if (!layout_bo) {
+      mesa_loge("panfrost_pack_afbc: failed to create AFBC-P payload layout "
+                "BO");
       return;
    }
 
-   panfrost_bo_wait(metadata_bo, INT64_MAX, false);
+   panfrost_bo_wait(layout_bo, INT64_MAX, false);
 
    for (unsigned level = 0; level <= last_level; ++level) {
       struct pan_image_slice_layout *src_slice =
          &prsrc->plane.layout.slices[level];
       struct pan_image_slice_layout *dst_slice = &slice_infos[level];
-      unsigned nr_sblocks_total =
+      unsigned nr_blocks_total =
          pan_afbc_stride_blocks(
             modifier, src_slice->afbc.header.row_stride_B) *
          pan_afbc_height_blocks(
@@ -2044,30 +2047,30 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       uint32_t body_offset_B = pan_afbc_body_offset(
          dev->arch, modifier, src_slice->afbc.header.surface_size_B);
       uint32_t offset = 0;
-      struct pan_afbc_block_info *meta =
-         metadata_bo->ptr.cpu + metadata_offsets[level];
+      struct pan_afbc_payload_extent *layout =
+         layout_bo->ptr.cpu + layout_offsets[level];
 
-      /* Stack allocated chunk used to copy AFBC block info from non-cacheable
-       * memory to cacheable memory. Each iteration of the offset computation
-       * loop below otherwise forces a flush of the write combining buffer
-       * because of the 32-bit read interleaved with the 32-bit write. A tile
-       * is composed of 8x8 header blocks. A chunk is made of 16 tiles so that
-       * at most 8 kB can be copied at each iteration (smaller values tend to
-       * increase latency). */
-      alignas(16) struct pan_afbc_block_info meta_chunk[64 * 16];
-      unsigned nr_sblocks_per_chunk = ARRAY_SIZE(meta_chunk);
+      /* Stack allocated chunk used to copy the AFBC-P payload layout from
+       * non-cacheable memory to cacheable memory. Each iteration of the
+       * offset computation loop below otherwise forces a flush of the write
+       * combining buffer because of the 32-bit read interleaved with the
+       * 32-bit write. A tile is composed of 8x8 header blocks. A chunk is
+       * made of 16 tiles so that at most 8 kB can be copied at each iteration
+       * (smaller values tend to increase latency). */
+      alignas(16) struct pan_afbc_payload_extent layout_chunk[64 * 16];
+      unsigned nr_blocks_per_chunk = ARRAY_SIZE(layout_chunk);
 
-      for (unsigned i = 0; i < nr_sblocks_total; i += nr_sblocks_per_chunk) {
-         unsigned nr_sblocks =
-            MIN2(nr_sblocks_per_chunk, nr_sblocks_total - i);
+      for (unsigned i = 0; i < nr_blocks_total; i += nr_blocks_per_chunk) {
+         unsigned nr_blocks =
+            MIN2(nr_blocks_per_chunk, nr_blocks_total - i);
 
          util_streaming_load_memcpy(
-            meta_chunk, &meta[i],
-            nr_sblocks * sizeof(struct pan_afbc_block_info));
+            layout_chunk, &layout[i],
+            nr_blocks * sizeof(struct pan_afbc_payload_extent));
 
-         for (unsigned j = 0; j < nr_sblocks; j++) {
-            meta[i + j].offset = offset;
-            offset += meta_chunk[j].size;
+         for (unsigned j = 0; j < nr_blocks; j++) {
+            layout[i + j].offset = offset;
+            offset += layout_chunk[j].size;
          }
       }
 
@@ -2093,7 +2096,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    unsigned ratio = 100 * new_size / old_size;
 
    if (ratio > screen->max_afbc_packing_ratio) {
-      panfrost_bo_unreference(metadata_bo);
+      panfrost_bo_unreference(layout_bo);
       return;
    }
    perf_debug(ctx, "%i%%: %i KB -> %i KB\n", ratio, old_size / 1024,
@@ -2113,8 +2116,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       panfrost_bo_create(dev, new_size, 0, new_label);
 
    if (!dst) {
-      mesa_loge("panfrost_pack_afbc: failed to get afbc superblock sizes");
-      panfrost_bo_unreference(metadata_bo);
+      mesa_loge("panfrost_pack_afbc: failed to create AFBC-P BO");
+      panfrost_bo_unreference(layout_bo);
       free(new_label);
       return;
    }
@@ -2124,8 +2127,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 
    for (unsigned level = 0; level <= last_level; ++level) {
       struct pan_image_slice_layout *slice = &slice_infos[level];
-      screen->vtbl.afbc_pack(batch, prsrc, dst, slice, metadata_bo,
-                             metadata_offsets[level], level);
+      screen->vtbl.afbc_pack(batch, prsrc, dst, slice, layout_bo,
+                             layout_offsets[level], level);
       prsrc->plane.layout.slices[level] = *slice;
    }
    prsrc->plane.layout.array_stride_B = new_size;
@@ -2146,7 +2149,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    prsrc->plane.base = dst->ptr.gpu;
    prsrc->image.props.crc = false;
    prsrc->valid.crc = false;
-   panfrost_bo_unreference(metadata_bo);
+   panfrost_bo_unreference(layout_bo);
 }
 
 static void

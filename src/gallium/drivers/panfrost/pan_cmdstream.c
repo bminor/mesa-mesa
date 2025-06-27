@@ -3608,7 +3608,7 @@ panfrost_launch_afbc_conv_shader(struct panfrost_batch *batch, void *cso,
 
 static void
 panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
-                   struct panfrost_bo *metadata, unsigned offset,
+                   struct panfrost_bo *layout, unsigned offset,
                    unsigned level)
 {
    MESA_TRACE_FUNC();
@@ -3616,7 +3616,7 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
    struct pan_image_slice_layout *slice = &src->plane.layout.slices[level];
    struct panfrost_afbc_size_info consts = {
       .src = src->plane.base + slice->offset_B,
-      .metadata = metadata->ptr.gpu + offset,
+      .layout = layout->ptr.gpu + offset,
    };
    unsigned stride_sb = pan_afbc_stride_blocks(src->image.props.modifier,
                                                slice->afbc.header.row_stride_B);
@@ -3626,7 +3626,7 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
                      u_minify(src->image.props.extent_px.height, level));
 
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
-   panfrost_batch_write_bo(batch, metadata, PIPE_SHADER_COMPUTE);
+   panfrost_batch_write_bo(batch, layout, PIPE_SHADER_COMPUTE);
 
    LAUNCH_AFBC_CONV_SHADER(size, batch, src, consts, nr_sblocks);
 }
@@ -3635,7 +3635,7 @@ static void
 panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
                    struct panfrost_bo *dst,
                    struct pan_image_slice_layout *dst_slice,
-                   struct panfrost_bo *metadata, unsigned metadata_offset_B,
+                   struct panfrost_bo *layout, unsigned layout_offset_B,
                    unsigned level)
 {
    MESA_TRACE_FUNC();
@@ -3653,7 +3653,7 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
    struct panfrost_afbc_pack_info consts = {
       .src = src->plane.base + src_slice->offset_B,
       .dst = dst->ptr.gpu + dst_slice->offset_B,
-      .metadata = metadata->ptr.gpu + metadata_offset_B,
+      .layout = layout->ptr.gpu + layout_offset_B,
       .header_size =
          pan_afbc_body_offset(dev->arch, src->image.props.modifier,
                               src_slice->afbc.header.surface_size_B),
@@ -3663,7 +3663,7 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
 
    panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
    panfrost_batch_write_bo(batch, dst, PIPE_SHADER_COMPUTE);
-   panfrost_batch_add_bo(batch, metadata, PIPE_SHADER_COMPUTE);
+   panfrost_batch_add_bo(batch, layout, PIPE_SHADER_COMPUTE);
 
    LAUNCH_AFBC_CONV_SHADER(pack, batch, src, consts, nr_sblocks);
 }

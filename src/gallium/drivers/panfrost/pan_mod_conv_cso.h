@@ -67,20 +67,20 @@ struct pan_mod_convert_shaders {
    pthread_mutex_t lock;
 };
 
-struct pan_afbc_block_info {
+struct pan_afbc_payload_extent {
    uint32_t size;
    uint32_t offset;
 };
 
 struct panfrost_afbc_size_info {
    uint64_t src;
-   uint64_t metadata;
+   uint64_t layout;
 } PACKED;
 
 struct panfrost_afbc_pack_info {
    uint64_t src;
    uint64_t dst;
-   uint64_t metadata;
+   uint64_t layout;
    uint32_t header_size;
    uint32_t src_stride;
    uint32_t dst_stride;
