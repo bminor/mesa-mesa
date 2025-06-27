@@ -68,7 +68,7 @@ vlVaCreateBuffer(VADriverContextP ctx, VAContextID context, VABufferType type,
    if (buf->type == VAEncCodedBufferType)
       buf->data = CALLOC(1, sizeof(VACodedBufferSegment));
    else
-      buf->data = MALLOC(size * num_elements);
+      buf->data = MALLOC((size_t)size * num_elements);
 
    if (!buf->data) {
       FREE(buf);
@@ -76,7 +76,7 @@ vlVaCreateBuffer(VADriverContextP ctx, VAContextID context, VABufferType type,
    }
 
    if (data)
-      memcpy(buf->data, data, size * num_elements);
+      memcpy(buf->data, data, (size_t)size * num_elements);
 
    drv = VL_VA_DRIVER(ctx);
    mtx_lock(&drv->mutex);
@@ -482,7 +482,7 @@ vlVaAcquireBufferHandle(VADriverContextP ctx, VABufferID buf_id,
 
       buf_info->type = buf->type;
       buf_info->mem_type = mem_type;
-      buf_info->mem_size = buf->num_elements * buf->size;
+      buf_info->mem_size = buf->num_elements * (size_t)buf->size;
    }
 
    buf->export_refcount++;
