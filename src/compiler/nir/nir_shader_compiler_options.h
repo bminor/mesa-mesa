@@ -370,7 +370,14 @@ typedef struct nir_shader_compiler_options {
    /**
     * If enabled, gl_HelperInvocation will be lowered as:
     *
-    *   !((1 << sample_id) & sample_mask_in))
+    * - non-sample-shading: sample_mask_in == 0.
+    * - sample shading:     !((1 << sample_id) & sample_mask_in))
+    *
+    * For this to be correct, it requires that fs.uses_sample_shading is set to
+    * true when sample shading is enabled.  This means that you need shader
+    * variants to set the flag when Vulkan's
+    * VkPipelineMultisampleStateCreateInfo->sampleShadingEnable or GL's
+    * glMinSampleshading() are enabled.
     *
     * This depends on some possibly hw implementation details, which may
     * not be true for all hw.  In particular that the FS is only executed
