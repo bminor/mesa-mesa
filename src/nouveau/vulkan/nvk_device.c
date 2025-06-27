@@ -157,122 +157,129 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
 
    dev->vk.shader_ops = &nvk_device_shader_ops;
 
-   result = nvkmd_pdev_create_dev(pdev->nvkmd, &pdev->vk.base, &dev->nvkmd);
-   if (result != VK_SUCCESS)
-      goto fail_init;
+   uint32_t queue_count = 0;
+   for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++)
+      queue_count += pCreateInfo->pQueueCreateInfos[i].queueCount;
 
-   vk_device_set_drm_fd(&dev->vk, nvkmd_dev_get_drm_fd(dev->nvkmd));
-   dev->vk.command_buffer_ops = &nvk_cmd_buffer_ops;
-
-   dev->vk.get_timestamp = nvk_device_get_timestamp;
-   dev->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
-
-   result = nvk_upload_queue_init(dev, &dev->upload);
-   if (result != VK_SUCCESS)
-      goto fail_nvkmd;
-
-   result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &pdev->vk.base,
-                                       0x1000, 0, NVKMD_MEM_LOCAL,
-                                       NVKMD_MEM_MAP_WR, &dev->zero_page);
-   if (result != VK_SUCCESS)
-      goto fail_upload;
-
-   memset(dev->zero_page->map, 0, 0x1000);
-   nvkmd_mem_unmap(dev->zero_page, 0);
-
-   result = nvk_descriptor_table_init(dev, &dev->images,
-                                      sizeof(struct nil_descriptor),
-                                      1024, 1024 * 1024);
-   if (result != VK_SUCCESS)
-      goto fail_zero_page;
-
-   /* Reserve the descriptor at offset 0 to be the null descriptor */
-   const struct nil_descriptor null_desc =
-      nil_null_descriptor(&pdev->info, dev->zero_page->va->addr);
-
-   ASSERTED uint32_t null_image_index;
-   result = nvk_descriptor_table_add(dev, &dev->images,
-                                     &null_desc, sizeof(null_desc),
-                                     &null_image_index);
-   assert(result == VK_SUCCESS);
-   assert(null_image_index == 0);
-
-   result = nvk_descriptor_table_init(dev, &dev->samplers,
-                                      8 * 4 /* tsc entry size */,
-                                      4096, 4096);
-   if (result != VK_SUCCESS)
-      goto fail_images;
-
-   /* On Kepler and earlier, TXF takes a sampler but SPIR-V defines it as not
-    * taking one so we need to reserve one at device create time.  If we do so
-    * now then it will always have sampler index 0 so we can rely on that in
-    * the compiler lowering code (similar to null descriptors).
-    */
-   if (pdev->info.cls_eng3d < MAXWELL_A) {
-      const struct nvk_sampler_header txf_sampler = nvk_txf_sampler_header(pdev);
-
-      ASSERTED uint32_t txf_sampler_index;
-      result = nvk_descriptor_table_add(dev, &dev->samplers,
-                                        &txf_sampler, sizeof(txf_sampler),
-                                        &txf_sampler_index);
-      assert(result == VK_SUCCESS);
-      assert(txf_sampler_index == 0);
-   }
-
-   if (dev->vk.enabled_features.descriptorBuffer ||
-       nvk_use_edb_buffer_views(pdev)) {
-      result = nvk_edb_bview_cache_init(dev, &dev->edb_bview_cache);
+   if (queue_count > 0) {
+      result = nvkmd_pdev_create_dev(pdev->nvkmd, &pdev->vk.base, &dev->nvkmd);
       if (result != VK_SUCCESS)
-         goto fail_samplers;
-   }
+         goto fail_init;
 
-   /* If we have a full BAR, go ahead and do shader uploads on the CPU.
-    * Otherwise, we fall back to doing shader uploads via the upload queue.
-    *
-    * Also, the I-cache pre-fetches and NVIDIA has informed us
-    * overallocating shaders BOs by 2K is sufficient.
-    */
-   enum nvkmd_mem_map_flags shader_map_flags = 0;
-   if (pdev->info.bar_size_B >= pdev->info.vram_size_B)
-      shader_map_flags = NVKMD_MEM_MAP_WR;
-   result = nvk_heap_init(dev, &dev->shader_heap,
-                          NVKMD_MEM_LOCAL, shader_map_flags,
-                          2048 /* overalloc */,
-                          pdev->info.cls_eng3d < VOLTA_A);
-   if (result != VK_SUCCESS)
-      goto fail_edb_bview_cache;
+      vk_device_set_drm_fd(&dev->vk, nvkmd_dev_get_drm_fd(dev->nvkmd));
+      dev->vk.command_buffer_ops = &nvk_cmd_buffer_ops;
 
-   result = nvk_heap_init(dev, &dev->event_heap,
-                          NVKMD_MEM_LOCAL, NVKMD_MEM_MAP_WR,
-                          0 /* overalloc */, false /* contiguous */);
-   if (result != VK_SUCCESS)
-      goto fail_shader_heap;
+      dev->vk.get_timestamp = nvk_device_get_timestamp;
+      dev->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
 
-   if (pdev->info.cls_eng3d < MAXWELL_B) {
-      result = nvk_heap_init(dev, &dev->qmd_heap,
+      result = nvk_upload_queue_init(dev, &dev->upload);
+      if (result != VK_SUCCESS)
+         goto fail_nvkmd;
+
+      result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &pdev->vk.base,
+                                          0x1000, 0, NVKMD_MEM_LOCAL,
+                                          NVKMD_MEM_MAP_WR, &dev->zero_page);
+      if (result != VK_SUCCESS)
+         goto fail_upload;
+
+      memset(dev->zero_page->map, 0, 0x1000);
+      nvkmd_mem_unmap(dev->zero_page, 0);
+
+      result = nvk_descriptor_table_init(dev, &dev->images,
+                                         sizeof(struct nil_descriptor),
+                                         1024, 1024 * 1024);
+      if (result != VK_SUCCESS)
+         goto fail_zero_page;
+
+      /* Reserve the descriptor at offset 0 to be the null descriptor */
+      const struct nil_descriptor null_desc =
+         nil_null_descriptor(&pdev->info, dev->zero_page->va->addr);
+
+      ASSERTED uint32_t null_image_index;
+      result = nvk_descriptor_table_add(dev, &dev->images,
+                                        &null_desc, sizeof(null_desc),
+                                        &null_image_index);
+      assert(result == VK_SUCCESS);
+      assert(null_image_index == 0);
+
+      result = nvk_descriptor_table_init(dev, &dev->samplers,
+                                         8 * 4 /* tsc entry size */,
+                                         4096, 4096);
+      if (result != VK_SUCCESS)
+         goto fail_images;
+
+      /* On Kepler and earlier, TXF takes a sampler but SPIR-V defines it as
+       * not taking one so we need to reserve one at device create time.  If
+       * we do so now then it will always have sampler index 0 so we can rely
+       * on that in the compiler lowering code (similar to null descriptors).
+       */
+      if (pdev->info.cls_eng3d < MAXWELL_A) {
+         const struct nvk_sampler_header txf_sampler =
+            nvk_txf_sampler_header(pdev);
+
+         ASSERTED uint32_t txf_sampler_index;
+         result = nvk_descriptor_table_add(dev, &dev->samplers,
+                                           &txf_sampler, sizeof(txf_sampler),
+                                           &txf_sampler_index);
+         assert(result == VK_SUCCESS);
+         assert(txf_sampler_index == 0);
+      }
+
+      if (dev->vk.enabled_features.descriptorBuffer ||
+          nvk_use_edb_buffer_views(pdev)) {
+         result = nvk_edb_bview_cache_init(dev, &dev->edb_bview_cache);
+         if (result != VK_SUCCESS)
+            goto fail_samplers;
+      }
+
+      /* If we have a full BAR, go ahead and do shader uploads on the CPU.
+       * Otherwise, we fall back to doing shader uploads via the upload queue.
+       *
+       * Also, the I-cache pre-fetches and NVIDIA has informed us
+       * overallocating shaders BOs by 2K is sufficient.
+       */
+      enum nvkmd_mem_map_flags shader_map_flags = 0;
+      if (pdev->info.bar_size_B >= pdev->info.vram_size_B)
+         shader_map_flags = NVKMD_MEM_MAP_WR;
+      result = nvk_heap_init(dev, &dev->shader_heap,
+                             NVKMD_MEM_LOCAL, shader_map_flags,
+                             2048 /* overalloc */,
+                             pdev->info.cls_eng3d < VOLTA_A);
+      if (result != VK_SUCCESS)
+         goto fail_edb_bview_cache;
+
+      result = nvk_heap_init(dev, &dev->event_heap,
                              NVKMD_MEM_LOCAL, NVKMD_MEM_MAP_WR,
                              0 /* overalloc */, false /* contiguous */);
       if (result != VK_SUCCESS)
-         goto fail_event_heap;
-   }
+         goto fail_shader_heap;
 
-   nvk_slm_area_init(&dev->slm);
-
-   if (pdev->info.cls_eng3d >= FERMI_A &&
-       pdev->info.cls_eng3d < MAXWELL_A) {
-      /* max size is 256k */
-      result = nvkmd_dev_alloc_mem(dev->nvkmd, &pdev->vk.base,
-                                   256 * 1024, 0, NVKMD_MEM_LOCAL,
-                                   &dev->vab_memory);
-      if (result != VK_SUCCESS)
-         goto fail_slm;
-   }
-
-   for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
-      for (unsigned q = 0; q < pCreateInfo->pQueueCreateInfos[i].queueCount; q++) {
-         result = nvk_queue_create(dev, &pCreateInfo->pQueueCreateInfos[i], q);
+      if (pdev->info.cls_eng3d < MAXWELL_B) {
+         result = nvk_heap_init(dev, &dev->qmd_heap,
+                                NVKMD_MEM_LOCAL, NVKMD_MEM_MAP_WR,
+                                0 /* overalloc */, false /* contiguous */);
          if (result != VK_SUCCESS)
-            goto fail_queues;
+            goto fail_event_heap;
+      }
+
+      nvk_slm_area_init(&dev->slm);
+
+      if (pdev->info.cls_eng3d >= FERMI_A &&
+          pdev->info.cls_eng3d < MAXWELL_A) {
+         /* max size is 256k */
+         result = nvkmd_dev_alloc_mem(dev->nvkmd, &pdev->vk.base,
+                                      256 * 1024, 0, NVKMD_MEM_LOCAL,
+                                      &dev->vab_memory);
+         if (result != VK_SUCCESS)
+            goto fail_slm;
+      }
+
+      for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
+         for (unsigned q = 0; q < pCreateInfo->pQueueCreateInfos[i].queueCount; q++) {
+            result = nvk_queue_create(dev, &pCreateInfo->pQueueCreateInfos[i], q);
+            if (result != VK_SUCCESS)
+               goto fail_queues;
+         }
       }
    }
 
@@ -285,9 +292,11 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
       goto fail_queues;
    }
 
-   result = nvk_device_init_meta(dev);
-   if (result != VK_SUCCESS)
-      goto fail_mem_cache;
+   if (queue_count > 0) {
+      result = nvk_device_init_meta(dev);
+      if (result != VK_SUCCESS)
+         goto fail_mem_cache;
+   }
 
    *pDevice = nvk_device_to_handle(dev);
 
@@ -342,7 +351,8 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    if (dev->copy_queries)
       vk_shader_destroy(&dev->vk, &dev->copy_queries->vk, &dev->vk.alloc);
 
-   nvk_device_finish_meta(dev);
+   if (dev->nvkmd)
+      nvk_device_finish_meta(dev);
 
    vk_pipeline_cache_destroy(dev->vk.mem_cache, NULL);
 
@@ -354,20 +364,22 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    if (dev->vab_memory)
       nvkmd_mem_unref(dev->vab_memory);
 
-   /* Idle the upload queue before we tear down heaps */
-   nvk_upload_queue_sync(dev, &dev->upload);
+   if (dev->nvkmd) {
+      /* Idle the upload queue before we tear down heaps */
+      nvk_upload_queue_sync(dev, &dev->upload);
 
-   nvk_slm_area_finish(&dev->slm);
-   if (pdev->info.cls_eng3d < MAXWELL_B)
-      nvk_heap_finish(dev, &dev->qmd_heap);
-   nvk_heap_finish(dev, &dev->event_heap);
-   nvk_heap_finish(dev, &dev->shader_heap);
-   nvk_edb_bview_cache_finish(dev, &dev->edb_bview_cache);
-   nvk_descriptor_table_finish(dev, &dev->samplers);
-   nvk_descriptor_table_finish(dev, &dev->images);
-   nvkmd_mem_unref(dev->zero_page);
-   nvk_upload_queue_finish(dev, &dev->upload);
-   nvkmd_dev_destroy(dev->nvkmd);
+      nvk_slm_area_finish(&dev->slm);
+      if (pdev->info.cls_eng3d < MAXWELL_B)
+         nvk_heap_finish(dev, &dev->qmd_heap);
+      nvk_heap_finish(dev, &dev->event_heap);
+      nvk_heap_finish(dev, &dev->shader_heap);
+      nvk_edb_bview_cache_finish(dev, &dev->edb_bview_cache);
+      nvk_descriptor_table_finish(dev, &dev->samplers);
+      nvk_descriptor_table_finish(dev, &dev->images);
+      nvkmd_mem_unref(dev->zero_page);
+      nvk_upload_queue_finish(dev, &dev->upload);
+      nvkmd_dev_destroy(dev->nvkmd);
+   }
 
    vk_device_finish(&dev->vk);
    vk_free(&dev->vk.alloc, dev);
