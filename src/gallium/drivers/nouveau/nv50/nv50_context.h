@@ -195,7 +195,8 @@ struct nv50_context {
     */
    uint32_t so_used[4];
 
-   PIPE_FB_SURFACES; //STOP USING THIS
+   struct pipe_surface *fb_cbufs[PIPE_MAX_COLOR_BUFS];
+   struct pipe_surface *fb_zsbuf;
    struct pipe_framebuffer_state framebuffer;
    struct pipe_blend_color blend_colour;
    struct pipe_stencil_ref stencil_ref;

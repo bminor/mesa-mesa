@@ -2,6 +2,7 @@
 
 #include "pipe/p_context.h"
 #include "nvc0/nvc0_resource.h"
+#include "nouveau_context.h"
 #include "nouveau_screen.h"
 
 
@@ -126,12 +127,15 @@ nvc0_resource_from_handle(struct pipe_screen * screen,
    }
 }
 
-static struct pipe_surface *
-nvc0_surface_create(struct pipe_context *pipe,
-                    struct pipe_resource *pres,
-                    const struct pipe_surface *templ)
+void
+nvc0_framebuffer_init(struct pipe_context *pctx,
+                      const struct pipe_framebuffer_state *fb,
+                      struct pipe_surface **cbufs,
+                      struct pipe_surface **zsbuf)
 {
-   return nvc0_miptree_surface_new(pipe, pres, templ);
+   return nv_framebuffer_init(pctx, fb, cbufs, zsbuf,
+                              nvc0_miptree_surface_new,
+                              nv50_surface_destroy);
 }
 
 static struct pipe_resource *
@@ -155,8 +159,6 @@ nvc0_init_resource_functions(struct pipe_context *pcontext)
    pcontext->texture_unmap = nvc0_miptree_transfer_unmap;
    pcontext->buffer_subdata = u_default_buffer_subdata;
    pcontext->texture_subdata = u_default_texture_subdata;
-   pcontext->create_surface = nvc0_surface_create;
-   pcontext->surface_destroy = nv50_surface_destroy;
    pcontext->invalidate_resource = nv50_invalidate_resource;
 }
 

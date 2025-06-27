@@ -195,7 +195,7 @@ nvc0_context_unreference_resources(struct nvc0_context *nvc0)
    nouveau_bufctx_del(&nvc0->bufctx);
    nouveau_bufctx_del(&nvc0->bufctx_cp);
 
-   util_framebuffer_init(&nvc0->base.pipe, NULL, nvc0->fb_cbufs, &nvc0->fb_zsbuf);
+   nvc0_framebuffer_init(&nvc0->base.pipe, NULL, nvc0->fb_cbufs, &nvc0->fb_zsbuf);
    util_unreference_framebuffer_state(&nvc0->framebuffer);
 
    for (i = 0; i < nvc0->num_vtxbufs; ++i)

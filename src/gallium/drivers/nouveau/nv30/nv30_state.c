@@ -399,7 +399,7 @@ nv30_set_framebuffer_state(struct pipe_context *pipe,
           debug_printf("Mismatched color and zeta formats, ignoring zeta.\n");
        }
     }
-    util_framebuffer_init(pipe, &nv30->framebuffer, nv30->fb_cbufs, &nv30->fb_zsbuf);
+    nv30_framebuffer_init(pipe, &nv30->framebuffer, nv30->fb_cbufs, &nv30->fb_zsbuf);
 }
 
 static void

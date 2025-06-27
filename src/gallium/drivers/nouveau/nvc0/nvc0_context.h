@@ -237,7 +237,8 @@ struct nvc0_context {
    struct list_head tex_head;
    struct list_head img_head;
 
-   PIPE_FB_SURFACES; //STOP USING THIS
+   struct pipe_surface *fb_cbufs[PIPE_MAX_COLOR_BUFS];
+   struct pipe_surface *fb_zsbuf;
    struct pipe_framebuffer_state framebuffer;
    bool sample_locations_enabled;
    uint8_t sample_locations[2 * 4 * 8];

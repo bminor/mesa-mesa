@@ -910,7 +910,7 @@ nvc0_set_framebuffer_state(struct pipe_context *pipe,
 
     nouveau_bufctx_reset(nvc0->bufctx_3d, NVC0_BIND_3D_FB);
 
-    util_framebuffer_init(pipe, fb, nvc0->fb_cbufs, &nvc0->fb_zsbuf);
+    nvc0_framebuffer_init(pipe, fb, nvc0->fb_cbufs, &nvc0->fb_zsbuf);
     util_copy_framebuffer_state(&nvc0->framebuffer, fb);
 
     nvc0->dirty_3d |= NVC0_NEW_3D_FRAMEBUFFER | NVC0_NEW_3D_SAMPLE_LOCATIONS |

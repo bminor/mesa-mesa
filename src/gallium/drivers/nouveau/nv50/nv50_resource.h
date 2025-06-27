@@ -157,6 +157,12 @@ void
 nv50_surface_destroy(struct pipe_context *, struct pipe_surface *);
 
 void
+nv50_framebuffer_init(struct pipe_context *pctx,
+                      const struct pipe_framebuffer_state *fb,
+                      struct pipe_surface **cbufs,
+                      struct pipe_surface **zsbuf);
+
+void
 nv50_invalidate_resource(struct pipe_context *, struct pipe_resource *);
 
 void

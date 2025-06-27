@@ -3,6 +3,7 @@
 #include "util/u_inlines.h"
 #include "util/format/u_format.h"
 
+#include "nouveau_context.h"
 #include "nouveau_screen.h"
 
 #include "nv50/nv50_resource.h"
@@ -40,14 +41,6 @@ nv50_resource_from_handle(struct pipe_screen * screen,
       return nv50_miptree_from_handle(screen, templ, whandle);
 }
 
-static struct pipe_surface *
-nv50_surface_create(struct pipe_context *pipe,
-                    struct pipe_resource *pres,
-                    const struct pipe_surface *templ)
-{
-   return nv50_miptree_surface_new(pipe, pres, templ);
-}
-
 void
 nv50_surface_destroy(struct pipe_context *pipe, struct pipe_surface *ps)
 {
@@ -56,6 +49,17 @@ nv50_surface_destroy(struct pipe_context *pipe, struct pipe_surface *ps)
    pipe_resource_reference(&ps->texture, NULL);
 
    FREE(s);
+}
+
+void
+nv50_framebuffer_init(struct pipe_context *pctx,
+                      const struct pipe_framebuffer_state *fb,
+                      struct pipe_surface **cbufs,
+                      struct pipe_surface **zsbuf)
+{
+   return nv_framebuffer_init(pctx, fb, cbufs, zsbuf,
+                              nv50_miptree_surface_new,
+                              nv50_surface_destroy);
 }
 
 void
@@ -142,7 +146,6 @@ nv50_init_resource_functions(struct pipe_context *pcontext)
    pcontext->texture_unmap = nv50_miptree_transfer_unmap;
    pcontext->buffer_subdata = u_default_buffer_subdata;
    pcontext->texture_subdata = u_default_texture_subdata;
-   pcontext->create_surface = nv50_surface_create;
    pcontext->surface_destroy = nv50_surface_destroy;
    pcontext->invalidate_resource = nv50_invalidate_resource;
 }

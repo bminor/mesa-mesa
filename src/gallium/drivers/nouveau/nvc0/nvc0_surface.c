@@ -1165,7 +1165,7 @@ nvc0_blitctx_post_blit(struct nvc0_blitctx *blit)
    struct nvc0_context *nvc0 = blit->nvc0;
    int s;
 
-   pipe_surface_reference(&nvc0->fb_cbufs[0], NULL);
+   nv50_surface_destroy(&nvc0->base.pipe, nvc0->fb_cbufs[0]);
 
    nvc0->framebuffer.width = blit->saved.fb.width;
    nvc0->framebuffer.height = blit->saved.fb.height;

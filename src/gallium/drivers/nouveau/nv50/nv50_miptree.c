@@ -500,7 +500,6 @@ nv50_miptree_surface_new(struct pipe_context *pipe,
    struct nv50_surface *ns = nv50_surface_from_miptree(mt, templ);
    if (!ns)
       return NULL;
-   ns->base.context = pipe;
 
    if (ns->base.first_layer) {
       const unsigned l = ns->base.level;

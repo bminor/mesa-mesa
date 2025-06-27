@@ -585,6 +585,5 @@ nvc0_miptree_surface_new(struct pipe_context *pipe,
    struct nv50_surface *ns = nv50_surface_from_miptree(nv50_miptree(pt), templ);
    if (!ns)
       return NULL;
-   ns->base.context = pipe;
    return &ns->base;
 }

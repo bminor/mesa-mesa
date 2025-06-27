@@ -541,7 +541,7 @@ nv30_miptree_from_handle(struct pipe_screen *pscreen,
    return &mt->base.base;
 }
 
-struct pipe_surface *
+static struct pipe_surface *
 nv30_miptree_surface_new(struct pipe_context *pipe,
                          struct pipe_resource *pt,
                          const struct pipe_surface *tmpl)
@@ -556,7 +556,6 @@ nv30_miptree_surface_new(struct pipe_context *pipe,
       return NULL;
    ps = &ns->base;
 
-   pipe_reference_init(&ps->reference, 1);
    pipe_resource_reference(&ps->texture, pt);
    ps->context = pipe;
    ps->format = tmpl->format;
@@ -576,11 +575,19 @@ nv30_miptree_surface_new(struct pipe_context *pipe,
    return ps;
 }
 
-void
+static void
 nv30_miptree_surface_del(struct pipe_context *pipe, struct pipe_surface *ps)
 {
-   struct nv30_surface *ns = nv30_surface(ps);
+   FREE(ps);
+}
 
-   pipe_resource_reference(&ps->texture, NULL);
-   FREE(ns);
+void
+nv30_framebuffer_init(struct pipe_context *pctx,
+                      const struct pipe_framebuffer_state *fb,
+                      struct pipe_surface **cbufs,
+                      struct pipe_surface **zsbuf)
+{
+   return nv_framebuffer_init(pctx, fb, cbufs, zsbuf,
+                              nv30_miptree_surface_new,
+                              nv30_miptree_surface_del);
 }

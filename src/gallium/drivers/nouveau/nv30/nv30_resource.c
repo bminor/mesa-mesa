@@ -99,8 +99,6 @@ nv30_resource_init(struct pipe_context *pipe)
    pipe->texture_unmap = nv30_miptree_transfer_unmap;
    pipe->buffer_subdata = u_default_buffer_subdata;
    pipe->texture_subdata = u_default_texture_subdata;
-   pipe->create_surface = nv30_miptree_surface_new;
-   pipe->surface_destroy = nv30_miptree_surface_del;
    pipe->resource_copy_region = nv30_resource_copy_region;
    pipe->blit = nv30_blit;
    pipe->flush_resource = nv30_flush_resource;
