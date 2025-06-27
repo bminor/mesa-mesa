@@ -2442,16 +2442,26 @@ impl SM70Op for OpTex {
 
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
-
         if e.sm >= 100 {
             e.set_field(48..56, 0xff_u8); // ureg
-            e.set_bit(59, self.lod_mode.is_explicit_lod());
         }
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
-        e.set_bit(77, false); // ToDo: NDV
+        if e.sm >= 100 {
+            e.set_field(76..78, 3_u8);
+            e.set_field(
+                56..58,
+                match self.offset_mode {
+                    TexOffsetMode::None => 0_u8,
+                    TexOffsetMode::AddOffI => 1_u8,
+                    TexOffsetMode::PerPx => panic!("Illegal offset value"),
+                },
+            );
+        } else {
+            e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
+            e.set_bit(77, false); // ToDo: NDV
+        }
         e.set_bit(78, self.z_cmpr);
         e.set_eviction_priority(&self.mem_eviction_priority);
         if e.sm >= 100 {
@@ -2504,12 +2514,28 @@ impl SM70Op for OpTld {
             e.set_field(48..56, 0xff_u8); // ureg
         }
 
+        if e.sm >= 100 {
+            e.set_field(
+                56..58,
+                match self.offset_mode {
+                    TexOffsetMode::None => 0_u8,
+                    TexOffsetMode::AddOffI => 1_u8,
+                    TexOffsetMode::PerPx => panic!("Illegal offset value"),
+                },
+            );
+        } else {
+            e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
+        }
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
 
-        // bit 77: .CL
-        e.set_bit(78, self.is_ms);
+        if e.sm >= 120 {
+            // MS vs UMS
+            e.set_bit(77, self.is_ms);
+        } else {
+            // bit 77: .CL
+            e.set_bit(78, self.is_ms);
+        }
         // bits 79..81: .F16
         e.set_eviction_priority(&self.mem_eviction_priority);
         assert!(self.lod_mode.is_explicit_lod());
@@ -2660,9 +2686,21 @@ impl SM70Op for OpTxd {
             e.set_field(48..56, 0xff_u8); // ureg
         }
 
+        if e.sm >= 100 {
+            e.set_field(
+                56..58,
+                match self.offset_mode {
+                    TexOffsetMode::None => 0_u8,
+                    TexOffsetMode::AddOffI => 1_u8,
+                    TexOffsetMode::PerPx => panic!("Illegal offset value"),
+                },
+            );
+        } else {
+            e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
+        }
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
+
         e.set_bit(77, false); // ToDo: NDV
         e.set_eviction_priority(&self.mem_eviction_priority);
         e.set_bit(90, self.nodep);
