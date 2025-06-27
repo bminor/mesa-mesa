@@ -98,6 +98,8 @@ vectorize_vec2_16bit(const nir_instr *instr, const void *_)
    const unsigned bit_size = alu->def.bit_size;
    if (bit_size == 16)
       return 2;
+   else if (bit_size == 8)
+      return 4;
    else
       return 1;
 }
