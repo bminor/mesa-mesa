@@ -22,8 +22,12 @@
 #include "ir3/ir3_compiler.h"
 
 static bool
-valid_sample_count(unsigned sample_count)
+valid_sample_count(unsigned sample_count, bool is_suboptimal)
 {
+   /* NPoT formats do not support MSAA: */
+   if (is_suboptimal && (sample_count > 1))
+      return false;
+
    switch (sample_count) {
    case 0:
    case 1:
@@ -47,10 +51,14 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
                                unsigned storage_sample_count, unsigned usage)
 {
    struct fd_screen *screen = fd_screen(pscreen);
+   bool allow_suboptimal = usage & PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL;
+   bool is_suboptimal = !util_is_power_of_two_or_zero(util_format_get_blocksize(format));
    unsigned retval = 0;
 
+   usage &= ~PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL;
+
    if ((target >= PIPE_MAX_TEXTURE_TYPES) ||
-       !valid_sample_count(sample_count)) {
+       !valid_sample_count(sample_count, is_suboptimal)) {
       DBG("not supported: format=%s, target=%d, sample_count=%d, usage=%x",
           util_format_name(format), target, sample_count, usage);
       return false;
@@ -69,8 +77,7 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
 
    if ((usage & (PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SHADER_IMAGE)) &&
        has_tex &&
-       (target == PIPE_BUFFER ||
-        util_is_power_of_two_or_zero(util_format_get_blocksize(format)))) {
+       (target == PIPE_BUFFER || allow_suboptimal || !is_suboptimal)) {
       retval |= usage & (PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SHADER_IMAGE);
    }
 
