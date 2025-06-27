@@ -1669,6 +1669,15 @@ impl SM20Encoder<'_> {
         );
     }
 
+    fn set_tex_ndv(&mut self, bit: usize, deriv_mode: TexDerivMode) {
+        let ndv = match deriv_mode {
+            TexDerivMode::Auto => false,
+            TexDerivMode::NonDivergent => true,
+            _ => panic!("{deriv_mode} is not supported"),
+        };
+        self.set_bit(bit, ndv);
+    }
+
     fn set_tex_channel_mask(
         &mut self,
         range: Range<usize>,
@@ -1719,6 +1728,7 @@ impl SM20Op for OpTex {
         assert!(self.fault.is_none());
         e.set_reg_src(20..26, &self.srcs[0]);
         e.set_reg_src(26..32, &self.srcs[1]);
+        e.set_tex_ndv(45, self.deriv_mode);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
         e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
@@ -1848,6 +1858,7 @@ impl SM20Op for OpTmml {
         assert!(self.dsts[1].is_none());
         e.set_reg_src(20..26, &self.srcs[0]);
         e.set_reg_src(26..32, &self.srcs[1]);
+        e.set_tex_ndv(45, self.deriv_mode);
         e.set_tex_channel_mask(46..50, self.channel_mask);
         e.set_tex_dim(51..54, self.dim);
     }

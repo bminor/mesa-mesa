@@ -1877,6 +1877,17 @@ impl<'a> ShaderFromNir<'a> {
                 _ => panic!("Invalid LOD mode"),
             };
 
+            // Starting with Blackwell B, the shader stage check for derivatives
+            // is back to defaulting to disabled on compute and instead we have
+            // a new derivative mode to re-enable it.  If tex_lod_mode == Zero,
+            // there is no implicit derivative so this doesn't matter.
+            let deriv_mode =
+                if self.sm.sm() >= 120 && lod_mode != TexLodMode::Zero {
+                    TexDerivMode::DerivXY
+                } else {
+                    TexDerivMode::Auto
+                };
+
             let offset_mode = match flags.offset_mode() {
                 NAK_NIR_OFFSET_MODE_NONE => TexOffsetMode::None,
                 NAK_NIR_OFFSET_MODE_AOFFI => TexOffsetMode::AddOffI,
@@ -1908,12 +1919,14 @@ impl<'a> ShaderFromNir<'a> {
                     channel_mask,
                 });
             } else if tex.op == nir_texop_lod {
+                assert!(lod_mode == TexLodMode::Auto);
                 assert!(offset_mode == TexOffsetMode::None);
                 b.push_op(OpTmml {
                     dsts: dsts,
                     tex: tex_ref,
                     srcs: srcs,
                     dim: dim,
+                    deriv_mode,
                     nodep: flags.nodep(),
                     channel_mask,
                 });
@@ -1955,6 +1968,7 @@ impl<'a> ShaderFromNir<'a> {
                     srcs: srcs,
                     dim: dim,
                     lod_mode: lod_mode,
+                    deriv_mode,
                     z_cmpr: flags.has_z_cmpr(),
                     offset_mode,
                     mem_eviction_priority: MemEvictionPriority::Normal,

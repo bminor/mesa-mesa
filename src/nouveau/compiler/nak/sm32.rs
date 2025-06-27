@@ -1939,6 +1939,15 @@ impl SM32Encoder<'_> {
             },
         );
     }
+
+    fn set_tex_ndv(&mut self, bit: usize, deriv_mode: TexDerivMode) {
+        let ndv = match deriv_mode {
+            TexDerivMode::Auto => false,
+            TexDerivMode::NonDivergent => true,
+            _ => panic!("{deriv_mode} is not supported"),
+        };
+        self.set_bit(bit, ndv);
+    }
 }
 
 /// Helper to legalize texture instructions
@@ -1986,7 +1995,7 @@ impl SM32Op for OpTex {
 
         e.set_field(34..38, self.channel_mask.to_bits());
         e.set_tex_dim(38..41, self.dim);
-        e.set_bit(41, false); // ToDo: NDV
+        e.set_tex_ndv(41, self.deriv_mode);
         e.set_bit(42, self.z_cmpr);
         e.set_bit(43, self.offset_mode == TexOffsetMode::AddOffI);
         e.set_tex_lod_mode(44..47, self.lod_mode);
@@ -2113,6 +2122,7 @@ impl SM32Op for OpTmml {
 
         e.set_field(34..38, self.channel_mask.to_bits());
         e.set_tex_dim(38..41, self.dim);
+        e.set_tex_ndv(41, self.deriv_mode);
     }
 }
 
@@ -2149,7 +2159,6 @@ impl SM32Op for OpTxd {
 
         e.set_field(34..38, self.channel_mask.to_bits());
         e.set_tex_dim(38..41, self.dim);
-        e.set_bit(41, false); // ToDo: NDV
         e.set_bit(54, self.offset_mode == TexOffsetMode::AddOffI);
     }
 }

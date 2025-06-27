@@ -2352,6 +2352,39 @@ impl SM70Encoder<'_> {
         );
     }
 
+    fn set_tex_ndv(&mut self, bit: usize, deriv_mode: TexDerivMode) {
+        let ndv = match deriv_mode {
+            TexDerivMode::Auto => false,
+            TexDerivMode::NonDivergent => true,
+            _ => panic!("{deriv_mode} is not supported"),
+        };
+        self.set_bit(bit, ndv);
+    }
+
+    fn set_tex_deriv_mode(
+        &mut self,
+        range: Range<usize>,
+        deriv_mode: TexDerivMode,
+    ) {
+        assert!(range.len() == 2);
+        assert!(self.sm >= 100);
+        self.set_field(
+            range,
+            match deriv_mode {
+                TexDerivMode::Auto => 0_u8,
+                TexDerivMode::NonDivergent => 1_u8,
+                TexDerivMode::ForceDivergent => {
+                    assert!(self.sm >= 100 && self.sm < 110);
+                    2_u8
+                }
+                TexDerivMode::DerivXY => {
+                    assert!(self.sm >= 120);
+                    3_u8
+                }
+            },
+        );
+    }
+
     fn set_image_dim(&mut self, range: Range<usize>, dim: ImageDim) {
         assert!(range.len() == 3);
         self.set_field(
@@ -2450,7 +2483,6 @@ impl SM70Op for OpTex {
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
         if e.sm >= 100 {
-            e.set_field(76..78, 3_u8);
             e.set_field(
                 56..58,
                 match self.offset_mode {
@@ -2459,9 +2491,10 @@ impl SM70Op for OpTex {
                     TexOffsetMode::PerPx => panic!("Illegal offset value"),
                 },
             );
+            e.set_tex_deriv_mode(76..78, self.deriv_mode);
         } else {
             e.set_bit(76, self.offset_mode == TexOffsetMode::AddOffI);
-            e.set_bit(77, false); // ToDo: NDV
+            e.set_tex_ndv(77, self.deriv_mode);
         }
         e.set_bit(78, self.z_cmpr);
         e.set_eviction_priority(&self.mem_eviction_priority);
@@ -2644,7 +2677,11 @@ impl SM70Op for OpTmml {
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
-        e.set_bit(77, false); // ToDo: NDV
+        if e.sm >= 100 {
+            e.set_tex_deriv_mode(76..78, self.deriv_mode);
+        } else {
+            e.set_tex_ndv(77, self.deriv_mode);
+        }
         e.set_bit(90, self.nodep);
     }
 }
@@ -2705,7 +2742,6 @@ impl SM70Op for OpTxd {
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
 
-        e.set_bit(77, false); // ToDo: NDV
         e.set_eviction_priority(&self.mem_eviction_priority);
         e.set_bit(90, self.nodep);
     }

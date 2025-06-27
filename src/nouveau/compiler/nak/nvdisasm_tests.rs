@@ -453,6 +453,7 @@ pub fn test_texture() {
 
                 dim: TexDim::_2D,
                 lod_mode,
+                deriv_mode: TexDerivMode::Auto,
                 z_cmpr: false,
                 offset_mode: TexOffsetMode::None,
                 mem_eviction_priority: MemEvictionPriority::First,
@@ -527,6 +528,7 @@ pub fn test_texture() {
             srcs: [SrcRef::Reg(r1).into(), SrcRef::Reg(r3).into()],
 
             dim: TexDim::_2D,
+            deriv_mode: TexDerivMode::Auto,
             nodep: true,
             channel_mask: ChannelMask::for_comps(3),
         };
