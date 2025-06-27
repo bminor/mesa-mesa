@@ -983,17 +983,14 @@ static void
 hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader,
                enum hk_feature_key features)
 {
-   if (features & HK_FEAT_LARGE_POINTS) {
-      /* Point size must be clamped, excessively large points don't render
-       * properly on G13.
-       *
-       * Must be synced with pointSizeRange.
-       */
-      NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f);
+   /* Point size must be clamped, excessively large points don't render
+    * properly on G13.
+    *
+    * Must be synced with pointSizeRange.
+    */
+   NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f);
 
-      /* TODO: Optimize out for monolithic? */
-      NIR_PASS(_, nir, nir_lower_default_point_size);
-   } else {
+   if (!(features & HK_FEAT_LARGE_POINTS)) {
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, kill_psiz,
                nir_metadata_control_flow, NULL);
    }
@@ -1063,6 +1060,17 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
          /* This destroys info so it needs to happen after the gather */
          NIR_PASS(_, nir, agx_nir_lower_tes, hw);
       }
+   }
+
+   /* Normally, vertex shaders need to write a default point size. However, if
+    * we have a geometry/tessellation shader, the hardware vertex (software
+    * GS/TES) will handle this itself instead.
+    *
+    * TODO: Optimize out for monolithic?
+    */
+   if (sw_stage == MESA_SHADER_VERTEX && hw &&
+       (features & HK_FEAT_LARGE_POINTS)) {
+      NIR_PASS(_, nir, nir_lower_default_point_size);
    }
 
    uint64_t outputs = nir->info.outputs_written;
