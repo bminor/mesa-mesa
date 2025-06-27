@@ -1930,12 +1930,12 @@ impl TexLodMode {
 impl fmt::Display for TexLodMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TexLodMode::Auto => write!(f, "la"),
-            TexLodMode::Zero => write!(f, "lz"),
-            TexLodMode::Bias => write!(f, "lb"),
-            TexLodMode::Lod => write!(f, "ll"),
-            TexLodMode::Clamp => write!(f, "lc"),
-            TexLodMode::BiasClamp => write!(f, "lb.lc"),
+            TexLodMode::Auto => write!(f, ""),
+            TexLodMode::Zero => write!(f, ".lz"),
+            TexLodMode::Bias => write!(f, ".lb"),
+            TexLodMode::Lod => write!(f, ".ll"),
+            TexLodMode::Clamp => write!(f, ".lc"),
+            TexLodMode::BiasClamp => write!(f, ".lb.lc"),
         }
     }
 }
@@ -5122,11 +5122,7 @@ pub struct OpTex {
 
 impl DisplayOp for OpTex {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "tex{}", self.dim)?;
-        if self.lod_mode != TexLodMode::Auto {
-            write!(f, ".{}", self.lod_mode)?;
-        }
-        write!(f, "{}", self.offset_mode)?;
+        write!(f, "tex{}{}{}", self.dim, self.lod_mode, self.offset_mode)?;
         if self.z_cmpr {
             write!(f, ".dc")?;
         }
@@ -5162,11 +5158,7 @@ pub struct OpTld {
 
 impl DisplayOp for OpTld {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "tld{}", self.dim)?;
-        if self.lod_mode != TexLodMode::Auto {
-            write!(f, ".{}", self.lod_mode)?;
-        }
-        write!(f, "{}", self.offset_mode)?;
+        write!(f, "tld{}{}{}", self.dim, self.lod_mode, self.offset_mode)?;
         if self.is_ms {
             write!(f, ".ms")?;
         }
