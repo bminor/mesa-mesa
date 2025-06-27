@@ -3,7 +3,12 @@ DRI_CONF_SECTION_PERFORMANCE
    /* AFBC options. */
    DRI_CONF_OPT_B(pan_afbc_tiled, true, "Use AFBC tiled layout whenever "
                   "possible")
-   DRI_CONF_OPT_B(pan_force_afbc_packing, false, "Use AFBC-P for textures")
+
+   /* AFBC packing options. */
+   DRI_CONF_OPT_B(pan_force_afbc_packing, false, "Pack AFBC textures "
+                  "progressively in the background")
+   DRI_CONF_OPT_I(pan_afbcp_reads_threshold, 10, 1, 255, "Consecutive reads "
+                  "theshold after which an AFBC texture is packed")
 
    /* 2M chunks. */
    DRI_CONF_OPT_I(pan_csf_chunk_size, 2 * 1024 * 1024, 256 * 1024, 8 * 1024 * 1024, "CSF Tiler Chunk Size")

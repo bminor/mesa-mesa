@@ -36,6 +36,32 @@
 #define PAN_BIND_SHARED_MASK                                                   \
    (PIPE_BIND_DISPLAY_TARGET | PIPE_BIND_SCANOUT | PIPE_BIND_SHARED)
 
+struct pan_afbcp {
+   /* Layout BO */
+   struct panfrost_bo *layout_bo;
+
+   /* Packed BO */
+   struct panfrost_bo *packed_bo;
+
+   /* Size of the packed BO */
+   unsigned size;
+
+   /* Compression ratio */
+   float ratio;
+
+   /* Payload layout offsets of each mip levels */
+   unsigned layout_offsets[PIPE_MAX_TEXTURE_LEVELS];
+
+   /* Packed plane description */
+   struct pan_image_plane plane;
+
+   /* Number of consecutive reads without a write on the resource */
+   uint32_t nr_consecutive_reads;
+
+   /* Prevent recursion by skipping resource access updates */
+   bool skip_access_updates;
+};
+
 struct panfrost_resource {
    struct pipe_resource base;
    struct {
@@ -94,6 +120,9 @@ struct panfrost_resource {
 
    /* Whether the resource owns the backing BO's label */
    bool owns_label;
+
+   /* AFBC-P state */
+   struct pan_afbcp *afbcp;
 };
 
 static inline struct panfrost_resource *
@@ -211,6 +240,21 @@ panfrost_resource_restore_format(struct panfrost_resource *rsrc,
 
 bool panfrost_should_pack_afbc(struct panfrost_device *dev,
                                const struct panfrost_resource *rsrc);
+
+void pan_resource_afbcp_update(struct panfrost_context *ctx,
+                               struct panfrost_resource *rsrc,
+                               bool write);
+
+/* Update the resource on each read or write access. */
+static inline void
+pan_resource_update_access(struct panfrost_context *ctx,
+                           struct panfrost_resource *rsrc,
+                           bool write)
+{
+   /* Currently only used to pack AFBC resources. */
+   if (rsrc->afbcp)
+      pan_resource_afbcp_update(ctx, rsrc, write);
+}
 
 void pan_resource_modifier_convert(struct panfrost_context *ctx,
                                    struct panfrost_resource *rsrc,

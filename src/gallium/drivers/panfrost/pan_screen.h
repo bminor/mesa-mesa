@@ -127,8 +127,15 @@ struct panfrost_screen {
    /* Use AFBC tiled layout whenever possible */
    bool afbc_tiled;
 
-   unsigned max_afbc_packing_ratio;
+   /* Pack AFBC textures progressively in the background */
    bool force_afbc_packing;
+
+   /* Discard packing if the packed size percentage reaches this value */
+   unsigned max_afbc_packing_ratio;
+
+   /* Consecutive reads threshold after which an AFBC texture is packed */
+   uint32_t afbcp_reads_threshold;
+
    bool allow_128bit_rts_v4;
    int force_afrc_rate;
    uint64_t compute_core_mask;

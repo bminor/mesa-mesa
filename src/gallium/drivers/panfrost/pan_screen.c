@@ -78,7 +78,7 @@ static const struct debug_named_value panfrost_debug_options[] = {
    {"overflow",   PAN_DBG_OVERFLOW,   "Check for buffer overflows in pool uploads"},
 #endif
    {"yuv",        PAN_DBG_YUV,        "Tint YUV textures with blue for 1-plane and green for 2-plane"},
-   {"forcepack",  PAN_DBG_FORCE_PACK, "Force packing of AFBC textures on upload"},
+   {"forcepack",  PAN_DBG_FORCE_PACK, "Pack AFBC textures progressively in the background"},
    {"cs",         PAN_DBG_CS,         "Enable extra checks in command stream"},
    DEBUG_NAMED_VALUE_END
 };
@@ -1003,6 +1003,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    if (!screen->force_afbc_packing)
       screen->force_afbc_packing = driQueryOptionb(config->options,
                                                    "pan_force_afbc_packing");
+   screen->afbcp_reads_threshold = driQueryOptioni(config->options,
+                                                   "pan_afbcp_reads_threshold");
 
    const char *option = debug_get_option("PAN_AFRC_RATE", NULL);
    if (!option) {

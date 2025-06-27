@@ -200,6 +200,45 @@ adjust_mtk_tiled_props(struct panfrost_resource *rsc,
 }
 
 static void
+pan_resource_afbcp_restart(struct panfrost_resource *prsrc)
+{
+   assert(prsrc->base.array_size == 1);
+
+   if (!prsrc->afbcp) {
+      prsrc->afbcp = calloc(1, sizeof(struct pan_afbcp));
+      return;
+   }
+
+   if (prsrc->afbcp->layout_bo) {
+      panfrost_bo_unreference(prsrc->afbcp->layout_bo);
+      prsrc->afbcp->layout_bo = NULL;
+   }
+   if (prsrc->afbcp->packed_bo) {
+      panfrost_bo_unreference(prsrc->afbcp->packed_bo);
+      prsrc->afbcp->packed_bo = NULL;
+   }
+
+   prsrc->afbcp->size = 0;
+   prsrc->afbcp->ratio = 0.0f;
+   prsrc->afbcp->nr_consecutive_reads = 0;
+}
+
+static void
+pan_resource_afbcp_stop(struct panfrost_resource *prsrc)
+{
+   if (!prsrc->afbcp)
+      return;
+
+   if (prsrc->afbcp->layout_bo)
+      panfrost_bo_unreference(prsrc->afbcp->layout_bo);
+   if (prsrc->afbcp->packed_bo)
+      panfrost_bo_unreference(prsrc->afbcp->packed_bo);
+
+   free(prsrc->afbcp);
+   prsrc->afbcp = NULL;
+}
+
+static void
 panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
 {
    MESA_TRACE_FUNC();
@@ -223,6 +262,8 @@ panfrost_resource_destroy(struct pipe_screen *screen, struct pipe_resource *pt)
       }
       panfrost_bo_unreference(rsrc->bo);
    }
+
+   pan_resource_afbcp_stop(rsrc);
 
    free(rsrc->index_cache);
    free(rsrc->damage.tile_map.data);
@@ -1778,6 +1819,8 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
    struct pipe_resource templates[MAX_IMAGE_PLANES] = {0};
    unsigned plane_count;
 
+   pan_resource_afbcp_stop(rsrc);
+
    templates[0] = rsrc->base;
    for (plane_count = 1;
         templates[plane_count - 1].next && plane_count < ARRAY_SIZE(templates);
@@ -1959,83 +2002,71 @@ panfrost_should_linear_convert(struct panfrost_context *ctx,
    }
 }
 
-static struct panfrost_bo *
-panfrost_get_afbc_payload_sizes(struct panfrost_context *ctx,
-                                struct panfrost_resource *rsrc,
-                                unsigned first_level, unsigned last_level,
-                                unsigned *out_offsets)
-{
-   struct panfrost_screen *screen = pan_screen(ctx->base.screen);
-   struct panfrost_device *dev = pan_device(ctx->base.screen);
-   struct panfrost_batch *batch;
-   struct panfrost_bo *bo;
-   unsigned layout_size = 0;
-
-   for (int level = first_level; level <= last_level; ++level) {
-      struct pan_image_slice_layout *slice = &rsrc->plane.layout.slices[level];
-      unsigned stride_blocks = pan_afbc_stride_blocks(
-         rsrc->image.props.modifier, slice->afbc.header.row_stride_B);
-      unsigned nr_blocks =
-         stride_blocks * pan_afbc_height_blocks(
-                        rsrc->image.props.modifier,
-                        u_minify(rsrc->image.props.extent_px.height, level));
-      unsigned sz = nr_blocks * sizeof(struct pan_afbc_payload_extent);
-      out_offsets[level - first_level] = layout_size;
-      layout_size += sz;
-   }
-
-   bo = panfrost_bo_create(dev, layout_size, 0, "AFBC-P payload layout");
-   if (!bo)
-      return NULL;
-
-   panfrost_flush_batches_accessing_rsrc(ctx, rsrc,
-                                         "AFBC-P payload layout pre-flush");
-   batch = panfrost_get_fresh_batch_for_fbo(ctx, "AFBC-P payload layout");
-
-   for (int level = first_level; level <= last_level; ++level) {
-      unsigned offset = out_offsets[level - first_level];
-      screen->vtbl.afbc_size(batch, rsrc, bo, offset, level);
-   }
-
-   panfrost_flush_batches_accessing_rsrc(ctx, rsrc,
-                                         "AFBC-P payload layout post-flush");
-
-   return bo;
-}
-
-static void
-panfrost_pack_afbc(struct panfrost_context *ctx,
-                   struct panfrost_resource *prsrc)
+/* Queue a CS modifier conversion job to calculate and store the payload sizes
+ * of the current AFBC BO into a new AFBC-P payload layout BO. Returns true on
+ * success. */
+static bool
+pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
+                                     struct panfrost_resource *prsrc)
 {
    MESA_TRACE_FUNC();
 
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
-   struct panfrost_bo *layout_bo;
-   unsigned layout_offsets[PIPE_MAX_TEXTURE_LEVELS];
-
-   assert(prsrc->base.array_size == 1);
-
-   uint64_t modifier = prsrc->modifier & ~AFBC_FORMAT_MOD_SPARSE;
+   uint64_t modifier = prsrc->modifier;
    unsigned last_level = prsrc->base.last_level;
-   struct pan_image_slice_layout slice_infos[PIPE_MAX_TEXTURE_LEVELS] = {0};
-   unsigned total_size = 0;
+   unsigned layout_size = 0;
 
-   layout_bo = panfrost_get_afbc_payload_sizes(ctx, prsrc, 0, last_level,
-                                               layout_offsets);
-
-   if (!layout_bo) {
-      mesa_loge("panfrost_pack_afbc: failed to create AFBC-P payload layout "
-                "BO");
-      return;
+   for (unsigned level = 0; level <= last_level; ++level) {
+      struct pan_image_slice_layout *slice =
+         &prsrc->plane.layout.slices[level];
+      unsigned nr_blocks =
+         pan_afbc_stride_blocks(
+            modifier, slice->afbc.header.row_stride_B) *
+         pan_afbc_height_blocks(
+            modifier, u_minify(prsrc->image.props.extent_px.height, level));
+      prsrc->afbcp->layout_offsets[level] = layout_size;
+      layout_size += nr_blocks * sizeof(struct pan_afbc_payload_extent);
    }
 
-   panfrost_bo_wait(layout_bo, INT64_MAX, false);
+   prsrc->afbcp->layout_bo = panfrost_bo_create(
+      dev, layout_size, 0, "AFBC-P payload layout");
+   if (!prsrc->afbcp->layout_bo) {
+      mesa_loge("pan_resource_afbcp_get_payload_sizes: failed to create "
+                "AFBC-P payload layout BO");
+      return false;
+   }
+
+   prsrc->afbcp->skip_access_updates = true;
+
+   struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
+   for (unsigned level = 0; level <= last_level; ++level)
+      screen->vtbl.afbc_size(batch, prsrc, prsrc->afbcp->layout_bo,
+                             prsrc->afbcp->layout_offsets[level], level);
+
+   prsrc->afbcp->skip_access_updates = false;
+
+   return true;
+}
+
+/* Calculate and store the packed payload offsets into the AFBC-P payload
+ * layout BO and store the total packed size. */
+static void
+pan_resource_afbcp_get_payload_offsets(struct panfrost_context *ctx,
+                                       struct panfrost_resource *prsrc)
+{
+   MESA_TRACE_FUNC();
+
+   struct panfrost_device *dev = pan_device(ctx->base.screen);
+   uint64_t modifier = prsrc->modifier;
+   unsigned last_level = prsrc->base.last_level;
+   unsigned total_size = 0;
 
    for (unsigned level = 0; level <= last_level; ++level) {
       struct pan_image_slice_layout *src_slice =
          &prsrc->plane.layout.slices[level];
-      struct pan_image_slice_layout *dst_slice = &slice_infos[level];
+      struct pan_image_slice_layout *dst_slice =
+         &prsrc->afbcp->plane.layout.slices[level];
       unsigned nr_blocks_total =
          pan_afbc_stride_blocks(
             modifier, src_slice->afbc.header.row_stride_B) *
@@ -2043,9 +2074,10 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
             modifier, u_minify(prsrc->image.props.extent_px.height, level));
       uint32_t body_offset_B = pan_afbc_body_offset(
          dev->arch, modifier, src_slice->afbc.header.surface_size_B);
-      uint32_t offset = 0;
+      uint32_t body_size_B = 0;
       struct pan_afbc_payload_extent *layout =
-         layout_bo->ptr.cpu + layout_offsets[level];
+         prsrc->afbcp->layout_bo->ptr.cpu +
+         prsrc->afbcp->layout_offsets[level];
 
       /* Stack allocated chunk used to copy the AFBC-P payload layout from
        * non-cacheable memory to cacheable memory. Each iteration of the
@@ -2066,38 +2098,43 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
             nr_blocks * sizeof(struct pan_afbc_payload_extent));
 
          for (unsigned j = 0; j < nr_blocks; j++) {
-            layout[i + j].offset = offset;
-            offset += layout_chunk[j].size;
+            layout[i + j].offset = body_size_B;
+            body_size_B += layout_chunk[j].size;
          }
       }
 
-      total_size =
-         ALIGN_POT(total_size, pan_afbc_header_align(dev->arch, modifier));
-      {
-         /* Header layout is exactly the same, only the body is shrunk. */
-         dst_slice->afbc.header = src_slice->afbc.header;
-         dst_slice->afbc.surface_stride_B = body_offset_B + offset;
-         dst_slice->size_B = dst_slice->afbc.surface_stride_B;
-         dst_slice->offset_B = total_size;
+      /* Header layout is exactly the same, only the body is shrunk. */
+      unsigned size_B = body_offset_B + body_size_B;
+      dst_slice->afbc.header = src_slice->afbc.header;
+      dst_slice->afbc.surface_stride_B = size_B;
+      dst_slice->size_B = size_B;
+      dst_slice->offset_B = total_size;
 
-         /* We can't write to AFBC-packed resource, so there is no reason to
-          * keep CRC data around */
-         dst_slice->crc.offset_B = 0;
-         dst_slice->crc.size_B = 0;
-      }
-      total_size += dst_slice->size_B;
+      /* We can't write to AFBC-packed resource, so there is no reason to
+       * keep CRC data around */
+      dst_slice->crc.offset_B = 0;
+      dst_slice->crc.size_B = 0;
+
+      total_size = ALIGN_POT(total_size + size_B,
+                             pan_afbc_header_align(dev->arch, modifier));
    }
 
-   unsigned new_size = ALIGN_POT(total_size, 4096); // FIXME
-   unsigned old_size = panfrost_bo_size(prsrc->bo);
-   unsigned ratio = 100 * new_size / old_size;
+   prsrc->afbcp->size = ALIGN_POT(total_size, 4096); // FIXME
+}
 
-   if (ratio > screen->max_afbc_packing_ratio) {
-      panfrost_bo_unreference(layout_bo);
-      return;
-   }
-   perf_debug(ctx, "%i%%: %i KB -> %i KB\n", ratio, old_size / 1024,
-              new_size / 1024);
+/* Queue a CS modifier conversion job to pack the current sparse AFBC BO into
+ * a new packed BO using the AFBC-P payload layout BO. Returns true on
+ * success. */
+static bool
+pan_resource_afbcp_pack(struct panfrost_context *ctx,
+                        struct panfrost_resource *prsrc)
+{
+   MESA_TRACE_FUNC();
+
+   struct panfrost_screen *screen = pan_screen(ctx->base.screen);
+   struct panfrost_device *dev = pan_device(ctx->base.screen);
+   uint64_t modifier = prsrc->modifier & ~AFBC_FORMAT_MOD_SPARSE;
+   unsigned last_level = prsrc->base.last_level;
 
    const char *old_user_label = NULL;
    if (prsrc->bo->label) {
@@ -2105,48 +2142,132 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       if (old_user_label)
          old_user_label += strlen("user_label=");
    }
+   char *new_label = panfrost_resource_new_label(
+      prsrc, modifier, old_user_label);
 
-   char *new_label =
-      panfrost_resource_new_label(prsrc, modifier, old_user_label);
-
-   struct panfrost_bo *dst =
-      panfrost_bo_create(dev, new_size, 0, new_label);
-
-   if (!dst) {
-      mesa_loge("panfrost_pack_afbc: failed to create AFBC-P BO");
-      panfrost_bo_unreference(layout_bo);
+   prsrc->afbcp->packed_bo = panfrost_bo_create(
+      dev, prsrc->afbcp->size, 0, new_label);
+   if (!prsrc->afbcp->packed_bo) {
+      mesa_loge("pan_resource_afbcp_pack: failed to create AFBC-P BO");
       free(new_label);
-      return;
+      return false;
    }
 
-   struct panfrost_batch *batch =
-      panfrost_get_fresh_batch_for_fbo(ctx, "AFBC compaction");
+   prsrc->afbcp->skip_access_updates = true;
 
-   for (unsigned level = 0; level <= last_level; ++level) {
-      struct pan_image_slice_layout *slice = &slice_infos[level];
-      screen->vtbl.afbc_pack(batch, prsrc, dst, slice, layout_bo,
-                             layout_offsets[level], level);
-      prsrc->plane.layout.slices[level] = *slice;
-   }
-   prsrc->plane.layout.array_stride_B = new_size;
-   prsrc->plane.layout.data_size_B = new_size;
+   struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
+   for (unsigned level = 0; level <= last_level; ++level)
+      screen->vtbl.afbc_pack(batch, prsrc, prsrc->afbcp->packed_bo,
+                             &prsrc->afbcp->plane.layout.slices[level],
+                             prsrc->afbcp->layout_bo,
+                             prsrc->afbcp->layout_offsets[level], level);
 
-   panfrost_flush_batches_accessing_rsrc(ctx, prsrc, "AFBC compaction flush");
+   prsrc->afbcp->skip_access_updates = false;
 
-   if (prsrc->owns_label) {
-      char *old_label = (char *)panfrost_bo_replace_label(prsrc->bo, "Disposed pre-AFBC compaction BO", false);
-      free(old_label);
-   }
+   return true;
+}
 
+/* Replace the current sparse BO by the newly packed BO. */
+static void
+pan_resource_afbcp_commit(struct panfrost_context *ctx,
+                          struct panfrost_resource *prsrc)
+{
+   MESA_TRACE_FUNC();
+
+   uint64_t modifier = prsrc->modifier & ~AFBC_FORMAT_MOD_SPARSE;
    assert(!panfrost_is_emulated_mod(modifier));
    prsrc->image.props.modifier = modifier;
    prsrc->modifier = modifier;
-   panfrost_bo_unreference(prsrc->bo);
-   prsrc->bo = dst;
-   prsrc->plane.base = dst->ptr.gpu;
+
+   prsrc->plane.layout.array_stride_B = prsrc->afbcp->size;
+   prsrc->plane.layout.data_size_B = prsrc->afbcp->size;
+   prsrc->plane.base = prsrc->afbcp->packed_bo->ptr.gpu;
    prsrc->image.props.crc = false;
    prsrc->valid.crc = false;
-   panfrost_bo_unreference(layout_bo);
+
+   for (unsigned level = 0; level <= prsrc->base.last_level; ++level)
+      prsrc->plane.layout.slices[level] =
+         prsrc->afbcp->plane.layout.slices[level];
+
+   if (prsrc->owns_label)
+      free((char *)panfrost_bo_replace_label(
+              prsrc->bo, "Disposed pre AFBC-P BO", false));
+   panfrost_bo_unreference(prsrc->bo);
+   prsrc->bo = prsrc->afbcp->packed_bo;
+   prsrc->afbcp->packed_bo = NULL;
+
+   pan_resource_afbcp_stop(prsrc);
+}
+
+/* Progressively pack AFBC resources. */
+void
+pan_resource_afbcp_update(struct panfrost_context *ctx,
+                          struct panfrost_resource *prsrc,
+                          bool write)
+{
+   struct panfrost_screen *screen = pan_screen(ctx->base.screen);
+
+   if (prsrc->afbcp->skip_access_updates)
+      return;
+
+   if (write) {
+      pan_resource_afbcp_restart(prsrc);
+      return;
+   }
+
+   if (++prsrc->afbcp->nr_consecutive_reads < screen->afbcp_reads_threshold)
+      return;
+
+   /* Don't bother if there's a write in the queue. */
+   if (panfrost_any_batch_writes_rsrc(ctx, prsrc))
+      return;
+
+   /* 1st async AFBC-P step: get payload sizes. */
+   if (!prsrc->afbcp->layout_bo) {
+      if (!panfrost_bo_wait(prsrc->bo, 0, false))
+         return;
+      if (!pan_resource_afbcp_get_payload_sizes(ctx, prsrc))
+         goto stop_packing;
+      return;
+   }
+
+   /* 2nd async AFBC-P step: get payload offsets. */
+   if (prsrc->afbcp->size == 0) {
+      if (!panfrost_bo_wait(prsrc->afbcp->layout_bo, 0, false))
+         return;
+      pan_resource_afbcp_get_payload_offsets(ctx, prsrc);
+      return;
+   }
+
+   /* Validate compression ratio. */
+   if (prsrc->afbcp->ratio == 0.0f) {
+      prsrc->afbcp->ratio =
+         (float)panfrost_bo_size(prsrc->bo) / prsrc->afbcp->size;
+      if (100.0f / prsrc->afbcp->ratio > screen->max_afbc_packing_ratio)
+         goto stop_packing;
+      perf_debug(ctx, "AFBC-P ratio: %.2f (%zu KB -> %u KB)\n",
+                 prsrc->afbcp->ratio, panfrost_bo_size(prsrc->bo) / 1024,
+                 prsrc->afbcp->size / 1024);
+   }
+
+   /* 3rd async AFBC-P step: pack. */
+   if (!prsrc->afbcp->packed_bo) {
+      if (!panfrost_bo_wait(prsrc->bo, 0, false) ||
+          !panfrost_bo_wait(prsrc->afbcp->layout_bo, 0, false))
+         return;
+      if (!pan_resource_afbcp_pack(ctx, prsrc))
+         goto stop_packing;
+      return;
+   }
+
+   /* 4th async AFBC-P step: commit. */
+   if (!panfrost_bo_wait(prsrc->afbcp->packed_bo, 0, false))
+      return;
+   pan_resource_afbcp_commit(ctx, prsrc);
+   return;
+
+ stop_packing:
+   pan_resource_afbcp_stop(prsrc);
 }
 
 static void
@@ -2180,6 +2301,7 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
                free(old_label);
             }
             panfrost_bo_unreference(prsrc->bo);
+            pan_resource_afbcp_stop(prsrc);
 
             panfrost_resource_setup(screen, prsrc, DRM_FORMAT_MOD_LINEAR,
                                     prsrc->image.props.format, 0);
@@ -2202,7 +2324,7 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
 
             if (pan_screen(pctx->screen)->force_afbc_packing) {
                if (panfrost_should_pack_afbc(dev, prsrc))
-                  panfrost_pack_afbc(ctx, prsrc);
+                  pan_resource_afbcp_restart(prsrc);
             }
          }
       }
@@ -2220,6 +2342,7 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
          if (prsrc->modifier ==
              DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
             if (panfrost_should_linear_convert(ctx, prsrc, transfer)) {
+               pan_resource_afbcp_stop(prsrc);
                panfrost_resource_setup(screen, prsrc, DRM_FORMAT_MOD_LINEAR,
                                        prsrc->image.props.format, 0);
 
