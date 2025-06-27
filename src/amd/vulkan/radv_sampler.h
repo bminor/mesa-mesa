@@ -13,6 +13,8 @@
 
 #include "vk_sampler.h"
 
+struct radv_device;
+
 struct radv_sampler {
    struct vk_sampler vk;
    uint32_t state[4];
@@ -20,5 +22,9 @@ struct radv_sampler {
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_sampler, vk.base, VkSampler, VK_OBJECT_TYPE_SAMPLER)
+
+void radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler,
+                       const VkSamplerCreateInfo *pCreateInfo);
+void radv_sampler_finish(struct radv_device *device, struct radv_sampler *sampler);
 
 #endif /* RADV_SAMPLER_H */

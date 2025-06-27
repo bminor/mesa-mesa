@@ -181,11 +181,14 @@ radv_unregister_border_color(struct radv_device *device, uint32_t index)
    mtx_unlock(&device->border_color_data.mutex);
 }
 
-static void
-radv_init_sampler(struct radv_device *device, struct radv_sampler *sampler, const VkSamplerCreateInfo *pCreateInfo)
+void
+radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, const VkSamplerCreateInfo *pCreateInfo)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   vk_sampler_init(&device->vk, &sampler->vk, pCreateInfo);
+
    uint32_t max_aniso = radv_get_max_anisotropy(device, pCreateInfo);
    uint32_t max_aniso_ratio = radv_tex_aniso_filter(max_aniso);
    unsigned filter_mode = radv_tex_filter_mode(sampler->vk.reduction_mode);
@@ -236,6 +239,15 @@ radv_init_sampler(struct radv_device *device, struct radv_sampler *sampler, cons
    ac_build_sampler_descriptor(pdev->info.gfx_level, &ac_state, sampler->state);
 }
 
+void
+radv_sampler_finish(struct radv_device *device, struct radv_sampler *sampler)
+{
+   if (sampler->border_color_index != RADV_BORDER_COLOR_COUNT)
+      radv_unregister_border_color(device, sampler->border_color_index);
+
+   vk_sampler_finish(&sampler->vk);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_CreateSampler(VkDevice _device, const VkSamplerCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                    VkSampler *pSampler)
@@ -243,11 +255,11 @@ radv_CreateSampler(VkDevice _device, const VkSamplerCreateInfo *pCreateInfo, con
    VK_FROM_HANDLE(radv_device, device, _device);
    struct radv_sampler *sampler;
 
-   sampler = vk_sampler_create(&device->vk, pCreateInfo, pAllocator, sizeof(*sampler));
+   sampler = vk_zalloc2(&device->vk.alloc, pAllocator, sizeof(*sampler), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!sampler)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   radv_init_sampler(device, sampler, pCreateInfo);
+   radv_sampler_init(device, sampler, pCreateInfo);
 
    *pSampler = radv_sampler_to_handle(sampler);
 
@@ -263,8 +275,6 @@ radv_DestroySampler(VkDevice _device, VkSampler _sampler, const VkAllocationCall
    if (!sampler)
       return;
 
-   if (sampler->border_color_index != RADV_BORDER_COLOR_COUNT)
-      radv_unregister_border_color(device, sampler->border_color_index);
-
-   vk_sampler_destroy(&device->vk, pAllocator, &sampler->vk);
+   radv_sampler_finish(device, sampler);
+   vk_free2(&device->vk.alloc, pAllocator, sampler);
 }
