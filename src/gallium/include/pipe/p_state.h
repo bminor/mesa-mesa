@@ -181,6 +181,12 @@ struct pipe_rasterizer_state
    unsigned clip_halfz:1;
 
    /**
+    * When true do not scale offset_units and use same rules for unorm and
+    * float depth buffers.
+    */
+   unsigned offset_units_unscaled:1;
+
+   /**
     * Depth values output from fragment shader may be outside 0..1.
     * These have to be clamped for use with UNORM buffers.
     * Vulkan can allow this with an extension,
