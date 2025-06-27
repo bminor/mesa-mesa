@@ -2,9 +2,9 @@
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
-set -uex
-
 . "${SCRIPTS_DIR}/setup-test-env.sh"
+
+set -uex
 
 section_start cuttlefish_setup "cuttlefish: setup"
 
