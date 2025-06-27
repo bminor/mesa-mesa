@@ -20,7 +20,7 @@ test-spirv2dxil-windows:
     - . _install/spirv2dxil_run.ps1
   artifacts:
     when: on_failure
-    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME}"
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
     paths:
       - spirv2dxil_results.txt
 
@@ -46,7 +46,7 @@ test-dozen-deqp:
     - . _install/deqp_runner_run.ps1
   artifacts:
     when: on_failure
-    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME}"
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
     paths:
       - results/
     reports:
