@@ -4562,15 +4562,10 @@ emit_load_sample_pos_from_id(struct ntd_context *ctx, nir_intrinsic_instr *intr)
 static bool
 emit_load_sample_id(struct ntd_context *ctx, nir_intrinsic_instr *intr)
 {
-   assert(ctx->mod.info.has_per_sample_input ||
-          intr->intrinsic == nir_intrinsic_load_sample_id_no_per_sample);
+   assert(ctx->mod.info.has_per_sample_input);
 
-   if (ctx->mod.info.has_per_sample_input)
-      return emit_load_unary_external_function(ctx, intr, "dx.op.sampleIndex",
-                                               DXIL_INTR_SAMPLE_INDEX, nir_type_int);
-
-   store_def(ctx, &intr->def, 0, dxil_module_get_int32_const(&ctx->mod, 0));
-   return true;
+   return emit_load_unary_external_function(ctx, intr, "dx.op.sampleIndex",
+                                            DXIL_INTR_SAMPLE_INDEX, nir_type_int);
 }
 
 static bool
@@ -4821,7 +4816,6 @@ emit_intrinsic(struct ntd_context *ctx, nir_intrinsic_instr *intr)
       return emit_load_unary_external_function(ctx, intr, "dx.op.primitiveID",
                                                DXIL_INTR_PRIMITIVE_ID, nir_type_int);
    case nir_intrinsic_load_sample_id:
-   case nir_intrinsic_load_sample_id_no_per_sample:
       return emit_load_sample_id(ctx, intr);
    case nir_intrinsic_load_invocation_id:
       switch (ctx->mod.shader_kind) {

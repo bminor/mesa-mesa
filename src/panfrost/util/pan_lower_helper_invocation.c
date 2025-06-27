@@ -25,10 +25,8 @@
 #include "pan_ir.h"
 
 /* Lower gl_HelperInvocation to (gl_SampleMaskIn == 0), this depends on
- * architectural details but is required for correct operation with
- * multisampling. NIR's lowering won't work for us, since there is no in-spec
- * way to implement load_sample_id_no_per_sample. */
-
+ * architectural details but is more efficient than NIR's lowering.
+ */
 static bool
 pan_lower_helper_invocation_instr(nir_builder *b, nir_intrinsic_instr *intr,
                                   void *data)
