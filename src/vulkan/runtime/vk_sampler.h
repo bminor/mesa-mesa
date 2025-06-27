@@ -153,6 +153,11 @@ struct vk_sampler {
 VK_DEFINE_NONDISP_HANDLE_CASTS(vk_sampler, base, VkSampler,
                                VK_OBJECT_TYPE_SAMPLER);
 
+void vk_sampler_init(struct vk_device *device,
+                     struct vk_sampler *sampler,
+                     const VkSamplerCreateInfo *pCreateInfo);
+void vk_sampler_finish(struct vk_sampler *sampler);
+
 void *vk_sampler_create(struct vk_device *device,
                         const VkSamplerCreateInfo *pCreateInfo,
                         const VkAllocationCallbacks *alloc,

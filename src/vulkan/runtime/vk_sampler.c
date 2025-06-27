@@ -21,8 +21,9 @@
  * IN THE SOFTWARE.
  */
 
+#include "vk_alloc.h"
 #include "vk_sampler.h"
-
+#include "vk_device.h"
 #include "vk_format.h"
 #include "vk_util.h"
 #include "vk_ycbcr_conversion.h"
@@ -178,19 +179,15 @@ vk_sampler_state_init(struct vk_sampler_state *state,
    }
 }
 
-void *
-vk_sampler_create(struct vk_device *device,
-                  const VkSamplerCreateInfo *pCreateInfo,
-                  const VkAllocationCallbacks *alloc,
-                  size_t size)
+void
+vk_sampler_init(struct vk_device *device,
+                struct vk_sampler *sampler,
+                const VkSamplerCreateInfo *pCreateInfo)
 {
-   struct vk_sampler *sampler;
-
-   sampler = vk_object_zalloc(device, alloc, size, VK_OBJECT_TYPE_SAMPLER);
-   if (!sampler)
-      return NULL;
-
    struct vk_sampler_state state;
+
+   vk_object_base_init(device, &sampler->base, VK_OBJECT_TYPE_SAMPLER);
+
    vk_sampler_state_init(&state, pCreateInfo);
 
    sampler->format = state.format;
@@ -209,6 +206,26 @@ vk_sampler_create(struct vk_device *device,
       assert(state.format == conversion->state.format);
       sampler->ycbcr_conversion = conversion;
    }
+}
+
+void
+vk_sampler_finish(struct vk_sampler *sampler)
+{
+   vk_object_base_finish(&sampler->base);
+}
+
+void *
+vk_sampler_create(struct vk_device *device,
+                  const VkSamplerCreateInfo *pCreateInfo,
+                  const VkAllocationCallbacks *alloc,
+                  size_t size)
+{
+   struct vk_sampler *sampler =
+      vk_zalloc2(&device->alloc, alloc, size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!sampler)
+      return NULL;
+
+   vk_sampler_init(device, sampler, pCreateInfo);
 
    return sampler;
 }
@@ -218,5 +235,6 @@ vk_sampler_destroy(struct vk_device *device,
                    const VkAllocationCallbacks *alloc,
                    struct vk_sampler *sampler)
 {
-   vk_object_free(device, alloc, sampler);
+   vk_sampler_finish(sampler);
+   vk_free2(&device->alloc, alloc, sampler);
 }
