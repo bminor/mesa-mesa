@@ -35,6 +35,8 @@ if [ -n "${ANDROID_CTS_PREPARE_COMMAND:-}" ]; then
   eval "$ANDROID_CTS_PREPARE_COMMAND"
 fi
 
+uncollapsed_section_switch android_cts_test "Android CTS: testing"
+
 set +e
 eval "/android-cts/tools/cts-tradefed" run commandAndExit cts-dev \
   $INCLUDE_FILTERS \
@@ -60,9 +62,7 @@ TESTS_FAILED=$?
 EXIT_CODE=$?
 set -e
 
-section_switch cuttlefish_results "cuttlefish: gathering the results"
-
 cp -r "/android-cts/results/latest"/* $RESULTS_DIR
 cp -r "/android-cts/logs/latest"/* $RESULTS_DIR
 
-section_end cuttlefish_results
+section_end android_cts_test
