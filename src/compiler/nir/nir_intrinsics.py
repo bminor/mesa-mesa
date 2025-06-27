@@ -1375,6 +1375,13 @@ intrinsic("cmat_insert", src_comp=[-1, 1, -1, 1])
 intrinsic("cmat_copy", src_comp=[-1, -1])
 intrinsic("cmat_transpose", src_comp=[-1, -1])
 
+# Select an output vertex in a poly GS. Takes the stream-local vertex ID.
+intrinsic("select_vertex_poly", src_comp=[1], indices=[STREAM_ID])
+
+# Emit a primitive (a point list, a line strip, or a triangle strip).
+# Sources: (index offset, first vertex, number of vertices, # of XFB primitives before).
+intrinsic("emit_primitive_poly", src_comp=[1, 1, 1, 1], indices=[STREAM_ID])
+
 # IR3-specific version of most SSBO intrinsics. The only different
 # compare to the originals is that they add an extra source to hold
 # the dword-offset, which is needed by the backend code apart from
