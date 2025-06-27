@@ -116,7 +116,8 @@ hk_preprocess_nir_internal(struct vk_physical_device *vk_pdev, nir_shader *nir)
       NIR_PASS(_, nir, nir_lower_returns);
    }
 
-   /* Unroll loops before lowering indirects via nir_lower_io_vars_to_temporaries */
+   /* Unroll loops before lowering indirects via
+    * nir_lower_io_vars_to_temporaries */
    UNUSED bool progress = false;
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
@@ -145,8 +146,8 @@ hk_preprocess_nir_internal(struct vk_physical_device *vk_pdev, nir_shader *nir)
     */
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir),
-            true, false);
+   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
+            nir_shader_get_entrypoint(nir), true, false);
 
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
