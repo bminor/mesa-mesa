@@ -134,11 +134,11 @@ modifier_is_supported(const struct intel_device_info *devinfo,
          return false;
       break;
    case I915_FORMAT_MOD_4_TILED_LNL_CCS:
-      if (devinfo->platform != INTEL_PLATFORM_LNL)
+      if (devinfo->ver < 20 || devinfo->has_local_mem)
          return false;
       break;
    case I915_FORMAT_MOD_4_TILED_BMG_CCS:
-      if (devinfo->platform != INTEL_PLATFORM_BMG)
+      if (devinfo->ver < 20 || !devinfo->has_local_mem)
          return false;
       break;
    case DRM_FORMAT_MOD_INVALID:
