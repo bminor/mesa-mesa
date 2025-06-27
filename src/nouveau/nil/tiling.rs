@@ -99,22 +99,30 @@ impl GOBType {
         dev: &nil_rs_bindings::nv_device_info,
         format: Format,
     ) -> GOBType {
-        if format.is_depth_or_stencil() {
-            GOBType::FermiZS
-        } else {
-            if dev.cls_eng3d >= clcd97::BLACKWELL_A {
+        if dev.cls_eng3d >= clcd97::BLACKWELL_A {
+            if format.is_depth_or_stencil() {
+                GOBType::FermiZS
+            } else {
                 match format.el_size_B() {
                     1 => GOBType::Blackwell8Bit,
                     2 => GOBType::Blackwell16Bit,
                     _ => GOBType::TuringColor2D,
                 }
-            } else if dev.cls_eng3d >= clc597::TURING_A {
-                GOBType::TuringColor2D
-            } else if dev.cls_eng3d >= cl9097::FERMI_A {
-                GOBType::FermiColor
-            } else {
-                panic!("Unsupported 3d engine class")
             }
+        } else if dev.cls_eng3d >= clc597::TURING_A {
+            if format.is_depth_or_stencil() {
+                GOBType::FermiZS
+            } else {
+                GOBType::TuringColor2D
+            }
+        } else if dev.cls_eng3d >= cl9097::FERMI_A {
+            if format.is_depth_or_stencil() {
+                GOBType::FermiZS
+            } else {
+                GOBType::FermiColor
+            }
+        } else {
+            panic!("Unsupported 3d engine class")
         }
     }
 
