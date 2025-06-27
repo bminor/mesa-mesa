@@ -1,8 +1,12 @@
+x11-dEQP-EGL.functional.buffer_age.no_preserve.no_resize.odd_clear_render_even_clear
+x11-dEQP-EGL.functional.buffer_age.no_preserve.no_resize.odd_none_even_none
 x11-dEQP-EGL.functional.buffer_age.no_preserve.resize_before_swap.odd_clear_clear_even_clear_clear
+x11-dEQP-EGL.functional.buffer_age.no_preserve.resize_before_swap.odd_clear_even_clear
 x11-dEQP-EGL.functional.sharing.gles2.multithread.random.programs.link.7
 
 KHR-GLES31.core.shader_atomic_counters.basic-usage-no-offset
 KHR-GLES31.core.shader_image_load_store.basic-allFormats-load-cs
+KHR-GLES31.core.shader_image_load_store.basic-allFormats-store-fs
 KHR-GLES31.core.shader_image_load_store.basic-glsl-earlyFragTests
 KHR-GLES31.core.shader_storage_buffer_object.advanced-indirectAddressing-case1-cs
 KHR-GLES31.core.shader_storage_buffer_object.advanced-unsizedArrayLength-cs-std430-vec
@@ -10,6 +14,10 @@ KHR-GLES31.core.shader_storage_buffer_object.basic-matrixOperations-case2-cs
 KHR-GLES31.core.texture_cube_map_array.image_op_compute_sh
 dEQP-GLES3.functional.buffer.write.recreate_store.random_4
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube
+dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_10x6_rgba.rgba_astc_10x6_khr_rgba_astc_10x6_khr.cubemap_to_texture3d
+dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_8x5_rgba.rgba_astc_8x5_khr_srgb8_alpha8_astc_8x5_khr.cubemap_to_texture3d
+dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba_astc_10x6_khr_rgba32f.cubemap_to_texture3d
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8_r8.texture2d_array_to_texture3d
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.ivec4
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.row_major_mat3x2
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.17
@@ -70,6 +78,7 @@ spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 2dshadow
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 3d
 spec@glsl-1.30@execution@tex-miplevel-selection texturelod cube
 spec@glsl-1.30@execution@tex-miplevel-selection texturelod cubearray
+spec@glsl-1.30@execution@texelfetch fs sampler2d 71x1-71x281
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 1x129x9-98x129x9
 spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9
 spec@glsl-1.30@execution@vs-loop-uint-induction-var-subtraction
@@ -122,12 +131,15 @@ dEQP-VK.robustness.image_robustness.bind.notemplate.rg32f.unroll.volatile.storag
 dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp32.input_args.ord_gt_testedWithout_NotInf_arg1_inf_arg2_one_res_one_deco_vert
 dEQP-VK.ssbo.phys.layout.basic_unsized_array.std430.row_major_mat2x4_store_cols
 dEQP-VK.ssbo.phys.layout.random.basic_types.15
+dEQP-VK.synchronization.op.single_queue.binary_semaphore.write_ssbo_vertex_read_vertex_input.buffer_262144
 dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_copy_buffer_read_vertex_input.buffer_262144_opaque_fd
 dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_vertex_read_vertex_input.buffer_262144_opaque_fd
 dEQP-VK.synchronization.timeline_semaphore.device_host.write_ssbo_geometry_read_vertex_input.buffer_262144
 dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
+dEQP-VK.synchronization2.op.single_queue.event.write_ssbo_compute_read_vertex_input.buffer_16384
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image.image_128x128_r16_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image.image_64x64x8_r32_sfloat
+dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_compute_indirect_read_vertex_input.buffer_262144
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_fragment_read_vertex_input.buffer_262144
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.isolines_fractional_odd_spacing_ccw
 dEQP-VK.tessellation.invariance.tess_coord_component_range.isolines_fractional_even_spacing_cw

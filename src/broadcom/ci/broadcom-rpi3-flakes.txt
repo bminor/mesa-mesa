@@ -40,6 +40,8 @@ dEQP-GLES2.functional.shaders.random.basic_expression.vertex.23
 dEQP-GLES2.functional.shaders.random.comparison_ops.fragment.22
 dEQP-GLES2.functional.shaders.random.conditionals.combined.95
 dEQP-GLES2.functional.shaders.random.conditionals.vertex.62
+dEQP-GLES2.functional.shaders.random.conditionals.vertex.70
+dEQP-GLES2.functional.shaders.random.exponential.fragment.33
 dEQP-GLES2.functional.shaders.random.texture.fragment.2
 dEQP-GLES2.functional.shaders.random.trigonometric.fragment.50
 dEQP-GLES2.functional.shaders.random.trigonometric.fragment.79
