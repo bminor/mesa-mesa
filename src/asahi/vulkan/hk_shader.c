@@ -1276,66 +1276,43 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
 
    /* Compile all variants up front */
    if (sw_stage == MESA_SHADER_GEOMETRY) {
-      for (unsigned rast_disc = 0; rast_disc < 2; ++rast_disc) {
-         struct hk_shader *main_variant = hk_main_gs_variant(obj, rast_disc);
-         struct hk_shader *count_variant = hk_count_gs_variant(obj, rast_disc);
-         bool last = (rast_disc + 1) == 2;
+      struct hk_shader *main_variant = hk_main_gs_variant(obj);
+      struct hk_shader *count_variant = hk_count_gs_variant(obj);
 
-         /* Each variant gets its own NIR. To save an extra clone, we use the
-          * original NIR for the last stage.
-          */
-         nir_shader *clone = last ? nir : nir_shader_clone(NULL, nir);
-         nir_shader *count = NULL, *rast = NULL, *pre_gs = NULL;
+      nir_shader *count = NULL, *rast = NULL, *pre_gs = NULL;
 
-         NIR_PASS(_, clone, agx_nir_lower_gs, rast_disc, &count, &rast, &pre_gs,
-                  &count_variant->info.gs);
+      NIR_PASS(_, nir, agx_nir_lower_gs, &count, &rast, &pre_gs,
+               &count_variant->info.gs);
 
-         if (!rast_disc) {
-            struct hk_shader *shader = &obj->variants[HK_GS_VARIANT_RAST];
+      struct hk_shader *shader = &obj->variants[HK_GS_VARIANT_RAST];
+      hk_lower_hw_vs(rast, shader, features);
+      shader->info.gs = count_variant->info.gs;
+      main_variant->info.gs = count_variant->info.gs;
 
-            hk_lower_hw_vs(rast, shader, features);
-            shader->info.gs = count_variant->info.gs;
-         }
+      struct {
+         nir_shader *in;
+         struct hk_shader *out;
+      } variants[] = {
+         {nir, hk_main_gs_variant(obj)},
+         {pre_gs, hk_pre_gs_variant(obj)},
+         {count, count_variant},
+         {rast, &obj->variants[HK_GS_VARIANT_RAST]},
+      };
 
-         main_variant->info.gs = count_variant->info.gs;
+      for (unsigned v = 0; v < ARRAY_SIZE(variants); ++v) {
+         if (variants[v].in) {
+            result = hk_compile_nir(
+               dev, pAllocator, variants[v].in, info->flags, info->robustness,
+               NULL, features, variants[v].out, sw_stage, true, NULL);
 
-         struct {
-            nir_shader *in;
-            struct hk_shader *out;
-         } variants[] = {
-            {clone, hk_main_gs_variant(obj, rast_disc)},
-            {pre_gs, hk_pre_gs_variant(obj, rast_disc)},
-            {count, count_variant},
-            {rast_disc ? NULL : rast, &obj->variants[HK_GS_VARIANT_RAST]},
-         };
-
-         for (unsigned v = 0; v < ARRAY_SIZE(variants); ++v) {
-            if (variants[v].in) {
-               result =
-                  hk_compile_nir(dev, pAllocator, variants[v].in, info->flags,
-                                 info->robustness, NULL, features,
-                                 variants[v].out, sw_stage, true, NULL);
-               if (result != VK_SUCCESS) {
-                  hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
-                  if (clone != nir) {
-                     ralloc_free(nir);
-                  }
-
-                  ralloc_free(clone);
-                  ralloc_free(pre_gs);
-                  ralloc_free(count);
-                  ralloc_free(rast);
-                  return result;
-               }
+            if (result != VK_SUCCESS) {
+               hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
+               ralloc_free(nir);
+               ralloc_free(pre_gs);
+               ralloc_free(count);
+               ralloc_free(rast);
+               return result;
             }
-         }
-
-         /* Nothing consumes this otherwise throw it away.
-          *
-          * TODO: We should just not generate it.
-          */
-         if (rast_disc) {
-            ralloc_free(rast);
          }
       }
    } else if (sw_stage == MESA_SHADER_VERTEX ||

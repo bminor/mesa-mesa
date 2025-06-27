@@ -139,6 +139,22 @@ vk_conv_topology(VkPrimitiveTopology topology)
    }
 }
 
+static bool
+hk_rast_discard(struct hk_cmd_buffer *cmd)
+{
+   struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
+
+   /* A non-zero rasterization stream acts as a rasterizer discard unless
+    * there's a multistream geometry shader bound.
+    */
+   if (dyn->rs.rasterization_stream != 0) {
+      struct hk_api_shader *gs = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY];
+      return !gs || !gs->variants[HK_GS_VARIANT_COUNT].info.gs.multistream;
+   }
+
+   return dyn->rs.rasterizer_discard_enable;
+}
+
 static void
 hk_cmd_buffer_dirty_render_pass(struct hk_cmd_buffer *cmd)
 {
@@ -1111,13 +1127,10 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
-   struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_api_shader *gs = gfx->shaders[MESA_SHADER_GEOMETRY];
    struct hk_shader *fs = hk_only_variant(gfx->shaders[MESA_SHADER_FRAGMENT]);
-
-   bool rast_disc = dyn->rs.rasterizer_discard_enable;
-   struct hk_shader *count = hk_count_gs_variant(gs, rast_disc);
+   struct hk_shader *count = hk_count_gs_variant(gs);
 
    /* XXX: We should deduplicate this logic */
    bool indirect = agx_is_indirect(draw.b) ||
@@ -1197,6 +1210,9 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       params.vs_grid[2] = params.gs_grid[2] = 1;
 
       if (gsi->shape == AGX_GS_SHAPE_DYNAMIC_INDEXED) {
+         /* Need to allocate heap if we haven't yet */
+         hk_heap(cmd);
+
          cmd->geom_index_buffer = dev->heap->va->addr;
          cmd->geom_index_count = dev->heap->size;
       } else {
@@ -1455,13 +1471,10 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    struct hk_api_shader *gs = gfx->shaders[MESA_SHADER_GEOMETRY];
    struct agx_grid grid_vs, grid_gs;
 
-   struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
-   bool rast_disc = dyn->rs.rasterizer_discard_enable;
-
    struct hk_shader *vs = hk_bound_sw_vs_before_gs(gfx);
-   struct hk_shader *main = hk_main_gs_variant(gs, rast_disc);
-   struct hk_shader *count = hk_count_gs_variant(gs, rast_disc);
-   struct hk_shader *pre_gs = hk_pre_gs_variant(gs, rast_disc);
+   struct hk_shader *main = hk_main_gs_variant(gs);
+   struct hk_shader *count = hk_count_gs_variant(gs);
+   struct hk_shader *pre_gs = hk_pre_gs_variant(gs);
 
    uint64_t geometry_params = desc->root.draw.geometry_params;
    unsigned count_words = count->info.gs.count_words;
@@ -1727,9 +1740,11 @@ hk_flush_shaders(struct hk_cmd_buffer *cmd)
 
    /* Geometry shading overrides the restart index, reemit on rebind */
    if (IS_SHADER_DIRTY(GEOMETRY)) {
+      struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
       struct hk_api_shader *gs = gfx->shaders[MESA_SHADER_GEOMETRY];
 
       desc->root.draw.api_gs = gs && !gs->is_passthrough;
+      BITSET_SET(dyn->dirty, MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE);
    }
 
    struct hk_shader *hw_vs = hk_bound_hw_vs(gfx);
@@ -2405,7 +2420,7 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
       agx_ppp_push_merged(&ppp, FRAGMENT_CONTROL, cfg,
                           linked_fs->b.fragment_control) {
 
-         cfg.tag_write_disable = dyn->rs.rasterizer_discard_enable;
+         cfg.tag_write_disable = hk_rast_discard(cmd);
       }
    }
 
@@ -2496,7 +2511,7 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
          }
 
          cfg.flat_shading_vertex = translate_ppp_vertex(gfx->provoking);
-         cfg.rasterizer_discard = dyn->rs.rasterizer_discard_enable;
+         cfg.rasterizer_discard = hk_rast_discard(cmd);
 
          /* We do not support unrestricted depth, so clamping is inverted from
           * clipping. This implementation seems to pass CTS without unrestricted
@@ -2648,6 +2663,13 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    if (IS_DIRTY(MS_SAMPLE_MASK)) {
       desc->root.draw.api_sample_mask = dyn->ms.sample_mask;
       desc->root_dirty = true;
+   }
+
+   if (IS_DIRTY(RS_RASTERIZATION_STREAM)) {
+      desc->root.draw.rasterization_stream = dyn->rs.rasterization_stream;
+      desc->root_dirty = true;
+
+      BITSET_SET(dyn->dirty, MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE);
    }
 
    if (fs_dirty || IS_DIRTY(DS_DEPTH_TEST_ENABLE) ||
@@ -3131,7 +3153,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       agx_push(out, VDM_STATE_VERTEX_UNKNOWN, cfg) {
          cfg.flat_shading_control = translate_vdm_vertex(gfx->provoking);
-         cfg.unknown_4 = cfg.unknown_5 = dyn->rs.rasterizer_discard_enable;
+         cfg.unknown_4 = cfg.unknown_5 = hk_rast_discard(cmd);
          cfg.generate_primitive_id = gfx->generate_primitive_id;
       }
 
@@ -3562,14 +3584,6 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
       if (geom) {
          draw = hk_launch_gs_prerast(cmd, ccs, draw);
-
-         /* We must not draw if the app specified rasterizer discard. This is
-          * required for both performance (it is pointless to rasterize and
-          * there are no side effects), but also correctness (no indirect draw
-          * descriptor will be filled out).
-          */
-         if (dyn->rs.rasterizer_discard_enable)
-            continue;
       }
 
       if (adj) {

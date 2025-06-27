@@ -1386,7 +1386,6 @@ agx_bind_vertex_elements_state(struct pipe_context *pctx, void *cso)
 }
 
 DERIVE_HASH_TABLE(asahi_vs_shader_key);
-DERIVE_HASH_TABLE(asahi_gs_shader_key);
 DERIVE_HASH_TABLE(asahi_fs_shader_key);
 DERIVE_HASH_TABLE(agx_fast_link_key);
 
@@ -1593,10 +1592,8 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
       NIR_PASS(_, nir, agx_nir_lower_tcs);
    } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      struct asahi_gs_shader_key *key = &key_->gs;
-
-      NIR_PASS(_, nir, agx_nir_lower_gs, key->rasterizer_discard, &gs_count,
-               &gs_copy, &pre_gs, &gs_info);
+      NIR_PASS(_, nir, agx_nir_lower_gs, &gs_count, &gs_copy, &pre_gs,
+               &gs_info);
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       struct asahi_fs_shader_key *key = &key_->fs;
 
@@ -1724,11 +1721,7 @@ agx_get_shader_variant(struct agx_screen *screen, struct pipe_context *pctx,
    } else if (so->type == PIPE_SHADER_VERTEX ||
               so->type == PIPE_SHADER_TESS_EVAL) {
       memcpy(cloned_key, key, sizeof(struct asahi_vs_shader_key));
-   } else if (so->type == PIPE_SHADER_GEOMETRY) {
-      memcpy(cloned_key, key, sizeof(struct asahi_gs_shader_key));
    } else {
-      assert(gl_shader_stage_is_compute(so->type) ||
-             so->type == PIPE_SHADER_TESS_CTRL);
       /* No key */
    }
 
@@ -1918,9 +1911,8 @@ agx_create_shader_state(struct pipe_context *pctx,
        nir->info.stage == MESA_SHADER_TESS_EVAL) {
       so->variants = asahi_vs_shader_key_table_create(so);
       so->linked_shaders = agx_fast_link_key_table_create(so);
-   } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      so->variants = asahi_gs_shader_key_table_create(so);
-   } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
+   } else if (nir->info.stage == MESA_SHADER_TESS_CTRL ||
+              nir->info.stage == MESA_SHADER_GEOMETRY) {
       /* No variants */
       so->variants = _mesa_hash_table_create(NULL, asahi_cs_shader_key_hash,
                                              asahi_cs_shader_key_equal);
@@ -1958,6 +1950,7 @@ agx_create_shader_state(struct pipe_context *pctx,
     * acceptable for now.
     */
    if ((so->type == PIPE_SHADER_TESS_CTRL) ||
+       (so->type == PIPE_SHADER_GEOMETRY) ||
        (so->type == PIPE_SHADER_FRAGMENT && !so->info.uses_fbfetch)) {
       union asahi_shader_key key = {0};
       agx_get_shader_variant(agx_screen(pctx->screen), pctx, so, &key);
@@ -1975,9 +1968,6 @@ agx_create_shader_state(struct pipe_context *pctx,
       union asahi_shader_key key = {0};
 
       switch (so->type) {
-      case PIPE_SHADER_GEOMETRY:
-         break;
-
       case PIPE_SHADER_TESS_EVAL:
          /* TODO: Tessellation shaders with shader-db */
          return so;
@@ -2256,12 +2246,10 @@ agx_update_gs(struct agx_context *ctx, const struct pipe_draw_info *info,
          tgt->stride = gs->xfb_strides[i];
    }
 
-   struct asahi_gs_shader_key key = {
-      .rasterizer_discard = ctx->rast->base.rasterizer_discard,
-   };
-
-   return agx_update_shader(ctx, &ctx->gs, PIPE_SHADER_GEOMETRY,
-                            (union asahi_shader_key *)&key);
+   ctx->gs = _mesa_hash_table_next_entry(
+                ctx->stage[PIPE_SHADER_GEOMETRY].shader->variants, NULL)
+                ->data;
+   return true;
 }
 
 static enum pipe_blendfactor
@@ -5147,9 +5135,6 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       /* Launch the pre-rasterization parts of the geometry shader */
       agx_launch_gs_prerast(batch, info, draws, indirect);
 
-      if (ctx->rast->base.rasterizer_discard)
-         return;
-
       /* Setup to rasterize the GS results */
       struct agx_gs_info *gsi = &ctx->gs->gs;
       info_gs = (struct pipe_draw_info){
@@ -5270,6 +5255,14 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
    out = (void *)agx_vdm_draw((uint32_t *)out, 0 /* ignored for now */, draw,
                               agx_primitive_for_pipe(info->mode));
+
+   /* Barrier transform feedback writes on themselves for consistency.
+    * This is the other half of agx_legalize_xfb.
+    */
+   if (ctx->gs && ctx->streamout.num_targets > 0) {
+      struct agx_device *dev = agx_device(ctx->base.screen);
+      out = (void *)agx_vdm_barrier((uint32_t *)out, dev->chip);
+   }
 
    batch->vdm.current = out;
    assert((batch->vdm.current + AGX_VDM_STREAM_LINK_LENGTH) <= batch->vdm.end &&

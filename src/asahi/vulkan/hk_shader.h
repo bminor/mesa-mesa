@@ -183,15 +183,12 @@ enum hk_gs_variant {
 
    /* Main compute shader */
    HK_GS_VARIANT_MAIN,
-   HK_GS_VARIANT_MAIN_NO_RAST,
 
    /* Count compute shader */
    HK_GS_VARIANT_COUNT,
-   HK_GS_VARIANT_COUNT_NO_RAST,
 
    /* Pre-GS compute shader */
    HK_GS_VARIANT_PRE,
-   HK_GS_VARIANT_PRE_NO_RAST,
 
    HK_GS_VARIANTS,
 };
@@ -200,11 +197,8 @@ enum hk_gs_variant {
 static const char *hk_gs_variant_name[] = {
    [HK_GS_VARIANT_RAST] = "Rasterization",
    [HK_GS_VARIANT_MAIN] = "Main",
-   [HK_GS_VARIANT_MAIN_NO_RAST] = "Main (rast. discard)",
    [HK_GS_VARIANT_COUNT] = "Count",
-   [HK_GS_VARIANT_COUNT_NO_RAST] = "Count (rast. discard)",
    [HK_GS_VARIANT_PRE] = "Pre-GS",
-   [HK_GS_VARIANT_PRE_NO_RAST] = "Pre-GS (rast. discard)",
 };
 /* clang-format on */
 
@@ -280,21 +274,21 @@ hk_any_variant(struct hk_api_shader *obj)
 }
 
 static struct hk_shader *
-hk_main_gs_variant(struct hk_api_shader *obj, bool rast_disc)
+hk_main_gs_variant(struct hk_api_shader *obj)
 {
-   return &obj->variants[HK_GS_VARIANT_MAIN + rast_disc];
+   return &obj->variants[HK_GS_VARIANT_MAIN];
 }
 
 static struct hk_shader *
-hk_count_gs_variant(struct hk_api_shader *obj, bool rast_disc)
+hk_count_gs_variant(struct hk_api_shader *obj)
 {
-   return &obj->variants[HK_GS_VARIANT_COUNT + rast_disc];
+   return &obj->variants[HK_GS_VARIANT_COUNT];
 }
 
 static struct hk_shader *
-hk_pre_gs_variant(struct hk_api_shader *obj, bool rast_disc)
+hk_pre_gs_variant(struct hk_api_shader *obj)
 {
-   return &obj->variants[HK_GS_VARIANT_PRE + rast_disc];
+   return &obj->variants[HK_GS_VARIANT_PRE];
 }
 
 #define HK_MAX_LINKED_USC_SIZE                                                 \

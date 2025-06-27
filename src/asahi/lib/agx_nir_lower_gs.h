@@ -38,6 +38,9 @@ struct agx_gs_info {
    /* Whether a prefix sum is required on the count outputs. Implies xfb */
    bool prefix_sum;
 
+   /* Whether the GS writes to a stream other than stream #0 */
+   bool multistream;
+
    /* Shape of the rasterization draw, named by the instance ID */
    enum agx_gs_shape shape;
 
@@ -45,9 +48,9 @@ struct agx_gs_info {
    uint8_t topology[64];
 };
 
-bool agx_nir_lower_gs(struct nir_shader *gs, bool rasterizer_discard,
-                      struct nir_shader **gs_count, struct nir_shader **gs_copy,
-                      struct nir_shader **pre_gs, struct agx_gs_info *info);
+bool agx_nir_lower_gs(struct nir_shader *gs, struct nir_shader **gs_count,
+                      struct nir_shader **gs_copy, struct nir_shader **pre_gs,
+                      struct agx_gs_info *info);
 
 bool agx_nir_lower_tcs(struct nir_shader *tcs);
 

@@ -416,6 +416,9 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_tess_param_buffer_agx:
       return lower_sysval_to_root_table(b, intrin, draw.tess_params);
 
+   case nir_intrinsic_load_rasterization_stream:
+      return lower_sysval_to_root_table(b, intrin, draw.rasterization_stream);
+
    case nir_intrinsic_load_is_first_fan_agx: {
       unsigned offset = hk_root_descriptor_offset(draw.provoking);
       b->cursor = nir_instr_remove(&intrin->instr);

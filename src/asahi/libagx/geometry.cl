@@ -13,11 +13,12 @@
 #include "query.h"
 #include "tessellator.h"
 
-/* Swap the two non-provoking vertices third vert in odd triangles. This
- * generates a vertex ID list with a consistent winding order.
+/* Swap the two non-provoking vertices in odd triangles. This generates a vertex
+ * ID list with a consistent winding order.
  *
- * With prim and flatshade_first, the map : [0, 1, 2] -> [0, 1, 2] is its own
- * inverse. This lets us reuse it for both vertex fetch and transform feedback.
+ * Holding prim and flatshade_first constant, the map : [0, 1, 2] -> [0, 1, 2]
+ * is its own inverse. It is hence used both vertex fetch and transform
+ * feedback.
  */
 uint
 libagx_map_vertex_in_tri_strip(uint prim, uint vert, bool flatshade_first)
@@ -30,12 +31,49 @@ libagx_map_vertex_in_tri_strip(uint prim, uint vert, bool flatshade_first)
    return (provoking || even) ? vert : ((3 - pv) - vert);
 }
 
-uint64_t
-libagx_xfb_vertex_address(global struct agx_geometry_params *p, uint base_index,
-                          uint vert, uint buffer, uint stride,
-                          uint output_offset)
+static inline uint
+xfb_prim(uint id, uint n, uint copy)
 {
-   uint index = base_index + vert;
+   return sub_sat(id, n - 1u) + copy;
+}
+
+/*
+ * Determine whether an output vertex has an n'th copy in the transform feedback
+ * buffer. This is written weirdly to let constant folding remove unnecessary
+ * stores when length is known statically.
+ */
+bool
+libagx_xfb_vertex_copy_in_strip(uint n, uint id, uint length, uint copy)
+{
+   uint prim = xfb_prim(id, n, copy);
+
+   int num_prims = length - (n - 1);
+   return copy == 0 || (prim < num_prims && id >= copy && copy < num_prims);
+}
+
+uint
+libagx_xfb_vertex_offset(uint n, uint invocation_base_prim,
+                         uint strip_base_prim, uint id_in_strip, uint copy,
+                         bool flatshade_first)
+{
+   uint prim = xfb_prim(id_in_strip, n, copy);
+   uint vert_0 = min(id_in_strip, n - 1);
+   uint vert = vert_0 - copy;
+
+   if (n == 3) {
+      vert = libagx_map_vertex_in_tri_strip(prim, vert, flatshade_first);
+   }
+
+   /* Tally up in the whole buffer */
+   uint base_prim = invocation_base_prim + strip_base_prim;
+   uint base_vertex = base_prim * n;
+   return base_vertex + (prim * n) + vert;
+}
+
+uint64_t
+libagx_xfb_vertex_address(constant struct agx_geometry_params *p, uint index,
+                          uint buffer, uint stride, uint output_offset)
+{
    uint xfb_offset = (index * stride) + output_offset;
 
    return (uintptr_t)(p->xfb_base[buffer]) + xfb_offset;
@@ -572,20 +610,20 @@ libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i,
 }
 
 void
-libagx_end_primitive(global uint32_t *index_buffer, uint total_verts,
-                     uint verts_in_prim, uint total_prims, uint index_offs,
-                     uint geometry_base, bool restart)
+libagx_write_strip(GLOBAL uint32_t *index_buffer, uint32_t inv_index_offset,
+                   uint32_t prim_index_offset, uint32_t vertex_offset,
+                   uint32_t verts_in_prim, uint3 info)
 {
-   _libagx_end_primitive(index_buffer, total_verts, verts_in_prim, total_prims,
-                         index_offs, geometry_base, restart);
+   _libagx_write_strip(index_buffer, inv_index_offset + prim_index_offset,
+                       vertex_offset, verts_in_prim, info.x, info.y, info.z);
 }
 
 void
-libagx_pad_index_gs(global int *index_buffer, uint total_verts,
-                    uint total_prims, uint id, uint alloc)
+libagx_pad_index_gs(global int *index_buffer, uint inv_index_offset,
+                    uint nr_indices, uint alloc)
 {
-   for (uint i = total_verts + total_prims; i < alloc; ++i) {
-      index_buffer[(id * alloc) + i] = -1;
+   for (uint i = nr_indices; i < alloc; ++i) {
+      index_buffer[inv_index_offset + i] = -1;
    }
 }
 
@@ -888,7 +926,7 @@ libagx_pre_gs(global struct agx_geometry_params *p, uint streams,
       int4 overflow = prims < in_prims;
 
       libagx_foreach_xfb(streams, i) {
-         p->xfb_prims[i] = prims[i];
+         p->xfb_verts[i] = prims[i] * vertices_per_prim;
 
          *(p->xfb_overflow[i]) += (bool)overflow[i];
          *(p->xfb_prims_generated_counter[i]) += prims[i];

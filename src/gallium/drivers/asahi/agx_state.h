@@ -514,16 +514,8 @@ struct asahi_fs_shader_key {
 };
 static_assert(sizeof(struct asahi_fs_shader_key) == 40, "no holes");
 
-struct asahi_gs_shader_key {
-   /* If true, this GS is run only for its side effects (including XFB) */
-   bool rasterizer_discard;
-   bool padding[7];
-};
-static_assert(sizeof(struct asahi_gs_shader_key) == 8, "no holes");
-
 union asahi_shader_key {
    struct asahi_vs_shader_key vs;
-   struct asahi_gs_shader_key gs;
    struct asahi_fs_shader_key fs;
 };
 
