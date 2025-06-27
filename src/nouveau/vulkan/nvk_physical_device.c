@@ -147,6 +147,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_maintenance5 = true,
       .KHR_maintenance6 = true,
       .KHR_maintenance7 = true,
+      .KHR_maintenance9 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -474,6 +475,9 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_KHR_maintenance7 */
       .maintenance7 = true,
+      
+      /* VK_KHR_maintenance9 */
+      .maintenance9 = true,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
@@ -1091,6 +1095,11 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic = NVK_MAX_DYNAMIC_BUFFERS / 2,
       .maxDescriptorSetUpdateAfterBindTotalBuffersDynamic = NVK_MAX_DYNAMIC_BUFFERS,
 
+      /* VK_KHR_maintenance9 */
+      .image2DViewOf3DSparse = false,
+      .defaultVertexAttributeValue =
+         VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR,
+
       /* VK_EXT_legacy_vertex_attributes */
       .nativeUnalignedPerformance = true,
 
@@ -1648,6 +1657,11 @@ nvk_GetPhysicalDeviceQueueFamilyProperties2(
                VkQueueFamilyGlobalPriorityProperties *p = (void *)ext;
                p->priorityCount = 1;
                p->priorities[0] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;
+               break;
+            }
+            case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OWNERSHIP_TRANSFER_PROPERTIES_KHR: {
+               VkQueueFamilyOwnershipTransferPropertiesKHR *p = (void *)ext;
+               p->optimalImageTransferToQueueFamilies = ~0;
                break;
             }
 
