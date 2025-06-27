@@ -54,6 +54,7 @@
 typedef struct {
    bool visited;
    uint32_t instr_index;
+   uint32_t indirection_level;
 } instr_info;
 
 static nir_instr *
@@ -126,7 +127,8 @@ is_grouped_load(nir_instr *instr)
 }
 
 static bool
-is_part_of_group(nir_instr *instr, uint8_t current_indirection_level)
+is_part_of_group(nir_instr *instr, nir_instr *first,
+                 uint32_t indirection_level, instr_info *infos)
 {
    /* Grouping is done by moving everything else out of the first..last
     * instruction range of the load group corresponding to the given
@@ -137,8 +139,13 @@ is_part_of_group(nir_instr *instr, uint8_t current_indirection_level)
     * the same place by moving everything else between the first and last load
     * out of the way. This doesn't change the order of non-reorderable
     * instructions.
+    *
+    * If "first" is set, compare against its indirection level, else compared
+    * against "indirection_level".
     */
-   return is_grouped_load(instr) && instr->pass_flags == current_indirection_level;
+   return is_grouped_load(instr) &&
+          infos[instr->index].indirection_level ==
+          (first ? infos[first->index].indirection_level : indirection_level);
 }
 
 struct check_sources_state {
@@ -169,7 +176,7 @@ group_loads(nir_instr *first, nir_instr *last, instr_info *infos)
     */
    for (nir_instr *instr = nir_instr_prev(last); instr != first;
         instr = nir_instr_prev(instr)) {
-      if (is_part_of_group(instr, first->pass_flags))
+      if (is_part_of_group(instr, first, 0, infos))
          continue;
 
       bool all_uses_after_last = true;
@@ -213,7 +220,7 @@ group_loads(nir_instr *first, nir_instr *last, instr_info *infos)
    for (nir_instr *instr = nir_instr_next(first); instr != last;
         instr = nir_instr_next(instr)) {
       /* Only move instructions without side effects. */
-      if (is_part_of_group(instr, first->pass_flags))
+      if (is_part_of_group(instr, first, 0, infos))
          continue;
 
       if (nir_foreach_src(instr, has_only_sources_less_than, &state)) {
@@ -369,23 +376,18 @@ process_block(nir_block *block, nir_load_grouping grouping,
    }
 
    /* Count the number of load indirections for each load instruction
-    * within this block. Store it in pass_flags.
+    * within this block.
     */
    nir_foreach_instr(instr, block) {
       if (is_grouped_load(instr)) {
          unsigned indirections = get_num_indirections(instr, infos);
 
-         /* pass_flags has only 8 bits */
-         indirections = MIN2(indirections, 255);
          num_inst_per_level[indirections]++;
-         instr->pass_flags = indirections;
+         infos[instr->index].indirection_level = indirections;
 
          max_indirection = MAX2(max_indirection, (int)indirections);
       }
    }
-
-   /* 255 contains all indirection levels >= 255, so ignore them. */
-   max_indirection = MIN2(max_indirection, 254);
 
    /* Each indirection level is grouped. */
    for (int level = 0; level <= max_indirection; level++) {
@@ -413,7 +415,7 @@ process_block(nir_block *block, nir_load_grouping grouping,
          }
 
          /* Only group load instructions with the same indirection level. */
-         if (is_grouped_load(current) && current->pass_flags == level) {
+         if (is_part_of_group(current, NULL, level, infos)) {
             nir_instr *current_resource;
 
             switch (grouping) {
