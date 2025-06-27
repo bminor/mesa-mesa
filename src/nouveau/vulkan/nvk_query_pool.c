@@ -83,7 +83,8 @@ nvk_CreateQueryPool(VkDevice device,
          return result;
       }
 
-      if (pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY)
+      if ((pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY) ||
+          (pCreateInfo->flags & VK_QUERY_POOL_CREATE_RESET_BIT_KHR))
          memset(pool->mem->map, 0, mem_size);
    }
 
