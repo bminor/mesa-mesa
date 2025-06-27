@@ -636,7 +636,7 @@ init_render_queue_state(struct anv_queue *queue, bool is_companion_rcs_batch)
 #if GFX_VERx10 >= 125
    anv_batch_emit(batch, GENX(STATE_COMPUTE_MODE), cm) {
 #if GFX_VER >= 30
-      cm.EnableVariableRegisterSizeAllocation = true;
+      cm.EnableVariableRegisterSizeAllocation = !INTEL_DEBUG(DEBUG_NO_VRT);
 #endif
       cm.Mask1 = 0xffff;
 #if GFX_VERx10 >= 200
@@ -774,7 +774,7 @@ init_compute_queue_state(struct anv_queue *queue)
    anv_batch_emit(batch, GENX(STATE_COMPUTE_MODE), cm) {
 #if GFX_VER >= 30
       cm.EnableVariableRegisterSizeAllocationMask = 1;
-      cm.EnableVariableRegisterSizeAllocation = true;
+      cm.EnableVariableRegisterSizeAllocation = !INTEL_DEBUG(DEBUG_NO_VRT);
 #endif
 #if GFX_VER >= 20
       cm.AsyncComputeThreadLimit = ACTL_Max8;

@@ -29,6 +29,7 @@
 #include "brw_shader.h"
 #include "brw_builder.h"
 #include "brw_cfg.h"
+#include "dev/intel_debug.h"
 #include "util/set.h"
 #include "util/register_allocate.h"
 
@@ -80,7 +81,8 @@ extern "C" void
 brw_alloc_reg_sets(struct brw_compiler *compiler)
 {
    const struct intel_device_info *devinfo = compiler->devinfo;
-   int base_reg_count = (devinfo->ver >= 30 ? XE3_MAX_GRF / reg_unit(devinfo) :
+   int base_reg_count = (devinfo->ver >= 30 && !INTEL_DEBUG(DEBUG_NO_VRT) ?
+                         XE3_MAX_GRF / reg_unit(devinfo) :
                          BRW_MAX_GRF);
 
    /* The registers used to make up almost all values handled in the compiler

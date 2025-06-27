@@ -1413,7 +1413,7 @@ iris_init_render_context(struct iris_batch *batch)
 #if GFX_VER >= 30
    iris_emit_cmd(batch, GENX(STATE_COMPUTE_MODE), cm) {
       cm.EnableVariableRegisterSizeAllocationMask = 1;
-      cm.EnableVariableRegisterSizeAllocation = true;
+      cm.EnableVariableRegisterSizeAllocation = !INTEL_DEBUG(DEBUG_NO_VRT);
    }
 #endif
 
@@ -1549,7 +1549,7 @@ iris_init_compute_context(struct iris_batch *batch)
    iris_emit_cmd(batch, GENX(STATE_COMPUTE_MODE), cm) {
 #if GFX_VER >= 30
       cm.EnableVariableRegisterSizeAllocationMask = 1;
-      cm.EnableVariableRegisterSizeAllocation = true;
+      cm.EnableVariableRegisterSizeAllocation = !INTEL_DEBUG(DEBUG_NO_VRT);
 #endif
 #if GFX_VER >= 20
       cm.AsyncComputeThreadLimit = pixel_async_compute_thread_limit;

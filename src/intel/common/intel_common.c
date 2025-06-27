@@ -5,6 +5,8 @@
 
 #include <stdlib.h>
 
+#include "dev/intel_debug.h"
+
 #include "intel_common.h"
 
 #include "intel_engine.h"
@@ -47,7 +49,7 @@ intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo
    uint8_t pixel_async_compute_thread_limit = 2;
    uint8_t z_pass_async_compute_thread_limit = 0;
    uint8_t np_z_async_throttle_settings = 0;
-   bool has_vrt = devinfo->verx10 >= 300;
+   bool has_vrt = devinfo->verx10 >= 300 && !INTEL_DEBUG(DEBUG_NO_VRT);
 
    /* When VRT is enabled async threads limits don't have effect */
    if (!slm_or_barrier_enabled || has_vrt) {
