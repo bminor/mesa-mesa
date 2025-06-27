@@ -271,11 +271,6 @@ struct nvc0_context {
 
    struct nvc0_blitctx *blit;
 
-   /* NOTE: some of these surfaces may reference buffers */
-   struct pipe_surface *surfaces[2][NVC0_MAX_SURFACE_SLOTS];
-   uint16_t surfaces_dirty[2];
-   uint16_t surfaces_valid[2];
-
    struct pipe_shader_buffer buffers[6][NVC0_MAX_BUFFERS];
    uint32_t buffers_dirty[6];
    uint32_t buffers_valid[6];

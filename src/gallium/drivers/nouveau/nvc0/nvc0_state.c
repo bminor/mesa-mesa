@@ -1175,37 +1175,6 @@ nvc0_set_transform_feedback_targets(struct pipe_context *pipe,
    }
 }
 
-static void
-nvc0_bind_surfaces_range(struct nvc0_context *nvc0, const unsigned t,
-                         unsigned start, unsigned nr,
-                         struct pipe_surface **psurfaces)
-{
-   const unsigned end = start + nr;
-   const unsigned mask = ((1 << nr) - 1) << start;
-   unsigned i;
-
-   if (psurfaces) {
-      for (i = start; i < end; ++i) {
-         const unsigned p = i - start;
-         if (psurfaces[p])
-            nvc0->surfaces_valid[t] |= (1 << i);
-         else
-            nvc0->surfaces_valid[t] &= ~(1 << i);
-         pipe_surface_reference(&nvc0->surfaces[t][i], psurfaces[p]);
-      }
-   } else {
-      for (i = start; i < end; ++i)
-         pipe_surface_reference(&nvc0->surfaces[t][i], NULL);
-      nvc0->surfaces_valid[t] &= ~mask;
-   }
-   nvc0->surfaces_dirty[t] |= mask;
-
-   if (t == 0)
-      nouveau_bufctx_reset(nvc0->bufctx_3d, NVC0_BIND_3D_SUF);
-   else
-      nouveau_bufctx_reset(nvc0->bufctx_cp, NVC0_BIND_CP_SUF);
-}
-
 static bool
 nvc0_bind_images_range(struct nvc0_context *nvc0, const unsigned s,
                        unsigned start, unsigned nr,
