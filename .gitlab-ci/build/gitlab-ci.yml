@@ -302,7 +302,7 @@ debian-release:
     BUILDTYPE: "release"
     S3_ARTIFACT_NAME: "mesa-x86_64-default-${BUILDTYPE}"
   script:
-    - *meson-build
+    - !reference [.meson-build-only, script]
     - 'if [ -n "$MESA_CI_PERFORMANCE_ENABLED" ]; then .gitlab-ci/prepare-artifacts.sh; fi'
 
 alpine-build-testing:
@@ -451,8 +451,7 @@ debian-android:
     - export GALLIUM_DRIVERS=iris,radeonsi,softpipe,virgl,zink
     - export VULKAN_DRIVERS=amd,intel,swrast,virtio
     - .gitlab-ci/create-llvm-meson-wrap-file.sh
-    - *meson-build
-    - .gitlab-ci/prepare-artifacts.sh
+    - !reference [.meson-build-for-tests, script]
     # remove all the files created by the previous build before the next build
     - git clean -dxf .
     # aarch64 build:
@@ -462,7 +461,7 @@ debian-android:
     - export CROSS=aarch64-linux-android
     - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d
     - export VULKAN_DRIVERS=freedreno,broadcom,virtio
-    - *meson-build
+    - !reference [.meson-build-only, script]
 
 .meson-cross:
   extends:
@@ -639,7 +638,7 @@ debian-arm64-release:
       -Wno-error=stringop-overread
       -Wno-error=deprecated-declarations
   script:
-    - *meson-build
+    - !reference [.meson-build-only, script]
     - 'if [ -n "$MESA_CI_PERFORMANCE_ENABLED" ]; then .gitlab-ci/prepare-artifacts.sh; fi'
 
 debian-no-libdrm:
