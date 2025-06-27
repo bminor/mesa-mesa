@@ -16,8 +16,6 @@ renaming_overrides_prefixing = true
 "nv_device_info" = "struct nv_device_info"
 "pipe_format" = "enum pipe_format"
 "pipe_swizzle" = "enum pipe_swizzle"
-"GOB_DEPTH" = "NIL_GOB_DEPTH"
-"GOB_WIDTH_B" = "NIL_GOB_WIDTH_B"
 "MAX_LEVELS" = "NIL_MAX_LEVELS"
 "MAX_DRM_FORMAT_MODS" = "NIL_MAX_DRM_FORMAT_MODS"
 
