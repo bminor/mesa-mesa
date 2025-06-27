@@ -6314,7 +6314,7 @@
         "description": "llvmpipe: Use the correct field to decide if coroutines are used",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "92083fc70d6d2cdeacebef7c8a984fd585074b5c",
         "notes": null
