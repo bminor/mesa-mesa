@@ -1526,6 +1526,9 @@ FD_GENX(fd6_blitter_init);
 unsigned
 fd6_tile_mode_for_format(enum pipe_format pfmt)
 {
+   if (!util_is_power_of_two_nonzero(util_format_get_blocksize(pfmt)))
+      return TILE6_LINEAR;
+
    /* basically just has to be a format we can blit, so uploads/downloads
     * via linear staging buffer works:
     */
