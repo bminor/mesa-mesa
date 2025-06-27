@@ -5314,7 +5314,7 @@
         "description": "vulkan/android: fix to not append GRALLOC_USAGE_HW_COMPOSER bit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c406d53858543da81b5bec5826c30d0698d95fb6",
         "notes": null
