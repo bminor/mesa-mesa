@@ -49,7 +49,7 @@
 static void extractsrc_u( GLubyte srcpixels[4][4], const GLubyte *srcaddr,
 			  GLint srcRowStride, GLint numxpixels, GLint numypixels, GLint comps)
 {
-   GLubyte i, j;
+   GLint i, j;
    const GLubyte *curaddr;
    for (j = 0; j < numypixels; j++) {
       curaddr = srcaddr + j * srcRowStride * comps;
@@ -63,7 +63,7 @@ static void extractsrc_u( GLubyte srcpixels[4][4], const GLubyte *srcaddr,
 static void extractsrc_s( GLbyte srcpixels[4][4], const GLbyte *srcaddr,
 			  GLint srcRowStride, GLint numxpixels, GLint numypixels, GLint comps)
 {
-   GLubyte i, j;
+   GLint i, j;
    const GLbyte *curaddr;
    for (j = 0; j < numypixels; j++) {
       curaddr = srcaddr + j * srcRowStride * comps;

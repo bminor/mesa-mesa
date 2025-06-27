@@ -509,7 +509,7 @@ static void encodedxtcolorblockfaster( GLubyte *blkaddr, GLubyte srccolors[4][4]
 
    GLubyte *bestcolor[2];
    GLubyte basecolors[2][3];
-   GLubyte i, j;
+   GLint i, j;
    GLuint lowcv, highcv, testcv;
    GLboolean haveAlpha = GL_FALSE;
 
@@ -570,7 +570,8 @@ static void encodedxt5alpha(GLubyte *blkaddr, GLubyte srccolors[4][4][4],
    GLubyte alphabase[2], alphause[2];
    GLshort alphatest[2];
    GLuint alphablockerror1, alphablockerror2, alphablockerror3;
-   GLubyte i, j, aindex, acutValues[7];
+   GLint i, j;
+   GLubyte aindex, acutValues[7];
    GLubyte alphaenc1[16], alphaenc2[16], alphaenc3[16];
    GLboolean alphaabsmin = GL_FALSE;
    GLboolean alphaabsmax = GL_FALSE;
@@ -889,7 +890,7 @@ static void encodedxt5alpha(GLubyte *blkaddr, GLubyte srccolors[4][4][4],
 static void extractsrccolors( GLubyte srcpixels[4][4][4], const GLchan *srcaddr,
                          GLint srcRowStride, GLint numxpixels, GLint numypixels, GLint comps)
 {
-   GLubyte i, j, c;
+   GLint i, j, c;
    const GLchan *curaddr;
    for (j = 0; j < numypixels; j++) {
       curaddr = srcaddr + j * srcRowStride * comps;
