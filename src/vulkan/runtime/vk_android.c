@@ -156,34 +156,6 @@ unmask32(uint32_t *inout_mask, uint32_t test_mask)
 }
 
 static VkResult
-format_supported_with_usage(struct vk_device *device, VkFormat format,
-                            VkImageUsageFlags imageUsage)
-{
-   struct vk_physical_device *physical = device->physical;
-   VkResult result;
-
-   const VkPhysicalDeviceImageFormatInfo2 image_format_info = {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,
-      .format = format,
-      .type = VK_IMAGE_TYPE_2D,
-      .tiling = VK_IMAGE_TILING_OPTIMAL,
-      .usage = imageUsage,
-   };
-
-   VkImageFormatProperties2 image_format_props = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2,
-   };
-
-   /* Check that requested format and usage are supported. */
-   result = physical->dispatch_table.GetPhysicalDeviceImageFormatProperties2(
-      (VkPhysicalDevice)physical, &image_format_info, &image_format_props);
-   if (result != VK_SUCCESS)
-      return result;
-
-   return VK_SUCCESS;
-}
-
-static VkResult
 setup_gralloc0_usage(struct vk_device *device, VkFormat format,
                      VkImageUsageFlags imageUsage, int *grallocUsage)
 {
@@ -219,11 +191,6 @@ vk_common_GetSwapchainGrallocUsageANDROID(VkDevice device_h, VkFormat format,
                                           int *grallocUsage)
 {
    VK_FROM_HANDLE(vk_device, device, device_h);
-   VkResult result;
-
-   result = format_supported_with_usage(device, format, imageUsage);
-   if (result != VK_SUCCESS)
-      return result;
 
    *grallocUsage = 0;
    return setup_gralloc0_usage(device, format, imageUsage, grallocUsage);
@@ -243,10 +210,6 @@ vk_common_GetSwapchainGrallocUsage2ANDROID(
 
    *grallocConsumerUsage = 0;
    *grallocProducerUsage = 0;
-
-   result = format_supported_with_usage(device, format, imageUsage);
-   if (result != VK_SUCCESS)
-      return result;
 
    int32_t grallocUsage = 0;
    result = setup_gralloc0_usage(device, format, imageUsage, &grallocUsage);
