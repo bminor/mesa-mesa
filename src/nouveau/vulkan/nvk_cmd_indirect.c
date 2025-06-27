@@ -181,11 +181,7 @@ nvk_nir_push_copy_dws(nir_builder *b, struct nvk_nir_push *p,
 
    nir_push_loop(b);
    {
-      nir_push_if(b, nir_uge(b, nir_load_var(b, i), dw_count));
-      {
-         nir_jump(b, nir_jump_break);
-      }
-      nir_pop_if(b, NULL);
+      nir_break_if(b, nir_uge(b, nir_load_var(b, i), dw_count));
 
       nir_def *dw = load_global_dw(b, nir_load_var(b, src_dw_addr), 0);
       store_global_dw(b, nir_load_var(b, p->addr), 0, dw);
@@ -215,12 +211,8 @@ nvk_nir_build_pad_NOP(nir_builder *b, struct nvk_nir_push *p, uint32_t nop)
 {
    nir_push_loop(b);
    {
-      nir_push_if(b, nir_uge_imm(b, nir_load_var(b, p->dw_count),
-                                    p->max_dw_count));
-      {
-         nir_jump(b, nir_jump_break);
-      }
-      nir_pop_if(b, NULL);
+      nir_break_if(b, nir_uge_imm(b, nir_load_var(b, p->dw_count),
+                                  p->max_dw_count));
 
       store_global_dw(b, nir_load_var(b, p->addr), 0, nir_imm_int(b, nop));
       nir_iadd_to_var_imm(b, p->addr, 4);

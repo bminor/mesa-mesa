@@ -384,9 +384,7 @@ dzn_nir_triangle_fan_prim_restart_rewrite_index_shader(uint8_t old_index_size)
    nir_def *read_index_count =
       nir_bcsel(&b, nir_ieq(&b, index0, prim_restart_val),
                 nir_imm_int(&b, 3), nir_imm_int(&b, 2));
-   nir_push_if(&b, nir_ult(&b, old_index_count, nir_iadd(&b, old_index_ptr, read_index_count)));
-   nir_jump(&b, nir_jump_break);
-   nir_pop_if(&b, NULL);
+   nir_break_if(&b, nir_ult(&b, old_index_count, nir_iadd(&b, old_index_ptr, read_index_count)));
 
    nir_def *old_index_offset =
       nir_imul_imm(&b, old_index_ptr, old_index_size);

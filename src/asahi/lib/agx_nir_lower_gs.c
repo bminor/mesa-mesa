@@ -1003,11 +1003,7 @@ agx_nir_lower_gs_instancing(nir_shader *gs)
    nir_loop *loop = nir_push_loop(&b);
    {
       index = nir_load_var(&b, i);
-      nir_push_if(&b, nir_uge_imm(&b, index, nr_invocations));
-      {
-         nir_jump(&b, nir_jump_break);
-      }
-      nir_pop_if(&b, NULL);
+      nir_break_if(&b, nir_uge_imm(&b, index, nr_invocations));
 
       b.cursor = nir_cf_reinsert(&list, b.cursor);
       nir_store_var(&b, i, nir_iadd_imm(&b, index, 1), ~0);

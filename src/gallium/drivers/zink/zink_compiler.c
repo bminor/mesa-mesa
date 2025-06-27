@@ -707,9 +707,7 @@ lower_line_stipple_fs(nir_shader *shader)
       nir_def *index_mask = nir_ishl(&b, nir_imm_int(&b, 1), index);
       nir_def *new_value = nir_ixor(&b, value, index_mask);
       nir_store_var(&b, v, new_value,  1);
-      nir_push_if(&b, nir_ieq_imm(&b, value, 0));
-      nir_jump(&b, nir_jump_break);
-      nir_pop_if(&b, NULL);
+      nir_break_if(&b, nir_ieq_imm(&b, value, 0));
 
       nir_def *stipple_pos =
          nir_interp_deref_at_sample(&b, 1, 32,

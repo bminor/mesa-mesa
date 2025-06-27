@@ -177,11 +177,7 @@ nir_zero_initialize_shared_memory(nir_shader *shader,
       {
          nir_def *offset = nir_load_var(&b, it);
 
-         nir_push_if(&b, nir_uge_imm(&b, offset, shared_size));
-         {
-            nir_jump(&b, nir_jump_break);
-         }
-         nir_pop_if(&b, NULL);
+         nir_break_if(&b, nir_uge_imm(&b, offset, shared_size));
 
          nir_store_shared(&b, nir_imm_zero(&b, chunk_comps, 32), offset,
                           .align_mul = chunk_size,
@@ -270,11 +266,7 @@ nir_clear_shared_memory(nir_shader *shader,
       {
          nir_def *offset = &offset_phi->def;
 
-         nir_push_if(&b, nir_uge_imm(&b, offset, shared_size));
-         {
-            nir_jump(&b, nir_jump_break);
-         }
-         nir_pop_if(&b, NULL);
+         nir_break_if(&b, nir_uge_imm(&b, offset, shared_size));
          nir_store_shared(&b, value, offset,
                           .align_mul = chunk_size,
                           .write_mask = ((1 << chunk_comps) - 1));

@@ -136,9 +136,7 @@ sanitize_cf_list(nir_function_impl* impl, struct exec_list* cf_list)
             /* We don't use block divergence information, so just this is enough. */
             cond->divergent = false;
 
-            nir_push_if(&b, cond);
-            nir_jump(&b, nir_jump_break);
-            nir_pop_if(&b, NULL);
+            nir_break_if(&b, cond);
 
             progress = true;
          }

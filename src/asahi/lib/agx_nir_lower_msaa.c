@@ -94,11 +94,7 @@ agx_nir_wrap_per_sample_loop(nir_shader *shader, uint8_t nr_samples)
    nir_loop *loop = nir_push_loop(&b);
    {
       bit = nir_load_var(&b, i);
-      nir_push_if(&b, nir_uge(&b, bit, end_bit));
-      {
-         nir_jump(&b, nir_jump_break);
-      }
-      nir_pop_if(&b, NULL);
+      nir_break_if(&b, nir_uge(&b, bit, end_bit));
 
       b.cursor = nir_cf_reinsert(&list, b.cursor);
       nir_store_var(&b, i, nir_ishl_imm(&b, bit, 1), ~0);

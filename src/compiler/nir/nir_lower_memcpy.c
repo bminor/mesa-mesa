@@ -159,11 +159,7 @@ lower_memcpy_impl(nir_function_impl *impl)
             nir_push_loop(&b);
             {
                nir_def *index = nir_load_var(&b, i);
-               nir_push_if(&b, nir_uge(&b, index, size));
-               {
-                  nir_jump(&b, nir_jump_break);
-               }
-               nir_pop_if(&b, NULL);
+               nir_break_if(&b, nir_uge(&b, index, size));
 
                nir_def *value =
                   memcpy_load_deref_elem(&b, copy_src, index);
