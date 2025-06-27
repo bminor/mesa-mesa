@@ -994,7 +994,7 @@
         "description": "anv: Fix typo when checking format's extended usage flag",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f4c1753c1aa1870d78b733a3b597200f22d607d1",
         "notes": null
