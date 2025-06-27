@@ -975,6 +975,11 @@ panvk_per_arch(CmdExecuteCommands)(VkCommandBuffer commandBuffer,
       primary->state.gfx.render.suspended =
          secondary->state.gfx.render.suspended;
 
+      /* Inherit the occlusion query state so that if the secondary contains
+       * begin/end, but the renderpass ends in the primary, the primary can
+       * correctly detect that an oq has ended in EndRendering. */
+      primary->state.gfx.render.oq = secondary->state.gfx.render.oq;
+
       /* If the render context we passed to the secondary command buffer got
        * invalidated, reset the FB/tiler descs and treat things as if we
        * suspended the render pass, since those descriptors have been
