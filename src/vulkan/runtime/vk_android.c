@@ -146,54 +146,39 @@ vk_android_get_front_buffer_usage(void)
    return 0;
 }
 
-/* If any bits in test_mask are set, then unset them and return true. */
-static inline bool
-unmask32(uint32_t *inout_mask, uint32_t test_mask)
-{
-   uint32_t orig_mask = *inout_mask;
-   *inout_mask &= ~test_mask;
-   return *inout_mask != orig_mask;
-}
-
 static VkResult
-setup_gralloc0_usage(struct vk_device *device, VkFormat format,
-                     VkImageUsageFlags imageUsage, int *grallocUsage)
+setup_gralloc0_usage(VkFormat format, VkImageUsageFlags image_usage,
+                     int *out_gralloc_usage)
 {
-   if (unmask32(&imageUsage, VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT))
-      *grallocUsage |= GRALLOC_USAGE_HW_RENDER;
+   const VkImageUsageFlags render_usage =
+      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+   const VkImageUsageFlags texture_usage =
+      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+      VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+   int gralloc_usage = 0;
 
-   if (unmask32(&imageUsage, VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                VK_IMAGE_USAGE_SAMPLED_BIT |
-                                VK_IMAGE_USAGE_STORAGE_BIT |
-                                VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT))
-      *grallocUsage |= GRALLOC_USAGE_HW_TEXTURE;
-
-   /* All VkImageUsageFlags not explicitly checked here are unsupported for
-    * gralloc swapchains.
-    */
-   if (imageUsage != 0) {
-      return vk_errorf(device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                       "unsupported VkImageUsageFlags(0x%x) for gralloc "
-                       "swapchain",
-                       imageUsage);
-   }
-
-   if (*grallocUsage == 0)
+   if (image_usage & ~(render_usage | texture_usage))
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   if (image_usage & render_usage)
+      gralloc_usage |= GRALLOC_USAGE_HW_RENDER;
+   if (image_usage & texture_usage)
+      gralloc_usage |= GRALLOC_USAGE_HW_TEXTURE;
+
+   if (!gralloc_usage)
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   *out_gralloc_usage = gralloc_usage;
 
    return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
-vk_common_GetSwapchainGrallocUsageANDROID(VkDevice device_h, VkFormat format,
+vk_common_GetSwapchainGrallocUsageANDROID(VkDevice device, VkFormat format,
                                           VkImageUsageFlags imageUsage,
                                           int *grallocUsage)
 {
-   VK_FROM_HANDLE(vk_device, device, device_h);
-
-   *grallocUsage = 0;
-   return setup_gralloc0_usage(device, format, imageUsage, grallocUsage);
+   return setup_gralloc0_usage(format, imageUsage, grallocUsage);
 }
 
 #if ANDROID_API_LEVEL >= 26
@@ -201,36 +186,23 @@ vk_common_GetSwapchainGrallocUsageANDROID(VkDevice device_h, VkFormat format,
 
 VKAPI_ATTR VkResult VKAPI_CALL
 vk_common_GetSwapchainGrallocUsage2ANDROID(
-   VkDevice device_h, VkFormat format, VkImageUsageFlags imageUsage,
+   VkDevice device, VkFormat format, VkImageUsageFlags imageUsage,
    VkSwapchainImageUsageFlagsANDROID swapchainImageUsage,
    uint64_t *grallocConsumerUsage, uint64_t *grallocProducerUsage)
 {
-   VK_FROM_HANDLE(vk_device, device, device_h);
-   VkResult result;
-
-   *grallocConsumerUsage = 0;
-   *grallocProducerUsage = 0;
-
-   int32_t grallocUsage = 0;
-   result = setup_gralloc0_usage(device, format, imageUsage, &grallocUsage);
+   int gralloc_usage;
+   VkResult result = setup_gralloc0_usage(format, imageUsage, &gralloc_usage);
    if (result != VK_SUCCESS)
       return result;
 
    /* Setup gralloc1 usage flags from gralloc0 flags. */
-
-   if (grallocUsage & GRALLOC_USAGE_HW_RENDER)
+   *grallocConsumerUsage = *grallocProducerUsage = 0;
+   if (gralloc_usage & GRALLOC_USAGE_HW_RENDER)
       *grallocProducerUsage |= GRALLOC1_PRODUCER_USAGE_GPU_RENDER_TARGET;
-
-   if (grallocUsage & GRALLOC_USAGE_HW_TEXTURE)
+   if (gralloc_usage & GRALLOC_USAGE_HW_TEXTURE)
       *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_GPU_TEXTURE;
 
-   if (grallocUsage & GRALLOC_USAGE_HW_COMPOSER) {
-      /* GPU composing case */
-      *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_GPU_TEXTURE;
-      /* Hardware composing case */
-      *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_HWCOMPOSER;
-   }
-
+   /* for front buffer rendering */
    if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
       *grallocProducerUsage |= vk_android_get_front_buffer_usage();
 
