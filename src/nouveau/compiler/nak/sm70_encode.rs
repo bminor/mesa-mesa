@@ -2443,7 +2443,8 @@ impl SM70Op for OpTex {
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
         if e.sm >= 100 {
-            e.set_field(48..56, 0xff_u8); // ureg
+            e.set_ureg_src(40..48, &Src::ZERO); // handle
+            e.set_ureg_src(48..56, &Src::ZERO); // offset
         }
 
         e.set_tex_dim(61..64, self.dim);
@@ -2509,9 +2510,9 @@ impl SM70Op for OpTld {
 
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
-
         if e.sm >= 100 {
-            e.set_field(48..56, 0xff_u8); // ureg
+            e.set_ureg_src(40..48, &Src::ZERO); // handle
+            e.set_ureg_src(48..56, &Src::ZERO); // offset
         }
 
         if e.sm >= 100 {
@@ -2584,9 +2585,9 @@ impl SM70Op for OpTld4 {
 
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
-
         if e.sm >= 100 {
-            e.set_field(48..56, 0xff_u8); // ureg
+            e.set_ureg_src(40..48, &Src::ZERO); // handle
+            e.set_ureg_src(48..56, &Src::ZERO); // offset
         }
 
         e.set_tex_dim(61..64, self.dim);
@@ -2637,6 +2638,9 @@ impl SM70Op for OpTmml {
 
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
+        if e.sm >= 100 {
+            e.set_ureg_src(40..48, &Src::ZERO); // handle
+        }
 
         e.set_tex_dim(61..64, self.dim);
         e.set_tex_channel_mask(72..76, self.channel_mask);
@@ -2681,9 +2685,9 @@ impl SM70Op for OpTxd {
 
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
-
         if e.sm >= 100 {
-            e.set_field(48..56, 0xff_u8); // ureg
+            e.set_ureg_src(40..48, &Src::ZERO); // handle
+            e.set_ureg_src(48..56, &Src::ZERO); // offset
         }
 
         if e.sm >= 100 {
@@ -2736,6 +2740,10 @@ impl SM70Op for OpTxq {
         }
 
         e.set_reg_src(24..32, &self.src);
+        if e.sm >= 100 {
+            e.set_ureg_src(40..48, &Src::ZERO); // handle
+        }
+
         e.set_field(
             62..64,
             match self.query {
