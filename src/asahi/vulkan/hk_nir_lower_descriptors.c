@@ -404,16 +404,16 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_depth_never_agx:
       return lower_sysval_to_root_table(b, intrin, draw.force_never_in_shader);
 
-   case nir_intrinsic_load_geometry_param_buffer_agx:
+   case nir_intrinsic_load_geometry_param_buffer_poly:
       return lower_sysval_to_root_table(b, intrin, draw.geometry_params);
 
-   case nir_intrinsic_load_vs_output_buffer_agx:
+   case nir_intrinsic_load_vs_output_buffer_poly:
       return lower_sysval_to_root_table(b, intrin, draw.vertex_output_buffer);
 
-   case nir_intrinsic_load_vs_outputs_agx:
+   case nir_intrinsic_load_vs_outputs_poly:
       return lower_sysval_to_root_table(b, intrin, draw.vertex_outputs);
 
-   case nir_intrinsic_load_tess_param_buffer_agx:
+   case nir_intrinsic_load_tess_param_buffer_poly:
       return lower_sysval_to_root_table(b, intrin, draw.tess_params);
 
    case nir_intrinsic_load_rasterization_stream:
@@ -439,7 +439,7 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_first_vertex:
    case nir_intrinsic_load_base_instance:
    case nir_intrinsic_load_draw_id:
-   case nir_intrinsic_load_input_assembly_buffer_agx: {
+   case nir_intrinsic_load_input_assembly_buffer_poly: {
       b->cursor = nir_instr_remove(&intrin->instr);
 
       unsigned base = AGX_ABI_VUNI_FIRST_VERTEX(*nr_vbos);
@@ -451,7 +451,7 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
          base = AGX_ABI_VUNI_DRAW_ID(*nr_vbos);
          size = 16;
       } else if (intrin->intrinsic ==
-                 nir_intrinsic_load_input_assembly_buffer_agx) {
+                 nir_intrinsic_load_input_assembly_buffer_poly) {
          base = AGX_ABI_VUNI_INPUT_ASSEMBLY(*nr_vbos);
          size = 64;
       }

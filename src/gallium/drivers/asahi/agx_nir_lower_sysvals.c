@@ -180,16 +180,16 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intr,
    case nir_intrinsic_get_ssbo_size:
       return load_sysval_indirect(b, 1, 32, stage_table(b), &s->ssbo_size,
                                   intr->src[0].ssa);
-   case nir_intrinsic_load_input_assembly_buffer_agx:
+   case nir_intrinsic_load_input_assembly_buffer_poly:
       return load_sysval_root(b, 1, 64, &u->input_assembly);
-   case nir_intrinsic_load_geometry_param_buffer_agx:
+   case nir_intrinsic_load_geometry_param_buffer_poly:
       return load_sysval_root(b, 1, 64, &u->geometry_params);
-   case nir_intrinsic_load_vs_output_buffer_agx:
+   case nir_intrinsic_load_vs_output_buffer_poly:
       return nir_load_global_constant(
          b, load_sysval_root(b, 1, 64, &u->vertex_output_buffer_ptr), 8, 1, 64);
-   case nir_intrinsic_load_vs_outputs_agx:
+   case nir_intrinsic_load_vs_outputs_poly:
       return load_sysval_root(b, 1, 64, &u->vertex_outputs);
-   case nir_intrinsic_load_tess_param_buffer_agx:
+   case nir_intrinsic_load_tess_param_buffer_poly:
       return load_sysval_root(b, 1, 64, &u->tess_params);
    case nir_intrinsic_load_fixed_point_size_agx:
       return load_sysval_root(b, 1, 32, &u->fixed_point_size);

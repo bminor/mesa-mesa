@@ -21,7 +21,7 @@ agx_nir_load_vertex_id(nir_builder *b, nir_def *id, unsigned index_size_B)
     * vertex ID is just the index as-is.
     */
    if (index_size_B) {
-      nir_def *ia = nir_load_input_assembly_buffer_agx(b);
+      nir_def *ia = nir_load_input_assembly_buffer_poly(b);
       id = libagx_load_index_buffer(b, ia, id, nir_imm_int(b, index_size_B));
    }
 

@@ -1381,6 +1381,25 @@ intrinsic("select_vertex_poly", src_comp=[1], indices=[STREAM_ID])
 # Sources: (index offset, first vertex, number of vertices, # of XFB primitives before).
 intrinsic("emit_primitive_poly", src_comp=[1, 1, 1, 1], indices=[STREAM_ID])
 
+# mesa_prim for the input topology (in a geometry shader)
+system_value("input_topology_poly", 1)
+
+# Pointer to the buffer passing outputs VS->TCS, VS->GS, or TES->GS linkage.
+system_value("vs_output_buffer_poly", 1, bit_sizes=[64])
+
+# Mask of VS->TCS, VS->GS, or TES->GS outputs. This is modelled as a sysval
+# so it can be dynamic with shader objects or constant folded with monolithic.
+system_value("vs_outputs_poly", 1, bit_sizes=[64])
+
+# Address of state for poly input assembly lowering for geometry/tessellation
+system_value("input_assembly_buffer_poly", 1, bit_sizes=[64])
+
+# Address of the parameter buffer for poly geometry shaders
+system_value("geometry_param_buffer_poly", 1, bit_sizes=[64])
+
+# Address of the parameter buffer for poly tessellation shaders
+system_value("tess_param_buffer_poly", 1, bit_sizes=[64])
+
 # IR3-specific version of most SSBO intrinsics. The only different
 # compare to the originals is that they add an extra source to hold
 # the dword-offset, which is needed by the backend code apart from
@@ -2079,9 +2098,6 @@ system_value("clip_z_coeff_agx", 1)
 # This affects flatshading, which is defined weirdly for fans with first.
 system_value("is_first_fan_agx", 1, bit_sizes=[1])
 
-# mesa_prim for the input topology (in a geometry shader)
-system_value("input_topology_agx", 1)
-
 # Root descriptor address
 system_value("root_agx", 1, bit_sizes=[64])
 
@@ -2271,23 +2287,6 @@ barrier("fence_pbe_to_tex_pixel_agx")
 
 # Unknown fence used in the helper program on exit.
 barrier("fence_helper_exit_agx")
-
-# Pointer to the buffer passing outputs VS->TCS, VS->GS, or TES->GS linkage.
-system_value("vs_output_buffer_agx", 1, bit_sizes=[64])
-
-# Mask of VS->TCS, VS->GS, or TES->GS outputs. This is modelled as a sysval
-# directly so it can be dynamic with shader objects or constant folded with
-# pipelines (including GPL)
-system_value("vs_outputs_agx", 1, bit_sizes=[64])
-
-# Address of state for AGX input assembly lowering for geometry/tessellation
-system_value("input_assembly_buffer_agx", 1, bit_sizes=[64])
-
-# Address of the parameter buffer for AGX geometry shaders
-system_value("geometry_param_buffer_agx", 1, bit_sizes=[64])
-
-# Address of the parameter buffer for AGX tessellation shaders
-system_value("tess_param_buffer_agx", 1, bit_sizes=[64])
 
 # Address of the pipeline statistic query result indexed by BASE
 system_value("stat_query_address_agx", 1, bit_sizes=[64], indices=[BASE])

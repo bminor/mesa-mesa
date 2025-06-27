@@ -18,7 +18,7 @@
 static nir_def *
 tcs_unrolled_id(nir_builder *b)
 {
-   return libagx_tcs_unrolled_id(b, nir_load_tess_param_buffer_agx(b),
+   return libagx_tcs_unrolled_id(b, nir_load_tess_param_buffer_poly(b),
                                  nir_load_workgroup_id(b));
 }
 
@@ -45,7 +45,7 @@ tcs_out_addr(nir_builder *b, nir_intrinsic_instr *intr, nir_def *vertex_id)
 
    nir_def *offset = nir_get_io_offset_src(intr)->ssa;
    nir_def *addr = libagx_tcs_out_address(
-      b, nir_load_tess_param_buffer_agx(b), tcs_unrolled_id(b), vertex_id,
+      b, nir_load_tess_param_buffer_poly(b), tcs_unrolled_id(b), vertex_id,
       nir_iadd_imm(b, offset, sem.location),
       nir_imm_int(b, util_last_bit(b->shader->info.patch_outputs_written)),
       nir_imm_int(b, b->shader->info.tess.tcs_vertices_out),
@@ -68,7 +68,7 @@ lower_tes_load(nir_builder *b, nir_intrinsic_instr *intr)
    if (intr->intrinsic == nir_intrinsic_load_per_vertex_input)
       vertex = intr->src[0].ssa;
 
-   nir_def *addr = libagx_tes_in_address(b, nir_load_tess_param_buffer_agx(b),
+   nir_def *addr = libagx_tes_in_address(b, nir_load_tess_param_buffer_poly(b),
                                          nir_load_vertex_id(b), vertex,
                                          nir_iadd_imm(b, offset, location));
 
@@ -84,7 +84,7 @@ tcs_load_input(nir_builder *b, nir_intrinsic_instr *intr)
 {
    nir_def *base = nir_imul(
       b, tcs_unrolled_id(b),
-      libagx_tcs_patch_vertices_in(b, nir_load_tess_param_buffer_agx(b)));
+      libagx_tcs_patch_vertices_in(b, nir_load_tess_param_buffer_poly(b)));
    nir_def *vertex = nir_iadd(b, base, intr->src[0].ssa);
 
    return agx_load_per_vertex_input(b, intr, vertex);
@@ -114,15 +114,16 @@ lower_tcs_impl(nir_builder *b, nir_intrinsic_instr *intr)
       return tcs_load_input(b, intr);
 
    case nir_intrinsic_load_patch_vertices_in:
-      return libagx_tcs_patch_vertices_in(b, nir_load_tess_param_buffer_agx(b));
+      return libagx_tcs_patch_vertices_in(b,
+                                          nir_load_tess_param_buffer_poly(b));
 
    case nir_intrinsic_load_tess_level_outer_default:
-      return libagx_tess_level_outer_default(b,
-                                             nir_load_tess_param_buffer_agx(b));
+      return libagx_tess_level_outer_default(
+         b, nir_load_tess_param_buffer_poly(b));
 
    case nir_intrinsic_load_tess_level_inner_default:
-      return libagx_tess_level_inner_default(b,
-                                             nir_load_tess_param_buffer_agx(b));
+      return libagx_tess_level_inner_default(
+         b, nir_load_tess_param_buffer_poly(b));
 
    case nir_intrinsic_load_output: {
       nir_def *addr = tcs_out_addr(b, intr, nir_undef(b, 1, 32));
@@ -186,11 +187,11 @@ lower_tes_impl(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    switch (intr->intrinsic) {
    case nir_intrinsic_load_tess_coord_xy:
-      return libagx_load_tess_coord(b, nir_load_tess_param_buffer_agx(b),
+      return libagx_load_tess_coord(b, nir_load_tess_param_buffer_poly(b),
                                     nir_load_vertex_id(b));
 
    case nir_intrinsic_load_primitive_id:
-      return libagx_tes_patch_id(b, nir_load_tess_param_buffer_agx(b),
+      return libagx_tes_patch_id(b, nir_load_tess_param_buffer_poly(b),
                                  nir_load_vertex_id(b));
 
    case nir_intrinsic_load_input:
@@ -200,7 +201,8 @@ lower_tes_impl(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return lower_tes_load(b, intr);
 
    case nir_intrinsic_load_patch_vertices_in:
-      return libagx_tes_patch_vertices_in(b, nir_load_tess_param_buffer_agx(b));
+      return libagx_tes_patch_vertices_in(b,
+                                          nir_load_tess_param_buffer_poly(b));
 
    default:
       return NULL;
@@ -228,7 +230,7 @@ lower_tes_indexing(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return false;
 
    b->cursor = nir_before_instr(&intr->instr);
-   nir_def *p = nir_load_tess_param_buffer_agx(b);
+   nir_def *p = nir_load_tess_param_buffer_poly(b);
    nir_def *id = nir_channel(b, nir_load_global_invocation_id(b, 32), 0);
    nir_def_replace(&intr->def, libagx_load_tes_index(b, p, id));
    return true;
