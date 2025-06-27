@@ -31,6 +31,7 @@ opt_uniform_subgroup_filter(const nir_instr *instr, const void *_state)
    case nir_intrinsic_masked_swizzle_amd:
    case nir_intrinsic_vote_all:
    case nir_intrinsic_vote_any:
+   case nir_intrinsic_vote_feq:
    case nir_intrinsic_vote_ieq:
       return !nir_src_is_divergent(&intrin->src[0]);
 
@@ -143,6 +144,9 @@ opt_uniform_subgroup_instr(nir_builder *b, nir_instr *instr, void *_state)
                             intrin->src[0].ssa);
          }
       }
+   } else if (intrin->intrinsic == nir_intrinsic_vote_feq) {
+      nir_def *x = intrin->src[0].ssa;
+      return nir_feq(b, x, x);
    } else if (intrin->intrinsic == nir_intrinsic_vote_ieq) {
       return nir_imm_true(b);
    }
