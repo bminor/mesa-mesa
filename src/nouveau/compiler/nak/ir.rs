@@ -8769,8 +8769,18 @@ pub trait ShaderModel {
     }
 
     #[allow(dead_code)]
-    fn is_blackwell(&self) -> bool {
+    fn is_blackwell_a(&self) -> bool {
         self.sm() >= 100 && self.sm() < 110
+    }
+
+    #[allow(dead_code)]
+    fn is_blackwell_b(&self) -> bool {
+        self.sm() >= 120 && self.sm() < 130
+    }
+
+    #[allow(dead_code)]
+    fn is_blackwell(&self) -> bool {
+        self.is_blackwell_a() || self.is_blackwell_b()
     }
 
     fn num_regs(&self, file: RegFile) -> u32;
