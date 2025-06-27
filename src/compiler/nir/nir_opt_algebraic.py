@@ -1074,6 +1074,10 @@ optimizations.extend([
    (('iand', ('uge(is_used_once)', a, b), ('uge', a, c)), ('uge', a, ('umax', b, c))),
    (('iand', ('uge(is_used_once)', a, c), ('uge', b, c)), ('uge', ('umin', a, b), c)),
 
+   # Law of trichotomy. This pattern is load-bearing on AGX for optimizing
+   # emulated transform feedback.
+   (('iand', ('uge', a, b), ('ult', a, b)), False),
+
    # A number of shaders contain a pattern like a.x < 0.0 || a.x > 1.0 || a.y
    # < 0.0, || a.y > 1.0 || ...  These patterns rearrange and replace in a
    # single step.  Doing just the replacement can lead to an infinite loop as
