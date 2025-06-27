@@ -1764,13 +1764,13 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    decode->dt_surf_tile_config = 0;
    decode->dt_uv_surf_tile_config = 0;
 
-   decode->dt_luma_top_offset = luma->surface.u.gfx9.surf_offset;
-   decode->dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset;
+   decode->dt_luma_top_offset = luma->surface.u.gfx9.surf_offset | (luma->surface.tile_swizzle << 8);
+   decode->dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset| (chroma->surface.tile_swizzle << 8);
    if (decode->dt_field_mode) {
       decode->dt_luma_bottom_offset =
-         luma->surface.u.gfx9.surf_offset + luma->surface.u.gfx9.surf_slice_size;
+         decode->dt_luma_top_offset + luma->surface.u.gfx9.surf_slice_size;
       decode->dt_chroma_bottom_offset =
-         chroma->surface.u.gfx9.surf_offset + chroma->surface.u.gfx9.surf_slice_size;
+         decode->dt_chroma_top_offset + chroma->surface.u.gfx9.surf_slice_size;
    } else {
       decode->dt_luma_bottom_offset = decode->dt_luma_top_offset;
       decode->dt_chroma_bottom_offset = decode->dt_chroma_top_offset;
