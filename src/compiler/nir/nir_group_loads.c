@@ -314,16 +314,30 @@ handle_load_range(nir_instr **first, nir_instr **last,
 }
 
 static bool
+is_demote(nir_instr *instr)
+{
+   if (instr->type == nir_instr_type_intrinsic) {
+      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+      if (intr->intrinsic == nir_intrinsic_terminate ||
+          intr->intrinsic == nir_intrinsic_terminate_if ||
+          intr->intrinsic == nir_intrinsic_demote ||
+          intr->intrinsic == nir_intrinsic_demote_if)
+         return true;
+   }
+
+   return false;
+}
+
+static bool
 is_barrier(nir_instr *instr)
 {
    if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
       const char *name = nir_intrinsic_infos[intr->intrinsic].name;
 
-      if (intr->intrinsic == nir_intrinsic_terminate ||
-          intr->intrinsic == nir_intrinsic_terminate_if ||
-          /* TODO: nir_intrinsics.py could do this */
-          strstr(name, "barrier"))
+      /* TODO: nir_intrinsics.py could do this */
+      if (strstr(name, "barrier"))
          return true;
    }
 
@@ -433,8 +447,8 @@ process_block(nir_block *block, nir_load_grouping grouping,
        * between them out.
        */
       nir_foreach_instr(current, block) {
-         /* Don't group across barriers. */
-         if (is_barrier(current)) {
+         /* Don't group across terminate and barriers. */
+         if (is_demote(current) || is_barrier(current)) {
             /* Group unconditionally.  */
             handle_load_range(&first_load, &last_load, NULL, 0);
             first_load = NULL;
