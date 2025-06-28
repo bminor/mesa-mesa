@@ -931,7 +931,8 @@ nvk_image_init(struct nvk_device *dev,
       }
    }
 
-   if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+   const enum pipe_format plane0_format = image->planes[0].nil.format.p_format;
+   if (plane0_format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT) {
       struct nil_image_init_info stencil_nil_info = {
          .dim = vk_image_type_to_nil_dim(image->vk.image_type),
          .format = nil_format(PIPE_FORMAT_R32_UINT),
