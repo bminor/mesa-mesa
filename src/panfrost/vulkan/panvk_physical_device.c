@@ -530,7 +530,7 @@ format_is_supported(struct panvk_physical_device *physical_device,
 
 static VkFormatFeatureFlags2
 get_image_plane_format_features(struct panvk_physical_device *physical_device,
-                                VkFormat format)
+                                VkFormat format, VkImageTiling tiling)
 {
    VkFormatFeatureFlags2 features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
@@ -583,12 +583,16 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
    if (fmt.bind & PAN_BIND_DEPTH_STENCIL)
       features |= VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
 
+   if (features != 0 && vk_format_is_color(format) &&
+       tiling == VK_IMAGE_TILING_LINEAR)
+      features |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT;
+
    return features;
 }
 
 static VkFormatFeatureFlags2
 get_image_format_features(struct panvk_physical_device *physical_device,
-                          VkFormat format)
+                          VkFormat format, VkImageTiling tiling)
 {
    const struct vk_format_ycbcr_info *ycbcr_info =
          vk_format_get_ycbcr_info(format);
@@ -599,7 +603,7 @@ get_image_format_features(struct panvk_physical_device *physical_device,
       return 0;
 
    if (ycbcr_info == NULL)
-      return get_image_plane_format_features(physical_device, format);
+      return get_image_plane_format_features(physical_device, format, tiling);
 
    if (unsupported_yuv_format(vk_format_to_pipe_format(format)))
       return 0;
@@ -613,7 +617,8 @@ get_image_format_features(struct panvk_physical_device *physical_device,
       const struct vk_format_ycbcr_plane *plane_info =
          &ycbcr_info->planes[plane];
       features &=
-         get_image_plane_format_features(physical_device, plane_info->format);
+         get_image_plane_format_features(physical_device, plane_info->format,
+                                         tiling);
       if (plane_info->denominator_scales[0] > 1 ||
           plane_info->denominator_scales[1] > 1)
          cosited_chroma = true;
@@ -734,22 +739,26 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
 
-   VkFormatFeatureFlags2 tex =
-      get_image_format_features(physical_device, format);
+   VkFormatFeatureFlags2 tex_linear =
+      get_image_format_features(physical_device, format,
+                                VK_IMAGE_TILING_LINEAR);
+   VkFormatFeatureFlags2 tex_optimal =
+      get_image_format_features(physical_device, format,
+                                VK_IMAGE_TILING_OPTIMAL);
    VkFormatFeatureFlags2 buffer =
       get_buffer_format_features(physical_device, format);
 
    pFormatProperties->formatProperties = (VkFormatProperties){
-      .linearTilingFeatures = tex,
-      .optimalTilingFeatures = tex,
+      .linearTilingFeatures = tex_linear,
+      .optimalTilingFeatures = tex_optimal,
       .bufferFeatures = buffer,
    };
 
    VkFormatProperties3 *formatProperties3 =
       vk_find_struct(pFormatProperties->pNext, FORMAT_PROPERTIES_3);
    if (formatProperties3) {
-      formatProperties3->linearTilingFeatures = tex;
-      formatProperties3->optimalTilingFeatures = tex;
+      formatProperties3->linearTilingFeatures = tex_linear;
+      formatProperties3->optimalTilingFeatures = tex_optimal;
       formatProperties3->bufferFeatures = buffer;
    }
 
@@ -877,14 +886,15 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
     */
    if (ycbcr_info == NULL) {
       format_feature_flags =
-         get_image_format_features(physical_device, info->format);
+         get_image_format_features(physical_device, info->format, info->tiling);
    } else {
       format_feature_flags = ~0u;
       assert(ycbcr_info->n_planes > 0);
       for (uint8_t plane = 0; plane < ycbcr_info->n_planes; plane++) {
          const VkFormat plane_format = ycbcr_info->planes[plane].format;
          format_feature_flags &=
-            get_image_format_features(physical_device, plane_format);
+            get_image_format_features(physical_device, plane_format,
+                                      info->tiling);
       }
    }
 
@@ -1075,6 +1085,7 @@ panvk_GetPhysicalDeviceImageFormatProperties2(
    VkExternalImageFormatProperties *external_props = NULL;
    VkFilterCubicImageViewImageFormatPropertiesEXT *cubic_props = NULL;
    VkFormatFeatureFlags2 format_feature_flags;
+   VkHostImageCopyDevicePerformanceQuery *hic_props = NULL;
    VkSamplerYcbcrConversionImageFormatProperties *ycbcr_props = NULL;
    VkResult result;
 
@@ -1106,6 +1117,9 @@ panvk_GetPhysicalDeviceImageFormatProperties2(
          break;
       case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT:
          cubic_props = (void *)s;
+         break;
+      case VK_STRUCTURE_TYPE_HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY:
+         hic_props = (void *)s;
          break;
       case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES:
          ycbcr_props = (void *)s;
@@ -1155,6 +1169,11 @@ panvk_GetPhysicalDeviceImageFormatProperties2(
          cubic_props->filterCubic = false;
          cubic_props->filterCubicMinmax = false;
       }
+   }
+
+   if (hic_props) {
+      hic_props->optimalDeviceAccess = true;
+      hic_props->identicalMemoryLayout = true;
    }
 
    const struct vk_format_ycbcr_info *ycbcr_info =

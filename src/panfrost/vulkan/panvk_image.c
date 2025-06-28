@@ -530,6 +530,11 @@ get_image_subresource_layout(const struct panvk_image *image,
       layout->rowPitch = slice_layout->tiled_or_linear.row_stride_B;
       layout->depthPitch = slice_layout->tiled_or_linear.surface_stride_B;
    }
+
+   VkSubresourceHostMemcpySize *memcpy_size =
+      vk_find_struct(layout2->pNext, SUBRESOURCE_HOST_MEMCPY_SIZE);
+   if (memcpy_size)
+      memcpy_size->size = slice_layout->size_B;
 }
 
 VKAPI_ATTR void VKAPI_CALL

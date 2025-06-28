@@ -138,6 +138,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .EXT_global_priority_query = true,
       .EXT_graphics_pipeline_library = true,
       .EXT_hdr_metadata = true,
+      .EXT_host_image_copy = true,
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
       /* EXT_image_drm_format_modifier depends on KHR_sampler_ycbcr_conversion */
@@ -376,6 +377,9 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_KHR_global_priority */
       .globalPriorityQuery = true,
+
+      /* VK_EXT_host_image_copy */
+      .hostImageCopy = true,
 
       /* VK_KHR_index_type_uint8 */
       .indexTypeUint8 = true,
@@ -943,6 +947,9 @@ panvk_per_arch(get_physical_device_properties)(
       .pixelRate = device->model->rates.pixel,
       .texelRate = device->model->rates.texel,
       .fmaRate = device->model->rates.fma,
+
+      /* VK_EXT_host_image_copy */
+      .identicalMemoryTypeRequirements = true,
    };
 
    snprintf(properties->deviceName, sizeof(properties->deviceName), "%s",
@@ -986,4 +993,44 @@ panvk_per_arch(get_physical_device_properties)(
    memcpy(properties->shaderModuleIdentifierAlgorithmUUID,
           vk_shaderModuleIdentifierAlgorithmUUID,
           sizeof(properties->shaderModuleIdentifierAlgorithmUUID));
+
+   /* VK_EXT_host_image_copy */
+   /* We don't use image layouts, advertise all of them */
+   static VkImageLayout supported_host_copy_layouts[] = {
+      VK_IMAGE_LAYOUT_GENERAL,
+      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+      VK_IMAGE_LAYOUT_PREINITIALIZED,
+
+      /* Only if vk1.1+ is supported */
+#if PAN_ARCH >= 10
+      /*  Vulkan 1.1 */
+      VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+
+      /*  Vulkan 1.2 */
+      VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+
+      /* Vulkan 1.3 */
+      VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+
+      /* Vulkan 1.4 */
+      VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ,
+#endif
+   };
+   properties->pCopySrcLayouts = supported_host_copy_layouts;
+   properties->copySrcLayoutCount = ARRAY_SIZE(supported_host_copy_layouts);
+   properties->pCopyDstLayouts = supported_host_copy_layouts;
+   properties->copyDstLayoutCount = ARRAY_SIZE(supported_host_copy_layouts);
+   /* All HW has the same tiling layout, key off build hash only */
+   STATIC_ASSERT(sizeof(instance->driver_build_sha) >= VK_UUID_SIZE);
+   memcpy(properties->optimalTilingLayoutUUID, instance->driver_build_sha,
+          VK_UUID_SIZE);
 }
