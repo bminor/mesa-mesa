@@ -1004,7 +1004,7 @@
         "description": "venus: fix msaa state sample location info sanitization",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ff64092ff341ccd2e861a740c00ef6baa0c39beb",
         "notes": null
