@@ -1359,6 +1359,18 @@ impl Buffer {
             );
         }
 
+        if ctx.has_buffer_texture_copies() {
+            let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
+            let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
+
+            let src_offset = self
+                .apply_offset(src_offset)?
+                .try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
+            let bx = create_pipe_box(dst_origin, *region, dst.mem_type)?;
+            ctx.resource_copy_buffer_texture(src_res, dst_res, src_offset, &bx);
+            return Ok(());
+        }
+
         let size = CLVec::calc_size(region, src_pitch);
         let src_offset = self.apply_offset(src_offset)?;
         let tx_src = self.tx(ctx, src_offset, size, RWFlags::RD)?;
@@ -1693,6 +1705,18 @@ impl Image {
                 dst_pitch[1],
                 dst_pitch[2],
             );
+        }
+
+        if ctx.has_buffer_texture_copies() {
+            let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
+            let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
+
+            let dst_offset = dst
+                .apply_offset(dst_offset)?
+                .try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
+            let bx = create_pipe_box(src_origin, *region, self.mem_type)?;
+            ctx.resource_copy_buffer_texture(src_res, dst_res, dst_offset, &bx);
+            return Ok(());
         }
 
         let tx_src = self.tx_image(

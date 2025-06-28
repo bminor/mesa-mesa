@@ -235,6 +235,35 @@ impl PipeContext {
         self.resource_copy_region(src, dst, dst_offset, bx)
     }
 
+    pub fn has_buffer_texture_copies(&self) -> bool {
+        unsafe { self.pipe.as_ref() }.image_copy_buffer.is_some()
+    }
+
+    /// Copies between a buffer and a texture if supported by the context
+    /// ([Self::has_buffer_texture_copies]).
+    pub fn resource_copy_buffer_texture(
+        &self,
+        src: &PipeResource,
+        dst: &PipeResource,
+        buffer_offset: u32,
+        bx: &pipe_box,
+    ) {
+        debug_assert_ne!(src.is_buffer(), dst.is_buffer());
+
+        unsafe {
+            self.pipe.as_ref().image_copy_buffer.unwrap()(
+                self.pipe.as_ptr(),
+                dst.pipe(),
+                src.pipe(),
+                buffer_offset,
+                0,
+                0,
+                0,
+                bx,
+            );
+        }
+    }
+
     fn resource_map(
         &self,
         res: &PipeResource,
