@@ -141,23 +141,6 @@ vn_wsi_create_image(struct vn_device *dev,
    img->wsi.is_prime_blit_src = wsi_info->blit_src;
    img->wsi.tiling_override = create_info->tiling;
 
-   if (create_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-      VkDevice dev_handle = vn_device_to_handle(dev);
-      VkImage img_handle = vn_image_to_handle(img);
-
-      VkImageDrmFormatModifierPropertiesEXT props = {
-         .sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
-      };
-      result = vn_GetImageDrmFormatModifierPropertiesEXT(dev_handle,
-                                                         img_handle, &props);
-      if (result != VK_SUCCESS) {
-         vn_DestroyImage(dev_handle, img_handle, alloc);
-         return result;
-      }
-
-      img->wsi.drm_format_modifier = props.drmFormatModifier;
-   }
-
    *out_img = img;
    return VK_SUCCESS;
 }

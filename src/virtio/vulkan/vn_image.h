@@ -74,8 +74,6 @@ struct vn_image {
       bool is_wsi;
       bool is_prime_blit_src;
       VkImageTiling tiling_override;
-      /* valid when tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT */
-      uint64_t drm_format_modifier;
 
       struct vn_device_memory *memory;
 
