@@ -1096,6 +1096,8 @@ nv50_blit_set_dst(struct nv50_blitctx *ctx,
    struct pipe_context *pipe = &nv50->base.pipe;
    struct pipe_surface templ;
 
+   /* We are going to reset this, so no point in refcounting */
+   templ.texture = res;
    if (util_format_is_depth_or_stencil(format))
       templ.format = nv50_blit_zeta_to_colour_format(format);
    else
