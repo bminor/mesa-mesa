@@ -204,10 +204,10 @@ group_loads(nir_instr *first, nir_instr *last)
       if (!can_move(instr, first->pass_flags))
          continue;
 
+      bool all_uses_after_last = true;
       nir_def *def = nir_instr_def(instr);
-      if (def) {
-         bool all_uses_after_last = true;
 
+      if (def) {
          nir_foreach_use(use, def) {
             if (nir_src_parent_instr(use)->block == instr->block &&
                 nir_src_parent_instr(use)->index <= last->index) {
@@ -215,18 +215,20 @@ group_loads(nir_instr *first, nir_instr *last)
                break;
             }
          }
+      }
 
-         if (all_uses_after_last) {
-            nir_instr *move_instr = instr;
-            /* Set the last instruction because we'll delete the current one. */
-            instr = exec_node_data_forward(nir_instr, instr->node.next, node);
+      if (all_uses_after_last) {
+         nir_instr *move_instr = instr;
+         /* Set the iterator to the next instruction because we'll move
+          * the current one.
+          */
+         instr = exec_node_data_forward(nir_instr, instr->node.next, node);
 
-            /* Move the instruction after the last and update its index
-             * to indicate that it's after it.
-             */
-            nir_instr_move(nir_after_instr(last), move_instr);
-            move_instr->index = last->index + 1;
-         }
+         /* Move the instruction after the last and update its index to
+          * indicate that it's after it.
+          */
+         nir_instr_move(nir_after_instr(last), move_instr);
+         move_instr->index = last->index + 1;
       }
    }
 
