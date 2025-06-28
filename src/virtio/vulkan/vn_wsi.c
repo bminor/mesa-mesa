@@ -139,7 +139,6 @@ vn_wsi_create_image(struct vn_device *dev,
 
    img->wsi.is_wsi = true;
    img->wsi.is_prime_blit_src = wsi_info->blit_src;
-   img->wsi.tiling_override = create_info->tiling;
 
    *out_img = img;
    return VK_SUCCESS;

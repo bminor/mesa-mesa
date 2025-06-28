@@ -881,11 +881,9 @@ vn_GetImageSubresourceLayout(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_image *img = vn_image_from_handle(image);
 
-   /* override aspect mask for wsi/ahb images with tiling modifier */
+   /* override aspect mask for ahb images with tiling modifier */
    VkImageSubresource local_subresource;
-   if ((img->wsi.is_wsi && img->wsi.tiling_override ==
-                              VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) ||
-       img->deferred_info) {
+   if (img->deferred_info) {
       VkImageAspectFlags aspect = pSubresource->aspectMask;
       switch (aspect) {
       case VK_IMAGE_ASPECT_COLOR_BIT:
@@ -1196,11 +1194,9 @@ vn_GetImageSubresourceLayout2(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
    struct vn_image *img = vn_image_from_handle(image);
 
-   /* override aspect mask for wsi/ahb images with tiling modifier */
+   /* override aspect mask for ahb images with tiling modifier */
    VkImageSubresource2 local_subresource;
-   if ((img->wsi.is_wsi && img->wsi.tiling_override ==
-                              VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) ||
-       img->deferred_info) {
+   if (img->deferred_info) {
       VkImageAspectFlags aspect = pSubresource->imageSubresource.aspectMask;
       switch (aspect) {
       case VK_IMAGE_ASPECT_COLOR_BIT:

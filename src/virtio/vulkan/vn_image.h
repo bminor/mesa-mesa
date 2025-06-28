@@ -73,7 +73,6 @@ struct vn_image {
        */
       bool is_wsi;
       bool is_prime_blit_src;
-      VkImageTiling tiling_override;
 
       struct vn_device_memory *memory;
 

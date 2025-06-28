@@ -418,7 +418,6 @@ vn_android_image_from_anb_internal(struct vn_device *dev,
    }
 
    img->wsi.is_wsi = true;
-   img->wsi.tiling_override = builder.create.tiling;
 
    int dma_buf_fd = vn_android_gralloc_get_dma_buf_fd(anb_info->handle);
    if (dma_buf_fd < 0) {
