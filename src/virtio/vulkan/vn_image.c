@@ -694,8 +694,9 @@ vn_CreateImage(VkDevice device,
 #if DETECT_OS_ANDROID
       result = vn_image_create_deferred(dev, pCreateInfo, alloc, &img);
 #else
-      result = vn_wsi_create_image_from_swapchain(
-         dev, pCreateInfo, swapchain_info, alloc, &img);
+      result = wsi_common_create_swapchain_image(
+         &dev->physical_device->wsi_device, pCreateInfo,
+         swapchain_info->swapchain, (VkImage *)&img);
 #endif
    } else {
       struct vn_image_create_info local_info;

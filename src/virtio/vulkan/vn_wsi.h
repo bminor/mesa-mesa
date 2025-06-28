@@ -30,14 +30,6 @@ vn_wsi_create_image(struct vn_device *dev,
                     const VkAllocationCallbacks *alloc,
                     struct vn_image **out_img);
 
-VkResult
-vn_wsi_create_image_from_swapchain(
-   struct vn_device *dev,
-   const VkImageCreateInfo *create_info,
-   const VkImageSwapchainCreateInfoKHR *swapchain_info,
-   const VkAllocationCallbacks *alloc,
-   struct vn_image **out_img);
-
 #else
 
 static inline VkResult
@@ -57,17 +49,6 @@ vn_wsi_create_image(struct vn_device *dev,
                     const struct wsi_image_create_info *wsi_info,
                     const VkAllocationCallbacks *alloc,
                     struct vn_image **out_img)
-{
-   return VK_ERROR_OUT_OF_HOST_MEMORY;
-}
-
-static inline VkResult
-vn_wsi_create_image_from_swapchain(
-   struct vn_device *dev,
-   const VkImageCreateInfo *create_info,
-   const VkImageSwapchainCreateInfoKHR *swapchain_info,
-   const VkAllocationCallbacks *alloc,
-   struct vn_image **out_img)
 {
    return VK_ERROR_OUT_OF_HOST_MEMORY;
 }
