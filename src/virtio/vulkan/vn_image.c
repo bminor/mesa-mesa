@@ -872,6 +872,28 @@ vn_GetImageDrmFormatModifierPropertiesEXT(
       dev->primary_ring, device, image, pProperties);
 }
 
+static VkImageAspectFlags
+vn_image_get_aspect(struct vn_image *img, VkImageAspectFlags aspect)
+{
+   if (!img->deferred_info)
+      return aspect;
+
+   switch (aspect) {
+   case VK_IMAGE_ASPECT_COLOR_BIT:
+   case VK_IMAGE_ASPECT_DEPTH_BIT:
+   case VK_IMAGE_ASPECT_STENCIL_BIT:
+   case VK_IMAGE_ASPECT_PLANE_0_BIT:
+      return VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
+   case VK_IMAGE_ASPECT_PLANE_1_BIT:
+      return VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
+   case VK_IMAGE_ASPECT_PLANE_2_BIT:
+      return VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+   default:
+      break;
+   }
+   unreachable("unexpected aspect");
+}
+
 void
 vn_GetImageSubresourceLayout(VkDevice device,
                              VkImage image,
@@ -883,31 +905,12 @@ vn_GetImageSubresourceLayout(VkDevice device,
 
    /* override aspect mask for ahb images with tiling modifier */
    VkImageSubresource local_subresource;
-   if (img->deferred_info) {
-      VkImageAspectFlags aspect = pSubresource->aspectMask;
-      switch (aspect) {
-      case VK_IMAGE_ASPECT_COLOR_BIT:
-      case VK_IMAGE_ASPECT_DEPTH_BIT:
-      case VK_IMAGE_ASPECT_STENCIL_BIT:
-      case VK_IMAGE_ASPECT_PLANE_0_BIT:
-         aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
-         break;
-      case VK_IMAGE_ASPECT_PLANE_1_BIT:
-         aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
-         break;
-      case VK_IMAGE_ASPECT_PLANE_2_BIT:
-         aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
-         break;
-      default:
-         break;
-      }
-
-      /* only handle supported aspect override */
-      if (aspect != pSubresource->aspectMask) {
-         local_subresource = *pSubresource;
-         local_subresource.aspectMask = aspect;
-         pSubresource = &local_subresource;
-      }
+   const VkImageAspectFlags aspect =
+      vn_image_get_aspect(img, pSubresource->aspectMask);
+   if (aspect != pSubresource->aspectMask) {
+      local_subresource = *pSubresource;
+      local_subresource.aspectMask = aspect;
+      pSubresource = &local_subresource;
    }
 
    /* TODO local cache */
@@ -1196,33 +1199,15 @@ vn_GetImageSubresourceLayout2(VkDevice device,
 
    /* override aspect mask for ahb images with tiling modifier */
    VkImageSubresource2 local_subresource;
-   if (img->deferred_info) {
-      VkImageAspectFlags aspect = pSubresource->imageSubresource.aspectMask;
-      switch (aspect) {
-      case VK_IMAGE_ASPECT_COLOR_BIT:
-      case VK_IMAGE_ASPECT_DEPTH_BIT:
-      case VK_IMAGE_ASPECT_STENCIL_BIT:
-      case VK_IMAGE_ASPECT_PLANE_0_BIT:
-         aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
-         break;
-      case VK_IMAGE_ASPECT_PLANE_1_BIT:
-         aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
-         break;
-      case VK_IMAGE_ASPECT_PLANE_2_BIT:
-         aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
-         break;
-      default:
-         break;
-      }
-
-      /* only handle supported aspect override */
-      if (aspect != pSubresource->imageSubresource.aspectMask) {
-         local_subresource = *pSubresource;
-         local_subresource.imageSubresource.aspectMask = aspect;
-         pSubresource = &local_subresource;
-      }
+   const VkImageAspectFlags aspect =
+      vn_image_get_aspect(img, pSubresource->imageSubresource.aspectMask);
+   if (aspect != pSubresource->imageSubresource.aspectMask) {
+      local_subresource = *pSubresource;
+      local_subresource.imageSubresource.aspectMask = aspect;
+      pSubresource = &local_subresource;
    }
 
+   /* TODO local cache */
    vn_call_vkGetImageSubresourceLayout2(dev->primary_ring, device, image,
                                         pSubresource, pLayout);
 }
