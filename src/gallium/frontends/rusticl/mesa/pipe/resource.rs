@@ -84,6 +84,19 @@ impl PipeResource {
         Some(Self { pipe: res })
     }
 
+    /// Creates a new reference to the underlying GPU resource
+    pub fn new_ref(&self) -> Self {
+        let mut ptr = ptr::null_mut();
+        // SAFETY: pipe_resource_reference will copy the ptr from src to dest, therefore ptr can't
+        //         be NULL.
+        unsafe {
+            pipe_resource_reference(&mut ptr, self.pipe.as_ptr());
+            Self {
+                pipe: NonNull::new_unchecked(ptr),
+            }
+        }
+    }
+
     pub(super) fn pipe(&self) -> *mut pipe_resource {
         self.pipe.as_ptr()
     }
