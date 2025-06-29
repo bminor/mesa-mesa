@@ -443,6 +443,7 @@ emit_bitwise_logic(isel_context* ctx, nir_alu_instr* instr, Temp dst,
 
       if (dst.size() == 1) {
          bld.vop2(v32_op, Definition(dst), src0, src1);
+         emit_split_vector(ctx, dst, instr->def.num_components);
       } else {
          Temp src00 = bld.tmp(src0.type(), 1), src01 = bld.tmp(src0.type(), 1);
          bld.pseudo(aco_opcode::p_split_vector, Definition(src00), Definition(src01), src0);
@@ -477,6 +478,8 @@ emit_bcsel(isel_context* ctx, nir_alu_instr* instr, Temp dst)
       } else {
          isel_err(&instr->instr, "Unimplemented NIR instr bit size");
       }
+
+      emit_split_vector(ctx, dst, instr->def.num_components);
       return;
    }
 
@@ -892,6 +895,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else {
          isel_err(&instr->instr, "Unimplemented NIR instr bit size");
       }
+      emit_split_vector(ctx, dst, instr->def.num_components);
       break;
    }
    case nir_op_iabs: {
