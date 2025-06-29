@@ -773,6 +773,10 @@ static const struct opcode_desc v3d71_mul_ops[] = {
         { 14, 14, .raddr_mask = OP_MASK(33), V3D_QPU_M_FTOSNORM16, 71 },
         { 14, 14, .raddr_mask = OP_MASK(34), V3D_QPU_M_VFTOUNORM8, 71 },
         { 14, 14, .raddr_mask = OP_MASK(35), V3D_QPU_M_VFTOSNORM8, 71 },
+        { 14, 14, .raddr_mask = OP_MASK(36), V3D_QPU_M_FUNPACKUNORMLO, 71 },
+        { 14, 14, .raddr_mask = OP_MASK(37), V3D_QPU_M_FUNPACKUNORMHI, 71 },
+        { 14, 14, .raddr_mask = OP_MASK(38), V3D_QPU_M_FUNPACKSNORMLO, 71 },
+        { 14, 14, .raddr_mask = OP_MASK(39), V3D_QPU_M_FUNPACKSNORMHI, 71 },
         { 14, 14, .raddr_mask = OP_MASK(48), V3D_QPU_M_VFTOUNORM10LO, 71 },
         { 14, 14, .raddr_mask = OP_MASK(49), V3D_QPU_M_VFTOUNORM10HI, 71 },
 
