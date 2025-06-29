@@ -55,6 +55,7 @@ PLATFORM_SYMBOLS = [
     '_ftext',
 ]
 
+
 def get_symbols_nm(nm, lib):
     '''
     List all the (non platform-specific) symbols exported by the library
