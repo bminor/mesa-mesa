@@ -554,8 +554,26 @@ get_image_subresource_layout(const struct panvk_image *image,
 
    VkSubresourceHostMemcpySize *memcpy_size =
       vk_find_struct(layout2->pNext, SUBRESOURCE_HOST_MEMCPY_SIZE);
-   if (memcpy_size)
-      memcpy_size->size = slice_layout->size_B;
+   if (memcpy_size) {
+      /* When copying to/from a D24S8 image, we can't use the normal memcpy
+       * path because we need to interleave the depth/stencil components. For
+       * the stencil aspect, the copied data only needs 1 byte/px instead of 4.
+       */
+      if (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT) {
+         switch (subres->aspectMask) {
+            case VK_IMAGE_ASPECT_DEPTH_BIT:
+               memcpy_size->size = slice_layout->size_B;
+               break;
+            case VK_IMAGE_ASPECT_STENCIL_BIT:
+               memcpy_size->size = slice_layout->size_B / 4;
+               break;
+            default:
+               unreachable("invalid aspect");
+         }
+      } else {
+         memcpy_size->size = slice_layout->size_B;
+      }
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL

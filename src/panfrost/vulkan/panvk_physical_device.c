@@ -584,7 +584,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
    if (fmt.bind & PAN_BIND_DEPTH_STENCIL)
       features |= VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-   if (features != 0 && vk_format_is_color(format))
+   if (features != 0)
       features |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT;
 
    return features;

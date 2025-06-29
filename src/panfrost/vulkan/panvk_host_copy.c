@@ -24,6 +24,33 @@ struct memory_params {
    struct vk_image_buffer_layout layout;
 };
 
+static void
+panvk_interleaved_copy(void *dst, void *src, unsigned size_bl,
+                       unsigned block_size_B, enum pan_interleave_zs interleave,
+                       bool is_store)
+{
+   switch (interleave) {
+      case PAN_INTERLEAVE_NONE:
+         if (is_store)
+            memcpy(dst, src, size_bl * block_size_B);
+         else
+            memcpy(src, dst, size_bl * block_size_B);
+         break;
+      case PAN_INTERLEAVE_DEPTH:
+         assert(block_size_B == 4);
+         for (unsigned i = 0; i < size_bl; i++)
+            pan_access_image_pixel(dst + i * 4, src + i * 4, 4, interleave,
+                                   is_store);
+         break;
+      case PAN_INTERLEAVE_STENCIL:
+         assert(block_size_B == 4);
+         for (unsigned i = 0; i < size_bl; i++)
+            pan_access_image_pixel(dst + i * 4, src + i, 4, interleave,
+                                   is_store);
+         break;
+   }
+}
+
 /* Copy either memory->image or image->memory. The direction is controlled by
  * the memory_to_img argument. */
 static void
@@ -62,19 +89,28 @@ panvk_copy_image_to_from_memory(struct image_params img,
    const struct pan_image_slice_layout *slice_layout =
       &plane_layout->slices[img.subres.mipLevel];
 
-   VkFormat vkfmt =
+   /* D24S8 is a special case because the aspects are interleaved in a single
+    * plane */
+   VkFormat vkfmt = img.img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT ?
+      img.img->vk.format :
       vk_format_get_aspect_format(img.img->vk.format, img.subres.aspectMask);
    enum pipe_format pfmt = vk_format_to_pipe_format(vkfmt);
    const struct util_format_description *fmt = util_format_description(pfmt);
+
+   enum pan_interleave_zs interleave = pan_get_interleave_zs(
+      pfmt, img.subres.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT,
+      img.subres.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
 
    unsigned block_width_px = fmt->block.width;
    unsigned block_height_px = fmt->block.height;
    assert(fmt->block.bits % 8 == 0);
    unsigned block_size_B = fmt->block.bits / 8;
-   assert(mem.layout.element_size_B == block_size_B);
+   /* With stencil interleave, the memory element size will be smaller than the
+    * image block size */
+   if (interleave != PAN_INTERLEAVE_STENCIL)
+      assert(mem.layout.element_size_B == block_size_B);
 
    unsigned row_size_bl = DIV_ROUND_UP(extent.width, block_width_px);
-   unsigned row_size_B = row_size_bl * block_size_B;
 
    unsigned layer_count =
       vk_image_subresource_layer_count(&img.img->vk, &img.subres);
@@ -87,10 +123,12 @@ panvk_copy_image_to_from_memory(struct image_params img,
       void *mem_layer_ptr = mem.ptr + layer * mem.layout.image_stride_B;
 
       if (flags & VK_HOST_IMAGE_COPY_MEMCPY_BIT) {
-         if (memory_to_img)
-            memcpy(img_layer_ptr, mem_layer_ptr, slice_layout->size_B);
-         else
-            memcpy(mem_layer_ptr, img_layer_ptr, slice_layout->size_B);
+         /* For depth/stencil interleave, we can't use a plain memcpy, but we
+          * can still get some performance benefit by skipping (de)tiling and
+          * strided copy logic. */
+         panvk_interleaved_copy(img_layer_ptr, mem_layer_ptr,
+                                slice_layout->size_B / block_size_B,
+                                block_size_B,interleave, memory_to_img);
          continue;
       }
 
@@ -106,17 +144,17 @@ panvk_copy_image_to_from_memory(struct image_params img,
             for (unsigned y = 0; y < extent.height; y += block_height_px) {
                unsigned img_y_bl = (y + img.offset.y) / block_height_px;
                unsigned mem_y_bl = y / block_height_px;
-               unsigned img_x_bl = img.offset.x / block_width_px;
                void *img_row_ptr = img_depth_ptr +
-                  img_y_bl * slice_layout->tiled_or_linear.row_stride_B +
-                  img_x_bl * block_size_B;
+                  img_y_bl * slice_layout->tiled_or_linear.row_stride_B;
                void *mem_row_ptr = mem_depth_ptr +
                   mem_y_bl * mem.layout.row_stride_B;
 
-               if (memory_to_img)
-                  memcpy(img_row_ptr, mem_row_ptr, row_size_B);
-               else
-                  memcpy(mem_row_ptr, img_row_ptr, row_size_B);
+               unsigned img_x_bl = img.offset.x / block_width_px;
+               void *img_block_ptr = img_row_ptr + img_x_bl * block_size_B;
+
+               panvk_interleaved_copy(img_block_ptr, mem_row_ptr,
+                                      row_size_bl, block_size_B, interleave,
+                                      memory_to_img);
             }
          } else {
             if (memory_to_img)
@@ -125,14 +163,14 @@ panvk_copy_image_to_from_memory(struct image_params img,
                   img.offset.x, img.offset.y, extent.width, extent.height,
                   slice_layout->tiled_or_linear.row_stride_B,
                   mem.layout.row_stride_B,
-                  pfmt, PAN_INTERLEAVE_NONE);
+                  pfmt, interleave);
             else
                pan_load_tiled_image(
                   mem_depth_ptr, img_depth_ptr,
                   img.offset.x, img.offset.y, extent.width, extent.height,
                   mem.layout.row_stride_B,
                   slice_layout->tiled_or_linear.row_stride_B,
-                  pfmt, PAN_INTERLEAVE_NONE);
+                  pfmt, interleave);
          }
       }
    }
@@ -244,9 +282,6 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
    VkImageSubresourceLayers src_subres = region->srcSubresource;
    VkImageSubresourceLayers dst_subres = region->dstSubresource;
 
-   /* Multiple aspect bits are only allowed with ZS, which we don't support */
-   assert(util_bitcount(src_subres.aspectMask == 1));
-   assert(util_bitcount(dst_subres.aspectMask == 1));
    unsigned src_plane_idx =
       panvk_plane_index(src->vk.format, src_subres.aspectMask);
    unsigned dst_plane_idx =

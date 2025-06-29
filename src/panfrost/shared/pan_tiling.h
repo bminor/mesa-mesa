@@ -28,6 +28,7 @@
 #define H_PANFROST_TILING
 
 #include <stdint.h>
+#include "util/bitscan.h"
 #include <util/format/u_format.h>
 
 #ifdef __cplusplus
@@ -114,6 +115,66 @@ void pan_copy_tiled_image(void *dst, const void *src, unsigned dst_x,
                           unsigned dst_y, unsigned src_x, unsigned src_y,
                           unsigned w, unsigned h, uint32_t dst_stride,
                           uint32_t src_stride, enum pipe_format format);
+
+static inline
+void *assume_pixel_aligned(void *ptr, const unsigned pixel_size)
+{
+    if (pixel_size == 1)
+        return __builtin_assume_aligned(ptr, 1);
+    else if (pixel_size == 2)
+        return __builtin_assume_aligned(ptr, 2);
+    else if (pixel_size == 4)
+        return __builtin_assume_aligned(ptr, 4);
+    else if (pixel_size == 8)
+        return __builtin_assume_aligned(ptr, 8);
+    else if (pixel_size == 16)
+        return __builtin_assume_aligned(ptr, 16);
+    else
+        unreachable("unexpected pixel size");
+}
+
+static inline
+void pan_access_image_pixel(void *dst, void *src, const unsigned pixel_size,
+                            enum pan_interleave_zs interleave, bool is_store)
+{
+   if (util_is_power_of_two_nonzero(pixel_size)) {
+      src = assume_pixel_aligned(src, pixel_size);
+      if (interleave != PAN_INTERLEAVE_STENCIL)
+         dst = assume_pixel_aligned(dst, pixel_size);
+   }
+
+   switch (interleave) {
+      case PAN_INTERLEAVE_NONE:
+         if (is_store)
+            memcpy(dst, src, pixel_size);
+         else
+            memcpy(src, dst, pixel_size);
+         break;
+      case PAN_INTERLEAVE_DEPTH:
+         /* interleave only applies to Z24S8 */
+         assert(pixel_size == 4);
+         if (is_store) {
+            uint32_t src_pixel = *(uint32_t *) src;
+            *(uint16_t *) dst = src_pixel & 0xffff;
+            *((uint8_t *) dst + 2) = (src_pixel >> 16) & 0xff;
+         } else {
+            /* The top 8 bits of Z24X8 are unused, so we can overwrite them
+             * with zeros in a single 32B write, instead of needing separate
+             * 16B and 8B writes */
+            *(uint32_t *) src = *(uint32_t *) dst & 0xffffff;
+         }
+         break;
+      case PAN_INTERLEAVE_STENCIL:
+         /* interleave only applies to Z24S8 */
+         assert(pixel_size == 4);
+         if (is_store)
+            *((uint8_t *) dst + 3) = *(uint8_t *) src;
+         else
+            *(uint8_t *) src = *((uint8_t *) dst + 3);
+         break;
+   }
+}
+
 
 #ifdef __cplusplus
 } /* extern C */
