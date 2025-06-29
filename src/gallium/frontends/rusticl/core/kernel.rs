@@ -27,7 +27,6 @@ use std::convert::TryInto;
 use std::ffi::CStr;
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::ops::Deref;
 use std::ops::Index;
 use std::ops::Not;
 use std::os::raw::c_void;
@@ -454,7 +453,7 @@ impl NirKernelBuilds {
 
 pub struct NirKernelBuild {
     nir_or_cso: KernelDevStateVariant,
-    constant_buffer: Option<Arc<PipeResource>>,
+    constant_buffer: Option<PipeResource>,
     info: pipe_compute_state_object_info,
     shared_size: u64,
     printf_info: Option<NirPrintfInfo>,
@@ -492,7 +491,7 @@ impl NirKernelBuild {
         }
     }
 
-    fn create_nir_constant_buffer(dev: &Device, nir: &NirShader) -> Option<Arc<PipeResource>> {
+    fn create_nir_constant_buffer(dev: &Device, nir: &NirShader) -> Option<PipeResource> {
         let buf = nir.get_constant_buffer();
         let len = buf.len() as u32;
 
@@ -507,7 +506,7 @@ impl NirKernelBuild {
                 .exec(|ctx| ctx.buffer_subdata(&res, 0, buf.as_ptr().cast(), len))
                 .wait();
 
-            Some(Arc::new(res))
+            Some(res)
         } else {
             None
         }
@@ -1626,7 +1625,7 @@ impl Kernel {
 
             let mut bdas: Vec<_> = bdas
                 .iter()
-                .map(|buffer| Ok(buffer.get_res_for_access(ctx, RWFlags::RW)?.deref()))
+                .map(|buffer| Ok(buffer.get_res_for_access(ctx, RWFlags::RW)?))
                 .collect::<CLResult<_>>()?;
 
             let svms_new = svms

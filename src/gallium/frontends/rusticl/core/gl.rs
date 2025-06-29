@@ -23,7 +23,7 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::sync::Arc;
 
-type CLGLMappings = Option<HashMap<Arc<PipeResource>, Arc<PipeResource>>>;
+type CLGLMappings = Option<HashMap<PipeResource, PipeResource>>;
 
 pub struct XPlatManager {
     #[cfg(glx)]
@@ -426,9 +426,9 @@ pub struct GLObject {
 }
 
 pub fn create_shadow_slice(
-    cube_map: &HashMap<&'static Device, Arc<PipeResource>>,
+    cube_map: &HashMap<&'static Device, PipeResource>,
     image_format: cl_image_format,
-) -> CLResult<HashMap<&'static Device, Arc<PipeResource>>> {
+) -> CLResult<HashMap<&'static Device, PipeResource>> {
     let mut slice = HashMap::new();
 
     for (dev, imported_gl_res) in cube_map {
@@ -449,7 +449,7 @@ pub fn create_shadow_slice(
             )
             .ok_or(CL_OUT_OF_HOST_MEMORY)?;
 
-        slice.insert(*dev, Arc::new(shadow));
+        slice.insert(*dev, shadow);
     }
 
     Ok(slice)
@@ -477,7 +477,7 @@ pub fn copy_cube_to_slice(ctx: &QueueContext, mem_objects: &[Mem]) -> CLResult<(
         let cl_res = image.get_res_for_access(ctx, RWFlags::WR)?;
         let gl_res = gl_obj.shadow_map.as_ref().unwrap().get(cl_res).unwrap();
 
-        ctx.resource_copy_texture(gl_res.as_ref(), cl_res.as_ref(), &dst_offset, &src_bx);
+        ctx.resource_copy_texture(gl_res, cl_res, &dst_offset, &src_bx);
     }
 
     Ok(())
@@ -505,7 +505,7 @@ pub fn copy_slice_to_cube(ctx: &QueueContext, mem_objects: &[Mem]) -> CLResult<(
         let cl_res = image.get_res_for_access(ctx, RWFlags::WR)?;
         let gl_res = gl_obj.shadow_map.as_ref().unwrap().get(cl_res).unwrap();
 
-        ctx.resource_copy_texture(cl_res.as_ref(), gl_res.as_ref(), &dst_offset, &src_bx);
+        ctx.resource_copy_texture(cl_res, gl_res, &dst_offset, &src_bx);
     }
 
     Ok(())

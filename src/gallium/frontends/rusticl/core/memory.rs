@@ -161,7 +161,7 @@ pub enum ResourceValidityEntity {
 
 /// Allocation with real GPU backing storage. Tracks on which device the content is valid on.
 pub struct ResourceAllocation {
-    pub res: HashMap<&'static Device, Arc<PipeResource>>,
+    pub res: HashMap<&'static Device, PipeResource>,
     valid_on: Mutex<Vec<ResourceValidityEntity>>,
     // it's a bit hacky, but storing the pointer as `usize` gives us `Send` and `Sync`. The
     // application is required to ensure no data races exist on the memory anyway.
@@ -213,7 +213,7 @@ impl ResourceAllocation {
     /// migrate the data to the GPU.
     /// TODO: add a map function to return a mapping to the resource of one device the data is valid
     ///       on instead of migrating if the user would simply map the resource anyway.
-    fn get_res_for_access(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<&Arc<PipeResource>> {
+    fn get_res_for_access(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<&PipeResource> {
         let dev = ctx.dev;
         let dev_entity = ResourceValidityEntity::Device(dev);
         let to_res = self.res.get(dev).ok_or(CL_OUT_OF_HOST_MEMORY)?;
@@ -442,7 +442,7 @@ pub enum Allocation {
 impl Allocation {
     /// Creates a new allocation object assuming the initial data is valid on every device.
     pub fn new(
-        res: HashMap<&'static Device, Arc<PipeResource>>,
+        res: HashMap<&'static Device, PipeResource>,
         offset: usize,
         host_ptr: *mut c_void,
     ) -> Self {
@@ -508,16 +508,12 @@ impl Allocation {
     }
 
     /// Returns the resource associated with `dev` without any data migration.
-    fn get_res_of_dev(&self, dev: &Device) -> Option<&Arc<PipeResource>> {
+    fn get_res_of_dev(&self, dev: &Device) -> Option<&PipeResource> {
         self.get_real_resource().res.get(dev)
     }
 
     /// Returns the resource associated with `ctx.dev` and transparently migrate the data.
-    pub fn get_res_for_access(
-        &self,
-        ctx: &QueueContext,
-        rw: RWFlags,
-    ) -> CLResult<&Arc<PipeResource>> {
+    pub fn get_res_for_access(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<&PipeResource> {
         self.get_real_resource().get_res_for_access(ctx, rw)
     }
 
@@ -1084,8 +1080,8 @@ impl MemBase {
                 .iter()
                 .map(|(dev, resource)| {
                     (
-                        Arc::clone(resource),
-                        Arc::clone(imported_gl_tex.get(dev).unwrap()),
+                        resource.new_ref(),
+                        imported_gl_tex.get(dev).unwrap().new_ref(),
                     )
                 })
                 .collect();
@@ -1167,11 +1163,7 @@ impl MemBase {
             && bit_check(self.flags, CL_MEM_USE_HOST_PTR)
     }
 
-    pub fn get_res_for_access(
-        &self,
-        ctx: &QueueContext,
-        rw: RWFlags,
-    ) -> CLResult<&Arc<PipeResource>> {
+    pub fn get_res_for_access(&self, ctx: &QueueContext, rw: RWFlags) -> CLResult<&PipeResource> {
         self.alloc.get_res_for_access(ctx, rw)
     }
 

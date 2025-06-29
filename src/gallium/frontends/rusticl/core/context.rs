@@ -142,7 +142,7 @@ impl Context {
         copy: bool,
         bda: bool,
         res_type: ResourceType,
-    ) -> CLResult<HashMap<&'static Device, Arc<PipeResource>>> {
+    ) -> CLResult<HashMap<&'static Device, PipeResource>> {
         let adj_size: u32 = size.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
         let mut res = HashMap::new();
         let mut pipe_flags = 0;
@@ -173,7 +173,7 @@ impl Context {
             }
 
             let resource = resource.ok_or(CL_OUT_OF_RESOURCES);
-            res.insert(dev, Arc::new(resource?));
+            res.insert(dev, resource?);
         }
 
         if !user_ptr.is_null() {
@@ -196,7 +196,7 @@ impl Context {
         user_ptr: *mut c_void,
         copy: bool,
         res_type: ResourceType,
-    ) -> CLResult<HashMap<&'static Device, Arc<PipeResource>>> {
+    ) -> CLResult<HashMap<&'static Device, PipeResource>> {
         let pipe_format = format.to_pipe_format().unwrap();
 
         let width = desc.image_width.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
@@ -241,7 +241,7 @@ impl Context {
             }
 
             let resource = resource.ok_or(CL_OUT_OF_RESOURCES);
-            res.insert(dev, Arc::new(resource?));
+            res.insert(dev, resource?);
         }
 
         if !user_ptr.is_null() {
@@ -387,7 +387,7 @@ impl Context {
                 }
             }
 
-            buffers.insert(dev, Arc::new(res));
+            buffers.insert(dev, res);
         }
 
         self.svm.lock().unwrap().svm_ptrs.insert(
@@ -406,16 +406,16 @@ impl Context {
         &self,
         ctx: &QueueContext,
         ptr: usize,
-    ) -> CLResult<Option<Arc<PipeResource>>> {
+    ) -> CLResult<Option<PipeResource>> {
         let svm = self.svm.lock().unwrap();
 
         let Some(alloc) = svm.svm_ptrs.find_alloc_precise(ptr) else {
             return Ok(None);
         };
 
-        Ok(Some(Arc::clone(
-            alloc.alloc.get_res_for_access(ctx, RWFlags::RW)?,
-        )))
+        Ok(Some(
+            alloc.alloc.get_res_for_access(ctx, RWFlags::RW)?.new_ref(),
+        ))
     }
 
     pub fn copy_svm_to_host(
@@ -617,7 +617,7 @@ impl Context {
         gl_target: cl_GLenum,
         format: cl_image_format,
         gl_props: GLMemProps,
-    ) -> CLResult<HashMap<&'static Device, Arc<PipeResource>>> {
+    ) -> CLResult<HashMap<&'static Device, PipeResource>> {
         let mut res = HashMap::new();
         let target = cl_mem_type_to_texture_target_gl(image_type, gl_target);
         let pipe_format = if image_type == CL_MEM_OBJECT_BUFFER {
@@ -649,7 +649,7 @@ impl Context {
                 )
                 .ok_or(CL_OUT_OF_RESOURCES)?;
 
-            res.insert(*dev, Arc::new(resource));
+            res.insert(*dev, resource);
         }
 
         Ok(res)
