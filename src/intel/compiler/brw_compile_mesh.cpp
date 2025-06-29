@@ -1330,10 +1330,6 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       g.add_const_data(const_data, nir->constant_data_size + sizeof(remap_table));
       prog_data->wa_18019110168_mapping_offset =
          prog_data->base.base.const_data_offset + nir->constant_data_size;
-      for (uint32_t i = 0; i < ARRAY_SIZE(remap_table); i++) {
-         if (remap_table[i] != -1)
-            fprintf(stderr, "%u -> %hhi\n", i, remap_table[i]);
-      }
    } else {
       g.add_const_data(nir->constant_data, nir->constant_data_size);
    }
