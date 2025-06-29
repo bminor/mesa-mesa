@@ -926,15 +926,6 @@ genX(init_physical_device_state)(ASSERTED struct anv_physical_device *pdevice)
    pdevice->cmd_capture_data = genX(cmd_capture_data);
 
    pdevice->gpgpu_pipeline_value = GPGPU;
-
-   struct GENX(VERTEX_ELEMENT_STATE) empty_ve = {
-      .Valid = true,
-      .Component0Control = VFCOMP_STORE_0,
-      .Component1Control = VFCOMP_STORE_0,
-      .Component2Control = VFCOMP_STORE_0,
-      .Component3Control = VFCOMP_STORE_0,
-   };
-   GENX(VERTEX_ELEMENT_STATE_pack)(NULL, pdevice->empty_vs_input, &empty_ve);
 }
 
 VkResult

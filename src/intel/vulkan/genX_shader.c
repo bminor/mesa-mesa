@@ -16,6 +16,16 @@
 #define device_needs_protected(device) \
    ((device)->vk.enabled_features.protectedMemory)
 
+#define anv_gfx_pack(dest, cmd, name) \
+   for (struct cmd name = (struct cmd) { __anv_cmd_header(cmd) },       \
+           *_dst = (struct cmd *)dest;                                  \
+        __builtin_expect(_dst != NULL, 1);                              \
+        ({                                                              \
+           assert(sizeof(dest) >= 4 * __anv_cmd_length(cmd));           \
+           __anv_cmd_pack(cmd)(NULL, _dst, &name);                      \
+           _dst = NULL;                                                 \
+        }))
+
 static uint32_t
 get_sampler_count(const struct anv_shader *shader)
 {
@@ -387,8 +397,8 @@ genX(batch_emit_vertex_input)(struct anv_batch *batch,
       return;
 
    if (ve_count == 0) {
-      memcpy(p + 1, device->physical->empty_vs_input,
-             sizeof(device->physical->empty_vs_input));
+      memcpy(p + 1, device->physical->gfx_default.empty_vs_input,
+             sizeof(device->physical->gfx_default.empty_vs_input));
    } else {
       /* Use dyn->vi to emit the dynamic VERTEX_ELEMENT_STATE input. */
       emit_ves_vf_instancing(batch, p + 1, device, shader, vi);
@@ -1293,6 +1303,42 @@ emit_cs_shader(struct anv_batch *batch,
    GENX(INTERFACE_DESCRIPTOR_DATA_pack)(batch,
                                         shader->cs.gfx9.idd,
                                         &desc);
+#endif
+}
+
+void
+genX(init_instructions)(struct anv_physical_device *device)
+{
+   struct GENX(VERTEX_ELEMENT_STATE) empty_ve = {
+      .Valid = true,
+      .Component0Control = VFCOMP_STORE_0,
+      .Component1Control = VFCOMP_STORE_0,
+      .Component2Control = VFCOMP_STORE_0,
+      .Component3Control = VFCOMP_STORE_0,
+   };
+   GENX(VERTEX_ELEMENT_STATE_pack)(
+      NULL, device->gfx_default.empty_vs_input, &empty_ve);
+
+   anv_gfx_pack(device->gfx_default.vs, GENX(3DSTATE_VS), vs);
+   anv_gfx_pack(device->gfx_default.hs, GENX(3DSTATE_HS), hs);
+   anv_gfx_pack(device->gfx_default.ds, GENX(3DSTATE_DS), ds);
+   anv_gfx_pack(device->gfx_default.gs, GENX(3DSTATE_GS), gs);
+   anv_gfx_pack(device->gfx_default.te, GENX(3DSTATE_TE), te);
+   anv_gfx_pack(device->gfx_default.so, GENX(3DSTATE_STREAMOUT), so);
+   anv_gfx_pack(device->gfx_default.wm, GENX(3DSTATE_WM), wm) {
+      wm.StatisticsEnable = true;
+   }
+   anv_gfx_pack(device->gfx_default.ps, GENX(3DSTATE_PS), ps);
+   anv_gfx_pack(device->gfx_default.ps_extra, GENX(3DSTATE_PS_EXTRA), pse);
+   anv_gfx_pack(device->gfx_default.ps_extra_dep, GENX(3DSTATE_PS_EXTRA), pse) {
+#if GFX_VERx10 >= 125
+      pse.EnablePSDependencyOnCPsizeChange = true;
+#endif
+   }
+
+#if GFX_VERx10 >= 125
+   anv_gfx_pack(device->gfx_default.task_control, GENX(3DSTATE_TASK_CONTROL), ts);
+   anv_gfx_pack(device->gfx_default.mesh_control, GENX(3DSTATE_MESH_CONTROL), ms);
 #endif
 }
 

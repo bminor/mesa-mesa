@@ -2805,6 +2805,7 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    anv_measure_device_init(device);
 
    anv_genX(&device->info, init_physical_device_state)(device);
+   anv_genX(&device->info, init_instructions)(device);
 
    *out = &device->vk;
 

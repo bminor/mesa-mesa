@@ -40,6 +40,7 @@ struct intel_sample_positions;
 struct intel_urb_config;
 struct anv_async_submit;
 struct anv_embedded_sampler;
+struct anv_physical_device;
 struct anv_pipeline_embedded_sampler_binding;
 struct anv_trtt_bind;
 
@@ -536,6 +537,8 @@ genX(cmd_dispatch_unaligned)(
    uint32_t                                    invocations_x,
    uint32_t                                    invocations_y,
    uint32_t                                    invocations_z);
+
+void genX(init_instructions)(struct anv_physical_device *device);
 
 void genX(shader_emit)(struct anv_batch *batch,
                        struct anv_device *device,

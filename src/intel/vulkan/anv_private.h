@@ -1606,11 +1606,27 @@ struct anv_physical_device {
     /* Value of PIPELINE_SELECT::PipelineSelection == GPGPU */
     uint32_t                                    gpgpu_pipeline_value;
 
-    /** A pre packed VERTEX_ELEMENT_STATE feeding 0s to the VS stage
-     *
-     * For use when a pipeline has no VS input
-     */
-    uint32_t                                    empty_vs_input[2];
+    struct {
+       /** A pre packed VERTEX_ELEMENT_STATE feeding 0s to the VS stage
+        *
+        * For use when a pipeline has no VS input
+        */
+       uint32_t                                 empty_vs_input[2];
+
+       /** A few default instructions */
+       uint32_t vs[9];
+       uint32_t hs[9];
+       uint32_t ds[11];
+       uint32_t gs[10];
+       uint32_t te[5];
+       uint32_t so[5];
+       uint32_t wm[2];
+       uint32_t ps[12];
+       uint32_t ps_extra[2];
+       uint32_t ps_extra_dep[2];
+       uint32_t mesh_control[3];
+       uint32_t task_control[3];
+    } gfx_default;
 };
 
 VkResult anv_physical_device_try_create(struct vk_instance *vk_instance,
