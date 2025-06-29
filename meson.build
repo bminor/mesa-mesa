@@ -2233,7 +2233,7 @@ if host_machine.system() == 'windows'
   endif
 else
   prog_nm = find_program('nm')
-  with_symbols_check = with_tests
+  with_symbols_check = prog_nm.found() and with_tests
   symbols_check_args = ['--nm', prog_nm.full_path()]
 endif
 

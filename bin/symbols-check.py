@@ -141,19 +141,15 @@ def main():
                         help='do not process this symbol')
     args = parser.parse_args()
 
-    try:
-        if platform.system() == 'Windows':
-            if not args.dumpbin:
-                parser.error('--dumpbin is mandatory')
-            lib_symbols = get_symbols_dumpbin(args.dumpbin, args.lib)
-        else:
-            if not args.nm:
-                parser.error('--nm is mandatory')
-            lib_symbols = get_symbols_nm(args.nm, args.lib)
-    except:
-        # We can't run this test, but we haven't technically failed it either
-        # Return the GNU "skip" error code
-        exit(77)
+    if platform.system() == 'Windows':
+        if not args.dumpbin:
+            parser.error('--dumpbin is mandatory')
+        lib_symbols = get_symbols_dumpbin(args.dumpbin, args.lib)
+    else:
+        if not args.nm:
+            parser.error('--nm is mandatory')
+        lib_symbols = get_symbols_nm(args.nm, args.lib)
+
     mandatory_symbols = []
     optional_symbols = []
     with open(args.symbols_file) as symbols_file:
