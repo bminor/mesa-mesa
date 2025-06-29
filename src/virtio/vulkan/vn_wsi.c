@@ -132,6 +132,23 @@ vn_wsi_create_image(struct vn_device *dev,
       create_info = &local_create_info;
    }
 
+   /* Gamescope relies on legacy scanout support when explicit modifier isn't
+    * available and it chains the mesa wsi hint requesting such. Venus doesn't
+    * support legacy scanout with optimal tiling on its own, so venus disables
+    * legacy scanout in favor of prime buffer blit for optimal performance. As
+    * a workaround here, venus can once again force linear tiling when legacy
+    * scanout is requested outside of common wsi.
+    */
+   if (wsi_info->scanout) {
+      if (create_info != &local_create_info) {
+         local_create_info = *create_info;
+         local_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+         create_info = &local_create_info;
+      } else {
+         local_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+      }
+   }
+
    struct vn_image *img;
    VkResult result = vn_image_create(dev, create_info, alloc, &img);
    if (result != VK_SUCCESS)
