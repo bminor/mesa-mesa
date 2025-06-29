@@ -13,6 +13,7 @@
 #define PANVK_MAX_PLANES 3
 
 struct panvk_device_memory;
+struct panvk_physical_device;
 
 /* Right now, planar YUV images are treated as N different images, hence the 1:1
  * association between pan_image and pan_image_plane, but this can be optimized
@@ -36,6 +37,15 @@ struct panvk_image {
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_image, vk.base, VkImage,
                                VK_OBJECT_TYPE_IMAGE)
+
+/* Check whether it is possible that images in a given configuration may use
+ * AFBC tiling. This function does not have access to all of the relevant
+ * image configuration, and returns true if any images with the specified
+ * configuration subset may use AFBC. */
+bool panvk_image_can_use_afbc(
+   struct panvk_physical_device *phys_dev, VkFormat fmt,
+   VkImageUsageFlags usage, VkImageType type, VkImageTiling tiling,
+   VkImageCreateFlags flags);
 
 static inline unsigned
 panvk_plane_index(VkFormat format, VkImageAspectFlags aspect_mask)

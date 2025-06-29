@@ -46,12 +46,42 @@
 #include "vk_object.h"
 #include "vk_util.h"
 
+bool
+panvk_image_can_use_afbc(
+   struct panvk_physical_device *phys_dev, VkFormat fmt,
+   VkImageUsageFlags usage, VkImageType type, VkImageTiling tiling,
+   VkImageCreateFlags flags)
+{
+   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   struct panvk_instance *instance = to_panvk_instance(phys_dev->vk.instance);
+   enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
+
+   /* Disallow AFBC if either of these is true
+    * - PANVK_DEBUG does not have the 'afbc' flag set
+    * - storage image views are requested
+    * - the GPU doesn't support AFBC
+    * - the format is not AFBC-able
+    * - tiling is set to linear
+    * - this is a 1D image
+    * - this is a 3D image on a pre-v7 GPU
+    * - this is a mutable format image on v7
+    */
+   return
+      (instance->debug_flags & PANVK_DEBUG_AFBC) &&
+      !(usage & (VK_IMAGE_USAGE_STORAGE_BIT)) &&
+      pan_query_afbc(&phys_dev->kmod.props) &&
+      pan_afbc_supports_format(arch, pfmt) &&
+      tiling == VK_IMAGE_TILING_OPTIMAL &&
+      type != VK_IMAGE_TYPE_1D &&
+      (type != VK_IMAGE_TYPE_3D || arch >= 7) &&
+      (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch != 7);
+}
+
 static bool
 panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    struct panvk_instance *instance =
       to_panvk_instance(image->vk.base.device->physical->instance);
    enum pipe_format pfmt = vk_format_to_pipe_format(image->vk.format);
@@ -65,28 +95,17 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
       return mod == DRM_FORMAT_MOD_LINEAR;
 
    if (drm_is_afbc(mod)) {
-      /* Disallow AFBC if either of these is true
-       * - PANVK_DEBUG does not have the 'afbc' flag set
-       * - storage image views are requested
-       * - this is a multisample image
-       * - the GPU doesn't support AFBC
-       * - the format is not AFBC-able
-       * - tiling is set to linear
-       * - this is a 1D image
-       * - this is a 3D image on a pre-v7 GPU
-       * - this is a mutable format image on v7
-       */
-      if (!(instance->debug_flags & PANVK_DEBUG_AFBC) ||
-          ((image->vk.usage | image->vk.stencil_usage) &
-           VK_IMAGE_USAGE_STORAGE_BIT) ||
-          image->vk.samples > 1 ||
-          !pan_query_afbc(&phys_dev->kmod.props) ||
-          !pan_afbc_supports_format(arch, pfmt) ||
-          image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
-          image->vk.image_type == VK_IMAGE_TYPE_1D ||
-          (image->vk.image_type == VK_IMAGE_TYPE_3D && arch < 7) ||
-          ((image->vk.create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
-           arch == 7))
+      if (!panvk_image_can_use_afbc(
+            phys_dev, image->vk.format,
+            image->vk.usage | image->vk.stencil_usage, image->vk.image_type,
+            image->vk.tiling, image->vk.create_flags))
+         return false;
+
+      /* AFBC is not supported for multisample images
+       *
+       * This is not checked in panvk_image_can_use_afbc because the sample
+       * count is not known in vkGetPhysicalDeviceImageFormatProperties2. */
+      if (image->vk.samples > 1)
          return false;
 
       const struct util_format_description *fdesc =
