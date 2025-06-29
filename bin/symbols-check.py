@@ -65,6 +65,8 @@ def get_symbols_nm(nm, lib):
     output = subprocess.check_output([nm, '-gP', lib],
                                      stderr=open(os.devnull, 'w')).decode("ascii")
     for line in output.splitlines():
+        if line.startswith(' '):
+            continue
         fields = line.split()
         if len(fields) == 2 and fields[1] == 'U':
             continue
