@@ -68,6 +68,26 @@ void pan_store_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
                            unsigned w, unsigned h, uint32_t dst_stride,
                            uint32_t src_stride, enum pipe_format format);
 
+/**
+ * Copy a rectangular region from one tiled image to another.
+ *
+ * @dst Tiled destination
+ * @src Tiled source
+ * @dst_x Region of interest of destination in pixels, aligned to block size
+ * @dst_y Region of interest of destination in pixels, aligned to block size
+ * @src_x Region of interest of source in pixels, aligned to block size
+ * @src_y Region of interest of source in pixels, aligned to block size
+ * @w Size of region of interest in pixels, aligned to block size
+ * @h Size of region of interest in pixels, aligned to block size
+ * @dst_stride Number of bytes between adjacent rows of tiles in destination.
+ * @src_stride Number of bytes between adjacent rows of tiles in source.
+ * @format Format of the source and destination image
+ */
+void pan_copy_tiled_image(void *dst, const void *src, unsigned dst_x,
+                          unsigned dst_y, unsigned src_x, unsigned src_y,
+                          unsigned w, unsigned h, uint32_t dst_stride,
+                          uint32_t src_stride, enum pipe_format format);
+
 #ifdef __cplusplus
 } /* extern C */
 #endif

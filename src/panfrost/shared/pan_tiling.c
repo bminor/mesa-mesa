@@ -26,9 +26,11 @@
  */
 
 #include "pan_tiling.h"
+#include <math.h>
 #include <stdbool.h>
 #include "util/bitscan.h"
 #include "util/macros.h"
+#include "util/ralloc.h"
 
 /*
  * This file implements software encode/decode of u-interleaved textures.
@@ -399,4 +401,97 @@ pan_load_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
 {
    pan_access_tiled_image((void *)src, dst, x, y, w, h, src_stride, dst_stride,
                           format, false);
+}
+
+void
+pan_copy_tiled_image(void *dst, const void *src, unsigned dst_x, unsigned dst_y,
+                     unsigned src_x, unsigned src_y, unsigned w, unsigned h,
+                     uint32_t dst_stride, uint32_t src_stride,
+                     enum pipe_format format)
+{
+   const struct util_format_description *desc = util_format_description(format);
+   unsigned block_size_B = desc->block.bits / 8;
+
+   /* If both the src and dst region are tile-aligned, we can just memcpy
+    * whole tiles without any (de)tiling */
+   if (src_x % TILE_WIDTH == 0 && src_y % TILE_HEIGHT == 0 &&
+       dst_x % TILE_WIDTH == 0 && dst_y % TILE_HEIGHT == 0 &&
+       w % TILE_WIDTH == 0 && h % TILE_HEIGHT == 0) {
+
+      unsigned tile_size_B = block_size_B * PIXELS_PER_TILE;
+
+      unsigned w_t = w / TILE_WIDTH;
+      unsigned h_t = h / TILE_HEIGHT;
+      unsigned src_x_t = src_x / TILE_WIDTH;
+      unsigned src_y_t = src_y / TILE_HEIGHT;
+      unsigned dst_x_t = dst_x / TILE_WIDTH;
+      unsigned dst_y_t = dst_y / TILE_HEIGHT;
+
+      for (unsigned y_t = 0; y_t < h_t; y_t++) {
+         void *dst_tile_row = dst +
+            (y_t + dst_y_t) * dst_stride +
+            dst_x_t * tile_size_B;
+         const void *src_tile_row = src +
+            (y_t + src_y_t) * src_stride +
+            src_x_t * tile_size_B;
+         memcpy(dst_tile_row, src_tile_row, tile_size_B * w_t);
+      }
+
+      return;
+   }
+
+   /* Otherwise, we copy by working across the copy region in 64KiB chunks.
+    * For each chunk, we detile part of the src into a linear tempoaray
+    * buffer, then tile to the dst */
+
+   /* This could fit on the stack easily on glibc, but it's dicier on musl,
+    * which has a 128KiB stack size */
+   const size_t chunk_size_B = 65536;
+   void *chunk = ralloc_size(NULL, chunk_size_B);
+
+   /* Choose pixel dimensions of the chunk. These should be tile aligned,
+    * maximize used space in the buffer, and be close to a square. */
+   unsigned chunk_size_bl = chunk_size_B / block_size_B;
+   unsigned chunk_width_bl = (unsigned) sqrtf((float) (chunk_size_bl));
+   chunk_width_bl = (chunk_width_bl / TILE_WIDTH) * TILE_WIDTH;
+   unsigned chunk_height_bl = chunk_size_bl / chunk_width_bl;
+   chunk_height_bl = (chunk_height_bl / TILE_HEIGHT) * TILE_HEIGHT;
+
+   unsigned chunk_width_px = chunk_width_bl * desc->block.width;
+   unsigned chunk_height_px = chunk_height_bl * desc->block.height;
+
+   unsigned chunk_row_stride_B = chunk_width_bl * block_size_B;
+
+   /* Align chunk copy regions to src tiles, to optimize detiling. We can't
+    * get tile alignment on both src and dst, but one is better than nothing. */
+   unsigned src_first_tile_x = (src_x / TILE_WIDTH) * TILE_WIDTH;
+   unsigned src_first_tile_y = (src_y / TILE_HEIGHT) * TILE_HEIGHT;
+
+   for (unsigned x = src_first_tile_x; x < src_x + w; x += chunk_width_px) {
+      for (unsigned y = src_first_tile_y; y < src_y + h; y += chunk_height_px) {
+         /* x/y are tile-aligned, but because the actual copy region is not,
+          * we may need to start at an offset position on the left/top edges */
+         unsigned src_chunk_x = MAX2(src_x, x);
+         unsigned src_chunk_y = MAX2(src_y, y);
+         unsigned dst_chunk_x = dst_x + (src_chunk_x - src_x);
+         unsigned dst_chunk_y = dst_y + (src_chunk_y - src_y);
+
+         /* Similarly, right/bottom edges may not need a whole chunk */
+         unsigned src_chunk_right = MIN2(src_chunk_x + chunk_width_px,
+                                         src_x + w);
+         unsigned src_chunk_bottom = MIN2(src_chunk_y + chunk_height_px,
+                                          src_y + h);
+         unsigned width = src_chunk_right - src_chunk_x;
+         unsigned height = src_chunk_bottom - src_chunk_y;
+
+         pan_load_tiled_image(
+            chunk, src, src_chunk_x, src_chunk_y, width, height,
+            chunk_row_stride_B, src_stride, format);
+         pan_store_tiled_image(
+            dst, chunk, dst_chunk_x, dst_chunk_y, width, height, dst_stride,
+            chunk_row_stride_B, format);
+      }
+   }
+
+   ralloc_free(chunk);
 }
