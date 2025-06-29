@@ -1031,7 +1031,7 @@ dri_create_image_from_winsys(struct dri_screen *screen,
       templ.width0 = width >> map->planes[i].width_shift;
       templ.height0 = height >> map->planes[i].height_shift;
       if (use_lowered)
-         templ.format = dri2_get_pipe_format_for_dri_format(map->planes[i].dri_format);
+         templ.format = map->planes[i].dri_format;
       else
          templ.format = map->pipe_format;
       assert(templ.format != PIPE_FORMAT_NONE);

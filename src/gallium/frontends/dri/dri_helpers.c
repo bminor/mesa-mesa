@@ -743,17 +743,6 @@ dri2_get_mapping_by_format(int format)
    return NULL;
 }
 
-enum pipe_format
-dri2_get_pipe_format_for_dri_format(int format)
-{
-   for (unsigned i = 0; i < ARRAY_SIZE(dri2_format_table); i++) {
-      if (dri2_format_table[i].dri_format == format)
-         return dri2_format_table[i].pipe_format;
-   }
-
-   return PIPE_FORMAT_NONE;
-}
-
 static enum pipe_format
 alt_pipe_format(enum pipe_format yuv_fmt)
 {
@@ -787,8 +776,7 @@ dri2_yuv_dma_buf_supported(struct dri_screen *screen,
                                     screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW))
       return true;
    for (unsigned i = 0; i < map->nplanes; i++) {
-      if (!pscreen->is_format_supported(pscreen,
-            dri2_get_pipe_format_for_dri_format(map->planes[i].dri_format),
+      if (!pscreen->is_format_supported(pscreen, map->planes[i].dri_format,
             screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW))
          return false;
    }
