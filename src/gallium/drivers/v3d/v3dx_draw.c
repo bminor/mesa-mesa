@@ -1748,8 +1748,20 @@ v3d_tlb_clear(struct v3d_job *job, unsigned buffers,
                                         &uc);
                         memcpy(job->clear_color[i], uc.ui, internal_size);
                         break;
-                case V3D_INTERNAL_TYPE_16I:
                 case V3D_INTERNAL_TYPE_16UI:
+                case V3D_INTERNAL_TYPE_16I:
+                        if (util_format_is_unorm(psurf->format)) {
+                            util_pack_color(clamped_color.f, PIPE_FORMAT_R16G16B16A16_UNORM,
+                                            &uc);
+                            memcpy(job->clear_color[i], uc.ui, internal_size);
+                            break;
+                        }
+                        if (util_format_is_snorm(psurf->format)) {
+                            util_pack_color(clamped_color.f, PIPE_FORMAT_R16G16B16A16_SNORM,
+                                            &uc);
+                            memcpy(job->clear_color[i], uc.ui, internal_size);
+                            break;
+                        }
                         job->clear_color[i][0] = ((clamped_color.ui[0] & 0xffff) |
                                                   clamped_color.ui[1] << 16);
                         job->clear_color[i][1] = ((clamped_color.ui[2] & 0xffff) |

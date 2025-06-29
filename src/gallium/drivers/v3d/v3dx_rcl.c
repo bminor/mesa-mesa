@@ -421,7 +421,15 @@ v3dX(clamp_for_format_and_type)(enum V3DX(Internal_Type) rt_type,
         case V3D_INTERNAL_TYPE_8:
                 return V3D_RENDER_TARGET_TYPE_CLAMP_8;
         case V3D_INTERNAL_TYPE_16I:
-                return V3D_RENDER_TARGET_TYPE_CLAMP_16I_CLAMPED;
+                /* For the 16-bit snorm case we need to take care of sign
+                 * extension. Consider F2SNORM16 for -1.0f. We get
+                 * 0x00008000. This is greater than 2**15 therefore gets
+                 * clamped to 00007fff. If we didn't disable clamping here, we
+                 * would need to sign extend after F2SNORM16 in the shader.
+                 */
+                return util_format_is_snorm(format) ?
+                       V3D_RENDER_TARGET_TYPE_CLAMP_16I :
+                       V3D_RENDER_TARGET_TYPE_CLAMP_16I_CLAMPED;
         case V3D_INTERNAL_TYPE_16UI:
                 return V3D_RENDER_TARGET_TYPE_CLAMP_16UI_CLAMPED;
         case V3D_INTERNAL_TYPE_16F:

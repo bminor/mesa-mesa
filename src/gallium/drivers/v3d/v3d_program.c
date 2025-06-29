@@ -685,6 +685,19 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                         key->f32_color_rb |= 1 << i;
                 }
 
+                if (desc->is_unorm && desc->channel[0].size == 16) {
+                        /* We write as integer */
+                        key->f32_color_rb |= 1 << i;
+                        key->norm_16 |= 1 << i;
+                }
+
+                if (desc->is_snorm) {
+                        if (desc->channel[0].size == 16)
+                                key->norm_16 |= 1 << i;
+                        key->snorm |= 1 << i;
+                        key->f32_color_rb |= 1 << i;
+                }
+
                 if (util_format_is_pure_uint(cbuf->format))
                         key->f32_color_rb |= 1 << i;
                 else if (util_format_is_pure_sint(cbuf->format))

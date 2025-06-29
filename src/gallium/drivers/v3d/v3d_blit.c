@@ -350,6 +350,15 @@ check_tlb_blit_ok(struct v3d_device_info *devinfo, struct pipe_blit_info *info)
             v3d_get_rt_format(devinfo, info->dst.format))
                 return false;
 
+        /* We can not support tlb copies between different formats with
+         * the same internal format if either format is emulated in shaders.
+         */
+        if ((info->src.format != info->dst.format) &&
+            (v3d_rt_format_is_emulated(info->src.format) ||
+             v3d_rt_format_is_emulated(info->dst.format))) {
+                return false;
+        }
+
         bool is_msaa_resolve = (info->src.resource->nr_samples > 1 &&
                                 info->dst.resource->nr_samples < 2);
 

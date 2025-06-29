@@ -85,18 +85,18 @@ static const struct v3d_format format_table[] = {
         FORMAT(R8G8_UNORM,        RG8,          RG8,         SWIZ_XY01, 16, 0),
         FORMAT(R8G8_SNORM,        NO,           RG8_SNORM,   SWIZ_XY01, 16, 0),
 
-        FORMAT(R16_UNORM,         NO,           R16,         SWIZ_X001, 32, 1),
-        FORMAT(R16_SNORM,         NO,           R16_SNORM,   SWIZ_X001, 32, 1),
+        FORMAT(R16_UNORM,         R16UI,        R16,         SWIZ_X001, 32, 1),
+        FORMAT(R16_SNORM,         R16I,         R16_SNORM,   SWIZ_X001, 32, 1),
         FORMAT(R16_FLOAT,         R16F,         R16F,        SWIZ_X001, 16, 0),
         FORMAT(R32_FLOAT,         R32F,         R32F,        SWIZ_X001, 32, 1),
 
-        FORMAT(R16G16_UNORM,      NO,           RG16,        SWIZ_XY01, 32, 2),
-        FORMAT(R16G16_SNORM,      NO,           RG16_SNORM,  SWIZ_XY01, 32, 2),
+        FORMAT(R16G16_UNORM,      RG16UI,       RG16,        SWIZ_XY01, 32, 2),
+        FORMAT(R16G16_SNORM,      RG16I,        RG16_SNORM,  SWIZ_XY01, 32, 2),
         FORMAT(R16G16_FLOAT,      RG16F,        RG16F,       SWIZ_XY01, 16, 0),
         FORMAT(R32G32_FLOAT,      RG32F,        RG32F,       SWIZ_XY01, 32, 2),
 
-        FORMAT(R16G16B16A16_UNORM, NO,          RGBA16,      SWIZ_XYZW, 32, 4),
-        FORMAT(R16G16B16A16_SNORM, NO,          RGBA16_SNORM, SWIZ_XYZW, 32, 4),
+        FORMAT(R16G16B16A16_UNORM, RGBA16UI,    RGBA16,      SWIZ_XYZW, 32, 4),
+        FORMAT(R16G16B16A16_SNORM, RGBA16I,     RGBA16_SNORM, SWIZ_XYZW, 32, 4),
         FORMAT(R16G16B16A16_FLOAT, RGBA16F,     RGBA16F,     SWIZ_XYZW, 16, 0),
         FORMAT(R32G32B32A32_FLOAT, RGBA32F,     RGBA32F,     SWIZ_XYZW, 32, 4),
 

@@ -40,6 +40,22 @@
 #include "v3d_format_table.h"
 
 bool
+v3d_rt_format_is_emulated(enum pipe_format f)
+{
+        switch (f) {
+        case PIPE_FORMAT_R16G16B16A16_UNORM:
+        case PIPE_FORMAT_R16G16_UNORM:
+        case PIPE_FORMAT_R16_UNORM:
+        case PIPE_FORMAT_R16G16B16A16_SNORM:
+        case PIPE_FORMAT_R16G16_SNORM:
+        case PIPE_FORMAT_R16_SNORM:
+               return true;
+        default:
+               return false;
+        }
+}
+
+bool
 v3d_rt_format_supported(const struct v3d_device_info *devinfo,
                         enum pipe_format f)
 {

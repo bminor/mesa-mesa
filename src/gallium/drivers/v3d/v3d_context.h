@@ -838,6 +838,7 @@ void v3d_flush_jobs_reading_resource(struct v3d_context *v3d,
 void v3d_update_compiled_shaders(struct v3d_context *v3d, uint8_t prim_mode);
 void v3d_update_compiled_cs(struct v3d_context *v3d);
 
+bool v3d_rt_format_is_emulated(enum pipe_format f);
 bool v3d_rt_format_supported(const struct v3d_device_info *devinfo,
                              enum pipe_format f);
 bool v3d_tex_format_supported(const struct v3d_device_info *devinfo,
