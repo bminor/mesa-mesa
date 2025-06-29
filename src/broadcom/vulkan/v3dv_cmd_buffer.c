@@ -1238,13 +1238,11 @@ cmd_buffer_state_set_attachment_clear_color(struct v3dv_cmd_buffer *cmd_buffer,
    v3d_X((&cmd_buffer->device->devinfo), get_internal_type_bpp_for_output_format)
       (format->planes[0].rt_type, &internal_type, &internal_bpp);
 
-   uint32_t internal_size = 4 << internal_bpp;
-
    struct v3dv_cmd_buffer_attachment_state *attachment_state =
       &cmd_buffer->state.attachments[attachment_idx];
 
    v3d_X((&cmd_buffer->device->devinfo), get_hw_clear_color)
-      (color, internal_type, internal_size, &attachment_state->clear_value.color[0]);
+      (color, &format->planes[0], &attachment_state->clear_value.color[0]);
 
    attachment_state->vk_clear_value.color = *color;
 }

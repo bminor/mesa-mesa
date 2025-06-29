@@ -353,11 +353,15 @@ v3dX(zs_buffer_from_aspect_bits)(VkImageAspectFlags aspects)
 
 void
 v3dX(get_hw_clear_color)(const VkClearColorValue *color,
-                         uint32_t internal_type,
-                         uint32_t internal_size,
+                         const struct v3dv_format_plane *format,
                          uint32_t *hw_color)
 {
    union util_color uc;
+   uint32_t internal_type, internal_bpp;
+   v3dX(get_internal_type_bpp_for_output_format)
+      (format->rt_type, &internal_type, &internal_bpp);
+   const uint32_t internal_size = 4 << internal_bpp;
+
    switch (internal_type) {
    case V3D_INTERNAL_TYPE_8:
       util_pack_color(color->float32, PIPE_FORMAT_R8G8B8A8_UNORM, &uc);
