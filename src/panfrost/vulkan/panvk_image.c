@@ -59,6 +59,7 @@ panvk_image_can_use_afbc(
    /* Disallow AFBC if either of these is true
     * - PANVK_DEBUG does not have the 'afbc' flag set
     * - storage image views are requested
+    * - host image copies are requested
     * - the GPU doesn't support AFBC
     * - the format is not AFBC-able
     * - tiling is set to linear
@@ -68,7 +69,8 @@ panvk_image_can_use_afbc(
     */
    return
       (instance->debug_flags & PANVK_DEBUG_AFBC) &&
-      !(usage & (VK_IMAGE_USAGE_STORAGE_BIT)) &&
+      !(usage & (VK_IMAGE_USAGE_STORAGE_BIT |
+                 VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
       pan_query_afbc(&phys_dev->kmod.props) &&
       pan_afbc_supports_format(arch, pfmt) &&
       tiling == VK_IMAGE_TILING_OPTIMAL &&

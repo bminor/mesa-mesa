@@ -27,6 +27,7 @@
 #include "panvk_physical_device.h"
 #include "panvk_wsi.h"
 
+#include "pan_afbc.h"
 #include "pan_props.h"
 
 #include "genxml/gen_macros.h"
@@ -530,7 +531,7 @@ format_is_supported(struct panvk_physical_device *physical_device,
 
 static VkFormatFeatureFlags2
 get_image_plane_format_features(struct panvk_physical_device *physical_device,
-                                VkFormat format, VkImageTiling tiling)
+                                VkFormat format)
 {
    VkFormatFeatureFlags2 features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
@@ -583,8 +584,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
    if (fmt.bind & PAN_BIND_DEPTH_STENCIL)
       features |= VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-   if (features != 0 && vk_format_is_color(format) &&
-       tiling == VK_IMAGE_TILING_LINEAR)
+   if (features != 0 && vk_format_is_color(format))
       features |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT;
 
    return features;
@@ -592,7 +592,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
 
 static VkFormatFeatureFlags2
 get_image_format_features(struct panvk_physical_device *physical_device,
-                          VkFormat format, VkImageTiling tiling)
+                          VkFormat format)
 {
    const struct vk_format_ycbcr_info *ycbcr_info =
          vk_format_get_ycbcr_info(format);
@@ -603,7 +603,7 @@ get_image_format_features(struct panvk_physical_device *physical_device,
       return 0;
 
    if (ycbcr_info == NULL)
-      return get_image_plane_format_features(physical_device, format, tiling);
+      return get_image_plane_format_features(physical_device, format);
 
    if (unsupported_yuv_format(vk_format_to_pipe_format(format)))
       return 0;
@@ -617,8 +617,7 @@ get_image_format_features(struct panvk_physical_device *physical_device,
       const struct vk_format_ycbcr_plane *plane_info =
          &ycbcr_info->planes[plane];
       features &=
-         get_image_plane_format_features(physical_device, plane_info->format,
-                                         tiling);
+         get_image_plane_format_features(physical_device, plane_info->format);
       if (plane_info->denominator_scales[0] > 1 ||
           plane_info->denominator_scales[1] > 1)
          cosited_chroma = true;
@@ -739,26 +738,22 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
 
-   VkFormatFeatureFlags2 tex_linear =
-      get_image_format_features(physical_device, format,
-                                VK_IMAGE_TILING_LINEAR);
-   VkFormatFeatureFlags2 tex_optimal =
-      get_image_format_features(physical_device, format,
-                                VK_IMAGE_TILING_OPTIMAL);
+   VkFormatFeatureFlags2 tex =
+      get_image_format_features(physical_device, format);
    VkFormatFeatureFlags2 buffer =
       get_buffer_format_features(physical_device, format);
 
    pFormatProperties->formatProperties = (VkFormatProperties){
-      .linearTilingFeatures = tex_linear,
-      .optimalTilingFeatures = tex_optimal,
+      .linearTilingFeatures = tex,
+      .optimalTilingFeatures = tex,
       .bufferFeatures = buffer,
    };
 
    VkFormatProperties3 *formatProperties3 =
       vk_find_struct(pFormatProperties->pNext, FORMAT_PROPERTIES_3);
    if (formatProperties3) {
-      formatProperties3->linearTilingFeatures = tex_linear;
-      formatProperties3->optimalTilingFeatures = tex_optimal;
+      formatProperties3->linearTilingFeatures = tex;
+      formatProperties3->optimalTilingFeatures = tex;
       formatProperties3->bufferFeatures = buffer;
    }
 
@@ -886,15 +881,14 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
     */
    if (ycbcr_info == NULL) {
       format_feature_flags =
-         get_image_format_features(physical_device, info->format, info->tiling);
+         get_image_format_features(physical_device, info->format);
    } else {
       format_feature_flags = ~0u;
       assert(ycbcr_info->n_planes > 0);
       for (uint8_t plane = 0; plane < ycbcr_info->n_planes; plane++) {
          const VkFormat plane_format = ycbcr_info->planes[plane].format;
          format_feature_flags &=
-            get_image_format_features(physical_device, plane_format,
-                                      info->tiling);
+            get_image_format_features(physical_device, plane_format);
       }
    }
 
@@ -1080,6 +1074,7 @@ panvk_GetPhysicalDeviceImageFormatProperties2(
    VkImageFormatProperties2 *base_props)
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
+   const VkImageStencilUsageCreateInfo *stencil_usage_info = NULL;
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
    const VkPhysicalDeviceImageViewImageFormatInfoEXT *image_view_info = NULL;
    VkExternalImageFormatProperties *external_props = NULL;
@@ -1098,6 +1093,9 @@ panvk_GetPhysicalDeviceImageFormatProperties2(
    /* Extract input structs */
    vk_foreach_struct_const(s, base_info->pNext) {
       switch (s->sType) {
+      case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO:
+         stencil_usage_info = (const void*)s;
+         break;
       case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO:
          external_info = (const void *)s;
          break;
@@ -1172,8 +1170,19 @@ panvk_GetPhysicalDeviceImageFormatProperties2(
    }
 
    if (hic_props) {
-      hic_props->optimalDeviceAccess = true;
-      hic_props->identicalMemoryLayout = true;
+      VkImageUsageFlags stencil_usage = stencil_usage_info ?
+         stencil_usage_info->stencilUsage : base_info->usage;
+
+      /* We don't support AFBC for images used for host transfer. So, if an
+       * image could have been tiled as AFBC if it weren't for host transfer,
+       * report suboptimal access. */
+      VkImageUsageFlags usage = base_info->usage | stencil_usage;
+      usage &= ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT;
+      bool can_use_afbc = panvk_image_can_use_afbc(
+         physical_device, base_info->format, usage, base_info->type,
+         base_info->tiling, base_info->flags);
+      hic_props->optimalDeviceAccess = !can_use_afbc;
+      hic_props->identicalMemoryLayout = !can_use_afbc;
    }
 
    const struct vk_format_ycbcr_info *ycbcr_info =

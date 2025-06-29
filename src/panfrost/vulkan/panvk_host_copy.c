@@ -6,6 +6,7 @@
 #include "panvk_device.h"
 #include "panvk_device_memory.h"
 #include "panvk_entrypoints.h"
+#include "pan_tiling.h"
 #include "panvk_image.h"
 
 #include "vk_object.h"
@@ -31,8 +32,10 @@ panvk_copy_image_to_from_memory(struct image_params img,
                                 VkExtent3D extent, VkHostImageCopyFlags flags,
                                 bool memory_to_img)
 {
-   /* We don't support copying tiled images yet */
-   assert(img.img->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
+   /* AFBC should be disabled on images used for host image copy */
+   assert(img.img->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR ||
+          img.img->vk.drm_format_mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+   bool linear = img.img->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR;
 
    /* We don't have to care about the multisample layout for image/memory
     * copies. From the Vulkan 1.4.317 spec:
@@ -61,7 +64,8 @@ panvk_copy_image_to_from_memory(struct image_params img,
 
    VkFormat vkfmt =
       vk_format_get_aspect_format(img.img->vk.format, img.subres.aspectMask);
-   const struct util_format_description *fmt = vk_format_description(vkfmt);
+   enum pipe_format pfmt = vk_format_to_pipe_format(vkfmt);
+   const struct util_format_description *fmt = util_format_description(pfmt);
 
    unsigned block_width_px = fmt->block.width;
    unsigned block_height_px = fmt->block.height;
@@ -98,20 +102,37 @@ panvk_copy_image_to_from_memory(struct image_params img,
           * layout, image_stride_B applies to both */
          void *mem_depth_ptr = mem_layer_ptr + z * mem.layout.image_stride_B;
 
-         for (unsigned y = 0; y < extent.height; y += block_height_px) {
-            unsigned img_y_bl = (y + img.offset.y) / block_height_px;
-            unsigned mem_y_bl = y / block_height_px;
-            unsigned img_x_bl = img.offset.x / block_width_px;
-            void *img_row_ptr = img_depth_ptr +
-               img_y_bl * slice_layout->tiled_or_linear.row_stride_B +
-               img_x_bl * block_size_B;
-            void *mem_row_ptr = mem_depth_ptr +
-               mem_y_bl * mem.layout.row_stride_B;
+         if (linear) {
+            for (unsigned y = 0; y < extent.height; y += block_height_px) {
+               unsigned img_y_bl = (y + img.offset.y) / block_height_px;
+               unsigned mem_y_bl = y / block_height_px;
+               unsigned img_x_bl = img.offset.x / block_width_px;
+               void *img_row_ptr = img_depth_ptr +
+                  img_y_bl * slice_layout->tiled_or_linear.row_stride_B +
+                  img_x_bl * block_size_B;
+               void *mem_row_ptr = mem_depth_ptr +
+                  mem_y_bl * mem.layout.row_stride_B;
 
+               if (memory_to_img)
+                  memcpy(img_row_ptr, mem_row_ptr, row_size_B);
+               else
+                  memcpy(mem_row_ptr, img_row_ptr, row_size_B);
+            }
+         } else {
             if (memory_to_img)
-               memcpy(img_row_ptr, mem_row_ptr, row_size_B);
+               pan_store_tiled_image(
+                  img_depth_ptr, mem_depth_ptr,
+                  img.offset.x, img.offset.y, extent.width, extent.height,
+                  slice_layout->tiled_or_linear.row_stride_B,
+                  mem.layout.row_stride_B,
+                  pfmt);
             else
-               memcpy(mem_row_ptr, img_row_ptr, row_size_B);
+               pan_load_tiled_image(
+                  mem_depth_ptr, img_depth_ptr,
+                  img.offset.x, img.offset.y, extent.width, extent.height,
+                  mem.layout.row_stride_B,
+                  slice_layout->tiled_or_linear.row_stride_B,
+                  pfmt);
          }
       }
    }
@@ -212,9 +233,13 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
                           const VkImageCopy2 *region,
                           VkHostImageCopyFlags flags)
 {
-   /* We don't support copying tiled images yet */
-   assert(src->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
-   assert(dst->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
+   /* AFBC should be disabled on images used for host image copy */
+   assert(src->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR ||
+          src->vk.drm_format_mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+   assert(dst->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR ||
+          dst->vk.drm_format_mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+   bool src_linear = src->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR;
+   bool dst_linear = dst->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR;
 
    VkImageSubresourceLayers src_subres = region->srcSubresource;
    VkImageSubresourceLayers dst_subres = region->dstSubresource;
@@ -241,10 +266,12 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
       vk_format_get_aspect_format(src->vk.format, src_subres.aspectMask);
    VkFormat dst_vkfmt =
       vk_format_get_aspect_format(dst->vk.format, dst_subres.aspectMask);
+   enum pipe_format src_pfmt = vk_format_to_pipe_format(src_vkfmt);
+   enum pipe_format dst_pfmt = vk_format_to_pipe_format(dst_vkfmt);
    const struct util_format_description *src_fmt =
-      vk_format_description(src_vkfmt);
+      util_format_description(src_pfmt);
    const struct util_format_description *dst_fmt =
-      vk_format_description(dst_vkfmt);
+      util_format_description(dst_pfmt);
 
    unsigned block_width_px = src_fmt->block.width;
    unsigned block_height_px = src_fmt->block.height;
@@ -300,19 +327,55 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
          void *dst_depth_ptr = dst_layer_ptr +
             dst_z * dst_slice_layout->tiled_or_linear.surface_stride_B;
 
-         for (unsigned y = 0; y < region->extent.height; y += block_height_px) {
-            unsigned src_y_bl = (y + region->srcOffset.y) / block_height_px;
-            unsigned dst_y_bl = (y + region->dstOffset.y) / block_height_px;
+         if (src_linear && dst_linear) {
+            for (unsigned y = 0; y < region->extent.height;
+                 y += block_height_px) {
+               unsigned src_y_bl = (y + region->srcOffset.y) / block_height_px;
+               unsigned dst_y_bl = (y + region->dstOffset.y) / block_height_px;
+               unsigned src_x_bl = region->srcOffset.x / block_width_px;
+               unsigned dst_x_bl = region->dstOffset.x / block_width_px;
+               void *src_row_ptr = src_depth_ptr +
+                  src_y_bl * src_slice_layout->tiled_or_linear.row_stride_B +
+                  src_x_bl * block_size_B;
+               void *dst_row_ptr = dst_depth_ptr +
+                  dst_y_bl * dst_slice_layout->tiled_or_linear.row_stride_B +
+                  dst_x_bl * block_size_B;
+
+               memcpy(dst_row_ptr, src_row_ptr, row_size_B);
+            }
+         } else if (src_linear && !dst_linear) {
+            unsigned src_y_bl = region->srcOffset.y / block_height_px;
             unsigned src_x_bl = region->srcOffset.x / block_width_px;
-            unsigned dst_x_bl = region->dstOffset.x / block_width_px;
             void *src_row_ptr = src_depth_ptr +
                src_y_bl * src_slice_layout->tiled_or_linear.row_stride_B +
                src_x_bl * block_size_B;
+            pan_store_tiled_image(
+               dst_depth_ptr, src_row_ptr,
+               region->dstOffset.x, region->dstOffset.y,
+               region->extent.width, region->extent.height,
+               dst_slice_layout->tiled_or_linear.row_stride_B,
+               src_slice_layout->tiled_or_linear.row_stride_B,
+               src_pfmt);
+         } else if (!src_linear && dst_linear) {
+            unsigned dst_y_bl = region->dstOffset.y / block_height_px;
+            unsigned dst_x_bl = region->dstOffset.x / block_width_px;
             void *dst_row_ptr = dst_depth_ptr +
                dst_y_bl * dst_slice_layout->tiled_or_linear.row_stride_B +
                dst_x_bl * block_size_B;
-
-            memcpy(dst_row_ptr, src_row_ptr, row_size_B);
+            pan_load_tiled_image(
+               dst_row_ptr, src_depth_ptr,
+               region->srcOffset.x, region->srcOffset.y,
+               region->extent.width, region->extent.height,
+               dst_slice_layout->tiled_or_linear.row_stride_B,
+               src_slice_layout->tiled_or_linear.row_stride_B,
+               dst_pfmt);
+         } else {
+            pan_copy_tiled_image(
+               dst_depth_ptr, src_depth_ptr, region->dstOffset.x,
+               region->dstOffset.y, region->srcOffset.x, region->srcOffset.y,
+               region->extent.width, region->extent.height,
+               dst_slice_layout->tiled_or_linear.row_stride_B,
+               src_slice_layout->tiled_or_linear.row_stride_B, src_pfmt);
          }
       }
    }
