@@ -1530,7 +1530,8 @@ brw_send_indirect_split_message(struct brw_codegen *p,
       if (ex_desc_imm_inst) {
          /* Write the immediate extended descriptor immediate value, but only
           * the part used for encoding an offset. This matches to bits
-          * 12:15-19:31 as described in BSpec 70586.
+          * 12:15-19:31 as described in BSpec 70586 (extended descriptor
+          * format) & BSpec 56890 (SEND instruction format).
           */
          assert(devinfo->ver >= 20);
          brw_eu_inst_set_bits(send, 127, 124, GET_BITS(ex_desc_imm_inst, 31, 28));

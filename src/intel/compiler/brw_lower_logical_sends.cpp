@@ -1455,10 +1455,9 @@ setup_lsc_surface_descriptors(const brw_builder &bld, brw_inst *inst,
          inst->src[1] = brw_imm_ud(lsc_bti_ex_desc(devinfo, surface.ud,
                                                    base_offset_bits));
       } else {
+         assert(base_offset == 0);
          const brw_builder ubld = bld.uniform();
-         brw_reg tmp = ubld.OR(
-            ubld.SHL(surface, brw_imm_ud(24)),
-            brw_imm_ud(base_offset << 12));
+         brw_reg tmp = ubld.SHL(surface, brw_imm_ud(24));
          inst->src[1] = component(tmp, 0);
       }
       break;
