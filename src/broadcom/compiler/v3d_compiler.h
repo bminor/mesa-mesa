@@ -434,6 +434,11 @@ struct v3d_fs_key {
         uint8_t swap_color_rb;
         /* Mask of which render targets need to be written as 32-bit floats */
         uint8_t f32_color_rb;
+        /* Mask of which render targets need to be written as 16-bit unorms or snorms */
+        uint8_t norm_16;
+        /* Mask of which render targets need to be written as snorms. */
+        uint8_t snorm;
+
         uint8_t ucp_enables;
 
         /* Color format information per render target. Only set when logic

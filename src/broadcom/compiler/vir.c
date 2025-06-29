@@ -25,6 +25,7 @@
 #include "v3d_compiler.h"
 #include "compiler/nir/nir_schedule.h"
 #include "compiler/nir/nir_builder.h"
+#include "compiler/nir/nir_format_convert.h"
 #include "util/perf/cpu_trace.h"
 
 int
@@ -1088,6 +1089,116 @@ v3d_nir_lower_gs_early(struct v3d_compile *c)
         NIR_PASS(_, c->s, nir_opt_constant_folding);
 }
 
+static const unsigned bits_16[] = {16, 16, 16, 16};
+
+static nir_def *
+v3d_nir_float_to_snorm_16(nir_builder *b, nir_def *a, bool sw)
+{
+        if (sw)
+               return nir_format_float_to_snorm(b, a, bits_16);
+
+        nir_def *out[4];
+        for (unsigned i = 0; i < a->num_components; i++)
+                out[i] = nir_f2snorm_16_v3d(b, nir_channel(b, a, i));
+
+        return nir_vec(b, out, a->num_components);
+}
+
+static nir_def *
+v3d_nir_float_to_unorm_16(nir_builder *b, nir_def *a, bool sw)
+{
+        if (sw)
+               return nir_format_float_to_unorm(b, a, bits_16);
+
+        nir_def *out[4];
+        for (unsigned i = 0; i < a->num_components; i++)
+                out[i] = nir_f2unorm_16_v3d(b, nir_channel(b, a, i));
+
+        return nir_vec(b, out, a->num_components);
+}
+
+static nir_def *
+v3d_nir_unorm_to_float_16(nir_builder *b, nir_def *a, bool sw)
+{
+        if (sw)
+                return nir_format_unorm_to_float(b, a, bits_16);
+
+        nir_def *out[4];
+        for (unsigned i = 0; i < a->num_components; i++)
+                out[i] = nir_unorm2f_16_v3d(b, nir_channel(b, a, i));
+
+        return nir_vec(b, out, a->num_components);
+}
+
+static nir_def *
+v3d_nir_snorm_to_float_16(nir_builder *b, nir_def *a, bool sw)
+{
+        if (sw)
+                return nir_format_snorm_to_float(b, a, bits_16);
+
+        nir_def *out[4];
+        for (unsigned i = 0; i < a->num_components; i++)
+                out[i] = nir_snorm2f_16_v3d(b, nir_channel(b, a, i));
+
+        return nir_vec(b, out, a->num_components);
+}
+
+static bool
+lower_16bit_norm(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+        if (intr->intrinsic != nir_intrinsic_load_output &&
+            intr->intrinsic != nir_intrinsic_store_output)
+                return false;
+
+        nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+        if (sem.location < FRAG_RESULT_DATA0)
+                return false;
+
+        struct v3d_compile *c = data;
+
+        unsigned rt = sem.location - FRAG_RESULT_DATA0;
+        bool norm = c->fs_key->norm_16 & (1 << rt);
+
+        if (!norm)
+                return false;
+
+        /* We do not have specific instructions for snorm packing on older
+         * hardware.
+         */
+        bool needs_sw = c->devinfo->ver < 71;
+        bool norm_signed = c->fs_key->snorm & (1 << rt);
+
+        bool is_store = intr->intrinsic == nir_intrinsic_store_output;
+
+        nir_def *dst;
+        if (is_store) {
+                b->cursor = nir_before_instr(&intr->instr);
+                nir_def *src = intr->src[0].ssa;
+                if (norm_signed)
+                        dst = v3d_nir_float_to_snorm_16(b, src, needs_sw);
+                else
+                        dst = v3d_nir_float_to_unorm_16(b, src, needs_sw);
+
+                nir_src_rewrite(&intr->src[0], dst);
+        } else {
+                b->cursor = nir_after_instr(&intr->instr);
+                if (norm_signed)
+                        dst = v3d_nir_snorm_to_float_16(b, &intr->def, needs_sw);
+                else
+                        dst = v3d_nir_unorm_to_float_16(b, &intr->def, needs_sw);
+
+                nir_def_rewrite_uses_after(&intr->def, dst);
+        }
+
+        return true;
+}
+
+static bool
+v3d_nir_lower_16bit_norm(nir_shader *s, struct v3d_compile *c)
+{
+        return nir_shader_intrinsics_pass(s, lower_16bit_norm, nir_metadata_control_flow, c);
+}
+
 static void
 v3d_nir_lower_fs_early(struct v3d_compile *c)
 {
@@ -1113,6 +1224,7 @@ v3d_nir_lower_fs_early(struct v3d_compile *c)
         }
 
         NIR_PASS(_, c->s, v3d_nir_lower_logic_ops, c);
+        NIR_PASS(_, c->s, v3d_nir_lower_16bit_norm, c);
         NIR_PASS(_, c->s, v3d_nir_lower_load_output, c);
 }
 
