@@ -111,19 +111,63 @@ const unsigned space_4[16] = {
 #define TILE_HEIGHT     16
 #define PIXELS_PER_TILE (TILE_WIDTH * TILE_HEIGHT)
 
+enum pan_interleave_zs
+pan_get_interleave_zs(enum pipe_format format, bool depth, bool stencil)
+{
+   if (format == PIPE_FORMAT_Z24_UNORM_S8_UINT) {
+      if (depth && stencil) {
+         return PAN_INTERLEAVE_NONE;
+      } else if (depth && !stencil) {
+         return PAN_INTERLEAVE_DEPTH;
+      } else if (!depth && stencil) {
+         return PAN_INTERLEAVE_STENCIL;
+      } else if (!depth && !stencil) {
+         unreachable("at least one aspect must be specified");
+      }
+   }
+   return PAN_INTERLEAVE_NONE;
+}
+
 static ALWAYS_INLINE
 void pan_access_image_pixel(void *dst, void *src, const unsigned pixel_size,
-                            bool is_store)
+                            enum pan_interleave_zs interleave, bool is_store)
 {
    if (util_is_power_of_two_nonzero(pixel_size)) {
       src = __builtin_assume_aligned(src, pixel_size);
-      dst = __builtin_assume_aligned(dst, pixel_size);
+      if (interleave != PAN_INTERLEAVE_STENCIL)
+         dst = __builtin_assume_aligned(dst, pixel_size);
    }
 
-   if (is_store)
-      memcpy(dst, src, pixel_size);
-   else
-      memcpy(src, dst, pixel_size);
+   switch (interleave) {
+      case PAN_INTERLEAVE_NONE:
+         if (is_store)
+            memcpy(dst, src, pixel_size);
+         else
+            memcpy(src, dst, pixel_size);
+         break;
+      case PAN_INTERLEAVE_DEPTH:
+         /* interleave only applies to Z24S8 */
+         assert(pixel_size == 4);
+         if (is_store) {
+            uint32_t src_pixel = *(uint32_t *) src;
+            *(uint16_t *) dst = src_pixel & 0xffff;
+            *((uint8_t *) dst + 2) = (src_pixel >> 16) & 0xff;
+         } else {
+            /* The top 8 bits of Z24X8 are unused, so we can overwrite them
+             * with zeros in a single 32B write, instead of needing separate
+             * 16B and 8B writes */
+            *(uint32_t *) src = *(uint32_t *) dst & 0xffffff;
+         }
+         break;
+      case PAN_INTERLEAVE_STENCIL:
+         /* interleave only applies to Z24S8 */
+         assert(pixel_size == 4);
+         if (is_store)
+            *((uint8_t *) dst + 3) = *(uint8_t *) src;
+         else
+            *(uint8_t *) src = *((uint8_t *) dst + 3);
+         break;
+   }
 }
 
 /* Optimized routine to tile an aligned (w & 0xF == 0) texture. Explanation:
@@ -159,21 +203,27 @@ void pan_access_image_pixel(void *dst, void *src, const unsigned pixel_size,
 
 static ALWAYS_INLINE void
 pan_access_tiled_image_aligned(
-   void *dst, void *src, unsigned pixel_size, unsigned shift,
-   uint16_t sx, uint16_t sy, uint16_t w, uint16_t h,
-   uint32_t dst_stride, uint32_t src_stride, bool is_store)
+   void *dst, void *src,
+   unsigned dst_pixel_size, unsigned src_pixel_size,
+   unsigned shift,
+   uint16_t sx, uint16_t sy,
+   uint16_t w, uint16_t h,
+   uint32_t dst_stride, uint32_t src_stride,
+   enum pan_interleave_zs interleave,
+   bool is_store)
 {
-   uint8_t *dest_start = dst + ((sx >> 4) * PIXELS_PER_TILE * pixel_size);
+   uint8_t *dest_start = dst + ((sx >> 4) * PIXELS_PER_TILE * dst_pixel_size);
    for (int y = sy, src_y = 0; src_y < h; ++y, ++src_y) {
       uint8_t *dest = (uint8_t *)(dest_start + ((y >> 4) * dst_stride));
       void *source = src + (src_y * src_stride);
-      void *source_end = source + w * pixel_size;
+      void *source_end = source + w * src_pixel_size;
       unsigned expanded_y = bit_duplication[y & 0xF] << shift;
       for (; source < source_end; dest += (PIXELS_PER_TILE << shift)) {
          for (uint8_t i = 0; i < 16; ++i) {
             unsigned index = expanded_y ^ (space_4[i] << shift);
-            pan_access_image_pixel(dest + index, source, pixel_size, is_store);
-            source += pixel_size;
+            pan_access_image_pixel(dest + index, source, dst_pixel_size,
+                                   interleave, is_store);
+            source += src_pixel_size;
          }
       }
    }
@@ -181,9 +231,14 @@ pan_access_tiled_image_aligned(
 
 static ALWAYS_INLINE void
 pan_access_tiled_image_unaligned(
-   void *dst, void *src, unsigned pixel_size, unsigned tile_shift,
-   uint16_t sx, uint16_t sy, uint16_t w, uint16_t h,
-   uint32_t dst_stride, uint32_t src_stride, bool is_store)
+   void *dst, void *src,
+   unsigned dst_pixel_size, unsigned src_pixel_size,
+   unsigned tile_shift,
+   uint16_t sx, uint16_t sy,
+   uint16_t w, uint16_t h,
+   uint32_t dst_stride, uint32_t src_stride,
+   enum pan_interleave_zs interleave,
+   bool is_store)
 {
    const unsigned mask = (1 << tile_shift) - 1;
    for (int y = sy, src_y = 0; src_y < h; ++y, ++src_y) {
@@ -194,37 +249,44 @@ pan_access_tiled_image_unaligned(
       for (int x = sx, src_x = 0; src_x < w; ++x, ++src_x) {
          unsigned block_x_s = (x >> tile_shift) * (1 << (tile_shift * 2));
          unsigned index = expanded_y ^ space_4[x & mask];
-         uint8_t *source = src + source_start + pixel_size * src_x;
-         uint8_t *dest = dst + block_start_s + pixel_size * (block_x_s + index);
-         pan_access_image_pixel(dest, source, pixel_size, is_store);
+         uint8_t *source = src + source_start + src_pixel_size * src_x;
+         uint8_t *dest =
+            dst + block_start_s + dst_pixel_size * (block_x_s + index);
+         pan_access_image_pixel(dest, source, dst_pixel_size, interleave,
+                                is_store);
       }
    }
 }
 
-#define TILED_UNALIGNED_VARIANT(bpp, store, shift)                             \
-   pan_access_tiled_image_unaligned(dst, src, (bpp) / 8, shift, sx, sy, w, h,  \
-                                    dst_stride, src_stride, store)
+#define TILED_UNALIGNED_VARIANT(dst_bpp, src_bpp, interleave, store, shift)    \
+   pan_access_tiled_image_unaligned(dst, src, (dst_bpp) / 8, (src_bpp) / 8,    \
+                                    shift, sx, sy, w, h,                       \
+                                    dst_stride, src_stride, interleave, store)
 
 /* We have a separate call for each configuration, to ensure that the inlined
  * function is specialized */
 #define TILED_UNALIGNED_VARIANTS(store, shift)                                 \
    {                                                                           \
       if (bpp == 8)                                                            \
-         TILED_UNALIGNED_VARIANT(8, store, shift);                             \
+         TILED_UNALIGNED_VARIANT(8, 8, PAN_INTERLEAVE_NONE, store, shift);     \
       else if (bpp == 16)                                                      \
-         TILED_UNALIGNED_VARIANT(16, store, shift);                            \
+         TILED_UNALIGNED_VARIANT(16, 16, PAN_INTERLEAVE_NONE, store, shift);   \
       else if (bpp == 24)                                                      \
-         TILED_UNALIGNED_VARIANT(24, store, shift);                            \
-      else if (bpp == 32)                                                      \
-         TILED_UNALIGNED_VARIANT(32, store, shift);                            \
+         TILED_UNALIGNED_VARIANT(24, 24, PAN_INTERLEAVE_NONE, store, shift);   \
+      else if (bpp == 32 && interleave == PAN_INTERLEAVE_NONE)                 \
+         TILED_UNALIGNED_VARIANT(32, 32, PAN_INTERLEAVE_NONE, store, shift);   \
+      else if (bpp == 32 && interleave == PAN_INTERLEAVE_DEPTH)                \
+         TILED_UNALIGNED_VARIANT(32, 32, PAN_INTERLEAVE_DEPTH, store, shift);  \
+      else if (bpp == 32 && interleave == PAN_INTERLEAVE_STENCIL)              \
+         TILED_UNALIGNED_VARIANT(32, 8, PAN_INTERLEAVE_STENCIL, store, shift); \
       else if (bpp == 48)                                                      \
-         TILED_UNALIGNED_VARIANT(48, store, shift);                            \
+         TILED_UNALIGNED_VARIANT(48, 48, PAN_INTERLEAVE_NONE, store, shift);   \
       else if (bpp == 64)                                                      \
-         TILED_UNALIGNED_VARIANT(64, store, shift);                            \
+         TILED_UNALIGNED_VARIANT(64, 64, PAN_INTERLEAVE_NONE, store, shift);   \
       else if (bpp == 96)                                                      \
-         TILED_UNALIGNED_VARIANT(96, store, shift);                            \
+         TILED_UNALIGNED_VARIANT(96, 96, PAN_INTERLEAVE_NONE, store, shift);   \
       else if (bpp == 128)                                                     \
-         TILED_UNALIGNED_VARIANT(128, store, shift);                           \
+         TILED_UNALIGNED_VARIANT(128, 128, PAN_INTERLEAVE_NONE, store, shift); \
    }
 
 /*
@@ -238,6 +300,7 @@ pan_access_tiled_image_generic(void *dst, void *src, unsigned sx, unsigned sy,
                                unsigned w, unsigned h, uint32_t dst_stride,
                                uint32_t src_stride,
                                const struct util_format_description *desc,
+                               enum pan_interleave_zs interleave,
                                bool _is_store)
 {
    unsigned bpp = desc->block.bits;
@@ -261,22 +324,27 @@ pan_access_tiled_image_generic(void *dst, void *src, unsigned sx, unsigned sy,
    }
 }
 
-#define TILED_ALIGNED_VARIANT(store, bpp, shift)                               \
-   pan_access_tiled_image_aligned(dst, src, (bpp) / 8, shift, sx, sy, w, h,    \
-                                  dst_stride, src_stride, store)
+#define TILED_ALIGNED_VARIANT(interleave, store, dst_bpp, src_bpp, shift)      \
+   pan_access_tiled_image_aligned(dst, src, (dst_bpp) / 8, (src_bpp) / 8,      \
+                                  shift, sx, sy, w, h,                         \
+                                  dst_stride, src_stride, interleave, store)
 
 #define TILED_ALIGNED_VARIANTS(store)                                          \
    {                                                                           \
       if (bpp == 8)                                                            \
-         TILED_ALIGNED_VARIANT(store, 8, 0);                                   \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_NONE, store, 8, 8, 0);           \
       else if (bpp == 16)                                                      \
-         TILED_ALIGNED_VARIANT(store, 16, 1);                                  \
-      else if (bpp == 32)                                                      \
-         TILED_ALIGNED_VARIANT(store, 32, 2);                                  \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_NONE, store, 16, 16, 1);         \
+      else if (bpp == 32 && interleave == PAN_INTERLEAVE_NONE)                 \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_NONE, store, 32, 32, 2);         \
+      else if (bpp == 32 && interleave == PAN_INTERLEAVE_DEPTH)                \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_DEPTH, store, 32, 32, 2);        \
+      else if (bpp == 32 && interleave == PAN_INTERLEAVE_STENCIL)              \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_STENCIL, store, 32, 8, 2);       \
       else if (bpp == 64)                                                      \
-         TILED_ALIGNED_VARIANT(store, 64, 3);                                  \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_NONE, store, 64, 64, 3);         \
       else if (bpp == 128)                                                     \
-         TILED_ALIGNED_VARIANT(store, 128, 4);                                 \
+         TILED_ALIGNED_VARIANT(PAN_INTERLEAVE_NONE, store, 128, 128, 4);       \
    }
 
 /* Optimized variant of pan_access_tiled_image_generic except that requires
@@ -285,7 +353,8 @@ static void
 pan_access_tiled_image_generic_aligned(
    void *dst, void *src, unsigned sx, unsigned sy, unsigned w, unsigned h,
    uint32_t dst_stride, uint32_t src_stride,
-   const struct util_format_description *desc,bool is_store)
+   const struct util_format_description *desc,
+   enum pan_interleave_zs interleave, bool is_store)
 {
    unsigned bpp = desc->block.bits;
 
@@ -309,8 +378,12 @@ pan_access_tiled_image_generic_aligned(
 static ALWAYS_INLINE void
 pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
                        unsigned h, uint32_t dst_stride, uint32_t src_stride,
-                       enum pipe_format format, bool is_store)
+                       enum pipe_format format,
+                       enum pan_interleave_zs interleave, bool is_store)
 {
+   if (interleave != PAN_INTERLEAVE_NONE)
+      assert(format == PIPE_FORMAT_Z24_UNORM_S8_UINT);
+
    const struct util_format_description *desc = util_format_description(format);
    unsigned bpp = desc->block.bits;
 
@@ -325,7 +398,7 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
    if (desc->block.width > 1 ||
        !util_is_power_of_two_nonzero(desc->block.bits)) {
       pan_access_tiled_image_generic(dst, (void *)src, x, y, w, h, dst_stride,
-                                     src_stride, desc, is_store);
+                                     src_stride, desc, interleave, is_store);
 
       return;
    }
@@ -343,7 +416,8 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
       unsigned dist = MIN2(first_full_tile_y - y, h);
 
       pan_access_tiled_image_generic(dst, OFFSET(src, x, y), x, y, w, dist,
-                                     dst_stride, src_stride, desc, is_store);
+                                     dst_stride, src_stride, desc, interleave,
+                                     is_store);
 
       if (dist == h)
          return;
@@ -358,7 +432,7 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
 
       pan_access_tiled_image_generic(dst, OFFSET(src, x, last_full_tile_y), x,
                                      last_full_tile_y, w, dist, dst_stride,
-                                     src_stride, desc, is_store);
+                                     src_stride, desc, interleave, is_store);
 
       h -= dist;
    }
@@ -368,7 +442,8 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
       unsigned dist = MIN2(first_full_tile_x - x, w);
 
       pan_access_tiled_image_generic(dst, OFFSET(src, x, y), x, y, dist, h,
-                                     dst_stride, src_stride, desc, is_store);
+                                     dst_stride, src_stride, desc, interleave,
+                                     is_store);
 
       if (dist == w)
          return;
@@ -383,14 +458,14 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
 
       pan_access_tiled_image_generic(dst, OFFSET(src, last_full_tile_x, y),
                                      last_full_tile_x, y, dist, h, dst_stride,
-                                     src_stride, desc, is_store);
+                                     src_stride, desc, interleave, is_store);
 
       w -= dist;
    }
 
    pan_access_tiled_image_generic_aligned(dst, OFFSET(src, x, y), x, y, w,
                                           h, dst_stride, src_stride, desc,
-                                          is_store);
+                                          interleave, is_store);
 }
 
 /**
@@ -401,19 +476,21 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
 void
 pan_store_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
                       unsigned w, unsigned h, uint32_t dst_stride,
-                      uint32_t src_stride, enum pipe_format format)
+                      uint32_t src_stride, enum pipe_format format,
+                      enum pan_interleave_zs interleave)
 {
    pan_access_tiled_image(dst, (void *)src, x, y, w, h, dst_stride, src_stride,
-                          format, true);
+                          format, interleave, true);
 }
 
 void
 pan_load_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
                      unsigned w, unsigned h, uint32_t dst_stride,
-                     uint32_t src_stride, enum pipe_format format)
+                     uint32_t src_stride, enum pipe_format format,
+                     enum pan_interleave_zs interleave)
 {
    pan_access_tiled_image((void *)src, dst, x, y, w, h, src_stride, dst_stride,
-                          format, false);
+                          format, interleave, false);
 }
 
 void
@@ -499,10 +576,10 @@ pan_copy_tiled_image(void *dst, const void *src, unsigned dst_x, unsigned dst_y,
 
          pan_load_tiled_image(
             chunk, src, src_chunk_x, src_chunk_y, width, height,
-            chunk_row_stride_B, src_stride, format);
+            chunk_row_stride_B, src_stride, format, PAN_INTERLEAVE_NONE);
          pan_store_tiled_image(
             dst, chunk, dst_chunk_x, dst_chunk_y, width, height, dst_stride,
-            chunk_row_stride_B, format);
+            chunk_row_stride_B, format, PAN_INTERLEAVE_NONE);
       }
    }
 

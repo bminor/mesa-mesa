@@ -654,7 +654,8 @@ lima_transfer_map(struct pipe_context *pctx,
                ptrans->box.width, ptrans->box.height,
                ptrans->stride,
                row_stride,
-               pres->format);
+               pres->format,
+               PAN_INTERLEAVE_NONE);
       }
 
       return trans->staging;
@@ -759,7 +760,8 @@ lima_transfer_flush_region(struct pipe_context *pctx,
                   ptrans->box.width, ptrans->box.height,
                   row_stride,
                   ptrans->stride,
-                  pres->format);
+                  pres->format,
+                  PAN_INTERLEAVE_NONE);
          }
       }
    }

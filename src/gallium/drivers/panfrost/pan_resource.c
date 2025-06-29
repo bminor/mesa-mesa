@@ -1386,7 +1386,7 @@ panfrost_load_tiled_images(struct panfrost_transfer *transfer,
          dst, map, ptrans->box.x, ptrans->box.y, ptrans->box.width,
          ptrans->box.height, ptrans->stride,
          rsrc->plane.layout.slices[level].tiled_or_linear.row_stride_B,
-         rsrc->image.props.format);
+         rsrc->image.props.format, PAN_INTERLEAVE_NONE);
    }
 }
 
@@ -1502,7 +1502,7 @@ panfrost_store_tiled_images(struct panfrost_transfer *transfer,
          map, src, ptrans->box.x, ptrans->box.y, ptrans->box.width,
          ptrans->box.height,
          rsrc->plane.layout.slices[level].tiled_or_linear.row_stride_B,
-         ptrans->stride, rsrc->image.props.format);
+         ptrans->stride, rsrc->image.props.format, PAN_INTERLEAVE_NONE);
    }
 }
 

@@ -151,14 +151,14 @@ test(unsigned width, unsigned height, unsigned rx, unsigned ry, unsigned rw,
       }
 
       pan_store_tiled_image(tiled, linear, rx, ry, rw, rh, dst_stride,
-                            src_stride, format);
+                            src_stride, format, PAN_INTERLEAVE_NONE);
    } else {
       for (unsigned i = 0; i < bpp * tiled_width * tiled_height; ++i) {
          ((uint8_t *)tiled)[i] = (i & 0xFF);
       }
 
       pan_load_tiled_image(linear, tiled, rx, ry, rw, rh, dst_stride,
-                           src_stride, format);
+                           src_stride, format, PAN_INTERLEAVE_NONE);
    }
 
    ref_access_tiled(ref, store ? linear : tiled, rx, ry, rw, rh, dst_stride,

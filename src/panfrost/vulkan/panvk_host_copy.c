@@ -125,14 +125,14 @@ panvk_copy_image_to_from_memory(struct image_params img,
                   img.offset.x, img.offset.y, extent.width, extent.height,
                   slice_layout->tiled_or_linear.row_stride_B,
                   mem.layout.row_stride_B,
-                  pfmt);
+                  pfmt, PAN_INTERLEAVE_NONE);
             else
                pan_load_tiled_image(
                   mem_depth_ptr, img_depth_ptr,
                   img.offset.x, img.offset.y, extent.width, extent.height,
                   mem.layout.row_stride_B,
                   slice_layout->tiled_or_linear.row_stride_B,
-                  pfmt);
+                  pfmt, PAN_INTERLEAVE_NONE);
          }
       }
    }
@@ -355,7 +355,7 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
                region->extent.width, region->extent.height,
                dst_slice_layout->tiled_or_linear.row_stride_B,
                src_slice_layout->tiled_or_linear.row_stride_B,
-               src_pfmt);
+               src_pfmt, PAN_INTERLEAVE_NONE);
          } else if (!src_linear && dst_linear) {
             unsigned dst_y_bl = region->dstOffset.y / block_height_px;
             unsigned dst_x_bl = region->dstOffset.x / block_width_px;
@@ -368,7 +368,7 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
                region->extent.width, region->extent.height,
                dst_slice_layout->tiled_or_linear.row_stride_B,
                src_slice_layout->tiled_or_linear.row_stride_B,
-               dst_pfmt);
+               dst_pfmt, PAN_INTERLEAVE_NONE);
          } else {
             pan_copy_tiled_image(
                dst_depth_ptr, src_depth_ptr, region->dstOffset.x,

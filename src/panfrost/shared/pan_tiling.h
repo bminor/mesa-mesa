@@ -34,6 +34,29 @@
 extern "C" {
 #endif
 
+/* The depth and stencil aspects of a Z24_UNORM_S8_UINT image are interleaved,
+ * where the bottom 24 bits are depth and the top 8 bits are stencil. When
+ * copying to/from a Z24S8 tiled image, the pan_interleave_zs enum specifies
+ * whether to (de)interleave the depth/stencil aspects */
+enum pan_interleave_zs {
+   /* Copy all aspects, no interleaving */
+   PAN_INTERLEAVE_NONE,
+   /* Copy only the depth aspect of a Z24S8 tiled image to/from linear Z24X8 */
+   PAN_INTERLEAVE_DEPTH,
+   /* Copy only the stencil aspect of a Z24S8 tiled image to/from linear S8 */
+   PAN_INTERLEAVE_STENCIL,
+};
+
+/**
+ * Get the appropriate pan_interleave_zs mode for copying to/from a given
+ * format.
+ *
+ * @depth Whether to copy the depth aspect
+ * @stencil Whether to copy the stencil aspect
+ */
+enum pan_interleave_zs
+pan_get_interleave_zs(enum pipe_format format, bool depth, bool stencil);
+
 /**
  * Load a rectangular region from a tiled image to a linear staging image.
  *
@@ -46,10 +69,12 @@ extern "C" {
  * @dst_stride Stride in bytes of linear destination
  * @src_stride Number of bytes between adjacent rows of tiles in source.
  * @format Format of the source and destination image
+ * @interleave How to deinterleave ZS aspects from the tiled image
  */
 void pan_load_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
                           unsigned w, unsigned h, uint32_t dst_stride,
-                          uint32_t src_stride, enum pipe_format format);
+                          uint32_t src_stride, enum pipe_format format,
+                          enum pan_interleave_zs interleave);
 
 /**
  * Store a linear staging image to a rectangular region of a tiled image.
@@ -63,10 +88,12 @@ void pan_load_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
  * @dst_stride Number of bytes between adjacent rows of tiles in destination.
  * @src_stride Stride in bytes of linear source
  * @format Format of the source and destination image
+ * @interleave How to interleave a ZS aspects to the tiled image
  */
 void pan_store_tiled_image(void *dst, const void *src, unsigned x, unsigned y,
                            unsigned w, unsigned h, uint32_t dst_stride,
-                           uint32_t src_stride, enum pipe_format format);
+                           uint32_t src_stride, enum pipe_format format,
+                           enum pan_interleave_zs interleave);
 
 /**
  * Copy a rectangular region from one tiled image to another.
