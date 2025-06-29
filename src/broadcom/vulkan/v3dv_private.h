@@ -627,6 +627,12 @@ struct v3dv_format_plane {
 
    /* Whether the return value is 16F/I/UI or 32F/I/UI. */
    uint8_t return_size;
+
+   /* Needs software unorm packing */
+   bool unorm;
+
+   /* Needs software snorm packing */
+   bool snorm;
 };
 
 struct v3dv_format {

@@ -45,6 +45,39 @@
          TEXTURE_DATA_FORMAT_##tex,                                 \
          swiz,                                                      \
          return_size,                                               \
+         false,                                                     \
+         false,                                                     \
+      }},                                                           \
+      supports_filtering,                                           \
+   }
+
+/* Format requiring software unorm packing */
+#define FORMAT_UNORM(vk, rt, tex, swiz, return_size, supports_filtering)  \
+   [VK_ENUM_OFFSET(VK_FORMAT_##vk)] = {                             \
+      1,                                                            \
+      {{                                                            \
+         V3D_OUTPUT_IMAGE_FORMAT_##rt,                              \
+         TEXTURE_DATA_FORMAT_##tex,                                 \
+         swiz,                                                      \
+         return_size,                                               \
+         true,                                                      \
+         false,                                                     \
+      }},                                                           \
+      supports_filtering,                                           \
+   }
+
+
+/* Format requiring software snorm packing */
+#define FORMAT_SNORM(vk, rt, tex, swiz, return_size, supports_filtering)  \
+   [VK_ENUM_OFFSET(VK_FORMAT_##vk)] = {                             \
+      1,                                                            \
+      {{                                                            \
+         V3D_OUTPUT_IMAGE_FORMAT_##rt,                              \
+         TEXTURE_DATA_FORMAT_##tex,                                 \
+         swiz,                                                      \
+         return_size,                                               \
+         false,                                                     \
+         true,                                                      \
       }},                                                           \
       supports_filtering,                                           \
    }
