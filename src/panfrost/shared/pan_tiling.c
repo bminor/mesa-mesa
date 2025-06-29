@@ -111,34 +111,20 @@ const unsigned space_4[16] = {
 #define TILE_HEIGHT     16
 #define PIXELS_PER_TILE (TILE_WIDTH * TILE_HEIGHT)
 
-/* We need a 128-bit type for idiomatically tiling bpp128 formats. The type must
- * only support copies and sizeof, so emulating with a packed structure works
- * well enough, but if there's a native 128-bit type we may we well prefer
- * that. */
+static ALWAYS_INLINE
+void pan_access_image_pixel(void *dst, void *src, const unsigned pixel_size,
+                            bool is_store)
+{
+   if (util_is_power_of_two_nonzero(pixel_size)) {
+      src = __builtin_assume_aligned(src, pixel_size);
+      dst = __builtin_assume_aligned(dst, pixel_size);
+   }
 
-#ifdef __SIZEOF_INT128__
-typedef __uint128_t pan_uint128_t;
-#else
-typedef struct {
-   uint64_t lo;
-   uint64_t hi;
-} __attribute__((packed)) pan_uint128_t;
-#endif
-
-typedef struct {
-   uint16_t lo;
-   uint8_t hi;
-} __attribute__((packed)) pan_uint24_t;
-
-typedef struct {
-   uint32_t lo;
-   uint16_t hi;
-} __attribute__((packed)) pan_uint48_t;
-
-typedef struct {
-   uint64_t lo;
-   uint32_t hi;
-} __attribute__((packed)) pan_uint96_t;
+   if (is_store)
+      memcpy(dst, src, pixel_size);
+   else
+      memcpy(src, dst, pixel_size);
+}
 
 /* Optimized routine to tile an aligned (w & 0xF == 0) texture. Explanation:
  *
@@ -171,76 +157,74 @@ typedef struct {
  * be unrolled), calculating the index within the tile and writing.
  */
 
-#define TILED_ACCESS_TYPE(pixel_t, shift)                                      \
-   static ALWAYS_INLINE void pan_access_tiled_image_##pixel_t(                 \
-      void *dst, void *src, uint16_t sx, uint16_t sy, uint16_t w, uint16_t h,  \
-      uint32_t dst_stride, uint32_t src_stride, bool is_store)                 \
-   {                                                                           \
-      uint8_t *dest_start =                                                    \
-         dst + ((sx >> 4) * PIXELS_PER_TILE * sizeof(pixel_t));                \
-      for (int y = sy, src_y = 0; src_y < h; ++y, ++src_y) {                   \
-         uint8_t *dest = (uint8_t *)(dest_start + ((y >> 4) * dst_stride));    \
-         pixel_t *source = src + (src_y * src_stride);                         \
-         pixel_t *source_end = source + w;                                     \
-         unsigned expanded_y = bit_duplication[y & 0xF] << shift;              \
-         for (; source < source_end; dest += (PIXELS_PER_TILE << shift)) {     \
-            for (uint8_t i = 0; i < 16; ++i) {                                 \
-               unsigned index = expanded_y ^ (space_4[i] << shift);            \
-               if (is_store)                                                   \
-                  *((pixel_t *)(dest + index)) = *(source++);                  \
-               else                                                            \
-                  *(source++) = *((pixel_t *)(dest + index));                  \
-            }                                                                  \
-         }                                                                     \
-      }                                                                        \
+static ALWAYS_INLINE void
+pan_access_tiled_image_aligned(
+   void *dst, void *src, unsigned pixel_size, unsigned shift,
+   uint16_t sx, uint16_t sy, uint16_t w, uint16_t h,
+   uint32_t dst_stride, uint32_t src_stride, bool is_store)
+{
+   uint8_t *dest_start = dst + ((sx >> 4) * PIXELS_PER_TILE * pixel_size);
+   for (int y = sy, src_y = 0; src_y < h; ++y, ++src_y) {
+      uint8_t *dest = (uint8_t *)(dest_start + ((y >> 4) * dst_stride));
+      void *source = src + (src_y * src_stride);
+      void *source_end = source + w * pixel_size;
+      unsigned expanded_y = bit_duplication[y & 0xF] << shift;
+      for (; source < source_end; dest += (PIXELS_PER_TILE << shift)) {
+         for (uint8_t i = 0; i < 16; ++i) {
+            unsigned index = expanded_y ^ (space_4[i] << shift);
+            pan_access_image_pixel(dest + index, source, pixel_size, is_store);
+            source += pixel_size;
+         }
+      }
    }
+}
 
-TILED_ACCESS_TYPE(uint8_t, 0);
-TILED_ACCESS_TYPE(uint16_t, 1);
-TILED_ACCESS_TYPE(uint32_t, 2);
-TILED_ACCESS_TYPE(uint64_t, 3);
-TILED_ACCESS_TYPE(pan_uint128_t, 4);
+static ALWAYS_INLINE void
+pan_access_tiled_image_unaligned(
+   void *dst, void *src, unsigned pixel_size, unsigned tile_shift,
+   uint16_t sx, uint16_t sy, uint16_t w, uint16_t h,
+   uint32_t dst_stride, uint32_t src_stride, bool is_store)
+{
+   const unsigned mask = (1 << tile_shift) - 1;
+   for (int y = sy, src_y = 0; src_y < h; ++y, ++src_y) {
+      unsigned block_start_s = (y >> tile_shift) * dst_stride;
+      unsigned source_start = src_y * src_stride;
+      unsigned expanded_y = bit_duplication[y & mask];
 
-#define TILED_UNALIGNED_TYPE(pixel_t, is_store, tile_shift)                    \
-   {                                                                           \
-      const unsigned mask = (1 << tile_shift) - 1;                             \
-      for (int y = sy, src_y = 0; src_y < h; ++y, ++src_y) {                   \
-         unsigned block_start_s = (y >> tile_shift) * dst_stride;              \
-         unsigned source_start = src_y * src_stride;                           \
-         unsigned expanded_y = bit_duplication[y & mask];                      \
-                                                                               \
-         for (int x = sx, src_x = 0; src_x < w; ++x, ++src_x) {                \
-            unsigned block_x_s = (x >> tile_shift) * (1 << (tile_shift * 2));  \
-            unsigned index = expanded_y ^ space_4[x & mask];                   \
-            uint8_t *source = src + source_start + sizeof(pixel_t) * src_x;    \
-            uint8_t *dest =                                                    \
-               dst + block_start_s + sizeof(pixel_t) * (block_x_s + index);    \
-                                                                               \
-            pixel_t *outp = (pixel_t *)(is_store ? dest : source);             \
-            pixel_t *inp = (pixel_t *)(is_store ? source : dest);              \
-            *outp = *inp;                                                      \
-         }                                                                     \
-      }                                                                        \
+      for (int x = sx, src_x = 0; src_x < w; ++x, ++src_x) {
+         unsigned block_x_s = (x >> tile_shift) * (1 << (tile_shift * 2));
+         unsigned index = expanded_y ^ space_4[x & mask];
+         uint8_t *source = src + source_start + pixel_size * src_x;
+         uint8_t *dest = dst + block_start_s + pixel_size * (block_x_s + index);
+         pan_access_image_pixel(dest, source, pixel_size, is_store);
+      }
    }
+}
 
-#define TILED_UNALIGNED_TYPES(store, shift)                                    \
+#define TILED_UNALIGNED_VARIANT(bpp, store, shift)                             \
+   pan_access_tiled_image_unaligned(dst, src, (bpp) / 8, shift, sx, sy, w, h,  \
+                                    dst_stride, src_stride, store)
+
+/* We have a separate call for each configuration, to ensure that the inlined
+ * function is specialized */
+#define TILED_UNALIGNED_VARIANTS(store, shift)                                 \
    {                                                                           \
       if (bpp == 8)                                                            \
-         TILED_UNALIGNED_TYPE(uint8_t, store, shift)                           \
+         TILED_UNALIGNED_VARIANT(8, store, shift);                             \
       else if (bpp == 16)                                                      \
-         TILED_UNALIGNED_TYPE(uint16_t, store, shift)                          \
+         TILED_UNALIGNED_VARIANT(16, store, shift);                            \
       else if (bpp == 24)                                                      \
-         TILED_UNALIGNED_TYPE(pan_uint24_t, store, shift)                      \
+         TILED_UNALIGNED_VARIANT(24, store, shift);                            \
       else if (bpp == 32)                                                      \
-         TILED_UNALIGNED_TYPE(uint32_t, store, shift)                          \
+         TILED_UNALIGNED_VARIANT(32, store, shift);                            \
       else if (bpp == 48)                                                      \
-         TILED_UNALIGNED_TYPE(pan_uint48_t, store, shift)                      \
+         TILED_UNALIGNED_VARIANT(48, store, shift);                            \
       else if (bpp == 64)                                                      \
-         TILED_UNALIGNED_TYPE(uint64_t, store, shift)                          \
+         TILED_UNALIGNED_VARIANT(64, store, shift);                            \
       else if (bpp == 96)                                                      \
-         TILED_UNALIGNED_TYPE(pan_uint96_t, store, shift)                      \
+         TILED_UNALIGNED_VARIANT(96, store, shift);                            \
       else if (bpp == 128)                                                     \
-         TILED_UNALIGNED_TYPE(pan_uint128_t, store, shift)                     \
+         TILED_UNALIGNED_VARIANT(128, store, shift);                           \
    }
 
 /*
@@ -266,16 +250,57 @@ pan_access_tiled_image_generic(void *dst, void *src, unsigned sx, unsigned sy,
 
    if (desc->block.width > 1) {
       if (_is_store)
-         TILED_UNALIGNED_TYPES(true, 2)
+         TILED_UNALIGNED_VARIANTS(true, 2)
       else
-         TILED_UNALIGNED_TYPES(false, 2)
+         TILED_UNALIGNED_VARIANTS(false, 2)
    } else {
       if (_is_store)
-         TILED_UNALIGNED_TYPES(true, 4)
+         TILED_UNALIGNED_VARIANTS(true, 4)
       else
-         TILED_UNALIGNED_TYPES(false, 4)
+         TILED_UNALIGNED_VARIANTS(false, 4)
    }
 }
+
+#define TILED_ALIGNED_VARIANT(store, bpp, shift)                               \
+   pan_access_tiled_image_aligned(dst, src, (bpp) / 8, shift, sx, sy, w, h,    \
+                                  dst_stride, src_stride, store)
+
+#define TILED_ALIGNED_VARIANTS(store)                                          \
+   {                                                                           \
+      if (bpp == 8)                                                            \
+         TILED_ALIGNED_VARIANT(store, 8, 0);                                   \
+      else if (bpp == 16)                                                      \
+         TILED_ALIGNED_VARIANT(store, 16, 1);                                  \
+      else if (bpp == 32)                                                      \
+         TILED_ALIGNED_VARIANT(store, 32, 2);                                  \
+      else if (bpp == 64)                                                      \
+         TILED_ALIGNED_VARIANT(store, 64, 3);                                  \
+      else if (bpp == 128)                                                     \
+         TILED_ALIGNED_VARIANT(store, 128, 4);                                 \
+   }
+
+/* Optimized variant of pan_access_tiled_image_generic except that requires
+ * sx/sy/w/h to be tile-aligned, and bpp to be a power of two */
+static void
+pan_access_tiled_image_generic_aligned(
+   void *dst, void *src, unsigned sx, unsigned sy, unsigned w, unsigned h,
+   uint32_t dst_stride, uint32_t src_stride,
+   const struct util_format_description *desc,bool is_store)
+{
+   unsigned bpp = desc->block.bits;
+
+   assert(sx % TILE_WIDTH == 0);
+   assert(sy % TILE_HEIGHT == 0);
+   assert(w % TILE_WIDTH == 0);
+   assert(h % TILE_HEIGHT == 0);
+   assert(util_is_power_of_two_nonzero(bpp));
+
+   if (is_store)
+      TILED_ALIGNED_VARIANTS(true)
+   else
+      TILED_ALIGNED_VARIANTS(false)
+}
+
 
 #define OFFSET(src, _x, _y)                                                    \
    (void *)((uint8_t *)src + ((_y)-orig_y) * src_stride +                      \
@@ -363,21 +388,9 @@ pan_access_tiled_image(void *dst, void *src, unsigned x, unsigned y, unsigned w,
       w -= dist;
    }
 
-   if (bpp == 8)
-      pan_access_tiled_image_uint8_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                     dst_stride, src_stride, is_store);
-   else if (bpp == 16)
-      pan_access_tiled_image_uint16_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                      dst_stride, src_stride, is_store);
-   else if (bpp == 32)
-      pan_access_tiled_image_uint32_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                      dst_stride, src_stride, is_store);
-   else if (bpp == 64)
-      pan_access_tiled_image_uint64_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                      dst_stride, src_stride, is_store);
-   else if (bpp == 128)
-      pan_access_tiled_image_pan_uint128_t(dst, OFFSET(src, x, y), x, y, w, h,
-                                           dst_stride, src_stride, is_store);
+   pan_access_tiled_image_generic_aligned(dst, OFFSET(src, x, y), x, y, w,
+                                          h, dst_stride, src_stride, desc,
+                                          is_store);
 }
 
 /**
