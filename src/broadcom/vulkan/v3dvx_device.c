@@ -378,8 +378,18 @@ v3dX(get_hw_clear_color)(const VkClearColorValue *color,
       util_pack_color(color->float32, PIPE_FORMAT_R16G16B16A16_FLOAT, &uc);
       memcpy(hw_color, uc.ui, internal_size);
    break;
-   case V3D_INTERNAL_TYPE_16I:
    case V3D_INTERNAL_TYPE_16UI:
+   case V3D_INTERNAL_TYPE_16I:
+      if (format->unorm) {
+         util_pack_color(color->float32, PIPE_FORMAT_R16G16B16A16_UNORM, &uc);
+         memcpy(hw_color, uc.ui, internal_size);
+         return;
+      }
+      if (format->snorm) {
+         util_pack_color(color->float32, PIPE_FORMAT_R16G16B16A16_SNORM, &uc);
+         memcpy(hw_color, uc.ui, internal_size);
+         return;
+      }
       hw_color[0] = ((color->uint32[0] & 0xffff) | color->uint32[1] << 16);
       hw_color[1] = ((color->uint32[2] & 0xffff) | color->uint32[3] << 16);
    break;

@@ -850,7 +850,9 @@ v3dX(clamp_for_format_and_type)(uint32_t rt_type,
    case V3D_INTERNAL_TYPE_8:
       return V3D_RENDER_TARGET_TYPE_CLAMP_8;
    case V3D_INTERNAL_TYPE_16I:
-      return V3D_RENDER_TARGET_TYPE_CLAMP_16I_CLAMPED;
+      return vk_format_is_snorm(vk_format) ?
+         V3D_RENDER_TARGET_TYPE_CLAMP_16I:
+         V3D_RENDER_TARGET_TYPE_CLAMP_16I_CLAMPED;
    case V3D_INTERNAL_TYPE_16UI:
       return V3D_RENDER_TARGET_TYPE_CLAMP_16UI_CLAMPED;
    case V3D_INTERNAL_TYPE_16F:

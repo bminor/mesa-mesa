@@ -1152,6 +1152,13 @@ v3d_fs_key_set_color_attachment(struct v3d_fs_key *key,
       key->f32_color_rb |= 1 << index;
    }
 
+   if ((desc->is_unorm || desc->is_snorm) && desc->channel[0].size == 16) {
+           key->norm_16 |= 1 << index;
+           key->f32_color_rb |= 1 << index;
+   }
+   if (desc->is_snorm)
+           key->snorm |= 1 << index;
+
    if (util_format_is_pure_uint(fb_pipe_format))
       key->f32_color_rb |= 1 << index;
    else if (util_format_is_pure_sint(fb_pipe_format))
@@ -2068,6 +2075,14 @@ pipeline_populate_graphics_key(struct v3dv_pipeline *pipeline,
           desc->channel[0].size == 32) {
          key->f32_color_rb |= 1 << i;
       }
+
+      if ((desc->is_unorm || desc->is_snorm) && desc->channel[0].size == 16) {
+         key->norm_16 |= 1 << i;
+         key->f32_color_rb |= 1 << i;
+      }
+
+      if (desc->is_snorm)
+         key->snorm |= 1 << i;
 
       if (util_format_is_pure_uint(fb_pipe_format))
          key->f32_color_rb |= 1 << i;

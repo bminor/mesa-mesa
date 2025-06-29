@@ -129,8 +129,8 @@ static const struct v3dv_format format_table[] = {
    FORMAT(R8G8B8A8_UINT,           RGBA8UI,      RGBA8UI,       SWIZ_XYZW, 16, false),
 
    FORMAT(R16G16B16A16_SFLOAT,     RGBA16F,      RGBA16F,       SWIZ_XYZW, 16, true),
-   FORMAT(R16G16B16A16_UNORM,      NO,           RGBA16,        SWIZ_XYZW, 32, true),
-   FORMAT(R16G16B16A16_SNORM,      NO,           RGBA16_SNORM,  SWIZ_XYZW, 32, true),
+   FORMAT_UNORM(R16G16B16A16_UNORM,RGBA16UI,     RGBA16,        SWIZ_XYZW, 32, true),
+   FORMAT_SNORM(R16G16B16A16_SNORM,RGBA16I,      RGBA16_SNORM,  SWIZ_XYZW, 32, true),
    FORMAT(R16G16B16A16_SINT,       RGBA16I,      RGBA16I,       SWIZ_XYZW, 16, false),
    FORMAT(R16G16B16A16_UINT,       RGBA16UI,     RGBA16UI,      SWIZ_XYZW, 16, false),
 
@@ -149,8 +149,8 @@ static const struct v3dv_format format_table[] = {
    FORMAT(R8G8_SINT,               RG8I,         RG8I,          SWIZ_XY01, 16, false),
    FORMAT(R8G8_UINT,               RG8UI,        RG8UI,         SWIZ_XY01, 16, false),
 
-   FORMAT(R16G16_UNORM,            NO,           RG16,          SWIZ_XY01, 32, true),
-   FORMAT(R16G16_SNORM,            NO,           RG16_SNORM,    SWIZ_XY01, 32, true),
+   FORMAT_UNORM(R16G16_UNORM,      RG16UI,       RG16,          SWIZ_XY01, 32, true),
+   FORMAT_SNORM(R16G16_SNORM,      RG16I,        RG16_SNORM,    SWIZ_XY01, 32, true),
    FORMAT(R16G16_SFLOAT,           RG16F,        RG16F,         SWIZ_XY01, 16, true),
    FORMAT(R16G16_SINT,             RG16I,        RG16I,         SWIZ_XY01, 16, false),
    FORMAT(R16G16_UINT,             RG16UI,       RG16UI,        SWIZ_XY01, 16, false),
@@ -165,8 +165,8 @@ static const struct v3dv_format format_table[] = {
    FORMAT(R8_SINT,                 R8I,          R8I,           SWIZ_X001, 16, false),
    FORMAT(R8_UINT,                 R8UI,         R8UI,          SWIZ_X001, 16, false),
 
-   FORMAT(R16_UNORM,               NO,           R16,           SWIZ_X001, 32, true),
-   FORMAT(R16_SNORM,               NO,           R16_SNORM,     SWIZ_X001, 32, true),
+   FORMAT_UNORM(R16_UNORM,         R16UI,        R16,           SWIZ_X001, 32, true),
+   FORMAT_SNORM(R16_SNORM,         R16I,         R16_SNORM,     SWIZ_X001, 32, true),
    FORMAT(R16_SFLOAT,              R16F,         R16F,          SWIZ_X001, 16, true),
    FORMAT(R16_SINT,                R16I,         R16I,          SWIZ_X001, 16, false),
    FORMAT(R16_UINT,                R16UI,        R16UI,         SWIZ_X001, 16, false),
