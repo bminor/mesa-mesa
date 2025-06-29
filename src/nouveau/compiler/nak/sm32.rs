@@ -3406,7 +3406,7 @@ fn as_sm32_op_mut(op: &mut Op) -> &mut dyn SM32Op {
 }
 
 fn encode_instr(
-    instr: Option<&Box<Instr>>,
+    instr: &Instr,
     sm: &ShaderModel32,
     labels: &FxHashMap<Label, usize>,
     encoded: &mut Vec<u32>,
@@ -3419,16 +3419,9 @@ fn encode_instr(
         sched: 0,
     };
 
-    if let Some(instr) = instr {
-        as_sm32_op(&instr.op).encode(&mut e);
-        e.set_pred(&instr.pred);
-        e.set_instr_dependency(&instr.deps);
-    } else {
-        let nop = OpNop { label: None };
-        nop.encode(&mut e);
-        e.set_pred(&true.into());
-        e.set_instr_dependency(&InstrDeps::new());
-    }
+    as_sm32_op(&instr.op).encode(&mut e);
+    e.set_pred(&instr.pred);
+    e.set_instr_dependency(&instr.deps);
 
     encoded.extend(&e.inst[..]);
 
@@ -3436,48 +3429,61 @@ fn encode_instr(
 }
 
 fn encode_sm32_shader(sm: &ShaderModel32, s: &Shader<'_>) -> Vec<u32> {
+    const INSTR_LEN_BYTES: usize = 8;
     assert!(s.functions.len() == 1);
     let func = &s.functions[0];
 
+    // --- Compute label addresses ---
+    // We need a schedule instruction every 7 instructions, these don't
+    // define jump boundaries so we can have multible blocks in the same
+    // 7-instr group.
     let mut ip = 0_usize;
     let mut labels = FxHashMap::default();
     for b in &func.blocks {
-        // We ensure blocks will have groups of 7 instructions with a
-        // schedule instruction before each groups.  As we should never jump
-        // to a schedule instruction, we account for that here.
-        labels.insert(b.label, ip + 8);
-
-        let block_num_instrs = b.instrs.len().next_multiple_of(7);
-
-        // Every 7 instructions, we have a new schedule instruction so we
-        // need to account for that.
-        ip += (block_num_instrs + (block_num_instrs / 7)) * 8;
+        let num_sched = (ip / 7) + 1;
+        labels.insert(b.label, (ip + num_sched) * INSTR_LEN_BYTES);
+        ip += b.instrs.len();
     }
 
-    let mut encoded = Vec::new();
-    for b in &func.blocks {
-        for sched_chunk in b.instrs.chunks(7) {
-            let sched_i = encoded.len();
-            let mut sched_instr = [0u32; 2];
-            encoded.extend(&sched_instr[..]); // Push now, will edit later
-            let mut bv = BitMutView::new(&mut sched_instr);
-            bv.set_field(0..2, 0b00);
-            bv.set_field(58..64, 0b000010); // 0x80
-            let mut bv = bv.subset_mut(2..58);
-
-            for (i, instr) in sched_chunk.iter().enumerate() {
-                let sched =
-                    encode_instr(Some(instr), sm, &labels, &mut encoded);
-
-                bv.set_field(i * 8..(i + 1) * 8, sched);
-            }
-            // Encode remaining ops in chunk as NOPs
-            for _ in sched_chunk.len()..7 {
-                encode_instr(None, sm, &labels, &mut encoded);
-            }
-            encoded[sched_i] = sched_instr[0];
-            encoded[sched_i + 1] = sched_instr[1];
+    // --- Real encoding ---
+    // Create an instruction iterator and iterate it in chunks of 7.
+    // fill the last chunk with a nop (it should never be executed).
+    let mut instr_iter = func
+        .blocks
+        .iter()
+        .flat_map(|b| b.instrs.iter().map(|x| &**x))
+        .peekable();
+    let mut filling_instr = Instr {
+        pred: true.into(),
+        op: Op::Nop(OpNop { label: None }),
+        deps: InstrDeps::new(),
+    };
+    filling_instr.deps.set_delay(1);
+    let mut sched_chunk_gen = || {
+        if instr_iter.peek().is_none() {
+            return None;
         }
+        Some([0; 7].map(|_| instr_iter.next().unwrap_or(&filling_instr)))
+    };
+
+    let mut encoded = Vec::new();
+    while let Some(sched_chunk) = sched_chunk_gen() {
+        let sched_i = encoded.len();
+
+        let mut sched_instr = [0u32; 2];
+        encoded.extend(&sched_instr[..]); // Push now, will edit later
+        let mut bv = BitMutView::new(&mut sched_instr);
+        bv.set_field(0..2, 0b00);
+        bv.set_field(58..64, 0b000010); // 0x80
+        let mut bv = bv.subset_mut(2..58);
+
+        for (i, instr) in sched_chunk.iter().enumerate() {
+            let sched = encode_instr(instr, sm, &labels, &mut encoded);
+
+            bv.set_field(i * 8..(i + 1) * 8, sched);
+        }
+        encoded[sched_i] = sched_instr[0];
+        encoded[sched_i + 1] = sched_instr[1];
     }
 
     encoded
