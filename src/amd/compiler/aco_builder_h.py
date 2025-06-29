@@ -313,10 +313,11 @@ public:
       return Definition(tmp(rc), reg);
    }
 
-   inline aco_opcode w64or32(WaveSpecificOpcode opcode) const {
-      if (program->wave_size == 64)
-         return (aco_opcode) opcode;
+   inline aco_opcode w64(WaveSpecificOpcode opcode) const {
+      return (aco_opcode) opcode;
+   }
 
+   inline aco_opcode w32(WaveSpecificOpcode opcode) const {
       switch (opcode) {
       case s_cselect:
          return aco_opcode::s_cselect_b32;
@@ -359,6 +360,13 @@ public:
       default:
          unreachable("Unsupported wave specific opcode.");
       }
+   }
+
+   inline aco_opcode w64or32(WaveSpecificOpcode opcode) const {
+      if (program->wave_size == 64)
+         return w64(opcode);
+      else
+         return w32(opcode);
    }
 
 % for fixed in ['m0', 'vcc', 'exec', 'scc']:

@@ -218,30 +218,6 @@ emit_vop2_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode opc, T
 }
 
 void
-emit_vop2_instruction_logic64(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst)
-{
-   Builder bld = create_alu_builder(ctx, instr);
-
-   Temp src0 = get_alu_src(ctx, instr->src[0]);
-   Temp src1 = get_alu_src(ctx, instr->src[1]);
-
-   if (src1.type() == RegType::sgpr) {
-      assert(src0.type() == RegType::vgpr);
-      std::swap(src0, src1);
-   }
-
-   Temp src00 = bld.tmp(src0.type(), 1);
-   Temp src01 = bld.tmp(src0.type(), 1);
-   bld.pseudo(aco_opcode::p_split_vector, Definition(src00), Definition(src01), src0);
-   Temp src10 = bld.tmp(v1);
-   Temp src11 = bld.tmp(v1);
-   bld.pseudo(aco_opcode::p_split_vector, Definition(src10), Definition(src11), src1);
-   Temp lo = bld.vop2(op, bld.def(v1), src00, src10);
-   Temp hi = bld.vop2(op, bld.def(v1), src01, src11);
-   bld.pseudo(aco_opcode::p_create_vector, Definition(dst), lo, hi);
-}
-
-void
 emit_vop3a_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst,
                        bool flush_denorms = false, unsigned num_sources = 2, bool swap_srcs = false)
 {
@@ -444,18 +420,39 @@ emit_comparison(isel_context* ctx, nir_alu_instr* instr, Temp dst, aco_opcode v1
 }
 
 void
-emit_boolean_logic(isel_context* ctx, nir_alu_instr* instr, Builder::WaveSpecificOpcode op,
-                   Temp dst)
+emit_bitwise_logic(isel_context* ctx, nir_alu_instr* instr, Temp dst,
+                   Builder::WaveSpecificOpcode op, aco_opcode v32_op)
 {
    Builder bld(ctx->program, ctx->block);
    Temp src0 = get_alu_src(ctx, instr->src[0]);
    Temp src1 = get_alu_src(ctx, instr->src[1]);
 
-   assert(dst.regClass() == bld.lm);
-   assert(src0.regClass() == bld.lm);
-   assert(src1.regClass() == bld.lm);
+   if (instr->def.bit_size == 1) {
+      bld.sop2(op, Definition(dst), bld.def(s1, scc), src0, src1);
+   } else if (dst.regClass() == s1) {
+      bld.sop2(bld.w32(op), Definition(dst), bld.def(s1, scc), src0, src1);
+   } else if (dst.regClass() == s2) {
+      bld.sop2(bld.w64(op), Definition(dst), bld.def(s1, scc), src0, src1);
+   } else {
+      assert(dst.regClass().type() == RegType::vgpr && dst.size() <= 2);
 
-   bld.sop2(op, Definition(dst), bld.def(s1, scc), src0, src1);
+      if (src1.type() == RegType::sgpr) {
+         assert(src0.type() == RegType::vgpr);
+         std::swap(src0, src1);
+      }
+
+      if (dst.size() == 1) {
+         bld.vop2(v32_op, Definition(dst), src0, src1);
+      } else {
+         Temp src00 = bld.tmp(src0.type(), 1), src01 = bld.tmp(src0.type(), 1);
+         bld.pseudo(aco_opcode::p_split_vector, Definition(src00), Definition(src01), src0);
+         Temp src10 = bld.tmp(v1), src11 = bld.tmp(v1);
+         bld.pseudo(aco_opcode::p_split_vector, Definition(src10), Definition(src11), src1);
+         Temp lo = bld.vop2(v32_op, bld.def(v1), src00, src10);
+         Temp hi = bld.vop2(v32_op, bld.def(v1), src01, src11);
+         bld.pseudo(aco_opcode::p_create_vector, Definition(dst), lo, hi);
+      }
+   }
 }
 
 void
@@ -1033,51 +1030,15 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       break;
    }
    case nir_op_ior: {
-      if (instr->def.bit_size == 1) {
-         emit_boolean_logic(ctx, instr, Builder::s_or, dst);
-      } else if (dst.regClass() == v1 || dst.regClass() == v2b || dst.regClass() == v1b) {
-         emit_vop2_instruction(ctx, instr, aco_opcode::v_or_b32, dst, true);
-      } else if (dst.regClass() == v2) {
-         emit_vop2_instruction_logic64(ctx, instr, aco_opcode::v_or_b32, dst);
-      } else if (dst.regClass() == s1) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_or_b32, dst, true);
-      } else if (dst.regClass() == s2) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_or_b64, dst, true);
-      } else {
-         isel_err(&instr->instr, "Unimplemented NIR instr bit size");
-      }
+      emit_bitwise_logic(ctx, instr, dst, Builder::s_or, aco_opcode::v_or_b32);
       break;
    }
    case nir_op_iand: {
-      if (instr->def.bit_size == 1) {
-         emit_boolean_logic(ctx, instr, Builder::s_and, dst);
-      } else if (dst.regClass() == v1 || dst.regClass() == v2b || dst.regClass() == v1b) {
-         emit_vop2_instruction(ctx, instr, aco_opcode::v_and_b32, dst, true);
-      } else if (dst.regClass() == v2) {
-         emit_vop2_instruction_logic64(ctx, instr, aco_opcode::v_and_b32, dst);
-      } else if (dst.regClass() == s1) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_and_b32, dst, true);
-      } else if (dst.regClass() == s2) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_and_b64, dst, true);
-      } else {
-         isel_err(&instr->instr, "Unimplemented NIR instr bit size");
-      }
+      emit_bitwise_logic(ctx, instr, dst, Builder::s_and, aco_opcode::v_and_b32);
       break;
    }
    case nir_op_ixor: {
-      if (instr->def.bit_size == 1) {
-         emit_boolean_logic(ctx, instr, Builder::s_xor, dst);
-      } else if (dst.regClass() == v1 || dst.regClass() == v2b || dst.regClass() == v1b) {
-         emit_vop2_instruction(ctx, instr, aco_opcode::v_xor_b32, dst, true);
-      } else if (dst.regClass() == v2) {
-         emit_vop2_instruction_logic64(ctx, instr, aco_opcode::v_xor_b32, dst);
-      } else if (dst.regClass() == s1) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_xor_b32, dst, true);
-      } else if (dst.regClass() == s2) {
-         emit_sop2_instruction(ctx, instr, aco_opcode::s_xor_b64, dst, true);
-      } else {
-         isel_err(&instr->instr, "Unimplemented NIR instr bit size");
-      }
+      emit_bitwise_logic(ctx, instr, dst, Builder::s_xor, aco_opcode::v_xor_b32);
       break;
    }
    case nir_op_ushr: {
@@ -3632,7 +3593,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
    }
    case nir_op_ieq: {
       if (instr->src[0].src.ssa->bit_size == 1)
-         emit_boolean_logic(ctx, instr, Builder::s_xnor, dst);
+         emit_bitwise_logic(ctx, instr, dst, Builder::s_xnor, aco_opcode::num_opcodes);
       else
          emit_comparison(
             ctx, instr, dst, aco_opcode::v_cmp_eq_i16, aco_opcode::v_cmp_eq_i32,
@@ -3642,7 +3603,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
    }
    case nir_op_ine: {
       if (instr->src[0].src.ssa->bit_size == 1)
-         emit_boolean_logic(ctx, instr, Builder::s_xor, dst);
+         emit_bitwise_logic(ctx, instr, dst, Builder::s_xor, aco_opcode::num_opcodes);
       else
          emit_comparison(
             ctx, instr, dst, aco_opcode::v_cmp_lg_i16, aco_opcode::v_cmp_lg_i32,
