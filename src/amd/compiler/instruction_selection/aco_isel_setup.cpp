@@ -5,6 +5,7 @@
  */
 
 #include "aco_instruction_selection.h"
+#include "aco_interface.h"
 
 #include "nir_builder.h"
 #include "nir_control_flow.h"
@@ -398,9 +399,9 @@ init_context(isel_context* ctx, nir_shader* shader)
                nir_alu_instr* alu_instr = nir_instr_as_alu(instr);
                RegType type = RegType::sgpr;
 
-               /* packed 16bit instructions have to be VGPR */
+               /* Packed 16-bit instructions have to be VGPR. */
                if (alu_instr->def.num_components == 2 &&
-                   nir_op_infos[alu_instr->op].output_size == 0)
+                   aco_nir_op_supports_packed_math_16bit(alu_instr))
                   type = RegType::vgpr;
 
                switch (alu_instr->op) {
