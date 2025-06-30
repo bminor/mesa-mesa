@@ -1429,6 +1429,7 @@ select_program(Program* program, unsigned shader_count, struct nir_shader* const
       return select_program_rt(ctx, shader_count, shaders, args);
 
    if (shader_count >= 2) {
+      program->needs_fp_mode_insertion = true;
       select_program_merged(ctx, shader_count, shaders);
    } else {
       bool need_barrier = false, check_merged_wave_info = false, endif_merged_wave_info = false;
@@ -1437,6 +1438,7 @@ select_program(Program* program, unsigned shader_count, struct nir_shader* const
       /* Handle separate compilation of VS+TCS and {VS,TES}+GS on GFX9+. */
       if (ctx.program->info.merged_shader_compiled_separately) {
          assert(ctx.program->gfx_level >= GFX9);
+         program->needs_fp_mode_insertion = true;
          if (ctx.stage.sw == SWStage::VS || ctx.stage.sw == SWStage::TES) {
             check_merged_wave_info = endif_merged_wave_info = true;
          } else {

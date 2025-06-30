@@ -2510,9 +2510,10 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       }
       Temp src = get_alu_src(ctx, instr->src[0]);
       if (instr->op == nir_op_f2f16_rtne && ctx->block->fp_mode.round16_64 != fp_round_ne) {
-         /* We emit s_round_mode/s_setreg_imm32 in lower_to_hw_instr to
-          * keep value numbering and the scheduler simpler.
+         /* We emit s_round_mode/s_setreg_imm32 in insert_fp_mode to
+          * keep value numbering and scheduling simpler.
           */
+         ctx->program->needs_fp_mode_insertion = true;
          if (dst.regClass() == v2b)
             bld.vop1(aco_opcode::p_v_cvt_f16_f32_rtne, Definition(dst), src);
          else
@@ -2599,6 +2600,8 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             src[i] = Operand(clamped->definitions[0].getTemp());
          }
       }
+
+      ctx->program->needs_fp_mode_insertion |= instr->op == nir_op_f2e4m3fn_satfn;
 
       aco_opcode opcode = instr->op == nir_op_f2e4m3fn || instr->op == nir_op_f2e4m3fn_sat
                              ? aco_opcode::v_cvt_pk_fp8_f32
@@ -3215,10 +3218,12 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       Temp src = get_alu_src(ctx, instr->src[0]);
       if (dst.regClass() == v1) {
          Temp f16;
-         if (ctx->block->fp_mode.round16_64 != fp_round_ne)
+         if (ctx->block->fp_mode.round16_64 != fp_round_ne) {
+            ctx->program->needs_fp_mode_insertion = true;
             f16 = bld.vop1(aco_opcode::p_v_cvt_f16_f32_rtne, bld.def(v2b), src);
-         else
+         } else {
             f16 = bld.vop1(aco_opcode::v_cvt_f16_f32, bld.def(v2b), src);
+         }
 
          if (ctx->block->fp_mode.denorm16_64 != fp_denorm_keep) {
             bld.vop1(aco_opcode::v_cvt_f32_f16, Definition(dst), f16);
@@ -3254,10 +3259,12 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          }
       } else if (dst.regClass() == s1) {
          Temp f16;
-         if (ctx->block->fp_mode.round16_64 != fp_round_ne)
+         if (ctx->block->fp_mode.round16_64 != fp_round_ne) {
+            ctx->program->needs_fp_mode_insertion = true;
             f16 = bld.sop1(aco_opcode::p_s_cvt_f16_f32_rtne, bld.def(s1), src);
-         else
+         } else {
             f16 = bld.sop1(aco_opcode::s_cvt_f16_f32, bld.def(s1), src);
+         }
 
          if (ctx->block->fp_mode.denorm16_64 != fp_denorm_keep) {
             bld.sop1(aco_opcode::s_cvt_f32_f16, Definition(dst), f16);

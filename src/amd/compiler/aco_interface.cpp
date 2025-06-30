@@ -157,7 +157,8 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
    if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_SCHED_ILP))
       schedule_ilp(program.get());
 
-   insert_fp_mode(program.get());
+   if (program->needs_fp_mode_insertion)
+      insert_fp_mode(program.get());
 
    insert_waitcnt(program.get());
    insert_NOPs(program.get());

@@ -233,6 +233,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    program->next_fp_mode.denorm32 = 0;
    program->next_fp_mode.round16_64 = fp_round_ne;
    program->next_fp_mode.round32 = fp_round_ne;
+   program->needs_fp_mode_insertion = false;
 }
 
 bool
