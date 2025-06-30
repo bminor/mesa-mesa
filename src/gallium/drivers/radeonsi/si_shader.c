@@ -1463,6 +1463,17 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
       progress = false;
    }
 
+   /* This reduces code size, but also SIMD occupancy to a smaller degree due to increased
+    * register usage, and it improves latency hiding for lds_param_load. It also hides another
+    * LLVM WQM bug.
+    *
+    * VS input loads are moved to top because we always want them at the beginning and issued
+    * all at once.
+    */
+   if (nir->info.stage == MESA_SHADER_VERTEX ||
+       nir->info.stage == MESA_SHADER_FRAGMENT)
+      NIR_PASS(progress, nir, nir_opt_move_to_top, nir_move_to_top_input_loads);
+
    /* Remove dead temps before we lower indirect indexing. */
    NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
