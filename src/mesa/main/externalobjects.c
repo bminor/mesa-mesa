@@ -633,7 +633,7 @@ import_semaphoreobj_fd(struct gl_context *ctx,
 {
    struct pipe_context *pipe = ctx->pipe;
 
-   pipe->create_fence_fd(pipe, &semObj->fence, fd, PIPE_FD_TYPE_SYNCOBJ);
+   pipe->create_fence_fd(pipe, &semObj->fence, fd, semObj->type);
 
 #if !defined(_WIN32)
    /* We own fd, but we no longer need it. So get rid of it */
@@ -649,7 +649,6 @@ import_semaphoreobj_win32(struct gl_context *ctx,
                           enum pipe_fd_type type)
 {
    struct pipe_context *pipe = ctx->pipe;
-   semObj->type = type;
 
    pipe->screen->create_fence_win32(pipe->screen, &semObj->fence, handle, name, type);
 }
@@ -743,10 +742,12 @@ server_signal_semaphore(struct gl_context *ctx,
  * Used as a placeholder for semaphore objects between glGenSemaphoresEXT()
  * and glImportSemaphoreFdEXT(), so that glIsSemaphoreEXT() can work correctly.
  */
-static struct gl_semaphore_object DummySemaphoreObject;
+static struct gl_semaphore_object DummySemaphoreObject = {
+   .type = PIPE_FD_TYPE_SYNCOBJ,
+};
 
 static struct gl_semaphore_object *
-create_real_semaphore(struct gl_context *ctx, GLuint semaphore, struct gl_semaphore_object *semObj, const char *func)
+create_real_semaphore(struct gl_context *ctx, GLuint semaphore, struct gl_semaphore_object *semObj, enum pipe_fd_type type, const char *func)
 {
    if (semObj == &DummySemaphoreObject) {
       semObj = semaphoreobj_alloc(ctx, semaphore);
@@ -755,7 +756,10 @@ create_real_semaphore(struct gl_context *ctx, GLuint semaphore, struct gl_semaph
          return NULL;
       }
       _mesa_HashInsert(&ctx->Shared->SemaphoreObjects, semaphore, semObj);
+   } else {
+      assert(semObj->type == type);
    }
+   semObj->type = type;
    return semObj;
 }
 
@@ -1170,7 +1174,7 @@ _mesa_ImportSemaphoreFdEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   semObj = create_real_semaphore(ctx, semaphore, semObj, func);
+   semObj = create_real_semaphore(ctx, semaphore, semObj, semObj->type, func);
    if (!semObj)
       return;
 
@@ -1207,12 +1211,12 @@ _mesa_ImportSemaphoreWin32HandleEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   semObj = create_real_semaphore(ctx, semaphore, semObj, func);
+   enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT || handleType == GL_SEMAPHORE_TYPE_TIMELINE_NV ?
+      PIPE_FD_TYPE_TIMELINE_SEMAPHORE : semObj->type;
+   semObj = create_real_semaphore(ctx, semaphore, semObj, type, func);
    if (!semObj)
       return;
 
-   enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT ?
-      PIPE_FD_TYPE_TIMELINE_SEMAPHORE : PIPE_FD_TYPE_SYNCOBJ;
    import_semaphoreobj_win32(ctx, semObj, handle, NULL, type);
 }
 
@@ -1246,11 +1250,11 @@ _mesa_ImportSemaphoreWin32NameEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   semObj = create_real_semaphore(ctx, semaphore, semObj, func);
+   enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT || handleType == GL_SEMAPHORE_TYPE_TIMELINE_NV ?
+      PIPE_FD_TYPE_TIMELINE_SEMAPHORE : semObj->type;
+   semObj = create_real_semaphore(ctx, semaphore, semObj, type, func);
    if (!semObj)
       return;
 
-   enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT ?
-      PIPE_FD_TYPE_TIMELINE_SEMAPHORE : PIPE_FD_TYPE_SYNCOBJ;
    import_semaphoreobj_win32(ctx, semObj, NULL, name, type);
 }
