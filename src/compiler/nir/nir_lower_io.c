@@ -1050,7 +1050,7 @@ type_size_vec4(const struct glsl_type *type, bool bindless)
 void
 nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
 {
-   if (nir->info.stage == MESA_SHADER_COMPUTE)
+   if (gl_shader_stage_is_compute(nir->info.stage))
       return;
 
    bool lower_indirect_inputs =
@@ -1086,10 +1086,9 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
    nir_sort_variables_by_location(nir, varying_var_mask);
 
-   if (lower_indirect_inputs || lower_indirect_outputs) {
+   if (lower_indirect_outputs) {
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-               nir_shader_get_entrypoint(nir), lower_indirect_outputs,
-               lower_indirect_inputs);
+               nir_shader_get_entrypoint(nir), true, false);
 
       /* We need to lower all the copy_deref's introduced by lower_io_to-
        * _temporaries before calling nir_lower_io.
@@ -1102,9 +1101,7 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
        * The problem is that nir_lower_io_vars_to_temporaries doesn't handle TCS.
        */
       if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-         NIR_PASS(_, nir, nir_lower_indirect_derefs,
-                  (lower_indirect_inputs ? nir_var_shader_in : 0) |
-                     (lower_indirect_outputs ? nir_var_shader_out : 0),
+         NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_shader_out,
                   UINT32_MAX);
       }
    }
@@ -1121,6 +1118,10 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
    /* nir_io_add_const_offset_to_base needs actual constants. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in | nir_var_shader_out);
+
+   /* This must be called after nir_io_add_const_offset_to_base. */
+   if (lower_indirect_inputs)
+      NIR_PASS(_, nir, nir_lower_io_indirect_loads, nir_var_shader_in);
 
    /* Lower and remove dead derefs and variables to clean up the IR. */
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);

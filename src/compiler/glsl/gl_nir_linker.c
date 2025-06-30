@@ -1512,6 +1512,19 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
    for (unsigned i = 0; i < num_shaders; i++) {
       nir_shader *nir = shaders[i];
 
+      /* Inter-shader code motion in nir_opt_varyings requires that each input
+       * load is loaded only once when possible, so move all input loads
+       * to the entry block, so that CSE can deduplicate them.
+       *
+       * We only do that for FS. Moving input loads to the beginning could
+       * increase register usage for other shaders too much.
+       */
+      if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+         NIR_PASS(_, nir, nir_opt_move_to_top,
+                  nir_move_to_entry_block_only |
+                  nir_move_to_top_input_loads);
+      }
+
       /* nir_opt_varyings requires scalar IO. Scalarize all varyings (not just
        * the ones we optimize) because we want to re-vectorize everything to
        * get better vectorization and other goodies from nir_opt_vectorize_io.
