@@ -541,16 +541,19 @@ namespace {
       for (unsigned reg = 0; reg < 2; reg++)
          constrained[p.atom_of_reg(reg)] = true;
 
-      /* At Intel Broadwell PRM, vol 07, section "Instruction Set Reference",
-       * subsection "EUISA Instructions", Send Message (page 990):
+      /* Bspec says:
        *
-       * "r127 must not be used for return address when there is a src and
-       * dest overlap in send instruction."
+       *    [Pre-CNL] r127 must not be used for return address when there is a
+       *    src and dest overlap in send instruction.
+       *
+       * The Intel Broadwell PRM, vol 07, section "Instruction Set Reference",
+       * subsection "EUISA Instructions", Send Message (page 990) contains the
+       * same text.
        *
        * Register allocation ensures that, so don't move 127 around to avoid
-       * breaking that property.
+       * breaking that property. The workaround will only be applied to Gfx9.
        */
-      constrained[p.atom_of_reg(127)] = true;
+      constrained[p.atom_of_reg(127)] = v->devinfo->ver < 10;
 
       foreach_block_and_inst(block, brw_inst, inst, v->cfg) {
          /* Assume that anything referenced via fixed GRFs is baked into the

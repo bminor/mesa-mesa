@@ -369,11 +369,13 @@ send_restrictions(const struct brw_isa_info *isa,
                inst->src[0].nr < 112,
                "send with EOT must use g112-g127");
 
-      ERROR_IF(!dst_is_null(inst) &&
-               (inst->dst.nr + brw_eu_inst_rlen(devinfo, inst->raw) > 127) &&
-               (inst->src[0].nr + brw_eu_inst_mlen(devinfo, inst->raw) > inst->dst.nr),
-               "r127 must not be used for return address when there is "
-               "a src and dest overlap");
+      if (devinfo->ver < 10) {
+         ERROR_IF(!dst_is_null(inst) &&
+                  (inst->dst.nr + brw_eu_inst_rlen(devinfo, inst->raw) > 127) &&
+                  (inst->src[0].nr + brw_eu_inst_mlen(devinfo, inst->raw) > inst->dst.nr),
+                  "r127 must not be used for return address when there is "
+                  "a src and dest overlap");
+      }
    }
 
    return error_msg;

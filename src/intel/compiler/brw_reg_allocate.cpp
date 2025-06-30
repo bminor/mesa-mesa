@@ -556,11 +556,14 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
    }
 
    if (grf127_send_hack_node >= 0) {
-      /* At Intel Broadwell PRM, vol 07, section "Instruction Set Reference",
-       * subsection "EUISA Instructions", Send Message (page 990):
+      /* Bspec says:
        *
-       * "r127 must not be used for return address when there is a src and
-       * dest overlap in send instruction."
+       *    [Pre-CNL] r127 must not be used for return address when there is a
+       *    src and dest overlap in send instruction.
+       *
+       * The Intel Broadwell PRM, vol 07, section "Instruction Set Reference",
+       * subsection "EUISA Instructions", Send Message (page 990) contains the
+       * same text.
        *
        * We are avoiding using grf127 as part of the destination of send
        * messages adding a node interference to the grf127_send_hack_node.
@@ -634,8 +637,21 @@ brw_reg_alloc::build_interference_graph(bool allow_spilling)
    first_payload_node = node_count;
    node_count += payload_node_count;
 
-   grf127_send_hack_node = node_count;
-   node_count++;
+   /* Bspec says:
+    *
+    *    [Pre-CNL] r127 must not be used for return address when there is a
+    *    src and dest overlap in send instruction.
+    *
+    * The Intel Broadwell PRM, vol 07, section "Instruction Set Reference",
+    * subsection "EUISA Instructions", Send Message (page 990) contains the
+    * same text.
+    *
+    * The workaround will only be applied to Gfx9.
+    */
+   if (devinfo->ver < 10)
+      grf127_send_hack_node = node_count++;
+   else
+      grf127_send_hack_node = -1;
 
    first_vgrf_node = node_count;
    node_count += fs->alloc.count;
