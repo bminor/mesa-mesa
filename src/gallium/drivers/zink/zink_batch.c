@@ -128,6 +128,7 @@ zink_reset_batch_state(struct zink_context *ctx, struct zink_batch_state *bs)
    bs->sparse_semaphore = VK_NULL_HANDLE;
    util_dynarray_clear(&bs->wait_semaphore_stages);
    util_dynarray_clear(&bs->wait_semaphores);
+   util_dynarray_clear(&bs->user_signal_semaphores);
 
    bs->present = VK_NULL_HANDLE;
    /* check the arrays first to avoid locking unnecessarily */
@@ -261,6 +262,7 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
    util_dynarray_fini(&bs->bindless_releases[1]);
    util_dynarray_fini(&bs->acquires);
    util_dynarray_fini(&bs->signal_semaphores);
+   util_dynarray_fini(&bs->user_signal_semaphores);
    util_dynarray_fini(&bs->wait_semaphores);
    util_dynarray_fini(&bs->wait_semaphore_stages);
    util_dynarray_fini(&bs->fd_wait_semaphores);
@@ -363,6 +365,7 @@ create_batch_state(struct zink_context *ctx)
    SET_CREATE_OR_FAIL(&bs->active_queries);
    SET_CREATE_OR_FAIL(&bs->dmabuf_exports);
    util_dynarray_init(&bs->signal_semaphores, NULL);
+   util_dynarray_init(&bs->user_signal_semaphores, NULL);
    util_dynarray_init(&bs->wait_semaphores, NULL);
    util_dynarray_init(&bs->tracked_semaphores, NULL);
    util_dynarray_init(&bs->fd_wait_semaphores, NULL);
@@ -589,7 +592,8 @@ typedef enum {
    ZINK_SUBMIT_WAIT_ACQUIRE,
    ZINK_SUBMIT_WAIT_FD,
    ZINK_SUBMIT_CMDBUF,
-   ZINK_SUBMIT_SIGNAL,
+   ZINK_SUBMIT_SIGNAL_INTERNAL,
+   ZINK_SUBMIT_SIGNAL_USER,
    ZINK_SUBMIT_MAX
 } zink_submit;
 
@@ -662,24 +666,33 @@ submit_queue(void *data, void *gdata, int thread_index)
 
    /* then the signal submit with the timeline (fence) semaphore */
    VkSemaphore signals[ZINK_MAX_SIGNALS];
-   si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount = !!bs->signal_semaphore;
+   si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount = !!bs->signal_semaphore;
    signals[0] = bs->signal_semaphore;
-   si[ZINK_SUBMIT_SIGNAL].pSignalSemaphores = signals;
+   si[ZINK_SUBMIT_SIGNAL_INTERNAL].pSignalSemaphores = signals;
    VkTimelineSemaphoreSubmitInfo tsi = {0};
    uint64_t signal_values[ZINK_MAX_SIGNALS] = {0};
    tsi.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-   si[ZINK_SUBMIT_SIGNAL].pNext = &tsi;
+   si[ZINK_SUBMIT_SIGNAL_INTERNAL].pNext = &tsi;
    tsi.pSignalSemaphoreValues = signal_values;
-   signal_values[si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount] = batch_id;
-   signals[si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount++] = screen->sem;
-   tsi.signalSemaphoreValueCount = si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount;
+   signal_values[si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount] = batch_id;
+   signals[si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount++] = screen->sem;
+   tsi.signalSemaphoreValueCount = si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount;
 
    if (bs->present)
-      signals[si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount++] = bs->present;
-   tsi.signalSemaphoreValueCount = si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount;
+      signals[si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount++] = bs->present;
+   tsi.signalSemaphoreValueCount = si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount;
 
-   assert(si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount <= ZINK_MAX_SIGNALS);
+   assert(si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount <= ZINK_MAX_SIGNALS);
    assert(tsi.signalSemaphoreValueCount <= ZINK_MAX_SIGNALS);
+
+   if (util_dynarray_num_elements(&bs->user_signal_semaphores, VkSemaphore)) {
+      si[ZINK_SUBMIT_SIGNAL_USER].signalSemaphoreCount = util_dynarray_num_elements(&bs->user_signal_semaphores, VkSemaphore);
+      si[ZINK_SUBMIT_SIGNAL_USER].pSignalSemaphores = bs->user_signal_semaphores.data;
+   } else {
+      num_si--;
+      if (!si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount)
+         num_si--;
+   }
 
    VkResult result;
    if (bs->has_work) {
@@ -723,9 +736,6 @@ submit_queue(void *data, void *gdata, int thread_index)
          }
       );
    }
-
-   if (!si[ZINK_SUBMIT_SIGNAL].signalSemaphoreCount)
-      num_si--;
 
    simple_mtx_lock(&screen->queue_lock);
    VRAM_ALLOC_LOOP(result,

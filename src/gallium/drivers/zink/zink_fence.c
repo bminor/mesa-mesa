@@ -236,11 +236,12 @@ zink_fence_server_signal(struct pipe_context *pctx, struct pipe_fence_handle *pf
 {
    struct zink_context *ctx = zink_context(pctx);
    struct zink_tc_fence *mfence = (struct zink_tc_fence *)pfence;
-
-   assert(!ctx->bs->signal_semaphore);
-   ctx->bs->signal_semaphore = mfence->sem;
-   ctx->bs->has_work = true;
    struct zink_batch_state *bs = ctx->bs;
+
+   util_dynarray_append(&ctx->bs->user_signal_semaphores, VkSemaphore, mfence->sem);
+   bs->has_work = true;
+
+
    /* this must produce a synchronous flush that completes before the function returns */
    pctx->flush(pctx, NULL, 0);
    if (zink_screen(ctx->base.screen)->threaded_submit)

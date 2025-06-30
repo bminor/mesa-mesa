@@ -600,7 +600,8 @@ struct zink_batch_state {
    VkCommandPool unsynchronized_cmdpool;
    VkCommandBuffer unsynchronized_cmdbuf;
    VkSemaphore signal_semaphore; //external signal semaphore
-   struct util_dynarray signal_semaphores; //external signal semaphores
+   struct util_dynarray signal_semaphores; //internal signal semaphores
+   struct util_dynarray user_signal_semaphores; //api signal semaphores
    struct util_dynarray wait_semaphores; //external wait semaphores
    struct util_dynarray wait_semaphore_stages; //external wait semaphores
    struct util_dynarray fd_wait_semaphores; //dmabuf wait semaphores
