@@ -10,7 +10,6 @@ glx@glx_ext_no_config_context@no fbconfig,Fail
 glx@glx-visuals-depth -pixmap,Warn
 glx@glx-visuals-stencil -pixmap,Fail
 spec@!opengl 1.1@line-smooth-stipple,Fail
-spec@arb_pipeline_statistics_query@arb_pipeline_statistics_query-frag,Fail
 spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgradcube,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@fs-packhalf2x16,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@vs-packhalf2x16,Fail
