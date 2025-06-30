@@ -5053,6 +5053,7 @@ bool nir_lower_io(nir_shader *shader,
 bool nir_io_add_const_offset_to_base(nir_shader *nir, nir_variable_mode modes);
 void nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs);
 bool nir_io_add_intrinsic_xfb_info(nir_shader *nir);
+bool nir_lower_io_indirect_loads(nir_shader *nir, nir_variable_mode modes);
 
 bool
 nir_lower_vars_to_explicit_types(nir_shader *shader,
@@ -5240,6 +5241,7 @@ nir_src *nir_get_io_index_src(nir_intrinsic_instr *instr);
 nir_src *nir_get_io_arrayed_index_src(nir_intrinsic_instr *instr);
 nir_src *nir_get_shader_call_payload_src(nir_intrinsic_instr *call);
 
+bool nir_is_output_load(nir_intrinsic_instr *intr);
 bool nir_is_arrayed_io(const nir_variable *var, gl_shader_stage stage);
 
 bool nir_lower_reg_intrinsics_to_ssa_impl(nir_function_impl *impl);

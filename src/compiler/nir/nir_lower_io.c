@@ -1011,6 +1011,15 @@ nir_get_io_arrayed_index_src_number(const nir_intrinsic_instr *instr)
    }
 }
 
+bool
+nir_is_output_load(nir_intrinsic_instr *intr)
+{
+   return intr->intrinsic == nir_intrinsic_load_output ||
+          intr->intrinsic == nir_intrinsic_load_per_vertex_output ||
+          intr->intrinsic == nir_intrinsic_load_per_primitive_output ||
+          intr->intrinsic == nir_intrinsic_load_per_view_output;
+}
+
 /**
  * Return the array index source for an arrayed load/store intrinsic.
  */

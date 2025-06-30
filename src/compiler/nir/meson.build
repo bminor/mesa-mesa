@@ -189,6 +189,7 @@ else
   'nir_lower_int_to_float.c',
   'nir_lower_io.c',
   'nir_lower_io_array_vars_to_elements.c',
+  'nir_lower_io_indirect_loads.c',
   'nir_lower_io_vars_to_temporaries.c',
   'nir_lower_io_to_scalar.c',
   'nir_lower_io_vars_to_scalar.c',
