@@ -499,6 +499,20 @@ iris_init_screen_caps(struct iris_screen *screen)
     * shift it right by one, so the highest valid address bit gets unset.
     */
    caps->max_vma = intel_48b_address(UINT64_MAX) >> 1;
+
+   if (devinfo->ver >= 9) {
+      caps->shader_subgroup_size = 32;
+      caps->shader_subgroup_supported_stages = BITFIELD_MASK(MESA_SHADER_STAGES);
+      caps->shader_subgroup_supported_features =
+         devinfo->has_64bit_float ? BITFIELD_MASK(PIPE_SHADER_SUBGROUP_NUM_FEATURES)
+                                  : (PIPE_SHADER_SUBGROUP_FEATURE_BASIC |
+                                     PIPE_SHADER_SUBGROUP_FEATURE_VOTE |
+                                     PIPE_SHADER_SUBGROUP_FEATURE_BALLOT |
+                                     PIPE_SHADER_SUBGROUP_FEATURE_SHUFFLE |
+                                     PIPE_SHADER_SUBGROUP_FEATURE_SHUFFLE_RELATIVE |
+                                     PIPE_SHADER_SUBGROUP_FEATURE_QUAD);
+      caps->shader_subgroup_quad_all_stages = true;
+   }
 }
 
 static uint64_t
