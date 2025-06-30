@@ -5268,6 +5268,31 @@ bool nir_clear_shared_memory(nir_shader *shader,
                              const unsigned shared_size,
                              const unsigned chunk_size);
 
+typedef enum {
+   /* If the instructions to move are in the function entry block, do nothing,
+    * else move them at the end (not the beginning) of the entry block.
+    *
+    * If this is not set, all selected instructions are always moved
+    * to the beginning of the entry block.
+    *
+    * This has the following advantages:
+    * - not moving all the way to the beginning reduces register usage within
+    *   the entry block
+    * - CSE within the entry block is still maximally effective
+    *   (nir_opt_varyings recommends that each input component is loaded only
+    *    once, and this option + CSE guarantees that)
+    * - the pass does nothing if all affected instructions are already
+    *   in the entry block.
+    */
+   nir_move_to_entry_block_only = BITFIELD_BIT(0),
+
+   /* Instruction options. */
+   nir_move_to_top_input_loads = BITFIELD_BIT(1),
+   nir_move_to_top_load_smem_amd = BITFIELD_BIT(2),
+} nir_opt_move_to_top_options;
+
+bool nir_opt_move_to_top(nir_shader *nir, nir_opt_move_to_top_options options);
+
 bool nir_move_vec_src_uses_to_dest(nir_shader *shader, bool skip_const_srcs);
 bool nir_move_output_stores_to_end(nir_shader *nir);
 bool nir_lower_vec_to_regs(nir_shader *shader, nir_instr_writemask_filter_cb cb,
