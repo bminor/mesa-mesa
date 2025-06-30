@@ -745,7 +745,12 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_lower_explicit_io,
             nir_var_mem_push_const | nir_var_mem_shared,
             nir_address_format_32bit_offset);
-   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_mem_shared, NULL, NULL);
+   NIR_PASS(_,
+            nir,
+            nir_lower_io_to_scalar,
+            nir_var_mem_push_const | nir_var_mem_shared,
+            NULL,
+            NULL);
 
    if (data->common.robust_buffer_access)
       NIR_PASS(_, nir, nir_lower_robust_access, robustness_filter, NULL);
