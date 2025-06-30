@@ -215,14 +215,14 @@ struct QueueEvent(Arc<Event>);
 impl QueueEvent {
     fn call(self, ctx: &QueueContext) -> (cl_int, Arc<Event>) {
         let res = self.0.call(ctx);
-        (res, self.to_inner())
+        (res, self.into_inner())
     }
 
     fn deps(&self) -> &[Arc<Event>] {
         &self.0.deps
     }
 
-    fn to_inner(self) -> Arc<Event> {
+    fn into_inner(self) -> Arc<Event> {
         // SAFETY: QueueEvent is transparent wrapper so it's safe to transmute the value. We want to
         //         prevent drop from running on it. Alternatively we could use ManuallyDrop, but
         //         that also requires an unsafe call (ManuallyDrop::take).
@@ -237,7 +237,7 @@ impl QueueEvent {
     }
 
     fn set_user_status(self, status: cl_int) {
-        self.to_inner().set_user_status(status);
+        self.into_inner().set_user_status(status);
     }
 }
 
@@ -352,7 +352,7 @@ impl Queue {
                         for e in new_events {
                             // If we hit any deps from another queue, flush so we don't risk a dead
                             // lock.
-                            if e.deps().iter().any(|ev| !e.has_same_queue_as(&ev)) {
+                            if e.deps().iter().any(|ev| !e.has_same_queue_as(ev)) {
                                 let dep_err = flush_events(&mut flushed, &ctx);
                                 last_err = cmp::min(last_err, dep_err);
                             }
@@ -360,7 +360,7 @@ impl Queue {
                             // check if any dependency has an error
                             for dep in e.deps() {
                                 // We have to wait on user events or events from other queues.
-                                let dep_err = if dep.is_user() || !e.has_same_queue_as(&dep) {
+                                let dep_err = if dep.is_user() || !e.has_same_queue_as(dep) {
                                     dep.wait()
                                 } else {
                                     dep.status()
