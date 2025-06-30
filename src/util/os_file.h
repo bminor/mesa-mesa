@@ -52,6 +52,15 @@ os_read_file(const char *filename, size_t *size);
 int
 os_same_file_description(int fd1, int fd2);
 
+/*
+ * Make a directory.  The file permissions bitmask 'mode' may be ignored
+ * (such as on Windows).
+ * Return 0 for success, -1 on failure (setting errno).
+*/
+int
+os_mkdir(const char *pathname, int mode);
+
+
 #ifdef __cplusplus
 }
 #endif

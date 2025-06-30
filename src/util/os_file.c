@@ -5,6 +5,7 @@
 
 #include "os_file.h"
 #include "detect_os.h"
+#include "util/detect.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -12,6 +13,7 @@
 #include <sys/stat.h>
 
 #if DETECT_OS_WINDOWS
+#include <direct.h>
 #include <io.h>
 #define open _open
 #define fdopen _fdopen
@@ -21,6 +23,7 @@
 #define O_CREAT _O_CREAT
 #define O_EXCL _O_EXCL
 #define O_WRONLY _O_WRONLY
+#define mkdir(dir, mode) _mkdir(dir)
 #else
 #include <unistd.h>
 #ifndef F_DUPFD_CLOEXEC
@@ -266,5 +269,16 @@ os_same_file_description(int fd1, int fd2)
 #else
    /* Otherwise we can't tell */
    return -1;
+#endif
+}
+
+
+int
+os_mkdir(const char *pathname, int mode)
+{
+#if DETECT_OS_WINDOWS
+   return _mkdir(pathname);
+#else
+   return mkdir(pathname, mode);
 #endif
 }

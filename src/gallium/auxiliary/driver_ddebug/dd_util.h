@@ -29,22 +29,6 @@
 #define DD_UTIL_H
 
 #include <stdio.h>
-#include <errno.h>
-
-#include "c99_alloca.h"
-#include "util/u_atomic.h"
-#include "util/u_debug.h"
-#include "util/u_string.h"
-
-#include "util/detect.h"
-#if DETECT_OS_POSIX
-#include <unistd.h>
-#include <sys/stat.h>
-#elif DETECT_OS_WINDOWS
-#include <direct.h>
-#include <process.h>
-#define mkdir(dir, mode) _mkdir(dir)
-#endif
 
 struct pipe_screen;
 

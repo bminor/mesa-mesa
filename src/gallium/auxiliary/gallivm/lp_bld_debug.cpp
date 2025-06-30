@@ -46,8 +46,8 @@
 #include "util/detect_os.h"
 #include "util/u_math.h"
 #include "util/u_debug.h"
+#include "util/os_file.h"
 
-#include "driver_ddebug/dd_util.h"
 #include "lp_bld_debug.h"
 #include "lp_bld_intr.h"
 
@@ -377,7 +377,7 @@ lp_function_add_debug_info(gallivm_state *gallivm, LLVMValueRef func, LLVMTypeRe
    if (!gallivm->file) {
       uint32_t shader_index = p_atomic_add_return(&global_shader_index, 1);
 
-      mkdir(LP_NIR_SHADER_DUMP_DIR, 0755);
+      os_mkdir(LP_NIR_SHADER_DUMP_DIR, 0755);
 
       asprintf(&gallivm->file_name, "%s/%u.nir", LP_NIR_SHADER_DUMP_DIR, shader_index);
 
