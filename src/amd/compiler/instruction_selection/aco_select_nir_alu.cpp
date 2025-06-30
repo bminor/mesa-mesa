@@ -319,6 +319,57 @@ emit_idot_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Te
 }
 
 void
+emit_pk_shift(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst)
+{
+   Builder bld = create_alu_builder(ctx, instr);
+   Temp src1 = get_alu_src_vop3p(ctx, instr->src[0]);
+   Temp src0;
+
+   bitarray8 opsel_lo = (instr->src[0].swizzle[0] & 1) << 1;
+   bitarray8 opsel_hi = (instr->src[0].swizzle[1] & 1) << 1;
+
+   /* NIR's shift operand is always 32bit, but we want 16bit here. */
+   if (instr->src[1].swizzle[0] == instr->src[1].swizzle[1]) {
+      src0 = get_alu_src(ctx, instr->src[1], 1);
+   } else {
+      Operand comps[2];
+      for (unsigned i = 0; i < 2; i++) {
+         nir_scalar s = nir_scalar_resolved(instr->src[1].src.ssa, instr->src[1].swizzle[i]);
+         if (nir_scalar_is_const(s)) {
+            comps[i] = Operand::c16(nir_scalar_as_uint(s));
+         } else if (nir_scalar_is_alu(s) &&
+                    (nir_scalar_alu_op(s) == nir_op_u2u32 ||
+                     nir_scalar_alu_op(s) == nir_op_i2i32) &&
+                    nir_instr_as_alu(s.def->parent_instr)->src[0].src.ssa->bit_size == 16) {
+            assert(s.def->num_components == 1);
+            Temp comp = get_alu_src(ctx, nir_instr_as_alu(s.def->parent_instr)->src[0]);
+            comps[i] = Operand(emit_extract_vector(ctx, comp, 0, v2b));
+         } else {
+            Temp vec = get_ssa_temp(ctx, instr->src[1].src.ssa);
+            RegClass rc = RegClass::get(vec.type(), 4);
+            Temp comp = emit_extract_vector(ctx, vec, instr->src[1].swizzle[i], rc);
+            comps[i] = Operand(emit_extract_vector(ctx, comp, 0, v2b));
+         }
+      }
+
+      opsel_hi[0] = 1;
+
+      if (comps[0].isConstant() && comps[1].isConstant()) {
+         uint32_t packed = (comps[1].constantValue() << 16) | comps[0].constantValue();
+         src0 = bld.copy(bld.def(s1), Operand::c32(packed));
+      } else {
+         src0 = bld.pseudo(aco_opcode::p_create_vector, bld.def(v1), comps[0], comps[1]);
+      }
+   }
+
+   if (src0.type() == RegType::sgpr && src1.type() == RegType::sgpr)
+      src1 = as_vgpr(ctx, src1);
+
+   bld.vop3p(op, Definition(dst), src0, src1, opsel_lo, opsel_hi);
+   emit_split_vector(ctx, dst, 2);
+}
+
+void
 emit_vop1_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst)
 {
    Builder bld = create_alu_builder(ctx, instr);
@@ -1038,7 +1089,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else if (dst.regClass() == v2b) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_lshrrev_b16, dst, false, true);
       } else if (dst.regClass() == v1 && instr->def.bit_size == 16) {
-         emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_lshrrev_b16, dst, true);
+         emit_pk_shift(ctx, instr, aco_opcode::v_pk_lshrrev_b16, dst);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_lshrrev_b32, dst, false, true);
       } else if (dst.regClass() == v2 && ctx->program->gfx_level >= GFX8) {
@@ -1061,7 +1112,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else if (dst.regClass() == v2b) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_lshlrev_b16, dst, false, true);
       } else if (dst.regClass() == v1 && instr->def.bit_size == 16) {
-         emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_lshlrev_b16, dst, true);
+         emit_pk_shift(ctx, instr, aco_opcode::v_pk_lshlrev_b16, dst);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_lshlrev_b32, dst, false, true, false,
                                false, 1);
@@ -1085,7 +1136,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else if (dst.regClass() == v2b) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_ashrrev_i16, dst, false, true);
       } else if (dst.regClass() == v1 && instr->def.bit_size == 16) {
-         emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_ashrrev_i16, dst, true);
+         emit_pk_shift(ctx, instr, aco_opcode::v_pk_ashrrev_i16, dst);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_ashrrev_i32, dst, false, true);
       } else if (dst.regClass() == v2 && ctx->program->gfx_level >= GFX8) {
