@@ -16,6 +16,8 @@ struct nvk_device;
 struct nvk_image_view {
    struct vk_image_view vk;
 
+   bool separate_zs;
+
    uint8_t plane_count;
    struct {
       uint8_t image_plane;

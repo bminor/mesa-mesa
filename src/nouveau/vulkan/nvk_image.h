@@ -79,6 +79,12 @@ struct nvk_image {
     */
    bool disjoint;
 
+   /** True if this image uses separate depth/stencil
+    *
+    * In this case, stencil will be in planes[1].
+    */
+   bool separate_zs;
+
    uint8_t plane_count;
    struct nvk_image_plane planes[NVK_MAX_IMAGE_PLANES];
 
@@ -114,7 +120,7 @@ nvk_image_base_address(const struct nvk_image *image, uint8_t plane)
 }
 
 static inline uint8_t
-nvk_image_aspects_to_plane(ASSERTED const struct nvk_image *image,
+nvk_image_aspects_to_plane(const struct nvk_image *image,
                            VkImageAspectFlags aspectMask)
 {
    /* Memory planes are only allowed for memory operations */
@@ -130,6 +136,15 @@ nvk_image_aspects_to_plane(ASSERTED const struct nvk_image *image,
    assert(aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT |
                          VK_IMAGE_ASPECT_STENCIL_BIT) ||
           util_bitcount(aspectMask) == 1);
+
+   if (image->separate_zs) {
+      assert(util_bitcount(aspectMask) == 1);
+      switch(aspectMask) {
+      case VK_IMAGE_ASPECT_DEPTH_BIT: return 0;
+      case VK_IMAGE_ASPECT_STENCIL_BIT: return 1;
+      default: unreachable("Not a depth/stencil aspect");
+      }
+   }
 
    switch(aspectMask) {
    case VK_IMAGE_ASPECT_PLANE_1_BIT: return 1;
