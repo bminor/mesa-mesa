@@ -1,6 +1,8 @@
 # Copyright © 2022 Collabora, Ltd.
 # SPDX-License-Identifier: MIT
 
+subdir('latencies')
+
 dep_paste = dependency('paste',
   version : '>= 1.0.14',
   fallback : ['paste', 'dep_paste'],
@@ -114,6 +116,7 @@ _libnak_rs = static_library(
   link_with : [
     _libnak_bindings_rs,
     _libnak_ir_proc_rs,
+    libnak_latencies_rs,
   ],
 )
 

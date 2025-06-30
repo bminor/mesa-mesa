@@ -3,10 +3,10 @@
 
 use crate::ir::*;
 use crate::legalize::LegalizeBuilder;
+use crate::sm120_instr_latencies::SM120Latency;
 use crate::sm70_encode::*;
 use crate::sm75_instr_latencies::SM75Latency;
 use crate::sm80_instr_latencies::SM80Latency;
-
 pub struct ShaderModel70 {
     sm: u8,
 }
@@ -154,7 +154,9 @@ impl ShaderModel for ShaderModel70 {
             return false;
         }
 
-        if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() {
+            SM120Latency::needs_scoreboards(op)
+        } else if self.is_ampere() || self.is_ada() {
             SM80Latency::needs_scoreboards(op)
         } else if self.is_turing() {
             SM75Latency::needs_scoreboards(op)
@@ -188,7 +190,9 @@ impl ShaderModel for ShaderModel70 {
         read: &Op,
         src_idx: usize,
     ) -> u32 {
-        if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() {
+            SM120Latency::raw(write, dst_idx, Some(read), src_idx)
+        } else if self.is_ampere() || self.is_ada() {
             SM80Latency::raw(write, dst_idx, Some(read), src_idx)
         } else if self.is_turing() {
             SM75Latency::raw(write, dst_idx, Some(read), src_idx)
@@ -204,7 +208,9 @@ impl ShaderModel for ShaderModel70 {
         write: &Op,
         dst_idx: usize,
     ) -> u32 {
-        if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() {
+            SM120Latency::war(read, src_idx, write, dst_idx)
+        } else if self.is_ampere() || self.is_ada() {
             SM80Latency::war(read, src_idx, write, dst_idx)
         } else if self.is_turing() {
             SM75Latency::war(read, src_idx, write, dst_idx)
@@ -223,7 +229,9 @@ impl ShaderModel for ShaderModel70 {
         b: &Op,
         b_dst_idx: usize,
     ) -> u32 {
-        if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() {
+            SM120Latency::waw(a, a_dst_idx, b, b_dst_idx, a_has_pred)
+        } else if self.is_ampere() || self.is_ada() {
             SM80Latency::waw(a, a_dst_idx, b, b_dst_idx, a_has_pred)
         } else if self.is_turing() {
             SM75Latency::waw(a, a_dst_idx, b, b_dst_idx, a_has_pred)
@@ -235,7 +243,9 @@ impl ShaderModel for ShaderModel70 {
     }
 
     fn paw_latency(&self, write: &Op, dst_idx: usize) -> u32 {
-        if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() {
+            SM120Latency::raw(write, dst_idx, None, 0)
+        } else if self.is_ampere() || self.is_ada() {
             SM80Latency::raw(write, dst_idx, None, 0)
         } else if self.is_turing() {
             SM75Latency::raw(write, dst_idx, None, 0)
@@ -250,7 +260,9 @@ impl ShaderModel for ShaderModel70 {
     }
 
     fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
-        if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() {
+            SM120Latency::raw(write, dst_idx, None, 0)
+        } else if self.is_ampere() || self.is_ada() {
             SM80Latency::raw(write, dst_idx, None, 0)
         } else if self.is_turing() {
             SM75Latency::raw(write, dst_idx, None, 0)

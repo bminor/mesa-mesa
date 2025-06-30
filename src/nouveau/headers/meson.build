@@ -77,6 +77,9 @@ executable(
   install : with_tools.contains('nouveau'),
 )
 
+nouveau_util_py = files('util.py')
+nouveau_util_py_path = meson.current_source_dir()
+
 # Only generate Rust bindings for NVK
 if with_nouveau_vk
   cl_rs_generated = []

@@ -27,6 +27,7 @@ mod opt_uniform_instrs;
 mod qmd;
 mod reg_tracker;
 mod repair_ssa;
+mod sm120_instr_latencies;
 mod sm20;
 mod sm30_instr_latencies;
 mod sm32;
