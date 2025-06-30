@@ -168,6 +168,8 @@ vn_android_drm_format_to_vk_format(uint32_t format)
       return VK_FORMAT_R16G16B16A16_SFLOAT;
    case DRM_FORMAT_ABGR2101010:
       return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+   case DRM_FORMAT_R8:
+      return VK_FORMAT_R8_UNORM;
    case DRM_FORMAT_YVU420:
       return VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
    case DRM_FORMAT_NV12:
@@ -870,12 +872,13 @@ vn_android_device_import_ahb(
          mem_type_index = ffs(mem_type_bits & mem_req->memoryTypeBits) - 1;
       }
 
-      /* XXX Workaround before we use cross-domain backend in minigbm. The
-       * blob_mem allocated from virgl backend can have a queried guest
-       * mappable size smaller than the size returned from image memory
-       * requirement.
+      /* XXX Workaround before we use cross-domain backend in minigbm, since
+       * venus doesn't support transfer blit for classic 3d resources.
+       *
+       * For AHB image, we can allow r8 storage image support, since that's
+       * always allocated with blob mem.
        */
-      force_unmappable = true;
+      force_unmappable = img->base.vk.format != VK_FORMAT_R8_UNORM;
    }
 
    if (dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE) {
