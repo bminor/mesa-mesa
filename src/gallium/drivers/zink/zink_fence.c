@@ -237,9 +237,9 @@ zink_fence_server_signal(struct pipe_context *pctx, struct pipe_fence_handle *pf
    struct zink_context *ctx = zink_context(pctx);
    struct zink_tc_fence *mfence = (struct zink_tc_fence *)pfence;
    struct zink_batch_state *bs = ctx->bs;
-   assert(!value);
 
    util_dynarray_append(&ctx->bs->user_signal_semaphores, VkSemaphore, mfence->sem);
+   util_dynarray_append(&ctx->bs->user_signal_semaphore_values, uint64_t, value);
    bs->has_work = true;
 
 
@@ -254,7 +254,6 @@ zink_fence_server_sync(struct pipe_context *pctx, struct pipe_fence_handle *pfen
 {
    struct zink_context *ctx = zink_context(pctx);
    struct zink_tc_fence *mfence = (struct zink_tc_fence *)pfence;
-   assert(!value);
 
    if (mfence->deferred_ctx == pctx || !mfence->sem)
       return;
@@ -264,6 +263,7 @@ zink_fence_server_sync(struct pipe_context *pctx, struct pipe_fence_handle *pfen
    VkPipelineStageFlags flag = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
    util_dynarray_append(&ctx->bs->wait_semaphores, VkSemaphore, mfence->sem);
    util_dynarray_append(&ctx->bs->wait_semaphore_stages, VkPipelineStageFlags, flag);
+   util_dynarray_append(&ctx->bs->wait_semaphore_values, uint64_t, value);
    pipe_reference(NULL, &mfence->reference);
    util_dynarray_append(&ctx->bs->fences, struct zink_tc_fence*, mfence);
 }
@@ -273,6 +273,11 @@ zink_create_fence_fd(struct pipe_context *pctx, struct pipe_fence_handle **pfenc
 {
    struct zink_screen *screen = zink_screen(pctx->screen);
    VkResult result;
+   VkSemaphoreType semtype[] = {
+      [PIPE_FD_TYPE_NATIVE_SYNC] = VK_SEMAPHORE_TYPE_BINARY,
+      [PIPE_FD_TYPE_SYNCOBJ] = VK_SEMAPHORE_TYPE_BINARY,
+      [PIPE_FD_TYPE_TIMELINE_SEMAPHORE_VK] = VK_SEMAPHORE_TYPE_TIMELINE,
+   };
 
    assert(fd >= 0);
 
@@ -280,9 +285,16 @@ zink_create_fence_fd(struct pipe_context *pctx, struct pipe_fence_handle **pfenc
    if (!mfence)
       goto fail_tc_fence_create;
 
+   const VkSemaphoreTypeCreateInfo tci = {
+      VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+      NULL,
+      semtype[type],
+   };
    const VkSemaphoreCreateInfo sci = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      &tci
    };
+
    result = VKSCR(CreateSemaphore)(screen->dev, &sci, NULL, &mfence->sem);
    if (result != VK_SUCCESS) {
       mesa_loge("ZINK: vkCreateSemaphore failed (%s)", vk_Result_to_str(result));
@@ -296,12 +308,14 @@ zink_create_fence_fd(struct pipe_context *pctx, struct pipe_fence_handle **pfenc
    static const VkExternalSemaphoreHandleTypeFlagBits handle_type[] = {
       [PIPE_FD_TYPE_NATIVE_SYNC] = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
       [PIPE_FD_TYPE_SYNCOBJ] = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
+      [PIPE_FD_TYPE_TIMELINE_SEMAPHORE_VK] = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
    };
    assert(type < ARRAY_SIZE(handle_type));
 
    static const VkSemaphoreImportFlagBits flags[] = {
       [PIPE_FD_TYPE_NATIVE_SYNC] = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT,
       [PIPE_FD_TYPE_SYNCOBJ] = 0,
+      [PIPE_FD_TYPE_TIMELINE_SEMAPHORE_VK] = 0,
    };
    assert(type < ARRAY_SIZE(flags));
 

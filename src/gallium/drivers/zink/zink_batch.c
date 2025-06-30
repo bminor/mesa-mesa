@@ -127,8 +127,10 @@ zink_reset_batch_state(struct zink_context *ctx, struct zink_batch_state *bs)
    bs->signal_semaphore = VK_NULL_HANDLE;
    bs->sparse_semaphore = VK_NULL_HANDLE;
    util_dynarray_clear(&bs->wait_semaphore_stages);
+   util_dynarray_clear(&bs->wait_semaphore_values);
    util_dynarray_clear(&bs->wait_semaphores);
    util_dynarray_clear(&bs->user_signal_semaphores);
+   util_dynarray_clear(&bs->user_signal_semaphore_values);
 
    bs->present = VK_NULL_HANDLE;
    /* check the arrays first to avoid locking unnecessarily */
@@ -263,8 +265,10 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
    util_dynarray_fini(&bs->acquires);
    util_dynarray_fini(&bs->signal_semaphores);
    util_dynarray_fini(&bs->user_signal_semaphores);
+   util_dynarray_fini(&bs->user_signal_semaphore_values);
    util_dynarray_fini(&bs->wait_semaphores);
    util_dynarray_fini(&bs->wait_semaphore_stages);
+   util_dynarray_fini(&bs->wait_semaphore_values);
    util_dynarray_fini(&bs->fd_wait_semaphores);
    util_dynarray_fini(&bs->fd_wait_semaphore_stages);
    util_dynarray_fini(&bs->tracked_semaphores);
@@ -366,12 +370,14 @@ create_batch_state(struct zink_context *ctx)
    SET_CREATE_OR_FAIL(&bs->dmabuf_exports);
    util_dynarray_init(&bs->signal_semaphores, NULL);
    util_dynarray_init(&bs->user_signal_semaphores, NULL);
+   util_dynarray_init(&bs->user_signal_semaphore_values, NULL);
    util_dynarray_init(&bs->wait_semaphores, NULL);
    util_dynarray_init(&bs->tracked_semaphores, NULL);
    util_dynarray_init(&bs->fd_wait_semaphores, NULL);
    util_dynarray_init(&bs->fences, NULL);
    util_dynarray_init(&bs->dead_querypools, NULL);
    util_dynarray_init(&bs->wait_semaphore_stages, NULL);
+   util_dynarray_init(&bs->wait_semaphore_values, NULL);
    util_dynarray_init(&bs->fd_wait_semaphore_stages, NULL);
    util_dynarray_init(&bs->zombie_samplers, NULL);
    util_dynarray_init(&bs->freed_sparse_backing_bos, NULL);
@@ -650,6 +656,14 @@ submit_queue(void *data, void *gdata, int thread_index)
    si[ZINK_SUBMIT_CMDBUF].waitSemaphoreCount = util_dynarray_num_elements(&bs->wait_semaphores, VkSemaphore);
    si[ZINK_SUBMIT_CMDBUF].pWaitSemaphores = bs->wait_semaphores.data;
    si[ZINK_SUBMIT_CMDBUF].pWaitDstStageMask = bs->wait_semaphore_stages.data;
+   VkTimelineSemaphoreSubmitInfo sem_submit = {
+      VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+      NULL,
+      si[ZINK_SUBMIT_CMDBUF].waitSemaphoreCount,
+      bs->wait_semaphore_values.data
+   };
+   if (si[ZINK_SUBMIT_CMDBUF].waitSemaphoreCount)
+      si[ZINK_SUBMIT_CMDBUF].pNext = &sem_submit;
    VkCommandBuffer cmdbufs[3];
    unsigned c = 0;
    if (bs->has_unsync)
@@ -685,9 +699,18 @@ submit_queue(void *data, void *gdata, int thread_index)
    assert(si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount <= ZINK_MAX_SIGNALS);
    assert(tsi.signalSemaphoreValueCount <= ZINK_MAX_SIGNALS);
 
-   if (util_dynarray_num_elements(&bs->user_signal_semaphores, VkSemaphore)) {
-      si[ZINK_SUBMIT_SIGNAL_USER].signalSemaphoreCount = util_dynarray_num_elements(&bs->user_signal_semaphores, VkSemaphore);
-      si[ZINK_SUBMIT_SIGNAL_USER].pSignalSemaphores = bs->user_signal_semaphores.data;
+   si[ZINK_SUBMIT_SIGNAL_USER].signalSemaphoreCount = util_dynarray_num_elements(&bs->user_signal_semaphores, VkSemaphore);
+   si[ZINK_SUBMIT_SIGNAL_USER].pSignalSemaphores = bs->user_signal_semaphores.data;
+   VkTimelineSemaphoreSubmitInfo user_sem_submit = {
+      VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+      NULL,
+      0,
+      NULL,
+      si[ZINK_SUBMIT_SIGNAL_USER].signalSemaphoreCount,
+      bs->user_signal_semaphore_values.data
+   };
+   if (si[ZINK_SUBMIT_SIGNAL_USER].signalSemaphoreCount) {
+      si[ZINK_SUBMIT_SIGNAL_USER].pNext = &user_sem_submit;
    } else {
       num_si--;
       if (!si[ZINK_SUBMIT_SIGNAL_INTERNAL].signalSemaphoreCount)

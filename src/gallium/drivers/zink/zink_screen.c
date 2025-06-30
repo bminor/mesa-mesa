@@ -924,6 +924,8 @@ zink_init_screen_caps(struct zink_screen *screen)
    caps->min_texel_offset = screen->info.props.limits.minTexelOffset;
    caps->max_texel_offset = screen->info.props.limits.maxTexelOffset;
 
+   caps->max_timeline_semaphore_difference = screen->info.timeline_props.maxTimelineSemaphoreValueDifference;
+
    caps->vertex_color_unclamped = true;
 
    caps->conditional_render = true;
