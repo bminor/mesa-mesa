@@ -8324,7 +8324,7 @@
         "description": "aco/ra: fix repeated compact_linear_vgprs() in get_reg()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b7738de4f93e25401332040b236b7403fb237977",
         "notes": null
