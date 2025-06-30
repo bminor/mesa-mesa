@@ -713,7 +713,9 @@ enum vpe_status vpe_build_commands(
     vpe_priv = container_of(vpe, struct vpe_priv, pub);
 
 #ifdef VPE_REGISTER_PROFILE
-    vpe_priv->config_writer.register_count = 0;
+    vpe_priv->config_writer.total_register_count        = 0;
+    vpe_priv->config_writer.burstMode_register_count    = 0;
+    vpe_priv->config_writer.nonBurstMode_register_count = 0;
     vpe_priv->config_writer.total_config_count = 0;
     vpe_priv->config_writer.reused_config_count = 0;
 #endif
@@ -867,7 +869,11 @@ enum vpe_status vpe_build_commands(
 #endif
         }
 #ifdef VPE_REGISTER_PROFILE
-        vpe_log("Total Registers Accessed: % d\n", vpe_priv->config_writer.register_count);
+        vpe_log("Total Registers Accessed: % d\n", vpe_priv->config_writer.total_register_count);
+        vpe_log("Burst Mode Registers Accessed: % d\n",
+            vpe_priv->config_writer.burstMode_register_count);
+        vpe_log("Non-Burst Mode Registers Accessed: % d\n",
+            vpe_priv->config_writer.nonBurstMode_register_count);
         vpe_log("Total Config Descriptors: % d\n", vpe_priv->config_writer.total_config_count);
         vpe_log("Total Re-used Config Descriptors: % d\n", vpe_priv->config_writer.reused_config_count);
 #endif
