@@ -379,7 +379,7 @@ SOFTWARE.
 	<field   pos="49"           name="SCOPE_HI" type="uint"/>
 	<field   pos="50"           name="TYPE_SIZE" type="#alias-type-size"/>
 	<field   low="51" high="52" name="SRC_REG_TYPE" type="#alias-src-reg-type"/>
-	<pattern low="53" high="54">1x</pattern>
+	<pattern low="53" high="54">xx</pattern>
 	<pattern low="55" high="58">1000</pattern> <!-- OPC -->
 	<field   pos="59"           name="JP" type="bool" display="(jp)"/>
 	<field   pos="60"           name="SY" type="bool" display="(sy)"/>
