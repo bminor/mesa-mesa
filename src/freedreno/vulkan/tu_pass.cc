@@ -516,6 +516,9 @@ tu_render_pass_calc_views(struct tu_render_pass *pass)
 static bool
 tu_render_pass_disable_fdm(struct tu_device *dev, struct tu_render_pass *pass)
 {
+   if (TU_DEBUG(NOFDM))
+      return true;
+
    for (uint32_t i = 0; i < pass->attachment_count; i++) {
       struct tu_render_pass_attachment *att = &pass->attachments[i];
 
