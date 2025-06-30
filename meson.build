@@ -1585,18 +1585,14 @@ if dep_thread.found()
 endif
 
 with_expat = get_option('expat') \
-  .disable_auto_if(with_platform_android or with_platform_windows)
+  .disable_auto_if(with_platform_android or with_platform_windows) \
+  .enable_if(with_intel_tools, error_message : 'Intel tools require expat')
 
 if host_machine.system() == 'darwin'
   dep_expat = meson.get_compiler('c').find_library('expat', required : with_expat)
 else
   dep_expat = dependency('expat', allow_fallback: true,
                          required : with_expat)
-endif
-
-# TODO: with Meson 1.1.0 this can be replaced with with_expat.enable_if(with_intel_tools)
-if with_intel_tools and not dep_expat.found()
-  error('Intel tools require expat')
 endif
 
 # We don't require expat on Android or Windows
