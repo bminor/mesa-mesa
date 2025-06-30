@@ -498,7 +498,9 @@ def parse_args() -> argparse.Namespace:
 
     mutex_group1 = parser.add_mutually_exclusive_group()
     mutex_group1.add_argument(
-        "--rev", default="HEAD", metavar="revision", help="repository git revision (default: HEAD)"
+        "--rev",
+        default="HEAD",
+        help="Repository git commit-ish, tag or branch name (default: HEAD)",
     )
     mutex_group1.add_argument(
         "--pipeline-url",
