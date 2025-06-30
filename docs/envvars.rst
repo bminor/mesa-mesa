@@ -535,6 +535,10 @@ Intel driver environment variables
       use color in output
    ``cs``
       dump shader assembly for compute shaders
+   ``dispatch_bkp``
+      Add semaphore wait before/after dispatch call count.
+      ``INTEL_DEBUG_BKP_BEFORE_DISPATCH_COUNT`` or
+      ``INTEL_DEBUG_BKP_AFTER_DISPATCH_COUNT`` can control dispatch call number.
    ``do32``
       generate compute shader SIMD32 programs even if workgroup size
       doesn't exceed the SIMD16 limit
