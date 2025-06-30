@@ -428,7 +428,7 @@ brw_reg_alloc::setup_live_interference(unsigned node, brw_range ip_range)
  * GRF sources and the destination.
  */
 static bool
-brw_inst_has_source_and_destination_hazard(const brw_inst *inst)
+brw_inst_has_source_and_destination_hazard(const brw_inst *inst, unsigned src)
 {
    switch (inst->opcode) {
    case FS_OPCODE_PACK_HALF_2x16_SPLIT:
@@ -506,14 +506,12 @@ brw_inst_has_source_and_destination_hazard(const brw_inst *inst)
        * would get stomped by the first decode as well.
        */
       if (inst->exec_size == 16) {
-         for (int i = 0; i < inst->sources; i++) {
-            if (inst->src[i].file == VGRF && (inst->src[i].stride == 0 ||
-                                              inst->src[i].type == BRW_TYPE_UW ||
-                                              inst->src[i].type == BRW_TYPE_W ||
-                                              inst->src[i].type == BRW_TYPE_UB ||
-                                              inst->src[i].type == BRW_TYPE_B)) {
-               return true;
-            }
+         if (inst->src[src].file == VGRF && (inst->src[src].stride == 0 ||
+                                             inst->src[src].type == BRW_TYPE_UW ||
+                                             inst->src[src].type == BRW_TYPE_W ||
+                                             inst->src[src].type == BRW_TYPE_UB ||
+                                             inst->src[src].type == BRW_TYPE_B)) {
+            return true;
          }
       }
       return false;
@@ -526,9 +524,10 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
    /* Certain instructions can't safely use the same register for their
     * sources and destination.  Add interference.
     */
-   if (inst->dst.file == VGRF && brw_inst_has_source_and_destination_hazard(inst)) {
+   if (inst->dst.file == VGRF) {
       for (unsigned i = 0; i < inst->sources; i++) {
-         if (inst->src[i].file == VGRF) {
+         if (inst->src[i].file == VGRF &&
+             brw_inst_has_source_and_destination_hazard(inst, i)) {
             ra_add_node_interference(g, first_vgrf_node + inst->dst.nr,
                                         first_vgrf_node + inst->src[i].nr);
          }
