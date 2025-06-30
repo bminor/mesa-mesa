@@ -988,6 +988,11 @@ dri_create_image_from_winsys(struct dri_screen *screen,
    if (!img)
       return NULL;
 
+   unsigned handle_usage = 0;
+
+   if (tex_usage & PIPE_BIND_RENDER_TARGET)
+      handle_usage |= PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE;
+
    memset(&templ, 0, sizeof(templ));
    templ.bind = tex_usage | bind;
    templ.target = screen->target;
@@ -1002,8 +1007,7 @@ dri_create_image_from_winsys(struct dri_screen *screen,
 
       templ.next = img->texture;
 
-      tex = pscreen->resource_from_handle(pscreen, &templ, &whandle[i],
-                                          PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE);
+      tex = pscreen->resource_from_handle(pscreen, &templ, &whandle[i], handle_usage);
       if (!tex) {
          pipe_resource_reference(&img->texture, NULL);
          FREE(img);
@@ -1027,7 +1031,7 @@ dri_create_image_from_winsys(struct dri_screen *screen,
 
       tex = pscreen->resource_from_handle(pscreen,
                &templ, &whandle[use_lowered ? map->planes[i].buffer_index : i],
-               PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE);
+               handle_usage);
       if (!tex) {
          pipe_resource_reference(&img->texture, NULL);
          FREE(img);
