@@ -1315,7 +1315,6 @@ nvk_create_drm_physical_device(struct vk_instance *_instance,
 
    bool conformant =
       nvkmd->dev_info.type == NV_DEVICE_TYPE_DIS &&
-      nvkmd->dev_info.cls_eng3d >= MAXWELL_A &&
       nvkmd->dev_info.cls_eng3d <= ADA_A;
 
    if (!conformant &&
