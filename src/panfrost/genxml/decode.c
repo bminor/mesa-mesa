@@ -563,6 +563,37 @@ GENX(pandecode_shader)(struct pandecode_context *ctx, uint64_t addr,
    return desc.binary;
 }
 
+static unsigned
+pandecode_buffer(struct pandecode_context *ctx,
+                 const struct mali_buffer_packed *cl, uint64_t addr)
+{
+   pan_unpack(cl, BUFFER, buffer)
+      ;
+   DUMP_UNPACKED(ctx, BUFFER, buffer, "Buffer @%" PRIx64 ":\n", addr);
+
+   /* If the address is the following descriptor, this descriptor is an IUB. */
+   if (buffer.address == (addr + 0x20)) {
+      assert((buffer.size % 0x20) == 0);
+
+      const uint8_t *cl_bytes = (uint8_t *)cl;
+      const uint32_t *words = (uint32_t *)(cl_bytes + 0x20);
+      unsigned count = buffer.size / (2 * sizeof(uint32_t));
+
+      ctx->indent++;
+      pandecode_log(ctx, "IUB @%" PRIx64 ":\n", buffer.address);
+      ctx->indent++;
+      for (unsigned i = 0; i < count; ++i)
+         pandecode_log(ctx, "%08X %08X\n", words[2 * i], words[2 * i + 1]);
+      ctx->indent--;
+      ctx->indent--;
+      pandecode_log(ctx, "\n");
+
+      return buffer.size;
+   }
+
+   return 0;
+}
+
 static void
 pandecode_resources(struct pandecode_context *ctx, uint64_t addr, unsigned size)
 {
@@ -589,7 +620,8 @@ pandecode_resources(struct pandecode_context *ctx, uint64_t addr, unsigned size)
          DUMP_CL(ctx, ATTRIBUTE, cl + i, "Attribute @%" PRIx64 ":\n", addr + i);
          break;
       case MALI_DESCRIPTOR_TYPE_BUFFER:
-         DUMP_CL(ctx, BUFFER, cl + i, "Buffer @%" PRIx64 ":\n", addr + i);
+         i += pandecode_buffer(ctx, (const struct mali_buffer_packed *)&cl[i],
+                               addr + i);
          break;
       default:
          fprintf(ctx->dump_stream, "Unknown descriptor type %X\n", header.type);
