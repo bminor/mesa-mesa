@@ -81,3 +81,16 @@
     paths:
       - subprojects/packagecache
 
+.ci-deqp-artifacts:
+  artifacts:
+    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
+    when: always
+    untracked: false
+    paths:
+      # Watch out!  Artifacts are relative to the build dir.
+      # https://gitlab.com/gitlab-org/gitlab-ce/commit/8788fb925706cad594adf6917a6c5f6587dd1521
+      - artifacts
+      - _build/meson-logs/*.txt
+      - _build/meson-logs/strace
+      - _build/.ninja_log
+

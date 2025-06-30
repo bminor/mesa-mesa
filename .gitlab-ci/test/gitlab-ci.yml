@@ -1,6 +1,24 @@
 include:
   - local: '.gitlab-ci/test/gitlab-ci-inc.yml'
 
+mr-label-maker-test:
+  extends:
+    - .fdo.ci-fairy
+  stage: sanity
+  tags:
+    - placeholder-job
+  rules:
+    - !reference [.mr-label-maker-rules, rules]
+  variables:
+    GIT_STRATEGY: fetch
+  timeout: 10m
+  script:
+    - set -eu
+    - python3 -m venv .venv
+    - source .venv/bin/activate
+    - pip install git+https://gitlab.freedesktop.org/freedesktop/mr-label-maker
+    - mr-label-maker --dry-run --mr $CI_MERGE_REQUEST_IID
+
 rustfmt:
   extends:
     - .formatting-check

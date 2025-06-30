@@ -182,3 +182,13 @@
     - (set -x; curl -L --retry 4 -f --retry-all-errors --retry-delay 60 ${FDO_HTTP_CACHE_URI:-}https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}.tar.zst | tar --zstd -x)
     - section_end artifacts_download
 
+# Jobs that need to pass before spending hardware resources on further testing
+.required-for-hardware-jobs:
+  needs:
+    - job: rustfmt
+      optional: true
+      artifacts: false
+    - job: yaml-toml-shell-py-test
+      optional: true
+      artifacts: false
+

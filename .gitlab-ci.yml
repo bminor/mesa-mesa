@@ -387,38 +387,6 @@ include:
     # manually triggered
     - when: manual
 
-
-.ci-deqp-artifacts:
-  artifacts:
-    name: "${CI_PROJECT_NAME}_${CI_JOB_NAME_SLUG}"
-    when: always
-    untracked: false
-    paths:
-      # Watch out!  Artifacts are relative to the build dir.
-      # https://gitlab.com/gitlab-org/gitlab-ce/commit/8788fb925706cad594adf6917a6c5f6587dd1521
-      - artifacts
-      - _build/meson-logs/*.txt
-      - _build/meson-logs/strace
-      - _build/.ninja_log
-
-# Git archive
-
-make-git-archive:
-  extends:
-    - .fdo.ci-fairy
-  stage: git-archive
-  rules:
-    - !reference [.scheduled_pipeline-rules, rules]
-  script:
-    # Compactify the .git directory
-    - git gc --aggressive
-    # Download & cache the perfetto subproject as well.
-    - rm -rf subprojects/perfetto ; mkdir -p subprojects/perfetto && curl --fail https://android.googlesource.com/platform/external/perfetto/+archive/$(grep 'revision =' subprojects/perfetto.wrap | cut -d ' ' -f3).tar.gz | tar zxf - -C subprojects/perfetto
-    # compress the current folder
-    - tar -cvzf ../$CI_PROJECT_NAME.tar.gz .
-
-    - ci-fairy s3cp --token-file "${S3_JWT_FILE}" ../$CI_PROJECT_NAME.tar.gz https://$S3_HOST/git-cache/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/$CI_PROJECT_NAME.tar.gz
-
 # Sanity checks of MR settings and commit logs
 sanity:
   extends:
@@ -467,31 +435,3 @@ sanity:
     reports:
       junit: check-*.xml
 
-
-mr-label-maker-test:
-  extends:
-    - .fdo.ci-fairy
-  stage: sanity
-  tags:
-    - placeholder-job
-  rules:
-    - !reference [.mr-label-maker-rules, rules]
-  variables:
-    GIT_STRATEGY: fetch
-  timeout: 10m
-  script:
-    - set -eu
-    - python3 -m venv .venv
-    - source .venv/bin/activate
-    - pip install git+https://gitlab.freedesktop.org/freedesktop/mr-label-maker
-    - mr-label-maker --dry-run --mr $CI_MERGE_REQUEST_IID
-
-# Jobs that need to pass before spending hardware resources on further testing
-.required-for-hardware-jobs:
-  needs:
-    - job: rustfmt
-      optional: true
-      artifacts: false
-    - job: yaml-toml-shell-py-test
-      optional: true
-      artifacts: false
