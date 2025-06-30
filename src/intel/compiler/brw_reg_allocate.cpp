@@ -428,12 +428,27 @@ brw_reg_alloc::setup_live_interference(unsigned node, brw_range ip_range)
  * GRF sources and the destination.
  */
 static bool
-brw_inst_has_source_and_destination_hazard(const brw_inst *inst, unsigned src)
+brw_inst_has_source_and_destination_hazard(const struct intel_device_info *devinfo,
+                                           const brw_inst *inst, unsigned src)
 {
    switch (inst->opcode) {
    case FS_OPCODE_PACK_HALF_2x16_SPLIT:
       /* Multiple partial writes to the destination */
       return true;
+   case SHADER_OPCODE_BROADCAST:
+      /* This instruction returns an arbitrary channel from the source. If the
+       * source is 64-bits and the platform does not support 64-bit integers,
+       * the instruction will be split in to multiple instructionsin the
+       * generator.  It's possible that one of the instructions will read from
+       * a channel corresponding to an earlier instruction.
+       *
+       * Otherwise, if the SIMD size is larger than the fundamental SIMD size
+       * of the platform, the instruction will be implicitly SIMD split. It is
+       * possible for earlier "instructions" to overwrite the source needed
+       * later.
+       */
+      return inst->exec_size > 8 * reg_unit(devinfo) ||
+             (brw_type_size_bytes(inst->src[src].type) > 4 && !devinfo->has_64bit_int);
    case SHADER_OPCODE_SHUFFLE:
       /* This instruction returns an arbitrary channel from the source and
        * gets split into smaller instructions in the generator.  It's possible
@@ -527,7 +542,7 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
    if (inst->dst.file == VGRF) {
       for (unsigned i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == VGRF &&
-             brw_inst_has_source_and_destination_hazard(inst, i)) {
+             brw_inst_has_source_and_destination_hazard(devinfo, inst, i)) {
             ra_add_node_interference(g, first_vgrf_node + inst->dst.nr,
                                         first_vgrf_node + inst->src[i].nr);
          }
