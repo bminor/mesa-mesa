@@ -1109,6 +1109,8 @@ bool gfx10_ngg_export_prim_early(struct si_shader *shader)
 
    return sel->stage != MESA_SHADER_GEOMETRY &&
           !gfx10_ngg_writes_user_edgeflags(shader) &&
+          /* gfx10.x is sometimes slower with the late primitive export, so use the early prim
+           * export by default. */
           sel->screen->info.gfx_level < GFX11;
 }
 
