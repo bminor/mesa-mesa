@@ -82,7 +82,9 @@ static bool is_barrier(const nir_instr *instr, UNUSED const void *cb_data)
  * \param[in,out] shader NIR shader.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_barriers(nir_shader *shader, bool *uses_usclib)
+bool pco_nir_lower_barriers(nir_shader *shader,
+                            pco_data *data,
+                            bool *uses_usclib)
 {
    bool barrier_emitted = false;
    bool progress = nir_shader_lower_instructions(shader,
@@ -91,6 +93,7 @@ bool pco_nir_lower_barriers(nir_shader *shader, bool *uses_usclib)
                                                  &barrier_emitted);
 
    *uses_usclib |= barrier_emitted;
+   data->common.uses.barriers |= progress;
 
    return progress;
 }

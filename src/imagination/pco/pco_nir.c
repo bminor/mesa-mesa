@@ -722,7 +722,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 
    NIR_PASS(_, nir, nir_opt_barrier_modes);
    NIR_PASS(_, nir, nir_opt_combine_barriers, NULL, NULL);
-   NIR_PASS(_, nir, pco_nir_lower_barriers, &uses_usclib);
+   NIR_PASS(_, nir, pco_nir_lower_barriers, data, &uses_usclib);
 
    NIR_PASS(_, nir, nir_lower_memory_model);
 
