@@ -424,7 +424,7 @@
         "description": "dri: fix __DRI_IMAGE_FORMAT* to PIPE_FORMAT* mappings",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7e106017863272887976673cf702e90bfe2d4efe",
         "notes": null
