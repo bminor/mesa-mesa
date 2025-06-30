@@ -7884,7 +7884,7 @@
         "description": "anv: fix capture/replay of sparse images with descriptor buffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "43b57ee8a5612758f9078848ee2e725f2a239d95",
         "notes": null
