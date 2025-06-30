@@ -507,18 +507,14 @@ intrin_to_variable_mode(nir_intrinsic_op intrin)
 }
 
 static bool
-lower_mem_access_instr(nir_builder *b, nir_instr *instr, void *_data)
+lower_mem_access_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_data)
 {
    const nir_lower_mem_access_bit_sizes_options *state = _data;
 
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
    if (!(state->modes & intrin_to_variable_mode(intrin->intrinsic)))
       return false;
 
-   b->cursor = nir_after_instr(instr);
+   b->cursor = nir_after_instr(&intrin->instr);
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_ubo:
@@ -552,7 +548,7 @@ bool
 nir_lower_mem_access_bit_sizes(nir_shader *shader,
                                const nir_lower_mem_access_bit_sizes_options *options)
 {
-   return nir_shader_instructions_pass(shader, lower_mem_access_instr,
-                                       nir_metadata_control_flow,
-                                       (void *)options);
+   return nir_shader_intrinsics_pass(shader, lower_mem_access_instr,
+                                     nir_metadata_control_flow,
+                                     (void *)options);
 }
