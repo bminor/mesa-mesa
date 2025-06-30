@@ -16,7 +16,8 @@
  */
 
 static void
-def_size(nir_def *def, unsigned *size, unsigned *align)
+def_size(nir_def *def, unsigned *size, unsigned *align,
+         nir_preamble_class *class)
 {
    unsigned bit_size = def->bit_size == 1 ? 32 : def->bit_size;
    /* Due to the implicit const file promotion we want to expand 16-bit values
@@ -25,6 +26,7 @@ def_size(nir_def *def, unsigned *size, unsigned *align)
     */
    *size = DIV_ROUND_UP(bit_size, 32) * def->num_components;
    *align = 1;
+   *class = nir_preamble_class_general;
 }
 
 static bool
@@ -319,7 +321,7 @@ ir3_nir_opt_preamble(nir_shader *nir, struct ir3_shader_variant *v)
       .subgroup_size_uniform = true,
       .load_workgroup_size_allowed = true,
       .def_size = def_size,
-      .preamble_storage_size = max_size,
+      .preamble_storage_size[nir_preamble_class_general] = max_size,
       .instr_cost_cb = instr_cost,
       .avoid_instr_cb = avoid_instr,
       .rewrite_cost_cb = rewrite_cost,

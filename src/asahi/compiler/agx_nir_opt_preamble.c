@@ -11,12 +11,14 @@
 #include "nir_opcodes.h"
 
 static void
-def_size(nir_def *def, unsigned *size, unsigned *align)
+def_size(nir_def *def, unsigned *size, unsigned *align,
+         nir_preamble_class *class)
 {
    unsigned bit_size = MAX2(def->bit_size, 16);
 
    *size = (bit_size * def->num_components) / 16;
    *align = bit_size / 16;
+   *class = nir_preamble_class_general;
 }
 
 static bool
@@ -330,7 +332,7 @@ static const nir_opt_preamble_options preamble_options = {
     * hot constants so we don't end up rematerializing all over the place.
     * 480 seems to be a sweetspot, based on a few minutes of shader-db.
     */
-   .preamble_storage_size = 480,
+   .preamble_storage_size[nir_preamble_class_general] = 480,
 };
 
 bool

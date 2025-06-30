@@ -347,6 +347,9 @@ index("bool", "explicit_coord")
 # The index of the format string used by a printf. (u_printf_info element of the shader)
 index("unsigned", "fmt_idx")
 
+# Register class for load/store_preamble
+index("nir_preamble_class", "preamble_class")
+
 intrinsic("nop", flags=[CAN_ELIMINATE])
 
 # Uses a value and cannot be eliminated.
@@ -1338,8 +1341,9 @@ load("mesh_view_indices", [1], [BASE, RANGE], [CAN_ELIMINATE, CAN_REORDER])
 # This should use something similar to Vulkan push constants and load_preamble
 # should be relatively cheap.
 # For now we only support accesses with a constant offset.
-load("preamble", [], indices=[BASE], flags=[CAN_ELIMINATE, CAN_REORDER])
-store("preamble", [], indices=[BASE])
+load("preamble", [], indices=[BASE, PREAMBLE_CLASS],
+     flags=[CAN_ELIMINATE, CAN_REORDER])
+store("preamble", [], indices=[BASE, PREAMBLE_CLASS])
 
 # A 64-bit bitfield indexed by I/O location storing 1 in bits corresponding to
 # varyings that have the flat interpolation specifier in the fragment shader and

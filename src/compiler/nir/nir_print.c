@@ -1232,6 +1232,12 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
 
    for (unsigned i = 0; i < info->num_indices; i++) {
       unsigned idx = info->indices[i];
+
+      /* Skip "general" to denoise since it is the unremarkable default case */
+      if (idx == NIR_INTRINSIC_PREAMBLE_CLASS &&
+          nir_intrinsic_preamble_class(instr) == nir_preamble_class_general)
+         continue;
+
       if (i == 0)
          fprintf(fp, " (");
       else
@@ -1699,6 +1705,14 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
          fprintf(fp, "interp_mode=%s",
                  glsl_interp_mode_name(nir_intrinsic_interp_mode(instr)));
          break;
+
+      case NIR_INTRINSIC_PREAMBLE_CLASS: {
+         /* "General" handled above */
+         nir_preamble_class cls = nir_intrinsic_preamble_class(instr);
+         assert(cls == nir_preamble_class_image);
+         fprintf(fp, "class=image");
+         break;
+      }
 
       default: {
          unsigned off = info->index_map[idx] - 1;

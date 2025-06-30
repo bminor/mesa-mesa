@@ -225,6 +225,16 @@ typedef enum {
 } nir_resource_data_intel;
 
 /**
+ * Register class for registers managed by nir_opt_preamble. General can handle
+ * anything, the others are driver-specific but with common names for nir_print.
+ */
+typedef enum {
+   nir_preamble_class_general,
+   nir_preamble_class_image,
+   nir_preamble_num_classes,
+} nir_preamble_class;
+
+/**
  * Which components to interpret as signed in cmat_muladd.
  * See 'Cooperative Matrix Operands' in SPV_KHR_cooperative_matrix.
  */
@@ -6343,13 +6353,20 @@ typedef struct nir_opt_preamble_options {
    /* True if load_workgroup_size is supported in the preamble. */
    bool load_workgroup_size_allowed;
 
-   /* size/align for load/store_preamble. */
-   void (*def_size)(nir_def *def, unsigned *size, unsigned *align);
+   /* size/align/class for load/store_preamble.
+    *
+    * Defs with class "general" will always be allocated as general. Other
+    * classes will attempt to allocate as the specialized class but may fallback
+    * to general. This mechanism enables "tiered" classes in a single
+    * nir_opt_preamble call with proper global behaviour.
+    */
+   void (*def_size)(nir_def *def, unsigned *size, unsigned *align,
+                    nir_preamble_class *class_);
 
-   /* Total available size for load/store_preamble storage, in units
+   /* Total available size per class for load/store_preamble storage, in units
     * determined by def_size.
     */
-   unsigned preamble_storage_size;
+   unsigned preamble_storage_size[nir_preamble_num_classes];
 
    /* Give the cost for an instruction. nir_opt_preamble will prioritize
     * instructions with higher costs. Instructions with cost 0 may still be
