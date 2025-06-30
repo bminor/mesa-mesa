@@ -247,7 +247,7 @@ lower_bit_size_cb(const nir_instr *instr, void *data)
           * 32-bit and so the bit size of the instruction is given by the
           * source.
           */
-         return alu->src[0].src.ssa->bit_size == 32 ? 0 : 32;
+         return alu->src[0].src.ssa->bit_size >= 32 ? 0 : 32;
 
       case nir_op_fabs:
       case nir_op_fadd:
