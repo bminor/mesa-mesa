@@ -234,7 +234,7 @@
         "description": "v3d: fix support for no buffer object bound",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bb8285c25859b35d06ccd283d7fdf1bab07dc059",
         "notes": null
