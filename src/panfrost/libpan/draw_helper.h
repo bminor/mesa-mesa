@@ -21,6 +21,11 @@ enum panlib_varying_buf_id {
    PANLIB_VARY_BUF_MAX,
 };
 
+struct libpan_draw_helper_index_min_max_result {
+    uint32_t min;
+    uint32_t max;
+};
+
 struct libpan_draw_helper_varying_buf_info {
     uint64_t address;
     uint32_t size;

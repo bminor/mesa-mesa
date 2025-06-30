@@ -1588,6 +1588,57 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                                      : cmdbuf->state.gfx.render.layer_count;
    const struct panvk_shader_variant *fs = panvk_shader_only_variant(get_fs(cmdbuf));
 
+   struct panvk_precomp_ctx precomp_ctx = panvk_per_arch(precomp_cs)(cmdbuf);
+   uint64_t index_min_max_res_ptr = 0;
+   uint32_t job_before_indirect_helper = copy_desc_job_id;
+   if (draw->info.index.size) {
+      index_min_max_res_ptr =
+         panvk_cmd_alloc_dev_mem(
+            cmdbuf, desc,
+            sizeof(struct libpan_draw_helper_index_min_max_result), 8)
+            .gpu;
+      const struct panlib_draw_index_minmax_search_helper_args args = {
+         .index_buffer_ptr = cmdbuf->state.gfx.ib.dev_addr,
+         .cmd = draw->info.indirect.buffer_dev_addr,
+         .min_ptr =
+            index_min_max_res_ptr +
+            offsetof(struct libpan_draw_helper_index_min_max_result, min),
+         .max_ptr =
+            index_min_max_res_ptr +
+            offsetof(struct libpan_draw_helper_index_min_max_result, max),
+      };
+
+      struct libpan_draw_helper_index_min_max_result val = {
+         .min = ((uint64_t)1 << (draw->info.index.size * 8)) - 1,
+         .max = 0,
+      };
+      uint64_t *raw_val = (uint64_t *)&val;
+
+      struct pan_ptr write_job =
+         pan_pool_alloc_desc(&cmdbuf->desc_pool.base, WRITE_VALUE_JOB);
+
+      pan_section_pack(write_job.cpu, WRITE_VALUE_JOB, PAYLOAD, payload) {
+         payload.type = MALI_WRITE_VALUE_TYPE_IMMEDIATE_64;
+         payload.address = index_min_max_res_ptr;
+         payload.immediate_value = *raw_val;
+      };
+
+      unsigned write_job_id =
+         pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_WRITE_VALUE, false, false,
+                        0, copy_desc_job_id, &write_job, false);
+      util_dynarray_append(&batch->jobs, void *, write_job.cpu);
+
+      uint32_t index_count = cmdbuf->state.gfx.ib.size / draw->info.index.size;
+      uint32_t wg_count = DIV_ROUND_UP(index_count, 65536);
+      assert(wg_count <= 65536);
+
+      panlib_draw_index_minmax_search_helper_struct(
+         &precomp_ctx, panlib_1d_with_jm_deps(wg_count, 0, write_job_id),
+         PANLIB_BARRIER_NONE, args, util_logbase2(draw->info.index.size),
+         ia->primitive_restart_enable);
+      job_before_indirect_helper = batch->vtc_jc.job_index;
+   }
+
    for (uint32_t i = 0; i < enabled_layer_count; i++) {
       /* Force a new push uniform block to be allocated */
       gfx_state_set_dirty(cmdbuf, VS_PUSH_UNIFORMS);
@@ -1669,20 +1720,19 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                vs, sysval_offset(graphics, vs.raw_vertex_offset));
       }
 
-      struct panvk_precomp_ctx precomp_ctx = panvk_per_arch(precomp_cs)(cmdbuf);
       enum panlib_barrier indirect_barrier =
          PANLIB_BARRIER_JM_SUPPRESS_PREFETCH;
       struct panlib_precomp_grid indirect_grid =
-         panlib_1d_with_jm_deps(1, 0, copy_desc_job_id);
+         panlib_1d_with_jm_deps(1, 0, job_before_indirect_helper);
 
       if (draw->info.indirect.buffer_dev_addr != 0 && draw->info.index.size) {
          const struct panlib_draw_indexed_indirect_helper_args args = {
             .cmd = draw->info.indirect.buffer_dev_addr,
             .index_buffer_ptr = cmdbuf->state.gfx.ib.dev_addr,
+            .index_min_max_res = index_min_max_res_ptr,
             .index_size = draw->info.index.size,
             .primitive_vertex_count = primitive_vertex_count(
                translate_prim_topology(ia->primitive_topology)),
-            .primitive_restart = ia->primitive_restart_enable,
             .varying_bufs_descs = draw->varying_bufs,
             .varying_bufs_info = draw->indirect_info.varying_bufs,
             .attrib_bufs_descs = draw->vs.attribute_bufs,

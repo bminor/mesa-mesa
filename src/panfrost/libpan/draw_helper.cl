@@ -10,36 +10,6 @@
 #include "draw_helper.h"
 
 #if (PAN_ARCH == 6 || PAN_ARCH == 7)
-static void
-panlib_index_minmax_search(global uint8_t *index_buffer_ptr,
-                           uint32_t index_bit_size, uint32_t start,
-                           uint32_t count, bool primitive_restart,
-                           uint32_t *min_ptr, uint32_t *max_ptr)
-{
-   *max_ptr = 0;
-
-   switch (index_bit_size) {
-#define MINMAX_SEARCH_CASE(sz)                                                 \
-   case sz: {                                                                  \
-      global uint##sz##_t *indices = (global uint##sz##_t *)index_buffer_ptr;  \
-      *min_ptr = UINT##sz##_MAX;                                               \
-      for (uint32_t i = 0; i < count; i++) {                                   \
-         if (primitive_restart && indices[i + start] == UINT##sz##_MAX)        \
-            continue;                                                          \
-         *min_ptr = min((uint32_t)indices[i + start], *min_ptr);               \
-         *max_ptr = max((uint32_t)indices[i + start], *max_ptr);               \
-      }                                                                        \
-      break;                                                                   \
-   }
-      MINMAX_SEARCH_CASE(32)
-      MINMAX_SEARCH_CASE(16)
-      MINMAX_SEARCH_CASE(8)
-#undef MINMAX_SEARCH_CASE
-   default:
-      assert(0 && "Invalid index size");
-   }
-}
-
 struct panlib_draw_info {
    struct {
       uint32_t size;
@@ -494,6 +464,7 @@ panlib_draw_indirect_helper(
 KERNEL(1)
 panlib_draw_indexed_indirect_helper(
    global VkDrawIndexedIndirectCommand *cmd, global uint8_t *index_buffer_ptr,
+   global struct libpan_draw_helper_index_min_max_result *index_min_max_res,
    uint32_t index_size, uint32_t primitive_vertex_count,
    uint32_t attrib_bufs_valid, uint32_t attribs_valid,
    global struct mali_attribute_buffer_packed *varying_bufs_descs,
@@ -504,21 +475,15 @@ panlib_draw_indexed_indirect_helper(
    global struct libpan_draw_helper_attrib_info *attribs_infos,
    global uint32_t *first_vertex_sysval, global uint32_t *first_instance_sysval,
    global uint32_t *raw_vertex_offset_sysval, global uint8_t *idvs_job,
-   global uint8_t *vertex_job, global uint8_t *tiler_job,
-   uint8_t primitive_restart)
+   global uint8_t *vertex_job, global uint8_t *tiler_job)
 {
    const uint32_t index_count = cmd->indexCount;
    const uint32_t first_index = cmd->firstIndex;
    const uint32_t first_instance = cmd->firstInstance;
    const uint32_t instance_count = cmd->instanceCount;
    const int32_t vertex_offset = cmd->vertexOffset;
-
-   /* First compute the min and max range */
-   uint32_t min_vertex, max_vertex;
-   panlib_index_minmax_search(index_buffer_ptr, index_size * 8, first_index,
-                              index_count, primitive_restart, &min_vertex,
-                              &max_vertex);
-
+   const uint32_t min_vertex = index_min_max_res->min;
+   const uint32_t max_vertex = index_min_max_res->max;
    const uint32_t vertex_range = max_vertex - min_vertex + 1;
 
    struct panlib_draw_info draw = {
@@ -558,4 +523,60 @@ panlib_draw_indexed_indirect_helper(
    *first_instance_sysval = draw.instance.base;
    *raw_vertex_offset_sysval = draw.vertex.raw_offset;
 }
+
+KERNEL(64)
+panlib_draw_index_minmax_search_helper(global uint8_t *index_buffer_ptr,
+                                       global VkDrawIndexedIndirectCommand *cmd,
+                                       global atomic_uint *min_ptr,
+                                       global atomic_uint *max_ptr,
+                                       uint32_t index_bytes_log2__3,
+                                       uint8_t primitive_restart__2)
+{
+   /* Max count of values to process per thread */
+   const uint32_t max_count_per_thread = 1024;
+
+   const uint32_t index_bit_size = (1 << index_bytes_log2__3) * 8;
+   const uint32_t start = cmd->firstIndex;
+   const uint32_t index_count = cmd->indexCount;
+
+   uint32_t base_idx = cl_global_id.x * max_count_per_thread;
+
+   /* If the thread is out of range, bail out */
+   if (base_idx >= index_count)
+      return;
+
+   /* Compute expected max iteration to do in this thread */
+   uint32_t count = MIN2(max_count_per_thread, index_count - base_idx);
+
+   /* Sanity check so nothing weird will happen */
+   assert(base_idx + count <= index_count);
+
+   uint32_t local_min = ((uint64_t)1 << index_bit_size) - 1;
+   uint32_t local_max = 0;
+
+   switch (index_bit_size) {
+#define MINMAX_SEARCH_CASE(sz)                                                 \
+   case sz: {                                                                  \
+      global uint##sz##_t *indices = (global uint##sz##_t *)index_buffer_ptr;  \
+      for (uint32_t i = 0; i < count; i++) {                                   \
+         uint32_t val = (uint32_t)indices[start + base_idx + i];               \
+         if (primitive_restart__2 && val == UINT##sz##_MAX)                    \
+            continue;                                                          \
+         local_min = min(local_min, val);                                      \
+         local_max = max(local_max, val);                                      \
+      }                                                                        \
+      break;                                                                   \
+   }
+      MINMAX_SEARCH_CASE(32)
+      MINMAX_SEARCH_CASE(16)
+      MINMAX_SEARCH_CASE(8)
+#undef MINMAX_SEARCH_CASE
+   default:
+      assert(0 && "Invalid index size");
+   }
+
+   atomic_fetch_min(min_ptr, local_min);
+   atomic_fetch_max(max_ptr, local_max);
+}
+
 #endif
