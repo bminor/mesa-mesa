@@ -1103,7 +1103,8 @@ agx_emit_image_load(agx_builder *b, agx_index dst, nir_intrinsic_instr *intr)
    agx_index ms_index = agx_src_index(&intr->src[2]);
    agx_index lod = agx_src_index(&intr->src[3]);
    enum agx_lod_mode lod_mode = AGX_LOD_MODE_LOD_MIN;
-   bool sparse = intr->intrinsic == nir_intrinsic_bindless_image_sparse_load;
+   bool sparse = intr->intrinsic == nir_intrinsic_image_sparse_load ||
+                 intr->intrinsic == nir_intrinsic_bindless_image_sparse_load;
 
    agx_index bindless = agx_immediate(0), texture;
    if (intr->intrinsic == nir_intrinsic_bindless_image_load ||
@@ -1459,6 +1460,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
       return agx_emit_store_preamble(b, instr);
 
    case nir_intrinsic_image_load:
+   case nir_intrinsic_image_sparse_load:
    case nir_intrinsic_bindless_image_load:
    case nir_intrinsic_bindless_image_sparse_load:
       return agx_emit_image_load(b, dst, instr);
