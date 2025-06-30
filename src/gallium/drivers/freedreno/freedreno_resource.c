@@ -1531,14 +1531,18 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
    slice->offset = handle->offset;
    slice->size0 = handle->stride * prsc->height0;
 
-   /* use a pitchalign of gmem_align_w pixels, because GMEM resolve for
-    * lower alignments is not implemented (but possible for a6xx at least)
-    *
-    * for UBWC-enabled resources, layout_resource_for_modifier will further
-    * validate the pitch and set the right pitchalign
-    */
-   rsc->layout.pitchalign =
-      fdl_cpp_shift(&rsc->layout) + util_logbase2(screen->info->gmem_align_w);
+   if (usage & PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE) {
+      /* use a pitchalign of gmem_align_w pixels, because GMEM resolve for
+       * lower alignments is not implemented (but possible for a6xx at least)
+       *
+       * for UBWC-enabled resources, layout_resource_for_modifier will further
+       * validate the pitch and set the right pitchalign
+       */
+      rsc->layout.pitchalign =
+         fdl_cpp_shift(&rsc->layout) + util_logbase2(screen->info->gmem_align_w);
+   } else {
+      rsc->layout.pitchalign = fdl_cpp_shift(&rsc->layout);
+   }
 
    /* apply the minimum pitchalign (note: actually 4 for a3xx but doesn't
     * matter) */
