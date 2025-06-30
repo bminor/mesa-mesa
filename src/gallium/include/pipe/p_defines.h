@@ -1088,6 +1088,7 @@ struct pipe_caps {
    unsigned shader_subgroup_supported_stages;
    unsigned shader_subgroup_supported_features;
    unsigned multiview;
+   uint64_t max_timeline_semaphore_difference;
 
    /** for CL SVM */
    uint64_t min_vma;
@@ -1314,6 +1315,7 @@ enum pipe_fd_type
    PIPE_FD_TYPE_NATIVE_SYNC,
    PIPE_FD_TYPE_SYNCOBJ,
    PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12,
+   PIPE_FD_TYPE_TIMELINE_SEMAPHORE_VK,
 };
 
 /**

@@ -11122,4 +11122,5 @@
 <xi:include href="NV_half_float.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 <xi:include href="GL4x.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
+<xi:include href="NV_timeline_semaphore.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </OpenGLAPI>

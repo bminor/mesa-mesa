@@ -398,6 +398,8 @@ static inline unsigned
 _mesa_semaphore_enum_to_count(GLenum pname)
 {
    switch (pname) {
+   case GL_TIMELINE_SEMAPHORE_VALUE_NV:
+      return 1;
    /* EXT_semaphore and EXT_semaphore_fd define no parameters */
    default:
       return 0;

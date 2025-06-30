@@ -287,6 +287,7 @@ struct gl_extensions
    GLboolean NV_conservative_raster_pre_snap;
    GLboolean NV_viewport_array2;
    GLboolean NV_viewport_swizzle;
+   GLboolean NV_timeline_semaphore;
    GLboolean NVX_gpu_memory_info;
    GLboolean TDFX_texture_compression_FXT1;
    GLboolean OES_EGL_image;
@@ -1000,6 +1001,9 @@ struct gl_constants
 
    /** Whether pipe_context::draw_vertex_state is supported. */
    bool HasDrawVertexState;
+
+   /* NV_timeline_semaphore */
+   GLuint64 MaxTimelineSemaphoreValueDifference;
 
    /** GL_KHR_shader_subgroup */
    GLuint ShaderSubgroupSize;

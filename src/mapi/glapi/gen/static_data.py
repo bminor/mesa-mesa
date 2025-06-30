@@ -1629,6 +1629,9 @@ all_functions = [
     "FramebufferTextureMultiviewOVR",
     "NamedFramebufferTextureMultiviewOVR",
     "FramebufferTextureMultisampleMultiviewOVR",
+    "CreateSemaphoresNV",
+    "GetSemaphoreParameterivNV",
+    "SemaphoreParameterivNV",
 
     # Keep these last. They are never used by any app.
     "ColorTable",

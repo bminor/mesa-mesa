@@ -501,6 +501,9 @@ descriptor=[
 
 # OVR_multiview
   [ "MAX_VIEWS_OVR", "CONST(MAX_VIEWS_OVR), extra_OVR_multiview" ],
+
+# NV_timeline_semaphore
+  [ "MAX_TIMELINE_SEMAPHORE_VALUE_DIFFERENCE_NV", "CONTEXT_INT64(Const.MaxTimelineSemaphoreValueDifference), extra_NV_timeline_semaphore" ],
 ]},
 
 { "apis": ["GLES", "GLES2"], "params": [
