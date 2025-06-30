@@ -86,18 +86,6 @@ image_3d_view_as_2d_array(struct nil_image *image,
    view->base_level = 0;
 }
 
-static enum pipe_format
-get_stencil_format(enum pipe_format format)
-{
-   switch (format) {
-   case PIPE_FORMAT_S8_UINT:              return PIPE_FORMAT_S8_UINT;
-   case PIPE_FORMAT_Z24_UNORM_S8_UINT:    return PIPE_FORMAT_X24S8_UINT;
-   case PIPE_FORMAT_S8_UINT_Z24_UNORM:    return PIPE_FORMAT_S8X24_UINT;
-   case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT: return PIPE_FORMAT_X32_S8X24_UINT;
-   default: unreachable("Unsupported depth/stencil format");
-   }
-}
-
 VkResult
 nvk_image_view_init(struct nvk_device *dev,
                     struct nvk_image_view *view,
@@ -156,7 +144,7 @@ nvk_image_view_init(struct nvk_device *dev,
          ycbcr_info->planes[view_plane].format : view->vk.format;
       enum pipe_format p_format = nvk_format_to_pipe_format(plane_format);
       if (view->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT)
-         p_format = get_stencil_format(p_format);
+         p_format = util_format_stencil_only(p_format);
 
       struct nil_view nil_view = {
          .view_type = vk_image_view_type_to_nil_view_type(view->vk.view_type),
