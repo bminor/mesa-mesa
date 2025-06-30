@@ -2687,7 +2687,8 @@ VkResult pvr_gpu_upload(struct pvr_device *device,
       return result;
 
    map = pvr_bo_suballoc_get_map_addr(suballoc_bo);
-   memcpy(map, data, size);
+   if (data)
+      memcpy(map, data, size);
 
    *pvr_bo_out = suballoc_bo;
 
