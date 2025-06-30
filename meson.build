@@ -281,7 +281,7 @@ with_any_vk = _vulkan_drivers.length() != 0
 
 with_llvm = with_llvm \
   .enable_if(with_swrast_vk, error_message : 'Lavapipe Vulkan driver requires LLVM') \
-  .enable_if(with_amd_vk, error_message : 'RadV Vulkan driver requires LLVM')
+  .enable_if(with_amd_vk and with_aco_tests, error_message : 'RadV ACO tests require LLVM')
 
 with_any_llvmpipe = with_gallium_llvmpipe or with_swrast_vk
 with_gallium_or_lvp = with_gallium or with_swrast_vk
