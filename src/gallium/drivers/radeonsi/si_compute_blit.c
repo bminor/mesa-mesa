@@ -599,6 +599,9 @@ bool si_compute_copy_image(struct si_context *sctx, struct pipe_resource *dst, u
 
    assert(util_format_is_subsampled_422(src_format) == util_format_is_subsampled_422(dst_format));
 
+   if (sdst->is_depth || ssrc->is_depth)
+      return false;
+
    /* Interpret as integer values to avoid NaN issues */
    if (!vi_dcc_enabled(ssrc, src_level) &&
        !vi_dcc_enabled(sdst, dst_level) &&
