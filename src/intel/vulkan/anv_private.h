@@ -5652,6 +5652,11 @@ struct anv_image {
    struct anv_image_memory_range av1_cdf_table;
 };
 
+struct anv_image_opaque_capture_data {
+   uint64_t planes[3];
+   uint64_t private_binding;
+};
+
 static inline bool
 anv_image_is_protected(const struct anv_image *image)
 {
