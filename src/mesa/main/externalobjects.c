@@ -745,6 +745,20 @@ server_signal_semaphore(struct gl_context *ctx,
  */
 static struct gl_semaphore_object DummySemaphoreObject;
 
+static struct gl_semaphore_object *
+create_real_semaphore(struct gl_context *ctx, GLuint semaphore, struct gl_semaphore_object *semObj, const char *func)
+{
+   if (semObj == &DummySemaphoreObject) {
+      semObj = semaphoreobj_alloc(ctx, semaphore);
+      if (!semObj) {
+         _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", func);
+         return NULL;
+      }
+      _mesa_HashInsert(&ctx->Shared->SemaphoreObjects, semaphore, semObj);
+   }
+   return semObj;
+}
+
 /**
  * Delete a semaphore object.
  * Not removed from hash table here.
@@ -1156,14 +1170,9 @@ _mesa_ImportSemaphoreFdEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   if (semObj == &DummySemaphoreObject) {
-      semObj = semaphoreobj_alloc(ctx, semaphore);
-      if (!semObj) {
-         _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", func);
-         return;
-      }
-      _mesa_HashInsert(&ctx->Shared->SemaphoreObjects, semaphore, semObj);
-   }
+   semObj = create_real_semaphore(ctx, semaphore, semObj, func);
+   if (!semObj)
+      return;
 
    import_semaphoreobj_fd(ctx, semObj, fd);
 }
@@ -1198,14 +1207,9 @@ _mesa_ImportSemaphoreWin32HandleEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   if (semObj == &DummySemaphoreObject) {
-      semObj = semaphoreobj_alloc(ctx, semaphore);
-      if (!semObj) {
-         _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", func);
-         return;
-      }
-      _mesa_HashInsert(&ctx->Shared->SemaphoreObjects, semaphore, semObj);
-   }
+   semObj = create_real_semaphore(ctx, semaphore, semObj, func);
+   if (!semObj)
+      return;
 
    enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT ?
       PIPE_FD_TYPE_TIMELINE_SEMAPHORE : PIPE_FD_TYPE_SYNCOBJ;
@@ -1242,14 +1246,9 @@ _mesa_ImportSemaphoreWin32NameEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   if (semObj == &DummySemaphoreObject) {
-      semObj = semaphoreobj_alloc(ctx, semaphore);
-      if (!semObj) {
-         _mesa_error(ctx, GL_OUT_OF_MEMORY, "%s", func);
-         return;
-      }
-      _mesa_HashInsert(&ctx->Shared->SemaphoreObjects, semaphore, semObj);
-   }
+   semObj = create_real_semaphore(ctx, semaphore, semObj, func);
+   if (!semObj)
+      return;
 
    enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT ?
       PIPE_FD_TYPE_TIMELINE_SEMAPHORE : PIPE_FD_TYPE_SYNCOBJ;
