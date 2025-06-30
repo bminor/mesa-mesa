@@ -430,6 +430,13 @@ def parse_args() -> argparse.Namespace:
         + '--target ".*traces" ',
     )
     parser.add_argument(
+        "--server",
+        metavar="gitlab-server",
+        type=str,
+        default=GITLAB_URL,
+        help=f"Specify the GitLab server work with (Default: {GITLAB_URL})",
+    )
+    parser.add_argument(
         "--target",
         metavar="target-job",
         help="Target job regex. For multiple targets, pass multiple values, "
@@ -534,6 +541,7 @@ def print_detected_jobs(
 
 
 def find_dependencies(
+    server: str,
     token: str | None,
     target_jobs_regex: re.Pattern,
     include_stage_regex: re.Pattern,
@@ -549,6 +557,7 @@ def find_dependencies(
     dependencies, and returns the names of these jobs.
 
     Args:
+        server (str): The url to the GitLab server.
         token (str | None): The GitLab API token. If None, the API is accessed without
                             authentication.
         target_jobs_regex (re.Pattern): A regex pattern to match the names of the target jobs.
@@ -561,7 +570,10 @@ def find_dependencies(
     Raises:
         SystemExit: If no target jobs are found in the pipeline.
     """
-    gql_instance = GitlabGQL(token=token)
+    gql_instance = GitlabGQL(
+        url=f"{server}/api/graphql",
+        token=token
+    )
     dag = create_job_needs_dag(
         gql_instance, {"projectPath": project_path.path_with_namespace, "iid": iid}
     )
@@ -624,7 +636,7 @@ def main() -> None:
 
         token = read_token(args.token)
 
-        gl = gitlab.Gitlab(url=GITLAB_URL,
+        gl = gitlab.Gitlab(url=args.server,
                            private_token=token,
                            retry_transient_errors=True)
 
@@ -700,6 +712,7 @@ def main() -> None:
         exclude_stage_regex = re.compile(exclude_stage)
 
         deps = find_dependencies(
+            server=args.server,
             token=token,
             target_jobs_regex=target_jobs_regex,
             include_stage_regex=include_stage_regex,
