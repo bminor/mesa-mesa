@@ -39,6 +39,9 @@ if get_option('layout') != 'mirror'
   error('`mirror` is the only build directory layout supported')
 endif
 
+with_llvm = get_option('llvm')
+amd_with_llvm = get_option('amd-use-llvm')
+
 with_mesa_debug = get_option('buildtype') == 'debug'
 
 # This means the final value of b_ndebug==true
@@ -141,6 +144,7 @@ gallium_drivers = get_option('gallium-drivers')
 if gallium_drivers.contains('auto')
   if system_has_kms_drm
     # TODO: Sparc
+    # TODO: handle llvm being disabled or auto when setting default_drivers
     if ['x86', 'x86_64'].contains(host_machine.cpu_family())
       gallium_drivers = [
         'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'svga', 'llvmpipe', 'softpipe',
@@ -206,6 +210,10 @@ with_gallium_asahi = gallium_drivers.contains('asahi')
 foreach gallium_driver : gallium_drivers
   pre_args += '-DHAVE_@0@'.format(gallium_driver.to_upper())
 endforeach
+with_llvm = with_llvm \
+  .enable_if(with_gallium_radeonsi and amd_with_llvm, error_message : 'RadeonSI Gallium driver configured to require LLVM') \
+  .enable_if(with_gallium_r600 and amd_with_llvm, error_message : 'R600 Gallium driver configured to require LLVM') \
+  .enable_if(with_gallium_llvmpipe, error_message : 'LLVMPipe Gallium driver requires LLVM')
 
 # compatibility for "swrast" as an internal-ish driver name
 with_gallium_swrast = with_gallium_softpipe or with_gallium_llvmpipe
@@ -226,6 +234,7 @@ with_gallium_kmsro = system_has_kms_drm and [
 
 _vulkan_drivers = get_option('vulkan-drivers')
 if _vulkan_drivers.contains('auto')
+  # TODO: handle swrat driver if llvm is auto/disabled
   if system_has_kms_drm
     if host_machine.cpu_family().startswith('x86')
       _vulkan_drivers = ['amd', 'intel', 'intel_hasvk', 'nouveau', 'swrast']
@@ -269,6 +278,10 @@ with_nouveau_vk = _vulkan_drivers.contains('nouveau')
 with_asahi_vk = _vulkan_drivers.contains('asahi')
 with_gfxstream_vk = _vulkan_drivers.contains('gfxstream')
 with_any_vk = _vulkan_drivers.length() != 0
+
+with_llvm = with_llvm \
+  .enable_if(with_swrast_vk, error_message : 'Lavapipe Vulkan driver requires LLVM') \
+  .enable_if(with_amd_vk, error_message : 'RadV Vulkan driver requires LLVM')
 
 with_any_llvmpipe = with_gallium_llvmpipe or with_swrast_vk
 with_gallium_or_lvp = with_gallium or with_swrast_vk
@@ -802,6 +815,9 @@ else
              with_microsoft_clc or with_gallium_rusticl or \
              with_drivers_clc or with_driver_using_cl
 endif
+
+with_llvm = with_llvm \
+  .enable_if(with_clc, error_message : 'CLC requires LLVM')
 
 dep_clc = null_dep
 if with_clc
@@ -1712,7 +1728,6 @@ if draw_with_llvm
   # lto is needded with LLVM>=15, but we don't know what LLVM verrsion we are using yet
   llvm_optional_modules += ['lto']
 endif
-amd_with_llvm = get_option('amd-use-llvm')
 
 # MCJIT is deprecated in LLVM and will not accept new architecture ports,
 # so any architecture not in the exhaustive list will have to rely on LLVM
@@ -1732,36 +1747,23 @@ _shared_llvm = get_option('shared-llvm') \
   .disable_auto_if(host_machine.system() == 'windows') \
   .allowed()
 
-_llvm = get_option('llvm')
-dep_llvm = null_dep
-with_llvm = false
-if _llvm.allowed()
-  dep_llvm = dependency(
-    'llvm',
-    method : host_machine.system() == 'windows' ? 'auto' : 'config-tool',
-    version : _llvm_version,
-    modules : llvm_modules,
-    optional_modules : llvm_optional_modules,
-    required : (
-      with_amd_vk or with_gallium_radeonsi or with_clc
-      or _llvm.enabled()
-    ),
-    static : not _shared_llvm,
-    fallback : ['llvm', 'dep_llvm'],
-    include_type : 'system',
-  )
-  with_llvm = dep_llvm.found()
-endif
-if with_llvm
+dep_llvm = dependency(
+  'llvm',
+  method : host_machine.system() == 'windows' ? 'auto' : 'config-tool',
+  version : _llvm_version,
+  modules : llvm_modules,
+  optional_modules : llvm_optional_modules,
+  required : with_llvm,
+  static : not _shared_llvm,
+  fallback : ['llvm', 'dep_llvm'],
+  include_type : 'system',
+)
+if dep_llvm.found()
   pre_args += '-DMESA_LLVM_VERSION_STRING="@0@"'.format(dep_llvm.version())
   pre_args += '-DLLVM_IS_SHARED=@0@'.format(_shared_llvm.to_int())
 
   if (with_swrast_vk or with_gallium_llvmpipe) and not draw_with_llvm
     error('Lavapipe and llvmpipe require LLVM draw support.')
-  endif
-
-  if with_gallium_r600 and not amd_with_llvm
-    error('R600 requires LLVM AMD support.')
   endif
 
   if host_machine.system() != 'windows'
@@ -1791,22 +1793,14 @@ if with_llvm
       language : ['c', 'cpp'],
     )
   endif
-elif with_amd_vk and with_aco_tests
-  error('ACO tests require LLVM, but LLVM is disabled.')
-elif with_swrast_vk
-  error('lavapipe requires LLVM and is enabled, but LLVM is disabled.')
-elif with_any_llvmpipe
-  error('llvmpipe requires LLVM and is enabled, but LLVM is disabled.')
-elif with_clc
-  error('The CLC compiler requires LLVM, but LLVM is disabled.')
 else
   draw_with_llvm = false
 endif
-amd_with_llvm = amd_with_llvm and with_llvm
-pre_args += '-DLLVM_AVAILABLE=@0@'.format(with_llvm.to_int())
-pre_args += '-DDRAW_LLVM_AVAILABLE=@0@'.format((with_llvm and draw_with_llvm).to_int())
+amd_with_llvm = amd_with_llvm and dep_llvm.found()
+pre_args += '-DLLVM_AVAILABLE=@0@'.format(dep_llvm.found().to_int())
+pre_args += '-DDRAW_LLVM_AVAILABLE=@0@'.format((dep_llvm.found() and draw_with_llvm).to_int())
 pre_args += '-DAMD_LLVM_AVAILABLE=@0@'.format(amd_with_llvm.to_int())
-pre_args += '-DGALLIVM_USE_ORCJIT=@0@'.format((with_llvm and llvm_with_orcjit).to_int())
+pre_args += '-DGALLIVM_USE_ORCJIT=@0@'.format((dep_llvm.found() and llvm_with_orcjit).to_int())
 
 if with_clc
   chosen_llvm_version_array = dep_llvm.version().split('.')
@@ -2362,8 +2356,8 @@ endif
 video_summary += {'APIs': video_apis.length() != 0 ? video_apis : false}
 summary(video_summary, section: 'Video', bool_yn: true, list_sep: ' ')
 
-llvm_summary = {'Enabled': with_llvm}
-if with_llvm
+llvm_summary = {'Required': with_llvm}
+if dep_llvm.found()
   llvm_summary += {'Version': dep_llvm.version()}
 endif
 summary(llvm_summary, section: 'LLVM', bool_yn: true, list_sep: ' ')

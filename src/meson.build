@@ -21,7 +21,7 @@ pps_includes = []
 
 inc_llvmpipe = include_directories('gallium/drivers/llvmpipe')
 
-if with_llvm
+if dep_llvm.found()
   inc_amd_common_llvm = include_directories('amd/llvm')
 else
   inc_amd_common_llvm = []
