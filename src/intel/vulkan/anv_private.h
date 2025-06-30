@@ -1930,11 +1930,6 @@ enum anv_internal_kernel_name {
    ANV_INTERNAL_KERNEL_COUNT,
 };
 
-enum anv_rt_bvh_build_method {
-   ANV_BVH_BUILD_METHOD_TRIVIAL,
-   ANV_BVH_BUILD_METHOD_NEW_SAH,
-};
-
 /* If serialization-breaking or algorithm-breaking changes are made,
  * increment the digits at the end
  */
@@ -2107,8 +2102,6 @@ struct anv_device {
     struct anv_shader_bin                      *rt_trampoline;
     struct anv_shader_bin                      *rt_trivial_return;
     struct anv_shader_bin                      *rt_null_ahs;
-
-    enum anv_rt_bvh_build_method                bvh_build_method;
 
     /** Draw generation shader
      *
