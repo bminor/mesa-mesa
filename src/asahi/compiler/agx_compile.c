@@ -783,6 +783,21 @@ agx_emit_store(agx_builder *b, nir_intrinsic_instr *instr)
                     shift, nir_is_coherent(instr));
 }
 
+/*
+ * Hardware bindless texture sources are specified as a 64-bit uniform base
+ * address summed with a 32-bit register index. We model in NIR with the
+ * bindless_image_agx intrinsic.
+ */
+static agx_index
+agx_translate_bindless_handle(agx_builder *b, nir_src *handle, agx_index *base)
+{
+   nir_intrinsic_instr *intr = nir_src_as_intrinsic(*handle);
+   assert(intr->intrinsic == nir_intrinsic_bindless_image_agx);
+
+   *base = agx_uniform(nir_intrinsic_desc_set(intr), AGX_SIZE_64);
+   return agx_src_index(&intr->src[0]);
+}
+
 /* Preambles write directly to uniform registers, so move from uniform to GPR */
 static agx_instr *
 agx_emit_load_preamble(agx_builder *b, agx_index dst,
@@ -804,8 +819,16 @@ agx_emit_load_preamble(agx_builder *b, agx_index dst,
 static agx_instr *
 agx_emit_store_preamble(agx_builder *b, nir_intrinsic_instr *instr)
 {
-   agx_index vec = agx_src_index(&instr->src[0]);
+   nir_preamble_class cls = nir_intrinsic_preamble_class(instr);
    unsigned base = nir_intrinsic_base(instr);
+
+   if (cls == nir_preamble_class_image) {
+      agx_index heap, offset;
+      offset = agx_translate_bindless_handle(b, &instr->src[0], &heap);
+      return agx_tex_state_store(b, heap, offset, base / 2);
+   }
+
+   agx_index vec = agx_src_index(&instr->src[0]);
    unsigned stride = agx_size_align_16(vec.size);
    unsigned nr = nir_src_num_components(instr->src[0]);
 
@@ -852,21 +875,6 @@ agx_tex_dim(enum glsl_sampler_dim dim, bool array)
    default:
       unreachable("Invalid sampler dim\n");
    }
-}
-
-/*
- * Hardware bindless texture sources are specified as a 64-bit uniform base
- * address summed with a 32-bit register index. We model in NIR with the
- * bindless_image_agx intrinsic.
- */
-static agx_index
-agx_translate_bindless_handle(agx_builder *b, nir_src *handle, agx_index *base)
-{
-   nir_intrinsic_instr *intr = nir_src_as_intrinsic(*handle);
-   assert(intr->intrinsic == nir_intrinsic_bindless_image_agx);
-
-   *base = agx_uniform(nir_intrinsic_desc_set(intr), AGX_SIZE_64);
-   return agx_src_index(&intr->src[0]);
 }
 
 static agx_instr *

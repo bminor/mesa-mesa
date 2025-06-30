@@ -301,6 +301,12 @@ op("uniform_store",
       encoding = ((0b111 << 27) | 0b1000101 | (1 << 47), 8, _),
       dests = 0, srcs = 2, imms = [MASK], can_eliminate = False)
 
+# sources are base, offset
+for kind, bit in [("tex", 1 << 6), ("sampler", 0)]:
+    op(f"{kind}_state_store", encoding = (0b10101101 | bit | (1 << 20), 8, _),
+          dests = 0, srcs = 2, imms = [IMM, SCOREBOARD], can_eliminate = False,
+          schedule_class = "store")
+
 # sources are value, base, index
 op("atomic",
       encoding = (0x15 | (1 << 26) | (1 << 31) | (5 << 44), 8, _),

@@ -30,6 +30,11 @@ agx_instr_accepts_uniform(enum agx_opcode op, unsigned src_index,
       assert(!(src_index == 2 && high) && "texture heap always low");
       return !high && (src_index == 1 || src_index == 2);
 
+   case AGX_OPCODE_TEX_STATE_STORE:
+   case AGX_OPCODE_SAMPLER_STATE_STORE:
+      assert(!high && "texture heap always low");
+      return !high && src_index == 0;
+
    case AGX_OPCODE_DEVICE_LOAD:
       return src_index == 0 && !high;
    case AGX_OPCODE_DEVICE_STORE:

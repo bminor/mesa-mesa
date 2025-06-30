@@ -922,6 +922,23 @@ agx_pack_instr(struct util_dynarray *emission, struct util_dynarray *fixups,
       break;
    }
 
+   case AGX_OPCODE_TEX_STATE_STORE:
+   case AGX_OPCODE_SAMPLER_STATE_STORE: {
+      unsigned U, Tt, T = agx_pack_texture(I, I->src[0], I->src[1], &U, &Tt);
+
+      pack_assert(I, U < (1 << 4));
+      pack_assert(I, (T & 1) == 0);
+      pack_assert(I, T < (1 << 8));
+      pack_assert(I, I->imm < (1 << 7));
+
+      uint64_t raw = agx_opcodes_info[I->op].encoding.exact | (I->imm << 8) |
+                     (I->scoreboard << 16) | ((uint64_t)(T >> 1) << 27) |
+                     ((uint64_t)(U << 1) << 58);
+
+      memcpy(util_dynarray_grow_bytes(emission, 1, 8), &raw, 8);
+      break;
+   }
+
    case AGX_OPCODE_IMAGE_WRITE: {
       bool Ct, Dt, Rt, Cs;
       unsigned Tt;
