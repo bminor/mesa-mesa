@@ -2628,6 +2628,10 @@ nir_rewrite_image_intrinsic(nir_intrinsic_instr *intrin, nir_def *src,
    if (nir_intrinsic_has_atomic_op(intrin))
       atomic_op = nir_intrinsic_atomic_op(intrin);
 
+   bool explicit_coord = false;
+   if (nir_intrinsic_has_explicit_coord(intrin))
+      explicit_coord = nir_intrinsic_explicit_coord(intrin);
+
    switch (intrin->intrinsic) {
 #define CASE(op)                                                       \
    case nir_intrinsic_image_deref_##op:                                \
@@ -2664,6 +2668,8 @@ nir_rewrite_image_intrinsic(nir_intrinsic_instr *intrin, nir_def *src,
 
    if (nir_intrinsic_has_atomic_op(intrin))
       nir_intrinsic_set_atomic_op(intrin, atomic_op);
+   if (nir_intrinsic_has_explicit_coord(intrin))
+      nir_intrinsic_set_explicit_coord(intrin, explicit_coord);
 
    nir_src_rewrite(&intrin->src[0], src);
 }
