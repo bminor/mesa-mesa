@@ -1365,6 +1365,7 @@
     <dest kind="ts" bit="8:14"/>
     <src kind="ureg64" bit="58:63"/>
     <src kind="exreg32" bit="27:33"/>
+    <modifier name="group" kind="group" bit="16"/>
   </ins>
 
   <ins name="sampler_state_store" length="8" display="load">
@@ -1372,6 +1373,7 @@
     <dest kind="ss" bit="8:14"/>
     <src kind="ureg64" bit="58:63"/>
     <src kind="exreg32" bit="27:33"/>
+    <modifier name="group" kind="group" bit="16"/>
   </ins>
 
   <ins name="store" length="6/8">
