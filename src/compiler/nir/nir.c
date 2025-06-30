@@ -2635,6 +2635,8 @@ nir_rewrite_image_intrinsic(nir_intrinsic_instr *intrin, nir_def *src,
    switch (intrin->intrinsic) {
 #define CASE(op)                                                       \
    case nir_intrinsic_image_deref_##op:                                \
+   case nir_intrinsic_image_##op:                                      \
+   case nir_intrinsic_bindless_image_##op:                             \
       intrin->intrinsic = bindless ? nir_intrinsic_bindless_image_##op \
                                    : nir_intrinsic_image_##op;         \
       break;
@@ -2654,13 +2656,16 @@ nir_rewrite_image_intrinsic(nir_intrinsic_instr *intrin, nir_def *src,
       unreachable("Unhanded image intrinsic");
    }
 
-   nir_variable *var = nir_intrinsic_get_var(intrin, 0);
+   if (nir_src_as_deref(intrin->src[0])) {
+      nir_variable *var = nir_intrinsic_get_var(intrin, 0);
 
-   /* Only update the format if the intrinsic doesn't have one set */
-   if (nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE)
-      nir_intrinsic_set_format(intrin, var->data.image.format);
+      /* Only update the format if the intrinsic doesn't have one set */
+      if (nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE)
+         nir_intrinsic_set_format(intrin, var->data.image.format);
 
-   nir_intrinsic_set_access(intrin, access | var->data.access);
+      nir_intrinsic_set_access(intrin, access | var->data.access);
+   }
+
    if (nir_intrinsic_has_src_type(intrin))
       nir_intrinsic_set_src_type(intrin, data_type);
    if (nir_intrinsic_has_dest_type(intrin))
