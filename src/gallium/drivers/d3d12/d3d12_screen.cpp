@@ -1139,7 +1139,7 @@ static void
 d3d12_create_fence_win32(struct pipe_screen *pscreen, struct pipe_fence_handle **pfence, void *handle, const void *name, enum pipe_fd_type type)
 {
    d3d12_fence_reference((struct d3d12_fence **)pfence, nullptr);
-   if(type == PIPE_FD_TYPE_TIMELINE_SEMAPHORE)
+   if(type == PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12)
       *pfence = (struct pipe_fence_handle*) d3d12_open_fence(d3d12_screen(pscreen), handle, name, type);
 }
 

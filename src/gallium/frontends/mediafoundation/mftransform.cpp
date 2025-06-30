@@ -904,7 +904,7 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
                                                   &m_pPipeFenceHandle,
                                                   m_hSharedFenceHandle,
                                                   NULL,
-                                                  PIPE_FD_TYPE_TIMELINE_SEMAPHORE );
+                                                  PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12 );
 
       hr = S_OK;
    }

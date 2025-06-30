@@ -900,7 +900,7 @@ _mesa_SemaphoreParameterui64vEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   if (semObj->type != PIPE_FD_TYPE_TIMELINE_SEMAPHORE) {
+   if (semObj->type != PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(Not a D3D12 fence)", func);
       return;
    }
@@ -932,7 +932,7 @@ _mesa_GetSemaphoreParameterui64vEXT(GLuint semaphore,
    if (!semObj)
       return;
 
-   if (semObj->type != PIPE_FD_TYPE_TIMELINE_SEMAPHORE) {
+   if (semObj->type != PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(Not a D3D12 fence)", func);
       return;
    }
@@ -1212,7 +1212,7 @@ _mesa_ImportSemaphoreWin32HandleEXT(GLuint semaphore,
       return;
 
    enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT || handleType == GL_SEMAPHORE_TYPE_TIMELINE_NV ?
-      PIPE_FD_TYPE_TIMELINE_SEMAPHORE : semObj->type;
+      PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12 : semObj->type;
    semObj = create_real_semaphore(ctx, semaphore, semObj, type, func);
    if (!semObj)
       return;
@@ -1251,7 +1251,7 @@ _mesa_ImportSemaphoreWin32NameEXT(GLuint semaphore,
       return;
 
    enum pipe_fd_type type = handleType == GL_HANDLE_TYPE_D3D12_FENCE_EXT || handleType == GL_SEMAPHORE_TYPE_TIMELINE_NV ?
-      PIPE_FD_TYPE_TIMELINE_SEMAPHORE : semObj->type;
+      PIPE_FD_TYPE_TIMELINE_SEMAPHORE_D3D12 : semObj->type;
    semObj = create_real_semaphore(ctx, semaphore, semObj, type, func);
    if (!semObj)
       return;
