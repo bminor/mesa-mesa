@@ -516,11 +516,9 @@ brw_inst_has_source_and_destination_hazard(const struct intel_device_info *devin
        *
        * Now our destination for the first instruction overwrote the
        * second instruction's src0, and we get garbage for those 8
-       * pixels.  There's a similar issue for the pre-gfx6
-       * pixel_x/pixel_y, which are registers of 16-bit values and thus
-       * would get stomped by the first decode as well.
+       * pixels.
        */
-      if (inst->exec_size == 16) {
+      if (inst->exec_size > 8 * reg_unit(devinfo)) {
          if (inst->src[src].file == VGRF && (inst->src[src].stride == 0 ||
                                              inst->src[src].type == BRW_TYPE_UW ||
                                              inst->src[src].type == BRW_TYPE_W ||
