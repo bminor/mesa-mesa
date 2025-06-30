@@ -214,11 +214,13 @@ impl SM70Encoder<'_> {
 
     fn set_instr_deps(&mut self, deps: &InstrDeps) {
         self.set_field(105..109, deps.delay);
-        self.set_bit(109, deps.yld);
         self.set_field(110..113, deps.wr_bar().unwrap_or(7));
         self.set_field(113..116, deps.rd_bar().unwrap_or(7));
         self.set_field(116..122, deps.wt_bar_mask);
-        self.set_field(122..126, deps.reuse_mask);
+        if self.sm < 120 {
+            self.set_bit(109, deps.yld);
+            self.set_field(122..126, deps.reuse_mask);
+        }
     }
 }
 
