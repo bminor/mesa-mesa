@@ -341,7 +341,7 @@ fd6_get_compute_state_info(struct pipe_context *pctx, void *cso, struct pipe_com
    }
 
    unsigned reg_file_size_vec4 = info->a6xx.reg_size_vec4 * threadsize_base * info->wave_granularity;
-   unsigned vec4_regs_per_thread = v->info.max_reg + 1;
+   unsigned vec4_regs_per_thread = MAX2(v->info.max_reg + 1, 1);
 
    cinfo->max_threads = MIN2(cinfo->max_threads, reg_file_size_vec4 / vec4_regs_per_thread);
 
