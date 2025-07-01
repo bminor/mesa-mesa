@@ -44,7 +44,7 @@ class ProjectPaths:
         self.setup_test_env = self.root / ".gitlab-ci" / "setup-test-env.sh"
         self.conditional_tags = self.root / ".gitlab-ci" / "conditional-build-image-tags.yml"
         self.container_dir = self.root / ".gitlab-ci" / "container"
-        self.container_ci = self.container_dir / "gitlab-ci.yml"
+        self.container_ci = self.container_dir / "gitlab-ci-inc.yml"
 
     def find_root(self) -> Path:
         """Find git repository root or fallback to other methods"""
