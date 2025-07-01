@@ -9,13 +9,3 @@ x86_64 CtsGraphicsTestCases android.graphics.cts.VulkanFeaturesTest#testVulkanAp
 
 ### no support for ABP 2021
 x86_64 CtsGraphicsTestCases android.graphics.cts.VulkanFeaturesTest#testAndroidBaselineProfile2021Support
-
-### crashes with GL error 1282
-x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferVertexBuffer_BLOB
-x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuWrite_BLOB
-x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuRead_BLOB
-
-### assertion error
-x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferVertexBuffer_BLOB
-x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuWrite_BLOB
-x86_64 CtsNativeHardwareTestCases android.hardware.nativehardware.cts.AHardwareBufferNativeTests#Blob_BlobTest_GpuDataBufferCpuRead_BLOB
