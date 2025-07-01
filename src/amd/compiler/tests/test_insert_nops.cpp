@@ -2016,6 +2016,17 @@ BEGIN_TEST(insert_nops.setpc_gfx10)
    bld.vop3(aco_opcode::v_writelane_b32_e64, Definition(PhysReg(256), v1),
             Operand(PhysReg(257), v1), Operand::zero(4), Operand(PhysReg(256), v1));
    finish_insert_nops_test(false);
+
+   /* FPAtomicToDenormModeHazard */
+   //>> p_unit_test 10
+   //! flat_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+   //! s_nop imm:2
+   //! s_waitcnt_depctr vm_vsrc(0)
+   create_program(GFX10, compute_cs, 64, CHIP_UNKNOWN);
+   bld.pseudo(aco_opcode::p_unit_test, Operand::c32(10));
+   bld.flat(aco_opcode::flat_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+            Operand(PhysReg(256), v1));
+   finish_insert_nops_test(false);
 END_TEST
 
 BEGIN_TEST(insert_nops.setpc_gfx11)
@@ -2251,4 +2262,78 @@ BEGIN_TEST(insert_nops.setpc_gfx12)
    bld.sop1(aco_opcode::s_setpc_b64, Operand::zero(8));
 
    finish_insert_nops_test(true);
+END_TEST
+
+BEGIN_TEST(insert_nops.fpatomic_to_denorm_mode)
+   for (amd_gfx_level lvl : {GFX10, GFX10_3}) {
+      if (!setup_cs(NULL, lvl))
+         continue;
+
+      //>> p_unit_test 0
+      //! global_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+      //! s_nop imm:2
+      //! s_denorm_mode imm:42
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(0));
+      bld.global(aco_opcode::global_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+                 Operand(PhysReg(256), v1));
+      bld.sopp(aco_opcode::s_denorm_mode, 42);
+
+      //! p_unit_test 1
+      //! global_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+      //! s_nop
+      //! s_nop imm:1
+      //! s_denorm_mode imm:42
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(1));
+      bld.global(aco_opcode::global_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+                 Operand(PhysReg(256), v1));
+      bld.sopp(aco_opcode::s_nop, 0);
+      bld.sopp(aco_opcode::s_denorm_mode, 42);
+
+      // VALU, waitcnt or enough wait states mitigates the hazard
+      //! p_unit_test 2
+      //! global_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+      //! v_nop
+      //! s_denorm_mode imm:42
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(2));
+      bld.global(aco_opcode::global_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+                 Operand(PhysReg(256), v1));
+      bld.vop1(aco_opcode::v_nop);
+      bld.sopp(aco_opcode::s_denorm_mode, 42);
+
+      //! p_unit_test 3
+      //! global_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+      //! s_waitcnt expcnt(0) lgkmcnt(0) vmcnt(0)
+      //! s_denorm_mode imm:42
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(3));
+      bld.global(aco_opcode::global_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+                 Operand(PhysReg(256), v1));
+      bld.sopp(aco_opcode::s_waitcnt, 0);
+      bld.sopp(aco_opcode::s_denorm_mode, 42);
+
+      //! p_unit_test 4
+      //! global_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+      //! s_nop imm:2
+      //! s_denorm_mode imm:42
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(4));
+      bld.global(aco_opcode::global_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+                 Operand(PhysReg(256), v1));
+      bld.sopp(aco_opcode::s_nop, 2);
+      bld.sopp(aco_opcode::s_denorm_mode, 42);
+
+      //! p_unit_test 5
+      //! global_atomic_fmin %0:v[0-1], s1: undef, %0:v[0]
+      //! s_nop
+      //! s_nop
+      //! s_nop
+      //! s_denorm_mode imm:42
+      bld.pseudo(aco_opcode::p_unit_test, Operand::c32(5));
+      bld.global(aco_opcode::global_atomic_fmin, Operand(PhysReg(256), v2), Operand(s1),
+                 Operand(PhysReg(256), v1));
+      bld.sopp(aco_opcode::s_nop, 0);
+      bld.sopp(aco_opcode::s_nop, 0);
+      bld.sopp(aco_opcode::s_nop, 0);
+      bld.sopp(aco_opcode::s_denorm_mode, 42);
+
+      finish_insert_nops_test();
+   }
 END_TEST
