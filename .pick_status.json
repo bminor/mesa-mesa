@@ -44,7 +44,7 @@
         "description": "rusticl: Fix work group size validation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eca4f0f632b1e3e6e24bd12ee5f00522eb7d0fdb",
         "notes": null
