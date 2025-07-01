@@ -1182,8 +1182,17 @@ fill_vs_mystery(struct etna_shader_variant *v)
 }
 
 static uint8_t
-alu_width_cb(UNUSED const nir_instr *instr, UNUSED const void *cb_data)
+alu_width_cb(const nir_instr *instr, UNUSED const void *cb_data)
 {
+   if (instr->type == nir_instr_type_alu) {
+      nir_alu_instr *alu = nir_instr_as_alu(instr);
+
+      if (alu->op == nir_op_fdot2 ||
+          alu->op == nir_op_fdot3 ||
+          alu->op == nir_op_fdot4)
+         return 0;
+   }
+
    return 4;
 }
 
