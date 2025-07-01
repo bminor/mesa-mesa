@@ -52,22 +52,31 @@ mediafoundation_def = custom_target(
 )
 
 winmod = import('windows')
-dll_version = '1.0.5'
 foreach codec : mft_codecs
   gallium_mf_name = 'ms' + codec + 'hmft'
   if get_option('mediafoundation-store-dll')
     gallium_mf_name += '_store'
   endif
-  mft_dll_version = dll_version
+
+  major_version = '1'
+  minor_version = '0'
+  patch_version = '6'
+  build_version = '0'
+  mft_dll_version = '@0@.@1@.@2@'.format(major_version, minor_version, patch_version)
 
   mediafoundation_rc_conf_data = configuration_data()
+  mediafoundation_rc_conf_data.set('VER_MAJOR', major_version)
+  mediafoundation_rc_conf_data.set('VER_MINOR', minor_version)
+  mediafoundation_rc_conf_data.set('VER_PATCH', patch_version)
+  mediafoundation_rc_conf_data.set('VER_BUILD', build_version)
+
   mediafoundation_rc_conf_data.set('CompanyName',       '"Microsoft Corporation"')
   mediafoundation_rc_conf_data.set('FileDescription',   '"Media Foundation DX12 Encoder MFT"')
-  mediafoundation_rc_conf_data.set('FileVersion',       '@0@.0'.format(mft_dll_version))
+  mediafoundation_rc_conf_data.set('FileVersion',       '@0@.@1@.@2@.@3@'.format(major_version, minor_version, patch_version, build_version))
   mediafoundation_rc_conf_data.set('InternalName',      '"@0@"'.format(gallium_mf_name))
   mediafoundation_rc_conf_data.set('OriginalFilename',  '"@0@"'.format(gallium_mf_name))
   mediafoundation_rc_conf_data.set('ProductName',       '"Media Foundation Encoder MFT"')
-  mediafoundation_rc_conf_data.set('ProductVersion',    '@0@.0'.format(mft_dll_version))
+  mediafoundation_rc_conf_data.set('ProductVersion',    '@0@.@1@.@2@.@3@'.format(major_version, minor_version, patch_version, build_version))
 
   rc_file = configure_file(
     configuration: mediafoundation_rc_conf_data,
