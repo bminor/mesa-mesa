@@ -30,6 +30,7 @@ EPHEMERAL=(
 )
 
 DEPS=(
+    aapt
     iproute2
 )
 apt-get install -y --no-remove --no-install-recommends \
@@ -55,12 +56,6 @@ chmod +x eglinfo
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -o vulkaninfo "https://${S3_HOST}/${S3_ANDROID_BUCKET}/mesa/mesa/${DATA_STORAGE_PATH}/vulkaninfo-android-x86_64"
 chmod +x vulkaninfo
-
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o "build-tools_r${ANDROID_SDK_VERSION}-linux.zip" "https://dl.google.com/android/repository/build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
-unzip "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
-rm "build-tools_r${ANDROID_SDK_VERSION}-linux.zip"
-mv "android-$ANDROID_VERSION" build-tools
 
 popd
 
