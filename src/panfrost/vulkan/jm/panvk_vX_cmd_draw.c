@@ -1723,34 +1723,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
          panlib_draw_indirect_helper_struct(&precomp_ctx, indirect_grid,
                                             indirect_barrier, args);
       } else {
-         const struct panlib_draw_indexed_helper_args args = {
-            .index_buffer_ptr = cmdbuf->state.gfx.ib.dev_addr,
-            .index_size = draw->info.index.size,
-            .first_index = draw->info.index.offset,
-            .index_count = draw->info.vertex.count,
-            .first_instance = draw->info.instance.base,
-            .instance_count = draw->info.instance.count,
-            .vertex_offset = draw->info.vertex.base,
-            .primitive_restart = ia->primitive_restart_enable,
-            .varying_bufs_descs = draw->varying_bufs,
-            .varying_bufs_info = draw->indirect_info.varying_bufs,
-            .attrib_bufs_descs = draw->vs.attribute_bufs,
-            .attrib_bufs_infos = draw->indirect_info.attrib_bufs,
-            .attrib_bufs_valid = attrib_bufs_valid,
-            .attribs_valid = attribs_valid,
-            .attribs_descs = draw->vs.attributes,
-            .attribs_infos = draw->indirect_info.attribs,
-            .first_vertex_sysval = first_vertex_sysval,
-            .first_instance_sysval = first_instance_sysval,
-            .raw_vertex_offset_sysval = raw_vertex_offset_sysval,
-            .idvs_job = vs->info.vs.idvs ? draw->jobs.idvs.gpu : 0,
-            .vertex_job = draw->jobs.vertex.gpu,
-            .tiler_job = draw->jobs.tiler.gpu,
-            .primitive_vertex_count = primitive_vertex_count(
-               translate_prim_topology(ia->primitive_topology)),
-         };
-         panlib_draw_indexed_helper_struct(&precomp_ctx, indirect_grid,
-                                           indirect_barrier, args);
+         assert(false && "Invalid indirect draw");
       }
 
       /* Grab the index of the indirect helper job */
@@ -1869,14 +1842,26 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
     * firstInstnace. */
    assert(firstInstance < INT32_MAX);
 
+   struct pan_ptr indirect_index_alloc = panvk_cmd_alloc_dev_mem(
+      cmdbuf, desc, sizeof(struct VkDrawIndexedIndirectCommand), 8);
+
+   struct VkDrawIndexedIndirectCommand *indirect_index_alloc_ptr =
+      indirect_index_alloc.cpu;
+
+   *indirect_index_alloc_ptr = (struct VkDrawIndexedIndirectCommand){
+      .indexCount = indexCount,
+      .instanceCount = instanceCount,
+      .firstIndex = firstIndex,
+      .vertexOffset = vertexOffset,
+      .firstInstance = firstInstance,
+   };
+
    struct panvk_draw_data draw = {
       .info = {
          .index.size = cmdbuf->state.gfx.ib.index_size,
-         .index.offset = firstIndex,
-         .vertex.base = vertexOffset,
-         .vertex.count = indexCount,
-         .instance.base = firstInstance,
-         .instance.count = instanceCount,
+         .indirect.buffer_dev_addr = indirect_index_alloc.gpu,
+         .indirect.draw_count = 1,
+         .indirect.stride = 0,
       },
    };
 

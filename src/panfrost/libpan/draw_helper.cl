@@ -437,69 +437,6 @@ padded_vertex_count(uint32_t vertex_count, uint32_t instance_count, bool idvs)
 /* Argument ordering choosen to avoid any padding */
 
 KERNEL(1)
-panlib_draw_indexed_helper(
-   global uint8_t *index_buffer_ptr, uint32_t index_size, uint32_t first_index,
-   uint32_t index_count, uint32_t first_instance, uint32_t instance_count,
-   int32_t vertex_offset, uint32_t primitive_vertex_count,
-   uint32_t attrib_bufs_valid, uint32_t attribs_valid,
-   uint8_t primitive_restart,
-   global struct mali_attribute_buffer_packed *varying_bufs_descs,
-   global struct libpan_draw_helper_varying_buf_info *varying_bufs_info,
-   global struct mali_attribute_buffer_packed *attrib_bufs_descs,
-   global struct libpan_draw_helper_attrib_buf_info *attrib_bufs_infos,
-   global struct mali_attribute_packed *attribs_descs,
-   global struct libpan_draw_helper_attrib_info *attribs_infos,
-   global uint32_t *first_vertex_sysval, global uint32_t *first_instance_sysval,
-   global uint32_t *raw_vertex_offset_sysval, global uint8_t *idvs_job,
-   global uint8_t *vertex_job, global uint8_t *tiler_job)
-{
-   /* First compute the min and max range */
-   uint32_t min_vertex, max_vertex;
-   panlib_index_minmax_search(index_buffer_ptr, index_size * 8, first_index,
-                              index_count, primitive_restart, &min_vertex,
-                              &max_vertex);
-
-   const uint32_t vertex_range = max_vertex - min_vertex + 1;
-
-   struct panlib_draw_info draw = {
-      .idvs_job = idvs_job,
-      .vertex_job = vertex_job,
-      .tiler_job = tiler_job,
-
-      .index.size = index_size,
-      .index.offset = first_index,
-      .vertex.base = vertex_offset,
-      .vertex.raw_offset = min_vertex + vertex_offset,
-      .vertex.count = index_count,
-      .instance.base = first_instance,
-      .instance.count = instance_count,
-
-      .varying_bufs.descs = varying_bufs_descs,
-      .varying_bufs.info = varying_bufs_info,
-
-      .attrib_bufs.descs = attrib_bufs_descs,
-      .attrib_bufs.infos = attrib_bufs_infos,
-      .attrib_bufs.valid = attrib_bufs_valid,
-
-      .attribs.descs = attribs_descs,
-      .attribs.infos = attribs_infos,
-      .attribs.valid = attribs_valid,
-
-      .vertex_range = vertex_range,
-      .padded_vertex_count =
-         padded_vertex_count(vertex_range, instance_count, idvs_job != NULL),
-      .primitive_vertex_count = primitive_vertex_count,
-      .indices = index_buffer_ptr,
-   };
-
-   panlib_patch_draw(&draw);
-
-   *first_vertex_sysval = draw.vertex.base;
-   *first_instance_sysval = draw.instance.base;
-   *raw_vertex_offset_sysval = draw.vertex.raw_offset;
-}
-
-KERNEL(1)
 panlib_draw_indirect_helper(
    global VkDrawIndirectCommand *cmd,
    global struct mali_attribute_buffer_packed *varying_bufs_descs,
