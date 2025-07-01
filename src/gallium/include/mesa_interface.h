@@ -787,30 +787,6 @@ typedef struct {
 #define __DRI_IMAGE_FOURCC_SABGR8888	0x84324258
 #define __DRI_IMAGE_FOURCC_SXRGB8888	0x85324258
 
-/**
- * Queryable on images created by createImageFromNames.
- *
- * RGB and RGBA might be usable directly as images, but it's still
- * recommended to call fromPlanar with plane == 0.
- *
- * Y_U_V, Y_UV,Y_XUXV and Y_UXVX all requires call to fromPlanar to create
- * usable sub-images, sampling from images return raw YUV data and
- * color conversion needs to be done in the shader.
- *
- * \since 5
- */
-
-#define __DRI_IMAGE_COMPONENTS_RGB	0x3001
-#define __DRI_IMAGE_COMPONENTS_RGBA	0x3002
-#define __DRI_IMAGE_COMPONENTS_Y_U_V	0x3003
-#define __DRI_IMAGE_COMPONENTS_Y_UV	0x3004
-#define __DRI_IMAGE_COMPONENTS_Y_XUXV	0x3005
-#define __DRI_IMAGE_COMPONENTS_Y_UXVX	0x3008
-#define __DRI_IMAGE_COMPONENTS_AYUV	0x3009
-#define __DRI_IMAGE_COMPONENTS_XYUV	0x300A
-#define __DRI_IMAGE_COMPONENTS_R	0x3006
-#define __DRI_IMAGE_COMPONENTS_RG	0x3007
-
 
 /**
  * queryImage attributes
@@ -822,7 +798,6 @@ typedef struct {
 #define __DRI_IMAGE_ATTRIB_FORMAT	0x2003 /* available in versions 3+ */
 #define __DRI_IMAGE_ATTRIB_WIDTH	0x2004 /* available in versions 4+ */
 #define __DRI_IMAGE_ATTRIB_HEIGHT	0x2005
-#define __DRI_IMAGE_ATTRIB_COMPONENTS	0x2006 /* available in versions 5+ */
 #define __DRI_IMAGE_ATTRIB_FD           0x2007 /* available in versions
                                                 * 7+. Each query will return a
                                                 * new fd. */

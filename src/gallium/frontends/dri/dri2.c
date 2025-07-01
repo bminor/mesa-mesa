@@ -686,7 +686,6 @@ dri2_update_tex_buffer(struct dri_drawable *drawable,
 static const struct dri2_format_mapping r8_b8_g8_mapping = {
    DRM_FORMAT_YVU420,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_U_V,
    PIPE_FORMAT_R8_B8_G8_420_UNORM,
    3,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_R8 },
@@ -697,7 +696,6 @@ static const struct dri2_format_mapping r8_b8_g8_mapping = {
 static const struct dri2_format_mapping r8_g8_b8_mapping = {
    DRM_FORMAT_YUV420,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_U_V,
    PIPE_FORMAT_R8_G8_B8_420_UNORM,
    3,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_R8 },
@@ -708,7 +706,6 @@ static const struct dri2_format_mapping r8_g8_b8_mapping = {
 static const struct dri2_format_mapping r8_g8b8_mapping = {
    DRM_FORMAT_NV12,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_UV,
    PIPE_FORMAT_R8_G8B8_420_UNORM,
    2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_R8 },
@@ -718,7 +715,6 @@ static const struct dri2_format_mapping r8_g8b8_mapping = {
 static const struct dri2_format_mapping r8_g8b8_mapping_422 = {
    DRM_FORMAT_NV16,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_UV,
    PIPE_FORMAT_R8_G8B8_422_UNORM,
    2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_R8 },
@@ -728,7 +724,6 @@ static const struct dri2_format_mapping r8_g8b8_mapping_422 = {
 static const struct dri2_format_mapping r8_b8g8_mapping = {
    DRM_FORMAT_NV21,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_UV,
    PIPE_FORMAT_R8_B8G8_420_UNORM,
    2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_R8 },
@@ -738,7 +733,6 @@ static const struct dri2_format_mapping r8_b8g8_mapping = {
 static const struct dri2_format_mapping r8g8_r8b8_mapping = {
    DRM_FORMAT_YUYV,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_XUXV,
    PIPE_FORMAT_R8G8_R8B8_UNORM, 2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR88 },
      { 0, 1, 0, __DRI_IMAGE_FORMAT_ARGB8888 } }
@@ -747,7 +741,6 @@ static const struct dri2_format_mapping r8g8_r8b8_mapping = {
 static const struct dri2_format_mapping r8b8_r8g8_mapping = {
    DRM_FORMAT_YVYU,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_XUXV,
    PIPE_FORMAT_R8B8_R8G8_UNORM, 2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR88 },
      { 0, 1, 0, __DRI_IMAGE_FORMAT_ARGB8888 } }
@@ -756,7 +749,6 @@ static const struct dri2_format_mapping r8b8_r8g8_mapping = {
 static const struct dri2_format_mapping b8r8_g8r8_mapping = {
    DRM_FORMAT_VYUY,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_XUXV,
    PIPE_FORMAT_B8R8_G8R8_UNORM, 2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR88 },
      { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR8888 } }
@@ -765,7 +757,6 @@ static const struct dri2_format_mapping b8r8_g8r8_mapping = {
 static const struct dri2_format_mapping g8r8_b8r8_mapping = {
    DRM_FORMAT_UYVY,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_XUXV,
    PIPE_FORMAT_G8R8_B8R8_UNORM, 2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_GR88 },
      { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR8888 } }
@@ -774,7 +765,6 @@ static const struct dri2_format_mapping g8r8_b8r8_mapping = {
 static const struct dri2_format_mapping r10_g10b10_mapping = {
    DRM_FORMAT_NV15,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_UV,
    PIPE_FORMAT_R10_G10B10_420_UNORM,
    2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE },
@@ -784,7 +774,6 @@ static const struct dri2_format_mapping r10_g10b10_mapping = {
 static const struct dri2_format_mapping r10_g10b10_mapping_422 = {
    DRM_FORMAT_NV20,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_Y_UV,
    PIPE_FORMAT_R10_G10B10_422_UNORM,
    2,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE },
@@ -794,7 +783,6 @@ static const struct dri2_format_mapping r10_g10b10_mapping_422 = {
 static const struct dri2_format_mapping r8g8b8_420_mapping = {
    DRM_FORMAT_YUV420_8BIT,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_XYUV,
    PIPE_FORMAT_R8G8B8_420_UNORM_PACKED,
    1,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE } },
@@ -803,7 +791,6 @@ static const struct dri2_format_mapping r8g8b8_420_mapping = {
 static const struct dri2_format_mapping r10g10b10_420_mapping = {
    DRM_FORMAT_YUV420_10BIT,
    __DRI_IMAGE_FORMAT_NONE,
-   __DRI_IMAGE_COMPONENTS_XYUV,
    PIPE_FORMAT_R10G10B10_420_UNORM_PACKED,
    1,
    { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE } },
@@ -1184,7 +1171,6 @@ dri_create_image(struct dri_screen *screen,
    img->layer = 0;
    img->dri_format = format;
    img->dri_fourcc = map->dri_fourcc;
-   img->dri_components = 0;
    img->use = use;
    img->in_fence_fd = -1;
 
@@ -1202,11 +1188,6 @@ dri2_query_image_common(struct dri_image *image, int attrib, int *value)
       return true;
    case __DRI_IMAGE_ATTRIB_HEIGHT:
       *value = image->texture->height0;
-      return true;
-   case __DRI_IMAGE_ATTRIB_COMPONENTS:
-      if (image->dri_components == 0)
-         return false;
-      *value = image->dri_components;
       return true;
    case __DRI_IMAGE_ATTRIB_FOURCC:
       if (image->dri_fourcc) {
@@ -1423,8 +1404,6 @@ dri2_dup_image(struct dri_image *image, void *loaderPrivate)
    img->dri_format = image->dri_format;
    img->dri_fourcc = image->dri_fourcc;
    img->internal_format = image->internal_format;
-   /* This should be 0 for sub images, but dup is also used for base images. */
-   img->dri_components = image->dri_components;
    img->use = image->use;
    img->in_fence_fd = (image->in_fence_fd > 0) ?
          os_dupfd_cloexec(image->in_fence_fd) : -1;
@@ -1490,7 +1469,6 @@ dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
    if (img == NULL)
       return NULL;
 
-   img->dri_components = map->dri_components;
    img->dri_fourcc = map->dri_fourcc;
    img->dri_format = map->dri_format;
 
@@ -1513,15 +1491,6 @@ dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate)
       }
    }
 
-   if (image->dri_components == 0) {
-      uint64_t modifier;
-      if (!dri2_resource_get_param(image, PIPE_RESOURCE_PARAM_MODIFIER, 0,
-                                   &modifier) ||
-          modifier == DRM_FORMAT_MOD_INVALID) {
-         return NULL;
-      }
-   }
-
    img = dri2_dup_image(image, loaderPrivate);
    if (img == NULL)
       return NULL;
@@ -1530,8 +1499,6 @@ dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate)
       img->texture->screen->resource_changed(img->texture->screen,
                                              img->texture);
 
-   /* set this to 0 for sub images. */
-   img->dri_components = 0;
    img->plane = plane;
    return img;
 }
@@ -1667,7 +1634,6 @@ dri2_from_dma_bufs(struct dri_screen *screen,
       goto exit;
    }
 
-   img->dri_components = map->dri_components;
    img->dri_fourcc = fourcc;
    img->dri_format = map->dri_format;
    img->imported_dmabuf = true;

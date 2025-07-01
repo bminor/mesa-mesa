@@ -30,7 +30,6 @@
 struct dri2_format_mapping {
    int dri_fourcc;
    int dri_format; /* image format */
-   int dri_components;
    enum pipe_format pipe_format;
    int nplanes;
    struct {

@@ -143,7 +143,6 @@ struct dri_image {
    unsigned layer;
    uint32_t dri_format;
    uint32_t dri_fourcc;
-   uint32_t dri_components;
    /* Provided by eglCreateImageKHR if creating from a
     * texture or a renderbuffer. 0 otherwise.
     */
