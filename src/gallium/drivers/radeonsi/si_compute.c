@@ -263,7 +263,7 @@ static void si_set_global_binding(struct pipe_context *ctx, unsigned first, unsi
       sctx->global_buffers = realloc(
          sctx->global_buffers, sctx->max_global_buffers * sizeof(sctx->global_buffers[0]));
       if (!sctx->global_buffers) {
-         fprintf(stderr, "radeonsi: failed to allocate compute global_buffers\n");
+         mesa_loge("failed to allocate compute global_buffers");
          return;
       }
 

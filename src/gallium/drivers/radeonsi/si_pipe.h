@@ -17,6 +17,7 @@
 #include "util/u_threaded_context.h"
 #include "util/u_vertex_state_cache.h"
 #include "util/perf/u_trace.h"
+#include "util/log.h"
 #include "ac_descriptors.h"
 #include "ac_sqtt.h"
 #include "ac_spm.h"
@@ -25,6 +26,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#undef  MESA_LOG_TAG
+#define MESA_LOG_TAG "radeonsi"
 
 struct ac_llvm_compiler;
 
@@ -2248,7 +2252,7 @@ static inline bool si_vs_uses_vbos(struct si_shader_selector *sel)
 }
 
 #define PRINT_ERR(fmt, args...)                                                                    \
-   fprintf(stderr, "EE %s:%d %s - " fmt, __FILE__, __LINE__, __func__, ##args)
+   mesa_loge("%s:%d %s - " fmt, __FILE__, __LINE__, __func__, ##args)
 
 #ifdef __cplusplus
 }

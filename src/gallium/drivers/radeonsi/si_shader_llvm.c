@@ -47,7 +47,7 @@ static void si_diagnostic_handler(LLVMDiagnosticInfoRef di, void *context)
 
    if (severity == LLVMDSError) {
       diag->retval = 1;
-      fprintf(stderr, "LLVM triggered Diagnostic Handler: %s\n", description);
+      mesa_loge("LLVM triggered Diagnostic Handler: %s", description);
    }
 
    LLVMDisposeMessage(description);
@@ -693,7 +693,7 @@ static void assert_registers_equal(struct si_screen *sscreen, unsigned reg, unsi
                                    unsigned llvm_value, bool allow_zero)
 {
    if (nir_value != llvm_value) {
-      fprintf(stderr, "Error: Unexpected non-matching shader config:\n");
+      mesa_loge("Unexpected non-matching shader config:");
       fprintf(stderr, "From NIR:\n");
       ac_dump_reg(stderr, sscreen->info.gfx_level, sscreen->info.family, reg, nir_value, ~0);
       fprintf(stderr, "From LLVM:\n");
@@ -771,7 +771,7 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
                                   nir->info.stage, si_get_shader_name(shader));
    si_llvm_dispose(&ctx);
    if (!success) {
-      fprintf(stderr, "LLVM failed to compile shader\n");
+      mesa_loge("LLVM failed to compile shader");
       return false;
    }
 

@@ -11,9 +11,13 @@
 
 #include "winsys/radeon_winsys.h"
 #include "vl/vl_video_buffer.h"
+#include "util/log.h"
+
+#undef  MESA_LOG_TAG
+#define MESA_LOG_TAG "radeonsi"
 
 #define RVID_ERR(fmt, args...)                                                                     \
-   fprintf(stderr, "EE %s:%d %s UVD - " fmt, __FILE__, __LINE__, __func__, ##args)
+   mesa_loge("%s:%d %s UVD - " fmt, __FILE__, __LINE__, __func__, ##args)
 
 #define UVD_FW_1_66_16 ((1 << 24) | (66 << 16) | (16 << 8))
 

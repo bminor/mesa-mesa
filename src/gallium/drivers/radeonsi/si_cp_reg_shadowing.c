@@ -27,7 +27,7 @@ void si_init_cp_reg_shadowing(struct si_context *sctx)
                                         sctx->screen->info.fw_based_mcbp.csa_size,
                                         sctx->screen->info.fw_based_mcbp.csa_alignment);
          if (!sctx->shadowing.registers || !sctx->shadowing.csa)
-            fprintf(stderr, "radeonsi: cannot create register shadowing buffer(s)\n");
+            mesa_loge("cannot create register shadowing buffer(s)");
          else
             sctx->ws->cs_set_mcbp_reg_shadowing_va(&sctx->gfx_cs,
                                                    sctx->shadowing.registers->gpu_address,
@@ -40,7 +40,7 @@ void si_init_cp_reg_shadowing(struct si_context *sctx)
                                         SI_SHADOWED_REG_BUFFER_SIZE,
                                         4096);
          if (!sctx->shadowing.registers)
-            fprintf(stderr, "radeonsi: cannot create a shadowed_regs buffer\n");
+            mesa_loge("cannot create a shadowed_regs buffer");
       }
    }
 

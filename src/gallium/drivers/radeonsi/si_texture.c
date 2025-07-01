@@ -1744,8 +1744,8 @@ static struct pipe_resource *si_texture_from_winsys_buffer(struct si_screen *ssc
           modifier == DRM_FORMAT_MOD_INVALID &&
           md_version >= 3 &&
           md_flags & (1u << AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT)) {
-         fprintf(stderr, "si_texture_from_winsys_buffer: fail texture import due to "
-                         "AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT being set.\n");
+         mesa_loge("si_texture_from_winsys_buffer: fail texture import due to "
+                   "AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT being set.");
          return NULL;
       }
    } else {

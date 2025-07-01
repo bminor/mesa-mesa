@@ -64,7 +64,7 @@ void si_save_cs(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, struct radeo
    return;
 
 oom:
-   fprintf(stderr, "%s: out of memory\n", __func__);
+   mesa_loge("%s: out of memory", __func__);
    memset(saved, 0, sizeof(*saved));
 }
 
@@ -199,7 +199,7 @@ bool si_replace_shader(unsigned num, struct si_shader_binary *binary)
 
       p = endp;
       if (*p != ':') {
-         fprintf(stderr, "RADEON_REPLACE_SHADERS formatted badly.\n");
+         mesa_loge("RADEON_REPLACE_SHADERS formatted badly.");
          exit(1);
       }
       ++p;
@@ -219,12 +219,12 @@ bool si_replace_shader(unsigned num, struct si_shader_binary *binary)
    if (semicolon) {
       p = copy = strndup(p, semicolon - p);
       if (!copy) {
-         fprintf(stderr, "out of memory\n");
+         mesa_loge("out of memory");
          return false;
       }
    }
 
-   fprintf(stderr, "radeonsi: replace shader %u by %s\n", num, p);
+   mesa_logi("replace shader %u by %s", num, p);
 
    f = fopen(p, "r");
    if (!f) {
@@ -244,7 +244,7 @@ bool si_replace_shader(unsigned num, struct si_shader_binary *binary)
 
    binary->code_buffer = MALLOC(filesize);
    if (!binary->code_buffer) {
-      fprintf(stderr, "out of memory\n");
+      mesa_loge("out of memory");
       goto out_close;
    }
 
@@ -496,7 +496,7 @@ void si_log_hw_flush(struct si_context *sctx)
        */
       FILE *f = dd_get_debug_file(false);
       if (!f) {
-         fprintf(stderr, "radeonsi: error opening aux context dump file.\n");
+         mesa_loge("error opening aux context dump file.");
       } else {
          dd_write_header(f, &sctx->screen->b, 0);
 
@@ -1114,7 +1114,7 @@ void si_check_vm_faults(struct si_context *sctx, struct radeon_saved_cs *saved)
 
    fclose(f);
 
-   fprintf(stderr, "Detected a VM fault, exiting...\n");
+   mesa_loge("Detected a VM fault, exiting...");
    exit(0);
 }
 

@@ -56,7 +56,7 @@
    }
 
 #define SIVPE_ERR(fmt, args...)                                                                     \
-   fprintf(stderr, "SIVPE ERROR %s:%d %s " fmt, __FILE__, __LINE__, __func__, ##args)
+   mesa_loge("SIVPE: %s:%d %s " fmt, __FILE__, __LINE__, __func__, ##args)
 
 #define SIVPE_PRINT(fmt, args...)                                                                   \
    printf("SIVPE %s: " fmt, __func__, ##args);

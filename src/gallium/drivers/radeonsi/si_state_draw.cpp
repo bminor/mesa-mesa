@@ -2128,19 +2128,19 @@ static void si_draw(struct pipe_context *ctx,
                 num_vertex_elements < vs->info.num_vs_inputs) {
 #ifndef NDEBUG
       if (!vs)
-         fprintf(stderr, "radeonsi: draw: missing vertex shader\n");
+         mesa_loge("draw: missing vertex shader");
 
       if (!sctx->shader.ps.cso)
-         fprintf(stderr, "radeonsi: draw: missing fragment shader\n");
+         mesa_loge("draw: missing fragment shader");
 
       if (HAS_TESS != (info->mode == MESA_PRIM_PATCHES)) {
-         fprintf(stderr, HAS_TESS ? "radeonsi: draw: invalid primitive type (expected PATCHES)\n"
-                                  : "radeonsi: draw: invalid primitive type (not expected PATCHES)\n");
+         mesa_loge(HAS_TESS ? "draw: invalid primitive type (expected PATCHES)"
+                            : "draw: invalid primitive type (not expected PATCHES)");
       }
 
       if (num_vertex_elements < vs->info.num_vs_inputs) {
-         fprintf(stderr, "radeonsi: draw: not enough vertex elements for a vertex shader "
-                         "(has: %u, need: %u)\n", num_vertex_elements, vs->info.num_vs_inputs);
+         mesa_loge("draw: not enough vertex elements for a vertex shader "
+                   "(has: %u, need: %u)", num_vertex_elements, vs->info.num_vs_inputs);
       }
 #endif
       assert(0);

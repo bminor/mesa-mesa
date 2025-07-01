@@ -2009,7 +2009,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
          si_nir_generate_gs_copy_shader(sscreen, compiler, shader, nir,
                                         linked.consumer.gs_copy_shader, debug);
       if (!shader->gs_copy_shader) {
-         fprintf(stderr, "radeonsi: can't create GS copy shader\n");
+         mesa_loge("can't create GS copy shader");
          ret = false;
          goto out;
       }
@@ -2065,10 +2065,9 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
       max_sgprs = MIN2(max_sgprs / waves_per_simd, max_sgprs_per_wave);
 
       if (shader->config.num_sgprs > max_sgprs || shader->config.num_vgprs > max_vgprs) {
-         fprintf(stderr,
-                 "LLVM failed to compile a shader correctly: "
-                 "SGPR:VGPR usage is %u:%u, but the hw limit is %u:%u\n",
-                 shader->config.num_sgprs, shader->config.num_vgprs, max_sgprs, max_vgprs);
+         mesa_loge("LLVM failed to compile a shader correctly: "
+                   "SGPR:VGPR usage is %u:%u, but the hw limit is %u:%u",
+                   shader->config.num_sgprs, shader->config.num_vgprs, max_sgprs, max_vgprs);
 
          /* Just terminate the process, because dependent
           * shaders can hang due to bad input data, but use
@@ -2587,7 +2586,7 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
    if (sel->stage <= MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg) {
       assert(!shader->key.ge.as_es && !shader->key.ge.as_ls);
       if (!gfx10_ngg_calculate_subgroup_info(shader)) {
-         fprintf(stderr, "Failed to compute subgroup info\n");
+         mesa_loge("Failed to compute subgroup info");
          return false;
       }
    } else if (sscreen->info.gfx_level >= GFX9 && sel->stage == MESA_SHADER_GEOMETRY) {
@@ -2608,7 +2607,7 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
    si_shader_dump(sscreen, shader, debug, stderr, true);
 
    if (!ok)
-      fprintf(stderr, "LLVM failed to upload shader\n");
+      mesa_loge("LLVM failed to upload shader");
    return ok;
 }
 

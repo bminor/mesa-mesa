@@ -987,8 +987,8 @@ void si_gfx_copy_image(struct si_context *sctx, struct pipe_resource *dst,
 
    /* If the blitter isn't available fail here instead of crashing. */
    if (!sctx->blitter) {
-      fprintf(stderr, "si_resource_copy_region failed src_format: %s dst_format: %s\n",
-              util_format_name(src->format), util_format_name(dst->format));
+      mesa_loge("si_resource_copy_region failed src_format: %s dst_format: %s",
+                util_format_name(src->format), util_format_name(dst->format));
       return;
    }
 
@@ -1028,8 +1028,8 @@ void si_gfx_copy_image(struct si_context *sctx, struct pipe_resource *dst,
          dst_templ.format = src_templ.format = PIPE_FORMAT_R32G32B32A32_UINT;
          break;
       default:
-         fprintf(stderr, "Unhandled format %s with blocksize %u\n",
-                 util_format_short_name(src->format), ssrc->surface.bpe);
+         mesa_loge("Unhandled format %s with blocksize %u",
+                   util_format_short_name(src->format), ssrc->surface.bpe);
          assert(0);
       }
    }

@@ -268,10 +268,9 @@ si_sqtt_resize_bo(struct si_context *sctx)
    /* Double the size of the thread trace buffer per SE. */
    sctx->sqtt->buffer_size *= 2;
 
-   fprintf(stderr,
-           "Failed to get the thread trace because the buffer "
-           "was too small, resizing to %d KB\n",
-           sctx->sqtt->buffer_size / 1024);
+   mesa_loge("Failed to get the thread trace because the buffer "
+             "was too small, resizing to %d KB",
+             sctx->sqtt->buffer_size / 1024);
 
    /* Re-create the thread trace BO. */
    return si_sqtt_init_bo(sctx);
@@ -290,7 +289,7 @@ static bool si_get_sqtt_trace(struct si_context *sctx,
 
    if (!ac_sqtt_get_trace(sctx->sqtt, &sctx->screen->info, sqtt)) {
       if (!si_sqtt_resize_bo(sctx)) {
-         fprintf(stderr, "radeonsi: Failed to resize the SQTT buffer.\n");
+         mesa_loge("Failed to resize the SQTT buffer.");
       } else {
          for (int i = 0; i < ARRAY_SIZE(sctx->sqtt->start_cs); i++) {
             sctx->screen->ws->cs_destroy(sctx->sqtt->start_cs[i]);
@@ -307,24 +306,22 @@ bool si_init_sqtt(struct si_context *sctx)
 {
    static bool warn_once = true;
    if (warn_once) {
-      fprintf(stderr, "*************************************************\n");
-      fprintf(stderr, "* WARNING: Thread trace support is experimental *\n");
-      fprintf(stderr, "*************************************************\n");
+      mesa_logw("Thread trace support is experimental *");
       warn_once = false;
    }
 
    sctx->sqtt = CALLOC_STRUCT(ac_sqtt);
 
    if (sctx->gfx_level < GFX8) {
-      fprintf(stderr, "GPU hardware not supported: refer to "
-                      "the RGP documentation for the list of "
-                      "supported GPUs!\n");
+      mesa_loge("GPU hardware not supported: refer to "
+                "the RGP documentation for the list of "
+                "supported GPUs!");
       return false;
    }
 
    if (sctx->gfx_level > GFX12) {
-      fprintf(stderr, "radeonsi: Thread trace is not supported "
-                      "for that GPU!\n");
+      mesa_loge("Thread trace is not supported "
+                "for that GPU!");
       return false;
    }
 
@@ -445,8 +442,8 @@ void si_handle_sqtt(struct si_context *sctx, struct radeon_cmdbuf *rcs)
             /* Do not enable tracing if we cannot remove the file,
              * because by then we'll trace every frame.
              */
-            fprintf(stderr, "radeonsi: could not remove thread "
-                            "trace trigger file, ignoring\n");
+            mesa_logw("could not remove thread "
+                      "trace trigger file, ignoring");
          }
       }
 
@@ -494,7 +491,7 @@ void si_handle_sqtt(struct si_context *sctx, struct radeon_cmdbuf *rcs)
          if (sctx->spm.ptr)
             sctx->ws->buffer_unmap(sctx->ws, sctx->spm.bo);
       } else {
-         fprintf(stderr, "Failed to read the trace\n");
+         mesa_loge("Failed to read the trace");
          if (!sctx->sqtt->trigger_file) {
             sctx->sqtt->start_frame = num_frames + 10;
          }

@@ -294,7 +294,7 @@ static bool si_load_shader_binary(struct si_shader *shader, void *binary)
 
    uint32_t *ptr = (uint32_t *)binary + sizeof(*head) / 4;
    if (util_hash_crc32(ptr, head->size - sizeof(*head)) != head->crc32) {
-      fprintf(stderr, "radeonsi: binary shader has invalid CRC32\n");
+      mesa_loge("binary shader has invalid CRC32");
       return false;
    }
 
@@ -3334,7 +3334,7 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
       unsigned char ir_sha1_cache_key[20];
 
       if (!shader) {
-         fprintf(stderr, "radeonsi: can't allocate a main shader part\n");
+         mesa_loge("can't allocate a main shader part");
          return;
       }
 
@@ -3376,11 +3376,10 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
 
          /* Compile the shader if it hasn't been loaded from the cache. */
          if (!si_compile_shader(sscreen, *compiler, shader, debug)) {
-            fprintf(stderr,
-               "radeonsi: can't compile a main shader part (type: %s).\n"
-               "This is probably a driver bug, please report "
-               "it to https://gitlab.freedesktop.org/mesa/mesa/-/issues.\n",
-               gl_shader_stage_name(shader->selector->stage));
+            mesa_loge("can't compile a main shader part (type: %s).\n"
+                      "This is probably a driver bug, please report "
+                      "it to https://gitlab.freedesktop.org/mesa/mesa/-/issues.",
+                      gl_shader_stage_name(shader->selector->stage));
             FREE(shader);
             return;
          }

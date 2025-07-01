@@ -388,7 +388,7 @@ void si_llvm_ps_build_end(struct si_shader_context *ctx)
                color[index][j] = result;
             }
          } else {
-            fprintf(stderr, "Warning: Unhandled fs output type:%d\n", semantic);
+            mesa_logw("Unhandled fs output type:%d", semantic);
          }
          break;
       }

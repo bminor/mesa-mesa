@@ -53,7 +53,7 @@
 #define RADEON_ENC_ERR(fmt, args...)                                                             \
    do {                                                                                          \
       enc->error = true;                                                                         \
-      fprintf(stderr, "EE %s:%d %s VCN - " fmt, __FILE__, __LINE__, __func__, ##args);           \
+      mesa_loge("%s:%d %s VCN - " fmt, __FILE__, __LINE__, __func__, ##args);           \
    } while(0)
 
 typedef void (*radeon_enc_get_buffer)(struct pipe_resource *resource, struct pb_buffer_lean **handle,

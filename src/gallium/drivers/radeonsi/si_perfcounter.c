@@ -493,7 +493,7 @@ static struct si_query_group *get_group_state(struct si_screen *screen, struct s
 
       query_shaders = query->shaders & ~AC_PC_SHADERS_WINDOWING;
       if (query_shaders && query_shaders != shaders) {
-         fprintf(stderr, "si_perfcounter: incompatible shader groups\n");
+         mesa_loge("si_perfcounter: incompatible shader groups");
          FREE(group);
          return NULL;
       }
@@ -567,7 +567,7 @@ struct pipe_query *si_create_batch_query(struct pipe_context *ctx, unsigned num_
          goto error;
 
       if (group->num_counters >= block->b->b->num_counters) {
-         fprintf(stderr, "perfcounter group %s: too many selected\n", block->b->b->name);
+         mesa_loge("perfcounter group %s: too many selected", block->b->b->name);
          goto error;
       }
       group->selectors[group->num_counters] = sub_index;
