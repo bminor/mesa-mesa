@@ -464,24 +464,7 @@ AssamblerVisitor::visit(const AluGroup& group)
    }
 
    auto [addr, is_index] = group.addr();
-
-   if (addr) {
-      if (!addr->has_flag(Register::addr_or_idx)) {
-         if (is_index) {
-            emit_index_reg(*addr, 0);
-         } else {
-            auto reg = addr->as_register();
-            assert(reg);
-            if (!m_last_addr || !m_bc->ar_loaded || !m_last_addr->equal_to(*reg)) {
-               m_last_addr = reg;
-               m_bc->ar_reg = reg->sel();
-               m_bc->ar_chan = reg->chan();
-               m_bc->ar_loaded = 0;
-               r600_load_ar(m_bc, group.addr_for_src());
-            }
-         }
-      }
-   }
+   assert(!addr || addr->has_flag(Register::addr_or_idx));
 
    for (auto& i : group) {
       if (i)
@@ -1198,13 +1181,6 @@ AssamblerVisitor::copy_dst(r600_bytecode_alu_dst& dst, const Register& d, bool w
 
    if (m_last_addr && m_last_addr->equal_to(d))
       m_last_addr = nullptr;
-
-   for (int i = 0; i < 2; ++i) {
-      /* Force emitting index register, if we didn't emit it yet, because
-       * the register value will change now */
-      if (dst.sel == m_bc->index_reg[i] && dst.chan == m_bc->index_reg_chan[i])
-         m_bc->index_loaded[i] = false;
-   }
 
    return true;
 }
