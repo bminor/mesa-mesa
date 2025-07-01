@@ -108,4 +108,3 @@ windows_test_msvc:
   variables:
     MESA_IMAGE_PATH: *windows_test_image_path
     MESA_IMAGE_TAG: *windows_test_image_tag
-

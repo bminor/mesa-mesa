@@ -18,4 +18,3 @@
 include:
   - local: '.gitlab-ci/container/gitlab-ci-inc.yml'
   - local: '.gitlab-ci/container/*/gitlab-ci.yml'
-

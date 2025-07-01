@@ -575,4 +575,3 @@ debian/baremetal_arm64_test-vk:
       optional: true
     - job: debian/baremetal_arm64_test-vk
       optional: true
-

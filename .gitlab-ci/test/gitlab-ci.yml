@@ -106,4 +106,3 @@ yaml-toml-shell-py-test:
       when: manual
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
-

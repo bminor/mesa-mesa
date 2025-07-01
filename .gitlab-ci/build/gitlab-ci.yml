@@ -23,7 +23,7 @@ debian-x86_64:
   extends:
     - .meson-build-for-tests
     - .use-debian/x86_64_build
-    - .build-run-long # but it really shouldn't! tracked in mesa#12544
+    - .build-run-long  # but it really shouldn't! tracked in mesa#12544
     - .ci-deqp-artifacts
   variables:
     UNWIND: "enabled"
@@ -45,7 +45,7 @@ debian-x86_64:
       -D tools=drm-shim
       -D valgrind=disabled
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
-    RUN_MESON_TESTS: "false" # debian-build-x86_64 already runs these
+    RUN_MESON_TESTS: "false"  # debian-build-x86_64 already runs these
   artifacts:
     reports:
       junit: artifacts/ci_scripts_report.xml
@@ -70,7 +70,7 @@ debian-x86_64-asan:
       -D valgrind=disabled
     S3_ARTIFACT_NAME: mesa-x86_64-asan-${BUILDTYPE}
     ARTIFACTS_DEBUG_SYMBOLS: 1
-    RUN_MESON_TESTS: "false" # just too slow
+    RUN_MESON_TESTS: "false"  # just too slow
     # Do a host build for mesa-clc (asan complains not being loaded as
     # the first library)
     HOST_BUILD_OPTIONS: >
@@ -121,7 +121,7 @@ debian-x86_64-msan:
       -Wno-error=unused-private-field
       -Wno-error=vla-cxx-extension
       -Wno-error=deprecated-declarations
-    RUN_MESON_TESTS: "false" # just too slow
+    RUN_MESON_TESTS: "false"  # just too slow
     # Do a host build for mesa-clc and precomp-compiler (msan complains about uninitialized
     # values in the LLVM libs)
     HOST_BUILD_OPTIONS: >
@@ -159,7 +159,7 @@ debian-x86_64-ubsan:
       -D gallium-va=false
     S3_ARTIFACT_NAME: ""
     ARTIFACTS_DEBUG_SYMBOLS: 1
-    RUN_MESON_TESTS: "false" # just too slow
+    RUN_MESON_TESTS: "false"  # just too slow
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false
@@ -477,7 +477,7 @@ debian-arm32-asan:
       -D tools=dlclose-skip
       -D gallium-rusticl=false
     ARTIFACTS_DEBUG_SYMBOLS: 1
-    RUN_MESON_TESTS: "false" # just too slow
+    RUN_MESON_TESTS: "false"  # just too slow
     S3_ARTIFACT_NAME: mesa-arm32-asan-${BUILDTYPE}
 
 debian-arm64:
@@ -501,7 +501,7 @@ debian-arm64:
       -D teflon=true
     GALLIUM_ST:
       -D gallium-rusticl=true
-    RUN_MESON_TESTS: "false" # run by debian-arm64-build-testing
+    RUN_MESON_TESTS: "false"  # run by debian-arm64-build-testing
     S3_ARTIFACT_NAME: mesa-arm64-default-${BUILDTYPE}
 
 debian-arm64-asan:
@@ -522,7 +522,7 @@ debian-arm64-asan:
       -D tools=dlclose-skip
       -D gallium-rusticl=false
     ARTIFACTS_DEBUG_SYMBOLS: 1
-    RUN_MESON_TESTS: "false" # just too slow
+    RUN_MESON_TESTS: "false"  # just too slow
     S3_ARTIFACT_NAME: mesa-arm64-asan-${BUILDTYPE}
 
 debian-arm64-ubsan:
@@ -547,7 +547,7 @@ debian-arm64-ubsan:
       -D b_sanitize=undefined
       -D gallium-rusticl=false
     ARTIFACTS_DEBUG_SYMBOLS: 1
-    RUN_MESON_TESTS: "false" # just too slow
+    RUN_MESON_TESTS: "false"  # just too slow
     S3_ARTIFACT_NAME: mesa-arm64-ubsan-${BUILDTYPE}
 
 debian-arm64-build-test:
@@ -732,7 +732,7 @@ debian-x86_32:
     - .meson-cross
     - .use-debian/x86_32_build
     - .meson-build-only
-    - .build-run-long # it's not clear why this runs long, but it also doesn't matter much
+    - .build-run-long  # it's not clear why this runs long, but it also doesn't matter much
   variables:
     BUILDTYPE: debug
     CROSS: i386

@@ -39,4 +39,3 @@ fedora/x86_64_build:
       optional: true
     - job: fedora/x86_64_build
       optional: true
-

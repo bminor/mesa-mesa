@@ -30,9 +30,9 @@ variables:
   # to a lack of available devices to run the jobs.
   timeout: 1h
   variables:
-    GIT_STRATEGY: none # testing doesn't build anything from source
+    GIT_STRATEGY: none  # testing doesn't build anything from source
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
-    FDO_CI_CONCURRENT: 6 # should be replaced by per-machine definitions
+    FDO_CI_CONCURRENT: 6  # should be replaced by per-machine definitions
     # the dispatchers use this to cache data locally
     LAVA_HTTP_CACHE_URI: "http://caching-proxy/cache/?uri="
     LAVA_ROOTFS_PATH: "${MESA_IMAGE_PATH}:${FDO_DISTRIBUTION_TAG}/lava-rootfs.tar.zst"
@@ -90,9 +90,9 @@ variables:
     - job: debian/x86_64_test-android
       artifacts: false
       optional: true
-    - job: debian-x86_64 # The generic Linux build for the host will be downloaded later
+    - job: debian-x86_64  # The generic Linux build for the host will be downloaded later
       artifacts: false
-    - job: debian-android # The Android build for the guest will be downloaded later and installed via adb
+    - job: debian-android  # The Android build for the guest will be downloaded later and installed via adb
       artifacts: false
 
 .lava-x86_64-test-gl:

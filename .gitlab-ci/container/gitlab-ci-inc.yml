@@ -111,4 +111,3 @@
   extends:
     - .container
     - .incorporate-base-tag+templates-commit
-
