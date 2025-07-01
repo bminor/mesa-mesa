@@ -4,7 +4,6 @@ glx@glx-swap-pixmap-bad,Fail
 glx@glx-visuals-depth,Fail
 glx@glx-visuals-depth -pixmap,Fail
 glx@glx-visuals-stencil -pixmap,Fail
-glx@glx_arb_create_context_no_error@no error,Fail
 glx@glx_arb_sync_control@waitformsc,Fail
 shaders@glsl-max-varyings >max_varying_components,Fail
 shaders@glsl-uniform-interstage-limits@subdivide 5,Fail
@@ -159,9 +158,11 @@ spec@arb_copy_image@arb_copy_image-formats,Crash
 spec@arb_copy_image@arb_copy_image-formats --samples=2,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_RGB32I/Destination: GL_RGB32F,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_RGB32UI/Destination: GL_RGB32F,Fail
+spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_R32F/Destination: GL_RG16,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=4,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=4@Source: GL_RGB32I/Destination: GL_RGB32F,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=4@Source: GL_RGB32UI/Destination: GL_RGB32F,Fail
+spec@arb_copy_image@arb_copy_image-formats --samples=4@Source: GL_R32F/Destination: GL_RG16,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=8,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32I/Destination: GL_RGB32F,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32UI/Destination: GL_RGB32F,Fail
