@@ -820,6 +820,9 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv')
     '--raw-line', '#![allow(non_snake_case)]',
     '--raw-line', '#![allow(non_upper_case_globals)]',
   ]
+  if rustc.version().version_compare('>= 1.88')
+    bindgen_output_args += ['--raw-line', '#![allow(unnecessary_transmutes)]']
+  endif
 endif
 
 if get_option('precomp-compiler') != 'system'
