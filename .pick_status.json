@@ -24,7 +24,7 @@
         "description": "anv: move view_usage check to before setting the protected bit on it",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8d9cc6aa236fe2986858f272afe581fb08a72ee3",
         "notes": null
