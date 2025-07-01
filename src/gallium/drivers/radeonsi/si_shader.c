@@ -1321,7 +1321,7 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
    bool progress = false;
 
    /* Kill outputs according to the shader key. */
-   if (nir->info.stage <= MESA_SHADER_GEOMETRY)
+   if (nir->info.stage <= MESA_SHADER_GEOMETRY || nir->info.stage == MESA_SHADER_MESH)
       NIR_PASS(progress, nir, si_nir_kill_outputs, key);
 
    bool inline_uniforms = false;
