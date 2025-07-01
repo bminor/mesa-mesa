@@ -1464,16 +1464,6 @@ pan_dump_resource(struct panfrost_context *ctx, struct panfrost_resource *rsc)
 
 #endif
 
-/* Get scan-order index from (x, y) position when blocks are
- * arranged in z-order in 8x8 tiles */
-static unsigned
-get_morton_index(unsigned x, unsigned y, unsigned stride)
-{
-   unsigned i = ((x << 0) & 1) | ((y << 1) & 2) | ((x << 1) & 4) |
-                ((y << 2) & 8) | ((x << 2) & 16) | ((y << 3) & 32);
-   return (((y & ~7) * stride) + ((x & ~7) << 3)) + i;
-}
-
 static void
 panfrost_store_tiled_images(struct panfrost_transfer *transfer,
                             struct panfrost_resource *rsrc)
@@ -2020,10 +2010,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
 
    assert(prsrc->base.array_size == 1);
 
-   uint64_t src_modifier = prsrc->modifier;
-   uint64_t dst_modifier =
-      src_modifier & ~(AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SPARSE);
-   bool is_tiled = src_modifier & AFBC_FORMAT_MOD_TILED;
+   uint64_t modifier = prsrc->modifier & ~AFBC_FORMAT_MOD_SPARSE;
    unsigned last_level = prsrc->base.last_level;
    struct pan_image_slice_layout slice_infos[PIPE_MAX_TEXTURE_LEVELS] = {0};
    unsigned total_size = 0;
@@ -2049,14 +2036,13 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       struct pan_image_slice_layout *src_slice =
          &prsrc->plane.layout.slices[level];
       struct pan_image_slice_layout *dst_slice = &slice_infos[level];
-      unsigned src_stride = pan_afbc_stride_blocks(
-         src_modifier, src_slice->afbc.header.row_stride_B);
-      unsigned src_nr_sblocks =
-         src_stride *
+      unsigned nr_sblocks_total =
+         pan_afbc_stride_blocks(
+            modifier, src_slice->afbc.header.row_stride_B) *
          pan_afbc_height_blocks(
-            src_modifier, u_minify(prsrc->image.props.extent_px.height, level));
+            modifier, u_minify(prsrc->image.props.extent_px.height, level));
       uint32_t body_offset_B = pan_afbc_body_offset(
-         dev->arch, dst_modifier, src_slice->afbc.header.surface_size_B);
+         dev->arch, modifier, src_slice->afbc.header.surface_size_B);
       uint32_t offset = 0;
       struct pan_afbc_block_info *meta =
          metadata_bo->ptr.cpu + metadata_offsets[level];
@@ -2069,28 +2055,24 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
        * at most 8 kB can be copied at each iteration (smaller values tend to
        * increase latency). */
       alignas(16) struct pan_afbc_block_info meta_chunk[64 * 16];
-      unsigned nr_blocks_per_chunk = ARRAY_SIZE(meta_chunk);
+      unsigned nr_sblocks_per_chunk = ARRAY_SIZE(meta_chunk);
 
-      for (unsigned i = 0; i < src_nr_sblocks; i += nr_blocks_per_chunk) {
-         unsigned nr_sblocks = MIN2(nr_blocks_per_chunk, src_nr_sblocks - i);
+      for (unsigned i = 0; i < nr_sblocks_total; i += nr_sblocks_per_chunk) {
+         unsigned nr_sblocks =
+            MIN2(nr_sblocks_per_chunk, nr_sblocks_total - i);
 
          util_streaming_load_memcpy(
             meta_chunk, &meta[i],
             nr_sblocks * sizeof(struct pan_afbc_block_info));
 
          for (unsigned j = 0; j < nr_sblocks; j++) {
-            unsigned idx = j;
-            if (is_tiled) {
-               idx &= ~63;
-               idx += get_morton_index(j & 7, (j & 63) >> 3, src_stride);
-            }
-            meta[i + idx].offset = offset;
-            offset += meta_chunk[idx].size;
+            meta[i + j].offset = offset;
+            offset += meta_chunk[j].size;
          }
       }
 
       total_size =
-         ALIGN_POT(total_size, pan_afbc_header_align(dev->arch, dst_modifier));
+         ALIGN_POT(total_size, pan_afbc_header_align(dev->arch, modifier));
       {
          /* Header layout is exactly the same, only the body is shrunk. */
          dst_slice->afbc.header = src_slice->afbc.header;
@@ -2125,7 +2107,7 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    }
 
    char *new_label =
-      panfrost_resource_new_label(prsrc, dst_modifier, old_user_label);
+      panfrost_resource_new_label(prsrc, modifier, old_user_label);
 
    struct panfrost_bo *dst =
       panfrost_bo_create(dev, new_size, 0, new_label);
@@ -2156,9 +2138,9 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
       free(old_label);
    }
 
-   assert(!panfrost_is_emulated_mod(dst_modifier));
-   prsrc->image.props.modifier = dst_modifier;
-   prsrc->modifier = dst_modifier;
+   assert(!panfrost_is_emulated_mod(modifier));
+   prsrc->image.props.modifier = modifier;
+   prsrc->modifier = modifier;
    panfrost_bo_unreference(prsrc->bo);
    prsrc->bo = dst;
    prsrc->plane.base = dst->ptr.gpu;

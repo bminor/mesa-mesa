@@ -76,27 +76,6 @@ write_afbc_header(nir_builder *b, nir_def *buf, nir_def *idx, nir_def *hdr)
 }
 
 static nir_def *
-get_morton_index(nir_builder *b, nir_def *idx, nir_def *src_stride,
-                 nir_def *dst_stride)
-{
-   nir_def *x = nir_umod(b, idx, dst_stride);
-   nir_def *y = nir_udiv(b, idx, dst_stride);
-
-   nir_def *offset = nir_imul(b, nir_iand_imm(b, y, ~0x7), src_stride);
-   offset = nir_iadd(b, offset, nir_ishl_imm(b, nir_ushr_imm(b, x, 3), 6));
-
-   x = nir_iand_imm(b, x, 0x7);
-   x = nir_iand_imm(b, nir_ior(b, x, nir_ishl_imm(b, x, 2)), 0x13);
-   x = nir_iand_imm(b, nir_ior(b, x, nir_ishl_imm(b, x, 1)), 0x15);
-   y = nir_iand_imm(b, y, 0x7);
-   y = nir_iand_imm(b, nir_ior(b, y, nir_ishl_imm(b, y, 2)), 0x13);
-   y = nir_iand_imm(b, nir_ior(b, y, nir_ishl_imm(b, y, 1)), 0x15);
-   nir_def *tile_idx = nir_ior(b, x, nir_ishl_imm(b, y, 1));
-
-   return nir_iadd(b, offset, tile_idx);
-}
-
-static nir_def *
 get_superblock_size(nir_builder *b, unsigned arch, nir_def *hdr,
                     nir_def *uncompressed_size)
 {
@@ -167,16 +146,15 @@ get_packed_offset(nir_builder *b, nir_def *metadata, nir_def *idx,
 #define MAX_LINE_SIZE 16
 
 static void
-copy_superblock(nir_builder *b, nir_def *dst, nir_def *dst_idx, nir_def *hdr_sz,
-                nir_def *src, nir_def *src_idx, nir_def *metadata,
-                nir_def *meta_idx, unsigned align)
+copy_superblock(nir_builder *b, nir_def *dst, nir_def *hdr_sz, nir_def *src,
+                nir_def *metadata, nir_def *idx, unsigned align)
 {
-   nir_def *hdr = read_afbc_header(b, src, src_idx);
+   nir_def *hdr = read_afbc_header(b, src, idx);
    nir_def *src_body_base_ptr = nir_u2u64(b, nir_channel(b, hdr, 0));
    nir_def *src_bodyptr = nir_iadd(b, src, src_body_base_ptr);
 
    nir_def *size;
-   nir_def *dst_offset = get_packed_offset(b, metadata, meta_idx, &size);
+   nir_def *dst_offset = get_packed_offset(b, metadata, idx, &size);
    nir_def *dst_body_base_ptr = nir_iadd(b, dst_offset, hdr_sz);
    nir_def *dst_bodyptr = nir_iadd(b, dst, dst_body_base_ptr);
 
@@ -184,7 +162,7 @@ copy_superblock(nir_builder *b, nir_def *dst, nir_def *dst_idx, nir_def *hdr_sz,
    nir_def *hdr2 =
       nir_vector_insert_imm(b, hdr, nir_u2u32(b, dst_body_base_ptr), 0);
    hdr = nir_bcsel(b, nir_ieq_imm(b, src_body_base_ptr, 0), hdr, hdr2);
-   write_afbc_header(b, dst, dst_idx, hdr);
+   write_afbc_header(b, dst, idx, hdr);
 
    nir_variable *offset_var =
       nir_local_variable_create(b->impl, glsl_uint_type(), "offset");
@@ -256,7 +234,6 @@ panfrost_create_afbc_pack_shader(struct panfrost_screen *screen,
                                  const struct pan_mod_convert_shader_key *key)
 {
    unsigned align = key->afbc.align;
-   bool tiled = key->mod & AFBC_FORMAT_MOD_TILED;
    struct panfrost_device *dev = pan_device(&screen->base);
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, pan_shader_get_compiler_options(dev->arch),
@@ -265,19 +242,14 @@ panfrost_create_afbc_pack_shader(struct panfrost_screen *screen,
    panfrost_afbc_add_info_ubo(pack, b);
 
    nir_def *coord = nir_load_global_invocation_id(&b, 32);
-   nir_def *src_stride = panfrost_afbc_pack_get_info_field(&b, src_stride);
-   nir_def *dst_stride = panfrost_afbc_pack_get_info_field(&b, dst_stride);
-   nir_def *dst_idx = nir_channel(&b, coord, 0);
-   nir_def *src_idx =
-      tiled ? get_morton_index(&b, dst_idx, src_stride, dst_stride) : dst_idx;
+   nir_def *idx = nir_channel(&b, coord, 0);
    nir_def *src = panfrost_afbc_pack_get_info_field(&b, src);
    nir_def *dst = panfrost_afbc_pack_get_info_field(&b, dst);
    nir_def *header_size =
       nir_u2u64(&b, panfrost_afbc_pack_get_info_field(&b, header_size));
    nir_def *metadata = panfrost_afbc_pack_get_info_field(&b, metadata);
 
-   copy_superblock(&b, dst, dst_idx, header_size, src, src_idx, metadata,
-                   src_idx, align);
+   copy_superblock(&b, dst, header_size, src, metadata, idx, align);
 
    return b.shader;
 }
@@ -460,7 +432,7 @@ panfrost_get_afbc_pack_shaders(struct panfrost_context *ctx,
                                struct panfrost_resource *rsrc, unsigned align)
 {
    struct pan_mod_convert_shader_key key = {
-      .mod = DRM_FORMAT_MOD_ARM_AFBC(rsrc->modifier & AFBC_FORMAT_MOD_TILED),
+      .mod = DRM_FORMAT_MOD_ARM_AFBC(0),
       .afbc = {
          .bpp = util_format_get_blocksizebits(rsrc->base.format),
          .align = align,
