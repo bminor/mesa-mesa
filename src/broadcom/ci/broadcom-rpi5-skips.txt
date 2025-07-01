@@ -14,15 +14,6 @@ spec@glsl-3.*
 spec@glsl-4.*
 spec@glsl-es-3.20.*
 
-# When running these tests in parallel with others, quite a few of the
-# tests reach the execution time limit of 1 minute, which generates a
-# lot of flakes (sometimes they pass, sometimes they are timeout). And
-# moving those tests to skip list won't fix the issue, as new tests
-# that were passing fastly now they take 1 minute. Requires
-# investigation.
-dEQP-VK.synchronization.implicit.*
-dEQP-VK.synchronization2.implicit.*
-
 # Slow CL tests (> 5 minute to run)
 program@execute@builtin@builtin-float-sincos-1.0.generated
 
@@ -125,12 +116,3 @@ dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.v
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.vk_image_type_3d.multiple.random.device.write
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.vk_image_type_3d.single.gradient.device.write
 dEQP-VK.image.concurrent_copy.vk_format_r8g8b8a8_unorm.vk_image_tiling_optimal.vk_image_type_3d.single.random.device.write
-dEQP-VK.synchronization.implicit.binary_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0203
-dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_image_geometry_read_copy_image_to_buffer.image_128x128_r16g16b16a16_uint_opaque_fd
-dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_image_geometry_read_image_compute.image_128x128_r8g8b8a8_unorm_opaque_fd
-dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_fragment_read_vertex_input.buffer_262144_opaque_fd
-dEQP-VK.synchronization.timeline_semaphore.device_host.write_ssbo_vertex_read_vertex_input.buffer_16384
-dEQP-VK.synchronization.timeline_semaphore.one_to_n.write_blit_image_read_image_compute.image_128x128_r16g16b16a16_uint
-dEQP-VK.synchronization.timeline_semaphore.wait_before_signal.write_ssbo_geometry_read_ssbo_tess_control.buffer_262144
-dEQP-VK.synchronization2.cross_instance.suballocated.write_ssbo_compute_indirect_read_ssbo_vertex.buffer_262144_binary_semaphore_fd
-dEQP-VK.synchronization2.signal_order.shared_binary_semaphore.write_copy_buffer_read_vertex_input.buffer_16384_opaque_fd
