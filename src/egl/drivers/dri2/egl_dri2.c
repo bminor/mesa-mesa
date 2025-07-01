@@ -1918,13 +1918,12 @@ dri2_create_image_khr_renderbuffer(_EGLDisplay *disp, _EGLContext *ctx,
 static const struct wl_drm_components_descriptor {
    uint32_t dri_components;
    EGLint components;
-   int nplanes;
 } wl_drm_components[] = {
-   {__DRI_IMAGE_COMPONENTS_RGB, EGL_TEXTURE_RGB, 1},
-   {__DRI_IMAGE_COMPONENTS_RGBA, EGL_TEXTURE_RGBA, 1},
-   {__DRI_IMAGE_COMPONENTS_Y_U_V, EGL_TEXTURE_Y_U_V_WL, 3},
-   {__DRI_IMAGE_COMPONENTS_Y_UV, EGL_TEXTURE_Y_UV_WL, 2},
-   {__DRI_IMAGE_COMPONENTS_Y_XUXV, EGL_TEXTURE_Y_XUXV_WL, 2},
+   {__DRI_IMAGE_COMPONENTS_RGB, EGL_TEXTURE_RGB},
+   {__DRI_IMAGE_COMPONENTS_RGBA, EGL_TEXTURE_RGBA},
+   {__DRI_IMAGE_COMPONENTS_Y_U_V, EGL_TEXTURE_Y_U_V_WL},
+   {__DRI_IMAGE_COMPONENTS_Y_UV, EGL_TEXTURE_Y_UV_WL},
+   {__DRI_IMAGE_COMPONENTS_Y_XUXV, EGL_TEXTURE_Y_XUXV_WL},
 };
 
 static _EGLImage *
@@ -1934,7 +1933,6 @@ dri2_create_image_wayland_wl_buffer(_EGLDisplay *disp, _EGLContext *ctx,
 {
    struct wl_drm_buffer *buffer;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   const struct wl_drm_components_descriptor *f;
    struct dri_image *dri_image;
    _EGLImageAttribs attrs;
    int32_t plane;
@@ -1948,12 +1946,6 @@ dri2_create_image_wayland_wl_buffer(_EGLDisplay *disp, _EGLContext *ctx,
       return NULL;
 
    plane = attrs.PlaneWL;
-   f = buffer->driver_format;
-   if (plane < 0 || plane >= f->nplanes) {
-      _eglError(EGL_BAD_PARAMETER,
-                "dri2_create_image_wayland_wl_buffer (plane out of bounds)");
-      return NULL;
-   }
 
    dri_image = dri2_from_planar(buffer->driver_buffer, plane, NULL);
    if (dri_image == NULL && plane == 0)
