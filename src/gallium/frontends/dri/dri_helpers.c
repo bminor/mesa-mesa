@@ -762,6 +762,10 @@ dri2_yuv_dma_buf_supported(struct dri_screen *screen,
    if (pscreen->is_format_supported(pscreen, alt_pipe_format(map->pipe_format),
                                     screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW))
       return true;
+
+   if (!util_format_is_yuv(map->pipe_format))
+      return false;
+
    for (unsigned i = 0; i < map->nplanes; i++) {
       if (!pscreen->is_format_supported(pscreen, map->planes[i].dri_format,
             screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW))
