@@ -40,8 +40,6 @@ struct dri2_format_mapping {
    } planes[3];
 };
 
-extern const __DRI2fenceExtension dri2FenceExtension;
-
 const struct dri2_format_mapping *
 dri2_get_mapping_by_fourcc(int fourcc);
 

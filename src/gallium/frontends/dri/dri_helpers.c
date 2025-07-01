@@ -239,19 +239,6 @@ dri_server_wait_sync(struct dri_context *_ctx, void *_fence, unsigned flags)
       ctx->fence_server_sync(ctx, fence->pipe_fence);
 }
 
-const __DRI2fenceExtension dri2FenceExtension = {
-   .base = { __DRI2_FENCE, 2 },
-
-   .create_fence = dri_create_fence,
-   .get_fence_from_cl_event = dri_get_fence_from_cl_event,
-   .destroy_fence = dri_destroy_fence,
-   .client_wait_sync = dri_client_wait_sync,
-   .server_wait_sync = dri_server_wait_sync,
-   .get_capabilities = dri_fence_get_caps,
-   .create_fence_fd = dri_create_fence_fd,
-   .get_fence_fd = dri_get_fence_fd,
-};
-
 struct dri_image *
 dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
 				     int renderbuffer, void *loaderPrivate,

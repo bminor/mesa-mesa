@@ -112,10 +112,6 @@ struct dri_screen
 
    bool swrast_no_present;
 
-   /* DRI exts that vary based on gallium pipe_screen caps. */
-   __DRIimageExtension image_extension;
-   __DRI2bufferDamageExtension buffer_damage_extension;
-
    /* DRI exts on this screen. Populated at init time based on device caps. */
    const __DRIextension *screen_extensions[14];
 
