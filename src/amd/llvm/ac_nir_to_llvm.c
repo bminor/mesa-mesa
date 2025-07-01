@@ -1166,9 +1166,14 @@ static bool visit_alu(struct ac_nir_context *ctx, const nir_alu_instr *instr)
    case nir_op_extract_i16: {
       bool is_signed = instr->op == nir_op_extract_i16 || instr->op == nir_op_extract_i8;
       unsigned size = instr->op == nir_op_extract_u8 || instr->op == nir_op_extract_i8 ? 8 : 16;
-      LLVMValueRef offset = LLVMConstInt(LLVMTypeOf(src[0]), nir_src_as_uint(instr->src[1].src) * size, false);
+      LLVMValueRef offset = LLVMBuildMul(ctx->ac.builder, src[1], ac_const_uint_vec(&ctx->ac, LLVMTypeOf(src[1]), size), "");
       result = LLVMBuildLShr(ctx->ac.builder, src[0], offset, "");
-      result = LLVMBuildTrunc(ctx->ac.builder, result, LLVMIntTypeInContext(ctx->ac.context, size), "");
+
+      LLVMTypeRef small_type = LLVMIntTypeInContext(ctx->ac.context, size);
+      if (instr->def.num_components > 1)
+         small_type = LLVMVectorType(small_type, instr->def.num_components);
+
+      result = LLVMBuildTrunc(ctx->ac.builder, result, small_type, "");
       if (is_signed)
          result = LLVMBuildSExt(ctx->ac.builder, result, LLVMTypeOf(src[0]), "");
       else
