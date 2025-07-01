@@ -382,6 +382,9 @@ lower_bit_size_callback(const nir_instr *instr, enum amd_gfx_level chip, bool di
       case nir_op_iadd_sat:
       case nir_op_isub_sat:
          return !divergence_known || bit_size == 8 || !alu->def.divergent ? 32 : 0;
+      case nir_op_extract_u8:
+      case nir_op_extract_i8:
+         return !divergence_known || !alu->def.divergent ? 32 : 0;
 
       default:
          return 0;
