@@ -51,6 +51,14 @@ static inline bool ref_needs_olchk(pco_ref ref)
  */
 static void insert_mov_ref(pco_instr *instr, pco_ref *ref, bool needs_s124)
 {
+   if (instr->op == PCO_OP_MBYP && needs_s124 && !pco_ref_has_mods_set(*ref)) {
+      instr->op = PCO_OP_MOVS1;
+      return;
+   } else if (instr->op == PCO_OP_MOVS1 && !needs_s124) {
+      instr->op = PCO_OP_MBYP;
+      return;
+   }
+
    assert(pco_ref_is_scalar(*ref));
    pco_ref new_ref = pco_ref_new_ssa(instr->parent_func,
                                      pco_ref_get_bits(*ref),
