@@ -1128,6 +1128,14 @@ wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index)
    return swapchain->get_wsi_image(swapchain, index)->image;
 }
 
+VkDeviceMemory
+wsi_common_get_memory(VkSwapchainKHR _swapchain, uint32_t index)
+{
+   VK_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
+   assert(index < swapchain->image_count);
+   return swapchain->get_wsi_image(swapchain, index)->memory;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 wsi_GetSwapchainImagesKHR(VkDevice device,
                           VkSwapchainKHR _swapchain,

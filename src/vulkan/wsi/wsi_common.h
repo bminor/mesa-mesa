@@ -330,6 +330,9 @@ ICD_DEFINE_NONDISP_HANDLE_CASTS(VkIcdSurfaceBase, VkSurfaceKHR)
 VkImage
 wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index);
 
+VkDeviceMemory
+wsi_common_get_memory(VkSwapchainKHR _swapchain, uint32_t index);
+
 VkResult
 wsi_common_acquire_next_image2(const struct wsi_device *wsi,
                                VkDevice device,
