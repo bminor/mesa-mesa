@@ -196,8 +196,8 @@ class VirtGpuDevice {
 
    virtual int execBuffer(struct VirtGpuExecBuffer& execbuffer, const VirtGpuResource* blob) = 0;
 
-   virtual bool getDrmInfo(VirtGpuDrmInfo* drmInfo) { return false; }
-   virtual bool getPciBusInfo(VirtGpuPciBusInfo* pciBusInfo) { return false; }
+   virtual bool getDrmInfo(VirtGpuDrmInfo* /*drmInfo*/) { return false; }
+   virtual bool getPciBusInfo(VirtGpuPciBusInfo* /*pciBusInfo*/) { return false; }
 
   private:
    enum VirtGpuCapset mCapset;
