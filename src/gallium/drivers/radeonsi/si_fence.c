@@ -538,10 +538,11 @@ static void si_flush_from_st(struct pipe_context *ctx, struct pipe_fence_handle 
    return si_flush_all_queues(ctx, fence, flags, false);
 }
 
-static void si_fence_server_signal(struct pipe_context *ctx, struct pipe_fence_handle *fence)
+static void si_fence_server_signal(struct pipe_context *ctx, struct pipe_fence_handle *fence, uint64_t value)
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_fence *sfence = (struct si_fence *)fence;
+   assert(!value);
 
    assert(sfence->gfx);
 
@@ -566,10 +567,11 @@ static void si_fence_server_signal(struct pipe_context *ctx, struct pipe_fence_h
    si_flush_all_queues(ctx, NULL, 0, true);
 }
 
-static void si_fence_server_sync(struct pipe_context *ctx, struct pipe_fence_handle *fence)
+static void si_fence_server_sync(struct pipe_context *ctx, struct pipe_fence_handle *fence, uint64_t value)
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_fence *sfence = (struct si_fence *)fence;
+   assert(!value);
 
    util_queue_fence_wait(&sfence->ready);
 

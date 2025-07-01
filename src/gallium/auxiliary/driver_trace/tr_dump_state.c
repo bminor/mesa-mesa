@@ -1243,6 +1243,7 @@ void trace_dump_pipe_picture_desc(const struct pipe_picture_desc *picture)
    trace_dump_member(bool, picture, input_full_range);
    trace_dump_member(format, picture, output_format);
    trace_dump_member(ptr, picture, in_fence);
+   trace_dump_member(uint, picture, in_fence_value);
    trace_dump_member(ptr, picture, out_fence);
    trace_dump_struct_end();
 }

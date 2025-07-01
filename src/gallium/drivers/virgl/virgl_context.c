@@ -1399,10 +1399,12 @@ static void virgl_create_fence_fd(struct pipe_context *ctx,
 }
 
 static void virgl_fence_server_sync(struct pipe_context *ctx,
-			            struct pipe_fence_handle *fence)
+			            struct pipe_fence_handle *fence,
+                                    uint64_t value)
 {
    struct virgl_context *vctx = virgl_context(ctx);
    struct virgl_screen *rs = virgl_screen(ctx->screen);
+   assert(!value);
 
    if (rs->vws->fence_server_sync)
       rs->vws->fence_server_sync(rs->vws, vctx->cbuf, fence);

@@ -86,10 +86,12 @@ svga_create_fence_fd(struct pipe_context *pipe,
  */
 static void
 svga_fence_server_sync(struct pipe_context *pipe,
-                       struct pipe_fence_handle *fence)
+                       struct pipe_fence_handle *fence,
+                       uint64_t value)
 {
    struct svga_winsys_screen *sws = svga_winsys_screen(pipe->screen);
    struct svga_context *svga = svga_context(pipe);
+   assert(!value);
 
    sws->fence_server_sync(sws, &svga->swc->imported_fence_fd, fence);
 }

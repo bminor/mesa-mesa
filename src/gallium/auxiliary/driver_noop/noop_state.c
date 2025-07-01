@@ -331,7 +331,8 @@ static void noop_clear_buffer(struct pipe_context *pipe,
 }
 
 static void noop_fence_server_sync(struct pipe_context *pipe,
-                                   struct pipe_fence_handle *fence)
+                                   struct pipe_fence_handle *fence,
+                                   uint64_t value)
 {
 }
 

@@ -110,7 +110,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          CHECKHR_GOTO( spDeviceContext3.As( &spDeviceContext4 ), done );
 
          // This will signal the staging fence the d3d12 mesa backend is consuming
-         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_SyncFenceValue );
+         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_NextSyncFenceValue );
          debug_printf( "[dx12 hmft 0x%p] DX11 *shared* input sample\n", this );
       }
       else
@@ -135,7 +135,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          // Since we're signaling from the D3D11 context on a shared fence, the signal
          // will happen after the d3d11 context copy is done.
          CHECKHR_GOTO( spDeviceContext3.As( &spDeviceContext4 ), done );
-         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_SyncFenceValue );
+         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_NextSyncFenceValue );
          CHECKHR_GOTO( spSharedTexture.As( &spDXGIResource1 ), done );
          CHECKHR_GOTO( spDXGIResource1->CreateSharedHandle( nullptr, DXGI_SHARED_RESOURCE_READ, nullptr, &hTexture ), done );
          debug_printf( "[dx12 hmft 0x%p] DX11 input sample\n", this );
@@ -169,7 +169,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // This will signal the staging fence the d3d12 mesa backend is consuming
       // Since we have a Wait() on spStagingQueue added by EnqueueResourceReadyWait, this will only happen after MF
       // triggered completion on the input
-      m_spStagingQueue->Signal( m_spStagingFence12.Get(), m_SyncFenceValue );
+      m_spStagingQueue->Signal( m_spStagingFence12.Get(), m_NextSyncFenceValue );
 
       winsysHandle.com_obj = spResource.Get();
       winsysHandle.type = WINSYS_HANDLE_TYPE_D3D12_RES;
@@ -205,6 +205,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       struct pipe_fence_handle *dst_surface_fence = nullptr;
 
       vpblit_params.base.in_fence = m_pPipeFenceHandle;   // input surface fence (driver input)
+      vpblit_params.base.in_fence_value = m_CurrentSyncFenceValue;
       vpblit_params.base.out_fence = &dst_surface_fence;          // Output surface fence (driver output)
 
       vpblit_params.base.input_format = pDX12EncodeContext->pPipeVideoBuffer->buffer_format;
@@ -500,7 +501,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    }
 
    // Set the fence to be waited on m_SyncFenceValue and increment the value for the next frame
-   m_pVlScreen->pscreen->set_fence_timeline_value( m_pVlScreen->pscreen, m_pPipeFenceHandle, m_SyncFenceValue++ );
+   m_CurrentSyncFenceValue = m_NextSyncFenceValue++;
 
 done:
    if( SUCCEEDED( hr ) )

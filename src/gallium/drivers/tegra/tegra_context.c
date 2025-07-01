@@ -809,11 +809,13 @@ tegra_create_fence_fd(struct pipe_context *pcontext,
 
 static void
 tegra_fence_server_sync(struct pipe_context *pcontext,
-                        struct pipe_fence_handle *fence)
+                        struct pipe_fence_handle *fence,
+                        uint64_t value)
 {
    struct tegra_context *context = to_tegra_context(pcontext);
+   assert(!value);
 
-   context->gpu->fence_server_sync(context->gpu, fence);
+   context->gpu->fence_server_sync(context->gpu, fence, value);
 }
 
 static struct pipe_sampler_view *

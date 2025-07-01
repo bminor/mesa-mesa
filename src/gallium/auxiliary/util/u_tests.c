@@ -572,7 +572,7 @@ test_sync_file_fences(struct pipe_context *ctx)
 
    /* Run another clear after waiting for everything. */
    struct pipe_fence_handle *final_fence = NULL;
-   ctx->fence_server_sync(ctx, merged_fence);
+   ctx->fence_server_sync(ctx, merged_fence, 0);
    value = 0xff;
    ctx->clear_buffer(ctx, buf, 0, buf->width0, &value, sizeof(value));
    ctx->flush(ctx, &final_fence, PIPE_FLUSH_FENCE_FD);

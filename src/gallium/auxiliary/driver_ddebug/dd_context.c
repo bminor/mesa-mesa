@@ -590,12 +590,13 @@ dd_context_set_stream_output_targets(struct pipe_context *_pipe,
 
 static void
 dd_context_fence_server_sync(struct pipe_context *_pipe,
-                             struct pipe_fence_handle *fence)
+                             struct pipe_fence_handle *fence,
+                             uint64_t value)
 {
    struct dd_context *dctx = dd_context(_pipe);
    struct pipe_context *pipe = dctx->pipe;
 
-   pipe->fence_server_sync(pipe, fence);
+   pipe->fence_server_sync(pipe, fence, value);
 }
 
 

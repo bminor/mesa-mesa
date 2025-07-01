@@ -124,9 +124,11 @@ do_flush(struct pipe_context *pipe,
 
 static void
 llvmpipe_fence_server_sync(struct pipe_context *pipe,
-                           struct pipe_fence_handle *fence)
+                           struct pipe_fence_handle *fence,
+                           uint64_t value)
 {
    struct lp_fence *f = (struct lp_fence *)fence;
+   assert(!value);
 
    if (!f->issued)
       return;

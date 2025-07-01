@@ -126,6 +126,7 @@ struct d3d12_video_processor
    D3D12_FEATURE_DATA_VIDEO_PROCESS_MAX_INPUT_STREAMS m_vpMaxInputStreams = { };
 
    struct d3d12_fence* input_surface_fence = NULL;
+   uint64_t input_surface_fence_value;
 };
 
 struct pipe_video_codec *

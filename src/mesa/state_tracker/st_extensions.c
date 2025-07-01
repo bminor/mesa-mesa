@@ -1316,7 +1316,6 @@ void st_init_extensions(struct pipe_screen *screen,
    if (extensions->EXT_semaphore) {
       consts->MaxTimelineSemaphoreValueDifference = screen->caps.max_timeline_semaphore_difference;
       extensions->NV_timeline_semaphore = consts->MaxTimelineSemaphoreValueDifference > 0;
-      assert(!extensions->NV_timeline_semaphore || screen->set_fence_timeline_value);
    }
 
    consts->ForceIntegerTexNearest = options->force_integer_tex_nearest;

@@ -121,10 +121,12 @@ vc4_fence_create_fd(struct pipe_context *pctx, struct pipe_fence_handle **pf,
 
 static void
 vc4_fence_server_sync(struct pipe_context *pctx,
-                      struct pipe_fence_handle *pfence)
+                      struct pipe_fence_handle *pfence,
+                      uint64_t value)
 {
         struct vc4_context *vc4 = vc4_context(pctx);
         struct vc4_fence *fence = vc4_fence(pfence);
+        assert(!value);
 
         MESA_TRACE_FUNC();
 

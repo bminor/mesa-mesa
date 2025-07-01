@@ -312,11 +312,13 @@ void r600_postflush_resume_features(struct r600_common_context *ctx)
 }
 
 static void r600_fence_server_sync(struct pipe_context *ctx,
-				   struct pipe_fence_handle *fence)
+				   struct pipe_fence_handle *fence,
+				   uint64_t value)
 {
 	/* radeon synchronizes all rings by default and will not implement
 	 * fence imports.
 	 */
+	assert(!value);
 }
 
 static void r600_flush_from_st(struct pipe_context *ctx,

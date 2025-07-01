@@ -385,7 +385,7 @@ handle_in_fence(struct dri_context *ctx, struct dri_image *img)
    img->in_fence_fd = -1;
 
    pipe->create_fence_fd(pipe, &fence, fd, PIPE_FD_TYPE_NATIVE_SYNC);
-   pipe->fence_server_sync(pipe, fence);
+   pipe->fence_server_sync(pipe, fence, 0);
    pipe->screen->fence_reference(pipe->screen, &fence, NULL);
 
    close(fd);

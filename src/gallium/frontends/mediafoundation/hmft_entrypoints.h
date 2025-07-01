@@ -553,7 +553,7 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    ComPtr<ID3D12Fence> m_spStagingFence12;
    struct pipe_fence_handle *m_pPipeFenceHandle = nullptr;
    HANDLE m_hSharedFenceHandle = nullptr;
-   uint64_t m_SyncFenceValue = 1;
+   uint64_t m_NextSyncFenceValue = 1, m_CurrentSyncFenceValue = 0;
 
    // Cached encoder capabilities
    class encoder_capabilities m_EncoderCapabilities = {};

@@ -258,9 +258,10 @@ crocus_fence_flush(struct pipe_context *ctx,
 }
 
 static void
-crocus_fence_await(struct pipe_context *ctx, struct pipe_fence_handle *fence)
+crocus_fence_await(struct pipe_context *ctx, struct pipe_fence_handle *fence, uint64_t value)
 {
    struct crocus_context *ice = (struct crocus_context *)ctx;
+   assert(!value);
 
    /* Unflushed fences from the same context are no-ops. */
    if (ctx && ctx == fence->unflushed_ctx)
@@ -532,9 +533,10 @@ crocus_fence_create_fd(struct pipe_context *ctx, struct pipe_fence_handle **out,
 }
 
 static void
-crocus_fence_signal(struct pipe_context *ctx, struct pipe_fence_handle *fence)
+crocus_fence_signal(struct pipe_context *ctx, struct pipe_fence_handle *fence, uint64_t value)
 {
    struct crocus_context *ice = (struct crocus_context *)ctx;
+   assert(!value);
 
    if (ctx == fence->unflushed_ctx)
       return;

@@ -204,6 +204,7 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    pPicInfo->requested_metadata = m_EncoderCapabilities.m_HWSupportedMetadataFlags;
 
    pPicInfo->base.in_fence = m_pPipeFenceHandle;
+   pPicInfo->base.in_fence_value = m_CurrentSyncFenceValue;
    pPicInfo->base.input_format = pDX12EncodeContext->pPipeVideoBuffer->buffer_format;
 
    UpdateH264EncPictureDesc( pPicInfo,

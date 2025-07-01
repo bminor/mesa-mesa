@@ -147,11 +147,12 @@ agx_create_fence_fd(struct pipe_context *pctx,
 }
 
 void
-agx_fence_server_sync(struct pipe_context *pctx, struct pipe_fence_handle *f)
+agx_fence_server_sync(struct pipe_context *pctx, struct pipe_fence_handle *f, uint64_t value)
 {
    struct agx_device *dev = agx_device(pctx->screen);
    struct agx_context *ctx = agx_context(pctx);
    int fd = -1, ret;
+   assert(!value);
 
    ret = drmSyncobjExportSyncFile(dev->fd, f->syncobj, &fd);
    assert(!ret);

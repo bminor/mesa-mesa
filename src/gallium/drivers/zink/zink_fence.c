@@ -232,11 +232,12 @@ fence_get_fd(struct pipe_screen *pscreen, struct pipe_fence_handle *pfence)
 }
 
 void
-zink_fence_server_signal(struct pipe_context *pctx, struct pipe_fence_handle *pfence)
+zink_fence_server_signal(struct pipe_context *pctx, struct pipe_fence_handle *pfence, uint64_t value)
 {
    struct zink_context *ctx = zink_context(pctx);
    struct zink_tc_fence *mfence = (struct zink_tc_fence *)pfence;
    struct zink_batch_state *bs = ctx->bs;
+   assert(!value);
 
    util_dynarray_append(&ctx->bs->user_signal_semaphores, VkSemaphore, mfence->sem);
    bs->has_work = true;
@@ -249,10 +250,11 @@ zink_fence_server_signal(struct pipe_context *pctx, struct pipe_fence_handle *pf
 }
 
 void
-zink_fence_server_sync(struct pipe_context *pctx, struct pipe_fence_handle *pfence)
+zink_fence_server_sync(struct pipe_context *pctx, struct pipe_fence_handle *pfence, uint64_t value)
 {
    struct zink_context *ctx = zink_context(pctx);
    struct zink_tc_fence *mfence = (struct zink_tc_fence *)pfence;
+   assert(!value);
 
    if (mfence->deferred_ctx == pctx || !mfence->sem)
       return;

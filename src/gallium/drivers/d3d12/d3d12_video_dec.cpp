@@ -696,7 +696,7 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
 
       // GPU wait on the graphics context which will do the copy until the decode finishes
       pD3D12Dec->base.context->fence_server_sync(pD3D12Dec->base.context,
-                                                 (struct pipe_fence_handle *)pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_fence.get());
+                                                 (struct pipe_fence_handle *)pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_fence.get(), 0);
 
       // Copy all format subresources/texture planes
       for (PlaneSlice = 0; PlaneSlice < pD3D12Dec->m_decodeFormatInfo.PlaneCount; PlaneSlice++) {

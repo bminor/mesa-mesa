@@ -756,14 +756,6 @@ struct pipe_screen {
    pipe_vertex_state_destroy_func vertex_state_destroy;
 
    /**
-    * Update a timeline semaphore value stored within a driver fence object.
-    * Future waits and signals will use the new value.
-    */
-   void (*set_fence_timeline_value)(struct pipe_screen *screen,
-                                    struct pipe_fence_handle *fence,
-                                    uint64_t value);
-
-   /**
     * Get additional data for interop_query_device_info
     *
     * \p in_data_size is how much data was allocated by the caller

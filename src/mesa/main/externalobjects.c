@@ -669,7 +669,7 @@ server_wait_semaphore(struct gl_context *ctx,
 
    /* The driver is allowed to flush during fence_server_sync, be prepared */
    st_flush_bitmap_cache(st);
-   pipe->fence_server_sync(pipe, semObj->fence);
+   pipe->fence_server_sync(pipe, semObj->fence, semObj->timeline_value);
 
    /**
     * According to the EXT_external_objects spec, the memory operations must
@@ -735,7 +735,7 @@ server_signal_semaphore(struct gl_context *ctx,
 
    /* The driver must flush during fence_server_signal, be prepared */
    st_flush_bitmap_cache(st);
-   pipe->fence_server_signal(pipe, semObj->fence);
+   pipe->fence_server_signal(pipe, semObj->fence, semObj->timeline_value);
 }
 
 /**
@@ -928,7 +928,6 @@ _mesa_SemaphoreParameterui64vEXT(GLuint semaphore,
    }
 
    semObj->timeline_value = params[0];
-   ctx->screen->set_fence_timeline_value(ctx->screen, semObj->fence, params[0]);
 }
 
 void GLAPIENTRY

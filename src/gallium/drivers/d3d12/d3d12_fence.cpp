@@ -111,8 +111,6 @@ d3d12_open_fence(struct d3d12_screen *screen, HANDLE handle, const void *name, p
    }
 
    ret->type = type;
-   /* A new value will be assigned later */
-   ret->value = 0;
    pipe_reference_init(&ret->reference, 1);
    return ret;
 }
@@ -167,6 +165,22 @@ fence_finish(struct pipe_screen *pscreen, struct pipe_context *pctx,
          d3d12_reset_batch(ctx, batch, 0);
    }
    return ret;
+}
+
+void
+d3d12_fence_signal_impl(struct d3d12_fence *fence, ID3D12CommandQueue *queue, uint64_t value)
+{
+   if (fence->type == PIPE_FD_TYPE_NATIVE_SYNC)
+      value = fence->value;
+   queue->Signal(fence->cmdqueue_fence, value);
+}
+
+void
+d3d12_fence_wait_impl(struct d3d12_fence *fence, ID3D12CommandQueue *queue, uint64_t value)
+{
+   if (fence->type == PIPE_FD_TYPE_NATIVE_SYNC)
+      value = fence->value;
+   queue->Wait(fence->cmdqueue_fence, value);
 }
 
 void

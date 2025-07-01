@@ -745,15 +745,6 @@ static void noop_vertex_state_destroy(struct pipe_screen *screen,
    FREE(state);
 }
 
-static void noop_set_fence_timeline_value(struct pipe_screen *screen,
-                                          struct pipe_fence_handle *fence,
-                                          uint64_t value)
-{
-   struct noop_pipe_screen *noop_screen = (struct noop_pipe_screen *)screen;
-   struct pipe_screen *oscreen = noop_screen->oscreen;
-   oscreen->set_fence_timeline_value(oscreen, fence, value);
-}
-
 static struct pipe_screen * noop_get_driver_pipe_screen(struct pipe_screen *_screen)
 {
    struct pipe_screen * screen = ((struct noop_pipe_screen*)_screen)->oscreen;
@@ -816,8 +807,6 @@ struct pipe_screen *noop_screen_create(struct pipe_screen *oscreen)
    screen->vertex_state_destroy = noop_vertex_state_destroy;
    if (oscreen->get_sparse_texture_virtual_page_size)
       screen->get_sparse_texture_virtual_page_size = noop_get_sparse_texture_virtual_page_size;
-   if (oscreen->set_fence_timeline_value)
-      screen->set_fence_timeline_value = noop_set_fence_timeline_value;
    screen->query_compression_rates = noop_query_compression_rates;
    screen->query_compression_modifiers = noop_query_compression_modifiers;
    screen->get_driver_pipe_screen = noop_get_driver_pipe_screen;

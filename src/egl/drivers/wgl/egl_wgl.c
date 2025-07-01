@@ -1088,7 +1088,7 @@ wgl_wait_sync_khr(_EGLDisplay *disp, _EGLSync *sync)
 
    struct pipe_context *pipe = wgl_ctx->ctx->st->pipe;
    if (pipe->fence_server_sync)
-      pipe->fence_server_sync(pipe, wgl_sync->fence);
+      pipe->fence_server_sync(pipe, wgl_sync->fence, 0);
 
    return EGL_TRUE;
 }

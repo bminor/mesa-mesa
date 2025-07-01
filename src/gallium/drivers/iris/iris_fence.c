@@ -323,9 +323,11 @@ syncobj_wait_available(int drm_fd, uint32_t handle)
 
 static void
 iris_fence_await(struct pipe_context *ctx,
-                 struct pipe_fence_handle *fence)
+                 struct pipe_fence_handle *fence,
+                 uint64_t value)
 {
    struct iris_context *ice = (struct iris_context *)ctx;
+   assert(!value);
 
    /* Unflushed fences from the same context are no-ops. */
    if (ctx && ctx == fence->unflushed_ctx)
@@ -609,9 +611,11 @@ iris_fence_create_fd(struct pipe_context *ctx,
 
 static void
 iris_fence_signal(struct pipe_context *ctx,
-                  struct pipe_fence_handle *fence)
+                  struct pipe_fence_handle *fence,
+                  uint64_t value)
 {
    struct iris_context *ice = (struct iris_context *)ctx;
+   assert(!value);
 
    if (ctx == fence->unflushed_ctx)
       return;

@@ -236,7 +236,7 @@ dri_server_wait_sync(struct dri_context *_ctx, void *_fence, unsigned flags)
    _mesa_glthread_finish(st->ctx);
 
    if (ctx->fence_server_sync)
-      ctx->fence_server_sync(ctx, fence->pipe_fence);
+      ctx->fence_server_sync(ctx, fence->pipe_fence, 0);
 }
 
 struct dri_image *
@@ -838,7 +838,7 @@ dri_image_fence_sync(struct dri_context *ctx, struct dri_image *img)
    img->in_fence_fd = -1;
 
    pipe->create_fence_fd(pipe, &fence, fd, PIPE_FD_TYPE_NATIVE_SYNC);
-   pipe->fence_server_sync(pipe, fence);
+   pipe->fence_server_sync(pipe, fence, 0);
    pipe->screen->fence_reference(pipe->screen, &fence, NULL);
 
    close(fd);

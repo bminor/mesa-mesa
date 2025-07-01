@@ -239,6 +239,7 @@ struct pipe_picture_desc
    unsigned flush_flags;
    /* A fence for pipe_video_codec::begin_frame to wait on */
    struct pipe_fence_handle *in_fence;
+   uint64_t in_fence_value;
    /* A fence for pipe_video_codec::end_frame to signal job completion */
    struct pipe_fence_handle **out_fence;
 };

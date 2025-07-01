@@ -430,7 +430,7 @@ wait_sync(struct gl_context *ctx, struct gl_sync_object *syncObj,
    screen->fence_reference(screen, &fence, syncObj->fence);
    simple_mtx_unlock(&syncObj->mutex);
 
-   pipe->fence_server_sync(pipe, fence);
+   pipe->fence_server_sync(pipe, fence, 0);
    screen->fence_reference(screen, &fence, NULL);
    _mesa_unref_sync_object(ctx, syncObj, 1);
 }

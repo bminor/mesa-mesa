@@ -52,9 +52,11 @@ lima_create_fence_fd(struct pipe_context *pctx,
 
 static void
 lima_fence_server_sync(struct pipe_context *pctx,
-                       struct pipe_fence_handle *fence)
+                       struct pipe_fence_handle *fence,
+                       uint64_t value)
 {
    struct lima_context *ctx = lima_context(pctx);
+   assert(!value);
 
    sync_accumulate("lima", &ctx->in_sync_fd, fence->fd);
 }

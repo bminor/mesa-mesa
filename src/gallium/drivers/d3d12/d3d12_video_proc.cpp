@@ -195,6 +195,7 @@ d3d12_video_processor_process_frame(struct pipe_video_codec *codec,
 
     // begin_frame gets only called once so wouldn't update process_properties->base.in_fence correctly
     pD3D12Proc->input_surface_fence = (struct d3d12_fence*) process_properties->base.in_fence;
+    pD3D12Proc->input_surface_fence_value = process_properties->base.in_fence_value;
 
     // Get the underlying resources from the pipe_video_buffers
     struct d3d12_video_buffer *pInputVideoBuffer = (struct d3d12_video_buffer *) input_texture;
@@ -370,7 +371,7 @@ d3d12_video_processor_flush(struct pipe_video_codec * codec)
 
         struct d3d12_fence *input_surface_fence = pD3D12Proc->input_surface_fence;
         if (input_surface_fence)
-            pD3D12Proc->m_spCommandQueue->Wait(input_surface_fence->cmdqueue_fence, input_surface_fence->value);
+           d3d12_fence_wait_impl(input_surface_fence, pD3D12Proc->m_spCommandQueue.Get(), pD3D12Proc->input_surface_fence_value);
 
         ID3D12CommandList *ppCommandLists[1] = { pD3D12Proc->m_spCommandList.Get() };
         pD3D12Proc->m_spCommandQueue->ExecuteCommandLists(1, ppCommandLists);

@@ -591,6 +591,7 @@ struct d3d12_video_encoder
       ComPtr<ID3D12CommandAllocator> m_spCommandAllocator;
 
       struct d3d12_fence* m_InputSurfaceFence = NULL;
+      uint64_t m_InputSurfaceFenceValue = 0;
       d3d12_unique_fence m_CompletionFence;
 
       /* Stores encode result for submission error control in the D3D12_VIDEO_ENC_ASYNC_DEPTH slots */

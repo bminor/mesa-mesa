@@ -197,21 +197,22 @@ d3d12_flush_resource(struct pipe_context *pctx,
 
 static void
 d3d12_signal(struct pipe_context *pipe,
-             struct pipe_fence_handle *pfence)
+             struct pipe_fence_handle *pfence,
+             uint64_t value)
 {
    struct d3d12_screen *screen = d3d12_screen(pipe->screen);
    struct d3d12_fence *fence = d3d12_fence(pfence);
    d3d12_flush_cmdlist(d3d12_context(pipe));
-   screen->cmdqueue->Signal(fence->cmdqueue_fence, fence->value);
+   d3d12_fence_signal_impl(fence, screen->cmdqueue, value);
 }
 
 static void
-d3d12_wait(struct pipe_context *pipe, struct pipe_fence_handle *pfence)
+d3d12_wait(struct pipe_context *pipe, struct pipe_fence_handle *pfence, uint64_t value)
 {
    struct d3d12_screen *screen = d3d12_screen(pipe->screen);
    struct d3d12_fence *fence = d3d12_fence(pfence);
    d3d12_flush_cmdlist(d3d12_context(pipe));
-   screen->cmdqueue->Wait(fence->cmdqueue_fence, fence->value);
+   d3d12_fence_wait_impl(fence, screen->cmdqueue, value);
 }
 
 static void

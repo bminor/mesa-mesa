@@ -122,6 +122,11 @@ d3d12_fence_finish(struct d3d12_fence *fence, uint64_t timeout_ns);
 void
 d3d12_screen_fence_init(struct pipe_screen *pscreen);
 
+void
+d3d12_fence_wait_impl(struct d3d12_fence *fence, ID3D12CommandQueue *queue, uint64_t value);
+void
+d3d12_fence_signal_impl(struct d3d12_fence *fence, ID3D12CommandQueue *queue, uint64_t value);
+
 #if defined(__cplusplus)
 #include <memory>
 struct d3d12_fence_deleter
