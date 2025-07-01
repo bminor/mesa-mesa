@@ -1908,24 +1908,6 @@ dri2_create_image_khr_renderbuffer(_EGLDisplay *disp, _EGLContext *ctx,
 }
 
 #ifdef HAVE_WAYLAND_PLATFORM
-
-/* This structure describes how a wl_buffer maps to one or more
- * dri_image structures.  A wl_drm_buffer stores the wl_drm format code and the
- * offsets and strides of the planes in the buffer.  This table maps a
- * wl_drm format code to a description of the planes in the buffer
- * that lets us create a struct dri_image for each of the planes. */
-
-static const struct wl_drm_components_descriptor {
-   uint32_t dri_components;
-   EGLint components;
-} wl_drm_components[] = {
-   {__DRI_IMAGE_COMPONENTS_RGB, EGL_TEXTURE_RGB},
-   {__DRI_IMAGE_COMPONENTS_RGBA, EGL_TEXTURE_RGBA},
-   {__DRI_IMAGE_COMPONENTS_Y_U_V, EGL_TEXTURE_Y_U_V_WL},
-   {__DRI_IMAGE_COMPONENTS_Y_UV, EGL_TEXTURE_Y_UV_WL},
-   {__DRI_IMAGE_COMPONENTS_Y_XUXV, EGL_TEXTURE_Y_XUXV_WL},
-};
-
 static _EGLImage *
 dri2_create_image_wayland_wl_buffer(_EGLDisplay *disp, _EGLContext *ctx,
                                     EGLClientBuffer _buffer,
@@ -2813,34 +2795,16 @@ dri2_wl_reference_buffer(void *user_data, uint32_t name, int fd,
 {
    _EGLDisplay *disp = user_data;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   struct dri_image *img;
-   int dri_components = 0;
 
    if (fd == -1)
-      img = dri2_from_names(
+      buffer->driver_buffer = dri2_from_names(
          dri2_dpy->dri_screen_render_gpu, buffer->width, buffer->height,
          buffer->format, (int *)&name, 1, buffer->stride, buffer->offset, NULL);
    else
-      img = dri2_from_dma_bufs(
+      buffer->driver_buffer = dri2_from_dma_bufs(
          dri2_dpy->dri_screen_render_gpu, buffer->width, buffer->height,
          buffer->format, DRM_FORMAT_MOD_INVALID, &fd, 1, buffer->stride,
          buffer->offset, 0, 0, 0, 0, 0, NULL, NULL);
-
-   if (img == NULL)
-      return;
-
-   dri2_query_image(img, __DRI_IMAGE_ATTRIB_COMPONENTS,
-                               &dri_components);
-
-   buffer->driver_format = NULL;
-   for (int i = 0; i < ARRAY_SIZE(wl_drm_components); i++)
-      if (wl_drm_components[i].dri_components == dri_components)
-         buffer->driver_format = &wl_drm_components[i];
-
-   if (buffer->driver_format == NULL)
-      dri2_destroy_image(img);
-   else
-      buffer->driver_buffer = img;
 }
 
 static void
@@ -2918,16 +2882,14 @@ dri2_query_wayland_buffer_wl(_EGLDisplay *disp,
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct wl_drm_buffer *buffer;
-   const struct wl_drm_components_descriptor *format;
 
    buffer = wayland_drm_buffer_get(dri2_dpy->wl_server_drm, buffer_resource);
    if (!buffer)
       return EGL_FALSE;
 
-   format = buffer->driver_format;
    switch (attribute) {
    case EGL_TEXTURE_FORMAT:
-      *value = format->components;
+      *value = buffer->egl_components;
       return EGL_TRUE;
    case EGL_WIDTH:
       *value = buffer->width;

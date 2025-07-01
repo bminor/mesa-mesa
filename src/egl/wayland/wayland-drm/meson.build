@@ -29,5 +29,6 @@ libwayland_drm = static_library(
   ['wayland-drm.c', wayland_drm_protocol_c, wayland_drm_server_protocol_h],
   gnu_symbol_visibility : 'hidden',
   dependencies : [dep_wayland_server],
+  include_directories : inc_include,
   build_by_default : false,
 )

@@ -36,7 +36,7 @@ struct wl_drm_buffer {
    struct wl_drm *drm;
    int32_t width, height;
    uint32_t format;
-   const void *driver_format;
+   uint32_t egl_components;
    int32_t offset[3];
    int32_t stride[3];
    void *driver_buffer;
