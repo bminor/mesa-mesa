@@ -536,16 +536,29 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
    }
 
    /* A compressed instruction is actually two instructions executed
-    * simultaneously.  On most platforms, it ok to have the source and
-    * destination registers be the same.  In this case, each instruction
-    * over-writes its own source and there's no problem.  The real problem
-    * here is if the source and destination registers are off by one.  Then
-    * you can end up in a scenario where the first instruction over-writes the
-    * source of the second instruction.  Since the compiler doesn't know about
-    * this level of granularity, we simply make the source and destination
-    * interfere.
+    * simultaneously. If the source and destination registers are the same,
+    * each instruction overwrites its own source, and there's no problem. The
+    * real problem here is if the source and destination registers are off by
+    * one. Then you can end up in a scenario where the first instruction
+    * overwrites the source of the second instruction. Consider this
+    * instruction:
+    *
+    *    and(16)         g17<1>UD        g16<1,1,0>UD    g13<1,1,0>UD
+    *
+    * The EU processes this as
+    *
+    *    and(8)          g17<1>UD        g16<1,1,0>UD    g13<1,1,0>UD
+    *    and(8)          g18<1>UD        g17<1,1,0>UD    g14<1,1,0>UD
+    *
+    * The first SIMD8 part of the instruction overwrites the source used in
+    * the second SIMD8 part. Since there's no way to tell the register
+    * allocator "the destination register number can be src, but it can't be
+    * src+1," simply make the source and destination interfere.
+    *
+    * Theoretically, the register_coalesce passes should have done the dest ==
+    * src merging.
     */
-   if (inst->dst.component_size(inst->exec_size) > REG_SIZE &&
+   if (inst->dst.component_size(inst->exec_size) > (reg_unit(devinfo) * REG_SIZE) &&
        inst->dst.file == VGRF) {
       for (int i = 0; i < inst->sources; ++i) {
          if (inst->src[i].file == VGRF) {
