@@ -5032,13 +5032,6 @@ tu_restore_suspended_pass(struct tu_cmd_buffer *cmd,
    cmd->state.gmem_layout = suspended->state.suspended_pass.gmem_layout;
    cmd->state.tiling = &cmd->state.framebuffer->tiling[cmd->state.gmem_layout];
    cmd->state.lrz = suspended->state.suspended_pass.lrz;
-
-   /* Re-emit tracepoint only when renderpass was started in
-    * some previous command buffer and it's being reconstructed
-    * in the internal command buffer.
-    */
-   if (cmd != suspended)
-      tu_trace_start_render_pass(cmd);
 }
 
 /* Take the saved pre-chain in "secondary" and copy its commands to "cmd",
