@@ -1501,6 +1501,7 @@ void pvr_pds_generate_descriptor_upload_program(
    unsigned int next_const64;
    unsigned int next_const32;
    unsigned int instruction = 0;
+   uint32_t compile_time_buffer_index = 0;
 
    unsigned int total_dma_count = 0;
    unsigned int running_dma_count = 0;
@@ -1582,6 +1583,18 @@ void pvr_pds_generate_descriptor_upload_program(
          special_buffer_entry->type =
             PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
          special_buffer_entry->buffer_type = buffer->type;
+         break;
+      }
+      case PVR_BUFFER_TYPE_COMPILE_TIME: {
+         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
+
+         special_buffer_entry =
+            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
+                                                 sizeof(*special_buffer_entry));
+         special_buffer_entry->type =
+            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
+         special_buffer_entry->buffer_type = PVR_BUFFER_TYPE_COMPILE_TIME;
+         special_buffer_entry->buffer_index = compile_time_buffer_index++;
          break;
       }
       }

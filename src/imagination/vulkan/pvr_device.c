@@ -1360,6 +1360,16 @@ VkResult pvr_pds_compute_shader_create_and_upload(
                           PDS_GENERATE_CODE_SEGMENT,
                           dev_info);
 
+   for (unsigned u = 0; u < PVR_WORKGROUP_DIMENSIONS; ++u) {
+      unsigned offset = program->num_workgroups_constant_offset_in_dwords[0];
+      if (program->num_work_groups_regs[u] != PVR_PDS_REG_UNUSED)
+         data_buffer[offset + u] = 0;
+
+      offset = program->base_workgroup_constant_offset_in_dwords[0];
+      if (program->work_group_input_regs[u] != PVR_PDS_REG_UNUSED)
+         data_buffer[offset + u] = 0;
+   }
+
    result = pvr_gpu_upload_pds(device,
                                data_buffer,
                                program->data_size,

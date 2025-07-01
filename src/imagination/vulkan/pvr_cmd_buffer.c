@@ -3754,7 +3754,7 @@ void pvr_compute_update_shared_private(
    info = (struct pvr_compute_kernel_info){
       .indirect_buffer_addr = PVR_DEV_ADDR_INVALID,
       .usc_common_size =
-         DIV_ROUND_UP(const_shared_regs,
+         DIV_ROUND_UP(PVR_DW_TO_BYTES(const_shared_regs),
                       ROGUE_CDMCTRL_KERNEL0_USC_COMMON_SIZE_UNIT_SIZE),
       .pds_data_size =
          DIV_ROUND_UP(PVR_DW_TO_BYTES(pipeline->pds_shared_update_data_size_dw),
