@@ -95,6 +95,8 @@ windows_test_msvc:
     MESA_IMAGE_PATH: *windows_build_image_path
     MESA_IMAGE_TAG: *windows_build_image_tag
   needs:
+    - job: sanity
+      optional: true
     - job: windows_build_msvc
       optional: true
 

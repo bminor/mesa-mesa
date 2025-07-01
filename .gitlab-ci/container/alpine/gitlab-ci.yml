@@ -50,6 +50,8 @@ alpine/x86_64_build:
     MESA_IMAGE_TAG: *alpine-x86_64_build
     LLVM_VERSION: *alpine-llvm_version
   needs:
+    - job: sanity
+      optional: true
     - job: alpine/x86_64_build
       optional: true
 

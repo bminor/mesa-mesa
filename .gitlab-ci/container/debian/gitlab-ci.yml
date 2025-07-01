@@ -45,6 +45,8 @@ debian/x86_64_build-base:
     MESA_BASE_TAG: *debian-x86_64_build-base
     LLVM_VERSION: *debian-x86_64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_build-base
       optional: true
 
@@ -67,6 +69,8 @@ debian/x86_64_build:
     MESA_IMAGE_TAG: *debian-x86_64_build
     LLVM_VERSION: *debian-x86_64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_build
       optional: true
 
@@ -88,6 +92,8 @@ debian/x86_32_build:
     MESA_IMAGE_TAG: *debian-x86_32_build
     LLVM_VERSION: *debian-x86_64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_32_build
       optional: true
 
@@ -110,6 +116,8 @@ debian/ppc64el_build:
     MESA_IMAGE_TAG: *debian-ppc64el_build
     LLVM_VERSION: *debian-ppc64el-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/ppc64el_build
       optional: true
 
@@ -132,6 +140,8 @@ debian/s390x_build:
     MESA_IMAGE_TAG: *debian-s390x_build
     LLVM_VERSION: *debian-s390x-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/s390x_build
       optional: true
 
@@ -172,6 +182,8 @@ debian/android_build:
     MESA_IMAGE_PATH: "debian/android_build"
     MESA_IMAGE_TAG: *debian-android_build
   needs:
+    - job: sanity
+      optional: true
     - job: debian/android_build
       optional: true
 
@@ -198,6 +210,8 @@ debian/arm64_build:
     MESA_ARTIFACTS_TAG: *debian-arm64_build
     LLVM_VERSION: *debian-arm64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm64_build
       optional: true
 
@@ -223,6 +237,8 @@ debian/x86_64_test-base:
     MESA_BASE_TAG: *debian-x86_64_test-base
     LLVM_VERSION: *debian-x86_64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_test-base
       optional: true
 
@@ -251,6 +267,8 @@ debian/arm32_test-base:
     LLVM_VERSION: *debian-arm64-llvm
     FDO_DISTRIBUTION_PLATFORM: "linux/arm/v7"
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm32_test-base
       optional: true
 
@@ -277,6 +295,8 @@ debian/arm64_test-base:
     MESA_BASE_TAG: *debian-arm64_test-base
     LLVM_VERSION: *debian-arm64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm64_test-base
       optional: true
 
@@ -299,6 +319,8 @@ debian/x86_64_test-gl:
     MESA_IMAGE_PATH: "debian/x86_64_test-gl"
     MESA_IMAGE_TAG: *debian-x86_64_test-gl
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_test-gl
       optional: true
 
@@ -321,6 +343,8 @@ debian/x86_64_test-vk:
     MESA_IMAGE_PATH: "debian/x86_64_test-vk"
     MESA_IMAGE_TAG: *debian-x86_64_test-vk
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_test-vk
       optional: true
 
@@ -345,6 +369,8 @@ debian/x86_64_test-android:
     MESA_IMAGE_PATH: "debian/x86_64_test-android"
     MESA_IMAGE_TAG: *debian-x86_64_test-android
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_test-android
       optional: true
 
@@ -367,6 +393,8 @@ debian/x86_64_test-video:
     MESA_IMAGE_PATH: "debian/x86_64_test-video"
     MESA_IMAGE_TAG: *debian-x86_64_test-video
   needs:
+    - job: sanity
+      optional: true
     - job: debian/x86_64_test-video
       optional: true
 
@@ -391,6 +419,8 @@ debian/arm32_test-gl:
     MESA_IMAGE_PATH: "debian/arm32_test-gl"
     MESA_IMAGE_TAG: *debian-arm32_test-gl
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm32_test-gl
       optional: true
 
@@ -416,6 +446,8 @@ debian/arm32_test-vk:
     MESA_IMAGE_PATH: "debian/arm32_test-vk"
     MESA_IMAGE_TAG: *debian-arm32_test-vk
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm32_test-vk
       optional: true
 
@@ -440,6 +472,8 @@ debian/arm64_test-gl:
     MESA_IMAGE_PATH: "debian/arm64_test-gl"
     MESA_IMAGE_TAG: *debian-arm64_test-gl
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm64_test-gl
       optional: true
 
@@ -464,6 +498,8 @@ debian/arm64_test-vk:
     MESA_IMAGE_PATH: "debian/arm64_test-vk"
     MESA_IMAGE_TAG: *debian-arm64_test-vk
   needs:
+    - job: sanity
+      optional: true
     - job: debian/arm64_test-vk
       optional: true
 
@@ -513,6 +549,8 @@ debian/baremetal_arm64_test-vk:
     MESA_IMAGE_PATH: "debian/baremetal_arm32_test-gl"
     MESA_IMAGE_TAG: *baremetal-arm32_test-gl
   needs:
+    - job: sanity
+      optional: true
     - job: debian/baremetal_arm32_test-gl
       optional: true
 
@@ -522,6 +560,8 @@ debian/baremetal_arm64_test-vk:
     MESA_IMAGE_PATH: "debian/baremetal_arm64_test-gl"
     MESA_IMAGE_TAG: *baremetal-arm64_test-gl
   needs:
+    - job: sanity
+      optional: true
     - job: debian/baremetal_arm64_test-gl
       optional: true
 
@@ -531,6 +571,8 @@ debian/baremetal_arm64_test-vk:
     MESA_IMAGE_PATH: "debian/baremetal_arm64_test-vk"
     MESA_IMAGE_TAG: *baremetal-arm64_test-vk
   needs:
+    - job: sanity
+      optional: true
     - job: debian/baremetal_arm64_test-vk
       optional: true
 

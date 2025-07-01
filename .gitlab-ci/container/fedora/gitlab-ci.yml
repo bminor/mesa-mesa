@@ -35,6 +35,8 @@ fedora/x86_64_build:
     MESA_IMAGE_TAG: *fedora-x86_64_build
     LLVM_VERSION: *fedora-x86_64-llvm
   needs:
+    - job: sanity
+      optional: true
     - job: fedora/x86_64_build
       optional: true
 
