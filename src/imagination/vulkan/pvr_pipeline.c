@@ -1751,7 +1751,13 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
    }
 
    /* Clear built-in sysvals. */
-   BITSET_CLEAR(system_values_read, SYSTEM_VALUE_SAMPLE_ID);
+   gl_system_value builtin_sys_vals[] = {
+      SYSTEM_VALUE_SAMPLE_ID,
+      SYSTEM_VALUE_LAYER_ID,
+   };
+
+   for (unsigned u = 0; u < ARRAY_SIZE(builtin_sys_vals); ++u)
+      BITSET_CLEAR(system_values_read, builtin_sys_vals[u]);
 
    assert(BITSET_IS_EMPTY(system_values_read));
 }

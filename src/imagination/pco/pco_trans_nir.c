@@ -1426,6 +1426,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                       pco_ref_hwreg(PCO_SR_SAMP_NUM, PCO_REG_CLASS_SPEC));
       break;
 
+   case nir_intrinsic_load_layer_id:
+      instr = pco_mov(&tctx->b,
+                      dest,
+                      pco_ref_hwreg(PCO_SR_RENDER_TGT_ID, PCO_REG_CLASS_SPEC));
+      break;
+
    case nir_intrinsic_load_face_ccw_pco:
       instr = pco_mov(&tctx->b,
                       dest,
