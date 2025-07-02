@@ -147,7 +147,9 @@ radeonsi-raven-vaapi-fluster:
   timeout: 30m
   parallel: 2
   variables:
-    FLUSTER_CODECS: VP9 H.264 H.265
+    DEQP_SUITE: fluster-vaapi
+    GPU_VERSION: radeonsi-raven-fluster
+    HWCI_TEST_SCRIPT: install/deqp-runner.sh
 
 radeonsi-mendocino-glcts-piglit:
   extends:

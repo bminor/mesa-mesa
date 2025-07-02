@@ -114,8 +114,6 @@
 .test-fluster:
   variables:
     FLUSTER_TAG: ${CONDITIONAL_BUILD_FLUSTER_TAG}
-    FLUSTER_RESULTS: "${GPU_VERSION}-${FLUSTER_CODEC}"
-    HWCI_TEST_SCRIPT: install/fluster-runner.sh
 
 .test-piglit:
   variables:
