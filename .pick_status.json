@@ -7034,7 +7034,7 @@
         "description": "panfrost: limit sample_shading to bifrost and later",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6bba718027e1a720f2531573b6be5a89a7722278",
         "notes": null
