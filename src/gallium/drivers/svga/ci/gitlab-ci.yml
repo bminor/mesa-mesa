@@ -39,4 +39,4 @@ vmware-vmx-piglit:x86_64:
     BOOT_METHOD: ipxe
     KERNEL_REPO: "blu/linux"
     KERNEL_TAG: "1106ba88b"
-    FDO_CI_CONCURRENT: 1
+    FDO_CI_CONCURRENT: 2
