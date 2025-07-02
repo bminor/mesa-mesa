@@ -456,6 +456,10 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    MFRatio m_PixelAspectRatio = { 1, 1 };   // default to 1:1
    MFNominalRange m_eNominalRange = MFNominalRange_16_235;
 
+   BOOL m_bFrameCroppingFlag = FALSE;
+   UINT32 m_uiFrameCropRightOffset = 0;
+   UINT32 m_uiFrameCropBottomOffset = 0;
+
    BOOL m_bForceKeyFrame = FALSE;
    UINT32 m_uiRateControlMode = eAVEncCommonRateControlMode_CBR;
    BOOL m_bRateControlModeSet = FALSE;

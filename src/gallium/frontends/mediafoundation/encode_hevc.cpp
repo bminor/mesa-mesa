@@ -34,12 +34,14 @@ CalculateQualityFromQP( DWORD QP );
 
 // utility function to compute the cropping rectangle given texture and output dimensions
 static void
-ComputeCroppingRect( pipe_h265_enc_picture_desc *pPicInfo,
-                     const UINT32 textureWidth,
+ComputeCroppingRect( const UINT32 textureWidth,
                      const UINT32 textureHeight,
                      const UINT uiOutputWidth,
                      const UINT uiOutputHeight,
-                     const enum pipe_video_profile outputPipeProfile )
+                     const enum pipe_video_profile outputPipeProfile,
+                     BOOL &bFrameCroppingFlag,
+                     UINT32 &uiFrameCropRightOffset,
+                     UINT32 &uiFrameCropBottomOffset )
 {
    UINT32 iCropRight = textureWidth - uiOutputWidth;
    UINT32 iCropBottom = textureHeight - uiOutputHeight;
@@ -69,9 +71,9 @@ ComputeCroppingRect( pipe_h265_enc_picture_desc *pPicInfo,
          }
          break;
       }
-      pPicInfo->seq.conformance_window_flag = TRUE;
-      pPicInfo->seq.conf_win_right_offset = static_cast<uint16_t>( iCropRight / cropUnitX );
-      pPicInfo->seq.conf_win_bottom_offset = static_cast<uint16_t>( iCropBottom / cropUnitY );
+      bFrameCroppingFlag = TRUE;
+      uiFrameCropRightOffset = iCropRight / cropUnitX;
+      uiFrameCropBottomOffset = iCropBottom / cropUnitY;
    }
 }
 
@@ -412,12 +414,10 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    pPicInfo->seq.log2_max_pic_order_cnt_lsb_minus4 = cur_frame_desc->gop_info->log2_max_pic_order_cnt_lsb_minus4;
 
    UpdateH265EncPictureDesc( pPicInfo, m_EncoderCapabilities, m_VUIInfo, m_FrameRate );
-   ComputeCroppingRect( pPicInfo,
-                        pDX12EncodeContext->textureWidth,
-                        pDX12EncodeContext->textureHeight,
-                        m_uiOutputWidth,
-                        m_uiOutputHeight,
-                        m_outputPipeProfile );
+
+   pPicInfo->seq.conformance_window_flag = m_bFrameCroppingFlag;
+   pPicInfo->seq.conf_win_right_offset = static_cast<uint16_t>( m_uiFrameCropRightOffset );
+   pPicInfo->seq.conf_win_bottom_offset = static_cast<uint16_t>( m_uiFrameCropBottomOffset );
 
    pPicInfo->seq.pic_width_in_luma_samples = static_cast<uint16_t>( pDX12EncodeContext->pPipeVideoBuffer->width );
    pPicInfo->seq.pic_height_in_luma_samples = static_cast<uint16_t>( pDX12EncodeContext->pPipeVideoBuffer->height );
@@ -694,7 +694,18 @@ CDX12EncHMFT::GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LP
    h265_pic_desc.seq.log2_max_pic_order_cnt_lsb_minus4 = 4;
 
    UpdateH265EncPictureDesc( &h265_pic_desc, m_EncoderCapabilities, m_VUIInfo, m_FrameRate );
-   ComputeCroppingRect( &h265_pic_desc, alignedWidth, alignedHeight, m_uiOutputWidth, m_uiOutputHeight, m_outputPipeProfile );
+   ComputeCroppingRect( alignedWidth,
+                        alignedHeight,
+                        m_uiOutputWidth,
+                        m_uiOutputHeight,
+                        m_outputPipeProfile,
+                        m_bFrameCroppingFlag,
+                        m_uiFrameCropRightOffset,
+                        m_uiFrameCropBottomOffset );
+
+   h265_pic_desc.seq.conformance_window_flag = m_bFrameCroppingFlag;
+   h265_pic_desc.seq.conf_win_right_offset = static_cast<uint16_t>( m_uiFrameCropRightOffset );
+   h265_pic_desc.seq.conf_win_bottom_offset = static_cast<uint16_t>( m_uiFrameCropBottomOffset );
 
    h265_pic_desc.seq.pic_width_in_luma_samples = static_cast<uint16_t>( alignedWidth );
    h265_pic_desc.seq.pic_height_in_luma_samples = static_cast<uint16_t>( alignedHeight );

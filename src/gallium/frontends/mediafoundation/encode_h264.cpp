@@ -34,12 +34,14 @@ CalculateQualityFromQP( DWORD QP );
 
 // utility function to compute the cropping rectangle given texture and output dimensions
 static void
-ComputeCroppingRect( pipe_h264_enc_picture_desc *pPicInfo,
-                     const UINT32 textureWidth,
+ComputeCroppingRect( const UINT32 textureWidth,
                      const UINT32 textureHeight,
                      const UINT uiOutputWidth,
                      const UINT uiOutputHeight,
-                     const enum pipe_video_profile outputPipeProfile )
+                     const enum pipe_video_profile outputPipeProfile,
+                     BOOL &bFrameCroppingFlag,
+                     UINT32 &uiFrameCropRightOffset,
+                     UINT32 &uiFrameCropBottomOffset )
 {
    UINT32 iCropRight = textureWidth - uiOutputWidth;
    UINT32 iCropBottom = textureHeight - uiOutputHeight;
@@ -65,9 +67,10 @@ ComputeCroppingRect( pipe_h264_enc_picture_desc *pPicInfo,
          }
          break;
       }
-      pPicInfo->seq.enc_frame_cropping_flag = TRUE;
-      pPicInfo->seq.enc_frame_crop_right_offset = iCropRight / cropUnitX;
-      pPicInfo->seq.enc_frame_crop_bottom_offset = iCropBottom / cropUnitY;
+
+      bFrameCroppingFlag = TRUE;
+      uiFrameCropRightOffset = iCropRight / cropUnitX;
+      uiFrameCropBottomOffset = iCropBottom / cropUnitY;
    }
 }
 
@@ -215,13 +218,10 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
                              m_VUIInfo,
                              m_FrameRate,
                              m_bCabacEnable );
-   ComputeCroppingRect( pPicInfo,
-                        pDX12EncodeContext->textureWidth,
-                        pDX12EncodeContext->textureHeight,
-                        m_uiOutputWidth,
-                        m_uiOutputHeight,
-                        m_outputPipeProfile );
 
+   pPicInfo->seq.enc_frame_cropping_flag = m_bFrameCroppingFlag;
+   pPicInfo->seq.enc_frame_crop_right_offset = m_uiFrameCropRightOffset;
+   pPicInfo->seq.enc_frame_crop_bottom_offset = m_uiFrameCropBottomOffset;
 
    if( pDX12EncodeContext->bROI )
    {
@@ -663,7 +663,17 @@ CDX12EncHMFT::GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LP
                              m_VUIInfo,
                              m_FrameRate,
                              m_bCabacEnable );
-   ComputeCroppingRect( &h264_pic_desc, alignedWidth, alignedHeight, m_uiOutputWidth, m_uiOutputHeight, m_outputPipeProfile );
+   ComputeCroppingRect( alignedWidth,
+                        alignedHeight,
+                        m_uiOutputWidth,
+                        m_uiOutputHeight,
+                        m_outputPipeProfile,
+                        m_bFrameCroppingFlag,
+                        m_uiFrameCropRightOffset,
+                        m_uiFrameCropBottomOffset );
+   h264_pic_desc.seq.enc_frame_cropping_flag = m_bFrameCroppingFlag;
+   h264_pic_desc.seq.enc_frame_crop_right_offset = m_uiFrameCropRightOffset;
+   h264_pic_desc.seq.enc_frame_crop_bottom_offset = m_uiFrameCropBottomOffset;
 
    h264_pic_desc.pic_order_cnt = 0;                                // cur_frame_desc->gop_info->picture_order_count;
    h264_pic_desc.intra_idr_period = gop_length;                    // cur_frame_desc->gop_info->base.intra_period;
