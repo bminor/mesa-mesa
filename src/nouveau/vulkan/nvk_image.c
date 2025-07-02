@@ -1523,27 +1523,16 @@ nvk_bind_image_memory(struct nvk_device *dev,
 
    /* Ignore this struct on Android, we cannot access swapchain structures there. */
 #ifdef NVK_USE_WSI_PLATFORM
-   const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-      vk_find_struct_const(info->pNext, BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
-
-   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
-      VkImage _wsi_image = wsi_common_get_image(swapchain_info->swapchain,
-                                                swapchain_info->imageIndex);
-      VK_FROM_HANDLE(nvk_image, wsi_img, _wsi_image);
-
-      assert(image->plane_count == 1);
-      assert(wsi_img->plane_count == 1);
-
-      struct nvk_image_plane *plane = &image->planes[0];
-      struct nvk_image_plane *swapchain_plane = &wsi_img->planes[0];
-
-      /* Copy memory binding information from swapchain image to the current image's plane. */
-      plane->addr = swapchain_plane->addr;
-
-      return VK_SUCCESS;
+   if (mem == NULL) {
+      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+         vk_find_struct_const(info->pNext, BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+      assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
+      mem = nvk_device_memory_from_handle(
+         wsi_common_get_memory(swapchain_info->swapchain, swapchain_info->imageIndex));
    }
 #endif
 
+   assert(mem != NULL);
    uint64_t offset_B = info->memoryOffset;
    if (image->disjoint) {
       const VkBindImagePlaneMemoryInfo *plane_info =
