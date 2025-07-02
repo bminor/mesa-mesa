@@ -804,21 +804,17 @@ dzn_BindImageMemory2(VkDevice dev,
       VK_FROM_HANDLE(dzn_image, image, bind_info->image);
 
 #ifdef DZN_USE_WSI_PLATFORM
-      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-         vk_find_struct_const(pBindInfos[i].pNext, BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
-
-      if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
-         struct dzn_image *swapchain_img =
-            dzn_image_from_handle(wsi_common_get_image(swapchain_info->swapchain, swapchain_info->imageIndex));
-
-         mem = swapchain_img->mem;
+      if (!mem) {
+         const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+            vk_find_struct_const(pBindInfos[i].pNext, BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+         assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
+         mem = dzn_device_memory_from_handle(
+            wsi_common_get_memory(swapchain_info->swapchain, swapchain_info->imageIndex));
       }
 #endif
 
-      image->mem = mem;
-
       HRESULT hres = S_OK;
-
+      assert(mem);
       if (mem->dedicated_res) {
          assert(pBindInfos[i].memoryOffset == 0);
          image->res = mem->dedicated_res;

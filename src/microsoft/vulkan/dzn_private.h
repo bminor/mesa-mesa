@@ -1066,7 +1066,6 @@ struct dzn_image {
    } linear;
    D3D12_RESOURCE_DESC desc;
    ID3D12Resource *res;
-   struct dzn_device_memory *mem;
    uint32_t castable_format_count;
    const DXGI_FORMAT *castable_formats;
 
