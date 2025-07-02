@@ -74,3 +74,6 @@ c7bf3b69ebc8f2252dbf724a4de638e6bb2ac402
 
 # ir3: reformat after previous commit
 7210054db8cfb445a8ccdeacfdcfecccf44fa266
+
+# freedreno/a6xx: The great register renaming
+7fd99c88b9cd5c0c8c1cb3e92383acac5cb8220b
