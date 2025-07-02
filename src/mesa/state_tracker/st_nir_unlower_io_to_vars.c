@@ -614,28 +614,8 @@ unlower_io_to_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
 
    if (desc.is_store) {
       unsigned writemask = nir_intrinsic_write_mask(intr) << desc.component;
-      nir_def *value = intr->src[0].ssa;
-
-      if (desc.component) {
-         unsigned new_num_components = desc.component + value->num_components;
-         unsigned swizzle[4] = {0};
-         assert(new_num_components <= 4);
-
-         /* Move components within the vector to the right because we only
-          * have vec4 stores. The writemask skips the extra components at
-          * the beginning.
-          *
-          * For component = 1: .xyz -> .xxyz
-          * For component = 2: .xy  -> .xxxy
-          * For component = 3: .x   -> .xxxx
-          */
-         for (unsigned i = 1; i < value->num_components; i++)
-            swizzle[desc.component + i] = i;
-
-         value = nir_swizzle(b, value, swizzle, new_num_components);
-      }
-
-      value = nir_resize_vector(b, value, num_components);
+      nir_def *value = nir_shift_channels(b, intr->src[0].ssa, desc.component,
+                                          num_components);
 
       /* virgl requires scalarized TESS_LEVEL stores because originally
        * the GLSL compiler never vectorized them. Doing 1 store per bit of

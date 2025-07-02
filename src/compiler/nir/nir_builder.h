@@ -1580,6 +1580,29 @@ nir_resize_vector(nir_builder *b, nir_def *src, unsigned num_components)
       return nir_trim_vector(b, src, num_components);
 }
 
+/* Shift channels to the left or right. Fill undefined components with .x.
+ * Examples:
+ *    channel_shift =  1, new_num_components = 4: .xyzw -> .xxyz
+ *    channel_shift = -1, new_num_components = 3: .xyzw -> .yzw
+ */
+static inline nir_def *
+nir_shift_channels(nir_builder *b, nir_def *def, int channel_shift,
+                   unsigned new_num_components)
+{
+   if (channel_shift == 0)
+      return nir_resize_vector(b, def, new_num_components);
+
+   assert(abs(channel_shift) < NIR_MAX_VEC_COMPONENTS);
+   unsigned swizzle[NIR_MAX_VEC_COMPONENTS] = {0};
+
+   for (int i = 1; i < def->num_components; i++) {
+      if (i + channel_shift >= 0)
+         swizzle[i + channel_shift] = i;
+   }
+
+   return nir_swizzle(b, def, swizzle, new_num_components);
+}
+
 nir_def *
 nir_ssa_for_alu_src(nir_builder *build, nir_alu_instr *instr, unsigned srcn);
 
