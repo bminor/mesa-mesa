@@ -166,7 +166,7 @@ panvk_sampler_fill_desc(const struct VkSamplerCreateInfo *info,
       }
 
 #if PAN_ARCH >= 10
-   cfg.reduction_mode = panvk_translate_reduction_mode(reduction_mode);
+      cfg.reduction_mode = panvk_translate_reduction_mode(reduction_mode);
 #endif
    }
 }
