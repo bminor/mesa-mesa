@@ -618,6 +618,10 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
       /* swapchain images are initially in the UNDEFINED layout */
       res->layout = VK_IMAGE_LAYOUT_UNDEFINED;
       cdt->swapchain->images[res->obj->dt_idx].init = true;
+      if (screen->info.have_EXT_host_image_copy) {
+         VkImageLayout layout = screen->info.have_KHR_unified_image_layouts ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+         zink_resource_image_hic_transition(screen, res, layout);
+      }
    }
    if (timeout == UINT64_MAX) {
       res->obj->indefinite_acquire = true;
