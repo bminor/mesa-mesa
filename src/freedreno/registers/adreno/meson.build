@@ -7,6 +7,10 @@ xml_reg_files = [
   'a4xx.xml',
   'a5xx.xml',
   'a6xx.xml',
+  'a6xx_enums.xml',
+  'a6xx_perfcntrs.xml',
+  'a7xx_enums.xml',
+  'a7xx_perfcntrs.xml',
 ]
 
 xml_files = xml_reg_files

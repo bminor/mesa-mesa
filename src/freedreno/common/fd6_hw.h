@@ -9,6 +9,10 @@
 #include "adreno_pm4.xml.h"
 #include "adreno_common.xml.h"
 
+#include "a6xx_enums.xml.h"
+#include "a7xx_enums.xml.h"
+#include "a6xx_perfcntrs.xml.h"
+#include "a7xx_perfcntrs.xml.h"
 #include "a6xx.xml.h"
 
 #endif /* FD6_HW_H */
