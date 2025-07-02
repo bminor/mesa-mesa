@@ -805,7 +805,7 @@ static void si_emit_dispatch_packets(struct si_context *sctx, const struct pipe_
 
    if (sctx->gfx_level >= GFX12 || sctx->screen->info.has_set_sh_pairs_packed) {
       radeon_end();
-      si_emit_buffered_compute_sh_regs(sctx);
+      si_emit_buffered_compute_sh_regs(sctx, cs);
       radeon_begin_again(cs);
    }
 

@@ -699,7 +699,7 @@ void si_cp_dma_prefetch(struct radeon_cmdbuf *cs,
 void si_set_vertex_buffer_descriptor(struct si_screen *sscreen, struct si_vertex_elements *velems,
                                      const struct pipe_vertex_buffer *vb, unsigned element_index,
                                      uint32_t *out);
-void si_emit_buffered_compute_sh_regs(struct si_context *sctx);
+void si_emit_buffered_compute_sh_regs(struct si_context *sctx, struct radeon_cmdbuf *cs);
 void si_emit_buffered_gfx_sh_regs_for_mesh(struct si_context *sctx);
 void si_init_draw_functions_GFX6(struct si_context *sctx);
 void si_init_draw_functions_GFX7(struct si_context *sctx);

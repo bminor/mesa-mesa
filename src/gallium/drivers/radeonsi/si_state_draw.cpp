@@ -1208,7 +1208,9 @@ static void si_emit_draw_registers(struct si_context *sctx,
 }
 
 static ALWAYS_INLINE void
-gfx11_emit_buffered_sh_regs_inline(struct si_context *sctx, unsigned *num_regs,
+gfx11_emit_buffered_sh_regs_inline(struct si_context *sctx,
+                                   struct radeon_cmdbuf *cs,
+                                   unsigned *num_regs,
                                    struct ac_gfx11_reg_pair *reg_pairs)
 {
    unsigned reg_count = *num_regs;
@@ -1220,7 +1222,7 @@ gfx11_emit_buffered_sh_regs_inline(struct si_context *sctx, unsigned *num_regs,
 
    /* If there is only one register, we can't use the packed SET packet. */
    if (reg_count == 1) {
-      radeon_begin(&sctx->gfx_cs);
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_SET_SH_REG, 1, 0));
       radeon_emit(reg_pairs[0].reg_offset[0]);
       radeon_emit(reg_pairs[0].reg_value[0]);
@@ -1232,7 +1234,7 @@ gfx11_emit_buffered_sh_regs_inline(struct si_context *sctx, unsigned *num_regs,
                                        PKT3_SET_SH_REG_PAIRS_PACKED;
    unsigned padded_reg_count = align(reg_count, 2);
 
-   radeon_begin(&sctx->gfx_cs);
+   radeon_begin(cs);
    radeon_emit(PKT3(packet, (padded_reg_count / 2) * 3, 0) | PKT3_RESET_FILTER_CAM_S(1));
    radeon_emit(padded_reg_count);
    radeon_emit_array(reg_pairs, (reg_count / 2) * 3);
@@ -1261,15 +1263,15 @@ gfx11_emit_buffered_sh_regs_inline(struct si_context *sctx, unsigned *num_regs,
 
 #if GFX_VER == 6 /* declare this function only once because there is only one variant. */
 
-void si_emit_buffered_compute_sh_regs(struct si_context *sctx)
+void si_emit_buffered_compute_sh_regs(struct si_context *sctx, struct radeon_cmdbuf *cs)
 {
    if (sctx->gfx_level >= GFX12) {
-      radeon_begin(&sctx->gfx_cs);
+      radeon_begin(cs);
       gfx12_emit_buffered_sh_regs_inline(&sctx->buffered_compute_sh_regs.num,
                                          sctx->buffered_compute_sh_regs.gfx12.regs);
       radeon_end();
    } else {
-      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_compute_sh_regs.num,
+      gfx11_emit_buffered_sh_regs_inline(sctx, cs, &sctx->buffered_compute_sh_regs.num,
                                          sctx->buffered_compute_sh_regs.gfx11.regs);
    }
 }
@@ -1283,7 +1285,8 @@ void si_emit_buffered_gfx_sh_regs_for_mesh(struct si_context *sctx)
                                          sctx->buffered_gfx_sh_regs.gfx12.regs);
       radeon_end();
    } else {
-      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_gfx_sh_regs.num,
+      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->gfx_cs,
+                                         &sctx->buffered_gfx_sh_regs.num,
                                          sctx->buffered_gfx_sh_regs.gfx11.regs);
    }
 }
@@ -1441,7 +1444,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
                                             sctx->buffered_gfx_sh_regs.gfx12.regs);
       } else if (HAS_SH_PAIRS_PACKED) {
          radeon_end();
-         gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_gfx_sh_regs.num,
+         gfx11_emit_buffered_sh_regs_inline(sctx, cs, &sctx->buffered_gfx_sh_regs.num,
                                             sctx->buffered_gfx_sh_regs.gfx11.regs);
          radeon_begin_again(cs);
       }
@@ -1569,7 +1572,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
                                             sctx->buffered_gfx_sh_regs.gfx12.regs);
       } else if (HAS_SH_PAIRS_PACKED) {
          radeon_end();
-         gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_gfx_sh_regs.num,
+         gfx11_emit_buffered_sh_regs_inline(sctx, cs, &sctx->buffered_gfx_sh_regs.num,
                                             sctx->buffered_gfx_sh_regs.gfx11.regs);
          radeon_begin_again(cs);
       }
