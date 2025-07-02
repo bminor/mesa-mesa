@@ -792,7 +792,6 @@ vn_image_bind_wsi_memory(struct vn_device *dev,
 
    for (uint32_t i = 0; i < count; i++) {
       VkBindImageMemoryInfo *info = &local_infos[i];
-      struct vn_image *img = vn_image_from_handle(info->image);
       struct vn_device_memory *mem =
          vn_device_memory_from_handle(info->memory);
 
@@ -807,23 +806,14 @@ vn_image_bind_wsi_memory(struct vn_device *dev,
          const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
             vk_find_struct_const(info->pNext,
                                  BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
-         assert(img->wsi.is_wsi && swapchain_info);
+         assert(swapchain_info);
 
-         struct vn_image *swapchain_img =
-            vn_image_from_handle(wsi_common_get_image(
-               swapchain_info->swapchain, swapchain_info->imageIndex));
-         mem = swapchain_img->wsi.memory;
+         mem = vn_device_memory_from_handle(wsi_common_get_memory(
+            swapchain_info->swapchain, swapchain_info->imageIndex));
 #endif
          info->memory = vn_device_memory_to_handle(mem);
       }
       assert(mem && info->memory != VK_NULL_HANDLE);
-
-#if DETECT_OS_ANDROID
-      assert(img->wsi.memory);
-#else
-      assert(!img->wsi.memory);
-      img->wsi.memory = mem;
-#endif
    }
 
    vn_async_vkBindImageMemory2(dev->primary_ring, vn_device_to_handle(dev),
