@@ -7514,7 +7514,7 @@
         "description": "freedreno/ci: fix a750-piglit-cl rules",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b3f7de99ffcbf6e6c95d575beba1f96c9859e8f",
         "notes": null
