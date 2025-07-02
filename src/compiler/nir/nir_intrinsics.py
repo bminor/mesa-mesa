@@ -2109,15 +2109,15 @@ intrinsic("load_sampler_handle_agx", [1], 1, [],
           bit_sizes=[16])
 
 # Load a bindless texture handle mapping a binding table texture.
-intrinsic("load_texture_handle_agx", [1], 2, [],
+intrinsic("load_texture_handle_agx", [1], 1, [],
           flags=[CAN_ELIMINATE, CAN_REORDER],
           bit_sizes=[32])
 
-# Given a vec2 bindless texture handle, load the address of the texture
-# descriptor described by that vec2. This allows inspecting the descriptor from
-# the shader. This does not actually load the content of the descriptor, only
-# the content of the handle (which is the address of the descriptor).
-intrinsic("load_from_texture_handle_agx", [2], 1, [],
+# Given a bindless texture handle, load the address of the texture descriptor
+# described by that. This allows inspecting the descriptor from the shader. This
+# does not actually load the content of the descriptor, only the content of the
+# handle (which is the address of the descriptor).
+intrinsic("load_from_texture_handle_agx", [1], 1, [],
           flags=[CAN_ELIMINATE, CAN_REORDER],
           bit_sizes=[64])
 
@@ -2324,6 +2324,12 @@ intrinsic("export_agx", [0], indices=[BASE])
 # Load an exported vector at the beginning of the shader part from GPRs starting
 # at BASE. Must only appear in the first block of the shader part.
 load("exported_agx", [], [BASE], [CAN_ELIMINATE])
+
+# AGX-specific bindless texture/image handle specifier. Similar to
+# vulkan_resource_index. The "descriptor set" here is the heap uniform. The
+# source is the offset in bytes into the heap.
+intrinsic("bindless_image_agx", [1], dest_comp=1, bit_sizes=[32],
+          indices=[DESC_SET], flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # Intel-specific query for loading from the isl_image_param struct passed
 # into the shader as a uniform.  The variable is a deref to the image

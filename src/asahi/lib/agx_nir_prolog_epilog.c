@@ -140,7 +140,8 @@ lower_non_monolithic_uniforms(nir_builder *b, nir_intrinsic_instr *intr,
       b->cursor = nir_instr_remove(&intr->instr);
       nir_def *offs =
          nir_imul_imm(b, nir_u2u32(b, intr->src[0].ssa), AGX_TEXTURE_LENGTH);
-      nir_def_rewrite_uses(&intr->def, nir_vec2(b, nir_imm_int(b, 0), offs));
+      nir_def_rewrite_uses(&intr->def,
+                           nir_bindless_image_agx(b, offs, .desc_set = 0));
       return true;
    } else {
       return false;

@@ -960,7 +960,8 @@ lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *rep;
 
    if (intr->intrinsic == nir_intrinsic_load_texture_handle_agx) {
-      rep = nir_vec2(b, nir_imm_int(b, ctx->image_heap), intr->src[0].ssa);
+      rep = nir_bindless_image_agx(b, intr->src[0].ssa,
+                                   .desc_set = ctx->image_heap);
    } else {
       rep = nir_load_preamble(b, 1, 64, .base = ctx->root);
    }

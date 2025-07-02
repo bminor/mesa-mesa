@@ -239,6 +239,7 @@ can_move_intrinsic(nir_intrinsic_instr *instr, opt_preamble_ctx *ctx)
    case nir_intrinsic_bindless_resource_ir3:
    case nir_intrinsic_load_const_ir3:
    case nir_intrinsic_load_constant_agx:
+   case nir_intrinsic_bindless_image_agx:
       return can_move_srcs(&instr->instr, ctx);
 
    /* Image/SSBO loads can be moved if they are CAN_REORDER and their

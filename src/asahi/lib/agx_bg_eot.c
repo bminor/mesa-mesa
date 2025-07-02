@@ -15,7 +15,6 @@
 #include "libagx_shaders.h"
 #include "nir.h"
 #include "nir_builder.h"
-#include "nir_intrinsics.h"
 #include "pool.h"
 
 static bool
@@ -26,8 +25,8 @@ lower_tex_handle_to_u0(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
    b->cursor = nir_instr_remove(&intr->instr);
    nir_def_rewrite_uses(
-      &intr->def,
-      nir_vec2(b, nir_imm_int(b, 0), nir_imul_imm(b, intr->src[0].ssa, 24)));
+      &intr->def, nir_bindless_image_agx(
+                     b, nir_imul_imm(b, intr->src[0].ssa, 24), .desc_set = 0));
 
    return true;
 }

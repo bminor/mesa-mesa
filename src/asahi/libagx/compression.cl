@@ -24,7 +24,7 @@
  * is hardcoded and the latter is an offsetof.
  */
 #define HANDLE(field)                                                          \
-   (uint2)(0, offsetof(struct libagx_decompress_images, field))
+   nir_bindless_image_agx(offsetof(struct libagx_decompress_images, field), 0)
 
 /*
  * The metadata buffer is fully twiddled, so interleave the X/Y coordinate bits.

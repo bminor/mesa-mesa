@@ -855,21 +855,18 @@ agx_tex_dim(enum glsl_sampler_dim dim, bool array)
 }
 
 /*
- * In the hardware, bindless texture sources are specified as a 64-bit uniform
- * base address summed with a 32-bit register index. In NIR, we model this as a
- * vec2, where the first source is the (constant) uniform register number and
- * the second source is the (dynamic) byte offset.
+ * Hardware bindless texture sources are specified as a 64-bit uniform base
+ * address summed with a 32-bit register index. We model in NIR with the
+ * bindless_image_agx intrinsic.
  */
 static agx_index
 agx_translate_bindless_handle(agx_builder *b, nir_src *handle, agx_index *base)
 {
-   nir_scalar base_scalar = nir_scalar_resolved(handle->ssa, 0);
-   assert(nir_scalar_is_const(base_scalar) && "base must be constant");
+   nir_intrinsic_instr *intr = nir_src_as_intrinsic(*handle);
+   assert(intr->intrinsic == nir_intrinsic_bindless_image_agx);
 
-   unsigned base_uint = nir_scalar_as_uint(base_scalar);
-   *base = agx_uniform(base_uint, AGX_SIZE_64);
-
-   return agx_emit_extract(b, agx_src_index(handle), 1);
+   *base = agx_uniform(nir_intrinsic_desc_set(intr), AGX_SIZE_64);
+   return agx_src_index(&intr->src[0]);
 }
 
 static agx_instr *
@@ -1729,6 +1726,10 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
 
    case nir_intrinsic_export_agx:
       return agx_emit_export(b, nir_intrinsic_base(instr), instr->src[0]);
+
+   case nir_intrinsic_bindless_image_agx:
+      /* These must always be chased */
+      return NULL;
 
    case nir_intrinsic_load_barycentric_sample:
    case nir_intrinsic_load_sample_id:
@@ -3375,15 +3376,11 @@ lower_load_from_texture_handle(nir_builder *b, nir_intrinsic_instr *intr,
    if (intr->intrinsic != nir_intrinsic_load_from_texture_handle_agx)
       return false;
 
-   /* Bindless handles are a vec2, where the first source is the (constant)
-    * uniform register number and the second source is the byte offset.
-    */
-   nir_scalar uniform = nir_scalar_resolved(intr->src[0].ssa, 0);
-   unsigned uniform_idx = nir_scalar_as_uint(uniform);
+   nir_intrinsic_instr *handle = nir_src_as_intrinsic(intr->src[0]);
 
    b->cursor = nir_instr_remove(&intr->instr);
-   nir_def *base = nir_load_preamble(b, 1, 64, uniform_idx);
-   nir_def *offset = nir_u2u64(b, nir_channel(b, intr->src[0].ssa, 1));
+   nir_def *base = nir_load_preamble(b, 1, 64, nir_intrinsic_desc_set(handle));
+   nir_def *offset = nir_u2u64(b, handle->src[0].ssa);
 
    nir_def_rewrite_uses(&intr->def, nir_iadd(b, base, offset));
    return true;

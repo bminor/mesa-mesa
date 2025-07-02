@@ -8,6 +8,7 @@
 #include "util/macros.h"
 #include "agx_compiler.h"
 #include "nir.h"
+#include "nir_intrinsics.h"
 #include "nir_opcodes.h"
 
 static void
@@ -279,43 +280,11 @@ rewrite_cost(nir_def *def, const void *data)
 static bool
 avoid_instr(const nir_instr *instr, const void *data)
 {
-   const nir_def *def = nir_instr_def((nir_instr *)instr);
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
 
-   /* Do not move bindless handles, since we need those to retain their
-    * constant base index.
-    */
-   if (def) {
-      nir_foreach_use(use, def) {
-         if (nir_src_parent_instr(use)->type == nir_instr_type_tex) {
-            /* Check if used as a bindless texture handle */
-            nir_tex_instr *tex = nir_instr_as_tex(nir_src_parent_instr(use));
-            int handle_idx =
-               nir_tex_instr_src_index(tex, nir_tex_src_texture_handle);
-
-            if (handle_idx >= 0 && tex->src[handle_idx].src.ssa == def)
-               return true;
-         } else if (nir_src_parent_instr(use)->type ==
-                    nir_instr_type_intrinsic) {
-            /* Check if used as a bindless image handle */
-            nir_intrinsic_instr *intr =
-               nir_instr_as_intrinsic(nir_src_parent_instr(use));
-
-            switch (intr->intrinsic) {
-            case nir_intrinsic_bindless_image_load:
-            case nir_intrinsic_bindless_image_sparse_load:
-            case nir_intrinsic_bindless_image_store:
-            case nir_intrinsic_bindless_image_store_block_agx:
-               if (intr->src[0].ssa == def)
-                  return true;
-               break;
-            default:
-               break;
-            }
-         }
-      }
-   }
-
-   return false;
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   return intr->intrinsic == nir_intrinsic_bindless_image_agx;
 }
 
 static const nir_opt_preamble_options preamble_options = {
