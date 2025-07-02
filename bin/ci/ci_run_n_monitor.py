@@ -479,14 +479,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--stress",
-        default=0,
+        metavar="n",
         type=int,
+        default=0,
         help="Stresstest job(s). Specify the number of times to rerun the selected jobs, "
              "or use -1 for indefinite. Defaults to 0. If jobs have already been executed, "
              "this will ensure the total run count respects the specified number.",
     )
     parser.add_argument(
         "--project",
+        metavar="name",
+        type=str,
         default="mesa",
         help="GitLab project in the format <user>/<project> or just <project>",
     )
@@ -499,15 +502,20 @@ def parse_args() -> argparse.Namespace:
     mutex_group1 = parser.add_mutually_exclusive_group()
     mutex_group1.add_argument(
         "--rev",
+        metavar="id",
+        type=str,
         default="HEAD",
         help="Repository git commit-ish, tag or branch name (default: HEAD)",
     )
     mutex_group1.add_argument(
         "--pipeline-url",
+        metavar="url",
+        type=str,
         help="URL of the pipeline to use, instead of auto-detecting it.",
     )
     mutex_group1.add_argument(
         "--mr",
+        metavar="id",
         type=int,
         help="ID of a merge request; the latest pipeline in that MR will be used.",
     )
