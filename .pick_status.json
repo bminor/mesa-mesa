@@ -7954,7 +7954,7 @@
         "description": "bin/symbols-check: document new platform symbols exported since symbols-check was broken",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
