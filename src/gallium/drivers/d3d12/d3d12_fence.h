@@ -86,6 +86,9 @@ struct d3d12_screen;
 struct d3d12_fence {
    struct pipe_reference reference;
    ID3D12Fence *cmdqueue_fence;
+   pipe_fd_type type;
+
+   // The below fields are only valid if type == PIPE_FD_TYPE_NATIVE_SYNC
    HANDLE event;
    int event_fd;
    uint64_t value;
@@ -105,7 +108,7 @@ struct d3d12_fence *
 d3d12_create_fence(struct d3d12_screen *screen, bool signal_new);
 
 struct d3d12_fence *
-d3d12_open_fence(struct d3d12_screen *screen, HANDLE handle, const void *name);
+d3d12_open_fence(struct d3d12_screen *screen, HANDLE handle, const void *name, pipe_fd_type type);
 
 void
 d3d12_fence_reference(struct d3d12_fence **ptr, struct d3d12_fence *fence);
