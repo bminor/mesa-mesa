@@ -163,6 +163,13 @@ AluReadportReservation::AluReadportReservation()
 bool
 AluReadportReservation::reserve_gpr(int sel, int chan, int cycle)
 {
+   for (int c = 0; c < 3; ++c) {
+      if (m_hw_gpr[c][chan] == sel) {
+         if (cycle == c)
+            return true;
+      }
+   }
+
    if (m_hw_gpr[cycle][chan] == -1) {
       m_hw_gpr[cycle][chan] = sel;
    } else if (m_hw_gpr[cycle][chan] != sel) {
