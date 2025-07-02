@@ -885,13 +885,6 @@ AllocAndFetchScreenConfigs(Display * dpy, struct glx_display * priv, enum glx_dr
             driver_name_is_inferred = false;
          }
       }
-#if defined(HAVE_X11_DRI2)
-      if (psc == NULL && glx_driver & GLX_DRIVER_DRI2 && dri2CheckSupport(dpy)) {
-	      psc = dri2CreateScreen(i, priv, driver_name_is_inferred);
-         if (psc)
-            priv->dri2Hash = __glxHashCreate();
-      }
-#endif
 #endif /* GLX_USE_DRM */
 
 #ifdef GLX_USE_WINDOWSGL
@@ -1030,12 +1023,8 @@ __glXInitialize(Display * dpy)
                glx_driver |= GLX_DRIVER_ZINK_INFER;
          }
       }
-#if defined(HAVE_X11_DRI2)
-      if (!debug_get_bool_option("LIBGL_DRI2_DISABLE", false))
-         glx_driver |= GLX_DRIVER_DRI2;
-#endif
 #if defined(HAVE_ZINK)
-      if (!(glx_driver & (GLX_DRIVER_DRI2 | GLX_DRIVER_DRI3)))
+      if (!(glx_driver & GLX_DRIVER_DRI3))
          if (kopper && !getenv("GALLIUM_DRIVER"))
             glx_driver |= GLX_DRIVER_ZINK_INFER;
 #endif /* HAVE_ZINK */

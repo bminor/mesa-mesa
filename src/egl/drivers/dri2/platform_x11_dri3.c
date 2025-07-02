@@ -529,12 +529,8 @@ dri3_x11_connect(struct dri2_egl_display *dri2_dpy, bool zink, bool swrast)
    if (dri2_dpy->fd_render_gpu < 0) {
       int conn_error = xcb_connection_has_error(dri2_dpy->conn);
       if (!swrast) {
-#ifdef HAVE_X11_DRI2
-         _eglLog(_EGL_INFO, "DRI3: Could not get DRI3 device");
-#else
          _eglLog(_EGL_WARNING, "DRI3 error: Could not get DRI3 device");
-         _eglLog(_EGL_WARNING, "Activate DRI3 at Xorg or build mesa with DRI2");
-#endif
+         _eglLog(_EGL_WARNING, "Ensure your X server supports DRI3 to get accelerated rendering");
          if (conn_error)
             _eglLog(_EGL_WARNING, "DRI3: Failed to initialize");
       }

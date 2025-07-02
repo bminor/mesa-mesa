@@ -188,7 +188,6 @@ debian-build-x86_64:
       -D egl=enabled
       -D glvnd=disabled
       -D platforms=x11,wayland
-      -D legacy-x11=dri2
     GALLIUM_ST: >
       -D gallium-extra-hud=true
       -D gallium-vdpau=enabled

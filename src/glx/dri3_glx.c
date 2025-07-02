@@ -58,7 +58,6 @@
 #if defined(GLX_DIRECT_RENDERING) && !defined(GLX_USE_APPLEGL)
 
 #include <X11/Xlib.h>
-#include <X11/extensions/Xfixes.h>
 #include <X11/Xlib-xcb.h>
 #include <X11/xshmfence.h>
 #include <xcb/xcb.h>
@@ -78,7 +77,6 @@
 #include "loader.h"
 #include "loader_x11.h"
 #include "loader_dri_helper.h"
-#include "dri2.h"
 #include "util/u_debug.h"
 #include "dri_util.h"
 

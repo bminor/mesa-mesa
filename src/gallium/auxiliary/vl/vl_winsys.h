@@ -88,9 +88,6 @@ xcb_screen_t *
 vl_dri_get_screen_for_root(xcb_connection_t *conn, xcb_window_t root);
 uint32_t
 vl_dri2_format_for_depth(struct vl_screen *vscreen, int depth);
-
-struct vl_screen *
-vl_dri2_screen_create(Display *display, int screen);
 #else
 static inline struct vl_screen *
 vl_dri2_screen_create(void *display, int screen) { return NULL; };

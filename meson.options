@@ -783,7 +783,6 @@ option(
   value : [],
   description : 'Build legacy X11 support features.',
   choices : [
-    'dri2'
   ],
 )
 

@@ -581,8 +581,6 @@ endif
 
 with_dri2 = (with_dri or with_any_vk) and (with_dri_platform == 'drm' or with_dri_platform == 'apple')
 
-with_x11_dri2 = with_dri2 and get_option('legacy-x11').contains('dri2')
-
 if with_dri
   if with_glx == 'disabled' and not with_egl and not with_gbm
     error('building dri drivers require at least one windowing system')
@@ -2020,7 +2018,6 @@ endif
 
 dep_x11 = null_dep
 dep_xext = null_dep
-dep_xfixes = null_dep
 dep_x11_xcb = null_dep
 dep_xcb = null_dep
 dep_xcb_keysyms = null_dep
@@ -2044,7 +2041,6 @@ dep_xcb_dri2_version = '>= 1.8'
 dep_xcb_dri3_version = '>= 1.13'
 dep_xcb_glx_version = '>= 1.8.1'
 dep_xcb_present_version = '>= 1.13'
-dep_xfixes_version = '>= 2.0'
 dep_xlib_xrandr_version = '>= 1.3'
 dep_xshmfence_version = '>= 1.1'
 
@@ -2059,7 +2055,6 @@ if with_platform_x11
   elif with_glx == 'dri'
     dep_x11 = dependency('x11')
     dep_xext = dependency('xext')
-    dep_xfixes = dependency('xfixes', version : dep_xfixes_version)
     dep_xcb_glx = dependency('xcb-glx', version : dep_xcb_glx_version)
     dep_xcb_shm = dependency('xcb-shm')
   elif with_gallium_rusticl
@@ -2075,14 +2070,11 @@ if with_platform_x11
       pre_args += '-DXCB_KEYSYMS_AVAILABLE'
     endif
     dep_x11_xcb = dependency('x11-xcb')
-    dep_xcb_dri2 = dependency('xcb-dri2', version : dep_xcb_dri2_version, required : with_x11_dri2)
     if with_dri_platform == 'drm' and not dep_libdrm.found()
       error('libdrm required for gallium video statetrackers when using x11')
     endif
   endif
   if with_dri_platform == 'drm'
-    dep_xcb_dri2 = dependency('xcb-dri2', version : dep_xcb_dri2_version, required : with_x11_dri2)
-
     dep_xcb_dri3 = dependency('xcb-dri3', version : dep_xcb_dri3_version)
     dep_xcb_present = dependency('xcb-present', version : dep_xcb_present_version)
     if (dep_xcb_dri3.version().version_compare('>= 1.17') and
@@ -2130,9 +2122,6 @@ if with_dri
 endif
 if with_dri2
   pre_args += '-DHAVE_DRI2'
-endif
-if with_x11_dri2
-  pre_args += '-DHAVE_X11_DRI2'
 endif
 if with_dri3_explicit_sync
   pre_args += '-DHAVE_DRI3_EXPLICIT_SYNC'

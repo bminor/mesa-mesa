@@ -26,14 +26,6 @@ LibGL environment variables
    if set to ``true``, do not use DrawArrays GLX protocol (for
    debugging)
 
-.. envvar:: LIBGL_DRI2_DISABLE
-
-   disable DRI2 if set to ``true``.
-
-.. envvar:: LIBGL_DRI3_DISABLE
-
-   disable DRI3 if set to ``true``.
-
 .. envvar:: LIBGL_KOPPER_DISABLE
 
    disable Vulkan swapchains with Zink if set to ``true``.

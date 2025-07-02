@@ -975,7 +975,6 @@ dri_screen_init(struct glx_screen *psc, struct glx_display *priv, int screen, in
    enum dri_screen_type type;
    switch (psc->display->driver) {
    case GLX_DRIVER_DRI3:
-   case GLX_DRIVER_DRI2:
       type = DRI_SCREEN_DRI3;
       break;
    case GLX_DRIVER_ZINK_YES:

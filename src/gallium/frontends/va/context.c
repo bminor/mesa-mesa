@@ -159,10 +159,6 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
 #endif
       if (!drv->vscreen)
          drv->vscreen = vl_dri3_screen_create(ctx->native_dpy, ctx->x11_screen);
-#ifdef HAVE_X11_DRI2
-      if (!drv->vscreen)
-         drv->vscreen = vl_dri2_screen_create(ctx->native_dpy, ctx->x11_screen);
-#endif
       if (!drv->vscreen)
          drv->vscreen = vl_xlib_swrast_screen_create(ctx->native_dpy, ctx->x11_screen);
       break;
