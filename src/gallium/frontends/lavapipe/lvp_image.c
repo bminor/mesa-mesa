@@ -210,14 +210,6 @@ fail:
    return result;
 }
 
-struct lvp_image *
-lvp_swapchain_get_image(VkSwapchainKHR swapchain,
-                        uint32_t index)
-{
-   VkImage image = wsi_common_get_image(swapchain, index);
-   return lvp_image_from_handle(image);
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CreateImage(VkDevice _device,
                 const VkImageCreateInfo *pCreateInfo,

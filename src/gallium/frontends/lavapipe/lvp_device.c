@@ -2364,66 +2364,46 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BindImageMemory2(VkDevice _device,
       LVP_FROM_HANDLE(lvp_device_memory, mem, bind_info->memory);
       LVP_FROM_HANDLE(lvp_image, image, bind_info->image);
       VkBindMemoryStatusKHR *status = (void*)vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS_KHR);
-      bool did_bind = false;
 
-#ifdef LVP_USE_WSI_PLATFORM
-      vk_foreach_struct_const(s, bind_info->pNext) {
-         switch (s->sType) {
-         case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR: {
-            const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-               (const VkBindImageMemorySwapchainInfoKHR *) s;
-            struct lvp_image *swapchain_image =
-               lvp_swapchain_get_image(swapchain_info->swapchain,
-                                       swapchain_info->imageIndex);
-
-            image->planes[0].pmem = swapchain_image->planes[0].pmem;
-            image->planes[0].memory_offset = swapchain_image->planes[0].memory_offset;
-            device->pscreen->resource_bind_backing(device->pscreen,
-                                                   image->planes[0].bo,
-                                                   image->planes[0].pmem,
-                                                   0, 0,
-                                                   image->planes[0].memory_offset);
-            did_bind = true;
-            if (status)
-               *status->pResult = VK_SUCCESS;
-            break;
-         }
-         default:
-            break;
-         }
-      }
+      if (!mem) {
+#if DETECT_OS_ANDROID
+         /* TODO handle VkNativeBufferANDROID */
+         unreachable("VkBindImageMemoryInfo with no memory");
+#else
+         const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+            vk_find_struct_const(bind_info->pNext,
+                                 BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+         assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
+         mem = lvp_device_memory_from_handle(wsi_common_get_memory(
+            swapchain_info->swapchain, swapchain_info->imageIndex));
 #endif
+      }
 
-      if (!did_bind) {
-         if (!mem) {
-            continue;
-         }
-
-         uint64_t offset_B = 0;
-         VkResult result;
-         if (image->disjoint) {
-            const VkBindImagePlaneMemoryInfo *plane_info =
-               vk_find_struct_const(pBindInfos[i].pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
-            uint8_t plane = lvp_image_aspects_to_plane(image, plane_info->planeAspect);
+      assert(mem);
+      uint64_t offset_B = 0;
+      VkResult result;
+      if (image->disjoint) {
+         const VkBindImagePlaneMemoryInfo *plane_info =
+            vk_find_struct_const(pBindInfos[i].pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
+         uint8_t plane = lvp_image_aspects_to_plane(image, plane_info->planeAspect);
+         result = lvp_image_plane_bind(device, &image->planes[plane],
+                                       mem, bind_info->memoryOffset, &offset_B);
+         if (status)
+            *status->pResult = result;
+         if (result != VK_SUCCESS)
+            return result;
+      } else {
+         VkResult fail = VK_SUCCESS;
+         for (unsigned plane = 0; plane < image->plane_count; plane++) {
             result = lvp_image_plane_bind(device, &image->planes[plane],
-                                          mem, bind_info->memoryOffset, &offset_B);
+                                          mem, bind_info->memoryOffset + image->offset, &offset_B);
             if (status)
-               *status->pResult = result;
+               *status->pResult = res;
             if (result != VK_SUCCESS)
-               return result;
-         } else {
-            VkResult fail = VK_SUCCESS;
-            for (unsigned plane = 0; plane < image->plane_count; plane++) {
-               result = lvp_image_plane_bind(device, &image->planes[plane],
-                                             mem, bind_info->memoryOffset + image->offset, &offset_B);
-               if (status)
-                  *status->pResult = res;
-               if (result != VK_SUCCESS)
-                  fail = result;
-            }
-            if (fail != VK_SUCCESS)
-               return fail;
+               fail = result;
          }
+         if (fail != VK_SUCCESS)
+            return fail;
       }
    }
    return res;
