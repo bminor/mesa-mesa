@@ -128,10 +128,3 @@ v3dv_wsi_finish(struct v3dv_physical_device *physical_device)
    wsi_device_finish(&physical_device->wsi_device,
                      &physical_device->vk.instance->alloc);
 }
-
-struct v3dv_image *
-v3dv_wsi_get_image_from_swapchain(VkSwapchainKHR swapchain, uint32_t index)
-{
-   VkImage image = wsi_common_get_image(swapchain, index);
-   return v3dv_image_from_handle(image);
-}

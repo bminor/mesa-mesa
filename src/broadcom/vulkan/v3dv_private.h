@@ -115,7 +115,7 @@
 } while (0)
 
 struct v3dv_instance;
-
+struct v3dv_image;
 struct v3d_simulator_file;
 
 /* Minimum required by the Vulkan 1.1 spec */
@@ -205,8 +205,6 @@ v3dv_device_lookup_bo(struct v3dv_physical_device *device, uint32_t handle)
 
 VkResult v3dv_wsi_init(struct v3dv_physical_device *physical_device);
 void v3dv_wsi_finish(struct v3dv_physical_device *physical_device);
-struct v3dv_image *v3dv_wsi_get_image_from_swapchain(VkSwapchainKHR swapchain,
-                                                     uint32_t index);
 
 void v3dv_meta_clear_init(struct v3dv_device *device);
 void v3dv_meta_clear_finish(struct v3dv_device *device);
