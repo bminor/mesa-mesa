@@ -195,13 +195,13 @@ static nir_shader *
 panfrost_create_afbc_size_shader(struct panfrost_screen *screen,
                                  const struct pan_mod_convert_shader_key *key)
 {
-   unsigned bpp = key->afbc.bpp;
    unsigned align = key->afbc.align;
    struct panfrost_device *dev = pan_device(&screen->base);
 
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, pan_shader_get_compiler_options(dev->arch),
-      "panfrost_afbc_size(bpp=%d)", bpp);
+      "panfrost_afbc_size(uncompressed_size=%u, align=%u)",
+      key->afbc.uncompressed_size, align);
 
    panfrost_afbc_add_info_ubo(size, b);
 
@@ -209,7 +209,7 @@ panfrost_create_afbc_size_shader(struct panfrost_screen *screen,
    nir_def *block_idx = nir_channel(&b, coord, 0);
    nir_def *src = panfrost_afbc_size_get_info_field(&b, src);
    nir_def *layout = panfrost_afbc_size_get_info_field(&b, layout);
-   nir_def *uncompressed_size = nir_imm_int(&b, 4 * 4 * bpp / 8); /* bytes */
+   nir_def *uncompressed_size = nir_imm_int(&b, key->afbc.uncompressed_size);
 
    nir_def *hdr = read_afbc_header(&b, src, block_idx);
    nir_def *size = get_superblock_size(&b, dev->arch, hdr, uncompressed_size);
@@ -410,7 +410,8 @@ get_mod_convert_shaders(struct panfrost_context *ctx,
    }
 
    if (drm_is_afbc(key->mod)) {
-      COMPILE_SHADER(afbc, size, key);
+      if (pan_screen(ctx->base.screen)->afbcp_gpu_payload_sizes)
+         COMPILE_SHADER(afbc, size, key);
       COMPILE_SHADER(afbc, pack, key);
    } else if (drm_is_mtk_tiled(key->mod)) {
       COMPILE_SHADER(mtk_tiled, detile, key);
@@ -434,7 +435,8 @@ panfrost_get_afbc_pack_shaders(struct panfrost_context *ctx,
    struct pan_mod_convert_shader_key key = {
       .mod = DRM_FORMAT_MOD_ARM_AFBC(0),
       .afbc = {
-         .bpp = util_format_get_blocksizebits(rsrc->base.format),
+         .uncompressed_size = pan_afbc_payload_uncompressed_size(
+            rsrc->base.format, rsrc->modifier),
          .align = align,
       },
    };
@@ -474,7 +476,8 @@ panfrost_afbc_context_destroy(struct panfrost_context *ctx)
       struct pan_mod_convert_shader_data *shader = he->data;
 
       if (drm_is_afbc(shader->key.mod)) {
-         ctx->base.delete_compute_state(&ctx->base, shader->afbc.size_cso);
+         if (pan_screen(ctx->base.screen)->afbcp_gpu_payload_sizes)
+            ctx->base.delete_compute_state(&ctx->base, shader->afbc.size_cso);
          ctx->base.delete_compute_state(&ctx->base, shader->afbc.pack_cso);
       } else if (drm_is_mtk_tiled(shader->key.mod)) {
          ctx->base.delete_compute_state(&ctx->base, shader->mtk_tiled.detile_cso);

@@ -38,7 +38,7 @@ struct pan_mod_convert_shader_key {
    uint64_t mod;
    union {
       struct {
-         unsigned bpp;
+         unsigned uncompressed_size;
          unsigned align;
       } afbc;
       struct {
@@ -65,11 +65,6 @@ struct pan_mod_convert_shader_data {
 struct pan_mod_convert_shaders {
    struct hash_table *shaders;
    pthread_mutex_t lock;
-};
-
-struct pan_afbc_payload_extent {
-   uint32_t size;
-   uint32_t offset;
 };
 
 struct panfrost_afbc_size_info {

@@ -1981,9 +1981,11 @@ pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
    MESA_TRACE_FUNC();
 
    afbcp_debug(ctx,
-               "AFBC-P prsrc=%p: Get payload sizes (reads=%u bo_size=%zu)",
+               "AFBC-P prsrc=%p: Get payload sizes (reads=%u bo_size=%zu, gpu=%s)",
                prsrc, prsrc->afbcp->nr_consecutive_reads,
-               panfrost_bo_size(prsrc->bo));
+               panfrost_bo_size(prsrc->bo),
+               pan_screen(ctx->base.screen)->afbcp_gpu_payload_sizes ?
+               "true" : "false");
 
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
@@ -2011,6 +2013,9 @@ pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
       return false;
    }
 
+   if (!pan_screen(ctx->base.screen)->afbcp_gpu_payload_sizes)
+      return true;
+
    prsrc->afbcp->skip_access_updates = true;
 
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
@@ -2021,6 +2026,50 @@ pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
    prsrc->afbcp->skip_access_updates = false;
 
    return true;
+}
+
+static uint32_t
+pan_resource_afbcp_get_payload_layout(struct panfrost_context *ctx,
+                                      struct panfrost_resource *prsrc,
+                                      struct pan_afbc_payload_extent *layout,
+                                      uint32_t nr_blocks_total,
+                                      uint32_t header_offset)
+{
+   if (!pan_screen(ctx->base.screen)->afbcp_gpu_payload_sizes) {
+      /* The CPU version sets both the payload sizes and offsets at once. */
+      struct panfrost_device *dev = pan_device(ctx->base.screen);
+      struct pan_afbc_headerblock *headers = (struct pan_afbc_headerblock *)
+         ((uint8_t *)prsrc->bo->ptr.cpu + header_offset);
+      return pan_afbc_payload_layout_packed(
+         dev->arch, headers, layout, nr_blocks_total, prsrc->base.format,
+         prsrc->modifier);
+   }
+
+   /* Stack allocated chunk used to copy the AFBC-P payload layout from
+    * non-cacheable memory to cacheable memory. Each iteration of the offset
+    * computation loop below otherwise forces a flush of the write combining
+    * buffer because of the 32-bit read interleaved with the 32-bit write. A
+    * tile is composed of 8x8 header blocks. A chunk is made of 16 tiles so
+    * that at most 8 kB can be copied at each iteration (smaller values tend
+    * to increase latency). */
+   alignas(16) struct pan_afbc_payload_extent layout_chunk[64 * 16];
+   unsigned nr_blocks_per_chunk = ARRAY_SIZE(layout_chunk);
+   uint32_t body_size_B = 0;
+
+   for (unsigned i = 0; i < nr_blocks_total; i += nr_blocks_per_chunk) {
+      unsigned nr_blocks =  MIN2(nr_blocks_per_chunk, nr_blocks_total - i);
+
+      util_streaming_load_memcpy(
+         layout_chunk, &layout[i],
+         nr_blocks * sizeof(struct pan_afbc_payload_extent));
+
+      for (unsigned j = 0; j < nr_blocks; j++) {
+         layout[i + j].offset = body_size_B;
+         body_size_B += layout_chunk[j].size;
+      }
+   }
+
+   return body_size_B;
 }
 
 /* Calculate and store the packed payload offsets into the AFBC-P payload
@@ -2053,34 +2102,11 @@ pan_resource_afbcp_get_payload_offsets(struct panfrost_context *ctx,
             modifier, u_minify(prsrc->image.props.extent_px.height, level));
       uint32_t body_offset_B = pan_afbc_body_offset(
          dev->arch, modifier, src_slice->afbc.header.surface_size_B);
-      uint32_t body_size_B = 0;
       struct pan_afbc_payload_extent *layout =
          prsrc->afbcp->layout_bo->ptr.cpu +
          prsrc->afbcp->layout_offsets[level];
-
-      /* Stack allocated chunk used to copy the AFBC-P payload layout from
-       * non-cacheable memory to cacheable memory. Each iteration of the
-       * offset computation loop below otherwise forces a flush of the write
-       * combining buffer because of the 32-bit read interleaved with the
-       * 32-bit write. A tile is composed of 8x8 header blocks. A chunk is
-       * made of 16 tiles so that at most 8 kB can be copied at each iteration
-       * (smaller values tend to increase latency). */
-      alignas(16) struct pan_afbc_payload_extent layout_chunk[64 * 16];
-      unsigned nr_blocks_per_chunk = ARRAY_SIZE(layout_chunk);
-
-      for (unsigned i = 0; i < nr_blocks_total; i += nr_blocks_per_chunk) {
-         unsigned nr_blocks =
-            MIN2(nr_blocks_per_chunk, nr_blocks_total - i);
-
-         util_streaming_load_memcpy(
-            layout_chunk, &layout[i],
-            nr_blocks * sizeof(struct pan_afbc_payload_extent));
-
-         for (unsigned j = 0; j < nr_blocks; j++) {
-            layout[i + j].offset = body_size_B;
-            body_size_B += layout_chunk[j].size;
-         }
-      }
+      uint32_t body_size_B = pan_resource_afbcp_get_payload_layout(
+         ctx, prsrc, layout, nr_blocks_total, src_slice->offset_B);
 
       /* Header layout is exactly the same, only the body is shrunk. */
       unsigned size_B = body_offset_B + body_size_B;

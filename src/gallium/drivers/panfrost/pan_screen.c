@@ -1005,6 +1005,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
                                                    "pan_force_afbc_packing");
    screen->afbcp_reads_threshold = driQueryOptioni(config->options,
                                                    "pan_afbcp_reads_threshold");
+   screen->afbcp_gpu_payload_sizes = driQueryOptionb(config->options,
+                                                     "pan_afbcp_gpu_payload_sizes");
 
    const char *option = debug_get_option("PAN_AFRC_RATE", NULL);
    if (!option) {

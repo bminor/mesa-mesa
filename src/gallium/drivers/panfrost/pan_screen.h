@@ -136,6 +136,9 @@ struct panfrost_screen {
    /* Consecutive reads threshold after which an AFBC texture is packed */
    uint32_t afbcp_reads_threshold;
 
+   /* Compute AFBC-P payload sizes on GPU */
+   bool afbcp_gpu_payload_sizes;
+
    bool allow_128bit_rts_v4;
    int force_afrc_rate;
    uint64_t compute_core_mask;

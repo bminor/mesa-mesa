@@ -137,6 +137,15 @@ struct pan_afbc_headerblock {
 };
 
 /*
+ * An AFBC payload extent describes the extent of the payload data (compressed
+ * superblock data) associated to a pan_afbc_headerblock.
+ */
+struct pan_afbc_payload_extent {
+   uint32_t size;
+   uint32_t offset;
+};
+
+/*
  * Given an AFBC modifier, return the superblock size.
  *
  * We do not yet have any use cases for multiplanar YCBCr formats with different
@@ -321,6 +330,18 @@ pan_afbc_payload_uncompressed_size(enum pipe_format format, uint64_t modifier)
 
    return size_B;
 }
+
+/*
+ * Calculate the size of each AFBC superblock payload data from the given
+ * header blocks, generate a packed AFBC payload layout and return the body
+ * size.
+ */
+uint32_t
+pan_afbc_payload_layout_packed(unsigned arch,
+                               const struct pan_afbc_headerblock *headers,
+                               struct pan_afbc_payload_extent *layout,
+                               uint32_t nr_blocks, enum pipe_format format,
+                               uint64_t modifier);
 
 static inline uint32_t
 pan_afbc_header_row_stride_align(unsigned arch, enum pipe_format format,

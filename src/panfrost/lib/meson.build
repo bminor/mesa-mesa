@@ -51,6 +51,7 @@ libpanfrost_lib_files = files(
   'pan_scratch.c',
   'pan_props.c',
   'pan_util.c',
+  'pan_afbc.c',
 )
 
 libpanfrost_lib = static_library(

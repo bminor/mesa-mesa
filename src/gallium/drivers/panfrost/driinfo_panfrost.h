@@ -9,6 +9,8 @@ DRI_CONF_SECTION_PERFORMANCE
                   "progressively in the background")
    DRI_CONF_OPT_I(pan_afbcp_reads_threshold, 10, 1, 255, "Consecutive reads "
                   "theshold after which an AFBC texture is packed")
+   DRI_CONF_OPT_B(pan_afbcp_gpu_payload_sizes, false, "Compute AFBC-P "
+                  "payload sizes on GPU")
 
    /* 2M chunks. */
    DRI_CONF_OPT_I(pan_csf_chunk_size, 2 * 1024 * 1024, 256 * 1024, 8 * 1024 * 1024, "CSF Tiler Chunk Size")
