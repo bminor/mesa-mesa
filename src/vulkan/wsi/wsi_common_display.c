@@ -152,7 +152,10 @@ struct wsi_display {
    struct list_head             connectors; /* list of all discovered connectors */
 };
 
-
+/**
+ * Creates the mapping from our property enums to the KMS property ID for that
+ * property associated with the object.
+ */
 static bool
 find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
 {
@@ -185,12 +188,18 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
 
    memset(prop_id, 0, prop_count * sizeof(*prop_id));
 
+   /* Mark these properties as optional, causing them to be skipped in the
+    * verification at the bottom.
+    */
    if (type == DRM_MODE_OBJECT_CRTC) {
       prop_id[GAMMA_LUT] = -1;
       prop_id[DEGAMMA_LUT] = -1;
       prop_id[CTM] = -1;
    }
 
+   /* Walk the list of properties seeing if their names match one of the
+    * properties we care about controlling.
+    */
    for (int p = 0; p < props->count_props; p++) {
       drmModePropertyPtr prop = drmModeGetProperty(fd, props->props[p]);
       if (!prop)
@@ -2155,12 +2164,20 @@ drm_atomic_commit(wsi_display_connector *connector, struct wsi_display_image *im
       return -1;
 
    if (!connector->active) {
+      /* Do the initial setup of the display when we're first taking control of
+       * it, or after a mode change was requested.
+       */
+
       if (drmModeCreatePropertyBlob(fd, mode, sizeof(*mode), &blob_id) != 0)
          return -1;
 
       drmModeAtomicAddProperty(req, connector->id, connector->property[CRTC_ID], crtc_id);
       drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[MODE_ID], blob_id);
       drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[ACTIVE], 1);
+
+      /* Disable any color transforms that may have been previously set on the
+       * CRTC by another user.
+       */
       if (connector->crtc_property[GAMMA_LUT] != -1)
          drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[GAMMA_LUT], 0);
       if (connector->crtc_property[DEGAMMA_LUT] != -1)
