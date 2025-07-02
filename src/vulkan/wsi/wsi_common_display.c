@@ -183,8 +183,10 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
    }
 
    props = drmModeObjectGetProperties(fd, obj_id, type);
-   if (!props)
+   if (!props) {
+      mesa_loge("Failed to drmModeObjectGetProperties(obj=%d, type=0x%08x)", obj_id, type);
       return false;
+   }
 
    memset(prop_id, 0, prop_count * sizeof(*prop_id));
 
@@ -240,8 +242,10 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
 
    /* verify that all required properties were found */
    for (int i = 0; i < prop_count; i++) {
-      if (!prop_id[i])
+      if (!prop_id[i]) {
+         mesa_logd("Failed to find required property %d for object type 0x%08x", i, type);
          return false;
+      }
    }
    return true;
 }
@@ -464,6 +468,7 @@ wsi_display_alloc_connector(struct wsi_display *wsi,
     * drmModeObjectGetProperties here could be avoided
     */
    if (!find_properties(connector, fd, DRM_MODE_OBJECT_CONNECTOR)) {
+      mesa_logd("Failed to find properties for connector");
       vk_free(wsi->alloc, connector);
       return NULL;
    }
