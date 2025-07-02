@@ -7344,7 +7344,7 @@
         "description": "st/pbo: use sized nir-types for download-path",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9123ee0f185f9744b82f84af2ec08cbaff63c364",
         "notes": null
