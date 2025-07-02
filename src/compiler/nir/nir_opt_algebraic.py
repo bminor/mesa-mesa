@@ -2704,6 +2704,17 @@ optimizations.extend([
 
    (('imul_high@16', a, b), ('i2i16', ('ishr', ('imul24_relaxed', ('i2i32', a), ('i2i32', b)), 16)), 'options->lower_mul_high16'),
    (('umul_high@16', a, b), ('u2u16', ('ushr', ('umul24_relaxed', ('u2u32', a), ('u2u32', b)), 16)), 'options->lower_mul_high16'),
+
+   # Optimize vec2 unsigned comparison predicates to usub_sat with clamp.
+   (('b2i16', ('vec2', ('ult', 'a@16', b), ('ult', 'c@16', d))),
+    ('umin', 1, ('usub_sat', ('vec2', b, d), ('vec2', a, c))),
+    'options->vectorize_vec2_16bit && !options->lower_usub_sat'),
+   (('b2i16', ('vec2', ('uge', 'a@16', '#b(is_not_zero)'), ('uge', 'c@16', '#d(is_not_zero)'))),
+    ('umin', 1, ('usub_sat', ('vec2', a, c), ('iadd', ('vec2', b, d), -1))),
+    'options->vectorize_vec2_16bit && !options->lower_usub_sat'),
+   (('b2i16', ('vec2', ('uge', '#a(is_not_uint_max)', 'b@16'), ('uge', '#c(is_not_uint_max)', 'd@16'))),
+    ('umin', 1, ('usub_sat', ('iadd', ('vec2', a, c), 1), ('vec2', b, d))),
+    'options->vectorize_vec2_16bit && !options->lower_usub_sat'),
 ])
 
 for bit_size in [8, 16, 32, 64]:

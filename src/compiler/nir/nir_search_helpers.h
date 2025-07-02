@@ -862,6 +862,26 @@ is_5lsb_not_zero(UNUSED struct hash_table *ht, const nir_alu_instr *instr,
    return true;
 }
 
+/**
+ * Returns whether at least one bit is 0.
+ */
+static inline bool
+is_not_uint_max(UNUSED struct hash_table *ht, const nir_alu_instr *instr,
+                unsigned src, unsigned num_components,
+                const uint8_t *swizzle)
+{
+   if (nir_src_as_const_value(instr->src[src].src) == NULL)
+      return false;
+
+   for (unsigned i = 0; i < num_components; i++) {
+      const int64_t c = nir_src_comp_as_int(instr->src[src].src, swizzle[i]);
+      if (c == -1)
+         return false;
+   }
+
+   return true;
+}
+
 static inline bool
 no_signed_wrap(const nir_alu_instr *instr)
 {
