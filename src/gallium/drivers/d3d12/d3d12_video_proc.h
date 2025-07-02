@@ -110,7 +110,7 @@ struct d3d12_video_processor
    ComPtr<ID3D12VideoProcessor1>                      m_spVideoProcessor;
    ComPtr<ID3D12CommandQueue>                         m_spCommandQueue;
    std::vector<ComPtr<ID3D12CommandAllocator>>        m_spCommandAllocators;
-   std::vector<struct d3d12_fence>                    m_PendingFences;
+   std::vector<d3d12_unique_fence>                    m_PendingFences;
    ComPtr<ID3D12VideoProcessCommandList1>             m_spCommandList;
 
    std::vector<D3D12_RESOURCE_BARRIER> m_transitionsBeforeCloseCmdList;

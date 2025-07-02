@@ -101,11 +101,11 @@ d3d12_fence(struct pipe_fence_handle *pfence)
    return (struct d3d12_fence *)pfence;
 }
 
-bool
-d3d12_reset_fence(struct d3d12_fence *fence, ID3D12Fence *d3d12_fence_obj, uint64_t fence_value);
-
 struct d3d12_fence *
 d3d12_create_fence(struct d3d12_screen *screen, bool signal_new);
+
+struct d3d12_fence *
+d3d12_create_fence_raw(ID3D12Fence *d3d12_fence_obj, uint64_t fence_value);
 
 struct d3d12_fence *
 d3d12_open_fence(struct d3d12_screen *screen, HANDLE handle, const void *name, pipe_fd_type type);
@@ -113,10 +113,25 @@ d3d12_open_fence(struct d3d12_screen *screen, HANDLE handle, const void *name, p
 void
 d3d12_fence_reference(struct d3d12_fence **ptr, struct d3d12_fence *fence);
 
+void
+d3d12_video_destroy_fence(struct pipe_video_codec *codec, struct pipe_fence_handle *fence);
+
 bool
 d3d12_fence_finish(struct d3d12_fence *fence, uint64_t timeout_ns);
 
 void
 d3d12_screen_fence_init(struct pipe_screen *pscreen);
+
+#if defined(__cplusplus)
+#include <memory>
+struct d3d12_fence_deleter
+{
+   void operator()(struct d3d12_fence *f)
+   {
+      d3d12_fence_reference(&f, nullptr);
+   }
+};
+using d3d12_unique_fence = std::unique_ptr<struct d3d12_fence, d3d12_fence_deleter>;
+#endif
 
 #endif

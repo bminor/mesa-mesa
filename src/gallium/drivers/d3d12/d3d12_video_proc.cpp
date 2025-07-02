@@ -179,10 +179,10 @@ d3d12_video_processor_end_frame(struct pipe_video_codec * codec,
 
     pD3D12Proc->m_spCommandList->ResourceBarrier(static_cast<uint32_t>(barrier_transitions.size()), barrier_transitions.data());
 
-    ASSERTED bool success = d3d12_reset_fence(&pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)], pD3D12Proc->m_spFence.Get(), pD3D12Proc->m_fenceValue);
-    assert(success);
-
-    *picture->fence = (pipe_fence_handle*) &pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)];
+    d3d12_unique_fence &fence = pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)];
+    fence.reset(d3d12_create_fence_raw(pD3D12Proc->m_spFence.Get(), pD3D12Proc->m_fenceValue));
+    if (picture->fence)
+      d3d12_fence_reference((struct d3d12_fence **)picture->fence, fence.get());
     return 0;
 }
 
@@ -426,6 +426,7 @@ d3d12_video_processor_create(struct pipe_context *context, const struct pipe_vid
    pD3D12Proc->base.end_frame = d3d12_video_processor_end_frame;
    pD3D12Proc->base.flush = d3d12_video_processor_flush;
    pD3D12Proc->base.fence_wait = d3d12_video_processor_fence_wait;
+   pD3D12Proc->base.destroy_fence = d3d12_video_destroy_fence;
 
    ///
 

@@ -180,58 +180,8 @@ flush_fail:
 }
 
 bool
-d3d12_video_encoder_ensure_fence_finished(struct pipe_video_codec *codec, ID3D12Fence *fence, uint64_t fenceValueToWaitOn, uint64_t timeout_ns)
-{
-      bool wait_result = true;
-      struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
-      HRESULT hr = S_OK;
-      uint64_t completedValue = fence->GetCompletedValue();
-
-      debug_printf("[d3d12_video_encoder] d3d12_video_encoder_ensure_fence_finished - Waiting for fence (with timeout_ns %" PRIu64 ") to finish with "
-                    "fenceValue: %" PRIu64 " - Current Fence Completed Value %" PRIu64 "\n",
-                    timeout_ns, fenceValueToWaitOn, completedValue);
-
-      if(completedValue < fenceValueToWaitOn) {
-
-         HANDLE              event = { };
-         int                 event_fd = 0;
-         event = d3d12_fence_create_event(&event_fd);
-
-         hr = fence->SetEventOnCompletion(fenceValueToWaitOn, event);
-         if (FAILED(hr)) {
-            debug_printf(
-               "[d3d12_video_encoder] d3d12_video_encoder_ensure_fence_finished - SetEventOnCompletion for fenceValue %" PRIu64 " failed with HR %x\n",
-               fenceValueToWaitOn, hr);
-            goto ensure_fence_finished_fail;
-         }
-
-         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_ensure_fence_finished - Waiting on fence to be done with "
-               "fenceValue: %" PRIu64 " - current CompletedValue: %" PRIu64 "\n",
-               fenceValueToWaitOn,
-               completedValue);
-
-         wait_result = d3d12_fence_wait_event(event, event_fd, timeout_ns);
-         d3d12_fence_close_event(event, event_fd);
-      } else {
-         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_ensure_fence_finished - Fence already done with "
-               "fenceValue: %" PRIu64 " - current CompletedValue: %" PRIu64 "\n",
-               fenceValueToWaitOn,
-               completedValue);
-      }
-      return wait_result;
-
-ensure_fence_finished_fail:
-   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_ensure_fence_finished failed for fenceValue: %" PRIu64 "\n", fenceValueToWaitOn);
-   pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
-   pD3D12Enc->m_spEncodedFrameMetadata[fenceValueToWaitOn % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
-   assert(false);
-   return false;
-}
-
-bool
 d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
-                                    ID3D12Fence *fence,
-                                    uint64_t fenceValueToWaitOn,
+                                    size_t pool_index,
                                     uint64_t timeout_ns)
 {
       struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
@@ -240,22 +190,23 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
       assert(pD3D12Enc->m_spEncodeCommandQueue);
       HRESULT hr = S_OK;
 
-      bool wait_result = d3d12_video_encoder_ensure_fence_finished(codec, fence, fenceValueToWaitOn, timeout_ns);
-      assert(wait_result);
+      auto &pool_entry = pD3D12Enc->m_inflightResourcesPool[pool_index];
+      if (!d3d12_fence_finish(pool_entry.m_CompletionFence.get(), timeout_ns))
+         return false;
 
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_sync_completion - resetting ID3D12CommandAllocator %p...\n",
-         pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].m_spCommandAllocator.Get());
-      hr = pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].m_spCommandAllocator->Reset();
+         pool_entry.m_spCommandAllocator.Get());
+      hr = pool_entry.m_spCommandAllocator->Reset();
       if(FAILED(hr)) {
          debug_printf("failed with %x.\n", hr);
          goto sync_with_token_fail;
       }
 
       // Release references granted on end_frame for this inflight operations
-      pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].m_spEncoder.Reset();
-      pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].m_spEncoderHeap.Reset();
-      pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].m_References.reset();
-      pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].m_InputSurfaceFence = NULL;
+      pool_entry.m_spEncoder.Reset();
+      pool_entry.m_spEncoderHeap.Reset();
+      pool_entry.m_References.reset();
+      pool_entry.m_InputSurfaceFence = NULL;
 
       // Validate device was not removed
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
@@ -268,15 +219,14 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
       }
 
       debug_printf(
-         "[d3d12_video_encoder] d3d12_video_encoder_sync_completion - GPU execution finalized for fenceValue: %" PRIu64 "\n",
-         fenceValueToWaitOn);
+         "[d3d12_video_encoder] d3d12_video_encoder_sync_completion - GPU execution finalized for pool index: %" PRIu64 "\n",
+         (uint64_t)pool_index);
 
-      return wait_result;
+      return true;
 
 sync_with_token_fail:
-   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_sync_completion failed for fenceValue: %" PRIu64 "\n", fenceValueToWaitOn);
-   pD3D12Enc->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_ENC_ASYNC_DEPTH].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
-   pD3D12Enc->m_spEncodedFrameMetadata[fenceValueToWaitOn % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_sync_completion failed for pool index: %" PRIu64 "\n", (uint64_t)pool_index);
+   pool_entry.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
    assert(false);
    return false;
 }
@@ -298,9 +248,9 @@ d3d12_video_encoder_destroy(struct pipe_video_codec *codec)
 
       // Flush pending work before destroying
    if(pD3D12Enc->m_bPendingWorkNotFlushed){
-      uint64_t curBatchFence = pD3D12Enc->m_fenceValue;
+      size_t pool_index = d3d12_video_encoder_pool_current_index(pD3D12Enc);
       d3d12_video_encoder_flush(codec);
-      d3d12_video_encoder_sync_completion(codec, pD3D12Enc->m_spFence.Get(), curBatchFence, OS_TIMEOUT_INFINITE);
+      d3d12_video_encoder_sync_completion(codec, pool_index, OS_TIMEOUT_INFINITE);
    }
 
    if (pD3D12Enc->m_SliceHeaderRepackBuffer)
@@ -2387,6 +2337,7 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
       return false;
    }
 
+   uint64_t CompletionFenceValue = pD3D12Enc->m_fenceValue;
    for (auto& inputResource : pD3D12Enc->m_inflightResourcesPool)
    {
       // Create associated command allocator for Encode, Resolve operations
@@ -2399,6 +2350,9 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
                         hr);
          return false;
       }
+
+      // Initialize fence for the in flight resource pool slot
+      inputResource.m_CompletionFence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spFence.Get(), CompletionFenceValue++));
    }
 
    ComPtr<ID3D12Device4> spD3D12Device4;
@@ -2434,8 +2388,8 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
    // Not using new doesn't call ctor and the initializations in the class declaration are lost
    struct d3d12_video_encoder *pD3D12Enc = new d3d12_video_encoder;
 
-   pD3D12Enc->m_spEncodedFrameMetadata.resize(D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT, {nullptr, 0, 0});
-   pD3D12Enc->m_inflightResourcesPool.resize(D3D12_VIDEO_ENC_ASYNC_DEPTH, { 0 });
+   pD3D12Enc->m_spEncodedFrameMetadata.resize(D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   pD3D12Enc->m_inflightResourcesPool.resize(D3D12_VIDEO_ENC_ASYNC_DEPTH);
 
    pD3D12Enc->base         = *codec;
    pD3D12Enc->m_screen     = context->screen;
@@ -2453,6 +2407,7 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
    pD3D12Enc->base.get_feedback     = d3d12_video_encoder_get_feedback;
    pD3D12Enc->base.create_dpb_buffer = d3d12_video_create_dpb_buffer;
    pD3D12Enc->base.fence_wait       = d3d12_video_encoder_fence_wait;
+   pD3D12Enc->base.destroy_fence = d3d12_video_destroy_fence;
    pD3D12Enc->base.encode_bitstream_sliced = d3d12_video_encoder_encode_bitstream_sliced;
    pD3D12Enc->base.get_slice_bitstream_data = d3d12_video_encoder_get_slice_bitstream_data;
 
@@ -2750,12 +2705,12 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
    ///
    /// Wait here to make sure the next in flight resource set is empty before using it
    ///
-   uint64_t fenceValueToWaitOn = static_cast<uint64_t>(std::max(static_cast<int64_t>(0l), static_cast<int64_t>(pD3D12Enc->m_fenceValue) - static_cast<int64_t>(D3D12_VIDEO_ENC_ASYNC_DEPTH) ));
-
-   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_begin_frame Waiting for completion of in flight resource sets with previous work with fenceValue: %" PRIu64 "\n",
-                 fenceValueToWaitOn);
-
-   d3d12_video_encoder_ensure_fence_finished(codec, pD3D12Enc->m_spFence.Get(), fenceValueToWaitOn, OS_TIMEOUT_INFINITE);
+   if (pD3D12Enc->m_fenceValue >= D3D12_VIDEO_ENC_ASYNC_DEPTH) {
+      debug_printf("[d3d12_video_encoder] d3d12_video_encoder_begin_frame Waiting for completion of in flight resource sets with previous work for pool index:"
+                   "%" PRIu64 "\n",
+                   (uint64_t)d3d12_video_encoder_pool_current_index(pD3D12Enc));
+      d3d12_fence_finish(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_CompletionFence.get(), OS_TIMEOUT_INFINITE);
+   }
 
    if (!d3d12_video_encoder_reconfigure_session(pD3D12Enc, target, picture)) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_begin_frame - Failure on "
@@ -2771,7 +2726,7 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
       goto fail;
    }
 
-   pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_InputSurfaceFence = (struct d3d12_fence*) *picture->fence;
+   pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_InputSurfaceFence = picture->fence ? d3d12_fence(*picture->fence) : nullptr;
    pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
    pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
 
@@ -2896,9 +2851,7 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
          return;
       }
 
-      bool wait_res = d3d12_video_encoder_ensure_fence_finished(codec,
-                                                               pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[slice_idx].cmdqueue_fence,
-                                                               pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues[slice_idx], OS_TIMEOUT_INFINITE);
+      bool wait_res = d3d12_fence_finish(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[slice_idx].get(), OS_TIMEOUT_INFINITE);
       if (!wait_res) {
          debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data for Encode GPU command for fence %" PRIu64 " failed on d3d12_video_encoder_ensure_fence_finished\n",
                         requested_metadata_fence);
@@ -3256,10 +3209,12 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       }
    }
 
-   ASSERTED bool success = d3d12_reset_fence(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData, pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
-   assert(success);
+   pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].
+         m_CompletionFence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue));
 
-   *feedback = (void*) &pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData;
+   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_fence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue));
+
+   *feedback = (void*)pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_fence.get();
 
    std::vector<D3D12_RESOURCE_BARRIER> rgCurrentFrameStateTransitions = {
       CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
@@ -3837,7 +3792,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes.resize(num_slice_objects, {});
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets.resize(num_slice_objects, {});
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences.resize(num_slice_objects, NULL);
-         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences.resize(num_slice_objects, {});
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences.resize(num_slice_objects);
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues.resize(num_slice_objects, pD3D12Enc->m_fenceValue);
 
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes.resize(num_slice_objects, NULL);
@@ -3896,14 +3851,11 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                      0,
                      sizeof(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i]));
 
-            pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].value = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues[i];
-            pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].cmdqueue_fence = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences[i].Get();
-            int event_fd = 0;
-            pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].event = d3d12_fence_create_event(&event_fd);
-            pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].cmdqueue_fence->SetEventOnCompletion(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].value,
-               pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].event);
+            pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].reset(
+               d3d12_create_fence_raw(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences[i].Get(),
+                                      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues[i]));
 
-            slice_fences[i] = (pipe_fence_handle*) &pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i];
+            d3d12_fence_reference((struct d3d12_fence **)&slice_fences[i], pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[i].get());
          }
 
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionBitstreamsBaseOffsets.resize(num_slice_objects, 0u);
@@ -4259,8 +4211,9 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          *pMetadata = opt_metadata;
       return;
    }
-
-   bool wait_res = d3d12_video_encoder_sync_completion(codec, feedback_fence->cmdqueue_fence, requested_metadata_fence, OS_TIMEOUT_INFINITE);
+   
+   
+   bool wait_res = d3d12_fence_finish(feedback_fence, OS_TIMEOUT_INFINITE);
    if (!wait_res) {
       opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
       debug_printf("Error: d3d12_video_encoder_get_feedback for Encode GPU command for fence %" PRIu64 " failed on d3d12_video_encoder_sync_completion\n",
@@ -4740,7 +4693,8 @@ d3d12_video_encoder_end_frame(struct pipe_video_codec * codec,
    pD3D12Enc->m_bPendingWorkNotFlushed = true;
 
    size_t current_metadata_slot = d3d12_video_encoder_metadata_current_index(pD3D12Enc);
-   *picture->fence = (pipe_fence_handle *) &pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData;
+   if (picture->fence)
+      d3d12_fence_reference((struct d3d12_fence **)picture->fence, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_fence.get());
 
    return 0;
 }
@@ -4883,8 +4837,12 @@ d3d12_video_encoder_fence_wait(struct pipe_video_codec *codec,
    struct d3d12_fence *fence = (struct d3d12_fence *) _fence;
    assert(fence);
 
-   bool wait_res =
-      d3d12_video_encoder_sync_completion(codec, fence->cmdqueue_fence, fence->value, timeout);
+   bool wait_res = d3d12_fence_finish(fence, timeout);
+   if (wait_res) {
+      // Opportunistically reset batches
+      for (uint32_t i = 0; i < D3D12_VIDEO_ENC_ASYNC_DEPTH; ++i)
+         d3d12_video_encoder_sync_completion(codec, i, 0);
+   }
 
    // Return semantics based on p_video_codec interface
    // ret == 0 -> Encode in progress

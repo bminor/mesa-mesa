@@ -40,27 +40,30 @@ destroy_fence(struct d3d12_fence *fence)
    FREE(fence);
 }
 
-bool
-d3d12_reset_fence(struct d3d12_fence *fence, ID3D12Fence *d3d12_fence_obj, uint64_t fence_value)
+struct d3d12_fence *
+d3d12_create_fence(struct d3d12_screen *screen, bool signal_new)
 {
-   d3d12_fence_close_event(fence->event, fence->event_fd);
-   fence->cmdqueue_fence = d3d12_fence_obj;
-   fence->value = fence_value;
-   fence->event = d3d12_fence_create_event(&fence->event_fd);
-   fence->signaled = false;
+   struct d3d12_fence *ret =
+      d3d12_create_fence_raw(screen->fence, screen->fence_value + (signal_new ? 1 : 0));
+   if (!ret) {
+      debug_printf("CALLOC_STRUCT failed\n");
+      return NULL;
+   }
 
-   if (FAILED(fence->cmdqueue_fence->SetEventOnCompletion(fence->value, fence->event)))
-      goto fail;
-
-   return true;
+   if (signal_new) {
+      ++screen->fence_value;
+      if (FAILED(screen->cmdqueue->Signal(screen->fence, ret->value)))
+         goto fail;
+   }
+   return ret;
 
 fail:
-   d3d12_fence_close_event(fence->event, fence->event_fd);
-   return false;
+   destroy_fence(ret);
+   return NULL;
 }
 
 struct d3d12_fence *
-d3d12_create_fence(struct d3d12_screen *screen, bool signal_new)
+d3d12_create_fence_raw(ID3D12Fence *fence, uint64_t value)
 {
    struct d3d12_fence *ret = CALLOC_STRUCT(d3d12_fence);
    if (!ret) {
@@ -69,13 +72,12 @@ d3d12_create_fence(struct d3d12_screen *screen, bool signal_new)
    }
 
    ret->type = PIPE_FD_TYPE_NATIVE_SYNC;
-   uint64_t value = screen->fence_value;
-   if (signal_new) {
-      value = ++screen->fence_value;
-      if (FAILED(screen->cmdqueue->Signal(screen->fence, value)))
-         goto fail;
-   }
-   if(!d3d12_reset_fence(ret, screen->fence, value))
+   ret->cmdqueue_fence = fence;
+   ret->value = value;
+   ret->event = d3d12_fence_create_event(&ret->event_fd);
+   ret->signaled = false;
+
+   if (FAILED(fence->SetEventOnCompletion(value, ret->event)))
       goto fail;
 
    pipe_reference_init(&ret->reference, 1);
@@ -122,6 +124,12 @@ d3d12_fence_reference(struct d3d12_fence **ptr, struct d3d12_fence *fence)
       destroy_fence((struct d3d12_fence *)*ptr);
 
    *ptr = fence;
+}
+
+void
+d3d12_video_destroy_fence(struct pipe_video_codec *codec, struct pipe_fence_handle *fence)
+{
+   d3d12_fence_reference((struct d3d12_fence **)&fence, nullptr);
 }
 
 static void

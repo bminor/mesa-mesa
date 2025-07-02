@@ -65,7 +65,7 @@ d3d12_video_create_decoder(struct pipe_context *context, const struct pipe_video
    // Not using new doesn't call ctor and the initializations in the class declaration are lost
    struct d3d12_video_decoder *pD3D12Dec = new d3d12_video_decoder;
 
-   pD3D12Dec->m_inflightResourcesPool.resize(D3D12_VIDEO_DEC_ASYNC_DEPTH, { 0 });
+   pD3D12Dec->m_inflightResourcesPool.resize(D3D12_VIDEO_DEC_ASYNC_DEPTH);
 
    pD3D12Dec->base = *codec;
    pD3D12Dec->m_screen = context->screen;
@@ -81,6 +81,7 @@ d3d12_video_create_decoder(struct pipe_context *context, const struct pipe_video
    pD3D12Dec->base.end_frame = d3d12_video_decoder_end_frame;
    pD3D12Dec->base.flush = d3d12_video_decoder_flush;
    pD3D12Dec->base.fence_wait = d3d12_video_decoder_fence_wait;
+   pD3D12Dec->base.destroy_fence = d3d12_video_destroy_fence;
 
    pD3D12Dec->m_decodeFormat = d3d12_convert_pipe_video_profile_to_dxgi_format(codec->profile);
    pD3D12Dec->m_d3d12DecProfileType = d3d12_video_decoder_convert_pipe_video_profile_to_profile_type(codec->profile);
@@ -157,8 +158,7 @@ d3d12_video_decoder_destroy(struct pipe_video_codec *codec)
    // Flush and wait for completion of any in-flight GPU work before destroying objects
    d3d12_video_decoder_flush(codec);
    if (pD3D12Dec->m_fenceValue > 1 /* Check we submitted at least one frame */) {
-      auto decode_queue_completion_fence = pD3D12Dec->m_inflightResourcesPool[(pD3D12Dec->m_fenceValue - 1u) % D3D12_VIDEO_DEC_ASYNC_DEPTH].m_FenceData;
-      d3d12_video_decoder_sync_completion(codec, decode_queue_completion_fence.cmdqueue_fence, decode_queue_completion_fence.value, OS_TIMEOUT_INFINITE);
+      d3d12_video_decoder_sync_completion(codec, (pD3D12Dec->m_fenceValue - 1u) % D3D12_VIDEO_DEC_ASYNC_DEPTH, OS_TIMEOUT_INFINITE);
       struct pipe_fence_handle *context_queue_completion_fence = NULL;
       pD3D12Dec->base.context->flush(pD3D12Dec->base.context, &context_queue_completion_fence, PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
       pD3D12Dec->m_pD3D12Screen->base.fence_finish(&pD3D12Dec->m_pD3D12Screen->base, NULL, context_queue_completion_fence, OS_TIMEOUT_INFINITE);
@@ -201,17 +201,13 @@ d3d12_video_decoder_begin_frame(struct pipe_video_codec *codec,
    ///
    /// Wait here to make sure the next in flight resource set is empty before using it
    ///
-   uint64_t fenceValueToWaitOn = static_cast<uint64_t>(
-      std::max(static_cast<int64_t>(0l),
-               static_cast<int64_t>(pD3D12Dec->m_fenceValue) - static_cast<int64_t>(D3D12_VIDEO_DEC_ASYNC_DEPTH)));
-
-   debug_printf("[d3d12_video_decoder] d3d12_video_decoder_begin_frame Waiting for completion of in flight resource "
-                "sets with previous work with fenceValue: %" PRIu64 "\n",
-                fenceValueToWaitOn);
-
-   ASSERTED bool wait_res =
-      d3d12_video_decoder_sync_completion(codec, pD3D12Dec->m_spFence.Get(), fenceValueToWaitOn, OS_TIMEOUT_INFINITE);
-   assert(wait_res);
+   if (pD3D12Dec->m_fenceValue >= D3D12_VIDEO_DEC_ASYNC_DEPTH) {
+      debug_printf("[d3d12_video_decoder] d3d12_video_decoder_begin_frame Waiting for completion of in flight resource "
+                   "sets with previous work\n");
+      ASSERTED bool wait_res =
+         d3d12_video_decoder_sync_completion(codec, pD3D12Dec->m_fenceValue % D3D12_VIDEO_DEC_ASYNC_DEPTH, OS_TIMEOUT_INFINITE);
+      assert(wait_res);
+   }
 
    HRESULT hr = pD3D12Dec->m_spDecodeCommandList->Reset(
       pD3D12Dec->m_inflightResourcesPool[d3d12_video_decoder_pool_current_index(pD3D12Dec)].m_spCommandAllocator.Get());
@@ -679,7 +675,8 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
 
    if (pD3D12Dec->m_spDPBManager->is_pipe_buffer_underlying_output_decode_allocation()) {
       // No need to copy, the output surface fence is merely the decode queue fence
-      *picture->fence = (pipe_fence_handle *) &pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_FenceData;
+      if (picture->fence)
+         d3d12_fence_reference((struct d3d12_fence **)picture->fence, pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_fence.get());
    } else {
       ///
       /// If !pD3D12Dec->m_spDPBManager->is_pipe_buffer_underlying_output_decode_allocation()
@@ -698,9 +695,8 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
       assert(pPipeSrc);
 
       // GPU wait on the graphics context which will do the copy until the decode finishes
-      pD3D12Screen->cmdqueue->Wait(
-         pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_FenceData.cmdqueue_fence,
-         pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_FenceData.value);
+      pD3D12Dec->base.context->fence_server_sync(pD3D12Dec->base.context,
+                                                 (struct pipe_fence_handle *)pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_fence.get());
 
       // Copy all format subresources/texture planes
       for (PlaneSlice = 0; PlaneSlice < pD3D12Dec->m_decodeFormatInfo.PlaneCount; PlaneSlice++) {
@@ -740,8 +736,12 @@ d3d12_video_decoder_fence_wait(struct pipe_video_codec *codec, struct pipe_fence
    struct d3d12_fence *fenceValueToWaitOn = (struct d3d12_fence *) fence;
    assert(fenceValueToWaitOn);
 
-   ASSERTED bool wait_res =
-      d3d12_video_decoder_sync_completion(codec, fenceValueToWaitOn->cmdqueue_fence, fenceValueToWaitOn->value, timeout);
+   bool wait_res = d3d12_fence_finish(fenceValueToWaitOn, timeout);
+   if (wait_res) {
+      // Opportunistically reset batches
+      for (uint32_t i = 0; i < D3D12_VIDEO_DEC_ASYNC_DEPTH; ++i)
+         (void)d3d12_video_decoder_sync_completion(codec, i, 0);
+   }
 
    // Return semantics based on p_video_codec interface
    // ret == 0 -> Decode in progress
@@ -806,10 +806,8 @@ d3d12_video_decoder_flush(struct pipe_video_codec *codec)
       }
 
       // Set async fence info
-      ASSERTED bool success = d3d12_reset_fence(&inFlightResources.m_FenceData, pD3D12Dec->m_spFence.Get(), pD3D12Dec->m_fenceValue);
-      assert(success);
+      inFlightResources.m_fence.reset(d3d12_create_fence_raw(pD3D12Dec->m_spFence.Get(), pD3D12Dec->m_fenceValue++));
 
-      pD3D12Dec->m_fenceValue++;
       pD3D12Dec->m_needsGPUFlush = false;
    }
    return;
@@ -843,6 +841,7 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
       return false;
    }
 
+   uint64_t CompletionFenceValue = pD3D12Dec->m_fenceValue;
    for (auto &inputResource : pD3D12Dec->m_inflightResourcesPool) {
       hr = pD3D12Dec->m_pD3D12Screen->dev->CreateCommandAllocator(
          D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE,
@@ -853,6 +852,9 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
                       hr);
          return false;
       }
+
+      // Initialize fence for the in flight resource pool slot
+      inputResource.m_fence.reset(d3d12_create_fence_raw(pD3D12Dec->m_spFence.Get(), CompletionFenceValue++));
    }
 
    ComPtr<ID3D12Device4> spD3D12Device4;
@@ -1621,58 +1623,8 @@ d3d12_video_decoder_resolve_profile(d3d12_video_decode_profile_type profileType,
 }
 
 bool
-d3d12_video_decoder_ensure_fence_finished(struct pipe_video_codec *codec,
-                                          ID3D12Fence *fence,
-                                          uint64_t fenceValueToWaitOn,
-                                          uint64_t timeout_ns)
-{
-   bool wait_result = true;
-   HRESULT hr = S_OK;
-   uint64_t completedValue = fence->GetCompletedValue();
-
-   debug_printf(
-      "[d3d12_video_decoder] d3d12_video_decoder_ensure_fence_finished - Waiting for fence (with timeout_ns %" PRIu64
-      ") to finish with "
-      "fenceValue: %" PRIu64 " - Current Fence Completed Value %" PRIu64 "\n",
-      timeout_ns,
-      fenceValueToWaitOn,
-      completedValue);
-
-   if (completedValue < fenceValueToWaitOn) {
-
-      HANDLE event = {};
-      int event_fd = 0;
-      event = d3d12_fence_create_event(&event_fd);
-
-      hr = fence->SetEventOnCompletion(fenceValueToWaitOn, event);
-      if (FAILED(hr)) {
-         debug_printf("[d3d12_video_decoder] d3d12_video_decoder_ensure_fence_finished - SetEventOnCompletion for "
-                      "fenceValue %" PRIu64 " failed with HR %x\n",
-                      fenceValueToWaitOn,
-                      hr);
-         return false;
-      }
-
-      wait_result = d3d12_fence_wait_event(event, event_fd, timeout_ns);
-      d3d12_fence_close_event(event, event_fd);
-
-      debug_printf("[d3d12_video_decoder] d3d12_video_decoder_ensure_fence_finished - Waiting on fence to be done with "
-                   "fenceValue: %" PRIu64 " - current CompletedValue: %" PRIu64 "\n",
-                   fenceValueToWaitOn,
-                   completedValue);
-   } else {
-      debug_printf("[d3d12_video_decoder] d3d12_video_decoder_ensure_fence_finished - Fence already done with "
-                   "fenceValue: %" PRIu64 " - current CompletedValue: %" PRIu64 "\n",
-                   fenceValueToWaitOn,
-                   completedValue);
-   }
-   return wait_result;
-}
-
-bool
 d3d12_video_decoder_sync_completion(struct pipe_video_codec *codec,
-                                    ID3D12Fence *fence,
-                                    uint64_t fenceValueToWaitOn,
+                                    uint32_t frame_index,
                                     uint64_t timeout_ns)
 {
    struct d3d12_video_decoder *pD3D12Dec = (struct d3d12_video_decoder *) codec;
@@ -1681,18 +1633,16 @@ d3d12_video_decoder_sync_completion(struct pipe_video_codec *codec,
    assert(pD3D12Dec->m_spDecodeCommandQueue);
    HRESULT hr = S_OK;
 
-   ASSERTED bool wait_result = d3d12_video_decoder_ensure_fence_finished(codec, fence, fenceValueToWaitOn, timeout_ns);
-   assert(wait_result);
+   auto &pool_entry = pD3D12Dec->m_inflightResourcesPool[frame_index];
+   if (!d3d12_fence_finish(pool_entry.m_fence.get(), timeout_ns))
+      return false;
 
    // Release references granted on end_frame for this inflight operations
-   pD3D12Dec->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_DEC_ASYNC_DEPTH].m_spDecoder.Reset();
-   pD3D12Dec->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_DEC_ASYNC_DEPTH].m_spDecoderHeap.Reset();
-   pD3D12Dec->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_DEC_ASYNC_DEPTH].m_References.reset();
-   pD3D12Dec->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_DEC_ASYNC_DEPTH].m_stagingDecodeBitstream.resize(
-      0);
-   pipe_resource_reference(
-      &pD3D12Dec->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_DEC_ASYNC_DEPTH].pPipeCompressedBufferObj,
-      NULL);
+   pool_entry.m_spDecoder.Reset();
+   pool_entry.m_spDecoderHeap.Reset();
+   pool_entry.m_References.reset();
+   pool_entry.m_stagingDecodeBitstream.clear();
+   pipe_resource_reference(&pool_entry.pPipeCompressedBufferObj, NULL);
 
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pD3D12Dec->m_pD3D12Screen;
    assert(pD3D12Screen);
@@ -1703,8 +1653,7 @@ d3d12_video_decoder_sync_completion(struct pipe_video_codec *codec,
           .m_pBitstreamUploadGPUCompletionFence,
       NULL);
 
-   hr =
-      pD3D12Dec->m_inflightResourcesPool[fenceValueToWaitOn % D3D12_VIDEO_DEC_ASYNC_DEPTH].m_spCommandAllocator->Reset();
+   hr = pool_entry.m_spCommandAllocator->Reset();
    if (FAILED(hr)) {
       debug_printf("failed with %x.\n", hr);
       goto sync_with_token_fail;
@@ -1721,15 +1670,14 @@ d3d12_video_decoder_sync_completion(struct pipe_video_codec *codec,
    }
 
    debug_printf(
-      "[d3d12_video_decoder] d3d12_video_decoder_sync_completion - GPU execution finalized for fenceValue: %" PRIu64
-      "\n",
-      fenceValueToWaitOn);
+      "[d3d12_video_decoder] d3d12_video_decoder_sync_completion - GPU execution finalized for frame index: %u\n",
+      frame_index);
 
-   return wait_result;
+   return true;
 
 sync_with_token_fail:
-   debug_printf("[d3d12_video_decoder] d3d12_video_decoder_sync_completion failed for fenceValue: %" PRIu64 "\n",
-                fenceValueToWaitOn);
+   debug_printf("[d3d12_video_decoder] d3d12_video_decoder_sync_completion failed for frame index: %u\n",
+                frame_index);
    assert(false);
    return false;
 }

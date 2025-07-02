@@ -99,7 +99,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec);
  * and releases the in-flight resources
  */
 bool
-d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec, ID3D12Fence *fence, uint64_t fenceValueToWaitOn, uint64_t timeout_ns);
+d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec, size_t pool_index, uint64_t timeout_ns);
 
 /**
  * Get feedback fence.
@@ -490,7 +490,7 @@ struct EncodedBitstreamResolvedMetadata
    std::vector<UINT64> ppResolvedSubregionSizes;
    std::vector<UINT64> ppResolvedSubregionOffsets;
    std::vector<ID3D12Fence*> ppSubregionFences;
-   std::vector<struct d3d12_fence> pSubregionPipeFences;
+   std::vector<d3d12_unique_fence> pSubregionPipeFences;
    std::vector<UINT64> pSubregionBitstreamsBaseOffsets;
    std::vector<UINT64> ppSubregionFenceValues;
    /* Slice headers written before each slices */
@@ -523,7 +523,7 @@ struct EncodedBitstreamResolvedMetadata
    uint64_t expected_max_slice_size = 0;
 
    /* Pending fence data for this frame */
-   struct d3d12_fence m_FenceData;
+   d3d12_unique_fence m_fence;
 };
 
 enum d3d12_video_encoder_driver_workarounds
@@ -591,6 +591,7 @@ struct d3d12_video_encoder
       ComPtr<ID3D12CommandAllocator> m_spCommandAllocator;
 
       struct d3d12_fence* m_InputSurfaceFence = NULL;
+      d3d12_unique_fence m_CompletionFence;
 
       /* Stores encode result for submission error control in the D3D12_VIDEO_ENC_ASYNC_DEPTH slots */
       enum pipe_video_feedback_encode_result_flags encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
