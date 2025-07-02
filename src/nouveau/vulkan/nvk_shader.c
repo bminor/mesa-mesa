@@ -909,10 +909,12 @@ nvk_compile_shader(struct nvk_device *dev,
       return result;
    }
 
-   result = nvk_shader_upload(dev, shader);
-   if (result != VK_SUCCESS) {
-      nvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
-      return result;
+   if (dev->nvkmd) {
+      result = nvk_shader_upload(dev, shader);
+      if (result != VK_SUCCESS) {
+         nvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
+         return result;
+      }
    }
 
    if (info->stage == MESA_SHADER_FRAGMENT) {
@@ -923,7 +925,7 @@ nvk_compile_shader(struct nvk_device *dev,
       }
    }
 
-   if (info->stage != MESA_SHADER_COMPUTE) {
+   if (info->stage != MESA_SHADER_COMPUTE && dev->nvkmd) {
       result = nvk_shader_fill_push(dev, shader, pAllocator);
       if (result != VK_SUCCESS) {
          nvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
@@ -1062,13 +1064,15 @@ nvk_deserialize_shader(struct vk_device *vk_dev,
       return vk_error(dev, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
    }
 
-   result = nvk_shader_upload(dev, shader);
-   if (result != VK_SUCCESS) {
-      nvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
-      return result;
+   if (dev->nvkmd) {
+      result = nvk_shader_upload(dev, shader);
+      if (result != VK_SUCCESS) {
+         nvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
+         return result;
+      }
    }
 
-   if (info.stage != MESA_SHADER_COMPUTE) {
+   if (info.stage != MESA_SHADER_COMPUTE && dev->nvkmd) {
       result = nvk_shader_fill_push(dev, shader, pAllocator);
       if (result != VK_SUCCESS) {
          nvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
