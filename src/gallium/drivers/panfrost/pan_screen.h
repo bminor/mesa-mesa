@@ -179,4 +179,11 @@ void panfrost_cmdstream_screen_init_v13(struct panfrost_screen *screen);
       util_debug_message(&ctx->base.debug, PERF_INFO, __VA_ARGS__);            \
    } while (0)
 
+#define afbcp_debug(ctx, ...)                                                  \
+   do {                                                                        \
+      if (unlikely(pan_device((ctx)->base.screen)->debug & PAN_DBG_FORCE_PACK)) \
+         mesa_logw(__VA_ARGS__);                                               \
+      util_debug_message(&ctx->base.debug, INFO, __VA_ARGS__);                 \
+   } while (0)
+
 #endif /* PAN_SCREEN_H */

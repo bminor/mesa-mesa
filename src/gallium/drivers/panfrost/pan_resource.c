@@ -2011,6 +2011,11 @@ pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
 {
    MESA_TRACE_FUNC();
 
+   afbcp_debug(ctx,
+               "AFBC-P prsrc=%p: Get payload sizes (reads=%u bo_size=%zu)",
+               prsrc, prsrc->afbcp->nr_consecutive_reads,
+               panfrost_bo_size(prsrc->bo));
+
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    uint64_t modifier = prsrc->modifier;
@@ -2056,6 +2061,11 @@ pan_resource_afbcp_get_payload_offsets(struct panfrost_context *ctx,
                                        struct panfrost_resource *prsrc)
 {
    MESA_TRACE_FUNC();
+
+   afbcp_debug(ctx,
+               "AFBC-P prsrc=%p: Get payload offsets (reads=%u bo_size=%zu)",
+               prsrc, prsrc->afbcp->nr_consecutive_reads,
+               panfrost_bo_size(prsrc->bo));
 
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    uint64_t modifier = prsrc->modifier;
@@ -2131,6 +2141,10 @@ pan_resource_afbcp_pack(struct panfrost_context *ctx,
 {
    MESA_TRACE_FUNC();
 
+   afbcp_debug(ctx, "AFBC-P prsrc=%p: Pack (reads=%u bo_size=%zu ratio=%.2f)",
+               prsrc, prsrc->afbcp->nr_consecutive_reads,
+               panfrost_bo_size(prsrc->bo), prsrc->afbcp->ratio);
+
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    uint64_t modifier = prsrc->modifier & ~AFBC_FORMAT_MOD_SPARSE;
@@ -2173,6 +2187,11 @@ pan_resource_afbcp_commit(struct panfrost_context *ctx,
                           struct panfrost_resource *prsrc)
 {
    MESA_TRACE_FUNC();
+
+   afbcp_debug(ctx,
+               "AFBC-P prsrc=%p: Commit (reads=%u bo_size=%zu ratio=%.2f)",
+               prsrc, prsrc->afbcp->nr_consecutive_reads,
+               panfrost_bo_size(prsrc->bo), prsrc->afbcp->ratio);
 
    uint64_t modifier = prsrc->modifier & ~AFBC_FORMAT_MOD_SPARSE;
    assert(!panfrost_is_emulated_mod(modifier));
@@ -2245,9 +2264,6 @@ pan_resource_afbcp_update(struct panfrost_context *ctx,
          (float)panfrost_bo_size(prsrc->bo) / prsrc->afbcp->size;
       if (100.0f / prsrc->afbcp->ratio > screen->max_afbc_packing_ratio)
          goto stop_packing;
-      perf_debug(ctx, "AFBC-P ratio: %.2f (%zu KB -> %u KB)\n",
-                 prsrc->afbcp->ratio, panfrost_bo_size(prsrc->bo) / 1024,
-                 prsrc->afbcp->size / 1024);
    }
 
    /* 3rd async AFBC-P step: pack. */
