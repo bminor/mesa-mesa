@@ -744,6 +744,12 @@ is_format_supported(struct pipe_screen *pscreen,
    return modifier == DRM_FORMAT_MOD_LINEAR;
 }
 
+static bool
+is_rendering_supported(struct pipe_screen *pscreen, enum pipe_format format)
+{
+   return pscreen->is_format_supported(pscreen, format, PIPE_TEXTURE_2D, 0, 0, PIPE_BIND_RENDER_TARGET);
+}
+
 static void
 fd_screen_query_dmabuf_modifiers(struct pipe_screen *pscreen,
                                  enum pipe_format format, int max,
@@ -767,7 +773,7 @@ fd_screen_query_dmabuf_modifiers(struct pipe_screen *pscreen,
             modifiers[num] = all_modifiers[i];
 
          if (external_only)
-            external_only[num] = false;
+            external_only[num] = !is_rendering_supported(pscreen, format);
       }
 
       num++;
