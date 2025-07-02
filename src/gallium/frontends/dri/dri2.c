@@ -1818,12 +1818,6 @@ dri2_unmap_image(struct dri_context *ctx, struct dri_image *image, void *data)
 }
 
 int
-dri2_get_capabilities(struct dri_screen *screen)
-{
-   return (screen->can_share_buffer ? __DRI_IMAGE_CAP_GLOBAL_NAMES : 0);
-}
-
-int
 dri_interop_query_device_info(struct dri_context *ctx,
                                struct mesa_glinterop_device_info *out)
 {

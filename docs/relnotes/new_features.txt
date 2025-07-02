@@ -65,3 +65,4 @@ VK_EXT_non_seamless_cube_map on panvk
 VK_ARM_shader_core_properties on panvk/v10+
 removed X11 DRI2 support
 removed EGL_MESA_drm_image
+removed pre-dmabuf wl_drm support

@@ -272,8 +272,6 @@ dri2_blit_image(struct dri_context *ctx, struct dri_image *dst, struct dri_image
                 int dstx0, int dsty0, int dstwidth, int dstheight,
                 int srcx0, int srcy0, int srcwidth, int srcheight,
                 int flush_flag);
-PUBLIC int
-dri2_get_capabilities(struct dri_screen *_screen);
 PUBLIC void *
 dri2_map_image(struct dri_context *ctx, struct dri_image *image,
                int x0, int y0, int width, int height,

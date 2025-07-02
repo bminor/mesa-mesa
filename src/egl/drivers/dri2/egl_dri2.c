@@ -2635,21 +2635,15 @@ dri2_destroy_image_khr(_EGLDisplay *disp, _EGLImage *image)
 #ifdef HAVE_WAYLAND_PLATFORM
 
 static void
-dri2_wl_reference_buffer(void *user_data, uint32_t name, int fd,
-                         struct wl_drm_buffer *buffer)
+dri2_wl_reference_buffer(void *user_data, int fd, struct wl_drm_buffer *buffer)
 {
    _EGLDisplay *disp = user_data;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
-   if (fd == -1)
-      buffer->driver_buffer = dri2_from_names(
-         dri2_dpy->dri_screen_render_gpu, buffer->width, buffer->height,
-         buffer->format, (int *)&name, 1, buffer->stride, buffer->offset, NULL);
-   else
-      buffer->driver_buffer = dri2_from_dma_bufs(
-         dri2_dpy->dri_screen_render_gpu, buffer->width, buffer->height,
-         buffer->format, DRM_FORMAT_MOD_INVALID, &fd, 1, buffer->stride,
-         buffer->offset, 0, 0, 0, 0, 0, NULL, NULL);
+   buffer->driver_buffer = dri2_from_dma_bufs(
+      dri2_dpy->dri_screen_render_gpu, buffer->width, buffer->height,
+      buffer->format, DRM_FORMAT_MOD_INVALID, &fd, 1, buffer->stride,
+      buffer->offset, 0, 0, 0, 0, 0, NULL, NULL);
 }
 
 static void
@@ -2668,7 +2662,6 @@ dri2_bind_wayland_display_wl(_EGLDisplay *disp, struct wl_display *wl_dpy)
       .release_buffer = dri2_wl_release_buffer,
       .is_format_supported = dri2_wl_is_format_supported,
    };
-   int flags = 0;
    char *device_name;
 
    if (dri2_dpy->wl_server_drm)
@@ -2680,11 +2673,11 @@ dri2_bind_wayland_display_wl(_EGLDisplay *disp, struct wl_display *wl_dpy)
    if (!device_name)
       goto fail;
 
-   if (dri2_dpy->has_dmabuf_import && dri2_dpy->has_dmabuf_export)
-      flags |= WAYLAND_DRM_PRIME;
+   if (!dri2_dpy->has_dmabuf_import || !dri2_dpy->has_dmabuf_export)
+      goto fail;
 
    dri2_dpy->wl_server_drm =
-      wayland_drm_init(wl_dpy, device_name, &wl_drm_callbacks, disp, flags);
+      wayland_drm_init(wl_dpy, device_name, &wl_drm_callbacks, disp);
 
    free(device_name);
 
