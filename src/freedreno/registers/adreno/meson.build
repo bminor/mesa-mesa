@@ -8,6 +8,7 @@ xml_reg_files = [
   'a5xx.xml',
   'a6xx.xml',
   'a6xx_enums.xml',
+  'a6xx_descriptors.xml',
   'a6xx_perfcntrs.xml',
   'a7xx_enums.xml',
   'a7xx_perfcntrs.xml',
