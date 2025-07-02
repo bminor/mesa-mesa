@@ -234,14 +234,14 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                       done );
       m_pPipeVideoBlitter->flush( m_pPipeVideoBlitter );
 
-      assert( *vpblit_params.base.fence );   // Driver must have returned the completion fence
+      assert(dst_surface_fence);   // Driver must have returned the completion fence
       // Wait for downscaling completion before encode can proceed
 
-      ASSERTED bool finished = m_pPipeVideoCodec->context->screen->fence_finish( m_pPipeVideoCodec->context->screen,
-                                                                                 NULL, /*passing non NULL resets GRFX context*/
-                                                                                 *vpblit_params.base.fence,
-                                                                                 OS_TIMEOUT_INFINITE );
+      ASSERTED bool finished = m_pPipeVideoCodec->fence_wait( m_pPipeVideoCodec,
+                                                              dst_surface_fence,
+                                                              OS_TIMEOUT_INFINITE );
       assert( finished );
+      m_pPipeVideoCodec->destroy_fence( m_pPipeVideoCodec, dst_surface_fence);
    }
 #endif   // ENCODE_WITH_TWO_PASS
 
