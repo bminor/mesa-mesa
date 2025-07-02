@@ -395,6 +395,8 @@ cmdstream[0]: 207 dwords
 			HLSQ_UPDATE_CNTL: 0x1f00000
 0000000500190270:		0000: 40e78a01 01f00000
 		opcode: CP_INDIRECT_BUFFER (3f) (4 dwords)
+			{ IB_BASE = 0x50001b000 }
+			{ IB_SIZE = 0x4b }
 		ibaddr:000000050001b000
 		ibsize:0000004b
 			opcode: CP_PERFCOUNTER_ACTION (50) (4 dwords)
@@ -556,6 +558,8 @@ cmdstream[0]: 207 dwords
 		opcode: CP_SET_VISIBILITY_OVERRIDE (64) (2 dwords)
 0000000500190290:		0000: 70640001 00000001
 		opcode: CP_INDIRECT_BUFFER (3f) (4 dwords)
+			{ IB_BASE = 0x500170000 }
+			{ IB_SIZE = 0x4f }
 		ibaddr:0000000500170000
 		ibsize:0000004f
 			write HLSQ_CONTROL_0_REG (e784)

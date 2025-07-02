@@ -432,6 +432,8 @@ cmdstream[0]: 265 dwords
 		opcode: CP_SET_MODE (63) (2 dwords)
 00000000010583b0:		0000: 70e30001 00000000
 		opcode: CP_INDIRECT_BUFFER (3f) (4 dwords)
+			{ IB_BASE = 0x115e000 }
+			{ IB_SIZE = 0xf1 }
 		ibaddr:000000000115e000
 		ibsize:000000f1
 			opcode: CP_COND_REG_EXEC (47) (3 dwords)
@@ -1507,6 +1509,8 @@ cmdstream[0]: 265 dwords
 000000000115e3b4:			0020: 00000000 0116300c 00000000 00000028
 00000000010583b8:		0000: 70bf8003 0115e000 00000000 000000f1
 		opcode: CP_INDIRECT_BUFFER (3f) (4 dwords)
+			{ IB_BASE = 0x115c000 }
+			{ IB_SIZE = 0x1c }
 		ibaddr:000000000115c000
 		ibsize:0000001c
 			opcode: CP_SET_DRAW_STATE (43) (4 dwords)
