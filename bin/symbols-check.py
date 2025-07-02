@@ -8,6 +8,8 @@ import subprocess
 # This list contains symbols that _might_ be exported for some platforms
 PLATFORM_SYMBOLS = [
     '_GLOBAL_OFFSET_TABLE_',
+    '_ITM_deregisterTMCloneTable',
+    '_ITM_registerTMCloneTable',
     '__bss_end__',
     '__bss_start',
     '__bss_start__',
@@ -21,6 +23,7 @@ PLATFORM_SYMBOLS = [
     '__cxa_deleted_virtual',
     '__cxa_demangle',
     '__cxa_end_catch',
+    '__cxa_finalize',
     '__cxa_free_dependent_exception',
     '__cxa_free_exception',
     '__cxa_get_exception_ptr',
@@ -39,12 +42,15 @@ PLATFORM_SYMBOLS = [
     '__cxa_uncaught_exception',
     '__cxa_uncaught_exceptions',
     '__cxa_unexpected_handler',
+    '__deregister_frame_info',
     '__dynamic_cast',
     '__emutls_get_address',
     '__end__',
+    '__gmon_start__',
     '__gxx_personality_v0',
     '__odr_asan._glapi_Context',
     '__odr_asan._glapi_Dispatch',
+    '__register_frame_info',
     '_bss_end__',
     '_edata',
     '_end',
@@ -53,6 +59,9 @@ PLATFORM_SYMBOLS = [
     '_fini',
     '_ftext',
     '_init',
+    'pthread_mutexattr_destroy',
+    'pthread_mutexattr_init',
+    'pthread_mutexattr_settype',
 ]
 
 
