@@ -1030,7 +1030,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
       std::lock_guard<std::mutex> lock( pThis->m_lock );
       while( !bHasEncodingError && pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
       {
-         pipe_enc_feedback_metadata metadata = { 0 };
+         pipe_enc_feedback_metadata metadata = { };
          unsigned int encoded_bitstream_bytes = 0u;
          ComPtr<IMFSample> spOutputSample;
          MFCreateSample( &spOutputSample );
