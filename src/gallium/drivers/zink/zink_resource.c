@@ -164,8 +164,8 @@ zink_debug_mem_print_stats(struct zink_screen *screen)
    simple_mtx_unlock(&screen->debug_mem_lock);
 }
 
-static void
-image_hic_transition(struct zink_screen *screen, struct zink_resource *res, VkImageLayout layout)
+void
+zink_resource_image_hic_transition(struct zink_screen *screen, struct zink_resource *res, VkImageLayout layout)
 {
    VkHostImageLayoutTransitionInfoEXT t = {
       VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT,
@@ -1711,7 +1711,7 @@ resource_create(struct pipe_screen *pscreen,
       /* immediately switch to GENERAL layout if possible to avoid extra sync */
       if (res->obj->image && res->queue != VK_QUEUE_FAMILY_FOREIGN_EXT && (res->obj->vkusage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) &&
           screen->driver_workarounds.general_layout)
-         image_hic_transition(screen, res, VK_IMAGE_LAYOUT_GENERAL);
+         zink_resource_image_hic_transition(screen, res, VK_IMAGE_LAYOUT_GENERAL);
    }
    if (res->obj->exportable)
       res->base.b.bind |= ZINK_BIND_DMABUF;
@@ -2703,7 +2703,7 @@ zink_image_subdata(struct pipe_context *pctx,
 
       /* only pre-transition uninit images to avoid thrashing */
       if (change_layout)
-         image_hic_transition(screen, res, VK_IMAGE_LAYOUT_GENERAL);
+         zink_resource_image_hic_transition(screen, res, VK_IMAGE_LAYOUT_GENERAL);
       VkMemoryToImageCopyEXT region = {
          VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT,
          NULL,
@@ -2729,7 +2729,7 @@ zink_image_subdata(struct pipe_context *pctx,
           box->width == pres->width0 && box->height == pres->height0 &&
           ((is_arrayed && box->depth == pres->array_size) || (!is_arrayed && box->depth == pres->depth0))) {
          /* assume full copy single-mip images use shader read access */
-         image_hic_transition(screen, res, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+         zink_resource_image_hic_transition(screen, res, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
          /* assume multi-mip where further subdata calls may happen */
       }
       /* make sure image is marked as having data */

@@ -38,6 +38,9 @@
 extern "C" {
 #endif
 
+void
+zink_resource_image_hic_transition(struct zink_screen *screen, struct zink_resource *res, VkImageLayout layout);
+
 bool
 zink_screen_resource_init(struct pipe_screen *pscreen);
 
