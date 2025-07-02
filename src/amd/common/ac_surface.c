@@ -1205,8 +1205,8 @@ static uint64_t ac_estimate_size(const struct ac_surf_config *config,
    assert(bpp);
    unsigned num_samples = MAX2(1, config->info.samples);
    unsigned bpe = bpp / 8;
-   unsigned width = align(in_width, align_width * blk_w);
-   unsigned height = align(in_height , align_height * blk_h);
+   unsigned width = util_align_npot(in_width, align_width * blk_w);
+   unsigned height = util_align_npot(in_height , align_height * blk_h);
    unsigned depth = align(config->is_3d ? config->info.depth :
                           config->is_cube ? 6 : config->info.array_size, align_depth);
    unsigned tile_size_bytes = align_width * align_height * align_depth * num_samples * bpe;
