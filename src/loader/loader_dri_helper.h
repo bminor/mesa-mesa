@@ -104,11 +104,11 @@ struct loader_screen_resources {
 #define __DRI_IMAGE_FORMAT_ABGR1555	PIPE_FORMAT_R5G5B5A1_UNORM
 #define __DRI_IMAGE_FORMAT_XBGR1555	PIPE_FORMAT_R5G5B5X1_UNORM
 
-int
-loader_image_format_to_fourcc(int format);
+uint32_t
+loader_pipe_format_to_fourcc(enum pipe_format pipe);
 
-int
-loader_fourcc_to_image_format(int format);
+enum pipe_format
+loader_fourcc_to_pipe_format(uint32_t fourcc);
 
 #ifdef HAVE_X11_PLATFORM
 void
