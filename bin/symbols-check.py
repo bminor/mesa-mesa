@@ -72,7 +72,7 @@ def get_symbols_nm(nm, lib):
             continue
         symbol_name = fields[0]
         if platform_name == 'Linux' or platform_name == 'GNU' or platform_name.startswith('GNU/'):
-            if symbol_name in PLATFORM_SYMBOLS:
+            if symbol_name.split('@')[0] in PLATFORM_SYMBOLS:
                 continue
         elif platform_name == 'Darwin':
             assert symbol_name[0] == '_'
