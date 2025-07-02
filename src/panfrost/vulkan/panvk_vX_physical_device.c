@@ -111,6 +111,7 @@ panvk_per_arch(get_physical_device_extensions)(
 #endif
       .KHR_synchronization2 = true,
       .KHR_timeline_semaphore = true,
+      .KHR_unified_image_layouts = true,
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_variable_pointers = true,
       .KHR_vertex_attribute_divisor = true,
@@ -478,6 +479,11 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_EXT_non_seamless_cube_map */
       .nonSeamlessCubeMap = true,
+
+      /* VK_KHR_unified_image_layouts */
+      .unifiedImageLayouts = true,
+      /* Video is not currently supported, so set to false */
+      .unifiedImageLayoutsVideo = false,
    };
 }
 
