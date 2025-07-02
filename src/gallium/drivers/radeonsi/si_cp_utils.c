@@ -26,7 +26,7 @@ static bool is_ts_event(unsigned event_type)
 void si_cp_release_mem_pws(struct si_context *sctx, struct radeon_cmdbuf *cs,
                            unsigned event_type, unsigned gcr_cntl)
 {
-   assert(sctx->gfx_level >= GFX11 && sctx->has_graphics);
+   assert(sctx->gfx_level >= GFX11 && sctx->is_gfx_queue);
    bool ts = is_ts_event(event_type);
    /* Extract GCR_CNTL fields because the encoding is different in RELEASE_MEM. */
    assert(G_586_GLI_INV(gcr_cntl) == 0);
@@ -94,7 +94,7 @@ void si_cp_acquire_mem_pws(struct si_context *sctx, struct radeon_cmdbuf *cs,
                            unsigned event_type, unsigned stage_sel, unsigned gcr_cntl,
                            unsigned distance, unsigned sqtt_flush_flags)
 {
-   assert(sctx->gfx_level >= GFX11 && sctx->has_graphics);
+   assert(sctx->gfx_level >= GFX11 && sctx->is_gfx_queue);
    bool ts = is_ts_event(event_type);
    bool cs_done = event_type == V_028A90_CS_DONE;
    bool ps = event_type == V_028A90_PS_DONE;
@@ -157,7 +157,7 @@ void si_cp_acquire_mem(struct si_context *sctx, struct radeon_cmdbuf *cs, unsign
       radeon_emit(gcr_cntl);      /* GCR_CNTL */
       radeon_end();
    } else {
-      bool compute_ib = !sctx->has_graphics;
+      bool compute_ib = !sctx->is_gfx_queue;
 
       /* This seems problematic with GFX7 (see #4764) */
       if (sctx->gfx_level != GFX7)

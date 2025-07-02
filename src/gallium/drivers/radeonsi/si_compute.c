@@ -696,7 +696,7 @@ static void si_emit_dispatch_packets(struct si_context *sctx, const struct pipe_
       /* Set PING_PONG_EN for every other dispatch.
        * Only allowed on a gfx queue, and PARTIAL_TG_EN and USE_THREAD_DIMENSIONS must be 0.
        */
-      if (sctx->has_graphics && !partial_block_en &&
+      if (sctx->is_gfx_queue && !partial_block_en &&
           !sctx->cs_shader_state.program->sel.info.uses_atomic_ordered_add) {
          dispatch_initiator |= S_00B800_PING_PONG_EN(sctx->compute_ping_pong_launch);
          sctx->compute_ping_pong_launch ^= 1;
@@ -745,7 +745,7 @@ static void si_emit_dispatch_packets(struct si_context *sctx, const struct pipe_
        * - COMPUTE_START_X/Y are in units of 2D subgrids, not workgroups
        *   (program COMPUTE_START_X to start_x >> log_x, COMPUTE_START_Y to start_y >> log_y).
        */
-      if (sctx->has_graphics && !partial_block_en &&
+      if (sctx->is_gfx_queue && !partial_block_en &&
           (info->indirect || info->grid[1] >= 4) && MIN2(info->block[0], info->block[1]) >= 4 &&
           si_get_2d_interleave_size(info, &log_x, &log_y)) {
          dispatch_interleave = S_00B8BC_INTERLEAVE_1D(1) || /* 1D is disabled */
@@ -754,7 +754,7 @@ static void si_emit_dispatch_packets(struct si_context *sctx, const struct pipe_
          dispatch_initiator |= S_00B800_INTERLEAVE_2D_EN(1);
       }
 
-      if (sctx->has_graphics) {
+      if (sctx->is_gfx_queue) {
          radeon_opt_set_sh_reg_idx(R_00B8BC_COMPUTE_DISPATCH_INTERLEAVE,
                                    SI_TRACKED_COMPUTE_DISPATCH_INTERLEAVE, 2, dispatch_interleave);
       } else {
@@ -886,7 +886,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
 
    si_check_dirty_buffers_textures(sctx);
 
-   if (sctx->has_graphics) {
+   if (sctx->is_gfx_queue) {
       if (sctx->num_draw_calls_sh_coherent.with_cb != sctx->num_draw_calls ||
           sctx->num_draw_calls_sh_coherent.with_db != sctx->num_draw_calls) {
          bool sync_cb = sctx->force_shader_coherency.with_cb ||
@@ -941,7 +941,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
       si_compute_resources_add_all_to_bo_list(sctx);
 
    /* Skipping setting redundant registers on compute queues breaks compute. */
-   if (!sctx->has_graphics) {
+   if (!sctx->is_gfx_queue) {
       BITSET_CLEAR_RANGE(sctx->tracked_regs.reg_saved_mask,
                          SI_FIRST_TRACKED_OTHER_REG, SI_NUM_ALL_TRACKED_REGS - 1);
    }
@@ -976,7 +976,7 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
    /* Registers that are not read from memory should be set before this: */
    si_emit_barrier_direct(sctx);
 
-   if (sctx->has_graphics && si_is_atom_dirty(sctx, &sctx->atoms.s.render_cond)) {
+   if (sctx->is_gfx_queue && si_is_atom_dirty(sctx, &sctx->atoms.s.render_cond)) {
       sctx->atoms.s.render_cond.emit(sctx, -1);
       si_set_atom_dirty(sctx, &sctx->atoms.s.render_cond, false);
    }

@@ -1958,7 +1958,7 @@ void si_init_query_functions(struct si_context *sctx)
    sctx->b.get_query_result = si_get_query_result;
    sctx->b.get_query_result_resource = si_get_query_result_resource;
 
-   if (sctx->has_graphics) {
+   if (sctx->is_gfx_queue) {
       sctx->atoms.s.render_cond.emit = si_emit_query_predication;
       sctx->b.render_condition = si_render_condition;
    }

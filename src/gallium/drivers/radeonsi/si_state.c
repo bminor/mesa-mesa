@@ -5013,13 +5013,13 @@ static bool gfx6_init_gfx_preamble_state(struct si_context *sctx)
    bool has_clear_state = sscreen->info.has_clear_state;
 
    /* We need more space because the preamble is large. */
-   struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 214, sctx->has_graphics);
+   struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 214, sctx->is_gfx_queue);
    if (!pm4) {
       mesa_loge("failed to allocate memory for cs_preamble_state");
       return false;
    }
 
-   if (sctx->has_graphics && !sctx->shadowing.registers) {
+   if (sctx->is_gfx_queue && !sctx->shadowing.registers) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       ac_pm4_cmd_add(&pm4->base, CC0_UPDATE_LOAD_ENABLES(1));
       ac_pm4_cmd_add(&pm4->base, CC1_UPDATE_SHADOW_ENABLES(1));
@@ -5037,7 +5037,7 @@ static bool gfx6_init_gfx_preamble_state(struct si_context *sctx)
 
    si_init_compute_preamble_state(sctx, pm4);
 
-   if (!sctx->has_graphics)
+   if (!sctx->is_gfx_queue)
       goto done;
 
    /* Graphics registers. */
@@ -5099,13 +5099,13 @@ static bool gfx10_init_gfx_preamble_state(struct si_context *sctx)
    struct si_screen *sscreen = sctx->screen;
 
    /* We need more space because the preamble is large. */
-   struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 214, sctx->has_graphics);
+   struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 214, sctx->is_gfx_queue);
    if (!pm4) {
       mesa_loge("failed to allocate memory for cs_preamble_state");
       return false;
    }
 
-   if (sctx->has_graphics && !sctx->shadowing.registers) {
+   if (sctx->is_gfx_queue && !sctx->shadowing.registers) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       ac_pm4_cmd_add(&pm4->base, CC0_UPDATE_LOAD_ENABLES(1));
       ac_pm4_cmd_add(&pm4->base, CC1_UPDATE_SHADOW_ENABLES(1));
@@ -5123,7 +5123,7 @@ static bool gfx10_init_gfx_preamble_state(struct si_context *sctx)
 
    si_init_compute_preamble_state(sctx, pm4);
 
-   if (!sctx->has_graphics)
+   if (!sctx->is_gfx_queue)
       goto done;
 
    /* Graphics registers. */
@@ -5171,26 +5171,26 @@ static bool gfx12_init_gfx_preamble_state(struct si_context *sctx)
 {
    struct si_screen *sscreen = sctx->screen;
 
-   struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 300, sctx->has_graphics);
+   struct si_pm4_state *pm4 = si_pm4_create_sized(sscreen, 300, sctx->is_gfx_queue);
    if (!pm4) {
       mesa_loge("failed to allocate memory for cs_preamble_state");
       return false;
    }
 
-   if (sctx->has_graphics && !sctx->shadowing.registers) {
+   if (sctx->is_gfx_queue && !sctx->shadowing.registers) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       ac_pm4_cmd_add(&pm4->base, CC0_UPDATE_LOAD_ENABLES(1));
       ac_pm4_cmd_add(&pm4->base, CC1_UPDATE_SHADOW_ENABLES(1));
    }
 
-   if (sctx->has_graphics && sscreen->dpbb_allowed) {
+   if (sctx->is_gfx_queue && sscreen->dpbb_allowed) {
       ac_pm4_cmd_add(&pm4->base, PKT3(PKT3_EVENT_WRITE, 0, 0));
       ac_pm4_cmd_add(&pm4->base, EVENT_TYPE(V_028A90_BREAK_BATCH) | EVENT_INDEX(0));
    }
 
    si_init_compute_preamble_state(sctx, pm4);
 
-   if (!sctx->has_graphics)
+   if (!sctx->is_gfx_queue)
       goto done;
 
    /* Graphics registers. */

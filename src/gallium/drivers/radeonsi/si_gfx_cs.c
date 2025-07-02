@@ -132,7 +132,7 @@ void si_flush_gfx_cs(struct si_context *ctx, unsigned flags, struct pipe_fence_h
 
    ctx->gfx_flush_in_progress = true;
 
-   if (ctx->has_graphics) {
+   if (ctx->is_gfx_queue) {
       if (!list_is_empty(&ctx->active_queries))
          si_suspend_queries(ctx);
 
@@ -534,7 +534,7 @@ void si_begin_new_gfx_cs(struct si_context *ctx, bool first_cs)
       radeon_end();
    }
 
-   if (!ctx->has_graphics) {
+   if (!ctx->is_gfx_queue) {
       ctx->initial_gfx_cs_size = ctx->gfx_cs.current.cdw;
       return;
    }

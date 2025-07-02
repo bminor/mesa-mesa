@@ -202,7 +202,7 @@ static void si_destroy_context(struct pipe_context *context)
    util_framebuffer_init(context, NULL, sctx->framebuffer.fb_cbufs, &sctx->framebuffer.fb_zsbuf);
    si_release_all_descriptors(sctx);
 
-   if (sctx->gfx_level >= GFX10 && sctx->has_graphics)
+   if (sctx->gfx_level >= GFX10 && sctx->is_gfx_queue)
       si_gfx11_destroy_query(sctx);
 
    if (sctx->sqtt) {
@@ -514,7 +514,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       return NULL;
    }
 
-   sctx->has_graphics = sscreen->info.gfx_level == GFX6 ||
+   sctx->is_gfx_queue = sscreen->info.gfx_level == GFX6 ||
                         /* Compute queues hang on Raven and derivatives, see:
                          * https://gitlab.freedesktop.org/mesa/mesa/-/issues/12310 */
                         ((sscreen->info.family == CHIP_RAVEN ||
@@ -558,7 +558,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       goto fail;
    }
 
-   if (!ws->cs_create(&sctx->gfx_cs, sctx->ctx, sctx->has_graphics ? AMD_IP_GFX : AMD_IP_COMPUTE,
+   if (!ws->cs_create(&sctx->gfx_cs, sctx->ctx, sctx->is_gfx_queue ? AMD_IP_GFX : AMD_IP_COMPUTE,
                       (void *)si_flush_gfx_cs, sctx)) {
       mesa_loge("can't create gfx_cs");
       sctx->gfx_cs.priv = NULL;
@@ -659,7 +659,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
    si_init_context_texture_functions(sctx);
 
    /* Initialize graphics-only context functions. */
-   if (sctx->has_graphics) {
+   if (sctx->is_gfx_queue) {
       if (sctx->gfx_level >= GFX10)
          si_gfx11_init_query(sctx);
       si_init_msaa_functions(sctx);
@@ -751,7 +751,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
       }
       sctx->null_const_buf.buffer_size = sctx->null_const_buf.buffer->width0;
 
-      unsigned start_shader = sctx->has_graphics ? 0 : PIPE_SHADER_COMPUTE;
+      unsigned start_shader = sctx->is_gfx_queue ? 0 : PIPE_SHADER_COMPUTE;
       for (shader = start_shader; shader < SI_NUM_SHADERS; shader++) {
          for (i = 0; i < SI_NUM_CONST_BUFFERS; i++) {
             sctx->b.set_constant_buffer(&sctx->b, shader, i, false, &sctx->null_const_buf);

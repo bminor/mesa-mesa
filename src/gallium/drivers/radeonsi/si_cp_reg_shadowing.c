@@ -11,7 +11,7 @@
 
 bool si_init_cp_reg_shadowing(struct si_context *sctx)
 {
-   if (sctx->has_graphics &&
+   if (sctx->is_gfx_queue &&
        sctx->screen->info.has_kernelq_reg_shadowing) {
       if (sctx->screen->info.has_fw_based_shadowing) {
          sctx->shadowing.registers =
@@ -51,7 +51,7 @@ bool si_init_cp_reg_shadowing(struct si_context *sctx)
    if (!si_init_gfx_preamble_state(sctx))
       return false;
 
-   if (sctx->has_graphics && sctx->screen->info.has_kernelq_reg_shadowing) {
+   if (sctx->is_gfx_queue && sctx->screen->info.has_kernelq_reg_shadowing) {
       /* We need to clear the shadowed reg buffer. */
       si_cp_dma_clear_buffer(sctx, &sctx->gfx_cs, &sctx->shadowing.registers->b.b,
                              0, sctx->shadowing.registers->bo_size, 0);

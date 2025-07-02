@@ -2853,7 +2853,7 @@ static void si_emit_gfx_resources_add_all_to_bo_list(struct si_context *sctx, un
 void si_init_all_descriptors(struct si_context *sctx)
 {
    int i;
-   unsigned first_shader = sctx->has_graphics ? 0 : PIPE_SHADER_COMPUTE;
+   unsigned first_shader = sctx->is_gfx_queue ? 0 : PIPE_SHADER_COMPUTE;
    unsigned hs_sgpr0, gs_sgpr0;
 
    if (sctx->gfx_level >= GFX12) {
@@ -2949,7 +2949,7 @@ void si_init_all_descriptors(struct si_context *sctx)
    sctx->b.delete_image_handle = si_delete_image_handle;
    sctx->b.make_image_handle_resident = si_make_image_handle_resident;
 
-   if (!sctx->has_graphics)
+   if (!sctx->is_gfx_queue)
       return;
 
    sctx->b.set_polygon_stipple = si_set_polygon_stipple;

@@ -756,7 +756,7 @@ bool si_compute_blit(struct si_context *sctx, const struct pipe_blit_info *info,
       .use_aco = sctx->screen->use_aco,
       .no_fmask = sctx->screen->debug_flags & DBG(NO_FMASK),
       /* Compute queues can't fail because there is no alternative. */
-      .fail_if_slow = sctx->has_graphics && fail_if_slow,
+      .fail_if_slow = sctx->is_gfx_queue && fail_if_slow,
    };
 
    struct ac_cs_blit_description blit = {
@@ -782,7 +782,7 @@ bool si_compute_blit(struct si_context *sctx, const struct pipe_blit_info *info,
          .box = info->src.box,
          .format = info->src.format,
       },
-      .is_gfx_queue = sctx->has_graphics,
+      .is_gfx_queue = sctx->is_gfx_queue,
       /* if (src_access || dst_access), one of the images is block-compressed, which can't fall
        * back to a pixel shader on radeonsi */
       .dst_has_dcc = vi_dcc_enabled(sdst, info->dst.level) && !src_access && !dst_access,
@@ -800,7 +800,7 @@ bool si_compute_blit(struct si_context *sctx, const struct pipe_blit_info *info,
       return true;
 
    /* This is needed for compute queues if DCC stores are unsupported. */
-   if (sctx->gfx_level < GFX10 && !sctx->has_graphics && vi_dcc_enabled(sdst, info->dst.level))
+   if (sctx->gfx_level < GFX10 && !sctx->is_gfx_queue && vi_dcc_enabled(sdst, info->dst.level))
       si_texture_disable_dcc(sctx, sdst);
 
    /* Shader images. */

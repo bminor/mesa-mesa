@@ -23,7 +23,7 @@ DEBUG_GET_ONCE_OPTION(replace_shaders, "RADEON_REPLACE_SHADERS", NULL)
 
 static enum amd_ip_type si_get_context_ip_type(struct si_context *sctx)
 {
-   return sctx->has_graphics ? AMD_IP_GFX : AMD_IP_COMPUTE;
+   return sctx->is_gfx_queue ? AMD_IP_GFX : AMD_IP_COMPUTE;
 }
 
 /**

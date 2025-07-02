@@ -1000,7 +1000,7 @@ struct si_context {
    bool blitter_running:1;
    bool suppress_update_ps_colorbuf0_slot:1;
    bool is_noop:1;
-   bool has_graphics:1;
+   bool is_gfx_queue:1;
    bool gfx_flush_in_progress : 1;
    bool gfx_last_ib_is_busy : 1;
    bool compute_is_busy : 1;

@@ -1274,7 +1274,7 @@ static bool si_try_normal_clear(struct si_context *sctx, struct pipe_surface *ds
        dst->last_layer == util_max_layer(dst->texture, dst->level) &&
        /* pipe->clear honors render_condition, so only use it if it's unset or if it's set and enabled. */
        (!sctx->render_cond || render_condition_enabled) &&
-       sctx->has_graphics) {
+       sctx->is_gfx_queue) {
       struct pipe_context *ctx = &sctx->b;
       struct pipe_framebuffer_state saved_fb = {}, fb = {};
 
@@ -1446,7 +1446,7 @@ void si_init_clear_functions(struct si_context *sctx)
    sctx->b.clear_render_target = si_clear_render_target;
    sctx->b.clear_texture = u_default_clear_texture;
 
-   if (sctx->has_graphics) {
+   if (sctx->is_gfx_queue) {
       if (sctx->gfx_level >= GFX12)
          sctx->b.clear = gfx12_clear;
       else

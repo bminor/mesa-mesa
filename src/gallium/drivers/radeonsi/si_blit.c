@@ -1426,7 +1426,7 @@ void si_decompress_dcc(struct si_context *sctx, struct si_texture *tex)
     * If blitter is running, we can't decompress DCC either because it
     * will cause a blitter recursion.
     */
-   if (!tex->surface.meta_offset || !sctx->has_graphics || sctx->blitter_running)
+   if (!tex->surface.meta_offset || !sctx->is_gfx_queue || sctx->blitter_running)
       return;
 
    si_blit_decompress_color(sctx, tex, 0, tex->buffer.b.b.last_level, 0,
@@ -1437,7 +1437,7 @@ void si_init_blit_functions(struct si_context *sctx)
 {
    sctx->b.resource_copy_region = si_resource_copy_region;
 
-   if (sctx->has_graphics) {
+   if (sctx->is_gfx_queue) {
       sctx->b.blit = si_blit;
       sctx->b.flush_resource = si_flush_resource;
       sctx->b.generate_mipmap = si_generate_mipmap;

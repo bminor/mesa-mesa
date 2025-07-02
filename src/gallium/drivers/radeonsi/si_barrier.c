@@ -40,7 +40,7 @@ static unsigned get_reduced_barrier_flags(struct si_context *ctx)
    if (!flags)
       return 0;
 
-   if (!ctx->has_graphics) {
+   if (!ctx->is_gfx_queue) {
       /* Only process compute flags. */
       flags &= SI_BARRIER_INV_ICACHE | SI_BARRIER_INV_SMEM | SI_BARRIER_INV_VMEM |
                SI_BARRIER_INV_L2 | SI_BARRIER_WB_L2 | SI_BARRIER_INV_L2_METADATA |
