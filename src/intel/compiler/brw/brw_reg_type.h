@@ -68,13 +68,15 @@ enum PACKED brw_reg_type {
    BRW_TYPE_Q  = 0b00111,
    /** @} */
 
-   /** Floating point types: 16 (half), 32, and 64-bit (double) @{ */
-   BRW_TYPE_HF = 0b01001,
-   BRW_TYPE_F  = 0b01010,
-   BRW_TYPE_DF = 0b01011,
+   /** Floating point types: 8, 16 (half), 32, and 64-bit (double) @{ */
+   BRW_TYPE_HF8 = 0b01000,
+   BRW_TYPE_HF  = 0b01001,
+   BRW_TYPE_F   = 0b01010,
+   BRW_TYPE_DF  = 0b01011,
    /** @} */
 
-   /** Floating point types (bfloat variants): 16-bit @{ */
+   /** Floating point types (bfloat variants): 8 and 16-bit @{ */
+   BRW_TYPE_BF8 = 0b01100,
    BRW_TYPE_BF  = 0b01101,
    /** @} */
 

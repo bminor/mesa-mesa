@@ -280,26 +280,28 @@ brw_type_decode_for_3src(const struct intel_device_info *devinfo,
 const char *
 brw_reg_type_to_letters(enum brw_reg_type type)
 {
-   static const char letters[][3] = {
-      [BRW_TYPE_UB] = "UB",
-      [BRW_TYPE_UW] = "UW",
-      [BRW_TYPE_UD] = "UD",
-      [BRW_TYPE_UQ] = "UQ",
+   static const char letters[][4] = {
+      [BRW_TYPE_UB]  = "UB",
+      [BRW_TYPE_UW]  = "UW",
+      [BRW_TYPE_UD]  = "UD",
+      [BRW_TYPE_UQ]  = "UQ",
 
-      [BRW_TYPE_B]  = "B",
-      [BRW_TYPE_W]  = "W",
-      [BRW_TYPE_D]  = "D",
-      [BRW_TYPE_Q]  = "Q",
+      [BRW_TYPE_B]   = "B",
+      [BRW_TYPE_W]   = "W",
+      [BRW_TYPE_D]   = "D",
+      [BRW_TYPE_Q]   = "Q",
 
-      [BRW_TYPE_HF] = "HF",
-      [BRW_TYPE_F]  = "F",
-      [BRW_TYPE_DF] = "DF",
+      [BRW_TYPE_HF8] = "HF8",
+      [BRW_TYPE_HF]  = "HF",
+      [BRW_TYPE_F]   = "F",
+      [BRW_TYPE_DF]  = "DF",
 
-      [BRW_TYPE_BF] = "BF",
+      [BRW_TYPE_BF8] = "BF8",
+      [BRW_TYPE_BF]  = "BF",
 
-      [BRW_TYPE_UV] = "UV",
-      [BRW_TYPE_V]  = "V",
-      [BRW_TYPE_VF] = "VF",
+      [BRW_TYPE_UV]  = "UV",
+      [BRW_TYPE_V]   = "V",
+      [BRW_TYPE_VF]  = "VF",
    };
 
    const char *l = type < ARRAY_SIZE(letters) ? letters[type] : NULL;
