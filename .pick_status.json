@@ -7284,7 +7284,7 @@
         "description": "anv: avoid leaking private binding for aliased wsi image",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d85a9d658faad07ec24a0466396648489623e032",
         "notes": null
