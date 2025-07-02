@@ -101,8 +101,8 @@ zink_resource_image_barrier2_init(VkImageMemoryBarrier2 *imb, struct zink_resour
    *imb = VkImageMemoryBarrier2 {
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
       NULL,
-      res->obj->access_stage ? res->obj->access_stage : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-      res->obj->access,
+      res->obj->unordered_access_stage ? res->obj->unordered_access_stage : res->obj->access_stage ? res->obj->access_stage : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+      res->obj->unordered_access ? res->obj->unordered_access : res->obj->access,
       pipeline,
       flags,
       res->layout,
@@ -237,7 +237,7 @@ struct emit_memory_barrier {
    {
       VkImageMemoryBarrier imb;
       zink_resource_image_barrier_init(&imb, res, new_layout, flags, pipeline);
-      if (!res->obj->access_stage || completed)
+      if (!(res->obj->access_stage | res->obj->unordered_access_stage) || completed)
          imb.srcAccessMask = 0;
       if (res->obj->needs_zs_evaluate)
          imb.pNext = &res->obj->zs_evaluate;
@@ -248,9 +248,10 @@ struct emit_memory_barrier {
          res->queue = VK_QUEUE_FAMILY_IGNORED;
          *queue_import = true;
       }
+      VkAccessFlags src_flags = res->obj->unordered_access_stage ? res->obj->unordered_access_stage : res->obj->access_stage;
       VKCTX(CmdPipelineBarrier)(
           cmdbuf,
-          res->obj->access_stage ? res->obj->access_stage : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+          src_flags ? src_flags : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
           pipeline,
           0,
           0, NULL,
@@ -293,7 +294,7 @@ struct emit_memory_barrier<barrier_KHR_synchronzation2> {
    {
       VkImageMemoryBarrier2 imb;
       zink_resource_image_barrier2_init(&imb, res, new_layout, flags, pipeline);
-      if (!res->obj->access_stage || completed)
+      if (!(res->obj->access_stage | res->obj->unordered_access_stage) || completed)
          imb.srcAccessMask = 0;
       if (res->obj->needs_zs_evaluate)
          imb.pNext = &res->obj->zs_evaluate;
@@ -407,7 +408,7 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    bool is_write = zink_resource_access_is_write(flags);
    if (is_write && zink_is_swapchain(res))
       zink_kopper_set_readback_needs_update(res);
-   if (!res->obj->needs_zs_evaluate && !zink_resource_image_needs_barrier(res, new_layout, flags, pipeline) &&
+   if (!GENERAL && !res->obj->needs_zs_evaluate && !zink_resource_image_needs_barrier(res, new_layout, flags, pipeline) &&
        (res->queue == zink_screen(ctx->base.screen)->gfx_queue || res->queue == VK_QUEUE_FAMILY_IGNORED))
       return;
    enum zink_resource_access rw = is_write ? ZINK_RESOURCE_ACCESS_RW : ZINK_RESOURCE_ACCESS_WRITE;
