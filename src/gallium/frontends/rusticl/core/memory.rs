@@ -499,7 +499,7 @@ impl Allocation {
     }
 
     /// Follows the sub-allocation chain until it hits a real GPU allocation.
-    fn get_real_resource(&self) -> &ResourceAllocation {
+    pub fn get_real_resource(&self) -> &ResourceAllocation {
         match self {
             Allocation::SubAlloc(sub) => sub.mem.alloc.get_real_resource(),
             Allocation::Resource(res) => res,

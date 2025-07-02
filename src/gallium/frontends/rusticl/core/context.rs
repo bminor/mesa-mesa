@@ -68,6 +68,12 @@ impl Drop for SVMAlloc {
                 debug_assert_eq!(0, ret);
             }
 
+            for (dev, res) in &self.alloc.get_real_resource().res {
+                if !dev.system_svm_supported() {
+                    dev.screen().resource_assign_vma(res, 0);
+                }
+            }
+
             Platform::get()
                 .vm
                 .as_ref()
