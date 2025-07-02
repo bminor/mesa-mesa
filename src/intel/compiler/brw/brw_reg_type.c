@@ -46,12 +46,22 @@ brw_type_encode(const struct intel_device_info *devinfo,
                                : devinfo->has_64bit_float))
       return INVALID_HW_REG_TYPE;
 
+   if (brw_type_is_float_or_bfloat(type) &&
+       brw_type_size_bits(type) == 8 &&
+       !devinfo->has_fp8)
+      return INVALID_HW_REG_TYPE;
+
    if (brw_type_is_bfloat(type) && !devinfo->has_bfloat16)
       return INVALID_HW_REG_TYPE;
 
    if (devinfo->ver >= 12) {
       if (brw_type_is_vector_imm(type))
          return type & ~(BRW_TYPE_VECTOR | BRW_TYPE_SIZE_MASK);
+
+      if (type == BRW_TYPE_BF8)
+         return 0b1000;
+      if (type == BRW_TYPE_HF8)
+         return 0b1100;
 
       return type & (BRW_TYPE_BASE_MASK | BRW_TYPE_SIZE_MASK);
    } else if (devinfo->ver >= 11) {
@@ -117,18 +127,45 @@ brw_type_decode(const struct intel_device_info *devinfo,
       return BRW_TYPE_INVALID;
 
    if (devinfo->ver >= 12) {
-      enum brw_reg_type t = (enum brw_reg_type) hw_type;
-      if (brw_type_size_bits(t) == 8) {
-         if (brw_type_is_float(t))
-            return file == IMM ? BRW_TYPE_VF : BRW_TYPE_INVALID;
-         else if (file == IMM)
-            return (t & BRW_TYPE_BASE_SINT) ? BRW_TYPE_V : BRW_TYPE_UV;
+      static const enum brw_reg_type tbl[16] = {
+         [0b0000] = BRW_TYPE_UB, /* or UV */
+         [0b0001] = BRW_TYPE_UW,
+         [0b0010] = BRW_TYPE_UD,
+         [0b0011] = BRW_TYPE_UQ,
+         [0b0100] = BRW_TYPE_B, /* or V */
+         [0b0101] = BRW_TYPE_W,
+         [0b0110] = BRW_TYPE_D,
+         [0b0111] = BRW_TYPE_Q,
+         [0b1000] = BRW_TYPE_BF8, /* or VF */
+         [0b1001] = BRW_TYPE_HF,
+         [0b1010] = BRW_TYPE_F,
+         [0b1011] = BRW_TYPE_DF,
+         [0b1100] = BRW_TYPE_HF8,
+         [0b1101] = BRW_TYPE_BF,
+         [0b1110] = BRW_TYPE_INVALID,
+         [0b1111] = BRW_TYPE_INVALID,
+      };
+
+      enum brw_reg_type t = tbl[hw_type];
+
+      if (file == IMM) {
+         switch (t) {
+         case BRW_TYPE_UB:  return BRW_TYPE_UV;
+         case BRW_TYPE_B:   return BRW_TYPE_V;
+         case BRW_TYPE_BF8: return BRW_TYPE_VF;
+         case BRW_TYPE_HF8: return BRW_TYPE_VF;
+         default:           break;
+         }
       }
-      if (brw_type_is_bfloat(t) && !devinfo->has_bfloat16)
+
+      if ((t == BRW_TYPE_HF8 || t == BRW_TYPE_BF8) &&
+          !devinfo->has_fp8)
          return BRW_TYPE_INVALID;
-      if (brw_type_is_float_or_bfloat(t) && brw_type_size_bits(t) < 16)
+      if (t == BRW_TYPE_BF && !devinfo->has_bfloat16)
          return BRW_TYPE_INVALID;
+
       return t;
+
    } else if (devinfo->ver >= 11) {
       static const enum brw_reg_type tbl[] = {
          [0] = BRW_TYPE_UD,
@@ -196,6 +233,10 @@ brw_type_encode_for_3src(const struct intel_device_info *devinfo,
                          enum brw_reg_type type)
 {
    if (brw_type_is_bfloat(type) && !devinfo->has_bfloat16)
+      return INVALID_HW_REG_TYPE;
+   if (brw_type_is_float_or_bfloat(type) &&
+       brw_type_size_bits(type) == 8 &&
+       !devinfo->has_fp8)
       return INVALID_HW_REG_TYPE;
 
    if (devinfo->ver >= 12) {
@@ -292,9 +333,11 @@ brw_data_type_encode(const struct intel_device_info *devinfo,
       [BRW_TYPE_W]              = { BRW_TYPE_INT_W },
       [BRW_TYPE_D]              = { BRW_TYPE_INT_D },
       [BRW_TYPE_Q]              = { BRW_TYPE_INT_Q },
+      [BRW_TYPE_HF8]            = { BRW_TYPE_FLOAT_HF8 },
       [BRW_TYPE_HF]             = { BRW_TYPE_FLOAT_HF },
       [BRW_TYPE_F]              = { BRW_TYPE_FLOAT_F },
       [BRW_TYPE_DF]             = { BRW_TYPE_FLOAT_DF },
+      [BRW_TYPE_BF8]            = { BRW_TYPE_FLOAT_BF8 },
       [BRW_TYPE_BF]             = { BRW_TYPE_FLOAT_BF },
    };
 
@@ -328,9 +371,11 @@ brw_data_type_decode(const struct intel_device_info *devinfo,
       },
       [1 /* float exec_type */] = {
          [0 ... 7]              = BRW_TYPE_INVALID,
+         [BRW_TYPE_FLOAT_BF8]   = BRW_TYPE_BF8,
          [BRW_TYPE_FLOAT_HF]    = BRW_TYPE_HF,
          [BRW_TYPE_FLOAT_F]     = BRW_TYPE_F,
          [BRW_TYPE_FLOAT_DF]    = BRW_TYPE_DF,
+         [BRW_TYPE_FLOAT_HF8]   = BRW_TYPE_HF8,
          [BRW_TYPE_FLOAT_BF]    = BRW_TYPE_BF,
       },
    };

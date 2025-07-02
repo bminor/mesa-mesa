@@ -436,16 +436,18 @@ TEST_P(validation_test, invalid_type_encoding_3src_a1)
       bool expected_result;
    } test_case[] = {
 #define E(x) ((unsigned)BRW_ALIGN1_3SRC_EXEC_TYPE_##x)
-      { BRW_TYPE_DF, E(FLOAT), devinfo.has_64bit_float },
-      { BRW_TYPE_F,  E(FLOAT), true  },
-      { BRW_TYPE_HF, E(FLOAT), true  },
-      { BRW_TYPE_Q,  E(INT),   devinfo.has_64bit_int },
-      { BRW_TYPE_UQ, E(INT),   devinfo.has_64bit_int },
-      { BRW_TYPE_D,  E(INT),   true  },
-      { BRW_TYPE_UD, E(INT),   true  },
-      { BRW_TYPE_W,  E(INT),   true  },
-      { BRW_TYPE_UW, E(INT),   true  },
-      { BRW_TYPE_BF, E(FLOAT), devinfo.has_bfloat16 },
+      { BRW_TYPE_DF,  E(FLOAT), devinfo.has_64bit_float },
+      { BRW_TYPE_F,   E(FLOAT), true  },
+      { BRW_TYPE_HF,  E(FLOAT), true  },
+      { BRW_TYPE_Q,   E(INT),   devinfo.has_64bit_int },
+      { BRW_TYPE_UQ,  E(INT),   devinfo.has_64bit_int },
+      { BRW_TYPE_D,   E(INT),   true  },
+      { BRW_TYPE_UD,  E(INT),   true  },
+      { BRW_TYPE_W,   E(INT),   true  },
+      { BRW_TYPE_UW,  E(INT),   true  },
+      { BRW_TYPE_BF,  E(FLOAT), devinfo.has_bfloat16 },
+      { BRW_TYPE_BF8, E(FLOAT), devinfo.has_fp8 },
+      { BRW_TYPE_HF8, E(FLOAT), devinfo.has_fp8 },
 
       /* There are no ternary instructions that can operate on B-type sources
        * on Gfx11-12. Src1/Src2 cannot be B-typed either.

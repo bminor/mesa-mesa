@@ -387,6 +387,8 @@ execution_type_for_type(enum brw_reg_type type)
    case BRW_TYPE_DF:
    case BRW_TYPE_F:
    case BRW_TYPE_HF:
+   case BRW_TYPE_BF8:
+   case BRW_TYPE_HF8:
       return type;
 
    case BRW_TYPE_VF:

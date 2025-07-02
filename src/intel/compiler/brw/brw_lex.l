@@ -302,10 +302,12 @@ BranchCtrl      { return BRANCH_CTRL; }
  /* data types */
 :?B     { return TYPE_B; }
 :?BF    { return TYPE_BF; }
+:?BF8   { return TYPE_BF8; }
 :?D     { return TYPE_D; }
 :?DF    { return TYPE_DF; }
 :?F     { return TYPE_F; }
 :?HF    { return TYPE_HF; }
+:?HF8   { return TYPE_HF8; }
 :?Q     { return TYPE_Q; }
 :?UB    { return TYPE_UB; }
 :?UD    { return TYPE_UD; }
