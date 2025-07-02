@@ -223,11 +223,24 @@ ir3_should_double_threadsize(struct ir3_shader_variant *v, unsigned regs_count)
       unsigned threads_per_wg =
          v->local_size[0] * v->local_size[1] * v->local_size[2];
 
+      /* If the workgroups fit in the base threadsize, then doubling would just
+       * leave us with an unused second half of each wave for no gain (The HW
+       * can't pack multiple workgroups into a wave, because the workgroups
+       * might make different barrier choices).
+       */
+      if (!v->local_size_variable) {
+         if (threads_per_wg <= compiler->threadsize_base)
+            return false;
+      }
+
       /* For a5xx, if the workgroup size is greater than the maximum number
        * of threads per core with 32 threads per wave (512) then we have to
        * use the doubled threadsize because otherwise the workgroup wouldn't
        * fit. For smaller workgroup sizes, we follow the blob and use the
        * smaller threadsize.
+       *
+       * For a6xx, because threadsize_base is bumped to 64, we don't have to
+       * worry about the workgroup fitting.
        */
       if (compiler->gen < 6) {
          return v->local_size_variable ||
@@ -235,15 +248,6 @@ ir3_should_double_threadsize(struct ir3_shader_variant *v, unsigned regs_count)
                    compiler->threadsize_base * compiler->max_waves;
       }
 
-      /* On a6xx, we prefer the larger threadsize unless the workgroup is
-       * small enough that it would be useless. Note that because
-       * threadsize_base is bumped to 64, we don't have to worry about the
-       * workgroup fitting, unlike the a5xx case.
-       */
-      if (!v->local_size_variable) {
-         if (threads_per_wg <= compiler->threadsize_base)
-            return false;
-      }
    }
       FALLTHROUGH;
    case MESA_SHADER_FRAGMENT: {
