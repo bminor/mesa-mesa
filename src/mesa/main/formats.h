@@ -403,6 +403,7 @@ typedef enum pipe_format mesa_format;
 #define MESA_FORMAT_R_UNORM16                    PIPE_FORMAT_R16_UNORM
 #define MESA_FORMAT_RG_UNORM8                    PIPE_FORMAT_R8G8_UNORM
 #define MESA_FORMAT_RG_UNORM16                   PIPE_FORMAT_R16G16_UNORM
+#define MESA_FORMAT_RGB_UNORM16                  PIPE_FORMAT_R16G16B16_UNORM
 #define MESA_FORMAT_BGR_UNORM8                   PIPE_FORMAT_B8G8R8_UNORM
 #define MESA_FORMAT_RGB_UNORM8                   PIPE_FORMAT_R8G8B8_UNORM
 #define MESA_FORMAT_RGBA_UNORM16                 PIPE_FORMAT_R16G16B16A16_UNORM

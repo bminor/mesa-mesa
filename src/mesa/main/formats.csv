@@ -114,6 +114,7 @@ MESA_FORMAT_RG_UNORM8                     , array , 1, 1, 1, un8 , un8 ,     ,  
 MESA_FORMAT_RG_UNORM16                    , array , 1, 1, 1, un16, un16,     ,     , xy01, rgb
 MESA_FORMAT_BGR_UNORM8                    , array , 1, 1, 1, un8 , un8 , un8 ,     , zyx1, rgb
 MESA_FORMAT_RGB_UNORM8                    , array , 1, 1, 1, un8 , un8 , un8 ,     , xyz1, rgb
+MESA_FORMAT_RGB_UNORM16                   , array , 1, 1, 1, un16, un16, un16,     , xyz1, rgb
 MESA_FORMAT_RGBA_UNORM16                  , array , 1, 1, 1, un16, un16, un16, un16, xyzw, rgb
 MESA_FORMAT_RGBX_UNORM16                  , array , 1, 1, 1, un16, un16, un16, x16 , xyz1, rgb
 
