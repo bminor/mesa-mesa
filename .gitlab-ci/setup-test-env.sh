@@ -88,7 +88,7 @@ function _section_end {
 alias section_end="x_off; _section_end"
 
 function _section_switch {
-    if [ -n "$CURRENT_SECTION" ]
+    if [ -n "${CURRENT_SECTION:-}" ]
     then
         build_section_end $CURRENT_SECTION
         x_off
@@ -99,7 +99,7 @@ function _section_switch {
 alias section_switch="x_off; _section_switch"
 
 function _uncollapsed_section_switch {
-    if [ -n "$CURRENT_SECTION" ]
+    if [ -n "${CURRENT_SECTION:-}" ]
     then
         build_section_end $CURRENT_SECTION
         x_off
