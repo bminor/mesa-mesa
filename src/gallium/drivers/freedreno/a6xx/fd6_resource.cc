@@ -17,7 +17,7 @@
 #include "common/freedreno_lrz.h"
 #include "common/freedreno_ubwc.h"
 
-#include "a6xx.xml.h"
+#include "fd6_hw.h"
 
 /* A subset of the valid tiled formats can be compressed.  We do
  * already require tiled in order to be compressed, but just because

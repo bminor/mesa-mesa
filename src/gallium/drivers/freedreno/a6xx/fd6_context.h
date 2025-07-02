@@ -18,7 +18,7 @@
 #include "ir3/ir3_shader.h"
 #include "ir3/ir3_descriptor.h"
 
-#include "a6xx.xml.h"
+#include "fd6_hw.h"
 
 struct fd6_lrz_state {
    union {

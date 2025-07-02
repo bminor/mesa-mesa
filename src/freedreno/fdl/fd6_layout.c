@@ -11,9 +11,7 @@
 
 #include "freedreno_layout.h"
 
-#include "adreno_pm4.xml.h"
-#include "adreno_common.xml.h"
-#include "a6xx.xml.h"
+#include "fd6_hw.h"
 
 static bool
 is_r8g8(const struct fdl_layout *layout)

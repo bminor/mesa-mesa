@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#include "a6xx.xml.h"
+#include "fd6_hw.h"
 
 /* In order to debug issues with usage of stale reg data we need to have
  * a list of regs which we allowed to stomp.

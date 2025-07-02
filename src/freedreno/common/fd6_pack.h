@@ -6,7 +6,7 @@
 #ifndef FD6_PACK_H
 #define FD6_PACK_H
 
-#include "a6xx.xml.h"
+#include "fd6_hw.h"
 
 struct fd_reg_pair {
    uint32_t reg;

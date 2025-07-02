@@ -55,9 +55,7 @@
 #include "ir3/ir3_compiler.h"
 #include "ir3/ir3_shader.h"
 
-#include "adreno_common.xml.h"
-#include "adreno_pm4.xml.h"
-#include "a6xx.xml.h"
+#include "fd6_hw.h"
 #include "fdl/freedreno_layout.h"
 #include "common/freedreno_dev_info.h"
 #include "common/freedreno_common.h"

@@ -11,9 +11,8 @@
 
 #include "util/half_float.h"
 #include "util/u_math.h"
-#include "adreno_common.xml.h"
-#include "adreno_pm4.xml.h"
-#include "a6xx.xml.h"
+
+#include "fd6_hw.h"
 
 #define REG(_x) REG_A6XX_ ## _x
 #include "freedreno_perfcntr.h"
