@@ -17,6 +17,29 @@
 
 #include <stdbool.h>
 
+static inline bool ref_needs_olchk(pco_ref ref)
+{
+   if (!pco_ref_is_reg(ref))
+      return false;
+
+   switch (pco_ref_get_reg_class(ref)) {
+   case PCO_REG_CLASS_PIXOUT:
+      return true;
+
+   case PCO_REG_CLASS_SPEC:
+      return ref.val == PCO_SR_OUTPUT_PART ||
+             (ref.val >= PCO_SR_TILED_LD_COMP0 &&
+              ref.val <= PCO_SR_TILED_ST_COMP3) ||
+             (ref.val >= PCO_SR_TILED_LD_COMP4 &&
+              ref.val <= PCO_SR_TILED_ST_COMP7);
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 /**
  * \brief Insert a mov to legalize how a hardware register is referenced.
  *
@@ -44,6 +67,13 @@ static void insert_mov_ref(pco_instr *instr, pco_ref *ref, bool needs_s124)
       mov_instr = pco_movs1(&b, new_ref, *ref, .exec_cnd = exec_cnd);
    else
       mov_instr = pco_mbyp(&b, new_ref, *ref, .exec_cnd = exec_cnd);
+
+   if (pco_instr_has_olchk(instr) && pco_instr_get_olchk(instr) &&
+       ref_needs_olchk(*ref)) {
+      assert(pco_instr_has_olchk(mov_instr));
+      pco_instr_set_olchk(mov_instr, true);
+      pco_instr_set_olchk(instr, false);
+   }
 
    *ref = new_ref;
 }
