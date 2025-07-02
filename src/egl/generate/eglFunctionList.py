@@ -195,10 +195,6 @@ EGL_FUNCTIONS = (
     # EGL_KHR_wait_sync
     _eglFunc("eglWaitSyncKHR",                       "display"),
 
-    # EGL_MESA_drm_image
-    _eglFunc("eglCreateDRMImageMESA",                "display"),
-    _eglFunc("eglExportDRMImageMESA",                "display"),
-
     # EGL_MESA_image_dma_buf_export
     _eglFunc("eglExportDMABUFImageQueryMESA",        "display"),
     _eglFunc("eglExportDMABUFImageMESA",             "display"),

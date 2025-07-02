@@ -51,18 +51,13 @@ struct _egl_image_attribs {
    EGLint GLTextureLevel;
    EGLint GLTextureZOffset;
 
-   /* EGL_MESA_drm_image */
-   EGLint Width;
-   EGLint Height;
-   EGLint DRMBufferFormatMESA;
-   EGLint DRMBufferUseMESA;
-   EGLint DRMBufferStrideMESA;
-
    /* EGL_WL_bind_wayland_display */
    EGLint PlaneWL;
 
    /* EGL_EXT_image_dma_buf_import and
     * EGL_EXT_image_dma_buf_import_modifiers */
+   EGLint Width;
+   EGLint Height;
    struct _egl_image_attrib_int DMABufFourCC;
    struct _egl_image_attrib_int DMABufPlaneFds[DMA_BUF_MAX_PLANES];
    struct _egl_image_attrib_int DMABufPlaneOffsets[DMA_BUF_MAX_PLANES];

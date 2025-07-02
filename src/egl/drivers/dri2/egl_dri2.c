@@ -701,10 +701,6 @@ dri2_setup_screen(_EGLDisplay *disp)
 
    disp->Extensions.KHR_reusable_sync = EGL_TRUE;
 
-   int capabilities;
-   capabilities = dri2_get_capabilities(dri2_dpy->dri_screen_render_gpu);
-   disp->Extensions.MESA_drm_image = (capabilities & __DRI_IMAGE_CAP_GLOBAL_NAMES) != 0;
-
 #ifdef HAVE_LIBDRM
    if (pscreen->caps.dmabuf & DRM_PRIME_CAP_EXPORT)
       disp->Extensions.MESA_image_dma_buf_export = true;
@@ -2076,47 +2072,6 @@ dri2_create_wayland_buffer_from_image(_EGLDisplay *disp, _EGLImage *img)
 }
 
 #ifdef HAVE_LIBDRM
-static _EGLImage *
-dri2_create_image_mesa_drm_buffer(_EGLDisplay *disp, _EGLContext *ctx,
-                                  EGLClientBuffer buffer,
-                                  const EGLint *attr_list)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   EGLint name, pitch;
-   uint32_t fourcc;
-   _EGLImageAttribs attrs;
-   struct dri_image *dri_image;
-
-   name = (EGLint)(uintptr_t)buffer;
-
-   if (!_eglParseImageAttribList(&attrs, disp, attr_list))
-      return NULL;
-
-   if (attrs.Width <= 0 || attrs.Height <= 0 ||
-       attrs.DRMBufferStrideMESA <= 0) {
-      _eglError(EGL_BAD_PARAMETER, "bad width, height or stride");
-      return NULL;
-   }
-
-   switch (attrs.DRMBufferFormatMESA) {
-   case EGL_DRM_BUFFER_FORMAT_ARGB32_MESA:
-      fourcc = DRM_FORMAT_ARGB8888;
-      pitch = attrs.DRMBufferStrideMESA * 4;
-      break;
-   default:
-      _eglError(EGL_BAD_PARAMETER,
-                "dri2_create_image_khr: unsupported pixmap depth");
-      return NULL;
-   }
-
-   int offset = 0;
-   dri_image = dri2_from_names(
-      dri2_dpy->dri_screen_render_gpu, attrs.Width, attrs.Height, fourcc,
-      (int *) &name, 1, (int *) &pitch, &offset, NULL);
-
-   return dri2_create_image_from_dri(disp, dri_image);
-}
-
 static EGLBoolean
 dri2_check_dma_buf_attribs(const _EGLImageAttribs *attrs)
 {
@@ -2517,103 +2472,6 @@ dri2_create_image_dma_buf(_EGLDisplay *disp, _EGLContext *ctx,
    return res;
 }
 
-static _EGLImage *
-dri2_create_drm_image_mesa(_EGLDisplay *disp, const EGLint *attr_list)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display_lock(disp);
-   struct dri2_egl_image *dri2_img;
-   _EGLImageAttribs attrs;
-   unsigned int dri_use, valid_mask;
-   int format;
-
-   if (!attr_list) {
-      _eglError(EGL_BAD_PARAMETER, __func__);
-      goto fail;
-   }
-
-   if (!_eglParseImageAttribList(&attrs, disp, attr_list))
-      goto fail;
-
-   if (attrs.Width <= 0 || attrs.Height <= 0) {
-      _eglError(EGL_BAD_PARAMETER, __func__);
-      goto fail;
-   }
-
-   switch (attrs.DRMBufferFormatMESA) {
-   case EGL_DRM_BUFFER_FORMAT_ARGB32_MESA:
-      format = PIPE_FORMAT_BGRA8888_UNORM;
-      break;
-   default:
-      _eglError(EGL_BAD_PARAMETER, __func__);
-      goto fail;
-   }
-
-   valid_mask = EGL_DRM_BUFFER_USE_SCANOUT_MESA |
-                EGL_DRM_BUFFER_USE_SHARE_MESA | EGL_DRM_BUFFER_USE_CURSOR_MESA;
-   if (attrs.DRMBufferUseMESA & ~valid_mask) {
-      _eglError(EGL_BAD_PARAMETER, __func__);
-      goto fail;
-   }
-
-   dri_use = 0;
-   if (attrs.DRMBufferUseMESA & EGL_DRM_BUFFER_USE_SHARE_MESA)
-      dri_use |= __DRI_IMAGE_USE_SHARE;
-   if (attrs.DRMBufferUseMESA & EGL_DRM_BUFFER_USE_SCANOUT_MESA)
-      dri_use |= __DRI_IMAGE_USE_SCANOUT;
-   if (attrs.DRMBufferUseMESA & EGL_DRM_BUFFER_USE_CURSOR_MESA)
-      dri_use |= __DRI_IMAGE_USE_CURSOR;
-
-   dri2_img = malloc(sizeof *dri2_img);
-   if (!dri2_img) {
-      _eglError(EGL_BAD_ALLOC, "dri2_create_image_khr");
-      goto fail;
-   }
-
-   _eglInitImage(&dri2_img->base, disp);
-
-   dri2_img->dri_image =
-      dri_create_image(dri2_dpy->dri_screen_render_gpu, attrs.Width,
-                                   attrs.Height, format, NULL, 0, dri_use, dri2_img);
-   if (dri2_img->dri_image == NULL) {
-      free(dri2_img);
-      _eglError(EGL_BAD_ALLOC, "dri2_create_drm_image_mesa");
-      goto fail;
-   }
-
-   mtx_unlock(&dri2_dpy->lock);
-
-   return &dri2_img->base;
-
-fail:
-   mtx_unlock(&dri2_dpy->lock);
-   return EGL_NO_IMAGE_KHR;
-}
-
-static EGLBoolean
-dri2_export_drm_image_mesa(_EGLDisplay *disp, _EGLImage *img, EGLint *name,
-                           EGLint *handle, EGLint *stride)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display_lock(disp);
-   struct dri2_egl_image *dri2_img = dri2_egl_image(img);
-
-   if (name && !dri2_query_image(dri2_img->dri_image,
-                                            __DRI_IMAGE_ATTRIB_NAME, name))
-      return dri2_egl_error_unlock(dri2_dpy, EGL_BAD_ALLOC,
-                                   "dri2_export_drm_image_mesa");
-
-   if (handle)
-      dri2_query_image(dri2_img->dri_image,
-                                  __DRI_IMAGE_ATTRIB_HANDLE, handle);
-
-   if (stride)
-      dri2_query_image(dri2_img->dri_image,
-                                  __DRI_IMAGE_ATTRIB_STRIDE, stride);
-
-   mtx_unlock(&dri2_dpy->lock);
-
-   return EGL_TRUE;
-}
-
 /**
  * Checks if we can support EGL_MESA_image_dma_buf_export on this image.
 
@@ -2747,8 +2605,6 @@ dri2_create_image_khr(_EGLDisplay *disp, _EGLContext *ctx, EGLenum target,
    case EGL_GL_RENDERBUFFER_KHR:
       return dri2_create_image_khr_renderbuffer(disp, ctx, buffer, attr_list);
 #ifdef HAVE_LIBDRM
-   case EGL_DRM_BUFFER_MESA:
-      return dri2_create_image_mesa_drm_buffer(disp, ctx, buffer, attr_list);
    case EGL_LINUX_DMA_BUF_EXT:
       return dri2_create_image_dma_buf(disp, ctx, buffer, attr_list);
 #endif
@@ -3304,8 +3160,6 @@ const _EGLDriver _eglDriver = {
    .QueryDriverConfig = dri2_query_driver_config,
    .QueryDeviceInfo = dri2_query_device_info,
 #ifdef HAVE_LIBDRM
-   .CreateDRMImageMESA = dri2_create_drm_image_mesa,
-   .ExportDRMImageMESA = dri2_export_drm_image_mesa,
    .ExportDMABUFImageQueryMESA = dri2_export_dma_buf_image_query_mesa,
    .ExportDMABUFImageMESA = dri2_export_dma_buf_image_mesa,
    .QueryDmaBufFormatsEXT = dri2_query_dma_buf_formats,
