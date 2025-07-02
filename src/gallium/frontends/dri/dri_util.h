@@ -250,10 +250,6 @@ dri2_dup_image(struct dri_image *image, void *loaderPrivate);
 PUBLIC GLboolean
 dri2_validate_usage(struct dri_image *image, unsigned int use);
 PUBLIC struct dri_image *
-dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
-                int *names, int num_names, int *strides, int *offsets,
-                void *loaderPrivate);
-PUBLIC struct dri_image *
 dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate);
 PUBLIC struct dri_image *
 dri2_from_dma_bufs(struct dri_screen *screen,

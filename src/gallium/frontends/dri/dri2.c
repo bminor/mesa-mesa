@@ -1448,40 +1448,6 @@ dri2_validate_usage(struct dri_image *image, unsigned int use)
 }
 
 struct dri_image *
-dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
-                int *names, int num_names, int *strides, int *offsets,
-                void *loaderPrivate)
-{
-   const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
-   struct dri_image *img;
-   struct winsys_handle whandle;
-
-   if (!map)
-      return NULL;
-
-   if (num_names != 1)
-      return NULL;
-
-   memset(&whandle, 0, sizeof(whandle));
-   whandle.type = WINSYS_HANDLE_TYPE_SHARED;
-   whandle.handle = names[0];
-   whandle.stride = strides[0];
-   whandle.offset = offsets[0];
-   whandle.format = map->pipe_format;
-   whandle.modifier = DRM_FORMAT_MOD_INVALID;
-
-   img = dri_create_image_from_winsys(screen, width, height, map,
-                                       1, &whandle, 0, loaderPrivate);
-   if (img == NULL)
-      return NULL;
-
-   img->dri_fourcc = map->dri_fourcc;
-   img->dri_format = map->dri_format;
-
-   return img;
-}
-
-struct dri_image *
 dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate)
 {
    struct dri_image *img;

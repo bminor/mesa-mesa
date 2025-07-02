@@ -47,7 +47,6 @@
 		dri2_query_image;
 		dri2_dup_image;
 		dri2_validate_usage;
-		dri2_from_names;
 		dri2_from_planar;
 		dri2_from_dma_bufs;
 		dri2_blit_image;
