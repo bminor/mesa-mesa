@@ -2906,6 +2906,9 @@ impl SM70Op for OpSuLd {
         e.set_reg_src(24..32, &self.coord);
         e.set_reg_src(64..72, &self.handle);
         e.set_pred_dst(81..84, &self.fault);
+        if e.sm >= 120 {
+            e.set_ureg_src(48..56, &Src::ZERO); // handle
+        }
 
         e.set_image_dim(61..64, self.image_dim);
         e.set_mem_order(&self.mem_order);
@@ -2933,6 +2936,9 @@ impl SM70Op for OpSuSt {
         e.set_reg_src(24..32, &self.coord);
         e.set_reg_src(32..40, &self.data);
         e.set_reg_src(64..72, &self.handle);
+        if e.sm >= 120 {
+            e.set_ureg_src(48..56, &Src::ZERO); // handle
+        }
 
         e.set_image_dim(61..64, self.image_dim);
         e.set_mem_order(&self.mem_order);
@@ -2962,6 +2968,9 @@ impl SM70Op for OpSuAtom {
         e.set_reg_src(32..40, &self.data);
         e.set_reg_src(64..72, &self.handle);
         e.set_pred_dst(81..84, &self.fault);
+        if e.sm >= 120 {
+            e.set_ureg_src(48..56, &Src::ZERO); // handle
+        }
 
         e.set_image_dim(61..64, self.image_dim);
         e.set_mem_order(&self.mem_order);
