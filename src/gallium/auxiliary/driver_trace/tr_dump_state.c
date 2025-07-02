@@ -1242,7 +1242,8 @@ void trace_dump_pipe_picture_desc(const struct pipe_picture_desc *picture)
    trace_dump_member(format, picture, input_format);
    trace_dump_member(bool, picture, input_full_range);
    trace_dump_member(format, picture, output_format);
-   trace_dump_member(ptr, picture, fence);
+   trace_dump_member(ptr, picture, in_fence);
+   trace_dump_member(ptr, picture, out_fence);
    trace_dump_struct_end();
 }
 
@@ -1278,7 +1279,6 @@ void trace_dump_pipe_vpp_desc(const struct pipe_vpp_desc *process_properties)
    trace_dump_member_struct(u_rect, process_properties, dst_region);
    trace_dump_member_enum(pipe_video_vpp_orientation, process_properties, orientation);
    trace_dump_member_struct(pipe_vpp_blend, process_properties, blend);
-   trace_dump_member(ptr, process_properties, src_surface_fence);
    trace_dump_struct_end();
 }
 

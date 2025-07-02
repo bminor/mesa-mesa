@@ -1196,7 +1196,7 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
 
    if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
       coded_buf = context->coded_buf;
-      context->desc.base.fence = &coded_buf->fence;
+      context->desc.base.out_fence = &coded_buf->fence;
       if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_MPEG4_AVC)
          context->desc.h264enc.frame_num_cnt++;
 
@@ -1230,6 +1230,7 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       else if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_AV1)
          context->desc.av1enc.requested_metadata = driver_metadata_support;
 
+      context->desc.base.in_fence = surf->fence;
       context->decoder->begin_frame(context->decoder, context->target, &context->desc.base);
       context->decoder->encode_bitstream(context->decoder, context->target,
                                          coded_buf->derived_surface.resource, &feedback);
@@ -1237,9 +1238,9 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       coded_buf->coded_surf = surf;
       surf->coded_buf = coded_buf;
    } else if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM) {
-      context->desc.base.fence = &surf->fence;
+      context->desc.base.out_fence = &surf->fence;
    } else if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_PROCESSING) {
-      context->desc.base.fence = &surf->fence;
+      context->desc.base.out_fence = &surf->fence;
    }
 
    if (screen->is_video_target_buffer_supported &&
@@ -1253,7 +1254,7 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    }
 
    /* when there are external handles, we can't set PIPE_FLUSH_ASYNC */
-   if (context->desc.base.fence)
+   if (context->desc.base.out_fence)
       context->desc.base.flush_flags = drv->has_external_handles ? 0 : PIPE_FLUSH_ASYNC;
 
    if (context->decoder->end_frame(context->decoder, context->target, &context->desc.base) != 0) {

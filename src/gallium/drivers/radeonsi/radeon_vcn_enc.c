@@ -1793,7 +1793,7 @@ static int radeon_enc_end_frame(struct pipe_video_codec *encoder, struct pipe_vi
    if (enc->error)
       return -1;
 
-   return flush(enc, picture->flush_flags, picture->fence);
+   return flush(enc, picture->flush_flags, picture->out_fence);
 }
 
 static void radeon_enc_destroy(struct pipe_video_codec *encoder)

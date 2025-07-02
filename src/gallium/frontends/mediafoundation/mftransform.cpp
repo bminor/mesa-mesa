@@ -1176,8 +1176,8 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      struct pipe_vpp_desc vpblit_params = {};
                      struct pipe_fence_handle *dst_surface_fence = nullptr;
 
-                     vpblit_params.src_surface_fence = NULL;   // No need, we _just_ waited for completion above before get_feedback
-                     vpblit_params.base.fence = &dst_surface_fence;   // Output surface fence (driver output)
+                     vpblit_params.base.in_fence = NULL;   // No need, we _just_ waited for completion above before get_feedback
+                     vpblit_params.base.out_fence = &dst_surface_fence;   // Output surface fence (driver output)
 
 #if MFT_CODEC_H264ENC
                      auto &cur_pic_dpb_entry =
@@ -1227,7 +1227,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                      pThis->m_pPipeVideoBlitter->flush( pThis->m_pPipeVideoBlitter );
 
-                     assert( *vpblit_params.base.fence );   // Driver must have returned the completion fence
+                     assert( dst_surface_fence );   // Driver must have returned the completion fence
                      // Wait for downscaling completion before encode can proceed
 
                      // TODO: This can probably be done better later as plumbing
@@ -1238,7 +1238,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      ASSERTED bool finished =
                         pThis->m_pPipeVideoCodec->context->screen->fence_finish( pThis->m_pPipeVideoCodec->context->screen,
                                                                                  NULL, /*passing non NULL resets GRFX context*/
-                                                                                 *vpblit_params.base.fence,
+                                                                                 dst_surface_fence,
                                                                                  OS_TIMEOUT_INFINITE );
                      assert( finished );
                   }
@@ -2019,7 +2019,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 
       HMFT_ETW_EVENT_STOP( "PipeSubmitFrame", this );
 
-      pDX12EncodeContext->encoderPicInfo.base.fence =
+      pDX12EncodeContext->encoderPicInfo.base.out_fence =
          &pDX12EncodeContext->pAsyncFence;   // end_frame will fill in the fence as output param
 
       HMFT_ETW_EVENT_START( "PipeEndFrame", this );

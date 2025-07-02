@@ -675,8 +675,8 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
 
    if (pD3D12Dec->m_spDPBManager->is_pipe_buffer_underlying_output_decode_allocation()) {
       // No need to copy, the output surface fence is merely the decode queue fence
-      if (picture->fence)
-         d3d12_fence_reference((struct d3d12_fence **)picture->fence, pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_fence.get());
+      if (picture->out_fence)
+         d3d12_fence_reference((struct d3d12_fence **)picture->out_fence, pD3D12Dec->m_inflightResourcesPool[inflightIndexBeforeFlush].m_fence.get());
    } else {
       ///
       /// If !pD3D12Dec->m_spDPBManager->is_pipe_buffer_underlying_output_decode_allocation()
@@ -722,7 +722,7 @@ d3d12_video_decoder_end_frame(struct pipe_video_codec *codec,
       }
       // Flush resource_copy_region batch
       // The output surface fence is the graphics queue that will signal after the copy ends
-      pD3D12Dec->base.context->flush(pD3D12Dec->base.context, picture->fence, PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+      pD3D12Dec->base.context->flush(pD3D12Dec->base.context, picture->out_fence, PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
    }
    return 0;
 }

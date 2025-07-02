@@ -181,8 +181,8 @@ d3d12_video_processor_end_frame(struct pipe_video_codec * codec,
 
     d3d12_unique_fence &fence = pD3D12Proc->m_PendingFences[d3d12_video_processor_pool_current_index(pD3D12Proc)];
     fence.reset(d3d12_create_fence_raw(pD3D12Proc->m_spFence.Get(), pD3D12Proc->m_fenceValue));
-    if (picture->fence)
-      d3d12_fence_reference((struct d3d12_fence **)picture->fence, fence.get());
+    if (picture->out_fence)
+      d3d12_fence_reference((struct d3d12_fence **)picture->out_fence, fence.get());
     return 0;
 }
 
@@ -193,8 +193,8 @@ d3d12_video_processor_process_frame(struct pipe_video_codec *codec,
 {
     struct d3d12_video_processor * pD3D12Proc = (struct d3d12_video_processor *) codec;
 
-    // begin_frame gets only called once so wouldn't update process_properties->src_surface_fence correctly
-    pD3D12Proc->input_surface_fence = (struct d3d12_fence*) process_properties->src_surface_fence;
+    // begin_frame gets only called once so wouldn't update process_properties->base.in_fence correctly
+    pD3D12Proc->input_surface_fence = (struct d3d12_fence*) process_properties->base.in_fence;
 
     // Get the underlying resources from the pipe_video_buffers
     struct d3d12_video_buffer *pInputVideoBuffer = (struct d3d12_video_buffer *) input_texture;

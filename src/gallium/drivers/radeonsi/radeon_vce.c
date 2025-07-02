@@ -1033,7 +1033,7 @@ static int rvce_end_frame(struct pipe_video_codec *encoder, struct pipe_video_bu
 {
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
 
-   flush(enc, picture->flush_flags, picture->fence);
+   flush(enc, picture->flush_flags, picture->out_fence);
 
    return 0;
 }

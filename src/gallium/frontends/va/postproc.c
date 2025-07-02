@@ -568,7 +568,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
             return VA_STATUS_ERROR_ALLOCATION_FAILED;
       }
 
-      context->desc.vidproc.src_surface_fence = src_surface->fence;
+      context->desc.base.in_fence = src_surface->fence;
       /* Perform VPBlit, if fail, fallback to other implementations below */
       if (VA_STATUS_SUCCESS == vlVaVidEngineBlit(drv, context, src_region, dst_region,
                                                  src, context->target, deinterlace, param))

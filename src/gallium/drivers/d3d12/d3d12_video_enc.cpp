@@ -2726,7 +2726,7 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
       goto fail;
    }
 
-   pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_InputSurfaceFence = picture->fence ? d3d12_fence(*picture->fence) : nullptr;
+   pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_InputSurfaceFence = d3d12_fence(picture->in_fence);
    pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
    pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
 
@@ -4693,8 +4693,8 @@ d3d12_video_encoder_end_frame(struct pipe_video_codec * codec,
    pD3D12Enc->m_bPendingWorkNotFlushed = true;
 
    size_t current_metadata_slot = d3d12_video_encoder_metadata_current_index(pD3D12Enc);
-   if (picture->fence)
-      d3d12_fence_reference((struct d3d12_fence **)picture->fence, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_fence.get());
+   if (picture->out_fence)
+      d3d12_fence_reference((struct d3d12_fence **)picture->out_fence, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_fence.get());
 
    return 0;
 }
