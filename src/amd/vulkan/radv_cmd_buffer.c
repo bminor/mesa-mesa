@@ -1967,6 +1967,12 @@ radv_emit_rbplus_state(struct radv_cmd_buffer *cmd_buffer)
       }
    }
 
+   /* If there are no color outputs, the first color export is always enabled as 32_R, so also set
+    * this to enable RB+.
+    */
+   if (!sx_ps_downconvert)
+      sx_ps_downconvert = V_028754_SX_RT_EXPORT_32_R;
+
    /* Do not set the DISABLE bits for the unused attachments, as that
     * breaks dual source blending in SkQP and does not seem to improve
     * performance. */
@@ -4637,6 +4643,23 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 
       radv_load_color_clear_metadata(cmd_buffer, iview, i);
    }
+
+   /* When there are no color outputs, always set the first color output as 32_R for RB+ depth-only. */
+   if (pdev->info.rbplus_allowed && render->color_att_count == 0) {
+      radeon_begin(cmd_buffer->cs);
+      if (pdev->info.gfx_level >= GFX12) {
+         radeon_set_context_reg(R_028EC0_CB_COLOR0_INFO + i * 4,
+                                S_028EC0_FORMAT(V_028EC0_COLOR_32) | S_028EC0_NUMBER_TYPE(V_028C70_NUMBER_FLOAT));
+      } else {
+         const uint32_t cb_color0_info = (pdev->info.gfx_level >= GFX11 ? S_028C70_FORMAT_GFX11(V_028C70_COLOR_32)
+                                                                        : S_028C70_FORMAT_GFX6(V_028C70_COLOR_32)) |
+                                         S_028C70_NUMBER_TYPE(V_028C70_NUMBER_FLOAT);
+         radeon_set_context_reg(R_028C70_CB_COLOR0_INFO + i * 0x3C, cb_color0_info);
+      }
+      radeon_end();
+      ++i;
+   }
+
    for (; i < cmd_buffer->state.last_subpass_color_count; i++) {
       radeon_begin(cs);
       if (pdev->info.gfx_level >= GFX12) {
@@ -7574,6 +7597,37 @@ radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader,
    radv_cs_add_buffer(device->ws, cs->b, shader->bo);
 }
 
+static bool
+radv_can_enable_rbplus_depth_only(const struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ps,
+                                  uint32_t col_format, uint32_t custom_blend_mode)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   if (!pdev->info.rbplus_allowed)
+      return false;
+
+   /* Enable RB+ for depth-only rendering. Registers must be programmed as follows:
+    *    CB_COLOR_CONTROL.MODE = CB_DISABLE
+    *    CB_COLOR0_INFO.FORMAT = COLOR_32
+    *    CB_COLOR0_INFO.NUMBER_TYPE = NUMBER_FLOAT
+    *    SPI_SHADER_COL_FORMAT.COL0_EXPORT_FORMAT = SPI_SHADER_32_R
+    *    SX_PS_DOWNCONVERT.MRT0 = SX_RT_EXPORT_32_R
+    *
+    * col_format == 0 implies no color outputs written and no alpha to coverage.
+    */
+
+   /* Do not enable for secondaries because it depends on states that we might not know. */
+   if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
+      return false;
+
+   /* Do not enable for internal operations which program CB_MODE differently. */
+   if (custom_blend_mode)
+      return false;
+
+   return !col_format && (!ps || !ps->info.ps.writes_memory);
+}
+
 static void
 radv_bind_fragment_output_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ps,
                                 const struct radv_shader_part *ps_epilog, uint32_t custom_blend_mode)
@@ -7596,7 +7650,10 @@ radv_bind_fragment_output_state(struct radv_cmd_buffer *cmd_buffer, const struct
       cb_shader_mask = 0xf;
    }
 
-   if (radv_needs_null_export_workaround(device, ps, custom_blend_mode) && !col_format)
+   const bool rbplus_depth_only_enabled =
+      radv_can_enable_rbplus_depth_only(cmd_buffer, ps, col_format, custom_blend_mode);
+
+   if ((radv_needs_null_export_workaround(device, ps, custom_blend_mode) && !col_format) || rbplus_depth_only_enabled)
       col_format = V_028714_SPI_SHADER_32_R;
 
    if (cmd_buffer->state.spi_shader_col_format != col_format) {
