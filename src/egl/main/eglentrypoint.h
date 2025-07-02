@@ -5,7 +5,9 @@
 /* alphabetical order */
 EGL_ENTRYPOINT(eglBindAPI)
 EGL_ENTRYPOINT(eglBindTexImage)
+#ifdef HAVE_BIND_WL_DISPLAY
 EGL_ENTRYPOINT(eglBindWaylandDisplayWL)
+#endif
 EGL_ENTRYPOINT(eglChooseConfig)
 EGL_ENTRYPOINT(eglClientWaitSync)
 EGL_ENTRYPOINT(eglClientWaitSyncKHR)
@@ -23,7 +25,9 @@ EGL_ENTRYPOINT(eglCreatePlatformWindowSurfaceEXT)
 EGL_ENTRYPOINT(eglCreateSync)
 EGL_ENTRYPOINT(eglCreateSync64KHR)
 EGL_ENTRYPOINT(eglCreateSyncKHR)
+#ifdef HAVE_BIND_WL_DISPLAY
 EGL_ENTRYPOINT(eglCreateWaylandBufferFromImageWL)
+#endif
 EGL_ENTRYPOINT(eglCreateWindowSurface)
 EGL_ENTRYPOINT(eglDebugMessageControlKHR)
 EGL_ENTRYPOINT(eglDestroyContext)
@@ -70,7 +74,9 @@ EGL_ENTRYPOINT(eglQueryDmaBufModifiersEXT)
 EGL_ENTRYPOINT(eglQueryString)
 EGL_ENTRYPOINT(eglQuerySupportedCompressionRatesEXT)
 EGL_ENTRYPOINT(eglQuerySurface)
+#ifdef HAVE_BIND_WL_DISPLAY
 EGL_ENTRYPOINT(eglQueryWaylandBufferWL)
+#endif
 EGL_ENTRYPOINT(eglReleaseTexImage)
 EGL_ENTRYPOINT(eglReleaseThread)
 EGL_ENTRYPOINT(eglSetBlobCacheFuncsANDROID)
@@ -82,7 +88,9 @@ EGL_ENTRYPOINT(eglSwapBuffersWithDamageEXT)
 EGL_ENTRYPOINT(eglSwapBuffersWithDamageKHR)
 EGL_ENTRYPOINT(eglSwapInterval)
 EGL_ENTRYPOINT(eglTerminate)
+#ifdef HAVE_BIND_WL_DISPLAY
 EGL_ENTRYPOINT(eglUnbindWaylandDisplayWL)
+#endif
 EGL_ENTRYPOINT(eglWaitClient)
 EGL_ENTRYPOINT(eglWaitGL)
 EGL_ENTRYPOINT(eglWaitNative)

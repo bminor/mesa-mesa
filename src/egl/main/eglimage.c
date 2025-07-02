@@ -71,6 +71,7 @@ _eglParseKHRImageAttribs(_EGLImageAttribs *attrs, _EGLDisplay *disp,
    return EGL_SUCCESS;
 }
 
+#ifdef HAVE_BIND_WL_DISPLAY
 static EGLint
 _eglParseWLBindWaylandDisplayAttribs(_EGLImageAttribs *attrs, _EGLDisplay *disp,
                                      EGLint attr, EGLint val)
@@ -88,6 +89,7 @@ _eglParseWLBindWaylandDisplayAttribs(_EGLImageAttribs *attrs, _EGLDisplay *disp,
 
    return EGL_SUCCESS;
 }
+#endif
 
 static EGLint
 _eglParseEXTImageDmaBufImportAttribs(_EGLImageAttribs *attrs, _EGLDisplay *disp,
@@ -266,9 +268,11 @@ _eglParseImageAttribList(_EGLImageAttribs *attrs, _EGLDisplay *disp,
       if (err == EGL_SUCCESS)
          continue;
 
+#ifdef HAVE_BIND_WL_DISPLAY
       err = _eglParseWLBindWaylandDisplayAttribs(attrs, disp, attr, val);
       if (err == EGL_SUCCESS)
          continue;
+#endif
 
       err = _eglParseEXTImageDmaBufImportAttribs(attrs, disp, attr, val);
       if (err == EGL_SUCCESS)

@@ -49,8 +49,10 @@
 
 #ifdef HAVE_WAYLAND_PLATFORM
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
+#if HAVE_BIND_WL_DISPLAY
 #include "wayland-drm-client-protocol.h"
 #include "wayland-drm.h"
+#endif
 #include <wayland-client.h>
 #endif
 
@@ -1892,7 +1894,7 @@ dri2_create_image_khr_renderbuffer(_EGLDisplay *disp, _EGLContext *ctx,
    return dri2_create_image_from_dri(disp, dri_image);
 }
 
-#ifdef HAVE_WAYLAND_PLATFORM
+#ifdef HAVE_BIND_WL_DISPLAY
 static _EGLImage *
 dri2_create_image_wayland_wl_buffer(_EGLDisplay *disp, _EGLContext *ctx,
                                     EGLClientBuffer _buffer,
@@ -2608,7 +2610,7 @@ dri2_create_image_khr(_EGLDisplay *disp, _EGLContext *ctx, EGLenum target,
    case EGL_LINUX_DMA_BUF_EXT:
       return dri2_create_image_dma_buf(disp, ctx, buffer, attr_list);
 #endif
-#ifdef HAVE_WAYLAND_PLATFORM
+#ifdef HAVE_BIND_WL_DISPLAY
    case EGL_WAYLAND_BUFFER_WL:
       return dri2_create_image_wayland_wl_buffer(disp, ctx, buffer, attr_list);
 #endif
@@ -2632,7 +2634,7 @@ dri2_destroy_image_khr(_EGLDisplay *disp, _EGLImage *image)
    return EGL_TRUE;
 }
 
-#ifdef HAVE_WAYLAND_PLATFORM
+#ifdef HAVE_BIND_WL_DISPLAY
 
 static void
 dri2_wl_reference_buffer(void *user_data, int fd, struct wl_drm_buffer *buffer)
@@ -3147,7 +3149,6 @@ const _EGLDriver _eglDriver = {
    .QueryBufferAge = dri2_query_buffer_age,
    .CreateImageKHR = dri2_create_image,
    .DestroyImageKHR = dri2_destroy_image_khr,
-   .CreateWaylandBufferFromImageWL = dri2_create_wayland_buffer_from_image,
    .QuerySurface = dri2_query_surface,
    .QueryDriverName = dri2_query_driver_name,
    .QueryDriverConfig = dri2_query_driver_config,
@@ -3158,10 +3159,11 @@ const _EGLDriver _eglDriver = {
    .QueryDmaBufFormatsEXT = dri2_query_dma_buf_formats,
    .QueryDmaBufModifiersEXT = dri2_query_dma_buf_modifiers,
 #endif
-#ifdef HAVE_WAYLAND_PLATFORM
+#ifdef HAVE_BIND_WL_DISPLAY
    .BindWaylandDisplayWL = dri2_bind_wayland_display_wl,
    .UnbindWaylandDisplayWL = dri2_unbind_wayland_display_wl,
    .QueryWaylandBufferWL = dri2_query_wayland_buffer_wl,
+   .CreateWaylandBufferFromImageWL = dri2_create_wayland_buffer_from_image,
 #endif
    .GetSyncValuesCHROMIUM = dri2_get_sync_values_chromium,
    .GetMscRateANGLE = dri2_get_msc_rate_angle,

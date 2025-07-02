@@ -271,9 +271,13 @@ struct dri2_egl_display {
    struct wl_display *wl_dpy;
    struct wl_display *wl_dpy_wrapper;
    struct wl_registry *wl_registry;
+#ifdef HAVE_BIND_WL_DISPLAY
    struct wl_drm *wl_server_drm;
    struct wl_drm *wl_drm;
    uint32_t wl_drm_version, wl_drm_name;
+   bool authenticated;
+   uint32_t capabilities;
+#endif
    struct wl_shm *wl_shm;
    struct wl_event_queue *wl_queue;
    struct zwp_linux_dmabuf_v1 *wl_dmabuf;
@@ -281,8 +285,6 @@ struct dri2_egl_display {
    struct dri2_wl_formats formats;
    struct zwp_linux_dmabuf_feedback_v1 *wl_dmabuf_feedback;
    struct dmabuf_feedback_format_table format_table;
-   bool authenticated;
-   uint32_t capabilities;
    char *device_name;
    bool is_render_node;
    clockid_t presentation_clock_id;
@@ -590,7 +592,7 @@ dri2_get_dri_config(struct dri2_egl_config *conf, EGLint surface_type,
 static inline void
 dri2_set_WL_bind_wayland_display(_EGLDisplay *disp)
 {
-#ifdef HAVE_WAYLAND_PLATFORM
+#ifdef HAVE_BIND_WL_DISPLAY
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    disp->Extensions.WL_bind_wayland_display =

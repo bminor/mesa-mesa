@@ -778,6 +778,16 @@ option(
 )
 
 option(
+  'legacy-wayland',
+  type : 'array',
+  value : [],
+  description : 'Build legacy Wayland support features.',
+  choices : [
+    'bind-wayland-display',
+  ],
+)
+
+option(
   'legacy-x11',
   type : 'array',
   value : [],

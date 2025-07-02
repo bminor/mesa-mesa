@@ -45,6 +45,8 @@ import genCommon
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--bind-wl-display", action="store_true",
+                        help="Include EGL_WL_bind_wayland_display")
     parser.add_argument("target", choices=("header", "source"),
                         help="Whether to build the source or header file.")
     parser.add_argument("xml_files", nargs="+",
@@ -56,9 +58,11 @@ def main():
     xmlByName = dict((f.name, f) for f in xmlFunctions)
     functions = []
     for (name, eglFunc) in eglFunctionList.EGL_FUNCTIONS:
+        if not args.bind_wl_display and "Wayland" in name:
+            continue
         func = xmlByName[name]
         eglFunc = fixupEglFunc(func, eglFunc)
-        functions.append((func, eglFunc))
+        functions.append((func, eglFunc))        
 
     # Sort the function list by name.
     functions = sorted(functions, key=lambda f: f[0].name)

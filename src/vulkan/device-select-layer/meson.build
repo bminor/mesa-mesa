@@ -15,7 +15,10 @@ endif
 
 if with_platform_wayland
    vklayer_files += files('device_select_wayland.c')
-   vklayer_files += [ wayland_drm_client_protocol_h, wayland_drm_protocol_c ]
+   if with_wayland_bind_display
+     vklayer_files += [ wayland_drm_client_protocol_h, wayland_drm_protocol_c ]
+     vklayer_flags += [ '-DHAVE_BIND_WL_DISPLAY' ]
+   endif
    vklayer_files += wp_files['linux-dmabuf-unstable-v1']
    vklayer_deps += dep_wayland_client
 endif

@@ -158,6 +158,7 @@ struct _egl_driver {
    /* for EGL_ANDROID_native_fence_sync */
    EGLint (*DupNativeFenceFDANDROID)(_EGLDisplay *disp, _EGLSync *sync);
 
+#ifdef HAVE_BIND_WL_DISPLAY
    /* for EGL_WL_bind_wayland_display */
    EGLBoolean (*BindWaylandDisplayWL)(_EGLDisplay *disp,
                                       struct wl_display *display);
@@ -170,6 +171,7 @@ struct _egl_driver {
    /* for EGL_WL_create_wayland_buffer_from_image */
    struct wl_buffer *(*CreateWaylandBufferFromImageWL)(_EGLDisplay *disp,
                                                        _EGLImage *img);
+#endif
 
    /* for EGL_EXT_swap_buffers_with_damage */
    EGLBoolean (*SwapBuffersWithDamageEXT)(_EGLDisplay *disp,

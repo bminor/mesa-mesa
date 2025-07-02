@@ -61,7 +61,7 @@ endif
 if with_imgui
   subdir('imgui')
 endif
-if with_platform_wayland
+if with_wayland_bind_display
   subdir('egl/wayland/wayland-drm')
 endif
 if with_any_vk or with_gallium_zink

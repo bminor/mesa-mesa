@@ -2239,6 +2239,7 @@ eglDupNativeFenceFDANDROID(EGLDisplay dpy, EGLSync sync)
    RETURN_EGL_SUCCESS(disp, ret);
 }
 
+#ifdef HAVE_BIND_WL_DISPLAY
 struct wl_display;
 
 static EGLBoolean EGLAPIENTRY
@@ -2327,6 +2328,7 @@ eglCreateWaylandBufferFromImageWL(EGLDisplay dpy, EGLImage image)
 
    RETURN_EGL_EVAL(disp, ret);
 }
+#endif
 
 static EGLBoolean EGLAPIENTRY
 eglGetSyncValuesCHROMIUM(EGLDisplay dpy, EGLSurface surface, EGLuint64KHR *ust,

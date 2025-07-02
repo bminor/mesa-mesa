@@ -57,7 +57,9 @@
 #include <loader_wayland_helper.h>
 
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
+#ifdef HAVE_BIND_WL_DISPLAY
 #include "wayland-drm-client-protocol.h"
+#endif
 #include <wayland-client.h>
 #include <wayland-egl-backend.h>
 
@@ -724,7 +726,11 @@ dri2_wl_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
    assert(visual_idx != -1);
    assert(dri2_wl_visuals[visual_idx].pipe_format != PIPE_FORMAT_NONE);
 
-   if (dri2_dpy->wl_dmabuf || dri2_dpy->wl_drm) {
+   if (dri2_dpy->wl_dmabuf
+#ifdef HAVE_BIND_WL_DISPLAY
+   || dri2_dpy->wl_drm
+#endif
+   ) {
       dri2_surf->format = dri2_wl_visuals[visual_idx].wl_drm_format;
    } else {
       assert(dri2_dpy->wl_shm);
@@ -752,6 +758,7 @@ dri2_wl_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
       goto cleanup_surf;
    }
 
+#ifdef HAVE_BIND_WL_DISPLAY
    if (dri2_dpy->wl_drm) {
       dri2_surf->wl_drm_wrapper = wl_proxy_create_wrapper(dri2_dpy->wl_drm);
       if (!dri2_surf->wl_drm_wrapper) {
@@ -761,6 +768,7 @@ dri2_wl_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
       wl_proxy_set_queue((struct wl_proxy *)dri2_surf->wl_drm_wrapper,
                          dri2_surf->wl_queue);
    }
+#endif
 
    dri2_surf->wl_dpy_wrapper = wl_proxy_create_wrapper(dri2_dpy->wl_dpy);
    if (!dri2_surf->wl_dpy_wrapper) {
@@ -840,9 +848,11 @@ cleanup_surf_wrapper:
 cleanup_dpy_wrapper:
    wl_proxy_wrapper_destroy(dri2_surf->wl_dpy_wrapper);
 cleanup_drm:
+#ifdef HAVE_BIND_WL_DISPLAY
    if (dri2_surf->wl_drm_wrapper)
       wl_proxy_wrapper_destroy(dri2_surf->wl_drm_wrapper);
 cleanup_queue:
+#endif
    wl_event_queue_destroy(dri2_surf->wl_queue);
 cleanup_surf:
    free(dri2_surf);
@@ -900,8 +910,10 @@ dri2_wl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
 
    loader_wayland_surface_destroy(&dri2_surf->wayland_surface);
    wl_proxy_wrapper_destroy(dri2_surf->wl_dpy_wrapper);
+#ifdef HAVE_BIND_WL_DISPLAY
    if (dri2_surf->wl_drm_wrapper)
       wl_proxy_wrapper_destroy(dri2_surf->wl_drm_wrapper);
+#endif
    if (dri2_surf->wl_dmabuf_feedback) {
       zwp_linux_dmabuf_feedback_v1_destroy(dri2_surf->wl_dmabuf_feedback);
       dmabuf_feedback_fini(&dri2_surf->dmabuf_feedback);
@@ -1657,7 +1669,9 @@ create_wl_buffer(struct dri2_egl_display *dri2_dpy,
       ret = zwp_linux_buffer_params_v1_create_immed(params, width, height,
                                                     fourcc, 0);
       zwp_linux_buffer_params_v1_destroy(params);
-   } else if (dri2_dpy->wl_drm) {
+   }
+#ifdef HAVE_BIND_WL_DISPLAY
+   else if (dri2_dpy->wl_drm) {
       struct wl_drm *wl_drm =
          dri2_surf ? dri2_surf->wl_drm_wrapper : dri2_dpy->wl_drm;
       int fd = -1, stride;
@@ -1684,6 +1698,7 @@ create_wl_buffer(struct dri2_egl_display *dri2_dpy,
                                        stride, 0, 0, 0, 0);
       close(fd);
    }
+#endif
 
    return ret;
 }
@@ -1877,6 +1892,7 @@ dri2_wl_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
    return dri2_wl_swap_buffers_with_damage(disp, draw, NULL, 0);
 }
 
+#ifdef HAVE_BIND_WL_DISPLAY
 static struct wl_buffer *
 dri2_wl_create_wayland_buffer_from_image(_EGLDisplay *disp, _EGLImage *img)
 {
@@ -2003,6 +2019,7 @@ static const struct wl_drm_listener drm_listener = {
    .authenticated = drm_handle_authenticated,
    .capabilities = drm_handle_capabilities,
 };
+#endif
 
 static void
 dmabuf_ignore_format(void *data, struct zwp_linux_dmabuf_v1 *dmabuf,
@@ -2041,6 +2058,7 @@ static const struct zwp_linux_dmabuf_v1_listener dmabuf_listener = {
    .modifier = dmabuf_handle_modifier,
 };
 
+#ifdef HAVE_BIND_WL_DISPLAY
 static void
 wl_drm_bind(struct dri2_egl_display *dri2_dpy)
 {
@@ -2049,6 +2067,7 @@ wl_drm_bind(struct dri2_egl_display *dri2_dpy)
                        &wl_drm_interface, dri2_dpy->wl_drm_version);
    wl_drm_add_listener(dri2_dpy->wl_drm, &drm_listener, dri2_dpy);
 }
+#endif
 
 static void
 default_dmabuf_feedback_format_table(
@@ -2088,7 +2107,9 @@ default_dmabuf_feedback_main_device(
 
    dri2_dpy->device_name = node;
    dri2_dpy->fd_render_gpu = fd;
+#ifdef HAVE_BIND_WL_DISPLAY
    dri2_dpy->authenticated = true;
+#endif
 }
 
 static void
@@ -2192,10 +2213,13 @@ registry_handle_global_drm(void *data, struct wl_registry *registry,
 {
    struct dri2_egl_display *dri2_dpy = data;
 
+#ifdef HAVE_BIND_WL_DISPLAY
    if (strcmp(interface, wl_drm_interface.name) == 0) {
       dri2_dpy->wl_drm_version = MIN2(version, 2);
       dri2_dpy->wl_drm_name = name;
-   } else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
+   } else
+#endif
+   if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
               version >= 3) {
       dri2_dpy->wl_dmabuf = wl_registry_bind(
          registry, name, &zwp_linux_dmabuf_v1_interface,
@@ -2233,7 +2257,10 @@ dri2_wl_setup_swap_interval(_EGLDisplay *disp)
 }
 
 static const struct dri2_egl_display_vtbl dri2_wl_display_vtbl = {
+#ifdef HAVE_BIND_WL_DISPLAY
    .authenticate = dri2_wl_authenticate,
+   .create_wayland_buffer_from_image = dri2_wl_create_wayland_buffer_from_image,
+#endif
    .create_window_surface = dri2_wl_create_window_surface,
    .create_pixmap_surface = dri2_wl_create_pixmap_surface,
    .destroy_surface = dri2_wl_destroy_surface,
@@ -2242,7 +2269,6 @@ static const struct dri2_egl_display_vtbl dri2_wl_display_vtbl = {
    .swap_buffers = dri2_wl_swap_buffers,
    .swap_buffers_with_damage = dri2_wl_swap_buffers_with_damage,
    .query_buffer_age = dri2_wl_query_buffer_age,
-   .create_wayland_buffer_from_image = dri2_wl_create_wayland_buffer_from_image,
    .get_dri_drawable = dri2_surface_get_dri_drawable,
 };
 
@@ -2334,6 +2360,7 @@ dri2_initialize_wayland_drm_extensions(struct dri2_egl_display *dri2_dpy)
       dmabuf_feedback_format_table_fini(&dri2_dpy->format_table);
    }
 
+#ifdef HAVE_BIND_WL_DISPLAY
    /* We couldn't retrieve a render node from the dma-buf feedback (or the
     * feedback was not advertised at all), so we must fallback to wl_drm. */
    if (dri2_dpy->fd_render_gpu == -1) {
@@ -2351,6 +2378,7 @@ dri2_initialize_wayland_drm_extensions(struct dri2_egl_display *dri2_dpy)
           (roundtrip(dri2_dpy) < 0 || !dri2_dpy->authenticated))
          return false;
    }
+#endif
    return true;
 }
 
@@ -2436,6 +2464,7 @@ dri2_initialize_wayland_drm(_EGLDisplay *disp)
 
    dri2_wl_setup_swap_interval(disp);
 
+#ifdef HAVE_BIND_WL_DISPLAY
    if (dri2_dpy->wl_drm) {
       /* To use Prime, we must have _DRI_IMAGE v7 at least.
        * createImageFromDmaBufs support indicates that Prime export/import is
@@ -2448,8 +2477,6 @@ dri2_initialize_wayland_drm(_EGLDisplay *disp)
       }
    }
 
-   dri2_wl_add_configs_for_visuals(disp);
-
    dri2_set_WL_bind_wayland_display(disp);
    /* When cannot convert EGLImage to wl_buffer when on a different gpu,
     * because the buffer of the EGLImage has likely a tiling mode the server
@@ -2457,11 +2484,12 @@ dri2_initialize_wayland_drm(_EGLDisplay *disp)
     * the extension */
    if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu)
       disp->Extensions.WL_create_wayland_buffer_from_image = EGL_TRUE;
+#endif
+
+   dri2_wl_add_configs_for_visuals(disp);
 
    disp->Extensions.EXT_buffer_age = EGL_TRUE;
-
    disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
-
    disp->Extensions.EXT_present_opaque = EGL_TRUE;
 
    /* Fill vtbl last to prevent accidentally calling virtual function during
@@ -2941,13 +2969,15 @@ registry_handle_global_kopper(void *data, struct wl_registry *registry,
 {
    struct dri2_egl_display *dri2_dpy = data;
 
-   if (strcmp(interface, wl_shm_interface.name) == 0) {
-      dri2_dpy->wl_shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
-      wl_shm_add_listener(dri2_dpy->wl_shm, &shm_listener, dri2_dpy);
-   }
+#ifdef HAVE_BIND_WL_DISPLAY
    if (strcmp(interface, wl_drm_interface.name) == 0) {
       dri2_dpy->wl_drm_version = MIN2(version, 2);
       dri2_dpy->wl_drm_name = name;
+   } else
+#endif
+   if (strcmp(interface, wl_shm_interface.name) == 0) {
+      dri2_dpy->wl_shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
+      wl_shm_add_listener(dri2_dpy->wl_shm, &shm_listener, dri2_dpy);
    } else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
                version >= 3) {
       dri2_dpy->wl_dmabuf = wl_registry_bind(
@@ -3202,9 +3232,11 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
 
    dri2_wl_add_configs_for_visuals(disp);
 
+#ifdef HAVE_BIND_WL_DISPLAY
    if (disp->Options.Zink && dri2_dpy->fd_render_gpu >= 0 &&
        (dri2_dpy->wl_dmabuf || dri2_dpy->wl_drm))
       dri2_set_WL_bind_wayland_display(disp);
+#endif
    disp->Extensions.EXT_buffer_age = EGL_TRUE;
    disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
    disp->Extensions.EXT_present_opaque = EGL_TRUE;
@@ -3235,8 +3267,10 @@ dri2_teardown_wayland(struct dri2_egl_display *dri2_dpy)
    dri2_wl_formats_fini(&dri2_dpy->formats);
    if (dri2_dpy->wp_presentation)
       wp_presentation_destroy(dri2_dpy->wp_presentation);
+#ifdef HAVE_BIND_WL_DISPLAY
    if (dri2_dpy->wl_drm)
       wl_drm_destroy(dri2_dpy->wl_drm);
+#endif
    if (dri2_dpy->wl_dmabuf)
       zwp_linux_dmabuf_v1_destroy(dri2_dpy->wl_dmabuf);
    if (dri2_dpy->wl_shm)

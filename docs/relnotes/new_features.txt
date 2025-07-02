@@ -66,3 +66,4 @@ VK_ARM_shader_core_properties on panvk/v10+
 removed X11 DRI2 support
 removed EGL_MESA_drm_image
 removed pre-dmabuf wl_drm support
+deprecated EGL_WL_bind_wayland_display

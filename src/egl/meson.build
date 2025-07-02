@@ -49,6 +49,13 @@ files_egl = files(
   'main/egltypedefs.h',
 )
 
+# Remove the argument parsing from gen_egl_dispatch.py when removing this
+# option
+gen_args = []
+if with_wayland_bind_display
+    gen_args += [ '--bind-wl-display' ]
+endif
+
 g_egldispatchstubs_c = custom_target(
   'g_egldispatchstubs.c',
   input : [
@@ -57,7 +64,7 @@ g_egldispatchstubs_c = custom_target(
   ],
   output : 'g_egldispatchstubs.c',
   command : [
-    prog_python, '@INPUT0@', 'source', '@INPUT1@', '@INPUT2@',
+    prog_python, '@INPUT0@', gen_args, 'source', '@INPUT1@', '@INPUT2@'
   ],
   depend_files : [ 'generate/eglFunctionList.py', glapi_xml_py_deps],
   capture : true,
@@ -71,7 +78,7 @@ g_egldispatchstubs_h = custom_target(
   ],
   output : 'g_egldispatchstubs.h',
   command : [
-    prog_python, '@INPUT0@', 'header', '@INPUT1@', '@INPUT2@',
+    prog_python, '@INPUT0@', gen_args, 'header', '@INPUT1@', '@INPUT2@'
   ],
   depend_files : [ 'generate/eglFunctionList.py', glapi_xml_py_deps],
   capture : true,
@@ -113,11 +120,17 @@ if with_dri
   endif
   if with_platform_wayland
     deps_for_egl += [dep_wayland_client, dep_wayland_server, dep_wayland_egl_headers]
-    link_for_egl += [libwayland_drm, libloader_wayland_helper]
+    link_for_egl += libloader_wayland_helper
     files_egl += files('drivers/dri2/platform_wayland.c')
     files_egl += wp_files['linux-dmabuf-unstable-v1']
-    files_egl += [wayland_drm_client_protocol_h]
-    incs_for_egl += include_directories('wayland/wayland-drm')
+    if with_wayland_bind_display
+      files_egl += [wayland_drm_client_protocol_h]
+      link_for_egl += [libwayland_drm]
+      incs_for_egl += include_directories('wayland/wayland-drm')
+      c_args_for_egl += [
+        '-DHAVE_BIND_WL_DISPLAY'
+      ]
+    endif
   endif
   if with_platform_android
     deps_for_egl += [dep_android, idep_u_gralloc]

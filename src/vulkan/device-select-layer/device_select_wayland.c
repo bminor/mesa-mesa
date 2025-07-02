@@ -22,7 +22,9 @@
  */
 #include "util/macros.h"
 #include <wayland-client.h>
+#ifdef HAVE_BIND_WL_DISPLAY
 #include "wayland-drm-client-protocol.h"
+#endif
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
 #include "device_select.h"
 #include <string.h>
@@ -32,14 +34,17 @@
 #include <xf86drm.h>
 
 struct device_select_wayland_info {
+#ifdef HAVE_BIND_WL_DISPLAY
    struct wl_drm *wl_drm;
    drmDevicePtr drm_dev_info;
+#endif
 
    struct zwp_linux_dmabuf_v1 *wl_dmabuf;
    struct zwp_linux_dmabuf_feedback_v1 *wl_dmabuf_feedback;
    drmDevicePtr dmabuf_dev_info;
 };
 
+#ifdef HAVE_BIND_WL_DISPLAY
 static void
 device_select_drm_handle_device(void *data, struct wl_drm *drm, const char *device)
 {
@@ -79,6 +84,7 @@ static const struct wl_drm_listener ds_drm_listener = {
    .authenticated = device_select_drm_handle_authenticated,
    .capabilities = device_select_drm_handle_capabilities
 };
+#endif
 
 static void
 default_dmabuf_feedback_format_table(void *data,
@@ -159,10 +165,13 @@ device_select_registry_global(void *data, struct wl_registry *registry, uint32_t
                               const char *interface, uint32_t version)
 {
    struct device_select_wayland_info *info = data;
+#if HAVE_BIND_WL_DISPLAY
    if (strcmp(interface, wl_drm_interface.name) == 0) {
       info->wl_drm = wl_registry_bind(registry, name, &wl_drm_interface, MIN2(version, 2));
       wl_drm_add_listener(info->wl_drm, &ds_drm_listener, data);
-   } else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
+   } else
+#endif
+   if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
               version >= ZWP_LINUX_DMABUF_V1_GET_DEFAULT_FEEDBACK_SINCE_VERSION) {
       info->wl_dmabuf =
          wl_registry_bind(registry, name, &zwp_linux_dmabuf_v1_interface,
@@ -208,9 +217,13 @@ int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint
    drmDevicePtr target;
    if (info.dmabuf_dev_info != NULL) {
       target = info.dmabuf_dev_info;
-   } else if (info.drm_dev_info != NULL) {
+   }
+#ifdef HAVE_BIND_WL_DISPLAY
+   if (target == NULL && info.drm_dev_info != NULL) {
       target = info.drm_dev_info;
-   } else {
+   }
+#endif
+   if (target != NULL) {
       goto done;
    }
 
@@ -235,15 +248,19 @@ int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint
  done:
    if (info.dmabuf_dev_info != NULL)
       drmFreeDevice(&info.dmabuf_dev_info);
+#ifdef HAVE_BIND_WL_DISPLAY
    if (info.drm_dev_info != NULL)
       drmFreeDevice(&info.drm_dev_info);
+#endif
 
    if (info.wl_dmabuf_feedback)
       zwp_linux_dmabuf_feedback_v1_destroy(info.wl_dmabuf_feedback);
    if (info.wl_dmabuf)
       zwp_linux_dmabuf_v1_destroy(info.wl_dmabuf);
+#ifdef HAVE_BIND_WL_DISPLAY
    if (info.wl_drm)
       wl_drm_destroy(info.wl_drm);
+#endif
 
    wl_registry_destroy(registry);
    wl_display_disconnect(display);

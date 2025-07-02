@@ -1977,6 +1977,7 @@ endif
 
 # TODO: symbol mangling
 
+with_wayland_bind_display = with_platform_wayland and get_option('legacy-wayland').contains('bind-wayland-display')
 if with_platform_wayland
   dep_wl_scanner = dependency('wayland-scanner', native: true)
   prog_wl_scanner = find_program(dep_wl_scanner.get_variable(pkgconfig : 'wayland_scanner'))
