@@ -152,8 +152,7 @@ static ALWAYS_INLINE bool
 check_unordered_exec(struct zink_context *ctx, struct zink_resource *res, bool is_write)
 {
    if (res) {
-      if (!res->obj->is_buffer) {
-         /* TODO: figure out how to link up unordered layout -> ordered layout and delete this conditionals */
+      if (!res->obj->is_buffer && !zink_screen(ctx->base.screen)->info.have_KHR_unified_image_layouts) {
          if (zink_resource_usage_is_unflushed(res) && !res->obj->unordered_read && !res->obj->unordered_write)
             return false;
       }
