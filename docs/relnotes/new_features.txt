@@ -61,3 +61,4 @@ GL_EXT_shader_image_load_store on r600/evergreen+
 CL_UNORM_INT_101010_2 and cl_ext_image_unorm_int_2_101010
 timestamps on panvk/v10+
 VK_KHR_calibrated_timestamps on panvk/v10+
+VK_EXT_non_seamless_cube_map on panvk

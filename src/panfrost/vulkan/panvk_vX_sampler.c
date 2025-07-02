@@ -155,6 +155,10 @@ panvk_sampler_fill_desc(const struct VkSamplerCreateInfo *info,
          info->unnormalizedCoordinates
             ? MALI_WRAP_MODE_CLAMP_TO_EDGE
             : panvk_translate_sampler_address_mode(info->addressModeW);
+
+      cfg.seamless_cube_map =
+         (flags & VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT) == 0;
+
       cfg.compare_function = panvk_translate_sampler_compare_func(info);
       cfg.border_color_r = border_color.uint32[0];
       cfg.border_color_g = border_color.uint32[1];
