@@ -638,7 +638,7 @@ panvk_image_bind(struct panvk_device *dev,
    VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
 
    if (!mem) {
-#ifdef ANDROID
+#if DETECT_OS_ANDROID
       /* TODO handle VkNativeBufferANDROID when we support ANB */
       unreachable("VkBindImageMemoryInfo with no memory");
 #else
@@ -646,12 +646,9 @@ panvk_image_bind(struct panvk_device *dev,
          vk_find_struct_const(bind_info->pNext,
                               BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
       assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
-
-      VkImage wsi_vk_image = wsi_common_get_image(swapchain_info->swapchain,
-                                                swapchain_info->imageIndex);
-      VK_FROM_HANDLE(panvk_image, wsi_image, wsi_vk_image);
-
-      mem = wsi_image->mem;
+      VkDeviceMemory mem_handle = wsi_common_get_memory(
+         swapchain_info->swapchain, swapchain_info->imageIndex);
+      mem = panvk_device_memory_from_handle(mem_handle);
 #endif
    }
 
