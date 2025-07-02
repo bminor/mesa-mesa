@@ -1707,7 +1707,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    /* WARNING: Register shadowing decreases performance by up to 50% on GFX11 with current FW. */
    info->has_kernelq_reg_shadowing = device_info.ids_flags & AMDGPU_IDS_FLAGS_PREEMPTION &&
-                                     info->gfx_level < GFX11;
+                                     info->gfx_level < GFX11 &&
+                                     !(info->userq_ip_mask & (1 << AMD_IP_GFX));
 
    if (info->gfx_level >= GFX12) {
       info->has_set_context_pairs = true;
