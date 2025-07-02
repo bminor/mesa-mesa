@@ -682,7 +682,8 @@ nvk_linear_render_copy(struct nvk_cmd_buffer *cmd,
                                          src_plane->nil.sample_layout),
    };
 
-   copy.remap = nouveau_copy_remap_format(image->vk.format);
+   assert(src_plane->nil.format.p_format == dst_plane->nil.format.p_format);
+   copy.remap = nouveau_copy_remap_format(src_plane->nil.format.p_format);
    nouveau_copy_rect(cmd, &copy);
 }
 
