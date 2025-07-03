@@ -239,19 +239,10 @@ a660-gl-cl:
   rules:
     - !reference [.collabora-freedreno-rules, rules]
     - !reference [.rusticl-rules, rules]
-  parallel: 2
+  parallel: 3
   variables:
     DEQP_SUITE: freedreno-a660
-    DEQP_FRACTION: 2
     HWCI_START_WESTON: 1
-
-a660-gl-full:
-  extends:
-    - a660-gl
-    - .collabora-freedreno-manual-rules
-  parallel: null
-  variables:
-    DEQP_FRACTION: 1
 
 a660-vk:
   extends:
