@@ -5364,7 +5364,7 @@
         "description": "panvk: Always use varying_count in emit_varying_attrs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "05020699b9ccba8f5af6a3af24e057c772b3aacc",
         "notes": null

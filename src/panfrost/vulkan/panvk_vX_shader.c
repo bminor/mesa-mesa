@@ -1751,11 +1751,9 @@ emit_varying_attrs(struct panvk_pool *desc_pool,
                    unsigned varying_count, const struct varyings_info *info,
                    unsigned *buf_offsets, struct panvk_priv_mem *mem)
 {
-   unsigned attr_count = BITSET_COUNT(info->active);
+   *mem = panvk_pool_alloc_desc_array(desc_pool, varying_count, ATTRIBUTE);
 
-   *mem = panvk_pool_alloc_desc_array(desc_pool, attr_count, ATTRIBUTE);
-
-   if (attr_count && !panvk_priv_mem_dev_addr(*mem))
+   if (varying_count && !panvk_priv_mem_dev_addr(*mem))
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
    struct mali_attribute_packed *attrs = panvk_priv_mem_host_addr(*mem);
