@@ -225,12 +225,15 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       }
       cs_move32_to(b, cs_sr_reg32(b, COMPUTE, WG_SIZE),
                    wg_size.opaque[0]);
-      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_X),
-                   info->wg_base.x * shader->cs.local_size.x);
-      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Y),
-                   info->wg_base.y * shader->cs.local_size.y);
-      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Z),
-                   info->wg_base.z * shader->cs.local_size.z);
+
+      /* global_id and wg_id in NIR are expected to have base_workgroup_id added.
+       * Because job offset doesn't apply to wg_id on Mali, we set this to 0.
+       * XXX: We could teach nir_lower_system_values how to handle Mali weird
+       * case. */
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_X), 0);
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Y), 0);
+      cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_OFFSET_Z), 0);
+
       if (indirect) {
          /* Load parameters from indirect buffer and update workgroup count
           * registers and sysvals */
