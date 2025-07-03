@@ -4330,6 +4330,142 @@ ac_surface_compute_nbc_view(struct ac_addrlib *addrlib, const struct radeon_info
    }
 }
 
+static bool
+gfx10_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                               const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                               const struct ac_surface_copy_region *surf_copy_region,
+                               bool surface_is_dst)
+{
+   ADDR2_COPY_MEMSURFACE_INPUT input = {0};
+   input.size = sizeof(ADDR2_COPY_MEMSURFACE_INPUT);
+   input.swizzleMode = surf->u.gfx9.swizzle_mode;
+   input.format = bpe_to_format(surf);
+   input.flags.color = !(surf->flags & RADEON_SURF_Z_OR_SBUFFER);
+   input.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
+   input.resourceType = (AddrResourceType)surf->u.gfx9.resource_type;
+   input.bpp = surf->bpe * 8;
+   input.unAlignedDims.width = surf_info->width;
+   input.unAlignedDims.height = surf_info->height;
+   input.unAlignedDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
+                               surf_info->depth :
+                               surf_info->array_size;
+   input.numMipLevels = surf_info->levels;
+   input.numSamples = surf_info->samples;
+   input.pitchInElement = surf->u.gfx9.pitch[surf_copy_region->level];
+   input.pbXor = surf->tile_swizzle;
+   input.pMappedSurface = (void *)surf_copy_region->surf_ptr;
+
+   ADDR_E_RETURNCODE res;
+   ADDR2_COPY_MEMSURFACE_REGION region = {0};
+   region.size = sizeof(ADDR2_COPY_MEMSURFACE_REGION);
+   region.x = surf_copy_region->offset.x;
+   region.y = surf_copy_region->offset.y;
+   region.slice = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
+                  surf_copy_region->offset.z :
+                  surf_copy_region->base_layer;
+   region.mipId = surf_copy_region->level;
+   region.copyDims.width = surf_copy_region->extent.width;
+   region.copyDims.height = surf_copy_region->extent.height;
+   region.copyDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
+                           surf_copy_region->extent.depth :
+                           surf_copy_region->num_layers;
+   region.pMem = (void *)surf_copy_region->host_ptr;
+   region.memRowPitch = surf_copy_region->mem_row_pitch;
+   region.memSlicePitch = surf_copy_region->mem_slice_pitch;
+
+   if (surface_is_dst) {
+      res = Addr2CopyMemToSurface(addrlib->handle, &input, &region, 1);
+   } else {
+      res = Addr2CopySurfaceToMem(addrlib->handle, &input, &region, 1);
+   }
+
+   return res == ADDR_OK;
+}
+
+static bool
+gfx12_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                               const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                               const struct ac_surface_copy_region *surf_copy_region,
+                               bool surface_is_dst)
+{
+   ADDR3_COPY_MEMSURFACE_INPUT input = {0};
+   input.size = sizeof(ADDR3_COPY_MEMSURFACE_INPUT);
+   input.swizzleMode = surf->u.gfx9.swizzle_mode;
+   input.format = bpe_to_format(surf);
+   input.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
+   input.resourceType = (AddrResourceType)surf->u.gfx9.resource_type;
+   input.bpp = surf->bpe * 8;
+   input.unAlignedDims.width = surf_info->width;
+   input.unAlignedDims.height = surf_info->height;
+   input.unAlignedDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
+                               surf_info->depth :
+                               surf_info->array_size;
+   input.numMipLevels = surf_info->levels;
+   input.numSamples = surf_info->samples;
+   input.pitchInElement = surf->u.gfx9.pitch[surf_copy_region->level];
+   input.pbXor = surf->tile_swizzle;
+   input.pMappedSurface = (void *)surf_copy_region->surf_ptr;
+
+   ADDR_E_RETURNCODE res;
+   ADDR3_COPY_MEMSURFACE_REGION region = {0};
+   region.size = sizeof(ADDR3_COPY_MEMSURFACE_REGION);
+   region.x = surf_copy_region->offset.x;
+   region.y = surf_copy_region->offset.y;
+   region.slice = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
+                  surf_copy_region->offset.z :
+                  surf_copy_region->base_layer;
+   region.mipId = surf_copy_region->level;
+   region.copyDims.width = surf_copy_region->extent.width;
+   region.copyDims.height = surf_copy_region->extent.height;
+   region.copyDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
+                           surf_copy_region->extent.depth :
+                           surf_copy_region->num_layers;
+   region.pMem = (void *)surf_copy_region->host_ptr;
+   region.memRowPitch = surf_copy_region->mem_row_pitch;
+   region.memSlicePitch = surf_copy_region->mem_slice_pitch;
+
+   if (surface_is_dst) {
+      res = Addr3CopyMemToSurface(addrlib->handle, &input, &region, 1);
+   } else {
+      res = Addr3CopySurfaceToMem(addrlib->handle, &input, &region, 1);
+   }
+
+   return res == ADDR_OK;
+}
+
+static bool
+ac_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                            const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                            const struct ac_surface_copy_region *surf_copy_region,
+                            bool surface_is_dst)
+{
+   assert(info->gfx_level >= GFX10);
+
+   if (info->gfx_level >= GFX12) {
+      return gfx12_surface_copy_mem_surface(addrlib, info, surf, surf_info,
+                                            surf_copy_region, surface_is_dst);
+   } else {
+      return gfx10_surface_copy_mem_surface(addrlib, info, surf, surf_info,
+                                            surf_copy_region, surface_is_dst);
+   }
+}
+
+bool
+ac_surface_copy_mem_to_surface(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                               const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                               const struct ac_surface_copy_region *surf_copy_region)
+{
+   return ac_surface_copy_mem_surface(addrlib, info, surf, surf_info, surf_copy_region, true);
+}
+
+bool
+ac_surface_copy_surface_to_mem(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                               const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                               const struct ac_surface_copy_region *surf_copy_region)
+{
+   return ac_surface_copy_mem_surface(addrlib, info, surf, surf_info, surf_copy_region, false);
+}
+
 void ac_surface_print_info(FILE *out, const struct radeon_info *info,
                            const struct radeon_surf *surf)
 {
