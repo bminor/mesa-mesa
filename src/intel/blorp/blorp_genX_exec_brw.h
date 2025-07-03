@@ -1798,6 +1798,8 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
          .BindingTableEntryCount = params->src.enabled ? 2 : 1,
          .BindingTablePointer = surfaces_offset,
          .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
+         .ThreadGroupDispatchSize =
+            intel_compute_threads_group_dispatch_size(dispatch.threads),
          .SharedLocalMemorySize =
             intel_compute_slm_encode_size(GFX_VER, prog_data->total_shared),
          .PreferredSLMAllocationSize =
