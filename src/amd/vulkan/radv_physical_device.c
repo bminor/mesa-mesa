@@ -151,6 +151,13 @@ radv_cooperative_matrix2_nv_enabled(const struct radv_physical_device *pdev)
    return instance->drirc.cooperative_matrix2_nv;
 }
 
+static bool
+radv_host_image_copy_enabled(const struct radv_physical_device *pdev)
+{
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+   return pdev->info.gfx_level >= GFX10 && (instance->perftest_flags & RADV_PERFTEST_HIC);
+}
+
 bool
 radv_enable_rt(const struct radv_physical_device *pdev)
 {
@@ -690,6 +697,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_global_priority_query = true,
       .EXT_graphics_pipeline_library = !pdev->use_llvm && !(instance->debug_flags & RADV_DEBUG_NO_GPL),
       .EXT_hdr_metadata = true,
+      .EXT_host_image_copy = radv_host_image_copy_enabled(pdev),
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
       .EXT_image_compression_control = true,
@@ -953,7 +961,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .maintenance6 = true,
       .pipelineProtectedAccess = false,
       .pipelineRobustness = true,
-      .hostImageCopy = false,
+      .hostImageCopy = radv_host_image_copy_enabled(pdev),
       .pushDescriptor = true,
 
       /* VK_EXT_conditional_rendering */
@@ -1730,11 +1738,6 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .defaultRobustnessUniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS,
       .defaultRobustnessVertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED,
       .defaultRobustnessImages = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2,
-      .copySrcLayoutCount = 0,
-      .pCopySrcLayouts = NULL,
-      .copyDstLayoutCount = 0,
-      .pCopyDstLayouts = NULL,
-      .identicalMemoryTypeRequirements = false,
 
       /* VK_EXT_discard_rectangles */
       .maxDiscardRectangles = MAX_DISCARD_RECTANGLES,
@@ -2030,7 +2033,45 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .patch = 0,
    };
 
-   memset(p->optimalTilingLayoutUUID, 0, sizeof(p->optimalTilingLayoutUUID));
+   /* VK_EXT_host_image_copy */
+   static const VkImageLayout supported_layouts[] = {
+      VK_IMAGE_LAYOUT_UNDEFINED,
+      VK_IMAGE_LAYOUT_GENERAL,
+      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+      VK_IMAGE_LAYOUT_PREINITIALIZED,
+      VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+      VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ,
+      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
+      VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,
+      VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
+      VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR,
+      VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,
+      VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,
+      VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,
+      VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,
+      VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT,
+      VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT,
+   };
+
+   p->copySrcLayoutCount = ARRAY_SIZE(supported_layouts);
+   p->pCopySrcLayouts = (VkImageLayout *)supported_layouts;
+   p->copyDstLayoutCount = ARRAY_SIZE(supported_layouts);
+   p->pCopyDstLayouts = (VkImageLayout *)supported_layouts;
+   memcpy(p->optimalTilingLayoutUUID, pdev->driver_uuid, VK_UUID_SIZE);
+   p->identicalMemoryTypeRequirements = false;
 
    /* VK_EXT_physical_device_drm */
 #ifndef _WIN32

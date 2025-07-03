@@ -1512,6 +1512,8 @@ RADV driver environment variables
       rt extensions with older hardware.
    ``gewave32``
       enable wave32 for vertex/tess/geometry shaders (GFX10+)
+   ``hic``
+      enable experimental implementation of VK_EXT_host_image_copy (GFX10+)
    ``localbos``
       enable local BOs
    ``nggc``

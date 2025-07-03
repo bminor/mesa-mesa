@@ -118,6 +118,7 @@ static const struct debug_control radv_perftest_options[] = {{"localbos", RADV_P
                                                              {"rtwave32", RADV_PERFTEST_RT_WAVE_32},
                                                              {"video_encode", RADV_PERFTEST_VIDEO_ENCODE},
                                                              {"nogttspill", RADV_PERFTEST_NO_GTT_SPILL},
+                                                             {"hic", RADV_PERFTEST_HIC},
                                                              {NULL, 0}};
 
 static const struct debug_control radv_trap_excp_options[] = {

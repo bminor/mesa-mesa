@@ -70,3 +70,4 @@ removed EGL_MESA_drm_image
 removed pre-dmabuf wl_drm support
 deprecated EGL_WL_bind_wayland_display
 VK_KHR_shader_atomic_int64 on panvk/v10+
+VK_EXT_host_image_copy on RADV (RDNA1+)
