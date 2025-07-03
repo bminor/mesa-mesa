@@ -245,7 +245,7 @@ merge_sets_interfere(struct ir3_liveness *live, struct ir3_merge_set *a,
    int dom_index = -1;
 
    /* Reject trying to merge the sets if the alignment doesn't work out */
-   if (b_offset % a->alignment != 0)
+   if ((a->alignment + b_offset) % b->alignment != 0)
       return true;
 
    while (a_index < a->regs_count || b_index < b->regs_count) {
