@@ -367,6 +367,7 @@ get_interface_descriptor_data(struct anv_cmd_buffer *cmd_buffer,
       .BindingTableEntryCount = devinfo->verx10 == 125 ?
          0 : MIN2(shader->bind_map.surface_count, 30),
       .NumberofThreadsinGPGPUThreadGroup = dispatch->threads,
+      .ThreadGroupDispatchSize = intel_compute_threads_group_dispatch_size(dispatch->threads),
       .SharedLocalMemorySize = intel_compute_slm_encode_size(GFX_VER, prog_data->base.total_shared),
       .PreferredSLMAllocationSize =
          intel_compute_preferred_slm_calc_encode_size(devinfo,
@@ -1392,6 +1393,8 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
          .SamplerCount = 0,
          .BindingTablePointer = surfaces->offset,
          .NumberofThreadsinGPGPUThreadGroup = 1,
+         .ThreadGroupDispatchSize =
+            intel_compute_threads_group_dispatch_size(dispatch.threads),
          .BTDMode = true,
 #if INTEL_NEEDS_WA_14017794102 || INTEL_NEEDS_WA_14023061436
          .ThreadPreemption = false,
