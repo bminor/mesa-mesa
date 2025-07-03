@@ -145,6 +145,13 @@ def indices_strides(indices):
 					"%s(i%d)" % (offset, idx)
 			for (idx, (ctype, stride, offset)) in  enumerate(indices)])
 
+def is_number(str):
+	try:
+		int(str)
+		return True
+	except ValueError:
+		return False
+
 class Bitset(object):
 	def __init__(self, name, template):
 		self.name = name
@@ -425,8 +432,7 @@ class Reg(object):
 			self.bitset.dump_pack_struct(is_deprecated, self)
 
 	def dump_regpair_builder(self):
-		if self.bitset.inline:
-			self.bitset.dump_regpair_builder(self)
+		self.bitset.dump_regpair_builder(self)
 
 	def dump_py(self):
 		print("\tREG_%s = 0x%08x" % (self.full_name, self.offset))
@@ -762,7 +768,7 @@ class Parser(object):
 		print("#endif")
 
 	def has_variants(self, reg):
-		return reg.name in self.variant_regs and len(self.variant_regs[reg.name]) > 1
+		return reg.name in self.variant_regs and not is_number(reg.name) and not is_number(reg.name[1:])
 
 	def dump(self):
 		enums = []
@@ -793,8 +799,7 @@ class Parser(object):
 
 
 	def dump_reg_variants(self, regname, variants):
-		# Don't bother for things that only have a single variant:
-		if len(variants) == 1:
+		if is_number(regname) or is_number(regname[1:]):
 			return
 		print("#ifdef __cplusplus")
 		print("struct __%s {" % regname)
