@@ -16,10 +16,10 @@ then
     echo "Python environment predates Python version checks."
     echo "It might be invalid and needs to be regenerated."
     rm -rf "$venv_dir"
-  elif ! cmp --quiet <(python --version) "$venv_python_version"
+  elif ! cmp --quiet <(python3 --version) "$venv_python_version"
   then
     old=$(cat "$venv_python_version")
-    new=$(python --version)
+    new=$(python3 --version)
     echo "Python version has changed ($old -> $new)."
     echo "Python environment needs to be regenerated."
     unset old new
@@ -30,8 +30,8 @@ fi
 if ! [ -r "$venv_dir/bin/activate" ]
 then
   echo "Creating Python environment..."
-  python -m venv "$venv_dir"
-  python --version > "$venv_python_version"
+  python3 -m venv "$venv_dir"
+  python3 --version > "$venv_python_version"
 fi
 
 # shellcheck disable=1091
@@ -44,4 +44,4 @@ then
   cp "$requirements_file" "$venv_req"
 fi
 
-python "$@"
+python3 "$@"
