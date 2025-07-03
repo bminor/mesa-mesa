@@ -99,6 +99,8 @@ rnn_load(struct rnn *rnn, const char *gpuname)
       init(rnn, "adreno/a6xx.xml", "A6XX", "A6XX");
    } else if (strstr(gpuname, "a7")) {
       init(rnn, "adreno/a6xx.xml", "A6XX", "A7XX");
+   } else if (strstr(gpuname, "a8")) {
+      init(rnn, "adreno/a6xx.xml", "A6XX", "A8XX");
    }
 }
 

@@ -474,12 +474,61 @@ reg_disasm_gpuaddr64(const char *name, uint64_t qword, int level)
    disasm_gpuaddr(name, qword, level);
 }
 
+/* Get the value of the corresponding SP_xS_TSIZE reg: */
+static unsigned
+get_tsize(const char *name)
+{
+   char tsize_reg[12];
+   sprintf(tsize_reg, "%.5s_TSIZE", name);
+   return reg_val(regbase(tsize_reg));
+}
+
+static unsigned
+get_usize(const char *name)
+{
+   char usize_reg[12];
+   sprintf(usize_reg, "%.5s_USIZE", name);
+   return reg_val(regbase(usize_reg));
+}
+
+static void
+reg_dump_texmemobj64(const char *name, uint64_t gpuaddr, int level)
+{
+   unsigned num_unit = get_tsize(name);
+   void *buf = hostptr(gpuaddr);
+   if (!buf)
+      return;
+   dump_tex_const(buf, num_unit, level + 1);
+}
+
+static void
+reg_dump_sampler64(const char *name, uint64_t gpuaddr, int level)
+{
+   unsigned num_unit = get_tsize(name);
+   void *buf = hostptr(gpuaddr);
+   if (!buf)
+      return;
+   dump_tex_samp(buf, STATE_SRC_DIRECT, num_unit, level + 1);
+}
+
+static void
+reg_dump_uav64(const char *name, uint64_t gpuaddr, int level)
+{
+   unsigned num_unit = get_usize(name);
+   void *buf = hostptr(gpuaddr);
+   if (!buf)
+      return;
+   dump_tex_const(buf, num_unit, level + 1);
+}
+
 /* Find the value of the TEX_COUNT register that corresponds to the named
  * TEX_SAMP/TEX_CONST reg.
  *
  * Note, this kinda assumes an equal # of samplers and textures, but not
  * really sure if there is a much better option.  I suppose on a6xx we
  * could instead decode the bitfields in SP_xS_CONFIG
+ *
+ * For a6xx+ use get_tsize()
  */
 static int
 get_tex_count(const char *name)
@@ -712,6 +761,31 @@ static struct {
       REG64(SP_CS_BASE, reg_disasm_gpuaddr64),
 
       {NULL},
+}, reg_a8xx[] = {
+      REG64(SP_VS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_HS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_DS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_GS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_PS_BASE, reg_disasm_gpuaddr64),
+      REG64(SP_CS_BASE, reg_disasm_gpuaddr64),
+
+      REG64(SP_VS_TEXMEMOBJ_BASE, reg_dump_texmemobj64),
+      REG64(SP_VS_SAMPLER_BASE, reg_dump_sampler64),
+      REG64(SP_HS_TEXMEMOBJ_BASE, reg_dump_texmemobj64),
+      REG64(SP_HS_SAMPLER_BASE, reg_dump_sampler64),
+      REG64(SP_DS_TEXMEMOBJ_BASE, reg_dump_texmemobj64),
+      REG64(SP_DS_SAMPLER_BASE, reg_dump_sampler64),
+      REG64(SP_GS_TEXMEMOBJ_BASE, reg_dump_texmemobj64),
+      REG64(SP_GS_SAMPLER_BASE, reg_dump_sampler64),
+      REG64(SP_PS_TEXMEMOBJ_BASE, reg_dump_texmemobj64),
+      REG64(SP_PS_SAMPLER_BASE, reg_dump_sampler64),
+      REG64(SP_CS_TEXMEMOBJ_BASE, reg_dump_texmemobj64),
+      REG64(SP_CS_SAMPLER_BASE, reg_dump_sampler64),
+
+      REG64(SP_GFX_UAV_BASE, reg_dump_uav64),
+      REG64(SP_CS_UAV_BASE, reg_dump_uav64),
+
+      {NULL},
 }, *type0_reg;
 
 static struct rnn *rnn;
@@ -793,6 +867,10 @@ cffdec_init(const struct cffdec_options *_options)
    case 7:
       type0_reg = reg_a7xx;
       init_rnn("a7xx");
+      break;
+   case 8:
+      type0_reg = reg_a8xx;
+      init_rnn("a8xx");
       break;
    default:
       errx(-1, "unsupported generation: %u", options->info->chip);
@@ -1452,6 +1530,10 @@ dump_tex_samp(uint32_t *texsamp, enum state_src_t src, int num_unit, int level)
          dump_domain(texsamp, 4, level + 2, "A6XX_TEX_SAMP");
          dump_hex(texsamp, 4, level + 1);
          texsamp += src == STATE_SRC_BINDLESS ? 16 : 4;
+      } else if ((8 <= options->info->chip) && (options->info->chip < 9)) {
+         dump_domain(texsamp, 4, level + 2, "A8XX_TEX_SAMP");
+         dump_hex(texsamp, 4, level + 1);
+         texsamp += src == STATE_SRC_BINDLESS ? 16 : 4;
       }
    }
 }
@@ -1490,6 +1572,15 @@ dump_tex_const(uint32_t *texconst, int num_unit, int level)
          texconst += 12;
       } else if ((6 <= options->info->chip) && (options->info->chip < 8)) {
          dump_domain(texconst, 16, level + 2, "A6XX_TEX_CONST");
+         if (options->dump_textures) {
+            uint64_t addr =
+               (((uint64_t)texconst[5] & 0x1ffff) << 32) | texconst[4];
+            dump_gpuaddr_size(addr, level - 2, hostlen(addr) / 4, 3);
+         }
+         dump_hex(texconst, 16, level + 1);
+         texconst += 16;
+      } else if ((8 <= options->info->chip) && (options->info->chip < 9)) {
+         dump_domain(texconst, 16, level + 2, "A8XX_TEX_MEMOBJ");
          if (options->dump_textures) {
             uint64_t addr =
                (((uint64_t)texconst[5] & 0x1ffff) << 32) | texconst[4];
