@@ -145,6 +145,9 @@ struct radv_physical_device {
    /* Bitmask of memory types that use the 32-bit address space. */
    uint32_t memory_types_32bit;
 
+   /* Bitmask of memory types that are host-visible. */
+   uint32_t memory_types_host_visible;
+
 #ifndef _WIN32
    int available_nodes;
    drmPciBusInfo bus_info;

@@ -1425,6 +1425,11 @@ radv_GetImageMemoryRequirements2(VkDevice _device, const VkImageMemoryRequiremen
    pMemoryRequirements->memoryRequirements.memoryTypeBits =
       ((1u << pdev->memory_properties.memoryTypeCount) - 1u) & ~pdev->memory_types_32bit;
 
+   if (image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) {
+      /* Only expose host visible memory types for images that need to be mapped on the CPU. */
+      pMemoryRequirements->memoryRequirements.memoryTypeBits &= pdev->memory_types_host_visible;
+   }
+
    pMemoryRequirements->memoryRequirements.size = size;
    pMemoryRequirements->memoryRequirements.alignment = alignment;
 

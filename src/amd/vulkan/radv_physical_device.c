@@ -490,6 +490,8 @@ radv_physical_device_init_mem_types(struct radv_physical_device *pdev)
    for (unsigned i = 0; i < type_count; ++i) {
       if (pdev->memory_flags[i] & RADEON_FLAG_32BIT)
          pdev->memory_types_32bit |= BITFIELD_BIT(i);
+      if (pdev->memory_flags[i] & RADEON_FLAG_CPU_ACCESS)
+         pdev->memory_types_host_visible |= BITFIELD_BIT(i);
    }
 }
 
