@@ -272,9 +272,6 @@ d3d12_video_buffer_get_surfaces(struct pipe_video_buffer *buffer)
        (pD3D12VideoBuffer->base.bind & PIPE_BIND_VIDEO_ENCODE_DPB))
       return nullptr;
 
-   if (!pipe->create_surface)
-      return nullptr;
-
    // pCurPlaneResource refers to the planar resource, not the overall resource.
    // in d3d12_resource this is handled by having a linked list of planes with
    // d3dRes->base.next ptr to next plane resource

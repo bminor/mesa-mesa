@@ -2818,6 +2818,23 @@ d3d12_screen_get_video_param(struct pipe_screen *pscreen,
    } else if (entrypoint == PIPE_VIDEO_ENTRYPOINT_PROCESSING) {
       return d3d12_screen_get_video_param_postproc(pscreen, profile, entrypoint, param);
    }
+
+   // Some frontends call get_video_param with PIPE_VIDEO_ENTRYPOINT_UNKNOWN
+   // to get some capabilities not entrypoint specific.
+   switch (param) {
+      case PIPE_VIDEO_CAP_SKIP_CLEAR_SURFACE:
+      {
+          // D3D12 does not require clearing the surface on creation for video
+          // as it doesn't use D3D12_HEAP_FLAG_CREATE_NOT_ZEROED
+          // Furthermore, on PIPE_CONTEXT_MEDIA_ONLY contexts, the
+          // clear_render_target function is not implemented
+         return 1;
+      } break;
+      default:
+         debug_printf("[d3d12_screen_get_video_param] unknown video param: %d\n", param);
+         return 0;
+   }
+
    return 0;
 }
 
