@@ -4774,7 +4774,7 @@
         "description": "vulkan: Remove build-system remnants of wl_drm support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e0903165702073ebaa6d6ae38541220b1c90e19f",
         "notes": null
