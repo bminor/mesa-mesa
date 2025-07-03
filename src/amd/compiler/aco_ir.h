@@ -271,6 +271,12 @@ withoutVOP3(Format format)
    return (Format)((uint32_t)format & ~((uint32_t)Format::VOP3));
 }
 
+constexpr Format
+withoutVOP2(Format format)
+{
+   return (Format)((uint32_t)format & ~((uint32_t)Format::VOP2));
+}
+
 enum class RegType {
    sgpr,
    vgpr,

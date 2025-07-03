@@ -568,6 +568,36 @@ is_sgpr_writable_without_side_effects(amd_gfx_level gfx_level, PhysReg reg)
           (!has_flat_scr_lo_gfx7_or_xnack_mask || (reg != 104 || reg != 105));
 }
 
+static bool
+convert_bitwise_to_16bit(Instruction* instr)
+{
+   if (instr->opcode == aco_opcode::v_cndmask_b32) {
+      instr->opcode = aco_opcode::v_cndmask_b16;
+      instr->format = withoutVOP2(asVOP3(instr->format));
+      instr->valu().abs = 0;
+      instr->valu().neg = 0;
+   } else if (instr->opcode == aco_opcode::v_mov_b32) {
+      instr->opcode = aco_opcode::v_mov_b16;
+      instr->valu().abs = 0;
+      instr->valu().neg = 0;
+   } else if (instr->opcode == aco_opcode::v_not_b32) {
+      instr->opcode = aco_opcode::v_not_b16;
+   } else if (instr->opcode == aco_opcode::v_and_b32) {
+      instr->opcode = aco_opcode::v_and_b16;
+      instr->format = withoutVOP2(asVOP3(instr->format));
+   } else if (instr->opcode == aco_opcode::v_or_b32) {
+      instr->opcode = aco_opcode::v_or_b16;
+      instr->format = withoutVOP2(asVOP3(instr->format));
+   } else if (instr->opcode == aco_opcode::v_xor_b32) {
+      instr->opcode = aco_opcode::v_xor_b16;
+      instr->format = withoutVOP2(asVOP3(instr->format));
+   } else {
+      return false;
+   }
+
+   return true;
+}
+
 unsigned
 get_subdword_operand_stride(amd_gfx_level gfx_level, const aco_ptr<Instruction>& instr,
                             unsigned idx, RegClass rc)
@@ -593,6 +623,13 @@ get_subdword_operand_stride(amd_gfx_level gfx_level, const aco_ptr<Instruction>&
    }
 
    switch (instr->opcode) {
+   case aco_opcode::v_mov_b32:
+   case aco_opcode::v_not_b32:
+   case aco_opcode::v_and_b32:
+   case aco_opcode::v_or_b32:
+   case aco_opcode::v_xor_b32:
+   case aco_opcode::v_cndmask_b32:
+      return gfx_level >= GFX11 && instr->definitions[0].bytes() <= 2 ? 2 : 4;
    case aco_opcode::v_cvt_f32_ubyte0: return 1;
    case aco_opcode::ds_write_b8:
    case aco_opcode::ds_write_b16: return gfx_level >= GFX9 ? 2 : 4;
@@ -642,6 +679,8 @@ add_subdword_operand(ra_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, uns
          instr->valu().opsel_hi[idx] = true;
          return;
       }
+
+      convert_bitwise_to_16bit(instr.get());
 
       assert(can_use_opsel(gfx_level, instr->opcode, idx));
       instr->valu().opsel[idx] = true;
@@ -706,6 +745,16 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
           can_use_opsel(gfx_level, instr->opcode, -1)) {
          data_stride = 2;
          stride = rc == v2b ? 2 : stride;
+      } else if ((instr->opcode == aco_opcode::v_cndmask_b32 ||
+                  instr->opcode == aco_opcode::v_mov_b32 ||
+                  instr->opcode == aco_opcode::v_not_b32 ||
+                  instr->opcode == aco_opcode::v_and_b32 || instr->opcode == aco_opcode::v_or_b32 ||
+                  instr->opcode == aco_opcode::v_xor_b32) &&
+                 program->gfx_level >= GFX11) {
+         /* Convert to 16bit opcode on demand. */
+         rc = v2b;
+         data_stride = 2;
+         stride = 2;
       }
       return;
    }
@@ -783,6 +832,11 @@ add_subdword_definition(Program* program, aco_ptr<Instruction>& instr, PhysReg r
       if (instr->opcode == aco_opcode::v_fma_mixlo_f16) {
          instr->opcode = aco_opcode::v_fma_mixhi_f16;
          return;
+      }
+
+      if (convert_bitwise_to_16bit(instr.get())) {
+         if (reg.byte() == 0)
+            return;
       }
 
       /* use opsel */
