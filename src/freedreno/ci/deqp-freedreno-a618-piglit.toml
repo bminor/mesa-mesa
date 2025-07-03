@@ -2,7 +2,15 @@
 piglit_folder = "/piglit"
 profile = "gpu"
 process_isolation = true
-fraction = 3
-skips = ["install/freedreno-a6xx-skips.txt", "install/freedreno-a618-skips.txt"]
+fraction = 6
+skips = ["install/freedreno-a6xx-skips.txt"]
   [piglit.env]
   PIGLIT_NO_WINDOW = "1"
+
+[[piglit]]
+piglit_folder = "/piglit"
+profile = "cl"
+process_isolation = true
+skips = ["install/freedreno-a6xx-skips.txt"]
+  [piglit.env]
+  RUSTICL_ENABLE = "msm"
