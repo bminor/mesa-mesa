@@ -2022,7 +2022,6 @@ dep_x11_xcb = null_dep
 dep_xcb = null_dep
 dep_xcb_keysyms = null_dep
 dep_xcb_glx = null_dep
-dep_xcb_dri2 = null_dep
 dep_xcb_dri3 = null_dep
 dep_glproto = null_dep
 dep_xxf86vm = null_dep
@@ -2035,7 +2034,6 @@ dep_xcb_shm = null_dep
 dep_xlib_xrandr = null_dep
 
 dep_glproto_version = '>= 1.4.14'
-dep_xcb_dri2_version = '>= 1.8'
 dep_xcb_dri3_version = '>= 1.13'
 dep_xcb_glx_version = '>= 1.8.1'
 dep_xcb_present_version = '>= 1.13'
