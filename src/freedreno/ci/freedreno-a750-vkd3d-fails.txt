@@ -1,5 +1,2 @@
 test_shader_instructions,Fail
 test_line_rasterization,Fail
-
-# error: src->ssa->num_components == num_components (../src/compiler/nir/nir_validate.c:205)
-test_shader_waveop_maximal_convergence,Crash

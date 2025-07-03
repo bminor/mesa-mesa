@@ -614,7 +614,7 @@
         "description": "nir/opt_uniform_subgroup: use ballot_bit_count",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d2e1e4442aa1a1121fae44666efae374bd94190a",
         "notes": null
