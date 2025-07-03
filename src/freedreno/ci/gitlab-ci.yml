@@ -437,18 +437,7 @@ a750-angle:
     DEQP_SUITE: tu-angle
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
 
-a750-gl:
-  extends:
-    - .ci-tron-arm64-test-gl
-    - .a750-mupuf
-    - .valve-freedreno-manual-rules
-  timeout: 30m  # base runtime 11min total, 8min of testing
-  variables:
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 25
-    HWCI_TEST_SCRIPT: install/deqp-runner.sh
-    DEQP_SUITE: freedreno-a750
-
-a750-piglit-cl:
+a750-gl-cl:
   extends:
     - .ci-tron-arm64-test-gl
     - .test-piglit
@@ -457,11 +446,12 @@ a750-piglit-cl:
   rules:
     - !reference [.valve-freedreno-manual-rules, rules]
     - !reference [.rusticl-manual-rules, rules]
+  timeout: 30m  # base runtime 11min total, 8min of testing
   variables:
-    DEQP_SUITE: freedreno-a750-piglit-cl
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 25
     HWCI_START_WESTON: 1
-    HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
-    VK_DRIVER: freedreno
+    HWCI_TEST_SCRIPT: install/deqp-runner.sh
+    DEQP_SUITE: freedreno-a750
 
 a750-vk:
   extends:

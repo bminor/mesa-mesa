@@ -59,3 +59,11 @@ deqp_args = [
     "--deqp-surface-type=pbuffer", "--deqp-visibility=hidden",
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
+
+[[piglit]]
+piglit_folder = "/piglit"
+profile = "cl"
+process_isolation = true
+skips = ["install/freedreno-a6xx-skips.txt"]
+  [piglit.env]
+  RUSTICL_ENABLE = "msm"
