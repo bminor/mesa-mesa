@@ -1093,7 +1093,7 @@ crocus_vs_outputs_written(struct crocus_context *ice,
    if (devinfo->ver < 6) {
 
       if (key->copy_edgeflag)
-         outputs_written |= BITFIELD64_BIT(VARYING_SLOT_EDGE);
+         outputs_written |= VARYING_BIT_EDGE;
 
       /* Put dummy slots into the VUE for the SF to put the replaced
        * point sprite coords in.  We shouldn't need these dummy slots,
@@ -1107,10 +1107,10 @@ crocus_vs_outputs_written(struct crocus_context *ice,
       }
 
       /* if back colors are written, allocate slots for front colors too */
-      if (outputs_written & BITFIELD64_BIT(VARYING_SLOT_BFC0))
-         outputs_written |= BITFIELD64_BIT(VARYING_SLOT_COL0);
-      if (outputs_written & BITFIELD64_BIT(VARYING_SLOT_BFC1))
-         outputs_written |= BITFIELD64_BIT(VARYING_SLOT_COL1);
+      if (outputs_written & VARYING_BIT_BFC0)
+         outputs_written |= VARYING_BIT_COL0;
+      if (outputs_written & VARYING_BIT_BFC1)
+         outputs_written |= VARYING_BIT_COL1;
    }
 
    /* In order for legacy clipping to work, we need to populate the clip
@@ -1118,8 +1118,8 @@ crocus_vs_outputs_written(struct crocus_context *ice,
     * shader doesn't write to gl_ClipDistance.
     */
    if (key->nr_userclip_plane_consts > 0) {
-      outputs_written |= BITFIELD64_BIT(VARYING_SLOT_CLIP_DIST0);
-      outputs_written |= BITFIELD64_BIT(VARYING_SLOT_CLIP_DIST1);
+      outputs_written |= VARYING_BIT_CLIP_DIST0;
+      outputs_written |= VARYING_BIT_CLIP_DIST1;
    }
 
    return outputs_written;
@@ -2220,7 +2220,7 @@ crocus_update_compiled_sf(struct crocus_context *ice)
    switch (ice->state.reduced_prim_mode) {
    case MESA_PRIM_TRIANGLES:
    default:
-      if (key.attrs & BITFIELD64_BIT(VARYING_SLOT_EDGE))
+      if (key.attrs & VARYING_BIT_EDGE)
          key.primitive = ELK_SF_PRIM_UNFILLED_TRIS;
       else
          key.primitive = ELK_SF_PRIM_TRIANGLES;

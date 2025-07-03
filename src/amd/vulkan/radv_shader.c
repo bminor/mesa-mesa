@@ -662,7 +662,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    /* Lower primitive shading rate to match HW requirements. */
    if ((nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_GEOMETRY ||
         nir->info.stage == MESA_SHADER_MESH) &&
-       nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_SHADING_RATE)) {
+       nir->info.outputs_written & VARYING_BIT_PRIMITIVE_SHADING_RATE) {
       /* Lower primitive shading rate to match HW requirements. */
       NIR_PASS(_, nir, radv_nir_lower_primitive_shading_rate, pdev->info.gfx_level);
    }

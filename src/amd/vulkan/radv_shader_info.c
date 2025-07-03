@@ -406,9 +406,9 @@ radv_get_output_masks(const struct nir_shader *nir, const struct radv_graphics_s
                       uint64_t *per_vtx_mask, uint64_t *per_prim_mask)
 {
    /* These are not compiled into neither output param nor position exports. */
-   const uint64_t special_mask = BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_COUNT) |
-                                 BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES) |
-                                 BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE);
+   const uint64_t special_mask = VARYING_BIT_PRIMITIVE_COUNT |
+                                 VARYING_BIT_PRIMITIVE_INDICES |
+                                 VARYING_BIT_CULL_PRIMITIVE;
 
    *per_prim_mask = nir->info.outputs_written & nir->info.per_primitive_outputs & ~special_mask;
    *per_vtx_mask = nir->info.outputs_written & ~nir->info.per_primitive_outputs & ~special_mask;

@@ -1297,7 +1297,7 @@ pipeline_populate_v3d_gs_key(struct v3d_gs_key *key,
    struct v3dv_pipeline *pipeline = p_stage->pipeline;
 
    key->per_vertex_point_size =
-      p_stage->nir->info.outputs_written & (1ull << VARYING_SLOT_PSIZ);
+      p_stage->nir->info.outputs_written & VARYING_BIT_PSIZ;
 
    key->is_coord = broadcom_shader_stage_is_binning(p_stage->stage);
 
@@ -1340,7 +1340,7 @@ pipeline_populate_v3d_vs_key(struct v3d_vs_key *key,
    struct v3dv_pipeline *pipeline = p_stage->pipeline;
 
    key->per_vertex_point_size =
-      p_stage->nir->info.outputs_written & (1ull << VARYING_SLOT_PSIZ);
+      p_stage->nir->info.outputs_written & VARYING_BIT_PSIZ;
 
    key->is_coord = broadcom_shader_stage_is_binning(p_stage->stage);
 
@@ -2295,8 +2295,7 @@ pipeline_add_multiview_gs(struct v3dv_pipeline *pipeline,
                                                   "multiview broadcast gs");
    nir_shader *nir = b.shader;
    nir->info.inputs_read = vs_nir->info.outputs_written;
-   nir->info.outputs_written = vs_nir->info.outputs_written |
-                               (1ull << VARYING_SLOT_LAYER);
+   nir->info.outputs_written = vs_nir->info.outputs_written | VARYING_BIT_LAYER;
 
    uint32_t vertex_count = mesa_vertices_per_prim(pipeline->topology);
    nir->info.gs.input_primitive =

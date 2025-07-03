@@ -1526,8 +1526,8 @@ brw_nir_link_shaders(const struct brw_compiler *compiler,
          ms_outputs |= BITFIELD64_BIT(var->data.location);
 
       uint64_t zero_inputs = ~ms_outputs & fs_inputs;
-      zero_inputs &= BITFIELD64_BIT(VARYING_SLOT_LAYER) |
-                     BITFIELD64_BIT(VARYING_SLOT_VIEWPORT);
+      zero_inputs &= VARYING_BIT_LAYER |
+                     VARYING_BIT_VIEWPORT;
 
       if (zero_inputs)
          NIR_PASS(_, consumer, brw_nir_zero_inputs, &zero_inputs);

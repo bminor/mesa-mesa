@@ -244,7 +244,7 @@ void si_lower_mediump_io(nir_shader *nir)
                * dEQP-GLES31.functional.shaders.builtin_functions.integer.bitfieldinsert.uvec3_lowp_geometry
                */
               (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0) | nir_var_shader_out,
-              BITFIELD64_BIT(VARYING_SLOT_PNTC) | BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32),
+              VARYING_BIT_PNTC | BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32),
               true);
 }
 

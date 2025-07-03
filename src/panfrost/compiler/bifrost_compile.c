@@ -5885,7 +5885,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
       if (gpu_id >= 0x9000) {
          NIR_PASS(_, nir, nir_lower_mediump_io, nir_var_shader_out,
-                  BITFIELD64_BIT(VARYING_SLOT_PSIZ), false);
+                  VARYING_BIT_PSIZ, false);
       }
 
       NIR_PASS(_, nir, pan_nir_lower_store_component);
@@ -6328,15 +6328,13 @@ bi_compile_variant(nir_shader *nir,
           * written (that mean not position, layer or point size) */
          info->vs.secondary_enable =
             (nir->info.outputs_written &
-             ~(BITFIELD64_BIT(VARYING_SLOT_POS) |
-               BITFIELD64_BIT(VARYING_SLOT_LAYER) |
-               BITFIELD64_BIT(VARYING_SLOT_PSIZ))) != 0;
+             ~(VARYING_BIT_POS | VARYING_BIT_LAYER | VARYING_BIT_PSIZ)) != 0;
       }
    }
 
    if ((idvs == BI_IDVS_POSITION || idvs == BI_IDVS_ALL) &&
        !nir->info.internal &&
-       nir->info.outputs_written & BITFIELD_BIT(VARYING_SLOT_PSIZ)) {
+       nir->info.outputs_written & VARYING_BIT_PSIZ) {
       /* Find the psiz write */
       bi_instr *write = NULL;
 
@@ -6379,7 +6377,7 @@ bi_should_idvs(nir_shader *nir, const struct pan_compile_inputs *inputs)
 
    /* Bifrost cannot write gl_PointSize during IDVS */
    if ((inputs->gpu_id < 0x9000) &&
-       nir->info.outputs_written & BITFIELD_BIT(VARYING_SLOT_PSIZ))
+       nir->info.outputs_written & VARYING_BIT_PSIZ)
       return false;
 
    /* Otherwise, IDVS is usually better */

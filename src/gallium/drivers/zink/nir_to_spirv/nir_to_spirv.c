@@ -4657,13 +4657,13 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
    case MESA_SHADER_TESS_EVAL:
       spirv_builder_emit_cap(&ctx.builder, SpvCapabilityTessellation);
       /* TODO: check features for this */
-      if (s->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_PSIZ))
+      if (s->info.outputs_written & VARYING_BIT_PSIZ)
          spirv_builder_emit_cap(&ctx.builder, SpvCapabilityTessellationPointSize);
       break;
 
    case MESA_SHADER_GEOMETRY:
       spirv_builder_emit_cap(&ctx.builder, SpvCapabilityGeometry);
-      if (s->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_PSIZ))
+      if (s->info.outputs_written & VARYING_BIT_PSIZ)
          spirv_builder_emit_cap(&ctx.builder, SpvCapabilityGeometryPointSize);
       break;
 
@@ -4671,8 +4671,8 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
    }
 
    if (s->info.stage < MESA_SHADER_GEOMETRY) {
-      if (s->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER) ||
-          s->info.inputs_read & BITFIELD64_BIT(VARYING_SLOT_LAYER)) {
+      if (s->info.outputs_written & VARYING_BIT_LAYER ||
+          s->info.inputs_read & VARYING_BIT_LAYER) {
          if (spirv_version >= SPIRV_VERSION(1, 5))
             spirv_builder_emit_cap(&ctx.builder, SpvCapabilityShaderLayer);
          else {
@@ -4684,8 +4684,8 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
       /* incredibly, this is legal and intended.
        * https://github.com/KhronosGroup/SPIRV-Registry/issues/95
        */
-      if (s->info.inputs_read & (BITFIELD64_BIT(VARYING_SLOT_LAYER) |
-                                 BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_ID)))
+      if (s->info.inputs_read & (VARYING_BIT_LAYER |
+                                 VARYING_BIT_PRIMITIVE_ID))
          spirv_builder_emit_cap(&ctx.builder, SpvCapabilityGeometry);
    }
 
@@ -4693,7 +4693,7 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
       spirv_builder_emit_extension(&ctx.builder, "SPV_KHR_storage_buffer_storage_class");
 
    if (s->info.stage < MESA_SHADER_FRAGMENT &&
-       s->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_VIEWPORT)) {
+       s->info.outputs_written & VARYING_BIT_VIEWPORT) {
       if (s->info.stage < MESA_SHADER_GEOMETRY)
          spirv_builder_emit_cap(&ctx.builder, SpvCapabilityShaderViewportIndex);
       else
@@ -4701,7 +4701,7 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
    }
 
    if (s->info.stage > MESA_SHADER_VERTEX &&
-       s->info.inputs_read & BITFIELD64_BIT(VARYING_SLOT_VIEWPORT)) {
+       s->info.inputs_read & VARYING_BIT_VIEWPORT) {
       if (s->info.stage < MESA_SHADER_GEOMETRY)
          spirv_builder_emit_cap(&ctx.builder, SpvCapabilityShaderViewportIndex);
       else

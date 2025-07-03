@@ -92,7 +92,7 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
       }
 
       info->vs.writes_point_size =
-         s->info.outputs_written & (1 << VARYING_SLOT_PSIZ);
+         s->info.outputs_written & VARYING_BIT_PSIZ;
 
       if (arch >= 9) {
          info->varyings.output_count =
@@ -141,15 +141,15 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
       info->contains_barrier |= s->info.fs.needs_coarse_quad_helper_invocations;
 
       info->fs.reads_frag_coord =
-         (s->info.inputs_read & (1 << VARYING_SLOT_POS)) ||
+         (s->info.inputs_read & VARYING_BIT_POS) ||
          BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_FRAG_COORD);
       info->fs.reads_primitive_id =
-         (s->info.inputs_read & (1 << VARYING_SLOT_PRIMITIVE_ID)) ||
+         (s->info.inputs_read & VARYING_BIT_PRIMITIVE_ID) ||
          BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID);
       info->fs.reads_point_coord =
-         s->info.inputs_read & (1 << VARYING_SLOT_PNTC);
+         s->info.inputs_read & VARYING_BIT_PNTC;
       info->fs.reads_face =
-         (s->info.inputs_read & (1 << VARYING_SLOT_FACE)) ||
+         (s->info.inputs_read & VARYING_BIT_FACE) ||
          BITSET_TEST(s->info.system_values_read, SYSTEM_VALUE_FRONT_FACE);
       if (arch >= 9) {
          info->varyings.input_count =

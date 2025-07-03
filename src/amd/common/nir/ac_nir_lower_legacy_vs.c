@@ -61,7 +61,7 @@ ac_nir_lower_legacy_vs(nir_shader *nir,
       out.infos[VARYING_SLOT_PRIMITIVE_ID].as_varying_mask = 0x1;
 
       /* Update outputs_written to reflect that the pass added a new output. */
-      nir->info.outputs_written |= BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_ID);
+      nir->info.outputs_written |= VARYING_BIT_PRIMITIVE_ID;
    }
 
    if (!disable_streamout && nir->xfb_info)

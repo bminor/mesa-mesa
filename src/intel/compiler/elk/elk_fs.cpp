@@ -1470,7 +1470,7 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
        *
        * See compile_sf_prog() for more info.
        */
-      if (inputs_read & BITFIELD64_BIT(VARYING_SLOT_PNTC))
+      if (inputs_read & VARYING_BIT_PNTC)
          prog_data->urb_setup[VARYING_SLOT_PNTC] = urb_next++;
    }
 

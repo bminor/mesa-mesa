@@ -2129,7 +2129,7 @@ radv_consider_force_vrs(const struct radv_graphics_state_key *gfx_state, const s
    if (last_vgt_stage->info.stage == MESA_SHADER_MESH)
       return false;
 
-   if (last_vgt_stage->nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_SHADING_RATE))
+   if (last_vgt_stage->nir->info.outputs_written & VARYING_BIT_PRIMITIVE_SHADING_RATE)
       return false;
 
    /* VRS has no effect if there is no pixel shader. */

@@ -15,7 +15,7 @@ bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key)
        !key->ge.opt.kill_pointsize &&
        !key->ge.opt.kill_layer &&
        !key->ge.opt.kill_clip_distances &&
-       !(nir->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER)) &&
+       !(nir->info.outputs_written & VARYING_BIT_LAYER) &&
        !key->ge.opt.remove_streamout &&
        !key->ge.mono.remove_streamout) {
       return nir_no_progress(impl);

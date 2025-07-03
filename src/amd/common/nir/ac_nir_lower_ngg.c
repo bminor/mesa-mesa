@@ -884,7 +884,7 @@ clipdist_culling_es_part(nir_builder *b, lower_ngg_nogs_state *s,
    if (s->options->cull_clipdist_mask && !s->has_clipdist) {
       /* use gl_ClipVertex if defined */
       nir_variable *clip_vertex_var =
-         b->shader->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_CLIP_VERTEX) ?
+         b->shader->info.outputs_written & VARYING_BIT_CLIP_VERTEX ?
          s->clip_vertex_var : s->position_value_var;
       nir_def *clip_vertex = nir_load_var(b, clip_vertex_var);
 

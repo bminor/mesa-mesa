@@ -3002,7 +3002,7 @@ tu_compile_shaders(struct tu_device *device,
       if (stage > MESA_SHADER_TESS_CTRL) {
          if (stage == MESA_SHADER_FRAGMENT) {
             ir3_key.tcs_store_primid = ir3_key.tcs_store_primid ||
-               (nir[stage]->info.inputs_read & (1ull << VARYING_SLOT_PRIMITIVE_ID));
+               (nir[stage]->info.inputs_read & VARYING_BIT_PRIMITIVE_ID);
          } else {
             ir3_key.tcs_store_primid = ir3_key.tcs_store_primid ||
                BITSET_TEST(nir[stage]->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID);

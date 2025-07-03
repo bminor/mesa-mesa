@@ -99,19 +99,19 @@ mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
    const uint64_t outputs_written = nir->info.outputs_written;
    const uint64_t per_primitive_outputs =
       nir->info.per_primitive_outputs &
-      ~BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES);
+      ~VARYING_BIT_PRIMITIVE_INDICES;
    const uint64_t other_outputs = outputs_written & ~per_primitive_outputs;
 
    uint64_t all_outputs = outputs_written;
 
    const uint64_t remapped_outputs = outputs_written &
       nir->info.per_primitive_outputs &
-      ~(BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE) |
-        BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES) |
-        BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_COUNT) |
-        BITFIELD64_BIT(VARYING_SLOT_LAYER) |
-        BITFIELD64_BIT(VARYING_SLOT_VIEWPORT) |
-        BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_SHADING_RATE));
+      ~(VARYING_BIT_CULL_PRIMITIVE |
+        VARYING_BIT_PRIMITIVE_INDICES |
+        VARYING_BIT_PRIMITIVE_COUNT |
+        VARYING_BIT_LAYER |
+        VARYING_BIT_VIEWPORT |
+        VARYING_BIT_PRIMITIVE_SHADING_RATE);
 
    /* indexed by slot of per-prim attribute */
    struct mapping mapping[VARYING_SLOT_MAX] = { {NULL, NULL, NULL}, };

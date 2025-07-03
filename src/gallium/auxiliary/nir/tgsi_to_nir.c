@@ -2551,7 +2551,7 @@ ttn_finalize_nir(struct ttn_compile *c, struct pipe_screen *screen)
 
    /* driver needs clipdistance as array<float> */
    if ((nir->info.outputs_written &
-        (BITFIELD64_BIT(VARYING_SLOT_CLIP_DIST0) | BITFIELD64_BIT(VARYING_SLOT_CLIP_DIST1))) &&
+        (VARYING_BIT_CLIP_DIST0 | VARYING_BIT_CLIP_DIST1)) &&
         nir->options->compact_arrays) {
       NIR_PASS(_, nir, lower_clipdistance_to_array);
    }

@@ -11,9 +11,9 @@
 #include "nir_builder.h"
 
 #define SPECIAL_MS_OUT_MASK \
-   (BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_COUNT) | \
-    BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES) | \
-    BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE))
+   (VARYING_BIT_PRIMITIVE_COUNT | \
+    VARYING_BIT_PRIMITIVE_INDICES | \
+    VARYING_BIT_CULL_PRIMITIVE)
 
 #define MS_PRIM_ARG_EXP_MASK \
    (VARYING_BIT_LAYER | \
@@ -143,7 +143,7 @@ ms_store_prim_indices(nir_builder *b,
    if (store_val->num_components > s->vertices_per_prim)
       store_val = nir_trim_vector(b, store_val, s->vertices_per_prim);
 
-   if (s->layout.var.prm_attr.mask & BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES)) {
+   if (s->layout.var.prm_attr.mask & VARYING_BIT_PRIMITIVE_INDICES) {
       for (unsigned c = 0; c < store_val->num_components; ++c) {
          const unsigned i = VARYING_SLOT_PRIMITIVE_INDICES * 4 + c + component_offset;
          nir_store_var(b, s->out_variables[i], nir_channel(b, store_val, c), 0x1);
@@ -176,7 +176,7 @@ ms_store_cull_flag(nir_builder *b,
    assert(store_val->num_components == 1);
    assert(store_val->bit_size == 1);
 
-   if (s->layout.var.prm_attr.mask & BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE)) {
+   if (s->layout.var.prm_attr.mask & VARYING_BIT_CULL_PRIMITIVE) {
       nir_store_var(b, s->out_variables[VARYING_SLOT_CULL_PRIMITIVE * 4], nir_b2i32(b, store_val), 0x1);
       return;
    }
@@ -768,7 +768,7 @@ ms_prim_exp_arg_ch1(nir_builder *b, nir_def *invocation_index, nir_def *num_vtx,
    nir_def *indices_loaded = NULL;
    nir_def *cull_flag = NULL;
 
-   if (s->layout.var.prm_attr.mask & BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES)) {
+   if (s->layout.var.prm_attr.mask & VARYING_BIT_PRIMITIVE_INDICES) {
       nir_def *indices[3] = {0};
       for (unsigned c = 0; c < s->vertices_per_prim; ++c)
          indices[c] = nir_load_var(b, s->out_variables[VARYING_SLOT_PRIMITIVE_INDICES * 4 + c]);
@@ -780,7 +780,7 @@ ms_prim_exp_arg_ch1(nir_builder *b, nir_def *invocation_index, nir_def *num_vtx,
 
    if (s->uses_cull_flags) {
       nir_def *loaded_cull_flag = NULL;
-      if (s->layout.var.prm_attr.mask & BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE))
+      if (s->layout.var.prm_attr.mask & VARYING_BIT_CULL_PRIMITIVE)
          loaded_cull_flag = nir_load_var(b, s->out_variables[VARYING_SLOT_CULL_PRIMITIVE * 4]);
       else
          loaded_cull_flag = nir_u2u32(b, nir_load_shared(b, 1, 8, prim_idx_addr, .base = s->layout.lds.cull_flags_addr));
@@ -1246,8 +1246,8 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
       VARYING_BIT_POS | VARYING_BIT_CULL_DIST0 | VARYING_BIT_CULL_DIST1 | VARYING_BIT_CLIP_DIST0 |
       VARYING_BIT_CLIP_DIST1 | VARYING_BIT_PSIZ | VARYING_BIT_VIEWPORT |
       VARYING_BIT_PRIMITIVE_SHADING_RATE | VARYING_BIT_LAYER |
-      BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_COUNT) |
-      BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES) | BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE);
+      VARYING_BIT_PRIMITIVE_COUNT |
+      VARYING_BIT_PRIMITIVE_INDICES | VARYING_BIT_CULL_PRIMITIVE;
 
    const bool use_attr_ring = hw_info->has_attr_ring;
    const uint64_t attr_ring_per_vertex_output_mask =
@@ -1263,9 +1263,9 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
       cross_invocation_output_access & ~SPECIAL_MS_OUT_MASK;
 
    const bool cross_invocation_indices =
-      cross_invocation_output_access & BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES);
+      cross_invocation_output_access & VARYING_BIT_PRIMITIVE_INDICES;
    const bool cross_invocation_cull_primitive =
-      cross_invocation_output_access & BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE);
+      cross_invocation_output_access & VARYING_BIT_CULL_PRIMITIVE;
 
    /* Shared memory used by the API shader. */
    ms_out_mem_layout l = { .lds = { .total_size = api_shared_size } };
@@ -1354,7 +1354,7 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
       shader->info.per_primitive_outputs & shader->info.outputs_written;
 
    /* Whether the shader uses CullPrimitiveEXT */
-   bool uses_cull = shader->info.outputs_written & BITFIELD64_BIT(VARYING_SLOT_CULL_PRIMITIVE);
+   bool uses_cull = shader->info.outputs_written & VARYING_BIT_CULL_PRIMITIVE;
    /* Can't handle indirect register addressing, pretend as if they were cross-invocation. */
    uint64_t cross_invocation_access = shader->info.mesh.ms_cross_invocation_output_access |
                                       (shader->info.outputs_read_indirectly |

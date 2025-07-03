@@ -91,7 +91,7 @@ add_const_offset_to_base_block(nir_block *block, nir_builder *b,
          if (b->shader->info.stage == MESA_SHADER_MESH &&
              sem.location == VARYING_SLOT_PRIMITIVE_INDICES &&
              !(b->shader->info.per_primitive_outputs &
-               BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_INDICES)))
+               VARYING_BIT_PRIMITIVE_INDICES))
             continue;
 
          nir_src *offset = nir_get_io_offset_src(intrin);

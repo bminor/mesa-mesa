@@ -80,7 +80,7 @@ st_point_size_per_vertex(struct gl_context *ctx)
    if (vertProg) {
       if (vertProg->Id == 0) {
          if (vertProg->info.outputs_written &
-             BITFIELD64_BIT(VARYING_SLOT_PSIZ)) {
+             VARYING_BIT_PSIZ) {
             /* generated program which emits point size */
             return true;
          }
@@ -101,7 +101,7 @@ st_point_size_per_vertex(struct gl_context *ctx)
             last = ctx->VertexProgram._Current;
          if (last)
             return !!(last->info.outputs_written &
-                      BITFIELD64_BIT(VARYING_SLOT_PSIZ));
+                      VARYING_BIT_PSIZ);
       }
    }
    return false;

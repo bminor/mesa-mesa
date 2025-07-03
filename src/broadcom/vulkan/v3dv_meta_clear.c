@@ -355,9 +355,8 @@ get_clear_rect_gs(const nir_shader_compiler_options *options,
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_GEOMETRY, options,
                                                   "meta clear gs");
    nir_shader *nir = b.shader;
-   nir->info.inputs_read = 1ull << VARYING_SLOT_POS;
-   nir->info.outputs_written = (1ull << VARYING_SLOT_POS) |
-                               (1ull << VARYING_SLOT_LAYER);
+   nir->info.inputs_read = VARYING_BIT_POS;
+   nir->info.outputs_written = VARYING_BIT_POS | VARYING_BIT_LAYER;
    nir->info.gs.input_primitive = MESA_PRIM_TRIANGLES;
    nir->info.gs.output_primitive = MESA_PRIM_TRIANGLE_STRIP;
    nir->info.gs.vertices_in = 3;
