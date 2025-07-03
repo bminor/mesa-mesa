@@ -2556,9 +2556,8 @@ tu6_emit_viewport(struct tu_cs *cs,
          tu_cs_emit(cs, fui(MAX2(viewport->minDepth, viewport->maxDepth)));
       }
    }
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_CL_GUARDBAND_CLIP_ADJ, 1);
-   tu_cs_emit(cs, A6XX_GRAS_CL_GUARDBAND_CLIP_ADJ_HORZ(guardband.width) |
-                  A6XX_GRAS_CL_GUARDBAND_CLIP_ADJ_VERT(guardband.height));
+   tu_cs_emit_regs(cs,
+      GRAS_CL_GUARDBAND_CLIP_ADJ(CHIP, .horz = guardband.width, .vert = guardband.height));
 
    /* TODO: what to do about this and multi viewport ? */
    float z_clamp_min = vp->viewport_count ? MIN2(vp->viewports[0].minDepth, vp->viewports[0].maxDepth) : 0;
@@ -3297,7 +3296,7 @@ tu6_emit_rast(struct tu_cs *cs,
       rs->line.mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR ?
       BRESENHAM : RECTANGULAR;
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SU_CNTL(
+                   GRAS_SU_CNTL(CHIP,
                      .cull_front = rs->cull_mode & VK_CULL_MODE_FRONT_BIT,
                      .cull_back = rs->cull_mode & VK_CULL_MODE_BACK_BIT,
                      .front_cw = rs->front_face == VK_FRONT_FACE_CLOCKWISE,
@@ -3608,7 +3607,7 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
    if (!fsr || (!fs_reads_fsr && vk_fragment_shading_rate_is_disabled(fsr))) {
       tu_cs_emit_regs(cs, A6XX_RB_VRS_CONFIG());
       tu_cs_emit_regs(cs, A7XX_SP_VRS_CONFIG());
-      tu_cs_emit_regs(cs, A7XX_GRAS_VRS_CONFIG());
+      tu_cs_emit_regs(cs, GRAS_VRS_CONFIG(CHIP));
       return;
    }
 
@@ -3646,7 +3645,7 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
                              .attachment_fsr_enable = enable_att_fsr,
                              .primitive_fsr_enable = enable_prim_fsr));
    tu_cs_emit_regs(
-      cs, A7XX_GRAS_VRS_CONFIG(
+      cs, GRAS_VRS_CONFIG(CHIP,
                 .pipeline_fsr_enable = enable_draw_fsr,
                 .frag_size_x = util_logbase2(frag_width),
                 .frag_size_y = util_logbase2(frag_height),

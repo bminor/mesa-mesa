@@ -92,6 +92,7 @@ template <chip CHIP>
 void fd6_emit_shader(struct fd_context *ctx, fd_cs &cs,
                      const struct ir3_shader_variant *so) assert_dt;
 
+template <chip CHIP>
 struct fd_ringbuffer *fd6_program_interp_state(struct fd6_emit *emit) assert_dt;
 
 template <chip CHIP>

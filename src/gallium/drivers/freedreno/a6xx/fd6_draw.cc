@@ -457,7 +457,7 @@ draw_vbos(struct fd_context *ctx, const struct pipe_draw_info *info,
       uint32_t restart_index =
          info->primitive_restart ? info->restart_index : 0xffffffff;
       if (ctx->last.dirty || (ctx->last.restart_index != restart_index)) {
-         crb.add(A6XX_PC_RESTART_INDEX(restart_index));
+         crb.add(PC_RESTART_INDEX(CHIP, restart_index));
          ctx->last.restart_index = restart_index;
       }
    }

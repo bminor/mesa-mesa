@@ -122,11 +122,11 @@ emit_mrt(fd_crb &crb, struct pipe_framebuffer_state *pfb,
    if (pfb->zsbuf.texture)
       max_layer_index = pfb->zsbuf.last_layer - pfb->zsbuf.first_layer;
 
-   crb.add(A6XX_GRAS_LRZ_MRT_BUFFER_INFO_0(.color_format = mrt0_format));
+   crb.add(GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = mrt0_format));
    crb.add(A6XX_RB_SRGB_CNTL(.dword = srgb_cntl));
    crb.add(A6XX_SP_SRGB_CNTL(.dword = srgb_cntl));
 
-   crb.add(A6XX_GRAS_CL_ARRAY_SIZE(max_layer_index));
+   crb.add(GRAS_CL_ARRAY_SIZE(CHIP, max_layer_index));
 }
 
 template <chip CHIP>
@@ -161,7 +161,7 @@ emit_zs(fd_crb &crb, struct pipe_surface *zsbuf, const struct fd_gmem_stateobj *
          crb.add(A6XX_RB_DEPTH_BUFFER_ARRAY_PITCH());
          crb.add(A6XX_RB_DEPTH_BUFFER_BASE());
          crb.add(A6XX_RB_DEPTH_GMEM_BASE(base));
-         crb.add(A6XX_GRAS_SU_DEPTH_BUFFER_INFO(.depth_format = fmt));
+         crb.add(GRAS_SU_DEPTH_BUFFER_INFO(CHIP, .depth_format = fmt));
 
          stencil = rsc;
       } else {
@@ -176,7 +176,7 @@ emit_zs(fd_crb &crb, struct pipe_surface *zsbuf, const struct fd_gmem_stateobj *
          crb.add(A6XX_RB_DEPTH_BUFFER_ARRAY_PITCH(array_stride));
          crb.add(A6XX_RB_DEPTH_BUFFER_BASE(.bo = rsc->bo, .bo_offset = offset));
          crb.add(A6XX_RB_DEPTH_GMEM_BASE(base));
-         crb.add(A6XX_GRAS_SU_DEPTH_BUFFER_INFO(.depth_format = fmt));
+         crb.add(GRAS_SU_DEPTH_BUFFER_INFO(CHIP, .depth_format = fmt));
 
          crb.add(A6XX_RB_DEPTH_FLAG_BUFFER_BASE(
             .bo = rsc->bo,
@@ -216,7 +216,7 @@ emit_zs(fd_crb &crb, struct pipe_surface *zsbuf, const struct fd_gmem_stateobj *
       crb.add(A6XX_RB_DEPTH_BUFFER_ARRAY_PITCH());
       crb.add(A6XX_RB_DEPTH_BUFFER_BASE());
       crb.add(A6XX_RB_DEPTH_GMEM_BASE());
-      crb.add(A6XX_GRAS_SU_DEPTH_BUFFER_INFO(.depth_format = DEPTH6_NONE));
+      crb.add(GRAS_SU_DEPTH_BUFFER_INFO(CHIP, .depth_format = DEPTH6_NONE));
       crb.add(RB_STENCIL_BUFFER_INFO(CHIP, 0));
    }
 }
@@ -230,8 +230,8 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
    if (!subpass->lrz) {
       fd_crb crb(cs, 6);
 
-      crb.add(A6XX_GRAS_LRZ_BUFFER_BASE());
-      crb.add(A6XX_GRAS_LRZ_BUFFER_PITCH());
+      crb.add(GRAS_LRZ_BUFFER_BASE(CHIP));
+      crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP));
       crb.add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE());
       if (CHIP >= A7XX)
          crb.add(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
@@ -252,8 +252,8 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
 
    crb.attach_bo(subpass->lrz);
 
-   crb.add(A6XX_GRAS_LRZ_BUFFER_BASE(.bo = subpass->lrz));
-   crb.add(A6XX_GRAS_LRZ_BUFFER_PITCH(.pitch = zsbuf->lrz_layout.lrz_pitch));
+   crb.add(GRAS_LRZ_BUFFER_BASE(CHIP, .bo = subpass->lrz));
+   crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP, .pitch = zsbuf->lrz_layout.lrz_pitch));
    crb.add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(
       .bo = zsbuf->lrz_layout.lrz_fc_size ? subpass->lrz : NULL,
       .bo_offset = zsbuf->lrz_layout.lrz_fc_offset
@@ -855,16 +855,17 @@ emit_conditional_ib(fd_cs &cs, struct fd_batch *batch, const struct fd_tile *til
    emit_marker6(cs, 6);
 }
 
+template <chip CHIP>
 static void
 set_scissor(fd_cs &cs, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2)
 {
    fd_pkt4(cs, 2)
-      .add(A6XX_GRAS_SC_WINDOW_SCISSOR_TL(.x = x1, .y = y1))
-      .add(A6XX_GRAS_SC_WINDOW_SCISSOR_BR(.x = x2, .y = y2));
+      .add(GRAS_SC_WINDOW_SCISSOR_TL(CHIP, .x = x1, .y = y1))
+      .add(GRAS_SC_WINDOW_SCISSOR_BR(CHIP, .x = x2, .y = y2));
 
    fd_pkt4(cs, 2)
-      .add(A6XX_GRAS_A2D_SCISSOR_TL(.x = x1, .y = y1))
-      .add(A6XX_GRAS_A2D_SCISSOR_BR(.x = x2, .y = y2));
+      .add(GRAS_A2D_SCISSOR_TL(CHIP, .x = x1, .y = y1))
+      .add(GRAS_A2D_SCISSOR_BR(CHIP, .x = x2, .y = y2));
 }
 
 template <chip CHIP>
@@ -905,7 +906,7 @@ set_bin_size(fd_crb &crb, const struct fd_gmem_stateobj *gmem, struct bin_size_p
    unsigned h = gmem ? gmem->bin_h : 0;
 
    if (CHIP == A6XX) {
-      crb.add(A6XX_GRAS_SC_BIN_CNTL(
+      crb.add(GRAS_SC_BIN_CNTL(CHIP,
             .binw = w, .binh = h,
             .render_mode = p.render_mode,
             .force_lrz_write_dis = p.force_lrz_write_dis,
@@ -913,7 +914,7 @@ set_bin_size(fd_crb &crb, const struct fd_gmem_stateobj *gmem, struct bin_size_p
             .lrz_feedback_zmode_mask = p.lrz_feedback_zmode_mask,
       ));
    } else {
-      crb.add(A6XX_GRAS_SC_BIN_CNTL(
+      crb.add(GRAS_SC_BIN_CNTL(CHIP,
             .binw = w, .binh = h,
             .render_mode = p.render_mode,
             .force_lrz_write_dis = p.force_lrz_write_dis,
@@ -929,7 +930,7 @@ set_bin_size(fd_crb &crb, const struct fd_gmem_stateobj *gmem, struct bin_size_p
          .lrz_feedback_zmode_mask = p.lrz_feedback_zmode_mask,
    ));
    /* no flag for RB_RESOLVE_CNTL_3... */
-   crb.add(A6XX_RB_RESOLVE_CNTL_3(.binw = w, .binh = h));
+   crb.add(RB_RESOLVE_CNTL_3(CHIP, .binw = w, .binh = h));
 }
 
 template <chip CHIP>
@@ -941,7 +942,7 @@ emit_binning_pass(fd_cs &cs, struct fd_batch *batch) assert_dt
 
    assert(!batch->tessellation);
 
-   set_scissor(cs, 0, 0, gmem->width - 1, gmem->height - 1);
+   set_scissor<CHIP>(cs, 0, 0, gmem->width - 1, gmem->height - 1);
 
    emit_marker6(cs, 7);
    fd_pkt7(cs, CP_SET_MARKER, 1)
@@ -1017,6 +1018,7 @@ emit_binning_pass(fd_cs &cs, struct fd_batch *batch) assert_dt
 }
 
 /* nregs: 7 */
+template <chip CHIP>
 static void
 emit_msaa(fd_crb &crb, unsigned nr)
 {
@@ -1028,8 +1030,8 @@ emit_msaa(fd_crb &crb, unsigned nr)
       .msaa_disable = (samples == MSAA_ONE),
    ));
 
-   crb.add(A6XX_GRAS_SC_RAS_MSAA_CNTL(.samples = samples));
-   crb.add(A6XX_GRAS_SC_DEST_MSAA_CNTL(
+   crb.add(GRAS_SC_RAS_MSAA_CNTL(CHIP, .samples = samples));
+   crb.add(GRAS_SC_DEST_MSAA_CNTL(CHIP,
       .samples = samples,
       .msaa_disable = (samples == MSAA_ONE),
    ));
@@ -1057,7 +1059,7 @@ fd7_emit_static_binning_regs(fd_cs &cs)
    ncrb.add(RB_UNKNOWN_8812(CHIP, 0x0));
    ncrb.add(RB_CCU_DBG_ECO_CNTL(CHIP, 0x0));
    ncrb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
-   ncrb.add(A6XX_GRAS_UNKNOWN_8110(0x2));
+   ncrb.add(GRAS_MODE_CNTL(CHIP, 0x2));
    ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
    ncrb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
 }
@@ -1138,7 +1140,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
    with_crb (cs, 150) {
       emit_zs<CHIP>(crb, &pfb->zsbuf, batch->gmem_state);
       emit_mrt<CHIP>(crb, pfb, batch->gmem_state);
-      emit_msaa(crb, pfb->samples);
+      emit_msaa<CHIP>(crb, pfb->samples);
    }
 
    patch_fb_read_gmem(batch);
@@ -1150,7 +1152,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
    if (use_hw_binning(batch)) {
       /* enable stream-out during binning pass: */
       with_crb (cs, 4) {
-         crb.add(A6XX_VPC_SO_OVERRIDE(false));
+         crb.add(VPC_SO_OVERRIDE(CHIP, false));
 
          set_bin_size<CHIP>(crb, gmem, {
                .render_mode = BINNING_PASS,
@@ -1164,7 +1166,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
 
       with_crb (cs, 5) {
          /* and disable stream-out for draw pass: */
-         crb.add(A6XX_VPC_SO_OVERRIDE(true));
+         crb.add(VPC_SO_OVERRIDE(CHIP, true));
 
          /*
           * NOTE: even if we detect VSC overflow and disable use of
@@ -1208,7 +1210,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
    } else {
       with_crb (cs, 4) {
          /* no binning pass, so enable stream-out for draw pass: */
-         crb.add(A6XX_VPC_SO_OVERRIDE(false));
+         crb.add(VPC_SO_OVERRIDE(CHIP, false));
 
          set_bin_size<CHIP>(crb, gmem, {
                .render_mode = RENDERING_PASS,
@@ -1261,7 +1263,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
    uint32_t x2 = tile->xoff + tile->bin_w - 1;
    uint32_t y2 = tile->yoff + tile->bin_h - 1;
 
-   set_scissor(cs, x1, y1, x2, y2);
+   set_scissor<CHIP>(cs, x1, y1, x2, y2);
    set_tessfactor_bo<CHIP>(cs, batch);
 
    fd6_emit_ccu_cntl<CHIP>(cs, screen, true);
@@ -1269,7 +1271,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
    with_crb (cs, 150) {
       emit_zs<CHIP>(crb, &pfb->zsbuf, batch->gmem_state);
       emit_mrt<CHIP>(crb, pfb, batch->gmem_state);
-      emit_msaa(crb, pfb->samples);
+      emit_msaa<CHIP>(crb, pfb->samples);
    }
 
    if (use_hw_binning(batch)) {
@@ -1304,7 +1306,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
          .add(0x0);
 
       with_crb (cs, 5) {
-         crb.add(A6XX_VPC_SO_OVERRIDE(true));
+         crb.add(VPC_SO_OVERRIDE(CHIP, true));
 
          /*
          * NOTE: even if we detect VSC overflow and disable use of
@@ -1339,7 +1341,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
 
       /* no binning pass, so enable stream-out for draw pass:: */
       fd_pkt4(cs, 1)
-         .add(A6XX_VPC_SO_OVERRIDE(false));
+         .add(VPC_SO_OVERRIDE(CHIP, false));
    }
 
    with_crb (cs, 7) {
@@ -1932,7 +1934,7 @@ fd6_emit_tile_fini(struct fd_batch *batch)
    emit_common_fini<CHIP>(cs, batch);
 
    fd_pkt4(cs, 1)
-      .add(A6XX_GRAS_LRZ_CNTL(.enable = true));
+      .add(GRAS_LRZ_CNTL(CHIP, .enable = true));
 
    fd6_event_write<CHIP>(batch->ctx, cs, FD_LRZ_FLUSH);
    fd6_event_write<CHIP>(batch->ctx, cs, FD_CCU_CLEAN_BLIT_CACHE);
@@ -2033,16 +2035,16 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
 
    if (pfb->width > 0 && pfb->height > 0)
-      set_scissor(cs, 0, 0, pfb->width - 1, pfb->height - 1);
+      set_scissor<CHIP>(cs, 0, 0, pfb->width - 1, pfb->height - 1);
    else
-      set_scissor(cs, 0, 0, 0, 0);
+      set_scissor<CHIP>(cs, 0, 0, 0, 0);
 
    set_tessfactor_bo<CHIP>(cs, batch);
 
    if (CHIP >= A7XX) {
       /* Non-context regs: */
       fd_pkt4(cs, 1)
-         .add(A6XX_GRAS_UNKNOWN_8110(0x2));
+         .add(GRAS_MODE_CNTL(CHIP, 0x2));
    }
 
    with_crb (cs, 12) {
@@ -2061,7 +2063,7 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
       }
 
       /* enable stream-out, with sysmem there is only one pass: */
-      crb.add(A6XX_VPC_SO_OVERRIDE(false));
+      crb.add(VPC_SO_OVERRIDE(CHIP, false));
    }
 
    emit_marker6(cs, 7);
@@ -2082,7 +2084,7 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
    with_crb (cs, 150) {
       emit_zs<CHIP>(crb, &pfb->zsbuf, NULL);
       emit_mrt<CHIP>(crb, pfb, NULL);
-      emit_msaa(crb, pfb->samples);
+      emit_msaa<CHIP>(crb, pfb->samples);
    }
 
    emit_common_init<CHIP>(cs, batch);

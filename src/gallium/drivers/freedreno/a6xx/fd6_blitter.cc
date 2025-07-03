@@ -319,7 +319,7 @@ emit_blit_setup(fd_ncrb<CHIP> &ncrb, enum pipe_format pfmt,
                         COND(scissor_enable, A6XX_RB_A2D_BLT_CNTL_SCISSOR);
 
    ncrb.add(A6XX_RB_A2D_BLT_CNTL(.dword = blit_cntl));
-   ncrb.add(A6XX_GRAS_A2D_BLT_CNTL(.dword = blit_cntl));
+   ncrb.add(GRAS_A2D_BLT_CNTL(CHIP, .dword = blit_cntl));
 
    if (CHIP >= A7XX) {
       ncrb.add(TPL1_A2D_BLT_CNTL(CHIP,
@@ -465,13 +465,13 @@ emit_blit_buffer(struct fd_context *ctx, fd_cs &cs, const struct pipe_blit_info 
           */
          emit_blit_buffer_dst<CHIP>(ncrb, dst, doff, p, FMT6_8_UNORM);
 
-         ncrb.add(A6XX_GRAS_A2D_SRC_XMIN(sshift));
-         ncrb.add(A6XX_GRAS_A2D_SRC_XMAX(sshift + w - 1));
-         ncrb.add(A6XX_GRAS_A2D_SRC_YMIN(0));
-         ncrb.add(A6XX_GRAS_A2D_SRC_YMAX(0));
+         ncrb.add(GRAS_A2D_SRC_XMIN(CHIP, sshift));
+         ncrb.add(GRAS_A2D_SRC_XMAX(CHIP, sshift + w - 1));
+         ncrb.add(GRAS_A2D_SRC_YMIN(CHIP, 0));
+         ncrb.add(GRAS_A2D_SRC_YMAX(CHIP, 0));
 
-         ncrb.add(A6XX_GRAS_A2D_DEST_TL(.x = dshift));
-         ncrb.add(A6XX_GRAS_A2D_DEST_BR(.x = dshift + w - 1));
+         ncrb.add(GRAS_A2D_DEST_TL(CHIP, .x = dshift));
+         ncrb.add(GRAS_A2D_DEST_BR(CHIP, .x = dshift + w - 1));
       }
 
       /*
@@ -500,10 +500,10 @@ clear_ubwc_setup(fd_cs &cs)
    ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW2());
    ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW3());
 
-   ncrb.add(A6XX_GRAS_A2D_SRC_XMIN(0));
-   ncrb.add(A6XX_GRAS_A2D_SRC_XMAX(0));
-   ncrb.add(A6XX_GRAS_A2D_SRC_YMIN(0));
-   ncrb.add(A6XX_GRAS_A2D_SRC_YMAX(0));
+   ncrb.add(GRAS_A2D_SRC_XMIN(CHIP, 0));
+   ncrb.add(GRAS_A2D_SRC_XMAX(CHIP, 0));
+   ncrb.add(GRAS_A2D_SRC_YMIN(CHIP, 0));
+   ncrb.add(GRAS_A2D_SRC_YMAX(CHIP, 0));
 }
 
 template <chip CHIP>
@@ -539,8 +539,8 @@ fd6_clear_ubwc(struct fd_batch *batch, struct fd_resource *rsc) assert_dt
           */
          emit_blit_buffer_dst<CHIP>(ncrb, rsc, offset, p, FMT6_8_UNORM);
 
-         ncrb.add(A6XX_GRAS_A2D_DEST_TL(.x = 0,     .y = 0));
-         ncrb.add(A6XX_GRAS_A2D_DEST_BR(.x = w - 1, .y = h - 1));
+         ncrb.add(GRAS_A2D_DEST_TL(CHIP, .x = 0,     .y = 0));
+         ncrb.add(GRAS_A2D_DEST_BR(CHIP, .x = w - 1, .y = h - 1));
       }
 
       /*
@@ -690,20 +690,20 @@ emit_blit_texture_setup(fd_cs &cs, const struct pipe_blit_info *info)
 
    fd_ncrb<CHIP> ncrb(cs, 13);
 
-   ncrb.add(A6XX_GRAS_A2D_SRC_XMIN(MIN2(sx1, sx2)));
-   ncrb.add(A6XX_GRAS_A2D_SRC_XMAX(MAX2(sx1, sx2) - 1));
-   ncrb.add(A6XX_GRAS_A2D_SRC_YMIN(MIN2(sy1, sy2)));
-   ncrb.add(A6XX_GRAS_A2D_SRC_YMAX(MAX2(sy1, sy2) - 1));
+   ncrb.add(GRAS_A2D_SRC_XMIN(CHIP, MIN2(sx1, sx2)));
+   ncrb.add(GRAS_A2D_SRC_XMAX(CHIP, MAX2(sx1, sx2) - 1));
+   ncrb.add(GRAS_A2D_SRC_YMIN(CHIP, MIN2(sy1, sy2)));
+   ncrb.add(GRAS_A2D_SRC_YMAX(CHIP, MAX2(sy1, sy2) - 1));
 
-   ncrb.add(A6XX_GRAS_A2D_DEST_TL(.x = MIN2(dx1, dx2), .y = MIN2(dy1, dy2)));
-   ncrb.add(A6XX_GRAS_A2D_DEST_BR(.x = MAX2(dx1, dx2) - 1, .y = MAX2(dy1, dy2) - 1));
+   ncrb.add(GRAS_A2D_DEST_TL(CHIP, .x = MIN2(dx1, dx2), .y = MIN2(dy1, dy2)));
+   ncrb.add(GRAS_A2D_DEST_BR(CHIP, .x = MAX2(dx1, dx2) - 1, .y = MAX2(dy1, dy2) - 1));
 
    if (info->scissor_enable) {
-      ncrb.add(A6XX_GRAS_A2D_SCISSOR_TL(
+      ncrb.add(GRAS_A2D_SCISSOR_TL(CHIP,
          .x = info->scissor.minx,
          .y = info->scissor.miny,
       ));
-      ncrb.add(A6XX_GRAS_A2D_SCISSOR_BR(
+      ncrb.add(GRAS_A2D_SCISSOR_BR(CHIP,
          .x = info->scissor.maxx - 1,
          .y = info->scissor.maxy - 1,
       ));
@@ -805,8 +805,8 @@ clear_lrz_setup(fd_cs &cs, struct fd_resource *zsbuf, struct fd_bo *lrz, double 
 {
    fd_ncrb<CHIP> ncrb(cs, 15);
 
-   ncrb.add(A6XX_GRAS_A2D_DEST_TL(.x = 0, .y = 0));
-   ncrb.add(A6XX_GRAS_A2D_DEST_BR(
+   ncrb.add(GRAS_A2D_DEST_TL(CHIP, .x = 0, .y = 0));
+   ncrb.add(GRAS_A2D_DEST_BR(CHIP,
       .x = zsbuf->lrz_layout.lrz_pitch - 1,
       .y = zsbuf->lrz_layout.lrz_height - 1,
    ));
@@ -994,8 +994,8 @@ fd6_clear_buffer(struct pipe_context *pctx,
       with_ncrb (cs, 6) {
          emit_blit_buffer_dst(ncrb, rsc, doff, 0, fmt);
 
-         ncrb.add(A6XX_GRAS_A2D_DEST_TL(.x = dst_x));
-         ncrb.add(A6XX_GRAS_A2D_DEST_BR(.x = dst_x + width - 1));
+         ncrb.add(GRAS_A2D_DEST_TL(CHIP, .x = dst_x));
+         ncrb.add(GRAS_A2D_DEST_BR(CHIP, .x = dst_x + width - 1));
       }
 
       emit_blit_fini<CHIP>(ctx, cs);
@@ -1028,11 +1028,11 @@ clear_surface_setup(fd_cs &cs, struct pipe_surface *psurf,
    uint32_t nr_samples = fd_resource_nr_samples(psurf->texture);
    fd_ncrb<CHIP> ncrb(cs, 11);
 
-   ncrb.add(A6XX_GRAS_A2D_DEST_TL(
+   ncrb.add(GRAS_A2D_DEST_TL(CHIP,
       .x = box2d->x * nr_samples,
       .y = box2d->y,
    ));
-   ncrb.add(A6XX_GRAS_A2D_DEST_BR(
+   ncrb.add(GRAS_A2D_DEST_BR(CHIP,
       .x = (box2d->x + box2d->width) * nr_samples - 1,
       .y = box2d->y + box2d->height - 1,
    ));
@@ -1167,13 +1167,13 @@ resolve_tile_setup(struct fd_batch *batch, fd_cs &cs, uint32_t base,
    unsigned height = pipe_surface_height(psurf);
    fd_ncrb<CHIP> ncrb(cs, 26);
 
-   ncrb.add(A6XX_GRAS_A2D_DEST_TL(.x = 0, .y = 0));
-   ncrb.add(A6XX_GRAS_A2D_DEST_BR(.x = width - 1, .y = height - 1));
+   ncrb.add(GRAS_A2D_DEST_TL(CHIP, .x = 0, .y = 0));
+   ncrb.add(GRAS_A2D_DEST_BR(CHIP, .x = width - 1, .y = height - 1));
 
-   ncrb.add(A6XX_GRAS_A2D_SRC_XMIN(0));
-   ncrb.add(A6XX_GRAS_A2D_SRC_XMAX(width - 1));
-   ncrb.add(A6XX_GRAS_A2D_SRC_YMIN(0));
-   ncrb.add(A6XX_GRAS_A2D_SRC_YMAX(height - 1));
+   ncrb.add(GRAS_A2D_SRC_XMIN(CHIP, 0));
+   ncrb.add(GRAS_A2D_SRC_XMAX(CHIP, width - 1));
+   ncrb.add(GRAS_A2D_SRC_YMIN(CHIP, 0));
+   ncrb.add(GRAS_A2D_SRC_YMAX(CHIP, height - 1));
 
    /* Enable scissor bit, which will take into account the window scissor
     * which is set per-tile

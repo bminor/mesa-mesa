@@ -881,7 +881,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_vpc<CHIP>(cs, vs, NULL, NULL, NULL, fs);
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A6XX_GRAS_UNKNOWN_8110(0x2));
+      tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
 
       tu_cs_emit_regs(cs, A7XX_SP_RENDER_CNTL(.fs_disable = false));
    }
@@ -902,7 +902,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
                       .vp_clip_code_ignore = 1,
                       .vp_xform_disable = 1,
                       .persp_division_disable = 1,));
-   tu_cs_emit_regs(cs, A6XX_GRAS_SU_CNTL()); // XXX msaa enable?
+   tu_cs_emit_regs(cs, GRAS_SU_CNTL(CHIP)); // XXX msaa enable?
 
    tu_cs_emit_regs(cs, VPC_RAST_STREAM_CNTL(CHIP));
    if (CHIP == A6XX) {
@@ -1592,7 +1592,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
 
       tu_cs_emit_regs(cs, A6XX_RB_VRS_CONFIG());
       tu_cs_emit_regs(cs, A7XX_SP_VRS_CONFIG());
-      tu_cs_emit_regs(cs, A7XX_GRAS_VRS_CONFIG());
+      tu_cs_emit_regs(cs, GRAS_VRS_CONFIG(CHIP));
    }
 
    tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_SC_CNTL,

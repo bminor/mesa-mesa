@@ -400,17 +400,14 @@ emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
 
       if (dev->physical_device->info->a7xx.has_gmem_vpc_attr_buf) {
          tu_cs_emit_regs(cs,
-            A7XX_VPC_ATTR_BUF_GMEM_SIZE(
-                  .size_gmem =
+            VPC_ATTR_BUF_GMEM_SIZE(CHIP,
                      gmem ? dev->physical_device->vpc_attr_buf_size_gmem
                           : dev->physical_device->vpc_attr_buf_size_bypass),
-            A7XX_VPC_ATTR_BUF_GMEM_BASE(
-                  .base_gmem =
+            VPC_ATTR_BUF_GMEM_BASE(CHIP,
                      gmem ? dev->physical_device->vpc_attr_buf_offset_gmem
                           : dev->physical_device->vpc_attr_buf_offset_bypass), );
          tu_cs_emit_regs(cs,
             A7XX_PC_ATTR_BUF_GMEM_SIZE(
-                  .size_gmem =
                      gmem ? dev->physical_device->vpc_attr_buf_size_gmem
                           : dev->physical_device->vpc_attr_buf_size_bypass), );
       }
@@ -1765,7 +1762,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_PC_MODE_CNTL,
                         phys_dev->info->a6xx.magic.PC_MODE_CNTL);
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_UNKNOWN_8110, 0);
+   tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_MODE_CNTL, 0);
 
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_8818, 0);
 
@@ -1781,13 +1778,13 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_88F0, 0);
 
    tu_cs_emit_regs(cs, A6XX_VPC_REPLACE_MODE_CNTL(false));
-   tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9300, 0);
+   tu_cs_emit_write_reg(cs, REG_A6XX_VPC_ROTATION_CNTL, 0);
 
    tu_cs_emit_regs(cs, A6XX_VPC_SO_OVERRIDE(true));
 
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_UNKNOWN_B183, 0);
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_UNKNOWN_80AF, 0);
+   tu_cs_emit_regs(cs, GRAS_SC_SCREEN_SCISSOR_CNTL(CHIP));
    if (CHIP == A6XX) {
       tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_SU_CONSERVATIVE_RAS_CNTL, 0);
       tu_cs_emit_regs(cs, A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL());
@@ -1875,7 +1872,7 @@ tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
 
    tu_cs_emit_regs(cs, A7XX_GRAS_UNKNOWN_8007(0x0));
 
-   tu_cs_emit_regs(cs, A6XX_GRAS_UNKNOWN_8110(0x2));
+   tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
    tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
    tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
@@ -2565,7 +2562,7 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
       tu_cs_emit_regs(cs, A7XX_GRAS_UNKNOWN_8007(0x0));
 
-      tu_cs_emit_regs(cs, A6XX_GRAS_UNKNOWN_8110(0x2));
+      tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
       tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
       tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_SYSMEM));

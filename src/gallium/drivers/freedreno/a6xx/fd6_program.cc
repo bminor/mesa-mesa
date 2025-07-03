@@ -255,6 +255,7 @@ FD_GENX(fd6_emit_shader);
  * Build a pre-baked state-obj to disable SO, so that we aren't dynamically
  * building this at draw time whenever we transition from SO enabled->disabled
  */
+template <chip CHIP>
 static void
 setup_stream_out_disable(struct fd_context *ctx)
 {
@@ -265,16 +266,17 @@ setup_stream_out_disable(struct fd_context *ctx)
 
    fd_crb crb(ctx->pipe, nreg);
 
-   crb.add(A6XX_VPC_SO_MAPPING_WPTR());
-   crb.add(A6XX_VPC_SO_CNTL());
+   crb.add(VPC_SO_MAPPING_WPTR(CHIP));
+   crb.add(VPC_SO_CNTL(CHIP));
 
    if (ctx->screen->info->a6xx.tess_use_shared) {
-      crb.add(A6XX_PC_DGEN_SO_CNTL());
+      crb.add(PC_DGEN_SO_CNTL(CHIP));
    }
 
    fd6_context(ctx)->streamout_disable_stateobj = crb.ring();
 }
 
+template <chip CHIP>
 static void
 setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
                  const struct ir3_shader_variant *v,
@@ -341,7 +343,7 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
 
    fd_crb crb(ctx->pipe, nreg);
 
-   crb.add(A6XX_VPC_SO_CNTL(
+   crb.add(VPC_SO_CNTL(CHIP,
       .buf0_stream = 1 + strmout->output[0].stream,
       .buf1_stream = 1 + strmout->output[1].stream,
       .buf2_stream = 1 + strmout->output[2].stream,
@@ -350,14 +352,14 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
    ));
 
    for (unsigned i = 0; i < 4; i++)
-      crb.add(A6XX_VPC_SO_BUFFER_STRIDE(i, strmout->stride[i]));
+      crb.add(VPC_SO_BUFFER_STRIDE(CHIP, i, strmout->stride[i]));
 
    bool first = true;
    BITSET_FOREACH_RANGE (start, end, valid_dwords,
                          A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS) {
-      crb.add(A6XX_VPC_SO_MAPPING_WPTR(.addr = start, .reset = first));
+      crb.add(VPC_SO_MAPPING_WPTR(CHIP, .addr = start, .reset = first));
       for (unsigned i = start; i < end; i++) {
-         crb.add(A6XX_VPC_SO_MAPPING_PORT(.dword = prog[i]));
+         crb.add(VPC_SO_MAPPING_PORT(CHIP, .dword = prog[i]));
       }
       first = false;
    }
@@ -366,7 +368,7 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
       /* Possibly not tess_use_shared related, but the combination of
        * tess + xfb fails some tests if we don't emit this.
        */
-      crb.add(A6XX_PC_DGEN_SO_CNTL(.stream_enable = true));
+      crb.add(PC_DGEN_SO_CNTL(CHIP, .stream_enable = true));
    }
 
    state->streamout_stateobj = crb.ring();
@@ -430,7 +432,7 @@ setup_config_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
    crb.add(A6XX_SP_GS_CONFIG(.dword = sp_xs_config(state->gs)));
    crb.add(A6XX_SP_PS_CONFIG(.dword = sp_xs_config(state->fs)));
 
-   crb.add(A6XX_SP_GFX_USIZE(ir3_shader_num_uavs(state->fs)));
+   crb.add(SP_GFX_USIZE(CHIP, ir3_shader_num_uavs(state->fs)));
 
    state->config_stateobj = crb.ring();
 }
@@ -656,7 +658,7 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
    emit_vs_system_values(crb, b);
 
    for (unsigned i = 0; i < 4; i++)
-      crb.add(A6XX_VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(i, ~linkage.varmask[i]));
+      crb.add(VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(CHIP, i, ~linkage.varmask[i]));
 
    /* a6xx finds position/pointsize at the end */
    const uint32_t position_regid =
@@ -722,10 +724,10 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
     * program:
     */
    if (do_streamout && !b->binning_pass) {
-      setup_stream_out(b->ctx, b->state, b->last_shader, &linkage);
+      setup_stream_out<CHIP>(b->ctx, b->state, b->last_shader, &linkage);
 
       if (!fd6_context(b->ctx)->streamout_disable_stateobj)
-         setup_stream_out_disable(b->ctx);
+         setup_stream_out_disable<CHIP>(b->ctx);
    }
 
    /* There is a hardware bug on a750 where STRIDE_IN_VPC of 5 to 8 in GS with
@@ -838,14 +840,14 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
       CONDREG(view_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_VIEW)
    });
 
-   crb.add(A6XX_PC_PS_CNTL(b->fs->reads_primid));
+   crb.add(PC_PS_CNTL(CHIP, b->fs->reads_primid));
 
    if (CHIP >= A7XX) {
-      crb.add(A6XX_GRAS_UNKNOWN_8110(0x2));
+      crb.add(GRAS_MODE_CNTL(CHIP, 0x2));
       crb.add(SP_RENDER_CNTL(CHIP, .fs_disable = false));
    }
 
-   crb.add(A6XX_VPC_PS_CNTL(
+   crb.add(VPC_PS_CNTL(CHIP,
       .numnonposvar = b->fs->total_in,
       .primidloc = linkage.primid_loc,
       .varying = !!b->fs->total_in,
@@ -853,7 +855,7 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
    ));
 
    if (b->hs) {
-      crb.add(A6XX_PC_HS_PARAM_0(b->hs->tess.tcs_vertices_out));
+      crb.add(PC_HS_PARAM_0(CHIP, b->hs->tess.tcs_vertices_out));
    }
 
    if (b->gs) {
@@ -869,7 +871,7 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
       vec4_size = b->gs->gs.vertices_in *
                   DIV_ROUND_UP(prev_stage_output_size, 4);
 
-      crb.add(A6XX_PC_GS_PARAM_0(
+      crb.add(PC_GS_PARAM_0(CHIP,
          .gs_vertices_out = vertices_out,
          .gs_invocations = invocations,
          .gs_output = output,
@@ -1039,7 +1041,7 @@ emit_fs_inputs(fd_crb &crb, const struct program_builder *b)
          need_size = true;
    }
 
-   crb.add(A6XX_GRAS_CL_INTERP_CNTL(
+   crb.add(GRAS_CL_INTERP_CNTL(CHIP,
       .ij_persp_pixel        = VALIDREG(ij_regid[IJ_PERSP_PIXEL]),
       .ij_persp_centroid     = VALIDREG(ij_regid[IJ_PERSP_CENTROID]),
       .ij_persp_sample       = VALIDREG(ij_regid[IJ_PERSP_SAMPLE]),
@@ -1067,7 +1069,7 @@ emit_fs_inputs(fd_crb &crb, const struct program_builder *b)
       .centerrhw             = VALIDREG(ij_regid[IJ_PERSP_CENTER_RHW])
    ));
    crb.add(A6XX_RB_PS_SAMPLEFREQ_CNTL(sample_shading));
-   crb.add(A6XX_GRAS_LRZ_PS_INPUT_CNTL(
+   crb.add(GRAS_LRZ_PS_INPUT_CNTL(CHIP,
       .sampleid              = VALIDREG(samp_id_regid),
       .fragcoordsamplemode   = sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER,
    ));
@@ -1160,7 +1162,7 @@ setup_stateobj(fd_cs &cs, const struct program_builder *b)
 
    fd_crb crb(cs, 100);
 
-   crb.add(A6XX_PC_STEREO_RENDERING_CNTL());
+   crb.add(PC_STEREO_RENDERING_CNTL(CHIP));
 
    emit_vfd_dest(crb, b->vs);
    emit_vpc<CHIP>(crb, b);
@@ -1175,7 +1177,7 @@ setup_stateobj(fd_cs &cs, const struct program_builder *b)
          patch_control_points * b->vs->output_size / 4;
 
       /* Total attribute slots in HS incoming patch. */
-      crb.add(A6XX_PC_HS_PARAM_1(patch_local_mem_size_16b));
+      crb.add(PC_HS_PARAM_1(CHIP, patch_local_mem_size_16b));
 
       const uint32_t wavesize = 64;
       const uint32_t vs_hs_local_mem_size = 16384;
@@ -1214,23 +1216,25 @@ setup_stateobj(fd_cs &cs, const struct program_builder *b)
       else
          output = TESS_CW_TRIS;
 
-      crb.add(A6XX_PC_DS_PARAM(
+      crb.add(PC_DS_PARAM(CHIP,
          .spacing = fd6_gl2spacing(b->ds->tess.spacing),
          .output = output,
       ));
    }
 }
 
+template <chip CHIP>
 static void emit_interp_state(fd_crb &crb, const struct fd6_program_state *state,
                               bool rasterflat, bool sprite_coord_mode,
                               uint32_t sprite_coord_enable);
 
+template <chip CHIP>
 static struct fd_ringbuffer *
 create_interp_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
 {
    fd_crb crb(ctx->pipe, 16);
 
-   emit_interp_state(crb, state, false, false, 0);
+   emit_interp_state<CHIP>(crb, state, false, false, 0);
 
    return crb.ring();
 }
@@ -1239,6 +1243,7 @@ create_interp_stateobj(struct fd_context *ctx, struct fd6_program_state *state)
  * baked stateobj because of dependency on other gl state (rasterflat
  * or sprite-coord-replacement)
  */
+template <chip CHIP>
 struct fd_ringbuffer *
 fd6_program_interp_state(struct fd6_emit *emit)
 {
@@ -1250,13 +1255,15 @@ fd6_program_interp_state(struct fd6_emit *emit)
    } else {
       fd_crb crb(emit->ctx->batch->submit, 16);
 
-      emit_interp_state(crb, state, emit->rasterflat,
-                        emit->sprite_coord_mode, emit->sprite_coord_enable);
+      emit_interp_state<CHIP>(crb, state, emit->rasterflat,
+                              emit->sprite_coord_mode, emit->sprite_coord_enable);
 
       return crb.ring();
    }
 }
+FD_GENX(fd6_program_interp_state);
 
+template <chip CHIP>
 static void
 emit_interp_state(fd_crb &crb, const struct fd6_program_state *state,
                   bool rasterflat, bool sprite_coord_mode,
@@ -1332,10 +1339,10 @@ emit_interp_state(fd_crb &crb, const struct fd6_program_state *state,
    }
 
    for (int i = 0; i < 8; i++)
-      crb.add(A6XX_VPC_VARYING_INTERP_MODE_MODE(i, vinterp[i]));
+      crb.add(VPC_VARYING_INTERP_MODE_MODE(CHIP, i, vinterp[i]));
 
    for (int i = 0; i < 8; i++)
-      crb.add(A6XX_VPC_VARYING_REPLACE_MODE_MODE(i, vpsrepl[i]));
+      crb.add(VPC_VARYING_REPLACE_MODE_MODE(CHIP, i, vpsrepl[i]));
 }
 
 template <chip CHIP>
@@ -1436,7 +1443,7 @@ fd6_program_create(void *data, const struct ir3_shader_variant *bs,
    fd_cs cs(state->stateobj);
    setup_stateobj<CHIP>(cs, &b);
 
-   state->interp_stateobj = create_interp_stateobj(ctx, state);
+   state->interp_stateobj = create_interp_stateobj<CHIP>(ctx, state);
 
    const struct ir3_stream_output_info *stream_output = &last_shader->stream_output;
    if (stream_output->num_outputs > 0)

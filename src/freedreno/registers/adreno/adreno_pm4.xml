@@ -1092,7 +1092,8 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 			<bitfield name="BINNING" pos="20" varset="chip" variants="A6XX-" type="boolean"/>
 			<bitfield name="GMEM" pos="21" varset="chip" variants="A6XX-" type="boolean"/>
 			<bitfield name="SYSMEM" pos="22" varset="chip" variants="A6XX-" type="boolean"/>
-			<bitfield name="GROUP_ID" low="24" high="28" type="uint"/>
+			<!-- high bit is 28 until a750: -->
+			<bitfield name="GROUP_ID" low="24" high="29" type="uint"/>
 		</reg32>
 		<reg64 offset="1" name="ADDR" type="address"/>
 		<reg32 offset="1" name="1">

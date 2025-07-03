@@ -642,7 +642,7 @@ primitives_emitted_resume(struct fd_acc_query *aq,
    ASSERT_ALIGNED(struct fd6_primitives_sample, start[0], 32);
 
    fd_pkt4(cs, 2)
-      .add(A6XX_VPC_SO_QUERY_BASE(primitives_sample(aq, start[0])));
+      .add(VPC_SO_QUERY_BASE(CHIP, primitives_sample(aq, start[0])));
 
    fd6_event_write<CHIP>(batch->ctx, cs, FD_WRITE_PRIMITIVE_COUNTS);
 }
@@ -683,7 +683,7 @@ primitives_emitted_pause(struct fd_acc_query *aq,
    ASSERT_ALIGNED(struct fd6_primitives_sample, stop[0], 32);
 
    fd_pkt4(cs, 2)
-      .add(A6XX_VPC_SO_QUERY_BASE(primitives_sample(aq, stop[0])));
+      .add(VPC_SO_QUERY_BASE(CHIP, primitives_sample(aq, stop[0])));
 
    fd6_event_write<CHIP>(batch->ctx, cs, FD_WRITE_PRIMITIVE_COUNTS);
    fd6_event_write<CHIP>(batch->ctx, cs, FD_CACHE_CLEAN);

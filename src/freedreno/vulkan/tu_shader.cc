@@ -2177,7 +2177,7 @@ tu6_emit_fs(struct tu_cs *cs,
    tu_cs_emit_regs(cs, A6XX_PC_PS_CNTL(.primitiveiden = fs && fs->reads_primid));
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A6XX_GRAS_UNKNOWN_8110(0x2));
+      tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
    }
 
    if (fs) {

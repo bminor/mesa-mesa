@@ -209,7 +209,7 @@ fd6_zsa_state_create(struct pipe_context *pctx,
          .zfail_bf = fd_stencil_op(bs->zfail_op),
       ));
 
-      crb.add(A6XX_GRAS_SU_STENCIL_CNTL(cso->stencil[0].enabled));
+      crb.add(GRAS_SU_STENCIL_CNTL(CHIP, cso->stencil[0].enabled));
       crb.add(A6XX_RB_STENCIL_MASK(.mask = fs->valuemask, .bfmask = bs->valuemask));
       crb.add(A6XX_RB_STENCIL_WRITE_MASK(.wrmask = fs->writemask, .bfwrmask = bs->writemask));
 
@@ -222,7 +222,7 @@ fd6_zsa_state_create(struct pipe_context *pctx,
          .z_bounds_enable = cso->depth_bounds_test,
       ));
 
-      crb.add(A6XX_GRAS_SU_DEPTH_CNTL(cso->depth_enabled));
+      crb.add(GRAS_SU_DEPTH_CNTL(CHIP, cso->depth_enabled));
 
       if (CHIP >= A7XX && !depth_clamp_enable) {
          crb.add(A6XX_RB_DEPTH_BOUND_MIN(0.0f));
