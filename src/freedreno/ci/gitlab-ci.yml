@@ -243,6 +243,7 @@ a660-gl-cl:
   variables:
     DEQP_SUITE: freedreno-a660
     HWCI_START_WESTON: 1
+    FDO_CI_CONCURRENT: 9
 
 a660-vk:
   extends:
