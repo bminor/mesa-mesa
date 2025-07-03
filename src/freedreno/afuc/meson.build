@@ -55,21 +55,21 @@ asm = executable(
 if with_tests
   asm_fw = custom_target('afuc_test.fw',
     output: 'afuc_test.fw',
-    command: [asm, files('../.gitlab-ci/traces/afuc_test.asm'), '@OUTPUT@'],
+    command: [asm, files('../tests/traces/afuc_test.asm'), '@OUTPUT@'],
   )
   asm_fw_a7xx = custom_target('afuc_test_a7xx.fw',
     output: 'afuc_test_a7xx.fw',
-    command: [asm, files('../.gitlab-ci/traces/afuc_test_a7xx.asm'), '@OUTPUT@'],
+    command: [asm, files('../tests/traces/afuc_test_a7xx.asm'), '@OUTPUT@'],
   )
   test('afuc-asm',
     diff,
-    args: ['-u', files('../.gitlab-ci/reference/afuc_test.fw'), asm_fw],
+    args: ['-u', files('../tests/reference/afuc_test.fw'), asm_fw],
     suite: 'freedreno',
     workdir: dir_source_root
   )
   test('afuc-asm-a7xx',
     diff,
-    args: ['-u', files('../.gitlab-ci/reference/afuc_test_a7xx.fw'), asm_fw_a7xx],
+    args: ['-u', files('../tests/reference/afuc_test_a7xx.fw'), asm_fw_a7xx],
     suite: 'freedreno',
     workdir: dir_source_root
   )
@@ -119,23 +119,23 @@ if cc.sizeof('size_t') > 4
   if with_tests
     disasm_fw = custom_target('afuc_test.asm',
       output: 'afuc_test.asm',
-      command: [disasm, '-u', files('../.gitlab-ci/reference/afuc_test.fw')],
+      command: [disasm, '-u', files('../tests/reference/afuc_test.fw')],
       capture: true
     )
     disasm_fw_a7xx = custom_target('afuc_test_a7xx.asm',
       output: 'afuc_test_a7xx.asm',
-      command: [disasm, '-u', files('../.gitlab-ci/reference/afuc_test_a7xx.fw')],
+      command: [disasm, '-u', files('../tests/reference/afuc_test_a7xx.fw')],
       capture: true
     )
     test('afuc-disasm',
       diff,
-      args: ['-u', files('../.gitlab-ci/reference/afuc_test.asm'), disasm_fw],
+      args: ['-u', files('../tests/reference/afuc_test.asm'), disasm_fw],
       suite: 'freedreno',
       workdir: dir_source_root
     )
     test('afuc-disasm-a7xx',
       diff,
-      args: ['-u', files('../.gitlab-ci/reference/afuc_test_a7xx.asm'), disasm_fw_a7xx],
+      args: ['-u', files('../tests/reference/afuc_test_a7xx.asm'), disasm_fw_a7xx],
       suite: 'freedreno',
       workdir: dir_source_root
     )
