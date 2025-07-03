@@ -2068,6 +2068,12 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
    if (OPT(nir_lower_int64))
       brw_nir_optimize(nir, devinfo);
 
+   /* This pass specifically looks for sequences of fmul and fadd that
+    * intel_nir_opt_peephole_ffma will try to eliminate. Call this
+    * reassociation pass first.
+    */
+   OPT(nir_opt_reassociate_matrix_mul);
+
    /* Try and fuse multiply-adds, if successful, run shrink_vectors to
     * avoid peephole_ffma to generate things like this :
     *    vec16 ssa_0 = ...
