@@ -30,6 +30,9 @@
     # Assume by default this is running deqp, as that's almost always true
     HWCI_TEST_SCRIPT: install/deqp-runner.sh
 
+    # Per-job files need to be in CI_PROJECT_DIR
+    S3_JWT_FILE: $CI_PROJECT_DIR/s3_jwt
+
     # Keep the job script in the artifacts
     CI_TRON_JOB_SCRIPT_PATH: results/job_script.sh
   needs:
