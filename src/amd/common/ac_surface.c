@@ -804,6 +804,29 @@ static unsigned bpe_to_format(struct radeon_surf *surf)
    return ADDR_FMT_INVALID;
 }
 
+static bool
+is_astc_format(unsigned format)
+{
+   switch (format) {
+   case ADDR_FMT_ASTC_5x4:
+   case ADDR_FMT_ASTC_5x5:
+   case ADDR_FMT_ASTC_6x5:
+   case ADDR_FMT_ASTC_6x6:
+   case ADDR_FMT_ASTC_8x5:
+   case ADDR_FMT_ASTC_8x6:
+   case ADDR_FMT_ASTC_8x8:
+   case ADDR_FMT_ASTC_10x5:
+   case ADDR_FMT_ASTC_10x6:
+   case ADDR_FMT_ASTC_10x8:
+   case ADDR_FMT_ASTC_10x10:
+   case ADDR_FMT_ASTC_12x10:
+   case ADDR_FMT_ASTC_12x12:
+      return true;
+   default:
+      return false;
+   }
+}
+
 /* The addrlib pitch alignment is forced to this number for all chips to support interop
  * between any 2 chips.
  */
@@ -3370,6 +3393,8 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
       AddrSurfInfoIn.swizzleMode = ADDR3_LINEAR;
    } else if (surf->flags & RADEON_SURF_VIDEO_REFERENCE) {
       AddrSurfInfoIn.swizzleMode = ADDR3_256B_2D;
+   } else if (is_astc_format(AddrSurfInfoIn.format)) {
+      AddrSurfInfoIn.swizzleMode = config->is_3d ? ADDR3_4KB_3D : ADDR3_4KB_2D;
    } else {
       AddrSurfInfoIn.swizzleMode = gfx12_select_swizzle_mode(addrlib, info, config, surf,
                                                              &AddrSurfInfoIn, surf->flags);
