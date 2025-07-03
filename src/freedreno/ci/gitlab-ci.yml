@@ -230,7 +230,7 @@ a660-angle:
   variables:
     DEQP_SUITE: tu-angle
 
-a660-piglit-cl:
+a660-gl-cl:
   extends:
     - .lava-arm64-test-gl
     - .lava-sm8350-hdk:arm64
@@ -239,19 +239,11 @@ a660-piglit-cl:
   rules:
     - !reference [.collabora-freedreno-rules, rules]
     - !reference [.rusticl-rules, rules]
-  variables:
-    DEQP_SUITE: freedreno-a660-piglit-cl
-    HWCI_START_WESTON: 1
-
-a660-gl:
-  extends:
-    - .lava-arm64-test-gl
-    - .collabora-freedreno-rules
-    - .lava-sm8350-hdk:arm64
   parallel: 2
   variables:
     DEQP_SUITE: freedreno-a660
     DEQP_FRACTION: 2
+    HWCI_START_WESTON: 1
 
 a660-gl-full:
   extends:
