@@ -30,6 +30,7 @@ foreach v: ['90', '110', '120', '125', '200', '300']
     dependencies: [
       dep_valgrind,
       idep_genxml,
+      idep_intel_dev,
     ],
   )
 endforeach
