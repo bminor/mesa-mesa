@@ -775,6 +775,9 @@ anv_block_pool_size(struct anv_block_pool *pool)
 }
 
 struct anv_state {
+   /* The offset within the VA of the anv_state_pool of this anv_state.
+    *    offset = <actual VMA address> - <anv_state_pool->anv_block_pool.start_address> - <anv_state_pool->start_offset>
+    */
    int64_t offset;
    uint32_t alloc_size;
    uint32_t idx;
