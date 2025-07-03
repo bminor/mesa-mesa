@@ -105,7 +105,6 @@ struct dri_screen
    struct pipe_loader_device *dev;
 
    /* gallium */
-   bool auto_fake_front;
    bool has_reset_status_query;
    bool has_protected_context;
    enum pipe_texture_target target;
@@ -161,16 +160,6 @@ struct dri_image {
 
    struct dri_screen *screen;
 };
-
-static inline bool
-dri_with_format(struct dri_screen *screen)
-{
-   const __DRIdri2LoaderExtension *loader = screen->dri2.loader;
-
-   return loader
-       && (loader->base.version >= 3)
-       && (loader->getBuffersWithFormat != NULL);
-}
 
 void
 dri_fill_st_visual(struct st_visual *stvis,

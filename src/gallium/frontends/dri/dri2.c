@@ -111,7 +111,6 @@ dri2_drawable_get_buffers(struct dri_drawable *drawable,
                           unsigned *count)
 {
    const __DRIdri2LoaderExtension *loader = drawable->screen->dri2.loader;
-   bool with_format;
    __DRIbuffer *buffers;
    int num_buffers;
    unsigned attachments[__DRI_BUFFER_COUNT];
@@ -119,18 +118,16 @@ dri2_drawable_get_buffers(struct dri_drawable *drawable,
 
    assert(loader);
    assert(*count <= __DRI_BUFFER_COUNT);
-   with_format = dri_with_format(drawable->screen);
 
    num_attachments = 0;
 
    /* for Xserver 1.6.0 (DRI2 version 1) we always need to ask for the front */
-   if (!with_format)
-      attachments[num_attachments++] = __DRI_BUFFER_FRONT_LEFT;
+   attachments[num_attachments++] = __DRI_BUFFER_FRONT_LEFT;
 
    for (i = 0; i < *count; i++) {
       enum pipe_format format;
       unsigned bind;
-      int att, depth;
+      int att;
 
       dri_drawable_get_format(drawable, atts[i], &format, &bind);
       if (format == PIPE_FORMAT_NONE)
@@ -138,11 +135,7 @@ dri2_drawable_get_buffers(struct dri_drawable *drawable,
 
       switch (atts[i]) {
       case ST_ATTACHMENT_FRONT_LEFT:
-         /* already added */
-         if (!with_format)
-            continue;
-         att = __DRI_BUFFER_FRONT_LEFT;
-         break;
+         continue;
       case ST_ATTACHMENT_BACK_LEFT:
          att = __DRI_BUFFER_BACK_LEFT;
          break;
@@ -156,58 +149,13 @@ dri2_drawable_get_buffers(struct dri_drawable *drawable,
          continue;
       }
 
-      /*
-       * In this switch statement we must support all formats that
-       * may occur as the stvis->color_format.
-       */
-      switch(format) {
-      case PIPE_FORMAT_R16G16B16A16_FLOAT:
-         depth = 64;
-         break;
-      case PIPE_FORMAT_R16G16B16X16_FLOAT:
-         depth = 48;
-         break;
-      case PIPE_FORMAT_B10G10R10A2_UNORM:
-      case PIPE_FORMAT_R10G10B10A2_UNORM:
-      case PIPE_FORMAT_BGRA8888_UNORM:
-      case PIPE_FORMAT_RGBA8888_UNORM:
-         depth = 32;
-         break;
-      case PIPE_FORMAT_R10G10B10X2_UNORM:
-      case PIPE_FORMAT_B10G10R10X2_UNORM:
-         depth = 30;
-         break;
-      case PIPE_FORMAT_BGRX8888_UNORM:
-      case PIPE_FORMAT_RGBX8888_UNORM:
-         depth = 24;
-         break;
-      case PIPE_FORMAT_B5G6R5_UNORM:
-         depth = 16;
-         break;
-      default:
-         depth = util_format_get_blocksizebits(format);
-         assert(!"Unexpected format in dri2_drawable_get_buffers()");
-      }
-
       attachments[num_attachments++] = att;
-      if (with_format) {
-         attachments[num_attachments++] = depth;
-      }
    }
 
-   if (with_format) {
-      num_attachments /= 2;
-      buffers = loader->getBuffersWithFormat(drawable,
-            &drawable->w, &drawable->h,
-            attachments, num_attachments,
-            &num_buffers, drawable->loaderPrivate);
-   }
-   else {
-      buffers = loader->getBuffers(drawable,
-            &drawable->w, &drawable->h,
-            attachments, num_attachments,
-            &num_buffers, drawable->loaderPrivate);
-   }
+   buffers = loader->getBuffers(drawable,
+         &drawable->w, &drawable->h,
+         attachments, num_attachments,
+         &num_buffers, drawable->loaderPrivate);
 
    if (buffers)
       *count = num_buffers;
@@ -449,9 +397,7 @@ dri2_allocate_textures(struct dri_context *ctx,
 
          switch (buf->attachment) {
          case __DRI_BUFFER_FRONT_LEFT:
-            if (!screen->auto_fake_front) {
-               continue; /* invalid attachment */
-            }
+            continue; /* invalid attachment */
             FALLTHROUGH;
          case __DRI_BUFFER_FAKE_FRONT_LEFT:
             statt = ST_ATTACHMENT_FRONT_LEFT;
@@ -1890,7 +1836,6 @@ dri2_init_screen(struct dri_screen *screen, bool driver_name_is_inferred)
    struct pipe_screen *pscreen = NULL;
 
    screen->can_share_buffer = true;
-   screen->auto_fake_front = dri_with_format(screen);
 
 #ifdef HAVE_LIBDRM
    if (pipe_loader_drm_probe_fd(&screen->dev, screen->fd, false))
@@ -1910,7 +1855,6 @@ dri_swrast_kms_init_screen(struct dri_screen *screen, bool driver_name_is_inferr
 {
    struct pipe_screen *pscreen = NULL;
    screen->can_share_buffer = false;
-   screen->auto_fake_front = dri_with_format(screen);
 
 #if defined(HAVE_DRISW_KMS) && defined(HAVE_SWRAST)
    if (pipe_loader_sw_probe_kms(&screen->dev, screen->fd))
