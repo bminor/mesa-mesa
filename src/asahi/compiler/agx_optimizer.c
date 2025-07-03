@@ -248,12 +248,29 @@ agx_optimizer_fmov_rev(agx_instr *I, agx_instr *use)
 }
 
 static bool
+agx_icond_is_unsigned(enum agx_icond cond)
+{
+   switch (cond) {
+   case AGX_ICOND_UEQ:
+   case AGX_ICOND_ULT:
+   case AGX_ICOND_UGT:
+      return true;
+
+   case AGX_ICOND_SEQ:
+   case AGX_ICOND_SLT:
+   case AGX_ICOND_SGT:
+      return false;
+   }
+
+   unreachable("invalid condition");
+}
+
+static bool
 agx_supports_zext(agx_instr *I, unsigned s)
 {
    switch (I->op) {
    case AGX_OPCODE_IADD:
    case AGX_OPCODE_IMAD:
-   case AGX_OPCODE_ICMP:
    case AGX_OPCODE_INTL:
    case AGX_OPCODE_FFS:
    case AGX_OPCODE_BITREV:
@@ -268,9 +285,15 @@ agx_supports_zext(agx_instr *I, unsigned s)
    case AGX_OPCODE_ICMP_BALLOT:
    case AGX_OPCODE_ICMP_QUAD_BALLOT:
       return true;
+
+   case AGX_OPCODE_ICMP:
    case AGX_OPCODE_ICMPSEL:
-      /* Only the comparisons can be extended, not the selection */
-      return s < 2;
+      /* Only the comparisons can be extended, not the selection. And we can
+       * only zero-extend with unsigned comparison. Presumably the hardware
+       * sign-extends with signed comparisons but we don't handle that yet.
+       */
+      return (s < 2) && agx_icond_is_unsigned(I->icond);
+
    default:
       return false;
    }
