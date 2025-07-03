@@ -232,7 +232,8 @@ etna_init_screen_caps(struct etna_screen *screen)
    caps->fs_position_is_sysval = true;
    caps->fs_face_is_integer_sysval = true; /* note: not integer */
    caps->fs_point_is_sysval = false;
-   caps->generate_mipmap = screen->specs.use_blt;
+   caps->generate_mipmap =
+   caps->clear_scissored = screen->specs.use_blt;
 
    /* Memory */
    caps->constant_buffer_offset_alignment = 256;
