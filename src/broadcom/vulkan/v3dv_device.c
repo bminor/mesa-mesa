@@ -69,7 +69,6 @@
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include <wayland-client.h>
-#include "wayland-drm-client-protocol.h"
 #endif
 
 #define V3DV_API_VERSION VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION)
