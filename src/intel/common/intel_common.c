@@ -217,3 +217,19 @@ intel_compute_engine_async_threads_limit(const struct intel_device_info *devinfo
    *ret_z_pass_async_compute_thread_limit = z_pass_async_compute_thread_limit;
    *ret_np_z_async_throttle_settings = np_z_async_throttle_settings;
 }
+
+int
+intel_compute_threads_group_dispatch_size(uint32_t hw_threads_in_wg)
+{
+   /* Following value calculated based on overdispatch is disabled. In case if
+    * compute overdispatch disabled set to 1, then we need to use TG Size 1.
+    */
+   switch (hw_threads_in_wg) {
+   case 1 ... 16:
+      return 0;
+   case 17 ... 32:
+      return 1;
+   default:
+      return 2;
+   }
+}
