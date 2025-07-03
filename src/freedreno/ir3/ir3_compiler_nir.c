@@ -20,6 +20,7 @@
 #include "instr-a3xx.h"
 #include "ir3.h"
 #include "ir3_context.h"
+#include "ir3_ra.h"
 
 static struct ir3_instruction_rpt
 rpt_instr(struct ir3_instruction *instr, unsigned nrpt)
@@ -5515,6 +5516,44 @@ collect_tex_prefetches(struct ir3_context *ctx, struct ir3 *ir)
    }
 }
 
+static bool
+is_noop_subreg_move(struct ir3_instruction *instr)
+{
+   enum ir3_subreg_move subreg_move = ir3_is_subreg_move(instr);
+
+   if (subreg_move == IR3_SUBREG_MOVE_NONE) {
+      return false;
+   }
+
+   struct ir3_register *src = instr->srcs[0];
+   struct ir3_register *dst = instr->dsts[0];
+   unsigned offset = subreg_move == IR3_SUBREG_MOVE_LOWER ? 0 : 1;
+
+   return ra_num_to_physreg(dst->num, dst->flags) ==
+          ra_num_to_physreg(src->num, src->flags) + offset;
+}
+
+static bool
+ir3_remove_noop_subreg_moves(struct ir3 *ir)
+{
+   if (!ir->compiler->mergedregs) {
+      return false;
+   }
+
+   bool progress = false;
+
+   foreach_block (block, &ir->block_list) {
+      foreach_instr_safe (instr, &block->instr_list) {
+         if (is_noop_subreg_move(instr)) {
+            ir3_instr_remove(instr);
+            progress = true;
+         }
+      }
+   }
+
+   return progress;
+}
+
 int
 ir3_compile_shader_nir(struct ir3_compiler *compiler,
                        struct ir3_shader *shader,
@@ -5846,6 +5885,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       goto out;
    }
 
+   IR3_PASS(ir, ir3_remove_noop_subreg_moves);
    IR3_PASS(ir, ir3_merge_rpt, so);
    IR3_PASS(ir, ir3_postsched, so);
 

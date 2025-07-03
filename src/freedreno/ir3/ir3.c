@@ -1905,3 +1905,44 @@ ir3_supports_rpt(struct ir3_compiler *compiler, unsigned opc)
       return false;
    }
 }
+
+static bool
+is_unmodified_full_gpr(struct ir3_register *src)
+{
+   return !(src->flags & (IR3_REG_HALF | IR3_REG_CONST | IR3_REG_IMMED |
+                          IR3_REG_RELATIV | IR3_REG_FNEG | IR3_REG_FABS |
+                          IR3_REG_SNEG | IR3_REG_SABS | IR3_REG_BNOT));
+}
+
+/* Does `instr` move half of its full GPR src to its half dst? If this is the
+ * case, and RA assigns overlapping registers to src and dst, the instruction
+ * can be removed in mergedregs mode.
+ */
+enum ir3_subreg_move
+ir3_is_subreg_move(struct ir3_instruction *instr)
+{
+   if (instr->opc == OPC_MOV) {
+      /* `cov.u32u16 hdst, src`: moves lower half of src to hdst. */
+      struct ir3_register *src = instr->srcs[0];
+      struct ir3_register *dst = instr->dsts[0];
+
+      if (instr->cat1.src_type == TYPE_U32 &&
+          instr->cat1.dst_type == TYPE_U16 && is_unmodified_full_gpr(src) &&
+          (src->flags & IR3_REG_SHARED) == (dst->flags & IR3_REG_SHARED)) {
+         return IR3_SUBREG_MOVE_LOWER;
+      }
+   } else if (instr->opc == OPC_SHR_B || instr->opc == OPC_ASHR_B) {
+      /* `[a]shr.b hdst, src, 16`: moves upper half of src to hdst. */
+      struct ir3_register *src = instr->srcs[0];
+      struct ir3_register *shamt = instr->srcs[1];
+      struct ir3_register *dst = instr->dsts[0];
+
+      if ((dst->flags & IR3_REG_HALF) && is_unmodified_full_gpr(src) &&
+          ((src->flags & IR3_REG_SHARED) == (dst->flags & IR3_REG_SHARED)) &&
+          (shamt->flags & IR3_REG_IMMED) && shamt->uim_val == 16) {
+         return IR3_SUBREG_MOVE_UPPER;
+      }
+   }
+
+   return IR3_SUBREG_MOVE_NONE;
+}

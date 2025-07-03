@@ -1143,6 +1143,14 @@ is_subgroup_cond_mov_macro(struct ir3_instruction *instr)
    }
 }
 
+enum ir3_subreg_move {
+   IR3_SUBREG_MOVE_NONE,
+   IR3_SUBREG_MOVE_LOWER,
+   IR3_SUBREG_MOVE_UPPER,
+};
+
+enum ir3_subreg_move ir3_is_subreg_move(struct ir3_instruction *instr);
+
 static inline bool
 is_alu(struct ir3_instruction *instr)
 {
