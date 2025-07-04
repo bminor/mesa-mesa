@@ -178,6 +178,7 @@ static inline struct agx_precompiled_kernel_info
 agx_compact_kernel_info(struct agx_shader_info *info)
 {
    assert(info->has_preamble == (info->nr_preamble_gprs > 0));
+   assert(info->texture_state_count <= 8 && "static maximum, no need to plumb");
 
    return (struct agx_precompiled_kernel_info){
       .preamble_offset = info->preamble_offset,

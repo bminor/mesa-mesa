@@ -347,6 +347,13 @@ main(int argc, char **argv)
             bool is_helper = !strcmp(libfunc->name, "libagx_helper");
             struct agx_shader_key key = {
                .promote_constants = !is_helper,
+
+               /* Most of the internal programs don't use textures at all, but
+                * the few that do are exclusively bindless, so we want to
+                * promote their access.
+                */
+               .promote_textures = true,
+
                .reserved_preamble = layout.size_B / 2,
                .is_helper = is_helper,
             };
