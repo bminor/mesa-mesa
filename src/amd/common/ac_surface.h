@@ -74,6 +74,7 @@ enum radeon_micro_mode
 #define RADEON_SURF_PREFER_4K_ALIGNMENT   (1ull << 36)
 #define RADEON_SURF_PREFER_64K_ALIGNMENT  (1ull << 37)
 #define RADEON_SURF_VIDEO_REFERENCE       (1ull << 38)
+#define RADEON_SURF_HOST_TRANSFER         (1ull << 39)
 
 struct legacy_surf_level {
    uint32_t offset_256B;   /* divided by 256, the hw can only do 40-bit addresses */

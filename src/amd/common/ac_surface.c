@@ -1889,6 +1889,12 @@ static int gfx9_get_preferred_swizzle_mode(ADDR_HANDLE addrlib, const struct rad
       sin.preferredSwSet.sw_S = 1;
    }
 
+   if (info->gfx_level >= GFX11 && (surf->flags & RADEON_SURF_HOST_TRANSFER)) {
+      /* 256KiB swizzles aren't supported for surface<->memory copies. */
+      sin.forbiddenBlock.gfx11.thin256KB = 1;
+      sin.forbiddenBlock.gfx11.thick256KB = 1;
+   }
+
    ret = Addr2GetPreferredSurfaceSetting(addrlib, &sin, &sout);
    if (ret != ADDR_OK)
       return ret;
