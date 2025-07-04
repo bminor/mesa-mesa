@@ -65,7 +65,9 @@ set -e
 cp -r "/android-cts/results/latest"/* $RESULTS_DIR
 cp -r "/android-cts/logs/latest"/* $RESULTS_DIR
 
-echo "============================================"
-echo "Review the Android CTS test results at: ${ARTIFACTS_BASE_URL}/results/test_result.html"
+if [ -n "${ARTIFACTS_BASE_URL:-}" ]; then
+  echo "============================================"
+  echo "Review the Android CTS test results at: ${ARTIFACTS_BASE_URL}/results/test_result.html"
+fi
 
 section_end android_cts_test
