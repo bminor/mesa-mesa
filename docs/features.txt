@@ -806,6 +806,7 @@ Rusticl Optional OpenCL 2.x Features:
   - Generic Address Space                               in progress
   cl_khr_il_program                                     DONE
   - Support SPIR-V 1.1 and 1.2                          DONE
+  - Max SPIR-V version                                  DONE 1.6
   - clSetProgramSpecializationConstant                  DONE
   Program Initialization and Clean-Up Kernels           not started
   - clSetProgramReleaseCallback                         not started
