@@ -87,6 +87,8 @@ struct u_log_context;
 
 #define R600_MAX_VARIABLE_THREADS_PER_BLOCK 1024
 
+#define R600_MAX_COLOR_BUFFERS 12
+
 enum r600_coherency {
 	R600_COHERENCY_NONE, /* no cache flushes needed */
 	R600_COHERENCY_SHADER,
@@ -207,7 +209,9 @@ struct r600_texture {
 
 struct r600_surface {
 	struct pipe_surface		base;
+};
 
+struct r600_cb_surface {
 	/* Misc. color flags. */
 	bool alphatest_bypass;
 	bool export_16bpc;
@@ -243,6 +247,11 @@ struct r600_surface {
 	unsigned db_prefetch_limit;	/* R600 only */
 	unsigned db_htile_surface;
 	unsigned db_preload_control;	/* EG and later */
+};
+
+struct evergreen_framebuffer {
+	struct r600_cb_surface cbufs[R600_MAX_COLOR_BUFFERS];
+	struct r600_cb_surface zsbuf;
 };
 
 struct r600_mmio_counter {
@@ -566,6 +575,8 @@ struct r600_common_context {
 	struct u_log_context		*log;
 
 	void				*query_result_shader;
+
+	struct evergreen_framebuffer    framebuffer;
 
 	/* Copy one resource to another using async DMA. */
 	void (*dma_copy)(struct pipe_context *ctx,

@@ -116,7 +116,7 @@ static void evergreen_set_rat(struct r600_pipe_compute *pipe,
 	pipe->ctx->compute_cb_target_mask |= (0xf << (id * 4));
 
 	surf = (struct r600_surface*)pipe->ctx->framebuffer.fb_cbufs[id];
-	evergreen_init_color_surface_rat(rctx, surf);
+	evergreen_init_color_surface_rat(rctx, &pipe->ctx->b.framebuffer.cbufs[id], surf);
 }
 
 static void evergreen_cs_set_vertex_buffer(struct r600_context *rctx,
