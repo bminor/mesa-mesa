@@ -1073,23 +1073,20 @@ static const __DRIkopperLoaderExtension kopper_loader_extension = {
 };
 
 static const __DRIextension *kopper_loader_extensions[] = {
-   &swrast_loader_extension.base,
-   &image_lookup_extension.base,
    &kopper_loader_extension.base,
+   &image_lookup_extension.base,
    NULL,
 };
 
 static const __DRIextension *swrast_loader_extensions[] = {
    &swrast_loader_extension.base,
    &image_lookup_extension.base,
-   &kopper_loader_extension.base,
    NULL,
 };
 
 static const __DRIextension *swrast_loader_shm_extensions[] = {
    &swrast_loader_shm_extension.base,
    &image_lookup_extension.base,
-   &kopper_loader_extension.base,
    NULL,
 };
 

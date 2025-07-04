@@ -154,6 +154,16 @@ dri2_get_pbuffer_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w
    *h = dri2_surf->base.Height;
 }
 
+static void
+dri2_kopper_get_pbuffer_drawable_info(struct dri_drawable *draw,
+                                      int *w, int *h, void *loaderPrivate)
+{
+   struct dri2_egl_surface *dri2_surf = loaderPrivate;
+
+   *w = dri2_surf->base.Width;
+   *h = dri2_surf->base.Height;
+}
+
 static int
 dri2_get_bytes_per_pixel(struct dri2_egl_surface *dri2_surf)
 {
@@ -245,6 +255,7 @@ const __DRIswrastLoaderExtension swrast_pbuffer_loader_extension = {
 
 const __DRIkopperLoaderExtension kopper_pbuffer_loader_extension = {
    .base = {__DRI_KOPPER_LOADER, 1},
+   .GetDrawableInfo = dri2_kopper_get_pbuffer_drawable_info,
    .SetSurfaceCreateInfo = NULL,
 };
 
