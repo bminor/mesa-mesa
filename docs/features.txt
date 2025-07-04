@@ -790,14 +790,14 @@ Rusticl Optional OpenCL 2.x Features:
   Pipes                                                 not started
   Program Scope Global Variables                        in progress
   Non-Uniform Work-groups                               not started
-  Images                                                in progress
+  Images                                                DONE (freedreno, iris, llvmpipe, zink)
   - Read-Write Images                                   DONE
   - sRGB Images                                         DONE
   - CL_ABGR                                             DONE
   - CL_UNORM_INT_101010_2                               DONE
   - cl_khr_depth_images                                 DONE
-  - cl_khr_image2d_from_buffer                          DONE (freedreno, iris, llvmpipe)
-  - cl_khr_3d_image_writes                              DONE (freedreno, iris, llvmpipe, nvc0, panfrost, radeonsi, zink)
+  - cl_khr_image2d_from_buffer                          DONE ()
+  - cl_khr_3d_image_writes                              DONE (nvc0, panfrost, radeonsi)
   Device and host timer synchronization                 DONE (freedreno, iris, llvmpipe, radeonsi, zink)
   OpenCL C 2.0                                          in progress
   - Memory Consistency Model (atomics)                  not started
