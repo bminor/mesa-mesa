@@ -187,7 +187,7 @@ st_update_framebuffer_state( struct st_context *st )
    if (!rb)
       rb = fb->Attachment[BUFFER_STENCIL].Renderbuffer;
 
-   if (rb) {
+   if (rb && rb->texture) {
       if (rb->is_rtt) {
          /* rendering to a GL texture, may have to update surface */
          _mesa_update_renderbuffer_surface(ctx, rb);
