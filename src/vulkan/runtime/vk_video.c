@@ -2451,13 +2451,13 @@ vk_video_encode_h264_slice_header(const StdVideoEncodeH264PictureInfo *pic_info,
       }
 
       vl_bitstream_put_bits(&enc, 1, pic_info->pRefLists->flags.ref_pic_list_modification_flag_l0);
-      vl_bitstream_put_bits(&enc, 1, pic_info->pRefLists->flags.ref_pic_list_modification_flag_l1);
-
       if (pic_info->pRefLists->flags.ref_pic_list_modification_flag_l0) {
          assert(0);
          for (unsigned i = 0; i < pic_info->pRefLists->refList0ModOpCount; i++) {
          }
       }
+
+      vl_bitstream_put_bits(&enc, 1, pic_info->pRefLists->flags.ref_pic_list_modification_flag_l1);
       if (pic_info->pRefLists->flags.ref_pic_list_modification_flag_l1) {
          assert(0);
          for (unsigned i = 0; i < pic_info->pRefLists->refList1ModOpCount; i++) {
