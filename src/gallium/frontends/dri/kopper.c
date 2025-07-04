@@ -347,13 +347,12 @@ XXX do this once swapinterval is hooked up
 }
 
 static inline void
-get_drawable_info(struct dri_drawable *drawable, int *x, int *y, int *w, int *h)
+get_drawable_info(struct dri_drawable *drawable, int *w, int *h)
 {
-   const __DRIswrastLoaderExtension *loader = drawable->screen->swrast_loader;
+   const __DRIkopperLoaderExtension *loader = drawable->screen->kopper_loader;
 
    if (loader)
-      loader->getDrawableInfo(drawable, x, y, w, h,
-                              drawable->loaderPrivate);
+      loader->GetDrawableInfo(drawable, w, h, drawable->loaderPrivate);
 }
 
 static void
@@ -361,7 +360,6 @@ kopper_update_drawable_info(struct dri_drawable *drawable)
 {
    struct dri_screen *screen = drawable->screen;
    bool is_window = drawable->info.bos.sType != 0;
-   int x, y;
    struct pipe_resource *ptex = drawable->textures[ST_ATTACHMENT_BACK_LEFT] ?
                                 drawable->textures[ST_ATTACHMENT_BACK_LEFT] :
                                 drawable->textures[ST_ATTACHMENT_FRONT_LEFT];
@@ -370,7 +368,7 @@ kopper_update_drawable_info(struct dri_drawable *drawable)
    if (drawable->info.bos.sType == VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR && do_kopper_update)
       zink_kopper_update(kopper_get_zink_screen(screen->base.screen), ptex, &drawable->w, &drawable->h);
    else
-      get_drawable_info(drawable, &x, &y, &drawable->w, &drawable->h);
+      get_drawable_info(drawable, &drawable->w, &drawable->h);
 }
 
 static inline void

@@ -2718,14 +2718,12 @@ dri2_wl_swrast_commit_backbuffer(struct dri2_egl_surface *dri2_surf)
 }
 
 static void
-dri2_wl_kopper_get_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w,
+dri2_wl_kopper_get_drawable_info(struct dri_drawable *draw, int *w,
                                  int *h, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
 
    kopper_update_buffers(dri2_surf);
-   *x = 0;
-   *y = 0;
    *w = dri2_surf->base.Width;
    *h = dri2_surf->base.Height;
 }
@@ -3058,15 +3056,6 @@ static const __DRIswrastLoaderExtension swrast_loader_extension = {
    .putImage2 = dri2_wl_swrast_put_image2,
 };
 
-static const __DRIswrastLoaderExtension kopper_swrast_loader_extension = {
-   .base = {__DRI_SWRAST_LOADER, 2},
-
-   .getDrawableInfo = dri2_wl_kopper_get_drawable_info,
-   .putImage = dri2_wl_swrast_put_image,
-   .getImage = dri2_wl_swrast_get_image,
-   .putImage2 = dri2_wl_swrast_put_image2,
-};
-
 static_assert(sizeof(struct kopper_vk_surface_create_storage) >=
                  sizeof(VkWaylandSurfaceCreateInfoKHR),
               "");
@@ -3126,16 +3115,16 @@ static const __DRIkopperLoaderExtension kopper_loader_extension = {
    .base = {__DRI_KOPPER_LOADER, 1},
 
    .SetSurfaceCreateInfo = kopperSetSurfaceCreateInfo,
+   .GetDrawableInfo = dri2_wl_kopper_get_drawable_info,
 };
 static const __DRIextension *swrast_loader_extensions[] = {
    &swrast_loader_extension.base,
    &image_lookup_extension.base,
    NULL,
 };
-static const __DRIextension *kopper_swrast_loader_extensions[] = {
-   &kopper_swrast_loader_extension.base,
-   &image_lookup_extension.base,
+static const __DRIextension *kopper_loader_extensions[] = {
    &kopper_loader_extension.base,
+   &image_lookup_extension.base,
    NULL,
 };
 
@@ -3216,7 +3205,7 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
    dri2_dpy->driver_name = strdup(disp->Options.Zink ? "zink" : "swrast");
    dri2_detect_swrast(disp);
 
-   dri2_dpy->loader_extensions = disp->Options.Zink ? kopper_swrast_loader_extensions : swrast_loader_extensions;
+   dri2_dpy->loader_extensions = disp->Options.Zink ? kopper_loader_extensions : swrast_loader_extensions;
 
    if (!dri2_create_screen(disp))
       goto cleanup;

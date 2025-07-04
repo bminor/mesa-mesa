@@ -194,6 +194,18 @@ swrast_get_image(struct dri_drawable *driDrawable,
                          data, surf->dri_private);
 }
 
+static void
+kopper_get_drawable_info(struct dri_drawable *driDrawable,
+                         int           *width,
+                         int           *height,
+                         void          *loaderPrivate)
+{
+   struct gbm_dri_surface *surf = loaderPrivate;
+
+   *width = surf->base.v0.width;
+   *height = surf->base.v0.height;
+}
+
 static const __DRIimageLookupExtension image_lookup_extension = {
    .base = { __DRI_IMAGE_LOOKUP, 2 },
 
@@ -222,6 +234,7 @@ static const __DRIkopperLoaderExtension kopper_loader_extension = {
     .base = { __DRI_KOPPER_LOADER, 1 },
 
     .SetSurfaceCreateInfo   = NULL,
+    .GetDrawableInfo        = kopper_get_drawable_info,
 };
 
 static const __DRIextension *gbm_dri_screen_extensions[] = {

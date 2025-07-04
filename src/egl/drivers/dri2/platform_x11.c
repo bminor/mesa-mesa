@@ -1056,10 +1056,20 @@ kopperSetSurfaceCreateInfo(void *_draw, struct kopper_loader_info *ci)
    ci->present_opaque = dri2_surf->base.PresentOpaque;
 }
 
+static void
+kopperGetDrawableInfo(struct dri_drawable *draw, int *w, int *h,
+                      void *loaderPrivate)
+{
+   int x = 0, y = 0;
+   *w = *h = 0;
+   x11_get_drawable_info(draw, &x, &y, w, h, loaderPrivate);
+}
+
 static const __DRIkopperLoaderExtension kopper_loader_extension = {
    .base = {__DRI_KOPPER_LOADER, 1},
 
    .SetSurfaceCreateInfo = kopperSetSurfaceCreateInfo,
+   .GetDrawableInfo = kopperGetDrawableInfo,
 };
 
 static const __DRIextension *kopper_loader_extensions[] = {
