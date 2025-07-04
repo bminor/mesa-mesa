@@ -1305,7 +1305,7 @@ dri2_initialize_x11(_EGLDisplay *disp)
     * We're going to enable Zink anyway.
     */
    if (!force_zink) {
-      bool status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
+      bool status = dri3_x11_connect(dri2_dpy, disp->Options.ForceSoftware);
       /* the status here is ignored for zink-with-kopper and swrast,
        * otherwise return whatever error/fallback status as failure
        */

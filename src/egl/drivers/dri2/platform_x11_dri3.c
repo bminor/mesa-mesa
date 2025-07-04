@@ -522,7 +522,7 @@ struct dri2_egl_display_vtbl dri3_x11_display_vtbl = {
 };
 
 bool
-dri3_x11_connect(struct dri2_egl_display *dri2_dpy, bool zink, bool swrast)
+dri3_x11_connect(struct dri2_egl_display *dri2_dpy, bool swrast)
 {
    dri2_dpy->fd_render_gpu =
       x11_dri3_open(dri2_dpy->conn, dri2_dpy->screen->root, 0);
@@ -543,12 +543,6 @@ dri3_x11_connect(struct dri2_egl_display *dri2_dpy, bool zink, bool swrast)
 
    if (!dri2_dpy->driver_name)
       dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd_render_gpu);
-
-   if (!zink && !strcmp(dri2_dpy->driver_name, "zink")) {
-      close(dri2_dpy->fd_render_gpu);
-      dri2_dpy->fd_render_gpu = -1;
-      return false;
-   }
 
    if (!dri2_dpy->driver_name) {
       _eglLog(_EGL_WARNING, "DRI3: No driver found");
