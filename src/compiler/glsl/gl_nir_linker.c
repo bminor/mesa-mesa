@@ -1327,7 +1327,6 @@ preprocess_shader(const struct gl_constants *consts,
       NIR_PASS(_, nir, gl_nir_zero_initialize_clip_distance);
 
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
-   NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
 
    if (gl_options->LowerPrecisionFloat16 && gl_options->LowerPrecisionInt16) {
