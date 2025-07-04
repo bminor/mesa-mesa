@@ -208,9 +208,6 @@ struct r600_texture {
 struct r600_surface {
 	struct pipe_surface		base;
 
-	bool color_initialized;
-	bool depth_initialized;
-
 	/* Misc. color flags. */
 	bool alphatest_bypass;
 	bool export_16bpc;

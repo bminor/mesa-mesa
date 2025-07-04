@@ -986,7 +986,6 @@ static void r600_init_color_surface(struct r600_context *rctx,
 									 cmask.size, cmask.alignment));
 
 			if (unlikely(!rctx->dummy_cmask)) {
-				surf->color_initialized = false;
 				return;
 			}
 
@@ -1008,7 +1007,6 @@ static void r600_init_color_surface(struct r600_context *rctx,
 									 fmask.size, fmask.alignment));
 
 			if (unlikely(!rctx->dummy_fmask)) {
-				surf->color_initialized = false;
 				return;
 			}
 		}
@@ -1024,7 +1022,6 @@ static void r600_init_color_surface(struct r600_context *rctx,
 
 	surf->cb_color_info = color_info;
 	surf->cb_color_view = color_view;
-	surf->color_initialized = true;
 }
 
 static void r600_init_depth_surface(struct r600_context *rctx,
@@ -1069,8 +1066,6 @@ static void r600_init_depth_surface(struct r600_context *rctx,
 		/* preload is not working properly on r6xx/r7xx */
 		surf->db_depth_info |= S_028010_TILE_SURFACE_ENABLE(1);
 	}
-
-	surf->depth_initialized = true;
 }
 
 static void r600_set_framebuffer_state(struct pipe_context *ctx,
@@ -1124,13 +1119,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 
 		target_mask |= (0xf << (i * 4));
 
-		if (!surf->color_initialized || force_cmask_fmask) {
-			r600_init_color_surface(rctx, surf, force_cmask_fmask);
-			if (force_cmask_fmask) {
-				/* re-initialize later without compression */
-				surf->color_initialized = false;
-			}
-		}
+		r600_init_color_surface(rctx, surf, force_cmask_fmask);
 
 		if (!surf->export_16bpc) {
 			rctx->cb_state.export_16bpc = false;
@@ -1163,9 +1152,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 
 		r600_context_add_resource_size(ctx, state->zsbuf.texture);
 
-		if (!surf->depth_initialized) {
-			r600_init_depth_surface(rctx, surf);
-		}
+		r600_init_depth_surface(rctx, surf);
 
 		if (state->zsbuf.format != rctx->poly_offset_state.zs_format) {
 			rctx->poly_offset_state.zs_format = state->zsbuf.format;
