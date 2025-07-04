@@ -838,7 +838,8 @@ uint32_t r600_translate_stencil_op(int s_op);
 uint32_t r600_translate_fill(uint32_t func);
 unsigned r600_tex_wrap(unsigned wrap);
 unsigned r600_tex_mipfilter(unsigned filter);
-unsigned r600_tex_compare(unsigned compare);
+unsigned r600_tex_compare(const unsigned mode,
+			  const unsigned compare);
 bool sampler_state_needs_border_color(const struct pipe_sampler_state *state);
 unsigned r600_get_swizzle_combined(const unsigned char *swizzle_format,
 				   const unsigned char *swizzle_view,

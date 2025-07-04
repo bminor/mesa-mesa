@@ -1664,7 +1664,7 @@
         "description": "r600: set never as the depth compare function when depth compare is disabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0c6e56c391a262bef2d20037b4ca77d60948f3e7",
         "notes": null
