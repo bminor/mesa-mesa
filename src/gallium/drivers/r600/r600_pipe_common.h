@@ -234,10 +234,6 @@ struct r600_texture {
 	uint32_t			framebuffers_bound;
 };
 
-struct r600_surface {
-	struct pipe_surface		base;
-};
-
 struct r600_cb_surface {
 	/* Misc. color flags. */
 	bool alphatest_bypass;

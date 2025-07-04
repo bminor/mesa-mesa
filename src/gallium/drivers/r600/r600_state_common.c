@@ -3014,7 +3014,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 			do {
 				unsigned i = u_bit_scan(&mask);
-				surf = rctx->framebuffer.fb_cbufs[i];
+				surf = &rctx->framebuffer.state.cbufs[i];
 				rtex = r600_as_texture(surf->texture);
 
 				rtex->dirty_level_mask |= 1 << surf->level;

@@ -801,12 +801,12 @@ static void r600_set_polygon_stipple(struct pipe_context *ctx,
 
 static void r600_init_color_surface(struct r600_context *rctx,
 				    struct r600_pre_eg_cb *surf,
-				    const struct r600_surface *cbuf,
+				    const struct pipe_surface *cbuf,
 				    bool force_cmask_fmask)
 {
 	struct r600_screen *rscreen = rctx->screen;
-	struct r600_texture *rtex = r600_as_texture(cbuf->base.texture);
-	unsigned level = cbuf->base.level;
+	struct r600_texture *rtex = r600_as_texture(cbuf->texture);
+	unsigned level = cbuf->level;
 	unsigned pitch, slice;
 	unsigned color_info;
 	unsigned color_view;
@@ -817,14 +817,14 @@ static void r600_init_color_surface(struct r600_context *rctx,
 	bool blend_bypass = 0, blend_clamp = 0, do_endian_swap = false;
 
 	if (rtex->db_compatible && !r600_can_sample_zs(rtex, false)) {
-		r600_init_flushed_depth_texture(&rctx->b.b, cbuf->base.texture, NULL);
+		r600_init_flushed_depth_texture(&rctx->b.b, cbuf->texture, NULL);
 		rtex = rtex->flushed_depth_texture;
 		assert(rtex);
 	}
 
 	offset = (uint64_t)rtex->surface.u.legacy.level[level].offset_256B * 256;
-	color_view = S_028080_SLICE_START(cbuf->base.first_layer) |
-		     S_028080_SLICE_MAX(cbuf->base.last_layer);
+	color_view = S_028080_SLICE_START(cbuf->first_layer) |
+		     S_028080_SLICE_MAX(cbuf->last_layer);
 
 	pitch = rtex->surface.u.legacy.level[level].nblk_x / 8 - 1;
 	slice = (rtex->surface.u.legacy.level[level].nblk_x * rtex->surface.u.legacy.level[level].nblk_y) / 64;
@@ -845,9 +845,9 @@ static void r600_init_color_surface(struct r600_context *rctx,
 		break;
 	}
 
-	desc = util_format_description(cbuf->base.format);
+	desc = util_format_description(cbuf->format);
 
-	i = util_format_get_first_non_void_channel(cbuf->base.format);
+	i = util_format_get_first_non_void_channel(cbuf->format);
 
 	ntype = V_0280A0_NUMBER_UNORM;
 	if (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB)
@@ -869,11 +869,11 @@ static void r600_init_color_surface(struct r600_context *rctx,
 	if (UTIL_ARCH_BIG_ENDIAN)
 		do_endian_swap = !rtex->db_compatible;
 
-	format = r600_translate_colorformat(rctx->b.gfx_level, cbuf->base.format,
+	format = r600_translate_colorformat(rctx->b.gfx_level, cbuf->format,
 			                              do_endian_swap);
 	assert(format != ~0);
 
-	swap = r600_translate_colorswap(cbuf->base.format, do_endian_swap);
+	swap = r600_translate_colorswap(cbuf->format, do_endian_swap);
 	assert(swap != ~0);
 
 	endian = r600_colorformat_endian_swap(format, do_endian_swap);
@@ -1027,12 +1027,12 @@ static void r600_init_color_surface(struct r600_context *rctx,
 
 static void r600_init_depth_surface(struct r600_context *rctx,
 				    struct r600_pre_eg_zs *surf,
-				    const struct r600_surface *zbuf)
+				    const struct pipe_surface *zbuf)
 {
-	struct r600_texture *rtex = r600_as_texture(zbuf->base.texture);
+	struct r600_texture *rtex = r600_as_texture(zbuf->texture);
 	unsigned level, pitch, slice, format, offset, array_mode;
 
-	level = zbuf->base.level;
+	level = zbuf->level;
 	offset = (uint64_t)rtex->surface.u.legacy.level[level].offset_256B * 256;
 	pitch = rtex->surface.u.legacy.level[level].nblk_x / 8 - 1;
 	slice = (rtex->surface.u.legacy.level[level].nblk_x * rtex->surface.u.legacy.level[level].nblk_y) / 64;
@@ -1050,13 +1050,13 @@ static void r600_init_depth_surface(struct r600_context *rctx,
 		break;
 	}
 
-	format = r600_translate_dbformat(zbuf->base.format);
+	format = r600_translate_dbformat(zbuf->format);
 	assert(format != ~0);
 
 	surf->db_depth_info = S_028010_ARRAY_MODE(array_mode) | S_028010_FORMAT(format);
 	surf->db_depth_base = offset >> 8;
-	surf->db_depth_view = S_028004_SLICE_START(zbuf->base.first_layer) |
-			      S_028004_SLICE_MAX(zbuf->base.last_layer);
+	surf->db_depth_view = S_028004_SLICE_START(zbuf->first_layer) |
+			      S_028004_SLICE_MAX(zbuf->last_layer);
 	surf->db_depth_size = S_028000_PITCH_TILE_MAX(pitch) | S_028000_SLICE_TILE_MAX(slice);
 	surf->db_prefetch_limit = (rtex->surface.u.legacy.level[level].nblk_y / 8) - 1;
 
@@ -1074,7 +1074,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 					const struct pipe_framebuffer_state *state)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_surface *surf;
+	struct pipe_surface *surf;
 	struct r600_texture *rtex;
 	unsigned i;
 	uint32_t target_mask = 0;
@@ -1092,7 +1092,6 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 			 R600_CONTEXT_INV_TEX_CACHE;
 
 	/* Set the new state. */
-	util_framebuffer_init(ctx, state, rctx->framebuffer.fb_cbufs, &rctx->framebuffer.fb_zsbuf);
 	util_copy_framebuffer_state(&rctx->framebuffer.state, state);
 
 	rctx->cb_state.export_16bpc = state->nr_cbufs != 0;
@@ -1112,11 +1111,11 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 					 rctx->cb_state.is_msaa_resolve &&
 					 i == 1;
 
-		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[i];
-		if (!surf)
+		surf = &rctx->framebuffer.state.cbufs[i];
+		if (!surf->texture)
 			continue;
 
-		rtex = r600_as_texture(surf->base.texture);
+		rtex = r600_as_texture(surf->texture);
 		r600_context_add_resource_size(ctx, state->cbufs[i].texture);
 
 		struct r600_pre_eg_cb *const cb = &rctx->b.r600_pre_eg_cbzs->cb_surface[i];
@@ -1139,8 +1138,8 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 	if (state->nr_cbufs) {
 		bool alphatest_bypass = false;
 
-		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[0];
-		if (surf) {
+		surf = &rctx->framebuffer.state.cbufs[0];
+		if (surf->texture) {
 			alphatest_bypass = rctx->b.r600_pre_eg_cbzs->cb_surface[0].alphatest_bypass;
 		}
 
@@ -1152,7 +1151,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 
 	/* ZS buffer. */
 	if (state->zsbuf.texture) {
-		surf = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
+		surf = &rctx->framebuffer.state.zsbuf;
 
 		r600_context_add_resource_size(ctx, state->zsbuf.texture);
 
@@ -1165,11 +1164,9 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 			r600_mark_atom_dirty(rctx, &rctx->poly_offset_state.atom);
 		}
 
-		if (rctx->db_state.rsurf != surf) {
-			rctx->db_state.rsurf = surf;
-			r600_mark_atom_dirty(rctx, &rctx->db_state.atom);
-			r600_mark_atom_dirty(rctx, &rctx->db_misc_state.atom);
-		}
+		rctx->db_state.rsurf = surf;
+		r600_mark_atom_dirty(rctx, &rctx->db_state.atom);
+		r600_mark_atom_dirty(rctx, &rctx->db_misc_state.atom);
 	} else if (rctx->db_state.rsurf) {
 		rctx->db_state.rsurf = NULL;
 		r600_mark_atom_dirty(rctx, &rctx->db_state.atom);
@@ -1341,17 +1338,17 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 
 	struct pipe_framebuffer_state *state = &rctx->framebuffer.state;
 	unsigned nr_cbufs = state->nr_cbufs;
-	struct r600_surface **cbuf = (struct r600_surface**)&rctx->framebuffer.fb_cbufs[0];
+	const struct pipe_surface *cbuf = &rctx->framebuffer.state.cbufs[0];
 	struct r600_pre_eg_cb *const cb = &rctx->b.r600_pre_eg_cbzs->cb_surface[0];
 	struct r600_pre_eg_zs *const zs = &rctx->b.r600_pre_eg_cbzs->zs_surface;
 
 	/* Colorbuffers. */
 	radeon_set_context_reg_seq(cs, R_0280A0_CB_COLOR0_INFO, 8);
 	for (i = 0; i < nr_cbufs; i++) {
-		radeon_emit(cs, cbuf[i] ? cb[i].cb_color_info : 0);
+		radeon_emit(cs, cbuf[i].texture ? cb[i].cb_color_info : 0);
 	}
 	/* set CB_COLOR1_INFO for possible dual-src blending */
-	if (rctx->cb_state.dual_src_blend && i == 1 && cbuf[0]) {
+	if (rctx->cb_state.dual_src_blend && i == 1 && cbuf[0].texture) {
 		radeon_emit(cs, cb[0].cb_color_info);
 		i++;
 	}
@@ -1363,7 +1360,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 		for (i = 0; i < nr_cbufs; i++) {
 			unsigned reloc;
 
-			if (!cbuf[i])
+			if (!cbuf[i].texture)
 				continue;
 
 			/* COLOR_BASE */
@@ -1371,9 +1368,9 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 
 			reloc = radeon_add_to_buffer_list(&rctx->b,
 						      &rctx->b.gfx,
-						      r600_as_resource(cbuf[i]->base.texture),
+						      r600_as_resource(cbuf[i].texture),
 						      RADEON_USAGE_READWRITE |
-						      (cbuf[i]->base.texture->nr_samples > 1 ?
+						      (cbuf[i].texture->nr_samples > 1 ?
 							      RADEON_PRIO_COLOR_BUFFER_MSAA :
 							      RADEON_PRIO_COLOR_BUFFER));
 			radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
@@ -1386,7 +1383,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 						      &rctx->b.gfx,
 						      cb[i].cb_buffer_fmask,
 						      RADEON_USAGE_READWRITE |
-						      (cbuf[i]->base.texture->nr_samples > 1 ?
+						      (cbuf[i].texture->nr_samples > 1 ?
 							      RADEON_PRIO_COLOR_BUFFER_MSAA :
 							      RADEON_PRIO_COLOR_BUFFER));
 			radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
@@ -1399,7 +1396,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 						      &rctx->b.gfx,
 						      cb[i].cb_buffer_cmask,
 						      RADEON_USAGE_READWRITE |
-						      (cbuf[i]->base.texture->nr_samples > 1 ?
+						      (cbuf[i].texture->nr_samples > 1 ?
 							      RADEON_PRIO_COLOR_BUFFER_MSAA :
 							      RADEON_PRIO_COLOR_BUFFER));
 			radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
@@ -1408,17 +1405,17 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 
 		radeon_set_context_reg_seq(cs, R_028060_CB_COLOR0_SIZE, nr_cbufs);
 		for (i = 0; i < nr_cbufs; i++) {
-			radeon_emit(cs, cbuf[i] ? cb[i].cb_color_size : 0);
+			radeon_emit(cs, cbuf[i].texture ? cb[i].cb_color_size : 0);
 		}
 
 		radeon_set_context_reg_seq(cs, R_028080_CB_COLOR0_VIEW, nr_cbufs);
 		for (i = 0; i < nr_cbufs; i++) {
-			radeon_emit(cs, cbuf[i] ? cb[i].cb_color_view : 0);
+			radeon_emit(cs, cbuf[i].texture ? cb[i].cb_color_view : 0);
 		}
 
 		radeon_set_context_reg_seq(cs, R_028100_CB_COLOR0_MASK, nr_cbufs);
 		for (i = 0; i < nr_cbufs; i++) {
-			radeon_emit(cs, cbuf[i] ? cb[i].cb_color_mask : 0);
+			radeon_emit(cs, cbuf[i].texture ? cb[i].cb_color_mask : 0);
 		}
 
 		sbu |= SURFACE_BASE_UPDATE_COLOR_NUM(nr_cbufs);
@@ -1433,12 +1430,12 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 
 	/* Zbuffer. */
 	if (state->zsbuf.texture) {
-		struct r600_surface *zsbuf = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
+		struct pipe_surface *zsbuf = &rctx->framebuffer.state.zsbuf;
 		unsigned reloc = radeon_add_to_buffer_list(&rctx->b,
 						       &rctx->b.gfx,
 						       r600_as_resource(state->zsbuf.texture),
 						       RADEON_USAGE_READWRITE |
-						       (zsbuf->base.texture->nr_samples > 1 ?
+						       (zsbuf->texture->nr_samples > 1 ?
 							       RADEON_PRIO_DEPTH_BUFFER_MSAA :
 							       RADEON_PRIO_DEPTH_BUFFER));
 
@@ -1537,7 +1534,7 @@ static void r600_emit_db_state(struct r600_context *rctx, struct r600_atom *atom
 	struct r600_db_state *a = (struct r600_db_state*)atom;
 
 	if (a->rsurf && rctx->b.r600_pre_eg_cbzs->zs_surface.db_htile_surface) {
-		struct r600_texture *rtex = r600_as_texture(a->rsurf->base.texture);
+		struct r600_texture *rtex = r600_as_texture(a->rsurf->texture);
 		unsigned reloc_idx;
 
 		radeon_set_context_reg(cs, R_02802C_DB_DEPTH_CLEAR, fui(rtex->depth_clear_value));

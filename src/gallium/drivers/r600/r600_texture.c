@@ -1492,7 +1492,7 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 						const struct pipe_surface *templ,
 						unsigned width0, unsigned height0)
 {
-	struct r600_surface *surface = CALLOC_STRUCT(r600_surface);
+	struct pipe_surface *surface = CALLOC_STRUCT(pipe_surface);
 
 	if (!surface)
 		return NULL;
@@ -1500,15 +1500,15 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 	assert(templ->first_layer <= util_max_layer(texture, templ->level));
 	assert(templ->last_layer <= util_max_layer(texture, templ->level));
 
-	pipe_reference_init(&surface->base.reference, 1);
-	pipe_resource_reference(&surface->base.texture, texture);
-	surface->base.context = pipe;
-	surface->base.format = templ->format;
-	surface->base.level = templ->level;
-	surface->base.first_layer = templ->first_layer;
-	surface->base.last_layer = templ->last_layer;
+	pipe_reference_init(&surface->reference, 1);
+	pipe_resource_reference(&surface->texture, texture);
+	surface->context = pipe;
+	surface->format = templ->format;
+	surface->level = templ->level;
+	surface->first_layer = templ->first_layer;
+	surface->last_layer = templ->last_layer;
 
-	return &surface->base;
+	return surface;
 }
 
 static struct pipe_surface *r600_create_surface(struct pipe_context *pipe,

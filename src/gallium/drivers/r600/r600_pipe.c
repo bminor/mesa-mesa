@@ -75,7 +75,6 @@ static void r600_destroy_context(struct pipe_context *context)
 	if (rctx->custom_blend_fastclear) {
 		rctx->b.b.delete_blend_state(&rctx->b.b, rctx->custom_blend_fastclear);
 	}
-	util_framebuffer_init(context, NULL, rctx->framebuffer.fb_cbufs, &rctx->framebuffer.fb_zsbuf);
 	util_unreference_framebuffer_state(&rctx->framebuffer.state);
 
 	if (rctx->gs_rings.gsvs_ring.buffer)

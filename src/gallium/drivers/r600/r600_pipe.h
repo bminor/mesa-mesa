@@ -111,7 +111,7 @@ struct r600_command_buffer {
 
 struct r600_db_state {
 	struct r600_atom		atom;
-	struct r600_surface		*rsurf;
+	struct pipe_surface		*rsurf;
 };
 
 struct r600_db_misc_state {
@@ -188,7 +188,6 @@ struct r600_cs_shader_state {
 };
 
 struct r600_framebuffer {
-	PIPE_FB_SURFACES; //STOP USING THIS
 	struct pipe_framebuffer_state state;
 };
 
@@ -723,10 +722,10 @@ bool evergreen_is_format_supported(struct pipe_screen *screen,
 				   unsigned usage);
 void evergreen_init_color_surface(struct r600_context *rctx,
                                   struct r600_cb_surface *surf,
-				  const struct r600_surface *cbuf);
+				  const struct pipe_surface *cbuf);
 void evergreen_init_color_surface_rat(struct r600_context *rctx,
 				      struct r600_cb_surface *surf,
-				      const struct r600_surface *cbuf);
+				      const struct pipe_surface *cbuf);
 void evergreen_update_db_shader_control(struct r600_context * rctx);
 bool evergreen_adjust_gprs(struct r600_context *rctx);
 void evergreen_setup_scratch_buffers(struct r600_context *rctx);

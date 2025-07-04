@@ -79,7 +79,6 @@ static void evergreen_set_rat(struct r600_pipe_compute *pipe,
 			      int size)
 {
 	struct pipe_surface rat_templ;
-	struct r600_surface *surf = NULL;
 	struct r600_context *rctx = NULL;
 
 	assert(id < 12);
@@ -98,12 +97,8 @@ static void evergreen_set_rat(struct r600_pipe_compute *pipe,
 	rat_templ.first_layer = 0;
 	rat_templ.last_layer = 0;
 
-	/* Add the RAT the list of color buffers. Drop the old buffer first. */
+	/* Add the RAT the list of color buffers. */
 	pipe->ctx->framebuffer.state.cbufs[id] = rat_templ;
-	pipe_surface_unref(&pipe->ctx->b.b, &pipe->ctx->framebuffer.fb_cbufs[id]);
-	pipe->ctx->framebuffer.fb_cbufs[id] = pipe->ctx->b.b.create_surface(
-		(struct pipe_context *)pipe->ctx,
-		(struct pipe_resource *)bo, &rat_templ);
 
 	/* Update the number of color buffers */
 	pipe->ctx->framebuffer.state.nr_cbufs =
@@ -115,8 +110,9 @@ static void evergreen_set_rat(struct r600_pipe_compute *pipe,
 	 * of this driver. */
 	pipe->ctx->compute_cb_target_mask |= (0xf << (id * 4));
 
-	surf = (struct r600_surface*)pipe->ctx->framebuffer.fb_cbufs[id];
-	evergreen_init_color_surface_rat(rctx, &pipe->ctx->b.framebuffer.cbufs[id], surf);
+	evergreen_init_color_surface_rat(rctx,
+					 &pipe->ctx->b.framebuffer.cbufs[id],
+					 &pipe->ctx->framebuffer.state.cbufs[id]);
 }
 
 static void evergreen_cs_set_vertex_buffer(struct r600_context *rctx,

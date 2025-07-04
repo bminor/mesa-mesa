@@ -515,7 +515,7 @@ evergreen_do_fast_color_clear(struct r600_context *rctx,
 		if (!(*buffers & clear_bit))
 			continue;
 
-		tex = r600_as_texture(rctx->framebuffer.fb_cbufs[i]->texture);
+		tex = r600_as_texture(rctx->framebuffer.state.cbufs[i].texture);
 
 		/* the clear is allowed if all layers are bound */
 		if (fb->cbufs[i].first_layer != 0 ||
