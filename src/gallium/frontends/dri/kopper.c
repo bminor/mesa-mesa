@@ -447,37 +447,6 @@ kopper_flush_frontbuffer(struct dri_context *ctx,
    return true;
 }
 
-static inline void
-get_image(struct dri_drawable *drawable, int x, int y, int width, int height, void *data)
-{
-   const __DRIswrastLoaderExtension *loader = drawable->screen->swrast_loader;
-
-   loader->getImage(drawable, x, y, width, height,
-                    data, drawable->loaderPrivate);
-}
-
-static inline bool
-get_image_shm(struct dri_drawable *drawable, int x, int y, int width, int height,
-              struct pipe_resource *res)
-{
-   const __DRIswrastLoaderExtension *loader = drawable->screen->swrast_loader;
-   struct winsys_handle whandle;
-
-   whandle.type = WINSYS_HANDLE_TYPE_SHMID;
-
-   if (loader->base.version < 4 || !loader->getImageShm)
-      return false;
-
-   if (!res->screen->resource_get_handle(res->screen, NULL, res, &whandle, PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE))
-      return false;
-
-   if (loader->base.version > 5 && loader->getImageShm2)
-      return loader->getImageShm2(drawable, x, y, width, height, whandle.handle, drawable->loaderPrivate);
-
-   loader->getImageShm(drawable, x, y, width, height, whandle.handle, drawable->loaderPrivate);
-   return true;
-}
-
 static void
 kopper_update_tex_buffer(struct dri_drawable *drawable,
                          struct dri_context *ctx,
