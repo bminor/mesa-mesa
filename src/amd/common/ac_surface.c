@@ -3423,6 +3423,11 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
       AddrSurfInfoIn.swizzleMode = ac_get_modifier_swizzle_mode(info->gfx_level, surf->modifier);
    } else if (surf->flags & (RADEON_SURF_IMPORTED | RADEON_SURF_FORCE_SWIZZLE_MODE)) {
       AddrSurfInfoIn.swizzleMode = surf->u.gfx9.swizzle_mode;
+   } else if (surf->flags & RADEON_SURF_PRT) {
+      if (config->is_3d && !AddrSurfInfoIn.flags.view3dAs2dArray)
+         AddrSurfInfoIn.swizzleMode = ADDR3_64KB_3D;
+      else
+         AddrSurfInfoIn.swizzleMode = ADDR3_64KB_2D;
    } else if (mode == RADEON_SURF_MODE_LINEAR_ALIGNED) {
       assert(config->info.samples <= 1 && !(surf->flags & RADEON_SURF_Z_OR_SBUFFER));
       AddrSurfInfoIn.swizzleMode = ADDR3_LINEAR;
