@@ -761,8 +761,17 @@ bi_make_vec8_helper(bi_builder *b, bi_index *src, unsigned *channel,
    if (b->shader->arch >= 9) {
       bi_index vec = bi_zero();
 
-      if (count >= 3)
-         vec = bi_mkvec_v2i8(b, bytes[2], bytes[3], vec);
+      if (count >= 3) {
+         if ((count == 3 && bytes[2].swizzle == BI_SWIZZLE_B0) ||
+             (count == 4 && bi_is_word_equiv(bytes[2], bytes[3]) &&
+              bytes[2].swizzle == BI_SWIZZLE_B0 &&
+              bytes[3].swizzle == BI_SWIZZLE_B1)) {
+            vec = bytes[2];
+            vec.swizzle = BI_SWIZZLE_B0123;
+         } else {
+            vec = bi_mkvec_v2i8(b, bytes[2], bytes[3], vec);
+         }
+      }
 
       return bi_mkvec_v2i8(b, bytes[0], bytes[1], vec);
    } else {
