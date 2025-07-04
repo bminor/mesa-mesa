@@ -171,3 +171,11 @@ radv_CopyImageToImageEXT(VkDevice _device, const VkCopyImageToImageInfo *pCopyIm
 
    return VK_SUCCESS;
 }
+
+VKAPI_ATTR VkResult VKAPI_CALL
+radv_TransitionImageLayout(VkDevice _device, uint32_t transitionCount,
+                           const VkHostImageLayoutTransitionInfo *pTransitions)
+{
+   /* no-op */
+   return VK_SUCCESS;
+}
