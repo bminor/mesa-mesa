@@ -670,7 +670,7 @@ static void r600_set_sampler_views(struct pipe_context *pipe,
 
 		if (rviews[i]) {
 			struct r600_texture *rtex =
-				(struct r600_texture*)rviews[i]->base.texture;
+				r600_as_texture(rviews[i]->base.texture);
 			bool is_buffer = rviews[i]->base.texture->target == PIPE_BUFFER;
 
 			if (!is_buffer && rtex->db_compatible) {
@@ -728,7 +728,7 @@ static void r600_update_compressed_colortex_mask(struct r600_samplerview_state *
 		struct pipe_resource *res = views->views[i]->base.texture;
 
 		if (res && res->target != PIPE_BUFFER) {
-			struct r600_texture *rtex = (struct r600_texture *)res;
+			struct r600_texture *rtex = r600_as_texture(res);
 
 			if (rtex->cmask.size) {
 				views->compressed_colortex_mask |= 1 << i;
@@ -780,7 +780,7 @@ static void r600_update_compressed_colortex_mask_images(struct r600_image_state 
 		struct pipe_resource *res = images->views[i].base.resource;
 
 		if (res && res->target != PIPE_BUFFER) {
-			struct r600_texture *rtex = (struct r600_texture *)res;
+			struct r600_texture *rtex = r600_as_texture(res);
 
 			if (rtex->cmask.size) {
 				images->compressed_colortex_mask |= 1 << i;
@@ -3000,7 +3000,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 		/* Set the depth buffer as dirty. */
 		if (rctx->framebuffer.state.zsbuf.texture) {
 			struct pipe_surface *surf = &rctx->framebuffer.state.zsbuf;
-			struct r600_texture *rtex = (struct r600_texture *)surf->texture;
+			struct r600_texture *rtex = r600_as_texture(surf->texture);
 
 			rtex->dirty_level_mask |= 1 << surf->level;
 
@@ -3015,7 +3015,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 			do {
 				unsigned i = u_bit_scan(&mask);
 				surf = rctx->framebuffer.fb_cbufs[i];
-				rtex = (struct r600_texture*)surf->texture;
+				rtex = r600_as_texture(surf->texture);
 
 				rtex->dirty_level_mask |= 1 << surf->level;
 

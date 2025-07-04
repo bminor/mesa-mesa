@@ -658,7 +658,7 @@ static void evergreen_fill_buffer_resource_words(struct r600_context *rctx,
 						 bool *skip_mip_address_reloc,
 						 unsigned tex_resource_words[8])
 {
-	struct r600_texture *tmp = (struct r600_texture*)buffer;
+	struct r600_texture *tmp = r600_as_texture(buffer);
 	uint64_t va;
 	int stride = util_format_get_blocksize(params->pipe_format);
 	unsigned format, num_format, format_comp, endian;
@@ -702,7 +702,7 @@ static struct pipe_sampler_view *
 texture_buffer_sampler_view(struct r600_context *rctx,
 			    struct r600_pipe_sampler_view *view)
 {
-	struct r600_texture *tmp = (struct r600_texture*)view->base.texture;
+	struct r600_texture *tmp = r600_as_texture(view->base.texture);
 	struct eg_buf_res_params params;
 
 	memset(&params, 0, sizeof(params));
@@ -747,7 +747,7 @@ static int evergreen_fill_tex_resource_words(struct r600_context *rctx,
 					     unsigned tex_resource_words[8])
 {
 	struct r600_screen *rscreen = (struct r600_screen*)rctx->b.b.screen;
-	struct r600_texture *tmp = (struct r600_texture*)texture;
+	struct r600_texture *tmp = r600_as_texture(texture);
 	unsigned format, endian;
 	uint32_t word4 = 0, yuv_format = 0, pitch = 0;
 	unsigned char array_mode = 0, non_disp_tiling = 0;
@@ -936,7 +936,7 @@ evergreen_create_sampler_view_custom(struct pipe_context *ctx,
 {
 	struct r600_context *rctx = (struct r600_context*)ctx;
 	struct r600_pipe_sampler_view *view = CALLOC_STRUCT(r600_pipe_sampler_view);
-	struct r600_texture *tmp = (struct r600_texture*)texture;
+	struct r600_texture *tmp = r600_as_texture(texture);
 	struct eg_tex_res_params params;
 	int ret;
 
@@ -1333,7 +1333,7 @@ void evergreen_init_color_surface_rat(struct r600_context *rctx,
 void evergreen_init_color_surface(struct r600_context *rctx,
 				  struct r600_surface *surf)
 {
-	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
+	struct r600_texture *rtex = r600_as_texture(surf->base.texture);
 	unsigned level = surf->base.level;
 	struct r600_tex_color_info color;
 
@@ -1365,7 +1365,7 @@ static void evergreen_init_depth_surface(struct r600_context *rctx,
 					 struct r600_surface *surf)
 {
 	struct r600_screen *rscreen = rctx->screen;
-	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
+	struct r600_texture *rtex = r600_as_texture(surf->base.texture);
 	unsigned level = surf->base.level;
 	struct legacy_surf_level *levelinfo = &rtex->surface.u.legacy.level[level];
 	uint64_t offset;
@@ -1488,7 +1488,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 
 		target_mask |= (0xf << (i * 4));
 
-		rtex = (struct r600_texture*)surf->base.texture;
+		rtex = r600_as_texture(surf->base.texture);
 
 		r600_context_add_resource_size(ctx, state->cbufs[i].texture);
 
@@ -1838,7 +1838,7 @@ static void evergreen_emit_image_state(struct r600_context *rctx, struct r600_at
 
 		resource = (struct r600_resource *)image->base.resource;
 		if (resource->b.b.target != PIPE_BUFFER)
-			rtex = (struct r600_texture *)image->base.resource;
+			rtex = r600_as_texture(image->base.resource);
 		else
 			rtex = NULL;
 
@@ -1971,7 +1971,7 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 			continue;
 		}
 
-		tex = (struct r600_texture *)cb->base.texture;
+		tex = r600_as_texture(cb->base.texture);
 		reloc = radeon_add_to_buffer_list(&rctx->b,
 					      &rctx->b.gfx,
 					      (struct r600_resource*)cb->base.texture,
@@ -2159,7 +2159,7 @@ static void evergreen_emit_db_state(struct r600_context *rctx, struct r600_atom 
 	struct r600_db_state *a = (struct r600_db_state*)atom;
 
 	if (a->rsurf && a->rsurf->db_htile_surface) {
-		struct r600_texture *rtex = (struct r600_texture *)a->rsurf->base.texture;
+		struct r600_texture *rtex = r600_as_texture(a->rsurf->base.texture);
 		unsigned reloc_idx;
 
 		radeon_set_context_reg(cs, R_02802C_DB_DEPTH_CLEAR, fui(rtex->depth_clear_value));
@@ -4148,8 +4148,8 @@ static void evergreen_dma_copy_tile(struct r600_context *rctx,
 				unsigned bpp)
 {
 	struct radeon_cmdbuf *cs = &rctx->b.dma.cs;
-	struct r600_texture *rsrc = (struct r600_texture*)src;
-	struct r600_texture *rdst = (struct r600_texture*)dst;
+	struct r600_texture *rsrc = r600_as_texture(src);
+	struct r600_texture *rdst = r600_as_texture(dst);
 	unsigned array_mode, lbpp, pitch_tile_max, slice_tile_max, size;
 	unsigned ncopy, height, cheight, detile, i, x, y, z, src_mode, dst_mode;
 	unsigned sub_cmd, bank_h, bank_w, mt_aspect, nbanks, tile_split, non_disp_tiling = 0;
@@ -4262,8 +4262,8 @@ static void evergreen_dma_copy(struct pipe_context *ctx,
 			       const struct pipe_box *src_box)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_texture *rsrc = (struct r600_texture*)src;
-	struct r600_texture *rdst = (struct r600_texture*)dst;
+	struct r600_texture *rsrc = r600_as_texture(src);
+	struct r600_texture *rdst = r600_as_texture(dst);
 	unsigned dst_pitch, src_pitch, bpp, dst_mode, src_mode, copy_height;
 	unsigned src_w, dst_w;
 	unsigned src_x, src_y;
@@ -4599,7 +4599,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 		evergreen_setup_immed_buffer(rctx, rview, iview->format);
 
 		bool is_buffer = image->target == PIPE_BUFFER;
-		struct r600_texture *rtex = (struct r600_texture *)image;
+		struct r600_texture *rtex = r600_as_texture(image);
 		if (!is_buffer && rtex->db_compatible)
 			istate->compressed_depthtex_mask |= 1 << i;
 		else

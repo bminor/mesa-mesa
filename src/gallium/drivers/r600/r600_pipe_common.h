@@ -948,6 +948,12 @@ r600_htile_enabled(struct r600_texture *tex, unsigned level)
 	return tex->htile_offset && level == 0;
 }
 
+static inline struct r600_texture *
+r600_as_texture(struct pipe_resource *res)
+{
+	return (struct r600_texture *)res;
+}
+
 #define COMPUTE_DBG(rscreen, fmt, args...) \
 	do { \
 		if ((rscreen->b.debug_flags & DBG_COMPUTE)) fprintf(stderr, fmt, ##args); \

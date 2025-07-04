@@ -619,7 +619,7 @@ texture_buffer_sampler_view(struct pipe_context *ctx,
 			    struct r600_pipe_sampler_view *view)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_texture *tmp = (struct r600_texture*)view->base.texture;
+	struct r600_texture *tmp = r600_as_texture(view->base.texture);
 	const unsigned stride = util_format_get_blocksize(view->base.format);
 	unsigned format, num_format, format_comp, endian;
 	uint64_t offset = view->base.u.buf.offset;
@@ -661,7 +661,7 @@ r600_create_sampler_view_custom(struct pipe_context *ctx,
 				unsigned width_first_level, unsigned height_first_level)
 {
 	struct r600_pipe_sampler_view *view = CALLOC_STRUCT(r600_pipe_sampler_view);
-	struct r600_texture *tmp = (struct r600_texture*)texture;
+	struct r600_texture *tmp = r600_as_texture(texture);
 	unsigned format, endian;
 	uint32_t word4 = 0, yuv_format = 0, pitch = 0;
 	unsigned char swizzle[4], array_mode = 0;
@@ -804,7 +804,7 @@ static void r600_init_color_surface(struct r600_context *rctx,
 				    bool force_cmask_fmask)
 {
 	struct r600_screen *rscreen = rctx->screen;
-	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
+	struct r600_texture *rtex = r600_as_texture(surf->base.texture);
 	unsigned level = surf->base.level;
 	unsigned pitch, slice;
 	unsigned color_info;
@@ -1030,7 +1030,7 @@ static void r600_init_color_surface(struct r600_context *rctx,
 static void r600_init_depth_surface(struct r600_context *rctx,
 				    struct r600_surface *surf)
 {
-	struct r600_texture *rtex = (struct r600_texture*)surf->base.texture;
+	struct r600_texture *rtex = r600_as_texture(surf->base.texture);
 	unsigned level, pitch, slice, format, offset, array_mode;
 
 	level = surf->base.level;
@@ -1119,7 +1119,7 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 		if (!surf)
 			continue;
 
-		rtex = (struct r600_texture*)surf->base.texture;
+		rtex = r600_as_texture(surf->base.texture);
 		r600_context_add_resource_size(ctx, state->cbufs[i].texture);
 
 		target_mask |= (0xf << (i * 4));
@@ -1541,7 +1541,7 @@ static void r600_emit_db_state(struct r600_context *rctx, struct r600_atom *atom
 	struct r600_db_state *a = (struct r600_db_state*)atom;
 
 	if (a->rsurf && a->rsurf->db_htile_surface) {
-		struct r600_texture *rtex = (struct r600_texture *)a->rsurf->base.texture;
+		struct r600_texture *rtex = r600_as_texture(a->rsurf->base.texture);
 		unsigned reloc_idx;
 
 		radeon_set_context_reg(cs, R_02802C_DB_DEPTH_CLEAR, fui(rtex->depth_clear_value));
@@ -2877,8 +2877,8 @@ static bool r600_dma_copy_tile(struct r600_context *rctx,
 				unsigned bpp)
 {
 	struct radeon_cmdbuf *cs = &rctx->b.dma.cs;
-	struct r600_texture *rsrc = (struct r600_texture*)src;
-	struct r600_texture *rdst = (struct r600_texture*)dst;
+	struct r600_texture *rsrc = r600_as_texture(src);
+	struct r600_texture *rdst = r600_as_texture(dst);
 	unsigned array_mode, lbpp, pitch_tile_max, slice_tile_max, size;
 	unsigned ncopy, height, cheight, detile, i, x, y, z, src_mode, dst_mode;
 	uint64_t base, addr;
@@ -2973,8 +2973,8 @@ static void r600_dma_copy(struct pipe_context *ctx,
 			  const struct pipe_box *src_box)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_texture *rsrc = (struct r600_texture*)src;
-	struct r600_texture *rdst = (struct r600_texture*)dst;
+	struct r600_texture *rsrc = r600_as_texture(src);
+	struct r600_texture *rdst = r600_as_texture(dst);
 	unsigned dst_pitch, src_pitch, bpp, dst_mode, src_mode, copy_height;
 	unsigned src_w, dst_w;
 	unsigned src_x, src_y;

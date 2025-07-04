@@ -278,7 +278,7 @@ void r600_decompress_depth_textures(struct r600_context *rctx,
 		assert(view);
 		rview = (struct r600_pipe_sampler_view*)view;
 
-		tex = (struct r600_texture *)view->texture;
+		tex = r600_as_texture(view->texture);
 		assert(tex->db_compatible);
 
 		if (r600_can_sample_zs(tex, rview->is_stencil_sampler)) {
@@ -310,7 +310,7 @@ void r600_decompress_depth_images(struct r600_context *rctx,
 		view = &images->views[i];
 		assert(view);
 
-		tex = (struct r600_texture *)view->base.resource;
+		tex = r600_as_texture(view->base.resource);
 		assert(tex->db_compatible);
 
 		if (r600_can_sample_zs(tex, false)) {
@@ -389,7 +389,7 @@ void r600_decompress_color_textures(struct r600_context *rctx,
 		view = &textures->views[i]->base;
 		assert(view);
 
-		tex = (struct r600_texture *)view->texture;
+		tex = r600_as_texture(view->texture);
 		assert(tex->cmask.size);
 
 		r600_blit_decompress_color(&rctx->b.b, tex,
@@ -413,7 +413,7 @@ void r600_decompress_color_images(struct r600_context *rctx,
 		view = &images->views[i];
 		assert(view);
 
-		tex = (struct r600_texture *)view->base.resource;
+		tex = r600_as_texture(view->base.resource);
 		assert(tex->cmask.size);
 
 		r600_blit_decompress_color(&rctx->b.b, tex,
@@ -433,7 +433,7 @@ static bool r600_decompress_subresource(struct pipe_context *ctx,
 					unsigned first_layer, unsigned last_layer)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
-	struct r600_texture *rtex = (struct r600_texture*)tex;
+	struct r600_texture *rtex = r600_as_texture(tex);
 
 	if (rtex->db_compatible) {
 		if (r600_can_sample_zs(rtex, false)) {
@@ -515,7 +515,7 @@ evergreen_do_fast_color_clear(struct r600_context *rctx,
 		if (!(*buffers & clear_bit))
 			continue;
 
-		tex = (struct r600_texture *)rctx->framebuffer.fb_cbufs[i]->texture;
+		tex = r600_as_texture(rctx->framebuffer.fb_cbufs[i]->texture);
 
 		/* the clear is allowed if all layers are bound */
 		if (fb->cbufs[i].first_layer != 0 ||
@@ -614,7 +614,7 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 			if (!fb->cbufs[i].texture)
 				continue;
 
-			tex = (struct r600_texture *)fb->cbufs[i].texture;
+			tex = r600_as_texture(fb->cbufs[i].texture);
 			if (tex->fmask.size == 0)
 				tex->dirty_level_mask &= ~(1 << fb->cbufs[i].level);
 		}
@@ -625,7 +625,7 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 		struct r600_texture *rtex;
 		unsigned level = fb->zsbuf.level;
 
-		rtex = (struct r600_texture*)fb->zsbuf.texture;
+		rtex = r600_as_texture(fb->zsbuf.texture);
 
 		/* We can't use hyperz fast clear if each slice of a texture
 		 * array are clear to different value. To simplify code just
@@ -1020,7 +1020,7 @@ static bool do_hardware_msaa_resolve(struct pipe_context *ctx,
 				     const struct pipe_blit_info *info)
 {
 	struct r600_context *rctx = (struct r600_context*)ctx;
-	struct r600_texture *dst = (struct r600_texture*)info->dst.resource;
+	struct r600_texture *dst = r600_as_texture(info->dst.resource);
 	unsigned dst_width = u_minify(info->dst.resource->width0, info->dst.level);
 	unsigned dst_height = u_minify(info->dst.resource->height0, info->dst.level);
 	enum pipe_format format = info->src.format;
@@ -1173,7 +1173,7 @@ static void r600_blit(struct pipe_context *ctx,
                       const struct pipe_blit_info *info)
 {
 	struct r600_context *rctx = (struct r600_context*)ctx;
-	struct r600_texture *rdst = (struct r600_texture *)info->dst.resource;
+	struct r600_texture *rdst = r600_as_texture(info->dst.resource);
 
 	if (do_hardware_msaa_resolve(ctx, info)) {
 		return;
@@ -1262,7 +1262,7 @@ static void r600_blit(struct pipe_context *ctx,
 static void r600_flush_resource(struct pipe_context *ctx,
 				struct pipe_resource *res)
 {
-	struct r600_texture *rtex = (struct r600_texture*)res;
+	struct r600_texture *rtex = r600_as_texture(res);
 
 	assert(res->target != PIPE_BUFFER);
 
