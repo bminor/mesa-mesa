@@ -1940,6 +1940,10 @@ radv_GetImageSubresourceLayout2(VkDevice _device, VkImage _image, const VkImageS
             radv_image_has_dcc(image) ? VK_IMAGE_COMPRESSION_DEFAULT_EXT : VK_IMAGE_COMPRESSION_DISABLED_EXT;
       }
    }
+
+   VkSubresourceHostMemcpySizeEXT *host_memcpy_size = vk_find_struct(pLayout->pNext, SUBRESOURCE_HOST_MEMCPY_SIZE_EXT);
+   if (host_memcpy_size)
+      host_memcpy_size->size = pLayout->subresourceLayout.size;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
