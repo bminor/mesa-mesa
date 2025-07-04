@@ -736,7 +736,7 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
    }
 
    if (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)
-      flags |= RADEON_SURF_NO_FMASK | RADEON_SURF_NO_HTILE | RADEON_SURF_DISABLE_DCC;
+      flags |= RADEON_SURF_HOST_TRANSFER | RADEON_SURF_NO_FMASK | RADEON_SURF_NO_HTILE | RADEON_SURF_DISABLE_DCC;
 
    return flags;
 }
