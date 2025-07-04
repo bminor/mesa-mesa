@@ -229,7 +229,6 @@ instr_cost(nir_instr *instr, const void *data)
       case nir_intrinsic_load_global_constant:
       case nir_intrinsic_load_constant_agx:
       case nir_intrinsic_load_ubo:
-      case nir_intrinsic_bindless_image_agx:
          return 10.0;
       case nir_intrinsic_ddx:
       case nir_intrinsic_ddx_fine:
@@ -238,6 +237,12 @@ instr_cost(nir_instr *instr, const void *data)
       case nir_intrinsic_ddy_fine:
       case nir_intrinsic_ddy_coarse:
          return 1.0;
+      case nir_intrinsic_bindless_image_agx:
+         /* It's worth promoting even with a constant source, but it doesn't
+          * turn into instructions so should be less than any other normal
+          * instruction... But just enough to get over the image rewrite_cost.
+          */
+         return 2.5;
       default:
          /* Assume it's a sysval or something */
          return 0.0;

@@ -916,7 +916,7 @@ hk_upload_shader(struct hk_device *dev, struct hk_shader *shader)
       cfg.preshader_register_count = shader->b.info.nr_preamble_gprs;
       cfg.sampler_state_register_count = agx_translate_sampler_state_count(
          shader->b.info.uses_txf ? 1 : 0, false);
-      cfg.texture_state_register_count = 0;
+      cfg.texture_state_register_count = shader->b.info.texture_state_count;
    }
 }
 
@@ -1121,6 +1121,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
       .no_stop = nir->info.stage == MESA_SHADER_FRAGMENT,
       .has_scratch = !nir->info.internal,
       .promote_constants = true,
+      .promote_textures = true,
    };
 
    /* For now, sample shading is always dynamic. Indicate that. */
@@ -1671,7 +1672,7 @@ hk_fast_link(struct hk_device *dev, bool fragment, struct hk_shader *main,
          cfg.cf_binding_count = s->b.cf.nr_bindings;
          cfg.uniform_register_count = main->b.info.push_count;
          cfg.preshader_register_count = main->b.info.nr_preamble_gprs;
-         cfg.texture_state_register_count = 0;
+         cfg.texture_state_register_count = main->b.info.texture_state_count;
          cfg.sampler_state_register_count =
             agx_translate_sampler_state_count(s->b.uses_txf ? 1 : 0, false);
       }
