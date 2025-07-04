@@ -735,6 +735,9 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
          flags |= RADEON_SURF_PREFER_64K_ALIGNMENT;
    }
 
+   if (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)
+      flags |= RADEON_SURF_NO_FMASK | RADEON_SURF_NO_HTILE | RADEON_SURF_DISABLE_DCC;
+
    return flags;
 }
 
@@ -843,7 +846,8 @@ radv_image_alloc_single_sample_cmask(const struct radv_device *device, const str
 {
    if (!surf->cmask_size || surf->cmask_offset || surf->bpe > 8 || image->vk.mip_levels > 1 ||
        image->vk.extent.depth > 1 || radv_image_has_dcc(image) || !radv_image_use_fast_clear_for_image(device, image) ||
-       (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT))
+       (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) ||
+       (image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT))
       return;
 
    assert(image->vk.samples == 1);
