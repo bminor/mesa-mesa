@@ -302,8 +302,6 @@ if freedreno_kmds.length() != 0 and freedreno_kmds != [ 'msm' ] and with_freedre
 endif
 
 with_vdrm = [
-  with_gallium_virgl,
-  with_virtio_vk,
   with_amdgpu_virtio,
   freedreno_kmds.contains('virtio'),
   with_gallium_asahi,
