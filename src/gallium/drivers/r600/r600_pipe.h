@@ -188,9 +188,12 @@ struct r600_cs_shader_state {
 };
 
 struct r600_framebuffer {
-	struct r600_atom atom;
 	PIPE_FB_SURFACES; //STOP USING THIS
 	struct pipe_framebuffer_state state;
+};
+
+struct r600_cb_state {
+	struct r600_atom atom;
 	unsigned compressed_cb_mask;
 	unsigned nr_samples;
 	bool export_16bpc;
@@ -534,6 +537,7 @@ struct r600_context {
 	struct r600_db_state		db_state;
 	struct r600_cso_state		dsa_state;
 	struct r600_framebuffer		framebuffer;
+	struct r600_cb_state            cb_state;
 	struct r600_poly_offset_state	poly_offset_state;
 	struct r600_cso_state		rasterizer_state;
 	struct r600_sample_mask		sample_mask;

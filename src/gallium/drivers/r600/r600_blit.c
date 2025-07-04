@@ -594,7 +594,7 @@ static void r600_clear(struct pipe_context *ctx, unsigned buffers,
 	struct pipe_framebuffer_state *fb = &rctx->framebuffer.state;
 
 	if (buffers & PIPE_CLEAR_COLOR && rctx->b.gfx_level >= EVERGREEN) {
-		evergreen_do_fast_color_clear(rctx, fb, &rctx->framebuffer.atom,
+		evergreen_do_fast_color_clear(rctx, fb, &rctx->cb_state.atom,
 					      &buffers, NULL, color);
 		if (!buffers)
 			return; /* all buffers have been fast cleared */

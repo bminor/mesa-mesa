@@ -1098,21 +1098,21 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 	util_framebuffer_init(ctx, state, rctx->framebuffer.fb_cbufs, &rctx->framebuffer.fb_zsbuf);
 	util_copy_framebuffer_state(&rctx->framebuffer.state, state);
 
-	rctx->framebuffer.export_16bpc = state->nr_cbufs != 0;
-	rctx->framebuffer.cb0_is_integer = state->nr_cbufs && state->cbufs[0].texture &&
+	rctx->cb_state.export_16bpc = state->nr_cbufs != 0;
+	rctx->cb_state.cb0_is_integer = state->nr_cbufs && state->cbufs[0].texture &&
 			       util_format_is_pure_integer(state->cbufs[0].format);
-	rctx->framebuffer.compressed_cb_mask = 0;
-	rctx->framebuffer.is_msaa_resolve = state->nr_cbufs == 2 &&
+	rctx->cb_state.compressed_cb_mask = 0;
+	rctx->cb_state.is_msaa_resolve = state->nr_cbufs == 2 &&
 					    state->cbufs[0].texture && state->cbufs[1].texture &&
 					    state->cbufs[0].texture->nr_samples > 1 &&
 				            state->cbufs[1].texture->nr_samples <= 1;
-	rctx->framebuffer.nr_samples = util_framebuffer_get_num_samples(state);
+	rctx->cb_state.nr_samples = util_framebuffer_get_num_samples(state);
 
 	/* Colorbuffers. */
 	for (i = 0; i < state->nr_cbufs; i++) {
 		/* The resolve buffer must have CMASK and FMASK to prevent hardlocks on R6xx. */
 		bool force_cmask_fmask = rctx->b.gfx_level == R600 &&
-					 rctx->framebuffer.is_msaa_resolve &&
+					 rctx->cb_state.is_msaa_resolve &&
 					 i == 1;
 
 		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[i];
@@ -1133,11 +1133,11 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 		}
 
 		if (!surf->export_16bpc) {
-			rctx->framebuffer.export_16bpc = false;
+			rctx->cb_state.export_16bpc = false;
 		}
 
 		if (rtex->fmask.size) {
-			rctx->framebuffer.compressed_cb_mask |= 1 << i;
+			rctx->cb_state.compressed_cb_mask |= 1 << i;
 		}
 	}
 
@@ -1196,26 +1196,26 @@ static void r600_set_framebuffer_state(struct pipe_context *ctx,
 	}
 
 	/* Calculate the CS size. */
-	rctx->framebuffer.atom.num_dw =
+	rctx->cb_state.atom.num_dw =
 		10 /*COLOR_INFO*/ + 4 /*SCISSOR*/ + 3 /*SHADER_CONTROL*/ + 8 /*MSAA*/;
 
 	if (rctx->framebuffer.state.nr_cbufs) {
-		rctx->framebuffer.atom.num_dw += 15 * rctx->framebuffer.state.nr_cbufs;
-		rctx->framebuffer.atom.num_dw += 3 * (2 + rctx->framebuffer.state.nr_cbufs);
+		rctx->cb_state.atom.num_dw += 15 * rctx->framebuffer.state.nr_cbufs;
+		rctx->cb_state.atom.num_dw += 3 * (2 + rctx->framebuffer.state.nr_cbufs);
 	}
 	if (rctx->framebuffer.state.zsbuf.texture) {
-		rctx->framebuffer.atom.num_dw += 16;
+		rctx->cb_state.atom.num_dw += 16;
 	} else {
-		rctx->framebuffer.atom.num_dw += 3;
+		rctx->cb_state.atom.num_dw += 3;
 	}
 	if (rctx->b.family > CHIP_R600 && rctx->b.family < CHIP_RV770) {
-		rctx->framebuffer.atom.num_dw += 2;
+		rctx->cb_state.atom.num_dw += 2;
 	}
 
-	r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
+	r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
 
 	r600_set_sample_locations_constant_buffer(rctx);
-	rctx->framebuffer.do_update_surf_dirtiness = true;
+	rctx->cb_state.do_update_surf_dirtiness = true;
 }
 
 static const uint32_t sample_locs_2x[] = {
@@ -1355,7 +1355,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 		radeon_emit(cs, cb[i] ? cb[i]->cb_color_info : 0);
 	}
 	/* set CB_COLOR1_INFO for possible dual-src blending */
-	if (rctx->framebuffer.dual_src_blend && i == 1 && cb[0]) {
+	if (rctx->cb_state.dual_src_blend && i == 1 && cb[0]) {
 		radeon_emit(cs, cb[0]->cb_color_info);
 		i++;
 	}
@@ -1477,7 +1477,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 	radeon_emit(cs, S_028244_BR_X(state->width) |
 			     S_028244_BR_Y(state->height)); /* R_028208_PA_SC_WINDOW_SCISSOR_BR */
 
-	if (rctx->framebuffer.is_msaa_resolve) {
+	if (rctx->cb_state.is_msaa_resolve) {
 		radeon_set_context_reg(cs, R_0287A0_CB_SHADER_CONTROL, 1);
 	} else {
 		/* Always enable the first colorbuffer in CB_SHADER_CONTROL. This
@@ -1487,7 +1487,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 				       (1ull << MAX2(nr_cbufs, 1)) - 1);
 	}
 
-	r600_emit_msaa_state(rctx, rctx->framebuffer.nr_samples);
+	r600_emit_msaa_state(rctx, rctx->cb_state.nr_samples);
 }
 
 static void r600_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
@@ -1498,7 +1498,7 @@ static void r600_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
 		return;
 
 	rctx->ps_iter_samples = min_samples;
-	if (rctx->framebuffer.nr_samples > 1) {
+	if (rctx->cb_state.nr_samples > 1) {
 		r600_mark_atom_dirty(rctx, &rctx->rasterizer_state.atom);
 		if (rctx->b.gfx_level == R600)
 			r600_mark_atom_dirty(rctx, &rctx->db_misc_state.atom);
@@ -1603,7 +1603,7 @@ static void r600_emit_db_misc_state(struct r600_context *rctx, struct r600_atom 
 	} else {
 		db_render_override |= S_028D10_FORCE_HIZ_ENABLE(V_028D10_FORCE_DISABLE);
 	}
-	if (rctx->b.gfx_level == R600 && rctx->framebuffer.nr_samples > 1 && rctx->ps_iter_samples > 0) {
+	if (rctx->b.gfx_level == R600 && rctx->cb_state.nr_samples > 1 && rctx->ps_iter_samples > 0) {
 		/* sample shading and hyperz causes lockups on R6xx chips */
 		db_render_override |= S_028D10_FORCE_HIZ_ENABLE(V_028D10_FORCE_DISABLE);
 	}
@@ -2462,7 +2462,7 @@ void r600_update_ps_state(struct pipe_context *ctx, struct r600_pipe_shader *sha
 	 */
 	bool sprite_coord_enable = rctx->rasterizer ? rctx->rasterizer->sprite_coord_enable : 0;
 	bool flatshade = rctx->rasterizer ? rctx->rasterizer->flatshade : 0;
-	bool msaa = rctx->framebuffer.nr_samples > 1 && rctx->ps_iter_samples > 0;
+	bool msaa = rctx->cb_state.nr_samples > 1 && rctx->ps_iter_samples > 0;
 
 	if (!cb->buf) {
 		r600_init_command_buffer(cb, 64);
@@ -2820,7 +2820,7 @@ void r600_update_db_shader_control(struct r600_context * rctx)
 		return;
 	}
 
-	dual_export = rctx->framebuffer.export_16bpc &&
+	dual_export = rctx->cb_state.export_16bpc &&
 		      !rctx->ps_shader->current->ps_depth_export;
 
 	db_shader_control = rctx->ps_shader->current->db_shader_control |
@@ -3069,7 +3069,7 @@ void r600_init_state_functions(struct r600_context *rctx)
 	 * !!!
 	 */
 
-	r600_init_atom(rctx, &rctx->framebuffer.atom, id++, r600_emit_framebuffer_state, 0);
+	r600_init_atom(rctx, &rctx->cb_state.atom, id++, r600_emit_framebuffer_state, 0);
 
 	/* shader const */
 	r600_init_atom(rctx, &rctx->constbuf_state[PIPE_SHADER_VERTEX].atom, id++, r600_emit_vs_constant_buffers, 0);

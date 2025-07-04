@@ -346,7 +346,7 @@ void r600_begin_new_cs(struct r600_context *ctx)
 	r600_mark_atom_dirty(ctx, &ctx->clip_state.atom);
 	r600_mark_atom_dirty(ctx, &ctx->db_misc_state.atom);
 	r600_mark_atom_dirty(ctx, &ctx->db_state.atom);
-	r600_mark_atom_dirty(ctx, &ctx->framebuffer.atom);
+	r600_mark_atom_dirty(ctx, &ctx->cb_state.atom);
 	if (ctx->b.gfx_level >= EVERGREEN) {
 		r600_mark_atom_dirty(ctx, &ctx->fragment_images.atom);
 		r600_mark_atom_dirty(ctx, &ctx->fragment_buffers.atom);

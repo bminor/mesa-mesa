@@ -1475,11 +1475,11 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 	util_copy_framebuffer_state(&rctx->framebuffer.state, state);
 
 	/* Colorbuffers. */
-	rctx->framebuffer.export_16bpc = state->nr_cbufs != 0;
-	rctx->framebuffer.cb0_is_integer = state->nr_cbufs && state->cbufs[0].texture &&
+	rctx->cb_state.export_16bpc = state->nr_cbufs != 0;
+	rctx->cb_state.cb0_is_integer = state->nr_cbufs && state->cbufs[0].texture &&
 					   util_format_is_pure_integer(state->cbufs[0].format);
-	rctx->framebuffer.compressed_cb_mask = 0;
-	rctx->framebuffer.nr_samples = util_framebuffer_get_num_samples(state);
+	rctx->cb_state.compressed_cb_mask = 0;
+	rctx->cb_state.nr_samples = util_framebuffer_get_num_samples(state);
 
 	for (i = 0; i < state->nr_cbufs; i++) {
 		surf = (struct r600_surface*)rctx->framebuffer.fb_cbufs[i];
@@ -1497,11 +1497,11 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 		}
 
 		if (!surf->export_16bpc) {
-			rctx->framebuffer.export_16bpc = false;
+			rctx->cb_state.export_16bpc = false;
 		}
 
 		if (rtex->fmask.size) {
-			rctx->framebuffer.compressed_cb_mask |= 1 << i;
+			rctx->cb_state.compressed_cb_mask |= 1 << i;
 		}
 	}
 
@@ -1565,7 +1565,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 		r600_mark_atom_dirty(rctx, &rctx->alphatest_state.atom);
 	}
 
-	log_samples = util_logbase2(rctx->framebuffer.nr_samples);
+	log_samples = util_logbase2(rctx->cb_state.nr_samples);
 	/* This is for Cayman to program SAMPLE_RATE, and for RV770 to fix a hw bug. */
 	if ((rctx->b.gfx_level == CAYMAN ||
 	     rctx->b.family == CHIP_RV770) &&
@@ -1576,31 +1576,31 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 
 
 	/* Calculate the CS size. */
-	rctx->framebuffer.atom.num_dw = 4; /* SCISSOR */
+	rctx->cb_state.atom.num_dw = 4; /* SCISSOR */
 
 	/* MSAA. */
 	if (rctx->b.gfx_level == EVERGREEN)
-		rctx->framebuffer.atom.num_dw += 17; /* Evergreen */
+		rctx->cb_state.atom.num_dw += 17; /* Evergreen */
 	else
-		rctx->framebuffer.atom.num_dw += 28; /* Cayman */
+		rctx->cb_state.atom.num_dw += 28; /* Cayman */
 
 	/* Colorbuffers. */
-	rctx->framebuffer.atom.num_dw += state->nr_cbufs * 23;
-	rctx->framebuffer.atom.num_dw += state->nr_cbufs * 2;
-	rctx->framebuffer.atom.num_dw += (12 - state->nr_cbufs) * 3;
+	rctx->cb_state.atom.num_dw += state->nr_cbufs * 23;
+	rctx->cb_state.atom.num_dw += state->nr_cbufs * 2;
+	rctx->cb_state.atom.num_dw += (12 - state->nr_cbufs) * 3;
 
 	/* ZS buffer. */
 	if (state->zsbuf.texture) {
-		rctx->framebuffer.atom.num_dw += 24;
-		rctx->framebuffer.atom.num_dw += 2;
+		rctx->cb_state.atom.num_dw += 24;
+		rctx->cb_state.atom.num_dw += 2;
 	} else {
-		rctx->framebuffer.atom.num_dw += 4;
+		rctx->cb_state.atom.num_dw += 4;
 	}
 
-	r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
+	r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
 
 	r600_set_sample_locations_constant_buffer(rctx);
-	rctx->framebuffer.do_update_surf_dirtiness = true;
+	rctx->cb_state.do_update_surf_dirtiness = true;
 }
 
 static void evergreen_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
@@ -1611,8 +1611,8 @@ static void evergreen_set_min_samples(struct pipe_context *ctx, unsigned min_sam
 		return;
 
 	rctx->ps_iter_samples = min_samples;
-	if (rctx->framebuffer.nr_samples > 1) {
-		r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
+	if (rctx->cb_state.nr_samples > 1) {
+		r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
 	}
 }
 
@@ -2015,7 +2015,7 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 		radeon_emit(cs, reloc);
 	}
 	/* set CB_COLOR1_INFO for possible dual-src blending */
-	if (rctx->framebuffer.dual_src_blend && i == 1 && state->cbufs[0].texture) {
+	if (rctx->cb_state.dual_src_blend && i == 1 && state->cbufs[0].texture) {
 		radeon_set_context_reg(cs, R_028C70_CB_COLOR0_INFO + 1 * 0x3C,
 				       cb->cb_color_info | tex->cb_color_info);
 		i++;
@@ -2075,9 +2075,9 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 	radeon_emit(cs, br); /* R_028208_PA_SC_WINDOW_SCISSOR_BR */
 
 	if (rctx->b.gfx_level == EVERGREEN) {
-		evergreen_emit_msaa_state(rctx, rctx->framebuffer.nr_samples, rctx->ps_iter_samples);
+		evergreen_emit_msaa_state(rctx, rctx->cb_state.nr_samples, rctx->ps_iter_samples);
 	} else {
-		cayman_emit_msaa_state(cs, rctx->framebuffer.nr_samples,
+		cayman_emit_msaa_state(cs, rctx->cb_state.nr_samples,
 				       rctx->ps_iter_samples, 0);
 	}
 }
@@ -3707,7 +3707,7 @@ void evergreen_update_ps_state(struct pipe_context *ctx, struct r600_pipe_shader
 	 */
 	bool sprite_coord_enable = rctx->rasterizer ? rctx->rasterizer->sprite_coord_enable : 0;
 	bool flatshade = rctx->rasterizer ? rctx->rasterizer->flatshade : 0;
-	bool msaa = rctx->framebuffer.nr_samples > 1 && rctx->ps_iter_samples > 0;
+	bool msaa = rctx->cb_state.nr_samples > 1 && rctx->ps_iter_samples > 0;
 
 	if (!cb->buf) {
 		r600_init_command_buffer(cb, 64);
@@ -4099,14 +4099,14 @@ void evergreen_update_db_shader_control(struct r600_context * rctx)
 		return;
 	}
 
-	dual_export = rctx->framebuffer.export_16bpc &&
+	dual_export = rctx->cb_state.export_16bpc &&
 		      !rctx->ps_shader->current->ps_depth_export;
 
 	db_shader_control = rctx->ps_shader->current->db_shader_control |
 			    S_02880C_DUAL_EXPORT_ENABLE(dual_export) |
 			    S_02880C_DB_SOURCE_FORMAT(dual_export ? V_02880C_EXPORT_DB_TWO :
 								    V_02880C_EXPORT_DB_FULL) |
-			    S_02880C_ALPHA_TO_MASK_DISABLE(rctx->framebuffer.cb0_is_integer);
+			    S_02880C_ALPHA_TO_MASK_DISABLE(rctx->cb_state.cb0_is_integer);
 
 	/* When alpha test is enabled we can't trust the hw to make the proper
 	 * decision on the order in which ztest should be run related to fragment
@@ -4515,7 +4515,7 @@ static void evergreen_set_shader_buffers(struct pipe_context *ctx,
 	istate->atom.num_dw = util_bitcount(istate->enabled_mask) * 46;
 
 	if (old_mask != istate->enabled_mask)
-		r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
+		r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
 
 	/* construct the target mask */
 	if (rctx->cb_misc_state.buffer_rat_enabled_mask != istate->enabled_mask) {
@@ -4730,7 +4730,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 		R600_CONTEXT_FLUSH_AND_INV_CB_META;
 
 	if (old_mask != istate->enabled_mask)
-		r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
+		r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
 
 	if (rctx->cb_misc_state.image_rat_enabled_mask != istate->enabled_mask) {
 		rctx->cb_misc_state.image_rat_enabled_mask = istate->enabled_mask;
@@ -4816,7 +4816,7 @@ void evergreen_init_state_functions(struct r600_context *rctx)
 		r600_init_atom(rctx, &rctx->config_state.atom, id++, evergreen_emit_config_state, 11);
 		rctx->config_state.dyn_gpr_enabled = true;
 	}
-	r600_init_atom(rctx, &rctx->framebuffer.atom, id++, evergreen_emit_framebuffer_state, 0);
+	r600_init_atom(rctx, &rctx->cb_state.atom, id++, evergreen_emit_framebuffer_state, 0);
 	r600_init_atom(rctx, &rctx->fragment_images.atom, id++, evergreen_emit_fragment_image_state, 0);
 	r600_init_atom(rctx, &rctx->compute_images.atom, id++, evergreen_emit_compute_image_state, 0);
 	r600_init_atom(rctx, &rctx->fragment_buffers.atom, id++, evergreen_emit_fragment_buffer_state, 0);

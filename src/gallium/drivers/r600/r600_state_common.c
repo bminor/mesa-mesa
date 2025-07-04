@@ -113,7 +113,7 @@ static void r600_texture_barrier(struct pipe_context *ctx, unsigned flags)
 		       R600_CONTEXT_FLUSH_AND_INV_CB |
 		       R600_CONTEXT_FLUSH_AND_INV |
 		       R600_CONTEXT_WAIT_3D_IDLE;
-	rctx->framebuffer.do_update_surf_dirtiness = true;
+	rctx->cb_state.do_update_surf_dirtiness = true;
 }
 
 static unsigned r600_conv_pipe_prim(unsigned prim)
@@ -202,9 +202,9 @@ static void r600_bind_blend_state_internal(struct r600_context *rctx,
 	if (update_cb) {
 		r600_mark_atom_dirty(rctx, &rctx->cb_misc_state.atom);
 	}
-	if (rctx->framebuffer.dual_src_blend != blend->dual_src_blend) {
-		rctx->framebuffer.dual_src_blend = blend->dual_src_blend;
-		r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
+	if (rctx->cb_state.dual_src_blend != blend->dual_src_blend) {
+		rctx->cb_state.dual_src_blend = blend->dual_src_blend;
+		r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
 	}
 }
 
@@ -822,7 +822,7 @@ static inline void r600_shader_selector_key(const struct pipe_context *ctx,
 		key->ps.color_two_side = rctx->rasterizer && rctx->rasterizer->two_side;
 		key->ps.alpha_to_one = rctx->alpha_to_one &&
 				      rctx->rasterizer && rctx->rasterizer->multisample_enable &&
-				      !rctx->framebuffer.cb0_is_integer;
+				      !rctx->cb_state.cb0_is_integer;
 		key->ps.nr_cbufs = rctx->framebuffer.state.nr_cbufs;
                 key->ps.apply_sample_id_mask = (rctx->ps_iter_samples > 1) || !rctx->rasterizer->multisample_enable;
 		/* Dual-source blending only makes sense with nr_cbufs == 1. */
@@ -1541,12 +1541,12 @@ void r600_set_sample_locations_constant_buffer(struct r600_context *rctx)
 {
 	struct pipe_context *ctx = &rctx->b.b;
 
-	assert(rctx->framebuffer.nr_samples < R600_UCP_SIZE);
-	assert(rctx->framebuffer.nr_samples <= ARRAY_SIZE(rctx->sample_positions)/4);
+	assert(rctx->cb_state.nr_samples < R600_UCP_SIZE);
+	assert(rctx->cb_state.nr_samples <= ARRAY_SIZE(rctx->sample_positions)/4);
 
 	memset(rctx->sample_positions, 0, 4 * 4 * 16);
-	for (unsigned i = 0; i < rctx->framebuffer.nr_samples; i++) {
-		ctx->get_sample_position(ctx, rctx->framebuffer.nr_samples, i, &rctx->sample_positions[4*i]);
+	for (unsigned i = 0; i < rctx->cb_state.nr_samples; i++) {
+		ctx->get_sample_position(ctx, rctx->cb_state.nr_samples, i, &rctx->sample_positions[4*i]);
 		/* Also fill in center-zeroed positions used for interpolateAtSample */
 		rctx->sample_positions[4*i + 2] = rctx->sample_positions[4*i + 0] - 0.5f;
 		rctx->sample_positions[4*i + 3] = rctx->sample_positions[4*i + 1] - 0.5f;
@@ -1955,7 +1955,7 @@ static bool r600_update_derived_state(struct r600_context *rctx)
 		rctx->rasterizer->sprite_coord_enable != rctx->ps_shader->current->sprite_coord_enable ||
 		rctx->rasterizer->flatshade != rctx->ps_shader->current->flatshade)) {
 
-		bool msaa = rctx->framebuffer.nr_samples > 1 && rctx->ps_iter_samples > 0;
+		bool msaa = rctx->cb_state.nr_samples > 1 && rctx->ps_iter_samples > 0;
 		if (unlikely(rctx->ps_shader &&
 				((rctx->rasterizer->sprite_coord_enable != rctx->ps_shader->current->sprite_coord_enable) ||
 				 (rctx->rasterizer->flatshade != rctx->ps_shader->current->flatshade) ||
@@ -2565,8 +2565,8 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	dirty_tex_counter = p_atomic_read(&rctx->b.screen->dirty_tex_counter);
 	if (unlikely(dirty_tex_counter != rctx->b.last_dirty_tex_counter)) {
 		rctx->b.last_dirty_tex_counter = dirty_tex_counter;
-		r600_mark_atom_dirty(rctx, &rctx->framebuffer.atom);
-		rctx->framebuffer.do_update_surf_dirtiness = true;
+		r600_mark_atom_dirty(rctx, &rctx->cb_state.atom);
+		rctx->cb_state.do_update_surf_dirtiness = true;
 	}
 
 	if (rctx->gs_shader) {
@@ -2996,7 +2996,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 	if (rctx->trace_buf)
 		eg_trace_emit(rctx);
 
-	if (rctx->framebuffer.do_update_surf_dirtiness) {
+	if (rctx->cb_state.do_update_surf_dirtiness) {
 		/* Set the depth buffer as dirty. */
 		if (rctx->framebuffer.state.zsbuf.texture) {
 			struct pipe_surface *surf = &rctx->framebuffer.state.zsbuf;
@@ -3007,10 +3007,10 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 			if (rtex->surface.has_stencil)
 				rtex->stencil_dirty_level_mask |= 1 << surf->level;
 		}
-		if (rctx->framebuffer.compressed_cb_mask) {
+		if (rctx->cb_state.compressed_cb_mask) {
 			struct pipe_surface *surf;
 			struct r600_texture *rtex;
-			unsigned mask = rctx->framebuffer.compressed_cb_mask;
+			unsigned mask = rctx->cb_state.compressed_cb_mask;
 
 			do {
 				unsigned i = u_bit_scan(&mask);
@@ -3021,7 +3021,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 			} while (mask);
 		}
-		rctx->framebuffer.do_update_surf_dirtiness = false;
+		rctx->cb_state.do_update_surf_dirtiness = false;
 	}
 
 	if (index_size && indexbuf != info->index.resource)
