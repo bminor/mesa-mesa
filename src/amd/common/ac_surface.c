@@ -733,7 +733,7 @@ static int surf_config_sanity(const struct ac_surf_config *config, unsigned flag
    return 0;
 }
 
-static unsigned bpe_to_format(struct radeon_surf *surf)
+static unsigned bpe_to_format(const struct radeon_surf *surf)
 {
    if (surf->blk_w != 1 || surf->blk_h != 1) {
       if (surf->blk_w == 4 && surf->blk_h == 4) {
