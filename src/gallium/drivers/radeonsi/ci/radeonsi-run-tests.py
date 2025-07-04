@@ -87,6 +87,9 @@ parser.add_argument(
     "--no-deqp", dest="deqp", help="Disable dEQP tests", action="store_false"
 )
 parser.add_argument(
+    "--no-vkcts", dest="vkcts", help="Disable VKCTS tests", action="store_false"
+)
+parser.add_argument(
     "--no-deqp-egl",
     dest="deqp_egl",
     help="Disable dEQP-EGL tests",
@@ -114,6 +117,7 @@ parser.set_defaults(piglit=True)
 parser.set_defaults(glcts=True)
 parser.set_defaults(escts=True)
 parser.set_defaults(deqp=True)
+parser.set_defaults(vkcts=False)
 parser.set_defaults(deqp_egl=True)
 parser.set_defaults(deqp_gles2=True)
 parser.set_defaults(deqp_gles3=True)
@@ -672,6 +676,44 @@ if args.deqp:
         + filters_args
         + flakes_args
     )
+
+    run_cmd(cmd, args.verbose)
+
+    if not verify_results(os.path.join(out, "failures.csv")):
+        success = False
+
+# vkcts test
+if args.vkcts and is_amd:
+    out = os.path.join(output_folder, "vkcts")
+    print_yellow("Running  VKCTS tests", args.verbose > 0)
+    os.mkdir(os.path.join(output_folder, "vkcts"))
+
+    cmd = (
+        [
+            "deqp-runner",
+            "run",
+            "--tests-per-group",
+            "100",
+            "--deqp",
+            "{}/build/external/vulkancts/modules/vulkan/deqp-vk".format(glcts_path),
+            "--caselist",
+            "{}/external/vulkancts/mustpass/main/vk-default.txt".format(glcts_path),
+            "--output",
+            out,
+            "--skips",
+            skips_list,
+            "--jobs",
+            str(args.jobs),
+            "--timeout",
+            "1000",
+        ]
+        + filters_args
+        + flakes_args
+    )
+
+    if os.path.exists(baseline):
+        cmd += ["--baseline", baseline]
+    cmd += deqp_args
 
     run_cmd(cmd, args.verbose)
 
