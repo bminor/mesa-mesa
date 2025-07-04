@@ -1333,7 +1333,7 @@ dri2_initialize_x11(_EGLDisplay *disp)
     * Every hardware driver_name is set using strdup. Doing the same in
     * here will allow is to simply free the memory at dri2_terminate().
     */
-   if (dri2_dpy->kopper)
+   if (disp->Options.Zink)
       dri2_dpy->driver_name = strdup("zink");
    else if (disp->Options.ForceSoftware)
       dri2_dpy->driver_name = strdup("swrast");
