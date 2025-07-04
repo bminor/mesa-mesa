@@ -236,8 +236,6 @@ struct emit_memory_barrier {
    {
       VkImageMemoryBarrier imb;
       zink_resource_image_barrier_init(&imb, res, new_layout, flags, pipeline);
-      if (!(res->obj->access_stage | res->obj->unordered_access_stage) || completed)
-         imb.srcAccessMask = 0;
       if (res->obj->needs_zs_evaluate)
          imb.pNext = &res->obj->zs_evaluate;
       res->obj->needs_zs_evaluate = false;
@@ -293,8 +291,6 @@ struct emit_memory_barrier<barrier_KHR_synchronzation2> {
    {
       VkImageMemoryBarrier2 imb;
       zink_resource_image_barrier2_init(&imb, res, new_layout, flags, pipeline);
-      if (!(res->obj->access_stage | res->obj->unordered_access_stage) || completed)
-         imb.srcAccessMask = 0;
       if (res->obj->needs_zs_evaluate)
          imb.pNext = &res->obj->zs_evaluate;
       res->obj->needs_zs_evaluate = false;
