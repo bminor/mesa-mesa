@@ -5,7 +5,7 @@ caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 renderer_check = "Turnip Adreno .* 660"
-tests_per_group = 5000
+tests_per_group = 10000
 
 # force-gmem testing
 # Autotuner forces sysmem on most CTS tests
