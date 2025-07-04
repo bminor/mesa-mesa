@@ -861,6 +861,57 @@ cleanup_surf:
 }
 
 static _EGLSurface *
+dri2_wl_create_pbuffer_surface(_EGLDisplay *disp, _EGLConfig *conf,
+                               const EGLint *attrib_list)
+{
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+   struct dri2_egl_config *dri2_conf = dri2_egl_config(conf);
+   struct dri2_egl_surface *dri2_surf;
+   const struct dri_config *config;
+   int visual_idx;
+   enum pipe_format pipe_format;
+
+   dri2_surf = calloc(1, sizeof *dri2_surf);
+   if (!dri2_surf) {
+      _eglError(EGL_BAD_ALLOC, "eglCreatePbufferSurface");
+      return NULL;
+   }
+
+   if (!dri2_init_surface(&dri2_surf->base, disp, EGL_PBUFFER_BIT, conf,
+                          attrib_list, false, NULL))
+      goto cleanup_surface;
+
+   config = dri2_get_dri_config(dri2_conf, EGL_PBUFFER_BIT,
+                                dri2_surf->base.GLColorspace);
+   if (!config) {
+      _eglError(EGL_BAD_MATCH,
+                "Unsupported surfacetype/colorspace configuration");
+      goto cleanup_surface;
+   }
+
+   visual_idx = dri2_wl_visual_idx_from_config(config);
+   assert(visual_idx != -1);
+   pipe_format = dri2_wl_visuals[visual_idx].pipe_format;
+   dri2_surf->format = dri2_wl_visuals[visual_idx].wl_drm_format;
+
+   if (!dri2_create_drawable(dri2_dpy, config, dri2_surf, dri2_surf))
+      goto cleanup_surface;
+
+   dri2_surf->front = dri_create_image(
+      dri2_dpy->dri_screen_render_gpu, dri2_surf->base.Width,
+      dri2_surf->base.Height, pipe_format, NULL, 0, 0, NULL);
+   if (!dri2_surf->front)
+      goto cleanup_surface;
+
+   return &dri2_surf->base;
+
+cleanup_surface:
+   driDestroyDrawable(dri2_surf->dri_drawable);
+   free(dri2_surf);
+   return NULL;
+}
+
+static _EGLSurface *
 dri2_wl_create_pixmap_surface(_EGLDisplay *disp, _EGLConfig *conf,
                               void *native_window, const EGLint *attrib_list)
 {
@@ -884,6 +935,13 @@ dri2_wl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
 
    driDestroyDrawable(dri2_surf->dri_drawable);
+
+   if (dri2_surf->base.Type == EGL_PBUFFER_BIT) {
+      dri2_destroy_image(dri2_surf->front);
+      dri2_fini_surface(surf);
+      free(surf);
+      return EGL_TRUE;
+   }
 
    for (int i = 0; i < ARRAY_SIZE(dri2_surf->color_buffers); i++) {
       if (dri2_surf->color_buffers[i].wayland_buffer.buffer)
@@ -1509,6 +1567,18 @@ image_get_buffers(struct dri_drawable *driDrawable, unsigned int format,
 
    MESA_TRACE_FUNC_FLOW(&flow);
 
+   if (dri2_surf->base.Type == EGL_PBUFFER_BIT) {
+      buffers->back = NULL;
+      if (buffer_mask & __DRI_IMAGE_BUFFER_FRONT) {
+         buffers->image_mask = __DRI_IMAGE_BUFFER_FRONT;
+         buffers->front = dri2_surf->front;
+      } else {
+         buffers->image_mask = 0;
+         buffers->front = NULL;
+      }
+      return 1;
+   }
+
    if (update_buffers_if_needed(dri2_surf, &flow) < 0)
       return 0;
 
@@ -1875,6 +1945,9 @@ dri2_wl_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
    struct mesa_trace_flow flow = { 0 };
 
    MESA_TRACE_FUNC_FLOW(&flow);
+
+   if (dri2_surf->base.Type == EGL_PBUFFER_BIT)
+      return 0;
 
    if (update_buffers_if_needed(dri2_surf, &flow) < 0) {
       _eglError(EGL_BAD_ALLOC, "dri2_query_buffer_age");
@@ -2260,6 +2333,7 @@ static const struct dri2_egl_display_vtbl dri2_wl_display_vtbl = {
    .create_wayland_buffer_from_image = dri2_wl_create_wayland_buffer_from_image,
 #endif
    .create_window_surface = dri2_wl_create_window_surface,
+   .create_pbuffer_surface = dri2_wl_create_pbuffer_surface,
    .create_pixmap_surface = dri2_wl_create_pixmap_surface,
    .destroy_surface = dri2_wl_destroy_surface,
    .swap_interval = dri2_wl_swap_interval,
@@ -2340,6 +2414,7 @@ static const struct dri2_egl_display_vtbl dri2_wl_kopper_display_vtbl = {
    .authenticate = NULL,
    .create_window_surface = dri2_wl_create_window_surface,
    .create_pixmap_surface = dri2_wl_create_pixmap_surface,
+   .create_pbuffer_surface = dri2_wl_create_pbuffer_surface,
    .destroy_surface = dri2_wl_destroy_surface,
    .create_image = dri2_create_image_khr,
    .swap_buffers = dri2_wl_kopper_swap_buffers,
@@ -2428,7 +2503,8 @@ dri2_wl_kopper_get_drawable_info(struct dri_drawable *draw, int *w,
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
 
-   kopper_update_buffers(dri2_surf);
+   if (dri2_surf->base.Type != EGL_PBUFFER_BIT)
+      kopper_update_buffers(dri2_surf);
    *w = dri2_surf->base.Width;
    *h = dri2_surf->base.Height;
 }
@@ -2456,6 +2532,7 @@ dri2_wl_add_configs_for_visuals(_EGLDisplay *disp)
    for (unsigned i = 0; dri2_dpy->driver_configs[i]; i++) {
       struct dri2_egl_config *dri2_conf;
       bool conversion = false;
+      bool server_supported = true;
       int idx = dri2_wl_visual_idx_from_config(dri2_dpy->driver_configs[i]);
 
       if (idx < 0)
@@ -2463,18 +2540,20 @@ dri2_wl_add_configs_for_visuals(_EGLDisplay *disp)
 
       /* Check if the server natively supports the colour buffer format */
       if (!server_supports_format(&dri2_dpy->formats, idx)) {
-         /* In multi-GPU scenarios, we usually have a different buffer, so a
-          * format conversion is easy compared to the overhead of the copy */
-         if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu)
-            continue;
-
-         /* Check if the server supports the alternate format */
-         if (!server_supports_pipe_format(&dri2_dpy->formats,
-                                          dri2_wl_visuals[idx].alt_pipe_format)) {
-            continue;
+         if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu) {
+            /* Not supported by the server, and we aren't doing a blit, so we
+             * can't use it. */
+            server_supported = false;
+         } else if (server_supports_pipe_format(
+                       &dri2_dpy->formats,
+                       dri2_wl_visuals[idx].alt_pipe_format)) {
+            /* The alternate format is supported by the server, so we can
+             * convert whilst we do a blit. */
+            conversion = true;
+         } else {
+            /* Not supported at all by the server. */
+            server_supported = false;
          }
-
-         conversion = true;
       }
 
       EGLint attr_list[] = {
@@ -2484,7 +2563,9 @@ dri2_wl_add_configs_for_visuals(_EGLDisplay *disp)
 
       /* The format is supported one way or another; add the EGLConfig */
       dri2_conf = dri2_add_config(disp, dri2_dpy->driver_configs[i],
-                                  EGL_WINDOW_BIT, attr_list);
+                                  EGL_PBUFFER_BIT |
+                                     (server_supported ? EGL_WINDOW_BIT : 0),
+                                  attr_list);
       if (!dri2_conf)
          continue;
 
@@ -2857,7 +2938,8 @@ dri2_wl_swrast_get_drawable_info(struct dri_drawable *draw, int *x, int *y, int 
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
 
-   (void)swrast_update_buffers(dri2_surf);
+   if (dri2_surf->base.Type != EGL_PBUFFER_BIT)
+      (void)swrast_update_buffers(dri2_surf);
    *x = 0;
    *y = 0;
    *w = dri2_surf->base.Width;
@@ -3059,6 +3141,7 @@ static const struct dri2_egl_display_vtbl dri2_wl_swrast_display_vtbl = {
    .authenticate = NULL,
    .create_window_surface = dri2_wl_create_window_surface,
    .create_pixmap_surface = dri2_wl_create_pixmap_surface,
+   .create_pbuffer_surface = dri2_wl_create_pbuffer_surface,
    .destroy_surface = dri2_wl_destroy_surface,
    .swap_interval = dri2_wl_swap_interval,
    .create_image = dri2_create_image_khr,

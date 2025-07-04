@@ -44,6 +44,9 @@ dEQP-GLES2.functional.texture.mipmap.cube.projected.linear_nearest,Fail
 
 wayland-dEQP-EGL.functional.create_context.no_config,Fail
 wayland-dEQP-EGL.functional.image.modify.renderbuffer_depth16_renderbuffer_clear_depth,Fail
+wayland-dEQP-EGL.functional.wide_color.pbuffer_fp16_default_colorspace,Fail
+wayland-dEQP-EGL.functional.wide_color.pbuffer_8888_colorspace_srgb,Fail
+wayland-dEQP-EGL.functional.wide_color.pbuffer_888_colorspace_srgb,Fail
 wayland-dEQP-EGL.functional.wide_color.window_fp16_default_colorspace,Fail
 wayland-dEQP-EGL.functional.wide_color.window_8888_colorspace_srgb,Fail
 wayland-dEQP-EGL.functional.wide_color.window_888_colorspace_srgb,Fail
