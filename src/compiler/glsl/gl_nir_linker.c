@@ -1327,9 +1327,7 @@ preprocess_shader(const struct gl_constants *consts,
       NIR_PASS(_, nir, gl_nir_zero_initialize_clip_distance);
 
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-            nir_shader_get_entrypoint(nir), true,
-            nir->info.stage == MESA_SHADER_VERTEX ||
-            nir->info.stage == MESA_SHADER_GEOMETRY);
+            nir_shader_get_entrypoint(nir), true, false);
 
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
    NIR_PASS(_, nir, nir_split_var_copies);
