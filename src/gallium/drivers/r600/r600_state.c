@@ -980,10 +980,10 @@ static void r600_init_color_surface(struct r600_context *rctx,
 			void *ptr;
 
 			r600_resource_reference(&rctx->dummy_cmask, NULL);
-			rctx->dummy_cmask = (struct r600_resource*)
-				r600_aligned_buffer_create(&rscreen->b.b, 0,
-							   PIPE_USAGE_DEFAULT,
-							   cmask.size, cmask.alignment);
+			rctx->dummy_cmask =
+				r600_as_resource(r600_aligned_buffer_create(&rscreen->b.b, 0,
+									 PIPE_USAGE_DEFAULT,
+									 cmask.size, cmask.alignment));
 
 			if (unlikely(!rctx->dummy_cmask)) {
 				surf->color_initialized = false;
@@ -1002,10 +1002,10 @@ static void r600_init_color_surface(struct r600_context *rctx,
 		    rctx->dummy_fmask->b.b.width0 < fmask.size ||
 		    (1 << rctx->dummy_fmask->buf->alignment_log2) % fmask.alignment != 0) {
 			r600_resource_reference(&rctx->dummy_fmask, NULL);
-			rctx->dummy_fmask = (struct r600_resource*)
-				r600_aligned_buffer_create(&rscreen->b.b, 0,
-							   PIPE_USAGE_DEFAULT,
-							   fmask.size, fmask.alignment);
+			rctx->dummy_fmask =
+				r600_as_resource(r600_aligned_buffer_create(&rscreen->b.b, 0,
+									 PIPE_USAGE_DEFAULT,
+									 fmask.size, fmask.alignment));
 
 			if (unlikely(!rctx->dummy_fmask)) {
 				surf->color_initialized = false;
@@ -1375,7 +1375,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 
 			reloc = radeon_add_to_buffer_list(&rctx->b,
 						      &rctx->b.gfx,
-						      (struct r600_resource*)cb[i]->base.texture,
+						      r600_as_resource(cb[i]->base.texture),
 						      RADEON_USAGE_READWRITE |
 						      (cb[i]->base.texture->nr_samples > 1 ?
 							      RADEON_PRIO_COLOR_BUFFER_MSAA :
@@ -1440,7 +1440,7 @@ static void r600_emit_framebuffer_state(struct r600_context *rctx, struct r600_a
 		struct r600_surface *surf = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
 		unsigned reloc = radeon_add_to_buffer_list(&rctx->b,
 						       &rctx->b.gfx,
-						       (struct r600_resource*)state->zsbuf.texture,
+						       r600_as_resource(state->zsbuf.texture),
 						       RADEON_USAGE_READWRITE |
 						       (surf->base.texture->nr_samples > 1 ?
 							       RADEON_PRIO_DEPTH_BUFFER_MSAA :
@@ -1664,7 +1664,7 @@ static void r600_emit_vertex_buffers(struct r600_context *rctx, struct r600_atom
 		unsigned stride = shader->strides[buffer_index];
 
 		vb = &rctx->vertex_buffer_state.vb[buffer_index];
-		rbuffer = (struct r600_resource*)vb->buffer.resource;
+		rbuffer = r600_as_resource(vb->buffer.resource);
 		assert(rbuffer);
 
 		offset = vb->buffer_offset;
@@ -1704,7 +1704,7 @@ static void r600_emit_constant_buffers(struct r600_context *rctx,
 		unsigned buffer_index = ffs(dirty_mask) - 1;
 		unsigned gs_ring_buffer = (buffer_index == R600_GS_RING_CONST_BUFFER);
 		cb = &state->cb[buffer_index];
-		rbuffer = (struct r600_resource*)cb->buffer;
+		rbuffer = r600_as_resource(cb->buffer);
 		assert(rbuffer);
 
 		offset = cb->buffer_offset;
@@ -1979,7 +1979,7 @@ static void r600_emit_gs_rings(struct r600_context *rctx, struct r600_atom *a)
 	radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_VGT_FLUSH));
 
 	if (state->enable) {
-		rbuffer =(struct r600_resource*)state->esgs_ring.buffer;
+		rbuffer = r600_as_resource(state->esgs_ring.buffer);
 		radeon_set_config_reg(cs, R_008C40_SQ_ESGS_RING_BASE, 0);
 		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 		radeon_emit(cs, radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx, rbuffer,
@@ -1988,7 +1988,7 @@ static void r600_emit_gs_rings(struct r600_context *rctx, struct r600_atom *a)
 		radeon_set_config_reg(cs, R_008C44_SQ_ESGS_RING_SIZE,
 				state->esgs_ring.buffer_size >> 8);
 
-		rbuffer =(struct r600_resource*)state->gsvs_ring.buffer;
+		rbuffer = r600_as_resource(state->gsvs_ring.buffer);
 		radeon_set_config_reg(cs, R_008C48_SQ_GSVS_RING_BASE, 0);
 		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 		radeon_emit(cs, radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx, rbuffer,

@@ -862,7 +862,7 @@ static void r600_clear_buffer(struct pipe_context *ctx, struct pipe_resource *ds
 					  1, &clear_value);
 		r600_blitter_end(ctx);
 	} else {
-		uint32_t *map = r600_buffer_map_sync_with_rings(&rctx->b, r600_resource(dst),
+		uint32_t *map = r600_buffer_map_sync_with_rings(&rctx->b, r600_as_resource(dst),
 								 PIPE_MAP_WRITE);
 		map += offset / 4;
 		size /= 4;

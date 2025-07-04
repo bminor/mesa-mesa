@@ -457,7 +457,7 @@ static bool r600_texture_get_handle(struct pipe_screen* screen,
 {
 	struct r600_common_screen *rscreen = (struct r600_common_screen*)screen;
 	struct r600_common_context *rctx;
-	struct r600_resource *res = (struct r600_resource*)resource;
+	struct r600_resource *res = r600_as_resource(resource);
 	struct r600_texture *rtex = r600_as_texture(resource);
 	struct radeon_bo_metadata metadata;
 	bool update_metadata = false;
@@ -702,12 +702,12 @@ void r600_texture_alloc_cmask_separate(struct r600_common_screen *rscreen,
 
 	r600_texture_get_cmask_info(rscreen, rtex, &rtex->cmask);
 
-	rtex->cmask_buffer = (struct r600_resource *)
-		r600_aligned_buffer_create(&rscreen->b,
-					   R600_RESOURCE_FLAG_UNMAPPABLE,
-					   PIPE_USAGE_DEFAULT,
-					   rtex->cmask.size,
-					   rtex->cmask.alignment);
+	rtex->cmask_buffer =
+		r600_as_resource(r600_aligned_buffer_create(&rscreen->b,
+							 R600_RESOURCE_FLAG_UNMAPPABLE,
+							 PIPE_USAGE_DEFAULT,
+							 rtex->cmask.size,
+							 rtex->cmask.alignment));
 	if (rtex->cmask_buffer == NULL) {
 		rtex->cmask.size = 0;
 		return;
@@ -725,9 +725,9 @@ void eg_resource_alloc_immed(struct r600_common_screen *rscreen,
 			     struct r600_resource *res,
 			     unsigned immed_size)
 {
-	res->immed_buffer = (struct r600_resource *)
-		pipe_buffer_create(&rscreen->b, PIPE_BIND_CUSTOM,
-				   PIPE_USAGE_DEFAULT, immed_size);
+	res->immed_buffer =
+		r600_as_resource(pipe_buffer_create(&rscreen->b, PIPE_BIND_CUSTOM,
+						 PIPE_USAGE_DEFAULT, immed_size));
 }
 
 static void r600_texture_get_htile_size(struct r600_common_screen *rscreen,
@@ -1392,7 +1392,7 @@ void *r600_texture_transfer_map(struct pipe_context *ctx,
 							 &trans->b.b.layer_stride);
 		}
 
-		trans->staging = (struct r600_resource*)staging_depth;
+		trans->staging = &staging_depth->resource;
 		buf = trans->staging;
 	} else if (use_staging_texture) {
 		struct pipe_resource resource;

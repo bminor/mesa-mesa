@@ -838,7 +838,7 @@ void cayman_emit_msaa_state(struct radeon_cmdbuf *cs, int nr_samples,
 
 /* Inline helpers. */
 
-static inline struct r600_resource *r600_resource(struct pipe_resource *r)
+static inline struct r600_resource *r600_as_resource(struct pipe_resource *r)
 {
 	return (struct r600_resource*)r;
 }
@@ -860,7 +860,7 @@ static inline void
 r600_context_add_resource_size(struct pipe_context *ctx, struct pipe_resource *r)
 {
 	struct r600_common_context *rctx = (struct r600_common_context *)ctx;
-	struct r600_resource *res = (struct r600_resource *)r;
+	struct r600_resource *res = r600_as_resource(r);
 
 	if (res) {
 		/* Add memory usage for need_gfx_cs_space */

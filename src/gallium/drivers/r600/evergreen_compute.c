@@ -68,7 +68,7 @@ struct r600_resource *r600_compute_buffer_alloc_vram(struct r600_screen *screen,
 	buffer = pipe_buffer_create((struct pipe_screen*) screen,
 				    0, PIPE_USAGE_IMMUTABLE, size);
 
-	return (struct r600_resource *)buffer;
+	return r600_as_resource(buffer);
 }
 
 
@@ -328,7 +328,7 @@ static void compute_emit_cs(struct r600_context *rctx,
 		current->shader.has_txq_cube_array_z_comp;
 
 	if (info->indirect) {
-		struct r600_resource *indirect_resource = (struct r600_resource *)info->indirect;
+		struct r600_resource *indirect_resource = r600_as_resource(info->indirect);
 		unsigned *data = r600_buffer_map_sync_with_rings(&rctx->b, indirect_resource, PIPE_MAP_READ);
 		unsigned offset = info->indirect_offset / 4;
 		indirect_grid[0] = data[offset];

@@ -1743,8 +1743,8 @@ void r600_setup_scratch_area_for_shader(struct r600_context *rctx,
 				pipe_resource_reference((struct pipe_resource**)&scratch->buffer, NULL);
 			}
 
-			scratch->buffer = (struct r600_resource *)pipe_buffer_create(rctx->b.b.screen, PIPE_BIND_CUSTOM,
-				PIPE_USAGE_DEFAULT, size);
+			scratch->buffer = r600_as_resource(pipe_buffer_create(rctx->b.b.screen, PIPE_BIND_CUSTOM,
+									   PIPE_USAGE_DEFAULT, size));
 			if (scratch->buffer) {
 				scratch->size = size;
 			}
@@ -2155,7 +2155,7 @@ r600_draw_parameters(struct r600_context *rctx,
 			if (!is_mapped) {
 				*indirect_ptr =
 					r600_buffer_map_sync_with_rings(&rctx->b,
-									(struct r600_resource *)indirect->buffer,
+									r600_as_resource(indirect->buffer),
 									PIPE_MAP_READ);
 				*cs_space += R600_DRAW_PARAMETERS_ENABLED_CS * indirect->draw_count;
 			}
@@ -2310,11 +2310,11 @@ r600_indirect_parameters_init(struct r600_context *rctx,
 		}
 
 		reloc_internal = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-							   r600_resource(indirect_parameters->internal),
+							   r600_as_resource(indirect_parameters->internal),
 							   RADEON_USAGE_READWRITE |
 							   RADEON_PRIO_SHADER_RW_BUFFER);
 
-		va_fence = r600_resource(indirect_parameters->internal)->gpu_address +
+		va_fence = r600_as_resource(indirect_parameters->internal)->gpu_address +
 			indirect_parameters->internal_offset +
 			offsetof(struct r600_indirect_gpu_internal, fence);
 
@@ -2330,7 +2330,7 @@ r600_indirect_parameters_init(struct r600_context *rctx,
 		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 		radeon_emit(cs, reloc_internal);
 
-		va_condition = r600_resource(indirect_parameters->internal)->gpu_address +
+		va_condition = r600_as_resource(indirect_parameters->internal)->gpu_address +
 			indirect_parameters->internal_offset +
 			offsetof(struct r600_indirect_gpu_internal, condition);
 
@@ -2371,24 +2371,24 @@ r600_indirect_parameters_draw(struct r600_context *rctx,
 
 	assert(radeon_check_cs(rctx, cs) || true);
 
-	va_draw_count = r600_resource(indirect->indirect_draw_count)->gpu_address +
+	va_draw_count = r600_as_resource(indirect->indirect_draw_count)->gpu_address +
 		indirect->indirect_draw_count_offset;
 
-	va_condition = r600_resource(indirect_parameters->internal)->gpu_address +
+	va_condition = r600_as_resource(indirect_parameters->internal)->gpu_address +
 		indirect_parameters->internal_offset +
 		offsetof(struct r600_indirect_gpu_internal, condition);
 
-	va_fence = r600_resource(indirect_parameters->internal)->gpu_address +
+	va_fence = r600_as_resource(indirect_parameters->internal)->gpu_address +
 		indirect_parameters->internal_offset +
 		offsetof(struct r600_indirect_gpu_internal, fence);
 
 	reloc_draw_count = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-						     r600_resource(indirect->indirect_draw_count),
+						     r600_as_resource(indirect->indirect_draw_count),
 						     RADEON_USAGE_READWRITE |
 						     RADEON_PRIO_SHADER_RW_BUFFER);
 
 	reloc_internal = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-						   r600_resource(indirect_parameters->internal),
+						   r600_as_resource(indirect_parameters->internal),
 						   RADEON_USAGE_READWRITE |
 						   RADEON_PRIO_SHADER_RW_BUFFER);
 
@@ -2798,7 +2798,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 		radeon_emit(cs, PKT3(PKT3_NUM_INSTANCES, 0, 0));
 		radeon_emit(cs, info->instance_count);
 	} else {
-		uint64_t va = r600_resource(indirect->buffer)->gpu_address;
+		uint64_t va = r600_as_resource(indirect->buffer)->gpu_address;
 		assert(rctx->b.gfx_level >= EVERGREEN);
 
 		// Invalidate so non-indirect draw calls reset this state
@@ -2812,7 +2812,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 		radeon_emit(cs, radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-							  (struct r600_resource*)indirect->buffer,
+							  r600_as_resource(indirect->buffer),
 							  RADEON_USAGE_READ |
                                                           RADEON_PRIO_DRAW_INDIRECT));
 	}
@@ -2833,7 +2833,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 			       info->index.user + draws[0].start * index_size, size_bytes);
 			cs->current.cdw += size_dw;
 		} else {
-			uint64_t va = r600_resource(indexbuf)->gpu_address + index_offset;
+			uint64_t va = r600_as_resource(indexbuf)->gpu_address + index_offset;
 
 			if (likely(!indirect)) {
 				radeon_emit(cs, PKT3(PKT3_DRAW_INDEX, 3, render_cond_bit));
@@ -2843,7 +2843,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 				radeon_emit(cs, V_0287F0_DI_SRC_SEL_DMA);
 				radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 				radeon_emit(cs, radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-									  (struct r600_resource*)indexbuf,
+									  r600_as_resource(indexbuf),
 									  RADEON_USAGE_READ |
                                                                           RADEON_PRIO_INDEX_BUFFER));
 			}
@@ -2859,7 +2859,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 
 				radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
 				radeon_emit(cs, radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-									  (struct r600_resource*)indexbuf,
+									  r600_as_resource(indexbuf),
 									  RADEON_USAGE_READ |
                                                                           RADEON_PRIO_INDEX_BUFFER));
 
@@ -3807,7 +3807,7 @@ uint32_t r600_colorformat_endian_swap(uint32_t colorformat, bool do_endian_swap)
 static void r600_invalidate_buffer(struct pipe_context *ctx, struct pipe_resource *buf)
 {
 	struct r600_context *rctx = (struct r600_context*)ctx;
-	struct r600_resource *rbuffer = r600_resource(buf);
+	struct r600_resource *rbuffer = r600_as_resource(buf);
 	unsigned i, shader, mask;
 	struct r600_pipe_sampler_view *view;
 

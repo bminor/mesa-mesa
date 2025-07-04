@@ -543,7 +543,7 @@ static bool r600_resource_commit(struct pipe_context *pctx,
 				 bool commit)
 {
 	struct r600_common_context *ctx = (struct r600_common_context *)pctx;
-	struct r600_resource *res = r600_resource(resource);
+	struct r600_resource *res = r600_as_resource(resource);
 
 	/*
 	 * Since buffer commitment changes cannot be pipelined, we need to
@@ -939,7 +939,7 @@ static void r600_resource_destroy(struct pipe_screen *screen,
 				  struct pipe_resource *res)
 {
 	if (res->target == PIPE_BUFFER) {
-		if (r600_resource(res)->compute_global_bo)
+		if (r600_as_resource(res)->compute_global_bo)
 			r600_compute_global_buffer_destroy(screen, res);
 		else
 			r600_buffer_destroy(screen, res);

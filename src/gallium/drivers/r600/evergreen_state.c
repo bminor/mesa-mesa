@@ -1308,7 +1308,7 @@ void evergreen_init_color_surface_rat(struct r600_context *rctx,
 	struct pipe_resource *pipe_buffer = surf->base.texture;
 	struct r600_tex_color_info color;
 
-	evergreen_set_color_surface_buffer(rctx, (struct r600_resource *)surf->base.texture,
+	evergreen_set_color_surface_buffer(rctx, r600_as_resource(surf->base.texture),
 					   surf->base.format, 0, pipe_buffer->width0,
 					   &color);
 
@@ -1325,7 +1325,7 @@ void evergreen_init_color_surface_rat(struct r600_context *rctx,
 	surf->cb_color_view = 0;
 
 	/* Set the buffer range the GPU will have access to: */
-	util_range_add(pipe_buffer, &r600_resource(pipe_buffer)->valid_buffer_range,
+	util_range_add(pipe_buffer, &r600_as_resource(pipe_buffer)->valid_buffer_range,
 		       0, pipe_buffer->width0);
 }
 
@@ -1777,7 +1777,7 @@ evergreen_emit_arb_shader_image_load_store_incomplete(struct r600_context *rctx,
 
 	dummy_reloc = radeon_add_to_buffer_list(&rctx->b,
 						&rctx->b.gfx,
-						r600_resource(dummy),
+						r600_as_resource(dummy),
 						RADEON_USAGE_READ |
 						RADEON_PRIO_SHADER_RW_BUFFER);
 
@@ -1836,7 +1836,7 @@ static void evergreen_emit_image_state(struct r600_context *rctx, struct r600_at
 			continue;
 		}
 
-		resource = (struct r600_resource *)image->base.resource;
+		resource = r600_as_resource(image->base.resource);
 		if (resource->b.b.target != PIPE_BUFFER)
 			rtex = r600_as_texture(image->base.resource);
 		else
@@ -1974,7 +1974,7 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 		tex = r600_as_texture(cb->base.texture);
 		reloc = radeon_add_to_buffer_list(&rctx->b,
 					      &rctx->b.gfx,
-					      (struct r600_resource*)cb->base.texture,
+					      r600_as_resource(cb->base.texture),
 					      RADEON_USAGE_READWRITE |
 					      (tex->resource.b.b.nr_samples > 1 ?
 						      RADEON_PRIO_COLOR_BUFFER_MSAA :
@@ -2032,7 +2032,7 @@ static void evergreen_emit_framebuffer_state(struct r600_context *rctx, struct r
 		struct r600_surface *zb = (struct r600_surface*)rctx->framebuffer.fb_zsbuf;
 		unsigned reloc = radeon_add_to_buffer_list(&rctx->b,
 						       &rctx->b.gfx,
-						       (struct r600_resource*)state->zsbuf.texture,
+						       r600_as_resource(state->zsbuf.texture),
 						       RADEON_USAGE_READWRITE |
 						       (zb->base.texture->nr_samples > 1 ?
 							       RADEON_PRIO_DEPTH_BUFFER_MSAA :
@@ -2247,7 +2247,7 @@ static void evergreen_emit_vertex_buffers(struct r600_context *rctx,
 				  1 : shader->strides[buffer_index];
 
 		vb = &state->vb[buffer_index];
-		rbuffer = (struct r600_resource*)vb->buffer.resource;
+		rbuffer = r600_as_resource(vb->buffer.resource);
 		assert(rbuffer);
 
 		va = rbuffer->gpu_address + vb->buffer_offset;
@@ -2308,7 +2308,7 @@ static void evergreen_emit_constant_buffers(struct r600_context *rctx,
 		unsigned gs_ring_buffer = (buffer_index == R600_GS_RING_CONST_BUFFER);
 
 		cb = &state->cb[buffer_index];
-		rbuffer = (struct r600_resource*)cb->buffer;
+		rbuffer = r600_as_resource(cb->buffer);
 		assert(rbuffer);
 
 		va = rbuffer->gpu_address + cb->buffer_offset;
@@ -3043,7 +3043,7 @@ static void evergreen_emit_gs_rings(struct r600_context *rctx, struct r600_atom 
 	radeon_emit(cs, EVENT_TYPE(EVENT_TYPE_VGT_FLUSH));
 
 	if (state->enable) {
-		rbuffer =(struct r600_resource*)state->esgs_ring.buffer;
+		rbuffer = r600_as_resource(state->esgs_ring.buffer);
 		radeon_set_config_reg(cs, R_008C40_SQ_ESGS_RING_BASE,
 				rbuffer->gpu_address >> 8);
 		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
@@ -3053,7 +3053,7 @@ static void evergreen_emit_gs_rings(struct r600_context *rctx, struct r600_atom 
 		radeon_set_config_reg(cs, R_008C44_SQ_ESGS_RING_SIZE,
 				state->esgs_ring.buffer_size >> 8);
 
-		rbuffer =(struct r600_resource*)state->gsvs_ring.buffer;
+		rbuffer = r600_as_resource(state->gsvs_ring.buffer);
 		radeon_set_config_reg(cs, R_008C48_SQ_GSVS_RING_BASE,
 				rbuffer->gpu_address >> 8);
 		radeon_emit(cs, PKT3(PKT3_NOP, 0, 0));
@@ -4378,7 +4378,7 @@ static void evergreen_setup_immed_buffer(struct r600_context *rctx,
 	uint32_t immed_size = rscreen->b.info.max_se * 256 * 64 * util_format_get_blocksize(pformat);
 	struct eg_buf_res_params buf_params;
 	bool skip_reloc = false;
-	struct r600_resource *resource = (struct r600_resource *)rview->base.resource;
+	struct r600_resource *resource = r600_as_resource(rview->base.resource);
 	if (!resource->immed_buffer) {
 		eg_resource_alloc_immed(&rscreen->b, resource, immed_size);
 	}
@@ -4466,7 +4466,7 @@ static void evergreen_set_shader_buffers(struct pipe_context *ctx,
 		buf = &buffers[idx];
 		pipe_resource_reference((struct pipe_resource **)&rview->base.resource, buf->buffer);
 
-		resource = (struct r600_resource *)rview->base.resource;
+		resource = r600_as_resource(rview->base.resource);
 
 		evergreen_setup_immed_buffer(rctx, rview, PIPE_FORMAT_R32_UINT);
 
@@ -4587,7 +4587,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 
 		iview = &images[idx];
 		image = iview->resource;
-		resource = (struct r600_resource *)image;
+		resource = r600_as_resource(image);
 
 		r600_context_add_resource_size(ctx, image);
 
@@ -4771,7 +4771,7 @@ static void evergreen_get_shader_buffers(struct r600_context *rctx,
 
 		pipe_resource_reference(&sbuf[idx].buffer, rview->base.resource);
 		if (rview->base.resource) {
-			uint64_t rview_va = ((struct r600_resource *)rview->base.resource)->gpu_address;
+			uint64_t rview_va = r600_as_resource(rview->base.resource)->gpu_address;
 
 			uint64_t prog_va = rview->resource_words[0];
 
@@ -5186,7 +5186,7 @@ void eg_trace_emit(struct r600_context *rctx)
 
 	/* This must be done after r600_need_cs_space. */
 	reloc = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-					  (struct r600_resource*)rctx->trace_buf, RADEON_USAGE_WRITE |
+					  rctx->trace_buf, RADEON_USAGE_WRITE |
 					  RADEON_PRIO_CP_DMA);
 
 	rctx->trace_id++;
@@ -5419,7 +5419,7 @@ void evergreen_emit_atomic_buffer_setup(struct r600_context *rctx,
 
 	for (int i = 0; i < global_atomic_count; i++) {
 		const struct r600_shader_atomic *atomic = &combined_atomics[i];
-		struct r600_resource *resource = r600_resource(astate->buffer[atomic->resource_id].buffer);
+		struct r600_resource *resource = r600_as_resource(astate->buffer[atomic->resource_id].buffer);
 		assert(resource);
 
 		if (rctx->b.gfx_level == CAYMAN)
@@ -5449,7 +5449,7 @@ void evergreen_emit_atomic_buffer_save(struct r600_context *rctx,
 
 	for (int i = 0; i < global_atomic_count; i++) {
 		const struct r600_shader_atomic *atomic = &combined_atomics[i];
-		struct r600_resource *resource = r600_resource(astate->buffer[atomic->resource_id].buffer);
+		struct r600_resource *resource = r600_as_resource(astate->buffer[atomic->resource_id].buffer);
 		assert(resource);
 
 		if (rctx->b.gfx_level == CAYMAN)
@@ -5463,10 +5463,10 @@ void evergreen_emit_atomic_buffer_save(struct r600_context *rctx,
 
 	++rctx->append_fence_id;
 	reloc = radeon_add_to_buffer_list(&rctx->b, &rctx->b.gfx,
-					  r600_resource(rctx->append_fence),
+					  r600_as_resource(rctx->append_fence),
 					  RADEON_USAGE_READWRITE |
 					  RADEON_PRIO_SHADER_RW_BUFFER);
-	dst_offset = r600_resource(rctx->append_fence)->gpu_address;
+	dst_offset = r600_as_resource(rctx->append_fence)->gpu_address;
 	radeon_emit(cs, PKT3(PKT3_EVENT_WRITE_EOS, 3, 0) | pkt_flags);
 	radeon_emit(cs, EVENT_TYPE(event) | EVENT_INDEX(6));
 	radeon_emit(cs, dst_offset & 0xffffffff);

@@ -489,9 +489,9 @@ static struct r600_resource *r600_new_query_buffer(struct r600_common_screen *rs
 	 * being written by the gpu, hence staging is probably a good
 	 * usage pattern.
 	 */
-	struct r600_resource *buf = (struct r600_resource*)
-		pipe_buffer_create(&rscreen->b, 0,
-				   PIPE_USAGE_STAGING, buf_size);
+	struct r600_resource *buf =
+		r600_as_resource(pipe_buffer_create(&rscreen->b, 0,
+						 PIPE_USAGE_STAGING, buf_size));
 	if (!buf)
 		return NULL;
 
@@ -1874,9 +1874,8 @@ void r600_query_fix_enabled_rb_mask(struct r600_common_screen *rscreen)
 	/* otherwise backup path for older kernels */
 
 	/* create buffer for event data */
-	buffer = (struct r600_resource*)
-		pipe_buffer_create(ctx->b.screen, 0,
-				   PIPE_USAGE_STAGING, max_rbs * 16);
+	buffer = r600_as_resource(pipe_buffer_create(ctx->b.screen, 0,
+						  PIPE_USAGE_STAGING, max_rbs * 16));
 	if (!buffer)
 		return;
 

@@ -107,8 +107,7 @@ static int store_shader(struct pipe_context *ctx,
 	uint32_t *ptr, i;
 
 	if (shader->bo == NULL) {
-		shader->bo = (struct r600_resource*)
-			pipe_buffer_create(ctx->screen, 0, PIPE_USAGE_IMMUTABLE, shader->shader.bc.ndw * 4);
+		shader->bo = r600_as_resource(pipe_buffer_create(ctx->screen, 0, PIPE_USAGE_IMMUTABLE, shader->shader.bc.ndw * 4));
 		if (shader->bo == NULL) {
 			return -ENOMEM;
 		}
