@@ -208,10 +208,6 @@ struct r600_texture {
 struct r600_surface {
 	struct pipe_surface		base;
 
-	/* These can vary with block-compressed textures. */
-	unsigned width0;
-	unsigned height0;
-
 	bool color_initialized;
 	bool depth_initialized;
 

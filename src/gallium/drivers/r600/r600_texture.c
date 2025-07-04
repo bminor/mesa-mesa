@@ -1508,9 +1508,6 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 	surface->base.first_layer = templ->first_layer;
 	surface->base.last_layer = templ->last_layer;
 
-	surface->width0 = width0;
-	surface->height0 = height0;
-
 	return &surface->base;
 }
 
