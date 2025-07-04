@@ -58,10 +58,6 @@
 #include "drm-uapi/drm_fourcc.h"
 #include "dri_util.h"
 
-
-static EGLBoolean
-dri2_x11_swap_interval(_EGLDisplay *disp, _EGLSurface *surf, EGLint interval);
-
 static void
 swrastCreateDrawable(struct dri2_egl_display *dri2_dpy,
                      struct dri2_egl_surface *dri2_surf)
@@ -501,7 +497,6 @@ static _EGLSurface *
 dri2_x11_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
                                void *native_window, const EGLint *attrib_list)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    _EGLSurface *surf;
 
    surf = dri2_x11_create_surface(disp, EGL_WINDOW_BIT, conf, native_window,
@@ -511,9 +506,6 @@ dri2_x11_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
        * server side is 1.
        */
       surf->SwapInterval = 1;
-
-      /* Override that with a driconf-set value. */
-      dri2_x11_swap_interval(disp, surf, dri2_dpy->default_swap_interval);
    }
 
    return surf;
@@ -696,25 +688,7 @@ dri2_x11_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
 
-   if (dri2_dpy->kopper) {
-      /* From the EGL 1.4 spec (page 52):
-       *
-       *     "The contents of ancillary buffers are always undefined
-       *      after calling eglSwapBuffers."
-       */
-      kopperSwapBuffers(dri2_surf->dri_drawable,
-                                    __DRI2_FLUSH_INVALIDATE_ANCILLARY);
-
-      /* If the X11 window has been resized, vkQueuePresentKHR() or
-       * vkAcquireNextImageKHR() may return VK_ERROR_SURFACE_LOST or
-       * VK_SUBOPTIMAL_KHR, causing kopper to re-create the swapchain with
-       * a different size.  We need to resize the EGLSurface in that case.
-       */
-      kopperQuerySurfaceSize(dri2_surf->dri_drawable,
-                             &dri2_surf->base.Width,
-                             &dri2_surf->base.Height);
-      return EGL_TRUE;
-   } else if (dri2_dpy->swrast) {
+   if (dri2_dpy->swrast) {
       /* aka the swrast path, which does the swap in the gallium driver. */
       driSwapBuffers(dri2_surf->dri_drawable);
       return EGL_TRUE;
@@ -727,31 +701,29 @@ static EGLBoolean
 dri2_x11_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
                                          const EGLint *rects, EGLint numRects)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
-   /* swrast path unsupported for now */
-   assert(dri2_dpy->kopper);
-   if (dri2_dpy->kopper) {
-      if (numRects)
-         kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, numRects, rects);
-      else
-         kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
 
-      /* If the X11 window has been resized, vkQueuePresentKHR() or
-       * vkAcquireNextImageKHR() may return VK_ERROR_SURFACE_LOST or
-       * VK_SUBOPTIMAL_KHR, causing kopper to re-create the swapchain with
-       * a different size.  We need to resize the EGLSurface in that case.
-       */
-      kopperQuerySurfaceSize(dri2_surf->dri_drawable,
-                             &dri2_surf->base.Width,
-                             &dri2_surf->base.Height);
-   } else {
-      if (numRects)
-         driSwapBuffersWithDamage(dri2_surf->dri_drawable, numRects, rects);
-      else
-         driSwapBuffers(dri2_surf->dri_drawable);
-   }
+   /* swrast path unsupported for now */
+   if (numRects)
+      kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, numRects, rects);
+   else
+      kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
+
+   /* If the X11 window has been resized, vkQueuePresentKHR() or
+    * vkAcquireNextImageKHR() may return VK_ERROR_SURFACE_LOST or
+    * VK_SUBOPTIMAL_KHR, causing kopper to re-create the swapchain with
+    * a different size.  We need to resize the EGLSurface in that case.
+    */
+   kopperQuerySurfaceSize(dri2_surf->dri_drawable,
+                          &dri2_surf->base.Width,
+                          &dri2_surf->base.Height);
    return EGL_TRUE;
+}
+
+static EGLBoolean
+dri2_x11_kopper_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
+{
+   return dri2_x11_kopper_swap_buffers_with_damage(disp, draw, NULL, 0);
 }
 
 static EGLBoolean
@@ -763,20 +735,6 @@ dri2_x11_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
       driSwapBuffersWithDamage(dri2_surf->dri_drawable, numRects, rects);
    else
       driSwapBuffers(dri2_surf->dri_drawable);
-   return EGL_TRUE;
-}
-
-static EGLBoolean
-dri2_x11_swap_interval(_EGLDisplay *disp, _EGLSurface *surf, EGLint interval)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
-
-   if (dri2_dpy->kopper) {
-      kopperSetSwapInterval(dri2_surf->dri_drawable, interval);
-      return EGL_TRUE;
-   }
-
    return EGL_TRUE;
 }
 
@@ -921,12 +879,9 @@ dri2_x11_get_msc_rate(_EGLDisplay *display, _EGLSurface *surface,
 static EGLBoolean
 dri2_kopper_swap_interval(_EGLDisplay *disp, _EGLSurface *surf, EGLint interval)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
 
-   /* This can legitimately be null for lavapipe */
-   if (dri2_dpy->kopper)
-      kopperSetSwapInterval(dri2_surf->dri_drawable, interval);
+   kopperSetSwapInterval(dri2_surf->dri_drawable, interval);
 
    return EGL_TRUE;
 }
@@ -957,16 +912,9 @@ dri2_kopper_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
 static EGLint
 dri2_kopper_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surf)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
 
-   /* This can legitimately be null for lavapipe */
-   if (dri2_dpy->kopper)
-      return kopperQueryBufferAge(dri2_surf->dri_drawable);
-   else
-      return driSWRastQueryBufferAge(dri2_surf->dri_drawable);
-
-   return 0;
+   return kopperQueryBufferAge(dri2_surf->dri_drawable);
 }
 
 static EGLint
@@ -1002,7 +950,7 @@ static const struct dri2_egl_display_vtbl dri2_x11_kopper_display_vtbl = {
    .destroy_surface = dri2_x11_destroy_surface,
    .create_image = dri2_create_image_khr,
    .swap_interval = dri2_kopper_swap_interval,
-   .swap_buffers = dri2_x11_swap_buffers,
+   .swap_buffers = dri2_x11_kopper_swap_buffers,
    .swap_buffers_with_damage = dri2_x11_kopper_swap_buffers_with_damage,
    .copy_buffers = dri2_x11_copy_buffers,
    .query_buffer_age = dri2_kopper_query_buffer_age,
@@ -1250,7 +1198,7 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp, bool force_zink)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
-   if (disp->Options.Zink && !disp->Options.ForceSoftware) {
+   if (dri2_dpy->kopper) {
       dri2_dpy->loader_extensions = kopper_loader_extensions;
    } else if (check_xshm(dri2_dpy)) {
       dri2_dpy->loader_extensions = swrast_loader_shm_extensions;
@@ -1264,7 +1212,7 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp, bool force_zink)
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
     */
-   if (disp->Options.Zink)
+   if (dri2_dpy->kopper)
       dri2_dpy->vtbl = &dri2_x11_kopper_display_vtbl;
    else
       dri2_dpy->vtbl = &dri2_x11_swrast_display_vtbl;
