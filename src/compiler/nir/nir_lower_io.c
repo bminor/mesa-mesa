@@ -1038,6 +1038,18 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       (nir->options->support_indirect_outputs >> nir->info.stage) & 0x1 &&
       nir->xfb_info == NULL;
 
+   /* TODO: This is a hack until a better solution is available.
+    * For all shaders except TCS, lower all outputs to temps because:
+    * - there can be output loads (nobody expects those outside of TCS)
+    * - drivers don't expect when an output is only written in control flow
+    *
+    * "has_indirect_outputs = false" causes all outputs to be lowered to temps.
+    * which lowers indirect stores, eliminates output loads, and moves all
+    * output stores to the end or GS emits.
+    */
+   if (nir->info.stage != MESA_SHADER_TESS_CTRL)
+      has_indirect_outputs = false;
+
    /* TODO: Sorting variables by location is required due to some bug
     * in nir_lower_io_vars_to_temporaries. If variables are not sorted,
     * dEQP-GLES31.functional.separate_shader.random.0 fails.
