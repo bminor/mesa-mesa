@@ -4604,7 +4604,7 @@
         "description": "panfrost: Fix incorrect condition in assert",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d2838f3ceb9d4bb9796dec5324264f44d9586426",
         "notes": null
