@@ -605,17 +605,6 @@ v3d_screen_get_compiler_options(struct pipe_screen *pscreen,
                 .has_uclz = true,
                 .divergence_analysis_options =
                        nir_divergence_multiple_workgroup_per_compute_subgroup,
-                /* We don't currently support this in the backend, but that is
-                 * okay because our NIR compiler sets the option
-                 * lower_all_io_to_temps, which will eliminate indirect
-                 * indexing on all input/output variables by translating it to
-                 * indirect indexing on temporary variables instead, which we
-                 * will then lower to scratch. We prefer this over setting this
-                 * to 0, which would cause if-ladder injection to eliminate
-                 * indirect indexing on inputs.
-                 */
-                .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
-                .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
                 /* This will enable loop unrolling in the state tracker so we won't
                  * be able to selectively disable it in backend if it leads to
                  * lower thread counts or TMU spills. Choose a conservative maximum to
