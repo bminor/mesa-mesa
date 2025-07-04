@@ -877,7 +877,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add(HLSQ_UNKNOWN_BE01(CHIP));
    }
 
-   ncrb.add(A6XX_VPC_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.VPC_DBG_ECO_CNTL));
+   ncrb.add(VPC_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.VPC_DBG_ECO_CNTL));
    ncrb.add(GRAS_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.GRAS_DBG_ECO_CNTL));
    if (CHIP == A6XX)
       ncrb.add(HLSQ_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL));
@@ -892,7 +892,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    }
 
    ncrb.add(GRAS_SC_SCREEN_SCISSOR_CNTL(CHIP));
-   ncrb.add(A6XX_VPC_UNKNOWN_9602());
+   ncrb.add(VPC_LB_MODE_CNTL(CHIP));
 
    /* These regs are blocked (CP_PROTECT) on a6xx: */
    if (CHIP >= A7XX) {
@@ -928,7 +928,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    fd_crb crb(cs, 80);
 
    crb.add(SP_GFX_USIZE(CHIP));
-   crb.add(A6XX_SP_UNKNOWN_B182());
+   crb.add(A6XX_TPL1_PS_ROTATION_CNTL());
 
    crb.add(A6XX_RB_RBP_CNTL(.dword = screen->info->a6xx.magic.RB_RBP_CNTL));
    crb.add(A6XX_SP_UNKNOWN_A9A8());
@@ -943,7 +943,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    crb.add(A6XX_VFD_MODE_CNTL(.vertex = true, .instance = true));
    if (CHIP == A6XX)
       crb.add(VPC_UNKNOWN_9107(CHIP));
-   crb.add(A6XX_RB_UNKNOWN_8811(.dword = 0x00000010));
+   crb.add(A6XX_RB_MODE_CNTL(.dword = 0x00000010));
    crb.add(PC_MODE_CNTL(CHIP, .dword=screen->info->a6xx.magic.PC_MODE_CNTL));
    crb.add(GRAS_LRZ_PS_INPUT_CNTL(CHIP));
    crb.add(A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL());
@@ -971,7 +971,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
       crb.add(VPC_RAST_STREAM_CNTL_V2(CHIP));
 
    crb.add(PC_STEREO_RENDERING_CNTL(CHIP));
-   crb.add(A6XX_SP_UNKNOWN_B183());
+   crb.add(A6XX_TPL1_PS_SWIZZLE_CNTL());
    crb.add(GRAS_SU_CONSERVATIVE_RAS_CNTL(CHIP));
    crb.add(GRAS_SU_VS_SIV_CNTL(CHIP));
    crb.add(GRAS_SC_CNTL(CHIP, .ccusinglecachelinesize = 2));

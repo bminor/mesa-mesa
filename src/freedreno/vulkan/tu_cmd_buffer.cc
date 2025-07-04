@@ -1746,7 +1746,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_CHICKEN_BITS,
                         phys_dev->info->a6xx.magic.SP_CHICKEN_BITS);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_GFX_USIZE, 0); // 2 on a740 ???
-   tu_cs_emit_write_reg(cs, REG_A6XX_SP_UNKNOWN_B182, 0);
+   tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_PS_ROTATION_CNTL, 0);
    if (CHIP == A6XX)
       tu_cs_emit_regs(cs, A6XX_HLSQ_SHARED_CONSTS(.enable = false));
    tu_cs_emit_write_reg(cs, REG_A6XX_UCHE_UNKNOWN_0E12,
@@ -1761,11 +1761,11 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
                                             .shared_consts_enable = false));
 
    tu_cs_emit_regs(cs, A6XX_VFD_MODE_CNTL(.vertex = true, .instance = true));
-   tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_8811, 0x00000010);
+   tu_cs_emit_write_reg(cs, REG_A6XX_RB_MODE_CNTL, 0x00000010);
    tu_cs_emit_write_reg(cs, REG_A6XX_PC_MODE_CNTL,
                         phys_dev->info->a6xx.magic.PC_MODE_CNTL);
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_MODE_CNTL, 0);
+   tu_cs_emit_regs(cs, GRAS_MODE_CNTL(CHIP));
 
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_8818, 0);
 
@@ -1781,11 +1781,11 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_88F0, 0);
 
    tu_cs_emit_regs(cs, A6XX_VPC_REPLACE_MODE_CNTL(false));
-   tu_cs_emit_write_reg(cs, REG_A6XX_VPC_ROTATION_CNTL, 0);
+   tu_cs_emit_regs(cs, VPC_ROTATION_CNTL(CHIP));
 
    tu_cs_emit_regs(cs, A6XX_VPC_SO_OVERRIDE(true));
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_SP_UNKNOWN_B183, 0);
+   tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_PS_SWIZZLE_CNTL, 0);
 
    tu_cs_emit_regs(cs, GRAS_SC_SCREEN_SCISSOR_CNTL(CHIP));
    if (CHIP == A6XX) {
@@ -1795,7 +1795,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9210, 0);
       tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9211, 0);
    }
-   tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9602, 0);
+   tu_cs_emit_write_reg(cs, REG_A6XX_VPC_LB_MODE_CNTL, 0);
    tu_cs_emit_regs(cs, PC_CONTEXT_SWITCH_GFX_PREEMPTION_MODE(CHIP));
    tu_cs_emit_regs(cs, A6XX_TPL1_MODE_CNTL(.isammode = ISAMMODE_GL,
                                             .texcoordroundmode = dev->instance->use_tex_coord_round_nearest_even_mode
@@ -1869,13 +1869,13 @@ static void
 tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
 {
    tu_cs_emit_regs(cs,
-                  A7XX_RB_UNKNOWN_8812(0x0));
+                  A7XX_RB_BUFFER_CNTL(0x0));
    tu_cs_emit_regs(cs,
                 A7XX_RB_CCU_DBG_ECO_CNTL(0x0));
 
-   tu_cs_emit_regs(cs, A7XX_GRAS_UNKNOWN_8007(0x0));
+   tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL(0x0));
 
-   tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
+   tu_cs_emit_regs(cs, GRAS_MODE_CNTL(A7XX, 0x2));
    tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
    tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
@@ -2550,14 +2550,24 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    });
 
    if (CHIP == A7XX) {
-      tu_cs_emit_regs(cs,
-                     A7XX_RB_UNKNOWN_8812(0x3ff)); // all buffers in sysmem
+      tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP,
+         .z_sysmem = true,
+         .s_sysmem = true,
+         .rt0_sysmem = true,
+         .rt1_sysmem = true,
+         .rt2_sysmem = true,
+         .rt3_sysmem = true,
+         .rt4_sysmem = true,
+         .rt5_sysmem = true,
+         .rt6_sysmem = true,
+         .rt7_sysmem = true,
+      ));
       tu_cs_emit_regs(cs,
          A7XX_RB_CCU_DBG_ECO_CNTL(cmd->device->physical_device->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
 
-      tu_cs_emit_regs(cs, A7XX_GRAS_UNKNOWN_8007(0x0));
+      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL(0x0));
 
-      tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
+      tu_cs_emit_regs(cs, GRAS_MODE_CNTL(A7XX, 0x2));
       tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
       tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_SYSMEM));

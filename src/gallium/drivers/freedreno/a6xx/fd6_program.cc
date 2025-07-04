@@ -1102,8 +1102,8 @@ emit_fs_inputs(fd_crb &crb, const struct program_builder *b)
 
       crb.add(SP_PS_CNTL_1(CHIP,
          .sysval_regs_count = sysval_regs,
-         .unk8 = 1,
-         .unk9 = 1,
+         .defer_wave_alloc_dis = true,
+         .evict_buf_mode = 1,
       ));
    }
 

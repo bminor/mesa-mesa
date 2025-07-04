@@ -293,7 +293,7 @@ if with_tests
       workdir: dir_source_root
     )
   endforeach
-  foreach gen : ['a6xx', 'a7xx']
+  foreach gen : ['a6xx', 'a7xx', 'a8xx']
     test('checkregs-' + gen,
       checkregs,
       args: gen,

@@ -1055,9 +1055,9 @@ fd7_emit_static_binning_regs(fd_cs &cs)
 {
    fd_ncrb<CHIP> ncrb(cs, 5);
 
-   ncrb.add(RB_UNKNOWN_8812(CHIP, 0x0));
+   ncrb.add(RB_BUFFER_CNTL(CHIP));
    ncrb.add(RB_CCU_DBG_ECO_CNTL(CHIP, 0x0));
-   ncrb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
+   ncrb.add(GRAS_LRZ_CB_CNTL(CHIP, 0x0));
    ncrb.add(GRAS_MODE_CNTL(CHIP, 0x2));
    ncrb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
 }
@@ -2056,9 +2056,20 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
       });
 
       if (CHIP >= A7XX) {
-         crb.add(RB_UNKNOWN_8812(CHIP, 0x3ff)); // all buffers in sysmem
+         crb.add(RB_BUFFER_CNTL(CHIP,
+            .z_sysmem = true,
+            .s_sysmem = true,
+            .rt0_sysmem = true,
+            .rt1_sysmem = true,
+            .rt2_sysmem = true,
+            .rt3_sysmem = true,
+            .rt4_sysmem = true,
+            .rt5_sysmem = true,
+            .rt6_sysmem = true,
+            .rt7_sysmem = true,
+         ));
          crb.add(RB_CCU_DBG_ECO_CNTL(CHIP, batch->ctx->screen->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
-         crb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
+         crb.add(GRAS_LRZ_CB_CNTL(CHIP, 0x0));
       }
 
       /* enable stream-out, with sysmem there is only one pass: */

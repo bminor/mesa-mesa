@@ -1845,9 +1845,11 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
             sysval_regs += 2;
       }
 
-      tu_cs_emit_regs(cs, A7XX_SP_PS_CNTL_1(.sysval_regs_count = sysval_regs,
-                                                 .unk8 = 1,
-                                                 .unk9 = 1));
+      tu_cs_emit_regs(cs, A7XX_SP_PS_CNTL_1(
+         .sysval_regs_count = sysval_regs,
+         .defer_wave_alloc_dis = true,
+         .evict_buf_mode = 1,
+      ));
    }
 
    enum a6xx_threadsize thrsz = fs->info.double_threadsize ? THREAD128 : THREAD64;
@@ -2201,7 +2203,7 @@ tu6_emit_fs(struct tu_cs *cs,
    tu_cs_emit_regs(cs, A6XX_PC_PS_CNTL(.primitiveiden = fs && fs->reads_primid));
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
+      tu_cs_emit_regs(cs, GRAS_MODE_CNTL(CHIP, 0x2));
    }
 
    if (fs) {

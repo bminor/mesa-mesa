@@ -887,7 +887,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_vpc<CHIP>(cs, vs, NULL, NULL, NULL, fs);
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A6XX_GRAS_MODE_CNTL(0x2));
+      tu_cs_emit_regs(cs, GRAS_MODE_CNTL(CHIP, 0x2));
 
       tu_cs_emit_regs(cs, A7XX_SP_RENDER_CNTL(.fs_disable = false));
    }
@@ -1555,7 +1555,18 @@ r3d_setup(struct tu_cmd_buffer *cmd,
       tu_cs_emit_regs(cs, RB_CNTL(CHIP, .buffers_location = BUFFERS_IN_SYSMEM));
 
       if (CHIP >= A7XX) {
-         tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8812(0x3ff));
+         tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP,
+            .z_sysmem = true,
+            .s_sysmem = true,
+            .rt0_sysmem = true,
+            .rt1_sysmem = true,
+            .rt2_sysmem = true,
+            .rt3_sysmem = true,
+            .rt4_sysmem = true,
+            .rt5_sysmem = true,
+            .rt6_sysmem = true,
+            .rt7_sysmem = true,
+         ));
          tu_cs_emit_regs(cs,
             A7XX_RB_CCU_DBG_ECO_CNTL(cmd->device->physical_device->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
       }
@@ -5199,7 +5210,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
                   CP_REG_TO_SCRATCH_0_CNT(1 - 1));
    if (CHIP >= A7XX) {
       tu_cs_emit_pkt7(cs, CP_REG_TO_SCRATCH, 1);
-      tu_cs_emit(cs, CP_REG_TO_SCRATCH_0_REG(REG_A7XX_RB_UNKNOWN_8812) |
+      tu_cs_emit(cs, CP_REG_TO_SCRATCH_0_REG(REG_A7XX_RB_BUFFER_CNTL) |
                      CP_REG_TO_SCRATCH_0_SCRATCH(1) |
                      CP_REG_TO_SCRATCH_0_CNT(1 - 1));
    }
@@ -5251,7 +5262,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
 
    if (CHIP >= A7XX) {
       tu_cs_emit_pkt7(cs, CP_SCRATCH_TO_REG, 1);
-      tu_cs_emit(cs, CP_SCRATCH_TO_REG_0_REG(REG_A7XX_RB_UNKNOWN_8812) |
+      tu_cs_emit(cs, CP_SCRATCH_TO_REG_0_REG(REG_A7XX_RB_BUFFER_CNTL) |
                         CP_SCRATCH_TO_REG_0_SCRATCH(1) |
                         CP_SCRATCH_TO_REG_0_CNT(1 - 1));
    }
