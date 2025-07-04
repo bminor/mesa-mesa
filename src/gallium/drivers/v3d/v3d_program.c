@@ -579,6 +579,9 @@ v3d_setup_shared_key(struct v3d_context *v3d, struct v3d_key *key,
                 if (return_size == 32)
                         key->sampler_is_32b |= (1 << i);
         }
+
+        key->robust_uniform_access = v3d->robust_buffer;
+        key->robust_storage_access = v3d->robust_buffer;
 }
 
 static void

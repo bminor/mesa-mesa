@@ -465,6 +465,7 @@ v3d_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
 
         slab_create_child(&v3d->transfer_pool, &screen->transfer_pool);
 
+        v3d->robust_buffer = flags & PIPE_CONTEXT_ROBUST_BUFFER_ACCESS;
         if (screen->devinfo.has_reset_counter) {
                 pctx->get_device_reset_status = v3d_get_device_reset_status;
                 v3d->global_reset_count = v3d_get_reset_count(v3d, false);

@@ -1,3 +1,4 @@
 EGL_EXT_create_context_robustness support on Panfrost V10+
 GL_ARB_robust_buffer_access_behavior, GL_KHR_robust_buffer_access_behavior and GL_KHR_robustness support on Panfrost
 VK_EXT_mutable_descriptor_type on panvk/v9+
+GL_KHR_robustness on v3d

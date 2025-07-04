@@ -669,6 +669,10 @@ struct v3d_context {
 
         bool active_queries;
 
+        /* Whether a context with robust buffer access should be created.
+         */
+        bool robust_buffer;
+
         /* How many GPU resets happened since the driver was proved, and how
          * many were caused by this context.
          */

@@ -390,6 +390,7 @@ v3d_init_screen_caps(struct v3d_screen *screen)
         caps->max_texture_lod_bias = 16.0f;
 
         caps->device_reset_status_query = screen->devinfo.has_reset_counter;
+        caps->robust_buffer_access_behavior = true;
 }
 
 static bool
