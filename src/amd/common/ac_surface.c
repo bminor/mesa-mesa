@@ -4228,10 +4228,10 @@ uint64_t ac_surface_get_plane_size(const struct radeon_surf *surf,
    }
 }
 
-uint64_t
-ac_surface_addr_from_coord(struct ac_addrlib *addrlib, const struct radeon_info *info,
-                           const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
-                           unsigned level, unsigned x, unsigned y, unsigned layer, bool is_3d)
+static uint64_t
+gfx9_surface_addr_from_coord(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                             const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                             unsigned level, unsigned x, unsigned y, unsigned layer, bool is_3d)
 {
    /* Only implemented for GFX9+ */
    assert(info->gfx_level >= GFX9);
@@ -4257,6 +4257,46 @@ ac_surface_addr_from_coord(struct ac_addrlib *addrlib, const struct radeon_info 
    output.size = sizeof(ADDR2_COMPUTE_SURFACE_ADDRFROMCOORD_OUTPUT);
    Addr2ComputeSurfaceAddrFromCoord(addrlib->handle, &input, &output);
    return output.addr;
+}
+
+static uint64_t
+gfx12_surface_addr_from_coord(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                              const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                              unsigned level, unsigned x, unsigned y, unsigned layer, bool is_3d)
+{
+   ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT input = {0};
+   input.size = sizeof(ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_INPUT);
+   input.slice = layer;
+   input.mipId = level;
+   input.pitchInElement = surf->u.gfx9.pitch[level];
+   input.unAlignedDims.width = DIV_ROUND_UP(surf_info->width, surf->blk_w);
+   input.unAlignedDims.height = DIV_ROUND_UP(surf_info->height, surf->blk_h);
+   input.unAlignedDims.depth = is_3d ? surf_info->depth : surf_info->array_size;
+   input.numMipLevels = surf_info->levels;
+   input.numSamples = surf_info->samples;
+   input.swizzleMode = surf->u.gfx9.swizzle_mode;
+   input.resourceType = (AddrResourceType)surf->u.gfx9.resource_type;
+   input.bpp = surf->bpe * 8;
+   input.x = x;
+   input.y = y;
+
+   ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_OUTPUT output = {0};
+   output.size = sizeof(ADDR3_COMPUTE_SURFACE_ADDRFROMCOORD_OUTPUT);
+   Addr3ComputeSurfaceAddrFromCoord(addrlib->handle, &input, &output);
+   return output.addr;
+}
+
+uint64_t
+ac_surface_addr_from_coord(struct ac_addrlib *addrlib, const struct radeon_info *info,
+                           const struct radeon_surf *surf, const struct ac_surf_info *surf_info,
+                           unsigned level, unsigned x, unsigned y, unsigned layer, bool is_3d)
+{
+   if (info->gfx_level >= GFX12)
+      return gfx12_surface_addr_from_coord(addrlib, info, surf, surf_info, level, x, y, layer, is_3d);
+   else if (info->gfx_level >= GFX9)
+      return gfx9_surface_addr_from_coord(addrlib, info, surf, surf_info, level, x, y, layer, is_3d);
+   else
+      unreachable("invalid gfx_level");
 }
 
 static void
