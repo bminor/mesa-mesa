@@ -1292,7 +1292,6 @@ preprocess_shader(const struct gl_constants *consts,
    if (prog->info.stage == MESA_SHADER_FRAGMENT && consts->HasFBFetch) {
       NIR_PASS(_, prog->nir, gl_nir_lower_blend_equation_advanced,
                  exts->KHR_blend_equation_advanced_coherent);
-      nir_lower_global_vars_to_local(prog->nir);
    }
 
    /* Set the next shader stage hint for VS and TES. */
