@@ -1151,15 +1151,14 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       unsigned h_in_mb = align(src_img->vk.extent.height, ANV_MB_HEIGHT) / ANV_MB_HEIGHT;
 
       uint8_t slice_header_data[256] = { 0, };
-      size_t slice_header_data_len_in_bytes = 0;
+      size_t slice_header_data_len_in_bits = 0;
       vk_video_encode_h264_slice_header(frame_info->pStdPictureInfo,
                                         sps,
                                         pps,
                                         slice_header,
                                         slice_qp - (pps->pic_init_qp_minus26 + 26),
-                                        &slice_header_data_len_in_bytes,
+                                        &slice_header_data_len_in_bits,
                                         &slice_header_data);
-      uint32_t slice_header_data_len_in_bits = slice_header_data_len_in_bytes * 8;
 
       anv_batch_emit(&cmd->batch, GENX(MFX_AVC_SLICE_STATE), avc_slice) {
          avc_slice.SliceType = slice_type;

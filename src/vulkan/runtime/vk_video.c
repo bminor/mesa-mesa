@@ -2500,20 +2500,34 @@ vk_video_encode_h264_slice_header(const StdVideoEncodeH264PictureInfo *pic_info,
       }
    }
 
+   uint32_t bits_written = 0;
+
    if (pps->flags.entropy_coding_mode_flag) {
+      /* CABAC */
       int left = vl_bitstream_get_num_bits_for_byte_align(&enc);
       int val = (1 << left) - 1;
-
       if (left)
          vl_bitstream_put_bits(&enc, left, val);
 
-      ASSERTED bool is_aligned = vl_bitstream_is_byte_aligned(&enc);
-      assert(is_aligned);
+      bits_written = vl_bitstream_get_byte_count(&enc) * 8;
+   } else {
+      /* CAVLC */
+      uint32_t bits_in_last_byte = enc.bits_to_go == 32 ? 0 : 32 - enc.bits_to_go;
+      uint32_t bytes_written = enc.offset;
+      bits_written = bytes_written * 8 + bits_in_last_byte;
+
+      /* Just padding to be aligned for flush, doesn't matter for the slice header.
+       */
+      if (!vl_bitstream_is_byte_aligned(&enc)) {
+         uint32_t left = vl_bitstream_get_num_bits_for_byte_align(&enc);
+
+         if (left)
+            vl_bitstream_put_bits(&enc, left, 0);
+      }
    }
 
-   vl_bitstream_rbsp_trailing(&enc);
    vl_bitstream_flush(&enc);
-   *data_size_ptr += vl_bitstream_get_byte_count(&enc);
+   *data_size_ptr += bits_written;
    vl_bitstream_encoder_free(&enc);
 
    return;
