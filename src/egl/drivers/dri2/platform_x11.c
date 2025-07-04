@@ -1194,17 +1194,11 @@ platform_x11_finalize(_EGLDisplay *disp, bool force_zink)
 }
 
 static EGLBoolean
-dri2_initialize_x11_swrast(_EGLDisplay *disp, bool force_zink)
+dri2_initialize_x11_kopper(_EGLDisplay *disp, bool force_zink)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
-   if (dri2_dpy->kopper) {
-      dri2_dpy->loader_extensions = kopper_loader_extensions;
-   } else if (check_xshm(dri2_dpy)) {
-      dri2_dpy->loader_extensions = swrast_loader_shm_extensions;
-   } else {
-      dri2_dpy->loader_extensions = swrast_loader_extensions;
-   }
+   dri2_dpy->loader_extensions = kopper_loader_extensions;
 
    if (!platform_x11_finalize(disp, force_zink))
       return EGL_FALSE;
@@ -1212,10 +1206,29 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp, bool force_zink)
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
     */
-   if (dri2_dpy->kopper)
-      dri2_dpy->vtbl = &dri2_x11_kopper_display_vtbl;
-   else
-      dri2_dpy->vtbl = &dri2_x11_swrast_display_vtbl;
+   dri2_dpy->vtbl = &dri2_x11_kopper_display_vtbl;
+
+   return EGL_TRUE;
+}
+
+static EGLBoolean
+dri2_initialize_x11_swrast(_EGLDisplay *disp)
+{
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+
+   if (check_xshm(dri2_dpy)) {
+      dri2_dpy->loader_extensions = swrast_loader_shm_extensions;
+   } else {
+      dri2_dpy->loader_extensions = swrast_loader_extensions;
+   }
+
+   if (!platform_x11_finalize(disp, false))
+      return EGL_FALSE;
+
+   /* Fill vtbl last to prevent accidentally calling virtual function during
+    * initialization.
+    */
+   dri2_dpy->vtbl = &dri2_x11_swrast_display_vtbl;
 
    return EGL_TRUE;
 }
@@ -1302,8 +1315,11 @@ dri2_initialize_x11(_EGLDisplay *disp)
 #endif
    dri2_detect_swrast(disp);
 
-   if (disp->Options.ForceSoftware || dri2_dpy->kopper)
-      return dri2_initialize_x11_swrast(disp, force_zink);
+   if (dri2_dpy->kopper)
+      return dri2_initialize_x11_kopper(disp, force_zink);
+
+   if (disp->Options.ForceSoftware)
+      return dri2_initialize_x11_swrast(disp);
 
 #ifdef HAVE_LIBDRM
    if (dri2_initialize_x11_dri3(disp))
