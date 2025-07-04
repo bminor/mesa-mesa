@@ -2614,7 +2614,6 @@ vtn_emit_make_visible_barrier(struct vtn_builder *b, SpvMemoryAccessMask access,
       return;
 
    vtn_emit_memory_barrier(b, scope, SpvMemorySemanticsMakeVisibleMask |
-                                     SpvMemorySemanticsAcquireMask |
                                      vtn_mode_to_memory_semantics(mode));
 }
 
@@ -2626,7 +2625,6 @@ vtn_emit_make_available_barrier(struct vtn_builder *b, SpvMemoryAccessMask acces
       return;
 
    vtn_emit_memory_barrier(b, scope, SpvMemorySemanticsMakeAvailableMask |
-                                     SpvMemorySemanticsReleaseMask |
                                      vtn_mode_to_memory_semantics(mode));
 }
 
