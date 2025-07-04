@@ -106,3 +106,68 @@ radv_CopyMemoryToImageEXT(VkDevice _device, const VkCopyMemoryToImageInfo *pCopy
 
    return VK_SUCCESS;
 }
+
+VKAPI_ATTR VkResult VKAPI_CALL
+radv_CopyImageToImageEXT(VkDevice _device, const VkCopyImageToImageInfo *pCopyImageToImageInfo)
+{
+   VkResult result = VK_SUCCESS;
+
+   for (uint32_t i = 0; i < pCopyImageToImageInfo->regionCount; i++) {
+      const VkImageCopy2 *copy = &pCopyImageToImageInfo->pRegions[i];
+      VK_FROM_HANDLE(radv_image, src_image, pCopyImageToImageInfo->srcImage);
+      void *host_ptr;
+
+      /* TODO: Avoid using a staging buffer for the copy. */
+      host_ptr = malloc(src_image->size);
+      if (!host_ptr)
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+      const VkCopyImageToMemoryInfo image_to_memory = {
+         .sType = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_MEMORY_INFO,
+         .flags = pCopyImageToImageInfo->flags,
+         .srcImage = pCopyImageToImageInfo->srcImage,
+         .srcImageLayout = pCopyImageToImageInfo->srcImageLayout,
+         .regionCount = 1,
+         .pRegions =
+            &(VkImageToMemoryCopy){
+               .sType = VK_STRUCTURE_TYPE_IMAGE_TO_MEMORY_COPY,
+               .pHostPointer = host_ptr,
+               .memoryRowLength = 0,
+               .memoryImageHeight = 0,
+               .imageSubresource = copy->srcSubresource,
+               .imageOffset = copy->srcOffset,
+               .imageExtent = copy->extent,
+            },
+      };
+
+      result = radv_CopyImageToMemoryEXT(_device, &image_to_memory);
+      if (result == VK_SUCCESS) {
+         const VkCopyMemoryToImageInfo memory_to_image = {
+            .sType = VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO,
+            .flags = pCopyImageToImageInfo->flags,
+            .dstImage = pCopyImageToImageInfo->dstImage,
+            .dstImageLayout = pCopyImageToImageInfo->dstImageLayout,
+            .regionCount = 1,
+            .pRegions =
+               &(VkMemoryToImageCopy){
+                  .sType = VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY,
+                  .pHostPointer = host_ptr,
+                  .memoryRowLength = 0,
+                  .memoryImageHeight = 0,
+                  .imageSubresource = copy->dstSubresource,
+                  .imageOffset = copy->dstOffset,
+                  .imageExtent = copy->extent,
+               },
+         };
+
+         result = radv_CopyMemoryToImageEXT(_device, &memory_to_image);
+      }
+
+      free(host_ptr);
+
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   return VK_SUCCESS;
+}
