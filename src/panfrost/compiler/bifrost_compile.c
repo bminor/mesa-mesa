@@ -474,8 +474,8 @@ bi_is_imm_var_desc_handle(bi_builder *b, nir_intrinsic_instr *instr,
    return bi_is_imm_desc_handle(b, instr, immediate, max);
 }
 
-static void bi_make_vec_to(bi_builder *b, bi_index final_dst, bi_index *src,
-                           unsigned *channel, unsigned count, unsigned bitsize);
+bi_instr *bi_make_vec_to(bi_builder *b, bi_index final_dst, bi_index *src,
+                         unsigned *channel, unsigned count, unsigned bitsize);
 
 /* Bifrost's load instructions lack a component offset despite operating in
  * terms of vec4 slots. Usually I/O vectorization avoids nonzero components,
@@ -806,7 +806,7 @@ bi_make_vec16_helper(bi_builder *b, bi_index *src, unsigned *channel,
       return bi_mkvec_v2i16(b, h0, h1);
 }
 
-static void
+bi_instr *
 bi_make_vec_to(bi_builder *b, bi_index dst, bi_index *src, unsigned *channel,
                unsigned count, unsigned bitsize)
 {
@@ -831,7 +831,7 @@ bi_make_vec_to(bi_builder *b, bi_index dst, bi_index *src, unsigned *channel,
          srcs[i >> 2] = bi_make_vec8_helper(b, src + i, channel_offset, rem);
    }
 
-   bi_emit_collect_to(b, dst, srcs, DIV_ROUND_UP(count, chan_per_word));
+   return bi_emit_collect_to(b, dst, srcs, DIV_ROUND_UP(count, chan_per_word));
 }
 
 static inline bi_instr *
