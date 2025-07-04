@@ -1905,6 +1905,55 @@ static LLVMValueRef get_global_address(struct ac_nir_context *ctx,
    return LLVMBuildPointerCast(ctx->ac.builder, addr, ptr_type, "");
 }
 
+static LLVMValueRef get_memory_addr(struct ac_nir_context *ctx, nir_intrinsic_instr *intr,
+                               LLVMTypeRef type)
+{
+   switch (intr->intrinsic) {
+   case nir_intrinsic_store_global_amd:
+      return get_global_address(ctx, intr, type);
+   case nir_intrinsic_store_shared: {
+      LLVMValueRef ptr = get_shared_mem_ptr(ctx, intr->src[1], nir_intrinsic_base(intr));
+      /* Cast the pointer to the type of the value. */
+      return LLVMBuildPointerCast(ctx->ac.builder, ptr,
+                                  LLVMPointerType(type,
+                                                  LLVMGetPointerAddressSpace(LLVMTypeOf(ptr))), "");
+   }
+   default:
+      unreachable("unexpected store intrinsic");
+   }
+}
+
+static void set_mem_op_alignment(LLVMValueRef instr, nir_intrinsic_instr *intr, nir_def *type)
+{
+   unsigned align = nir_intrinsic_align(intr);
+   unsigned pot_size = (intr->src[0].ssa->bit_size / 8) *
+                       (1 << util_logbase2(intr->src[0].ssa->num_components));
+   /* The alignment must be at most the stored size. */
+   LLVMSetAlignment(instr, MIN2(align, pot_size));
+}
+
+static void set_coherent_volatile(LLVMValueRef instr, nir_intrinsic_instr *intr)
+{
+   if ((intr->intrinsic == nir_intrinsic_load_global ||
+        intr->intrinsic == nir_intrinsic_store_global) &&
+       nir_intrinsic_access(intr) & (ACCESS_COHERENT | ACCESS_VOLATILE))
+      LLVMSetOrdering(instr, LLVMAtomicOrderingMonotonic);
+}
+
+static void visit_store(struct ac_nir_context *ctx, nir_intrinsic_instr *intr)
+{
+   LLVMBuilderRef builder = ctx->ac.builder;
+   LLVMValueRef data = get_src(ctx, intr->src[0]);
+   LLVMValueRef ptr = get_memory_addr(ctx, intr, LLVMTypeOf(data));
+   unsigned writemask = nir_intrinsic_write_mask(intr);
+   /* nir_opt_shrink_stores should split stores with holes. */
+   assert(writemask == BITFIELD_MASK(intr->src[0].ssa->num_components));
+
+   LLVMValueRef store = LLVMBuildStore(builder, data, ptr);
+   set_mem_op_alignment(store, intr, intr->src[0].ssa);
+   set_coherent_volatile(store, intr);
+}
+
 static LLVMValueRef visit_load_global(struct ac_nir_context *ctx,
                                       nir_intrinsic_instr *instr)
 {
@@ -1927,28 +1976,6 @@ static LLVMValueRef visit_load_global(struct ac_nir_context *ctx,
       LLVMSetOrdering(val, LLVMAtomicOrderingMonotonic);
 
    return val;
-}
-
-static void visit_store_global(struct ac_nir_context *ctx,
-				     nir_intrinsic_instr *instr)
-{
-   LLVMValueRef data = get_src(ctx, instr->src[0]);
-   LLVMTypeRef type = LLVMTypeOf(data);
-   LLVMValueRef addr = get_global_address(ctx, instr, type);
-   LLVMValueRef val;
-   /* nir_opt_shrink_stores should be enough to simplify the writemask. Store writemasks should
-    * have no holes.
-    */
-   assert(nir_intrinsic_write_mask(instr) == BITFIELD_MASK(instr->src[0].ssa->num_components));
-
-   val = LLVMBuildStore(ctx->ac.builder, data, addr);
-
-   uint32_t align = nir_intrinsic_align(instr);
-   uint32_t size = ac_get_type_size(type);
-   LLVMSetAlignment(val, MIN2(align, 1 << (ffs(size) - 1)));
-
-   if (nir_intrinsic_access(instr) & (ACCESS_COHERENT | ACCESS_VOLATILE))
-      LLVMSetOrdering(val, LLVMAtomicOrderingMonotonic);
 }
 
 static LLVMValueRef visit_global_atomic(struct ac_nir_context *ctx,
@@ -2529,28 +2556,6 @@ static LLVMValueRef visit_load_shared(struct ac_nir_context *ctx, const nir_intr
    return LLVMBuildBitCast(ctx->ac.builder, ret, get_def_type(ctx, &instr->def), "");
 }
 
-static void visit_store_shared(struct ac_nir_context *ctx, const nir_intrinsic_instr *instr)
-{
-   LLVMValueRef derived_ptr, data, index;
-   LLVMBuilderRef builder = ctx->ac.builder;
-
-   unsigned const_off = nir_intrinsic_base(instr);
-   LLVMTypeRef elem_type = LLVMIntTypeInContext(ctx->ac.context, instr->src[0].ssa->bit_size);
-   LLVMValueRef ptr = get_shared_mem_ptr(ctx, instr->src[1], const_off);
-   LLVMValueRef src = get_src(ctx, instr->src[0]);
-
-   int writemask = nir_intrinsic_write_mask(instr);
-   for (int chan = 0; chan < 16; chan++) {
-      if (!(writemask & (1 << chan))) {
-         continue;
-      }
-      data = ac_llvm_extract_elem(&ctx->ac, src, chan);
-      index = LLVMConstInt(ctx->ac.i32, chan, 0);
-      derived_ptr = LLVMBuildGEP2(builder, elem_type, ptr, &index, 1, "");
-      LLVMBuildStore(builder, data, derived_ptr);
-   }
-}
-
 static LLVMValueRef visit_load_shared2_amd(struct ac_nir_context *ctx,
                                            const nir_intrinsic_instr *instr)
 {
@@ -2813,7 +2818,8 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       result = visit_load_global(ctx, instr);
       break;
    case nir_intrinsic_store_global_amd:
-      visit_store_global(ctx, instr);
+   case nir_intrinsic_store_shared:
+      visit_store(ctx, instr);
       break;
    case nir_intrinsic_global_atomic_amd:
    case nir_intrinsic_global_atomic_swap_amd:
@@ -2837,9 +2843,6 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_load_shared:
       result = visit_load_shared(ctx, instr);
-      break;
-   case nir_intrinsic_store_shared:
-      visit_store_shared(ctx, instr);
       break;
    case nir_intrinsic_load_shared2_amd:
       result = visit_load_shared2_amd(ctx, instr);
