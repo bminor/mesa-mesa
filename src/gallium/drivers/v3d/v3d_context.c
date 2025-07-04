@@ -366,6 +366,38 @@ v3d_get_sample_position(struct pipe_context *pctx,
         }
 }
 
+static uint32_t
+v3d_get_reset_count(struct v3d_context *v3d, bool per_context)
+{
+        struct drm_v3d_get_param reset_counter = {
+                .param = per_context ? DRM_V3D_PARAM_CONTEXT_RESET_COUNTER :
+                                       DRM_V3D_PARAM_GLOBAL_RESET_COUNTER,
+        };
+        ASSERTED int ret =
+                v3d_ioctl(v3d->fd, DRM_IOCTL_V3D_GET_PARAM, &reset_counter);
+        assert(!ret);
+
+        return reset_counter.value;
+}
+
+static enum pipe_reset_status
+v3d_get_device_reset_status(struct pipe_context *pctx)
+{
+        struct v3d_context *v3d = v3d_context(pctx);
+
+        uint32_t global_reset_count = v3d_get_reset_count(v3d, false);
+        if (global_reset_count == v3d->global_reset_count)
+                return PIPE_NO_RESET;
+        v3d->global_reset_count = global_reset_count;
+
+        uint32_t context_reset_count = v3d_get_reset_count(v3d, true);
+        if (context_reset_count == v3d->context_reset_count)
+                return PIPE_INNOCENT_CONTEXT_RESET;
+        v3d->context_reset_count = context_reset_count;
+
+        return PIPE_GUILTY_CONTEXT_RESET;
+}
+
 bool
 v3d_render_condition_check(struct v3d_context *v3d)
 {
@@ -432,6 +464,12 @@ v3d_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
         v3d->fd = screen->fd;
 
         slab_create_child(&v3d->transfer_pool, &screen->transfer_pool);
+
+        if (screen->devinfo.has_reset_counter) {
+                pctx->get_device_reset_status = v3d_get_device_reset_status;
+                v3d->global_reset_count = v3d_get_reset_count(v3d, false);
+                v3d->context_reset_count = v3d_get_reset_count(v3d, true);
+        }
 
         v3d->uploader = u_upload_create_default(&v3d->base);
         v3d->base.stream_uploader = v3d->uploader;

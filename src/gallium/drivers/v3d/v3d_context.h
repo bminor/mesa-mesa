@@ -669,6 +669,12 @@ struct v3d_context {
 
         bool active_queries;
 
+        /* How many GPU resets happened since the driver was proved, and how
+         * many were caused by this context.
+         */
+        uint32_t global_reset_count;
+        uint32_t context_reset_count;
+
         /**
          * If a compute job writes a resource read by a non-compute stage we
          * should sync on the last compute job.
