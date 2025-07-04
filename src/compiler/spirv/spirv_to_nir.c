@@ -1194,6 +1194,13 @@ vtn_type_contains_block(struct vtn_builder *b, struct vtn_type *type)
    }
 }
 
+bool
+vtn_type_is_block_array(struct vtn_builder *b, struct vtn_type *type)
+{
+   return type->base_type == vtn_base_type_array &&
+          vtn_type_contains_block(b, type->array_element);
+}
+
 /** Returns true if two types are "compatible", i.e. you can do an OpLoad,
  * OpStore, or OpCopyMemory between them without breaking anything.
  * Technically, the SPIR-V rules require the exact same type ID but this lets

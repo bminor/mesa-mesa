@@ -414,11 +414,19 @@ vtn_pointer_dereference(struct vtn_builder *b,
                                            desc_index, desc_arr_idx);
       }
 
-      if (idx == deref_chain->length) {
-         /* The entire deref was consumed in finding the block index.  Return
-          * a pointer which just has a block index and a later access chain
-          * will dereference deeper.
-          */
+      /* For acceleration structures, this is the end of the line.  We leave
+       * them as a desc_index pointer and do the descriptor load when we see
+       * the OpLoad on the acceleration structure pointer.
+       *
+       * If we got here and we are still a block array then we also need to
+       * return a desc_index pointer.  We leave loading the descriptor to some
+       * later access chain when it hits the block type.
+       */
+      if (base->mode == vtn_variable_mode_accel_struct ||
+          vtn_type_is_block_array(b, type)) {
+         /* This has to be the end of the access chain */
+         vtn_assert(idx == deref_chain->length);
+
          struct vtn_pointer *ptr = vtn_zalloc(b, struct vtn_pointer);
          ptr->type = vtn_create_internal_pointer_type(b, base->type, type);
          ptr->mode = base->mode;
@@ -427,9 +435,8 @@ vtn_pointer_dereference(struct vtn_builder *b,
          return ptr;
       }
 
-      /* If we got here, there's more access chain to handle and we have the
-       * final block index.  Insert a descriptor load and cast to a deref to
-       * start the deref chain.
+      /* For block types, we just hit the end of the array of blocks and we
+       * can go ahead and load the descriptor and cast it to a deref.
        */
       nir_def *desc = vtn_descriptor_load(b, base->mode, desc_index);
 
@@ -1952,7 +1959,7 @@ vtn_pointer_ssa_is_desc_index(struct vtn_builder *b,
       return false;
 
    return vtn_pointer_is_external_block(b, ptr) &&
-          vtn_type_contains_block(b, ptr->type->pointed);
+          vtn_type_is_block_array(b, ptr->type->pointed);
 }
 
 nir_def *
