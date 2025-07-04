@@ -311,14 +311,10 @@ void
 dri2_destroy_image(struct dri_image *img)
 {
    const __DRIimageLoaderExtension *imgLoader = img->screen->image.loader;
-   const __DRIdri2LoaderExtension *dri2Loader = img->screen->dri2.loader;
 
    if (imgLoader && imgLoader->base.version >= 4 &&
          imgLoader->destroyLoaderImageState) {
       imgLoader->destroyLoaderImageState(img->loader_private);
-   } else if (dri2Loader && dri2Loader->base.version >= 5 &&
-         dri2Loader->destroyLoaderImageState) {
-      dri2Loader->destroyLoaderImageState(img->loader_private);
    }
 
    pipe_resource_reference(&img->texture, NULL);

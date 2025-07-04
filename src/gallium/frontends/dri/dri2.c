@@ -102,67 +102,6 @@ dri_invalidate_drawable(struct dri_drawable *drawable)
    p_atomic_inc(&drawable->base.stamp);
 }
 
-/**
- * Retrieve __DRIbuffer from the DRI loader.
- */
-static __DRIbuffer *
-dri2_drawable_get_buffers(struct dri_drawable *drawable,
-                          const enum st_attachment_type *atts,
-                          unsigned *count)
-{
-   const __DRIdri2LoaderExtension *loader = drawable->screen->dri2.loader;
-   __DRIbuffer *buffers;
-   int num_buffers;
-   unsigned attachments[__DRI_BUFFER_COUNT];
-   unsigned num_attachments, i;
-
-   assert(loader);
-   assert(*count <= __DRI_BUFFER_COUNT);
-
-   num_attachments = 0;
-
-   /* for Xserver 1.6.0 (DRI2 version 1) we always need to ask for the front */
-   attachments[num_attachments++] = __DRI_BUFFER_FRONT_LEFT;
-
-   for (i = 0; i < *count; i++) {
-      enum pipe_format format;
-      unsigned bind;
-      int att;
-
-      dri_drawable_get_format(drawable, atts[i], &format, &bind);
-      if (format == PIPE_FORMAT_NONE)
-         continue;
-
-      switch (atts[i]) {
-      case ST_ATTACHMENT_FRONT_LEFT:
-         continue;
-      case ST_ATTACHMENT_BACK_LEFT:
-         att = __DRI_BUFFER_BACK_LEFT;
-         break;
-      case ST_ATTACHMENT_FRONT_RIGHT:
-         att = __DRI_BUFFER_FRONT_RIGHT;
-         break;
-      case ST_ATTACHMENT_BACK_RIGHT:
-         att = __DRI_BUFFER_BACK_RIGHT;
-         break;
-      default:
-         continue;
-      }
-
-      attachments[num_attachments++] = att;
-   }
-
-   buffers = loader->getBuffers(drawable,
-         &drawable->w, &drawable->h,
-         attachments, num_attachments,
-         &num_buffers, drawable->loaderPrivate);
-
-   if (buffers)
-      *count = num_buffers;
-
-   return buffers;
-}
-
 bool
 dri_image_drawable_get_buffers(struct dri_drawable *drawable,
                                struct __DRIimageList *images,
@@ -253,16 +192,10 @@ dri2_allocate_textures(struct dri_context *ctx,
    struct dri_screen *screen = drawable->screen;
    struct pipe_resource templ;
    bool alloc_depthstencil = false;
-   unsigned i, j, bind;
+   unsigned i, j;
    const __DRIimageLoaderExtension *image = screen->image.loader;
    /* Image specific variables */
    struct __DRIimageList images;
-   /* Dri2 specific variables */
-   __DRIbuffer *buffers = NULL;
-   struct winsys_handle whandle;
-   unsigned num_buffers = statts_count;
-
-   assert(num_buffers <= __DRI_BUFFER_COUNT);
 
    /* Wait for glthread to finish because we can't use pipe_context from
     * multiple threads.
@@ -270,20 +203,10 @@ dri2_allocate_textures(struct dri_context *ctx,
    _mesa_glthread_finish(ctx->st->ctx);
 
    /* First get the buffers from the loader */
-   if (image) {
-      if (!dri_image_drawable_get_buffers(drawable, &images,
-                                          statts, statts_count))
-         return;
-   }
-   else {
-      buffers = dri2_drawable_get_buffers(drawable, statts, &num_buffers);
-      if (!buffers || (drawable->old_num == num_buffers &&
-                       drawable->old_w == drawable->w &&
-                       drawable->old_h == drawable->h &&
-                       memcmp(drawable->old, buffers,
-                              sizeof(__DRIbuffer) * num_buffers) == 0))
-         return;
-   }
+   assert(image);
+   if (!dri_image_drawable_get_buffers(drawable, &images,
+                                       statts, statts_count))
+      return;
 
    /* Second clean useless resources*/
 
@@ -339,102 +262,51 @@ dri2_allocate_textures(struct dri_context *ctx,
    templ.depth0 = 1;
    templ.array_size = 1;
 
-   if (image) {
-      if (images.image_mask & __DRI_IMAGE_BUFFER_FRONT) {
-         struct pipe_resource **buf =
-            &drawable->textures[ST_ATTACHMENT_FRONT_LEFT];
-         struct pipe_resource *texture = images.front->texture;
+   if (images.image_mask & __DRI_IMAGE_BUFFER_FRONT) {
+      struct pipe_resource **buf =
+         &drawable->textures[ST_ATTACHMENT_FRONT_LEFT];
+      struct pipe_resource *texture = images.front->texture;
 
-         drawable->w = texture->width0;
-         drawable->h = texture->height0;
+      drawable->w = texture->width0;
+      drawable->h = texture->height0;
 
-         pipe_resource_reference(buf, texture);
-         dri_image_fence_sync(ctx, images.front);
-      }
-
-      if (images.image_mask & __DRI_IMAGE_BUFFER_BACK) {
-         struct pipe_resource **buf =
-            &drawable->textures[ST_ATTACHMENT_BACK_LEFT];
-         struct pipe_resource *texture = images.back->texture;
-
-         drawable->w = texture->width0;
-         drawable->h = texture->height0;
-
-         pipe_resource_reference(buf, texture);
-         dri_image_fence_sync(ctx, images.back);
-      }
-
-      if (images.image_mask & __DRI_IMAGE_BUFFER_SHARED) {
-         struct pipe_resource **buf =
-            &drawable->textures[ST_ATTACHMENT_BACK_LEFT];
-         struct pipe_resource *texture = images.back->texture;
-
-         drawable->w = texture->width0;
-         drawable->h = texture->height0;
-
-         pipe_resource_reference(buf, texture);
-         dri_image_fence_sync(ctx, images.back);
-
-         ctx->is_shared_buffer_bound = true;
-      } else {
-         ctx->is_shared_buffer_bound = false;
-      }
-
-      /* Note: if there is both a back and a front buffer,
-       * then they have the same size.
-       */
-      templ.width0 = drawable->w;
-      templ.height0 = drawable->h;
+      pipe_resource_reference(buf, texture);
+      dri_image_fence_sync(ctx, images.front);
    }
-   else {
-      memset(&whandle, 0, sizeof(whandle));
 
-      /* Process DRI-provided buffers and get pipe_resources. */
-      for (i = 0; i < num_buffers; i++) {
-         __DRIbuffer *buf = &buffers[i];
-         enum st_attachment_type statt;
-         enum pipe_format format;
+   if (images.image_mask & __DRI_IMAGE_BUFFER_BACK) {
+      struct pipe_resource **buf =
+         &drawable->textures[ST_ATTACHMENT_BACK_LEFT];
+      struct pipe_resource *texture = images.back->texture;
 
-         switch (buf->attachment) {
-         case __DRI_BUFFER_FRONT_LEFT:
-            continue; /* invalid attachment */
-            FALLTHROUGH;
-         case __DRI_BUFFER_FAKE_FRONT_LEFT:
-            statt = ST_ATTACHMENT_FRONT_LEFT;
-            break;
-         case __DRI_BUFFER_BACK_LEFT:
-            statt = ST_ATTACHMENT_BACK_LEFT;
-            break;
-         default:
-            continue; /* invalid attachment */
-         }
+      drawable->w = texture->width0;
+      drawable->h = texture->height0;
 
-         dri_drawable_get_format(drawable, statt, &format, &bind);
-         if (format == PIPE_FORMAT_NONE)
-            continue;
-
-         /* dri2_drawable_get_buffers has already filled dri_drawable->w
-          * and dri_drawable->h */
-         templ.width0 = drawable->w;
-         templ.height0 = drawable->h;
-         templ.format = format;
-         templ.bind = bind;
-         whandle.handle = buf->name;
-         whandle.stride = buf->pitch;
-         whandle.offset = 0;
-         whandle.format = format;
-         whandle.modifier = DRM_FORMAT_MOD_INVALID;
-         if (screen->can_share_buffer)
-            whandle.type = WINSYS_HANDLE_TYPE_SHARED;
-         else
-            whandle.type = WINSYS_HANDLE_TYPE_KMS;
-         drawable->textures[statt] =
-            screen->base.screen->resource_from_handle(screen->base.screen,
-                  &templ, &whandle,
-                  PIPE_HANDLE_USAGE_EXPLICIT_FLUSH);
-         assert(drawable->textures[statt]);
-      }
+      pipe_resource_reference(buf, texture);
+      dri_image_fence_sync(ctx, images.back);
    }
+
+   if (images.image_mask & __DRI_IMAGE_BUFFER_SHARED) {
+      struct pipe_resource **buf =
+         &drawable->textures[ST_ATTACHMENT_BACK_LEFT];
+      struct pipe_resource *texture = images.back->texture;
+
+      drawable->w = texture->width0;
+      drawable->h = texture->height0;
+
+      pipe_resource_reference(buf, texture);
+      dri_image_fence_sync(ctx, images.back);
+
+      ctx->is_shared_buffer_bound = true;
+   } else {
+      ctx->is_shared_buffer_bound = false;
+   }
+
+   /* Note: if there is both a back and a front buffer,
+    * then they have the same size.
+    */
+   templ.width0 = drawable->w;
+   templ.height0 = drawable->h;
 
    /* Allocate private MSAA colorbuffers. */
    if (drawable->stvis.samples > 1) {
@@ -528,20 +400,6 @@ dri2_allocate_textures(struct dri_context *ctx,
          pipe_resource_reference(&drawable->textures[statt], NULL);
       }
    }
-
-   /* For DRI2, we may get the same buffers again from the server.
-    * To prevent useless imports of gem names, drawable->old* is used
-    * to bypass the import if we get the same buffers. This doesn't apply
-    * to DRI3/Wayland, users of image.loader, since the buffer is managed
-    * by the client (no import), and the back buffer is going to change
-    * at every redraw.
-    */
-   if (!image) {
-      drawable->old_num = num_buffers;
-      drawable->old_w = drawable->w;
-      drawable->old_h = drawable->h;
-      memcpy(drawable->old, buffers, sizeof(__DRIbuffer) * num_buffers);
-   }
 }
 
 static bool
@@ -550,7 +408,6 @@ dri2_flush_frontbuffer(struct dri_context *ctx,
                        enum st_attachment_type statt)
 {
    const __DRIimageLoaderExtension *image = drawable->screen->image.loader;
-   const __DRIdri2LoaderExtension *loader = drawable->screen->dri2.loader;
    const __DRImutableRenderBufferLoaderExtension *shared_buffer_loader =
       drawable->screen->mutableRenderBuffer.loader;
    struct pipe_context *pipe = ctx->st->pipe;
@@ -599,9 +456,6 @@ dri2_flush_frontbuffer(struct dri_context *ctx,
 
          pipe->screen->fence_reference(pipe->screen, &fence, NULL);
       }
-   }
-   else if (loader->flushFrontBuffer) {
-      loader->flushFrontBuffer(drawable, drawable->loaderPrivate);
    }
 
    return true;

@@ -69,9 +69,6 @@ struct dri_screen
    const __DRIkopperLoaderExtension *kopper_loader;
 
    struct {
-       /* Flag to indicate that this is a DRI2 screen.  Many of the above
-        * fields will not be valid or initializaed in that case. */
-       const __DRIdri2LoaderExtension *loader;
        const __DRIimageLookupExtension *image;
        const __DRIbackgroundCallableExtension *backgroundCallable;
    } dri2;

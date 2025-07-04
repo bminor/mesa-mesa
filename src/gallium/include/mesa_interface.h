@@ -465,9 +465,6 @@ typedef struct {
     unsigned int flags;
 } __DRIbuffer;
 
-/* The X server implements up to version 3 of the DRI2 loader. */
-#define __DRI_DRI2_LOADER "DRI_DRI2Loader"
-
 enum dri_loader_cap {
    /* Whether the loader handles RGBA channel ordering correctly. If not,
     * only BGRA ordering can be exposed.
@@ -475,76 +472,6 @@ enum dri_loader_cap {
    DRI_LOADER_CAP_RGBA_ORDERING,
    DRI_LOADER_CAP_FP16,
 };
-
-typedef struct {
-    __DRIextension base;
-
-    __DRIbuffer *(*getBuffers)(struct dri_drawable *driDrawable,
-			       int *width, int *height,
-			       unsigned int *attachments, int count,
-			       int *out_count, void *loaderPrivate);
-
-    /**
-     * Flush pending front-buffer rendering
-     *
-     * Any rendering that has been performed to the
-     * \c __DRI_BUFFER_FAKE_FRONT_LEFT will be flushed to the
-     * \c __DRI_BUFFER_FRONT_LEFT.
-     *
-     * \param driDrawable    Drawable whose front-buffer is to be flushed
-     * \param loaderPrivate  Loader's private data
-     *
-     * \since 2
-     */
-    void (*flushFrontBuffer)(struct dri_drawable *driDrawable, void *loaderPrivate);
-
-
-    /**
-     * Get list of buffers from the server
-     *
-     * Gets a list of buffer for the specified set of attachments.  Unlike
-     * \c ::getBuffers, this function takes a list of attachments paired with
-     * opaque \c unsigned \c int value describing the format of the buffer.
-     * It is the responsibility of the caller to know what the service that
-     * allocates the buffers will expect to receive for the format.
-     *
-     * \param driDrawable    Drawable whose buffers are being queried.
-     * \param width          Output where the width of the buffers is stored.
-     * \param height         Output where the height of the buffers is stored.
-     * \param attachments    List of pairs of attachment ID and opaque format
-     *                       requested for the drawable.
-     * \param count          Number of attachment / format pairs stored in
-     *                       \c attachments.
-     * \param loaderPrivate  Loader's private data
-     *
-     * \since 3
-     */
-    __DRIbuffer *(*getBuffersWithFormat)(struct dri_drawable *driDrawable,
-					 int *width, int *height,
-					 unsigned int *attachments, int count,
-					 int *out_count, void *loaderPrivate);
-
-    /**
-     * Return a loader capability value. If the loader doesn't know the enum,
-     * it will return 0.
-     *
-     * \param loaderPrivate The last parameter of createNewScreen or
-     *                      createNewScreen2.
-     * \param cap           See the enum.
-     *
-     * \since 4
-     */
-    unsigned (*getCapability)(void *loaderPrivate, enum dri_loader_cap cap);
-
-    /**
-     * Clean up any loader state associated with an image.
-     *
-     * \param loaderPrivate  Loader's private data that was previously passed
-     *                       into a __DRIimageExtensionRec::createImage function
-     * \since 5
-     */
-    void (*destroyLoaderImageState)(void *loaderPrivate);
-} __DRIdri2LoaderExtension;
 
 /**
  * This extension provides alternative screen, drawable and context
