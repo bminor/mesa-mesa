@@ -1489,8 +1489,7 @@ void r600_texture_transfer_unmap(struct pipe_context *ctx,
 
 struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 						struct pipe_resource *texture,
-						const struct pipe_surface *templ,
-						unsigned width0, unsigned height0)
+						const struct pipe_surface *templ)
 {
 	struct pipe_surface *surface = CALLOC_STRUCT(pipe_surface);
 
@@ -1511,36 +1510,7 @@ struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 	return surface;
 }
 
-static struct pipe_surface *r600_create_surface(struct pipe_context *pipe,
-						struct pipe_resource *tex,
-						const struct pipe_surface *templ)
-{
-	unsigned width0 = tex->width0;
-	unsigned height0 = tex->height0;
-
-	if (tex->target != PIPE_BUFFER && templ->format != tex->format) {
-		const struct util_format_description *tex_desc
-			= util_format_description(tex->format);
-		const struct util_format_description *templ_desc
-			= util_format_description(templ->format);
-
-		assert(tex_desc->block.bits == templ_desc->block.bits);
-
-		/* Adjust size of surface if and only if the block width or
-		 * height is changed. */
-		if (tex_desc->block.width != templ_desc->block.width ||
-		    tex_desc->block.height != templ_desc->block.height) {
-			width0 = util_format_get_nblocksx(tex->format, width0);
-			height0 = util_format_get_nblocksy(tex->format, height0);
-		}
-	}
-
-	return r600_create_surface_custom(pipe, tex, templ,
-					  width0, height0);
-}
-
-static void r600_surface_destroy(struct pipe_context *pipe,
-				 struct pipe_surface *surface)
+void r600_destroy_surface_custom(struct pipe_surface *surface)
 {
 	pipe_resource_reference(&surface->texture, NULL);
 	FREE(surface);
@@ -1727,7 +1697,5 @@ void r600_init_screen_texture_functions(struct r600_common_screen *rscreen)
 
 void r600_init_context_texture_functions(struct r600_common_context *rctx)
 {
-	rctx->b.create_surface = r600_create_surface;
-	rctx->b.surface_destroy = r600_surface_destroy;
 	rctx->b.clear_texture = u_default_clear_texture;
 }

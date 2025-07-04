@@ -825,8 +825,8 @@ struct pipe_resource *r600_texture_create(struct pipe_screen *screen,
 					const struct pipe_resource *templ);
 struct pipe_surface *r600_create_surface_custom(struct pipe_context *pipe,
 						struct pipe_resource *texture,
-						const struct pipe_surface *templ,
-						unsigned width0, unsigned height0);
+						const struct pipe_surface *templ);
+void r600_destroy_surface_custom(struct pipe_surface *);
 unsigned r600_translate_colorswap(enum pipe_format format, bool do_endian_swap);
 void r600_texture_alloc_cmask_separate(struct r600_common_screen *rscreen,
 					struct r600_texture *rtex);

@@ -171,19 +171,18 @@ static void r600_blit_decompress_depth(struct pipe_context *ctx,
 				surf_tmpl.first_layer = layer;
 				surf_tmpl.last_layer = layer;
 
-				zsurf = ctx->create_surface(ctx, &texture->resource.b.b, &surf_tmpl);
+				zsurf = r600_create_surface_custom(ctx, &texture->resource.b.b, &surf_tmpl);
 
 				surf_tmpl.format = flushed_depth_texture->resource.b.b.format;
-				cbsurf = ctx->create_surface(ctx,
-						&flushed_depth_texture->resource.b.b, &surf_tmpl);
+				cbsurf = r600_create_surface_custom(ctx, &flushed_depth_texture->resource.b.b, &surf_tmpl);
 
 				r600_blitter_begin(ctx, R600_DECOMPRESS);
 				util_blitter_custom_depth_stencil(rctx->blitter, zsurf, cbsurf, 1 << sample,
 								  rctx->custom_dsa_flush, depth);
 				r600_blitter_end(ctx);
 
-				pipe_surface_reference(&zsurf, NULL);
-				pipe_surface_reference(&cbsurf, NULL);
+				r600_destroy_surface_custom(zsurf);
+				r600_destroy_surface_custom(cbsurf);
 			}
 		}
 
@@ -238,14 +237,14 @@ static void r600_blit_decompress_depth_in_place(struct r600_context *rctx,
 			surf_tmpl.first_layer = layer;
 			surf_tmpl.last_layer = layer;
 
-			zsurf = rctx->b.b.create_surface(&rctx->b.b, &texture->resource.b.b, &surf_tmpl);
+			zsurf = r600_create_surface_custom(&rctx->b.b, &texture->resource.b.b, &surf_tmpl);
 
 			r600_blitter_begin(&rctx->b.b, R600_DECOMPRESS);
 			util_blitter_custom_depth_stencil(rctx->blitter, zsurf, NULL, ~0,
 							  rctx->custom_dsa_flush, 1.0f);
 			r600_blitter_end(&rctx->b.b);
 
-			pipe_surface_reference(&zsurf, NULL);
+			r600_destroy_surface_custom(zsurf);
 		}
 
 		/* The texture will always be dirty if some layers or samples aren't flushed.
@@ -356,14 +355,14 @@ static void r600_blit_decompress_color(struct pipe_context *ctx,
 			surf_tmpl.level = level;
 			surf_tmpl.first_layer = layer;
 			surf_tmpl.last_layer = layer;
-			cbsurf = ctx->create_surface(ctx, &rtex->resource.b.b, &surf_tmpl);
+			cbsurf = r600_create_surface_custom(ctx, &rtex->resource.b.b, &surf_tmpl);
 
 			r600_blitter_begin(ctx, R600_DECOMPRESS);
 			util_blitter_custom_color(rctx->blitter, cbsurf,
 				rtex->fmask.size ? rctx->custom_blend_decompress : rctx->custom_blend_fastclear);
 			r600_blitter_end(ctx);
 
-			pipe_surface_reference(&cbsurf, NULL);
+			r600_destroy_surface_custom(cbsurf);
 		}
 
 		/* The texture will always be dirty if some layers aren't flushed.
@@ -988,9 +987,7 @@ void r600_resource_copy_region(struct pipe_context *ctx,
 		}
 	}
 
-	dst_view = r600_create_surface_custom(ctx, dst, &dst_templ,
-					      /* we don't care about these two for r600g */
-					      dst->width0, dst->height0);
+	dst_view = r600_create_surface_custom(ctx, dst, &dst_templ);
 
 	if (rctx->b.gfx_level >= EVERGREEN) {
 		src_view = evergreen_create_sampler_view_custom(ctx, src, &src_templ,
@@ -1012,7 +1009,7 @@ void r600_resource_copy_region(struct pipe_context *ctx,
 				  false, false, 0, NULL);
 	r600_blitter_end(ctx);
 
-	pipe_surface_reference(&dst_view, NULL);
+	r600_destroy_surface_custom(dst_view);
 	pipe_sampler_view_reference(&src_view, NULL);
 }
 
