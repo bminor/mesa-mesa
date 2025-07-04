@@ -2620,7 +2620,7 @@ dri2_initialize_wayland_drm(_EGLDisplay *disp)
       goto cleanup;
    }
 
-   dri2_detect_swrast(disp);
+   dri2_detect_swrast_kopper(disp);
 
    dri2_dpy->loader_extensions = dri2_dpy->kopper ? kopper_loader_extensions
                                                   : dri2_loader_extensions;
@@ -3126,7 +3126,7 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
       goto cleanup;
 
    dri2_dpy->driver_name = strdup(disp->Options.Zink ? "zink" : "swrast");
-   dri2_detect_swrast(disp);
+   dri2_detect_swrast_kopper(disp);
 
    dri2_dpy->loader_extensions = dri2_dpy->kopper ? kopper_loader_extensions
                                                   : swrast_loader_extensions;

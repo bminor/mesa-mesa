@@ -288,7 +288,7 @@ surfaceless_probe_device(_EGLDisplay *disp, bool swrast, bool zink)
       }
 
       if (dri2_dpy->driver_name) {
-         dri2_detect_swrast(disp);
+         dri2_detect_swrast_kopper(disp);
          if (dri2_dpy->kopper)
             dri2_dpy->loader_extensions = kopper_loader_extensions;
          else if (swrast)
@@ -359,7 +359,7 @@ surfaceless_probe_device_sw(_EGLDisplay *disp)
    if (!dri2_dpy->driver_name)
       return false;
 
-   dri2_detect_swrast(disp);
+   dri2_detect_swrast_kopper(disp);
 
    if (dri2_dpy->kopper)
       dri2_dpy->loader_extensions = kopper_loader_extensions;

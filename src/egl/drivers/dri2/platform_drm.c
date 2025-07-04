@@ -632,7 +632,7 @@ dri2_initialize_drm(_EGLDisplay *disp)
 
    dri2_dpy->driver_name = strdup(dri2_dpy->gbm_dri->driver_name);
 
-   dri2_detect_swrast(disp);
+   dri2_detect_swrast_kopper(disp);
 
    dri2_dpy->dri_screen_render_gpu = dri2_dpy->gbm_dri->screen;
    dri2_dpy->driver_configs = dri2_dpy->gbm_dri->driver_configs;

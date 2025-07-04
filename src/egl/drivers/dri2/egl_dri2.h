@@ -441,7 +441,7 @@ extern const __DRIswrastLoaderExtension swrast_pbuffer_loader_extension;
 extern const __DRIkopperLoaderExtension kopper_pbuffer_loader_extension;
 
 void
-dri2_detect_swrast(_EGLDisplay *disp);
+dri2_detect_swrast_kopper(_EGLDisplay *disp);
 
 /* Helper for platforms not using dri2_create_screen */
 void

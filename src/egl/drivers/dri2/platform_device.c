@@ -293,7 +293,7 @@ device_probe_device(_EGLDisplay *disp)
       }
    }
 
-   dri2_detect_swrast(disp);
+   dri2_detect_swrast_kopper(disp);
 
    dri2_dpy->loader_extensions = image_loader_extensions;
    return true;
@@ -316,7 +316,7 @@ device_probe_device_sw(_EGLDisplay *disp)
       return false;
 
    /* HACK: should be driver_swrast_null */
-   dri2_detect_swrast(disp);
+   dri2_detect_swrast_kopper(disp);
 
    dri2_dpy->loader_extensions = swrast_loader_extensions;
    return true;

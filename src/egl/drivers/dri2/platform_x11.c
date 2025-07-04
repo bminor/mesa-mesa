@@ -1313,7 +1313,8 @@ dri2_initialize_x11(_EGLDisplay *disp)
          return EGL_FALSE;
    }
 #endif
-   dri2_detect_swrast(disp);
+
+   dri2_detect_swrast_kopper(disp);
 
    if (dri2_dpy->kopper)
       return dri2_initialize_x11_kopper(disp, force_zink);
