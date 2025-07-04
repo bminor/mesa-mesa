@@ -11,7 +11,7 @@ from ruamel.yaml import YAML
 
 from os import getenv
 
-from lava.utils.lava_farm import get_lava_farm
+from lava.utils.lava_farm import get_lava_farm, get_lava_boot_method
 from lava.utils.log_section import LAVA_DEPLOY_TIMEOUT
 from lava.utils.ssh_job_definition import (
     generate_docker_test,
@@ -60,11 +60,15 @@ class LAVAJobDefinition:
         if FORCE_UART:
             return False
 
-        # Only Collabora's farm supports to run docker container as a LAVA actions,
-        # which is required to follow the job in a SSH section
         current_farm = get_lava_farm()
+        boot_method = get_lava_boot_method()
 
-        return current_farm == "collabora"
+        # Some Chromebooks have unreliable serial connections, so SSH is preferred.
+        # Only Collabora's farm supports running docker container as a LAVA actions,
+        # which is required to follow the job in an SSH section
+        # Chromebooks use the "depthcharge" boot method, so use SSH in that case,
+        # and UART for everything else.
+        return current_farm == "collabora" and boot_method == "depthcharge"
 
     def generate_lava_yaml_payload(self) -> dict[str, Any]:
         """

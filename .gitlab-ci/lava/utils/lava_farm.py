@@ -18,3 +18,16 @@ def get_lava_farm() -> str:
         logging.warning("FARM environment variable is not set, using unknown")
 
     return farm.lower()
+
+def get_lava_boot_method() -> str:
+    """
+    Returns the LAVA boot method based on the BOOT_METHOD environment variable.
+
+    :return: The LAVA boot method
+    """
+    boot_method: str = os.getenv("BOOT_METHOD", "unknown")
+
+    if boot_method == "unknown":
+        logging.warning("BOOT_METHOD environment variable is not set, using unknown")
+
+    return boot_method.lower()

@@ -85,8 +85,9 @@ def clear_env_vars(autouse=True):
 
 @pytest.fixture
 def mock_collabora_farm(clear_env_vars, monkeypatch):
-    # Mock a Collabora farm-like device runner tag to enable SSH execution
+    # Mock a Chromebook in the Collabora farm
     monkeypatch.setenv("FARM", "collabora")
+    monkeypatch.setenv("BOOT_METHOD", "depthcharge")
 
 
 @pytest.mark.parametrize("force_uart", [True, False], ids=["SSH", "UART"])
