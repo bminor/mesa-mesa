@@ -3144,7 +3144,7 @@
         "description": "nir/opt_remove_phis: skip unreachable phis",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "60776f87c38f69507d60591b46b3ea2efba8e188",
         "notes": null
