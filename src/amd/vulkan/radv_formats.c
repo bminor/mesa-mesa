@@ -501,6 +501,15 @@ radv_physical_device_get_format_properties(struct radv_physical_device *pdev, Vk
       buffer = 0;
    }
 
+   /* No depth/stencil support yet due to VKCTS issues. */
+   if (!vk_format_is_depth_or_stencil(format)) {
+      if (linear & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)
+         linear |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
+
+      if (tiled & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)
+         tiled |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
+   }
+
    out_properties->linearTilingFeatures = linear;
    out_properties->optimalTilingFeatures = tiled;
    out_properties->bufferFeatures = buffer;
@@ -628,6 +637,9 @@ radv_get_modifier_flags(struct radv_physical_device *pdev, VkFormat format, uint
 
    /* Unconditionally disable DISJOINT support for modifiers for now */
    features &= ~VK_FORMAT_FEATURE_2_DISJOINT_BIT;
+
+   /* Unconditionally disable HOST_TRANSFER support for modifiers for now */
+   features &= ~VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
 
    if (ac_modifier_has_dcc(modifier)) {
       /* We don't enable DCC for multi-planar formats */
@@ -1030,9 +1042,18 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
          goto unsupported;
    }
 
-   /* Sparse resources with multi-planar formats are unsupported. */
+   if (image_usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) {
+      if (!(format_feature_flags & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT))
+         goto unsupported;
+   }
+
    if (info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      /* Sparse resources with multi-planar formats are unsupported. */
       if (vk_format_get_plane_count(format) > 1)
+         goto unsupported;
+
+      /* Sparse resources with host-transfer are unsupported. */
+      if (image_usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)
          goto unsupported;
    }
 
