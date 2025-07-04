@@ -1064,8 +1064,8 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    if (!vk_format_is_depth_or_stencil(image->vk.format) && !image->vk.external_handle_types &&
        !(image->vk.create_flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
                                    VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) &&
-       !(image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
-                            VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) &&
+       !(image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                            VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
        image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       info.surf_index = &device->image_mrt_offset_counter;
       info.fmask_surf_index = &device->fmask_mrt_offset_counter;
