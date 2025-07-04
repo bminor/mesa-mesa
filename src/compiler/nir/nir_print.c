@@ -1115,6 +1115,13 @@ print_deref_instr(nir_deref_instr *instr, print_state *state)
       fprintf(fp, "%s%s", get_variable_mode_str(1 << m, true),
               modes ? "|" : "");
    }
+
+   nir_variable *var = nir_deref_instr_get_variable(instr);
+   if (var) {
+      static const char *precision_str[] = {"", " highp", " mediump", " lowp"};
+      fprintf(fp, "%s", precision_str[var->data.precision]);
+   }
+
    fprintf(fp, " %s)", get_type_name(instr->type, state));
 
    if (instr->deref_type == nir_deref_type_cast) {
