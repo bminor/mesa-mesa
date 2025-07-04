@@ -1123,8 +1123,11 @@ static struct si_texture *si_texture_create_object(struct pipe_screen *screen,
       /* Always set BO metadata - required for programming DCC fields for GFX12 SDMA in the kernel.
        * If the texture is suballocated, this will overwrite the metadata for all suballocations,
        * but there is nothing we can do about that.
+       *
+       * Sparse textures don't have any backing storage at this point.
        */
-      si_set_tex_bo_metadata(sscreen, tex);
+      if (!(base->flags & PIPE_RESOURCE_FLAG_SPARSE))
+         si_set_tex_bo_metadata(sscreen, tex);
       return tex;
    }
 

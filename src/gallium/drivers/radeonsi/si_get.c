@@ -1034,8 +1034,7 @@ void si_init_screen_caps(struct si_screen *sscreen)
 
    /* Gfx8 (Polaris11) hangs, so don't enable this on Gfx8 and older chips. */
    bool enable_sparse =
-      sscreen->info.gfx_level >= GFX9 && sscreen->info.gfx_level < GFX12 &&
-      sscreen->info.has_sparse_vm_mappings;
+      sscreen->info.gfx_level >= GFX9 && sscreen->info.has_sparse_vm_mappings;
 
    /* Supported features (boolean caps). */
    caps->max_dual_source_render_targets = true;
