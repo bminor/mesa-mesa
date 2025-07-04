@@ -8794,9 +8794,17 @@ radv_CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
 
    assume(pLocationInfo->colorAttachmentCount <= MESA_VK_MAX_COLOR_ATTACHMENTS);
    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; i++) {
-      state->dynamic.vk.cal.color_map[i] = pLocationInfo->pColorAttachmentLocations[i] == VK_ATTACHMENT_UNUSED
-                                              ? MESA_VK_ATTACHMENT_UNUSED
-                                              : pLocationInfo->pColorAttachmentLocations[i];
+      uint8_t val;
+
+      if (!pLocationInfo->pColorAttachmentLocations) {
+         val = i;
+      } else if (pLocationInfo->pColorAttachmentLocations[i] == VK_ATTACHMENT_UNUSED) {
+         val = MESA_VK_ATTACHMENT_UNUSED;
+      } else {
+         val = pLocationInfo->pColorAttachmentLocations[i];
+      }
+
+      state->dynamic.vk.cal.color_map[i] = val;
    }
 
    state->dirty_dynamic |= RADV_DYNAMIC_COLOR_ATTACHMENT_MAP;
