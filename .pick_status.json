@@ -6824,7 +6824,7 @@
         "description": "zink: fix submit_count disambiguation for bo usage checks",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "61b0955308d720a6fa065e7a414d16999f7ffd03",
         "notes": null
