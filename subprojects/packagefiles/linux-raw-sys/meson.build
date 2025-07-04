@@ -4,7 +4,7 @@
 project(
   'linux-raw-sys',
   'rust',
-  version : '0.4.14',
+  version : '0.7.0',
   license : 'MIT OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception',
 )
 
