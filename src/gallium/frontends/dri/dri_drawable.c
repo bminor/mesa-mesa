@@ -311,12 +311,6 @@ dri_set_tex_buffer2(struct dri_context *ctx, GLint target,
    }
 }
 
-const __DRItexBufferExtension driTexBufferExtension = {
-   .base = { __DRI_TEX_BUFFER, 2 },
-
-   .setTexBuffer2      = dri_set_tex_buffer2,
-};
-
 /**
  * Get the format and binding of an attachment.
  */

@@ -75,25 +75,6 @@ typedef struct {
 #define __DRI_TEXTURE_FORMAT_RGB         0x20D9
 #define __DRI_TEXTURE_FORMAT_RGBA        0x20DA
 
-#define __DRI_TEX_BUFFER "DRI_TexBuffer"
-typedef struct {
-    __DRIextension base;
-
-    /**
-     * Method to override base texture image with the contents of a
-     * struct dri_drawable, including the required texture format attribute.
-     *
-     * For GLX_EXT_texture_from_pixmap with AIGLX.  Used by the X server since
-     * 2011.
-     *
-     * \since 2
-     */
-    void (*setTexBuffer2)(struct dri_context *pDRICtx,
-			  int target,
-			  int format,
-			  struct dri_drawable *pDraw);
-} __DRItexBufferExtension;
-
 /**
  * Used by drivers that implement DRI2.  Version 3 is used by the X server.
  */

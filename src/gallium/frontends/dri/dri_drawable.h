@@ -155,8 +155,6 @@ dri_flush(struct dri_context *ctx,
 void
 dri_flush_drawable(struct dri_drawable *dPriv);
 
-extern const __DRItexBufferExtension driTexBufferExtension;
-
 void
 drisw_update_tex_buffer(struct dri_drawable *drawable,
                         struct dri_context *ctx,
