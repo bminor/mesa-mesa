@@ -1319,17 +1319,17 @@ add_predication_workaround(struct ir3_compiler *compiler,
                            struct ir3_instruction *prede)
 {
    if (predtf && compiler->predtf_nop_quirk) {
-      struct ir3_builder build = ir3_builder_at(ir3_after_block(predtf->block));
+      struct ir3_builder build = ir3_builder_at(
+         ir3_before_block(predtf->block->predecessors[0]->successors[1]));
       struct ir3_instruction *nop = ir3_NOP(&build);
       nop->repeat = 4;
-      ir3_instr_move_after(nop, predtf);
    }
 
    if (compiler->prede_nop_quirk) {
-      struct ir3_builder build = ir3_builder_at(ir3_after_block(prede->block));
+      struct ir3_builder build =
+         ir3_builder_at(ir3_before_block(prede->block->successors[0]));
       struct ir3_instruction *nop = ir3_NOP(&build);
       nop->repeat = 6;
-      ir3_instr_move_after(nop, prede);
    }
 }
 
