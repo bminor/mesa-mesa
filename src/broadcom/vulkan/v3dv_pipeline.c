@@ -162,7 +162,6 @@ v3dv_pipeline_get_nir_options(const struct v3d_device_info *devinfo)
       .lower_uadd_sat = true,
       .lower_usub_sat = true,
       .lower_iadd_sat = true,
-      .lower_all_io_to_temps = true,
       .lower_extract_byte = true,
       .lower_extract_word = true,
       .lower_insert_byte = true,

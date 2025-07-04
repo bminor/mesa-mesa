@@ -23,7 +23,6 @@ static const nir_shader_compiler_options options = {
    .fuse_ffma32 = true,
    .fuse_ffma64 = true,
    /* .fdot_replicates = true, it is replicated, but it makes things worse */
-   .lower_all_io_to_temps = true,
    .vertex_id_zero_based = true, /* its not implemented anyway */
    .lower_bitops = true,
    .lower_vector_cmp = true,

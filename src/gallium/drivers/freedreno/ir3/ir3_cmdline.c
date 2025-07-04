@@ -113,8 +113,6 @@ load_glsl(unsigned num_files, char *const *files, gl_shader_stage stage)
       .lower_precision = true,
    };
    struct gl_shader_program *prog;
-   const nir_shader_compiler_options *nir_options =
-      ir3_get_compiler_options(compiler);
    static struct gl_context local_ctx;
 
    prog = standalone_compile_shader(&options, num_files, files, &local_ctx);
@@ -124,8 +122,7 @@ load_glsl(unsigned num_files, char *const *files, gl_shader_stage stage)
    nir_shader *nir = prog->_LinkedShaders[stage]->Program->nir;
 
    /* required NIR passes: */
-   if (nir_options->lower_all_io_to_temps ||
-       nir->info.stage == MESA_SHADER_VERTEX ||
+   if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_GEOMETRY) {
       NIR_PASS_V(nir, nir_lower_io_vars_to_temporaries,
                  nir_shader_get_entrypoint(nir), true, true);

@@ -1328,7 +1328,6 @@ preprocess_shader(const struct gl_constants *consts,
 
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
             nir_shader_get_entrypoint(nir), true,
-            options->lower_all_io_to_temps ||
             nir->info.stage == MESA_SHADER_VERTEX ||
             nir->info.stage == MESA_SHADER_GEOMETRY);
 

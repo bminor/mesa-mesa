@@ -3614,7 +3614,6 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
    op.lower_extract_word = (chipset < NVISA_GM107_CHIPSET);
    op.lower_insert_byte = true;
    op.lower_insert_word = true;
-   op.lower_all_io_to_temps = false;
    op.vertex_id_zero_based = false;
    op.lower_base_vertex = false;
    op.lower_helper_invocation = false;

@@ -355,9 +355,6 @@ typedef struct nir_shader_compiler_options {
    bool lower_insert_byte;
    bool lower_insert_word;
 
-   /* TODO: this flag is potentially useless, remove? */
-   bool lower_all_io_to_temps;
-
    /* Indicates that the driver only has zero-based vertex id */
    bool vertex_id_zero_based;
 

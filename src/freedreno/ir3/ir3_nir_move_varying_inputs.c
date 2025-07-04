@@ -13,8 +13,7 @@
  * We need to set the (ei) "end input" flag on the last varying fetch.
  * And we want to ensure that all threads execute the instruction that
  * sets (ei).  The easiest way to ensure this is to move all varying
- * fetches into the start block.  Which is something we used to get for
- * free by using lower_all_io_to_temps=true.
+ * fetches into the start block.
  *
  * This may come at the cost of additional register usage.  OTOH setting
  * the (ei) flag earlier probably frees up more VS to run.

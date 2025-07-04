@@ -2156,7 +2156,6 @@ nir_to_qir(struct vc4_compile *c)
 }
 
 static const nir_shader_compiler_options nir_options = {
-        .lower_all_io_to_temps = true,
         .lower_extract_byte = true,
         .lower_extract_word = true,
         .lower_insert_byte = true,
