@@ -623,6 +623,14 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
          zink_resource_image_hic_transition(screen, res, layout);
       }
    }
+   res->obj->unordered_read = true;
+   res->obj->unordered_write = true;
+   res->obj->access = 0;
+   res->obj->unordered_access = 0;
+   /* this is the stage used by the acquire semaphore */
+   res->obj->unordered_access_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+   res->obj->access_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+   res->obj->ordered_access_is_copied = true;
    if (timeout == UINT64_MAX) {
       res->obj->indefinite_acquire = true;
       p_atomic_inc(&cdt->swapchain->num_acquires);
