@@ -1407,6 +1407,13 @@ iris_init_render_context(struct iris_batch *batch)
       p.DX10OGLBorderModeforYCRCB = true;
       p.DX10OGLBorderModeforYCRCBMask = true;
    }
+
+   if (intel_device_info_is_bmg_g31(devinfo)) {
+      iris_emit_reg(batch, GENX(CACHE_MODE_0), reg) {
+         reg.MsaaFastClearEnabled = true;
+         reg.MsaaFastClearEnabledMask = true;
+      }
+   }
 #endif
 
 #if GFX_VER >= 30

@@ -522,6 +522,15 @@ init_render_queue_state(struct anv_queue *queue, bool is_companion_rcs_batch)
 #endif
    }
 
+#if GFX_VER == 20
+   if (intel_device_info_is_bmg_g31(devinfo)) {
+      anv_batch_write_reg(batch, GENX(CACHE_MODE_0), cm0) {
+         cm0.MsaaFastClearEnabled = true;
+         cm0.MsaaFastClearEnabledMask = true;
+      }
+   }
+#endif
+
 #if INTEL_NEEDS_WA_1806527549
    /* Wa_1806527549 says to disable the following HiZ optimization when the
     * depth buffer is D16_UNORM. We've found the WA to help with more depth
