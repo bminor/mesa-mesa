@@ -169,6 +169,33 @@ struct r600_cmask_info {
 	uint64_t base_address_reg;
 };
 
+struct r600_pre_eg_cb {
+	struct r600_resource            *cb_buffer_fmask; /* Used for FMASK relocations. R600 only */
+	struct r600_resource            *cb_buffer_cmask; /* Used for CMASK relocations. R600 only */
+
+	/* Misc. color flags. */
+	bool                            alphatest_bypass;
+	bool                            export_16bpc;
+
+	unsigned                        cb_color_size; /* R600 only */
+	unsigned                 	cb_color_info;
+	unsigned                        cb_color_base;
+	unsigned                        cb_color_view;
+	unsigned                        cb_color_fmask;
+	unsigned                        cb_color_cmask;
+	unsigned                        cb_color_mask; /* R600 only */
+};
+
+struct r600_pre_eg_zs {
+	uint64_t                        db_depth_base;
+	uint64_t                        db_htile_data_base;
+	unsigned                        db_depth_view;
+	unsigned                        db_depth_size;
+	unsigned                        db_depth_info; /* R600 only, then SI and later */
+	unsigned                        db_prefetch_limit; /* R600 only */
+	unsigned                        db_htile_surface;
+};
+
 struct r600_texture {
 	struct r600_resource		resource;
 
@@ -222,7 +249,6 @@ struct r600_cb_surface {
 	unsigned cb_color_info;
 	unsigned cb_color_base;
 	unsigned cb_color_view;
-	unsigned cb_color_size;		/* R600 only */
 	unsigned cb_color_dim;		/* EG only */
 	unsigned cb_color_pitch;	/* EG and later */
 	unsigned cb_color_slice;	/* EG and later */
@@ -230,21 +256,16 @@ struct r600_cb_surface {
 	unsigned cb_color_fmask;	/* CB_COLORn_FMASK (EG and later) or CB_COLORn_FRAG (r600) */
 	unsigned cb_color_fmask_slice;	/* EG and later */
 	unsigned cb_color_cmask;	/* CB_COLORn_TILE (r600 only) */
-	unsigned cb_color_mask;		/* R600 only */
-	struct r600_resource *cb_buffer_fmask; /* Used for FMASK relocations. R600 only */
-	struct r600_resource *cb_buffer_cmask; /* Used for CMASK relocations. R600 only */
 
 	/* DB registers. */
 	uint64_t db_depth_base;		/* DB_Z_READ/WRITE_BASE (EG and later) or DB_DEPTH_BASE (r600) */
 	uint64_t db_stencil_base;	/* EG and later */
 	uint64_t db_htile_data_base;
-	unsigned db_depth_info;		/* R600 only, then SI and later */
 	unsigned db_z_info;		/* EG and later */
 	unsigned db_depth_view;
 	unsigned db_depth_size;
 	unsigned db_depth_slice;	/* EG and later */
 	unsigned db_stencil_info;	/* EG and later */
-	unsigned db_prefetch_limit;	/* R600 only */
 	unsigned db_htile_surface;
 	unsigned db_preload_control;	/* EG and later */
 };
@@ -252,6 +273,11 @@ struct r600_cb_surface {
 struct evergreen_framebuffer {
 	struct r600_cb_surface cbufs[R600_MAX_COLOR_BUFFERS];
 	struct r600_cb_surface zsbuf;
+};
+
+struct r600_pre_eg_cbzs {
+	struct r600_pre_eg_cb cb_surface[PIPE_MAX_COLOR_BUFS];
+	struct r600_pre_eg_zs zs_surface;
 };
 
 struct r600_mmio_counter {
@@ -577,6 +603,7 @@ struct r600_common_context {
 	void				*query_result_shader;
 
 	struct evergreen_framebuffer    framebuffer;
+	struct r600_pre_eg_cbzs         *r600_pre_eg_cbzs;
 
 	/* Copy one resource to another using async DMA. */
 	void (*dma_copy)(struct pipe_context *ctx,

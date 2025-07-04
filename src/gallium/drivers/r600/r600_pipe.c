@@ -120,6 +120,14 @@ static void r600_destroy_context(struct pipe_context *context)
 			pipe_resource_reference(&rctx->atomic_buffer_state.buffer[i].buffer, NULL);
 		break;
 	default:
+		if (rctx->b.r600_pre_eg_cbzs) {
+			for (unsigned i = 0; i < PIPE_MAX_COLOR_BUFS; i++) {
+				r600_resource_reference(&rctx->b.r600_pre_eg_cbzs->cb_surface[i].cb_buffer_fmask, NULL);
+				r600_resource_reference(&rctx->b.r600_pre_eg_cbzs->cb_surface[i].cb_buffer_cmask, NULL);
+			}
+
+			FREE(rctx->b.r600_pre_eg_cbzs);
+		}
 		break;
 	}
 
@@ -176,6 +184,8 @@ static struct pipe_context *r600_create_context(struct pipe_screen *screen,
 					   rctx->b.family == CHIP_RS780 ||
 					   rctx->b.family == CHIP_RS880 ||
 					   rctx->b.family == CHIP_RV710);
+
+		rctx->b.r600_pre_eg_cbzs = CALLOC_STRUCT(r600_pre_eg_cbzs);
 		break;
 	case EVERGREEN:
 	case CAYMAN:
