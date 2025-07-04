@@ -7114,7 +7114,7 @@
         "description": "meson: drop vdrm from virgl and venus",
         "nominated": false,
         "nomination_type": 2,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1a6fc7006af7a0fbfcf2d10c5a1890722ed9ec10",
         "notes": null
