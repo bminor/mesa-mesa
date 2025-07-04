@@ -140,6 +140,9 @@ struct agx_shader_info {
    /* Uses txf and hence needs a txf sampler mapped */
    bool uses_txf;
 
+   /* Number of texture state registers pushed by the preamble. */
+   uint8_t texture_state_count;
+
    /* Number of 16-bit registers used by the main shader and preamble
     * respectively.
     */
@@ -282,6 +285,12 @@ struct agx_shader_key {
     * false, constants will not be promoted to uniforms.
     */
    bool promote_constants;
+
+   /* Similarly whether the driver supports promoting bindless textures.
+    * Currently this works only if non-bindless textures are not used, but
+    * none of our drivers mix bindless / non-bindless usage.
+    */
+   bool promote_textures;
 
    /* Set if this is a non-monolithic shader that must be linked with additional
     * shader parts before the program can be used. This suppresses omission of

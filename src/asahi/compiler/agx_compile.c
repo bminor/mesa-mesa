@@ -3042,7 +3042,8 @@ optimize_bounds(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 static void
-agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
+agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
+                 uint8_t *ts_count)
 {
    /* This runs only once up front since other optimizations don't affect it */
    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
@@ -3147,8 +3148,12 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
 
    if (preamble_size && (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE))) {
       unsigned temp = *preamble_size;
-      NIR_PASS(_, nir, agx_nir_opt_preamble, &temp);
+      unsigned temp_ts_count = ts_count ? *ts_count : 1000 /* large finite */;
+      NIR_PASS(_, nir, agx_nir_opt_preamble, &temp, &temp_ts_count);
       *preamble_size = temp;
+
+      if (ts_count)
+         *ts_count = temp_ts_count;
    }
 
    /* Forming preambles may dramatically reduce the instruction count
@@ -3895,8 +3900,10 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
             nir_metadata_control_flow, NULL);
 
    info->push_count = key->reserved_preamble;
-   agx_optimize_nir(nir, key->dev.soft_fault,
-                    key->secondary ? NULL : &info->push_count);
+   agx_optimize_nir(
+      nir, key->dev.soft_fault, key->secondary ? NULL : &info->push_count,
+      (key->secondary || !key->promote_textures) ? NULL
+                                                 : &info->texture_state_count);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       info->varyings.fs.nr_cf = key->fs.cf_base;
