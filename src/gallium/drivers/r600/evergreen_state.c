@@ -1357,8 +1357,6 @@ void evergreen_init_color_surface(struct r600_context *rctx,
 	surf->cb_color_attrib = color.attrib;
 	surf->cb_color_fmask = color.fmask;
 	surf->cb_color_fmask_slice = color.fmask_slice;
-
-	surf->color_initialized = true;
 }
 
 static void evergreen_init_depth_surface(struct r600_context *rctx,
@@ -1447,8 +1445,6 @@ static void evergreen_init_depth_surface(struct r600_context *rctx,
 		surf->db_z_info |= S_028040_TILE_SURFACE_ENABLE(1);
 		surf->db_preload_control = 0;
 	}
-
-	surf->depth_initialized = true;
 }
 
 static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
@@ -1492,9 +1488,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 
 		r600_context_add_resource_size(ctx, state->cbufs[i].texture);
 
-		if (!surf->color_initialized) {
-			evergreen_init_color_surface(rctx, surf);
-		}
+		evergreen_init_color_surface(rctx, surf);
 
 		if (!surf->export_16bpc) {
 			rctx->cb_state.export_16bpc = false;
@@ -1533,9 +1527,7 @@ static void evergreen_set_framebuffer_state(struct pipe_context *ctx,
 
 		r600_context_add_resource_size(ctx, state->zsbuf.texture);
 
-		if (!surf->depth_initialized) {
-			evergreen_init_depth_surface(rctx, surf);
-		}
+		evergreen_init_depth_surface(rctx, surf);
 
 		if (state->zsbuf.format != rctx->poly_offset_state.zs_format) {
 			rctx->poly_offset_state.zs_format = state->zsbuf.format;
