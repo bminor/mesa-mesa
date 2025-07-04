@@ -95,6 +95,10 @@ remove_phis_instr(nir_builder *b, nir_phi_instr *phi, void *unused)
    nir_def *def = NULL;
    bool needs_remat = false;
 
+   /* Skip unreachable phis, they should be removed by nir_opt_dead_cf. */
+   if (nir_block_is_unreachable(block))
+      return false;
+
    nir_foreach_phi_src(src, phi) {
       /* For phi nodes at the beginning of loops, we may encounter some
        * sources from backedges that point back to the destination of the
