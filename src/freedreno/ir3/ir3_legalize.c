@@ -1306,6 +1306,19 @@ block_sched(struct ir3 *ir)
    }
 }
 
+static void
+add_nop_before_block(struct ir3_block *block, unsigned repeat)
+{
+   struct ir3_instruction *nop = ir3_block_get_first_instr(block);
+
+   if (!nop || nop->opc != OPC_NOP) {
+      struct ir3_builder build = ir3_builder_at(ir3_before_block(block));
+      nop = ir3_NOP(&build);
+   }
+
+   nop->repeat = MAX2(nop->repeat, repeat);
+}
+
 /* Some gens have a hardware issue that needs to be worked around by 1)
  * inserting 4 nops after the second pred[tf] of a pred[tf]/pred[ft] pair and/or
  * inserting 6 nops after prede.
@@ -1319,17 +1332,11 @@ add_predication_workaround(struct ir3_compiler *compiler,
                            struct ir3_instruction *prede)
 {
    if (predtf && compiler->predtf_nop_quirk) {
-      struct ir3_builder build = ir3_builder_at(
-         ir3_before_block(predtf->block->predecessors[0]->successors[1]));
-      struct ir3_instruction *nop = ir3_NOP(&build);
-      nop->repeat = 4;
+      add_nop_before_block(predtf->block->predecessors[0]->successors[1], 4);
    }
 
    if (compiler->prede_nop_quirk) {
-      struct ir3_builder build =
-         ir3_builder_at(ir3_before_block(prede->block->successors[0]));
-      struct ir3_instruction *nop = ir3_NOP(&build);
-      nop->repeat = 6;
+      add_nop_before_block(prede->block->successors[0], 6);
    }
 }
 

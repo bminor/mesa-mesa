@@ -616,6 +616,16 @@ ir3_block_get_last_phi(struct ir3_block *block)
 }
 
 struct ir3_instruction *
+ir3_block_get_first_instr(struct ir3_block *block)
+{
+   if (list_is_empty(&block->instr_list)) {
+      return NULL;
+   }
+
+   return list_first_entry(&block->instr_list, struct ir3_instruction, node);
+}
+
+struct ir3_instruction *
 ir3_find_shpe(struct ir3 *ir)
 {
    if (!ir3_has_preamble(ir)) {
