@@ -2278,6 +2278,189 @@ static const __DRIextension *dri2_loader_extensions[] = {
    NULL,
 };
 
+static EGLBoolean
+dri2_wl_surface_throttle(struct dri2_egl_surface *dri2_surf)
+{
+   struct dri2_egl_display *dri2_dpy =
+      dri2_egl_display(dri2_surf->base.Resource.Display);
+
+   while (dri2_surf->throttle_callback != NULL)
+      if (loader_wayland_dispatch(dri2_dpy->wl_dpy, dri2_surf->wl_queue, NULL) ==
+          -1)
+         return EGL_FALSE;
+
+   if (dri2_surf->base.SwapInterval > 0) {
+      dri2_surf->throttle_callback =
+         wl_surface_frame(dri2_surf->wayland_surface.wrapper);
+      wl_callback_add_listener(dri2_surf->throttle_callback, &throttle_listener,
+                               dri2_surf);
+   }
+
+   return EGL_TRUE;
+}
+
+static EGLBoolean
+dri2_wl_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
+                                        const EGLint *rects, EGLint n_rects)
+{
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
+
+   if (!dri2_surf->wl_win)
+      return _eglError(EGL_BAD_NATIVE_WINDOW, "dri2_swap_buffers");
+
+   if (!dri2_wl_surface_throttle(dri2_surf))
+      return EGL_FALSE;
+
+   if (n_rects) {
+      if (dri2_dpy->kopper)
+         kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, n_rects, rects);
+      else
+         driSwapBuffersWithDamage(dri2_surf->dri_drawable, n_rects, rects);
+   } else {
+      if (dri2_dpy->kopper)
+         kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
+      else
+         driSwapBuffers(dri2_surf->dri_drawable);
+   }
+
+   dri2_surf->current = dri2_surf->back;
+   dri2_surf->back = NULL;
+
+   return EGL_TRUE;
+}
+
+static EGLBoolean
+dri2_wl_kopper_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
+{
+   dri2_wl_kopper_swap_buffers_with_damage(disp, draw, NULL, 0);
+   return EGL_TRUE;
+}
+
+static EGLint
+dri2_wl_kopper_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
+{
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surface);
+
+   /* This can legitimately be null for lavapipe */
+   if (dri2_dpy->kopper)
+      return kopperQueryBufferAge(dri2_surf->dri_drawable);
+   else
+      return driSWRastQueryBufferAge(dri2_surf->dri_drawable);
+   return 0;
+}
+
+static const struct dri2_egl_display_vtbl dri2_wl_kopper_display_vtbl = {
+   .authenticate = NULL,
+   .create_window_surface = dri2_wl_create_window_surface,
+   .create_pixmap_surface = dri2_wl_create_pixmap_surface,
+   .destroy_surface = dri2_wl_destroy_surface,
+   .create_image = dri2_create_image_khr,
+   .swap_buffers = dri2_wl_kopper_swap_buffers,
+   .swap_buffers_with_damage = dri2_wl_kopper_swap_buffers_with_damage,
+   .get_dri_drawable = dri2_surface_get_dri_drawable,
+   .query_buffer_age = dri2_wl_kopper_query_buffer_age,
+};
+
+static_assert(sizeof(struct kopper_vk_surface_create_storage) >=
+                 sizeof(VkWaylandSurfaceCreateInfoKHR),
+              "");
+
+static void
+kopperSetSurfaceCreateInfo(void *_draw, struct kopper_loader_info *out)
+{
+   struct dri2_egl_surface *dri2_surf = _draw;
+   struct dri2_egl_display *dri2_dpy =
+      dri2_egl_display(dri2_surf->base.Resource.Display);
+   VkWaylandSurfaceCreateInfoKHR *wlsci =
+      (VkWaylandSurfaceCreateInfoKHR *)&out->bos;
+
+   wlsci->sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+   wlsci->pNext = NULL;
+   wlsci->flags = 0;
+   wlsci->display = dri2_dpy->wl_dpy;
+   /* Pass the original wl_surface through to Vulkan WSI.  If we pass the
+    * proxy wrapper, kopper won't be able to properly de-duplicate surfaces
+    * and we may end up creating two VkSurfaceKHRs for the same underlying
+    * wl_surface.  Vulkan WSI (which kopper calls into) will make its own
+    * queues and proxy wrappers.
+    */
+   wlsci->surface = dri2_surf->wayland_surface.surface;
+   out->present_opaque = dri2_surf->base.PresentOpaque;
+   /* convert to vulkan constants */
+   switch (dri2_surf->base.CompressionRate) {
+   case EGL_SURFACE_COMPRESSION_FIXED_RATE_NONE_EXT:
+      out->compression = 0;
+      break;
+   case EGL_SURFACE_COMPRESSION_FIXED_RATE_DEFAULT_EXT:
+      out->compression = UINT32_MAX;
+      break;
+#define EGL_VK_COMP(NUM) \
+   case EGL_SURFACE_COMPRESSION_FIXED_RATE_##NUM##BPC_EXT: \
+      out->compression = VK_IMAGE_COMPRESSION_FIXED_RATE_##NUM##BPC_BIT_EXT; \
+      break
+   EGL_VK_COMP(1);
+   EGL_VK_COMP(2);
+   EGL_VK_COMP(3);
+   EGL_VK_COMP(4);
+   EGL_VK_COMP(5);
+   EGL_VK_COMP(6);
+   EGL_VK_COMP(7);
+   EGL_VK_COMP(8);
+   EGL_VK_COMP(9);
+   EGL_VK_COMP(10);
+   EGL_VK_COMP(11);
+   EGL_VK_COMP(12);
+#undef EGL_VK_COMP
+   default:
+      unreachable("unknown compression rate");
+   }
+}
+
+static void
+kopper_update_buffers(struct dri2_egl_surface *dri2_surf)
+{
+   /* we need to do the following operations only once per frame */
+   if (dri2_surf->back)
+      return;
+
+   if (dri2_surf->wl_win &&
+       (dri2_surf->base.Width != dri2_surf->wl_win->width ||
+        dri2_surf->base.Height != dri2_surf->wl_win->height)) {
+
+      dri2_surf->base.Width = dri2_surf->wl_win->width;
+      dri2_surf->base.Height = dri2_surf->wl_win->height;
+      dri2_surf->dx = dri2_surf->wl_win->dx;
+      dri2_surf->dy = dri2_surf->wl_win->dy;
+      dri2_surf->current = NULL;
+   }
+}
+
+static void
+dri2_wl_kopper_get_drawable_info(struct dri_drawable *draw, int *w,
+                                 int *h, void *loaderPrivate)
+{
+   struct dri2_egl_surface *dri2_surf = loaderPrivate;
+
+   kopper_update_buffers(dri2_surf);
+   *w = dri2_surf->base.Width;
+   *h = dri2_surf->base.Height;
+}
+
+static const __DRIkopperLoaderExtension kopper_loader_extension = {
+   .base = {__DRI_KOPPER_LOADER, 1},
+
+   .SetSurfaceCreateInfo = kopperSetSurfaceCreateInfo,
+   .GetDrawableInfo = dri2_wl_kopper_get_drawable_info,
+};
+
+static const __DRIextension *kopper_loader_extensions[] = {
+   &kopper_loader_extension.base,
+   &image_lookup_extension.base,
+   NULL,
+};
+
 static void
 dri2_wl_add_configs_for_visuals(_EGLDisplay *disp)
 {
@@ -2552,25 +2735,6 @@ dri2_wl_swrast_allocate_buffer(struct dri2_egl_surface *dri2_surf, int format,
    return EGL_TRUE;
 }
 
-static void
-kopper_update_buffers(struct dri2_egl_surface *dri2_surf)
-{
-   /* we need to do the following operations only once per frame */
-   if (dri2_surf->back)
-      return;
-
-   if (dri2_surf->wl_win &&
-       (dri2_surf->base.Width != dri2_surf->wl_win->width ||
-        dri2_surf->base.Height != dri2_surf->wl_win->height)) {
-
-      dri2_surf->base.Width = dri2_surf->wl_win->width;
-      dri2_surf->base.Height = dri2_surf->wl_win->height;
-      dri2_surf->dx = dri2_surf->wl_win->dx;
-      dri2_surf->dy = dri2_surf->wl_win->dy;
-      dri2_surf->current = NULL;
-   }
-}
-
 static int
 swrast_update_buffers(struct dri2_egl_surface *dri2_surf)
 {
@@ -2669,27 +2833,6 @@ dri2_wl_swrast_get_backbuffer_data(struct dri2_egl_surface *dri2_surf)
    return dri2_surf->back->data;
 }
 
-static EGLBoolean
-dri2_wl_surface_throttle(struct dri2_egl_surface *dri2_surf)
-{
-   struct dri2_egl_display *dri2_dpy =
-      dri2_egl_display(dri2_surf->base.Resource.Display);
-
-   while (dri2_surf->throttle_callback != NULL)
-      if (loader_wayland_dispatch(dri2_dpy->wl_dpy, dri2_surf->wl_queue, NULL) ==
-          -1)
-         return EGL_FALSE;
-
-   if (dri2_surf->base.SwapInterval > 0) {
-      dri2_surf->throttle_callback =
-         wl_surface_frame(dri2_surf->wayland_surface.wrapper);
-      wl_callback_add_listener(dri2_surf->throttle_callback, &throttle_listener,
-                               dri2_surf);
-   }
-
-   return EGL_TRUE;
-}
-
 static void
 dri2_wl_swrast_commit_backbuffer(struct dri2_egl_surface *dri2_surf)
 {
@@ -2715,17 +2858,6 @@ dri2_wl_swrast_commit_backbuffer(struct dri2_egl_surface *dri2_surf)
    }
 
    wl_display_flush(dri2_dpy->wl_dpy);
-}
-
-static void
-dri2_wl_kopper_get_drawable_info(struct dri_drawable *draw, int *w,
-                                 int *h, void *loaderPrivate)
-{
-   struct dri2_egl_surface *dri2_surf = loaderPrivate;
-
-   kopper_update_buffers(dri2_surf);
-   *w = dri2_surf->base.Width;
-   *h = dri2_surf->base.Height;
 }
 
 static void
@@ -2828,44 +2960,6 @@ dri2_wl_swrast_put_image(struct dri_drawable *draw, int op, int x, int y, int w,
 }
 
 static EGLBoolean
-dri2_wl_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
-                                        const EGLint *rects, EGLint n_rects)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
-
-   if (!dri2_surf->wl_win)
-      return _eglError(EGL_BAD_NATIVE_WINDOW, "dri2_swap_buffers");
-
-   if (!dri2_wl_surface_throttle(dri2_surf))
-      return EGL_FALSE;
-
-   if (n_rects) {
-      if (dri2_dpy->kopper)
-         kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, n_rects, rects);
-      else
-         driSwapBuffersWithDamage(dri2_surf->dri_drawable, n_rects, rects);
-   } else {
-      if (dri2_dpy->kopper)
-         kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
-      else
-         driSwapBuffers(dri2_surf->dri_drawable);
-   }
-
-   dri2_surf->current = dri2_surf->back;
-   dri2_surf->back = NULL;
-
-   return EGL_TRUE;
-}
-
-static EGLBoolean
-dri2_wl_kopper_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
-{
-   dri2_wl_kopper_swap_buffers_with_damage(disp, draw, NULL, 0);
-   return EGL_TRUE;
-}
-
-static EGLBoolean
 dri2_wl_swrast_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
                                         const EGLint *rects, EGLint n_rects)
 {
@@ -2918,20 +3012,6 @@ dri2_wl_swrast_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
 {
    dri2_wl_swrast_swap_buffers_with_damage(disp, draw, NULL, 0);
    return EGL_TRUE;
-}
-
-static EGLint
-dri2_wl_kopper_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surface);
-
-   /* This can legitimately be null for lavapipe */
-   if (dri2_dpy->kopper)
-      return kopperQueryBufferAge(dri2_surf->dri_drawable);
-   else
-      return driSWRastQueryBufferAge(dri2_surf->dri_drawable);
-   return 0;
 }
 
 static EGLint
@@ -3035,18 +3115,6 @@ static const struct dri2_egl_display_vtbl dri2_wl_swrast_display_vtbl = {
    .query_buffer_age = dri2_wl_swrast_query_buffer_age,
 };
 
-static const struct dri2_egl_display_vtbl dri2_wl_kopper_display_vtbl = {
-   .authenticate = NULL,
-   .create_window_surface = dri2_wl_create_window_surface,
-   .create_pixmap_surface = dri2_wl_create_pixmap_surface,
-   .destroy_surface = dri2_wl_destroy_surface,
-   .create_image = dri2_create_image_khr,
-   .swap_buffers = dri2_wl_kopper_swap_buffers,
-   .swap_buffers_with_damage = dri2_wl_kopper_swap_buffers_with_damage,
-   .get_dri_drawable = dri2_surface_get_dri_drawable,
-   .query_buffer_age = dri2_wl_kopper_query_buffer_age,
-};
-
 static const __DRIswrastLoaderExtension swrast_loader_extension = {
    .base = {__DRI_SWRAST_LOADER, 2},
 
@@ -3056,74 +3124,8 @@ static const __DRIswrastLoaderExtension swrast_loader_extension = {
    .putImage2 = dri2_wl_swrast_put_image2,
 };
 
-static_assert(sizeof(struct kopper_vk_surface_create_storage) >=
-                 sizeof(VkWaylandSurfaceCreateInfoKHR),
-              "");
-
-static void
-kopperSetSurfaceCreateInfo(void *_draw, struct kopper_loader_info *out)
-{
-   struct dri2_egl_surface *dri2_surf = _draw;
-   struct dri2_egl_display *dri2_dpy =
-      dri2_egl_display(dri2_surf->base.Resource.Display);
-   VkWaylandSurfaceCreateInfoKHR *wlsci =
-      (VkWaylandSurfaceCreateInfoKHR *)&out->bos;
-
-   wlsci->sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-   wlsci->pNext = NULL;
-   wlsci->flags = 0;
-   wlsci->display = dri2_dpy->wl_dpy;
-   /* Pass the original wl_surface through to Vulkan WSI.  If we pass the
-    * proxy wrapper, kopper won't be able to properly de-duplicate surfaces
-    * and we may end up creating two VkSurfaceKHRs for the same underlying
-    * wl_surface.  Vulkan WSI (which kopper calls into) will make its own
-    * queues and proxy wrappers.
-    */
-   wlsci->surface = dri2_surf->wayland_surface.surface;
-   out->present_opaque = dri2_surf->base.PresentOpaque;
-   /* convert to vulkan constants */
-   switch (dri2_surf->base.CompressionRate) {
-   case EGL_SURFACE_COMPRESSION_FIXED_RATE_NONE_EXT:
-      out->compression = 0;
-      break;
-   case EGL_SURFACE_COMPRESSION_FIXED_RATE_DEFAULT_EXT:
-      out->compression = UINT32_MAX;
-      break;
-#define EGL_VK_COMP(NUM) \
-   case EGL_SURFACE_COMPRESSION_FIXED_RATE_##NUM##BPC_EXT: \
-      out->compression = VK_IMAGE_COMPRESSION_FIXED_RATE_##NUM##BPC_BIT_EXT; \
-      break
-   EGL_VK_COMP(1);
-   EGL_VK_COMP(2);
-   EGL_VK_COMP(3);
-   EGL_VK_COMP(4);
-   EGL_VK_COMP(5);
-   EGL_VK_COMP(6);
-   EGL_VK_COMP(7);
-   EGL_VK_COMP(8);
-   EGL_VK_COMP(9);
-   EGL_VK_COMP(10);
-   EGL_VK_COMP(11);
-   EGL_VK_COMP(12);
-#undef EGL_VK_COMP
-   default:
-      unreachable("unknown compression rate");
-   }
-}
-
-static const __DRIkopperLoaderExtension kopper_loader_extension = {
-   .base = {__DRI_KOPPER_LOADER, 1},
-
-   .SetSurfaceCreateInfo = kopperSetSurfaceCreateInfo,
-   .GetDrawableInfo = dri2_wl_kopper_get_drawable_info,
-};
 static const __DRIextension *swrast_loader_extensions[] = {
    &swrast_loader_extension.base,
-   &image_lookup_extension.base,
-   NULL,
-};
-static const __DRIextension *kopper_loader_extensions[] = {
-   &kopper_loader_extension.base,
    &image_lookup_extension.base,
    NULL,
 };
