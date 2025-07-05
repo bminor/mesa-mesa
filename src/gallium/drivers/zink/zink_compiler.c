@@ -1310,8 +1310,6 @@ zink_screen_init_compiler(struct zink_screen *screen)
       .has_isub = true,
       .lower_mul_2x32_64 = true,
       .support_16bit_alu = true, /* not quite what it sounds like */
-      .support_indirect_inputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_COMPUTE),
-      .support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_COMPUTE),
       .max_unroll_iterations = 0,
    };
 
@@ -1359,7 +1357,9 @@ zink_screen_init_compiler(struct zink_screen *screen)
          nir_lower_bitfield_reverse64 | nir_lower_bitfield_extract64;
    }
 
-   screen->nir_options.support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
+   screen->nir_options.support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
+                                                 BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
+                                                 BITFIELD_BIT(MESA_SHADER_FRAGMENT);
    screen->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
 }
 

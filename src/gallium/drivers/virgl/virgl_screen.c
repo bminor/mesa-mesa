@@ -1090,11 +1090,7 @@ virgl_create_screen(struct virgl_winsys *vws, const struct pipe_screen_config *c
    if (screen->caps.caps.v2.capability_bits & VIRGL_CAP_INDIRECT_INPUT_ADDR) {
       screen->compiler_options.support_indirect_inputs |= BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
                                                            BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-                                                           BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
                                                            BITFIELD_BIT(MESA_SHADER_FRAGMENT);
-
-      if (!(screen->caps.caps.v2.capability_bits & VIRGL_CAP_HOST_IS_GLES))
-         screen->compiler_options.support_indirect_inputs |= BITFIELD_BIT(MESA_SHADER_VERTEX);
    }
 
    slab_create_parent(&screen->transfer_pool, sizeof(struct virgl_transfer), 16);
