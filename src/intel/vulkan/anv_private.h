@@ -2918,6 +2918,36 @@ enum anv_descriptor_data {
    ANV_DESCRIPTOR_SURFACE_SAMPLER         = BITFIELD_BIT(9),
 };
 
+struct anv_embedded_sampler_key {
+   /** No need to track binding elements for embedded samplers as :
+    *
+    *    VUID-VkDescriptorSetLayoutBinding-flags-08006:
+    *
+    *       "If VkDescriptorSetLayoutCreateInfo:flags contains
+    *        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT,
+    *        descriptorCount must: less than or equal to 1"
+    *
+    * The following struct can be safely hash as it doesn't include in
+    * address/offset.
+    */
+   uint32_t sampler[4];
+   uint32_t color[4];
+};
+
+struct anv_descriptor_set_layout_sampler {
+   /* Immutable sampler used to populate descriptor sets on allocation */
+   struct anv_sampler *immutable_sampler;
+
+   /* Hashing key for embedded samplers */
+   struct anv_embedded_sampler_key embedded_key;
+
+   /* Whether ycbcr_conversion_state hold any data */
+   bool has_ycbcr_conversion;
+
+   /* YCbCr conversion state (only valid if has_ycbcr_conversion is true) */
+   struct vk_ycbcr_conversion_state ycbcr_conversion_state;
+};
+
 struct anv_descriptor_set_binding_layout {
    /* The type of the descriptors in this binding */
    VkDescriptorType type;
@@ -2969,8 +2999,8 @@ struct anv_descriptor_set_binding_layout {
     */
    uint16_t descriptor_sampler_stride;
 
-   /* Immutable samplers (or NULL if no immutable samplers) */
-   struct anv_sampler **immutable_samplers;
+   /* Sampler data (or NULL if no embedded/immutable samplers) */
+   struct anv_descriptor_set_layout_sampler *samplers;
 };
 
 enum anv_descriptor_set_layout_type {
@@ -3358,22 +3388,6 @@ struct anv_pipeline_binding {
        */
       uint8_t dynamic_offset_index;
    };
-};
-
-struct anv_embedded_sampler_key {
-   /** No need to track binding elements for embedded samplers as :
-    *
-    *    VUID-VkDescriptorSetLayoutBinding-flags-08006:
-    *
-    *       "If VkDescriptorSetLayoutCreateInfo:flags contains
-    *        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT,
-    *        descriptorCount must: less than or equal to 1"
-    *
-    * The following struct can be safely hash as it doesn't include in
-    * address/offset.
-    */
-   uint32_t sampler[4];
-   uint32_t color[4];
 };
 
 struct anv_pipeline_embedded_sampler_binding {
