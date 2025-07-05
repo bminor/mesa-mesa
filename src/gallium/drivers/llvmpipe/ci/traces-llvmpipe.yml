@@ -158,4 +158,4 @@ traces:
       label: [unsupported]
   warzone2100/warzone2100-default.trace:
     gl-vmware-llvmpipe:
-      checksum: 6defaef6e95be34f9ba891c80e7c3e89
+      checksum: 098aeff0e3dc5a70adfb9d9c9854a7d7
