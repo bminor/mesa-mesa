@@ -514,6 +514,33 @@ def get_pnext_member_copy(struct, src_type, member, types, level):
       }
       """ % (pnext_decl, case_stmts)
 
+def get_pnext_member_free(struct_type, types, field_name):
+    if not types[struct_type].extended_by:
+        return ""
+
+    pnext_decl = "const VkBaseInStructure *pnext = %s;" % field_name
+    case_stmts = ""
+    for type in types[struct_type].extended_by:
+        guard_pre_stmt = ""
+        guard_post_stmt = ""
+        if type.guard is not None:
+            guard_pre_stmt = "#ifdef %s" % type.guard
+            guard_post_stmt = "#endif"
+
+        case_stmts += """
+%s
+         case %s:
+            %s
+         break;
+%s
+      """ % (guard_pre_stmt, type.enum, get_struct_free("((%s *)pnext)" % (type.name), type.name, types), guard_post_stmt)
+    return """
+      %s
+      if (pnext) {
+         switch ((int32_t)pnext->sType) {%s}
+      }
+      """ % (pnext_decl, case_stmts)
+
 def get_struct_copy(dst, src_name, src_type, size, types, level=0):
     global tmp_dst_idx
     global tmp_src_idx
@@ -547,15 +574,20 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
     if_stmt = "if (%s) {" % src_name
     return "%s%s%s%s%s%s%s%s%s%s%s%s} else {%s%s%s}" % (if_stmt, indent, allocation, indent, copy, indent, tmp_dst, indent, tmp_src, indent, member_copies, indent_sameline, indent, null_assignment, indent_sameline)
 
-def get_struct_free(command, param, types):
+def get_command_struct_free(command, param, types):
     field_name = "cmd->u.%s.%s" % (to_struct_field_name(command.name), to_field_name(param.name))
+    return get_struct_free(field_name, param.type, types)
+
+def get_struct_free(field_name, struct_type, types):
     struct_free = "vk_free(queue->alloc, (void*)%s);" % field_name
     member_frees = ""
-    if (param.type in types):
-        for member in types[param.type].members:
+    if (struct_type in types):
+        for member in types[struct_type].members:
+            member_name = "%s->%s" % (field_name, member.name)
             if member.len and member.len != 'null-terminated':
-                member_name = "cmd->u.%s.%s->%s" % (to_struct_field_name(command.name), to_field_name(param.name), member.name)
                 member_frees += "vk_free(queue->alloc, (void*)%s);\n" % member_name
+            elif member.name == 'pNext':
+                member_frees += get_pnext_member_free(struct_type, types, member_name)
     return "%s   %s\n" % (member_frees, struct_free)
 
 EntrypointType = namedtuple('EntrypointType', 'name enum members extended_by guard')
@@ -675,7 +707,7 @@ def main():
         'to_struct_name': to_struct_name,
         'get_array_copy': get_array_copy,
         'get_struct_copy': get_struct_copy,
-        'get_struct_free': get_struct_free,
+        'get_struct_free': get_command_struct_free,
         'types': types,
         'manual_commands': MANUAL_COMMANDS,
         'no_enqueue_commands': NO_ENQUEUE_COMMANDS,
