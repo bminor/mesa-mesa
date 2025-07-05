@@ -1030,25 +1030,25 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
    if (nir->info.stage == MESA_SHADER_COMPUTE)
       return;
 
-   bool has_indirect_inputs =
-      (nir->options->support_indirect_inputs >> nir->info.stage) & 0x1;
+   bool lower_indirect_inputs =
+      !(nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage));
 
    /* Transform feedback requires that indirect outputs are lowered. */
-   bool has_indirect_outputs =
-      (nir->options->support_indirect_outputs >> nir->info.stage) & 0x1 &&
-      nir->xfb_info == NULL;
+   bool lower_indirect_outputs =
+      !(nir->options->support_indirect_outputs & BITFIELD_BIT(nir->info.stage)) ||
+      nir->xfb_info;
 
    /* TODO: This is a hack until a better solution is available.
     * For all shaders except TCS, lower all outputs to temps because:
     * - there can be output loads (nobody expects those outside of TCS)
     * - drivers don't expect when an output is only written in control flow
     *
-    * "has_indirect_outputs = false" causes all outputs to be lowered to temps.
+    * "lower_indirect_outputs = true" causes all outputs to be lowered to temps,
     * which lowers indirect stores, eliminates output loads, and moves all
     * output stores to the end or GS emits.
     */
    if (nir->info.stage != MESA_SHADER_TESS_CTRL)
-      has_indirect_outputs = false;
+      lower_indirect_outputs = true;
 
    /* TODO: Sorting variables by location is required due to some bug
     * in nir_lower_io_vars_to_temporaries. If variables are not sorted,
@@ -1063,10 +1063,10 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
    nir_sort_variables_by_location(nir, varying_var_mask);
 
-   if (!has_indirect_inputs || !has_indirect_outputs) {
+   if (lower_indirect_inputs || lower_indirect_outputs) {
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-               nir_shader_get_entrypoint(nir), !has_indirect_outputs,
-               !has_indirect_inputs);
+               nir_shader_get_entrypoint(nir), lower_indirect_outputs,
+               lower_indirect_inputs);
 
       /* We need to lower all the copy_deref's introduced by lower_io_to-
        * _temporaries before calling nir_lower_io.
@@ -1080,8 +1080,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
        */
       if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
          NIR_PASS(_, nir, nir_lower_indirect_derefs,
-                  (!has_indirect_inputs ? nir_var_shader_in : 0) |
-                     (!has_indirect_outputs ? nir_var_shader_out : 0),
+                  (lower_indirect_inputs ? nir_var_shader_in : 0) |
+                     (lower_indirect_outputs ? nir_var_shader_out : 0),
                   UINT32_MAX);
       }
    }
