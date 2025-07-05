@@ -40,9 +40,6 @@ protected:
 };
 
 bool
-r600_lower_scratch_addresses(nir_shader *shader);
-
-bool
 r600_lower_ubo_to_align16(nir_shader *shader);
 
 bool

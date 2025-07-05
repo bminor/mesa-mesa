@@ -69,53 +69,6 @@ AssemblyFromShader::lower(const Shader& ir)
 }
 
 static void
-r600_nir_lower_scratch_address_impl(nir_builder *b, nir_intrinsic_instr *instr)
-{
-   b->cursor = nir_before_instr(&instr->instr);
-
-   int address_index = 0;
-   int align;
-
-   if (instr->intrinsic == nir_intrinsic_store_scratch) {
-      align = instr->src[0].ssa->num_components;
-      address_index = 1;
-   } else {
-      align = instr->def.num_components;
-   }
-
-   nir_def *address = instr->src[address_index].ssa;
-   nir_def *new_address = nir_ishr_imm(b, address, 4 * align);
-
-   nir_src_rewrite(&instr->src[address_index], new_address);
-}
-
-bool
-r600_lower_scratch_addresses(nir_shader *shader)
-{
-   bool progress = false;
-   nir_foreach_function_impl(impl, shader)
-   {
-      nir_builder build = nir_builder_create(impl);
-
-      nir_foreach_block(block, impl)
-      {
-         nir_foreach_instr(instr, block)
-         {
-            if (instr->type != nir_instr_type_intrinsic)
-               continue;
-            nir_intrinsic_instr *op = nir_instr_as_intrinsic(instr);
-            if (op->intrinsic != nir_intrinsic_load_scratch &&
-                op->intrinsic != nir_intrinsic_store_scratch)
-               continue;
-            r600_nir_lower_scratch_address_impl(&build, op);
-            progress = true;
-         }
-      }
-   }
-   return progress;
-}
-
-static void
 insert_uniform_sorted(struct exec_list *var_list, nir_variable *new_var)
 {
    nir_foreach_variable_in_list(var, var_list)
@@ -447,7 +400,6 @@ r600_nir_lower_atomics(nir_shader *shader)
                                      nir_metadata_control_flow, NULL);
 }
 using r600::r600_lower_fs_out_to_vector;
-using r600::r600_lower_scratch_addresses;
 using r600::r600_lower_ubo_to_align16;
 
 int
