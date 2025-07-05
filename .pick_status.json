@@ -6224,7 +6224,7 @@
         "description": "glsl: fix a possible crash in gl_nir_lower_xfb_varying",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fa9cee4247de1530e5ff9441e64295a1d21024dc",
         "notes": null
