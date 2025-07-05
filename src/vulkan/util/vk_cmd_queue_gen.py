@@ -506,13 +506,11 @@ def get_pnext_member_copy(struct, src_type, member, types, level):
             %s
          break;
 %s
-      """ % (guard_pre_stmt, type.enum, get_struct_copy(field_name, "pnext", type.name, "sizeof(%s)" % type.name, types, level), guard_post_stmt)
+      """ % (guard_pre_stmt, type.enum, get_struct_copy(field_name, "pnext", type.name, "sizeof(%s)" % type.name, types, level + 1), guard_post_stmt)
     return """
       %s
       if (pnext) {
-         switch ((int32_t)pnext->sType) {
-         %s
-         }
+         switch ((int32_t)pnext->sType) {%s}
       }
       """ % (pnext_decl, case_stmts)
 
@@ -520,17 +518,20 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
     global tmp_dst_idx
     global tmp_src_idx
 
-    allocation = "%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);\n%sif (%s == NULL) goto err;\n" % (dst, size, "   " * (level + 1), dst)
-    copy = "memcpy((void*)%s, %s, %s);" % (dst, src_name, size)
-
     level += 1
+
     tmp_dst_name = "tmp_dst%d" % level
     tmp_src_name = "tmp_src%d" % level
+    
+    indent = "\n%s" % ("   " * (level + 1))
+    indent_sameline = "\n%s" % ("   " * level)
+
+    allocation = "%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);%sif (%s == NULL) goto err;\n" % (dst, size, indent, dst)
+    copy = "memcpy((void*)%s, %s, %s);" % (dst, src_name, size)
+
     tmp_dst = "%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_dst_name, dst, tmp_dst_name)
     tmp_src = "%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_src_name, src_name, tmp_src_name)
     member_copies = ""
-    indent = "\n%s" % ("   " * (level + 1))
-    indent_sameline = "\n%s" % ("   " * level)
     if src_type in types:
         for member in types[src_type].members:
             if member.len and member.len == 'struct-ptr':
