@@ -409,19 +409,12 @@ r600_glsl_type_size(const struct glsl_type *type, bool is_bindless)
 }
 
 void
-r600_get_natural_size_align_bytes(const struct glsl_type *type,
-                                  unsigned *size,
-                                  unsigned *align)
+r600_get_scratch_size_align(const struct glsl_type *type,
+                            unsigned *size,
+                            unsigned *align)
 {
-   if (type->base_type != GLSL_TYPE_ARRAY) {
-      *align = 1;
-      *size = 1;
-   } else {
-      unsigned elem_size, elem_align;
-      glsl_get_natural_size_align_bytes(type->fields.array, &elem_size, &elem_align);
-      *align = 1;
-      *size = type->length;
-   }
+   *size = glsl_count_vec4_slots(type, false, false);
+   *align = 1;
 }
 
 static bool
@@ -977,8 +970,8 @@ r600_lower_and_optimize_nir(nir_shader *sh,
             nir_lower_vars_to_scratch,
             nir_var_function_temp,
             40,
-            r600_get_natural_size_align_bytes,
-            r600_get_natural_size_align_bytes);
+            r600_get_scratch_size_align,
+            r600_get_scratch_size_align);
 
    while (optimize_once(sh))
       ;
