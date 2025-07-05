@@ -4557,19 +4557,9 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
 
    assert(prog->data->LinkStatus != LINKING_FAILURE);
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
-      if (!prog->_LinkedShaders[i])
-         continue;
-
-      /* Check for transform feedback varyings specified via the API */
-      prog->_LinkedShaders[i]->Program->nir->info.has_transform_feedback_varyings =
-            prog->TransformFeedback.NumVarying > 0;
-
-      /* Check for transform feedback varyings specified in the Shader */
-      if (prog->last_vert_prog) {
-         prog->_LinkedShaders[i]->Program->nir->info.has_transform_feedback_varyings |=
-               prog->last_vert_prog->sh.LinkedTransformFeedback->NumVarying > 0;
-      }
+   if (prog->last_vert_prog) {
+      prog->last_vert_prog->nir->info.has_transform_feedback_varyings |=
+         num_xfb_decls > 0;
    }
 
    /* Assign NIR XFB info to the last stage before the fragment shader */
