@@ -59,24 +59,6 @@ struct exec_ctx {
    exec_ctx(Program* program_) : program(program_), info(program->blocks.size()) {}
 };
 
-bool
-needs_exact(aco_ptr<Instruction>& instr)
-{
-   return false;
-}
-
-WQMState
-get_instr_needs(aco_ptr<Instruction>& instr)
-{
-   if (needs_exact(instr))
-      return Exact;
-
-   bool pred_by_exec = needs_exec_mask(instr.get()) || instr->opcode == aco_opcode::p_logical_end ||
-                       instr->isBranch();
-
-   return pred_by_exec ? WQM : Unspecified;
-}
-
 void
 transition_to_WQM(exec_ctx& ctx, Builder bld, unsigned idx)
 {
@@ -378,33 +360,6 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
    return i;
 }
 
-/* Avoid live-range splits in Exact mode:
- * Because the data register of atomic VMEM instructions
- * is shared between src and dst, it might be necessary
- * to create live-range splits during RA.
- * Make the live-range splits explicit in WQM mode.
- */
-void
-handle_atomic_data(exec_ctx& ctx, Builder& bld, unsigned block_idx, aco_ptr<Instruction>& instr)
-{
-   /* check if this is an atomic VMEM instruction */
-   int idx = -1;
-   if (!instr->isVMEM() || instr->definitions.empty())
-      return;
-   else if (instr->isMIMG())
-      idx = instr->operands[2].isTemp() ? 2 : -1;
-   else if (instr->operands.size() == 4)
-      idx = 3;
-
-   if (idx != -1) {
-      /* insert explicit copy of atomic data in WQM-mode */
-      transition_to_WQM(ctx, bld, block_idx);
-      Temp data = instr->operands[idx].getTemp();
-      data = bld.copy(bld.def(data.regClass()), data);
-      instr->operands[idx].setTemp(data);
-   }
-}
-
 void
 remove_disable_wqm(Instruction* instr)
 {
@@ -438,7 +393,7 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
    if (info.exec.back().type & mask_type_wqm) {
       state = WQM;
    } else {
-      assert(!ctx.handle_wqm || info.exec.back().type & mask_type_exact);
+      assert(!ctx.handle_wqm);
       state = Exact;
    }
 
@@ -446,18 +401,6 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
 
    for (; idx < block->instructions.size(); idx++) {
       aco_ptr<Instruction> instr = std::move(block->instructions[idx]);
-
-      WQMState needs = ctx.handle_wqm ? get_instr_needs(instr) : Unspecified;
-
-      if (needs == WQM && state != WQM) {
-         transition_to_WQM(ctx, bld, block->index);
-         state = WQM;
-      } else if (needs == Exact) {
-         if (ctx.handle_wqm)
-            handle_atomic_data(ctx, bld, block->index, instr);
-         transition_to_Exact(ctx, bld, block->index);
-         state = Exact;
-      }
 
       if (instr->opcode == aco_opcode::p_discard_if) {
          Operand current_exec = Operand(exec, bld.lm);
