@@ -4416,12 +4416,7 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
          return false;
    }
 
-   if (num_shaders == 1) {
-      gl_nir_opt_dead_builtin_varyings(consts, api, prog, NULL, linked_shader[0],
-                                       0, NULL);
-      gl_nir_opt_dead_builtin_varyings(consts, api, prog, linked_shader[0], NULL,
-                                       num_xfb_decls, xfb_decls);
-   } else {
+   if (num_shaders > 1) {
       /* Linking the stages in the opposite order (from fragment to vertex)
        * ensures that inter-shader outputs written to in an earlier stage
        * are eliminated if they are (transitively) not used in a later
@@ -4434,10 +4429,6 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
 
          struct gl_linked_shader *const sh_i = prog->_LinkedShaders[i];
          struct gl_linked_shader *const sh_next = prog->_LinkedShaders[next];
-
-         gl_nir_opt_dead_builtin_varyings(consts, api, prog, sh_i, sh_next,
-                                          next == MESA_SHADER_FRAGMENT ? num_xfb_decls : 0,
-                                          xfb_decls);
 
          const uint64_t reserved_out_slots =
             reserved_varying_slot(sh_i, nir_var_shader_out);

@@ -101,14 +101,6 @@ nir_variable * gl_nir_lower_xfb_varying(nir_shader *shader,
                                         const char *old_var_name,
                                         nir_variable *toplevel_var);
 
-void gl_nir_opt_dead_builtin_varyings(const struct gl_constants *consts,
-                                      gl_api api,
-                                      struct gl_shader_program *prog,
-                                      struct gl_linked_shader *producer,
-                                      struct gl_linked_shader *consumer,
-                                      unsigned num_tfeedback_decls,
-                                      struct xfb_decl *tfeedback_decls);
-
 void gl_nir_set_uniform_initializers(const struct gl_constants *consts,
                                      struct gl_shader_program *prog);
 
