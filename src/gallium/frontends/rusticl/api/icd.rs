@@ -531,15 +531,6 @@ pub extern "C" fn clGetExtensionFunctionAddress(
         // cl_khr_create_command_queue
         "clCreateCommandQueueWithPropertiesKHR" => cl_ext_func!(clCreateCommandQueueWithProperties: clCreateCommandQueueWithPropertiesKHR_fn),
 
-        // cl_khr_icd
-        "clGetPlatformInfo" => cl_ext_func!(clGetPlatformInfo: clGetPlatformInfo_fn),
-        "clIcdGetPlatformIDsKHR" => cl_ext_func!(clIcdGetPlatformIDsKHR: clIcdGetPlatformIDsKHR_fn),
-        "clIcdGetFunctionAddressForPlatformKHR" => cl_ext_func!(clIcdGetFunctionAddressForPlatformKHR: clIcdGetFunctionAddressForPlatformKHR_fn),
-        "clIcdSetPlatformDispatchDataKHR" => cl_ext_func!(clIcdSetPlatformDispatchDataKHR: clIcdSetPlatformDispatchDataKHR_fn),
-
-        // cl_khr_il_program
-        "clCreateProgramWithILKHR" => cl_ext_func!(clCreateProgramWithIL: clCreateProgramWithILKHR_fn),
-
         // cl_khr_gl_sharing
         "clCreateFromGLBuffer" => cl_ext_func!(clCreateFromGLBuffer: clCreateFromGLBuffer_fn),
         "clCreateFromGLRenderbuffer" => cl_ext_func!(clCreateFromGLRenderbuffer: clCreateFromGLRenderbuffer_fn),
@@ -552,8 +543,20 @@ pub extern "C" fn clGetExtensionFunctionAddress(
         "clGetGLObjectInfo" => cl_ext_func!(clGetGLObjectInfo: clGetGLObjectInfo_fn),
         "clGetGLTextureInfo" => cl_ext_func!(clGetGLTextureInfo: clGetGLTextureInfo_fn),
 
+        // cl_khr_icd
+        "clGetPlatformInfo" => cl_ext_func!(clGetPlatformInfo: clGetPlatformInfo_fn),
+        "clIcdGetPlatformIDsKHR" => cl_ext_func!(clIcdGetPlatformIDsKHR: clIcdGetPlatformIDsKHR_fn),
+        "clIcdGetFunctionAddressForPlatformKHR" => cl_ext_func!(clIcdGetFunctionAddressForPlatformKHR: clIcdGetFunctionAddressForPlatformKHR_fn),
+        "clIcdSetPlatformDispatchDataKHR" => cl_ext_func!(clIcdSetPlatformDispatchDataKHR: clIcdSetPlatformDispatchDataKHR_fn),
+
+        // cl_khr_il_program
+        "clCreateProgramWithILKHR" => cl_ext_func!(clCreateProgramWithIL: clCreateProgramWithILKHR_fn),
+
         // cl_khr_suggested_local_work_size
         "clGetKernelSuggestedLocalWorkSizeKHR" => cl_ext_func!(clGetKernelSuggestedLocalWorkSizeKHR: clGetKernelSuggestedLocalWorkSizeKHR_fn),
+
+        // cl_ext_buffer_device_address
+        "clSetKernelArgDevicePointerEXT" => cl_ext_func!(clSetKernelArgDevicePointerEXT: clSetKernelArgDevicePointerEXT_fn),
 
         // cl_arm_shared_virtual_memory
         "clEnqueueSVMFreeARM" => cl_ext_func!(clEnqueueSVMFreeARM: clEnqueueSVMFreeARM_fn),
@@ -565,9 +568,6 @@ pub extern "C" fn clGetExtensionFunctionAddress(
         "clSetKernelExecInfoARM" => cl_ext_func!(clSetKernelExecInfo: clSetKernelExecInfoARM_fn),
         "clSVMAllocARM" => cl_ext_func!(clSVMAlloc: clSVMAllocARM_fn),
         "clSVMFreeARM" => cl_ext_func!(clSVMFree: clSVMFreeARM_fn),
-
-        // cl_ext_buffer_device_address
-        "clSetKernelArgDevicePointerEXT" => cl_ext_func!(clSetKernelArgDevicePointerEXT: clSetKernelArgDevicePointerEXT_fn),
 
         // DPCPP bug https://github.com/intel/llvm/issues/9964
         "clSetProgramSpecializationConstant" => cl_ext_func!(clSetProgramSpecializationConstant: clSetProgramSpecializationConstant_fn),
