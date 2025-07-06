@@ -55,6 +55,7 @@ struct exec_ctx {
    std::vector<loop_info> loop;
    bool handle_wqm = false;
    bool had_demote_in_cf = false;
+   Temp local_exact_mask;
    exec_ctx(Program* program_) : program(program_), info(program->blocks.size()) {}
 };
 
@@ -145,6 +146,8 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
    Builder bld(ctx.program, &instructions);
    Block::edge_vec& preds = block->linear_preds;
    bool restore_exec = false;
+
+   ctx.local_exact_mask = Temp();
 
    /* start block */
    if (preds.empty()) {
@@ -498,6 +501,7 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
          info.exec.back().op = Operand(exec, bld.lm);
          instr->opcode = aco_opcode::p_exit_early_if_not;
          assert(!ctx.handle_wqm || (info.exec[0].type & mask_type_wqm) == 0);
+         ctx.local_exact_mask = Temp();
       } else if (instr->opcode == aco_opcode::p_is_helper) {
          Definition dst = instr->definitions[0];
          assert(dst.size() == bld.lm.size());
@@ -560,10 +564,8 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
          /* End shader if global mask is zero. */
          instr->opcode = aco_opcode::p_exit_early_if_not;
          instr->operands[0] = exit_cond;
-         bld.insert(std::move(instr));
 
-         continue;
-
+         ctx.local_exact_mask = Temp();
       } else if (instr->opcode == aco_opcode::p_elect) {
          bool all_lanes_enabled = info.exec.back().op.constantEquals(-1u);
          Definition dst = instr->definitions[0];
@@ -585,6 +587,25 @@ process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instructio
          state = Exact;
          ctx.handle_wqm = false;
          continue;
+      } else if (instr_disables_wqm(instr.get())) {
+         if (!ctx.handle_wqm) {
+            remove_disable_wqm(instr.get());
+         } else {
+            if (!info.exec.back().op.isTemp())
+               info.exec.back().op = bld.copy(bld.def(bld.lm), Operand(exec, bld.lm));
+
+            instr_wqm_mask(instr.get()) = info.exec.back().op;
+
+            if (info.exec.size() > 2) {
+               if (!ctx.local_exact_mask.id()) {
+                  ctx.local_exact_mask = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc),
+                                                  ctx.info[block->index].exec[0].op, Operand(exec, bld.lm));
+               }
+               instr_exact_mask(instr.get()) = Operand(ctx.local_exact_mask);
+            } else {
+               instr_exact_mask(instr.get()) = info.exec[0].op;
+            }
+         }
       }
 
       bld.insert(std::move(instr));
