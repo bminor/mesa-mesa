@@ -521,7 +521,7 @@ spec@ext_texture_srgb@texwrap formats-s3tc bordercolor-swizzled@GL_COMPRESSED_SR
 # These are llvmpipe crashes when running virgl on top of llvmpipe
 spec@glsl-1.50@execution@geometry@dynamic_input_array_index,Crash
 spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Crash
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Crash
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
 
 # uprev Piglit in Mesa
 spec@arb_es2_compatibility@texwrap formats bordercolor-swizzled,Fail
