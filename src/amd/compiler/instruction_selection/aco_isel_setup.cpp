@@ -367,6 +367,12 @@ init_context(isel_context* ctx, nir_shader* shader)
    apply_nuw_to_offsets(ctx, impl);
    ac_nir_flag_smem_for_loads(shader, ctx->program->gfx_level, false, true);
 
+   if (shader->info.stage == MESA_SHADER_FRAGMENT) {
+      nir_opt_load_skip_helpers_options skip_helper_options = {};
+      skip_helper_options.no_add_divergence = true;
+      nir_opt_load_skip_helpers(shader, &skip_helper_options);
+   }
+
    /* sanitize control flow */
    sanitize_cf_list(impl, &impl->body);
    nir_progress(true, impl, nir_metadata_none);
@@ -621,11 +627,8 @@ init_context(isel_context* ctx, nir_shader* shader)
             }
             case nir_instr_type_tex: {
                nir_tex_instr* tex = nir_instr_as_tex(instr);
-               RegType type = tex->def.divergent ? RegType::vgpr : RegType::sgpr;
-
-               if (tex->op == nir_texop_texture_samples) {
-                  assert(!tex->def.divergent);
-               }
+               RegType type =
+                  tex->def.divergent || tex->skip_helpers ? RegType::vgpr : RegType::sgpr;
 
                RegClass rc = get_reg_class(ctx, type, tex->def.num_components, tex->def.bit_size);
                regclasses[tex->def.index] = rc;

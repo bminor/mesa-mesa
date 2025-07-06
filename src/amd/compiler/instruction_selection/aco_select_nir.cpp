@@ -83,6 +83,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
    assert(instr->op != nir_texop_samples_identical);
 
    Builder bld(ctx->program, ctx->block);
+   bool disable_wqm = instr->skip_helpers;
    bool has_bias = false, has_lod = false, level_zero = false, has_compare = false,
         has_offset = false, has_ddx = false, has_ddy = false, has_derivs = false,
         has_sample_index = false, has_clamped_lod = false, has_wqm_coord = false;
@@ -338,7 +339,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
          Temp tg4_lod = bld.copy(bld.def(v1), Operand::zero());
          Temp size = bld.tmp(v2);
          MIMG_instruction* tex = emit_mimg(bld, aco_opcode::image_get_resinfo, {size}, resource,
-                                           Operand(s4), std::vector<Temp>{tg4_lod}, false);
+                                           Operand(s4), std::vector<Temp>{tg4_lod}, disable_wqm);
          tex->dim = dim;
          tex->dmask = 0x3;
          tex->da = da;
@@ -495,7 +496,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
                          : aco_opcode::image_load_mip;
       Operand vdata = instr->is_sparse ? emit_tfe_init(bld, tmp_dst) : Operand(v1);
       MIMG_instruction* tex =
-         emit_mimg(bld, op, {tmp_dst}, resource, Operand(s4), args, false, vdata);
+         emit_mimg(bld, op, {tmp_dst}, resource, Operand(s4), args, disable_wqm, vdata);
       if (instr->op == nir_texop_fragment_mask_fetch_amd)
          tex->dim = da ? ac_image_2darray : ac_image_2d;
       else
@@ -675,7 +676,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
 
    Operand vdata = instr->is_sparse ? emit_tfe_init(bld, tmp_dst) : Operand(v1);
    MIMG_instruction* tex =
-      emit_mimg(bld, opcode, {tmp_dst}, resource, Operand(sampler), args, false, vdata);
+      emit_mimg(bld, opcode, {tmp_dst}, resource, Operand(sampler), args, disable_wqm, vdata);
    tex->dim = dim;
    tex->dmask = dmask & 0xf;
    tex->da = da;
