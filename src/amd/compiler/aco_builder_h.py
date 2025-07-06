@@ -617,17 +617,23 @@ formats = [(f if len(f) == 5 else f + ('',)) for f in formats]
     % for num_definitions, num_operands in shapes:
         <%
         args = ['aco_opcode opcode']
+        has_disable_wqm = False
         for i in range(num_definitions):
             args.append('Definition def%d' % i)
         for i in range(num_operands):
             args.append('Op op%d' % i)
         for f in formats:
             args += f.get_builder_field_decls()
+            has_disable_wqm |= f.has_disable_wqm()
         %>\\
 
    Result ${name}(${', '.join(args)})
    {
-      Instruction* instr = create_instruction(opcode, (Format)(${'|'.join('(int)Format::%s' % f.name for f in formats)}), ${num_operands}, ${num_definitions});
+      unsigned num_ops = ${num_operands};
+      % if has_disable_wqm:
+      num_ops += disable_wqm * 2;
+      %endif
+      Instruction* instr = create_instruction(opcode, (Format)(${'|'.join('(int)Format::%s' % f.name for f in formats)}), num_ops, ${num_definitions});
         % for i in range(num_definitions):
             instr->definitions[${i}] = def${i};
             instr->definitions[${i}].setPrecise(is_precise);
@@ -639,6 +645,14 @@ formats = [(f if len(f) == 5 else f + ('',)) for f in formats]
         % for i in range(num_operands):
             instr->operands[${i}] = op${i}.op;
         % endfor
+
+        % if has_disable_wqm:
+        if (disable_wqm) {
+           instr_exact_mask(instr) = Operand();
+           instr_wqm_mask(instr) = Operand();
+        }
+        %endif
+
         % for f in formats:
             % for dest, field_name in zip(f.get_builder_field_dests(), f.get_builder_field_names()):
       instr->${f.get_accessor()}().${dest} = ${field_name};

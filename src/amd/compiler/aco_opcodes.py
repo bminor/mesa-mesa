@@ -201,6 +201,9 @@ class Format(IntEnum):
    def get_builder_field_decls(self):
       return [('%s %s=%s' % (f[0], f[1], f[2]) if f[2] != None else '%s %s' % (f[0], f[1])) for f in self.get_builder_fields()]
 
+   def has_disable_wqm(self):
+      return any([f[1] == 'disable_wqm' for f in self.get_builder_fields()])
+
    def get_builder_initialization(self, num_operands):
       res = ''
       if self == Format.SDWA:
