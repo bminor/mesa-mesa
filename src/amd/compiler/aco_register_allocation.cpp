@@ -111,7 +111,7 @@ struct PhysRegIterator {
 struct vector_info {
    vector_info() : is_weak(false), num_parts(0), parts(NULL) {}
    vector_info(Instruction* instr, unsigned start = 0, bool weak = false)
-       : is_weak(weak), num_parts(instr->operands.size() - start),
+       : is_weak(weak), num_parts(instr->operands.size() - start - (instr_disables_wqm(instr) * 2)),
          parts(instr->operands.begin() + start)
    {
       if (parts[0].isVectorAligned()) {
@@ -3065,7 +3065,8 @@ get_affinities(ra_ctx& ctx)
                     !instr->mimg().strict_wqm) {
 
             bool is_vector = false;
-            for (unsigned i = 3, vector_begin = 3; i < instr->operands.size(); i++) {
+            unsigned op_count = instr->operands.size() - (instr->mimg().disable_wqm * 2);
+            for (unsigned i = 3, vector_begin = 3; i < op_count; i++) {
                if (is_vector || instr->operands[i].isVectorAligned())
                   ctx.vectors[instr->operands[i].tempId()] = vector_info(instr.get(), vector_begin);
                else if (ctx.program->gfx_level < GFX12 && !instr->operands[3].isVectorAligned())

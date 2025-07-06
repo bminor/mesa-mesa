@@ -62,11 +62,7 @@ struct exec_ctx {
 bool
 needs_exact(aco_ptr<Instruction>& instr)
 {
-   if (instr->isMIMG()) {
-      return instr->mimg().disable_wqm;
-   } else {
-      return instr->isEXP() || instr->opcode == aco_opcode::p_dual_src_export_gfx11;
-   }
+   return instr->isEXP() || instr->opcode == aco_opcode::p_dual_src_export_gfx11;
 }
 
 WQMState
@@ -420,6 +416,8 @@ remove_disable_wqm(Instruction* instr)
       instr->mtbuf().disable_wqm = false;
    } else if (instr->isFlatLike()) {
       instr->flatlike().disable_wqm = false;
+   } else if (instr->isMIMG()) {
+      instr->mimg().disable_wqm = false;
    }
 
    /* Remove the two masks so that the assembler doesn't need to handle them. */
@@ -843,6 +841,8 @@ instr_disables_wqm(Instruction* instr)
       return instr->mtbuf().disable_wqm;
    } else if (instr->isFlatLike()) {
       return instr->flatlike().disable_wqm;
+   } else if (instr->isMIMG()) {
+      return instr->mimg().disable_wqm;
    }
 
    return false;

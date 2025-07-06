@@ -498,7 +498,7 @@ emit_pack_v1(isel_context* ctx, const std::vector<Temp>& unpacked)
 
 MIMG_instruction*
 emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc, Operand samp,
-          std::vector<Temp> coords, Operand vdata)
+          std::vector<Temp> coords, bool disable_wqm, Operand vdata)
 {
    bool is_vsample = !samp.isUndefined() || op == aco_opcode::image_msaa_load;
 
@@ -541,7 +541,8 @@ emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc, Operan
       coords.resize(nsa_size + 1);
    }
 
-   aco_ptr<Instruction> mimg{create_instruction(op, Format::MIMG, 3 + coords.size(), dsts.size())};
+   aco_ptr<Instruction> mimg{
+      create_instruction(op, Format::MIMG, 3 + coords.size() + disable_wqm * 2, dsts.size())};
    for (unsigned i = 0; i < dsts.size(); ++i)
       mimg->definitions[i] = Definition(dsts[i]);
    mimg->operands[0] = Operand(rsrc);
@@ -549,6 +550,14 @@ emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc, Operan
    mimg->operands[2] = vdata;
    for (unsigned i = 0; i < coords.size(); i++)
       mimg->operands[3 + i] = Operand(coords[i]);
+
+   if (disable_wqm) {
+      instr_exact_mask(mimg.get()) = Operand();
+      instr_wqm_mask(mimg.get()) = Operand();
+      mimg->mimg().disable_wqm = true;
+      bld.program->needs_exact = true;
+   }
+
    mimg->mimg().strict_wqm = strict_wqm;
 
    return &bld.insert(std::move(mimg))->mimg();

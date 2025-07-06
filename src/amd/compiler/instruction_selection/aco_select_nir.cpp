@@ -338,7 +338,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
          Temp tg4_lod = bld.copy(bld.def(v1), Operand::zero());
          Temp size = bld.tmp(v2);
          MIMG_instruction* tex = emit_mimg(bld, aco_opcode::image_get_resinfo, {size}, resource,
-                                           Operand(s4), std::vector<Temp>{tg4_lod});
+                                           Operand(s4), std::vector<Temp>{tg4_lod}, false);
          tex->dim = dim;
          tex->dmask = 0x3;
          tex->da = da;
@@ -494,7 +494,8 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
                          ? aco_opcode::image_load
                          : aco_opcode::image_load_mip;
       Operand vdata = instr->is_sparse ? emit_tfe_init(bld, tmp_dst) : Operand(v1);
-      MIMG_instruction* tex = emit_mimg(bld, op, {tmp_dst}, resource, Operand(s4), args, vdata);
+      MIMG_instruction* tex =
+         emit_mimg(bld, op, {tmp_dst}, resource, Operand(s4), args, false, vdata);
       if (instr->op == nir_texop_fragment_mask_fetch_amd)
          tex->dim = da ? ac_image_2darray : ac_image_2d;
       else
@@ -674,7 +675,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
 
    Operand vdata = instr->is_sparse ? emit_tfe_init(bld, tmp_dst) : Operand(v1);
    MIMG_instruction* tex =
-      emit_mimg(bld, opcode, {tmp_dst}, resource, Operand(sampler), args, vdata);
+      emit_mimg(bld, opcode, {tmp_dst}, resource, Operand(sampler), args, false, vdata);
    tex->dim = dim;
    tex->dmask = dmask & 0xf;
    tex->da = da;

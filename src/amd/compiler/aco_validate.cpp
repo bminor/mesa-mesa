@@ -859,13 +859,15 @@ validate_ir(Program* program)
                      instr.get());
             }
 
+            unsigned non_mask_ops = instr->operands.size() - (instr->mimg().disable_wqm * 2);
+
             if (instr->mimg().strict_wqm) {
                check(instr->operands[3].hasRegClass() &&
                         instr->operands[3].regClass().is_linear_vgpr(),
                      "MIMG operands[3] must be temp linear VGPR.", instr.get());
 
                unsigned total_size = 0;
-               for (unsigned i = 4; i < instr->operands.size(); i++) {
+               for (unsigned i = 4; i < non_mask_ops; i++) {
                   check(instr->operands[i].hasRegClass() && instr->operands[i].regClass() == v1,
                         "MIMG operands[4+] (VADDR) must be v1", instr.get());
                   total_size += instr->operands[i].bytes();
@@ -873,19 +875,18 @@ validate_ir(Program* program)
                check(total_size <= instr->operands[3].bytes(),
                      "MIMG operands[4+] must fit within operands[3].", instr.get());
             } else {
-               check(instr->operands.size() == 4 || program->gfx_level >= GFX10,
+               check(non_mask_ops == 4 || program->gfx_level >= GFX10,
                      "NSA is only supported on GFX10+", instr.get());
-               for (unsigned i = 3; i < instr->operands.size(); i++) {
+               for (unsigned i = 3; i < non_mask_ops; i++) {
                   check(instr->operands[i].hasRegClass() &&
                            instr->operands[i].regClass().type() == RegType::vgpr,
                         "MIMG operands[3+] (VADDR) must be VGPR", instr.get());
-                  if (instr->operands.size() > 4) {
+                  if (non_mask_ops > 4) {
                      if (program->gfx_level < GFX11) {
                         check(instr->operands[i].regClass() == v1,
                               "GFX10 MIMG VADDR must be v1 if NSA is used", instr.get());
                      } else {
-                        unsigned num_scalar =
-                           program->gfx_level >= GFX12 ? (instr->operands.size() - 4) : 4;
+                        unsigned num_scalar = program->gfx_level >= GFX12 ? (non_mask_ops - 4) : 4;
                         if (instr->opcode != aco_opcode::image_bvh_intersect_ray &&
                             instr->opcode != aco_opcode::image_bvh64_intersect_ray &&
                             instr->opcode != aco_opcode::image_bvh_dual_intersect_ray &&

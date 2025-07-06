@@ -2087,7 +2087,8 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
       }
 
       Operand vdata = is_sparse ? emit_tfe_init(bld, tmp) : Operand(v1);
-      MIMG_instruction* load = emit_mimg(bld, opcode, {tmp}, resource, Operand(s4), coords, vdata);
+      MIMG_instruction* load =
+         emit_mimg(bld, opcode, {tmp}, resource, Operand(s4), coords, false, vdata);
       load->cache = get_cache_flags(ctx, nir_intrinsic_access(instr) | ACCESS_TYPE_LOAD);
       load->a16 = instr->src[1].ssa->bit_size == 16;
       load->d16 = d16;
@@ -2230,7 +2231,7 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
    aco_opcode opcode = level_zero ? aco_opcode::image_store : aco_opcode::image_store_mip;
 
    MIMG_instruction* store =
-      emit_mimg(bld, opcode, {}, resource, Operand(s4), coords, Operand(data));
+      emit_mimg(bld, opcode, {}, resource, Operand(s4), coords, true, Operand(data));
    store->cache = cache;
    store->a16 = instr->src[1].ssa->bit_size == 16;
    store->d16 = d16;
@@ -2239,9 +2240,7 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
    ac_image_dim sdim = ac_get_image_dim(ctx->options->gfx_level, dim, is_array);
    store->dim = sdim;
    store->da = should_declare_array(sdim);
-   store->disable_wqm = true;
    store->sync = sync;
-   ctx->program->needs_exact = true;
    return;
 }
 
@@ -2389,7 +2388,7 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
    if (return_previous)
       tmps = {(cmpswap ? bld.tmp(data.regClass()) : dst)};
    MIMG_instruction* mimg =
-      emit_mimg(bld, image_op, tmps, resource, Operand(s4), coords, Operand(data));
+      emit_mimg(bld, image_op, tmps, resource, Operand(s4), coords, true, Operand(data));
    mimg->cache = get_atomic_cache_flags(ctx, return_previous);
    mimg->dmask = (1 << data.size()) - 1;
    mimg->a16 = instr->src[1].ssa->bit_size == 16;
@@ -2397,9 +2396,7 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
    ac_image_dim sdim = ac_get_image_dim(ctx->options->gfx_level, dim, is_array);
    mimg->dim = sdim;
    mimg->da = should_declare_array(sdim);
-   mimg->disable_wqm = true;
    mimg->sync = sync;
-   ctx->program->needs_exact = true;
    if (return_previous && cmpswap)
       bld.pseudo(aco_opcode::p_extract_vector, Definition(dst), tmps[0], Operand::zero());
    return;

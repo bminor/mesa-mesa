@@ -228,7 +228,8 @@ void emit_interp_mov_instr(isel_context* ctx, unsigned idx, unsigned component, 
                            Temp dst, Temp prim_mask, bool high_16bits);
 std::vector<Temp> emit_pack_v1(isel_context* ctx, const std::vector<Temp>& unpacked);
 MIMG_instruction* emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc,
-                            Operand samp, std::vector<Temp> coords, Operand vdata = Operand(v1));
+                            Operand samp, std::vector<Temp> coords, bool disable_wqm,
+                            Operand vdata = Operand(v1));
 Operand emit_tfe_init(Builder& bld, Temp dst);
 struct aco_export_mrt {
    Operand out[4];
