@@ -2820,10 +2820,16 @@ lower_to_hw_instr(Program* program)
                assert(clobber_vcc.regClass() == bld.lm && clobber_vcc.physReg() == vcc);
                assert(clobber_scc.isFixed() && clobber_scc.physReg() == scc);
 
-               bld.sop1(Builder::s_mov, Definition(exec_tmp.physReg(), bld.lm),
-                        Operand(exec, bld.lm));
-               bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), clobber_scc,
-                        Operand(exec, bld.lm));
+               bool disable_wqm = instr_disables_wqm(instr.get());
+               assert(instr->operands.size() == (disable_wqm ? 10 : 8));
+
+               /* If WQM was already ended, manually re-enable it. */
+               if (!disable_wqm) {
+                  bld.sop1(Builder::s_mov, Definition(exec_tmp.physReg(), bld.lm),
+                           Operand(exec, bld.lm));
+                  bld.sop1(Builder::s_wqm, Definition(exec, bld.lm), clobber_scc,
+                           Operand(exec, bld.lm));
+               }
 
                uint8_t enabled_channels = 0;
                Operand mrt0[4], mrt1[4];
@@ -2864,17 +2870,31 @@ lower_to_hw_instr(Program* program)
                   dst1 = dst1.advance(4);
                }
 
-               bld.sop1(Builder::s_mov, Definition(exec, bld.lm),
-                        Operand(exec_tmp.physReg(), bld.lm));
+               if (!disable_wqm) {
+                  bld.sop1(Builder::s_mov, Definition(exec, bld.lm),
+                           Operand(exec_tmp.physReg(), bld.lm));
+               }
 
                /* Force export all channels when everything is undefined. */
                if (!enabled_channels)
                   enabled_channels = 0xf;
 
-               bld.exp(aco_opcode::exp, mrt0[0], mrt0[1], mrt0[2], mrt0[3], enabled_channels,
-                       V_008DFC_SQ_EXP_MRT + 21, false);
-               bld.exp(aco_opcode::exp, mrt1[0], mrt1[1], mrt1[2], mrt1[3], enabled_channels,
-                       V_008DFC_SQ_EXP_MRT + 22, false);
+               Instruction* exp[2];
+
+               exp[0] =
+                  bld.exp(aco_opcode::exp, mrt0[0], mrt0[1], mrt0[2], mrt0[3], enabled_channels,
+                          V_008DFC_SQ_EXP_MRT + 21, false, false, false, disable_wqm);
+               exp[1] =
+                  bld.exp(aco_opcode::exp, mrt1[0], mrt1[1], mrt1[2], mrt1[3], enabled_channels,
+                          V_008DFC_SQ_EXP_MRT + 22, false, false, false, disable_wqm);
+
+               if (disable_wqm) {
+                  for (unsigned i = 0; i < 2; i++) {
+                     instr_exact_mask(exp[i]) = instr_exact_mask(instr.get());
+                     instr_wqm_mask(exp[i]) = instr_wqm_mask(instr.get());
+                  }
+               }
+
                break;
             }
             case aco_opcode::p_end_with_regs: {

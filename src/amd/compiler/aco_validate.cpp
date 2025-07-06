@@ -753,12 +753,22 @@ validate_ir(Program* program)
                      "Fifth definition of p_dual_src_export_gfx11 must be vcc", instr.get());
                check(instr->definitions[5].physReg() == scc,
                      "Sixth definition of p_dual_src_export_gfx11 must be scc", instr.get());
-               check(instr->operands.size() == 8, "p_dual_src_export_gfx11 must have 8 operands",
-                     instr.get());
+               check(instr->operands.size() == 8 || instr->operands.size() == 10,
+                     "p_dual_src_export_gfx11 must have 8 or 10 operands", instr.get());
                for (unsigned i = 0; i < instr->operands.size(); i++) {
-                  check(
-                     instr->operands[i].isOfType(RegType::vgpr) || instr->operands[i].isUndefined(),
-                     "Operands of p_dual_src_export_gfx11 must be VGPRs or undef", instr.get());
+                  if (i < 8) {
+                     check(instr->operands[i].isOfType(RegType::vgpr) ||
+                              instr->operands[i].isUndefined(),
+                           "Operands of p_dual_src_export_gfx11 must be VGPRs or undef",
+                           instr.get());
+                  } else {
+                     check(instr->operands[i].isUndefined() ||
+                              (instr->operands[i].hasRegClass() &&
+                               instr->operands[i].regClass() == program->lane_mask),
+                           "WQM/exact mask operands of p_dual_src_export_gfx11 must be undef or "
+                           "lane mask",
+                           instr.get());
+                  }
                }
             }
             break;

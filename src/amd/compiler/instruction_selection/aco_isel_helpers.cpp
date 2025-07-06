@@ -590,11 +590,14 @@ create_fs_dual_src_export_gfx11(isel_context* ctx, const struct aco_export_mrt* 
    Builder bld(ctx->program, ctx->block);
 
    aco_ptr<Instruction> exp{
-      create_instruction(aco_opcode::p_dual_src_export_gfx11, Format::PSEUDO, 8, 6)};
+      create_instruction(aco_opcode::p_dual_src_export_gfx11, Format::PSEUDO, 10, 6)};
    for (unsigned i = 0; i < 4; i++) {
       exp->operands[i] = mrt0 ? mrt0->out[i] : Operand(v1);
       exp->operands[i + 4] = mrt1 ? mrt1->out[i] : Operand(v1);
    }
+
+   instr_exact_mask(exp.get()) = Operand();
+   instr_wqm_mask(exp.get()) = Operand();
 
    RegClass type = RegClass(RegType::vgpr, util_bitcount(mrt0->enabled_channels));
    exp->definitions[0] = bld.def(type); /* mrt0 */
