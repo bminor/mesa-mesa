@@ -62,11 +62,7 @@ struct exec_ctx {
 bool
 needs_exact(aco_ptr<Instruction>& instr)
 {
-   if (instr->isMUBUF()) {
-      return instr->mubuf().disable_wqm;
-   } else if (instr->isMTBUF()) {
-      return instr->mtbuf().disable_wqm;
-   } else if (instr->isMIMG()) {
+   if (instr->isMIMG()) {
       return instr->mimg().disable_wqm;
    } else if (instr->isFlatLike()) {
       return instr->flatlike().disable_wqm;
@@ -419,6 +415,12 @@ void
 remove_disable_wqm(Instruction* instr)
 {
    assert(instr_disables_wqm(instr));
+
+   if (instr->isMUBUF()) {
+      instr->mubuf().disable_wqm = false;
+   } else if (instr->isMTBUF()) {
+      instr->mtbuf().disable_wqm = false;
+   }
 
    /* Remove the two masks so that the assembler doesn't need to handle them. */
    instr->operands.pop_back();
@@ -835,6 +837,12 @@ insert_exec_mask(Program* program)
 bool
 instr_disables_wqm(Instruction* instr)
 {
+   if (instr->isMUBUF()) {
+      return instr->mubuf().disable_wqm;
+   } else if (instr->isMTBUF()) {
+      return instr->mtbuf().disable_wqm;
+   }
+
    return false;
 }
 

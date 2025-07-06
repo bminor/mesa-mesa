@@ -2206,11 +2206,13 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
          default: UNREACHABLE(">4 channel buffer image store");
          }
       }
-      aco_ptr<Instruction> store{create_instruction(opcode, Format::MUBUF, 4, 0)};
+      aco_ptr<Instruction> store{create_instruction(opcode, Format::MUBUF, 6, 0)};
       store->operands[0] = Operand(rsrc);
       store->operands[1] = Operand(vindex);
       store->operands[2] = Operand::c32(0);
       store->operands[3] = Operand(data);
+      store->operands[4] = Operand();
+      store->operands[5] = Operand();
       store->mubuf().idxen = true;
       store->mubuf().cache = cache;
       store->mubuf().disable_wqm = true;
@@ -2357,12 +2359,14 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       Temp resource = bld.as_uniform(get_ssa_temp(ctx, instr->src[0].ssa));
       // assert(ctx->options->gfx_level < GFX9 && "GFX9 stride size workaround not yet
       // implemented.");
-      aco_ptr<Instruction> mubuf{create_instruction(is_64bit ? buf_op64 : buf_op, Format::MUBUF, 4,
+      aco_ptr<Instruction> mubuf{create_instruction(is_64bit ? buf_op64 : buf_op, Format::MUBUF, 6,
                                                     return_previous ? 1 : 0)};
       mubuf->operands[0] = Operand(resource);
       mubuf->operands[1] = Operand(vindex);
       mubuf->operands[2] = Operand::c32(0);
       mubuf->operands[3] = Operand(data);
+      mubuf->operands[4] = Operand();
+      mubuf->operands[5] = Operand();
       Definition def =
          return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
       if (return_previous)
@@ -2449,11 +2453,13 @@ visit_store_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
       if (write_datas[i].bytes() < 4)
          access |= ACCESS_MAY_STORE_SUBDWORD;
 
-      aco_ptr<Instruction> store{create_instruction(op, Format::MUBUF, 4, 0)};
+      aco_ptr<Instruction> store{create_instruction(op, Format::MUBUF, 6, 0)};
       store->operands[0] = Operand(rsrc);
       store->operands[1] = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
       store->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
       store->operands[3] = Operand(write_datas[i]);
+      store->operands[4] = Operand();
+      store->operands[5] = Operand();
       store->mubuf().offset = offsets[i];
       store->mubuf().offen = (offset.type() == RegType::vgpr);
       store->mubuf().cache = get_cache_flags(ctx, access);
@@ -2486,11 +2492,13 @@ visit_atomic_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp dst = get_ssa_temp(ctx, &instr->def);
 
    aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
-   aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 4, return_previous ? 1 : 0)};
+   aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 6, return_previous ? 1 : 0)};
    mubuf->operands[0] = Operand(rsrc);
    mubuf->operands[1] = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
    mubuf->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
    mubuf->operands[3] = Operand(data);
+   mubuf->operands[4] = Operand();
+   mubuf->operands[5] = Operand();
    Definition def =
       return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
    if (return_previous)
@@ -2639,7 +2647,7 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
 
          Temp rsrc = get_mubuf_global_rsrc(bld, write_address);
 
-         aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 4, 0)};
+         aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 6, 0)};
          mubuf->operands[0] = Operand(rsrc);
          if (write_address.type() == RegType::vgpr)
             mubuf->operands[1] = Operand(write_address);
@@ -2650,6 +2658,8 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
          mubuf->operands[2] =
             write_offset.type() == RegType::sgpr ? Operand(write_offset) : Operand::c32(0);
          mubuf->operands[3] = Operand(write_datas[i]);
+         mubuf->operands[4] = Operand();
+         mubuf->operands[5] = Operand();
          mubuf->mubuf().offen = write_offset.type() == RegType::vgpr;
          mubuf->mubuf().cache = get_cache_flags(ctx, access);
          mubuf->mubuf().offset = write_const_offset;
@@ -2779,7 +2789,7 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
 
       aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
 
-      aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 4, return_previous ? 1 : 0)};
+      aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 6, return_previous ? 1 : 0)};
       mubuf->operands[0] = Operand(rsrc);
       if (addr.type() == RegType::vgpr)
          mubuf->operands[1] = Operand(addr);
@@ -2789,6 +2799,8 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
          mubuf->operands[1] = Operand(v1);
       mubuf->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
       mubuf->operands[3] = Operand(data);
+      mubuf->operands[4] = Operand();
+      mubuf->operands[5] = Operand();
       Definition def =
          return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
       if (return_previous)

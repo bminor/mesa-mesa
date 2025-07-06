@@ -1449,7 +1449,8 @@ get_tied_defs(Instruction* instr)
               instr->opcode == aco_opcode::ds_bvh_stack_push8_pop1_rtn_b32 ||
               instr->opcode == aco_opcode::ds_bvh_stack_push8_pop2_rtn_b64) {
       ops.push_back(0);
-   } else if (instr->isMUBUF() && instr->definitions.size() == 1 && instr->operands.size() == 4) {
+   } else if (instr->isMUBUF() && instr->definitions.size() == 1 &&
+              (instr_info.is_atomic[(int)instr->opcode] || instr->mubuf().tfe)) {
       ops.push_back(3);
    } else if (instr->isMIMG() && instr->definitions.size() == 1 &&
               !instr->operands[2].isUndefined()) {
