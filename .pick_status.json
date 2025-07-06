@@ -5794,7 +5794,7 @@
         "description": "brw/disasm: Fix Gfx11 3src-instructions dst register disassembly",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e7179232c9d8968f45687c795323ef2b39719a2d",
         "notes": null
