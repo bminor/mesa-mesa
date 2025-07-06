@@ -461,7 +461,7 @@ pub fn check_cl_bool<T: PartialEq + TryInto<cl_uint>>(val: T) -> Option<bool> {
 }
 
 pub fn event_list_from_cl(
-    q: &Arc<Queue>,
+    q: &Queue,
     num_events_in_wait_list: cl_uint,
     event_wait_list: *const cl_event,
 ) -> CLResult<Vec<Arc<Event>>> {
