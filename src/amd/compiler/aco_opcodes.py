@@ -152,7 +152,8 @@ class Format(IntEnum):
                  ('unsigned', 'dest', None),
                  ('bool', 'compr', 'false', 'compressed'),
                  ('bool', 'done', 'false'),
-                 ('bool', 'vm', 'false', 'valid_mask')]
+                 ('bool', 'vm', 'false', 'valid_mask'),
+                 ('bool', 'disable_wqm', 'false')]
       elif self == Format.PSEUDO_BRANCH:
          return [('uint32_t', 'target0', '0', 'target[0]'),
                  ('uint32_t', 'target1', '0', 'target[1]')]

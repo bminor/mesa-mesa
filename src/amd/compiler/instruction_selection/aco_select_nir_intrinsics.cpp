@@ -5040,7 +5040,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 
       const bool row_en = instr->intrinsic == nir_intrinsic_export_row_amd;
 
-      aco_ptr<Instruction> exp{create_instruction(aco_opcode::exp, Format::EXP, 4 + row_en, 0)};
+      aco_ptr<Instruction> exp{create_instruction(aco_opcode::exp, Format::EXP, 6 + row_en, 0)};
 
       exp->exp().dest = target;
       exp->exp().enabled_mask = write_mask;
@@ -5084,6 +5084,10 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
          row = bld.copy(bld.def(s1, m0), row);
          exp->operands[4] = bld.m0(row);
       }
+
+      exp->exp().disable_wqm = true;
+      instr_exact_mask(exp.get()) = Operand();
+      instr_wqm_mask(exp.get()) = Operand();
 
       ctx->block->instructions.emplace_back(std::move(exp));
       break;
