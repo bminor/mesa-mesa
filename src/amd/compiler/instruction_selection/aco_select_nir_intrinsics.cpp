@@ -2622,7 +2622,7 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
          default: UNREACHABLE("store_global not implemented for this size.");
          }
 
-         aco_ptr<Instruction> flat{create_instruction(op, format, 3, 0)};
+         aco_ptr<Instruction> flat{create_instruction(op, format, 5, 0)};
          if (write_address.regClass() == s2) {
             assert(global && write_offset.id() && write_offset.type() == RegType::vgpr);
             flat->operands[0] = Operand(write_offset);
@@ -2633,6 +2633,8 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
             flat->operands[1] = Operand(s1);
          }
          flat->operands[2] = Operand(write_datas[i]);
+         flat->operands[3] = Operand();
+         flat->operands[4] = Operand();
          flat->flatlike().cache = get_cache_flags(ctx, access);
          assert(global || !write_const_offset);
          flat->flatlike().offset = write_const_offset;
@@ -2759,7 +2761,7 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       }
 
       aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
-      aco_ptr<Instruction> flat{create_instruction(op, format, 3, return_previous ? 1 : 0)};
+      aco_ptr<Instruction> flat{create_instruction(op, format, 5, return_previous ? 1 : 0)};
       if (addr.regClass() == s2) {
          assert(global && offset.id() && offset.type() == RegType::vgpr);
          flat->operands[0] = Operand(offset);
@@ -2770,6 +2772,8 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
          flat->operands[1] = Operand(s1);
       }
       flat->operands[2] = Operand(data);
+      flat->operands[3] = Operand();
+      flat->operands[4] = Operand();
       if (return_previous)
          flat->definitions[0] = Definition(dst);
       flat->flatlike().cache = get_atomic_cache_flags(ctx, return_previous);

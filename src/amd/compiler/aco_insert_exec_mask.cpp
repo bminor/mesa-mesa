@@ -64,8 +64,6 @@ needs_exact(aco_ptr<Instruction>& instr)
 {
    if (instr->isMIMG()) {
       return instr->mimg().disable_wqm;
-   } else if (instr->isFlatLike()) {
-      return instr->flatlike().disable_wqm;
    } else {
       return instr->isEXP() || instr->opcode == aco_opcode::p_dual_src_export_gfx11;
    }
@@ -420,6 +418,8 @@ remove_disable_wqm(Instruction* instr)
       instr->mubuf().disable_wqm = false;
    } else if (instr->isMTBUF()) {
       instr->mtbuf().disable_wqm = false;
+   } else if (instr->isFlatLike()) {
+      instr->flatlike().disable_wqm = false;
    }
 
    /* Remove the two masks so that the assembler doesn't need to handle them. */
@@ -841,6 +841,8 @@ instr_disables_wqm(Instruction* instr)
       return instr->mubuf().disable_wqm;
    } else if (instr->isMTBUF()) {
       return instr->mtbuf().disable_wqm;
+   } else if (instr->isFlatLike()) {
+      return instr->flatlike().disable_wqm;
    }
 
    return false;
