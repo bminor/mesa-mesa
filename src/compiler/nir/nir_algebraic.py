@@ -214,6 +214,7 @@ class Value(object):
       ${'true' if val.nsz else 'false'},
       ${'true' if val.nnan else 'false'},
       ${'true' if val.ninf else 'false'},
+      ${'true' if val.contract else 'false'},
       ${val.swizzle},
       ${val.c_opcode()},
       ${val.comm_expr_idx}, ${val.comm_exprs},
@@ -393,6 +394,7 @@ class Expression(Value):
       self.nsz = cond.pop('nsz', False)
       self.nnan = cond.pop('nnan', False)
       self.ninf = cond.pop('ninf', False)
+      self.contract = cond.pop('contract', False)
       self.swizzle = -1 if m.group('swizzle') is None else swizzles[m.group('swizzle').removeprefix('.')]
 
       assert len(cond) <= 1

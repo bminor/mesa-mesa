@@ -485,10 +485,10 @@ optimizations.extend([
    (('ffma@64', a, b, c), ('fadd', ('fmul', a, b), c), 'options->lower_ffma64'),
    (('ffmaz', a, b, c), ('fadd', ('fmulz', a, b), c), 'options->lower_ffma32'),
    # Always lower inexact ffma, because it will be fused back by late optimizations (nir_opt_algebraic_late).
-   (('~ffma@16', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma16'),
-   (('~ffma@32', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma32'),
-   (('~ffma@64', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma64'),
-   (('~ffmaz', a, b, c), ('fadd', ('fmulz', a, b), c), 'options->fuse_ffma32'),
+   (('ffma@16(contract)', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma16'),
+   (('ffma@32(contract)', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma32'),
+   (('ffma@64(contract)', a, b, c), ('fadd', ('fmul', a, b), c), 'options->fuse_ffma64'),
+   (('ffmaz(contract)', a, b, c), ('fadd', ('fmulz', a, b), c), 'options->fuse_ffma32'),
 
    (('~fmul', ('fadd', ('bcsel', a, ('fmul', b, c), 0), '#d'), '#e'),
     ('bcsel', a, ('fmul', ('fadd', ('fmul', b, c), d), e), ('fmul', d, e))),
@@ -3563,7 +3563,7 @@ for sz, mulz in itertools.product([16, 32, 64], [False, True]):
     fmul = ('fmulz' if mulz else 'fmul') + '(is_only_used_by_fadd)'
     ffma = 'ffmaz' if mulz else 'ffma'
 
-    fadd = '~fadd@{}'.format(sz)
+    fadd = 'fadd@{}(contract)'.format(sz)
     option = 'options->fuse_ffma{}'.format(sz)
 
     late_optimizations.extend([

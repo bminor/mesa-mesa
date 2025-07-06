@@ -148,6 +148,9 @@ typedef struct {
    /** Replacement does not preserve infinities. */
    bool ninf : 1;
 
+   /** Replacement contracts an expression */
+   bool contract : 1;
+
    /** Whether the use of the instruction should have a swizzle. */
    int16_t swizzle : 5;
 
