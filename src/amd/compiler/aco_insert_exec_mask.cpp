@@ -413,6 +413,16 @@ handle_atomic_data(exec_ctx& ctx, Builder& bld, unsigned block_idx, aco_ptr<Inst
 }
 
 void
+remove_disable_wqm(Instruction* instr)
+{
+   assert(instr_disables_wqm(instr));
+
+   /* Remove the two masks so that the assembler doesn't need to handle them. */
+   instr->operands.pop_back();
+   instr->operands.pop_back();
+}
+
+void
 process_instructions(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>& instructions,
                      unsigned idx)
 {
@@ -744,6 +754,49 @@ process_block(exec_ctx& ctx, Block* block)
    add_branch_code(ctx, block);
 }
 
+void
+disable_wqm_block(Program* program, Block* block)
+{
+   std::vector<aco_ptr<Instruction>> instructions;
+   instructions.reserve(block->instructions.size());
+
+   Builder bld(program, &instructions);
+
+   for (unsigned i = 0; i < block->instructions.size(); i++) {
+      aco_ptr<Instruction>& instr = block->instructions[i];
+      if (!instr_disables_wqm(instr.get())) {
+         bld.insert(std::move(instr));
+         continue;
+      }
+
+      Operand exact_mask = instr_exact_mask(instr.get());
+      Operand wqm_mask = instr_wqm_mask(instr.get());
+      assert(exact_mask.hasRegClass() && exact_mask.regClass() == bld.lm);
+      assert(wqm_mask.hasRegClass() && wqm_mask.regClass() == bld.lm);
+
+      bld.sop1(Builder::s_mov, Definition(exec, bld.lm), exact_mask);
+
+      remove_disable_wqm(instr.get());
+      bld.insert(std::move(instr));
+
+      /* Keep exact mask for whole clauses. */
+      for (; i + 1 < block->instructions.size(); i++) {
+         aco_ptr<Instruction>& next = block->instructions[i + 1];
+         if (!instr_disables_wqm(next.get()) ||
+             instr_exact_mask(next.get()).physReg() != exact_mask.physReg() ||
+             instr_wqm_mask(next.get()).physReg() != wqm_mask.physReg())
+            break;
+
+         remove_disable_wqm(next.get());
+         bld.insert(std::move(next));
+      }
+
+      bld.sop1(Builder::s_mov, Definition(exec, bld.lm), wqm_mask);
+   }
+
+   block->instructions = std::move(instructions);
+}
+
 } /* end namespace */
 
 void
@@ -756,6 +809,34 @@ insert_exec_mask(Program* program)
 
    for (Block& block : program->blocks)
       process_block(ctx, &block);
+}
+
+bool
+instr_disables_wqm(Instruction* instr)
+{
+   return false;
+}
+
+Operand&
+instr_exact_mask(Instruction* instr)
+{
+   return instr->operands[instr->operands.size() - 2];
+}
+
+Operand&
+instr_wqm_mask(Instruction* instr)
+{
+   return instr->operands[instr->operands.size() - 1];
+}
+
+void
+disable_wqm(Program* program)
+{
+   if (!program->needs_wqm || !program->needs_exact)
+      return;
+
+   for (Block& block : program->blocks)
+      disable_wqm_block(program, &block);
 }
 
 } // namespace aco

@@ -1916,6 +1916,10 @@ bool can_swap_operands(aco_ptr<Instruction>& instr, aco_opcode* new_op, unsigned
 
 uint32_t get_reduction_identity(ReduceOp op, unsigned idx);
 
+bool instr_disables_wqm(Instruction* instr);
+Operand& instr_exact_mask(Instruction* instr);
+Operand& instr_wqm_mask(Instruction* instr);
+
 unsigned get_mimg_nsa_dwords(const Instruction* instr);
 
 unsigned get_vopd_opy_start(const Instruction* instr);
@@ -2290,6 +2294,7 @@ void live_var_analysis(Program* program);
 std::vector<uint16_t> dead_code_analysis(Program* program);
 void dominator_tree(Program* program);
 void insert_exec_mask(Program* program);
+void disable_wqm(Program* program);
 void value_numbering(Program* program);
 void optimize(Program* program);
 void optimize_postRA(Program* program);

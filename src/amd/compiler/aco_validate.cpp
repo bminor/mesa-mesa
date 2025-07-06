@@ -404,18 +404,20 @@ validate_ir(Program* program)
          for (unsigned i = 0; i < instr->operands.size(); i++) {
             if (instr->operands[i].isUndefined()) {
                bool flat = instr->isFlatLike();
-               bool can_be_undef = is_phi(instr) || instr->isEXP() || instr->isReduction() ||
-                                   instr->opcode == aco_opcode::p_create_vector ||
-                                   instr->opcode == aco_opcode::p_start_linear_vgpr ||
-                                   instr->opcode == aco_opcode::p_jump_to_epilog ||
-                                   instr->opcode == aco_opcode::p_dual_src_export_gfx11 ||
-                                   instr->opcode == aco_opcode::p_end_with_regs ||
-                                   (instr->opcode == aco_opcode::p_interp_gfx11 && i == 0) ||
-                                   (instr->opcode == aco_opcode::p_bpermute_permlane && i == 0) ||
-                                   (flat && i == 1) || (instr->isMIMG() && (i == 1 || i == 2)) ||
-                                   ((instr->isMUBUF() || instr->isMTBUF()) && i == 1) ||
-                                   (instr->isScratch() && i == 0) || (instr->isDS() && i == 0) ||
-                                   (instr->opcode == aco_opcode::p_init_scratch && i == 0);
+               bool can_be_undef =
+                  is_phi(instr) || instr->isEXP() || instr->isReduction() ||
+                  instr->opcode == aco_opcode::p_create_vector ||
+                  instr->opcode == aco_opcode::p_start_linear_vgpr ||
+                  instr->opcode == aco_opcode::p_jump_to_epilog ||
+                  instr->opcode == aco_opcode::p_dual_src_export_gfx11 ||
+                  instr->opcode == aco_opcode::p_end_with_regs ||
+                  (instr->opcode == aco_opcode::p_interp_gfx11 && i == 0) ||
+                  (instr->opcode == aco_opcode::p_bpermute_permlane && i == 0) ||
+                  (flat && i == 1) || (instr->isMIMG() && (i == 1 || i == 2)) ||
+                  ((instr->isMUBUF() || instr->isMTBUF()) && i == 1) ||
+                  (instr->isScratch() && i == 0) || (instr->isDS() && i == 0) ||
+                  (instr->opcode == aco_opcode::p_init_scratch && i == 0) ||
+                  (instr_disables_wqm(instr.get()) && i + 2 >= instr->operands.size());
                check(can_be_undef, "Undefs can only be used in certain operands", instr.get());
             } else {
                check(instr->operands[i].isFixed() || instr->operands[i].isTemp() ||
