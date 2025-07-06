@@ -320,9 +320,16 @@ emit_load(struct lower_io_state *state,
    nir_intrinsic_set_dest_type(load, dest_type);
 
    if (load->intrinsic != nir_intrinsic_load_uniform) {
+      int location = var->data.location;
+      unsigned num_slots = get_number_of_slots(state, var);
+
+      /* Maximum values in nir_io_semantics. */
+      assert(location >= 0 && location <= 127);
+      assert(num_slots <= 63);
+
       nir_io_semantics semantics = { 0 };
-      semantics.location = var->data.location;
-      semantics.num_slots = get_number_of_slots(state, var);
+      semantics.location = location;
+      semantics.num_slots = num_slots;
       semantics.fb_fetch_output = var->data.fb_fetch_output;
       if (semantics.fb_fetch_output) {
          semantics.fb_fetch_output_coherent =
@@ -478,9 +485,16 @@ emit_store(struct lower_io_state *state, nir_def *data,
       }
    }
 
+   int location = var->data.location;
+   unsigned num_slots = get_number_of_slots(state, var);
+
+   /* Maximum values in nir_io_semantics. */
+   assert(location >= 0 && location <= 127);
+   assert(num_slots <= 63);
+
    nir_io_semantics semantics = { 0 };
-   semantics.location = var->data.location;
-   semantics.num_slots = get_number_of_slots(state, var);
+   semantics.location = location;
+   semantics.num_slots = num_slots;
    semantics.dual_source_blend_index = var->data.index;
    semantics.gs_streams = gs_streams;
    semantics.medium_precision = is_medium_precision(b->shader, var);
