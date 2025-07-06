@@ -762,8 +762,13 @@ dri2_yuv_dma_buf_supported(struct dri_screen *screen,
       return false;
 
    for (unsigned i = 0; i < map->nplanes; i++) {
-      if (!pscreen->is_format_supported(pscreen, map->planes[i].dri_format,
-            screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW))
+      /* Some planar-YUV formats can't be lowered unless the HW supports
+       * specific YUV-as-RGB formats. Those have their plane format set
+       * to __DRI_IMAGE_FORMAT_NONE. */
+      if (map->planes[i].dri_format == __DRI_IMAGE_FORMAT_NONE ||
+          !pscreen->is_format_supported(pscreen, map->planes[i].dri_format,
+                                        screen->target, 0, 0,
+                                        PIPE_BIND_SAMPLER_VIEW))
          return false;
    }
    return true;
