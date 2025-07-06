@@ -259,11 +259,15 @@ llvmpipe_sampler_matrix_destroy(struct llvmpipe_context *ctx)
       if (texture->state.static_state.format == PIPE_FORMAT_NONE)
          sampler_count = MIN2(sampler_count, 1);
 
-      for (uint32_t sampler_index = 0; sampler_index < sampler_count; sampler_index++)
-         free(texture->sample_functions[sampler_index]);
-
+      for (uint32_t sampler_index = 0; sampler_index < sampler_count; sampler_index++) {
+         if (texture->sample_functions[sampler_index] != matrix->jit_sample_functions)
+            free(texture->sample_functions[sampler_index]);
+      }
       free(texture->sample_functions);
-      free(texture->fetch_functions);
+
+      if (texture->fetch_functions != matrix->jit_fetch_functions)
+         free(texture->fetch_functions);
+
       free(texture->image_functions);
       free(texture);
    }
@@ -1192,13 +1196,18 @@ static void
 compile_sample_functions(struct llvmpipe_context *ctx, struct lp_texture_handle_state *texture,
                         struct lp_static_sampler_state *sampler, void **functions)
 {
+   struct lp_sampler_matrix *matrix = &ctx->sampler_matrix;
+
+   /* There is nothing to do if this texture+sampler combination uses the "default" functions. */
+   if (functions == matrix->jit_sample_functions || functions == matrix->jit_fetch_functions)
+      return;
+
    bool has_sampler = !!sampler;
 
    struct lp_static_sampler_state dummy_sampler = { 0 };
    if (!sampler)
       sampler = &dummy_sampler;
 
-   struct lp_sampler_matrix *matrix = &ctx->sampler_matrix;
    for (uint32_t sample_key = 0; sample_key < LP_SAMPLE_KEY_COUNT; sample_key++) {
       if (!BITSET_TEST(matrix->sample_keys, sample_key))
          continue;
@@ -1277,14 +1286,11 @@ llvmpipe_register_texture(struct llvmpipe_context *ctx, struct lp_texture_handle
                entry->sample_functions[i] = entry->sample_functions[0];
          }
       } else {
-         for (uint32_t i = 0; i < matrix->sampler_count; i++) {
-            entry->sample_functions[i] = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
-            compile_sample_functions(ctx, state, matrix->samplers + i, entry->sample_functions[i]);
-         }
+         for (uint32_t i = 0; i < matrix->sampler_count; i++)
+            entry->sample_functions[i] = matrix->jit_sample_functions;
       }
 
-      entry->fetch_functions = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
-      compile_sample_functions(ctx, state, NULL, entry->fetch_functions);
+      entry->fetch_functions = matrix->jit_fetch_functions;
 
       if (!entry->size_function)
          entry->size_function = matrix->jit_size_functions[0];
@@ -1336,8 +1342,7 @@ llvmpipe_register_sampler(struct llvmpipe_context *ctx, struct lp_static_sampler
          continue;
       }
 
-      texture->sample_functions[matrix->sampler_count - 1] = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
-      compile_sample_functions(ctx, &texture->state, state, texture->sample_functions[matrix->sampler_count - 1]);
+      texture->sample_functions[matrix->sampler_count - 1] = matrix->jit_sample_functions;
    }
 
    simple_mtx_unlock(&matrix->lock);
@@ -1367,7 +1372,8 @@ register_sample_key(struct llvmpipe_context *ctx, uint32_t sample_key)
 
       enum lp_sampler_op_type op_type = (sample_key & LP_SAMPLER_OP_TYPE_MASK) >> LP_SAMPLER_OP_TYPE_SHIFT;
       if (op_type == LP_SAMPLER_OP_FETCH) {
-         texture->fetch_functions[sample_key] = matrix->jit_fetch_functions[sample_key];
+         if (texture->fetch_functions != matrix->jit_fetch_functions)
+            texture->fetch_functions[sample_key] = matrix->jit_fetch_functions[sample_key];
          continue;
       }
 
@@ -1458,12 +1464,25 @@ llvmpipe_clear_sample_functions_cache(struct llvmpipe_context *ctx, struct pipe_
    /* All work is finished, it's safe to move cache entries into the table. */
    hash_table_foreach_remove(acquire_latest_function_cache(&matrix->caches[LP_FUNCTION_CACHE_SAMPLE]), entry) {
       struct sample_function_cache_key *key = (void *)entry->key;
+
+      if (key->texture_functions->sample_functions[key->sampler_index] == matrix->jit_sample_functions) {
+         key->texture_functions->sample_functions[key->sampler_index] = malloc(LP_SAMPLE_KEY_COUNT * sizeof(void *));
+         memcpy(key->texture_functions->sample_functions[key->sampler_index], matrix->jit_sample_functions,
+                LP_SAMPLE_KEY_COUNT * sizeof(void *));
+      }
+
       key->texture_functions->sample_functions[key->sampler_index][key->sample_key] = entry->data;
       free(key);
    }
 
    hash_table_foreach_remove(acquire_latest_function_cache(&matrix->caches[LP_FUNCTION_CACHE_FETCH]), entry) {
       struct sample_function_cache_key *key = (void *)entry->key;
+
+      if (key->texture_functions->fetch_functions == matrix->jit_fetch_functions) {
+         key->texture_functions->fetch_functions = malloc(LP_SAMPLE_KEY_COUNT * sizeof(void *));
+         memcpy(key->texture_functions->fetch_functions, matrix->jit_fetch_functions, LP_SAMPLE_KEY_COUNT * sizeof(void *));
+      }
+
       key->texture_functions->fetch_functions[key->sample_key] = entry->data;
       free(key);
    }
