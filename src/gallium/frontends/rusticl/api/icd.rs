@@ -405,7 +405,7 @@ pub trait ArcedCLObject<'a, const ERR: i32, CL: ReferenceCountedAPIPointer<Self,
 macro_rules! impl_cl_type_trait_base {
     (@BASE $cl: ident, $t: ident, [$($types: ident),+], $err: ident, $($field:ident).+) => {
         impl $crate::api::icd::ReferenceCountedAPIPointer<$t, $err> for $cl {
-            fn get_ptr(&self) -> CLResult<*const $t> {
+            fn get_ptr(&self) -> $crate::api::icd::CLResult<*const $t> {
                 type Base = $crate::api::icd::CLObjectBase<$err>;
                 let t = Base::check_ptr(self.cast())?;
                 if ![$($crate::api::icd::RusticlTypes::$types),+].contains(&t) {
