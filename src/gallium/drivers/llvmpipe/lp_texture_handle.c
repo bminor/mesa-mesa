@@ -1190,16 +1190,8 @@ compile_jit_size_function(struct llvmpipe_context *ctx, bool samples)
 
 static void
 compile_sample_functions(struct llvmpipe_context *ctx, struct lp_texture_handle_state *texture,
-                        struct lp_static_sampler_state *sampler, void ***dst)
+                        struct lp_static_sampler_state *sampler, void **functions)
 {
-   void **functions;
-   if (*dst) {
-      functions = *dst;
-   } else {
-      functions = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
-      *dst = functions;
-   }
-
    bool has_sampler = !!sampler;
 
    struct lp_static_sampler_state dummy_sampler = { 0 };
@@ -1278,16 +1270,21 @@ llvmpipe_register_texture(struct llvmpipe_context *ctx, struct lp_texture_handle
       entry->sampler_count = matrix->sampler_count;
 
       if (state->static_state.format == PIPE_FORMAT_NONE) {
-         if (matrix->sampler_count)
-            compile_sample_functions(ctx, state, NULL, entry->sample_functions);
-         for (uint32_t i = 1; i < matrix->sampler_count; i++)
-            entry->sample_functions[i] = entry->sample_functions[0];
+         if (matrix->sampler_count) {
+            entry->sample_functions[0] = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
+            compile_sample_functions(ctx, state, NULL, entry->sample_functions[0]);
+            for (uint32_t i = 1; i < matrix->sampler_count; i++)
+               entry->sample_functions[i] = entry->sample_functions[0];
+         }
       } else {
-         for (uint32_t i = 0; i < matrix->sampler_count; i++)
-            compile_sample_functions(ctx, state, matrix->samplers + i, entry->sample_functions + i);
+         for (uint32_t i = 0; i < matrix->sampler_count; i++) {
+            entry->sample_functions[i] = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
+            compile_sample_functions(ctx, state, matrix->samplers + i, entry->sample_functions[i]);
+         }
       }
 
-      compile_sample_functions(ctx, state, NULL, &entry->fetch_functions);
+      entry->fetch_functions = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
+      compile_sample_functions(ctx, state, NULL, entry->fetch_functions);
 
       if (!entry->size_function)
          entry->size_function = matrix->jit_size_functions[0];
@@ -1329,21 +1326,18 @@ llvmpipe_register_sampler(struct llvmpipe_context *ctx, struct lp_static_sampler
       texture->sampler_count = matrix->sampler_count;
       texture->sample_functions = realloc(texture->sample_functions, matrix->sampler_count * sizeof(void **));
 
-      void ***dst = texture->sample_functions + (matrix->sampler_count - 1);
-
       if (texture->state.static_state.format == PIPE_FORMAT_NONE)  {
          if (matrix->sampler_count == 1) {
-            *dst = NULL;
-            compile_sample_functions(ctx, &texture->state, NULL, dst);
+            texture->sample_functions[0] = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
+            compile_sample_functions(ctx, &texture->state, NULL, texture->sample_functions[0]);
          } else {
-            *dst = texture->sample_functions[0];
+            texture->sample_functions[matrix->sampler_count - 1] = texture->sample_functions[0];
          }
-
          continue;
       }
 
-      *dst = NULL;
-      compile_sample_functions(ctx, &texture->state, state, dst);
+      texture->sample_functions[matrix->sampler_count - 1] = calloc(LP_SAMPLE_KEY_COUNT, sizeof(void *));
+      compile_sample_functions(ctx, &texture->state, state, texture->sample_functions[matrix->sampler_count - 1]);
    }
 
    simple_mtx_unlock(&matrix->lock);
