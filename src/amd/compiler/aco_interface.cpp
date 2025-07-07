@@ -478,6 +478,8 @@ aco_nir_op_supports_packed_math_16bit(const nir_alu_instr* alu)
    case nir_op_ishl:
    case nir_op_ishr:
    case nir_op_ushr: return true;
+   case nir_op_u2u16:
+   case nir_op_i2i16: return alu->src[0].src.ssa->bit_size == 8;
    default: return false;
    }
 }
