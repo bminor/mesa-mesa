@@ -3164,7 +3164,7 @@
         "description": "frontends/va: Fix leaking fences in GetImage/PutImage",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0f20a3a4f1acfc03266c9a64cf1f6d08bfe53c93",
         "notes": null
