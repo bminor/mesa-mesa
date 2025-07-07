@@ -282,7 +282,8 @@ v3dv-rpi5-vk-full:arm64:
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
     DEQP_FRACTION: 1
 
-rpi3-skqp:arm64:
+# This is quite unstable. Keep it disabled
+.rpi3-skqp:arm64:
   extends:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-test:arm64-gl
