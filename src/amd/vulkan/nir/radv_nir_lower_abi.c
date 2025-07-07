@@ -156,8 +156,16 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
        */
       nir_def *small_workgroup = nir_ieq_imm(b, nir_iand_imm(b, gs_tg_info, BITFIELD_RANGE(22 + 4, 9 - 4)), 0);
 
-      /* If clip or cull distances are present, always cull against them if the workgroup is large enough. */
-      if (b->shader->info.clip_distance_array_size || b->shader->info.cull_distance_array_size) {
+      if (b->shader->info.cull_distance_array_size) {
+         /* If cull distances are present, always cull in the shader. We don't export them in order to increase
+          * primitive throughput.
+          */
+         replacement = nir_imm_true(b);
+         break;
+      }
+
+      if (b->shader->info.clip_distance_array_size) {
+         /* If clip distances are present, cull in the shader only when the workgroup is large enough. */
          replacement = nir_inot(b, small_workgroup);
          break;
       }

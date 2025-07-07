@@ -791,6 +791,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
    options.wave_size = info->wave_size;
    options.export_clipdist_mask = info->outinfo.clip_dist_mask | info->outinfo.cull_dist_mask;
    options.cull_clipdist_mask = options.export_clipdist_mask;
+   options.dont_export_cull_distances = info->has_ngg_culling;
    options.vs_output_param_offset = info->outinfo.vs_output_param_offset;
    options.has_param_exports = info->outinfo.param_exports || info->outinfo.prim_param_exports;
    options.can_cull = info->has_ngg_culling;
@@ -1435,7 +1436,7 @@ radv_get_num_pos_exports(struct radv_shader_info *info)
        info->outinfo.writes_primitive_shading_rate)
       num++;
 
-   unsigned clip_cull_mask = info->outinfo.clip_dist_mask | info->outinfo.cull_dist_mask;
+   unsigned clip_cull_mask = info->outinfo.clip_dist_mask | (info->has_ngg_culling ? 0 : info->outinfo.cull_dist_mask);
 
    if (clip_cull_mask & 0x0f)
       num++;
@@ -1636,7 +1637,7 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
    const bool misc_vec_ena = info->outinfo.writes_pointsize || info->outinfo.writes_layer ||
                              info->outinfo.writes_viewport_index || info->outinfo.writes_primitive_shading_rate;
    const unsigned clip_dist_mask = info->outinfo.clip_dist_mask;
-   const unsigned cull_dist_mask = info->outinfo.cull_dist_mask;
+   const unsigned cull_dist_mask = info->has_ngg_culling ? 0 : info->outinfo.cull_dist_mask;
    const unsigned total_mask = clip_dist_mask | cull_dist_mask;
 
    info->regs.pa_cl_vs_out_cntl =
