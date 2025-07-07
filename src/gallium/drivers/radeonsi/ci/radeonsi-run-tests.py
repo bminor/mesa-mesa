@@ -80,6 +80,10 @@ parser.add_argument(
     default=os.path.dirname(__file__),
 )
 parser.add_argument(
+    "--mustrun-path",
+    help="Folder containing expected the mustrun files (default: source folder of vk-gl-cts)",
+)
+parser.add_argument(
     "--piglit", dest="piglit", help="Disable piglit tests", type="mybool"
 )
 parser.add_argument("--glcts", dest="glcts", help="Disable GLCTS tests", type="mybool")
@@ -499,44 +503,44 @@ if args.glcts:
         "{}/build/external/openglcts/modules/glcts".format(vk_gl_cts_path),
     ]
 
+    if args.mustrun_path:
+        mustrun_basepaths = [args.mustrun_path, args.mustrun_path]
+    else:
+        mustrun_basepaths = [
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/".format(
+                vk_gl_cts_path
+            ),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/".format(
+                vk_gl_cts_path
+            ),
+        ]
+
     if is_amd or args.zink:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gl46-main.txt".format(mustrun_basepaths[0]),
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gl46-khr-single.txt".format(mustrun_basepaths[1]),
         ]
     elif args.llvmpipe:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-main.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gl45-main.txt".format(mustrun_basepaths[0]),
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl45-khr-single.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gl45-khr-single.txt".format(mustrun_basepaths[1]),
         ]
     elif args.virgl:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-main.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gl43-main.txt".format(mustrun_basepaths[0]),
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl43-khr-single.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gl43-khr-single.txt".format(mustrun_basepaths[1]),
         ]
     elif args.softpipe:
         # KHR-GL33.info.renderer crashes with softpipe.
         # cmd += [
         #    "--caselist",
-        #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-main.txt".format(vk_gl_cts_path),
+        #    "{}/gl33-main.txt".format(mustrun_basepaths[0]),
         # ]
         pass
     else:
@@ -572,6 +576,13 @@ if args.escts:
     print_yellow("Running  ESCTS tests", args.verbose > 0)
     os.mkdir(out)
 
+    if args.mustrun_path:
+        mustrun_basepath = args.mustrun_path
+    else:
+        mustrun_basepath = "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x".format(
+            vk_gl_cts_path
+        )
+
     cmd = [
         "deqp-runner",
         "run",
@@ -580,25 +591,17 @@ if args.escts:
         "--deqp",
         "{}/build/external/openglcts/modules/glcts".format(vk_gl_cts_path),
         "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles2-khr-main.txt".format(
-            vk_gl_cts_path
-        ),
+        "{}/gles2-khr-main.txt".format(mustrun_basepath),
         "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles3-khr-main.txt".format(
-            vk_gl_cts_path
-        ),
+        "{}/gles3-khr-main.txt".format(mustrun_basepath),
         "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles31-khr-main.txt".format(
-            vk_gl_cts_path
-        ),
+        "{}/gles31-khr-main.txt".format(mustrun_basepath),
     ]
 
     if not args.softpipe:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles32-khr-main.txt".format(
-                vk_gl_cts_path
-            ),
+            "{}/gles32-khr-main.txt".format(mustrun_basepath),
         ]
 
     cmd += (
@@ -653,12 +656,16 @@ if args.deqp:
                 )
             )
         )
-        suite.write(
-            'caselists = ["{}"]\n'.format(
-                "{}/external/openglcts/data/gl_cts/data/mustpass/{}/aosp_mustpass/3.2.6.x/{}-main.txt".format(
-                    vk_gl_cts_path, "egl" if k == "egl" else "gles", k
-                )
+
+        if args.mustrun_path:
+            mustrun_basepath = args.mustrun_path
+        else:
+            mustrun_basepath = "{}/external/openglcts/data/gl_cts/data/mustpass/{}/aosp_mustpass/3.2.6.x".format(
+                vk_gl_cts_path, "egl" if k == "egl" else "gles"
             )
+
+        suite.write(
+            'caselists = ["{}"]\n'.format("{}/{}-main.txt".format(mustrun_basepath, k))
         )
         if os.path.exists(baseline):
             suite.write('baseline = "{}"\n'.format(baseline))
@@ -697,6 +704,11 @@ if args.vkcts and is_amd:
     print_yellow("Running  VKCTS tests", args.verbose > 0)
     os.mkdir(os.path.join(output_folder, "vkcts"))
 
+    if args.mustrun_path:
+        mustrun_basepath = args.mustrun_path
+    else:
+        mustrun_basepath = "{}/external/vulkancts/mustpass/main".format(vk_gl_cts_path)
+
     cmd = (
         [
             "deqp-runner",
@@ -706,7 +718,7 @@ if args.vkcts and is_amd:
             "--deqp",
             "{}/build/external/vulkancts/modules/vulkan/deqp-vk".format(vk_gl_cts_path),
             "--caselist",
-            "{}/external/vulkancts/mustpass/main/vk-default.txt".format(vk_gl_cts_path),
+            "{}/vk-default.txt".format(mustrun_basepath),
             "--output",
             out,
             "--skips",
