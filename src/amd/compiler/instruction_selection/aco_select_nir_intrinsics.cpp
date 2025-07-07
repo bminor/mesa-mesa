@@ -5134,6 +5134,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 
       vec->definitions[0] = Definition(dst);
       ctx->block->instructions.emplace_back(std::move(vec));
+      set_wqm(ctx, true);
       break;
    }
    case nir_intrinsic_store_scalar_arg_amd: {

@@ -683,7 +683,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
    tex->tfe = instr->is_sparse;
    tex->d16 = d16;
    tex->a16 = a16;
-   if (implicit_derivs)
+   if (implicit_derivs && !has_wqm_coord)
       set_wqm(ctx, true);
 
    if (tg4_integer_cube_workaround) {
