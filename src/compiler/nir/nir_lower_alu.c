@@ -202,7 +202,6 @@ lower_alu_instr(nir_builder *b, nir_alu_instr *instr, UNUSED void *cb_data)
       nir_def *s1 = nir_ssa_for_alu_src(b, instr, 1);
 
       bool max = instr->op == nir_op_fmax;
-      nir_def *iminmax = max ? nir_imax(b, s0, s1) : nir_imin(b, s0, s1);
 
       /* Lower the fmin/fmax to a no_signed_zero fmin/fmax. This ensures that
        * nir_lower_alu is idempotent, and allows the backend to implement
@@ -212,7 +211,39 @@ lower_alu_instr(nir_builder *b, nir_alu_instr *instr, UNUSED void *cb_data)
       nir_def *fminmax = max ? nir_fmax(b, s0, s1) : nir_fmin(b, s0, s1);
       b->fp_fast_math = instr->fp_fast_math;
 
-      lowered = nir_bcsel(b, nir_feq(b, s0, s1), iminmax, fminmax);
+      /* If we have a constant source, we can usually optimize */
+      if (s0->num_components == 1 && s0->bit_size == 32) {
+         for (unsigned i = 0; i < 2 && lowered == NULL; ++i) {
+            if (!nir_src_is_const(instr->src[i].src))
+               continue;
+
+            uint32_t x = nir_alu_src_as_uint(instr->src[i]);
+            bool pos_zero = x == fui(+0.0);
+            bool neg_zero = x == fui(-0.0);
+            nir_def *zero = i == 0 ? s0 : s1;
+            nir_def *other = i == 0 ? s1 : s0;
+
+            if (!pos_zero && !neg_zero) {
+               /* The lowering is only required when both sources are zero, so
+                * if we have a nonzero constant source, skip the lowering.
+                */
+               lowered = fminmax;
+            } else if (pos_zero && max) {
+               /* max(x, +0.0) = +0.0 < x ? x : +0.0 */
+               lowered = nir_bcsel(b, nir_flt(b, zero, other), other, zero);
+            } else if (neg_zero && !max) {
+               /* min(x, -0.0) = x < -0.0 ? x : -0.0 */
+               lowered = nir_bcsel(b, nir_flt(b, other, zero), other, zero);
+            }
+         }
+      }
+
+      /* Fallback on the emulation */
+      if (!lowered) {
+         nir_def *iminmax = max ? nir_imax(b, s0, s1) : nir_imin(b, s0, s1);
+         lowered = nir_bcsel(b, nir_feq(b, s0, s1), iminmax, fminmax);
+      }
+
       break;
    }
 
