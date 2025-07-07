@@ -57,6 +57,7 @@ rusticl_files = files(
   'core/platform.rs',
   'core/program.rs',
   'core/queue.rs',
+  'core/semaphore.rs',
   'core/util.rs',
   'core/version.rs',
   'core/gl.rs',

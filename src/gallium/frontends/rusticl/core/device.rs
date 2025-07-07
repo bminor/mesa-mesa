@@ -770,6 +770,10 @@ impl DeviceBase {
             add_ext(1, 0, 2, "cl_ext_buffer_device_address");
         }
 
+        if self.are_semaphores_supported() {
+            add_ext(1, 0, 1, "cl_khr_semaphore");
+        }
+
         self.extensions = exts;
         self.clc_features = feats;
         self.extension_string = exts_str.join(" ");
@@ -1252,6 +1256,10 @@ impl DeviceBase {
             subgroups_shuffle_relative: subgroups_supported,
             ..Default::default()
         }
+    }
+
+    pub fn are_semaphores_supported(&self) -> bool {
+        self.screen().caps().fence_signal && self.screen().has_semaphore_create()
     }
 }
 

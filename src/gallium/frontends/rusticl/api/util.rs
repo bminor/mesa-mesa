@@ -6,7 +6,7 @@ use crate::api::types::*;
 use crate::core::event::*;
 use crate::core::queue::*;
 
-use mesa_rust_util::properties::Properties;
+use mesa_rust_util::properties::{MultiValProperties, Properties};
 use rusticl_opencl_gen::*;
 
 use std::cmp;
@@ -409,6 +409,21 @@ where
 
     fn write_to(&self, out: &mut [MaybeUninit<T>]) {
         self.raw_data().write_to(out);
+    }
+}
+
+impl<T> CLProp for &MultiValProperties<T>
+where
+    T: CLProp + Copy,
+{
+    type Output = T;
+
+    fn count(&self) -> usize {
+        self.as_raw_slice().count()
+    }
+
+    fn write_to(&self, out: &mut [MaybeUninit<T>]) {
+        self.as_raw_slice().write_to(out);
     }
 }
 

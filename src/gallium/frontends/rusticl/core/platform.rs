@@ -277,6 +277,10 @@ impl Platform {
         #[allow(static_mut_refs)]
         PLATFORM_ONCE.call_once(|| unsafe { PLATFORM.init() });
     }
+
+    pub fn all_devs_have_semaphores(&self) -> bool {
+        self.devs.iter().all(|dev| dev.are_semaphores_supported())
+    }
 }
 
 impl Drop for Platform {

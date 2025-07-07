@@ -229,6 +229,7 @@ pub enum RusticlTypes {
     Program,
     Queue,
     Sampler,
+    Semaphore,
 }
 
 impl RusticlTypes {
@@ -247,6 +248,7 @@ impl RusticlTypes {
             0xec4cf9af => Self::Program,
             0xec4cf9b0 => Self::Queue,
             0xec4cf9b1 => Self::Sampler,
+            0xec4cf9b2 => Self::Semaphore,
             _ => return None,
         };
         debug_assert!(result.u32() == val);

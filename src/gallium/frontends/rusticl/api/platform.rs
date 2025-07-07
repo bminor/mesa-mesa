@@ -27,6 +27,13 @@ unsafe impl CLInfo<cl_platform_info> for cl_platform_id {
             CL_PLATFORM_NAME => v.write::<&CStr>(c"rusticl"),
             CL_PLATFORM_NUMERIC_VERSION => v.write::<cl_version>(CLVersion::Cl3_0.into()),
             CL_PLATFORM_PROFILE => v.write::<&CStr>(c"FULL_PROFILE"),
+            CL_PLATFORM_SEMAPHORE_TYPES_KHR => {
+                v.write::<&[cl_semaphore_type_khr]>(if Platform::get().all_devs_have_semaphores() {
+                    &[CL_SEMAPHORE_TYPE_BINARY_KHR]
+                } else {
+                    &[]
+                })
+            }
             CL_PLATFORM_VENDOR => v.write::<&CStr>(c"Mesa/X.org"),
             // OpenCL<space><major_version.minor_version><space><platform-specific information>
             CL_PLATFORM_VERSION => v.write::<&CStr>(c"OpenCL 3.0 "),

@@ -858,7 +858,7 @@ Rusticl extensions:
   cl_khr_mipmap_image_writes                            not started
   cl_khr_pci_bus_info                                   DONE (iris, nvc0, radeonsi, zink)
   cl_khr_priority_hints                                 DONE (asahi, freedreno, iris, panfrost, radeonsi)
-  cl_khr_semaphore                                      not started
+  cl_khr_semaphore                                      DONE (radeonsi, zink)
   cl_khr_spirv_extended_debug_info                      not started
   cl_khr_spirv_linkonce_odr                             DONE
   cl_khr_spirv_no_integer_wrap_decoration               DONE
