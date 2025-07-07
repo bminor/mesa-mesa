@@ -34,6 +34,7 @@
 #include "etnaviv_resource.h"
 #include "etnaviv_translate.h"
 
+#include "util/format/u_format.h"
 #include "util/u_math.h"
 #include "pipe/p_defines.h"
 #include "pipe/p_state.h"
@@ -212,6 +213,51 @@ emit_blt_inplace(struct etna_cmd_stream *stream, const struct blt_inplace_op *op
    etna_set_state(stream, 0x14068, op->num_tiles);
    etna_set_state(stream, VIVS_BLT_SET_COMMAND, 0x00000003);
    etna_set_state(stream, VIVS_BLT_COMMAND, 0x00000004);
+   etna_set_state(stream, VIVS_BLT_SET_COMMAND, 0x00000003);
+   etna_set_state(stream, VIVS_BLT_ENABLE, 0x00000000);
+
+   if (DBG_ENABLED(ETNA_DBG_DRAW_STALL))
+      etna_stall(stream, SYNC_RECIPIENT_FE, SYNC_RECIPIENT_PE);
+}
+
+/* Emit genmipamp using BLT. */
+static void
+emit_blt_genmipmap(struct etna_cmd_stream *stream, const struct blt_genmipmap_op *op)
+{
+   etna_cmd_stream_reserve(stream, 64*2); /* Never allow BLT sequences to be broken up */
+
+   etna_set_state(stream, VIVS_GL_FLUSH_CACHE, 0x00000c23);
+   etna_set_state(stream, VIVS_TS_FLUSH_CACHE, VIVS_TS_FLUSH_CACHE_FLUSH);
+
+   etna_set_state(stream, VIVS_BLT_ENABLE, 0x00000001);
+
+   etna_set_state(stream, VIVS_BLT_SRC_STRIDE, blt_compute_stride_bits(&op->src));
+   etna_set_state(stream, VIVS_BLT_SRC_CONFIG, blt_compute_img_config_bits(&op->src, false));
+   etna_set_state_reloc(stream, VIVS_BLT_SRC_ADDR, &op->src.addr);
+
+   etna_set_state(stream, VIVS_BLT_DEST_CONFIG, blt_compute_img_config_bits(&op->src, true));
+   etna_set_state(stream, VIVS_BLT_DEST_STRIDE, blt_compute_stride_bits(&op->src));
+
+   etna_set_state(stream, VIVS_BLT_IMAGE_SIZE,
+           VIVS_BLT_IMAGE_SIZE_HEIGHT(op->height) |
+           VIVS_BLT_IMAGE_SIZE_WIDTH(op->width));
+
+   etna_set_state(stream, VIVS_BLT_SWIZZLE,
+           blt_compute_swizzle_bits(&op->src, false) |
+           blt_compute_swizzle_bits(&op->src, true));
+
+   for (unsigned i = 0; i < op->num_levels; i++) {
+      etna_set_state_reloc(stream, VIVS_BLT_MIP_ADDR(i), &op->level[i]);
+      etna_set_state(stream, VIVS_BLT_MIP_STRIDE(i), op->stride[i]);
+   }
+
+   etna_set_state(stream, VIVS_BLT_MIPMAP_CONFIG,
+           VIVS_BLT_MIPMAP_CONFIG_NUM(op->num_levels + 1) |
+           VIVS_BLT_MIPMAP_CONFIG_UNK5);
+   etna_set_state(stream, VIVS_BLT_CONFIG, 0x0);
+
+   etna_set_state(stream, VIVS_BLT_SET_COMMAND, 0x00000003);
+   etna_set_state(stream, VIVS_BLT_COMMAND, VIVS_BLT_COMMAND_COMMAND_GEN_MIPMAPS);
    etna_set_state(stream, VIVS_BLT_SET_COMMAND, 0x00000003);
    etna_set_state(stream, VIVS_BLT_ENABLE, 0x00000000);
 
@@ -408,6 +454,82 @@ etna_clear_blt(struct pipe_context *pctx, unsigned buffers, const struct pipe_sc
       etna_set_state(ctx->stream, VIVS_GL_FLUSH_CACHE, 0x00000c23);
    else
       etna_set_state(ctx->stream, VIVS_GL_FLUSH_CACHE, 0x00000002);
+}
+
+static bool
+etna_generate_mipmap_blt(struct pipe_context *pctx,
+                         struct pipe_resource *prsc,
+                         enum pipe_format format,
+                         unsigned base_level,
+                         unsigned last_level,
+                         unsigned first_layer,
+                         unsigned last_layer)
+{
+   struct etna_resource *rsc = etna_resource(prsc);
+   struct etna_context *ctx = etna_context(pctx);
+   struct etna_resource_level *src_lev = &rsc->levels[base_level];
+
+   if (format != prsc->format)
+      return false;
+
+   if (first_layer != last_layer)
+      return false;
+
+   uint32_t fmt = translate_blt_format(format);
+   if (fmt == ETNA_NO_MATCH) {
+      perf_debug_ctx(ctx, "BLT mipmap generation not possible due to unsupported format: %s\n",
+                     util_format_short_name(format));
+      return false;
+   }
+
+   struct blt_genmipmap_op op = {};
+
+   op.num_levels = last_level - base_level;
+   op.width = prsc->width0;
+   op.height = prsc->height0;
+   op.src.addr.bo = rsc->bo;
+   op.src.addr.offset = src_lev->offset + (first_layer * src_lev->layer_stride);
+   op.src.addr.flags = ETNA_RELOC_READ;
+   op.src.stride = src_lev->stride;
+   op.src.tiling = rsc->layout;
+   op.src.format = fmt;
+   op.src.swizzle[0] = 0;
+   op.src.swizzle[1] = 1;
+   op.src.swizzle[2] = 2;
+   op.src.swizzle[3] = 3;
+
+   if (etna_resource_level_ts_valid(src_lev)) {
+      assert(first_layer == 0);
+
+      op.src.use_ts = 1;
+      op.src.ts_addr.bo = rsc->ts_bo;
+      op.src.ts_addr.offset = src_lev->ts_offset;
+      op.src.ts_addr.flags = ETNA_RELOC_READ;
+      op.src.ts_mode = src_lev->ts_mode;
+      op.src.ts_compress_fmt = src_lev->ts_compress_fmt;
+   }
+
+   for (unsigned i = 0; i < op.num_levels; i++) {
+      struct etna_resource_level *dst_lev = &rsc->levels[i + 1];
+
+      op.level[i].bo = rsc->bo;
+      op.level[i].offset = dst_lev->offset + (first_layer * dst_lev->layer_stride);
+      op.level[i].flags = ETNA_RELOC_WRITE;
+      op.stride[i] = dst_lev->stride;
+
+      etna_resource_level_ts_mark_invalid(dst_lev);
+   }
+
+   emit_blt_genmipmap(ctx->stream, &op);
+
+   etna_stall(ctx->stream, SYNC_RECIPIENT_RA, SYNC_RECIPIENT_BLT);
+
+   resource_read(ctx, prsc);
+   resource_written(ctx, prsc);
+
+   ctx->dirty |= ETNA_DIRTY_TEXTURE_CACHES;
+
+   return true;
 }
 
 static bool
@@ -657,6 +779,7 @@ etna_clear_blit_blt_init(struct pipe_context *pctx)
 
    DBG("etnaviv: Using BLT blit engine");
    pctx->clear = etna_clear_blt;
+   pctx->generate_mipmap = etna_generate_mipmap_blt;
    ctx->blit = etna_try_blt_blit;
    ctx->emit_yuv_tiler_state = etna_emit_yuv_tiler_state_blt;
 }
