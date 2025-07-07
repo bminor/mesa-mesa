@@ -1,5 +1,6 @@
 /*
  * Copyright © 2024 Collabora Ltd.
+ * Copyright © 2025 Arm Ltd.
  * SPDX-License-Identifier: MIT
  */
 
@@ -237,6 +238,32 @@ panvk_per_arch(CreateDescriptorSetLayout)(
    return VK_SUCCESS;
 }
 
+static bool
+is_supported_mutable_type(VkDescriptorType t)
+{
+   switch (t) {
+      case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+      case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+      case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+      case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+      case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+      case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+         return true;
+      default:
+         return false;
+   }
+}
+
+static bool
+is_mutable_type_list_supported(const VkMutableDescriptorTypeListEXT *const lst)
+{
+   for (uint32_t i = 0; i < lst->descriptorTypeCount; i++) {
+      if (!is_supported_mutable_type(lst->pDescriptorTypes[i]))
+         return false;
+   }
+   return true;
+}
+
 void
 panvk_per_arch(GetDescriptorSetLayoutSupport)(
    VkDevice _device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
@@ -248,6 +275,9 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
    VkDescriptorSetVariableDescriptorCountLayoutSupport *var_desc_count =
       vk_find_struct(pSupport->pNext,
                      DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT);
+
+   const VkMutableDescriptorTypeCreateInfoEXT *mut_info = vk_find_struct_const(
+      pCreateInfo->pNext, MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT);
 
    pSupport->supported = false;
 
@@ -264,6 +294,16 @@ panvk_per_arch(GetDescriptorSetLayoutSupport)(
       if (vk_descriptor_type_is_dynamic(type)) {
          dyn_buf_count += binding->descriptorCount;
          continue;
+      }
+
+      if (binding->descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+         /* VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303 */
+         assert(mut_info->mutableDescriptorTypeListCount > i);
+         if (!is_mutable_type_list_supported(
+                &mut_info->pMutableDescriptorTypeLists[i])) {
+            pSupport->supported = false;
+            return;
+         }
       }
 
       unsigned textures_per_desc = is_texture(type) ? 1 : 0;

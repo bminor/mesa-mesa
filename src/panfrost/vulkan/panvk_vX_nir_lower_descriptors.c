@@ -218,10 +218,14 @@ shader_desc_idx(uint32_t set, uint32_t binding,
 static nir_address_format
 addr_format_for_type(VkDescriptorType type, const struct lower_desc_ctx *ctx)
 {
+   /* Mutable must imply that both formats are the same. */
+   assert(type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT || ctx->ubo_addr_format == ctx->ssbo_addr_format);
+
    switch (type) {
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+   case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
       return ctx->ubo_addr_format;
 
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
@@ -858,7 +862,8 @@ get_img_index(nir_builder *b, nir_deref_instr *deref,
       get_binding_layout(set, binding, ctx);
    assert(bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
           bind_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
-          bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+          bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER ||
+          bind_layout->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT);
 
    unsigned img_offset = shader_desc_idx(set, binding, NO_SUBDESC, ctx);
 
