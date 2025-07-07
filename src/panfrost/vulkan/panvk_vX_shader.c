@@ -385,10 +385,12 @@ panvk_get_spirv_options(UNUSED struct vk_physical_device *vk_pdev,
 }
 
 static void
-panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
+panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
                      nir_shader *nir,
                      UNUSED const struct vk_pipeline_robustness_state *rs)
 {
+   struct panvk_physical_device *pdev = to_panvk_physical_device(vk_pdev);
+
    /* Ensure to regroup output variables at the same location */
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       NIR_PASS(_, nir, nir_opt_vectorize_io_vars, nir_var_shader_out);
@@ -456,6 +458,10 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev,
 
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
+
+   uint64_t core_max_id = util_last_bit(pdev->kmod.props.shader_present) - 1;
+   NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_core_max_id_arm,
+            core_max_id);
 }
 
 static void

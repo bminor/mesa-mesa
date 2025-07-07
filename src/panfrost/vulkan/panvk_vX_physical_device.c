@@ -179,6 +179,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .GOOGLE_hlsl_functionality1 = true,
       .GOOGLE_user_type = true,
 
+      .ARM_shader_core_builtins = true,
       .ARM_shader_core_properties = has_vk1_1,
    };
 }
@@ -503,6 +504,9 @@ panvk_per_arch(get_physical_device_features)(
       /* VK_KHR_present_wait2 */
       .presentWait2 = true,
 #endif
+
+      /* VK_ARM_shader_core_builtins */
+      .shaderCoreBuiltins = PAN_ARCH >= 9,
    };
 }
 
@@ -962,6 +966,12 @@ panvk_per_arch(get_physical_device_properties)(
 
       /* VK_EXT_host_image_copy */
       .identicalMemoryTypeRequirements = true,
+
+      /* VK_ARM_shader_core_builtins */
+      .shaderCoreMask = device->kmod.props.shader_present,
+      .shaderCoreCount = util_bitcount(device->kmod.props.shader_present),
+      .shaderWarpsPerCore = device->kmod.props.max_threads_per_core /
+                            (pan_subgroup_size(PAN_ARCH) * 2),
    };
 
    snprintf(properties->deviceName, sizeof(properties->deviceName), "%s",
