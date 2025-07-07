@@ -473,6 +473,8 @@ aco_nir_op_supports_packed_math_16bit(const nir_alu_instr* alu)
    case nir_op_imax:
    case nir_op_umin:
    case nir_op_umax:
+   case nir_op_extract_u8:
+   case nir_op_extract_i8:
    case nir_op_ishl:
    case nir_op_ishr:
    case nir_op_ushr: return true;
