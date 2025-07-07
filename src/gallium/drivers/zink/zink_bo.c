@@ -805,7 +805,7 @@ buffer_bo_commit(struct zink_context *ctx, struct zink_resource *res, uint32_t o
 
    uint32_t va_page = offset / ZINK_SPARSE_BUFFER_PAGE_SIZE;
    uint32_t end_va_page = va_page + DIV_ROUND_UP(size, ZINK_SPARSE_BUFFER_PAGE_SIZE);
-   VkSemaphore cur_sem = VK_NULL_HANDLE;
+   VkSemaphore cur_sem = *sem;
    if (commit) {
       while (va_page < end_va_page) {
          uint32_t span_va_page;
