@@ -434,11 +434,6 @@ pub fn test_texture() {
     for sm in SM_LIST {
         let mut c = DisasmCheck::new();
         for lod_mode in lod_modes {
-            let lod_mode_str = if lod_mode == TexLodMode::Auto {
-                String::new()
-            } else {
-                format!(".{lod_mode}")
-            };
             if lod_mode == TexLodMode::BiasClamp && sm >= 100 {
                 continue;
             }
@@ -463,7 +458,7 @@ pub fn test_texture() {
             c.push(
                 instr,
                 format!(
-                    "tex.b{lod_mode_str}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"
+                    "tex.b{lod_mode}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"
                 ),
             );
 
@@ -486,7 +481,9 @@ pub fn test_texture() {
                 };
                 c.push(
                     instr,
-                    format!("tld.b{lod_mode_str}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"),
+                    format!(
+                        "tld.b{lod_mode}.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"
+                    ),
                 );
             }
         }
