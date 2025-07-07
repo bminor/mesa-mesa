@@ -1044,7 +1044,6 @@ dri2_display_create(_EGLDisplay *disp)
    dri2_dpy->fd_display_gpu = -1;
    dri2_dpy->multibuffers_available = true;
    dri2_dpy->kopper = disp->Options.Zink && !debug_get_bool_option("LIBGL_KOPPER_DISABLE", false);
-   dri2_dpy->kopper_without_modifiers = dri2_dpy->kopper && debug_get_bool_option("LIBGL_KOPPER_DRI2", false);
    disp->DriverData = (void *)dri2_dpy;
 
    return dri2_dpy;

@@ -1205,14 +1205,14 @@ check_xshm(struct dri2_egl_display *dri2_dpy)
 }
 
 static bool
-platform_x11_finalize(_EGLDisplay *disp)
+platform_x11_finalize(_EGLDisplay *disp, bool force_zink)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    if (!dri2_create_screen(disp))
       return false;
 
-   if (!dri2_setup_device(disp, disp->Options.ForceSoftware || dri2_dpy->kopper_without_modifiers)) {
+   if (!dri2_setup_device(disp, disp->Options.ForceSoftware || force_zink)) {
       _eglError(EGL_NOT_INITIALIZED, "DRI2: failed to setup EGLDevice");
       return false;
    }
@@ -1246,7 +1246,7 @@ platform_x11_finalize(_EGLDisplay *disp)
 }
 
 static EGLBoolean
-dri2_initialize_x11_swrast(_EGLDisplay *disp)
+dri2_initialize_x11_swrast(_EGLDisplay *disp, bool force_zink)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
@@ -1258,7 +1258,7 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
       dri2_dpy->loader_extensions = swrast_loader_extensions;
    }
 
-   if (!platform_x11_finalize(disp))
+   if (!platform_x11_finalize(disp, force_zink))
       return EGL_FALSE;
 
    /* Fill vtbl last to prevent accidentally calling virtual function during
@@ -1287,7 +1287,7 @@ dri2_initialize_x11_dri3(_EGLDisplay *disp)
 
    dri2_dpy->loader_extensions = dri3_image_loader_extensions;
 
-   if (!platform_x11_finalize(disp))
+   if (!platform_x11_finalize(disp, false))
       return EGL_FALSE;
 
    loader_init_screen_resources(&dri2_dpy->screen_resources, dri2_dpy->conn,
@@ -1309,6 +1309,12 @@ dri2_initialize_x11(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
+   /* True if we're going to force-enable a HW Zink driver, even if the X
+    * server is missing a bunch of features.
+    */
+   const bool force_zink =
+      disp->Options.Zink && debug_get_bool_option("LIBGL_KOPPER_DRI2", false);
+
    /*
     * Every hardware driver_name is set using strdup. Doing the same in
     * here will allow is to simply free the memory at dri2_terminate().
@@ -1321,11 +1327,23 @@ dri2_initialize_x11(_EGLDisplay *disp)
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       return EGL_FALSE;
 
-#ifdef HAVE_LIBDRM
-   /* kopper_without_modifiers really means (zink && LIBGL_DRI3_DISABLE=true),
-    * so this conditional is effectively "is dri3 enabled"
+#ifdef HAVE_X11_DRM
+   dri2_dpy->multibuffers_available = x11_dri3_has_multibuffer(dri2_dpy->conn);
+
+   /* If we've selected Zink and we're not taking the swrast path then we need
+    * multibuffers or else import won't work.  We shouldn't enable Zink in
+    * this case.  The user is allowed to override this with LIBGL_KOPPER_DRI2.
     */
-   if (!disp->Options.Zink || !debug_get_bool_option("LIBGL_KOPPER_DRI2", false)) {
+   if (disp->Options.Zink && !disp->Options.ForceSoftware &&
+       !force_zink && !dri2_dpy->multibuffers_available)
+      return EGL_FALSE;
+#endif
+
+#ifdef HAVE_LIBDRM
+   /* If LIBGL_KOPPER_DRI2 is enabled, skip the X11 render device checks.
+    * We're going to enable Zink anyway.
+    */
+   if (!force_zink) {
       bool status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
       /* the status here is ignored for zink-with-kopper and swrast,
        * otherwise return whatever error/fallback status as failure
@@ -1336,17 +1354,8 @@ dri2_initialize_x11(_EGLDisplay *disp)
 #endif
    dri2_detect_swrast(disp);
 
-#ifdef HAVE_X11_DRM
-   dri2_dpy->multibuffers_available = x11_dri3_has_multibuffer(dri2_dpy->conn);
-
-   if (disp->Options.Zink && !disp->Options.ForceSoftware &&
-       !dri2_dpy->multibuffers_available &&
-       !dri2_dpy->kopper_without_modifiers)
-      return EGL_FALSE;
-#endif
-
    if (disp->Options.ForceSoftware || dri2_dpy->kopper)
-      return dri2_initialize_x11_swrast(disp);
+      return dri2_initialize_x11_swrast(disp, force_zink);
 
 #ifdef HAVE_LIBDRM
    if (dri2_initialize_x11_dri3(disp))

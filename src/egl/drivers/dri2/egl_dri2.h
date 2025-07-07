@@ -240,7 +240,6 @@ struct dri2_egl_display {
    bool has_compression_modifiers;
    bool own_device;
    bool kopper;
-   bool kopper_without_modifiers;
    bool swrast;
    bool swrast_not_kms;
    int min_swap_interval;
