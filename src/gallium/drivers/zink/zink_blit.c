@@ -71,7 +71,15 @@ blit_resolve(struct zink_context *ctx, const struct pipe_blit_info *info, bool *
    if (src->obj->dt)
       *needs_present_readback = zink_kopper_acquire_readback(ctx, src, &use_src);
 
-   zink_resource_setup_transfer_layouts(ctx, use_src, dst);
+   if (zink_screen(ctx->base.screen)->driver_workarounds.general_layout) {
+      zink_resource_image_transfer_dst_barrier(ctx, dst, info->dst.level, &info->dst.box, false);
+      screen->image_barrier(ctx, use_src,
+                              VK_IMAGE_LAYOUT_GENERAL,
+                              VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                              VK_PIPELINE_STAGE_TRANSFER_BIT);
+   } else {
+      zink_resource_setup_transfer_layouts(ctx, use_src, dst);
+   }
    VkCommandBuffer cmdbuf = *needs_present_readback ?
                             ctx->bs->cmdbuf :
                             zink_get_cmdbuf(ctx, src, dst);
@@ -276,7 +284,15 @@ blit_native(struct zink_context *ctx, const struct pipe_blit_info *info, bool *n
    if (src->obj->dt)
       *needs_present_readback = zink_kopper_acquire_readback(ctx, src, &use_src);
 
-   zink_resource_setup_transfer_layouts(ctx, use_src, dst);
+   if (zink_screen(ctx->base.screen)->driver_workarounds.general_layout) {
+      zink_resource_image_transfer_dst_barrier(ctx, dst, info->dst.level, &info->dst.box, false);
+      screen->image_barrier(ctx, use_src,
+                              VK_IMAGE_LAYOUT_GENERAL,
+                              VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                              VK_PIPELINE_STAGE_TRANSFER_BIT);
+   } else {
+      zink_resource_setup_transfer_layouts(ctx, use_src, dst);
+   }
    VkCommandBuffer cmdbuf = *needs_present_readback ?
                             ctx->bs->cmdbuf :
                             zink_get_cmdbuf(ctx, src, dst);

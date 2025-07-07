@@ -4950,7 +4950,21 @@ zink_resource_copy_region(struct pipe_context *pctx,
       zink_fb_clears_apply_or_discard(ctx, pdst, (struct u_rect){dstx, dstx + src_box->width, dsty, dsty + src_box->height}, dstz, src_box->depth, false);
       zink_fb_clears_apply_region(ctx, psrc, zink_rect_from_box(src_box), src_box->z, src_box->depth);
 
-      zink_resource_setup_transfer_layouts(ctx, src, dst);
+      struct zink_screen *screen = zink_screen(ctx->base.screen);
+      if (screen->driver_workarounds.general_layout) {
+         struct pipe_box box = {
+            dstx, src_box->width,
+            dsty, src_box->height,
+            dstz, src_box->depth
+         };
+         zink_resource_image_transfer_dst_barrier(ctx, dst, dst_level, &box, false);
+         screen->image_barrier(ctx, src,
+                               VK_IMAGE_LAYOUT_GENERAL,
+                               VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+                               VK_PIPELINE_STAGE_TRANSFER_BIT);
+      } else {
+         zink_resource_setup_transfer_layouts(ctx, src, dst);
+      }
       VkCommandBuffer cmdbuf = zink_get_cmdbuf(ctx, src, dst);
       zink_batch_reference_resource_rw(ctx, src, false);
       zink_batch_reference_resource_rw(ctx, dst, true);
