@@ -352,7 +352,8 @@ ValueFactory::dest(const nir_def& ssa, int chan, Pin pin_channel, uint8_t chan_m
       sel = m_next_register_index++;
       sfn_log << SfnLog::reg << "Assign " << sel << " to index " << ssa.index << " in "
               << &m_ssa_index_to_sel << "\n";
-      m_ssa_index_to_sel[ssa.index] = sel;
+      if (pin_channel != pin_free)
+         m_ssa_index_to_sel[ssa.index] = sel;
    }
 
    if (pin_channel == pin_free)
