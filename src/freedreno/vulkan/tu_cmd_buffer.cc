@@ -1477,9 +1477,6 @@ tu6_emit_gmem_stores(struct tu_cmd_buffer *cmd,
                                   (!cmd->state.rp.draw_cs_writes_to_cond_pred ||
                                   cs != &cmd->draw_cs);
 
-   if (pass->has_fdm)
-      tu_cs_set_writeable(cs, true);
-
    bool scissor_emitted = false;
 
    /* Resolve should happen before store in case BLIT_EVENT_STORE_AND_CLEAR is
@@ -1521,6 +1518,9 @@ tu6_emit_tile_store_cs(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    uint32_t subpass_idx = pass->subpass_count - 1;
    const struct tu_subpass *subpass = &pass->subpasses[subpass_idx];
 
+   if (pass->has_fdm)
+      tu_cs_set_writeable(cs, true);
+
    /* We believe setting the marker affects what state HW blocks save/restore
     * during preemption.  So we only emit it before the stores at the end of the
     * last subpass, not other resolves.
@@ -1534,6 +1534,10 @@ tu6_emit_tile_store_cs(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    tu6_emit_gmem_stores<CHIP>(cmd, cs, &resolve_group, subpass);
 
    tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
+
+   if (pass->has_fdm)
+      tu_cs_set_writeable(cs, false);
+
 }
 
 void
