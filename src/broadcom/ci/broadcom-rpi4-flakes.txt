@@ -166,3 +166,5 @@ dEQP-VK.fragment_operations.occlusion_query.precise_test_depth_write_stencil_cle
 dEQP-VK.synchronization.op.single_queue.barrier.write_ssbo_compute_read_vertex_input.buffer_262144
 spec@ext_transform_feedback@tessellation quads wireframe
 spec@nv_primitive_restart@primitive-restart-draw-mode-line_strip
+
+dEQP-VK.binding_model.buffer_device_address.set15.depth1.baseubo.convertcheckuv2.store.single.std140.vert_offset_nonzero

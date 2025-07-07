@@ -37,6 +37,7 @@ dEQP-VK.synchronization2.implicit.*
 
 # Slow CTS tests (> 1 minute to run)
 dEQP-VK.memory.mapping.dedicated_alloc.buffer.full.variable.implicit_unmap
+dEQP-VK.memory.mapping.dedicated_alloc.image.full.variable.implicit_unmap
 dEQP-VK.spirv_assembly.instruction.graphics.spirv_ids_abuse.lots_ids_geom
 dEQP-VK.ssbo.layout.random.16bit.all_shared_buffer.31
 dEQP-VK.ssbo.layout.random.8bit.all_per_block_buffers.5

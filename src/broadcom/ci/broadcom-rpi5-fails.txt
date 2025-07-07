@@ -432,6 +432,9 @@ program@execute@scalar-load-long,Crash
 program@execute@scalar-load-ulong,Crash
 program@run kernel with max work item sizes,Fail
 
+# Bisected to 6bc47e65 ("rusticl: Fix work group size validation")
+program@bitcoin: phatk kernel,Fail
+
 # Needs kernel supporting the correct number of performance counters. The fix
 # already landed on drm-misc-next (c606043ddbf0)
 KHR-GL31.transform_feedback3.multiple_streams,Fail
