@@ -997,6 +997,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    snprintf(screen->renderer_string, sizeof(screen->renderer_string),
             "%s (Panfrost)", dev->model->name);
 
+   screen->afbc_tiled = driQueryOptionb(config->options, "pan_afbc_tiled");
+
    screen->force_afbc_packing = dev->debug & PAN_DBG_FORCE_PACK;
    if (!screen->force_afbc_packing)
       screen->force_afbc_packing = driQueryOptionb(config->options,

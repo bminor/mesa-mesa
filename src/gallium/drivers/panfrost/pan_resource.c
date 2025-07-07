@@ -614,11 +614,11 @@ panfrost_should_afbc(struct panfrost_device *dev,
  * images that are at least 128x128.
  */
 static bool
-panfrost_should_tile_afbc(const struct panfrost_device *dev,
+panfrost_should_tile_afbc(const struct panfrost_screen *screen,
                           const struct panfrost_resource *pres)
 {
-   return pan_afbc_can_tile(dev->arch) && pres->base.width0 >= 128 &&
-          pres->base.height0 >= 128 && !(dev->debug & PAN_DBG_FORCE_PACK);
+   return screen->afbc_tiled && pan_afbc_can_tile(screen->dev.arch) &&
+          pres->base.width0 >= 128 && pres->base.height0 >= 128;
 }
 
 bool
@@ -753,7 +753,7 @@ panfrost_best_modifier(struct pipe_screen *pscreen,
       if (pan_afbc_can_ytr(pres->base.format))
          afbc |= AFBC_FORMAT_MOD_YTR;
 
-      if (panfrost_should_tile_afbc(dev, pres))
+      if (panfrost_should_tile_afbc(screen, pres))
          afbc |= AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SC;
 
       return DRM_FORMAT_MOD_ARM_AFBC(afbc);

@@ -123,6 +123,10 @@ struct panfrost_screen {
    char renderer_string[100];
    struct panfrost_vtable vtbl;
    struct disk_cache *disk_cache;
+
+   /* Use AFBC tiled layout whenever possible */
+   bool afbc_tiled;
+
    unsigned max_afbc_packing_ratio;
    bool force_afbc_packing;
    bool allow_128bit_rts_v4;

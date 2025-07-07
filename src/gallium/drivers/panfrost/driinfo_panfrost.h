@@ -1,5 +1,8 @@
 /* panfrost specific driconf options */
 DRI_CONF_SECTION_PERFORMANCE
+   /* AFBC options. */
+   DRI_CONF_OPT_B(pan_afbc_tiled, true, "Use AFBC tiled layout whenever "
+                  "possible")
    DRI_CONF_OPT_B(pan_force_afbc_packing, false, "Use AFBC-P for textures")
 
    /* 2M chunks. */
