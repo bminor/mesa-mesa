@@ -64,7 +64,7 @@ To capture a trace with Perfetto you need to take the following steps:
    can be found in ``subprojects/perfetto/test/configs``.
 
 3. Change directory to ``subprojects/perfetto`` and run a
-   `convenience script <https://perfetto.dev/docs/quickstart/linux-tracing#capturing-a-trace>`__
+   `convenience script <https://perfetto.dev/docs/getting-started/system-tracing#recording-your-first-system-trace>`__
    to start the tracing service:
 
    .. code-block:: sh
