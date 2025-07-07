@@ -49,7 +49,7 @@ parser.add_argument(
 )
 
 # The path to above the mesa directory, i.e. ../../../../../..
-path_above_mesa = os.path.realpath(os.path.join(os.path.dirname(__file__), *['..'] * 6))
+path_above_mesa = os.path.realpath(os.path.join(os.path.dirname(__file__), *[".."] * 6))
 
 parser.add_argument("--piglit-path", type=str, help="Path to piglit source folder.")
 parser.add_argument("--glcts-path", type=str, help="Path to GLCTS source folder.")
@@ -57,7 +57,7 @@ parser.add_argument(
     "--parent-path",
     type=str,
     help="Path to folder containing piglit/GLCTS and dEQP source folders.",
-    default=os.getenv('MAREKO_BUILD_PATH', path_above_mesa),
+    default=os.getenv("MAREKO_BUILD_PATH", path_above_mesa),
 )
 parser.add_argument("--verbose", "-v", action="count", default=0)
 parser.add_argument(
@@ -125,8 +125,11 @@ parser.add_argument(
     help="Output folder (logs, etc)",
     default=os.path.join(
         # Default is ../../../../../../test-results/datetime
-        os.path.join(path_above_mesa, 'test-results',
-                     datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        os.path.join(
+            path_above_mesa,
+            "test-results",
+            datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
+        )
     ),
 )
 
@@ -157,12 +160,8 @@ parser.add_argument(
 parser.add_argument(
     "--softpipe", dest="softpipe", help="Test softpipe", action="store_true"
 )
-parser.add_argument(
-    "--virgl", dest="virgl", help="Test virgl", action="store_true"
-)
-parser.add_argument(
-    "--zink", dest="zink", help="Test zink", action="store_true"
-)
+parser.add_argument("--virgl", dest="virgl", help="Test virgl", action="store_true")
+parser.add_argument("--zink", dest="zink", help="Test zink", action="store_true")
 
 args = parser.parse_args(sys.argv[1:])
 piglit_path = args.piglit_path
@@ -216,30 +215,30 @@ assert args.llvmpipe + args.softpipe + args.virgl + args.zink <= 1
 is_amd = args.llvmpipe + args.softpipe + args.virgl + args.zink == 0
 
 if args.llvmpipe:
-    env["LIBGL_ALWAYS_SOFTWARE"] = '1'
+    env["LIBGL_ALWAYS_SOFTWARE"] = "1"
     baseline = "../../llvmpipe/ci/llvmpipe-fails.txt"
     flakes_list = "../../llvmpipe/ci/llvmpipe-flakes.txt"
     skips_list = "../../llvmpipe/ci/llvmpipe-skips.txt"
 elif args.softpipe:
-    env["LIBGL_ALWAYS_SOFTWARE"] = '1'
-    env["GALLIUM_DRIVER"] = 'softpipe'
+    env["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    env["GALLIUM_DRIVER"] = "softpipe"
     baseline = "../../softpipe/ci/softpipe-fails.txt"
     flakes_list = "../../softpipe/ci/softpipe-flakes.txt"
     skips_list = "../../softpipe/ci/softpipe-skips.txt"
 elif args.virgl:
     env["PIGLIT_PLATFORM"] = "gbm"
-    baseline = ''
+    baseline = ""
     flakes_list = None
     skips_list = "skips.csv"
 elif args.zink:
     env["PIGLIT_PLATFORM"] = "gbm"
-    env["MESA_LOADER_DRIVER_OVERRIDE"] = 'zink'
+    env["MESA_LOADER_DRIVER_OVERRIDE"] = "zink"
     baseline = "../../zink/ci/zink-radv-navi31-fails.txt"
     flakes_list = "../../zink/ci/zink-radv-navi31-flakes.txt"
     skips_list = "../../zink/ci/zink-radv-navi31-skips.txt"
 elif is_amd:
     env["PIGLIT_PLATFORM"] = "gbm"
-    flakes_list = None # it will be determined later
+    flakes_list = None  # it will be determined later
     skips_list = "skips.csv"
 else:
     assert False
@@ -247,7 +246,9 @@ else:
 if not is_amd:
     baseline = os.path.normpath(os.path.join(os.path.dirname(__file__), baseline))
     if flakes_list is not None:
-        flakes_list = os.path.normpath(os.path.join(os.path.dirname(__file__), flakes_list))
+        flakes_list = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), flakes_list)
+        )
 
 skips_list = os.path.normpath(os.path.join(os.path.dirname(__file__), skips_list))
 env_glinfo = dict(env)
@@ -262,7 +263,7 @@ try:
         env=env_glinfo,
     )
 except subprocess.CalledProcessError:
-    print('piglit/bin/glinfo failed to create a GL context')
+    print("piglit/bin/glinfo failed to create a GL context")
     exit(1)
 
 renderer = None
@@ -272,13 +273,15 @@ for line in p.stdout.decode().split("\n"):
         renderer = line
         if is_amd:
             gpu_name_full = "(".join(line.split("(")[:-1]).strip()
-            gpu_name = line.replace("(TM)", "").split("(")[1].split(",")[1].lower().strip()
+            gpu_name = (
+                line.replace("(TM)", "").split("(")[1].split(",")[1].lower().strip()
+            )
         break
     elif "gfx_level" in line:
         gfx_level = int(line.split("=")[1])
 
 if renderer is None:
-    print('piglit/bin/glinfo failed to create a GL context')
+    print("piglit/bin/glinfo failed to create a GL context")
     exit(1)
 
 output_folder = args.output_folder
@@ -298,6 +301,7 @@ os.makedirs(output_folder, exist_ok=True)
 logfile = open(os.path.join(output_folder, "{}-run-tests.log".format(gpu_name)), "w")
 
 spin = itertools.cycle("-\\|/")
+
 
 def gfx_level_to_str(cl):
     supported = ["gfx6", "gfx7", "gfx8", "gfx9", "gfx10", "gfx10_3", "gfx11", "gfx12"]
@@ -351,9 +355,9 @@ def verify_results(results):
             lines = file.readlines()
             if len(lines) == 0:
                 return True
-            print("{} new result{}:".format(len(lines), 's' if len(lines) > 1 else ''))
+            print("{} new result{}:".format(len(lines), "s" if len(lines) > 1 else ""))
             for i in range(min(10, len(lines))):
-                print("  * ", end='')
+                print("  * ", end="")
                 if "Pass" in lines[i]:
                     print_green(lines[i][:-1])
                 else:
@@ -370,7 +374,7 @@ def verify_results(results):
 def parse_test_filters(include_tests, baseline):
     cmd = []
     for t in include_tests:
-        if t == 'baseline':
+        if t == "baseline":
             t = baseline
 
         if os.path.exists(t):
@@ -389,15 +393,19 @@ def select_baseline(basepath, gfx_level, gpu_name, suffix):
 
     # select the best baseline we can find
     # 1. exact match
-    exact = os.path.join(basepath, "{}-{}-{}.csv".format(gfx_level_str, gpu_name, suffix))
+    exact = os.path.join(
+        basepath, "{}-{}-{}.csv".format(gfx_level_str, gpu_name, suffix)
+    )
     if os.path.exists(exact):
         return exact
     # 2. any baseline with the same gfx_level
     while gfx_level >= 8:
-        gfx_level_str += '-'
+        gfx_level_str += "-"
         for subdir, dirs, files in os.walk(basepath):
             for file in files:
-                if file.find(gfx_level_str) == 0 and file.endswith("-{}.csv".format(suffix)):
+                if file.find(gfx_level_str) == 0 and file.endswith(
+                    "-{}.csv".format(suffix)
+                ):
                     return os.path.join(basepath, file)
         # No match. Try an earlier class
         gfx_level = gfx_level - 1
@@ -407,8 +415,8 @@ def select_baseline(basepath, gfx_level, gpu_name, suffix):
 
 
 if is_amd:
-    baseline = select_baseline(args.baseline, gfx_level, gpu_name, 'fail')
-    flakes_list = select_baseline(args.baseline, gfx_level, gpu_name, 'flakes')
+    baseline = select_baseline(args.baseline, gfx_level, gpu_name, "fail")
+    flakes_list = select_baseline(args.baseline, gfx_level, gpu_name, "flakes")
 
 success = True
 filters_args = parse_test_filters(args.include_tests, baseline)
@@ -427,25 +435,29 @@ print_yellow("Skips: {}".format(skips_list))
 if args.piglit:
     out = os.path.join(output_folder, "piglit")
     print_yellow("Running piglit tests", args.verbose > 0)
-    cmd = [
-        "piglit-runner",
-        "run",
-        "--piglit-folder",
-        piglit_path,
-        "--profile",
-        "quick",
-        "--output",
-        out,
-        "--process-isolation",
-        "--timeout",
-        "300",
-        "--jobs",
-        str(args.jobs),
-        "--skips",
-        skips_list,
-        "--skips",
-        os.path.join(path_above_mesa, "mesa", ".gitlab-ci", "all-skips.txt")
-    ] + filters_args + flakes_args
+    cmd = (
+        [
+            "piglit-runner",
+            "run",
+            "--piglit-folder",
+            piglit_path,
+            "--profile",
+            "quick",
+            "--output",
+            out,
+            "--process-isolation",
+            "--timeout",
+            "300",
+            "--jobs",
+            str(args.jobs),
+            "--skips",
+            skips_list,
+            "--skips",
+            os.path.join(path_above_mesa, "mesa", ".gitlab-ci", "all-skips.txt"),
+        ]
+        + filters_args
+        + flakes_args
+    )
 
     if os.path.exists(baseline):
         cmd += ["--baseline", baseline]
@@ -477,44 +489,60 @@ if args.glcts:
     if is_amd or args.zink:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(glcts_path),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(
+                glcts_path
+            ),
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(glcts_path),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(
+                glcts_path
+            ),
         ]
     elif args.llvmpipe:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-main.txt".format(glcts_path),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-main.txt".format(
+                glcts_path
+            ),
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl45-khr-single.txt".format(glcts_path),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl45-khr-single.txt".format(
+                glcts_path
+            ),
         ]
     elif args.virgl:
         cmd += [
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-main.txt".format(glcts_path),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-main.txt".format(
+                glcts_path
+            ),
             "--caselist",
-            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl43-khr-single.txt".format(glcts_path),
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl43-khr-single.txt".format(
+                glcts_path
+            ),
         ]
     elif args.softpipe:
         # KHR-GL33.info.renderer crashes with softpipe.
-        #cmd += [
+        # cmd += [
         #    "--caselist",
         #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-main.txt".format(glcts_path),
-        #]
+        # ]
         pass
     else:
         assert False
 
-    cmd += [
-        "--output",
-        out,
-        "--skips",
-        skips_list,
-        "--jobs",
-        str(args.jobs),
-        "--timeout",
-        "1000"
-    ] + filters_args + flakes_args
+    cmd += (
+        [
+            "--output",
+            out,
+            "--skips",
+            skips_list,
+            "--jobs",
+            str(args.jobs),
+            "--timeout",
+            "1000",
+        ]
+        + filters_args
+        + flakes_args
+    )
 
     if os.path.exists(baseline):
         cmd += ["--baseline", baseline]
@@ -560,16 +588,20 @@ if args.escts:
             ),
         ]
 
-    cmd += [
-        "--output",
-        out,
-        "--skips",
-        skips_list,
-        "--jobs",
-        str(args.jobs),
-        "--timeout",
-        "1000"
-    ] + filters_args + flakes_args
+    cmd += (
+        [
+            "--output",
+            out,
+            "--skips",
+            skips_list,
+            "--jobs",
+            str(args.jobs),
+            "--timeout",
+            "1000",
+        ]
+        + filters_args
+        + flakes_args
+    )
 
     if os.path.exists(baseline):
         cmd += ["--baseline", baseline]
@@ -603,12 +635,16 @@ if args.deqp:
         suite.write("[[deqp]]\n")
         suite.write(
             'deqp = "{}"\n'.format(
-                "{}/build/modules/{subtest}/deqp-{subtest}".format(glcts_path, subtest=k)
+                "{}/build/modules/{subtest}/deqp-{subtest}".format(
+                    glcts_path, subtest=k
+                )
             )
         )
         suite.write(
             'caselists = ["{}"]\n'.format(
-                "{}/external/openglcts/data/gl_cts/data/mustpass/{}/aosp_mustpass/3.2.6.x/{}-main.txt".format(glcts_path, "egl" if k == "egl" else "gles", k)
+                "{}/external/openglcts/data/gl_cts/data/mustpass/{}/aosp_mustpass/3.2.6.x/{}-main.txt".format(
+                    glcts_path, "egl" if k == "egl" else "gles", k
+                )
             )
         )
         if os.path.exists(baseline):
@@ -622,16 +658,20 @@ if args.deqp:
 
     suite.close()
 
-    cmd = [
-        "deqp-runner",
-        "suite",
-        "--jobs",
-        str(args.jobs),
-        "--output",
-        os.path.join(output_folder, "deqp"),
-        "--suite",
-        suite_filename,
-    ] + filters_args + flakes_args
+    cmd = (
+        [
+            "deqp-runner",
+            "suite",
+            "--jobs",
+            str(args.jobs),
+            "--output",
+            os.path.join(output_folder, "deqp"),
+            "--suite",
+            suite_filename,
+        ]
+        + filters_args
+        + flakes_args
+    )
 
     run_cmd(cmd, args.verbose)
 
