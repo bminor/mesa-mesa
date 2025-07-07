@@ -11,6 +11,10 @@ KHR-GL46.gpu_shader_fp64.fp64.varyings
 dEQP-VK.memory.mapping.*.full.variable.implicit_unmap*
 dEQP-VK.spirv_assembly.instruction.graphics.16bit_storage.struct_mixed_types.uniform_buffer_block_vert
 dEQP-VK.spirv_assembly.instruction.*.spirv_ids_abuse.lots_ids*
+dEQP-VK.api.buffer_memory_requirements.create_sparse_binding_sparse_residency.ext_mem_flags_excluded.method1.size_req_storage_usage_bits
+dEQP-VK.api.buffer_memory_requirements.create_sparse_binding_sparse_residency.ext_mem_flags_excluded.method2.size_req_storage_usage_bits
+dEQP-VK.api.buffer_memory_requirements.create_sparse_binding_sparse_residency_sparse_aliased.ext_mem_flags_excluded.method1.size_req_storage_usage_bits
+dEQP-VK.api.buffer_memory_requirements.create_sparse_binding_sparse_residency_sparse_aliased.ext_mem_flags_excluded.method2.size_req_storage_usage_bits
 
 # Slow tests that may hit 60s timeout pre-merge, but pass otherwise
 spec@arb_gpu_shader_fp64@execution@built-in-functions@fs-op-div-dmat3-dmat3
