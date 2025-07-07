@@ -1495,13 +1495,15 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
       .syncobj_handles = (uintptr_t)syncobj_dependencies_list,
       .syncobj_timeline_handles = (uintptr_t)&syncobj_timeline_dependency,
       .syncobj_timeline_points = (uintptr_t)&syncobj_timeline_dependency_point,
-      .bo_read_handles = (uintptr_t)shared_buf_kms_handles_read,
-      .bo_write_handles = (uintptr_t)shared_buf_kms_handles_write,
+      /* Wait for previous reads/writes to complete before writing to these BOs. */
+      .bo_read_handles = (uintptr_t)shared_buf_kms_handles_write,
+      /* Wait for previous writes to complete before reading from these BOs. */
+      .bo_write_handles = (uintptr_t)shared_buf_kms_handles_read,
       .num_syncobj_timeline_handles = num_syncobj_timeline_dependencies,
       .num_fences = 0,
       .num_syncobj_handles = num_syncobj_dependencies,
-      .num_bo_read_handles = num_shared_buf_read,
-      .num_bo_write_handles = num_shared_buf_write,
+      .num_bo_read_handles = num_shared_buf_write,
+      .num_bo_write_handles = num_shared_buf_read,
       .out_fences = (uintptr_t)NULL,
    };
 
