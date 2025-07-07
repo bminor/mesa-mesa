@@ -3372,3 +3372,27 @@ fn enqueue_release_gl_objects(
         Box::new(move |_, ctx| copy_slice_to_cube(ctx, &objs)),
     )
 }
+
+#[cl_entrypoint(clEnqueueAcquireExternalMemObjectsKHR)]
+fn enqueue_acquire_external_mem_objects(
+    _command_queue: cl_command_queue,
+    _num_mem_objects: cl_uint,
+    _mem_objects: *const cl_mem,
+    _num_events_in_wait_list: cl_uint,
+    _event_wait_list: *const cl_event,
+    _event: *mut cl_event,
+) -> CLResult<()> {
+    Err(CL_INVALID_OPERATION)
+}
+
+#[cl_entrypoint(clEnqueueReleaseExternalMemObjectsKHR)]
+fn enqueue_release_external_mem_objects(
+    _command_queue: cl_command_queue,
+    _num_mem_objects: cl_uint,
+    _mem_objects: *const cl_mem,
+    _num_events_in_wait_list: cl_uint,
+    _event_wait_list: *const cl_event,
+    _event: *mut cl_event,
+) -> CLResult<()> {
+    Err(CL_INVALID_OPERATION)
+}

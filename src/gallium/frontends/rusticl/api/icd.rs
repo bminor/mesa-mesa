@@ -12,6 +12,7 @@ use crate::api::platform;
 use crate::api::platform::*;
 use crate::api::program::*;
 use crate::api::queue::*;
+use crate::api::semaphore::*;
 use crate::api::types::*;
 use crate::api::util::*;
 use crate::core::platform::*;
@@ -534,6 +535,16 @@ pub extern "C" fn clGetExtensionFunctionAddress(
         // cl_khr_create_command_queue
         "clCreateCommandQueueWithPropertiesKHR" => cl_ext_func!(clCreateCommandQueueWithProperties: clCreateCommandQueueWithPropertiesKHR_fn),
 
+        // cl_khr_external_memory
+        "clEnqueueAcquireExternalMemObjectsKHR" => cl_ext_func!(clEnqueueAcquireExternalMemObjectsKHR: clEnqueueAcquireExternalMemObjectsKHR_fn),
+        "clEnqueueReleaseExternalMemObjectsKHR" => cl_ext_func!(clEnqueueReleaseExternalMemObjectsKHR: clEnqueueReleaseExternalMemObjectsKHR_fn),
+
+        // cl_khr_external_semaphore
+        "clGetSemaphoreHandleForTypeKHR" => cl_ext_func!(clGetSemaphoreHandleForTypeKHR: clGetSemaphoreHandleForTypeKHR_fn),
+
+        // cl_khr_external_semaphore_sync_fd
+        "clReImportSemaphoreSyncFdKHR" => cl_ext_func!(clReImportSemaphoreSyncFdKHR: clReImportSemaphoreSyncFdKHR_fn),
+
         // cl_khr_gl_sharing
         "clCreateFromGLBuffer" => cl_ext_func!(clCreateFromGLBuffer: clCreateFromGLBuffer_fn),
         "clCreateFromGLRenderbuffer" => cl_ext_func!(clCreateFromGLRenderbuffer: clCreateFromGLRenderbuffer_fn),
@@ -554,6 +565,14 @@ pub extern "C" fn clGetExtensionFunctionAddress(
 
         // cl_khr_il_program
         "clCreateProgramWithILKHR" => cl_ext_func!(clCreateProgramWithIL: clCreateProgramWithILKHR_fn),
+
+        // cl_khr_semaphore
+        "clCreateSemaphoreWithPropertiesKHR" => cl_ext_func!(clCreateSemaphoreWithPropertiesKHR: clCreateSemaphoreWithPropertiesKHR_fn),
+        "clEnqueueSignalSemaphoresKHR" => cl_ext_func!(clEnqueueSignalSemaphoresKHR: clEnqueueSignalSemaphoresKHR_fn),
+        "clEnqueueWaitSemaphoresKHR" => cl_ext_func!(clEnqueueWaitSemaphoresKHR: clEnqueueWaitSemaphoresKHR_fn),
+        "clGetSemaphoreInfoKHR" => cl_ext_func!(clGetSemaphoreInfoKHR: clGetSemaphoreInfoKHR_fn),
+        "clReleaseSemaphoreKHR" => cl_ext_func!(clReleaseSemaphoreKHR: clReleaseSemaphoreKHR_fn),
+        "clRetainSemaphoreKHR" => cl_ext_func!(clRetainSemaphoreKHR: clRetainSemaphoreKHR_t),
 
         // cl_khr_suggested_local_work_size
         "clGetKernelSuggestedLocalWorkSizeKHR" => cl_ext_func!(clGetKernelSuggestedLocalWorkSizeKHR: clGetKernelSuggestedLocalWorkSizeKHR_fn),

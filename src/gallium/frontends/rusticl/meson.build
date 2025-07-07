@@ -45,6 +45,7 @@ rusticl_files = files(
   'api/platform.rs',
   'api/program.rs',
   'api/queue.rs',
+  'api/semaphore.rs',
   'api/types.rs',
   'api/util.rs',
   'core.rs',
