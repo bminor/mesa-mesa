@@ -857,8 +857,6 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
    VkAndroidHardwareBufferPropertiesANDROID *pProperties)
 {
    VK_FROM_HANDLE(vk_device, device, device_h);
-   struct vk_physical_device *pdevice = device->physical;
-
    VkResult result;
 
    VkAndroidHardwareBufferFormatPropertiesANDROID *format_prop =
@@ -897,13 +895,16 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
    assert(handle && handle->numFds > 0);
    pProperties->allocationSize = lseek(handle->data[0], 0, SEEK_END);
 
-   VkPhysicalDeviceMemoryProperties mem_props;
+   VkMemoryFdPropertiesKHR fd_props = {
+      .sType = VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR,
+   };
+   result = device->dispatch_table.GetMemoryFdPropertiesKHR(
+      device_h, VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT, handle->data[0],
+      &fd_props);
+   if (result != VK_SUCCESS)
+      return result;
 
-   device->physical->dispatch_table.GetPhysicalDeviceMemoryProperties(
-      (VkPhysicalDevice)pdevice, &mem_props);
-
-   /* All memory types. (Should we be smarter than this?) */
-   pProperties->memoryTypeBits = (1u << mem_props.memoryTypeCount) - 1;
+   pProperties->memoryTypeBits = fd_props.memoryTypeBits;
 
    return VK_SUCCESS;
 }
