@@ -1146,6 +1146,18 @@ for s in [16, 32, 64]:
        (('bcsel@{}'.format(s), ('feq', a, 0.0), 1.0, ('i2f{}'.format(s), ('iadd', ('b2i{}'.format(s), ('flt', 0.0, 'a@{}'.format(s))), ('ineg', ('b2i{}'.format(s), ('flt', 'a@{}'.format(s), 0.0)))))),
         ('i2f{}'.format(s), ('iadd', ('b2i32', ('!fge', a, 0.0)), ('ineg', ('b2i32', ('!flt', a, 0.0)))))),
 
+       # Signed pow() used in Control. It's not enough to match just the
+       # copysign piece because we would require extra instructions to handle
+       # the various floating point special cases. Specializing to the pow
+       # sequence lets us collapse all the sign fixup code.
+       (('fmul', ('fexp2', ('fmul', ('flog2', ('fabs', a)), b)),
+         ('i2f', ('iadd',           ('b2i', ('flt', 0.0, a)),
+                          ('ineg', ('b2i', ('flt', a, 0.0)))))),
+
+        ('bcsel', ('!flt', a, 0.0),
+         ('fneg', ('fexp2', ('fmul', ('flog2', ('fabs', a)), b))),
+                  ('fexp2', ('fmul', ('flog2', ('fabs', a)), b)))),
+
        (('bcsel', a, ('b2f(is_used_once)', 'b@{}'.format(s)), ('b2f', 'c@{}'.format(s))), ('b2f', ('bcsel', a, b, c))),
 
        # The C spec says, "If the value of the integral part cannot be represented
