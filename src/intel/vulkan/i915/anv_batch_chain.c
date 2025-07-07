@@ -747,6 +747,7 @@ i915_queue_exec_async(struct anv_async_submit *submit,
 
    if (INTEL_DEBUG(DEBUG_SUBMIT))
       anv_i915_debug_submit(&execbuf);
+   anv_async_submit_print_batch(submit);
 
    ANV_RMV(bos_gtt_map, device, execbuf.bos, execbuf.bo_count);
 

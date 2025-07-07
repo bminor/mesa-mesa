@@ -1845,3 +1845,37 @@ anv_async_submit_wait(struct anv_async_submit *submit)
                        VK_SYNC_WAIT_COMPLETE,
                        os_time_get_absolute_timeout(OS_TIMEOUT_INFINITE)) == VK_SUCCESS;
 }
+
+void
+anv_async_submit_print_batch(struct anv_async_submit *submit)
+{
+   if ((INTEL_DEBUG(DEBUG_BATCH) | INTEL_DEBUG(DEBUG_BATCH_STATS)) == 0)
+      return;
+
+   struct anv_bo *batch_bo =
+      *util_dynarray_element(&submit->batch_bos, struct anv_bo *, 0);
+   struct intel_batch_decode_ctx *ctx = submit->queue->decoder;
+
+   if (submit->use_companion_rcs) {
+      struct anv_device *device = submit->queue->device;
+
+      ctx = NULL;
+      for (unsigned i = 0; i < device->physical->queue.family_count; i++) {
+         struct intel_batch_decode_ctx *decoder = &device->decoder[i];
+
+         if (decoder->engine == INTEL_ENGINE_CLASS_RENDER) {
+            ctx = decoder;
+            break;
+         }
+      }
+   }
+
+   assert(ctx);
+   submit->queue->device->cmd_buffer_being_decoded = NULL;
+
+   if (INTEL_DEBUG(DEBUG_BATCH))
+      intel_print_batch(ctx, batch_bo->map, batch_bo->size, batch_bo->offset, false);
+
+   if (INTEL_DEBUG(DEBUG_BATCH_STATS))
+      intel_batch_stats(ctx, batch_bo->map, batch_bo->size, batch_bo->offset, false);
+}

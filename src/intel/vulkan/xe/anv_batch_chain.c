@@ -195,6 +195,7 @@ xe_queue_exec_async(struct anv_async_submit *submit,
    };
 
    xe_exec_print_debug(queue, 0, NULL, NULL, 0, &exec);
+   anv_async_submit_print_batch(submit);
 
    if (likely(!device->info->no_hw)) {
       if (intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, &exec))
