@@ -4,6 +4,7 @@
 use crate::compiler::nir::NirShader;
 use crate::pipe::context::*;
 use crate::pipe::device::*;
+use crate::pipe::fence::PipeFence;
 use crate::pipe::resource::*;
 use crate::util::disk_cache::*;
 
@@ -442,6 +443,11 @@ impl PipeScreen {
         }
     }
 
+    pub fn create_semaphore(self: &Arc<PipeScreen>) -> Option<PipeFence> {
+        let fence = unsafe { self.screen().semaphore_create.unwrap()(self.screen.as_ptr()) };
+        PipeFence::new(fence, self)
+    }
+
     pub(super) fn unref_fence(&self, mut fence: *mut pipe_fence_handle) {
         unsafe {
             self.screen().fence_reference.unwrap()(
@@ -469,6 +475,10 @@ impl PipeScreen {
             self.screen().query_memory_info?(self.screen.as_ptr(), &mut info);
         }
         Some(info)
+    }
+
+    pub fn has_semaphore_create(&self) -> bool {
+        self.screen().semaphore_create.is_some()
     }
 }
 
