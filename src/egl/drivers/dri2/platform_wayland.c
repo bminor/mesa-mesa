@@ -3207,7 +3207,7 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
    dri2_dpy->driver_name = strdup(disp->Options.Zink ? "zink" : "swrast");
    dri2_detect_swrast(disp);
 
-   dri2_dpy->loader_extensions = disp->Options.Zink ? kopper_loader_extensions : swrast_loader_extensions;
+   dri2_dpy->loader_extensions = dri2_dpy->kopper ? kopper_loader_extensions : swrast_loader_extensions;
 
    if (!dri2_create_screen(disp))
       goto cleanup;
@@ -3235,7 +3235,7 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
     */
-   dri2_dpy->vtbl = disp->Options.Zink ? &dri2_wl_kopper_display_vtbl : &dri2_wl_swrast_display_vtbl;
+   dri2_dpy->vtbl = dri2_dpy->kopper ? &dri2_wl_kopper_display_vtbl : &dri2_wl_swrast_display_vtbl;
 
    return EGL_TRUE;
 
