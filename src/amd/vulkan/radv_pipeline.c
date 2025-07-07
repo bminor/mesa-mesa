@@ -952,8 +952,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
    case MESA_SHADER_VERTEX:
       if (!shader->info.vs.as_ls && !shader->info.vs.as_es) {
          /* VS -> FS outputs. */
-         stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                          shader->info.outinfo.prim_param_exports;
+         stats.outputs += shader->info.outinfo.param_exports + shader->info.outinfo.prim_param_exports;
       } else if (gfx_level <= GFX8) {
          /* VS -> TCS, VS -> GS outputs on GFX6-8 */
          stats.outputs += shader->info.vs.num_linked_outputs;
@@ -974,8 +973,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
    case MESA_SHADER_TESS_EVAL:
       if (!shader->info.tes.as_es) {
          /* TES -> FS outputs */
-         stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                          shader->info.outinfo.prim_param_exports;
+         stats.outputs += shader->info.outinfo.param_exports + shader->info.outinfo.prim_param_exports;
       } else if (gfx_level <= GFX8) {
          /* TES -> GS outputs on GFX6-8 */
          stats.outputs += shader->info.tes.num_linked_outputs;
@@ -999,8 +997,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
 
       if (shader->info.is_ngg) {
          /* GS -> FS outputs (GFX10+ NGG) */
-         stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                          shader->info.outinfo.prim_param_exports;
+         stats.outputs += shader->info.outinfo.param_exports + shader->info.outinfo.prim_param_exports;
       } else {
          /* GS -> FS outputs (GFX6-10.3 legacy) */
          stats.outputs += DIV_ROUND_UP(((uint32_t)shader->info.gs.num_components_per_stream[0] +
@@ -1014,8 +1011,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
 
    case MESA_SHADER_MESH:
       /* MS -> FS outputs */
-      stats.outputs += shader->info.outinfo.pos_exports + shader->info.outinfo.param_exports +
-                       shader->info.outinfo.prim_param_exports;
+      stats.outputs += shader->info.outinfo.param_exports + shader->info.outinfo.prim_param_exports;
       break;
 
    case MESA_SHADER_FRAGMENT:
