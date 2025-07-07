@@ -96,6 +96,8 @@ static unsigned
 va_pack_fau_special(const bi_instr *I, enum bir_fau fau)
 {
    switch (fau) {
+   case BIR_FAU_WARP_ID:
+      return VA_FAU_SPECIAL_PAGE_0_WARP_ID;
    case BIR_FAU_ATEST_PARAM:
       return VA_FAU_SPECIAL_PAGE_0_ATEST_DATUM;
    case BIR_FAU_TLS_PTR:
@@ -104,6 +106,8 @@ va_pack_fau_special(const bi_instr *I, enum bir_fau fau)
       return VA_FAU_SPECIAL_PAGE_1_WORKGROUP_LOCAL_POINTER;
    case BIR_FAU_LANE_ID:
       return VA_FAU_SPECIAL_PAGE_3_LANE_ID;
+   case BIR_FAU_CORE_ID:
+      return VA_FAU_SPECIAL_PAGE_3_CORE_ID;
    case BIR_FAU_SHADER_OUTPUT:
       return VA_FAU_SPECIAL_PAGE_3_SHADER_OUTPUT;
    case BIR_FAU_PROGRAM_COUNTER:
