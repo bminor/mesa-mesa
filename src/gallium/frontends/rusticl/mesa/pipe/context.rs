@@ -629,6 +629,11 @@ impl PipeContext {
             }
         }
     }
+
+    pub fn has_fence_server(&self) -> bool {
+        let pipe = unsafe { self.pipe().as_ref() };
+        pipe.fence_server_signal.is_some() && pipe.fence_server_sync.is_some()
+    }
 }
 
 impl Drop for PipeContext {
