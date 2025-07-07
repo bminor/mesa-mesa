@@ -157,7 +157,7 @@ panvk_per_arch(CreateDescriptorSetLayout)(
          binding_layout->flags = binding_flags_info->pBindingFlags[i];
       }
 
-      if (binding_layout->type & VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+      if (binding_layout->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
          binding_layout->desc_count =
             panvk_get_iub_desc_count(binding->descriptorCount);
       } else {
