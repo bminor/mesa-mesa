@@ -510,7 +510,7 @@ tu_cs_reset(struct tu_cs *cs)
       tu_bo_finish(cs->device, cs->read_write.bos[i]);
    }
 
-   cs->writeable = false;
+   assert(!cs->writeable);
 
    if (cs->read_only.bo_count) {
       cs->read_only.bos[0] = cs->read_only.bos[cs->read_only.bo_count - 1];
