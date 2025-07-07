@@ -1429,53 +1429,63 @@ radv_determine_ngg_settings(struct radv_device *device, struct radv_shader_stage
 }
 
 static void
-radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *producer,
-                       struct radv_shader_stage *consumer, const struct radv_graphics_state_key *gfx_state)
+radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *stages,
+                       const struct radv_graphics_state_key *gfx_state)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_shader_stage *vs_stage = stages[MESA_SHADER_VERTEX].nir ? &stages[MESA_SHADER_VERTEX] : NULL;
+   struct radv_shader_stage *tcs_stage = stages[MESA_SHADER_TESS_CTRL].nir ? &stages[MESA_SHADER_TESS_CTRL] : NULL;
+   struct radv_shader_stage *tes_stage = stages[MESA_SHADER_TESS_EVAL].nir ? &stages[MESA_SHADER_TESS_EVAL] : NULL;
+   struct radv_shader_stage *gs_stage = stages[MESA_SHADER_GEOMETRY].nir ? &stages[MESA_SHADER_GEOMETRY] : NULL;
+   struct radv_shader_stage *ms_stage = stages[MESA_SHADER_MESH].nir ? &stages[MESA_SHADER_MESH] : NULL;
+   struct radv_shader_stage *fs_stage = stages[MESA_SHADER_FRAGMENT].nir ? &stages[MESA_SHADER_FRAGMENT] : NULL;
+   struct radv_shader_stage *es_stage = tes_stage && tes_stage->info.tes.as_es ? tes_stage
+                                        : vs_stage && vs_stage->info.vs.as_es  ? vs_stage
+                                                                               : NULL;
+   struct radv_shader_stage *prerast_stage = ms_stage                                  ? ms_stage
+                                             : gs_stage                                ? gs_stage
+                                             : tes_stage && !tes_stage->info.tes.as_es ? tes_stage
+                                             : vs_stage && !vs_stage->info.vs.as_es && !vs_stage->info.vs.as_ls
+                                                ? vs_stage
+                                                : NULL;
+   struct radv_shader_stage *ngg_stage = prerast_stage && prerast_stage->info.is_ngg ? prerast_stage : NULL;
 
    /* Export primitive ID and clip/cull distances if read by the FS, or export unconditionally when
     * the next stage is unknown (with graphics pipeline library).
     */
-   if (producer->info.next_stage == MESA_SHADER_FRAGMENT ||
-       !(gfx_state->lib_flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
-      const bool ps_prim_id_in = !consumer || consumer->info.ps.prim_id_input;
-      const bool ps_clip_dists_in = !consumer || !!consumer->info.ps.input_clips_culls_mask;
+   if (prerast_stage && (prerast_stage->info.next_stage == MESA_SHADER_FRAGMENT ||
+                         !(gfx_state->lib_flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT))) {
+      const bool ps_prim_id_in = !fs_stage || fs_stage->info.ps.prim_id_input;
+      const bool ps_clip_dists_in = !fs_stage || !!fs_stage->info.ps.input_clips_culls_mask;
 
-      radv_set_vs_output_param(device, producer->nir, gfx_state, &producer->info, ps_prim_id_in, ps_clip_dists_in);
+      radv_set_vs_output_param(device, prerast_stage->nir, gfx_state, &prerast_stage->info, ps_prim_id_in,
+                               ps_clip_dists_in);
    }
 
-   if (producer->stage == MESA_SHADER_VERTEX || producer->stage == MESA_SHADER_TESS_EVAL) {
+   if (prerast_stage && !ms_stage) {
       /* Compute NGG info (GFX10+) or GS info. */
-      if (producer->info.is_ngg) {
-         struct radv_shader_stage *gs_stage = consumer && consumer->stage == MESA_SHADER_GEOMETRY ? consumer : NULL;
-         struct gfx10_ngg_info *out = gs_stage ? &gs_stage->info.ngg_info : &producer->info.ngg_info;
-
+      if (ngg_stage) {
          /* Determine other NGG settings like culling for VS or TES without GS. */
-         if (!gs_stage) {
-            radv_determine_ngg_settings(device, producer, consumer, gfx_state);
+         if (!gs_stage)
+            radv_determine_ngg_settings(device, ngg_stage, fs_stage, gfx_state);
+
+         if (es_stage) {
+            gfx10_ngg_set_esgs_ring_itemsize(device, &es_stage->info, gs_stage ? &gs_stage->info : NULL,
+                                             &prerast_stage->info.ngg_info);
+            assert(es_stage->info.workgroup_size == 256);
          }
 
-         gfx10_ngg_set_esgs_ring_itemsize(device, &producer->info, gs_stage ? &gs_stage->info : NULL, out);
-
-         assert(producer->info.workgroup_size == 256);
-         assert(!gs_stage || gs_stage->info.workgroup_size == 256);
-      } else if (consumer && consumer->stage == MESA_SHADER_GEOMETRY) {
-         struct radv_shader_info *gs_info = &consumer->info;
-         struct radv_shader_info *es_info = &producer->info;
-
-         es_info->workgroup_size = gs_info->workgroup_size;
+         assert(ngg_stage->info.workgroup_size == 256);
+      } else if (es_stage && gs_stage) {
+         es_stage->info.workgroup_size = gs_stage->info.workgroup_size;
       }
 
-      if (consumer && consumer->stage == MESA_SHADER_GEOMETRY) {
-         producer->info.gs_inputs_read = consumer->nir->info.inputs_read;
+      if (es_stage && gs_stage) {
+         es_stage->info.gs_inputs_read = gs_stage->nir->info.inputs_read;
       }
    }
 
-   if (producer->stage == MESA_SHADER_VERTEX && consumer && consumer->stage == MESA_SHADER_TESS_CTRL) {
-      struct radv_shader_stage *vs_stage = producer;
-      struct radv_shader_stage *tcs_stage = consumer;
-
+   if (vs_stage && tcs_stage) {
       vs_stage->info.vs.tcs_inputs_via_lds = tcs_stage->nir->info.inputs_read;
 
       if (gfx_state->ts.patch_control_points) {
@@ -1515,10 +1525,7 @@ radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *pro
    }
 
    /* Copy shader info between TCS<->TES. */
-   if (producer->stage == MESA_SHADER_TESS_CTRL && consumer && consumer->stage == MESA_SHADER_TESS_EVAL) {
-      struct radv_shader_stage *tcs_stage = producer;
-      struct radv_shader_stage *tes_stage = consumer;
-
+   if (tcs_stage && tes_stage) {
       tcs_stage->info.tcs.tes_reads_tess_factors = tes_stage->info.tes.reads_tess_factors;
       tcs_stage->info.tcs.tes_inputs_read = tes_stage->nir->info.inputs_read;
       tcs_stage->info.tcs.tes_patch_inputs_read = tes_stage->nir->info.patch_inputs_read;
@@ -1559,29 +1566,13 @@ radv_nir_shader_info_merge(const struct radv_shader_stage *src, struct radv_shad
       dst_info->gs.es_type = src->stage;
 }
 
-static const gl_shader_stage graphics_shader_order[] = {
-   MESA_SHADER_VERTEX, MESA_SHADER_TESS_CTRL, MESA_SHADER_TESS_EVAL, MESA_SHADER_GEOMETRY,
-
-   MESA_SHADER_TASK,   MESA_SHADER_MESH,
-};
-
 void
 radv_nir_shader_info_link(struct radv_device *device, const struct radv_graphics_state_key *gfx_state,
                           struct radv_shader_stage *stages)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   /* Walk backwards to link */
-   struct radv_shader_stage *next_stage = stages[MESA_SHADER_FRAGMENT].nir ? &stages[MESA_SHADER_FRAGMENT] : NULL;
-
-   for (int i = ARRAY_SIZE(graphics_shader_order) - 1; i >= 0; i--) {
-      gl_shader_stage s = graphics_shader_order[i];
-      if (!stages[s].nir)
-         continue;
-
-      radv_link_shaders_info(device, &stages[s], next_stage, gfx_state);
-      next_stage = &stages[s];
-   }
+   radv_link_shaders_info(device, stages, gfx_state);
 
    if (pdev->info.gfx_level >= GFX9) {
       /* Merge shader info for VS+TCS. */
