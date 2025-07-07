@@ -1399,6 +1399,9 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
          features |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
 
       features |= VK_FORMAT_FEATURE_2_BLIT_SRC_BIT;
+
+      if (vk_format_has_depth(format))
+         features |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT;
    }
 
    if (fmt.bind & PAN_BIND_RENDER_TARGET) {
@@ -1415,19 +1418,16 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
       }
    }
 
-   if (fmt.bind & PAN_BIND_STORAGE_IMAGE)
+   if (fmt.bind & PAN_BIND_STORAGE_IMAGE) {
       features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
                   VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
                   VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
-
-   if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
-      features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
+      if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
+         features |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
+   }
 
    if (fmt.bind & PAN_BIND_DEPTH_STENCIL)
       features |= VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-   if (vk_format_has_depth(format))
-      features |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT;
 
    return features;
 }

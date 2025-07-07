@@ -94,7 +94,7 @@
         "description": "panvk: don't report features for image formats that are only usable as vertex buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "70b8056df16a1f9273105fab3ef1c91389ba1cc8",
         "notes": null
