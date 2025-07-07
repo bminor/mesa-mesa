@@ -1204,30 +1204,10 @@ check_xshm(struct dri2_egl_display *dri2_dpy)
    return ret;
 }
 
-static EGLBoolean
-dri2_x11_check_multibuffers(_EGLDisplay *disp)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-
-#ifdef HAVE_X11_DRM
-   dri2_dpy->multibuffers_available = x11_dri3_has_multibuffer(dri2_dpy->conn);
-
-   if (disp->Options.Zink && !disp->Options.ForceSoftware &&
-       !dri2_dpy->multibuffers_available &&
-       !dri2_dpy->kopper_without_modifiers)
-      return EGL_FALSE;
-#endif
-
-   return EGL_TRUE;
-}
-
 static bool
 platform_x11_finalize(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-
-   if (!dri2_x11_check_multibuffers(disp))
-      return false;
 
    if (!dri2_create_screen(disp))
       return false;
@@ -1355,6 +1335,15 @@ dri2_initialize_x11(_EGLDisplay *disp)
    }
 #endif
    dri2_detect_swrast(disp);
+
+#ifdef HAVE_X11_DRM
+   dri2_dpy->multibuffers_available = x11_dri3_has_multibuffer(dri2_dpy->conn);
+
+   if (disp->Options.Zink && !disp->Options.ForceSoftware &&
+       !dri2_dpy->multibuffers_available &&
+       !dri2_dpy->kopper_without_modifiers)
+      return EGL_FALSE;
+#endif
 
    if (disp->Options.ForceSoftware || dri2_dpy->kopper)
       return dri2_initialize_x11_swrast(disp);
