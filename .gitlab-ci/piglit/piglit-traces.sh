@@ -33,6 +33,8 @@ fi
 
 if [ -n "${LAVA_HTTP_CACHE_URI:-}" ]; then
     export PIGLIT_REPLAY_EXTRA_ARGS="--download-caching-proxy-url=${LAVA_HTTP_CACHE_URI} ${PIGLIT_REPLAY_EXTRA_ARGS}"
+elif [ -n "${CI_TRON_JOB_HTTP_SERVER:-}" ]; then
+    export PIGLIT_REPLAY_EXTRA_ARGS="--download-caching-proxy-url=${CI_TRON_JOB_HTTP_SERVER}/caching_proxy/ ${PIGLIT_REPLAY_EXTRA_ARGS}"
 elif [ -n "${FDO_HTTP_CACHE_URI:-}" ]; then
     # FIXME: remove when there is no baremetal traces job anymore.
     export PIGLIT_REPLAY_EXTRA_ARGS="--download-caching-proxy-url=${FDO_HTTP_CACHE_URI} ${PIGLIT_REPLAY_EXTRA_ARGS}"
