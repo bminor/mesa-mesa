@@ -428,7 +428,7 @@ rra_dump_acceleration_structure(const struct radv_physical_device *pdev,
     * On GFX12, we mask away the top 16 bits because the instance BLAS addresses
     * use pointer flags.
     */
-   uint64_t va = accel_struct->va & 0x1FFFFFFFFFFFFFF;
+   uint64_t va = (accel_struct->va & 0x1FFFFFFFFFFFFFF) - node_parent_table_size;
    if (radv_use_bvh8(pdev))
       va &= 0xFFFFFFFFFFFF;
    memcpy(chunk_header.virtual_address, &va, sizeof(uint64_t));
