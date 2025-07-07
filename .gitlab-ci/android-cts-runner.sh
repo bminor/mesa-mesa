@@ -62,12 +62,13 @@ TESTS_FAILED=$?
 EXIT_CODE=$?
 set -e
 
-cp -r "/android-cts/results/latest"/* $RESULTS_DIR
-cp -r "/android-cts/logs/latest"/* $RESULTS_DIR
+mkdir "${RESULTS_DIR}/android-cts"
+cp -r "/android-cts/results/latest/" "${RESULTS_DIR}/android-cts/results"
+cp -r "/android-cts/logs/latest/" "${RESULTS_DIR}/android-cts/logs"
 
 if [ -n "${ARTIFACTS_BASE_URL:-}" ]; then
   echo "============================================"
-  echo "Review the Android CTS test results at: ${ARTIFACTS_BASE_URL}/results/test_result.html"
+  echo "Review the Android CTS test results at: ${ARTIFACTS_BASE_URL}/results/android-cts/results/test_result.html"
 fi
 
 section_end android_cts_test
