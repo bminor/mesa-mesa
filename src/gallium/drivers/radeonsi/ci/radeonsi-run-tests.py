@@ -40,6 +40,9 @@ parser = argparse.ArgumentParser(
     description="radeonsi tester",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
+parser.register(
+    "type", "mybool", lambda s: True if s in ["yes", "y", "1", "true"] else False
+)
 parser.add_argument(
     "--jobs",
     "-j",
@@ -75,43 +78,37 @@ parser.add_argument(
     default=os.path.dirname(__file__),
 )
 parser.add_argument(
-    "--no-piglit", dest="piglit", help="Disable piglit tests", action="store_false"
+    "--piglit", dest="piglit", help="Disable piglit tests", type="mybool"
 )
+parser.add_argument("--glcts", dest="glcts", help="Disable GLCTS tests", type="mybool")
 parser.add_argument(
-    "--no-glcts", dest="glcts", help="Disable GLCTS tests", action="store_false"
+    "--escts", dest="escts", help="Disable GLES CTS tests", type="mybool"
 )
+parser.add_argument("--deqp", dest="deqp", help="Disable dEQP tests", type="mybool")
+parser.add_argument("--vkcts", dest="vkcts", help="Disable VKCTS tests", type="mybool")
 parser.add_argument(
-    "--no-escts", dest="escts", help="Disable GLES CTS tests", action="store_false"
-)
-parser.add_argument(
-    "--no-deqp", dest="deqp", help="Disable dEQP tests", action="store_false"
-)
-parser.add_argument(
-    "--no-vkcts", dest="vkcts", help="Disable VKCTS tests", action="store_false"
-)
-parser.add_argument(
-    "--no-deqp-egl",
+    "--deqp-egl",
     dest="deqp_egl",
     help="Disable dEQP-EGL tests",
-    action="store_false",
+    type="mybool",
 )
 parser.add_argument(
-    "--no-deqp-gles2",
+    "--deqp-gles2",
     dest="deqp_gles2",
     help="Disable dEQP-gles2 tests",
-    action="store_false",
+    type="mybool",
 )
 parser.add_argument(
-    "--no-deqp-gles3",
+    "--deqp-gles3",
     dest="deqp_gles3",
     help="Disable dEQP-gles3 tests",
-    action="store_false",
+    type="mybool",
 )
 parser.add_argument(
-    "--no-deqp-gles31",
+    "--deqp-gles31",
     dest="deqp_gles31",
     help="Disable dEQP-gles31 tests",
-    action="store_false",
+    type="mybool",
 )
 parser.set_defaults(piglit=True)
 parser.set_defaults(glcts=True)
