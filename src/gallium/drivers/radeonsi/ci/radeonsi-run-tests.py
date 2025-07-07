@@ -55,7 +55,9 @@ parser.add_argument(
 path_above_mesa = os.path.realpath(os.path.join(os.path.dirname(__file__), *[".."] * 6))
 
 parser.add_argument("--piglit-path", type=str, help="Path to piglit source folder.")
-parser.add_argument("--glcts-path", type=str, help="Path to GLCTS source folder.")
+parser.add_argument(
+    "--vk-gl-cts-path", type=str, help="Path to VK-GL-CTS source folder."
+)
 parser.add_argument(
     "--parent-path",
     type=str,
@@ -166,16 +168,16 @@ parser.add_argument("--zink", dest="zink", help="Test zink", action="store_true"
 
 args = parser.parse_args(sys.argv[1:])
 piglit_path = args.piglit_path
-glcts_path = args.glcts_path
+vk_gl_cts_path = args.vk_gl_cts_path
 
 if args.parent_path:
-    if args.piglit_path or args.glcts_path:
+    if args.piglit_path or args.vk_gl_cts_path:
         parser.print_help()
         sys.exit(0)
     piglit_path = os.path.join(args.parent_path, "piglit")
-    glcts_path = os.path.join(args.parent_path, "glcts")
+    vk_gl_cts_path = os.path.join(args.parent_path, "glcts")
 else:
-    if not args.piglit_path or not args.glcts_path:
+    if not args.piglit_path or not args.vk_gl_cts_path:
         parser.print_help()
         sys.exit(0)
 
@@ -494,47 +496,47 @@ if args.glcts:
         "--tests-per-group",
         "100",
         "--deqp",
-        "{}/build/external/openglcts/modules/glcts".format(glcts_path),
+        "{}/build/external/openglcts/modules/glcts".format(vk_gl_cts_path),
     ]
 
     if is_amd or args.zink:
         cmd += [
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
         ]
     elif args.llvmpipe:
         cmd += [
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-main.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl45-khr-single.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
         ]
     elif args.virgl:
         cmd += [
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-main.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl43-khr-single.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
         ]
     elif args.softpipe:
         # KHR-GL33.info.renderer crashes with softpipe.
         # cmd += [
         #    "--caselist",
-        #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-main.txt".format(glcts_path),
+        #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-main.txt".format(vk_gl_cts_path),
         # ]
         pass
     else:
@@ -576,18 +578,18 @@ if args.escts:
         "--tests-per-group",
         "100",
         "--deqp",
-        "{}/build/external/openglcts/modules/glcts".format(glcts_path),
+        "{}/build/external/openglcts/modules/glcts".format(vk_gl_cts_path),
         "--caselist",
         "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles2-khr-main.txt".format(
-            glcts_path
+            vk_gl_cts_path
         ),
         "--caselist",
         "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles3-khr-main.txt".format(
-            glcts_path
+            vk_gl_cts_path
         ),
         "--caselist",
         "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles31-khr-main.txt".format(
-            glcts_path
+            vk_gl_cts_path
         ),
     ]
 
@@ -595,7 +597,7 @@ if args.escts:
         cmd += [
             "--caselist",
             "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles32-khr-main.txt".format(
-                glcts_path
+                vk_gl_cts_path
             ),
         ]
 
@@ -647,14 +649,14 @@ if args.deqp:
         suite.write(
             'deqp = "{}"\n'.format(
                 "{}/build/modules/{subtest}/deqp-{subtest}".format(
-                    glcts_path, subtest=k
+                    vk_gl_cts_path, subtest=k
                 )
             )
         )
         suite.write(
             'caselists = ["{}"]\n'.format(
                 "{}/external/openglcts/data/gl_cts/data/mustpass/{}/aosp_mustpass/3.2.6.x/{}-main.txt".format(
-                    glcts_path, "egl" if k == "egl" else "gles", k
+                    vk_gl_cts_path, "egl" if k == "egl" else "gles", k
                 )
             )
         )
@@ -702,9 +704,9 @@ if args.vkcts and is_amd:
             "--tests-per-group",
             "100",
             "--deqp",
-            "{}/build/external/vulkancts/modules/vulkan/deqp-vk".format(glcts_path),
+            "{}/build/external/vulkancts/modules/vulkan/deqp-vk".format(vk_gl_cts_path),
             "--caselist",
-            "{}/external/vulkancts/mustpass/main/vk-default.txt".format(glcts_path),
+            "{}/external/vulkancts/mustpass/main/vk-default.txt".format(vk_gl_cts_path),
             "--output",
             out,
             "--skips",
