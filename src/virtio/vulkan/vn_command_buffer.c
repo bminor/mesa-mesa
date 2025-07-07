@@ -1490,7 +1490,7 @@ vn_CmdCopyImageToBuffer(VkCommandBuffer commandBuffer,
    if (buf->wsi.mem) {
       assert(img->wsi.is_wsi);
       assert(img->wsi.is_prime_blit_src);
-      assert(!img->wsi.blit_mem);
+      assert(!img->wsi.blit_mem || img->wsi.blit_mem == buf->wsi.mem);
       img->wsi.blit_mem = buf->wsi.mem;
    }
 
