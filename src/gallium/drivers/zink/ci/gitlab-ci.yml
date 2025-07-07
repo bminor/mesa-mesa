@@ -248,6 +248,7 @@ zink-radv-navi10-valve:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     GPU_VERSION: zink-radv-navi10
+    RADV_PERFTEST: hic
 
 zink-radv-vangogh-valve:
   timeout: 35m
@@ -264,6 +265,7 @@ zink-radv-vangogh-valve:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     FDO_CI_CONCURRENT: 6
     ZINK_DEBUG: vvl
+    RADV_PERFTEST: hic
   # Override the list of tags to drop `ci-tron:priority:low`
   tags:
     - farm:$RUNNER_FARM_LOCATION
@@ -279,6 +281,7 @@ zink-radv-navi31-valve:
     GPU_VERSION: zink-radv-navi31
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
     ZINK_DEBUG: vvl
+    RADV_PERFTEST: hic
 
 zink-radv-cezanne:
   extends:
