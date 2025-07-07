@@ -861,6 +861,28 @@ nir_cf_delete(nir_cf_list *cf_list)
    }
 }
 
+void
+nir_remove_after_cf_node(nir_cf_node *node)
+{
+   nir_cf_node *end = node;
+   while (!nir_cf_node_is_last(end))
+      end = nir_cf_node_next(end);
+
+   nir_cursor begin = nir_after_cf_node(node);
+   if (begin.option == nir_cursor_before_block) {
+      /* nir_cf_extract() would ignore these phis */
+      nir_function_impl *impl = nir_cf_node_get_function(node);
+      nir_foreach_phi_safe(phi, begin.block) {
+         replace_ssa_def_uses(&phi->def, impl);
+         nir_instr_remove_v(&phi->instr);
+      }
+   }
+
+   nir_cf_list list;
+   nir_cf_extract(&list, begin, nir_after_cf_node(end));
+   nir_cf_delete(&list);
+}
+
 struct block_index {
    nir_block *block;
    uint32_t index;
