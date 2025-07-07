@@ -36,9 +36,10 @@ LibGL environment variables
 
 .. envvar:: LIBGL_KOPPER_DRI2
 
-   disable DRI3 with Zink if set to ``true``.
-   In general, this should not be used unless you know what you are
-   doing. Some examples of "knowing what you are doing" include:
+   if set to ``true``, allow loading Zink even if X11 does not support
+   explicit DRM format modifiers. In general, this should not be used
+   unless you know what you are doing. Some examples of "knowing what you
+   are doing" include:
    - running xrdp
    - using a VK driver which doesn't support modifiers
 
