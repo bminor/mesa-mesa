@@ -406,12 +406,12 @@ st_Clear(struct gl_context *ctx, GLbitfield mask)
          if (b != BUFFER_NONE && mask & (1 << b)) {
             struct gl_renderbuffer *rb
                = ctx->DrawBuffer->Attachment[b].Renderbuffer;
-            enum pipe_format format = _mesa_renderbuffer_get_format(ctx, rb);
             int colormask_index = ctx->Extensions.EXT_draw_buffers2 ? i : 0;
 
             if (!rb || !rb->texture)
                continue;
 
+            enum pipe_format format = _mesa_renderbuffer_get_format(ctx, rb);
             unsigned colormask =
                GET_COLORMASK(ctx->Color.ColorMask, colormask_index);
 
