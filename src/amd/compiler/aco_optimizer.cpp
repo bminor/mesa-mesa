@@ -1164,13 +1164,19 @@ can_eliminate_fcanonicalize(opt_ctx& ctx, aco_ptr<Instruction>& instr, Temp tmp,
 }
 
 bool
-can_eliminate_and_exec(opt_ctx& ctx, Temp tmp, unsigned pass_flags)
+can_eliminate_and_exec(opt_ctx& ctx, Temp tmp, unsigned pass_flags, bool allow_cselect = false)
 {
    Instruction* instr = ctx.info[tmp.id()].parent_instr;
    /* Remove superfluous s_and when the VOPC instruction uses the same exec and thus
     * already produces the same result */
    if (instr->isVOPC())
       return instr->pass_flags == pass_flags;
+
+   if (allow_cselect && instr->pass_flags == pass_flags &&
+       (instr->opcode == aco_opcode::s_cselect_b32 || instr->opcode == aco_opcode::s_cselect_b64)) {
+      return (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(-1)) ||
+             (instr->operands[1].constantEquals(0) && instr->operands[0].constantEquals(-1));
+   }
 
    if (instr->operands.size() != 2 || instr->pass_flags != pass_flags)
       return false;
@@ -4550,9 +4556,19 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       if (instr->operands[0].isTemp() && fixed_to_exec(instr->operands[1]) &&
           ctx.uses[instr->operands[0].tempId()] == 1 &&
           ctx.uses[instr->definitions[1].tempId()] == 0 &&
-          can_eliminate_and_exec(ctx, instr->operands[0].getTemp(), instr->pass_flags)) {
+          can_eliminate_and_exec(ctx, instr->operands[0].getTemp(), instr->pass_flags, true)) {
          ctx.uses[instr->operands[0].tempId()]--;
          Instruction* op_instr = ctx.info[instr->operands[0].tempId()].parent_instr;
+
+         if (op_instr->opcode == aco_opcode::s_cselect_b32 ||
+             op_instr->opcode == aco_opcode::s_cselect_b64) {
+            for (unsigned i = 0; i < 2; i++) {
+               if (op_instr->operands[i].constantEquals(-1))
+                  op_instr->operands[i] = instr->operands[1];
+            }
+            ctx.info[op_instr->definitions[0].tempId()].label &= label_uniform_bool;
+         }
+
          op_instr->definitions[0].setTemp(instr->definitions[0].getTemp());
          ctx.info[op_instr->definitions[0].tempId()].parent_instr = op_instr;
          instr.reset();
