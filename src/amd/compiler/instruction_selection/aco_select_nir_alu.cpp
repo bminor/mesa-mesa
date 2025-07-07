@@ -276,20 +276,17 @@ emit_vop3a_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, T
 }
 
 Builder::Result
-emit_vop3p_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst,
-                       bool swap_srcs = false)
+emit_vop3p_instruction(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst)
 {
-   Temp src0 = get_alu_src_vop3p(ctx, instr->src[swap_srcs]);
-   Temp src1 = get_alu_src_vop3p(ctx, instr->src[!swap_srcs]);
+   Temp src0 = get_alu_src_vop3p(ctx, instr->src[0]);
+   Temp src1 = get_alu_src_vop3p(ctx, instr->src[1]);
    if (src0.type() == RegType::sgpr && src1.type() == RegType::sgpr)
       src1 = as_vgpr(ctx, src1);
    assert(instr->def.num_components == 2);
 
    /* swizzle to opsel: all swizzles are either 0 (x) or 1 (y) */
-   unsigned opsel_lo =
-      (instr->src[!swap_srcs].swizzle[0] & 1) << 1 | (instr->src[swap_srcs].swizzle[0] & 1);
-   unsigned opsel_hi =
-      (instr->src[!swap_srcs].swizzle[1] & 1) << 1 | (instr->src[swap_srcs].swizzle[1] & 1);
+   unsigned opsel_lo = (instr->src[1].swizzle[0] & 1) << 1 | (instr->src[0].swizzle[0] & 1);
+   unsigned opsel_hi = (instr->src[1].swizzle[1] & 1) << 1 | (instr->src[0].swizzle[1] & 1);
 
    Builder bld = create_alu_builder(ctx, instr);
    Builder::Result res = bld.vop3p(op, Definition(dst), src0, src1, opsel_lo, opsel_hi);
@@ -1966,7 +1963,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          emit_vop2_instruction(ctx, instr, aco_opcode::v_min_f16, dst, true, false,
                                ctx->block->fp_mode.must_flush_denorms16_64);
       } else if (dst.regClass() == v1 && instr->def.bit_size == 16) {
-         emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_min_f16, dst, true);
+         emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_min_f16, dst);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_min_f32, dst, true, false,
                                ctx->block->fp_mode.must_flush_denorms32);
