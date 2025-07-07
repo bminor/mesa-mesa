@@ -239,6 +239,7 @@ struct vn_ctx {
    monotonic_buffer_resource m;
    expr_set expr_values;
    aco::unordered_map<uint32_t, Temp> renames;
+   std::vector<uint16_t> uses;
 
    /* The exec id should be the same on the same level of control flow depth.
     * Together with the check for dominator relations, it is safe to assume
@@ -254,6 +255,7 @@ struct vn_ctx {
       for (Block& block : program->blocks)
          size += block.instructions.size();
       expr_values.reserve(size);
+      uses = dead_code_analysis(program);
    }
 };
 
@@ -342,6 +344,10 @@ process_block(vn_ctx& ctx, Block& block)
    new_instructions.reserve(block.instructions.size());
 
    for (aco_ptr<Instruction>& instr : block.instructions) {
+      /* Clean up dead create_vector/split_vector left behind by instruction selection. */
+      if (is_dead(ctx.uses, instr.get()))
+         continue;
+
       /* first, rename operands */
       for (Operand& op : instr->operands) {
          if (!op.isTemp())
