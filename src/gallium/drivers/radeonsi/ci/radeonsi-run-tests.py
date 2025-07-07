@@ -84,6 +84,10 @@ parser.add_argument(
     help="Folder containing expected the mustrun files (default: source folder of vk-gl-cts)",
 )
 parser.add_argument(
+    "--cts-binaries-path",
+    help="Folder containing expected the vk-gl-cts binaries",
+)
+parser.add_argument(
     "--piglit", dest="piglit", help="Disable piglit tests", type="mybool"
 )
 parser.add_argument("--glcts", dest="glcts", help="Disable GLCTS tests", type="mybool")
@@ -494,13 +498,18 @@ if args.glcts:
     print_yellow("Running  GLCTS tests", args.verbose > 0)
     os.mkdir(os.path.join(output_folder, "glcts"))
 
+    bin_path = (
+        args.cts_binaries_path
+        if args.cts_binaries_path
+        else "{}/build/external/openglcts/modules".format(vk_gl_cts_path)
+    )
     cmd = [
         "deqp-runner",
         "run",
         "--tests-per-group",
         "100",
         "--deqp",
-        "{}/build/external/openglcts/modules/glcts".format(vk_gl_cts_path),
+        "{}/glcts".format(bin_path),
     ]
 
     if args.mustrun_path:
@@ -583,13 +592,19 @@ if args.escts:
             vk_gl_cts_path
         )
 
+    bin_path = (
+        args.cts_binaries_path
+        if args.cts_binaries_path
+        else "{}/build/external/openglcts/modules".format(vk_gl_cts_path)
+    )
+
     cmd = [
         "deqp-runner",
         "run",
         "--tests-per-group",
         "100",
         "--deqp",
-        "{}/build/external/openglcts/modules/glcts".format(vk_gl_cts_path),
+        "{}/glcts".format(bin_path),
         "--caselist",
         "{}/gles2-khr-main.txt".format(mustrun_basepath),
         "--caselist",
@@ -648,13 +663,15 @@ if args.deqp:
         if not deqp_tests[k]:
             continue
 
+        bin_path = (
+            args.cts_binaries_path
+            if args.cts_binaries_path
+            else "{}/build/modules/{}".format(vk_gl_cts_path, k)
+        )
+
         suite.write("[[deqp]]\n")
         suite.write(
-            'deqp = "{}"\n'.format(
-                "{}/build/modules/{subtest}/deqp-{subtest}".format(
-                    vk_gl_cts_path, subtest=k
-                )
-            )
+            'deqp = "{}"\n'.format("{}/deqp-{subtest}".format(bin_path, subtest=k))
         )
 
         if args.mustrun_path:
@@ -709,6 +726,12 @@ if args.vkcts and is_amd:
     else:
         mustrun_basepath = "{}/external/vulkancts/mustpass/main".format(vk_gl_cts_path)
 
+    bin_path = (
+        args.cts_binaries_path
+        if args.cts_binaries_path
+        else "{}/build/external/vulkancts/modules/vulkan".format(vk_gl_cts_path)
+    )
+
     cmd = (
         [
             "deqp-runner",
@@ -716,7 +739,7 @@ if args.vkcts and is_amd:
             "--tests-per-group",
             "100",
             "--deqp",
-            "{}/build/external/vulkancts/modules/vulkan/deqp-vk".format(vk_gl_cts_path),
+            "{}/deqp-vk".format(bin_path),
             "--caselist",
             "{}/vk-default.txt".format(mustrun_basepath),
             "--output",
