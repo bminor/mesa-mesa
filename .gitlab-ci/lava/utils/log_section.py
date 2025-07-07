@@ -49,7 +49,8 @@ LAVA_BOOT_TIMEOUT = int(getenv("LAVA_BOOT_TIMEOUT", 5))
 LAVA_TEST_OVERHEAD_MIN = int(getenv("LAVA_TEST_OVERHEAD_MIN", 5))
 
 # CI_JOB_TIMEOUT in full minutes, no reason to use seconds here
-CI_JOB_TIMEOUT_MIN = int(getenv("CI_JOB_TIMEOUT")) // 60
+# Defaults to 60 minutes if not set
+CI_JOB_TIMEOUT_MIN = int(getenv("CI_JOB_TIMEOUT", "3600")) // 60
 # Sanity check: we need more job time than the LAVA estimated overhead
 assert CI_JOB_TIMEOUT_MIN > LAVA_TEST_OVERHEAD_MIN, (
     f"CI_JOB_TIMEOUT in full minutes ({CI_JOB_TIMEOUT_MIN}) must be greater than LAVA_TEST_OVERHEAD ({LAVA_TEST_OVERHEAD_MIN})"
