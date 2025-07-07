@@ -404,6 +404,7 @@ class LAVAJobSubmitter(PathResolver):
     device_type: str
     farm: str
     job_timeout_min: int  # The job timeout in minutes
+    shell_prompt: str = "lava-shell:"
     dtb_filename: str = None
     dump_yaml: bool = False  # Whether to dump the YAML payload to stdout
     first_stage_init: str = None

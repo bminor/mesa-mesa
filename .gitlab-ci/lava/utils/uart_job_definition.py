@@ -151,7 +151,7 @@ def tftp_boot_action(args: "LAVAJobSubmitter") -> dict[str, Any]:
     tftp_boot = {
         "failure_retry": NUMBER_OF_ATTEMPTS_LAVA_BOOT,
         "method": args.boot_method,
-        "prompts": ["lava-shell:"],
+        "prompts": [args.shell_prompt],
         "commands": "nfs",
     }
 
@@ -162,7 +162,7 @@ def qemu_boot_action(args: "LAVAJobSubmitter") -> dict[str, Any]:
     qemu_boot = {
         "failure_retry": NUMBER_OF_ATTEMPTS_LAVA_BOOT,
         "method": args.boot_method,
-        "prompts": ["lava-shell:"],
+        "prompts": [args.shell_prompt],
     }
 
     return qemu_boot
@@ -174,7 +174,7 @@ def fastboot_boot_action(args: "LAVAJobSubmitter") -> dict[str, Any]:
         "docker": {"image": DOCKER_IMAGE},
         "failure_retry": NUMBER_OF_ATTEMPTS_LAVA_BOOT,
         "method": args.boot_method,
-        "prompts": ["lava-shell:"],
+        "prompts": [args.shell_prompt],
         "commands": ["set_active a"],
     }
 

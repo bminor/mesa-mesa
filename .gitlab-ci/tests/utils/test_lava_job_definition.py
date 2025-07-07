@@ -47,6 +47,7 @@ def job_submitter_factory(mode: Literal["UBOOT", "FASTBOOT"], shell_file):
         boot_method = "fastboot"
         device_type = "my_fastboot_device_type"
 
+    shell_prompt = "lava-shell:"
     job_timeout_min = 10
     mesa_job_name = "dut test"
     pipeline_info = "my_pipeline_info"
@@ -55,6 +56,7 @@ def job_submitter_factory(mode: Literal["UBOOT", "FASTBOOT"], shell_file):
 
     return LAVAJobSubmitter(
         boot_method=boot_method,
+        shell_prompt=shell_prompt,
         device_type=device_type,
         farm="test_farm",
         dtb_filename="my_dtb_filename",
