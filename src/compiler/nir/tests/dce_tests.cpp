@@ -137,3 +137,49 @@ TEST_F(nir_opt_dead_cf_test, jump_before_constant_if)
 
    nir_validate_shader(b->shader, NULL);
 }
+
+TEST_F(nir_opt_dead_cf_test, unreachable_phi)
+{
+   /*
+    * Test that nir_opt_dead_cf/nir_remove_after_cf_node removes phis at the start of dead code.
+    *
+    * block b0:  // preds:
+    * 32    %0 = deref_var &cond (shader_in bool)
+    * 1     %1 = @load_deref (%0) (access=none)
+    *            // succs: b1 b2
+    * if %1 {
+    *     block b1:// preds: b0
+    *     return
+    *     // succs: b4
+    * } else {
+    *     block b2:// preds: b0
+    *     return
+    *     // succs: b4
+    * }
+    * block b3:  // preds:
+    * 32    %2 = phi
+    * 32    %3 = deref_var &out (shader_out int)
+    *            @store_deref (%3, %2) (wrmask=x, access=none)
+    *            // succs: b4
+    * block b4:
+    */
+   nir_variable *cond = nir_variable_create(b->shader, nir_var_shader_in, glsl_bool_type(), "cond");
+   nir_variable *var = nir_variable_create(b->shader, nir_var_shader_out, glsl_int_type(), "out");
+
+   nir_push_if(b, nir_load_var(b, cond));
+   nir_jump(b, nir_jump_return);
+   nir_push_else(b, NULL);
+   nir_jump(b, nir_jump_return);
+   nir_pop_if(b, NULL);
+
+   nir_phi_instr *phi = nir_phi_instr_create(b->shader);
+   nir_def_init(&phi->instr, &phi->def, 1, 32);
+   nir_builder_instr_insert(b, &phi->instr);
+   nir_store_var(b, var, &phi->def, 0x1);
+
+   ASSERT_TRUE(nir_opt_dead_cf(b->shader));
+   nir_validate_shader(b->shader, NULL);
+
+   ASSERT_TRUE(exec_list_is_empty(&nir_impl_last_block(b->impl)->instr_list));
+   ASSERT_FALSE(nir_opt_dead_cf(b->shader));
+}
