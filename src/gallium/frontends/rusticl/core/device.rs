@@ -151,7 +151,7 @@ pub trait HelperContextWrapper {
     ) -> Option<PipeTransfer>;
 
     fn is_create_fence_fd_supported(&self) -> bool;
-    fn import_fence(&self, fence_fd: &FenceFd) -> CLResult<PipeFence>;
+    fn import_fence(&self, fence_fd: &FenceFd, fence_type: pipe_fd_type) -> CLResult<PipeFence>;
 }
 
 pub struct HelperContext<'a> {
@@ -246,8 +246,10 @@ impl HelperContextWrapper for HelperContext<'_> {
         self.lock.is_create_fence_fd_supported()
     }
 
-    fn import_fence(&self, fd: &FenceFd) -> CLResult<PipeFence> {
-        self.lock.import_fence(fd).ok_or(CL_OUT_OF_HOST_MEMORY)
+    fn import_fence(&self, fd: &FenceFd, fence_type: pipe_fd_type) -> CLResult<PipeFence> {
+        self.lock
+            .import_fence(fd, fence_type)
+            .ok_or(CL_OUT_OF_HOST_MEMORY)
     }
 }
 

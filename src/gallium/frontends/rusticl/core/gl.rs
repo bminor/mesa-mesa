@@ -9,6 +9,7 @@ use crate::core::util::*;
 
 use libc_rust_gen::{close, dlsym};
 use mesa_rust::pipe::context::RWFlags;
+use mesa_rust_gen::pipe_fd_type;
 use rusticl_opencl_gen::*;
 
 use mesa_rust::pipe::fence::*;
@@ -285,7 +286,9 @@ impl GLCtxManager {
 
         if let Some(fence_fd) = self.do_flush(&mut [export_in])? {
             for dev in &cl_ctx.devs {
-                let fence = dev.helper_ctx().import_fence(&fence_fd)?;
+                let fence = dev
+                    .helper_ctx()
+                    .import_fence(&fence_fd, pipe_fd_type::PIPE_FD_TYPE_NATIVE_SYNC)?;
                 fence.wait();
             }
         }

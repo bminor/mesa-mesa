@@ -4,7 +4,6 @@ use crate::pipe::resource::*;
 use crate::pipe::screen::*;
 use crate::pipe::transfer::*;
 
-use mesa_rust_gen::pipe_fd_type::*;
 use mesa_rust_gen::*;
 use mesa_rust_util::has_required_feature;
 
@@ -637,14 +636,14 @@ impl PipeContext {
         }
     }
 
-    pub fn import_fence(&self, fence_fd: &FenceFd) -> Option<PipeFence> {
+    pub fn import_fence(&self, fence_fd: &FenceFd, fence_type: pipe_fd_type) -> Option<PipeFence> {
         unsafe {
             let mut fence = ptr::null_mut();
             self.pipe.as_ref().create_fence_fd.unwrap()(
                 self.pipe.as_ptr(),
                 &mut fence,
                 fence_fd.fd,
-                PIPE_FD_TYPE_NATIVE_SYNC,
+                fence_type,
             );
             PipeFence::new(fence, &self.screen)
         }

@@ -12,6 +12,7 @@ use crate::core::gl::*;
 use crate::core::memory::*;
 use crate::core::queue::*;
 
+use mesa_rust_gen::pipe_fd_type;
 use mesa_rust_util::properties::Properties;
 use mesa_rust_util::ptr::*;
 use mesa_rust_util::static_assert;
@@ -3326,7 +3327,7 @@ fn enqueue_acquire_gl_objects(
         false,
         Box::new(move |_, ctx| {
             if let Some(fence_fd) = fence_fd {
-                ctx.import_fence(&fence_fd)
+                ctx.import_fence(&fence_fd, pipe_fd_type::PIPE_FD_TYPE_NATIVE_SYNC)
                     .ok_or(CL_OUT_OF_RESOURCES)?
                     .gpu_wait(ctx)
             }
