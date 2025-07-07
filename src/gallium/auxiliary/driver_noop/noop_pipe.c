@@ -736,6 +736,14 @@ static void noop_vertex_state_destroy(struct pipe_screen *screen,
    FREE(state);
 }
 
+static struct pipe_fence_handle *
+noop_semaphore_create(struct pipe_screen *screen)
+{
+   struct pipe_reference *f = MALLOC_STRUCT(pipe_reference);
+   f->count = 1;
+   return (struct pipe_fence_handle*)f;
+}
+
 static struct pipe_screen * noop_get_driver_pipe_screen(struct pipe_screen *_screen)
 {
    struct pipe_screen * screen = ((struct noop_pipe_screen*)_screen)->oscreen;
@@ -800,6 +808,8 @@ struct pipe_screen *noop_screen_create(struct pipe_screen *oscreen)
    screen->query_compression_rates = noop_query_compression_rates;
    screen->query_compression_modifiers = noop_query_compression_modifiers;
    screen->get_driver_pipe_screen = noop_get_driver_pipe_screen;
+   if (oscreen->semaphore_create)
+      screen->semaphore_create = noop_semaphore_create;
 
    /* copy all caps */
    *(struct pipe_caps *)&screen->caps = oscreen->caps;

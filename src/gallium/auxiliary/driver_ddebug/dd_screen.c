@@ -453,6 +453,14 @@ dd_screen_memobj_destroy(struct pipe_screen *_screen,
 
    screen->memobj_destroy(screen, memobj);
 }
+
+static struct pipe_fence_handle *
+dd_screen_semaphore_create(struct pipe_screen *_screen)
+{
+   struct pipe_screen *screen = dd_screen(_screen)->screen;
+
+   return screen->semaphore_create(screen);
+}
 /********************************************************************
  * screen
  */
@@ -664,6 +672,7 @@ ddebug_screen_create(struct pipe_screen *screen)
    dscreen->base.get_driver_pipe_screen = dd_get_driver_pipe_screen;
    SCR_INIT(is_dmabuf_modifier_supported);
    SCR_INIT(get_dmabuf_modifier_planes);
+   SCR_INIT(semaphore_create);
 
    /* copy all caps */
    *(struct pipe_caps *)&dscreen->base.caps = screen->caps;

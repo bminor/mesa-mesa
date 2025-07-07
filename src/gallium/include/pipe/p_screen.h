@@ -389,6 +389,14 @@ struct pipe_screen {
                            struct pipe_fence_handle *fence);
 
    /**
+    * Creates a semaphore that can be signaled and waited on through
+    * fence_server_sync and fence_server_signal.
+    *
+    * Drivers are required to not flush or wait on anything in this call.
+    */
+   struct pipe_fence_handle* (*semaphore_create)(struct pipe_screen *screen);
+
+   /**
     * Wait for the fence to finish.
     *
     * If the fence was created with PIPE_FLUSH_DEFERRED, and the context is
