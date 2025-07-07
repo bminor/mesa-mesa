@@ -3773,9 +3773,9 @@ agx_preprocess_nir(nir_shader *nir)
    /* Clean up deref gunk after lowering I/O */
    NIR_PASS(_, nir, nir_opt_dce);
 
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
    NIR_PASS(_, nir, nir_lower_frexp);
    NIR_PASS(_, nir, nir_lower_alu);
-   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
    NIR_PASS(_, nir, nir_lower_flrp, 16 | 32 | 64, false);
    NIR_PASS(_, nir, agx_lower_sincos);
