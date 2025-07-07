@@ -804,10 +804,16 @@ finish_program(isel_context* ctx)
       while (it != instrs->end()) {
          aco_ptr<Instruction>& instr = *it;
          /* End WQM before: */
-         if (instr->isVMEM() || instr->isFlatLike() || instr->isDS() || instr->isEXP() ||
+         if (instr->isDS() || instr->isEXP() ||
              instr->opcode == aco_opcode::p_dual_src_export_gfx11 ||
              instr->opcode == aco_opcode::p_jump_to_epilog ||
              instr->opcode == aco_opcode::p_logical_start)
+            break;
+
+         /* Only end WQM if we don't disable wqm anyway. We can schedule loads with disable_wqm
+          * upwards, but the exec write from p_end_wqm is a barrrier.
+          */
+         if ((instr->isVMEM() || instr->isFlatLike()) && !instr_disables_wqm(instr.get()))
             break;
 
          ++it;
