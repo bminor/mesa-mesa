@@ -1316,6 +1316,27 @@ vtn_get_builtin_location(struct vtn_builder *b,
       set_mode_system_value(b, mode);
       break;
 
+   case SpvBuiltInCoreIDARM:
+      *location = SYSTEM_VALUE_CORE_ID,
+      set_mode_system_value(b, mode);
+      break;
+   case SpvBuiltInCoreCountARM:
+      *location = SYSTEM_VALUE_CORE_COUNT_ARM,
+      set_mode_system_value(b, mode);
+      break;
+   case SpvBuiltInCoreMaxIDARM:
+      *location = SYSTEM_VALUE_CORE_MAX_ID_ARM,
+      set_mode_system_value(b, mode);
+      break;
+   case SpvBuiltInWarpIDARM:
+      *location = SYSTEM_VALUE_WARP_ID_ARM,
+      set_mode_system_value(b, mode);
+      break;
+   case SpvBuiltInWarpMaxIDARM:
+      *location = SYSTEM_VALUE_WARP_MAX_ID_ARM,
+      set_mode_system_value(b, mode);
+      break;
+
    default:
       vtn_fail("Unsupported builtin: %s (%u)",
                spirv_builtin_to_string(builtin), builtin);

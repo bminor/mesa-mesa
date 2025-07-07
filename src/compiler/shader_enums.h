@@ -932,6 +932,13 @@ typedef enum
    SYSTEM_VALUE_WARP_ID_NV,
    SYSTEM_VALUE_SM_ID_NV,
 
+   /* SPV_ARM_core_builtins */
+   SYSTEM_VALUE_CORE_ID,
+   SYSTEM_VALUE_CORE_COUNT_ARM,
+   SYSTEM_VALUE_CORE_MAX_ID_ARM,
+   SYSTEM_VALUE_WARP_ID_ARM,
+   SYSTEM_VALUE_WARP_MAX_ID_ARM,
+
    SYSTEM_VALUE_MAX             /**< Number of values */
 } gl_system_value;
 

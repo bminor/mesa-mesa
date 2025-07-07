@@ -69,6 +69,7 @@ static const struct spirv_capabilities implemented_capabilities = {
    .ComputeDerivativeGroupQuadsKHR = true,
    .CooperativeMatrixKHR = true,
    .CooperativeMatrixConversionsNV = true,
+   .CoreBuiltinsARM = true,
    .CullDistance = true,
    .DemoteToHelperInvocation = true,
    .DenormFlushToZero = true,

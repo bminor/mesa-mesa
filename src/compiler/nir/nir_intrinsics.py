@@ -1648,6 +1648,12 @@ system_value("multisampled_pan", 1, bit_sizes=[32])
 # noperspective, this is 32 bits and starts from VARYING_SLOT_VAR0.
 system_value("noperspective_varyings_pan", 1, bit_sizes=[32])
 
+# System values for SPV_ARM_core_builtins
+system_value("core_count_arm", 1, bit_sizes=[32])
+system_value("core_max_id_arm", 1, bit_sizes=[32])
+system_value("warp_id_arm", 1, bit_sizes=[32])
+system_value("warp_max_id_arm", 1, bit_sizes=[32])
+
 # R600 specific instrincs
 #
 # location where the tesselation data is stored in LDS

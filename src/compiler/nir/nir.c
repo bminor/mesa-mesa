@@ -2546,6 +2546,16 @@ nir_intrinsic_from_system_value(gl_system_value val)
       return nir_intrinsic_load_warp_id_nv;
    case SYSTEM_VALUE_SM_ID_NV:
       return nir_intrinsic_load_sm_id_nv;
+   case SYSTEM_VALUE_CORE_ID:
+      return nir_intrinsic_load_core_id;
+   case SYSTEM_VALUE_CORE_COUNT_ARM:
+      return nir_intrinsic_load_core_count_arm;
+   case SYSTEM_VALUE_CORE_MAX_ID_ARM:
+      return nir_intrinsic_load_core_max_id_arm;
+   case SYSTEM_VALUE_WARP_ID_ARM:
+      return nir_intrinsic_load_warp_id_arm;
+   case SYSTEM_VALUE_WARP_MAX_ID_ARM:
+      return nir_intrinsic_load_warp_max_id_arm;
    default:
       return nir_num_intrinsics;
    }
@@ -2724,6 +2734,16 @@ nir_system_value_from_intrinsic(nir_intrinsic_op intrin)
       return SYSTEM_VALUE_WARP_ID_NV;
    case nir_intrinsic_load_sm_id_nv:
       return SYSTEM_VALUE_SM_ID_NV;
+   case nir_intrinsic_load_core_id:
+      return SYSTEM_VALUE_CORE_ID;
+   case nir_intrinsic_load_core_count_arm:
+      return SYSTEM_VALUE_CORE_COUNT_ARM;
+   case nir_intrinsic_load_core_max_id_arm:
+      return SYSTEM_VALUE_CORE_MAX_ID_ARM;
+   case nir_intrinsic_load_warp_id_arm:
+      return SYSTEM_VALUE_WARP_ID_ARM;
+   case nir_intrinsic_load_warp_max_id_arm:
+      return SYSTEM_VALUE_WARP_MAX_ID_ARM;
    default:
       UNREACHABLE("intrinsic doesn't produce a system value");
    }
