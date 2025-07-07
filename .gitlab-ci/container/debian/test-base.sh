@@ -40,6 +40,7 @@ EPHEMERAL=(
     glslang-tools
     g++
     libasound2-dev
+    libcairo2-dev
     libcap-dev
     "libclang-cpp${LLVM_VERSION}-dev"
     "libclang-rt-${LLVM_VERSION}-dev"
@@ -49,6 +50,7 @@ EPHEMERAL=(
     libepoxy-dev
     libexpat1-dev
     libgbm-dev
+    libinput-dev
     libgles2-mesa-dev
     liblz4-dev
     libpciaccess-dev
@@ -57,11 +59,13 @@ EPHEMERAL=(
     libudev-dev
     libwaffle-dev
     libx11-xcb-dev
+    libxcb-composite0-dev
     libxcb-dri2-0-dev
     libxcb-dri3-dev
     libxcb-present-dev
     libxfixes-dev
     libxcb-ewmh-dev
+    libxcursor-dev
     libxext-dev
     libxkbcommon-dev
     libxrandr-dev
@@ -94,12 +98,14 @@ DEPS=(
     jq
     kmod
     libasan8
+    libcairo2
     libcap2
     libdrm2
     libegl1
     libepoxy0
     libexpat1
     libfdt1
+    libinput10
     "libclang-common-${LLVM_VERSION}-dev"
     "libclang-cpp${LLVM_VERSION}"
     "libllvm${LLVM_VERSION}"
@@ -111,10 +117,12 @@ DEPS=(
     libvulkan1
     libwayland-client0
     libwayland-server0
+    libxcb-composite0
     libxcb-ewmh2
     libxcb-randr0
     libxcb-shm0
     libxcb-xfixes0
+    libxcursor1
     libxkbcommon0
     libxrandr2
     libxrender1
@@ -136,7 +144,6 @@ DEPS=(
     sysvinit-core
     vulkan-tools
     waffle-utils
-    weston
     xwayland
     xinit
     xserver-xorg-video-amdgpu
@@ -194,6 +201,10 @@ section_end debian_setup
 ############### Build Wayland
 
 . .gitlab-ci/container/build-wayland.sh
+
+############### Build Weston
+
+. .gitlab-ci/container/build-weston.sh
 
 ############### Install Rust toolchain
 
