@@ -264,8 +264,10 @@ panvk_desc_pool_free_set(struct panvk_descriptor_pool *pool,
 
    if (!BITSET_TEST(pool->free_sets, set_idx)) {
       if (set->desc_count)
-         util_vma_heap_free(&pool->desc_heap, set->descs.dev,
-                            set->desc_count * PANVK_DESCRIPTOR_SIZE);
+         util_vma_heap_free(
+            &pool->desc_heap,
+            pool->host_only_mem ? (uintptr_t)set->descs.host : set->descs.dev,
+            set->desc_count * PANVK_DESCRIPTOR_SIZE);
 
       BITSET_SET(pool->free_sets, set_idx);
 
@@ -290,9 +292,45 @@ panvk_destroy_descriptor_pool(struct panvk_device *device,
    if (pool->desc_bo) {
       util_vma_heap_finish(&pool->desc_heap);
       panvk_priv_bo_unref(pool->desc_bo);
+   } else if (pool->host_only_mem) {
+      vk_free2(&device->vk.alloc, pAllocator, (void *)pool->host_only_mem);
+      pool->host_only_mem = 0;
    }
 
    vk_object_free(&device->vk, pAllocator, pool);
+}
+
+static VkResult
+panvk_init_pool_memory(struct panvk_device *device,
+                       struct panvk_descriptor_pool *pool,
+                       const VkDescriptorPoolCreateInfo *pCreateInfo,
+                       uint64_t pool_size,
+                       const VkAllocationCallbacks *pAllocator)
+{
+   if (!(pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT)) {
+      VkResult result = panvk_priv_bo_create(device, pool_size, 0,
+                                             VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
+                                             &pool->desc_bo);
+      if (result != VK_SUCCESS)
+         return result;
+
+      uint64_t bo_size = pool->desc_bo->bo->size;
+      assert(pool_size <= bo_size);
+
+      util_vma_heap_init(&pool->desc_heap, pool->desc_bo->addr.dev, bo_size);
+   } else {
+      void *pool_mem = vk_alloc2(&device->vk.alloc, pAllocator, pool_size, 8,
+                                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+      if (!pool_mem)
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+      /* A host-only pool has no bo backing it. */
+      pool->desc_bo = NULL;
+      pool->host_only_mem = (uintptr_t)pool_mem;
+      util_vma_heap_init(&pool->desc_heap, pool->host_only_mem, pool_size);
+   }
+
+   return VK_SUCCESS;
 }
 
 VkResult
@@ -337,16 +375,12 @@ panvk_per_arch(CreateDescriptorPool)(
       desc_count += pool->max_sets;
 
       uint64_t pool_size = desc_count * PANVK_DESCRIPTOR_SIZE;
-      VkResult result = panvk_priv_bo_create(device, pool_size, 0,
-                                             VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
-                                             &pool->desc_bo);
+      VkResult result = panvk_init_pool_memory(device, pool, pCreateInfo,
+                                               pool_size, pAllocator);
       if (result != VK_SUCCESS) {
          panvk_destroy_descriptor_pool(device, pAllocator, pool);
          return result;
       }
-      uint64_t bo_size = pool->desc_bo->bo->size;
-      assert(pool_size <= bo_size);
-      util_vma_heap_init(&pool->desc_heap, pool->desc_bo->addr.dev, bo_size);
    }
 
    *pDescriptorPool = panvk_descriptor_pool_to_handle(pool);
@@ -499,6 +533,10 @@ panvk_desc_pool_allocate_set(struct panvk_descriptor_pool *pool,
       set->descs.dev = descs_dev_addr;
       set->descs.host =
          pool->desc_bo->addr.host + set->descs.dev - pool->desc_bo->addr.dev;
+   } else {
+      /* This cast is fine because the heap is initialized from a host
+       * pointer in case of a host only pool. */
+      set->descs.host = (void *)(uintptr_t)descs_dev_addr;
    }
    desc_set_write_immutable_samplers(set, variable_count);
    BITSET_CLEAR(pool->free_sets, first_free_set - 1);

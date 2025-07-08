@@ -61,6 +61,8 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_descriptor_set, base, VkDescriptorSet,
 struct panvk_descriptor_pool {
    struct vk_object_base base;
    struct panvk_priv_bo *desc_bo;
+   /* Set if the pool was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT. */
+   uintptr_t host_only_mem;
    struct util_vma_heap desc_heap;
 
    /* Initialize to ones */
