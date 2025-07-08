@@ -53,8 +53,5 @@ dEQP-VK.reconvergence.maximal.compute.nesting4.7.38
 # investigated.
 dEQP-VK.api.command_buffers.many_indirect_disps_on_secondary
 
-# RADV bug
-dEQP-VK.dgc.ext.misc.properties.maxIndirectSequenceCount
-
 # CTS bug
 dEQP-VK.api.debug_utils.long_labels_video_decode
