@@ -198,8 +198,7 @@ if [ -n "$HWCI_START_WESTON" ]; then
   export DISPLAY=:0
   mkdir -p /tmp/.X11-unix
 
-  env \
-    weston -Bheadless-backend.so --use-gl -Swayland-0 --xwayland --idle-time=0 &
+  env weston --config="/install/common/weston.ini" -Swayland-0 --use-gl &
   BACKGROUND_PIDS="$! $BACKGROUND_PIDS"
 
   while [ ! -S "$WESTON_X11_SOCK" ]; do sleep 1; done
