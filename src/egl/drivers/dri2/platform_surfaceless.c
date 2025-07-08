@@ -199,12 +199,6 @@ surfaceless_get_capability(void *loaderPrivate, enum dri_loader_cap cap)
    }
 }
 
-static const __DRIkopperLoaderExtension kopper_loader_extension = {
-   .base = {__DRI_KOPPER_LOADER, 1},
-
-   .SetSurfaceCreateInfo = NULL,
-};
-
 static const __DRIimageLoaderExtension image_loader_extension = {
    .base = {__DRI_IMAGE_LOADER, 2},
    .getBuffers = surfaceless_image_get_buffers,
@@ -215,13 +209,13 @@ static const __DRIimageLoaderExtension image_loader_extension = {
 static const __DRIextension *image_loader_extensions[] = {
    &image_loader_extension.base,  &image_lookup_extension.base,
    &background_callable_extension.base,
-   &kopper_loader_extension.base, NULL,
+   &kopper_pbuffer_loader_extension.base, NULL,
 };
 
 static const __DRIextension *swrast_loader_extensions[] = {
    &swrast_pbuffer_loader_extension.base, &image_loader_extension.base,
    &image_lookup_extension.base,
-   &kopper_loader_extension.base,         NULL,
+   &kopper_pbuffer_loader_extension.base, NULL,
 };
 
 static bool

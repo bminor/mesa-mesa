@@ -243,6 +243,11 @@ const __DRIswrastLoaderExtension swrast_pbuffer_loader_extension = {
    .getImage = dri2_get_image,
 };
 
+const __DRIkopperLoaderExtension kopper_pbuffer_loader_extension = {
+   .base = {__DRI_KOPPER_LOADER, 1},
+   .SetSurfaceCreateInfo = NULL,
+};
+
 static const EGLint dri2_to_egl_attribute_map[__DRI_ATTRIB_MAX] = {
    [__DRI_ATTRIB_BUFFER_SIZE] = EGL_BUFFER_SIZE,
    [__DRI_ATTRIB_LEVEL] = EGL_LEVEL,
