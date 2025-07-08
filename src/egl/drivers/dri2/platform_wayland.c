@@ -1079,10 +1079,15 @@ create_dri_image(struct dri2_egl_surface *dri2_surf,
       modifiers = NULL;
    }
 
+   if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu) {
+      use_flags = 0;
+      modifiers = NULL;
+      num_modifiers = 0;
+   }
+
    dri2_surf->back->dri_image = dri_create_image_with_modifiers(
       dri2_dpy->dri_screen_render_gpu, dri2_surf->base.Width,
-      dri2_surf->base.Height, pipe_format,
-      (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu) ? 0 : use_flags,
+      dri2_surf->base.Height, pipe_format, use_flags,
       modifiers, num_modifiers, NULL);
 
    if (surf_modifiers_count > 0) {
