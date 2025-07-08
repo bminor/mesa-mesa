@@ -155,6 +155,9 @@ lower_offset_filter(const nir_instr *instr, const void *data)
    if (tex->op == nir_texop_tex && info->stage == MESA_SHADER_VERTEX)
       return true;
 
+   if (tex->op == nir_texop_txb)
+      return true;
+
    if (tex->op == nir_texop_txf)
       return true;
 
