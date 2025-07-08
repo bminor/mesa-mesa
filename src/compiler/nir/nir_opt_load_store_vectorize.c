@@ -1539,8 +1539,8 @@ handle_barrier(struct vectorize_ctx *ctx, bool *progress, nir_function_impl *imp
                                                        nir_var_mem_shared |
                                                        nir_var_mem_global |
                                                        nir_var_mem_task_payload);
-         acquire = nir_intrinsic_memory_semantics(intrin) & NIR_MEMORY_ACQUIRE;
-         release = nir_intrinsic_memory_semantics(intrin) & NIR_MEMORY_RELEASE;
+         acquire = nir_intrinsic_memory_semantics(intrin) & (NIR_MEMORY_ACQUIRE | NIR_MEMORY_MAKE_VISIBLE);
+         release = nir_intrinsic_memory_semantics(intrin) & (NIR_MEMORY_RELEASE | NIR_MEMORY_MAKE_AVAILABLE);
          switch (nir_intrinsic_memory_scope(intrin)) {
          case SCOPE_INVOCATION:
             /* a barier should never be required for correctness with these scopes */
