@@ -152,10 +152,9 @@ radv_get_base_row(nir_builder *b, struct glsl_cmat_description desc, const lower
       base_row = nir_udiv_imm(b, local_idx, 16);
 
       if (params->wave_size == 64) {
-         /* Switch rows from lanes 16..31 to 32..47, offset right shift by -2
-          * to get implicit * 4.
-          */
-         base_row = nir_ushr_imm(b, nir_bitfield_reverse(b, base_row), 30 - 2);
+         /* Switch rows from lanes 16..31 to 32..47 */
+         base_row = nir_ushr_imm(b, nir_bitfield_reverse(b, base_row), 30);
+         base_row = nir_imul_imm(b, base_row, 4);
       } else {
          base_row = nir_imul_imm(b, base_row, 8);
       }
