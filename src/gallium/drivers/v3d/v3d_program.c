@@ -361,11 +361,9 @@ v3d_uncompiled_shader_create(struct pipe_context *pctx,
         if (s->info.stage == MESA_SHADER_FRAGMENT &&
             s->info.outputs_written & BITFIELD_BIT(FRAG_RESULT_COLOR)) {
                 /* We only support one attachment when doing dual source blending. */
-                if (s->info.fs.color_is_dual_source)
-                        NIR_PASS(_, s, nir_lower_fragcolor, 1);
-                else if (V3D_DBG(SOFT_BLEND))
-                        NIR_PASS(_, s, nir_lower_fragcolor,
-                                 V3D_MAX_DRAW_BUFFERS);
+                unsigned max_rb = s->info.fs.color_is_dual_source ?
+                        1 : V3D_MAX_DRAW_BUFFERS;
+                NIR_PASS(_, s, nir_lower_fragcolor, max_rb);
         }
 
         if (s->info.stage != MESA_SHADER_VERTEX &&

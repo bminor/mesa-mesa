@@ -2460,8 +2460,7 @@ ntq_setup_outputs(struct v3d_compile *c)
 
                 switch (var->data.location) {
                 case FRAG_RESULT_COLOR:
-                        for (int i = 0; i < V3D_MAX_DRAW_BUFFERS; i++)
-                                c->output_color_var[i] = var;
+                        UNREACHABLE("Frag color should be lowered");
                         break;
                 case FRAG_RESULT_DATA0:
                 case FRAG_RESULT_DATA1:
