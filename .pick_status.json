@@ -4424,7 +4424,7 @@
         "description": "pan/bi: Disallow FAU for CLPER in bi_check_fau_src",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0acc6b564efefbef9c8902ffd0fd1bef5b220323",
         "notes": null
