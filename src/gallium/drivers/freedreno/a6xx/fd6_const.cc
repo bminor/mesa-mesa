@@ -11,37 +11,34 @@
 #include "fd6_compute.h"
 #include "fd6_pack.h"
 
-#define emit_const_user fd6_emit_const_user
-#define emit_const_bo   fd6_emit_const_bo
 #include "ir3_const.h"
 
+
 static inline void
-fd6_emit_driver_ubo(struct fd_ringbuffer *ring, const struct ir3_shader_variant *v,
+fd6_emit_driver_ubo(fd_cs &cs, const struct ir3_shader_variant *v,
                     int base, uint32_t sizedwords, unsigned buffer_offset,
                     struct fd_bo *bo)
 {
-   enum a6xx_state_block block = fd6_stage2shadersb(v->type);
+   int size_vec4s = DIV_ROUND_UP(sizedwords, 4);
 
    /* base == ubo idx */
-   OUT_PKT7(ring, fd6_stage2opcode(v->type), 5);
-   OUT_RING(ring, CP_LOAD_STATE6_0_DST_OFF(base) |
-            CP_LOAD_STATE6_0_STATE_TYPE(ST6_UBO) |
-            CP_LOAD_STATE6_0_STATE_SRC(SS6_DIRECT) |
-            CP_LOAD_STATE6_0_STATE_BLOCK(block) |
-            CP_LOAD_STATE6_0_NUM_UNIT(1));
-   OUT_RING(ring, CP_LOAD_STATE6_1_EXT_SRC_ADDR(0));
-   OUT_RING(ring, CP_LOAD_STATE6_2_EXT_SRC_ADDR_HI(0));
-
-   int size_vec4s = DIV_ROUND_UP(sizedwords, 4);
-   OUT_RELOC(ring, bo, buffer_offset,
-             ((uint64_t)A6XX_UBO_1_SIZE(size_vec4s) << 32), 0);
+   fd_pkt7(cs, fd6_stage2opcode(v->type), 5)
+      .add(CP_LOAD_STATE6_0(
+         .dst_off = base,
+         .state_type = ST6_UBO,
+         .state_src = SS6_DIRECT,
+         .state_block = fd6_stage2shadersb(v->type),
+         .num_unit = 1,
+      ))
+      .add(CP_LOAD_STATE6_EXT_SRC_ADDR())
+      .add(A6XX_UBO_DESC(0, bo, buffer_offset, size_vec4s));
 }
 
 /* A helper to upload driver-params to a UBO, for the case where constants are
  * loaded by shader preamble rather than ST6_CONSTANTS
  */
 static void
-fd6_upload_emit_driver_ubo(struct fd_context *ctx, struct fd_ringbuffer *ring,
+fd6_upload_emit_driver_ubo(struct fd_context *ctx, fd_cs &cs,
                            const struct ir3_shader_variant *v, int base,
                            uint32_t sizedwords, const void *dwords)
 {
@@ -63,9 +60,9 @@ fd6_upload_emit_driver_ubo(struct fd_context *ctx, struct fd_ringbuffer *ring,
     * this allocation happens outside of the context of batch resource
     * tracking.
     */
-   fd_ringbuffer_attach_bo(ring, fd_resource(buffer)->bo);
+   cs.attach_bo(fd_resource(buffer)->bo);
 
-   fd6_emit_driver_ubo(ring, v, base, sizedwords, buffer_offset,
+   fd6_emit_driver_ubo(cs, v, base, sizedwords, buffer_offset,
                        fd_resource(buffer)->bo);
 
    pipe_resource_reference(&buffer, NULL);
@@ -76,8 +73,7 @@ fd6_upload_emit_driver_ubo(struct fd_context *ctx, struct fd_ringbuffer *ring,
  * sizedwords:     size of const value buffer
  */
 void
-fd6_emit_const_user(struct fd_ringbuffer *ring,
-                    const struct ir3_shader_variant *v, uint32_t regid,
+fd6_emit_const_user(fd_cs &cs, const struct ir3_shader_variant *v, uint32_t regid,
                     uint32_t sizedwords, const uint32_t *dwords)
 {
    emit_const_asserts(v, regid, sizedwords);
@@ -88,28 +84,29 @@ fd6_emit_const_user(struct fd_ringbuffer *ring,
     */
    uint32_t align_sz = align(sizedwords, 4);
 
-   if (fd6_geom_stage(v->type)) {
-      OUT_PKTBUF(ring, CP_LOAD_STATE6_GEOM, dwords, align_sz,
-         CP_LOAD_STATE6_0(.dst_off = regid / 4, .state_type = ST6_CONSTANTS,
-                          .state_src = SS6_DIRECT,
-                          .state_block = fd6_stage2shadersb(v->type),
-                          .num_unit = DIV_ROUND_UP(sizedwords, 4)),
-         CP_LOAD_STATE6_1(),
-         CP_LOAD_STATE6_2());
-   } else {
-      OUT_PKTBUF(ring, CP_LOAD_STATE6_FRAG, dwords, align_sz,
-         CP_LOAD_STATE6_0(.dst_off = regid / 4, .state_type = ST6_CONSTANTS,
-                          .state_src = SS6_DIRECT,
-                          .state_block = fd6_stage2shadersb(v->type),
-                          .num_unit = DIV_ROUND_UP(sizedwords, 4)),
-         CP_LOAD_STATE6_1(),
-         CP_LOAD_STATE6_2());
-   }
+   fd_pkt7(cs, fd6_stage2opcode(v->type), 3 + align_sz)
+      .add(CP_LOAD_STATE6_0(
+         .dst_off = regid / 4,
+         .state_type = ST6_CONSTANTS,
+         .state_src = SS6_DIRECT,
+         .state_block = fd6_stage2shadersb(v->type),
+         .num_unit = DIV_ROUND_UP(sizedwords, 4)
+      ))
+      .add(CP_LOAD_STATE6_EXT_SRC_ADDR())
+      .add(dwords, align_sz);
+}
+
+static void
+emit_const_user(struct fd_ringbuffer *ring,
+                const struct ir3_shader_variant *v, uint32_t regid,
+                uint32_t size, const uint32_t *user_buffer)
+{
+   fd_cs cs(ring);
+   fd6_emit_const_user(cs, v, regid, size, user_buffer);
 }
 
 void
-fd6_emit_const_bo(struct fd_ringbuffer *ring,
-                  const struct ir3_shader_variant *v, uint32_t regid,
+fd6_emit_const_bo(fd_cs &cs, const struct ir3_shader_variant *v, uint32_t regid,
                   uint32_t offset, uint32_t sizedwords, struct fd_bo *bo)
 {
    uint32_t dst_off = regid / 4;
@@ -119,21 +116,23 @@ fd6_emit_const_bo(struct fd_ringbuffer *ring,
 
    emit_const_asserts(v, regid, sizedwords);
 
-   if (fd6_geom_stage(v->type)) {
-      OUT_PKT(ring, CP_LOAD_STATE6_GEOM,
-              CP_LOAD_STATE6_0(.dst_off = dst_off, .state_type = ST6_CONSTANTS,
-                               .state_src = SS6_INDIRECT,
-                               .state_block = fd6_stage2shadersb(v->type),
-                               .num_unit = num_unit, ),
-              CP_LOAD_STATE6_EXT_SRC_ADDR(.bo = bo, .bo_offset = offset));
-   } else {
-      OUT_PKT(ring, CP_LOAD_STATE6_FRAG,
-              CP_LOAD_STATE6_0(.dst_off = dst_off, .state_type = ST6_CONSTANTS,
-                               .state_src = SS6_INDIRECT,
-                               .state_block = fd6_stage2shadersb(v->type),
-                               .num_unit = num_unit, ),
-              CP_LOAD_STATE6_EXT_SRC_ADDR(.bo = bo, .bo_offset = offset));
-   }
+   fd_pkt7(cs, fd6_stage2opcode(v->type), 3)
+      .add(CP_LOAD_STATE6_0(
+         .dst_off = dst_off, .state_type = ST6_CONSTANTS,
+         .state_src = SS6_INDIRECT,
+         .state_block = fd6_stage2shadersb(v->type),
+         .num_unit = num_unit,
+      ))
+      .add(CP_LOAD_STATE6_EXT_SRC_ADDR(.bo = bo, .bo_offset = offset));
+}
+
+static void
+emit_const_bo(struct fd_ringbuffer *ring,
+              const struct ir3_shader_variant *v, uint32_t regid,
+              uint32_t offset, uint32_t size, struct fd_bo *bo)
+{
+   fd_cs cs(ring);
+   fd6_emit_const_bo(cs, v, regid, offset, size, bo);
 }
 
 static bool
@@ -158,7 +157,7 @@ wait_mem_writes(struct fd_context *ctx)
 
 template <chip CHIP>
 static void
-emit_stage_tess_consts(struct fd_ringbuffer *ring, const struct ir3_shader_variant *v,
+emit_stage_tess_consts(fd_cs &cs, const struct ir3_shader_variant *v,
                        struct fd_context *ctx, uint32_t *params, int num_params)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
@@ -166,7 +165,7 @@ emit_stage_tess_consts(struct fd_ringbuffer *ring, const struct ir3_shader_varia
    if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
       int base = const_state->primitive_param_ubo.idx;
 
-      fd6_upload_emit_driver_ubo(ctx, ring, v, base, num_params, params);
+      fd6_upload_emit_driver_ubo(ctx, cs, v, base, num_params, params);
    } else if (ir3_const_can_upload(&const_state->allocs,
                                    IR3_CONST_ALLOC_PRIMITIVE_PARAM,
                                    v->constlen)) {
@@ -174,7 +173,7 @@ emit_stage_tess_consts(struct fd_ringbuffer *ring, const struct ir3_shader_varia
          const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_PARAM].offset_vec4;
       int size = MIN2(1 + regid, v->constlen) - regid;
       if (size > 0)
-         fd6_emit_const_user(ring, v, regid * 4, num_params, params);
+         fd6_emit_const_user(cs, v, regid * 4, num_params, params);
    }
 }
 
@@ -183,8 +182,7 @@ struct fd_ringbuffer *
 fd6_build_tess_consts(struct fd6_emit *emit)
 {
    struct fd_context *ctx = emit->ctx;
-   struct fd_ringbuffer *constobj = fd_submit_new_ringbuffer(
-      ctx->batch->submit, 0x1000, FD_RINGBUFFER_STREAMING);
+   fd_cs constobj(ctx->batch->submit, 0x1000);
 
    /* VS sizes are in bytes since that's what STLW/LDLW use, while the HS
     * size is dwords, since that's what LDG/STG use.
@@ -205,7 +203,7 @@ fd6_build_tess_consts(struct fd6_emit *emit)
       int64_t tess_factor_iova = fd_bo_get_iova(tess_bo);
       int64_t tess_param_iova = tess_factor_iova + FD6_TESS_FACTOR_SIZE;
 
-      fd_ringbuffer_attach_bo(constobj, tess_bo);
+      constobj.attach_bo(tess_bo);
 
       uint32_t hs_params[8] = {
          emit->vs->output_size * num_vertices * 4, /* vs primitive stride */
@@ -258,12 +256,12 @@ fd6_build_tess_consts(struct fd6_emit *emit)
                                    gs_params, ARRAY_SIZE(gs_params));
    }
 
-   return constobj;
+   return constobj.ring();
 }
 FD_GENX(fd6_build_tess_consts);
 
 static void
-fd6_emit_ubos(const struct ir3_shader_variant *v, struct fd_ringbuffer *ring,
+fd6_emit_ubos(const struct ir3_shader_variant *v, fd_cs &cs,
               struct fd_constbuf_stateobj *constbuf)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
@@ -272,25 +270,26 @@ fd6_emit_ubos(const struct ir3_shader_variant *v, struct fd_ringbuffer *ring,
    if (!num_ubos)
       return;
 
-   OUT_PKT7(ring, fd6_stage2opcode(v->type), 3 + (2 * num_ubos));
-   OUT_RING(ring, CP_LOAD_STATE6_0_DST_OFF(0) |
-                     CP_LOAD_STATE6_0_STATE_TYPE(ST6_UBO) |
-                     CP_LOAD_STATE6_0_STATE_SRC(SS6_DIRECT) |
-                     CP_LOAD_STATE6_0_STATE_BLOCK(fd6_stage2shadersb(v->type)) |
-                     CP_LOAD_STATE6_0_NUM_UNIT(num_ubos));
-   OUT_RING(ring, CP_LOAD_STATE6_1_EXT_SRC_ADDR(0));
-   OUT_RING(ring, CP_LOAD_STATE6_2_EXT_SRC_ADDR_HI(0));
+   fd_pkt7 pkt(cs, fd6_stage2opcode(v->type), 3 + (2 * num_ubos));
+
+   pkt.add(CP_LOAD_STATE6_0(
+         .dst_off = 0,
+         .state_type = ST6_UBO,
+         .state_src = SS6_DIRECT,
+         .state_block = fd6_stage2shadersb(v->type),
+         .num_unit = num_ubos,
+      ))
+      .add(CP_LOAD_STATE6_EXT_SRC_ADDR());
 
    for (int i = 0; i < num_ubos; i++) {
       struct pipe_constant_buffer *cb = &constbuf->cb[i];
 
       if (cb->buffer) {
+         struct fd_bo *bo = fd_resource(cb->buffer)->bo;
          int size_vec4s = DIV_ROUND_UP(cb->buffer_size, 16);
-         OUT_RELOC(ring, fd_resource(cb->buffer)->bo, cb->buffer_offset,
-                   (uint64_t)A6XX_UBO_1_SIZE(size_vec4s) << 32, 0);
+         pkt.add(A6XX_UBO_DESC(i, bo, cb->buffer_offset, size_vec4s));
       } else {
-         OUT_RING(ring, 0xbad00000 | (i << 16));
-         OUT_RING(ring, A6XX_UBO_1_SIZE(0));
+         pkt.add(A6XX_UBO_DESC(i, NULL, 0, 0));
       }
    }
 }
@@ -325,16 +324,15 @@ FD_GENX(fd6_user_consts_cmdstream_size);
 
 template <chip CHIP>
 static void
-emit_user_consts(const struct ir3_shader_variant *v,
-                 struct fd_ringbuffer *ring,
+emit_user_consts(const struct ir3_shader_variant *v, fd_cs &cs,
                  struct fd_constbuf_stateobj *constbuf)
 {
-   fd6_emit_ubos(v, ring, constbuf);
+   fd6_emit_ubos(v, cs, constbuf);
 
    if (CHIP == A7XX && v->compiler->load_shader_consts_via_preamble)
       return;
 
-   ir3_emit_user_consts(v, ring, constbuf);
+   ir3_emit_user_consts(v, cs.ring(), constbuf);
 }
 
 template <chip CHIP, fd6_pipeline_type PIPELINE>
@@ -344,8 +342,7 @@ fd6_build_user_consts(struct fd6_emit *emit)
    struct fd_context *ctx = emit->ctx;
    unsigned sz = emit->prog->user_consts_cmdstream_size;
 
-   struct fd_ringbuffer *constobj =
-      fd_submit_new_ringbuffer(ctx->batch->submit, sz, FD_RINGBUFFER_STREAMING);
+   fd_cs constobj(ctx->batch->submit, sz);
 
    emit_user_consts<CHIP>(emit->vs, constobj, &ctx->constbuf[MESA_SHADER_VERTEX]);
 
@@ -360,7 +357,7 @@ fd6_build_user_consts(struct fd6_emit *emit)
    }
    emit_user_consts<CHIP>(emit->fs, constobj, &ctx->constbuf[MESA_SHADER_FRAGMENT]);
 
-   return constobj;
+   return constobj.ring();
 }
 template struct fd_ringbuffer * fd6_build_user_consts<A6XX, HAS_TESS_GS>(struct fd6_emit *emit);
 template struct fd_ringbuffer * fd6_build_user_consts<A7XX, HAS_TESS_GS>(struct fd6_emit *emit);
@@ -369,7 +366,7 @@ template struct fd_ringbuffer * fd6_build_user_consts<A7XX, NO_TESS_GS>(struct f
 
 template <chip CHIP>
 static inline void
-emit_driver_params(const struct ir3_shader_variant *v, struct fd_ringbuffer *dpconstobj,
+emit_driver_params(const struct ir3_shader_variant *v, fd_cs &dpconstobj,
                    struct fd_context *ctx, const struct pipe_draw_info *info,
                    const struct pipe_draw_indirect_info *indirect,
                    const struct ir3_driver_params_vs *vertex_params)
@@ -382,14 +379,13 @@ emit_driver_params(const struct ir3_shader_variant *v, struct fd_ringbuffer *dpc
                                  dword_sizeof(*vertex_params),
                                  vertex_params);
    } else {
-      ir3_emit_driver_params(v, dpconstobj, ctx, info, indirect, vertex_params);
+      ir3_emit_driver_params(v, dpconstobj.ring(), ctx, info, indirect, vertex_params);
    }
 }
 
 template <chip CHIP>
 static inline void
-emit_hs_driver_params(const struct ir3_shader_variant *v,
-                      struct fd_ringbuffer *dpconstobj,
+emit_hs_driver_params(const struct ir3_shader_variant *v, fd_cs &dpconstobj,
                       struct fd_context *ctx)
 {
    if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
@@ -401,7 +397,7 @@ emit_hs_driver_params(const struct ir3_shader_variant *v,
                                  dword_sizeof(hs_params),
                                  &hs_params);
    } else {
-      ir3_emit_hs_driver_params(v, dpconstobj, ctx);
+      ir3_emit_hs_driver_params(v, dpconstobj.ring(), ctx);
    }
 }
 
@@ -442,12 +438,11 @@ fd6_build_driver_params(struct fd6_emit *emit)
       num_dp * (4 + dword_sizeof(p)) + /* 4dw PKT7 header */
       num_ubo_dp * 6;                  /* 6dw per UBO descriptor */
 
-   struct fd_ringbuffer *dpconstobj = fd_submit_new_ringbuffer(
-         ctx->batch->submit, size_dwords * 4, FD_RINGBUFFER_STREAMING);
+   fd_cs dpconstobj(ctx->batch->submit, size_dwords * 4);
 
    /* VS still works the old way*/
    if (emit->vs->need_driver_params) {
-      ir3_emit_driver_params(emit->vs, dpconstobj, ctx, emit->info, emit->indirect, &p);
+      ir3_emit_driver_params(emit->vs, dpconstobj.ring(), ctx, emit->info, emit->indirect, &p);
    }
 
    if (PIPELINE == HAS_TESS_GS) {
@@ -469,7 +464,7 @@ fd6_build_driver_params(struct fd6_emit *emit)
 
    fd6_ctx->has_dp_state = true;
 
-   return dpconstobj;
+   return dpconstobj.ring();
 }
 
 template struct fd_ringbuffer * fd6_build_driver_params<A6XX, HAS_TESS_GS>(struct fd6_emit *emit);
@@ -479,8 +474,7 @@ template struct fd_ringbuffer * fd6_build_driver_params<A7XX, NO_TESS_GS>(struct
 
 template <chip CHIP>
 void
-fd6_emit_cs_driver_params(struct fd_context *ctx,
-                          struct fd_ringbuffer *ring,
+fd6_emit_cs_driver_params(struct fd_context *ctx, fd_cs &cs,
                           const struct ir3_shader_variant *v,
                           const struct pipe_grid_info *info)
 {
@@ -501,20 +495,20 @@ fd6_emit_cs_driver_params(struct fd_context *ctx,
 
       if (info->indirect) {
          /* Copy indirect params into UBO: */
-         ctx->screen->mem_to_mem(ring, buffer, buffer_offset, info->indirect,
+         ctx->screen->mem_to_mem(cs.ring(), buffer, buffer_offset, info->indirect,
                                  info->indirect_offset, 3);
 
          wait_mem_writes(ctx);
       } else {
-         fd_ringbuffer_attach_bo(ring, fd_resource(buffer)->bo);
+         cs.attach_bo(fd_resource(buffer)->bo);
       }
 
-      fd6_emit_driver_ubo(ring, v, base, dword_sizeof(compute_params),
+      fd6_emit_driver_ubo(cs, v, base, dword_sizeof(compute_params),
                           buffer_offset, fd_resource(buffer)->bo);
 
       pipe_resource_reference(&buffer, NULL);
    } else {
-      ir3_emit_cs_driver_params(v, ring, ctx, info);
+      ir3_emit_cs_driver_params(v, cs.ring(), ctx, info);
       if (info->indirect)
          wait_mem_writes(ctx);
    }
@@ -523,50 +517,47 @@ FD_GENX(fd6_emit_cs_driver_params);
 
 template <chip CHIP>
 void
-fd6_emit_cs_user_consts(struct fd_context *ctx,
-                        struct fd_ringbuffer *ring,
+fd6_emit_cs_user_consts(struct fd_context *ctx, fd_cs &cs,
                         const struct ir3_shader_variant *v)
 {
-   emit_user_consts<CHIP>(v, ring, &ctx->constbuf[MESA_SHADER_COMPUTE]);
+   emit_user_consts<CHIP>(v, cs, &ctx->constbuf[MESA_SHADER_COMPUTE]);
 }
 FD_GENX(fd6_emit_cs_user_consts);
 
 template <chip CHIP>
 void
-fd6_emit_immediates(const struct ir3_shader_variant *v,
-                    struct fd_ringbuffer *ring)
+fd6_emit_immediates(const struct ir3_shader_variant *v, fd_cs &cs)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
 
    if (const_state->consts_ubo.idx >= 0) {
       int sizedwords = DIV_ROUND_UP(v->constant_data_size, 4);
 
-      fd6_emit_driver_ubo(ring, v, const_state->consts_ubo.idx, sizedwords,
+      fd6_emit_driver_ubo(cs, v, const_state->consts_ubo.idx, sizedwords,
                           v->info.constant_data_offset, v->bo);
    }
 
    if (CHIP == A7XX && v->compiler->load_inline_uniforms_via_preamble_ldgk)
       return;
 
-   ir3_emit_immediates(v, ring);
+   ir3_emit_immediates(v, cs.ring());
 }
 FD_GENX(fd6_emit_immediates);
 
 template <chip CHIP>
 void
-fd6_emit_link_map(struct fd_context *ctx,
+fd6_emit_link_map(struct fd_context *ctx, fd_cs &cs,
                   const struct ir3_shader_variant *producer,
-                  const struct ir3_shader_variant *consumer,
-                  struct fd_ringbuffer *ring)
+                  const struct ir3_shader_variant *consumer)
 {
    if (CHIP == A7XX && producer->compiler->load_shader_consts_via_preamble) {
       const struct ir3_const_state *const_state = ir3_const_state(consumer);
       int base = const_state->primitive_map_ubo.idx;
       uint32_t size = ALIGN(consumer->input_size, 4);
 
-      fd6_upload_emit_driver_ubo(ctx, ring, consumer, base, size, producer->output_loc);
+      fd6_upload_emit_driver_ubo(ctx, cs, consumer, base, size, producer->output_loc);
    } else {
-      ir3_emit_link_map(producer, consumer, ring);
+      ir3_emit_link_map(producer, consumer, cs.ring());
    }
 }
 FD_GENX(fd6_emit_link_map);

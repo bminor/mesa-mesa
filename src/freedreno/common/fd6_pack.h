@@ -52,6 +52,13 @@ __reg_iova(const struct fd_reg_pair *reg)
    return iova << reg->bo_low;
 }
 
+/* Special helper for building UBO descriptors inline with pkt7 */
+#define A6XX_UBO_DESC(_i, _bo, _bo_offset, _size_vec4s) {       \
+      .reg = 3 + (2 * _i),                                      \
+      .value = (uint64_t)A6XX_UBO_1_SIZE(_size_vec4s) << 32,    \
+      .bo = _bo, .bo_offset = _bo_offset,                       \
+   }, {}
+
 /**
  * Helper for various builders that use fd_ringbuffer.  Not for direct use.
  */

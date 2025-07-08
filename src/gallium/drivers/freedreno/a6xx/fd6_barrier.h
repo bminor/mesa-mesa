@@ -6,7 +6,9 @@
 #ifndef FD6_BARRIER_H_
 #define FD6_BARRIER_H_
 
+#include "freedreno_batch.h"
 #include "freedreno_context.h"
+#include "fd6_pack.h"
 
 /**
  * Various flush operations that could be needed
@@ -24,11 +26,17 @@ enum fd6_flush {
 };
 
 template <chip CHIP>
-void fd6_emit_flushes(struct fd_context *ctx, struct fd_ringbuffer *ring,
-                      unsigned flushes);
+void fd6_emit_flushes(struct fd_context *ctx, fd_cs &cs, unsigned flushes);
 
 template <chip CHIP>
-void fd6_barrier_flush(struct fd_batch *batch) assert_dt;
+static inline void
+fd6_barrier_flush(fd_cs &cs, struct fd_batch *batch)
+{
+   if (!batch->barrier)
+      return;
+   fd6_emit_flushes<CHIP>(batch->ctx, cs, batch->barrier);
+   batch->barrier = 0;
+}
 
 void fd6_barrier_init(struct pipe_context *pctx);
 

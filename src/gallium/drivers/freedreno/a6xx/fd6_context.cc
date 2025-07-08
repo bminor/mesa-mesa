@@ -74,11 +74,9 @@ fd6_vertex_state_create(struct pipe_context *pctx, unsigned num_elements,
    struct fd6_vertex_stateobj *state = CALLOC_STRUCT(fd6_vertex_stateobj);
    memcpy(state->base.pipe, elements, sizeof(*elements) * num_elements);
    state->base.num_elements = num_elements;
-   state->stateobj =
-      fd_ringbuffer_new_object(ctx->pipe, 4 * (num_elements * 4 + 1));
-   struct fd_ringbuffer *ring = state->stateobj;
 
-   OUT_PKT4(ring, REG_A6XX_VFD_FETCH_INSTR(0), 2 * num_elements);
+   fd_crb crb(ctx->pipe, num_elements * 3);
+
    for (int32_t i = 0; i < num_elements; i++) {
       const struct pipe_vertex_element *elem = &elements[i];
       enum pipe_format pfmt = (enum pipe_format)elem->src_format;
@@ -86,24 +84,25 @@ fd6_vertex_state_create(struct pipe_context *pctx, unsigned num_elements,
       bool isint = util_format_is_pure_integer(pfmt);
       assert(fmt != FMT6_NONE);
 
-      OUT_RING(ring, A6XX_VFD_FETCH_INSTR_INSTR_IDX(elem->vertex_buffer_index) |
-                        A6XX_VFD_FETCH_INSTR_INSTR_OFFSET(elem->src_offset) |
-                        A6XX_VFD_FETCH_INSTR_INSTR_FORMAT(fmt) |
-                        COND(elem->instance_divisor,
-                             A6XX_VFD_FETCH_INSTR_INSTR_INSTANCED) |
-                        A6XX_VFD_FETCH_INSTR_INSTR_SWAP(fd6_vertex_swap(pfmt)) |
-                        A6XX_VFD_FETCH_INSTR_INSTR_UNK30 |
-                        COND(!isint, A6XX_VFD_FETCH_INSTR_INSTR_FLOAT));
-      OUT_RING(ring,
-               MAX2(1, elem->instance_divisor)); /* VFD_FETCH_INSTR[j].STEP_RATE */
+      crb.add(A6XX_VFD_FETCH_INSTR_INSTR(i,
+               .idx = elem->vertex_buffer_index,
+               .offset = elem->src_offset,
+               .instanced = elem->instance_divisor,
+               .format = fmt,
+               .swap = fd6_vertex_swap(pfmt),
+               .unk30 = true,
+               ._float = !isint,
+             ))
+         .add(A6XX_VFD_FETCH_INSTR_STEP_RATE(i, MAX2(1, elem->instance_divisor)));
    }
 
    for (int32_t i = 0; i < num_elements; i++) {
       const struct pipe_vertex_element *elem = &elements[i];
 
-      OUT_PKT4(ring, REG_A6XX_VFD_VERTEX_BUFFER_STRIDE(elem->vertex_buffer_index), 1);
-      OUT_RING(ring, elem->src_stride);
+      crb.add(A6XX_VFD_VERTEX_BUFFER_STRIDE(elem->vertex_buffer_index, elem->src_stride));
    }
+
+   state->stateobj = crb.ring();
 
    return state;
 }
@@ -308,20 +307,19 @@ fd6_context_create(struct pipe_screen *pscreen, void *priv,
 
    fd6_blitter_init<CHIP>(pctx);
 
-   struct fd_ringbuffer *ring =
-      fd_ringbuffer_new_object(fd6_ctx->base.pipe, 6 * 4);
+   fd_crb crb(fd6_ctx->base.pipe, 3);
 
-   OUT_REG(ring, A6XX_GRAS_SC_MSAA_SAMPLE_POS_CNTL());
-   OUT_REG(ring, A6XX_RB_MSAA_SAMPLE_POS_CNTL());
-   OUT_REG(ring, A6XX_TPL1_MSAA_SAMPLE_POS_CNTL());
+   crb.add(A6XX_GRAS_SC_MSAA_SAMPLE_POS_CNTL())
+      .add(A6XX_RB_MSAA_SAMPLE_POS_CNTL())
+      .add(A6XX_TPL1_MSAA_SAMPLE_POS_CNTL());
 
-   fd6_ctx->sample_locations_disable_stateobj = ring;
+   fd6_ctx->sample_locations_disable_stateobj = crb.ring();
 
    fd6_ctx->preamble = fd6_build_preemption_preamble<CHIP>(&fd6_ctx->base);
 
-   ring = fd_ringbuffer_new_object(fd6_ctx->base.pipe, 0x1000);
-   fd6_emit_static_regs<CHIP>(&fd6_ctx->base, ring);
-   fd6_ctx->restore = ring;
+   fd_cs restore(fd6_ctx->base.pipe, 0x1000);
+   fd6_emit_static_regs<CHIP>(restore, &fd6_ctx->base);
+   fd6_ctx->restore = restore.ring();
 
    return fd_context_init_tc(pctx, flags);
 }

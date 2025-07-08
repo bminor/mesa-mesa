@@ -582,62 +582,28 @@ tex_key_equals(const void *_a, const void *_b)
    return memcmp(a, b, sizeof(struct fd6_texture_key)) == 0;
 }
 
+static enum a6xx_state_block
+stage2sb(mesa_shader_stage type)
+{
+   switch (type) {
+   case MESA_SHADER_VERTEX:     return SB6_VS_TEX;
+   case MESA_SHADER_TESS_CTRL:  return SB6_HS_TEX;
+   case MESA_SHADER_TESS_EVAL:  return SB6_DS_TEX;
+   case MESA_SHADER_GEOMETRY:   return SB6_GS_TEX;
+   case MESA_SHADER_FRAGMENT:   return SB6_FS_TEX;
+   case MESA_SHADER_COMPUTE:    return SB6_CS_TEX;
+   default:
+      UNREACHABLE("bad state block");
+   }
+}
+
 static struct fd_ringbuffer *
 build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
                     struct fd_texture_stateobj *tex)
    assert_dt
 {
-   struct fd_ringbuffer *ring = fd_ringbuffer_new_object(ctx->pipe, 32 * 4);
-   unsigned opcode, tex_samp_reg, tex_const_reg, tex_count_reg;
    struct fd_bo *tex_desc = NULL, *samp_desc = NULL;
-   enum a6xx_state_block sb;
-
-   switch (type) {
-   case MESA_SHADER_VERTEX:
-      sb = SB6_VS_TEX;
-      opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_VS_SAMPLER_BASE;
-      tex_const_reg = REG_A6XX_SP_VS_TEXMEMOBJ_BASE;
-      tex_count_reg = REG_A6XX_SP_VS_TSIZE;
-      break;
-   case MESA_SHADER_TESS_CTRL:
-      sb = SB6_HS_TEX;
-      opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_HS_SAMPLER_BASE;
-      tex_const_reg = REG_A6XX_SP_HS_TEXMEMOBJ_BASE;
-      tex_count_reg = REG_A6XX_SP_HS_TSIZE;
-      break;
-   case MESA_SHADER_TESS_EVAL:
-      sb = SB6_DS_TEX;
-      opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_DS_SAMPLER_BASE;
-      tex_const_reg = REG_A6XX_SP_DS_TEXMEMOBJ_BASE;
-      tex_count_reg = REG_A6XX_SP_DS_TSIZE;
-      break;
-   case MESA_SHADER_GEOMETRY:
-      sb = SB6_GS_TEX;
-      opcode = CP_LOAD_STATE6_GEOM;
-      tex_samp_reg = REG_A6XX_SP_GS_SAMPLER_BASE;
-      tex_const_reg = REG_A6XX_SP_GS_TEXMEMOBJ_BASE;
-      tex_count_reg = REG_A6XX_SP_GS_TSIZE;
-      break;
-   case MESA_SHADER_FRAGMENT:
-      sb = SB6_FS_TEX;
-      opcode = CP_LOAD_STATE6_FRAG;
-      tex_samp_reg = REG_A6XX_SP_PS_SAMPLER_BASE;
-      tex_const_reg = REG_A6XX_SP_PS_TEXMEMOBJ_BASE;
-      tex_count_reg = REG_A6XX_SP_PS_TSIZE;
-      break;
-   case MESA_SHADER_COMPUTE:
-      sb = SB6_CS_TEX;
-      opcode = CP_LOAD_STATE6_FRAG;
-      tex_samp_reg = REG_A6XX_SP_CS_SAMPLER_BASE;
-      tex_const_reg = REG_A6XX_SP_CS_TEXMEMOBJ_BASE;
-      tex_count_reg = REG_A6XX_SP_CS_TSIZE;
-      break;
-   default:
-      UNREACHABLE("bad state block");
-   }
+   fd_cs cs(ctx->pipe, 32 * 4);
 
    if (tex->num_samplers > 0) {
       samp_desc = fd_bo_new(ctx->dev, tex->num_samplers * 4 * 4,
@@ -654,21 +620,7 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
          buf += 4;
       }
 
-      fd_ringbuffer_attach_bo(ring, samp_desc);
-
-      /* output sampler state: */
-      OUT_PKT7(ring, opcode, 3);
-      OUT_RING(ring, CP_LOAD_STATE6_0_DST_OFF(0) |
-                        CP_LOAD_STATE6_0_STATE_TYPE(ST6_SHADER) |
-                        CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
-                        CP_LOAD_STATE6_0_STATE_BLOCK(sb) |
-                        CP_LOAD_STATE6_0_NUM_UNIT(tex->num_samplers));
-      OUT_RELOC(ring, samp_desc, 0); /* SRC_ADDR_LO/HI */
-
-      OUT_PKT4(ring, tex_samp_reg, 2);
-      OUT_RELOC(ring, samp_desc, 0); /* SRC_ADDR_LO/HI */
-
-      fd_bo_del(samp_desc);
+      cs.attach_bo(samp_desc);
    }
 
    if (tex->num_textures > 0) {
@@ -694,27 +646,73 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
          buf += 16;
       }
 
-      fd_ringbuffer_attach_bo(ring, tex_desc);
-
-      /* emit texture state: */
-      OUT_PKT7(ring, opcode, 3);
-      OUT_RING(ring, CP_LOAD_STATE6_0_DST_OFF(0) |
-                        CP_LOAD_STATE6_0_STATE_TYPE(ST6_CONSTANTS) |
-                        CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
-                        CP_LOAD_STATE6_0_STATE_BLOCK(sb) |
-                        CP_LOAD_STATE6_0_NUM_UNIT(tex->num_textures));
-      OUT_RELOC(ring, tex_desc, 0); /* SRC_ADDR_LO/HI */
-
-      OUT_PKT4(ring, tex_const_reg, 2);
-      OUT_RELOC(ring, tex_desc, 0); /* SRC_ADDR_LO/HI */
-
-      fd_bo_del(tex_desc);
+      cs.attach_bo(tex_desc);
    }
 
-   OUT_PKT4(ring, tex_count_reg, 1);
-   OUT_RING(ring, tex->num_textures);
+   with_crb (cs, 5) {
+      switch (type) {
+      case MESA_SHADER_VERTEX:
+         crb.add(A6XX_SP_VS_SAMPLER_BASE(samp_desc));
+         crb.add(A6XX_SP_VS_TEXMEMOBJ_BASE(tex_desc));
+         crb.add(A6XX_SP_VS_TSIZE(tex->num_textures));
+         break;
+      case MESA_SHADER_TESS_CTRL:
+         crb.add(A6XX_SP_HS_SAMPLER_BASE(samp_desc));
+         crb.add(A6XX_SP_HS_TEXMEMOBJ_BASE(tex_desc));
+         crb.add(A6XX_SP_HS_TSIZE(tex->num_textures));
+         break;
+      case MESA_SHADER_TESS_EVAL:
+         crb.add(A6XX_SP_DS_SAMPLER_BASE(samp_desc));
+         crb.add(A6XX_SP_DS_TEXMEMOBJ_BASE(tex_desc));
+         crb.add(A6XX_SP_DS_TSIZE(tex->num_textures));
+         break;
+      case MESA_SHADER_GEOMETRY:
+         crb.add(A6XX_SP_GS_SAMPLER_BASE(samp_desc));
+         crb.add(A6XX_SP_GS_TEXMEMOBJ_BASE(tex_desc));
+         crb.add(A6XX_SP_GS_TSIZE(tex->num_textures));
+         break;
+      case MESA_SHADER_FRAGMENT:
+         crb.add(A6XX_SP_PS_SAMPLER_BASE(samp_desc));
+         crb.add(A6XX_SP_PS_TEXMEMOBJ_BASE(tex_desc));
+         crb.add(A6XX_SP_PS_TSIZE(tex->num_textures));
+         break;
+      case MESA_SHADER_COMPUTE:
+         crb.add(A6XX_SP_CS_SAMPLER_BASE(samp_desc));
+         crb.add(A6XX_SP_CS_TEXMEMOBJ_BASE(tex_desc));
+         crb.add(A6XX_SP_CS_TSIZE(tex->num_textures));
+         break;
+      default:
+         UNREACHABLE("bad state block");
+      }
+   }
 
-   return ring;
+   if (samp_desc) {
+      fd_pkt7(cs, fd6_stage2opcode(type), 3)
+         .add(CP_LOAD_STATE6_0(
+            .state_type = ST6_SHADER,
+            .state_src = SS6_INDIRECT,
+            .state_block = stage2sb(type),
+            .num_unit = tex->num_samplers,
+         ))
+         .add(CP_LOAD_STATE6_EXT_SRC_ADDR(samp_desc));
+
+         fd_bo_del(samp_desc);
+   }
+
+   if (tex_desc) {
+      fd_pkt7(cs, fd6_stage2opcode(type), 3)
+         .add(CP_LOAD_STATE6_0(
+            .state_type = ST6_CONSTANTS,
+            .state_src = SS6_INDIRECT,
+            .state_block = stage2sb(type),
+            .num_unit = tex->num_textures,
+         ))
+         .add(CP_LOAD_STATE6_EXT_SRC_ADDR(tex_desc));
+
+         fd_bo_del(tex_desc);
+   }
+
+   return cs.ring();
 }
 
 /**

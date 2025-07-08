@@ -19,6 +19,7 @@
 #include "ir3/ir3_descriptor.h"
 
 #include "fd6_hw.h"
+#include "fd6_pack.h"
 
 struct fd6_lrz_state {
    union {
@@ -165,14 +166,13 @@ struct fd6_control {
    (fd6_ctx)->control_mem, offsetof(struct fd6_control, member)
 
 static inline void
-emit_marker6(struct fd_ringbuffer *ring, int scratch_idx)
+emit_marker6(fd_cs &cs, int scratch_idx)
 {
    extern int32_t marker_cnt;
-   unsigned reg = REG_A6XX_CP_SCRATCH_REG(scratch_idx);
    if (__EMIT_MARKER) {
-      OUT_WFI5(ring);
-      OUT_PKT4(ring, reg, 1);
-      OUT_RING(ring, p_atomic_inc_return(&marker_cnt));
+      fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
+      fd_pkt4(cs, 1)
+         .add(A6XX_CP_SCRATCH_REG(scratch_idx, p_atomic_inc_return(&marker_cnt)));
    }
 }
 

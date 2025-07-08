@@ -14,6 +14,7 @@
 
 #include "freedreno_context.h"
 
+#include "fd6_pack.h"
 
 template <chip CHIP>
 void fd6_blitter_init(struct pipe_context *pctx);
@@ -29,11 +30,11 @@ template <chip CHIP>
 void fd6_clear_lrz(struct fd_batch *batch, struct fd_resource *zsbuf,
                    struct fd_bo *lrz, double depth) assert_dt;
 template <chip CHIP>
-void fd6_clear_surface(struct fd_context *ctx, struct fd_ringbuffer *ring,
+void fd6_clear_surface(struct fd_context *ctx, fd_cs &cs,
                        struct pipe_surface *psurf, const struct pipe_box *box2d,
                        union pipe_color_union *color, uint32_t unknown_8c01) assert_dt;
 template <chip CHIP>
-void fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
-                      uint32_t base, struct pipe_surface *psurf, uint32_t unknown_8c01) assert_dt;
+void fd6_resolve_tile(struct fd_batch *batch, fd_cs &cs, uint32_t base,
+                      struct pipe_surface *psurf, uint32_t unknown_8c01) assert_dt;
 
 #endif /* FD6_BLIT_H_ */
