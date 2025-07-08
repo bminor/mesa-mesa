@@ -2035,6 +2035,11 @@ bi_check_fau_src(bi_instr *ins, unsigned s, uint32_t *constants,
    assert(s < ins->nr_srcs);
    bi_index src = ins->src[s];
 
+   /* CLPER only support registers on source 0 */
+   if (s == 0 &&
+       (ins->op == BI_OPCODE_CLPER_OLD_I32 || ins->op == BI_OPCODE_CLPER_I32))
+      return false;
+
    /* Staging registers can't have FAU accesses */
    if (bi_is_staging_src(ins, s))
       return (src.type != BI_INDEX_CONSTANT) && (src.type != BI_INDEX_FAU);
