@@ -13,13 +13,13 @@ cd /
 
 findmnt --mountpoint /proc || mount -t proc none /proc
 findmnt --mountpoint /sys || mount -t sysfs none /sys
-mount -t debugfs none /sys/kernel/debug
+findmnt --mountpoint /sys/kernel/debug || mount -t debugfs none /sys/kernel/debug
 findmnt --mountpoint /dev || mount -t devtmpfs none /dev
 mkdir -p /dev/pts
-mount -t devpts devpts /dev/pts
-mkdir /dev/shm
-mount -t tmpfs -o noexec,nodev,nosuid tmpfs /dev/shm
-mount -t tmpfs tmpfs /tmp
+findmnt --mountpoint /dev/pts || mount -t devpts devpts /dev/pts
+mkdir -p /dev/shm
+findmnt --mountpoint /dev/shm || mount -t tmpfs -o noexec,nodev,nosuid tmpfs /dev/shm
+findmnt --mountpoint /tmp || mount -t tmpfs tmpfs /tmp
 
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 [ -z "$NFS_SERVER_IP" ] || echo "$NFS_SERVER_IP caching-proxy" >> /etc/hosts
