@@ -290,6 +290,7 @@ tu_cs_set_writeable(struct tu_cs *cs, bool writeable)
    assert(cs->mode == TU_CS_MODE_GROW || cs->mode == TU_CS_MODE_SUB_STREAM);
 
    if (cs->writeable != writeable) {
+      assert(!cs->cond_stack_depth);
       if (cs->mode == TU_CS_MODE_GROW && !tu_cs_is_empty(cs))
          tu_cs_add_entry(cs);
       struct tu_bo_array *old_bos = cs->writeable ? &cs->read_write : &cs->read_only;
