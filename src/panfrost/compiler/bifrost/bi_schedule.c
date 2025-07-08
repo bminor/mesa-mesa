@@ -1366,6 +1366,10 @@ bi_use_passthrough(bi_instr *ins, bi_index old, enum bifrost_packed_src new,
       if ((i == 0 || i == 4) && except_sr)
          continue;
 
+      if ((new == BIFROST_SRC_PASS_FMA || new == BIFROST_SRC_PASS_ADD) &&
+          !bi_reads_temps(ins, i))
+         continue;
+
       if (bi_is_word_equiv(ins->src[i], old)) {
          ins->src[i].type = BI_INDEX_PASS;
          ins->src[i].value = new;

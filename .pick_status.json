@@ -4434,7 +4434,7 @@
         "description": "pan/bi: Do not allow passthrough for instructions disallowing temps",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4252fb84f4f0ad5ec6f3d966fec308a3b42ffd7a",
         "notes": null
