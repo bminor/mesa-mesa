@@ -41,7 +41,7 @@ if [ "${USE_VENV:-}" == true ]; then
     ${PYTHON_BIN} -m pip install --break-system-packages -r "${CI_PROJECT_DIR}/bin/ci/test/requirements.txt"
 fi
 
-LIB_TEST_DIR=${CI_PROJECT_DIR}/.gitlab-ci/tests
+LIB_TEST_DIR=${CI_PROJECT_DIR}/.gitlab-ci/lava/tests
 SCRIPT_TEST_DIR=${CI_PROJECT_DIR}/bin/ci
 
 uncollapsed_section_start pytest "Running pytest"

@@ -91,7 +91,7 @@ yaml-toml-shell-py-test:
         - .shellcheckrc
         - bin/toml_lint.py
         - src/**/ci/*.toml
-        - .gitlab-ci/tests/**/*
+        - .gitlab-ci/lava/tests/**/*
         - bin/ci/**/*
       when: on_success
     # direct pushes that bypassed the CI
