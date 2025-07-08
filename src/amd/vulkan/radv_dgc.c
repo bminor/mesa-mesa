@@ -907,6 +907,22 @@ dgc_emit_sqtt_end_api_marker(struct dgc_cmdbuf *cs, enum rgp_sqtt_marker_general
 /**
  * Command buffer
  */
+static void
+dgc_emit_indirect_buffer(nir_builder *b, nir_def *va, nir_def *ib_offset, nir_def *ib_cdw,
+                         const struct radv_device *device)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   nir_def *packet[] = {
+      nir_imm_int(b, PKT3(PKT3_INDIRECT_BUFFER, 2, 0)),
+      nir_iadd(b, load_param32(b, upload_addr), ib_offset),
+      nir_imm_int(b, pdev->info.address32_hi),
+      nir_ior_imm(b, ib_cdw, S_3F2_CHAIN(1) | S_3F2_VALID(1) | S_3F2_PRE_ENA(false)),
+   };
+
+   nir_build_store_global(b, nir_vec(b, packet, 4), va, .access = ACCESS_NON_READABLE);
+}
+
 static nir_def *
 dgc_cmd_buf_size(nir_builder *b, nir_def *sequence_count, bool is_ace, const struct radv_device *device)
 {
@@ -975,16 +991,9 @@ build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_
 
       nir_push_if(b, is_compute_queue);
       {
-         nir_def *chain_packets[] = {
-            nir_imm_int(b, PKT3(PKT3_INDIRECT_BUFFER, 2, 0)),
-            nir_iadd(b, load_param32(b, upload_addr), cmd_buf_trailer_offset),
-            nir_imm_int(b, pdev->info.address32_hi),
-            nir_imm_int(b, trailer_size | S_3F2_CHAIN(1) | S_3F2_VALID(1) | S_3F2_PRE_ENA(false)),
-         };
-
-         nir_build_store_global(b, nir_vec(b, chain_packets, 4),
-                                nir_iadd(b, va, nir_u2u64(b, nir_iadd(b, nir_load_var(b, offset), cmd_buf_offset))),
-                                .access = ACCESS_NON_READABLE);
+         dgc_emit_indirect_buffer(b,
+                                  nir_iadd(b, va, nir_u2u64(b, nir_iadd(b, nir_load_var(b, offset), cmd_buf_offset))),
+                                  cmd_buf_trailer_offset, nir_imm_int(b, trailer_size), device);
       }
       nir_pop_if(b, NULL);
    }
@@ -1094,15 +1103,7 @@ build_dgc_buffer_preamble(nir_builder *b, nir_def *cmd_buf_preamble_offset, nir_
 
       nir_build_store_global(b, packet, va, .access = ACCESS_NON_READABLE);
 
-      nir_def *chain_packets[] = {
-         nir_imm_int(b, PKT3(PKT3_INDIRECT_BUFFER, 2, 0)),
-         nir_iadd(b, cmd_buf_main_offset, load_param32(b, upload_addr)),
-         nir_imm_int(b, pdev->info.address32_hi),
-         nir_ior_imm(b, words, S_3F2_CHAIN(1) | S_3F2_VALID(1) | S_3F2_PRE_ENA(false)),
-      };
-
-      nir_build_store_global(b, nir_vec(b, chain_packets, 4), nir_iadd_imm(b, va, pad_size),
-                             .access = ACCESS_NON_READABLE);
+      dgc_emit_indirect_buffer(b, nir_iadd_imm(b, va, pad_size), cmd_buf_main_offset, words, device);
    }
    nir_pop_if(b, NULL);
 }
