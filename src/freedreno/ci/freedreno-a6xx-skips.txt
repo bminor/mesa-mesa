@@ -94,3 +94,6 @@ spec@!opengl 1.0@gl-1.0-no-op-paths
 # Piglit assumes fp16 denorms are supported, which the driver doesn't.
 program@execute@amdgcn-f16-inline-immediates
 program@execute@amdgcn-f16-inline-immediates@add integer 64
+
+# Vulkan Video isn't supported, since video isn't part of the gpu
+dEQP-VK.video.*
