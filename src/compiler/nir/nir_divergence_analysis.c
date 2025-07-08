@@ -209,6 +209,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_subgroup_id:
    case nir_intrinsic_shared_append_amd:
    case nir_intrinsic_shared_consume_amd:
+   case nir_intrinsic_load_sm_id_nv:
+   case nir_intrinsic_load_warp_id_nv:
       /* VS/TES/GS invocations of the same primitive can be in different
        * subgroups, so subgroup ops are always divergent between vertices of
        * the same primitive.
@@ -355,6 +357,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_samples_log2_agx:
    case nir_intrinsic_load_active_subgroup_count_agx:
    case nir_intrinsic_load_root_agx:
+   case nir_intrinsic_load_sm_count_nv:
+   case nir_intrinsic_load_warps_per_sm_nv:
    case nir_intrinsic_load_fs_msaa_intel:
    case nir_intrinsic_load_constant_base_ptr:
    case nir_intrinsic_load_const_buf_base_addr_lvp:
