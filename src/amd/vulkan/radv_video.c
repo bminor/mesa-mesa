@@ -865,8 +865,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       ext->maxLevel = STD_VIDEO_VP9_LEVEL_6_2;
       strcpy(pCapabilities->stdHeaderVersion.extensionName, VK_STD_VULKAN_VIDEO_CODEC_VP9_DECODE_EXTENSION_NAME);
       pCapabilities->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_VP9_DECODE_SPEC_VERSION;
-      pCapabilities->minCodedExtent.width = 64;
-      pCapabilities->minCodedExtent.height = 64;
+      pCapabilities->minCodedExtent.width = 16;
+      pCapabilities->minCodedExtent.height = 16;
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
