@@ -973,7 +973,9 @@ anv_GetEncodedVideoSessionParametersKHR(VkDevice device,
          char *data_ptr = pData ? (char *)pData + sps_size : NULL;
          for (unsigned i = 0; i < params->vk.h264_enc.h264_pps_count; i++)
             if (params->vk.h264_enc.h264_pps[i].base.pic_parameter_set_id == h264_get_info->stdPPSId) {
-               vk_video_encode_h264_pps(&params->vk.h264_enc.h264_pps[i].base, false, size_limit, &pps_size, data_ptr);
+               vk_video_encode_h264_pps(&params->vk.h264_enc.h264_pps[i].base,
+                                        params->vk.h264_enc.profile_idc == STD_VIDEO_H264_PROFILE_IDC_HIGH,
+                                        size_limit, &pps_size, data_ptr);
             }
       }
       total_size = sps_size + pps_size;
