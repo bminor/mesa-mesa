@@ -56,6 +56,23 @@ unsafe impl<T> Send for ThreadSafeCPtr<T> {}
 // SAFETY: safety requierements of Sync fullfilled at [ThreadSafeCPtr::new] time
 unsafe impl<T> Sync for ThreadSafeCPtr<T> {}
 
+pub trait BetterPointer<T> {
+    /// Reads the pointer and advances it by 1 element.
+    ///
+    /// # Safety
+    ///
+    /// `self` needs to be valid for reading.
+    unsafe fn read_and_advance(&mut self) -> T;
+}
+
+impl<T> BetterPointer<T> for *const T {
+    unsafe fn read_and_advance(&mut self) -> T {
+        let val = unsafe { self.read() };
+        *self = unsafe { self.add(1) };
+        val
+    }
+}
+
 pub trait CheckedPtr<T> {
     /// Copies `count * size_of::<T>()` bytes from `src` to `self`. The source
     /// and destination may overlap.
