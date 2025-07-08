@@ -376,7 +376,6 @@ struct r600_common_screen {
 	} barrier_flags;
 
 	struct nir_shader_compiler_options nir_options;
-	struct nir_shader_compiler_options nir_options_fs;
 };
 
 /* This encapsulates a state or an operation which can emitted into the GPU

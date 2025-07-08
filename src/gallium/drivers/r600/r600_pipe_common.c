@@ -937,11 +937,7 @@ r600_get_compiler_options(struct pipe_screen *screen,
        assert(ir == PIPE_SHADER_IR_NIR);
 
        struct r600_common_screen *rscreen = (struct r600_common_screen *)screen;
-
-       if (shader != PIPE_SHADER_FRAGMENT)
-          return &rscreen->nir_options;
-       else
-          return &rscreen->nir_options_fs;
+       return &rscreen->nir_options;
 }
 
 extern bool r600_lower_to_scalar_instr_filter(const nir_instr *instr, const void *);
@@ -1218,7 +1214,6 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 			nir_lower_dround_even;
 	}
 
-        rscreen->nir_options_fs = rscreen->nir_options;
 	uint8_t indirect_supported_mask =
 		(uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES) &
 		~BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
