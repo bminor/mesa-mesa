@@ -648,6 +648,7 @@ kill_swapchain(struct zink_context *ctx, struct zink_resource *res)
    zink_batch_reference_resource(ctx, res);
    struct pipe_resource *pres = screen->base.resource_create(&screen->base, &res->base.b);
    zink_resource_object_reference(screen, &res->obj, zink_resource(pres)->obj);
+   res->rebind_count++;
    res->layout = VK_IMAGE_LAYOUT_UNDEFINED;
    res->swapchain = false;
    pipe_resource_reference(&pres, NULL);
@@ -1145,6 +1146,7 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx)
    struct pipe_resource *pz = screen->base.resource_create(&screen->base, &templ);
    struct zink_resource *z = zink_resource(pz);
    zink_resource_object_reference(screen, &res->obj, z->obj);
+   res->rebind_count++;
    res->base.b.width0 = ctx->fb_state.width;
    res->base.b.height0 = ctx->fb_state.height;
    pipe_resource_reference(&pz, NULL);

@@ -1296,6 +1296,8 @@ struct zink_resource {
    VkPipelineStageFlagBits gfx_barrier;
    VkAccessFlagBits barrier_access[2]; //gfx, compute
 
+   unsigned rebind_count;
+
    VkRect2D damage;
    bool use_damage;
 
@@ -1577,7 +1579,7 @@ struct zink_buffer_view {
 struct zink_sampler_view {
    struct pipe_sampler_view base;
    VkImageViewCreateInfo ivci;
-   struct zink_resource_object *obj;
+   unsigned rebind_count;
    union {
       struct zink_surface *image_view;
       struct zink_buffer_view *buffer_view;
@@ -1592,7 +1594,7 @@ struct zink_sampler_view {
 
 struct zink_image_view {
    struct pipe_image_view base;
-   struct zink_resource_object *obj;
+   unsigned rebind_count;
    union {
       struct zink_surface *surface;
       struct zink_buffer_view *buffer_view;

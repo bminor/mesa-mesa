@@ -1162,7 +1162,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
    sampler_view->base = *state;
    sampler_view->base.texture = NULL;
    pipe_resource_reference(&sampler_view->base.texture, pres);
-   sampler_view->obj = res->obj;
+   sampler_view->rebind_count = res->rebind_count;
    sampler_view->base.reference.count = 1;
    sampler_view->base.context = pctx;
 
@@ -1295,7 +1295,7 @@ zink_create_sampler_view(struct pipe_context *pctx, struct pipe_resource *pres,
          sampler_view->tbo_size = MIN2(state->u.buf.size / blocksize, screen->info.props.limits.maxTexelBufferElements) * blocksize;
          return &sampler_view->base;
       }
-      sampler_view->obj = res->obj;
+      sampler_view->rebind_count = res->rebind_count;
       sampler_view->buffer_view = get_buffer_view(ctx, res, state->format, state->u.buf.offset, state->u.buf.size);
       err = !sampler_view->buffer_view;
    }
@@ -2056,7 +2056,7 @@ zink_set_shader_images(struct pipe_context *pctx,
                   a->import2d = import2d;
                   bind_shaderimage_resource_stage(ctx, b, a->import2d, is_compute);
                }
-               a->obj = res->obj;
+               a->rebind_count = res->rebind_count;
                a->surface = surface;
             }
          }
@@ -2244,13 +2244,13 @@ zink_set_sampler_views(struct pipe_context *pctx,
                   if (!a || a->base.texture != b->base.texture || zink_resource(a->base.texture)->obj != res->obj ||
                      memcmp(&a->base.u.buf, &b->base.u.buf, sizeof(b->base.u.buf)))
                      update = true;
-               } else if (b->obj != res->obj) {
+               } else if (b->rebind_count != res->rebind_count) {
                   /* if this resource has been rebound while it wasn't set here,
                   * its backing resource will have changed and thus we need to update
                   * the bufferview
                   */
                   b->buffer_view = get_buffer_view(ctx, res, b->base.format, b->base.u.buf.offset, b->base.u.buf.size);
-                  b->obj = res->obj;
+                  b->rebind_count = res->rebind_count;
                   update = true;
                } else if (!a || a->buffer_view->buffer_view != b->buffer_view->buffer_view)
                      update = true;
@@ -2260,8 +2260,8 @@ zink_set_sampler_views(struct pipe_context *pctx,
                if (!ctx->unordered_blitting)
                   res->obj->unordered_read = false;
             } else {
-               if (res->obj != b->obj) {
-                  b->obj = res->obj;
+               if (res->rebind_count != b->rebind_count) {
+                  b->rebind_count = res->rebind_count;
                   struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&b->base, &res->base.b, b->base.target);
                   b->image_view = zink_get_surface(ctx, &tmpl, &b->ivci);
                   update = true;
@@ -5047,7 +5047,7 @@ rebind_image(struct zink_context *ctx, struct zink_resource *res)
          for (unsigned j = 0; j < ctx->di.num_sampler_views[i]; j++) {
             struct zink_sampler_view *sv = zink_sampler_view(ctx->sampler_views[i][j]);
             if (sv && sv->base.texture == &res->base.b) {
-               sv->obj = res->obj;
+               sv->rebind_count = res->rebind_count;
                struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, &res->base.b, sv->base.target);
                sv->image_view = zink_get_surface(ctx, &tmpl, &sv->ivci);
                ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, j, 1);
@@ -5152,8 +5152,8 @@ zink_rebind_all_images(struct zink_context *ctx)
          if (!sv || !sv->image_view || sv->base.texture->target == PIPE_BUFFER)
             continue;
          struct zink_resource *res = zink_resource(sv->base.texture);
-         if (res->obj != sv->obj) {
-            sv->obj = res->obj;
+         if (res->rebind_count != sv->rebind_count) {
+            sv->rebind_count = res->rebind_count;
             struct pipe_surface tmpl = pipe_surface_templ_from_sampler_view(&sv->base, &res->base.b, sv->base.target);
             sv->image_view = zink_get_surface(ctx, &tmpl, &sv->ivci);
             ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, j, 1);
@@ -5165,11 +5165,11 @@ zink_rebind_all_images(struct zink_context *ctx)
          struct zink_resource *res = zink_resource(image_view->base.resource);
          if (!res || res->base.b.target == PIPE_BUFFER)
             continue;
-         if (ctx->image_views[i][j].obj != res->obj) {
+         if (ctx->image_views[i][j].rebind_count != res->rebind_count) {
             struct zink_resource *import2d = NULL;
             image_view->surface = create_image_surface(ctx, &image_view->base, i == MESA_SHADER_COMPUTE, &import2d);
             assert(!import2d);
-            image_view->obj = res->obj;
+            image_view->rebind_count = res->rebind_count;
             ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_IMAGE, j, 1);
             update_descriptor_state_image(ctx, i, j, res);
             if (!general_layout)
@@ -5201,6 +5201,7 @@ zink_context_replace_buffer_storage(struct pipe_context *pctx, struct pipe_resou
    zink_resource_copies_reset(d);
    /* force counter buffer reset */
    d->so_valid = false;
+   d->rebind_count++;
    /* FIXME: tc buffer sharedness tracking */
    if (!num_rebinds) {
       num_rebinds = d->bind_count[0] + d->bind_count[1];

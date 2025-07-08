@@ -1780,6 +1780,7 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
       box.depth = util_num_layers(&res->base.b, i);
       ctx->base.resource_copy_region(&ctx->base, &res->base.b, i, 0, 0, 0, &staging.base.b, i, &box);
    }
+   res->rebind_count++;
    if (old_obj->exportable) {
       simple_mtx_lock(&ctx->bs->exportable_lock);
       _mesa_set_remove_key(&ctx->bs->dmabuf_exports, &staging);
