@@ -2496,19 +2496,157 @@ dgc_pad_cmdbuf(struct dgc_cmdbuf *cs, nir_def *cmd_buf_end)
    nir_pop_if(b, NULL);
 }
 
+static void
+dgc_emit_one_sequence_main(struct dgc_cmdbuf *cs, nir_def *sequence_id, struct radv_indirect_command_layout *layout)
+{
+   nir_builder *b = cs->b;
+
+   nir_def *cmd_buf_stride = load_param32(b, cmd_buf_stride);
+   nir_def *cmd_buf_base_offset = load_param32(b, cmd_buf_main_offset);
+
+   nir_store_var(b, cs->offset, nir_iadd(b, nir_imul(b, sequence_id, cmd_buf_stride), cmd_buf_base_offset), 1);
+   nir_def *cmd_buf_end = nir_iadd(b, nir_load_var(b, cs->offset), cmd_buf_stride);
+
+   nir_def *stream_addr = load_param64(b, stream_addr);
+   stream_addr = nir_iadd(b, stream_addr, nir_u2u64(b, nir_imul_imm(b, sequence_id, layout->vk.stride)));
+
+   nir_def *upload_offset_init =
+      nir_iadd(b, load_param32(b, upload_main_offset), nir_imul(b, load_param32(b, upload_stride), sequence_id));
+   nir_store_var(b, cs->upload_offset, upload_offset_init, 0x1);
+
+   if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES))
+      cs->ies_va = dgc_load_ies_va(cs, stream_addr);
+
+   if (layout->push_constant_mask) {
+      const VkShaderStageFlags stages =
+         (layout->vk.dgc_info & (BITFIELD_BIT(MESA_VK_DGC_RT) | BITFIELD_BIT(MESA_VK_DGC_DISPATCH)))
+            ? VK_SHADER_STAGE_COMPUTE_BIT
+            : (VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT);
+
+      dgc_emit_push_constant(cs, stream_addr, sequence_id, stages);
+   }
+
+   if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_RT)) {
+      /* Raytracing */
+      dgc_emit_rt(cs, stream_addr, sequence_id);
+   } else if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DISPATCH)) {
+      /* Compute */
+      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES)) {
+         dgc_emit_ies(cs);
+      }
+
+      dgc_emit_dispatch(cs, stream_addr, sequence_id);
+   } else {
+      /* Graphics */
+      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_VB)) {
+         dgc_emit_vertex_buffer(cs, stream_addr);
+      }
+
+      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_INDEXED)) {
+         if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IB)) {
+            nir_variable *max_index_count_var =
+               nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "max_index_count");
+
+            dgc_emit_index_buffer(cs, stream_addr, max_index_count_var);
+
+            nir_def *max_index_count = nir_load_var(b, max_index_count_var);
+
+            if (layout->vk.draw_count) {
+               dgc_emit_draw_with_count(cs, stream_addr, sequence_id, true);
+            } else {
+               dgc_emit_draw_indexed(cs, stream_addr, sequence_id, max_index_count);
+            }
+         } else {
+            if (layout->vk.draw_count) {
+               dgc_emit_draw_with_count(cs, stream_addr, sequence_id, true);
+            } else {
+               dgc_emit_draw_indirect(cs, stream_addr, sequence_id, true);
+            }
+         }
+      } else {
+         /* Non-indexed draws */
+         if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_MESH)) {
+            if (layout->vk.draw_count) {
+               dgc_emit_draw_mesh_tasks_with_count_gfx(cs, stream_addr, sequence_id);
+            } else {
+               dgc_emit_draw_mesh_tasks_gfx(cs, stream_addr, sequence_id);
+            }
+         } else {
+            if (layout->vk.draw_count) {
+               dgc_emit_draw_with_count(cs, stream_addr, sequence_id, false);
+            } else {
+               dgc_emit_draw(cs, stream_addr, sequence_id);
+            }
+         }
+      }
+   }
+
+   /* Pad the cmdbuffer if we did not use the whole stride */
+   dgc_pad_cmdbuf(cs, cmd_buf_end);
+}
+
+static void
+dgc_emit_one_sequence_ace(struct dgc_cmdbuf *cs, nir_def *sequence_id, struct radv_indirect_command_layout *layout)
+{
+   nir_builder *b = cs->b;
+
+   nir_def *ace_cmd_buf_stride = load_param32(b, ace_cmd_buf_stride);
+   nir_def *ace_cmd_buf_base_offset = load_param32(b, ace_cmd_buf_main_offset);
+
+   nir_store_var(b, cs->offset, nir_iadd(b, nir_imul(b, sequence_id, ace_cmd_buf_stride), ace_cmd_buf_base_offset), 1);
+   nir_def *cmd_buf_end = nir_iadd(b, nir_load_var(b, cs->offset), ace_cmd_buf_stride);
+
+   nir_def *stream_addr = load_param64(b, stream_addr);
+   stream_addr = nir_iadd(b, stream_addr, nir_u2u64(b, nir_imul_imm(b, sequence_id, layout->vk.stride)));
+
+   nir_def *upload_offset_init =
+      nir_iadd(b, load_param32(b, upload_main_offset), nir_imul(b, load_param32(b, upload_stride), sequence_id));
+   nir_store_var(b, cs->upload_offset, upload_offset_init, 0x1);
+
+   if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES))
+      cs->ies_va = dgc_load_ies_va(cs, stream_addr);
+
+   if (layout->push_constant_mask) {
+      nir_def *push_constant_stages = dgc_get_push_constant_stages(cs);
+
+      nir_push_if(b, nir_test_mask(b, push_constant_stages, VK_SHADER_STAGE_TASK_BIT_EXT));
+      {
+         const struct dgc_pc_params params = dgc_get_pc_params(cs);
+         dgc_emit_push_constant_for_stage(cs, stream_addr, sequence_id, &params, MESA_SHADER_TASK);
+      }
+      nir_pop_if(b, NULL);
+   }
+
+   if (layout->vk.draw_count) {
+      dgc_emit_draw_mesh_tasks_with_count_ace(cs, stream_addr, sequence_id);
+   } else {
+      dgc_emit_draw_mesh_tasks_ace(cs, stream_addr);
+   }
+
+   /* Pad the cmdbuffer if we did not use the whole stride */
+   dgc_pad_cmdbuf(cs, cmd_buf_end);
+}
+
 static nir_shader *
 build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_layout *layout)
 {
    const struct radv_physical_device *pdev = radv_device_physical(dev);
+
    nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_dgc_prepare");
    b.shader->info.workgroup_size[0] = 64;
+
+   struct dgc_cmdbuf cmd_buf = {
+      .b = &b,
+      .dev = dev,
+      .va = nir_pack_64_2x32_split(&b, load_param32(&b, upload_addr), nir_imm_int(&b, pdev->info.address32_hi)),
+      .offset = nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "cmd_buf_offset"),
+      .upload_offset = nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "upload_offset"),
+      .layout = layout,
+   };
 
    nir_def *global_id = radv_meta_nir_get_global_ids(&b, 1);
 
    nir_def *sequence_id = global_id;
-
-   nir_def *cmd_buf_stride = load_param32(&b, cmd_buf_stride);
-   nir_def *cmd_buf_base_offset = load_param32(&b, cmd_buf_main_offset);
 
    nir_def *sequence_count = load_param32(&b, sequence_count);
    nir_def *sequence_count_addr = load_param64(&b, sequence_count_addr);
@@ -2547,93 +2685,7 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
 
    nir_push_if(&b, nir_ult(&b, sequence_id, sequence_count));
    {
-      struct dgc_cmdbuf cmd_buf = {
-         .b = &b,
-         .dev = dev,
-         .va = nir_pack_64_2x32_split(&b, load_param32(&b, upload_addr), nir_imm_int(&b, pdev->info.address32_hi)),
-         .offset = nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "cmd_buf_offset"),
-         .upload_offset = nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "upload_offset"),
-         .layout = layout,
-      };
-      nir_store_var(&b, cmd_buf.offset, nir_iadd(&b, nir_imul(&b, global_id, cmd_buf_stride), cmd_buf_base_offset), 1);
-      nir_def *cmd_buf_end = nir_iadd(&b, nir_load_var(&b, cmd_buf.offset), cmd_buf_stride);
-
-      nir_def *stream_addr = load_param64(&b, stream_addr);
-      stream_addr = nir_iadd(&b, stream_addr, nir_u2u64(&b, nir_imul_imm(&b, sequence_id, layout->vk.stride)));
-
-      nir_def *upload_offset_init =
-         nir_iadd(&b, load_param32(&b, upload_main_offset), nir_imul(&b, load_param32(&b, upload_stride), sequence_id));
-      nir_store_var(&b, cmd_buf.upload_offset, upload_offset_init, 0x1);
-
-      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES))
-         cmd_buf.ies_va = dgc_load_ies_va(&cmd_buf, stream_addr);
-
-      if (layout->push_constant_mask) {
-         const VkShaderStageFlags stages =
-            (layout->vk.dgc_info & (BITFIELD_BIT(MESA_VK_DGC_RT) | BITFIELD_BIT(MESA_VK_DGC_DISPATCH)))
-               ? VK_SHADER_STAGE_COMPUTE_BIT
-               : (VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT);
-
-         dgc_emit_push_constant(&cmd_buf, stream_addr, sequence_id, stages);
-      }
-
-      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_RT)) {
-         /* Raytracing */
-         dgc_emit_rt(&cmd_buf, stream_addr, sequence_id);
-      } else if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DISPATCH)) {
-         /* Compute */
-         if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES)) {
-            dgc_emit_ies(&cmd_buf);
-         }
-
-         dgc_emit_dispatch(&cmd_buf, stream_addr, sequence_id);
-      } else {
-         /* Graphics */
-         if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_VB)) {
-            dgc_emit_vertex_buffer(&cmd_buf, stream_addr);
-         }
-
-         if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_INDEXED)) {
-            if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IB)) {
-               nir_variable *max_index_count_var =
-                  nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "max_index_count");
-
-               dgc_emit_index_buffer(&cmd_buf, stream_addr, max_index_count_var);
-
-               nir_def *max_index_count = nir_load_var(&b, max_index_count_var);
-
-               if (layout->vk.draw_count) {
-                  dgc_emit_draw_with_count(&cmd_buf, stream_addr, sequence_id, true);
-               } else {
-                  dgc_emit_draw_indexed(&cmd_buf, stream_addr, sequence_id, max_index_count);
-               }
-            } else {
-               if (layout->vk.draw_count) {
-                  dgc_emit_draw_with_count(&cmd_buf, stream_addr, sequence_id, true);
-               } else {
-                  dgc_emit_draw_indirect(&cmd_buf, stream_addr, sequence_id, true);
-               }
-            }
-         } else {
-            /* Non-indexed draws */
-            if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_MESH)) {
-               if (layout->vk.draw_count) {
-                  dgc_emit_draw_mesh_tasks_with_count_gfx(&cmd_buf, stream_addr, sequence_id);
-               } else {
-                  dgc_emit_draw_mesh_tasks_gfx(&cmd_buf, stream_addr, sequence_id);
-               }
-            } else {
-               if (layout->vk.draw_count) {
-                  dgc_emit_draw_with_count(&cmd_buf, stream_addr, sequence_id, false);
-               } else {
-                  dgc_emit_draw(&cmd_buf, stream_addr, sequence_id);
-               }
-            }
-         }
-      }
-
-      /* Pad the cmdbuffer if we did not use the whole stride */
-      dgc_pad_cmdbuf(&cmd_buf, cmd_buf_end);
+      dgc_emit_one_sequence_main(&cmd_buf, sequence_id, layout);
    }
    nir_pop_if(&b, NULL);
 
@@ -2643,54 +2695,11 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
    /* Prepare the ACE command stream */
    nir_push_if(&b, nir_ieq_imm(&b, load_param8(&b, has_task_shader), 1));
    {
-      nir_def *ace_cmd_buf_stride = load_param32(&b, ace_cmd_buf_stride);
-      nir_def *ace_cmd_buf_base_offset = load_param32(&b, ace_cmd_buf_main_offset);
-
       build_dgc_buffer_trailer_ace(&b, dev);
 
       nir_push_if(&b, nir_ult(&b, sequence_id, sequence_count));
       {
-         struct dgc_cmdbuf cmd_buf = {
-            .b = &b,
-            .dev = dev,
-            .va = nir_pack_64_2x32_split(&b, load_param32(&b, upload_addr), nir_imm_int(&b, pdev->info.address32_hi)),
-            .offset = nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "cmd_buf_offset"),
-            .upload_offset = nir_variable_create(b.shader, nir_var_shader_temp, glsl_uint_type(), "upload_offset"),
-            .layout = layout,
-         };
-         nir_store_var(&b, cmd_buf.offset,
-                       nir_iadd(&b, nir_imul(&b, global_id, ace_cmd_buf_stride), ace_cmd_buf_base_offset), 1);
-         nir_def *cmd_buf_end = nir_iadd(&b, nir_load_var(&b, cmd_buf.offset), ace_cmd_buf_stride);
-
-         nir_def *stream_addr = load_param64(&b, stream_addr);
-         stream_addr = nir_iadd(&b, stream_addr, nir_u2u64(&b, nir_imul_imm(&b, sequence_id, layout->vk.stride)));
-
-         nir_def *upload_offset_init = nir_iadd(&b, load_param32(&b, upload_main_offset),
-                                                nir_imul(&b, load_param32(&b, upload_stride), sequence_id));
-         nir_store_var(&b, cmd_buf.upload_offset, upload_offset_init, 0x1);
-
-         if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES))
-            cmd_buf.ies_va = dgc_load_ies_va(&cmd_buf, stream_addr);
-
-         if (layout->push_constant_mask) {
-            nir_def *push_constant_stages = dgc_get_push_constant_stages(&cmd_buf);
-
-            nir_push_if(&b, nir_test_mask(&b, push_constant_stages, VK_SHADER_STAGE_TASK_BIT_EXT));
-            {
-               const struct dgc_pc_params params = dgc_get_pc_params(&cmd_buf);
-               dgc_emit_push_constant_for_stage(&cmd_buf, stream_addr, sequence_id, &params, MESA_SHADER_TASK);
-            }
-            nir_pop_if(&b, NULL);
-         }
-
-         if (layout->vk.draw_count) {
-            dgc_emit_draw_mesh_tasks_with_count_ace(&cmd_buf, stream_addr, sequence_id);
-         } else {
-            dgc_emit_draw_mesh_tasks_ace(&cmd_buf, stream_addr);
-         }
-
-         /* Pad the cmdbuffer if we did not use the whole stride */
-         dgc_pad_cmdbuf(&cmd_buf, cmd_buf_end);
+         dgc_emit_one_sequence_ace(&cmd_buf, sequence_id, layout);
       }
       nir_pop_if(&b, NULL);
 
