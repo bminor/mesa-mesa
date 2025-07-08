@@ -5194,7 +5194,7 @@
         "description": "lavapipe: fix advertised depth resolve modes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "07956bbcae4cbc396d2e6b8dcf2bab5acbfd6507",
         "notes": null
