@@ -100,14 +100,10 @@ v3d_get_device_info(int fd, struct v3d_device_info* devinfo, v3d_ioctl_fun drm_i
    devinfo->compat_rev = (hub_ident3.value >> 16) & 0xff;
 
     ret = drm_ioctl(fd, DRM_IOCTL_V3D_GET_PARAM, &max_perfcnt);
-    if (ret != 0) {
-            /* Kernel doesn't have support to return the maximum number of
-             * performance counters.
-             */
+    if (ret != 0)
             devinfo->max_perfcnt = 0;
-    } else {
+    else
             devinfo->max_perfcnt = max_perfcnt.value;
-    }
 
    return true;
 }
