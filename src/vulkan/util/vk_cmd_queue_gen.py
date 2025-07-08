@@ -583,9 +583,9 @@ def get_struct_free(field_name, struct_type, types):
     member_frees = ""
     if (struct_type in types):
         for member in types[struct_type].members:
-            member_name = "%s->%s" % (field_name, member.name)
+            member_name = "%s ? %s->%s : NULL" % (field_name, field_name, member.name)
             if member.len and member.len != 'null-terminated':
-                member_frees += "vk_free(queue->alloc, (void*)%s);\n" % member_name
+                member_frees += "vk_free(queue->alloc, (void*)(%s));\n" % member_name
             elif member.name == 'pNext':
                 member_frees += get_pnext_member_free(struct_type, types, member_name)
     return "%s   %s\n" % (member_frees, struct_free)
