@@ -114,8 +114,7 @@ EOF
     ;;
   android) cat >> out/Release/args.gn <<EOF
 android_ndk_version="${ANDROID_NDK_VERSION}"
-android64_ndk_api_level=${ANDROID_SDK_VERSION}
-android32_ndk_api_level=${ANDROID_SDK_VERSION}
+android_ndk_api_level=${ANDROID_SDK_VERSION}
 use_custom_libcxx=true
 EOF
     ;;
