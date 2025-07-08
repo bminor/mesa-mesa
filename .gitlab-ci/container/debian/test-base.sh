@@ -54,7 +54,9 @@ EPHEMERAL=(
     libgles2-mesa-dev
     liblz4-dev
     libpciaccess-dev
+    libpixman-1-dev
     libssl-dev
+    libtirpc-dev
     libvulkan-dev
     libudev-dev
     libwaffle-dev
@@ -66,14 +68,19 @@ EPHEMERAL=(
     libxfixes-dev
     libxcb-ewmh-dev
     libxcursor-dev
+    libxcvt-dev
     libxext-dev
+    libxfont-dev
     libxkbcommon-dev
+    libxkbfile-dev
     libxrandr-dev
     libxrender-dev
+    libxshmfence-dev
     libzstd-dev
     "llvm-${LLVM_VERSION}-dev"
     make
     meson
+    mesa-common-dev
     patch
     pkgconf
     protobuf-compiler
@@ -110,9 +117,11 @@ DEPS=(
     "libclang-cpp${LLVM_VERSION}"
     "libllvm${LLVM_VERSION}"
     liblz4-1
+    libpixman-1-0
     libpng16-16
     libproc2-0
     libpython3.11
+    libtirpc3
     libubsan1
     libvulkan1
     libwayland-client0
@@ -123,9 +132,12 @@ DEPS=(
     libxcb-shm0
     libxcb-xfixes0
     libxcursor1
+    libxcvt0
+    libxfont2
     libxkbcommon0
     libxrandr2
     libxrender1
+    libxshmfence1
     ocl-icd-libopencl1
     pciutils
     python3-lxml
@@ -144,8 +156,8 @@ DEPS=(
     sysvinit-core
     vulkan-tools
     waffle-utils
-    xwayland
     xinit
+    xserver-common
     xserver-xorg-video-amdgpu
     xserver-xorg-video-ati
     xauth
@@ -205,6 +217,10 @@ section_end debian_setup
 ############### Build Weston
 
 . .gitlab-ci/container/build-weston.sh
+
+############### Build XWayland
+
+. .gitlab-ci/container/build-xwayland.sh
 
 ############### Install Rust toolchain
 
