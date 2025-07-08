@@ -1381,6 +1381,11 @@ create_image(struct zink_screen *screen, struct zink_resource_object *obj,
       emici.pNext = ici.pNext;
       emici.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
       ici.pNext = &emici;
+   } else {
+      /* If the frontend passed modifiers it should have also passed
+       * PIPE_BIND_SHARED
+       */
+      assert(ici.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT);
    }
 
    if (linear)
