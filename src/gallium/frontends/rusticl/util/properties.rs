@@ -1,3 +1,5 @@
+use crate::ptr::BetterPointer;
+
 #[derive(Default)]
 pub struct Properties<T> {
     props: Vec<T>,
@@ -23,18 +25,17 @@ impl<T> Properties<T> {
         let mut res = Self::default();
         if !p.is_null() {
             unsafe {
-                while *p != T::default() {
+                let mut val = p.read_and_advance();
+                while val != T::default() {
                     // Property lists are expected to be small, so no point in using HashSet or
                     // sorting.
-                    if res.get(&*p).is_some() {
+                    if res.get(&val).is_some() {
                         return None;
                     }
 
-                    res.props.push(*p);
-                    res.props.push(*p.add(1));
-
-                    // Advance by two as we read through a list of pairs.
-                    p = p.add(2);
+                    res.props.push(val);
+                    res.props.push(p.read_and_advance());
+                    val = p.read_and_advance();
                 }
             }
 
