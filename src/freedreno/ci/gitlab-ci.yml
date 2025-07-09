@@ -96,12 +96,11 @@ a618-vk:
     - .lava-arm64-test-vk
     - .lava-sc7180-trogdor-kingoftown:arm64
     - .collabora-turnip-rules
-  parallel: 9
+  parallel: 8
   variables:
     DEQP_SUITE: freedreno-a618-vk
     FLAKES_CHANNEL: "#freedreno-ci"
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
-    DEQP_FRACTION: 2
 
 a618-vk-full:
   extends:
@@ -113,7 +112,6 @@ a618-vk-full:
   parallel: 3
   variables:
     DEQP_SUITE: freedreno-a618-vk-full
-    DEQP_FRACTION: 1
 
 a618-vk-asan:
   extends:
