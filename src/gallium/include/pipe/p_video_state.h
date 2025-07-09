@@ -397,6 +397,7 @@ struct pipe_h264_sps
    uint8_t  mb_adaptive_frame_field_flag;
    uint8_t  direct_8x8_inference_flag;
    uint8_t  MinLumaBiPredSize8x8;
+   uint8_t  gaps_in_frame_num_value_allowed_flag;
    uint32_t pic_width_in_mbs_minus1;
    uint32_t pic_height_in_mbs_minus1;
 };
