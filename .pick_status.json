@@ -2854,7 +2854,7 @@
         "description": "radeon/vcn: add gaps_in_frame flag to h264 sps",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
