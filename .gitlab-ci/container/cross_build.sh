@@ -39,7 +39,6 @@ DEPS=(
     "libxrandr-dev:$arch"
     "libxshmfence-dev:$arch"
     "libxxf86vm-dev:$arch"
-    "libwayland-dev:$arch"
 )
 
 dpkg --add-architecture $arch

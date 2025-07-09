@@ -56,7 +56,6 @@ EPHEMERAL=(
     libvulkan-dev
     libudev-dev
     libwaffle-dev
-    libwayland-dev
     libx11-xcb-dev
     libxcb-dri2-0-dev
     libxcb-dri3-dev

@@ -19,20 +19,20 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250618-crosvmvirgl"
+  DEBIAN_BASE_TAG: "20250709-libwayland"
 
-  DEBIAN_BUILD_TAG: "20250611-rust"
+  DEBIAN_BUILD_TAG: "20250710-libwayland"
 
-  DEBIAN_TEST_ANDROID_TAG: "20250701-cuttlefish"
-  DEBIAN_TEST_GL_TAG: "20250616-vkcts-main"
+  DEBIAN_TEST_ANDROID_TAG: "20250709-libwayland"
+  DEBIAN_TEST_GL_TAG: "20250709-libwayland"
   DEBIAN_TEST_VIDEO_TAG: "20250609-helper"
-  DEBIAN_TEST_VK_TAG: "20250619-vkd3d"
+  DEBIAN_TEST_VK_TAG: "20250709-libwayland"
 
-  ALPINE_X86_64_BUILD_TAG: "20250611-rust"
+  ALPINE_X86_64_BUILD_TAG: "20250709-libwayland"
   ALPINE_X86_64_LAVA_SSH_TAG: "20250423-rootfs"
   ALPINE_X86_64_LAVA_TRIGGER_TAG: "20250619-cts-ovl"
 
-  FEDORA_X86_64_BUILD_TAG: "20250611-rust"
+  FEDORA_X86_64_BUILD_TAG: "20250709-libwayland"
 
   KERNEL_TAG: "v6.14-mesa-4277"
   KERNEL_REPO: "gfx-ci/linux"
