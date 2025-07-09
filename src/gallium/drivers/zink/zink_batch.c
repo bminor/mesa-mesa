@@ -617,6 +617,7 @@ submit_queue(void *data, void *gdata, int thread_index)
    while (!bs->fence.batch_id)
       bs->fence.batch_id = (uint32_t)p_atomic_inc_return(&screen->curr_batch);
    bs->usage.usage = bs->fence.batch_id;
+   assert(bs->usage.usage);
    bs->usage.unflushed = false;
 
    uint64_t batch_id = bs->fence.batch_id;
