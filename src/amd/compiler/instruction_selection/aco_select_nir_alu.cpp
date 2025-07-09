@@ -865,7 +865,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       break;
    }
    case nir_op_mov: {
-      Temp src = get_alu_src(ctx, instr->src[0]);
+      Temp src = get_alu_src(ctx, instr->src[0], instr->def.num_components);
       if (src.type() == RegType::vgpr && dst.type() == RegType::sgpr) {
          /* use size() instead of bytes() for 8/16-bit */
          assert(src.size() == dst.size() && "wrong src or dst register class for nir_op_mov");
