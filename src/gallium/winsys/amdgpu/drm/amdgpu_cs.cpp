@@ -61,6 +61,31 @@ amdgpu_fence_create(struct amdgpu_cs *acs)
 }
 
 static struct pipe_fence_handle *
+amdgpu_fence_create_semaphore(struct radeon_winsys *rws)
+{
+   struct amdgpu_winsys *aws = amdgpu_winsys(rws);
+   struct amdgpu_fence *fence = CALLOC_STRUCT(amdgpu_fence);
+
+   if (!fence)
+      return NULL;
+
+   pipe_reference_init(&fence->reference, 1);
+   fence->aws = aws;
+   /* fence->ctx == NULL means that the fence is syncobj-based. */
+
+   int r = ac_drm_cs_create_syncobj2(aws->dev, 0, &fence->syncobj);
+   if (r) {
+      FREE(fence);
+      return NULL;
+   }
+
+   util_queue_fence_init(&fence->submitted);
+   fence->imported = true;
+
+   return (struct pipe_fence_handle*)fence;
+}
+
+static struct pipe_fence_handle *
 amdgpu_fence_import_syncobj(struct radeon_winsys *rws, int fd)
 {
    struct amdgpu_winsys *aws = amdgpu_winsys(rws);
@@ -2254,6 +2279,7 @@ void amdgpu_cs_init_functions(struct amdgpu_screen_winsys *sws)
    sws->base.cs_add_fence_dependency = amdgpu_cs_add_fence_dependency;
    sws->base.cs_add_syncobj_signal = amdgpu_cs_add_syncobj_signal;
    sws->base.cs_get_ip_type = amdgpu_cs_get_ip_type;
+   sws->base.semaphore_create = amdgpu_fence_create_semaphore;
    sws->base.fence_wait = amdgpu_fence_wait_rel_timeout;
    sws->base.fence_reference = amdgpu_winsys_fence_reference;
    sws->base.fence_import_syncobj = amdgpu_fence_import_syncobj;

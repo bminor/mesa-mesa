@@ -737,6 +737,8 @@ struct radeon_winsys {
    void (*fence_reference)(struct radeon_winsys *ws, struct pipe_fence_handle **dst,
                            struct pipe_fence_handle *src);
 
+   struct pipe_fence_handle *(*semaphore_create)(struct radeon_winsys *ws);
+
    /**
     * Create a new fence object corresponding to the given syncobj fd.
     */
