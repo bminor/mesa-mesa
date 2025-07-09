@@ -5668,6 +5668,7 @@ struct feedback_loop_surface {
    uint16_t first_layer;
    uint16_t last_layer;
    uint16_t level;
+   uint16_t idx;
 };
 
 static bool
@@ -5695,11 +5696,12 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
             .first_layer = psurf->first_layer,
             .last_layer = psurf->last_layer,
             .level = psurf->level,
+            .idx = idx,
          };
       }
    }
 
-   bool is_feedback = false;
+   uint32_t is_feedback = 0;
    /* avoid false positives when a texture is bound but not used */
    u_foreach_bit(vkstage, res->gfx_barrier) {
       VkPipelineStageFlags vkstagebit = BITFIELD_BIT(vkstage);
@@ -5726,16 +5728,13 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
                continue;
             if (sv->u.tex.first_layer > psurfs[i].last_layer || sv->u.tex.last_layer < psurfs[i].first_layer)
                continue;
-            is_feedback = true;
-            break;
+            is_feedback |= BITFIELD_BIT(psurfs[i].idx);
          }
-         if (is_feedback)
-            break;
       }
    }
    if (!is_feedback)
       return false;
-   if (ctx->feedback_loops & res->fb_binds)
+   if (ctx->feedback_loops & is_feedback)
       /* already added */
       return true;
    /* new feedback loop detected */
@@ -5749,9 +5748,9 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
       ctx->gfx_pipeline_state.feedback_loop_zs = true;
    }
    ctx->rp_layout_changed = true;
-   ctx->feedback_loops |= res->fb_binds;
+   ctx->feedback_loops |= is_feedback;
    if (!zink_screen(ctx->base.screen)->driver_workarounds.general_layout) {
-      u_foreach_bit(idx, res->fb_binds) {
+      u_foreach_bit(idx, is_feedback) {
          if (zink_screen(ctx->base.screen)->info.have_EXT_attachment_feedback_loop_layout)
             ctx->dynamic_fb.attachments[idx].imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
          else
