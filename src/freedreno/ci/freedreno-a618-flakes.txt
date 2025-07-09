@@ -319,6 +319,7 @@ KHR-GL46.blend_equation_advanced.test_coherency.multiplySequence
 KHR-GL46.compute_shader.copy-image
 KHR-GL46.gpu_shader_fp64.builtin.distance_dvec4
 KHR-GL46.gpu_shader_fp64.builtin.inverse_dmat4
+KHR-GL46.gpu_shader_fp64.builtin.mod_double
 KHR-GL46.gpu_shader_fp64.fp64.varyings
 KHR-GL46.pixelstoragemodes.compressedteximage3d.rgba_astc_8x5.16_15_8
 KHR-GL46.pixelstoragemodes.compressedteximage3d.rgba_astc_8x5.32_30_1

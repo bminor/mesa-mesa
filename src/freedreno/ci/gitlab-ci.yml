@@ -134,7 +134,9 @@ a618-gles-asan:
     FLAKES_CHANNEL: "#freedreno-ci"
     FDO_CI_CONCURRENT: 2 # We get OOMkills if we go too wide with asan enabled
 
-.a618-gl:
+# Run dEQP EGL window system tests with the window systems available.
+# X11 takes over the screen, wayland is run headless.
+a618-gl:
   extends:
     - .lava-arm64-test-gl
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
@@ -142,29 +144,18 @@ a618-gles-asan:
   variables:
     DEQP_SUITE: freedreno-a618
     FLAKES_CHANNEL: "#freedreno-ci"
+    HWCI_START_XORG: 1
+    HWCI_START_WESTON: 1
     DEQP_FRACTION: 4
 
 a618-gl-full:
   extends:
-    - .a618-gl
+    - a618-gl
     - .collabora-freedreno-manual-rules
   timeout: 65m
   variables:
     FDO_CI_CONCURRENT: 6  # More causes issues and slows the job down
     DEQP_FRACTION: 1
-
-# Run dEQP EGL window system tests separately with the window systems available.
-# X11 takes over the screen, wayland is run headless.
-.a618-egl:
-  extends:
-    - .lava-arm64-test-gl
-    - .lava-sc7180-trogdor-lazor-limozeen:arm64
-    - .collabora-freedreno-rules
-  variables:
-    FLAKES_CHANNEL: "#freedreno-ci"
-    HWCI_START_XORG: 1
-    HWCI_START_WESTON: 1
-    DEQP_SUITE: freedreno-a618-egl
 
 a618-skqp:
   extends:
