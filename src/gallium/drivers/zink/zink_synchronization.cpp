@@ -451,6 +451,9 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    } else {
       res->obj->access = flags;
       res->obj->access_stage = pipeline;
+      res->obj->unordered_access = 0;
+      res->obj->unordered_access_stage = 0;
+      res->obj->ordered_access_is_copied = false;
    }
 
    if (!(flags & VK_ACCESS_TRANSFER_WRITE_BIT))
