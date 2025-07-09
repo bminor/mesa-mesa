@@ -1625,7 +1625,7 @@ impl Kernel {
 
             let mut bdas: Vec<_> = bdas
                 .iter()
-                .map(|buffer| Ok(buffer.get_res_for_access(ctx, RWFlags::RW)?))
+                .map(|buffer| buffer.get_res_for_access(ctx, RWFlags::RW))
                 .collect::<CLResult<_>>()?;
 
             let svms_new = svms
