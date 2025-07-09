@@ -5,6 +5,10 @@ use crate::ir::*;
 use crate::legalize::{
     src_is_reg, swap_srcs_if_not_reg, LegalizeBuildHelpers, LegalizeBuilder,
 };
+use crate::sm30_instr_latencies::{
+    encode_kepler_shader, instr_exec_latency, instr_latency,
+    KeplerInstructionEncoder,
+};
 use bitview::*;
 
 use rustc_hash::FxHashMap;
@@ -57,19 +61,18 @@ impl ShaderModel for ShaderModel20 {
         false
     }
 
-    fn exec_latency(&self, _op: &Op) -> u32 {
-        1
+    fn exec_latency(&self, op: &Op) -> u32 {
+        instr_exec_latency(self.sm, op)
     }
 
     fn raw_latency(
         &self,
-        _write: &Op,
-        _dst_idx: usize,
+        write: &Op,
+        dst_idx: usize,
         _read: &Op,
         _src_idx: usize,
     ) -> u32 {
-        // TODO
-        13
+        instr_latency(self.sm, write, dst_idx)
     }
 
     fn war_latency(
@@ -79,7 +82,6 @@ impl ShaderModel for ShaderModel20 {
         _write: &Op,
         _dst_idx: usize,
     ) -> u32 {
-        // TODO
         // We assume the source gets read in the first 4 cycles.  We don't know
         // how quickly the write will happen.  This is all a guess.
         4
@@ -87,27 +89,23 @@ impl ShaderModel for ShaderModel20 {
 
     fn waw_latency(
         &self,
-        _a: &Op,
-        _a_dst_idx: usize,
+        a: &Op,
+        a_dst_idx: usize,
         _a_has_pred: bool,
         _b: &Op,
         _b_dst_idx: usize,
     ) -> u32 {
         // We know our latencies are wrong so assume the wrote could happen
         // anywhere between 0 and instr_latency(a) cycles
-
-        // TODO
-        13
+        instr_latency(self.sm, a, a_dst_idx)
     }
 
     fn paw_latency(&self, _write: &Op, _dst_idx: usize) -> u32 {
-        // TODO
         13
     }
 
-    fn worst_latency(&self, _write: &Op, _dst_idx: usize) -> u32 {
-        // TODO
-        15
+    fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        instr_latency(self.sm, write, dst_idx)
     }
 
     fn max_instr_delay(&self) -> u8 {
@@ -119,7 +117,12 @@ impl ShaderModel for ShaderModel20 {
     }
 
     fn encode_shader(&self, s: &Shader<'_>) -> Vec<u32> {
-        encode_sm20_shader(self, s)
+        if self.sm >= 30 {
+            // Kepler adds explicit instruction latency encodings
+            encode_sm30_shader(self, s)
+        } else {
+            encode_sm20_shader(self, s)
+        }
     }
 }
 
@@ -3080,4 +3083,39 @@ fn encode_sm20_shader(sm: &ShaderModel20, s: &Shader<'_>) -> Vec<u32> {
     }
 
     encoded
+}
+
+impl KeplerInstructionEncoder for ShaderModel20 {
+    fn encode_instr(
+        &self,
+        instr: &Instr,
+        labels: &FxHashMap<Label, usize>,
+        encoded: &mut Vec<u32>,
+    ) {
+        let mut e = SM20Encoder {
+            sm: self,
+            ip: encoded.len() * 4,
+            labels,
+            inst: [0_u32; 2],
+        };
+        as_sm20_op(&instr.op).encode(&mut e);
+        e.set_pred(&instr.pred);
+        encoded.extend(&e.inst[..]);
+    }
+
+    fn prepare_sched_instr<'a>(
+        &self,
+        sched_instr: &'a mut [u32; 2],
+    ) -> impl BitMutViewable + 'a {
+        let mut bv = BitMutView::new(sched_instr);
+        bv.set_field(0..4, 0b0111);
+        bv.set_field(60..64, 0b0010);
+
+        BitMutView::new_subset(sched_instr, 4..60)
+    }
+}
+
+fn encode_sm30_shader(sm: &ShaderModel20, s: &Shader<'_>) -> Vec<u32> {
+    assert!(sm.sm >= 30);
+    encode_kepler_shader(sm, s)
 }

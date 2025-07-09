@@ -28,6 +28,7 @@ mod qmd;
 mod reg_tracker;
 mod repair_ssa;
 mod sm20;
+mod sm30_instr_latencies;
 mod sm32;
 mod sm50;
 mod sm70;
