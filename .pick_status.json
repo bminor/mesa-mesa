@@ -1024,7 +1024,7 @@
         "description": "v3d: Fix depth resource invalidation with separate_stencil",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6ff509593ced88feec810aa653cf727da8629758",
         "notes": null
