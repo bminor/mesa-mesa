@@ -45,6 +45,13 @@ lower_insert_extract = [
 
 lower_algebraic.extend(lower_insert_extract)
 
+lower_b2b = [
+   (('b2b32', a), ('ineg', ('b2i32', a))),
+   (('b2b1', a), ('ine', a, 0)),
+]
+
+lower_algebraic.extend(lower_b2b)
+
 lower_scmp = [
    # Float comparisons + bool conversions.
    (('b2f32', ('flt', a, b)), ('slt', a, 'b@32'), '!options->lower_scmp'),
