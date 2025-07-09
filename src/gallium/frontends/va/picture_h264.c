@@ -61,7 +61,8 @@ void vlVaHandlePictureParameterBufferH264(vlVaDriver *drv, vlVaContext *context,
    context->desc.h264.num_ref_frames = h264->num_ref_frames;
    context->desc.h264.pps->sps->chroma_format_idc = h264->seq_fields.bits.chroma_format_idc;
    /*residual_colour_transform_flag*/
-   /*gaps_in_frame_num_value_allowed_flag*/
+   context->desc.h264.pps->sps->gaps_in_frame_num_value_allowed_flag =
+      h264->seq_fields.bits.gaps_in_frame_num_value_allowed_flag;
    context->desc.h264.pps->sps->frame_mbs_only_flag =
       h264->seq_fields.bits.frame_mbs_only_flag;
    context->desc.h264.pps->sps->mb_adaptive_frame_field_flag =
