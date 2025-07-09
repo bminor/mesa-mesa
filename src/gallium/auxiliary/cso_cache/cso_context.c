@@ -402,7 +402,7 @@ cso_unbind_context(struct cso_context *cso)
                ctx->base.pipe->bind_sampler_states(ctx->base.pipe, sh, 0, maxsam, zeros);
             }
             if (maxview > 0) {
-               ctx->base.pipe->set_sampler_views(ctx->base.pipe, sh, 0, maxview, 0, views);
+               ctx->base.pipe->set_sampler_views(ctx->base.pipe, sh, 0, 0, maxview, views);
             }
             if (maxssbo > 0) {
                ctx->base.pipe->set_shader_buffers(ctx->base.pipe, sh, 0, maxssbo, ssbos, 0);
