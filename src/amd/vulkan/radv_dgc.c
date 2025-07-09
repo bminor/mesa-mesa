@@ -1085,8 +1085,7 @@ build_dgc_buffer_trailer_ace(nir_builder *b, const struct radv_device *device)
 
 static void
 build_dgc_buffer_preamble(nir_builder *b, nir_def *cmd_buf_preamble_offset, nir_def *cmd_buf_size,
-                          nir_def *cmd_buf_main_offset, unsigned preamble_size, nir_def *sequence_count,
-                          const struct radv_device *device)
+                          nir_def *cmd_buf_main_offset, unsigned preamble_size, const struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
@@ -1117,8 +1116,7 @@ build_dgc_buffer_preamble_main(nir_builder *b, nir_def *sequence_count, const st
    nir_def *cmd_buf_size = dgc_cmd_buf_size(b, sequence_count, false, device);
    unsigned preamble_size = radv_dgc_preamble_cmdbuf_size(device, AMD_IP_GFX);
 
-   build_dgc_buffer_preamble(b, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size,
-                             sequence_count, device);
+   build_dgc_buffer_preamble(b, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size, device);
 }
 
 static void
@@ -1129,8 +1127,7 @@ build_dgc_buffer_preamble_ace(nir_builder *b, nir_def *sequence_count, const str
    nir_def *cmd_buf_size = dgc_cmd_buf_size(b, sequence_count, true, device);
    unsigned preamble_size = radv_dgc_preamble_cmdbuf_size(device, AMD_IP_COMPUTE);
 
-   build_dgc_buffer_preamble(b, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size,
-                             sequence_count, device);
+   build_dgc_buffer_preamble(b, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size, device);
 }
 
 /**
