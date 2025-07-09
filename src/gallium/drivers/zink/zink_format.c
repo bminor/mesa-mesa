@@ -161,6 +161,8 @@ zink_format_get_emulated_alpha(enum pipe_format format)
 
       format = util_format_luminance_to_red(format);
    }
+   if (util_format_is_intensity(format))
+      return util_format_intensity_to_red(format);
 
    return emulate_red_alpha(format);
 }
