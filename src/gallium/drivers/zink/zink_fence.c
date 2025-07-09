@@ -406,9 +406,16 @@ fail:
 }
 #endif
 
+static struct pipe_fence_handle*
+zink_semaphore_create(struct pipe_screen *pscreen)
+{
+   return (struct pipe_fence_handle*)zink_semaphore_fence_create(pscreen, VK_SEMAPHORE_TYPE_BINARY);
+}
+
 void
 zink_screen_fence_init(struct pipe_screen *pscreen)
 {
+   pscreen->semaphore_create = zink_semaphore_create;
    pscreen->fence_reference = fence_reference;
    pscreen->fence_finish = fence_finish;
    pscreen->fence_get_fd = fence_get_fd;
