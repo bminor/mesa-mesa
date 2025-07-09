@@ -80,6 +80,29 @@ agxdecode_find_handle(struct agxdecode_ctx *ctx, unsigned handle)
 }
 
 static size_t
+_agxdecode_grab_mapped(struct agxdecode_ctx *ctx, uint64_t gpu_va, void **buf,
+                       int line, const char *filename)
+{
+   if (lib_config.read_gpu_mem)
+      unreachable("you'll have to figure it out.");
+
+   const struct agx_bo *mem =
+      agxdecode_find_mapped_gpu_mem_containing(ctx, gpu_va);
+
+   if (!mem) {
+      fprintf(stderr, "Access to unknown memory %" PRIx64 " in %s:%d\n", gpu_va,
+              filename, line);
+      fflush(agxdecode_dump_stream);
+      assert(0);
+   }
+
+   uint32_t offset = gpu_va - mem->va->addr;
+
+   *buf = mem->_map + offset;
+   return mem->size - offset;
+}
+
+static size_t
 __agxdecode_fetch_gpu_mem(struct agxdecode_ctx *ctx, const struct agx_bo *mem,
                           uint64_t gpu_va, size_t size, void *buf, int line,
                           const char *filename)
@@ -116,6 +139,9 @@ __agxdecode_fetch_gpu_mem(struct agxdecode_ctx *ctx, const struct agx_bo *mem,
 
 #define agxdecode_fetch_gpu_mem(ctx, gpu_va, size, buf)                        \
    __agxdecode_fetch_gpu_mem(ctx, NULL, gpu_va, size, buf, __LINE__, __FILE__)
+
+#define agxdecode_grab_mapped(ctx, gpu_va, buf)                                \
+   _agxdecode_grab_mapped(ctx, gpu_va, buf, __LINE__, __FILE__)
 
 #define agxdecode_fetch_gpu_array(ctx, gpu_va, buf)                            \
    agxdecode_fetch_gpu_mem(ctx, gpu_va, sizeof(buf), buf)
@@ -270,7 +296,6 @@ agxdecode_usc(struct agxdecode_ctx *ctx, const uint8_t *map,
 {
    enum agx_sampler_states *sampler_states = data;
    enum agx_usc_control type = map[0];
-   uint8_t buf[3072];
 
    bool extended_samplers =
       (sampler_states != NULL) &&
@@ -293,10 +318,11 @@ agxdecode_usc(struct agxdecode_ctx *ctx, const uint8_t *map,
       agx_unpack(agxdecode_dump_stream, map, USC_PRESHADER, ctrl);
       DUMP_UNPACKED(USC_PRESHADER, ctrl, "Preshader\n");
 
-      agx_disassemble(
-         buf, agxdecode_fetch_gpu_array(ctx, decode_usc(ctx, ctrl.code), buf),
-         agxdecode_dump_stream);
+      void *buf;
+      size_t size =
+         agxdecode_grab_mapped(ctx, decode_usc(ctx, ctrl.code), &buf);
 
+      agx_disassemble(buf, size, agxdecode_dump_stream);
       return STATE_DONE;
    }
 
@@ -305,9 +331,11 @@ agxdecode_usc(struct agxdecode_ctx *ctx, const uint8_t *map,
       DUMP_UNPACKED(USC_SHADER, ctrl, "Shader\n");
 
       agxdecode_log("\n");
-      agx_disassemble(
-         buf, agxdecode_fetch_gpu_array(ctx, decode_usc(ctx, ctrl.code), buf),
-         agxdecode_dump_stream);
+      void *buf;
+      size_t size =
+         agxdecode_grab_mapped(ctx, decode_usc(ctx, ctrl.code), &buf);
+
+      agx_disassemble(buf, size, agxdecode_dump_stream);
       agxdecode_log("\n");
 
       return AGX_USC_SHADER_LENGTH;
