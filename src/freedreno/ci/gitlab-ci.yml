@@ -112,8 +112,6 @@ a618-vk-full:
   timeout: 2h
   parallel: 3
   variables:
-    # ran into OOM with VK-GL-CTS 1.2.8.0 at 6
-    FDO_CI_CONCURRENT: 4
     DEQP_SUITE: freedreno-a618-vk-full
     DEQP_FRACTION: 1
 
@@ -154,6 +152,7 @@ a618-gl-full:
     - .collabora-freedreno-manual-rules
   timeout: 65m
   variables:
+    FDO_CI_CONCURRENT: 6  # More causes issues and slows the job down
     DEQP_FRACTION: 1
 
 # Run dEQP EGL window system tests separately with the window systems available.
@@ -193,6 +192,7 @@ a618-piglit:
     - !reference [.rusticl-rules, rules]
   variables:
     DEQP_SUITE: freedreno-a618-piglit
+    FDO_CI_CONCURRENT: 6  # More causes issues and isn't much faster anyway
     FLAKES_CHANNEL: "#freedreno-ci"
     HWCI_START_WESTON: 1
 

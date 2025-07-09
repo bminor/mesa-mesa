@@ -230,7 +230,7 @@
     BOOT_METHOD: depthcharge
     DEVICE_TYPE: sc7180-trogdor-kingoftown
     DTB: sc7180-trogdor-kingoftown
-#   FDO_CI_CONCURRENT: ?
+    FDO_CI_CONCURRENT: 8
     # Increase the hangcheck timer for our spilling tests which bump up against
     # the .5s default.
     FREEDRENO_HANGCHECK_MS: 2000
@@ -247,7 +247,7 @@
     BOOT_METHOD: depthcharge
     DEVICE_TYPE: sc7180-trogdor-lazor-limozeen
     DTB: sc7180-trogdor-lazor-limozeen-nots-r5
-#   FDO_CI_CONCURRENT: ?
+    FDO_CI_CONCURRENT: 8
     # Increase the hangcheck timer for our spilling tests which bump up against
     # the .5s default.
     FREEDRENO_HANGCHECK_MS: 2000
