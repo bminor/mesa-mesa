@@ -798,6 +798,11 @@ r600_finalize_nir_common(nir_shader *nir, enum amd_gfx_level gfx_level)
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
       NIR_PASS(_, nir, r600_gs_load_deref_io_to_indirect_per_vertex_input);
+      NIR_PASS(_,
+               nir,
+               nir_lower_indirect_derefs,
+               nir_var_shader_in,
+               R600_GS_VERTEX_INDIRECT_TOTAL);
    }
 
    NIR_PASS(_, nir, nir_lower_flrp, nir_lower_flrp_mask, false);
