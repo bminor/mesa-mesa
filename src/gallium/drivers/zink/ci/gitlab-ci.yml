@@ -155,21 +155,11 @@ zink-tu-a618:
     - .zink-test
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
   variables:
-    DEQP_FRACTION: 2
     DEQP_SUITE: zink-tu-a618
     FLAKES_CHANNEL: "#freedreno-ci"
     HWCI_START_WESTON: 1
     GPU_VERSION: zink-tu-a618
-  parallel: 2
-
-zink-tu-a618-full:
-  extends:
-    - zink-tu-a618
-    - .zink-turnip-collabora-manual-rules
-  variables:
-    DEQP_FRACTION: 1
-  parallel: null
-  timeout: 1h
+  parallel: 3
 
 zink-tu-a618-traces:
   extends:
