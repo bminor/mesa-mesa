@@ -5564,7 +5564,7 @@
         "description": "Revert \"pvr: Implement VK_EXT_memory_budget\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "97efa57531b826edf62b00fd4dc26d7568ff941b",
         "notes": null
