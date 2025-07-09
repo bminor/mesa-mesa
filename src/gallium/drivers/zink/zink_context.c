@@ -2925,9 +2925,6 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    bool has_msrtss = screen->info.have_EXT_multisampled_render_to_single_sampled;
    bool use_tc_info = !ctx->blitting && ctx->track_renderpasses;
    uint32_t msaa_expand_mask = 0;
-
-   /* TODO: if multiple fbfetch attachments or zsbuf fbfetch */
-   bool had_fbfetch_info = !!ctx->dynamic_fb.attachments[0].pNext;
    /* j/k this is super nonconformant */
    bool very_legal_and_conformant_msaa_opt = ctx->dynamic_fb.tc_info.has_resolve && ctx->dynamic_fb.tc_info.ended && (zink_debug & ZINK_DEBUG_MSAAOPT);
    ctx->dynamic_fb.attachments[0].pNext = NULL;
@@ -3081,14 +3078,6 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
    assert(!ctx->dynamic_fb.info.pDepthAttachment || ctx->gfx_pipeline_state.rendering_info.depthAttachmentFormat);
    assert(!ctx->dynamic_fb.info.pStencilAttachment || ctx->gfx_pipeline_state.rendering_info.stencilAttachmentFormat);
    bool rp_changed = ctx->gfx_pipeline_state.rp_state != rp_state;
-
-   if (screen->info.have_KHR_unified_image_layouts && screen->info.have_EXT_attachment_feedback_loop_layout) {
-      rp_changed |= had_fbfetch_info != !!ctx->fbfetch_outputs;
-      if (ctx->fbfetch_outputs) {
-         assert(ctx->fbfetch_outputs == BITFIELD_BIT(0));
-         ctx->dynamic_fb.attachments[0].pNext = &ctx->dynamic_fb.fbfetch_att;
-      }
-   }
 
    if (!rp_changed && ctx->in_rp)
       return 0;
@@ -3684,6 +3673,11 @@ unbind_fb_surface(struct zink_context *ctx, const struct pipe_surface *surf, uns
          if (ctx->gfx_pipeline_state.feedback_loop)
             ctx->gfx_pipeline_state.dirty = true;
          ctx->gfx_pipeline_state.feedback_loop = false;
+      }
+      if (zink_screen(ctx->base.screen)->info.have_KHR_unified_image_layouts && zink_screen(ctx->base.screen)->info.have_EXT_attachment_feedback_loop_layout) {
+         ctx->dynamic_fb.fbfetch_att[idx].feedbackLoopEnable = VK_FALSE;
+         if (idx == PIPE_MAX_COLOR_BUFS)
+            ctx->dynamic_fb.fbfetch_att[idx + 1].feedbackLoopEnable = VK_FALSE;
       }
    }
    res->fb_binds &= ~BITFIELD_BIT(idx);
@@ -5468,12 +5462,17 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
       att->imageLayout = general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
       att->resolveImageLayout = general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
       att->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      if (screen->info.have_KHR_unified_image_layouts && screen->info.have_EXT_attachment_feedback_loop_layout)
+         att->pNext = &ctx->dynamic_fb.fbfetch_att[i];
    }
-   ctx->dynamic_fb.fbfetch_att = (VkAttachmentFeedbackLoopInfoEXT){
-      VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT,
-      NULL,
-      VK_TRUE
-   };
+   for (unsigned i = 0; i < ARRAY_SIZE(ctx->dynamic_fb.fbfetch_att); i++) {
+      ctx->dynamic_fb.fbfetch_att[i] = (VkAttachmentFeedbackLoopInfoEXT){
+         VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT,
+         NULL,
+         VK_FALSE
+      };
+   }
+
    ctx->gfx_pipeline_state.rendering_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
    ctx->gfx_pipeline_state.rendering_info.pColorAttachmentFormats = ctx->gfx_pipeline_state.rendering_formats;
    ctx->gfx_pipeline_state.feedback_loop = screen->driver_workarounds.always_feedback_loop;
@@ -5749,7 +5748,11 @@ add_implicit_feedback_loop(struct zink_context *ctx, struct zink_resource *res)
    }
    ctx->rp_layout_changed = true;
    ctx->feedback_loops |= is_feedback;
-   if (!zink_screen(ctx->base.screen)->driver_workarounds.general_layout) {
+   if (zink_screen(ctx->base.screen)->info.have_KHR_unified_image_layouts && zink_screen(ctx->base.screen)->info.have_EXT_attachment_feedback_loop_layout) {
+      u_foreach_bit(idx, is_feedback) {
+         ctx->dynamic_fb.fbfetch_att[idx].feedbackLoopEnable = VK_TRUE;
+      }
+   } else {
       u_foreach_bit(idx, is_feedback) {
          if (zink_screen(ctx->base.screen)->info.have_EXT_attachment_feedback_loop_layout)
             ctx->dynamic_fb.attachments[idx].imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
