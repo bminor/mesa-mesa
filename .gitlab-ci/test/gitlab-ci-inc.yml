@@ -143,12 +143,7 @@
     PIGLIT_REPLAY_DEVICE_NAME: $GPU_VERSION
     PIGLIT_RESULTS: "${GPU_VERSION}-replay"
     PIGLIT_NO_WINDOW: 1
-    HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
-  script:
-    - section_start variables "Variables passed through:"
-    - filter_env_vars
-    - section_end variables
-    - install/piglit/piglit-traces.sh
+    HWCI_TEST_SCRIPT: "install/piglit/piglit-traces.sh"
 
 .deqp-test:
   script:
