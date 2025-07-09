@@ -919,8 +919,10 @@ dri_create_image(struct dri_screen *screen,
    if (pscreen->is_format_supported(pscreen, map->pipe_format, screen->target,
                                     0, 0, PIPE_BIND_RENDER_TARGET))
       tex_usage |= PIPE_BIND_RENDER_TARGET;
-   if (pscreen->is_format_supported(pscreen, map->pipe_format, screen->target,
-                                    0, 0, PIPE_BIND_SAMPLER_VIEW))
+   if (pscreen->is_format_supported(pscreen, map->pipe_format, screen->target, 0, 0,
+                                    PIPE_BIND_SAMPLER_VIEW) ||
+       pscreen->is_format_supported(pscreen, map->pipe_format, screen->target, 0, 0,
+                                    PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SAMPLER_VIEW_SUBOPTIMAL))
       tex_usage |= PIPE_BIND_SAMPLER_VIEW;
 
    if (!tex_usage)
