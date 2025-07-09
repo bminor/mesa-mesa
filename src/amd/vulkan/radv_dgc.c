@@ -908,10 +908,10 @@ dgc_emit_sqtt_end_api_marker(struct dgc_cmdbuf *cs, enum rgp_sqtt_marker_general
  * Command buffer
  */
 static void
-dgc_emit_indirect_buffer(nir_builder *b, nir_def *va, nir_def *ib_offset, nir_def *ib_cdw,
-                         const struct radv_device *device)
+dgc_emit_indirect_buffer(struct dgc_cmdbuf *cs, nir_def *va, nir_def *ib_offset, nir_def *ib_cdw)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_physical_device *pdev = radv_device_physical(cs->dev);
+   nir_builder *b = cs->b;
 
    nir_def *packet[] = {
       nir_imm_int(b, PKT3(PKT3_INDIRECT_BUFFER, 2, 0)),
@@ -924,13 +924,12 @@ dgc_emit_indirect_buffer(nir_builder *b, nir_def *va, nir_def *ib_offset, nir_de
 }
 
 static void
-dgc_emit_padding(nir_builder *b, nir_def *cmd_buf_offset, nir_def *size, const struct radv_device *device)
+dgc_emit_padding(struct dgc_cmdbuf *cs, nir_def *cmd_buf_offset, nir_def *size)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    const unsigned MAX_PACKET_WORDS = 0x3FFC;
+   nir_builder *b = cs->b;
 
-   nir_def *va = nir_pack_64_2x32_split(b, load_param32(b, upload_addr), nir_imm_int(b, pdev->info.address32_hi));
-   va = nir_iadd(b, va, nir_u2u64(b, cmd_buf_offset));
+   nir_def *va = nir_iadd(b, cs->va, nir_u2u64(b, cmd_buf_offset));
 
    nir_variable *offset = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "offset");
    nir_store_var(b, offset, nir_imm_int(b, 0), 0x1);
@@ -975,11 +974,11 @@ dgc_cmd_buf_size(nir_builder *b, nir_def *sequence_count, bool is_ace, const str
 }
 
 static void
-build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_size, nir_def *cmd_buf_stride,
-                      nir_def *cmd_buf_trailer_offset, nir_def *sequence_count, unsigned trailer_size, bool is_ace,
-                      const struct radv_device *device)
+build_dgc_buffer_tail(struct dgc_cmdbuf *cs, nir_def *cmd_buf_offset, nir_def *cmd_buf_size, nir_def *cmd_buf_stride,
+                      nir_def *cmd_buf_trailer_offset, nir_def *sequence_count, unsigned trailer_size, bool is_ace)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
+   nir_builder *b = cs->b;
+
    nir_def *is_compute_queue = nir_ior_imm(b, nir_ieq_imm(b, load_param8(b, queue_family), RADV_QUEUE_COMPUTE), is_ace);
 
    nir_def *global_id = radv_meta_nir_get_global_ids(b, 1);
@@ -994,15 +993,13 @@ build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_
       cmd_buf_size =
          nir_bcsel(b, is_compute_queue, nir_iadd_imm(b, cmd_buf_size, -PKT3_INDIRECT_BUFFER_BYTES), cmd_buf_size);
 
-      nir_def *va = nir_pack_64_2x32_split(b, load_param32(b, upload_addr), nir_imm_int(b, pdev->info.address32_hi));
-
-      dgc_emit_padding(b, nir_iadd(b, cmd_buf_offset, cmd_buf_tail_start),
-                       nir_isub(b, cmd_buf_size, cmd_buf_tail_start), device);
+      dgc_emit_padding(cs, nir_iadd(b, cmd_buf_offset, cmd_buf_tail_start),
+                       nir_isub(b, cmd_buf_size, cmd_buf_tail_start));
 
       nir_push_if(b, is_compute_queue);
       {
-         dgc_emit_indirect_buffer(b, nir_iadd(b, va, nir_u2u64(b, nir_iadd(b, cmd_buf_size, cmd_buf_offset))),
-                                  cmd_buf_trailer_offset, nir_imm_int(b, trailer_size), device);
+         dgc_emit_indirect_buffer(cs, nir_iadd(b, cs->va, nir_u2u64(b, nir_iadd(b, cmd_buf_size, cmd_buf_offset))),
+                                  cmd_buf_trailer_offset, nir_imm_int(b, trailer_size));
       }
       nir_pop_if(b, NULL);
    }
@@ -1010,47 +1007,51 @@ build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_
 }
 
 static void
-build_dgc_buffer_tail_main(nir_builder *b, nir_def *sequence_count, const struct radv_device *device)
+build_dgc_buffer_tail_main(struct dgc_cmdbuf *cs, nir_def *sequence_count)
 {
+   const struct radv_device *device = cs->dev;
+   nir_builder *b = cs->b;
+
    nir_def *cmd_buf_offset = load_param32(b, cmd_buf_main_offset);
    nir_def *cmd_buf_size = dgc_cmd_buf_size(b, sequence_count, false, device);
    nir_def *cmd_buf_stride = load_param32(b, cmd_buf_stride);
    nir_def *cmd_buf_trailer_offset = nir_imm_int(b, 0);
    unsigned trailer_size = radv_dgc_trailer_cmdbuf_size(device, AMD_IP_GFX) / 4;
 
-   build_dgc_buffer_tail(b, cmd_buf_offset, cmd_buf_size, cmd_buf_stride, cmd_buf_trailer_offset, sequence_count,
-                         trailer_size, false, device);
+   build_dgc_buffer_tail(cs, cmd_buf_offset, cmd_buf_size, cmd_buf_stride, cmd_buf_trailer_offset, sequence_count,
+                         trailer_size, false);
 }
 
 static void
-build_dgc_buffer_tail_ace(nir_builder *b, nir_def *sequence_count, const struct radv_device *device)
+build_dgc_buffer_tail_ace(struct dgc_cmdbuf *cs, nir_def *sequence_count)
 {
+   const struct radv_device *device = cs->dev;
+   nir_builder *b = cs->b;
+
    nir_def *cmd_buf_offset = load_param32(b, ace_cmd_buf_main_offset);
    nir_def *cmd_buf_size = dgc_cmd_buf_size(b, sequence_count, true, device);
    nir_def *cmd_buf_stride = load_param32(b, ace_cmd_buf_stride);
    nir_def *cmd_buf_trailer_offset = load_param32(b, ace_cmd_buf_trailer_offset);
    unsigned trailer_size = radv_dgc_trailer_cmdbuf_size(device, AMD_IP_COMPUTE) / 4;
 
-   build_dgc_buffer_tail(b, cmd_buf_offset, cmd_buf_size, cmd_buf_stride, cmd_buf_trailer_offset, sequence_count,
-                         trailer_size, true, device);
+   build_dgc_buffer_tail(cs, cmd_buf_offset, cmd_buf_size, cmd_buf_stride, cmd_buf_trailer_offset, sequence_count,
+                         trailer_size, true);
 }
 
 static void
-build_dgc_buffer_trailer(nir_builder *b, nir_def *cmd_buf_offset, unsigned trailer_size,
-                         const struct radv_device *device)
+build_dgc_buffer_trailer(struct dgc_cmdbuf *cs, nir_def *cmd_buf_offset, unsigned trailer_size)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
+   nir_builder *b = cs->b;
 
    nir_def *global_id = radv_meta_nir_get_global_ids(b, 1);
 
    nir_push_if(b, nir_ieq_imm(b, global_id, 0));
    {
-      nir_def *va = nir_pack_64_2x32_split(b, load_param32(b, upload_addr), nir_imm_int(b, pdev->info.address32_hi));
-      va = nir_iadd(b, va, nir_u2u64(b, cmd_buf_offset));
+      nir_def *va = nir_iadd(b, cs->va, nir_u2u64(b, cmd_buf_offset));
 
       const uint32_t pad_size = trailer_size - PKT3_INDIRECT_BUFFER_BYTES;
 
-      dgc_emit_padding(b, cmd_buf_offset, nir_imm_int(b, pad_size), device);
+      dgc_emit_padding(cs, cmd_buf_offset, nir_imm_int(b, pad_size));
 
       nir_def *nop_packets[] = {
          nir_imm_int(b, PKT3_NOP_PAD),
@@ -1066,68 +1067,79 @@ build_dgc_buffer_trailer(nir_builder *b, nir_def *cmd_buf_offset, unsigned trail
 }
 
 static void
-build_dgc_buffer_trailer_main(nir_builder *b, const struct radv_device *device)
+build_dgc_buffer_trailer_main(struct dgc_cmdbuf *cs)
 {
+   const struct radv_device *device = cs->dev;
+   nir_builder *b = cs->b;
+
    nir_def *cmd_buf_offset = nir_imm_int(b, 0);
    const unsigned trailer_size = radv_dgc_trailer_cmdbuf_size(device, AMD_IP_GFX);
 
-   build_dgc_buffer_trailer(b, cmd_buf_offset, trailer_size, device);
+   build_dgc_buffer_trailer(cs, cmd_buf_offset, trailer_size);
 }
 
 static void
-build_dgc_buffer_trailer_ace(nir_builder *b, const struct radv_device *device)
+build_dgc_buffer_trailer_ace(struct dgc_cmdbuf *cs)
 {
+   const struct radv_device *device = cs->dev;
+   nir_builder *b = cs->b;
+
    nir_def *cmd_buf_offset = load_param32(b, ace_cmd_buf_trailer_offset);
    const unsigned trailer_size = radv_dgc_trailer_cmdbuf_size(device, AMD_IP_COMPUTE);
 
-   build_dgc_buffer_trailer(b, cmd_buf_offset, trailer_size, device);
+   build_dgc_buffer_trailer(cs, cmd_buf_offset, trailer_size);
 }
 
 static void
-build_dgc_buffer_preamble(nir_builder *b, nir_def *cmd_buf_preamble_offset, nir_def *cmd_buf_size,
-                          nir_def *cmd_buf_main_offset, unsigned preamble_size, const struct radv_device *device)
+build_dgc_buffer_preamble(struct dgc_cmdbuf *cs, nir_def *cmd_buf_preamble_offset, nir_def *cmd_buf_size,
+                          nir_def *cmd_buf_main_offset, unsigned preamble_size)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
+   nir_builder *b = cs->b;
 
    nir_def *global_id = radv_meta_nir_get_global_ids(b, 1);
    nir_def *use_preamble = nir_ine_imm(b, load_param8(b, use_preamble), 0);
 
    nir_push_if(b, nir_iand(b, nir_ieq_imm(b, global_id, 0), use_preamble));
    {
-      nir_def *va = nir_pack_64_2x32_split(b, load_param32(b, upload_addr), nir_imm_int(b, pdev->info.address32_hi));
-      va = nir_iadd(b, va, nir_u2u64(b, cmd_buf_preamble_offset));
+      nir_def *va = nir_iadd(b, cs->va, nir_u2u64(b, cmd_buf_preamble_offset));
 
       nir_def *words = nir_ushr_imm(b, cmd_buf_size, 2);
 
       const uint32_t pad_size = preamble_size - PKT3_INDIRECT_BUFFER_BYTES;
 
-      dgc_emit_padding(b, cmd_buf_preamble_offset, nir_imm_int(b, pad_size), device);
+      dgc_emit_padding(cs, cmd_buf_preamble_offset, nir_imm_int(b, pad_size));
 
-      dgc_emit_indirect_buffer(b, nir_iadd_imm(b, va, pad_size), cmd_buf_main_offset, words, device);
+      dgc_emit_indirect_buffer(cs, nir_iadd_imm(b, va, pad_size), cmd_buf_main_offset, words);
    }
    nir_pop_if(b, NULL);
 }
 
 static void
-build_dgc_buffer_preamble_main(nir_builder *b, nir_def *sequence_count, const struct radv_device *device)
+build_dgc_buffer_preamble_main(struct dgc_cmdbuf *cs, nir_def *sequence_count)
 {
+   const struct radv_device *device = cs->dev;
+   nir_builder *b = cs->b;
+
    nir_def *cmd_buf_preamble_offset = load_param32(b, cmd_buf_preamble_offset);
    nir_def *cmd_buf_main_offset = load_param32(b, cmd_buf_main_offset);
    nir_def *cmd_buf_size = dgc_cmd_buf_size(b, sequence_count, false, device);
    unsigned preamble_size = radv_dgc_preamble_cmdbuf_size(device, AMD_IP_GFX);
 
-   build_dgc_buffer_preamble(b, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size, device);
+   build_dgc_buffer_preamble(cs, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size);
 }
 
 static void
-build_dgc_buffer_preamble_ace(nir_builder *b, nir_def *sequence_count, const struct radv_device *device)
+build_dgc_buffer_preamble_ace(struct dgc_cmdbuf *cs, nir_def *sequence_count)
 {
+   const struct radv_device *device = cs->dev;
+   nir_builder *b = cs->b;
+
    nir_def *cmd_buf_preamble_offset = load_param32(b, ace_cmd_buf_preamble_offset);
    nir_def *cmd_buf_main_offset = load_param32(b, ace_cmd_buf_main_offset);
    nir_def *cmd_buf_size = dgc_cmd_buf_size(b, sequence_count, true, device);
    unsigned preamble_size = radv_dgc_preamble_cmdbuf_size(device, AMD_IP_COMPUTE);
 
-   build_dgc_buffer_preamble(b, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size, device);
+   build_dgc_buffer_preamble(cs, cmd_buf_preamble_offset, cmd_buf_size, cmd_buf_main_offset, preamble_size);
 }
 
 /**
@@ -2679,7 +2691,7 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
 
    sequence_count = nir_load_var(&b, count_var);
 
-   build_dgc_buffer_trailer_main(&b, dev);
+   build_dgc_buffer_trailer_main(&cmd_buf);
 
    nir_push_if(&b, nir_ult(&b, sequence_id, sequence_count));
    {
@@ -2687,13 +2699,13 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
    }
    nir_pop_if(&b, NULL);
 
-   build_dgc_buffer_tail_main(&b, sequence_count, dev);
-   build_dgc_buffer_preamble_main(&b, sequence_count, dev);
+   build_dgc_buffer_tail_main(&cmd_buf, sequence_count);
+   build_dgc_buffer_preamble_main(&cmd_buf, sequence_count);
 
    /* Prepare the ACE command stream */
    nir_push_if(&b, nir_ieq_imm(&b, load_param8(&b, has_task_shader), 1));
    {
-      build_dgc_buffer_trailer_ace(&b, dev);
+      build_dgc_buffer_trailer_ace(&cmd_buf);
 
       nir_push_if(&b, nir_ult(&b, sequence_id, sequence_count));
       {
@@ -2701,8 +2713,8 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
       }
       nir_pop_if(&b, NULL);
 
-      build_dgc_buffer_tail_ace(&b, sequence_count, dev);
-      build_dgc_buffer_preamble_ace(&b, sequence_count, dev);
+      build_dgc_buffer_tail_ace(&cmd_buf, sequence_count);
+      build_dgc_buffer_preamble_ace(&cmd_buf, sequence_count);
    }
    nir_pop_if(&b, NULL);
 
