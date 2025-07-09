@@ -865,7 +865,10 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       break;
    }
    default:
-      unreachable("bad VkPhysicalDeviceImageFormatInfo2");
+      /* VK_KHR_maintenance5: Physical-device-level functions can now be called
+       * with any value in the valid range for a type beyond the defined
+       * enumerants [...] */
+      goto unsupported;
    }
 
    /* For the purposes of these checks, we don't care about all the extra
@@ -892,8 +895,6 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       goto unsupported;
 
    switch (info->type) {
-   default:
-      unreachable("bad vkimage type");
    case VK_IMAGE_TYPE_1D:
       maxExtent.width = 1 << 16;
       maxExtent.height = 1;
@@ -911,6 +912,11 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       maxMipLevels = util_logbase2(maxExtent.width) + 1;
       maxArraySize = 1;
       break;
+   default:
+      /* VK_KHR_maintenance5: Physical-device-level functions can now be called
+       * with any value in the valid range for a type beyond the defined
+       * enumerants [...] */
+      goto unsupported;
    }
 
    if (ycbcr_info)
