@@ -923,6 +923,38 @@ dgc_emit_indirect_buffer(nir_builder *b, nir_def *va, nir_def *ib_offset, nir_de
    nir_build_store_global(b, nir_vec(b, packet, 4), va, .access = ACCESS_NON_READABLE);
 }
 
+static void
+dgc_emit_padding(nir_builder *b, nir_def *cmd_buf_offset, nir_def *size, const struct radv_device *device)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const unsigned MAX_PACKET_WORDS = 0x3FFC;
+
+   nir_def *va = nir_pack_64_2x32_split(b, load_param32(b, upload_addr), nir_imm_int(b, pdev->info.address32_hi));
+   va = nir_iadd(b, va, nir_u2u64(b, cmd_buf_offset));
+
+   nir_variable *offset = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "offset");
+   nir_store_var(b, offset, nir_imm_int(b, 0), 0x1);
+
+   nir_push_loop(b);
+   {
+      nir_def *curr_offset = nir_load_var(b, offset);
+
+      nir_break_if(b, nir_ieq(b, curr_offset, size));
+
+      nir_def *packet_size = nir_isub(b, size, curr_offset);
+      packet_size = nir_umin(b, size, nir_imm_int(b, MAX_PACKET_WORDS * 4));
+
+      nir_def *len = nir_ushr_imm(b, packet_size, 2);
+      len = nir_iadd_imm(b, len, -2);
+      nir_def *packet = nir_pkt3(b, PKT3_NOP, len);
+
+      nir_build_store_global(b, packet, nir_iadd(b, va, nir_u2u64(b, curr_offset)), .access = ACCESS_NON_READABLE);
+
+      nir_store_var(b, offset, nir_iadd(b, curr_offset, packet_size), 0x1);
+   }
+   nir_pop_loop(b, NULL);
+}
+
 static nir_def *
 dgc_cmd_buf_size(nir_builder *b, nir_def *sequence_count, bool is_ace, const struct radv_device *device)
 {
@@ -956,9 +988,6 @@ build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_
    {
       nir_def *cmd_buf_tail_start = nir_imul(b, cmd_buf_stride, sequence_count);
 
-      nir_variable *offset = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "offset");
-      nir_store_var(b, offset, cmd_buf_tail_start, 0x1);
-
       /* On compute queue, the DGC command buffer is chained by patching the
        * trailer but this isn't needed on graphics because it's using IB2.
        */
@@ -966,33 +995,13 @@ build_dgc_buffer_tail(nir_builder *b, nir_def *cmd_buf_offset, nir_def *cmd_buf_
          nir_bcsel(b, is_compute_queue, nir_iadd_imm(b, cmd_buf_size, -PKT3_INDIRECT_BUFFER_BYTES), cmd_buf_size);
 
       nir_def *va = nir_pack_64_2x32_split(b, load_param32(b, upload_addr), nir_imm_int(b, pdev->info.address32_hi));
-      nir_push_loop(b);
-      {
-         nir_def *curr_offset = nir_load_var(b, offset);
-         const unsigned MAX_PACKET_WORDS = 0x3FFC;
 
-         nir_break_if(b, nir_ieq(b, curr_offset, cmd_buf_size));
-
-         nir_def *packet, *packet_size;
-
-         packet_size = nir_isub(b, cmd_buf_size, curr_offset);
-         packet_size = nir_umin(b, packet_size, nir_imm_int(b, MAX_PACKET_WORDS * 4));
-
-         nir_def *len = nir_ushr_imm(b, packet_size, 2);
-         len = nir_iadd_imm(b, len, -2);
-         packet = nir_pkt3(b, PKT3_NOP, len);
-
-         nir_build_store_global(b, packet, nir_iadd(b, va, nir_u2u64(b, nir_iadd(b, curr_offset, cmd_buf_offset))),
-                                .access = ACCESS_NON_READABLE);
-
-         nir_store_var(b, offset, nir_iadd(b, curr_offset, packet_size), 0x1);
-      }
-      nir_pop_loop(b, NULL);
+      dgc_emit_padding(b, nir_iadd(b, cmd_buf_offset, cmd_buf_tail_start),
+                       nir_isub(b, cmd_buf_size, cmd_buf_tail_start), device);
 
       nir_push_if(b, is_compute_queue);
       {
-         dgc_emit_indirect_buffer(b,
-                                  nir_iadd(b, va, nir_u2u64(b, nir_iadd(b, nir_load_var(b, offset), cmd_buf_offset))),
+         dgc_emit_indirect_buffer(b, nir_iadd(b, va, nir_u2u64(b, nir_iadd(b, cmd_buf_size, cmd_buf_offset))),
                                   cmd_buf_trailer_offset, nir_imm_int(b, trailer_size), device);
       }
       nir_pop_if(b, NULL);
@@ -1040,12 +1049,8 @@ build_dgc_buffer_trailer(nir_builder *b, nir_def *cmd_buf_offset, unsigned trail
       va = nir_iadd(b, va, nir_u2u64(b, cmd_buf_offset));
 
       const uint32_t pad_size = trailer_size - PKT3_INDIRECT_BUFFER_BYTES;
-      const uint32_t pad_size_dw = pad_size >> 2;
 
-      nir_def *len = nir_imm_int(b, pad_size_dw - 2);
-      nir_def *packet = nir_pkt3(b, PKT3_NOP, len);
-
-      nir_build_store_global(b, packet, va, .access = ACCESS_NON_READABLE);
+      dgc_emit_padding(b, cmd_buf_offset, nir_imm_int(b, pad_size), device);
 
       nir_def *nop_packets[] = {
          nir_imm_int(b, PKT3_NOP_PAD),
@@ -1096,12 +1101,8 @@ build_dgc_buffer_preamble(nir_builder *b, nir_def *cmd_buf_preamble_offset, nir_
       nir_def *words = nir_ushr_imm(b, cmd_buf_size, 2);
 
       const uint32_t pad_size = preamble_size - PKT3_INDIRECT_BUFFER_BYTES;
-      const uint32_t pad_size_dw = pad_size >> 2;
 
-      nir_def *len = nir_imm_int(b, pad_size_dw - 2);
-      nir_def *packet = nir_pkt3(b, PKT3_NOP, len);
-
-      nir_build_store_global(b, packet, va, .access = ACCESS_NON_READABLE);
+      dgc_emit_padding(b, cmd_buf_preamble_offset, nir_imm_int(b, pad_size), device);
 
       dgc_emit_indirect_buffer(b, nir_iadd_imm(b, va, pad_size), cmd_buf_main_offset, words, device);
    }
