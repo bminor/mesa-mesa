@@ -964,7 +964,7 @@
         "description": "anv/android: refactor anb resolve to fix align assertion",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "43cb986d9e7e33b0baf37b44a90c9edd1b9fe2b4",
         "notes": null
