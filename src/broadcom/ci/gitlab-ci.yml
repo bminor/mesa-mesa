@@ -37,7 +37,7 @@ vc4-rpi3-gl-piglit-full:arm64:
   variables:
     DEQP_SUITE: broadcom-rpi3-piglit-full
 
-.ci-tron-vc4-rpi3-gl-piglit-full:arm64:
+ci-tron-vc4-rpi3-gl-piglit-full:arm64:
   extends:
     - .ci-tron-vc4-rpi3-gl:arm64
     - .vc4-manual-rules
@@ -550,7 +550,7 @@ rpi4-skqp:arm64:
     HWCI_START_WESTON: 1
     FLAKES_CHANNEL: "#videocore-ci"
 
-.ci-tron-rpi4-skqp:arm64:
+ci-tron-rpi4-skqp:arm64:
   extends:
     - .ci-tron-arm64-test-gl
     - .ci-tron-broadcom-rpi4:arm64
@@ -575,7 +575,7 @@ rpi5-skqp:arm64:
     HWCI_START_WESTON: 1
     FLAKES_CHANNEL: "#videocore-ci"
 
-.ci-tron-rpi5-skqp:arm64:
+ci-tron-rpi5-skqp:arm64:
   extends:
     - .ci-tron-arm64-test-gl
     - .ci-tron-broadcom-rpi5:arm64
