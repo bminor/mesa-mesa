@@ -676,6 +676,7 @@ static const uint8_t av1_buffer_size[ANV_VID_MEM_AV1_MAX][4] = {
    { 9 ,   17  ,   11  ,    22 }, /* lrTileColYBuf, */
    { 5 ,   9   ,   6   ,    12 }, /* lrTileColUBuf, */
    { 5 ,   9   ,   6   ,    12 }, /* lrTileColVBuf, */
+   { 4,    8   ,   5   ,    10 }, /* lrTileColAlignBuffer, */
 };
 
 static const uint8_t av1_buffer_size_ext[ANV_VID_MEM_AV1_MAX][4] = {
@@ -710,6 +711,7 @@ static const uint8_t av1_buffer_size_ext[ANV_VID_MEM_AV1_MAX][4] = {
    { 2 ,    2    ,    2    ,    2 },  /* lrTileColYBuf, */
    { 1 ,    1    ,    1    ,    1 },  /* lrTileColUBuf, */
    { 1 ,    1    ,    1    ,    1 },  /* lrTileColVBuf, */
+   { 1,     1    ,    1    ,    1 },  /* lrTileColAlignBuffer, */
 };
 
 const uint32_t av1_mi_size_log2         = 2;
@@ -810,6 +812,7 @@ get_av1_video_session_mem_reqs(struct anv_video_session *vid,
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_Y:
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_U:
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_V:
+      case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_ALIGNMENT_RW:
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_META_TILE_COLUMN:
          buffer_size = height_in_sb * av1_buffer_size[mem][buf_size_idx] +
             av1_buffer_size_ext[mem][buf_size_idx];
