@@ -94,12 +94,6 @@ struct radv_meta_state {
       struct radix_sort_vk *radix_sort;
       struct vk_acceleration_structure_build_ops build_ops;
       struct vk_acceleration_structure_build_args build_args;
-
-      struct {
-         VkBuffer buffer;
-         VkDeviceMemory memory;
-         VkAccelerationStructureKHR accel_struct;
-      } null;
    } accel_struct_build;
 
    struct vk_texcompress_etc2_state etc_decode;

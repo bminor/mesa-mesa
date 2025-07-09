@@ -1530,9 +1530,25 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
    nir_store_var(b, trav_vars.hit, nir_imm_false(b), 1);
 
    nir_def *accel_struct = nir_load_var(b, vars->accel_struct);
-   nir_def *bvh_offset = nir_build_load_global(
-      b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
-      .access = ACCESS_NON_WRITEABLE);
+
+   nir_def *zero = nir_imm_int(b, 0);
+   nir_def *bvh_offset;
+   nir_push_if(b, nir_ine_imm(b, accel_struct, 0));
+   {
+      bvh_offset = nir_build_load_global(
+         b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
+         .access = ACCESS_NON_WRITEABLE);
+      nir_store_var(b, trav_vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
+   }
+   nir_push_else(b, NULL);
+   {
+      nir_store_var(b, trav_vars.current_node,
+                    nir_imm_int(b, radv_use_bvh_stack_rtn(pdev) ? RADV_BVH_STACK_TERMINAL_NODE : RADV_BVH_INVALID_NODE),
+                    0x1);
+   }
+   nir_pop_if(b, NULL);
+   bvh_offset = nir_if_phi(b, bvh_offset, zero);
+
    nir_def *root_bvh_base = nir_iadd(b, accel_struct, nir_u2u64(b, bvh_offset));
    root_bvh_base = build_addr_to_node(device, b, root_bvh_base, cull_mask_and_flags);
 
@@ -1559,7 +1575,6 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
 
    nir_store_var(b, trav_vars.stack, stack_idx, 1);
    nir_store_var(b, trav_vars.stack_low_watermark, nir_load_var(b, trav_vars.stack), 1);
-   nir_store_var(b, trav_vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
    nir_store_var(b, trav_vars.previous_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
    nir_store_var(b, trav_vars.instance_top_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
    nir_store_var(b, trav_vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_NO_INSTANCE_ROOT), 0x1);

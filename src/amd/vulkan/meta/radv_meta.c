@@ -326,12 +326,6 @@ radv_device_init_meta(struct radv_device *device)
          return result;
    }
 
-   if (device->vk.enabled_features.nullDescriptor) {
-      result = radv_device_init_null_accel_struct(device);
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
    return VK_SUCCESS;
 }
 

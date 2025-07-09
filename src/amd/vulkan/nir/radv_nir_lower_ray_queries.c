@@ -278,9 +278,19 @@ lower_rq_initialize(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query
    isec_store(b, closest, instance_addr, accel_struct);
    isec_store(b, candidate, instance_addr, accel_struct);
 
-   nir_def *bvh_offset = nir_build_load_global(
-      b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
-      .access = ACCESS_NON_WRITEABLE);
+   nir_def *accel_struct_non_null = nir_ine_imm(b, accel_struct, 0);
+
+   nir_def *zero = nir_imm_int(b, 0);
+   nir_def *bvh_offset = NULL;
+   nir_push_if(b, accel_struct_non_null);
+   {
+      bvh_offset = nir_build_load_global(
+         b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
+         .access = ACCESS_NON_WRITEABLE);
+   }
+   nir_pop_if(b, NULL);
+   bvh_offset = nir_if_phi(b, bvh_offset, zero);
+
    nir_def *bvh_base = nir_iadd(b, accel_struct, nir_u2u64(b, bvh_offset));
    bvh_base = build_addr_to_node(device, b, bvh_base, instr->src[2].ssa);
 
@@ -312,7 +322,7 @@ lower_rq_initialize(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query
 
    rq_store(b, rq, trav_top_stack, nir_imm_int(b, -1));
 
-   rq_store(b, rq, incomplete, nir_imm_bool(b, !(instance->debug_flags & RADV_DEBUG_NO_RT)));
+   rq_store(b, rq, incomplete, nir_iand_imm(b, accel_struct_non_null, !(instance->debug_flags & RADV_DEBUG_NO_RT)));
 
    vars->initialize = instr;
 }

@@ -274,11 +274,6 @@ radv_write_sampler_descriptor(unsigned *dst, VkSampler _sampler)
 static ALWAYS_INLINE void
 radv_write_accel_struct_descriptor(struct radv_device *device, void *ptr, VkDeviceAddress va)
 {
-   if (!va) {
-      VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, device->meta_state.accel_struct_build.null.accel_struct);
-      va = vk_acceleration_structure_get_va(accel_struct);
-   }
-
    uint64_t desc[2] = {va, 0};
 
    assert(sizeof(desc) == RADV_ACCEL_STRUCT_DESC_SIZE);
