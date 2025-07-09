@@ -600,6 +600,7 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
    case nir_intrinsic_load_per_vertex_output:
    case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_load_per_primitive_output:
+   case nir_intrinsic_load_pixel_local:
       if (shader->info.stage == MESA_SHADER_TESS_CTRL &&
           instr->intrinsic == nir_intrinsic_load_output &&
           !is_patch_special) {
@@ -628,6 +629,10 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
          shader->info.mesh.ms_cross_invocation_output_access |= slot_mask;
 
       if (shader->info.stage == MESA_SHADER_FRAGMENT &&
+          instr->intrinsic == nir_intrinsic_load_pixel_local)
+         shader->info.fs.accesses_pixel_local_storage = true;
+
+      if (shader->info.stage == MESA_SHADER_FRAGMENT &&
           nir_intrinsic_io_semantics(instr).fb_fetch_output)
          shader->info.fs.uses_fbfetch_output = true;
       break;
@@ -636,6 +641,7 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
    case nir_intrinsic_store_per_vertex_output:
    case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output:
+   case nir_intrinsic_store_pixel_local:
       if (shader->info.stage == MESA_SHADER_TESS_CTRL &&
           instr->intrinsic == nir_intrinsic_store_output &&
           !is_patch_special) {
@@ -675,6 +681,10 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
       if (shader->info.stage == MESA_SHADER_FRAGMENT &&
           nir_intrinsic_io_semantics(instr).dual_source_blend_index)
          shader->info.fs.color_is_dual_source = true;
+
+      if (shader->info.stage == MESA_SHADER_FRAGMENT &&
+          instr->intrinsic == nir_intrinsic_store_pixel_local)
+         shader->info.fs.accesses_pixel_local_storage = true;
       break;
 
    case nir_intrinsic_load_color0:

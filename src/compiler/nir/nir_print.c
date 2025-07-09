@@ -1484,6 +1484,11 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
             mode = nir_var_shader_out;
             break;
 
+         case nir_intrinsic_load_pixel_local:
+         case nir_intrinsic_store_pixel_local:
+            mode = nir_var_mem_pixel_local_inout;
+            break;
+
          default:
             break;
          }

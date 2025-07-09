@@ -386,6 +386,11 @@ emit_load(struct lower_io_state *state,
    case nir_var_uniform:
       op = nir_intrinsic_load_uniform;
       break;
+   case nir_var_mem_pixel_local_in:
+   case nir_var_mem_pixel_local_inout:
+      assert(!array_index);
+      op = nir_intrinsic_load_pixel_local;
+      break;
    default:
       UNREACHABLE("Unknown variable mode");
    }
@@ -415,6 +420,11 @@ emit_load(struct lower_io_state *state,
       nir_intrinsic_set_access(load, var->data.access);
 
    nir_intrinsic_set_dest_type(load, dest_type);
+
+   if (op == nir_intrinsic_load_pixel_local) {
+      assert(var && var->data.image.format != PIPE_FORMAT_NONE);
+      nir_intrinsic_set_format(load, var->data.image.format);
+   }
 
    if (load->intrinsic != nir_intrinsic_load_uniform) {
       int location = var->data.location;
@@ -535,9 +545,11 @@ emit_store(struct lower_io_state *state, nir_def *data,
 {
    nir_builder *b = &state->builder;
 
-   assert(var->data.mode == nir_var_shader_out);
    nir_intrinsic_op op;
-   if (!array_index)
+   if (var->data.mode == nir_var_mem_pixel_local_out ||
+       var->data.mode == nir_var_mem_pixel_local_inout)
+      op = nir_intrinsic_store_pixel_local;
+   else if (!array_index)
       op = nir_intrinsic_store_output;
    else if (var->data.per_view)
       op = nir_intrinsic_store_per_view_output;
@@ -602,6 +614,10 @@ emit_store(struct lower_io_state *state, nir_def *data,
    semantics.per_view = var->data.per_view;
 
    nir_intrinsic_set_io_semantics(store, semantics);
+   if (op == nir_intrinsic_store_pixel_local) {
+      assert(var && var->data.image.format != PIPE_FORMAT_NONE);
+      nir_intrinsic_set_format(store, var->data.image.format);
+   }
 
    nir_builder_instr_insert(b, &store->instr);
 }
@@ -904,7 +920,8 @@ nir_lower_io_impl(nir_function_impl *impl,
                   _mesa_hash_string, _mesa_key_string_equal);
 
    ASSERTED nir_variable_mode supported_modes =
-      nir_var_shader_in | nir_var_shader_out | nir_var_uniform;
+      nir_var_shader_in | nir_var_shader_out | nir_var_uniform |
+      nir_var_any_pixel_local;
    assert(!(modes & ~supported_modes));
 
    nir_foreach_block(block, impl) {
@@ -951,6 +968,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_input:
    case nir_intrinsic_load_per_primitive_input:
    case nir_intrinsic_load_output:
+   case nir_intrinsic_load_pixel_local:
    case nir_intrinsic_load_shared:
    case nir_intrinsic_load_task_payload:
    case nir_intrinsic_load_uniform:
@@ -991,6 +1009,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_interpolated_input:
    case nir_intrinsic_load_global_amd:
    case nir_intrinsic_store_output:
+   case nir_intrinsic_store_pixel_local:
    case nir_intrinsic_store_shared:
    case nir_intrinsic_store_task_payload:
    case nir_intrinsic_store_global:
