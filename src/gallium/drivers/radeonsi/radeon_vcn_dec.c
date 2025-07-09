@@ -76,10 +76,16 @@ static rvcn_dec_message_avc_t get_h264_msg(struct radeon_decoder *dec,
    result.level = dec->base.level;
 
    result.sps_info_flags = 0;
-   result.sps_info_flags |= pic->pps->sps->direct_8x8_inference_flag << 0;
-   result.sps_info_flags |= pic->pps->sps->mb_adaptive_frame_field_flag << 1;
-   result.sps_info_flags |= pic->pps->sps->frame_mbs_only_flag << 2;
-   result.sps_info_flags |= pic->pps->sps->delta_pic_order_always_zero_flag << 3;
+   result.sps_info_flags |= pic->pps->sps->direct_8x8_inference_flag
+                            << RDECODE_SPS_INFO_H264_DIRECT_8X8_INFERENCE_FLAG_SHIFT;
+   result.sps_info_flags |= pic->pps->sps->mb_adaptive_frame_field_flag
+                            << RDECODE_SPS_INFO_H264_MB_ADAPTIVE_FRAME_FIELD_FLAG_SHIFT;
+   result.sps_info_flags |= pic->pps->sps->frame_mbs_only_flag
+                            << RDECODE_SPS_INFO_H264_FRAME_MBS_ONLY_FLAG_SHIFT;
+   result.sps_info_flags |= pic->pps->sps->delta_pic_order_always_zero_flag
+                            << RDECODE_SPS_INFO_H264_DELTA_PIC_ORDER_ALWAYS_ZERO_FLAG_SHIFT;
+   result.sps_info_flags |= pic->pps->sps->gaps_in_frame_num_value_allowed_flag
+                            << RDECODE_SPS_INFO_H264_GAPS_IN_FRAME_NUM_VALUE_ALLOWED_FLAG_SHIFT;
    result.sps_info_flags |= ((dec->dpb_type >= DPB_DYNAMIC_TIER_2) ? 0 : 1)
                               << RDECODE_SPS_INFO_H264_EXTENSION_SUPPORT_FLAG_SHIFT;
 
