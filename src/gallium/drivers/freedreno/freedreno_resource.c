@@ -1175,7 +1175,9 @@ fd_resource_resize(struct pipe_resource *prsc, uint32_t sz)
    assert(prsc->bind == PIPE_BIND_QUERY_BUFFER);
 
    prsc->width0 = sz;
-   realloc_bo(rsc, fd_screen(prsc->screen)->setup_slices(rsc));
+   fdl_layout_buffer(&rsc->layout, sz);
+
+   realloc_bo(rsc, rsc->layout.size);
 }
 
 static void
