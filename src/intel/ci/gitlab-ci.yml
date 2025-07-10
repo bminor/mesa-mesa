@@ -70,7 +70,7 @@ anv-tgl-vk-full:
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
   timeout: 2h
 
-hasvk-hsw:
+.hasvk-hsw:
   extends:
     - .hasvk-hsw-full
   variables:
