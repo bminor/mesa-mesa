@@ -422,9 +422,6 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    if (!UNSYNCHRONIZED)
       resource_check_defer_image_barrier(ctx, res, new_layout, pipeline);
 
-   if (is_write)
-      res->obj->last_write = flags;
-
    res->layout = new_layout;
 
    if (is_write)
