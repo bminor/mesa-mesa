@@ -9231,6 +9231,11 @@ iris_upload_compute_walker(struct iris_context *ice,
          .TileLayout = cs_data->walk_order == INTEL_WALK_ORDER_YXZ ?
                        TileY32bpe : Linear,
 #endif
+#if GFX_VER >= 30
+         /* HSD 14016252163 */
+         .DispatchWalkOrder = cs_data->uses_sampler ? MortonWalk : LinearWalk,
+         .ThreadGroupBatchSize = cs_data->uses_sampler ? TG_BATCH_4 : TG_BATCH_1,
+#endif
       };
 
       _iris_pack_command(batch, GENX(COMPUTE_WALKER),
