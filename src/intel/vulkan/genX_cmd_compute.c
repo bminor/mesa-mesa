@@ -563,7 +563,12 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 0] = num_workgroup_data[0],
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 1] = num_workgroup_data[1],
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 2] = num_workgroup_data[2],
-      }
+      },
+#if GFX_VER >= 30
+         /* HSD 14016252163 */
+      .DispatchWalkOrder = prog_data->uses_sampler ? MortonWalk : LinearWalk,
+      .ThreadGroupBatchSize = prog_data->uses_sampler ? TG_BATCH_4 : TG_BATCH_1,
+#endif
    };
 
    cmd_buffer->state.last_compute_walker =
@@ -1374,6 +1379,11 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
       .ExecutionMask                  = 0xff,
       .EmitInlineParameter            = true,
       .PostSync.MOCS                  = anv_mocs(pipeline->base.device, NULL, 0),
+#if GFX_VER >= 30
+         /* HSD 14016252163 */
+      .DispatchWalkOrder = cs_prog_data->uses_sampler ? MortonWalk : LinearWalk,
+      .ThreadGroupBatchSize = cs_prog_data->uses_sampler ? TG_BATCH_4 : TG_BATCH_1,
+#endif
 
       .InterfaceDescriptor = (struct GENX(INTERFACE_DESCRIPTOR_DATA)) {
          .KernelStartPointer = device->rt_trampoline->kernel.offset,
