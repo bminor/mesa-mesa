@@ -9,9 +9,10 @@
 
 #include <cstdlib>
 
+#include "util/detect_os.h"
 #include "pps_datasource.h"
 
-int main(int argc, const char **argv)
+int init(std::string &driver_name)
 {
    using namespace pps;
 
@@ -20,8 +21,6 @@ int main(int argc, const char **argv)
    args.backends = perfetto::kSystemBackend;
    perfetto::Tracing::Initialize(args);
 
-   std::string driver_name =
-      (argc > 1) ? Driver::find_driver_name(argv[1]) : Driver::default_driver_name();
    GpuDataSource::register_data_source(driver_name);
 
    const auto &driver = Driver::get_supported_drivers().at(driver_name);
@@ -35,3 +34,20 @@ int main(int argc, const char **argv)
 
    return EXIT_SUCCESS;
 }
+
+int main(int argc, const char **argv)
+{
+   using namespace pps;
+   std::string driver_name =
+      (argc > 1) ? Driver::find_driver_name(argv[1]) : Driver::default_driver_name();
+   return init(driver_name);
+}
+
+#if DETECT_OS_ANDROID
+extern "C" int start()
+{
+   using namespace pps;
+   std::string driver_name = Driver::default_driver_name();
+   return init(driver_name);
+}
+#endif
