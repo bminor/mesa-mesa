@@ -94,7 +94,6 @@ dzn_nir_indirect_draw_shader(struct dzn_indirect_draw_type type)
                                      type.indirect_count ? "_count" : "",
                                      type.triangle_fan ? "_triangle_fan" : "",
                                      type.triangle_fan_primitive_restart ? "_primitive_restart" : "");
-   b.shader->info.internal = true;
 
    nir_def *params_desc =
       dzn_nir_create_bo_desc(&b, nir_var_mem_ubo, 0, 0, "params", 0);
@@ -299,7 +298,6 @@ dzn_nir_triangle_fan_prim_restart_rewrite_index_shader(uint8_t old_index_size)
                                      dxil_get_base_nir_compiler_options(),
                                      "dzn_meta_triangle_prim_rewrite_index(old_index_size=%d)",
                                      old_index_size);
-   b.shader->info.internal = true;
 
    nir_def *params_desc =
       dzn_nir_create_bo_desc(&b, nir_var_mem_ubo, 0, 0, "params", 0);
@@ -460,7 +458,6 @@ dzn_nir_triangle_fan_rewrite_index_shader(uint8_t old_index_size)
                                      dxil_get_base_nir_compiler_options(),
                                      "dzn_meta_triangle_rewrite_index(old_index_size=%d)",
                                      old_index_size);
-   b.shader->info.internal = true;
 
    nir_def *params_desc =
       dzn_nir_create_bo_desc(&b, nir_var_mem_ubo, 0, 0, "params", 0);
@@ -547,7 +544,6 @@ dzn_nir_blit_vs(void)
       nir_builder_init_simple_shader(MESA_SHADER_VERTEX,
                                      dxil_get_base_nir_compiler_options(),
                                      "dzn_meta_blit_vs()");
-   b.shader->info.internal = true;
 
    nir_def *params_desc =
       dzn_nir_create_bo_desc(&b, nir_var_mem_ubo, 0, 0, "params", 0);
@@ -606,7 +602,6 @@ dzn_nir_blit_fs(const struct dzn_nir_blit_info *info)
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
                                      dxil_get_base_nir_compiler_options(),
                                      "dzn_meta_blit_fs()");
-   b.shader->info.internal = true;
 
    const struct glsl_type *tex_type =
       glsl_texture_type(info->sampler_dim, info->src_is_array, info->out_type);
