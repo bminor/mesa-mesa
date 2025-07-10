@@ -177,27 +177,6 @@ build_f16_copy_fs_shader(struct pipe_screen *pscreen, enum pipe_texture_target t
    if (util_texture_is_array(target))
       ncoord++;
 
-   nir_tex_instr *tex = nir_tex_instr_create(b->shader, 2);
-
-   tex->op = nir_texop_txf;
-
-   /* Note: since we're just copying data, we rely on the HW ignoring the
-    * dest_type.  Use isaml.3d so that a single shader can handle both 2D
-    * and 3D cases.
-    */
-   tex->dest_type = nir_type_float16;
-   tex->is_array = util_texture_is_array(target);
-   tex->is_shadow = false;
-   tex->sampler_dim = dim[target];
-   tex->coord_components = ncoord;
-
-   tex->texture_index = 0;
-   tex->sampler_index = 0;
-
-   b->shader->info.num_textures = 1;
-   BITSET_SET(b->shader->info.textures_used, 0);
-   BITSET_SET(b->shader->info.textures_used_by_txf, 0);
-
    unsigned swiz[4] = { 0, 1, 2 };
 
    /* tex coords are in components x/y/z, lod in w */
@@ -209,13 +188,20 @@ build_f16_copy_fs_shader(struct pipe_screen *pscreen, enum pipe_texture_target t
    nir_def *lod   = nir_channel(b, nir_f2i32(b, input), 3);
    nir_def *coord = nir_swizzle(b, nir_f2i32(b, input), swiz, ncoord);
 
-   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord, coord);
-   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_lod, lod);
+   /* Note: since we're just copying data, we rely on the HW ignoring the
+    * dest_type. Use isaml.3d so that a single shader can handle both 2D
+    * and 3D cases.
+    */
+   nir_def *tex = nir_txf(b, coord, .lod = lod, .texture_index = 0,
+                          .dim = dim[target],
+                          .is_array = util_texture_is_array(target),
+                          .dest_type = nir_type_float16);
 
-   nir_def_init(&tex->instr, &tex->def, 4, 16);
-   nir_builder_instr_insert(b, &tex->instr);
+   b->shader->info.num_textures = 1;
+   BITSET_SET(b->shader->info.textures_used, 0);
+   BITSET_SET(b->shader->info.textures_used_by_txf, 0);
 
-   nir_store_var(b, out_color, &tex->def, 0xf);
+   nir_store_var(b, out_color, tex, 0xf);
 
    return b->shader;
 }
