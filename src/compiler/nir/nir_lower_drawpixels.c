@@ -79,7 +79,6 @@ static bool
 lower_color(nir_builder *b, lower_drawpixels_state *state, nir_intrinsic_instr *intr)
 {
    nir_def *texcoord;
-   nir_tex_instr *tex;
    nir_def *def;
 
    b->cursor = nir_before_instr(&intr->instr);
@@ -102,22 +101,8 @@ lower_color(nir_builder *b, lower_drawpixels_state *state, nir_intrinsic_instr *
    /* replace load_var(gl_Color) w/ texture sample:
     *   TEX def, texcoord, drawpix_sampler, 2D
     */
-   tex = nir_tex_instr_create(state->shader, 3);
-   tex->op = nir_texop_tex;
-   tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
-   tex->coord_components = 2;
-   tex->dest_type = nir_type_float32;
-   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
-                                     &tex_deref->def);
-   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_sampler_deref,
-                                     &tex_deref->def);
-   tex->src[2] =
-      nir_tex_src_for_ssa(nir_tex_src_coord,
-                          nir_trim_vector(b, texcoord, tex->coord_components));
-
-   nir_def_init(&tex->instr, &tex->def, 4, 32);
-   nir_builder_instr_insert(b, &tex->instr);
-   def = &tex->def;
+   def = nir_tex(b, nir_trim_vector(b, texcoord, 2), .texture_deref = tex_deref,
+                 .sampler_deref = tex_deref);
 
    /* Apply the scale and bias. */
    if (state->options->scale_and_bias) {
@@ -141,7 +126,7 @@ lower_color(nir_builder *b, lower_drawpixels_state *state, nir_intrinsic_instr *
       nir_def *def_xy, *def_zw;
 
       /* TEX def.xy, def.xyyy, pixelmap_sampler, 2D; */
-      tex = nir_tex_instr_create(state->shader, 3);
+      nir_tex_instr *tex = nir_tex_instr_create(state->shader, 3);
       tex->op = nir_texop_tex;
       tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
       tex->coord_components = 2;
