@@ -373,7 +373,7 @@ radv_GetDescriptorSetLayoutSupport(VkDevice _device, const VkDescriptorSetLayout
 
 static VkResult
 radv_descriptor_set_create(struct radv_device *device, struct radv_descriptor_pool *pool,
-                           struct radv_descriptor_set_layout *layout, const uint32_t *variable_count,
+                           struct radv_descriptor_set_layout *layout, const uint32_t variable_count,
                            struct radv_descriptor_set **out_set)
 {
    if (pool->entry_count == pool->max_entry_count)
@@ -383,7 +383,7 @@ radv_descriptor_set_create(struct radv_device *device, struct radv_descriptor_po
    uint32_t buffer_count = layout->buffer_count;
    if (variable_count) {
       unsigned stride = radv_descriptor_type_buffer_count(layout->binding[layout->binding_count - 1].type);
-      buffer_count = layout->binding[layout->binding_count - 1].buffer_offset + *variable_count * stride;
+      buffer_count = layout->binding[layout->binding_count - 1].buffer_offset + variable_count * stride;
    }
    unsigned range_offset = sizeof(struct radv_descriptor_set_header) + sizeof(struct radeon_winsys_bo *) * buffer_count;
    const unsigned dynamic_offset_count = layout->dynamic_offset_count;
@@ -418,7 +418,7 @@ radv_descriptor_set_create(struct radv_device *device, struct radv_descriptor_po
       if (layout->binding[layout->binding_count - 1].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
          stride = 1;
 
-      layout_size = layout->binding[layout->binding_count - 1].offset + *variable_count * stride;
+      layout_size = layout->binding[layout->binding_count - 1].offset + variable_count * stride;
    }
    layout_size = align(layout_size, 32);
    set->header.size = layout_size;
@@ -522,19 +522,15 @@ radv_AllocateDescriptorSets(VkDevice _device, const VkDescriptorSetAllocateInfo 
 
    const VkDescriptorSetVariableDescriptorCountAllocateInfo *variable_counts =
       vk_find_struct_const(pAllocateInfo->pNext, DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO);
-   const uint32_t zero = 0;
 
    /* allocate a set of buffers for each shader to contain descriptors */
    for (i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
       VK_FROM_HANDLE(radv_descriptor_set_layout, layout, pAllocateInfo->pSetLayouts[i]);
 
-      const uint32_t *variable_count = NULL;
-      if (layout->has_variable_descriptors && variable_counts) {
-         if (i < variable_counts->descriptorSetCount)
-            variable_count = variable_counts->pDescriptorCounts + i;
-         else
-            variable_count = &zero;
-      }
+      uint32_t variable_count =
+         layout->has_variable_descriptors && variable_counts && i < variable_counts->descriptorSetCount
+            ? variable_counts->pDescriptorCounts[i]
+            : 0;
 
       assert(!(layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
 
