@@ -54,7 +54,6 @@ a306-traces:
   rules:
     - when: never # Google nginx needs updating
   variables:
-    PIGLIT_REPLAY_DEVICE_NAME: "freedreno-a306"
     PIGLIT_RESULTS: "freedreno-a306-replay"
 
 a530-gl:
@@ -74,7 +73,6 @@ a530-traces:
   rules:
     - when: never # Google nginx needs updating
   variables:
-    PIGLIT_REPLAY_DEVICE_NAME: "freedreno-a530"
     PIGLIT_RESULTS: "freedreno-a530-replay"
 
 a530-piglit:
@@ -410,7 +408,6 @@ a630-traces:
   rules:
     - when: never  # Cheza DUTs are retired and no longer active
   variables:
-    PIGLIT_REPLAY_DEVICE_NAME: "freedreno-a630"
     PIGLIT_RESULTS: "freedreno-a630-replay"
     # This lets us run several more traces which don't use any features we're
     # missing.
