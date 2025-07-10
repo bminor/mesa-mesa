@@ -261,7 +261,7 @@ struct DefInfo {
    DefInfo(ra_ctx& ctx, aco_ptr<Instruction>& instr, RegClass rc_, int operand) : rc(rc_)
    {
       size = rc.size();
-      stride = get_stride(rc);
+      stride = get_stride(rc) * 4;
       data_stride = 0;
 
       bounds = get_reg_bounds(ctx, rc);
@@ -294,7 +294,7 @@ struct DefInfo {
       }
 
       if (!data_stride)
-         data_stride = rc.is_subdword() ? stride : (stride * 4);
+         data_stride = stride;
    }
 
 private:
@@ -686,7 +686,7 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
    if (instr->isPseudo()) {
       if (instr->opcode == aco_opcode::p_interp_gfx11) {
          rc = RegClass(RegType::vgpr, rc.size());
-         stride = 1;
+         stride = 4;
       }
       return;
    }
@@ -699,7 +699,7 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
          return;
 
       rc = instr_is_16bit(gfx_level, instr->opcode) ? v2b : v1;
-      stride = rc == v2b ? 4 : 1;
+      stride = 4;
       if (instr->opcode == aco_opcode::v_fma_mixlo_f16 ||
           can_use_opsel(gfx_level, instr->opcode, -1)) {
          data_stride = 2;
@@ -730,7 +730,7 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
       assert(gfx_level >= GFX9);
       if (program->dev.sram_ecc_enabled) {
          rc = v1;
-         stride = 1;
+         stride = 4;
          data_stride = 2;
       } else {
          stride = 2;
@@ -741,24 +741,19 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
    case aco_opcode::buffer_load_format_d16_xyz:
    case aco_opcode::tbuffer_load_format_d16_xyz: {
       assert(gfx_level >= GFX9);
-      if (program->dev.sram_ecc_enabled) {
+      stride = 4;
+      if (program->dev.sram_ecc_enabled)
          rc = v2;
-         stride = 1;
-      } else {
-         stride = 4;
-      }
       return;
    }
    default: break;
    }
 
-   if (instr->isMIMG() && instr->mimg().d16 && !program->dev.sram_ecc_enabled) {
+   stride = 4;
+   if (instr->isMIMG() && instr->mimg().d16 && !program->dev.sram_ecc_enabled)
       assert(gfx_level >= GFX9);
-      stride = 4;
-   } else {
+   else
       rc = RegClass(RegType::vgpr, rc.size());
-      stride = 1;
-   }
 }
 
 void
@@ -999,13 +994,13 @@ get_reg_simple(ra_ctx& ctx, const RegisterFile& reg_file, DefInfo info)
 {
    PhysRegInterval bounds = info.bounds;
    uint32_t size = info.size;
-   uint32_t stride = info.rc.is_subdword() ? DIV_ROUND_UP(info.stride, 4) : info.stride;
+   uint32_t stride = DIV_ROUND_UP(info.stride, 4);
    RegClass rc = info.rc;
 
    if (stride < size && !rc.is_subdword()) {
       DefInfo new_info = info;
-      new_info.stride = stride * 2;
-      if (size % new_info.stride == 0) {
+      new_info.stride = info.stride * 2;
+      if (size % (stride * 2) == 0) {
          std::optional<PhysReg> res = get_reg_simple(ctx, reg_file, new_info);
          if (res)
             return res;
@@ -1216,7 +1211,8 @@ get_regs_for_copies(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcop
          info.bounds = PhysRegInterval::from_until(bounds.lo(), MIN2(def_reg.lo(), bounds.hi()));
          res = get_reg_simple(ctx, reg_file, info);
          if (!res && def_reg.hi() <= bounds.hi()) {
-            unsigned lo = (def_reg.hi() + info.stride - 1) & ~(info.stride - 1);
+            unsigned stride = DIV_ROUND_UP(info.stride, 4);
+            unsigned lo = (def_reg.hi() + stride - 1) & ~(stride - 1);
             info.bounds = PhysRegInterval::from_until(PhysReg{lo}, bounds.hi());
             res = get_reg_simple(ctx, reg_file, info);
          }
@@ -1240,7 +1236,7 @@ get_regs_for_copies(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcop
       unsigned num_vars = 0;
 
       /* we use a sliding window to find potential positions */
-      unsigned stride = var.rc.is_subdword() ? 1 : info.stride;
+      unsigned stride = DIV_ROUND_UP(info.stride, 4);
       for (PhysRegInterval reg_win{bounds.lo(), size}; reg_win.hi() <= bounds.hi();
            reg_win += stride) {
          if (!is_dead_operand && intersects(reg_win, def_reg))
@@ -1331,7 +1327,7 @@ get_reg_impl(ra_ctx& ctx, const RegisterFile& reg_file, std::vector<parallelcopy
 {
    const PhysRegInterval& bounds = info.bounds;
    uint32_t size = info.size;
-   uint32_t stride = info.rc.is_subdword() ? DIV_ROUND_UP(info.stride, 4) : info.stride;
+   uint32_t stride = DIV_ROUND_UP(info.stride, 4);
    RegClass rc = info.rc;
 
    /* check how many free regs we have */
@@ -1587,8 +1583,8 @@ compact_relocate_vars(ra_ctx& ctx, const std::vector<IDAndRegClass>& vars,
       sorted.begin(), sorted.end(),
       [=, &ctx](const IDAndInfo& a, const IDAndInfo& b)
       {
-         unsigned a_stride = MAX2(a.info.stride * (a.info.rc.is_subdword() ? 1 : 4), 4);
-         unsigned b_stride = MAX2(b.info.stride * (b.info.rc.is_subdword() ? 1 : 4), 4);
+         unsigned a_stride = MAX2(a.info.stride, 4);
+         unsigned b_stride = MAX2(b.info.stride, 4);
          /* Since the SGPR bounds should always be a multiple of two, we can place
           * variables in this order:
           * - the usual 4 SGPR aligned variables
@@ -1619,8 +1615,7 @@ compact_relocate_vars(ra_ctx& ctx, const std::vector<IDAndRegClass>& vars,
    PhysReg next_reg = start;
    PhysReg space_reg;
    for (IDAndInfo& var : sorted) {
-      unsigned stride = var.info.rc.is_subdword() ? var.info.stride : var.info.stride * 4;
-      next_reg.reg_b = align(next_reg.reg_b, MAX2(stride, 4));
+      next_reg.reg_b = align(next_reg.reg_b, MAX2(var.info.stride, 4));
 
       /* 0xffffffff is a special variable ID used reserve a space for killed
        * operands and definitions.
