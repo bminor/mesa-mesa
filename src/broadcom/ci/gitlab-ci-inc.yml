@@ -125,8 +125,6 @@
   variables:
     DEVICE_TYPE: rpi3
     GPU_VERSION: broadcom-rpi3
-  script:
-    - ./install/bare-metal/poe-powered.sh
   tags:
     - igalia-rpi3
 
@@ -136,8 +134,6 @@
     DEVICE_TYPE: rpi4
     GPU_VERSION: broadcom-rpi4
     VK_DRIVER: broadcom
-  script:
-    - ./install/bare-metal/poe-powered.sh
   tags:
     - igalia-rpi4
 
@@ -147,8 +143,6 @@
     DEVICE_TYPE: rpi5
     GPU_VERSION: broadcom-rpi5
     VK_DRIVER: broadcom
-  script:
-    - ./install/bare-metal/poe-powered.sh
   tags:
     - igalia-rpi5
 
