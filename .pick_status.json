@@ -3744,7 +3744,7 @@
         "description": "glsl: fix reuse of deref",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3da4b5eaa51ea74a4e3e1309a75308a9586189a6",
         "notes": null
