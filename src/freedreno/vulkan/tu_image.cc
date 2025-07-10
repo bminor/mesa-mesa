@@ -546,16 +546,23 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
       layout->tile_mode = tile_mode;
       layout->ubwc = image->ubwc_enabled;
 
-      if (!fdl6_layout(layout, &device->physical_device->dev_info, format,
-                       image->vk.samples,
-                       width0, height0,
-                       image->vk.extent.depth,
-                       image->vk.mip_levels,
-                       image->vk.array_layers,
-                       image->vk.image_type == VK_IMAGE_TYPE_3D,
-                       image->is_mutable,
-                       force_ubwc,
-                       plane_layouts ? &plane_layout : NULL)) {
+      struct fdl_image_params params = {
+         .format = format,
+         .nr_samples = image->vk.samples,
+         .width0 = width0,
+         .height0 = height0,
+         .depth0 = image->vk.extent.depth,
+         .mip_levels = image->vk.mip_levels,
+         .array_size = image->vk.array_layers,
+         .tile_mode = tile_mode,
+         .ubwc = image->ubwc_enabled,
+         .force_ubwc = force_ubwc,
+         image->vk.image_type == VK_IMAGE_TYPE_3D,
+         image->is_mutable,
+      };
+
+      if (!fdl6_layout_image(layout, &device->physical_device->dev_info,
+                             &params, plane_layouts ? &plane_layout : NULL)) {
          assert(plane_layouts); /* can only fail with explicit layout */
          return vk_error(device, VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT);
       }

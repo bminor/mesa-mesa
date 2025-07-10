@@ -2920,25 +2920,24 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
       struct fdl_layout staging_layout = { 0 };
       VkOffset3D staging_offset = { 0 };
 
-      staging_layout.tile_mode = TILE6_LINEAR;
-      staging_layout.ubwc = false;
-
       uint32_t layer_count =
          vk_image_subresource_layer_count(&src_image->vk,
                                           &info->srcSubresource);
-      fdl6_layout(&staging_layout,
-                  &cmd->device->physical_device->dev_info,
-                  src_format,
-                  src_image->layout[0].nr_samples,
-                  extent.width,
-                  extent.height,
-                  extent.depth,
-                  1,
-                  layer_count,
-                  extent.depth > 1,
-                  false,
-                  false,
-                  NULL);
+
+      struct fdl_image_params params = {
+         .format = src_format,
+         .nr_samples = src_image->layout[0].nr_samples,
+         .width0 = extent.width,
+         .height0 = extent.height,
+         .depth0 = extent.depth,
+         .mip_levels = 1,
+         .array_size = layer_count,
+         .tile_mode = TILE6_LINEAR,
+         .is_3d = extent.depth > 1,
+      };
+
+      fdl6_layout_image(&staging_layout, &cmd->device->physical_device->dev_info,
+                        &params, NULL);
 
       struct tu_bo *staging_bo;
       VkResult result = tu_get_scratch_bo(cmd->device,
