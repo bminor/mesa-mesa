@@ -1235,13 +1235,6 @@ alloc_resource_struct(struct pipe_screen *pscreen,
    return rsc;
 }
 
-enum fd_layout_type {
-   ERROR,
-   LINEAR,
-   TILED,
-   UBWC,
-};
-
 static bool
 has_implicit_modifier(const uint64_t *modifiers, int count)
 {
@@ -1269,34 +1262,34 @@ get_best_layout(struct fd_screen *screen,
 
    /* First, find all the conditions which would force us to linear */
    if (!screen->tile_mode)
-      return LINEAR;
+      return FD_LAYOUT_LINEAR;
 
    if (!screen->tile_mode(tmpl))
-      return LINEAR;
+      return FD_LAYOUT_LINEAR;
 
    if (tmpl->target == PIPE_BUFFER)
-      return LINEAR;
+      return FD_LAYOUT_LINEAR;
 
    if ((tmpl->usage == PIPE_USAGE_STAGING) &&
        !util_format_is_depth_or_stencil(tmpl->format))
-      return LINEAR;
+      return FD_LAYOUT_LINEAR;
 
    if (tmpl->bind & PIPE_BIND_LINEAR) {
       if (tmpl->usage != PIPE_USAGE_STAGING)
          perf_debug("%" PRSC_FMT ": forcing linear: bind flags",
                     PRSC_ARGS(tmpl));
-      return LINEAR;
+      return FD_LAYOUT_LINEAR;
    }
 
    if (FD_DBG(NOTILE))
-       return LINEAR;
+       return FD_LAYOUT_LINEAR;
 
    /* Shared resources without explicit modifiers must always be linear */
    if (!can_explicit && (tmpl->bind & PIPE_BIND_SHARED)) {
       perf_debug("%" PRSC_FMT
                  ": forcing linear: shared resource + implicit modifiers",
                  PRSC_ARGS(tmpl));
-      return LINEAR;
+      return FD_LAYOUT_LINEAR;
    }
 
    bool ubwc_ok = is_a6xx(screen) && !screen->info->a6xx.is_a702;
@@ -1324,21 +1317,21 @@ get_best_layout(struct fd_screen *screen,
    }
 
    if (ubwc_ok)
-      return UBWC;
+      return FD_LAYOUT_UBWC;
 
    if (can_implicit ||
        drm_find_modifier(DRM_FORMAT_MOD_QCOM_TILED3, modifiers, count))
-      return TILED;
+      return FD_LAYOUT_TILED;
 
    if (!drm_find_modifier(DRM_FORMAT_MOD_LINEAR, modifiers, count)) {
       perf_debug("%" PRSC_FMT ": need linear but not in modifier set",
                  PRSC_ARGS(tmpl));
-      return ERROR;
+      return FD_LAYOUT_ERROR;
    }
 
    perf_debug("%" PRSC_FMT ": not using tiling: explicit modifiers and no UBWC",
               PRSC_ARGS(tmpl));
-   return LINEAR;
+   return FD_LAYOUT_LINEAR;
 }
 
 /**
@@ -1379,15 +1372,10 @@ fd_resource_allocate_and_resolve(struct pipe_screen *pscreen,
 
    enum fd_layout_type layout =
       get_best_layout(screen, tmpl, modifiers, count);
-   if (layout == ERROR) {
+   if (layout == FD_LAYOUT_ERROR) {
       free(prsc);
       return NULL;
    }
-
-   if (layout >= TILED)
-      rsc->layout.tile_mode = screen->tile_mode(prsc);
-   if (layout == UBWC)
-      rsc->layout.ubwc = true;
 
    rsc->internal_format = format;
 
@@ -1396,7 +1384,7 @@ fd_resource_allocate_and_resolve(struct pipe_screen *pscreen,
       size = prsc->width0;
       fdl_layout_buffer(&rsc->layout, size);
    } else {
-      size = screen->setup_slices(rsc);
+      size = screen->layout_resource(rsc, layout);
    }
 
    /* special case for hw-query buffer, which we need to allocate before we

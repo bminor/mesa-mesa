@@ -122,7 +122,7 @@ fd5_screen_init(struct pipe_screen *pscreen)
    pscreen->context_create = fd5_context_create;
    pscreen->is_format_supported = fd5_screen_is_format_supported;
 
-   screen->setup_slices = fd5_setup_slices;
+   screen->layout_resource = fd5_layout_resource;
    if (FD_DBG(TTILE))
       screen->tile_mode = fd5_tile_mode;
 

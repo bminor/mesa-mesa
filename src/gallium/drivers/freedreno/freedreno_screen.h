@@ -29,6 +29,13 @@
 
 struct fd_bo;
 
+enum fd_layout_type {
+   FD_LAYOUT_ERROR,
+   FD_LAYOUT_LINEAR,
+   FD_LAYOUT_TILED,
+   FD_LAYOUT_UBWC,
+};
+
 /* Potential reasons for needing to skip bypass path and use GMEM, the
  * generation backend can override this with screen->gmem_reason_mask
  */
@@ -127,7 +134,7 @@ struct fd_screen {
     */
    struct fd_pipe *pipe;
 
-   uint32_t (*setup_slices)(struct fd_resource *rsc);
+   uint32_t (*layout_resource)(struct fd_resource *rsc, enum fd_layout_type type);
    unsigned (*tile_mode)(const struct pipe_resource *prsc);
    int (*layout_resource_for_modifier)(struct fd_resource *rsc,
                                        uint64_t modifier);

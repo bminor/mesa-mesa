@@ -7,9 +7,10 @@
  */
 
 #include "fd2_resource.h"
+#include "freedreno_screen.h"
 
 uint32_t
-fd2_setup_slices(struct fd_resource *rsc)
+fd2_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 {
    struct pipe_resource *prsc = &rsc->b.b;
    enum pipe_format format = prsc->format;

@@ -8,9 +8,10 @@
  */
 
 #include "fd4_resource.h"
+#include "freedreno_screen.h"
 
 uint32_t
-fd4_setup_slices(struct fd_resource *rsc)
+fd4_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 {
    struct pipe_resource *prsc = &rsc->b.b;
    enum pipe_format format = prsc->format;
@@ -22,6 +23,8 @@ fd4_setup_slices(struct fd_resource *rsc)
     * layer (since in fact the layer contains the slices)
     */
    uint32_t layers_in_level, alignment;
+
+   assert(type == FD_LAYOUT_LINEAR);
 
    if (prsc->target == PIPE_TEXTURE_3D) {
       rsc->layout.layer_first = false;

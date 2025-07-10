@@ -99,7 +99,7 @@ fd3_screen_init(struct pipe_screen *pscreen)
    fd3_emit_init_screen(pscreen);
    ir3_screen_init(pscreen);
 
-   screen->setup_slices = fd3_setup_slices;
+   screen->layout_resource = fd3_layout_resource;
    if (FD_DBG(TTILE))
       screen->tile_mode = fd3_tile_mode;
 

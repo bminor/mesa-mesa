@@ -105,7 +105,7 @@ fd2_screen_init(struct pipe_screen *pscreen)
    pscreen->context_create = fd2_context_create;
    pscreen->is_format_supported = fd2_screen_is_format_supported;
 
-   screen->setup_slices = fd2_setup_slices;
+   screen->layout_resource = fd2_layout_resource;
    if (FD_DBG(TTILE))
       screen->tile_mode = fd2_tile_mode;
 

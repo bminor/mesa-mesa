@@ -11,6 +11,6 @@
 
 #include "freedreno_resource.h"
 
-uint32_t fd5_setup_slices(struct fd_resource *rsc);
+uint32_t fd5_layout_resource(struct fd_resource *rsc, enum fd_layout_type type);
 
 #endif /* FD5_RESOURCE_H_ */

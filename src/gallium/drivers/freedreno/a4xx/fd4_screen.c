@@ -98,7 +98,7 @@ fd4_screen_init(struct pipe_screen *pscreen)
 {
    struct fd_screen *screen = fd_screen(pscreen);
    screen->max_rts = A4XX_MAX_RENDER_TARGETS;
-   screen->setup_slices = fd4_setup_slices;
+   screen->layout_resource = fd4_layout_resource;
    pscreen->context_create = fd4_context_create;
    pscreen->is_format_supported = fd4_screen_is_format_supported;
    fd4_emit_init_screen(pscreen);

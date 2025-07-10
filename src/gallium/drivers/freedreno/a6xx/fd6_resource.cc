@@ -252,10 +252,15 @@ setup_lrz(struct fd_resource *rsc)
 
 template <chip CHIP>
 static uint32_t
-fd6_setup_slices(struct fd_resource *rsc)
+fd6_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 {
    struct pipe_resource *prsc = &rsc->b.b;
    struct fd_screen *screen = fd_screen(prsc->screen);
+
+   if (type >= FD_LAYOUT_TILED)
+      rsc->layout.tile_mode = fd6_tile_mode(prsc);
+   if (type == FD_LAYOUT_UBWC)
+      rsc->layout.ubwc = true;
 
    if (rsc->layout.ubwc && !ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
       rsc->layout.ubwc = false;
@@ -354,7 +359,7 @@ fd6_resource_screen_init(struct pipe_screen *pscreen)
 {
    struct fd_screen *screen = fd_screen(pscreen);
 
-   screen->setup_slices = fd6_setup_slices<CHIP>;
+   screen->layout_resource = fd6_layout_resource<CHIP>;
    screen->layout_resource_for_modifier = fd6_layout_resource_for_modifier;
    screen->is_format_supported = fd6_is_format_supported;
 }
