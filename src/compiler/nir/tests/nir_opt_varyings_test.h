@@ -289,7 +289,7 @@ protected:
       }
 
       nir_opt_varyings_progress progress =
-         nir_opt_varyings(b1->shader, b2->shader, true, 4096, 15);
+         nir_opt_varyings(b1->shader, b2->shader, true, 4096, 15, true);
       nir_validate_shader(b1->shader, "validate producer shader");
       nir_validate_shader(b2->shader, "validate consumer shader");
 

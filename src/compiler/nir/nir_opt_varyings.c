@@ -2443,7 +2443,8 @@ is_uniform_expression(nir_instr *instr, struct is_uniform_expr_state *state)
  */
 static void
 propagate_uniform_expressions(struct linkage_info *linkage,
-                              nir_opt_varyings_progress *progress)
+                              nir_opt_varyings_progress *progress,
+                              bool *consumer_progress)
 {
    unsigned i;
 
@@ -2530,6 +2531,7 @@ propagate_uniform_expressions(struct linkage_info *linkage,
             /* Replace the original load. */
             nir_def_replace(&loadi->def, clone);
             *progress |= list_index ? nir_progress_producer : nir_progress_consumer;
+            *consumer_progress |= list_index == 0; /* 0 means consumer loads */
          }
       }
 
@@ -2724,7 +2726,8 @@ nir_ht_scalar_equal(const void *a, const void *b)
 
 static void
 deduplicate_outputs(struct linkage_info *linkage,
-                    nir_opt_varyings_progress *progress)
+                    nir_opt_varyings_progress *progress,
+                    bool *consumer_progress)
 {
    struct hash_table *tables[NUM_DEDUP_QUALIFIERS] = { NULL };
    unsigned i;
@@ -2812,6 +2815,7 @@ deduplicate_outputs(struct linkage_info *linkage,
             list_inithead(src_loads);
 
             *progress |= list_index ? nir_progress_producer : nir_progress_consumer;
+            *consumer_progress |= list_index == 0; /* 0 means consumer loads */
          }
       }
 
@@ -5302,7 +5306,8 @@ print_shader_linkage(nir_shader *producer, nir_shader *consumer)
  */
 nir_opt_varyings_progress
 nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
-                 unsigned max_uniform_components, unsigned max_ubos_per_stage)
+                 unsigned max_uniform_components, unsigned max_ubos_per_stage,
+                 bool debug_no_algebraic /* don't set to true, only for nir_tests */)
 {
    /* Task -> Mesh I/O uses payload variables and not varying slots,
     * so this pass can't do anything about it.
@@ -5329,19 +5334,37 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
    /* Part 1: Run optimizations that only remove varyings. (they can move
     * instructions between shaders)
     */
-   propagate_uniform_expressions(linkage, &progress);
+   bool prop_dedup_consumer_progress = false;
+   propagate_uniform_expressions(linkage, &progress,
+                                 &prop_dedup_consumer_progress);
 
    /* Part 2: Deduplicate outputs. */
-   deduplicate_outputs(linkage, &progress);
-
-   /* Run CSE on the consumer after output deduplication because duplicated
-    * loads can prevent finding the post-dominator for inter-shader code
-    * motion.
-    */
-   NIR_PASS(_, consumer, nir_opt_cse);
-
-   /* Re-gather linkage info after CSE. */
+   deduplicate_outputs(linkage, &progress, &prop_dedup_consumer_progress);
    free_linkage(linkage);
+
+   /* The consumer must be optimized before continuing because:
+    * - constant propagation can propagate 0, which can lead to elimination of
+    *   input loads after algebraic opts
+    * - output deduplication doesn't remove the corresponding loads
+    *   in the consumer, but backward inter-shader code motion requires
+    *   that there is exactly 1 load per input
+    */
+   if (prop_dedup_consumer_progress) {
+      bool opts_progress;
+      do {
+         opts_progress = false;
+         NIR_PASS(opts_progress, consumer, nir_opt_dce);
+         NIR_PASS(opts_progress, consumer, nir_opt_cse);
+         if (!debug_no_algebraic)
+            NIR_PASS(opts_progress, consumer, nir_opt_algebraic);
+         NIR_PASS(opts_progress, consumer, nir_opt_constant_folding);
+         /* We may also consider eliminating dead control flow (such as
+          * "if false:") if that ever happens.
+          */
+      } while (opts_progress);
+   }
+
+   /* Re-gather linkage info after optimizations. */
    init_linkage(producer, consumer, spirv, max_uniform_components,
                 max_ubos_per_stage, linkage, &progress);
 

@@ -1606,7 +1606,7 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
       nir_shader *producer = stages[s].nir;
       nir_shader *consumer = stages[next].nir;
 
-      const nir_opt_varyings_progress p = nir_opt_varyings(producer, consumer, true, 0, 0);
+      const nir_opt_varyings_progress p = nir_opt_varyings(producer, consumer, true, 0, 0, false);
 
       /* Run algebraic optimizations on shaders that changed. */
       if (p & nir_progress_producer) {
@@ -1634,7 +1634,7 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
       nir_shader *producer = stages[s].nir;
       nir_shader *consumer = stages[next].nir;
 
-      const nir_opt_varyings_progress p = nir_opt_varyings(producer, consumer, true, 0, 0);
+      const nir_opt_varyings_progress p = nir_opt_varyings(producer, consumer, true, 0, 0, false);
 
       /* Run algebraic optimizations on shaders that changed. */
       if (p & nir_progress_producer) {

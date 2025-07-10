@@ -1447,7 +1447,7 @@ optimize_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
 {
    nir_opt_varyings_progress progress =
       nir_opt_varyings(producer, consumer, spirv, max_uniform_comps,
-                       max_ubos);
+                       max_ubos, false);
 
    if (progress & nir_progress_producer)
       gl_nir_opts(producer);

@@ -4994,7 +4994,8 @@ typedef enum {
 
 nir_opt_varyings_progress
 nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
-                 unsigned max_uniform_components, unsigned max_ubos_per_stage);
+                 unsigned max_uniform_components, unsigned max_ubos_per_stage,
+                 bool debug_no_algebraic);
 
 bool nir_slot_is_sysval_output(gl_varying_slot slot,
                                gl_shader_stage next_shader);
