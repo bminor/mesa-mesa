@@ -147,6 +147,24 @@ ValueFactory::allocate_pinned_vec4(int sel, bool is_ssa)
    return retval;
 }
 
+LocalArray *
+ValueFactory::allocate_pinned_array(int start, int size, int channels)
+{
+   auto array = new LocalArray(start, channels, 4, 0);
+
+   for (int i = 0; i < channels; ++i) {
+      RegisterKey key(start, i, vp_array);
+      m_registers[key] = array;
+   }
+
+   for (auto reg : *array) {
+      reg->set_pin(pin_fully);
+      reg->set_flag(Register::pin_start);
+      reg->set_flag(Register::ssa);
+   }
+   return array;
+}
+
 void
 ValueFactory::inject_value(const nir_def& def, int chan, PVirtualValue value)
 {

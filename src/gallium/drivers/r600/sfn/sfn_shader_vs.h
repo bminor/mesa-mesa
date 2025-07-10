@@ -156,6 +156,12 @@ private:
    void do_get_shader_info(r600_shader *sh_info) override;
 
    VertexExportStage *m_export_stage{nullptr};
+   template <typename T>
+   using ArrayMap =
+      std::map<unsigned, T, std::less<unsigned>, Allocator<std::pair<const unsigned, T>>>;
+
+   ArrayMap<int> m_input_array_ranges;
+   ArrayMap<LocalArray *> m_input_arrays;
    int m_last_vertex_attribute_register{0};
    PRegister m_vertex_id{nullptr};
    PRegister m_instance_id{nullptr};

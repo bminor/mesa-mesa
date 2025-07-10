@@ -211,6 +211,7 @@ public:
    bool allocate_registers(const nir_intrinsic_instr_alloc& regs);
    PRegister allocate_pinned_register(int sel, int chan);
    RegisterVec4 allocate_pinned_vec4(int sel, bool is_ssa);
+   LocalArray *allocate_pinned_array(int start, int size, int channels);
 
    /* Inject a predefined value for a given dest value
     * (usually the result of a sysvalue load) */

@@ -417,9 +417,13 @@ VertexShader::do_scan_instruction(nir_instr *instr)
 
    switch (intr->intrinsic) {
    case nir_intrinsic_load_input: {
-      int vtx_register = nir_intrinsic_base(intr) + 1;
+      int vtx_register =
+         nir_intrinsic_base(intr) + nir_intrinsic_io_semantics(intr).num_slots;
       if (m_last_vertex_attribute_register < vtx_register)
          m_last_vertex_attribute_register = vtx_register;
+      if (nir_intrinsic_io_semantics(intr).num_slots > 1)
+         m_input_array_ranges[nir_intrinsic_base(intr) + 1] =
+            nir_intrinsic_io_semantics(intr).num_slots;
       return true;
    }
    case nir_intrinsic_store_output: {
@@ -474,27 +478,38 @@ VertexShader::do_scan_instruction(nir_instr *instr)
 bool
 VertexShader::load_input(nir_intrinsic_instr *intr)
 {
-   unsigned driver_location = nir_intrinsic_base(intr);
+   unsigned range_base = nir_intrinsic_base(intr) + 1;
    unsigned location = nir_intrinsic_io_semantics(intr).location;
    auto& vf = value_factory();
 
-   AluInstr *ir = nullptr;
-   if (location < VERT_ATTRIB_MAX) {
-      for (unsigned i = 0; i < intr->def.num_components; ++i) {
-         auto src = vf.allocate_pinned_register(driver_location + 1, i);
-         src->set_flag(Register::ssa);
-         vf.inject_value(intr->def, i, src);
-      }
-      if (ir)
-         ir->set_alu_flag(alu_last_instr);
-
-      ShaderInput input(driver_location);
-      input.set_gpr(driver_location + 1);
-      add_input(input);
-      return true;
+   if (location >= VERT_ATTRIB_MAX) {
+      fprintf(stderr, "r600-NIR: Unimplemented load_deref for %d\n", location);
+      return false;
    }
-   fprintf(stderr, "r600-NIR: Unimplemented load_deref for %d\n", location);
-   return false;
+
+   for (auto [start, array] : m_input_arrays) {
+      if (range_base >= start && range_base < start + array->size()) {
+         auto addr = vf.src(intr->src[0], 0);
+         for (unsigned i = 0; i < intr->def.num_components; ++i) {
+            auto src = array->element(0, addr, i);
+            auto dst = vf.dest(intr->def, i, pin_free);
+            emit_instruction(new AluInstr(op1_mov, dst, src, AluInstr::write));
+         }
+         return true;
+      }
+   }
+
+   /* We didn't find an array so inject the value and add the register lazily */
+   for (unsigned i = 0; i < intr->def.num_components; ++i) {
+      auto src = vf.allocate_pinned_register(range_base, i);
+      src->set_flag(Register::ssa);
+      vf.inject_value(intr->def, i, src);
+   }
+
+   ShaderInput input(range_base - 1);
+   input.set_gpr(range_base);
+   add_input(input);
+   return true;
 }
 
 int
@@ -527,6 +542,17 @@ VertexShader::do_allocate_reserved_registers()
 
    if (m_sv_values.test(es_draw_id)) {
       m_draw_parameters_enabled = true;
+   }
+
+   for (auto [start, size] : m_input_array_ranges) {
+      auto array = value_factory().allocate_pinned_array(start, size, 4);
+      m_input_arrays[start] = array;
+
+      for (int i = 0; i < size; ++i) {
+         ShaderInput input(start + i - 1);
+         input.set_gpr(start + i);
+         add_input(input);
+      }
    }
 
    return m_last_vertex_attribute_register + 1;
