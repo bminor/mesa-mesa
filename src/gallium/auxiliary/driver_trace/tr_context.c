@@ -112,7 +112,10 @@ trace_context_draw_vbo(struct pipe_context *_pipe,
    trace_dump_arg(int, drawid_offset);
    trace_dump_arg(draw_indirect_info, indirect);
    trace_dump_arg_begin("draws");
-   trace_dump_struct_array(draw_start_count, draws, num_draws);
+   if (info->index.resource)
+      trace_dump_struct_array(draw_start_count_indexed, draws, num_draws);
+   else
+      trace_dump_struct_array(draw_start_count, draws, num_draws);
    trace_dump_arg_end();
    trace_dump_arg(uint, num_draws);
 

@@ -941,6 +941,17 @@ void trace_dump_draw_start_count(const struct pipe_draw_start_count_bias *state)
    trace_dump_struct_begin("pipe_draw_start_count_bias");
    trace_dump_member(uint, state, start);
    trace_dump_member(uint, state, count);
+   trace_dump_struct_end();
+}
+
+void trace_dump_draw_start_count_indexed(const struct pipe_draw_start_count_bias *state)
+{
+   if (!trace_dumping_enabled_locked())
+      return;
+
+   trace_dump_struct_begin("pipe_draw_start_count_bias");
+   trace_dump_member(uint, state, start);
+   trace_dump_member(uint, state, count);
    trace_dump_member(int,  state, index_bias);
    trace_dump_struct_end();
 }

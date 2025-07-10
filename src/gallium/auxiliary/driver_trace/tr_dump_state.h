@@ -103,6 +103,8 @@ void trace_dump_draw_vertex_state_info(struct pipe_draw_vertex_state_info state)
 
 void trace_dump_draw_start_count(const struct pipe_draw_start_count_bias *state);
 
+void trace_dump_draw_start_count_indexed(const struct pipe_draw_start_count_bias *state);
+
 void trace_dump_draw_indirect_info(const struct pipe_draw_indirect_info *state);
 
 void trace_dump_blit_info(const struct pipe_blit_info *);
