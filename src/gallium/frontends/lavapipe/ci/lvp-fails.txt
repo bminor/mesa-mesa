@@ -863,3 +863,6 @@ dEQP-VK.pipeline.shader_object_linked_spirv.multisample.sample_rate_a2c.static_a
 dEQP-VK.pipeline.fast_linked_library.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.shader_object_linked_binary.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.shader_object_unlinked_spirv.multisample.sample_rate_a2c.static_a2c,Fail
+
+dEQP-VK.sparse_resources.image_block_shapes.2d.g8b8g8r8_422_unorm.samples_1,Fail
+dEQP-VK.sparse_resources.image_block_shapes.2d_array.g8b8g8r8_422_unorm.samples_1,Fail
