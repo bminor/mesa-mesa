@@ -287,9 +287,6 @@ unsigned ac_compute_lshs_workgroup_size(enum amd_gfx_level gfx_level, gl_shader_
                                         unsigned tess_patch_in_vtx,
                                         unsigned tess_patch_out_vtx);
 
-unsigned ac_compute_esgs_workgroup_size(enum amd_gfx_level gfx_level, unsigned wave_size,
-                                        unsigned es_verts, unsigned gs_inst_prims);
-
 unsigned ac_compute_ngg_workgroup_size(unsigned es_verts, unsigned gs_inst_prims,
                                        unsigned max_vtx_out, unsigned prim_amp_factor);
 

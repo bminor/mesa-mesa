@@ -888,23 +888,6 @@ unsigned ac_compute_lshs_workgroup_size(enum amd_gfx_level gfx_level, gl_shader_
       unreachable("invalid LSHS shader stage");
 }
 
-unsigned ac_compute_esgs_workgroup_size(enum amd_gfx_level gfx_level, unsigned wave_size,
-                                        unsigned es_verts, unsigned gs_inst_prims)
-{
-   /* ESGS may operate in workgroups if on-chip GS (LDS rings) are enabled.
-    *
-    * GFX6: Not possible in the HW.
-    * GFX7-8 (unmerged): possible in the HW, but not implemented in Mesa.
-    * GFX9+ (merged): implemented in Mesa.
-    */
-
-   if (gfx_level <= GFX8)
-      return wave_size;
-
-   unsigned workgroup_size = MAX2(es_verts, gs_inst_prims);
-   return CLAMP(workgroup_size, 1, 256);
-}
-
 unsigned ac_compute_ngg_workgroup_size(unsigned es_verts, unsigned gs_inst_prims,
                                        unsigned max_vtx_out, unsigned prim_amp_factor)
 {

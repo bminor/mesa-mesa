@@ -1265,11 +1265,20 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
       break;
    case MESA_SHADER_GEOMETRY:
       if (!info->is_ngg) {
-         unsigned es_verts_per_subgroup = info->gs_ring_info.es_verts_per_subgroup;
-         unsigned gs_inst_prims_in_subgroup = info->gs_ring_info.gs_inst_prims_in_subgroup;
+         /* ESGS may operate in workgroups if on-chip GS (LDS rings) are enabled.
+          *
+          * GFX6: Not possible in the HW.
+          * GFX7-8 (unmerged): possible in the HW, but not implemented in Mesa.
+          * GFX9+ (merged): implemented in Mesa.
+          *
+          * Set the maximum possible value by default, this will be optimized during linking if
+          * possible.
+          */
+         if (pdev->info.gfx_level <= GFX8)
+            info->workgroup_size = info->wave_size;
+         else
+            info->workgroup_size = 256;
 
-         info->workgroup_size = ac_compute_esgs_workgroup_size(pdev->info.gfx_level, info->wave_size,
-                                                               es_verts_per_subgroup, gs_inst_prims_in_subgroup);
       } else {
          /* Set the maximum possible value by default, this will be optimized during linking if
           * possible.
