@@ -242,9 +242,9 @@ gs_per_vertex_input_vertex_offset_gfx9(nir_builder *b, lower_esgs_io_state *st,
 
    for (unsigned i = 1; i < b->shader->info.gs.vertices_in; i++) {
       nir_def *cond = nir_ieq_imm(b, vertex_src->ssa, i);
-      nir_def *elem = gs_get_vertex_offset(b, st, i / 2u * 2u);
+      nir_def *elem = gs_get_vertex_offset(b, st, i / 2u);
       if (i % 2u)
-         elem = nir_ishr_imm(b, elem, 16u);
+         elem = nir_ushr_imm(b, elem, 16u);
 
       vertex_offset = nir_bcsel(b, cond, elem, vertex_offset);
    }
