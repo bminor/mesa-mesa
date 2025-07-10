@@ -1574,7 +1574,7 @@
         "description": "loader: Report DRI_PRIME errors earlier",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ea84b85887a147b38a2a168e37c3d1f19c94b1b3",
         "notes": null
