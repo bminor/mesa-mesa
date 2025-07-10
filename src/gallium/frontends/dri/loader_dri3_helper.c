@@ -1611,7 +1611,7 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
       cookie_pix = xcb_dri3_pixmap_from_buffer_checked(draw->conn,
                                                        pixmap,
                                                        draw->drawable,
-                                                       buffer->size,
+                                                       0,
                                                        width, height, buffer->strides[0],
                                                        depth, buffer->cpp * 8,
                                                        buffer_fds[0]);

@@ -71,7 +71,6 @@ struct loader_dri3_buffer {
    bool         reallocate;     /* Buffer should be reallocated and not reused */
 
    uint32_t     num_planes;
-   uint32_t     size;
    int          strides[4];
    int          offsets[4];
    uint64_t     modifier;
