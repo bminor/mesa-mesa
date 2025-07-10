@@ -2718,12 +2718,42 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
    case SpvOpPtrAccessChain:
    case SpvOpInBoundsAccessChain:
    case SpvOpInBoundsPtrAccessChain: {
-      struct vtn_access_chain *chain = vtn_access_chain_create(b, count - 4);
+      bool ptr_as_array = opcode == SpvOpPtrAccessChain ||
+                          opcode == SpvOpInBoundsPtrAccessChain;
+
+      struct vtn_type *ptr_type = vtn_get_type(b, w[1]);
+      struct vtn_pointer *base = vtn_pointer(b, w[3]);
+
+      unsigned first_idx = 4;
+
+      /* The SPIR-V spec says
+       *
+       *    "OpPtrAccessChain: If _Base_ points to a structure decorated with
+       *    *Block* or *BufferBlock* and the value of 'Element' is not zero
+       *    then the behavior is undefined."
+       */
+      if (ptr_as_array &&
+          (base->type->pointed->block || base->type->pointed->buffer_block)) {
+
+         struct vtn_value *val = vtn_untyped_value(b, w[first_idx]);
+         if (val->value_type == vtn_value_type_constant &&
+             vtn_constant_int(b, w[first_idx]) != 0) {
+            vtn_warn("OpPtrAccessChain on a block with non-zero Element.");
+         }
+
+         /* Any value other than zero for Element results in undefined
+          * behavior so we can just ignore the ptr_as_array part.
+          */
+         first_idx++;
+         ptr_as_array = false;
+      }
+
       enum gl_access_qualifier access = 0;
-      chain->ptr_as_array = (opcode == SpvOpPtrAccessChain || opcode == SpvOpInBoundsPtrAccessChain);
+      struct vtn_access_chain *chain = vtn_access_chain_create(b, count - first_idx);
+      chain->ptr_as_array = ptr_as_array;
 
       unsigned idx = 0;
-      for (int i = 4; i < count; i++) {
+      for (int i = first_idx; i < count; i++) {
          struct vtn_value *link_val = vtn_untyped_value(b, w[i]);
          if (link_val->value_type == vtn_value_type_constant) {
             chain->link[idx].mode = vtn_access_mode_literal;
@@ -2738,10 +2768,6 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
 
          idx++;
       }
-
-      struct vtn_type *ptr_type = vtn_get_type(b, w[1]);
-
-      struct vtn_pointer *base = vtn_pointer(b, w[3]);
 
       chain->in_bounds = (opcode == SpvOpInBoundsAccessChain || opcode == SpvOpInBoundsPtrAccessChain);
 

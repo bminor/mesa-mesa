@@ -1454,7 +1454,12 @@ array_stride_decoration_cb(struct vtn_builder *b,
    struct vtn_type *type = val->type;
 
    if (dec->decoration == SpvDecorationArrayStride) {
-      if (vtn_type_contains_block(b, type)) {
+      if (type->base_type == vtn_base_type_pointer &&
+          (type->pointed->block || type->pointed->buffer_block)) {
+         vtn_warn("A pointer to a structure decorated with *Block* or "
+                  "*BufferBlock* must not have an *ArrayStride* decoration");
+         /* Ignore the decoration */
+      } else if (vtn_type_contains_block(b, type)) {
          vtn_warn("The ArrayStride decoration cannot be applied to an array "
                   "type which contains a structure type decorated Block "
                   "or BufferBlock");
