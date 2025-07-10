@@ -73,14 +73,14 @@
             "extensions": {
                 "VK_EXT_line_rasterization": 1
             },
-        	"features": {
+            "features": {
                 "VkPhysicalDeviceLineRasterizationFeaturesEXT": {
                     "bresenhamLines": true
                 }
             }
         },
         "gl21_baseline_line_non_strict": {
-        	"properties": {
+            "properties": {
                 "VkPhysicalDeviceProperties": {
                     "limits": {
                         "strictLines": false
