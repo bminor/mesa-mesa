@@ -1471,9 +1471,6 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
    unsigned max_ubos = UINT_MAX;
    unsigned max_uniform_comps = UINT_MAX;
 
-   if (debug_get_bool_option("MESA_GLSL_DISABLE_IO_OPT", false))
-      return;
-
    for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
       struct gl_linked_shader *shader = prog->_LinkedShaders[i];
 
@@ -1495,6 +1492,9 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
    /* Lower IO derefs to load and store intrinsics. */
    for (unsigned i = 0; i < num_shaders; i++)
       nir_lower_io_passes(shaders[i], true);
+
+   if (debug_get_bool_option("MESA_GLSL_DISABLE_IO_OPT", false))
+      return;
 
    /* There is nothing to optimize for only 1 shader. */
    if (num_shaders == 1) {
