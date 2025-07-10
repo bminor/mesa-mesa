@@ -136,8 +136,8 @@ struct fd_screen {
 
    uint32_t (*layout_resource)(struct fd_resource *rsc, enum fd_layout_type type);
    unsigned (*tile_mode)(const struct pipe_resource *prsc);
-   int (*layout_resource_for_modifier)(struct fd_resource *rsc,
-                                       uint64_t modifier);
+   bool (*layout_resource_for_handle)(struct fd_resource *rsc,
+                                      struct winsys_handle *handle);
    bool (*is_format_supported)(struct pipe_screen *pscreen,
                                enum pipe_format fmt, uint64_t modifier);
 

@@ -277,7 +277,7 @@ fd6_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
    return rsc->layout.size;
 }
 
-static int
+static bool
 fill_ubwc_buffer_sizes(struct fd_resource *rsc)
 {
    struct pipe_resource *prsc = &rsc->b.b;
@@ -288,23 +288,23 @@ fill_ubwc_buffer_sizes(struct fd_resource *rsc)
    };
 
    if (!can_do_ubwc(prsc))
-      return -1;
+      return false;
 
    struct fdl_image_params params = fd_image_params(prsc, true, TILE6_3);
 
    if (!fdl6_layout_image(&rsc->layout, screen->info, &params, &l))
-      return -1;
+      return false;
 
    if (rsc->layout.size > fd_bo_size(rsc->bo))
-      return -1;
+      return false;
 
-   return 0;
+   return true;
 }
 
-static int
-fd6_layout_resource_for_modifier(struct fd_resource *rsc, uint64_t modifier)
+static bool
+fd6_layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle)
 {
-   switch (modifier) {
+   switch (handle->modifier) {
    case DRM_FORMAT_MOD_QCOM_COMPRESSED:
       return fill_ubwc_buffer_sizes(rsc);
    case DRM_FORMAT_MOD_LINEAR:
@@ -313,7 +313,7 @@ fd6_layout_resource_for_modifier(struct fd_resource *rsc, uint64_t modifier)
                     ": not UBWC: imported with DRM_FORMAT_MOD_LINEAR!",
                     PRSC_ARGS(&rsc->b.b));
       }
-      return 0;
+      return true;
    case DRM_FORMAT_MOD_QCOM_TILED3:
       rsc->layout.tile_mode = fd6_tile_mode(&rsc->b.b);
       FALLTHROUGH;
@@ -326,9 +326,9 @@ fd6_layout_resource_for_modifier(struct fd_resource *rsc, uint64_t modifier)
                     ": not UBWC: imported with DRM_FORMAT_MOD_INVALID!",
                     PRSC_ARGS(&rsc->b.b));
       }
-      return 0;
+      return true;
    default:
-      return -1;
+      return false;
    }
 }
 
@@ -359,7 +359,7 @@ fd6_resource_screen_init(struct pipe_screen *pscreen)
    struct fd_screen *screen = fd_screen(pscreen);
 
    screen->layout_resource = fd6_layout_resource<CHIP>;
-   screen->layout_resource_for_modifier = fd6_layout_resource_for_modifier;
+   screen->layout_resource_for_handle = fd6_layout_resource_for_handle;
    screen->is_format_supported = fd6_is_format_supported;
 }
 FD_GENX(fd6_resource_screen_init);

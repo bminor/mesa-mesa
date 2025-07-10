@@ -1546,7 +1546,7 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
 
    assert(rsc->layout.cpp);
 
-   if (screen->layout_resource_for_modifier(rsc, handle->modifier) < 0)
+   if (!screen->layout_resource_for_handle(rsc, handle))
       goto fail;
 
    if (screen->ro) {
@@ -1652,10 +1652,10 @@ static const struct u_transfer_vtbl transfer_vtbl = {
    .get_stencil = fd_resource_get_stencil,
 };
 
-static int
-fd_layout_resource_for_modifier(struct fd_resource *rsc, uint64_t modifier)
+static bool
+fd_layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle)
 {
-   switch (modifier) {
+   switch (handle->modifier) {
    case DRM_FORMAT_MOD_LINEAR:
       /* The dri gallium frontend will pass DRM_FORMAT_MOD_INVALID to us
        * when it's called through any of the non-modifier BO create entry
@@ -1663,9 +1663,9 @@ fd_layout_resource_for_modifier(struct fd_resource *rsc, uint64_t modifier)
        * other legacy backchannels, but for freedreno it just means
        * LINEAR. */
    case DRM_FORMAT_MOD_INVALID:
-      return 0;
+      return true;
    default:
-      return -1;
+      return false;
    }
 }
 
@@ -1770,8 +1770,8 @@ fd_resource_screen_init(struct pipe_screen *pscreen)
                                U_TRANSFER_HELPER_SEPARATE_Z32S8 |
                                U_TRANSFER_HELPER_MSAA_MAP);
 
-   if (!screen->layout_resource_for_modifier)
-      screen->layout_resource_for_modifier = fd_layout_resource_for_modifier;
+   if (!screen->layout_resource_for_handle)
+      screen->layout_resource_for_handle = fd_layout_resource_for_handle;
 
    /* GL_EXT_memory_object */
    pscreen->memobj_create_from_handle = fd_memobj_create_from_handle;
