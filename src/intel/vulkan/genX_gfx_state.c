@@ -3936,6 +3936,27 @@ genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer)
       BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_MULTISAMPLE);
 #endif
 
+#if GFX_VERx10 == 125
+   if (intel_device_info_is_dg2(device->info)) {
+      /* On DG2 & MTL, dEQP-VK.shader_object.binding.mesh_swap_task fails on
+       * both simulation & HW, dEQP-VK.shader_object.binding.mesh_swap_mesh
+       * fails on HW.
+       *
+       * We can get the first test to pass more often by reemitting
+       * 3DSTATE_TASK_CONTROL but the other nothing is helping but a CS stall.
+       *
+       * What seems to happen is that the new shader offset programmed isn't
+       * applied and instead the HW reexecutes the previous shader.
+       */
+      if ((BITSET_TEST(hw_state->emit_dirty, ANV_GFX_STATE_TASK_SHADER) ||
+           BITSET_TEST(hw_state->emit_dirty, ANV_GFX_STATE_MESH_SHADER)) &&
+          gfx->shaders[MESA_SHADER_MESH] != NULL) {
+         genx_batch_emit_pipe_control(&cmd_buffer->batch, device->info,
+                                      _3D, ANV_PIPE_CS_STALL_BIT);
+      }
+   }
+#endif
+
    /* Wa_18020335297 - Apply the WA when viewport ptr is reprogrammed. */
    if (intel_needs_workaround(device->info, 18020335297) &&
        BITSET_TEST(hw_state->emit_dirty, ANV_GFX_STATE_VIEWPORT_CC) &&
