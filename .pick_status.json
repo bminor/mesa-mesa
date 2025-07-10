@@ -4454,7 +4454,7 @@
         "description": "util: add workaround for legacy OpenGL tf2",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a34cc97ca3e19fb36045bf361b3a6bd865f71c7b",
         "notes": null
