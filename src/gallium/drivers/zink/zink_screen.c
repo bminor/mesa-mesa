@@ -2300,6 +2300,27 @@ zink_create_exportable_semaphore(struct zink_screen *screen)
    return ret == VK_SUCCESS ? sem : VK_NULL_HANDLE;
 }
 
+#if defined(HAVE_LIBDRM) && (DETECT_OS_LINUX || DETECT_OS_BSD)
+static int
+zink_resource_get_dma_buf(struct zink_screen *screen, struct zink_resource *res)
+{
+   if (res->obj->is_aux) {
+      return os_dupfd_cloexec(res->obj->handle);
+   } else {
+      VkMemoryGetFdInfoKHR fd_info = {0};
+      fd_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+      fd_info.memory = zink_bo_get_mem(res->obj->bo);
+      fd_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+
+      int fd;
+      if (VKSCR(GetMemoryFdKHR)(screen->dev, &fd_info, &fd) != VK_SUCCESS)
+         return -1;
+
+      return fd;
+   }
+}
+#endif
+
 VkSemaphore
 zink_screen_export_dmabuf_semaphore(struct zink_screen *screen, struct zink_resource *res)
 {
@@ -2310,18 +2331,7 @@ zink_screen_export_dmabuf_semaphore(struct zink_screen *screen, struct zink_reso
       .fd = -1,
    };
 
-   int fd = -1;
-   if (res->obj->is_aux) {
-      fd = os_dupfd_cloexec(res->obj->handle);
-   } else {
-      VkMemoryGetFdInfoKHR fd_info = {0};
-      fd_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
-      fd_info.memory = zink_bo_get_mem(res->obj->bo);
-      fd_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
-      if (VKSCR(GetMemoryFdKHR)(screen->dev, &fd_info, &fd) != VK_SUCCESS)
-         fd = -1;
-   }
-
+   int fd = zink_resource_get_dma_buf(screen, res);
    if (unlikely(fd < 0)) {
       mesa_loge("MESA: Unable to get a valid memory fd");
       return VK_NULL_HANDLE;
@@ -2374,17 +2384,7 @@ zink_screen_import_dmabuf_semaphore(struct zink_screen *screen, struct zink_reso
    }
 
    bool ret = false;
-   int fd;
-   if (res->obj->is_aux) {
-      fd = os_dupfd_cloexec(res->obj->handle);
-   } else {
-      VkMemoryGetFdInfoKHR fd_info = {0};
-      fd_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
-      fd_info.memory = zink_bo_get_mem(res->obj->bo);
-      fd_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
-      if (VKSCR(GetMemoryFdKHR)(screen->dev, &fd_info, &fd) != VK_SUCCESS)
-         fd = -1;
-   }
+   int fd = zink_resource_get_dma_buf(screen, res);
    if (fd != -1) {
       struct dma_buf_import_sync_file import = {
          .flags = DMA_BUF_SYNC_RW,
