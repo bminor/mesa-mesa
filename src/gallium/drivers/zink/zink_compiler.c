@@ -3359,7 +3359,7 @@ zink_shader_spirv_compile(struct zink_screen *screen, struct zink_shader *zs, st
       sci.setLayoutCount = pg->num_dsl;
       sci.pSetLayouts = pg->dsl;
    } else {
-      sci.setLayoutCount = zs->info.stage + 1;
+      sci.setLayoutCount = zs->info.stage == MESA_SHADER_COMPUTE ? 1 : ZINK_GFX_SHADER_COUNT;
       dsl[zs->info.stage] = zs->precompile.dsl;;
       sci.pSetLayouts = dsl;
    }
