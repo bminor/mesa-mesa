@@ -440,7 +440,7 @@ radv_GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutC
 
          uint64_t max_count = INT32_MAX;
          if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
-            max_count = INT32_MAX - size;
+            max_count = MAX_INLINE_UNIFORM_BLOCK_SIZE - size;
          else if (descriptor_size)
             max_count = (INT32_MAX - size) / descriptor_size;
 
