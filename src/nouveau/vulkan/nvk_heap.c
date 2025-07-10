@@ -20,7 +20,7 @@ nvk_heap_init(struct nvk_device *dev, struct nvk_heap *heap,
               uint32_t overalloc, bool contiguous)
 {
    VkResult result = nvk_mem_arena_init(dev, &heap->arena, mem_flags, map_flags,
-                                        true, NVK_MEM_ARENA_MAX_SIZE);
+                                        contiguous, NVK_MEM_ARENA_MAX_SIZE);
    if (result != VK_SUCCESS)
       return result;
 
