@@ -17,6 +17,8 @@ fd2_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
    uint32_t height0 = util_format_get_nblocksy(format, prsc->height0);
    uint32_t level, size = 0;
 
+   fd_resource_layout_init(prsc);
+
    /* 32 pixel alignment */
    fdl_set_pitchalign(&rsc->layout, fdl_cpp_shift(&rsc->layout) + 5);
 

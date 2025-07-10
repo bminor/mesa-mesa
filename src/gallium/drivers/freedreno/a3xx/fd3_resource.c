@@ -56,6 +56,8 @@ fd3_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 {
    uint32_t alignment;
 
+   fd_resource_layout_init(&rsc->b.b);
+
    if (type >= FD_LAYOUT_TILED)
       rsc->layout.tile_mode = fd3_tile_mode(&rsc->b.b);
    if (type == FD_LAYOUT_UBWC)

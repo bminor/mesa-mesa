@@ -1180,7 +1180,8 @@ fd_resource_resize(struct pipe_resource *prsc, uint32_t sz)
    realloc_bo(rsc, rsc->layout.size);
 }
 
-static void
+/* Helper for legacy backends not using fdl: */
+void
 fd_resource_layout_init(struct pipe_resource *prsc)
 {
    struct fd_resource *rsc = fd_resource(prsc);
@@ -1367,8 +1368,6 @@ fd_resource_allocate_and_resolve(struct pipe_screen *pscreen,
 
    if (tmpl->bind & PIPE_BIND_SHARED)
       rsc->b.is_shared = true;
-
-   fd_resource_layout_init(prsc);
 
    enum fd_layout_type layout =
       get_best_layout(screen, tmpl, modifiers, count);

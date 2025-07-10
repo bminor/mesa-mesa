@@ -26,6 +26,8 @@ fd4_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 
    assert(type == FD_LAYOUT_LINEAR);
 
+   fd_resource_layout_init(prsc);
+
    if (prsc->target == PIPE_TEXTURE_3D) {
       rsc->layout.layer_first = false;
       layers_in_level = prsc->array_size;
