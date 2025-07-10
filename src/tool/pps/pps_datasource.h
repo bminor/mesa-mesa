@@ -56,10 +56,6 @@ class GpuDataSource : public perfetto::DataSource<GpuDataSource, GpuDataSourceTr
    /// Last CPU timestamp at which we correlated CPU/GPU timestamps
    uint64_t last_correlation_timestamp = 0;
 
-   /// A data source supports one driver at a time, but if you need more
-   /// than one gpu datasource you can just run another producer
-   Driver *driver = nullptr;
-
    /// CPU timestamp of packet sent with counter descriptors
    uint64_t descriptor_timestamp = 0;
 

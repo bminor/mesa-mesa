@@ -24,7 +24,9 @@
 
 namespace pps
 {
-static std::string driver_name;
+/// A data source supports one driver at a time, but if you need more
+/// than one gpu datasource you can just run another producer
+static Driver *driver = nullptr;
 
 /// Synchronize access to started_cv and started
 static std::mutex started_m;
@@ -38,26 +40,6 @@ float ms(const std::chrono::nanoseconds &t)
 
 void GpuDataSource::OnSetup(const SetupArgs &args)
 {
-   // Create drivers for all supported devices
-   auto drm_devices = DrmDevice::create_all();
-   for (auto &drm_device : drm_devices) {
-      if (drm_device.name != driver_name)
-         continue;
-
-      if (auto driver = Driver::get_driver(std::move(drm_device))) {
-         if (!driver->init_perfcnt()) {
-            // Skip failing driver
-            PPS_LOG_ERROR("Failed to initialize %s driver", driver->drm_device.name.c_str());
-            continue;
-         }
-
-         this->driver = driver;
-      }
-   }
-   if (driver == nullptr) {
-      PPS_LOG_FATAL("No DRM devices supported");
-   }
-
    // Parse perfetto config
    const std::string &config_raw = args.config->gpu_counter_config_raw();
    perfetto::protos::pbzero::GpuCounterConfig::Decoder config(config_raw);
@@ -144,20 +126,7 @@ void GpuDataSource::wait_started()
    }
 }
 
-void GpuDataSource::register_data_source(const std::string &_driver_name)
-{
-   driver_name = _driver_name;
-   static perfetto::DataSourceDescriptor dsd;
-#if DETECT_OS_ANDROID
-   // Android tooling expects this data source name
-   dsd.set_name("gpu.counters");
-#else
-   dsd.set_name("gpu.counters." + driver_name);
-#endif
-   Register(dsd);
-}
-
-void add_group(perfetto::protos::pbzero::GpuCounterDescriptor *desc,
+template <typename GpuCounterDescriptor> void add_group(GpuCounterDescriptor *desc,
    const CounterGroup &group,
    const std::string &prefix,
    int32_t gpu_num)
@@ -181,14 +150,11 @@ void add_group(perfetto::protos::pbzero::GpuCounterDescriptor *desc,
    }
 }
 
-void add_descriptors(perfetto::protos::pbzero::GpuCounterEvent *event,
+template <typename GpuCounterDescriptor> void add_descriptors(GpuCounterDescriptor *desc,
    std::vector<CounterGroup> const &groups,
    std::vector<Counter> const &counters,
    Driver &driver)
 {
-   // Start a counter descriptor
-   auto desc = event->set_counter_descriptor();
-
    // Add the groups
    for (auto const &group : groups) {
       add_group(desc, group, driver.drm_device.name, driver.drm_device.gpu_num);
@@ -200,19 +166,19 @@ void add_descriptors(perfetto::protos::pbzero::GpuCounterEvent *event,
       spec->set_counter_id(counter.id);
       spec->set_name(counter.name);
 
-      auto units = perfetto::protos::pbzero::GpuCounterDescriptor::NONE;
+      auto units = GpuCounterDescriptor::NONE;
       switch (counter.units) {
       case Counter::Units::Percent:
-         units = perfetto::protos::pbzero::GpuCounterDescriptor::PERCENT;
+         units = GpuCounterDescriptor::PERCENT;
          break;
       case Counter::Units::Byte:
-         units = perfetto::protos::pbzero::GpuCounterDescriptor::BYTE;
+         units = GpuCounterDescriptor::BYTE;
          break;
       case Counter::Units::Hertz:
-         units = perfetto::protos::pbzero::GpuCounterDescriptor::HERTZ;
+         units = GpuCounterDescriptor::HERTZ;
          break;
       case Counter::Units::None:
-         units = perfetto::protos::pbzero::GpuCounterDescriptor::NONE;
+         units = GpuCounterDescriptor::NONE;
          break;
       default:
          assert(false && "Missing counter units type!");
@@ -299,9 +265,11 @@ void GpuDataSource::trace(TraceContext &ctx)
          auto event = packet->set_gpu_counter_event();
          event->set_gpu_id(driver->drm_device.gpu_num);
 
+         // Start a counter descriptor
+         auto desc = event->set_counter_descriptor();
          auto &groups = driver->groups;
          auto &counters = driver->enabled_counters;
-         add_descriptors(event, groups, counters, *driver);
+         add_descriptors(desc, groups, counters, *driver);
       }
 
       {
@@ -380,6 +348,44 @@ void GpuDataSource::trace_callback(TraceContext ctx)
    } else {
       PPS_LOG("Tracing finished");
    }
+}
+
+void GpuDataSource::register_data_source(const std::string &driver_name)
+{
+   // Create drivers for all supported devices
+   auto drm_devices = DrmDevice::create_all();
+   for (auto &drm_device : drm_devices) {
+      if (drm_device.name != driver_name)
+         continue;
+
+      if (auto _driver = Driver::get_driver(std::move(drm_device))) {
+         if (!_driver->init_perfcnt()) {
+            // Skip failing driver
+            PPS_LOG_ERROR("Failed to initialize %s driver", _driver->drm_device.name.c_str());
+            continue;
+         }
+
+         driver = _driver;
+      }
+   }
+   if (driver == nullptr) {
+      PPS_LOG_FATAL("No DRM devices supported");
+   }
+
+   static perfetto::DataSourceDescriptor dsd;
+#if DETECT_OS_ANDROID
+   // Android tooling expects this data source name
+   dsd.set_name("gpu.counters");
+#else
+   dsd.set_name("gpu.counters." + driver_name);
+#endif
+   // Start a counter descriptor
+   perfetto::protos::gen::GpuCounterDescriptor desc;
+   auto &groups = driver->groups;
+   auto &counters = driver->enabled_counters;
+   add_descriptors(&desc, groups, counters, *driver);
+   dsd.set_gpu_counter_descriptor_raw(desc.SerializeAsString());
+   Register(dsd);
 }
 
 } // namespace pps
