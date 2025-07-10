@@ -1,5 +1,3 @@
-# src/gallium/auxiliary/util/u_surface.c:285: util_resource_copy_region: Assertion `dst_box.x + dst_box.width <= (int)u_minify(dst->width0, dst_level)' failed.
-test_copy_texture_bc_rgba,Crash
 
 # src/gallium/frontends/lavapipe/lvp_private.h:773: lvp_image_aspects_to_plane: Assertion `!(aspectMask & ~image->vk.aspects)' failed.
 test_get_resource_tiling,Crash

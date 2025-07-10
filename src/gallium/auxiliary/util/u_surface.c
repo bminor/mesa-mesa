@@ -283,8 +283,8 @@ util_resource_copy_region(struct pipe_context *pipe,
    /* check that region boxes are not out of bounds */
    assert(src_box.x + src_box.width <= (int)u_minify(src->width0, src_level));
    assert(src_box.y + src_box.height <= (int)u_minify(src->height0, src_level));
-   assert(dst_box.x + dst_box.width <= (int)u_minify(dst->width0, dst_level));
-   assert(dst_box.y + dst_box.height <= (int)u_minify(dst->height0, dst_level));
+   assert(dst_box.x + dst_box.width <= (int)util_align_npot(u_minify(dst->width0, dst_level), dst_bw));
+   assert(dst_box.y + dst_box.height <= (int)util_align_npot(u_minify(dst->height0, dst_level), dst_bh));
 
    /* check that total number of src, dest bytes match */
    assert((src_box.width / src_bw) * (src_box.height / src_bh) * src_bs ==
