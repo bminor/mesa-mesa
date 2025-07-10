@@ -396,24 +396,41 @@ struct update_unordered_access_and_get_cmdbuf<false> {
    }
 };
 
+/* always accumulate new read accesses, resetting on write access */
 static void
 apply_new_access(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline, bool unordered, bool usage_matches, bool is_write)
 {
    if (unordered) {
-      /* these should get automatically emitted during submission */
-      res->obj->unordered_access = flags;
-      res->obj->unordered_access_stage = pipeline;
       if (is_write) {
+         res->obj->unordered_access = flags;
+         res->obj->unordered_access_stage = pipeline;
+         /* these should get automatically emitted during submission */
          ctx->bs->unordered_write_access |= flags;
          ctx->bs->unordered_write_stages |= pipeline;
+      } else {
+         if (zink_resource_access_is_write(res->obj->unordered_access)) {
+            res->obj->unordered_access = 0;
+            res->obj->unordered_access_stage = 0;
+         }
+         res->obj->unordered_access |= flags;
+         res->obj->unordered_access_stage |= pipeline;
       }
    } else {
       res->obj->unordered_access = 0;
       res->obj->unordered_access_stage = 0;
    }
    if (!unordered || !usage_matches || res->obj->ordered_access_is_copied) {
-      res->obj->access = flags;
-      res->obj->access_stage = pipeline;
+      if (zink_resource_access_is_write(res->obj->unordered_access | res->obj->access)) {
+         res->obj->access = 0;
+         res->obj->access_stage = 0;
+      }
+      if (is_write) {
+         res->obj->access = flags;
+         res->obj->access_stage = pipeline;
+      } else {
+         res->obj->access |= flags;
+         res->obj->access_stage |= pipeline;
+      }
       res->obj->ordered_access_is_copied = unordered;
    }
 }
@@ -641,10 +658,11 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
       res->obj->ordered_access_is_copied = false;
    }
    /* unordered barriers can be skipped when:
-    * - there is no current-batch unordered access AND previous batch usage is not write access
-    * - there is current-batch unordered access AND the unordered access is not write access
+    * - previous access is not write AND (last write has already been synchronized OR no write is active)
     */
-   bool can_skip_unordered = !unordered || UNSYNCHRONIZED ? false : !zink_resource_access_is_write(!unordered_usage_matches ? res->obj->access : res->obj->unordered_access);
+   VkAccessFlags prev_access = !unordered_usage_matches ? res->obj->access : res->obj->unordered_access;
+   bool needs_access = zink_resource_access_is_write(prev_access) || (res->obj->last_write && (prev_access & flags) != flags);
+   bool can_skip_unordered = !unordered || UNSYNCHRONIZED ? false : !needs_access;
    /* ordered barriers can be skipped if both:
     * - there is no current access
     * - there is no current-batch unordered access
