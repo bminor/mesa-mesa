@@ -396,6 +396,28 @@ struct update_unordered_access_and_get_cmdbuf<false> {
    }
 };
 
+static void
+apply_new_access(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline, bool unordered, bool usage_matches, bool is_write)
+{
+   if (unordered) {
+      /* these should get automatically emitted during submission */
+      res->obj->unordered_access = flags;
+      res->obj->unordered_access_stage = pipeline;
+      if (is_write) {
+         ctx->bs->unordered_write_access |= flags;
+         ctx->bs->unordered_write_stages |= pipeline;
+      }
+   } else {
+      res->obj->unordered_access = 0;
+      res->obj->unordered_access_stage = 0;
+   }
+   if (!unordered || !usage_matches || res->obj->ordered_access_is_copied) {
+      res->obj->access = flags;
+      res->obj->access_stage = pipeline;
+      res->obj->ordered_access_is_copied = unordered;
+   }
+}
+
 template <barrier_type BARRIER_API, bool UNSYNCHRONIZED, bool GENERAL>
 void
 zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res, VkImageLayout new_layout, VkAccessFlags flags, VkPipelineStageFlags pipeline)
@@ -428,23 +450,7 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
       res->obj->last_write = flags;
    if (GENERAL) {
       bool unordered = ctx->unordered_blitting || cmdbuf == ctx->bs->reordered_cmdbuf;
-      if (unordered) {
-         /* these should get automatically emitted during submission */
-         res->obj->unordered_access = flags;
-         res->obj->unordered_access_stage = pipeline;
-         if (is_write) {
-            ctx->bs->unordered_write_access |= flags;
-            ctx->bs->unordered_write_stages |= pipeline;
-         }
-      } else {
-         res->obj->unordered_access = 0;
-         res->obj->unordered_access_stage = 0;
-      }
-      if (!unordered || !usage_matches || res->obj->ordered_access_is_copied) {
-         res->obj->access = flags;
-         res->obj->access_stage = pipeline;
-         res->obj->ordered_access_is_copied = unordered;
-      }
+      apply_new_access(ctx, res, flags, pipeline, unordered, usage_matches, is_write);
    } else {
       res->obj->access = flags;
       res->obj->access_stage = pipeline;
@@ -676,23 +682,7 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
 
    if (is_write)
       res->obj->last_write = flags;
-   if (unordered) {
-      /* these should get automatically emitted during submission */
-      res->obj->unordered_access = flags;
-      res->obj->unordered_access_stage = pipeline;
-      if (is_write) {
-         ctx->bs->unordered_write_access |= flags;
-         ctx->bs->unordered_write_stages |= pipeline;
-      }
-   } else {
-      res->obj->unordered_access = 0;
-      res->obj->unordered_access_stage = 0;
-   }
-   if (!unordered || !usage_matches || res->obj->ordered_access_is_copied) {
-      res->obj->access = flags;
-      res->obj->access_stage = pipeline;
-      res->obj->ordered_access_is_copied = unordered;
-   }
+   apply_new_access(ctx, res, flags, pipeline, unordered, usage_matches, is_write);
    if (!(flags & VK_ACCESS_TRANSFER_WRITE_BIT) && GENERAL_IMAGE)
       zink_resource_copies_reset(res);
 }
