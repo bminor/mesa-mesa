@@ -12,7 +12,8 @@ void
 panvk_per_arch(cmd_prepare_dispatch_sysvals)(
    struct panvk_cmd_buffer *cmdbuf, const struct panvk_dispatch_info *info)
 {
-   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
+   const struct panvk_shader_variant *shader =
+      panvk_shader_only_variant(cmdbuf->state.compute.shader);
    const struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
    BITSET_DECLARE(dirty_sysvals, MAX_SYSVAL_FAUS) = {0};

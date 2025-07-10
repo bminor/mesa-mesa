@@ -300,9 +300,10 @@ panvk_per_arch(blend_emit_descs)(struct panvk_cmd_buffer *cmdbuf,
       &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_color_blend_state *cb = &dyns->cb;
    const struct vk_color_attachment_location_state *cal = &dyns->cal;
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
+   const struct panvk_shader_variant *fs =
+      panvk_shader_only_variant(cmdbuf->state.gfx.fs.shader);
    const struct pan_shader_info *fs_info = fs ? &fs->info : NULL;
-   uint64_t fs_code = panvk_shader_get_dev_addr(fs);
+   uint64_t fs_code = panvk_shader_variant_get_dev_addr(fs);
    const struct panvk_rendering_state *render = &cmdbuf->state.gfx.render;
    const VkFormat *color_attachment_formats = render->color_attachments.fmts;
    const uint8_t *color_attachment_samples = render->color_attachments.samples;

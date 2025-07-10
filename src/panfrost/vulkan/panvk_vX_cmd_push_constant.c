@@ -8,13 +8,13 @@
 #include "panvk_entrypoints.h"
 
 VkResult
-panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
-                                          const struct panvk_shader *shader,
-                                          uint32_t repeat_count)
+panvk_per_arch(cmd_prepare_push_uniforms)(
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader_variant *shader,
+   uint32_t repeat_count)
 {
    uint64_t *push_ptr;
 
-   switch (shader->vk.stage) {
+   switch (shader->info.stage) {
    case MESA_SHADER_COMPUTE:
       if (!compute_state_dirty(cmdbuf, PUSH_UNIFORMS))
          return VK_SUCCESS;
@@ -47,7 +47,7 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
    if (!push_uniforms.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   uint64_t *sysvals = shader->vk.stage == MESA_SHADER_COMPUTE
+   uint64_t *sysvals = shader->info.stage == MESA_SHADER_COMPUTE
                           ? (uint64_t *)&cmdbuf->state.compute.sysvals
                           : (uint64_t *)&cmdbuf->state.gfx.sysvals;
    uint64_t *push_consts = cmdbuf->state.push_constants.data;
@@ -57,7 +57,7 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
    for (uint32_t i = 0; i < repeat_count; i++) {
       uint64_t addr =
          push_uniforms.gpu + i * shader->fau.total_count * sizeof(uint64_t);
-      if (shader->vk.stage == MESA_SHADER_COMPUTE)
+      if (shader->info.stage == MESA_SHADER_COMPUTE)
          cmdbuf->state.compute.sysvals.push_uniforms = addr;
       else
          cmdbuf->state.gfx.sysvals.push_uniforms = addr;

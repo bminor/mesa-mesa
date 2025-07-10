@@ -148,11 +148,11 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img)
 struct panvk_cmd_buffer;
 struct panvk_descriptor_state;
 struct panvk_device;
-struct panvk_shader;
+struct panvk_shader_variant;
 struct panvk_shader_desc_state;
 
 VkResult panvk_per_arch(meta_get_copy_desc_job)(
-   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader *shader,
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader_variant *shader,
    const struct panvk_descriptor_state *desc_state,
    const struct panvk_shader_desc_state *shader_desc_state,
    uint32_t attrib_buf_idx_offset, struct pan_ptr *job_desc);

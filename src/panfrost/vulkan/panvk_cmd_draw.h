@@ -260,8 +260,9 @@ static inline bool
 fs_required(const struct panvk_cmd_graphics_state *state,
             const struct vk_dynamic_graphics_state *dyn_state)
 {
-   const struct pan_shader_info *fs_info =
-      state->fs.shader ? &state->fs.shader->info : NULL;
+   const struct panvk_shader_variant *fs =
+      panvk_shader_only_variant(state->fs.shader);
+   const struct pan_shader_info *fs_info = fs ? &fs->info : NULL;
    const struct vk_color_blend_state *cb = &dyn_state->cb;
    const struct vk_rasterization_state *rs = &dyn_state->rs;
 
@@ -407,7 +408,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
 
 static inline uint32_t
 color_attachment_written_mask(
-   const struct panvk_shader *fs,
+   const struct panvk_shader_variant *fs,
    const struct vk_color_attachment_location_state *cal)
 {
    uint32_t written_by_shader =
@@ -428,7 +429,7 @@ color_attachment_written_mask(
 }
 
 static inline uint32_t
-color_attachment_read_mask(const struct panvk_shader *fs,
+color_attachment_read_mask(const struct panvk_shader_variant *fs,
                            const struct vk_input_attachment_location_state *ial,
                            uint8_t color_attachment_mask)
 {
@@ -453,7 +454,7 @@ color_attachment_read_mask(const struct panvk_shader *fs,
 }
 
 static inline bool
-z_attachment_read(const struct panvk_shader *fs,
+z_attachment_read(const struct panvk_shader_variant *fs,
                   const struct vk_input_attachment_location_state *ial)
 {
    uint32_t depth_mask = ial->depth_att == MESA_VK_ATTACHMENT_NO_INDEX
@@ -465,7 +466,7 @@ z_attachment_read(const struct panvk_shader *fs,
 }
 
 static inline bool
-s_attachment_read(const struct panvk_shader *fs,
+s_attachment_read(const struct panvk_shader_variant *fs,
                   const struct vk_input_attachment_location_state *ial)
 {
    uint32_t stencil_mask = ial->stencil_att == MESA_VK_ATTACHMENT_NO_INDEX

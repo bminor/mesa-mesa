@@ -28,7 +28,7 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
-   const struct panvk_shader *shader =
+   const struct panvk_shader_variant *shader =
       panvk_per_arch(precomp_cache_get)(dev->precomp_cache, idx);
    assert(shader);
 

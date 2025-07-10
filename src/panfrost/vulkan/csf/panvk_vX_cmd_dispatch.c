@@ -43,7 +43,8 @@ prepare_driver_set(struct panvk_cmd_buffer *cmdbuf)
 
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.compute.desc_state;
-   const struct panvk_shader *cs = cmdbuf->state.compute.shader;
+   const struct panvk_shader_variant *cs =
+      panvk_shader_only_variant(cmdbuf->state.compute.shader);
    uint32_t desc_count = cs->desc_info.dyn_bufs.count + 1;
    struct pan_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
@@ -67,10 +68,9 @@ prepare_driver_set(struct panvk_cmd_buffer *cmdbuf)
 }
 
 uint64_t
-panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
-                                         const struct panvk_shader *shader,
-                                         const struct pan_compute_dim *dim,
-                                         bool indirect)
+panvk_per_arch(cmd_dispatch_prepare_tls)(
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader_variant *shader,
+   const struct pan_compute_dim *dim, bool indirect)
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(cmdbuf->vk.base.device->physical);
@@ -122,7 +122,8 @@ panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
 static void
 cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 {
-   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
+   const struct panvk_shader_variant *shader =
+      panvk_shader_only_variant(cmdbuf->state.compute.shader);
    VkResult result;
 
    /* If there's no compute shader, we can skip the dispatch. */
@@ -170,8 +171,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    if (result != VK_SUCCESS)
       return;
 
-   result = panvk_per_arch(cmd_prepare_push_uniforms)(
-      cmdbuf, cmdbuf->state.compute.shader, 1);
+   result = panvk_per_arch(cmd_prepare_push_uniforms)(cmdbuf, shader, 1);
    if (result != VK_SUCCESS)
       return;
 
@@ -355,7 +355,8 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
                                 uint32_t groupCountY, uint32_t groupCountZ)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
+   const struct panvk_shader_variant *shader =
+      panvk_shader_only_variant(cmdbuf->state.compute.shader);
    struct panvk_dispatch_info info = {
       .wg_base = {baseGroupX, baseGroupY, baseGroupZ},
       .direct.wg_count = {groupCountX, groupCountY, groupCountZ},

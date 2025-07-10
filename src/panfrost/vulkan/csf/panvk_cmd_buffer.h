@@ -465,8 +465,9 @@ void panvk_per_arch(cmd_inherit_render_state)(
 
 static inline void
 panvk_per_arch(calculate_task_axis_and_increment)(
-   const struct panvk_shader *shader, struct panvk_physical_device *phys_dev,
-   unsigned *task_axis, unsigned *task_increment)
+   const struct panvk_shader_variant *shader,
+   struct panvk_physical_device *phys_dev, unsigned *task_axis,
+   unsigned *task_increment)
 {
    /* Pick the task_axis and task_increment to maximize thread
     * utilization. */

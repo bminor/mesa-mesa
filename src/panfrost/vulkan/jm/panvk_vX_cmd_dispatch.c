@@ -31,10 +31,9 @@
 #include <vulkan/vulkan_core.h>
 
 uint64_t
-panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
-                                         const struct panvk_shader *shader,
-                                         const struct pan_compute_dim *dim,
-                                         bool indirect)
+panvk_per_arch(cmd_dispatch_prepare_tls)(
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader_variant *shader,
+   const struct pan_compute_dim *dim, bool indirect)
 {
    struct panvk_batch *batch = cmdbuf->cur_batch;
 
@@ -64,7 +63,8 @@ panvk_per_arch(cmd_dispatch_prepare_tls)(struct panvk_cmd_buffer *cmdbuf,
 static void
 cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
 {
-   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
+   const struct panvk_shader_variant *shader =
+      panvk_shader_only_variant(cmdbuf->state.compute.shader);
    VkResult result;
 
    /* If there's no compute shader, we can skip the dispatch. */
@@ -104,7 +104,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    panvk_per_arch(cmd_prepare_dispatch_sysvals)(cmdbuf, info);
 
    result = panvk_per_arch(cmd_prepare_push_uniforms)(
-      cmdbuf, cmdbuf->state.compute.shader, 1);
+      cmdbuf, shader, 1);
    if (result != VK_SUCCESS)
       return;
 

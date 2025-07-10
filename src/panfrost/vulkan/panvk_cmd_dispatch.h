@@ -77,7 +77,7 @@ void panvk_per_arch(cmd_prepare_dispatch_sysvals)(
    struct panvk_cmd_buffer *cmdbuf, const struct panvk_dispatch_info *info);
 
 uint64_t panvk_per_arch(cmd_dispatch_prepare_tls)(
-   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader *shader,
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader_variant *shader,
    const struct pan_compute_dim *dim, bool indirect);
 
 #endif

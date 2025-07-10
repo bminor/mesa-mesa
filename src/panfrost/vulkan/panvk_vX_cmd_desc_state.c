@@ -113,7 +113,7 @@ VkResult
 panvk_per_arch(cmd_prepare_dyn_ssbos)(
    struct panvk_cmd_buffer *cmdbuf,
    const struct panvk_descriptor_state *desc_state,
-   const struct panvk_shader *shader,
+   const struct panvk_shader_variant *shader,
    struct panvk_shader_desc_state *shader_desc_state)
 {
    shader_desc_state->dyn_ssbos = 0;
@@ -151,7 +151,7 @@ panvk_per_arch(cmd_prepare_dyn_ssbos)(
 
 static void
 panvk_cmd_fill_dyn_ubos(const struct panvk_descriptor_state *desc_state,
-                        const struct panvk_shader *shader,
+                        const struct panvk_shader_variant *shader,
                         struct mali_uniform_buffer_packed *ubos,
                         uint32_t ubo_count)
 {
@@ -180,7 +180,7 @@ VkResult
 panvk_per_arch(cmd_prepare_shader_desc_tables)(
    struct panvk_cmd_buffer *cmdbuf,
    const struct panvk_descriptor_state *desc_state,
-   const struct panvk_shader *shader,
+   const struct panvk_shader_variant *shader,
    struct panvk_shader_desc_state *shader_desc_state)
 {
    memset(shader_desc_state->tables, 0, sizeof(shader_desc_state->tables));
@@ -246,7 +246,8 @@ panvk_per_arch(cmd_prepare_shader_desc_tables)(
 void
 panvk_per_arch(cmd_fill_dyn_bufs)(
    const struct panvk_descriptor_state *desc_state,
-   const struct panvk_shader *shader, struct mali_buffer_packed *buffers)
+   const struct panvk_shader_variant *shader,
+   struct mali_buffer_packed *buffers)
 {
    if (!shader)
       return;
@@ -273,7 +274,7 @@ VkResult
 panvk_per_arch(cmd_prepare_shader_res_table)(
    struct panvk_cmd_buffer *cmdbuf,
    const struct panvk_descriptor_state *desc_state,
-   const struct panvk_shader *shader,
+   const struct panvk_shader_variant *shader,
    struct panvk_shader_desc_state *shader_desc_state, uint32_t repeat_count)
 {
    if (!shader) {

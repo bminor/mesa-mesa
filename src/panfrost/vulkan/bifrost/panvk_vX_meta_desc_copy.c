@@ -334,7 +334,7 @@ out:
 
 VkResult
 panvk_per_arch(meta_get_copy_desc_job)(
-   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader *shader,
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_shader_variant *shader,
    const struct panvk_descriptor_state *desc_state,
    const struct panvk_shader_desc_state *shader_desc_state,
    uint32_t attrib_buf_idx_offset, struct pan_ptr *job_desc)

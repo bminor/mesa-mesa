@@ -80,7 +80,7 @@ panvk_get_precompiled_locked(struct panvk_precomp_cache *cache,
    return shader;
 }
 
-struct panvk_shader *
+const struct panvk_shader_variant *
 panvk_per_arch(precomp_cache_get)(struct panvk_precomp_cache *cache,
                                   unsigned program)
 {
@@ -90,12 +90,12 @@ panvk_per_arch(precomp_cache_get)(struct panvk_precomp_cache *cache,
    struct panvk_shader *ret = p_atomic_read(cache->precomp + program);
 
    if (ret != NULL)
-      return ret;
+      return panvk_shader_only_variant(ret);
 
    /* Otherwise, take the lock and upload. */
    simple_mtx_lock(&cache->lock);
    ret = panvk_get_precompiled_locked(cache, program);
    simple_mtx_unlock(&cache->lock);
 
-   return ret;
+   return panvk_shader_only_variant(ret);
 }

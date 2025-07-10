@@ -85,5 +85,6 @@ ForEachMacros: [
   'pan_section_pack',
   'pan_unpack',
   'panvk_cs_reg_upd_ctx',
+  'panvk_shader_foreach_variant',
   'u_foreach_bit',
 ]

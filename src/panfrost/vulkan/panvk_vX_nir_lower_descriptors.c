@@ -74,7 +74,7 @@ struct lower_desc_ctx {
    bool null_descriptor_support;
    nir_address_format ubo_addr_format;
    nir_address_format ssbo_addr_format;
-   struct panvk_shader *shader;
+   struct panvk_shader_variant *shader;
 };
 
 static nir_address_format
@@ -872,7 +872,7 @@ get_img_index(nir_builder *b, nir_deref_instr *deref,
 
 struct panvk_lower_input_attachment_load_ctx {
    uint32_t ro_color_mask;
-   struct panvk_shader *shader;
+   struct panvk_shader_variant *shader;
 };
 
 static bool
@@ -890,7 +890,7 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
       return false;
 
    const struct panvk_lower_input_attachment_load_ctx *ctx = data;
-   struct panvk_shader *shader = ctx->shader;
+   struct panvk_shader_variant *shader = ctx->shader;
    nir_variable *var = nir_deref_instr_get_variable(deref);
    assert(var);
 
@@ -1066,7 +1066,7 @@ readonly_color_mask(nir_shader *nir,
 static bool
 lower_input_attachment_loads(nir_shader *nir,
                              const struct vk_graphics_pipeline_state *state,
-                             struct panvk_shader *shader)
+                             struct panvk_shader_variant *shader)
 {
    bool progress = false;
    struct panvk_lower_input_attachment_load_ctx ia_load_ctx = {
@@ -1453,7 +1453,7 @@ collect_instr_desc_access(nir_builder *b, nir_instr *instr, void *data)
 }
 
 static void
-upload_shader_desc_info(struct panvk_device *dev, struct panvk_shader *shader,
+upload_shader_desc_info(struct panvk_device *dev, struct panvk_shader_variant *shader,
                         const struct panvk_shader_desc_info *desc_info)
 {
 #if PAN_ARCH < 9
@@ -1496,7 +1496,7 @@ panvk_per_arch(nir_lower_descriptors)(
    nir_shader *nir, struct panvk_device *dev,
    const struct vk_pipeline_robustness_state *rs, uint32_t set_layout_count,
    struct vk_descriptor_set_layout *const *set_layouts,
-   const struct vk_graphics_pipeline_state *state, struct panvk_shader *shader)
+   const struct vk_graphics_pipeline_state *state, struct panvk_shader_variant *shader)
 {
    struct lower_desc_ctx ctx = {
       .shader = shader,

@@ -36,7 +36,7 @@ struct panvk_precomp_cache *
    panvk_per_arch(precomp_cache_init)(struct panvk_device *dev);
 void panvk_per_arch(precomp_cache_cleanup)(struct panvk_precomp_cache *cache);
 
-struct panvk_shader *
+const struct panvk_shader_variant *
    panvk_per_arch(precomp_cache_get)(struct panvk_precomp_cache *cache,
                                      unsigned program);
 
