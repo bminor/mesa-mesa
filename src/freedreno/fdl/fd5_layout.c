@@ -12,28 +12,6 @@
 #include "freedreno_layout.h"
 
 void
-fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
-            uint32_t nr_samples, uint32_t width0, uint32_t height0,
-            uint32_t depth0, uint32_t mip_levels, uint32_t array_size,
-            bool is_3d)
-{
-   struct fdl_image_params params = {
-      .format = format,
-      .nr_samples = nr_samples,
-      .width0 = width0,
-      .height0 = height0,
-      .depth0 = depth0,
-      .mip_levels = mip_levels,
-      .array_size = array_size,
-      .tile_mode = layout->tile_mode,
-      .ubwc = layout->ubwc,
-      .is_3d = is_3d,
-   };
-
-   return fdl5_layout_image(layout, &params);
-}
-
-void
 fdl5_layout_image(struct fdl_layout *layout, const struct fdl_image_params *params)
 {
    memset(layout, 0, sizeof(*layout));
