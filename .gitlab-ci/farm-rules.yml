@@ -31,7 +31,7 @@
 # In case of issues with a farm, here are the people to contact:
 #   farm name        | ci infrastructure used           | admin(s)
 #   -----------------|----------------------------------|---------
-#   anholt           | baremetal/poe-powered            | @anholt
+#   anholt           | (decommissioned)                 | @anholt
 #   austriancoder    | ci-tron                          | @austriancoder
 #   collabora        | lava                             | @daniels, @sergi
 #   google-freedreno | none (moving to LAVA)            | @daniels, @sergi
