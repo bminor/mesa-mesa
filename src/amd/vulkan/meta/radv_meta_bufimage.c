@@ -589,8 +589,10 @@ create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *s
  * to/from by a compute shader. Here we will perform a buffer copy to copy the
  * texels that the hardware missed.
  *
- * GFX10 will not use this workaround because it can be fixed by adjusting its
+ * GFX10+ will not use this workaround because it can be fixed by adjusting its
  * image view descriptors instead.
+ *
+ * GFX12+ is not affected (see NO_EDGE_CLAMP).
  */
 static void
 fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_blit2d_buffer *buf_bsurf,
@@ -606,9 +608,14 @@ fixup_gfx9_cs_copy(struct radv_cmd_buffer *cmd_buffer, const struct radv_meta_bl
    struct ac_surf_info surf_info = radv_get_ac_surf_info(device, image);
    enum radv_copy_flags img_copy_flags = 0, mem_copy_flags = 0;
 
+   if (gpu_info->gfx_level < GFX9 || gpu_info->gfx_level >= GFX12)
+      return;
+
+   if (image->vk.mip_levels == 1 || !vk_format_is_block_compressed(image->vk.format))
+      return;
+
    /* GFX10 will use a different workaround unless this is not a 2D image */
-   if (gpu_info->gfx_level < GFX9 || (gpu_info->gfx_level >= GFX10 && image->vk.image_type == VK_IMAGE_TYPE_2D) ||
-       image->vk.mip_levels == 1 || !vk_format_is_block_compressed(image->vk.format))
+   if (gpu_info->gfx_level >= GFX10 && image->vk.image_type == VK_IMAGE_TYPE_2D)
       return;
 
    /* The physical extent of the base mip */
