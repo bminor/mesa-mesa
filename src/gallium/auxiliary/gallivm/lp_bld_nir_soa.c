@@ -3190,7 +3190,7 @@ do_alu_action(struct lp_build_nir_soa_context *bld,
 {
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
-   LLVMValueRef result;
+   LLVMValueRef result = NULL;
 
    struct lp_build_context *float_bld = get_flt_bld(bld, src_bit_size[0], instr->def.divergent);
    struct lp_build_context *int_bld = get_int_bld(bld, false, src_bit_size[0], instr->def.divergent);
