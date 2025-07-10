@@ -2995,11 +2995,11 @@ vtn_split_barrier_semantics(struct vtn_builder *b,
       *after |= SpvMemorySemanticsAcquireMask | storage_semantics;
    }
 
-   if (av_vis_semantics & SpvMemorySemanticsMakeVisibleMask)
-      *before |= SpvMemorySemanticsMakeVisibleMask | storage_semantics;
-
    if (av_vis_semantics & SpvMemorySemanticsMakeAvailableMask)
-      *after |= SpvMemorySemanticsMakeAvailableMask | storage_semantics;
+      *before |= SpvMemorySemanticsMakeAvailableMask | storage_semantics;
+
+   if (av_vis_semantics & SpvMemorySemanticsMakeVisibleMask)
+      *after |= SpvMemorySemanticsMakeVisibleMask | storage_semantics;
 }
 
 static nir_memory_semantics
