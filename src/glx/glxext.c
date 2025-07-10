@@ -990,7 +990,6 @@ __glXInitialize(Display * dpy)
 #if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
    Bool glx_direct = !debug_get_bool_option("LIBGL_ALWAYS_INDIRECT", false);
    Bool glx_accel = !debug_get_bool_option("LIBGL_ALWAYS_SOFTWARE", false);
-   Bool dri3 = !debug_get_bool_option("LIBGL_DRI3_DISABLE", false);
    Bool kopper = !debug_get_bool_option("LIBGL_KOPPER_DISABLE", false);
 
    if (env && !strcmp(env, "zink"))
@@ -1009,20 +1008,15 @@ __glXInitialize(Display * dpy)
     ** (e.g., those called in AllocAndFetchScreenConfigs).
     */
 #if defined(GLX_USE_DRM)
-   bool dri3_err = false;
-   if (glx_direct && glx_accel && dri3)
+   if (glx_direct && glx_accel)
       dpyPriv->has_multibuffer = x11_dri3_has_multibuffer(XGetXCBConnection(dpy));
    if (glx_direct && glx_accel &&
        (!(glx_driver & GLX_DRIVER_ZINK_YES) || !kopper)) {
-      if (dri3) {
-         /* dri3 is tried as long as this doesn't error; whether modifiers work is not relevant */
-         if (!dri3_err) {
-            glx_driver |= GLX_DRIVER_DRI3;
-            /* nouveau wants to fallback to zink so if we get a screen enable try_zink */
-            if (!debug_get_bool_option("LIBGL_KOPPER_DISABLE", false))
-               glx_driver |= GLX_DRIVER_ZINK_INFER;
-         }
-      }
+      /* dri3 is tried as long as this doesn't error; whether modifiers work is not relevant */
+      glx_driver |= GLX_DRIVER_DRI3;
+      /* nouveau wants to fallback to zink so if we get a screen enable try_zink */
+      if (!debug_get_bool_option("LIBGL_KOPPER_DISABLE", false))
+         glx_driver |= GLX_DRIVER_ZINK_INFER;
 #if defined(HAVE_ZINK)
       if (!(glx_driver & GLX_DRIVER_DRI3))
          if (kopper && !getenv("GALLIUM_DRIVER"))
