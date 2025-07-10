@@ -2853,9 +2853,10 @@ prep_fb_attachment(struct zink_context *ctx, struct zink_resource *res, unsigned
       if (!i)
          zink_update_fbfetch(ctx);
    }
-   zink_batch_resource_usage_set(ctx->bs, res, true, false);
-   if (ctx->blitting)
+   if (ctx->blitting) {
+      zink_batch_resource_usage_set(ctx->bs, res, true, false);
       return true;
+   }
    VkImageLayout layout;
    /* depth attachment is stored as the last attachment, but bitfields always use PIPE_MAX_COLOR_BUFS */
    int idx = i == ctx->fb_state.nr_cbufs ? PIPE_MAX_COLOR_BUFS : i;
@@ -2905,6 +2906,7 @@ prep_fb_attachment(struct zink_context *ctx, struct zink_resource *res, unsigned
    res->obj->unordered_read = res->obj->unordered_write = false;
    if (!screen->driver_workarounds.general_layout && i == ctx->fb_state.nr_cbufs && res->sampler_bind_count[0])
       update_res_sampler_layouts(ctx, res);
+   zink_batch_resource_usage_set(ctx->bs, res, true, false);
    return true;
 }
 
