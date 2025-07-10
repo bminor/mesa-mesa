@@ -6,8 +6,6 @@
     GIT_STRATEGY: none
     B2C_VERSION: v0.9.15.1  # Linux 6.13.7
 
-    SCRIPTS_DIR: install
-
     CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: exit_code: 0\r$'
     CI_TRON_PATTERN__SESSION_END__REGEX: '^.*It''s now safe to turn off your computer\r$'
 
@@ -24,7 +22,7 @@
     CI_TRON__B2C_IMAGE_UNDER_TEST: $MESA_IMAGE
     CI_TRON__B2C_EXEC_SHELL: bash
     CI_TRON__B2C_EXEC_SHELL_FLAGS: "-euc -o pipefail"
-    CI_TRON__B2C_EXEC_CMD: "curl --silent --fail-with-body {{ job.http.url }}$CI_TRON_HTTP_ARTIFACT__INSTALL__PATH | tar --zstd --extract && $SCRIPTS_DIR/common/init-stage2.sh"
+    CI_TRON__B2C_EXEC_CMD: "curl --silent --fail-with-body {{ job.http.url }}$CI_TRON_HTTP_ARTIFACT__INSTALL__PATH | tar --zstd --extract && export SCRIPTS_DIR=$$PWD/install && $$SCRIPTS_DIR/common/init-stage2.sh"
 
     # Assume by default this is running deqp, as that's almost always true
     HWCI_TEST_SCRIPT: install/deqp-runner.sh
