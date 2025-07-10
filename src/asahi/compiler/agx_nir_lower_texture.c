@@ -398,24 +398,16 @@ static nir_def *
 txs_for_image(nir_builder *b, nir_intrinsic_instr *intr,
               unsigned num_components, unsigned bit_size, bool query_samples)
 {
-   nir_tex_instr *tex = nir_tex_instr_create(b->shader, query_samples ? 1 : 2);
-   tex->op = query_samples ? nir_texop_texture_samples : nir_texop_txs;
-   tex->is_array = nir_intrinsic_image_array(intr);
-   tex->dest_type = nir_type_uint32;
-   tex->sampler_dim = nir_intrinsic_image_dim(intr);
+   enum glsl_sampler_dim dim = nir_intrinsic_image_dim(intr);
+   nir_def *lod = query_samples ? NULL : intr->src[1].ssa;
+   nir_texop op = query_samples ? nir_texop_texture_samples : nir_texop_txs;
 
-   tex->src[0] =
-      nir_tex_src_for_ssa(nir_tex_src_texture_handle, intr->src[0].ssa);
-
-   if (!query_samples)
-      tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_lod, intr->src[1].ssa);
-
-   nir_def_init(&tex->instr, &tex->def, num_components, bit_size);
-   nir_builder_instr_insert(b, &tex->instr);
-   nir_def *res = &tex->def;
+   nir_def *res =
+      nir_build_tex(b, op, .texture_handle = intr->src[0].ssa, .lod = lod,
+                    .dim = dim, .is_array = nir_intrinsic_image_array(intr));
 
    /* Cube images are implemented as 2D arrays, so we need to divide here. */
-   if (tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE && res->num_components > 2 &&
+   if (dim == GLSL_SAMPLER_DIM_CUBE && res->num_components > 2 &&
        !query_samples) {
       nir_def *divided = nir_udiv_imm(b, nir_channel(b, res, 2), 6);
       res = nir_vector_insert_imm(b, res, divided, 2);

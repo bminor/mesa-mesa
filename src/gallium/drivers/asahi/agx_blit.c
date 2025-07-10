@@ -124,19 +124,10 @@ asahi_blit_compute_shader(struct pipe_context *ctx, struct asahi_blit_key *key)
             b, nir_pad_vector(b, coords_el_nd, 3), nir_u2f32(b, layer), 2);
       }
 
-      nir_tex_instr *tex = nir_tex_instr_create(b->shader, 1);
-      tex->dest_type = nir_type_uint32; /* irrelevant */
-      tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
-      tex->is_array = key->array;
-      tex->op = nir_texop_tex;
-      tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord, coords_el_nd);
-      tex->backend_flags = AGX_TEXTURE_FLAG_NO_CLAMP;
-      tex->coord_components = coords_el_nd->num_components;
-      tex->texture_index = 0;
-      tex->sampler_index = 0;
-      nir_def_init(&tex->instr, &tex->def, 4, 32);
-      nir_builder_instr_insert(b, &tex->instr);
-      colour0 = &tex->def;
+      colour0 = nir_tex(b, coords_el_nd, .texture_index = 0, .sampler_index = 0,
+                        .backend_flags = AGX_TEXTURE_FLAG_NO_CLAMP,
+                        .dim = GLSL_SAMPLER_DIM_2D, .is_array = key->array,
+                        .dest_type = nir_type_uint32);
    }
    nir_push_else(b, NULL);
    {
