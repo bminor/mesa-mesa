@@ -1413,7 +1413,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          pThis->m_eventInputDrained.set();
       }
       pThis->m_eventHaveInput.reset();
-      if( !pThis->m_bLowLatency )
+      if( !pThis->m_bLowLatency && !pThis->m_bFlushing && !pThis->m_bDraining )
       {
          pThis->m_dwNeedInputCount++;
          HRESULT hr = pThis->QueueEvent( METransformNeedInput, GUID_NULL, S_OK, nullptr );
