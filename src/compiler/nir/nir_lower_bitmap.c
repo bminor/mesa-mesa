@@ -49,73 +49,41 @@
  * If L8_UNORM, options->swizzle_xxxx is true.  Otherwise we can just use
  * the .w comp.
  */
-
-static void
-lower_bitmap(nir_shader *shader, nir_builder *b,
-             const nir_lower_bitmap_options *options)
+bool
+nir_lower_bitmap(nir_shader *shader, const nir_lower_bitmap_options *options)
 {
-   nir_def *texcoord;
-   nir_tex_instr *tex;
-   nir_def *cond;
+   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
+   assert(shader->info.io_lowered);
+
+   nir_function_impl *impl = nir_shader_get_entrypoint(shader);
+   nir_builder b_ = nir_builder_at(nir_before_impl(impl));
+   nir_builder *b = &b_;
 
    nir_def *baryc =
       nir_load_barycentric_pixel(b, 32, .interp_mode = INTERP_MODE_SMOOTH);
-   texcoord = nir_load_interpolated_input(b, 4, 32, baryc, nir_imm_int(b, 0),
-                                          .io_semantics.location = VARYING_SLOT_TEX0);
+
+   nir_def *texcoord =
+      nir_load_interpolated_input(b, 2, 32, baryc, nir_imm_int(b, 0),
+                                  .io_semantics.location = VARYING_SLOT_TEX0);
 
    const struct glsl_type *sampler2D =
       glsl_sampler_type(GLSL_SAMPLER_DIM_2D, false, false, GLSL_TYPE_FLOAT);
 
    nir_variable *tex_var =
-      nir_variable_create(shader, nir_var_uniform, sampler2D, "bitmap_tex");
+      nir_variable_create(b->shader, nir_var_uniform, sampler2D, "bitmap_tex");
    tex_var->data.binding = options->sampler;
    tex_var->data.explicit_binding = true;
    tex_var->data.how_declared = nir_var_hidden;
 
    nir_deref_instr *tex_deref = nir_build_deref_var(b, tex_var);
 
-   tex = nir_tex_instr_create(shader, 3);
-   tex->op = nir_texop_tex;
-   tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
-   tex->coord_components = 2;
-   tex->dest_type = nir_type_float32;
-   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
-                                     &tex_deref->def);
-   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_sampler_deref,
-                                     &tex_deref->def);
-   tex->src[2] = nir_tex_src_for_ssa(nir_tex_src_coord,
-                                     nir_trim_vector(b, texcoord, tex->coord_components));
-
-   nir_def_init(&tex->instr, &tex->def, 4, 32);
-   nir_builder_instr_insert(b, &tex->instr);
+   nir_def *tex = nir_tex(b, texcoord, .texture_deref = tex_deref,
+                          .sampler_deref = tex_deref);
 
    /* kill if tex != 0.0.. take .x or .w channel according to format: */
-   cond = nir_fneu_imm(b, nir_channel(b, &tex->def, options->swizzle_xxxx ? 0 : 3),
-                       0.0);
+   nir_def *channel = nir_channel(b, tex, options->swizzle_xxxx ? 0 : 3);
+   nir_discard_if(b, nir_fneu_imm(b, channel, 0.0));
 
-   nir_discard_if(b, cond);
-
-   shader->info.fs.uses_discard = true;
-}
-
-static void
-lower_bitmap_impl(nir_function_impl *impl,
-                  const nir_lower_bitmap_options *options)
-{
-   nir_builder b = nir_builder_at(nir_before_impl(impl));
-
-   lower_bitmap(impl->function->shader, &b, options);
-
-   nir_progress(true, impl, nir_metadata_control_flow);
-}
-
-bool
-nir_lower_bitmap(nir_shader *shader,
-                 const nir_lower_bitmap_options *options)
-{
-   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
-   assert(shader->info.io_lowered);
-
-   lower_bitmap_impl(nir_shader_get_entrypoint(shader), options);
-   return true;
+   b->shader->info.fs.uses_discard = true;
+   return nir_progress(true, impl, nir_metadata_control_flow);
 }
