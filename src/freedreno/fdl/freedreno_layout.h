@@ -76,6 +76,37 @@ struct fdl_explicit_layout {
 };
 
 /**
+ * General layout params for images.
+ */
+struct fdl_image_params {
+   enum pipe_format format;
+   uint32_t nr_samples;
+   uint32_t width0;
+   uint32_t height0;
+   uint32_t depth0;
+   uint32_t mip_levels;
+   uint32_t array_size;
+
+   /**
+    * Preferred tile mode, may be overriden by layout constraints.
+    */
+   uint32_t tile_mode;
+
+   /**
+    * UBWC preferred, may be overriden
+    */
+   bool ubwc;
+
+   /**
+    * Force UBWC, even when below the minimum width.
+    */
+   bool force_ubwc;
+
+   bool is_3d;
+   bool is_mutable;
+};
+
+/**
  * Metadata shared between vk and gallium driver for interop.
  *
  * NOTE: EXT_external_objects requires app to check device and driver
@@ -231,6 +262,11 @@ fdl_ubwc_enabled(const struct fdl_layout *layout, int level)
 const char *fdl_tile_mode_desc(const struct fdl_layout *layout, int level);
 
 void fdl_layout_buffer(struct fdl_layout *layout, uint32_t size);
+
+void fdl5_layout_image(struct fdl_layout *layout, const struct fdl_image_params *params);
+bool fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
+                       const struct fdl_image_params *params,
+                       const struct fdl_explicit_layout *explicit_layout);
 
 void fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
                  uint32_t nr_samples, uint32_t width0, uint32_t height0,

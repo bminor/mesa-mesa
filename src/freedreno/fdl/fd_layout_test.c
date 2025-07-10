@@ -12,11 +12,7 @@
 bool
 fdl_test_layout(const struct testcase *testcase, const struct fd_dev_id *dev_id)
 {
-   struct fdl_layout layout = {
-      .ubwc = testcase->layout.ubwc,
-      .tile_mode = testcase->layout.tile_mode,
-      .tile_all = testcase->layout.tile_all,
-   };
+   struct fdl_layout layout;
    bool ok = true;
 
    int max_size = MAX2(testcase->layout.width0, testcase->layout.height0);
@@ -26,20 +22,25 @@ fdl_test_layout(const struct testcase *testcase, const struct fd_dev_id *dev_id)
       max_size = u_minify(max_size, 1);
    }
 
+   struct fdl_image_params params = {
+      .format = testcase->format,
+      .nr_samples = MAX2(testcase->layout.nr_samples, 1),
+      .width0 = testcase->layout.width0,
+      .height0 = MAX2(testcase->layout.height0, 1),
+      .depth0 = MAX2(testcase->layout.depth0, 1),
+      .mip_levels = mip_levels,
+      .array_size = MAX2(testcase->array_size, 1),
+      .is_3d = testcase->is_3d,
+      .ubwc = testcase->layout.ubwc,
+      .tile_mode = testcase->layout.tile_mode,
+   };
+
    if (fd_dev_gen(dev_id) >= 6) {
       const struct fd_dev_info *dev_info = fd_dev_info_raw(dev_id);
-      fdl6_layout(&layout, dev_info, testcase->format,
-                  MAX2(testcase->layout.nr_samples, 1), testcase->layout.width0,
-                  MAX2(testcase->layout.height0, 1),
-                  MAX2(testcase->layout.depth0, 1), mip_levels,
-                  MAX2(testcase->array_size, 1), testcase->is_3d, false, false, NULL);
+      fdl6_layout_image(&layout, dev_info, &params, NULL);
    } else {
       assert(fd_dev_gen(dev_id) >= 5);
-      fdl5_layout(&layout, testcase->format,
-                  MAX2(testcase->layout.nr_samples, 1), testcase->layout.width0,
-                  MAX2(testcase->layout.height0, 1),
-                  MAX2(testcase->layout.depth0, 1), mip_levels,
-                  MAX2(testcase->array_size, 1), testcase->is_3d);
+      fdl5_layout_image(&layout, &params);
    }
 
    /* fdl lays out UBWC data before the color data, while all we have

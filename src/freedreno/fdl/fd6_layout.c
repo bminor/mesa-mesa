@@ -119,23 +119,52 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
             bool force_ubwc,
             struct fdl_explicit_layout *explicit_layout)
 {
+   struct fdl_image_params params = {
+      .format = format,
+      .nr_samples = nr_samples,
+      .width0 = width0,
+      .height0 = height0,
+      .depth0 = depth0,
+      .mip_levels = mip_levels,
+      .array_size = array_size,
+      .tile_mode = layout->tile_mode,
+      .ubwc = layout->ubwc,
+      .force_ubwc = force_ubwc,
+      .is_3d = is_3d,
+      .is_mutable = is_mutable,
+   };
+
+   return fdl6_layout_image(layout, info, &params, explicit_layout);
+}
+
+bool
+fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
+                  const struct fdl_image_params *params,
+                  const struct fdl_explicit_layout *explicit_layout)
+{
    uint32_t offset = 0, heightalign;
    uint32_t ubwc_blockwidth, ubwc_blockheight;
 
-   assert(nr_samples > 0);
-   layout->width0 = width0;
-   layout->height0 = height0;
-   layout->depth0 = depth0;
-   layout->mip_levels = mip_levels;
+   memset(layout, 0, sizeof(*layout));
 
-   layout->cpp = util_format_get_blocksize(format);
-   layout->cpp *= nr_samples;
+   assert(params->nr_samples > 0);
+
+   layout->width0 = params->width0;
+   layout->height0 = params->height0;
+   layout->depth0 = params->depth0;
+   layout->mip_levels = params->mip_levels;
+
+   layout->cpp = util_format_get_blocksize(params->format);
+   layout->cpp *= params->nr_samples;
    layout->cpp_shift = ffs(layout->cpp) - 1;
 
-   layout->format = format;
-   layout->nr_samples = nr_samples;
-   layout->layer_first = !is_3d;
-   layout->is_mutable = is_mutable;
+   layout->format = params->format;
+   layout->nr_samples = params->nr_samples;
+   layout->layer_first = !params->is_3d;
+   layout->is_mutable = params->is_mutable;
+
+   layout->ubwc = params->ubwc;
+   layout->tile_mode = params->tile_mode;
 
    if (!util_is_power_of_two_or_zero(layout->cpp)) {
       /* R8G8B8 and other 3 component formats don't get UBWC: */
@@ -147,24 +176,24 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
       /* For simplicity support UBWC only for 3D images without mipmaps,
        * most d3d11 games don't use mipmaps for 3D images.
        */
-      if (depth0 > 1 && mip_levels > 1)
+      if (params->depth0 > 1 && params->mip_levels > 1)
          layout->ubwc = false;
 
       if (ubwc_blockwidth == 0)
          layout->ubwc = false;
    }
 
-   assert(!force_ubwc || layout->ubwc);
+   assert(!params->force_ubwc || layout->ubwc);
 
-   if (!force_ubwc && width0 < FDL_MIN_UBWC_WIDTH) {
+   if (!params->force_ubwc && params->width0 < FDL_MIN_UBWC_WIDTH) {
       layout->ubwc = false;
       /* Linear D/S is not supported by HW. */
-      if (!util_format_is_depth_or_stencil(format))
+      if (!util_format_is_depth_or_stencil(params->format))
          layout->tile_mode = TILE6_LINEAR;
    }
 
    /* Linear D/S is not supported by HW. */
-   if (util_format_is_depth_or_stencil(format))
+   if (util_format_is_depth_or_stencil(params->format))
       layout->tile_all = true;
 
    if (layout->ubwc && !info->a6xx.has_ubwc_linear_mipmap_fallback)
@@ -173,7 +202,7 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
    /* in layer_first layout, the level (slice) contains just one
     * layer (since in fact the layer contains the slices)
     */
-   uint32_t layers_in_level = layout->layer_first ? 1 : array_size;
+   uint32_t layers_in_level = layout->layer_first ? 1 : params->array_size;
 
    /* note: for tiled+noubwc layouts, we can use a lower pitchalign
     * which will affect the linear levels only, (the hardware will still
@@ -220,17 +249,17 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
          return false;
    }
 
-   uint32_t ubwc_width0 = width0;
-   uint32_t ubwc_height0 = height0;
+   uint32_t ubwc_width0 = params->width0;
+   uint32_t ubwc_height0 = params->height0;
    uint32_t ubwc_tile_height_alignment = RGB_TILE_HEIGHT_ALIGNMENT;
-   if (mip_levels > 1) {
+   if (params->mip_levels > 1) {
       /* With mipmapping enabled, UBWC layout is power-of-two sized,
        * specified in log2 width/height in the descriptors.  The height
        * alignment is 64 for mipmapping, but for buffer sharing (always
        * single level) other participants expect 16.
        */
-      ubwc_width0 = util_next_power_of_two(width0);
-      ubwc_height0 = util_next_power_of_two(height0);
+      ubwc_width0 = util_next_power_of_two(params->width0);
+      ubwc_height0 = util_next_power_of_two(params->height0);
       ubwc_tile_height_alignment = 64;
    }
    layout->ubwc_width0 = align(DIV_ROUND_UP(ubwc_width0, ubwc_blockwidth),
@@ -240,15 +269,15 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
 
    uint32_t min_3d_layer_size = 0;
 
-   for (uint32_t level = 0; level < mip_levels; level++) {
-      uint32_t depth = u_minify(depth0, level);
+   for (uint32_t level = 0; level < params->mip_levels; level++) {
+      uint32_t depth = u_minify(params->depth0, level);
       struct fdl_slice *slice = &layout->slices[level];
       struct fdl_slice *ubwc_slice = &layout->ubwc_slices[level];
       enum a6xx_tile_mode tile_mode = fdl_tile_mode(layout, level);
       uint32_t pitch = fdl_pitch(layout, level);
-      uint32_t height = u_minify(height0, level);
+      uint32_t height = u_minify(params->height0, level);
 
-      uint32_t nblocksy = util_format_get_nblocksy(format, height);
+      uint32_t nblocksy = util_format_get_nblocksy(params->format, height);
       if (tile_mode)
          nblocksy = align(nblocksy, heightalign);
 
@@ -259,7 +288,7 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
        * The pitch is already sufficiently aligned, but height
        * may not be. note this only matters if last level is linear
        */
-      if (level == mip_levels - 1)
+      if (level == params->mip_levels - 1)
          nblocksy = align(nblocksy, 4);
 
       slice->offset = offset + layout->size;
@@ -269,7 +298,7 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
        * until the value we specify in TEX_CONST_3_MIN_LAYERSZ, which is used to
        * make sure that we follow alignment requirements after minification.
        */
-      if (is_3d) {
+      if (params->is_3d) {
          if (level == 0) {
             slice->size0 = align(nblocksy * pitch, 4096);
          } else if (min_3d_layer_size) {
@@ -316,7 +345,7 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
 
    if (layout->layer_first) {
       layout->layer_size = align64(layout->size, 4096);
-      layout->size = layout->layer_size * array_size;
+      layout->size = layout->layer_size * params->array_size;
    }
 
    /* Place the UBWC slices before the uncompressed slices, because the
@@ -325,10 +354,12 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
     * independently.
     */
    if (layout->ubwc) {
-      assert(!(depth0 > 1 && mip_levels > 1));
-      for (uint32_t level = 0; level < mip_levels; level++)
-         layout->slices[level].offset += layout->ubwc_layer_size * array_size * depth0;
-      layout->size += layout->ubwc_layer_size * array_size * depth0;
+      assert(!(params->depth0 > 1 && params->mip_levels > 1));
+      for (uint32_t level = 0; level < params->mip_levels; level++) {
+         layout->slices[level].offset +=
+            layout->ubwc_layer_size * params->array_size * params->depth0;
+      }
+      layout->size += layout->ubwc_layer_size * params->array_size * params->depth0;
    }
 
    /* include explicit offset in size */

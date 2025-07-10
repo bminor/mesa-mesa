@@ -17,24 +17,49 @@ fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
             uint32_t depth0, uint32_t mip_levels, uint32_t array_size,
             bool is_3d)
 {
-   assert(nr_samples > 0);
-   layout->width0 = width0;
-   layout->height0 = height0;
-   layout->depth0 = depth0;
+   struct fdl_image_params params = {
+      .format = format,
+      .nr_samples = nr_samples,
+      .width0 = width0,
+      .height0 = height0,
+      .depth0 = depth0,
+      .mip_levels = mip_levels,
+      .array_size = array_size,
+      .tile_mode = layout->tile_mode,
+      .ubwc = layout->ubwc,
+      .is_3d = is_3d,
+   };
 
-   layout->cpp = util_format_get_blocksize(format);
-   layout->cpp *= nr_samples;
+   return fdl5_layout_image(layout, &params);
+}
+
+void
+fdl5_layout_image(struct fdl_layout *layout, const struct fdl_image_params *params)
+{
+   memset(layout, 0, sizeof(*layout));
+
+   assert(params->nr_samples > 0);
+   assert(!params->ubwc && !params->force_ubwc);
+
+   layout->width0 = params->width0;
+   layout->height0 = params->height0;
+   layout->depth0 = params->depth0;
+
+   layout->cpp = util_format_get_blocksize(params->format);
+   layout->cpp *= params->nr_samples;
    layout->cpp_shift = ffs(layout->cpp) - 1;
 
-   layout->format = format;
-   layout->nr_samples = nr_samples;
-   layout->layer_first = !is_3d;
+   layout->format = params->format;
+   layout->nr_samples = params->nr_samples;
+   layout->layer_first = !params->is_3d;
+
+   layout->tile_mode = params->tile_mode;
 
    uint32_t heightalign = layout->cpp == 1 ? 32 : 16;
    /* in layer_first layout, the level (slice) contains just one
     * layer (since in fact the layer contains the slices)
     */
-   uint32_t layers_in_level = layout->layer_first ? 1 : array_size;
+   uint32_t layers_in_level = layout->layer_first ? 1 : params->array_size;
 
    /* use 128 pixel alignment for cpp=1 and cpp=2 */
    if (layout->cpp < 4 && layout->tile_mode)
@@ -42,13 +67,13 @@ fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
    else
       fdl_set_pitchalign(layout, fdl_cpp_shift(layout) + 6);
 
-   for (uint32_t level = 0; level < mip_levels; level++) {
-      uint32_t depth = u_minify(depth0, level);
+   for (uint32_t level = 0; level < params->mip_levels; level++) {
+      uint32_t depth = u_minify(params->depth0, level);
       struct fdl_slice *slice = &layout->slices[level];
       uint32_t tile_mode = fdl_tile_mode(layout, level);
       uint32_t pitch = fdl_pitch(layout, level);
       uint32_t nblocksy =
-         util_format_get_nblocksy(format, u_minify(height0, level));
+         util_format_get_nblocksy(params->format, u_minify(params->height0, level));
 
       if (tile_mode) {
          nblocksy = align(nblocksy, heightalign);
@@ -60,7 +85,7 @@ fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
           * The pitch is already sufficiently aligned, but height
           * may not be:
           */
-         if (level == mip_levels - 1)
+         if (level == params->mip_levels - 1)
             nblocksy = align(nblocksy, 32);
       }
 
@@ -72,7 +97,7 @@ fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
        * different than what this code does), so as soon as the layer size
        * range gets into range, we stop reducing it.
        */
-      if (is_3d) {
+      if (params->is_3d) {
          if (level <= 1 || layout->slices[level - 1].size0 > 0xf000) {
             slice->size0 = align(nblocksy * pitch, 4096);
          } else {
@@ -87,6 +112,6 @@ fdl5_layout(struct fdl_layout *layout, enum pipe_format format,
 
    if (layout->layer_first) {
       layout->layer_size = align64(layout->size, 4096);
-      layout->size = layout->layer_size * array_size;
+      layout->size = layout->layer_size * params->array_size;
    }
 }
