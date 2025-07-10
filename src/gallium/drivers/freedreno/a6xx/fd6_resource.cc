@@ -256,18 +256,20 @@ fd6_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 {
    struct pipe_resource *prsc = &rsc->b.b;
    struct fd_screen *screen = fd_screen(prsc->screen);
+   bool ubwc = false;
+   unsigned tile_mode = TILE6_LINEAR;
 
    if (type >= FD_LAYOUT_TILED)
-      rsc->layout.tile_mode = fd6_tile_mode(prsc);
+      tile_mode = fd6_tile_mode(prsc);
    if (type == FD_LAYOUT_UBWC)
-      rsc->layout.ubwc = true;
+      ubwc = true;
 
-   if (rsc->layout.ubwc && !ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
-      rsc->layout.ubwc = false;
+   if (ubwc && !ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
+      ubwc = false;
 
-   fdl6_layout(&rsc->layout, screen->info, prsc->format, fd_resource_nr_samples(prsc),
-               prsc->width0, prsc->height0, prsc->depth0, prsc->last_level + 1,
-               prsc->array_size, prsc->target == PIPE_TEXTURE_3D, false, false, NULL);
+   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
+
+   fdl6_layout_image(&rsc->layout, screen->info, &params, NULL);
 
    if (!FD_DBG(NOLRZ) && has_depth(prsc->format) && !is_z32(prsc->format))
       setup_lrz<CHIP>(rsc);
@@ -288,12 +290,9 @@ fill_ubwc_buffer_sizes(struct fd_resource *rsc)
    if (!can_do_ubwc(prsc))
       return -1;
 
-   rsc->layout.ubwc = true;
-   rsc->layout.tile_mode = TILE6_3;
+   struct fdl_image_params params = fd_image_params(prsc, true, TILE6_3);
 
-   if (!fdl6_layout(&rsc->layout, screen->info, prsc->format, fd_resource_nr_samples(prsc),
-                    prsc->width0, prsc->height0, prsc->depth0,
-                    prsc->last_level + 1, prsc->array_size, false, false, true, &l))
+   if (!fdl6_layout_image(&rsc->layout, screen->info, &params, &l))
       return -1;
 
    if (rsc->layout.size > fd_bo_size(rsc->bo))

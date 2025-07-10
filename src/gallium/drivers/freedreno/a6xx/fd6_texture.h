@@ -126,17 +126,23 @@ fd6_layout_tex2d_from_buf(struct fdl_layout *layout,
       .pitch = tex2d_from_buf->row_stride * block_size,
    };
 
+   struct fdl_image_params params = {
+      .format = format,
+      .nr_samples = 1,
+      .width0 = tex2d_from_buf->width,
+      .height0 = tex2d_from_buf->height,
+      .depth0 = 1,
+      .mip_levels = 1,
+      .array_size = 1,
+   };
+
    *layout = (struct fdl_layout) {
       .ubwc = false,
       .tile_all = false,
       .tile_mode = TILE6_LINEAR,
    };
 
-   ASSERTED bool ret = fdl6_layout(layout, info, format, 1,
-                                   tex2d_from_buf->width,
-                                   tex2d_from_buf->height,
-                                   1, 1, 1, false, false,
-                                   false, &explicit_layout);
+   ASSERTED bool ret = fdl6_layout_image(layout, info, &params, &explicit_layout);
    assert(ret);
 }
 
