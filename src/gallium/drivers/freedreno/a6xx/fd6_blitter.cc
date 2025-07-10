@@ -1537,6 +1537,7 @@ fd6_tile_mode_for_format(enum pipe_format pfmt)
 
    return TILE6_LINEAR;
 }
+
 unsigned
 fd6_tile_mode(const struct pipe_resource *tmpl)
 {

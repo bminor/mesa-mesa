@@ -110,7 +110,7 @@ static const enum pc_di_primtype primtypes[] = {
    [MESA_PRIM_TRIANGLES]      = DI_PT_TRILIST,
    [MESA_PRIM_TRIANGLE_STRIP] = DI_PT_TRISTRIP,
    [MESA_PRIM_TRIANGLE_FAN]   = DI_PT_TRIFAN,
-   [MESA_PRIM_COUNT]            = DI_PT_RECTLIST,  /* internal clear blits */
+   [MESA_PRIM_COUNT]          = DI_PT_RECTLIST,  /* internal clear blits */
 };
 /* clang-format on */
 
