@@ -930,11 +930,9 @@ dri2_wl_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
 static EGLBoolean
 dri2_wl_swap_interval(_EGLDisplay *disp, _EGLSurface *surf, EGLint interval)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
 
-   if (dri2_dpy->kopper)
-      kopperSetSwapInterval(dri2_surf->dri_drawable, interval);
+   kopperSetSwapInterval(dri2_surf->dri_drawable, interval);
 
    return EGL_TRUE;
 }
@@ -2303,7 +2301,6 @@ static EGLBoolean
 dri2_wl_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
                                         const EGLint *rects, EGLint n_rects)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
 
    if (!dri2_surf->wl_win)
@@ -2313,15 +2310,9 @@ dri2_wl_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
       return EGL_FALSE;
 
    if (n_rects) {
-      if (dri2_dpy->kopper)
-         kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, n_rects, rects);
-      else
-         driSwapBuffersWithDamage(dri2_surf->dri_drawable, n_rects, rects);
+      kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, n_rects, rects);
    } else {
-      if (dri2_dpy->kopper)
-         kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
-      else
-         driSwapBuffers(dri2_surf->dri_drawable);
+      kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
    }
 
    dri2_surf->current = dri2_surf->back;
@@ -2340,15 +2331,9 @@ dri2_wl_kopper_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
 static EGLint
 dri2_wl_kopper_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surface);
 
-   /* This can legitimately be null for lavapipe */
-   if (dri2_dpy->kopper)
-      return kopperQueryBufferAge(dri2_surf->dri_drawable);
-   else
-      return driSWRastQueryBufferAge(dri2_surf->dri_drawable);
-   return 0;
+   return kopperQueryBufferAge(dri2_surf->dri_drawable);
 }
 
 static const struct dri2_egl_display_vtbl dri2_wl_kopper_display_vtbl = {
@@ -3143,7 +3128,8 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
    dri2_dpy->driver_name = strdup(disp->Options.Zink ? "zink" : "swrast");
    dri2_detect_swrast(disp);
 
-   dri2_dpy->loader_extensions = dri2_dpy->kopper ? kopper_loader_extensions : swrast_loader_extensions;
+   dri2_dpy->loader_extensions = dri2_dpy->kopper ? kopper_loader_extensions
+                                                  : swrast_loader_extensions;
 
    if (!dri2_create_screen(disp))
       goto cleanup;
@@ -3171,7 +3157,8 @@ dri2_initialize_wayland_swrast(_EGLDisplay *disp)
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
     */
-   dri2_dpy->vtbl = dri2_dpy->kopper ? &dri2_wl_kopper_display_vtbl : &dri2_wl_swrast_display_vtbl;
+   dri2_dpy->vtbl = dri2_dpy->kopper ? &dri2_wl_kopper_display_vtbl
+                                     : &dri2_wl_swrast_display_vtbl;
 
    return EGL_TRUE;
 
