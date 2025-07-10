@@ -67,12 +67,9 @@ radv_set_mutable_tex_desc_fields(struct radv_device *device, struct radv_image *
       .va = gpu_address,
       .gfx10 =
          {
+            .nbc_view = nbc_view,
             .write_compress_enable = dcc_enabled && is_storage_image && enable_write_compression,
             .iterate_256 = radv_image_get_iterate256(device, image),
-         },
-      .gfx9 =
-         {
-            .nbc_view = nbc_view,
          },
       .gfx6 =
          {
@@ -181,11 +178,8 @@ gfx10_make_texture_descriptor(struct radv_device *device, struct radv_image *ima
       .min_lod = min_lod,
       .gfx10 =
          {
-            .uav3d = array_pitch,
-         },
-      .gfx9 =
-         {
             .nbc_view = nbc_view,
+            .uav3d = array_pitch,
          },
       .dcc_enabled = radv_dcc_enabled(image, first_level),
       .tc_compat_htile_enabled = radv_tc_compat_htile_enabled(image, first_level),

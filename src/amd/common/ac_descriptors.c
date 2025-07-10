@@ -437,7 +437,7 @@ ac_build_gfx10_texture_descriptor(const struct radeon_info *info, const struct a
    const struct radeon_surf *surf = state->surf;
    const struct util_format_description *fmt_desc = util_format_description(state->format);
    const uint32_t img_format = ac_get_gfx10_img_format(info->gfx_level, state);
-   const struct ac_surf_nbc_view *nbc_view = state->gfx9.nbc_view;
+   const struct ac_surf_nbc_view *nbc_view = state->gfx10.nbc_view;
    const uint32_t field_last_level = state->num_samples > 1 ? util_logbase2(state->num_samples) : state->last_level;
 
    desc[0] = 0;
@@ -500,7 +500,7 @@ ac_build_gfx12_texture_descriptor(const struct radeon_info *info, const struct a
    const bool no_edge_clamp = state->num_levels > 1 && util_format_is_compressed(state->img_format) &&
                               !util_format_is_compressed(state->format);
    const uint32_t min_lod_clamped = util_unsigned_fixed(CLAMP(state->min_lod, 0, 15), 8);
-   const struct ac_surf_nbc_view *nbc_view = state->gfx9.nbc_view;
+   const struct ac_surf_nbc_view *nbc_view = state->gfx10.nbc_view;
 
    uint32_t max_mip = state->num_samples > 1 ? util_logbase2(state->num_samples) : state->num_levels - 1;
    if (nbc_view && nbc_view->valid)
@@ -562,7 +562,7 @@ ac_set_mutable_tex_desc_fields(const struct radeon_info *info, const struct ac_m
 {
    const struct radeon_surf *surf = state->surf;
    const struct legacy_surf_level *base_level_info = state->gfx6.base_level_info;
-   const struct ac_surf_nbc_view *nbc_view = state->gfx9.nbc_view;
+   const struct ac_surf_nbc_view *nbc_view = state->gfx10.nbc_view;
    uint8_t swizzle = surf->tile_swizzle;
    uint64_t va = state->va, meta_va = 0;
 
