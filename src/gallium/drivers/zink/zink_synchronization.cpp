@@ -479,30 +479,21 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    if (!(flags & VK_ACCESS_TRANSFER_WRITE_BIT))
       zink_resource_copies_reset(res);
 
-   if (res->obj->exportable)
-      simple_mtx_lock(&ctx->bs->exportable_lock);
    if (res->obj->dt) {
       struct kopper_displaytarget *cdt = res->obj->dt;
       if (cdt->swapchain->num_acquires && res->obj->dt_idx != UINT32_MAX) {
          cdt->swapchain->images[res->obj->dt_idx].layout = res->layout;
       }
-   } else if (res->obj->exportable) {
-      struct pipe_resource *pres = NULL;
-      bool found = false;
-      _mesa_set_search_or_add(&ctx->bs->dmabuf_exports, res, &found);
-      if (!found) {
-         pipe_resource_reference(&pres, &res->base.b);
-      }
    }
    if (res->obj->exportable && queue_import) {
+      simple_mtx_lock(&ctx->bs->exportable_lock);
       for (struct zink_resource *r = res; r; r = zink_resource(r->base.b.next)) {
          VkSemaphore sem = zink_screen_export_dmabuf_semaphore(zink_screen(ctx->base.screen), r);
          if (sem)
             util_dynarray_append(&ctx->bs->fd_wait_semaphores, VkSemaphore, sem);
       }
-   }
-   if (res->obj->exportable)
       simple_mtx_unlock(&ctx->bs->exportable_lock);
+   }
 }
 
 bool
@@ -711,7 +702,7 @@ zink_resource_image_barrier_general(struct zink_context *ctx, struct zink_resour
 {
    assert(new_layout == VK_IMAGE_LAYOUT_GENERAL || new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
    /* if this requires an actual image barrier, send it through to the image barrier handlers */
-   if (res->obj->needs_zs_evaluate || res->obj->exportable || zink_is_swapchain(res) || res->layout != new_layout ||
+   if (res->obj->needs_zs_evaluate || res->layout != new_layout ||
        (res->queue != zink_screen(ctx->base.screen)->gfx_queue && res->queue != VK_QUEUE_FAMILY_IGNORED)) {
       zink_resource_image_barrier<barrier_KHR_synchronzation2, UNSYNCHRONIZED, true>(ctx, res, new_layout, flags, pipeline);
       return;
