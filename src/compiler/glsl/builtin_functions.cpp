@@ -5639,6 +5639,11 @@ builtin_builder::create_builtins()
                               &glsl_type_builtin_uvec2),
                 NULL);
 
+   add_function("clock2x32EXT",
+                _shader_clock(shader_clock,
+                              &glsl_type_builtin_uvec2),
+                NULL);
+
    add_function("clockARB",
                 _shader_clock(shader_clock_int64,
                               &glsl_type_builtin_uint64_t),
