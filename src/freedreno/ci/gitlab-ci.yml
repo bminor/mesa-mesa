@@ -53,8 +53,6 @@ a306-traces:
     - .a306-test
   rules:
     - when: never # Google nginx needs updating
-  variables:
-    PIGLIT_RESULTS: "freedreno-a306-replay"
 
 a530-gl:
   extends:
@@ -72,8 +70,6 @@ a530-traces:
     - .a530-test
   rules:
     - when: never # Google nginx needs updating
-  variables:
-    PIGLIT_RESULTS: "freedreno-a530-replay"
 
 a530-piglit:
   extends:
@@ -408,7 +404,6 @@ a630-traces:
   rules:
     - when: never  # Cheza DUTs are retired and no longer active
   variables:
-    PIGLIT_RESULTS: "freedreno-a630-replay"
     # This lets us run several more traces which don't use any features we're
     # missing.
     MESA_GLSL_VERSION_OVERRIDE: "460"

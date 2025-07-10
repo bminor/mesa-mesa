@@ -199,7 +199,6 @@ v3d-rpi4-traces:arm64:
   variables:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     PIGLIT_TRACES_FILE: traces-broadcom.yml
-    PIGLIT_RESULTS: "broadcom-rpi4-replay"
 
 v3d-rpi4-gl:arm32:
   extends:
@@ -461,7 +460,6 @@ v3d-rpi5-traces:arm64:
   variables:
     HWCI_TEST_SCRIPT: "/install/piglit/piglit-traces.sh"
     PIGLIT_TRACES_FILE: traces-broadcom.yml
-    PIGLIT_RESULTS: "broadcom-rpi5-replay"
 
 v3dv-rpi5-vk:arm64:
   extends:

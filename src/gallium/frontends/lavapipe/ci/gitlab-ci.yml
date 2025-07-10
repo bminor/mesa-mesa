@@ -54,7 +54,6 @@ lavapipe-vkd3d:
   variables:
     PIGLIT_TRACES_FILE: traces-lavapipe.yml
     PIGLIT_REPLAY_DEVICE_NAME: "vk-lvp"
-    PIGLIT_RESULTS: "${GPU_VERSION}-replay"
   extends:
     - .piglit-traces-test
     - .lavapipe-test
