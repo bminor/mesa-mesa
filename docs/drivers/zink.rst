@@ -23,6 +23,10 @@ we can compare the ZINK profiles with Vulkan devices profiles generated with
 `Vulkaninfo <https://vulkan.lunarg.com/doc/view/latest/windows/vulkaninfo.html>`__
 or `downloaded from GPUinfo.org`_
 to establish the feature-levels supported by these drivers.
+You can check a running driver against the Zink profiles by building mesa with
+``--tools=zink`` and running
+``./src/gallium/drivers/zink/check_requirements/zink_check_requirements``
+from the build directory.
 
 OpenGL 2.1
 ^^^^^^^^^^

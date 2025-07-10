@@ -116,3 +116,7 @@ if with_tests
     suite : ['zink'],
   )
 endif
+
+if with_tools.contains('zink')
+  subdir('check_requirements')
+endif
