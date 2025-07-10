@@ -598,3 +598,13 @@ spec@ext_texture_array@copyteximage 1d_array samples=8,Fail
 # https://gitlab.freedesktop.org/mesa/mesa/-/issues/13434
 spec@arb_indirect_parameters@conditional-render,Fail
 spec@arb_indirect_parameters@conditional-render@Query result: Pass. Inverted mode: Yes.  Points drawn: 4,Fail
+
+# This is a piglit bug: The tests use more GS input components than GL reports.
+# This started to fail (correctly) when the GLSL linker started checking whether
+# the max GS input component limit is exceeded.
+spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec2-index-rd,Fail
+spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec3-index-rd,Fail
+spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec4-index-rd,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
