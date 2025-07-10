@@ -592,13 +592,11 @@ build_blit_vs_shader(void)
    nir_builder _b =
       nir_builder_init_simple_shader(MESA_SHADER_VERTEX, NULL, "blit vs");
    nir_builder *b = &_b;
-   b->shader->info.internal = true;
 
    nir_variable *out_pos =
-      nir_variable_create(b->shader, nir_var_shader_out, glsl_vec4_type(),
-                          "gl_Position");
-   out_pos->data.location = VARYING_SLOT_POS;
-
+      nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                        VARYING_SLOT_POS,
+                                        glsl_vec4_type());
    nir_def *vert0_pos = load_const(b, 0, 2);
    nir_def *vert1_pos = load_const(b, 4, 2);
    nir_def *vertex = nir_load_vertex_id(b);
@@ -612,10 +610,9 @@ build_blit_vs_shader(void)
    nir_store_var(b, out_pos, pos, 0xf);
 
    nir_variable *out_coords =
-      nir_variable_create(b->shader, nir_var_shader_out, glsl_vec_type(3),
-                          "coords");
-   out_coords->data.location = VARYING_SLOT_VAR0;
-
+      nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                        VARYING_SLOT_VAR0,
+                                        glsl_vec_type(3));
    nir_def *vert0_coords = load_const(b, 2, 2);
    nir_def *vert1_coords = load_const(b, 6, 2);
 
@@ -637,13 +634,11 @@ build_clear_vs_shader(void)
    nir_builder _b =
       nir_builder_init_simple_shader(MESA_SHADER_VERTEX, NULL, "blit vs");
    nir_builder *b = &_b;
-   b->shader->info.internal = true;
 
    nir_variable *out_pos =
-      nir_variable_create(b->shader, nir_var_shader_out, glsl_vec4_type(),
-                          "gl_Position");
-   out_pos->data.location = VARYING_SLOT_POS;
-
+      nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                        VARYING_SLOT_POS,
+                                        glsl_vec4_type());
    nir_def *vert0_pos = load_const(b, 0, 2);
    nir_def *vert1_pos = load_const(b, 4, 2);
    /* c0.z is used to clear depth */
@@ -658,9 +653,9 @@ build_clear_vs_shader(void)
    nir_store_var(b, out_pos, pos, 0xf);
 
    nir_variable *out_layer =
-      nir_variable_create(b->shader, nir_var_shader_out, glsl_uint_type(),
-                          "gl_Layer");
-   out_layer->data.location = VARYING_SLOT_LAYER;
+      nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                        VARYING_SLOT_LAYER,
+                                        glsl_uint_type());
    nir_def *layer = load_const(b, 3, 1);
    nir_store_var(b, out_layer, layer, 1);
 
@@ -674,44 +669,31 @@ build_blit_fs_shader(bool zscale)
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, NULL,
                                      zscale ? "zscale blit fs" : "blit fs");
    nir_builder *b = &_b;
-   b->shader->info.internal = true;
 
    nir_variable *out_color =
-      nir_variable_create(b->shader, nir_var_shader_out, glsl_vec4_type(),
-                          "color0");
-   out_color->data.location = FRAG_RESULT_DATA0;
+      nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                        FRAG_RESULT_DATA0, glsl_vec4_type());
 
    unsigned coord_components = zscale ? 3 : 2;
    nir_variable *in_coords =
-      nir_variable_create(b->shader, nir_var_shader_in,
-                          glsl_vec_type(coord_components),
-                          "coords");
-   in_coords->data.location = VARYING_SLOT_VAR0;
-
-   nir_tex_instr *tex = nir_tex_instr_create(b->shader, 1);
-   /* Note: since we're just copying data, we rely on the HW ignoring the
-    * dest_type.
-    */
-   tex->dest_type = nir_type_int32;
-   tex->is_array = false;
-   tex->is_shadow = false;
-   tex->sampler_dim = zscale ? GLSL_SAMPLER_DIM_3D : GLSL_SAMPLER_DIM_2D;
-
-   tex->texture_index = 0;
-   tex->sampler_index = 0;
+      nir_create_variable_with_location(b->shader, nir_var_shader_in,
+                                        VARYING_SLOT_VAR0,
+                                        glsl_vec_type(coord_components));
 
    b->shader->info.num_textures = 1;
    BITSET_SET(b->shader->info.textures_used, 0);
 
-   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord,
-                                     nir_load_var(b, in_coords));
-   tex->coord_components = coord_components;
+   nir_def *res =
+      nir_tex(b, nir_load_var(b, in_coords),
+              .texture_index = 0, .sampler_index = 0,
+              .dim = zscale ? GLSL_SAMPLER_DIM_3D : GLSL_SAMPLER_DIM_2D,
 
-   nir_def_init(&tex->instr, &tex->def, 4, 32);
-   nir_builder_instr_insert(b, &tex->instr);
+              /* Note: since we're just copying data, we rely on the HW ignoring
+               * the base type.
+               */
+              .dest_type = nir_type_int32);
 
-   nir_store_var(b, out_color, &tex->def, 0xf);
-
+   nir_store_var(b, out_color, res, 0xf);
    return b->shader;
 }
 
@@ -725,33 +707,13 @@ build_ms_copy_fs_shader(void)
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, NULL,
                                      "multisample copy fs");
    nir_builder *b = &_b;
-   b->shader->info.internal = true;
 
    nir_variable *out_color =
-      nir_variable_create(b->shader, nir_var_shader_out, glsl_vec4_type(),
-                          "color0");
-   out_color->data.location = FRAG_RESULT_DATA0;
-
+      nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                        FRAG_RESULT_DATA0, glsl_vec4_type());
    nir_variable *in_coords =
-      nir_variable_create(b->shader, nir_var_shader_in,
-                          glsl_vec_type(2),
-                          "coords");
-   in_coords->data.location = VARYING_SLOT_VAR0;
-
-   nir_tex_instr *tex = nir_tex_instr_create(b->shader, 2);
-
-   tex->op = nir_texop_txf_ms;
-
-   /* Note: since we're just copying data, we rely on the HW ignoring the
-    * dest_type.
-    */
-   tex->dest_type = nir_type_int32;
-   tex->is_array = false;
-   tex->is_shadow = false;
-   tex->sampler_dim = GLSL_SAMPLER_DIM_MS;
-
-   tex->texture_index = 0;
-   tex->sampler_index = 0;
+      nir_create_variable_with_location(b->shader, nir_var_shader_in,
+                                        VARYING_SLOT_VAR0, glsl_vec_type(2));
 
    b->shader->info.num_textures = 1;
    BITSET_SET(b->shader->info.textures_used, 0);
@@ -759,17 +721,16 @@ build_ms_copy_fs_shader(void)
 
    nir_def *coord = nir_f2i32(b, nir_load_var(b, in_coords));
 
-   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord, coord);
-   tex->coord_components = 2;
+   nir_def *tex = nir_txf_ms(b, coord, nir_load_sample_id(b),
+                             .texture_index = 0, .sampler_index = 0,
+                             .dim = GLSL_SAMPLER_DIM_MS,
 
-   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_ms_index,
-                                     nir_load_sample_id(b));
+                             /* Note: since we're just copying data, we rely on
+                              * the HW ignoring the dest_type.
+                               */
+                             .dest_type = nir_type_int32);
 
-   nir_def_init(&tex->instr, &tex->def, 4, 32);
-   nir_builder_instr_insert(b, &tex->instr);
-
-   nir_store_var(b, out_color, &tex->def, 0xf);
-
+   nir_store_var(b, out_color, tex, 0xf);
    return b->shader;
 }
 
@@ -780,14 +741,12 @@ build_clear_fs_shader(unsigned mrts)
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, NULL,
                                      "mrt%u clear fs", mrts);
    nir_builder *b = &_b;
-   b->shader->info.internal = true;
 
    for (unsigned i = 0; i < mrts; i++) {
       nir_variable *out_color =
-         nir_variable_create(b->shader, nir_var_shader_out, glsl_vec4_type(),
-                             "color");
-      out_color->data.location = FRAG_RESULT_DATA0 + i;
-
+         nir_create_variable_with_location(b->shader, nir_var_shader_out,
+                                           FRAG_RESULT_DATA0 + i,
+                                           glsl_vec4_type());
       nir_def *color = load_const(b, 4 * i, 4);
       nir_store_var(b, out_color, color, 0xf);
    }
