@@ -2265,7 +2265,6 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
 
    const struct radv_shader_info *gs_info = &gs_stage->info;
    nir_shader *nir = gs_stage->gs_copy_shader;
-   nir->info.internal = true;
 
    nir_validate_shader(nir, "after ac_nir_create_gs_copy_shader");
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
