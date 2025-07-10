@@ -23,18 +23,20 @@ uint32_t
 fd5_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 {
    struct pipe_resource *prsc = &rsc->b.b;
+   bool ubwc = false;
+   unsigned tile_mode = 0;
 
    if (FD_DBG(LRZ) && has_depth(prsc->format) && !is_z32(prsc->format))
       setup_lrz(rsc);
 
    if (type >= FD_LAYOUT_TILED)
-      rsc->layout.tile_mode = fd5_tile_mode(prsc);
+      tile_mode = fd5_tile_mode(prsc);
    if (type == FD_LAYOUT_UBWC)
-      rsc->layout.ubwc = true;
+      ubwc = true;
 
-   fdl5_layout(&rsc->layout, prsc->format, fd_resource_nr_samples(prsc),
-               prsc->width0, prsc->height0, prsc->depth0, prsc->last_level + 1,
-               prsc->array_size, prsc->target == PIPE_TEXTURE_3D);
+   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
+
+   fdl5_layout_image(&rsc->layout, &params);
 
    return rsc->layout.size;
 }
