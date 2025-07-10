@@ -322,6 +322,23 @@ fd_resource_nr_samples(const struct pipe_resource *prsc)
    return MAX2(1, prsc->nr_samples);
 }
 
+static inline struct fdl_image_params
+fd_image_params(const struct pipe_resource *prsc, bool ubwc, unsigned tile_mode)
+{
+   return (struct fdl_image_params) {
+      .format = prsc->format,
+      .nr_samples = fd_resource_nr_samples(prsc),
+      .width0 = prsc->width0,
+      .height0 = prsc->height0,
+      .depth0 = prsc->depth0,
+      .mip_levels = prsc->last_level + 1,
+      .array_size = prsc->array_size,
+      .tile_mode = tile_mode,
+      .ubwc = ubwc,
+      .is_3d = (prsc->target == PIPE_TEXTURE_3D),
+   };
+}
+
 void fd_resource_screen_init(struct pipe_screen *pscreen);
 void fd_resource_context_init(struct pipe_context *pctx);
 
