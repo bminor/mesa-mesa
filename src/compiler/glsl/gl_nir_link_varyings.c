@@ -3398,69 +3398,6 @@ reserved_varying_slot(struct gl_linked_shader *sh,
    return slots;
 }
 
-/**
- * Sets the bits in the inputs_read, or outputs_written
- * bitfield corresponding to this variable.
- */
-static void
-set_variable_io_mask(BITSET_WORD *bits, nir_variable *var, gl_shader_stage stage)
-{
-   assert(var->data.mode == nir_var_shader_in ||
-          var->data.mode == nir_var_shader_out);
-   assert(var->data.location >= VARYING_SLOT_VAR0);
-
-   const struct glsl_type *type = var->type;
-   if (nir_is_arrayed_io(var, stage)) {
-      assert(glsl_type_is_array(type));
-      type = glsl_get_array_element(type);
-   }
-
-   unsigned location = var->data.location - VARYING_SLOT_VAR0;
-   unsigned slots = glsl_count_attribute_slots(type, false);
-   for (unsigned i = 0; i < slots; i++) {
-      BITSET_SET(bits, location + i);
-   }
-}
-
-static uint8_t
-get_num_components(nir_variable *var)
-{
-   if (glsl_type_is_struct_or_ifc(glsl_without_array(var->type)))
-      return 4;
-
-   return glsl_get_vector_elements(glsl_without_array(var->type));
-}
-
-static void
-tcs_add_output_reads(nir_shader *shader, BITSET_WORD **read)
-{
-   nir_foreach_function_impl(impl, shader) {
-      nir_foreach_block(block, impl) {
-         nir_foreach_instr(instr, block) {
-            if (instr->type != nir_instr_type_intrinsic)
-               continue;
-
-            nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-            if (intrin->intrinsic != nir_intrinsic_load_deref)
-               continue;
-
-            nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-            if (!nir_deref_mode_is(deref, nir_var_shader_out))
-               continue;
-
-            nir_variable *var = nir_deref_instr_get_variable(deref);
-            for (unsigned i = 0; i < get_num_components(var); i++) {
-               if (var->data.location < VARYING_SLOT_VAR0)
-                  continue;
-
-               unsigned comp = var->data.location_frac;
-               set_variable_io_mask(read[comp + i], var, shader->info.stage);
-            }
-         }
-      }
-   }
-}
-
 /* We need to replace any interp intrinsics with undefined (shader_temp) inputs
  * as no further NIR pass expects to see this.
  */
@@ -3502,207 +3439,6 @@ fixup_vars_lowered_to_temp(nir_shader *shader, nir_variable_mode mode)
 
    nir_lower_global_vars_to_local(shader);
    nir_fixup_deref_modes(shader);
-}
-
-/**
- * Helper for removing unused shader I/O variables, by demoting them to global
- * variables (which may then be dead code eliminated).
- *
- * Example usage is:
- *
- * progress = nir_remove_unused_io_vars(producer, consumer, nir_var_shader_out,
- *                                      read, patches_read) ||
- *                                      progress;
- *
- * The "used" should be an array of 4 BITSET_WORDs representing each
- * .location_frac used.  Note that for vector variables, only the first channel
- * (.location_frac) is examined for deciding if the variable is used!
- */
-static bool
-remove_unused_io_vars(nir_shader *producer, nir_shader *consumer,
-                      struct gl_shader_program *prog,
-                      nir_variable_mode mode,
-                      BITSET_WORD **used_by_other_stage, bool *out_progress)
-{
-   assert(mode == nir_var_shader_in || mode == nir_var_shader_out);
-
-   bool progress = false;
-   nir_shader *shader = mode == nir_var_shader_out ? producer : consumer;
-
-   BITSET_WORD **used;
-   nir_foreach_variable_with_modes_safe(var, shader, mode) {
-      used = used_by_other_stage;
-
-      /* Skip builtins dead builtins are removed elsewhere */
-      if (is_gl_identifier(var->name))
-         continue;
-
-      if (var->data.location < VARYING_SLOT_VAR0 && var->data.location >= 0)
-         continue;
-
-      /* Skip xfb varyings and any other type we cannot remove */
-      if (var->data.always_active_io)
-         continue;
-
-      if (var->data.explicit_xfb_buffer)
-         continue;
-
-      BITSET_WORD *other_stage = used[var->data.location_frac];
-
-      /* if location == -1 lower varying to global as it has no match and is not
-       * a xfb varying, this must be done after skiping bultins as builtins
-       * could be assigned a location of -1.
-       * We also lower unused varyings with explicit locations.
-       */
-      bool use_found = false;
-      if (var->data.location >= 0) {
-         unsigned location = var->data.location - VARYING_SLOT_VAR0;
-
-         const struct glsl_type *type = var->type;
-         if (nir_is_arrayed_io(var, shader->info.stage)) {
-            assert(glsl_type_is_array(type));
-            type = glsl_get_array_element(type);
-         }
-
-         unsigned slots = glsl_count_attribute_slots(type, false);
-         for (unsigned i = 0; i < slots; i++) {
-            if (BITSET_TEST(other_stage, location + i)) {
-               use_found = true;
-               break;
-            }
-         }
-      }
-
-      if (!use_found) {
-         /* This one is invalid, make it a global variable instead */
-         var->data.location = 0;
-         var->data.mode = nir_var_shader_temp;
-
-         progress = true;
-
-         if (mode == nir_var_shader_in) {
-            if (!prog->IsES && prog->GLSL_Version <= 120) {
-               /* On page 25 (page 31 of the PDF) of the GLSL 1.20 spec:
-                *
-                *     Only those varying variables used (i.e. read) in
-                *     the fragment shader executable must be written to
-                *     by the vertex shader executable; declaring
-                *     superfluous varying variables in a vertex shader is
-                *     permissible.
-                *
-                * We interpret this text as meaning that the VS must
-                * write the variable for the FS to read it.  See
-                * "glsl1-varying read but not written" in piglit.
-                */
-               linker_error(prog, "%s shader varying %s not written "
-                            "by %s shader\n.",
-                            _mesa_shader_stage_to_string(consumer->info.stage),
-                            var->name,
-                            _mesa_shader_stage_to_string(producer->info.stage));
-               return false;
-            } else {
-               linker_warning(prog, "%s shader varying %s not written "
-                              "by %s shader\n.",
-                              _mesa_shader_stage_to_string(consumer->info.stage),
-                              var->name,
-                              _mesa_shader_stage_to_string(producer->info.stage));
-            }
-         }
-      }
-   }
-
-   if (progress)
-      fixup_vars_lowered_to_temp(shader, mode);
-
-   *out_progress |= progress;
-   return true;
-}
-
-static bool
-remove_unused_varyings(nir_shader *producer, nir_shader *consumer,
-                       struct gl_shader_program *prog, void *mem_ctx,
-                       bool *out_progress)
-{
-   assert(producer->info.stage != MESA_SHADER_FRAGMENT);
-   assert(consumer->info.stage != MESA_SHADER_VERTEX);
-
-   int max_loc_out = 0;
-   nir_foreach_shader_out_variable(var, producer) {
-      if (var->data.location < VARYING_SLOT_VAR0)
-         continue;
-
-      const struct glsl_type *type = var->type;
-      if (nir_is_arrayed_io(var, producer->info.stage)) {
-         assert(glsl_type_is_array(type));
-         type = glsl_get_array_element(type);
-      }
-      unsigned slots = glsl_count_attribute_slots(type, false);
-
-      max_loc_out = max_loc_out < (var->data.location - VARYING_SLOT_VAR0) + slots ?
-         (var->data.location - VARYING_SLOT_VAR0) + slots : max_loc_out;
-   }
-
-   int max_loc_in = 0;
-   nir_foreach_shader_in_variable(var, consumer) {
-      if (var->data.location < VARYING_SLOT_VAR0)
-         continue;
-
-      const struct glsl_type *type = var->type;
-      if (nir_is_arrayed_io(var, consumer->info.stage)) {
-         assert(glsl_type_is_array(type));
-         type = glsl_get_array_element(type);
-      }
-      unsigned slots = glsl_count_attribute_slots(type, false);
-
-      max_loc_in = max_loc_in < (var->data.location - VARYING_SLOT_VAR0) + slots ?
-         (var->data.location - VARYING_SLOT_VAR0) + slots : max_loc_in;
-   }
-
-   /* Old glsl shaders that don't use explicit locations can contain greater
-    * than 64 varyings before unused varyings are removed so we must count them
-    * and make use of the BITSET macros to keep track of used slots. Once we
-    * have removed these excess varyings we can make use of further nir varying
-    * linking optimimisation passes.
-    */
-   BITSET_WORD *read[4];
-   BITSET_WORD *written[4];
-   int max_loc = MAX2(max_loc_in, max_loc_out);
-   for (unsigned i = 0; i < 4; i++) {
-      read[i] = rzalloc_array(mem_ctx, BITSET_WORD, BITSET_WORDS(max_loc));
-      written[i] = rzalloc_array(mem_ctx, BITSET_WORD, BITSET_WORDS(max_loc));
-   }
-
-   nir_foreach_shader_out_variable(var, producer) {
-      if (var->data.location < VARYING_SLOT_VAR0)
-         continue;
-
-      for (unsigned i = 0; i < get_num_components(var); i++) {
-         unsigned comp = var->data.location_frac;
-         set_variable_io_mask(written[comp + i], var, producer->info.stage);
-      }
-   }
-
-   nir_foreach_shader_in_variable(var, consumer) {
-      if (var->data.location < VARYING_SLOT_VAR0)
-         continue;
-
-      for (unsigned i = 0; i < get_num_components(var); i++) {
-         unsigned comp = var->data.location_frac;
-         set_variable_io_mask(read[comp + i], var, consumer->info.stage);
-      }
-   }
-
-   /* Each TCS invocation can read data written by other TCS invocations,
-    * so even if the outputs are not used by the TES we must also make
-    * sure they are not read by the TCS before demoting them to globals.
-    */
-   if (producer->info.stage == MESA_SHADER_TESS_CTRL)
-      tcs_add_output_reads(producer, read);
-
-   return remove_unused_io_vars(producer, consumer, prog, nir_var_shader_out,
-                                read, out_progress) &&
-          remove_unused_io_vars(producer, consumer, prog, nir_var_shader_in,
-                                written, out_progress);
 }
 
 static bool
@@ -3966,56 +3702,6 @@ assign_initial_varying_locations(const struct gl_constants *consts,
          xfb_decls[i].matched_candidate->toplevel_var->data.location_frac;
    }
 
-   return true;
-}
-
-static bool
-link_shader_opts(struct varying_matches *vm,
-                 nir_shader *producer, nir_shader *consumer,
-                 struct gl_shader_program *prog, void *mem_ctx)
-{
-   /* If we can't pack the stage using this pass then we can't lower io to
-    * scalar just yet. Instead we leave it to a later NIR linking pass that uses
-    * ARB_enhanced_layout style packing to pack things further.
-    *
-    * Otherwise we might end up causing linking errors and perf regressions
-    * because the new scalars will be assigned individual slots and can overflow
-    * the available slots.
-    */
-   if (producer->options->lower_to_scalar && !vm->disable_varying_packing &&
-      !vm->disable_xfb_packing) {
-      NIR_PASS(_, producer, nir_lower_io_vars_to_scalar, nir_var_shader_out);
-      NIR_PASS(_, consumer, nir_lower_io_vars_to_scalar, nir_var_shader_in);
-   }
-
-   gl_nir_opts(producer);
-   gl_nir_opts(consumer);
-
-   if (nir_link_opt_varyings(producer, consumer))
-      gl_nir_opts(consumer);
-
-   NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out, NULL);
-   NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in, NULL);
-
-   bool progress = false;
-   if (!remove_unused_varyings(producer, consumer, prog, mem_ctx, &progress))
-      return false;
-
-   if (progress) {
-      NIR_PASS(_, producer, nir_lower_global_vars_to_local);
-      NIR_PASS(_, consumer, nir_lower_global_vars_to_local);
-
-      gl_nir_opts(producer);
-      gl_nir_opts(consumer);
-
-      /* Optimizations can cause varyings to become unused. */
-      NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out,
-                 NULL);
-      NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in,
-                 NULL);
-   }
-
-   nir_link_varying_precision(producer, consumer);
    return true;
 }
 
@@ -4316,13 +4002,7 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
          return false;
    }
 
-   if (num_shaders == 1) {
-      /* Linking shaders also optimizes them. Separate shaders, compute shaders
-       * and shaders with a fixed-func VS or FS that don't need linking are
-       * optimized here.
-       */
-      gl_nir_opts(linked_shader[0]->Program->nir);
-   } else {
+   if (num_shaders > 1) {
       /* Linking the stages in the opposite order (from fragment to vertex)
        * ensures that inter-shader outputs written to in an earlier stage
        * are eliminated if they are (transitively) not used in a later
@@ -4339,22 +4019,54 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
                                                stage_num_xfb_decls, xfb_decls,
                                                &vm))
             return false;
+      }
+   }
 
-         /* Now that validation is done its safe to remove unused varyings. As
-          * we have both a producer and consumer its safe to remove unused
-          * varyings even if the program is a SSO because the stages are being
-          * linked together i.e. we have a multi-stage SSO.
-          */
-         if (!link_shader_opts(&vm, linked_shader[i]->Program->nir,
-                               linked_shader[i + 1]->Program->nir,
-                               prog, mem_ctx))
-            return false;
+   for (unsigned i = 0; i < num_shaders; i++)
+      gl_nir_opts(linked_shader[i]->Program->nir);
 
+   if (num_shaders > 1) {
+      for (int i = num_shaders - 2; i >= 0; i--) {
+         nir_link_varying_precision(linked_shader[i]->Program->nir,
+                                    linked_shader[i + 1]->Program->nir);
+      }
+
+      /* On page 25 (page 31 of the PDF) of the GLSL 1.20 spec:
+       *
+       *     Only those varying variables used (i.e. read) in
+       *     the fragment shader executable must be written to
+       *     by the vertex shader executable; declaring
+       *     superfluous varying variables in a vertex shader is
+       *     permissible.
+       *
+       * We interpret this text as meaning that the VS must write the variable
+       * for the FS to read it. See "glsl1-varying read but not written" in piglit.
+       *
+       * Since this rule was dropped from GLSL 1.30 and later, we don't do
+       * the same thing for TCS, TES, and GS inputs.
+       */
+      if (!prog->IsES && prog->GLSL_Version <= 120 &&
+          prog->_LinkedShaders[MESA_SHADER_FRAGMENT] &&
+          prog->last_vert_prog) {
+         nir_shader *prev = prog->last_vert_prog->nir;
+         nir_shader *fs = prog->_LinkedShaders[MESA_SHADER_FRAGMENT]->Program->nir;
+
+         nir_foreach_variable_with_modes(var, fs, nir_var_shader_in) {
+            if (!var->data.is_xfb_only && var->data.location == -1) {
+               linker_error(prog, "%s shader varying %s not written "
+                                  "by %s shader\n.",
+                            _mesa_shader_stage_to_string(fs->info.stage),
+                            var->name,
+                            _mesa_shader_stage_to_string(prev->info.stage));
+               return false;
+            }
+         }
+      }
+
+      for (unsigned i = 0; i < num_shaders; i++) {
          remove_unused_shader_inputs_and_outputs(prog, linked_shader[i]->Stage,
-                                                 nir_var_shader_out);
-         remove_unused_shader_inputs_and_outputs(prog,
-                                                 linked_shader[i + 1]->Stage,
-                                                 nir_var_shader_in);
+                                                 (i > 0 ? nir_var_shader_in : 0) |
+                                                 (i < num_shaders - 1 ? nir_var_shader_out : 0));
       }
    }
 
