@@ -286,6 +286,13 @@ iris-kbl-traces-performance:
   variables:
     GPU_VERSION: intel-kbl
 
+iris-adl-traces-performance:
+  extends:
+    - .iris-adl-test
+    - .profile-traces
+  variables:
+    GPU_VERSION: intel-adl
+
 intel-adl-cl:
   extends:
     - .intel-adl-test

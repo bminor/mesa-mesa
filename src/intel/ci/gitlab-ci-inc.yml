@@ -406,6 +406,11 @@
   variables:
     LAVA_FORCE_UART: 1
 
+.iris-adl-test:
+  extends:
+    - .iris-test
+    - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
+
 .iris-whl-deqp:
   extends:
     - .iris-whl-test
