@@ -116,6 +116,8 @@
     FDO_CI_CONCURRENT: 1
     # Piglit is very sparse in its status output and downloads of big traces can take a while
     DEVICE_HANGING_TIMEOUT_SEC: 600
+    # So we aren't capped by VSync by the X server
+    EGL_PLATFORM: surfaceless
     GIT_STRATEGY: none
     HWCI_FREQ_MAX: "true"
     # Always use the same device
