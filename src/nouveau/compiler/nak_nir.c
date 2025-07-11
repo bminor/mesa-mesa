@@ -91,6 +91,13 @@ vectorize_filter_cb(const nir_instr *instr, const void *_data)
 static uint8_t
 phi_vectorize_cb(const nir_instr *instr, const void *data)
 {
+   nir_phi_instr *phi = nir_instr_as_phi(instr);
+   unsigned bit_size = phi->def.bit_size;
+
+   if (bit_size == 16)
+      return 2;
+   if (bit_size == 8)
+      return 4;
    return 1;
 }
 
