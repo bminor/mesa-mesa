@@ -1527,6 +1527,9 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
 
    rsc->valid = true;
 
+   if (FD_DBG(LAYOUT))
+      fdl_dump_layout(&rsc->layout);
+
    return prsc;
 
 fail:
