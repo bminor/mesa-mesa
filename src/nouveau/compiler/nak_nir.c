@@ -286,13 +286,6 @@ lower_bit_size_cb(const nir_instr *instr, void *data)
       }
    }
 
-   case nir_instr_type_phi: {
-      nir_phi_instr *phi = nir_instr_as_phi(instr);
-      if (phi->def.bit_size < 32 && phi->def.bit_size != 1)
-         return 32;
-      return 0;
-   }
-
    default:
       return 0;
    }
