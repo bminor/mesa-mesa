@@ -307,6 +307,12 @@ fd6_layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *ha
 {
    uint64_t modifier = handle->modifier;
 
+   if (modifier == DRM_FORMAT_MOD_INVALID) {
+      struct fdl_metadata metadata;
+      if (!fd_bo_get_metadata(rsc->bo, &metadata, sizeof(metadata)))
+         modifier = metadata.modifier;
+   }
+
    switch (modifier) {
    case DRM_FORMAT_MOD_QCOM_COMPRESSED:
       return layout_resource_for_handle(rsc, handle, true, TILE6_3);
