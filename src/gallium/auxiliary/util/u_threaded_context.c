@@ -377,12 +377,12 @@ tc_resource_batch_usage_test_busy(const struct threaded_context *tc, const struc
 
    int diff;
    if (tbuf->last_batch_usage < tc->last_completed)
-      /* account for wrapping */
-      diff = (tbuf->last_batch_usage + (INT8_MAX - 1)) - tc->last_completed;
+      /* account for wrapping: un-wrap the resource's usage */
+      diff = (tbuf->last_batch_usage + INT8_MAX) - tc->last_completed;
    else
       diff = tbuf->last_batch_usage - tc->last_completed;
 
-   /* if diff is positive, then batch usage has completed: resource is not busy */
+   /* if diff is positive, then batch usage has not completed: resource is busy */
    return diff > 0;
 }
 
