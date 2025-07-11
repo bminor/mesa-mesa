@@ -64,6 +64,16 @@ get_alu_src(struct isel_context* ctx, nir_alu_src src, unsigned size = 1)
    if (src.src.ssa->num_components == 1 && size == 1)
       return get_ssa_temp(ctx, src.src.ssa);
 
+   if (nir_src_is_const(src.src) && src.src.ssa->num_components == 1 &&
+       (size * src.src.ssa->bit_size) <= 32) {
+      uint32_t val = 0;
+      for (unsigned i = 0; i < size; i++) {
+         val |= nir_src_as_uint(src.src) << (i * src.src.ssa->bit_size);
+      }
+      Builder bld(ctx->program, ctx->block);
+      return bld.copy(bld.def(s1), Operand::c32(val));
+   }
+
    Temp vec = get_ssa_temp(ctx, src.src.ssa);
    unsigned elem_size = src.src.ssa->bit_size / 8u;
    bool identity_swizzle = true;
