@@ -2837,7 +2837,7 @@ impl SM20Op for OpTexDepBar {
     fn encode(&self, e: &mut SM20Encoder<'_>) {
         e.set_opcode(SM20Unit::Tex, 0x3c);
         e.set_field(5..9, 0xf_u8); // flags
-        e.set_field(26..30, self.textures_left);
+        e.set_field(26..32, self.textures_left);
     }
 }
 
