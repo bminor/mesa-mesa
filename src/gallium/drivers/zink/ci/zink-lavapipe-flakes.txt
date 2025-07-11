@@ -1,4 +1,5 @@
 KHR-GL46.es_31_compatibility.sample_variables.mask.rgba8ui.samples_0.mask_5
+KHR-Single-GL46.subgroups.quad.framebuffer.subgroupquadbroadcast_2_dvec4_tess_eval
 dEQP-GLES2.functional.texture.filtering.cube.nearest_linear_mirror_l8_pot
 spec@khr_debug@push-pop-group_gl.*
 glx@glx-multi-window-single-context
