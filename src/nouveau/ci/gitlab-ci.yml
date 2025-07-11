@@ -20,7 +20,7 @@ nvk-ad106-vkcts-valve:
   timeout: 60m
   parallel: 2
   variables:
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 55  # usual run time: ??min
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 55  # usual run time: 37min
 
 nvk-ga106-vkd3d-valve:
   extends:
