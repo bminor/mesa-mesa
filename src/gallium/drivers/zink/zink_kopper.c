@@ -150,9 +150,14 @@ destroy_swapchain(struct zink_screen *screen, struct kopper_swapchain *cswap)
       return;
    util_queue_fence_destroy(&cswap->present_fence);
    for (unsigned i = 0; i < cswap->num_images; i++) {
-      simple_mtx_lock(&screen->semaphores_lock);
-      util_dynarray_append(&screen->semaphores, VkSemaphore, cswap->images[i].acquire);
-      simple_mtx_unlock(&screen->semaphores_lock);
+      /* Destroy the acquire semaphore directly, if any.  If acquire != NULL
+       * then we've called vkAcquireNextImage() with the given semaphore but
+       * not submitted anything which waits on it.  This means the semaphore
+       * has a pending signal operation and is not safe to recycle.
+       */
+      if (cswap->images[i].acquire != VK_NULL_HANDLE)
+         VKSCR(DestroySemaphore)(screen->dev, cswap->images[i].acquire, NULL);
+
       pipe_resource_reference(&cswap->images[i].readback, NULL);
    }
    free(cswap->images);

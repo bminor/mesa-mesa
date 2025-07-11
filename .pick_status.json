@@ -1594,7 +1594,7 @@
         "description": "zink/kopper: Don't recycle unused acquire semaphores",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e9f18f64b9ec56ed0e89a5baa41b4536585a8a90",
         "notes": null
