@@ -44,6 +44,7 @@ panvk_per_arch(get_physical_device_extensions)(
    *ext = (struct vk_device_extension_table){
       .KHR_8bit_storage = true,
       .KHR_16bit_storage = true,
+      .KHR_shader_atomic_int64 = PAN_ARCH >= 9,
       .KHR_bind_memory2 = true,
       .KHR_buffer_device_address = true,
       .KHR_calibrated_timestamps = true,
@@ -287,8 +288,8 @@ panvk_per_arch(get_physical_device_features)(
       .storageBuffer8BitAccess = true,
       .uniformAndStorageBuffer8BitAccess = true,
       .storagePushConstant8 = true,
-      .shaderBufferInt64Atomics = false,
-      .shaderSharedInt64Atomics = false,
+      .shaderBufferInt64Atomics = PAN_ARCH >= 9,
+      .shaderSharedInt64Atomics = PAN_ARCH >= 9,
       .shaderFloat16 = PAN_ARCH >= 10,
       .shaderInt8 = true,
 
