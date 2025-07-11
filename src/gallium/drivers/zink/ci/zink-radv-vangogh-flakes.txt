@@ -7,7 +7,10 @@ KHR-GL46.explicit_uniform_location.subroutine-loc
 KHR-GL46.gl_spirv.spirv_glsl_to_spirv_builtin_functions_test
 KHR-GL46.gl_spirv.spirv_modules_positive_test
 KHR-GL46.gpu_shader_fp64.builtin.max_against_scalar_dvec4
+KHR-GL46.gpu_shader_fp64.builtin.modf_double
 KHR-GL46.gpu_shader_fp64.builtin.notequal_dvec4
+KHR-GL46.gpu_shader_fp64.builtin.outerproduct_dmat3x4
+KHR-GL46.gpu_shader_fp64.builtin.smoothstep_against_scalar_dvec3
 KHR-GL46.layout_binding.buffer_layout_binding_atomicAdd_ComputeShader
 KHR-GL46.layout_binding.sampler2D_layout_binding_texture_ComputeShader
 KHR-GL46.layout_location.image_2d_array
@@ -25,6 +28,7 @@ KHR-GL46.sparse_buffer_tests.BufferStorageTest
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rg8i
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rgba16
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_array_rgba8ui
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_r16_snorm
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_r16ui
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba8ui
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_3d_r16f
@@ -54,6 +58,7 @@ dEQP-GLES3.functional.texture.shadow.cube.linear_mipmap_nearest.greater_depth_co
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_12x10_rgba.srgb8_alpha8_astc_12x10_khr_rgba_astc_12x10_khr.texture3d_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32ui_rgba_astc_12x10_khr.texture3d_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba_astc_4x4_khr_rgba32ui.texture2d_array_to_texture2d_array
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32f_rg32i.cubemap_to_texture2d
 dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_.*
 dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_100x100_drawcount_1
 dEQP-GLES31.functional.shaders.opaque_type_indexing.sampler.uniform.fragment.usampler2darray
@@ -93,6 +98,7 @@ spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'coherent' qua
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'volatile' qualifier memory barrier test/modulus=64
 spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative
 spec@arb_tessellation_shader@execution@built-in-functions@tcs-sign-vec3
+spec@arb_texture_gather@texturegatheroffset@vs-rgba-blue-unorm-2d
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_RGB9_E5
 spec@arb_timer_query@timestamp-get
