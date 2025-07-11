@@ -417,7 +417,7 @@ get_mod_convert_shaders(struct panfrost_context *ctx,
 
    pthread_mutex_lock(&ctx->mod_convert_shaders.lock);
    struct hash_entry *he =
-      _mesa_hash_table_search(ctx->mod_convert_shaders.shaders, &key);
+      _mesa_hash_table_search(ctx->mod_convert_shaders.shaders, key);
    struct pan_mod_convert_shader_data *shader = he ? he->data : NULL;
    pthread_mutex_unlock(&ctx->mod_convert_shaders.lock);
 
