@@ -172,7 +172,7 @@ zink_context_destroy_query_pools(struct zink_context *ctx)
 }
 
 static struct zink_query_pool *
-find_or_allocate_qp(struct zink_context *ctx, struct zink_query *q, unsigned idx)
+find_or_allocate_qp(struct zink_context *ctx, struct zink_query *q, unsigned idx, bool *vkq_needs_reset)
 {
    VkQueryPipelineStatisticFlags pipeline_stats = 0;
    if (q->type == PIPE_QUERY_PRIMITIVES_GENERATED && q->vkqtype != VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT)
@@ -208,6 +208,10 @@ find_or_allocate_qp(struct zink_context *ctx, struct zink_query *q, unsigned idx
 
    VkQueryPoolCreateInfo pool_create = {0};
    pool_create.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+   if (screen->info.have_KHR_maintenance9) {
+      pool_create.flags = VK_QUERY_POOL_CREATE_RESET_BIT_KHR;
+      vkq_needs_reset = false;
+   }
    pool_create.queryType = vk_query_type;
    pool_create.queryCount = NUM_QUERIES;
    pool_create.pipelineStatistics = pipeline_stats;
@@ -465,16 +469,17 @@ query_pool_get_range(struct zink_context *ctx, struct zink_query *q)
       /* try and find the active query for this */
       struct zink_vk_query *vkq;
       int xfb_idx = num_queries == 4 ? i : q->index;
+      bool vkq_needs_reset = true;
       if ((q->vkqtype == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT ||
            (pool_idx == 1)) && ctx->curr_xfb_queries[xfb_idx]) {
          vkq = ctx->curr_xfb_queries[xfb_idx];
          vkq->refcount++;
          vkq->pool->refcount++;
       } else {
-         struct zink_query_pool *pool = find_or_allocate_qp(ctx, q, pool_idx);
+         struct zink_query_pool *pool = find_or_allocate_qp(ctx, q, pool_idx, &vkq_needs_reset);
          if (pool->last_range == NUM_QUERIES) {
             list_del(&pool->list);
-            pool = find_or_allocate_qp(ctx, q, pool_idx);
+            pool = find_or_allocate_qp(ctx, q, pool_idx, &vkq_needs_reset);
          }
          vkq = CALLOC_STRUCT(zink_vk_query);
          if (!vkq) {
@@ -484,7 +489,7 @@ query_pool_get_range(struct zink_context *ctx, struct zink_query *q)
 
          pool->refcount++;
          vkq->refcount = 1;
-         vkq->needs_reset = true;
+         vkq->needs_reset = vkq_needs_reset;
          vkq->pool = pool;
          vkq->started = false;
          vkq->query_id = pool->last_range++;
