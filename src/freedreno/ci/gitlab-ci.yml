@@ -237,6 +237,10 @@ a618-traces-performance:
   extends:
     - a618-traces
     - .collabora-freedreno-rules-performance
+    - .piglit-performance-base
+  rules:
+    - !reference [.piglit-performance-base, rules]
+    - !reference [.collabora-freedreno-rules-performance, rules]
   variables:
     # Always use the same device
     # a618 tag starts with cbg-1 (not cbg-0) for some reason
