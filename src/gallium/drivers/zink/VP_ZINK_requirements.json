@@ -400,6 +400,7 @@
                 "VK_EXT_extended_dynamic_state2": 1,
                 "VK_EXT_extended_dynamic_state3": 1,
                 "VK_EXT_graphics_pipeline_library": 1,
+                "VK_EXT_primitive_topology_list_restart": 1,
                 "VK_EXT_non_seamless_cube_map": 1,
                 "VK_KHR_pipeline_library": 1,
                 "VK_EXT_attachment_feedback_loop_layout": 1,
@@ -424,6 +425,10 @@
                     "extendedDynamicState3ProvokingVertexMode": true,
                     "extendedDynamicState3LineRasterizationMode": true,
                     "extendedDynamicState3DepthClipNegativeOneToOne": true
+                },
+                "VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT": {
+                    "primitiveTopologyListRestart": true,
+                    "primitiveTopologyPatchListRestart": true
                 },
                 "VkPhysicalDeviceFeatures": {
                     "textureCompressionBC": true
