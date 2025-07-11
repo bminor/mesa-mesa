@@ -1499,14 +1499,11 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
    if (tmpl->target == PIPE_BUFFER)
       tc_buffer_disable_cpu_storage(&rsc->b.b);
 
-   struct fdl_slice *slice = fd_resource_slice(rsc, 0);
    struct pipe_resource *prsc = &rsc->b.b;
 
    DBG("%" PRSC_FMT ", modifier=%" PRIx64, PRSC_ARGS(prsc), handle->modifier);
 
    rsc->b.is_shared = true;
-
-   fd_resource_layout_init(prsc);
 
    struct fd_bo *bo = fd_screen_bo_from_handle(pscreen, handle);
    if (!bo)
@@ -1515,38 +1512,11 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
    fd_resource_set_bo(rsc, bo);
 
    rsc->internal_format = tmpl->format;
-   rsc->layout.layer_first = true;
-   rsc->layout.pitch0 = handle->stride;
-   slice->offset = handle->offset;
-   slice->size0 = handle->stride * prsc->height0;
-
-   if (usage & PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE) {
-      /* use a pitchalign of gmem_align_w pixels, because GMEM resolve for
-       * lower alignments is not implemented (but possible for a6xx at least)
-       *
-       * for UBWC-enabled resources, layout_resource_for_modifier will further
-       * validate the pitch and set the right pitchalign
-       */
-      rsc->layout.pitchalign =
-         fdl_cpp_shift(&rsc->layout) + util_logbase2(screen->info->gmem_align_w);
-   } else {
-      rsc->layout.pitchalign = fdl_cpp_shift(&rsc->layout);
-   }
-
-   /* apply the minimum pitchalign (note: actually 4 for a3xx but doesn't
-    * matter) */
-   if (is_a6xx(screen) || is_a5xx(screen))
-      rsc->layout.pitchalign = MAX2(rsc->layout.pitchalign, 6);
-   else
-      rsc->layout.pitchalign = MAX2(rsc->layout.pitchalign, 5);
-
-   if (rsc->layout.pitch0 < (prsc->width0 * rsc->layout.cpp) ||
-       fd_resource_pitch(rsc, 0) != rsc->layout.pitch0)
-      goto fail;
-
-   assert(rsc->layout.cpp);
 
    if (!screen->layout_resource_for_handle(rsc, handle))
+      goto fail;
+
+   if (rsc->layout.pitch0 != handle->stride)
       goto fail;
 
    if (screen->ro) {
@@ -1655,6 +1625,40 @@ static const struct u_transfer_vtbl transfer_vtbl = {
 static bool
 fd_layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle)
 {
+   struct pipe_resource *prsc = &rsc->b.b;
+   struct fd_screen *screen = fd_screen(prsc->screen);
+
+   fd_resource_layout_init(prsc);
+
+   struct fdl_slice *slice = fd_resource_slice(rsc, 0);
+   rsc->layout.layer_first = true;
+   rsc->layout.pitch0 = handle->stride;
+   slice->offset = handle->offset;
+   slice->size0 = handle->stride * prsc->height0;
+
+   /* use a pitchalign of gmem_align_w pixels, because GMEM resolve for
+    * lower alignments is not implemented (but possible for a6xx at least)
+    *
+    * for UBWC-enabled resources, layout_resource_for_modifier will further
+    * validate the pitch and set the right pitchalign
+    */
+   rsc->layout.pitchalign =
+      fdl_cpp_shift(&rsc->layout) + util_logbase2(screen->info->gmem_align_w);
+
+   /* apply the minimum pitchalign (note: actually 4 for a3xx but doesn't
+    * matter)
+    */
+   if (is_a6xx(screen) || is_a5xx(screen))
+      rsc->layout.pitchalign = MAX2(rsc->layout.pitchalign, 6);
+   else
+      rsc->layout.pitchalign = MAX2(rsc->layout.pitchalign, 5);
+
+   if (rsc->layout.pitch0 < (prsc->width0 * rsc->layout.cpp) ||
+       fd_resource_pitch(rsc, 0) != rsc->layout.pitch0)
+      return false;
+
+   assert(rsc->layout.cpp);
+
    switch (handle->modifier) {
    case DRM_FORMAT_MOD_LINEAR:
       /* The dri gallium frontend will pass DRM_FORMAT_MOD_INVALID to us
