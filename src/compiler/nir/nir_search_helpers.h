@@ -895,6 +895,12 @@ no_unsigned_wrap(const nir_alu_instr *instr)
 }
 
 static inline bool
+xz_components_unused(const nir_alu_instr *instr)
+{
+   return (nir_def_components_read(&instr->def) & 0x5) == 0;
+}
+
+static inline bool
 is_integral(struct hash_table *ht, const nir_alu_instr *instr, unsigned src,
             UNUSED unsigned num_components, UNUSED const uint8_t *swizzle)
 {

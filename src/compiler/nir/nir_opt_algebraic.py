@@ -2091,6 +2091,10 @@ optimizations.extend([
    (('ior', ('u2u16', ('unpack_32_4x8.z', a)), ('ishl', ('u2u16', ('unpack_32_4x8.w', a)), 8)),
     ('unpack_32_2x16_split_y', a), '!options->lower_unpack_32_2x16_split'),
 
+   # Prefer 16bit unpack/extract because it's easier to vectorize
+   (('i2i16', ('unpack_32_4x8(xz_components_unused).y', a)), ('extract_i8', ('unpack_32_2x16.x', a), 1), '!options->lower_extract_byte'),
+   (('i2i16', ('unpack_32_4x8(xz_components_unused).w', a)), ('extract_i8', ('unpack_32_2x16.y', a), 1), '!options->lower_extract_byte'),
+
    (('extract_u16', ('extract_i16', a, b), 0), ('extract_u16', a, b)),
    (('extract_u16', ('extract_u16', a, b), 0), ('extract_u16', a, b)),
 
