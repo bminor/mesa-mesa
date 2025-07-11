@@ -95,6 +95,17 @@ zink-anv-adl-traces-restricted:
     PIGLIT_REPLAY_EXTRA_ARGS: --db-path ${CI_PROJECT_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}
   allow_failure: true
 
+zink-anv-adl-traces-performance:
+  extends:
+    - .zink-anv-adl-trace-test
+    - .zink-anv-manual-rules
+    - .piglit-performance-base
+  rules:
+    - !reference [.piglit-performance-base, rules]
+    - !reference [.zink-anv-manual-rules, rules]
+  variables:
+    PIGLIT_TRACES_FILE: traces-zink.yml
+
 zink-anv-tgl:
   extends:
     - .zink-anv-tgl-test
