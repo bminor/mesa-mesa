@@ -267,7 +267,8 @@ main(int argc, char **argv)
    printf("localsize: %dx%dx%d\n", kernel->local_size[0], kernel->local_size[1],
           kernel->local_size[2]);
    for (int i = 0; i < kernel->num_bufs; i++) {
-      printf("buf[%d]: size=%u\n", i, kernel->buf_sizes[i]);
+      printf("buf[%d]: size=%u, type=%s\n", i, kernel->buf_sizes[i],
+             kernel->buf_types[i] == KERNEL_BUF_UBO ? "UBO" : "SSBO");
       kernel->bufs[i] = fd_bo_new(dev, kernel->buf_sizes[i] * 4, 0, "buf[%d]", i);
 
       if (kernel->buf_init_data[i]) {

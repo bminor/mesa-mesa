@@ -15,8 +15,14 @@
 extern "C" {
 #endif
 
+enum kernel_buf_type {
+   KERNEL_BUF_UAV,
+   KERNEL_BUF_UBO,
+};
+
 struct ir3_kernel_info {
    uint32_t num_bufs;
+   enum kernel_buf_type buf_types[MAX_BUFS];
    uint32_t buf_sizes[MAX_BUFS]; /* size in dwords */
    uint32_t buf_addr_regs[MAX_BUFS];
    uint32_t *buf_init_data[MAX_BUFS];

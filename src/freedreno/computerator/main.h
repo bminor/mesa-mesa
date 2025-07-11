@@ -16,12 +16,15 @@
 #include "adreno_common.xml.h"
 #include "adreno_pm4.xml.h"
 
+#include "ir3/ir3_assembler.h"
+
 #define MAX_BUFS 4
 
 struct kernel {
    /* filled in by backend when shader is assembled: */
    uint32_t local_size[3];
    uint32_t num_bufs;
+   enum kernel_buf_type buf_types[MAX_BUFS];
    uint32_t buf_sizes[MAX_BUFS]; /* size in dwords */
    uint32_t buf_addr_regs[MAX_BUFS];
    uint32_t *buf_init_data[MAX_BUFS];

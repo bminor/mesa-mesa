@@ -356,15 +356,39 @@ cs_const_emit(struct fd_ringbuffer *ring, struct kernel *kernel,
    }
 }
 
+static unsigned
+kernel_num_bufs(struct kernel *kernel, enum kernel_buf_type buf_type)
+{
+   unsigned num_bufs = 0;
+
+   for (unsigned i = 0; i < kernel->num_bufs; i++) {
+      if (kernel->buf_types[i] == buf_type) {
+         num_bufs++;
+      }
+   }
+
+   return num_bufs;
+}
+
 template<chip CHIP>
 static void
 cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
             struct kernel *kernel)
 {
+   unsigned num_bufs = kernel_num_bufs(kernel, KERNEL_BUF_UAV);
+
+   if (num_bufs == 0) {
+      return;
+   }
+
    struct fd_ringbuffer *state = fd_submit_new_ringbuffer(
       submit, kernel->num_bufs * 16 * 4, FD_RINGBUFFER_STREAMING);
 
    for (unsigned i = 0; i < kernel->num_bufs; i++) {
+      if (kernel->buf_types[i] != KERNEL_BUF_UAV) {
+         continue;
+      }
+
       /* size is encoded with low 15b in WIDTH and high bits in HEIGHT,
        * in units of elements:
        */
@@ -396,7 +420,7 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
                      CP_LOAD_STATE6_0_STATE_TYPE(ST6_UAV) |
                      CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
                      CP_LOAD_STATE6_0_STATE_BLOCK(SB6_CS_SHADER) |
-                     CP_LOAD_STATE6_0_NUM_UNIT(kernel->num_bufs));
+                     CP_LOAD_STATE6_0_NUM_UNIT(num_bufs));
    OUT_RB(ring, state);
 
    if (CHIP == A6XX) {
@@ -407,9 +431,39 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
    OUT_RB(ring, state);
 
    OUT_PKT4(ring, REG_A6XX_SP_CS_USIZE, 1);
-   OUT_RING(ring, kernel->num_bufs);
+   OUT_RING(ring, num_bufs);
 
    fd_ringbuffer_del(state);
+}
+
+static void
+cs_ubo_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
+{
+   unsigned num_bufs = kernel_num_bufs(kernel, KERNEL_BUF_UBO);
+
+   if (num_bufs == 0) {
+      return;
+   }
+
+   for (unsigned i = 0, offset = 0; i < kernel->num_bufs; i++) {
+      if (kernel->buf_types[i] != KERNEL_BUF_UBO) {
+         continue;
+      }
+
+      OUT_PKT7(ring, CP_LOAD_STATE6_FRAG, 5);
+      OUT_RING(ring, CP_LOAD_STATE6_0_DST_OFF(offset) |
+                        CP_LOAD_STATE6_0_STATE_TYPE(ST6_UBO) |
+                        CP_LOAD_STATE6_0_STATE_SRC(SS6_DIRECT) |
+                        CP_LOAD_STATE6_0_STATE_BLOCK(SB6_CS_SHADER) |
+                        CP_LOAD_STATE6_0_NUM_UNIT(1));
+      OUT_RING(ring, CP_LOAD_STATE6_1_EXT_SRC_ADDR(0));
+      OUT_RING(ring, CP_LOAD_STATE6_2_EXT_SRC_ADDR_HI(0));
+      unsigned size_vec4s = DIV_ROUND_UP(kernel->buf_sizes[i], 4);
+      OUT_RELOC(ring, kernel->bufs[i], 0,
+                (uint64_t)A6XX_UBO_1_SIZE(size_vec4s) << 32, 0);
+
+      offset++;
+   }
 }
 
 template<chip CHIP>
@@ -485,6 +539,7 @@ a6xx_emit_grid(struct kernel *kernel, uint32_t grid[3],
    cs_program_emit<CHIP>(ring, kernel);
    cs_const_emit<CHIP>(ring, kernel, grid);
    cs_ibo_emit<CHIP>(ring, submit, kernel);
+   cs_ubo_emit(ring, kernel);
 
    OUT_PKT7(ring, CP_SET_MARKER, 1);
    OUT_RING(ring, A6XX_CP_SET_MARKER_0_MODE(RM6_COMPUTE));

@@ -403,6 +403,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_A_LOCALSIZE
 %token <tok> T_A_CONST
 %token <tok> T_A_BUF
+%token <tok> T_A_UBO
 %token <tok> T_A_INVOCATIONID
 %token <tok> T_A_WGID
 %token <tok> T_A_NUMWG
@@ -796,6 +797,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %type <tok> cat5_opc cat5_samp cat5_tex cat5_type
 %type <type> type
 %type <unum> const_val cat6_src_shift
+%type <num> buf_type
 
 %error-verbose
 
@@ -853,9 +855,13 @@ buf_header_addr_reg:
 }
 |
 
-buf_header:        T_A_BUF const_val {
+buf_type: T_A_BUF { $$ = KERNEL_BUF_UAV; }
+|         T_A_UBO { $$ = KERNEL_BUF_UBO; }
+
+buf_header:        buf_type const_val {
                        int idx = info->num_bufs++;
                        assert(idx < MAX_BUFS);
+                       info->buf_types[idx] = $1;
                        info->buf_sizes[idx] = $2;
 } buf_header_addr_reg buf_header_init_vals
 

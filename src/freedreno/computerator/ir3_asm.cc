@@ -42,6 +42,8 @@ ir3_asm_assemble(struct ir3_compiler *c, FILE *in)
    kernel->base.local_size[1] = v->local_size[1];
    kernel->base.local_size[2] = v->local_size[2];
    kernel->base.num_bufs = kernel->info.num_bufs;
+   memcpy(kernel->base.buf_types, kernel->info.buf_types,
+          sizeof(kernel->base.buf_sizes));
    memcpy(kernel->base.buf_sizes, kernel->info.buf_sizes,
           sizeof(kernel->base.buf_sizes));
    memcpy(kernel->base.buf_addr_regs, kernel->info.buf_addr_regs,
