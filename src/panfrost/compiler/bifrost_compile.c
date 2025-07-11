@@ -1597,6 +1597,8 @@ bi_atom_opc_for_nir(nir_atomic_op op)
    case nir_atomic_op_iand: return BI_ATOM_OPC_AAND;
    case nir_atomic_op_ior:  return BI_ATOM_OPC_AOR;
    case nir_atomic_op_ixor: return BI_ATOM_OPC_AXOR;
+   case nir_atomic_op_xchg: return BI_ATOM_OPC_AXCHG;
+   case nir_atomic_op_cmpxchg: return BI_ATOM_OPC_AXCHG;
    default: unreachable("Unexpected computational atomic");
    }
    /* clang-format on */
@@ -1829,6 +1831,36 @@ bi_emit_image_store(bi_builder *b, nir_intrinsic_instr *instr)
              BI_REGISTER_FORMAT_AUTO, instr->num_components - 1);
 }
 
+static void
+bi_emit_atomic_i64_to(bi_builder *b, bi_index dst, bi_index addr, bi_index arg,
+                      nir_atomic_op op)
+{
+   enum bi_atom_opc opc = bi_atom_opc_for_nir(op);
+   enum bi_atom_opc post_opc = opc;
+   bool bifrost = b->shader->arch <= 8;
+
+   /* ATOM_C.i64 takes a vector with {arg, coalesced}, ATOM_C1.i64 doesn't
+    * take any vector but can still output in RETURN mode */
+   bi_index tmp_dest = bifrost ? bi_temp(b->shader) : dst;
+   unsigned sr_count = bifrost ? 4 : 2;
+
+   /* Generate either ATOM or ATOM1 as required */
+   if (bi_promote_atom_c1(opc, arg, &opc)) {
+      bi_atom1_return_i64_to(b, tmp_dest, bi_extract(b, addr, 0),
+                             bi_extract(b, addr, 1), opc, sr_count);
+   } else {
+      bi_atom_return_i64_to(b, tmp_dest, arg, bi_extract(b, addr, 0),
+                            bi_extract(b, addr, 1), opc, sr_count);
+   }
+
+   if (bifrost) {
+      /* Post-process it */
+      bi_emit_cached_split(b, tmp_dest, 64 * 2);
+      bi_atom_post_i64_to(b, dst, bi_extract(b, tmp_dest, 0),
+                          bi_extract(b, tmp_dest, 2), post_opc);
+      bi_emit_cached_split(b, dst, 64);
+   }
+}
 static void
 bi_emit_atomic_i32_to(bi_builder *b, bi_index dst, bi_index addr, bi_index arg,
                       nir_atomic_op op)
@@ -2121,24 +2153,32 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
    case nir_intrinsic_shared_atomic: {
       nir_atomic_op op = nir_intrinsic_atomic_op(instr);
 
-      if (op == nir_atomic_op_xchg) {
-         bi_emit_axchg_to(b, dst, bi_src_index(&instr->src[0]), &instr->src[1],
-                          BI_SEG_WLS);
+      bi_index addr = bi_src_index(&instr->src[0]);
+      bi_index addr_hi;
+
+      if (b->shader->arch >= 9) {
+         bi_handle_segment(b, &addr, &addr_hi, BI_SEG_WLS, NULL);
+         addr = bi_collect_v2i32(b, addr, addr_hi);
+
+         if (nir_src_bit_size(instr->src[1]) == 32) {
+            bi_emit_atomic_i32_to(b, dst, addr, bi_src_index(&instr->src[1]), op);
+         } else {
+            bi_emit_atomic_i64_to(b, dst, addr, bi_src_index(&instr->src[1]), op);
+         }
       } else {
-         assert(nir_src_bit_size(instr->src[1]) == 32);
-
-         bi_index addr = bi_src_index(&instr->src[0]);
-         bi_index addr_hi;
-
-         if (b->shader->arch >= 9) {
-            bi_handle_segment(b, &addr, &addr_hi, BI_SEG_WLS, NULL);
-            addr = bi_collect_v2i32(b, addr, addr_hi);
+         if (op == nir_atomic_op_xchg) {
+            bi_emit_axchg_to(b, dst, addr, &instr->src[1],
+                             BI_SEG_WLS);
          } else {
             addr = bi_seg_add_i64(b, addr, bi_zero(), false, BI_SEG_WLS);
             bi_emit_cached_split(b, addr, 64);
-         }
 
-         bi_emit_atomic_i32_to(b, dst, addr, bi_src_index(&instr->src[1]), op);
+            if (nir_src_bit_size(instr->src[1]) == 32) {
+               bi_emit_atomic_i32_to(b, dst, addr, bi_src_index(&instr->src[1]), op);
+            } else {
+               bi_emit_atomic_i64_to(b, dst, addr, bi_src_index(&instr->src[1]), op);
+            }
+         }
       }
 
       bi_split_def(b, &instr->def);
@@ -2148,14 +2188,27 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
    case nir_intrinsic_global_atomic: {
       nir_atomic_op op = nir_intrinsic_atomic_op(instr);
 
-      if (op == nir_atomic_op_xchg) {
-         bi_emit_axchg_to(b, dst, bi_src_index(&instr->src[0]), &instr->src[1],
-                          BI_SEG_NONE);
+      if (b->shader->arch >= 9) {
+         if (nir_src_bit_size(instr->src[1]) == 32) {
+            bi_emit_atomic_i32_to(b, dst, bi_src_index(&instr->src[0]),
+                                  bi_src_index(&instr->src[1]), op);
+         } else {
+            bi_emit_atomic_i64_to(b, dst, bi_src_index(&instr->src[0]),
+                                  bi_src_index(&instr->src[1]), op);
+         }
       } else {
-         assert(nir_src_bit_size(instr->src[1]) == 32);
 
-         bi_emit_atomic_i32_to(b, dst, bi_src_index(&instr->src[0]),
-                               bi_src_index(&instr->src[1]), op);
+         if (op == nir_atomic_op_xchg) {
+            bi_emit_axchg_to(b, dst, bi_src_index(&instr->src[0]), &instr->src[1], BI_SEG_NONE);
+         } else {
+            if (nir_src_bit_size(instr->src[1]) == 32) {
+               bi_emit_atomic_i32_to(b, dst, bi_src_index(&instr->src[0]),
+                                     bi_src_index(&instr->src[1]), op);
+            } else {
+               bi_emit_atomic_i64_to(b, dst, bi_src_index(&instr->src[0]),
+                                     bi_src_index(&instr->src[1]), op);
+            }
+         }
       }
 
       bi_split_def(b, &instr->def);
@@ -2383,20 +2436,29 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
 static void
 bi_emit_load_const(bi_builder *b, nir_load_const_instr *instr)
 {
-   /* Make sure we've been lowered */
-   assert(instr->def.num_components <= (32 / instr->def.bit_size));
-
    /* Accumulate all the channels of the constant, as if we did an
     * implicit SEL over them */
-   uint32_t acc = 0;
+   uint64_t acc = 0;
 
    for (unsigned i = 0; i < instr->def.num_components; ++i) {
-      unsigned v =
+      uint64_t v =
          nir_const_value_as_uint(instr->value[i], instr->def.bit_size);
       acc |= (v << (i * instr->def.bit_size));
    }
 
-   bi_mov_i32_to(b, bi_get_index(instr->def.index), bi_imm_u32(acc));
+   if (instr->def.bit_size <= 32) {
+      bi_mov_i32_to(b, bi_get_index(instr->def.index), bi_imm_u32(acc));
+   } else {
+      uint32_t imm_2x32[2] = { acc & 0xffffffff, (acc >> 32) & 0xffffffff };
+      bi_index tempa = bi_temp(b->shader);
+      bi_index tempb = bi_temp(b->shader);
+      bi_mov_i32_to(b, tempa, bi_imm_u32(imm_2x32[0]));
+      bi_mov_i32_to(b, tempb, bi_imm_u32(imm_2x32[1]));
+
+      bi_instr *collect = bi_collect_i32_to(b, bi_get_index(instr->def.index), 2);
+      collect->src[0] = tempa;
+      collect->src[1] = tempb;
+   }
 }
 
 static bi_index

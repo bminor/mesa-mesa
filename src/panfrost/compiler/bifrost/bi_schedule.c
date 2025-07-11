@@ -397,6 +397,48 @@ bi_lower_atom_c1(bi_context *ctx, struct bi_clause_state *clause,
 }
 
 static bi_instr *
+bi_lower_atom_c_64(bi_context *ctx, struct bi_clause_state *clause,
+                struct bi_tuple_state *tuple)
+{
+   bi_instr *pinstr = tuple->add;
+   bi_builder b = bi_init_builder(ctx, bi_before_instr(pinstr));
+   bi_instr *atom_c = bi_atom_c_return_i64(&b, pinstr->src[1], pinstr->src[2],
+                                           pinstr->src[0], pinstr->atom_opc);
+
+   if (bi_is_null(pinstr->dest[0]))
+      bi_set_opcode(atom_c, BI_OPCODE_ATOM_C_I64);
+
+   bi_instr *atom_cx =
+      bi_atom_cx_to(&b, pinstr->dest[0], pinstr->src[0], pinstr->src[1],
+                    pinstr->src[2], pinstr->src[0], pinstr->sr_count);
+   tuple->add = atom_cx;
+   bi_remove_instruction(pinstr);
+
+   return atom_c;
+}
+
+static bi_instr *
+bi_lower_atom_c1_64(bi_context *ctx, struct bi_clause_state *clause,
+                 struct bi_tuple_state *tuple)
+{
+   bi_instr *pinstr = tuple->add;
+   bi_builder b = bi_init_builder(ctx, bi_before_instr(pinstr));
+   bi_instr *atom_c = bi_atom_c1_return_i64(&b, pinstr->src[0], pinstr->src[1],
+                                            pinstr->atom_opc);
+
+   if (bi_is_null(pinstr->dest[0]))
+      bi_set_opcode(atom_c, BI_OPCODE_ATOM_C1_I64);
+
+   bi_instr *atom_cx =
+      bi_atom_cx_to(&b, pinstr->dest[0], bi_null(), pinstr->src[0],
+                    pinstr->src[1], bi_dontcare(&b), pinstr->sr_count);
+   tuple->add = atom_cx;
+   bi_remove_instruction(pinstr);
+
+   return atom_c;
+}
+
+static bi_instr *
 bi_lower_seg_add(bi_context *ctx, struct bi_clause_state *clause,
                  struct bi_tuple_state *tuple)
 {
@@ -1289,6 +1331,10 @@ bi_take_instr(bi_context *ctx, struct bi_worklist st,
       return bi_lower_atom_c(ctx, clause, tuple);
    else if (tuple->add && tuple->add->op == BI_OPCODE_ATOM1_RETURN_I32)
       return bi_lower_atom_c1(ctx, clause, tuple);
+   else if (tuple->add && tuple->add->op == BI_OPCODE_ATOM_RETURN_I64)
+      return bi_lower_atom_c_64(ctx, clause, tuple);
+   else if (tuple->add && tuple->add->op == BI_OPCODE_ATOM1_RETURN_I64)
+      return bi_lower_atom_c1_64(ctx, clause, tuple);
    else if (tuple->add && tuple->add->op == BI_OPCODE_SEG_ADD_I64)
       return bi_lower_seg_add(ctx, clause, tuple);
    else if (tuple->add && tuple->add->table)

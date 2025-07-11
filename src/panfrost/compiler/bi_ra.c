@@ -854,7 +854,8 @@ bi_is_tied(const bi_instr *I)
 {
    return (I->op == BI_OPCODE_TEXC || I->op == BI_OPCODE_TEXC_DUAL ||
            I->op == BI_OPCODE_ATOM_RETURN_I32 || I->op == BI_OPCODE_AXCHG_I32 ||
-           I->op == BI_OPCODE_ACMPXCHG_I32) &&
+           I->op == BI_OPCODE_ACMPXCHG_I32 || I->op == BI_OPCODE_AXCHG_I64 ||
+           I->op == BI_OPCODE_ACMPXCHG_I64) &&
           !bi_is_null(I->src[0]);
 }
 

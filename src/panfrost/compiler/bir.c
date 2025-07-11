@@ -90,6 +90,8 @@ bi_count_read_registers(const bi_instr *ins, unsigned s)
    /* ATOM reads 1 but writes 2. Exception for ACMPXCHG */
    if (s == 0 && ins->op == BI_OPCODE_ATOM_RETURN_I32)
       return (ins->atom_opc == BI_ATOM_OPC_ACMPXCHG) ? 2 : 1;
+   else if (s == 0 && ins->op == BI_OPCODE_ATOM_RETURN_I64)
+      return (ins->atom_opc == BI_ATOM_OPC_ACMPXCHG) ? 4 : 2;
    else if (s == 0 && bi_get_opcode_props(ins)->sr_read)
       return bi_count_staging_registers(ins);
    else if (s == 4 && ins->op == BI_OPCODE_BLEND)
@@ -125,8 +127,18 @@ bi_count_write_registers(const bi_instr *ins, unsigned d)
       case BI_OPCODE_ACMPXCHG_I32:
          /* Reads 2 but writes 1 */
          return 1;
+      case BI_OPCODE_ACMPXCHG_I64:
+         /* Reads 4 but writes 2 */
+         return 2;
+      case BI_OPCODE_ATOM_POST_I32:
+         /* Reads 2 but writes 1 */
+         return 1;
+      case BI_OPCODE_ATOM_POST_I64:
+         /* Reads 4 but writes 2 */
+         return 2;
 
       case BI_OPCODE_ATOM1_RETURN_I32:
+      case BI_OPCODE_ATOM1_RETURN_I64:
          /* Allow omitting the destination for plain ATOM1 */
          return bi_is_null(ins->dest[0]) ? 0 : ins->sr_count;
       default:

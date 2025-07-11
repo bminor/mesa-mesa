@@ -110,10 +110,23 @@ lower(bi_builder *b, bi_instr *I)
          return bi_branchzi(b, bi_zero(), I->src[0], BI_CMPF_EQ);
       }
 
+   case BI_OPCODE_AXCHG_I64:
+      bi_set_opcode(I, BI_OPCODE_ATOM_RETURN_I64);
+      I->atom_opc = BI_ATOM_OPC_AXCHG;
+      I->sr_count = 2;
+      return NULL;
+
    case BI_OPCODE_AXCHG_I32:
       bi_set_opcode(I, BI_OPCODE_ATOM_RETURN_I32);
       I->atom_opc = BI_ATOM_OPC_AXCHG;
       I->sr_count = 1;
+      return NULL;
+
+   case BI_OPCODE_ACMPXCHG_I64:
+      bi_set_opcode(I, BI_OPCODE_ATOM_RETURN_I64);
+      I->atom_opc = BI_ATOM_OPC_ACMPXCHG;
+      /* Reads 4, this is special cased in bir.c */
+      I->sr_count = 2;
       return NULL;
 
    case BI_OPCODE_ACMPXCHG_I32:
