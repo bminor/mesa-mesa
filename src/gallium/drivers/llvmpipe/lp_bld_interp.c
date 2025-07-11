@@ -127,6 +127,39 @@ attrib_name(LLVMValueRef val, unsigned attrib, unsigned chan, const char *suffix
 }
 
 
+static LLVMValueRef
+interp_attrib_linear(struct lp_build_interp_soa_context *bld,
+                     unsigned attrib,
+                     LLVMValueRef index,
+                     LLVMValueRef pixoffx,
+                     LLVMValueRef pixoffy)
+{
+   struct lp_build_context *coeff_bld = &bld->coeff_bld;
+   struct lp_build_context *setup_bld = &bld->setup_bld;
+   struct gallivm_state *gallivm = coeff_bld->gallivm;
+   LLVMBuilderRef builder = gallivm->builder;
+
+   LLVMValueRef dadx, dady, a;
+
+   dadx = lp_build_extract_broadcast(gallivm, setup_bld->type,
+                                     coeff_bld->type, bld->dadxaos[attrib],
+                                     index);
+   dady = lp_build_extract_broadcast(gallivm, setup_bld->type,
+                                     coeff_bld->type, bld->dadyaos[attrib],
+                                     index);
+   a = lp_build_extract_broadcast(gallivm, setup_bld->type,
+                                  coeff_bld->type, bld->a0aos[attrib],
+                                  index);
+  /*
+   * a = a0 + (x * dadx + y * dady)
+   */
+   a = lp_build_fmuladd(builder, dadx, pixoffx, a);
+   a = lp_build_fmuladd(builder, dady, pixoffy, a);
+
+   return a;
+}
+
+
 static void
 calc_offsets(struct lp_build_context *coeff_bld,
              unsigned quad_start_index,
@@ -335,8 +368,6 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
       for (unsigned chan = 0; chan < TGSI_NUM_CHANNELS; chan++) {
          if (mask & (1 << chan)) {
             LLVMValueRef index = lp_build_const_int32(gallivm, chan);
-            LLVMValueRef dadx = coeff_bld->zero;
-            LLVMValueRef dady = coeff_bld->zero;
             LLVMValueRef a = coeff_bld->zero;
             LLVMValueRef chan_pixoffx = pixoffx, chan_pixoffy = pixoffy;
 
@@ -346,7 +377,6 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
 
             case LP_INTERP_LINEAR:
                if (attrib == 0 && chan == 0) {
-                  dadx = coeff_bld->one;
                   if (sample_id) {
                      LLVMValueRef x_val_idx = LLVMBuildMul(gallivm->builder, sample_id, lp_build_const_int32(gallivm, 2), "");
                      x_val_idx = lp_build_array_get2(gallivm, bld->sample_pos_array_type,
@@ -355,9 +385,9 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
                   } else {
                      a = lp_build_const_vec(gallivm, coeff_bld->type, bld->pos_offset);
                   }
+                  a = lp_build_add(coeff_bld, chan_pixoffx, a);
                }
                else if (attrib == 0 && chan == 1) {
-                  dady = coeff_bld->one;
                   if (sample_id) {
                      LLVMValueRef y_val_idx = LLVMBuildMul(gallivm->builder, sample_id, lp_build_const_int32(gallivm, 2), "");
                      y_val_idx = LLVMBuildAdd(gallivm->builder, y_val_idx, lp_build_const_int32(gallivm, 1), "");
@@ -367,18 +397,9 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
                   } else {
                      a = lp_build_const_vec(gallivm, coeff_bld->type, bld->pos_offset);
                   }
+                  a = lp_build_add(coeff_bld, chan_pixoffy, a);
                }
                else {
-                  dadx = lp_build_extract_broadcast(gallivm, setup_bld->type,
-                                                    coeff_bld->type, bld->dadxaos[attrib],
-                                                    index);
-                  dady = lp_build_extract_broadcast(gallivm, setup_bld->type,
-                                                    coeff_bld->type, bld->dadyaos[attrib],
-                                                    index);
-                  a = lp_build_extract_broadcast(gallivm, setup_bld->type,
-                                                 coeff_bld->type, bld->a0aos[attrib],
-                                                 index);
-
                   if (bld->coverage_samples > 1) {
                      LLVMValueRef xoffset = pix_center_offset;
                      LLVMValueRef yoffset = pix_center_offset;
@@ -400,23 +421,32 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
                      chan_pixoffx = lp_build_add(coeff_bld, chan_pixoffx, xoffset);
                      chan_pixoffy = lp_build_add(coeff_bld, chan_pixoffy, yoffset);
                   }
+                  a = interp_attrib_linear(bld, attrib, index, chan_pixoffx, chan_pixoffy);
                }
-
-               /*
-                * a = a0 + (x * dadx + y * dady)
-                */
-               a = lp_build_fmuladd(builder, dadx, chan_pixoffx, a);
-               a = lp_build_fmuladd(builder, dady, chan_pixoffy, a);
 
                if (interp == LP_INTERP_PERSPECTIVE) {
                   if (oow == NULL) {
-                     LLVMValueRef w = bld->attribs[0][3];
+                     LLVMValueRef w;
                      assert(attrib != 0);
                      assert(bld->mask[0] & TGSI_WRITEMASK_W);
+                     if (bld->coverage_samples > 1 &&
+                         (loc == TGSI_INTERPOLATE_LOC_SAMPLE ||
+                          loc == TGSI_INTERPOLATE_LOC_CENTROID)) {
+                        /*
+                         * We can't use the precalculated 1/w since we didn't know
+                         * the actual position yet (we were assuming center).
+                         */
+                        LLVMValueRef indexw = lp_build_const_int32(gallivm, 3);
+                        w = interp_attrib_linear(bld, 0, indexw, chan_pixoffx, chan_pixoffy);
+                     }
+                     else {
+                        w = bld->attribs[0][3];
+                     }
                      oow = lp_build_rcp(coeff_bld, w);
                   }
                   a = lp_build_mul(coeff_bld, a, oow);
                }
+
                break;
 
             case LP_INTERP_CONSTANT:
@@ -456,6 +486,7 @@ static LLVMValueRef
 lp_build_interp_soa_indirect(struct lp_build_interp_soa_context *bld,
                              struct gallivm_state *gallivm,
                              unsigned attrib, unsigned chan,
+                             bool recalc_w,
                              LLVMValueRef indir_index,
                              LLVMValueRef pixoffx,
                              LLVMValueRef pixoffy)
@@ -516,11 +547,22 @@ lp_build_interp_soa_indirect(struct lp_build_interp_soa_context *bld,
       a = lp_build_fmuladd(builder, dady, pixoffy, a);
 
       if (interp == LP_INTERP_PERSPECTIVE) {
-        LLVMValueRef w = bld->attribs[0][3];
-        assert(attrib != 0);
-        assert(bld->mask[0] & TGSI_WRITEMASK_W);
-        LLVMValueRef oow = lp_build_rcp(coeff_bld, w);
-        a = lp_build_mul(coeff_bld, a, oow);
+         LLVMValueRef w;
+         assert(attrib != 0);
+         assert(bld->mask[0] & TGSI_WRITEMASK_W);
+         if (recalc_w) {
+            /*
+             * We can't use the precalculated 1/w since we didn't know
+             * the actual position yet (we were assuming center).
+             */
+            LLVMValueRef indexw = lp_build_const_int32(gallivm, 3);
+            w = interp_attrib_linear(bld, 0, indexw, pixoffx, pixoffy);
+         }
+         else {
+            w = bld->attribs[0][3];
+         }
+         LLVMValueRef oow = lp_build_rcp(coeff_bld, w);
+         a = lp_build_mul(coeff_bld, a, oow);
       }
 
       break;
@@ -557,6 +599,7 @@ lp_build_interp_soa(struct lp_build_interp_soa_context *bld,
    LLVMValueRef pixoffx;
    LLVMValueRef pixoffy;
    LLVMValueRef ptr;
+   bool recalc_w = false;
 
    /* could do this with code-generated passed in pixel offsets too */
 
@@ -582,12 +625,16 @@ lp_build_interp_soa(struct lp_build_interp_soa_context *bld,
          pixoffy = LLVMBuildFAdd(builder, pixoffy, pix_center_offset, "");
       }
 
-      if (offsets[0])
+      if (offsets[0]) {
          pixoffx = LLVMBuildFAdd(builder, pixoffx,
                                  offsets[0], "");
-      if (offsets[1])
+         recalc_w = true;
+      }
+      if (offsets[1]) {
          pixoffy = LLVMBuildFAdd(builder, pixoffy,
                                  offsets[1], "");
+         recalc_w = true;
+      }
    } else if (loc == TGSI_INTERPOLATE_LOC_SAMPLE) {
       LLVMValueRef x_val_idx = LLVMBuildMul(gallivm->builder, offsets[0],
          lp_build_const_int_vec(gallivm, bld->coeff_bld.type, 2 * 4), "");
@@ -616,6 +663,7 @@ lp_build_interp_soa(struct lp_build_interp_soa_context *bld,
       if (bld->coverage_samples > 1) {
          pixoffx = LLVMBuildFAdd(builder, pixoffx, xoffset, "");
          pixoffy = LLVMBuildFAdd(builder, pixoffy, yoffset, "");
+         recalc_w = true;
       }
    } else if (loc == TGSI_INTERPOLATE_LOC_CENTROID) {
       LLVMValueRef centroid_x_offset, centroid_y_offset;
@@ -629,6 +677,7 @@ lp_build_interp_soa(struct lp_build_interp_soa_context *bld,
 
          pixoffx = LLVMBuildFAdd(builder, pixoffx, centroid_x_offset, "");
          pixoffy = LLVMBuildFAdd(builder, pixoffy, centroid_y_offset, "");
+         recalc_w = true;
       }
    }
 
@@ -636,45 +685,37 @@ lp_build_interp_soa(struct lp_build_interp_soa_context *bld,
    attrib++;
 
    if (indir_index)
-     return lp_build_interp_soa_indirect(bld, gallivm, attrib, chan,
+     return lp_build_interp_soa_indirect(bld, gallivm, attrib, chan, recalc_w,
                                          indir_index, pixoffx, pixoffy);
 
 
    const enum lp_interp interp = bld->interp[attrib];
-   LLVMValueRef dadx = coeff_bld->zero;
-   LLVMValueRef dady = coeff_bld->zero;
    LLVMValueRef a = coeff_bld->zero;
-
    LLVMValueRef index = lp_build_const_int32(gallivm, chan);
 
    switch (interp) {
    case LP_INTERP_PERSPECTIVE:
       FALLTHROUGH;
    case LP_INTERP_LINEAR:
-      dadx = lp_build_extract_broadcast(gallivm, setup_bld->type,
-                                        coeff_bld->type, bld->dadxaos[attrib],
-                                        index);
-
-      dady = lp_build_extract_broadcast(gallivm, setup_bld->type,
-                                        coeff_bld->type, bld->dadyaos[attrib],
-                                        index);
-
-      a = lp_build_extract_broadcast(gallivm, setup_bld->type,
-                                     coeff_bld->type, bld->a0aos[attrib],
-                                     index);
-
-      /*
-       * a = a0 + (x * dadx + y * dady)
-       */
-      a = lp_build_fmuladd(builder, dadx, pixoffx, a);
-      a = lp_build_fmuladd(builder, dady, pixoffy, a);
+      a = interp_attrib_linear(bld, attrib, index, pixoffx, pixoffy);
 
       if (interp == LP_INTERP_PERSPECTIVE) {
-        LLVMValueRef w = bld->attribs[0][3];
-        assert(attrib != 0);
-        assert(bld->mask[0] & TGSI_WRITEMASK_W);
-        LLVMValueRef oow = lp_build_rcp(coeff_bld, w);
-        a = lp_build_mul(coeff_bld, a, oow);
+         LLVMValueRef w;
+         assert(attrib != 0);
+         assert(bld->mask[0] & TGSI_WRITEMASK_W);
+         if (recalc_w) {
+            /*
+             * We can't use the precalculated 1/w since we didn't know
+             * the actual position yet (we were assuming center).
+             */
+            LLVMValueRef indexw = lp_build_const_int32(gallivm, 3);
+            w = interp_attrib_linear(bld, 0, indexw, pixoffx, pixoffy);
+         }
+         else {
+            w = bld->attribs[0][3];
+         }
+         LLVMValueRef oow = lp_build_rcp(coeff_bld, w);
+         a = lp_build_mul(coeff_bld, a, oow);
       }
 
       break;
