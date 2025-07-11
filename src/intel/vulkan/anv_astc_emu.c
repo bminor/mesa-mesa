@@ -96,8 +96,8 @@ astc_emu_init_flush_denorm_shader(nir_builder *b)
 
       coord = nir_vec3(b, nir_channel(b, coord, 0), nir_channel(b, coord, 1),
                        zero);
-      nir_def *val =
-         nir_txf_deref(b, nir_build_deref_var(b, src_var), coord, zero);
+      nir_def *val = nir_txf(b, coord, .lod = zero,
+                             .texture_deref = nir_build_deref_var(b, src_var));
       nir_store_var(b, val_var, val, 0xf);
 
       /* A void-extent block has this layout

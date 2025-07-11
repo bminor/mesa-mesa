@@ -185,12 +185,12 @@ etc2_build_shader(struct vk_device *dev, const struct nir_shader_compiler_option
    nir_variable *payload_var = nir_variable_create(b.shader, nir_var_shader_temp, glsl_vec4_type(), "payload");
    nir_push_if(&b, is_3d);
    {
-      nir_def *color = nir_txf_deref(&b, nir_build_deref_var(&b, input_img_3d), src_coord, nir_imm_int(&b, 0));
+      nir_def *color = nir_txf(&b, src_coord, .texture_deref = nir_build_deref_var(&b, input_img_3d), .lod = nir_imm_int(&b, 0));
       nir_store_var(&b, payload_var, color, 0xf);
    }
    nir_push_else(&b, NULL);
    {
-      nir_def *color = nir_txf_deref(&b, nir_build_deref_var(&b, input_img_2d), src_coord, nir_imm_int(&b, 0));
+      nir_def *color = nir_txf(&b, src_coord, .texture_deref = nir_build_deref_var(&b, input_img_2d), .lod = nir_imm_int(&b, 0));
       nir_store_var(&b, payload_var, color, 0xf);
    }
    nir_pop_if(&b, NULL);

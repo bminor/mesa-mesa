@@ -263,7 +263,8 @@ static inline nir_def *cs_fetch_texel(struct cs_shader *s, nir_def *coords, unsi
    nir_builder *b = &s->b;
    nir_deref_instr *tex_deref = nir_build_deref_var(b, s->samplers[sampler]);
    nir_component_mask_t mask = s->array ? 0x7 : 0x3;
-   return nir_tex_deref(b, tex_deref, tex_deref, nir_channels(b, coords, mask));
+   return nir_tex(b, nir_channels(b, coords, mask),
+                  .texture_deref = tex_deref, .sampler_deref = tex_deref);
 }
 
 static inline nir_def *cs_image_load(struct cs_shader *s, nir_def *pos)

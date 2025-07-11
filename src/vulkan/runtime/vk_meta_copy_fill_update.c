@@ -787,11 +787,11 @@ img_deref(nir_builder *b, const struct vk_meta_copy_image_view *view,
 }
 
 static nir_def *
-read_texel(nir_builder *b, nir_deref_instr *tex_deref, nir_def *coords,
+read_texel(nir_builder *b, nir_deref_instr *tex, nir_def *coords,
            nir_def *sample_id)
 {
-   return sample_id ? nir_txf_ms_deref(b, tex_deref, coords, sample_id)
-                    : nir_txf_deref(b, tex_deref, coords, NULL);
+   return sample_id ? nir_txf_ms(b, coords, sample_id, .texture_deref = tex)
+                    : nir_txf(b, coords, .texture_deref = tex);
 }
 
 static nir_variable *

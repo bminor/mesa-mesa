@@ -26,6 +26,7 @@
 #include "glsl/list.h"
 #include "util/list.h"
 #include "util/ralloc.h"
+#include "glsl_types.h"
 #include "nir.h"
 #include "nir_serialize.h"
 
@@ -218,25 +219,71 @@ nir_build_alu_src_arr(nir_builder *build, nir_op op, nir_def **srcs)
    return nir_builder_alu_instr_finish_and_insert(build, instr);
 }
 
-nir_def *
-nir_build_tex_deref_instr(nir_builder *build, nir_texop op,
-                          nir_deref_instr *texture,
-                          nir_deref_instr *sampler,
-                          unsigned num_extra_srcs,
-                          const nir_tex_src *extra_srcs)
+static inline bool
+nir_dim_has_lod(enum glsl_sampler_dim dim)
 {
-   assert(texture != NULL);
-   assert(glsl_type_is_image(texture->type) ||
-          glsl_type_is_texture(texture->type) ||
-          glsl_type_is_sampler(texture->type));
+   switch (dim) {
+   case GLSL_SAMPLER_DIM_1D:
+   case GLSL_SAMPLER_DIM_2D:
+   case GLSL_SAMPLER_DIM_3D:
+   case GLSL_SAMPLER_DIM_CUBE:
+      return true;
+   default:
+      return false;
+   }
+}
 
-   const unsigned num_srcs = 1 + (sampler != NULL) + num_extra_srcs;
+nir_def *
+nir_build_tex_struct(nir_builder *build, nir_texop op, struct nir_tex_builder f)
+{
+   assert(((f.texture_index || f.texture_offset != NULL) +
+           (f.texture_handle != NULL) + (f.texture_deref != NULL)) <= 1 &&
+          "one type of texture");
+
+   assert(((f.sampler_index || f.sampler_offset != NULL) +
+           (f.sampler_handle != NULL) + (f.sampler_deref != NULL)) <= 1 &&
+          "one type of sampler");
+
+   bool has_texture_src =
+      f.texture_offset || f.texture_handle || f.texture_deref;
+
+   bool has_sampler_src =
+      f.sampler_offset || f.sampler_handle || f.sampler_deref;
+
+   nir_def *lod = f.lod;
+   enum glsl_sampler_dim dim = f.dim;
+   nir_alu_type dest_type = f.dest_type;
+   bool is_array = f.is_array;
+
+   if (f.texture_deref) {
+      const glsl_type *type = f.texture_deref->type;
+      assert(glsl_type_is_image(type) || glsl_type_is_texture(type) ||
+             glsl_type_is_sampler(type));
+
+      dim = glsl_get_sampler_dim(type);
+      is_array = glsl_sampler_type_is_array(type);
+
+      dest_type = nir_get_nir_type_for_glsl_base_type(
+         glsl_get_sampler_result_type(type));
+   }
+
+   if (lod == NULL && nir_dim_has_lod(dim) &&
+       (op == nir_texop_txs || op == nir_texop_txf)) {
+
+      lod = nir_imm_int(build, 0);
+   }
+
+   const unsigned num_srcs = has_texture_src + has_sampler_src + !!f.coord +
+                             !!f.ms_index + !!lod + !!f.bias + !!f.comparator;
 
    nir_tex_instr *tex = nir_tex_instr_create(build->shader, num_srcs);
    tex->op = op;
-   tex->sampler_dim = glsl_get_sampler_dim(texture->type);
-   tex->is_array = glsl_sampler_type_is_array(texture->type);
+   tex->sampler_dim = dim;
+   tex->is_array = is_array;
    tex->is_shadow = false;
+   tex->backend_flags = f.backend_flags;
+   tex->texture_index = f.texture_index;
+   tex->sampler_index = f.sampler_index;
 
    switch (op) {
    case nir_texop_txs:
@@ -255,60 +302,62 @@ nir_build_tex_deref_instr(nir_builder *build, nir_texop op,
       break;
    default:
       assert(!nir_tex_instr_is_query(tex));
-      tex->dest_type = nir_get_nir_type_for_glsl_base_type(
-         glsl_get_sampler_result_type(texture->type));
+      tex->dest_type = dest_type;
       break;
    }
 
-   unsigned src_idx = 0;
-   tex->src[src_idx++] = nir_tex_src_for_ssa(nir_tex_src_texture_deref,
-                                             &texture->def);
-   if (sampler != NULL) {
-      assert(glsl_type_is_sampler(sampler->type));
-      tex->src[src_idx++] = nir_tex_src_for_ssa(nir_tex_src_sampler_deref,
-                                                &sampler->def);
+   unsigned i = 0;
+
+   if (f.texture_deref) {
+      tex->src[i++] =
+         nir_tex_src_for_ssa(nir_tex_src_texture_deref, &f.texture_deref->def);
+   } else if (f.texture_handle) {
+      tex->src[i++] =
+         nir_tex_src_for_ssa(nir_tex_src_texture_handle, f.texture_handle);
+   } else if (f.texture_offset) {
+      tex->src[i++] =
+         nir_tex_src_for_ssa(nir_tex_src_texture_offset, f.texture_offset);
    }
-   for (unsigned i = 0; i < num_extra_srcs; i++) {
-      switch (extra_srcs[i].src_type) {
-      case nir_tex_src_coord:
-         tex->coord_components = nir_src_num_components(extra_srcs[i].src);
-         assert(tex->coord_components == tex->is_array +
-                                            glsl_get_sampler_dim_coordinate_components(tex->sampler_dim));
-         break;
 
-      case nir_tex_src_lod:
-         assert(tex->sampler_dim == GLSL_SAMPLER_DIM_1D ||
-                tex->sampler_dim == GLSL_SAMPLER_DIM_2D ||
-                tex->sampler_dim == GLSL_SAMPLER_DIM_3D ||
-                tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE);
-         break;
-
-      case nir_tex_src_ms_index:
-         assert(tex->sampler_dim == GLSL_SAMPLER_DIM_MS);
-         break;
-
-      case nir_tex_src_comparator:
-         /* Assume 1-component shadow for the builder helper */
-         tex->is_shadow = true;
-         tex->is_new_style_shadow = true;
-         break;
-
-      case nir_tex_src_texture_deref:
-      case nir_tex_src_sampler_deref:
-      case nir_tex_src_texture_offset:
-      case nir_tex_src_sampler_offset:
-      case nir_tex_src_texture_handle:
-      case nir_tex_src_sampler_handle:
-         unreachable("Texture and sampler must be provided directly as derefs");
-         break;
-
-      default:
-         break;
-      }
-
-      tex->src[src_idx++] = extra_srcs[i];
+   if (f.sampler_deref) {
+      assert(glsl_type_is_sampler(f.sampler_deref->type));
+      tex->src[i++] =
+         nir_tex_src_for_ssa(nir_tex_src_sampler_deref, &f.sampler_deref->def);
+   } else if (f.sampler_handle) {
+      tex->src[i++] =
+         nir_tex_src_for_ssa(nir_tex_src_sampler_handle, f.sampler_handle);
+   } else if (f.sampler_offset) {
+      tex->src[i++] =
+         nir_tex_src_for_ssa(nir_tex_src_sampler_offset, f.sampler_offset);
    }
-   assert(src_idx == num_srcs);
+
+   if (f.coord) {
+      tex->coord_components = f.coord->num_components;
+
+      assert(tex->coord_components ==
+             tex->is_array +
+                glsl_get_sampler_dim_coordinate_components(tex->sampler_dim));
+
+      tex->src[i++] = nir_tex_src_for_ssa(nir_tex_src_coord, f.coord);
+   }
+
+   if (lod) {
+      tex->src[i++] = nir_tex_src_for_ssa(nir_tex_src_lod, lod);
+   }
+
+   if (f.ms_index) {
+      assert(tex->sampler_dim == GLSL_SAMPLER_DIM_MS);
+      tex->src[i++] = nir_tex_src_for_ssa(nir_tex_src_ms_index, f.ms_index);
+   }
+
+   if (f.comparator) {
+      /* Assume 1-component shadow for the builder helper */
+      tex->is_shadow = true;
+      tex->is_new_style_shadow = true;
+      tex->src[i++] = nir_tex_src_for_ssa(nir_tex_src_comparator, f.comparator);
+   }
+
+   assert(i == num_srcs);
 
    nir_def_init(&tex->instr, &tex->def, nir_tex_instr_dest_size(tex),
                 nir_alu_type_get_type_size(tex->dest_type));

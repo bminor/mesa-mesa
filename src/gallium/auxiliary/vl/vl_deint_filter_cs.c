@@ -13,7 +13,8 @@ static inline nir_def *
 texture(nir_builder *b, nir_def *pos, nir_variable *sampler)
 {
    nir_deref_instr *tex_deref = nir_build_deref_var(b, sampler);
-   return nir_tex_deref(b, tex_deref, tex_deref, nir_channels(b, pos, 0x3));
+   return nir_tex(b, nir_channels(b, pos, 0x3),
+                  .texture_deref = tex_deref, .sampler_deref = tex_deref);
 }
 
 static inline void

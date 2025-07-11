@@ -543,9 +543,10 @@ build_image_copy_shader(const struct vk_meta_image_copy_key *key)
                                           NULL, key->dst_format);
          } else {
             if (msaa) {
-               value1 = nir_txf_ms_deref(b, deref, src_coord, ms_index);
+               value1 =
+                  nir_txf_ms(b, src_coord, ms_index, .texture_deref = deref);
             } else {
-               value1 = nir_txf_deref(b, deref, src_coord, NULL);
+               value1 = nir_txf(b, src_coord, .texture_deref = deref);
             }
 
             nir_instr_as_tex(value1->parent_instr)->backend_flags =

@@ -903,7 +903,7 @@ nv50_blitter_make_fp(struct pipe_context *pipe,
 
       nir_deref_instr *tex_deref = nir_build_deref_var(&b, sampler);
 
-      s = nir_tex_deref(&b, tex_deref, tex_deref, coord);
+      s = nir_tex(&b, coord, .texture_deref = tex_deref, .sampler_deref = tex_deref);
       s = nir_channel(&b, s, 0);
    }
 
@@ -916,7 +916,7 @@ nv50_blitter_make_fp(struct pipe_context *pipe,
 
       nir_deref_instr *tex_deref = nir_build_deref_var(&b, sampler);
 
-      rgba = nir_tex_deref(&b, tex_deref, tex_deref, coord);
+      rgba = nir_tex(&b, coord, .texture_deref = tex_deref, .sampler_deref = tex_deref);
       z = nir_channel(&b, rgba, 0);
    }
 

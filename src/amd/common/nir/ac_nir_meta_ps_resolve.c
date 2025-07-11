@@ -13,13 +13,7 @@ static nir_def *
 build_tex_load_ms(nir_builder *b, unsigned num_components, unsigned bit_size,
                   nir_deref_instr *tex_deref, nir_def *coord, nir_def *sample_index)
 {
-   nir_tex_src srcs[] = {
-      nir_tex_src_for_ssa(nir_tex_src_coord, coord),
-      nir_tex_src_for_ssa(nir_tex_src_ms_index, sample_index),
-   };
-   nir_def *result = nir_build_tex_deref_instr(b, nir_texop_txf_ms, tex_deref, tex_deref,
-                                               ARRAY_SIZE(srcs), srcs);
-
+   nir_def *result = nir_txf_ms(b, coord, sample_index, .texture_deref = tex_deref);
    nir_tex_instr *tex = nir_instr_as_tex(result->parent_instr);
 
    assert(bit_size == 32 || bit_size == 16);
@@ -77,7 +71,7 @@ ac_create_resolve_ps(const struct ac_ps_resolve_options *options,
    for (unsigned chan = 0; chan < 2; chan++) {
       if (chan ? key->y_clamp_to_edge : key->x_clamp_to_edge) {
          if (!resinfo) {
-            resinfo = nir_build_tex_deref_instr(&b, nir_texop_txs, deref, deref, 0, NULL);
+            resinfo = nir_txs(&b, .texture_deref = deref);
 
             if (key->a16) {
                resinfo = nir_umin_imm(&b, resinfo, INT16_MAX);
@@ -100,15 +94,10 @@ ac_create_resolve_ps(const struct ac_ps_resolve_options *options,
    assert(key->last_src_channel <= key->last_dst_channel);
 
    if (uses_samples_identical) {
-      nir_tex_src iden_srcs[] = {
-         nir_tex_src_for_ssa(nir_tex_src_coord, coord),
-      };
-      nir_def *samples_identical =
-         nir_build_tex_deref_instr(&b, nir_texop_samples_identical, deref, deref,
-                                   ARRAY_SIZE(iden_srcs), iden_srcs);
+      nir_def *cond = nir_samples_identical(&b, coord, .texture_deref = deref);
 
       /* If all samples are identical, load only sample 0. */
-      if_identical = nir_push_if(&b, samples_identical);
+      if_identical = nir_push_if(&b, cond);
       {
          sample0 = build_tex_load_ms(&b, key->last_src_channel + 1, key->d16 ? 16 : 32,
                                      deref, coord, nir_imm_intN_t(&b, 0, coord->bit_size));

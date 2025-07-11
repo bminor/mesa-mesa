@@ -131,7 +131,7 @@ build_tex_resolve(nir_builder *b, nir_deref_instr *t,
                   VkSampleCountFlagBits samples,
                   VkResolveModeFlagBits resolve_mode)
 {
-   nir_def *accum = nir_txf_ms_deref(b, t, coord, nir_imm_int(b, 0));
+   nir_def *accum = nir_txf_ms(b, coord, nir_imm_int(b, 0), .texture_deref = t);
    if (resolve_mode == VK_RESOLVE_MODE_SAMPLE_ZERO_BIT)
       return accum;
 
@@ -139,7 +139,7 @@ build_tex_resolve(nir_builder *b, nir_deref_instr *t,
       glsl_get_sampler_result_type(t->type);
 
    for (unsigned i = 1; i < samples; i++) {
-      nir_def *val = nir_txf_ms_deref(b, t, coord, nir_imm_int(b, i));
+      nir_def *val = nir_txf_ms(b, coord, nir_imm_int(b, i), .texture_deref = t);
       switch (resolve_mode) {
       case VK_RESOLVE_MODE_AVERAGE_BIT:
          assert(base_type == GLSL_TYPE_FLOAT);
@@ -305,7 +305,8 @@ build_blit_shader(const struct vk_meta_blit_key *key)
 
       nir_def *val;
       if (resolve_mode == VK_RESOLVE_MODE_NONE) {
-         val = nir_txl_deref(b, t, s, src_coord, nir_imm_float(b, 0));
+         val = nir_txl(b, src_coord, nir_imm_float(b, 0),
+                       .texture_deref = t, .sampler_deref = s);
       } else {
          val = build_tex_resolve(b, t, nir_f2u32(b, src_coord),
                                  key->src_samples, resolve_mode);
