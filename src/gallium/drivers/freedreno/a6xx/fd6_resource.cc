@@ -278,13 +278,13 @@ fd6_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 }
 
 static bool
-fill_ubwc_buffer_sizes(struct fd_resource *rsc)
+fill_ubwc_buffer_sizes(struct fd_resource *rsc, struct winsys_handle *handle)
 {
    struct pipe_resource *prsc = &rsc->b.b;
    struct fd_screen *screen = fd_screen(prsc->screen);
    struct fdl_explicit_layout l = {
-      .offset = rsc->layout.slices[0].offset,
-      .pitch = rsc->layout.pitch0,
+      .offset = handle->offset,
+      .pitch = handle->stride,
    };
 
    if (!can_do_ubwc(prsc))
@@ -306,7 +306,7 @@ fd6_layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *ha
 {
    switch (handle->modifier) {
    case DRM_FORMAT_MOD_QCOM_COMPRESSED:
-      return fill_ubwc_buffer_sizes(rsc);
+      return fill_ubwc_buffer_sizes(rsc, handle);
    case DRM_FORMAT_MOD_LINEAR:
       if (can_do_ubwc(&rsc->b.b)) {
          perf_debug("%" PRSC_FMT
