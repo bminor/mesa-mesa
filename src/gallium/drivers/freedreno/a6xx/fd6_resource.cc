@@ -278,7 +278,8 @@ fd6_layout_resource(struct fd_resource *rsc, enum fd_layout_type type)
 }
 
 static bool
-fill_ubwc_buffer_sizes(struct fd_resource *rsc, struct winsys_handle *handle)
+layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle,
+                           bool ubwc, unsigned tile_mode)
 {
    struct pipe_resource *prsc = &rsc->b.b;
    struct fd_screen *screen = fd_screen(prsc->screen);
@@ -287,10 +288,10 @@ fill_ubwc_buffer_sizes(struct fd_resource *rsc, struct winsys_handle *handle)
       .pitch = handle->stride,
    };
 
-   if (!can_do_ubwc(prsc))
+   if (ubwc && !can_do_ubwc(prsc))
       return false;
 
-   struct fdl_image_params params = fd_image_params(prsc, true, TILE6_3);
+   struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
 
    if (!fdl6_layout_image(&rsc->layout, screen->info, &params, &l))
       return false;
@@ -304,29 +305,22 @@ fill_ubwc_buffer_sizes(struct fd_resource *rsc, struct winsys_handle *handle)
 static bool
 fd6_layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle)
 {
-   switch (handle->modifier) {
+   uint64_t modifier = handle->modifier;
+
+   switch (modifier) {
    case DRM_FORMAT_MOD_QCOM_COMPRESSED:
-      return fill_ubwc_buffer_sizes(rsc, handle);
+      return layout_resource_for_handle(rsc, handle, true, TILE6_3);
    case DRM_FORMAT_MOD_LINEAR:
-      if (can_do_ubwc(&rsc->b.b)) {
-         perf_debug("%" PRSC_FMT
-                    ": not UBWC: imported with DRM_FORMAT_MOD_LINEAR!",
-                    PRSC_ARGS(&rsc->b.b));
-      }
-      return true;
-   case DRM_FORMAT_MOD_QCOM_TILED3:
-      rsc->layout.tile_mode = fd6_tile_mode(&rsc->b.b);
-      FALLTHROUGH;
    case DRM_FORMAT_MOD_INVALID:
-      /* For now, without buffer metadata, we must assume that buffers
-       * imported with INVALID modifier are linear
-       */
       if (can_do_ubwc(&rsc->b.b)) {
-         perf_debug("%" PRSC_FMT
-                    ": not UBWC: imported with DRM_FORMAT_MOD_INVALID!",
-                    PRSC_ARGS(&rsc->b.b));
+         const char *mod_name =
+               (modifier == DRM_FORMAT_MOD_LINEAR) ? "LINEAR" : "INVALID";
+         perf_debug("%" PRSC_FMT ": not UBWC: imported with DRM_FORMAT_MOD_%s!",
+                    PRSC_ARGS(&rsc->b.b), mod_name);
       }
-      return true;
+      return layout_resource_for_handle(rsc, handle, false, TILE6_LINEAR);
+   case DRM_FORMAT_MOD_QCOM_TILED3:
+      return layout_resource_for_handle(rsc, handle, false, TILE6_3);
    default:
       return false;
    }
