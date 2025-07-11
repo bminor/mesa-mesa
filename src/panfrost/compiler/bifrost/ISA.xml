@@ -8298,7 +8298,48 @@
     <immediate name="sr_count" size="4" pseudo="true"/>
   </ins>
 
+  <!-- Scheduler lowered to *ATOM_C.i64/+ATOM_CX. Real Valhall instructions. -->
+  <ins name="ATOM_RETURN.i64" pseudo="true" staging="rw=sr_count" message="atomic" unit="add">
+    <src start="0"/>
+    <src start="3"/>
+    <mod name="atom_opc" start="9" size="5">
+      <reserved/>
+      <reserved/>
+      <opt>aadd</opt>
+      <reserved/>
+      <reserved/>
+      <reserved/>
+      <reserved/>
+      <reserved/>
+      <opt>asmin</opt>
+      <opt>asmax</opt>
+      <opt>aumin</opt>
+      <opt>aumax</opt>
+      <opt>aand</opt>
+      <opt>aor</opt>
+      <opt>axor</opt>
+      <opt>axchg</opt> <!-- For Valhall -->
+      <opt>acmpxchg</opt> <!-- For Valhall -->
+    </mod>
+    <!-- not actually encoded, but used for IR -->
+    <immediate name="sr_count" size="4" pseudo="true"/>
+  </ins>
+
   <ins name="ATOM1_RETURN.i32" pseudo="true" staging="w=sr_count" message="atomic" unit="add">
+    <src start="0"/>
+    <src start="3"/>
+    <mod name="atom_opc" start="6" size="3">
+      <opt>ainc</opt>
+      <opt>adec</opt>
+      <opt>aumax1</opt>
+      <opt>asmax1</opt>
+      <opt>aor1</opt>
+    </mod>
+    <!-- not actually encoded, but used for IR -->
+    <immediate name="sr_count" size="4" pseudo="true"/>
+</ins>
+
+  <ins name="ATOM1_RETURN.i64" pseudo="true" staging="w=sr_count" message="atomic" unit="add">
     <src start="0"/>
     <src start="3"/>
     <mod name="atom_opc" start="6" size="3">
@@ -8313,6 +8354,30 @@
   </ins>
 
   <ins name="ATOM.i32" pseudo="true" staging="r=sr_count" message="atomic" unit="add">
+    <src start="0"/>
+    <src start="3"/>
+    <mod name="atom_opc" start="9" size="4">
+      <reserved/>
+      <reserved/>
+      <opt>aadd</opt>
+      <reserved/>
+      <reserved/>
+      <reserved/>
+      <reserved/>
+      <reserved/>
+      <opt>asmin</opt>
+      <opt>asmax</opt>
+      <opt>aumin</opt>
+      <opt>aumax</opt>
+      <opt>aand</opt>
+      <opt>aor</opt>
+      <opt>axor</opt>
+    </mod>
+    <!-- not actually encoded, but used for IR -->
+    <immediate name="sr_count" size="4" pseudo="true"/>
+  </ins>
+
+  <ins name="ATOM.i64" pseudo="true" staging="r=sr_count" message="atomic" unit="add">
     <src start="0"/>
     <src start="3"/>
     <mod name="atom_opc" start="9" size="4">

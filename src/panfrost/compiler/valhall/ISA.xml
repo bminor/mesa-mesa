@@ -2508,7 +2508,10 @@
     <slot/>
     <sr_count/>
     <sr_write_count/>
+
+    <!-- Only valid with .xchg to implement ACMPXCHG -->
     <va_mod name="compare" start="26" size="1"/>
+
     <atom_opc/>
     <va_mod name="memory_width" start="128" size="1" implied="true"/>
 

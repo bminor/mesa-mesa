@@ -57,9 +57,6 @@ SKIP = set([
         "RSHIFT_OR.i64",
         "LSHIFT_XOR.i64",
         "RSHIFT_XOR.i64",
-        "ATOM.i64",
-        "ATOM_RETURN.i64",
-        "ATOM1_RETURN.i64",
 
         # CLPER widens
         "CLPER.s32",
