@@ -29,10 +29,6 @@
 struct hk_physical_device;
 struct vk_pipeline_cache;
 
-/* Fixed offsets for reserved null image descriptors */
-#define HK_NULL_TEX_OFFSET (0)
-#define HK_NULL_PBE_OFFSET (24)
-
 typedef void (*hk_internal_builder_t)(struct nir_builder *b, const void *key);
 
 struct hk_internal_key {

@@ -410,15 +410,15 @@ hk_build_bg_eot(struct hk_cmd_buffer *cmd, const VkRenderingInfo *info,
       if (key.op[rt] == AGX_BG_LOAD) {
          uses_txf = true;
 
-         uint32_t index = key.tib.layered
-                             ? iview->planes[0].layered_background_desc_index
-                             : iview->planes[0].background_desc_index;
+         const struct agx_texture_packed *desc =
+            key.tib.layered ? &iview->planes[0].layered_background
+                            : &iview->planes[0].background;
 
          agx_usc_pack(&b, TEXTURE, cfg) {
             /* Shifted to match eMRT indexing, could be optimized */
             cfg.start = rt * 2;
             cfg.count = 1;
-            cfg.buffer = dev->images.bo->va->addr + index * AGX_TEXTURE_LENGTH;
+            cfg.buffer = hk_pool_upload(cmd, desc, sizeof(*desc), 8);
          }
 
          nr_tex = (rt * 2) + 1;
@@ -430,14 +430,14 @@ hk_build_bg_eot(struct hk_cmd_buffer *cmd, const VkRenderingInfo *info,
          agx_usc_uniform(&b, 4 + (8 * rt), 8, colour);
          uniforms = MAX2(uniforms, 4 + (8 * rt) + 8);
       } else if (key.op[rt] == AGX_EOT_STORE) {
-         uint32_t index = key.tib.layered
-                             ? iview->planes[0].layered_eot_pbe_desc_index
-                             : iview->planes[0].eot_pbe_desc_index;
+         const struct agx_pbe_packed *desc = key.tib.layered
+                                                ? &iview->planes[0].layered_eot
+                                                : &iview->planes[0].eot;
 
          agx_usc_pack(&b, TEXTURE, cfg) {
             cfg.start = rt;
             cfg.count = 1;
-            cfg.buffer = dev->images.bo->va->addr + index * AGX_TEXTURE_LENGTH;
+            cfg.buffer = hk_pool_upload(cmd, desc, sizeof(*desc), 8);
          }
 
          nr_tex = rt + 1;

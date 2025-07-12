@@ -19,46 +19,14 @@ struct hk_device;
 struct hk_image_view {
    struct vk_image_view vk;
 
-   uint32_t descriptor_index[HK_MAX_IMAGE_DESCS];
-   uint8_t descriptor_count;
-
    uint8_t plane_count;
    struct {
       uint8_t image_plane;
 
-      /** Descriptors used for eMRT. We delay upload since we want them
-       * contiguous in memory, although this could be reworked if we wanted.
-       */
-      struct agx_texture_packed emrt_texture;
-      struct agx_pbe_packed emrt_pbe;
+      struct agx_texture_packed ia, sampled, ro_storage, background,
+         layered_background, emrt_texture;
 
-      /** Index in the image descriptor table for the sampled image descriptor */
-      uint32_t sampled_desc_index;
-
-      /** Index in the image descriptor table for the storage image descriptor */
-      uint32_t storage_desc_index;
-
-      /** Index in the image descriptor table for the readonly storage image
-       * descriptor.
-       */
-      uint32_t ro_storage_desc_index;
-
-      /** Index in the image descriptor table for the texture descriptor used
-       * for background programs.
-       */
-      uint32_t background_desc_index;
-      uint32_t layered_background_desc_index;
-
-      /** Index in the image descriptor table for the texture descriptor used
-       * for input attachments.
-       */
-      uint32_t ia_desc_index;
-
-      /** Index in the image descriptor table for the PBE descriptor used for
-       * end-of-tile programs.
-       */
-      uint32_t eot_pbe_desc_index;
-      uint32_t layered_eot_pbe_desc_index;
+      struct agx_pbe_packed storage, eot, layered_eot, emrt_pbe;
    } planes[3];
 };
 

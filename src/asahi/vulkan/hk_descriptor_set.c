@@ -9,6 +9,7 @@
 #include "util/half_float.h"
 #include "vulkan/vulkan_core.h"
 
+#include "agx_helpers.h"
 #include "hk_buffer.h"
 #include "hk_buffer_view.h"
 #include "hk_descriptor_set_layout.h"
@@ -58,7 +59,11 @@ write_sampled_image_view_desc(struct hk_descriptor_set *set,
                               VkDescriptorType descriptor_type)
 {
    struct hk_sampled_image_descriptor desc[3] = {};
-   assert(HK_NULL_TEX_OFFSET == 0 && "zero initialized so null descs implicit");
+
+   /* "Zero" initialize */
+   for (unsigned i = 0; i < 3; ++i) {
+      agx_set_null_texture(&desc[i].tex);
+   }
 
    uint8_t plane_count = 1;
    bool ia = (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
@@ -69,11 +74,8 @@ write_sampled_image_view_desc(struct hk_descriptor_set *set,
 
       plane_count = view->plane_count;
       for (uint8_t plane = 0; plane < plane_count; plane++) {
-         unsigned index = ia ? view->planes[plane].ia_desc_index
-                             : view->planes[plane].sampled_desc_index;
-
-         assert(index < (1 << 20));
-         desc[plane].image_offset = index * HK_IMAGE_STRIDE;
+         desc[plane].tex =
+            ia ? view->planes[plane].ia : view->planes[plane].sampled;
 
          float min_lod = MAX2(view->vk.min_lod - view->vk.base_mip_level, 0.0);
 
@@ -148,14 +150,11 @@ write_storage_image_view_desc(struct hk_descriptor_set *set,
       assert(view->plane_count == 1);
       uint8_t plane = 0;
 
-      desc.tex_offset =
-         view->planes[plane].ro_storage_desc_index * HK_IMAGE_STRIDE;
-
-      desc.pbe_offset =
-         view->planes[plane].storage_desc_index * HK_IMAGE_STRIDE;
+      desc.tex = view->planes[plane].ro_storage;
+      desc.pbe = view->planes[plane].storage;
    } else {
-      desc.tex_offset = HK_NULL_TEX_OFFSET;
-      desc.pbe_offset = HK_NULL_PBE_OFFSET;
+      agx_set_null_texture(&desc.tex);
+      agx_set_null_pbe(&desc.pbe);
    }
 
    write_desc(set, binding, elem, &desc, sizeof(desc));
@@ -208,14 +207,11 @@ write_buffer_view_desc(struct hk_descriptor_set *set,
    if (bufferView != VK_NULL_HANDLE) {
       VK_FROM_HANDLE(hk_buffer_view, view, bufferView);
 
-      assert(view->tex_desc_index < (1 << 20));
-      assert(view->pbe_desc_index < (1 << 20));
-
-      desc.tex_offset = view->tex_desc_index * HK_IMAGE_STRIDE;
-      desc.pbe_offset = view->pbe_desc_index * HK_IMAGE_STRIDE;
+      desc.tex = view->tex;
+      desc.pbe = view->pbe;
    } else {
-      desc.tex_offset = HK_NULL_TEX_OFFSET;
-      desc.pbe_offset = HK_NULL_PBE_OFFSET;
+      agx_set_null_texture(&desc.tex);
+      agx_set_null_pbe(&desc.pbe);
    }
 
    write_desc(set, binding, elem, &desc, sizeof(desc));

@@ -296,9 +296,6 @@ hk_upload_null_descriptors(struct hk_device *dev)
 
    hk_descriptor_table_add(dev, &dev->images, &null_pbe, sizeof(null_pbe),
                            &offset_pbe);
-
-   assert((offset_tex * HK_IMAGE_STRIDE) == HK_NULL_TEX_OFFSET && "static");
-   assert((offset_pbe * HK_IMAGE_STRIDE) == HK_NULL_PBE_OFFSET && "static");
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL

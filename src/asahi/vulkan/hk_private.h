@@ -20,7 +20,7 @@
 #define HK_MIN_TEXEL_BUFFER_ALIGNMENT 16
 #define HK_MIN_UBO_ALIGNMENT          64
 #define HK_MAX_VIEWPORTS              16
-#define HK_MAX_DESCRIPTOR_SIZE        32
+#define HK_MAX_DESCRIPTOR_SIZE        64
 #define HK_MAX_PUSH_DESCRIPTORS       32
 #define HK_MAX_DESCRIPTOR_SET_SIZE    (1u << 30)
 #define HK_MAX_DESCRIPTORS            (1 << 20)

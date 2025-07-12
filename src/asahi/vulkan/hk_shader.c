@@ -952,13 +952,20 @@ struct fixed_uniforms {
 static bool
 lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
+   struct fixed_uniforms *ctx = data;
+   if (intr->intrinsic == nir_intrinsic_bindless_image_agx) {
+      /* Change of units from sets to uniforms */
+      nir_intrinsic_set_desc_set(
+         intr, ctx->sets + (nir_intrinsic_desc_set(intr) * 4));
+      return true;
+   }
+
    if (intr->intrinsic != nir_intrinsic_load_texture_handle_agx &&
        intr->intrinsic != nir_intrinsic_load_root_agx &&
        intr->intrinsic != nir_intrinsic_load_descriptor_set_agx)
       return false;
 
    b->cursor = nir_before_instr(&intr->instr);
-   struct fixed_uniforms *ctx = data;
    nir_def *rep;
 
    if (intr->intrinsic == nir_intrinsic_load_texture_handle_agx) {

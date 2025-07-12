@@ -305,12 +305,35 @@ load_resource_deref_desc(nir_builder *b, unsigned num_components,
                           offset_B, ctx);
 }
 
+static nir_def *
+load_image_handle(nir_builder *b, const struct lower_descriptors_ctx *ctx,
+                  nir_src src, unsigned offset_B)
+
+{
+   uint32_t set, binding;
+   nir_def *index;
+   get_resource_deref_binding(b, nir_src_as_deref(src), &set, &binding, &index);
+
+   const struct hk_descriptor_set_binding_layout *binding_layout =
+      get_binding_layout(set, binding, ctx);
+
+   if (ctx->clamp_desc_array_bounds)
+      index =
+         nir_umin(b, index, nir_imm_int(b, binding_layout->array_size - 1));
+
+   assert(binding_layout->stride > 0);
+   nir_def *desc_offs_B =
+      nir_iadd_imm(b, nir_imul_imm(b, index, binding_layout->stride),
+                   binding_layout->offset + offset_B);
+
+   return nir_bindless_image_agx(b, desc_offs_B, .desc_set = set);
+}
+
 static bool
 lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intr,
                    const struct lower_descriptors_ctx *ctx)
 {
    b->cursor = nir_before_instr(&intr->instr);
-   nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
 
    /* Reads and queries use the texture descriptor; writes and atomics PBE. */
    unsigned offs;
@@ -319,14 +342,13 @@ lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intr,
        intr->intrinsic != nir_intrinsic_image_deref_size &&
        intr->intrinsic != nir_intrinsic_image_deref_samples) {
 
-      offs = offsetof(struct hk_storage_image_descriptor, pbe_offset);
+      offs = offsetof(struct hk_storage_image_descriptor, pbe);
    } else {
-      offs = offsetof(struct hk_storage_image_descriptor, tex_offset);
+      offs = offsetof(struct hk_storage_image_descriptor, tex);
    }
 
-   nir_def *offset = load_resource_deref_desc(b, 1, 32, deref, offs, ctx);
-   nir_rewrite_image_intrinsic(intr, nir_load_texture_handle_agx(b, offset),
-                               true);
+   nir_rewrite_image_intrinsic(
+      intr, load_image_handle(b, ctx, intr->src[0], offs), true);
 
    return true;
 }
@@ -637,14 +659,12 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
    }
 
    {
-      unsigned offs =
-         offsetof(struct hk_sampled_image_descriptor, image_offset);
+      unsigned offset_B =
+         plane_offset_B + offsetof(struct hk_sampled_image_descriptor, tex);
 
-      nir_def *offset = load_resource_deref_desc(
-         b, 1, 32, nir_src_as_deref(nir_src_for_ssa(texture)),
-         plane_offset_B + offs, ctx);
+      nir_def *handle =
+         load_image_handle(b, ctx, nir_src_for_ssa(texture), offset_B);
 
-      nir_def *handle = nir_load_texture_handle_agx(b, offset);
       nir_tex_instr_add_src(tex, nir_tex_src_texture_handle, handle);
    }
 

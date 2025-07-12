@@ -519,40 +519,11 @@ pack_pbe(struct hk_device *dev, struct hk_image_view *view, unsigned view_plane,
 }
 
 static VkResult
-add_descriptor(struct hk_device *dev, struct hk_image_view *view,
-               struct agx_texture_packed *desc,
-               struct agx_texture_packed *cached, uint32_t *index)
-{
-   /* First, look for a descriptor we already uploaded */
-   for (unsigned i = 0; i < view->descriptor_count; ++i) {
-      if (memcmp(&cached[i], desc, sizeof *desc) == 0) {
-         *index = view->descriptor_index[i];
-         return VK_SUCCESS;
-      }
-   }
-
-   /* Else, add a new descriptor */
-   VkResult result =
-      hk_descriptor_table_add(dev, &dev->images, desc, sizeof *desc, index);
-   if (result != VK_SUCCESS)
-      return result;
-
-   uint32_t local_index = view->descriptor_count++;
-   assert(local_index < HK_MAX_IMAGE_DESCS);
-
-   cached[local_index] = *desc;
-   view->descriptor_index[local_index] = *index;
-   return VK_SUCCESS;
-}
-
-static VkResult
 hk_image_view_init(struct hk_device *dev, struct hk_image_view *view,
                    bool driver_internal,
                    const VkImageViewCreateInfo *pCreateInfo)
 {
    VK_FROM_HANDLE(hk_image, image, pCreateInfo->image);
-   VkResult result;
-
    memset(view, 0, sizeof(*view));
 
    vk_image_view_init(&dev->vk, &view->vk, driver_internal, pCreateInfo);
@@ -575,75 +546,26 @@ hk_image_view_init(struct hk_device *dev, struct hk_image_view *view,
              vk_format_get_plane_count(view->vk.format));
       view->plane_count = 0;
       u_foreach_bit(aspect_bit, view->vk.aspects) {
-         uint8_t image_plane =
+         view->planes[view->plane_count++].image_plane =
             hk_image_aspects_to_plane(image, 1u << aspect_bit);
-         view->planes[view->plane_count++].image_plane = image_plane;
       }
    }
 
-   struct agx_texture_packed cached[HK_MAX_IMAGE_DESCS];
+   /* Fill in each view plane separately */
+   for (unsigned p = 0; p < view->plane_count; p++) {
+      pack_texture(view, p, HK_DESC_USAGE_SAMPLED, &view->planes[p].sampled);
+      pack_texture(view, p, HK_DESC_USAGE_STORAGE, &view->planes[p].ro_storage);
+      pack_texture(view, p, HK_DESC_USAGE_INPUT, &view->planes[p].ia);
+      pack_texture(view, p, HK_DESC_USAGE_EMRT, &view->planes[p].emrt_texture);
+      pack_texture(view, p, HK_DESC_USAGE_BG_EOT, &view->planes[p].background);
+      pack_texture(view, p, HK_DESC_USAGE_LAYERED_BG_EOT,
+                   &view->planes[p].layered_background);
 
-   /* Finally, fill in each view plane separately */
-   for (unsigned view_plane = 0; view_plane < view->plane_count; view_plane++) {
-      const struct {
-         VkImageUsageFlagBits flag;
-         enum hk_desc_usage usage;
-         uint32_t *tex;
-         uint32_t *pbe;
-      } descriptors[] = {
-         {VK_IMAGE_USAGE_SAMPLED_BIT, HK_DESC_USAGE_SAMPLED,
-          &view->planes[view_plane].sampled_desc_index},
-
-         {VK_IMAGE_USAGE_STORAGE_BIT, HK_DESC_USAGE_STORAGE,
-          &view->planes[view_plane].ro_storage_desc_index,
-          &view->planes[view_plane].storage_desc_index},
-
-         {VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, HK_DESC_USAGE_INPUT,
-          &view->planes[view_plane].ia_desc_index},
-
-         {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, HK_DESC_USAGE_BG_EOT,
-          &view->planes[view_plane].background_desc_index,
-          &view->planes[view_plane].eot_pbe_desc_index},
-
-         {VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, HK_DESC_USAGE_LAYERED_BG_EOT,
-          &view->planes[view_plane].layered_background_desc_index,
-          &view->planes[view_plane].layered_eot_pbe_desc_index},
-      };
-
-      for (unsigned i = 0; i < ARRAY_SIZE(descriptors); ++i) {
-         if (!(view->vk.usage & descriptors[i].flag))
-            continue;
-
-         for (unsigned is_pbe = 0; is_pbe < 2; ++is_pbe) {
-            struct agx_texture_packed desc;
-            uint32_t *out = is_pbe ? descriptors[i].pbe : descriptors[i].tex;
-
-            if (!out)
-               continue;
-
-            if (is_pbe) {
-               static_assert(sizeof(struct agx_pbe_packed) ==
-                             sizeof(struct agx_texture_packed));
-
-               pack_pbe(dev, view, view_plane, descriptors[i].usage,
-                        (struct agx_pbe_packed *)&desc);
-            } else {
-               pack_texture(view, view_plane, descriptors[i].usage, &desc);
-            }
-
-            result = add_descriptor(dev, view, &desc, cached, out);
-            if (result != VK_SUCCESS)
-               return result;
-         }
-      }
-
-      if (view->vk.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
-         pack_texture(view, view_plane, HK_DESC_USAGE_EMRT,
-                      &view->planes[view_plane].emrt_texture);
-
-         pack_pbe(dev, view, view_plane, HK_DESC_USAGE_EMRT,
-                  &view->planes[view_plane].emrt_pbe);
-      }
+      pack_pbe(dev, view, p, HK_DESC_USAGE_STORAGE, &view->planes[p].storage);
+      pack_pbe(dev, view, p, HK_DESC_USAGE_BG_EOT, &view->planes[p].eot);
+      pack_pbe(dev, view, p, HK_DESC_USAGE_EMRT, &view->planes[p].emrt_pbe);
+      pack_pbe(dev, view, p, HK_DESC_USAGE_LAYERED_BG_EOT,
+               &view->planes[p].layered_eot);
    }
 
    return VK_SUCCESS;
@@ -658,10 +580,6 @@ hk_DestroyImageView(VkDevice _device, VkImageView imageView,
 
    if (!view)
       return;
-
-   for (uint8_t d = 0; d < view->descriptor_count; ++d) {
-      hk_descriptor_table_remove(dev, &dev->images, view->descriptor_index[d]);
-   }
 
    vk_image_view_finish(&view->vk);
    vk_free2(&dev->vk.alloc, pAllocator, view);
