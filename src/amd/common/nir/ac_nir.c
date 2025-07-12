@@ -613,6 +613,9 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
    if (!is_shared) {
       return (align % (bit_size / 8u)) == 0 && num_components <= NIR_MAX_VEC_COMPONENTS;
    } else {
+      /* 96-bit and 128-bit LDS loads are slow. Don't use them. */
+      if (!is_store && bit_size * num_components > 64)
+         return false;
       if (bit_size >= 32 && num_components == 3) {
          /* AMD hardware can't do 3-component loads except for 96-bit loads. */
          return bit_size == 32 && align % 16 == 0;
