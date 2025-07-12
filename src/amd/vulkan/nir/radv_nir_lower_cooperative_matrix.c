@@ -247,12 +247,12 @@ convert_use(nir_builder *b, nir_def *src, enum glsl_cmat_use src_use, enum glsl_
          memcpy(components, tmp, sizeof(components));
       }
 
+      nir_def *low_lanes = nir_inverse_ballot(b, 1, nir_imm_intN_t(b, 0xffff0000ffffull, params->wave_size));
       for (int i = 0; i < num_comps; i++) {
-         unsigned broadcast_low16 = 0xf;
-         unsigned broadcast_high16 = 0xf | (0x10 << 10);
-         tmp[i * 2] = nir_masked_swizzle_amd(b, components[i], .swizzle_mask = broadcast_low16, .fetch_inactive = 1);
-         tmp[i * 2 + 1] =
-            nir_masked_swizzle_amd(b, components[i], .swizzle_mask = broadcast_high16, .fetch_inactive = 1);
+         unsigned swap16 = 0x1f | (0x10 << 10);
+         nir_def *half_swap = nir_masked_swizzle_amd(b, components[i], .swizzle_mask = swap16, .fetch_inactive = 1);
+         tmp[i * 2] = nir_bcsel(b, low_lanes, components[i], half_swap);
+         tmp[i * 2 + 1] = nir_bcsel(b, low_lanes, half_swap, components[i]);
       }
 
       num_comps *= 2;
