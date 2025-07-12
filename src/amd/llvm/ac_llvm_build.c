@@ -2313,7 +2313,7 @@ LLVMTypeRef ac_arg_type_to_pointee_type(struct ac_llvm_context *ctx, enum ac_arg
       return ctx->f32;
       break;
    case AC_ARG_CONST_PTR_PTR:
-      return ac_array_in_const32_addr_space(ctx->i8);
+      return ac_array_in_const32_addr_space(ctx);
       break;
    case AC_ARG_CONST_DESC_PTR:
       return ctx->v4i32;
@@ -2327,14 +2327,14 @@ LLVMTypeRef ac_arg_type_to_pointee_type(struct ac_llvm_context *ctx, enum ac_arg
    }
 }
 
-LLVMTypeRef ac_array_in_const_addr_space(LLVMTypeRef elem_type)
+LLVMTypeRef ac_array_in_const_addr_space(struct ac_llvm_context *ctx)
 {
-   return LLVMPointerType(elem_type, AC_ADDR_SPACE_CONST);
+   return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST);
 }
 
-LLVMTypeRef ac_array_in_const32_addr_space(LLVMTypeRef elem_type)
+LLVMTypeRef ac_array_in_const32_addr_space(struct ac_llvm_context *ctx)
 {
-   return LLVMPointerType(elem_type, AC_ADDR_SPACE_CONST_32BIT);
+   return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST_32BIT);
 }
 
 static struct ac_llvm_flow *get_current_flow(struct ac_llvm_context *ctx)
@@ -3600,38 +3600,27 @@ void ac_export_mrt_z(struct ac_llvm_context *ctx, LLVMValueRef depth, LLVMValueR
 
 static LLVMTypeRef arg_llvm_type(enum ac_arg_type type, unsigned size, struct ac_llvm_context *ctx)
 {
-   LLVMTypeRef base;
    switch (type) {
       case AC_ARG_FLOAT:
          return size == 1 ? ctx->f32 : LLVMVectorType(ctx->f32, size);
       case AC_ARG_INT:
          return size == 1 ? ctx->i32 : LLVMVectorType(ctx->i32, size);
       case AC_ARG_CONST_PTR:
-         base = ctx->i8;
-         break;
       case AC_ARG_CONST_FLOAT_PTR:
-         base = ctx->f32;
-         break;
       case AC_ARG_CONST_PTR_PTR:
-         base = ac_array_in_const32_addr_space(ctx->i8);
-         break;
       case AC_ARG_CONST_DESC_PTR:
-         base = ctx->v4i32;
-         break;
       case AC_ARG_CONST_IMAGE_PTR:
-         base = ctx->v8i32;
          break;
       default:
          assert(false);
          return NULL;
    }
 
-   assert(base);
    if (size == 1) {
-      return ac_array_in_const32_addr_space(base);
+      return ac_array_in_const32_addr_space(ctx);
    } else {
       assert(size == 2);
-      return ac_array_in_const_addr_space(base);
+      return ac_array_in_const_addr_space(ctx);
    }
 }
 
@@ -3681,9 +3670,7 @@ struct ac_llvm_pointer ac_build_main(const struct ac_shader_args *args, struct a
    if (args->ring_offsets.used) {
       ctx->ring_offsets =
          ac_build_intrinsic(ctx, "llvm.amdgcn.implicit.buffer.ptr",
-                            LLVMPointerType(ctx->i8, AC_ADDR_SPACE_CONST), NULL, 0, 0);
-      ctx->ring_offsets = LLVMBuildBitCast(ctx->builder, ctx->ring_offsets,
-                                           ac_array_in_const_addr_space(ctx->v4i32), "");
+                            LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST), NULL, 0, 0);
    }
 
    ctx->main_function = (struct ac_llvm_pointer) {

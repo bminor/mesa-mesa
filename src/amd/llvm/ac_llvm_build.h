@@ -408,8 +408,8 @@ void ac_init_exec_full_mask(struct ac_llvm_context *ctx);
 
 LLVMValueRef ac_find_lsb(struct ac_llvm_context *ctx, LLVMTypeRef dst_type, LLVMValueRef src0);
 
-LLVMTypeRef ac_array_in_const_addr_space(LLVMTypeRef elem_type);
-LLVMTypeRef ac_array_in_const32_addr_space(LLVMTypeRef elem_type);
+LLVMTypeRef ac_array_in_const_addr_space(struct ac_llvm_context *ctx);
+LLVMTypeRef ac_array_in_const32_addr_space(struct ac_llvm_context *ctx);
 
 void ac_build_bgnloop(struct ac_llvm_context *ctx, int lable_id);
 void ac_build_break(struct ac_llvm_context *ctx);

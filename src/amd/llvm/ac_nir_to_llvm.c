@@ -63,7 +63,7 @@ static LLVMValueRef get_shared_mem_ptr(struct ac_nir_context *ctx, nir_src src, 
       LLVMTypeRef type = LLVMArrayType(ctx->ac.i32, lds_size / 4);
       ctx->lds = (struct ac_llvm_pointer) {
          .value = LLVMBuildIntToPtr(ctx->ac.builder, ctx->ac.i32_0,
-                     LLVMPointerType(type, AC_ADDR_SPACE_LDS), "lds"),
+                     LLVMPointerTypeInContext(ctx->ac.context, AC_ADDR_SPACE_LDS), "lds"),
          .pointee_type = type,
       };
    }
@@ -1694,8 +1694,8 @@ static LLVMValueRef emit_ssbo_comp_swap_64(struct ac_nir_context *ctx, LLVMValue
    LLVMValueRef ptr = ac_build_gather_values(&ctx->ac, ptr_parts, 2);
    ptr = LLVMBuildBitCast(ctx->ac.builder, ptr, ctx->ac.i64, "");
    ptr = LLVMBuildAdd(ctx->ac.builder, ptr, offset, "");
-   ptr = LLVMBuildIntToPtr(ctx->ac.builder, ptr, LLVMPointerType(ctx->ac.i64, AC_ADDR_SPACE_GLOBAL),
-                           "");
+   ptr = LLVMBuildIntToPtr(ctx->ac.builder, ptr,
+                           LLVMPointerTypeInContext(ctx->ac.context, AC_ADDR_SPACE_GLOBAL), "");
 
    LLVMValueRef result =
       ac_build_atomic_cmp_xchg(&ctx->ac, ptr, compare, exchange, "singlethread-one-as");
@@ -1886,40 +1886,32 @@ static LLVMValueRef enter_waterfall_ubo(struct ac_nir_context *ctx, struct water
 }
 
 static LLVMValueRef get_global_address(struct ac_nir_context *ctx,
-                                       nir_intrinsic_instr *instr,
-                                       LLVMTypeRef type)
+                                       nir_intrinsic_instr *instr)
 {
    bool is_store = instr->intrinsic == nir_intrinsic_store_global_amd;
    LLVMValueRef addr = get_src(ctx, instr->src[is_store ? 1 : 0]);
 
-   LLVMTypeRef ptr_type = LLVMPointerType(type, AC_ADDR_SPACE_GLOBAL);
+   LLVMTypeRef ptr_type = LLVMPointerTypeInContext(ctx->ac.context, AC_ADDR_SPACE_GLOBAL);
 
    uint32_t base = nir_intrinsic_base(instr);
    unsigned num_src = nir_intrinsic_infos[instr->intrinsic].num_srcs;
    LLVMValueRef offset = get_src(ctx, instr->src[num_src - 1]);
    offset = LLVMBuildAdd(ctx->ac.builder, offset, LLVMConstInt(ctx->ac.i32, base, false), "");
 
-   LLVMTypeRef i8_ptr_type = LLVMPointerType(ctx->ac.i8, AC_ADDR_SPACE_GLOBAL);
-   addr = LLVMBuildIntToPtr(ctx->ac.builder, addr, i8_ptr_type, "");
-   addr = LLVMBuildGEP2(ctx->ac.builder, ctx->ac.i8, addr, &offset, 1, "");
-   return LLVMBuildPointerCast(ctx->ac.builder, addr, ptr_type, "");
+   addr = LLVMBuildIntToPtr(ctx->ac.builder, addr, ptr_type, "");
+   return LLVMBuildGEP2(ctx->ac.builder, ctx->ac.i8, addr, &offset, 1, "");
 }
 
-static LLVMValueRef get_memory_addr(struct ac_nir_context *ctx, nir_intrinsic_instr *intr,
-                               LLVMTypeRef type)
+static LLVMValueRef get_memory_addr(struct ac_nir_context *ctx, nir_intrinsic_instr *intr)
 {
    switch (intr->intrinsic) {
    case nir_intrinsic_load_global_amd:
    case nir_intrinsic_store_global_amd:
-      return get_global_address(ctx, intr, type);
+      return get_global_address(ctx, intr);
    case nir_intrinsic_load_shared:
    case nir_intrinsic_store_shared: {
       unsigned num_src = nir_intrinsic_infos[intr->intrinsic].num_srcs;
-      LLVMValueRef ptr = get_shared_mem_ptr(ctx, intr->src[num_src - 1], nir_intrinsic_base(intr));
-      /* Cast the pointer to the type of the value. */
-      return LLVMBuildPointerCast(ctx->ac.builder, ptr,
-                                  LLVMPointerType(type,
-                                                  LLVMGetPointerAddressSpace(LLVMTypeOf(ptr))), "");
+      return get_shared_mem_ptr(ctx, intr->src[num_src - 1], nir_intrinsic_base(intr));
    }
    default:
       unreachable("unexpected store intrinsic");
@@ -1948,7 +1940,7 @@ static void visit_store(struct ac_nir_context *ctx, nir_intrinsic_instr *intr)
 {
    LLVMBuilderRef builder = ctx->ac.builder;
    LLVMValueRef data = get_src(ctx, intr->src[0]);
-   LLVMValueRef ptr = get_memory_addr(ctx, intr, LLVMTypeOf(data));
+   LLVMValueRef ptr = get_memory_addr(ctx, intr);
    unsigned writemask = nir_intrinsic_write_mask(intr);
    /* nir_opt_shrink_stores should split stores with holes. */
    assert(writemask == BITFIELD_MASK(intr->src[0].ssa->num_components));
@@ -1961,7 +1953,7 @@ static void visit_store(struct ac_nir_context *ctx, nir_intrinsic_instr *intr)
 static LLVMValueRef visit_load(struct ac_nir_context *ctx, nir_intrinsic_instr *intr)
 {
    LLVMTypeRef result_type = get_def_type(ctx, &intr->def);
-   LLVMValueRef ptr = get_memory_addr(ctx, intr, result_type);
+   LLVMValueRef ptr = get_memory_addr(ctx, intr);
 
    LLVMValueRef value = LLVMBuildLoad2(ctx->ac.builder, result_type, ptr, "");
    set_mem_op_alignment(value, intr, &intr->def);
@@ -2000,7 +1992,7 @@ static LLVMValueRef visit_global_atomic(struct ac_nir_context *ctx,
       data = LLVMBuildBitCast(ctx->ac.builder, data, data_type, "");
    }
 
-   LLVMValueRef addr = get_global_address(ctx, instr, data_type);
+   LLVMValueRef addr = get_global_address(ctx, instr);
 
    if (instr->intrinsic == nir_intrinsic_global_atomic_swap_amd) {
       LLVMValueRef data1 = get_src(ctx, instr->src[2]);
@@ -3174,7 +3166,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_gds_atomic_add_amd: {
       LLVMValueRef store_val = get_src(ctx, instr->src[0]);
       LLVMValueRef addr = get_src(ctx, instr->src[1]);
-      LLVMTypeRef gds_ptr_type = LLVMPointerType(ctx->ac.i32, AC_ADDR_SPACE_GDS);
+      LLVMTypeRef gds_ptr_type = LLVMPointerTypeInContext(ctx->ac.context, AC_ADDR_SPACE_GDS);
       LLVMValueRef gds_base = LLVMBuildIntToPtr(ctx->ac.builder, addr, gds_ptr_type, "");
       ac_build_atomic_rmw(&ctx->ac, LLVMAtomicRMWBinOpAdd, gds_base, store_val, "workgroup-one-as");
       break;
@@ -3213,9 +3205,8 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       int addr_space = is_addr_32bit ? AC_ADDR_SPACE_CONST_32BIT : AC_ADDR_SPACE_CONST;
 
       LLVMTypeRef result_type = get_def_type(ctx, &instr->def);
-      LLVMTypeRef byte_ptr_type = LLVMPointerType(ctx->ac.i8, addr_space);
-
-      LLVMValueRef addr = LLVMBuildIntToPtr(ctx->ac.builder, base, byte_ptr_type, "");
+      LLVMValueRef addr = LLVMBuildIntToPtr(ctx->ac.builder, base,
+                                            LLVMPointerTypeInContext(ctx->ac.context, addr_space), "");
       /* see ac_build_load_custom() for 32bit/64bit addr GEP difference */
       addr = is_addr_32bit ?
          LLVMBuildInBoundsGEP2(ctx->ac.builder, ctx->ac.i8, addr, &offset, 1, "") :
@@ -3245,7 +3236,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
        */
       LLVMValueRef args[8] = {
          LLVMBuildIntToPtr(ctx->ac.builder, get_src(ctx, instr->src[0]),
-                           LLVMPointerType(ctx->ac.i32, AC_ADDR_SPACE_GDS), ""),
+                           LLVMPointerTypeInContext(ctx->ac.context, AC_ADDR_SPACE_GDS), ""),
          ctx->ac.i32_0,                             /* value to add */
          ctx->ac.i32_0,                             /* ordering */
          ctx->ac.i32_0,                             /* scope */

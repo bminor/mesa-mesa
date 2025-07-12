@@ -261,7 +261,7 @@ LLVMValueRef si_prolog_get_internal_binding_slot(struct si_shader_context *ctx, 
 {
    LLVMValueRef list = LLVMBuildIntToPtr(
       ctx->ac.builder, ac_get_arg(&ctx->ac, ctx->args->internal_bindings),
-      ac_array_in_const32_addr_space(ctx->ac.v4i32), "");
+      ac_array_in_const32_addr_space(&ctx->ac), "");
    LLVMValueRef index = LLVMConstInt(ctx->ac.i32, slot, 0);
 
    return ac_build_load_to_sgpr(&ctx->ac,
