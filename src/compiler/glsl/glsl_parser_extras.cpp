@@ -41,6 +41,7 @@
 #include "glsl_to_nir.h"
 #include "ir_optimization.h"
 #include "builtin_functions.h"
+#include "pipe/p_screen.h"
 
 /**
  * Format a short human-readable description of the given GLSL version.
@@ -2449,7 +2450,8 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
    if (shader->CompileStatus == COMPILE_SUCCESS) {
       memcpy(shader->compiled_source_blake3, source_blake3, BLAKE3_OUT_LEN);
 
-      shader->nir = glsl_to_nir(shader, options->NirOptions, source_blake3);
+      shader->nir = glsl_to_nir(shader, ctx->screen->nir_options[shader->Stage],
+                                source_blake3);
    }
 
    if (ctx->Cache && shader->CompileStatus == COMPILE_SUCCESS) {

@@ -35,6 +35,7 @@
 #include "main/shaderobj.h"
 #include "util/glheader.h"
 #include "util/perf/cpu_trace.h"
+#include "pipe/p_screen.h"
 
 /**
  * This file included general link methods, using NIR.
@@ -1275,7 +1276,8 @@ lower_patch_vertices_in(struct gl_shader_program *shader_prog)
 }
 
 static void
-preprocess_shader(const struct gl_constants *consts,
+preprocess_shader(const struct pipe_screen *screen,
+                  const struct gl_constants *consts,
                   const struct gl_extensions *exts,
                   struct gl_program *prog,
                   struct gl_shader_program *shader_program,
@@ -1283,7 +1285,7 @@ preprocess_shader(const struct gl_constants *consts,
 {
    const struct gl_shader_compiler_options *gl_options =
       &consts->ShaderCompilerOptions[prog->info.stage];
-   const nir_shader_compiler_options *options = gl_options->NirOptions;
+   const nir_shader_compiler_options *options = screen->nir_options[prog->info.stage];
    assert(options);
 
    nir_shader *nir = prog->nir;
@@ -1358,15 +1360,15 @@ preprocess_shader(const struct gl_constants *consts,
 }
 
 static bool
-prelink_lowering(const struct gl_constants *consts,
+prelink_lowering(const struct pipe_screen *screen,
+                 const struct gl_constants *consts,
                  const struct gl_extensions *exts,
                  struct gl_shader_program *shader_program,
                  struct gl_linked_shader **linked_shader, unsigned num_shaders)
 {
    for (unsigned i = 0; i < num_shaders; i++) {
       struct gl_linked_shader *shader = linked_shader[i];
-      const nir_shader_compiler_options *options =
-         consts->ShaderCompilerOptions[shader->Stage].NirOptions;
+      const nir_shader_compiler_options *options = screen->nir_options[shader->Stage];
       struct gl_program *prog = shader->Program;
 
       /* NIR drivers that support tess shaders and compact arrays need to use
@@ -1384,7 +1386,7 @@ prelink_lowering(const struct gl_constants *consts,
           i == MESA_SHADER_VERTEX)
          remove_dead_varyings_pre_linking(prog->nir);
 
-      preprocess_shader(consts, exts, prog, shader_program, shader->Stage);
+      preprocess_shader(screen, consts, exts, prog, shader_program, shader->Stage);
 
       if (prog->nir->info.shared_size > consts->MaxComputeSharedMemorySize) {
          linker_error(shader_program, "Too much shared memory used (%u/%u)\n",
@@ -1587,7 +1589,8 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
 }
 
 bool
-gl_nir_link_spirv(const struct gl_constants *consts,
+gl_nir_link_spirv(const struct pipe_screen *screen,
+                  const struct gl_constants *consts,
                   const struct gl_extensions *exts,
                   struct gl_shader_program *prog,
                   const struct gl_nir_linker_options *options)
@@ -1607,7 +1610,7 @@ gl_nir_link_spirv(const struct gl_constants *consts,
 
    gl_nir_link_assign_xfb_resources(consts, prog);
 
-   if (!prelink_lowering(consts, exts, prog, linked_shader, num_shaders))
+   if (!prelink_lowering(screen, consts, exts, prog, linked_shader, num_shaders))
       return false;
 
    gl_nir_lower_optimize_varyings(consts, prog, true);
@@ -3228,7 +3231,8 @@ is_sampler_array_accessed_indirectly(nir_deref_instr *deref)
  * that includes loop induction variable).
  */
 static bool
-validate_sampler_array_indexing(const struct gl_constants *consts,
+validate_sampler_array_indexing(const struct pipe_screen *screen,
+                                const struct gl_constants *consts,
                                 struct gl_shader_program *prog)
 {
    for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
@@ -3236,7 +3240,7 @@ validate_sampler_array_indexing(const struct gl_constants *consts,
          continue;
 
       bool no_dynamic_indexing =
-         consts->ShaderCompilerOptions[i].NirOptions->force_indirect_unrolling_sampler;
+         screen->nir_options[i]->force_indirect_unrolling_sampler;
 
       bool uses_indirect_sampler_array_indexing = false;
       nir_foreach_function_impl(impl, prog->_LinkedShaders[i]->Program->nir) {
@@ -3958,7 +3962,8 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    if (!gl_assign_attribute_or_color_locations(consts, prog))
       goto done;
 
-   if (!prelink_lowering(consts, exts, prog, linked_shader, num_linked_shaders))
+   if (!prelink_lowering(ctx->screen, consts, exts, prog, linked_shader,
+                         num_linked_shaders))
       goto done;
 
    if (!gl_nir_link_varyings(consts, exts, api, prog))
@@ -3970,7 +3975,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
     */
    if ((!prog->IsES && prog->GLSL_Version < 130) ||
        (prog->IsES && prog->GLSL_Version < 300)) {
-      if (!validate_sampler_array_indexing(consts, prog))
+      if (!validate_sampler_array_indexing(ctx->screen, consts, prog))
          goto done;
    }
 

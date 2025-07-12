@@ -449,8 +449,8 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       static const gl_nir_linker_options opts = {
          true /*fill_parameters */
       };
-      if (!gl_nir_link_spirv(&ctx->Const, &ctx->Extensions, shader_program,
-                             &opts))
+      if (!gl_nir_link_spirv(ctx->screen, &ctx->Const, &ctx->Extensions,
+                             shader_program, &opts))
          return GL_FALSE;
    }
 

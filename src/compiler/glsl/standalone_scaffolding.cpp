@@ -36,6 +36,7 @@
 #include "util/strtod.h"
 #include "main/mtypes.h"
 #include "string_to_uint_map.h"
+#include "pipe/p_screen.h"
 
 void
 _mesa_warning(struct gl_context *ctx, const char *fmt, ...)
@@ -200,6 +201,8 @@ standalone_new_program(UNUSED struct gl_context *ctx, gl_shader_stage stage,
 void initialize_context_to_defaults(struct gl_context *ctx, gl_api api)
 {
    memset(ctx, 0, sizeof(*ctx));
+
+   ctx->screen = (struct pipe_screen*)calloc(1, sizeof(struct pipe_screen));
 
    ctx->API = api;
 

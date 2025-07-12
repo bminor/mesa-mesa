@@ -362,8 +362,6 @@ struct gl_shader_compiler_options
 
    /** (driconf) Force gl_Position to be considered precise */
    GLboolean PositionAlwaysPrecise;
-
-   const struct nir_shader_compiler_options *NirOptions;
 };
 
 /**

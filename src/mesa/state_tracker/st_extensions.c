@@ -209,8 +209,6 @@ void st_init_limits(struct pipe_screen *screen,
           (sh == PIPE_SHADER_COMPUTE && !screen->caps.compute))
          continue;
 
-      options->NirOptions = screen->nir_options[stage];
-
       pc->MaxTextureImageUnits =
          _min(screen->shader_caps[sh].max_texture_samplers,
               MAX_TEXTURE_IMAGE_UNITS);

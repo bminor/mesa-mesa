@@ -37,6 +37,7 @@
 #include "glsl_to_nir.h"
 #include "linker_util.h"
 #include "nir_builder.h"
+#include "pipe/p_screen.h"
 
 /* The printed-GLSL-IR tests use fmemopen so we can do stdio to memory (or you'd
  * need equivalent tempfiles that you manage).  Just disable this test on those
@@ -174,7 +175,7 @@ namespace
       for (int i = 0; i < MESA_SHADER_STAGES; i++) {
          ctx->Const.ShaderCompilerOptions[i].LowerPrecisionFloat16 = true;
          ctx->Const.ShaderCompilerOptions[i].LowerPrecisionInt16 = true;
-         ctx->Const.ShaderCompilerOptions[i].NirOptions = &compiler_options;
+         ctx->screen->nir_options[i] = &compiler_options;
       }
 
       /* GL_ARB_explicit_uniform_location, GL_MAX_UNIFORM_LOCATIONS */

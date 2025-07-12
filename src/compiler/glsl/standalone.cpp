@@ -42,6 +42,7 @@
 #include "main/mtypes.h"
 #include "program/program.h"
 #include "nir_shader_compiler_options.h"
+#include "pipe/p_screen.h"
 
 static const struct standalone_options *options;
 
@@ -55,10 +56,10 @@ initialize_context(struct gl_context *ctx, gl_api api)
    _mesa_glsl_builtin_functions_init_or_ref();
 
    ctx->Version = 450;
-   ctx->Const.ShaderCompilerOptions[MESA_SHADER_VERTEX].NirOptions =
-      &nir_fs_options;
-   ctx->Const.ShaderCompilerOptions[MESA_SHADER_FRAGMENT].NirOptions =
-      &nir_vs_options;
+
+   ctx->screen->nir_options[MESA_SHADER_VERTEX] = &nir_vs_options;
+   ctx->screen->nir_options[MESA_SHADER_FRAGMENT] = &nir_fs_options;
+
 
    /* The standalone compiler needs to claim support for almost
     * everything in order to compile the built-in functions.
