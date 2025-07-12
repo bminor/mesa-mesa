@@ -2,13 +2,18 @@
 # The tests assumes a dubgroup size >= 16
 test_shader_waveop_maximal_convergence,Fail
 
+# The test expects different precision/rounding
 test_sampler_feedback_implicit_lod_aniso,Fail
 
+# The test uses multiplanar formats for render targets which is unsupported
 test_planar_video_formats,Fail
+
+# The test expect lod=0.5 to load level 1 with nearest sampling
+test_sample_instructions,Fail
+
 test_rayquery,Fail
 test_raytracing,Fail
 test_raytracing_mismatch_global_rs_link,Fail
-test_sample_instructions,Fail
 test_sampler_rounding,Fail
 test_update_tile_mappings,Fail
 test_view_min_lod,Fail
