@@ -2524,7 +2524,7 @@
         "description": "radeonsi: recompute FS output IO bases to prevent an LLVM crash",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7a506d0a4145dd74a48affa1b08bfefd53d94a04",
         "notes": null
