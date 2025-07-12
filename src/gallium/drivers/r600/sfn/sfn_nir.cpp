@@ -625,14 +625,6 @@ r600_lower_to_scalar_instr_filter(const nir_instr *instr, const void *)
 
    auto alu = nir_instr_as_alu(instr);
    switch (alu->op) {
-   case nir_op_bany_fnequal3:
-   case nir_op_bany_fnequal4:
-   case nir_op_ball_fequal3:
-   case nir_op_ball_fequal4:
-   case nir_op_bany_inequal3:
-   case nir_op_bany_inequal4:
-   case nir_op_ball_iequal3:
-   case nir_op_ball_iequal4:
    case nir_op_fdot2:
    case nir_op_fdot3:
    case nir_op_fdot4:

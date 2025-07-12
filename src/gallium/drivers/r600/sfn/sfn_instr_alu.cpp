@@ -1384,15 +1384,6 @@ emit_alu_op3(const nir_alu_instr& alu,
              Shader& shader,
              const std::array<int, 3>& src_shuffle = {0, 1, 2});
 static bool
-emit_any_all_fcomp2(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
-static bool
-emit_any_all_fcomp(
-   const nir_alu_instr& alu, EAluOp opcode, int nc, bool all, Shader& shader);
-static bool
-emit_any_all_icomp(
-   const nir_alu_instr& alu, EAluOp opcode, int nc, bool all, Shader& shader);
-
-static bool
 emit_alu_comb_with_zero(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
 static bool
 emit_unpack_64_2x32_split(const nir_alu_instr& alu, int comp, Shader& shader);
@@ -1651,31 +1642,6 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
       return emit_alu_op1(*alu, op1_bfrev_int, shader);
    case nir_op_bitfield_select:
       return emit_alu_op3(*alu, op3_bfi_int, shader);
-
-   case nir_op_b32all_fequal2:
-      return emit_any_all_fcomp2(*alu, op2_sete_dx10, shader);
-   case nir_op_b32all_fequal3:
-      return emit_any_all_fcomp(*alu, op2_sete, 3, true, shader);
-   case nir_op_b32all_fequal4:
-      return emit_any_all_fcomp(*alu, op2_sete, 4, true, shader);
-   case nir_op_b32all_iequal2:
-      return emit_any_all_icomp(*alu, op2_sete_int, 2, true, shader);
-   case nir_op_b32all_iequal3:
-      return emit_any_all_icomp(*alu, op2_sete_int, 3, true, shader);
-   case nir_op_b32all_iequal4:
-      return emit_any_all_icomp(*alu, op2_sete_int, 4, true, shader);
-   case nir_op_b32any_fnequal2:
-      return emit_any_all_fcomp2(*alu, op2_setne_dx10, shader);
-   case nir_op_b32any_fnequal3:
-      return emit_any_all_fcomp(*alu, op2_setne, 3, false, shader);
-   case nir_op_b32any_fnequal4:
-      return emit_any_all_fcomp(*alu, op2_setne, 4, false, shader);
-   case nir_op_b32any_inequal2:
-      return emit_any_all_icomp(*alu, op2_setne_int, 2, false, shader);
-   case nir_op_b32any_inequal3:
-      return emit_any_all_icomp(*alu, op2_setne_int, 3, false, shader);
-   case nir_op_b32any_inequal4:
-      return emit_any_all_icomp(*alu, op2_setne_int, 4, false, shader);
    case nir_op_b32csel:
       return emit_alu_op3(*alu, op3_cnde_int, shader, {0, 2, 1});
 
@@ -2448,148 +2414,6 @@ emit_alu_op3(const nir_alu_instr& alu,
    if (ir)
       ir->set_alu_flag(alu_last_instr);
    return true;
-}
-
-static bool
-emit_any_all_fcomp2(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
-{
-   AluInstr *ir = nullptr;
-   auto& value_factory = shader.value_factory();
-
-   PRegister tmp[2];
-   tmp[0] = value_factory.temp_register();
-   tmp[1] = value_factory.temp_register();
-
-   for (unsigned i = 0; i < 2; ++i) {
-      ir = new AluInstr(opcode,
-                        tmp[i],
-                        value_factory.src(alu.src[0], i),
-                        value_factory.src(alu.src[1], i),
-                        {alu_write});
-      shader.emit_instruction(ir);
-   }
-   ir->set_alu_flag(alu_last_instr);
-
-   opcode = (opcode == op2_setne_dx10) ? op2_or_int : op2_and_int;
-   ir = new AluInstr(opcode,
-                     value_factory.dest(alu.def, 0, pin_free),
-                     tmp[0],
-                     tmp[1],
-                     AluInstr::last_write);
-   shader.emit_instruction(ir);
-   return true;
-}
-
-static bool
-emit_any_all_fcomp(const nir_alu_instr& alu, EAluOp op, int nc, bool all, Shader& shader)
-{
-   /* This should probabyl be lowered in nir */
-   auto& value_factory = shader.value_factory();
-
-   AluInstr *ir = nullptr;
-   RegisterVec4 v = value_factory.temp_vec4(pin_group);
-   AluInstr::SrcValues s;
-
-   for (int i = 0; i < nc; ++i) {
-      s.push_back(v[i]);
-   }
-
-   for (int i = nc; i < 4; ++i)
-      s.push_back(value_factory.inline_const(all ? ALU_SRC_1 : ALU_SRC_0, 0));
-
-   for (int i = 0; i < nc; ++i) {
-      ir = new AluInstr(op,
-                        v[i],
-                        value_factory.src(alu.src[0], i),
-                        value_factory.src(alu.src[1], i),
-                        {alu_write});
-      shader.emit_instruction(ir);
-   }
-   if (ir)
-      ir->set_alu_flag(alu_last_instr);
-
-   auto max_val = value_factory.temp_register();
-
-   ir = new AluInstr(op1_max4, max_val, s, AluInstr::last_write, 4);
-
-   if (all) {
-      ir->set_source_mod(0, AluInstr::mod_neg);
-      ir->set_source_mod(1, AluInstr::mod_neg);
-      ir->set_source_mod(2, AluInstr::mod_neg);
-      ir->set_source_mod(3, AluInstr::mod_neg);
-   }
-
-   shader.emit_instruction(ir);
-
-   if (all)
-      op = (op == op2_sete) ? op2_sete_dx10 : op2_setne_dx10;
-   else
-      op = (op == op2_sete) ? op2_setne_dx10 : op2_sete_dx10;
-
-   ir = new AluInstr(op,
-                     value_factory.dest(alu.def, 0, pin_free),
-                     max_val,
-                     value_factory.inline_const(ALU_SRC_1, 0),
-                     AluInstr::last_write);
-   if (all)
-      ir->set_source_mod(1, AluInstr::mod_neg);
-   shader.emit_instruction(ir);
-
-   return true;
-}
-
-static bool
-emit_any_all_icomp(const nir_alu_instr& alu, EAluOp op, int nc, bool all, Shader& shader)
-{
-   /* This should probabyl be lowered in nir */
-   auto& value_factory = shader.value_factory();
-
-   AluInstr *ir = nullptr;
-   PRegister v[6];
-
-   auto dest = value_factory.dest(alu.def, 0, pin_free);
-
-   for (int i = 0; i < nc + nc / 2; ++i)
-      v[i] = value_factory.temp_register();
-
-   EAluOp combine = all ? op2_and_int : op2_or_int;
-
-   for (int i = 0; i < nc; ++i) {
-      ir = new AluInstr(op,
-                        v[i],
-                        value_factory.src(alu.src[0], i),
-                        value_factory.src(alu.src[1], i),
-                        AluInstr::write);
-      shader.emit_instruction(ir);
-   }
-   if (ir)
-      ir->set_alu_flag(alu_last_instr);
-
-   if (nc == 2) {
-      ir = new AluInstr(combine, dest, v[0], v[1], AluInstr::last_write);
-      shader.emit_instruction(ir);
-      return true;
-   }
-
-   if (nc == 3) {
-      ir = new AluInstr(combine, v[3], v[0], v[1], AluInstr::last_write);
-      shader.emit_instruction(ir);
-      ir = new AluInstr(combine, dest, v[3], v[2], AluInstr::last_write);
-      shader.emit_instruction(ir);
-      return true;
-   }
-
-   if (nc == 4) {
-      ir = new AluInstr(combine, v[4], v[0], v[1], AluInstr::write);
-      shader.emit_instruction(ir);
-      ir = new AluInstr(combine, v[5], v[2], v[3], AluInstr::last_write);
-      shader.emit_instruction(ir);
-      ir = new AluInstr(combine, dest, v[4], v[5], AluInstr::last_write);
-      shader.emit_instruction(ir);
-      return true;
-   }
-
-   return false;
 }
 
 static bool
