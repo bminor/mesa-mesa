@@ -147,7 +147,7 @@ make_drawpix_z_stencil_program_nir(struct st_context *st,
                                    bool write_stencil)
 {
    const nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, MESA_SHADER_FRAGMENT);
+      st->screen->nir_options[MESA_SHADER_FRAGMENT];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,
                                                   "drawpixels %s%s",
@@ -184,7 +184,7 @@ make_drawpix_zs_to_color_program_nir(struct st_context *st,
                                    bool rgba)
 {
    const nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, MESA_SHADER_FRAGMENT);
+      st->screen->nir_options[MESA_SHADER_FRAGMENT];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,
                                                   "copypixels ZStoC");

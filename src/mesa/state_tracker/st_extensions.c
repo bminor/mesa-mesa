@@ -1840,13 +1840,11 @@ void st_init_extensions(struct pipe_screen *screen,
       screen->caps.allow_draw_out_of_order;
    consts->GLThreadNopCheckFramebufferStatus = options->glthread_nop_check_framebuffer_status;
 
-   const struct nir_shader_compiler_options *nir_options =
-      consts->ShaderCompilerOptions[MESA_SHADER_FRAGMENT].NirOptions;
-
    if (screen->shader_caps[PIPE_SHADER_FRAGMENT].integers &&
        extensions->ARB_stencil_texturing &&
        screen->caps.doubles &&
-       !(nir_options->lower_doubles_options & nir_lower_fp64_full_software))
+       !(screen->nir_options[MESA_SHADER_FRAGMENT]->lower_doubles_options &
+         nir_lower_fp64_full_software))
       extensions->NV_copy_depth_to_color = true;
    if (screen->caps.device_protected_surface || screen->caps.device_protected_context)
       extensions->EXT_protected_textures = true;

@@ -101,7 +101,7 @@ st_nir_make_passthrough_vs(struct st_context *st,
                            unsigned sysval_mask)
 {
    const nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, MESA_SHADER_VERTEX);
+      st->screen->nir_options[MESA_SHADER_VERTEX];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX, options,
                                                   "%s", shader_name);
@@ -138,7 +138,7 @@ void *
 st_nir_make_clearcolor_shader(struct st_context *st)
 {
    const nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, MESA_SHADER_FRAGMENT);
+      st->screen->nir_options[MESA_SHADER_FRAGMENT];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,
                                                   "clear color FS");

@@ -1374,7 +1374,7 @@ _mesa_get_fixed_func_vertex_program(struct gl_context *ctx)
          return NULL;
 
       const struct nir_shader_compiler_options *options =
-         st_get_nir_compiler_options(ctx->st, MESA_SHADER_VERTEX);
+         ctx->screen->nir_options[MESA_SHADER_VERTEX];
 
       nir_shader *s =
          create_new_program( &key, prog,

@@ -601,7 +601,7 @@ static void *
 hw_select_create_gs(struct st_context *st, union state_key state)
 {
    const nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(st, MESA_SHADER_GEOMETRY);
+      st->screen->nir_options[MESA_SHADER_GEOMETRY];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_GEOMETRY, options,
                                                   "hw select GS");

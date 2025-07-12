@@ -979,9 +979,3 @@ st_destroy_context(struct st_context *st)
       _mesa_make_current(save_ctx, save_drawbuffer, save_readbuffer);
    }
 }
-
-const struct nir_shader_compiler_options *
-st_get_nir_compiler_options(struct st_context *st, gl_shader_stage stage)
-{
-   return st->ctx->Const.ShaderCompilerOptions[stage].NirOptions;
-}

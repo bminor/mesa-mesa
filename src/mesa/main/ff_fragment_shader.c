@@ -985,7 +985,7 @@ _mesa_get_fixed_func_fragment_program(struct gl_context *ctx)
          return NULL;
 
       const struct nir_shader_compiler_options *options =
-         st_get_nir_compiler_options(ctx->st, MESA_SHADER_FRAGMENT);
+         ctx->screen->nir_options[MESA_SHADER_FRAGMENT];
 
       nir_shader *s =
          create_new_program(&key, prog, options);

@@ -645,7 +645,7 @@ get_nir_shader(struct st_context *st, struct gl_program *prog, bool is_draw)
 
    struct blob_reader blob_reader;
    const struct nir_shader_compiler_options *options =
-      is_draw ? &draw_nir_options : st_get_nir_compiler_options(st, prog->info.stage);
+      is_draw ? &draw_nir_options : st->screen->nir_options[prog->info.stage];
 
    if (is_draw && st->ctx->Const.PackedDriverUniformStorage &&
        (!prog->shader_program || prog->shader_program->data->LinkStatus != LINKING_SKIPPED)) {
@@ -989,7 +989,7 @@ st_translate_fragment_program(struct st_context *st,
       prog->nir = prog_to_nir(st->ctx, prog);
    } else if (prog->ati_fs) {
       const struct nir_shader_compiler_options *options =
-         st_get_nir_compiler_options(st, MESA_SHADER_FRAGMENT);
+         st->screen->nir_options[MESA_SHADER_FRAGMENT];
 
       assert(!prog->nir);
       prog->nir = st_translate_atifs_program(prog->ati_fs, prog, options);

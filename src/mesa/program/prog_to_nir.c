@@ -803,7 +803,7 @@ struct nir_shader *
 prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
 {
    const struct nir_shader_compiler_options *options =
-      st_get_nir_compiler_options(ctx->st, prog->info.stage);
+      ctx->screen->nir_options[prog->info.stage];
    struct ptn_compile *c;
    struct nir_shader *s;
    gl_shader_stage stage = prog->info.stage;

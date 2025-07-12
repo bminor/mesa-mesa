@@ -411,7 +411,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
    for (unsigned i = 0; i < num_shaders; i++) {
       struct gl_linked_shader *shader = linked_shader[i];
       const nir_shader_compiler_options *options =
-         st->ctx->Const.ShaderCompilerOptions[shader->Stage].NirOptions;
+         ctx->screen->nir_options[shader->Stage];
       struct gl_program *prog = shader->Program;
 
       shader->Program->info.separate_shader = shader_program->SeparateShader;
@@ -515,7 +515,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       st_glsl_to_nir_post_opts(st, shader->Program, shader_program);
 
       if (prev_info &&
-          ctx->Const.ShaderCompilerOptions[shader->Stage].NirOptions->unify_interfaces) {
+          ctx->screen->nir_options[shader->Stage]->unify_interfaces) {
          prev_info->outputs_written |= info->inputs_read &
             ~(VARYING_BIT_TESS_LEVEL_INNER | VARYING_BIT_TESS_LEVEL_OUTER);
          info->inputs_read |= prev_info->outputs_written &
