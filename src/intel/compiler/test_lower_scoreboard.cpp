@@ -1143,3 +1143,65 @@ TEST_F(scoreboard_test, scalar_register_mov_grf_is_not_in_scalar_pipe)
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
+
+TEST_F(scoreboard_test, DISABLED_baked_dependency_with_inferred_pipe_combination)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg *g = vgrf_array(bld, exp, BRW_TYPE_F, 8);
+   brw_reg  x = vgrf(bld, exp, BRW_TYPE_F);
+
+   bld.MOV(g[1], brw_imm_f(1.0f));
+   bld.MOV(g[2], brw_imm_f(2.0f));
+   bld.MOV(g[5], brw_imm_f(5.0f));
+
+   bld.IF();
+   emit_SEND(bld, x, g[1], g[2]);
+   bld.ELSE();
+   emit_SEND(bld, x, g[1], g[2]);
+   bld.ENDIF();
+
+   bld.MAD(g[4], g[5], g[1], x);
+
+   EXPECT_PROGRESS(brw_lower_scoreboard, bld);
+
+   exp.MOV(g[1], brw_imm_f(1.0f));
+   exp.MOV(g[2], brw_imm_f(2.0f));
+   exp.MOV(g[5], brw_imm_f(5.0f));
+
+   exp.IF();
+   emit_SEND(exp, x, g[1], g[2])->sched = SWSB("@3 $0");
+   exp.ELSE();
+   emit_SEND(exp, x, g[1], g[2])->sched = SWSB("@3 $0");
+   exp.ENDIF();
+
+   exp.MAD(g[4], g[5], g[1], x)->sched = SWSB("@3 $0.dst");
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(scoreboard_test, DISABLED_math_inv_with_mul_dependency)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg *g = vgrf_array(bld, exp, BRW_TYPE_F, 8);
+   brw_reg  x = vgrf(bld, exp, BRW_TYPE_F);
+
+   bld.MOV(g[1], brw_imm_f(1.0f));
+   bld.MOV(g[2], brw_imm_f(2.0f));
+
+   bld.emit(SHADER_OPCODE_RCP, x, g[1]);
+   bld.MUL(g[1], g[2], x);
+
+   EXPECT_PROGRESS(brw_lower_scoreboard, bld);
+
+   exp.MOV(g[1], brw_imm_f(1.0f));
+   exp.MOV(g[2], brw_imm_f(2.0f));
+
+   exp.emit(SHADER_OPCODE_RCP, x, g[1])->sched = SWSB("@2 $0");
+   exp.MUL(g[1], g[2], x)->sched = SWSB("@1 $0.dst");
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
