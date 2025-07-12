@@ -85,16 +85,6 @@ lower_load_constant(nir_builder *b, nir_intrinsic_instr *load,
 }
 
 static nir_def *
-load_descriptor_set_addr(nir_builder *b, uint32_t set,
-                         UNUSED const struct lower_descriptors_ctx *ctx)
-{
-   uint32_t set_addr_offset =
-      hk_root_descriptor_offset(sets) + set * sizeof(uint64_t);
-
-   return load_root(b, 1, 64, nir_imm_int(b, set_addr_offset), 8);
-}
-
-static nir_def *
 load_dynamic_buffer_start(nir_builder *b, uint32_t set,
                           const struct lower_descriptors_ctx *ctx)
 {
@@ -152,8 +142,8 @@ load_descriptor(nir_builder *b, unsigned num_components, unsigned bit_size,
    }
 
    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK: {
-      nir_def *base_addr = nir_iadd_imm(
-         b, load_descriptor_set_addr(b, set, ctx), binding_layout->offset);
+      nir_def *base_addr = nir_iadd_imm(b, nir_load_descriptor_set_agx(b, set),
+                                        binding_layout->offset);
 
       assert(binding_layout->stride == 1);
       const uint32_t binding_size = binding_layout->array_size;
@@ -177,7 +167,7 @@ load_descriptor(nir_builder *b, unsigned num_components, unsigned bit_size,
       desc_align_offset %= desc_align_mul;
 
       nir_def *desc;
-      nir_def *set_addr = load_descriptor_set_addr(b, set, ctx);
+      nir_def *set_addr = nir_load_descriptor_set_agx(b, set);
       desc = nir_load_global_constant_offset(
          b, num_components, bit_size, set_addr, desc_ubo_offset,
          .align_mul = desc_align_mul, .align_offset = desc_align_offset,
@@ -715,7 +705,7 @@ lower_ssbo_resource_index(nir_builder *b, nir_intrinsic_instr *intrin,
    switch (binding_layout->type) {
    case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
-      nir_def *set_addr = load_descriptor_set_addr(b, set, ctx);
+      nir_def *set_addr = nir_load_descriptor_set_agx(b, set);
       binding_addr = nir_iadd_imm(b, set_addr, binding_layout->offset);
       binding_stride = binding_layout->stride;
       break;

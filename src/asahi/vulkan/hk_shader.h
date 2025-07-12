@@ -108,6 +108,7 @@ struct hk_shader_info {
    uint8_t clip_distance_array_size;
    uint8_t cull_distance_array_size;
    uint8_t image_heap_uniform;
+   uint8_t set_count;
 
    /* XXX: is there a less goofy way to do this? I really don't want dynamic
     * allocation here.

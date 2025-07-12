@@ -677,12 +677,22 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
 
    struct agx_usc_builder b = agx_usc_builder(t.cpu, usc_size);
 
-   uint64_t root_ptr;
+   uint64_t root_ptr, set_ptr;
 
-   if (sw_stage == PIPE_SHADER_COMPUTE)
+   if (sw_stage == PIPE_SHADER_COMPUTE) {
       root_ptr = hk_cmd_buffer_upload_root(cmd, VK_PIPELINE_BIND_POINT_COMPUTE);
-   else
+      set_ptr = hk_pool_upload(cmd, cmd->state.cs.descriptors.root.sets,
+                               sizeof(uint64_t) * s->info.set_count, 32);
+   } else {
       root_ptr = cmd->state.gfx.root;
+      set_ptr = hk_pool_upload(cmd, cmd->state.gfx.descriptors.root.sets,
+                               sizeof(uint64_t) * s->info.set_count, 32);
+   }
+
+   if (s->info.set_count) {
+      unsigned set_base = s->info.image_heap_uniform + 4;
+      agx_usc_uniform(&b, set_base, 4 * s->info.set_count, set_ptr);
+   }
 
    static_assert(offsetof(struct hk_root_descriptor_table, root_desc_addr) == 0,
                  "self-reflective");

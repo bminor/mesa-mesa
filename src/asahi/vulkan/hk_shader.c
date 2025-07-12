@@ -944,6 +944,7 @@ hk_init_link_ht(struct hk_shader *shader, gl_shader_stage sw_stage)
 }
 
 struct fixed_uniforms {
+   unsigned sets;
    unsigned image_heap;
    unsigned root;
 };
@@ -952,7 +953,8 @@ static bool
 lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    if (intr->intrinsic != nir_intrinsic_load_texture_handle_agx &&
-       intr->intrinsic != nir_intrinsic_load_root_agx)
+       intr->intrinsic != nir_intrinsic_load_root_agx &&
+       intr->intrinsic != nir_intrinsic_load_descriptor_set_agx)
       return false;
 
    b->cursor = nir_before_instr(&intr->instr);
@@ -962,6 +964,9 @@ lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    if (intr->intrinsic == nir_intrinsic_load_texture_handle_agx) {
       rep = nir_bindless_image_agx(b, intr->src[0].ssa,
                                    .desc_set = ctx->image_heap);
+   } else if (intr->intrinsic == nir_intrinsic_load_descriptor_set_agx) {
+      unsigned s = nir_intrinsic_desc_set(intr);
+      rep = nir_load_preamble(b, 1, 64, .base = ctx->sets + (4 * s));
    } else {
       rep = nir_load_preamble(b, 1, 64, .base = ctx->root);
    }
@@ -1008,7 +1013,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
                const struct vk_pipeline_robustness_state *rs,
                const struct hk_fs_key *fs_key, enum hk_feature_key features,
                struct hk_shader *shader, gl_shader_stage sw_stage, bool hw,
-               nir_xfb_info *xfb_info)
+               nir_xfb_info *xfb_info, unsigned set_count)
 {
    unsigned nr_vbos = 0;
 
@@ -1086,16 +1091,19 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
       }
    }
 
-   struct fixed_uniforms f = {.root = 0, .image_heap = 4};
+   struct fixed_uniforms f = {.root = 0, .image_heap = 4, .sets = 8};
    if (sw_stage == MESA_SHADER_FRAGMENT) {
       f.image_heap = AGX_ABI_FUNI_COUNT;
       f.root = AGX_ABI_FUNI_ROOT;
+      f.sets = AGX_ABI_FUNI_COUNT + 4;
    } else if (sw_stage == MESA_SHADER_VERTEX) {
       f.root = AGX_ABI_VUNI_COUNT_VK(nr_vbos);
       f.image_heap = f.root + 4;
+      f.sets = f.root + 8;
    }
 
    shader->info.image_heap_uniform = f.image_heap;
+   shader->info.set_count = set_count;
 
    /* XXX: rename */
    NIR_PASS(_, nir, hk_lower_uvs_index, nr_vbos);
@@ -1112,10 +1120,8 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
 #endif
 
    struct agx_shader_key backend_key = {
-      /* the image heap is always the last fixed uniform, so we can start
-       * preamble after that.
-       */
-      .reserved_preamble = f.image_heap + 4,
+      /* Sets at the end */
+      .reserved_preamble = f.image_heap + (4 * (set_count + 1)),
 
       .dev = agx_gather_device_key(&dev->dev),
       .no_stop = nir->info.stage == MESA_SHADER_FRAGMENT,
@@ -1311,9 +1317,10 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
 
       for (unsigned v = 0; v < ARRAY_SIZE(variants); ++v) {
          if (variants[v].in) {
-            result = hk_compile_nir(
-               dev, pAllocator, variants[v].in, info->flags, info->robustness,
-               NULL, features, variants[v].out, sw_stage, true, NULL);
+            result =
+               hk_compile_nir(dev, pAllocator, variants[v].in, info->flags,
+                              info->robustness, NULL, features, variants[v].out,
+                              sw_stage, true, NULL, info->set_layout_count);
 
             if (result != VK_SUCCESS) {
                hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
@@ -1379,9 +1386,10 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
          }
 
          /* hk_compile_nir takes ownership of the clone */
-         result = hk_compile_nir(dev, pAllocator, clone, info->flags,
-                                 info->robustness, fs_key, features, shader,
-                                 sw_stage, hw, nir->xfb_info);
+         result =
+            hk_compile_nir(dev, pAllocator, clone, info->flags,
+                           info->robustness, fs_key, features, shader, sw_stage,
+                           hw, nir->xfb_info, info->set_layout_count);
          if (result != VK_SUCCESS) {
             hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
             ralloc_free(nir);
@@ -1392,9 +1400,9 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
       struct hk_shader *shader = hk_only_variant(obj);
 
       /* hk_compile_nir takes ownership of nir */
-      result =
-         hk_compile_nir(dev, pAllocator, nir, info->flags, info->robustness,
-                        fs_key, features, shader, sw_stage, true, NULL);
+      result = hk_compile_nir(dev, pAllocator, nir, info->flags,
+                              info->robustness, fs_key, features, shader,
+                              sw_stage, true, NULL, info->set_layout_count);
       if (result != VK_SUCCESS) {
          hk_api_shader_destroy(&dev->vk, &obj->vk, pAllocator);
          return result;

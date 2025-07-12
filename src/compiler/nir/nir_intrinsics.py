@@ -2122,6 +2122,11 @@ intrinsic("load_texture_handle_agx", [1], 1, [],
           flags=[CAN_ELIMINATE, CAN_REORDER],
           bit_sizes=[32])
 
+# Load descriptor set address
+intrinsic("load_descriptor_set_agx", [], 1, [DESC_SET],
+          flags=[CAN_ELIMINATE, CAN_REORDER],
+          bit_sizes=[64])
+
 # Given a bindless texture handle, load the address of the texture descriptor
 # described by that. This allows inspecting the descriptor from the shader. This
 # does not actually load the content of the descriptor, only the content of the
