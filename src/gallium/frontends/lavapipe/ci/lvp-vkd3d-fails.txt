@@ -15,5 +15,4 @@ test_rayquery,Fail
 test_raytracing,Fail
 test_raytracing_mismatch_global_rs_link,Fail
 test_sampler_rounding,Fail
-test_update_tile_mappings,Fail
 test_view_min_lod,Fail

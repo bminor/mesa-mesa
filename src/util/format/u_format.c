@@ -1549,7 +1549,7 @@ uint32_t
 util_format_get_tilesize(enum pipe_format format, uint32_t dimensions, uint32_t samples, uint32_t axis)
 {
    if (dimensions == 1)
-      return axis == 0 ? 64 * 1024 : 1;
+      return axis == 0 ? 64 * 1024 / util_next_power_of_two(util_format_get_blocksize(format)) : 1;
 
    uint32_t kind = 0;
    if (dimensions == 2)
