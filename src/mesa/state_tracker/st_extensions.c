@@ -204,14 +204,12 @@ void st_init_limits(struct pipe_screen *screen,
       struct gl_shader_compiler_options *options =
          &c->ShaderCompilerOptions[stage];
       struct gl_program_constants *pc = &c->Program[stage];
-      options->NirOptions =
-         screen->nir_options[stage] ? screen->nir_options[stage] :
-                                      &nir_to_tgsi_compiler_options;
 
-      if (sh == PIPE_SHADER_COMPUTE) {
-         if (!screen->caps.compute)
-            continue;
-      }
+      if (!screen->nir_options[stage] ||
+          (sh == PIPE_SHADER_COMPUTE && !screen->caps.compute))
+         continue;
+
+      options->NirOptions = screen->nir_options[stage];
 
       pc->MaxTextureImageUnits =
          _min(screen->shader_caps[sh].max_texture_samplers,
