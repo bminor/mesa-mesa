@@ -53,13 +53,6 @@ struct hk_storage_image_descriptor {
 static_assert(sizeof(struct hk_storage_image_descriptor) == 8,
               "hk_storage_image_descriptor has no holes");
 
-struct hk_buffer_view_descriptor {
-   uint32_t tex_offset;
-   uint32_t pbe_offset;
-};
-static_assert(sizeof(struct hk_buffer_view_descriptor) == 8,
-              "hk_buffer_view_descriptor has no holes");
-
 /* This has to match nir_address_format_64bit_bounded_global */
 struct hk_buffer_address {
    uint64_t base_addr;

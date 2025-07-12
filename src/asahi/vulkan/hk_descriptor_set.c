@@ -204,7 +204,7 @@ write_buffer_view_desc(struct hk_descriptor_set *set,
                        const VkBufferView bufferView, uint32_t binding,
                        uint32_t elem)
 {
-   struct hk_buffer_view_descriptor desc = {};
+   struct hk_storage_image_descriptor desc = {};
    if (bufferView != VK_NULL_HANDLE) {
       VK_FROM_HANDLE(hk_buffer_view, view, bufferView);
 
