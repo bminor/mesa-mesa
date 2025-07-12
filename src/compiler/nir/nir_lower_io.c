@@ -324,8 +324,8 @@ emit_load(struct lower_io_state *state,
       unsigned num_slots = get_number_of_slots(state, var);
 
       /* Maximum values in nir_io_semantics. */
-      assert(location >= 0 && location <= 127);
       assert(num_slots <= 63);
+      assert(location >= 0 && location + num_slots <= NUM_TOTAL_VARYING_SLOTS);
 
       nir_io_semantics semantics = { 0 };
       semantics.location = location;
@@ -489,8 +489,8 @@ emit_store(struct lower_io_state *state, nir_def *data,
    unsigned num_slots = get_number_of_slots(state, var);
 
    /* Maximum values in nir_io_semantics. */
-   assert(location >= 0 && location <= 127);
    assert(num_slots <= 63);
+   assert(location >= 0 && location + num_slots <= NUM_TOTAL_VARYING_SLOTS);
 
    nir_io_semantics semantics = { 0 };
    semantics.location = location;
