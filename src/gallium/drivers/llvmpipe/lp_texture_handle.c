@@ -327,6 +327,8 @@ compile_image_function(struct llvmpipe_context *ctx, struct lp_static_texture_st
 
    struct lp_img_params params = { 0 };
 
+   params.instr_has_layer_coord = flags & LP_IMAGE_OP_HAS_LAYER;
+
    params.img_op = op % LP_IMAGE_OP_COUNT;
    if (params.img_op >= LP_IMG_OP_COUNT - 1) {
       params.op = params.img_op - (LP_IMG_OP_COUNT - 1);

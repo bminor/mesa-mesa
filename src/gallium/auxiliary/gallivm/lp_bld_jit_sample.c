@@ -231,7 +231,7 @@ lp_bld_llvm_sampler_soa_emit_fetch_texel(const struct lp_build_sampler_soa *base
 
       for (uint32_t i = 0; i < 4; i++) {
          if (LLVMIsUndef(params->coords[i]))
-            args[num_args++] = LLVMGetUndef(coord_type);
+            args[num_args++] = LLVMConstNull(coord_type);
          else
             args[num_args++] = params->coords[i];
       }

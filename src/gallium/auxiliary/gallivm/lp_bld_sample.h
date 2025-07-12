@@ -100,7 +100,8 @@ enum lp_sampler_op_type {
 #define LP_SAMPLER_FETCH_MS          (1 << 10)
 #define LP_SAMPLER_RESIDENCY         (1 << 11)
 #define LP_SAMPLER_MIN_LOD           (1 << 12)
-#define LP_SAMPLE_KEY_COUNT          (1 << 13)
+#define LP_SAMPLER_HAS_LAYER         (1 << 13)
+#define LP_SAMPLE_KEY_COUNT          (1 << 14)
 
 
 /* Parameters used to handle TEX instructions */
@@ -166,8 +167,9 @@ struct lp_sampler_size_query_params
 
 #define LP_IMAGE_OP_MS 1
 #define LP_IMAGE_OP_64 2
+#define LP_IMAGE_OP_HAS_LAYER 4
 
-#define LP_TOTAL_IMAGE_OP_COUNT (LP_IMAGE_OP_COUNT * 4)
+#define LP_TOTAL_IMAGE_OP_COUNT (LP_IMAGE_OP_COUNT * 8)
 
 struct lp_img_params
 {
@@ -177,6 +179,7 @@ struct lp_img_params
    unsigned img_op;
    unsigned target;
    unsigned packed_op;
+   bool instr_has_layer_coord;
    LLVMAtomicRMWBinOp op;
    LLVMValueRef exec_mask;
    bool exec_mask_nz;
@@ -444,6 +447,7 @@ struct lp_build_sample_context
    bool no_rho_approx;
    bool fetch_ms;
    bool residency;
+   bool instr_has_layer_coord;
 
    /** regular scalar float type */
    struct lp_type float_type;

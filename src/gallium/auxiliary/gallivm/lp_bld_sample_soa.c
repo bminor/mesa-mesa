@@ -2981,8 +2981,11 @@ lp_build_fetch_texel(struct lp_build_sample_context *bld,
    lp_build_extract_image_sizes(bld, &bld->int_size_bld, int_coord_bld->type,
                                 size, &width, &height, &depth);
 
+   /* Initialize undefined layer coords and handle layer for non arrayed textures
+    * to make the descriptors compatible.
+    */
    if (target == PIPE_TEXTURE_1D_ARRAY ||
-       target == PIPE_TEXTURE_2D_ARRAY) {
+       target == PIPE_TEXTURE_2D_ARRAY || bld->instr_has_layer_coord) {
       if (out_of_bound_ret_zero) {
          z = lp_build_layer_coord(bld, texture_unit, false, z, &out1);
          out_of_bounds = lp_build_or(int_coord_bld, out_of_bounds, out1);
@@ -3378,6 +3381,7 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
 
    bld.fetch_ms = fetch_ms;
    bld.residency = !!(sample_key & LP_SAMPLER_RESIDENCY);
+   bld.instr_has_layer_coord = !!(sample_key & LP_SAMPLER_HAS_LAYER);
    if (op_is_gather)
       bld.gather_comp = (sample_key & LP_SAMPLER_GATHER_COMP_MASK) >> LP_SAMPLER_GATHER_COMP_SHIFT;
    bld.lodf_type = type;
@@ -4714,6 +4718,7 @@ lp_build_img_op_soa(const struct lp_static_texture_state *static_texture_state,
    depth = LLVMBuildZExt(gallivm->builder, depth,
                          int_coord_bld.elem_type, "");
    bool layer_coord = has_layer_coord(target);
+   layer_coord |= params->instr_has_layer_coord;
 
    width = lp_build_scale_view_dim(gallivm, width, res_format_desc->block.width,
                                    format_desc->block.width);

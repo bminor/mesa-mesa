@@ -4249,6 +4249,8 @@ visit_load_image(struct lp_build_nir_soa_context *bld,
 {
    LLVMValueRef coords[NIR_MAX_VEC_COMPONENTS] = { NULL };
    get_src_vec(bld, 1, coords);
+   for (uint32_t i = nir_image_intrinsic_coord_components(instr); i < 4; i++)
+      coords[i] = bld->uint_bld.zero;
 
    struct lp_img_params params = { 0 };
 
@@ -4282,8 +4284,12 @@ visit_store_image(struct lp_build_nir_soa_context *bld,
 {
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
+
    LLVMValueRef coords[NIR_MAX_VEC_COMPONENTS] = { NULL };
    get_src_vec(bld, 1, coords);
+   for (uint32_t i = nir_image_intrinsic_coord_components(instr); i < 4; i++)
+      coords[i] = bld->uint_bld.zero;
+
    LLVMValueRef in_val[NIR_MAX_VEC_COMPONENTS] = { NULL };
    get_src_vec(bld, 3, in_val);
    struct lp_img_params params = { 0 };
@@ -4410,6 +4416,9 @@ lp_packed_img_op_from_intrinsic(nir_intrinsic_instr *instr)
          flags |= LP_IMAGE_OP_64;
    }
 
+   if (nir_intrinsic_image_array(instr))
+      flags |= LP_IMAGE_OP_HAS_LAYER;
+
    return op + flags * LP_IMAGE_OP_COUNT;
 }
 
@@ -4421,8 +4430,12 @@ visit_atomic_image(struct lp_build_nir_soa_context *bld,
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
    struct lp_img_params params = { 0 };
+
    LLVMValueRef coords[NIR_MAX_VEC_COMPONENTS] = { NULL };
    get_src_vec(bld, 1, coords);
+   for (uint32_t i = nir_image_intrinsic_coord_components(instr); i < 4; i++)
+      coords[i] = bld->uint_bld.zero;
+
    LLVMValueRef in_val = get_src(bld, &instr->src[3], 0);
 
    params.target = glsl_sampler_to_pipe(nir_intrinsic_image_dim(instr),
@@ -5290,6 +5303,9 @@ lp_build_nir_sample_key(gl_shader_stage stage, nir_tex_instr *instr)
       sample_key |= LP_SAMPLER_OP_LODQ << LP_SAMPLER_OP_TYPE_SHIFT;
    }
 
+   if (instr->is_array)
+      sample_key |= LP_SAMPLER_HAS_LAYER;
+
    bool explicit_lod = false;
    uint32_t lod_src = 0;
 
@@ -5369,7 +5385,7 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
    nir_deref_instr *sampler_deref_instr = NULL;
    LLVMValueRef texture_unit_offset = NULL;
    LLVMValueRef texel[NIR_MAX_VEC_COMPONENTS];
-   LLVMValueRef coord_undef = LLVMGetUndef(bld->base.vec_type);
+   LLVMValueRef coord_zero = bld->base.zero;
    unsigned coord_vals = instr->coord_components;
 
    LLVMValueRef texture_resource = NULL;
@@ -5380,7 +5396,7 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
       case nir_tex_src_coord: {
          get_src_vec(bld, i, coords);
          for (unsigned chan = coord_vals; chan < 5; chan++)
-            coords[chan] = coord_undef;
+            coords[chan] = coord_zero;
          break;
       }
       case nir_tex_src_texture_deref:
@@ -5477,12 +5493,12 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
    case nir_texop_txl:
    case nir_texop_txd:
    case nir_texop_lod:
-      for (unsigned chan = 0; chan < coord_vals; ++chan)
+      for (unsigned chan = 0; chan < 5; ++chan)
          coords[chan] = cast_type(bld, coords[chan], nir_type_float, 32);
       break;
    case nir_texop_txf:
    case nir_texop_txf_ms:
-      for (unsigned chan = 0; chan < instr->coord_components; ++chan)
+      for (unsigned chan = 0; chan < 5; ++chan)
          coords[chan] = cast_type(bld, coords[chan], nir_type_int, 32);
       break;
    default:
@@ -5492,7 +5508,7 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
    if (instr->is_array && instr->sampler_dim == GLSL_SAMPLER_DIM_1D) {
       /* move layer coord for 1d arrays. */
       coords[2] = coords[1];
-      coords[1] = coord_undef;
+      coords[1] = coord_zero;
    }
 
    uint32_t samp_base_index = 0, tex_base_index = 0;
