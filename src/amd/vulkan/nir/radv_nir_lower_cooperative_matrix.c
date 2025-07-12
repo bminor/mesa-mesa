@@ -605,9 +605,13 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                   src = nir_vec(&b, components, src->num_components / scale);
                }
 
-               src = convert_use(&b, src, src_use, dst_use, &params);
+               if (radv_nir_cmat_bits(src_desc) <= radv_nir_cmat_bits(dst_desc))
+                  src = convert_use(&b, src, src_use, dst_use, &params);
 
                nir_def *ret = convert_base_type(&b, src, src_element_type, dst_element_type, sat);
+
+               if (radv_nir_cmat_bits(src_desc) > radv_nir_cmat_bits(dst_desc))
+                  ret = convert_use(&b, ret, src_use, dst_use, &params);
 
                if (dst_mul > src_mul) {
                   nir_def *components[NIR_MAX_VEC_COMPONENTS];
