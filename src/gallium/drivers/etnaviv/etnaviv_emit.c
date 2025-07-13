@@ -636,7 +636,9 @@ etna_emit_state(struct etna_context *ctx)
       ETNA_DIRTY_SHADER | ETNA_DIRTY_CONSTBUF;
 
    /**** Large dynamically-sized state ****/
-   bool do_uniform_flush = screen->info->halti < 5;
+   bool need_steering = screen->info->halti < 5 &&
+                        (screen->specs.has_unified_instmem ||
+                         screen->specs.has_unified_uniforms);
    if (dirty & (ETNA_DIRTY_SHADER)) {
       /* Special case: a new shader was loaded; simply re-load all uniforms and
        * shader code at once */
@@ -708,10 +710,14 @@ etna_emit_state(struct etna_context *ctx)
             ps_offset += ctx->shader_state.vs_inst_mem_size * 4;
          }
 
+         if (need_steering)
+            etna_set_state(stream, VIVS_SH_CONTROL, 0x0);
          etna_set_state_multi(stream, screen->specs.vs_offset,
                               ctx->shader_state.vs_inst_mem_size,
                               ctx->shader_state.VS_INST_MEM);
 
+         if (need_steering)
+            etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_CODE);
          etna_set_state_multi(stream, ps_offset,
                               ctx->shader_state.ps_inst_mem_size,
                               ctx->shader_state.PS_INST_MEM);
@@ -722,12 +728,12 @@ etna_emit_state(struct etna_context *ctx)
          etna_set_state(stream, VIVS_PS_UNIFORM_BASE, ctx->shader.vs->uniforms.count / 4);
       }
 
-      if (do_uniform_flush)
+      if (need_steering)
          etna_set_state(stream, VIVS_SH_CONTROL, 0x0);
 
       etna_uniforms_write(ctx, ctx->shader.vs, ctx->constant_buffer[PIPE_SHADER_VERTEX].cb);
 
-      if (do_uniform_flush)
+      if (need_steering)
          etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_UNIFORM);
 
       etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[PIPE_SHADER_FRAGMENT].cb);
@@ -740,14 +746,14 @@ etna_emit_state(struct etna_context *ctx)
       }
    } else {
       /* ideally this cache would only be flushed if there are VS uniform changes */
-      if (do_uniform_flush)
+      if (need_steering)
          etna_set_state(stream, VIVS_SH_CONTROL, 0x0);
 
       if (dirty & (uniform_dirty_bits | ctx->shader.vs->uniforms_dirty_bits))
          etna_uniforms_write(ctx, ctx->shader.vs, ctx->constant_buffer[PIPE_SHADER_VERTEX].cb);
 
       /* ideally this cache would only be flushed if there are PS uniform changes */
-      if (do_uniform_flush)
+      if (need_steering)
          etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_UNIFORM);
 
       if (dirty & (uniform_dirty_bits | ctx->shader.fs->uniforms_dirty_bits))
