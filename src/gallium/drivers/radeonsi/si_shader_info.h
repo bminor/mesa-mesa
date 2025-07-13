@@ -16,10 +16,6 @@ enum si_color_output_type {
    SI_TYPE_UINT16,
 };
 
-struct si_vs_tcs_input_info {
-   uint8_t semantic;
-};
-
 /* Shader info from initial NIR before optimizations for shader variants. */
 struct si_shader_info {
    struct {
@@ -88,7 +84,7 @@ struct si_shader_info {
 
    uint8_t num_inputs;
    uint8_t num_outputs;
-   struct si_vs_tcs_input_info input[PIPE_MAX_SHADER_INPUTS];
+   uint8_t input_semantic[PIPE_MAX_SHADER_INPUTS];
    uint8_t output_semantic[PIPE_MAX_SHADER_OUTPUTS];
 
    uint8_t num_vs_inputs;

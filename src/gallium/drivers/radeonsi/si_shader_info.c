@@ -125,12 +125,12 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
    unsigned num_slots = indirect ? nir_intrinsic_io_semantics(intr).num_slots : 1;
 
    if (is_input) {
-      assert(driver_location + num_slots <= ARRAY_SIZE(info->input));
+      assert(driver_location + num_slots <= ARRAY_SIZE(info->input_semantic));
 
       for (unsigned i = 0; i < num_slots; i++) {
          unsigned loc = driver_location + i;
 
-         info->input[loc].semantic = semantic + i;
+         info->input_semantic[loc] = semantic + i;
 
          if (mask)
             info->num_inputs = MAX2(info->num_inputs, loc + 1);
@@ -589,7 +589,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
             if ((info->colors_read >> (i * 4)) & 0xf) {
                unsigned index = num_inputs_with_colors;
 
-               info->input[index].semantic = (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
+               info->input_semantic[index] = (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
                num_inputs_with_colors++;
 
                /* Back-face color don't increment num_inputs. si_emit_spi_map will use
@@ -646,7 +646,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       for (unsigned i = 0; i < info->num_inputs; i++) {
-         unsigned semantic = info->input[i].semantic;
+         unsigned semantic = info->input_semantic[i];
 
          if ((semantic <= VARYING_SLOT_VAR31 || semantic >= VARYING_SLOT_VAR0_16BIT) &&
              semantic != VARYING_SLOT_PNTC) {
@@ -659,9 +659,9 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
             info->colors_written_4bit |= 0xf << (4 * i);
 
       for (unsigned i = 0; i < info->num_inputs; i++) {
-         if (info->input[i].semantic == VARYING_SLOT_COL0)
+         if (info->input_semantic[i] == VARYING_SLOT_COL0)
             info->color_attr_index[0] = i;
-         else if (info->input[i].semantic == VARYING_SLOT_COL1)
+         else if (info->input_semantic[i] == VARYING_SLOT_COL1)
             info->color_attr_index[1] = i;
       }
    }
