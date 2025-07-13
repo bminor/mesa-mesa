@@ -6,6 +6,8 @@
 #ifndef FD6_PACK_H
 #define FD6_PACK_H
 
+#include <stdint.h>
+
 #include "fd6_hw.h"
 
 struct fd_reg_pair {
@@ -24,7 +26,10 @@ struct fd_reg_pair {
 #include "a6xx-pack.xml.h"
 #include "adreno-pm4-pack.xml.h"
 
-#define __assert_eq(a, b)                                                      \
+#ifdef NDEBUG
+#  define __assert_eq(a, b) do { (void)(a); (void)(b); } while (0)
+#else
+#  define __assert_eq(a, b)                                                    \
    do {                                                                        \
       if ((a) != (b)) {                                                        \
          fprintf(stderr, "assert failed: " #a " (0x%x) != " #b " (0x%x)\n", a, \
@@ -32,6 +37,7 @@ struct fd_reg_pair {
          assert((a) == (b));                                                   \
       }                                                                        \
    } while (0)
+#endif
 
 #if !FD_BO_NO_HARDPIN
 #  error 'Hardpin unsupported'
