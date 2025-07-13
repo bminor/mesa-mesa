@@ -1700,14 +1700,6 @@ hk_fast_link(struct hk_device *dev, bool fragment, struct hk_shader *main,
       agx_usc_immediates(&b, &main->b.info.rodata, main->bo->va->addr);
    }
 
-   if (main) {
-      agx_usc_pack(&b, UNIFORM, cfg) {
-         cfg.start_halfs = main->info.image_heap_uniform;
-         cfg.size_halfs = 4;
-         cfg.buffer = dev->rodata.image_heap_ptr;
-      }
-   }
-
    if (s->b.uses_txf)
       agx_usc_push_packed(&b, SAMPLER, dev->dev.txf_sampler);
 
