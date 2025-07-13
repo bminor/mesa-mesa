@@ -675,8 +675,8 @@ etna_emit_state(struct etna_context *ctx)
          /* ICACHE (pre-HALTI5) */
          assert(screen->specs.has_icache && screen->specs.has_unified_instmem);
          /* Set icache (VS) */
-         etna_set_state(stream, VIVS_VS_RANGE,
-                        VIVS_VS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 - 1));
+         etna_set_state(stream, VIVS_VS_NEWRANGE_LOW, 0);
+         etna_set_state(stream, VIVS_VS_NEWRANGE_HIGH, ctx->shader_state.vs_inst_mem_size / 4 - 1);
          etna_set_state(stream, VIVS_SH_ICACHE_CONTROL,
                                 VIVS_SH_ICACHE_CONTROL_ENABLE |
                                 VIVS_SH_ICACHE_CONTROL_FLUSH_VS);
@@ -684,8 +684,8 @@ etna_emit_state(struct etna_context *ctx)
          etna_set_state_reloc(stream, VIVS_VS_INST_ADDR, &ctx->shader_state.VS_INST_ADDR);
 
          /* Set icache (PS) */
-         etna_set_state(stream, VIVS_PS_RANGE,
-                        VIVS_PS_RANGE_HIGH(ctx->shader_state.ps_inst_mem_size / 4 - 1));
+         etna_set_state(stream, VIVS_PS_NEWRANGE_LOW, 0);
+         etna_set_state(stream, VIVS_PS_NEWRANGE_HIGH, ctx->shader_state.ps_inst_mem_size / 4 - 1);
          etna_set_state(stream, VIVS_SH_ICACHE_CONTROL,
                                 VIVS_SH_ICACHE_CONTROL_ENABLE |
                                 VIVS_SH_ICACHE_CONTROL_FLUSH_PS);
@@ -702,12 +702,20 @@ etna_emit_state(struct etna_context *ctx)
                                    VIVS_SH_ICACHE_CONTROL_FLUSH_VS);
          }
          if (screen->specs.has_unified_instmem) {
-            etna_set_state(stream, VIVS_VS_RANGE,
-                           VIVS_VS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 - 1));
-            etna_set_state(stream, VIVS_PS_RANGE,
-                           VIVS_PS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 +
-                                              ctx->shader_state.ps_inst_mem_size / 4 - 1) |
-                           VIVS_PS_RANGE_LOW(ctx->shader_state.vs_inst_mem_size / 4));
+            if (screen->specs.has_icache) {
+               etna_set_state(stream, VIVS_VS_NEWRANGE_LOW, 0);
+               etna_set_state(stream, VIVS_VS_NEWRANGE_HIGH, ctx->shader_state.vs_inst_mem_size / 4 - 1);
+               etna_set_state(stream, VIVS_PS_NEWRANGE_LOW, ctx->shader_state.vs_inst_mem_size / 4);
+               etna_set_state(stream, VIVS_PS_NEWRANGE_HIGH, ctx->shader_state.vs_inst_mem_size / 4 +
+                                                             ctx->shader_state.ps_inst_mem_size / 4 - 1);
+            } else {
+               etna_set_state(stream, VIVS_VS_RANGE,
+                              VIVS_VS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 - 1));
+               etna_set_state(stream, VIVS_PS_RANGE,
+                              VIVS_PS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 +
+                                                 ctx->shader_state.ps_inst_mem_size / 4 - 1) |
+                              VIVS_PS_RANGE_LOW(ctx->shader_state.vs_inst_mem_size / 4));
+            }
             ps_offset += ctx->shader_state.vs_inst_mem_size * 4;
          }
 
