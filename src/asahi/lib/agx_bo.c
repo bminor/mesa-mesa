@@ -324,8 +324,11 @@ agx_bo_unreference(struct agx_device *dev, struct agx_bo *bo)
    if (!bo)
       return;
 
+   int refcnt = p_atomic_dec_return(&bo->refcnt);
+   assert(refcnt >= 0);
+
    /* Don't return to cache if there are still references */
-   if (p_atomic_dec_return(&bo->refcnt))
+   if (refcnt)
       return;
 
    pthread_mutex_lock(&dev->bo_map_lock);
