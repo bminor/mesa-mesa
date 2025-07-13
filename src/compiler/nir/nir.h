@@ -4885,8 +4885,8 @@ typedef enum {
    nir_group_same_resource_only,
 } nir_load_grouping;
 
-bool nir_group_loads(nir_shader *shader, nir_load_grouping grouping,
-                     unsigned max_distance);
+bool nir_opt_group_loads(nir_shader *shader, nir_load_grouping grouping,
+                         unsigned max_distance);
 
 bool nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes);
 bool nir_split_array_vars(nir_shader *shader, nir_variable_mode modes);

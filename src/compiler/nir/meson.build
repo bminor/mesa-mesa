@@ -124,7 +124,7 @@ else
   'nir_gather_tcs_info.c',
   'nir_gather_types.c',
   'nir_gather_xfb_info.c',
-  'nir_group_loads.c',
+  'nir_opt_group_loads.c',
   'nir_gs_count_vertices.c',
   'nir_inline_uniforms.c',
   'nir_instr_set.c',

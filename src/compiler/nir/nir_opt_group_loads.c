@@ -454,8 +454,8 @@ process_block(nir_block *block, nir_load_grouping grouping,
  * in a group.
  */
 bool
-nir_group_loads(nir_shader *shader, nir_load_grouping grouping,
-                unsigned max_distance)
+nir_opt_group_loads(nir_shader *shader, nir_load_grouping grouping,
+                    unsigned max_distance)
 {
    /* Temporary space for instruction info. */
    struct util_dynarray infos_scratch;
