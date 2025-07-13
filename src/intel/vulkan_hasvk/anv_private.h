@@ -100,6 +100,7 @@ typedef uint32_t xcb_window_t;
 struct anv_batch;
 struct anv_buffer;
 struct anv_buffer_view;
+struct anv_image;
 struct anv_image_view;
 struct anv_instance;
 
@@ -1522,6 +1523,8 @@ struct anv_device_memory {
 
    /* If set, this memory comes from a host pointer. */
    void *                                       host_ptr;
+
+   struct anv_image                             *dedicated_image;
 };
 
 /**
