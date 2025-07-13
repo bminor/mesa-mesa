@@ -24,7 +24,8 @@ bool si_nir_lower_polygon_stipple(nir_shader *nir)
    nir_def *zero = nir_imm_int(b, 0);
    /* The stipple pattern is 32x32, each row has 32 bits. */
    nir_def *offset = nir_ishl_imm(b, nir_channel(b, pixel_coord, 1), 2);
-   nir_def *row = nir_load_buffer_amd(b, 1, 32, desc, offset, zero, zero);
+   nir_def *row = nir_load_buffer_amd(b, 1, 32, desc, offset, zero, zero,
+                                      .access = ACCESS_CAN_REORDER | ACCESS_CAN_SPECULATE);
    nir_def *bit = nir_ubfe(b, row, nir_channel(b, pixel_coord, 0), nir_imm_int(b, 1));
 
    nir_def *pass = nir_i2b(b, bit);

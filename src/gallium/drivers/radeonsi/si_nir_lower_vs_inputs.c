@@ -238,7 +238,8 @@ opencoded_load_format(nir_builder *b, nir_def *rsrc, nir_def *vindex,
       unsigned bit_size = 8 << MIN2(load_log_size, 2);
       nir_def *zero = nir_imm_int(b, 0);
 
-      loads[i] = nir_load_buffer_amd(b, num_channels, bit_size, rsrc, zero, soffset, vindex);
+      loads[i] = nir_load_buffer_amd(b, num_channels, bit_size, rsrc, zero, soffset, vindex,
+                                     .access = ACCESS_CAN_REORDER | ACCESS_CAN_SPECULATE);
    }
 
    if (log_recombine > 0) {
@@ -490,7 +491,8 @@ load_vs_input_from_vertex_buffer(nir_builder *b, unsigned input_index,
       fetches[i] = nir_load_buffer_amd(b, channels_per_fetch, bit_size, vb_desc,
                                        zero, zero, vertex_index,
                                        .base = fetch_stride * i,
-                                       .access = ACCESS_USES_FORMAT_AMD);
+                                       .access = ACCESS_USES_FORMAT_AMD | ACCESS_CAN_REORDER |
+                                                 ACCESS_CAN_SPECULATE);
    }
 
    if (num_fetches == 1 && channels_per_fetch > 1) {
