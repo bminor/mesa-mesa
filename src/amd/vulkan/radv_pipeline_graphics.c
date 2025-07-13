@@ -1665,8 +1665,8 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
       if (next != MESA_SHADER_NONE && stages[next].nir && next != MESA_SHADER_FRAGMENT &&
           !stages[s].key.optimisations_disabled && !stages[next].key.optimisations_disabled) {
          nir_shader *consumer = stages[next].nir;
-         NIR_PASS(_, producer, nir_opt_vectorize_io, nir_var_shader_out);
-         NIR_PASS(_, consumer, nir_opt_vectorize_io, nir_var_shader_in);
+         NIR_PASS(_, producer, nir_opt_vectorize_io, nir_var_shader_out, false);
+         NIR_PASS(_, consumer, nir_opt_vectorize_io, nir_var_shader_in, false);
       }
 
       /* Gather shader info; at least the I/O info likely changed

@@ -1505,7 +1505,7 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
        */
       NIR_PASS(_, nir, nir_lower_io_to_scalar, get_varying_nir_var_mask(nir),
                NULL, NULL);
-      NIR_PASS(_, nir, nir_opt_vectorize_io, get_varying_nir_var_mask(nir));
+      NIR_PASS(_, nir, nir_opt_vectorize_io, get_varying_nir_var_mask(nir), false);
       return;
    }
 
@@ -1569,7 +1569,7 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
       nir_shader *nir = shaders[i];
 
       /* Re-vectorize IO. */
-      NIR_PASS(_, nir, nir_opt_vectorize_io, get_varying_nir_var_mask(nir));
+      NIR_PASS(_, nir, nir_opt_vectorize_io, get_varying_nir_var_mask(nir), false);
 
       /* Recompute intrinsic bases, which are totally random after
        * optimizations and compaction. Do that for all inputs and outputs,
