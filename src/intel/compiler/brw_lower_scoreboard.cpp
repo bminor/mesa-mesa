@@ -1014,19 +1014,19 @@ namespace {
          return true;
       else if (devinfo->ver < 20)
          return ordered_pipe == inferred_pipe &&
-                unordered_mode == (is_unordered(devinfo, inst) ? TGL_SBID_SET :
-                                   TGL_SBID_DST);
+                unordered_mode & (is_unordered(devinfo, inst) ? TGL_SBID_SET :
+                                                                TGL_SBID_DST);
       else if (is_send(inst))
-         return unordered_mode == TGL_SBID_SET &&
+         return unordered_mode & TGL_SBID_SET &&
                 (ordered_pipe == TGL_PIPE_FLOAT ||
                  ordered_pipe == TGL_PIPE_INT ||
                  ordered_pipe == TGL_PIPE_ALL);
       else if (inst->opcode == BRW_OPCODE_DPAS)
          return ordered_pipe == inferred_pipe;
       else
-         return (unordered_mode == TGL_SBID_DST && ordered_pipe == inferred_pipe) ||
-                (unordered_mode == TGL_SBID_SRC && ordered_pipe == inferred_pipe) ||
-                (unordered_mode == TGL_SBID_DST && ordered_pipe == TGL_PIPE_ALL);
+         return (unordered_mode & TGL_SBID_DST && ordered_pipe == inferred_pipe) ||
+                (unordered_mode & TGL_SBID_SRC && ordered_pipe == inferred_pipe) ||
+                (unordered_mode & TGL_SBID_DST && ordered_pipe == TGL_PIPE_ALL);
    }
 
    /** @} */

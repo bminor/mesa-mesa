@@ -1144,7 +1144,7 @@ TEST_F(scoreboard_test, scalar_register_mov_grf_is_not_in_scalar_pipe)
    EXPECT_SHADERS_MATCH(bld, exp);
 }
 
-TEST_F(scoreboard_test, DISABLED_baked_dependency_with_inferred_pipe_combination)
+TEST_F(scoreboard_test, baked_dependency_with_inferred_pipe_combination)
 {
    brw_builder bld = make_shader();
    brw_builder exp = make_shader();
@@ -1181,7 +1181,7 @@ TEST_F(scoreboard_test, DISABLED_baked_dependency_with_inferred_pipe_combination
    EXPECT_SHADERS_MATCH(bld, exp);
 }
 
-TEST_F(scoreboard_test, DISABLED_math_inv_with_mul_dependency)
+TEST_F(scoreboard_test, math_inv_with_mul_dependency)
 {
    brw_builder bld = make_shader();
    brw_builder exp = make_shader();
