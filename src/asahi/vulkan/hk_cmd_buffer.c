@@ -690,8 +690,7 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
    }
 
    if (s->info.set_count) {
-      unsigned set_base = s->info.image_heap_uniform + 4;
-      agx_usc_uniform(&b, set_base, 4 * s->info.set_count, set_ptr);
+      agx_usc_uniform(&b, s->info.set_uniform, 4 * s->info.set_count, set_ptr);
    }
 
    static_assert(offsetof(struct hk_root_descriptor_table, root_desc_addr) == 0,

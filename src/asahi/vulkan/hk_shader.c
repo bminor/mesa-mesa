@@ -945,7 +945,6 @@ hk_init_link_ht(struct hk_shader *shader, gl_shader_stage sw_stage)
 
 struct fixed_uniforms {
    unsigned sets;
-   unsigned image_heap;
    unsigned root;
 };
 
@@ -960,18 +959,14 @@ lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return true;
    }
 
-   if (intr->intrinsic != nir_intrinsic_load_texture_handle_agx &&
-       intr->intrinsic != nir_intrinsic_load_root_agx &&
+   if (intr->intrinsic != nir_intrinsic_load_root_agx &&
        intr->intrinsic != nir_intrinsic_load_descriptor_set_agx)
       return false;
 
    b->cursor = nir_before_instr(&intr->instr);
    nir_def *rep;
 
-   if (intr->intrinsic == nir_intrinsic_load_texture_handle_agx) {
-      rep = nir_bindless_image_agx(b, intr->src[0].ssa,
-                                   .desc_set = ctx->image_heap);
-   } else if (intr->intrinsic == nir_intrinsic_load_descriptor_set_agx) {
+   if (intr->intrinsic == nir_intrinsic_load_descriptor_set_agx) {
       unsigned s = nir_intrinsic_desc_set(intr);
       rep = nir_load_preamble(b, 1, 64, .base = ctx->sets + (4 * s));
    } else {
@@ -1098,18 +1093,16 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
       }
    }
 
-   struct fixed_uniforms f = {.root = 0, .image_heap = 4, .sets = 8};
+   struct fixed_uniforms f = {.root = 0, .sets = 4};
    if (sw_stage == MESA_SHADER_FRAGMENT) {
-      f.image_heap = AGX_ABI_FUNI_COUNT;
       f.root = AGX_ABI_FUNI_ROOT;
-      f.sets = AGX_ABI_FUNI_COUNT + 4;
+      f.sets = AGX_ABI_FUNI_COUNT;
    } else if (sw_stage == MESA_SHADER_VERTEX) {
       f.root = AGX_ABI_VUNI_COUNT_VK(nr_vbos);
-      f.image_heap = f.root + 4;
-      f.sets = f.root + 8;
+      f.sets = f.root + 4;
    }
 
-   shader->info.image_heap_uniform = f.image_heap;
+   shader->info.set_uniform = f.sets;
    shader->info.set_count = set_count;
 
    /* XXX: rename */
@@ -1128,7 +1121,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
 
    struct agx_shader_key backend_key = {
       /* Sets at the end */
-      .reserved_preamble = f.image_heap + (4 * (set_count + 1)),
+      .reserved_preamble = f.sets + (4 * set_count),
 
       .dev = agx_gather_device_key(&dev->dev),
       .no_stop = nir->info.stage == MESA_SHADER_FRAGMENT,
