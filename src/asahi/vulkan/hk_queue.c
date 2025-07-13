@@ -868,9 +868,6 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
       agxdecode_drm_cmdbuf(dev->dev.agxdecode, &dev->dev.params, &payload,
                            true);
 
-      agxdecode_image_heap(dev->dev.agxdecode, dev->images.bo->va->addr,
-                           dev->images.alloc);
-
       agxdecode_next_frame();
    }
 

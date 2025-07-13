@@ -66,7 +66,6 @@ struct hk_device {
    struct agx_device dev;
    struct agxdecode_ctx *decode_ctx;
 
-   struct hk_descriptor_table images;
    struct hk_descriptor_table occlusion_queries;
    struct hk_sampler_heap samplers;
 
@@ -79,7 +78,6 @@ struct hk_device {
 
    struct {
       struct agx_bo *bo;
-      uint64_t image_heap_ptr;
       uint64_t heap;
    } rodata;
 
