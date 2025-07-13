@@ -25,9 +25,6 @@ void agxdecode_close(void);
 void agxdecode_cmdstream(struct agxdecode_ctx *ctx, unsigned cmdbuf_index,
                          unsigned map_index, bool verbose);
 
-void agxdecode_image_heap(struct agxdecode_ctx *ctx, uint64_t heap,
-                          unsigned nr_entries);
-
 struct util_dynarray;
 
 void agxdecode_drm_cmdbuf(struct agxdecode_ctx *ctx,

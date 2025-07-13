@@ -792,32 +792,6 @@ agxdecode_sampler_heap(struct agxdecode_ctx *ctx, uint64_t heap, unsigned count)
    }
 }
 
-void
-agxdecode_image_heap(struct agxdecode_ctx *ctx, uint64_t heap,
-                     unsigned nr_entries)
-{
-   agxdecode_dump_file_open();
-
-   fprintf(agxdecode_dump_stream, "Image heap:\n");
-   struct agx_texture_packed *map = calloc(nr_entries, AGX_TEXTURE_LENGTH);
-   agxdecode_fetch_gpu_mem(ctx, heap, AGX_TEXTURE_LENGTH * nr_entries, map);
-
-   for (unsigned i = 0; i < nr_entries; ++i) {
-      bool nonzero = false;
-      for (unsigned j = 0; j < ARRAY_SIZE(map[i].opaque); ++j) {
-         nonzero |= map[i].opaque[j] != 0;
-      }
-
-      if (nonzero) {
-         fprintf(agxdecode_dump_stream, "%u: \n", i);
-         agxdecode_texture_pbe(ctx, map + i);
-         fprintf(agxdecode_dump_stream, "\n");
-      }
-   }
-
-   free(map);
-}
-
 static void
 agxdecode_helper(struct agxdecode_ctx *ctx, const char *prefix, uint64_t helper)
 {
