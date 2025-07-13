@@ -1120,14 +1120,6 @@ wsi_ReleaseSwapchainImagesEXT(VkDevice _device,
    return VK_SUCCESS;
 }
 
-VkImage
-wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index)
-{
-   VK_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
-   assert(index < swapchain->image_count);
-   return swapchain->get_wsi_image(swapchain, index)->image;
-}
-
 VkDeviceMemory
 wsi_common_get_memory(VkSwapchainKHR _swapchain, uint32_t index)
 {
@@ -1714,18 +1706,6 @@ wsi_common_create_swapchain_image(const struct wsi_device *wsi,
 
    return wsi->CreateImage(chain->device, &chain->image_info.create,
                            &chain->alloc, pImage);
-}
-
-VkResult
-wsi_common_bind_swapchain_image(const struct wsi_device *wsi,
-                                VkImage vk_image,
-                                VkSwapchainKHR _swapchain,
-                                uint32_t image_idx)
-{
-   VK_FROM_HANDLE(wsi_swapchain, chain, _swapchain);
-   struct wsi_image *image = chain->get_wsi_image(chain, image_idx);
-
-   return wsi->BindImageMemory(chain->device, vk_image, image->memory, 0);
 }
 
 VkResult

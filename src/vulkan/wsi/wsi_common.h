@@ -327,9 +327,6 @@ wsi_device_setup_syncobj_fd(struct wsi_device *wsi_device,
 
 ICD_DEFINE_NONDISP_HANDLE_CASTS(VkIcdSurfaceBase, VkSurfaceKHR)
 
-VkImage
-wsi_common_get_image(VkSwapchainKHR _swapchain, uint32_t index);
-
 VkDeviceMemory
 wsi_common_get_memory(VkSwapchainKHR _swapchain, uint32_t index);
 
@@ -351,11 +348,6 @@ wsi_common_create_swapchain_image(const struct wsi_device *wsi,
                                   const VkImageCreateInfo *pCreateInfo,
                                   VkSwapchainKHR _swapchain,
                                   VkImage *pImage);
-VkResult
-wsi_common_bind_swapchain_image(const struct wsi_device *wsi,
-                                VkImage vk_image,
-                                VkSwapchainKHR _swapchain,
-                                uint32_t image_idx);
 
 bool
 wsi_common_vk_instance_supports_present_wait(const struct vk_instance *instance);
