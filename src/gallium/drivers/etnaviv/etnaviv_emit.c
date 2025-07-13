@@ -183,11 +183,12 @@ static void
 emit_pre_halti5_state(struct etna_context *ctx)
 {
    struct etna_cmd_stream *stream = ctx->stream;
+   struct etna_screen *screen = ctx->screen;
    uint32_t dirty = ctx->dirty;
    struct etna_coalesce coalesce;
 
    etna_coalesce_start(stream, &coalesce);
-   if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
+   if (unlikely(!screen->specs.has_unified_instmem && (dirty & (ETNA_DIRTY_SHADER)))) {
       /*00800*/ EMIT_STATE(VS_END_PC, ctx->shader_state.VS_END_PC);
    }
    if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
@@ -200,7 +201,7 @@ emit_pre_halti5_state(struct etna_context *ctx)
         /*00820*/ EMIT_STATE(VS_INPUT(x), ctx->shader_state.VS_INPUT[x]);
       }
    }
-   if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
+   if (unlikely(!screen->specs.has_unified_instmem && (dirty & (ETNA_DIRTY_SHADER)))) {
       /*00838*/ EMIT_STATE(VS_START_PC, ctx->shader_state.VS_START_PC);
    }
    if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
@@ -217,7 +218,7 @@ emit_pre_halti5_state(struct etna_context *ctx)
          /*00E40*/ EMIT_STATE(RA_CENTROID_TABLE(x), ctx->framebuffer.RA_CENTROID_TABLE[x]);
       }
    }
-   if (unlikely(dirty & (ETNA_DIRTY_SHADER))) {
+   if (unlikely(!screen->specs.has_unified_instmem && (dirty & (ETNA_DIRTY_SHADER)))) {
       /*01000*/ EMIT_STATE(PS_END_PC, ctx->shader_state.PS_END_PC);
       /*01018*/ EMIT_STATE(PS_START_PC, ctx->shader_state.PS_START_PC);
    }
