@@ -1985,14 +1985,6 @@ anv_image_finish(struct anv_image *image)
    vk_image_finish(&image->vk);
 }
 
-static struct anv_image *
-anv_swapchain_get_image(VkSwapchainKHR swapchain,
-                        uint32_t index)
-{
-   VkImage image = wsi_common_get_image(swapchain, index);
-   return anv_image_from_handle(image);
-}
-
 static VkResult
 anv_image_init_from_create_info(struct anv_device *device,
                                 struct anv_image *image,
@@ -2706,12 +2698,11 @@ anv_bind_image_memory(struct anv_device *device,
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
          const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
             (const VkBindImageMemorySwapchainInfoKHR *) s;
-         struct anv_image *swapchain_image =
-            anv_swapchain_get_image(swapchain_info->swapchain,
-                                    swapchain_info->imageIndex);
+         mem = anv_device_memory_from_handle(wsi_common_get_memory(
+            swapchain_info->swapchain, swapchain_info->imageIndex));
+         struct anv_image *swapchain_image = mem->dedicated_image;
          assert(swapchain_image);
          assert(image->vk.aspects == swapchain_image->vk.aspects);
-         assert(mem == NULL);
 
          /* Remove the internally allocated private binding since we're going
           * to replace everything with BOs from the WSI image, we don't want

@@ -1553,6 +1553,7 @@ VkResult anv_AllocateMemory(
    struct anv_image *image = dedicated_info ?
                              anv_image_from_handle(dedicated_info->image) :
                              NULL;
+   mem->dedicated_image = image;
 
    if (device->info->ver >= 20 && image &&
        image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
