@@ -652,20 +652,20 @@ etna_emit_state(struct etna_context *ctx)
          assert(ctx->shader_state.VS_INST_ADDR.bo && ctx->shader_state.PS_INST_ADDR.bo);
          /* Set icache (VS) */
          etna_set_state(stream, VIVS_VS_NEWRANGE_LOW, 0);
-         etna_set_state(stream, VIVS_VS_NEWRANGE_HIGH, ctx->shader_state.vs_inst_mem_size / 4);
+         etna_set_state(stream, VIVS_VS_HALTI5_RANGE_HIGH, ctx->shader_state.vs_inst_mem_size / 4);
          assert(ctx->shader_state.VS_INST_ADDR.bo);
          etna_set_state_reloc(stream, VIVS_VS_INST_ADDR, &ctx->shader_state.VS_INST_ADDR);
          etna_set_state(stream, VIVS_SH_CONFIG, 0x00000002);
-         etna_set_state(stream, VIVS_VS_ICACHE_CONTROL, VIVS_VS_ICACHE_CONTROL_ENABLE);
+         etna_set_state(stream, VIVS_SH_ICACHE_CONTROL, VIVS_SH_ICACHE_CONTROL_ENABLE);
          etna_set_state(stream, VIVS_VS_ICACHE_COUNT, ctx->shader_state.vs_inst_mem_size / 4 - 1);
 
          /* Set icache (PS) */
          etna_set_state(stream, VIVS_PS_NEWRANGE_LOW, 0);
-         etna_set_state(stream, VIVS_PS_NEWRANGE_HIGH, ctx->shader_state.ps_inst_mem_size / 4);
+         etna_set_state(stream, VIVS_PS_HALTI5_RANGE_HIGH, ctx->shader_state.ps_inst_mem_size / 4);
          assert(ctx->shader_state.PS_INST_ADDR.bo);
          etna_set_state_reloc(stream, VIVS_PS_INST_ADDR, &ctx->shader_state.PS_INST_ADDR);
          etna_set_state(stream, VIVS_SH_CONFIG, 0x00000002);
-         etna_set_state(stream, VIVS_VS_ICACHE_CONTROL, VIVS_VS_ICACHE_CONTROL_ENABLE);
+         etna_set_state(stream, VIVS_SH_ICACHE_CONTROL, VIVS_SH_ICACHE_CONTROL_ENABLE);
          etna_set_state(stream, VIVS_PS_ICACHE_COUNT, ctx->shader_state.ps_inst_mem_size / 4 - 1);
 
       } else if (ctx->shader_state.VS_INST_ADDR.bo || ctx->shader_state.PS_INST_ADDR.bo) {
@@ -674,18 +674,18 @@ etna_emit_state(struct etna_context *ctx)
          /* Set icache (VS) */
          etna_set_state(stream, VIVS_VS_RANGE,
                         VIVS_VS_RANGE_HIGH(ctx->shader_state.vs_inst_mem_size / 4 - 1));
-         etna_set_state(stream, VIVS_VS_ICACHE_CONTROL,
-               VIVS_VS_ICACHE_CONTROL_ENABLE |
-               VIVS_VS_ICACHE_CONTROL_FLUSH_VS);
+         etna_set_state(stream, VIVS_SH_ICACHE_CONTROL,
+                                VIVS_SH_ICACHE_CONTROL_ENABLE |
+                                VIVS_SH_ICACHE_CONTROL_FLUSH_VS);
          assert(ctx->shader_state.VS_INST_ADDR.bo);
          etna_set_state_reloc(stream, VIVS_VS_INST_ADDR, &ctx->shader_state.VS_INST_ADDR);
 
          /* Set icache (PS) */
          etna_set_state(stream, VIVS_PS_RANGE,
                         VIVS_PS_RANGE_HIGH(ctx->shader_state.ps_inst_mem_size / 4 - 1));
-         etna_set_state(stream, VIVS_VS_ICACHE_CONTROL,
-               VIVS_VS_ICACHE_CONTROL_ENABLE |
-               VIVS_VS_ICACHE_CONTROL_FLUSH_PS);
+         etna_set_state(stream, VIVS_SH_ICACHE_CONTROL,
+                                VIVS_SH_ICACHE_CONTROL_ENABLE |
+                                VIVS_SH_ICACHE_CONTROL_FLUSH_PS);
          assert(ctx->shader_state.PS_INST_ADDR.bo);
          etna_set_state_reloc(stream, VIVS_PS_INST_ADDR, &ctx->shader_state.PS_INST_ADDR);
       } else {
@@ -694,9 +694,9 @@ etna_emit_state(struct etna_context *ctx)
          /* Upload shader directly, first flushing and disabling icache if
           * supported on this hw */
          if (screen->specs.has_icache) {
-            etna_set_state(stream, VIVS_VS_ICACHE_CONTROL,
-                  VIVS_VS_ICACHE_CONTROL_FLUSH_PS |
-                  VIVS_VS_ICACHE_CONTROL_FLUSH_VS);
+            etna_set_state(stream, VIVS_SH_ICACHE_CONTROL,
+                                   VIVS_SH_ICACHE_CONTROL_FLUSH_PS |
+                                   VIVS_SH_ICACHE_CONTROL_FLUSH_VS);
          }
          if (screen->specs.has_unified_instmem) {
             etna_set_state(stream, VIVS_VS_RANGE,
@@ -723,12 +723,12 @@ etna_emit_state(struct etna_context *ctx)
       }
 
       if (do_uniform_flush)
-         etna_set_state(stream, VIVS_VS_UNIFORM_CACHE, VIVS_VS_UNIFORM_CACHE_FLUSH);
+         etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_CODE);
 
       etna_uniforms_write(ctx, ctx->shader.vs, ctx->constant_buffer[PIPE_SHADER_VERTEX].cb);
 
       if (do_uniform_flush)
-         etna_set_state(stream, VIVS_VS_UNIFORM_CACHE, VIVS_VS_UNIFORM_CACHE_FLUSH | VIVS_VS_UNIFORM_CACHE_PS);
+         etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_CODE | VIVS_SH_CONTROL_PS_UNIFORM);
 
       etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[PIPE_SHADER_FRAGMENT].cb);
 
@@ -741,14 +741,14 @@ etna_emit_state(struct etna_context *ctx)
    } else {
       /* ideally this cache would only be flushed if there are VS uniform changes */
       if (do_uniform_flush)
-         etna_set_state(stream, VIVS_VS_UNIFORM_CACHE, VIVS_VS_UNIFORM_CACHE_FLUSH);
+         etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_CODE);
 
       if (dirty & (uniform_dirty_bits | ctx->shader.vs->uniforms_dirty_bits))
          etna_uniforms_write(ctx, ctx->shader.vs, ctx->constant_buffer[PIPE_SHADER_VERTEX].cb);
 
       /* ideally this cache would only be flushed if there are PS uniform changes */
       if (do_uniform_flush)
-         etna_set_state(stream, VIVS_VS_UNIFORM_CACHE, VIVS_VS_UNIFORM_CACHE_FLUSH | VIVS_VS_UNIFORM_CACHE_PS);
+         etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_CODE | VIVS_SH_CONTROL_PS_UNIFORM);
 
       if (dirty & (uniform_dirty_bits | ctx->shader.fs->uniforms_dirty_bits))
          etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[PIPE_SHADER_FRAGMENT].cb);
