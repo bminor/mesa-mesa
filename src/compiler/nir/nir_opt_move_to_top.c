@@ -80,6 +80,18 @@ can_move_src_to_top(nir_src *src, void *_state)
          instr->pass_flags |= PASS_FLAG_CANT_MOVE;
          return false;
       }
+
+      if (instr->block == nir_start_block(state->impl) &&
+          !nir_intrinsic_can_reorder(nir_instr_as_intrinsic(instr))) {
+         instr->pass_flags |= PASS_FLAG_CANT_MOVE;
+         return false;
+      }
+   }
+
+   if (instr->block != nir_start_block(state->impl) &&
+       !nir_instr_can_speculate(instr)) {
+      instr->pass_flags |= PASS_FLAG_CANT_MOVE;
+      return false;
    }
 
    if (!nir_foreach_src(instr, can_move_src_to_top, state)) {
