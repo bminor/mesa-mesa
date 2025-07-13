@@ -419,10 +419,12 @@ opencoded_load_format(nir_builder *b, nir_def *rsrc, nir_def *vindex,
 static void
 load_vs_input_from_vertex_buffer(nir_builder *b, unsigned input_index,
                                  struct lower_vs_inputs_state *s,
-                                 unsigned bit_size, nir_def *out[4])
+                                 nir_intrinsic_instr *intr, nir_def *out[4])
 {
    const struct si_shader_selector *sel = s->shader->selector;
    const union si_shader_key *key = &s->shader->key;
+   unsigned bit_size = intr->def.bit_size;
+   unsigned channels_read = nir_def_components_read(&intr->def) << nir_intrinsic_component(intr);
 
    nir_def *vb_desc;
    if (input_index < sel->info.num_vbos_in_user_sgprs) {
@@ -460,7 +462,7 @@ load_vs_input_from_vertex_buffer(nir_builder *b, unsigned input_index,
       return;
    }
 
-   unsigned required_channels = util_last_bit(sel->info.input[input_index].usage_mask);
+   unsigned required_channels = util_last_bit(channels_read);
    if (required_channels == 0) {
       for (unsigned i = 0; i < 4; ++i)
          out[i] = nir_undef(b, 1, bit_size);
@@ -566,7 +568,7 @@ lower_vs_input_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    if (b->shader->info.vs.blit_sgprs_amd)
       load_vs_input_from_blit_sgpr(b, input_index, s, comp);
    else
-      load_vs_input_from_vertex_buffer(b, input_index, s, intrin->def.bit_size, comp);
+      load_vs_input_from_vertex_buffer(b, input_index, s, intrin, comp);
 
    nir_def *replacement = nir_vec(b, &comp[component], num_components);
 

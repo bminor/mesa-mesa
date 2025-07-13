@@ -18,7 +18,6 @@ enum si_color_output_type {
 
 struct si_vs_tcs_input_info {
    uint8_t semantic;
-   uint8_t usage_mask;
 };
 
 /* Shader info from initial NIR before optimizations for shader variants. */

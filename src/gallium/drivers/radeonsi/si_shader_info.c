@@ -132,10 +132,8 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
          info->input[loc].semantic = semantic + i;
 
-         if (mask) {
-            info->input[loc].usage_mask |= mask;
+         if (mask)
             info->num_inputs = MAX2(info->num_inputs, loc + 1);
-         }
       }
    } else {
       /* Outputs. */
@@ -592,7 +590,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                unsigned index = num_inputs_with_colors;
 
                info->input[index].semantic = (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
-               info->input[index].usage_mask = info->colors_read >> (i * 4);
                num_inputs_with_colors++;
 
                /* Back-face color don't increment num_inputs. si_emit_spi_map will use
