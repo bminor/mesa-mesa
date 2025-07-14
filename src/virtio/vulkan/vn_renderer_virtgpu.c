@@ -1187,10 +1187,14 @@ virtgpu_bo_create_from_dma_buf(struct vn_renderer *renderer,
       /* mmap_size is only used when mappable */
       mmap_size = 0;
       if (blob_flags & VIRTGPU_BLOB_FLAG_USE_MAPPABLE) {
+         /* If queried blob size is smaller than requested allocation size, we
+          * drop the mappable flag to defer the mapping failure till the app's
+          * vkMapMemory api call.
+          */
          if (info.size < size)
-            goto fail;
-
-         mmap_size = size;
+            blob_flags &= ~VIRTGPU_BLOB_FLAG_USE_MAPPABLE;
+         else
+            mmap_size = size;
       }
    }
 
