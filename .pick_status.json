@@ -3714,7 +3714,7 @@
         "description": "Revert \"gallium: add drawid_offset to draw_mesh_tasks interface\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "27cd4b061c8531863d9f61b63bef5b3197a7b117",
         "notes": null
