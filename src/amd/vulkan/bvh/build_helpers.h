@@ -109,8 +109,4 @@ radv_encode_blas_pointer_flags(uint32_t flags, uint32_t geometry_type)
    return ptr_flags;
 }
 
-/** Compute ceiling of integer quotient of A divided by B.
-    From macros.h */
-#define DIV_ROUND_UP(A, B) (((A) + (B)-1) / (B))
-
 #endif /* BUILD_HELPERS_H */
