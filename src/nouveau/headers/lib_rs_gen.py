@@ -109,7 +109,7 @@ def main():
         assert mod_path[0] == 'nvh'
         root.add_child(mod_path[1:])
 
-    util.write_template(args.out_rs, TEMPLATE_RS, dict(root=root))
+    util.write_template_rs(args.out_rs, TEMPLATE_RS, dict(root=root))
 
 
 if __name__ == '__main__':

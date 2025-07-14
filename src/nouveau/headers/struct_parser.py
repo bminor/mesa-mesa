@@ -164,7 +164,7 @@ def main():
     with open(args.in_h, 'r', encoding='utf-8') as f:
         structs = parse_header(nvcl, f)
 
-    util.write_template(args.out_rs, TEMPLATE_RS, dict(structs=structs))
+    util.write_template_rs(args.out_rs, TEMPLATE_RS, dict(structs=structs))
 
 
 if __name__ == '__main__':

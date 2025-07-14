@@ -574,9 +574,9 @@ def main():
     if args.out_c is not None:
         util.write_template(args.out_c, TEMPLATE_C, environment)
     if args.out_rs is not None:
-        util.write_template(args.out_rs, TEMPLATE_RS, environment)
+        util.write_template_rs(args.out_rs, TEMPLATE_RS, environment)
     if args.out_rs_mthd is not None:
-        util.write_template(args.out_rs_mthd, TEMPLATE_RS_MTHD, environment)
+        util.write_template_rs(args.out_rs_mthd, TEMPLATE_RS_MTHD, environment)
 
 
 if __name__ == '__main__':
