@@ -406,32 +406,44 @@ wsi_wl_display_add_drm_format_modifier(struct wsi_wl_display *display,
                                        struct u_vector *formats,
                                        uint32_t drm_format, uint64_t modifier)
 {
-   switch (drm_format) {
-#if 0
-   /* TODO: These are only available when VK_EXT_4444_formats is enabled, so
-    * we probably need to make their use conditional on this extension. */
-   case DRM_FORMAT_ARGB4444:
-      wsi_wl_display_add_vk_format_modifier(display, formats,
-                                            VK_FORMAT_A4R4G4B4_UNORM_PACK16,
-                                            WSI_WL_FMT_ALPHA, modifier);
-      break;
-   case DRM_FORMAT_XRGB4444:
-      wsi_wl_display_add_vk_format_modifier(display, formats,
-                                            VK_FORMAT_A4R4G4B4_UNORM_PACK16,
-                                            WSI_WL_FMT_OPAQUE, modifier);
-      break;
-   case DRM_FORMAT_ABGR4444:
-      wsi_wl_display_add_vk_format_modifier(display, formats,
-                                            VK_FORMAT_A4B4G4R4_UNORM_PACK16,
-                                            WSI_WL_FMT_ALPHA, modifier);
-      break;
-   case DRM_FORMAT_XBGR4444:
-      wsi_wl_display_add_vk_format_modifier(display, formats,
-                                            VK_FORMAT_A4B4G4R4_UNORM_PACK16,
-                                            WSI_WL_FMT_OPAQUE, modifier);
-      break;
-#endif
+   VK_FROM_HANDLE(vk_physical_device, pdevice, display->wsi_wl->physical_device);
+   /* From Vulkan 1.3 onwards, we can always try adding the 4444 formats.
+    * If the format isn't supported or isn't renderable,
+    * wsi_wl_display_add_vk_format() will reject it via
+    * vkGetPhysicalDeviceFormatProperties().
+    */
+   if (pdevice->supported_features.formatA4R4G4B4 ||
+       pdevice->properties.apiVersion >= VK_MAKE_VERSION(1, 3, 0)) {
+      switch (drm_format) {
+      case DRM_FORMAT_ARGB4444:
+         wsi_wl_display_add_vk_format_modifier(display, formats,
+                                               VK_FORMAT_A4R4G4B4_UNORM_PACK16,
+                                               WSI_WL_FMT_ALPHA, modifier);
+         break;
+      case DRM_FORMAT_XRGB4444:
+         wsi_wl_display_add_vk_format_modifier(display, formats,
+                                               VK_FORMAT_A4R4G4B4_UNORM_PACK16,
+                                               WSI_WL_FMT_OPAQUE, modifier);
+         break;
+      }
+   }
+   if (pdevice->supported_features.formatA4B4G4R4 ||
+       pdevice->properties.apiVersion >= VK_MAKE_VERSION(1, 3, 0)) {
+      switch (drm_format) {
+      case DRM_FORMAT_ABGR4444:
+         wsi_wl_display_add_vk_format_modifier(display, formats,
+                                               VK_FORMAT_A4B4G4R4_UNORM_PACK16,
+                                               WSI_WL_FMT_ALPHA, modifier);
+         break;
+      case DRM_FORMAT_XBGR4444:
+         wsi_wl_display_add_vk_format_modifier(display, formats,
+                                               VK_FORMAT_A4B4G4R4_UNORM_PACK16,
+                                               WSI_WL_FMT_OPAQUE, modifier);
+         break;
+      }
+   }
 
+   switch (drm_format) {
    /* Vulkan _PACKN formats have the same component order as DRM formats
     * on little endian systems, on big endian there exists no analog. */
 #if UTIL_ARCH_LITTLE_ENDIAN
@@ -634,12 +646,10 @@ static uint32_t
 wl_drm_format_for_vk_format(VkFormat vk_format, bool alpha)
 {
    switch (vk_format) {
-#if 0
    case VK_FORMAT_A4R4G4B4_UNORM_PACK16:
       return alpha ? DRM_FORMAT_ARGB4444 : DRM_FORMAT_XRGB4444;
    case VK_FORMAT_A4B4G4R4_UNORM_PACK16:
       return alpha ? DRM_FORMAT_ABGR4444 : DRM_FORMAT_XBGR4444;
-#endif
 #if UTIL_ARCH_LITTLE_ENDIAN
    case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
       return alpha ? DRM_FORMAT_RGBA4444 : DRM_FORMAT_RGBX4444;
