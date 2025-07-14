@@ -59,7 +59,6 @@
 #ifdef HAVE_X11_PLATFORM
 #include "X11/Xlibint.h"
 #include "x11_dri3.h"
-#include "x11_display.h"
 #endif
 
 #include "GL/mesa_glinterop.h"
@@ -110,27 +109,12 @@ dri2_gl_flush()
 static GLboolean
 dri_is_thread_safe(UNUSED void *loaderPrivate)
 {
-#ifdef HAVE_X11_PLATFORM
-   struct dri2_egl_surface *dri2_surf = loaderPrivate;
-
    /* loader_dri3_blit_context_get creates a context with
     * loaderPrivate being NULL. Enabling glthread for a blitting
     * context isn't useful so return false.
     */
    if (!loaderPrivate)
       return false;
-
-   _EGLDisplay *display = dri2_surf->base.Resource.Display;
-
-   Display *xdpy = (Display *)display->PlatformDisplay;
-
-   /* Check Xlib is running in thread safe mode when running on EGL/X11-xlib
-    * platform
-    */
-   if (display->Platform == _EGL_PLATFORM_X11 && xdpy &&
-       !x11_xlib_display_is_thread_safe(xdpy))
-      return false;
-#endif
 
    return true;
 }
