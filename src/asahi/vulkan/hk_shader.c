@@ -915,7 +915,7 @@ hk_upload_shader(struct hk_device *dev, struct hk_shader *shader)
       cfg.uniform_register_count = shader->b.info.push_count;
       cfg.preshader_register_count = shader->b.info.nr_preamble_gprs;
       cfg.sampler_state_register_count = agx_translate_sampler_state_count(
-         shader->b.info.uses_txf ? 1 : 0, false);
+         shader->b.info.sampler_state_count, false);
       cfg.texture_state_register_count = shader->b.info.texture_state_count;
    }
 }
@@ -1676,13 +1676,17 @@ hk_fast_link(struct hk_device *dev, bool fragment, struct hk_shader *main,
                  nr_samples_shaded);
 
    if (fragment) {
+      unsigned samplers = main->b.info.sampler_state_count;
+      if (s->b.uses_txf)
+         samplers = MAX2(samplers, 1);
+
       agx_pack(&s->fs_counts, FRAGMENT_SHADER_WORD_0, cfg) {
          cfg.cf_binding_count = s->b.cf.nr_bindings;
          cfg.uniform_register_count = main->b.info.push_count;
          cfg.preshader_register_count = main->b.info.nr_preamble_gprs;
          cfg.texture_state_register_count = main->b.info.texture_state_count;
          cfg.sampler_state_register_count =
-            agx_translate_sampler_state_count(s->b.uses_txf ? 1 : 0, false);
+            agx_translate_sampler_state_count(samplers, false);
       }
    }
 
