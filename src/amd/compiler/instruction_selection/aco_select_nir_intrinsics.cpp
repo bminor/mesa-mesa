@@ -286,7 +286,6 @@ struct LoadEmitInfo {
 
    ac_hw_cache_flags cache = {{0, 0, 0, 0, 0}};
    bool split_by_component_stride = true;
-   bool readfirstlane_for_uniform = false;
    unsigned swizzle_component_size = 0;
    memory_sync_info sync;
    Temp soffset = Temp(0, s1);
@@ -451,11 +450,8 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
       /* try to p_as_uniform early so we can create more optimizable code and
        * also update allocated_vec */
       for (unsigned j = start; j < components_split; j++) {
-         if (allocated_vec[j].bytes() % 4 == 0 && info.dst.type() == RegType::sgpr) {
-            allocated_vec[j] = emit_vector_as_uniform(
-               ctx, allocated_vec[j], bld.tmp(RegClass(RegType::sgpr, allocated_vec[j].size())),
-               info.readfirstlane_for_uniform);
-         }
+         if (allocated_vec[j].bytes() % 4 == 0 && info.dst.type() == RegType::sgpr)
+            allocated_vec[j] = bld.as_uniform(allocated_vec[j]);
          has_vgprs |= allocated_vec[j].type() == RegType::vgpr;
       }
    }
@@ -477,83 +473,12 @@ emit_load(isel_context* ctx, Builder& bld, const LoadEmitInfo& info,
       Temp tmp = bld.tmp(RegType::vgpr, info.dst.size());
       vec->definitions[0] = Definition(tmp);
       bld.insert(std::move(vec));
-      emit_vector_as_uniform(ctx, tmp, info.dst, info.readfirstlane_for_uniform);
+      bld.pseudo(aco_opcode::p_as_uniform, Definition(info.dst), tmp);
    } else {
       vec->definitions[0] = Definition(info.dst);
       bld.insert(std::move(vec));
    }
 }
-
-Temp
-lds_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed, unsigned align)
-{
-   Temp offset =
-      info.offset.regClass() == s1 ? bld.copy(bld.def(v1), info.offset) : info.offset.getTemp();
-   uint32_t const_offset = info.const_offset;
-
-   Operand m = load_lds_size_m0(bld);
-
-   bool large_ds_read = bld.program->gfx_level >= GFX7;
-   bool usable_read2 = bld.program->gfx_level >= GFX7;
-
-   bool read2 = false;
-   unsigned size = 0;
-   aco_opcode op;
-   if (bytes_needed >= 16 && align % 16 == 0 && large_ds_read) {
-      size = 16;
-      op = aco_opcode::ds_read_b128;
-   } else if (bytes_needed >= 16 && align % 8 == 0 && const_offset % 8 == 0 && usable_read2) {
-      size = 16;
-      read2 = true;
-      op = aco_opcode::ds_read2_b64;
-   } else if (bytes_needed >= 12 && align % 16 == 0 && large_ds_read) {
-      size = 12;
-      op = aco_opcode::ds_read_b96;
-   } else if (bytes_needed >= 8 && align % 8 == 0) {
-      size = 8;
-      op = aco_opcode::ds_read_b64;
-   } else if (bytes_needed >= 8 && align % 4 == 0 && const_offset % 4 == 0 && usable_read2) {
-      size = 8;
-      read2 = true;
-      op = aco_opcode::ds_read2_b32;
-   } else if (bytes_needed >= 4 && align % 4 == 0) {
-      size = 4;
-      op = aco_opcode::ds_read_b32;
-   } else if (bytes_needed >= 2 && align % 2 == 0) {
-      size = 2;
-      op = bld.program->gfx_level >= GFX9 ? aco_opcode::ds_read_u16_d16 : aco_opcode::ds_read_u16;
-   } else {
-      size = 1;
-      op = bld.program->gfx_level >= GFX9 ? aco_opcode::ds_read_u8_d16 : aco_opcode::ds_read_u8;
-   }
-
-   unsigned const_offset_unit = read2 ? size / 2u : 1u;
-   unsigned const_offset_range = read2 ? 255 * const_offset_unit : 65536;
-
-   if (const_offset > (const_offset_range - const_offset_unit)) {
-      unsigned excess = const_offset - (const_offset % const_offset_range);
-      offset = bld.vadd32(bld.def(v1), offset, Operand::c32(excess));
-      const_offset -= excess;
-   }
-
-   const_offset /= const_offset_unit;
-
-   RegClass rc = RegClass::get(RegType::vgpr, size);
-   Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
-   Instruction* instr;
-   if (read2)
-      instr = bld.ds(op, Definition(val), offset, m, const_offset, const_offset + 1);
-   else
-      instr = bld.ds(op, Definition(val), offset, m, const_offset);
-   instr->ds().sync = info.sync;
-
-   if (m.isUndefined())
-      instr->operands.pop_back();
-
-   return val;
-}
-
-const EmitLoadParameters lds_load_params{lds_load_callback, UINT32_MAX};
 
 std::pair<aco_opcode, unsigned>
 get_smem_opcode(amd_gfx_level level, unsigned bytes, bool buffer, bool round_down)
@@ -1018,31 +943,6 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
 }
 
 const EmitLoadParameters global_load_params{global_load_callback, UINT32_MAX};
-
-Temp
-load_lds(isel_context* ctx, unsigned elem_size_bytes, unsigned num_components, Temp dst,
-         Temp address, unsigned base_offset, unsigned align)
-{
-   assert(util_is_power_of_two_nonzero(align));
-
-   Builder bld(ctx->program, ctx->block);
-
-   LoadEmitInfo info = {Operand(as_vgpr(ctx, address)), dst, num_components, elem_size_bytes};
-   info.align_mul = align;
-   info.align_offset = 0;
-   info.sync = memory_sync_info(storage_shared);
-   info.const_offset = base_offset;
-   /* The 2 separate loads for gfx10+ wave64 can see different values, even for uniform addresses,
-    * if another wave writes LDS in between. Use v_readfirstlane instead of p_as_uniform in order
-    * to avoid copy-propagation.
-    */
-   info.readfirstlane_for_uniform = ctx->options->gfx_level >= GFX10 &&
-                                    ctx->program->wave_size == 64 &&
-                                    ctx->program->workgroup_size > 64;
-   emit_load(ctx, bld, info, lds_load_params);
-
-   return dst;
-}
 
 void
 split_store_data(isel_context* ctx, RegType dst_type, unsigned count, Temp* dst, unsigned* bytes,
@@ -3103,15 +3003,62 @@ emit_barrier(isel_context* ctx, nir_intrinsic_instr* instr)
 void
 visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
 {
-   // TODO: implement sparse reads using ds_read2_b32 and nir_def_components_read()
    Temp dst = get_ssa_temp(ctx, &instr->def);
    Temp address = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa));
    Builder bld(ctx->program, ctx->block);
 
    unsigned elem_size_bytes = instr->def.bit_size / 8;
    unsigned num_components = instr->def.num_components;
+   unsigned bytes = elem_size_bytes * num_components;
    unsigned align = nir_intrinsic_align_mul(instr) ? nir_intrinsic_align(instr) : elem_size_bytes;
-   load_lds(ctx, elem_size_bytes, num_components, dst, address, nir_intrinsic_base(instr), align);
+   assert(bytes == 12 ? align % 16 == 0 : align % bytes == 0);
+
+   Operand m = load_lds_size_m0(bld);
+   aco_opcode op;
+
+   switch (bytes) {
+   case 16: op = aco_opcode::ds_read_b128; break;
+   case 12: op = aco_opcode::ds_read_b96; break;
+   case 8: op = aco_opcode::ds_read_b64; break;
+   case 4: op = aco_opcode::ds_read_b32; break;
+   case 2:
+      op = bld.program->gfx_level >= GFX9 ? aco_opcode::ds_read_u16_d16 : aco_opcode::ds_read_u16;
+      break;
+   case 1:
+      op = bld.program->gfx_level >= GFX9 ? aco_opcode::ds_read_u8_d16 : aco_opcode::ds_read_u8;
+      break;
+   default: UNREACHABLE("Unsupported load_shared size");
+   }
+
+   unsigned const_offset = nir_intrinsic_base(instr);
+   unsigned const_offset_range = 65536;
+   if (const_offset >= const_offset_range) {
+      unsigned excess = const_offset - (const_offset % const_offset_range);
+      address = bld.vadd32(bld.def(v1), address, Operand::c32(excess));
+      const_offset -= excess;
+   }
+
+   Definition def = dst.regClass().type() == RegType::sgpr
+                       ? bld.def(RegClass::get(RegType::vgpr, bytes))
+                       : Definition(dst);
+   Instruction* ds = bld.ds(op, def, address, m, const_offset);
+   ds->ds().sync = memory_sync_info(storage_shared);
+
+   if (m.isUndefined())
+      ds->operands.pop_back();
+
+   if (def.getTemp() != dst) {
+      /* The 2 separate loads for gfx10+ wave64 can see different values, even for uniform
+       * addresses, if another wave writes LDS in between. Use v_readfirstlane instead of
+       * p_as_uniform in order to avoid copy-propagation.
+       */
+      bool readfirstlane_for_uniform = ctx->options->gfx_level >= GFX10 &&
+                                       ctx->program->wave_size == 64 &&
+                                       ctx->program->workgroup_size > 64;
+      emit_vector_as_uniform(ctx, def.getTemp(), dst, readfirstlane_for_uniform);
+   }
+
+   emit_split_vector(ctx, dst, instr->def.num_components);
 }
 
 void
