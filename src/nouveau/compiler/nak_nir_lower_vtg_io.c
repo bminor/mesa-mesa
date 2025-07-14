@@ -40,10 +40,10 @@ tess_ctrl_output_vtx(nir_builder *b, nir_def *vtx)
     * range of lanes.  We have to compute the lane index of the requested
     * invocation from the invocation index.
     */
-   nir_def *lane = nir_load_sysval_nv(b, 32, .base = NAK_SV_LANE_ID,
-                                      .access = ACCESS_CAN_REORDER);
-   nir_def *invoc = nir_load_sysval_nv(b, 32, .base = NAK_SV_INVOCATION_ID,
-                                       .access = ACCESS_CAN_REORDER);
+   nir_def *lane = nak_nir_load_sysval(b, NAK_SV_LANE_ID,
+                                       ACCESS_CAN_REORDER);
+   nir_def *invoc = nak_nir_load_sysval(b, NAK_SV_INVOCATION_ID,
+                                        ACCESS_CAN_REORDER);
 
    return nir_iadd(b, lane, nir_iadd(b, vtx, nir_ineg(b, invoc)));
 }
@@ -139,9 +139,8 @@ lower_vtg_io_intrin(nir_builder *b,
 
    if (vtx != NULL && !is_output) {
       if (nak->sm >= 50) {
-         nir_def *info = nir_load_sysval_nv(b, 32,
-                                            .base = NAK_SV_INVOCATION_INFO,
-                                            .access = ACCESS_CAN_REORDER);
+         nir_def *info = nak_nir_load_sysval(b, NAK_SV_INVOCATION_INFO,
+                                             ACCESS_CAN_REORDER);
          nir_def *lo = nir_extract_u8_imm(b, info, 0);
          nir_def *hi = nir_extract_u8_imm(b, info, 2);
          nir_def *idx = nir_iadd(b, nir_imul(b, lo, hi), vtx);

@@ -132,6 +132,9 @@ enum ENUM_PACKED nak_sv {
 
 bool nak_nir_workgroup_has_one_subgroup(const nir_shader *nir);
 
+nir_def *nak_nir_load_sysval(nir_builder *b, enum nak_sv idx,
+                             enum gl_access_qualifier access);
+
 struct nak_xfb_info
 nak_xfb_from_nir(const struct nak_compiler *nak,
                  const struct nir_xfb_info *nir_xfb);

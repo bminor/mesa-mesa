@@ -377,6 +377,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       break;
 
    case nir_intrinsic_decl_reg:
+   case nir_intrinsic_load_sysval_nv:
       is_divergent = nir_intrinsic_divergent(instr);
       break;
 
@@ -917,7 +918,6 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_ray_hit_kind:
    case nir_intrinsic_load_ray_flags:
    case nir_intrinsic_load_cull_mask:
-   case nir_intrinsic_load_sysval_nv:
    case nir_intrinsic_emit_vertex_nv:
    case nir_intrinsic_end_primitive_nv:
    case nir_intrinsic_report_ray_intersection:
