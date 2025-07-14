@@ -671,8 +671,9 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
    if (sampler != NULL) {
       unsigned offs =
          offsetof(struct hk_sampled_image_descriptor, sampler_index);
+      bool clamp_to_0 = tex->backend_flags & AGX_TEXTURE_FLAG_CLAMP_TO_0;
 
-      if (tex->backend_flags & AGX_TEXTURE_FLAG_CLAMP_TO_0) {
+      if (clamp_to_0) {
          offs = offsetof(struct hk_sampled_image_descriptor,
                          clamp_0_sampler_index_or_negative);
       }
@@ -680,6 +681,30 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
       nir_def *index = load_resource_deref_desc(
          b, 1, 16, nir_src_as_deref(nir_src_for_ssa(sampler)),
          plane_offset_B + offs, ctx);
+
+      if (!clamp_to_0) {
+         uint32_t set, binding;
+         nir_def *idx;
+         get_resource_deref_binding(b,
+                                    nir_src_as_deref(nir_src_for_ssa(sampler)),
+                                    &set, &binding, &idx);
+
+         const struct hk_descriptor_set_binding_layout *binding_layout =
+            get_binding_layout(set, binding, ctx);
+
+         if (ctx->clamp_desc_array_bounds)
+            idx =
+               nir_umin(b, idx, nir_imm_int(b, binding_layout->array_size - 1));
+
+         assert(binding_layout->stride > 0);
+         nir_def *desc_offs_B = nir_iadd_imm(
+            b, nir_imul_imm(b, idx, binding_layout->stride),
+            binding_layout->offset + plane_offset_B +
+               offsetof(struct hk_sampled_image_descriptor, sampler));
+
+         index =
+            nir_bindless_sampler_agx(b, desc_offs_B, index, .desc_set = set);
+      }
 
       nir_tex_instr_add_src(tex, nir_tex_src_sampler_handle, index);
    }

@@ -952,7 +952,8 @@ static bool
 lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    struct fixed_uniforms *ctx = data;
-   if (intr->intrinsic == nir_intrinsic_bindless_image_agx) {
+   if (intr->intrinsic == nir_intrinsic_bindless_image_agx ||
+       intr->intrinsic == nir_intrinsic_bindless_sampler_agx) {
       /* Change of units from sets to uniforms */
       nir_intrinsic_set_desc_set(
          intr, ctx->sets + (nir_intrinsic_desc_set(intr) * 4));

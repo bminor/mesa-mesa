@@ -23,6 +23,7 @@ struct hk_descriptor_set_layout;
 
 struct hk_sampled_image_descriptor {
    struct agx_texture_packed tex;
+   struct agx_sampler_packed sampler;
    uint16_t sampler_index;
 
    /* Negative if there is no border colour, else the clamp=0 sampler index used
@@ -42,7 +43,7 @@ struct hk_sampled_image_descriptor {
    uint16_t pad;
    /* TODO: This should probably be a heap! */
    uint32_t border[4];
-   uint8_t pad2[12];
+   uint8_t pad2[4];
 };
 static_assert(sizeof(struct hk_sampled_image_descriptor) == 64,
               "hk_sampled_image_descriptor has no holes");

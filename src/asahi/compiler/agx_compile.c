@@ -792,7 +792,8 @@ static agx_index
 agx_translate_bindless_handle(agx_builder *b, nir_src *handle, agx_index *base)
 {
    nir_intrinsic_instr *intr = nir_src_as_intrinsic(*handle);
-   assert(intr->intrinsic == nir_intrinsic_bindless_image_agx);
+   assert(intr->intrinsic == nir_intrinsic_bindless_image_agx ||
+          intr->intrinsic == nir_intrinsic_bindless_sampler_agx);
 
    *base = agx_uniform(nir_intrinsic_desc_set(intr), AGX_SIZE_64);
    return agx_src_index(&intr->src[0]);
@@ -822,10 +823,17 @@ agx_emit_store_preamble(agx_builder *b, nir_intrinsic_instr *instr)
    nir_preamble_class cls = nir_intrinsic_preamble_class(instr);
    unsigned base = nir_intrinsic_base(instr);
 
-   if (cls == nir_preamble_class_image) {
+   if (cls != nir_preamble_class_general) {
       agx_index heap, offset;
       offset = agx_translate_bindless_handle(b, &instr->src[0], &heap);
-      return agx_tex_state_store(b, heap, offset, base / 2);
+
+      /* base is 32-bit units for images but 16-bit for samplers, hence the
+       * division difference to convert into texture/sampler state units.
+       */
+      if (cls == nir_preamble_class_image)
+         return agx_tex_state_store(b, heap, offset, base / 2);
+      else
+         return agx_sampler_state_store(b, heap, offset, base);
    }
 
    agx_index vec = agx_src_index(&instr->src[0]);
@@ -1740,6 +1748,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
       return agx_emit_export(b, nir_intrinsic_base(instr), instr->src[0]);
 
    case nir_intrinsic_bindless_image_agx:
+   case nir_intrinsic_bindless_sampler_agx:
       /* These must always be chased */
       return NULL;
 
@@ -2217,8 +2226,14 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
 {
    agx_index coords = agx_null(), bindless = agx_immediate(0),
              texture = agx_immediate(instr->texture_index),
-             sampler = agx_immediate(0), lod = agx_immediate(0),
-             compare = agx_null(), packed_offset = agx_null();
+             sampler = agx_immediate(instr->sampler_index),
+             lod = agx_immediate(0), compare = agx_null(),
+             packed_offset = agx_null();
+
+   /* Default to the txf sampler at ss0 */
+   if (!nir_tex_instr_need_sampler(instr)) {
+      sampler = agx_immediate(0);
+   }
 
    bool lod_is_zero = true;
 
@@ -3047,7 +3062,7 @@ optimize_bounds(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
 static void
 agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
-                 uint8_t *ts_count)
+                 uint8_t *ts_count, uint8_t *ss_count)
 {
    /* This runs only once up front since other optimizations don't affect it */
    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
@@ -3151,13 +3166,26 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
    NIR_PASS(_, nir, agx_nir_lower_fminmax);
 
    if (preamble_size && (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE))) {
-      unsigned temp = *preamble_size;
-      unsigned temp_ts_count = ts_count ? *ts_count : 1000 /* large finite */;
-      NIR_PASS(_, nir, agx_nir_opt_preamble, &temp, &temp_ts_count);
-      *preamble_size = temp;
+      unsigned sizes[] = {
+         *preamble_size,
+         ts_count ? *ts_count : 1000 /* large finite */,
+         ss_count ? *ss_count : 1000 /* large finite */,
+      };
+
+      /* Don't clobber txf sampler */
+      if (sizes[2] == 0)
+         sizes[2]++;
+
+      NIR_PASS(_, nir, agx_nir_opt_preamble, sizes);
+
+      *preamble_size = sizes[0];
 
       if (ts_count)
-         *ts_count = temp_ts_count;
+         *ts_count = sizes[1];
+
+      /* if something other than the txf sampler is written... */
+      if (ss_count && sizes[2] > 1)
+         *ss_count = sizes[2];
    }
 
    /* Forming preambles may dramatically reduce the instruction count
@@ -3907,7 +3935,9 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
    agx_optimize_nir(
       nir, key->dev.soft_fault, key->secondary ? NULL : &info->push_count,
       (key->secondary || !key->promote_textures) ? NULL
-                                                 : &info->texture_state_count);
+                                                 : &info->texture_state_count,
+      (key->secondary || !key->promote_textures) ? NULL
+                                                 : &info->sampler_state_count);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       info->varyings.fs.nr_cf = key->fs.cf_base;

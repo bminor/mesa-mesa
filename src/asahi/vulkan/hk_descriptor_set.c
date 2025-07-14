@@ -114,6 +114,7 @@ write_sampled_image_view_desc(struct hk_descriptor_set *set,
           */
          desc[plane].sampler_index =
             sampler->planes[sampler_plane].hw->index + 28;
+         desc[plane].sampler = sampler->planes[sampler_plane].hw->key;
          desc[plane].lod_bias_fp16 = sampler->lod_bias_fp16;
          desc[plane].clamp_0_sampler_index_or_negative = -1;
       }

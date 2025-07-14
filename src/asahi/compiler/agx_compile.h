@@ -287,9 +287,10 @@ struct agx_shader_key {
     */
    bool promote_constants;
 
-   /* Similarly whether the driver supports promoting bindless textures.
-    * Currently this works only if non-bindless textures are not used, but
-    * none of our drivers mix bindless / non-bindless usage.
+   /* Similarly whether the driver supports promoting bindless
+    * textures/samplers.  Currently this works only if non-bindless
+    * textures/samplers are not used, but none of our drivers mix bindless /
+    * non-bindless usage.
     */
    bool promote_textures;
 
