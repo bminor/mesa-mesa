@@ -46,7 +46,13 @@ struct vk_shader;
 
 /** Root descriptor table. */
 struct hk_root_descriptor_table {
+   /* Address of this descriptor itself. Must be first for reflection. */
    uint64_t root_desc_addr;
+
+   /* Descriptor set base addresses. Must follow root_desc_addr to match our
+    * push layout.
+    */
+   uint64_t sets[HK_MAX_SETS];
 
    union {
       struct {
@@ -109,9 +115,6 @@ struct hk_root_descriptor_table {
 
    /* Client push constants */
    uint8_t push[HK_MAX_PUSH_SIZE];
-
-   /* Descriptor set base addresses */
-   uint64_t sets[HK_MAX_SETS];
 
    /* Dynamic buffer bindings */
    struct hk_buffer_address dynamic_buffers[HK_MAX_DYNAMIC_BUFFERS];

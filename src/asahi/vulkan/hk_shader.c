@@ -943,20 +943,19 @@ hk_init_link_ht(struct hk_shader *shader, gl_shader_stage sw_stage)
                                       : VK_SUCCESS;
 }
 
-struct fixed_uniforms {
-   unsigned sets;
-   unsigned root;
-};
-
 static bool
 lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
-   struct fixed_uniforms *ctx = data;
+   /* Root is first, descriptor sets follow immediately. */
+   unsigned *root_ = data;
+   unsigned root = *root_;
+   unsigned sets = root + 4;
+
    if (intr->intrinsic == nir_intrinsic_bindless_image_agx ||
        intr->intrinsic == nir_intrinsic_bindless_sampler_agx) {
       /* Change of units from sets to uniforms */
-      nir_intrinsic_set_desc_set(
-         intr, ctx->sets + (nir_intrinsic_desc_set(intr) * 4));
+      nir_intrinsic_set_desc_set(intr,
+                                 sets + (nir_intrinsic_desc_set(intr) * 4));
       return true;
    }
 
@@ -969,9 +968,9 @@ lower_uniforms(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
    if (intr->intrinsic == nir_intrinsic_load_descriptor_set_agx) {
       unsigned s = nir_intrinsic_desc_set(intr);
-      rep = nir_load_preamble(b, 1, 64, .base = ctx->sets + (4 * s));
+      rep = nir_load_preamble(b, 1, 64, .base = sets + (4 * s));
    } else {
-      rep = nir_load_preamble(b, 1, 64, .base = ctx->root);
+      rep = nir_load_preamble(b, 1, 64, .base = root);
    }
 
    nir_def_replace(&intr->def, rep);
@@ -1094,22 +1093,18 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
       }
    }
 
-   struct fixed_uniforms f = {.root = 0, .sets = 4};
-   if (sw_stage == MESA_SHADER_FRAGMENT) {
-      f.root = AGX_ABI_FUNI_ROOT;
-      f.sets = AGX_ABI_FUNI_COUNT;
-   } else if (sw_stage == MESA_SHADER_VERTEX) {
-      f.root = AGX_ABI_VUNI_COUNT_VK(nr_vbos);
-      f.sets = f.root + 4;
-   }
+   unsigned root = 0;
+   if (sw_stage == MESA_SHADER_FRAGMENT)
+      root = AGX_ABI_FUNI_ROOT;
+   else if (sw_stage == MESA_SHADER_VERTEX)
+      root = AGX_ABI_VUNI_COUNT_VK(nr_vbos);
 
-   shader->info.set_uniform = f.sets;
    shader->info.set_count = set_count;
 
    /* XXX: rename */
    NIR_PASS(_, nir, hk_lower_uvs_index, nr_vbos);
    NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_uniforms,
-            nir_metadata_control_flow, &f);
+            nir_metadata_control_flow, &root);
 
 #if 0
    /* TODO */
@@ -1121,9 +1116,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
 #endif
 
    struct agx_shader_key backend_key = {
-      /* Sets at the end */
-      .reserved_preamble = f.sets + (4 * set_count),
-
+      .reserved_preamble = root + (4 * (1 + set_count)),
       .dev = agx_gather_device_key(&dev->dev),
       .no_stop = nir->info.stage == MESA_SHADER_FRAGMENT,
       .has_scratch = !nir->info.internal,

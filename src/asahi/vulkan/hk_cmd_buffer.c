@@ -677,20 +677,12 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
 
    struct agx_usc_builder b = agx_usc_builder(t.cpu, usc_size);
 
-   uint64_t root_ptr, set_ptr;
+   uint64_t root_ptr;
 
    if (sw_stage == PIPE_SHADER_COMPUTE) {
       root_ptr = hk_cmd_buffer_upload_root(cmd, VK_PIPELINE_BIND_POINT_COMPUTE);
-      set_ptr = hk_pool_upload(cmd, cmd->state.cs.descriptors.root.sets,
-                               sizeof(uint64_t) * s->info.set_count, 32);
    } else {
       root_ptr = cmd->state.gfx.root;
-      set_ptr = hk_pool_upload(cmd, cmd->state.gfx.descriptors.root.sets,
-                               sizeof(uint64_t) * s->info.set_count, 32);
-   }
-
-   if (s->info.set_count) {
-      agx_usc_uniform(&b, s->info.set_uniform, 4 * s->info.set_count, set_ptr);
    }
 
    static_assert(offsetof(struct hk_root_descriptor_table, root_desc_addr) == 0,
@@ -748,7 +740,8 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
       root_unif = AGX_ABI_FUNI_ROOT;
    }
 
-   agx_usc_uniform(&b, root_unif, 4, root_ptr);
+   /* Address for the root and each set */
+   agx_usc_uniform(&b, root_unif, 4 * (1 + s->info.set_count), root_ptr);
 
    agx_usc_push_blob(&b, linked->usc.data, linked->usc.size);
    return agx_usc_addr(&dev->dev, t.gpu);
