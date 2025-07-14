@@ -2317,6 +2317,9 @@ dri2_initialize_wayland_drm(_EGLDisplay *disp)
       goto cleanup;
    }
 
+   if (!strcmp(dri2_dpy->driver_name, "zink"))
+      goto cleanup;
+
    dri2_dpy->loader_extensions = dri2_loader_extensions;
    if (!dri2_load_driver(disp)) {
       _eglError(EGL_BAD_ALLOC, "DRI2: failed to load driver");
