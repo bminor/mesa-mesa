@@ -169,12 +169,12 @@ anv_copy_image_memory(struct anv_device *device,
 }
 
 static uint64_t
-calc_mem_row_pitch_B(const struct isl_surf *surf,
+calc_mem_row_pitch_B(enum isl_format format,
                      uint64_t api_row_length_px,
                      const VkExtent3D *extent_px)
 {
    const struct isl_format_layout *fmt_layout =
-      isl_format_get_layout(surf->format);
+      isl_format_get_layout(format);
    const uint32_t bs = fmt_layout->bpb / 8;
 
    return api_row_length_px != 0 ?
@@ -183,13 +183,13 @@ calc_mem_row_pitch_B(const struct isl_surf *surf,
 }
 
 static uint64_t
-calc_mem_height_pitch_B(const struct isl_surf *surf,
+calc_mem_height_pitch_B(enum isl_format format,
                         uint64_t row_pitch_B,
                         uint64_t api_height_px,
                         const VkExtent3D *extent_px)
 {
    const struct isl_format_layout *fmt_layout =
-      isl_format_get_layout(surf->format);
+      isl_format_get_layout(format);
 
    return api_height_px != 0 ?
       (row_pitch_B * DIV_ROUND_UP(api_height_px, fmt_layout->bh)) :
@@ -222,11 +222,11 @@ anv_CopyMemoryToImageEXT(
 
       /* Memory distance between each row */
       uint64_t mem_row_pitch_B =
-         calc_mem_row_pitch_B(surf, region->memoryRowLength,
+         calc_mem_row_pitch_B(surf->format, region->memoryRowLength,
                               &region->imageExtent);
       /* Memory distance between each slice (1 3D level or 1 array layer) */
       uint64_t mem_height_pitch_B =
-         calc_mem_height_pitch_B(surf, mem_row_pitch_B,
+         calc_mem_height_pitch_B(surf->format, mem_row_pitch_B,
                                  region->memoryImageHeight,
                                  &region->imageExtent);
 
@@ -304,11 +304,11 @@ anv_CopyImageToMemoryEXT(
 
       /* Memory distance between each row */
       uint64_t mem_row_pitch_B =
-         calc_mem_row_pitch_B(surf, region->memoryRowLength,
+         calc_mem_row_pitch_B(surf->format, region->memoryRowLength,
                               &region->imageExtent);
       /* Memory distance between each slice (1 3D level or 1 array layer) */
       uint64_t mem_height_pitch_B =
-         calc_mem_height_pitch_B(surf, mem_row_pitch_B,
+         calc_mem_height_pitch_B(surf->format, mem_row_pitch_B,
                                  region->memoryImageHeight,
                                  &region->imageExtent);
 
