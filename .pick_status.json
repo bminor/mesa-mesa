@@ -3114,7 +3114,7 @@
         "description": "panfrost: Fix modifier conversion shaders search key",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "ae3fb3089f50a5f7bc42f209656b783ac98ec509",
         "notes": null
