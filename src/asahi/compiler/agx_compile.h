@@ -140,8 +140,8 @@ struct agx_shader_info {
    /* Uses txf and hence needs a txf sampler mapped */
    bool uses_txf;
 
-   /* Number of texture state registers pushed by the preamble. */
-   uint8_t texture_state_count;
+   /* Number of texture/sampler state registers pushed by the preamble. */
+   uint8_t texture_state_count, sampler_state_count;
 
    /* Number of 16-bit registers used by the main shader and preamble
     * respectively.
