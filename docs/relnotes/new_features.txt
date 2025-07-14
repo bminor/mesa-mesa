@@ -59,6 +59,7 @@ GL_EXT_shader_realtime_clock on panfrost/v6+
 VK_KHR_shader_float8 on RADV (RDNA4+)
 GL_EXT_window_rectangles on r600
 GL_EXT_shader_image_load_store on r600/evergreen+
+GL_EXT_shader_clock on all drivers that support GL_ARB_shader_clock
 CL_UNORM_INT_101010_2 and cl_ext_image_unorm_int_2_101010
 timestamps on panvk/v10+
 VK_KHR_calibrated_timestamps on panvk/v10+
