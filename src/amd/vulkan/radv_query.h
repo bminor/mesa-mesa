@@ -25,7 +25,7 @@ struct radv_query_pool {
    uint64_t size;
    char *ptr;
    bool uses_emulated_queries;
-   bool uses_ace; /* For task shader invocations on GFX10.3+ */
+   bool uses_ace;              /* For task shader invocations on GFX10.3+ */
    bool uses_shader_query_buf; /* For generated/written primitives on GFX12+ */
 };
 

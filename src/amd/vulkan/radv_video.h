@@ -11,8 +11,8 @@
 #ifndef RADV_VIDEO_H
 #define RADV_VIDEO_H
 
-#include "vk_video.h"
 #include "radv_event.h"
+#include "vk_video.h"
 
 #include "ac_vcn.h"
 
@@ -26,9 +26,9 @@ struct radv_image_create_info;
 
 #define RADV_ENC_MAX_RATE_LAYER 4
 
-#define RADV_BIND_SESSION_CTX 0
-#define RADV_BIND_DECODER_CTX 1
-#define RADV_BIND_INTRA_ONLY 2
+#define RADV_BIND_SESSION_CTX          0
+#define RADV_BIND_DECODER_CTX          1
+#define RADV_BIND_INTRA_ONLY           2
 #define RADV_BIND_ENCODE_AV1_CDF_STORE RADV_BIND_DECODER_CTX
 
 struct radv_vid_mem {
@@ -95,10 +95,8 @@ VkResult radv_video_get_encode_session_memory_requirements(struct radv_device *d
                                                            uint32_t *pMemoryRequirementsCount,
                                                            VkVideoSessionMemoryRequirementsKHR *pMemoryRequirements);
 void radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk_video_session_parameters *params);
-void radv_video_get_enc_dpb_image(struct radv_device *device,
-                                  const struct VkVideoProfileListInfoKHR *profile_list,
-                                  struct radv_image *image,
-                                  struct radv_image_create_info *create_info);
+void radv_video_get_enc_dpb_image(struct radv_device *device, const struct VkVideoProfileListInfoKHR *profile_list,
+                                  struct radv_image *image, struct radv_image_create_info *create_info);
 bool radv_video_decode_vp9_supported(const struct radv_physical_device *pdev);
 bool radv_video_encode_av1_supported(const struct radv_physical_device *pdev);
 

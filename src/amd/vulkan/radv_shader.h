@@ -46,8 +46,8 @@ enum {
 #define RADV_STAGE_MASK ((1 << MESA_VULKAN_SHADER_STAGES) - 1)
 
 #define radv_foreach_stage(stage, stage_bits)                                                                          \
-   for (gl_shader_stage stage, __tmp = (gl_shader_stage)((stage_bits)&RADV_STAGE_MASK); stage = ffs(__tmp) - 1, __tmp; \
-        __tmp &= ~(1 << (stage)))
+   for (gl_shader_stage stage, __tmp = (gl_shader_stage)((stage_bits) & RADV_STAGE_MASK);                              \
+        stage = ffs(__tmp) - 1, __tmp; __tmp &= ~(1 << (stage)))
 
 enum radv_nggc_settings {
    radv_nggc_none = 0,
@@ -200,22 +200,22 @@ struct radv_nir_compiler_options {
    } debug;
 };
 
-#define SET_SGPR_FIELD(field, value) (((unsigned)(value)&field##__MASK) << field##__SHIFT)
+#define SET_SGPR_FIELD(field, value) (((unsigned)(value) & field##__MASK) << field##__SHIFT)
 
-#define TCS_OFFCHIP_LAYOUT_NUM_PATCHES__SHIFT          0
-#define TCS_OFFCHIP_LAYOUT_NUM_PATCHES__MASK           0x7f
+#define TCS_OFFCHIP_LAYOUT_NUM_PATCHES__SHIFT           0
+#define TCS_OFFCHIP_LAYOUT_NUM_PATCHES__MASK            0x7f
 #define TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN__SHIFT     7
 #define TCS_OFFCHIP_LAYOUT_PATCH_VERTICES_IN__MASK      0x1f
 #define TCS_OFFCHIP_LAYOUT_TCS_MEM_ATTRIB_STRIDE__SHIFT 12
 #define TCS_OFFCHIP_LAYOUT_TCS_MEM_ATTRIB_STRIDE__MASK  0x1f
-#define TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS__SHIFT       17
-#define TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS__MASK        0x3f
-#define TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS__SHIFT       23
-#define TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS__MASK        0x3f
-#define TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE__SHIFT       29
-#define TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE__MASK        0x03
-#define TCS_OFFCHIP_LAYOUT_TES_READS_TF__SHIFT         31
-#define TCS_OFFCHIP_LAYOUT_TES_READS_TF__MASK          0x01
+#define TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS__SHIFT        17
+#define TCS_OFFCHIP_LAYOUT_NUM_LS_OUTPUTS__MASK         0x3f
+#define TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS__SHIFT        23
+#define TCS_OFFCHIP_LAYOUT_NUM_HS_OUTPUTS__MASK         0x3f
+#define TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE__SHIFT        29
+#define TCS_OFFCHIP_LAYOUT_PRIMITIVE_MODE__MASK         0x03
+#define TCS_OFFCHIP_LAYOUT_TES_READS_TF__SHIFT          31
+#define TCS_OFFCHIP_LAYOUT_TES_READS_TF__MASK           0x01
 
 #define TES_STATE_NUM_PATCHES__SHIFT      0
 #define TES_STATE_NUM_PATCHES__MASK       0xff

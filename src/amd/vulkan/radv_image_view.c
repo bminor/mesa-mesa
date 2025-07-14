@@ -10,11 +10,11 @@
 
 #include "vk_log.h"
 
-#include "radv_image_view.h"
 #include "radv_buffer_view.h"
 #include "radv_entrypoints.h"
 #include "radv_formats.h"
 #include "radv_image.h"
+#include "radv_image_view.h"
 
 #include "ac_descriptors.h"
 #include "ac_formats.h"

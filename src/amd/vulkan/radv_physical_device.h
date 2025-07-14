@@ -14,15 +14,15 @@
 #include "ac_gpu_info.h"
 #include "ac_perfcounter.h"
 
+#include "ac_uvd_dec.h"
+#include "ac_vcn_enc.h"
 #include "radv_instance.h"
 #include "radv_queue.h"
 #include "radv_radeon_winsys.h"
-#include "ac_uvd_dec.h"
-#include "ac_vcn_enc.h"
 #include "wsi_common.h"
 
-#include "nir_shader_compiler_options.h"
 #include "compiler/shader_enums.h"
+#include "nir_shader_compiler_options.h"
 
 #include "vk_physical_device.h"
 

@@ -927,13 +927,13 @@ fail:
 
 /* For MSAA sample positions. */
 #define FILL_SREG(s0x, s0y, s1x, s1y, s2x, s2y, s3x, s3y)                                                              \
-   ((((unsigned)(s0x)&0xf) << 0) | (((unsigned)(s0y)&0xf) << 4) | (((unsigned)(s1x)&0xf) << 8) |                       \
-    (((unsigned)(s1y)&0xf) << 12) | (((unsigned)(s2x)&0xf) << 16) | (((unsigned)(s2y)&0xf) << 20) |                    \
-    (((unsigned)(s3x)&0xf) << 24) | (((unsigned)(s3y)&0xf) << 28))
+   ((((unsigned)(s0x) & 0xf) << 0) | (((unsigned)(s0y) & 0xf) << 4) | (((unsigned)(s1x) & 0xf) << 8) |                 \
+    (((unsigned)(s1y) & 0xf) << 12) | (((unsigned)(s2x) & 0xf) << 16) | (((unsigned)(s2y) & 0xf) << 20) |              \
+    (((unsigned)(s3x) & 0xf) << 24) | (((unsigned)(s3y) & 0xf) << 28))
 
 /* For obtaining location coordinates from registers */
-#define SEXT4(x)               ((int)((x) | ((x)&0x8 ? 0xfffffff0 : 0)))
-#define GET_SFIELD(reg, index) SEXT4(((reg) >> ((index)*4)) & 0xf)
+#define SEXT4(x)               ((int)((x) | ((x) & 0x8 ? 0xfffffff0 : 0)))
+#define GET_SFIELD(reg, index) SEXT4(((reg) >> ((index) * 4)) & 0xf)
 #define GET_SX(reg, index)     GET_SFIELD((reg)[(index) / 4], ((index) % 4) * 2)
 #define GET_SY(reg, index)     GET_SFIELD((reg)[(index) / 4], ((index) % 4) * 2 + 1)
 

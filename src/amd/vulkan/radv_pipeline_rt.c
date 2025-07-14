@@ -198,11 +198,11 @@ radv_rt_init_capture_replay(struct radv_device *device, const VkRayTracingPipeli
             }
          }
 
-         reloc_out:
-            simple_mtx_unlock(&library_shader->replay_mtx);
-            if (result != VK_SUCCESS)
-               return result;
-         }
+      reloc_out:
+         simple_mtx_unlock(&library_shader->replay_mtx);
+         if (result != VK_SUCCESS)
+            return result;
+      }
    }
 
    return result;
@@ -618,8 +618,8 @@ radv_rt_compile_shaders(struct radv_device *device, struct vk_pipeline_cache *ca
 
       struct radv_shader_stage *stage = &stages[i];
       gl_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->pStages[i].stage);
-      radv_pipeline_stage_init(pipeline->base.base.create_flags, &pCreateInfo->pStages[i],
-                               pipeline_layout, &stage_keys[s], stage);
+      radv_pipeline_stage_init(pipeline->base.base.create_flags, &pCreateInfo->pStages[i], pipeline_layout,
+                               &stage_keys[s], stage);
 
       /* precompile the shader */
       stage->nir = radv_shader_spirv_to_nir(device, stage, NULL, false);

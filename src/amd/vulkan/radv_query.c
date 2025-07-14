@@ -2742,8 +2742,7 @@ radv_CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 sta
 
    radv_cs_add_buffer(device->ws, cs, pool->bo);
 
-   assert(cmd_buffer->qf != RADV_QUEUE_VIDEO_DEC &&
-          cmd_buffer->qf != RADV_QUEUE_VIDEO_ENC);
+   assert(cmd_buffer->qf != RADV_QUEUE_VIDEO_DEC && cmd_buffer->qf != RADV_QUEUE_VIDEO_ENC);
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
       if (instance->drirc.flush_before_timestamp_write) {

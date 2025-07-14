@@ -630,7 +630,7 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
    VkFormat format = radv_image_get_plane_format(pdev, image, plane_id);
    const struct util_format_description *desc = radv_format_description(format);
    const VkImageAlignmentControlCreateInfoMESA *alignment =
-         vk_find_struct_const(pCreateInfo->pNext, IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA);
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_ALIGNMENT_CONTROL_CREATE_INFO_MESA);
    bool is_depth, is_stencil;
 
    is_depth = util_format_has_depth(desc);
@@ -721,9 +721,8 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
       bool is_4k_capable;
 
       if (!vk_format_is_depth_or_stencil(image_format)) {
-         is_4k_capable =
-               !(pCreateInfo->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && (flags & RADEON_SURF_DISABLE_DCC) &&
-               (flags & RADEON_SURF_NO_FMASK);
+         is_4k_capable = !(pCreateInfo->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
+                         (flags & RADEON_SURF_DISABLE_DCC) && (flags & RADEON_SURF_NO_FMASK);
       } else {
          /* Depth-stencil format without DEPTH_STENCIL usage does not work either. */
          is_4k_capable = false;
@@ -1180,14 +1179,13 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
     * to sample it later with a linear filter, it will get garbage after the height it wants,
     * so we let the user specify the width/height unaligned, and align them preallocation.
     */
-   if (image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
-                          VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+   if (image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
                           VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
       if (!device->vk.enabled_features.videoMaintenance1)
          assert(profile_list);
 
-      const bool is_linear = image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
-         image->planes[0].surface.modifier == DRM_FORMAT_MOD_LINEAR;
+      const bool is_linear =
+         image->vk.tiling == VK_IMAGE_TILING_LINEAR || image->planes[0].surface.modifier == DRM_FORMAT_MOD_LINEAR;
 
       /* Only linear decode target requires the custom alignment. */
       if (is_linear || !(image->vk.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR)) {
@@ -1222,8 +1220,8 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
          image->planes[plane].surface.flags |= RADEON_SURF_DISABLE_DCC | RADEON_SURF_NO_FMASK | RADEON_SURF_NO_HTILE;
       }
 
-      if (plane > 0 && image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
-                                          VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) {
+      if (plane > 0 &&
+          image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) {
          image->planes[plane].surface.flags |= RADEON_SURF_FORCE_SWIZZLE_MODE;
          image->planes[plane].surface.u.gfx9.swizzle_mode = image->planes[0].surface.u.gfx9.swizzle_mode;
       }
@@ -1813,7 +1811,7 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
       if (status)
          *status->pResult = VK_SUCCESS;
 
-         /* Ignore this struct on Android, we cannot access swapchain structures there. */
+      /* Ignore this struct on Android, we cannot access swapchain structures there. */
 #ifdef RADV_USE_WSI_PLATFORM
       if (!mem) {
          const VkBindImageMemorySwapchainInfoKHR *swapchain_info =

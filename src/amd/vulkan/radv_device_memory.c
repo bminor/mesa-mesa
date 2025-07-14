@@ -16,13 +16,11 @@
 #include "radv_image.h"
 #include "radv_rmv.h"
 
-#include "vk_log.h"
 #include "vk_debug_utils.h"
+#include "vk_log.h"
 
 static void
-radv_device_memory_emit_report(struct radv_device *device,
-                               struct radv_device_memory *mem,
-                               bool is_alloc,
+radv_device_memory_emit_report(struct radv_device *device, struct radv_device_memory *mem, bool is_alloc,
                                VkResult result)
 {
    if (likely(!device->vk.memory_reports))
@@ -32,17 +30,15 @@ radv_device_memory_emit_report(struct radv_device *device,
    if (result != VK_SUCCESS) {
       type = VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATION_FAILED_EXT;
    } else if (is_alloc) {
-      type = mem->import_handle_type
-             ? VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_IMPORT_EXT
-             : VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT;
+      type = mem->import_handle_type ? VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_IMPORT_EXT
+                                     : VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT;
    } else {
-      type = mem->import_handle_type
-             ? VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_UNIMPORT_EXT
-             : VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_FREE_EXT;
+      type = mem->import_handle_type ? VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_UNIMPORT_EXT
+                                     : VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_FREE_EXT;
    }
 
-   vk_emit_device_memory_report(&device->vk, type, mem->bo->obj_id, mem->bo->size,
-                                VK_OBJECT_TYPE_DEVICE_MEMORY, (uintptr_t)(mem), mem->heap_index);
+   vk_emit_device_memory_report(&device->vk, type, mem->bo->obj_id, mem->bo->size, VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                (uintptr_t)(mem), mem->heap_index);
 }
 
 void

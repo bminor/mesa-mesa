@@ -16,9 +16,9 @@
 #define VG(x) ((void)0)
 #endif
 
-#include "radv_instance.h"
 #include "radv_debug.h"
 #include "radv_entrypoints.h"
+#include "radv_instance.h"
 #include "radv_wsi.h"
 
 #include "util/driconf.h"
@@ -347,7 +347,7 @@ static const struct vk_instance_extension_table radv_instance_extensions_support
 };
 
 static enum radeon_ctx_pstate
-radv_parse_pstate(const char* str)
+radv_parse_pstate(const char *str)
 {
    if (!strcmp(str, "peak")) {
       return RADEON_CTX_PSTATE_PEAK;

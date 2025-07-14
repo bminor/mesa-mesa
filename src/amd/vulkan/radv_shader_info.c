@@ -22,15 +22,13 @@ mark_sampler_desc(const nir_variable *var, struct radv_shader_info *info)
 }
 
 static bool
-radv_use_vs_prolog(const nir_shader *nir,
-                   const struct radv_graphics_state_key *gfx_state)
+radv_use_vs_prolog(const nir_shader *nir, const struct radv_graphics_state_key *gfx_state)
 {
    return gfx_state->vs.has_prolog && nir->info.inputs_read;
 }
 
 static bool
-radv_use_per_attribute_vb_descs(const nir_shader *nir,
-                                const struct radv_graphics_state_key *gfx_state,
+radv_use_per_attribute_vb_descs(const nir_shader *nir, const struct radv_graphics_state_key *gfx_state,
                                 const struct radv_shader_stage_key *stage_key)
 {
    return stage_key->vertex_robustness1 || radv_use_vs_prolog(nir, gfx_state);
@@ -367,7 +365,7 @@ gather_xfb_info(const nir_shader *nir, struct radv_shader_info *info)
 
    const nir_xfb_info *xfb = nir->xfb_info;
 
-   u_foreach_bit(output_buffer, xfb->buffers_written) {
+   u_foreach_bit (output_buffer, xfb->buffers_written) {
       unsigned stream = xfb->buffer_to_stream[output_buffer];
       so->enabled_stream_buffers_mask |= (1 << output_buffer) << (stream * 4);
       so->strides[output_buffer] = xfb->buffers[output_buffer].stride / 4;
@@ -398,9 +396,8 @@ radv_get_output_masks(const struct nir_shader *nir, const struct radv_graphics_s
                       uint64_t *per_vtx_mask, uint64_t *per_prim_mask)
 {
    /* These are not compiled into neither output param nor position exports. */
-   const uint64_t special_mask = VARYING_BIT_PRIMITIVE_COUNT |
-                                 VARYING_BIT_PRIMITIVE_INDICES |
-                                 VARYING_BIT_CULL_PRIMITIVE;
+   const uint64_t special_mask =
+      VARYING_BIT_PRIMITIVE_COUNT | VARYING_BIT_PRIMITIVE_INDICES | VARYING_BIT_CULL_PRIMITIVE;
 
    *per_prim_mask = nir->info.outputs_written & nir->info.per_primitive_outputs & ~special_mask;
    *per_vtx_mask = nir->info.outputs_written & ~nir->info.per_primitive_outputs & ~special_mask;
@@ -659,8 +656,8 @@ gather_shader_info_tes(struct radv_device *device, const nir_shader *nir, struct
    if (!info->inputs_linked) {
       info->tes.num_linked_inputs = util_last_bit64(radv_gather_unlinked_io_mask(
          nir->info.inputs_read & ~(VARYING_BIT_TESS_LEVEL_OUTER | VARYING_BIT_TESS_LEVEL_INNER)));
-      info->tes.num_linked_patch_inputs = util_last_bit64(
-         radv_gather_unlinked_patch_io_mask(nir->info.inputs_read, nir->info.patch_inputs_read));
+      info->tes.num_linked_patch_inputs =
+         util_last_bit64(radv_gather_unlinked_patch_io_mask(nir->info.inputs_read, nir->info.patch_inputs_read));
    }
    if (!info->outputs_linked)
       info->tes.num_linked_outputs = util_last_bit64(radv_gather_unlinked_io_mask(nir->info.outputs_written));

@@ -757,8 +757,8 @@ radv_reset_sqtt_trace(struct radv_device *device)
    simple_mtx_lock(&device->sqtt_command_pool_mtx);
    for (unsigned i = 0; i < ARRAY_SIZE(device->sqtt_command_pool); i++) {
       if (device->sqtt_command_pool[i])
-         vk_common_TrimCommandPool(radv_device_to_handle(device), vk_command_pool_to_handle(device->sqtt_command_pool[i]),
-                                0);
+         vk_common_TrimCommandPool(radv_device_to_handle(device),
+                                   vk_command_pool_to_handle(device->sqtt_command_pool[i]), 0);
    }
    simple_mtx_unlock(&device->sqtt_command_pool_mtx);
 }

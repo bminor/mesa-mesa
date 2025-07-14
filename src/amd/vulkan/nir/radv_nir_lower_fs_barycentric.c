@@ -256,6 +256,5 @@ radv_nir_lower_fs_barycentric(nir_shader *shader, const struct radv_graphics_sta
       .rast_prim = rast_prim,
    };
 
-   return nir_shader_intrinsics_pass(shader, lower_load_barycentric_coord,
-                                     nir_metadata_none, &state);
+   return nir_shader_intrinsics_pass(shader, lower_load_barycentric_coord, nir_metadata_none, &state);
 }

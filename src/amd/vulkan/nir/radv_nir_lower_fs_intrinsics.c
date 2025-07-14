@@ -90,8 +90,7 @@ pass(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
             /* sample_pos -= 0.5 */
             sample_pos = nir_fadd_imm(b, sample_pos, -0.5f);
 
-            res2 = nir_load_barycentric_at_offset(b, 32, sample_pos,
-                                                  .interp_mode = nir_intrinsic_interp_mode(intrin));
+            res2 = nir_load_barycentric_at_offset(b, 32, sample_pos, .interp_mode = nir_intrinsic_interp_mode(intrin));
          }
          nir_pop_if(b, NULL);
 
@@ -105,8 +104,8 @@ pass(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
             /* sample_pos -= 0.5 */
             sample_pos = nir_fadd_imm(b, sample_pos, -0.5f);
 
-            new_dest = nir_load_barycentric_at_offset(b, 32, sample_pos,
-                                                      .interp_mode = nir_intrinsic_interp_mode(intrin));
+            new_dest =
+               nir_load_barycentric_at_offset(b, 32, sample_pos, .interp_mode = nir_intrinsic_interp_mode(intrin));
          }
       }
 
@@ -122,7 +121,7 @@ bool
 radv_nir_lower_fs_intrinsics(nir_shader *nir, const struct radv_shader_stage *fs_stage,
                              const struct radv_graphics_state_key *gfx_state)
 {
-   struct ctx ctx = { .fs_stage = fs_stage, .gfx_state = gfx_state };
+   struct ctx ctx = {.fs_stage = fs_stage, .gfx_state = gfx_state};
    return nir_shader_intrinsics_pass(nir, pass, nir_metadata_none, &ctx);
 }
 

@@ -83,17 +83,17 @@ radv_CreateDescriptorUpdateTemplate(VkDevice _device, const VkDescriptorUpdateTe
          dst_stride = binding_layout->size / 4;
       }
 
-      templ->entry[i] = (struct radv_descriptor_update_template_entry){
-         .descriptor_type = entry->descriptorType,
-         .descriptor_count = entry->descriptorCount,
-         .src_offset = entry->offset,
-         .src_stride = entry->stride,
-         .dst_offset = dst_offset,
-         .dst_stride = dst_stride,
-         .buffer_offset = buffer_offset,
-         .has_sampler = !binding_layout->immutable_samplers_offset,
-         .has_ycbcr_sampler = binding_layout->has_ycbcr_sampler,
-         .immutable_samplers = immutable_samplers};
+      templ->entry[i] =
+         (struct radv_descriptor_update_template_entry){.descriptor_type = entry->descriptorType,
+                                                        .descriptor_count = entry->descriptorCount,
+                                                        .src_offset = entry->offset,
+                                                        .src_stride = entry->stride,
+                                                        .dst_offset = dst_offset,
+                                                        .dst_stride = dst_stride,
+                                                        .buffer_offset = buffer_offset,
+                                                        .has_sampler = !binding_layout->immutable_samplers_offset,
+                                                        .has_ycbcr_sampler = binding_layout->has_ycbcr_sampler,
+                                                        .immutable_samplers = immutable_samplers};
    }
 
    *pDescriptorUpdateTemplate = radv_descriptor_update_template_to_handle(templ);

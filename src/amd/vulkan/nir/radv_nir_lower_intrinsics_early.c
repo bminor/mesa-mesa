@@ -41,6 +41,5 @@ pass(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 bool
 radv_nir_lower_intrinsics_early(nir_shader *nir, bool lower_view_index_to_zero)
 {
-   return nir_shader_intrinsics_pass(nir, pass, nir_metadata_control_flow,
-                                     &lower_view_index_to_zero);
+   return nir_shader_intrinsics_pass(nir, pass, nir_metadata_control_flow, &lower_view_index_to_zero);
 }

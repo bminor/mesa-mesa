@@ -73,11 +73,10 @@ blit2d_bind_src(struct radv_cmd_buffer *cmd_buffer, VkPipelineLayout layout, str
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
             .data.pUniformTexelBuffer =
-               &(VkDescriptorAddressInfoEXT){
-                  .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-                  .address = src_buf->addr + src_buf->offset,
-                  .range = src_buf->size - src_buf->offset,
-                  .format = depth_format ? depth_format : src_buf->format},
+               &(VkDescriptorAddressInfoEXT){.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+                                             .address = src_buf->addr + src_buf->offset,
+                                             .range = src_buf->size - src_buf->offset,
+                                             .format = depth_format ? depth_format : src_buf->format},
          }});
 
       const VkPushConstantsInfoKHR pc_info = {

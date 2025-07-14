@@ -175,7 +175,8 @@ init_ray_query_vars(nir_shader *shader, const glsl_type *opaque_type, struct ray
 }
 
 static void
-lower_ray_query(nir_shader *shader, nir_variable *ray_query, struct hash_table *ht, const struct radv_physical_device *pdev)
+lower_ray_query(nir_shader *shader, nir_variable *ray_query, struct hash_table *ht,
+                const struct radv_physical_device *pdev)
 {
    struct ray_query_vars *vars = ralloc(ht, struct ray_query_vars);
 

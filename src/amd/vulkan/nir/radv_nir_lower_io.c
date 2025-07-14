@@ -143,7 +143,7 @@ radv_nir_lower_io(struct radv_device *device, nir_shader *nir)
     */
    NIR_PASS(_, nir, nir_lower_array_deref_of_vec, nir_var_shader_in | nir_var_shader_out, NULL,
             nir_lower_direct_array_deref_of_vec_load | nir_lower_indirect_array_deref_of_vec_load |
-            nir_lower_direct_array_deref_of_vec_store | nir_lower_indirect_array_deref_of_vec_store);
+               nir_lower_direct_array_deref_of_vec_store | nir_lower_indirect_array_deref_of_vec_store);
 
    if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
       NIR_PASS(_, nir, nir_lower_tess_level_array_vars_to_vec);
@@ -230,15 +230,16 @@ radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *s
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       if (info->vs.as_ls) {
          NIR_PASS(_, nir, ac_nir_lower_ls_outputs_to_mem, map_output, pdev->info.gfx_level, info->vs.tcs_in_out_eq,
-                    info->vs.tcs_inputs_via_temp, info->vs.tcs_inputs_via_lds);
+                  info->vs.tcs_inputs_via_temp, info->vs.tcs_inputs_via_lds);
          return true;
       } else if (info->vs.as_es) {
-         NIR_PASS(_, nir, ac_nir_lower_es_outputs_to_mem, map_output, pdev->info.gfx_level, info->esgs_itemsize, info->gs_inputs_read);
+         NIR_PASS(_, nir, ac_nir_lower_es_outputs_to_mem, map_output, pdev->info.gfx_level, info->esgs_itemsize,
+                  info->gs_inputs_read);
          return true;
       }
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
       NIR_PASS(_, nir, ac_nir_lower_hs_inputs_to_mem, map_input, pdev->info.gfx_level, info->vs.tcs_in_out_eq,
-                 info->vs.tcs_inputs_via_temp, info->vs.tcs_inputs_via_lds);
+               info->vs.tcs_inputs_via_temp, info->vs.tcs_inputs_via_lds);
 
       nir_tcs_info tcs_info;
       nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
@@ -254,7 +255,8 @@ radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *s
       NIR_PASS(_, nir, ac_nir_lower_tes_inputs_to_mem, map_input);
 
       if (info->tes.as_es) {
-         NIR_PASS(_, nir, ac_nir_lower_es_outputs_to_mem, map_output, pdev->info.gfx_level, info->esgs_itemsize, info->gs_inputs_read);
+         NIR_PASS(_, nir, ac_nir_lower_es_outputs_to_mem, map_output, pdev->info.gfx_level, info->esgs_itemsize,
+                  info->gs_inputs_read);
       }
 
       return true;

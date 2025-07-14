@@ -241,7 +241,8 @@ radv_amdgpu_cs_domain(const struct radeon_winsys *_ws)
     * If there is no PCIe info, assume there is enough bandwidth.
     */
    const uint32_t bandwidth_mbps_threshold = 8 * 0.985 * 1024;
-   bool enough_bandwidth = !ws->info.has_pcie_bandwidth_info || ws->info.pcie_bandwidth_mbps >= bandwidth_mbps_threshold;
+   bool enough_bandwidth =
+      !ws->info.has_pcie_bandwidth_info || ws->info.pcie_bandwidth_mbps >= bandwidth_mbps_threshold;
 
    bool use_sam =
       (enough_vram && enough_bandwidth && ws->info.has_dedicated_vram && !(ws->perftest & RADV_PERFTEST_NO_SAM)) ||

@@ -10,8 +10,8 @@
 #ifndef RADV_META_NIR_H
 #define RADV_META_NIR_H
 
-#include "vulkan/vulkan_core.h"
 #include "compiler/shader_enums.h"
+#include "vulkan/vulkan_core.h"
 #include "nir_defines.h"
 
 #ifdef __cplusplus

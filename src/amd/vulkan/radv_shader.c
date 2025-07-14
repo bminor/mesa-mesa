@@ -384,8 +384,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
          .device = device,
          .object = stage->spirv.object,
       };
-      const struct spirv_capabilities spirv_caps =
-         vk_physical_device_get_spirv_capabilities(device->vk.physical);
+      const struct spirv_capabilities spirv_caps = vk_physical_device_get_spirv_capabilities(device->vk.physical);
       const struct spirv_to_nir_options spirv_options = {
          .amd_gcn_shader = true,
          .amd_shader_ballot = true,
@@ -1665,7 +1664,6 @@ radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_sha
                                       S_028A44_GS_PRIMS_PER_SUBGRP(info->ngg_info.max_gsprims) |
                                       S_028A44_GS_INST_PRIMS_IN_SUBGRP(info->ngg_info.max_gsprims * gs_num_invocations);
    }
-
 
    info->regs.vgt_gs_max_vert_out = info->gs.vertices_out;
 }

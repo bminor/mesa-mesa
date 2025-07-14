@@ -98,8 +98,7 @@ radv_amdgpu_winsys_rebuild_bo_list(struct radv_amdgpu_winsys_bo *bo)
 }
 
 static void
-radv_amdgpu_log_va_op(struct radv_amdgpu_winsys *ws,
-                      struct radv_amdgpu_winsys_bo *bo, uint64_t offset, uint64_t size,
+radv_amdgpu_log_va_op(struct radv_amdgpu_winsys *ws, struct radv_amdgpu_winsys_bo *bo, uint64_t offset, uint64_t size,
                       uint64_t virtual_va)
 {
    struct radv_amdgpu_winsys_bo_log *bo_log = NULL;
@@ -471,7 +470,7 @@ radv_amdgpu_winsys_bo_create(struct radeon_winsys *_ws, uint64_t size, unsigned 
        * VRAM.
        */
       if (!(ws->perftest & RADV_PERFTEST_NO_GTT_SPILL))
-          request.preferred_heap |= AMDGPU_GEM_DOMAIN_GTT;
+         request.preferred_heap |= AMDGPU_GEM_DOMAIN_GTT;
    }
 
    if (initial_domain & RADEON_DOMAIN_GTT)
@@ -1128,15 +1127,13 @@ radv_amdgpu_dump_bo_log(struct radeon_winsys *_ws, FILE *file)
    u_rwlock_rdlock(&ws->log_bo_list_lock);
    LIST_FOR_EACH_ENTRY (bo_log, &ws->log_bo_list, list) {
       if (bo_log->virtual_mapping) {
-         fprintf(file, "timestamp=%llu, VA=%.16llx-%.16llx, mapped_to=%.16llx\n",
-                 (long long)bo_log->timestamp,
+         fprintf(file, "timestamp=%llu, VA=%.16llx-%.16llx, mapped_to=%.16llx\n", (long long)bo_log->timestamp,
                  (long long)radv_amdgpu_canonicalize_va(bo_log->va),
                  (long long)radv_amdgpu_canonicalize_va(bo_log->va + bo_log->size),
                  (long long)radv_amdgpu_canonicalize_va(bo_log->mapped_va));
       } else {
          fprintf(file, "timestamp=%llu, VA=%.16llx-%.16llx, destroyed=%d, is_virtual=%d\n",
-                 (long long)bo_log->timestamp,
-                 (long long)radv_amdgpu_canonicalize_va(bo_log->va),
+                 (long long)bo_log->timestamp, (long long)radv_amdgpu_canonicalize_va(bo_log->va),
                  (long long)radv_amdgpu_canonicalize_va(bo_log->va + bo_log->size), bo_log->destroyed,
                  bo_log->is_virtual);
       }

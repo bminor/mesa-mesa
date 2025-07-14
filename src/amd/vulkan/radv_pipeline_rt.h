@@ -11,9 +11,9 @@
 #ifndef RADV_PIPELINE_RT_H
 #define RADV_PIPELINE_RT_H
 
+#include "util/bitset.h"
 #include "radv_pipeline_compute.h"
 #include "radv_shader.h"
-#include "util/bitset.h"
 
 struct radv_ray_tracing_pipeline {
    struct radv_compute_pipeline base;

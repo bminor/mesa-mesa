@@ -1640,7 +1640,6 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
       if (p & nir_progress_producer) {
          radv_optimize_nir_algebraic(producer, true, false);
          NIR_PASS(_, producer, nir_opt_undef);
-
       }
       if (p & nir_progress_consumer) {
          radv_optimize_nir_algebraic(consumer, true, false);
@@ -2295,7 +2294,7 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
    gs_copy_stage.info.inline_push_constant_mask = gs_copy_stage.args.ac.inline_push_const_mask;
 
    NIR_PASS(_, nir, ac_nir_lower_intrinsics_to_args, pdev->info.gfx_level, pdev->info.has_ls_vgpr_init_bug,
-              AC_HW_VERTEX_SHADER, 64, 64, &gs_copy_stage.args.ac);
+            AC_HW_VERTEX_SHADER, 64, 64, &gs_copy_stage.args.ac);
    NIR_PASS(_, nir, radv_nir_lower_abi, pdev->info.gfx_level, &gs_copy_stage, gfx_state, pdev->info.address32_hi);
 
    struct radv_graphics_pipeline_key key = {0};
@@ -2446,8 +2445,7 @@ radv_pipeline_import_retained_shaders(const struct radv_device *device, struct r
       const VkPipelineShaderStageCreateInfo *sinfo = &lib->stages[i];
       gl_shader_stage s = vk_to_mesa_shader_stage(sinfo->stage);
 
-      radv_pipeline_stage_init(lib->base.base.create_flags, sinfo,
-                               &lib->layout, &lib->stage_keys[s], &stages[s]);
+      radv_pipeline_stage_init(lib->base.base.create_flags, sinfo, &lib->layout, &lib->stage_keys[s], &stages[s]);
    }
 
    /* Import the NIR shaders (after SPIRV->NIR). */
@@ -3241,8 +3239,9 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
             if (pdev->info.gfx_level >= GFX10) {
                pipeline->vertex_input.non_trivial_format[i] = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
             } else {
-               pipeline->vertex_input.non_trivial_format[i] =
-                  vtx_info->dst_sel | S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) | S_008F0C_DATA_FORMAT(hw_format & 0xf);
+               pipeline->vertex_input.non_trivial_format[i] = vtx_info->dst_sel |
+                                                              S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) |
+                                                              S_008F0C_DATA_FORMAT(hw_format & 0xf);
             }
          } else {
             pipeline->vertex_input.nontrivial_formats |= BITFIELD_BIT(i);

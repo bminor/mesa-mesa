@@ -6,6 +6,7 @@
 
 #include "vk_log.h"
 
+#include "util/blob.h"
 #include "radv_device.h"
 #include "radv_entrypoints.h"
 #include "radv_physical_device.h"
@@ -13,7 +14,6 @@
 #include "radv_pipeline_compute.h"
 #include "radv_pipeline_graphics.h"
 #include "radv_shader_object.h"
-#include "util/blob.h"
 
 static void
 radv_shader_object_destroy_variant(struct radv_device *device, VkShaderCodeTypeEXT code_type,

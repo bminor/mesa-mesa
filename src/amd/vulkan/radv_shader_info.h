@@ -98,7 +98,7 @@ struct radv_shader_info {
    bool has_xfb_query;
    uint8_t ngg_lds_scratch_size;
    uint32_t num_tess_patches;
-   uint32_t esgs_itemsize; /* Only for VS or TES as ES */
+   uint32_t esgs_itemsize;       /* Only for VS or TES as ES */
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
    struct radv_vs_output_info outinfo;
    unsigned workgroup_size;
@@ -111,7 +111,7 @@ struct radv_shader_info {
    bool outputs_linked;
    bool merged_shader_compiled_separately; /* GFX9+ */
    bool force_indirect_desc_sets;
-   uint64_t gs_inputs_read; /* Mask of GS inputs read (only used by linked ES) */
+   uint64_t gs_inputs_read;  /* Mask of GS inputs read (only used by linked ES) */
    unsigned nir_shared_size; /* Only used by LLVM. */
 
    struct {

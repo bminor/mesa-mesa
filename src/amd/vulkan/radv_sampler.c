@@ -12,10 +12,10 @@
 
 #include "ac_descriptors.h"
 
-#include "radv_sampler.h"
 #include "radv_device.h"
 #include "radv_entrypoints.h"
 #include "radv_physical_device.h"
+#include "radv_sampler.h"
 
 static unsigned
 radv_tex_wrap(VkSamplerAddressMode address_mode)

@@ -573,9 +573,9 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
 
    NIR_PASS(_, stage->nir, ac_nir_lower_global_access);
    NIR_PASS(_, stage->nir, ac_nir_lower_intrinsics_to_args, gfx_level,
-              pdev->info.has_ls_vgpr_init_bug && gfx_state && !gfx_state->vs.has_prolog,
-              radv_select_hw_stage(&stage->info, gfx_level), stage->info.wave_size, stage->info.workgroup_size,
-              &stage->args.ac);
+            pdev->info.has_ls_vgpr_init_bug && gfx_state && !gfx_state->vs.has_prolog,
+            radv_select_hw_stage(&stage->info, gfx_level), stage->info.wave_size, stage->info.workgroup_size,
+            &stage->args.ac);
    NIR_PASS(_, stage->nir, radv_nir_lower_abi, gfx_level, stage, gfx_state, pdev->info.address32_hi);
 
    if (!stage->key.optimisations_disabled) {

@@ -700,7 +700,7 @@ radv_get_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image 
 
       /* Preserve VRS rates during clears but not during initialization. */
       if (is_clear && radv_image_has_vrs_htile(device, image)) {
-         mask &= ~(0x3 << 6); /* VRS X-rate */
+         mask &= ~(0x3 << 6);  /* VRS X-rate */
          mask &= ~(0x3 << 10); /* VRS Y-rate */
       }
 

@@ -19,7 +19,7 @@
 #include "vk_shader_module.h"
 
 #define PKT3_INDIRECT_BUFFER_BYTES 16
-#define DGC_VBO_INFO_SIZE (sizeof(struct radv_vbo_info) + 4 /* vbo_offsets */)
+#define DGC_VBO_INFO_SIZE          (sizeof(struct radv_vbo_info) + 4 /* vbo_offsets */)
 
 /* The DGC command buffer layout is quite complex, here's some explanations:
  *

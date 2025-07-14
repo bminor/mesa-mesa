@@ -116,7 +116,6 @@ struct radv_graphics_pipeline {
 
    unsigned rast_prim;
 
-
    /* Custom blend mode for internal operations. */
    unsigned custom_blend_mode;
 

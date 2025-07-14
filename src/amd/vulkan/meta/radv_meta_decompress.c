@@ -17,7 +17,8 @@ struct radv_htile_expand_key {
 };
 
 static VkResult
-get_pipeline_gfx(struct radv_device *device, struct radv_image *image, VkPipeline *pipeline_out, VkPipelineLayout *layout_out)
+get_pipeline_gfx(struct radv_device *device, struct radv_image *image, VkPipeline *pipeline_out,
+                 VkPipelineLayout *layout_out)
 {
    const uint32_t samples = image->vk.samples;
    struct radv_htile_expand_key key;
@@ -137,9 +138,9 @@ get_pipeline_gfx(struct radv_device *device, struct radv_image *image, VkPipelin
    };
 
    struct vk_meta_rendering_info render = {
-       .depth_attachment_format = VK_FORMAT_D32_SFLOAT_S8_UINT,
-       .stencil_attachment_format = VK_FORMAT_D32_SFLOAT_S8_UINT,
-    };
+      .depth_attachment_format = VK_FORMAT_D32_SFLOAT_S8_UINT,
+      .stencil_attachment_format = VK_FORMAT_D32_SFLOAT_S8_UINT,
+   };
 
    result = vk_meta_create_graphics_pipeline(&device->vk, &device->meta_state.device, &pipeline_create_info, &render,
                                              &key, sizeof(key), pipeline_out);
