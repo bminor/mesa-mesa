@@ -1886,6 +1886,7 @@ anv_device_import_bo_from_host_ptr(struct anv_device *device,
                            ANV_BO_ALLOC_HOST_COHERENT |
                            ANV_BO_ALLOC_AUX_CCS |
                            ANV_BO_ALLOC_PROTECTED |
+                           ANV_BO_ALLOC_COMPRESSED |
                            ANV_BO_ALLOC_FIXED_ADDRESS)));
    assert(alloc_flags & ANV_BO_ALLOC_EXTERNAL);
 
