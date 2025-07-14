@@ -22,7 +22,6 @@
  */
 
 #include <list>
-#include <vector>
 #include "brw_compiler.h"
 #include "brw_shader.h"
 #include "brw_builder.h"

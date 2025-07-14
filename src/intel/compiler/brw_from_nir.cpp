@@ -33,8 +33,6 @@
 #include "util/bitscan.h"
 #include "compiler/glsl_types.h"
 
-#include <vector>
-
 struct brw_bind_info {
    bool valid;
    bool bindless;
