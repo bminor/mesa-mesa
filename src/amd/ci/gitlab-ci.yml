@@ -95,7 +95,7 @@ radv-raven-traces-restricted:
     PIGLIT_TRACES_FILE: restricted-traces-amd.yml
     PIGLIT_REPLAY_DEVICE_NAME: "vk-${GPU_VERSION}"
     PIGLIT_REPLAY_EXTRA_ARGS: --keep-image --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}
-    FDO_CI_CONCURRENT: 10
+    FDO_CI_CONCURRENT: 5  # Run the 10 traces in 2 sets of 5 to avoid OOMs
   allow_failure: true
 
 radeonsi-raven-piglit:
