@@ -1327,6 +1327,28 @@ opcode("alignbyte_amd", 0, tuint32, [0, 0, 0], [tuint32, tuint32, tuint32], Fals
    dst = src >> ((src2 & 0x3) * 8);
 """)
 
+# AMD specific: Byte swizzle within 64-bits of source data
+# Operand order matches v_perm_b32, src0 contains the MSBs
+# and src1 the LSBs of the data.
+opcode("byte_perm_amd", 0, tuint32, [0, 0, 0], [tuint32, tuint32, tuint32], False, "", """
+   uint64_t src = src1 | ((uint64_t)src0 << 32);
+   dst = 0;
+   for (unsigned i = 0; i < 4; i++) {
+      uint8_t sel = (src2 >> (i * 8)) & 0xff;
+      unsigned res;
+      if (sel >= 13) {
+         res = 0xff;
+      } else if (sel == 12) {
+         res = 0;
+      } else if (sel >= 8) {
+         res = ((src >> (((sel - 8) * 2 + 1) * 8 + 7)) & 1) * 0xff;
+      } else {
+         res = (src >> (sel * 8)) & 0xff;
+      }
+      dst |= res << (i * 8);
+   }
+""")
+
 # Midgard specific sin and cos
 # These expect their inputs to be divided by pi.
 unop("fsin_mdg", tfloat, "sinf(3.141592653589793 * src0)")
