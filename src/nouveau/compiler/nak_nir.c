@@ -24,9 +24,27 @@ nir_def *
 nak_nir_load_sysval(nir_builder *b, enum nak_sv idx,
                     enum gl_access_qualifier access)
 {
+   bool divergent;
+
+   switch (idx) {
+   case NAK_SV_CTAID_X:
+   case NAK_SV_CTAID_Y:
+   case NAK_SV_CTAID_Z:
+   case NAK_SV_VIRTCFG:
+   case NAK_SV_PRIM_TYPE:
+   case NAK_SV_CLOCK_LO:
+   case NAK_SV_CLOCK_HI:
+   case NAK_SV_VARIABLE_RATE:
+      divergent = false;
+      break;
+   default:
+      divergent = true;
+      break;
+   }
+
    return nir_load_sysval_nv(b, 32, .base = idx,
                              .access = access,
-                             .divergent = true);
+                             .divergent = divergent);
 }
 
 bool
