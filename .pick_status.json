@@ -194,7 +194,7 @@
         "description": "pan/kmod: fix propagation of MAP_FAILED in pan_kmod_bo_mmap",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d5f4f918f37491fd9fd944230dd047575a53b24b",
         "notes": null
