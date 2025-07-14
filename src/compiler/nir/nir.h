@@ -231,6 +231,7 @@ typedef enum {
 typedef enum {
    nir_preamble_class_general,
    nir_preamble_class_image,
+   nir_preamble_class_sampler,
    nir_preamble_num_classes,
 } nir_preamble_class;
 
