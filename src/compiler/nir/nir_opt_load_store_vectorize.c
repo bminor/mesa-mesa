@@ -1446,32 +1446,42 @@ vectorize_sorted_entries(struct vectorize_ctx *ctx, nir_function_impl *impl,
           * callback if needed.  Driver callbacks will likely want to
           * restrict this to a smaller value, say 4 bytes (or none).
           */
-         unsigned max_hole =
-            first->is_store ||
-                  (ctx->options->has_shared2_amd &&
-                   get_variable_mode(first) == nir_var_mem_shared)
-               ? 0
-               : 28;
+         unsigned max_hole = first->is_store ? 0 : 28;
          unsigned low_size = get_bit_size(low) / 8u * low->num_components;
          bool separate = diff > max_hole + low_size;
+         if (separate)
+            continue;
 
-         if (separate) {
-            if (!ctx->options->has_shared2_amd ||
-                get_variable_mode(first) != nir_var_mem_shared)
-               break;
+         if (try_vectorize(impl, ctx, low, high, first, second)) {
+            low = low->is_store ? second : first;
+            *util_dynarray_element(arr, struct entry *, second_idx) = NULL;
+            progress = true;
+         }
+      }
+      *util_dynarray_element(arr, struct entry *, first_idx) = low;
+   }
 
-            if (try_vectorize_shared2(ctx, low, high, first, second)) {
-               low = NULL;
-               *util_dynarray_element(arr, struct entry *, second_idx) = NULL;
-               progress = true;
-               break;
-            }
-         } else {
-            if (try_vectorize(impl, ctx, low, high, first, second)) {
-               low = low->is_store ? second : first;
-               *util_dynarray_element(arr, struct entry *, second_idx) = NULL;
-               progress = true;
-            }
+   if (!ctx->options->has_shared2_amd)
+      return progress;
+
+   /* Do a second pass for backends which support load/store shared2. */
+   for (unsigned first_idx = 0; first_idx < num_entries; first_idx++) {
+      struct entry *low = *util_dynarray_element(arr, struct entry *, first_idx);
+      if (!low || get_variable_mode(low) != nir_var_mem_shared)
+         continue;
+
+      for (unsigned second_idx = first_idx + 1; second_idx < num_entries; second_idx++) {
+         struct entry *high = *util_dynarray_element(arr, struct entry *, second_idx);
+         if (!high || get_variable_mode(high) != nir_var_mem_shared)
+            continue;
+
+         struct entry *first = low->index < high->index ? low : high;
+         struct entry *second = low->index < high->index ? high : low;
+         if (try_vectorize_shared2(ctx, low, high, first, second)) {
+            low = NULL;
+            *util_dynarray_element(arr, struct entry *, second_idx) = NULL;
+            progress = true;
+            break;
          }
       }
 
