@@ -792,6 +792,7 @@ option(
   type : 'array',
   value : [],
   description : 'Build legacy X11 support features.',
+  deprecated : true,
   choices : [
   ],
 )
