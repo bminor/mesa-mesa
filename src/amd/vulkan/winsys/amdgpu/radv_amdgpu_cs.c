@@ -240,7 +240,8 @@ radv_amdgpu_cs_domain(const struct radeon_winsys *_ws)
    /* Bandwidth should be equivalent to at least PCIe 3.0 x8.
     * If there is no PCIe info, assume there is enough bandwidth.
     */
-   bool enough_bandwidth = !ws->info.has_pcie_bandwidth_info || ws->info.pcie_bandwidth_mbps >= 8 * 0.985 * 1024;
+   const uint32_t bandwidth_mbps_threshold = 8 * 0.985 * 1024;
+   bool enough_bandwidth = !ws->info.has_pcie_bandwidth_info || ws->info.pcie_bandwidth_mbps >= bandwidth_mbps_threshold;
 
    bool use_sam =
       (enough_vram && enough_bandwidth && ws->info.has_dedicated_vram && !(ws->perftest & RADV_PERFTEST_NO_SAM)) ||
