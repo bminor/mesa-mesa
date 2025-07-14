@@ -197,15 +197,15 @@ calc_mem_height_pitch_B(enum isl_format format,
 }
 
 VkResult
-anv_CopyMemoryToImageEXT(
-    VkDevice                                    _device,
-    const VkCopyMemoryToImageInfoEXT*           pCopyMemoryToImageInfo)
+anv_CopyMemoryToImage(
+    VkDevice                                 _device,
+    const VkCopyMemoryToImageInfo*           pCopyMemoryToImageInfo)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, image, pCopyMemoryToImageInfo->dstImage);
 
    for (uint32_t r = 0; r < pCopyMemoryToImageInfo->regionCount; r++) {
-      const VkMemoryToImageCopyEXT *region =
+      const VkMemoryToImageCopy *region =
          &pCopyMemoryToImageInfo->pRegions[r];
       const uint32_t plane =
          anv_image_aspect_to_plane(image, region->imageSubresource.aspectMask);
@@ -244,7 +244,7 @@ anv_CopyMemoryToImageEXT(
             uint64_t mem_row_offset = (z + a) * mem_height_pitch_B;
             uint64_t start_tile_B, end_tile_B;
             if ((pCopyMemoryToImageInfo->flags &
-                 VK_HOST_IMAGE_COPY_MEMCPY_EXT) &&
+                 VK_HOST_IMAGE_COPY_MEMCPY) &&
                 isl_surf_image_has_unique_tiles(surf,
                    region->imageSubresource.mipLevel,
                    region->imageOffset.z + z +
@@ -274,15 +274,15 @@ anv_CopyMemoryToImageEXT(
 }
 
 VkResult
-anv_CopyImageToMemoryEXT(
-    VkDevice                                    _device,
-    const VkCopyImageToMemoryInfoEXT*           pCopyImageToMemoryInfo)
+anv_CopyImageToMemory(
+    VkDevice                                 _device,
+    const VkCopyImageToMemoryInfo*           pCopyImageToMemoryInfo)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, image, pCopyImageToMemoryInfo->srcImage);
 
    for (uint32_t r = 0; r < pCopyImageToMemoryInfo->regionCount; r++) {
-      const VkImageToMemoryCopyEXT *region =
+      const VkImageToMemoryCopy *region =
          &pCopyImageToMemoryInfo->pRegions[r];
       const uint32_t plane =
          anv_image_aspect_to_plane(image, region->imageSubresource.aspectMask);
@@ -321,7 +321,7 @@ anv_CopyImageToMemoryEXT(
             uint64_t mem_row_offset = (z + a) * mem_height_pitch_B;
             uint64_t start_tile_B, end_tile_B;
             if ((pCopyImageToMemoryInfo->flags &
-                 VK_HOST_IMAGE_COPY_MEMCPY_EXT) &&
+                 VK_HOST_IMAGE_COPY_MEMCPY) &&
                 isl_surf_image_has_unique_tiles(surf,
                    region->imageSubresource.mipLevel,
                    region->imageOffset.z + z +
@@ -351,9 +351,9 @@ anv_CopyImageToMemoryEXT(
 }
 
 VkResult
-anv_CopyImageToImageEXT(
-    VkDevice                                    _device,
-    const VkCopyImageToImageInfoEXT*            pCopyImageToImageInfo)
+anv_CopyImageToImage(
+    VkDevice                                 _device,
+    const VkCopyImageToImageInfo*            pCopyImageToImageInfo)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, src_image, pCopyImageToImageInfo->srcImage);
@@ -475,10 +475,10 @@ anv_CopyImageToImageEXT(
 }
 
 VkResult
-anv_TransitionImageLayoutEXT(
-    VkDevice                                    device,
-    uint32_t                                    transitionCount,
-    const VkHostImageLayoutTransitionInfoEXT*   pTransitions)
+anv_TransitionImageLayout(
+    VkDevice                                 device,
+    uint32_t                                 transitionCount,
+    const VkHostImageLayoutTransitionInfo*   pTransitions)
 {
    /* Our layout transitions are mostly about resolving the auxiliary surface
     * into the main surface. Since we disable the auxiliary surface, there is
