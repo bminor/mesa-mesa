@@ -1067,6 +1067,13 @@ impl URegLatencySM80 {
                     panic!("Illegal R2UR in ureg");
                 }
             }
+            Op::S2R(_) => {
+                if !reader {
+                    ToUr
+                } else {
+                    panic!("Illegal S2UR in ureg");
+                }
+            }
             Op::Vote(_) => VoteU,
 
             Op::FRnd(_) => vdecoupled,
