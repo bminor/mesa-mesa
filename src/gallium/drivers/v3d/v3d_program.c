@@ -630,7 +630,7 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                  !util_writes_depth_stencil(&v3d->zsa->base)) &&
                 !(v3d->active_queries && v3d->current_oq);
 
-        key->software_blend = v3d->blend->use_software;
+        key->software_blend = v3d->framebuffer_soft_blend || v3d->blend->use_software;
 
         for (int i = 0; i < v3d->framebuffer.nr_cbufs; i++) {
                 const struct pipe_surface *cbuf = &v3d->framebuffer.cbufs[i];

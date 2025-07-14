@@ -645,6 +645,11 @@ struct v3d_context {
         unsigned sample_mask;
         struct pipe_framebuffer_state framebuffer;
 
+        /* True when the framebuffer state has a format that needs software
+         * blending to be enabled.
+         */
+        bool framebuffer_soft_blend;
+
         /* Flags if we have submitted any jobs for the current framebuffer so
          * we can make skip framebuffer invalidation for cases where we had to
          * split the command list into multiple jobs for the same frame (i.e.

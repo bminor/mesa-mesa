@@ -504,6 +504,19 @@ v3d_set_constant_buffer(struct pipe_context *pctx, mesa_shader_stage shader, uin
         v3d->dirty |= V3D_DIRTY_CONSTBUF;
 }
 
+static bool
+v3d_fb_needs_soft_blend(struct v3d_context *v3d,
+                        const struct pipe_framebuffer_state *framebuffer)
+{
+        for (unsigned i = 0; i < framebuffer->nr_cbufs; i++) {
+                const struct pipe_surface *cbuf = &framebuffer->cbufs[i];
+                if (!v3d_format_supports_tlb_resolve_and_blend(&v3d->screen->devinfo,
+                                                               cbuf->format))
+                        return true;
+        }
+        return false;
+}
+
 static void
 v3d_set_framebuffer_state(struct pipe_context *pctx,
                           const struct pipe_framebuffer_state *framebuffer)
@@ -514,6 +527,15 @@ v3d_set_framebuffer_state(struct pipe_context *pctx,
         v3d->job = NULL;
 
         util_copy_framebuffer_state(cso, framebuffer);
+
+        bool needs_soft_blend = v3d_fb_needs_soft_blend(v3d, framebuffer);
+
+        if (!(v3d->blend && v3d->blend->use_software) &&
+            (v3d->framebuffer_soft_blend != needs_soft_blend)) {
+                v3d->dirty |= V3D_DIRTY_BLEND;
+        }
+
+        v3d->framebuffer_soft_blend = needs_soft_blend;
 
         v3d->swap_color_rb = 0;
         v3d->blend_dst_alpha_one = 0;

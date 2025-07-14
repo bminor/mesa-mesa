@@ -28,10 +28,6 @@ spec@!opengl 1.1@texwrap formats bordercolor@GL_LUMINANCE16_ALPHA16- border colo
 spec@!opengl 1.4@gl-1.4-polygon-offset,Fail
 spec@!opengl 2.0@gl-2.0-edgeflag,Fail
 spec@!opengl 2.0@gl-2.0-edgeflag-immediate,Fail
-spec@arb_color_buffer_float@gl_rgba32f-render,Fail
-spec@arb_color_buffer_float@gl_rgba32f-render-fog,Fail
-spec@arb_color_buffer_float@gl_rgba32f-render-sanity,Fail
-spec@arb_color_buffer_float@gl_rgba32f-render-sanity-fog,Fail
 spec@arb_copy_image@arb_copy_image-formats,Fail
 spec@arb_copy_image@arb_copy_image-formats@Source: GL_ALPHA16/Destination: GL_ALPHA16,Fail
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats,Fail

@@ -326,7 +326,9 @@ v3dX(emit_state)(struct pipe_context *pctx)
                         config.direct3d_provoking_vertex =
                                 v3d->rasterizer->base.flatshade_first;
 
-                        config.blend_enable = v3d->blend->blend_enables && !v3d->blend->use_software;
+                        config.blend_enable = v3d->blend->blend_enables &&
+                                !v3d->framebuffer_soft_blend &&
+                                        !v3d->blend->use_software;
 
                         /* Note: EZ state may update based on the compiled FS,
                          * along with ZSA
@@ -482,7 +484,7 @@ v3dX(emit_state)(struct pipe_context *pctx)
         if (v3d->dirty & V3D_DIRTY_BLEND) {
                 struct v3d_blend_state *blend = v3d->blend;
 
-                if (blend->blend_enables && !blend->use_software) {
+                if (blend->blend_enables && !blend->use_software && !v3d->framebuffer_soft_blend) {
                         cl_emit(&job->bcl, BLEND_ENABLES, enables) {
                                 enables.mask = blend->blend_enables;
                         }
