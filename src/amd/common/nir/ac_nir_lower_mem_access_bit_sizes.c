@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "util/blake3/blake3_impl.h"
 #include "ac_nir.h"
 #include "ac_nir_helpers.h"
 
@@ -62,6 +63,20 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    const bool is_load = nir_intrinsic_infos[intrin].has_dest;
    const bool is_smem = intrin == nir_intrinsic_load_push_constant || (access & ACCESS_SMEM_AMD);
    const uint32_t combined_align = nir_combined_align(align_mul, align_offset);
+   nir_mem_access_size_align res;
+
+   if (intrin == nir_intrinsic_load_shared || intrin == nir_intrinsic_store_shared) {
+      /* Split unsupported shared access. */
+      res.bit_size = MIN2(bit_size, combined_align * 8ull);
+      res.align = res.bit_size / 8;
+      /* Don't use >64-bit LDS loads for performance reasons. */
+      unsigned max_bytes = intrin == nir_intrinsic_store_shared && cb_data->gfx_level >= GFX7 ? 16 : 8;
+      bytes = MIN3(bytes, combined_align, max_bytes);
+      bytes = bytes == 12 ? bytes : round_down_to_power_of_2(bytes);
+      res.num_components = bytes / res.align;
+      res.shift = nir_mem_access_shift_method_bytealign_amd;
+      return res;
+   }
 
    /* Make 8-bit accesses 16-bit if possible */
    if (is_load && bit_size == 8 && combined_align >= 2 && bytes % 2 == 0)
@@ -79,17 +94,10 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    else if (is_smem)
       max_components = MIN2(512 / bit_size, 16);
 
-   nir_mem_access_size_align res;
    res.num_components = MIN2(DIV_ROUND_UP(bytes, bit_size / 8), max_components);
    res.bit_size = bit_size;
    res.align = MIN2(bit_size / 8, 4); /* 64-bit access only requires 4 byte alignment. */
    res.shift = nir_mem_access_shift_method_shift64;
-
-   if ((intrin == nir_intrinsic_load_shared || intrin == nir_intrinsic_store_shared)) {
-      /* Split unaligned shared access to create more read2/write2. */
-      if (combined_align < 16 && bytes < 16)
-         res.num_components = MIN2(res.num_components, 64 / bit_size);
-   }
 
    if (!is_load)
       return res;
