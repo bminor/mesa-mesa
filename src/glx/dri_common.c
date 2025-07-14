@@ -45,7 +45,6 @@
 #include <xcb/xproto.h>
 #include "dri_util.h"
 #include "pipe-loader/pipe_loader.h"
-#include "x11_display.h"
 
 #define __ATTRIB(attrib, field) \
     { attrib, offsetof(struct glx_config, field) }
@@ -747,8 +746,7 @@ driSetBackgroundContext(void *loaderPrivate)
 static GLboolean
 driIsThreadSafe(void *loaderPrivate)
 {
-   struct glx_context *pcp = (struct glx_context *) loaderPrivate;
-   return x11_xlib_display_is_thread_safe(pcp->psc->dpy);
+   return true;
 }
 
 const __DRIbackgroundCallableExtension driBackgroundCallable = {

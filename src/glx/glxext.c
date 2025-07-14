@@ -28,11 +28,13 @@
 #include "glxextensions.h"
 
 #include "util/u_debug.h"
+
 #if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
 #include "dri_common.h"
 #endif
 
 #include "x11_dri3.h"
+#include "x11_display.h"
 #ifdef HAVE_LIBDRM
 #include "loader_dri3_helper.h"
 #endif
@@ -939,6 +941,9 @@ __glXInitialize(Display * dpy)
    XExtCodes *codes;
    struct glx_display *dpyPriv, *d;
    int i, majorVersion = 0;
+
+   if (!x11_xlib_display_is_thread_safe(dpy))
+      return NULL;
 
    _XLockMutex(_Xglobal_lock);
 
