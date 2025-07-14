@@ -2038,6 +2038,7 @@ dep_glproto_version = '>= 1.4.14'
 dep_xcb_dri3_version = '>= 1.13'
 dep_xcb_glx_version = '>= 1.8.1'
 dep_xcb_present_version = '>= 1.13'
+dep_xlib_version = '>= 1.8'
 dep_xlib_xrandr_version = '>= 1.3'
 dep_xshmfence_version = '>= 1.1'
 
@@ -2047,16 +2048,16 @@ if with_platform_x11
   dep_xcb = dependency('xcb')
   dep_xcb_xrandr = dependency('xcb-randr')
   if with_glx == 'xlib'
-    dep_x11 = dependency('x11')
+    dep_x11 = dependency('x11', version : dep_xlib_version)
     dep_xext = dependency('xext')
   elif with_glx == 'dri'
-    dep_x11 = dependency('x11')
+    dep_x11 = dependency('x11', version : dep_xlib_version)
     dep_xext = dependency('xext')
     dep_xcb_glx = dependency('xcb-glx', version : dep_xcb_glx_version)
     dep_xcb_shm = dependency('xcb-shm')
   elif with_gallium_rusticl
     # needed for GL sharing extension
-    dep_x11 = dependency('x11')
+    dep_x11 = dependency('x11', version : dep_xlib_version)
   endif
   if (with_any_vk or with_glx == 'dri' or with_egl or
        (with_gallium_vdpau or with_gallium_va))
