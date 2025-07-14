@@ -630,6 +630,9 @@ hk_reserve_scratch(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    uint32_t max_scratch_size =
       MAX2(s->b.info.scratch_size, s->b.info.preamble_scratch_size);
 
+   /* Not scratch but this is the most convenient place for this... */
+   cs->uses_sampler_heap |= s->b.info.uses_sampler_heap;
+
    if (max_scratch_size == 0)
       return;
 

@@ -86,12 +86,14 @@ asahi_fill_cdm_command(struct hk_device *dev, struct hk_cs *cs,
       .cdm_ctrl_stream_base = cs->addr,
       .cdm_ctrl_stream_end = cs->addr + len,
 
-      .sampler_heap = dev->samplers.table.bo->va->addr,
-      .sampler_count = dev->samplers.table.alloc,
-
       .ts.end.handle = cs->timestamp.end.handle,
       .ts.end.offset = cs->timestamp.end.offset_B,
    };
+
+   if (cs->uses_sampler_heap) {
+      cmd->sampler_heap = dev->samplers.table.bo->va->addr;
+      cmd->sampler_count = dev->samplers.table.alloc;
+   }
 
    if (cs->scratch.cs.main || cs->scratch.cs.preamble) {
       cmd->helper.data = dev->scratch.cs.buf->va->addr;
@@ -199,8 +201,10 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
    c->isp_scissor_base = cs->uploaded_scissor;
    c->isp_dbias_base = cs->uploaded_zbias;
 
-   c->sampler_heap = dev->samplers.table.bo->va->addr;
-   c->sampler_count = dev->samplers.table.alloc;
+   if (cs->uses_sampler_heap) {
+      c->sampler_heap = dev->samplers.table.bo->va->addr;
+      c->sampler_count = dev->samplers.table.alloc;
+   }
 
    c->isp_oclqry_base = dev->occlusion_queries.bo->va->addr;
 

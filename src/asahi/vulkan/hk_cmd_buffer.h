@@ -360,6 +360,12 @@ struct hk_cs {
    /* Whether there is more than just the root chunk */
    bool stream_linked;
 
+   /* Whether the sampler heap is required. Although we always must maintain the
+    * heap for correctness, it's often not necessary since we can push lots of
+    * samplers (especially for GL/DX11-era engines).
+    */
+   bool uses_sampler_heap;
+
    /* Scratch requirements */
    struct {
       union {
@@ -428,6 +434,7 @@ hk_cs_merge_cdm(struct hk_cs *a, const struct hk_cs *b)
    a->current = b->current;
    a->stream_linked = true;
 
+   a->uses_sampler_heap |= b->uses_sampler_heap;
    a->scratch.cs.main |= b->scratch.cs.main;
    a->scratch.cs.preamble |= b->scratch.cs.preamble;
 
