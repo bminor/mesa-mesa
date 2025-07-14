@@ -424,7 +424,7 @@
         "description": "meson: set the `legacy-x11` option as deprecated",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "08c6ba223bb70acf23e87ea50c9f8e66038ceec0",
         "notes": null
