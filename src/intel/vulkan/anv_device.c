@@ -1811,8 +1811,10 @@ VkResult anv_GetMemoryHostPointerPropertiesEXT(
 
    switch (handleType) {
    case VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT:
-      /* Host memory can be imported as any memory type. */
+
       pMemoryHostPointerProperties->memoryTypeBits =
+         device->info->ver >= 20 ?
+         device->physical->memory.default_buffer_mem_types :
          (1ull << device->physical->memory.type_count) - 1;
 
       return VK_SUCCESS;
