@@ -240,6 +240,8 @@ pub const ${version[0]}: u16 = ${version[1]};
 """)
 
 TEMPLATE_RS_MTHD = Template("""\
+use crate::Mthd;
+use crate::ArrayMthd;
 
 %if prev_mod is not None:
 use crate::classes::${prev_mod}::mthd as ${prev_mod};
@@ -576,9 +578,6 @@ def main():
                 f.write(TEMPLATE_RS.render(**environment))
         if args.out_rs_mthd is not None:
             with open(args.out_rs_mthd, 'w', encoding='utf-8') as f:
-                f.write("use crate::Mthd;\n")
-                f.write("use crate::ArrayMthd;\n")
-                f.write("\n")
                 f.write(TEMPLATE_RS_MTHD.render(**environment))
 
     except Exception:
