@@ -43,10 +43,9 @@ vn_android_get_ahb_usage(const VkImageUsageFlags usage,
                          const VkImageCreateFlags flags);
 
 VkResult
-vn_android_device_import_ahb(
-   struct vn_device *dev,
-   struct vn_device_memory *mem,
-   const struct VkMemoryDedicatedAllocateInfo *dedicated_info);
+vn_android_device_import_ahb(struct vn_device *dev,
+                             struct vn_device_memory *mem,
+                             const struct VkMemoryAllocateInfo *alloc_info);
 
 VkFormat
 vn_android_drm_format_to_vk_format(uint32_t format);
@@ -100,7 +99,7 @@ static inline VkResult
 vn_android_device_import_ahb(
    UNUSED struct vn_device *dev,
    UNUSED struct vn_device_memory *mem,
-   UNUSED const struct VkMemoryDedicatedAllocateInfo *dedicated_info)
+   UNUSED const struct VkMemoryAllocateInfo *alloc_info)
 {
    return VK_ERROR_OUT_OF_HOST_MEMORY;
 }

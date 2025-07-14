@@ -766,10 +766,9 @@ vn_android_get_drm_format_modifier_info(
 }
 
 VkResult
-vn_android_device_import_ahb(
-   struct vn_device *dev,
-   struct vn_device_memory *mem,
-   const struct VkMemoryDedicatedAllocateInfo *dedicated_info)
+vn_android_device_import_ahb(struct vn_device *dev,
+                             struct vn_device_memory *mem,
+                             const struct VkMemoryAllocateInfo *alloc_info)
 {
    const struct vk_device_memory *mem_vk = &mem->base.vk;
    const native_handle_t *handle = NULL;
@@ -789,6 +788,9 @@ vn_android_device_import_ahb(
                                              &mem_type_bits);
    if (result != VK_SUCCESS)
       return result;
+
+   const VkMemoryDedicatedAllocateInfo *dedicated_info =
+      vk_find_struct_const(alloc_info->pNext, MEMORY_DEDICATED_ALLOCATE_INFO);
 
    /* If ahb is for an image, finish the deferred image creation first */
    if (dedicated_info && dedicated_info->image != VK_NULL_HANDLE) {

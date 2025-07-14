@@ -360,21 +360,6 @@ vn_AllocateMemory(VkDevice device,
 {
    struct vn_device *dev = vn_device_from_handle(device);
 
-   const VkImportMemoryFdInfoKHR *import_fd_info = NULL;
-   const VkMemoryDedicatedAllocateInfo *dedicated_info = NULL;
-   vk_foreach_struct_const(pnext, pAllocateInfo->pNext) {
-      switch (pnext->sType) {
-      case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
-         import_fd_info = (const void *)pnext;
-         break;
-      case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
-         dedicated_info = (const void *)pnext;
-         break;
-      default:
-         break;
-      }
-   }
-
    struct vn_device_memory *mem = vk_device_memory_create(
       &dev->base.vk, pAllocateInfo, pAllocator, sizeof(*mem));
    if (!mem)
@@ -382,9 +367,12 @@ vn_AllocateMemory(VkDevice device,
 
    vn_object_set_id(mem, vn_get_next_obj_id(), VK_OBJECT_TYPE_DEVICE_MEMORY);
 
+   const VkImportMemoryFdInfoKHR *import_fd_info =
+      vk_find_struct_const(pAllocateInfo->pNext, IMPORT_MEMORY_FD_INFO_KHR);
+
    VkResult result;
    if (mem->base.vk.ahardware_buffer) {
-      result = vn_android_device_import_ahb(dev, mem, dedicated_info);
+      result = vn_android_device_import_ahb(dev, mem, pAllocateInfo);
    } else if (import_fd_info) {
       result = vn_device_memory_import_dma_buf(dev, mem, pAllocateInfo,
                                                import_fd_info->fd);
