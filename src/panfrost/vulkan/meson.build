@@ -93,6 +93,7 @@ csf_files = [
   'csf/panvk_vX_event.c',
   'csf/panvk_vX_exception_handler.c',
   'csf/panvk_vX_gpu_queue.c',
+  'csf/panvk_vX_instr.c',
   'csf/panvk_vX_utrace.c',
 ]
 

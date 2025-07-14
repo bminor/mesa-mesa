@@ -40,6 +40,7 @@
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
 #include "panvk_instance.h"
+#include "panvk_instr.h"
 #include "panvk_physical_device.h"
 #include "panvk_priv_bo.h"
 #include "panvk_tracepoints.h"
@@ -171,7 +172,11 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       }
    }
 
-   trace_end_cmdbuf(&cmdbuf->utrace.uts[subqueue], cmdbuf, cmdbuf->flags);
+   struct panvk_instr_end_args instr_info = {.cmdbuf = {
+                                                .flags = cmdbuf->flags,
+                                             }};
+   panvk_per_arch(panvk_instr_end_work)(
+      subqueue, cmdbuf, PANVK_INSTR_WORK_TYPE_CMDBUF, &instr_info);
 
    cs_finish(&cmdbuf->state.cs[subqueue].builder);
 }
@@ -600,7 +605,8 @@ panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    u_foreach_bit(i, utrace_subqueue_mask)
-      trace_begin_barrier(&cmdbuf->utrace.uts[i], cmdbuf);
+      panvk_per_arch(panvk_instr_begin_work)(i, cmdbuf,
+                                             PANVK_INSTR_WORK_TYPE_BARRIER);
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
@@ -652,10 +658,14 @@ panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    u_foreach_bit(i, utrace_subqueue_mask) {
-      trace_end_barrier(
-         &cmdbuf->utrace.uts[i], cmdbuf, deps.src[i].wait_sb_mask,
-         deps.dst[i].wait_subqueue_mask, deps.src[i].cache_flush.l2,
-         deps.src[i].cache_flush.lsc, deps.src[i].cache_flush.others);
+      struct panvk_instr_end_args info = {
+         .barrier = {.wait_sb_mask = deps.src[i].wait_sb_mask,
+                     .wait_subqueue_mask = deps.dst[i].wait_subqueue_mask,
+                     .l2 = deps.src[i].cache_flush.l2,
+                     .lsc = deps.src[i].cache_flush.lsc,
+                     .other = deps.src[i].cache_flush.others}};
+      panvk_per_arch(panvk_instr_end_work)(
+         i, cmdbuf, PANVK_INSTR_WORK_TYPE_BARRIER, &info);
    }
 }
 
@@ -960,7 +970,8 @@ panvk_per_arch(BeginCommandBuffer)(VkCommandBuffer commandBuffer,
    panvk_per_arch(cmd_inherit_render_state)(cmdbuf, pBeginInfo);
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
-      trace_begin_cmdbuf(&cmdbuf->utrace.uts[i], cmdbuf);
+      panvk_per_arch(panvk_instr_begin_work)(i, cmdbuf,
+                                             PANVK_INSTR_WORK_TYPE_CMDBUF);
 
    return VK_SUCCESS;
 }

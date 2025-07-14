@@ -7,6 +7,9 @@
 #include "panvk_cmd_meta.h"
 #include "panvk_entrypoints.h"
 #include "panvk_tracepoints.h"
+#if PAN_ARCH >= 10
+#include "csf/panvk_instr.h"
+#endif
 
 static bool
 copy_to_image_use_gfx_pipeline(struct panvk_device *dev,
@@ -48,7 +51,8 @@ panvk_per_arch(cmd_meta_compute_start)(
    save_ctx->cs.desc = cmdbuf->state.compute.cs.desc;
 
 #if PAN_ARCH >= 10
-   trace_begin_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf);
+   panvk_per_arch(panvk_instr_begin_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
+                                          PANVK_INSTR_WORK_TYPE_META);
 #endif
 }
 
@@ -61,7 +65,8 @@ panvk_per_arch(cmd_meta_compute_end)(
       cmdbuf->state.compute.desc_state.push_sets[0];
 
 #if PAN_ARCH >= 10
-   trace_end_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf);
+   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
+                                        PANVK_INSTR_WORK_TYPE_META, NULL);
 #endif
 
    cmdbuf->state.compute.desc_state.sets[0] = save_ctx->set0;
@@ -119,8 +124,10 @@ panvk_per_arch(cmd_meta_gfx_start)(
    cmdbuf->state.gfx.vk_meta = true;
 
 #if PAN_ARCH >= 10
-   trace_begin_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_VERTEX_TILER], cmdbuf);
-   trace_begin_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
+   panvk_per_arch(panvk_instr_begin_work)(PANVK_SUBQUEUE_VERTEX_TILER, cmdbuf,
+                                          PANVK_INSTR_WORK_TYPE_META);
+   panvk_per_arch(panvk_instr_begin_work)(PANVK_SUBQUEUE_FRAGMENT, cmdbuf,
+                                          PANVK_INSTR_WORK_TYPE_META);
 #endif
 }
 
@@ -133,8 +140,10 @@ panvk_per_arch(cmd_meta_gfx_end)(
       cmdbuf->state.gfx.desc_state.push_sets[0];
 
 #if PAN_ARCH >= 10
-   trace_end_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_VERTEX_TILER], cmdbuf);
-   trace_end_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
+   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_VERTEX_TILER, cmdbuf,
+                                        PANVK_INSTR_WORK_TYPE_META, NULL);
+   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_FRAGMENT, cmdbuf,
+                                        PANVK_INSTR_WORK_TYPE_META, NULL);
 #endif
 
    cmdbuf->state.gfx.desc_state.sets[0] = save_ctx->set0;

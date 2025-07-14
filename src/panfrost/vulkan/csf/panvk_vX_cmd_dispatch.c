@@ -20,6 +20,7 @@
 #include "panvk_cmd_push_constant.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
+#include "panvk_instr.h"
 #include "panvk_macros.h"
 #include "panvk_meta.h"
 #include "panvk_physical_device.h"
@@ -362,14 +363,26 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
       .direct.wg_count = {groupCountX, groupCountY, groupCountZ},
    };
 
-   trace_begin_dispatch(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf);
+   panvk_per_arch(panvk_instr_begin_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
+                                          PANVK_INSTR_WORK_TYPE_DISPATCH);
 
    cmd_dispatch(cmdbuf, &info);
 
-   trace_end_dispatch(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf,
-                      baseGroupX, baseGroupY, baseGroupZ, groupCountX,
-                      groupCountY, groupCountZ, shader->cs.local_size.x,
-                      shader->cs.local_size.y, shader->cs.local_size.z);
+   struct panvk_instr_end_args instr_info = {
+      .dispatch = {
+         .base_group_x = baseGroupX,
+         .base_group_y = baseGroupY,
+         .base_group_z = baseGroupZ,
+         .group_count_x = groupCountX,
+         .group_count_y = groupCountY,
+         .group_count_z = groupCountZ,
+         .group_size_x = shader->cs.local_size.x,
+         .group_size_y = shader->cs.local_size.y,
+         .group_size_z = shader->cs.local_size.z,
+      }};
+   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
+                                        PANVK_INSTR_WORK_TYPE_DISPATCH,
+                                        &instr_info);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -383,12 +396,15 @@ panvk_per_arch(CmdDispatchIndirect)(VkCommandBuffer commandBuffer,
       .indirect.buffer_dev_addr = buffer_gpu,
    };
 
-   trace_begin_dispatch_indirect(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE],
-                                 cmdbuf);
+   panvk_per_arch(panvk_instr_begin_work)(
+      PANVK_SUBQUEUE_COMPUTE, cmdbuf, PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT);
 
    cmd_dispatch(cmdbuf, &info);
 
-   trace_end_dispatch_indirect(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE],
-                               cmdbuf,
-                               (struct u_trace_address){.offset = buffer_gpu});
+   struct panvk_instr_end_args instr_info = {.dispatch_indirect = {
+                                                .buffer_gpu = buffer_gpu,
+                                             }};
+   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
+                                        PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
+                                        &instr_info);
 }
