@@ -59,6 +59,7 @@
 #ifdef HAVE_X11_PLATFORM
 #include "X11/Xlibint.h"
 #include "x11_dri3.h"
+#include "x11_display.h"
 #endif
 
 #include "GL/mesa_glinterop.h"
@@ -125,11 +126,9 @@ dri_is_thread_safe(UNUSED void *loaderPrivate)
 
    /* Check Xlib is running in thread safe mode when running on EGL/X11-xlib
     * platform
-    *
-    * 'lock_fns' is the XLockDisplay function pointer of the X11 display 'dpy'.
-    * It will be NULL if XInitThreads wasn't called.
     */
-   if (display->Platform == _EGL_PLATFORM_X11 && xdpy && !xdpy->lock_fns)
+   if (display->Platform == _EGL_PLATFORM_X11 && xdpy &&
+       !x11_xlib_display_is_thread_safe(xdpy))
       return false;
 #endif
 

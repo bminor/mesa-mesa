@@ -21,7 +21,6 @@
  * IN THE SOFTWARE.
  */
 
-#include <X11/Xlibint.h>
 #include <X11/Xlib-xcb.h>
 #include <X11/xshmfence.h>
 #define XK_MISCELLANY
@@ -54,6 +53,7 @@
 #include "util/u_thread.h"
 #include "util/xmlconfig.h"
 #include "util/timespec.h"
+#include "x11/x11_display.h"
 
 #include "vk_format.h"
 #include "vk_instance.h"
@@ -610,15 +610,6 @@ wsi_GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
    return true;
 }
 
-static bool
-xlib_display_is_thread_safe(Display *dpy)
-{
-   /* 'lock_fns' is the XLockDisplay function pointer of the X11 display 'dpy'.
-    * It will be NULL if XInitThreads wasn't called.
-    */
-   return dpy->lock_fns != NULL;
-}
-
 VKAPI_ATTR VkBool32 VKAPI_CALL
 wsi_GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                 uint32_t queueFamilyIndex,
@@ -628,7 +619,7 @@ wsi_GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
    /* Our WSI implementation for X11 relies on threads.  Check Xlib is running
     * in thread safe mode before advertising support.
     */
-   if (!xlib_display_is_thread_safe(dpy))
+   if (!x11_xlib_display_is_thread_safe(dpy))
       return false;
 
    return wsi_GetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice,
@@ -641,7 +632,7 @@ static bool
 x11_surface_is_thread_safe(VkIcdSurfaceBase *icd_surface)
 {
    if (icd_surface->platform == VK_ICD_WSI_PLATFORM_XLIB)
-      return xlib_display_is_thread_safe(((VkIcdSurfaceXlib *)icd_surface)->dpy);
+      return x11_xlib_display_is_thread_safe(((VkIcdSurfaceXlib *)icd_surface)->dpy);
    else
       return true;
 }
@@ -2588,11 +2579,8 @@ x11_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    /* We really shouldn't get here as we return no WSI support for XLib when
     * it's not threadsafe.  However, one final check doesn't cost much.
     */
-   if (!x11_surface_is_thread_safe(icd_surface)) {
-      fprintf(stderr, "vulkan: xlib Display is not thread-safe.  Call "
-                      "XInitThreads() in your app\n");
+   if (!x11_surface_is_thread_safe(icd_surface))
       return VK_ERROR_UNKNOWN;
-   }
 
    /* Get xcb connection from the icd_surface and from that our internal struct
     * representing it.
