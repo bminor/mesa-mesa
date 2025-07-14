@@ -729,6 +729,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_constant_agx:
    case nir_intrinsic_load_texture_handle_agx:
    case nir_intrinsic_bindless_image_agx:
+   case nir_intrinsic_bindless_sampler_agx:
    case nir_intrinsic_load_reg_indirect:
    case nir_intrinsic_load_const_ir3:
    case nir_intrinsic_load_frag_size_ir3:

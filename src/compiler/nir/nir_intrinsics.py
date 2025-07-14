@@ -2340,6 +2340,12 @@ load("exported_agx", [], [BASE], [CAN_ELIMINATE])
 intrinsic("bindless_image_agx", [1], dest_comp=1, bit_sizes=[32],
           indices=[DESC_SET], flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# AGX-specific bindless sampler handle specifier. Takes both a byte offset into the
+# descriptor set (first source) and an index into the global heap (second
+# source) to allow optimal pushing heuristics.
+intrinsic("bindless_sampler_agx", [1, 1], dest_comp=1, bit_sizes=[16],
+          indices=[DESC_SET], flags=[CAN_ELIMINATE, CAN_REORDER])
+
 # Intel-specific query for loading from the isl_image_param struct passed
 # into the shader as a uniform.  The variable is a deref to the image
 # variable. The const index specifies which of the six parameters to load.
