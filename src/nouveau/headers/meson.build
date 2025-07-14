@@ -48,7 +48,7 @@ cl_generated = []
 foreach cl : nv_classes
   cl_generated += custom_target(
     cl + '.h',
-    input : ['class_parser.py', 'nvidia/classes/'+cl+'.h'],
+    input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', 'util.py'],
     output : ['nv_push_'+cl+'.h', 'nv_push_'+cl+'.c'],
     command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
                '--out-h', '@OUTPUT0@', '--out-c', '@OUTPUT1@'],
@@ -83,7 +83,7 @@ if with_nouveau_vk
   foreach cl : nv_classes
     cl_rs_generated += custom_target(
       'nvh_classes_' + cl + '.rs',
-      input : ['class_parser.py', 'nvidia/classes/'+cl+'.h'],
+      input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', 'util.py'],
       output : ['nvh_classes_'+cl+'.rs'],
       command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
                  '--out-rs', '@OUTPUT0@'],
@@ -104,7 +104,7 @@ if with_nouveau_vk
 
     cl_rs_generated += custom_target(
       'nvh_' + cl + '_mthd.rs',
-      input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', prev_cl_h],
+      input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', prev_cl_h, 'util.py'],
       output : ['nvh_classes_'+cl+'_mthd.rs'],
       command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
                  prev_cl_args, '--out-rs-mthd', '@OUTPUT0@'],
@@ -113,7 +113,7 @@ if with_nouveau_vk
     if cl.endswith('c0') and fs.is_file('nvidia/classes/'+cl+'qmd.h')
       cl_rs_generated += custom_target(
         'nvh_classes_' + cl + '_qmd.rs',
-        input : ['struct_parser.py', 'nvidia/classes/'+cl+'qmd.h'],
+        input : ['struct_parser.py', 'nvidia/classes/'+cl+'qmd.h', 'util.py'],
         output : ['nvh_classes_'+cl+'_qmd.rs'],
         command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
                    '--out-rs', '@OUTPUT0@']
@@ -123,7 +123,7 @@ if with_nouveau_vk
     if cl.endswith('97')
       cl_rs_generated += custom_target(
         'nvh_classes_' + cl + '_tex.rs',
-        input : ['struct_parser.py', 'nvidia/classes/'+cl+'tex.h'],
+        input : ['struct_parser.py', 'nvidia/classes/'+cl+'tex.h', 'util.py'],
         output : ['nvh_classes_'+cl+'_tex.rs'],
         command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
                    '--out-rs', '@OUTPUT0@']
@@ -132,7 +132,7 @@ if with_nouveau_vk
 
     if fs.is_file(f'nvidia/classes/@cl@sph.h')
       cl_rs_generated += custom_target(
-        input : ['struct_parser.py', f'nvidia/classes/@cl@sph.h'],
+        input : ['struct_parser.py', f'nvidia/classes/@cl@sph.h', 'util.py'],
         output : [f'nvh_classes_@cl@_sph.rs'],
         command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
                    '--out-rs', '@OUTPUT0@']
@@ -152,7 +152,7 @@ if with_nouveau_vk
 
   _nvidia_headers_lib_rs = custom_target(
     'lib.rs',
-    input : ['lib_rs_gen.py'],
+    input : ['lib_rs_gen.py', 'util.py'],
     output : ['lib.rs'],
     command : [prog_python, '@INPUT0@', '--out-rs', '@OUTPUT0@',
                cl_rs_generated]

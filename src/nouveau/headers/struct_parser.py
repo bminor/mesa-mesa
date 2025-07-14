@@ -11,6 +11,9 @@ import sys
 from collections import namedtuple
 from mako.template import Template
 
+import util
+
+
 TEMPLATE_RS = Template("""\
 // Copyright © 2024 Collabora Ltd. and Red Hat Inc.
 // SPDX-License-Identifier: MIT
@@ -161,19 +164,8 @@ def main():
     with open(args.in_h, 'r', encoding='utf-8') as f:
         structs = parse_header(nvcl, f)
 
-    try:
-        with open(args.out_rs, 'w', encoding='utf-8') as f:
-            f.write(TEMPLATE_RS.render(structs=structs))
+    util.write_template(args.out_rs, TEMPLATE_RS, dict(structs=structs))
 
-    except Exception:
-        # In the event there's an error, this imports some helpers from mako
-        # to print a useful stack trace and prints it, then exits with
-        # status 1, if python is run with debug; otherwise it just raises
-        # the exception
-        import sys
-        from mako import exceptions
-        print(exceptions.text_error_template().render(), file=sys.stderr)
-        sys.exit(1)
 
 if __name__ == '__main__':
     main()

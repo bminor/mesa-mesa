@@ -11,6 +11,9 @@ import subprocess
 
 from mako.template import Template
 
+import util
+
+
 METHOD_ARRAY_SIZES = {
     'BIND_GROUP_CONSTANT_BUFFER'                            : 16,
     'CALL_MME_DATA'                                         : 256,
@@ -565,30 +568,16 @@ def main():
         'bs': '\\'
     }
 
-    try:
-        if args.out_h is not None:
-            environment['header'] = os.path.basename(args.out_h)
-            with open(args.out_h, 'w', encoding='utf-8') as f:
-                f.write(TEMPLATE_H.render(**environment))
-        if args.out_c is not None:
-            with open(args.out_c, 'w', encoding='utf-8') as f:
-                f.write(TEMPLATE_C.render(**environment))
-        if args.out_rs is not None:
-            with open(args.out_rs, 'w', encoding='utf-8') as f:
-                f.write(TEMPLATE_RS.render(**environment))
-        if args.out_rs_mthd is not None:
-            with open(args.out_rs_mthd, 'w', encoding='utf-8') as f:
-                f.write(TEMPLATE_RS_MTHD.render(**environment))
+    if args.out_h is not None:
+        environment['header'] = os.path.basename(args.out_h)
+        util.write_template(args.out_h, TEMPLATE_H, environment)
+    if args.out_c is not None:
+        util.write_template(args.out_c, TEMPLATE_C, environment)
+    if args.out_rs is not None:
+        util.write_template(args.out_rs, TEMPLATE_RS, environment)
+    if args.out_rs_mthd is not None:
+        util.write_template(args.out_rs_mthd, TEMPLATE_RS_MTHD, environment)
 
-    except Exception:
-        # In the event there's an error, this imports some helpers from mako
-        # to print a useful stack trace and prints it, then exits with
-        # status 1, if python is run with debug; otherwise it just raises
-        # the exception
-        import sys
-        from mako import exceptions
-        print(exceptions.text_error_template().render(), file=sys.stderr)
-        sys.exit(1)
 
 if __name__ == '__main__':
     main()
