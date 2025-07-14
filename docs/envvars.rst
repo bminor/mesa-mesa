@@ -1658,9 +1658,10 @@ RADV driver environment variables
      no HiZ workaround is enabled, use at your own risk but optimal for performance
    ``partial``
      mitigate the issue partially, potentially risky but performance should be
-     mostly optimal (default value)
+     mostly optimal
    ``full``
      mitigate the issue completely, no risk but performance might be decreased
+     (default value)
 
 RadeonSI driver environment variables
 -------------------------------------

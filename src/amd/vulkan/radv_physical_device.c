@@ -2315,7 +2315,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    if (pdev->info.gfx_level == GFX12) {
       const char *gfx12_hiz_wa_str = instance->drirc.performance.gfx12_hiz_wa;
 
-      pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_PARTIAL; /* Default */
+      pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_FULL; /* Default */
 
       if (strlen(gfx12_hiz_wa_str) > 0) {
          if (!strcmp(gfx12_hiz_wa_str, "disabled")) {
