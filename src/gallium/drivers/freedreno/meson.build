@@ -252,6 +252,9 @@ freedreno_cpp_args += cpp.get_supported_arguments([
   '-Wno-vla-cxx-extension',
 ])
 
+# Temporarily quiet deprecated warnings until gallium driver is converted:
+freedreno_cpp_args += '-DFD_NO_DEPRECATED_PACK'
+
 libfreedreno_dependencies = [
   dep_libdrm,
   idep_mesautil,

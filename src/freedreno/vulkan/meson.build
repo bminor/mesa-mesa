@@ -109,6 +109,9 @@ if freedreno_kmds.contains('virtio')
   tu_deps += dep_libdrm
 endif
 
+# Temporarily quiet deprecated warnings until turnip is converted:
+tu_flags += '-DFD_NO_DEPRECATED_PACK'
+
 tu_tracepoints = custom_target(
   'tu_tracepoints.[ch]',
   input: 'tu_tracepoints.py',

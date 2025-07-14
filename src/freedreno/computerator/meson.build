@@ -17,6 +17,9 @@ computerator_cpp_args = cpp.get_supported_arguments([
   '-Wno-sign-compare',
 ])
 
+# Temporarily quiet deprecated warnings until computerator is converted:
+computerator_cpp_args += '-DFD_NO_DEPRECATED_PACK'
+
 computerator = executable(
   'computerator',
   computerator_files,

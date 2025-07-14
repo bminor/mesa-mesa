@@ -226,7 +226,7 @@ class Bitset(object):
 
 		depcrstr = ""
 		if is_deprecated:
-			depcrstr = " __attribute__((deprecated))"
+			depcrstr = " FD_DEPRECATED"
 		if reg.array:
 			print("static inline%s struct fd_reg_pair\npack_%s(uint32_t __i, struct %s fields)\n{" %
 				  (depcrstr, prefix, prefix))
@@ -338,7 +338,7 @@ class Array(object):
 	def dump(self, is_deprecated):
 		depcrstr = ""
 		if is_deprecated:
-			depcrstr = " __attribute__((deprecated))"
+			depcrstr = " FD_DEPRECATED"
 		proto = indices_varlist(self.indices())
 		strides = indices_strides(self.indices())
 		array_offset = self.total_offset()
@@ -407,7 +407,7 @@ class Reg(object):
 	def dump(self, is_deprecated):
 		depcrstr = ""
 		if is_deprecated:
-			depcrstr = " __attribute__((deprecated)) "
+			depcrstr = " FD_DEPRECATED "
 		proto = indices_prototype(self.indices())
 		strides = indices_strides(self.indices())
 		offset = self.total_offset()
@@ -922,9 +922,20 @@ The rules-ng-ng source files this header was generated from are:
 	print("#endif")
 	print()
 
+	print("#ifndef FD_NO_DEPRECATED_PACK")
+	print("#define FD_DEPRECATED __attribute__((deprecated))")
+	print("#else")
+	print("#define FD_DEPRECATED")
+	print("#endif")
+	print()
+
 	func(p)
 
-	print("\n#endif /* %s */" % guard)
+	print()
+	print("#undef FD_DEPRECATED")
+	print()
+
+	print("#endif /* %s */" % guard)
 
 
 def dump_c_defines(args):
