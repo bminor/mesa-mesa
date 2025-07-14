@@ -110,7 +110,6 @@ VkResult
 vn_device_memory_import_dma_buf(struct vn_device *dev,
                                 struct vn_device_memory *mem,
                                 const VkMemoryAllocateInfo *alloc_info,
-                                bool force_unmappable,
                                 int fd)
 {
    const VkMemoryType *mem_type =
@@ -119,8 +118,8 @@ vn_device_memory_import_dma_buf(struct vn_device *dev,
 
    struct vn_renderer_bo *bo;
    VkResult result = vn_renderer_bo_create_from_dma_buf(
-      dev->renderer, alloc_info->allocationSize, fd,
-      force_unmappable ? 0 : mem_type->propertyFlags, &bo);
+      dev->renderer, alloc_info->allocationSize, fd, mem_type->propertyFlags,
+      &bo);
    if (result != VK_SUCCESS)
       return result;
 
@@ -387,7 +386,7 @@ vn_AllocateMemory(VkDevice device,
    if (mem->base.vk.ahardware_buffer) {
       result = vn_android_device_import_ahb(dev, mem, dedicated_info);
    } else if (import_fd_info) {
-      result = vn_device_memory_import_dma_buf(dev, mem, pAllocateInfo, false,
+      result = vn_device_memory_import_dma_buf(dev, mem, pAllocateInfo,
                                                import_fd_info->fd);
    } else {
       result = vn_device_memory_alloc(dev, mem, pAllocateInfo);

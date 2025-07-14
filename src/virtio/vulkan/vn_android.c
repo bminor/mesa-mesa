@@ -778,7 +778,6 @@ vn_android_device_import_ahb(
    uint64_t alloc_size = 0;
    uint32_t mem_type_bits = 0;
    uint32_t mem_type_index = mem_vk->memory_type_index;
-   bool force_unmappable = false;
    VkResult result = VK_SUCCESS;
 
    handle = AHardwareBuffer_getNativeHandle(mem_vk->ahardware_buffer);
@@ -837,14 +836,6 @@ vn_android_device_import_ahb(
 
          mem_type_index = ffs(mem_type_bits & mem_req->memoryTypeBits) - 1;
       }
-
-      /* XXX Workaround before we use cross-domain backend in minigbm, since
-       * venus doesn't support transfer blit for classic 3d resources.
-       *
-       * For AHB image, we can allow r8 storage image support, since that's
-       * always allocated with blob mem.
-       */
-      force_unmappable = img->base.vk.format != VK_FORMAT_R8_UNORM;
    }
 
    if (dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE) {
@@ -888,8 +879,8 @@ vn_android_device_import_ahb(
       .allocationSize = alloc_size,
       .memoryTypeIndex = mem_type_index,
    };
-   result = vn_device_memory_import_dma_buf(dev, mem, &local_alloc_info,
-                                            force_unmappable, dup_fd);
+   result =
+      vn_device_memory_import_dma_buf(dev, mem, &local_alloc_info, dup_fd);
    if (result != VK_SUCCESS) {
       close(dup_fd);
       return result;
