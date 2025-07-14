@@ -3174,7 +3174,7 @@
         "description": "tc: fix usage wrapping in busy test",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "b89e0fa226f64854160bf1f84bbf44e78f4274bc",
         "notes": null
