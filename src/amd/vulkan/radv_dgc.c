@@ -286,7 +286,7 @@ radv_get_sequence_size_graphics(const struct radv_indirect_command_layout *layou
       }
    }
 
-   if (pdev->info.gfx_level == GFX12 && pdev->use_hiz) {
+   if (pdev->use_gfx12_hiz_his_event_wa) {
       /* HiZ/HiS hw workaround */
       *cmd_size += 8 * 4;
    }
@@ -1151,7 +1151,7 @@ dgc_gfx12_emit_hiz_his_wa(struct dgc_cmdbuf *cs)
    const struct radv_device *device = cs->dev;
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (pdev->info.gfx_level == GFX12 && pdev->use_hiz) {
+   if (pdev->use_gfx12_hiz_his_event_wa) {
       dgc_cs_begin(cs);
       dgc_cs_emit_imm(PKT3(PKT3_RELEASE_MEM, 6, 0));
       dgc_cs_emit_imm(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5));

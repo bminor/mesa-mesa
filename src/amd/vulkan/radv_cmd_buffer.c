@@ -9593,7 +9593,7 @@ radv_gfx12_emit_hiz_his_wa(const struct radv_device *device, const struct radv_c
     * - disable HiZ/HiS completely which is the safest workaround but this is known to decrease performance
     * - emit a dummy BOTTOM_OF_PIPE_TS after every draw which should workaround the hang and maintain performance
     */
-   if (pdev->info.gfx_level == GFX12 && render->has_hiz_his) {
+   if (pdev->use_gfx12_hiz_his_event_wa && render->has_hiz_his) {
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
       radeon_emit(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5));

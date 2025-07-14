@@ -104,6 +104,12 @@ struct radv_physical_device {
    /* Whether to enable HTILE compression for depth/stencil images. */
    bool use_hiz;
 
+   /* Whether the driver uses BOTTOM_OF_PIPE_TS events to workaround random GPU hangs with HiZ/HiS
+    * on GFX12. Note that this workaround doesn't mitigate the issue reliably but it helps in most
+    * scenarios.
+    */
+   bool use_gfx12_hiz_his_event_wa;
+
    /* Whether to enable NGG. */
    bool use_ngg;
 
