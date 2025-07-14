@@ -500,7 +500,10 @@ construct_value(nir_builder *build,
 
       nir_alu_src val;
       val.src = nir_src_for_ssa(&alu->def);
-      memcpy(val.swizzle, identity_swizzle, sizeof val.swizzle);
+      if (expr->swizzle < 0)
+         memcpy(val.swizzle, identity_swizzle, sizeof(val.swizzle));
+      else
+         memset(val.swizzle, expr->swizzle, sizeof(val.swizzle));
 
       return val;
    }
