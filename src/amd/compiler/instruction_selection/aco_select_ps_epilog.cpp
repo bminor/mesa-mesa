@@ -83,7 +83,7 @@ export_mrt(isel_context* ctx, const struct aco_export_mrt* mrt)
 
 bool
 export_fs_mrt_color(isel_context* ctx, const struct aco_ps_epilog_info* info, Temp colors[4],
-                    unsigned slot, struct aco_export_mrt* mrt)
+                    unsigned slot, unsigned color_type, struct aco_export_mrt* mrt)
 {
    unsigned col_format = (info->spi_shader_col_format >> (slot * 4)) & 0xf;
 
@@ -101,6 +101,7 @@ export_fs_mrt_color(isel_context* ctx, const struct aco_ps_epilog_info* info, Te
    aco_opcode compr_op = aco_opcode::num_opcodes;
    bool compr = false;
    bool is_16bit = colors[0].regClass() == v2b;
+   assert(is_16bit == (color_type != ACO_TYPE_ANY32));
    bool is_int8 = (info->color_is_int8 >> slot) & 1;
    bool is_int10 = (info->color_is_int10 >> slot) & 1;
    bool enable_mrt_output_nan_fixup = (ctx->options->enable_mrt_output_nan_fixup >> slot) & 1;
@@ -119,11 +120,41 @@ export_fs_mrt_color(isel_context* ctx, const struct aco_ps_epilog_info* info, Te
    }
 
    switch (col_format) {
-   case V_028714_SPI_SHADER_32_R: enabled_channels = 1; break;
+   case V_028714_SPI_SHADER_32_R:
+      if (color_type == ACO_TYPE_FLOAT16)
+         values[0] = bld.vop1(aco_opcode::v_cvt_f32_f16, bld.def(v1), values[0]);
+      else if (color_type == ACO_TYPE_INT16 || color_type == ACO_TYPE_UINT16)
+         values[0] = Operand(
+            convert_int(ctx, bld, values[0].getTemp(), 16, 32, color_type == ACO_TYPE_INT16));
+      enabled_channels = 1;
+      break;
 
-   case V_028714_SPI_SHADER_32_GR: enabled_channels = 0x3; break;
+   case V_028714_SPI_SHADER_32_GR:
+      if (color_type == ACO_TYPE_FLOAT16) {
+         for (unsigned i = 0; i < 2; i++)
+            values[i] = bld.vop1(aco_opcode::v_cvt_f32_f16, bld.def(v1), values[i]);
+      } else if (color_type == ACO_TYPE_INT16 || color_type == ACO_TYPE_UINT16) {
+         for (unsigned i = 0; i < 2; i++)
+            values[i] = Operand(
+               convert_int(ctx, bld, values[i].getTemp(), 16, 32, color_type == ACO_TYPE_INT16));
+      }
+      enabled_channels = 0x3;
+      break;
 
    case V_028714_SPI_SHADER_32_AR:
+      if (color_type == ACO_TYPE_FLOAT16) {
+         for (unsigned i = 0; i < 2; i++) {
+            unsigned idx = i ? 3 : 0;
+            values[idx] = bld.vop1(aco_opcode::v_cvt_f32_f16, bld.def(v1), values[idx]);
+         }
+      } else if (color_type == ACO_TYPE_INT16 || color_type == ACO_TYPE_UINT16) {
+         for (unsigned i = 0; i < 2; i++) {
+            unsigned idx = i ? 3 : 0;
+            values[idx] = Operand(
+               convert_int(ctx, bld, values[idx].getTemp(), 16, 32, color_type == ACO_TYPE_INT16));
+         }
+      }
+
       if (ctx->options->gfx_level >= GFX10) {
          /* Special case: on GFX10, the outputs are different for 32_AR */
          enabled_channels = 0x3;
@@ -210,7 +241,17 @@ export_fs_mrt_color(isel_context* ctx, const struct aco_ps_epilog_info* info, Te
       }
       break;
 
-   case V_028714_SPI_SHADER_32_ABGR: enabled_channels = 0xF; break;
+   case V_028714_SPI_SHADER_32_ABGR:
+      enabled_channels = 0xF;
+      if (color_type == ACO_TYPE_FLOAT16) {
+         for (unsigned i = 0; i < 4; i++)
+            values[i] = bld.vop1(aco_opcode::v_cvt_f32_f16, bld.def(v1), values[i]);
+      } else if (color_type == ACO_TYPE_INT16 || color_type == ACO_TYPE_UINT16) {
+         for (unsigned i = 0; i < 4; i++)
+            values[i] = Operand(
+               convert_int(ctx, bld, values[i].getTemp(), 16, 32, color_type == ACO_TYPE_INT16));
+      }
+      break;
 
    case V_028714_SPI_SHADER_ZERO:
    default: return false;
@@ -358,11 +399,11 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
          continue;
 
       Temp color = get_arg(&ctx, einfo->colors[i]);
-      unsigned col_types = (einfo->color_types >> (i * 2)) & 0x3;
+      unsigned col_type = (einfo->color_types >> (i * 2)) & 0x3;
 
-      emit_split_vector(&ctx, color, col_types == ACO_TYPE_ANY32 ? 4 : 8);
+      emit_split_vector(&ctx, color, col_type == ACO_TYPE_ANY32 ? 4 : 8);
       for (unsigned c = 0; c < 4; ++c) {
-         colors[i][c] = emit_extract_vector(&ctx, color, c, col_types == ACO_TYPE_ANY32 ? v1 : v2b);
+         colors[i][c] = emit_extract_vector(&ctx, color, c, col_type == ACO_TYPE_ANY32 ? v1 : v2b);
       }
 
       /* Store MRTZ.a before applying alpha-to-one if enabled. */
@@ -395,18 +436,21 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
        */
       for (unsigned i = 0; i < 8; i++) {
          struct aco_export_mrt* mrt = &mrts[mrt_num];
-         if (export_fs_mrt_color(&ctx, einfo, colors[0], i, mrt))
+         unsigned col_type = einfo->color_types & 0x3;
+
+         if (export_fs_mrt_color(&ctx, einfo, colors[0], i, col_type, mrt))
             mrt->target += mrt_num++;
       }
    } else {
       for (unsigned i = 0; i < MAX_DRAW_BUFFERS; i++) {
          struct aco_export_mrt* mrt = &mrts[mrt_num];
          const uint8_t cb_idx = einfo->color_map[i];
+         unsigned col_type = (einfo->color_types >> (cb_idx * 2)) & 0x3;
 
          if (cb_idx == 0xff || !einfo->colors[cb_idx].used)
             continue;
 
-         if (export_fs_mrt_color(&ctx, einfo, colors[cb_idx], i, mrt)) {
+         if (export_fs_mrt_color(&ctx, einfo, colors[cb_idx], i, col_type, mrt)) {
             mrt->target += mrt_num++;
          }
       }
