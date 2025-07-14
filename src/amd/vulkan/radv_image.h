@@ -64,6 +64,11 @@ struct radv_image {
     */
    uint64_t tc_compat_zrange_offset;
 
+   /* Metadata for the HiZ workaround on GFX12 with both depth and stencil planes. It's used to
+    * track whether HiZ metadata are in-sync with main image data, per-level.
+    */
+   uint64_t hiz_valid_offset;
+
    /* For VK_ANDROID_native_buffer, the WSI image owns the memory, */
    VkDeviceMemory owned_memory;
 
