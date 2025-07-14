@@ -204,7 +204,7 @@
         "description": "panvk: add error checking for dump/trace mmap call",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c257bf514277ab51d30096cbf3c29c884561ae52",
         "notes": null
