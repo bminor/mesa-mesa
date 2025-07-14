@@ -3954,6 +3954,111 @@ linker_error_io_limit_exceeded(struct gl_shader_program *prog, gl_api api,
 }
 
 static bool
+check_against_input_limit(struct gl_shader_program *prog,
+                          const struct gl_constants *consts,
+                          gl_api api, nir_shader *nir)
+{
+   uint64_t inputs_read = nir->info.inputs_read;
+   uint32_t patch_inputs_read = nir->info.patch_inputs_read;
+   uint16_t inputs_read_16bit = nir->info.inputs_read_16bit;
+
+   if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
+      /* These don't count against the limit. */
+      inputs_read &= ~(VARYING_BIT_TESS_LEVEL_INNER |
+                       VARYING_BIT_TESS_LEVEL_OUTER);
+   } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
+      inputs_read &= ~VARYING_BIT_PRIMITIVE_ID;
+   } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      inputs_read &= ~(VARYING_BIT_POS |
+                       VARYING_BIT_FACE |
+                       VARYING_BIT_PNTC);
+   }
+
+   unsigned num_input_comps = (util_bitcount64(inputs_read) +
+                               util_bitcount(inputs_read_16bit)) * 4;
+   unsigned num_patch_input_comps = util_bitcount(patch_inputs_read) * 4;
+   unsigned max_input_comps =
+      consts->Program[nir->info.stage].MaxInputComponents;
+
+   if (num_input_comps > max_input_comps) {
+      linker_error_io_limit_exceeded(prog, api, nir->info.stage, num_input_comps,
+                                     max_input_comps, "input");
+      return false;
+   }
+
+   if (nir->info.stage == MESA_SHADER_TESS_EVAL &&
+       num_patch_input_comps > consts->MaxTessPatchComponents) {
+      linker_error_io_limit_exceeded(prog, api, nir->info.stage,
+                                     num_patch_input_comps,
+                                     consts->MaxTessPatchComponents,
+                                     "patch input");
+      return false;
+   }
+
+   return true;
+}
+
+static bool
+check_against_output_limit(struct gl_shader_program *prog,
+                           const struct gl_constants *consts,
+                           gl_api api, nir_shader *nir)
+{
+   uint64_t outputs_written = nir->info.outputs_written;
+   uint32_t patch_outputs_written = nir->info.patch_outputs_written;
+   uint16_t outputs_written_16bit = nir->info.outputs_written_16bit;
+
+   if (nir->info.stage == MESA_SHADER_VERTEX ||
+       nir->info.stage == MESA_SHADER_TESS_EVAL ||
+       nir->info.stage == MESA_SHADER_GEOMETRY) {
+      /* The FS cannot or might not read the following.
+       * We could make it more accurate if needed.
+       */
+      outputs_written &= ~(VARYING_BIT_POS |
+                           VARYING_BIT_PSIZ |
+                           VARYING_BIT_CLIP_VERTEX |
+                           /* In theory, these shouldn't count against
+                            * limits if the FS doesn't read them.
+                            */
+                           VARYING_BIT_CLIP_DIST0 |
+                           VARYING_BIT_CLIP_DIST1 |
+                           VARYING_BIT_CULL_DIST0 |
+                           VARYING_BIT_CULL_DIST1 |
+                           VARYING_BIT_LAYER |
+                           VARYING_BIT_VIEWPORT |
+                           VARYING_BIT_VIEWPORT_MASK);
+   } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
+      /* These don't count against the limit. */
+      outputs_written &= ~(VARYING_BIT_TESS_LEVEL_INNER |
+                           VARYING_BIT_TESS_LEVEL_OUTER |
+                           VARYING_BIT_BOUNDING_BOX0 |
+                           VARYING_BIT_BOUNDING_BOX1);
+   }
+
+   unsigned num_output_comps = (util_bitcount64(outputs_written) +
+                                util_bitcount(outputs_written_16bit)) * 4;
+   unsigned num_patch_output_comps = util_bitcount(patch_outputs_written) * 4;
+   unsigned max_output_comps =
+      consts->Program[nir->info.stage].MaxOutputComponents;
+
+   if (num_output_comps > max_output_comps) {
+      linker_error_io_limit_exceeded(prog, api, nir->info.stage, num_output_comps,
+                                     max_output_comps, "output");
+      return false;
+   }
+
+   if (nir->info.stage == MESA_SHADER_TESS_CTRL &&
+       num_patch_output_comps > consts->MaxTessPatchComponents) {
+      linker_error_io_limit_exceeded(prog, api, nir->info.stage,
+                                     num_patch_output_comps,
+                                     consts->MaxTessPatchComponents,
+                                     "patch output");
+      return false;
+   }
+
+   return true;
+}
+
+static bool
 link_varyings(const struct pipe_screen *screen,
               struct gl_shader_program *prog, unsigned first,
               unsigned last, const struct gl_constants *consts,
@@ -4241,98 +4346,11 @@ link_varyings(const struct pipe_screen *screen,
 
          nir_shader *nir = prog->_LinkedShaders[i]->Program->nir;
 
-         if (i != first) {
-            uint64_t inputs_read = nir->info.inputs_read;
-            uint32_t patch_inputs_read = nir->info.patch_inputs_read;
-            uint16_t inputs_read_16bit = nir->info.inputs_read_16bit;
+         if (i != first && !check_against_input_limit(prog, consts, api, nir))
+            return false;
 
-            if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
-               /* These don't count against the limit. */
-               inputs_read &= ~(VARYING_BIT_TESS_LEVEL_INNER |
-                                VARYING_BIT_TESS_LEVEL_OUTER);
-            } else if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-               inputs_read &= ~VARYING_BIT_PRIMITIVE_ID;
-            } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-               inputs_read &= ~(VARYING_BIT_POS |
-                                VARYING_BIT_FACE |
-                                VARYING_BIT_PNTC);
-            }
-
-            unsigned num_input_comps = (util_bitcount64(inputs_read) +
-                                        util_bitcount(inputs_read_16bit)) * 4;
-            unsigned num_patch_input_comps = util_bitcount(patch_inputs_read) * 4;
-            unsigned max_input_comps =
-               consts->Program[nir->info.stage].MaxInputComponents;
-
-            if (num_input_comps > max_input_comps) {
-               linker_error_io_limit_exceeded(prog, api, i, num_input_comps,
-                                              max_input_comps, "input");
-               return false;
-            }
-
-            if (nir->info.stage == MESA_SHADER_TESS_EVAL &&
-                num_patch_input_comps > consts->MaxTessPatchComponents) {
-               linker_error_io_limit_exceeded(prog, api, i,
-                                              num_patch_input_comps,
-                                              consts->MaxTessPatchComponents,
-                                              "patch input");
-               return false;
-            }
-         }
-
-         if (i != last) {
-            uint64_t outputs_written = nir->info.outputs_written;
-            uint32_t patch_outputs_written = nir->info.patch_outputs_written;
-            uint16_t outputs_written_16bit = nir->info.outputs_written_16bit;
-
-            if (nir->info.stage == MESA_SHADER_VERTEX ||
-                nir->info.stage == MESA_SHADER_TESS_EVAL ||
-                nir->info.stage == MESA_SHADER_GEOMETRY) {
-               /* The FS cannot or might not read the following.
-                * We could make it more accurate if needed.
-                */
-               outputs_written &= ~(VARYING_BIT_POS |
-                                    VARYING_BIT_PSIZ |
-                                    VARYING_BIT_CLIP_VERTEX |
-                                    /* In theory, these shouldn't count against
-                                     * limits if the FS doesn't read them.
-                                     */
-                                    VARYING_BIT_CLIP_DIST0 |
-                                    VARYING_BIT_CLIP_DIST1 |
-                                    VARYING_BIT_CULL_DIST0 |
-                                    VARYING_BIT_CULL_DIST1 |
-                                    VARYING_BIT_LAYER |
-                                    VARYING_BIT_VIEWPORT |
-                                    VARYING_BIT_VIEWPORT_MASK);
-            } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-               /* These don't count against the limit. */
-               outputs_written &= ~(VARYING_BIT_TESS_LEVEL_INNER |
-                                    VARYING_BIT_TESS_LEVEL_OUTER |
-                                    VARYING_BIT_BOUNDING_BOX0 |
-                                    VARYING_BIT_BOUNDING_BOX1);
-            }
-
-            unsigned num_output_comps = (util_bitcount64(outputs_written) +
-                                         util_bitcount(outputs_written_16bit)) * 4;
-            unsigned num_patch_output_comps = util_bitcount(patch_outputs_written) * 4;
-            unsigned max_output_comps =
-               consts->Program[nir->info.stage].MaxOutputComponents;
-
-            if (num_output_comps > max_output_comps) {
-               linker_error_io_limit_exceeded(prog, api, i, num_output_comps,
-                                              max_output_comps, "output");
-               return false;
-            }
-
-            if (nir->info.stage == MESA_SHADER_TESS_CTRL &&
-                num_patch_output_comps > consts->MaxTessPatchComponents) {
-               linker_error_io_limit_exceeded(prog, api, i,
-                                              num_patch_output_comps,
-                                              consts->MaxTessPatchComponents,
-                                              "patch output");
-               return false;
-            }
-         }
+         if (i != last && !check_against_output_limit(prog, consts, api, nir))
+            return false;
       }
    }
 
