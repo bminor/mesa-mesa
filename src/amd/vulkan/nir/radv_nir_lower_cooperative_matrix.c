@@ -308,13 +308,41 @@ convert_use(nir_builder *b, nir_def *src, enum glsl_cmat_use src_use, enum glsl_
    } else if (src_use == GLSL_CMAT_USE_B && dst_use == GLSL_CMAT_USE_ACCUMULATOR) {
       assert(params->gfx_level < GFX12);
       assert(num_comps == 16);
-      for (unsigned keep32 = 0; keep32 < ((params->wave_size == 64) ? 2 : 1); keep32++) {
-         nir_def *ballot = nir_imm_intN_t(b, keep32 ? UINT32_MAX : 0xffff0000ffffull, params->wave_size);
-         nir_def *keep = nir_inverse_ballot(b, 1, ballot);
-         num_comps /= 2;
-         for (unsigned i = 0; i < num_comps; i++) {
-            components[i] = nir_bcsel(b, keep, components[i * 2], components[i * 2 + 1]);
+      if (src->bit_size == 32) {
+         for (unsigned keep32 = 0; keep32 < ((params->wave_size == 64) ? 2 : 1); keep32++) {
+            nir_def *ballot = nir_imm_intN_t(b, keep32 ? UINT32_MAX : 0xffff0000ffffull, params->wave_size);
+            nir_def *keep = nir_inverse_ballot(b, 1, ballot);
+            num_comps /= 2;
+            for (unsigned i = 0; i < num_comps; i++) {
+               components[i] = nir_bcsel(b, keep, components[i * 2], components[i * 2 + 1]);
+            }
          }
+      } else {
+         /* Same as above, but operate on 32 bits at once, using byte_perm as vectorized bcsel. */
+         assert(src->bit_size < 32);
+         nir_def *packed = nir_extract_bits(b, components, num_comps, 0, num_comps / (32 / src->bit_size), 32);
+         num_comps /= 32 / src->bit_size;
+         for (unsigned i = 0; i < num_comps; i++)
+            components[i] = nir_channel(b, packed, i);
+
+         nir_def *low_sel = nir_imm_int(b, src->bit_size == 8 ? 0x06040200 : 0x05040100);
+         nir_def *high_sel = nir_imm_int(b, src->bit_size == 8 ? 0x07050301 : 0x07060302);
+
+         for (unsigned keep32 = 0; keep32 < ((params->wave_size == 64) ? 2 : 1); keep32++) {
+            nir_def *ballot = nir_imm_intN_t(b, keep32 ? UINT32_MAX : 0xffff0000ffffull, params->wave_size);
+            nir_def *keep = nir_inverse_ballot(b, 1, ballot);
+            nir_def *perm = nir_bcsel(b, keep, low_sel, high_sel);
+            num_comps /= 2;
+            for (unsigned i = 0; i < num_comps; i++) {
+               components[i] = nir_byte_perm_amd(b, components[i * 2 + 1], components[i * 2], perm);
+            }
+         }
+
+         nir_def *unpacked =
+            nir_extract_bits(b, components, num_comps, 0, num_comps * (32 / src->bit_size), src->bit_size);
+         num_comps *= 32 / src->bit_size;
+         for (unsigned i = 0; i < num_comps; i++)
+            components[i] = nir_channel(b, unpacked, i);
       }
    } else if ((src_use == GLSL_CMAT_USE_A && dst_use == GLSL_CMAT_USE_B) ||
               (src_use == GLSL_CMAT_USE_B && dst_use == GLSL_CMAT_USE_A)) {
