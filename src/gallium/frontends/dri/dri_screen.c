@@ -601,11 +601,6 @@ dri_set_background_context(struct st_context *st,
                            struct util_queue_monitoring *queue_info)
 {
    struct dri_context *ctx = (struct dri_context *)st->frontend_context;
-   const __DRIbackgroundCallableExtension *backgroundCallable =
-      ctx->screen->dri2.backgroundCallable;
-
-   if (backgroundCallable)
-      backgroundCallable->setBackgroundContext(ctx->loaderPrivate);
 
    if (ctx->hud)
       hud_add_queue_for_monitoring(ctx->hud, queue_info);

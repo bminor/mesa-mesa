@@ -1240,7 +1240,6 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
 static const __DRIextension *dri3_image_loader_extensions[] = {
    &dri3_image_loader_extension.base,
    &image_lookup_extension.base,
-   &background_callable_extension.base,
    NULL,
 };
 

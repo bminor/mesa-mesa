@@ -737,25 +737,6 @@ out:
    return e ? e->config : NULL;
 }
 
-static void
-driSetBackgroundContext(void *loaderPrivate)
-{
-   __glXSetCurrentContext(loaderPrivate);
-}
-
-static GLboolean
-driIsThreadSafe(void *loaderPrivate)
-{
-   return true;
-}
-
-const __DRIbackgroundCallableExtension driBackgroundCallable = {
-   .base = { __DRI_BACKGROUND_CALLABLE, 2 },
-
-   .setBackgroundContext    = driSetBackgroundContext,
-   .isThreadSafe            = driIsThreadSafe,
-};
-
 Bool
 dri_bind_context(struct glx_context *context, GLXDrawable draw, GLXDrawable read)
 {

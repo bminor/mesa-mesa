@@ -70,7 +70,6 @@ struct dri_screen
 
    struct {
        const __DRIimageLookupExtension *image;
-       const __DRIbackgroundCallableExtension *backgroundCallable;
    } dri2;
 
    struct {

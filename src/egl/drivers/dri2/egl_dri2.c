@@ -92,39 +92,10 @@ static const enum pipe_format dri2_pbuffer_visuals[] = {
 };
 
 static void
-dri_set_background_context(void *loaderPrivate)
-{
-   _EGLContext *ctx = _eglGetCurrentContext();
-   _EGLThreadInfo *t = _eglGetCurrentThread();
-
-   _eglBindContextToThread(ctx, t);
-}
-
-static void
 dri2_gl_flush()
 {
    CALL_Flush(GET_DISPATCH(), ());
 }
-
-static GLboolean
-dri_is_thread_safe(UNUSED void *loaderPrivate)
-{
-   /* loader_dri3_blit_context_get creates a context with
-    * loaderPrivate being NULL. Enabling glthread for a blitting
-    * context isn't useful so return false.
-    */
-   if (!loaderPrivate)
-      return false;
-
-   return true;
-}
-
-const __DRIbackgroundCallableExtension background_callable_extension = {
-   .base = {__DRI_BACKGROUND_CALLABLE, 2},
-
-   .setBackgroundContext = dri_set_background_context,
-   .isThreadSafe = dri_is_thread_safe,
-};
 
 static void
 dri2_get_pbuffer_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w,
