@@ -594,11 +594,7 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
          return false;
    }
 
-   uint32_t align;
-   if (align_offset)
-      align = 1 << (ffs(align_offset) - 1);
-   else
-      align = align_mul;
+   uint32_t align = nir_combined_align(align_mul, align_offset);
 
    /* Don't cross swizzle elements. stack/scratch intrinsics use scratch_* instructions, which
     * seem to work fine.
@@ -620,10 +616,9 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
          /* AMD hardware can't do 3-component loads except for 96-bit loads. */
          return bit_size == 32 && align % 16 == 0;
       }
-      unsigned req = bit_size >= 32 ? bit_size * num_components : bit_size;
-      if (req == 64 || req == 128) /* 64-bit and 128-bit loads can use ds_read2_b{32,64} */
-         req /= 2u;
-      return align % (req / 8u) == 0;
+
+      /* DS loads and stores require the alignment of the size. */
+      return align % (aligned_new_size / 8u) == 0;
    }
    return false;
 }
