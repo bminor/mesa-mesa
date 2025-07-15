@@ -287,6 +287,7 @@ else
   'nir_opt_phi_to_bool.c',
   'nir_opt_preamble.c',
   'nir_opt_ray_queries.c',
+  'nir_opt_reassociate.c',
   'nir_opt_reassociate_bfi.c',
   'nir_opt_rematerialize_compares.c',
   'nir_opt_remove_phis.c',

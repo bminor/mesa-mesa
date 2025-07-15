@@ -6255,6 +6255,24 @@ typedef struct nir_opt_peephole_select_options {
 bool nir_opt_peephole_select(nir_shader *shader,
                              const nir_opt_peephole_select_options *options);
 
+typedef enum {
+   /* Enable the global CSE heuristic */
+   nir_reassociate_cse_heuristic = (1 << 0),
+
+   /* Indicate the backend can accelerate scalar (i.e. non-divergent) math. If
+    * set, we try to reassociate expressions like ((div + con) + con) to be
+    * (div + (con + con)) to save a vector ALU operation. We're fairly
+    * aggressive about it: in some circumstances, we will spend 2 scalar
+    * instructions to save 1 vector instruction.
+    *
+    * This is true for backends using nir_opt_preamble even if there's no scalar
+    * ALU, since non-divergence is a decent proxy for uniformity.
+    */
+   nir_reassociate_scalar_math = (1 << 1),
+} nir_reassociate_options;
+
+bool nir_opt_reassociate(nir_shader *shader, nir_reassociate_options opts);
+
 bool nir_opt_reassociate_bfi(nir_shader *shader);
 
 bool nir_opt_rematerialize_compares(nir_shader *shader);

@@ -169,6 +169,8 @@ ForEachMacros:
   - nir_precomp_foreach_arg
   - nir_precomp_foreach_variant_param
 
+  - foreach_pair
+
 # egl
   - egl_relax
 
