@@ -558,6 +558,8 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(_, stage->nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
+   NIR_PASS(_, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
+
    /* This must be after lowering resources to descriptor loads and before lowering intrinsics
     * to args and lowering int64.
     */
@@ -599,11 +601,8 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
           */
          .has_shared2_amd = gfx_level >= GFX7,
       };
-
-      progress = false;
-      NIR_PASS(progress, stage->nir, nir_opt_load_store_vectorize, &late_vectorize_opts);
-      if (progress)
-         NIR_PASS(_, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
+      NIR_PASS(_, stage->nir, nir_opt_load_store_vectorize, &late_vectorize_opts);
+      NIR_PASS(_, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
    }
 
    radv_optimize_nir_algebraic(
