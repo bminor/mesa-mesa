@@ -3378,22 +3378,19 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             break;
          }
 
-         Operand lhs;
+         Temp lhs;
          if (const_insert && const_bitmask) {
-            lhs = Operand::c32(const_insert->u32 & const_bitmask->u32);
+            lhs = bld.copy(bld.def(s1), Operand::c32(const_insert->u32 & const_bitmask->u32));
          } else {
-            insert =
-               bld.sop2(aco_opcode::s_and_b32, bld.def(s1), bld.def(s1, scc), insert, bitmask);
-            lhs = Operand(insert);
+            lhs = bld.sop2(aco_opcode::s_and_b32, bld.def(s1), bld.def(s1, scc), insert, bitmask);
          }
 
-         Operand rhs;
+         Temp rhs;
          nir_const_value* const_base = nir_src_as_const_value(instr->src[2].src);
          if (const_base && const_bitmask) {
-            rhs = Operand::c32(const_base->u32 & ~const_bitmask->u32);
+            rhs = bld.copy(bld.def(s1), Operand::c32(const_base->u32 & ~const_bitmask->u32));
          } else {
-            base = bld.sop2(aco_opcode::s_andn2_b32, bld.def(s1), bld.def(s1, scc), base, bitmask);
-            rhs = Operand(base);
+            rhs = bld.sop2(aco_opcode::s_andn2_b32, bld.def(s1), bld.def(s1, scc), base, bitmask);
          }
 
          bld.sop2(aco_opcode::s_or_b32, Definition(dst), bld.def(s1, scc), rhs, lhs);
