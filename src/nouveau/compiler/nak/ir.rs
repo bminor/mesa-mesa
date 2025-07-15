@@ -6945,7 +6945,15 @@ impl_display_for_op!(OpBar);
 #[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpTexDepBar {
-    pub textures_left: i8,
+    pub textures_left: u8,
+}
+
+impl OpTexDepBar {
+    /// Maximum value of textures_left
+    ///
+    /// The maximum encodable value is 63.  However, nvcc starts emitting
+    /// TEXDEPBAR 0x3e as soon as it hits 62 texture instructions.
+    pub const MAX_TEXTURES_LEFT: u8 = 62;
 }
 
 impl DisplayOp for OpTexDepBar {
