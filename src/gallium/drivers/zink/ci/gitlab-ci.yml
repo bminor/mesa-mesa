@@ -284,6 +284,18 @@ zink-radv-vangogh-valve:
     - farm:$RUNNER_FARM_LOCATION
     - amdgpu:codename:VANGOGH
 
+zink-radv-vangogh-traces:
+  extends:
+    - zink-radv-vangogh-valve
+    - .zink-radv-valve-rules
+    - .zink-trace-test
+    - .piglit-traces-test
+  parallel: null
+  timeout: 10m
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 5  # normal runtime = 40-50 sec
+    PIGLIT_TRACES_FILE: traces-zink.yml
+
 zink-radv-navi31-valve:
   extends:
     - .radv-zink-test-valve
