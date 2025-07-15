@@ -309,6 +309,7 @@ setup_miptree(struct etna_resource *rsc, unsigned paddingX, unsigned paddingY,
               unsigned msaa_xscale, unsigned msaa_yscale)
 {
    struct pipe_resource *prsc = &rsc->base;
+   enum pipe_format fmt = translate_format_128bit_to_64bit(prsc->format);
    unsigned level, size = 0;
    unsigned width = prsc->width0;
    unsigned height = prsc->height0;
@@ -322,10 +323,13 @@ setup_miptree(struct etna_resource *rsc, unsigned paddingX, unsigned paddingY,
       mip->depth = depth;
       mip->padded_width = align(width * msaa_xscale, paddingX);
       mip->padded_height = align(height * msaa_yscale, paddingY);
-      mip->stride = util_format_get_stride(prsc->format, mip->padded_width);
+      mip->stride = util_format_get_stride(fmt, mip->padded_width);
       mip->offset = size;
-      mip->layer_stride = mip->stride * util_format_get_nblocksy(prsc->format, mip->padded_height);
+      mip->layer_stride = mip->stride * util_format_get_nblocksy(fmt, mip->padded_height);
       mip->size = prsc->array_size * mip->layer_stride;
+
+      if (format_is_128bit(prsc->format))
+         mip->size *= 2;
 
       /* align levels to 64 bytes to be able to render to them */
       size += align(mip->size, ETNA_PE_ALIGNMENT) * depth;
