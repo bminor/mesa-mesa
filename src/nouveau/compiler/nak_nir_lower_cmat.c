@@ -570,6 +570,50 @@ lower_cmat_convert(nir_builder *b, nir_intrinsic_instr *intr, nir_def *cmat,
    return cmat;
 }
 
+static void
+lower_cmat_load(nir_builder *b, nir_intrinsic_instr *intr)
+{
+   const struct glsl_cmat_description desc = cmat_src_desc(intr->src[0]);
+   const unsigned length = get_cmat_length(desc);
+   const enum glsl_matrix_layout layout = nir_intrinsic_matrix_layout(intr);
+
+   nir_deref_instr *deref = nir_def_as_deref(intr->src[1].ssa);
+   nir_def *stride = intr->src[2].ssa;
+
+   nir_def *vars[NIR_MAX_VEC_COMPONENTS];
+   for (unsigned i = 0; i < length; ++i)
+      vars[i] = nir_undef(b, 1, glsl_base_type_bit_size(desc.element_type));
+
+   nir_def *lane_id = nir_load_subgroup_invocation(b);
+
+   for (unsigned idx = 0; idx < length; idx++) {
+      nir_def *col_offset;
+      nir_def *row_offset;
+
+      compute_matrix_offsets(b, desc, layout, lane_id, idx,
+                              &col_offset, &row_offset);
+
+      row_offset = nir_imul(b, row_offset, stride);
+
+      col_offset = nir_u2uN(b, col_offset, deref->def.bit_size);
+      row_offset = nir_u2uN(b, row_offset, deref->def.bit_size);
+
+      nir_deref_instr *iter_deref =
+         nir_build_deref_ptr_as_array(b, deref, row_offset);
+      iter_deref = nir_build_deref_cast(
+         b, &iter_deref->def, deref->modes,
+         glsl_scalar_type(desc.element_type),
+         glsl_base_type_bit_size(desc.element_type) / 8);
+      iter_deref =
+         nir_build_deref_ptr_as_array(b, iter_deref, col_offset);
+
+      vars[idx] = nir_load_deref(b, iter_deref);
+   }
+
+   nir_def *mat = nir_vec(b, vars, length);
+   store_cmat_src(b, intr->src[0], mat);
+}
+
 static bool
 lower_cmat_instr(nir_builder *b,
                  nir_instr *instr,
@@ -607,46 +651,7 @@ lower_cmat_instr(nir_builder *b,
    }
 
    case nir_intrinsic_cmat_load: {
-      const struct glsl_cmat_description desc = cmat_src_desc(intr->src[0]);
-      const unsigned length = get_cmat_length(desc);
-      const enum glsl_matrix_layout layout = nir_intrinsic_matrix_layout(intr);
-
-      nir_deref_instr *deref =
-         nir_def_as_deref(intr->src[1].ssa);
-      nir_def *stride = intr->src[2].ssa;
-
-      nir_def *vars[NIR_MAX_VEC_COMPONENTS];
-      for (unsigned i = 0; i < length; ++i)
-         vars[i] = nir_undef(b, 1, glsl_base_type_bit_size(desc.element_type));
-
-      nir_def *lane_id = nir_load_subgroup_invocation(b);
-
-      for (unsigned idx = 0; idx < length; idx++) {
-         nir_def *col_offset;
-         nir_def *row_offset;
-
-         compute_matrix_offsets(b, desc, layout, lane_id, idx,
-                                &col_offset, &row_offset);
-
-         row_offset = nir_imul(b, row_offset, stride);
-
-         col_offset = nir_u2uN(b, col_offset, deref->def.bit_size);
-         row_offset = nir_u2uN(b, row_offset, deref->def.bit_size);
-
-         nir_deref_instr *iter_deref =
-            nir_build_deref_ptr_as_array(b, deref, row_offset);
-         iter_deref = nir_build_deref_cast(
-            b, &iter_deref->def, deref->modes,
-            glsl_scalar_type(desc.element_type),
-            glsl_base_type_bit_size(desc.element_type) / 8);
-         iter_deref =
-            nir_build_deref_ptr_as_array(b, iter_deref, col_offset);
-
-         vars[idx] = nir_load_deref(b, iter_deref);
-      }
-
-      nir_def *mat = nir_vec(b, vars, length);
-      store_cmat_src(b, intr->src[0], mat);
+      lower_cmat_load(b, intr);
       nir_instr_remove(instr);
       return true;
    }
