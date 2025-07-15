@@ -18,7 +18,7 @@ def main() -> None:
                         type=pathlib.Path)
     parser.add_argument('--validate', action='store_true')
     parser.add_argument('--quiet', action='store_true')
-    parser.add_argument('--bits-format', choices=['new', 'old'], default='old',
+    parser.add_argument('--bits-format', choices=['new', 'old'], default='new',
                         help="'new' for dword/bits; 'old' for start/end (default=%(default)s)")
     args: Args = parser.parse_args()
 
