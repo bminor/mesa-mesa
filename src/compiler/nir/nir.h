@@ -4378,6 +4378,13 @@ nir_src_rewrite(nir_src *src, nir_def *new_ssa)
    list_addtail(&src->use_link, &new_ssa->uses);
 }
 
+static inline void
+nir_alu_src_rewrite_scalar(nir_alu_src *alu, nir_scalar s)
+{
+   nir_src_rewrite(&alu->src, s.def);
+   alu->swizzle[0] = (uint8_t)s.comp;
+}
+
 /** Initialize a nir_src
  *
  * This is almost never the helper you want to use.  This helper assumes that
