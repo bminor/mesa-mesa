@@ -68,10 +68,11 @@ panvk_per_arch(panvk_instr_begin_work)(enum panvk_subqueue_id id,
                                        struct panvk_cmd_buffer *cmdbuf,
                                        enum panvk_instr_work_type work_type)
 {
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_utrace_cs_info cs_info = {
       .cmdbuf = cmdbuf,
-      .ts_wait_mask = dev->csf.sb.all_iters_mask | SB_MASK(DEFERRED_FLUSH),
+      /* For the begin marker, the caller should wait for dependencies before
+         calling begin. */
+      .ts_wait_mask = 0,
    };
 
    switch (work_type) {
