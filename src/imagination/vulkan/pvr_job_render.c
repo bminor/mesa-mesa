@@ -723,7 +723,7 @@ static VkResult pvr_rt_datas_init(struct pvr_device *device,
 err_pvr_rt_mta_mlist_data_fini:
    pvr_rt_mta_mlist_data_fini(rt_dataset);
 
-   return VK_SUCCESS;
+   return result;
 }
 
 static void pvr_rt_datas_fini(struct pvr_rt_dataset *rt_dataset)
