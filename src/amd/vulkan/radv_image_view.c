@@ -643,6 +643,41 @@ radv_image_view_init(struct radv_image_view *iview, struct radv_device *device,
 }
 
 void
+radv_hiz_image_view_init(struct radv_image_view *iview, struct radv_device *device,
+                         const VkImageViewCreateInfo *pCreateInfo)
+{
+   VK_FROM_HANDLE(radv_image, image, pCreateInfo->image);
+
+   vk_image_view_init(&device->vk, &iview->vk, true, pCreateInfo);
+
+   assert(vk_format_has_depth(image->vk.format) && vk_format_has_stencil(image->vk.format));
+   assert(iview->vk.aspects == VK_IMAGE_ASPECT_DEPTH_BIT);
+
+   memset(&iview->descriptor, 0, sizeof(iview->descriptor));
+
+   iview->image = image;
+
+   const uint32_t type =
+      radv_tex_dim(image->vk.image_type, iview->vk.view_type, image->vk.array_layers, image->vk.samples, true, false);
+
+   const struct ac_gfx12_hiz_state hiz_state = {
+      .surf = &image->planes[0].surface,
+      .va = image->bindings[0].addr,
+      .type = type,
+      .num_samples = image->vk.samples,
+      .first_level = iview->vk.base_mip_level,
+      .last_level = iview->vk.base_mip_level + iview->vk.level_count - 1,
+      .num_levels = image->vk.mip_levels,
+      .first_layer = iview->vk.base_array_layer,
+      .last_layer = iview->vk.base_array_layer + iview->vk.layer_count - 1,
+   };
+
+   uint32_t *desc = iview->storage_descriptor.plane_descriptors[0];
+
+   ac_build_gfx12_hiz_descriptor(&hiz_state, desc);
+}
+
+void
 radv_image_view_finish(struct radv_image_view *iview)
 {
    vk_image_view_finish(&iview->vk);
