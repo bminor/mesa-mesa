@@ -28,6 +28,7 @@
 
 #include "etnaviv_context.h"
 #include "etnaviv_debug.h"
+#include "etnaviv_format.h"
 #include "etnaviv_rs.h"
 #include "etnaviv_screen.h"
 #include "etnaviv_translate.h"
@@ -575,6 +576,10 @@ etna_resource_create(struct pipe_screen *pscreen,
       if (screen->specs.can_supertile)
          layout |= ETNA_LAYOUT_BIT_SUPER;
    }
+
+   /* 128 bit format needs to be CPU tiled specially */
+   if (format_is_128bit(templat->format))
+      layout = ETNA_LAYOUT_TILED;
 
    if (/* linear base or scanout without modifier requested */
        (templat->bind & (PIPE_BIND_LINEAR | PIPE_BIND_SCANOUT)) ||
