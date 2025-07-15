@@ -290,6 +290,7 @@ etna_blit_clear_color_blt(struct pipe_context *pctx, unsigned idx,
    uint64_t new_clear_value = etna_clear_blit_pack_rgba(dst->format, color);
    bool fast_clear = etna_blt_will_fastclear(dst_level, scissor_state);
    int msaa_xscale = 1, msaa_yscale = 1;
+   bool is_128bit_format = format_is_128bit(dst->format);
 
    translate_samples_to_xyscale(dst->texture->nr_samples,
                                 &msaa_xscale, &msaa_yscale);
@@ -333,7 +334,20 @@ etna_blit_clear_color_blt(struct pipe_context *pctx, unsigned idx,
       clr.rect_h = dst_level->height * msaa_yscale;
    }
 
+   if (is_128bit_format) {
+      clr.clear_value[0] = color->ui[0];
+      clr.clear_value[1] = color->ui[1];
+   }
+
    emit_blt_clearimage(ctx->stream, &clr);
+
+   if (is_128bit_format) {
+      clr.clear_value[0] = color->ui[2];
+      clr.clear_value[1] = color->ui[3];
+      clr.dest.addr.offset += (dst_level->size * dst_level->depth) / 2;
+
+      emit_blt_clearimage(ctx->stream, &clr);
+   }
 
    /* This made the TS valid */
    if (dst_level->ts_size) {
