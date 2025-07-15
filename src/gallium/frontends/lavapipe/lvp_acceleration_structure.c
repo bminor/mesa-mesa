@@ -509,6 +509,13 @@ lvp_encode_as(struct vk_acceleration_structure *dst, VkDeviceAddress intermediat
          const struct vk_ir_node *ir_child = (const void *)(ir_bvh + ir_child_offset);
 
          output_box->bounds[child_index] = ir_child->aabb;
+         /* Increase the bounding box size a bit for watertightness. */
+         output_box->bounds[child_index].min.x -= MAX2(fabsf(output_box->bounds[child_index].min.x), 1.0) * FLT_EPSILON;
+         output_box->bounds[child_index].min.y -= MAX2(fabsf(output_box->bounds[child_index].min.y), 1.0) * FLT_EPSILON;
+         output_box->bounds[child_index].min.z -= MAX2(fabsf(output_box->bounds[child_index].min.z), 1.0) * FLT_EPSILON;
+         output_box->bounds[child_index].max.x += MAX2(fabsf(output_box->bounds[child_index].max.x), 1.0) * FLT_EPSILON;
+         output_box->bounds[child_index].max.y += MAX2(fabsf(output_box->bounds[child_index].max.y), 1.0) * FLT_EPSILON;
+         output_box->bounds[child_index].max.z += MAX2(fabsf(output_box->bounds[child_index].max.z), 1.0) * FLT_EPSILON;
 
          if (ir_child_offset < root_offset) {
             output_box->children[child_index] =
