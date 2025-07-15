@@ -595,6 +595,9 @@ pvr_rt_mta_mlist_data_init(struct pvr_device *device,
    pvr_dev_addr_t dev_addr;
    VkResult result;
 
+   /* No known cores where the Mlist size could be 0 */
+   assert(mlist_size > 0);
+
    /* Allocate memory for macrotile array and Mlist for all RT datas.
     *
     * Allocation layout: MTA[0..N] + Mlist alignment padding + Mlist[0..N].
@@ -629,12 +632,8 @@ pvr_rt_mta_mlist_data_init(struct pvr_device *device,
                                   rt_datas_mta_size);
 
    for (uint32_t i = 0; i < num_rt_datas; i++) {
-      if (mlist_size != 0) {
-         rt_dataset->rt_datas[i].mlist_dev_addr = dev_addr;
-         dev_addr = PVR_DEV_ADDR_OFFSET(dev_addr, mlist_size);
-      } else {
-         rt_dataset->rt_datas[i].mlist_dev_addr = PVR_DEV_ADDR_INVALID;
-      }
+      rt_dataset->rt_datas[i].mlist_dev_addr = dev_addr;
+      dev_addr = PVR_DEV_ADDR_OFFSET(dev_addr, mlist_size);
    }
 
    return VK_SUCCESS;
