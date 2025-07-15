@@ -57,9 +57,15 @@ enum Label {
    label_omod5 = 1 << 10,
    label_clamp = 1 << 12,
    label_b2f = 1 << 16,
+   /* This label means that it's either 0 or -1, and the ssa_info::temp is an s1 which is 0 or 1. */
    label_uniform_bool = 1 << 21,
    label_constant_64bit = 1 << 22,
+   /* This label is added to the first definition of s_not/s_or/s_xor/s_and when all operands are
+    * uniform_bool or uniform_bitwise. The first definition of ssa_info::instr would be 0 or -1 and
+    * the second is SCC.
+    */
    label_uniform_bitwise = 1 << 23,
+   /* This label means that it's either 0 or 1 and ssa_info::temp is the inverse. */
    label_scc_invert = 1 << 24,
    label_scc_needed = 1 << 26,
    label_b2i = 1 << 27,
