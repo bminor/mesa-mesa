@@ -30,11 +30,6 @@ struct vn_device_memory *
 vn_android_get_wsi_memory_from_bind_info(
    struct vn_device *dev, const VkBindImageMemoryInfo *bind_info);
 
-bool
-vn_android_get_drm_format_modifier_info(
-   const VkPhysicalDeviceImageFormatInfo2 *format_info,
-   VkPhysicalDeviceImageDrmFormatModifierInfoEXT *out_info);
-
 const VkFormat *
 vn_android_format_to_view_formats(VkFormat format, uint32_t *out_count);
 
@@ -71,14 +66,6 @@ vn_android_get_wsi_memory_from_bind_info(
    UNUSED const VkBindImageMemoryInfo *bind_info)
 {
    return NULL;
-}
-
-static inline bool
-vn_android_get_drm_format_modifier_info(
-   UNUSED const VkPhysicalDeviceImageFormatInfo2 *format_info,
-   UNUSED VkPhysicalDeviceImageDrmFormatModifierInfoEXT *out_info)
-{
-   return false;
 }
 
 static inline const VkFormat *

@@ -719,52 +719,6 @@ vn_android_ahb_allocate(uint32_t width,
    return ahb;
 }
 
-bool
-vn_android_get_drm_format_modifier_info(
-   const VkPhysicalDeviceImageFormatInfo2 *format_info,
-   VkPhysicalDeviceImageDrmFormatModifierInfoEXT *out_info)
-{
-   /* To properly fill VkPhysicalDeviceImageDrmFormatModifierInfoEXT, we have
-    * to allocate an ahb to retrieve the drm format modifier. For the image
-    * sharing mode, we assume VK_SHARING_MODE_EXCLUSIVE for now.
-    */
-   AHardwareBuffer *ahb = NULL;
-   uint32_t format = 0;
-   uint64_t usage = 0;
-   struct vn_android_gralloc_buffer_properties buf_props;
-
-   assert(format_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT);
-
-   format = vk_image_format_to_ahb_format(format_info->format);
-   if (!format)
-      return false;
-
-   usage =
-      vk_image_usage_to_ahb_usage(format_info->flags, format_info->usage);
-   ahb = vn_android_ahb_allocate(16, 16, 1, format, usage);
-   if (!ahb)
-      return false;
-
-   if (!vn_android_gralloc_get_buffer_properties(
-          AHardwareBuffer_getNativeHandle(ahb), &buf_props)) {
-      AHardwareBuffer_release(ahb);
-      return false;
-   }
-
-   *out_info = (VkPhysicalDeviceImageDrmFormatModifierInfoEXT){
-      .sType =
-         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT,
-      .pNext = NULL,
-      .drmFormatModifier = buf_props.modifier,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .queueFamilyIndexCount = 0,
-      .pQueueFamilyIndices = NULL,
-   };
-
-   AHardwareBuffer_release(ahb);
-   return true;
-}
-
 VkResult
 vn_android_device_import_ahb(struct vn_device *dev,
                              struct vn_device_memory *mem,

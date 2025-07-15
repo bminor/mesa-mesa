@@ -2258,22 +2258,15 @@ vn_physical_device_fix_image_format_info(
    local_info->format = *info;
    VkBaseOutStructure *dst = (void *)&local_info->format;
 
-   bool is_ahb = false;
-   bool has_format_list = false;
-   /* we should generate deep copy functions... */
    vk_foreach_struct_const(src, info->pNext) {
       void *pnext = NULL;
       switch (src->sType) {
       case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO:
          memcpy(&local_info->external, src, sizeof(local_info->external));
-         is_ahb =
-            local_info->external.handleType ==
-            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
          local_info->external.handleType = renderer_handle_type;
          pnext = &local_info->external;
          break;
       case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO:
-         has_format_list = true;
          memcpy(&local_info->list, src, sizeof(local_info->list));
          pnext = &local_info->list;
          break;
@@ -2298,47 +2291,6 @@ vn_physical_device_fix_image_format_info(
       if (pnext) {
          dst->pNext = pnext;
          dst = pnext;
-      }
-   }
-
-   if (is_ahb) {
-      assert(local_info->format.tiling !=
-             VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT);
-      local_info->format.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-      if (!vn_android_get_drm_format_modifier_info(&local_info->format,
-                                                   &local_info->modifier))
-         return NULL;
-
-      dst->pNext = (void *)&local_info->modifier;
-      dst = dst->pNext;
-
-      if ((info->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
-          (!has_format_list || !local_info->list.viewFormatCount)) {
-         /* 12.3. Images
-          *
-          * If tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags
-          * contains VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, then the pNext chain
-          * must include a VkImageFormatListCreateInfo structure with non-zero
-          * viewFormatCount.
-          */
-         VkImageFormatListCreateInfo *list = &local_info->list;
-         uint32_t vcount = 0;
-         const VkFormat *vformats =
-            vn_android_format_to_view_formats(info->format, &vcount);
-         if (!vformats) {
-            /* local_info persists through the image format query call */
-            vformats = &local_info->format.format;
-            vcount = 1;
-         }
-
-         list->sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO;
-         list->viewFormatCount = vcount;
-         list->pViewFormats = vformats;
-
-         if (!has_format_list) {
-            dst->pNext = (void *)list;
-            dst = dst->pNext;
-         }
       }
    }
 
@@ -2464,9 +2416,6 @@ vn_image_get_image_format_key(
             _mesa_sha1_update(&sha1_ctx, &src->sType,
                               sizeof(VkStructureType));
             break;
-         case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID:
-            /* no need to update cache key since handled outside the cache */
-            break;
          default:
             physical_dev->image_format_cache.debug.cache_skip_count++;
             return false;
@@ -2558,9 +2507,6 @@ vn_image_init_format_from_cache(
                   cache_entry->properties.filter_cubic.filterCubicMinmax;
                break;
             }
-            case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID:
-               /* no-op here since handled outside the cache */
-               break;
             default:
                unreachable("unexpected format props pNext");
             }
@@ -2645,9 +2591,6 @@ vn_image_store_format_in_cache(
                *((VkFilterCubicImageViewImageFormatPropertiesEXT *)src);
             break;
          }
-         case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID:
-            /* no-op here since handled outside the cache */
-            break;
          default:
             unreachable("unexpected format props pNext");
          }
@@ -2688,30 +2631,17 @@ vn_sanitize_image_format_properties(
    if (external_props) {
       VkExternalMemoryProperties *mem_props =
          &external_props->externalMemoryProperties;
-      if (external_info->handleType ==
-          VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
-         assert(physical_dev->instance->renderer->info.has_dma_buf_import);
-         mem_props->externalMemoryFeatures =
-            VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT |
-            VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT |
-            VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
-         mem_props->exportFromImportedHandleTypes =
-            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-         mem_props->compatibleHandleTypes =
-            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-      } else {
-         /* export support is via virtgpu but import relies on the renderer */
-         if (!physical_dev->instance->renderer->info.has_dma_buf_import) {
-            mem_props->externalMemoryFeatures &=
-               ~VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
-         }
-
-         mem_props->compatibleHandleTypes = supported_handle_types;
-         mem_props->exportFromImportedHandleTypes =
-            (mem_props->exportFromImportedHandleTypes & renderer_handle_type)
-               ? supported_handle_types
-               : 0;
+      /* export support is via virtgpu but import relies on the renderer */
+      if (!physical_dev->instance->renderer->info.has_dma_buf_import) {
+         mem_props->externalMemoryFeatures &=
+            ~VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
       }
+
+      mem_props->compatibleHandleTypes = supported_handle_types;
+      mem_props->exportFromImportedHandleTypes =
+         (mem_props->exportFromImportedHandleTypes & renderer_handle_type)
+            ? supported_handle_types
+            : 0;
    }
 }
 
@@ -2827,25 +2757,15 @@ vn_GetPhysicalDeviceImageFormatProperties2(
 
    struct vn_physical_device_image_format_info local_info;
    if (external_info) {
-      /* Check the image tiling against the renderer handle type:
-       * - No need to check for AHB since the tiling will either be forwarded
-       *   or overwritten based on the renderer external memory type.
-       * - For opaque fd and dma_buf fd handle types, passthrough tiling when
-       *   the renderer external memory is dma_buf. Then we can avoid
-       *   reconstructing the structs to support drm format modifier tiling
-       *   like how we support AHB.
-       */
-      if (external_info->handleType !=
-          VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
-         if (renderer_handle_type ==
-                VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT &&
-             pImageFormatInfo->tiling !=
-                VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            return vn_error(physical_dev->instance,
-                            VK_ERROR_FORMAT_NOT_SUPPORTED);
-         }
-      } else if (!physical_dev->instance->renderer->info.has_dma_buf_import) {
-         /* AHB backed image requires renderer to support import bit */
+      assert(
+         external_info->handleType !=
+         VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID);
+
+      /* venus doesn't support legacy tiling for scanout purpose */
+      if (renderer_handle_type ==
+             VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT &&
+          pImageFormatInfo->tiling !=
+             VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
          return vn_error(physical_dev->instance,
                          VK_ERROR_FORMAT_NOT_SUPPORTED);
       }
@@ -2898,22 +2818,6 @@ vn_GetPhysicalDeviceImageFormatProperties2(
          vn_image_store_format_in_cache(physical_dev, key,
                                         pImageFormatProperties, result);
       }
-   }
-
-   /* VkAndroidHardwareBufferUsageANDROID is always populated directly */
-   if (result == VK_SUCCESS && external_info &&
-       external_info->handleType ==
-          VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
-      VkAndroidHardwareBufferUsageANDROID *ahb_usage =
-         vk_find_struct(pImageFormatProperties->pNext,
-                        ANDROID_HARDWARE_BUFFER_USAGE_ANDROID);
-      if (ahb_usage) {
-         ahb_usage->androidHardwareBufferUsage = vk_image_usage_to_ahb_usage(
-            pImageFormatInfo->flags, pImageFormatInfo->usage);
-      }
-
-      /* AHBs with mipmap usage will ignore this property */
-      pImageFormatProperties->imageFormatProperties.maxMipLevels = 1;
    }
 
    return vn_result(physical_dev->instance, result);
