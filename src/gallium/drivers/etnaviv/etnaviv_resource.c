@@ -159,6 +159,10 @@ etna_resource_can_use_ts(struct etna_screen *screen,
    if (!etna_resource_hw_tileable(screen->specs.use_blt, prsc))
       return false;
 
+   /* Do not use TS for emulated 128 bit formats */
+   if (format_is_128bit(prsc->format))
+      return false;
+
    return true;
 }
 
