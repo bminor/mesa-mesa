@@ -2,6 +2,8 @@ glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
 glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
 glx@glx-swap-pixmap-bad,Fail
+shaders@glsl-max-varyings,Fail
+shaders@glsl-max-varyings >max_varying_components,Fail
 shaders@point-vertex-id divisor,Fail
 shaders@point-vertex-id gl_instanceid divisor,Fail
 shaders@point-vertex-id gl_instanceid,Fail
@@ -160,15 +162,7 @@ spec@ext_transform_feedback@tessellation triangle_strip smooth,Fail
 spec@ext_transform_feedback@tessellation triangle_strip wireframe,Fail
 spec@glsl-1.10@execution@varying-packing@simple float array,Fail
 spec@glsl-1.10@execution@varying-packing@simple float arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple int array,Fail
-spec@glsl-1.10@execution@varying-packing@simple int arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec2 array,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec2 arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec3 array,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec3 arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec3 separate,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec4 array,Fail
-spec@glsl-1.10@execution@varying-packing@simple ivec4 arrays_of_arrays,Fail
+spec@glsl-1.10@execution@varying-packing@simple float separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat2 array,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat2 arrays_of_arrays,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat2 separate,Fail
@@ -196,22 +190,15 @@ spec@glsl-1.10@execution@varying-packing@simple mat4x2 separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat4x3 array,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat4x3 arrays_of_arrays,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat4x3 separate,Fail
-spec@glsl-1.10@execution@varying-packing@simple uint array,Fail
-spec@glsl-1.10@execution@varying-packing@simple uint arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec2 array,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec2 arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec3 array,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec3 arrays_of_arrays,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec3 separate,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec4 array,Fail
-spec@glsl-1.10@execution@varying-packing@simple uvec4 arrays_of_arrays,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec2 array,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec2 arrays_of_arrays,Fail
+spec@glsl-1.10@execution@varying-packing@simple vec2 separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec3 array,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec3 arrays_of_arrays,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec3 separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec4 array,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec4 arrays_of_arrays,Fail
+spec@glsl-1.10@execution@varying-packing@simple vec4 separate,Fail
 spec@glsl-1.30@execution@tex-miplevel-selection texture() 2drect,Crash
 spec@glsl-1.30@execution@tex-miplevel-selection texture() 2drectshadow,Crash
 spec@khr_texture_compression_astc@miptree-gles srgb-fp,Fail

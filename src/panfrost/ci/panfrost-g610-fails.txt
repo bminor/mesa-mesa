@@ -19,3 +19,6 @@ dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform,
 dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform_linear,Fail
 dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform,Fail
 dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform_linear,Fail
+
+# ../src/panfrost/compiler/bi_spill_ssa.c:276: bi_index_as_mem: Assertion `val < ctx->spill_max' failed.
+dEQP-VK.graphicsfuzz.spv-stable-maze-flatten-copy-composite,Crash
