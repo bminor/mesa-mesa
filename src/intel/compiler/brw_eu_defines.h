@@ -718,6 +718,8 @@ enum memory_flags {
    MEMORY_FLAG_TRANSPOSE = 1 << 0,
    /** Whether this operation should fire for helper invocations */
    MEMORY_FLAG_INCLUDE_HELPERS = 1 << 1,
+   /** Whether memory access is marked volatile by GLSL/SPIR-V. */
+   MEMORY_FLAG_VOLATILE_ACCESS = 1 << 2,
 };
 
 enum rt_logical_srcs {

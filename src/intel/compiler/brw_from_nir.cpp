@@ -7099,8 +7099,13 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
    const bool is_load = !is_store && !is_atomic;
    const bool include_helpers = nir_intrinsic_has_access(instr) &&
       (nir_intrinsic_access(instr) & ACCESS_INCLUDE_HELPERS);
+   const bool volatile_access = nir_intrinsic_has_access(instr) &&
+      (nir_intrinsic_access(instr) & ACCESS_VOLATILE);
    const unsigned align =
       nir_intrinsic_has_align(instr) ? nir_intrinsic_align(instr) : 0;
+   const unsigned logical_flags =
+      (include_helpers ? MEMORY_FLAG_INCLUDE_HELPERS : 0) |
+      (volatile_access ? MEMORY_FLAG_VOLATILE_ACCESS : 0);
    bool no_mask_handle = false;
    int data_src = -1;
 
@@ -7109,8 +7114,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
    srcs[MEMORY_LOGICAL_COORD_COMPONENTS] = brw_imm_ud(1);
    srcs[MEMORY_LOGICAL_ALIGNMENT] = brw_imm_ud(align);
    /* DATA_SIZE and CHANNELS are handled below the switch */
-   srcs[MEMORY_LOGICAL_FLAGS] =
-      brw_imm_ud(include_helpers ? MEMORY_FLAG_INCLUDE_HELPERS : 0);
+   srcs[MEMORY_LOGICAL_FLAGS] = brw_imm_ud(logical_flags);
    /* DATA0 and DATA1 are handled below */
 
    /* Set the default address offset to 0 */
