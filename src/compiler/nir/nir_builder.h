@@ -852,6 +852,12 @@ nir_channel(nir_builder *b, nir_def *def, unsigned c)
 }
 
 static inline nir_def *
+nir_mov_scalar(nir_builder *b, nir_scalar scalar)
+{
+   return nir_channel(b, scalar.def, scalar.comp);
+}
+
+static inline nir_def *
 nir_channel_or_undef(nir_builder *b, nir_def *def, signed int channel)
 {
    if (channel >= 0 && channel < def->num_components)
