@@ -361,7 +361,6 @@ lower_bit_size_callback(const nir_instr *instr, enum amd_gfx_level chip, bool di
    if (alu->def.bit_size & (8 | 16)) {
       unsigned bit_size = alu->def.bit_size;
       switch (alu->op) {
-      case nir_op_bitfield_select:
       case nir_op_imul_high:
       case nir_op_umul_high:
       case nir_op_uadd_carry:
