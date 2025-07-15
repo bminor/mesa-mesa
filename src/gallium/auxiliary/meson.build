@@ -427,6 +427,7 @@ files_libgalliumvl = files(
 
 vlwinsys_deps = []
 files_libgalliumvlwinsys = files('vl/vl_winsys.h')
+links_libgalliumvlwinsys = []
 if host_machine.system() == 'windows'
   files_libgalliumvlwinsys += files('vl/vl_winsys_win32.c')
 else
@@ -434,6 +435,7 @@ else
 endif
 if with_platform_x11
   files_libgalliumvlwinsys += files('vl/vl_winsys_dri.c')
+  links_libgalliumvlwinsys += libloader_x11
   if with_dri_platform == 'drm'
     vlwinsys_deps += [
       dep_xcb_sync, dep_xcb_present, dep_xshmfence, dep_xcb_xfixes,
@@ -572,6 +574,6 @@ libgalliumvlwinsys = static_library(
   files_libgalliumvlwinsys,
   include_directories : [inc_gallium, inc_include, inc_loader, inc_src, include_directories('../drivers/zink')],
   dependencies : [dep_libdrm, vlwinsys_deps, idep_mesautil],
-  link_with : [libloader_x11],
+  link_with : links_libgalliumvlwinsys,
   build_by_default : false,
 )

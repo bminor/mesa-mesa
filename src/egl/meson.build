@@ -94,7 +94,6 @@ if with_dri
   deps_for_egl += idep_xmlconfig
   link_for_egl += libloader
   incs_for_egl += inc_loader
-  incs_for_egl += inc_loader_x11
   incs_for_egl += inc_gallium
   incs_for_egl += inc_gallium_aux
   incs_for_egl += inc_mesa
@@ -107,9 +106,10 @@ if with_dri
 
   if with_platform_x11
     files_egl += files('drivers/dri2/platform_x11.c')
+    incs_for_egl += inc_loader_x11
+    link_for_egl += libloader_x11
     if with_dri_platform == 'drm'
       files_egl += files('drivers/dri2/platform_x11_dri3.c')
-      link_for_egl += [libloader_x11]
     endif
     deps_for_egl += [dep_x11_xcb, dep_xcb_xrandr, dep_xcb_xfixes, dep_xcb_shm]
   endif
