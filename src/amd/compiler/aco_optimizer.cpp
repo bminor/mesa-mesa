@@ -4299,12 +4299,29 @@ to_uniform_bool_instr(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::s_or_b64: instr->opcode = aco_opcode::s_or_b32; break;
    case aco_opcode::s_xor_b32:
    case aco_opcode::s_xor_b64: instr->opcode = aco_opcode::s_absdiff_i32; break;
+   case aco_opcode::s_not_b32:
+   case aco_opcode::s_not_b64: {
+      aco_ptr<Instruction> new_instr{
+         create_instruction(aco_opcode::s_absdiff_i32, Format::SOP2, 2, 2)};
+      new_instr->operands[0] = instr->operands[0];
+      new_instr->operands[1] = Operand::c32(1);
+      new_instr->definitions[0] = instr->definitions[0];
+      new_instr->definitions[1] = instr->definitions[1];
+      new_instr->pass_flags = instr->pass_flags;
+      instr = std::move(new_instr);
+      ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+      ctx.info[instr->definitions[1].tempId()].parent_instr = instr.get();
+      break;
+   }
    default:
       /* Don't transform other instructions. They are very unlikely to appear here. */
       return false;
    }
 
    for (Operand& op : instr->operands) {
+      if (!op.isTemp())
+         continue;
+
       ctx.uses[op.tempId()]--;
 
       if (ctx.info[op.tempId()].is_uniform_bool()) {
@@ -4330,8 +4347,8 @@ to_uniform_bool_instr(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
    instr->definitions[0].setTemp(Temp(instr->definitions[0].tempId(), s1));
    ctx.program->temp_rc[instr->definitions[0].tempId()] = s1;
-   assert(instr->operands[0].regClass() == s1);
-   assert(instr->operands[1].regClass() == s1);
+   assert(!instr->operands[0].isTemp() || instr->operands[0].regClass() == s1);
+   assert(!instr->operands[1].isTemp() || instr->operands[1].regClass() == s1);
    return true;
 }
 
