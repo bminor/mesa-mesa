@@ -14,8 +14,8 @@
 #include "bifrost_nir.h"
 #include "compiler.h"
 
-/* allow this many temporaries for spilling */
-#define MAX_TEMPS_FOR_SPILL 16
+/* allow at least this many temporaries for spilling */
+#define MIN_TEMPS_FOR_SPILL 4
 
 /*
  * An implementation of "Register Spilling and Live-Range Splitting for SSA-Form
@@ -1242,12 +1242,23 @@ unsigned
 bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
 {
    void *memctx = ralloc_context(NULL);
-   dist_t *next_uses = rzalloc_array(memctx, dist_t, ctx->ssa_alloc + MAX_TEMPS_FOR_SPILL);
-   bi_instr **remat = rzalloc_array(memctx, bi_instr *, ctx->ssa_alloc + MAX_TEMPS_FOR_SPILL);
    unsigned spill_count = spill_base;
-   unsigned max_temps = MAX_TEMPS_FOR_SPILL;
+   unsigned max_temps = MIN_TEMPS_FOR_SPILL;
 
-   /* check for instructions that can be easily re-materialized */
+   /* calculate how many temporaries we may need */
+   bi_foreach_instr_global(ctx, I) {
+      /* we may need a temp to re-materialize */
+      if (can_remat(I))
+         max_temps++;
+      /* we also may need temps to handle phis */
+      if (I->op == BI_OPCODE_PHI)
+         max_temps++;
+   }
+
+   dist_t *next_uses = rzalloc_array(memctx, dist_t, ctx->ssa_alloc + max_temps);
+   bi_instr **remat = rzalloc_array(memctx, bi_instr *, ctx->ssa_alloc + max_temps);
+
+   /* now record instructions that can be easily re-materialized */
    bi_foreach_instr_global(ctx, I) {
       if (can_remat(I))
          remat[I->dest[0].value] = I;
