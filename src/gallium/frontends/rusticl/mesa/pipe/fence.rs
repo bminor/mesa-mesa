@@ -22,6 +22,8 @@ pub struct PipeFence {
     screen: Arc<PipeScreen>,
 }
 
+unsafe impl Send for PipeFence {}
+
 impl PipeFence {
     pub fn new(fence: *mut pipe_fence_handle, screen: &Arc<PipeScreen>) -> Self {
         Self {
