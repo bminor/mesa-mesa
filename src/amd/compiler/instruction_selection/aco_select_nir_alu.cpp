@@ -3358,19 +3358,32 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       break;
    }
    case nir_op_bitfield_select: {
+      Temp bitmask = get_alu_src(ctx, instr->src[0], instr->def.num_components);
+      Temp insert = get_alu_src(ctx, instr->src[1], instr->def.num_components);
+      Temp base = get_alu_src(ctx, instr->src[2], instr->def.num_components);
 
       /* dst = (insert & bitmask) | (base & ~bitmask) */
-      if (dst.regClass() == s1) {
-         Temp bitmask = get_alu_src(ctx, instr->src[0]);
-         Temp insert = get_alu_src(ctx, instr->src[1]);
-         Temp base = get_alu_src(ctx, instr->src[2]);
-         aco_ptr<Instruction> sop2;
-         nir_const_value* const_bitmask = nir_src_as_const_value(instr->src[0].src);
-         nir_const_value* const_insert = nir_src_as_const_value(instr->src[1].src);
+      if (dst.type() == RegType::sgpr) {
+         RegClass rc = dst.regClass();
+         assert(rc == s1 || rc == s2);
 
-         if (const_bitmask && ctx->program->gfx_level >= GFX9 &&
-             (const_bitmask->u32 == 0xffff || const_bitmask->u32 == 0xffff0000)) {
-            if (const_bitmask->u32 == 0xffff) {
+         bool src_const[3] = {true, true, true};
+         uint64_t const_value[3] = {0, 0, 0};
+         for (unsigned i = 0; i < 3; i++) {
+            for (unsigned j = 0; j < instr->def.num_components; j++) {
+               nir_scalar s = nir_scalar_resolved(instr->src[i].src.ssa, instr->src[i].swizzle[j]);
+               if (!nir_scalar_is_const(s)) {
+                  src_const[i] = false;
+                  break;
+               }
+
+               const_value[i] |= nir_scalar_as_uint(s) << (instr->def.bit_size * j);
+            }
+         }
+
+         if (rc == s1 && src_const[0] && ctx->program->gfx_level >= GFX9 &&
+             (const_value[0] == 0xffff || const_value[0] == 0xffff0000)) {
+            if (const_value[0] == 0xffff) {
                bld.sop2(aco_opcode::s_pack_lh_b32_b16, Definition(dst), insert, base);
             } else {
                bld.sop2(aco_opcode::s_pack_lh_b32_b16, Definition(dst), base, insert);
@@ -3379,24 +3392,62 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          }
 
          Temp lhs;
-         if (const_insert && const_bitmask) {
-            lhs = bld.copy(bld.def(s1), Operand::c32(const_insert->u32 & const_bitmask->u32));
+         if (src_const[0] && src_const[1]) {
+            uint64_t const_lhs = const_value[1] & const_value[0];
+            if (rc == s1) {
+               lhs = bld.copy(bld.def(s1), Operand::c32(const_lhs));
+            } else {
+               lhs = bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), Operand::c32(const_lhs),
+                                Operand::c32(const_lhs >> 32));
+            }
          } else {
-            lhs = bld.sop2(aco_opcode::s_and_b32, bld.def(s1), bld.def(s1, scc), insert, bitmask);
+            aco_opcode s_and = rc == s1 ? aco_opcode::s_and_b32 : aco_opcode::s_and_b64;
+            lhs = bld.sop2(s_and, bld.def(rc), bld.def(s1, scc), insert, bitmask);
          }
 
          Temp rhs;
-         nir_const_value* const_base = nir_src_as_const_value(instr->src[2].src);
-         if (const_base && const_bitmask) {
-            rhs = bld.copy(bld.def(s1), Operand::c32(const_base->u32 & ~const_bitmask->u32));
+         if (src_const[0] && src_const[2]) {
+            uint64_t const_rhs = const_value[2] & ~const_value[0];
+            if (rc == s1) {
+               rhs = bld.copy(bld.def(s1), Operand::c32(const_rhs));
+            } else {
+               rhs = bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), Operand::c32(const_rhs),
+                                Operand::c32(const_rhs >> 32));
+            }
          } else {
-            rhs = bld.sop2(aco_opcode::s_andn2_b32, bld.def(s1), bld.def(s1, scc), base, bitmask);
+            aco_opcode s_andn2 = rc == s1 ? aco_opcode::s_andn2_b32 : aco_opcode::s_andn2_b64;
+            rhs = bld.sop2(s_andn2, bld.def(rc), bld.def(s1, scc), base, bitmask);
          }
 
-         bld.sop2(aco_opcode::s_or_b32, Definition(dst), bld.def(s1, scc), rhs, lhs);
+         aco_opcode s_or = rc == s1 ? aco_opcode::s_or_b32 : aco_opcode::s_or_b64;
+         bld.sop2(s_or, Definition(dst), bld.def(s1, scc), rhs, lhs);
+         break;
+      }
 
-      } else if (dst.regClass() == v1) {
-         emit_vop3a_instruction(ctx, instr, aco_opcode::v_bfi_b32, dst, false, 3);
+      if (bitmask.type() == RegType::sgpr) {
+         insert = as_vgpr(ctx, insert);
+         base = as_vgpr(ctx, base);
+      } else if (insert.type() == RegType::sgpr) {
+         base = as_vgpr(ctx, base);
+      }
+
+      if (dst.size() == 1) {
+         bld.vop3(aco_opcode::v_bfi_b32, Definition(dst), bitmask, insert, base);
+         emit_split_vector(ctx, dst, instr->def.num_components);
+      } else if (dst.size() == 2) {
+         Temp bitmask_lo = bld.tmp(v1), bitmask_hi = bld.tmp(v1);
+         bld.pseudo(aco_opcode::p_split_vector, Definition(bitmask_lo), Definition(bitmask_hi),
+                    bitmask);
+         Temp insert_lo = bld.tmp(v1), insert_hi = bld.tmp(v1);
+         bld.pseudo(aco_opcode::p_split_vector, Definition(insert_lo), Definition(insert_hi),
+                    insert);
+         Temp base_lo = bld.tmp(v1), base_hi = bld.tmp(v1);
+         bld.pseudo(aco_opcode::p_split_vector, Definition(base_lo), Definition(base_hi), base);
+
+         Temp res_lo = bld.vop3(aco_opcode::v_bfi_b32, bld.def(v1), bitmask_lo, insert_lo, base_lo);
+         Temp res_hi = bld.vop3(aco_opcode::v_bfi_b32, bld.def(v1), bitmask_hi, insert_hi, base_hi);
+
+         bld.pseudo(aco_opcode::p_create_vector, Definition(dst), res_lo, res_hi);
       } else {
          isel_err(&instr->instr, "Unimplemented NIR instr bit size");
       }
