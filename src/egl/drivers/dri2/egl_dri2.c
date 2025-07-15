@@ -58,7 +58,7 @@
 
 #ifdef HAVE_X11_PLATFORM
 #include "X11/Xlibint.h"
-#include "loader_x11.h"
+#include "x11_dri3.h"
 #endif
 
 #include "GL/mesa_glinterop.h"

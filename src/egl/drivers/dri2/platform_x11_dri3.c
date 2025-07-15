@@ -38,7 +38,7 @@
 #include "platform_x11_dri3.h"
 
 #include "loader.h"
-#include "loader_x11.h"
+#include "x11_dri3.h"
 #include "loader_dri3_helper.h"
 
 static struct dri3_egl_surface *

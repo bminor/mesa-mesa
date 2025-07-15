@@ -6,7 +6,7 @@ inc_loader_x11 = include_directories('.')
 if with_dri_platform == 'drm'
   libloader_x11 = static_library(
     'loader_x11',
-    'loader_x11.c',
+    'x11_dri3.c',
     gnu_symbol_visibility : 'hidden',
     include_directories : [inc_include, inc_src, inc_gallium],
     dependencies : [

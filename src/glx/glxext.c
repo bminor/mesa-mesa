@@ -32,7 +32,7 @@
 #include "dri_common.h"
 #endif
 
-#include "loader_x11.h"
+#include "x11_dri3.h"
 #ifdef HAVE_LIBDRM
 #include "loader_dri3_helper.h"
 #endif

@@ -75,7 +75,7 @@
 #include "dri_common.h"
 #include "dri3_priv.h"
 #include "loader.h"
-#include "loader_x11.h"
+#include "x11_dri3.h"
 #include "loader_dri_helper.h"
 #include "util/u_debug.h"
 #include "dri_util.h"

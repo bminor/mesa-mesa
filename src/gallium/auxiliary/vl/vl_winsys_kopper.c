@@ -35,7 +35,7 @@
 #include <X11/Xlib-xcb.h>
 #include "gallium/drivers/zink/zink_kopper.h"
 #include <vulkan/vulkan_xcb.h>
-#include "x11/loader_x11.h"
+#include "x11/x11_dri3.h"
 #endif
 #include "zink_public.h"
 

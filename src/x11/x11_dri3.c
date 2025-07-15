@@ -21,6 +21,8 @@
  * OF THIS SOFTWARE.
  */
 
+#include "x11_dri3.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -29,7 +31,7 @@
 #include <xcb/dri3.h>
 #include <xcb/present.h>
 #include <xcb/xfixes.h>
-#include "loader_x11.h"
+
 /** x11_dri3_open
  *
  * Wrapper around xcb_dri3_open

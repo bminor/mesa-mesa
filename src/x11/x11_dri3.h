@@ -26,6 +26,8 @@
 
 #include <xcb/xcb.h>
 #include <inttypes.h>
+#include <stdbool.h>
+
 int x11_dri3_open(xcb_connection_t *conn, xcb_window_t root, uint32_t provider);
 bool x11_dri3_has_multibuffer(xcb_connection_t *c);
 

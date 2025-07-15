@@ -51,7 +51,7 @@
 #include "util/log.h"
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "loader_x11.h"
+#include "x11_dri3.h"
 #include "kopper_interface.h"
 #include "loader.h"
 #include "platform_x11.h"
