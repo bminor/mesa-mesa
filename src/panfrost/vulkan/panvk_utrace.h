@@ -41,6 +41,13 @@ void panvk_utrace_delete_flush_data(struct u_trace_context *utctx,
 
 #if PAN_ARCH >= 10
 
+struct panvk_cmd_buffer;
+
+struct panvk_utrace_cs_info {
+   struct panvk_cmd_buffer *cmdbuf;
+   uint32_t ts_wait_mask;
+};
+
 void panvk_per_arch(utrace_context_init)(struct panvk_device *dev);
 void panvk_per_arch(utrace_context_fini)(struct panvk_device *dev);
 

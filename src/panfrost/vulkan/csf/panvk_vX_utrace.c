@@ -14,13 +14,11 @@
 
 static void
 cmd_write_timestamp(const struct panvk_device *dev, struct cs_builder *b,
-                    uint64_t addr)
+                    uint64_t addr, uint32_t wait_mask)
 {
    const struct cs_index addr_reg = cs_scratch_reg64(b, 0);
    /* abuse DEFERRED_SYNC */
-   const struct cs_async_op async =
-      cs_defer(dev->csf.sb.all_iters_mask | SB_MASK(DEFERRED_FLUSH),
-               SB_ID(DEFERRED_SYNC));
+   const struct cs_async_op async = cs_defer(wait_mask, SB_ID(DEFERRED_SYNC));
 
    cs_move64_to(b, addr_reg, addr);
    cs_store_state(b, addr_reg, 0, MALI_CS_STATE_TIMESTAMP, async);
@@ -82,13 +80,16 @@ static void
 panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
                        uint64_t offset_B, uint32_t flags)
 {
-   struct panvk_cmd_buffer *cmdbuf = cs;
+   /* Here the input type for void *cs is panvk_utrace_cs_info instead of
+    * panvk_cmd_buffer so we can pass additional parameters. */
+   struct panvk_utrace_cs_info *cs_info = cs;
+   struct panvk_cmd_buffer *cmdbuf = cs_info->cmdbuf;
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct cs_builder *b = get_builder(cmdbuf, ut);
    const struct panvk_priv_bo *bo = timestamps;
    const uint64_t addr = bo->addr.dev + offset_B;
 
-   cmd_write_timestamp(dev, b, addr);
+   cmd_write_timestamp(dev, b, addr, cs_info->ts_wait_mask);
 }
 
 static void
@@ -96,7 +97,10 @@ panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
                           uint64_t dst_offset_B, void *src_buffer,
                           uint64_t src_offset_B, uint32_t size_B)
 {
-   struct cs_builder *b = get_builder(cs, ut);
+   /* Here the input type for void *cs is panvk_utrace_cs_info instead of
+    * panvk_cmd_buffer so we can pass additional parameters. */
+   struct panvk_utrace_cs_info *cs_info = cs;
+   struct cs_builder *b = get_builder(cs_info->cmdbuf, ut);
    const struct panvk_priv_bo *dst_bo = dst_buffer;
    const uint64_t dst_addr = dst_bo->addr.dev + dst_offset_B;
    const uint64_t src_addr = src_offset_B;
