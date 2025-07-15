@@ -589,6 +589,8 @@ tu_get_external_image_format_properties(
     *    VK_ERROR_FORMAT_NOT_SUPPORTED.
     */
 
+   assert(handleType !=
+          VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID);
    switch (handleType) {
    case VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT:
    case VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT:
@@ -607,14 +609,6 @@ tu_get_external_image_format_properties(
                           handleType, pImageFormatInfo->type);
       }
       break;
-#if DETECT_OS_ANDROID
-   case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID:
-      flags = VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT |
-              VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT |
-              VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
-      compat_flags = export_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-      break;
-#endif
    case VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT:
       flags = VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
       compat_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
@@ -647,7 +641,6 @@ tu_GetPhysicalDeviceImageFormatProperties2(
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
    const VkPhysicalDeviceImageViewImageFormatInfoEXT *image_view_info = NULL;
    VkExternalImageFormatProperties *external_props = NULL;
-   VkAndroidHardwareBufferUsageANDROID *android_usage = NULL;
    VkFilterCubicImageViewImageFormatPropertiesEXT *cubic_props = NULL;
    VkFormatFeatureFlags format_feature_flags;
    VkSamplerYcbcrConversionImageFormatProperties *ycbcr_props = NULL;
@@ -681,9 +674,6 @@ tu_GetPhysicalDeviceImageFormatProperties2(
       case VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES:
          external_props = (VkExternalImageFormatProperties *) s;
          break;
-      case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID:
-         android_usage = (VkAndroidHardwareBufferUsageANDROID *) s;
-         break;
       case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT:
          cubic_props = (VkFilterCubicImageViewImageFormatPropertiesEXT *) s;
          break;
@@ -705,11 +695,31 @@ tu_GetPhysicalDeviceImageFormatProperties2(
     *    present and VkExternalImageFormatProperties will be ignored.
     */
    if (external_info && external_info->handleType != 0) {
-      result = tu_get_external_image_format_properties(
-         physical_device, base_info, external_info->handleType,
-         external_props);
-      if (result != VK_SUCCESS)
-         goto fail;
+      if (external_info->handleType ==
+          VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
+         result = vk_android_get_ahb_image_properties(physicalDevice,
+                                                      base_info, base_props);
+         if (result != VK_SUCCESS)
+            goto fail;
+
+         VkImageFormatProperties *props = &base_props->imageFormatProperties;
+         if (!(props->sampleCounts & VK_SAMPLE_COUNT_1_BIT)) {
+            result = vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
+                               "sampleCounts (%x) unsupported for AHB",
+                               props->sampleCounts);
+            goto fail;
+         }
+
+         /* AHBs with mipmap usage will ignore this property */
+         props->maxMipLevels = 1;
+         props->sampleCounts = VK_SAMPLE_COUNT_1_BIT;
+      } else {
+         result = tu_get_external_image_format_properties(
+            physical_device, base_info, external_info->handleType,
+            external_props);
+         if (result != VK_SUCCESS)
+            goto fail;
+      }
    }
 
    if (cubic_props) {
@@ -725,43 +735,6 @@ tu_GetPhysicalDeviceImageFormatProperties2(
          cubic_props->filterCubic = false;
          cubic_props->filterCubicMinmax = false;
       }
-   }
-
-   if (android_usage) {
-      /* Don't expect gralloc to be able to allocate anything other than 3D: */
-      if (base_info->type != VK_IMAGE_TYPE_2D) {
-         result = vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                            "type (%u) unsupported for AHB", base_info->type);
-         goto fail;
-      }
-      VkImageFormatProperties *props = &base_props->imageFormatProperties;
-      if (!(props->sampleCounts & VK_SAMPLE_COUNT_1_BIT)) {
-         result = vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                          "sampleCounts (%x) unsupported for AHB", props->sampleCounts);
-         goto fail;
-      }
-      android_usage->androidHardwareBufferUsage =
-         vk_image_usage_to_ahb_usage(base_info->flags, base_info->usage);
-      uint32_t format = vk_image_format_to_ahb_format(base_info->format);
-      if (!format) {
-         result = vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                            "format (%u) unsupported for AHB", base_info->format);
-         goto fail;
-      }
-      /* We can't advertise support for anything that gralloc cannot allocate
-       * so we are stuck without any better option than attempting a test
-       * allocation:
-       */
-      if (!vk_ahb_probe_format(base_info->format, base_info->flags, base_info->usage)) {
-         result = vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                            "format (%x) with flags (%x) and usage (%x) unsupported for AHB",
-                            base_info->format, base_info->flags, base_info->usage);
-         goto fail;
-      }
-
-      /* AHBs with mipmap usage will ignore this property */
-      props->maxMipLevels = 1;
-      props->sampleCounts = VK_SAMPLE_COUNT_1_BIT;
    }
 
    if (ycbcr_props)
