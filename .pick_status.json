@@ -3274,7 +3274,7 @@
         "description": "nak: disable imma 8x8x16 on Blackwell+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "669c8a51452e484c45e28a7014ea49590a4a7ee3",
         "notes": null

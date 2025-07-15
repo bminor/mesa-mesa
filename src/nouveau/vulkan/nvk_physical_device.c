@@ -56,7 +56,7 @@
 #include "clc797.h"
 #include "clc6c0.h"
 #include "clc997.h"
-
+#include "clcdc0.h"
 static uint32_t
 nvk_get_vk_version(const struct nv_device_info *info)
 {
@@ -1796,20 +1796,22 @@ nvk_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDev
             if (result_type == VK_COMPONENT_TYPE_UINT32_KHR && sat)
                continue;
 
-            vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
-            {
-               *p = (struct VkCooperativeMatrixPropertiesKHR){
-                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
-                  .MSize = 8,
-                  .NSize = 8,
-                  .KSize = 16,
-                  .AType = input_type_ab,
-                  .BType = input_type_ab,
-                  .CType = result_type,
-                  .ResultType = result_type,
-                  .saturatingAccumulation = sat,
+            if (pdev->info.cls_compute < BLACKWELL_COMPUTE_A) {
+               vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
+               {
+                  *p = (struct VkCooperativeMatrixPropertiesKHR){
+                     .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                     .MSize = 8,
+                     .NSize = 8,
+                     .KSize = 16,
+                     .AType = input_type_ab,
+                     .BType = input_type_ab,
+                     .CType = result_type,
+                     .ResultType = result_type,
+                     .saturatingAccumulation = sat,
                   .scope = VK_SCOPE_SUBGROUP_KHR
-               };
+                  };
+               }
             }
 
             if (pdev->info.cls_compute >= AMPERE_COMPUTE_A) {
