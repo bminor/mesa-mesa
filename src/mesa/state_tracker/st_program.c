@@ -804,6 +804,7 @@ st_create_common_variant(struct st_context *st,
    }
 
    assert(state.ir.nir->info.stage == MESA_SHADER_COMPUTE ||
+          state.ir.nir->info.stage == MESA_SHADER_TASK ||
           state.ir.nir->info.io_lowered);
 
    /* This should be after all passes that touch IO. */

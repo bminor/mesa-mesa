@@ -1137,10 +1137,12 @@ type_size_vec4(const struct glsl_type *type, bool bindless)
 void
 nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
 {
-   if (mesa_shader_stage_is_compute(nir->info.stage))
+   if (mesa_shader_stage_is_compute(nir->info.stage) ||
+       nir->info.stage == MESA_SHADER_TASK)
       return;
 
    bool lower_indirect_inputs =
+      nir->info.stage != MESA_SHADER_MESH &&
       !(nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage));
 
    /* Transform feedback requires that indirect outputs are lowered. */
@@ -1169,7 +1171,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
     * must sort explicitly here to get what nir_assign_io_var_locations does.
     */
    unsigned varying_var_mask =
-      (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0) |
+      (nir->info.stage != MESA_SHADER_VERTEX &&
+       nir->info.stage != MESA_SHADER_MESH ? nir_var_shader_in : 0) |
       (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
    nir_sort_variables_by_location(nir, varying_var_mask);
 
@@ -1228,8 +1231,11 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
     *
     * This must be done after DCE to remove dead load_input intrinsics.
     */
+   bool recompute_inputs =
+      (nir->info.stage != MESA_SHADER_VERTEX || renumber_vs_inputs) &&
+      nir->info.stage != MESA_SHADER_MESH;
    NIR_PASS(_, nir, nir_recompute_io_bases,
-            (nir->info.stage != MESA_SHADER_VERTEX || renumber_vs_inputs ? nir_var_shader_in : 0) | nir_var_shader_out);
+            (recompute_inputs ? nir_var_shader_in : 0) | nir_var_shader_out);
 
    if (nir->xfb_info)
       NIR_PASS(_, nir, nir_io_add_intrinsic_xfb_info);
