@@ -2,8 +2,6 @@ KHR-GL46.shader_image_load_store.basic-allFormats-store,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-store,Fail
 KHR-GL46.shading_language_420pack.binding_images,Fail
 
-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
-
 # https://gitlab.freedesktop.org/mesa/mesa/-/issues/5582
 KHR-GLES31.core.texture_cube_map_array.color_depth_attachments,Fail
 KHR-GL46.texture_cube_map_array.color_depth_attachments,Fail
@@ -210,7 +208,6 @@ spec@arb_gpu_shader5@arb_gpu_shader5-xfb-streams-without-invocations,Fail
 spec@arb_gpu_shader5@arb_gpu_shader5-xfb-streams-without-invocations spirv,Fail
 spec@arb_gpu_shader5@arb_gpu_shader5-xfb-streams@arb_gpu_shader5-xfb-streams,Fail
 spec@arb_gpu_shader5@arb_gpu_shader5-xfb-streams@arb_gpu_shader5-xfb-streams-blocks,Fail
-spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-vs-getuniformdv,Crash
 spec@arb_gpu_shader_fp64@execution@built-in-functions@fs-inverse-dmat4,Fail
 spec@arb_gpu_shader_fp64@uniform_buffers@fs-ubo-load.indirect.3,Fail
 spec@glsl-4.00@execution@built-in-functions@fs-op-div-double-dmat4,Fail
@@ -231,7 +228,19 @@ spec@ext_base_instance@arb_base_instance-drawarrays_gles3,Fail
 
 # Bad assumptions in piglit about layout of multiplanar formats,
 # it should use separate buffers per plane:
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-export,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p010,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p012,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p016,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
+
+# Regression from https://gitlab.freedesktop.org/mesa/mesa/-/compare/ace49d9e52a6156f114ee00eec759d734bd84fc0...88c79a13b9056099048080e7d41576e0cb69c347
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
 
 # glcts update
 dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
