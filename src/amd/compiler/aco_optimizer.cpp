@@ -1910,15 +1910,11 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
              * uniform bool into divergent */
             ctx.info[instr->definitions[1].tempId()].set_temp(
                ctx.info[instr->operands[0].tempId()].temp);
-            ctx.info[instr->definitions[0].tempId()].set_uniform_bool(
-               ctx.info[instr->operands[0].tempId()].temp);
             break;
          } else if (ctx.info[instr->operands[0].tempId()].is_uniform_bitwise()) {
             /* Try to get rid of the superfluous s_and_b64, since the uniform bitwise instruction
              * already produces the same SCC */
             ctx.info[instr->definitions[1].tempId()].set_temp(
-               ctx.info[instr->operands[0].tempId()].parent_instr->definitions[1].getTemp());
-            ctx.info[instr->definitions[0].tempId()].set_uniform_bool(
                ctx.info[instr->operands[0].tempId()].parent_instr->definitions[1].getTemp());
             break;
          } else if ((ctx.program->stage.num_sw_stages() > 1 ||
