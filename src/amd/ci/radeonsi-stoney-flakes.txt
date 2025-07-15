@@ -45,6 +45,7 @@ spec@!opengl 1.2@texture-packed-formats
 spec@amd_shader_trinary_minmax@execution@built-in-functions@fs-mid3-vec4-vec4-vec4
 spec@arb_clear_texture@arb_clear_texture-depth
 spec@arb_copy_image@arb_copy_image-formats --samples=2
+spec@arb_draw_indirect@arb_draw_indirect-transform-feedback
 spec@arb_framebuffer_srgb@blit renderbuffer linear_to_srgb upsample disabled render
 spec@arb_framebuffer_srgb@blit texture linear_to_srgb scaled enabled render
 spec@arb_gpu_shader5@texturegatheroffset@vs-rgba-0-unorm-2d
@@ -64,6 +65,7 @@ spec@ext_external_objects@vk-semaphores
 spec@ext_framebuffer_multisample@accuracy 16 stencil_resolve
 spec@ext_framebuffer_multisample@accuracy 4 depth_draw small depthstencil
 spec@ext_framebuffer_multisample@accuracy 4 depth_resolve small depthstencil
+spec@ext_framebuffer_multisample@accuracy all_samples depth_draw depthstencil
 spec@ext_framebuffer_multisample@accuracy all_samples depth_draw small depthstencil
 spec@ext_framebuffer_multisample@accuracy all_samples depth_resolve small depthstencil
 spec@ext_framebuffer_multisample@accuracy all_samples stencil_resolve small depthstencil
