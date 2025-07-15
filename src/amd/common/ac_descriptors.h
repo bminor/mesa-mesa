@@ -304,6 +304,21 @@ void
 ac_set_mutable_cb_surface_fields(const struct radeon_info *info, const struct ac_mutable_cb_state *state,
                                  struct ac_cb_surface *cb);
 
+struct ac_gfx12_hiz_state {
+   struct radeon_surf *surf;
+   uint64_t va;
+   uint32_t type : 4;
+   uint32_t num_samples : 5;
+   uint32_t first_level : 4;
+   uint32_t last_level : 5;
+   uint32_t num_levels : 6;
+   uint32_t first_layer : 13;
+   uint32_t last_layer : 13;
+};
+
+void
+ac_build_gfx12_hiz_descriptor(const struct ac_gfx12_hiz_state *state, uint32_t desc[8]);
+
 #ifdef __cplusplus
 }
 #endif
