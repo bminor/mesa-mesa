@@ -55,11 +55,6 @@ workflow:
     - if: &is-merge-request $CI_PIPELINE_SOURCE == "merge_request_event"
     # Push to a branch on a fork
     - if: &is-push-to-fork $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
-    # a pipeline running within the upstream project
-    - if: &is-upstream-pipeline $CI_PROJECT_PATH == $FDO_UPSTREAM_REPO
-    # an MR pipeline running within the upstream project, usually true for
-    # those with the Developer role or above
-    - if: &is-upstream-mr-pipeline $CI_PROJECT_PATH == $FDO_UPSTREAM_REPO && $CI_PIPELINE_SOURCE == "merge_request_event"
     # Nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
@@ -265,7 +260,7 @@ include:
       when: manual
     # ... if the MR pipeline runs as mesa/mesa and does not need a container
     # rebuild, we can skip it
-    - if: *is-upstream-mr-pipeline
+    - if: &is-upstream-mr-pipeline $CI_PROJECT_PATH == $FDO_UPSTREAM_REPO && $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
     # ... however for MRs running inside the user namespace, we may need to
     # run these jobs to copy the container images from upstream
@@ -281,7 +276,7 @@ include:
     - if: *is-scheduled-pipeline
       when: never
     # Any other pipeline in the upstream should reuse already-built containers
-    - if: *is-upstream-pipeline
+    - if: &is-upstream-pipeline $CI_PROJECT_PATH == $FDO_UPSTREAM_REPO
       when: never
     # Allow building everything in fork pipelines, but build nothing unless
     # manually triggered
