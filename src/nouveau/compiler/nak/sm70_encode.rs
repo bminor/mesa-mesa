@@ -149,6 +149,33 @@ impl SM70Encoder<'_> {
         self.set_pred_src_file(range, not_bit, src, RegFile::UPred);
     }
 
+    fn set_rev_upred_src(
+        &mut self,
+        range: Range<usize>,
+        not_bit: usize,
+        src: &Src,
+    ) {
+        let file = RegFile::UPred;
+        let (not, reg) = match src.src_ref {
+            SrcRef::True => (false, self.true_reg(file)),
+            SrcRef::False => (true, self.true_reg(file)),
+            SrcRef::Reg(reg) => {
+                assert!(reg.file() == file);
+                (false, reg)
+            }
+            _ => panic!("Not a register"),
+        };
+
+        assert!(range.len() == 3);
+        assert!(reg.base_idx() <= 7);
+        assert!(reg.comps() == 1);
+
+        // These sources are funky.  They're encoded backwards.
+        self.set_field(range, 7 - reg.base_idx());
+
+        self.set_bit(not_bit, not ^ src_mod_is_bnot(src.src_mod));
+    }
+
     fn set_src_cb(&mut self, range: Range<usize>, cx_bit: usize, cb: &CBufRef) {
         let mut v = BitMutView::new_subset(self, range);
         v.set_field(6..22, cb.offset);
@@ -3847,6 +3874,10 @@ impl SM70Op for OpImma {
         e.set_reg_src(64..72, &self.srcs[2]);
         e.set_bit(74, true); // SRC1.COL
 
+        if e.sm >= 90 {
+            e.set_rev_upred_src(87..90, 90, &true.into());
+        }
+
         assert!(self.mat_size == ImmaSize::M8N8K16 || e.sm >= 80);
         e.set_field2(
             75..76,
@@ -3896,6 +3927,10 @@ impl SM70Op for OpHmma {
         e.set_reg_src(24..32, &self.srcs[0]);
         e.set_reg_src(32..40, &self.srcs[1]);
         e.set_reg_src(64..72, &self.srcs[2]);
+
+        if e.sm >= 90 {
+            e.set_rev_upred_src(87..90, 90, &true.into());
+        }
 
         assert!(self.mat_size != HmmaSize::M16N8K4 || e.sm >= 80);
         e.set_field2(
