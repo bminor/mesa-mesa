@@ -398,9 +398,9 @@ get_queue_global_priority(const VkDeviceQueueCreateInfo *pCreateInfo)
 }
 
 VkResult
-nvk_queue_init(struct nvk_device *dev, struct nvk_queue *queue,
-               const VkDeviceQueueCreateInfo *pCreateInfo,
-               uint32_t index_in_family)
+nvk_queue_create(struct nvk_device *dev,
+                 const VkDeviceQueueCreateInfo *pCreateInfo,
+                 uint32_t index_in_family)
 {
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    VkResult result;
@@ -427,9 +427,14 @@ nvk_queue_init(struct nvk_device *dev, struct nvk_queue *queue,
    if (global_priority > VK_QUEUE_GLOBAL_PRIORITY_MEDIUM)
       return VK_ERROR_NOT_PERMITTED;
 
+   struct nvk_queue *queue = vk_zalloc(&dev->vk.alloc, sizeof(struct nvk_queue),
+                                       8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!queue)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
    result = vk_queue_init(&queue->vk, &dev->vk, pCreateInfo, index_in_family);
    if (result != VK_SUCCESS)
-      return result;
+      goto fail_alloc;
 
    nvk_queue_state_init(&queue->state);
 
@@ -500,12 +505,14 @@ fail_exec_ctx:
 fail_init:
    nvk_queue_state_finish(dev, &queue->state);
    vk_queue_finish(&queue->vk);
+fail_alloc:
+   vk_free(&dev->vk.alloc, queue);
 
    return result;
 }
 
 void
-nvk_queue_finish(struct nvk_device *dev, struct nvk_queue *queue)
+nvk_queue_destroy(struct nvk_device *dev, struct nvk_queue *queue)
 {
    nvk_mem_stream_sync(dev, &queue->push_stream, queue->exec_ctx);
    nvk_mem_stream_finish(dev, &queue->push_stream);
@@ -519,4 +526,5 @@ nvk_queue_finish(struct nvk_device *dev, struct nvk_queue *queue)
    if (queue->exec_ctx != NULL)
       nvkmd_ctx_destroy(queue->exec_ctx);
    vk_queue_finish(&queue->vk);
+   vk_free(&dev->vk.alloc, queue);
 }

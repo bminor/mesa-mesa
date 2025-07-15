@@ -266,10 +266,13 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
          goto fail_slm;
    }
 
-   result = nvk_queue_init(dev, &dev->queue,
-                           &pCreateInfo->pQueueCreateInfos[0], 0);
-   if (result != VK_SUCCESS)
-      goto fail_vab_memory;
+   for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
+      for (unsigned q = 0; q < pCreateInfo->pQueueCreateInfos[i].queueCount; q++) {
+         result = nvk_queue_create(dev, &pCreateInfo->pQueueCreateInfos[i], q);
+         if (result != VK_SUCCESS)
+            goto fail_queues;
+      }
+   }
 
    struct vk_pipeline_cache_create_info cache_info = {
       .weak_ref = true,
@@ -277,7 +280,7 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
    dev->vk.mem_cache = vk_pipeline_cache_create(&dev->vk, &cache_info, NULL);
    if (dev->vk.mem_cache == NULL) {
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
-      goto fail_queue;
+      goto fail_queues;
    }
 
    result = nvk_device_init_meta(dev);
@@ -290,9 +293,11 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
 
 fail_mem_cache:
    vk_pipeline_cache_destroy(dev->vk.mem_cache, NULL);
-fail_queue:
-   nvk_queue_finish(dev, &dev->queue);
-fail_vab_memory:
+fail_queues:
+   vk_foreach_queue_safe(iter, &dev->vk) {
+      struct nvk_queue *queue = container_of(iter, struct nvk_queue, vk);
+      nvk_queue_destroy(dev, queue);
+   }
    if (dev->vab_memory)
       nvkmd_mem_unref(dev->vab_memory);
 fail_slm:
@@ -338,7 +343,12 @@ nvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    nvk_device_finish_meta(dev);
 
    vk_pipeline_cache_destroy(dev->vk.mem_cache, NULL);
-   nvk_queue_finish(dev, &dev->queue);
+
+   vk_foreach_queue_safe(iter, &dev->vk) {
+      struct nvk_queue *queue = container_of(iter, struct nvk_queue, vk);
+      nvk_queue_destroy(dev, queue);
+   }
+
    if (dev->vab_memory)
       nvkmd_mem_unref(dev->vab_memory);
 

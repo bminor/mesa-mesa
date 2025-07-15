@@ -59,11 +59,11 @@ nvk_queue_device(struct nvk_queue *queue)
    return (struct nvk_device *)queue->vk.base.device;
 }
 
-VkResult nvk_queue_init(struct nvk_device *dev, struct nvk_queue *queue,
-                        const VkDeviceQueueCreateInfo *pCreateInfo,
-                        uint32_t index_in_family);
+VkResult nvk_queue_create(struct nvk_device *dev,
+                          const VkDeviceQueueCreateInfo *pCreateInfo,
+                          uint32_t index_in_family);
 
-void nvk_queue_finish(struct nvk_device *dev, struct nvk_queue *queue);
+void nvk_queue_destroy(struct nvk_device *dev, struct nvk_queue *queue);
 
 VkResult nvk_push_draw_state_init(struct nvk_queue *queue,
                                   struct nv_push *p);
