@@ -4768,6 +4768,71 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAMEBUFFER;
 }
 
+static uint32_t
+radv_gfx12_override_hiz_enable(struct radv_cmd_buffer *cmd_buffer, bool enable)
+{
+   const struct radv_rendering_state *render = &cmd_buffer->state.render;
+   const struct radv_ds_buffer_info *ds = &render->ds_att.ds;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+   uint32_t hiz_info = ds->ac.u.gfx12.hiz_info;
+   const uint32_t cdw = cs->b->cdw;
+
+   if (!enable)
+      hiz_info &= C_028B94_SURFACE_ENABLE;
+
+   radeon_begin(cs);
+   gfx12_begin_context_regs();
+   gfx12_set_context_reg(R_028B94_PA_SC_HIZ_INFO, hiz_info);
+   gfx12_end_context_regs();
+   radeon_end();
+
+   return cs->b->cdw - cdw;
+}
+
+static void
+radv_gfx12_emit_alt_hiz_wa(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_rendering_state *render = &cmd_buffer->state.render;
+   const struct radv_image_view *iview = render->ds_att.iview;
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+
+   if (!iview || !iview->image->hiz_valid_offset)
+      return;
+
+   struct vk_depth_stencil_state ds = d->vk.ds;
+   vk_optimize_depth_stencil_state(&ds, render->ds_att_aspects, true);
+
+   const bool depth_and_stencil_enable =
+      (ds.depth.test_enable || ds.depth.write_enable) && (ds.stencil.test_enable || ds.stencil.write_enable);
+   const bool depth_write_enable = ds.depth.write_enable;
+
+   const uint32_t num_dwords = radv_gfx12_override_hiz_enable(cmd_buffer, false);
+
+   if (depth_and_stencil_enable) {
+      if (depth_write_enable) {
+         VkImageSubresourceRange range = {
+            .aspectMask = render->ds_att_aspects,
+            .baseMipLevel = iview->vk.base_mip_level,
+            .levelCount = iview->vk.level_count,
+            .baseArrayLayer = iview->vk.base_array_layer,
+            .layerCount = iview->vk.layer_count,
+         };
+
+         /* Mark HiZ metadata as invalid because HiZ will be disabled and metadata will be
+          * out-of-sync with main image data.
+          */
+         radv_update_hiz_metadata(cmd_buffer, iview->image, &range, false);
+      }
+   } else {
+      const uint64_t va = radv_get_hiz_valid_va(iview->image, iview->vk.base_mip_level);
+
+      radv_emit_cond_exec(device, cmd_buffer->cs, va, num_dwords);
+
+      radv_gfx12_override_hiz_enable(cmd_buffer, true);
+   }
+}
+
 static void
 radv_emit_guardband_state(struct radv_cmd_buffer *cmd_buffer)
 {
@@ -8924,6 +8989,28 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
              * fast color/depth clears can't work.
              */
             radv_emit_framebuffer_state(primary);
+
+            if (pdev->info.gfx_level == GFX12 && !pdev->use_gfx12_hiz_his_event_wa) {
+               const struct radv_rendering_state *render = &primary->state.render;
+               const struct radv_image_view *iview = render->ds_att.iview;
+
+               if (iview && iview->image->hiz_valid_offset) {
+                  /* On GFX12, if the HiZ workaround using metadata is enabled, we need to consider
+                   * that any of the draws in the secondary command buffer could trigger the issue
+                   * and HiZ needs to be disabled completely.
+                   */
+                  const VkImageSubresourceRange range = {
+                     .aspectMask = render->ds_att_aspects,
+                     .baseMipLevel = iview->vk.base_mip_level,
+                     .levelCount = iview->vk.level_count,
+                     .baseArrayLayer = iview->vk.base_array_layer,
+                     .layerCount = iview->vk.layer_count,
+                  };
+
+                  radv_gfx12_override_hiz_enable(primary, false);
+                  radv_update_hiz_metadata(primary, iview->image, &range, false);
+               }
+            }
          }
       }
 
@@ -11373,6 +11460,10 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    const bool late_scissor_emission =
       pdev->info.has_gfx9_scissor_bug ? radv_need_late_scissor_emission(cmd_buffer, info) : false;
 
+   const bool gfx12_emit_alt_hiz_wa =
+      pdev->info.gfx_level == GFX12 && !pdev->use_gfx12_hiz_his_event_wa &&
+      cmd_buffer->state.dirty & (RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_DEPTH_STENCIL_STATE);
+
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RBPLUS)
       radv_emit_rbplus_state(cmd_buffer);
 
@@ -11444,6 +11535,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
          radv_emit_msaa_state(cmd_buffer);
    }
+
+   if (gfx12_emit_alt_hiz_wa)
+      radv_gfx12_emit_alt_hiz_wa(cmd_buffer);
 
    radv_emit_shaders_state(cmd_buffer);
 
