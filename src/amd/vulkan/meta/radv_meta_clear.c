@@ -466,6 +466,7 @@ emit_depthstencil_clear(struct radv_cmd_buffer *cmd_buffer, VkClearDepthStencilV
                         bool can_fast_clear)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    const bool unrestricted = device->vk.enabled_extensions.EXT_depth_range_unrestricted;
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    uint32_t samples;
@@ -537,6 +538,22 @@ emit_depthstencil_clear(struct radv_cmd_buffer *cmd_buffer, VkClearDepthStencilV
 
    if (aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
       radv_CmdSetStencilReference(cmd_buffer_h, VK_STENCIL_FACE_FRONT_BIT, prev_reference);
+   }
+
+   if (iview && iview->image->hiz_valid_offset && radv_is_clear_rect_full(iview, clear_rect, view_mask)) {
+      assert(pdev->info.gfx_level == GFX12);
+
+      const VkImageSubresourceRange range = {
+         .aspectMask = aspects,
+         .baseMipLevel = iview->vk.base_mip_level,
+         .levelCount = iview->vk.level_count,
+         .baseArrayLayer = iview->vk.base_array_layer,
+         .layerCount = iview->vk.layer_count,
+      };
+
+      radv_clear_hiz(cmd_buffer, iview->image, &range, radv_gfx12_get_hiz_initial_value());
+
+      radv_update_hiz_metadata(cmd_buffer, iview->image, &range, true);
    }
 }
 
