@@ -259,7 +259,7 @@ _mesa_StencilMask( GLuint mask )
    const GLint face = ctx->Stencil.ActiveFace;
 
    if (MESA_VERBOSE & VERBOSE_API)
-      _mesa_debug(ctx, "glStencilMask()\n");
+      _mesa_debug(ctx, "glStencilMask(0x%x)\n", mask);
 
    if (face != 0) {
       /* Only modify the EXT_stencil_two_side back-face state.
