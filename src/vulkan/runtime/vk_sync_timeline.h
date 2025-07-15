@@ -45,7 +45,7 @@ struct vk_sync_timeline_type
 vk_sync_timeline_get_type(const struct vk_sync_type *point_sync_type);
 
 struct vk_sync_timeline_point {
-   struct vk_sync_timeline *timeline;
+   struct vk_sync_timeline_state *timeline_state;
 
    struct list_head link;
 
@@ -55,6 +55,17 @@ struct vk_sync_timeline_point {
    bool pending;
 
    struct vk_sync sync;
+};
+
+struct vk_sync_timeline_state {
+   mtx_t mutex;
+   struct u_cnd_monotonic cond;
+
+   uint64_t highest_past;
+   uint64_t highest_pending;
+
+   struct list_head pending_points;
+   struct list_head free_points;
 };
 
 /** Implements a timeline vk_sync type on top of a binary vk_sync
@@ -78,15 +89,7 @@ struct vk_sync_timeline_point {
  */
 struct vk_sync_timeline {
    struct vk_sync sync;
-
-   mtx_t mutex;
-   struct u_cnd_monotonic cond;
-
-   uint64_t highest_past;
-   uint64_t highest_pending;
-
-   struct list_head pending_points;
-   struct list_head free_points;
+   struct vk_sync_timeline_state *state;
 };
 
 VkResult vk_sync_timeline_init(struct vk_device *device,
