@@ -3284,7 +3284,7 @@
         "description": "nak: Wire up the mma predicate on Hopper+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "90438bae51bc3a29bf1dfdb63e84a498104fc790",
         "notes": null
