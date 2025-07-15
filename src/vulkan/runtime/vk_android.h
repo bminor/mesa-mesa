@@ -104,6 +104,11 @@ VkResult vk_android_get_ahb_layout(
    VkImageDrmFormatModifierExplicitCreateInfoEXT *out,
    VkSubresourceLayout *out_layouts, int max_planes);
 
+VkResult vk_android_get_ahb_image_properties(
+   VkPhysicalDevice pdev_handle,
+   const VkPhysicalDeviceImageFormatInfo2 *info,
+   VkImageFormatProperties2 *props);
+
 #else /* DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 26 */
 
 static inline uint64_t
@@ -152,6 +157,15 @@ vk_android_get_ahb_layout(
    VkSubresourceLayout *out_layouts, int max_planes)
 {
    return VK_ERROR_FEATURE_NOT_PRESENT;
+}
+
+static inline VkResult
+vk_android_get_ahb_image_properties(
+   VkPhysicalDevice pdev_handle,
+   const VkPhysicalDeviceImageFormatInfo2 *info,
+   VkImageFormatProperties2 *props)
+{
+   return VK_ERROR_FORMAT_NOT_SUPPORTED;
 }
 
 #endif /* ANDROID_API_LEVEL >= 26 */

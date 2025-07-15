@@ -645,11 +645,15 @@ vk_ahb_probe_format(VkFormat vk_format,
                     VkImageCreateFlags vk_create,
                     VkImageUsageFlags vk_usage)
 {
+   const uint32_t ahb_format = vk_image_format_to_ahb_format(vk_format);
+   if (!ahb_format)
+      return false;
+
    AHardwareBuffer_Desc desc = {
       .width = 16,
       .height = 16,
       .layers = 1,
-      .format = vk_image_format_to_ahb_format(vk_format),
+      .format = ahb_format,
       .usage = vk_image_usage_to_ahb_usage(vk_create, vk_usage),
    };
 #if ANDROID_API_LEVEL >= 29
@@ -905,6 +909,78 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
 
    /* All memory types. (Should we be smarter than this?) */
    pProperties->memoryTypeBits = (1u << mem_props.memoryTypeCount) - 1;
+
+   return VK_SUCCESS;
+}
+
+/* AHB image support per spec:
+ *
+ * - Any Android hardware buffer successfully allocated outside Vulkan with
+ *   usage that includes AHARDWAREBUFFER_USAGE_GPU_* must be supported when
+ *   using equivalent Vulkan image parameters.
+ *
+ * - If a given choice of image parameters are supported for import, they can
+ *   also be used to create an image and memory that will be exported to an
+ *   Android hardware buffer.
+ *
+ * An additional constraint derived from above is:
+ *
+ * - If that AHB cannot get allocated out, then the Vulkan driver must not
+ *   advertise support for the AHB backed image.
+ *
+ * Based on all above, this helper implements the AHB validation as well as
+ * the AHB external and usage props filling.
+ */
+VkResult
+vk_android_get_ahb_image_properties(
+   VkPhysicalDevice pdev_handle,
+   const VkPhysicalDeviceImageFormatInfo2 *info,
+   VkImageFormatProperties2 *props)
+{
+   VK_FROM_HANDLE(vk_physical_device, pdevice, pdev_handle);
+   VkExternalImageFormatProperties *external_props;
+   VkAndroidHardwareBufferUsageANDROID *ahb_usage;
+
+   ASSERTED const VkPhysicalDeviceExternalImageFormatInfo *external_info =
+      vk_find_struct_const(info->pNext,
+                           PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO);
+   assert(
+      external_info &&
+      external_info->handleType ==
+         VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID);
+
+   if (info->type != VK_IMAGE_TYPE_2D) {
+      return vk_errorf(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED,
+                       "type (%u) unsupported for AHB", info->type);
+   }
+
+   if (!vk_ahb_probe_format(info->format, info->flags, info->usage)) {
+      return vk_errorf(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED,
+                       "format (%x) flags (%x) usage (%x) unsupported for AHB",
+                       info->format, info->flags, info->usage);
+   }
+
+   external_props =
+      vk_find_struct(props->pNext, EXTERNAL_IMAGE_FORMAT_PROPERTIES);
+   if (external_props) {
+      external_props->externalMemoryProperties = (VkExternalMemoryProperties){
+         .externalMemoryFeatures =
+            VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT |
+            VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT |
+            VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT,
+         .exportFromImportedHandleTypes =
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
+         .compatibleHandleTypes =
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
+      };
+   }
+
+   ahb_usage =
+      vk_find_struct(props->pNext, ANDROID_HARDWARE_BUFFER_USAGE_ANDROID);
+   if (ahb_usage) {
+      ahb_usage->androidHardwareBufferUsage =
+         vk_image_usage_to_ahb_usage(info->flags, info->usage);
+   }
 
    return VK_SUCCESS;
 }
