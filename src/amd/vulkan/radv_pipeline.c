@@ -322,6 +322,7 @@ opt_vectorize_callback(const nir_instr *instr, const void *_)
    case nir_op_ior:
    case nir_op_ixor:
    case nir_op_inot:
+   case nir_op_bitfield_select:
       for (unsigned idx = 0; idx < nir_op_infos[alu->op].num_inputs; idx++)
          target_width = MIN2(target_width, max_alu_src_identity_swizzle(alu, &alu->src[idx]));
       break;
