@@ -98,7 +98,8 @@ struct pvr_rt_dataset {
    struct pvr_winsys_rt_dataset *ws_rt_dataset;
 
    /* RT data information */
-   struct pvr_bo *mta_mlist_bo;
+   struct pvr_bo *mta_bo;
+   struct pvr_bo *mlist_bo;
 
    struct pvr_bo *rgn_headers_bo;
    uint64_t rgn_headers_stride;
@@ -578,58 +579,82 @@ static void pvr_rt_get_region_headers_stride_size(
    *size_out = rgn_headers_size * layers;
 }
 
-static VkResult
-pvr_rt_mta_mlist_data_init(struct pvr_device *device,
-                           struct pvr_rt_dataset *rt_dataset,
-                           const struct pvr_free_list *global_free_list,
-                           const struct pvr_free_list *local_free_list,
-                           const struct pvr_rt_mtile_info *mtile_info)
+static VkResult pvr_rt_mta_data_init(struct pvr_device *device,
+                                     struct pvr_rt_dataset *rt_dataset)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
+   const uint32_t mta_size = rogue_get_macrotile_array_size(dev_info);
+   const uint32_t num_rt_datas = ARRAY_SIZE(rt_dataset->rt_datas);
+   pvr_dev_addr_t dev_addr;
+   VkResult result;
+
+   /* Valid case - see rogue_get_macrotile_array_size() */
+   if (mta_size == 0) {
+      rt_dataset->mta_bo = NULL;
+
+      for (uint32_t i = 0; i < num_rt_datas; i++)
+         rt_dataset->rt_datas[i].mta_dev_addr = PVR_DEV_ADDR_INVALID;
+
+      return VK_SUCCESS;
+   }
+
+   result = pvr_bo_alloc(device,
+                         device->heaps.general_heap,
+                         mta_size * num_rt_datas,
+                         ROGUE_CR_PM_MTILE_ARRAY_BASE_ADDR_ALIGNMENT,
+                         PVR_BO_ALLOC_FLAG_GPU_UNCACHED,
+                         &rt_dataset->mta_bo);
+   if (result != VK_SUCCESS)
+      return result;
+
+   dev_addr = rt_dataset->mta_bo->vma->dev_addr;
+
+   for (uint32_t i = 0; i < num_rt_datas; i++) {
+      rt_dataset->rt_datas[i].mta_dev_addr = dev_addr;
+      dev_addr = PVR_DEV_ADDR_OFFSET(dev_addr, mta_size);
+   }
+
+   return VK_SUCCESS;
+}
+
+static void pvr_rt_mta_data_fini(struct pvr_rt_dataset *rt_dataset)
+{
+   if (rt_dataset->mta_bo == NULL)
+      return;
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(rt_dataset->rt_datas); i++)
+      rt_dataset->rt_datas[i].mta_dev_addr = PVR_DEV_ADDR_INVALID;
+
+   pvr_bo_free(rt_dataset->device, rt_dataset->mta_bo);
+   rt_dataset->mta_bo = NULL;
+}
+
+static VkResult
+pvr_rt_mlist_data_init(struct pvr_device *device,
+                       struct pvr_rt_dataset *rt_dataset,
+                       const struct pvr_free_list *global_free_list,
+                       const struct pvr_free_list *local_free_list)
+{
    const uint32_t mlist_size =
       pvr_rt_get_mlist_size(global_free_list, local_free_list);
-   uint32_t mta_size = rogue_get_macrotile_array_size(dev_info);
    const uint32_t num_rt_datas = ARRAY_SIZE(rt_dataset->rt_datas);
-   uint32_t rt_datas_mlist_size;
-   uint32_t rt_datas_mta_size;
    pvr_dev_addr_t dev_addr;
    VkResult result;
 
    /* No known cores where the Mlist size could be 0 */
    assert(mlist_size > 0);
 
-   /* Allocate memory for macrotile array and Mlist for all RT datas.
-    *
-    * Allocation layout: MTA[0..N] + Mlist alignment padding + Mlist[0..N].
-    *
-    * N is number of RT datas.
-    */
-   rt_datas_mta_size = ALIGN_POT(mta_size * num_rt_datas,
-                                 ROGUE_CR_PM_MLIST0_BASE_ADDR_ALIGNMENT);
-   rt_datas_mlist_size = mlist_size * num_rt_datas;
-
    result = pvr_bo_alloc(device,
                          device->heaps.general_heap,
-                         rt_datas_mta_size + rt_datas_mlist_size,
+                         mlist_size * num_rt_datas,
                          ROGUE_CR_PM_MTILE_ARRAY_BASE_ADDR_ALIGNMENT,
-                         PVR_BO_ALLOC_FLAG_GPU_UNCACHED,
-                         &rt_dataset->mta_mlist_bo);
+                         PVR_BO_ALLOC_FLAG_GPU_UNCACHED |
+                            PVR_BO_ALLOC_FLAG_PM_FW_PROTECT,
+                         &rt_dataset->mlist_bo);
    if (result != VK_SUCCESS)
       return result;
 
-   dev_addr = rt_dataset->mta_mlist_bo->vma->dev_addr;
-
-   for (uint32_t i = 0; i < num_rt_datas; i++) {
-      if (mta_size != 0) {
-         rt_dataset->rt_datas[i].mta_dev_addr = dev_addr;
-         dev_addr = PVR_DEV_ADDR_OFFSET(dev_addr, mta_size);
-      } else {
-         rt_dataset->rt_datas[i].mta_dev_addr = PVR_DEV_ADDR_INVALID;
-      }
-   }
-
-   dev_addr = PVR_DEV_ADDR_OFFSET(rt_dataset->mta_mlist_bo->vma->dev_addr,
-                                  rt_datas_mta_size);
+   dev_addr = rt_dataset->mlist_bo->vma->dev_addr;
 
    for (uint32_t i = 0; i < num_rt_datas; i++) {
       rt_dataset->rt_datas[i].mlist_dev_addr = dev_addr;
@@ -639,15 +664,13 @@ pvr_rt_mta_mlist_data_init(struct pvr_device *device,
    return VK_SUCCESS;
 }
 
-static void pvr_rt_mta_mlist_data_fini(struct pvr_rt_dataset *rt_dataset)
+static void pvr_rt_mlist_data_fini(struct pvr_rt_dataset *rt_dataset)
 {
-   for (uint32_t i = 0; i < ARRAY_SIZE(rt_dataset->rt_datas); i++) {
+   for (uint32_t i = 0; i < ARRAY_SIZE(rt_dataset->rt_datas); i++)
       rt_dataset->rt_datas[i].mlist_dev_addr = PVR_DEV_ADDR_INVALID;
-      rt_dataset->rt_datas[i].mta_dev_addr = PVR_DEV_ADDR_INVALID;
-   }
 
-   pvr_bo_free(rt_dataset->device, rt_dataset->mta_mlist_bo);
-   rt_dataset->mta_mlist_bo = NULL;
+   pvr_bo_free(rt_dataset->device, rt_dataset->mlist_bo);
+   rt_dataset->mlist_bo = NULL;
 }
 
 static VkResult
@@ -704,23 +727,29 @@ static VkResult pvr_rt_datas_init(struct pvr_device *device,
 {
    VkResult result;
 
-   result = pvr_rt_mta_mlist_data_init(device,
-                                       rt_dataset,
-                                       global_free_list,
-                                       local_free_list,
-                                       mtile_info);
+   result = pvr_rt_mta_data_init(device, rt_dataset);
    if (result != VK_SUCCESS)
       return result;
+
+   result = pvr_rt_mlist_data_init(device,
+                                   rt_dataset,
+                                   global_free_list,
+                                   local_free_list);
+   if (result != VK_SUCCESS)
+      goto err_pvr_rt_mta_data_fini;
 
    result =
       pvr_rt_rgn_headers_data_init(device, rt_dataset, mtile_info, layers);
    if (result != VK_SUCCESS)
-      goto err_pvr_rt_mta_mlist_data_fini;
+      goto err_pvr_rt_mlist_data_fini;
 
    return VK_SUCCESS;
 
-err_pvr_rt_mta_mlist_data_fini:
-   pvr_rt_mta_mlist_data_fini(rt_dataset);
+err_pvr_rt_mlist_data_fini:
+   pvr_rt_mlist_data_fini(rt_dataset);
+
+err_pvr_rt_mta_data_fini:
+   pvr_rt_mta_data_fini(rt_dataset);
 
    return result;
 }
@@ -728,7 +757,8 @@ err_pvr_rt_mta_mlist_data_fini:
 static void pvr_rt_datas_fini(struct pvr_rt_dataset *rt_dataset)
 {
    pvr_rt_rgn_headers_data_fini(rt_dataset);
-   pvr_rt_mta_mlist_data_fini(rt_dataset);
+   pvr_rt_mlist_data_fini(rt_dataset);
+   pvr_rt_mta_data_fini(rt_dataset);
 }
 
 static void pvr_rt_dataset_ws_create_info_init(
