@@ -398,7 +398,9 @@ ast_type_qualifier::merge_qualifier(YYLTYPE *loc,
       }
    }
 
-   if (state->has_enhanced_layouts()) {
+   /* Not apply to mesh shader */
+   if (state->stage <= MESA_SHADER_GEOMETRY &&
+       state->has_enhanced_layouts()) {
       if (!this->flags.q.explicit_xfb_buffer) {
          if (q.flags.q.xfb_buffer) {
             this->flags.q.xfb_buffer = 1;
