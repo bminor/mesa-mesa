@@ -635,12 +635,7 @@ vk_image_usage_to_ahb_usage(const VkImageCreateFlags vk_create,
    return ahb_usage;
 }
 
-/* Probe gralloc implementation to test whether it can allocate a buffer
- * for the given format and usage.  Vk drivers must not advertise support
- * for AHB backed VkImage's if the gralloc implementation is not able to
- * perform the allocation.
- */
-bool
+static bool
 vk_ahb_probe_format(VkFormat vk_format,
                     VkImageCreateFlags vk_create,
                     VkImageUsageFlags vk_usage)
