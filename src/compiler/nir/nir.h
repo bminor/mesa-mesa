@@ -1435,6 +1435,13 @@ typedef enum {
     * comparison.
     */
    NIR_OP_IS_SELECTION = (1 << 2),
+
+   /**
+    * Operation is associative mathematically (as real numbers), but not
+    * associative with floating-point math. This can be treated as associative
+    * iff the operation's exact bit is not set.
+    */
+   NIR_OP_IS_INEXACT_ASSOCIATIVE = (1 << 3),
 } nir_op_algebraic_property;
 
 /* vec16 is the widest ALU op in NIR, making the max number of input of ALU
