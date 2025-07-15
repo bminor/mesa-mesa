@@ -566,7 +566,7 @@ opt_16bit_src(nir_builder *b, nir_instr *instr, nir_src *src, nir_alu_type src_t
          if (new_comps[i].def->bit_size != 16) {
             assert(new_comps[i].def->bit_size == 32);
 
-            nir_def *extract = nir_channel(b, new_comps[i].def, new_comps[i].comp);
+            nir_def *extract = nir_mov_scalar(b, new_comps[i]);
             switch (nir_scalar_alu_op(comp)) {
             case nir_op_unpack_half_2x16_split_x:
                extract = nir_unpack_32_2x16_split_x(b, extract);

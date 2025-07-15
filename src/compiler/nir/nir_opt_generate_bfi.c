@@ -134,15 +134,15 @@ nir_opt_generate_bfi_instr(nir_builder *b,
    if (b->shader->options->has_bfi) {
       bfi = nir_bfi(b,
                     nir_imm_int(b, mask),
-                    nir_channel(b, insert.def, insert.comp),
-                    nir_channel(b, base.def, base.comp));
+                    nir_mov_scalar(b, insert),
+                    nir_mov_scalar(b, base));
    } else {
       assert(b->shader->options->has_bitfield_select);
 
       bfi = nir_bitfield_select(b,
                                 nir_imm_int(b, mask),
-                                nir_channel(b, insert.def, insert.comp),
-                                nir_channel(b, base.def, base.comp));
+                                nir_mov_scalar(b, insert),
+                                nir_mov_scalar(b, base));
    }
 
    nir_def_replace(&alu->def, bfi);

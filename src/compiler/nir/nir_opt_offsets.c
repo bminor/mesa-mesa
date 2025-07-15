@@ -93,9 +93,8 @@ try_extract_const_addition(nir_builder *b, nir_scalar val, opt_offsets_state *st
       return val;
 
    b->cursor = nir_before_instr(&alu->instr);
-   nir_def *r =
-      nir_iadd(b, nir_channel(b, src[0].def, src[0].comp),
-               nir_channel(b, src[1].def, src[1].comp));
+   nir_def *r = nir_iadd(b, nir_mov_scalar(b, src[0]),
+                         nir_mov_scalar(b, src[1]));
    return nir_get_scalar(r, 0);
 }
 
@@ -130,7 +129,7 @@ try_fold_load_store(nir_builder *b,
          return false;
       off_const += add_offset;
       b->cursor = nir_before_instr(&intrin->instr);
-      replace_src = nir_channel(b, val.def, val.comp);
+      replace_src = nir_mov_scalar(b, val);
    } else if (nir_src_as_uint(*off_src) && nir_src_as_uint(*off_src) <= max - off_const) {
       off_const += nir_src_as_uint(*off_src);
       b->cursor = nir_before_instr(&intrin->instr);

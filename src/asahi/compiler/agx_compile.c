@@ -3012,8 +3012,8 @@ optimize_bounds(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
    /* Now start rewriting. Grab some common variables */
    b->cursor = nir_before_instr(&intr->instr);
-   nir_def *offset = nir_channel(b, srcs[0].def, srcs[0].comp);
-   nir_def *bounds = nir_channel(b, srcs[1].def, srcs[1].comp);
+   nir_def *offset = nir_mov_scalar(b, srcs[0]);
+   nir_def *bounds = nir_mov_scalar(b, srcs[1]);
 
    nir_def *in_bounds = nir_uge(b, bounds, offset);
    nir_def *zero = nir_imm_int(b, 0);

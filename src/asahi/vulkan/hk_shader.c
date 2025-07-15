@@ -285,7 +285,7 @@ check_in_bounds(nir_builder *b, nir_intrinsic_instr *intr)
       if (nir_scalar_is_const(srcs[1 - i]) &&
           nir_scalar_as_uint(srcs[1 - i]) == load_size) {
 
-         nir_def *index = nir_channel(b, srcs[i].def, srcs[i].comp);
+         nir_def *index = nir_mov_scalar(b, srcs[i]);
          return nir_ult(b, index, nir_udiv_imm(b, bound, load_size));
       }
    }
@@ -309,8 +309,8 @@ bound_offset(nir_builder *b, nir_def *valid, nir_scalar offset)
          nir_scalar_chase_alu_src(offset, 1),
       };
       unsigned i = nir_scalar_is_const(srcs[0]) ? 1 : 0;
-      nir_def *x = nir_channel(b, srcs[i].def, srcs[i].comp);
-      nir_def *y = nir_channel(b, srcs[1 - i].def, srcs[1 - i].comp);
+      nir_def *x = nir_mov_scalar(b, srcs[i]);
+      nir_def *y = nir_mov_scalar(b, srcs[1 - i]);
 
       return nir_amul(b, nir_bcsel(b, valid, x, nir_imm_int(b, 0)), y);
    }
@@ -326,7 +326,7 @@ bound_offset(nir_builder *b, nir_def *valid, nir_scalar offset)
       }
    }
 
-   nir_def *def = nir_channel(b, offset.def, offset.comp);
+   nir_def *def = nir_mov_scalar(b, offset);
 
    /* If the offset fits within the zero page, clamping is pointless */
    if (nir_scalar_is_const(offset) &&

@@ -93,7 +93,7 @@ parse_msad(nir_alu_instr *msad, struct mqsad *mqsad)
 static void
 create_msad(nir_builder *b, struct mqsad *mqsad)
 {
-   nir_def *mqsad_def = nir_mqsad_4x8(b, nir_channel(b, mqsad->ref.def, mqsad->ref.comp),
+   nir_def *mqsad_def = nir_mqsad_4x8(b, nir_mov_scalar(b, mqsad->ref),
                                       nir_vec_scalars(b, mqsad->src, 2),
                                       nir_vec_scalars(b, mqsad->accum, 4));
 

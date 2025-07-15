@@ -409,7 +409,7 @@ replace_scalar_component_uses(nir_builder *b, nir_scalar old, nir_scalar rep)
    for (unsigned dst_comp = 0; dst_comp < old.def->num_components; ++dst_comp) {
       nir_scalar old_dst = nir_get_scalar(old.def, dst_comp);
       nir_scalar new_dst = dst_comp == old.comp ? rep : old_dst;
-      dst[dst_comp] = nir_channel(b, new_dst.def, new_dst.comp);
+      dst[dst_comp] = nir_mov_scalar(b, new_dst);
    }
 
    nir_def *replacement = nir_vec(b, dst, old.def->num_components);

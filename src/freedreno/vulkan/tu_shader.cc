@@ -319,7 +319,7 @@ lower_ssbo_ubo_intrinsic(struct tu_device *dev,
       return true;
    }
 
-   nir_def *base_idx = nir_channel(b, scalar_idx.def, scalar_idx.comp);
+   nir_def *base_idx = nir_mov_scalar(b, scalar_idx);
    for (unsigned i = 0; i < dev->physical_device->info->a6xx.max_sets; i++) {
       /* if (base_idx == i) { ... */
       nir_if *nif = nir_push_if(b, nir_ieq_imm(b, base_idx, i));
