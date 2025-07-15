@@ -333,3 +333,14 @@ zink-radv-gfx1201-valve:
     GPU_VERSION: zink-radv-gfx1201
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 10
     RADV_PERFTEST: hic
+
+zink-radv-gfx1201-traces:
+  extends:
+    - zink-radv-gfx1201-valve
+    - .zink-radv-valve-rules
+    - .zink-trace-test
+    - .piglit-traces-test
+  timeout: 10m
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 5  # normal runtime = 30-40 sec
+    PIGLIT_TRACES_FILE: traces-zink.yml
