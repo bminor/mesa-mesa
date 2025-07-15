@@ -79,7 +79,7 @@ zink-anv-adl-full:
     - .zink-anv-manual-rules
     - .test-piglit
   variables:
-    DEQP_SUITE: zink-anv-adl-full
+    DEQP_SUITE: zink-anv-full
   timeout: 2h
   parallel: 5
 
@@ -132,7 +132,7 @@ zink-anv-tgl-full:
     - .zink-anv-manual-rules
     - .test-piglit
   variables:
-    DEQP_SUITE: zink-anv-tgl-full
+    DEQP_SUITE: zink-anv-full
   timeout: 1h 45m
   parallel: 3
 
