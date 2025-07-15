@@ -109,6 +109,11 @@ VkResult vk_android_get_ahb_image_properties(
    const VkPhysicalDeviceImageFormatInfo2 *info,
    VkImageFormatProperties2 *props);
 
+void vk_android_get_ahb_buffer_properties(
+   VkPhysicalDevice pdev_handle,
+   const VkPhysicalDeviceExternalBufferInfo *info,
+   VkExternalBufferProperties *props);
+
 #else /* DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 26 */
 
 static inline uint64_t
@@ -166,6 +171,14 @@ vk_android_get_ahb_image_properties(
    VkImageFormatProperties2 *props)
 {
    return VK_ERROR_FORMAT_NOT_SUPPORTED;
+}
+
+static inline void
+vk_android_get_ahb_buffer_properties(
+   VkPhysicalDevice pdev_handle,
+   const VkPhysicalDeviceExternalBufferInfo *info,
+   VkExternalBufferProperties *props)
+{
 }
 
 #endif /* ANDROID_API_LEVEL >= 26 */
