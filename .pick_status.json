@@ -114,7 +114,7 @@
         "description": "v3dv: Do not increase TFU READAHEAD for imported buffers size",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0bcb82048cba02204f975077afab8dddfbc4b398",
         "notes": null
