@@ -380,9 +380,10 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
          .group_size_y = shader->cs.local_size.y,
          .group_size_z = shader->cs.local_size.z,
       }};
-   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
-                                        PANVK_INSTR_WORK_TYPE_DISPATCH,
-                                        &instr_info);
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   panvk_per_arch(panvk_instr_end_work_async)(
+      PANVK_SUBQUEUE_COMPUTE, cmdbuf, PANVK_INSTR_WORK_TYPE_DISPATCH,
+      &instr_info, dev->csf.sb.all_iters_mask);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -401,10 +402,11 @@ panvk_per_arch(CmdDispatchIndirect)(VkCommandBuffer commandBuffer,
 
    cmd_dispatch(cmdbuf, &info);
 
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_instr_end_args instr_info = {.dispatch_indirect = {
                                                 .buffer_gpu = buffer_gpu,
                                              }};
-   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
-                                        PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
-                                        &instr_info);
+   panvk_per_arch(panvk_instr_end_work_async)(
+      PANVK_SUBQUEUE_COMPUTE, cmdbuf, PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
+      &instr_info, dev->csf.sb.all_iters_mask);
 }

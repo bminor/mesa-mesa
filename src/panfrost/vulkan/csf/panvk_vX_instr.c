@@ -108,10 +108,18 @@ panvk_per_arch(panvk_instr_end_work)(
    enum panvk_instr_work_type work_type,
    const struct panvk_instr_end_args *const args)
 {
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   panvk_per_arch(panvk_instr_end_work_async)(id, cmdbuf, work_type, args, 0);
+}
+
+void
+panvk_per_arch(panvk_instr_end_work_async)(
+   enum panvk_subqueue_id id, struct panvk_cmd_buffer *cmdbuf,
+   enum panvk_instr_work_type work_type,
+   const struct panvk_instr_end_args *const args, unsigned int wait_mask)
+{
    struct panvk_utrace_cs_info cs_info = {
       .cmdbuf = cmdbuf,
-      .ts_wait_mask = dev->csf.sb.all_iters_mask | SB_MASK(DEFERRED_FLUSH),
+      .ts_wait_mask = wait_mask,
    };
 
    switch (work_type) {

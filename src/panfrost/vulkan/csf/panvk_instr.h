@@ -67,3 +67,11 @@ void panvk_per_arch(panvk_instr_end_work)(
    enum panvk_subqueue_id id, struct panvk_cmd_buffer *cmdbuf,
    enum panvk_instr_work_type work_type,
    const struct panvk_instr_end_args *const args);
+
+/**
+ * Mark the end of async work with an immediate scoreboard mask.
+ */
+void panvk_per_arch(panvk_instr_end_work_async)(
+   enum panvk_subqueue_id id, struct panvk_cmd_buffer *cmdbuf,
+   enum panvk_instr_work_type work_type,
+   const struct panvk_instr_end_args *const args, unsigned int wait_mask);

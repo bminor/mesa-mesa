@@ -3445,10 +3445,11 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
          .flags = cmdbuf->state.gfx.render.flags,
          .fb = &cmdbuf->state.gfx.render.fb.info,
       }};
-   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_VERTEX_TILER, cmdbuf,
-                                       PANVK_INSTR_WORK_TYPE_RENDER,
-                                       &instr_info);
-   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_FRAGMENT, cmdbuf,
-                                       PANVK_INSTR_WORK_TYPE_RENDER,
-                                       &instr_info);
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   panvk_per_arch(panvk_instr_end_work_async)(
+      PANVK_SUBQUEUE_VERTEX_TILER, cmdbuf, PANVK_INSTR_WORK_TYPE_RENDER,
+      &instr_info, dev->csf.sb.all_iters_mask);
+   panvk_per_arch(panvk_instr_end_work_async)(
+      PANVK_SUBQUEUE_FRAGMENT, cmdbuf, PANVK_INSTR_WORK_TYPE_RENDER,
+      &instr_info, dev->csf.sb.all_iters_mask);
 }
