@@ -111,6 +111,20 @@ lower_bcsel64(nir_builder *b, nir_def *cond, nir_def *x, nir_def *y)
 }
 
 static nir_def *
+lower_bitfield_select64(nir_builder *b, nir_def *cond, nir_def *x, nir_def *y)
+{
+   nir_def *cond_lo = nir_unpack_64_2x32_split_x(b, cond);
+   nir_def *cond_hi = nir_unpack_64_2x32_split_y(b, cond);
+   nir_def *x_lo = nir_unpack_64_2x32_split_x(b, x);
+   nir_def *x_hi = nir_unpack_64_2x32_split_y(b, x);
+   nir_def *y_lo = nir_unpack_64_2x32_split_x(b, y);
+   nir_def *y_hi = nir_unpack_64_2x32_split_y(b, y);
+
+   return nir_pack_64_2x32_split(b, nir_bitfield_select(b, cond_lo, x_lo, y_lo),
+                                 nir_bitfield_select(b, cond_hi, x_hi, y_hi));
+}
+
+static nir_def *
 lower_inot64(nir_builder *b, nir_def *x)
 {
    nir_def *x_lo = nir_unpack_64_2x32_split_x(b, x);
@@ -952,6 +966,7 @@ nir_lower_int64_op_to_options_mask(nir_op opcode)
    case nir_op_ior:
    case nir_op_ixor:
    case nir_op_inot:
+   case nir_op_bitfield_select:
       return nir_lower_logic64;
    case nir_op_ishl:
    case nir_op_ishr:
@@ -1060,6 +1075,8 @@ lower_int64_alu_instr(nir_builder *b, nir_alu_instr *alu)
       return lower_ixor64(b, src[0], src[1]);
    case nir_op_inot:
       return lower_inot64(b, src[0]);
+   case nir_op_bitfield_select:
+      return lower_bitfield_select64(b, src[0], src[1], src[2]);
    case nir_op_ishl:
       return lower_ishl64(b, src[0], src[1]);
    case nir_op_ishr:
