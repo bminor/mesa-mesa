@@ -216,6 +216,7 @@ _PLATFORM_GFXVERS = {"INTEL_PLATFORM_BDW" : 80,
                      "INTEL_PLATFORM_LNL" : 200,
                      "INTEL_PLATFORM_BMG" : 200,
                      "INTEL_PLATFORM_PTL" : 300,
+                     "INTEL_PLATFORM_WCL" : 300,
                      }
 
 def macro_versions(wa_def):
