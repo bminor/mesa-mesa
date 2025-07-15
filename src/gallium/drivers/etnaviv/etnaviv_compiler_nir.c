@@ -1181,6 +1181,12 @@ fill_vs_mystery(struct etna_shader_variant *v)
                              VIVS_VS_LOAD_BALANCING_D(0x0f);
 }
 
+static uint8_t
+alu_width_cb(UNUSED const nir_instr *instr, UNUSED const void *cb_data)
+{
+   return 4;
+}
+
 bool
 etna_compile_shader(struct etna_shader_variant *v)
 {
@@ -1260,7 +1266,7 @@ etna_compile_shader(struct etna_shader_variant *v)
    NIR_PASS(_, s, nir_lower_vars_to_ssa);
    NIR_PASS(_, s, nir_lower_indirect_derefs, nir_var_all, UINT32_MAX);
    NIR_PASS(_, s, etna_nir_lower_texture, &v->key, v->shader->info);
-   NIR_PASS(_, s, nir_lower_alu_width, NULL, NULL);
+   NIR_PASS(_, s, nir_lower_alu_width, alu_width_cb, NULL);
 
    NIR_PASS(_, s, nir_lower_alu_to_scalar, etna_alu_to_scalar_filter_cb, c->info);
    if (c->info->halti >= 2) {
