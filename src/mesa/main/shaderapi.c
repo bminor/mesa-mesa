@@ -550,7 +550,9 @@ detach_shader(struct gl_context *ctx, GLuint program, GLuint shader,
                    shProg->Shaders[j]->Stage == MESA_SHADER_TESS_CTRL ||
                    shProg->Shaders[j]->Stage == MESA_SHADER_TESS_EVAL ||
                    shProg->Shaders[j]->Stage == MESA_SHADER_GEOMETRY ||
-                   shProg->Shaders[j]->Stage == MESA_SHADER_FRAGMENT);
+                   shProg->Shaders[j]->Stage == MESA_SHADER_FRAGMENT ||
+                   shProg->Shaders[j]->Stage == MESA_SHADER_TASK ||
+                   shProg->Shaders[j]->Stage == MESA_SHADER_MESH);
             assert(shProg->Shaders[j]->RefCount > 0);
          }
 #endif
