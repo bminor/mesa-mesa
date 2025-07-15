@@ -394,10 +394,16 @@ denominate the patch.
 For patches that either need to be nominated after they've landed in
 main, or that are known ahead of time to not not apply cleanly to a
 stable branch (such as due to a rename), using a GitLab MR is most
-appropriate. The MR should be based on and target the
-``staging/year.quarter`` branch, not on the ``year.quarter`` branch,
-per the stable branch policy. Assigning the MR to release maintainer for
-said branch or mentioning them is helpful, but not required.
+appropriate. The MR must be based on and target the ``YY.N`` branch, and the
+release manager will change the target to the ``staging/YY.N`` branch when
+merging it; this avoid issues with the rebasing nature of the ``staging``
+branches. Assigning the MR to release maintainer for said branch or mentioning
+them is not required but helpful, to allow them to see the MR as soon as
+possible.
+
+.. warning::
+   Do not merge your backport MR yourself, even if you think it's ready.
+   The release manager will do it once everything is ok.
 
 Make sure to use ``git cherry-pick -x`` when cherry-picking the commits
 from the main branch. This adds the "cherry picked from commit ..." line
