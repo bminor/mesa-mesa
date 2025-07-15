@@ -16,6 +16,7 @@ glx@glx-multithread-clearbuffer
 glx@glx-multithread-shader-compile
 glx@glx-multithread-texture
 glx@glx-shader-sharing
+glx@glx_ext_no_config_context@no fbconfig
 
 # The following tests started to flake after CI fix, see
 # https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/16325
@@ -34,3 +35,7 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y410
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y416
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420
+
+glslparsertest@shaders@vector.frag
+spec@arb_gpu_shader_fp64@compiler@built-in-functions@op-add-double-dvec3.vert
+spec@glsl-4.00@compiler@built-in-functions@op-mult-dmat3-dvec3.vert
