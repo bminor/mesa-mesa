@@ -77,6 +77,7 @@ class Opcode(object):
       assert isinstance(algebraic_properties, str)
       assert isinstance(const_expr, str)
       assert len(input_sizes) == len(input_types)
+      assert len(input_sizes) == 2 or "associative" not in algebraic_properties
       assert 0 <= output_size <= 5 or (output_size == 8) or (output_size == 16)
       for size in input_sizes:
          assert 0 <= size <= 5 or (size == 8) or (size == 16)
@@ -1042,10 +1043,10 @@ zero plus src2 if either src0 or src1 is zero.
 
 triop("flrp", tfloat, "", "src0 * (1 - src2) + src1 * src2")
 
-triop("iadd3", tint, _2src_commutative + associative, "src0 + src1 + src2",
+triop("iadd3", tint, _2src_commutative, "src0 + src1 + src2",
       description = "Ternary addition")
 
-triop("imad", tint, _2src_commutative + associative, "src0 * src1 + src2",
+triop("imad", tint, _2src_commutative, "src0 * src1 + src2",
       description = "Integer multiply-add")
 
 csel_description = """
