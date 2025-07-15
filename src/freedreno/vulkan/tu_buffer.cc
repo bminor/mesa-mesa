@@ -9,6 +9,7 @@
 
 #include "tu_buffer.h"
 
+#include "vk_android.h"
 #include "vk_debug_utils.h"
 
 #include "tu_device.h"
@@ -118,6 +119,10 @@ tu_GetPhysicalDeviceExternalBufferProperties(
       flags = VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
       compat_flags = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
       break;
+   case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID:
+      vk_android_get_ahb_buffer_properties(
+         physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+      return;
    default:
       break;
    }
