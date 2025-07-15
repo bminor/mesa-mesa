@@ -7,6 +7,7 @@
 #define FREEDRENO_COMMON_H_
 
 #include "util/u_atomic.h"
+#include "util/macros.h"
 
 #ifdef __cplusplus
 
@@ -136,16 +137,6 @@ struct BitmaskEnum {
 #  define BEGINC
 #  define ENDC
 #endif
-
-/*
- * SWAP - swap value of @a and @b
- */
-#define SWAP(a, b)                                                             \
-   do {                                                                        \
-      __typeof(a) __tmp = (a);                                                 \
-      (a) = (b);                                                               \
-      (b) = __tmp;                                                             \
-   } while (0)
 
 /* for conditionally setting boolean flag(s): */
 #define COND(bool, val) ((bool) ? (val) : 0)

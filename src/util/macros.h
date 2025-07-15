@@ -519,4 +519,14 @@ typedef int lock_cap_t;
 #define PRAGMA_POISON
 #endif
 
+/*
+ * SWAP - swap value of @a and @b
+ */
+#define SWAP(a, b)                                                             \
+   do {                                                                        \
+      __typeof(a) __tmp = (a);                                                 \
+      (a) = (b);                                                               \
+      (b) = __tmp;                                                             \
+   } while (0)
+
 #endif /* UTIL_MACROS_H */
