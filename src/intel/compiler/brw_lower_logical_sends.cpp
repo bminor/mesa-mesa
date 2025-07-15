@@ -1512,6 +1512,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       (enum memory_flags) inst->src[MEMORY_LOGICAL_FLAGS].ud;
    const bool transpose = flags & MEMORY_FLAG_TRANSPOSE;
    const bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
+   const bool volatile_access = flags & MEMORY_FLAG_VOLATILE_ACCESS;
    const brw_reg data0 = inst->src[MEMORY_LOGICAL_DATA0];
    const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
    const bool has_side_effects = inst->has_side_effects();
@@ -1638,7 +1639,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->ex_mlen = ex_mlen;
    inst->header_size = 0;
    inst->send_has_side_effects = has_side_effects;
-   inst->send_is_volatile = !has_side_effects;
+   inst->send_is_volatile = !has_side_effects || volatile_access;
 
    inst->resize_sources(4);
 
@@ -1708,6 +1709,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       (enum memory_flags) inst->src[MEMORY_LOGICAL_FLAGS].ud;
    const bool block = flags & MEMORY_FLAG_TRANSPOSE;
    const bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
+   const bool volatile_access = flags & MEMORY_FLAG_VOLATILE_ACCESS;
    const brw_reg data0 = inst->src[MEMORY_LOGICAL_DATA0];
    const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
    const bool has_side_effects = inst->has_side_effects();
@@ -1921,7 +1923,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->ex_mlen = ex_mlen;
    inst->header_size = header.file != BAD_FILE ? 1 : 0;
    inst->send_has_side_effects = has_side_effects;
-   inst->send_is_volatile = !has_side_effects;
+   inst->send_is_volatile = !has_side_effects || volatile_access;
 
    if (block) {
       assert(inst->force_writemask_all);
