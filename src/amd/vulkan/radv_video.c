@@ -1782,16 +1782,8 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
    }
 
    if (vid->vk.h265.profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_10) {
-      if (vid->vk.picture_format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16) {
-         result.p010_mode = 1;
-         result.msb_mode = 1;
-      } else {
-         result.p010_mode = 0;
-         result.luma_10to8 = 5;
-         result.chroma_10to8 = 5;
-         result.hevc_reserved[0] = 4; /* sclr_luma10to8 */
-         result.hevc_reserved[1] = 4; /* sclr_chroma10to8 */
-      }
+      result.p010_mode = 1;
+      result.msb_mode = 1;
    }
 
    return result;
@@ -1971,14 +1963,8 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct r
    }
 
    if (vid->vk.vp9.profile == STD_VIDEO_VP9_PROFILE_2) {
-      if (vid->vk.picture_format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16) {
-         result.p010_mode = 1;
-         result.msb_mode = 1;
-      } else {
-         result.p010_mode = 0;
-         result.luma_10to8 = 1;
-         result.chroma_10to8 = 1;
-      }
+      result.p010_mode = 1;
+      result.msb_mode = 1;
    }
    return result;
 }
@@ -2278,14 +2264,8 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct r
    }
 
    if (seq_hdr->pColorConfig->BitDepth > 8) {
-      if (vid->vk.picture_format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 ||
-          vid->vk.picture_format == VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16) {
-         result.p010_mode = 1;
-         result.msb_mode = 1;
-      } else {
-         result.luma_10to8 = 1;
-         result.chroma_10to8 = 1;
-      }
+      result.p010_mode = 1;
+      result.msb_mode = 1;
    }
 
    result.preskip_segid = 0;
@@ -2972,16 +2952,8 @@ get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, str
    }
 
    if (vid->vk.h265.profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_10) {
-      if (vid->vk.picture_format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16) {
-         result.p010_mode = 1;
-         result.msb_mode = 1;
-      } else {
-         result.p010_mode = 0;
-         result.luma_10to8 = 5;
-         result.chroma_10to8 = 5;
-         result.sclr_luma10to8 = 4;
-         result.sclr_chroma10to8 = 4;
-      }
+      result.p010_mode = 1;
+      result.msb_mode = 1;
    }
 
    return result;
