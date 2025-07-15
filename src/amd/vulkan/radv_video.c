@@ -984,6 +984,17 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
    case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
       struct VkVideoEncodeAV1CapabilitiesKHR *ext = (struct VkVideoEncodeAV1CapabilitiesKHR *)vk_find_struct(
          pCapabilities->pNext, VIDEO_ENCODE_AV1_CAPABILITIES_KHR);
+
+      const struct VkVideoEncodeAV1ProfileInfoKHR *av1_profile =
+         vk_find_struct_const(pVideoProfile->pNext, VIDEO_ENCODE_AV1_PROFILE_INFO_KHR);
+
+      if (av1_profile->stdProfile != STD_VIDEO_AV1_PROFILE_MAIN)
+         return VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR;
+
+      if (pVideoProfile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR &&
+          pVideoProfile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR)
+         return VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR;
+
       pCapabilities->maxDpbSlots = RADV_VIDEO_AV1_MAX_DPB_SLOTS;
       pCapabilities->maxActiveReferencePictures = RADV_VIDEO_AV1_MAX_NUM_REF_FRAME;
       strcpy(pCapabilities->stdHeaderVersion.extensionName, VK_STD_VULKAN_VIDEO_CODEC_AV1_ENCODE_EXTENSION_NAME);
