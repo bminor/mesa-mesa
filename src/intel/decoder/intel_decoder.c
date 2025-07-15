@@ -147,9 +147,6 @@ static void
 get_array_offset_count(const char **atts, uint32_t *offset, uint32_t *count,
                        uint32_t *size, bool *variable)
 {
-   bool is_old_format = false;
-   bool is_new_format = false;
-
    *offset = 0;
 
    for (int i = 0; atts[i]; i += 2) {
@@ -159,17 +156,9 @@ get_array_offset_count(const char **atts, uint32_t *offset, uint32_t *count,
          *count = strtoul(atts[i + 1], &p, 0);
          if (*count == 0)
             *variable = true;
-      } else if (strcmp(atts[i], "start") == 0) {
-         assert(!is_new_format);
-         is_old_format = true;
-         *offset = strtoul(atts[i + 1], &p, 0);
       } else if (strcmp(atts[i], "dword") == 0) {
-         assert(!is_old_format);
-         is_new_format = true;
          *offset += 32 * strtoul(atts[i + 1], &p, 0);
       } else if (strcmp(atts[i], "offset_bits") == 0) {
-         assert(!is_old_format);
-         is_new_format = true;
          *offset += strtoul(atts[i + 1], &p, 0);
       } else if (strcmp(atts[i], "size") == 0) {
          *size = strtoul(atts[i + 1], &p, 0);
@@ -350,9 +339,6 @@ create_field(struct parser_context *ctx, const char **atts)
    field = rzalloc(ctx->group, struct intel_field);
    field->parent = ctx->group;
 
-   bool is_old_format = false;
-   bool is_new_format = false;
-
    uint32_t dword = 0;
    uint32_t bits_start = 0;
    uint32_t bits_end = 0;
@@ -368,21 +354,9 @@ create_field(struct parser_context *ctx, const char **atts)
          if (strcmp(field->name, "DWord Length") == 0) {
             field->parent->dword_length_field = field;
          }
-      } else if (strcmp(atts[i], "start") == 0) {
-         assert(!is_new_format);
-         is_old_format = true;
-         bits_start = strtoul(atts[i + 1], &p, 0);
-      } else if (strcmp(atts[i], "end") == 0) {
-         assert(!is_new_format);
-         is_old_format = true;
-         bits_end = strtoul(atts[i + 1], &p, 0);
       } else if (strcmp(atts[i], "dword") == 0) {
-         assert(!is_old_format);
-         is_new_format = true;
          dword = strtoul(atts[i + 1], &p, 10);
       } else if (strcmp(atts[i], "bits") == 0) {
-         assert(!is_old_format);
-         is_new_format = true;
          const char *bits_str = atts[i + 1];
          const char *colon = strchr(bits_str, ':');
          assert(colon);

@@ -214,13 +214,8 @@ class Field(object):
     def add_gen(self, gen, xml_attrs):
         assert isinstance(gen, Gen)
 
-        if 'start' in xml_attrs:
-            dword = 0
-            start = int(xml_attrs['start'])
-            end = int(xml_attrs['end'])
-        else:
-            dword = int(xml_attrs['dword'])
-            end, start = map(int, xml_attrs['bits'].split(':'))
+        dword = int(xml_attrs['dword'])
+        end, start = map(int, xml_attrs['bits'].split(':'))
 
         self.start_by_gen[gen] = dword * 32 + start
         self.bits_by_gen[gen] = 1 + end - start
