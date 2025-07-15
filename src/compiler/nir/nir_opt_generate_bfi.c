@@ -27,7 +27,7 @@
 #include "nir_builder.h"
 
 static bool
-parse_iand(nir_scalar alu, nir_scalar *value, uint32_t *mask)
+parse_iand(nir_scalar alu, nir_scalar *value, uint64_t *mask)
 {
    if (nir_scalar_alu_op(alu) == nir_op_iand) {
       /* If both source are constants, do not perform the conversion. There
@@ -59,7 +59,7 @@ parse_iand(nir_scalar alu, nir_scalar *value, uint32_t *mask)
          return false;
 
       if (nir_scalar_as_uint(nir_scalar_chase_alu_src(alu, 1)) == 0) {
-         *mask = nir_scalar_alu_op(alu) == nir_op_extract_u16 ? 0x0000ffff : 0x000000ff;
+         *mask = nir_scalar_alu_op(alu) == nir_op_extract_u16 ? 0xffff : 0xff;
          *value = left;
          return true;
       }
@@ -74,75 +74,90 @@ nir_opt_generate_bfi_instr(nir_builder *b,
                            UNUSED void *cb_data)
 {
    /* Since none of the source bits will overlap, these are equvalent. */
-   if ((alu->op != nir_op_ior &&
-        alu->op != nir_op_ixor &&
-        alu->op != nir_op_iadd) ||
-       alu->def.num_components != 1 || alu->def.bit_size != 32)
+   if (alu->op != nir_op_ior &&
+       alu->op != nir_op_ixor &&
+       alu->op != nir_op_iadd)
       return false;
 
-   nir_scalar alu_scalar = nir_get_scalar(&alu->def, 0);
-   nir_scalar left = nir_scalar_chase_alu_src(alu_scalar, 0);
-   nir_scalar right = nir_scalar_chase_alu_src(alu_scalar, 1);
-
-   if (!nir_scalar_is_alu(left) || !nir_scalar_is_alu(right))
+   if (alu->def.bit_size == 1)
       return false;
 
-   nir_scalar src1;
-   nir_scalar src2;
-   uint32_t mask1;
-   uint32_t mask2;
-
-   if (!parse_iand(left, &src1, &mask1))
+   /* bfi only supports 32bit. */
+   if (!b->shader->options->has_bitfield_select && alu->def.bit_size != 32)
       return false;
 
-   if (!parse_iand(right, &src2, &mask2))
-      return false;
+   nir_scalar insert[NIR_MAX_VEC_COMPONENTS];
+   nir_scalar base[NIR_MAX_VEC_COMPONENTS];
+   nir_const_value mask_cvals[NIR_MAX_VEC_COMPONENTS];
 
-   if (mask1 != ~mask2)
-      return false;
+   for (unsigned i = 0; i < alu->def.num_components; i++) {
+      nir_scalar alu_scalar = nir_get_scalar(&alu->def, i);
+      nir_scalar left = nir_scalar_chase_alu_src(alu_scalar, 0);
+      nir_scalar right = nir_scalar_chase_alu_src(alu_scalar, 1);
 
-   nir_scalar insert;
-   nir_scalar base;
-   uint32_t mask;
+      if (!nir_scalar_is_alu(left) || !nir_scalar_is_alu(right))
+         return false;
 
-   /* The mask used by the bfi instruction must be odd. When the mask is odd,
-    * the implict shift applied by the bfi is by zero bits. Since one of the
-    * masks must be odd, the rule can always be applied.
-    *
-    * bitfield_select does not have this restriction, but it doesn't hurt.
-    */
-   if ((mask1 & 1) != 0) {
-      /* Because mask1 == ~mask2. */
-      assert((mask2 & 1) == 0);
+      nir_scalar src1;
+      nir_scalar src2;
+      uint64_t mask1;
+      uint64_t mask2;
 
-      mask = mask1;
-      insert = src1;
-      base = src2;
-   } else {
-      /* Because mask1 == ~mask2. */
-      assert((mask2 & 1) != 0);
+      if (!parse_iand(left, &src1, &mask1))
+         return false;
 
-      mask = mask2;
-      insert = src2;
-      base = src1;
+      if (!parse_iand(right, &src2, &mask2))
+         return false;
+
+      if (mask1 != (~mask2 & BITFIELD64_MASK(alu->def.bit_size)))
+         return false;
+
+      /* The mask used by the bfi instruction must be odd. When the mask is odd,
+       * the implict shift applied by the bfi is by zero bits. Since one of the
+       * masks must be odd, the rule can always be applied.
+       *
+       * bitfield_select does not have this restriction, but don't do it for vectors
+       * because swapping only part of the components would hurt.
+       */
+      uint64_t mask;
+      if (b->shader->options->has_bitfield_select && alu->def.num_components > 1) {
+         /* Just pick one. */
+         mask = mask1;
+         insert[i] = src1;
+         base[i] = src2;
+      } else if ((mask1 & 1) != 0) {
+         /* Because mask1 == ~mask2. */
+         assert((mask2 & 1) == 0);
+
+         mask = mask1;
+         insert[i] = src1;
+         base[i] = src2;
+      } else {
+         /* Because mask1 == ~mask2. */
+         assert((mask2 & 1) != 0);
+
+         mask = mask2;
+         insert[i] = src2;
+         base[i] = src1;
+      }
+
+      mask_cvals[i] = nir_const_value_for_uint(mask, alu->def.bit_size);
    }
 
    b->cursor = nir_before_instr(&alu->instr);
 
+   nir_def *mask_vec = nir_build_imm(b, alu->def.num_components, alu->def.bit_size, mask_cvals);
+   nir_def *insert_vec = nir_vec_scalars(b, insert, alu->def.num_components);
+   nir_def *base_vec = nir_vec_scalars(b, base, alu->def.num_components);
+
    nir_def *bfi;
 
-   if (b->shader->options->has_bfi) {
-      bfi = nir_bfi(b,
-                    nir_imm_int(b, mask),
-                    nir_mov_scalar(b, insert),
-                    nir_mov_scalar(b, base));
+   if (b->shader->options->has_bitfield_select) {
+      bfi = nir_bitfield_select(b, mask_vec, insert_vec, base_vec);
    } else {
-      assert(b->shader->options->has_bitfield_select);
+      assert(b->shader->options->has_bfi);
 
-      bfi = nir_bitfield_select(b,
-                                nir_imm_int(b, mask),
-                                nir_mov_scalar(b, insert),
-                                nir_mov_scalar(b, base));
+      bfi = nir_bfi(b, mask_vec, insert_vec, base_vec);
    }
 
    nir_def_replace(&alu->def, bfi);
