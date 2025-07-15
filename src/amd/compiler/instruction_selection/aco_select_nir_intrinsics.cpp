@@ -1057,130 +1057,6 @@ advance_write_mask(uint32_t* todo_mask, int start, int count)
    *todo_mask &= ~u_bit_consecutive(0, count) << start;
 }
 
-void
-store_lds(isel_context* ctx, unsigned elem_size_bytes, Temp data, uint32_t wrmask, Temp address,
-          unsigned base_offset, unsigned align)
-{
-   assert(util_is_power_of_two_nonzero(align));
-   assert(util_is_power_of_two_nonzero(elem_size_bytes) && elem_size_bytes <= 8);
-
-   Builder bld(ctx->program, ctx->block);
-   bool large_ds_write = ctx->options->gfx_level >= GFX7;
-   bool usable_write2 = ctx->options->gfx_level >= GFX7;
-
-   unsigned write_count = 0;
-   Temp write_datas[32];
-   unsigned offsets[32];
-   unsigned bytes[32];
-   aco_opcode opcodes[32];
-
-   wrmask = util_widen_mask(wrmask, elem_size_bytes);
-
-   const unsigned wrmask_bitcnt = util_bitcount(wrmask);
-   uint32_t todo = u_bit_consecutive(0, data.bytes());
-
-   if (u_bit_consecutive(0, wrmask_bitcnt) == wrmask)
-      todo = MIN2(todo, wrmask);
-
-   while (todo) {
-      int offset, byte;
-      if (!scan_write_mask(wrmask, todo, &offset, &byte)) {
-         offsets[write_count] = offset;
-         bytes[write_count] = byte;
-         opcodes[write_count] = aco_opcode::num_opcodes;
-         write_count++;
-         advance_write_mask(&todo, offset, byte);
-         continue;
-      }
-
-      bool aligned2 = offset % 2 == 0 && align % 2 == 0;
-      bool aligned4 = offset % 4 == 0 && align % 4 == 0;
-      bool aligned8 = offset % 8 == 0 && align % 8 == 0;
-      bool aligned16 = offset % 16 == 0 && align % 16 == 0;
-
-      // TODO: use ds_write_b8_d16_hi/ds_write_b16_d16_hi if beneficial
-      aco_opcode op = aco_opcode::num_opcodes;
-      if (byte >= 16 && aligned16 && large_ds_write) {
-         op = aco_opcode::ds_write_b128;
-         byte = 16;
-      } else if (byte >= 12 && aligned16 && large_ds_write) {
-         op = aco_opcode::ds_write_b96;
-         byte = 12;
-      } else if (byte >= 8 && aligned8) {
-         op = aco_opcode::ds_write_b64;
-         byte = 8;
-      } else if (byte >= 4 && aligned4) {
-         op = aco_opcode::ds_write_b32;
-         byte = 4;
-      } else if (byte >= 2 && aligned2) {
-         op = aco_opcode::ds_write_b16;
-         byte = 2;
-      } else if (byte >= 1) {
-         op = aco_opcode::ds_write_b8;
-         byte = 1;
-      } else {
-         assert(false);
-      }
-
-      offsets[write_count] = offset;
-      bytes[write_count] = byte;
-      opcodes[write_count] = op;
-      write_count++;
-      advance_write_mask(&todo, offset, byte);
-   }
-
-   Operand m = load_lds_size_m0(bld);
-
-   split_store_data(ctx, RegType::vgpr, write_count, write_datas, bytes, data);
-
-   for (unsigned i = 0; i < write_count; i++) {
-      aco_opcode op = opcodes[i];
-      if (op == aco_opcode::num_opcodes)
-         continue;
-
-      Temp split_data = write_datas[i];
-
-      unsigned second = write_count;
-      if (usable_write2 && (op == aco_opcode::ds_write_b32 || op == aco_opcode::ds_write_b64)) {
-         for (second = i + 1; second < write_count; second++) {
-            if (opcodes[second] == op && (offsets[second] - offsets[i]) % split_data.bytes() == 0) {
-               op = split_data.bytes() == 4 ? aco_opcode::ds_write2_b32 : aco_opcode::ds_write2_b64;
-               opcodes[second] = aco_opcode::num_opcodes;
-               break;
-            }
-         }
-      }
-
-      bool write2 = op == aco_opcode::ds_write2_b32 || op == aco_opcode::ds_write2_b64;
-      unsigned write2_off = (offsets[second] - offsets[i]) / split_data.bytes();
-
-      unsigned inline_offset = base_offset + offsets[i];
-      unsigned max_offset = write2 ? (255 - write2_off) * split_data.bytes() : 65535;
-      Temp address_offset = address;
-      if (inline_offset > max_offset) {
-         address_offset = bld.vadd32(bld.def(v1), Operand::c32(base_offset), address_offset);
-         inline_offset = offsets[i];
-      }
-
-      /* offsets[i] shouldn't be large enough for this to happen */
-      assert(inline_offset <= max_offset);
-
-      Instruction* instr;
-      if (write2) {
-         Temp second_data = write_datas[second];
-         inline_offset /= split_data.bytes();
-         instr = bld.ds(op, address_offset, split_data, second_data, m, inline_offset,
-                        inline_offset + write2_off);
-      } else {
-         instr = bld.ds(op, address_offset, split_data, m, inline_offset);
-      }
-      instr->ds().sync = memory_sync_info(storage_shared);
-
-      if (m.isUndefined())
-         instr->operands.pop_back();
-   }
-}
-
 aco_opcode
 get_buffer_store_op(unsigned bytes)
 {
@@ -3064,13 +2940,45 @@ visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
 void
 visit_store_shared(isel_context* ctx, nir_intrinsic_instr* instr)
 {
-   unsigned writemask = nir_intrinsic_write_mask(instr);
-   Temp data = get_ssa_temp(ctx, instr->src[0].ssa);
+   ASSERTED unsigned writemask = nir_intrinsic_write_mask(instr);
+   assert(writemask == BITFIELD_MASK(instr->src[0].ssa->num_components));
+   Temp data = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa));
    Temp address = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[1].ssa));
-   unsigned elem_size_bytes = instr->src[0].ssa->bit_size / 8;
 
-   unsigned align = nir_intrinsic_align_mul(instr) ? nir_intrinsic_align(instr) : elem_size_bytes;
-   store_lds(ctx, elem_size_bytes, data, writemask, address, nir_intrinsic_base(instr), align);
+   unsigned elem_size_bytes = instr->src[0].ssa->bit_size / 8;
+   unsigned num_components = instr->src[0].ssa->num_components;
+   unsigned bytes = elem_size_bytes * num_components;
+   assert(bytes <= 8 || ctx->program->gfx_level >= GFX7);
+   ASSERTED unsigned align =
+      nir_intrinsic_align_mul(instr) ? nir_intrinsic_align(instr) : elem_size_bytes;
+   assert(align % bytes == 0 || (align % 16 == 0 && bytes == 12));
+
+   Builder bld(ctx->program, ctx->block);
+   Operand m = load_lds_size_m0(bld);
+   aco_opcode op;
+   switch (bytes) {
+   case 16: op = aco_opcode::ds_write_b128; break;
+   case 12: op = aco_opcode::ds_write_b96; break;
+   case 8: op = aco_opcode::ds_write_b64; break;
+   case 4: op = aco_opcode::ds_write_b32; break;
+   case 2: op = aco_opcode::ds_write_b16; break;
+   case 1: op = aco_opcode::ds_write_b8; break;
+   default: UNREACHABLE("Unsupported load_shared size");
+   }
+
+   unsigned const_offset = nir_intrinsic_base(instr);
+   unsigned const_offset_range = 65536;
+   if (const_offset >= const_offset_range) {
+      unsigned excess = const_offset - (const_offset % const_offset_range);
+      address = bld.vadd32(bld.def(v1), address, Operand::c32(excess));
+      const_offset -= excess;
+   }
+
+   Instruction* ds = bld.ds(op, address, data, m, const_offset);
+   ds->ds().sync = memory_sync_info(storage_shared);
+
+   if (m.isUndefined())
+      ds->operands.pop_back();
 }
 
 void
