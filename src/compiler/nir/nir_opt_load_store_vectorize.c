@@ -1354,9 +1354,9 @@ try_vectorize_shared2(struct vectorize_ctx *ctx,
    unsigned high_bit_size = get_bit_size(high);
    unsigned low_size = low->num_components * low_bit_size / 8;
    unsigned high_size = high->num_components * high_bit_size / 8;
-   if ((low_size != 4 && low_size != 8) || (high_size != 4 && high_size != 8))
-      return false;
    if (low_size != high_size)
+      return false;
+   if (!(low_size == 4 || (low->is_store && low_size == 8)))
       return false;
    if (low->align_mul % low_size || low->align_offset % low_size)
       return false;
