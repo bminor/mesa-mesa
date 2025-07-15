@@ -100,6 +100,12 @@ static unsigned mesa_to_gl_stages(unsigned stages)
    if (stages & BITFIELD_BIT(MESA_SHADER_COMPUTE))
       ret |= GL_COMPUTE_SHADER_BIT;
 
+   if (stages & BITFIELD_BIT(MESA_SHADER_TASK))
+      ret |= GL_TASK_SHADER_BIT_EXT;
+
+   if (stages & BITFIELD_BIT(MESA_SHADER_MESH))
+      ret |= GL_MESH_SHADER_BIT_EXT;
+
    return ret;
 }
 
