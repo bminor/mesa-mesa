@@ -2715,6 +2715,75 @@ vn_sanitize_image_format_properties(
    }
 }
 
+static VkResult
+vn_get_ahb_image_props(struct vn_physical_device *physical_dev,
+                       const VkPhysicalDeviceImageFormatInfo2 *info,
+                       VkImageFormatProperties2 *props)
+{
+   /* Only advertise support for optimal tiling since venus is unable to
+    * detiling if the AHB allocated outside is tiled. Internally venus always
+    * overrides the tiling to VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.
+    */
+   if (info->tiling != VK_IMAGE_TILING_OPTIMAL)
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   /* No need to support AHB + VK_EXT_separate_stencil_usage. */
+   if (vk_find_struct_const(info->pNext, IMAGE_STENCIL_USAGE_CREATE_INFO))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   /* No need to support AHB + VK_EXT_filter_cubic. */
+   if (vk_find_struct_const(info->pNext,
+                            PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+   /* No need to check mutable format list info since the mutable bit does not
+    * make a difference of the AHB allocation. In practice, AHB image would
+    * only mutate between unorm and srgb, and later spec has allowed the impl
+    * to fail the non-srgb mutation. For simplicity, we skip the additional
+    * check here.
+    */
+   VkResult result = vk_android_get_ahb_image_properties(
+      vn_physical_device_to_handle(physical_dev), info, props);
+   if (result != VK_SUCCESS)
+      return result;
+
+   /* Now properly fill all the default props. */
+
+   const struct vk_properties *vk_props = &physical_dev->base.vk.properties;
+   const uint32_t extent = info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
+                              ? vk_props->maxImageDimensionCube
+                              : vk_props->maxImageDimension2D;
+   props->imageFormatProperties = (VkImageFormatProperties){
+      .maxExtent =
+         (VkExtent3D){
+            .width = extent,
+            .height = extent,
+            .depth = 1,
+         },
+      .maxMipLevels = 1,
+      .maxArrayLayers = 1,
+      .sampleCounts = VK_SAMPLE_COUNT_1_BIT,
+      .maxResourceSize = 1 << 31,
+   };
+
+   /* AHB + VK_KHR_sampler_ycbcr_conversion */
+   VkSamplerYcbcrConversionImageFormatProperties *ycbcr = vk_find_struct(
+      props->pNext, SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES);
+   if (ycbcr)
+      ycbcr->combinedImageSamplerDescriptorCount = 1;
+
+   /* AHB + VK_EXT_host_image_copy */
+   VkHostImageCopyDevicePerformanceQuery *host_copy =
+      vk_find_struct(props->pNext, HOST_IMAGE_COPY_DEVICE_PERFORMANCE_QUERY);
+   if (host_copy) {
+      /* Venus always prefers device side async blit to host side copy. */
+      host_copy->optimalDeviceAccess = VK_FALSE;
+      host_copy->identicalMemoryLayout = VK_FALSE;
+   }
+
+   return VK_SUCCESS;
+}
+
 VkResult
 vn_GetPhysicalDeviceImageFormatProperties2(
    VkPhysicalDevice physicalDevice,
@@ -2739,16 +2808,25 @@ vn_GetPhysicalDeviceImageFormatProperties2(
    const VkPhysicalDeviceExternalImageFormatInfo *external_info =
       vk_find_struct_const(pImageFormatInfo->pNext,
                            PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO);
-   if (external_info && !external_info->handleType)
-      external_info = NULL;
-
-   struct vn_physical_device_image_format_info local_info;
    if (external_info) {
-      if (!(external_info->handleType & supported_handle_types)) {
+      if (!external_info->handleType) {
+         external_info = NULL;
+      } else if (!(external_info->handleType & supported_handle_types)) {
          return vn_error(physical_dev->instance,
                          VK_ERROR_FORMAT_NOT_SUPPORTED);
       }
 
+      /* Fully resolve AHB image format query on the driver side. */
+      if (external_info->handleType ==
+          VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
+         assert(physical_dev->instance->renderer->info.has_dma_buf_import);
+         return vn_get_ahb_image_props(physical_dev, pImageFormatInfo,
+                                       pImageFormatProperties);
+      }
+   }
+
+   struct vn_physical_device_image_format_info local_info;
+   if (external_info) {
       /* Check the image tiling against the renderer handle type:
        * - No need to check for AHB since the tiling will either be forwarded
        *   or overwritten based on the renderer external memory type.
