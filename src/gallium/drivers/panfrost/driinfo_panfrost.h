@@ -24,6 +24,5 @@ DRI_CONF_SECTION_END
 DRI_CONF_SECTION_MISCELLANEOUS
    DRI_CONF_PAN_COMPUTE_CORE_MASK(~0ull)
    DRI_CONF_PAN_FRAGMENT_CORE_MASK(~0ull)
-   DRI_CONF_OPT_B(pan_allow_128bit_rts_v4, false, "Allow using 128 bit render-targets on V4")
    DRI_CONF_OPT_B(pan_relax_afbc_yuv_imports, false, "Use relaxed import rules for AFBC(YUV)")
 DRI_CONF_SECTION_END
