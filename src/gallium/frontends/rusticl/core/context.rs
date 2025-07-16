@@ -183,7 +183,9 @@ impl Context {
                     d.helper_ctx()
                         .exec(|ctx| ctx.buffer_subdata(r, 0, user_ptr, size.try_into().unwrap()))
                 })
-                .for_each(|f| f.wait());
+                .for_each(|f| {
+                    f.wait();
+                });
         }
 
         Ok(res)
@@ -255,7 +257,9 @@ impl Context {
                     d.helper_ctx()
                         .exec(|ctx| ctx.texture_subdata(r, &bx, user_ptr, stride, layer_stride))
                 })
-                .for_each(|f| f.wait());
+                .for_each(|f| {
+                    f.wait();
+                });
         }
 
         Ok(res)

@@ -445,14 +445,14 @@ impl PipeScreen {
         }
     }
 
-    pub(super) fn fence_finish(&self, fence: *mut pipe_fence_handle) {
+    pub(super) fn fence_finish(&self, fence: *mut pipe_fence_handle) -> bool {
         unsafe {
             self.screen().fence_finish.unwrap()(
                 self.screen.as_ptr(),
                 ptr::null_mut(),
                 fence,
                 OS_TIMEOUT_INFINITE as u64,
-            );
+            )
         }
     }
 

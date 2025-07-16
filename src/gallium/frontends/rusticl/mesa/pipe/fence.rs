@@ -30,8 +30,11 @@ impl PipeFence {
         }
     }
 
-    pub fn wait(&self) {
-        self.screen.fence_finish(self.fence);
+    /// Returns false on errors.
+    ///
+    /// TODO: should be a Result.
+    pub fn wait(&self) -> bool {
+        self.screen.fence_finish(self.fence)
     }
 }
 
