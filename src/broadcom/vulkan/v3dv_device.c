@@ -2183,7 +2183,7 @@ v3dv_AllocateMemory(VkDevice _device,
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
 
    /* We always allocate device memory in multiples of a page, so round up
-    * requested size to that. We need to add a V3D_TFU_READHAEAD padding to
+    * requested size to that. We need to add a V3D_TFU_READAHEAD padding to
     * avoid invalid reads done by the TFU unit after the end of the last page
     * allocated.
     */

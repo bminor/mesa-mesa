@@ -71,6 +71,11 @@ struct v3d_device_info {
         uint32_t cle_buffer_min_size;
 };
 
+/* TFU has a 64-bytes readhead. To avoid the unit reading unmaped memory
+ * we need to overallocate buffers that could be read by the TFU.
+ */
+#define V3D_TFU_READAHEAD_SIZE 64
+
 typedef int (*v3d_ioctl_fun)(int fd, unsigned long request, void *arg);
 
 bool
