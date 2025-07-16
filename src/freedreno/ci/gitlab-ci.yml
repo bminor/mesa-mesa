@@ -1,7 +1,7 @@
 include:
   - local: 'src/freedreno/ci/gitlab-ci-inc.yml'
 
-a306-gl:
+.a306-gl:
   extends:
     - .baremetal-deqp-test
     - .a306-test
@@ -10,7 +10,7 @@ a306-gl:
     FDO_CI_CONCURRENT: 6
   parallel: 5
 
-a306-piglit:
+.a306-piglit:
   extends:
     - .baremetal-deqp-test
     - .a306-test
@@ -36,7 +36,7 @@ a306-piglit:
     FDO_CI_CONCURRENT: 3
     HWCI_START_WESTON: 1
 
-a306-piglit-shader:
+.a306-piglit-shader:
   extends:
     - .baremetal-deqp-test
     - .a306-test
@@ -47,14 +47,12 @@ a306-piglit-shader:
     FDO_CI_CONCURRENT: 6
     HWCI_START_WESTON: 1
 
-a306-traces:
+.a306-traces:
   extends:
     - .google-freedreno-test-traces
     - .a306-test
-  rules:
-    - when: never # Google nginx needs updating
 
-a530-gl:
+.a530-gl:
   extends:
     - .baremetal-deqp-test
     - .test-piglit
@@ -64,14 +62,12 @@ a530-gl:
     FDO_CI_CONCURRENT: 3  # if 4, sometimes "deqp-gles31, not enough memory for the allocation" appears
   parallel: 6
 
-a530-traces:
+.a530-traces:
   extends:
     - .google-freedreno-test-traces
     - .a530-test
-  rules:
-    - when: never # Google nginx needs updating
 
-a530-piglit:
+.a530-piglit:
   extends:
     - .baremetal-deqp-test
     - .a530-test
