@@ -112,6 +112,9 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
    compiler->lower_dpas = !devinfo->has_systolic ||
                           debug_get_bool_option("INTEL_LOWER_DPAS", false);
 
+   compiler->optimistic_simd_heuristic =
+      debug_get_bool_option("INTEL_SIMD_OPTIMISTIC", false);
+
    nir_lower_int64_options int64_options =
       nir_lower_imul64 |
       nir_lower_isign64 |
@@ -243,6 +246,8 @@ brw_get_compiler_config_value(const struct brw_compiler *compiler)
    insert_u64_bit(&config, compiler->precise_trig);
    bits++;
    insert_u64_bit(&config, compiler->lower_dpas);
+   bits++;
+   insert_u64_bit(&config, compiler->optimistic_simd_heuristic);
    bits++;
 
    enum intel_debug_flag debug_bits[] = {

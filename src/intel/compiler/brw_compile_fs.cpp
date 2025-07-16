@@ -1641,7 +1641,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       }
    }
 
-   if (devinfo->ver >= 30) {
+   if (compiler->optimistic_simd_heuristic) {
       unsigned max_dispatch_width = reqd_dispatch_width ? reqd_dispatch_width : 32;
 
       if (max_polygons >= 2 && !key->coarse_pixel) {

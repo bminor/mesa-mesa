@@ -122,6 +122,26 @@ struct brw_compiler {
    bool lower_dpas;
 
    /**
+    * This can be set to use an "optimistic" SIMD heuristic that
+    * assumes that the highest SIMD width and polygon count achievable
+    * without spills will give the highest performance, so the
+    * compiler doesn't need to try more than that.
+    *
+    * As of xe3 most programs compile without spills at 32-wide
+    * dispatch so with this option enabled typically only a single
+    * back-end compilation will be done instead of the default
+    * behavior of one compilation per supported dispatch mode.  This
+    * can speed up the back-end compilation of fragment shaders by a
+    * 2+ factor, but could also increase compile-time especially on
+    * pre-xe3 platforms in cases with high register pressure.
+    *
+    * Run-time performance of the shaders will be reduced since this
+    * removes the ability to use a static analysis to estimate the
+    * relative performance of the dispatch modes supported.
+    */
+   bool optimistic_simd_heuristic;
+
+   /**
     * Calling the ra_allocate function after each register spill can take
     * several minutes. This option speeds up shader compilation by spilling
     * more registers after the ra_allocate failure. Required for
