@@ -193,11 +193,6 @@ panfrost_is_format_supported(struct pipe_screen *screen,
    if (format == PIPE_FORMAT_Z16_UNORM && dev->arch <= 4)
       return false;
 
-   if (dev->arch <= 4 && util_format_get_blocksize(format) >= 16 &&
-       !pan_screen(screen)->allow_128bit_rts_v4 &&
-       (bind & PIPE_BIND_RENDER_TARGET))
-      return false;
-
    /* Check we support the format with the given bind */
 
    unsigned pan_bind_flags = pipe_to_pan_bind_flags(bind);
@@ -1029,9 +1024,6 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
       panfrost_destroy_screen(&(screen->base));
       return NULL;
    }
-
-   screen->allow_128bit_rts_v4 =
-      driQueryOptionb(config->options, "pan_allow_128bit_rts_v4");
 
    screen->csf_tiler_heap.chunk_size = driQueryOptioni(config->options,
                                                        "pan_csf_chunk_size");

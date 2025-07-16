@@ -139,7 +139,6 @@ struct panfrost_screen {
    /* Compute AFBC-P payload sizes on GPU */
    bool afbcp_gpu_payload_sizes;
 
-   bool allow_128bit_rts_v4;
    int force_afrc_rate;
    uint64_t compute_core_mask;
    uint64_t fragment_core_mask;
