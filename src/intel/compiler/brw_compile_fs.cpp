@@ -1786,7 +1786,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
       if (!has_spilled &&
           dispatch_width_limit >= 32 &&
           reqd_dispatch_width == SUBGROUP_SIZE_VARYING &&
-          !simd16_failed && INTEL_SIMD(FS, 32)) {
+          !simd16_failed && INTEL_SIMD(FS, 32) &&
+          !prog_data->base.ray_queries) {
          /* Try a SIMD32 compile */
          brw_shader_params shader_params = base_shader_params;
          shader_params.dispatch_width = 32;
