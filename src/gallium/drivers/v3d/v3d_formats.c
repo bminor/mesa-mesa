@@ -124,9 +124,13 @@ v3d_get_format_swizzle(const struct v3d_device_info *devinfo, enum pipe_format f
         return vf->swizzle;
 }
 
+/**
+ * If our internal type is normalised or a 16bit float we can do real
+ * operations on the tilebuffer such as msaa resolve or blending.
+ */
 bool
-v3d_format_supports_tlb_msaa_resolve(const struct v3d_device_info *devinfo,
-                                     enum pipe_format f)
+v3d_format_supports_tlb_resolve_and_blend(const struct v3d_device_info *devinfo,
+                                          enum pipe_format f)
 {
         uint32_t internal_type;
         uint32_t internal_bpp;

@@ -354,7 +354,7 @@ check_tlb_blit_ok(struct v3d_device_info *devinfo, struct pipe_blit_info *info)
                                 info->dst.resource->nr_samples < 2);
 
         if (is_msaa_resolve &&
-            !v3d_format_supports_tlb_msaa_resolve(devinfo, info->src.format))
+            !v3d_format_supports_tlb_resolve_and_blend(devinfo, info->src.format))
                 return false;
 
         return true;
