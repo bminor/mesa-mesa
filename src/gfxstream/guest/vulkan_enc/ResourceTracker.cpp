@@ -7581,8 +7581,6 @@ void ResourceTracker::on_vkCmdClearColorImage(void* context, VkCommandBuffer com
         return;
     }
 
-    auto& imageInfo = imageInfoIt->second;
-    VkFormat actualFormat = imageInfo.createInfo.format;
     VkClearColorValue convertedColor = *pColor;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -7590,6 +7588,8 @@ void ResourceTracker::on_vkCmdClearColorImage(void* context, VkCommandBuffer com
     // it'll have the identical parameters, so we need to convert the linearized
     // clear color back to sRGB at this point.
     // TODO(b/420857458): revise the allocation logic to support mutable formats better
+    auto& imageInfo = imageInfoIt->second;
+    VkFormat actualFormat = imageInfo.createInfo.format;
     if (imageInfo.hasAnb && srgbFormatNeedsConversionForClearColor(actualFormat)) {
        // Perform linear to srgb conversion
        // Backing image is UNORM for vkCmdClearColorImage so we convert pColor
