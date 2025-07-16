@@ -683,7 +683,7 @@ namespace {
             case LSC_OP_ATOMIC_OR:
             case LSC_OP_ATOMIC_XOR:
                return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
-                                     30 /* XXX */, 400 /* XXX */,
+                                     1300 /* XXX */, 0 /* XXX */,
                                      10 /* XXX */, 100 /* XXX */, 0, 0,
                                      0, 400 /* XXX */);
             default:
