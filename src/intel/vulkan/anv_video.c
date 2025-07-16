@@ -1029,7 +1029,39 @@ anv_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(VkPhysicalDevice physi
                                                           const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
                                                           VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties)
 {
-   /* TODO. */
+   const VkVideoProfileInfoKHR *profile = pQualityLevelInfo->pVideoProfile;
+
+   pQualityLevelProperties->preferredRateControlMode = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR;
+
+   switch (profile->videoCodecOperation) {
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+      VkVideoEncodeH264QualityLevelPropertiesKHR *ext =
+         vk_find_struct(pQualityLevelProperties->pNext, VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_KHR);
+
+      ext->preferredIdrPeriod = 60;
+      ext->preferredGopFrameCount = 60;
+      ext->preferredConstantQp = (VkVideoEncodeH264QpKHR) { 26, 26, 26 };
+      /* For Low-Power(VDENC) mode */
+      ext->preferredMaxL0ReferenceCount = 3;
+      ext->preferredMaxL1ReferenceCount = 0;
+      ext->preferredStdEntropyCodingModeFlag = true;
+      break;
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+      VkVideoEncodeH265QualityLevelPropertiesKHR *ext =
+         vk_find_struct(pQualityLevelProperties->pNext, VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_KHR);
+      ext->preferredIdrPeriod = 60;
+      ext->preferredGopFrameCount = 60;
+      /* For Low-Power(VDENC) mode */
+      ext->preferredMaxL0ReferenceCount = 3;
+      ext->preferredMaxL1ReferenceCount = 3;
+      ext->preferredConstantQp = (VkVideoEncodeH265QpKHR) { 26, 26, 26 };
+      break;
+   }
+   default:
+      return VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR;
+   }
+
    return VK_SUCCESS;
 }
 
