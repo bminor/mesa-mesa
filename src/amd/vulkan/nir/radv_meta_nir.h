@@ -109,6 +109,8 @@ nir_shader *radv_meta_nir_build_depth_stencil_resolve_fragment_shader(struct rad
 
 nir_shader *radv_meta_nir_build_resolve_fs(struct radv_device *dev);
 
+nir_shader *radv_meta_nir_build_clear_hiz_compute_shader(struct radv_device *dev, int samples);
+
 #ifdef __cplusplus
 }
 #endif
