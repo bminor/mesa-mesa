@@ -60,7 +60,12 @@
 void
 radv_probe_video_encode(struct radv_physical_device *pdev)
 {
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
    pdev->video_encode_enabled = false;
+
+   if (instance->debug_flags & RADV_DEBUG_NO_VIDEO)
+      return;
 
    if (pdev->info.vcn_ip_version >= VCN_5_0_0) {
       pdev->video_encode_enabled = true;
@@ -105,7 +110,6 @@ radv_probe_video_encode(struct radv_physical_device *pdev)
          return;
    }
 
-   struct radv_instance *instance = radv_physical_device_instance(pdev);
    pdev->video_encode_enabled = !!(instance->perftest_flags & RADV_PERFTEST_VIDEO_ENCODE);
 }
 

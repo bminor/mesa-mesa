@@ -308,6 +308,9 @@ radv_probe_video_decode(struct radv_physical_device *pdev)
 
    pdev->video_decode_enabled = false;
 
+   if (instance->debug_flags & RADV_DEBUG_NO_VIDEO)
+      return;
+
    /* The support for decode events are available at the same time as encode */
    if (pdev->info.vcn_ip_version >= VCN_5_0_0) {
       pdev->video_decode_enabled = true;

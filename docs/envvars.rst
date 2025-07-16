@@ -1428,6 +1428,8 @@ RADV driver environment variables
    ``noumr``
       disable UMR dumps during GPU hang detection (only with
       :envvar:`RADV_DEBUG` = ``hang``)
+   ``novideo``
+      disable all video extensions
    ``novrsflatshading``
       disable VRS for flat shading (only on GFX10.3+)
    ``preoptir``
