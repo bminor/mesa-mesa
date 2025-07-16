@@ -286,6 +286,7 @@ void brw_calculate_cfg(brw_shader &s);
 void brw_optimize(brw_shader &s);
 
 enum brw_instruction_scheduler_mode {
+   BRW_SCHEDULE_PRE_LATENCY,
    BRW_SCHEDULE_PRE,
    BRW_SCHEDULE_PRE_NON_LIFO,
    BRW_SCHEDULE_PRE_LIFO,

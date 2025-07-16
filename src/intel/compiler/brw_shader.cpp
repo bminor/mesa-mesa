@@ -1087,6 +1087,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    bool allocated;
 
    static const enum brw_instruction_scheduler_mode pre_modes[] = {
+      BRW_SCHEDULE_PRE_LATENCY,
       BRW_SCHEDULE_PRE,
       BRW_SCHEDULE_PRE_NON_LIFO,
       BRW_SCHEDULE_NONE,
@@ -1094,6 +1095,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    };
 
    static const char *scheduler_mode_name[] = {
+      [BRW_SCHEDULE_PRE_LATENCY] = "latency-sensitive",
       [BRW_SCHEDULE_PRE] = "top-down",
       [BRW_SCHEDULE_PRE_NON_LIFO] = "non-lifo",
       [BRW_SCHEDULE_PRE_LIFO] = "lifo",
@@ -1129,6 +1131,9 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
     */
    for (unsigned i = 0; i < ARRAY_SIZE(pre_modes); i++) {
       enum brw_instruction_scheduler_mode sched_mode = pre_modes[i];
+
+      if (devinfo->ver < 30 && sched_mode == BRW_SCHEDULE_PRE_LATENCY)
+         continue;
 
       brw_schedule_instructions_pre_ra(s, sched, sched_mode);
       s.shader_stats.scheduler_mode = scheduler_mode_name[sched_mode];

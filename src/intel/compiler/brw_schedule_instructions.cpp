@@ -587,7 +587,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
 class brw_instruction_scheduler {
 public:
    brw_instruction_scheduler(void *mem_ctx, const brw_shader *s, int grf_count, int hw_reg_count,
-                         int block_count, bool post_reg_alloc);
+                             int block_count, bool post_reg_alloc, bool need_latencies);
 
    void add_barrier_deps(schedule_node *n);
    void add_cross_lane_deps(schedule_node *n);
@@ -706,8 +706,9 @@ public:
 };
 
 brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_shader *s,
-                                             int grf_count, int hw_reg_count,
-                                             int block_count, bool post_reg_alloc)
+                                                     int grf_count, int hw_reg_count,
+                                                     int block_count, bool post_reg_alloc,
+                                                     bool need_latencies)
    : s(s)
 {
    this->mem_ctx = mem_ctx;
@@ -724,7 +725,7 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_sh
    foreach_block_and_inst(block, brw_inst, inst, s->cfg) {
       n->inst = inst;
 
-      if (!post_reg_alloc)
+      if (!need_latencies)
          n->latency = 1;
       else
          n->set_latency(isa);
@@ -742,7 +743,7 @@ brw_instruction_scheduler::brw_instruction_scheduler(void *mem_ctx, const brw_sh
    current.available.make_empty();
 
    this->hw_reg_count = hw_reg_count;
-   this->mode = BRW_SCHEDULE_NONE;
+   this->mode = (need_latencies ? BRW_SCHEDULE_PRE_LATENCY : BRW_SCHEDULE_NONE);
    this->reg_pressure = 0;
 
    if (!post_reg_alloc) {
@@ -1571,7 +1572,7 @@ brw_instruction_scheduler::choose_instruction_to_schedule()
 {
    schedule_node *chosen = NULL;
 
-   if (mode == BRW_SCHEDULE_PRE || mode == BRW_SCHEDULE_POST) {
+   if (mode == BRW_SCHEDULE_PRE || mode == BRW_SCHEDULE_PRE_LATENCY || mode == BRW_SCHEDULE_POST) {
       int chosen_time = 0;
 
       /* Of the instructions ready to execute or the closest to being ready,
@@ -1848,8 +1849,16 @@ brw_prepare_scheduler(brw_shader &s, void *mem_ctx)
    const int grf_count = s.alloc.count;
 
    brw_instruction_scheduler *empty = rzalloc(mem_ctx, brw_instruction_scheduler);
-   return new (empty) brw_instruction_scheduler(mem_ctx, &s, grf_count, s.first_non_payload_grf,
-                                                s.cfg->num_blocks, /* post_reg_alloc */ false);
+   return new (empty) brw_instruction_scheduler(ralloc_context(mem_ctx), &s, grf_count,
+                                                s.first_non_payload_grf, s.cfg->num_blocks,
+                                                /* post_reg_alloc */ false, s.devinfo->ver >= 30);
+}
+
+static bool
+needs_instruction_latencies(brw_instruction_scheduler_mode mode)
+{
+   return mode == BRW_SCHEDULE_PRE_LATENCY ||
+          mode == BRW_SCHEDULE_POST;
 }
 
 void
@@ -1858,6 +1867,21 @@ brw_schedule_instructions_pre_ra(brw_shader &s, brw_instruction_scheduler *sched
 {
    if (mode == BRW_SCHEDULE_NONE)
       return;
+
+   if (needs_instruction_latencies(mode) != needs_instruction_latencies(sched->mode)) {
+      /* The new mode requires different instruction latencies, which
+       * requires recalculating the dependency graph as well as the
+       * delay and exit metadata.  Instead of maintaining a codepath
+       * to reset and recompute most of the scheduler data structure
+       * simply recreate the scheduler object.
+       */
+      void *mem_ctx = ralloc_parent(sched);
+      ralloc_free(sched->mem_ctx);
+      new (sched) brw_instruction_scheduler(ralloc_context(mem_ctx), &s, s.alloc.count,
+                                            s.first_non_payload_grf, s.cfg->num_blocks,
+                                            /* post_reg_alloc */ false,
+                                            needs_instruction_latencies(mode));
+   }
 
    sched->run(mode);
 
@@ -1868,12 +1892,13 @@ void
 brw_schedule_instructions_post_ra(brw_shader &s)
 {
    const bool post_reg_alloc = true;
+   const bool need_latencies = true;
    const int grf_count = reg_unit(s.devinfo) * s.grf_used;
 
    void *mem_ctx = ralloc_context(NULL);
 
    brw_instruction_scheduler sched(mem_ctx, &s, grf_count, s.first_non_payload_grf,
-                                   s.cfg->num_blocks, post_reg_alloc);
+                                   s.cfg->num_blocks, post_reg_alloc, need_latencies);
    sched.run(BRW_SCHEDULE_POST);
 
    ralloc_free(mem_ctx);
