@@ -65,10 +65,8 @@ namespace {
     * potentially depend on.
     */
    enum intel_eu_dependency_id {
-      /* Register part of the GRF. */
-      EU_DEPENDENCY_ID_GRF0 = 0,
       /* Address register part of the ARF. */
-      EU_DEPENDENCY_ID_ADDR0 = EU_DEPENDENCY_ID_GRF0 + XE3_MAX_GRF,
+      EU_DEPENDENCY_ID_ADDR0 = 0,
       /* Accumulator register part of the ARF. */
       EU_DEPENDENCY_ID_ACCUM0 = EU_DEPENDENCY_ID_ADDR0 + 1,
       /* Flag register part of the ARF. */
@@ -77,15 +75,33 @@ namespace {
       EU_DEPENDENCY_ID_SBID_WR0 = EU_DEPENDENCY_ID_FLAG0 + 16,
       /* SBID token read completion.  Only used on Gfx12+. */
       EU_DEPENDENCY_ID_SBID_RD0 = EU_DEPENDENCY_ID_SBID_WR0 + 32,
-      /* Number of computation dependencies currently tracked. */
-      EU_NUM_DEPENDENCY_IDS = EU_DEPENDENCY_ID_SBID_RD0 + 32
+      /* Register part of the GRF. */
+      EU_DEPENDENCY_ID_GRF0 = EU_DEPENDENCY_ID_SBID_RD0 + 32,
+      EU_DEPENDENCY_ID_INVALID = ~0u
    };
+
+   unsigned
+   num_grf_dependency_ids(const brw_shader *s) {
+      return (!s->grf_used ? s->alloc.count :
+              s->devinfo->ver >= 30 ? XE3_MAX_GRF :
+              s->devinfo->ver >= 20 ? XE2_MAX_GRF :
+              BRW_MAX_GRF);
+   }
 
    /**
     * State of our modeling of the program execution.
     */
    struct state {
-      state() : unit_ready(), dep_ready(), unit_busy(), weight(1.0) {}
+      state(const brw_shader *s) :
+	 unit_ready(), dep_ready(), num_dependency_ids(EU_DEPENDENCY_ID_GRF0 + num_grf_dependency_ids(s)), unit_busy(), weight(1.0)
+      {
+	 dep_ready = new unsigned[num_dependency_ids]();
+      }
+
+      ~state() {
+	 delete[] dep_ready;
+      }
+
       /**
        * Time at which a given unit will be ready to execute the next
        * computation, in clock units.
@@ -95,7 +111,9 @@ namespace {
        * Time at which an instruction dependent on a given dependency ID will
        * be ready to execute, in clock units.
        */
-      unsigned dep_ready[EU_NUM_DEPENDENCY_IDS];
+      unsigned *dep_ready;
+      unsigned num_dependency_ids;
+
       /**
        * Aggregated utilization of a given unit excluding idle cycles,
        * in clock units.
@@ -736,7 +754,7 @@ namespace {
    void
    stall_on_dependency(state &st, enum intel_eu_dependency_id id)
    {
-      if (id < ARRAY_SIZE(st.dep_ready))
+      if (id < st.num_dependency_ids)
          st.unit_ready[EU_UNIT_FE] = MAX2(st.unit_ready[EU_UNIT_FE],
                                        st.dep_ready[id]);
    }
@@ -775,7 +793,7 @@ namespace {
    mark_read_dependency(state &st, const perf_desc &perf,
                         enum intel_eu_dependency_id id)
    {
-      if (id < ARRAY_SIZE(st.dep_ready))
+      if (id < st.num_dependency_ids)
          st.dep_ready[id] = st.unit_ready[EU_UNIT_FE] + perf.ls;
    }
 
@@ -791,7 +809,7 @@ namespace {
          st.dep_ready[id] = st.unit_ready[EU_UNIT_FE] + perf.la;
       else if (id >= EU_DEPENDENCY_ID_FLAG0 && id < EU_DEPENDENCY_ID_SBID_WR0)
          st.dep_ready[id] = st.unit_ready[EU_UNIT_FE] + perf.lf;
-      else if (id < ARRAY_SIZE(st.dep_ready))
+      else if (id < st.num_dependency_ids)
          st.dep_ready[id] = st.unit_ready[EU_UNIT_FE] + perf.ld;
    }
 
@@ -803,13 +821,12 @@ namespace {
                      const int delta)
    {
       if (r.file == VGRF) {
-         const unsigned i = r.nr + r.offset / REG_SIZE + delta;
-         assert(i < EU_DEPENDENCY_ID_ADDR0 - EU_DEPENDENCY_ID_GRF0);
+         const unsigned i = r.nr;
          return intel_eu_dependency_id(EU_DEPENDENCY_ID_GRF0 + i);
 
       } else if (r.file == FIXED_GRF) {
          const unsigned i = r.nr + delta;
-         assert(i < EU_DEPENDENCY_ID_ADDR0 - EU_DEPENDENCY_ID_GRF0);
+         assert(i < XE3_MAX_GRF);
          return intel_eu_dependency_id(EU_DEPENDENCY_ID_GRF0 + i);
 
       } else if (r.file == ARF && r.nr >= BRW_ARF_ADDRESS &&
@@ -824,7 +841,7 @@ namespace {
          return intel_eu_dependency_id(EU_DEPENDENCY_ID_ACCUM0 + i);
 
       } else {
-         return EU_NUM_DEPENDENCY_IDS;
+         return EU_DEPENDENCY_ID_INVALID;
       }
    }
 
@@ -846,11 +863,10 @@ namespace {
    tgl_swsb_rd_dependency_id(tgl_swsb swsb)
    {
       if (swsb.mode) {
-         assert(swsb.sbid <
-                EU_NUM_DEPENDENCY_IDS - EU_DEPENDENCY_ID_SBID_RD0);
+         assert(swsb.sbid < EU_DEPENDENCY_ID_GRF0 - EU_DEPENDENCY_ID_SBID_RD0);
          return intel_eu_dependency_id(EU_DEPENDENCY_ID_SBID_RD0 + swsb.sbid);
       } else {
-         return EU_NUM_DEPENDENCY_IDS;
+         return EU_DEPENDENCY_ID_INVALID;
       }
    }
 
@@ -866,7 +882,7 @@ namespace {
                 EU_DEPENDENCY_ID_SBID_RD0 - EU_DEPENDENCY_ID_SBID_WR0);
          return intel_eu_dependency_id(EU_DEPENDENCY_ID_SBID_WR0 + swsb.sbid);
       } else {
-         return EU_NUM_DEPENDENCY_IDS;
+         return EU_DEPENDENCY_ID_INVALID;
       }
    }
 
@@ -1075,7 +1091,7 @@ namespace {
       const float loop_weight = 10;
       unsigned halt_count = 0;
       unsigned elapsed = 0;
-      state st;
+      state st { s };
 
       foreach_block(block, s->cfg) {
          const unsigned elapsed0 = elapsed;
