@@ -454,13 +454,13 @@ Vulkan 1.1 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, radv, tu, vn
   VK_KHR_multiview                                      DONE (anv, dzn, hasvk, lvp, nvk, panvk/v10+, radv, tu, v3dv, vn)
   VK_KHR_relaxed_block_layout                           DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_sampler_ycbcr_conversion                       DONE (anv, hasvk, lvp, nvk, panvk/v10+, radv, tu, v3dv, vn)
-  VK_KHR_shader_draw_parameters                         DONE (anv, dzn, hasvk, lvp, nvk, radv, tu, vn, panvk)
+  VK_KHR_shader_draw_parameters                         DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, vn)
   VK_KHR_storage_buffer_storage_class                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_variable_pointers                              DONE (anv, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
 
 Vulkan 1.2 -- all DONE: anv, hk, nvk, panvk/v10+, tu, vn
 
-  VK_KHR_8bit_storage                                   DONE (anv, dzn, hasvk, lvp, nvk, radv, tu/a750+, v3dv, vn, panvk)
+  VK_KHR_8bit_storage                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu/a750+, v3dv, vn)
   VK_KHR_buffer_device_address                          DONE (anv, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_create_renderpass2                             DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_depth_stencil_resolve                          DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
@@ -471,7 +471,7 @@ Vulkan 1.2 -- all DONE: anv, hk, nvk, panvk/v10+, tu, vn
   VK_KHR_sampler_mirror_clamp_to_edge                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_separate_depth_stencil_layouts                 DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_shader_atomic_int64                            DONE (anv, lvp, nvk, panvk/v10+, radv, vn, tu/a740+)
-  VK_KHR_shader_float16_int8                            DONE (anv, dzn, nvk, hasvk, lvp, radv, tu, vn, panvk)
+  VK_KHR_shader_float16_int8                            DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, vn)
   VK_KHR_shader_float_controls                          DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_shader_subgroup_extended_types                 DONE (anv, hasvk, lvp, nvk, panvk/v10+, radv, tu, vn)
   VK_KHR_spirv_1_4                                      DONE (anv, dzn, hasvk, lvp, nvk, panvk/v10+, radv, tu, v3dv, vn)
