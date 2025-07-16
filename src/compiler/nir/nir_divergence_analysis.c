@@ -1371,7 +1371,11 @@ visit_if(nir_if *if_stmt, struct divergence_state *state)
          phi->def.loop_invariant =
             invariant && nir_foreach_src(&phi->instr, src_invariant, state->loop);
       }
-      bool ignore_undef = state->options & nir_divergence_ignore_undef_if_phi_srcs;
+
+      /* The only user of this option (ACO) only supports it for non-boolean phis. */
+      bool ignore_undef =
+         (state->options & nir_divergence_ignore_undef_if_phi_srcs) && phi->def.bit_size != 1;
+
       progress |= visit_if_merge_phi(phi, cond_divergent, ignore_undef);
    }
 
