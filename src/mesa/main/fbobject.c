@@ -1063,6 +1063,17 @@ test_attachment_completeness(const struct gl_context *ctx, GLenum format,
             att->Complete = GL_FALSE;
             return;
          }
+         if (_mesa_is_gles(ctx)) {
+            switch (texImage->InternalFormat) {
+            case GL_SRGB_EXT:
+            case GL_SRGB_ALPHA_EXT:
+               att_incomplete("bad internal format");
+               att->Complete = GL_FALSE;
+               return;
+            default:
+               break;
+            }
+         }
       }
       else if (format == GL_DEPTH) {
          if (baseFormat != GL_DEPTH_COMPONENT &&
@@ -2440,8 +2451,9 @@ _mesa_base_fbo_format(const struct gl_context *ctx, GLenum internalFormat)
       return _mesa_is_desktop_gl(ctx) || _mesa_has_EXT_texture_norm16(ctx)
          ? GL_RGBA : 0;
    case GL_RGB10_A2:
-   case GL_SRGB8_ALPHA8_EXT:
       return _mesa_is_desktop_gl(ctx) || _mesa_is_gles3(ctx) ? GL_RGBA : 0;
+   case GL_SRGB8_ALPHA8_EXT:
+      return ctx->Extensions.EXT_sRGB ? GL_RGBA : 0;
    case GL_STENCIL_INDEX:
    case GL_STENCIL_INDEX1_EXT:
    case GL_STENCIL_INDEX4_EXT:
