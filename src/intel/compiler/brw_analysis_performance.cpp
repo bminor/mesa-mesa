@@ -1062,8 +1062,10 @@ namespace {
        *       EU fusion has been removed on Xe2+ so its divergence behavior is
        *       expected to be closer to pre-Gfx12 platforms.
        */
-      const float discard_weight = (dispatch_width > 16 || s->devinfo->ver != 12 ?
-                                    1.0 : 0.5);
+      const float discard_weight =
+         s->devinfo->ver >= 30 ? (dispatch_width > 16 ? 0.75 : 0.525) :
+         s->devinfo->ver == 12 ? (dispatch_width > 16 ? 1.0 : 0.5) :
+         1.0;
       const float loop_weight = 10;
       unsigned halt_count = 0;
       unsigned elapsed = 0;
