@@ -103,19 +103,27 @@ get_output(Program* program, unsigned block_idx, ssa_state* state)
    return output;
 }
 
-void
-insert_before_logical_end(Block* block, aco_ptr<Instruction> instr)
+Builder
+bld_before_logical_end(Program* program, Block* block)
 {
    auto IsLogicalEnd = [](const aco_ptr<Instruction>& inst) -> bool
    { return inst->opcode == aco_opcode::p_logical_end; };
-   auto it = std::find_if(block->instructions.crbegin(), block->instructions.crend(), IsLogicalEnd);
+   auto it = std::find_if(block->instructions.rbegin(), block->instructions.rend(), IsLogicalEnd);
 
-   if (it == block->instructions.crend()) {
+   Builder bld(program);
+   if (it == block->instructions.rend()) {
       assert(block->instructions.back()->isBranch());
-      block->instructions.insert(std::prev(block->instructions.end()), std::move(instr));
+      bld.reset(&block->instructions, std::prev(block->instructions.end()));
    } else {
-      block->instructions.insert(std::prev(it.base()), std::move(instr));
+      bld.reset(&block->instructions, std::prev(it.base()));
    }
+   return bld;
+}
+
+void
+insert_before_logical_end(Block* block, aco_ptr<Instruction> instr)
+{
+   bld_before_logical_end(NULL, block).insert(std::move(instr));
 }
 
 void
@@ -127,12 +135,7 @@ build_merge_code(Program* program, ssa_state* state, Block* block, Operand cur)
    if (cur.isUndefined())
       return;
 
-   Builder bld(program);
-   auto IsLogicalEnd = [](const aco_ptr<Instruction>& instr) -> bool
-   { return instr->opcode == aco_opcode::p_logical_end; };
-   auto it = std::find_if(block->instructions.rbegin(), block->instructions.rend(), IsLogicalEnd);
-   assert(it != block->instructions.rend());
-   bld.reset(&block->instructions, std::prev(it.base()));
+   Builder bld = bld_before_logical_end(program, block);
 
    pred_defined defined = state->any_pred_defined[block_idx];
    if (defined == pred_defined::undef) {
@@ -237,16 +240,10 @@ build_empty_else_merge_code(Program* program, Block& merge_block, Block& invert_
    /* If the else block is empty, we know that the else phi operand dominates the
     * then block, so we can handle the phi only in the then block.
     */
-   Builder bld(program);
    Block& then_block = program->blocks[merge_block.logical_preds[0]];
+   Builder bld = bld_before_logical_end(program, &then_block);
    Operand then_op = phi->operands[0];
    Operand else_op = phi->operands[1];
-
-   auto before_logical_end =
-      std::find_if(then_block.instructions.begin(), then_block.instructions.end(),
-                   [](const aco_ptr<Instruction>& instr) -> bool
-                   { return instr->opcode == aco_opcode::p_logical_end; });
-   bld.reset(&then_block.instructions, before_logical_end);
 
    Operand new_op;
 
