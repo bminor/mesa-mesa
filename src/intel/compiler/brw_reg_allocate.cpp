@@ -289,7 +289,7 @@ private:
    void setup_live_interference(unsigned node, brw_range ip_range);
    void setup_inst_interference(const brw_inst *inst);
 
-   void build_interference_graph(bool allow_spilling);
+   bool build_interference_graph(bool allow_spilling);
 
    brw_reg build_ex_desc(const brw_builder &bld, unsigned reg_size, bool unspill);
 
@@ -654,7 +654,7 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
    }
 }
 
-void
+bool
 brw_reg_alloc::build_interference_graph(bool allow_spilling)
 {
    /* Compute the RA node layout */
@@ -701,8 +701,13 @@ brw_reg_alloc::build_interference_graph(bool allow_spilling)
    for (unsigned i = 0; i < fs->alloc.count; i++) {
       unsigned size = DIV_ROUND_UP(fs->alloc.sizes[i], reg_unit(devinfo));
 
+#ifndef NDEBUG
       assert(size <= ARRAY_SIZE(compiler->reg_set.classes) &&
              "Register allocation relies on split_virtual_grfs()");
+#else
+      if (size > ARRAY_SIZE(compiler->reg_set.classes))
+         return false;
+#endif
 
       ra_set_node_class(g, first_vgrf_node + i,
                         compiler->reg_set.classes[size - 1]);
@@ -716,6 +721,8 @@ brw_reg_alloc::build_interference_graph(bool allow_spilling)
     */
    foreach_block_and_inst(block, brw_inst, inst, fs->cfg)
       setup_inst_interference(inst);
+
+   return true;
 }
 
 brw_reg
@@ -1309,7 +1316,8 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
 bool
 brw_reg_alloc::assign_regs(bool allow_spilling, bool spill_all)
 {
-   build_interference_graph(allow_spilling);
+   if (!build_interference_graph(allow_spilling))
+      return false;
 
    unsigned spilled = 0;
    while (1) {
