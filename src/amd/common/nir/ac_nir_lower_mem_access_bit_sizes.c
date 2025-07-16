@@ -66,6 +66,9 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    /* Make 8-bit accesses 16-bit if possible */
    if (is_load && bit_size == 8 && combined_align >= 2 && bytes % 2 == 0)
       bit_size = 16;
+   /* Make 8/16-bit accesses 32-bit if possible */
+   if (bit_size <= 16 && combined_align >= 4 && bytes % 4 == 0)
+      bit_size = 32;
 
    bit_size = MIN2(bit_size, combined_align == 4 ? 64 : combined_align * 8ull);
 
