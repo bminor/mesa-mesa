@@ -119,6 +119,9 @@ brw_alloc_reg_sets(struct brw_compiler *compiler)
 
       for (int reg = 0; reg <= base_reg_count - class_sizes[i]; reg++)
          ra_class_add_reg(classes[i], reg);
+
+      if (devinfo->ver >= 30 && !INTEL_DEBUG(DEBUG_NO_VRT))
+         ra_class_override_p(classes[i], 96 - class_sizes[i] + 1);
    }
 
    ra_set_finalize(regs, NULL);
