@@ -186,6 +186,17 @@ brw_optimize(brw_shader &s)
    OPT(brw_opt_dead_code_eliminate);
    OPT(brw_opt_register_coalesce);
 
+   /* Logical sends and load_payload can have large VGRFs that cannot be
+    * split. Once all of the lowering passes and optimization passes that
+    * might eliminate any of those instructions have completed, try to split
+    * larger VGRFs one last time.
+    *
+    * Register allocation can only handle VGRFs up to a certain size, so this
+    * is the last opportunity to prevent later failures due to VGRFs that are
+    * too large.
+    */
+   OPT(brw_opt_split_virtual_grfs);
+
    if (progress)
       OPT(brw_lower_simd_width);
 
