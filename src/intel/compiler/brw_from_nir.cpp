@@ -4885,10 +4885,14 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
       const unsigned elems = src_components * src_packing_factor;
 
       brw_builder bldn = bld.exec_all();
-      const brw_reg src = retype(get_nir_src(ntb, instr->src[0], 0), src_type);
+      brw_reg src = retype(get_nir_src(ntb, instr->src[0], 0), src_type);
       const brw_reg dst = retype(dest, dst_type);
 
       assert(dst_cmat_desc.use == src_cmat_desc.use);
+
+      const bool needs_intermediate =
+         (src.type == BRW_TYPE_BF && dst.type != BRW_TYPE_F) ||
+         (dst.type == BRW_TYPE_BF && src.type != BRW_TYPE_F);
 
       switch (src_cmat_desc.use) {
       case GLSL_CMAT_USE_B:
@@ -4898,6 +4902,16 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
       case GLSL_CMAT_USE_A:
       case GLSL_CMAT_USE_ACCUMULATOR: {
          const unsigned width = bldn.dispatch_width();
+
+         if (needs_intermediate) {
+            brw_reg tmp = bldn.vgrf(BRW_TYPE_F, elems);
+            for (unsigned c = 0; c < elems; c++) {
+               bldn.MOV(suboffset(tmp, c * width),
+                        suboffset(src, c * width));
+            }
+            src = tmp;
+         }
+
          for (unsigned c = 0; c < elems; c++) {
             bldn.MOV(suboffset(dst, c * width),
                      suboffset(src, c * width));

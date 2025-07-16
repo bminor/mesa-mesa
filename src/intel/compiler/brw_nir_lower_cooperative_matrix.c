@@ -466,51 +466,23 @@ lower_cmat_convert(nir_builder *b, nir_intrinsic_instr *intrin,
    const slice_info *dst_info = get_slice_info(state, dst_slice);
    const slice_info *src_info = get_slice_info(state, src_slice);
 
-   const nir_cmat_signed cmat_signed_mask = nir_intrinsic_cmat_signed_mask(intrin);
+   /* Cooperative matrices must have the same "shape" to be converted. */
+   assert(src_info->desc.rows  == dst_info->desc.rows);
+   assert(src_info->desc.cols  == dst_info->desc.cols);
+   assert(src_info->desc.use   == dst_info->desc.use);
+   assert(src_info->desc.scope == dst_info->desc.scope);
 
-   enum glsl_base_type src_element_type = glsl_apply_signedness_to_base_type(
-      src_info->desc.element_type, cmat_signed_mask & NIR_CMAT_A_SIGNED);
-   enum glsl_base_type dst_element_type = glsl_apply_signedness_to_base_type(
-      dst_info->desc.element_type, cmat_signed_mask & NIR_CMAT_RESULT_SIGNED);
-
-   bool needs_intermediate =
-      (src_element_type == GLSL_TYPE_BFLOAT16 && dst_element_type != GLSL_TYPE_FLOAT) ||
-      (src_element_type != GLSL_TYPE_FLOAT    && dst_element_type == GLSL_TYPE_BFLOAT16);
-
-   nir_def *result;
    nir_def *src = nir_load_deref(b, src_slice);
 
-   if (needs_intermediate) {
-      /* Cooperative matrices must have the same "shape" to be converted. */
-      assert(src_info->desc.rows  == dst_info->desc.rows);
-      assert(src_info->desc.cols  == dst_info->desc.cols);
-      assert(src_info->desc.use   == dst_info->desc.use);
-      assert(src_info->desc.scope == dst_info->desc.scope);
+   const unsigned dst_components = glsl_get_vector_elements(dst_info->type);
+   const unsigned dst_bits = glsl_base_type_bit_size(dst_info->desc.element_type);
 
-      struct glsl_cmat_description float_desc = src_info->desc;
-      float_desc.element_type = GLSL_TYPE_FLOAT;
-
-      slice_info float_info = {};
-      init_slice_info(state, float_desc, &float_info);
-
-      nir_op op1 = get_cmat_conversion_op(src_element_type, GLSL_TYPE_FLOAT);
-      nir_op op2 = get_cmat_conversion_op(GLSL_TYPE_FLOAT,  dst_element_type);
-
-      nir_def *tmp = emit_packed_alu1(b, state, src_info, &float_info, op1, src);
-      result = emit_packed_alu1(b, state, &float_info, dst_info, op2, tmp);
-
-   } else {
-      const unsigned dst_components = glsl_get_vector_elements(dst_info->type);
-      const unsigned dst_bits = glsl_base_type_bit_size(dst_info->desc.element_type);
-
-      result =
-            nir_convert_cmat_intel(b,
-                                   dst_components,
-                                   dst_info->packing_factor * dst_bits,
-                                   src,
-                                   .dst_cmat_desc = dst_info->desc,
-                                   .src_cmat_desc = src_info->desc);
-   }
+   nir_def *result = nir_convert_cmat_intel(b,
+                                            dst_components,
+                                            dst_info->packing_factor * dst_bits,
+                                            src,
+                                            .dst_cmat_desc = dst_info->desc,
+                                            .src_cmat_desc = src_info->desc);
 
    nir_store_deref(b, dst_slice, result, nir_component_mask(result->num_components));
 }
