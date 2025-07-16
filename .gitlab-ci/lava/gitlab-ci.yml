@@ -107,6 +107,21 @@ variables:
     - job: debian-x86_64
       artifacts: false
 
+.lava-x86_64-test-asan-gl:
+  extends:
+    - .use-debian/x86_64_test-gl
+    - .lava-x86_64-test
+  variables:
+    DEQP_FORCE_ASAN: 1
+    S3_ARTIFACT_NAME: mesa-x86_64-asan-debugoptimized
+  needs:
+    - !reference [.lava-test, needs]
+    - job: debian/x86_64_test-gl
+      artifacts: false
+      optional: true
+    - job: debian-x86_64-asan
+      artifacts: false
+
 .lava-x86_64-test-video:
   extends:
     - .use-debian/x86_64_test-video
@@ -129,6 +144,21 @@ variables:
       artifacts: false
       optional: true
     - job: debian-x86_64
+      artifacts: false
+
+.lava-x86_64-test-asan-vk:
+  extends:
+    - .use-debian/x86_64_test-vk
+    - .lava-x86_64-test
+  variables:
+    DEQP_FORCE_ASAN: 1
+    S3_ARTIFACT_NAME: mesa-x86_64-asan-debugoptimized
+  needs:
+    - !reference [.lava-test, needs]
+    - job: debian/x86_64_test-vk
+      artifacts: false
+      optional: true
+    - job: debian-x86_64-asan
       artifacts: false
 
 .lava-arm32-test:
