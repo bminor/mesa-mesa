@@ -64,6 +64,7 @@
 #include "util/u_sampler.h"
 #include "util/u_simple_shaders.h"
 #include "util/u_string.h"
+#include "util/u_surface.h"
 #include "util/u_upload_mgr.h"
 #include "tgsi/tgsi_text.h"
 #include "tgsi/tgsi_dump.h"
@@ -531,8 +532,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
                         CSO_BIT_RENDER_CONDITION));
 
    /* set states */
-   memset(&surf_templ, 0, sizeof(surf_templ));
-   surf_templ.format = tex->format;
+   u_surface_default_template(&surf_templ, tex);
 
    /* Without this, AA lines look thinner if they are between 2 pixels
     * because the alpha is 0.5 on both pixels. (it's ugly)
