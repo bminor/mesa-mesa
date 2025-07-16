@@ -1808,7 +1808,7 @@ void
 tu_physical_device_get_global_priority_properties(const struct tu_physical_device *pdevice,
                                                   VkQueueFamilyGlobalPriorityPropertiesKHR *props)
 {
-   props->priorityCount = MIN2(pdevice->submitqueue_priority_count, 3);
+   props->priorityCount = MIN2(pdevice->submitqueue_priority_count, 4);
    switch (props->priorityCount) {
    case 1:
       props->priorities[0] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
@@ -1821,6 +1821,12 @@ tu_physical_device_get_global_priority_properties(const struct tu_physical_devic
       props->priorities[0] = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
       props->priorities[1] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
       props->priorities[2] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
+      break;
+   case 4:
+      props->priorities[0] = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
+      props->priorities[1] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+      props->priorities[2] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
+      props->priorities[3] = VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR;
       break;
    default:
       UNREACHABLE("unexpected priority count");

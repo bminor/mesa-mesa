@@ -38,15 +38,30 @@ tu_get_submitqueue_priority(const struct tu_physical_device *pdevice,
    }
 
    /* Valid values are from 0 to (pdevice->submitqueue_priority_count - 1),
-    * with 0 being the highest priority.  This matches what freedreno does.
+    * with 0 being the highest priority.
+    *
+    * Map vulkan's REALTIME to LOW priority to that range.
     */
    int priority;
-   if (global_priority == VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR)
-      priority = pdevice->submitqueue_priority_count / 2;
-   else if (global_priority < VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR)
-      priority = pdevice->submitqueue_priority_count - 1;
-   else
+   switch (global_priority) {
+   case VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR:
+      priority = 3;
+      break;
+   case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR:
+      priority = 2;
+      break;
+   case VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR:
+      priority = 1;
+      break;
+   case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
       priority = 0;
+      break;
+   default:
+      UNREACHABLE("");
+      break;
+   }
+   priority =
+      DIV_ROUND_UP((pdevice->submitqueue_priority_count - 1) * priority, 3);
 
    return priority;
 }
