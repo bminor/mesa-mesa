@@ -26,6 +26,7 @@
 #include "pipe/p_defines.h"
 #include "util/format/u_format.h"
 #include "util/u_math.h"
+#include "vk_android.h"
 #include "vk_util.h"
 #include "vk_enum_defines.h"
 
@@ -470,7 +471,17 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_GetPhysicalDeviceImageFormatProperties2(
       }
    }
 
-   if (external_info && external_info->handleType != 0 && external_props) {
+   if (external_info &&
+       external_info->handleType ==
+       VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
+      result = vk_android_get_ahb_image_properties(physicalDevice,
+                                                   base_info, base_props);
+      if (result != VK_SUCCESS)
+         return result;
+
+      base_props->imageFormatProperties.maxMipLevels = 1;
+      base_props->imageFormatProperties.maxArrayLayers = 1;
+   } else if (external_info && external_info->handleType != 0 && external_props) {
       VkExternalMemoryFeatureFlagBits flags = 0;
       VkExternalMemoryHandleTypeFlags export_flags = 0;
       VkExternalMemoryHandleTypeFlags compat_flags = 0;
@@ -639,6 +650,13 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceExternalBufferProperties(
    const VkPhysicalDeviceExternalBufferInfo    *pExternalBufferInfo,
    VkExternalBufferProperties                  *pExternalBufferProperties)
 {
+   if (pExternalBufferInfo->handleType ==
+       VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
+      vk_android_get_ahb_buffer_properties(
+         physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+      return;
+   }
+
    VkExternalMemoryFeatureFlagBits flags = 0;
    VkExternalMemoryHandleTypeFlags export_flags = 0;
    VkExternalMemoryHandleTypeFlags compat_flags = 0;
