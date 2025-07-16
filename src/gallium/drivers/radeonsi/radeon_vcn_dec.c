@@ -1309,6 +1309,7 @@ static void rvcn_dec_message_create(struct radeon_decoder *dec)
    header->total_size = sizes;
    header->num_buffers = 1;
    header->msg_type = RDECODE_MSG_CREATE;
+   header->stream_handle = dec->stream_handle;
    header->status_report_feedback_number = 0;
 
    header->index[0].message_id = RDECODE_MESSAGE_CREATE;
@@ -1556,6 +1557,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    header->header_size = sizeof(rvcn_dec_message_header_t);
    header->total_size = sizes;
    header->msg_type = RDECODE_MSG_DECODE;
+   header->stream_handle = dec->stream_handle;
    header->status_report_feedback_number = dec->frame_number;
 
    header->index[0].message_id = RDECODE_MESSAGE_DECODE;
@@ -1937,6 +1939,7 @@ static void rvcn_dec_message_destroy(struct radeon_decoder *dec)
    header->total_size = sizeof(rvcn_dec_message_header_t) - sizeof(rvcn_dec_message_index_t);
    header->num_buffers = 0;
    header->msg_type = RDECODE_MSG_DESTROY;
+   header->stream_handle = dec->stream_handle;
    header->status_report_feedback_number = 0;
 }
 
@@ -2817,6 +2820,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
    dec->base.destroy_fence = radeon_dec_destroy_fence;
 
    dec->stream_type = stream_type;
+   dec->stream_handle = si_vid_alloc_stream_handle();
    dec->screen = context->screen;
    dec->ws = ws;
 
