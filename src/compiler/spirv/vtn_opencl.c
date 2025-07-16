@@ -526,10 +526,17 @@ handle_special(struct vtn_builder *b, uint32_t opcode,
           (nb->shader->options->lower_ffma32 && srcs[0]->bit_size == 32) ||
           (nb->shader->options->lower_ffma64 && srcs[0]->bit_size == 64));
 
+      const bool save_exact = nb->exact;
+      nir_def *res;
+
+      nb->exact = true;
       if (lower)
-         return nir_fmad(nb, srcs[0], srcs[1], srcs[2]);
+         res = nir_fmad(nb, srcs[0], srcs[1], srcs[2]);
       else
-         return nir_ffma(nb, srcs[0], srcs[1], srcs[2]);
+         res = nir_ffma(nb, srcs[0], srcs[1], srcs[2]);
+
+      nb->exact = save_exact;
+      return res;
    }
    case OpenCLstd_Maxmag:
       return nir_maxmag(nb, srcs[0], srcs[1]);
@@ -565,11 +572,18 @@ handle_special(struct vtn_builder *b, uint32_t opcode,
       if (nb->shader->options->lower_ldexp)
          break;
       return nir_ldexp(nb, srcs[0], srcs[1]);
-   case OpenCLstd_Fma:
+   case OpenCLstd_Fma: {
       /* FIXME: the software implementation only supports fp32 for now. */
       if (nb->shader->options->lower_ffma32 && srcs[0]->bit_size == 32)
          break;
-      return nir_ffma(nb, srcs[0], srcs[1], srcs[2]);
+
+      /* OpenCL FMA is not allowed to be split. */
+      const bool save_exact = nb->exact;
+      nb->exact = true;
+      nir_def *res = nir_ffma(nb, srcs[0], srcs[1], srcs[2]);
+      nb->exact = save_exact;
+      return res;
+   }
    case OpenCLstd_Rotate:
       return nir_urol(nb, srcs[0], nir_u2u32(nb, srcs[1]));
    default:
