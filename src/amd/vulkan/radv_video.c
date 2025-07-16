@@ -1170,131 +1170,73 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
           (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR))
       return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
-   VK_OUTARRAY_MAKE_TYPED(VkVideoFormatPropertiesKHR, out, pVideoFormatProperties, pVideoFormatPropertyCount);
-
-   bool need_8bit = true;
-   bool need_10bit = false;
-   bool need_12bit = false;
+   VkFormat format = VK_FORMAT_UNDEFINED;
    const struct VkVideoProfileListInfoKHR *prof_list =
       (struct VkVideoProfileListInfoKHR *)vk_find_struct_const(pVideoFormatInfo->pNext, VIDEO_PROFILE_LIST_INFO_KHR);
    if (prof_list) {
       for (unsigned i = 0; i < prof_list->profileCount; i++) {
          const VkVideoProfileInfoKHR *profile = &prof_list->pProfiles[i];
-         if (profile->lumaBitDepth & VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR)
-            need_10bit = true;
-         else if (profile->lumaBitDepth & VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR)
-            need_12bit = true;
+
+         /* "If any of the video profiles specified via VkVideoProfileListInfoKHR::pProfiles are not
+          * supported, then this command returns one of the video-profile-specific error codes."
+          */
+         VkResult res = radv_video_is_profile_supported(pdev, profile);
+         if (res != VK_SUCCESS)
+            return res;
+
+         VkFormat profile_format = VK_FORMAT_UNDEFINED;
+
+         if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)
+            profile_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+         else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR)
+            profile_format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
+         else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR)
+            profile_format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
+
+         /* All profiles must share the same format. */
+         if (format != VK_FORMAT_UNDEFINED && format != profile_format)
+            return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
+
+         format = profile_format;
       }
+   } else {
+      format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
    }
 
-   const bool drm_format_modifier_tiling =
-      pdev->info.gfx_level >= GFX9 && pVideoFormatInfo->imageUsage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
-                                                                      VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR);
+   if (format == VK_FORMAT_UNDEFINED)
+      return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
-   if (need_12bit) {
+   const bool dpb = pVideoFormatInfo->imageUsage &
+                    (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
+   const bool src_dst = pVideoFormatInfo->imageUsage &
+                        (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR);
+   VkImageTiling tiling[3];
+   uint32_t num_tiling = 0;
+
+   tiling[num_tiling++] = VK_IMAGE_TILING_OPTIMAL;
+
+   if (src_dst && !dpb)
+      tiling[num_tiling++] = VK_IMAGE_TILING_LINEAR;
+
+   if (src_dst && pdev->info.gfx_level >= GFX9)
+      tiling[num_tiling++] = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+
+   VK_OUTARRAY_MAKE_TYPED(VkVideoFormatPropertiesKHR, out, pVideoFormatProperties, pVideoFormatPropertyCount);
+
+   for (uint32_t i = 0; i < num_tiling; i++) {
       vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
       {
-         p->format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
+         p->format = format;
          p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
          p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
          p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
          p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
          p->imageCreateFlags = 0;
-         if (pVideoFormatInfo->imageUsage &
-             (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR))
+         if (src_dst)
             p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
          p->imageType = VK_IMAGE_TYPE_2D;
-         p->imageTiling = VK_IMAGE_TILING_OPTIMAL;
+         p->imageTiling = tiling[i];
          p->imageUsageFlags = pVideoFormatInfo->imageUsage;
-      }
-
-      if (drm_format_modifier_tiling) {
-         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
-         {
-            p->format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
-            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-            p->imageType = VK_IMAGE_TYPE_2D;
-            p->imageTiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-            p->imageUsageFlags = pVideoFormatInfo->imageUsage;
-         }
-      }
-
-      if (pVideoFormatInfo->imageUsage & (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)) {
-         need_8bit = false;
-         need_10bit = false;
-      }
-   }
-
-   if (need_10bit) {
-      vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
-      {
-         p->format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
-         p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->imageCreateFlags = 0;
-         if (pVideoFormatInfo->imageUsage &
-             (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR))
-            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-         p->imageType = VK_IMAGE_TYPE_2D;
-         p->imageTiling = VK_IMAGE_TILING_OPTIMAL;
-         p->imageUsageFlags = pVideoFormatInfo->imageUsage;
-      }
-
-      if (drm_format_modifier_tiling) {
-         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
-         {
-            p->format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
-            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-            p->imageType = VK_IMAGE_TYPE_2D;
-            p->imageTiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-            p->imageUsageFlags = pVideoFormatInfo->imageUsage;
-         }
-      }
-
-      if (pVideoFormatInfo->imageUsage & (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR))
-         need_8bit = false;
-   }
-
-   if (need_8bit) {
-      vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
-      {
-         p->format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-         p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->imageCreateFlags = 0;
-         if (pVideoFormatInfo->imageUsage &
-             (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR))
-            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-         p->imageType = VK_IMAGE_TYPE_2D;
-         p->imageTiling = VK_IMAGE_TILING_OPTIMAL;
-         p->imageUsageFlags = pVideoFormatInfo->imageUsage;
-      }
-
-      if (drm_format_modifier_tiling) {
-         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
-         {
-            p->format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-            p->imageType = VK_IMAGE_TYPE_2D;
-            p->imageTiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-            p->imageUsageFlags = pVideoFormatInfo->imageUsage;
-         }
       }
    }
 
