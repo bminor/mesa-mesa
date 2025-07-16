@@ -213,6 +213,7 @@ the branches:
    git push origin HEAD:refs/heads/$VERSION
    git push origin HEAD:refs/heads/staging/$VERSION
    git checkout staging/$VERSION
+   git branch --set-upstream-to origin/staging/$VERSION
 
 You are now on the :ref:`staging branch <stagingbranch>`, where you
 will be doing your release maintainer work. This branch can be rebased
