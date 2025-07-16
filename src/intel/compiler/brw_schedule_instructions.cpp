@@ -1141,6 +1141,9 @@ brw_instruction_scheduler::register_needs_barrier(const brw_reg &reg)
    if (reg.file != ARF || reg.is_null())
       return false;
 
+   if (reg.nr >= BRW_ARF_FLAG && reg.nr < BRW_ARF_MASK)
+      return false;
+
    /* If you look at SR register layout, there is nothing in there that
     * depends on other instructions. This is just fixed dispatch information.
     *
