@@ -11362,6 +11362,10 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       }
    }
 
+   const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
+   if (dynamic_states)
+      radv_validate_dynamic_states(cmd_buffer, dynamic_states);
+
    /* Determine whether GFX9 late scissor workaround should be applied based on:
     * 1. radv_need_late_scissor_emission
     * 2. any dirty dynamic flags that may cause context rolls
@@ -11422,12 +11426,8 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_ENABLE)
       radv_emit_streamout_enable_state(cmd_buffer);
 
-   const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
-
    if (dynamic_states) {
       radv_cmd_buffer_flush_dynamic_state(cmd_buffer, dynamic_states);
-
-      radv_validate_dynamic_states(cmd_buffer, dynamic_states);
 
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
          radv_emit_clip_rects_state(cmd_buffer);
