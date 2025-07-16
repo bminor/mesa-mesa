@@ -3844,7 +3844,7 @@
         "description": "freedreno: Remove obsolete comment",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "78c8a8af80d5b0ccd68dd85ff7ecbb699be31f7d",
         "notes": null

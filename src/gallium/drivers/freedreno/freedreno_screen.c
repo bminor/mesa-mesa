@@ -960,17 +960,6 @@ fd_screen_create(int fd,
    screen->dev_info = info;
    screen->info = &screen->dev_info;
 
-   /* explicitly checking for GPU revisions that are known to work.  This
-    * may be overly conservative for a3xx, where spoofing the gpu_id with
-    * the blob driver seems to generate identical cmdstream dumps.  But
-    * on a2xx, there seem to be small differences between the GPU revs
-    * so it is probably better to actually test first on real hardware
-    * before enabling:
-    *
-    * If you have a different adreno version, feel free to add it to one
-    * of the cases below and see what happens.  And if it works, please
-    * send a patch ;-)
-    */
    switch (screen->gen) {
    case 2:
       fd2_screen_init(pscreen);
