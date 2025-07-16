@@ -148,6 +148,31 @@ bool ac_modifier_supports_dcc_image_stores(enum amd_gfx_level gfx_level, uint64_
 
 }
 
+bool ac_modifier_supports_video(const struct radeon_info *info, uint64_t modifier)
+{
+   if (ac_modifier_has_dcc(modifier)) {
+      /* DCC not supported */
+      if (info->gfx_level < GFX12)
+         return false;
+
+      if (info->drm_minor < 63 &&
+          AMD_FMT_MOD_GET(DCC_MAX_COMPRESSED_BLOCK, modifier) == AMD_FMT_MOD_DCC_BLOCK_256B)
+         return false;
+   }
+
+   if (modifier != DRM_FORMAT_MOD_LINEAR) {
+      /* Linear only for UVD/VCE and VCN 1.0 */
+      if (info->vcn_ip_version < VCN_2_0_0)
+         return false;
+
+      /* Only "S" swizzle modes supported */
+      if (info->vcn_ip_version < VCN_2_2_0 &&
+          AMD_FMT_MOD_GET(TILE, modifier) != AMD_FMT_MOD_TILE_GFX9_64K_S)
+         return false;
+   }
+
+   return true;
+}
 
 bool ac_surface_supports_dcc_image_stores(enum amd_gfx_level gfx_level,
                                           const struct radeon_surf *surf)
