@@ -8,3 +8,7 @@ dEQP-VK.pipeline.monolithic.timestamp.misc_tests.consistent_results,Fail
 # New fails in 1.4.1.0
 dEQP-VK.pipeline.pipeline_library.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.fast_linked_library.multisample.sample_rate_a2c.static_a2c,Fail
+
+# From venus-lavapipe-full
+dEQP-VK.draw.renderpass.multiple_interpolation.structured.with_sample_decoration.4_samples,Fail
+dEQP-VK.memory.mapping.suballocation.sub.4087.offset_129.size_255.subflush_map2,Crash

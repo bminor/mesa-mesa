@@ -35,3 +35,7 @@ dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_linear_mipmap_nearest_clam
 # 60s timeout (flake), unknown when it appeard
 dEQP-VK.ubo.random.16bit.all_per_block_buffers.8
 dEQP-VK.spirv_assembly.instruction.graphics.8bit_storage.struct_mixed_types.storage_buffer_frag
+
+# Timeout in venus-lavapipe-full
+dEQP-VK.ray_tracing_pipeline.misc.cullmask_tri
+dEQP-VK.ray_tracing_pipeline.trace_rays_cmds_maintenance_1.indirect2_cpu.11_13_5
