@@ -3304,8 +3304,17 @@ validate_interpolation_qualifier(struct _mesa_glsl_parse_state *state,
                        "deprecated storage qualifier '%s'", i, s);
    }
 
-   validate_fragment_flat_interpolation_input(state, loc, interpolation,
-                                              var_type, mode);
+   if (qual->flags.q.per_primitive) {
+      if (interpolation != INTERP_MODE_NONE) {
+         _mesa_glsl_error(loc, state,
+                          "interpolation qualifier '%s' cannot be applied to "
+                          "per-primitive auxiliary storage qualifier",
+                          interpolation_string(interpolation));
+      }
+   } else {
+      validate_fragment_flat_interpolation_input(state, loc, interpolation,
+                                                 var_type, mode);
+   }
 }
 
 static glsl_interp_mode
