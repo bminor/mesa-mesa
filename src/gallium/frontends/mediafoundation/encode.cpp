@@ -365,7 +365,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             done );
       }
 
-      if( m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.supported )
+      if( m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.supported && m_uiVideoSatdMapBlockSize > 0 )
       {
          uint32_t block_size = ( 1 << m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.log2_values_block_size );
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.pipe_pixel_format;

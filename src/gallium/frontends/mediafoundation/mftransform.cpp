@@ -1344,6 +1344,21 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   }
                }
 
+               // Conditionally attach SATD map
+               if( pThis->m_uiVideoSatdMapBlockSize && pDX12EncodeContext->pPipeResourceSATDMapStats != nullptr )
+               {
+                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
+                                                                      pDX12EncodeContext->pPipeResourceSATDMapStats,
+                                                                      pDX12EncodeContext->pSyncObjectQueue,
+                                                                      MFSampleExtension_VideoEncodeSatdMap,
+                                                                      spOutputSample.Get() );
+
+                  if( FAILED( hr ) )
+                  {
+                     MFE_INFO( "[dx12 hmft 0x%p] SATDMap: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                  }
+               }
+
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
                // into spMemoryBuffer. Otherwise, let's copy all the sliced together here after full frame completion
 #if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )

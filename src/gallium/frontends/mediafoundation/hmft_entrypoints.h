@@ -357,6 +357,33 @@ DEFINE_GUID( MFSampleExtension_VideoEncodeBitsUsedMap, 0x6894263d, 0xe6e2, 0x4bc
 
 #endif
 
+#ifndef CODECAPI_AVEncVideoSatdMapBlockSize
+// AVEncVideoSatdMapBlockSize (VT_UI4)
+// The block size used in reporting the output SATD map for each block in an encoded video frame.
+// ulVal should be zero or power of 2, such as 16 or 32.
+// A zero value disables the SATD map reporting.
+DEFINE_CODECAPI_GUID( AVEncVideoSatdMapBlockSize,
+                      "596F1106-8CE0-4302-AF79-C4EC67AADC6D",
+                      0x596f1106,
+                      0x8ce0,
+                      0x4302,
+                      0xaf,
+                      0x79,
+                      0xc4,
+                      0xec,
+                      0x67,
+                      0xaa,
+                      0xdc,
+                      0x6d )
+#define CODECAPI_AVEncVideoSatdMapBlockSize DEFINE_CODECAPI_GUIDNAMED( AVEncVideoSatdMapBlockSize )
+
+// MFSampleExtension_VideoEncodeSatdMap {ADF61D96-C2D3-4B57-A138-DDE4D351EAA9}
+// Type: IMFMediaBuffer
+// The SATD map of an encoded video frame.
+DEFINE_GUID( MFSampleExtension_VideoEncodeSatdMap, 0xadf61d96, 0xc2d3, 0x4b57, 0xa1, 0x38, 0xdd, 0xe4, 0xd3, 0x51, 0xea, 0xa9 );
+
+#endif
+
 #if MFT_CODEC_H264ENC
 #define HMFT_GUID "8994db7c-288a-4c62-a136-a3c3c2a208a8"
 #elif MFT_CODEC_H265ENC
@@ -542,6 +569,7 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    BOOL m_bVideoEnableSpatialAdaptiveQuantization = FALSE;
    UINT32 m_uiVideoOutputQPMapBlockSize = 0;
    UINT32 m_uiVideoOutputBitsUsedMapBlockSize = 0;
+   UINT32 m_uiVideoSatdMapBlockSize = 0;
 
    struct pipe_video_codec *m_pPipeVideoCodec = nullptr;
    struct pipe_video_codec *m_pPipeVideoBlitter = nullptr;
