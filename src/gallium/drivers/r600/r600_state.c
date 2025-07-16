@@ -982,9 +982,9 @@ static void r600_init_color_surface(struct r600_context *rctx,
 
 			r600_resource_reference(&rctx->dummy_cmask, NULL);
 			rctx->dummy_cmask =
-				r600_as_resource(r600_aligned_buffer_create(&rscreen->b.b, 0,
-									 PIPE_USAGE_DEFAULT,
-									 cmask.size, cmask.alignment));
+				r600_aligned_buffer_create(&rscreen->b.b, 0,
+							   PIPE_USAGE_DEFAULT,
+							   cmask.size, cmask.alignment);
 
 			if (unlikely(!rctx->dummy_cmask)) {
 				return;
@@ -1003,9 +1003,9 @@ static void r600_init_color_surface(struct r600_context *rctx,
 		    (1 << rctx->dummy_fmask->buf->alignment_log2) % fmask.alignment != 0) {
 			r600_resource_reference(&rctx->dummy_fmask, NULL);
 			rctx->dummy_fmask =
-				r600_as_resource(r600_aligned_buffer_create(&rscreen->b.b, 0,
-									 PIPE_USAGE_DEFAULT,
-									 fmask.size, fmask.alignment));
+				r600_aligned_buffer_create(&rscreen->b.b, 0,
+							   PIPE_USAGE_DEFAULT,
+							   fmask.size, fmask.alignment);
 
 			if (unlikely(!rctx->dummy_fmask)) {
 				return;

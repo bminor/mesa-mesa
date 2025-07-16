@@ -704,7 +704,7 @@ void r600_buffer_flush_region(struct pipe_context *ctx,
 struct pipe_resource *r600_buffer_create(struct pipe_screen *screen,
 					 const struct pipe_resource *templ,
 					 unsigned alignment);
-struct pipe_resource * r600_aligned_buffer_create(struct pipe_screen *screen,
+struct r600_resource * r600_aligned_buffer_create(struct pipe_screen *screen,
 						  unsigned flags,
 						  unsigned usage,
 						  unsigned size,

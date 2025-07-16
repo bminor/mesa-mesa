@@ -570,7 +570,7 @@ struct pipe_resource *r600_buffer_create(struct pipe_screen *screen,
 	return &rbuffer->b.b;
 }
 
-struct pipe_resource *r600_aligned_buffer_create(struct pipe_screen *screen,
+struct r600_resource *r600_aligned_buffer_create(struct pipe_screen *screen,
 						 unsigned flags,
 						 unsigned usage,
 						 unsigned size,
@@ -588,7 +588,7 @@ struct pipe_resource *r600_aligned_buffer_create(struct pipe_screen *screen,
 	buffer.height0 = 1;
 	buffer.depth0 = 1;
 	buffer.array_size = 1;
-	return r600_buffer_create(screen, &buffer, alignment);
+	return r600_as_resource(r600_buffer_create(screen, &buffer, alignment));
 }
 
 struct pipe_resource *
