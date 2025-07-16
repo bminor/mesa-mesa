@@ -303,6 +303,8 @@ rusticl_mesa_bindings = rust.bindgen(
     '--constified-enum-module', 'pipe_tex_filter',
     '--allowlist-type',         'pipe_tex_wrap',
     '--constified-enum-module', 'pipe_tex_wrap',
+    '--allowlist-type',         'pipe_swizzle',
+    '--constified-enum-module', 'pipe_swizzle',
 
     # rusticl C functions
     '--allowlist-function',     'rusticl_.*',

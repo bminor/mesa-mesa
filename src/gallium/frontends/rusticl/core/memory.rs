@@ -2140,7 +2140,7 @@ impl Image {
     pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c, '_>> {
         let res = self.get_res_for_access(ctx, RWFlags::RD)?;
 
-        let template = if let Some(Mem::Buffer(parent)) = self.parent() {
+        let mut template = if let Some(Mem::Buffer(parent)) = self.parent() {
             if self.mem_type == CL_MEM_OBJECT_IMAGE2D {
                 res.pipe_sampler_view_template_2d_buffer(
                     self.pipe_format,
@@ -2160,6 +2160,13 @@ impl Image {
         } else {
             res.pipe_sampler_view_template()
         };
+
+        // Some drivers won't do it themselves.
+        if self.image_format.image_channel_order == CL_INTENSITY {
+            template.set_swizzle_g(pipe_swizzle::PIPE_SWIZZLE_X);
+            template.set_swizzle_b(pipe_swizzle::PIPE_SWIZZLE_X);
+            template.set_swizzle_a(pipe_swizzle::PIPE_SWIZZLE_X);
+        }
 
         PipeSamplerView::new(ctx, res, &template).ok_or(CL_OUT_OF_HOST_MEMORY)
     }
