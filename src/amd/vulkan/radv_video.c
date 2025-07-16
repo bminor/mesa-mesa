@@ -1128,6 +1128,22 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          p->imageUsageFlags = pVideoFormatInfo->imageUsage;
       }
 
+      if (pVideoFormatInfo->imageUsage &
+          (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) {
+         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
+         {
+            p->format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
+            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+            p->imageType = VK_IMAGE_TYPE_2D;
+            p->imageTiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+            p->imageUsageFlags = pVideoFormatInfo->imageUsage;
+         }
+      }
+
       if (pVideoFormatInfo->imageUsage & (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)) {
          need_8bit = false;
          need_10bit = false;
@@ -1151,6 +1167,22 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          p->imageUsageFlags = pVideoFormatInfo->imageUsage;
       }
 
+      if (pVideoFormatInfo->imageUsage &
+          (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) {
+         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
+         {
+            p->format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
+            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+            p->imageType = VK_IMAGE_TYPE_2D;
+            p->imageTiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+            p->imageUsageFlags = pVideoFormatInfo->imageUsage;
+         }
+      }
+
       if (pVideoFormatInfo->imageUsage & (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR))
          need_8bit = false;
    }
@@ -1170,6 +1202,22 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          p->imageType = VK_IMAGE_TYPE_2D;
          p->imageTiling = VK_IMAGE_TILING_OPTIMAL;
          p->imageUsageFlags = pVideoFormatInfo->imageUsage;
+      }
+
+      if (pVideoFormatInfo->imageUsage &
+          (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)) {
+         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
+         {
+            p->format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+            p->imageType = VK_IMAGE_TYPE_2D;
+            p->imageTiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+            p->imageUsageFlags = pVideoFormatInfo->imageUsage;
+         }
       }
    }
 

@@ -830,9 +830,15 @@ radv_check_modifier_support(struct radv_physical_device *pdev, const VkPhysicalD
        !need_dcc_sign_reinterpret)
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
+   const bool video = info->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR);
+   if (video && !ac_modifier_supports_video(&pdev->info, modifier))
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
    /* We can expand this as needed and implemented but there is not much demand
-    * for more. */
-   if (ac_modifier_has_dcc(modifier)) {
+    * for more.
+    * Video can't support array layers with swizzle modes that use slice index
+    * for addressing. */
+   if (ac_modifier_has_dcc(modifier) || video) {
       props->maxMipLevels = 1;
       props->maxArrayLayers = 1;
    }
