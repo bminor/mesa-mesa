@@ -237,7 +237,10 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p016,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
 
-# Regression from https://gitlab.freedesktop.org/mesa/mesa/-/compare/ace49d9e52a6156f114ee00eec759d734bd84fc0...88c79a13b9056099048080e7d41576e0cb69c347
+# This is a piglit bug: The tests use more GS input components than GL reports.
+# This started to fail (correctly) when the GLSL linker started checking whether
+# the max GS input component limit is exceeded with 08b522d21e1 ("glsl: check
+# against varying limits using NIR shader_info after nir_opt_varyings").
 spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
 spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Fail
 spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
