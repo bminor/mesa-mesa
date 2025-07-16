@@ -1058,18 +1058,21 @@ save_instruction_order(const struct cfg_t *cfg)
 }
 
 static void
-restore_instruction_order(struct cfg_t *cfg, brw_inst **inst_arr)
+restore_instruction_order(brw_shader &s, brw_inst **inst_arr)
 {
-   ASSERTED int num_insts = cfg->total_instructions;
+   ASSERTED int num_insts = s.cfg->total_instructions;
 
    int ip = 0;
-   foreach_block (block, cfg) {
+   foreach_block (block, s.cfg) {
       block->instructions.make_empty();
 
       for (unsigned i = 0; i < block->num_instructions; i++)
          block->instructions.push_tail(inst_arr[ip++]);
    }
    assert(ip == num_insts);
+
+   s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |
+                         BRW_DEPENDENCY_VARIABLES);
 }
 
 /* Per-thread scratch space is a power-of-two multiple of 1KB. */
@@ -1169,9 +1172,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
       }
 
       /* Reset back to the original order before trying the next mode */
-      restore_instruction_order(s.cfg, orig_order);
-
-      s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
+      restore_instruction_order(s, orig_order);
    }
 
    ralloc_free(scheduler_ctx);
@@ -1181,7 +1182,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
          fprintf(stderr, "Spilling - using lowest-pressure mode \"%s\"\n",
                  scheduler_mode_name[best_sched]);
       }
-      restore_instruction_order(s.cfg, best_pressure_order);
+      restore_instruction_order(s, best_pressure_order);
       s.shader_stats.scheduler_mode = scheduler_mode_name[best_sched];
 
       allocated = brw_assign_regs(s, allow_spilling, spill_all);
