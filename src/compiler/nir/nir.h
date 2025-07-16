@@ -41,6 +41,7 @@
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
+#include "util/range_minimum_query.h"
 #include "util/set.h"
 #include "util/u_math.h"
 #include "nir_defines.h"
@@ -3476,6 +3477,17 @@ typedef enum {
     */
    nir_metadata_divergence = 0x40,
 
+   /** Indicates that block dominance lca information is valid
+    *
+    * This includes:
+    *
+    *   - nir_function_impl::dom_lca_info
+    *
+    * A pass can preserve this metadata type if it preserves
+    * nir_metadata_dominance.
+    */
+   nir_metadata_dominance_lca = 0x80,
+
    /** All control flow metadata
     *
     * This includes all metadata preserved by a pass that preserves control flow
@@ -3486,7 +3498,8 @@ typedef enum {
     * This is the most common metadata set to preserve, so it has its own alias.
     */
    nir_metadata_control_flow = nir_metadata_block_index |
-                               nir_metadata_dominance,
+                               nir_metadata_dominance |
+                               nir_metadata_dominance_lca,
 
    /** All metadata
     *
@@ -3523,6 +3536,12 @@ typedef struct nir_function_impl {
 
    /* total number of basic blocks, only valid when block_index_dirty = false */
    unsigned num_blocks;
+
+   /** Information used for LCA queries */
+   struct nir_dom_lca_info {
+      struct range_minimum_query_table table;
+      nir_block **block_from_idx;
+   } dom_lca_info;
 
    /** True if this nir_function_impl uses structured control-flow
     *
@@ -4921,8 +4940,18 @@ bool nir_shader_lower_instructions(nir_shader *shader,
 
 void nir_calc_dominance_impl(nir_function_impl *impl);
 void nir_calc_dominance(nir_shader *shader);
+void nir_calc_dominance_lca_impl(nir_function_impl *impl);
 
+/**
+ * Computes the lowest common ancestor of two blocks in the dominator tree.
+ *
+ * If one of the blocks is null or unreachable, the other block is returned or
+ * NULL if it's unreachable.
+ *
+ * Requires nir_metadata_dominance_lca
+ */
 nir_block *nir_dominance_lca(nir_block *b1, nir_block *b2);
+
 bool nir_block_dominates(nir_block *parent, nir_block *child);
 bool nir_block_is_unreachable(nir_block *block);
 

@@ -796,8 +796,9 @@ weak_gvn(const nir_instr *a, const nir_instr *b)
 static bool
 opt_gcm_impl(nir_shader *shader, nir_function_impl *impl, bool value_number)
 {
-   nir_metadata_require(impl,
-                        nir_metadata_block_index | nir_metadata_dominance);
+   nir_metadata_require(impl, nir_metadata_block_index |
+                              nir_metadata_dominance |
+                              nir_metadata_dominance_lca);
    nir_metadata_require(impl, nir_metadata_loop_analysis,
                         shader->options->force_indirect_unrolling,
                         shader->options->force_indirect_unrolling_sampler);

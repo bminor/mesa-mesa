@@ -38,6 +38,8 @@ nir_metadata_require(nir_function_impl *impl, nir_metadata required, ...)
       nir_index_instrs(impl);
    if (NEEDS_UPDATE(nir_metadata_dominance))
       nir_calc_dominance_impl(impl);
+   if (NEEDS_UPDATE(nir_metadata_dominance_lca))
+      nir_calc_dominance_lca_impl(impl);
    if (NEEDS_UPDATE(nir_metadata_live_defs))
       nir_live_defs_impl(impl);
    if (NEEDS_UPDATE(nir_metadata_divergence))
@@ -72,6 +74,9 @@ nir_progress(bool progress, nir_function_impl *impl, nir_metadata preserved)
    /* If we do not make progress, we preserve all metadata. */
    if (!progress)
       preserved = nir_metadata_all;
+
+   if (!(preserved & nir_metadata_dominance))
+      assert(!(preserved & nir_metadata_dominance_lca));
 
    /* If we discard valid liveness information, immediately free the
     * liveness information for each block. For large shaders, it can

@@ -692,6 +692,8 @@ nir_function_impl_create_bare(nir_shader *shader)
    impl->num_blocks = 0;
    impl->valid_metadata = nir_metadata_none;
    impl->structured = true;
+   range_minimum_query_table_init(&impl->dom_lca_info.table);
+   impl->dom_lca_info.block_from_idx = NULL;
 
    /* create start & end blocks */
    nir_block *start_block = nir_block_create(shader);

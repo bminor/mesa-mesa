@@ -361,11 +361,12 @@ nir_opt_sink(nir_shader *shader, nir_move_options options)
    bool progress = false;
 
    nir_foreach_function_impl(impl, shader) {
-      nir_metadata_require(impl,
-                           nir_metadata_block_index | nir_metadata_dominance |
-                           (options & (nir_move_only_convergent |
-                                       nir_move_only_divergent) ?
-                               nir_metadata_divergence : 0));
+      nir_metadata required = nir_metadata_block_index |
+                              nir_metadata_dominance |
+                              nir_metadata_dominance_lca;
+      if (options & (nir_move_only_convergent | nir_move_only_divergent))
+         required |= nir_metadata_divergence;
+      nir_metadata_require(impl, required);
 
       nir_foreach_block_reverse(block, impl) {
          nir_foreach_instr_reverse_safe(instr, block) {

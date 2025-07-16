@@ -212,35 +212,6 @@ nir_calc_dominance(nir_shader *shader)
    }
 }
 
-static nir_block *
-block_return_if_reachable(nir_block *b)
-{
-   return (b && nir_block_is_reachable(b)) ? b : NULL;
-}
-
-/**
- * Computes the least common ancestor of two blocks.  If one of the blocks
- * is null or unreachable, the other block is returned or NULL if it's
- * unreachable.
- */
-nir_block *
-nir_dominance_lca(nir_block *b1, nir_block *b2)
-{
-   if (b1 == NULL || !nir_block_is_reachable(b1))
-      return block_return_if_reachable(b2);
-
-   if (b2 == NULL || !nir_block_is_reachable(b2))
-      return block_return_if_reachable(b1);
-
-   assert(nir_cf_node_get_function(&b1->cf_node) ==
-          nir_cf_node_get_function(&b2->cf_node));
-
-   assert(nir_cf_node_get_function(&b1->cf_node)->valid_metadata &
-          nir_metadata_dominance);
-
-   return intersect(b1, b2);
-}
-
 /**
  * Returns true if parent dominates child according to the following
  * definition:

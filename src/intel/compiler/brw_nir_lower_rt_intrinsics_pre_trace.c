@@ -64,7 +64,8 @@ brw_nir_lower_rt_intrinsics_pre_trace(nir_shader *nir)
 
    if (intrinsics->entries > 0) {
       nir_foreach_function_with_impl(func, impl, nir) {
-         nir_metadata_require(impl, nir_metadata_dominance);
+         nir_metadata_require(impl, nir_metadata_dominance |
+                                    nir_metadata_dominance_lca);
 
          /* Going in reverse order of blocks, move the intrinsics gather above
           * in the LCA block to trace calls.
