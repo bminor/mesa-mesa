@@ -4453,6 +4453,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       assert(src.regClass() == bld.lm);
       assert(dst.regClass() == bld.lm);
 
+      if (!nir_src_is_divergent(&instr->src[0])) {
+         bld.copy(Definition(dst), src);
+         break;
+      }
+
       Temp tmp = bld.sop1(Builder::s_not, bld.def(bld.lm), bld.def(s1, scc), src);
       tmp = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), tmp, Operand(exec, bld.lm))
                .def(1)
@@ -4468,6 +4473,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       assert(src.regClass() == bld.lm);
       assert(dst.regClass() == bld.lm);
 
+      if (!nir_src_is_divergent(&instr->src[0])) {
+         bld.copy(Definition(dst), src);
+         break;
+      }
+
       Temp tmp = bool_to_scalar_condition(ctx, src);
       bool_to_vector_condition(ctx, tmp, dst);
       set_wqm(ctx);
@@ -4475,6 +4485,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    }
    case nir_intrinsic_quad_vote_any: {
       Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
+      if (!nir_src_is_divergent(&instr->src[0])) {
+         bld.copy(Definition(get_ssa_temp(ctx, &instr->def)), src);
+         break;
+      }
+
       src = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src, Operand(exec, bld.lm));
       bld.sop1(Builder::s_wqm, Definition(get_ssa_temp(ctx, &instr->def)), bld.def(s1, scc), src);
       set_wqm(ctx);
@@ -4482,6 +4497,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    }
    case nir_intrinsic_quad_vote_all: {
       Temp src = get_ssa_temp(ctx, instr->src[0].ssa);
+      if (!nir_src_is_divergent(&instr->src[0])) {
+         bld.copy(Definition(get_ssa_temp(ctx, &instr->def)), src);
+         break;
+      }
+
       src = bld.sop1(Builder::s_not, bld.def(bld.lm), bld.def(s1, scc), src);
       src = bld.sop2(Builder::s_and, bld.def(bld.lm), bld.def(s1, scc), src, Operand(exec, bld.lm));
       src = bld.sop1(Builder::s_wqm, bld.def(bld.lm), bld.def(s1, scc), src);
