@@ -423,47 +423,13 @@ panvk_image_init(struct panvk_image *image,
    return panvk_image_init_layouts(image, pCreateInfo);
 }
 
-static VkResult
+static void
 panvk_image_plane_bind(struct panvk_device *dev,
                        struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
                        uint64_t base, uint64_t offset)
 {
    plane->plane.base = base + offset;
    plane->offset = offset;
-   /* Reset the AFBC headers */
-   if (drm_is_afbc(plane->image.props.modifier)) {
-      /* Transient CPU mapping */
-      void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
-                                       PROT_WRITE, MAP_SHARED, NULL);
-
-      if (bo_base == MAP_FAILED)
-         return panvk_errorf(dev, VK_ERROR_OUT_OF_HOST_MEMORY,
-                             "Failed to CPU map AFBC image plane");
-
-      for (unsigned layer = 0; layer < plane->image.props.array_size;
-           layer++) {
-         for (unsigned level = 0; level < plane->image.props.nr_slices;
-              level++) {
-            const struct pan_image_slice_layout *slayout =
-               &plane->plane.layout.slices[level];
-            uint32_t z_slice_count =
-               u_minify(plane->image.props.extent_px.depth, level);
-
-            for (unsigned z = 0; z < z_slice_count; z++) {
-               void *header = bo_base + offset +
-                              ((uint64_t)slayout->afbc.surface_stride_B * z) +
-                              (layer * plane->plane.layout.array_stride_B) +
-                              plane->plane.layout.slices[level].offset_B;
-               memset(header, 0, slayout->afbc.header.surface_size_B);
-            }
-         }
-      }
-
-      ASSERTED int ret = os_munmap(bo_base, pan_kmod_bo_size(bo));
-      assert(!ret);
-   }
-
-   return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -676,7 +642,7 @@ panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
    *pSparseMemoryRequirementCount = 0;
 }
 
-static VkResult
+static void
 panvk_image_bind(struct panvk_device *dev,
                  const VkBindImageMemoryInfo *bind_info) {
    VK_FROM_HANDLE(panvk_image, image, bind_info->image);
@@ -704,19 +670,14 @@ panvk_image_bind(struct panvk_device *dev,
          vk_find_struct_const(bind_info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
       const uint8_t plane =
          panvk_plane_index(image->vk.format, plane_info->planeAspect);
-      return panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                    mem->addr.dev, bind_info->memoryOffset);
+      panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
+                             mem->addr.dev, bind_info->memoryOffset);
    } else {
       for (unsigned plane = 0; plane < image->plane_count; plane++) {
-         VkResult result =
-            panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                   mem->addr.dev, bind_info->memoryOffset);
-         if (result != VK_SUCCESS)
-            return result;
+         panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
+                                mem->addr.dev, bind_info->memoryOffset);
       }
    }
-
-   return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -724,17 +685,14 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                        const VkBindImageMemoryInfo *pBindInfos)
 {
    VK_FROM_HANDLE(panvk_device, dev, device);
-   VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {
       const VkBindMemoryStatus *bind_status =
          vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
-      VkResult bind_result = panvk_image_bind(dev, &pBindInfos[i]);
+      panvk_image_bind(dev, &pBindInfos[i]);
       if (bind_status)
-         *bind_status->pResult = bind_result;
-      if (bind_result != VK_SUCCESS)
-         result = bind_result;
+         *bind_status->pResult = VK_SUCCESS;
    }
 
-   return result;
+   return VK_SUCCESS;
 }
