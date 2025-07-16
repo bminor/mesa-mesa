@@ -76,7 +76,7 @@ on the packaging tool used by your distribution.
      apt-get build-dep mesa # Debian and derivatives
      ... # others
 
-1. Building with meson
+2. Building with meson
 ----------------------
 
 Meson is the latest build system in mesa, it is currently able to build
@@ -101,7 +101,7 @@ On Windows you can also use the Visual Studio backend
 Please read the :doc:`detailed meson instructions <meson>` for more
 information
 
-1. Running against a local build (easy way)
+3. Running against a local build (easy way)
 -------------------------------------------
 
 It's often necessary or useful when debugging driver issues or testing new
@@ -116,7 +116,7 @@ This will run the given command against the build in ``builddir``. Note that mes
 will ``chdir`` into the directory first, so any relative paths in the command line
 will be relative to ``builddir`` which may not be what you expect.
 
-1. Running against a local build (hard way)
+4. Running against a local build (hard way)
 -------------------------------------------
 
 If you prefer you can configure your test environment manually. To do this,
@@ -200,12 +200,12 @@ here are a few things to check:
     recently built 64-bit and are now building 32-bit, throw away the install
     directory first to prevent conflicts.
 
-1. Building with AOSP (Android)
+5. Building with AOSP (Android)
 -------------------------------
 
-<TODO>
+See :doc:`detailed Android instructions <android>`.
 
-1. Library Information
+6. Library Information
 ----------------------
 
 When compilation has finished, look in the top-level ``lib/`` (or
@@ -232,7 +232,7 @@ If you built the DRI hardware drivers, you'll also see the DRI drivers:
 If you built with Gallium support, look in lib/gallium/ for
 Gallium-based versions of libGL and device drivers.
 
-1. Building OpenGL programs with pkg-config
+7. Building OpenGL programs with pkg-config
 -------------------------------------------
 
 Running ``meson install`` will install package configuration files for
