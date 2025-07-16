@@ -3154,8 +3154,21 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
       } while (progress);
    }
 
+   for (unsigned i = 0; i < 4; ++i) {
+      do {
+         progress = false;
+
+         NIR_PASS(progress, nir, nir_opt_algebraic);
+         NIR_PASS(progress, nir, nir_opt_constant_folding);
+         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_cse);
+         NIR_PASS(progress, nir, nir_opt_dce);
+      } while (progress);
+   }
+
    /* Lower fmin/fmax before optimizing preambles so we can see across uniform
-    * expressions.
+    * expressions. Do it after nir_opt_reassociate because nir_opt_reassociate
+    * should work on unlowered fmin/fmax.
     */
    NIR_PASS(_, nir, agx_nir_lower_fminmax);
 
