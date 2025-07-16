@@ -8,8 +8,12 @@ KHR-GL46.shader_group_vote.all_invocations
 KHR-GL46.shader_group_vote.all_invocations_equal
 KHR-GL46.shader_group_vote.invocations_with_variables
 KHR-GL46.shader_image_load_store.early-fragment-tests
+KHR-GL46.shader_image_size.advanced-nonMS-tes-float
+KHR-GL46.shader_image_size.advanced-nonMS-tes-int
 KHR-GL46.shader_image_size.advanced-nonMS-tes-uint
 KHR-GL46.shader_image_size.basic-nonMS-tes-float
+KHR-GL46.shader_image_size.basic-nonMS-tes-int
+KHR-GL46.shader_image_size.basic-nonMS-tes-uint
 KHR-GL46.shader_storage_buffer_object.advanced-usage-sync-cs
 KHR-GL46.shader_storage_buffer_object.advanced-write-tessellation
 KHR-GL46.tessellation_shader.single.max_patch_vertices
@@ -33,6 +37,7 @@ dEQP-GLES31.functional.image_load_store.cube.load_store.r32f_single_layer
 dEQP-GLES31.functional.image_load_store.cube.load_store.rgba16f
 dEQP-GLES31.functional.image_load_store.early_fragment_tests.early_fragment_tests_depth_fbo
 dEQP-GLES31.functional.shaders.builtin_var.compute.local_invocation_id
+dEQP-GLES31.functional.ssbo.array_length.sized_array
 dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat2x4
 dEQP-GLES31.functional.ssbo.layout.3_level_unsized_array.packed.mat4
 dEQP-GLES31.functional.ssbo.layout.basic_unsized_array.std140.row_major_mat3
