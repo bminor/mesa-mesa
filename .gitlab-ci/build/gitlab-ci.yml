@@ -56,12 +56,14 @@ debian-x86_64-asan:
     - .meson-build-for-tests
     - .build-run-long
   variables:
-    VULKAN_DRIVERS: "swrast"
-    GALLIUM_DRIVERS: "llvmpipe,softpipe"
+    VULKAN_DRIVERS: "swrast,amd,intel"
+    GALLIUM_DRIVERS: "llvmpipe,softpipe,zink"
     C_ARGS: >
       -Wno-error=stringop-truncation
       -Wno-error=deprecated-declarations
     EXTRA_OPTION: >
+      -D intel-elk=false
+      -D intel-rt=false
       -D b_sanitize=address
       -D gallium-va=false
       -D gallium-rusticl=false
