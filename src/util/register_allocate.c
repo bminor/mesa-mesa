@@ -283,6 +283,21 @@ ra_class_add_reg(struct ra_class *class, unsigned int r)
 }
 
 /**
+ * Overrides the P value of a register class to be below the
+ * automatically calculated one in order to force optimistic
+ * allocation above this threshold even for nodes that are trivially
+ * colorable, which can be used to reduce the register requirement of
+ * programs on platforms where increasing register use imposes limits
+ * on thread parallelism.
+ */
+void
+ra_class_override_p(struct ra_class *class, unsigned int p)
+{
+   assert(p <= class->p);
+   class->p = p;
+}
+
+/**
  * Returns true if the register belongs to the given class.
  */
 static bool
