@@ -760,6 +760,9 @@ void radv_update_dcc_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_im
 void radv_update_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struct radv_image_view *iview,
                                       int cb_idx, uint32_t color_values[2]);
 
+void radv_update_hiz_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
+                              const VkImageSubresourceRange *range, bool enable);
+
 unsigned radv_instance_rate_prolog_index(unsigned num_attributes, uint32_t instance_rate_inputs);
 
 enum radv_cmd_flush_bits radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_stages,

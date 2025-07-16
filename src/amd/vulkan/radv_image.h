@@ -267,6 +267,16 @@ radv_get_ds_clear_value_va(const struct radv_image *image, uint32_t base_level)
    return va;
 }
 
+static inline uint64_t
+radv_get_hiz_valid_va(const struct radv_image *image, uint32_t base_level)
+{
+   assert(image->hiz_valid_offset != 0);
+
+   uint64_t va = image->bindings[0].addr;
+   va += image->hiz_valid_offset + base_level * 4;
+   return va;
+}
+
 static inline uint32_t
 radv_get_htile_initial_value(const struct radv_device *device, const struct radv_image *image)
 {
@@ -304,6 +314,31 @@ radv_get_htile_initial_value(const struct radv_device *device, const struct radv
    }
 
    return initial_value;
+}
+
+static inline uint32_t
+radv_gfx12_get_hiz_initial_value(void)
+{
+   const uint16_t zmin = 0;
+   const uint16_t zmax = 0xffff;
+
+   /* The first component is the minimum value accross the s-tile, and the second component is the
+    * maximum value.
+    */
+   return zmin | (zmax << 16);
+}
+
+static inline uint32_t
+radv_gfx12_get_hiz_clear_value(VkClearDepthStencilValue value)
+{
+   const uint32_t max_zval = UINT16_MAX;
+   uint32_t zmin, zmax;
+
+   zmin = lroundf(value.depth * max_zval);
+   zmin &= max_zval;
+   zmax = zmin;
+
+   return zmin | (zmax << 16);
 }
 
 static inline bool

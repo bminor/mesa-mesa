@@ -4144,6 +4144,30 @@ radv_set_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image
    }
 }
 
+void
+radv_update_hiz_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
+                         const VkImageSubresourceRange *range, bool enable)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+   if (!image->hiz_valid_offset)
+      return;
+
+   const uint64_t va = radv_get_hiz_valid_va(image, range->baseMipLevel);
+   const uint32_t level_count = vk_image_subresource_level_count(&image->vk, range);
+
+   ASSERTED unsigned cdw_end =
+      radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, level_count, cmd_buffer->state.predicating);
+
+   radeon_begin(cs);
+   for (uint32_t l = 0; l < level_count; l++)
+      radeon_emit(enable);
+   radeon_end();
+
+   assert(cs->b->cdw == cdw_end);
+}
+
 /**
  * Update the TC-compat metadata value for this image.
  */
@@ -13039,25 +13063,58 @@ radv_initialize_htile(struct radv_cmd_buffer *cmd_buffer, struct radv_image *ima
 }
 
 static void
+radv_initialize_hiz(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, const VkImageSubresourceRange *range)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+   struct radv_barrier_data barrier = {0};
+
+   barrier.layout_transitions.init_mask_ram = 1;
+   radv_describe_layout_transition(cmd_buffer, &barrier);
+
+   /* Transitioning from LAYOUT_UNDEFINED layout not everyone is consistent
+    * in considering previous rendering work for WAW hazards. */
+   state->flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, 0, image, range);
+
+   radv_clear_hiz(cmd_buffer, image, range, radv_gfx12_get_hiz_initial_value());
+
+   /* Allow to enable HiZ for this range because all layers are handled in the barrier. */
+   const bool enable_hiz =
+      range->baseArrayLayer == 0 && vk_image_subresource_layer_count(&image->vk, range) == image->vk.array_layers;
+
+   radv_update_hiz_metadata(cmd_buffer, image, range, enable_hiz);
+}
+
+static void
 radv_handle_depth_image_transition(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
                                    VkImageLayout src_layout, VkImageLayout dst_layout, unsigned src_queue_mask,
                                    unsigned dst_queue_mask, const VkImageSubresourceRange *range,
                                    struct radv_sample_locations_state *sample_locs)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (!radv_htile_enabled(image, range->baseMipLevel))
-      return;
+   if (pdev->info.gfx_level >= GFX12) {
+      if (!image->hiz_valid_offset)
+         return;
 
-   if (src_layout == VK_IMAGE_LAYOUT_UNDEFINED || src_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
-      radv_initialize_htile(cmd_buffer, image, range);
-   } else if (radv_layout_is_htile_compressed(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
-              !radv_layout_is_htile_compressed(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_DB | RADV_CMD_FLAG_FLUSH_AND_INV_DB_META;
+      if (src_layout == VK_IMAGE_LAYOUT_UNDEFINED || src_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
+         radv_initialize_hiz(cmd_buffer, image, range);
+      }
+   } else {
+      if (!radv_htile_enabled(image, range->baseMipLevel))
+         return;
 
-      radv_expand_depth_stencil(cmd_buffer, image, range, sample_locs);
+      if (src_layout == VK_IMAGE_LAYOUT_UNDEFINED || src_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
+         radv_initialize_htile(cmd_buffer, image, range);
+      } else if (radv_layout_is_htile_compressed(device, image, range->baseMipLevel, src_layout, src_queue_mask) &&
+                 !radv_layout_is_htile_compressed(device, image, range->baseMipLevel, dst_layout, dst_queue_mask)) {
+         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_DB | RADV_CMD_FLAG_FLUSH_AND_INV_DB_META;
 
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_DB | RADV_CMD_FLAG_FLUSH_AND_INV_DB_META;
+         radv_expand_depth_stencil(cmd_buffer, image, range, sample_locs);
+
+         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_DB | RADV_CMD_FLAG_FLUSH_AND_INV_DB_META;
+      }
    }
 }
 
