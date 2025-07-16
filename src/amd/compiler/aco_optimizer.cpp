@@ -1945,8 +1945,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       if (instr->operands[0].constantEquals((unsigned)-1) && instr->operands[1].constantEquals(0)) {
          /* Found a cselect that operates on a uniform bool that comes from eg. s_cmp */
          ctx.info[instr->definitions[0].tempId()].set_uniform_bool(instr->operands[2].getTemp());
-      }
-      if (instr->operands[2].isTemp() && ctx.info[instr->operands[2].tempId()].is_scc_invert()) {
+      } else if (instr->operands[2].isTemp() && ctx.info[instr->operands[2].tempId()].is_scc_invert()) {
          /* Flip the operands to get rid of the scc_invert instruction */
          std::swap(instr->operands[0], instr->operands[1]);
          instr->operands[2].setTemp(ctx.info[instr->operands[2].tempId()].temp);
