@@ -2184,8 +2184,6 @@ agx_lod_mode_for_nir(nir_texop op, bool biased, bool min_lod, bool lod_is_zero)
    case nir_texop_txd:
       return min_lod ? AGX_LOD_MODE_LOD_GRAD_MIN : AGX_LOD_MODE_LOD_GRAD;
    case nir_texop_txl:
-      assert(!min_lod);
-      return AGX_LOD_MODE_LOD_MIN;
    case nir_texop_txf:
       assert(!min_lod);
       return lod_is_zero ? AGX_LOD_MODE_AUTO_LOD : AGX_LOD_MODE_LOD_MIN;
