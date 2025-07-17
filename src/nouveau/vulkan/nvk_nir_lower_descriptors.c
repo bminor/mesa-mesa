@@ -879,89 +879,6 @@ load_resource_deref_desc(nir_builder *b,
                           set, binding, index, offset_B, ctx);
 }
 
-static void
-lower_msaa_image_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
-                        const struct lower_descriptors_ctx *ctx)
-{
-   assert(nir_intrinsic_image_dim(intrin) == GLSL_SAMPLER_DIM_MS);
-
-   b->cursor = nir_before_instr(&intrin->instr);
-   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-   nir_def *desc = load_resource_deref_desc(b, 2, 32, deref, 0, ctx);
-   nir_def *desc0 = nir_channel(b, desc, 0);
-   nir_def *desc1 = nir_channel(b, desc, 1);
-
-   nir_def *img_index = nir_ubitfield_extract_imm(b, desc0, 0, 20);
-   nir_rewrite_image_intrinsic(intrin, img_index, true);
-
-   nir_def *sw_log2 = nir_ubitfield_extract_imm(b, desc0, 20, 2);
-   nir_def *sh_log2 = nir_ubitfield_extract_imm(b, desc0, 22, 2);
-   nir_def *s_map = desc1;
-
-   nir_def *sw = nir_ishl(b, nir_imm_int(b, 1), sw_log2);
-   nir_def *sh = nir_ishl(b, nir_imm_int(b, 1), sh_log2);
-   nir_def *num_samples = nir_imul(b, sw, sh);
-
-   switch (intrin->intrinsic) {
-   case nir_intrinsic_bindless_image_load:
-   case nir_intrinsic_bindless_image_sparse_load:
-   case nir_intrinsic_bindless_image_store:
-   case nir_intrinsic_bindless_image_atomic:
-   case nir_intrinsic_bindless_image_atomic_swap: {
-      nir_def *x = nir_channel(b, intrin->src[1].ssa, 0);
-      nir_def *y = nir_channel(b, intrin->src[1].ssa, 1);
-      nir_def *z = nir_channel(b, intrin->src[1].ssa, 2);
-      nir_def *w = nir_channel(b, intrin->src[1].ssa, 3);
-      nir_def *s = intrin->src[2].ssa;
-
-      nir_def *s_xy = nir_ushr(b, s_map, nir_imul_imm(b, s, 4));
-      nir_def *sx = nir_ubitfield_extract_imm(b, s_xy, 0, 2);
-      nir_def *sy = nir_ubitfield_extract_imm(b, s_xy, 2, 2);
-
-      x = nir_imad(b, x, sw, sx);
-      y = nir_imad(b, y, sh, sy);
-
-      /* Make OOB sample indices OOB X/Y indices */
-      x = nir_bcsel(b, nir_ult(b, s, num_samples), x, nir_imm_int(b, -1));
-
-      nir_src_rewrite(&intrin->src[1], nir_vec4(b, x, y, z, w));
-      nir_src_rewrite(&intrin->src[2], nir_undef(b, 1, 32));
-      break;
-   }
-
-   case nir_intrinsic_bindless_image_size: {
-      b->cursor = nir_after_instr(&intrin->instr);
-
-      nir_def *size = &intrin->def;
-      nir_def *w = nir_channel(b, size, 0);
-      nir_def *h = nir_channel(b, size, 1);
-
-      w = nir_ushr(b, w, sw_log2);
-      h = nir_ushr(b, h, sh_log2);
-
-      size = nir_vector_insert_imm(b, size, w, 0);
-      size = nir_vector_insert_imm(b, size, h, 1);
-
-      nir_def_rewrite_uses_after(&intrin->def, size, size->parent_instr);
-      break;
-   }
-
-   case nir_intrinsic_bindless_image_samples: {
-      /* We need to handle NULL descriptors explicitly */
-      nir_def *samples =
-         nir_bcsel(b, nir_ieq(b, desc0, nir_imm_int(b, 0)),
-                      nir_imm_int(b, 0), num_samples);
-      nir_def_rewrite_uses(&intrin->def, samples);
-      break;
-   }
-
-   default:
-      unreachable("Unknown image intrinsic");
-   }
-
-   nir_intrinsic_set_image_dim(intrin, GLSL_SAMPLER_DIM_2D);
-}
-
 static bool
 is_edb_buffer_view(nir_deref_instr *deref,
                    const struct lower_descriptors_ctx *ctx)
@@ -1106,14 +1023,31 @@ lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
 {
    nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
 
-   if (glsl_get_sampler_dim(deref->type) == GLSL_SAMPLER_DIM_MS) {
-      lower_msaa_image_intrin(b, intrin, ctx);
-   } else if (is_edb_buffer_view(deref, ctx)) {
+   if (is_edb_buffer_view(deref, ctx)) {
       lower_edb_buffer_image_intrin(b, intrin, ctx);
-   } else {
-      b->cursor = nir_before_instr(&intrin->instr);
-      nir_def *desc = load_resource_deref_desc(b, 1, 32, deref, 0, ctx);
-      nir_rewrite_image_intrinsic(intrin, desc, true);
+      return true;
+   }
+
+   b->cursor = nir_before_instr(&intrin->instr);
+   nir_def *desc = load_resource_deref_desc(b, 1, 32, deref, 0, ctx);
+   nir_rewrite_image_intrinsic(intrin, desc, true);
+
+   /* On pre-Volta hardware, we don't have real null descriptors.  Null
+    * descriptors work well enough for sampling but they may not return the
+    * correct query results.
+    */
+   if (ctx->dev_info->cls_eng3d < VOLTA_A &&
+       (intrin->intrinsic == nir_intrinsic_bindless_image_size ||
+        intrin->intrinsic == nir_intrinsic_bindless_image_samples)) {
+      b->cursor = nir_after_instr(&intrin->instr);
+
+      nir_def *image_handle =
+         nir_iand_imm(b, desc, NVK_IMAGE_DESCRIPTOR_IMAGE_INDEX_MASK);
+      nir_def *is_null = nir_ieq_imm(b, image_handle, 0);
+      nir_def *zero = nir_imm_zero(b, intrin->def.num_components,
+                                      intrin->def.bit_size);
+      nir_def *res = nir_bcsel(b, is_null, zero, &intrin->def);
+      nir_def_rewrite_uses_after(&intrin->def, res, res->parent_instr);
    }
 
    return true;

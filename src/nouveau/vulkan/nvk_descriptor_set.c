@@ -137,23 +137,6 @@ get_storage_image_view_desc(const struct nvk_physical_device *pdev,
          assert(view->planes[plane].storage_desc_index < (1 << 20));
 
          desc.image_index = view->planes[plane].storage_desc_index;
-
-         const struct nil_Extent4D_Samples px_extent_sa =
-            nil_px_extent_sa(view->planes[plane].sample_layout);
-         desc.sw_log2 = util_logbase2(px_extent_sa.width);
-         desc.sh_log2 = util_logbase2(px_extent_sa.height);
-
-         const enum nil_sample_layout slayout = view->planes[plane].sample_layout;
-         if (slayout != NIL_SAMPLE_LAYOUT_1X1) {
-            uint32_t samples = nil_sample_layout_samples(slayout);
-            assert(samples <= 16);
-            for (uint32_t s = 0; s < samples; s++) {
-               const struct nil_sample_offset off = nil_sample_offset(slayout, s);
-               assert(off.x < 4 && off.y < 4);
-               uint32_t s_xy = off.y << 2 | off.x;
-               desc.sample_map |= s_xy << (s * 4);
-            }
-         }
       }
 
       assert(sizeof(desc) <= dst_size);

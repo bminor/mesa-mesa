@@ -240,9 +240,6 @@ nvk_image_view_init(struct nvk_device *dev,
          }
 
          if (pdev->info.cls_eng3d >= MAXWELL_A) {
-            if (image->vk.samples != VK_SAMPLE_COUNT_1_BIT)
-               nil_image = nil_msaa_image_as_sa(&nil_image);
-
             const struct nil_descriptor desc =
                nil_image_view_descriptor(&pdev->info, &nil_image,
                                          &nil_view, base_addr);
