@@ -1,0 +1,2 @@
+EGL_EXT_create_context_robustness support on Panfrost V10+
+GL_ARB_robust_buffer_access_behavior and GL_KHR_robust_buffer_access_behavior support on Panfrost
