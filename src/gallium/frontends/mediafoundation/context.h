@@ -52,6 +52,7 @@ typedef class DX12EncodeContext
    // producer (e.g decoder) can reuse the buffer in their pool
    pipe_video_buffer *pPipeVideoBuffer = nullptr;
    pipe_video_buffer *pDownscaledTwoPassPipeVideoBuffer = nullptr;
+   pipe_fence_handle *pDownscaledTwoPassPipeVideoBufferCompletionFence = nullptr;
    ComPtr<IMFMediaBuffer> spMediaBuffer;
    ComPtr<IMFD3D12SynchronizationObjectCommands> spSyncObjectCommands;
    ID3D12CommandQueue *pSyncObjectQueue = nullptr;   // weakref
@@ -194,5 +195,7 @@ typedef class DX12EncodeContext
          pDownscaledTwoPassPipeVideoBuffer->destroy( pDownscaledTwoPassPipeVideoBuffer );
       if( pPipeResourcePSNRStats )
          pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourcePSNRStats );
+      if (pDownscaledTwoPassPipeVideoBufferCompletionFence)
+         pVlScreen->pscreen->fence_reference( pVlScreen->pscreen, &pDownscaledTwoPassPipeVideoBufferCompletionFence, NULL );
    }
 } *LPDX12EncodeContext;

@@ -35,6 +35,8 @@ HRESULT
 CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12EncodeContext )
 {
    HRESULT hr = S_OK;
+   struct pipe_fence_handle *pPipeEncoderInputFenceHandle = nullptr;
+   UINT64 pipeEncoderInputFenceHandleValue = 0u;
    UINT unDiscontinuity = 0;
    LPDX12EncodeContext pDX12EncodeContext;
    UINT uiSubresourceIndex = 0;
@@ -126,7 +128,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          CHECKHR_GOTO( spDeviceContext3.As( &spDeviceContext4 ), done );
 
          // This will signal the staging fence the d3d12 mesa backend is consuming
-         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_NextSyncFenceValue );
+         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_CurrentSyncFenceValue );
          debug_printf( "[dx12 hmft 0x%p] DX11 *shared* input sample\n", this );
       }
       else
@@ -165,7 +167,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          // Since we're signaling from the D3D11 context on a shared fence, the signal
          // will happen after the d3d11 context copy is done.
          CHECKHR_GOTO( spDeviceContext3.As( &spDeviceContext4 ), done );
-         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_NextSyncFenceValue );
+         spDeviceContext4->Signal( m_spStagingFence11.Get(), m_CurrentSyncFenceValue );
       }
    }
    else
@@ -188,7 +190,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // This will signal the staging fence the d3d12 mesa backend is consuming
       // Since we have a Wait() on spStagingQueue added by EnqueueResourceReadyWait, this will only happen after MF
       // triggered completion on the input
-      m_spStagingQueue->Signal( m_spStagingFence12.Get(), m_NextSyncFenceValue );
+      m_spStagingQueue->Signal( m_spStagingFence12.Get(), m_CurrentSyncFenceValue );
 
       winsysHandle.com_obj = spResource.Get();
       winsysHandle.type = WINSYS_HANDLE_TYPE_D3D12_RES;
@@ -202,8 +204,24 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       debug_printf( "[dx12 hmft 0x%p] DX12 input sample\n", this );
    }
 
+
+   //
+   // If two pass is disabled, we just need to set the input fence and input fence value
+   // to the input texture fence/value.
+   //
+   // Otherwise, when two pass is enabled, we need to downscale the input texture
+   // for which we need to sync the readiness of the input texture against
+   // the vpblit input fence, and then sync the encoder readiness fence (e.g pPicInfo->base.in_fence)
+   // against the vpblit output fence
+   //
+
+   if( !m_pPipeVideoCodec->two_pass.enable || ( m_pPipeVideoCodec->two_pass.pow2_downscale_factor == 0 ) )
+   {
+      pPipeEncoderInputFenceHandle = m_pPipeFenceHandle;
+      pipeEncoderInputFenceHandleValue = m_CurrentSyncFenceValue;
+   }
 #if ENCODE_WITH_TWO_PASS
-   if( m_pPipeVideoCodec->two_pass.enable && ( m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0 ) )
+   else
    {
       // TODO: In case the app sends the downscaled input remove this
 
@@ -221,11 +239,12 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer = m_pPipeContext->create_video_buffer( m_pPipeContext, &templ );
 
       struct pipe_vpp_desc vpblit_params = {};
-      struct pipe_fence_handle *dst_surface_fence = nullptr;
 
       vpblit_params.base.in_fence = m_pPipeFenceHandle;   // input surface fence (driver input)
-      vpblit_params.base.in_fence_value = m_CurrentSyncFenceValue;
-      vpblit_params.base.out_fence = &dst_surface_fence;          // Output surface fence (driver output)
+      vpblit_params.base.in_fence_value = pipeEncoderInputFenceHandleValue;   // input surface fence value (driver input)
+
+      vpblit_params.base.out_fence = &pPipeEncoderInputFenceHandle;          // Output surface fence (driver output)
+      pipeEncoderInputFenceHandleValue = 0u; // pPipeEncoderInputFenceHandle is PIPE_FD_TYPE_NATIVE_SYNC so doesn't need the value
 
       vpblit_params.base.input_format = pDX12EncodeContext->pPipeVideoBuffer->buffer_format;
       vpblit_params.base.output_format = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer->buffer_format;
@@ -254,14 +273,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                       done );
       m_pPipeVideoBlitter->flush( m_pPipeVideoBlitter );
 
-      assert(dst_surface_fence);   // Driver must have returned the completion fence
-      // Wait for downscaling completion before encode can proceed
-
-      ASSERTED bool finished = m_pPipeVideoCodec->fence_wait( m_pPipeVideoCodec,
-                                                              dst_surface_fence,
-                                                              OS_TIMEOUT_INFINITE );
-      assert( finished );
-      m_pPipeVideoCodec->destroy_fence( m_pPipeVideoCodec, dst_surface_fence);
+      assert(pPipeEncoderInputFenceHandle);   // Driver must have returned the completion fence
+      pDX12EncodeContext->pDownscaledTwoPassPipeVideoBufferCompletionFence = pPipeEncoderInputFenceHandle; // For destruction of the fence later
    }
 #endif   // ENCODE_WITH_TWO_PASS
 
@@ -443,6 +456,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    pDX12EncodeContext->pVlScreen = m_pVlScreen;   // weakref
 
    // Call the helper for encoder specific work
+   pDX12EncodeContext->encoderPicInfo.base.in_fence = pPipeEncoderInputFenceHandle;
+   pDX12EncodeContext->encoderPicInfo.base.in_fence_value = pipeEncoderInputFenceHandleValue;
    CHECKHR_GOTO( PrepareForEncodeHelper( pDX12EncodeContext, bReceivedDirtyRectBlob, dirtyRectFrameNum ), done );
 
    {
@@ -519,8 +534,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       }
    }
 
-   // Set the fence to be waited on m_SyncFenceValue and increment the value for the next frame
-   m_CurrentSyncFenceValue = m_NextSyncFenceValue++;
+   m_CurrentSyncFenceValue++;   // increment the fence value for the next sync fence
 
 done:
    if( SUCCEEDED( hr ) )
