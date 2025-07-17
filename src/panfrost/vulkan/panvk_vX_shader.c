@@ -1281,9 +1281,17 @@ panvk_compile_shader(struct panvk_device *dev,
       return panvk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    shader->own_bin = true;
+
+   nir_variable_mode robust2_modes = 0;
+   if (info->robustness->uniform_buffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT)
+      robust2_modes |= nir_var_mem_ubo;
+   if (info->robustness->storage_buffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT)
+      robust2_modes |= nir_var_mem_ssbo;
+
    struct pan_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_id,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
+      .robust2_modes = robust2_modes,
    };
 
    if (info->stage == MESA_SHADER_FRAGMENT && state != NULL &&

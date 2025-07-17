@@ -105,6 +105,8 @@ struct pan_compile_inputs {
    bool no_idvs;
    uint32_t view_mask;
 
+   nir_variable_mode robust2_modes;
+
    /* Mask of UBOs that may be moved to push constants */
    uint32_t pushable_ubos;
 

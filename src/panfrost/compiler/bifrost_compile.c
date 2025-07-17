@@ -5437,7 +5437,7 @@ mem_vectorize_cb(unsigned align_mul, unsigned align_offset, unsigned bit_size,
 }
 
 static void
-bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
+bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_modes)
 {
    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
 
@@ -5474,6 +5474,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
       progress, nir, nir_opt_load_store_vectorize,
       &(const nir_load_store_vectorize_options){
          .modes = nir_var_mem_global | nir_var_mem_shared | nir_var_shader_temp,
+         .robust_modes = robust2_modes,
          .callback = mem_vectorize_cb,
       });
    NIR_PASS(progress, nir, nir_lower_pack);
@@ -6472,7 +6473,7 @@ bifrost_compile_shader_nir(nir_shader *nir,
          NIR_PASS(_, nir, bifrost_nir_lower_shader_output);
    }
 
-   bi_optimize_nir(nir, inputs->gpu_id, inputs->is_blend);
+   bi_optimize_nir(nir, inputs->gpu_id, inputs->robust2_modes);
 
    info->tls_size = nir->scratch_size;
 
