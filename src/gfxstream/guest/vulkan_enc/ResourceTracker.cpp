@@ -3136,13 +3136,13 @@ VkResult ResourceTracker::allocateCoherentMemory(VkDevice device,
     // Support device address capture/replay allocations
     if (deviceAddressMemoryAllocation) {
         if (allocFlagsInfoPtr) {
-            mesa_logd("%s: has alloc flags\n", __func__);
+            MESA_TRACE_SCOPE("%s: has alloc flags\n", __func__);
             allocFlagsInfo = *allocFlagsInfoPtr;
             vk_append_struct(&structChainIter, &allocFlagsInfo);
         }
 
         if (opaqueCaptureAddressAllocInfoPtr) {
-            mesa_logd("%s: has opaque capture address\n", __func__);
+            MESA_TRACE_SCOPE("%s: has opaque capture address\n", __func__);
             opaqueCaptureAddressAllocInfo = *opaqueCaptureAddressAllocInfoPtr;
             vk_append_struct(&structChainIter, &opaqueCaptureAddressAllocInfo);
         }
@@ -3343,13 +3343,13 @@ VkResult ResourceTracker::on_vkAllocateMemory(void* context, VkResult input_resu
         vk_find_struct_const(pAllocateInfo, MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO);
 
     if (allocFlagsInfoPtr) {
-        mesa_logd("%s: has alloc flags\n", __func__);
+        MESA_TRACE_SCOPE("%s: has alloc flags\n", __func__);
         allocFlagsInfo = *allocFlagsInfoPtr;
         vk_append_struct(&structChainIter, &allocFlagsInfo);
     }
 
     if (opaqueCaptureAddressAllocInfoPtr) {
-        mesa_logd("%s: has opaque capture address\n", __func__);
+        MESA_TRACE_SCOPE("%s: has opaque capture address\n", __func__);
         opaqueCaptureAddressAllocInfo = *opaqueCaptureAddressAllocInfoPtr;
         vk_append_struct(&structChainIter, &opaqueCaptureAddressAllocInfo);
     }
@@ -4764,11 +4764,11 @@ VkResult ResourceTracker::on_vkCreateFence(void* context, VkResult input_result,
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (exportSyncFd) {
         if (!mFeatureInfo.hasVirtioGpuNativeSync) {
-            mesa_logd("%s: ensure sync device\n", __func__);
+            MESA_TRACE_SCOPE("%s: ensure sync device\n", __func__);
             ensureSyncDeviceFd();
         }
 
-        mesa_logd("%s: getting fence info\n", __func__);
+        MESA_TRACE_SCOPE("%s: getting fence info\n", __func__);
         std::lock_guard<std::recursive_mutex> lock(mLock);
         auto it = info_VkFence.find(*pFence);
 
@@ -4778,7 +4778,7 @@ VkResult ResourceTracker::on_vkCreateFence(void* context, VkResult input_result,
 
         info.external = true;
         info.exportFenceCreateInfo = *exportFenceInfoPtr;
-        mesa_logd("%s: info set (fence still -1). fence: %p\n", __func__, (void*)(*pFence));
+        MESA_TRACE_SCOPE("%s: info set (fence still -1). fence: %p\n", __func__, (void*)(*pFence));
         // syncFd is still -1 because we expect user to explicitly
         // export it via vkGetFenceFdKHR
     }
@@ -4814,7 +4814,7 @@ VkResult ResourceTracker::on_vkResetFences(void* context, VkResult, VkDevice dev
 
 #if GFXSTREAM_ENABLE_GUEST_GOLDFISH
         if (info.syncFd && *info.syncFd >= 0) {
-            mesa_logd("%s: resetting fence. make fd -1\n", __func__);
+            MESA_TRACE_SCOPE("%s: resetting fence. make fd -1\n", __func__);
             goldfish_sync_signal(*info.syncFd);
             mSyncHelper->close(*info.syncFd);
         }
@@ -4858,17 +4858,17 @@ VkResult ResourceTracker::on_vkImportFenceFdKHR(void* context, VkResult, VkDevic
 
 #if GFXSTREAM_ENABLE_GUEST_GOLDFISH
     if (info.syncFd && *info.syncFd >= 0) {
-        mesa_logd("%s: previous sync fd exists, close it\n", __func__);
+        MESA_TRACE_SCOPE("%s: previous sync fd exists, close it\n", __func__);
         goldfish_sync_signal(*info.syncFd);
         mSyncHelper->close(*info.syncFd);
     }
 #endif
 
     if (pImportFenceFdInfo->fd < 0) {
-        mesa_logd("%s: import -1, set to -1 and exit\n", __func__);
+        MESA_TRACE_SCOPE("%s: import -1, set to -1 and exit\n", __func__);
         info.syncFd = -1;
     } else {
-        mesa_logd("%s: import actual fd, dup and close()\n", __func__);
+        MESA_TRACE_SCOPE("%s: import actual fd, dup and close()\n", __func__);
 
         int fenceCopy = mSyncHelper->dup(pImportFenceFdInfo->fd);
         if (fenceCopy < 0) {
@@ -4963,7 +4963,7 @@ VkResult ResourceTracker::on_vkGetFenceFdKHR(void* context, VkResult, VkDevice d
         // relinquish ownership
         info.syncFd.reset();
 
-        mesa_logd("%s: got fd: %d\n", __func__, *pFd);
+        MESA_TRACE_SCOPE("%s: got fd: %d\n", __func__, *pFd);
         return VK_SUCCESS;
     }
     return VK_ERROR_DEVICE_LOST;
@@ -5031,7 +5031,7 @@ VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice d
     lock.unlock();
 
     for (auto fd : fencesExternalSyncFds) {
-        mesa_logd("Waiting on sync fd: %d", fd);
+        MESA_TRACE_SCOPE("Waiting on sync fd: %d", fd);
 
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         // syncHelper works in milliseconds
@@ -5045,7 +5045,7 @@ VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice d
         }
 
         timeout -= timeTaken;
-        mesa_logd("Done waiting on sync fd: %d", fd);
+        MESA_TRACE_SCOPE("Done waiting on sync fd: %d", fd);
 
 #if GFXSTREAM_SYNC_DEBUG
         mSyncHelper->debugPrint(fd);
@@ -5055,7 +5055,7 @@ VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice d
     if (!fencesNonExternal.empty()) {
         auto hostConn = ResourceTracker::threadingCallbacks.hostConnectionGetFunc();
         auto vkEncoder = ResourceTracker::threadingCallbacks.vkEncoderGetFunc(hostConn);
-        mesa_logd("vkWaitForFences to host");
+        MESA_TRACE_SCOPE("vkWaitForFences to host");
         return vkEncoder->vkWaitForFences(device, fencesNonExternal.size(),
                                           fencesNonExternal.data(), waitAll, timeout,
                                           true /* do lock */);
@@ -6534,7 +6534,7 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
             }
 
             if (externalFenceFdToSignal >= 0) {
-                mesa_logd("%s: external fence real signal: %d\n", __func__,
+                MESA_TRACE_SCOPE("%s: external fence real signal: %d\n", __func__,
                           externalFenceFdToSignal);
                 goldfish_sync_signal(externalFenceFdToSignal);
             }
@@ -7658,7 +7658,7 @@ VkResult ResourceTracker::exportSyncFdForQSRILocked(VkImage image, int* fd) {
 #endif
     }
 
-    mesa_logd("%s: got fd: %d\n", __func__, *fd);
+    MESA_TRACE_SCOPE("%s: got fd: %d\n", __func__, *fd);
     auto imageInfoIt = info_VkImage.find(image);
     if (imageInfoIt != info_VkImage.end()) {
         auto& imageInfo = imageInfoIt->second;
