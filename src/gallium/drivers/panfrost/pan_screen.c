@@ -677,6 +677,7 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    caps->surface_sample_count = true;
 
    caps->device_reset_status_query = dev->arch >= 10;
+   caps->robust_buffer_access_behavior = dev->arch >= 6;
 
    caps->sampler_view_target = true;
    caps->clip_halfz = true;
