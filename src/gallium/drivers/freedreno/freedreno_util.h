@@ -85,6 +85,7 @@ enum fd_debug_flag {
    FD_DBG_NOHW         = BITFIELD_BIT(28),
    FD_DBG_NOSBIN       = BITFIELD_BIT(29),
    FD_DBG_STOMP        = BITFIELD_BIT(30),
+   FD_DBG_ABORT        = BITFIELD_BIT(31),
 };
 /* clang-format on */
 

@@ -81,6 +81,7 @@ static const struct debug_named_value fd_debug_options[] = {
    {"nohw",      FD_DBG_NOHW,     "Disable submitting commands to the HW"},
    {"nosbin",    FD_DBG_NOSBIN,   "Execute GMEM bins in raster order instead of 'S' pattern"},
    {"stomp",     FD_DBG_STOMP,    "Enable register stomper"},
+   {"abort",     FD_DBG_ABORT,    "Abort on GPU reset"},
    DEBUG_NAMED_VALUE_END
 };
 /* clang-format on */

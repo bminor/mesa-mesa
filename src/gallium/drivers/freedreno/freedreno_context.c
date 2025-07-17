@@ -127,6 +127,9 @@ out:
 
    u_trace_context_process(&ctx->trace_context,
                            !!(flags & PIPE_FLUSH_END_OF_FRAME));
+
+   if (FD_DBG(ABORT))
+      assert(pctx->get_device_reset_status(pctx) == PIPE_NO_RESET);
 }
 
 static void
