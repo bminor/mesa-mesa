@@ -950,9 +950,10 @@ vk_android_get_ahb_image_properties(
    }
 
    if (!vk_ahb_probe_format(info->format, info->flags, info->usage)) {
-      return vk_errorf(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                       "format (%x) flags (%x) usage (%x) unsupported for AHB",
-                       info->format, info->flags, info->usage);
+      return vk_errorf(
+         pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED,
+         "format (%u) flags (0x%x) usage (0x%x) unsupported for AHB",
+         info->format, info->flags, info->usage);
    }
 
    external_props =
