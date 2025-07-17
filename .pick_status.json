@@ -2314,7 +2314,7 @@
         "description": "lima: ppir: index SSA nodes the same way as we index registers",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
