@@ -1186,7 +1186,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      vpblit_params.dst_region.y1 = cur_pic_dpb_entry.downscaled_buffer->height;
 
                      pThis->m_pPipeVideoBlitter->begin_frame( pThis->m_pPipeVideoBlitter,
-                                                              pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
+                                                              cur_pic_dpb_entry.downscaled_buffer,
                                                               &vpblit_params.base );
 
                      if( pThis->m_pPipeVideoBlitter->process_frame( pThis->m_pPipeVideoBlitter,
@@ -1201,7 +1201,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      }
 
                      if( pThis->m_pPipeVideoBlitter->end_frame( pThis->m_pPipeVideoBlitter,
-                                                                pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer,
+                                                                cur_pic_dpb_entry.downscaled_buffer,
                                                                 &vpblit_params.base ) != 0 )
                      {
                         assert( false );
