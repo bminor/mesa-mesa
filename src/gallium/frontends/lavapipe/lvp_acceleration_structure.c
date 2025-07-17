@@ -55,6 +55,51 @@ lvp_init_radix_sort(struct lvp_device *device)
 }
 
 static void
+lvp_get_leaf_node_size(VkGeometryTypeKHR geometry_type, uint32_t *ir_leaf_node_size,
+                       uint32_t *output_leaf_node_size)
+{
+   switch (geometry_type) {
+   case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
+      *ir_leaf_node_size = sizeof(struct vk_ir_triangle_node);
+      *output_leaf_node_size = sizeof(struct lvp_bvh_triangle_node);
+      break;
+   case VK_GEOMETRY_TYPE_AABBS_KHR:
+      *ir_leaf_node_size = sizeof(struct vk_ir_aabb_node);
+      *output_leaf_node_size = sizeof(struct lvp_bvh_aabb_node);
+      break;
+   case VK_GEOMETRY_TYPE_INSTANCES_KHR:
+      *ir_leaf_node_size = sizeof(struct vk_ir_instance_node);
+      *output_leaf_node_size = sizeof(struct lvp_bvh_instance_node);
+      break;
+   default:
+      break;
+   }
+}
+
+static VkDeviceSize
+lvp_get_as_size_internal(VkGeometryTypeKHR geometry_type, uint32_t leaf_node_count)
+{
+   uint32_t internal_node_count = MAX2(leaf_node_count, 2) - 1;
+   uint32_t nodes_size = internal_node_count * sizeof(struct lvp_bvh_box_node);
+
+   uint32_t ir_leaf_node_size = 0;
+   uint32_t output_leaf_node_size = 0;
+   lvp_get_leaf_node_size(geometry_type, &ir_leaf_node_size, &output_leaf_node_size);
+
+   nodes_size += leaf_node_count * output_leaf_node_size;
+
+   nodes_size = util_align_npot(nodes_size, LVP_BVH_NODE_PREFETCH_SIZE);
+
+   return sizeof(struct lvp_bvh_header) + nodes_size;
+}
+
+static VkDeviceSize
+lvp_get_as_size(VkDevice device, const struct vk_acceleration_structure_build_state *state)
+{
+   return lvp_get_as_size_internal(vk_get_as_geometry_type(state->build_info), state->leaf_node_count);
+}
+
+static void
 lvp_write_buffer_cp(VkCommandBuffer cmdbuf, VkDeviceAddress addr,
                     void *data, uint32_t size)
 {
@@ -382,28 +427,6 @@ ret:
    free(internal_nodes);
 }
 
-static void
-lvp_get_leaf_node_size(VkGeometryTypeKHR geometry_type, uint32_t *ir_leaf_node_size,
-                       uint32_t *output_leaf_node_size)
-{
-   switch (geometry_type) {
-   case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
-      *ir_leaf_node_size = sizeof(struct vk_ir_triangle_node);
-      *output_leaf_node_size = sizeof(struct lvp_bvh_triangle_node);
-      break;
-   case VK_GEOMETRY_TYPE_AABBS_KHR:
-      *ir_leaf_node_size = sizeof(struct vk_ir_aabb_node);
-      *output_leaf_node_size = sizeof(struct lvp_bvh_aabb_node);
-      break;
-   case VK_GEOMETRY_TYPE_INSTANCES_KHR:
-      *ir_leaf_node_size = sizeof(struct vk_ir_instance_node);
-      *output_leaf_node_size = sizeof(struct lvp_bvh_instance_node);
-      break;
-   default:
-      break;
-   }
-}
-
 void
 lvp_encode_as(struct vk_acceleration_structure *dst, VkDeviceAddress intermediate_as_addr,
               VkDeviceAddress intermediate_header_addr, uint32_t leaf_count,
@@ -431,8 +454,10 @@ lvp_encode_as(struct vk_acceleration_structure *dst, VkDeviceAddress intermediat
 
    output_header->leaf_nodes_offset = sizeof(struct lvp_bvh_header) + header->ir_internal_node_count * sizeof(struct lvp_bvh_box_node);
 
+   uint32_t bvh_size = lvp_get_as_size_internal(geometry_type, leaf_count);
+   output_header->compacted_size = bvh_size;
    output_header->serialization_size = sizeof(struct lvp_accel_struct_serialization_header) +
-                                       sizeof(uint64_t) * output_header->instance_count + dst->size;
+                                       sizeof(uint64_t) * output_header->instance_count + bvh_size;
 
    for (uint32_t i = 0; i < header->active_leaf_count; i++) {
       const void *ir_leaf = ir_bvh + i * ir_leaf_node_size;
@@ -628,23 +653,6 @@ lvp_CopyAccelerationStructureToMemoryKHR(VkDevice _device, VkDeferredOperationKH
 {
    unreachable("Unimplemented");
    return VK_ERROR_FEATURE_NOT_PRESENT;
-}
-
-static VkDeviceSize
-lvp_get_as_size(VkDevice device, const struct vk_acceleration_structure_build_state *state)
-{
-   uint32_t internal_node_count = MAX2(state->leaf_node_count, 2) - 1;
-   uint32_t nodes_size = internal_node_count * sizeof(struct lvp_bvh_box_node);
-
-   uint32_t ir_leaf_node_size = 0;
-   uint32_t output_leaf_node_size = 0;
-   lvp_get_leaf_node_size(vk_get_as_geometry_type(state->build_info), &ir_leaf_node_size, &output_leaf_node_size);
-
-   nodes_size += state->leaf_node_count * output_leaf_node_size;
-
-   nodes_size = util_align_npot(nodes_size, LVP_BVH_NODE_PREFETCH_SIZE);
-
-   return sizeof(struct lvp_bvh_header) + nodes_size;
 }
 
 static VkResult

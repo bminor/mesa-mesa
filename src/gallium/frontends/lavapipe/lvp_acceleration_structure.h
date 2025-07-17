@@ -72,11 +72,10 @@ struct lvp_bvh_box_node {
 struct lvp_bvh_header {
    vk_aabb bounds;
 
+   uint32_t compacted_size;
    uint32_t serialization_size;
    uint32_t instance_count;
    uint32_t leaf_nodes_offset;
-
-   uint32_t padding;
 };
 
 struct lvp_accel_struct_serialization_header {

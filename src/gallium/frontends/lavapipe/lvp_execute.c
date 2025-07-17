@@ -4480,17 +4480,12 @@ handle_copy_acceleration_structure(struct vk_cmd_queue_entry *cmd, struct render
 {
    struct vk_cmd_copy_acceleration_structure_khr *copy = &cmd->u.copy_acceleration_structure_khr;
 
-   VK_FROM_HANDLE(vk_acceleration_structure, src, copy->info->src);
-   VK_FROM_HANDLE(vk_acceleration_structure, dst, copy->info->dst);
+   VK_FROM_HANDLE(vk_acceleration_structure, src_accel_struct, copy->info->src);
+   VK_FROM_HANDLE(vk_acceleration_structure, dst_accel_struct, copy->info->dst);
 
-   struct pipe_box box = { 0 };
-   u_box_1d(src->offset, MIN2(src->size, dst->size), &box);
-   state->pctx->resource_copy_region(state->pctx,
-                                     lvp_buffer_from_handle(
-                                        vk_buffer_to_handle(dst->buffer))->bo, 0,
-                                     dst->offset, 0, 0,
-                                     lvp_buffer_from_handle(
-                                        vk_buffer_to_handle(src->buffer))->bo, 0, &box);
+   struct lvp_bvh_header *src = (void *)(uintptr_t)vk_acceleration_structure_get_va(src_accel_struct);
+   struct lvp_bvh_header *dst = (void *)(uintptr_t)vk_acceleration_structure_get_va(dst_accel_struct);
+   memcpy(dst, src, src->compacted_size);
 }
 
 static void
@@ -4526,7 +4521,7 @@ handle_copy_acceleration_structure_to_memory(struct vk_cmd_queue_entry *cmd, str
    lvp_device_get_cache_uuid(dst->driver_uuid);
    lvp_device_get_cache_uuid(dst->accel_struct_compat);
    dst->serialization_size = src->serialization_size;
-   dst->compacted_size = accel_struct->size;
+   dst->compacted_size = src->compacted_size;
    dst->instance_count = src->instance_count;
 
    for (uint32_t i = 0; i < src->instance_count; i++) {
@@ -4536,7 +4531,7 @@ handle_copy_acceleration_structure_to_memory(struct vk_cmd_queue_entry *cmd, str
       dst->instances[i] = node[i].bvh_ptr;
    }
 
-   memcpy(&dst->instances[dst->instance_count], src, accel_struct->size);
+   memcpy(&dst->instances[dst->instance_count], src, src->compacted_size);
 }
 
 static void
@@ -4552,20 +4547,20 @@ handle_write_acceleration_structures_properties(struct vk_cmd_queue_entry *cmd, 
    for (uint32_t i = 0; i < write->acceleration_structure_count; i++) {
       VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, write->acceleration_structures[i]);
 
+      struct lvp_bvh_header *header = (void *)(uintptr_t)vk_acceleration_structure_get_va(accel_struct);
+
       switch ((uint32_t)pool->base_type) {
       case LVP_QUERY_ACCELERATION_STRUCTURE_COMPACTED_SIZE:
-         dst[i] = accel_struct->size;
+         dst[i] = header->compacted_size;
          break;
       case LVP_QUERY_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE: {
-         struct lvp_bvh_header *header = (void *)(uintptr_t)vk_acceleration_structure_get_va(accel_struct);
          dst[i] = header->serialization_size;
          break;
       }
       case LVP_QUERY_ACCELERATION_STRUCTURE_SIZE:
-         dst[i] = accel_struct->size;
+         dst[i] = header->compacted_size;
          break;
       case LVP_QUERY_ACCELERATION_STRUCTURE_INSTANCE_COUNT: {
-         struct lvp_bvh_header *header = (void *)(uintptr_t)vk_acceleration_structure_get_va(accel_struct);
          dst[i] = header->instance_count;
          break;
       }
