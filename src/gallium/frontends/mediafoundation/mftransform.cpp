@@ -859,32 +859,28 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
 
-#if ENCODE_WITH_TWO_PASS
-      encoderSettings.two_pass.enable = 1;
+      if( m_bRateControlFramePreAnalysis )
+      {
+         encoderSettings.two_pass.enable = 1;
 #if ENCODE_WITH_TWO_PASS_LOWEST_RES
-      encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.max_pow2_downscale_factor;
+         encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.max_pow2_downscale_factor;
 #else
-      encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.min_pow2_downscale_factor;
+         encoderSettings.two_pass.pow2_downscale_factor = m_EncoderCapabilities.m_TwoPassSupport.bits.min_pow2_downscale_factor;
 #endif   // ENCODE_WITH_TWO_PASS_LOWEST_RES
 
-#if ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
-      encoderSettings.two_pass.skip_1st_dpb_texture = m_EncoderCapabilities.m_TwoPassSupport.bits.supports_1pass_recon_writing_skip;
-#else
-      encoderSettings.two_pass.skip_1st_dpb_texture = 0u;
-#endif   // ENCODE_WITH_TWO_PASS_EXTERNAL_DPB_RECON_SCALE
+         encoderSettings.two_pass.skip_1st_dpb_texture = m_bRateControlFramePreAnalysisExternalReconDownscale ? true : false;
 
-      if( encoderSettings.two_pass.enable && ( encoderSettings.two_pass.pow2_downscale_factor > 0 ) )
-      {
-         struct pipe_video_codec blitterSettings = {};
-         blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
-         blitterSettings.width = Width;
-         blitterSettings.height = Height;
-         CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
-                         MF_E_UNEXPECTED,
-                         done );
+         if( encoderSettings.two_pass.enable && ( encoderSettings.two_pass.pow2_downscale_factor > 0 ) )
+         {
+            struct pipe_video_codec blitterSettings = {};
+            blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
+            blitterSettings.width = Width;
+            blitterSettings.height = Height;
+            CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
+                            MF_E_UNEXPECTED,
+                            done );
+         }
       }
-
-#endif   // ENCODE_WITH_TWO_PASS
 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,

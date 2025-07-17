@@ -220,9 +220,9 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       pPipeEncoderInputFenceHandle = m_pPipeFenceHandle;
       pipeEncoderInputFenceHandleValue = m_CurrentSyncFenceValue;
    }
-#if ENCODE_WITH_TWO_PASS
    else
-   {
+   {  // ENCODE_WITH_TWO_PASS code block
+      
       // TODO: In case the app sends the downscaled input remove this
 
       //
@@ -276,7 +276,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       assert(pPipeEncoderInputFenceHandle);   // Driver must have returned the completion fence
       pDX12EncodeContext->pDownscaledTwoPassPipeVideoBufferCompletionFence = pPipeEncoderInputFenceHandle; // For destruction of the fence later
    }
-#endif   // ENCODE_WITH_TWO_PASS
 
    // validate texture dimensions with surface alignment here for now, will add handling for non-aligned textures later
    if( textureWidth % surfaceWidthAlignment != 0 || textureHeight % surfaceHeightAlignment != 0 )
