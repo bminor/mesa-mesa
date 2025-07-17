@@ -151,6 +151,18 @@ zink-anv-tgl-traces-restricted:
     PIGLIT_REPLAY_EXTRA_ARGS: --db-path ${CI_PROJECT_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}
   allow_failure: true
 
+zink-anv-cml-asan:
+  extends:
+    - .lava-x86_64-test-asan-gl
+    - .anv-test
+    - .lava-acer-chromebox-cxi4-puff:x86_64
+    - .zink-anv-rules
+    - .zink-test
+  variables:
+    GPU_VERSION: zink-anv-cml
+    DEQP_SUITE: zink-anv-cml
+  parallel: 10
+
 zink-tu-a618:
   extends:
     - .lava-arm64-test-gl
