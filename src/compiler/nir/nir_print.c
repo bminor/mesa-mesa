@@ -1865,6 +1865,9 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
    case nir_texop_tex_type_nv:
       fprintf(fp, "tex_type_nv ");
       break;
+   case nir_texop_sample_pos_nv:
+      fprintf(fp, "sample_pos_nv ");
+      break;
    default:
       unreachable("Invalid texture operation");
       break;

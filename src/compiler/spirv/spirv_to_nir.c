@@ -3508,6 +3508,7 @@ vtn_handle_texture(struct vtn_builder *b, SpvOp opcode,
       break;
    case nir_texop_hdr_dim_nv:
    case nir_texop_tex_type_nv:
+   case nir_texop_sample_pos_nv:
       vtn_fail("unexpected nir_texop_*_nv");
       break;
    }

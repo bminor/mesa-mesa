@@ -2356,6 +2356,8 @@ typedef enum nir_texop {
    nir_texop_hdr_dim_nv,
    /** Maps to TXQ.TEXTURE_TYPE */
    nir_texop_tex_type_nv,
+   /** Maps to TXQ.SAMPLER_POS */
+   nir_texop_sample_pos_nv,
 } nir_texop;
 
 /** Represents a texture instruction */

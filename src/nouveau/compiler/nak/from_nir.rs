@@ -1866,6 +1866,17 @@ impl<'a> ShaderFromNir<'a> {
                 nodep: flags.nodep(),
                 channel_mask,
             });
+        } else if tex.op == nir_texop_sample_pos_nv {
+            let src = self.get_src(&srcs[0].src);
+            assert!(fault.is_none());
+            b.push_op(OpTxq {
+                dsts: dsts,
+                tex: tex_ref,
+                src: src,
+                query: TexQuery::SamplerPos,
+                nodep: flags.nodep(),
+                channel_mask,
+            });
         } else {
             let lod_mode = match flags.lod_mode() {
                 NAK_NIR_LOD_MODE_AUTO => TexLodMode::Auto,
