@@ -1754,7 +1754,7 @@
         "description": "panvk: Fix nullDescriptor for dynamic descriptors",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a789867cb452a6062cdd2ae7f5d77e0ea443cd00",
         "notes": null
