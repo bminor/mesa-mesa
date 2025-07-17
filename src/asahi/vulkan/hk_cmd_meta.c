@@ -490,7 +490,7 @@ build_image_copy_shader(const struct vk_meta_image_copy_key *key)
       assert(isa_format != PIPE_FORMAT_NONE);
    }
 
-   nir_def *local_offset = nir_imm_intN_t(b, 0, 16);
+   nir_def *local_offset = nir_imm_int(b, 0);
    nir_def *lid = nir_trim_vector(b, nir_load_local_invocation_id(b), 2);
    lid = nir_u2u16(b, lid);
 

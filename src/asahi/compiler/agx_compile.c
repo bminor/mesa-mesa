@@ -897,11 +897,6 @@ agx_emit_block_image_store(agx_builder *b, nir_intrinsic_instr *instr)
    enum agx_dim dim = agx_tex_dim(nir_intrinsic_image_dim(instr), array);
    bool explicit = nir_intrinsic_explicit_coord(instr);
 
-   /* 32-bit source physically, 16-bit in NIR, top half ignored but needed
-    * logically to ensure alignment.
-    */
-   offset = agx_pad_to_32(b, offset);
-
    /* Modified coordinate descriptor */
    if (!explicit) {
       if (array) {

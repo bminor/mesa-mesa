@@ -166,7 +166,7 @@ asahi_blit_compute_shader(struct pipe_context *ctx, struct asahi_blit_key *key)
    else if (clamp == ASAHI_BLIT_CLAMP_UINT_TO_SINT)
       color = nir_umin(b, color, nir_imm_int(b, INT32_MAX));
 
-   nir_def *local_offset = nir_imm_intN_t(b, 0, 16);
+   nir_def *local_offset = nir_imm_int(b, 0);
    nir_def *lid = nir_trim_vector(b, nir_load_local_invocation_id(b), 2);
    lid = nir_u2u16(b, lid);
 
