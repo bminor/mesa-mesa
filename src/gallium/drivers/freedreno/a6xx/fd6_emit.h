@@ -202,8 +202,8 @@ fd6_emit_get_prog(struct fd6_emit *emit)
 template <chip CHIP>
 static inline void
 __event_write(struct fd_ringbuffer *ring, enum fd_gpu_event event,
-              enum event_write_src esrc, enum event_write_dst edst, uint32_t val,
-              struct fd_bo *bo, uint32_t offset, uint64_t orval, int32_t shift)
+              enum event_write_src esrc, enum event_write_dst edst,
+              uint32_t val, struct fd_bo *bo, uint32_t offset)
 {
    struct fd_gpu_event_info info = fd_gpu_events<CHIP>[event];
    unsigned len = info.needs_seqno ? 4 : 1;
@@ -223,7 +223,7 @@ __event_write(struct fd_ringbuffer *ring, enum fd_gpu_event event,
    }
 
    if (info.needs_seqno) {
-      OUT_RELOC(ring, bo, offset, orval, shift); /* ADDR_LO/HI */
+      OUT_RELOC(ring, bo, offset); /* ADDR_LO/HI */
       if (len == 4)
          OUT_RING(ring, val);
    }
@@ -231,20 +231,16 @@ __event_write(struct fd_ringbuffer *ring, enum fd_gpu_event event,
 
 template <chip CHIP>
 static inline void
-fd6_record_ts(struct fd_ringbuffer *ring, struct fd_bo *bo, uint32_t offset,
-              uint64_t orval, int32_t shift)
+fd6_record_ts(struct fd_ringbuffer *ring, struct fd_bo *bo, uint32_t offset)
 {
-   __event_write<CHIP>(ring, FD_RB_DONE, EV_WRITE_ALWAYSON, EV_DST_RAM, 0,
-                       bo, offset, orval, shift);
+   __event_write<CHIP>(ring, FD_RB_DONE, EV_WRITE_ALWAYSON, EV_DST_RAM, 0, bo, offset);
 }
 
 template <chip CHIP>
 static inline void
-fd6_fence_write(struct fd_ringbuffer *ring, uint32_t val, struct fd_bo *bo,
-                uint32_t offset, uint64_t orval, int32_t shift)
+fd6_fence_write(struct fd_ringbuffer *ring, uint32_t val, struct fd_bo *bo, uint32_t offset)
 {
-   __event_write<CHIP>(ring, FD_CACHE_CLEAN, EV_WRITE_USER_32B, EV_DST_RAM, val,
-                       bo, offset, orval, shift);
+   __event_write<CHIP>(ring, FD_CACHE_CLEAN, EV_WRITE_USER_32B, EV_DST_RAM, val, bo, offset);
 }
 
 template <chip CHIP>

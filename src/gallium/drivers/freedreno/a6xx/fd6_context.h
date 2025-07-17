@@ -162,7 +162,7 @@ struct fd6_control {
 };
 
 #define control_ptr(fd6_ctx, member)                                           \
-   (fd6_ctx)->control_mem, offsetof(struct fd6_control, member), 0, 0
+   (fd6_ctx)->control_mem, offsetof(struct fd6_control, member)
 
 static inline void
 emit_marker6(struct fd_ringbuffer *ring, int scratch_idx)

@@ -42,8 +42,7 @@ FD_DEFINE_CAST(fd_acc_query_sample, fd6_query_sample);
 #define query_sample_idx(aq, idx, field)                                       \
    fd_resource((aq)->prsc)->bo,                                                \
       (idx * sizeof(struct fd6_query_sample)) +                                \
-         offsetof(struct fd6_query_sample, field),                             \
-      0, 0
+         offsetof(struct fd6_query_sample, field)
 
 /* offset of a single field of fd6_query_sample: */
 #define query_sample(aq, field) query_sample_idx(aq, 0, field)
@@ -314,7 +313,7 @@ static void
 record_timestamp(struct fd_ringbuffer *ring, struct fd_bo *bo, unsigned offset)
 {
    fd_ringbuffer_attach_bo(ring, bo);
-   fd6_record_ts<CHIP>(ring, bo, offset, 0, 0);
+   fd6_record_ts<CHIP>(ring, bo, offset);
 }
 
 static void

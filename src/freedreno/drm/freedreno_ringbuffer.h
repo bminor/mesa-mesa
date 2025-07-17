@@ -301,39 +301,6 @@ __reloc_iova(struct fd_bo *bo, uint32_t offset, uint64_t orval, int32_t shift)
    return iova;
 }
 
-/*
- * NOTE: OUT_RELOC() is 2 dwords (64b) on a5xx+
- */
-static inline void
-OUT_RELOC(struct fd_ringbuffer *ring, struct fd_bo *bo, uint32_t offset,
-          uint64_t orval, int32_t shift)
-{
-   if (LOG_DWORDS) {
-      fprintf(stderr, "ring[%p]: OUT_RELOC   %04x:  %p+%u << %d", ring,
-              (uint32_t)(ring->cur - ring->start), bo, offset, shift);
-   }
-   assert(offset < fd_bo_size(bo));
-
-   uint64_t iova = __reloc_iova(bo, offset, orval, shift);
-
-#if FD_BO_NO_HARDPIN
-   uint64_t *cur = (uint64_t *)ring->cur;
-   *cur = iova;
-   ring->cur += 2;
-   fd_ringbuffer_assert_attached(ring, bo);
-#else
-   struct fd_reloc reloc = {
-         .bo = bo,
-         .iova = iova,
-         .orval = orval,
-         .offset = offset,
-         .shift = shift,
-   };
-
-   fd_ringbuffer_reloc(ring, &reloc);
-#endif
-}
-
 static inline void
 OUT_RB(struct fd_ringbuffer *ring, struct fd_ringbuffer *target)
 {
@@ -401,6 +368,47 @@ OUT_WFI5(struct fd_ringbuffer *ring)
 
 #ifdef __cplusplus
 } /* end of extern "C" */
+#endif
+
+/*
+ * NOTE: OUT_RELOC() is 2 dwords (64b) on a5xx+
+ */
+static inline void
+OUT_RELOC(struct fd_ringbuffer *ring, struct fd_bo *bo, uint32_t offset,
+          uint64_t orval, int32_t shift)
+{
+   if (LOG_DWORDS) {
+      fprintf(stderr, "ring[%p]: OUT_RELOC   %04x:  %p+%u << %d", ring,
+              (uint32_t)(ring->cur - ring->start), bo, offset, shift);
+   }
+   assert(offset < fd_bo_size(bo));
+
+   uint64_t iova = __reloc_iova(bo, offset, orval, shift);
+
+#if FD_BO_NO_HARDPIN
+   uint64_t *cur = (uint64_t *)ring->cur;
+   *cur = iova;
+   ring->cur += 2;
+   fd_ringbuffer_assert_attached(ring, bo);
+#else
+   struct fd_reloc reloc = {
+         .bo = bo,
+         .iova = iova,
+         .orval = orval,
+         .offset = offset,
+         .shift = shift,
+   };
+
+   fd_ringbuffer_reloc(ring, &reloc);
+#endif
+}
+
+#ifdef __cplusplus
+static inline void
+OUT_RELOC(struct fd_ringbuffer *ring, struct fd_bo *bo, uint32_t offset)
+{
+   OUT_RELOC(ring, bo, offset, 0, 0);
+}
 #endif
 
 #endif /* FREEDRENO_RINGBUFFER_H_ */
