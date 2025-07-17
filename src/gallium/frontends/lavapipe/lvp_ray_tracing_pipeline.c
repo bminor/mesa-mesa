@@ -1122,6 +1122,7 @@ lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
 
    struct lvp_shader *shader = &pipeline->shaders[MESA_SHADER_RAYGEN];
    lvp_shader_init(shader, b->shader);
+   shader->push_constant_size = pipeline->layout->push_constant_size;
    shader->shader_cso = lvp_shader_compile(pipeline->device, shader, nir_shader_clone(NULL, shader->pipeline_nir->nir), false);
 
    _mesa_hash_table_destroy(compiler.functions, NULL);
