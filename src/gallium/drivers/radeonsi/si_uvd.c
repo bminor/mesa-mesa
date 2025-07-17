@@ -37,30 +37,11 @@ struct pipe_video_buffer *si_video_buffer_create_with_modifiers(struct pipe_cont
    for (i = 0; i < modifiers_count; i++) {
       uint64_t mod = modifiers[i];
 
-      if (ac_modifier_has_dcc(mod)) {
-         /* DCC not supported */
-         if (sscreen->info.gfx_level < GFX12)
-            continue;
+      if (!ac_modifier_supports_video(&sscreen->info, mod))
+         continue;
 
-         /* Filter out non displayable modifiers */
-         if (sscreen->info.drm_minor < 63 &&
-             AMD_FMT_MOD_GET(DCC_MAX_COMPRESSED_BLOCK, mod) == AMD_FMT_MOD_DCC_BLOCK_256B)
-            continue;
-      }
-
-      if (mod != DRM_FORMAT_MOD_LINEAR) {
-         /* Linear only for UVD/VCE and VCN 1.0 */
-         if (sscreen->info.vcn_ip_version < VCN_2_0_0)
-            continue;
-
-         /* Only "S" swizzle modes supported */
-         if (sscreen->info.vcn_ip_version < VCN_2_2_0 &&
-             AMD_FMT_MOD_GET(TILE, mod) != AMD_FMT_MOD_TILE_GFX9_64K_S)
-            continue;
-
-         if (!sscreen->info.has_image_opcodes)
-            continue;
-      }
+      if (mod != DRM_FORMAT_MOD_LINEAR && !sscreen->info.has_image_opcodes)
+         continue;
 
       allowed_modifiers[allowed_modifiers_count++] = mod;
    }
