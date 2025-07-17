@@ -594,7 +594,7 @@ lower_image_txq(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 
    nir_tex_instr *txq = nir_tex_instr_create(b->shader, 1);
-   txq->sampler_dim = remap_sampler_dim(nir_intrinsic_image_dim(intrin));
+   txq->sampler_dim = nir_intrinsic_image_dim(intrin);
    txq->is_array = nir_intrinsic_image_array(intrin);
    txq->dest_type = nir_type_int32;
 
