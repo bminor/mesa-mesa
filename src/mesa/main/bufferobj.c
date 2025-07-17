@@ -3162,6 +3162,8 @@ _mesa_GetBufferParameteriv(GLenum target, GLenum pname, GLint *params)
    struct gl_buffer_object *bufObj;
    GLint64 parameter;
 
+   *params = 0;
+
    bufObj = get_buffer(ctx, "glGetBufferParameteriv", target,
                        GL_INVALID_OPERATION);
    if (!bufObj)
@@ -3180,6 +3182,8 @@ _mesa_GetBufferParameteri64v(GLenum target, GLenum pname, GLint64 *params)
    GET_CURRENT_CONTEXT(ctx);
    struct gl_buffer_object *bufObj;
    GLint64 parameter;
+
+   *params = 0;
 
    bufObj = get_buffer(ctx, "glGetBufferParameteri64v", target,
                        GL_INVALID_OPERATION);
@@ -3200,6 +3204,8 @@ _mesa_GetNamedBufferParameteriv(GLuint buffer, GLenum pname, GLint *params)
    struct gl_buffer_object *bufObj;
    GLint64 parameter;
 
+   *params = 0;
+
    bufObj = _mesa_lookup_bufferobj_err(ctx, buffer,
                                        "glGetNamedBufferParameteriv");
    if (!bufObj)
@@ -3218,6 +3224,8 @@ _mesa_GetNamedBufferParameterivEXT(GLuint buffer, GLenum pname, GLint *params)
    GET_CURRENT_CONTEXT(ctx);
    struct gl_buffer_object *bufObj;
    GLint64 parameter;
+
+   *params = 0;
 
    if (!buffer) {
       _mesa_error(ctx, GL_INVALID_OPERATION,
@@ -3244,6 +3252,8 @@ _mesa_GetNamedBufferParameteri64v(GLuint buffer, GLenum pname,
    GET_CURRENT_CONTEXT(ctx);
    struct gl_buffer_object *bufObj;
    GLint64 parameter;
+
+   *params = 0;
 
    bufObj = _mesa_lookup_bufferobj_err(ctx, buffer,
                                        "glGetNamedBufferParameteri64v");
