@@ -2302,7 +2302,9 @@ tu_emit_program_state(struct tu_cs *sub_cs,
       prog->vs_binning_state = prog->vs_state;
    } else {
       prog->vs_binning_state =
-         shaders[MESA_SHADER_VERTEX]->binning_state;
+         (safe_variants & (1u << MESA_SHADER_VERTEX))
+            ? shaders[MESA_SHADER_VERTEX]->safe_const_binning_state
+            : shaders[MESA_SHADER_VERTEX]->binning_state;
    }
 
    prog->hs_state = draw_states[MESA_SHADER_TESS_CTRL];

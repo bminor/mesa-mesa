@@ -2343,9 +2343,13 @@ tu_upload_shader(struct tu_device *dev,
    const struct ir3_shader_variant *v = shader->variant;
    const struct ir3_shader_variant *binning = v ? v->binning : NULL;
    const struct ir3_shader_variant *safe_const = shader->safe_const_variant;
+   const struct ir3_shader_variant *safe_const_binning =
+      safe_const && v->type == MESA_SHADER_VERTEX ? safe_const->binning : NULL;
 
-   if (v->type == MESA_SHADER_VERTEX && v->stream_output.num_outputs != 0)
+   if (v->type == MESA_SHADER_VERTEX && v->stream_output.num_outputs != 0) {
       binning = v;
+      safe_const_binning = safe_const;
+   }
 
    uint32_t size = 0;
    if (v->type == MESA_SHADER_VERTEX)
@@ -2354,16 +2358,11 @@ tu_upload_shader(struct tu_device *dev,
    const unsigned xs_size = 128;
    const unsigned vpc_size = 32 + (v->stream_output.num_outputs != 0 ? 256 : 0);
 
-   size += xs_size + tu_xs_get_additional_cs_size_dwords(v);
-   size += v->info.size / 4;
-   if (binning) {
-      size += xs_size + tu_xs_get_additional_cs_size_dwords(binning);
-      size += binning->info.size / 4;
-   }
-
-   if (safe_const) {
-      size += xs_size + tu_xs_get_additional_cs_size_dwords(safe_const);
-      size += safe_const->info.size / 4;
+   for (auto& variant : {v, binning, safe_const, safe_const_binning}) {
+      if (variant) {
+         size += xs_size + tu_xs_get_additional_cs_size_dwords(variant);
+         size += variant->info.size / 4;
+      }
    }
 
    /* We emit an empty VPC including streamout state in the binning draw state */
@@ -2416,6 +2415,7 @@ tu_upload_shader(struct tu_device *dev,
    uint64_t iova = tu_upload_variant(&shader->cs, v);
    uint64_t binning_iova = tu_upload_variant(&shader->cs, binning);
    uint64_t safe_const_iova = tu_upload_variant(&shader->cs, safe_const);
+   uint64_t safe_const_binning_iova = tu_upload_variant(&shader->cs, safe_const_binning);
 
    struct tu_cs sub_cs;
    tu_cs_begin_sub_stream(&shader->cs, xs_size +
@@ -2443,6 +2443,17 @@ tu_upload_shader(struct tu_device *dev,
       /* emit an empty VPC */
       TU_CALLX(dev, tu6_emit_vpc)(&sub_cs, binning, NULL, NULL, NULL, NULL);
       shader->binning_state = tu_cs_end_draw_state(&shader->cs, &sub_cs);
+   }
+
+   if (safe_const_binning) {
+      tu_cs_begin_sub_stream(&shader->cs, xs_size + vpc_size +
+         tu_xs_get_additional_cs_size_dwords(safe_const_binning), &sub_cs);
+      TU_CALLX(dev, tu6_emit_variant)(
+         &sub_cs, v->type, safe_const_binning, &pvtmem_config, shader->view_mask,
+         safe_const_binning_iova);
+      /* emit an empty VPC */
+      TU_CALLX(dev, tu6_emit_vpc)(&sub_cs, safe_const_binning, NULL, NULL, NULL, NULL);
+      shader->safe_const_binning_state = tu_cs_end_draw_state(&shader->cs, &sub_cs);
    }
 
    /* We don't support binning variants for GS, so the same draw state is used
