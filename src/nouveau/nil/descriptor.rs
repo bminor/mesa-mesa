@@ -273,6 +273,19 @@ fn normalize_extent(image: &Image, view: &View) -> Extent4D<units::Pixels> {
     }
     extent.array_len = 0;
 
+    // When an MSAA image is accessed through surface ops (suld/sust), the
+    // surface hardware entirely ignores the sample layout so we have to
+    // increase the size in the descriptor or else it will crop to the upper
+    // left corner.
+    if view.access == ViewAccess::Storage
+        && image.sample_layout != SampleLayout::_1x1
+    {
+        assert!(image.dim == ImageDim::_2D);
+        assert!(view.base_level == 0);
+        assert!(view.num_levels == 1);
+        extent = extent.to_sa(image.sample_layout).cast_units();
+    }
+
     extent
 }
 

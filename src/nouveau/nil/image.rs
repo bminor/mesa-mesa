@@ -985,6 +985,21 @@ pub enum ViewAccess {
 
     /// This image view will be accessed as a storage image via surface
     /// instructions (suld/sust)
+    ///
+    /// This primarily affects multisampled images.  With multisampled storage
+    /// image, we generate a descriptor which has the image dimensions in units
+    /// of samples rather than pixels.  The resulting descriptors are safe to
+    /// access via surface instructions (suld/sust) since the surface
+    /// instructions entirely ignore the MULTI_SAMPLE_COUNT field in the image
+    /// descriptor.  They are not, however, safe to access from texture
+    /// instructions as those take the sample count into account and will think
+    /// the image is too big, possibly leading to OOB reads.
+    ///
+    /// In NAK (the compiler component), we have lowering code which takes the
+    /// sample into account and is able compute 2D (x, y) coordidinates in
+    /// sample space which correspond to the logical (x, y, s) coordinate
+    /// provided by the client shader, thus allowing multisampled storage
+    /// access.
     Storage,
 }
 
