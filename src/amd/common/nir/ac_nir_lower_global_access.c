@@ -24,12 +24,15 @@ is_u2u64(nir_scalar scalar)
 
 static nir_def *
 try_extract_additions(nir_builder *b, nir_scalar scalar, uint64_t *out_const,
-                      nir_def **out_offset)
+                      nir_def **out_offset, bool require_nuw)
 {
    if (!nir_scalar_is_alu(scalar) || nir_scalar_alu_op(scalar) != nir_op_iadd)
       return NULL;
 
    nir_alu_instr *alu = nir_def_as_alu(scalar.def);
+   if (require_nuw && !alu->no_unsigned_wrap)
+      return NULL;
+
    nir_scalar src0 = nir_scalar_chase_alu_src(scalar, 0);
    nir_scalar src1 = nir_scalar_chase_alu_src(scalar, 1);
 
@@ -41,18 +44,21 @@ try_extract_additions(nir_builder *b, nir_scalar scalar, uint64_t *out_const,
          nir_scalar offset_scalar = nir_scalar_chase_alu_src(src, 0);
          if (offset_scalar.def->bit_size != 32)
             continue;
+
          *out_offset = nir_mov_scalar(b, offset_scalar);
+         nir_def *replace_offset = try_extract_additions(b, offset_scalar, out_const, out_offset, true);
+         *out_offset = replace_offset ? replace_offset : *out_offset;
       } else {
          continue;
       }
 
       nir_def *replace_src =
-         try_extract_additions(b, i == 1 ? src0 : src1, out_const, out_offset);
+         try_extract_additions(b, i == 1 ? src0 : src1, out_const, out_offset, require_nuw);
       return replace_src ? replace_src : nir_ssa_for_alu_src(b, alu, 1 - i);
    }
 
-   nir_def *replace_src0 = try_extract_additions(b, src0, out_const, out_offset);
-   nir_def *replace_src1 = try_extract_additions(b, src1, out_const, out_offset);
+   nir_def *replace_src0 = try_extract_additions(b, src0, out_const, out_offset, require_nuw);
+   nir_def *replace_src1 = try_extract_additions(b, src1, out_const, out_offset, require_nuw);
    if (!replace_src0 && !replace_src1)
       return NULL;
 
@@ -94,7 +100,7 @@ process_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_)
    nir_def *offset = NULL;
    nir_scalar src = {addr_src->ssa, 0};
    b->cursor = nir_after_instr(addr_src->ssa->parent_instr);
-   nir_def *addr = try_extract_additions(b, src, &off_const, &offset);
+   nir_def *addr = try_extract_additions(b, src, &off_const, &offset, false);
    addr = addr ? addr : addr_src->ssa;
 
    b->cursor = nir_before_instr(&intrin->instr);
