@@ -287,6 +287,9 @@ assert_memhandle_type(VkExternalMemoryHandleTypeFlags types)
    unsigned valid[] = {
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+#if DETECT_OS_ANDROID
+      VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
+#endif
    };
    for (unsigned i = 0; i < ARRAY_SIZE(valid); i++) {
       if (types & valid[i])
