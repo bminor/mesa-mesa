@@ -2754,7 +2754,7 @@
         "description": "ci: Always save the artifacts for performance traces",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b723bc80d2b4929892aa7ddebb13296a9c7255ce",
         "notes": null
