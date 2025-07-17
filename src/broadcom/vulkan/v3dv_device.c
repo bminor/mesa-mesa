@@ -2182,15 +2182,7 @@ v3dv_AllocateMemory(VkDevice _device,
 
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
 
-   /* We always allocate device memory in multiples of a page, so round up
-    * requested size to that. We need to add a V3D_TFU_READAHEAD padding to
-    * avoid invalid reads done by the TFU unit after the end of the last page
-    * allocated.
-    */
-
-   const VkDeviceSize alloc_size = align64(pAllocateInfo->allocationSize +
-                                           V3D_TFU_READAHEAD_SIZE, 4096);
-
+   const VkDeviceSize alloc_size = align64(pAllocateInfo->allocationSize, 4096);
    if (unlikely(alloc_size > MAX_MEMORY_ALLOCATION_SIZE))
       return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
@@ -2360,10 +2352,18 @@ get_image_memory_requirements(struct v3dv_image *image,
                               VkImageAspectFlagBits planeAspect,
                               VkMemoryRequirements2 *pMemoryRequirements)
 {
+   uint32_t readahead = 0;
+   /* The TFU unit has a 64-bytes readahead so we need to add a
+    * V3D_TFU_READAHEAD padding to avoid invalid reads done by the TFU after
+    * the end of the last allocated memory page causing MMU error.
+    */
+   if (image->vk.usage & (VK_IMAGE_USAGE_TRANSFER_SRC_BIT))
+           readahead = V3D_TFU_READAHEAD_SIZE;
+
    pMemoryRequirements->memoryRequirements = (VkMemoryRequirements) {
       .memoryTypeBits = 0x1,
       .alignment = image->planes[0].alignment,
-      .size = image->non_disjoint_size
+      .size = image->non_disjoint_size ? image->non_disjoint_size + readahead : 0
    };
 
    if (planeAspect != VK_IMAGE_ASPECT_NONE) {
@@ -2376,7 +2376,7 @@ get_image_memory_requirements(struct v3dv_image *image,
       VkMemoryRequirements *mem_reqs =
          &pMemoryRequirements->memoryRequirements;
       mem_reqs->alignment = image->planes[plane].alignment;
-      mem_reqs->size = image->planes[plane].size;
+      mem_reqs->size = image->planes[plane].size + readahead;
    }
 
    vk_foreach_struct(ext, pMemoryRequirements->pNext) {
@@ -2580,23 +2580,27 @@ static void
 get_buffer_memory_requirements(struct v3dv_buffer *buffer,
                                VkMemoryRequirements2 *pMemoryRequirements)
 {
+   uint32_t readahead = 0;
+   /* UBO and SSBO may be read using ldunifa, which prefetches the next 4
+    * bytes after a read. If the buffer's size is exactly a multiple of a page
+    * size and the shader reads the last 4 bytes with ldunifa the prefetching
+    * would read out of bounds and cause an MMU error, so we allocate extra
+    * space to avoid kernel error spamming. The TFU unit has also a 64-bytes
+    * readahead so we need to add a V3D_TFU_READAHEAD padding to avoid invalid
+    * reads done by the TFU after the end of the last allocated memory page.
+    */
+   if (buffer->usage & (VK_BUFFER_USAGE_TRANSFER_SRC_BIT))
+           readahead = V3D_TFU_READAHEAD_SIZE;
+   else if (buffer->usage & (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+           readahead = 4;
+   }
+
    pMemoryRequirements->memoryRequirements = (VkMemoryRequirements) {
       .memoryTypeBits = 0x1,
       .alignment = buffer->alignment,
-      .size = align64(buffer->size, buffer->alignment),
+      .size = align64(buffer->size + readahead, buffer->alignment),
    };
-
-   /* UBO and SSBO may be read using ldunifa, which prefetches the next
-    * 4 bytes after a read. If the buffer's size is exactly a multiple
-    * of a page size and the shader reads the last 4 bytes with ldunifa
-    * the prefetching would read out of bounds and cause an MMU error,
-    * so we allocate extra space to avoid kernel error spamming.
-    */
-   bool can_ldunifa = buffer->usage &
-                      (VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-   if (can_ldunifa && (buffer->size % 4096 == 0))
-      pMemoryRequirements->memoryRequirements.size += buffer->alignment;
 
    vk_foreach_struct(ext, pMemoryRequirements->pNext) {
       switch (ext->sType) {
