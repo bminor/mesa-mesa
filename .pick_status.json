@@ -744,7 +744,7 @@
         "description": "radv: fix SQTT shaders relocation on GFX12",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "098c15bfc94446d755455aaa275a30d4ef8389c3",
         "notes": null

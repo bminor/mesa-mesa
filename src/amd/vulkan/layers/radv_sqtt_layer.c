@@ -17,23 +17,36 @@
 #include "ac_rgp.h"
 #include "ac_sqtt.h"
 
-void
-radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv_graphics_pipeline *pipeline)
+static void
+radv_gfx12_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv_graphics_pipeline *pipeline)
 {
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_sqtt_shaders_reloc *reloc = pipeline->sqtt_shaders_reloc;
+
+   radv_foreach_stage (s, RADV_GRAPHICS_STAGE_BITS & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
+      const struct radv_shader *shader = pipeline->base.shaders[s];
+
+      if (!shader)
+         continue;
+
+      /* Shaders are allocated in the 32-bit addr space and high bits are already configured. */
+      gfx12_push_sh_reg(cmd_buffer, shader->info.regs.pgm_lo, reloc->va[s] >> 8);
+   }
+}
+
+static void
+radv_gfx6_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv_graphics_pipeline *pipeline)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    struct radv_sqtt_shaders_reloc *reloc = pipeline->sqtt_shaders_reloc;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    uint64_t va;
-
-   radv_cs_add_buffer(device->ws, cs, reloc->bo);
 
    radeon_begin(cs);
 
    /* VS */
    if (pipeline->base.shaders[MESA_SHADER_VERTEX]) {
-      struct radv_shader *vs = pipeline->base.shaders[MESA_SHADER_VERTEX];
+      const struct radv_shader *vs = pipeline->base.shaders[MESA_SHADER_VERTEX];
 
       va = reloc->va[MESA_SHADER_VERTEX];
       if (vs->info.vs.as_ls) {
@@ -57,7 +70,7 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
       va = reloc->va[MESA_SHADER_TESS_CTRL];
 
-      if (gfx_level >= GFX9) {
+      if (pdev->info.gfx_level >= GFX9) {
          radeon_set_sh_reg(tcs->info.regs.pgm_lo, va >> 8);
       } else {
          radeon_set_sh_reg_seq(tcs->info.regs.pgm_lo, 2);
@@ -68,7 +81,7 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
    /* TES */
    if (pipeline->base.shaders[MESA_SHADER_TESS_EVAL]) {
-      struct radv_shader *tes = pipeline->base.shaders[MESA_SHADER_TESS_EVAL];
+      const struct radv_shader *tes = pipeline->base.shaders[MESA_SHADER_TESS_EVAL];
 
       va = reloc->va[MESA_SHADER_TESS_EVAL];
       if (tes->info.is_ngg) {
@@ -86,13 +99,13 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
    /* GS */
    if (pipeline->base.shaders[MESA_SHADER_GEOMETRY]) {
-      struct radv_shader *gs = pipeline->base.shaders[MESA_SHADER_GEOMETRY];
+      const struct radv_shader *gs = pipeline->base.shaders[MESA_SHADER_GEOMETRY];
 
       va = reloc->va[MESA_SHADER_GEOMETRY];
       if (gs->info.is_ngg) {
          radeon_set_sh_reg(gs->info.regs.pgm_lo, va >> 8);
       } else {
-         if (gfx_level >= GFX9) {
+         if (pdev->info.gfx_level >= GFX9) {
             radeon_set_sh_reg(gs->info.regs.pgm_lo, va >> 8);
          } else {
             radeon_set_sh_reg_seq(gs->info.regs.pgm_lo, 2);
@@ -123,6 +136,23 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
    }
 
    radeon_end();
+}
+
+void
+radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv_graphics_pipeline *pipeline)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_sqtt_shaders_reloc *reloc = pipeline->sqtt_shaders_reloc;
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   radv_cs_add_buffer(device->ws, cs, reloc->bo);
+
+   if (pdev->info.gfx_level >= GFX12) {
+      radv_gfx12_sqtt_emit_relocated_shaders(cmd_buffer, pipeline);
+   } else {
+      radv_gfx6_sqtt_emit_relocated_shaders(cmd_buffer, pipeline);
+   }
 }
 
 static uint64_t
