@@ -188,6 +188,7 @@ nvk_image_view_init(struct nvk_device *dev,
 
       if (view->vk.usage & (VK_IMAGE_USAGE_SAMPLED_BIT |
                            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
+         nil_view.access = NIL_VIEW_ACCESS_TEXTURE;
          const struct nil_descriptor desc =
             nil_image_view_descriptor(&pdev->info, &nil_image,
                                       &nil_view, base_addr);
@@ -214,6 +215,8 @@ nvk_image_view_init(struct nvk_device *dev,
       }
 
       if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+         nil_view.access = NIL_VIEW_ACCESS_STORAGE;
+
          /* For storage images, we can't have any cubes */
          if (view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE ||
             view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)

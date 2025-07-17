@@ -22,11 +22,7 @@ use std::ops::Range;
 
 use crate::extent::{units, Extent4D};
 use crate::format::Format;
-use crate::image::Image;
-use crate::image::ImageDim;
-use crate::image::SampleLayout;
-use crate::image::View;
-use crate::image::ViewType;
+use crate::image::{Image, ImageDim, SampleLayout, View, ViewAccess, ViewType};
 
 macro_rules! set_enum {
     ($th:expr, $cls:ident, $field:ident, $enum:ident) => {
@@ -922,6 +918,9 @@ impl Descriptor {
                 &mut desc.bits,
             );
         } else if dev.cls_eng3d >= FERMI_A {
+            // Kepler and earlier doesn't support surface access through
+            // conventional image descriptors
+            assert_eq!(view.access, ViewAccess::Texture);
             nv9097_fill_image_view_desc(
                 image,
                 view,

@@ -975,10 +975,25 @@ pub enum ViewType {
     CubeArray,
 }
 
+/// An enum describing how an image view will be accessed by the shader.
+#[allow(dead_code)]
+#[derive(Clone, Debug, Copy, PartialEq)]
+#[repr(u8)]
+pub enum ViewAccess {
+    /// This image view will be accessed via texture instructions (tex, etc.)
+    Texture,
+
+    /// This image view will be accessed as a storage image via surface
+    /// instructions (suld/sust)
+    Storage,
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct View {
     pub view_type: ViewType,
+
+    pub access: ViewAccess,
 
     /// The format to use in the view
     ///

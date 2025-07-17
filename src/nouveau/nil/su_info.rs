@@ -6,7 +6,7 @@
 
 use crate::format::Format;
 use crate::image::ViewType;
-use crate::image::{Image, SampleLayout, View};
+use crate::image::{Image, SampleLayout, View, ViewAccess};
 use bitview::{BitMutView, SetField};
 use nil_rs_bindings::*;
 
@@ -204,6 +204,7 @@ pub extern "C" fn nil_fill_su_info(
     view: &View,
     base_address: u64,
 ) -> SuInfo {
+    assert_eq!(view.access, ViewAccess::Storage);
     assert!(view.format.supports_storage(dev));
     debug_assert!(image.align_B >= 256);
     let level = &image.levels[view.base_level as usize];
