@@ -61,19 +61,29 @@ ac_vcn_dec_calc_ctx_size_av1(unsigned av1_version)
    int sdb_pitch_128x128 = align(32 * num_128x128_CTB_8k, 256) * 2;
    int sdb_lf_size_ctb_64x64 = sdb_pitch_64x64 * (align(1728, 64) / 64);
    int sdb_lf_size_ctb_128x128 = sdb_pitch_128x128 * (align(3008, 64) / 64);
-   int sdb_superres_size_ctb_64x64 = sdb_pitch_64x64 * (align(3232, 64) / 64);
-   int sdb_superres_size_ctb_128x128 = sdb_pitch_128x128 * (align(6208, 64) / 64);
-   int sdb_output_size_ctb_64x64 = sdb_pitch_64x64 * (align(1312, 64) / 64);
-   int sdb_output_size_ctb_128x128 = sdb_pitch_128x128 * (align(2336, 64) / 64);
-   int sdb_fg_avg_luma_size_ctb_64x64 = sdb_pitch_64x64 * (align(384, 64) / 64);
-   int sdb_fg_avg_luma_size_ctb_128x128 = sdb_pitch_128x128 * (align(640, 64) / 64);
 
-   ctx_size += (MAX2(sdb_lf_size_ctb_64x64, sdb_lf_size_ctb_128x128) +
-                MAX2(sdb_superres_size_ctb_64x64, sdb_superres_size_ctb_128x128) +
-                MAX2(sdb_output_size_ctb_64x64, sdb_output_size_ctb_128x128) +
-                MAX2(sdb_fg_avg_luma_size_ctb_64x64, sdb_fg_avg_luma_size_ctb_128x128)) *
+   if (av1_version == RDECODE_AV1_VER_2) {
+      int aligned_height_in_64x64_blk = align(4352, 64) / 64;
+      int aligned_superres_total_pixels = align((78 + 2) * 3 * 32, 256);
+      int sdb_superres_size_ctb = aligned_height_in_64x64_blk * aligned_superres_total_pixels;
+      ctx_size += (MAX2(sdb_lf_size_ctb_64x64, sdb_lf_size_ctb_128x128) + sdb_superres_size_ctb) *
                   2 +
-               68 * 512;
+                  68 * 512;
+   } else {
+      int sdb_superres_size_ctb_64x64 = sdb_pitch_64x64 * (align(3232, 64) / 64);
+      int sdb_superres_size_ctb_128x128 = sdb_pitch_128x128 * (align(6208, 64) / 64);
+      int sdb_output_size_ctb_64x64 = sdb_pitch_64x64 * (align(1312, 64) / 64);
+      int sdb_output_size_ctb_128x128 = sdb_pitch_128x128 * (align(2336, 64) / 64);
+      int sdb_fg_avg_luma_size_ctb_64x64 = sdb_pitch_64x64 * (align(384, 64) / 64);
+      int sdb_fg_avg_luma_size_ctb_128x128 = sdb_pitch_128x128 * (align(640, 64) / 64);
+
+      ctx_size += (MAX2(sdb_lf_size_ctb_64x64, sdb_lf_size_ctb_128x128) +
+         MAX2(sdb_superres_size_ctb_64x64, sdb_superres_size_ctb_128x128) +
+         MAX2(sdb_output_size_ctb_64x64, sdb_output_size_ctb_128x128) +
+         MAX2(sdb_fg_avg_luma_size_ctb_64x64, sdb_fg_avg_luma_size_ctb_128x128)) *
+         2 +
+         68 * 512;
+   }
 
    return ctx_size;
 }
