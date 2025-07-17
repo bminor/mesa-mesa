@@ -2724,7 +2724,7 @@
         "description": "zink: disallow intensity buffer images",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "475c43cf8a7e0b8f353e8fbd169b98625e62b1f3",
         "notes": null
