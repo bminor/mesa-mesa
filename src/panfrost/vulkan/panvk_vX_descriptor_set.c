@@ -194,22 +194,25 @@ write_dynamic_buffer_desc(struct panvk_descriptor_set *set,
                           const VkDescriptorBufferInfo *const info,
                           uint32_t binding, uint32_t elem)
 {
-   if (info->buffer == VK_NULL_HANDLE) {
-      write_nulldesc(set, binding, elem, NO_SUBDESC);
-      return;
+   /* Default to memory sink (OOB address) */
+   uint64_t dev_addr = 0x8ull << 60;
+   uint64_t range = 0;
+
+   if (info->buffer != VK_NULL_HANDLE) {
+      VK_FROM_HANDLE(panvk_buffer, buffer, info->buffer);
+
+      dev_addr = panvk_buffer_gpu_ptr(buffer, info->offset);
+      range = panvk_buffer_range(buffer, info->offset, info->range);
    }
 
-   VK_FROM_HANDLE(panvk_buffer, buffer, info->buffer);
    const struct panvk_descriptor_set_binding_layout *binding_layout =
       &set->layout->bindings[binding];
    uint32_t dyn_buf_idx = binding_layout->desc_idx + elem;
-   const uint64_t range = panvk_buffer_range(buffer, info->offset, info->range);
 
    assert(range <= UINT32_MAX);
    assert(dyn_buf_idx < ARRAY_SIZE(set->dyn_bufs));
 
-   set->dyn_bufs[dyn_buf_idx].dev_addr =
-      panvk_buffer_gpu_ptr(buffer, info->offset);
+   set->dyn_bufs[dyn_buf_idx].dev_addr = dev_addr;
    set->dyn_bufs[dyn_buf_idx].size = range;
 }
 
