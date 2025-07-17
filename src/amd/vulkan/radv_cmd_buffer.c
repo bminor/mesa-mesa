@@ -11128,10 +11128,12 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
          /* Inner coverage requires underestimate conservative rasterization. */
          if (d->vk.rs.conservative_mode == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT &&
              !uses_inner_coverage) {
-            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_ENABLE(1) | S_028C4C_UNDER_RAST_SAMPLE_SELECT(1) |
+            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_ENABLE(1) |
+                                       S_028C4C_UNDER_RAST_SAMPLE_SELECT(pdev->info.gfx_level < GFX12) |
                                        S_028C4C_PBB_UNCERTAINTY_REGION_ENABLE(1);
          } else {
-            pa_sc_conservative_rast |= S_028C4C_OVER_RAST_SAMPLE_SELECT(1) | S_028C4C_UNDER_RAST_ENABLE(1);
+            pa_sc_conservative_rast |=
+               S_028C4C_OVER_RAST_SAMPLE_SELECT(pdev->info.gfx_level < GFX12) | S_028C4C_UNDER_RAST_ENABLE(1);
          }
 
          /* Adjust MSAA state if conservative rasterization is enabled. */
