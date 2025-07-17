@@ -22,14 +22,14 @@ git clone https://gitlab.freedesktop.org/wayland/wayland
 cd wayland
 git checkout "$LIBWAYLAND_VERSION"
 
-# Build the scanner first in case we're a cross build
-# Note the lack of EXTRA_MESON_ARGS here.  This is always a native build
-meson setup -Dtests=false -Ddocumentation=false -Ddtd_validation=false -Dlibraries=false -Dscanner=true _scanner
-meson install -C _scanner
-
-# Now build libwayland using the given scanner
-meson setup -Ddocumentation=false -Ddtd_validation=false -Dlibraries=true -Dscanner=false _build ${EXTRA_MESON_ARGS:-}
+# Build the native library and scanner first in case we're a cross build.
+# Note the lack of EXTRA_MESON_ARGS here.
+meson setup -Dtests=false -Ddocumentation=false -Ddtd_validation=false -Dlibraries=true -Dscanner=true _build
 meson install -C _build
+
+# Now build cross libwayland using the native scanner
+meson setup -Dtests=false -Ddocumentation=false -Ddtd_validation=false -Dlibraries=true -Dscanner=false _cross ${EXTRA_MESON_ARGS:-}
+meson install -C _cross
 cd ..
 rm -rf wayland
 
