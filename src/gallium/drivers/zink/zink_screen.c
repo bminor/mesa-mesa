@@ -1408,6 +1408,10 @@ zink_is_format_supported(struct pipe_screen *pscreen,
       if (bind & PIPE_BIND_SHADER_IMAGE &&
           !(props->optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
          return false;
+
+      /* Can't swizzle storage images. */
+      if (bind & PIPE_BIND_SHADER_IMAGE && util_format_is_intensity(format))
+         return false;
    }
 
    return true;
