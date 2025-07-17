@@ -2684,7 +2684,7 @@
         "description": "zink: fix valid contents check for adding new bind",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b022cdc8a1c3534d6f57f53b876e30b10e339432",
         "notes": null

@@ -1777,7 +1777,9 @@ add_resource_bind(struct zink_context *ctx, struct zink_resource *res, unsigned 
    res->layout = VK_IMAGE_LAYOUT_UNDEFINED;
    res->obj = new_obj;
    res->queue = VK_QUEUE_FAMILY_IGNORED;
-   if (res->valid) {
+   bool valid_contents = (res->obj->is_buffer && (res->valid_buffer_range.end || res->base.valid_buffer_range.end)) ||
+                         (!res->obj->is_buffer && res->valid);
+   if (valid_contents) {
       for (unsigned i = 0; i <= res->base.b.last_level; i++) {
          struct pipe_box box;
          u_box_3d(0, 0, 0,
