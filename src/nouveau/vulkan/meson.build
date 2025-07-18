@@ -132,7 +132,7 @@ nvk_deps = [
 nvk_flags = []
 
 if with_platform_android
-  nvk_deps += [dep_android, idep_u_gralloc]
+  nvk_deps += [dep_android]
   nvk_flags += '-DVK_USE_PLATFORM_ANDROID_KHR'
   nvk_files += files('nvk_android.c')
 endif
