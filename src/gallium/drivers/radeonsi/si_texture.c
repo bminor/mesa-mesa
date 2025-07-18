@@ -222,7 +222,9 @@ static int si_init_surface(struct si_screen *sscreen, struct radeon_surf *surfac
             flags |= RADEON_SURF_SBUFFER;
 
          if (sscreen->debug_flags & DBG(NO_HYPERZ) ||
-             ptex->flags & PIPE_RESOURCE_FLAG_SPARSE)
+             (ptex->flags & PIPE_RESOURCE_FLAG_SPARSE) ||
+             (ptex->bind & PIPE_BIND_SHARED) ||
+             is_imported)
             flags |= RADEON_SURF_NO_HTILE;
       }
 
