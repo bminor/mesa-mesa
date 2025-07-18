@@ -382,12 +382,9 @@ vtn_pointer_dereference(struct vtn_builder *b,
           * and we need to process enough levels of dereferences to get inside
           * of it.  Same applies to acceleration structures.
           */
-         if (deref_chain->ptr_as_array) {
-            unsigned aoa_size = glsl_get_aoa_size(type->type);
-            desc_arr_idx = vtn_access_link_as_ssa(b, deref_chain->link[idx],
-                                                  MAX2(aoa_size, 1), 32);
-            idx++;
-         }
+
+         /* This should be prevented higher up by OpAccessChain */
+         vtn_assert(!deref_chain->ptr_as_array);
 
          for (; idx < deref_chain->length; idx++) {
             if (type->base_type != vtn_base_type_array) {
