@@ -2117,6 +2117,11 @@ VKAPI_ATTR void VKAPI_CALL lvp_FreeMemory(
       break;
 #ifdef PIPE_MEMORY_FD
    case LVP_DEVICE_MEMORY_TYPE_DMA_BUF:
+#if DETECT_OS_ANDROID
+      if (mem->android_hardware_buffer)
+         AHardwareBuffer_release(mem->android_hardware_buffer);
+      FALLTHROUGH;
+#endif
    case LVP_DEVICE_MEMORY_TYPE_OPAQUE_FD:
       device->pscreen->free_memory_fd(device->pscreen, mem->pmem);
       if(mem->backed_fd >= 0)
