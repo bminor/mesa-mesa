@@ -160,9 +160,13 @@ def generate_docker_test(
 
     docker_commands += [
         to_yaml_block(DOCKER_COMMANDS, escape_vars=["LAVA_TARGET_IP"]),
-        "lava_ssh_test_case 'wait_for_dut_login' << EOF",
-        "while [ ! -e /dut_ready ]; do sleep 1; done;",
-        "EOF",
+        to_yaml_block(
+            (
+                "lava_ssh_test_case 'wait_for_dut_login' << EOF",
+                "while [ ! -e /dut_ready ]; do sleep 1; done;",
+                "EOF",
+            )
+        ),
         to_yaml_block(
             (
                 "lava_ssh_test_case 'artifact_download' 'bash --' << EOF",

@@ -101,9 +101,10 @@ actions:
                     -o ConnectTimeout=60 \
                     root@$(lava-target-ip) "${@}"
             }
-          - lava_ssh_test_case 'wait_for_dut_login' << EOF
-          - while [ ! -e /dut_ready ]; do sleep 1; done;
-          - EOF
+          - |-
+            lava_ssh_test_case 'wait_for_dut_login' << EOF
+            while [ ! -e /dut_ready ]; do sleep 1; done;
+            EOF
           - |-
             lava_ssh_test_case 'artifact_download' 'bash --' << EOF
             source /dut-env-vars.sh
