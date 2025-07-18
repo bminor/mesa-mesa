@@ -12,9 +12,6 @@ maxsize
 max[_-].*size
 maxuniformblocksize
 
-# Don't test interop with Vulkan
-ext_external_obj
-
 # These create a bright green window that covers the whole screen, which can be distracting.
 glx@glx_arb_sync_control@timing.*fullscreen
 
