@@ -247,7 +247,7 @@ static void pvr_physical_device_get_supported_features(
       .largePoints = true,
       .alphaToOne = true,
       .multiViewport = false,
-      .samplerAnisotropy = false,
+      .samplerAnisotropy = true,
       .textureCompressionETC2 = true,
       .textureCompressionASTC_LDR = false,
       .textureCompressionBC = false,
@@ -503,7 +503,7 @@ static bool pvr_physical_device_get_properties(
       .maxDrawIndexedIndexValue = (1U << 24) - 1U, /* Requires fullDrawIndexUint32 */
       .maxDrawIndirectCount = 1U, /* Requires multiDrawIndirect */
       .maxSamplerLodBias = 16.0f,
-      .maxSamplerAnisotropy = 1.0f, /* Requires samplerAnisotropy */
+      .maxSamplerAnisotropy = 16.0f, /* Requires samplerAnisotropy */
       .maxViewports = 1U, /* Requires multiViewport */
 
       .maxViewportDimensions[0] = 4096U,
@@ -3319,8 +3319,17 @@ VkResult pvr_CreateSampler(VkDevice _device,
             CLAMP(pCreateInfo->mipLodBias, min_dadjust, max_dadjust),
             ROGUE_TEXSTATE_DADJUST_FRACTIONAL_BITS);
 
-      /* Anisotropy is not supported for now. */
       word.anisoctl = ROGUE_TEXSTATE_ANISOCTL_DISABLED;
+      if (pCreateInfo->anisotropyEnable) {
+         if (pCreateInfo->maxAnisotropy >= 16.0f)
+            word.anisoctl = ROGUE_TEXSTATE_ANISOCTL_X16;
+         else if (pCreateInfo->maxAnisotropy >= 8.0f)
+            word.anisoctl = ROGUE_TEXSTATE_ANISOCTL_X8;
+         else if (pCreateInfo->maxAnisotropy >= 4.0f)
+            word.anisoctl = ROGUE_TEXSTATE_ANISOCTL_X4;
+         else if (pCreateInfo->maxAnisotropy >= 2.0f)
+            word.anisoctl = ROGUE_TEXSTATE_ANISOCTL_X2;
+      }
 
       if (PVR_HAS_QUIRK(&device->pdevice->dev_info, 51025) &&
           pCreateInfo->mipmapMode == VK_SAMPLER_MIPMAP_MODE_NEAREST) {
