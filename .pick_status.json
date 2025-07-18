@@ -3834,7 +3834,7 @@
         "description": "radv/winsys: Support vm_always_valid in the NULL winsys",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "df1224c8b2e5537c92e07266bdc1ea2e739604bc",
         "notes": null
