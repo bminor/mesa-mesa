@@ -1270,11 +1270,14 @@ llvmpipe_register_texture(struct llvmpipe_context *ctx, struct lp_texture_handle
    simple_mtx_lock(&matrix->lock);
 
    if (entry->sampled) {
-      if (entry->sample_functions) {
-         entry->sample_functions = realloc(entry->sample_functions, matrix->sampler_count * sizeof(void **));
-         memset(entry->sample_functions + entry->sampler_count, 0, (matrix->sampler_count - entry->sampler_count) * sizeof(void **));
-      } else {
-         entry->sample_functions = calloc(matrix->sampler_count, sizeof(void **));
+      if (matrix->sampler_count > 0) {
+         if (entry->sample_functions) {
+            entry->sample_functions = realloc(entry->sample_functions, matrix->sampler_count * sizeof(void **));
+            memset(entry->sample_functions + entry->sampler_count, 0,
+                   (matrix->sampler_count - entry->sampler_count) * sizeof(void **));
+         } else {
+            entry->sample_functions = calloc(matrix->sampler_count, sizeof(void **));
+         }
       }
       entry->sampler_count = matrix->sampler_count;
 
