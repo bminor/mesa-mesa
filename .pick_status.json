@@ -3934,7 +3934,7 @@
         "description": "panfrost: fix swapped stats for varing and position shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4da7b120008280c28277a6d6c507f5f1a481c1c1",
         "notes": null
