@@ -2599,18 +2599,6 @@ v3dv_flag_oom(struct v3dv_cmd_buffer *cmd_buffer, struct v3dv_job *job)
       return;                                                       \
 } while(0)                                                          \
 
-static inline uint32_t
-u64_hash(const void *key)
-{
-   return _mesa_hash_data(key, sizeof(uint64_t));
-}
-
-static inline bool
-u64_compare(const void *key1, const void *key2)
-{
-   return memcmp(key1, key2, sizeof(uint64_t)) == 0;
-}
-
 /* v3d_macros from common requires v3dX and V3DX definitions. Below we need to
  * define v3dX for each version supported, because when we compile code that
  * is not version-specific, all version-specific macros need to be already

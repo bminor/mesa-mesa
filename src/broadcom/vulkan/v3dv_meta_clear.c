@@ -282,10 +282,10 @@ v3dv_meta_clear_init(struct v3dv_device *device)
 {
    if (device->instance->meta_cache_enabled) {
       device->meta.color_clear.cache =
-         _mesa_hash_table_create(NULL, u64_hash, u64_compare);
+         _mesa_hash_table_create(NULL, _mesa_hash_u64, _mesa_key_u64_equal);
 
       device->meta.depth_clear.cache =
-         _mesa_hash_table_create(NULL, u64_hash, u64_compare);
+         _mesa_hash_table_create(NULL, _mesa_hash_u64, _mesa_key_u64_equal);
    }
 
    create_color_clear_pipeline_layout(device,
