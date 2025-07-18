@@ -555,18 +555,6 @@ emit_header()
           dev_id.gpu_id, dev_id.chip_id);
 }
 
-static inline uint32_t
-u64_hash(const void *key)
-{
-   return _mesa_hash_data(key, sizeof(uint64_t));
-}
-
-static inline bool
-u64_compare(const void *key1, const void *key2)
-{
-   return memcmp(key1, key2, sizeof(uint64_t)) == 0;
-}
-
 static int
 handle_file(const char *filename, uint32_t submit_to_decompile)
 {
@@ -587,7 +575,7 @@ handle_file(const char *filename, uint32_t submit_to_decompile)
 
    type0_reg = reg_a6xx;
    mem_ctx = ralloc_context(NULL);
-   _mesa_set_init(&decompiled_shaders, mem_ctx, u64_hash, u64_compare);
+   _mesa_set_init(&decompiled_shaders, mem_ctx, _mesa_hash_u64, _mesa_key_u64_equal);
 
    struct {
       unsigned int len;
