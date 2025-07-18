@@ -1346,23 +1346,6 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
 
    nir_tex_instr_add_src(tex, nir_tex_src_texture_handle, combined_handle);
 
-   /* On pre-Volta hardware, we don't have real null descriptors.  Null
-    * descriptors work well enough for sampling but they may not return the
-    * correct query results.
-    */
-   if (ctx->dev_info->cls_eng3d < VOLTA_A && nir_tex_instr_is_query(tex)) {
-      b->cursor = nir_after_instr(&tex->instr);
-
-      /* This should get CSE'd with the earlier load */
-      nir_def *texture_handle =
-         nir_iand_imm(b, texture_desc, NVK_IMAGE_DESCRIPTOR_IMAGE_INDEX_MASK);
-      nir_def *is_null = nir_ieq_imm(b, texture_handle, 0);
-      nir_def *zero = nir_imm_zero(b, tex->def.num_components,
-                                      tex->def.bit_size);
-      nir_def *res = nir_bcsel(b, is_null, zero, &tex->def);
-      nir_def_rewrite_uses_after(&tex->def, res, res->parent_instr);
-   }
-
    return true;
 }
 
