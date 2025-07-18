@@ -10,6 +10,7 @@ use mesa_rust::compiler::nir::NirShader;
 use mesa_rust::pipe::context::PipeContext;
 use mesa_rust::pipe::context::PipeContextPrio;
 use mesa_rust::pipe::fence::PipeFence;
+use mesa_rust::pipe::resource::PipeSamplerView;
 use mesa_rust_gen::*;
 use mesa_rust_util::properties::*;
 use rusticl_opencl_gen::*;
@@ -70,6 +71,7 @@ impl<'a> QueueContext<'a> {
             variant: NirKernelVariant::Default,
             cso: None,
             use_stream: self.dev.prefers_real_buffer_in_cb0(),
+            bound_sampler_views: 0,
         }
     }
 }
@@ -83,6 +85,7 @@ pub struct QueueContextWithState<'a> {
     builds: Option<Arc<NirKernelBuilds>>,
     variant: NirKernelVariant,
     cso: Option<CSOWrapper<'a>>,
+    bound_sampler_views: u32,
 }
 
 impl QueueContextWithState<'_> {
@@ -123,6 +126,13 @@ impl QueueContextWithState<'_> {
         Ok(())
     }
 
+    pub fn bind_sampler_views(&mut self, views: Vec<PipeSamplerView>) {
+        let cnt = views.len() as u32;
+        let unbind_cnt = self.bound_sampler_views.saturating_sub(cnt);
+        self.ctx.set_sampler_views(views, unbind_cnt);
+        self.bound_sampler_views = cnt;
+    }
+
     pub fn update_cb0(&self, data: &[u8]) -> CLResult<()> {
         // only update if we actually bind data
         if !data.is_empty() {
@@ -149,6 +159,7 @@ impl<'a> Deref for QueueContextWithState<'a> {
 impl Drop for QueueContextWithState<'_> {
     fn drop(&mut self) {
         self.set_constant_buffer(0, &[]);
+        self.ctx.clear_sampler_views(self.bound_sampler_views);
         self.ctx.clear_shader_images(self.dev.caps.max_write_images);
         if self.builds.is_some() {
             // SAFETY: We simply unbind here. The bound cso will only be dropped at the end of this

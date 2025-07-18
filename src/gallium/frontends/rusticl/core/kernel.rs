@@ -1653,10 +1653,9 @@ impl Kernel {
                 globals.push(unsafe { input.as_mut_ptr().byte_add(offset) }.cast());
             }
 
-            let sviews_len = sviews.len();
             ctx.bind_kernel(&nir_kernel_builds, variant)?;
             ctx.bind_sampler_states(&samplers);
-            ctx.set_sampler_views(sviews);
+            ctx.bind_sampler_views(sviews);
             ctx.set_shader_images(&iviews);
             ctx.set_global_binding(resources.as_slice(), &mut globals);
 
@@ -1701,7 +1700,6 @@ impl Kernel {
             }
 
             ctx.clear_global_binding(globals.len() as u32);
-            ctx.clear_sampler_views(sviews_len as u32);
             ctx.clear_sampler_states(samplers.len() as u32);
 
             ctx.memory_barrier(PIPE_BARRIER_GLOBAL_BUFFER);
