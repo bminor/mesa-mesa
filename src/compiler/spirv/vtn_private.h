@@ -488,17 +488,23 @@ struct vtn_pointer {
 
    /** The referenced variable, if known
     *
-    * This field may be NULL if the pointer uses a (block_index, offset) pair
-    * instead of an access chain or if the access chain starts at a deref.
+    * This field may be NULL if the access chain starts at a deref.
     */
    struct vtn_variable *var;
 
-   /** The NIR deref corresponding to this pointer */
-   nir_deref_instr *deref;
+   /* The descriptor "index"
+    *
+    * The stores the logical descriptor index (if any) and the result of a
+    * vulkan_resource_index or vulkan_resource_reindex intrinsic.
+    */
+   struct nir_def *desc_index;
 
-   /** A (block_index, offset) pair representing a UBO or SSBO position. */
-   struct nir_def *block_index;
-   struct nir_def *offset;
+   /** The NIR deref corresponding to this pointer
+    *
+    * This may be NULL if it's a pointer to a block or acceleration structure,
+    * in which case desc_index is used instead.
+    **/
+   nir_deref_instr *deref;
 
    /* Access qualifiers */
    enum gl_access_qualifier access;

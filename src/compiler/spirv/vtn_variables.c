@@ -349,7 +349,7 @@ vtn_pointer_dereference(struct vtn_builder *b,
    } else if (b->options->environment == NIR_SPIRV_VULKAN &&
               (vtn_pointer_is_external_block(b, base) ||
                base->mode == vtn_variable_mode_accel_struct)) {
-      nir_def *block_index = base->block_index;
+      nir_def *desc_index = base->desc_index;
 
       /* We dereferencing an external block pointer.  Correctness of this
        * operation relies on one particular line in the SPIR-V spec, section
@@ -370,13 +370,13 @@ vtn_pointer_dereference(struct vtn_builder *b,
        *
        * Some of the Vulkan CTS tests with hand-rolled SPIR-V have been known
        * to forget the Block or BufferBlock decoration from time to time.
-       * It's more robust if we check for both !block_index and for the type
+       * It's more robust if we check for both !desc_index and for the type
        * to contain a block.  This way there's a decent chance that arrays of
        * UBOs/SSBOs will work correctly even if variable pointers are
        * completley toast.
        */
       nir_def *desc_arr_idx = NULL;
-      if (!block_index || vtn_type_contains_block(b, type) ||
+      if (!desc_index || vtn_type_contains_block(b, type) ||
           base->mode == vtn_variable_mode_accel_struct) {
          /* If our type contains a block, then we're still outside the block
           * and we need to process enough levels of dereferences to get inside
@@ -406,12 +406,12 @@ vtn_pointer_dereference(struct vtn_builder *b,
          }
       }
 
-      if (!block_index) {
+      if (!desc_index) {
          vtn_assert(base->var && base->type->pointed);
-         block_index = vtn_variable_resource_index(b, base->var, desc_arr_idx);
+         desc_index = vtn_variable_resource_index(b, base->var, desc_arr_idx);
       } else if (desc_arr_idx) {
-         block_index = vtn_resource_reindex(b, base->mode,
-                                            block_index, desc_arr_idx);
+         desc_index = vtn_resource_reindex(b, base->mode,
+                                           desc_index, desc_arr_idx);
       }
 
       if (idx == deref_chain->length) {
@@ -422,7 +422,7 @@ vtn_pointer_dereference(struct vtn_builder *b,
          struct vtn_pointer *ptr = vtn_zalloc(b, struct vtn_pointer);
          ptr->type = vtn_create_internal_pointer_type(b, base->type, type);
          ptr->mode = base->mode;
-         ptr->block_index = block_index;
+         ptr->desc_index = desc_index;
          ptr->access = access;
          return ptr;
       }
@@ -431,7 +431,7 @@ vtn_pointer_dereference(struct vtn_builder *b,
        * final block index.  Insert a descriptor load and cast to a deref to
        * start the deref chain.
        */
-      nir_def *desc = vtn_descriptor_load(b, base->mode, block_index);
+      nir_def *desc = vtn_descriptor_load(b, base->mode, desc_index);
 
       assert(base->mode == vtn_variable_mode_ssbo ||
              base->mode == vtn_variable_mode_ubo);
@@ -660,15 +660,15 @@ static nir_def *
 vtn_pointer_to_descriptor(struct vtn_builder *b, struct vtn_pointer *ptr)
 {
    assert(ptr->mode == vtn_variable_mode_accel_struct);
-   if (!ptr->block_index) {
+   if (!ptr->desc_index) {
       struct vtn_access_chain chain = {
          .length = 0,
       };
       ptr = vtn_pointer_dereference(b, ptr, &chain);
    }
 
-   vtn_assert(ptr->deref == NULL && ptr->block_index != NULL);
-   return vtn_descriptor_load(b, ptr->mode, ptr->block_index);
+   vtn_assert(ptr->deref == NULL && ptr->desc_index != NULL);
+   return vtn_descriptor_load(b, ptr->mode, ptr->desc_index);
 }
 
 static void
@@ -1948,8 +1948,8 @@ vtn_pointer_to_ssa(struct vtn_builder *b, struct vtn_pointer *ptr)
        * Uniform storage class with BufferBlock or the StorageBuffer
        * storage class with Block can be used.
        */
-      if (!ptr->block_index) {
-         /* If we don't have a block_index then we must be a pointer to the
+      if (!ptr->desc_index) {
+         /* If we don't have a desc_index then we must be a pointer to the
           * variable itself.
           */
          vtn_assert(!ptr->deref);
@@ -1960,7 +1960,7 @@ vtn_pointer_to_ssa(struct vtn_builder *b, struct vtn_pointer *ptr)
          ptr = vtn_pointer_dereference(b, ptr, &chain);
       }
 
-      return ptr->block_index;
+      return ptr->desc_index;
    } else {
       return &vtn_pointer_to_deref(b, ptr)->def;
    }
@@ -1994,7 +1994,7 @@ vtn_pointer_from_ssa(struct vtn_builder *b, nir_def *ssa,
        * pointer to somewhere inside the block.  Set the block index
        * instead of making a cast.
        */
-      ptr->block_index = ssa;
+      ptr->desc_index = ssa;
    } else {
       /* This is a pointer to something internal or a pointer inside a
        * block.  It's just a regular cast.
