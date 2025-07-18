@@ -232,12 +232,14 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    screen->vtbl.compile_shader(s, &inputs, &out->binary, &out->info);
 
-   pan_stats_util_debug(dbg, mesa_shader_stage_name(s->info.stage),
-                        &out->info.stats);
-
    if (s->info.stage == MESA_SHADER_VERTEX && out->info.vs.idvs) {
       pan_stats_util_debug(dbg, "MESA_SHADER_POSITION",
+                           &out->info.stats);
+      pan_stats_util_debug(dbg, "MESA_SHADER_VERTEX",
                            &out->info.stats_idvs_varying);
+   } else {
+      pan_stats_util_debug(dbg, mesa_shader_stage_name(s->info.stage),
+                           &out->info.stats);
    }
 
    assert(req_local_mem >= out->info.wls_size);
