@@ -389,7 +389,7 @@ zink_draw(struct pipe_context *pctx,
             zink_batch_reference_resource(ctx, zink_resource(index_buffer));
       } else {
          index_buffer = dinfo->index.resource;
-         zink_batch_reference_resource_rw(ctx, zink_resource(index_buffer), false);
+         zink_batch_resource_usage_set(ctx->bs, zink_resource(index_buffer), false, true);
       }
       assert(index_size <= 4 && index_size != 3);
       assert(index_size != 1 || screen->info.have_EXT_index_type_uint8);

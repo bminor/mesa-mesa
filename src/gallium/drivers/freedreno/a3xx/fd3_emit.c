@@ -235,7 +235,7 @@ emit_textures(struct fd_context *ctx, struct fd_ringbuffer *ring,
       unsigned off;
       void *ptr;
 
-      u_upload_alloc(fd3_ctx->border_color_uploader, 0,
+      u_upload_alloc_ref(fd3_ctx->border_color_uploader, 0,
                      BORDER_COLOR_UPLOAD_SIZE, BORDER_COLOR_UPLOAD_SIZE, &off,
                      &fd3_ctx->border_color_buf, &ptr);
 

@@ -52,6 +52,7 @@
 #include "main/formats.h"       /* MESA_FORMAT_COUNT */
 #include "util/u_idalloc.h"
 #include "util/simple_mtx.h"
+#include "util/set.h"
 #include "util/u_dynarray.h"
 #include "vbo/vbo.h"
 #include "state_tracker/st_atom.h"
@@ -1443,22 +1444,6 @@ struct gl_buffer_object
    gl_buffer_usage UsageHistory; /**< How has this buffer been used so far? */
 
    struct pipe_resource *buffer;
-   struct gl_context *private_refcount_ctx;
-   /* This mechanism allows passing buffer references to the driver without
-    * using atomics to increase the reference count.
-    *
-    * This private refcount can be decremented without atomics but only one
-    * context (ctx above) can use this counter to be thread-safe.
-    *
-    * This number is atomically added to buffer->reference.count at
-    * initialization. If it's never used, the same number is atomically
-    * subtracted from buffer->reference.count before destruction. If this
-    * number is decremented, we can pass that reference to the driver without
-    * touching reference.count. At buffer destruction we only subtract
-    * the number of references we did not return. This can possibly turn
-    * a million atomic increments into 1 add and 1 subtract atomic op.
-    */
-   int private_refcount;
 
    GLbitfield StorageFlags; /**< GL_MAP_PERSISTENT_BIT, etc. */
 
@@ -2426,6 +2411,9 @@ struct gl_shared_state
    GLint RefCount;			   /**< Reference count */
    bool DisplayListsAffectGLThread;
 
+   struct list_head Contexts;   /**< gl_context objects */
+   struct set ReleaseResources; /**< in use by some context */
+
    struct _mesa_HashTable DisplayList;	   /**< Display lists hash table */
    struct _mesa_HashTable TexObjects;	   /**< Texture objects hash table */
 
@@ -3273,6 +3261,10 @@ struct gl_context
 {
    /** State possibly shared with other contexts in the address space */
    struct gl_shared_state *Shared;
+   struct list_head SharedLink;
+
+   /** Only accessible while Shared->Mutex is held */
+   struct util_dynarray ReleaseResources;
 
    /** Whether Shared->BufferObjects has already been locked for this context. */
    bool BufferObjectsLocked;

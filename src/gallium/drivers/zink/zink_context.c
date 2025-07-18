@@ -1379,8 +1379,7 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
       const struct pipe_vertex_buffer *vb = buffers + i;
       struct pipe_vertex_buffer *ctx_vb = &ctx->vertex_buffers[i];
       update_existing_vbo(ctx, i);
-      pipe_resource_reference(&ctx_vb->buffer.resource, NULL);
-      ctx_vb->buffer.resource = vb->buffer.resource;
+      pipe_resource_reference(&ctx_vb->buffer.resource, vb->buffer.resource);
 
       if (vb->buffer.resource) {
          struct zink_resource *res = zink_resource(vb->buffer.resource);
@@ -1538,7 +1537,6 @@ invalidate_inlined_uniforms(struct zink_context *ctx, mesa_shader_stage pstage)
 ALWAYS_INLINE static void
 zink_set_constant_buffer_internal(struct pipe_context *pctx,
                          mesa_shader_stage shader, uint index,
-                         bool take_ownership,
                          const struct pipe_constant_buffer *cb,
                          bool use_db)
 {
@@ -1551,7 +1549,7 @@ zink_set_constant_buffer_internal(struct pipe_context *pctx,
       unsigned offset = cb->buffer_offset;
       struct zink_screen *screen = zink_screen(pctx->screen);
       if (cb->user_buffer) {
-         u_upload_data(ctx->base.const_uploader, 0, cb->buffer_size,
+         u_upload_data_ref(ctx->base.const_uploader, 0, cb->buffer_size,
                        screen->info.props.limits.minUniformBufferOffsetAlignment,
                        cb->user_buffer, &offset, &buffer);
       }
@@ -1575,12 +1573,7 @@ zink_set_constant_buffer_internal(struct pipe_context *pctx,
                 !!res != !!buffer || (res && res->obj->buffer != new_res->obj->buffer) ||
                 ctx->ubos[shader][index].buffer_size != cb->buffer_size;
 
-      if (take_ownership) {
-         pipe_resource_reference(&ctx->ubos[shader][index].buffer, NULL);
-         ctx->ubos[shader][index].buffer = buffer;
-      } else {
-         pipe_resource_reference(&ctx->ubos[shader][index].buffer, buffer);
-      }
+      pipe_resource_reference(&ctx->ubos[shader][index].buffer, buffer);
       ctx->ubos[shader][index].buffer_offset = offset;
       ctx->ubos[shader][index].buffer_size = cb->buffer_size;
       ctx->ubos[shader][index].user_buffer = NULL;
@@ -1626,19 +1619,17 @@ zink_set_constant_buffer_internal(struct pipe_context *pctx,
 static void
 zink_set_constant_buffer_db(struct pipe_context *pctx,
                          mesa_shader_stage shader, uint index,
-                         bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
-   zink_set_constant_buffer_internal(pctx, shader, index, take_ownership, cb, true);
+   zink_set_constant_buffer_internal(pctx, shader, index, cb, true);
 }
 
 static void
 zink_set_constant_buffer_lazy(struct pipe_context *pctx,
                          mesa_shader_stage shader, uint index,
-                         bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
-   zink_set_constant_buffer_internal(pctx, shader, index, take_ownership, cb, false);
+   zink_set_constant_buffer_internal(pctx, shader, index, cb, false);
 }
 
 ALWAYS_INLINE static void
@@ -5447,6 +5438,7 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    ctx->base.set_sampler_views = zink_set_sampler_views;
    ctx->base.sampler_view_destroy = zink_sampler_view_destroy;
    ctx->base.sampler_view_release = u_default_sampler_view_release;
+   ctx->base.resource_release = u_default_resource_release;
    ctx->base.get_sample_position = zink_get_sample_position;
    ctx->base.set_sample_locations = zink_set_sample_locations;
 

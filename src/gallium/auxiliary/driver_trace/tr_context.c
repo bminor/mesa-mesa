@@ -942,7 +942,6 @@ trace_context_set_sample_mask(struct pipe_context *_pipe,
 static void
 trace_context_set_constant_buffer(struct pipe_context *_pipe,
                                   mesa_shader_stage shader, uint index,
-                                  bool take_ownership,
                                   const struct pipe_constant_buffer *constant_buffer)
 {
    struct trace_context *tr_ctx = trace_context(_pipe);
@@ -953,10 +952,9 @@ trace_context_set_constant_buffer(struct pipe_context *_pipe,
    trace_dump_arg(ptr, pipe);
    trace_dump_arg_enum(mesa_shader_stage, shader);
    trace_dump_arg(uint, index);
-   trace_dump_arg(bool, take_ownership);
    trace_dump_arg(constant_buffer, constant_buffer);
 
-   pipe->set_constant_buffer(pipe, shader, index, take_ownership, constant_buffer);
+   pipe->set_constant_buffer(pipe, shader, index, constant_buffer);
 
    trace_dump_call_end();
 }
@@ -2464,6 +2462,21 @@ trace_context_get_device_reset_status(struct pipe_context *_pipe)
    return status;
 }
 
+static void
+trace_context_resource_release(struct pipe_context *_pipe, struct pipe_resource *resource)
+{
+   struct trace_context *tr_ctx = trace_context(_pipe);
+   struct pipe_context *pipe = tr_ctx->pipe;
+
+   trace_dump_call_begin("pipe_context", "resource_release");
+   trace_dump_arg(ptr, pipe);
+   trace_dump_arg(ptr, resource);
+
+   pipe->resource_release(pipe, resource);
+
+   trace_dump_call_end();
+}
+
 struct pipe_context *
 trace_context_create(struct trace_screen *tr_scr,
                      struct pipe_context *pipe)
@@ -2611,6 +2624,7 @@ trace_context_create(struct trace_screen *tr_scr,
    TR_CTX_INIT(set_global_binding);
    TR_CTX_INIT(set_hw_atomic_buffers);
    TR_CTX_INIT(get_device_reset_status);
+   TR_CTX_INIT(resource_release);
 
 
 #undef TR_CTX_INIT

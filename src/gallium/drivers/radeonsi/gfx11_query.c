@@ -374,7 +374,7 @@ static void gfx11_sh_query_get_result_resource(struct si_context *sctx, struct s
          ssbo[2].buffer_size = is_result_64bit ? 8 : 4;
       }
 
-      sctx->b.set_constant_buffer(&sctx->b, MESA_SHADER_COMPUTE, 0, false, &constant_buffer);
+      sctx->b.set_constant_buffer(&sctx->b, MESA_SHADER_COMPUTE, 0, &constant_buffer);
 
       if (flags & PIPE_QUERY_WAIT) {
          uint64_t va;

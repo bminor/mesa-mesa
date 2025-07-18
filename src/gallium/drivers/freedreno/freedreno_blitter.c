@@ -292,7 +292,7 @@ fd_blitter_clear(struct pipe_context *pctx, unsigned buffers,
       .buffer_size = 16,
       .user_buffer = &color->ui,
    };
-   pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 0, false, &cb);
+   pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 0, &cb);
 
    unsigned rs_idx = pfb->samples > 1 ? 1 : 0;
    if (!ctx->clear_rs_state[rs_idx]) {

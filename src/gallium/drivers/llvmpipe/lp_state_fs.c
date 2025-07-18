@@ -4229,7 +4229,6 @@ llvmpipe_delete_fs_state(struct pipe_context *pipe, void *fs)
 static void
 llvmpipe_set_constant_buffer(struct pipe_context *pipe,
                              mesa_shader_stage shader, uint index,
-                             bool take_ownership,
                              const struct pipe_constant_buffer *cb)
 {
    struct llvmpipe_context *llvmpipe = llvmpipe_context(pipe);
@@ -4239,15 +4238,14 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
    assert(index < ARRAY_SIZE(llvmpipe->constants[shader]));
 
    /* note: reference counting */
-   util_copy_constant_buffer(&llvmpipe->constants[shader][index], cb,
-                             take_ownership);
+   util_copy_constant_buffer(&llvmpipe->constants[shader][index], cb);
 
    /* user_buffer is only valid until the next set_constant_buffer (at most,
     * possibly until shader deletion), so we need to upload it now to make
     * sure it doesn't get updated/freed out from under us.
     */
    if (constants->user_buffer) {
-      u_upload_data(llvmpipe->pipe.const_uploader, 0, constants->buffer_size,
+      u_upload_data_ref(llvmpipe->pipe.const_uploader, 0, constants->buffer_size,
                     16, constants->user_buffer, &constants->buffer_offset,
                     &constants->buffer);
    }

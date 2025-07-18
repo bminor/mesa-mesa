@@ -2413,7 +2413,7 @@ zink_buffer_map(struct pipe_context *pctx,
                mgr = ctx->tc->base.stream_uploader;
             else
                mgr = ctx->base.stream_uploader;
-            u_upload_alloc(mgr, 0, box->width,
+            u_upload_alloc_ref(mgr, 0, box->width,
                         screen->info.props.limits.minMemoryMapAlignment, &offset,
                         (struct pipe_resource **)&trans->staging_res, (void **)&ptr);
             trans->offset = offset;

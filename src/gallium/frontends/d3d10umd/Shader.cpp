@@ -174,7 +174,6 @@ SetConstantBuffers(mesa_shader_stage shader_type,    // IN
       pipe->set_constant_buffer(pipe,
                                 shader_type,
                                 StartBuffer + i,
-                                false,
                                 &cb);
    }
 }

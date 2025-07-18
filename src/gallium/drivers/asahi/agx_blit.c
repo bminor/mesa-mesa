@@ -284,7 +284,7 @@ asahi_compute_restore(struct agx_context *ctx)
    }
 
    /* take_ownership=true so do not unreference */
-   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, true,
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0,
                              &blitter->saved_cb);
    blitter->saved_cb.buffer = NULL;
 
@@ -366,7 +366,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
       .buffer_size = sizeof(data),
       .user_buffer = data,
    };
-   ctx->set_constant_buffer(ctx, MESA_SHADER_COMPUTE, 0, false, &cb);
+   ctx->set_constant_buffer(ctx, MESA_SHADER_COMPUTE, 0, &cb);
 
    struct pipe_image_view image = {
       .resource = dst,
@@ -448,7 +448,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
    };
    ctx->launch_grid(ctx, &grid_info);
    ctx->set_shader_images(ctx, MESA_SHADER_COMPUTE, 0, 0, 1, NULL);
-   ctx->set_constant_buffer(ctx, MESA_SHADER_COMPUTE, 0, false, NULL);
+   ctx->set_constant_buffer(ctx, MESA_SHADER_COMPUTE, 0, NULL);
    ctx->set_sampler_views(ctx, MESA_SHADER_COMPUTE, 0, 0, 1, NULL);
 
    asahi_compute_restore(agx_context(ctx));

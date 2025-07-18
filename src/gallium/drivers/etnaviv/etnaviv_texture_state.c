@@ -617,6 +617,7 @@ etna_texture_state_init(struct pipe_context *pctx)
    ctx->base.create_sampler_view = etna_create_sampler_view_state;
    ctx->base.sampler_view_destroy = etna_sampler_view_state_destroy;
    ctx->base.sampler_view_release = u_default_sampler_view_release;
+   ctx->base.resource_release = u_default_resource_release;
    ctx->ts_for_sampler_view = etna_ts_for_sampler_view_state;
 
    STATIC_ASSERT(VIVS_TE_SAMPLER_LOD_ADDR__LEN == VIVS_NTE_SAMPLER_ADDR_LOD__LEN);

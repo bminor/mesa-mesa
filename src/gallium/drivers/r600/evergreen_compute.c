@@ -146,7 +146,7 @@ static void evergreen_cs_set_constant_buffer(struct r600_context *rctx,
 	cb.buffer = buffer;
 	cb.user_buffer = NULL;
 
-	rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_COMPUTE, cb_index, false, &cb);
+	rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_COMPUTE, cb_index, &cb);
 }
 
 /* We need to define these R600 registers here, because we can't include

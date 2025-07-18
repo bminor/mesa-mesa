@@ -769,6 +769,8 @@ st_create_context_priv(struct gl_context *ctx, struct pipe_context *pipe,
    list_inithead(&st->zombie_shaders.list.node);
    simple_mtx_init(&st->zombie_shaders.mutex, mtx_plain);
 
+   util_dynarray_init(&st->release_resources, NULL);
+
    ctx->Const.DriverSupportedPrimMask = screen->caps.supported_prim_modes |
                                         /* patches is always supported */
                                         BITFIELD_BIT(MESA_PRIM_PATCHES);
@@ -889,6 +891,28 @@ destroy_framebuffer_attachment_sampler_cb(void *data, void *userData)
 }
 
 void
+st_prune_releasebufs(struct st_context *st)
+{
+   struct pipe_resource **pres = st->release_resources.data;
+   unsigned count = util_dynarray_num_elements(&st->release_resources, struct pipe_resource*);
+   for (unsigned j = 0; j < count; j++)
+      pipe_resource_release(st->pipe, pres[j]);
+   util_dynarray_clear(&st->release_resources);
+   st->release_counter = 0;
+}
+
+void
+st_add_releasebuf(struct st_context *st, struct pipe_resource *releasebuf)
+{
+   if (!releasebuf)
+      return;
+   if (st->release_counter != st->work_counter)
+      st_prune_releasebufs(st);
+   util_dynarray_append(&st->release_resources, struct pipe_resource*, releasebuf);
+   st->release_counter = st->work_counter;
+}
+
+void
 st_destroy_context(struct st_context *st)
 {
    struct gl_context *ctx = st->ctx;
@@ -934,6 +958,9 @@ st_destroy_context(struct st_context *st)
          }
       }
    }
+
+   st_prune_releasebufs(st);
+   util_dynarray_fini(&st->release_resources);
 
    st_release_program(st, &st->fp);
    st_release_program(st, &st->gp);

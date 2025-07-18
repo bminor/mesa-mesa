@@ -1264,7 +1264,7 @@ d3d12_set_vertex_buffers(struct pipe_context *pctx,
                          const struct pipe_vertex_buffer *buffers)
 {
    struct d3d12_context *ctx = d3d12_context(pctx);
-   util_set_vertex_buffers_count(ctx->vbs, &ctx->num_vbs, buffers, num_buffers, true);
+   util_set_vertex_buffers_count(ctx->vbs, &ctx->num_vbs, buffers, num_buffers);
 
    for (unsigned i = 0; i < ctx->num_vbs; ++i) {
       const struct pipe_vertex_buffer* buf = ctx->vbs + i;
@@ -1367,7 +1367,6 @@ d3d12_increment_constant_buffer_bind_count(struct d3d12_context *ctx,
 static void
 d3d12_set_constant_buffer(struct pipe_context *pctx,
                           mesa_shader_stage shader, uint index,
-                          bool take_ownership,
                           const struct pipe_constant_buffer *buf)
 {
    struct d3d12_context *ctx = d3d12_context(pctx);
@@ -1378,7 +1377,7 @@ d3d12_set_constant_buffer(struct pipe_context *pctx,
    if (buf) {
       unsigned offset = buf->buffer_offset;
       if (buf->user_buffer) {
-         u_upload_data(pctx->const_uploader, 0, buf->buffer_size,
+         u_upload_data_ref(pctx->const_uploader, 0, buf->buffer_size,
                        D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT,
                        buf->user_buffer, &offset, &ctx->cbufs[shader][index].buffer);
          d3d12_increment_constant_buffer_bind_count(ctx, shader,
@@ -1388,12 +1387,7 @@ d3d12_set_constant_buffer(struct pipe_context *pctx,
          if (buffer)
             d3d12_increment_constant_buffer_bind_count(ctx, shader, d3d12_resource(buffer));
 
-         if (take_ownership) {
-            pipe_resource_reference(&ctx->cbufs[shader][index].buffer, NULL);
-            ctx->cbufs[shader][index].buffer = buffer;
-         } else {
-            pipe_resource_reference(&ctx->cbufs[shader][index].buffer, buffer);
-         }
+         pipe_resource_reference(&ctx->cbufs[shader][index].buffer, buffer);
       }
 
       ctx->cbufs[shader][index].buffer_offset = offset;
@@ -1922,7 +1916,7 @@ d3d12_disable_fake_so_buffers(struct d3d12_context *ctx)
       cbuf.buffer = fake_target->fill_buffer;
       cbuf.buffer_offset = fake_target->fill_buffer_offset;
       cbuf.buffer_size = fake_target->fill_buffer->width0 - cbuf.buffer_offset;
-      ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, false, &cbuf);
+      ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, &cbuf);
 
       grid.indirect = fake_target->fill_buffer;
       grid.indirect_offset = fake_target->fill_buffer_offset + 4;
@@ -2277,6 +2271,7 @@ d3d12_init_graphics_context_functions(struct d3d12_context *ctx)
    ctx->base.create_sampler_view = d3d12_create_sampler_view;
    ctx->base.sampler_view_destroy = d3d12_destroy_sampler_view;
    ctx->base.sampler_view_release = u_default_sampler_view_release;
+   ctx->base.resource_release = u_default_resource_release;
 
    ctx->base.create_vertex_elements_state = d3d12_create_vertex_elements_state;
    ctx->base.bind_vertex_elements_state = d3d12_bind_vertex_elements_state;

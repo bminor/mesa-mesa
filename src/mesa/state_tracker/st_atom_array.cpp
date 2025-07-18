@@ -149,8 +149,7 @@ setup_arrays(struct gl_context *ctx,
          /* Set the vertex buffer. */
          if (!ALLOW_USER_BUFFERS || binding->BufferObj) {
             assert(binding->BufferObj);
-            struct pipe_resource *buf =
-               _mesa_get_bufferobj_reference(ctx, binding->BufferObj);
+            struct pipe_resource *buf = binding->BufferObj->buffer;
             vbuffer[bufidx].buffer.resource = buf;
             vbuffer[bufidx].is_user_buffer = false;
             vbuffer[bufidx].buffer_offset = binding->Offset +
@@ -215,8 +214,7 @@ setup_arrays(struct gl_context *ctx,
 
       if (binding->BufferObj) {
          /* Set the binding */
-         vbuffer[bufidx].buffer.resource =
-            _mesa_get_bufferobj_reference(ctx, binding->BufferObj);
+         vbuffer[bufidx].buffer.resource = binding->BufferObj->buffer;
          vbuffer[bufidx].is_user_buffer = false;
          vbuffer[bufidx].buffer_offset = _mesa_draw_binding_offset(binding);
       } else {
@@ -315,10 +313,11 @@ st_setup_current(struct st_context *st,
                                       st->pipe->const_uploader :
                                       st->pipe->stream_uploader;
       uint8_t *ptr = NULL;
+      struct pipe_resource *releasebuf = NULL;
 
       u_upload_alloc(uploader, 0, max_size, 16,
                      &vbuffer[bufidx].buffer_offset,
-                     &vbuffer[bufidx].buffer.resource, (void**)&ptr);
+                     &vbuffer[bufidx].buffer.resource, &releasebuf, (void**)&ptr);
       uint8_t *cursor = ptr;
 
       if (FILL_TC_SET_VB) {
@@ -355,6 +354,7 @@ st_setup_current(struct st_context *st,
 
       /* Always unmap. The uploader might use explicit flushes. */
       u_upload_unmap(uploader);
+      st_add_releasebuf(st, releasebuf);
    }
 }
 
@@ -479,7 +479,7 @@ st_update_array_templ(struct st_context *st,
    } else {
       /* Only vertex buffers. */
       if (!FILL_TC_SET_VB)
-         cso_set_vertex_buffers(st->cso_context, num_vbuffers, true, vbuffer);
+         cso_set_vertex_buffers(st->cso_context, num_vbuffers, vbuffer);
 
       /* This can change only when we update vertex elements. */
       assert(st->uses_user_vertex_buffers == uses_user_vertex_buffers);
@@ -704,7 +704,5 @@ st_create_gallium_vertex_state(struct gl_context *ctx,
                                   indexbuf->buffer : NULL,
                                   enabled_arrays);
 
-   for (unsigned i = 0; i < num_vbuffers; i++)
-      pipe_vertex_buffer_unreference(&vbuffer[i]);
    return state;
 }

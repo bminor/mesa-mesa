@@ -110,7 +110,7 @@ fd_set_min_samples(struct pipe_context *pctx, unsigned min_samples) in_dt
 static void
 upload_user_buffer(struct pipe_context *pctx, struct pipe_constant_buffer *cb)
 {
-   u_upload_data(pctx->stream_uploader, 0, cb->buffer_size, 64,
+   u_upload_data_ref(pctx->stream_uploader, 0, cb->buffer_size, 64,
                  cb->user_buffer, &cb->buffer_offset, &cb->buffer);
    cb->user_buffer = NULL;
 }
@@ -125,13 +125,13 @@ upload_user_buffer(struct pipe_context *pctx, struct pipe_constant_buffer *cb)
  */
 static void
 fd_set_constant_buffer(struct pipe_context *pctx, mesa_shader_stage shader,
-                       uint index, bool take_ownership,
+                       uint index,
                        const struct pipe_constant_buffer *cb) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    struct fd_constbuf_stateobj *so = &ctx->constbuf[shader];
 
-   util_copy_constant_buffer(&so->cb[index], cb, take_ownership);
+   util_copy_constant_buffer(&so->cb[index], cb);
 
    /* Note that gallium frontends can unbind constant buffers by
     * passing a NULL cb, or a cb with no buffer:
@@ -472,8 +472,7 @@ fd_set_vertex_buffers(struct pipe_context *pctx, unsigned count,
       }
    }
 
-   util_set_vertex_buffers_mask(so->vb, &so->enabled_mask, vb, count,
-                                true);
+   util_set_vertex_buffers_mask(so->vb, &so->enabled_mask, vb, count);
    so->count = util_last_bit(so->enabled_mask);
 
    if (!vb)

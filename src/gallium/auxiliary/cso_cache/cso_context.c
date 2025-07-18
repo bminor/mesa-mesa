@@ -413,7 +413,7 @@ cso_unbind_context(struct cso_context *cso)
                ctx->base.pipe->set_shader_images(ctx->base.pipe, sh, 0, 0, maximg, NULL);
             }
             for (int i = 0; i < maxcb; i++) {
-               ctx->base.pipe->set_constant_buffer(ctx->base.pipe, sh, i, false, NULL);
+               ctx->base.pipe->set_constant_buffer(ctx->base.pipe, sh, i, NULL);
             }
          }
       }
@@ -422,9 +422,9 @@ cso_unbind_context(struct cso_context *cso)
       struct pipe_stencil_ref sr = {0};
       ctx->base.pipe->set_stencil_ref(ctx->base.pipe, sr);
       ctx->base.pipe->bind_fs_state(ctx->base.pipe, NULL);
-      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_FRAGMENT, 0, false, NULL);
+      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_FRAGMENT, 0, NULL);
       ctx->base.pipe->bind_vs_state(ctx->base.pipe, NULL);
-      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_VERTEX, 0, false, NULL);
+      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_VERTEX, 0, NULL);
       if (ctx->has_geometry_shader) {
          ctx->base.pipe->bind_gs_state(ctx->base.pipe, NULL);
       }
@@ -1378,18 +1378,17 @@ cso_restore_vertex_elements(struct cso_context_priv *ctx)
 void
 cso_set_vertex_buffers(struct cso_context *cso,
                        unsigned count,
-                       bool take_ownership,
                        const struct pipe_vertex_buffer *buffers)
 {
    struct cso_context_priv *ctx = (struct cso_context_priv *)cso;
    struct u_vbuf *vbuf = ctx->vbuf_current;
 
    if (vbuf) {
-      u_vbuf_set_vertex_buffers(vbuf, count, take_ownership, buffers);
+      u_vbuf_set_vertex_buffers(vbuf, count, buffers);
       return;
    }
 
-   util_set_vertex_buffers(ctx->base.pipe, count, take_ownership, buffers);
+   ctx->base.pipe->set_vertex_buffers(ctx->base.pipe, count, buffers);
 }
 
 
@@ -1426,7 +1425,7 @@ cso_set_vertex_buffers_and_elements(struct cso_context *cso,
       }
 
       u_vbuf_set_vertex_elements(vbuf, velems);
-      u_vbuf_set_vertex_buffers(vbuf, vb_count, true, vbuffers);
+      u_vbuf_set_vertex_buffers(vbuf, vb_count, vbuffers);
       return;
    }
 
@@ -1832,9 +1831,9 @@ cso_restore_state(struct cso_context *ctx, unsigned unbind)
    if (state_mask & CSO_BIT_VIEWPORT)
       cso_restore_viewport(cso);
    if (unbind & CSO_UNBIND_VS_CONSTANTS)
-      cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_VERTEX, 0, false, NULL);
+      cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_VERTEX, 0, NULL);
    if (unbind & CSO_UNBIND_FS_CONSTANTS)
-      cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_FRAGMENT, 0, false, NULL);
+      cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_FRAGMENT, 0, NULL);
    if (state_mask & CSO_BIT_VERTEX_ELEMENTS)
       cso_restore_vertex_elements(cso);
    if (state_mask & CSO_BIT_STREAM_OUTPUTS)

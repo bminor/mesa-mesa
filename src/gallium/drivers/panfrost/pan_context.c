@@ -338,7 +338,7 @@ panfrost_set_vertex_buffers(struct pipe_context *pctx, unsigned num_buffers,
    struct panfrost_context *ctx = pan_context(pctx);
 
    util_set_vertex_buffers_mask(ctx->vertex_buffers, &ctx->vb_mask, buffers,
-                                num_buffers, true);
+                                num_buffers);
 
    ctx->dirty |= PAN_DIRTY_VERTEX;
 }
@@ -346,13 +346,12 @@ panfrost_set_vertex_buffers(struct pipe_context *pctx, unsigned num_buffers,
 static void
 panfrost_set_constant_buffer(struct pipe_context *pctx,
                              mesa_shader_stage shader, uint index,
-                             bool take_ownership,
                              const struct pipe_constant_buffer *buf)
 {
    struct panfrost_context *ctx = pan_context(pctx);
    struct panfrost_constant_buffer *pbuf = &ctx->constant_buffer[shader];
 
-   util_copy_constant_buffer(&pbuf->cb[index], buf, take_ownership);
+   util_copy_constant_buffer(&pbuf->cb[index], buf);
 
    unsigned mask = (1 << index);
 

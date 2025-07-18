@@ -146,7 +146,7 @@ iris_update_draw_parameters(struct iris_context *ice,
             ice->draw.params.baseinstance = info->start_instance;
             ice->draw.params_valid = true;
 
-            u_upload_data(ice->ctx.const_uploader, 0,
+            u_upload_data_ref(ice->ctx.const_uploader, 0,
                           sizeof(ice->draw.params), 4, &ice->draw.params,
                           &draw_params->offset, &draw_params->res);
          }
@@ -164,7 +164,7 @@ iris_update_draw_parameters(struct iris_context *ice,
          ice->draw.derived_params.drawid = drawid_offset;
          ice->draw.derived_params.is_indexed_draw = is_indexed_draw;
 
-         u_upload_data(ice->ctx.const_uploader, 0,
+         u_upload_data_ref(ice->ctx.const_uploader, 0,
                        sizeof(ice->draw.derived_params), 4,
                        &ice->draw.derived_params,
                        &derived_params->offset, &derived_params->res);
@@ -376,7 +376,7 @@ iris_update_grid_size_resource(struct iris_context *ice,
       grid_updated = true;
    } else if (memcmp(ice->state.last_grid, grid->grid, sizeof(grid->grid)) != 0) {
       memcpy(ice->state.last_grid, grid->grid, sizeof(grid->grid));
-      u_upload_data(ice->state.dynamic_uploader, 0, sizeof(grid->grid), 4,
+      u_upload_data_ref(ice->state.dynamic_uploader, 0, sizeof(grid->grid), 4,
                     grid->grid, &grid_ref->offset, &grid_ref->res);
       grid_updated = true;
    }
@@ -392,7 +392,7 @@ iris_update_grid_size_resource(struct iris_context *ice,
    struct iris_bo *grid_bo = iris_resource_bo(grid_ref->res);
 
    void *surf_map = NULL;
-   u_upload_alloc(ice->state.surface_uploader, 0, isl_dev->ss.size,
+   u_upload_alloc_ref(ice->state.surface_uploader, 0, isl_dev->ss.size,
                   isl_dev->ss.align, &state_ref->offset, &state_ref->res,
                   &surf_map);
    state_ref->offset +=

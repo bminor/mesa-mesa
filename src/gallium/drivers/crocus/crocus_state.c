@@ -970,7 +970,7 @@ gen4_upload_curbe(struct crocus_batch *batch)
       goto emit;
 
    uint32_t *map;
-   u_upload_alloc(ice->ctx.const_uploader, 0, buf_sz, 64,
+   u_upload_alloc_ref(ice->ctx.const_uploader, 0, buf_sz, 64,
                   &ice->curbe.curbe_offset, (struct pipe_resource **)&ice->curbe.curbe_res, (void **) &map);
 
    /* fragment shader constants */
@@ -3505,7 +3505,6 @@ crocus_set_framebuffer_state(struct pipe_context *ctx,
 static void
 crocus_set_constant_buffer(struct pipe_context *ctx,
                            mesa_shader_stage p_stage, unsigned index,
-                           bool take_ownership,
                            const struct pipe_constant_buffer *input)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
@@ -3513,7 +3512,7 @@ crocus_set_constant_buffer(struct pipe_context *ctx,
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
    struct pipe_constant_buffer *cbuf = &shs->constbufs[index];
 
-   util_copy_constant_buffer(&shs->constbufs[index], input, take_ownership);
+   util_copy_constant_buffer(&shs->constbufs[index], input);
 
    if (input && input->buffer_size && (input->buffer || input->user_buffer)) {
       shs->bound_cbufs |= 1u << index;
@@ -3521,12 +3520,12 @@ crocus_set_constant_buffer(struct pipe_context *ctx,
       if (input->user_buffer) {
          void *map = NULL;
          pipe_resource_reference(&cbuf->buffer, NULL);
-         u_upload_alloc(ice->ctx.const_uploader, 0, input->buffer_size, 64,
+         u_upload_alloc_ref(ice->ctx.const_uploader, 0, input->buffer_size, 64,
                         &cbuf->buffer_offset, &cbuf->buffer, (void **) &map);
 
          if (!cbuf->buffer) {
             /* Allocation was unsuccessful - just unbind */
-            crocus_set_constant_buffer(ctx, p_stage, index, false, NULL);
+            crocus_set_constant_buffer(ctx, p_stage, index, NULL);
             return;
          }
 
@@ -3566,7 +3565,7 @@ upload_sysvals(struct crocus_context *ice,
    uint32_t *map = NULL;
 
    assert(sysval_cbuf_index < PIPE_MAX_CONSTANT_BUFFERS);
-   u_upload_alloc(ice->ctx.const_uploader, 0, upload_size, 64,
+   u_upload_alloc_ref(ice->ctx.const_uploader, 0, upload_size, 64,
                   &cbuf->buffer_offset, &cbuf->buffer, (void **) &map);
 
    for (int i = 0; i < shader->num_system_values; i++) {
@@ -3693,7 +3692,7 @@ crocus_set_vertex_buffers(struct pipe_context *ctx,
       (GFX_VERx10 < 75 && screen->devinfo.platform != INTEL_PLATFORM_BYT) * 2;
 
    util_set_vertex_buffers_mask(ice->state.vertex_buffers, &ice->state.bound_vertex_buffers,
-                                buffers, count, true);
+                                buffers, count);
 
    for (unsigned i = 0; i < count; i++) {
       struct pipe_vertex_buffer *state =
@@ -4056,7 +4055,7 @@ crocus_create_stream_output_target(struct pipe_context *ctx,
 #if GFX_VER >= 7
    struct crocus_context *ice = (struct crocus_context *) ctx;
    void *temp;
-   u_upload_alloc(ice->ctx.stream_uploader, 0, sizeof(uint32_t), 4,
+   u_upload_alloc_ref(ice->ctx.stream_uploader, 0, sizeof(uint32_t), 4,
                   &cso->offset_offset,
                   (struct pipe_resource **)&cso->offset_res,
                   &temp);
@@ -4105,7 +4104,7 @@ crocus_stream_store_prims_written(struct crocus_batch *batch,
                                   struct crocus_stream_output_target *tgt)
 {
    if (!tgt->offset_res) {
-      u_upload_alloc(batch->ice->ctx.stream_uploader, 0, 4096, 4,
+      u_upload_alloc_ref(batch->ice->ctx.stream_uploader, 0, 4096, 4,
                      &tgt->offset_offset,
                      (struct pipe_resource **)&tgt->offset_res,
                      &tgt->prim_map);
@@ -7829,7 +7828,7 @@ crocus_upload_render_state(struct crocus_context *ice,
 
       if (draw->has_user_indices) {
          unsigned start_offset = draw->index_size * sc->start;
-         u_upload_data(ice->ctx.stream_uploader, 0,
+         u_upload_data_ref(ice->ctx.stream_uploader, 0,
                        sc->count * draw->index_size, 4,
                        (char *)draw->index.user + start_offset,
                        &offset, &ice->state.index_buffer.res);
@@ -9298,6 +9297,7 @@ genX(crocus_init_state)(struct crocus_context *ice)
    ctx->set_viewport_states = crocus_set_viewport_states;
    ctx->sampler_view_destroy = crocus_sampler_view_destroy;
    ctx->sampler_view_release = u_default_sampler_view_release;
+   ctx->resource_release = u_default_resource_release;
    ctx->surface_destroy = crocus_surface_destroy;
    ctx->draw_vbo = crocus_draw_vbo;
    ctx->launch_grid = crocus_launch_grid;

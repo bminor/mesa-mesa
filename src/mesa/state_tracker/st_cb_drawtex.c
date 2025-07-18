@@ -157,6 +157,7 @@ st_DrawTex(struct gl_context *ctx, GLfloat x, GLfloat y, GLfloat z,
    numAttribs = 1 + emitColor + numTexCoords;
 
    /* load vertex buffer */
+   struct pipe_resource *releasebuf = NULL;
    {
 #define SET_ATTRIB(VERT, ATTR, X, Y, Z, W)                              \
       do {                                                              \
@@ -174,7 +175,7 @@ st_DrawTex(struct gl_context *ctx, GLfloat x, GLfloat y, GLfloat z,
 
       u_upload_alloc(pipe->stream_uploader, 0,
                      numAttribs * 4 * 4 * sizeof(GLfloat), 4,
-                     &offset, &vbuffer, (void **) &vbuf);
+                     &offset, &vbuffer, &releasebuf, (void **) &vbuf);
       if (!vbuffer) {
          return;
       }
@@ -299,10 +300,12 @@ st_DrawTex(struct gl_context *ctx, GLfloat x, GLfloat y, GLfloat z,
    }
 
    util_draw_vertex_buffer(pipe, cso, vbuffer,
-                           offset, true,
+                           offset,
                            MESA_PRIM_TRIANGLE_FAN,
                            4,  /* verts */
                            numAttribs); /* attribs/vert */
+
+   pipe_resource_release(pipe, releasebuf);
 
    /* restore state */
    cso_restore_state(cso, 0);

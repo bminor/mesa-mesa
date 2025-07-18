@@ -433,7 +433,6 @@ impl PipeContext {
                 self.pipe.as_ptr(),
                 mesa_shader_stage::MESA_SHADER_COMPUTE,
                 idx,
-                false,
                 &cb,
             )
         }
@@ -451,7 +450,6 @@ impl PipeContext {
                 self.pipe.as_ptr(),
                 mesa_shader_stage::MESA_SHADER_COMPUTE,
                 idx,
-                false,
                 if data.is_empty() { ptr::null() } else { &cb },
             )
         }
@@ -469,6 +467,7 @@ impl PipeContext {
 
         unsafe {
             let stream = self.pipe.as_ref().stream_uploader;
+            let mut releasebuf = ptr::null_mut();
             u_upload_data(
                 stream,
                 0,
@@ -477,6 +476,7 @@ impl PipeContext {
                 data.as_ptr().cast(),
                 &mut cb.buffer_offset,
                 &mut cb.buffer,
+                &mut releasebuf,
             );
             u_upload_unmap(stream);
 
@@ -488,9 +488,9 @@ impl PipeContext {
                 self.pipe.as_ptr(),
                 mesa_shader_stage::MESA_SHADER_COMPUTE,
                 idx,
-                true,
                 &cb,
             );
+            self.pipe.as_ref().resource_release.unwrap()(self.pipe.as_ptr(), releasebuf);
 
             true
         }

@@ -771,7 +771,7 @@ emit_constbuf(struct svga_context *svga,
        */
       alloc_buf_size = align(new_buf_size, CONST0_UPLOAD_ALIGNMENT);
 
-      u_upload_alloc(svga->const0_upload, 0, alloc_buf_size,
+      u_upload_alloc_ref(svga->const0_upload, 0, alloc_buf_size,
                      CONST0_UPLOAD_ALIGNMENT, &offset,
                      &dst_buffer, &dst_map);
 

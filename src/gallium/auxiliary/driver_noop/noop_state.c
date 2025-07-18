@@ -154,13 +154,8 @@ static void noop_set_framebuffer_state(struct pipe_context *ctx,
 
 static void noop_set_constant_buffer(struct pipe_context *ctx,
                                      mesa_shader_stage shader, uint index,
-                                     bool take_ownership,
                                      const struct pipe_constant_buffer *cb)
 {
-   if (take_ownership && cb) {
-      struct pipe_resource *buf = cb->buffer;
-      pipe_resource_reference(&buf, NULL);
-   }
 }
 
 static void noop_set_inlinable_constants(struct pipe_context *ctx,

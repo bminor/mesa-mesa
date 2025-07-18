@@ -622,5 +622,6 @@ llvmpipe_init_sampler_funcs(struct llvmpipe_context *llvmpipe)
    llvmpipe->pipe.set_sampler_views = llvmpipe_set_sampler_views;
    llvmpipe->pipe.sampler_view_destroy = llvmpipe_sampler_view_destroy;
    llvmpipe->pipe.sampler_view_release = u_default_sampler_view_release;
+   llvmpipe->pipe.resource_release = u_default_resource_release;
    llvmpipe->pipe.delete_sampler_state = llvmpipe_delete_sampler_state;
 }

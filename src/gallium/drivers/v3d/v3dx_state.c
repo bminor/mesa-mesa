@@ -309,7 +309,7 @@ v3d_set_vertex_buffers(struct pipe_context *pctx,
 
         assert(BITSET_SIZE(so->enabled_mask) <= 32);
         util_set_vertex_buffers_mask(so->vb, &so->enabled_mask[0], vb,
-                                     count, true);
+                                     count);
 
         so->count = BITSET_LAST_BIT(so->enabled_mask);
 
@@ -441,7 +441,7 @@ v3d_vertex_state_create(struct pipe_context *pctx, unsigned num_elements,
                  * elements use them.
                  */
                 uint32_t *attrs;
-                u_upload_alloc(v3d->state_uploader, 0,
+                u_upload_alloc_ref(v3d->state_uploader, 0,
                                V3D_MAX_VS_INPUTS * sizeof(float), 16,
                                &so->defaults_offset, &so->defaults, (void **)&attrs);
 
@@ -484,13 +484,12 @@ v3d_vertex_state_bind(struct pipe_context *pctx, void *hwcso)
 
 static void
 v3d_set_constant_buffer(struct pipe_context *pctx, mesa_shader_stage shader, uint index,
-                        bool take_ownership,
                         const struct pipe_constant_buffer *cb)
 {
         struct v3d_context *v3d = v3d_context(pctx);
         struct v3d_constbuf_stateobj *so = &v3d->constbuf[shader];
 
-        util_copy_constant_buffer(&so->cb[index], cb, take_ownership);
+        util_copy_constant_buffer(&so->cb[index], cb);
 
         /* Note that the gallium frontend can unbind constant buffers by
          * passing NULL here.
@@ -789,7 +788,7 @@ v3d_create_sampler_state(struct pipe_context *pctx,
         int sampler_align = so->border_color_variants ? 32 : 8;
         int sampler_size = align(cl_packet_length(SAMPLER_STATE), sampler_align);
         int num_variants = (so->border_color_variants ? ARRAY_SIZE(so->sampler_state_offset) : 1);
-        u_upload_alloc(v3d->state_uploader, 0,
+        u_upload_alloc_ref(v3d->state_uploader, 0,
                        sampler_size * num_variants,
                        sampler_align,
                        &so->sampler_state_offset[0],
@@ -1345,7 +1344,7 @@ v3d_create_image_view_texture_shader_state(struct v3d_context *v3d,
         struct v3d_image_view *iview = &so->si[img];
 
         void *map;
-        u_upload_alloc(v3d->uploader, 0, cl_packet_length(TEXTURE_SHADER_STATE),
+        u_upload_alloc_ref(v3d->uploader, 0, cl_packet_length(TEXTURE_SHADER_STATE),
                        32,
                        &iview->tex_state_offset,
                        &iview->tex_state,
@@ -1470,6 +1469,7 @@ v3dX(state_init)(struct pipe_context *pctx)
         pctx->create_sampler_view = v3d_create_sampler_view;
         pctx->sampler_view_destroy = v3d_sampler_view_destroy;
         pctx->sampler_view_release = u_default_sampler_view_release;
+        pctx->resource_release = u_default_resource_release;
         pctx->set_sampler_views = v3d_set_sampler_views;
 
         pctx->set_shader_buffers = v3d_set_shader_buffers;

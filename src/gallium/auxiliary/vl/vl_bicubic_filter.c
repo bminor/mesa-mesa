@@ -428,9 +428,10 @@ vl_bicubic_filter_render(struct vl_bicubic_filter *filter,
 
    struct pipe_constant_buffer cb = {0};
    float *ptr = NULL;
+   struct pipe_resource *releasebuf = NULL;
 
    u_upload_alloc(filter->pipe->const_uploader, 0, 2 * sizeof(float), 256,
-                  &cb.buffer_offset, &cb.buffer, (void**)&ptr);
+                  &cb.buffer_offset, &cb.buffer, &releasebuf, (void**)&ptr);
    cb.buffer_size = 2 * sizeof(float);
 
    if (ptr) {
@@ -450,7 +451,7 @@ vl_bicubic_filter_render(struct vl_bicubic_filter *filter,
                                      0, 0, pipe_surface_width(dst),
                                      pipe_surface_height(dst), false);
    filter->pipe->set_constant_buffer(filter->pipe, MESA_SHADER_FRAGMENT,
-                                     0, false, &cb);
+                                     0, &cb);
    filter->pipe->bind_rasterizer_state(filter->pipe, filter->rs_state);
    filter->pipe->bind_blend_state(filter->pipe, filter->blend);
    filter->pipe->bind_sampler_states(filter->pipe, MESA_SHADER_FRAGMENT,
@@ -462,7 +463,8 @@ vl_bicubic_filter_render(struct vl_bicubic_filter *filter,
    filter->pipe->set_framebuffer_state(filter->pipe, &fb_state);
    filter->pipe->set_viewport_states(filter->pipe, 0, 1, &viewport);
    filter->pipe->bind_vertex_elements_state(filter->pipe, filter->ves);
-   util_set_vertex_buffers(filter->pipe, 1, false, &filter->quad);
+   filter->pipe->set_vertex_buffers(filter->pipe, 1, &filter->quad);
 
    util_draw_arrays(filter->pipe, MESA_PRIM_QUADS, 0, 4);
+   pipe_resource_release(filter->pipe, releasebuf);
 }

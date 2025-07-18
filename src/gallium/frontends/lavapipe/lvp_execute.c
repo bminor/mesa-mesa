@@ -93,6 +93,8 @@ struct rendering_state {
    struct u_upload_mgr *uploader;
    struct cso_context *cso;
 
+   struct util_dynarray releasebufs;
+
    bool blend_dirty;
    bool rs_dirty;
    bool dsa_dirty;
@@ -208,7 +210,6 @@ struct rendering_state {
    void *tess_states[2];
 
    struct util_dynarray push_desc_sets;
-   struct util_dynarray internal_buffers;
 
    struct lvp_pipeline *exec_graph;
 
@@ -302,9 +303,12 @@ update_pcbuf(struct rendering_state *state, mesa_shader_stage pstage,
       cbuf.buffer_size = size;
       cbuf.buffer = NULL;
       cbuf.user_buffer = NULL;
-      u_upload_alloc(state->uploader, 0, size, 64, &cbuf.buffer_offset, &cbuf.buffer, (void**)&mem);
+      struct pipe_resource *releasebuf = NULL;
+      u_upload_alloc(state->uploader, 0, size, 64, &cbuf.buffer_offset, &cbuf.buffer, &releasebuf, (void**)&mem);
+      if (releasebuf)
+         util_dynarray_append(&state->releasebufs, struct pipe_resource*, releasebuf);
       memcpy(mem, state->push_constants, size);
-      state->pctx->set_constant_buffer(state->pctx, pstage, 0, true, &cbuf);
+      state->pctx->set_constant_buffer(state->pctx, pstage, 0, &cbuf);
    }
    state->pcbuf_dirty[api_stage] = false;
 }
@@ -317,7 +321,7 @@ static void emit_compute_state(struct rendering_state *state)
    if (state->constbuf_dirty[MESA_SHADER_COMPUTE]) {
       for (unsigned i = 0; i < state->num_const_bufs[MESA_SHADER_COMPUTE]; i++)
          state->pctx->set_constant_buffer(state->pctx, MESA_SHADER_COMPUTE,
-                                          i + 1, false, &state->const_buffer[MESA_SHADER_COMPUTE][i]);
+                                          i + 1, &state->const_buffer[MESA_SHADER_COMPUTE][i]);
       state->constbuf_dirty[MESA_SHADER_COMPUTE] = false;
    }
 
@@ -494,7 +498,7 @@ static void emit_state(struct rendering_state *state)
    }
 
    if (state->vb_dirty) {
-      cso_set_vertex_buffers(state->cso, state->num_vb, false, state->vb);
+      cso_set_vertex_buffers(state->cso, state->num_vb, state->vb);
       state->vb_dirty = false;
    }
 
@@ -502,7 +506,7 @@ static void emit_state(struct rendering_state *state)
       if (state->constbuf_dirty[sh]) {
          for (unsigned idx = 0; idx < state->num_const_bufs[sh]; idx++)
             state->pctx->set_constant_buffer(state->pctx, sh,
-                                             idx + 1, false, &state->const_buffer[sh][idx]);
+                                             idx + 1, &state->const_buffer[sh][idx]);
       }
       state->constbuf_dirty[sh] = false;
    }
@@ -4365,11 +4369,12 @@ lvp_push_internal_buffer(struct rendering_state *state, mesa_shader_stage stage,
    };
 
    uint8_t *mem;
-   u_upload_alloc(state->uploader, 0, size, 64, &buffer.buffer_offset, &buffer.buffer, (void**)&mem);
+   struct pipe_resource *releasebuf = NULL;
+   u_upload_alloc(state->uploader, 0, size, 64, &buffer.buffer_offset, &buffer.buffer, &releasebuf, (void**)&mem);
+   if (releasebuf)
+      util_dynarray_append(&state->releasebufs, struct pipe_resource*, releasebuf);
 
    state->pctx->set_shader_buffers(state->pctx, stage, 0, 1, &buffer, 0x1);
-
-   util_dynarray_append(&state->internal_buffers, struct pipe_resource *, buffer.buffer);
 
    return mem;
 }
@@ -4581,7 +4586,7 @@ lvp_trace_rays(struct rendering_state *state, VkTraceRaysIndirectCommand2KHR *co
    if (state->constbuf_dirty[MESA_SHADER_RAYGEN]) {
       for (unsigned i = 0; i < state->num_const_bufs[MESA_SHADER_RAYGEN]; i++)
          state->pctx->set_constant_buffer(state->pctx, MESA_SHADER_COMPUTE,
-                                          i + 1, false, &state->const_buffer[MESA_SHADER_RAYGEN][i]);
+                                          i + 1, &state->const_buffer[MESA_SHADER_RAYGEN][i]);
       state->constbuf_dirty[MESA_SHADER_RAYGEN] = false;
    }
 
@@ -5380,7 +5385,7 @@ VkResult lvp_execute_cmds(struct lvp_device *device,
    state->sample_mask = UINT32_MAX;
    state->poison_mem = device->poison_mem;
    util_dynarray_init(&state->push_desc_sets, NULL);
-   util_dynarray_init(&state->internal_buffers, NULL);
+   util_dynarray_init(&state->releasebufs, NULL);
 
    /* default values */
    state->min_sample_shading = 1;
@@ -5418,12 +5423,13 @@ VkResult lvp_execute_cmds(struct lvp_device *device,
    util_dynarray_foreach (&state->push_desc_sets, struct lvp_descriptor_set *, set)
       lvp_descriptor_set_destroy(device, *set);
 
+   struct pipe_resource **pres = state->releasebufs.data;
+   unsigned count = util_dynarray_num_elements(&state->releasebufs, struct pipe_resource*);
+   for (unsigned j = 0; j < count; j++)
+      pipe_resource_release(state->pctx, pres[j]);
+
    util_dynarray_fini(&state->push_desc_sets);
-
-   util_dynarray_foreach (&state->internal_buffers, struct pipe_resource *, buffer)
-      pipe_resource_reference(buffer, NULL);
-
-   util_dynarray_fini(&state->internal_buffers);
+   util_dynarray_fini(&state->releasebufs);
 
    for (unsigned i = 0; i < ARRAY_SIZE(state->desc_buffers); i++)
       pipe_resource_reference(&state->desc_buffers[i], NULL);

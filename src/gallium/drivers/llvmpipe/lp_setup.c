@@ -639,10 +639,10 @@ lp_setup_set_fs_constants(struct lp_setup_context *setup,
    unsigned i;
    for (i = 0; i < num; ++i) {
       util_copy_constant_buffer(&setup->constants[i].current,
-                                &buffers[i], false);
+                                &buffers[i]);
    }
    for (; i < ARRAY_SIZE(setup->constants); i++) {
-      util_copy_constant_buffer(&setup->constants[i].current, NULL, false);
+      util_copy_constant_buffer(&setup->constants[i].current, NULL);
    }
    setup->dirty |= LP_SETUP_NEW_CONSTANTS;
 }

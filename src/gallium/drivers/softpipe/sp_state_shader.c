@@ -357,7 +357,6 @@ softpipe_delete_gs_state(struct pipe_context *pipe, void *gs)
 static void
 softpipe_set_constant_buffer(struct pipe_context *pipe,
                              mesa_shader_stage shader, uint index,
-                             bool take_ownership,
                              const struct pipe_constant_buffer *cb)
 {
    struct softpipe_context *softpipe = softpipe_context(pipe);
@@ -381,13 +380,7 @@ softpipe_set_constant_buffer(struct pipe_context *pipe,
 
    draw_flush(softpipe->draw);
 
-   /* note: reference counting */
-   if (take_ownership) {
-      pipe_resource_reference(&softpipe->constants[shader][index], NULL);
-      softpipe->constants[shader][index] = constants;
-   } else {
-      pipe_resource_reference(&softpipe->constants[shader][index], constants);
-   }
+   pipe_resource_reference(&softpipe->constants[shader][index], constants);
 
    if (shader == MESA_SHADER_VERTEX || shader == MESA_SHADER_GEOMETRY) {
       draw_set_mapped_constant_buffer(softpipe->draw, shader, index, data, size);

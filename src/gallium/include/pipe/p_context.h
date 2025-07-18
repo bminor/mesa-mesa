@@ -460,13 +460,10 @@ struct pipe_context {
     *
     * \param shader           Shader stage
     * \param index            Buffer binding slot index within a shader stage
-    * \param take_ownership   The callee takes ownership of the buffer reference.
-    *                         (the callee shouldn't increment the ref count)
     * \param buf              Constant buffer parameters
     */
    void (*set_constant_buffer)(struct pipe_context *,
                                mesa_shader_stage shader, uint index,
-                               bool take_ownership,
                                const struct pipe_constant_buffer *buf);
 
    /**
@@ -619,11 +616,6 @@ struct pipe_context {
 
    /**
     * Bind an array of vertex buffers to the specified slots.
-    *
-    * Unlike other set functions, the caller should always increment
-    * the buffer reference counts because the driver should only copy
-    * the pipe_resource pointers. This is the same behavior as setting
-    * take_ownership = true in other functions.
     *
     * count must be equal to the maximum used vertex buffer index + 1
     * in vertex elements or 0.
@@ -963,6 +955,13 @@ struct pipe_context {
     */
    bool (*resource_commit)(struct pipe_context *, struct pipe_resource *,
                            unsigned level, struct pipe_box *box, bool commit);
+
+   /**
+    * Signal the driver that the frontend has released a resource.
+    *
+    * Following this call, the driver has full ownership of the resource.
+    */
+   void (*resource_release)(struct pipe_context *, struct pipe_resource *);
 
    /**
     * Creates a video codec for a specific video format/profile

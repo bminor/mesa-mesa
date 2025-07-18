@@ -374,7 +374,7 @@ void *r600_buffer_transfer_map(struct pipe_context *ctx,
 			unsigned offset;
 			struct r600_resource *staging = NULL;
 
-			u_upload_alloc(ctx->stream_uploader, 0,
+			u_upload_alloc_ref(ctx->stream_uploader, 0,
                                        box->width + (box->x % R600_MAP_BUFFER_ALIGNMENT),
 				       rctx->screen->info.tcc_cache_line_size,
 				       &offset, (struct pipe_resource**)&staging,

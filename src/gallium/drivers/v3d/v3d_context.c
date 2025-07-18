@@ -228,7 +228,7 @@ v3d_ensure_prim_counts_allocated(struct v3d_context *ctx)
 
         /* Init all 7 counters and 1 padding to 0 */
         uint32_t zeroes[8] = { 0 };
-        u_upload_data(ctx->uploader,
+        u_upload_data_ref(ctx->uploader,
                       0, sizeof(zeroes), 32, zeroes,
                       &ctx->prim_counts_offset,
                       &ctx->prim_counts);

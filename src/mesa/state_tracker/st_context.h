@@ -279,6 +279,9 @@ struct st_context
       struct gl_program *current_program[MESA_SHADER_MESH_STAGES];
    };
 
+   struct util_dynarray release_resources;
+   unsigned release_counter;
+
    struct st_common_variant *vp_variant;
 
    struct {
@@ -548,6 +551,11 @@ st_context_add_work(struct st_context *st)
    }
 }
 
+void
+st_prune_releasebufs(struct st_context *st);
+
+void
+st_add_releasebuf(struct st_context *st, struct pipe_resource *releasebuf);
 
 #ifdef __cplusplus
 }

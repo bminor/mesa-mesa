@@ -1040,6 +1040,11 @@ _mesa_initialize_context(struct gl_context *ctx,
 
    ctx->FirstTimeCurrent = GL_TRUE;
 
+   simple_mtx_lock(&ctx->Shared->Mutex);
+   list_addtail(&ctx->SharedLink, &ctx->Shared->Contexts);
+   simple_mtx_unlock(&ctx->Shared->Mutex);
+   util_dynarray_init(&ctx->ReleaseResources, NULL);
+
    return GL_TRUE;
 
 fail:
@@ -1122,6 +1127,14 @@ _mesa_free_context_data(struct gl_context *ctx, bool destroy_debug_output)
    free(ctx->MarshalExec);
 
    /* Shared context state (display lists, textures, etc) */
+   simple_mtx_lock(&ctx->Shared->Mutex);
+   list_del(&ctx->SharedLink);
+
+   _mesa_clear_releasebufs(ctx);
+   util_dynarray_fini(&ctx->ReleaseResources);
+
+   simple_mtx_unlock(&ctx->Shared->Mutex);
+
    _mesa_reference_shared_state(ctx, &ctx->Shared, NULL);
 
    if (destroy_debug_output)
@@ -1148,6 +1161,15 @@ _mesa_free_context_data(struct gl_context *ctx, bool destroy_debug_output)
    free(ctx->tmp_draws);
 }
 
+void
+_mesa_clear_releasebufs(struct gl_context *ctx)
+{
+   struct pipe_resource **pres = ctx->ReleaseResources.data;
+   unsigned count = util_dynarray_num_elements(&ctx->ReleaseResources, struct pipe_resource*);
+   for (unsigned j = 0; j < count; j++)
+      pipe_resource_release(ctx->pipe, pres[j]);
+   util_dynarray_clear(&ctx->ReleaseResources);
+}
 
 /**
  * Copy attribute groups from one context to another.

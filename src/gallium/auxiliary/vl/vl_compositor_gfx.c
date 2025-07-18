@@ -599,7 +599,7 @@ calc_drawn_area(struct vl_compositor_state *s, struct vl_compositor_layer *layer
 }
 
 static void
-gen_vertex_data(struct vl_compositor *c, struct vl_compositor_state *s, struct u_rect *dirty)
+gen_vertex_data(struct vl_compositor *c, struct vl_compositor_state *s, struct u_rect *dirty, struct pipe_resource **releasebuf)
 {
    struct vertex2f *vb;
    unsigned i;
@@ -611,6 +611,7 @@ gen_vertex_data(struct vl_compositor *c, struct vl_compositor_state *s, struct u
                   VL_COMPOSITOR_VB_STRIDE * VL_COMPOSITOR_MAX_LAYERS * 4, /* size */
                   4, /* alignment */
                   &c->vertex_buf.buffer_offset, &c->vertex_buf.buffer.resource,
+                  releasebuf,
                   (void **)&vb);
 
    for (i = 0; i < VL_COMPOSITOR_MAX_LAYERS; i++) {
@@ -724,7 +725,8 @@ vl_compositor_gfx_render(struct vl_compositor_state *s,
    }
    c->pipe->set_scissor_states(c->pipe, 0, 1, &s->scissor);
 
-   gen_vertex_data(c, s, dirty_area);
+   struct pipe_resource *releasebuf = NULL;
+   gen_vertex_data(c, s, dirty_area, &releasebuf);
    set_csc_matrix(s);
 
    if (clear_dirty && dirty_area &&
@@ -739,9 +741,10 @@ vl_compositor_gfx_render(struct vl_compositor_state *s,
    c->pipe->set_framebuffer_state(c->pipe, &c->fb_state);
    c->pipe->bind_vs_state(c->pipe, c->vs);
    c->pipe->bind_vertex_elements_state(c->pipe, c->vertex_elems_state);
-   util_set_vertex_buffers(c->pipe, 1, false, &c->vertex_buf);
+   c->pipe->set_vertex_buffers(c->pipe, 1, &c->vertex_buf);
    pipe_set_constant_buffer(c->pipe, MESA_SHADER_FRAGMENT, 0, s->shader_params);
    c->pipe->bind_rasterizer_state(c->pipe, c->rast);
 
    draw_layers(c, s, dirty_area);
+   pipe_resource_release(c->pipe, releasebuf);
 }

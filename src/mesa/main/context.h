@@ -541,6 +541,8 @@ _mesa_has_internalformat_query(const struct gl_context *ctx)
           _mesa_is_gles3(ctx);
 }
 
+void
+_mesa_clear_releasebufs(struct gl_context *ctx);
 #ifdef __cplusplus
 }
 #endif

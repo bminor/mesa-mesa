@@ -505,7 +505,7 @@ d3d12_restore_compute_transform_state(struct d3d12_context *ctx, d3d12_compute_t
 
    ctx->base.bind_compute_state(&ctx->base, save->cs);
 
-   ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, true, &save->cbuf0);
+   ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, &save->cbuf0);
    ctx->base.set_shader_buffers(&ctx->base, MESA_SHADER_COMPUTE, 0, ARRAY_SIZE(save->ssbos), save->ssbos, (1u << ARRAY_SIZE(save->ssbos)) - 1);
 
    if (ctx->current_predication)

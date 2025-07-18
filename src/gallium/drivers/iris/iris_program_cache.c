@@ -165,7 +165,7 @@ iris_upload_shader(struct iris_screen *screen,
 {
    const struct intel_device_info *devinfo = screen->devinfo;
 
-   u_upload_alloc(uploader, 0, shader->program_size, 64,
+   u_upload_alloc_ref(uploader, 0, shader->program_size, 64,
                   &shader->assembly.offset, &shader->assembly.res,
                   &shader->map);
    memcpy(shader->map, assembly, shader->program_size);

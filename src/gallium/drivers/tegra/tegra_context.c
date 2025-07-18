@@ -476,7 +476,7 @@ tegra_set_clip_state(struct pipe_context *pcontext,
 
 static void
 tegra_set_constant_buffer(struct pipe_context *pcontext, mesa_shader_stage shader,
-                          unsigned int index, bool take_ownership,
+                          unsigned int index,
                           const struct pipe_constant_buffer *buf)
 {
    struct tegra_context *context = to_tegra_context(pcontext);
@@ -488,7 +488,7 @@ tegra_set_constant_buffer(struct pipe_context *pcontext, mesa_shader_stage shade
       buf = &buffer;
    }
 
-   context->gpu->set_constant_buffer(context->gpu, shader, index, take_ownership, buf);
+   context->gpu->set_constant_buffer(context->gpu, shader, index, buf);
 }
 
 static void
@@ -1355,6 +1355,7 @@ tegra_screen_context_create(struct pipe_screen *pscreen, void *priv,
    context->base.create_sampler_view = tegra_create_sampler_view;
    context->base.sampler_view_destroy = tegra_sampler_view_destroy;
    context->base.sampler_view_release = u_default_sampler_view_release;
+   context->base.resource_release = u_default_resource_release;
 
    context->base.create_surface = tegra_create_surface;
    context->base.surface_destroy = tegra_surface_destroy;

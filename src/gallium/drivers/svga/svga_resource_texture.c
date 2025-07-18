@@ -1459,7 +1459,7 @@ svga_texture_transfer_map_upload(struct svga_context *svga,
     * upload buffer manager code will try to allocate a new buffer
     * with the new buffer size.
     */
-   u_upload_alloc(svga->tex_upload, 0, upload_size, 16,
+   u_upload_alloc_ref(svga->tex_upload, 0, upload_size, 16,
                   &offset, &tex_buffer, &tex_map);
 
    if (!tex_map) {

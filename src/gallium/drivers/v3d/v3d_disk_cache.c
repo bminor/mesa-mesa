@@ -166,7 +166,7 @@ v3d_disk_cache_retrieve(struct v3d_context *v3d,
                 ralloc_array(shader->prog_data.base, uint32_t, ulist_count);
         memcpy(shader->prog_data.base->uniforms.data, ulist_data, ulist_data_size);
 
-        u_upload_data(v3d->state_uploader, 0, qpu_size, 8,
+        u_upload_data_ref(v3d->state_uploader, 0, qpu_size, 8,
                       qpu_insts, &shader->offset, &shader->resource);
 
         shader->qpu_size = qpu_size;

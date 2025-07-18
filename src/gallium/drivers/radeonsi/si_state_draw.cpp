@@ -1868,7 +1868,7 @@ static bool si_upload_and_prefetch_VB_descriptors(struct si_context *sctx,
          /* Vertex buffer descriptors are the only ones which are uploaded directly
           * and don't go through si_upload_graphics_shader_descriptors.
           */
-         u_upload_alloc(sctx->b.const_uploader, 0, alloc_size,
+         u_upload_alloc_ref(sctx->b.const_uploader, 0, alloc_size,
                         si_optimal_tcc_alignment(sctx, alloc_size), &offset,
                         (struct pipe_resource **)&sctx->last_const_upload_buffer, (void **)&ptr);
          if (!sctx->last_const_upload_buffer)
@@ -2184,7 +2184,7 @@ static void si_draw(struct pipe_context *ctx,
          start_offset = start * 2;
          size = count * 2;
 
-         /* Don't use u_upload_alloc because we don't need to map the buffer for CPU access. */
+         /* Don't use u_upload_alloc_ref because we don't need to map the buffer for CPU access. */
          indexbuf = pipe_buffer_create(&sctx->screen->b, 0, PIPE_USAGE_IMMUTABLE, start_offset + size);
          if (unlikely(!indexbuf))
             return;
@@ -2208,7 +2208,7 @@ static void si_draw(struct pipe_context *ctx,
          start_offset = draws[0].start * index_size;
 
          indexbuf = NULL;
-         u_upload_data(ctx->stream_uploader, start_offset, draws[0].count * index_size,
+         u_upload_data_ref(ctx->stream_uploader, start_offset, draws[0].count * index_size,
                        sctx->screen->info.tcc_cache_line_size,
                        (char *)info->index.user + start_offset, &index_offset, &indexbuf);
          if (unlikely(!indexbuf))

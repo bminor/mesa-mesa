@@ -1545,10 +1545,10 @@ lp_csctx_set_cs_constants(struct lp_cs_context *csctx,
    assert(num <= ARRAY_SIZE(csctx->constants));
 
    for (i = 0; i < num; ++i) {
-      util_copy_constant_buffer(&csctx->constants[i].current, &buffers[i], false);
+      util_copy_constant_buffer(&csctx->constants[i].current, &buffers[i]);
    }
    for (; i < ARRAY_SIZE(csctx->constants); i++) {
-      util_copy_constant_buffer(&csctx->constants[i].current, NULL, false);
+      util_copy_constant_buffer(&csctx->constants[i].current, NULL);
    }
 }
 

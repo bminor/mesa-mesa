@@ -40,6 +40,7 @@
 #include "bufferobj.h"
 #include "externalobjects.h"
 #include "mtypes.h"
+#include "shared.h"
 #include "teximage.h"
 #include "glformats.h"
 #include "texstore.h"
@@ -258,21 +259,9 @@ buffer_usage(GLenum target, GLboolean immutable,
 static void
 _mesa_bufferobj_release_buffer(struct gl_context *ctx, struct gl_buffer_object *obj)
 {
-   if (!obj->buffer)
-      return;
-
-   /* Subtract the remaining private references before unreferencing
-    * the buffer. See the header file for explanation.
-    */
-   if (obj->private_refcount) {
-      assert(obj->private_refcount > 0);
-      p_atomic_add(&obj->buffer->reference.count,
-                   -obj->private_refcount);
-      obj->private_refcount = 0;
-   }
-   obj->private_refcount_ctx = NULL;
-
-   pipe_resource_reference(&obj->buffer, NULL);
+   if (obj->buffer)
+      _mesa_release_pending_resource(ctx, obj->buffer, true);
+   obj->buffer = NULL;
 }
 
 static ALWAYS_INLINE GLboolean
@@ -379,8 +368,6 @@ bufferobj_data(struct gl_context *ctx,
          obj->Size = 0;
          return GL_FALSE;
       }
-
-      obj->private_refcount_ctx = ctx;
    }
 
    /* The current buffer may be bound, so we have to revalidate all atoms that
@@ -1163,6 +1150,13 @@ unreference_zombie_buffers_for_ctx(struct gl_context *ctx)
          detach_ctx_from_buffer(ctx, buf);
       }
    }
+
+   set_foreach(&ctx->Shared->ReleaseResources, entry) {
+      struct pipe_resource *releasebuf = (void*)entry->key;
+      if (_mesa_release_pending_resource(ctx, releasebuf, false))
+         _mesa_set_remove(&ctx->Shared->ReleaseResources, entry);
+   }
+   _mesa_clear_releasebufs(ctx);
 }
 
 /**

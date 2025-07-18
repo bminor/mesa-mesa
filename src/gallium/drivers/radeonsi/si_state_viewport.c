@@ -86,7 +86,7 @@ static void si_emit_cull_state(struct si_context *sctx, unsigned index)
        memcmp(&info, &sctx->last_small_prim_cull_info, sizeof(info))) {
       unsigned offset = 0;
 
-      u_upload_data(sctx->b.const_uploader, 0, sizeof(info),
+      u_upload_data_ref(sctx->b.const_uploader, 0, sizeof(info),
                     si_optimal_tcc_alignment(sctx, sizeof(info)), &info, &offset,
                     (struct pipe_resource **)&sctx->small_prim_cull_info_buf);
 

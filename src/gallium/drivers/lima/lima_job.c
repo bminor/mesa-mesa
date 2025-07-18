@@ -310,7 +310,7 @@ lima_job_create_stream_bo(struct lima_job *job, int pipe,
    void *cpu;
    unsigned offset;
    struct pipe_resource *pres = NULL;
-   u_upload_alloc(ctx->uploader, 0, size, 0x40, &offset, &pres, &cpu);
+   u_upload_alloc_ref(ctx->uploader, 0, size, 0x40, &offset, &pres, &cpu);
 
    struct lima_resource *res = lima_resource(pres);
    *va = res->bo->va + offset;

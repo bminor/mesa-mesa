@@ -220,7 +220,7 @@ ir3_emit_ubos(struct fd_context *ctx, const struct ir3_shader_variant *v,
           */
          if (cb->user_buffer) {
             struct pipe_context *pctx = &ctx->base;
-            u_upload_data(pctx->stream_uploader, 0, cb->buffer_size, 64,
+            u_upload_data_ref(pctx->stream_uploader, 0, cb->buffer_size, 64,
                           cb->user_buffer, &cb->buffer_offset, &cb->buffer);
             cb->user_buffer = NULL;
          }
@@ -640,7 +640,7 @@ ir3_emit_cs_driver_params(const struct ir3_shader_variant *v,
          struct pipe_resource *buffer = NULL;
          unsigned buffer_offset;
 
-         u_upload_data(ctx->base.const_uploader, 0, sizeof(compute_params),
+         u_upload_data_ref(ctx->base.const_uploader, 0, sizeof(compute_params),
                        16, &compute_params,  &buffer_offset, &buffer);
 
          /* Copy the indirect params into the driver param buffer.  The layout

@@ -1792,14 +1792,13 @@ static void r300_set_vertex_buffers_hwtcl(struct pipe_context* pipe,
     struct r300_context* r300 = r300_context(pipe);
 
     util_set_vertex_buffers_count(r300->vertex_buffer,
-                                  &r300->nr_vertex_buffers, buffers, count,
-                                  true);
+                                  &r300->nr_vertex_buffers, buffers, count);
 
     /* There must be at least one vertex buffer set, otherwise it locks up. */
     if (!r300->nr_vertex_buffers) {
         util_set_vertex_buffers_count(r300->vertex_buffer,
                                       &r300->nr_vertex_buffers,
-                                      &r300->dummy_vb, 1, false);
+                                      &r300->dummy_vb, 1);
     }
 
     r300->vertex_arrays_dirty = true;
@@ -1813,8 +1812,7 @@ static void r300_set_vertex_buffers_swtcl(struct pipe_context* pipe,
     unsigned i;
 
     util_set_vertex_buffers_count(r300->vertex_buffer,
-                                  &r300->nr_vertex_buffers, buffers, count,
-                                  true);
+                                  &r300->nr_vertex_buffers, buffers, count);
     draw_set_vertex_buffers(r300->draw, count, buffers);
 
     if (!buffers)
@@ -2063,7 +2061,6 @@ static void r300_delete_vs_state(struct pipe_context* pipe, void* shader)
 
 static void r300_set_constant_buffer(struct pipe_context *pipe,
                                      mesa_shader_stage shader, uint index,
-                                     bool take_ownership,
                                      const struct pipe_constant_buffer *cb)
 {
     struct r300_context* r300 = r300_context(pipe);
@@ -2178,6 +2175,7 @@ void r300_init_state_functions(struct r300_context* r300)
     r300->context.create_sampler_view = r300_create_sampler_view;
     r300->context.sampler_view_destroy = r300_sampler_view_destroy;
     r300->context.sampler_view_release = u_default_sampler_view_release;
+    r300->context.resource_release = u_default_resource_release;
 
     r300->context.set_scissor_states = r300_set_scissor_states;
 

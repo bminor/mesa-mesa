@@ -863,7 +863,7 @@ draw_layers(struct vl_compositor       *c,
 
          /* Unbind. */
          c->pipe->set_shader_images(c->pipe, MESA_SHADER_COMPUTE, 0, 0, 1, NULL);
-         c->pipe->set_constant_buffer(c->pipe, MESA_SHADER_COMPUTE, 0, false, NULL);
+         c->pipe->set_constant_buffer(c->pipe, MESA_SHADER_COMPUTE, 0, NULL);
          c->pipe->set_sampler_views(c->pipe, MESA_SHADER_COMPUTE, 0, 0,
                         num_sampler_views, NULL);
          c->pipe->bind_compute_state(c->pipe, NULL);

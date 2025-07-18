@@ -1841,7 +1841,7 @@ void si_save_qbo_state(struct si_context *sctx, struct si_qbo_state *st)
 
 void si_restore_qbo_state(struct si_context *sctx, struct si_qbo_state *st)
 {
-   sctx->b.set_constant_buffer(&sctx->b, MESA_SHADER_COMPUTE, 0, true, &st->saved_const0);
+   sctx->b.set_constant_buffer(&sctx->b, MESA_SHADER_COMPUTE, 0, &st->saved_const0);
 }
 
 static void si_emit_db_render_state(struct si_context *sctx, unsigned index)
@@ -4738,8 +4738,7 @@ static void si_set_vertex_buffers(struct pipe_context *ctx, unsigned count,
       dst->buffer_offset = src->buffer_offset;
 
       /* Only unreference bound vertex buffers. */
-      pipe_resource_reference(&dst->buffer.resource, NULL);
-      dst->buffer.resource = src->buffer.resource;
+      pipe_resource_reference(&dst->buffer.resource, src->buffer.resource);
 
       if (src->buffer_offset & 3)
          unaligned |= BITFIELD_BIT(i);
@@ -4891,6 +4890,7 @@ void si_init_state_compute_functions(struct si_context *sctx)
    sctx->b.create_sampler_view = si_create_sampler_view;
    sctx->b.sampler_view_destroy = si_sampler_view_destroy;
    sctx->b.sampler_view_release = u_default_sampler_view_release;
+   sctx->b.resource_release = u_default_resource_release;
 }
 
 void si_init_state_functions(struct si_context *sctx)

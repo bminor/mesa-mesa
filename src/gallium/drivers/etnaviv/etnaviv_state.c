@@ -78,7 +78,7 @@ etna_set_sample_mask(struct pipe_context *pctx, unsigned sample_mask)
 
 static void
 etna_set_constant_buffer(struct pipe_context *pctx,
-      mesa_shader_stage shader, uint index, bool take_ownership,
+      mesa_shader_stage shader, uint index,
       const struct pipe_constant_buffer *cb)
 {
    struct etna_context *ctx = etna_context(pctx);
@@ -86,7 +86,7 @@ etna_set_constant_buffer(struct pipe_context *pctx,
 
    assert(index < ETNA_MAX_CONST_BUF);
 
-   util_copy_constant_buffer(&so->cb[index], cb, take_ownership);
+   util_copy_constant_buffer(&so->cb[index], cb);
 
    /* Note that the gallium frontends can unbind constant buffers by
     * passing NULL here. */
@@ -99,7 +99,7 @@ etna_set_constant_buffer(struct pipe_context *pctx,
 
    if (!cb->buffer) {
       struct pipe_constant_buffer *cb = &so->cb[index];
-      u_upload_data(pctx->const_uploader, 0, cb->buffer_size, 16, cb->user_buffer, &cb->buffer_offset, &cb->buffer);
+      u_upload_data_ref(pctx->const_uploader, 0, cb->buffer_size, 16, cb->user_buffer, &cb->buffer_offset, &cb->buffer);
       ctx->dirty |= ETNA_DIRTY_SHADER_CACHES;
    }
 
@@ -518,8 +518,7 @@ etna_set_vertex_buffers(struct pipe_context *pctx, unsigned num_buffers,
    struct etna_context *ctx = etna_context(pctx);
    struct etna_vertexbuf_state *so = &ctx->vertex_buffer;
 
-   util_set_vertex_buffers_mask(so->vb, &so->enabled_mask, vb, num_buffers,
-                                true);
+   util_set_vertex_buffers_mask(so->vb, &so->enabled_mask, vb, num_buffers);
    so->count = util_last_bit(so->enabled_mask);
 
    if (!num_buffers) {

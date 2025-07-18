@@ -214,6 +214,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
    cso_set_mesh_shader_handle(cso, NULL);
 
    /* Upload vertices */
+   struct pipe_resource *releasebuf = NULL;
    {
       struct pipe_vertex_buffer vbo = {0};
       struct cso_velems_state velem;
@@ -226,7 +227,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       float *verts = NULL;
 
       u_upload_alloc(st->pipe->stream_uploader, 0, 8 * sizeof(float), 4,
-                     &vbo.buffer_offset, &vbo.buffer.resource, (void **) &verts);
+                     &vbo.buffer_offset, &vbo.buffer.resource, &releasebuf, (void **) &verts);
       if (!verts)
          return false;
 
@@ -250,7 +251,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       velem.velems[0].dual_slot = false;
 
       cso_set_vertex_elements(cso, &velem);
-      cso_set_vertex_buffers(cso, 1, true, &vbo);
+      cso_set_vertex_buffers(cso, 1, &vbo);
    }
 
    /* Upload constants */
@@ -277,6 +278,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       cso_draw_arrays_instanced(cso, MESA_PRIM_TRIANGLE_STRIP,
                                 0, 4, 0, addr->depth);
    }
+   pipe_resource_release(st->pipe, releasebuf);
 
    return true;
 }

@@ -63,7 +63,7 @@ stream_state(struct iris_batch *batch,
    struct pipe_resource *res = NULL;
    void *ptr = NULL;
 
-   u_upload_alloc(uploader, 0, size, alignment, out_offset, &res, &ptr);
+   u_upload_alloc_ref(uploader, 0, size, alignment, out_offset, &res, &ptr);
 
    struct iris_bo *bo = iris_resource_bo(res);
    iris_use_pinned_bo(batch, bo, false, IRIS_DOMAIN_NONE);

@@ -1664,18 +1664,17 @@ tc_call_set_constant_buffer(struct pipe_context *pipe, void *call)
    struct tc_constant_buffer *p = (struct tc_constant_buffer *)call;
 
    if (unlikely(p->base.is_null)) {
-      pipe->set_constant_buffer(pipe, p->base.shader, p->base.index, false, NULL);
+      pipe->set_constant_buffer(pipe, p->base.shader, p->base.index, NULL);
       return call_size(tc_constant_buffer_base);
    }
 
-   pipe->set_constant_buffer(pipe, p->base.shader, p->base.index, true, &p->cb);
+   pipe->set_constant_buffer(pipe, p->base.shader, p->base.index, &p->cb);
    return call_size(tc_constant_buffer);
 }
 
 static void
 tc_set_constant_buffer(struct pipe_context *_pipe,
                        mesa_shader_stage shader, uint index,
-                       bool take_ownership,
                        const struct pipe_constant_buffer *cb)
 {
    struct threaded_context *tc = threaded_context(_pipe);
@@ -1956,6 +1955,33 @@ tc_sampler_view_release(struct pipe_context *_pipe, struct pipe_sampler_view *vi
       tc_add_call(tc, TC_CALL_sampler_view_release, tc_sampler_view_release);
 
    p->view = view;
+}
+
+struct tc_resource_release {
+   struct tc_call_base base;
+   struct pipe_resource *resource;
+};
+
+static uint16_t ALWAYS_INLINE
+tc_call_resource_release(struct pipe_context *pipe, void *call)
+{
+   struct tc_resource_release *p = (struct tc_resource_release *)call;
+
+   pipe->resource_release(pipe, p->resource);
+   return call_size(tc_resource_release);
+}
+
+static void
+tc_resource_release(struct pipe_context *_pipe, struct pipe_resource *resource)
+{
+   if (!resource)
+      return;
+
+   struct threaded_context *tc = threaded_context(_pipe);
+   struct tc_resource_release *p =
+      tc_add_call(tc, TC_CALL_resource_release, tc_resource_release);
+
+   p->resource = resource;
 }
 
 struct tc_shader_images {
@@ -2747,7 +2773,7 @@ tc_buffer_map(struct pipe_context *_pipe,
       struct threaded_transfer *ttrans = slab_zalloc(&tc->pool_transfers);
       uint8_t *map;
 
-      u_upload_alloc(tc->base.stream_uploader, 0,
+      u_upload_alloc_ref(tc->base.stream_uploader, 0,
                      box->width + (box->x % tc->map_buffer_alignment),
                      tc->map_buffer_alignment, &ttrans->b.offset,
                      &ttrans->staging, (void**)&map);
@@ -3699,11 +3725,8 @@ tc_call_draw_single_drawid(struct pipe_context *pipe, void *call)
 
    info->info.index_bounds_valid = false;
    info->info.has_user_indices = false;
-   info->info.take_index_buffer_ownership = false;
 
    pipe->draw_vbo(pipe, &info->info, info_drawid->drawid_offset, NULL, &draw, 1);
-   if (info->info.index_size)
-      tc_drop_resource_reference(info->info.index.resource);
 
    return call_size(tc_draw_single_drawid);
 }
@@ -3716,7 +3739,6 @@ simplify_draw_info(struct pipe_draw_info *info)
     */
    info->has_user_indices = false;
    info->index_bounds_valid = false;
-   info->take_index_buffer_ownership = false;
    info->index_bias_varies = false;
    info->_pad = 0;
 
@@ -3788,10 +3810,6 @@ tc_call_draw_single(struct pipe_context *pipe, void *call)
          first->info.index_bias_varies = index_bias_varies;
          pipe->draw_vbo(pipe, &first->info, 0, NULL, multi, num_draws);
 
-         /* Since all draws use the same index buffer, drop all references at once. */
-         if (first->info.index_size)
-            pipe_drop_resource_references(first->info.index.resource, num_draws);
-
          return call_size(tc_draw_single) * num_draws;
       }
    }
@@ -3806,11 +3824,8 @@ tc_call_draw_single(struct pipe_context *pipe, void *call)
 
    first->info.index_bounds_valid = false;
    first->info.has_user_indices = false;
-   first->info.take_index_buffer_ownership = false;
 
    pipe->draw_vbo(pipe, &first->info, 0, NULL, &draw, 1);
-   if (first->info.index_size)
-      tc_drop_resource_reference(first->info.index.resource);
 
    return call_size(tc_draw_single);
 }
@@ -3828,11 +3843,8 @@ tc_call_draw_indirect(struct pipe_context *pipe, void *call)
    struct tc_draw_indirect *info = to_call(call, tc_draw_indirect);
 
    info->info.index_bounds_valid = false;
-   info->info.take_index_buffer_ownership = false;
 
    pipe->draw_vbo(pipe, &info->info, 0, &info->indirect, &info->draw, 1);
-   if (info->info.index_size)
-      tc_drop_resource_reference(info->info.index.resource);
 
    tc_drop_resource_reference(info->indirect.buffer);
    tc_drop_resource_reference(info->indirect.indirect_draw_count);
@@ -3854,11 +3866,8 @@ tc_call_draw_multi(struct pipe_context *pipe, void *call)
 
    info->info.has_user_indices = false;
    info->info.index_bounds_valid = false;
-   info->info.take_index_buffer_ownership = false;
 
    pipe->draw_vbo(pipe, &info->info, 0, NULL, info->slot, info->num_draws);
-   if (info->info.index_size)
-      tc_drop_resource_reference(info->info.index.resource);
 
    return info->base.num_slots;
 }
@@ -3879,10 +3888,6 @@ tc_draw_single(struct pipe_context *_pipe, const struct pipe_draw_info *info,
       tc_add_call(tc, TC_CALL_draw_single, tc_draw_single);
 
    if (info->index_size) {
-      if (!info->take_index_buffer_ownership) {
-         tc_set_resource_reference(&p->info.index.resource,
-                                   info->index.resource);
-      }
       tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list], info->index.resource);
    }
    memcpy(&p->info, info, DRAW_INFO_SIZE_WITHOUT_MIN_MAX_INDEX);
@@ -3907,10 +3912,6 @@ tc_draw_single_draw_id(struct pipe_context *_pipe,
       &tc_add_call(tc, TC_CALL_draw_single_drawid, tc_draw_single_drawid)->base;
 
    if (info->index_size) {
-      if (!info->take_index_buffer_ownership) {
-         tc_set_resource_reference(&p->info.index.resource,
-                                   info->index.resource);
-      }
       tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list], info->index.resource);
    }
    ((struct tc_draw_single_drawid*)p)->drawid_offset = drawid_offset;
@@ -3935,6 +3936,7 @@ tc_draw_user_indices_single(struct pipe_context *_pipe,
    unsigned index_size = info->index_size;
    unsigned size = draws[0].count * index_size;
    struct pipe_resource *buffer = NULL;
+   struct pipe_resource *releasebuf = NULL;
    unsigned offset;
 
    if (!size)
@@ -3946,7 +3948,7 @@ tc_draw_user_indices_single(struct pipe_context *_pipe,
     */
    u_upload_data(tc->base.stream_uploader, 0, size, 4,
                  (uint8_t*)info->index.user + draws[0].start * index_size,
-                 &offset, &buffer);
+                 &offset, &buffer, &releasebuf);
    if (unlikely(!buffer))
       return;
 
@@ -3959,6 +3961,7 @@ tc_draw_user_indices_single(struct pipe_context *_pipe,
    p->info.max_index = draws[0].count;
    p->index_bias = draws[0].index_bias;
    simplify_draw_info(&p->info);
+   pipe_resource_release(_pipe, releasebuf);
 }
 
 /* Single draw with user indices and drawid_offset > 0. */
@@ -3974,6 +3977,7 @@ tc_draw_user_indices_single_draw_id(struct pipe_context *_pipe,
    unsigned index_size = info->index_size;
    unsigned size = draws[0].count * index_size;
    struct pipe_resource *buffer = NULL;
+   struct pipe_resource *releasebuf = NULL;
    unsigned offset;
 
    if (!size)
@@ -3985,7 +3989,7 @@ tc_draw_user_indices_single_draw_id(struct pipe_context *_pipe,
     */
    u_upload_data(tc->base.stream_uploader, 0, size, 4,
                  (uint8_t*)info->index.user + draws[0].start * index_size,
-                 &offset, &buffer);
+                 &offset, &buffer, &releasebuf);
    if (unlikely(!buffer))
       return;
 
@@ -3999,6 +4003,7 @@ tc_draw_user_indices_single_draw_id(struct pipe_context *_pipe,
    p->info.max_index = draws[0].count;
    p->index_bias = draws[0].index_bias;
    simplify_draw_info(&p->info);
+   pipe_resource_release(_pipe, releasebuf);
 }
 
 #define DRAW_OVERHEAD_BYTES sizeof(struct tc_draw_multi)
@@ -4017,7 +4022,6 @@ tc_draw_multi(struct pipe_context *_pipe, const struct pipe_draw_info *info,
 {
    struct threaded_context *tc = threaded_context(_pipe);
    int total_offset = 0;
-   bool take_index_buffer_ownership = info->take_index_buffer_ownership;
 
    while (num_draws) {
       struct tc_batch *next = &tc->batch_slots[tc->next];
@@ -4037,13 +4041,8 @@ tc_draw_multi(struct pipe_context *_pipe, const struct pipe_draw_info *info,
          tc_add_slot_based_call(tc, TC_CALL_draw_multi, tc_draw_multi,
                                 dr);
       if (info->index_size) {
-         if (!take_index_buffer_ownership) {
-            tc_set_resource_reference(&p->info.index.resource,
-                                      info->index.resource);
-         }
          tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list], info->index.resource);
       }
-      take_index_buffer_ownership = false;
       memcpy(&p->info, info, DRAW_INFO_SIZE_WITHOUT_MIN_MAX_INDEX);
       p->num_draws = dr;
       memcpy(p->slot, &draws[total_offset], sizeof(draws[0]) * dr);
@@ -4080,7 +4079,7 @@ tc_draw_user_indices_multi(struct pipe_context *_pipe,
     * e.g. transfer_unmap and flush partially-uninitialized draw_vbo
     * to the driver if it was done afterwards.
     */
-   u_upload_alloc(tc->base.stream_uploader, 0,
+   u_upload_alloc_ref(tc->base.stream_uploader, 0,
                   total_count << index_size_shift, 4,
                   &buffer_offset, &buffer, (void**)&ptr);
    if (unlikely(!buffer))
@@ -4106,12 +4105,7 @@ tc_draw_user_indices_multi(struct pipe_context *_pipe,
                                 dr);
       memcpy(&p->info, info, DRAW_INFO_SIZE_WITHOUT_INDEXBUF_AND_MIN_MAX_INDEX);
 
-      if (total_offset == 0)
-         /* the first slot inherits the reference from u_upload_alloc() */
-         p->info.index.resource = buffer;
-      else
-         /* all following slots need a new reference */
-         tc_set_resource_reference(&p->info.index.resource, buffer);
+      p->info.index.resource = buffer;
 
       p->num_draws = dr;
 
@@ -4157,10 +4151,6 @@ tc_draw_indirect(struct pipe_context *_pipe, const struct pipe_draw_info *info,
    struct tc_buffer_list *next = &tc->buffer_lists[tc->next_buf_list];
 
    if (info->index_size) {
-      if (!info->take_index_buffer_ownership) {
-         tc_set_resource_reference(&p->info.index.resource,
-                                   info->index.resource);
-      }
       tc_add_to_buffer_list(next, info->index.resource);
    }
    memcpy(&p->info, info, DRAW_INFO_SIZE_WITHOUT_MIN_MAX_INDEX);
@@ -5676,6 +5666,7 @@ threaded_context_create(struct pipe_context *pipe,
    CTX_INIT(set_global_binding);
    CTX_INIT(get_sample_position);
    CTX_INIT(invalidate_resource);
+   CTX_INIT(resource_release);
    CTX_INIT(get_device_reset_status);
    CTX_INIT(set_device_reset_callback);
    CTX_INIT(dump_debug_state);

@@ -414,6 +414,12 @@ static bool noop_is_resource_busy(struct pipe_screen *screen,
    return false;
 }
 
+static void
+noop_resource_release(struct pipe_context *ctx, struct pipe_resource *resource)
+{
+   pipe_resource_reference(&resource, NULL);
+}
+
 static struct pipe_context *noop_create_context(struct pipe_screen *screen,
                                                 void *priv, unsigned flags)
 {
@@ -458,6 +464,7 @@ static struct pipe_context *noop_create_context(struct pipe_screen *screen,
    ctx->invalidate_resource = noop_invalidate_resource;
    ctx->set_context_param = noop_set_context_param;
    ctx->set_frontend_noop = noop_set_frontend_noop;
+   ctx->resource_release = noop_resource_release;
    noop_init_state_functions(ctx);
 
    p_atomic_inc(&screen->num_contexts);

@@ -350,4 +350,5 @@ softpipe_init_sampler_funcs(struct pipe_context *pipe)
    pipe->set_sampler_views = softpipe_set_sampler_views;
    pipe->sampler_view_destroy = softpipe_sampler_view_destroy;
    pipe->sampler_view_release = u_default_sampler_view_release;
+   pipe->resource_release = u_default_resource_release;
 }

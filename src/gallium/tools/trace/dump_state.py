@@ -422,7 +422,7 @@ class Context(Dispatcher):
             return self._state.fs
         assert False
 
-    def set_constant_buffer(self, shader, index, take_ownership, constant_buffer):
+    def set_constant_buffer(self, shader, index, constant_buffer):
         self._update(self._get_stage_state(shader).constant_buffer, index, 1, [constant_buffer])
 
     def set_framebuffer_state(self, state):

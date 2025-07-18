@@ -3585,15 +3585,15 @@ panfrost_launch_afbc_conv_shader(struct panfrost_batch *batch, void *cso,
    struct panfrost_constant_buffer *pbuf =
       &batch->ctx->constant_buffer[MESA_SHADER_COMPUTE];
    saved_cso = batch->ctx->uncompiled[MESA_SHADER_COMPUTE];
-   util_copy_constant_buffer(&pbuf->cb[0], &saved_const, true);
+   util_copy_constant_buffer(&pbuf->cb[0], &saved_const);
 
    pctx->bind_compute_state(pctx, cso);
-   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, false, cbuf);
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, cbuf);
 
    panfrost_launch_grid_on_batch(pctx, batch, &grid);
 
    pctx->bind_compute_state(pctx, saved_cso);
-   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, true, &saved_const);
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, &saved_const);
 }
 
 #define LAUNCH_AFBC_CONV_SHADER(name, batch, rsrc, consts, nr_blocks)          \
@@ -3792,15 +3792,15 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
       &batch->ctx->constant_buffer[MESA_SHADER_COMPUTE];
    void *saved_cso = batch->ctx->uncompiled[MESA_SHADER_COMPUTE];
    void *cso = shader->mtk_tiled.detile_cso;
-   util_copy_constant_buffer(&pbuf->cb[0], &saved_const, true);
+   util_copy_constant_buffer(&pbuf->cb[0], &saved_const);
 
    pipe->bind_compute_state(pipe, cso);
-   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, false, &cbuf);
+   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, &cbuf);
 
    panfrost_launch_grid_on_batch(pipe, batch, &grid_info);
 
    pipe->bind_compute_state(pipe, saved_cso);
-   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, true, &saved_const);
+   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, &saved_const);
 
    panfrost_resource_restore_format(pan_resource(y_src), &y_src_save);
    panfrost_resource_restore_format(pan_resource(uv_src), &uv_src_save);
@@ -4327,6 +4327,7 @@ context_populate_vtbl(struct pipe_context *pipe)
    pipe->create_sampler_view = panfrost_create_sampler_view;
    pipe->sampler_view_destroy = panfrost_sampler_view_destroy;
    pipe->sampler_view_release = u_default_sampler_view_release;
+   pipe->resource_release = u_default_resource_release;
    pipe->create_sampler_state = panfrost_create_sampler_state;
    pipe->create_blend_state = panfrost_create_blend_state;
 

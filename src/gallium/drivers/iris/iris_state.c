@@ -326,7 +326,7 @@ upload_state(struct u_upload_mgr *uploader,
              unsigned alignment)
 {
    void *p = NULL;
-   u_upload_alloc(uploader, 0, size, alignment, &ref->offset, &ref->res, &p);
+   u_upload_alloc_ref(uploader, 0, size, alignment, &ref->offset, &ref->res, &p);
    return p;
 }
 
@@ -347,7 +347,7 @@ stream_state(struct iris_batch *batch,
 {
    void *ptr = NULL;
 
-   u_upload_alloc(uploader, 0, size, alignment, out_offset, out_res, &ptr);
+   u_upload_alloc_ref(uploader, 0, size, alignment, out_offset, out_res, &ptr);
 
    struct iris_bo *bo = iris_resource_bo(*out_res);
    iris_use_pinned_bo(batch, bo, false, IRIS_DOMAIN_NONE);
@@ -3963,7 +3963,6 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
 static void
 iris_set_constant_buffer(struct pipe_context *ctx,
                          mesa_shader_stage stage, unsigned index,
-                         bool take_ownership,
                          const struct pipe_constant_buffer *input)
 {
    struct iris_context *ice = (struct iris_context *) ctx;
@@ -3979,12 +3978,12 @@ iris_set_constant_buffer(struct pipe_context *ctx,
       if (input->user_buffer) {
          void *map = NULL;
          pipe_resource_reference(&cbuf->buffer, NULL);
-         u_upload_alloc(ice->ctx.const_uploader, 0, input->buffer_size, 64,
+         u_upload_alloc_ref(ice->ctx.const_uploader, 0, input->buffer_size, 64,
                         &cbuf->buffer_offset, &cbuf->buffer, (void **) &map);
 
          if (!cbuf->buffer) {
             /* Allocation was unsuccessful - just unbind */
-            iris_set_constant_buffer(ctx, stage, index, false, NULL);
+            iris_set_constant_buffer(ctx, stage, index, NULL);
             return;
          }
 
@@ -3997,12 +3996,7 @@ iris_set_constant_buffer(struct pipe_context *ctx,
             shs->dirty_cbufs |= 1u << index;
          }
 
-         if (take_ownership) {
-            pipe_resource_reference(&cbuf->buffer, NULL);
-            cbuf->buffer = input->buffer;
-         } else {
-            pipe_resource_reference(&cbuf->buffer, input->buffer);
-         }
+         pipe_resource_reference(&cbuf->buffer, input->buffer);
 
          cbuf->buffer_offset = input->buffer_offset;
       }
@@ -4042,7 +4036,7 @@ upload_sysvals(struct iris_context *ice,
    void *map = NULL;
 
    assert(sysval_cbuf_index < PIPE_MAX_CONSTANT_BUFFERS);
-   u_upload_alloc(ice->ctx.const_uploader, 0, upload_size, 64,
+   u_upload_alloc_ref(ice->ctx.const_uploader, 0, upload_size, 64,
                   &cbuf->buffer_offset, &cbuf->buffer, &map);
 
    uint32_t *sysval_map = map;
@@ -4209,8 +4203,7 @@ iris_set_vertex_buffers(struct pipe_context *ctx,
           state->resource != buffer->buffer.resource)
          ice->state.dirty |= IRIS_DIRTY_VERTEX_BUFFER_FLUSHES;
 
-      pipe_resource_reference(&state->resource, NULL);
-      state->resource = buffer->buffer.resource;
+      pipe_resource_reference(&state->resource, buffer->buffer.resource);
 
       struct iris_resource *res = (void *) state->resource;
 
@@ -8492,7 +8485,7 @@ iris_emit_index_buffer(struct iris_context *ice,
    if (draw->has_user_indices) {
       unsigned start_offset = draw->index_size * sc->start;
 
-      u_upload_data(ice->ctx.const_uploader, start_offset,
+      u_upload_data_ref(ice->ctx.const_uploader, start_offset,
                     sc->count * draw->index_size, 4,
                     (char*)draw->index.user + start_offset,
                     &offset, &ice->state.last_res.index_buffer);
@@ -10671,6 +10664,7 @@ genX(init_state)(struct iris_context *ice)
    ctx->set_viewport_states = iris_set_viewport_states;
    ctx->sampler_view_destroy = iris_sampler_view_destroy;
    ctx->sampler_view_release = u_default_sampler_view_release;
+   ctx->resource_release = u_default_resource_release;
    ctx->surface_destroy = iris_surface_destroy;
    ctx->draw_vbo = iris_draw_vbo;
    ctx->launch_grid = iris_launch_grid;

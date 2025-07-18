@@ -789,7 +789,6 @@ nvc0_get_compute_state_info(struct pipe_context *pipe, void *hwcso,
 static void
 nvc0_set_constant_buffer(struct pipe_context *pipe,
                          mesa_shader_stage shader, uint index,
-                         bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
    struct nvc0_context *nvc0 = nvc0_context(pipe);
@@ -819,12 +818,7 @@ nvc0_set_constant_buffer(struct pipe_context *pipe,
    if (nvc0->constbuf[s][i].u.buf)
       nv04_resource(nvc0->constbuf[s][i].u.buf)->cb_bindings[s] &= ~(1 << i);
 
-   if (take_ownership) {
-      pipe_resource_reference(&nvc0->constbuf[s][i].u.buf, NULL);
-      nvc0->constbuf[s][i].u.buf = res;
-   } else {
-      pipe_resource_reference(&nvc0->constbuf[s][i].u.buf, res);
-   }
+   pipe_resource_reference(&nvc0->constbuf[s][i].u.buf, res);
 
    nvc0->constbuf[s][i].user = (cb && cb->user_buffer) ? true : false;
    if (nvc0->constbuf[s][i].user) {
@@ -1030,7 +1024,7 @@ nvc0_set_vertex_buffers(struct pipe_context *pipe,
 
     unsigned last_count = nvc0->num_vtxbufs;
     util_set_vertex_buffers_count(nvc0->vtxbuf, &nvc0->num_vtxbufs, vb,
-                                  count, true);
+                                  count);
 
     unsigned clear_mask =
        last_count > count ? BITFIELD_RANGE(count, last_count - count) : 0;
@@ -1432,6 +1426,7 @@ nvc0_init_state_functions(struct nvc0_context *nvc0)
    pipe->create_sampler_view = nvc0_create_sampler_view;
    pipe->sampler_view_destroy = nvc0_sampler_view_destroy;
    pipe->sampler_view_release = u_default_sampler_view_release;
+   pipe->resource_release = u_default_resource_release;
    pipe->set_sampler_views = nvc0_set_sampler_views;
 
    pipe->create_vs_state = nvc0_vp_state_create;

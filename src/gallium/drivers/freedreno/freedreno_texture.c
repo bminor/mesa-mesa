@@ -95,6 +95,7 @@ fd_texture_init(struct pipe_context *pctx)
    if (!pctx->sampler_view_destroy)
       pctx->sampler_view_destroy = fd_sampler_view_destroy;
    pctx->sampler_view_release = u_default_sampler_view_release;
+   pctx->resource_release = u_default_resource_release;
 }
 
 /* helper for setting up border-color buffer for a3xx/a4xx: */

@@ -1300,18 +1300,18 @@ agx_batch_upload_pbe(struct agx_batch *batch, struct agx_pbe_packed *out,
 
 static void
 agx_set_constant_buffer(struct pipe_context *pctx, mesa_shader_stage shader,
-                        uint index, bool take_ownership,
+                        uint index,
                         const struct pipe_constant_buffer *cb)
 {
    struct agx_context *ctx = agx_context(pctx);
    struct agx_stage *s = &ctx->stage[shader];
    struct pipe_constant_buffer *constants = &s->cb[index];
 
-   util_copy_constant_buffer(&s->cb[index], cb, take_ownership);
+   util_copy_constant_buffer(&s->cb[index], cb);
 
    /* Upload user buffer immediately */
    if (constants->user_buffer && !constants->buffer) {
-      u_upload_data(ctx->base.const_uploader, 0, constants->buffer_size, 64,
+      u_upload_data_ref(ctx->base.const_uploader, 0, constants->buffer_size, 64,
                     constants->user_buffer, &constants->buffer_offset,
                     &constants->buffer);
    }
@@ -1341,7 +1341,7 @@ agx_set_vertex_buffers(struct pipe_context *pctx, unsigned count,
    struct agx_context *ctx = agx_context(pctx);
 
    util_set_vertex_buffers_mask(ctx->vertex_buffers, &ctx->vb_mask, buffers,
-                                count, true);
+                                count);
 
    ctx->dirty |= AGX_DIRTY_VERTEX;
 }
@@ -4209,7 +4209,7 @@ agx_draw_without_restart(struct agx_batch *batch,
       uint32_t desc[5] = {draw->count, info->instance_count, 0,
                           draw->index_bias, info->start_instance};
 
-      u_upload_data(ctx->base.const_uploader, 0, sizeof(desc), 4, &desc,
+      u_upload_data_ref(ctx->base.const_uploader, 0, sizeof(desc), 4, &desc,
                     &indirect_synthesized.offset, &indirect_synthesized.buffer);
 
       indirect = &indirect_synthesized;
@@ -4426,7 +4426,7 @@ util_draw_multi_upload_indirect(struct pipe_context *pctx,
                                 const struct pipe_draw_start_count_bias *draws)
 {
    struct pipe_draw_indirect_info indirect_ = *indirect;
-   u_upload_data(pctx->const_uploader, 0, 4, 4, &indirect->draw_count,
+   u_upload_data_ref(pctx->const_uploader, 0, 4, 4, &indirect->draw_count,
                  &indirect_.indirect_draw_count_offset,
                  &indirect_.indirect_draw_count);
 
@@ -5589,6 +5589,7 @@ agx_init_state_functions(struct pipe_context *ctx)
    ctx->set_viewport_states = agx_set_viewport_states;
    ctx->sampler_view_destroy = agx_sampler_view_destroy;
    ctx->sampler_view_release = u_default_sampler_view_release;
+   ctx->resource_release = u_default_resource_release;
    ctx->draw_vbo = agx_draw_vbo;
    ctx->launch_grid = agx_launch_grid;
    ctx->set_global_binding = agx_set_global_binding;

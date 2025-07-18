@@ -323,7 +323,7 @@ static void *pre_upload_binary(struct si_screen *sscreen, struct si_shader *shad
       *upload_ctx = si_get_aux_context(&sscreen->aux_context.shader_upload);
 
       void *ret;
-      u_upload_alloc((*upload_ctx)->b.stream_uploader, 0, binary_size, 256,
+      u_upload_alloc_ref((*upload_ctx)->b.stream_uploader, 0, binary_size, 256,
                      staging_offset, staging, &ret);
       if (!ret)
          si_put_aux_context_flush(&sscreen->aux_context.shader_upload);

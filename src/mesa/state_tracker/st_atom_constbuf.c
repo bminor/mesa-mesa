@@ -57,7 +57,7 @@ st_unbind_unused_cb0(struct st_context *st, mesa_shader_stage shader_type)
    if (st->state.constbuf0_enabled_shader_mask & (1 << shader_type)) {
       struct pipe_context *pipe = st->pipe;
 
-      pipe->set_constant_buffer(pipe, shader_type, 0, false, NULL);
+      pipe->set_constant_buffer(pipe, shader_type, 0, NULL);
       st->state.constbuf0_enabled_shader_mask &= ~(1 << shader_type);
    }
 }
@@ -123,6 +123,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
       /* this path cannot be used with select/feedback draws */
       if (st->prefer_real_buffer_in_constbuf0) {
          struct pipe_context *pipe = st->pipe;
+         struct pipe_resource *releasebuf = NULL;
          uint32_t *ptr;
 
          const unsigned alignment = MAX2(
@@ -133,7 +134,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
           * to compensate for the fetch_state defect.
           */
          u_upload_alloc(pipe->const_uploader, 0, paramBytes + 12,
-            alignment, &cb.buffer_offset, &cb.buffer, (void**)&ptr);
+            alignment, &cb.buffer_offset, &cb.buffer, &releasebuf, (void**)&ptr);
 
          int uniform_bytes = params->UniformBytes;
          if (uniform_bytes)
@@ -146,7 +147,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
             _mesa_upload_state_parameters(st->ctx, params, ptr);
 
          u_upload_unmap(pipe->const_uploader);
-         pipe->set_constant_buffer(pipe, stage, 0, true, &cb);
+         pipe->set_constant_buffer(pipe, stage, 0, &cb);
 
          /* Set inlinable constants. This is more involved because state
           * parameters are uploaded directly above instead of being loaded
@@ -174,6 +175,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
                                           prog->info.num_inlinable_uniforms,
                                           values);
          }
+         st_add_releasebuf(st, releasebuf);
       } else {
          struct pipe_context *pipe = st->pipe;
 
@@ -185,7 +187,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
          if (params->StateFlags)
             _mesa_load_state_parameters(st->ctx, params);
 
-         pipe->set_constant_buffer(pipe, stage, 0, false, &cb);
+         pipe->set_constant_buffer(pipe, stage, 0, &cb);
 
          /* Set inlinable constants. */
          unsigned num_inlinable_uniforms = prog->info.num_inlinable_uniforms;
@@ -303,8 +305,7 @@ st_bind_ubos(struct st_context *st, struct gl_program *prog,
          &st->ctx->UniformBufferBindings[prog->sh.UniformBlocks[i]->Binding];
 
       if (binding->BufferObject) {
-         cb.buffer = _mesa_get_bufferobj_reference(st->ctx,
-                                                   binding->BufferObject);
+         cb.buffer = binding->BufferObject->buffer;
       } else {
          cb.buffer = NULL;
       }
@@ -324,7 +325,7 @@ st_bind_ubos(struct st_context *st, struct gl_program *prog,
          cb.buffer_size = 0;
       }
 
-      pipe->set_constant_buffer(pipe, shader_type, 1 + i, true, &cb);
+      pipe->set_constant_buffer(pipe, shader_type, 1 + i, &cb);
    }
 }
 

@@ -807,7 +807,7 @@ static void r600_blitter_clear_buffer(struct r600_context *rctx,
 		return;
 	}
 
-	u_upload_data(pipe->stream_uploader, 0, num_channels*4, 4, clear_value,
+	u_upload_data_ref(pipe->stream_uploader, 0, num_channels*4, 4, clear_value,
 	              &vb.buffer_offset, &vb.buffer.resource);
 	if (!vb.buffer.resource)
 		goto out;

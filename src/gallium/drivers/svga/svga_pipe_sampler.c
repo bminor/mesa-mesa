@@ -543,4 +543,5 @@ svga_init_sampler_functions(struct svga_context *svga)
    svga->pipe.create_sampler_view = svga_create_sampler_view;
    svga->pipe.sampler_view_destroy = svga_sampler_view_destroy;
    svga->pipe.sampler_view_release = u_default_sampler_view_release;
+   svga->pipe.resource_release = u_default_resource_release;
 }

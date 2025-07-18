@@ -837,7 +837,7 @@ v3d_sand8_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 .buffer_size = sizeof(sand8_stride),
         };
 
-        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 0, false,
+        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 0,
                                   &cb_uniforms);
         struct pipe_constant_buffer saved_fs_cb1 = { 0 };
         pipe_resource_reference(&saved_fs_cb1.buffer,
@@ -850,7 +850,7 @@ v3d_sand8_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 .buffer_size = (src->bo->size -
                                 src->slices[info->src.level].offset),
         };
-        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1, false,
+        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1,
                                   &cb_src);
         /* Unbind the textures, to make sure we don't try to recurse into the
          * shadow blit.
@@ -866,7 +866,7 @@ v3d_sand8_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         util_blitter_restore_constant_buffer_state(v3d->blitter);
 
         /* Restore cb1 (util_blitter doesn't handle this one). */
-        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1, true,
+        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1,
                                   &saved_fs_cb1);
 
         pipe_resource_reference(&dst_surf.texture, NULL);
@@ -1144,7 +1144,7 @@ v3d_sand30_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 .buffer_size = sizeof(sand30_stride),
         };
 
-        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 0, false,
+        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 0,
                                   &cb_uniforms);
 
         struct pipe_constant_buffer saved_fs_cb1 = { 0 };
@@ -1158,7 +1158,7 @@ v3d_sand30_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 .buffer_size = (src->bo->size -
                                 src->slices[info->src.level].offset),
         };
-        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1, false,
+        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1,
                                   &cb_src);
         /* Unbind the textures, to make sure we don't try to recurse into the
          * shadow blit.
@@ -1175,7 +1175,7 @@ v3d_sand30_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         util_blitter_restore_constant_buffer_state(v3d->blitter);
 
         /* Restore cb1 (util_blitter doesn't handle this one). */
-        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1, true,
+        pctx->set_constant_buffer(pctx, MESA_SHADER_FRAGMENT, 1,
                                   &saved_fs_cb1);
         pipe_resource_reference(&dst_surf.texture, NULL);
 

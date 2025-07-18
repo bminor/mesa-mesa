@@ -108,14 +108,16 @@ hud_draw_colored_prims(struct hud_context *hud, unsigned prim,
    hud->constants.scale[1] = yscale * hud_scale;
    pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf);
 
+   struct pipe_resource *releasebuf = NULL;
    u_upload_data(hud->pipe->stream_uploader, 0,
                  num_vertices * 2 * sizeof(float), 16, buffer,
-                 &vbuffer.buffer_offset, &vbuffer.buffer.resource);
+                 &vbuffer.buffer_offset, &vbuffer.buffer.resource, &releasebuf);
    u_upload_unmap(hud->pipe->stream_uploader);
 
-   cso_set_vertex_buffers(cso, 1, true, &vbuffer);
+   cso_set_vertex_buffers(cso, 1, &vbuffer);
    cso_set_fragment_shader_handle(hud->cso, hud->fs_color);
    cso_draw_arrays(cso, prim, 0, num_vertices);
+   pipe_resource_release(hud->pipe, releasebuf);
 }
 
 static void
@@ -596,7 +598,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
 
       pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf);
 
-      cso_set_vertex_buffers(cso, 1, true, &hud->bg.vbuf);
+      cso_set_vertex_buffers(cso, 1, &hud->bg.vbuf);
       cso_draw_arrays(cso, MESA_PRIM_QUADS, 0, hud->bg.num_vertices);
       hud->bg.vbuf.buffer.resource = NULL;
    } else {
@@ -607,7 +609,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    if (hud->text.num_vertices) {
       cso_set_vertex_shader_handle(cso, hud->vs_text);
       cso_set_vertex_elements(cso, &hud->text_velems);
-      cso_set_vertex_buffers(cso, 1, true, &hud->text.vbuf);
+      cso_set_vertex_buffers(cso, 1, &hud->text.vbuf);
       cso_set_fragment_shader_handle(hud->cso, hud->fs_text);
       cso_draw_arrays(cso, MESA_PRIM_QUADS, 0, hud->text.num_vertices);
       cso_set_vertex_elements(cso, &hud->velems);
@@ -634,7 +636,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
 
    if (hud->whitelines.num_vertices) {
       cso_set_vertex_shader_handle(cso, hud->vs_color);
-      cso_set_vertex_buffers(cso, 1, true, &hud->whitelines.vbuf);
+      cso_set_vertex_buffers(cso, 1, &hud->whitelines.vbuf);
       cso_set_fragment_shader_handle(hud->cso, hud->fs_color);
       cso_draw_arrays(cso, MESA_PRIM_LINES, 0, hud->whitelines.num_vertices);
       hud->whitelines.vbuf.buffer.resource = NULL;
@@ -694,17 +696,19 @@ hud_stop_queries(struct hud_context *hud, struct pipe_context *pipe)
    /* Allocate everything once and divide the storage into 3 portions
     * manually, because u_upload_alloc can unmap memory from previous calls.
     */
+   struct pipe_resource *pres = NULL, *releasebuf = NULL;
    u_upload_alloc(pipe->stream_uploader, 0,
                   hud->bg.buffer_size +
                   hud->whitelines.buffer_size +
                   hud->text.buffer_size,
-                  16, &hud->bg.vbuf.buffer_offset, &hud->bg.vbuf.buffer.resource,
+                  16, &hud->bg.vbuf.buffer_offset, &pres, &releasebuf,
                   (void**)&hud->bg.vertices);
    if (!hud->bg.vertices)
       return;
-
+   pipe_resource_reference(&hud->bg.vbuf.buffer.resource, pres);
    pipe_resource_reference(&hud->whitelines.vbuf.buffer.resource, hud->bg.vbuf.buffer.resource);
    pipe_resource_reference(&hud->text.vbuf.buffer.resource, hud->bg.vbuf.buffer.resource);
+   pipe_resource_release(pipe, releasebuf);
 
    hud->whitelines.vbuf.buffer_offset = hud->bg.vbuf.buffer_offset +
                                         hud->bg.buffer_size;

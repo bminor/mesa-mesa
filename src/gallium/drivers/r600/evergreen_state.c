@@ -1760,7 +1760,7 @@ evergreen_emit_arb_shader_image_load_store_incomplete(struct r600_context *rctx,
 	assert(ARRAY_SIZE(immed_resource_words) == 8);
 	assert(ARRAY_SIZE(resource_words) == 8);
 
-	u_upload_alloc(rctx->b.b.stream_uploader, 0,
+	u_upload_alloc_ref(rctx->b.b.stream_uploader, 0,
 		       4,
 		       256,
 		       &dummy_offset,
@@ -4942,17 +4942,17 @@ void evergreen_setup_tess_constants(struct r600_context *rctx,
 
 		if (unlikely(vertexid))
 			rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_VERTEX,
-						      R600_LDS_INFO_CONST_BUFFER, false,
+						      R600_LDS_INFO_CONST_BUFFER,
 						      &rctx->lds_constbuf_pipe);
 		else
 			rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_VERTEX,
-						      R600_LDS_INFO_CONST_BUFFER, false,
+						      R600_LDS_INFO_CONST_BUFFER,
 						      NULL);
 
 		rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_CTRL,
-					      R600_LDS_INFO_CONST_BUFFER, false, NULL);
+					      R600_LDS_INFO_CONST_BUFFER, NULL);
 		rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_EVAL,
-					      R600_LDS_INFO_CONST_BUFFER, false, NULL);
+					      R600_LDS_INFO_CONST_BUFFER, NULL);
 		return;
 	}
 
@@ -5009,13 +5009,13 @@ void evergreen_setup_tess_constants(struct r600_context *rctx,
 	rctx->last_num_tcs_input_cp = num_tcs_input_cp;
 
 	rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_VERTEX,
-				      R600_LDS_INFO_CONST_BUFFER, false,
+				      R600_LDS_INFO_CONST_BUFFER,
 				      &rctx->lds_constbuf_pipe);
 	rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_CTRL,
-				      R600_LDS_INFO_CONST_BUFFER, false,
+				      R600_LDS_INFO_CONST_BUFFER,
 				      &rctx->lds_constbuf_pipe);
 	rctx->b.b.set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_EVAL,
-				      R600_LDS_INFO_CONST_BUFFER, true,
+				      R600_LDS_INFO_CONST_BUFFER,
 				      &rctx->lds_constbuf_pipe);
 }
 

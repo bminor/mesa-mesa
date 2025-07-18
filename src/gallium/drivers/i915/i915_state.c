@@ -719,7 +719,6 @@ i915_delete_vs_state(struct pipe_context *pipe, void *shader)
 static void
 i915_set_constant_buffer(struct pipe_context *pipe,
                          mesa_shader_stage shader, uint32_t index,
-                         bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
    struct i915_context *i915 = i915_context(pipe);
@@ -761,12 +760,7 @@ i915_set_constant_buffer(struct pipe_context *pipe,
       diff = i915->current.num_user_constants[shader] != 0;
    }
 
-   if (take_ownership) {
-      pipe_resource_reference(&i915->constants[shader], NULL);
-      i915->constants[shader] = buf;
-   } else {
-      pipe_resource_reference(&i915->constants[shader], buf);
-   }
+   pipe_resource_reference(&i915->constants[shader], buf);
    i915->current.num_user_constants[shader] = new_num;
 
    if (diff)
@@ -1057,8 +1051,7 @@ i915_set_vertex_buffers(struct pipe_context *pipe, unsigned count,
    assert(count <= PIPE_MAX_ATTRIBS);
 
    util_set_vertex_buffers_count(draw->pt.vertex_buffer,
-                                 &draw->pt.nr_vertex_buffers, buffers, count,
-                                 true);
+                                 &draw->pt.nr_vertex_buffers, buffers, count);
 }
 
 static void *
@@ -1148,6 +1141,7 @@ i915_init_state_functions(struct i915_context *i915)
    i915->base.create_sampler_view = i915_create_sampler_view;
    i915->base.sampler_view_destroy = i915_sampler_view_destroy;
    i915->base.sampler_view_release = u_default_sampler_view_release;
+   i915->base.resource_release = u_default_resource_release;
    i915->base.set_viewport_states = i915_set_viewport_states;
    i915->base.set_vertex_buffers = i915_set_vertex_buffers;
 }

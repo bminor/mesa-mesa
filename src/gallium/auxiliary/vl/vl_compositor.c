@@ -286,7 +286,7 @@ cleanup_buffers(struct vl_compositor *c)
    if (c->pipe_gfx_supported) {
            c->pipe->delete_vertex_elements_state(c->pipe, c->vertex_elems_state);
    }
-   pipe_resource_reference(&c->vertex_buf.buffer.resource, NULL);
+   c->vertex_buf.buffer.resource = NULL;
 }
 
 static inline struct u_rect
@@ -909,5 +909,5 @@ vl_compositor_cleanup_state(struct vl_compositor_state *s)
    assert(s);
 
    vl_compositor_clear_layers(s);
-   pipe_resource_reference(&s->shader_params, NULL);
+   pipe_resource_release(s->pipe, s->shader_params);
 }

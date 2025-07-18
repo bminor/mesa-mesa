@@ -51,7 +51,7 @@ fd6_upload_emit_driver_ubo(struct fd_context *ctx, fd_cs &cs,
 
    unsigned buffer_offset;
    struct pipe_resource *buffer = NULL;
-   u_upload_data(pctx->const_uploader, 0, sizedwords * sizeof(uint32_t),
+   u_upload_data_ref(pctx->const_uploader, 0, sizedwords * sizeof(uint32_t),
                  16, dwords,  &buffer_offset, &buffer);
    if (!buffer)
       return;  /* nothing good will come of this.. */
@@ -490,7 +490,7 @@ fd6_emit_cs_driver_params(struct fd_context *ctx, fd_cs &cs,
       struct pipe_resource *buffer = NULL;
       unsigned buffer_offset;
 
-      u_upload_data(ctx->base.const_uploader, 0, sizeof(compute_params),
+      u_upload_data_ref(ctx->base.const_uploader, 0, sizeof(compute_params),
                      16, &compute_params,  &buffer_offset, &buffer);
 
       if (info->indirect) {

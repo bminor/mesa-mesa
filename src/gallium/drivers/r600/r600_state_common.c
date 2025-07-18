@@ -589,8 +589,7 @@ static void r600_set_vertex_buffers(struct pipe_context *ctx,
 			   (vb[i].is_user_buffer != input[i].is_user_buffer))) {
 			if (input[i].buffer.resource) {
 				vb[i].buffer_offset = input[i].buffer_offset;
-				pipe_resource_reference(&vb[i].buffer.resource, NULL);
-				vb[i].buffer.resource = input[i].buffer.resource;
+				pipe_resource_reference(&vb[i].buffer.resource, input[i].buffer.resource);
 				new_buffer_mask |= 1 << i;
 				r600_context_add_resource_size(ctx, input[i].buffer.resource);
 			} else {
@@ -598,8 +597,7 @@ static void r600_set_vertex_buffers(struct pipe_context *ctx,
 				disable_mask |= 1 << i;
 			}
 		} else if (input[i].buffer.resource) {
-			pipe_resource_reference(&vb[i].buffer.resource, NULL);
-			vb[i].buffer.resource = input[i].buffer.resource;
+			pipe_resource_reference(&vb[i].buffer.resource, input[i].buffer.resource);
 		}
 	}
 
@@ -1240,7 +1238,6 @@ void r600_constant_buffers_dirty(struct r600_context *rctx, struct r600_constbuf
 
 static void r600_set_constant_buffer(struct pipe_context *ctx,
 				     mesa_shader_stage shader, uint index,
-				     bool take_ownership,
 				     const struct pipe_constant_buffer *input)
 {
 	struct r600_context *rctx = (struct r600_context *)ctx;
@@ -1278,11 +1275,11 @@ static void r600_set_constant_buffer(struct pipe_context *ctx,
 				tmpPtr[i] = util_cpu_to_le32(((uint32_t *)ptr)[i]);
 			}
 
-			u_upload_data(ctx->stream_uploader, 0, size, 256,
+			u_upload_data_ref(ctx->stream_uploader, 0, size, 256,
                                       tmpPtr, &cb->buffer_offset, &cb->buffer);
 			free(tmpPtr);
 		} else {
-			u_upload_data(ctx->stream_uploader, 0,
+			u_upload_data_ref(ctx->stream_uploader, 0,
                                       input->buffer_size, 256, ptr,
                                       &cb->buffer_offset, &cb->buffer);
 		}
@@ -1291,12 +1288,7 @@ static void r600_set_constant_buffer(struct pipe_context *ctx,
 	} else {
 		/* Setup the hw buffer. */
 		cb->buffer_offset = input->buffer_offset;
-		if (take_ownership) {
-			pipe_resource_reference(&cb->buffer, NULL);
-			cb->buffer = input->buffer;
-		} else {
-			pipe_resource_reference(&cb->buffer, input->buffer);
-		}
+		pipe_resource_reference(&cb->buffer, input->buffer);
 		r600_context_add_resource_size(ctx, input->buffer);
 	}
 
@@ -1410,7 +1402,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 		cb.user_buffer = ptr;
 		cb.buffer_offset = 0;
 		cb.buffer_size = size;
-		rctx->b.b.set_constant_buffer(&rctx->b.b, sh, R600_BUFFER_INFO_CONST_BUFFER, false, &cb);
+		rctx->b.b.set_constant_buffer(&rctx->b.b, sh, R600_BUFFER_INFO_CONST_BUFFER, &cb);
 		pipe_resource_reference(&cb.buffer, NULL);
 	}
 }
@@ -1599,21 +1591,21 @@ static void update_gs_block_state(struct r600_context *rctx, unsigned enable)
 
 		if (enable) {
 			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_GEOMETRY,
-					R600_GS_RING_CONST_BUFFER, false, &rctx->gs_rings.esgs_ring);
+					R600_GS_RING_CONST_BUFFER, &rctx->gs_rings.esgs_ring);
 			if (rctx->tes_shader) {
 				r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_EVAL,
-							 R600_GS_RING_CONST_BUFFER, false, &rctx->gs_rings.gsvs_ring);
+							 R600_GS_RING_CONST_BUFFER, &rctx->gs_rings.gsvs_ring);
 			} else {
 				r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_VERTEX,
-							 R600_GS_RING_CONST_BUFFER, false, &rctx->gs_rings.gsvs_ring);
+							 R600_GS_RING_CONST_BUFFER, &rctx->gs_rings.gsvs_ring);
 			}
 		} else {
 			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_GEOMETRY,
-					R600_GS_RING_CONST_BUFFER, false, NULL);
+					R600_GS_RING_CONST_BUFFER, NULL);
 			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_VERTEX,
-					R600_GS_RING_CONST_BUFFER, false, NULL);
+					R600_GS_RING_CONST_BUFFER, NULL);
 			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_EVAL,
-					R600_GS_RING_CONST_BUFFER, false, NULL);
+					R600_GS_RING_CONST_BUFFER, NULL);
 		}
 	}
 }
@@ -2298,7 +2290,7 @@ r600_indirect_parameters_init(struct r600_context *rctx,
 		indirect_parameters->counter = 0;
 		indirect_parameters->internal = NULL;
 
-		u_upload_alloc(rctx->b.b.stream_uploader, 0,
+		u_upload_alloc_ref(rctx->b.b.stream_uploader, 0,
 			       sizeof(struct r600_indirect_gpu_internal),
 			       256,
 			       &indirect_parameters->internal_offset,
@@ -2630,7 +2622,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 				indexbuf->width0 - index_offset;
 			const unsigned out_width = count * out_size;
 
-			u_upload_alloc(ctx->stream_uploader, start, out_width,
+			u_upload_alloc_ref(ctx->stream_uploader, start, out_width,
                                        256, &out_offset, &out_buffer, &ptr);
 
 			if (unlikely(!ptr))
@@ -2655,7 +2647,7 @@ static void r600_draw_vbo(struct pipe_context *ctx, const struct pipe_draw_info 
 						 draws[0].count*index_size > 20)) {
 			unsigned start_offset = draws[0].start * index_size;
 			indexbuf = NULL;
-			u_upload_data(ctx->stream_uploader, 0,
+			u_upload_data_ref(ctx->stream_uploader, 0,
                                       draws[0].count * index_size, 256,
 				      (char*)info->index.user + start_offset,
 				      &index_offset, &indexbuf);
@@ -3966,6 +3958,7 @@ void r600_init_common_state_functions(struct r600_context *rctx)
 	rctx->b.b.set_sampler_views = r600_set_sampler_views;
 	rctx->b.b.sampler_view_destroy = r600_sampler_view_destroy;
 	rctx->b.b.sampler_view_release = u_default_sampler_view_release;
+	rctx->b.b.resource_release = u_default_resource_release;
 	rctx->b.b.memory_barrier = r600_memory_barrier;
 	rctx->b.b.texture_barrier = r600_texture_barrier;
 	rctx->b.b.set_stream_output_targets = r600_set_streamout_targets;

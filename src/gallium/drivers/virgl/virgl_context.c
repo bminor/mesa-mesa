@@ -580,8 +580,7 @@ static void virgl_set_vertex_buffers(struct pipe_context *ctx,
 
    util_set_vertex_buffers_count(vctx->vertex_buffer,
                                  &vctx->num_vertex_buffers,
-                                 buffers, num_buffers,
-                                 true);
+                                 buffers, num_buffers);
 
    if (buffers) {
       for (unsigned i = 0; i < num_buffers; i++) {
@@ -638,7 +637,6 @@ static void virgl_hw_set_index_buffer(struct virgl_context *vctx,
 
 static void virgl_set_constant_buffer(struct pipe_context *ctx,
                                      mesa_shader_stage shader, uint index,
-                                      bool take_ownership,
                                      const struct pipe_constant_buffer *buf)
 {
    struct virgl_context *vctx = virgl_context(ctx);
@@ -653,12 +651,7 @@ static void virgl_set_constant_buffer(struct pipe_context *ctx,
                                        buf->buffer_offset,
                                        buf->buffer_size, res);
 
-      if (take_ownership) {
-         pipe_resource_reference(&binding->ubos[index].buffer, NULL);
-         binding->ubos[index].buffer = buf->buffer;
-      } else {
-         pipe_resource_reference(&binding->ubos[index].buffer, buf->buffer);
-      }
+      pipe_resource_reference(&binding->ubos[index].buffer, buf->buffer);
       binding->ubos[index] = *buf;
       binding->ubo_enabled_mask |= 1 << index;
    } else {
@@ -1051,7 +1044,7 @@ static void virgl_draw_vbo(struct pipe_context *ctx,
 
            if (ib.user_buffer) {
                    unsigned start_offset = draws[0].start * ib.index_size;
-                   u_upload_data(vctx->uploader, 0,
+                   u_upload_data_ref(vctx->uploader, 0,
                                  draws[0].count * ib.index_size, 4,
                                  (char*)ib.user_buffer + start_offset,
                                  &ib.offset, &ib.buffer);
@@ -1785,6 +1778,7 @@ struct pipe_context *virgl_context_create(struct pipe_screen *pscreen,
    vctx->base.create_sampler_view = virgl_create_sampler_view;
    vctx->base.sampler_view_destroy = virgl_destroy_sampler_view;
    vctx->base.sampler_view_release = u_default_sampler_view_release;
+   vctx->base.resource_release = u_default_resource_release;
    vctx->base.set_sampler_views = virgl_set_sampler_views;
    vctx->base.texture_barrier = virgl_texture_barrier;
 
