@@ -12,6 +12,8 @@ timeout = 180.0
 version_check = "GL ES 3.2.*git"
 renderer_check = "zink.*Intel.*"
 fraction = 2
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles3/deqp-gles3"
@@ -25,6 +27,8 @@ deqp_args = [
 ]
 timeout = 180.0
 fraction = 2
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
@@ -38,6 +42,8 @@ deqp_args = [
 ]
 timeout = 180.0
 fraction = 2
+[deqp.env]
+  ZINK_DEBUG = "validation"
 
 [[deqp]]
 deqp = "/deqp-gl/external/openglcts/modules/glcts"
