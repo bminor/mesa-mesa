@@ -70,6 +70,7 @@
 #define     PREDICATION_OP_BOOL32                     0x4
 #define   PREDICATION_CONTINUE                        (1 << 31)
 #define PKT3_COND_EXEC                             0x22
+#define   COND_EXEC_USERQ_OVERRULE_CMD                (1 << 31)
 #define PKT3_PRED_EXEC                             0x23
 #define PKT3_DRAW_INDIRECT                         0x24
 #define PKT3_DRAW_INDEX_INDIRECT                   0x25
@@ -111,6 +112,9 @@
 #define   STRMOUT_SELECT_BUFFER(x)                    (((unsigned)(x)&0x3) << 8)
 #define PKT3_DRAW_INDEX_OFFSET_2                   0x35
 #define PKT3_WRITE_DATA                            0x37
+#define   WRITE_DATA_DST_SEL(x)                       (((unsigned)(x)&0xf) << 8)
+#define   WRITE_DATA_WR_CONFIRM                       (1 << 20)
+#define   WRITE_DATA_CACHE_POLICY(x)                  (x << 25)
 #define PKT3_DRAW_INDEX_INDIRECT_MULTI             0x38
 #define PKT3_MEM_SEMAPHORE                         0x39
 #define PKT3_MPEG_INDEX                            0x3A /* GFX6 only */
@@ -250,6 +254,8 @@
 #define PKT3_INCREMENT_CE_COUNTER                  0x84
 #define PKT3_INCREMENT_DE_COUNTER                  0x85
 #define PKT3_WAIT_ON_CE_COUNTER                    0x86
+#define PKT3_FRAME_CONTROL                         0x90
+#define   S_FRAME_CONTROL_CMD(x)                      ((x) << 28)
 #define PKT3_HDP_FLUSH                             0x95
 #define PKT3_SET_SH_REG_INDEX                      0x9B
 #define PKT3_LOAD_CONTEXT_REG_INDEX                0x9F /* GFX8+ */

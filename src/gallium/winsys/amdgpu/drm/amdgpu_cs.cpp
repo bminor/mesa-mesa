@@ -1408,6 +1408,11 @@ static int amdgpu_cs_submit_ib_kernelq(struct amdgpu_cs *acs,
    return r;
 }
 
+struct cond_exec_skip_count {
+   uint32_t *count_dw_ptr;
+   uint64_t start_wptr;
+};
+
 static void amdgpu_cs_add_userq_packets(struct amdgpu_winsys *aws,
                                         struct amdgpu_userq *userq,
                                         struct amdgpu_cs_context *csc,
@@ -1417,13 +1422,31 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_winsys *aws,
    amdgpu_pkt_begin();
 
    if (userq->ip_type == AMD_IP_GFX || userq->ip_type == AMD_IP_COMPUTE) {
+      struct cond_exec_skip_count *cond_exec_skip_counts = NULL;
+
+      if (csc->aws->info.gfx_level == GFX11_5 && userq->ip_type == AMD_IP_GFX) {
+         /* index 0 holds skip count for skipping the entire job. Rest for FENCE_WAIT_MULTI
+          * packet pre-emption going to end of the job.
+          */
+         cond_exec_skip_counts = (struct cond_exec_skip_count*)alloca(
+            sizeof(struct cond_exec_skip_count) * (1 + DIV_ROUND_UP(num_fences, 4)));
+         amdgpu_pkt_add_dw(PKT3(PKT3_COND_EXEC, 3, 0));
+         amdgpu_pkt_add_dw(0);
+         amdgpu_pkt_add_dw(0);
+         amdgpu_pkt_add_dw(0);
+         cond_exec_skip_counts[0].count_dw_ptr = amdgpu_pkt_get_ptr_skip_dw();
+         cond_exec_skip_counts[0].start_wptr = amdgpu_pkt_get_next_wptr();
+      }
+
       if (num_fences) {
          unsigned max_num_fences_fwm;
          unsigned num_fences_in_iter;
+
          if (csc->aws->info.has_dedicated_vram || csc->aws->info.gfx_level >= GFX12)
             max_num_fences_fwm = 32;
          else
             max_num_fences_fwm = 4;
+
          for (unsigned i = 0; i < num_fences; i = i + max_num_fences_fwm) {
             num_fences_in_iter = (i + max_num_fences_fwm > num_fences) ?
                                     num_fences - i : max_num_fences_fwm;
@@ -1434,6 +1457,15 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_winsys *aws,
                amdgpu_pkt_add_dw(fence_info[i + j].va >> 32);
                amdgpu_pkt_add_dw(fence_info[i + j].value);
                amdgpu_pkt_add_dw(fence_info[i + j].value >> 32);
+            }
+
+            if (csc->aws->info.gfx_level == GFX11_5 && userq->ip_type == AMD_IP_GFX) {
+               amdgpu_pkt_add_dw(PKT3(PKT3_COND_EXEC, 3, 0));
+               amdgpu_pkt_add_dw(0);
+               amdgpu_pkt_add_dw(0);
+               amdgpu_pkt_add_dw(0);
+               cond_exec_skip_counts[1 + i].count_dw_ptr = amdgpu_pkt_get_ptr_skip_dw();
+               cond_exec_skip_counts[1 + i].start_wptr = amdgpu_pkt_get_next_wptr();
             }
          }
       }
@@ -1469,11 +1501,31 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_winsys *aws,
       amdgpu_pkt_add_dw(userq->user_fence_seq_num >> 32);
       amdgpu_pkt_add_dw(0);
 
-      /* protected signal packet. This is trusted RELEASE_MEM packet. i.e. fence buffer
-       * is only accessible from kernel through VMID 0.
+      /* protected signal packet. This is trusted RELEASE_MEM packet.
+       *
+       * Kernel allocates the memory for the protected fence and passes the protected fence address
+       * in MQD (memory queue descriptor - where static and dynamic queue states are stored). This
+       * fence memory is mapped as write, only for VMID 0. This packet writes the ring buffer
+       * monotonic (non-wrapping) read pointer value to the fence address passed in MQD when the
+       * job is completed.
+       *
+       * The protected fence memory is mapped as read only to the user VMID. The
+       * DRM_AMDGPU_USERQ_WAIT ioctl will return read only fence memory address along with protected
+       * fence sequence number to wait which is used in FENCE_WAIT_MULTI packet.
+       *
+       * PKT3_PROTECTED_FENCE_SIGNAL packet should be the last packet before ringing doorbell so
+       * that mesa user fence sequence number matches with protected fence sequence number. This
+       * is helpful in debugging.
        */
       amdgpu_pkt_add_dw(PKT3(PKT3_PROTECTED_FENCE_SIGNAL, 0, 0));
       amdgpu_pkt_add_dw(0);
+
+      if (csc->aws->info.gfx_level == GFX11_5 && userq->ip_type == AMD_IP_GFX) {
+         for (unsigned i = 0; i < 1 + DIV_ROUND_UP(num_fences, 4); i++)
+            *cond_exec_skip_counts[i].count_dw_ptr = (amdgpu_pkt_get_next_wptr() -
+                                                         cond_exec_skip_counts[i].start_wptr) |
+                                                         COND_EXEC_USERQ_OVERRULE_CMD;
+      }
    } else {
       mesa_loge("amdgpu: unsupported userq ip submission = %d\n", userq->ip_type);
    }
@@ -1496,7 +1548,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
 
    /* Syncobj dependencies. */
    unsigned num_syncobj_dependencies = csc->syncobj_dependencies.num;
-   uint32_t *syncobj_dependencies_list =
+    uint32_t *syncobj_dependencies_list =
       (uint32_t*)alloca(num_syncobj_dependencies * sizeof(uint32_t));
 
    /* Currently only 1 vm timeline syncobj can be a dependency. */

@@ -32,6 +32,11 @@ extern "C" {
    userq->next_wptr = __next_wptr; \
 } while (0)
 
+#define amdgpu_pkt_get_ptr_skip_dw() \
+   (__ring_ptr + (__next_wptr++ & AMDGPU_USERQ_RING_SIZE_DW_MASK))
+
+#define amdgpu_pkt_get_next_wptr() __next_wptr
+
 struct amdgpu_winsys;
 struct amdgpu_screen_winsys;
 
@@ -68,7 +73,8 @@ struct amdgpu_userq {
     * (this avoids writing multiple times to the door bell for the same
     * submission) */
    uint64_t next_wptr;
-   struct pb_buffer_lean *rptr_bo;
+   struct pb_buffer_lean *vram_bo;
+   uint64_t rptr_va;
 
    struct pb_buffer_lean *doorbell_bo;
    uint64_t *doorbell_bo_map;

@@ -58,14 +58,16 @@ amdgpu_userq_ring_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq,
    *userq->wptr_bo_map = 0;
    userq->next_wptr = 0;
 
-   userq->rptr_bo = amdgpu_bo_create(aws, aws->info.gart_page_size, 256, RADEON_DOMAIN_VRAM,
+   /* Allocate memory for rptr. */
+   userq->vram_bo = amdgpu_bo_create(aws, aws->info.gart_page_size, 256, RADEON_DOMAIN_VRAM,
                                      RADEON_FLAG_CLEAR_VRAM | RADEON_FLAG_GL2_BYPASS |
                                         RADEON_FLAG_NO_SUBALLOC |
                                         RADEON_FLAG_NO_INTERPROCESS_SHARING);
-   if (!userq->rptr_bo)
+   if (!userq->vram_bo)
       return false;
 
-   update_vm_timeline_point_to_wait(vm_timeline_point_to_wait, userq->rptr_bo);
+   update_vm_timeline_point_to_wait(vm_timeline_point_to_wait, userq->vram_bo);
+   userq->rptr_va = amdgpu_bo_get_va(userq->vram_bo);
    return true;
 }
 
@@ -77,7 +79,7 @@ amdgpu_userq_deinit(struct amdgpu_winsys *aws, struct amdgpu_userq *userq)
 
    radeon_bo_reference(&aws->dummy_sws.base, &userq->gtt_bo, NULL);
    radeon_bo_reference(&aws->dummy_sws.base, &userq->wptr_bo, NULL);
-   radeon_bo_reference(&aws->dummy_sws.base, &userq->rptr_bo, NULL);
+   radeon_bo_reference(&aws->dummy_sws.base, &userq->vram_bo, NULL);
    radeon_bo_reference(&aws->dummy_sws.base, &userq->doorbell_bo, NULL);
 
    switch (userq->ip_type) {
@@ -206,8 +208,8 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
       r = ac_drm_create_userqueue(aws->dev, hw_ip_type,
                                   get_real_bo(amdgpu_winsys_bo(userq->doorbell_bo))->kms_handle,
                                   AMDGPU_USERQ_DOORBELL_INDEX, ring_va, AMDGPU_USERQ_RING_SIZE,
-                                  amdgpu_bo_get_va(userq->wptr_bo), amdgpu_bo_get_va(userq->rptr_bo),
-                                  mqd, priority, &userq->userq_handle);
+                                  amdgpu_bo_get_va(userq->wptr_bo), userq->rptr_va, mqd, priority,
+                                  &userq->userq_handle);
       if (r == -EACCES && priority == AMDGPU_USERQ_CREATE_FLAGS_QUEUE_PRIORITY_HIGH) {
          /* Try again with a lower priority. */
          priority = AMDGPU_USERQ_CREATE_FLAGS_QUEUE_PRIORITY_NORMAL_HIGH;
