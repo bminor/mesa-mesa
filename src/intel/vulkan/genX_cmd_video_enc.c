@@ -2098,7 +2098,15 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       cmd2.TilingEnable = pps->flags.tiles_enabled_flag;
 
       if (anv_vdenc_h265_picture_type(frame_info->pStdPictureInfo->pic_type) != 0) {
-         const StdVideoEncodeH265ReferenceListsInfo* ref_lists = frame_info->pStdPictureInfo->pRefLists;
+         StdVideoEncodeH265ReferenceListsInfo* ref_lists =
+            (struct StdVideoEncodeH265ReferenceListsInfo *)frame_info->pStdPictureInfo->pRefLists;
+
+         if (frame_info->pStdPictureInfo->pic_type == STD_VIDEO_H265_PICTURE_TYPE_P) {
+            for (int i = 0; i< STD_VIDEO_H265_MAX_NUM_LIST_REF; i++) {
+               ref_lists->RefPicList1[i] = ref_lists->RefPicList0[i];
+               ref_lists->list_entry_l1[i] = ref_lists->list_entry_l0[i];
+            }
+         }
 
          bool long_term = false;
          uint8_t ref_slot = ref_lists->RefPicList0[0];
