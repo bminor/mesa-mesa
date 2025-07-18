@@ -1454,7 +1454,7 @@
         "description": "dri: fix image_loader_extensions array",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "56ed5cf1bba0304d258a56d0f9c2e767705cec01",
         "notes": null
