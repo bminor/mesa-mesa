@@ -69,6 +69,8 @@ try_lower_input_load(nir_intrinsic_instr *load, bool use_fragcoord_sysval)
    nir_def *coord =
       nir_vec4(&b, nir_channel(&b, pos, 0), nir_channel(&b, pos, 1), layer, nir_imm_int(&b, 0));
 
+   nir_intrinsic_set_image_array(load, true);
+
    nir_src_rewrite(&load->src[1], coord);
 
    return true;
