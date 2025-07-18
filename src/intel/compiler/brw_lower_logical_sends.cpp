@@ -1574,10 +1574,25 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
     *
     *    Atomic messages are always forced to "un-cacheable" in the L1
     *    cache.
+    *
+    * Bspec: Overview of memory Access:
+    *
+    *   If a read from a Null tile gets a cache-hit in a virtually-addressed
+    *   GPU cache, then the read may not return zeroes.
+    *
+    * If a shader writes to a null tile and wants to be able to read it back
+    * as zero, it will use the 'volatile' decoration for the access, otherwise
+    * the compiler may choose to optimize things out, breaking the
+    * residencyNonResidentStrict guarantees. Due to the above, we need to make
+    * these operations uncached.
     */
    unsigned cache_mode =
       lsc_opcode_is_atomic(op) ? (unsigned) LSC_CACHE(devinfo, STORE, L1UC_L3WB) :
-      lsc_opcode_is_store(op)  ? (unsigned) LSC_CACHE(devinfo, STORE, L1STATE_L3MOCS) :
+      volatile_access ?
+         (lsc_opcode_is_store(op) ?
+            (unsigned) LSC_CACHE(devinfo, STORE, L1UC_L3UC) :
+            (unsigned) LSC_CACHE(devinfo, LOAD, L1UC_L3UC)) :
+      lsc_opcode_is_store(op) ? (unsigned) LSC_CACHE(devinfo, STORE, L1STATE_L3MOCS) :
       (unsigned) LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS);
 
    /* If we're a fragment shader, we have to predicate with the sample mask to
