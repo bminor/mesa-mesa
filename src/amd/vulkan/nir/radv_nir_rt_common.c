@@ -533,7 +533,7 @@ insert_traversal_triangle_case(struct radv_device *device, nir_builder *b, const
    {
       intersection.frontface = nir_fgt_imm(b, div, 0);
       nir_def *not_cull;
-      if (pdev->info.gfx_level < GFX11) {
+      if (pdev->info.gfx_level < GFX11 || radv_emulate_rt(pdev)) {
          nir_def *switch_ccw =
             nir_test_mask(b, nir_load_deref(b, args->vars.sbt_offset_and_flags), RADV_INSTANCE_TRIANGLE_FLIP_FACING);
          intersection.frontface = nir_ixor(b, intersection.frontface, switch_ccw);
@@ -681,7 +681,7 @@ static nir_def *
 build_bvh_base(nir_builder *b, const struct radv_physical_device *pdev, nir_def *base_addr, nir_def *ptr_flags,
                bool overwrite)
 {
-   if (pdev->info.gfx_level < GFX11)
+   if (pdev->info.gfx_level < GFX11 || radv_emulate_rt(pdev))
       return base_addr;
 
    nir_def *base_addr_vec = nir_unpack_64_2x32(b, base_addr);

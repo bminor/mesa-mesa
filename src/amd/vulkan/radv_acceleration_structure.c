@@ -467,11 +467,13 @@ radv_build_flags(VkCommandBuffer commandBuffer, uint32_t key)
       flags |= RADV_BUILD_FLAG_COMPACT;
    if (radv_use_bvh8(pdev))
       flags |= RADV_BUILD_FLAG_BVH8;
-   /* gfx11 box intersection tests can return garbage with infs and non-standard box sorting */
-   if (pdev->info.gfx_level == GFX11)
-      flags |= RADV_BUILD_FLAG_NO_INFS;
-   if (pdev->info.gfx_level >= GFX11)
-      flags |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
+   if (!radv_emulate_rt(pdev)) {
+      /* gfx11 box intersection tests can return garbage with infs and non-standard box sorting */
+      if (pdev->info.gfx_level == GFX11)
+         flags |= RADV_BUILD_FLAG_NO_INFS;
+      if (pdev->info.gfx_level >= GFX11)
+         flags |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
+   }
 
    return flags;
 }
