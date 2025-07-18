@@ -287,3 +287,14 @@ zink-radv-cezanne:
     DEQP_SUITE: zink-radv
     GPU_VERSION: zink-radv-cezanne
     HWCI_START_WESTON: 1
+
+zink-radv-gfx1201-valve:
+  extends:
+    - .radv-zink-test-valve
+    - .gfx1201-test-valve
+    - .zink-radv-valve-manual-rules
+  timeout: 1h 20m
+  variables:
+    GPU_VERSION: zink-radv-gfx1201
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
+    RADV_PERFTEST: hic
