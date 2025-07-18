@@ -87,8 +87,9 @@ GDSInstr::emit_atomic_counter(nir_intrinsic_instr *intr, Shader& shader)
    case nir_intrinsic_atomic_counter_min:
    case nir_intrinsic_atomic_counter_or:
    case nir_intrinsic_atomic_counter_xor:
-   case nir_intrinsic_atomic_counter_comp_swap:
       return emit_atomic_op2(intr, shader);
+   case nir_intrinsic_atomic_counter_comp_swap:
+      return emit_atomic_counter_comp_swap(intr, shader);
    case nir_intrinsic_atomic_counter_read:
    case nir_intrinsic_atomic_counter_post_dec:
       return emit_atomic_read(intr, shader);
@@ -350,6 +351,63 @@ GDSInstr::emit_atomic_pre_dec(nir_intrinsic_instr *instr, Shader& shader)
                                            tmp_dest,
                                            vf.one_i(),
                                            AluInstr::last_write));
+   return true;
+}
+
+bool
+GDSInstr::emit_atomic_counter_comp_swap(nir_intrinsic_instr *instr, Shader& shader)
+{
+   auto& vf = shader.value_factory();
+   bool read_result = !list_is_empty(&instr->def.uses);
+
+   ESDOp op =
+      read_result ? get_opcode(instr->intrinsic) : get_opcode_wo(instr->intrinsic);
+
+   if (DS_OP_INVALID == op)
+      return false;
+
+   auto [offset, uav_id] = shader.evaluate_resource_offset(instr, 0);
+
+   offset += nir_intrinsic_base(instr);
+
+   auto dest = read_result ? vf.dest(instr->def, 0, pin_free) : nullptr;
+
+   if (uav_id != nullptr)
+      shader.set_flag(Shader::sh_indirect_atomic);
+
+   GDSInstr *ir = nullptr;
+
+   if (shader.chip_class() < ISA_CC_CAYMAN) {
+      auto tmp = vf.temp_vec4(pin_group, {4, 1, 2, 7});
+
+      shader.emit_instruction(
+         new AluInstr(op1_mov, tmp[1], vf.src(instr->src[1], 0), AluInstr::write));
+      shader.emit_instruction(
+         new AluInstr(op1_mov, tmp[2], vf.src(instr->src[2], 0), AluInstr::write));
+
+      ir = new GDSInstr(op, dest, tmp, offset, uav_id);
+   } else {
+      auto tmp = vf.temp_vec4(pin_group, {0, 1, 2, 7});
+
+      if (uav_id)
+         shader.emit_instruction(new AluInstr(op3_muladd_uint24,
+                                              tmp[0],
+                                              uav_id,
+                                              vf.literal(4),
+                                              vf.literal(4 * offset),
+                                              AluInstr::write));
+      else
+         shader.emit_instruction(
+            new AluInstr(op1_mov, tmp[0], vf.literal(4 * offset), AluInstr::write));
+
+      shader.emit_instruction(
+         new AluInstr(op1_mov, tmp[1], vf.src(instr->src[1], 0), AluInstr::write));
+      shader.emit_instruction(
+         new AluInstr(op1_mov, tmp[2], vf.src(instr->src[2], 0), AluInstr::write));
+
+      ir = new GDSInstr(op, dest, tmp, 0, nullptr);
+   }
+   shader.emit_instruction(ir);
    return true;
 }
 
