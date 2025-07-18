@@ -197,6 +197,7 @@ lvp_import_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
    AHardwareBuffer_acquire(info->buffer);
    mem->android_hardware_buffer = info->buffer;
    mem->size = size;
+   mem->map = device->pscreen->map_memory(device->pscreen, mem->pmem);
    mem->memory_type = LVP_DEVICE_MEMORY_TYPE_DMA_BUF;
 
    return VK_SUCCESS;
