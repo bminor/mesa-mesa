@@ -1719,7 +1719,8 @@ static struct pipe_resource *si_texture_from_winsys_buffer(struct si_screen *ssc
                                                            const struct pipe_resource *templ,
                                                            struct pb_buffer_lean *buf, unsigned stride,
                                                            uint64_t offset, uint64_t modifier,
-                                                           unsigned usage, bool dedicated)
+                                                           unsigned usage, bool dedicated,
+                                                           bool take_ownership)
 {
    struct radeon_surf surface = {};
    struct radeon_bo_metadata metadata = {};
@@ -1787,6 +1788,11 @@ static struct pipe_resource *si_texture_from_winsys_buffer(struct si_screen *ssc
                                   offset, stride, 0, 0);
    if (!tex)
       return NULL;
+
+   if (!take_ownership) {
+      struct pb_buffer_lean *tmp = NULL;
+      radeon_bo_reference(sscreen->ws, &tmp, buf);
+   }
 
    tex->buffer.b.is_shared = true;
    tex->buffer.external_usage = usage;
@@ -1867,7 +1873,7 @@ static struct pipe_resource *si_texture_from_handle(struct pipe_screen *screen,
       return NULL;
 
    if (templ->target == PIPE_BUFFER)
-      return si_buffer_from_winsys_buffer(screen, templ, buf, 0);
+      return si_buffer_from_winsys_buffer(screen, templ, buf, 0, true);
 
    if (whandle->plane >= util_format_get_num_planes(whandle->format)) {
       struct si_auxiliary_texture *tex = CALLOC_STRUCT_CL(si_auxiliary_texture);
@@ -1885,7 +1891,7 @@ static struct pipe_resource *si_texture_from_handle(struct pipe_screen *screen,
    }
 
    return si_texture_from_winsys_buffer(sscreen, templ, buf, whandle->stride, whandle->offset,
-                                        whandle->modifier, usage, true);
+                                        whandle->modifier, usage, true, true);
 }
 
 bool si_init_flushed_depth_texture(struct pipe_context *ctx, struct pipe_resource *texture)
@@ -2386,22 +2392,17 @@ static struct pipe_resource *si_resource_from_memobj(struct pipe_screen *screen,
    struct pipe_resource *res;
 
    if (templ->target == PIPE_BUFFER)
-      res = si_buffer_from_winsys_buffer(screen, templ, memobj->buf, offset);
+      res = si_buffer_from_winsys_buffer(screen, templ, memobj->buf, offset, false);
    else
       res = si_texture_from_winsys_buffer(sscreen, templ, memobj->buf,
                                           memobj->stride,
                                           offset, DRM_FORMAT_MOD_INVALID,
                                           PIPE_HANDLE_USAGE_FRAMEBUFFER_WRITE | PIPE_HANDLE_USAGE_SHADER_WRITE,
-                                          memobj->b.dedicated);
+                                          memobj->b.dedicated, false);
 
    if (!res)
       return NULL;
 
-   /* si_texture_from_winsys_buffer doesn't increment refcount of
-    * memobj->buf, so increment it here.
-    */
-   struct pb_buffer_lean *buf = NULL;
-   radeon_bo_reference(sscreen->ws, &buf, memobj->buf);
    return res;
 }
 

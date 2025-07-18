@@ -688,7 +688,8 @@ static struct pipe_resource *si_buffer_from_user_memory(struct pipe_screen *scre
 struct pipe_resource *si_buffer_from_winsys_buffer(struct pipe_screen *screen,
                                                    const struct pipe_resource *templ,
                                                    struct pb_buffer_lean *imported_buf,
-                                                   uint64_t offset)
+                                                   uint64_t offset,
+                                                   bool take_ownership)
 {
    if (offset + templ->width0 > imported_buf->size)
       return NULL;
@@ -731,7 +732,11 @@ struct pipe_resource *si_buffer_from_winsys_buffer(struct pipe_screen *screen,
 
    res->b.is_shared = true;
    res->b.buffer_id_unique = util_idalloc_mt_alloc(&sscreen->buffer_ids);
-   res->buf = imported_buf;
+   if (take_ownership)
+      res->buf = imported_buf;
+   else
+      radeon_bo_reference(sscreen->ws, &res->buf, imported_buf);
+
    res->gpu_address = sscreen->ws->buffer_get_virtual_address(res->buf) + offset;
    res->domains = domains;
    res->flags = flags;
