@@ -221,3 +221,23 @@ lvp_create_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
 
    return result;
 }
+
+#if ANDROID_API_LEVEL >= 26
+VkResult
+lvp_GetMemoryAndroidHardwareBufferANDROID(
+   VkDevice device,
+   const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
+   struct AHardwareBuffer **pBuffer)
+{
+   LVP_FROM_HANDLE(lvp_device_memory, mem, pInfo->memory);
+
+   if (mem->android_hardware_buffer) {
+      *pBuffer = mem->android_hardware_buffer;
+      /* Increase refcount. */
+      AHardwareBuffer_acquire(*pBuffer);
+      return VK_SUCCESS;
+   }
+
+   return VK_ERROR_INVALID_EXTERNAL_HANDLE;
+}
+#endif
