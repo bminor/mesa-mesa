@@ -250,17 +250,47 @@ hash_intrinsic(uint32_t hash, const nir_intrinsic_instr *instr)
    return hash;
 }
 
+/* Gathers all the small bits of nir_instr_tex as a uint32_t */
+static uint32_t
+pack_tex(const nir_tex_instr *instr)
+{
+   uint32_t packed = 0, bit = 0;
+
+#define PACK(_val, _bits) do { \
+   uint32_t u = (_val), bits = (_bits); \
+   assert(bit + bits <= 32); \
+   assert(u <= BITFIELD_MASK(bits)); \
+   packed |= u << bit; \
+   bit += bits; \
+} while (0)
+
+   PACK(instr->op, 5);
+   PACK(instr->num_srcs, 5);
+   PACK(instr->sampler_dim, 4);
+   PACK(instr->coord_components, 3);
+   PACK(instr->is_array, 1);
+   PACK(instr->is_shadow, 1);
+   PACK(instr->is_new_style_shadow, 1);
+   PACK(instr->is_sparse, 1);
+   PACK(instr->component, 2);
+   PACK(instr->array_is_lowered_cube, 1);
+   PACK(instr->is_gather_implicit_lod, 1);
+   PACK(instr->skip_helpers, 1);
+   PACK(instr->texture_non_uniform, 1);
+   PACK(instr->sampler_non_uniform, 1);
+   PACK(instr->offset_non_uniform, 1);
+
+#undef PACK
+
+   return packed;
+}
+
 static uint32_t
 hash_tex(uint32_t hash, const nir_tex_instr *instr)
 {
    uint8_t v[24];
-   v[0] = instr->op;
-   v[1] = instr->num_srcs;
-   v[2] = instr->coord_components | (instr->sampler_dim << 4);
-   uint8_t flags = instr->is_array | (instr->is_shadow << 1) | (instr->is_new_style_shadow << 2) |
-                   (instr->is_sparse << 3) | (instr->component << 4) | (instr->texture_non_uniform << 6) |
-                   (instr->sampler_non_uniform << 7);
-   v[3] = flags;
+   uint32_t packed = pack_tex(instr);
+   memcpy(v, &packed, 4);
    STATIC_ASSERT(sizeof(instr->tg4_offsets) == 8);
    memcpy(v + 4, instr->tg4_offsets, 8);
    uint32_t texture_index = instr->texture_index;
@@ -621,11 +651,11 @@ nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2)
       nir_tex_instr *tex1 = nir_instr_as_tex(instr1);
       nir_tex_instr *tex2 = nir_instr_as_tex(instr2);
 
-      if (tex1->op != tex2->op)
+      /* This covers the opcode and num_srcs */
+      if (pack_tex(tex1) != pack_tex(tex2))
          return false;
 
-      if (tex1->num_srcs != tex2->num_srcs)
-         return false;
+      assert(tex1->num_srcs == tex2->num_srcs);
       for (unsigned i = 0; i < tex1->num_srcs; i++) {
          if (tex1->src[i].src_type != tex2->src[i].src_type ||
              !nir_srcs_equal(tex1->src[i].src, tex2->src[i].src)) {
@@ -633,20 +663,13 @@ nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2)
          }
       }
 
-      if (tex1->coord_components != tex2->coord_components ||
-          tex1->sampler_dim != tex2->sampler_dim ||
-          tex1->is_array != tex2->is_array ||
-          tex1->is_shadow != tex2->is_shadow ||
-          tex1->is_new_style_shadow != tex2->is_new_style_shadow ||
-          tex1->component != tex2->component ||
-          tex1->texture_index != tex2->texture_index ||
-          tex1->sampler_index != tex2->sampler_index ||
-          tex1->backend_flags != tex2->backend_flags) {
-         return false;
-      }
-
       if (memcmp(tex1->tg4_offsets, tex2->tg4_offsets,
                  sizeof(tex1->tg4_offsets)))
+         return false;
+
+      if (tex1->texture_index != tex2->texture_index ||
+          tex1->sampler_index != tex2->sampler_index ||
+          tex1->backend_flags != tex2->backend_flags)
          return false;
 
       return true;
