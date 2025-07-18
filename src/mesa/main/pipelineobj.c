@@ -250,6 +250,12 @@ use_program_stages(struct gl_context *ctx, struct gl_shader_program *shProg,
    if ((stages & GL_COMPUTE_SHADER_BIT) != 0)
       use_program_stage(ctx, GL_COMPUTE_SHADER, shProg, pipe);
 
+   if ((stages & GL_TASK_SHADER_BIT_EXT) != 0)
+      use_program_stage(ctx, GL_TASK_SHADER_EXT, shProg, pipe);
+
+   if ((stages & GL_MESH_SHADER_BIT_EXT) != 0)
+      use_program_stage(ctx, GL_MESH_SHADER_EXT, shProg, pipe);
+
    pipe->Validated = pipe->UserValidated = false;
 
    if (pipe == ctx->_Shader)
@@ -316,6 +322,8 @@ _mesa_UseProgramStages(GLuint pipeline, GLbitfield stages, GLuint program)
                           GL_TESS_EVALUATION_SHADER_BIT;
    if (_mesa_has_compute_shaders(ctx))
       any_valid_stages |= GL_COMPUTE_SHADER_BIT;
+   if (_mesa_has_EXT_mesh_shader(ctx))
+      any_valid_stages |= GL_TASK_SHADER_BIT_EXT | GL_MESH_SHADER_BIT_EXT;
 
    if (stages != GL_ALL_SHADER_BITS && (stages & ~any_valid_stages) != 0) {
       _mesa_error(ctx, GL_INVALID_VALUE, "glUseProgramStages(Stages)");
