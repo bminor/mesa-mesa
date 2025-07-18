@@ -1743,9 +1743,12 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
+   uint32_t array_idx = enc_info->srcPictureResource.baseArrayLayer + src_iv->vk.base_array_layer;
    uint64_t va = src_img->bindings[0].addr;
-   uint64_t luma_va = va + src_img->planes[0].surface.u.gfx9.surf_offset;
-   uint64_t chroma_va = va + src_img->planes[1].surface.u.gfx9.surf_offset;
+   uint64_t luma_va = va + src_img->planes[0].surface.u.gfx9.surf_offset +
+                      array_idx * src_img->planes[0].surface.u.gfx9.surf_slice_size;
+   uint64_t chroma_va = va + src_img->planes[1].surface.u.gfx9.surf_offset +
+                        array_idx * src_img->planes[1].surface.u.gfx9.surf_slice_size;
    uint32_t pic_type;
    unsigned int slot_idx = 0xffffffff;
    unsigned int max_layers = cmd_buffer->video.vid->rc_layer_control.max_num_temporal_layers;
