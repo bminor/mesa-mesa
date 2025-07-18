@@ -27,12 +27,12 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::sync::Arc;
 
-fn validate_mem_flags(flags: cl_mem_flags, images: bool) -> CLResult<()> {
+fn validate_mem_flags(flags: cl_mem_flags, import: bool) -> CLResult<()> {
     let mut valid_flags = cl_bitfield::from(
         CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_KERNEL_READ_AND_WRITE,
     );
 
-    if !images {
+    if !import {
         valid_flags |= cl_bitfield::from(
             CL_MEM_USE_HOST_PTR
                 | CL_MEM_ALLOC_HOST_PTR
@@ -912,7 +912,7 @@ fn get_supported_image_formats(
     let c = Context::ref_from_raw(context)?;
 
     // CL_INVALID_VALUE if flags
-    validate_mem_flags(flags, true)?;
+    validate_mem_flags(flags, false)?;
 
     // or image_type are not valid
     if !image_type_valid(image_type) {
@@ -3050,7 +3050,7 @@ fn create_from_gl(
 
     // CL_INVALID_VALUE if values specified in flags are not valid or if value specified in
     // texture_target is not one of the values specified in the description of texture_target.
-    validate_mem_flags(flags, target == GL_ARRAY_BUFFER)?;
+    validate_mem_flags(flags, true)?;
 
     // CL_INVALID_MIP_LEVEL if miplevel is greather than zero and the OpenGL
     // implementation does not support creating from non-zero mipmap levels.
