@@ -1929,25 +1929,34 @@ vtn_mode_to_address_format(struct vtn_builder *b, enum vtn_variable_mode mode)
    unreachable("Invalid variable mode");
 }
 
+static bool
+vtn_pointer_ssa_is_desc_index(struct vtn_builder *b,
+                              struct vtn_pointer *ptr)
+{
+   /* Acceleration structures are always desc_index */
+   if (ptr->mode == vtn_variable_mode_accel_struct)
+      return true;
+
+   /* Physical storage buffers don't have descriptors
+    *
+    * This assumes that there will never be a SSBO binding variable using the
+    * PhysicalStorageBuffer storage class.  This assumption appears to be
+    * correct according to the Vulkan spec because the table, "Shader Resource
+    * and Storage Class Correspondence," the only the Uniform storage class
+    * with BufferBlock or the StorageBuffer storage class with Block can be
+    * used.
+    */
+   if (ptr->mode == vtn_variable_mode_phys_ssbo)
+      return false;
+
+   return vtn_pointer_is_external_block(b, ptr) &&
+          vtn_type_contains_block(b, ptr->type->pointed);
+}
+
 nir_def *
 vtn_pointer_to_ssa(struct vtn_builder *b, struct vtn_pointer *ptr)
 {
-   if ((vtn_pointer_is_external_block(b, ptr) &&
-        vtn_type_contains_block(b, ptr->type->pointed) &&
-        ptr->mode != vtn_variable_mode_phys_ssbo) ||
-       ptr->mode == vtn_variable_mode_accel_struct) {
-      /* In this case, we're looking for a block index and not an actual
-       * deref.
-       *
-       * For PhysicalStorageBuffer pointers, we don't have a block index
-       * at all because we get the pointer directly from the client.  This
-       * assumes that there will never be a SSBO binding variable using the
-       * PhysicalStorageBuffer storage class.  This assumption appears
-       * to be correct according to the Vulkan spec because the table,
-       * "Shader Resource and Storage Class Correspondence," the only the
-       * Uniform storage class with BufferBlock or the StorageBuffer
-       * storage class with Block can be used.
-       */
+   if (vtn_pointer_ssa_is_desc_index(b, ptr)) {
       if (!ptr->desc_index) {
          /* If we don't have a desc_index then we must be a pointer to the
           * variable itself.
@@ -1981,38 +1990,13 @@ vtn_pointer_from_ssa(struct vtn_builder *b, nir_def *ssa,
                                          without_array, &nir_mode);
    ptr->type = ptr_type;
 
-   const struct glsl_type *deref_type =
-      vtn_type_get_nir_type(b, ptr_type->pointed, ptr->mode);
-   if (!vtn_pointer_is_external_block(b, ptr) &&
-       ptr->mode != vtn_variable_mode_accel_struct) {
-      ptr->deref = nir_build_deref_cast(&b->nb, ssa, nir_mode,
-                                        deref_type, ptr_type->stride);
-   } else if ((vtn_type_contains_block(b, ptr->type->pointed) &&
-               ptr->mode != vtn_variable_mode_phys_ssbo) ||
-              ptr->mode == vtn_variable_mode_accel_struct) {
-      /* This is a pointer to somewhere in an array of blocks, not a
-       * pointer to somewhere inside the block.  Set the block index
-       * instead of making a cast.
-       */
+   if (vtn_pointer_ssa_is_desc_index(b, ptr)) {
       ptr->desc_index = ssa;
    } else {
-      /* This is a pointer to something internal or a pointer inside a
-       * block.  It's just a regular cast.
-       *
-       * For PhysicalStorageBuffer pointers, we don't have a block index
-       * at all because we get the pointer directly from the client.  This
-       * assumes that there will never be a SSBO binding variable using the
-       * PhysicalStorageBuffer storage class.  This assumption appears
-       * to be correct according to the Vulkan spec because the table,
-       * "Shader Resource and Storage Class Correspondence," the only the
-       * Uniform storage class with BufferBlock or the StorageBuffer
-       * storage class with Block can be used.
-       */
+      const struct glsl_type *deref_type =
+         vtn_type_get_nir_type(b, ptr_type->pointed, ptr->mode);
       ptr->deref = nir_build_deref_cast(&b->nb, ssa, nir_mode,
                                         deref_type, ptr_type->stride);
-      ptr->deref->def.num_components =
-         glsl_get_vector_elements(ptr_type->type);
-      ptr->deref->def.bit_size = glsl_get_bit_size(ptr_type->type);
    }
 
    return ptr;
