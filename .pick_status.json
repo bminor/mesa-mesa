@@ -8124,7 +8124,7 @@
         "description": "brw: Fix printing of blocks in disassembly when BRW is available",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d2c39b1779330439e5b3bb5539c0e7655d3bee8c",
         "notes": null
