@@ -2037,13 +2037,12 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       bool dmabuf = import_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
       uint64_t size;
       if(!device->pscreen->import_memory_fd(device->pscreen, import_info->fd, &mem->pmem, &size, dmabuf)) {
-         close(import_info->fd);
          error = VK_ERROR_INVALID_EXTERNAL_HANDLE;
          goto fail;
       }
       if(size < pAllocateInfo->allocationSize) {
          device->pscreen->free_memory_fd(device->pscreen, mem->pmem);
-         close(import_info->fd);
+         error = VK_ERROR_INVALID_EXTERNAL_HANDLE;
          goto fail;
       }
       if (export_info && export_info->handleTypes == import_info->handleType) {
