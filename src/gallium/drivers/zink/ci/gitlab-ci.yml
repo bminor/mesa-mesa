@@ -159,6 +159,7 @@ zink-tu-a618:
     FLAKES_CHANNEL: "#freedreno-ci"
     HWCI_START_WESTON: 1
     GPU_VERSION: zink-tu-a618
+    DRIVER_NAME: null  # Don't use freedreno skips
   parallel: 3
 
 zink-tu-a618-traces:
@@ -196,6 +197,7 @@ zink-tu-a750:
     DEQP_SUITE: zink-tu-a750
     GPU_VERSION: zink-tu-a750
     HWCI_START_WESTON: 1
+    DRIVER_NAME: null  # Don't use freedreno skips
 
 ############### Combined testing (GL, GLES, Piglit) on NVK / RADV
 zink-nvk-ga106-valve:

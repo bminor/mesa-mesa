@@ -238,6 +238,7 @@
     GPU_VERSION: freedreno-a618
     KERNEL_IMAGE_TYPE: ""
     RUNNER_TAG: mesa-ci-x86-64-lava-sc7180-trogdor-kingoftown
+    DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
     KERNEL_TAG: msm-next-250718
@@ -256,6 +257,7 @@
     GPU_VERSION: freedreno-a618
     KERNEL_IMAGE_TYPE: ""
     RUNNER_TAG: mesa-ci-x86-64-lava-sc7180-trogdor-lazor-limozeen
+    DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
     KERNEL_TAG: msm-next-250718
@@ -275,6 +277,7 @@
     KERNEL_IMAGE_NAME: "Image.gz"
     KERNEL_IMAGE_TYPE: ""
     RUNNER_TAG: mesa-ci-x86-64-lava-sm8350-hdk
+    DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
     KERNEL_TAG: msm-next-250718
@@ -360,4 +363,5 @@
     CI_TRON_WATCHDOG__FIRMWARE_TO_LINUX__START_REGEX: 'VB: RWDeviceState: Succeed using devinfo!'  # A line repeated during firmware boot
     CI_TRON_WATCHDOG__FIRMWARE_TO_LINUX__STOP_REGEX: 'CPU features: detected:'                     # A line repeated during Linux boot
     GPU_VERSION: freedreno-a750
+    DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno

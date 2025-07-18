@@ -2,7 +2,6 @@
 [[deqp]]
 deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
 caselists = ["/deqp-vk/mustpass/vk-main.txt"]
-skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 renderer_check = "Turnip Adreno .* 660"
 tests_per_group = 10000
@@ -12,7 +11,6 @@ tests_per_group = 10000
 [[deqp]]
 deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
 caselists = ["/deqp-vk/mustpass/vk-main.txt"]
-skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 prefix = "gmem-"
 fraction = 10
@@ -24,7 +22,6 @@ TU_DEBUG = "gmem,forcebin"
 [[deqp]]
 deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
 caselists = ["/deqp-vk/mustpass/vk-main.txt"]
-skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 prefix = "nobin-"
 fraction = 10
@@ -37,7 +34,6 @@ TU_DEBUG = "gmem,nobin"
 [[deqp]]
 deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
 caselists = ["/deqp-vk/mustpass/vk-main.txt"]
-skips = ["install/freedreno-a6xx-skips.txt"]
 timeout = 300
 include = ["dEQP-VK.renderpass.*"]
 prefix = "bypass-"

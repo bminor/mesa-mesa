@@ -1,7 +1,6 @@
 [[deqp]]
 deqp = "/deqp-gles/modules/gles31/deqp-gles31"
 caselists = ["/deqp-gles/mustpass/gles31-main.txt"]
-skips = ["/install/freedreno-a6xx-skips.txt"]
 fraction = 1
 renderer_check = "FD618"
 deqp_args = [

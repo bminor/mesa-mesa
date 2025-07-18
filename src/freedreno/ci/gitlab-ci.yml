@@ -90,6 +90,7 @@ a618-angle:
     - .test-angle
   variables:
     DEQP_SUITE: tu-angle
+    DRIVER_NAME: null  # Don't use freedreno skips
 
 a618-vk:
   extends:
@@ -237,6 +238,7 @@ a660-angle:
     - .test-angle
   variables:
     DEQP_SUITE: tu-angle
+    DRIVER_NAME: null  # Don't use freedreno skips
 
 a660-gl-cl:
   extends:
@@ -284,6 +286,7 @@ a750-angle:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: tu-angle
     HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
+    DRIVER_NAME: null  # Don't use freedreno skips
 
 a750-gl-cl:
   extends:
