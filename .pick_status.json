@@ -124,7 +124,7 @@
         "description": "mesa/st: do not check single-sampled for max_samples",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f56443ac84bc1a46865debe76ccb82a37d042005",
         "notes": null

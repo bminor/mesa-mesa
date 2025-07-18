@@ -705,9 +705,10 @@ get_max_samples_for_formats(struct pipe_screen *screen,
                             unsigned bind)
 {
    unsigned i, f, supported_samples = 0;
+   unsigned min_samples = screen->caps.fake_sw_msaa ? 1 : 2;
 
    for (f = 0; f < num_formats; f++) {
-      for (i = max_samples; i > 0; --i) {
+      for (i = max_samples; i >= min_samples; --i) {
          if (screen->is_format_supported(screen, formats[f],
                                          PIPE_TEXTURE_2D, i, i, bind)) {
             /* update both return value and loop-boundary */
@@ -728,8 +729,9 @@ get_max_samples_for_formats_advanced(struct pipe_screen *screen,
                                      unsigned bind)
 {
    unsigned i, f;
+   unsigned min_samples = screen->caps.fake_sw_msaa ? 1 : 2;
 
-   for (i = max_samples; i > 0; --i) {
+   for (i = max_samples; i >= min_samples; --i) {
       for (f = 0; f < num_formats; f++) {
          if (screen->is_format_supported(screen, formats[f], PIPE_TEXTURE_2D,
                                          i, num_storage_samples, bind)) {
