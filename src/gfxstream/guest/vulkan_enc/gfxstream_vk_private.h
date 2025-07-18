@@ -81,6 +81,13 @@ struct gfxstream_vk_device {
 
     struct vk_device_dispatch_table cmd_dispatch;
     struct gfxstream_vk_physical_device* physical_device;
+
+    uint32_t queue_family_count;
+    struct queue_family_info {
+        uint32_t queue_count;
+        struct gfxstream_vk_queue* queues;
+    } *queue_families;
+
     VkDevice internal_object;
 };
 
