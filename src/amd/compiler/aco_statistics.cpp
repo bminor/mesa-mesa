@@ -34,6 +34,7 @@ public:
    BlockCycleEstimator(Program* program_) : program(program_) {}
 
    Program* program;
+   Block* block;
 
    int32_t cur_cycle = 0;
    int32_t res_available[(int)BlockCycleEstimator::resource_count] = {0};
@@ -43,6 +44,7 @@ public:
 
    void add(aco_ptr<Instruction>& instr);
    void join(const BlockCycleEstimator& other);
+   double get_freq() const;
 
 private:
    unsigned get_waitcnt_cost(wait_imm imm);
@@ -459,22 +461,57 @@ BlockCycleEstimator::join(const BlockCycleEstimator& pred)
 {
    assert(cur_cycle == 0);
 
+   double mul = pred.get_freq() / get_freq();
+   mul = std::min(mul, 1.0);
+
    for (unsigned i = 0; i < (unsigned)resource_count; i++) {
       assert(res_usage[i] == 0);
-      res_available[i] = MAX2(res_available[i], pred.res_available[i] - pred.cur_cycle);
+      res_available[i] = MAX2(res_available[i], (pred.res_available[i] - pred.cur_cycle) * mul);
    }
 
    for (unsigned i = 0; i < 512; i++)
-      reg_available[i] = MAX2(reg_available[i], pred.reg_available[i] - pred.cur_cycle + cur_cycle);
+      reg_available[i] = MAX2(reg_available[i], (pred.reg_available[i] - pred.cur_cycle) * mul);
 
    for (unsigned i = 0; i < wait_type_num; i++) {
       std::deque<int32_t>& ops = mem_ops[i];
       const std::deque<int32_t>& pred_ops = pred.mem_ops[i];
       for (unsigned j = 0; j < MIN2(ops.size(), pred_ops.size()); j++)
-         ops.rbegin()[j] = MAX2(ops.rbegin()[j], pred_ops.rbegin()[j] - pred.cur_cycle);
+         ops.rbegin()[j] = MAX2(ops.rbegin()[j], (pred_ops.rbegin()[j] - pred.cur_cycle) * mul);
       for (int j = pred_ops.size() - ops.size() - 1; j >= 0; j--)
-         ops.push_front(pred_ops[j] - pred.cur_cycle);
+         ops.push_front((pred_ops[j] - pred.cur_cycle) * mul);
    }
+}
+
+double
+BlockCycleEstimator::get_freq() const
+{
+   /* TODO: it would be nice to be able to consider estimated loop trip
+    * counts used for loop unrolling.
+    */
+
+   /* TODO: estimate the trip_count of divergent loops (those which break
+    * divergent) higher than of uniform loops
+    */
+
+   /* Assume loops execute 8-2 times, uniform branches are taken 50% the time,
+    * and any lane in the wave takes a side of a divergent branch 75% of the
+    * time.
+    */
+   double iter = 1.0;
+   iter *= block->loop_nest_depth > 0 ? 8.0 : 1.0;
+   iter *= block->loop_nest_depth > 1 ? 4.0 : 1.0;
+   iter *= block->loop_nest_depth > 2 ? pow(2.0, block->loop_nest_depth - 2) : 1.0;
+   iter *= pow(0.5, block->uniform_if_depth);
+   iter *= pow(0.75, block->divergent_if_logical_depth);
+
+   bool divergent_if_linear_else =
+      block->logical_preds.empty() && block->linear_preds.size() == 1 &&
+      block->linear_succs.size() == 1 &&
+      program->blocks[block->linear_preds[0]].kind & (block_kind_branch | block_kind_invert);
+   if (divergent_if_linear_else)
+      iter *= 0.25;
+
+   return iter;
 }
 
 } /* end namespace */
@@ -543,6 +580,8 @@ collect_preasm_stats(Program* program)
    double latency = 0;
    double usage[(int)BlockCycleEstimator::resource_count] = {0};
    std::vector<BlockCycleEstimator> blocks(program->blocks.size(), program);
+   for (Block& block : program->blocks)
+      blocks[block.index].block = &block;
 
    constexpr const unsigned vmem_latency = 320;
    for (const Definition def : program->args_pending_vmem) {
@@ -562,32 +601,7 @@ collect_preasm_stats(Program* program)
          instr->pass_flags = block_est.cur_cycle - before;
       }
 
-      /* TODO: it would be nice to be able to consider estimated loop trip
-       * counts used for loop unrolling.
-       */
-
-      /* TODO: estimate the trip_count of divergent loops (those which break
-       * divergent) higher than of uniform loops
-       */
-
-      /* Assume loops execute 8-2 times, uniform branches are taken 50% the time,
-       * and any lane in the wave takes a side of a divergent branch 75% of the
-       * time.
-       */
-      double iter = 1.0;
-      iter *= block.loop_nest_depth > 0 ? 8.0 : 1.0;
-      iter *= block.loop_nest_depth > 1 ? 4.0 : 1.0;
-      iter *= block.loop_nest_depth > 2 ? pow(2.0, block.loop_nest_depth - 2) : 1.0;
-      iter *= pow(0.5, block.uniform_if_depth);
-      iter *= pow(0.75, block.divergent_if_logical_depth);
-
-      bool divergent_if_linear_else =
-         block.logical_preds.empty() && block.linear_preds.size() == 1 &&
-         block.linear_succs.size() == 1 &&
-         program->blocks[block.linear_preds[0]].kind & (block_kind_branch | block_kind_invert);
-      if (divergent_if_linear_else)
-         iter *= 0.25;
-
+      double iter = block_est.get_freq();
       latency += block_est.cur_cycle * iter;
       for (unsigned i = 0; i < (unsigned)BlockCycleEstimator::resource_count; i++)
          usage[i] += block_est.res_usage[i] * iter;
