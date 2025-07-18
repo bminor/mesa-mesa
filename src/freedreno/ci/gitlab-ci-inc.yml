@@ -341,24 +341,6 @@
   tags:
     - google-freedreno-db820c
 
-# 6 devices (2023-07-06)
-.a630-test:
-  variables:
-    FDO_CI_CONCURRENT: 10
-    BM_KERNEL: cheza-kernel
-    BM_CMDLINE: "ip=dhcp console=ttyMSM0,115200n8 root=/dev/nfs rw nfsrootdebug nfsroot=,tcp,nfsvers=4.2 init=/init"
-    DEVICE_TYPE: sdm845-cheza-r3
-    GPU_VERSION: freedreno-a630
-  timeout: 20m
-  tags:
-    - google-freedreno-cheza
-  script:
-    - ./install/bare-metal/cros-servo.sh
-
-.a630-full:
-  tags:
-    - google-freedreno-cheza-long
-
 # CI-tron
 
 .a750-mupuf:
