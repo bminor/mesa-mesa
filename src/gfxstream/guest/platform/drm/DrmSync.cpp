@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "LinuxSync.h"
+#include "DrmSync.h"
 
 #include <unistd.h>
 
@@ -14,13 +14,13 @@
 
 namespace gfxstream {
 
-LinuxSyncHelper::LinuxSyncHelper() {}
+DrmSyncHelper::DrmSyncHelper() {}
 
-int LinuxSyncHelper::wait(int syncFd, int timeoutMilliseconds) {
+int DrmSyncHelper::wait(int syncFd, int timeoutMilliseconds) {
     return sync_wait(syncFd, timeoutMilliseconds);
 }
 
-void LinuxSyncHelper::debugPrint(int syncFd) {
+void DrmSyncHelper::debugPrint(int syncFd) {
     struct sync_file_info* info = sync_file_info(syncFd);
     if (!info) {
         mesa_loge("failed to get sync file info");
@@ -38,10 +38,10 @@ void LinuxSyncHelper::debugPrint(int syncFd) {
     free(info);
 }
 
-int LinuxSyncHelper::dup(int syncFd) { return ::dup(syncFd); }
+int DrmSyncHelper::dup(int syncFd) { return ::dup(syncFd); }
 
-int LinuxSyncHelper::close(int syncFd) { return ::close(syncFd); }
+int DrmSyncHelper::close(int syncFd) { return ::close(syncFd); }
 
-SyncHelper* osCreateSyncHelper() { return new LinuxSyncHelper(); }
+SyncHelper* osCreateSyncHelper() { return new DrmSyncHelper(); }
 
 }  // namespace gfxstream

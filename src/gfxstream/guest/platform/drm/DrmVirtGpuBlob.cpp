@@ -13,7 +13,7 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "LinuxVirtGpu.h"
+#include "DrmVirtGpu.h"
 #include "drm-uapi/virtgpu_drm.h"
 #include "util/log.h"
 
@@ -27,7 +27,7 @@
 static std::mutex sDrmObjectRefMutex;
 static std::unordered_map<uint32_t, int> sDrmObjectRefMap;
 
-LinuxVirtGpuResource::LinuxVirtGpuResource(int64_t deviceHandle, uint32_t blobHandle,
+DrmVirtGpuResource::DrmVirtGpuResource(int64_t deviceHandle, uint32_t blobHandle,
                                            uint32_t resourceHandle, uint64_t size)
     : mDeviceHandle(deviceHandle),
       mBlobHandle(blobHandle),
@@ -42,7 +42,7 @@ LinuxVirtGpuResource::LinuxVirtGpuResource(int64_t deviceHandle, uint32_t blobHa
     }
 }
 
-LinuxVirtGpuResource::~LinuxVirtGpuResource() {
+DrmVirtGpuResource::~DrmVirtGpuResource() {
     if (mBlobHandle == INVALID_DESCRIPTOR) {
         return;
     }
@@ -51,7 +51,7 @@ LinuxVirtGpuResource::~LinuxVirtGpuResource() {
     auto refMapIt = sDrmObjectRefMap.find(mBlobHandle);
     if (refMapIt == sDrmObjectRefMap.end()) {
         mesa_logw(
-            "LinuxVirtGpuResource::~LinuxVirtGpuResource() could not find the blobHandle: %d in "
+            "DrmVirtGpuResource::~DrmVirtGpuResource() could not find the blobHandle: %d in "
             "internal map",
             mBlobHandle);
         return;
@@ -73,18 +73,18 @@ LinuxVirtGpuResource::~LinuxVirtGpuResource() {
     }
 }
 
-void LinuxVirtGpuResource::intoRaw() {
+void DrmVirtGpuResource::intoRaw() {
     mBlobHandle = INVALID_DESCRIPTOR;
     mResourceHandle = INVALID_DESCRIPTOR;
 }
 
-uint32_t LinuxVirtGpuResource::getBlobHandle() const { return mBlobHandle; }
+uint32_t DrmVirtGpuResource::getBlobHandle() const { return mBlobHandle; }
 
-uint32_t LinuxVirtGpuResource::getResourceHandle() const { return mResourceHandle; }
+uint32_t DrmVirtGpuResource::getResourceHandle() const { return mResourceHandle; }
 
-uint64_t LinuxVirtGpuResource::getSize() const { return mSize; }
+uint64_t DrmVirtGpuResource::getSize() const { return mSize; }
 
-VirtGpuResourceMappingPtr LinuxVirtGpuResource::createMapping() {
+VirtGpuResourceMappingPtr DrmVirtGpuResource::createMapping() {
     int ret;
     struct drm_virtgpu_map map {
         .handle = mBlobHandle, .pad = 0,
@@ -104,10 +104,10 @@ VirtGpuResourceMappingPtr LinuxVirtGpuResource::createMapping() {
         return nullptr;
     }
 
-    return std::make_shared<LinuxVirtGpuResourceMapping>(shared_from_this(), ptr, mSize);
+    return std::make_shared<DrmVirtGpuResourceMapping>(shared_from_this(), ptr, mSize);
 }
 
-int LinuxVirtGpuResource::exportBlob(struct VirtGpuExternalHandle& handle) {
+int DrmVirtGpuResource::exportBlob(struct VirtGpuExternalHandle& handle) {
     int ret, fd;
 
     uint32_t flags = DRM_CLOEXEC;
@@ -122,7 +122,7 @@ int LinuxVirtGpuResource::exportBlob(struct VirtGpuExternalHandle& handle) {
     return 0;
 }
 
-int LinuxVirtGpuResource::wait() {
+int DrmVirtGpuResource::wait() {
     int ret;
     struct drm_virtgpu_3d_wait wait_3d = {0};
 
@@ -144,7 +144,7 @@ int LinuxVirtGpuResource::wait() {
     return 0;
 }
 
-int LinuxVirtGpuResource::transferToHost(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+int DrmVirtGpuResource::transferToHost(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
     int ret;
     struct drm_virtgpu_3d_transfer_to_host xfer = {0};
 
@@ -164,7 +164,7 @@ int LinuxVirtGpuResource::transferToHost(uint32_t x, uint32_t y, uint32_t w, uin
     return 0;
 }
 
-int LinuxVirtGpuResource::transferFromHost(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+int DrmVirtGpuResource::transferFromHost(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
     int ret;
     struct drm_virtgpu_3d_transfer_from_host xfer = {0};
 

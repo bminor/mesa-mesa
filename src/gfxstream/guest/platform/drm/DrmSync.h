@@ -9,9 +9,9 @@
 
 namespace gfxstream {
 
-class LinuxSyncHelper : public SyncHelper {
+class DrmSyncHelper : public SyncHelper {
    public:
-    LinuxSyncHelper();
+    DrmSyncHelper();
 
     int wait(int syncFd, int timeoutMilliseconds) override;
 

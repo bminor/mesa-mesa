@@ -8,12 +8,12 @@
 #include "VirtGpu.h"
 #include <xf86drm.h>
 
-class LinuxVirtGpuResource : public std::enable_shared_from_this<LinuxVirtGpuResource>,
+class DrmVirtGpuResource : public std::enable_shared_from_this<DrmVirtGpuResource>,
                              public VirtGpuResource {
    public:
-    LinuxVirtGpuResource(int64_t deviceHandle, uint32_t blobHandle, uint32_t resourceHandle,
+    DrmVirtGpuResource(int64_t deviceHandle, uint32_t blobHandle, uint32_t resourceHandle,
                          uint64_t size);
-    ~LinuxVirtGpuResource();
+    ~DrmVirtGpuResource();
 
     void intoRaw() override;
     uint32_t getResourceHandle() const override;
@@ -37,10 +37,10 @@ class LinuxVirtGpuResource : public std::enable_shared_from_this<LinuxVirtGpuRes
     uint64_t mSize;
 };
 
-class LinuxVirtGpuResourceMapping : public VirtGpuResourceMapping {
+class DrmVirtGpuResourceMapping : public VirtGpuResourceMapping {
    public:
-    LinuxVirtGpuResourceMapping(VirtGpuResourcePtr blob, uint8_t* ptr, uint64_t size);
-    ~LinuxVirtGpuResourceMapping(void);
+    DrmVirtGpuResourceMapping(VirtGpuResourcePtr blob, uint8_t* ptr, uint64_t size);
+    ~DrmVirtGpuResourceMapping(void);
 
     uint8_t* asRawPtr(void) override;
 
@@ -50,12 +50,12 @@ class LinuxVirtGpuResourceMapping : public VirtGpuResourceMapping {
     uint64_t mSize;
 };
 
-class LinuxVirtGpuDevice : public VirtGpuDevice {
+class DrmVirtGpuDevice : public VirtGpuDevice {
    public:
-    LinuxVirtGpuDevice(enum VirtGpuCapset capset);
+    DrmVirtGpuDevice(enum VirtGpuCapset capset);
     int32_t init(int32_t descriptor);
 
-    virtual ~LinuxVirtGpuDevice();
+    virtual ~DrmVirtGpuDevice();
 
     virtual int64_t getDeviceHandle(void);
 

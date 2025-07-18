@@ -16,7 +16,7 @@
 #include <fstream>
 #include <string>
 
-#include "LinuxVirtGpu.h"
+#include "DrmVirtGpu.h"
 #include "drm-uapi/virtgpu_drm.h"
 #include "util/detect_os.h"
 #include "util/log.h"
@@ -39,7 +39,7 @@
 
 static inline uint32_t align_up(uint32_t n, uint32_t a) { return ((n + a - 1) / a) * a; }
 
-int32_t LinuxVirtGpuDevice::openDevice() {
+int32_t DrmVirtGpuDevice::openDevice() {
     drmDevicePtr devs[8];
     int32_t ret = -EINVAL;
     int count = drmGetDevices2(0, devs, ARRAY_SIZE(devs));
@@ -139,9 +139,9 @@ out:
     return ret;
 }
 
-LinuxVirtGpuDevice::LinuxVirtGpuDevice(enum VirtGpuCapset capset) : VirtGpuDevice(capset) {}
+DrmVirtGpuDevice::DrmVirtGpuDevice(enum VirtGpuCapset capset) : VirtGpuDevice(capset) {}
 
-int32_t LinuxVirtGpuDevice::init(int32_t descriptor) {
+int32_t DrmVirtGpuDevice::init(int32_t descriptor) {
     struct VirtGpuParam params[] = {
         PARAM(VIRTGPU_PARAM_3D_FEATURES),          PARAM(VIRTGPU_PARAM_CAPSET_QUERY_FIX),
         PARAM(VIRTGPU_PARAM_RESOURCE_BLOB),        PARAM(VIRTGPU_PARAM_HOST_VISIBLE),
@@ -269,13 +269,13 @@ int32_t LinuxVirtGpuDevice::init(int32_t descriptor) {
     return 0;
 }
 
-LinuxVirtGpuDevice::~LinuxVirtGpuDevice() { close(mDeviceHandle); }
+DrmVirtGpuDevice::~DrmVirtGpuDevice() { close(mDeviceHandle); }
 
-struct VirtGpuCaps LinuxVirtGpuDevice::getCaps(void) { return mCaps; }
+struct VirtGpuCaps DrmVirtGpuDevice::getCaps(void) { return mCaps; }
 
-int64_t LinuxVirtGpuDevice::getDeviceHandle(void) { return mDeviceHandle; }
+int64_t DrmVirtGpuDevice::getDeviceHandle(void) { return mDeviceHandle; }
 
-VirtGpuResourcePtr LinuxVirtGpuDevice::createResource(uint32_t width, uint32_t height,
+VirtGpuResourcePtr DrmVirtGpuDevice::createResource(uint32_t width, uint32_t height,
                                                       uint32_t stride, uint32_t size,
                                                       uint32_t virglFormat, uint32_t target,
                                                       uint32_t bind) {
@@ -299,11 +299,11 @@ VirtGpuResourcePtr LinuxVirtGpuDevice::createResource(uint32_t width, uint32_t h
         return nullptr;
     }
 
-    return std::make_shared<LinuxVirtGpuResource>(
+    return std::make_shared<DrmVirtGpuResource>(
         mDeviceHandle, create.bo_handle, create.res_handle, static_cast<uint64_t>(create.size));
 }
 
-VirtGpuResourcePtr LinuxVirtGpuDevice::createBlob(const struct VirtGpuCreateBlob& blobCreate) {
+VirtGpuResourcePtr DrmVirtGpuDevice::createBlob(const struct VirtGpuCreateBlob& blobCreate) {
     int ret;
     struct drm_virtgpu_resource_create_blob create = {0};
 
@@ -320,11 +320,11 @@ VirtGpuResourcePtr LinuxVirtGpuDevice::createBlob(const struct VirtGpuCreateBlob
         return nullptr;
     }
 
-    return std::make_shared<LinuxVirtGpuResource>(mDeviceHandle, create.bo_handle,
+    return std::make_shared<DrmVirtGpuResource>(mDeviceHandle, create.bo_handle,
                                                   create.res_handle, blobCreate.size);
 }
 
-VirtGpuResourcePtr LinuxVirtGpuDevice::importBlob(const struct VirtGpuExternalHandle& handle) {
+VirtGpuResourcePtr DrmVirtGpuDevice::importBlob(const struct VirtGpuExternalHandle& handle) {
     struct drm_virtgpu_resource_info info = {0};
     uint32_t blobHandle;
     int ret;
@@ -343,11 +343,11 @@ VirtGpuResourcePtr LinuxVirtGpuDevice::importBlob(const struct VirtGpuExternalHa
         return nullptr;
     }
 
-    return std::make_shared<LinuxVirtGpuResource>(mDeviceHandle, blobHandle, info.res_handle,
+    return std::make_shared<DrmVirtGpuResource>(mDeviceHandle, blobHandle, info.res_handle,
                                                   static_cast<uint64_t>(info.size));
 }
 
-int LinuxVirtGpuDevice::execBuffer(struct VirtGpuExecBuffer& execbuffer,
+int DrmVirtGpuDevice::execBuffer(struct VirtGpuExecBuffer& execbuffer,
                                    const VirtGpuResource* blob) {
     int ret;
     struct drm_virtgpu_execbuffer exec = {0};
@@ -380,7 +380,7 @@ int LinuxVirtGpuDevice::execBuffer(struct VirtGpuExecBuffer& execbuffer,
 }
 
 VirtGpuDevice* osCreateVirtGpuDevice(enum VirtGpuCapset capset, int32_t descriptor) {
-    auto device = new LinuxVirtGpuDevice(capset);
+    auto device = new DrmVirtGpuDevice(capset);
     int32_t ret = device->init(descriptor);
     if (ret) {
         delete device;
@@ -390,7 +390,7 @@ VirtGpuDevice* osCreateVirtGpuDevice(enum VirtGpuCapset capset, int32_t descript
     return device;
 }
 
-bool LinuxVirtGpuDevice::getDrmInfo(VirtGpuDrmInfo* drmInfo) {
+bool DrmVirtGpuDevice::getDrmInfo(VirtGpuDrmInfo* drmInfo) {
     drmInfo->hasPrimary = mHasPrimary;
     drmInfo->hasRender = true;
     drmInfo->primaryMajor = mPrimaryMajor;
@@ -400,7 +400,7 @@ bool LinuxVirtGpuDevice::getDrmInfo(VirtGpuDrmInfo* drmInfo) {
     return true;
 }
 
-bool LinuxVirtGpuDevice::getPciBusInfo(VirtGpuPciBusInfo* pciBusInfo) {
+bool DrmVirtGpuDevice::getPciBusInfo(VirtGpuPciBusInfo* pciBusInfo) {
     if (mBusType != DRM_BUS_PCI) {
         return false;
     }

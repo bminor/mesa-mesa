@@ -8,8 +8,8 @@ subdir('kumquat')
 libplatform_virtgpu = [libplatform_virtgpu_kumquat]
 
 if system_has_kms_drm
-  subdir('linux')
-  libplatform_virtgpu += libplatform_virtgpu_linux
+  subdir('drm')
+  libplatform_virtgpu += libplatform_virtgpu_drm
 elif host_machine.system() == 'windows'
   subdir('windows')
   libplatform_virtgpu += libplatform_virtgpu_windows
