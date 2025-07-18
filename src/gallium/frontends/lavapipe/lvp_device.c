@@ -1967,12 +1967,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    VkResult error = VK_ERROR_OUT_OF_DEVICE_MEMORY;
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
    int priority = 0;
-
-   if (pAllocateInfo->allocationSize == 0) {
-      /* Apparently, this is allowed */
-      *pMem = VK_NULL_HANDLE;
-      return VK_SUCCESS;
-   }
+   bool is_ahb_export_alloc = false;
 
    vk_foreach_struct_const(ext, pAllocateInfo->pNext) {
       switch ((unsigned)ext->sType) {
@@ -2005,6 +2000,20 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       default:
          break;
       }
+   }
+
+#if DETECT_OS_ANDROID
+   is_ahb_export_alloc = !ahb_import_info && export_info &&
+      export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+#endif
+
+   /* Can early return with size 0 if not AHB export alloc. See
+    * VUID-VkMemoryAllocateInfo-pNext-01874 for details.
+    */
+   if (pAllocateInfo->allocationSize == 0 && !is_ahb_export_alloc) {
+      /* Apparently, this is allowed */
+      *pMem = VK_NULL_HANDLE;
+      return VK_SUCCESS;
    }
 
 #ifdef PIPE_MEMORY_FD
@@ -2042,8 +2051,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       error = lvp_import_ahb_memory(device, mem, ahb_import_info);
       if (error != VK_SUCCESS)
          goto fail;
-   } else if(export_info &&
-             (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
+   } else if (is_ahb_export_alloc) {
       error = lvp_create_ahb_memory(device, mem, pAllocateInfo);
       if (error != VK_SUCCESS)
          goto fail;
