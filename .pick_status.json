@@ -2384,7 +2384,7 @@
         "description": "lavapipe: implement GetMemoryAndroidHardwareBufferANDROID",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cebb2bf26623e31aa1fbab0e73c7e2a1e3cfe956",
         "notes": null
