@@ -10,6 +10,12 @@
 #include "util/u_math.h"
 
 static bool
+has_null_descriptors(const struct nak_compiler *nak) {
+   /* We only have "real" null descriptors on Volta+ */
+   return nak->sm >= 70;
+}
+
+static bool
 has_cbuf_tex(const struct nak_compiler *nak) {
    /* TODO: Figure out how bound textures work on blackwell */
    return nak->sm >= 70 && nak->sm < 100;
@@ -94,6 +100,17 @@ build_txq_levels(nir_builder *b, nir_def *img_h,
    nir_def *res = build_txq(b, nir_texop_hdr_dim_nv, img_h,
                             nir_imm_int(b, 0), nak);
    return nir_channel(b, res, 3);
+}
+
+static nir_def *
+build_img_is_null(nir_builder *b, nir_def *img_h,
+                  const struct nak_compiler *nak)
+{
+   /* Prior to Volta, we don't have real NULL descriptors but we can figure
+    * out if it's null based on the number of levels returned by
+    * txq.dimension.
+    */
+   return nir_ieq_imm(b, build_txq_levels(b, img_h, nak), 0);
 }
 
 static enum glsl_sampler_dim
@@ -394,6 +411,12 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       rel = nir_fmul_imm(b, rel, 1.0 / 256.0);
 
       nir_def *res = nir_vec2(b, abs, rel);
+
+      if (!has_null_descriptors(nak)) {
+         res = nir_bcsel(b, build_img_is_null(b, tex_h, nak),
+                         nir_imm_int(b, 0), res);
+      }
+
       nir_def_rewrite_uses_after(&tex->def, res, res->parent_instr);
    }
 
@@ -405,7 +428,14 @@ build_txq_samples(nir_builder *b, nir_def *img_h,
                   const struct nak_compiler *nak)
 {
    nir_def *res = build_txq(b, nir_texop_tex_type_nv, img_h, NULL, nak);
-   return nir_channel(b, res, 2);
+   res = nir_channel(b, res, 2);
+
+   if (!has_null_descriptors(nak)) {
+      res = nir_bcsel(b, build_img_is_null(b, img_h, nak),
+                      nir_imm_int(b, 0), res);
+   }
+
+   return res;
 }
 
 static nir_def *
@@ -417,7 +447,14 @@ build_txq_size(nir_builder *b, unsigned num_components,
       lod = nir_imm_int(b, 0);
 
    nir_def *res = build_txq(b, nir_texop_hdr_dim_nv, img_h, lod, nak);
-   return nir_trim_vector(b, res, num_components);
+   res = nir_trim_vector(b, res, num_components);
+
+   if (!has_null_descriptors(nak)) {
+      res = nir_bcsel(b, build_img_is_null(b, img_h, nak),
+                      nir_imm_int(b, 0), res);
+   }
+
+   return res;
 }
 
 static bool
