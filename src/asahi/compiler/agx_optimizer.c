@@ -571,9 +571,7 @@ agx_optimizer_forward(agx_context *ctx)
       /* Inline immediates if we can. TODO: systematic */
       if (I->op != AGX_OPCODE_COLLECT && I->op != AGX_OPCODE_IMAGE_LOAD &&
           I->op != AGX_OPCODE_TEXTURE_LOAD &&
-          I->op != AGX_OPCODE_UNIFORM_STORE && I->op != AGX_OPCODE_EXPORT &&
-          I->op != AGX_OPCODE_TEX_STATE_STORE &&
-          I->op != AGX_OPCODE_SAMPLER_STATE_STORE)
+          I->op != AGX_OPCODE_UNIFORM_STORE && I->op != AGX_OPCODE_EXPORT)
          agx_optimizer_inline_imm(defs, I);
 
       if (I->op == AGX_OPCODE_IF_ICMP) {
