@@ -893,6 +893,31 @@ subtract_deref(nir_builder *b, nir_deref_instr *deref, int64_t offset)
 }
 
 static void
+hoist_base_addr(nir_instr *instr, nir_instr *to_hoist)
+{
+   /* Return if this instruction already dominates the first load. */
+   if (to_hoist->block != instr->block || to_hoist->index <= instr->index)
+      return;
+
+   /* Only the offset calculation (consisting of ALU and load_const)
+    * differs between the vectorized loads.
+    */
+   assert(to_hoist->type == nir_instr_type_load_const ||
+          to_hoist->type == nir_instr_type_alu);
+
+   if (to_hoist->type == nir_instr_type_alu) {
+      /* For ALU, recursively hoist the sources. */
+      nir_alu_instr *alu = nir_instr_as_alu(to_hoist);
+      for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++)
+         hoist_base_addr(instr, alu->src[i].src.ssa->parent_instr);
+   }
+
+   nir_instr_move(nir_before_instr(instr), to_hoist);
+   to_hoist->index = instr->index;
+   return;
+}
+
+static void
 vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
                 struct entry *low, struct entry *high,
                 struct entry *first, struct entry *second,
@@ -958,21 +983,16 @@ vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
 
    /* update the offset */
    if (first != low && info->base_src >= 0) {
-      /* let nir_opt_algebraic() remove this addition. this doesn't have much
-       * issues with subtracting 16 from expressions like "(i + 1) * 16" because
-       * nir_opt_algebraic() turns them into "i * 16 + 16" */
       b->cursor = nir_before_instr(first->instr);
 
+      /* Hoist low base addr before first intrinsic. */
+      nir_def *base = low->intrin->src[info->base_src].ssa;
+      hoist_base_addr(first->instr, base->parent_instr);
+      nir_src_rewrite(&first->intrin->src[info->base_src], base);
+
       if (nir_intrinsic_has_offset_shift(first->intrin)) {
-         nir_add_io_offset(b, first->intrin, -(int)(high_start / 8u));
-      } else {
-         /* TODO once all intrinsics that need a scaled offset use
-          * offset_shift, this old path can be removed.
-          */
-         nir_def *new_base = first->intrin->src[info->base_src].ssa;
-         new_base = nir_iadd_imm(
-            b, new_base, -(int)(high_start / 8u / get_offset_scale(first)));
-         nir_src_rewrite(&first->intrin->src[info->base_src], new_base);
+         nir_intrinsic_set_offset_shift(first->intrin,
+                                        nir_intrinsic_offset_shift(low->intrin));
       }
    }
 
@@ -1013,7 +1033,7 @@ vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
 
       nir_intrinsic_set_range_base(first->intrin, old_low_range_base);
       nir_intrinsic_set_range(first->intrin, range);
-   } else if (nir_intrinsic_has_base(first->intrin) && info->base_src == -1 && info->deref_src == -1) {
+   } else if (nir_intrinsic_has_base(first->intrin) && info->deref_src == -1) {
       nir_intrinsic_set_base(first->intrin, nir_intrinsic_base(low->intrin));
    }
 
@@ -1737,6 +1757,8 @@ process_block(nir_function_impl *impl, struct vectorize_ctx *ctx, nir_block *blo
    unsigned next_index = 0;
 
    nir_foreach_instr_safe(instr, block) {
+      instr->index = next_index++;
+
       if (handle_barrier(ctx, &progress, impl, instr))
          continue;
 
@@ -1760,7 +1782,7 @@ process_block(nir_function_impl *impl, struct vectorize_ctx *ctx, nir_block *blo
 
       /* create entry */
       struct entry *entry = create_entry(ctx, ctx, info, intrin);
-      entry->index = next_index++;
+      entry->index = next_index;
 
       list_addtail(&entry->head, &ctx->entries[mode_index]);
 
