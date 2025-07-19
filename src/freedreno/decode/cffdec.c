@@ -2900,28 +2900,8 @@ cp_context_reg_bunch(uint32_t *dwords, uint32_t sizedwords, int level)
    summary = saved_summary;
 }
 
-/* Looks similar to CP_CONTEXT_REG_BUNCH, but not quite the same...
- * discarding first two dwords??
- *
- *   CP_CONTEXT_REG_BUNCH:
- *        0221: 9c1ff606  (rep)(xmov3)mov $usraddr, $data
- *        ; mov $data, $data
- *        ; mov $usraddr, $data
- *        ; mov $data, $data
- *        0222: d8000000  waitin
- *        0223: 981f0806  mov $01, $data
- *
- *   CP_UNK5D:
- *        0224: 981f0006  mov $00, $data
- *        0225: 981f0006  mov $00, $data
- *        0226: 9c1ff206  (rep)(xmov1)mov $usraddr, $data
- *        ; mov $data, $data
- *        0227: d8000000  waitin
- *        0228: 981f0806  mov $01, $data
- *
- */
 static void
-cp_context_reg_bunch2(uint32_t *dwords, uint32_t sizedwords, int level)
+cp_non_context_reg_bunch(uint32_t *dwords, uint32_t sizedwords, int level)
 {
    dwords += 2;
    sizedwords -= 2;
@@ -3033,7 +3013,7 @@ static const struct type3_op {
 
    /* for a7xx */
    CP(THREAD_CONTROL, cp_set_thread_control),
-   CP(CONTEXT_REG_BUNCH2, cp_context_reg_bunch2),
+   CP(NON_CONTEXT_REG_BUNCH, cp_non_context_reg_bunch),
    CP(EVENT_WRITE7, cp_event_write),
 };
 

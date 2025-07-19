@@ -640,8 +640,7 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<value name="CP_BV_BR_COUNT_OPS" value="0x1b" variants="A7XX-"/>
 	<doc> Clears, adds to local, or adds to global timestamp </doc>
 	<value name="CP_MODIFY_TIMESTAMP" value="0x1c" variants="A7XX-"/>
-	<!-- similar to CP_CONTEXT_REG_BUNCH, but discards first two dwords?? -->
-	<value name="CP_CONTEXT_REG_BUNCH2" value="0x5d" variants="A7XX-"/>
+	<value name="CP_NON_CONTEXT_REG_BUNCH" value="0x5d" variants="A7XX-"/>
 	<doc>
 		Write to a scratch memory that is read by CP_REG_TEST with
 		SOURCE_SCRATCH_MEM set. It's not the same scratch as scratch registers.
