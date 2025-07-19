@@ -24,7 +24,7 @@ static_assert!(CL_RUNNING == 1);
 static_assert!(CL_SUBMITTED == 2);
 static_assert!(CL_QUEUED == 3);
 
-pub type EventSig = Box<dyn FnOnce(&Context, &QueueContext) -> CLResult<()> + Send + Sync>;
+pub type EventSig = Box<dyn FnOnce(&Context, &mut QueueContext) -> CLResult<()> + Send + Sync>;
 
 pub enum EventTimes {
     Queued = CL_PROFILING_COMMAND_QUEUED as isize,
@@ -220,7 +220,7 @@ impl Event {
     // We always assume that work here simply submits stuff to the hardware even if it's just doing
     // sw emulation or nothing at all.
     // If anything requets waiting, we will update the status through fencing later.
-    pub fn call(&self, ctx: &QueueContext) -> cl_int {
+    pub fn call(&self, ctx: &mut QueueContext) -> cl_int {
         let mut lock = self.state();
         let mut status = lock.status;
         let profiling_enabled = lock.time_queued != 0;
@@ -237,7 +237,7 @@ impl Event {
                 |w| {
                     if profiling_enabled {
                         query_start =
-                            PipeQueryGen::<{ pipe_query_type::PIPE_QUERY_TIMESTAMP }>::new(ctx);
+                            PipeQueryGen::<{ pipe_query_type::PIPE_QUERY_TIMESTAMP }>::new(ctx.ctx);
                     }
 
                     let res = w(&self.context, ctx).err().map_or(
@@ -247,7 +247,7 @@ impl Event {
                     );
                     if profiling_enabled {
                         query_end =
-                            PipeQueryGen::<{ pipe_query_type::PIPE_QUERY_TIMESTAMP }>::new(ctx);
+                            PipeQueryGen::<{ pipe_query_type::PIPE_QUERY_TIMESTAMP }>::new(ctx.ctx);
                     }
                     res
                 },

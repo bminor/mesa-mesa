@@ -59,7 +59,7 @@ struct QueueKernelState<'a> {
 ///
 /// Used for tracking bound GPU state to lower CPU overhead and centralize state tracking
 pub struct QueueContext<'a> {
-    ctx: &'a PipeContext,
+    pub ctx: &'a PipeContext,
     pub dev: &'static Device,
     use_stream: bool,
     kernel_state: RefCell<QueueKernelState<'a>>,
@@ -216,7 +216,7 @@ pub struct Queue {
 struct QueueEvent(Arc<Event>);
 
 impl QueueEvent {
-    fn call(self, ctx: &QueueContext) -> (cl_int, Arc<Event>) {
+    fn call(self, ctx: &mut QueueContext) -> (cl_int, Arc<Event>) {
         let res = self.0.call(ctx);
         (res, self.into_inner())
     }
@@ -350,7 +350,7 @@ impl Queue {
                     // TODO: use pipe_context::set_device_reset_callback to get notified about gone
                     //       GPU contexts
                     let mut last_err = CL_SUCCESS as cl_int;
-                    let ctx = ctx.ctx();
+                    let mut ctx = ctx.ctx();
                     let mut flushed = Vec::new();
                     loop {
                         debug_assert!(flushed.is_empty());
@@ -389,7 +389,7 @@ impl Queue {
                             // if there is an execution error don't bother signaling it as the  context
                             // might be in a broken state. How queues behave after any event hit an
                             // error is entirely implementation defined.
-                            let (err, e) = e.call(&ctx);
+                            let (err, e) = e.call(&mut ctx);
                             last_err = err;
                             if last_err < 0 {
                                 continue;
