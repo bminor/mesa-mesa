@@ -131,7 +131,7 @@ load_descriptor(nir_builder *b, unsigned num_components, unsigned bit_size,
                                     binding_layout->dynamic_buffer_index));
 
       nir_def *root_desc_offset = nir_iadd_imm(
-         b, nir_imul_imm(b, index, sizeof(struct hk_buffer_address)),
+         b, nir_amul_imm(b, index, sizeof(struct hk_buffer_address)),
          hk_root_descriptor_offset(dynamic_buffers));
 
       assert(num_components == 4 && bit_size == 32);
@@ -158,7 +158,7 @@ load_descriptor(nir_builder *b, unsigned num_components, unsigned bit_size,
    default: {
       assert(binding_layout->stride > 0);
       nir_def *desc_ubo_offset =
-         nir_iadd_imm(b, nir_imul_imm(b, index, binding_layout->stride),
+         nir_iadd_imm(b, nir_amul_imm(b, index, binding_layout->stride),
                       binding_layout->offset + offset_B);
 
       unsigned desc_align_mul = (1 << (ffs(binding_layout->stride) - 1));
@@ -323,7 +323,7 @@ load_image_handle(nir_builder *b, const struct lower_descriptors_ctx *ctx,
 
    assert(binding_layout->stride > 0);
    nir_def *desc_offs_B =
-      nir_iadd_imm(b, nir_imul_imm(b, index, binding_layout->stride),
+      nir_iadd_imm(b, nir_amul_imm(b, index, binding_layout->stride),
                    binding_layout->offset + offset_B);
 
    return nir_bindless_image_agx(b, desc_offs_B, .desc_set = set);
@@ -489,7 +489,7 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
       /* Prefix sum to find the compacted offset */
       nir_def *idx = nir_bit_count(b, nir_iand_imm(b, flags, bit - 1));
       nir_def *addr = nir_iadd(
-         b, base, nir_imul_imm(b, nir_u2u64(b, idx), sizeof(uint64_t)));
+         b, base, nir_amul_imm(b, nir_u2u64(b, idx), sizeof(uint64_t)));
 
       /* The above returns garbage if the query isn't actually enabled, handle
        * that case.
@@ -698,7 +698,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex,
 
          assert(binding_layout->stride > 0);
          nir_def *desc_offs_B = nir_iadd_imm(
-            b, nir_imul_imm(b, idx, binding_layout->stride),
+            b, nir_amul_imm(b, idx, binding_layout->stride),
             binding_layout->offset + plane_offset_B +
                offsetof(struct hk_sampled_image_descriptor, sampler));
 
@@ -769,7 +769,7 @@ lower_ssbo_resource_index(nir_builder *b, nir_intrinsic_instr *intrin,
 
       nir_def *dynamic_binding_offset =
          nir_iadd_imm(b,
-                      nir_imul_imm(b, dynamic_buffer_start,
+                      nir_amul_imm(b, dynamic_buffer_start,
                                    sizeof(struct hk_buffer_address)),
                       hk_root_descriptor_offset(dynamic_buffers));
 
@@ -787,7 +787,7 @@ lower_ssbo_resource_index(nir_builder *b, nir_intrinsic_instr *intrin,
    binding_addr = nir_ior_imm(b, binding_addr, (uint64_t)binding_stride << 56);
 
    const uint32_t binding_size = binding_layout->array_size * binding_stride;
-   nir_def *offset_in_binding = nir_imul_imm(b, index, binding_stride);
+   nir_def *offset_in_binding = nir_amul_imm(b, index, binding_stride);
 
    nir_def *addr = nir_vec4(b, nir_unpack_64_2x32_split_x(b, binding_addr),
                             nir_unpack_64_2x32_split_y(b, binding_addr),
