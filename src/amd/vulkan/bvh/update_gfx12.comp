@@ -81,6 +81,27 @@ main()
       child_offset += SIZEOF(radv_gfx12_box_node) * child_index;
    }
 
+   vk_aabb bounds;
+   bounds.min = vec3(INFINITY);
+   bounds.max = vec3(-INFINITY);
+   if (is_leaf) {
+      VOID_REF src_leaf_node = OFFSET(src_bvh, child_offset);
+      uint32_t geometry_index =
+         DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET)) >> 4;
+      uint32_t primitive_index =
+         DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET + 4)) & 0xfffffff;
+
+      vk_bvh_geometry_data geom_data = DEREF(INDEX(vk_bvh_geometry_data, args.geom_data, geometry_index));
+
+      VOID_REF dst_leaf_node = OFFSET(dst_bvh, child_offset);
+      if (geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+         radv_build_triangle(bounds, dst_leaf_node, geom_data, primitive_index, true);
+      } else {
+         VOID_REF src_ptr = OFFSET(geom_data.data, primitive_index * geom_data.stride);
+         radv_build_aabb(bounds, src_ptr, dst_leaf_node, geometry_index, primitive_index, true);
+      }
+   }
+
    uint32_t child_index = (child_offset - internal_nodes_offset) / SIZEOF(radv_gfx12_box_node);
 
    bool is_ready = is_leaf_or_invalid;
@@ -91,27 +112,7 @@ main()
       if (radv_ballot(cluster, is_ready) != 0xff)
          continue;
 
-      vk_aabb bounds;
-      bounds.min = vec3(INFINITY);
-      bounds.max = vec3(-INFINITY);
-
-      if (is_leaf) {
-         VOID_REF src_leaf_node = OFFSET(src_bvh, child_offset);
-         uint32_t geometry_index =
-            DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET)) >> 4;
-         uint32_t primitive_index =
-            DEREF(REF(uint32_t)(src_leaf_node + RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET + 4)) & 0xfffffff;
-
-         vk_bvh_geometry_data geom_data = DEREF(INDEX(vk_bvh_geometry_data, args.geom_data, geometry_index));
-
-         VOID_REF dst_leaf_node = OFFSET(dst_bvh, child_offset);
-         if (geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-            radv_build_triangle(bounds, dst_leaf_node, geom_data, primitive_index, true);
-         } else {
-            VOID_REF src_ptr = OFFSET(geom_data.data, primitive_index * geom_data.stride);
-            radv_build_aabb(bounds, src_ptr, dst_leaf_node, geometry_index, primitive_index, true);
-         }
-      } else if (is_valid) {
+      if (!is_leaf_or_invalid) {
          bounds = DEREF(INDEX(vk_aabb, args.bounds, child_index));
       }
 
@@ -123,13 +124,20 @@ main()
       total_bounds.max.y = subgroupClusteredMax(bounds.max.y, 8);
       total_bounds.max.z = subgroupClusteredMax(bounds.max.z, 8);
 
-      if (!is_root_node) {
-         DEREF(INDEX(vk_aabb, args.bounds, node_index - 1)) = total_bounds;
+      if (cluster.invocation_index == 0) {
+         if (is_root_node) {
+            DEREF(args.dst).aabb = total_bounds;
+         } else {
+            DEREF(INDEX(vk_aabb, args.bounds, node_index - 1)) = total_bounds;
 
-         memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
-                       gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
+            memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
+                          gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
 
-         DEREF(INDEX(uint32_t, args.internal_ready_count, node_index - 1)) = 1;
+            DEREF(INDEX(uint32_t, args.internal_ready_count, node_index - 1)) = 1;
+
+            memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
+                          gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
+         }
       }
 
       vec3 origin = total_bounds.min;
@@ -174,12 +182,6 @@ main()
          DEREF(dst_node).children[cluster.invocation_index] = null_child;
       }
 
-      if (is_root_node)
-         DEREF(args.dst).aabb = total_bounds;
-
-      /* Make changes to internal_ready_count available to the other invocations. */
-      memoryBarrier(gl_ScopeDevice, gl_StorageSemanticsBuffer,
-                    gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
       break;
    }
 }
