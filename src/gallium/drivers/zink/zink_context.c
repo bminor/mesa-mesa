@@ -2227,7 +2227,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
 
          struct zink_resource *res = b ? zink_resource(b->base.texture) : NULL;
          if (b && b->base.texture) {
-            if (!a || zink_resource(a->base.texture) != res) {
+            if (!a || zink_resource(a->base.texture) != res || a->import2d != b->import2d) {
                if (a)
                   unbind_samplerview(ctx, shader_type, start_slot + i);
                bind_samplerview_resource_stage(ctx, res, shader_type);
