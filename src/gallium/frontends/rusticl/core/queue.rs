@@ -55,17 +55,44 @@ struct QueueKernelState<'a> {
     cso: Option<CSOWrapper<'a>>,
 }
 
-/// State tracking wrapper for [PipeContext]
-///
-/// Used for tracking bound GPU state to lower CPU overhead and centralize state tracking
 pub struct QueueContext<'a> {
     pub ctx: &'a PipeContext,
     pub dev: &'static Device,
+}
+
+// This should go once we moved all state tracking into QueueContext
+impl Deref for QueueContext<'_> {
+    type Target = PipeContext;
+
+    fn deref(&self) -> &Self::Target {
+        self.ctx
+    }
+}
+
+impl<'a> QueueContext<'a> {
+    fn wrap(&'a self) -> QueueContextWithState<'a> {
+        QueueContextWithState {
+            ctx: self,
+            kernel_state: RefCell::new(QueueKernelState {
+                builds: None,
+                variant: NirKernelVariant::Default,
+                cso: None,
+            }),
+            use_stream: self.dev.prefers_real_buffer_in_cb0(),
+        }
+    }
+}
+
+/// State tracking wrapper for [PipeContext]
+///
+/// Used for tracking bound GPU state to lower CPU overhead and centralize state tracking
+pub struct QueueContextWithState<'a> {
+    pub ctx: &'a QueueContext<'a>,
     use_stream: bool,
     kernel_state: RefCell<QueueKernelState<'a>>,
 }
 
-impl QueueContext<'_> {
+impl QueueContextWithState<'_> {
     // TODO: figure out how to make it &mut self without causing tons of borrowing issues.
     pub fn bind_kernel(
         &self,
@@ -121,16 +148,15 @@ impl QueueContext<'_> {
     }
 }
 
-// This should go once we moved all state tracking into QueueContext
-impl Deref for QueueContext<'_> {
-    type Target = PipeContext;
+impl<'a> Deref for QueueContextWithState<'a> {
+    type Target = QueueContext<'a>;
 
     fn deref(&self) -> &Self::Target {
         self.ctx
     }
 }
 
-impl Drop for QueueContext<'_> {
+impl Drop for QueueContextWithState<'_> {
     fn drop(&mut self) {
         self.set_constant_buffer(0, &[]);
         self.ctx.clear_shader_images(self.dev.caps.max_write_images);
@@ -172,13 +198,7 @@ impl SendableQueueContext {
     fn ctx(&self) -> QueueContext {
         QueueContext {
             ctx: &self.ctx,
-            kernel_state: RefCell::new(QueueKernelState {
-                builds: None,
-                variant: NirKernelVariant::Default,
-                cso: None,
-            }),
             dev: self.dev,
-            use_stream: self.dev.prefers_real_buffer_in_cb0(),
         }
     }
 }
@@ -216,7 +236,7 @@ pub struct Queue {
 struct QueueEvent(Arc<Event>);
 
 impl QueueEvent {
-    fn call(self, ctx: &mut QueueContext) -> (cl_int, Arc<Event>) {
+    fn call(self, ctx: &mut QueueContextWithState) -> (cl_int, Arc<Event>) {
         let res = self.0.call(ctx);
         (res, self.into_inner())
     }
@@ -350,7 +370,8 @@ impl Queue {
                     // TODO: use pipe_context::set_device_reset_callback to get notified about gone
                     //       GPU contexts
                     let mut last_err = CL_SUCCESS as cl_int;
-                    let mut ctx = ctx.ctx();
+                    let ctx = ctx.ctx();
+                    let mut ctx = ctx.wrap();
                     let mut flushed = Vec::new();
                     loop {
                         debug_assert!(flushed.is_empty());

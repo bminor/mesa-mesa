@@ -24,7 +24,8 @@ static_assert!(CL_RUNNING == 1);
 static_assert!(CL_SUBMITTED == 2);
 static_assert!(CL_QUEUED == 3);
 
-pub type EventSig = Box<dyn FnOnce(&Context, &mut QueueContext) -> CLResult<()> + Send + Sync>;
+pub type EventSig =
+    Box<dyn FnOnce(&Context, &mut QueueContextWithState) -> CLResult<()> + Send + Sync>;
 
 pub enum EventTimes {
     Queued = CL_PROFILING_COMMAND_QUEUED as isize,
@@ -220,7 +221,7 @@ impl Event {
     // We always assume that work here simply submits stuff to the hardware even if it's just doing
     // sw emulation or nothing at all.
     // If anything requets waiting, we will update the status through fencing later.
-    pub fn call(&self, ctx: &mut QueueContext) -> cl_int {
+    pub fn call(&self, ctx: &mut QueueContextWithState) -> cl_int {
         let mut lock = self.state();
         let mut status = lock.status;
         let profiling_enabled = lock.time_queued != 0;
