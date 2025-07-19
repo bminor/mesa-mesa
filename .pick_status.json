@@ -4044,7 +4044,7 @@
         "description": "zink: properly unbind sampler views with imported 2D resource",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7167214cabc33751c8672e1070bb16d491069039",
         "notes": null
