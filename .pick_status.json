@@ -874,7 +874,7 @@
         "description": "rusticl/queue: clear shader images when destroying queues",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "50dbcb1d00d239cacc13c394543fddfdee121cac",
         "notes": null
