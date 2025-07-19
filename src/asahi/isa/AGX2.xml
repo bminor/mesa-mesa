@@ -274,6 +274,11 @@
     <property name="size64"/>
   </encoding>
 
+  <encoding name="ureg64_shift2">
+    <immediate name="uniform" bit="0:6" shift="2"/>
+    <property name="size64"/>
+  </encoding>
+
   <encoding name="exreg16">
     <immediate name="reg" bit="0:7"/>
   </encoding>
@@ -281,6 +286,20 @@
   <encoding name="exreg32">
     <immediate name="reg" bit="0:7" shift="1"/>
     <property name="size32"/>
+  </encoding>
+
+  <encoding name="heap_offs">
+    <case>
+      <exact bit="31">0</exact>
+      <immediate name="reg" bit="0:8"/>
+      <property name="size32"/>
+    </case>
+
+    <case>
+      <exact bit="31">1</exact>
+      <immediate name="imm" bit="0:30"/>
+      <property name="size32"/>
+    </case>
   </encoding>
 
   <encoding name="atomic_dest">
@@ -1363,16 +1382,16 @@
   <ins name="tex_state_store" length="8" display="load">
     <exact bit="0:7 20">111101101</exact>
     <dest kind="ts" bit="8:14"/>
-    <src kind="ureg64" bit="58:63"/>
-    <src kind="exreg32" bit="27:33"/>
+    <src kind="ureg64_shift2" bit="59:63"/>
+    <src kind="heap_offs" bit="26:56 58"/>
     <modifier name="group" kind="group" bit="16"/>
   </ins>
 
   <ins name="sampler_state_store" length="8" display="load">
     <exact bit="0:7 20">110101101</exact>
     <dest kind="ss" bit="8:14"/>
-    <src kind="ureg64" bit="58:63"/>
-    <src kind="exreg32" bit="27:33"/>
+    <src kind="ureg64_shift2" bit="59:63"/>
+    <src kind="heap_offs" bit="26:56 58"/>
     <modifier name="group" kind="group" bit="16"/>
   </ins>
 
