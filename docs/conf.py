@@ -143,6 +143,7 @@ linkcheck_ignore = [
     r'https://sourceforge.net/.*',  # blocking the linkcheck user-agent
     r'https://.*\.sourceforge\.net/.*',  # blocking the linkcheck user-agent
     r'https://stackoverflow.com/.*',  # blocking the linkcheck user-agent
+    r'https://(www|dev)\.vulkan\.org/.*',  # blocking the linkcheck user-agent
 ]
 linkcheck_exclude_documents = [r'relnotes/.*']
 
