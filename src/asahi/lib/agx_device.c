@@ -339,6 +339,13 @@ agx_bo_import(struct agx_device *dev, int fd)
          p_atomic_set(&bo->refcnt, 1);
       else
          agx_bo_reference(bo);
+
+      /* If this bo came back to us via import, it had better
+       * been marked shared to begin with.
+       */
+      assert(bo->flags & AGX_BO_SHAREABLE);
+      assert(bo->flags & AGX_BO_SHARED);
+      assert(bo->prime_fd != -1);
    }
    pthread_mutex_unlock(&dev->bo_map_lock);
 
@@ -357,40 +364,47 @@ error:
    return NULL;
 }
 
+void
+agx_bo_make_shared(struct agx_device *dev, struct agx_bo *bo)
+{
+   assert(bo->flags & AGX_BO_SHAREABLE);
+   if (bo->flags & AGX_BO_SHARED) {
+      assert(bo->prime_fd >= 0);
+      return;
+   }
+
+   bo->flags |= AGX_BO_SHARED;
+   assert(bo->prime_fd == -1);
+
+   int ret =
+      drmPrimeHandleToFD(dev->fd, bo->handle, DRM_CLOEXEC, &bo->prime_fd);
+   assert(ret == 0);
+   assert(bo->prime_fd >= 0);
+
+   /* If there is a pending writer to this BO, import it into the buffer
+    * for implicit sync.
+    */
+   uint64_t writer = p_atomic_read_relaxed(&bo->writer);
+   if (writer) {
+      int out_sync_fd = -1;
+      int ret = drmSyncobjExportSyncFile(dev->fd, agx_bo_writer_syncobj(writer),
+                                         &out_sync_fd);
+      assert(ret >= 0);
+      assert(out_sync_fd >= 0);
+
+      ret = agx_import_sync_file(dev, bo, out_sync_fd);
+      assert(ret >= 0);
+      close(out_sync_fd);
+   }
+}
+
 int
 agx_bo_export(struct agx_device *dev, struct agx_bo *bo)
 {
-   int fd;
-
-   assert(bo->flags & AGX_BO_SHAREABLE);
-
-   if (drmPrimeHandleToFD(dev->fd, bo->handle, DRM_CLOEXEC, &fd))
-      return -1;
-
-   if (!(bo->flags & AGX_BO_SHARED)) {
-      bo->flags |= AGX_BO_SHARED;
-      assert(bo->prime_fd == -1);
-      bo->prime_fd = os_dupfd_cloexec(fd);
-
-      /* If there is a pending writer to this BO, import it into the buffer
-       * for implicit sync.
-       */
-      uint64_t writer = p_atomic_read_relaxed(&bo->writer);
-      if (writer) {
-         int out_sync_fd = -1;
-         int ret = drmSyncobjExportSyncFile(
-            dev->fd, agx_bo_writer_syncobj(writer), &out_sync_fd);
-         assert(ret >= 0);
-         assert(out_sync_fd >= 0);
-
-         ret = agx_import_sync_file(dev, bo, out_sync_fd);
-         assert(ret >= 0);
-         close(out_sync_fd);
-      }
-   }
+   agx_bo_make_shared(dev, bo);
 
    assert(bo->prime_fd >= 0);
-   return fd;
+   return os_dupfd_cloexec(bo->prime_fd);
 }
 
 static int

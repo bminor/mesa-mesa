@@ -260,14 +260,8 @@ agx_resource_get_handle(struct pipe_screen *pscreen, struct pipe_context *ctx,
    } else if (handle->type == WINSYS_HANDLE_TYPE_KMS) {
       rsrc_debug(rsrc, "Get handle: %p (KMS)\n", rsrc);
 
-      /* BO must be considered shared at this point.
-       * The seemingly redundant check exists because if the BO is
-       * already shared then mutating the BO would be potentially
-       * racy.
-       */
-      assert(rsrc->bo->flags & AGX_BO_SHAREABLE);
-      if (!(rsrc->bo->flags & AGX_BO_SHARED))
-         rsrc->bo->flags |= AGX_BO_SHARED;
+      /* BO must be considered shared at this point. */
+      agx_bo_make_shared(dev, rsrc->bo);
 
       handle->handle = rsrc->bo->handle;
    } else if (handle->type == WINSYS_HANDLE_TYPE_FD) {
