@@ -3256,7 +3256,16 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
 
    NIR_PASS(_, nir, nir_opt_sink, move_all);
    NIR_PASS(_, nir, nir_opt_move, move_all);
-   NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
+   NIR_PASS(progress, nir, nir_lower_all_phis_to_scalar);
+
+   /* After lowering phis to scalar, we must copy prop/DCE for correctness. RA
+    * can't deal with dead phis.
+    */
+   do {
+      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_dce);
+      progress = false;
+   } while (progress);
 }
 
 /*
