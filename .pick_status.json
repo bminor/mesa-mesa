@@ -2054,7 +2054,7 @@
         "description": "asahi: Ensure shared BOs have a prime_fd",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "067d820c9db02c9e3e1b23e3d80c49e3838957e0",
         "notes": null
