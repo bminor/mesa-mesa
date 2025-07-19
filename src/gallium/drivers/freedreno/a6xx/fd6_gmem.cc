@@ -653,9 +653,8 @@ emit_vsc_overflow_test(struct fd_batch *batch)
       OUT_PKT7(ring, CP_COND_WRITE5, 8);
       OUT_RING(ring, CP_COND_WRITE5_0_FUNCTION(WRITE_GE) |
                         CP_COND_WRITE5_0_WRITE_MEMORY);
-      OUT_RING(ring, CP_COND_WRITE5_1_POLL_ADDR_LO(
-                        REG_A6XX_VSC_PIPE_DATA_DRAW_SIZE(i)));
-      OUT_RING(ring, CP_COND_WRITE5_2_POLL_ADDR_HI(0));
+      OUT_RING(ring, REG_A6XX_VSC_PIPE_DATA_DRAW_SIZE(i));
+      OUT_RING(ring, 0);
       OUT_RING(ring, CP_COND_WRITE5_3_REF(fd6_ctx->vsc_draw_strm_pitch - 64));
       OUT_RING(ring, CP_COND_WRITE5_4_MASK(~0));
       OUT_RELOC(ring,
@@ -666,9 +665,8 @@ emit_vsc_overflow_test(struct fd_batch *batch)
       OUT_PKT7(ring, CP_COND_WRITE5, 8);
       OUT_RING(ring, CP_COND_WRITE5_0_FUNCTION(WRITE_GE) |
                         CP_COND_WRITE5_0_WRITE_MEMORY);
-      OUT_RING(ring, CP_COND_WRITE5_1_POLL_ADDR_LO(
-                        REG_A6XX_VSC_PIPE_DATA_PRIM_SIZE(i)));
-      OUT_RING(ring, CP_COND_WRITE5_2_POLL_ADDR_HI(0));
+      OUT_RING(ring, REG_A6XX_VSC_PIPE_DATA_PRIM_SIZE(i));
+      OUT_RING(ring, 0);
       OUT_RING(ring, CP_COND_WRITE5_3_REF(fd6_ctx->vsc_prim_strm_pitch - 64));
       OUT_RING(ring, CP_COND_WRITE5_4_MASK(~0));
       OUT_RELOC(ring,

@@ -1895,20 +1895,17 @@ got cmdszdw=38
 00000001000e3010:			0000: 70268000
 			opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 				{ COUNT = 0 | DISABLE_ALL_GROUPS | GROUP_ID = 0 }
-				{ ADDR_LO = 0 }
-				{ ADDR_HI = 0 }
+				{ [0].ADDR = 0 }
 00000001000e319c:			0000: 70438003 00040000 00000000 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_COLOR_TS
 00000001000e31e8:			0000: 70460004 0000001d 00001000 00000001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_DEPTH_TS
 00000001000e31fc:			0000: 70460004 0000001c 00001000 00000001 00000000
@@ -2150,15 +2147,13 @@ got cmdszdw=38
 00000001000e3584:			0000: 702c0001 00000003
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_COLOR_TS
 00000001000e358c:			0000: 70460004 0000001d 00001000 00000001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_DEPTH_TS
 00000001000e35a0:			0000: 70460004 0000001c 00001000 00000001 00000000
@@ -2188,8 +2183,7 @@ got cmdszdw=38
 0000000100223010:			0000: 70268000
 			opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 				{ COUNT = 0 | DISABLE_ALL_GROUPS | GROUP_ID = 0 }
-				{ ADDR_LO = 0 }
-				{ ADDR_HI = 0 }
+				{ [0].ADDR = 0 }
 000000010022319c:			0000: 70438003 00040000 00000000 00000000
 			opcode: CP_SET_MARKER (65) (2 dwords)
 				{ MARKER_MODE = SET_RENDER_MODE | MODE = RM6_DIRECT_RENDER }
@@ -2198,15 +2192,13 @@ got cmdszdw=38
 0000000100223258:			0000: 709d0001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_COLOR_TS
 0000000100223260:			0000: 70460004 0000001d 00001000 00000001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_DEPTH_TS
 0000000100223274:			0000: 70460004 0000001c 00001000 00000001 00000000
@@ -2357,11 +2349,9 @@ got cmdszdw=38
 000000010022720c:				0000: 706d8003 00000002 00008801 000a0010
 				opcode: CP_SET_DRAW_STATE (43) (7 dwords)
 					{ COUNT = 0 | DISABLE | GMEM | GROUP_ID = 9 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | SYSMEM | GROUP_ID = 10 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 000000010022721c:				0000: 70438006 09220000 00000000 00000000 0a420000 00000000 00000000
 00000001002232ac:			0000: 70bf8003 00227000 00000001 0000008e
 			opcode: CP_INDIRECT_BUFFER (3f) (4 dwords)
@@ -2369,71 +2359,49 @@ got cmdszdw=38
 				{ IB_SIZE = 0x61 }
 				opcode: CP_SET_DRAW_STATE (43) (67 dwords)
 					{ COUNT = 26 | BINNING | GMEM | SYSMEM | GROUP_ID = 0 }
-					{ ADDR_LO = 0x1e7280 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x1001e7280 }
 					{ COUNT = 129 | GMEM | SYSMEM | GROUP_ID = 1 }
-					{ ADDR_LO = 0x1e72e8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x1].ADDR = 0x1001e72e8 }
 					{ COUNT = 99 | BINNING | GROUP_ID = 2 }
-					{ ADDR_LO = 0x1e74ec }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x1001e74ec }
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 4 }
-					{ ADDR_LO = 0x1e76e0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x1001e76e0 }
 					{ COUNT = 2 | SYSMEM | GROUP_ID = 13 }
-					{ ADDR_LO = 0x1e77c0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x1001e77c0 }
 					{ COUNT = 2 | GMEM | GROUP_ID = 12 }
-					{ ADDR_LO = 0x1e77b8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x5].ADDR = 0x1001e77b8 }
 					{ COUNT = 18 | BINNING | GMEM | SYSMEM | GROUP_ID = 15 }
-					{ ADDR_LO = 0x1e768c }
-					{ ADDR_HI = 0x1 }
+					{ [0x6].ADDR = 0x1001e768c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 16 }
-					{ ADDR_LO = 0x1e76d4 }
-					{ ADDR_HI = 0x1 }
+					{ [0x7].ADDR = 0x1001e76d4 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 17 }
-					{ ADDR_LO = 0x1e7714 }
-					{ ADDR_HI = 0x1 }
+					{ [0x8].ADDR = 0x1001e7714 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 18 }
-					{ ADDR_LO = 0x1e771c }
-					{ ADDR_HI = 0x1 }
+					{ [0x9].ADDR = 0x1001e771c }
 					{ COUNT = 5 | BINNING | GMEM | SYSMEM | GROUP_ID = 19 }
-					{ ADDR_LO = 0x1e778c }
-					{ ADDR_HI = 0x1 }
+					{ [0xa].ADDR = 0x1001e778c }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 20 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xb].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 21 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xc].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 22 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xd].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 23 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xe].ADDR = 0 }
 					{ COUNT = 6 | BINNING | GMEM | SYSMEM | GROUP_ID = 24 }
-					{ ADDR_LO = 0x1e77a0 }
-					{ ADDR_HI = 0x1 }
+					{ [0xf].ADDR = 0x1001e77a0 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x1e77c8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x10].ADDR = 0x1001e77c8 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 26 }
-					{ ADDR_LO = 0x1e7734 }
-					{ ADDR_HI = 0x1 }
+					{ [0x11].ADDR = 0x1001e7734 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 27 }
-					{ ADDR_LO = 0x1e7678 }
-					{ ADDR_HI = 0x1 }
+					{ [0x12].ADDR = 0x1001e7678 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 28 }
-					{ ADDR_LO = 0x1e7704 }
-					{ ADDR_HI = 0x1 }
+					{ [0x13].ADDR = 0x1001e7704 }
 					{ COUNT = 20 | BINNING | GMEM | SYSMEM | GROUP_ID = 29 }
-					{ ADDR_LO = 0x1e773c }
-					{ ADDR_HI = 0x1 }
+					{ [0x14].ADDR = 0x1001e773c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 30 }
-					{ ADDR_LO = 0x1e7680 }
-					{ ADDR_HI = 0x1 }
+					{ [0x15].ADDR = 0x1001e7680 }
 0000000100208000:				0000: 70438042 0070001a 001e7280 00000001 01600081 001e72e8 00000001 02100063
 0000000100208020:				0020: 001e74ec 00000001 04700009 001e76e0 00000001 0d400002 001e77c0 00000001
 0000000100208040:				0040: 0c200002 001e77b8 00000001 0f700012 001e768c 00000001 10700003 001e76d4
@@ -2445,30 +2413,23 @@ got cmdszdw=38
 0000000100208100:				0100: 1e700003 001e7680 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 14 }
-					{ ADDR_LO = 0x20c000 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x10020c000 }
 000000010020810c:				0000: 70438003 0e700009 0020c000 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x20c060 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x10020c060 }
 0000000100208124:				0000: 70438003 19700002 0020c060 00000001
 				opcode: CP_SET_DRAW_STATE (43) (16 dwords)
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 5 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DIRTY | DISABLE | GMEM | SYSMEM | GROUP_ID = 7 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 3 }
-					{ ADDR_LO = 0x20c024 }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x10020c024 }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 8 }
-					{ ADDR_LO = 0x20c034 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x10020c034 }
 					{ COUNT = 8 | BINNING | GMEM | SYSMEM | GROUP_ID = 11 }
-					{ ADDR_LO = 0x20c040 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x10020c040 }
 0000000100208134:				0000: 7043800f 05720000 00000000 00000000 07630000 00000000 00000000 03700004
 0000000100208154:				0020: 0020c024 00000001 08700003 0020c034 00000001 0b700008 0020c040 00000001
 				group_id: 0
@@ -3038,8 +2999,7 @@ got cmdszdw=38
 000000010022736c:				0000: 702c0001 00000003
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_COLOR_TS
 0000000100227374:				0000: 70460004 0000001d 00001000 00000001 00000000
@@ -3058,16 +3018,13 @@ got cmdszdw=38
 00000001002274b8:				0000: 706d8003 00000002 00008801 00050010
 				opcode: CP_SET_DRAW_STATE (43) (7 dwords)
 					{ COUNT = 0 | DISABLE | GMEM | GROUP_ID = 9 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | SYSMEM | GROUP_ID = 10 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 00000001002274c8:				0000: 70438006 09220000 00000000 00000000 0a420000 00000000 00000000
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_COLOR_TS
 00000001002274e4:				0000: 70460004 0000001d 00001000 00000001 00000000
@@ -3087,71 +3044,49 @@ got cmdszdw=38
 				{ IB_SIZE = 0x61 }
 				opcode: CP_SET_DRAW_STATE (43) (67 dwords)
 					{ COUNT = 26 | BINNING | GMEM | SYSMEM | GROUP_ID = 0 }
-					{ ADDR_LO = 0x1e8780 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x1001e8780 }
 					{ COUNT = 129 | GMEM | SYSMEM | GROUP_ID = 1 }
-					{ ADDR_LO = 0x1e87e8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x1].ADDR = 0x1001e87e8 }
 					{ COUNT = 99 | BINNING | GROUP_ID = 2 }
-					{ ADDR_LO = 0x1e89ec }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x1001e89ec }
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 4 }
-					{ ADDR_LO = 0x1e8be0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x1001e8be0 }
 					{ COUNT = 2 | SYSMEM | GROUP_ID = 13 }
-					{ ADDR_LO = 0x1e8cc0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x1001e8cc0 }
 					{ COUNT = 2 | GMEM | GROUP_ID = 12 }
-					{ ADDR_LO = 0x1e8cb8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x5].ADDR = 0x1001e8cb8 }
 					{ COUNT = 18 | BINNING | GMEM | SYSMEM | GROUP_ID = 15 }
-					{ ADDR_LO = 0x1e8b8c }
-					{ ADDR_HI = 0x1 }
+					{ [0x6].ADDR = 0x1001e8b8c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 16 }
-					{ ADDR_LO = 0x1e8bd4 }
-					{ ADDR_HI = 0x1 }
+					{ [0x7].ADDR = 0x1001e8bd4 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 17 }
-					{ ADDR_LO = 0x1e8c14 }
-					{ ADDR_HI = 0x1 }
+					{ [0x8].ADDR = 0x1001e8c14 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 18 }
-					{ ADDR_LO = 0x1e8c1c }
-					{ ADDR_HI = 0x1 }
+					{ [0x9].ADDR = 0x1001e8c1c }
 					{ COUNT = 5 | BINNING | GMEM | SYSMEM | GROUP_ID = 19 }
-					{ ADDR_LO = 0x1e8c8c }
-					{ ADDR_HI = 0x1 }
+					{ [0xa].ADDR = 0x1001e8c8c }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 20 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xb].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 21 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xc].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 22 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xd].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 23 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xe].ADDR = 0 }
 					{ COUNT = 6 | BINNING | GMEM | SYSMEM | GROUP_ID = 24 }
-					{ ADDR_LO = 0x1e8ca0 }
-					{ ADDR_HI = 0x1 }
+					{ [0xf].ADDR = 0x1001e8ca0 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x1e8cc8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x10].ADDR = 0x1001e8cc8 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 26 }
-					{ ADDR_LO = 0x1e8c34 }
-					{ ADDR_HI = 0x1 }
+					{ [0x11].ADDR = 0x1001e8c34 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 27 }
-					{ ADDR_LO = 0x1e8b78 }
-					{ ADDR_HI = 0x1 }
+					{ [0x12].ADDR = 0x1001e8b78 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 28 }
-					{ ADDR_LO = 0x1e8c04 }
-					{ ADDR_HI = 0x1 }
+					{ [0x13].ADDR = 0x1001e8c04 }
 					{ COUNT = 20 | BINNING | GMEM | SYSMEM | GROUP_ID = 29 }
-					{ ADDR_LO = 0x1e8c3c }
-					{ ADDR_HI = 0x1 }
+					{ [0x14].ADDR = 0x1001e8c3c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 30 }
-					{ ADDR_LO = 0x1e8b80 }
-					{ ADDR_HI = 0x1 }
+					{ [0x15].ADDR = 0x1001e8b80 }
 000000010020f000:				0000: 70438042 0070001a 001e8780 00000001 01600081 001e87e8 00000001 02100063
 000000010020f020:				0020: 001e89ec 00000001 04700009 001e8be0 00000001 0d400002 001e8cc0 00000001
 000000010020f040:				0040: 0c200002 001e8cb8 00000001 0f700012 001e8b8c 00000001 10700003 001e8bd4
@@ -3163,30 +3098,23 @@ got cmdszdw=38
 000000010020f100:				0100: 1e700003 001e8b80 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 14 }
-					{ ADDR_LO = 0x213000 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x100213000 }
 000000010020f10c:				0000: 70438003 0e700009 00213000 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x213060 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x100213060 }
 000000010020f124:				0000: 70438003 19700002 00213060 00000001
 				opcode: CP_SET_DRAW_STATE (43) (16 dwords)
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 5 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DIRTY | DISABLE | GMEM | SYSMEM | GROUP_ID = 7 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 3 }
-					{ ADDR_LO = 0x213024 }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x100213024 }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 8 }
-					{ ADDR_LO = 0x213034 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x100213034 }
 					{ COUNT = 8 | BINNING | GMEM | SYSMEM | GROUP_ID = 11 }
-					{ ADDR_LO = 0x213040 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x100213040 }
 000000010020f134:				0000: 7043800f 05720000 00000000 00000000 07630000 00000000 00000000 03700004
 000000010020f154:				0020: 00213024 00000001 08700003 00213034 00000001 0b700008 00213040 00000001
 				group_id: 0
@@ -3756,8 +3684,7 @@ got cmdszdw=38
 0000000100227640:				0000: 702c0001 00000003
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_COLOR_TS
 0000000100227648:				0000: 70460004 0000001d 00001000 00000001 00000000
@@ -3776,23 +3703,19 @@ got cmdszdw=38
 000000010022778c:				0000: 706d8003 00000002 00008801 00020010
 				opcode: CP_SET_DRAW_STATE (43) (7 dwords)
 					{ COUNT = 0 | DISABLE | GMEM | GROUP_ID = 9 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | SYSMEM | GROUP_ID = 10 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 000000010022779c:				0000: 70438006 09220000 00000000 00000000 0a420000 00000000 00000000
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_COLOR_TS
 00000001002277b8:				0000: 70460004 0000001d 00001000 00000001 00000000
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_DEPTH_TS
 00000001002277cc:				0000: 70460004 0000001c 00001000 00000001 00000000
@@ -3816,71 +3739,49 @@ got cmdszdw=38
 				{ IB_SIZE = 0x61 }
 				opcode: CP_SET_DRAW_STATE (43) (67 dwords)
 					{ COUNT = 26 | BINNING | GMEM | SYSMEM | GROUP_ID = 0 }
-					{ ADDR_LO = 0x1e9c80 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x1001e9c80 }
 					{ COUNT = 129 | GMEM | SYSMEM | GROUP_ID = 1 }
-					{ ADDR_LO = 0x1e9ce8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x1].ADDR = 0x1001e9ce8 }
 					{ COUNT = 99 | BINNING | GROUP_ID = 2 }
-					{ ADDR_LO = 0x1e9eec }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x1001e9eec }
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 4 }
-					{ ADDR_LO = 0x1ea0e0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x1001ea0e0 }
 					{ COUNT = 2 | SYSMEM | GROUP_ID = 13 }
-					{ ADDR_LO = 0x1ea1c0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x1001ea1c0 }
 					{ COUNT = 2 | GMEM | GROUP_ID = 12 }
-					{ ADDR_LO = 0x1ea1b8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x5].ADDR = 0x1001ea1b8 }
 					{ COUNT = 18 | BINNING | GMEM | SYSMEM | GROUP_ID = 15 }
-					{ ADDR_LO = 0x1ea08c }
-					{ ADDR_HI = 0x1 }
+					{ [0x6].ADDR = 0x1001ea08c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 16 }
-					{ ADDR_LO = 0x1ea0d4 }
-					{ ADDR_HI = 0x1 }
+					{ [0x7].ADDR = 0x1001ea0d4 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 17 }
-					{ ADDR_LO = 0x1ea114 }
-					{ ADDR_HI = 0x1 }
+					{ [0x8].ADDR = 0x1001ea114 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 18 }
-					{ ADDR_LO = 0x1ea11c }
-					{ ADDR_HI = 0x1 }
+					{ [0x9].ADDR = 0x1001ea11c }
 					{ COUNT = 5 | BINNING | GMEM | SYSMEM | GROUP_ID = 19 }
-					{ ADDR_LO = 0x1ea18c }
-					{ ADDR_HI = 0x1 }
+					{ [0xa].ADDR = 0x1001ea18c }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 20 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xb].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 21 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xc].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 22 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xd].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 23 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xe].ADDR = 0 }
 					{ COUNT = 6 | BINNING | GMEM | SYSMEM | GROUP_ID = 24 }
-					{ ADDR_LO = 0x1ea1a0 }
-					{ ADDR_HI = 0x1 }
+					{ [0xf].ADDR = 0x1001ea1a0 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x1ea1c8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x10].ADDR = 0x1001ea1c8 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 26 }
-					{ ADDR_LO = 0x1ea134 }
-					{ ADDR_HI = 0x1 }
+					{ [0x11].ADDR = 0x1001ea134 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 27 }
-					{ ADDR_LO = 0x1ea078 }
-					{ ADDR_HI = 0x1 }
+					{ [0x12].ADDR = 0x1001ea078 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 28 }
-					{ ADDR_LO = 0x1ea104 }
-					{ ADDR_HI = 0x1 }
+					{ [0x13].ADDR = 0x1001ea104 }
 					{ COUNT = 20 | BINNING | GMEM | SYSMEM | GROUP_ID = 29 }
-					{ ADDR_LO = 0x1ea13c }
-					{ ADDR_HI = 0x1 }
+					{ [0x14].ADDR = 0x1001ea13c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 30 }
-					{ ADDR_LO = 0x1ea080 }
-					{ ADDR_HI = 0x1 }
+					{ [0x15].ADDR = 0x1001ea080 }
 0000000100216000:				0000: 70438042 0070001a 001e9c80 00000001 01600081 001e9ce8 00000001 02100063
 0000000100216020:				0020: 001e9eec 00000001 04700009 001ea0e0 00000001 0d400002 001ea1c0 00000001
 0000000100216040:				0040: 0c200002 001ea1b8 00000001 0f700012 001ea08c 00000001 10700003 001ea0d4
@@ -3892,30 +3793,23 @@ got cmdszdw=38
 0000000100216100:				0100: 1e700003 001ea080 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 14 }
-					{ ADDR_LO = 0x21a000 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x10021a000 }
 000000010021610c:				0000: 70438003 0e700009 0021a000 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x21a060 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x10021a060 }
 0000000100216124:				0000: 70438003 19700002 0021a060 00000001
 				opcode: CP_SET_DRAW_STATE (43) (16 dwords)
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 5 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DIRTY | DISABLE | GMEM | SYSMEM | GROUP_ID = 7 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 3 }
-					{ ADDR_LO = 0x21a024 }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x10021a024 }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 8 }
-					{ ADDR_LO = 0x21a034 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x10021a034 }
 					{ COUNT = 8 | BINNING | GMEM | SYSMEM | GROUP_ID = 11 }
-					{ ADDR_LO = 0x21a040 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x10021a040 }
 0000000100216134:				0000: 7043800f 05720000 00000000 00000000 07630000 00000000 00000000 03700004
 0000000100216154:				0020: 0021a024 00000001 08700003 0021a034 00000001 0b700008 0021a040 00000001
 				group_id: 0
@@ -4427,23 +4321,19 @@ ESTIMATED CRASH LOCATION!
 000000010022793c:				0000: 706d8003 00000002 00008801 00010010
 				opcode: CP_SET_DRAW_STATE (43) (7 dwords)
 					{ COUNT = 0 | DISABLE | GMEM | GROUP_ID = 9 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | SYSMEM | GROUP_ID = 10 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 000000010022794c:				0000: 70438006 09220000 00000000 00000000 0a420000 00000000 00000000
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_COLOR_TS
 0000000100227968:				0000: 70460004 0000001d 00001000 00000001 00000000
 				opcode: CP_EVENT_WRITE (46) (5 dwords)
 					{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-					{ ADDR_0_LO = 0x1000 }
-					{ ADDR_0_HI = 0x1 }
+					{ ADDR = 0x100001000 }
 					{ 3 = 0 }
 				event PC_CCU_FLUSH_DEPTH_TS
 000000010022797c:				0000: 70460004 0000001c 00001000 00000001 00000000
@@ -4467,71 +4357,49 @@ ESTIMATED CRASH LOCATION!
 				{ IB_SIZE = 0x61 }
 				opcode: CP_SET_DRAW_STATE (43) (67 dwords)
 					{ COUNT = 26 | BINNING | GMEM | SYSMEM | GROUP_ID = 0 }
-					{ ADDR_LO = 0x1eb180 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x1001eb180 }
 					{ COUNT = 129 | GMEM | SYSMEM | GROUP_ID = 1 }
-					{ ADDR_LO = 0x1eb1e8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x1].ADDR = 0x1001eb1e8 }
 					{ COUNT = 99 | BINNING | GROUP_ID = 2 }
-					{ ADDR_LO = 0x1eb3ec }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x1001eb3ec }
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 4 }
-					{ ADDR_LO = 0x1eb5e0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x1001eb5e0 }
 					{ COUNT = 2 | SYSMEM | GROUP_ID = 13 }
-					{ ADDR_LO = 0x1eb6c0 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x1001eb6c0 }
 					{ COUNT = 2 | GMEM | GROUP_ID = 12 }
-					{ ADDR_LO = 0x1eb6b8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x5].ADDR = 0x1001eb6b8 }
 					{ COUNT = 18 | BINNING | GMEM | SYSMEM | GROUP_ID = 15 }
-					{ ADDR_LO = 0x1eb58c }
-					{ ADDR_HI = 0x1 }
+					{ [0x6].ADDR = 0x1001eb58c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 16 }
-					{ ADDR_LO = 0x1eb5d4 }
-					{ ADDR_HI = 0x1 }
+					{ [0x7].ADDR = 0x1001eb5d4 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 17 }
-					{ ADDR_LO = 0x1eb614 }
-					{ ADDR_HI = 0x1 }
+					{ [0x8].ADDR = 0x1001eb614 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 18 }
-					{ ADDR_LO = 0x1eb61c }
-					{ ADDR_HI = 0x1 }
+					{ [0x9].ADDR = 0x1001eb61c }
 					{ COUNT = 5 | BINNING | GMEM | SYSMEM | GROUP_ID = 19 }
-					{ ADDR_LO = 0x1eb68c }
-					{ ADDR_HI = 0x1 }
+					{ [0xa].ADDR = 0x1001eb68c }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 20 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xb].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 21 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xc].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 22 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xd].ADDR = 0 }
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 23 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0xe].ADDR = 0 }
 					{ COUNT = 6 | BINNING | GMEM | SYSMEM | GROUP_ID = 24 }
-					{ ADDR_LO = 0x1eb6a0 }
-					{ ADDR_HI = 0x1 }
+					{ [0xf].ADDR = 0x1001eb6a0 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x1eb6c8 }
-					{ ADDR_HI = 0x1 }
+					{ [0x10].ADDR = 0x1001eb6c8 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 26 }
-					{ ADDR_LO = 0x1eb634 }
-					{ ADDR_HI = 0x1 }
+					{ [0x11].ADDR = 0x1001eb634 }
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 27 }
-					{ ADDR_LO = 0x1eb578 }
-					{ ADDR_HI = 0x1 }
+					{ [0x12].ADDR = 0x1001eb578 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 28 }
-					{ ADDR_LO = 0x1eb604 }
-					{ ADDR_HI = 0x1 }
+					{ [0x13].ADDR = 0x1001eb604 }
 					{ COUNT = 20 | BINNING | GMEM | SYSMEM | GROUP_ID = 29 }
-					{ ADDR_LO = 0x1eb63c }
-					{ ADDR_HI = 0x1 }
+					{ [0x14].ADDR = 0x1001eb63c }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 30 }
-					{ ADDR_LO = 0x1eb580 }
-					{ ADDR_HI = 0x1 }
+					{ [0x15].ADDR = 0x1001eb580 }
 000000010021d000:				0000: 70438042 0070001a 001eb180 00000001 01600081 001eb1e8 00000001 02100063
 000000010021d020:				0020: 001eb3ec 00000001 04700009 001eb5e0 00000001 0d400002 001eb6c0 00000001
 000000010021d040:				0040: 0c200002 001eb6b8 00000001 0f700012 001eb58c 00000001 10700003 001eb5d4
@@ -4543,30 +4411,23 @@ ESTIMATED CRASH LOCATION!
 000000010021d100:				0100: 1e700003 001eb580 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 9 | BINNING | GMEM | SYSMEM | GROUP_ID = 14 }
-					{ ADDR_LO = 0x221000 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x100221000 }
 000000010021d10c:				0000: 70438003 0e700009 00221000 00000001
 				opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 					{ COUNT = 2 | BINNING | GMEM | SYSMEM | GROUP_ID = 25 }
-					{ ADDR_LO = 0x221060 }
-					{ ADDR_HI = 0x1 }
+					{ [0].ADDR = 0x100221060 }
 000000010021d124:				0000: 70438003 19700002 00221060 00000001
 				opcode: CP_SET_DRAW_STATE (43) (16 dwords)
 					{ COUNT = 0 | DISABLE | BINNING | GMEM | SYSMEM | GROUP_ID = 5 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0].ADDR = 0 }
 					{ COUNT = 0 | DIRTY | DISABLE | GMEM | SYSMEM | GROUP_ID = 7 }
-					{ ADDR_LO = 0 }
-					{ ADDR_HI = 0 }
+					{ [0x1].ADDR = 0 }
 					{ COUNT = 4 | BINNING | GMEM | SYSMEM | GROUP_ID = 3 }
-					{ ADDR_LO = 0x221024 }
-					{ ADDR_HI = 0x1 }
+					{ [0x2].ADDR = 0x100221024 }
 					{ COUNT = 3 | BINNING | GMEM | SYSMEM | GROUP_ID = 8 }
-					{ ADDR_LO = 0x221034 }
-					{ ADDR_HI = 0x1 }
+					{ [0x3].ADDR = 0x100221034 }
 					{ COUNT = 8 | BINNING | GMEM | SYSMEM | GROUP_ID = 11 }
-					{ ADDR_LO = 0x221040 }
-					{ ADDR_HI = 0x1 }
+					{ [0x4].ADDR = 0x100221040 }
 000000010021d134:				0000: 7043800f 05720000 00000000 00000000 07630000 00000000 00000000 03700004
 000000010021d154:				0020: 00221024 00000001 08700003 00221034 00000001 0b700008 00221040 00000001
 				group_id: 0
@@ -5071,20 +4932,17 @@ ESTIMATED CRASH LOCATION!
 0000000100223334:			0000: 70460001 00000026
 			opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 				{ COUNT = 0 | DISABLE_ALL_GROUPS | GROUP_ID = 0 }
-				{ ADDR_LO = 0 }
-				{ ADDR_HI = 0 }
+				{ [0].ADDR = 0 }
 000000010022333c:			0000: 70438003 00040000 00000000 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_COLOR_TS
 000000010022334c:			0000: 70460004 0000001d 00001000 00000001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_DEPTH_TS
 0000000100223360:			0000: 70460004 0000001c 00001000 00000001 00000000
@@ -5100,20 +4958,17 @@ ESTIMATED CRASH LOCATION!
 000000010022d010:			0000: 70268000
 			opcode: CP_SET_DRAW_STATE (43) (4 dwords)
 				{ COUNT = 0 | DISABLE_ALL_GROUPS | GROUP_ID = 0 }
-				{ ADDR_LO = 0 }
-				{ ADDR_HI = 0 }
+				{ [0].ADDR = 0 }
 000000010022d19c:			0000: 70438003 00040000 00000000 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_COLOR_TS
 000000010022d1e8:			0000: 70460004 0000001d 00001000 00000001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_DEPTH_TS
 000000010022d1fc:			0000: 70460004 0000001c 00001000 00000001 00000000
@@ -5127,8 +4982,7 @@ ESTIMATED CRASH LOCATION!
 000000010022d218:			0000: 70460001 00000018
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = CACHE_FLUSH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event CACHE_FLUSH_TS
 000000010022d220:			0000: 70460004 00000004 00001000 00000001 00000000
@@ -13078,15 +12932,13 @@ ESTIMATED CRASH LOCATION!
 0000000100234e60:			0000: 702c0001 00000003
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_COLOR_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_COLOR_TS
 0000000100234e68:			0000: 70460004 0000001d 00001000 00000001 00000000
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = PC_CCU_FLUSH_DEPTH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event PC_CCU_FLUSH_DEPTH_TS
 0000000100234e7c:			0000: 70460004 0000001c 00001000 00000001 00000000
@@ -13100,8 +12952,7 @@ ESTIMATED CRASH LOCATION!
 0000000100234e98:			0000: 70460001 00000018
 			opcode: CP_EVENT_WRITE (46) (5 dwords)
 				{ EVENT = CACHE_FLUSH_TS }
-				{ ADDR_0_LO = 0x1000 }
-				{ ADDR_0_HI = 0x1 }
+				{ ADDR = 0x100001000 }
 				{ 3 = 0 }
 			event CACHE_FLUSH_TS
 0000000100234ea0:			0000: 70460004 00000004 00001000 00000001 00000000
@@ -13114,20 +12965,17 @@ ESTIMATED CRASH LOCATION!
 0000000000000000:		0000: 70bf8003 00231000 00000001 00000fb0
 		opcode: CP_REG_TO_MEM (3e) (4 dwords)
 			{ REG = 0x400 | CNT = 2 | 64B }
-			{ DEST = 0x7f0 }
-			{ DEST_HI = 0x10000 }
+			{ DEST = 0x10000000007f0 }
 		gpuaddr:00010000000007f0
 0000000000000000:		0000: 703e8003 40080400 000007f0 00010000
 		opcode: CP_REG_TO_MEM (3e) (4 dwords)
 			{ REG = 0x980 | CNT = 2 | 64B }
-			{ DEST = 0x800 }
-			{ DEST_HI = 0x10000 }
+			{ DEST = 0x1000000000800 }
 		gpuaddr:0001000000000800
 0000000000000000:		0000: 703e8003 40080980 00000800 00010000
 		opcode: CP_EVENT_WRITE (46) (5 dwords)
 			{ EVENT = CACHE_FLUSH_TS | IRQ }
-			{ ADDR_0_LO = 0x4 }
-			{ ADDR_0_HI = 0x10000 }
+			{ ADDR = 0x1000000000004 }
 			{ 3 = 0x3dc3f }
 		event CACHE_FLUSH_TS
 0000000000000000:		0000: 70460004 80000004 00000004 00010000 0003dc3f
