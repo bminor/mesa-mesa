@@ -133,6 +133,7 @@ impl Deref for QueueContext<'_> {
 impl Drop for QueueContext<'_> {
     fn drop(&mut self) {
         self.set_constant_buffer(0, &[]);
+        self.ctx.clear_shader_images(self.dev.caps.max_write_images);
         if self.kernel_state.get_mut().builds.is_some() {
             // SAFETY: We simply unbind here. The bound cso will only be dropped at the end of this
             //         drop handler.
