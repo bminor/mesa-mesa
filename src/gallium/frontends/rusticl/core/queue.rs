@@ -14,7 +14,6 @@ use mesa_rust_gen::*;
 use mesa_rust_util::properties::*;
 use rusticl_opencl_gen::*;
 
-use std::cell::RefCell;
 use std::cmp;
 use std::ffi::c_void;
 use std::mem;
@@ -49,12 +48,6 @@ impl Drop for CSOWrapper<'_> {
     }
 }
 
-struct QueueKernelState<'a> {
-    builds: Option<Arc<NirKernelBuilds>>,
-    variant: NirKernelVariant,
-    cso: Option<CSOWrapper<'a>>,
-}
-
 pub struct QueueContext<'a> {
     pub ctx: &'a PipeContext,
     pub dev: &'static Device,
@@ -73,11 +66,9 @@ impl<'a> QueueContext<'a> {
     fn wrap(&'a self) -> QueueContextWithState<'a> {
         QueueContextWithState {
             ctx: self,
-            kernel_state: RefCell::new(QueueKernelState {
-                builds: None,
-                variant: NirKernelVariant::Default,
-                cso: None,
-            }),
+            builds: None,
+            variant: NirKernelVariant::Default,
+            cso: None,
             use_stream: self.dev.prefers_real_buffer_in_cb0(),
         }
     }
@@ -89,22 +80,21 @@ impl<'a> QueueContext<'a> {
 pub struct QueueContextWithState<'a> {
     pub ctx: &'a QueueContext<'a>,
     use_stream: bool,
-    kernel_state: RefCell<QueueKernelState<'a>>,
+    builds: Option<Arc<NirKernelBuilds>>,
+    variant: NirKernelVariant,
+    cso: Option<CSOWrapper<'a>>,
 }
 
 impl QueueContextWithState<'_> {
     // TODO: figure out how to make it &mut self without causing tons of borrowing issues.
     pub fn bind_kernel(
-        &self,
+        &mut self,
         builds: &Arc<NirKernelBuilds>,
         variant: NirKernelVariant,
     ) -> CLResult<()> {
-        // this should never panic, but you never know.
-        let mut state = self.kernel_state.borrow_mut();
-
         // If we already set the CSO then we don't have to bind again.
-        if let Some(stored_builds) = &state.builds {
-            if Arc::ptr_eq(stored_builds, builds) && state.variant == variant {
+        if let Some(stored_builds) = &self.builds {
+            if Arc::ptr_eq(stored_builds, builds) && self.variant == variant {
                 return Ok(());
             }
         }
@@ -121,14 +111,14 @@ impl QueueContextWithState<'_> {
                 unsafe {
                     self.bind_compute_state(cso.cso.as_ptr());
                 }
-                state.cso.replace(cso);
+                self.cso.replace(cso);
             }
         };
 
         // We can only store the new builds after we bound the new cso otherwise we might drop it
         // too early.
-        state.builds = Some(Arc::clone(builds));
-        state.variant = variant;
+        self.builds = Some(Arc::clone(builds));
+        self.variant = variant;
 
         Ok(())
     }
@@ -160,7 +150,7 @@ impl Drop for QueueContextWithState<'_> {
     fn drop(&mut self) {
         self.set_constant_buffer(0, &[]);
         self.ctx.clear_shader_images(self.dev.caps.max_write_images);
-        if self.kernel_state.get_mut().builds.is_some() {
+        if self.builds.is_some() {
             // SAFETY: We simply unbind here. The bound cso will only be dropped at the end of this
             //         drop handler.
             unsafe {

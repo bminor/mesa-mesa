@@ -1531,7 +1531,7 @@ impl Kernel {
                                     iviews.push(image.image_view(ctx, true)?);
                                     (&mut img_formats, &mut img_orders)
                                 } else {
-                                    sviews.push(image.sampler_view(ctx)?);
+                                    sviews.push(image.sampler_view(ctx.ctx)?);
                                     (&mut tex_formats, &mut tex_orders)
                                 };
 
