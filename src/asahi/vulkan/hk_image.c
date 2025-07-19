@@ -40,11 +40,10 @@ hk_get_image_plane_format_features(struct hk_physical_device *pdev,
 {
    VkFormatFeatureFlags2 features = 0;
 
-   /* These optional formats need custom borders for opaque black, so hide for
+   /* This optional format needs hacks for opaque black, so hide for
     * performance. We might specially enable this for Proton / behind a driconf.
     */
-   if (vk_format == VK_FORMAT_A8_UNORM_KHR ||
-       vk_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16)
+   if (vk_format == VK_FORMAT_A8_UNORM_KHR)
       return 0;
 
    enum pipe_format p_format = hk_format_to_pipe_format(vk_format);
