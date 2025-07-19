@@ -3,6 +3,7 @@ use crate::core::context::*;
 use crate::core::device::*;
 use crate::core::event::*;
 use crate::core::kernel::*;
+use crate::core::memory::PipeSamplerState;
 use crate::core::platform::*;
 use crate::impl_cl_type_trait;
 
@@ -16,6 +17,7 @@ use mesa_rust_util::properties::*;
 use rusticl_opencl_gen::*;
 
 use std::cmp;
+use std::collections::HashMap;
 use std::ffi::c_void;
 use std::mem;
 use std::mem::ManuallyDrop;
@@ -72,6 +74,7 @@ impl<'a> QueueContext<'a> {
             cso: None,
             use_stream: self.dev.prefers_real_buffer_in_cb0(),
             bound_sampler_views: 0,
+            samplers: HashMap::new(),
         }
     }
 }
@@ -86,6 +89,7 @@ pub struct QueueContextWithState<'a> {
     variant: NirKernelVariant,
     cso: Option<CSOWrapper<'a>>,
     bound_sampler_views: u32,
+    samplers: HashMap<PipeSamplerState, *mut c_void>,
 }
 
 impl QueueContextWithState<'_> {
@@ -126,6 +130,21 @@ impl QueueContextWithState<'_> {
         Ok(())
     }
 
+    pub fn bind_sampler_states(&mut self, samplers: Vec<pipe_sampler_state>) {
+        let samplers = samplers
+            .into_iter()
+            .map(PipeSamplerState::from)
+            .map(|sampler| {
+                *self
+                    .samplers
+                    .entry(sampler)
+                    .or_insert_with_key(|sampler| self.ctx.create_sampler_state(sampler.pipe()))
+            })
+            .collect::<Vec<_>>();
+
+        self.ctx.bind_sampler_states(&samplers);
+    }
+
     pub fn bind_sampler_views(&mut self, views: Vec<PipeSamplerView>) {
         let cnt = views.len() as u32;
         let unbind_cnt = self.bound_sampler_views.saturating_sub(cnt);
@@ -160,6 +179,11 @@ impl Drop for QueueContextWithState<'_> {
     fn drop(&mut self) {
         self.set_constant_buffer(0, &[]);
         self.ctx.clear_sampler_views(self.bound_sampler_views);
+        self.ctx.clear_sampler_states(self.dev.max_samplers());
+        self.samplers
+            .values()
+            .for_each(|&sampler| self.ctx.delete_sampler_state(sampler));
+
         self.ctx.clear_shader_images(self.dev.caps.max_write_images);
         if self.builds.is_some() {
             // SAFETY: We simply unbind here. The bound cso will only be dropped at the end of this

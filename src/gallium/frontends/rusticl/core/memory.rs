@@ -30,6 +30,7 @@ use std::collections::btree_map::Entry;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::mem;
 use std::mem::size_of;
 use std::num::NonZeroU64;
@@ -2294,5 +2295,40 @@ impl Sampler {
             self.filter_mode,
             self.normalized_coords,
         ))
+    }
+}
+
+/// A custom wrapper around pipe_sampler_state that implements certain Traits (e.g. Hash and
+/// PartialEq) only looking at fields we actually care about. All other fields will be ignored!
+#[repr(transparent)]
+pub struct PipeSamplerState(pipe_sampler_state);
+
+impl From<pipe_sampler_state> for PipeSamplerState {
+    fn from(value: pipe_sampler_state) -> Self {
+        Self(value)
+    }
+}
+
+impl Hash for PipeSamplerState {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u32(self.0.wrap_r());
+        state.write_u32(self.0.min_img_filter());
+        state.write_u32(self.0.unnormalized_coords());
+    }
+}
+
+impl PartialEq for PipeSamplerState {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.wrap_r() == other.0.wrap_r()
+            && self.0.min_img_filter() == other.0.min_img_filter()
+            && self.0.unnormalized_coords() == other.0.unnormalized_coords()
+    }
+}
+
+impl Eq for PipeSamplerState {}
+
+impl PipeSamplerState {
+    pub fn pipe(&self) -> &pipe_sampler_state {
+        &self.0
     }
 }

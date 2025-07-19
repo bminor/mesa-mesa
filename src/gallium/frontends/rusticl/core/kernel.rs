@@ -1641,11 +1641,6 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let samplers: Vec<_> = samplers
-                .iter()
-                .map(|s| ctx.create_sampler_state(s))
-                .collect();
-
             let mut resources = Vec::with_capacity(resource_info.len());
             let mut globals: Vec<*mut u32> = Vec::with_capacity(resource_info.len());
             for (res, offset) in resource_info {
@@ -1654,7 +1649,7 @@ impl Kernel {
             }
 
             ctx.bind_kernel(&nir_kernel_builds, variant)?;
-            ctx.bind_sampler_states(&samplers);
+            ctx.bind_sampler_states(samplers);
             ctx.bind_sampler_views(sviews);
             ctx.set_shader_images(&iviews);
             ctx.set_global_binding(resources.as_slice(), &mut globals);
@@ -1700,11 +1695,8 @@ impl Kernel {
             }
 
             ctx.clear_global_binding(globals.len() as u32);
-            ctx.clear_sampler_states(samplers.len() as u32);
 
             ctx.memory_barrier(PIPE_BARRIER_GLOBAL_BUFFER);
-
-            samplers.iter().for_each(|s| ctx.delete_sampler_state(*s));
 
             if let Some(printf_buf) = &printf_buf {
                 let tx = ctx
