@@ -583,8 +583,10 @@ nir_opt_vectorize_io(nir_shader *shader, nir_variable_mode modes,
             if (nir_intrinsic_has_io_semantics(intr)) {
                sem = nir_intrinsic_io_semantics(intr);
                assert(sem.location < NUM_TOTAL_VARYING_SLOTS);
-               index = sem.location * 8 + sem.high_16bits * 4 +
-                       nir_intrinsic_component(intr);
+               index = sem.location * 8 + sem.high_16bits * 4;
+
+               if (nir_intrinsic_has_component(intr))
+                  index += nir_intrinsic_component(intr);
             }
 
             switch (intr->intrinsic) {
