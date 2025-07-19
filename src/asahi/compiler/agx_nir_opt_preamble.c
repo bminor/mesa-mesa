@@ -436,17 +436,17 @@ agx_nir_opt_preamble(nir_shader *nir, unsigned *sizes)
    bool progress = false;
    NIR_PASS(progress, nir, nir_opt_preamble, &preamble_options, sizes);
 
-   if (progress) {
-      int16_t heap[512];
-      memset(heap, ~0, sizeof(heap));
+   int16_t heap[512];
+   memset(heap, ~0, sizeof(heap));
 
+   if (progress) {
       nir_function_intrinsics_pass(nir_shader_get_preamble(nir),
                                    lower_store_preamble,
                                    nir_metadata_control_flow, heap);
-
-      NIR_PASS(progress, nir, nir_shader_intrinsics_pass, lower_preamble,
-               nir_metadata_control_flow, heap);
    }
+
+   NIR_PASS(progress, nir, nir_shader_intrinsics_pass, lower_preamble,
+            nir_metadata_control_flow, heap);
 
    return progress;
 }
