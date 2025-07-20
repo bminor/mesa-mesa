@@ -208,7 +208,7 @@ P_DUMP_${nvcl}_MTHD_DATA(FILE *fp, uint16_t idx, uint32_t data,
         fprintf(fp, "%s.${field.name} = ", prefix);
     %if len(field.defs):
         switch (parsed) {
-      %for d in field.defs:
+      %for d in field.unique_defs:
         case ${nvcl}_${mthd.name}_${field.name}_${d}:
             fprintf(fp, "${d}${bs}n");
             break;
@@ -274,7 +274,7 @@ pub use ${prev_mod}::${to_camel(mthd.name)};
 #[repr(u16)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ${field.rs_type(mthd)} {
-    %for def_name, def_value in field.defs.items():
+    %for def_name, def_value in field.unique_defs.items():
     ${to_camel(def_name)} = ${def_value.lower()},
     %endfor
 }
@@ -355,6 +355,8 @@ class Field(object):
         self.start = int(start)
         self.end = int(end)
         self.defs = {}
+        self._values = set()
+        self.unique_defs = {}
 
     def __eq__(self, other):
         if not isinstance(other, Field):
@@ -364,6 +366,14 @@ class Field(object):
                self.start == other.start and \
                self.end == other.end and \
                self.defs == other.defs
+
+    def add_def(self, name, value):
+        assert name not in self.defs
+        self.defs[name] = value
+
+        if value not in self._values:
+            self._values.add(value)
+            self.unique_defs[name] = value
 
     @property
     def is_bool(self):
@@ -478,7 +488,7 @@ def parse_header(nvcl, f):
                     state = 1
                 elif teststr in list[1]:
                     if not SKIP_FIELD[0] in list[1]:
-                        curfield.defs[list[1].removeprefix(teststr)] = list[2]
+                        curfield.add_def(list[1].removeprefix(teststr), list[2])
                 else:
                     state = 1
 
