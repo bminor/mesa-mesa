@@ -1,28 +1,27 @@
-/*******************************************************************************
-    Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 1993-2004 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
 
-    Permission is hereby granted, free of charge, to any person obtaining a
-    copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following conditions:
 
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.
-
-*******************************************************************************/
-
-
-////////////////// NOT OFFICAL NVIDIA -  HACKED BY airlied 
 #include "nvtypes.h"
 
 #ifndef _clc9b5_h_
@@ -32,20 +31,30 @@
 extern "C" {
 #endif
 
-#define BLACKWELL_DMA_COPY_A                                                           (0x0000C9B5)
+#define BLACKWELL_DMA_COPY_A                                                            (0x0000C9B5)
 
 #define NVC9B5_NOP                                                              (0x00000100)
 #define NVC9B5_NOP_PARAMETER                                                    31:0
 #define NVC9B5_PM_TRIGGER                                                       (0x00000140)
 #define NVC9B5_PM_TRIGGER_V                                                     31:0
+#define NVC9B5_SET_MONITORED_FENCE_TYPE                                         (0x0000021C)
+#define NVC9B5_SET_MONITORED_FENCE_TYPE_TYPE                                    0:0
+#define NVC9B5_SET_MONITORED_FENCE_TYPE_TYPE_MONITORED_FENCE                    (0x00000000)
+#define NVC9B5_SET_MONITORED_FENCE_TYPE_TYPE_MONITORED_FENCE_EXT                (0x00000001)
+#define NVC9B5_SET_MONITORED_FENCE_SIGNAL_ADDR_BASE_UPPER                       (0x00000220)
+#define NVC9B5_SET_MONITORED_FENCE_SIGNAL_ADDR_BASE_UPPER_UPPER                 24:0
+#define NVC9B5_SET_MONITORED_FENCE_SIGNAL_ADDR_BASE_LOWER                       (0x00000224)
+#define NVC9B5_SET_MONITORED_FENCE_SIGNAL_ADDR_BASE_LOWER_LOWER                 31:0
 #define NVC9B5_SET_SEMAPHORE_A                                                  (0x00000240)
-#define NVC9B5_SET_SEMAPHORE_A_UPPER                                            16:0
+#define NVC9B5_SET_SEMAPHORE_A_UPPER                                            24:0
 #define NVC9B5_SET_SEMAPHORE_B                                                  (0x00000244)
 #define NVC9B5_SET_SEMAPHORE_B_LOWER                                            31:0
 #define NVC9B5_SET_SEMAPHORE_PAYLOAD                                            (0x00000248)
 #define NVC9B5_SET_SEMAPHORE_PAYLOAD_PAYLOAD                                    31:0
+#define NVC9B5_SET_SEMAPHORE_PAYLOAD_UPPER                                      (0x0000024C)
+#define NVC9B5_SET_SEMAPHORE_PAYLOAD_UPPER_PAYLOAD                              31:0
 #define NVC9B5_SET_RENDER_ENABLE_A                                              (0x00000254)
-#define NVC9B5_SET_RENDER_ENABLE_A_UPPER                                        7:0
+#define NVC9B5_SET_RENDER_ENABLE_A_UPPER                                        24:0
 #define NVC9B5_SET_RENDER_ENABLE_B                                              (0x00000258)
 #define NVC9B5_SET_RENDER_ENABLE_B_LOWER                                        31:0
 #define NVC9B5_SET_RENDER_ENABLE_C                                              (0x0000025C)
@@ -60,11 +69,19 @@ extern "C" {
 #define NVC9B5_SET_SRC_PHYS_MODE_TARGET_LOCAL_FB                                (0x00000000)
 #define NVC9B5_SET_SRC_PHYS_MODE_TARGET_COHERENT_SYSMEM                         (0x00000001)
 #define NVC9B5_SET_SRC_PHYS_MODE_TARGET_NONCOHERENT_SYSMEM                      (0x00000002)
+#define NVC9B5_SET_SRC_PHYS_MODE_TARGET_PEERMEM                                 (0x00000003)
+#define NVC9B5_SET_SRC_PHYS_MODE_BASIC_KIND                                     5:2
+#define NVC9B5_SET_SRC_PHYS_MODE_PEER_ID                                        8:6
+#define NVC9B5_SET_SRC_PHYS_MODE_FLA                                            9:9
 #define NVC9B5_SET_DST_PHYS_MODE                                                (0x00000264)
 #define NVC9B5_SET_DST_PHYS_MODE_TARGET                                         1:0
 #define NVC9B5_SET_DST_PHYS_MODE_TARGET_LOCAL_FB                                (0x00000000)
 #define NVC9B5_SET_DST_PHYS_MODE_TARGET_COHERENT_SYSMEM                         (0x00000001)
 #define NVC9B5_SET_DST_PHYS_MODE_TARGET_NONCOHERENT_SYSMEM                      (0x00000002)
+#define NVC9B5_SET_DST_PHYS_MODE_TARGET_PEERMEM                                 (0x00000003)
+#define NVC9B5_SET_DST_PHYS_MODE_BASIC_KIND                                     5:2
+#define NVC9B5_SET_DST_PHYS_MODE_PEER_ID                                        8:6
+#define NVC9B5_SET_DST_PHYS_MODE_FLA                                            9:9
 #define NVC9B5_LAUNCH_DMA                                                       (0x00000300)
 #define NVC9B5_LAUNCH_DMA_DATA_TRANSFER_TYPE                                    1:0
 #define NVC9B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_NONE                               (0x00000000)
@@ -73,10 +90,16 @@ extern "C" {
 #define NVC9B5_LAUNCH_DMA_FLUSH_ENABLE                                          2:2
 #define NVC9B5_LAUNCH_DMA_FLUSH_ENABLE_FALSE                                    (0x00000000)
 #define NVC9B5_LAUNCH_DMA_FLUSH_ENABLE_TRUE                                     (0x00000001)
+#define NVC9B5_LAUNCH_DMA_FLUSH_TYPE                                            25:25
+#define NVC9B5_LAUNCH_DMA_FLUSH_TYPE_SYS                                        (0x00000000)
+#define NVC9B5_LAUNCH_DMA_FLUSH_TYPE_GL                                         (0x00000001)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE                                        4:3
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE_NONE                                   (0x00000000)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE_RELEASE_SEMAPHORE_NO_TIMESTAMP         (0x00000001)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE_RELEASE_SEMAPHORE_WITH_TIMESTAMP       (0x00000002)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE_RELEASE_ONE_WORD_SEMAPHORE             (0x00000001)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE_RELEASE_FOUR_WORD_SEMAPHORE            (0x00000002)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_TYPE_RELEASE_CONDITIONAL_INTR_SEMAPHORE     (0x00000003)
 #define NVC9B5_LAUNCH_DMA_INTERRUPT_TYPE                                        6:5
 #define NVC9B5_LAUNCH_DMA_INTERRUPT_TYPE_NONE                                   (0x00000000)
 #define NVC9B5_LAUNCH_DMA_INTERRUPT_TYPE_BLOCKING                               (0x00000001)
@@ -93,9 +116,6 @@ extern "C" {
 #define NVC9B5_LAUNCH_DMA_REMAP_ENABLE                                          10:10
 #define NVC9B5_LAUNCH_DMA_REMAP_ENABLE_FALSE                                    (0x00000000)
 #define NVC9B5_LAUNCH_DMA_REMAP_ENABLE_TRUE                                     (0x00000001)
-#define NVC9B5_LAUNCH_DMA_FORCE_RMWDISABLE                                      11:11
-#define NVC9B5_LAUNCH_DMA_FORCE_RMWDISABLE_FALSE                                (0x00000000)
-#define NVC9B5_LAUNCH_DMA_FORCE_RMWDISABLE_TRUE                                 (0x00000001)
 #define NVC9B5_LAUNCH_DMA_SRC_TYPE                                              12:12
 #define NVC9B5_LAUNCH_DMA_SRC_TYPE_VIRTUAL                                      (0x00000000)
 #define NVC9B5_LAUNCH_DMA_SRC_TYPE_PHYSICAL                                     (0x00000001)
@@ -111,30 +131,46 @@ extern "C" {
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_IADD                              (0x00000005)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_INC                               (0x00000006)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_DEC                               (0x00000007)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_INVALIDA                          (0x00000008)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_INVALIDB                          (0x00000009)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_FADD                              (0x0000000A)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_FMIN                              (0x0000000B)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_FMAX                              (0x0000000C)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_INVALIDC                          (0x0000000D)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_INVALIDD                          (0x0000000E)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_INVALIDE                          (0x0000000F)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_SIGN                              18:18
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_SIGN_SIGNED                       (0x00000000)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_SIGN_UNSIGNED                     (0x00000001)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_ENABLE                            19:19
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_ENABLE_FALSE                      (0x00000000)
 #define NVC9B5_LAUNCH_DMA_SEMAPHORE_REDUCTION_ENABLE_TRUE                       (0x00000001)
-#define NVC9B5_LAUNCH_DMA_SRC_BYPASS_L2                                         20:20
-#define NVC9B5_LAUNCH_DMA_SRC_BYPASS_L2_USE_PTE_SETTING                         (0x00000000)
-#define NVC9B5_LAUNCH_DMA_SRC_BYPASS_L2_FORCE_VOLATILE                          (0x00000001)
-#define NVC9B5_LAUNCH_DMA_DST_BYPASS_L2                                         21:21
-#define NVC9B5_LAUNCH_DMA_DST_BYPASS_L2_USE_PTE_SETTING                         (0x00000000)
-#define NVC9B5_LAUNCH_DMA_DST_BYPASS_L2_FORCE_VOLATILE                          (0x00000001)
-#define NVC9B5_LAUNCH_DMA_VPRMODE                                               23:22
+#define NVC9B5_LAUNCH_DMA_COPY_TYPE                                             21:20
+#define NVC9B5_LAUNCH_DMA_COPY_TYPE_PROT2PROT                                   (0x00000000)
+#define NVC9B5_LAUNCH_DMA_COPY_TYPE_DEFAULT                                     (0x00000000)
+#define NVC9B5_LAUNCH_DMA_COPY_TYPE_SECURE                                      (0x00000001)
+#define NVC9B5_LAUNCH_DMA_COPY_TYPE_NONPROT2NONPROT                             (0x00000002)
+#define NVC9B5_LAUNCH_DMA_COPY_TYPE_RESERVED                                    (0x00000003)
+#define NVC9B5_LAUNCH_DMA_VPRMODE                                               22:22
 #define NVC9B5_LAUNCH_DMA_VPRMODE_VPR_NONE                                      (0x00000000)
 #define NVC9B5_LAUNCH_DMA_VPRMODE_VPR_VID2VID                                   (0x00000001)
+#define NVC9B5_LAUNCH_DMA_MEMORY_SCRUB_ENABLE                                   23:23
+#define NVC9B5_LAUNCH_DMA_MEMORY_SCRUB_ENABLE_FALSE                             (0x00000000)
+#define NVC9B5_LAUNCH_DMA_MEMORY_SCRUB_ENABLE_TRUE                              (0x00000001)
 #define NVC9B5_LAUNCH_DMA_RESERVED_START_OF_COPY                                24:24
+#define NVC9B5_LAUNCH_DMA_DISABLE_PLC                                           26:26
+#define NVC9B5_LAUNCH_DMA_DISABLE_PLC_FALSE                                     (0x00000000)
+#define NVC9B5_LAUNCH_DMA_DISABLE_PLC_TRUE                                      (0x00000001)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_PAYLOAD_SIZE                                27:27
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_PAYLOAD_SIZE_ONE_WORD                       (0x00000000)
+#define NVC9B5_LAUNCH_DMA_SEMAPHORE_PAYLOAD_SIZE_TWO_WORD                       (0x00000001)
 #define NVC9B5_LAUNCH_DMA_RESERVED_ERR_CODE                                     31:28
 #define NVC9B5_OFFSET_IN_UPPER                                                  (0x00000400)
-#define NVC9B5_OFFSET_IN_UPPER_UPPER                                            16:0
+#define NVC9B5_OFFSET_IN_UPPER_UPPER                                            24:0
 #define NVC9B5_OFFSET_IN_LOWER                                                  (0x00000404)
 #define NVC9B5_OFFSET_IN_LOWER_VALUE                                            31:0
 #define NVC9B5_OFFSET_OUT_UPPER                                                 (0x00000408)
-#define NVC9B5_OFFSET_OUT_UPPER_UPPER                                           16:0
+#define NVC9B5_OFFSET_OUT_UPPER_UPPER                                           24:0
 #define NVC9B5_OFFSET_OUT_LOWER                                                 (0x0000040C)
 #define NVC9B5_OFFSET_OUT_LOWER_VALUE                                           31:0
 #define NVC9B5_PITCH_IN                                                         (0x00000410)
@@ -145,6 +181,26 @@ extern "C" {
 #define NVC9B5_LINE_LENGTH_IN_VALUE                                             31:0
 #define NVC9B5_LINE_COUNT                                                       (0x0000041C)
 #define NVC9B5_LINE_COUNT_VALUE                                                 31:0
+#define NVC9B5_SET_SECURE_COPY_MODE                                             (0x00000500)
+#define NVC9B5_SET_SECURE_COPY_MODE_MODE                                        0:0
+#define NVC9B5_SET_SECURE_COPY_MODE_MODE_ENCRYPT                                (0x00000000)
+#define NVC9B5_SET_SECURE_COPY_MODE_MODE_DECRYPT                                (0x00000001)
+#define NVC9B5_SET_DECRYPT_AUTH_TAG_COMPARE_ADDR_UPPER                          (0x00000514)
+#define NVC9B5_SET_DECRYPT_AUTH_TAG_COMPARE_ADDR_UPPER_UPPER                    24:0
+#define NVC9B5_SET_DECRYPT_AUTH_TAG_COMPARE_ADDR_LOWER                          (0x00000518)
+#define NVC9B5_SET_DECRYPT_AUTH_TAG_COMPARE_ADDR_LOWER_LOWER                    31:0
+#define NVC9B5_SET_ENCRYPT_AUTH_TAG_ADDR_UPPER                                  (0x00000530)
+#define NVC9B5_SET_ENCRYPT_AUTH_TAG_ADDR_UPPER_UPPER                            24:0
+#define NVC9B5_SET_ENCRYPT_AUTH_TAG_ADDR_LOWER                                  (0x00000534)
+#define NVC9B5_SET_ENCRYPT_AUTH_TAG_ADDR_LOWER_LOWER                            31:0
+#define NVC9B5_SET_ENCRYPT_IV_ADDR_UPPER                                        (0x00000538)
+#define NVC9B5_SET_ENCRYPT_IV_ADDR_UPPER_UPPER                                  24:0
+#define NVC9B5_SET_ENCRYPT_IV_ADDR_LOWER                                        (0x0000053C)
+#define NVC9B5_SET_ENCRYPT_IV_ADDR_LOWER_LOWER                                  31:0
+#define NVC9B5_SET_MEMORY_SCRUB_PARAMETERS                                      (0x000006FC)
+#define NVC9B5_SET_MEMORY_SCRUB_PARAMETERS_DISCARDABLE                          0:0
+#define NVC9B5_SET_MEMORY_SCRUB_PARAMETERS_DISCARDABLE_FALSE                    (0x00000000)
+#define NVC9B5_SET_MEMORY_SCRUB_PARAMETERS_DISCARDABLE_TRUE                     (0x00000001)
 #define NVC9B5_SET_REMAP_CONST_A                                                (0x00000700)
 #define NVC9B5_SET_REMAP_CONST_A_V                                              31:0
 #define NVC9B5_SET_REMAP_CONST_B                                                (0x00000704)
@@ -216,11 +272,6 @@ extern "C" {
 #define NVC9B5_SET_DST_BLOCK_SIZE_DEPTH_THIRTYTWO_GOBS                          (0x00000005)
 #define NVC9B5_SET_DST_BLOCK_SIZE_GOB_HEIGHT                                    15:12
 #define NVC9B5_SET_DST_BLOCK_SIZE_GOB_HEIGHT_GOB_HEIGHT_FERMI_8                 (0x00000001)
-#define NVC9B5_SET_DST_BLOCK_SIZE_GOB_KIND                                      17:16
-#define NVC9B5_SET_DST_BLOCK_SIZE_GOB_KIND_32                                   0
-#define NVC9B5_SET_DST_BLOCK_SIZE_GOB_KIND_8                                    1
-#define NVC9B5_SET_DST_BLOCK_SIZE_GOB_KIND_16                                   2
-#define NVC9B5_SET_DST_BLOCK_SIZE_GOB_KIND_24                                   3
 #define NVC9B5_SET_DST_WIDTH                                                    (0x00000710)
 #define NVC9B5_SET_DST_WIDTH_V                                                  31:0
 #define NVC9B5_SET_DST_HEIGHT                                                   (0x00000714)
@@ -251,11 +302,6 @@ extern "C" {
 #define NVC9B5_SET_SRC_BLOCK_SIZE_DEPTH_THIRTYTWO_GOBS                          (0x00000005)
 #define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_HEIGHT                                    15:12
 #define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_HEIGHT_GOB_HEIGHT_FERMI_8                 (0x00000001)
-#define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_KIND                                      17:16
-#define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_KIND_32                                   0
-#define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_KIND_8                                    1
-#define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_KIND_16                                   2
-#define NVC9B5_SET_SRC_BLOCK_SIZE_GOB_KIND_24                                   3
 #define NVC9B5_SET_SRC_WIDTH                                                    (0x0000072C)
 #define NVC9B5_SET_SRC_WIDTH_V                                                  31:0
 #define NVC9B5_SET_SRC_HEIGHT                                                   (0x00000730)

@@ -25,7 +25,7 @@
 #include "nv_push_clc6c0.h"
 #include "nv_push_clc797.h"
 #include "nv_push_clc7c0.h"
-#include "nv_push_clc9b5.h"
+#include "nv_push_clcab5.h"
 
 #ifndef NDEBUG
 void
@@ -200,8 +200,8 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                   mthd_name = P_PARSE_NV902D_MTHD(mthd);
                   break;
                case 4:
-                  if (devinfo->cls_copy >= 0xc9b5)
-                     mthd_name = P_PARSE_NVC9B5_MTHD(mthd);
+                  if (devinfo->cls_copy >= 0xcab5)
+                     mthd_name = P_PARSE_NVCAB5_MTHD(mthd);
                   else if (devinfo->cls_copy >= 0xc1b5)
                      mthd_name = P_PARSE_NVC1B5_MTHD(mthd);
                   else if (devinfo->cls_copy >= 0xa0b5)
@@ -248,8 +248,8 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                P_DUMP_NV902D_MTHD_DATA(fp, mthd, value, "\t\t");
                break;
             case 4:
-               if (devinfo->cls_copy >= 0xc9b5)
-                  P_DUMP_NVC9B5_MTHD_DATA(fp, mthd, value, "\t\t");
+               if (devinfo->cls_copy >= 0xcab5)
+                  P_DUMP_NVCAB5_MTHD_DATA(fp, mthd, value, "\t\t");
                else if (devinfo->cls_copy >= 0xc1b5)
                   P_DUMP_NVC1B5_MTHD_DATA(fp, mthd, value, "\t\t");
                else if (devinfo->cls_copy >= 0xa0b5)

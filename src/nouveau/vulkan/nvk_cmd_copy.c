@@ -19,7 +19,7 @@
 #include "nv_push_cl902d.h"
 #include "nv_push_cl90b5.h"
 #include "nv_push_clc1b5.h"
-#include "nv_push_clc9b5.h"
+#include "nv_push_clcab5.h"
 
 static inline uint16_t
 nvk_cmd_buffer_copy_cls(struct nvk_cmd_buffer *cmd)
@@ -171,16 +171,18 @@ to_90b5_remap_num_comps(uint8_t num_comps)
 }
 
 static uint32_t
-nil_to_nvc9b5_gob_type(enum nil_gob_type gob_type)
+nil_to_nvcab5_gob_type(enum nil_gob_type gob_type)
 {
+#define NVCAB5_GOB_KIND(NV) NVCAB5_SET_SRC_BLOCK_SIZE_KIND_BPP_BL_##NV
    switch (gob_type) {
-   case NIL_GOB_TYPE_TURING_COLOR2_D:  return 0;
-   case NIL_GOB_TYPE_BLACKWELL8_BIT:   return 1;
-   case NIL_GOB_TYPE_BLACKWELL16_BIT:  return 2;
-   case NIL_GOB_TYPE_BLACKWELL_Z24:    return 3;
+   case NIL_GOB_TYPE_TURING_COLOR2_D:  return NVCAB5_GOB_KIND(32);
+   case NIL_GOB_TYPE_BLACKWELL8_BIT:   return NVCAB5_GOB_KIND(8);
+   case NIL_GOB_TYPE_BLACKWELL16_BIT:  return NVCAB5_GOB_KIND(16);
+   case NIL_GOB_TYPE_BLACKWELL_Z24:    return NVCAB5_GOB_KIND(24);
    default:
       unreachable("Invalid GOB type on Blackwell+");
    }
+#undef NVCAB5_GOB_KIND
 }
 
 static void
@@ -257,13 +259,13 @@ nouveau_copy_rect(struct nvk_cmd_buffer *cmd, struct nouveau_copy *copy)
          P_MTHD(p, NV90B5, SET_SRC_BLOCK_SIZE);
          assert(nil_gob_type_height(copy->src.tiling.gob_type) == 8);
 
-         if (nvk_cmd_buffer_copy_cls(cmd) >= BLACKWELL_DMA_COPY_A) {
-            P_NVC9B5_SET_SRC_BLOCK_SIZE(p, {
+         if (nvk_cmd_buffer_copy_cls(cmd) >= BLACKWELL_DMA_COPY_B) {
+            P_NVCAB5_SET_SRC_BLOCK_SIZE(p, {
                .width = 0, /* Tiles are always 1 GOB wide */
                .height = copy->src.tiling.y_log2,
                .depth = copy->src.tiling.z_log2,
                .gob_height = GOB_HEIGHT_GOB_HEIGHT_FERMI_8,
-               .gob_kind = nil_to_nvc9b5_gob_type(copy->src.tiling.gob_type),
+               .kind_bpp = nil_to_nvcab5_gob_type(copy->src.tiling.gob_type),
             });
          } else {
             P_NV90B5_SET_SRC_BLOCK_SIZE(p, {
@@ -307,13 +309,13 @@ nouveau_copy_rect(struct nvk_cmd_buffer *cmd, struct nouveau_copy *copy)
       if (copy->dst.tiling.gob_type != NIL_GOB_TYPE_LINEAR) {
          P_MTHD(p, NV90B5, SET_DST_BLOCK_SIZE);
          assert(nil_gob_type_height(copy->dst.tiling.gob_type) == 8);
-         if (nvk_cmd_buffer_copy_cls(cmd) >= BLACKWELL_DMA_COPY_A) {
-            P_NVC9B5_SET_DST_BLOCK_SIZE(p, {
+         if (nvk_cmd_buffer_copy_cls(cmd) >= BLACKWELL_DMA_COPY_B) {
+            P_NVCAB5_SET_DST_BLOCK_SIZE(p, {
                .width = 0, /* Tiles are always 1 GOB wide */
                .height = copy->dst.tiling.y_log2,
                .depth = copy->dst.tiling.z_log2,
                .gob_height = GOB_HEIGHT_GOB_HEIGHT_FERMI_8,
-               .gob_kind = nil_to_nvc9b5_gob_type(copy->dst.tiling.gob_type),
+               .kind_bpp = nil_to_nvcab5_gob_type(copy->dst.tiling.gob_type),
             });
          } else {
             P_NV90B5_SET_DST_BLOCK_SIZE(p, {
