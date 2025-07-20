@@ -284,7 +284,7 @@
         "description": "v3d/compiler: Lower load_output after logic operations",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "42154029fcd18ac6dcf677b0467711e03687064d",
         "notes": null

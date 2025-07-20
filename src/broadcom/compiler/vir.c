@@ -1112,8 +1112,8 @@ v3d_nir_lower_fs_early(struct v3d_compile *c)
                 NIR_PASS(_, c->s, v3d_nir_lower_blend, c);
         }
 
-        NIR_PASS(_, c->s, v3d_nir_lower_load_output, c);
         NIR_PASS(_, c->s, v3d_nir_lower_logic_ops, c);
+        NIR_PASS(_, c->s, v3d_nir_lower_load_output, c);
 }
 
 static void
