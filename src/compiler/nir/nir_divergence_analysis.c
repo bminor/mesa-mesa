@@ -357,6 +357,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_samples_log2_agx:
    case nir_intrinsic_load_active_subgroup_count_agx:
    case nir_intrinsic_load_root_agx:
+   case nir_intrinsic_load_descriptor_set_agx:
    case nir_intrinsic_load_sm_count_nv:
    case nir_intrinsic_load_warps_per_sm_nv:
    case nir_intrinsic_load_fs_msaa_intel:
@@ -728,6 +729,9 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_reg:
    case nir_intrinsic_load_constant_agx:
    case nir_intrinsic_load_texture_handle_agx:
+   case nir_intrinsic_load_from_texture_handle_agx:
+   case nir_intrinsic_load_vbo_base_agx:
+   case nir_intrinsic_load_attrib_clamp_agx:
    case nir_intrinsic_bindless_image_agx:
    case nir_intrinsic_bindless_sampler_agx:
    case nir_intrinsic_load_reg_indirect:
