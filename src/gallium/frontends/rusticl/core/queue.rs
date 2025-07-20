@@ -11,6 +11,7 @@ use mesa_rust::compiler::nir::NirShader;
 use mesa_rust::pipe::context::PipeContext;
 use mesa_rust::pipe::context::PipeContextPrio;
 use mesa_rust::pipe::fence::PipeFence;
+use mesa_rust::pipe::resource::PipeImageView;
 use mesa_rust::pipe::resource::PipeSamplerView;
 use mesa_rust_gen::*;
 use mesa_rust_util::properties::*;
@@ -74,6 +75,7 @@ impl<'a> QueueContext<'a> {
             cso: None,
             use_stream: self.dev.prefers_real_buffer_in_cb0(),
             bound_sampler_views: 0,
+            bound_shader_images: 0,
             samplers: HashMap::new(),
         }
     }
@@ -89,6 +91,7 @@ pub struct QueueContextWithState<'a> {
     variant: NirKernelVariant,
     cso: Option<CSOWrapper<'a>>,
     bound_sampler_views: u32,
+    bound_shader_images: u32,
     samplers: HashMap<PipeSamplerState, *mut c_void>,
 }
 
@@ -152,6 +155,13 @@ impl QueueContextWithState<'_> {
         self.bound_sampler_views = cnt;
     }
 
+    pub fn bind_shader_images(&mut self, images: &[PipeImageView]) {
+        let cnt = images.len() as u32;
+        let unbind_cnt = self.bound_shader_images.saturating_sub(cnt);
+        self.ctx.set_shader_images(images, unbind_cnt);
+        self.bound_shader_images = cnt;
+    }
+
     pub fn update_cb0(&self, data: &[u8]) -> CLResult<()> {
         // only update if we actually bind data
         if !data.is_empty() {
@@ -180,11 +190,12 @@ impl Drop for QueueContextWithState<'_> {
         self.set_constant_buffer(0, &[]);
         self.ctx.clear_sampler_views(self.bound_sampler_views);
         self.ctx.clear_sampler_states(self.dev.max_samplers());
+        self.ctx.clear_shader_images(self.bound_shader_images);
+
         self.samplers
             .values()
             .for_each(|&sampler| self.ctx.delete_sampler_state(sampler));
 
-        self.ctx.clear_shader_images(self.dev.caps.max_write_images);
         if self.builds.is_some() {
             // SAFETY: We simply unbind here. The bound cso will only be dropped at the end of this
             //         drop handler.

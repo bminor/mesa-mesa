@@ -568,7 +568,7 @@ impl PipeContext {
         }
     }
 
-    pub fn set_shader_images(&self, images: &[PipeImageView]) {
+    pub fn set_shader_images(&self, images: &[PipeImageView], unbind_trailing: u32) {
         let images = PipeImageView::slice_to_pipe(images);
         unsafe {
             self.pipe.as_ref().set_shader_images.unwrap()(
@@ -576,7 +576,7 @@ impl PipeContext {
                 pipe_shader_type::PIPE_SHADER_COMPUTE,
                 0,
                 images.len() as u32,
-                0,
+                unbind_trailing,
                 images.as_ptr(),
             )
         }
