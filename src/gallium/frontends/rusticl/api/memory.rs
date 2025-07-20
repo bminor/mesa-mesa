@@ -3185,13 +3185,27 @@ fn enqueue_acquire_gl_objects(
         return Err(CL_INVALID_GL_OBJECT);
     }
 
+    // We need to flush on the applications thread:
+    //
+    // If an OpenGL context is bound to the current thread, then any OpenGL commands which
+    //   1. affect or access the contents of a memory object listed in the mem_objects list, and
+    //   2. were issued on that OpenGL context prior to the call to clEnqueueAcquireGLObjects
+    // will complete before execution of any OpenCL commands following the clEnqueueAcquireGLObjects
+    // which affect or access any of those memory objects. If a non-NULL event object is returned,
+    // it will report completion only after completion of such OpenGL commands.
+    let fence_fd = q.context.flush_gl_mem_objects(&objs)?;
     create_and_queue(
         q,
         CL_COMMAND_ACQUIRE_GL_OBJECTS,
         evs,
         event,
         false,
-        Box::new(move |_, ctx| copy_cube_to_slice(ctx, &objs)),
+        Box::new(move |_, ctx| {
+            if let Some(fence_fd) = fence_fd {
+                ctx.import_fence(&fence_fd).gpu_wait(ctx);
+            }
+            copy_cube_to_slice(ctx, &objs)
+        }),
     )
 }
 
