@@ -419,10 +419,47 @@ impl Drop for GLExportManager {
 }
 
 pub struct GLObject {
-    pub gl_object_target: cl_GLenum,
-    pub gl_object_type: cl_gl_object_type,
-    pub gl_object_name: cl_GLuint,
+    pub props: mesa_glinterop_export_in,
     pub shadow_map: CLGLMappings,
+}
+
+// SAFETY: We never use the pointer inside mesa_glinterop_export_in for anything.
+unsafe impl Send for GLObject {}
+unsafe impl Sync for GLObject {}
+
+impl GLObject {
+    pub fn cl_gl_type(&self) -> CLResult<cl_gl_object_type> {
+        Ok(match self.props.target {
+            GL_ARRAY_BUFFER => CL_GL_OBJECT_BUFFER,
+            GL_TEXTURE_BUFFER => CL_GL_OBJECT_TEXTURE_BUFFER,
+            GL_RENDERBUFFER => CL_GL_OBJECT_RENDERBUFFER,
+            GL_TEXTURE_1D => CL_GL_OBJECT_TEXTURE1D,
+            GL_TEXTURE_1D_ARRAY => CL_GL_OBJECT_TEXTURE1D_ARRAY,
+            GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+            | GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+            | GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+            | GL_TEXTURE_CUBE_MAP_POSITIVE_X
+            | GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+            | GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+            | GL_TEXTURE_2D
+            | GL_TEXTURE_RECTANGLE => CL_GL_OBJECT_TEXTURE2D,
+            GL_TEXTURE_2D_ARRAY => CL_GL_OBJECT_TEXTURE2D_ARRAY,
+            GL_TEXTURE_3D => CL_GL_OBJECT_TEXTURE3D,
+            _ => return Err(CL_INVALID_VALUE),
+        })
+    }
+
+    pub fn cl_mem_type(&self) -> CLResult<cl_mem_object_type> {
+        mem_type_from_gl(self.props.target)
+    }
+
+    pub fn name(&self) -> cl_GLuint {
+        self.props.obj
+    }
+
+    pub fn target(&self) -> cl_GLuint {
+        self.props.target
+    }
 }
 
 pub fn create_shadow_slice(
@@ -461,14 +498,14 @@ pub fn copy_cube_to_slice(ctx: &QueueContext, mem_objects: &[Mem]) -> CLResult<(
             continue;
         };
         let gl_obj = image.gl_obj.as_ref().unwrap();
-        if !is_cube_map_face(gl_obj.gl_object_target) {
+        if !is_cube_map_face(gl_obj.target()) {
             continue;
         }
         let width = image.image_desc.image_width;
         let height = image.image_desc.image_height;
 
         // Fill in values for doing the copy
-        let idx = get_array_slice_idx(gl_obj.gl_object_target);
+        let idx = get_array_slice_idx(gl_obj.target());
         let src_origin = CLVec::<usize>::new([0, 0, idx]);
         let dst_offset: [u32; 3] = [0, 0, 0];
         let region = CLVec::<usize>::new([width, height, 1]);
@@ -489,14 +526,14 @@ pub fn copy_slice_to_cube(ctx: &QueueContext, mem_objects: &[Mem]) -> CLResult<(
             continue;
         };
         let gl_obj = image.gl_obj.as_ref().unwrap();
-        if !is_cube_map_face(gl_obj.gl_object_target) {
+        if !is_cube_map_face(gl_obj.target()) {
             continue;
         }
         let width = image.image_desc.image_width;
         let height = image.image_desc.image_height;
 
         // Fill in values for doing the copy
-        let idx = get_array_slice_idx(gl_obj.gl_object_target) as u32;
+        let idx = get_array_slice_idx(gl_obj.target()) as u32;
         let src_origin = CLVec::<usize>::new([0, 0, 0]);
         let dst_offset: [u32; 3] = [0, 0, idx];
         let region = CLVec::<usize>::new([width, height, 1]);
@@ -534,15 +571,12 @@ pub fn cl_to_interop_flags(flags: u32) -> u32 {
     }
 }
 
-pub fn target_from_gl(target: u32) -> CLResult<(u32, u32)> {
-    // CL_INVALID_IMAGE_FORMAT_DESCRIPTOR if the OpenGL texture
-    // internal format does not map to a supported OpenCL image format.
+pub fn mem_type_from_gl(target: u32) -> CLResult<cl_mem_object_type> {
     Ok(match target {
-        GL_ARRAY_BUFFER => (CL_MEM_OBJECT_BUFFER, CL_GL_OBJECT_BUFFER),
-        GL_TEXTURE_BUFFER => (CL_MEM_OBJECT_IMAGE1D_BUFFER, CL_GL_OBJECT_TEXTURE_BUFFER),
-        GL_RENDERBUFFER => (CL_MEM_OBJECT_IMAGE2D, CL_GL_OBJECT_RENDERBUFFER),
-        GL_TEXTURE_1D => (CL_MEM_OBJECT_IMAGE1D, CL_GL_OBJECT_TEXTURE1D),
-        GL_TEXTURE_1D_ARRAY => (CL_MEM_OBJECT_IMAGE1D_ARRAY, CL_GL_OBJECT_TEXTURE1D_ARRAY),
+        GL_ARRAY_BUFFER => CL_MEM_OBJECT_BUFFER,
+        GL_TEXTURE_BUFFER => CL_MEM_OBJECT_IMAGE1D_BUFFER,
+        GL_TEXTURE_1D => CL_MEM_OBJECT_IMAGE1D,
+        GL_TEXTURE_1D_ARRAY => CL_MEM_OBJECT_IMAGE1D_ARRAY,
         GL_TEXTURE_CUBE_MAP_NEGATIVE_X
         | GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
         | GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
@@ -550,9 +584,10 @@ pub fn target_from_gl(target: u32) -> CLResult<(u32, u32)> {
         | GL_TEXTURE_CUBE_MAP_POSITIVE_Y
         | GL_TEXTURE_CUBE_MAP_POSITIVE_Z
         | GL_TEXTURE_2D
-        | GL_TEXTURE_RECTANGLE => (CL_MEM_OBJECT_IMAGE2D, CL_GL_OBJECT_TEXTURE2D),
-        GL_TEXTURE_2D_ARRAY => (CL_MEM_OBJECT_IMAGE2D_ARRAY, CL_GL_OBJECT_TEXTURE2D_ARRAY),
-        GL_TEXTURE_3D => (CL_MEM_OBJECT_IMAGE3D, CL_GL_OBJECT_TEXTURE3D),
+        | GL_TEXTURE_RECTANGLE
+        | GL_RENDERBUFFER => CL_MEM_OBJECT_IMAGE2D,
+        GL_TEXTURE_2D_ARRAY => CL_MEM_OBJECT_IMAGE2D_ARRAY,
+        GL_TEXTURE_3D => CL_MEM_OBJECT_IMAGE3D,
         _ => return Err(CL_INVALID_VALUE),
     })
 }
