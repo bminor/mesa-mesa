@@ -4844,7 +4844,7 @@
         "description": "rusticl/queue: do not return event status errors on flush/finish",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3129fd8dcfae579e854ec67134d99dec0e40882b",
         "notes": null
