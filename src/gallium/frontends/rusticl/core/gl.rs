@@ -206,6 +206,60 @@ impl GLCtxManager {
         }
     }
 
+    fn do_flush(&self, exports_in: &mut [mesa_glinterop_export_in]) -> CLResult<Option<FenceFd>> {
+        let mut fd = -1;
+        let mut flush_out = mesa_glinterop_flush_out {
+            version: 1,
+            fence_fd: &mut fd,
+            ..Default::default()
+        };
+
+        let err = match self.gl_ctx {
+            GLCtx::EGL(disp, ctx) => {
+                let egl_flush_objects_func = self
+                    .xplat_manager
+                    .MesaGLInteropEGLFlushObjects()?
+                    .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?;
+
+                unsafe {
+                    egl_flush_objects_func(
+                        disp.cast(),
+                        ctx.cast(),
+                        exports_in.len() as u32,
+                        exports_in.as_mut_ptr(),
+                        &mut flush_out,
+                    )
+                }
+            }
+            GLCtx::GLX(disp, ctx) => {
+                let glx_flush_objects_func = self
+                    .xplat_manager
+                    .MesaGLInteropGLXFlushObjects()?
+                    .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?;
+
+                unsafe {
+                    glx_flush_objects_func(
+                        disp.cast(),
+                        ctx.cast(),
+                        exports_in.len() as u32,
+                        exports_in.as_mut_ptr(),
+                        &mut flush_out,
+                    )
+                }
+            }
+        };
+
+        if err != 0 {
+            return Err(interop_to_cl_error(err));
+        }
+
+        if fd != -1 {
+            Ok(Some(FenceFd { fd: fd }))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn export_object(
         &self,
         cl_ctx: &Arc<Context>,
@@ -229,13 +283,12 @@ impl GLCtxManager {
             ..Default::default()
         };
 
-        let mut fd = -1;
-
-        let mut flush_out = mesa_glinterop_flush_out {
-            version: 1,
-            fence_fd: &mut fd,
-            ..Default::default()
-        };
+        if let Some(fence_fd) = self.do_flush(&mut [export_in])? {
+            cl_ctx.devs.iter().for_each(|dev| {
+                let fence = dev.helper_ctx().import_fence(&fence_fd);
+                fence.wait();
+            });
+        }
 
         let err = unsafe {
             match &self.gl_ctx {
@@ -244,74 +297,14 @@ impl GLCtxManager {
                         .MesaGLInteropEGLExportObject()?
                         .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?;
 
-                    let egl_flush_objects_func = xplat_manager
-                        .MesaGLInteropEGLFlushObjects()?
-                        .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?;
-
-                    let err_flush = egl_flush_objects_func(
-                        disp.cast(),
-                        ctx.cast(),
-                        1,
-                        &mut export_in,
-                        &mut flush_out,
-                    );
-
-                    if err_flush != 0 {
-                        err_flush
-                    } else {
-                        if fd != -1 {
-                            // TODO: use fence_server_sync in ctx inside the queue thread
-                            let fence_fd = FenceFd { fd };
-                            cl_ctx.devs.iter().for_each(|dev| {
-                                let fence = dev.helper_ctx().import_fence(&fence_fd);
-                                fence.wait();
-                            });
-                        }
-
-                        egl_export_object_func(
-                            disp.cast(),
-                            ctx.cast(),
-                            &mut export_in,
-                            &mut export_out,
-                        )
-                    }
+                    egl_export_object_func(disp.cast(), ctx.cast(), &mut export_in, &mut export_out)
                 }
                 GLCtx::GLX(disp, ctx) => {
                     let glx_export_object_func = xplat_manager
                         .MesaGLInteropGLXExportObject()?
                         .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?;
 
-                    let glx_flush_objects_func = xplat_manager
-                        .MesaGLInteropGLXFlushObjects()?
-                        .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?;
-
-                    let err_flush = glx_flush_objects_func(
-                        disp.cast(),
-                        ctx.cast(),
-                        1,
-                        &mut export_in,
-                        &mut flush_out,
-                    );
-
-                    if err_flush != 0 {
-                        err_flush
-                    } else {
-                        if fd != -1 {
-                            // TODO: use fence_server_sync in ctx inside the queue thread
-                            let fence_fd = FenceFd { fd };
-                            cl_ctx.devs.iter().for_each(|dev| {
-                                let fence = dev.helper_ctx().import_fence(&fence_fd);
-                                fence.wait();
-                            });
-                        }
-
-                        glx_export_object_func(
-                            disp.cast(),
-                            ctx.cast(),
-                            &mut export_in,
-                            &mut export_out,
-                        )
-                    }
+                    glx_export_object_func(disp.cast(), ctx.cast(), &mut export_in, &mut export_out)
                 }
             }
         };
@@ -330,6 +323,16 @@ impl GLCtxManager {
             export_in: export_in,
             export_out: export_out,
         })
+    }
+
+    pub fn flush(&self, mem_objects: &[Mem]) -> CLResult<Option<FenceFd>> {
+        let mut exports_in = mem_objects
+            .iter()
+            .filter_map(|m| m.gl_obj.as_ref())
+            .map(|gl_obj| gl_obj.props)
+            .collect::<Vec<_>>();
+
+        self.do_flush(&mut exports_in)
     }
 }
 
