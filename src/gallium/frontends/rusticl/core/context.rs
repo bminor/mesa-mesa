@@ -10,6 +10,7 @@ use crate::core::util::*;
 use crate::impl_cl_type_trait;
 
 use mesa_rust::pipe::context::RWFlags;
+use mesa_rust::pipe::fence::FenceFd;
 use mesa_rust::pipe::resource::*;
 use mesa_rust::pipe::screen::ResourceType;
 use mesa_rust_gen::*;
@@ -653,6 +654,11 @@ impl Context {
         }
 
         Ok(res)
+    }
+
+    pub fn flush_gl_mem_objects(&self, mem_objects: &[Mem]) -> CLResult<Option<FenceFd>> {
+        let gl_ctx = self.gl_ctx_manager.as_ref().ok_or(CL_INVALID_CONTEXT)?;
+        gl_ctx.flush(mem_objects)
     }
 }
 
