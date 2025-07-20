@@ -3040,12 +3040,9 @@ unsafe impl CLInfo<cl_gl_texture_info> for cl_mem {
         let mem = MemBase::ref_from_raw(*self)?;
         match *q {
             CL_GL_MIPMAP_LEVEL => v.write::<cl_GLint>(0),
-            CL_GL_TEXTURE_TARGET => v.write::<cl_GLenum>(
-                mem.gl_obj
-                    .as_ref()
-                    .ok_or(CL_INVALID_GL_OBJECT)?
-                    .gl_object_target,
-            ),
+            CL_GL_TEXTURE_TARGET => {
+                v.write::<cl_GLenum>(mem.gl_obj.as_ref().ok_or(CL_INVALID_GL_OBJECT)?.target())
+            }
             _ => Err(CL_INVALID_VALUE),
         }
     }
@@ -3081,7 +3078,7 @@ fn create_from_gl(
         let gl_export_manager =
             gl_ctx_manager.export_object(&c, target, flags as u32, miplevel, texture)?;
 
-        Ok(MemBase::from_gl(c, flags, &gl_export_manager)?)
+        Ok(MemBase::from_gl(c, flags, gl_export_manager)?)
     } else {
         Err(CL_INVALID_CONTEXT)
     }
@@ -3170,8 +3167,8 @@ fn get_gl_object_info(
             // case they are ignored.
             // SAFETY: Caller is responsible for providing null pointers or ones
             // which are valid for a write of the appropriate size.
-            unsafe { gl_object_type.write_checked(gl_obj.gl_object_type) };
-            unsafe { gl_object_name.write_checked(gl_obj.gl_object_name) };
+            unsafe { gl_object_type.write_checked(gl_obj.cl_gl_type()?) };
+            unsafe { gl_object_name.write_checked(gl_obj.name()) };
         }
         None => {
             // CL_INVALID_GL_OBJECT if there is no GL object associated with memobj.

@@ -920,12 +920,12 @@ impl MemBase {
     pub fn from_gl(
         context: Arc<Context>,
         flags: cl_mem_flags,
-        gl_export_manager: &GLExportManager,
+        gl_export_manager: GLExportManager,
     ) -> CLResult<cl_mem> {
-        let export_in = &gl_export_manager.export_in;
+        let export_in = gl_export_manager.export_in;
         let export_out = &gl_export_manager.export_out;
 
-        let (mem_type, gl_object_type) = target_from_gl(export_in.target)?;
+        let mem_type = mem_type_from_gl(export_in.target)?;
         let gl_mem_props = gl_export_manager.get_gl_mem_props()?;
 
         // Handle Buffers
@@ -987,9 +987,7 @@ impl MemBase {
             size: gl_mem_props.size(),
             props: Properties::default(),
             gl_obj: Some(GLObject {
-                gl_object_target: gl_export_manager.export_in.target,
-                gl_object_type: gl_object_type,
-                gl_object_name: export_in.obj,
+                props: export_in,
                 shadow_map: shadow_map,
             }),
             cbs: Mutex::new(Vec::new()),
