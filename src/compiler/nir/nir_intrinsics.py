@@ -2225,8 +2225,10 @@ store("agx", [1, 1], [ACCESS, BASE, FORMAT, SIGN_EXTEND])
 # Logical complement of load_front_face, mapping to an AGX system value
 system_value("back_face_agx", 1, bit_sizes=[1, 32])
 
-# Load the base address of an indexed vertex attribute (for lowering).
+# Load the base address/stride of an indexed vertex attribute (for lowering).
 intrinsic("load_vbo_base_agx", src_comp=[1], dest_comp=1, bit_sizes=[64],
+          flags=[CAN_ELIMINATE, CAN_REORDER])
+intrinsic("load_vbo_stride_agx", src_comp=[1], dest_comp=1, bit_sizes=[32],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # When vertex robustness is enabled, loads the maximum valid attribute index for
