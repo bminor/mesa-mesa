@@ -274,7 +274,14 @@ StringFromCodecAPI( const GUID *Api )
    {
       return "CODECAPI_AVEncVideoRateControlFramePreAnalysisExternalReconDownscale";
    }
-
+   else if (*Api == CODECAPI_AVEncVideoInputDeltaQPBlockSettings)
+   {
+      return "CODECAPI_AVEncVideoInputDeltaQPBlockSettings";
+   }
+   else if (*Api == CODECAPI_AVEncVideoInputAbsoluteQPBlockSettings)
+   {
+       return "CODECAPI_AVEncVideoInputAbsoluteQPBlockSettings";
+   }
    return "Unknown CodecAPI";
 }
 
