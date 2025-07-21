@@ -62,6 +62,7 @@ struct hk_root_descriptor_table {
          /* Vertex input state */
          uint64_t attrib_base[AGX_MAX_VBUFS];
          uint32_t attrib_clamps[AGX_MAX_VBUFS];
+         uint32_t attrib_strides[AGX_MAX_VBUFS];
 
          /* Pointer to the VS->TCS, VS->GS, or TES->GS buffer. */
          uint64_t vertex_output_buffer;
@@ -865,3 +866,8 @@ void hk_dispatch_precomp(struct hk_cmd_buffer *cmd, struct agx_grid grid,
 
 void hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
                     bool after_gfx);
+
+void agx_fill_velem_keys(const struct vk_vertex_input_state *vi,
+                         uint64_t attribs_read, struct agx_velem_key *keys);
+
+struct agx_robustness hk_prolog_robustness(struct hk_device *dev);

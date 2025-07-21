@@ -431,6 +431,10 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_rasterization_stream:
       return lower_sysval_to_root_table(b, intrin, draw.rasterization_stream);
 
+   case nir_intrinsic_load_vbo_stride_agx:
+      return lower_sysval_to_root_table(
+         b, intrin, draw.attrib_strides[nir_src_as_uint(intrin->src[0])]);
+
    case nir_intrinsic_load_is_first_fan_agx: {
       unsigned offset = hk_root_descriptor_offset(draw.provoking);
       b->cursor = nir_instr_remove(&intrin->instr);

@@ -9,11 +9,13 @@
 #include "compiler/nir/nir_format_convert.h"
 #include "util/bitset.h"
 #include "util/u_math.h"
+#include "agx_linker.h"
 #include "shader_enums.h"
 
 struct ctx {
-   struct agx_attribute *attribs;
+   const struct agx_velem_key *attribs;
    struct agx_robustness rs;
+   bool dynamic_strides;
 };
 
 static bool
@@ -25,7 +27,7 @@ is_rgb10_a2(const struct util_format_description *desc)
           desc->channel[3].shift == 30 && desc->channel[3].size == 2;
 }
 
-static enum pipe_format
+enum pipe_format
 agx_vbo_internal_format(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
@@ -115,16 +117,15 @@ pass(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
       return false;
 
    struct ctx *ctx = data;
-   struct agx_attribute *attribs = ctx->attribs;
+   const struct agx_velem_key *attribs = ctx->attribs;
    b->cursor = nir_instr_remove(&intr->instr);
 
    nir_src *offset_src = nir_get_io_offset_src(intr);
    assert(nir_src_is_const(*offset_src) && "no attribute indirects");
    unsigned index = nir_intrinsic_base(intr) + nir_src_as_uint(*offset_src);
 
-   struct agx_attribute attrib = attribs[index];
+   struct agx_velem_key attrib = attribs[index];
    uint32_t stride = attrib.stride;
-   uint16_t offset = attrib.src_offset;
 
    const struct util_format_description *desc =
       util_format_description(attrib.format);
@@ -202,25 +203,28 @@ pass(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *base = nir_load_vbo_base_agx(b, buf_handle);
 
    assert((stride % interchange_align) == 0 && "must be aligned");
-   assert((offset % interchange_align) == 0 && "must be aligned");
 
    unsigned stride_el = stride / interchange_align;
-   unsigned offset_el = offset / interchange_align;
    unsigned shift = 0;
 
    /* Try to use the small shift on the load itself when possible. This can save
     * an instruction. Shifts are only available for regular interchange formats,
     * i.e. the set of formats that support masking.
     */
-   if (offset_el == 0 && (stride_el == 2 || stride_el == 4) &&
+   if ((stride_el == 2 || stride_el == 4) &&
        ail_isa_format_supports_mask((enum ail_isa_format)interchange_format)) {
 
       shift = util_logbase2(stride_el);
       stride_el = 1;
    }
 
-   nir_def *stride_offset_el =
-      nir_iadd_imm(b, nir_imul_imm(b, el, stride_el), offset_el);
+   nir_def *stride_el_def = nir_imm_int(b, stride_el);
+   if (ctx->dynamic_strides) {
+      assert(stride_el == 0);
+      stride_el_def = nir_load_vbo_stride_agx(b, buf_handle);
+   }
+
+   nir_def *stride_offset_el = nir_imul(b, el, stride_el_def);
 
    /* Fixing up the address is expected to be profitable for vec3 and above, as
     * it requires 2 instructions. It is implemented with a 64GiB carveout at the
@@ -305,8 +309,8 @@ pass(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 bool
-agx_nir_lower_vbo(nir_shader *shader, struct agx_attribute *attribs,
-                  struct agx_robustness robustness)
+agx_nir_lower_vbo(nir_shader *shader, const struct agx_velem_key *attribs,
+                  struct agx_robustness robustness, bool dynamic_strides)
 {
    assert(shader->info.stage == MESA_SHADER_VERTEX);
 
@@ -317,7 +321,12 @@ agx_nir_lower_vbo(nir_shader *shader, struct agx_attribute *attribs,
       robustness.level = MAX2(robustness.level, AGX_ROBUSTNESS_GL);
    }
 
-   struct ctx ctx = {.attribs = attribs, .rs = robustness};
+   struct ctx ctx = {
+      .attribs = attribs,
+      .rs = robustness,
+      .dynamic_strides = dynamic_strides,
+   };
+
    return nir_shader_intrinsics_pass(shader, pass, nir_metadata_control_flow,
                                      &ctx);
 }

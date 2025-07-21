@@ -56,24 +56,6 @@ agx_nir_lower_poly_stipple(nir_shader *s)
    return nir_progress(true, b->impl, nir_metadata_control_flow);
 }
 
-static bool
-lower_vbo(nir_shader *s, const struct agx_velem_key *key,
-          const struct agx_robustness rs)
-{
-   struct agx_attribute out[AGX_MAX_VBUFS];
-
-   for (unsigned i = 0; i < AGX_MAX_VBUFS; ++i) {
-      out[i] = (struct agx_attribute){
-         .divisor = key[i].divisor,
-         .stride = key[i].stride,
-         .format = key[i].format,
-         .instanced = key[i].instanced,
-      };
-   }
-
-   return agx_nir_lower_vbo(s, out, rs);
-}
-
 static int
 map_vs_part_uniform(nir_intrinsic_instr *intr, unsigned nr_attribs)
 {
@@ -148,6 +130,13 @@ lower_non_monolithic_uniforms(nir_builder *b, nir_intrinsic_instr *intr,
    }
 }
 
+bool
+agx_nir_lower_non_monolithic_uniforms(nir_shader *nir, unsigned nr)
+{
+   return nir_shader_intrinsics_pass(nir, lower_non_monolithic_uniforms,
+                                     nir_metadata_control_flow, &nr);
+}
+
 static bool
 lower_adjacency(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
@@ -188,19 +177,22 @@ agx_nir_vs_prolog(nir_builder *b, const void *key_)
    /* First, construct a passthrough shader reading each attribute and exporting
     * the value. We also need to export vertex/instance ID in their usual regs.
     */
-   unsigned i = 0;
-   nir_def *vec = NULL;
-   unsigned vec_idx = ~0;
-   BITSET_FOREACH_SET(i, key->component_mask, AGX_MAX_ATTRIBS * 4) {
-      unsigned a = i / 4;
-      unsigned c = i % 4;
+   if (!key->static_vi) {
+      unsigned i = 0;
+      nir_def *vec = NULL;
+      unsigned vec_idx = ~0;
+      BITSET_FOREACH_SET(i, key->component_mask, AGX_MAX_ATTRIBS * 4) {
+         unsigned a = i / 4;
+         unsigned c = i % 4;
 
-      if (vec_idx != a) {
-         vec = nir_load_input(b, 4, 32, nir_imm_int(b, 0), .base = a);
-         vec_idx = a;
+         if (vec_idx != a) {
+            vec = nir_load_input(b, 4, 32, nir_imm_int(b, 0), .base = a);
+            vec_idx = a;
+         }
+
+         nir_export_agx(b, nir_channel(b, vec, c),
+                        .base = AGX_ABI_VIN_ATTRIB(i));
       }
-
-      nir_export_agx(b, nir_channel(b, vec, c), .base = AGX_ABI_VIN_ATTRIB(i));
    }
 
    if (!key->hw) {
@@ -212,12 +204,14 @@ agx_nir_vs_prolog(nir_builder *b, const void *key_)
    nir_export_agx(b, nir_load_instance_id(b), .base = AGX_ABI_VIN_INSTANCE_ID);
 
    /* Now lower the resulting program using the key */
-   lower_vbo(b->shader, key->attribs, key->robustness);
+   if (!key->static_vi) {
+      agx_nir_lower_vbo(b->shader, key->attribs, key->robustness, false);
 
-   /* Clean up redundant vertex ID loads */
-   if (!key->hw || key->adjacency) {
-      NIR_PASS(_, b->shader, nir_opt_cse);
-      NIR_PASS(_, b->shader, nir_opt_dce);
+      /* Clean up redundant vertex ID loads */
+      if (!key->hw || key->adjacency) {
+         NIR_PASS(_, b->shader, nir_opt_cse);
+         NIR_PASS(_, b->shader, nir_opt_dce);
+      }
    }
 
    if (!key->hw) {
@@ -229,13 +223,42 @@ agx_nir_vs_prolog(nir_builder *b, const void *key_)
 
    /* Finally, lower uniforms according to our ABI */
    unsigned nr = DIV_ROUND_UP(BITSET_LAST_BIT(key->component_mask), 4);
-   nir_shader_intrinsics_pass(b->shader, lower_non_monolithic_uniforms,
-                              nir_metadata_control_flow, &nr);
+   agx_nir_lower_non_monolithic_uniforms(b->shader, nr);
    b->shader->info.io_lowered = true;
 }
 
 static bool
-lower_input_to_prolog(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+gather_inputs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_input)
+      return false;
+
+   unsigned idx = nir_src_as_uint(intr->src[0]) + nir_intrinsic_base(intr);
+   unsigned comp = nir_intrinsic_component(intr);
+
+   assert(intr->def.bit_size == 32 && "todo: push conversions up?");
+   unsigned base = 4 * idx + comp;
+
+   b->cursor = nir_before_instr(&intr->instr);
+   BITSET_WORD *comps_read = data;
+   nir_component_mask_t mask = nir_def_components_read(&intr->def);
+
+   u_foreach_bit(c, mask) {
+      BITSET_SET(comps_read, base + c);
+   }
+
+   return false;
+}
+
+bool
+agx_nir_gather_vs_inputs(nir_shader *s, BITSET_WORD *attrib_components_read)
+{
+   return nir_shader_intrinsics_pass(
+      s, gather_inputs, nir_metadata_control_flow, attrib_components_read);
+}
+
+static bool
+lower_input_to_prolog(nir_builder *b, nir_intrinsic_instr *intr, void *_data)
 {
    if (intr->intrinsic != nir_intrinsic_load_input)
       return false;
@@ -251,24 +274,15 @@ lower_input_to_prolog(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nir_load_exported_agx(b, intr->def.num_components, intr->def.bit_size,
                             .base = AGX_ABI_VIN_ATTRIB(base));
 
-   BITSET_WORD *comps_read = data;
-   nir_component_mask_t mask = nir_def_components_read(&intr->def);
-
-   u_foreach_bit(c, mask) {
-      BITSET_SET(comps_read, base + c);
-   }
-
    nir_def_replace(&intr->def, val);
    return true;
 }
 
 bool
-agx_nir_lower_vs_input_to_prolog(nir_shader *s,
-                                 BITSET_WORD *attrib_components_read)
+agx_nir_lower_vs_input_to_prolog(nir_shader *s)
 {
    return nir_shader_intrinsics_pass(s, lower_input_to_prolog,
-                                     nir_metadata_control_flow,
-                                     attrib_components_read);
+                                     nir_metadata_control_flow, NULL);
 }
 
 static bool

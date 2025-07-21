@@ -59,6 +59,11 @@ struct agx_vs_prolog_key {
    /* Whether running as a hardware vertex shader (versus compute) */
    bool hw;
 
+   /* Whether the shader uses static vertex input and the prolog just fixes up
+    * the vertex ID.
+    */
+   bool static_vi;
+
    /* If !hw and the draw call is indexed, the index size */
    uint8_t sw_index_size_B;
 
@@ -182,10 +187,14 @@ void agx_nir_vs_prolog(struct nir_builder *b, const void *key_);
 void agx_nir_fs_epilog(struct nir_builder *b, const void *key_);
 void agx_nir_fs_prolog(struct nir_builder *b, const void *key_);
 
-bool agx_nir_lower_vs_input_to_prolog(nir_shader *s,
-                                      BITSET_WORD *attrib_components_read);
+bool agx_nir_gather_vs_inputs(nir_shader *s,
+                              BITSET_WORD *attrib_components_read);
+
+bool agx_nir_lower_vs_input_to_prolog(nir_shader *s);
 
 bool agx_nir_lower_fs_output_to_epilog(nir_shader *s,
                                        struct agx_fs_epilog_link_info *out);
 
 bool agx_nir_lower_fs_active_samples_to_register(nir_shader *s);
+
+bool agx_nir_lower_non_monolithic_uniforms(nir_shader *nir, unsigned nr);

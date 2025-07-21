@@ -1567,8 +1567,8 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
       if (nir->info.vs.tes_agx) {
          NIR_PASS(_, nir, agx_nir_lower_tes, key->hw);
       } else {
-         NIR_PASS(_, nir, agx_nir_lower_vs_input_to_prolog,
-                  attrib_components_read);
+         NIR_PASS(_, nir, agx_nir_gather_vs_inputs, attrib_components_read);
+         NIR_PASS(_, nir, agx_nir_lower_vs_input_to_prolog);
       }
 
       if (key->hw) {

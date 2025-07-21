@@ -17,22 +17,6 @@ extern "C" {
 #define AGX_MAX_ATTRIBS (16)
 #define AGX_MAX_VBUFS   (16)
 
-/* See pipe_vertex_element for justification on the sizes. This structure should
- * be small so it can be embedded into a shader key.
- */
-struct agx_attribute {
-   /* If instanced, Zero means all get the same value (Vulkan semantics). */
-   uint32_t divisor;
-   uint32_t stride;
-   uint16_t src_offset;
-
-   /* pipe_format, all vertex formats should be <= 255 */
-   uint8_t format;
-
-   unsigned buf   : 7;
-   bool instanced : 1;
-};
-
 enum agx_robustness_level {
    /* No robustness */
    AGX_ROBUSTNESS_DISABLED,
@@ -54,8 +38,12 @@ struct agx_robustness {
    bool soft_fault;
 };
 
-bool agx_nir_lower_vbo(nir_shader *shader, struct agx_attribute *attribs,
-                       struct agx_robustness rs);
+struct agx_velem_key;
+
+bool agx_nir_lower_vbo(nir_shader *shader, const struct agx_velem_key *attribs,
+                       struct agx_robustness rs, bool dynamic_strides);
+
+enum pipe_format agx_vbo_internal_format(enum pipe_format format);
 
 bool agx_vbo_supports_format(enum pipe_format format);
 
