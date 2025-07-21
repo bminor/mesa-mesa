@@ -1960,17 +1960,12 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    ASSERTED const VkExportMemoryAllocateInfo *export_info = NULL;
    ASSERTED const VkImportMemoryFdInfoKHR *import_info = NULL;
    const VkMemoryAllocateFlagsInfo *mem_flags = NULL;
-   const VkImportMemoryHostPointerInfoEXT *host_ptr_info = NULL;
    VkResult error = VK_ERROR_OUT_OF_DEVICE_MEMORY;
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
    int priority = 0;
 
    vk_foreach_struct_const(ext, pAllocateInfo->pNext) {
       switch ((unsigned)ext->sType) {
-      case VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT:
-         host_ptr_info = (VkImportMemoryHostPointerInfoEXT*)ext;
-         assert(host_ptr_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT);
-         break;
       case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO:
          export_info = (VkExportMemoryAllocateInfo*)ext;
          assert_memhandle_type(export_info->handleTypes);
@@ -2007,12 +2002,12 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    mem->backed_fd = -1;
    mem->size = pAllocateInfo->allocationSize;
 
-   if (host_ptr_info) {
+   if (mem->vk.host_ptr) {
       mem->mem_alloc = (struct llvmpipe_memory_allocation) {
-         .cpu_addr = host_ptr_info->pHostPointer,
+         .cpu_addr = mem->vk.host_ptr,
       };
       mem->pmem = (void *)&mem->mem_alloc;
-      mem->map = host_ptr_info->pHostPointer;
+      mem->map = mem->vk.host_ptr;
       mem->memory_type = LVP_DEVICE_MEMORY_TYPE_USER_PTR;
    }
 #if DETECT_OS_ANDROID
