@@ -1931,7 +1931,7 @@ set_mem_priority(struct lvp_device_memory *mem, int priority)
       if (priority > 0)
          advice |= MADV_WILLNEED;
       if (advice)
-         madvise(mem->map, mem->size, advice);
+         madvise(mem->map, mem->vk.size, advice);
    }
 #endif
 }
@@ -1992,7 +1992,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
 
    mem->memory_type = LVP_DEVICE_MEMORY_TYPE_DEFAULT;
    mem->backed_fd = -1;
-   mem->size = pAllocateInfo->allocationSize;
 
    if (mem->vk.host_ptr) {
       mem->mem_alloc = (struct llvmpipe_memory_allocation) {
@@ -2032,7 +2031,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
          close(import_info->fd);
       }
 
-      mem->size = size;
+      mem->vk.size = size;
       mem->map = device->pscreen->map_memory(device->pscreen, mem->pmem);
       mem->memory_type = dmabuf ? LVP_DEVICE_MEMORY_TYPE_DMA_BUF : LVP_DEVICE_MEMORY_TYPE_OPAQUE_FD;
    }

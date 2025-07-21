@@ -244,7 +244,6 @@ struct lvp_device_memory {
    struct pipe_memory_allocation *pmem;
    struct llvmpipe_memory_allocation mem_alloc;
    VkDeviceSize                                 map_size;
-   VkDeviceSize                                 size;
    void *                                       map;
    enum lvp_device_memory_type memory_type;
    int                                          backed_fd;
