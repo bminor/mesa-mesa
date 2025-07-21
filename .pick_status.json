@@ -3604,7 +3604,7 @@
         "description": "nir/print: Don't segfault checking has_debug_info",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce0f30b2301e8a7eb75f9a5fc1fa066bb7ad2569",
         "notes": null
