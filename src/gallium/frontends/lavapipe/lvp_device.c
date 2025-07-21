@@ -2022,13 +2022,10 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    }
 #endif
 
-   mem = vk_alloc2(&device->vk.alloc, pAllocator, sizeof(*mem), 8,
-                   VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   mem = vk_device_memory_create(&device->vk, pAllocateInfo, pAllocator,
+                                 sizeof(*mem));
    if (mem == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   vk_object_base_init(&device->vk, &mem->base,
-                       VK_OBJECT_TYPE_DEVICE_MEMORY);
 
    mem->memory_type = LVP_DEVICE_MEMORY_TYPE_DEFAULT;
    mem->backed_fd = -1;
@@ -2118,8 +2115,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    return VK_SUCCESS;
 
 fail:
-   vk_object_base_finish(&mem->base);
-   vk_free2(&device->vk.alloc, pAllocator, mem);
+   vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
    return vk_error(device, error);
 }
 
@@ -2158,9 +2154,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_FreeMemory(
    default:
       break;
    }
-   vk_object_base_finish(&mem->base);
-   vk_free2(&device->vk.alloc, pAllocator, mem);
 
+   vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL lvp_MapMemory2KHR(

@@ -70,6 +70,7 @@ typedef uint32_t xcb_window_t;
 #include "vk_buffer_view.h"
 #include "vk_device.h"
 #include "vk_device_generated_commands.h"
+#include "vk_device_memory.h"
 #include "vk_instance.h"
 #include "vk_image.h"
 #include "vk_log.h"
@@ -242,7 +243,8 @@ enum lvp_device_memory_type {
 };
 
 struct lvp_device_memory {
-   struct vk_object_base base;
+   struct vk_device_memory vk;
+
    struct pipe_memory_allocation *pmem;
    struct llvmpipe_memory_allocation mem_alloc;
    uint32_t                                     type_index;
@@ -687,7 +689,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_descriptor_set, base, VkDescriptorSet,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET)
 VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_descriptor_set_layout, vk.base, VkDescriptorSetLayout,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT)
-VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_device_memory, base, VkDeviceMemory,
+VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_device_memory, vk.base, VkDeviceMemory,
                                VK_OBJECT_TYPE_DEVICE_MEMORY)
 VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
