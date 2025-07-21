@@ -765,6 +765,44 @@ struct radv_resolve_barrier {
 
 void radv_emit_resolve_barrier(struct radv_cmd_buffer *cmd_buffer, const struct radv_resolve_barrier *barrier);
 
+struct radv_draw_info {
+   /**
+    * Number of vertices.
+    */
+   uint32_t count;
+
+   /**
+    * First instance id.
+    */
+   uint32_t first_instance;
+
+   /**
+    * Number of instances.
+    */
+   uint32_t instance_count;
+
+   /**
+    * Whether it's an indexed draw.
+    */
+   bool indexed;
+
+   /**
+    * Indirect draw parameters.
+    */
+   uint64_t indirect_va;
+   uint32_t stride;
+
+   /**
+    * Draw count parameters VA.
+    */
+   uint64_t count_va;
+
+   /**
+    * Stream output parameters VA.
+    */
+   uint64_t strmout_va;
+};
+
 struct radv_dispatch_info {
    /**
     * Determine the layout of the grid (in block units) to be used.
