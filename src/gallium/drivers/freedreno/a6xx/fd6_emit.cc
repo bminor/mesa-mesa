@@ -742,7 +742,7 @@ template void fd6_emit_3d_state<A7XX, HAS_TESS_GS>(struct fd_ringbuffer *ring, s
 template <chip CHIP>
 void
 fd6_emit_cs_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
-                  struct fd6_compute_state *cs)
+                  struct fd6_compute_state *cp)
 {
    struct fd6_state state = {};
 
@@ -765,7 +765,7 @@ fd6_emit_cs_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
       switch (group) {
       case FD6_GROUP_PROG:
-         fd6_state_add_group(&state, cs->stateobj, FD6_GROUP_PROG);
+         fd6_state_add_group(&state, cp->stateobj, FD6_GROUP_PROG);
          break;
       case FD6_GROUP_CS_TEX:
          fd6_state_take_group(

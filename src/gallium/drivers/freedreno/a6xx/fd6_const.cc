@@ -481,13 +481,13 @@ template <chip CHIP>
 void
 fd6_emit_cs_driver_params(struct fd_context *ctx,
                           struct fd_ringbuffer *ring,
-                          struct fd6_compute_state *cs,
+                          const struct ir3_shader_variant *v,
                           const struct pipe_grid_info *info)
 {
    if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
-      const struct ir3_const_state *const_state = ir3_const_state(cs->v);
+      const struct ir3_const_state *const_state = ir3_const_state(v);
       struct ir3_driver_params_cs compute_params =
-         ir3_build_driver_params_cs(cs->v, info);
+         ir3_build_driver_params_cs(v, info);
       int base = const_state->driver_params_ubo.idx;
 
       if (base < 0)
@@ -509,12 +509,12 @@ fd6_emit_cs_driver_params(struct fd_context *ctx,
          fd_ringbuffer_attach_bo(ring, fd_resource(buffer)->bo);
       }
 
-      fd6_emit_driver_ubo(ring, cs->v, base, dword_sizeof(compute_params),
+      fd6_emit_driver_ubo(ring, v, base, dword_sizeof(compute_params),
                           buffer_offset, fd_resource(buffer)->bo);
 
       pipe_resource_reference(&buffer, NULL);
    } else {
-      ir3_emit_cs_driver_params(cs->v, ring, ctx, info);
+      ir3_emit_cs_driver_params(v, ring, ctx, info);
       if (info->indirect)
          wait_mem_writes(ctx);
    }
@@ -525,9 +525,9 @@ template <chip CHIP>
 void
 fd6_emit_cs_user_consts(struct fd_context *ctx,
                         struct fd_ringbuffer *ring,
-                        struct fd6_compute_state *cs)
+                        const struct ir3_shader_variant *v)
 {
-   emit_user_consts<CHIP>(cs->v, ring, &ctx->constbuf[MESA_SHADER_COMPUTE]);
+   emit_user_consts<CHIP>(v, ring, &ctx->constbuf[MESA_SHADER_COMPUTE]);
 }
 FD_GENX(fd6_emit_cs_user_consts);
 

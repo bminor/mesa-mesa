@@ -158,31 +158,31 @@ template <chip CHIP>
 static void
 fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
 {
-   struct fd6_compute_state *cs = (struct fd6_compute_state *)ctx->compute;
+   struct fd6_compute_state *cp = (struct fd6_compute_state *)ctx->compute;
    struct fd_ringbuffer *ring = ctx->batch->draw;
 
-   if (unlikely(!cs->v)) {
-      struct ir3_shader_state *hwcso = (struct ir3_shader_state *)cs->hwcso;
+   if (unlikely(!cp->v)) {
+      struct ir3_shader_state *hwcso = (struct ir3_shader_state *)cp->hwcso;
       struct ir3_shader_key key = {};
 
-      cs->v = ir3_shader_variant(ir3_get_shader(hwcso), key, false, &ctx->debug);
-      if (!cs->v)
+      cp->v = ir3_shader_variant(ir3_get_shader(hwcso), key, false, &ctx->debug);
+      if (!cp->v)
          return;
 
-      cs->stateobj = fd_ringbuffer_new_object(ctx->pipe, 0x1000);
-      cs_program_emit<CHIP>(ctx, cs->stateobj, cs->v);
+      cp->stateobj = fd_ringbuffer_new_object(ctx->pipe, 0x1000);
+      cs_program_emit<CHIP>(ctx, cp->stateobj, cp->v);
    }
 
    trace_start_compute(&ctx->batch->trace, ring, !!info->indirect, info->work_dim,
                        info->block[0], info->block[1], info->block[2],
                        info->grid[0],  info->grid[1],  info->grid[2],
-                       cs->v->shader_id);
+                       cp->v->shader_id);
 
    if (ctx->batch->barrier)
       fd6_barrier_flush<CHIP>(ctx->batch);
 
    bool emit_instrlen_workaround =
-      cs->v->instrlen > ctx->screen->info->a6xx.instr_cache_size;
+      cp->v->instrlen > ctx->screen->info->a6xx.instr_cache_size;
 
    /* There appears to be a HW bug where in some rare circumstances it appears
     * to accidentally use the FS instrlen instead of the CS instrlen, which
@@ -200,28 +200,28 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
     * See https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/19023
     */
    if (emit_instrlen_workaround) {
-      OUT_REG(ring, A6XX_SP_PS_INSTR_SIZE(cs->v->instrlen));
+      OUT_REG(ring, A6XX_SP_PS_INSTR_SIZE(cp->v->instrlen));
       fd6_event_write<CHIP>(ctx, ring, FD_LABEL);
    }
 
    if (ctx->gen_dirty)
-      fd6_emit_cs_state<CHIP>(ctx, ring, cs);
+      fd6_emit_cs_state<CHIP>(ctx, ring, cp);
 
    if (ctx->gen_dirty & BIT(FD6_GROUP_CONST))
-      fd6_emit_cs_user_consts<CHIP>(ctx, ring, cs);
+      fd6_emit_cs_user_consts<CHIP>(ctx, ring, cp->v);
 
-   if (cs->v->need_driver_params)
-      fd6_emit_cs_driver_params<CHIP>(ctx, ring, cs, info);
+   if (cp->v->need_driver_params)
+      fd6_emit_cs_driver_params<CHIP>(ctx, ring, cp->v, info);
 
    OUT_PKT7(ring, CP_SET_MARKER, 1);
    OUT_RING(ring, A6XX_CP_SET_MARKER_0_MODE(RM6_COMPUTE));
 
    uint32_t shared_size =
-      MAX2(((int)(cs->v->cs.req_local_mem + info->variable_shared_mem) - 1) / 1024, 1);
+      MAX2(((int)(cp->v->cs.req_local_mem + info->variable_shared_mem) - 1) / 1024, 1);
    enum a6xx_const_ram_mode mode =
-      cs->v->constlen > 256 ? CONSTLEN_512 :
-      (cs->v->constlen > 192 ? CONSTLEN_256 :
-      (cs->v->constlen > 128 ? CONSTLEN_192 : CONSTLEN_128));
+      cp->v->constlen > 256 ? CONSTLEN_512 :
+      (cp->v->constlen > 192 ? CONSTLEN_256 :
+      (cp->v->constlen > 128 ? CONSTLEN_192 : CONSTLEN_128));
    OUT_PKT4(ring, REG_A6XX_SP_CS_CNTL_1, 1);
    OUT_RING(ring, A6XX_SP_CS_CNTL_1_SHARED_SIZE(shared_size) |
                      A6XX_SP_CS_CNTL_1_CONSTANTRAMMODE(mode));
@@ -238,9 +238,9 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
    /* for some reason, mesa/st doesn't set info->work_dim, so just assume 3: */
    const unsigned work_dim = info->work_dim ? info->work_dim : 3;
 
-   if (cs->v->local_size_variable) {
+   if (cp->v->local_size_variable) {
       uint16_t wg[] = {local_size[0], local_size[1], local_size[2]};
-      cs_program_emit_local_size<CHIP>(ctx, ring, cs->v, wg);
+      cs_program_emit_local_size<CHIP>(ctx, ring, cp->v, wg);
    }
 
    OUT_REG(ring,
