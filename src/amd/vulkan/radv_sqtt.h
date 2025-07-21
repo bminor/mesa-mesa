@@ -15,6 +15,7 @@
 
 struct radv_cmd_buffer;
 struct radv_dispatch_info;
+struct radv_draw_info;
 struct radv_graphics_pipeline;
 
 struct radv_barrier_data {
@@ -98,7 +99,7 @@ void radv_describe_begin_cmd_buffer(struct radv_cmd_buffer *cmd_buffer);
 
 void radv_describe_end_cmd_buffer(struct radv_cmd_buffer *cmd_buffer);
 
-void radv_describe_draw(struct radv_cmd_buffer *cmd_buffer);
+void radv_describe_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *draw_info);
 
 void radv_describe_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info);
 
