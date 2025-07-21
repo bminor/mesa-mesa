@@ -212,6 +212,7 @@ struct st_context
 
    bool validate_all_dirty_states;
    bool can_null_texture;
+   bool is_threaded_context;
 
    /* driver supports scissored clears */
    bool can_scissor_clear;

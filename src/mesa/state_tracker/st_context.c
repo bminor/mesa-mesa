@@ -67,6 +67,7 @@
 #include "util/u_memory.h"
 #include "util/hash_table.h"
 #include "util/thread_sched.h"
+#include "util/u_threaded_context.h"
 #include "cso_cache/cso_context.h"
 #include "compiler/glsl/glsl_parser_extras.h"
 #include "nir.h"
@@ -466,6 +467,7 @@ st_create_context_priv(struct gl_context *ctx, struct pipe_context *pipe,
       cso_flags = 0;
       break;
    }
+   st->is_threaded_context = pipe->draw_vbo == tc_draw_vbo;
 
    st->cso_context = cso_create_context(pipe, cso_flags);
    ctx->cso_context = st->cso_context;
