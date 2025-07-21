@@ -366,6 +366,7 @@
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:TAHITI
     CI_TRON_KERNEL_CMDLINE__AMDGPU_FORCE_SI_SUPPORT: amdgpu.si_support=1
+    GPU_VERSION: radv-tahiti
 
 .hawaii-test-valve:
   variables:
@@ -373,11 +374,13 @@
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:HAWAII
     CI_TRON_KERNEL_CMDLINE__AMDGPU_FORCE_CIK_SUPPORT: amdgpu.cik_support=1
+    GPU_VERSION: radv-hawaii
 
 .kabini-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:KABINI
+    GPU_VERSION: radv-kabini
 
 .polaris10-test-valve:
   variables:
@@ -386,6 +389,7 @@
     # (2022-01) tsc=unstable was added in response to this message in kmsg,
     #    TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
     CI_TRON_KERNEL_CMDLINE__TSC_WORKAROUND: 'tsc=unstable'
+    GPU_VERSION: radv-polaris10
 
 .polaris10-test-valve-mupuf:
   extends: .polaris10-test-valve
@@ -401,12 +405,14 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VEGA10
+    GPU_VERSION: radv-vega10
     FDO_CI_CONCURRENT: 16
 
 .renoir-test-valve:
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RENOIR
+    GPU_VERSION: radv-renoir
     FDO_CI_CONCURRENT: 16
 
 .navi10-test-valve:
@@ -423,6 +429,7 @@
     - .navi10-test-valve
   variables:
     RUNNER_FARM_LOCATION: mupuf
+    GPU_VERSION: radv-navi10
     FDO_CI_CONCURRENT: 24
 
 .navi10-test-valve-kws:
@@ -436,6 +443,7 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI21
+    GPU_VERSION: radv-navi21
     FDO_CI_CONCURRENT: 32
     # FIXME: drop everything below to use the same kernel as the rest of the amdgpu jobs
     CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci
@@ -447,6 +455,7 @@
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VANGOGH
+    GPU_VERSION: radv-vangogh
     FDO_CI_CONCURRENT: 8
   tags:
     - farm:$RUNNER_FARM_LOCATION
@@ -457,12 +466,14 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RAPHAEL
+    GPU_VERSION: radv-raphael
     FDO_CI_CONCURRENT: 32
 
 .navi31-test-valve:
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI31
+    GPU_VERSION: radv-navi31
     FDO_CI_CONCURRENT: 32
     # FIXME: drop everything below to use the same kernel as the rest of the amdgpu jobs
     CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci
@@ -475,6 +486,7 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI48
+    GPU_VERSION: radv-gfx1201
     FDO_CI_CONCURRENT: 16  # FIXME: Replace with 32 when the zerovram regression is addressed
 
 ############### Fluster tests ###############

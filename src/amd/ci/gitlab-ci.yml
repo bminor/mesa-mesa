@@ -174,7 +174,6 @@ radeonsi-mendocino-glcts-piglit:
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 12h
   variables:
-    GPU_VERSION: radv-kabini
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 710
 
 radv-tahiti-vkcts:
@@ -184,7 +183,6 @@ radv-tahiti-vkcts:
     - .radv-valve-manual-rules  # Make sure this job is *always* run manually
   timeout: 1h
   variables:
-    GPU_VERSION: radv-tahiti
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
     RADV_PERFTEST: video_decode,video_encode
 
@@ -195,7 +193,6 @@ radv-hawaii-vkcts:
     - .radv-valve-manual-rules
   timeout: 1h
   variables:
-    GPU_VERSION: radv-hawaii
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
     RADV_PERFTEST: video_decode,video_encode
 
@@ -206,7 +203,6 @@ radv-polaris10-vkcts:
     - .radv-valve-manual-rules
   timeout: 1h 35m
   variables:
-    GPU_VERSION: radv-polaris10
     CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 4
     CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 70
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 90
@@ -220,7 +216,6 @@ radv-vega10-vkcts:
     - .radv-valve-manual-rules
   timeout: 1h 15m
   variables:
-    GPU_VERSION: radv-vega10
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
@@ -231,7 +226,6 @@ radv-renoir-vkcts:
     - .radv-valve-manual-rules
   timeout: 2h 15m
   variables:
-    GPU_VERSION: radv-renoir
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 130
     RADV_PERFTEST: transfer_queue
     FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
@@ -243,7 +237,6 @@ radv-navi10-vkcts:
     - .navi10-test-valve-kws
     - .radv-valve-manual-rules
   variables:
-    GPU_VERSION: radv-navi10
     RADV_PERFTEST: transfer_queue,hic
 
 radv-navi21-vkcts:
@@ -254,7 +247,6 @@ radv-navi21-vkcts:
     - .navi21-test-valve
     - .radv-valve-rules
   variables:
-    GPU_VERSION: radv-navi21
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     RADV_PERFTEST: transfer_queue,hic
 
@@ -266,7 +258,6 @@ radv-vangogh-vkcts:
     - .radv-valve-manual-rules
   timeout: 90m
   variables:
-    GPU_VERSION: radv-vangogh
     RADV_PERFTEST: transfer_queue,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
@@ -299,7 +290,6 @@ radv-raphael-vkcts:
     - .radv-valve-manual-rules
   timeout: 45m
   variables:
-    GPU_VERSION: radv-raphael
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40
     RADV_PERFTEST: transfer_queue,hic
 
@@ -311,7 +301,6 @@ radv-navi31-vkcts:
     - .navi31-test-valve
     - .radv-valve-rules
   variables:
-    GPU_VERSION: radv-navi31
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     # TODO: Remove video_encode,video_decode with next kernel.
     RADV_PERFTEST: transfer_queue,video_decode,video_encode,hic
@@ -326,7 +315,6 @@ radv-gfx1201-vkcts:
     - .gfx1201-test-valve
     - .radv-valve-manual-rules
   variables:
-    GPU_VERSION: radv-gfx1201
     # TODO: Verify that task shaders don't hang.
     # TODO: Fix GPU hangs with video
     RADV_DEBUG: nomeshshader,novideo
@@ -391,7 +379,6 @@ radv-tahiti-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-tahiti
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -404,7 +391,6 @@ radv-hawaii-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-hawaii
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -417,7 +403,6 @@ radv-polaris10-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-polaris10
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -430,7 +415,6 @@ radv-vega10-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-vega10
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -443,7 +427,6 @@ radv-renoir-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-renoir
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -456,7 +439,6 @@ radv-navi10-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-navi10
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -469,7 +451,6 @@ radv-navi21-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-navi21
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -482,7 +463,6 @@ radv-vangogh-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-vangogh
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -495,7 +475,6 @@ radv-raphael-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-raphael
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -508,7 +487,6 @@ radv-navi31-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-navi31
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -521,7 +499,6 @@ radv-gfx1201-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-gfx1201
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 
@@ -534,4 +511,3 @@ radv-gfx1201-vkd3d:
   timeout: 10m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
-    GPU_VERSION: radv-kabini
