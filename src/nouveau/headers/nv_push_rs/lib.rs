@@ -207,7 +207,10 @@ impl Push {
 
     /// Push an array of dwords into the push buffer
     pub fn push_inline_data(&mut self, data: &[u32]) {
-        if self.last_inc != usize::MAX {
+        if let Some(last) = self.mem.get_mut(self.last_inc) {
+            let last = MthdHeader::from_bits_mut(last);
+            last.add_len(data.len().try_into().unwrap());
+        } else {
             panic!("Inline data must only be placed after a method header");
         }
         self.mem.extend_from_slice(data);
