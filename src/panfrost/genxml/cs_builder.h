@@ -513,6 +513,17 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
    if (unlikely(!cs_is_valid(b)))
       return false;
 
+   /* Make sure we have sufficient capacity if we wont allocate more */
+   if (b->conf.alloc_buffer == NULL) {
+      if (unlikely(b->cur_chunk.size + num_instrs > b->cur_chunk.buffer.capacity)) {
+         assert(!"Out of CS space");
+         b->invalid = true;
+         return false;
+      }
+
+      return true;
+   }
+
    /* Lazy root chunk allocation. */
    if (unlikely(!b->root_chunk.buffer.cpu)) {
       b->root_chunk.buffer = b->conf.alloc_buffer(b->conf.cookie);
@@ -530,8 +541,10 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
     * We actually do this a few instructions before running out, because the
     * sequence to jump to a new queue takes multiple instructions.
     */
-   if (unlikely((b->cur_chunk.size + num_instrs + JUMP_SEQ_INSTR_COUNT) >
-                b->cur_chunk.buffer.capacity)) {
+   bool jump_to_next_chunk =
+      (b->cur_chunk.size + num_instrs + JUMP_SEQ_INSTR_COUNT) >
+      b->cur_chunk.buffer.capacity;
+   if (unlikely(jump_to_next_chunk)) {
       /* Now, allocate a new chunk */
       struct cs_buffer newbuf = b->conf.alloc_buffer(b->conf.cookie);
 
