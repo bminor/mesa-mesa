@@ -3564,7 +3564,7 @@
         "description": "intel/compiler: use the WA framework when emitting WA 14014595444",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d276ad45207356abeed1fd920714443b553ed1a2",
         "notes": null
