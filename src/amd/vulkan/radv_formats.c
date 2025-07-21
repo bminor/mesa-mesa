@@ -975,13 +975,14 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
       goto unsupported;
    }
 
-   /* For some reasons, we can't create 1d block-compressed images that can be stored to with a
-    * different format on GFX6.
-    */
-   if (pdev->info.gfx_level == GFX6 && info->type == VK_IMAGE_TYPE_1D && vk_format_is_block_compressed(format) &&
-       (info->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) &&
-       ((info->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) || (info->usage & VK_IMAGE_USAGE_STORAGE_BIT))) {
-      goto unsupported;
+   /* GFX6 has issues with 1D block-compressed formats. */
+   if (pdev->info.gfx_level == GFX6 && info->type == VK_IMAGE_TYPE_1D && vk_format_is_block_compressed(format)) {
+      maxMipLevels = 1;
+
+      if ((info->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) &&
+          ((info->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) || (info->usage & VK_IMAGE_USAGE_STORAGE_BIT))) {
+         goto unsupported;
+      }
    }
 
    /* From the Vulkan 1.3.206 spec:
