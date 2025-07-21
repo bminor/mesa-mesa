@@ -66,6 +66,7 @@ METHOD_IS_FLOAT = [
     'SET_VIEWPORT_CLIP_MIN_Z',
     'SET_VIEWPORT_CLIP_MAX_Z',
     'SET_Z_CLEAR_VALUE',
+    'SET_POINT_SIZE',
 ]
 
 # generator chokes on these in later files
