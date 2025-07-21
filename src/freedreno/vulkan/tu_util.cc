@@ -287,6 +287,19 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
       if (!tile_size.height)
          continue;
 
+      /* When using FDM, we need approximately square tiles to maintain
+       * proper density distribution across the framebuffer.
+       * Way to wide or tall tiles would distort the density mapping, causing
+       * areas intended for low density to receive higher density and vice
+       * versa.
+       */
+      uint32_t fdm_penalty = 0;
+      if (pass->has_fdm &&
+          (tile_size.width > tile_size.height * 2 ||
+           tile_size.height > tile_size.width * 2)) {
+         fdm_penalty = 1000;
+      }
+
       tile_count.width = DIV_ROUND_UP(fb->width, tile_size.width);
       tile_count.height = DIV_ROUND_UP(fb->height, tile_size.height);
 
@@ -300,14 +313,15 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
        * and amount of cache flushing), but the most square tiles in the case
        * of a tie (likely highest cache locality).
        */
-      if (tile_count.width * tile_count.height < best_tile_count ||
-          (tile_count.width * tile_count.height == best_tile_count &&
+      uint32_t total_tiles = tile_count.width * tile_count.height + fdm_penalty;
+      if (total_tiles < best_tile_count ||
+          (total_tiles == best_tile_count &&
            abs((int)(tile_size.width - tile_size.height)) <
               abs((int)(tiling->tile0.width - tiling->tile0.height)))) {
          tiling->possible = true;
          tiling->tile0 = tile_size;
          tiling->vsc.tile_count = tile_count;
-         best_tile_count = tile_count.width * tile_count.height;
+         best_tile_count = total_tiles;
       }
    }
 
