@@ -98,11 +98,11 @@ ir_vec_index_to_cond_assign_visitor::convert_vector_extract_to_cond_assign(ir_rv
 
       ir_rvalue *vec_input = interpolant->operands[0];
       ir_expression *const vec_interpolate =
-         new(base_ir) ir_expression(expr->operation, vec_input->type,
+         new(ir->node_linalloc) ir_expression(expr->operation, vec_input->type,
                                     vec_input, expr->operands[1]);
 
       this->progress = true;
-      return new(base_ir) ir_expression(ir_binop_vector_extract, ir->type,
+      return new(ir->node_linalloc) ir_expression(ir_binop_vector_extract, ir->type,
                                         vec_interpolate,
                                         interpolant->operands[1]);
    }

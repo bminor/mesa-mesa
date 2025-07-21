@@ -208,13 +208,13 @@ public:
 
       /* Create a link from the caller to the callee.
        */
-      call_node *node = new(mem_ctx) call_node;
+      call_node *node = new(call->node_linalloc) call_node;
       node->func = target;
       this->current->callees.push_tail(node);
 
       /* Create a link from the callee to the caller.
        */
-      node = new(mem_ctx) call_node;
+      node = new(call->node_linalloc) call_node;
       node->func = this->current;
       target->callers.push_tail(node);
       return visit_continue;

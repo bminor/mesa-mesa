@@ -905,7 +905,7 @@ function_header:
          /* add type for IDENTIFIER search */
          state->symbols->add_type($2, glsl_subroutine_type($2));
       } else
-         state->symbols->add_function(new(state) ir_function($2));
+         state->symbols->add_function(new(ctx) ir_function($2));
       state->symbols->push_scope();
    }
    ;
@@ -920,7 +920,7 @@ parameter_declarator:
       $$->type->set_location(@1);
       $$->type->specifier = $1;
       $$->identifier = $2;
-      state->symbols->add_variable(new(state) ir_variable(NULL, $2, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $2, ir_var_auto));
    }
    | layout_qualifier type_specifier any_identifier
    {
@@ -937,7 +937,7 @@ parameter_declarator:
       $$->type->specifier = $1;
       $$->identifier = $2;
       $$->array_specifier = $3;
-      state->symbols->add_variable(new(state) ir_variable(NULL, $2, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $2, ir_var_auto));
    }
    ;
 
@@ -1049,7 +1049,7 @@ init_declarator_list:
 
       $$ = $1;
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $3, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $3, ir_var_auto));
    }
    | init_declarator_list ',' any_identifier array_specifier
    {
@@ -1059,7 +1059,7 @@ init_declarator_list:
 
       $$ = $1;
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $3, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $3, ir_var_auto));
    }
    | init_declarator_list ',' any_identifier array_specifier '=' initializer
    {
@@ -1069,7 +1069,7 @@ init_declarator_list:
 
       $$ = $1;
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $3, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $3, ir_var_auto));
    }
    | init_declarator_list ',' any_identifier '=' initializer
    {
@@ -1079,7 +1079,7 @@ init_declarator_list:
 
       $$ = $1;
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $3, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $3, ir_var_auto));
    }
    ;
 
@@ -1101,7 +1101,7 @@ single_declaration:
       $$ = new(ctx) ast_declarator_list($1);
       $$->set_location_range(@1, @2);
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $2, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $2, ir_var_auto));
    }
    | fully_specified_type any_identifier array_specifier
    {
@@ -1112,7 +1112,7 @@ single_declaration:
       $$ = new(ctx) ast_declarator_list($1);
       $$->set_location_range(@1, @3);
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $2, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $2, ir_var_auto));
    }
    | fully_specified_type any_identifier array_specifier '=' initializer
    {
@@ -1123,7 +1123,7 @@ single_declaration:
       $$ = new(ctx) ast_declarator_list($1);
       $$->set_location_range(@1, @3);
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $2, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $2, ir_var_auto));
    }
    | fully_specified_type any_identifier '=' initializer
    {
@@ -1134,7 +1134,7 @@ single_declaration:
       $$ = new(ctx) ast_declarator_list($1);
       $$->set_location_range(@1, @2);
       $$->declarations.push_tail(&decl->link);
-      state->symbols->add_variable(new(state) ir_variable(NULL, $2, ir_var_auto));
+      state->symbols->add_variable(new(ctx) ir_variable(NULL, $2, ir_var_auto));
    }
    | INVARIANT variable_identifier
    {

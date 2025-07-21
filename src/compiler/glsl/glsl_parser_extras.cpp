@@ -2183,7 +2183,8 @@ do_late_parsing_checks(struct _mesa_glsl_parse_state *state)
 static void
 opt_shader(const struct gl_constants *consts,
            const struct gl_extensions *exts,
-           struct gl_shader *shader)
+           struct gl_shader *shader,
+           linear_ctx *linalloc)
 {
    assert(shader->CompileStatus != COMPILE_FAILURE &&
           !shader->ir->is_empty());
@@ -2218,7 +2219,7 @@ opt_shader(const struct gl_constants *consts,
 
    optimize_dead_builtin_variables(shader->ir, other);
 
-   lower_vector_derefs(shader);
+   lower_vector_derefs(shader, linalloc);
 
    lower_packing_builtins(shader->ir, exts->ARB_shading_language_packing,
                           exts->ARB_gpu_shader5,
@@ -2402,7 +2403,7 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
       lower_builtins(shader->ir);
       assign_subroutine_indexes(state);
       lower_subroutine(shader->ir, state);
-      opt_shader(&ctx->Const, &ctx->Extensions, shader);
+      opt_shader(&ctx->Const, &ctx->Extensions, shader, state->linalloc);
    }
 
    if (!force_recompile) {

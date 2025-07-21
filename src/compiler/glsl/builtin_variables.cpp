@@ -561,7 +561,7 @@ builtin_variable_generator::add_index_variable(const char *name,
                                                enum ir_variable_mode mode,
                                                int slot, int index)
 {
-   ir_variable *var = new(symtab) ir_variable(type, name, mode);
+   ir_variable *var = new(state->linalloc) ir_variable(type, name, mode);
    var->data.how_declared = ir_var_declared_implicitly;
 
    switch (var->data.mode) {
@@ -607,7 +607,7 @@ builtin_variable_generator::add_variable(const char *name,
                                          enum ir_variable_mode mode, int slot,
                                          enum glsl_interp_mode interp)
 {
-   ir_variable *var = new(symtab) ir_variable(type, name, mode);
+   ir_variable *var = new(state->linalloc) ir_variable(type, name, mode);
    var->data.how_declared = ir_var_declared_implicitly;
 
    switch (var->data.mode) {
@@ -697,8 +697,8 @@ builtin_variable_generator::add_const(const char *name, int precision,
 {
    ir_variable *const var = add_variable(name, &glsl_type_builtin_int,
                                          precision, ir_var_auto, -1);
-   var->constant_value = new(var) ir_constant(value);
-   var->constant_initializer = new(var) ir_constant(value);
+   var->constant_value = new(state->linalloc) ir_constant(value);
+   var->constant_initializer = new(state->linalloc) ir_constant(value);
    var->data.has_initializer = true;
    return var;
 }
@@ -716,9 +716,9 @@ builtin_variable_generator::add_const_ivec3(const char *name, int x, int y,
    data.i[0] = x;
    data.i[1] = y;
    data.i[2] = z;
-   var->constant_value = new(var) ir_constant(&glsl_type_builtin_ivec3, &data);
+   var->constant_value = new(state->linalloc) ir_constant(&glsl_type_builtin_ivec3, &data);
    var->constant_initializer =
-      new(var) ir_constant(&glsl_type_builtin_ivec3, &data);
+      new(state->linalloc) ir_constant(&glsl_type_builtin_ivec3, &data);
    var->data.has_initializer = true;
    return var;
 }

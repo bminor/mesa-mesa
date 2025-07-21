@@ -186,8 +186,11 @@ struct loop_record
       /* also supported for the "function loop" */
       if(!this->execute_flag) {
          ir_exec_list& list = this->loop ? this->loop->body_instructions : signature->body;
-         this->execute_flag = new(this->signature) ir_variable(&glsl_type_builtin_bool, "execute_flag", ir_var_temporary);
-         list.push_head(new(this->signature) ir_assignment(new(this->signature) ir_dereference_variable(execute_flag), new(this->signature) ir_constant(true)));
+         this->execute_flag = new(this->signature->node_linalloc) ir_variable(&glsl_type_builtin_bool, "execute_flag", ir_var_temporary);
+         list.push_head(new(this->signature->node_linalloc)
+                        ir_assignment(new(this->signature->node_linalloc)
+                                      ir_dereference_variable(execute_flag),
+                                      new(this->signature->node_linalloc) ir_constant(true)));
          list.push_head(this->execute_flag);
       }
       return this->execute_flag;
@@ -439,12 +442,12 @@ retry: /* we get here if we put code after the if inside a branch */
          if(pull_out_jumps && jump_strengths[0] == jump_strengths[1]) {
             bool unify = true;
             if(jump_strengths[0] == strength_continue)
-               ir->insert_after(new(ir) ir_loop_jump(ir_loop_jump::jump_continue));
+               ir->insert_after(new(ir->node_linalloc) ir_loop_jump(ir_loop_jump::jump_continue));
             else if(jump_strengths[0] == strength_break)
-               ir->insert_after(new(ir) ir_loop_jump(ir_loop_jump::jump_break));
+               ir->insert_after(new(ir->node_linalloc) ir_loop_jump(ir_loop_jump::jump_break));
             /* FINISHME: unify returns with identical expressions */
             else if(jump_strengths[0] == strength_return && glsl_type_is_void(this->function.signature->return_type))
-               ir->insert_after(new(ir) ir_return(NULL));
+               ir->insert_after(new(ir->node_linalloc) ir_return(NULL));
 	    else
 	       unify = false;
 
@@ -503,7 +506,10 @@ retry: /* we get here if we put code after the if inside a branch */
              * this->loop must be initialized even outside of loops.
              */
             ir_variable* execute_flag = this->loop.get_execute_flag();
-            jumps[lower]->replace_with(new(ir) ir_assignment(new (ir) ir_dereference_variable(execute_flag), new (ir) ir_constant(false)));
+            jumps[lower]->replace_with(new(ir->node_linalloc)
+                                       ir_assignment(new (ir->node_linalloc)
+                                                     ir_dereference_variable(execute_flag),
+                                                     new (ir->node_linalloc) ir_constant(false)));
             /* Note: we must update block_records and jumps to reflect
              * the fact that the control path has been altered to an
              * instruction that clears the execute flag.
@@ -645,7 +651,9 @@ retry: /* we get here if we put code after the if inside a branch */
              */
             if(!ir->get_next()->is_tail_sentinel()) {
                assert(this->loop.execute_flag);
-               ir_if* if_execute = new(ir) ir_if(new(ir) ir_dereference_variable(this->loop.execute_flag));
+               ir_if* if_execute = new(ir->node_linalloc)
+                                   ir_if(new(ir->node_linalloc)
+                                         ir_dereference_variable(this->loop.execute_flag));
                move_outer_block_inside(ir, &if_execute->then_instructions);
                ir->insert_after(if_execute);
             }
@@ -713,7 +721,9 @@ retry: /* we get here if we put code after the if inside a branch */
       if(this->loop.may_set_return_flag) {
          assert(this->function.return_flag);
          /* Generate the if statement to check the return flag */
-         ir_if* return_if = new(ir) ir_if(new(ir) ir_dereference_variable(this->function.return_flag));
+         ir_if* return_if = new(ir->node_linalloc)
+                            ir_if(new(ir->node_linalloc)
+                                  ir_dereference_variable(this->function.return_flag));
          /* Note: we also need to propagate the knowledge that the
           * return flag may get set to the outer context.  This
           * satisfies the loop.may_set_return_flag part of the
@@ -726,7 +736,8 @@ retry: /* we get here if we put code after the if inside a branch */
              * loop if the return flag is set.  Caller will lower that
              * break statement if necessary.
              */
-            return_if->then_instructions.push_tail(new(ir) ir_loop_jump(ir_loop_jump::jump_break));
+            return_if->then_instructions.push_tail(new(ir->node_linalloc)
+                                                   ir_loop_jump(ir_loop_jump::jump_break));
          else {
             /* Otherwise, ensure that the instructions that follow are only
              * executed if the return flag is clear.  We can do that by moving
@@ -739,12 +750,15 @@ retry: /* we get here if we put code after the if inside a branch */
              * the return flag then branch and let a future pass tidy it up.
              */
             if (glsl_type_is_void(this->function.signature->return_type))
-               return_if->then_instructions.push_tail(new(ir) ir_return(NULL));
+               return_if->then_instructions.push_tail(new(ir->node_linalloc)
+                                                      ir_return(NULL));
             else {
                assert(this->function.return_value);
                ir_variable* return_value = this->function.return_value;
                return_if->then_instructions.push_tail(
-                  new(ir) ir_return(new(ir) ir_dereference_variable(return_value)));
+                  new(ir->node_linalloc)
+                        ir_return(new(ir->node_linalloc)
+                                  ir_dereference_variable(return_value)));
             }
          }
 
@@ -789,7 +803,9 @@ retry: /* we get here if we put code after the if inside a branch */
       }
 
       if(this->function.return_value)
-         ir->body.push_tail(new(ir) ir_return(new (ir) ir_dereference_variable(this->function.return_value)));
+         ir->body.push_tail(new(ir->node_linalloc)
+                            ir_return(new (ir->node_linalloc)
+                                      ir_dereference_variable(this->function.return_value)));
 
       this->loop = saved_loop;
       this->function = saved_function;

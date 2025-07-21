@@ -257,8 +257,6 @@ ir_validate::visit_enter(ir_function *ir)
 ir_visitor_status
 ir_validate::visit_leave(ir_function *ir)
 {
-   assert(ralloc_parent(ir->name) == ir);
-
    this->current_function = NULL;
    return visit_continue;
 }
@@ -1046,14 +1044,6 @@ ir_validate::visit_leave(ir_swizzle *ir)
 ir_visitor_status
 ir_validate::visit(ir_variable *ir)
 {
-   /* An ir_variable is the one thing that can (and will) appear multiple times
-    * in an IR tree.  It is added to the hashtable so that it can be used
-    * in the ir_dereference_variable handler to ensure that a variable is
-    * declared before it is dereferenced.
-    */
-   if (ir->name && ir->is_name_ralloced())
-      assert(ralloc_parent(ir->name) == ir);
-
    _mesa_set_add(ir_set, ir);
 
    /* If a variable is an array, verify that the maximum array index is in

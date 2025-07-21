@@ -985,7 +985,7 @@ ast_layout_expression::process_qualifier_constant(struct _mesa_glsl_parse_state 
       ir_rvalue *const ir = const_expression->hir(&dummy_instructions, state);
 
       ir_constant *const const_int =
-         ir->constant_expression_value(ralloc_parent(ir));
+         ir->constant_expression_value(state->linalloc);
 
       if (const_int == NULL || !glsl_type_is_integer_32(const_int->type)) {
          YYLTYPE loc = const_expression->get_location();
@@ -1042,7 +1042,7 @@ process_qualifier_constant(struct _mesa_glsl_parse_state *state,
    ir_rvalue *const ir = const_expression->hir(&dummy_instructions, state);
 
    ir_constant *const const_int =
-      ir->constant_expression_value(ralloc_parent(ir));
+      ir->constant_expression_value(state->linalloc);
    if (const_int == NULL || !glsl_type_is_integer_32(const_int->type)) {
       _mesa_glsl_error(loc, state, "%s must be an integral constant "
                        "expression", qual_indentifier);

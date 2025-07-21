@@ -49,7 +49,7 @@ public:
    virtual void handle_rvalue(ir_rvalue **rvalue);
    virtual ir_visitor_status visit_enter(ir_call *ir);
 
-   ir_function_signature *map_builtin(ir_function_signature *sig);
+   ir_function_signature *map_builtin(linear_ctx *linalloc, ir_function_signature *sig);
 
    /* Set of rvalues that can be lowered. This will be filled in by
     * find_lowerable_rvalues_visitor. Only the root node of a lowerable section
@@ -66,8 +66,6 @@ public:
     * A temporary hash table only used in order to clone functions.
     */
    struct hash_table *clone_ht;
-
-   void *lowered_builtin_mem_ctx;
 
    const struct gl_shader_compiler_options *options;
 };
@@ -710,8 +708,7 @@ convert_precision(bool up, ir_rvalue *ir)
    }
 
    const glsl_type *desired_type = convert_type(up, ir->type);
-   void *mem_ctx = ralloc_parent(ir);
-   return new(mem_ctx) ir_expression(op, desired_type, ir, NULL);
+   return new(ir->node_linalloc) ir_expression(op, desired_type, ir, NULL);
 }
 
 void
@@ -879,7 +876,7 @@ find_precision_visitor::visit_enter(ir_call *ir)
         return_var->data.precision != GLSL_PRECISION_LOW))
       return visit_continue;
 
-   ir->callee = map_builtin(ir->callee);
+   ir->callee = map_builtin(ir->node_linalloc, ir->callee);
    ir->generate_inline(ir);
    ir->remove();
 
@@ -887,12 +884,11 @@ find_precision_visitor::visit_enter(ir_call *ir)
 }
 
 ir_function_signature *
-find_precision_visitor::map_builtin(ir_function_signature *sig)
+find_precision_visitor::map_builtin(linear_ctx *linalloc, ir_function_signature *sig)
 {
    if (lowered_builtins == NULL) {
       lowered_builtins = _mesa_pointer_hash_table_create(NULL);
       clone_ht =_mesa_pointer_hash_table_create(NULL);
-      lowered_builtin_mem_ctx = ralloc_context(NULL);
    } else {
       struct hash_entry *entry = _mesa_hash_table_search(lowered_builtins, sig);
       if (entry)
@@ -900,7 +896,7 @@ find_precision_visitor::map_builtin(ir_function_signature *sig)
    }
 
    ir_function_signature *lowered_sig =
-      sig->clone(lowered_builtin_mem_ctx, clone_ht);
+      sig->clone(linalloc, clone_ht);
 
    /* If we're lowering the output precision of the function, then also lower
     * the precision of its inputs unless they have a specific qualifier.  The
@@ -929,7 +925,6 @@ find_precision_visitor::find_precision_visitor(const struct gl_shader_compiler_o
    : lowerable_rvalues(_mesa_pointer_set_create(NULL)),
      lowered_builtins(NULL),
      clone_ht(NULL),
-     lowered_builtin_mem_ctx(NULL),
      options(options)
 {
 }
@@ -941,7 +936,6 @@ find_precision_visitor::~find_precision_visitor()
    if (lowered_builtins) {
       _mesa_hash_table_destroy(lowered_builtins, NULL);
       _mesa_hash_table_destroy(clone_ht, NULL);
-      ralloc_free(lowered_builtin_mem_ctx);
    }
 }
 
@@ -1034,7 +1028,7 @@ lower_variables_visitor::visit(ir_variable *var)
       if (!options->LowerPrecisionConstants)
          return visit_continue;
       var->constant_value =
-         var->constant_value->clone(ralloc_parent(var), NULL);
+         var->constant_value->clone(var->node_linalloc, NULL);
       lower_constant(var->constant_value);
    }
 
@@ -1043,7 +1037,7 @@ lower_variables_visitor::visit(ir_variable *var)
       if (!options->LowerPrecisionConstants)
          return visit_continue;
       var->constant_initializer =
-         var->constant_initializer->clone(ralloc_parent(var), NULL);
+         var->constant_initializer->clone(var->node_linalloc, NULL);
       lower_constant(var->constant_initializer);
    }
 
@@ -1076,16 +1070,16 @@ lower_variables_visitor::convert_split_assignment(ir_dereference *lhs,
                                                   ir_rvalue *rhs,
                                                   bool insert_before)
 {
-   void *mem_ctx = ralloc_parent(lhs);
+   linear_ctx *linalloc = lhs->node_linalloc;
 
    if (glsl_type_is_array(lhs->type)) {
       for (unsigned i = 0; i < lhs->type->length; i++) {
          ir_dereference *l, *r;
 
-         l = new(mem_ctx) ir_dereference_array(lhs->clone(mem_ctx, NULL),
-                                               new(mem_ctx) ir_constant(i));
-         r = new(mem_ctx) ir_dereference_array(rhs->clone(mem_ctx, NULL),
-                                               new(mem_ctx) ir_constant(i));
+         l = new(linalloc) ir_dereference_array(lhs->clone(linalloc, NULL),
+                                               new(linalloc) ir_constant(i));
+         r = new(linalloc) ir_dereference_array(rhs->clone(linalloc, NULL),
+                                               new(linalloc) ir_constant(i));
          convert_split_assignment(l, r, insert_before);
       }
       return;
@@ -1096,7 +1090,7 @@ lower_variables_visitor::convert_split_assignment(ir_dereference *lhs,
    assert(glsl_type_is_16bit(lhs->type) != glsl_type_is_16bit(rhs->type));
 
    ir_assignment *assign =
-      new(mem_ctx) ir_assignment(lhs, convert_precision(glsl_type_is_32bit(lhs->type), rhs));
+      new(linalloc) ir_assignment(lhs, convert_precision(glsl_type_is_32bit(lhs->type), rhs));
 
    if (insert_before)
       base_ir->insert_before(assign);
@@ -1188,7 +1182,7 @@ lower_variables_visitor::visit_enter(ir_assignment *ir)
 ir_visitor_status
 lower_variables_visitor::visit_enter(ir_return *ir)
 {
-   void *mem_ctx = ralloc_parent(ir);
+   linear_ctx *linalloc = ir->node_linalloc;
 
    ir_dereference *deref = ir->value ? ir->value->as_dereference() : NULL;
    if (deref) {
@@ -1200,16 +1194,16 @@ lower_variables_visitor::visit_enter(ir_return *ir)
           glsl_type_is_32bit(glsl_without_array(deref->type))) {
          /* Create a 32-bit temporary variable. */
          ir_variable *new_var =
-            new(mem_ctx) ir_variable(deref->type, "lowerp", ir_var_temporary);
+            new(linalloc) ir_variable(deref->type, "lowerp", ir_var_temporary);
          base_ir->insert_before(new_var);
 
          /* Fix types in dereferences. */
          fix_types_in_deref_chain(deref);
 
          /* Convert to 32 bits for the return value. */
-         convert_split_assignment(new(mem_ctx) ir_dereference_variable(new_var),
+         convert_split_assignment(new(linalloc) ir_dereference_variable(new_var),
                                   deref, true);
-         ir->value = new(mem_ctx) ir_dereference_variable(new_var);
+         ir->value = new(linalloc) ir_dereference_variable(new_var);
       }
    }
 
@@ -1255,20 +1249,19 @@ void lower_variables_visitor::handle_rvalue(ir_rvalue **rvalue)
       if (var &&
           _mesa_set_search(lower_vars, var) &&
           glsl_type_is_32bit(glsl_without_array(deref->type))) {
-         void *mem_ctx = ralloc_parent(ir);
 
          /* Create a 32-bit temporary variable. */
          ir_variable *new_var =
-            new(mem_ctx) ir_variable(deref->type, "lowerp", ir_var_temporary);
+            new(ir->node_linalloc) ir_variable(deref->type, "lowerp", ir_var_temporary);
          base_ir->insert_before(new_var);
 
          /* Fix types in dereferences. */
          fix_types_in_deref_chain(deref);
 
          /* Convert to 32 bits for the rvalue. */
-         convert_split_assignment(new(mem_ctx) ir_dereference_variable(new_var),
+         convert_split_assignment(new(ir->node_linalloc) ir_dereference_variable(new_var),
                                   deref, true);
-         *rvalue = new(mem_ctx) ir_dereference_variable(new_var);
+         *rvalue = new(ir->node_linalloc) ir_dereference_variable(new_var);
       }
    }
 }
@@ -1276,8 +1269,6 @@ void lower_variables_visitor::handle_rvalue(ir_rvalue **rvalue)
 ir_visitor_status
 lower_variables_visitor::visit_enter(ir_call *ir)
 {
-   void *mem_ctx = ralloc_parent(ir);
-
    /* We can't pass 16-bit variables as 32-bit inout/out parameters. */
    ir_foreach_two_lists(formal_node, &ir->callee->parameters,
                      actual_node, &ir->actual_parameters) {
@@ -1298,23 +1289,23 @@ lower_variables_visitor::visit_enter(ir_call *ir)
 
          /* Create a 32-bit temporary variable for the parameter. */
          ir_variable *new_var =
-            new(mem_ctx) ir_variable(param->type, "lowerp", ir_var_temporary);
+            new(ir->node_linalloc) ir_variable(param->type, "lowerp", ir_var_temporary);
          base_ir->insert_before(new_var);
 
          /* Replace the parameter. */
-         actual_node->replace_with(new(mem_ctx) ir_dereference_variable(new_var));
+         actual_node->replace_with(new(ir->node_linalloc) ir_dereference_variable(new_var));
 
          if (param->data.mode == ir_var_function_in ||
              param->data.mode == ir_var_function_inout) {
             /* Convert to 32 bits for passing in. */
-            convert_split_assignment(new(mem_ctx) ir_dereference_variable(new_var),
-                                     param_deref->clone(mem_ctx, NULL), true);
+            convert_split_assignment(new(ir->node_linalloc) ir_dereference_variable(new_var),
+                                     param_deref->clone(ir->node_linalloc, NULL), true);
          }
          if (param->data.mode == ir_var_function_out ||
              param->data.mode == ir_var_function_inout) {
             /* Convert to 16 bits after returning. */
             convert_split_assignment(param_deref,
-                                     new(mem_ctx) ir_dereference_variable(new_var),
+                                     new(ir->node_linalloc) ir_dereference_variable(new_var),
                                      false);
          }
       }
@@ -1329,7 +1320,7 @@ lower_variables_visitor::visit_enter(ir_call *ir)
        glsl_type_is_32bit(glsl_without_array(ret_deref->type))) {
       /* Create a 32-bit temporary variable. */
       ir_variable *new_var =
-         new(mem_ctx) ir_variable(ir->callee->return_type, "lowerp",
+         new(ir->node_linalloc) ir_variable(ir->callee->return_type, "lowerp",
                                   ir_var_temporary);
       base_ir->insert_before(new_var);
 
@@ -1337,8 +1328,8 @@ lower_variables_visitor::visit_enter(ir_call *ir)
       ret_deref->var = new_var;
 
       /* Convert to 16 bits after returning. */
-      convert_split_assignment(new(mem_ctx) ir_dereference_variable(ret_var),
-                               new(mem_ctx) ir_dereference_variable(new_var),
+      convert_split_assignment(new(ir->node_linalloc) ir_dereference_variable(ret_var),
+                               new(ir->node_linalloc) ir_dereference_variable(new_var),
                                false);
    }
 

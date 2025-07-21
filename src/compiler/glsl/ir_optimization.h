@@ -57,7 +57,7 @@ bool lower_packing_builtins(ir_exec_list *instructions,
                             bool has_shading_language_packing,
                             bool has_gpu_shader5,
                             bool has_half_float_packing);
-bool lower_vector_derefs(gl_shader *shader);
+bool lower_vector_derefs(gl_shader *shader, linear_ctx *linalloc);
 void optimize_dead_builtin_variables(ir_exec_list *instructions,
                                      enum ir_variable_mode other);
 

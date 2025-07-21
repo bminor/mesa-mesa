@@ -51,14 +51,13 @@ public:
 static void
 replace_return_with_assignment(ir_instruction *ir, void *data)
 {
-   void *ctx = ralloc_parent(ir);
    ir_dereference *orig_deref = (ir_dereference *) data;
    ir_return *ret = ir->as_return();
 
    if (ret) {
       if (ret->value) {
-	 ir_rvalue *lhs = orig_deref->clone(ctx, NULL);
-         ret->replace_with(new(ctx) ir_assignment(lhs, ret->value));
+	 ir_rvalue *lhs = orig_deref->clone(ir->node_linalloc, NULL);
+         ret->replace_with(new(ir->node_linalloc) ir_assignment(lhs, ret->value));
       } else {
 	 /* un-valued return has to be the last return, or we shouldn't
 	  * have reached here. (see can_inline()).
@@ -82,18 +81,17 @@ ir_visitor_status
 ir_save_lvalue_visitor::visit_enter(ir_dereference_array *deref)
 {
    if (deref->array_index->ir_type != ir_type_constant) {
-      void *ctx = ralloc_parent(deref);
       ir_variable *index;
       ir_assignment *assignment;
 
-      index = new(ctx) ir_variable(deref->array_index->type, "saved_idx", ir_var_temporary);
+      index = new(deref->node_linalloc) ir_variable(deref->array_index->type, "saved_idx", ir_var_temporary);
       base_ir->insert_before(index);
 
-      assignment = new(ctx) ir_assignment(new(ctx) ir_dereference_variable(index),
+      assignment = new(deref->node_linalloc) ir_assignment(new(deref->node_linalloc) ir_dereference_variable(index),
                                           deref->array_index);
       base_ir->insert_before(assignment);
 
-      deref->array_index = new(ctx) ir_dereference_variable(index);
+      deref->array_index = new(deref->node_linalloc) ir_dereference_variable(index);
    }
 
    deref->array->accept(this);
@@ -137,7 +135,7 @@ should_replace_variable(ir_variable *sig_param, ir_rvalue *param,
 void
 ir_call::generate_inline(ir_instruction *next_ir)
 {
-   void *ctx = ralloc_parent(this);
+   linear_ctx *linalloc = this->node_linalloc;
    ir_variable **parameters;
    unsigned num_parameters;
    int i;
@@ -163,7 +161,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
          /* Actual replacement happens below */
 	 parameters[i] = NULL;
       } else {
-	 parameters[i] = sig_param->clone(ctx, ht);
+	 parameters[i] = sig_param->clone(linalloc, ht);
 	 parameters[i]->data.mode = ir_var_temporary;
 
 	 /* Remove the read-only decoration because we're going to write
@@ -198,7 +196,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
              sig_param->data.mode == ir_var_const_in) {
             ir_assignment *assign;
 
-            assign = new(ctx) ir_assignment(new(ctx) ir_dereference_variable(parameters[i]),
+            assign = new(linalloc) ir_assignment(new(linalloc) ir_dereference_variable(parameters[i]),
                                             param);
             next_ir->insert_before(assign);
          } else {
@@ -214,8 +212,8 @@ ir_call::generate_inline(ir_instruction *next_ir)
             if (sig_param->data.mode == ir_var_function_inout) {
                ir_assignment *assign;
 
-               assign = new(ctx) ir_assignment(new(ctx) ir_dereference_variable(parameters[i]),
-                                               param->clone(ctx, NULL)->as_rvalue());
+               assign = new(linalloc) ir_assignment(new(linalloc) ir_dereference_variable(parameters[i]),
+                                               param->clone(linalloc, NULL)->as_rvalue());
                next_ir->insert_before(assign);
             }
          }
@@ -228,7 +226,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
 
    /* Generate the inlined body of the function to a new list */
    ir_foreach_in_list(ir_instruction, ir, &callee->body) {
-      ir_instruction *new_ir = ir->clone(ctx, ht);
+      ir_instruction *new_ir = ir->clone(linalloc, ht);
 
       new_instructions.push_tail(new_ir);
       visit_tree(new_ir, replace_return_with_assignment, this->return_deref);
@@ -265,8 +263,8 @@ ir_call::generate_inline(ir_instruction *next_ir)
 			    sig_param->data.mode == ir_var_function_inout)) {
 	 ir_assignment *assign;
 
-         assign = new(ctx) ir_assignment(param,
-                                         new(ctx) ir_dereference_variable(parameters[i]));
+         assign = new(linalloc) ir_assignment(param,
+                                         new(linalloc) ir_dereference_variable(parameters[i]));
 	 next_ir->insert_before(assign);
       }
 
@@ -316,7 +314,7 @@ ir_variable_replacement_visitor::replace_deref(ir_dereference **deref)
 {
    ir_dereference_variable *deref_var = (*deref)->as_dereference_variable();
    if (deref_var && deref_var->var == this->orig)
-      *deref = this->repl->as_dereference()->clone(ralloc_parent(*deref), NULL);
+      *deref = this->repl->as_dereference()->clone((*deref)->node_linalloc, NULL);
 }
 
 void
@@ -338,7 +336,7 @@ ir_variable_replacement_visitor::replace_rvalue(ir_rvalue **rvalue)
 
    ir_dereference_variable *deref_var = (deref)->as_dereference_variable();
    if (deref_var && deref_var->var == this->orig)
-      *rvalue = this->repl->clone(ralloc_parent(deref), NULL);
+      *rvalue = this->repl->clone(deref->node_linalloc, NULL);
 }
 
 ir_visitor_status
