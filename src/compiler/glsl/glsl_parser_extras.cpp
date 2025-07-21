@@ -2231,9 +2231,6 @@ opt_shader(const struct gl_constants *consts,
    do_vec_index_to_cond_assign(shader->ir);
 
    validate_ir_tree(shader->ir);
-
-   /* Retain any live IR, but trash the rest. */
-   reparent_ir(shader->ir, shader->ir);
 }
 
 static bool
@@ -2422,9 +2419,6 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
       }
    }
 
-   delete state->symbols;
-   ralloc_free(state);
-
    if (ctx->_Shader && ctx->_Shader->Flags & GLSL_DUMP) {
       if (shader->CompileStatus) {
          assert(shader->ir);
@@ -2453,6 +2447,9 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
       shader->nir = glsl_to_nir(shader, ctx->screen->nir_options[shader->Stage],
                                 source_blake3);
    }
+
+   delete state->symbols;
+   ralloc_free(state);
 
    if (ctx->Cache && shader->CompileStatus == COMPILE_SUCCESS) {
       char sha1_buf[41];

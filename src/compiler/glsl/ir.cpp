@@ -2191,44 +2191,6 @@ visit_exec_list_safe(ir_exec_list *list, ir_visitor *visitor)
    }
 }
 
-
-static void
-steal_memory(ir_instruction *ir, void *new_ctx)
-{
-   ir_variable *var = ir->as_variable();
-   ir_function *fn = ir->as_function();
-   ir_constant *constant = ir->as_constant();
-   if (var != NULL && var->constant_value != NULL)
-      steal_memory(var->constant_value, ir);
-
-   if (var != NULL && var->constant_initializer != NULL)
-      steal_memory(var->constant_initializer, ir);
-
-   if (fn != NULL && fn->subroutine_types)
-      ralloc_steal(new_ctx, fn->subroutine_types);
-
-   /* The components of aggregate constants are not visited by the normal
-    * visitor, so steal their values by hand.
-    */
-   if (constant != NULL &&
-       (glsl_type_is_array(constant->type) || glsl_type_is_struct(constant->type))) {
-      for (unsigned int i = 0; i < constant->type->length; i++) {
-         steal_memory(constant->const_elements[i], ir);
-      }
-   }
-
-   ralloc_steal(new_ctx, ir);
-}
-
-
-void
-reparent_ir(ir_exec_list *list, void *mem_ctx)
-{
-   ir_foreach_in_list(ir_instruction, node, list) {
-      visit_tree(node, steal_memory, mem_ctx);
-   }
-}
-
 enum mesa_prim
 gl_to_mesa_prim(GLenum prim)
 {

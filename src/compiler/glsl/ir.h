@@ -2440,9 +2440,6 @@ detect_recursion_unlinked(struct _mesa_glsl_parse_state *state,
 void
 clone_ir_list(void *mem_ctx, ir_exec_list *out, const ir_exec_list *in);
 
-extern void
-reparent_ir(ir_exec_list *list, void *mem_ctx);
-
 extern char *
 prototype_string(const glsl_type *return_type, const char *name,
 		 ir_exec_list *parameters);
