@@ -326,6 +326,23 @@ radv-navi31-vkcts:
     RADV_PERFTEST: transfer_queue,video_decode,video_encode,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
+
+radv-gfx1201-vkcts:
+  timeout: 25m
+  parallel: 2
+  extends:
+    - .ci-tron-test-radv-vk
+    - .gfx1201-test-valve
+    - .radv-valve-manual-rules
+  variables:
+    DEQP_SUITE: radv-valve
+    GPU_VERSION: radv-gfx1201
+    # TODO: Verify that task shaders don't hang.
+    # TODO: Fix GPU hangs with video
+    RADV_DEBUG: nomeshshader,novideo
+    RADV_PERFTEST: transfer_queue,hic
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 40
+
 ############### Fossilize
 radv-fossils:
   extends:
@@ -482,6 +499,17 @@ radv-navi31-vkd3d:
     - .radv-valve-manual-rules
   variables:
     GPU_VERSION: radv-navi31
+    # Random tests fail/crash when trying to run them in parallel
+    FDO_CI_CONCURRENT: 1
+
+radv-gfx1201-vkd3d:
+  extends:
+    - .ci-tron-test-radv-vk
+    - .test-vkd3d-proton
+    - .gfx1201-test-valve
+    - .radv-valve-manual-rules
+  variables:
+    GPU_VERSION: radv-gfx1201
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
 

@@ -468,6 +468,13 @@
     CI_TRON_INITRAMFS__GPU__URL: null
     CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: null
 
+
+.gfx1201-test-valve:
+  variables:
+    RUNNER_FARM_LOCATION: keywords
+    CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI48
+    FDO_CI_CONCURRENT: 16  # FIXME: Replace with 32 when the zerovram regression is addressed
+
 ############### Fluster tests ###############
 .radeonsi-vaapi-fluster-rules:
   extends:
