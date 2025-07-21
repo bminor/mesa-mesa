@@ -247,12 +247,14 @@ ALU2(SUBB)
 #undef ALU2
 #undef ALU3
 
+/* In Xe2+ each register is 64bytes/512bits long while older platforms it is
+ * 32bytes/256bits long.
+ */
 static inline unsigned
 reg_unit(const struct intel_device_info *devinfo)
 {
    return devinfo->ver >= 20 ? 2 : 1;
 }
-
 
 /* Helpers for SEND instruction:
  */
