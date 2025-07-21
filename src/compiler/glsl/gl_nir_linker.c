@@ -1436,29 +1436,6 @@ prelink_lowering(const struct pipe_screen *screen,
    return true;
 }
 
-static unsigned
-get_varying_nir_var_mask(nir_shader *nir)
-{
-   return (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0) |
-          (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
-}
-
-static nir_opt_varyings_progress
-optimize_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
-                  unsigned max_uniform_comps, unsigned max_ubos)
-{
-   nir_opt_varyings_progress progress =
-      nir_opt_varyings(producer, consumer, spirv, max_uniform_comps,
-                       max_ubos, false);
-
-   if (progress & nir_progress_producer)
-      gl_nir_opts(producer);
-   if (progress & nir_progress_consumer)
-      gl_nir_opts(consumer);
-
-   return progress;
-}
-
 /**
  * Lower load_deref and store_deref on input/output variables to load_input
  * and store_output intrinsics, and perform varying optimizations and
@@ -1498,94 +1475,8 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
    if (debug_get_bool_option("MESA_GLSL_DISABLE_IO_OPT", false))
       return;
 
-   /* There is nothing to optimize for only 1 shader. */
-   if (num_shaders == 1) {
-      nir_shader *nir = shaders[0];
-
-      /* Even with a separate shader, it's still worth to re-vectorize IO from
-       * scratch because the original shader might not be vectorized optimally.
-       */
-      NIR_PASS(_, nir, nir_lower_io_to_scalar, get_varying_nir_var_mask(nir),
-               NULL, NULL);
-      NIR_PASS(_, nir, nir_opt_vectorize_io, get_varying_nir_var_mask(nir), false);
-      return;
-   }
-
-   for (unsigned i = 0; i < num_shaders; i++) {
-      nir_shader *nir = shaders[i];
-
-      /* Inter-shader code motion in nir_opt_varyings requires that each input
-       * load is loaded only once when possible, so move all input loads
-       * to the entry block, so that CSE can deduplicate them.
-       *
-       * We only do that for FS. Moving input loads to the beginning could
-       * increase register usage for other shaders too much.
-       */
-      if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-         NIR_PASS(_, nir, nir_opt_move_to_top,
-                  nir_move_to_entry_block_only |
-                  nir_move_to_top_input_loads);
-      }
-
-      /* nir_opt_varyings requires scalar IO. Scalarize all varyings (not just
-       * the ones we optimize) because we want to re-vectorize everything to
-       * get better vectorization and other goodies from nir_opt_vectorize_io.
-       */
-      NIR_PASS(_, nir, nir_lower_io_to_scalar, get_varying_nir_var_mask(nir),
-               NULL, NULL);
-
-      /* nir_opt_varyings requires shaders to be optimized. */
-      gl_nir_opts(nir);
-   }
-
-   /* Optimize varyings from the first shader to the last shader first, and
-    * then in the opposite order from the last changed producer.
-    *
-    * For example, VS->GS->FS is optimized in this order first:
-    *    (VS,GS), (GS,FS)
-    *
-    * That ensures that constants and undefs (dead inputs) are propagated
-    * forward.
-    *
-    * If GS was changed while optimizing (GS,FS), (VS,GS) is optimized again
-    * because removing outputs in GS can cause a chain reaction in making
-    * GS inputs, VS outputs, and VS inputs dead.
-    */
-   unsigned highest_changed_producer = 0;
-   for (unsigned i = 0; i < num_shaders - 1; i++) {
-      if (optimize_varyings(shaders[i], shaders[i + 1], spirv,
-                            max_uniform_comps, max_ubos) & nir_progress_producer)
-         highest_changed_producer = i;
-   }
-
-   /* Optimize varyings from the highest changed producer to the first
-    * shader.
-    */
-   for (unsigned i = highest_changed_producer; i > 0; i--) {
-      optimize_varyings(shaders[i - 1], shaders[i], spirv, max_uniform_comps,
-                        max_ubos);
-   }
-
-   /* Final cleanups. */
-   for (unsigned i = 0; i < num_shaders; i++) {
-      nir_shader *nir = shaders[i];
-
-      /* Re-vectorize IO. */
-      NIR_PASS(_, nir, nir_opt_vectorize_io, get_varying_nir_var_mask(nir), false);
-
-      /* Recompute intrinsic bases, which are totally random after
-       * optimizations and compaction. Do that for all inputs and outputs,
-       * including VS inputs because those could have been removed too.
-       */
-      NIR_PASS(_, nir, nir_recompute_io_bases,
-                 nir_var_shader_in | nir_var_shader_out);
-
-      /* Regenerate transform feedback info because compaction in
-       * nir_opt_varyings always moves them to other slots.
-       */
-      if (nir->xfb_info)
-         nir_gather_xfb_info_from_intrinsics(nir);
-   }
+   nir_opt_varyings_bulk(shaders, num_shaders, spirv, max_uniform_comps,
+                         max_ubos, gl_nir_opts);
 }
 
 bool

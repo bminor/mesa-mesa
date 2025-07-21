@@ -5014,6 +5014,14 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
                  unsigned max_uniform_components, unsigned max_ubos_per_stage,
                  bool debug_no_algebraic);
 
+unsigned
+nir_varying_var_mask(nir_shader *nir);
+
+void
+nir_opt_varyings_bulk(nir_shader **shaders, uint32_t num_shaders, bool spirv,
+                      unsigned max_uniform_comps, unsigned max_ubos,
+                      void (*optimize)(nir_shader *));
+
 bool nir_slot_is_sysval_output(gl_varying_slot slot,
                                gl_shader_stage next_shader);
 bool nir_slot_is_varying(gl_varying_slot slot, gl_shader_stage next_shader);
