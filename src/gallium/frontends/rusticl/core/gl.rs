@@ -255,16 +255,19 @@ impl GLCtxManager {
                         &mut export_in,
                         &mut flush_out,
                     );
-                    // TODO: use fence_server_sync in ctx inside the queue thread
-                    let fence_fd = FenceFd { fd };
-                    cl_ctx.devs.iter().for_each(|dev| {
-                        let fence = dev.helper_ctx().import_fence(&fence_fd);
-                        fence.wait();
-                    });
 
                     if err_flush != 0 {
                         err_flush
                     } else {
+                        if fd != -1 {
+                            // TODO: use fence_server_sync in ctx inside the queue thread
+                            let fence_fd = FenceFd { fd };
+                            cl_ctx.devs.iter().for_each(|dev| {
+                                let fence = dev.helper_ctx().import_fence(&fence_fd);
+                                fence.wait();
+                            });
+                        }
+
                         egl_export_object_func(
                             disp.cast(),
                             ctx.cast(),
@@ -289,16 +292,19 @@ impl GLCtxManager {
                         &mut export_in,
                         &mut flush_out,
                     );
-                    // TODO: use fence_server_sync in ctx inside the queue thread
-                    let fence_fd = FenceFd { fd };
-                    cl_ctx.devs.iter().for_each(|dev| {
-                        let fence = dev.helper_ctx().import_fence(&fence_fd);
-                        fence.wait();
-                    });
 
                     if err_flush != 0 {
                         err_flush
                     } else {
+                        if fd != -1 {
+                            // TODO: use fence_server_sync in ctx inside the queue thread
+                            let fence_fd = FenceFd { fd };
+                            cl_ctx.devs.iter().for_each(|dev| {
+                                let fence = dev.helper_ctx().import_fence(&fence_fd);
+                                fence.wait();
+                            });
+                        }
+
                         glx_export_object_func(
                             disp.cast(),
                             ctx.cast(),
