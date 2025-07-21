@@ -1113,8 +1113,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
       bld.MOV(sources[length++], min_lod);
 
       /* Wa_14014595444: Populate MLOD as parameter 5 (twice). */
-       if (devinfo->verx10 == 125 && op == FS_OPCODE_TXB_LOGICAL &&
-           shadow_c.file == BAD_FILE)
+       if (intel_needs_workaround(devinfo, 14014595444) &&
+           op == FS_OPCODE_TXB_LOGICAL && shadow_c.file == BAD_FILE)
          bld.MOV(sources[length++], min_lod);
    }
 
