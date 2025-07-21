@@ -43,9 +43,6 @@
 #ifndef LIST_CONTAINER_H
 #define LIST_CONTAINER_H
 
-#ifndef __cplusplus
-#include <stddef.h>
-#endif
 #include <assert.h>
 
 #include "util/ralloc.h"
@@ -53,65 +50,6 @@
 struct exec_node {
    struct exec_node *next;
    struct exec_node *prev;
-
-#ifdef __cplusplus
-   DECLARE_RZALLOC_CXX_OPERATORS(exec_node)
-
-   exec_node() : next(NULL), prev(NULL)
-   {
-      /* empty */
-   }
-
-   const exec_node *get_next() const;
-   exec_node *get_next();
-
-   const exec_node *get_prev() const;
-   exec_node *get_prev();
-
-   void remove();
-
-   /**
-    * Link a node with itself
-    *
-    * This creates a sort of degenerate list that is occasionally useful.
-    */
-   void self_link();
-
-   /**
-    * Insert a node in the list after the current node
-    */
-   void insert_after(exec_node *after);
-
-   /**
-    * Insert another list in the list after the current node
-    */
-   void insert_after(struct exec_list *after);
-
-   /**
-    * Insert a node in the list before the current node
-    */
-   void insert_before(exec_node *before);
-
-   /**
-    * Insert another list in the list before the current node
-    */
-   void insert_before(struct exec_list *before);
-
-   /**
-    * Replace the current node with the given node.
-    */
-   void replace_with(exec_node *replacement);
-
-   /**
-    * Is this the sentinel at the tail of the list?
-    */
-   bool is_tail_sentinel() const;
-
-   /**
-    * Is this the sentinel at the head of the list?
-    */
-   bool is_head_sentinel() const;
-#endif
 };
 
 static inline void
@@ -204,63 +142,6 @@ exec_node_is_head_sentinel(const struct exec_node *n)
 }
 
 #ifdef __cplusplus
-inline const exec_node *exec_node::get_next() const
-{
-   return exec_node_get_next_const(this);
-}
-
-inline exec_node *exec_node::get_next()
-{
-   return exec_node_get_next(this);
-}
-
-inline const exec_node *exec_node::get_prev() const
-{
-   return exec_node_get_prev_const(this);
-}
-
-inline exec_node *exec_node::get_prev()
-{
-   return exec_node_get_prev(this);
-}
-
-inline void exec_node::remove()
-{
-   exec_node_remove(this);
-}
-
-inline void exec_node::self_link()
-{
-   exec_node_self_link(this);
-}
-
-inline void exec_node::insert_after(exec_node *after)
-{
-   exec_node_insert_after(this, after);
-}
-
-inline void exec_node::insert_before(exec_node *before)
-{
-   exec_node_insert_node_before(this, before);
-}
-
-inline void exec_node::replace_with(exec_node *replacement)
-{
-   exec_node_replace_with(this, replacement);
-}
-
-inline bool exec_node::is_tail_sentinel() const
-{
-   return exec_node_is_tail_sentinel(this);
-}
-
-inline bool exec_node::is_head_sentinel() const
-{
-   return exec_node_is_head_sentinel(this);
-}
-#endif
-
-#ifdef __cplusplus
 /* This macro will not work correctly if `t' uses virtual inheritance. */
 #define exec_list_offsetof(t, f, p) \
    (((char *) &((t *) p)->f) - ((char *) p))
@@ -281,68 +162,9 @@ inline bool exec_node::is_head_sentinel() const
 #define exec_node_data(type, node, field) \
    ((type *) (((uintptr_t) node) - exec_list_offsetof(type, field, node)))
 
-#ifdef __cplusplus
-struct exec_node;
-#endif
-
 struct exec_list {
    struct exec_node head_sentinel;
    struct exec_node tail_sentinel;
-
-#ifdef __cplusplus
-   DECLARE_RALLOC_CXX_OPERATORS(exec_list)
-
-   exec_list()
-   {
-      make_empty();
-   }
-
-   void make_empty();
-
-   bool is_empty() const;
-
-   const exec_node *get_head() const;
-   exec_node *get_head();
-   const exec_node *get_head_raw() const;
-   exec_node *get_head_raw();
-
-   const exec_node *get_tail() const;
-   exec_node *get_tail();
-   const exec_node *get_tail_raw() const;
-   exec_node *get_tail_raw();
-
-   unsigned length() const;
-
-   void push_head(exec_node *n);
-   void push_tail(exec_node *n);
-   void push_degenerate_list_at_head(exec_node *n);
-
-   /**
-    * Remove the first node from a list and return it
-    *
-    * \return
-    * The first node in the list or \c NULL if the list is empty.
-    *
-    * \sa exec_list::get_head
-    */
-   exec_node *pop_head();
-
-   /**
-    * Move all of the nodes from this list to the target list
-    */
-   void move_nodes_to(exec_list *target);
-
-   /**
-    * Append all nodes from the source list to the end of the target list
-    */
-   void append_list(exec_list *source);
-
-   /**
-    * Prepend all nodes from the source list to the beginning of the target
-    * list
-    */
-   void prepend_list(exec_list *source);
-#endif
 };
 
 static inline void
@@ -574,108 +396,6 @@ exec_list_validate(const struct exec_list *list)
       assert(node->prev->next == node);
    }
 }
-
-#ifdef __cplusplus
-inline void exec_list::make_empty()
-{
-   exec_list_make_empty(this);
-}
-
-inline bool exec_list::is_empty() const
-{
-   return exec_list_is_empty(this);
-}
-
-inline const exec_node *exec_list::get_head() const
-{
-   return exec_list_get_head_const(this);
-}
-
-inline exec_node *exec_list::get_head()
-{
-   return exec_list_get_head(this);
-}
-
-inline const exec_node *exec_list::get_head_raw() const
-{
-   return exec_list_get_head_raw_const(this);
-}
-
-inline exec_node *exec_list::get_head_raw()
-{
-   return exec_list_get_head_raw(this);
-}
-
-inline const exec_node *exec_list::get_tail() const
-{
-   return exec_list_get_tail_const(this);
-}
-
-inline exec_node *exec_list::get_tail()
-{
-   return exec_list_get_tail(this);
-}
-
-inline const exec_node *exec_list::get_tail_raw() const
-{
-   return exec_list_get_tail_raw_const(this);
-}
-
-inline exec_node *exec_list::get_tail_raw()
-{
-   return exec_list_get_tail_raw(this);
-}
-
-inline unsigned exec_list::length() const
-{
-   return exec_list_length(this);
-}
-
-inline void exec_list::push_head(exec_node *n)
-{
-   exec_list_push_head(this, n);
-}
-
-inline void exec_list::push_tail(exec_node *n)
-{
-   exec_list_push_tail(this, n);
-}
-
-inline void exec_list::push_degenerate_list_at_head(exec_node *n)
-{
-   exec_list_push_degenerate_list_at_head(this, n);
-}
-
-inline exec_node *exec_list::pop_head()
-{
-   return exec_list_pop_head(this);
-}
-
-inline void exec_list::move_nodes_to(exec_list *target)
-{
-   exec_list_move_nodes_to(this, target);
-}
-
-inline void exec_list::append_list(exec_list *source)
-{
-   exec_list_append(this, source);
-}
-
-inline void exec_node::insert_after(exec_list *after)
-{
-   exec_node_insert_list_after(this, after);
-}
-
-inline void exec_list::prepend_list(exec_list *source)
-{
-   exec_list_prepend(this, source);
-}
-
-inline void exec_node::insert_before(exec_list *before)
-{
-   exec_node_insert_list_before(this, before);
-}
-#endif
 
 #define exec_node_typed_forward(__node, __type) \
    (!exec_node_is_tail_sentinel(__node) ? (__type) (__node) : NULL)

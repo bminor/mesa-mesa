@@ -393,7 +393,7 @@ r600_nir_lower_atomics(nir_shader *shader)
          var->data.index = iindex->second;
          iindex->second += offset_update;
       }
-      shader->variables.push_tail(&var->node);
+      exec_list_push_tail(&shader->variables, &var->node);
    }
 
    return nir_shader_intrinsics_pass(shader, r600_lower_deref_instr,

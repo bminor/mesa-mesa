@@ -469,7 +469,7 @@ r600_append_tcs_TF_emission(nir_shader *shader, enum mesa_prim prim_type)
    }
 
    assert(exec_list_length(&shader->functions) == 1);
-   nir_function *f = (nir_function *)shader->functions.get_head();
+   nir_function *f = (nir_function *)exec_list_get_head(&shader->functions);
    nir_builder builder = nir_builder_create(f->impl);
    nir_builder *b = &builder;
 
