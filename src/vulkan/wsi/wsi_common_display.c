@@ -1289,24 +1289,12 @@ wsi_display_destroy_buffer(struct wsi_display *wsi,
 static VkResult
 wsi_display_image_init(struct wsi_swapchain *drv_chain,
                        const VkSwapchainCreateInfoKHR *create_info,
+                       uint32_t drm_format,
                        struct wsi_display_image *image)
 {
    struct wsi_display_swapchain *chain =
       (struct wsi_display_swapchain *) drv_chain;
    struct wsi_display *wsi = chain->wsi;
-   uint32_t drm_format = 0;
-
-   for (unsigned i = 0; i < ARRAY_SIZE(available_surface_formats); i++) {
-      if (create_info->imageFormat == available_surface_formats[i].surface_format.format &&
-          create_info->imageColorSpace == available_surface_formats[i].surface_format.colorSpace) {
-         drm_format = available_surface_formats[i].drm_format;
-         break;
-      }
-   }
-
-   /* the application provided an invalid format, bail */
-   if (drm_format == 0)
-      return VK_ERROR_DEVICE_LOST;
 
    VkResult result = wsi_create_image(&chain->base, &chain->base.image_info,
                                       &image->base);
@@ -2399,6 +2387,20 @@ wsi_display_surface_create_swapchain(
 
    assert(create_info->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);
 
+   uint32_t drm_format = 0;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(available_surface_formats); i++) {
+      if (create_info->imageFormat == available_surface_formats[i].surface_format.format &&
+          create_info->imageColorSpace == available_surface_formats[i].surface_format.colorSpace) {
+         drm_format = available_surface_formats[i].drm_format;
+         break;
+      }
+   }
+
+   /* the application provided an invalid format, bail */
+   if (drm_format == 0)
+      return VK_ERROR_DEVICE_LOST;
+
    const unsigned num_images = create_info->minImageCount;
    struct wsi_display_swapchain *chain =
       vk_zalloc(allocator,
@@ -2463,6 +2465,7 @@ wsi_display_surface_create_swapchain(
    for (uint32_t image = 0; image < chain->base.image_count; image++) {
       result = wsi_display_image_init(&chain->base,
                                       create_info,
+                                      drm_format,
                                       &chain->images[image]);
       if (result != VK_SUCCESS) {
          while (image > 0) {
