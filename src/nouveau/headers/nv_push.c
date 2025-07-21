@@ -21,9 +21,11 @@
 #include "nv_push_clc397.h"
 #include "nv_push_clc3c0.h"
 #include "nv_push_clc597.h"
+#include "nv_push_clc5b5.h"
 #include "nv_push_clc5c0.h"
 #include "nv_push_clc5b0.h"
 #include "nv_push_clc697.h"
+#include "nv_push_clc6b5.h"
 #include "nv_push_clc6c0.h"
 #include "nv_push_clc797.h"
 #include "nv_push_clc7c0.h"
@@ -215,6 +217,10 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                case 0xb5:
                   if (cls_hi >= 0xca)
                      mthd_name = P_PARSE_NVCAB5_MTHD(mthd);
+                  else if (cls_hi >= 0xc6)
+                     mthd_name = P_PARSE_NVC6B5_MTHD(mthd);
+                  else if (cls_hi >= 0xc5)
+                     mthd_name = P_PARSE_NVC5B5_MTHD(mthd);
                   else if (cls_hi >= 0xc1)
                      mthd_name = P_PARSE_NVC1B5_MTHD(mthd);
                   else if (cls_hi >= 0xa0)
