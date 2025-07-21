@@ -2084,7 +2084,7 @@
         "description": "docs/linkcheck: drop cgit exception as nothing links to it anymore",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "0f6be273f1e3fb880c572e4283623d8e4ecbe0b1",
         "notes": null
