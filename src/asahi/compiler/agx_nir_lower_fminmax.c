@@ -62,6 +62,8 @@ lower(nir_builder *b, nir_alu_instr *alu, void *data)
 
    if (could_be_denorm(src0) || could_be_denorm(src1)) {
       b->cursor = nir_after_instr(&alu->instr);
+      b->exact = true;
+
       nir_def *canonicalized = nir_fadd_imm(b, &alu->def, -0.0);
       nir_def_rewrite_uses_after(&alu->def, canonicalized,
                                  canonicalized->parent_instr);
