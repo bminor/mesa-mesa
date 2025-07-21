@@ -41,6 +41,7 @@
 #include "pipe/p_state.h"
 #include "util/compiler.h"
 #include "util/u_blitter.h"
+#include "util/u_dump.h"
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
 #include "util/u_surface.h"
@@ -146,10 +147,10 @@ etna_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info)
    }
 
    if (!util_blitter_is_blit_supported(ctx->blitter, &info)) {
-      DBG("blit unsupported %s -> %s",
-          util_format_short_name(info.src.resource->format),
-          util_format_short_name(info.dst.resource->format));
-      return;
+      fprintf(stderr, "\n");
+      util_dump_blit_info(stderr, &info);
+      fprintf(stderr, "\n\n");
+      UNREACHABLE("Unsupported blit");
    }
 
    etna_blit_save_state(ctx, info.render_condition_enable);
