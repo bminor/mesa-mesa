@@ -171,8 +171,6 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
 
       cs->stateobj = fd_ringbuffer_new_object(ctx->pipe, 0x1000);
       cs_program_emit<CHIP>(ctx, cs->stateobj, cs->v);
-
-      cs->user_consts_cmdstream_size = fd6_user_consts_cmdstream_size<CHIP>(cs->v);
    }
 
    trace_start_compute(&ctx->batch->trace, ring, !!info->indirect, info->work_dim,
