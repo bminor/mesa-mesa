@@ -1004,7 +1004,7 @@ download_texture_compute(struct st_context *st,
    assert(cs);
    struct cso_context *cso = st->cso_context;
 
-   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, false, &cb);
+   pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_COMPUTE, &cb);
 
    cso_save_compute_state(cso, CSO_BIT_COMPUTE_SHADER | CSO_BIT_COMPUTE_SAMPLERS);
    cso_set_compute_shader_handle(cso, cs);

@@ -691,14 +691,14 @@ st_draw_hw_select_prepare_common(struct gl_context *ctx)
    cb.buffer_size = sizeof(consts) - (MAX_CLIP_PLANES - num_planes) * 4 * sizeof(float);
 
    struct pipe_context *pipe = st->pipe;
-   pipe->set_constant_buffer(pipe, MESA_SHADER_GEOMETRY, 0, false, &cb);
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_GEOMETRY, &cb);
 
    struct pipe_shader_buffer buffer;
    memset(&buffer, 0, sizeof(buffer));
    buffer.buffer = ctx->Select.Result->buffer;
    buffer.buffer_size = MAX_NAME_STACK_RESULT_NUM * 3 * sizeof(int);
 
-   pipe->set_shader_buffers(pipe, MESA_SHADER_GEOMETRY, 0, 1, &buffer, 0x1);
+   pipe->set_shader_buffers(st->pipe, MESA_SHADER_GEOMETRY, 0, 1, &buffer, 0x1);
 
    return true;
 }

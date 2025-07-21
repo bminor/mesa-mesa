@@ -38,6 +38,7 @@
 #include "util/u_debug_describe.h"
 #include "util/u_debug_refcnt.h"
 #include "util/u_atomic.h"
+#include "util/u_upload_mgr.h"
 #include "util/box.h"
 #include "util/u_math.h"
 
@@ -691,6 +692,26 @@ pipe_set_constant_buffer(struct pipe_context *pipe,
    }
 }
 
+static inline void
+pipe_upload_constant_buffer0(struct pipe_context *pipe, mesa_shader_stage stage, struct pipe_constant_buffer *cb)
+{
+   struct pipe_constant_buffer cbuf = *cb;
+   cbuf.buffer = NULL;
+   const unsigned alignment = MAX2(pipe->screen->caps.constant_buffer_offset_alignment, 64);
+   void *ptr;
+
+   if (pipe->screen->caps.prefer_real_buffer_in_constbuf0) {
+      u_upload_alloc(pipe->const_uploader, 0, cbuf.buffer_size,
+         alignment, &cbuf.buffer_offset, &cbuf.buffer, (void**)&ptr);
+      memcpy(ptr, cbuf.user_buffer, cbuf.buffer_size);
+      cbuf.user_buffer = NULL;
+
+      u_upload_unmap(pipe->const_uploader);
+      pipe->set_constant_buffer(pipe, stage, 0, true, &cbuf);
+   } else {
+      pipe->set_constant_buffer(pipe, stage, 0, false, cb);
+   }
+}
 
 /**
  * Get the polygon offset enable/disable flag for the given polygon fill mode.
