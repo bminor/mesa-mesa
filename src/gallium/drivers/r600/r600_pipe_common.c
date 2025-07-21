@@ -200,10 +200,9 @@ void r600_draw_rectangle(struct blitter_context *blitter,
 	vbuffer.buffer.resource = buf;
 	vbuffer.buffer_offset = offset;
 
-	util_set_vertex_buffers(&rctx->b, 1, false, &vbuffer);
+	rctx->b.set_vertex_buffers(&rctx->b, 1, &vbuffer);
 	util_draw_arrays_instanced(&rctx->b, R600_PRIM_RECTANGLE_LIST, 0, 3,
 				   0, num_instances);
-	pipe_resource_reference(&buf, NULL);
 }
 
 static void r600_dma_emit_wait_idle(struct r600_common_context *rctx)
