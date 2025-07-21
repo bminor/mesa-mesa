@@ -8,15 +8,15 @@ http://0x04.net/cgit/index.cgi/rules-ng-ng
 git clone git://0x04.net/rules-ng-ng
 
 The rules-ng-ng source files this header was generated from are:
-- state.xml     (  30672 bytes, from 2025-01-06 20:30:33)
-- common.xml    (  35664 bytes, from 2024-12-05 12:09:36)
-- common_3d.xml (  15069 bytes, from 2024-12-05 12:09:36)
-- state_hi.xml  (  35909 bytes, from 2024-12-05 12:09:36)
-- copyright.xml (   1597 bytes, from 2020-10-28 12:56:03)
-- state_2d.xml  (  52271 bytes, from 2023-05-30 20:50:02)
-- state_3d.xml  (  89609 bytes, from 2025-07-13 22:31:44)
-- state_blt.xml (  14592 bytes, from 2024-12-05 12:09:36)
-- state_vg.xml  (   5975 bytes, from 2020-10-28 12:56:03)
+- state.xml     (  30672 bytes, from 2025-07-21 18:46:25)
+- common.xml    (  35664 bytes, from 2025-07-21 18:46:25)
+- common_3d.xml (  15069 bytes, from 2025-07-21 18:46:25)
+- state_hi.xml  (  35909 bytes, from 2025-07-21 18:46:25)
+- copyright.xml (   1597 bytes, from 2024-04-10 16:26:25)
+- state_2d.xml  (  52271 bytes, from 2024-04-10 16:26:25)
+- state_3d.xml  (  89665 bytes, from 2025-07-21 18:46:38)
+- state_blt.xml (  14592 bytes, from 2025-07-21 18:46:25)
+- state_vg.xml  (   5975 bytes, from 2024-04-10 16:26:25)
 
 Copyright (C) 2012-2025 by the following authors:
 - Wladimir J. van der Laan <laanwj@gmail.com>
@@ -1470,6 +1470,7 @@ DEALINGS IN THE SOFTWARE.
 #define VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT__MASK		0x000000f0
 #define VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT__SHIFT	4
 #define VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT(x)		(((x) << VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT__SHIFT) & VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT__MASK)
+#define VIVS_TS_SAMPLER_CONFIG_64BPP_FORMAT			0x00000200
 #define VIVS_TS_SAMPLER_CONFIG_UNK11__MASK			0x00003800
 #define VIVS_TS_SAMPLER_CONFIG_UNK11__SHIFT			11
 #define VIVS_TS_SAMPLER_CONFIG_UNK11(x)				(((x) << VIVS_TS_SAMPLER_CONFIG_UNK11__SHIFT) & VIVS_TS_SAMPLER_CONFIG_UNK11__MASK)
