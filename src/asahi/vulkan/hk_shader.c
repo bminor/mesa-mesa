@@ -2,6 +2,8 @@
  * Copyright 2024 Valve Corporation
  * Copyright 2024 Alyssa Rosenzweig
  * Copyright 2022-2023 Collabora Ltd. and Red Hat Inc.
+ * Copyright 2023 Advanced Micro Devices, Inc.
+ * Copyright 2018 Intel Corporation
  * SPDX-License-Identifier: MIT
  */
 #include "hk_shader.h"
@@ -1178,6 +1180,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
    if (lock)
       simple_mtx_lock(lock);
 
+   assert(nir->info.io_lowered);
    agx_compile_shader_nir(nir, &backend_key, &shader->b);
 
    if (lock)
@@ -1296,11 +1299,10 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
    }
 
-   /* TODO: Multiview with ESO */
-   const bool is_multiview = state && state->rp->view_mask != 0;
-
-   hk_lower_nir(dev, nir, info->robustness, is_multiview,
-                info->set_layout_count, info->set_layouts, features);
+   if (!nir->info.io_lowered) {
+      hk_lower_nir(dev, nir, info->robustness, false, info->set_layout_count,
+                   info->set_layouts, features);
+   }
 
    gl_shader_stage sw_stage = nir->info.stage;
 
@@ -1483,6 +1485,41 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
    return VK_SUCCESS;
 }
 
+static void
+nir_opts(nir_shader *nir)
+{
+   bool progress;
+
+   do {
+      progress = false;
+
+      NIR_PASS(progress, nir, nir_opt_loop);
+      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_remove_phis);
+      NIR_PASS(progress, nir, nir_opt_dce);
+
+      NIR_PASS(progress, nir, nir_opt_if, 0);
+      NIR_PASS(progress, nir, nir_opt_dead_cf);
+      NIR_PASS(progress, nir, nir_opt_cse);
+
+      NIR_PASS(progress, nir, nir_opt_peephole_select,
+               &(nir_opt_peephole_select_options){
+                  .limit = 8,
+                  .expensive_alu_ok = true,
+                  .discard_ok = true,
+               });
+
+      NIR_PASS(progress, nir, nir_opt_phi_precision);
+      NIR_PASS(progress, nir, nir_opt_algebraic);
+      NIR_PASS(progress, nir, nir_opt_constant_folding);
+      NIR_PASS(progress, nir, nir_io_add_const_offset_to_base,
+               nir_var_shader_in | nir_var_shader_out);
+
+      NIR_PASS(progress, nir, nir_opt_undef);
+      NIR_PASS(progress, nir, nir_opt_loop_unroll);
+   } while (progress);
+}
+
 static VkResult
 hk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
                    struct vk_shader_compile_info *infos,
@@ -1492,8 +1529,38 @@ hk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
                    struct vk_shader **shaders_out)
 {
    struct hk_device *dev = container_of(vk_dev, struct hk_device, vk);
+   nir_shader *shaders[shader_count];
+
+   /* Lower shaders, notably lowering I/O. This is a prerequisite for
+    * intershader optimization.
+    */
+   for (uint32_t i = 0; i < shader_count; i++) {
+      const struct vk_shader_compile_info *info = &infos[i];
+      /* TODO: Multiview with ESO */
+      const bool is_multiview = state && state->rp->view_mask != 0;
+      enum hk_feature_key hk_features = hk_make_feature_key(features);
+      nir_shader *nir = info->nir;
+
+      hk_lower_nir(dev, nir, info->robustness, is_multiview,
+                   info->set_layout_count, info->set_layouts, hk_features);
+
+      if (nir->xfb_info) {
+         nir_io_add_const_offset_to_base(
+            nir, nir_var_shader_in | nir_var_shader_out);
+
+         nir_io_add_intrinsic_xfb_info(nir);
+      }
+
+      shaders[i] = nir;
+   }
+
+   nir_opt_varyings_bulk(shaders, shader_count, true, UINT32_MAX, UINT32_MAX,
+                         nir_opts);
 
    for (uint32_t i = 0; i < shader_count; i++) {
+      nir_shader_gather_info(infos[i].nir,
+                             nir_shader_get_entrypoint(infos[i].nir));
+
       VkResult result =
          hk_compile_shader(dev, &infos[i], state, features, pAllocator,
                            (struct hk_api_shader **)&shaders_out[i]);
