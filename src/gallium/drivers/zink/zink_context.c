@@ -2252,7 +2252,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
                   b->buffer_view = get_buffer_view(ctx, res, b->base.format, b->base.u.buf.offset, b->base.u.buf.size);
                   b->rebind_count = res->rebind_count;
                   update = true;
-               } else if (!a || a->buffer_view->buffer_view != b->buffer_view->buffer_view)
+               } else if (!a || a->buffer_view != b->buffer_view)
                      update = true;
                zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, VK_ACCESS_SHADER_READ_BIT,
                                           res->gfx_barrier);
