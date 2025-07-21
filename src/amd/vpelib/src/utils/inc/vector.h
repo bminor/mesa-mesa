@@ -25,7 +25,6 @@
 #pragma once
 
 #include "vpe_types.h"
-#include "resource.h"
 
 #ifdef __cplusplus
 extern "C" {

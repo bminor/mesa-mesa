@@ -177,14 +177,15 @@ static enum vpe_status vpe_allocate_cm_memory(
         }
 
         if (!stream_ctx->gamut_remap) {
-            stream_ctx->gamut_remap = vpe_zalloc(sizeof(struct colorspace_transform));
+            stream_ctx->gamut_remap =
+                (struct colorspace_transform *)vpe_zalloc(sizeof(struct colorspace_transform));
             if (!stream_ctx->gamut_remap) {
                 vpe_log("err: out of memory for gamut_remap!");
                 return VPE_STATUS_NO_MEMORY;
             }
         }
         if (!stream_ctx->blend_tf) {
-            stream_ctx->blend_tf = vpe_zalloc(sizeof(struct transfer_func));
+            stream_ctx->blend_tf = (struct transfer_func *)vpe_zalloc(sizeof(struct transfer_func));
             if (!stream_ctx->blend_tf) {
                 vpe_log("err: out of memory for blend tf!");
                 return VPE_STATUS_NO_MEMORY;
@@ -789,7 +790,8 @@ enum vpe_status vpe_color_update_movable_cm(
             enum color_transfer_func tf, lut_in_tf;
 
             if (!stream_ctx->in_shaper_func) {
-                stream_ctx->in_shaper_func = vpe_zalloc(sizeof(struct transfer_func));
+                stream_ctx->in_shaper_func =
+                    (struct transfer_func *)vpe_zalloc(sizeof(struct transfer_func));
                 if (!stream_ctx->in_shaper_func) {
                     vpe_log("err: out of memory for shaper tf!");
                     ret = VPE_STATUS_NO_MEMORY;
@@ -798,7 +800,8 @@ enum vpe_status vpe_color_update_movable_cm(
             }
 
             if (!stream_ctx->blend_tf) {
-                stream_ctx->blend_tf = vpe_zalloc(sizeof(struct transfer_func));
+                stream_ctx->blend_tf =
+                    (struct transfer_func *)vpe_zalloc(sizeof(struct transfer_func));
                 if (!stream_ctx->blend_tf) {
                     vpe_log("err: out of memory for blend/post1d tf!");
                     ret = VPE_STATUS_NO_MEMORY;
@@ -807,7 +810,7 @@ enum vpe_status vpe_color_update_movable_cm(
             }
 
             if (!stream_ctx->lut3d_func) {
-                stream_ctx->lut3d_func = vpe_zalloc(sizeof(struct vpe_3dlut));
+                stream_ctx->lut3d_func = (struct vpe_3dlut *)vpe_zalloc(sizeof(struct vpe_3dlut));
                 if (!stream_ctx->lut3d_func) {
                     vpe_log("err: out of memory for 3d lut!");
                     ret = VPE_STATUS_NO_MEMORY;
@@ -816,7 +819,8 @@ enum vpe_status vpe_color_update_movable_cm(
             }
 
             if (!output_ctx->gamut_remap) {
-                output_ctx->gamut_remap = vpe_zalloc(sizeof(struct colorspace_transform));
+                output_ctx->gamut_remap =
+                    (struct colorspace_transform *)vpe_zalloc(sizeof(struct colorspace_transform));
                 if (!output_ctx->gamut_remap) {
                     vpe_log("err: out of memory for post blend gamut remap!");
                     ret = VPE_STATUS_NO_MEMORY;
