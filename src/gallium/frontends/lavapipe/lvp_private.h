@@ -49,10 +49,6 @@
 #include "drm-uapi/drm_fourcc.h"
 #endif
 
-#if DETECT_OS_ANDROID
-#include <vndk/hardware_buffer.h>
-#endif
-
 /* Pre-declarations needed for WSI entrypoints */
 struct wl_surface;
 struct wl_display;
@@ -253,9 +249,6 @@ struct lvp_device_memory {
    void *                                       map;
    enum lvp_device_memory_type memory_type;
    int                                          backed_fd;
-#if DETECT_OS_ANDROID
-   struct AHardwareBuffer *android_hardware_buffer;
-#endif
 };
 
 struct lvp_pipe_sync {
@@ -809,11 +802,7 @@ lvp_nv_dgc_token_to_cmd_type(const VkIndirectCommandsLayoutTokenNV *token);
 
 #if DETECT_OS_ANDROID
 VkResult
-lvp_import_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
-                      const VkImportAndroidHardwareBufferInfoANDROID *info);
-VkResult
-lvp_create_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
-                      const VkMemoryAllocateInfo *pAllocateInfo);
+lvp_import_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem);
 #endif
 
 enum vk_cmd_type

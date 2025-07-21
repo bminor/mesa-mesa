@@ -1960,14 +1960,10 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    ASSERTED const VkExportMemoryAllocateInfo *export_info = NULL;
    ASSERTED const VkImportMemoryFdInfoKHR *import_info = NULL;
    const VkMemoryAllocateFlagsInfo *mem_flags = NULL;
-#if DETECT_OS_ANDROID
-   ASSERTED const VkImportAndroidHardwareBufferInfoANDROID *ahb_import_info = NULL;
-#endif
    const VkImportMemoryHostPointerInfoEXT *host_ptr_info = NULL;
    VkResult error = VK_ERROR_OUT_OF_DEVICE_MEMORY;
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
    int priority = 0;
-   UNUSED bool is_ahb_export_alloc = false;
 
    vk_foreach_struct_const(ext, pAllocateInfo->pNext) {
       switch ((unsigned)ext->sType) {
@@ -1991,21 +1987,10 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO:
          mem_flags = (void*)ext;
          break;
-#if DETECT_OS_ANDROID
-      case VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID: {
-         ahb_import_info = (VkImportAndroidHardwareBufferInfoANDROID*)ext;
-         break;
-      }
-#endif
       default:
          break;
       }
    }
-
-#if DETECT_OS_ANDROID
-   is_ahb_export_alloc = !ahb_import_info && export_info &&
-      export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-#endif
 
 #ifdef PIPE_MEMORY_FD
    if (import_info != NULL && import_info->fd < 0) {
@@ -2022,10 +2007,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    mem->backed_fd = -1;
    mem->size = pAllocateInfo->allocationSize;
 
-#if DETECT_OS_ANDROID
-   mem->android_hardware_buffer = NULL;
-#endif
-
    if (host_ptr_info) {
       mem->mem_alloc = (struct llvmpipe_memory_allocation) {
          .cpu_addr = host_ptr_info->pHostPointer,
@@ -2035,12 +2016,8 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       mem->memory_type = LVP_DEVICE_MEMORY_TYPE_USER_PTR;
    }
 #if DETECT_OS_ANDROID
-   else if(ahb_import_info) {
-      error = lvp_import_ahb_memory(device, mem, ahb_import_info);
-      if (error != VK_SUCCESS)
-         goto fail;
-   } else if (is_ahb_export_alloc) {
-      error = lvp_create_ahb_memory(device, mem, pAllocateInfo);
+   else if (mem->vk.ahardware_buffer) {
+      error = lvp_import_ahb_memory(device, mem);
       if (error != VK_SUCCESS)
          goto fail;
    }
@@ -2130,11 +2107,6 @@ VKAPI_ATTR void VKAPI_CALL lvp_FreeMemory(
       break;
 #ifdef PIPE_MEMORY_FD
    case LVP_DEVICE_MEMORY_TYPE_DMA_BUF:
-#if DETECT_OS_ANDROID
-      if (mem->android_hardware_buffer)
-         AHardwareBuffer_release(mem->android_hardware_buffer);
-      FALLTHROUGH;
-#endif
    case LVP_DEVICE_MEMORY_TYPE_OPAQUE_FD:
       device->pscreen->free_memory_fd(device->pscreen, mem->pmem);
       if(mem->backed_fd >= 0)

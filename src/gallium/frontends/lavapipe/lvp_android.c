@@ -25,6 +25,7 @@
 
 #if ANDROID_API_LEVEL >= 26
 #include <hardware/gralloc1.h>
+#include <vndk/hardware_buffer.h>
 #endif
 
 #include <vulkan/vk_android_native_buffer.h>
@@ -115,10 +116,10 @@ lvp_QueueSignalReleaseImageANDROID(VkQueue _queue,
 }
 
 VkResult
-lvp_import_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
-                      const VkImportAndroidHardwareBufferInfoANDROID *info)
+lvp_import_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem)
 {
-   const native_handle_t *handle = AHardwareBuffer_getNativeHandle(info->buffer);
+   const native_handle_t *handle =
+      AHardwareBuffer_getNativeHandle(mem->vk.ahardware_buffer);
    int dma_buf = (handle && handle->numFds) ? handle->data[0] : -1;
    if (dma_buf < 0)
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
@@ -128,51 +129,9 @@ lvp_import_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
    if (!result)
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
 
-   AHardwareBuffer_acquire(info->buffer);
-   mem->android_hardware_buffer = info->buffer;
    mem->size = size;
    mem->map = device->pscreen->map_memory(device->pscreen, mem->pmem);
    mem->memory_type = LVP_DEVICE_MEMORY_TYPE_DMA_BUF;
 
    return VK_SUCCESS;
 }
-
-VkResult
-lvp_create_ahb_memory(struct lvp_device *device, struct lvp_device_memory *mem,
-                      const VkMemoryAllocateInfo *pAllocateInfo)
-{
-   mem->android_hardware_buffer = vk_alloc_ahardware_buffer(pAllocateInfo);
-   if (mem->android_hardware_buffer == NULL)
-      return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-   const struct VkImportAndroidHardwareBufferInfoANDROID import_info = {
-      .buffer = mem->android_hardware_buffer,
-   };
-
-   VkResult result = lvp_import_ahb_memory(device, mem, &import_info);
-
-   /* Release a reference to avoid leak for AHB allocation. */
-   AHardwareBuffer_release(mem->android_hardware_buffer);
-
-   return result;
-}
-
-#if ANDROID_API_LEVEL >= 26
-VkResult
-lvp_GetMemoryAndroidHardwareBufferANDROID(
-   VkDevice device,
-   const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
-   struct AHardwareBuffer **pBuffer)
-{
-   LVP_FROM_HANDLE(lvp_device_memory, mem, pInfo->memory);
-
-   if (mem->android_hardware_buffer) {
-      *pBuffer = mem->android_hardware_buffer;
-      /* Increase refcount. */
-      AHardwareBuffer_acquire(*pBuffer);
-      return VK_SUCCESS;
-   }
-
-   return VK_ERROR_INVALID_EXTERNAL_HANDLE;
-}
-#endif
