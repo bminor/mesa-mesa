@@ -81,7 +81,7 @@ panfrost-g52-gl:arm64:
   variables:
     FDO_CI_CONCURRENT: 6
     DEQP_SUITE: panfrost-g52
-    PAN_MESA_DEBUG: "deqp,sync,indirect"
+    PAN_MESA_DEBUG: "sync"
 
 panfrost-g52-vk:arm64:
   parallel: 8
@@ -157,7 +157,7 @@ panfrost-g610-gl:arm64:
     - .lava-rk3588-rock-5b:arm64
   variables:
     DEQP_SUITE: panfrost-g610
-    PAN_MESA_DEBUG: "deqp,sync,indirect"
+    PAN_MESA_DEBUG: "sync"
     LAVA_TAGS: 4gb
 
 # Disable this for now until it gets more stable

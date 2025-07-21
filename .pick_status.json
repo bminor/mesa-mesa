@@ -1284,7 +1284,7 @@
         "description": "pan/ci: remove non-existent flag from PAN_MESA_DEBUG",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ea03d0652d22b9e36ccc8ba475f9b78b4dff973e",
         "notes": null
