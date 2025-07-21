@@ -1369,6 +1369,14 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
          key.stride[i] = xfb->buffers[i].stride;
       }
 
+      /* Any buffer that is written is treated as writing at least 1 byte. If
+       * nothing is actually written, this ensures correctness with XFB queries.
+       * See dEQP-VK.transform_feedback.simple.multiquery_omit_write_3.
+       */
+      u_foreach_bit(b, xfb->buffers_written) {
+         key.output_end[b] = 1;
+      }
+
       for (unsigned i = 0; i < xfb->output_count; ++i) {
          nir_xfb_output_info output = xfb->outputs[i];
          unsigned buffer = xfb->outputs[i].buffer;
