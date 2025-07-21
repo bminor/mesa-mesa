@@ -10,9 +10,6 @@ spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked
 # Random: ../src/util/hash_table.c:311: hash_table_search: Assertion `!key_pointer_is_reserved(ht, key)' failed.
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread
 
-# Random: error: nir_intrinsic_range(instr) != 0 (../src/compiler/nir/nir_validate.c:599)
-spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag
-
 # Random
 # Mostly reported by "Some new flakes found:" and most of them never appear in the failures
 KHR-GL46.ext_texture_shadow_lod.texture.samplercubearrayshadow_fragment

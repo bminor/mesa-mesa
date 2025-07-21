@@ -8,8 +8,6 @@ glx@extension string sanity,Fail
 # #6322
 spec@arb_framebuffer_object@fbo-blit-scaled-linear,Fail
 
-spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag,Crash
-
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-tf-separate,Fail
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT,Fail

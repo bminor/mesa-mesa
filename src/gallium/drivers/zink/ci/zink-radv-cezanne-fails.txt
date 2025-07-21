@@ -15,7 +15,6 @@ glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
 glx@glx-multi-window-single-context,Fail
 glx@glx-multithread-texture,Crash
 glx@glx-swap-pixmap-bad,Fail
-spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag,Crash
 spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-store,Fail
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-tf-separate,Fail
 spec@arb_sample_locations@test,Fail

@@ -307,8 +307,12 @@ emit_load(struct lower_io_state *state,
       const struct glsl_type *type = var->type;
       if (array_index)
          type = glsl_get_array_element(type);
+
       unsigned var_size = state->type_size(type, var->data.bindless);
-      nir_intrinsic_set_range(load, var_size);
+      if (var_size)
+         nir_intrinsic_set_range(load, var_size);
+      else
+         nir_intrinsic_set_range(load, ~0);
    }
 
    if (mode == nir_var_shader_in || mode == nir_var_shader_out)

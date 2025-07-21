@@ -24,9 +24,6 @@ spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode full precision,Fail
 spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
 
-# error: nir_intrinsic_range(instr) != 0 (../src/compiler/nir/nir_validate.c:599)^M
-spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag,Crash
-
 # glcts failures
 KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r11f_g11f_b10f,Fail
 KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r16,Fail
