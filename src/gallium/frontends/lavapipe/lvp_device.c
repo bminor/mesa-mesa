@@ -2076,8 +2076,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
          memset(mem->map, 0, pAllocateInfo->allocationSize);
    }
 
-   mem->type_index = pAllocateInfo->memoryTypeIndex;
-
    *pMem = lvp_device_memory_to_handle(mem);
 
    return VK_SUCCESS;

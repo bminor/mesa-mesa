@@ -243,7 +243,6 @@ struct lvp_device_memory {
 
    struct pipe_memory_allocation *pmem;
    struct llvmpipe_memory_allocation mem_alloc;
-   uint32_t                                     type_index;
    VkDeviceSize                                 map_size;
    VkDeviceSize                                 size;
    void *                                       map;
