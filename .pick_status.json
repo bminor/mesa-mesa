@@ -694,7 +694,7 @@
         "description": "ci: fix rustfmt job rules",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fe8bc3f23e3bc01ff7af90ad3b25aef410fd51ad",
         "notes": null

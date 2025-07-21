@@ -228,6 +228,9 @@
     - if: *is-merge-request
       when: never
     # non-pre-merge: run but only advisory
+    - if: $CI_PROJECT_NAMESPACE == "mesa"
+      changes: *rustfmt_files
+      allow_failure: true
     - when: manual
       allow_failure: true
 
