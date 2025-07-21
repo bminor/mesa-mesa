@@ -5404,7 +5404,7 @@
         "description": "nouveau/headers: Fix nv_push rust push_inline_data implementation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "66954d997d801743156f5eeda7a23ba1d9b6c098",
         "notes": null
