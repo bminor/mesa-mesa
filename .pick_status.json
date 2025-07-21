@@ -6244,7 +6244,7 @@
         "description": "st/interup: flushing objects is a no-op when no context is bound",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
