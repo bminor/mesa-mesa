@@ -207,7 +207,9 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
             return nullptr;
         }
 
-        setenv(VK_ICD_FILENAMES, driver, 1);
+        if (driver) {
+            setenv(VK_ICD_FILENAMES, driver, 1);
+        }
     }
 
     return sVkMapper.get();
