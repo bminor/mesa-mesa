@@ -316,8 +316,8 @@ fd_blitter_clear(struct pipe_context *pctx, unsigned buffers,
    pctx->set_viewport_states(pctx, 0, 1, &vp);
 
    pctx->bind_vertex_elements_state(pctx, ctx->solid_vbuf_state.vtx);
-   util_set_vertex_buffers(pctx, 1, false,
-                           &ctx->solid_vbuf_state.vertexbuf.vb[0]);
+   pipe_reference(NULL, &ctx->solid_vbuf_state.vertexbuf.vb[0].buffer.resource->reference);
+   pctx->set_vertex_buffers(pctx, 1, &ctx->solid_vbuf_state.vertexbuf.vb[0]);
    pctx->set_stream_output_targets(pctx, 0, NULL, NULL, 0);
 
    if (pfb->layers > 1)
