@@ -197,12 +197,62 @@ impl Push {
         self.push_mthd_bits(class_to_subc(M::CLASS), M::ADDR, mthd.to_bits());
     }
 
+    pub fn push_mthd_0inc<M: Mthd>(&mut self, mthd: M) {
+        assert!(mthd.to_bits() == 0);
+
+        self.last_inc = self.mem.len();
+        let header = MthdHeader::new(
+            MthdType::ZeroInc,
+            class_to_subc(M::CLASS),
+            M::ADDR,
+            0,
+        );
+        self.mem.push(header.into_bits());
+    }
+
+    pub fn push_mthd_1inc<M: Mthd>(&mut self, mthd: M) {
+        self.last_inc = self.mem.len();
+        let header = MthdHeader::new(
+            MthdType::OneInc,
+            class_to_subc(M::CLASS),
+            M::ADDR,
+            0,
+        );
+        self.mem.push(header.into_bits());
+        self.mem.push(mthd.to_bits());
+    }
+
     pub fn push_array_method<M: ArrayMthd>(&mut self, i: usize, mthd: M) {
         self.push_mthd_bits(
             class_to_subc(M::CLASS),
             M::addr(i),
             mthd.to_bits(),
         );
+    }
+
+    pub fn push_array_mthd_0inc<M: ArrayMthd>(&mut self, i: usize, mthd: M) {
+        assert!(mthd.to_bits() == 0);
+
+        self.last_inc = self.mem.len();
+        let header = MthdHeader::new(
+            MthdType::ZeroInc,
+            class_to_subc(M::CLASS),
+            M::addr(i),
+            0,
+        );
+        self.mem.push(header.into_bits());
+    }
+
+    pub fn push_array_mthd_1inc<M: ArrayMthd>(&mut self, i: usize, mthd: M) {
+        self.last_inc = self.mem.len();
+        let header = MthdHeader::new(
+            MthdType::OneInc,
+            class_to_subc(M::CLASS),
+            M::addr(i),
+            1,
+        );
+        self.mem.push(header.into_bits());
+        self.mem.push(mthd.to_bits());
     }
 
     /// Push an array of dwords into the push buffer
