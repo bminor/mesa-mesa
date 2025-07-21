@@ -292,7 +292,7 @@ init_shader_program(struct gl_shader_program *prog)
 
    prog->TransformFeedback.BufferMode = GL_INTERLEAVED_ATTRIBS;
 
-   exec_list_make_empty(&prog->EmptyUniformLocations);
+   ir_exec_list_make_empty(&prog->EmptyUniformLocations);
 }
 
 /**

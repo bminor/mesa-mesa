@@ -121,11 +121,11 @@ ir_if::clone(void *mem_ctx, struct hash_table *ht) const
 {
    ir_if *new_if = new(mem_ctx) ir_if(this->condition->clone(mem_ctx, ht));
 
-   foreach_in_list(ir_instruction, ir, &this->then_instructions) {
+   ir_foreach_in_list(ir_instruction, ir, &this->then_instructions) {
       new_if->then_instructions.push_tail(ir->clone(mem_ctx, ht));
    }
 
-   foreach_in_list(ir_instruction, ir, &this->else_instructions) {
+   ir_foreach_in_list(ir_instruction, ir, &this->else_instructions) {
       new_if->else_instructions.push_tail(ir->clone(mem_ctx, ht));
    }
 
@@ -137,7 +137,7 @@ ir_loop::clone(void *mem_ctx, struct hash_table *ht) const
 {
    ir_loop *new_loop = new(mem_ctx) ir_loop();
 
-   foreach_in_list(ir_instruction, ir, &this->body_instructions) {
+   ir_foreach_in_list(ir_instruction, ir, &this->body_instructions) {
       new_loop->body_instructions.push_tail(ir->clone(mem_ctx, ht));
    }
 
@@ -151,9 +151,9 @@ ir_call::clone(void *mem_ctx, struct hash_table *ht) const
    if (this->return_deref != NULL)
       new_return_ref = this->return_deref->clone(mem_ctx, ht);
 
-   exec_list new_parameters;
+   ir_exec_list new_parameters;
 
-   foreach_in_list(ir_instruction, ir, &this->actual_parameters) {
+   ir_foreach_in_list(ir_instruction, ir, &this->actual_parameters) {
       new_parameters.push_tail(ir->clone(mem_ctx, ht));
    }
 
@@ -276,7 +276,7 @@ ir_function::clone(void *mem_ctx, struct hash_table *ht) const
    for (int i = 0; i < copy->num_subroutine_types; i++)
      copy->subroutine_types[i] = this->subroutine_types[i];
 
-   foreach_in_list(const ir_function_signature, sig, &this->signatures) {
+   ir_foreach_in_list(const ir_function_signature, sig, &this->signatures) {
       ir_function_signature *sig_copy = sig->clone(mem_ctx, ht);
       copy->add_signature(sig_copy);
 
@@ -298,7 +298,7 @@ ir_function_signature::clone(void *mem_ctx, struct hash_table *ht) const
 
    /* Clone the instruction list.
     */
-   foreach_in_list(const ir_instruction, inst, &this->body) {
+   ir_foreach_in_list(const ir_instruction, inst, &this->body) {
       ir_instruction *const inst_copy = inst->clone(mem_ctx, ht);
       copy->body.push_tail(inst_copy);
    }
@@ -318,7 +318,7 @@ ir_function_signature::clone_prototype(void *mem_ctx, struct hash_table *ht) con
 
    /* Clone the parameter list, but NOT the body.
     */
-   foreach_in_list(const ir_variable, param, &this->parameters) {
+   ir_foreach_in_list(const ir_variable, param, &this->parameters) {
       assert(const_cast<ir_variable *>(param)->as_variable() != NULL);
 
       ir_variable *const param_copy = param->clone(mem_ctx, ht);
@@ -414,7 +414,7 @@ private:
 
 
 static void
-fixup_function_calls(struct hash_table *ht, exec_list *instructions)
+fixup_function_calls(struct hash_table *ht, ir_exec_list *instructions)
 {
    fixup_ir_call_visitor v(ht);
    v.run(instructions);
@@ -422,11 +422,11 @@ fixup_function_calls(struct hash_table *ht, exec_list *instructions)
 
 
 void
-clone_ir_list(void *mem_ctx, exec_list *out, const exec_list *in)
+clone_ir_list(void *mem_ctx, ir_exec_list *out, const ir_exec_list *in)
 {
    struct hash_table *ht = _mesa_pointer_hash_table_create(NULL);
 
-   foreach_in_list(const ir_instruction, original, in) {
+   ir_foreach_in_list(const ir_instruction, original, in) {
       ir_instruction *copy = original->clone(mem_ctx, ht);
 
       out->push_tail(copy);

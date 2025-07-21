@@ -35,14 +35,14 @@ static ir_rvalue *
 convert_component(ir_rvalue *src, const glsl_type *desired_type);
 
 static unsigned
-process_parameters(exec_list *instructions, exec_list *actual_parameters,
-                   exec_list *parameters,
+process_parameters(ir_exec_list *instructions, ir_exec_list *actual_parameters,
+                   ir_exec_list *parameters,
                    struct _mesa_glsl_parse_state *state)
 {
    void *mem_ctx = state;
    unsigned count = 0;
 
-   foreach_list_typed(ast_node, ast, link, parameters) {
+   ir_foreach_list_typed(ast_node, ast, link, parameters) {
       /* We need to process the parameters first in order to know if we can
        * raise or not a unitialized warning. Calling set_is_lhs silence the
        * warning for now. Raising the warning or not will be checked at
@@ -87,7 +87,7 @@ process_parameters(exec_list *instructions, exec_list *actual_parameters,
  */
 char *
 prototype_string(const glsl_type *return_type, const char *name,
-                 exec_list *parameters)
+                 ir_exec_list *parameters)
 {
    char *str = NULL;
 
@@ -97,7 +97,7 @@ prototype_string(const glsl_type *return_type, const char *name,
    ralloc_asprintf_append(&str, "%s(", name);
 
    const char *comma = "";
-   foreach_in_list(const ir_instruction, param, parameters) {
+   ir_foreach_in_list(const ir_instruction, param, parameters) {
       ralloc_asprintf_append(&str, "%s%s", comma,
                              glsl_get_type_name(param->ir_type ==
                                                 ir_type_variable ? ((ir_variable *)param)->type :
@@ -226,20 +226,20 @@ is_atomic_image_function(const char *func_name)
 static bool
 verify_parameter_modes(_mesa_glsl_parse_state *state,
                        ir_function_signature *sig,
-                       exec_list &actual_ir_parameters,
-                       exec_list &actual_ast_parameters)
+                       ir_exec_list &actual_ir_parameters,
+                       ir_exec_list &actual_ast_parameters)
 {
-   exec_node *actual_ir_node  = actual_ir_parameters.get_head_raw();
-   exec_node *actual_ast_node = actual_ast_parameters.get_head_raw();
+   ir_exec_node *actual_ir_node  = actual_ir_parameters.get_head_raw();
+   ir_exec_node *actual_ast_node = actual_ast_parameters.get_head_raw();
 
-   foreach_in_list(const ir_variable, formal, &sig->parameters) {
+   ir_foreach_in_list(const ir_variable, formal, &sig->parameters) {
       /* The lists must be the same length. */
       assert(!actual_ir_node->is_tail_sentinel());
       assert(!actual_ast_node->is_tail_sentinel());
 
       const ir_rvalue *const actual = (ir_rvalue *) actual_ir_node;
       const ast_expression *const actual_ast =
-         exec_node_data(ast_expression, actual_ast_node, link);
+         ir_exec_node_data(ast_expression, actual_ast_node, link);
 
       YYLTYPE loc = actual_ast->get_location();
 
@@ -396,7 +396,7 @@ verify_parameter_modes(_mesa_glsl_parse_state *state,
          (ir_rvalue *) actual_ir_parameters.get_head_raw();
 
       const ast_expression *const actual_ast =
-         exec_node_data(ast_expression,
+         ir_exec_node_data(ast_expression,
                         actual_ast_parameters.get_head_raw(), link);
       YYLTYPE loc = actual_ast->get_location();
 
@@ -409,7 +409,7 @@ verify_parameter_modes(_mesa_glsl_parse_state *state,
          (ir_rvalue *) actual_ir_parameters.get_head_raw();
 
       const ast_expression *const actual_ast =
-         exec_node_data(ast_expression,
+         ir_exec_node_data(ast_expression,
                         actual_ast_parameters.get_head_raw(), link);
       YYLTYPE loc = actual_ast->get_location();
 
@@ -424,7 +424,7 @@ verify_parameter_modes(_mesa_glsl_parse_state *state,
 
 struct copy_index_deref_data {
    void *mem_ctx;
-   exec_list *before_instructions;
+   ir_exec_list *before_instructions;
 };
 
 static void
@@ -465,7 +465,7 @@ copy_index_derefs_to_temps(ir_instruction *ir, void *data)
 
 static void
 fix_parameter(void *mem_ctx, ir_rvalue *actual, const glsl_type *formal_type,
-              exec_list *before_instructions, exec_list *after_instructions,
+              ir_exec_list *before_instructions, ir_exec_list *after_instructions,
               bool parameter_is_inout)
 {
    ir_expression *const expr = actual->as_expression();
@@ -568,21 +568,21 @@ fix_parameter(void *mem_ctx, ir_rvalue *actual, const glsl_type *formal_type,
  * this returns NULL.
  */
 static ir_rvalue *
-generate_call(exec_list *instructions, ir_function_signature *sig,
-              exec_list *actual_parameters,
+generate_call(ir_exec_list *instructions, ir_function_signature *sig,
+              ir_exec_list *actual_parameters,
               ir_variable *sub_var,
               ir_rvalue *array_idx,
               struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
-   exec_list post_call_conversions;
+   ir_exec_list post_call_conversions;
 
    /* Perform implicit conversion of arguments.  For out parameters, we need
     * to place them in a temporary variable and do the conversion after the
     * call takes place.  Since we haven't emitted the call yet, we'll place
-    * the post-call conversions in a temporary exec_list, and emit them later.
+    * the post-call conversions in a temporary ir_exec_list, and emit them later.
     */
-   foreach_two_lists(formal_node, &sig->parameters,
+   ir_foreach_two_lists(formal_node, &sig->parameters,
                      actual_node, actual_parameters) {
       ir_rvalue *actual = (ir_rvalue *) actual_node;
       ir_variable *formal = (ir_variable *) formal_node;
@@ -699,7 +699,7 @@ generate_call(exec_list *instructions, ir_function_signature *sig,
  */
 static ir_function_signature *
 match_function_by_name(const char *name,
-                       exec_list *actual_parameters,
+                       ir_exec_list *actual_parameters,
                        struct _mesa_glsl_parse_state *state)
 {
    ir_function *f = state->symbols->get_function(name);
@@ -747,7 +747,7 @@ match_function_by_name(const char *name,
 
 static ir_function_signature *
 match_subroutine_by_name(const char *name,
-                         exec_list *actual_parameters,
+                         ir_exec_list *actual_parameters,
                          struct _mesa_glsl_parse_state *state,
                          ir_variable **var_r)
 {
@@ -785,10 +785,10 @@ match_subroutine_by_name(const char *name,
 }
 
 static ir_rvalue *
-generate_array_index(void *mem_ctx, exec_list *instructions,
+generate_array_index(void *mem_ctx, ir_exec_list *instructions,
                      struct _mesa_glsl_parse_state *state, YYLTYPE loc,
                      const ast_expression *array, ast_expression *idx,
-                     const char **function_name, exec_list *actual_parameters)
+                     const char **function_name, ir_exec_list *actual_parameters)
 {
    if (array->oper == ast_array_index) {
       /* This handles arrays of arrays */
@@ -827,7 +827,7 @@ function_exists(_mesa_glsl_parse_state *state,
 {
    ir_function *f = symbols->get_function(name);
    if (f != NULL) {
-      foreach_in_list(ir_function_signature, sig, &f->signatures) {
+      ir_foreach_in_list(ir_function_signature, sig, &f->signatures) {
          if (sig->is_builtin() && !sig->is_builtin_available(state))
             continue;
          return true;
@@ -843,7 +843,7 @@ print_function_prototypes(_mesa_glsl_parse_state *state, YYLTYPE *loc,
    if (f == NULL)
       return;
 
-   foreach_in_list(ir_function_signature, sig, &f->signatures) {
+   ir_foreach_in_list(ir_function_signature, sig, &f->signatures) {
       if (sig->is_builtin() && !sig->is_builtin_available(state))
          continue;
 
@@ -861,7 +861,7 @@ print_function_prototypes(_mesa_glsl_parse_state *state, YYLTYPE *loc,
 static void
 no_matching_function_error(const char *name,
                            YYLTYPE *loc,
-                           exec_list *actual_parameters,
+                           ir_exec_list *actual_parameters,
                            _mesa_glsl_parse_state *state)
 {
    struct glsl_symbol_table *symb = _mesa_glsl_get_builtin_function_symbols();
@@ -1255,9 +1255,9 @@ dereference_component(ir_rvalue *src, unsigned component)
 
 
 static ir_rvalue *
-process_vec_mat_constructor(exec_list *instructions,
+process_vec_mat_constructor(ir_exec_list *instructions,
                             const glsl_type *constructor_type,
-                            YYLTYPE *loc, exec_list *parameters,
+                            YYLTYPE *loc, ir_exec_list *parameters,
                             struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -1276,7 +1276,7 @@ process_vec_mat_constructor(exec_list *instructions,
       return ir_rvalue::error_value(ctx);
    }
 
-   exec_list actual_parameters;
+   ir_exec_list actual_parameters;
    const unsigned parameter_count =
       process_parameters(instructions, &actual_parameters, parameters, state);
 
@@ -1294,7 +1294,7 @@ process_vec_mat_constructor(exec_list *instructions,
    bool all_parameters_are_constant = true;
 
    /* Type cast each parameter and, if possible, fold constants. */
-   foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
+   ir_foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
       /* Apply implicit conversions (not the scalar constructor rules, see the
        * spec quote above!) and attempt to convert the parameter to a constant
        * valued expression. After doing so, track whether or not all the
@@ -1330,7 +1330,7 @@ process_vec_mat_constructor(exec_list *instructions,
 
    int i = 0;
 
-   foreach_in_list(ir_rvalue, rhs, &actual_parameters) {
+   ir_foreach_in_list(ir_rvalue, rhs, &actual_parameters) {
       ir_instruction *assignment = NULL;
 
       if (glsl_type_is_matrix(var->type)) {
@@ -1355,9 +1355,9 @@ process_vec_mat_constructor(exec_list *instructions,
 
 
 static ir_rvalue *
-process_array_constructor(exec_list *instructions,
+process_array_constructor(ir_exec_list *instructions,
                           const glsl_type *constructor_type,
-                          YYLTYPE *loc, exec_list *parameters,
+                          YYLTYPE *loc, ir_exec_list *parameters,
                           struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -1381,7 +1381,7 @@ process_array_constructor(exec_list *instructions,
     *    that can be converted to the element type of the array according to
     *    Section 4.1.10 "Implicit Conversions.""
     */
-   exec_list actual_parameters;
+   ir_exec_list actual_parameters;
    const unsigned parameter_count =
       process_parameters(instructions, &actual_parameters, parameters, state);
    bool is_unsized_array = glsl_type_is_unsized_array(constructor_type);
@@ -1410,7 +1410,7 @@ process_array_constructor(exec_list *instructions,
    const glsl_type *element_type = constructor_type->fields.array;
 
    /* Type cast each parameter and, if possible, fold constants. */
-   foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
+   ir_foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
       /* Apply implicit conversions (not the scalar constructor rules, see the
        * spec quote above!) and attempt to convert the parameter to a constant
        * valued expression. After doing so, track whether or not all the
@@ -1466,7 +1466,7 @@ process_array_constructor(exec_list *instructions,
    instructions->push_tail(var);
 
    int i = 0;
-   foreach_in_list(ir_rvalue, rhs, &actual_parameters) {
+   ir_foreach_in_list(ir_rvalue, rhs, &actual_parameters) {
       ir_rvalue *lhs = new(ctx) ir_dereference_array(var,
                                                      new(ctx) ir_constant(i));
 
@@ -1484,7 +1484,7 @@ process_array_constructor(exec_list *instructions,
  * Determine if a list consists of a single scalar r-value
  */
 static bool
-single_scalar_parameter(exec_list *parameters)
+single_scalar_parameter(ir_exec_list *parameters)
 {
    const ir_rvalue *const p = (ir_rvalue *) parameters->get_head_raw();
    assert(((ir_rvalue *)p)->as_rvalue() != NULL);
@@ -1506,8 +1506,8 @@ single_scalar_parameter(exec_list *parameters)
  */
 static ir_rvalue *
 emit_inline_vector_constructor(const glsl_type *type,
-                               exec_list *instructions,
-                               exec_list *parameters,
+                               ir_exec_list *instructions,
+                               ir_exec_list *parameters,
                                void *ctx)
 {
    assert(!parameters->is_empty());
@@ -1540,7 +1540,7 @@ emit_inline_vector_constructor(const glsl_type *type,
 
       memset(&data, 0, sizeof(data));
 
-      foreach_in_list(ir_rvalue, param, parameters) {
+      ir_foreach_in_list(ir_rvalue, param, parameters) {
          unsigned rhs_components = glsl_get_components(param->type);
 
          /* Do not try to assign more components to the vector than it has! */
@@ -1603,7 +1603,7 @@ emit_inline_vector_constructor(const glsl_type *type,
       }
 
       base_component = 0;
-      foreach_in_list(ir_rvalue, param, parameters) {
+      ir_foreach_in_list(ir_rvalue, param, parameters) {
          unsigned rhs_components = glsl_get_components(param->type);
 
          /* Do not try to assign more components to the vector than it has! */
@@ -1700,8 +1700,8 @@ assign_to_matrix_column(ir_variable *var, unsigned column, unsigned row_base,
  */
 static ir_rvalue *
 emit_inline_matrix_constructor(const glsl_type *type,
-                               exec_list *instructions,
-                               exec_list *parameters,
+                               ir_exec_list *instructions,
+                               ir_exec_list *parameters,
                                void *ctx)
 {
    assert(!parameters->is_empty());
@@ -1910,7 +1910,7 @@ emit_inline_matrix_constructor(const glsl_type *type,
       unsigned col_idx = 0;
       unsigned row_idx = 0;
 
-      foreach_in_list(ir_rvalue, rhs, parameters) {
+      ir_foreach_in_list(ir_rvalue, rhs, parameters) {
          unsigned rhs_components = glsl_get_components(rhs->type);
          unsigned rhs_base = 0;
 
@@ -1968,8 +1968,8 @@ emit_inline_matrix_constructor(const glsl_type *type,
 
 static ir_rvalue *
 emit_inline_record_constructor(const glsl_type *type,
-                               exec_list *instructions,
-                               exec_list *parameters,
+                               ir_exec_list *instructions,
+                               ir_exec_list *parameters,
                                void *mem_ctx)
 {
    ir_variable *const var =
@@ -1979,7 +1979,7 @@ emit_inline_record_constructor(const glsl_type *type,
 
    instructions->push_tail(var);
 
-   exec_node *node = parameters->get_head_raw();
+   ir_exec_node *node = parameters->get_head_raw();
    for (unsigned i = 0; i < type->length; i++) {
       assert(!node->is_tail_sentinel());
 
@@ -2001,9 +2001,9 @@ emit_inline_record_constructor(const glsl_type *type,
 
 
 static ir_rvalue *
-process_record_constructor(exec_list *instructions,
+process_record_constructor(ir_exec_list *instructions,
                            const glsl_type *constructor_type,
-                           YYLTYPE *loc, exec_list *parameters,
+                           YYLTYPE *loc, ir_exec_list *parameters,
                            struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -2024,7 +2024,7 @@ process_record_constructor(exec_list *instructions,
     *     "Implicit Conversions". In the latter case, an implicit conversion
     *     will be done on the initializer before the assignment is done."
     */
-   exec_list actual_parameters;
+   ir_exec_list actual_parameters;
 
    const unsigned parameter_count =
          process_parameters(instructions, &actual_parameters, parameters,
@@ -2043,7 +2043,7 @@ process_record_constructor(exec_list *instructions,
 
    int i = 0;
    /* Type cast each parameter and, if possible, fold constants. */
-   foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
+   ir_foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
 
       const glsl_struct_field *struct_field =
          &constructor_type->fields.structure[i];
@@ -2081,7 +2081,7 @@ process_record_constructor(exec_list *instructions,
 }
 
 ir_rvalue *
-ast_function_expression::handle_method(exec_list *instructions,
+ast_function_expression::handle_method(ir_exec_list *instructions,
                                        struct _mesa_glsl_parse_state *state)
 {
    const ast_expression *field = subexpressions[0];
@@ -2167,7 +2167,7 @@ static inline bool is_valid_constructor(const glsl_type *type,
 }
 
 ir_rvalue *
-ast_function_expression::hir(exec_list *instructions,
+ast_function_expression::hir(ir_exec_list *instructions,
                              struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -2268,9 +2268,9 @@ ast_function_expression::hir(exec_list *instructions,
 
       unsigned matrix_parameters = 0;
       unsigned nonmatrix_parameters = 0;
-      exec_list actual_parameters;
+      ir_exec_list actual_parameters;
 
-      foreach_list_typed(ast_node, ast, link, &this->expressions) {
+      ir_foreach_list_typed(ast_node, ast, link, &this->expressions) {
          ir_rvalue *result = ast->hir(instructions, state);
 
          /* From page 50 (page 56 of the PDF) of the GLSL 1.50 spec:
@@ -2350,7 +2350,7 @@ ast_function_expression::hir(exec_list *instructions,
        * matrix up into a series of column vectors.
        */
       if (!glsl_type_is_matrix(constructor_type)) {
-         foreach_in_list_safe(ir_rvalue, matrix, &actual_parameters) {
+         ir_foreach_in_list_safe(ir_rvalue, matrix, &actual_parameters) {
             if (!glsl_type_is_matrix(matrix->type))
                continue;
 
@@ -2376,7 +2376,7 @@ ast_function_expression::hir(exec_list *instructions,
       bool all_parameters_are_constant = true;
 
       /* Type cast each parameter and, if possible, fold constants.*/
-      foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
+      ir_foreach_in_list_safe(ir_rvalue, ir, &actual_parameters) {
          const glsl_type *desired_type;
 
          /* From section 5.4.1 of the ARB_bindless_texture spec:
@@ -2485,7 +2485,7 @@ ast_function_expression::hir(exec_list *instructions,
       const ast_expression *id = subexpressions[0];
       const char *func_name = NULL;
       YYLTYPE loc = get_location();
-      exec_list actual_parameters;
+      ir_exec_list actual_parameters;
       ir_variable *sub_var = NULL;
       ir_rvalue *array_idx = NULL;
 
@@ -2603,7 +2603,7 @@ ast_function_expression::hir(exec_list *instructions,
 bool
 ast_function_expression::has_sequence_subexpression() const
 {
-   foreach_list_typed(const ast_node, ast, link, &this->expressions) {
+   ir_foreach_list_typed(const ast_node, ast, link, &this->expressions) {
       if (ast->has_sequence_subexpression())
          return true;
    }
@@ -2612,7 +2612,7 @@ ast_function_expression::has_sequence_subexpression() const
 }
 
 ir_rvalue *
-ast_aggregate_initializer::hir(exec_list *instructions,
+ast_aggregate_initializer::hir(ir_exec_list *instructions,
                                struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;

@@ -1057,13 +1057,13 @@ ir_call::constant_expression_value(void *mem_ctx, struct hash_table *variable_co
 
 
 bool ir_function_signature::constant_expression_evaluate_expression_list(void *mem_ctx,
-                                                                        const struct exec_list &body,
+                                                                        const struct ir_exec_list &body,
                                                                          struct hash_table *variable_context,
                                                                          ir_constant **result)
 {
    assert(mem_ctx);
 
-   foreach_in_list(ir_instruction, inst, &body) {
+   ir_foreach_in_list(ir_instruction, inst, &body) {
       switch(inst->ir_type) {
 
          /* (declare () type symbol) */
@@ -1138,7 +1138,7 @@ bool ir_function_signature::constant_expression_evaluate_expression_list(void *m
          if (!cond || !glsl_type_is_boolean(cond->type))
             return false;
 
-         exec_list &branch = cond->get_bool_component(0) ? iif->then_instructions : iif->else_instructions;
+         ir_exec_list &branch = cond->get_bool_component(0) ? iif->then_instructions : iif->else_instructions;
 
          *result = NULL;
          if (!constant_expression_evaluate_expression_list(mem_ctx, branch,
@@ -1168,7 +1168,7 @@ bool ir_function_signature::constant_expression_evaluate_expression_list(void *m
 
 ir_constant *
 ir_function_signature::constant_expression_value(void *mem_ctx,
-                                                 exec_list *actual_parameters,
+                                                 ir_exec_list *actual_parameters,
                                                  struct hash_table *variable_context)
 {
    assert(mem_ctx);
@@ -1209,9 +1209,9 @@ ir_function_signature::constant_expression_value(void *mem_ctx,
     * have to use the variable objects from the object with the body,
     * but the parameter instanciation on the current object.
     */
-   const exec_node *parameter_info = origin ? origin->parameters.get_head_raw() : parameters.get_head_raw();
+   const ir_exec_node *parameter_info = origin ? origin->parameters.get_head_raw() : parameters.get_head_raw();
 
-   foreach_in_list(ir_rvalue, n, actual_parameters) {
+   ir_foreach_in_list(ir_rvalue, n, actual_parameters) {
       ir_constant *constant =
          n->constant_expression_value(mem_ctx, variable_context);
       if (constant == NULL) {

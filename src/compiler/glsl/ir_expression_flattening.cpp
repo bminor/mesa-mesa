@@ -52,7 +52,7 @@ public:
 };
 
 void
-do_expression_flattening(exec_list *instructions,
+do_expression_flattening(ir_exec_list *instructions,
 			 bool (*predicate)(ir_instruction *ir))
 {
    ir_expression_flattening_visitor v(predicate);

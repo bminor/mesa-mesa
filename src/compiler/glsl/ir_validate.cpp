@@ -243,7 +243,7 @@ ir_validate::visit_enter(ir_function *ir)
    /* Verify that all of the things stored in the list of signatures are,
     * in fact, function signatures.
     */
-   foreach_in_list(ir_instruction, sig, &ir->signatures) {
+   ir_foreach_in_list(ir_instruction, sig, &ir->signatures) {
       if (sig->ir_type != ir_type_function_signature) {
 	 printf("Non-signature in signature list of function `%s'\n",
 		ir->name);
@@ -1175,8 +1175,8 @@ ir_validate::visit_enter(ir_call *ir)
       abort();
    }
 
-   const exec_node *formal_param_node = callee->parameters.get_head_raw();
-   const exec_node *actual_param_node = ir->actual_parameters.get_head_raw();
+   const ir_exec_node *formal_param_node = callee->parameters.get_head_raw();
+   const ir_exec_node *actual_param_node = ir->actual_parameters.get_head_raw();
    while (true) {
       if (formal_param_node->is_tail_sentinel()
           != actual_param_node->is_tail_sentinel()) {
@@ -1244,7 +1244,7 @@ check_node_type(ir_instruction *ir, void *data)
 }
 
 void
-validate_ir_tree(exec_list *instructions)
+validate_ir_tree(ir_exec_list *instructions)
 {
    /* We shouldn't have any reason to validate IR in a release build,
     * and it's half composed of assert()s anyway which wouldn't do
@@ -1258,7 +1258,7 @@ validate_ir_tree(exec_list *instructions)
 
    v.run(instructions);
 
-   foreach_in_list(ir_instruction, ir, instructions) {
+   ir_foreach_in_list(ir_instruction, ir, instructions) {
       visit_tree(ir, check_node_type, NULL);
    }
 }

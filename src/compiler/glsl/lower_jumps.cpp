@@ -185,7 +185,7 @@ struct loop_record
    {
       /* also supported for the "function loop" */
       if(!this->execute_flag) {
-         exec_list& list = this->loop ? this->loop->body_instructions : signature->body;
+         ir_exec_list& list = this->loop ? this->loop->body_instructions : signature->body;
          this->execute_flag = new(this->signature) ir_variable(&glsl_type_builtin_bool, "execute_flag", ir_var_temporary);
          list.push_head(new(this->signature) ir_assignment(new(this->signature) ir_dereference_variable(execute_flag), new(this->signature) ir_constant(true)));
          list.push_head(this->execute_flag);
@@ -222,7 +222,7 @@ struct ir_lower_jumps_visitor : public ir_control_flow_visitor {
     * DEAD_CODE_ELIMINATION: If this->block.min_strength is not
     * strength_none, the visited node is at the end of its exec_list.
     * In other words, any unreachable statements that follow the
-    * visited statement in its exec_list have been removed.
+    * visited statement in its ir_exec_list have been removed.
     *
     * CONTAINED_JUMPS_LOWERED: If the visited statement contains other
     * statements, then should_lower_jump() is false for all of the
@@ -251,7 +251,7 @@ struct ir_lower_jumps_visitor : public ir_control_flow_visitor {
    {
    }
 
-   void truncate_after_instruction(exec_node *ir)
+   void truncate_after_instruction(ir_exec_node *ir)
    {
       if (!ir)
          return;
@@ -262,7 +262,7 @@ struct ir_lower_jumps_visitor : public ir_control_flow_visitor {
       }
    }
 
-   void move_outer_block_inside(ir_instruction *ir, exec_list *inner_block)
+   void move_outer_block_inside(ir_instruction *ir, ir_exec_list *inner_block)
    {
       while (!ir->get_next()->is_tail_sentinel()) {
          ir_instruction *move_ir = (ir_instruction *)ir->get_next();
@@ -360,7 +360,7 @@ struct ir_lower_jumps_visitor : public ir_control_flow_visitor {
       return lower;
    }
 
-   block_record visit_block(exec_list* list)
+   block_record visit_block(ir_exec_list* list)
    {
       /* Note: since visiting a node may change that node's next
        * pointer, we can't use visit_exec_list(), because
@@ -373,7 +373,7 @@ struct ir_lower_jumps_visitor : public ir_control_flow_visitor {
 
       block_record saved_block = this->block;
       this->block = block_record();
-      foreach_in_list(ir_instruction, node, list) {
+      ir_foreach_in_list(ir_instruction, node, list) {
          node->accept(this);
       }
       block_record ret = this->block;
@@ -406,7 +406,7 @@ retry: /* we get here if we put code after the if inside a branch */
        * ir->else_instructions end with an unconditional jump.
        */
       for(unsigned i = 0; i < 2; ++i) {
-         exec_list& list = i ? ir->else_instructions : ir->then_instructions;
+         ir_exec_list& list = i ? ir->else_instructions : ir->then_instructions;
          jumps[i] = 0;
          if(!list.is_empty() && get_jump_strength((ir_instruction*)list.get_tail()))
             jumps[i] = (ir_jump*)list.get_tail();
@@ -586,8 +586,8 @@ retry: /* we get here if we put code after the if inside a branch */
          if(move_into >= 0) {
             assert(!block_records[move_into].min_strength && !block_records[move_into].may_clear_execute_flag); /* otherwise, we just truncated */
 
-            exec_list* list = move_into ? &ir->else_instructions : &ir->then_instructions;
-            exec_node* next = ir->get_next();
+            ir_exec_list* list = move_into ? &ir->else_instructions : &ir->then_instructions;
+            ir_exec_node* next = ir->get_next();
             if(!next->is_tail_sentinel()) {
                move_outer_block_inside(ir, list);
 
@@ -598,7 +598,7 @@ retry: /* we get here if we put code after the if inside a branch */
                 * block_records[move_into] with the result of this
                 * analysis.
                 */
-               exec_list list;
+               ir_exec_list list;
                list.head_sentinel.next = next;
                block_records[move_into] = visit_block(&list);
 
@@ -619,7 +619,7 @@ retry: /* we get here if we put code after the if inside a branch */
              * any instructions that that are already wrapped in the
              * appropriate guard.
              */
-            exec_node *node;
+            ir_exec_node *node;
             for(node = ir->get_next(); !node->is_tail_sentinel();)
             {
                ir_instruction* ir_after = (ir_instruction*)node;
@@ -804,7 +804,7 @@ retry: /* we get here if we put code after the if inside a branch */
 } /* anonymous namespace */
 
 bool
-do_lower_jumps(exec_list *instructions, bool pull_out_jumps, bool lower_continue)
+do_lower_jumps(ir_exec_list *instructions, bool pull_out_jumps, bool lower_continue)
 {
    ir_lower_jumps_visitor v;
    v.pull_out_jumps = pull_out_jumps;

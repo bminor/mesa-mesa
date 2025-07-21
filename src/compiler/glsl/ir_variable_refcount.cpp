@@ -48,10 +48,10 @@ free_entry(struct hash_entry *entry)
    ir_variable_refcount_entry *ivre = (ir_variable_refcount_entry *) entry->data;
 
    /* Free assignment list */
-   exec_node *n;
+   ir_exec_node *n;
    while ((n = ivre->assign_list.pop_head()) != NULL) {
       struct assignment_entry *assignment_entry =
-         exec_node_data(struct assignment_entry, n, link);
+         ir_exec_node_data(struct assignment_entry, n, link);
       free(assignment_entry);
    }
 

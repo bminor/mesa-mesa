@@ -144,7 +144,7 @@ private:
    const int op_mask;
    bool progress;
    ir_factory factory;
-   exec_list factory_instructions;
+   ir_exec_list factory_instructions;
 
    /**
     * Determine the needed lowering operation by filtering \a expr_op
@@ -1326,7 +1326,7 @@ private:
  * \brief Lower the builtin packing functions.
  */
 bool
-lower_packing_builtins(exec_list *instructions,
+lower_packing_builtins(ir_exec_list *instructions,
                        bool has_shading_language_packing,
                        bool has_gpu_shader5,
                        bool has_half_float_packing)

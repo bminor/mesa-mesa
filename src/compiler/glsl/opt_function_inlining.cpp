@@ -35,7 +35,7 @@
 #include "util/hash_table.h"
 
 static void
-do_variable_replacement(exec_list *instructions,
+do_variable_replacement(ir_exec_list *instructions,
                         ir_variable *orig,
                         ir_rvalue *repl);
 
@@ -152,7 +152,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
     * and set up the mapping of real function body variables to ours.
     */
    i = 0;
-   foreach_two_lists(formal_node, &this->callee->parameters,
+   ir_foreach_two_lists(formal_node, &this->callee->parameters,
                      actual_node, &this->actual_parameters) {
       ir_variable *sig_param = (ir_variable *) formal_node;
       ir_rvalue *param = (ir_rvalue *) actual_node;
@@ -224,10 +224,10 @@ ir_call::generate_inline(ir_instruction *next_ir)
       ++i;
    }
 
-   exec_list new_instructions;
+   ir_exec_list new_instructions;
 
    /* Generate the inlined body of the function to a new list */
-   foreach_in_list(ir_instruction, ir, &callee->body) {
+   ir_foreach_in_list(ir_instruction, ir, &callee->body) {
       ir_instruction *new_ir = ir->clone(ctx, ht);
 
       new_instructions.push_tail(new_ir);
@@ -237,7 +237,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
    /* If any opaque types were passed in, replace any deref of the
     * opaque variable with a deref of the argument.
     */
-   foreach_two_lists(formal_node, &this->callee->parameters,
+   ir_foreach_two_lists(formal_node, &this->callee->parameters,
                      actual_node, &this->actual_parameters) {
       ir_rvalue *const param = (ir_rvalue *) actual_node;
       ir_variable *sig_param = (ir_variable *) formal_node;
@@ -255,7 +255,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
     * variables to our own.
     */
    i = 0;
-   foreach_two_lists(formal_node, &this->callee->parameters,
+   ir_foreach_two_lists(formal_node, &this->callee->parameters,
                      actual_node, &this->actual_parameters) {
       ir_rvalue *const param = (ir_rvalue *) actual_node;
       const ir_variable *const sig_param = (ir_variable *) formal_node;
@@ -361,7 +361,7 @@ ir_variable_replacement_visitor::visit_leave(ir_assignment *ir)
 ir_visitor_status
 ir_variable_replacement_visitor::visit_leave(ir_call *ir)
 {
-   foreach_in_list_safe(ir_rvalue, param, &ir->actual_parameters) {
+   ir_foreach_in_list_safe(ir_rvalue, param, &ir->actual_parameters) {
       ir_rvalue *new_param = param;
       replace_rvalue(&new_param);
 
@@ -373,7 +373,7 @@ ir_variable_replacement_visitor::visit_leave(ir_call *ir)
 }
 
 static void
-do_variable_replacement(exec_list *instructions,
+do_variable_replacement(ir_exec_list *instructions,
                         ir_variable *orig,
                         ir_rvalue *repl)
 {

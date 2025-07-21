@@ -523,7 +523,7 @@ ir_minmax_visitor::handle_rvalue(ir_rvalue **rvalue)
 }
 
 bool
-do_minmax_prune(exec_list *instructions)
+do_minmax_prune(ir_exec_list *instructions)
 {
    ir_minmax_visitor v;
 

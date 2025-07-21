@@ -410,7 +410,7 @@ ir_algebraic_visitor::handle_rvalue(ir_rvalue **rvalue)
 }
 
 bool
-do_algebraic(exec_list *instructions, bool native_integers,
+do_algebraic(ir_exec_list *instructions, bool native_integers,
              const struct gl_shader_compiler_options *options)
 {
    ir_algebraic_visitor v(native_integers, options);

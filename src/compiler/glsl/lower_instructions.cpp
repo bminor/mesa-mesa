@@ -84,7 +84,7 @@ private:
 #define lowering(x) (this->lower & x)
 
 bool
-lower_instructions(exec_list *instructions, bool force_abs_sqrt,
+lower_instructions(ir_exec_list *instructions, bool force_abs_sqrt,
                    bool have_gpu_shader5)
 {
    unsigned what_to_lower =

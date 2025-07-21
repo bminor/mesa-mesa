@@ -28,7 +28,7 @@
 void
 ast_array_specifier::print(void) const
 {
-   foreach_list_typed (ast_node, array_dimension, link, &this->array_dimensions) {
+   ir_foreach_list_typed (ast_node, array_dimension, link, &this->array_dimensions) {
       printf("[ ");
       if (((ast_expression*)array_dimension)->oper != ast_unsized_array_dim)
          array_dimension->print();

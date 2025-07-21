@@ -37,7 +37,7 @@
 #include "compiler/glsl_types.h"
 
 struct assignment_entry {
-   exec_node link;
+   ir_exec_node link;
    ir_assignment *assign;
 };
 
@@ -53,7 +53,7 @@ public:
     * This is intended to be used for dead code optimisation and may
     * not be a complete list.
     */
-   exec_list assign_list;
+   ir_exec_list assign_list;
 
    /** Number of times the variable is referenced, including assignments. */
    unsigned referenced_count;

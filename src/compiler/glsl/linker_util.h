@@ -26,7 +26,7 @@
 
 #include "util/bitset.h"
 #include "util/glheader.h"
-#include "compiler/glsl/list.h"
+#include "compiler/glsl/ir_list.h"
 #include "compiler/glsl_types.h"
 #include "main/mtypes.h"
 #include "main/shader_types.h"
@@ -61,7 +61,7 @@ extern "C" {
  * continouous block of empty slots in UniformRemapTable.
  */
 struct empty_uniform_block {
-   struct exec_node link;
+   struct ir_exec_node link;
    /* The start location of the block */
    unsigned start;
    /* The number of slots in the block */

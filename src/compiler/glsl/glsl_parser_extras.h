@@ -385,7 +385,7 @@ struct _mesa_glsl_parse_state {
    const struct gl_constants *consts;
    gl_api api;
    void *scanner;
-   exec_list translation_unit;
+   ir_exec_list translation_unit;
    glsl_symbol_table *symbols;
 
    linear_ctx *linalloc;
@@ -618,7 +618,7 @@ struct _mesa_glsl_parse_state {
     * During AST to IR conversion, pointer to the toplevel IR
     * instruction list being generated.
     */
-   exec_list *toplevel_ir;
+   ir_exec_list *toplevel_ir;
 
    /** Have we found a return statement in this function? */
    bool found_return;

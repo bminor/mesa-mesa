@@ -1102,10 +1102,10 @@ _mesa_ast_set_aggregate_type(const glsl_type *type,
        * E.g., if <type> if struct S[2] we want to set each element's type to
        * struct S.
        */
-      for (exec_node *expr_node = ai->expressions.get_head_raw();
+      for (ir_exec_node *expr_node = ai->expressions.get_head_raw();
            !expr_node->is_tail_sentinel();
            expr_node = expr_node->next) {
-         ast_expression *expr = exec_node_data(ast_expression, expr_node,
+         ast_expression *expr = ir_exec_node_data(ast_expression, expr_node,
                                                link);
 
          if (expr->oper == ast_aggregate)
@@ -1114,12 +1114,12 @@ _mesa_ast_set_aggregate_type(const glsl_type *type,
 
    /* If the aggregate is a struct, recursively set its fields' types. */
    } else if (glsl_type_is_struct(type)) {
-      exec_node *expr_node = ai->expressions.get_head_raw();
+      ir_exec_node *expr_node = ai->expressions.get_head_raw();
 
       /* Iterate through the struct's fields. */
       for (unsigned i = 0; !expr_node->is_tail_sentinel() && i < type->length;
            i++, expr_node = expr_node->next) {
-         ast_expression *expr = exec_node_data(ast_expression, expr_node,
+         ast_expression *expr = ir_exec_node_data(ast_expression, expr_node,
                                                link);
 
          if (expr->oper == ast_aggregate) {
@@ -1128,10 +1128,10 @@ _mesa_ast_set_aggregate_type(const glsl_type *type,
       }
    /* If the aggregate is a matrix, set its columns' types. */
    } else if (glsl_type_is_matrix(type)) {
-      for (exec_node *expr_node = ai->expressions.get_head_raw();
+      for (ir_exec_node *expr_node = ai->expressions.get_head_raw();
            !expr_node->is_tail_sentinel();
            expr_node = expr_node->next) {
-         ast_expression *expr = exec_node_data(ast_expression, expr_node,
+         ast_expression *expr = ir_exec_node_data(ast_expression, expr_node,
                                                link);
 
          if (expr->oper == ast_aggregate)
@@ -1243,7 +1243,7 @@ _mesa_ast_process_interface_block(YYLTYPE *locp,
       block->default_layout.xfb_buffer = state->out_qualifier->xfb_buffer;
    }
 
-   foreach_list_typed (ast_declarator_list, member, link, &block->declarations) {
+   ir_foreach_list_typed (ast_declarator_list, member, link, &block->declarations) {
       ast_type_qualifier& qualifier = member->type->qualifier;
       if ((qualifier.flags.i & interface_type_mask) == 0) {
          /* GLSLangSpec.1.50.11, 4.3.7 (Interface Blocks):
@@ -1358,7 +1358,7 @@ ast_compound_statement::print(void) const
 {
    printf("{\n");
 
-   foreach_list_typed(ast_node, ast, link, &this->statements) {
+   ir_foreach_list_typed(ast_node, ast, link, &this->statements) {
       ast->print();
    }
 
@@ -1437,7 +1437,7 @@ ast_expression::print(void) const
       subexpressions[0]->print();
       printf("( ");
 
-      foreach_list_typed (ast_node, ast, link, &this->expressions) {
+      ir_foreach_list_typed (ast_node, ast, link, &this->expressions) {
 	 if (&ast->link != this->expressions.get_head())
 	    printf(", ");
 
@@ -1484,7 +1484,7 @@ ast_expression::print(void) const
 
    case ast_sequence: {
       printf("( ");
-      foreach_list_typed (ast_node, ast, link, & this->expressions) {
+      ir_foreach_list_typed (ast_node, ast, link, & this->expressions) {
 	 if (&ast->link != this->expressions.get_head())
 	    printf(", ");
 
@@ -1496,7 +1496,7 @@ ast_expression::print(void) const
 
    case ast_aggregate: {
       printf("{ ");
-      foreach_list_typed (ast_node, ast, link, & this->expressions) {
+      ir_foreach_list_typed (ast_node, ast, link, & this->expressions) {
 	 if (&ast->link != this->expressions.get_head())
 	    printf(", ");
 
@@ -1550,7 +1550,7 @@ ast_function::print(void) const
    return_type->print();
    printf(" %s (", identifier);
 
-   foreach_list_typed(ast_node, ast, link, & this->parameters) {
+   ir_foreach_list_typed(ast_node, ast, link, & this->parameters) {
       ast->print();
    }
 
@@ -1627,7 +1627,7 @@ ast_declarator_list::print(void) const
    else
       printf("precise ");
 
-   foreach_list_typed (ast_node, ast, link, & this->declarations) {
+   ir_foreach_list_typed (ast_node, ast, link, & this->declarations) {
       if (&ast->link != this->declarations.get_head())
 	 printf(", ");
 
@@ -1769,7 +1769,7 @@ ast_case_label::ast_case_label(ast_expression *test_value)
 
 void ast_case_label_list::print(void) const
 {
-   foreach_list_typed(ast_node, ast, link, & this->labels) {
+   ir_foreach_list_typed(ast_node, ast, link, & this->labels) {
       ast->print();
    }
    printf("\n");
@@ -1784,7 +1784,7 @@ ast_case_label_list::ast_case_label_list(void)
 void ast_case_statement::print(void) const
 {
    labels->print();
-   foreach_list_typed(ast_node, ast, link, & this->stmts) {
+   ir_foreach_list_typed(ast_node, ast, link, & this->stmts) {
       ast->print();
       printf("\n");
    }
@@ -1799,7 +1799,7 @@ ast_case_statement::ast_case_statement(ast_case_label_list *labels)
 
 void ast_case_statement_list::print(void) const
 {
-   foreach_list_typed(ast_node, ast, link, & this->cases) {
+   ir_foreach_list_typed(ast_node, ast, link, & this->cases) {
       ast->print();
    }
 }
@@ -1869,7 +1869,7 @@ void
 ast_struct_specifier::print(void) const
 {
    printf("struct %s { ", name);
-   foreach_list_typed(ast_node, ast, link, &this->declarations) {
+   ir_foreach_list_typed(ast_node, ast, link, &this->declarations) {
       ast->print();
    }
    printf("} ");
@@ -1886,7 +1886,7 @@ ast_struct_specifier::ast_struct_specifier(const char *identifier,
 
 void ast_subroutine_list::print(void) const
 {
-   foreach_list_typed (ast_node, ast, link, & this->declarations) {
+   ir_foreach_list_typed (ast_node, ast, link, & this->declarations) {
       if (&ast->link != this->declarations.get_head())
          printf(", ");
       ast->print();
@@ -2358,7 +2358,7 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
    }
 
    if (dump_ast) {
-      foreach_list_typed(ast_node, ast, link, &state->translation_unit) {
+      ir_foreach_list_typed(ast_node, ast, link, &state->translation_unit) {
          ast->print();
       }
       printf("\n\n");
@@ -2367,7 +2367,7 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
    ralloc_free(shader->ir);
    ralloc_free(shader->nir);
    shader->nir = NULL;
-   shader->ir = new(shader) exec_list;
+   shader->ir = new(shader) ir_exec_list;
    if (!state->error && !state->translation_unit.is_empty())
       _mesa_ast_to_hir(shader->ir, state);
 
@@ -2485,7 +2485,7 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
  *                                    integers in floating point registers).
  */
 bool
-do_common_optimization(exec_list *ir, bool linked,
+do_common_optimization(ir_exec_list *ir, bool linked,
                        const struct gl_shader_compiler_options *options,
                        bool native_integers)
 {

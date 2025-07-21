@@ -153,6 +153,7 @@ files_libglsl = files(
   'ir_hierarchical_visitor.cpp',
   'ir_hierarchical_visitor.h',
   'ir_hv_accept.cpp',
+  'ir_list.h',
   'ir_optimization.h',
   'ir_print_visitor.cpp',
   'ir_print_visitor.h',

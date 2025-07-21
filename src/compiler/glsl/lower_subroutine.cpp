@@ -52,7 +52,7 @@ public:
 }
 
 bool
-lower_subroutine(exec_list *instructions, struct _mesa_glsl_parse_state *state)
+lower_subroutine(ir_exec_list *instructions, struct _mesa_glsl_parse_state *state)
 {
    lower_subroutine_visitor v(state);
    visit_list_elements(&v, instructions);
@@ -67,9 +67,9 @@ lower_subroutine_visitor::call_clone(ir_call *call, ir_function_signature *calle
    if (call->return_deref != NULL)
       new_return_ref = call->return_deref->clone(mem_ctx, NULL);
 
-   exec_list new_parameters;
+   ir_exec_list new_parameters;
 
-   foreach_in_list(ir_instruction, ir, &call->actual_parameters) {
+   ir_foreach_in_list(ir_instruction, ir, &call->actual_parameters) {
       new_parameters.push_tail(ir->clone(mem_ctx, NULL));
    }
 

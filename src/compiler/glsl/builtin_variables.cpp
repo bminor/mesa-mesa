@@ -418,7 +418,7 @@ per_vertex_accumulator::construct_interface_instance() const
 class builtin_variable_generator
 {
 public:
-   builtin_variable_generator(exec_list *instructions,
+   builtin_variable_generator(ir_exec_list *instructions,
                               struct _mesa_glsl_parse_state *state);
    void generate_constants();
    void generate_uniforms();
@@ -511,7 +511,7 @@ private:
       add_varying(slot, type, GLSL_PRECISION_NONE, name, interp);
    }
 
-   exec_list * const instructions;
+   ir_exec_list * const instructions;
    struct _mesa_glsl_parse_state * const state;
    glsl_symbol_table * const symtab;
 
@@ -541,7 +541,7 @@ private:
 
 
 builtin_variable_generator::builtin_variable_generator(
-   exec_list *instructions, struct _mesa_glsl_parse_state *state)
+   ir_exec_list *instructions, struct _mesa_glsl_parse_state *state)
    : instructions(instructions), state(state), symtab(state->symbols),
      compatibility(state->compat_shader || state->ARB_compatibility_enable),
      bool_t(&glsl_type_builtin_bool), int_t(&glsl_type_builtin_int),
@@ -1680,7 +1680,7 @@ builtin_variable_generator::generate_varyings()
 
 
 void
-_mesa_glsl_initialize_variables(exec_list *instructions,
+_mesa_glsl_initialize_variables(ir_exec_list *instructions,
 				struct _mesa_glsl_parse_state *state)
 {
    builtin_variable_generator gen(instructions, state);

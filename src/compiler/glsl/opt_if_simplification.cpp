@@ -59,7 +59,7 @@ ir_if_simplification_visitor::visit_enter(ir_assignment *ir)
 }
 
 bool
-do_if_simplification(exec_list *instructions)
+do_if_simplification(ir_exec_list *instructions)
 {
    ir_if_simplification_visitor v;
 

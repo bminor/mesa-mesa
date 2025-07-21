@@ -66,12 +66,12 @@ using namespace ir_builder;
 
 static void
 detect_conflicting_assignments(struct _mesa_glsl_parse_state *state,
-                               exec_list *instructions);
+                               ir_exec_list *instructions);
 static void
 verify_subroutine_associated_funcs(struct _mesa_glsl_parse_state *state);
 
 static void
-remove_per_vertex_blocks(exec_list *instructions,
+remove_per_vertex_blocks(ir_exec_list *instructions,
                          _mesa_glsl_parse_state *state, ir_variable_mode mode);
 
 /**
@@ -127,7 +127,7 @@ private:
 };
 
 void
-_mesa_ast_to_hir(exec_list *instructions, struct _mesa_glsl_parse_state *state)
+_mesa_ast_to_hir(ir_exec_list *instructions, struct _mesa_glsl_parse_state *state)
 {
    _mesa_glsl_initialize_variables(instructions, state);
 
@@ -156,7 +156,7 @@ _mesa_ast_to_hir(exec_list *instructions, struct _mesa_glsl_parse_state *state)
     */
    state->symbols->push_scope();
 
-   foreach_list_typed (ast_node, ast, link, & state->translation_unit)
+   ir_foreach_list_typed (ast_node, ast, link, & state->translation_unit)
       ast->hir(instructions, state);
 
    verify_subroutine_associated_funcs(state);
@@ -173,7 +173,7 @@ _mesa_ast_to_hir(exec_list *instructions, struct _mesa_glsl_parse_state *state)
     * applications depend on this behavior, and it matches what nearly all
     * other drivers do.
     */
-   foreach_in_list_safe(ir_instruction, node, instructions) {
+   ir_foreach_in_list_safe(ir_instruction, node, instructions) {
       ir_variable *const var = node->as_variable();
 
       if (var == NULL)
@@ -937,7 +937,7 @@ mark_whole_array_access(ir_rvalue *access)
 }
 
 static bool
-do_assignment(exec_list *instructions, struct _mesa_glsl_parse_state *state,
+do_assignment(ir_exec_list *instructions, struct _mesa_glsl_parse_state *state,
               const char *non_lvalue_description,
               ir_rvalue *lhs, ir_rvalue *rhs,
               ir_rvalue **out_rvalue, bool needs_rvalue,
@@ -1071,7 +1071,7 @@ do_assignment(exec_list *instructions, struct _mesa_glsl_parse_state *state,
 }
 
 static ir_rvalue *
-get_lvalue_copy(exec_list *instructions, ir_rvalue *lvalue)
+get_lvalue_copy(ir_exec_list *instructions, ir_rvalue *lvalue)
 {
    void *ctx = ralloc_parent(lvalue);
    ir_variable *var;
@@ -1088,7 +1088,7 @@ get_lvalue_copy(exec_list *instructions, ir_rvalue *lvalue)
 
 
 ir_rvalue *
-ast_node::hir(exec_list *instructions, struct _mesa_glsl_parse_state *state)
+ast_node::hir(ir_exec_list *instructions, struct _mesa_glsl_parse_state *state)
 {
    (void) instructions;
    (void) state;
@@ -1108,14 +1108,14 @@ ast_node::set_is_lhs(bool /* new_value */)
 }
 
 void
-ast_function_expression::hir_no_rvalue(exec_list *instructions,
+ast_function_expression::hir_no_rvalue(ir_exec_list *instructions,
                                        struct _mesa_glsl_parse_state *state)
 {
    (void)hir(instructions, state);
 }
 
 void
-ast_aggregate_initializer::hir_no_rvalue(exec_list *instructions,
+ast_aggregate_initializer::hir_no_rvalue(ir_exec_list *instructions,
                                          struct _mesa_glsl_parse_state *state)
 {
    (void)hir(instructions, state);
@@ -1220,7 +1220,7 @@ do_comparison(void *mem_ctx, int operation, ir_rvalue *op0, ir_rvalue *op1)
  * boolean to avoid triggering cascading error messages.
  */
 static ir_rvalue *
-get_scalar_boolean_operand(exec_list *instructions,
+get_scalar_boolean_operand(ir_exec_list *instructions,
                            struct _mesa_glsl_parse_state *state,
                            ast_expression *parent_expr,
                            int operand,
@@ -1340,14 +1340,14 @@ constant_one_for_inc_dec(void *ctx, const glsl_type *type)
 }
 
 ir_rvalue *
-ast_expression::hir(exec_list *instructions,
+ast_expression::hir(ir_exec_list *instructions,
                     struct _mesa_glsl_parse_state *state)
 {
    return do_hir(instructions, state, true);
 }
 
 void
-ast_expression::hir_no_rvalue(exec_list *instructions,
+ast_expression::hir_no_rvalue(ir_exec_list *instructions,
                               struct _mesa_glsl_parse_state *state)
 {
    do_hir(instructions, state, false);
@@ -1372,7 +1372,7 @@ ast_expression::set_is_lhs(bool new_value)
 }
 
 ir_rvalue *
-ast_expression::do_hir(exec_list *instructions,
+ast_expression::do_hir(ir_exec_list *instructions,
                        struct _mesa_glsl_parse_state *state,
                        bool needs_rvalue)
 {
@@ -1629,7 +1629,7 @@ ast_expression::do_hir(exec_list *instructions,
       break;
 
    case ast_logic_and: {
-      exec_list rhs_instructions;
+      ir_exec_list rhs_instructions;
       op[0] = get_scalar_boolean_operand(instructions, state, this, 0,
                                          "LHS", &error_emitted);
       op[1] = get_scalar_boolean_operand(&rhs_instructions, state, this, 1,
@@ -1663,7 +1663,7 @@ ast_expression::do_hir(exec_list *instructions,
    }
 
    case ast_logic_or: {
-      exec_list rhs_instructions;
+      ir_exec_list rhs_instructions;
       op[0] = get_scalar_boolean_operand(instructions, state, this, 0,
                                          "LHS", &error_emitted);
       op[1] = get_scalar_boolean_operand(&rhs_instructions, state, this, 1,
@@ -1883,8 +1883,8 @@ ast_expression::do_hir(exec_list *instructions,
        * the if-statement assigns a value to the anonymous temporary.  This
        * temporary is the r-value of the expression.
        */
-      exec_list then_instructions;
-      exec_list else_instructions;
+      ir_exec_list then_instructions;
+      ir_exec_list else_instructions;
 
       op[1] = this->subexpressions[1]->hir(&then_instructions, state);
       op[2] = this->subexpressions[2]->hir(&else_instructions, state);
@@ -2175,10 +2175,10 @@ ast_expression::do_hir(exec_list *instructions,
        * therefore add instructions to the instruction list), they get dropped
        * on the floor.
        */
-      exec_node *previous_tail = NULL;
+      ir_exec_node *previous_tail = NULL;
       YYLTYPE previous_operand_loc = loc;
 
-      foreach_list_typed (ast_node, ast, link, &this->expressions) {
+      ir_foreach_list_typed (ast_node, ast, link, &this->expressions) {
          /* If one of the operands of comma operator does not generate any
           * code, we want to emit a warning.  At each pass through the loop
           * previous_tail will point to the last instruction in the stream
@@ -2309,7 +2309,7 @@ ast_expression::has_sequence_subexpression() const
 }
 
 ir_rvalue *
-ast_expression_statement::hir(exec_list *instructions,
+ast_expression_statement::hir(ir_exec_list *instructions,
                               struct _mesa_glsl_parse_state *state)
 {
    /* It is possible to have expression statements that don't have an
@@ -2331,13 +2331,13 @@ ast_expression_statement::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_compound_statement::hir(exec_list *instructions,
+ast_compound_statement::hir(ir_exec_list *instructions,
                             struct _mesa_glsl_parse_state *state)
 {
    if (new_scope)
       state->symbols->push_scope();
 
-   foreach_list_typed (ast_node, ast, link, &this->statements)
+   ir_foreach_list_typed (ast_node, ast, link, &this->statements)
       ast->hir(instructions, state);
 
    if (new_scope)
@@ -2349,18 +2349,18 @@ ast_compound_statement::hir(exec_list *instructions,
 }
 
 /**
- * Evaluate the given exec_node (which should be an ast_node representing
+ * Evaluate the given ir_exec_node (which should be an ast_node representing
  * a single array dimension) and return its integer value.
  */
 static unsigned
-process_array_size(exec_node *node,
+process_array_size(ir_exec_node *node,
                    struct _mesa_glsl_parse_state *state)
 {
    void *mem_ctx = state;
 
-   exec_list dummy_instructions;
+   ir_exec_list dummy_instructions;
 
-   ast_node *array_size = exec_node_data(ast_node, node, link);
+   ast_node *array_size = ir_exec_node_data(ast_node, node, link);
 
    /**
     * Dimensions other than the outermost dimension can by unsized if they
@@ -2436,7 +2436,7 @@ process_array_type(YYLTYPE *loc, const glsl_type *base,
          }
       }
 
-      for (exec_node *node = array_specifier->array_dimensions.get_tail_raw();
+      for (ir_exec_node *node = array_specifier->array_dimensions.get_tail_raw();
            !node->is_head_sentinel(); node = node->prev) {
          unsigned array_size = process_array_size(node, state);
          array_type = glsl_array_type(array_type, array_size, 0);
@@ -4617,7 +4617,7 @@ get_variable_being_redeclared(ir_variable **var_ptr, YYLTYPE loc,
 static ir_rvalue *
 process_initializer(ir_variable *var, ast_declaration *decl,
                     ast_fully_specified_type *type,
-                    exec_list *initializer_instructions,
+                    ir_exec_list *initializer_instructions,
                     struct _mesa_glsl_parse_state *state)
 {
    void *mem_ctx = state;
@@ -5051,7 +5051,7 @@ validate_identifier(const char *identifier, YYLTYPE loc,
 }
 
 ir_rvalue *
-ast_declarator_list::hir(exec_list *instructions,
+ast_declarator_list::hir(ir_exec_list *instructions,
                          struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -5080,7 +5080,7 @@ ast_declarator_list::hir(exec_list *instructions,
                           "scope");
       }
 
-      foreach_list_typed (ast_declaration, decl, link, &this->declarations) {
+      ir_foreach_list_typed (ast_declaration, decl, link, &this->declarations) {
          assert(decl->array_specifier == NULL);
          assert(decl->initializer == NULL);
 
@@ -5113,7 +5113,7 @@ ast_declarator_list::hir(exec_list *instructions,
    if (this->precise) {
       assert(this->type == NULL);
 
-      foreach_list_typed (ast_declaration, decl, link, &this->declarations) {
+      ir_foreach_list_typed (ast_declaration, decl, link, &this->declarations) {
          assert(decl->array_specifier == NULL);
          assert(decl->initializer == NULL);
 
@@ -5359,7 +5359,7 @@ ast_declarator_list::hir(exec_list *instructions,
       }
    }
 
-   foreach_list_typed (ast_declaration, decl, link, &this->declarations) {
+   ir_foreach_list_typed (ast_declaration, decl, link, &this->declarations) {
       const struct glsl_type *var_type;
       ir_variable *var;
       const char *identifier = decl->identifier;
@@ -5825,7 +5825,7 @@ ast_declarator_list::hir(exec_list *instructions,
        * redeclarations) the declaration may not actually be added to the
        * instruction stream.
        */
-      exec_list initializer_instructions;
+      ir_exec_list initializer_instructions;
 
       /* Examine var name here since var may get deleted in the next call */
       bool var_is_gl_id = is_gl_identifier(var->name);
@@ -5980,7 +5980,7 @@ ast_declarator_list::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_parameter_declarator::hir(exec_list *instructions,
+ast_parameter_declarator::hir(ir_exec_list *instructions,
                               struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -6114,15 +6114,15 @@ ast_parameter_declarator::hir(exec_list *instructions,
 
 
 void
-ast_parameter_declarator::parameters_to_hir(exec_list *ast_parameters,
+ast_parameter_declarator::parameters_to_hir(ir_exec_list *ast_parameters,
                                             bool formal,
-                                            exec_list *ir_parameters,
+                                            ir_exec_list *ir_parameters,
                                             _mesa_glsl_parse_state *state)
 {
    ast_parameter_declarator *void_param = NULL;
    unsigned count = 0;
 
-   foreach_list_typed (ast_parameter_declarator, param, link, ast_parameters) {
+   ir_foreach_list_typed (ast_parameter_declarator, param, link, ast_parameters) {
       param->formal_parameter = formal;
       param->hir(ir_parameters, state);
 
@@ -6156,13 +6156,13 @@ emit_function(_mesa_glsl_parse_state *state, ir_function *f)
 
 
 ir_rvalue *
-ast_function::hir(exec_list *instructions,
+ast_function::hir(ir_exec_list *instructions,
                   struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
    ir_function *f = NULL;
    ir_function_signature *sig = NULL;
-   exec_list hir_parameters;
+   ir_exec_list hir_parameters;
    YYLTYPE loc = this->get_location();
 
    const char *const name = identifier;
@@ -6453,7 +6453,7 @@ ast_function::hir(exec_list *instructions,
       f->subroutine_types = ralloc_array(state, const struct glsl_type *,
                                          f->num_subroutine_types);
       idx = 0;
-      foreach_list_typed(ast_declaration, decl, link, &this->return_type->qualifier.subroutine_list->declarations) {
+      ir_foreach_list_typed(ast_declaration, decl, link, &this->return_type->qualifier.subroutine_list->declarations) {
          const struct glsl_type *type;
          /* the subroutine type must be already declared */
          type = state->symbols->get_type(decl->identifier);
@@ -6511,7 +6511,7 @@ ast_function::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_function_definition::hir(exec_list *instructions,
+ast_function_definition::hir(ir_exec_list *instructions,
                              struct _mesa_glsl_parse_state *state)
 {
    prototype->is_definition = true;
@@ -6531,7 +6531,7 @@ ast_function_definition::hir(exec_list *instructions,
     * Add these to the symbol table.
     */
    state->symbols->push_scope();
-   foreach_in_list(ir_variable, var, &signature->parameters) {
+   ir_foreach_in_list(ir_variable, var, &signature->parameters) {
       assert(var->as_variable() != NULL);
 
       /* The only way a parameter would "exist" is if two parameters have
@@ -6570,7 +6570,7 @@ ast_function_definition::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_jump_statement::hir(exec_list *instructions,
+ast_jump_statement::hir(ir_exec_list *instructions,
                         struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -6736,7 +6736,7 @@ ast_jump_statement::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_demote_statement::hir(exec_list *instructions,
+ast_demote_statement::hir(ir_exec_list *instructions,
                           struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -6755,7 +6755,7 @@ ast_demote_statement::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_selection_statement::hir(exec_list *instructions,
+ast_selection_statement::hir(ir_exec_list *instructions,
                              struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -6835,7 +6835,7 @@ key_contents(const void *key)
 }
 
 void
-ast_switch_statement::eval_test_expression(exec_list *instructions,
+ast_switch_statement::eval_test_expression(ir_exec_list *instructions,
                                            struct _mesa_glsl_parse_state *state)
 {
    if (test_val == NULL)
@@ -6843,7 +6843,7 @@ ast_switch_statement::eval_test_expression(exec_list *instructions,
 }
 
 ir_rvalue *
-ast_switch_statement::hir(exec_list *instructions,
+ast_switch_statement::hir(ir_exec_list *instructions,
                           struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -6958,7 +6958,7 @@ ast_switch_statement::hir(exec_list *instructions,
 
 
 void
-ast_switch_statement::test_to_hir(exec_list *instructions,
+ast_switch_statement::test_to_hir(ir_exec_list *instructions,
                                   struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -6983,7 +6983,7 @@ ast_switch_statement::test_to_hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_switch_body::hir(exec_list *instructions,
+ast_switch_body::hir(ir_exec_list *instructions,
                      struct _mesa_glsl_parse_state *state)
 {
    if (stmts != NULL) {
@@ -6997,12 +6997,12 @@ ast_switch_body::hir(exec_list *instructions,
 }
 
 ir_rvalue *
-ast_case_statement_list::hir(exec_list *instructions,
+ast_case_statement_list::hir(ir_exec_list *instructions,
                              struct _mesa_glsl_parse_state *state)
 {
-   exec_list default_case, after_default, tmp;
+   ir_exec_list default_case, after_default, tmp;
 
-   foreach_list_typed (ast_case_statement, case_stmt, link, & this->cases) {
+   ir_foreach_list_typed (ast_case_statement, case_stmt, link, & this->cases) {
       case_stmt->hir(&tmp, state);
 
       /* Default case. */
@@ -7061,7 +7061,7 @@ ast_case_statement_list::hir(exec_list *instructions,
 }
 
 ir_rvalue *
-ast_case_statement::hir(exec_list *instructions,
+ast_case_statement::hir(ir_exec_list *instructions,
                         struct _mesa_glsl_parse_state *state)
 {
    labels->hir(instructions, state);
@@ -7071,7 +7071,7 @@ ast_case_statement::hir(exec_list *instructions,
       new(state) ir_dereference_variable(state->switch_state.is_fallthru_var);
    ir_if *const test_fallthru = new(state) ir_if(deref_fallthru_guard);
 
-   foreach_list_typed (ast_node, stmt, link, & this->stmts)
+   ir_foreach_list_typed (ast_node, stmt, link, & this->stmts)
       stmt->hir(& test_fallthru->then_instructions, state);
 
    instructions->push_tail(test_fallthru);
@@ -7082,10 +7082,10 @@ ast_case_statement::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_case_label_list::hir(exec_list *instructions,
+ast_case_label_list::hir(ir_exec_list *instructions,
                          struct _mesa_glsl_parse_state *state)
 {
-   foreach_list_typed (ast_case_label, label, link, & this->labels)
+   ir_foreach_list_typed (ast_case_label, label, link, & this->labels)
       label->hir(instructions, state);
 
    /* Case labels do not have r-values. */
@@ -7093,7 +7093,7 @@ ast_case_label_list::hir(exec_list *instructions,
 }
 
 ir_rvalue *
-ast_case_label::hir(exec_list *instructions,
+ast_case_label::hir(ir_exec_list *instructions,
                     struct _mesa_glsl_parse_state *state)
 {
    ir_factory body(instructions, state);
@@ -7230,7 +7230,7 @@ ast_case_label::hir(exec_list *instructions,
 }
 
 void
-ast_iteration_statement::condition_to_hir(exec_list *instructions,
+ast_iteration_statement::condition_to_hir(ir_exec_list *instructions,
                                           struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -7265,7 +7265,7 @@ ast_iteration_statement::condition_to_hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_iteration_statement::hir(exec_list *instructions,
+ast_iteration_statement::hir(ir_exec_list *instructions,
                              struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;
@@ -7370,7 +7370,7 @@ is_valid_default_precision_type(const struct glsl_type *const type)
 
 
 ir_rvalue *
-ast_type_specifier::hir(exec_list *instructions,
+ast_type_specifier::hir(ir_exec_list *instructions,
                         struct _mesa_glsl_parse_state *state)
 {
    if (this->default_precision == ast_precision_none && this->structure == NULL)
@@ -7480,9 +7480,9 @@ ast_type_specifier::hir(exec_list *instructions,
  * stored in \c *fields_ret.
  */
 static unsigned
-ast_process_struct_or_iface_block_members(exec_list *instructions,
+ast_process_struct_or_iface_block_members(ir_exec_list *instructions,
                                           struct _mesa_glsl_parse_state *state,
-                                          exec_list *declarations,
+                                          ir_exec_list *declarations,
                                           glsl_struct_field **fields_ret,
                                           bool is_interface,
                                           enum glsl_matrix_layout matrix_layout,
@@ -7503,7 +7503,7 @@ ast_process_struct_or_iface_block_members(exec_list *instructions,
     * This means that we actually need to count the number of elements in the
     * 'declarations' list in each of the elements.
     */
-   foreach_list_typed (ast_declarator_list, decl_list, link, declarations) {
+   ir_foreach_list_typed (ast_declarator_list, decl_list, link, declarations) {
       decl_count += decl_list->declarations.length();
    }
 
@@ -7519,7 +7519,7 @@ ast_process_struct_or_iface_block_members(exec_list *instructions,
    bool first_member_has_explicit_location = false;
 
    unsigned i = 0;
-   foreach_list_typed (ast_declarator_list, decl_list, link, declarations) {
+   ir_foreach_list_typed (ast_declarator_list, decl_list, link, declarations) {
       const char *type_name;
       YYLTYPE loc = decl_list->get_location();
 
@@ -7711,7 +7711,7 @@ ast_process_struct_or_iface_block_members(exec_list *instructions,
             validate_matrix_layout_for_type(state, &loc, decl_type, NULL);
       }
 
-      foreach_list_typed (ast_declaration, decl, link,
+      ir_foreach_list_typed (ast_declaration, decl, link,
                           &decl_list->declarations) {
          YYLTYPE loc = decl->get_location();
 
@@ -7970,7 +7970,7 @@ is_anonymous(const glsl_type *t)
 }
 
 ir_rvalue *
-ast_struct_specifier::hir(exec_list *instructions,
+ast_struct_specifier::hir(ir_exec_list *instructions,
                           struct _mesa_glsl_parse_state *state)
 {
    YYLTYPE loc = this->get_location();
@@ -8086,7 +8086,7 @@ apply_memory_qualifiers(ir_variable *var, glsl_struct_field field)
 }
 
 ir_rvalue *
-ast_interface_block::hir(exec_list *instructions,
+ast_interface_block::hir(ir_exec_list *instructions,
                          struct _mesa_glsl_parse_state *state)
 {
    YYLTYPE loc = this->get_location();
@@ -8214,7 +8214,7 @@ ast_interface_block::hir(exec_list *instructions,
       matrix_layout = GLSL_MATRIX_LAYOUT_COLUMN_MAJOR;
 
    bool redeclaring_per_vertex = strcmp(this->block_name, "gl_PerVertex") == 0;
-   exec_list declared_variables;
+   ir_exec_list declared_variables;
    glsl_struct_field *fields;
 
    /* For blocks that accept memory qualifiers (i.e. shader storage), verify
@@ -8833,7 +8833,7 @@ ast_interface_block::hir(exec_list *instructions,
           * thinking there are conflicting definitions of gl_PerVertex in the
           * shader.
           */
-         foreach_in_list_safe(ir_instruction, node, instructions) {
+         ir_foreach_in_list_safe(ir_instruction, node, instructions) {
             ir_variable *const var = node->as_variable();
             if (var != NULL &&
                 var->get_interface_type() == earlier_per_vertex &&
@@ -8856,7 +8856,7 @@ ast_interface_block::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_tcs_output_layout::hir(exec_list *instructions,
+ast_tcs_output_layout::hir(ir_exec_list *instructions,
                            struct _mesa_glsl_parse_state *state)
 {
    YYLTYPE loc = this->get_location();
@@ -8887,7 +8887,7 @@ ast_tcs_output_layout::hir(exec_list *instructions,
    /* If any shader outputs occurred before this declaration and did not
     * specify an array size, their size is determined now.
     */
-   foreach_in_list (ir_instruction, node, instructions) {
+   ir_foreach_in_list (ir_instruction, node, instructions) {
       ir_variable *var = node->as_variable();
       if (var == NULL || var->data.mode != ir_var_shader_out)
          continue;
@@ -8913,7 +8913,7 @@ ast_tcs_output_layout::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_gs_input_layout::hir(exec_list *instructions,
+ast_gs_input_layout::hir(ir_exec_list *instructions,
                          struct _mesa_glsl_parse_state *state)
 {
    YYLTYPE loc = this->get_location();
@@ -8941,7 +8941,7 @@ ast_gs_input_layout::hir(exec_list *instructions,
    /* If any shader inputs occurred before this declaration and did not
     * specify an array size, their size is determined now.
     */
-   foreach_in_list(ir_instruction, node, instructions) {
+   ir_foreach_in_list(ir_instruction, node, instructions) {
       ir_variable *var = node->as_variable();
       if (var == NULL || var->data.mode != ir_var_shader_in)
          continue;
@@ -8969,7 +8969,7 @@ ast_gs_input_layout::hir(exec_list *instructions,
 
 
 ir_rvalue *
-ast_cs_input_layout::hir(exec_list *instructions,
+ast_cs_input_layout::hir(ir_exec_list *instructions,
                          struct _mesa_glsl_parse_state *state)
 {
    YYLTYPE loc = this->get_location();
@@ -9078,7 +9078,7 @@ ast_cs_input_layout::hir(exec_list *instructions,
 
 static void
 detect_conflicting_assignments(struct _mesa_glsl_parse_state *state,
-                               exec_list *instructions)
+                               ir_exec_list *instructions)
 {
    bool gl_FragColor_assigned = false;
    bool gl_FragData_assigned = false;
@@ -9091,7 +9091,7 @@ detect_conflicting_assignments(struct _mesa_glsl_parse_state *state,
    YYLTYPE loc;
    memset(&loc, 0, sizeof(loc));
 
-   foreach_in_list(ir_instruction, node, instructions) {
+   ir_foreach_in_list(ir_instruction, node, instructions) {
       ir_variable *var = node->as_variable();
 
       if (!var || !var->data.assigned)
@@ -9185,7 +9185,7 @@ verify_subroutine_associated_funcs(struct _mesa_glsl_parse_state *state)
       unsigned definitions = 0;
       ir_function *fn = state->subroutines[i];
       /* Calculate number of function definitions with the same name */
-      foreach_in_list(ir_function_signature, sig, &fn->signatures) {
+      ir_foreach_in_list(ir_function_signature, sig, &fn->signatures) {
          if (sig->is_defined) {
             if (++definitions > 1) {
                _mesa_glsl_error(&loc, state,
@@ -9202,7 +9202,7 @@ verify_subroutine_associated_funcs(struct _mesa_glsl_parse_state *state)
 }
 
 static void
-remove_per_vertex_blocks(exec_list *instructions,
+remove_per_vertex_blocks(ir_exec_list *instructions,
                          _mesa_glsl_parse_state *state, ir_variable_mode mode)
 {
    /* Find the gl_PerVertex interface block of the appropriate (in/out) mode,
@@ -9242,7 +9242,7 @@ remove_per_vertex_blocks(exec_list *instructions,
    /* Remove any ir_variable declarations that refer to the interface block
     * we're removing.
     */
-   foreach_in_list_safe(ir_instruction, node, instructions) {
+   ir_foreach_in_list_safe(ir_instruction, node, instructions) {
       ir_variable *const var = node->as_variable();
       if (var != NULL && var->get_interface_type() == per_vertex &&
           var->data.mode == mode &&
@@ -9254,7 +9254,7 @@ remove_per_vertex_blocks(exec_list *instructions,
 }
 
 ir_rvalue *
-ast_warnings_toggle::hir(exec_list *,
+ast_warnings_toggle::hir(ir_exec_list *,
                          struct _mesa_glsl_parse_state *state)
 {
    state->warnings_enabled = enable;

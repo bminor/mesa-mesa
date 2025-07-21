@@ -47,7 +47,7 @@ public:
 
    bool progress;
    gl_shader_stage shader_stage;
-   exec_list factory_instructions;
+   ir_exec_list factory_instructions;
    ir_factory factory;
 };
 

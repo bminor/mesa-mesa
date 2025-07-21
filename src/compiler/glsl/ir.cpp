@@ -863,7 +863,7 @@ ir_constant::ir_constant(const ir_constant *c, unsigned i)
    }
 }
 
-ir_constant::ir_constant(const struct glsl_type *type, exec_list *value_list)
+ir_constant::ir_constant(const struct glsl_type *type, ir_exec_list *value_list)
    : ir_rvalue(ir_type_constant)
 {
    this->const_elements = NULL;
@@ -880,7 +880,7 @@ ir_constant::ir_constant(const struct glsl_type *type, exec_list *value_list)
    if (glsl_type_is_array(type) || glsl_type_is_struct(type)) {
       this->const_elements = ralloc_array(this, ir_constant *, type->length);
       unsigned i = 0;
-      foreach_in_list(ir_constant, value, value_list) {
+      ir_foreach_in_list(ir_constant, value, value_list) {
 	 assert(value->as_constant() != NULL);
 
 	 this->const_elements[i++] = value;
@@ -2108,10 +2108,10 @@ modes_match(unsigned a, unsigned b)
 
 
 const char *
-ir_function_signature::qualifiers_match(exec_list *params)
+ir_function_signature::qualifiers_match(ir_exec_list *params)
 {
    /* check that the qualifiers match. */
-   foreach_two_lists(a_node, &this->parameters, b_node, params) {
+   ir_foreach_two_lists(a_node, &this->parameters, b_node, params) {
       ir_variable *a = (ir_variable *) a_node;
       ir_variable *b = (ir_variable *) b_node;
 
@@ -2136,7 +2136,7 @@ ir_function_signature::qualifiers_match(exec_list *params)
 
 
 void
-ir_function_signature::replace_parameters(exec_list *new_params)
+ir_function_signature::replace_parameters(ir_exec_list *new_params)
 {
    /* Destroy all of the previous parameter information.  If the previous
     * parameter information comes from the function prototype, it may either
@@ -2157,7 +2157,7 @@ ir_function::ir_function(const char *name)
 bool
 ir_function::has_user_signature()
 {
-   foreach_in_list(ir_function_signature, sig, &this->signatures) {
+   ir_foreach_in_list(ir_function_signature, sig, &this->signatures) {
       if (!sig->is_builtin())
 	 return true;
    }
@@ -2176,17 +2176,17 @@ ir_rvalue::error_value(void *mem_ctx)
 
 
 void
-visit_exec_list(exec_list *list, ir_visitor *visitor)
+visit_exec_list(ir_exec_list *list, ir_visitor *visitor)
 {
-   foreach_in_list(ir_instruction, node, list) {
+   ir_foreach_in_list(ir_instruction, node, list) {
       node->accept(visitor);
    }
 }
 
 void
-visit_exec_list_safe(exec_list *list, ir_visitor *visitor)
+visit_exec_list_safe(ir_exec_list *list, ir_visitor *visitor)
 {
-   foreach_in_list_safe(ir_instruction, node, list) {
+   ir_foreach_in_list_safe(ir_instruction, node, list) {
       node->accept(visitor);
    }
 }
@@ -2222,9 +2222,9 @@ steal_memory(ir_instruction *ir, void *new_ctx)
 
 
 void
-reparent_ir(exec_list *list, void *mem_ctx)
+reparent_ir(ir_exec_list *list, void *mem_ctx)
 {
-   foreach_in_list(ir_instruction, node, list) {
+   ir_foreach_in_list(ir_instruction, node, list) {
       visit_tree(node, steal_memory, mem_ctx);
    }
 }

@@ -32,7 +32,7 @@
 #include "util/format/u_format.h"
 #include "util/half_float.h"
 #include "compiler/glsl_types.h"
-#include "list.h"
+#include "ir_list.h"
 #include "ir_visitor.h"
 #include "ir_hierarchical_visitor.h"
 #include "util/glheader.h"
@@ -102,7 +102,7 @@ enum ir_node_type {
 /**
  * Base class of all IR instructions
  */
-class ir_instruction : public exec_node {
+class ir_instruction : public ir_exec_node {
 public:
    enum ir_node_type ir_type;
 
@@ -1184,7 +1184,7 @@ public:
     * Returns NULL for non-built-ins.
     */
    ir_constant *constant_expression_value(void *mem_ctx,
-                                          exec_list *actual_parameters,
+                                          ir_exec_list *actual_parameters,
                                           struct hash_table *variable_context);
 
    /**
@@ -1214,14 +1214,14 @@ public:
     * and the supplied parameter list.  If not, returns the name of the first
     * parameter with mismatched qualifiers (for use in error messages).
     */
-   const char *qualifiers_match(exec_list *params);
+   const char *qualifiers_match(ir_exec_list *params);
 
    /**
     * Replace the current parameter list with the given one.  This is useful
     * if the current information came from a prototype, and either has invalid
     * or missing parameter names.
     */
-   void replace_parameters(exec_list *new_params);
+   void replace_parameters(ir_exec_list *new_params);
 
    /**
     * Function return type.
@@ -1236,7 +1236,7 @@ public:
     * This represents the storage.  The paramaters passed in a particular
     * call will be in ir_call::actual_paramaters.
     */
-   struct exec_list parameters;
+   struct ir_exec_list parameters;
 
    /** Whether or not this function has a body (which may be empty). */
    unsigned is_defined:1;
@@ -1267,7 +1267,7 @@ public:
    bool is_builtin_available(const _mesa_glsl_parse_state *state) const;
 
    /** Body of instructions in the function. */
-   struct exec_list body;
+   struct ir_exec_list body;
 
 private:
    /**
@@ -1296,7 +1296,7 @@ private:
     * and the value in *result if result is non-NULL.
     */
    bool constant_expression_evaluate_expression_list(void *mem_ctx,
-                                                     const struct exec_list &body,
+                                                     const struct ir_exec_list &body,
 						     struct hash_table *variable_context,
 						     ir_constant **result);
 };
@@ -1331,7 +1331,7 @@ public:
     * conversions into account.  Also flags whether the match was exact.
     */
    ir_function_signature *matching_signature(_mesa_glsl_parse_state *state,
-                                             const exec_list *actual_param,
+                                             const ir_exec_list *actual_param,
                                              bool has_implicit_conversions,
                                              bool has_implicit_int_to_uint_conversion,
                                              bool allow_builtins,
@@ -1342,7 +1342,7 @@ public:
     * conversions into account.
     */
    ir_function_signature *matching_signature(_mesa_glsl_parse_state *state,
-                                             const exec_list *actual_param,
+                                             const ir_exec_list *actual_param,
                                              bool has_implicit_conversions,
                                              bool has_implicit_int_to_uint_conversion,
                                              bool allow_builtins);
@@ -1352,7 +1352,7 @@ public:
     * any implicit type conversions.
     */
    ir_function_signature *exact_matching_signature(_mesa_glsl_parse_state *state,
-                                                   const exec_list *actual_ps);
+                                                   const ir_exec_list *actual_ps);
 
    /**
     * Name of the function.
@@ -1365,7 +1365,7 @@ public:
    /**
     * List of ir_function_signature for each overloaded function with this name.
     */
-   struct exec_list signatures;
+   struct ir_exec_list signatures;
 
    /**
     * is this function a subroutine type declaration
@@ -1413,9 +1413,9 @@ public:
 
    ir_rvalue *condition;
    /** List of ir_instruction for the body of the then branch */
-   exec_list  then_instructions;
+   ir_exec_list  then_instructions;
    /** List of ir_instruction for the body of the else branch */
-   exec_list  else_instructions;
+   ir_exec_list  else_instructions;
 };
 
 
@@ -1436,7 +1436,7 @@ public:
    virtual ir_visitor_status accept(ir_hierarchical_visitor *);
 
    /** List of ir_instruction that make up the body of the loop. */
-   exec_list body_instructions;
+   ir_exec_list body_instructions;
 };
 
 
@@ -1610,7 +1610,7 @@ class ir_call : public ir_instruction {
 public:
    ir_call(ir_function_signature *callee,
 	   ir_dereference_variable *return_deref,
-	   exec_list *actual_parameters)
+	   ir_exec_list *actual_parameters)
       : ir_instruction(ir_type_call), return_deref(return_deref), callee(callee), sub_var(NULL), array_idx(NULL)
    {
       assert(callee->return_type != NULL);
@@ -1619,7 +1619,7 @@ public:
 
    ir_call(ir_function_signature *callee,
 	   ir_dereference_variable *return_deref,
-	   exec_list *actual_parameters,
+	   ir_exec_list *actual_parameters,
 	   ir_variable *var, ir_rvalue *array_idx)
       : ir_instruction(ir_type_call), return_deref(return_deref), callee(callee), sub_var(var), array_idx(array_idx)
    {
@@ -1665,7 +1665,7 @@ public:
    ir_function_signature *callee;
 
    /* List of ir_rvalue of paramaters passed in this call. */
-   exec_list actual_parameters;
+   ir_exec_list actual_parameters;
 
    /*
     * ARB_shader_subroutine support -
@@ -2200,7 +2200,7 @@ public:
    /**
     * Construct an ir_constant from a list of ir_constant values
     */
-   ir_constant(const struct glsl_type *type, exec_list *values);
+   ir_constant(const struct glsl_type *type, ir_exec_list *values);
 
    /**
     * Construct an ir_constant from a scalar component of another ir_constant
@@ -2410,15 +2410,15 @@ public:
  * Apply a visitor to each IR node in a list
  */
 void
-visit_exec_list(exec_list *list, ir_visitor *visitor);
+visit_exec_list(ir_exec_list *list, ir_visitor *visitor);
 
 void
-visit_exec_list_safe(exec_list *list, ir_visitor *visitor);
+visit_exec_list_safe(ir_exec_list *list, ir_visitor *visitor);
 
 /**
  * Validate invariants on each IR node in a list
  */
-void validate_ir_tree(exec_list *instructions);
+void validate_ir_tree(ir_exec_list *instructions);
 
 /**
  * Detect whether an unlinked shader contains static recursion
@@ -2429,7 +2429,7 @@ void validate_ir_tree(exec_list *instructions);
  */
 void
 detect_recursion_unlinked(struct _mesa_glsl_parse_state *state,
-			  exec_list *instructions);
+			  ir_exec_list *instructions);
 
 /**
  * Make a clone of each IR instruction in a list
@@ -2438,14 +2438,14 @@ detect_recursion_unlinked(struct _mesa_glsl_parse_state *state,
  * \param out  List to hold the cloned instructions
  */
 void
-clone_ir_list(void *mem_ctx, exec_list *out, const exec_list *in);
+clone_ir_list(void *mem_ctx, ir_exec_list *out, const ir_exec_list *in);
 
 extern void
-reparent_ir(exec_list *list, void *mem_ctx);
+reparent_ir(ir_exec_list *list, void *mem_ctx);
 
 extern char *
 prototype_string(const glsl_type *return_type, const char *name,
-		 exec_list *parameters);
+		 ir_exec_list *parameters);
 
 const char *
 mode_string(const ir_variable *var);
@@ -2457,10 +2457,10 @@ extern void
 _mesa_glsl_initialize_types(struct _mesa_glsl_parse_state *state);
 
 extern void
-_mesa_glsl_initialize_variables(struct exec_list *instructions,
+_mesa_glsl_initialize_variables(struct ir_exec_list *instructions,
                                 struct _mesa_glsl_parse_state *state);
 
-extern void _mesa_print_ir(FILE *f, struct exec_list *instructions,
+extern void _mesa_print_ir(FILE *f, struct ir_exec_list *instructions,
                            struct _mesa_glsl_parse_state *state);
 
 extern void

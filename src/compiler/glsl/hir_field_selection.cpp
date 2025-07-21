@@ -28,7 +28,7 @@
 
 ir_rvalue *
 _mesa_ast_field_selection_to_hir(const ast_expression *expr,
-				 exec_list *instructions,
+				 ir_exec_list *instructions,
 				 struct _mesa_glsl_parse_state *state)
 {
    void *ctx = state;

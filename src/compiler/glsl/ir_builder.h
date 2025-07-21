@@ -76,7 +76,7 @@ public:
 
 class ir_factory {
 public:
-   ir_factory(exec_list *instructions = NULL, void *mem_ctx = NULL)
+   ir_factory(ir_exec_list *instructions = NULL, void *mem_ctx = NULL)
       : instructions(instructions),
         mem_ctx(mem_ctx)
    {
@@ -110,7 +110,7 @@ public:
       return new(mem_ctx) ir_constant(b);
    }
 
-   exec_list *instructions;
+   ir_exec_list *instructions;
    void *mem_ctx;
 };
 

@@ -1155,7 +1155,7 @@ public:
    void initialize();
    void release();
    ir_function_signature *find(_mesa_glsl_parse_state *state,
-                               const char *name, exec_list *actual_parameters);
+                               const char *name, ir_exec_list *actual_parameters);
 
    /**
     * A symbol table to hold all the built-in signatures; created by this
@@ -1208,7 +1208,7 @@ private:
     * point to the ir_variable that will hold the function return
     * value, or be \c NULL if the function has void return type.
     */
-   ir_call *call(ir_function *f, ir_variable *ret, exec_list params);
+   ir_call *call(ir_function *f, ir_variable *ret, ir_exec_list params);
 
    /** Create a new function and add the given signatures. */
    void add_function(const char *name, ...);
@@ -1634,7 +1634,7 @@ builtin_builder::~builtin_builder()
 
 ir_function_signature *
 builtin_builder::find(_mesa_glsl_parse_state *state,
-                      const char *name, exec_list *actual_parameters)
+                      const char *name, ir_exec_list *actual_parameters)
 {
    /* The shader currently being compiled requested a built-in function;
     * it needs to link against builtin_builder::shader in order to get them.
@@ -6035,7 +6035,7 @@ builtin_builder::add_function(const char *name, ...)
          break;
 
       if (false) {
-         exec_list stuff;
+         ir_exec_list stuff;
          stuff.push_tail(sig);
          validate_ir_tree(&stuff);
       }
@@ -6374,7 +6374,7 @@ builtin_builder::new_sig(const glsl_type *return_type,
    ir_function_signature *sig =
       new(mem_ctx) ir_function_signature(return_type, avail);
 
-   exec_list plist;
+   ir_exec_list plist;
    va_start(ap, num_params);
    for (int i = 0; i < num_params; i++) {
       plist.push_tail(va_arg(ap, ir_variable *));
@@ -6511,11 +6511,11 @@ builtin_builder::asin_expr(ir_variable *x, float p0, float p1)
  * \c ir_call.
  */
 ir_call *
-builtin_builder::call(ir_function *f, ir_variable *ret, exec_list params)
+builtin_builder::call(ir_function *f, ir_variable *ret, ir_exec_list params)
 {
-   exec_list actual_params;
+   ir_exec_list actual_params;
 
-   foreach_in_list_safe(ir_instruction, ir, &params) {
+   ir_foreach_in_list_safe(ir_instruction, ir, &params) {
       ir_dereference_variable *d = ir->as_dereference_variable();
       if (d != NULL) {
          d->remove();
@@ -8684,7 +8684,7 @@ builtin_builder::_atomic_counter_op1(const char *intrinsic,
 
       body.emit(assign(neg_data, neg(data)));
 
-      exec_list parameters;
+      ir_exec_list parameters;
 
       parameters.push_tail(new(mem_ctx) ir_dereference_variable(counter));
       parameters.push_tail(new(mem_ctx) ir_dereference_variable(neg_data));
@@ -9584,7 +9584,7 @@ _mesa_glsl_builtin_functions_decref()
 
 ir_function_signature *
 _mesa_glsl_find_builtin_function(_mesa_glsl_parse_state *state,
-                                 const char *name, exec_list *actual_parameters)
+                                 const char *name, ir_exec_list *actual_parameters)
 {
    ir_function_signature *s;
    simple_mtx_lock(&builtins_lock);
@@ -9602,7 +9602,7 @@ _mesa_glsl_has_builtin_function(_mesa_glsl_parse_state *state, const char *name)
    simple_mtx_lock(&builtins_lock);
    f = builtins.symbols->get_function(name);
    if (f != NULL) {
-      foreach_in_list(ir_function_signature, sig, &f->signatures) {
+      ir_foreach_in_list(ir_function_signature, sig, &f->signatures) {
          if (sig->is_builtin_available(state)) {
             ret = true;
             break;
@@ -9629,7 +9629,7 @@ _mesa_get_main_function_signature(glsl_symbol_table *symbol_table)
 {
    ir_function *const f = symbol_table->get_function("main");
    if (f != NULL) {
-      exec_list void_parameters;
+      ir_exec_list void_parameters;
 
       /* Look for the 'void main()' signature and ensure that it's defined.
        * This keeps the linker from accidentally pick a shader that just

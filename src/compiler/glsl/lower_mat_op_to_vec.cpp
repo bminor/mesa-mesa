@@ -85,7 +85,7 @@ mat_op_to_vec_predicate(ir_instruction *ir)
 }
 
 bool
-do_mat_op_to_vec(exec_list *instructions)
+do_mat_op_to_vec(ir_exec_list *instructions)
 {
    ir_mat_op_to_vec_visitor v;
 
