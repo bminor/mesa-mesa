@@ -2066,6 +2066,12 @@ enum anv_internal_kernel_name {
  */
 #define ANV_RT_UUID_MACRO             "ANV_RT_BVH_0001"
 
+enum anv_object_key_bvh_type {
+   ANV_OBJECT_KEY_BVH_ENCODE = VK_META_OBJECT_KEY_DRIVER_OFFSET,
+   ANV_OBJECT_KEY_BVH_HEADER,
+   ANV_OBJECT_KEY_BVH_COPY,
+};
+
 enum bvh_dump_type {
    BVH_ANV,
    BVH_IR_HDR,
