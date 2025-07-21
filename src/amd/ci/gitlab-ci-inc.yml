@@ -356,6 +356,8 @@
     - .ci-tron-x86_64-test-vk
     - .radv-valve-rules
     - .ci-tron-test-radv
+  variables:
+    DEQP_SUITE: radv-valve
 
 
 .tahiti-test-valve:
