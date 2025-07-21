@@ -20,6 +20,7 @@
 #include "nv_push_clc1b5.h"
 #include "nv_push_clc397.h"
 #include "nv_push_clc3c0.h"
+#include "nv_push_clc56f.h"
 #include "nv_push_clc597.h"
 #include "nv_push_clc5b5.h"
 #include "nv_push_clc5c0.h"
@@ -166,7 +167,10 @@ vk_push_print(FILE *fp, const struct nv_push *push,
       while (count--) {
          if (!is_tert) {
             if (mthd < 0x100) {
-               mthd_name = P_PARSE_NV906F_MTHD(mthd);
+               if (devinfo->cls_eng3d >= 0xc597)
+                  mthd_name = P_PARSE_NVC56F_MTHD(mthd);
+               else
+                  mthd_name = P_PARSE_NV906F_MTHD(mthd);
             } else {
                int class_id = curr_subchans[subchan];
                int cls_lo = class_id & 0xff;
