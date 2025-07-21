@@ -56,6 +56,19 @@ enum panvk_incremental_rendering_pass {
    PANVK_IR_PASS_COUNT
 };
 
+struct panvk_ir_fbd_info {
+   uint32_t word0;
+   uint32_t word6;
+   uint32_t word7;
+   uint32_t word12;
+};
+
+struct panvk_ir_desc_info {
+   struct panvk_ir_fbd_info fbd;
+   uint32_t crc_zs_word0;
+   uint32_t rtd_word1[MAX_RTS];
+};
+
 static inline uint32_t
 get_tiler_oom_handler_idx(bool has_zs_ext, uint32_t rt_count)
 {
@@ -83,9 +96,6 @@ get_fbd_size(bool has_zs_ext, uint32_t rt_count)
 /* Helper defines to get specific fields in the tiler_oom_ctx. */
 #define TILER_OOM_CTX_FIELD_OFFSET(_name)                                      \
    offsetof(struct panvk_cs_subqueue_context, tiler_oom_ctx._name)
-#define TILER_OOM_CTX_FBDPTR_OFFSET(_pass)                                     \
-   (TILER_OOM_CTX_FIELD_OFFSET(fbds) +                                         \
-    (PANVK_IR_##_pass##_PASS * sizeof(uint64_t)))
 
 struct panvk_cs_timestamp_query {
    struct cs_single_link_list_node node;
@@ -119,7 +129,12 @@ struct panvk_cs_subqueue_context {
    } render;
    struct {
       uint32_t counter;
-      uint64_t fbds[PANVK_IR_PASS_COUNT];
+      /* Base pointer to regular FBD for layer 0 */
+      uint64_t layer_fbd_ptr;
+      /* Pointer to scratch FBD used in the event of IR */
+      uint64_t ir_scratch_fbd_ptr;
+      /* Partial descriptor data needed in the event of IR */
+      struct panvk_ir_desc_info ir_desc_infos[PANVK_IR_PASS_COUNT];
       uint32_t td_count;
       uint32_t layer_count;
    } tiler_oom_ctx;
@@ -572,4 +587,19 @@ vk_stage_to_subqueue_mask(VkPipelineStageFlagBits2 vk_stage)
 
 void panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
                                   struct panvk_cs_deps deps);
+#if PAN_ARCH >= 10
+
+void panvk_per_arch(cs_patch_ir_state)(
+   struct cs_builder *b, const struct cs_tracing_ctx *tracing_ctx,
+   bool has_zs_ext, uint32_t rt_count, struct cs_index remaining_layers_in_td,
+   struct cs_index current_fbd_ptr_reg, struct cs_index ir_desc_info_ptr,
+   struct cs_index ir_fbd_word_0, struct cs_index scratch_fbd_ptr_reg,
+   struct cs_index scratch_registers_5);
+
+void panvk_per_arch(cs_ir_update_registers_to_next_layer)(
+   struct cs_builder *b, bool has_zs_ext, uint32_t rt_count,
+   struct cs_index current_fbd_ptr_reg, struct cs_index ir_fbd_word_0,
+   struct cs_index remaining_layers_in_td);
+#endif /* PAN_ARCH >= 10 */
+
 #endif /* PANVK_CMD_BUFFER_H */
