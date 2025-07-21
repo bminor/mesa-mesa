@@ -6110,44 +6110,6 @@ radv_upload_graphics_shader_descriptors(struct radv_cmd_buffer *cmd_buffer)
    radv_flush_force_vrs_state(cmd_buffer);
 }
 
-struct radv_draw_info {
-   /**
-    * Number of vertices.
-    */
-   uint32_t count;
-
-   /**
-    * First instance id.
-    */
-   uint32_t first_instance;
-
-   /**
-    * Number of instances.
-    */
-   uint32_t instance_count;
-
-   /**
-    * Whether it's an indexed draw.
-    */
-   bool indexed;
-
-   /**
-    * Indirect draw parameters.
-    */
-   uint64_t indirect_va;
-   uint32_t stride;
-
-   /**
-    * Draw count parameters VA.
-    */
-   uint64_t count_va;
-
-   /**
-    * Stream output parameters VA.
-    */
-   uint64_t strmout_va;
-};
-
 struct radv_prim_vertex_count {
    uint8_t min;
    uint8_t incr;
@@ -11545,7 +11507,7 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
    }
 
    if (!dgc)
-      radv_describe_draw(cmd_buffer);
+      radv_describe_draw(cmd_buffer, info);
    if (likely(!info->indirect_va)) {
       struct radv_cmd_state *state = &cmd_buffer->state;
       struct radeon_cmdbuf *cs = cmd_buffer->cs;
@@ -11611,7 +11573,7 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       radv_flush_constants(cmd_buffer, pc_stages, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
    if (!dgc)
-      radv_describe_draw(cmd_buffer);
+      radv_describe_draw(cmd_buffer, info);
    if (likely(!info->indirect_va)) {
       struct radv_cmd_state *state = &cmd_buffer->state;
       if (unlikely(state->last_num_instances != 1)) {

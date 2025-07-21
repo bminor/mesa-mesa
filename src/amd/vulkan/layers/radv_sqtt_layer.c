@@ -383,15 +383,44 @@ radv_describe_end_cmd_buffer(struct radv_cmd_buffer *cmd_buffer)
    radv_emit_sqtt_userdata(cmd_buffer, &marker, sizeof(marker) / 4);
 }
 
-void
-radv_describe_draw(struct radv_cmd_buffer *cmd_buffer)
+static void
+radv_gfx12_write_draw_marker(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *draw_info)
 {
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
+   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, cmd_buffer->qf);
+   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+
+   /* RGP doesn't need this marker for indirect draws. */
+   if (draw_info->indirect_va)
+      return;
+
+   const uint32_t dw0 = 0xf /* Used by RGP to identify this marker */ | (draw_info->instance_count << 4);
+   const uint32_t dw1 = draw_info->count;
+
+   /* This must be emitted with two separate SQ_THREAD_TRACE_USERDATA_7 packets, otherwise RGP
+    * doesn't recognize this draw marker.
+    */
+   radeon_begin(cs);
+   radeon_set_uconfig_perfctr_reg(gfx_level, ring, R_030D1C_SQ_THREAD_TRACE_USERDATA_7, dw0);
+   radeon_set_uconfig_perfctr_reg(gfx_level, ring, R_030D1C_SQ_THREAD_TRACE_USERDATA_7, dw1);
+   radeon_end();
+}
+
+void
+radv_describe_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *draw_info)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (likely(!device->sqtt.bo))
       return;
 
    radv_write_event_marker(cmd_buffer, cmd_buffer->state.current_event_type, UINT_MAX, UINT_MAX, UINT_MAX);
+
+   if (pdev->info.gfx_level >= GFX12)
+      radv_gfx12_write_draw_marker(cmd_buffer, draw_info);
 }
 
 void
