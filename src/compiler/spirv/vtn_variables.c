@@ -524,6 +524,8 @@ vtn_pointer_to_deref(struct vtn_builder *b, struct vtn_pointer *ptr)
       ptr = vtn_pointer_dereference(b, ptr, &chain);
    }
 
+   vtn_assert(ptr->deref != NULL);
+
    return ptr->deref;
 }
 
