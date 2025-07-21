@@ -297,9 +297,6 @@ assert_memhandle_type(VkExternalMemoryHandleTypeFlags types)
    unsigned valid[] = {
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
-#if DETECT_OS_ANDROID
-      VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
-#endif
    };
    for (unsigned i = 0; i < ARRAY_SIZE(valid); i++) {
       if (types & valid[i])
@@ -1957,7 +1954,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
 {
    LVP_FROM_HANDLE(lvp_device, device, _device);
    struct lvp_device_memory *mem;
-   ASSERTED const VkExportMemoryAllocateInfo *export_info = NULL;
    ASSERTED const VkImportMemoryFdInfoKHR *import_info = NULL;
    const VkMemoryAllocateFlagsInfo *mem_flags = NULL;
    VkResult error = VK_ERROR_OUT_OF_DEVICE_MEMORY;
@@ -1966,10 +1962,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
 
    vk_foreach_struct_const(ext, pAllocateInfo->pNext) {
       switch ((unsigned)ext->sType) {
-      case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO:
-         export_info = (VkExportMemoryAllocateInfo*)ext;
-         assert_memhandle_type(export_info->handleTypes);
-         break;
       case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
          import_info = (VkImportMemoryFdInfoKHR*)ext;
          assert_memhandle_type(import_info->handleType);
@@ -2018,8 +2010,11 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    }
 #endif
 #ifdef PIPE_MEMORY_FD
-   else if(import_info && import_info->handleType) {
-      bool dmabuf = import_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+   else if (mem->vk.import_handle_type) {
+      assert(import_info &&
+             import_info->handleType == mem->vk.import_handle_type);
+      const bool dmabuf = mem->vk.import_handle_type ==
+                          VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
       uint64_t size;
       if(!device->pscreen->import_memory_fd(device->pscreen, import_info->fd, &mem->pmem, &size, dmabuf)) {
          error = VK_ERROR_INVALID_EXTERNAL_HANDLE;
@@ -2030,7 +2025,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
          error = VK_ERROR_INVALID_EXTERNAL_HANDLE;
          goto fail;
       }
-      if (export_info && export_info->handleTypes == import_info->handleType) {
+      if (mem->vk.export_handle_types == mem->vk.import_handle_type) {
          mem->backed_fd = import_info->fd;
       }
       else {
@@ -2041,8 +2036,9 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       mem->map = device->pscreen->map_memory(device->pscreen, mem->pmem);
       mem->memory_type = dmabuf ? LVP_DEVICE_MEMORY_TYPE_DMA_BUF : LVP_DEVICE_MEMORY_TYPE_OPAQUE_FD;
    }
-   else if (export_info && export_info->handleTypes) {
-      bool dmabuf = export_info->handleTypes == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+   else if (mem->vk.export_handle_types) {
+      const bool dmabuf = mem->vk.export_handle_types ==
+                          VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
       mem->pmem = device->pscreen->allocate_memory_fd(device->pscreen, pAllocateInfo->allocationSize, &mem->backed_fd, dmabuf);
       if (!mem->pmem || mem->backed_fd < 0) {
           goto fail;
