@@ -50,7 +50,7 @@ struct YYLTYPE;
  */
 class ast_node {
 public:
-   DECLARE_LINEAR_ZALLOC_CXX_OPERATORS(ast_node);
+   DECLARE_LINEAR_ZALLOC_CXX_OPERATORS(ast_node,,);
 
    /**
     * Print an AST node in something approximating the original GLSL code

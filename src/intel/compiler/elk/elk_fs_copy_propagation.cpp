@@ -143,7 +143,7 @@ private:
 };
 
 struct acp {
-   DECLARE_LINEAR_ALLOC_CXX_OPERATORS(acp);
+   DECLARE_LINEAR_ALLOC_CXX_OPERATORS(acp,,);
 
    struct rb_tree by_dst;
    struct rb_tree by_src;
