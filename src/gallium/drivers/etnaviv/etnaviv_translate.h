@@ -329,6 +329,8 @@ translate_blt_format(enum pipe_format fmt)
    case PIPE_FORMAT_R10G10B10A2_UNORM:
    case PIPE_FORMAT_R10G10B10X2_UNORM:
       return BLT_FORMAT_A2R10G10B10;
+   case PIPE_FORMAT_R8_UNORM:
+      return BLT_FORMAT_R8;
    default:
       return ETNA_NO_MATCH;
    }
