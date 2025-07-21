@@ -102,7 +102,8 @@ etna_configure_sampler_ts(struct etna_sampler_ts *sts, struct pipe_sampler_view 
    sts->TS_SAMPLER_CONFIG =
       VIVS_TS_SAMPLER_CONFIG_ENABLE |
       COND(lev->ts_compress_fmt >= 0, VIVS_TS_SAMPLER_CONFIG_COMPRESSION) |
-      VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT(lev->ts_compress_fmt);
+      VIVS_TS_SAMPLER_CONFIG_COMPRESSION_FORMAT(lev->ts_compress_fmt) |
+      COND(util_format_get_blocksizebits(pview->format) == 64, VIVS_TS_SAMPLER_CONFIG_64BPP_FORMAT);
    sts->TS_SAMPLER_CLEAR_VALUE = lev->clear_value;
    sts->TS_SAMPLER_CLEAR_VALUE2 = lev->clear_value >> 32;
    sts->TS_SAMPLER_STATUS_BASE.bo = rsc->ts_bo;
