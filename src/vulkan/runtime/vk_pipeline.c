@@ -1119,6 +1119,7 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
                                      struct vk_graphics_pipeline *pipeline,
                                      struct vk_pipeline_layout *pipeline_layout,
                                      const struct vk_graphics_pipeline_state *state,
+                                     bool link_time_optimize,
                                      uint32_t stage_count,
                                      struct vk_pipeline_stage *stages,
                                      VkPipelineCreationFeedback *stage_feedbacks)
@@ -1133,7 +1134,7 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
     * likely haven't been properly linked.  We keep the precompiled shaders
     * and we still look it up in the cache so it may still be fast.
     */
-   if (pipeline->base.flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) {
+   if (link_time_optimize) {
       for (uint32_t i = 0; i < stage_count; i++) {
          if (stages[i].shader != NULL) {
             vk_shader_unref(device, stages[i].shader);
@@ -1184,45 +1185,41 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
    blake3_hash layout_blake3;
    _mesa_blake3_final(&blake3_ctx, layout_blake3);
 
-   /* Partition the shaders */
+   /* Partition the shaders. Whenever pipelines are used,
+    * vertex/geometry/fragment stages are always specified together, so should
+    * always be linked. That doesn't break the fast link since the relevant link
+    * happens at pipeline library create time.
+    *
+    * We don't gate this behind an option since linking shaders is beneficial on
+    * all hardware, to clean up the I/O mess that applications regularly leave.
+    */
    uint32_t part_count;
    uint32_t partition[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES + 1] = { 0 };
-   if (pipeline->base.flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) {
+   if (link_time_optimize) {
       partition[1] = stage_count;
       part_count = 1;
-   } else if (ops->link_geom_stages) {
-      if (stages[0].stage == MESA_SHADER_FRAGMENT) {
-         assert(stage_count == 1);
-         partition[1] = stage_count;
-         part_count = 1;
-      } else if (stages[stage_count - 1].stage == MESA_SHADER_FRAGMENT) {
-         /* In this case we have both */
-         assert(stage_count > 1);
-         partition[1] = stage_count - 1;
-         partition[2] = stage_count;
-         part_count = 2;
-      } else {
-         /* In this case we only have geometry */
-         partition[1] = stage_count;
-         part_count = 1;
-      }
+   } else if (stages[0].stage == MESA_SHADER_FRAGMENT) {
+      assert(stage_count == 1);
+      partition[1] = stage_count;
+      part_count = 1;
+   } else if (stages[stage_count - 1].stage == MESA_SHADER_FRAGMENT) {
+      /* In this case we have both geometry stages and fragment */
+      assert(stage_count > 1);
+      partition[1] = stage_count - 1;
+      partition[2] = stage_count;
+      part_count = 2;
    } else {
-      /* Otherwise, we're don't want to link anything */
-      part_count = stage_count;
-      for (uint32_t i = 0; i < stage_count; i++)
-         partition[i + 1] = i + 1;
+      /* In this case we only have geometry stages */
+      partition[1] = stage_count;
+      part_count = 1;
    }
 
    for (uint32_t p = 0; p < part_count; p++) {
       const int64_t part_start = os_time_get_nano();
 
       /* Don't try to re-compile any fast-link shaders */
-      if (!(pipeline->base.flags &
-            VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT)) {
-         assert(ops->link_geom_stages || partition[p + 1] == partition[p] + 1);
-         if (stages[partition[p]].shader != NULL)
-            continue;
-      }
+      if (!link_time_optimize && stages[partition[p]].shader != NULL)
+         continue;
 
       struct vk_shader_pipeline_cache_key shader_key = { 0 };
 
@@ -1777,8 +1774,46 @@ vk_create_graphics_pipeline(struct vk_device *device,
     */
    qsort(stages, stage_count, sizeof(*stages), cmp_vk_pipeline_stages);
 
+   /* Decide whether we should apply link-time optimizations. The spec says:
+    *
+    *    VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT specifies that
+    *    pipeline libraries being linked into this library should have link time
+    *    optimizations applied. If this bit is omitted, implementations should
+    *    instead perform linking as rapidly as possible.
+    *
+    *    ...
+    *
+    *    Using VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT (or not) when
+    *    linking pipeline libraries is intended as a performance tradeoff
+    *    between host and device. If the bit is omitted, linking should be
+    *    faster and produce a pipeline more rapidly, but performance of the
+    *    pipeline on the target device may be reduced. If the bit is included,
+    *    linking may be slower but should produce a pipeline with device
+    *    performance comparable to a monolithically created pipeline.
+    *
+    * The key phrase here is "pipeline libraries". When we are linking pipeline
+    * libraries, we look at this bit to determine whether to apply link-time
+    * optimizations. When there are not pipeline libraries, however, we are
+    * compiling a monolithic pipeline, which the last sentence implies should
+    * always have link-time optimizations applied.
+    *
+    * Summarizing, we want to link-time optimize monolithic pipelines and
+    * non-monolithic pipelines with LINK_TIME_OPTIMIZATION_BIT.
+    *
+    * (Strictly speaking, there's a corner case here, where a pipeline without
+    * LINK_TIME_OPTIMIZATION_BIT links pipeline libraries for graphics state but
+    * supplies shaders directly outside of the pipeline library. This logic does
+    * not link those shaders, which is a conservative choice. GPL is a disaster
+    * of combinatoric complexity, and this simplified approach gets good
+    * performance for the cases that actually matter: monolithic, GPL fast link,
+    * GPL optimized link.)
+    */
+    bool lto = libs_info == NULL ||
+              (pipeline->base.flags &
+               VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT);
+
    result = vk_graphics_pipeline_compile_shaders(device, cache, pipeline,
-                                                 pipeline_layout, state,
+                                                 pipeline_layout, state, lto,
                                                  stage_count, stages,
                                                  stage_feedbacks);
    if (result != VK_SUCCESS)

@@ -207,13 +207,6 @@ struct vk_device_shader_ops {
       nir_shader *nir,
       const struct vk_pipeline_robustness_state *rs);
 
-   /** True if the driver wants geometry stages linked
-    *
-    * If set to true, geometry stages will always be compiled with
-    * VK_SHADER_CREATE_LINK_STAGE_BIT_EXT when pipelines are used.
-    */
-   bool link_geom_stages;
-
    /** Hash a vk_graphics_state object and a vk_features object.
     *
     * This callback hashes whatever bits of vk_graphics_pipeline_state might
