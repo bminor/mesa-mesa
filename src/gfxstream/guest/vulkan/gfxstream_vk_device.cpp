@@ -590,20 +590,12 @@ void gfxstream_vk_DestroyDevice(VkDevice device, const VkAllocationCallbacks* pA
     auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
     vkEnc->vkDestroyDevice(gfxstream_device->internal_object, pAllocator, true /* do lock */);
 
-    /* Must finish the queues, and destroy the queue-list objects manually */
+    /* Must destroy device queues manually */
     vk_foreach_queue_safe(queue, &gfxstream_device->vk) {
         vk_queue_finish(queue);
         vk_free(&gfxstream_device->vk.alloc, queue);
     }
-    /* Now destroy the queue allocations from the device object */
-    for (uint32_t qfi = 0; qfi < gfxstream_device->queue_family_count; qfi++) {
-        vk_free(&gfxstream_device->vk.alloc, gfxstream_device->queue_families[qfi].queues);
-        gfxstream_device->queue_families[qfi].queues = NULL;
-        gfxstream_device->queue_families[qfi].queue_count = 0;
-    }
     vk_free(&gfxstream_device->vk.alloc, gfxstream_device->queue_families);
-    gfxstream_device->queue_families = NULL;
-    gfxstream_device->queue_family_count = 0;
 
     vk_device_finish(&gfxstream_device->vk);
     vk_free(&gfxstream_device->vk.alloc, gfxstream_device);
