@@ -121,10 +121,10 @@ __gen_padded(uint32_t v, uint32_t start, uint32_t end)
  * pointer address space */
 #ifndef __OPENCL_VERSION__
 #define pan_cast_and_pack(dst, T, name)                                        \
-   pan_pack((PREFIX2(T, PACKED_T) *)dst, T, name)
+   pan_pack((PREFIX2(T, PACKED_T) *)(dst), T, name)
 
 #define pan_cast_and_pack_nodefaults(dst, T, name)                             \
-   pan_pack_nodefaults((PREFIX2(T, PACKED_T) *)dst, T, name)
+   pan_pack_nodefaults((PREFIX2(T, PACKED_T) *)(dst), T, name)
 
 #define pan_cast_and_unpack(src, T, name)                                      \
    pan_unpack((const PREFIX2(T, PACKED_T) *)(src), T, name)
