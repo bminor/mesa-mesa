@@ -1314,7 +1314,7 @@
         "description": "pan/genxml: Add missing parenthesis on pan_cast_and_pack macros",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "410e5a36ec88b9e7702a7149554a1422debab535",
         "notes": null
