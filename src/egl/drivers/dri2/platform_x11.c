@@ -1781,8 +1781,10 @@ platform_x11_finalize(_EGLDisplay *disp)
 
    if (!dri2_dpy->swrast) {
 #ifdef HAVE_WAYLAND_PLATFORM
-      if (dri2_dpy->kopper)
+      if (dri2_dpy->kopper) {
+         free(dri2_dpy->device_name);
          dri2_dpy->device_name = strdup("zink");
+      }
 #endif
 
       dri2_dpy->swap_available = true;
