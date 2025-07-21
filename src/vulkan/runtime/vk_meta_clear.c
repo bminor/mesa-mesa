@@ -442,8 +442,17 @@ clear_image_level_layers(struct vk_command_buffer *cmd,
    VkCommandBuffer _cmd = vk_command_buffer_to_handle(cmd);
    VkResult result;
 
+   VkImageViewUsageCreateInfo view_usage = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+   };
+   if (image->aspects == VK_IMAGE_ASPECT_COLOR_BIT)
+      view_usage.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+   if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
+      view_usage.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
    const VkImageViewCreateInfo view_info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .pNext = &view_usage,
       .image = vk_image_to_handle(image),
       .viewType = vk_image_render_view_type(image, layer_count),
       .format = format,
