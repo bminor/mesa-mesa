@@ -222,7 +222,7 @@ GL 4.5, GLSL 4.50 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_ARB_shader_texture_image_samples                   DONE (freedreno/a3xx+, nv50, crocus/gen7+)
   GL_ARB_texture_barrier                                DONE (freedreno, nv50, v3d, vc4, lima, crocus)
   GL_KHR_context_flush_control                          DONE (all - but needs GLX/EGL extension to be useful)
-  GL_KHR_robustness                                     DONE (freedreno)
+  GL_KHR_robustness                                     DONE (freedreno, panfrost)
   GL_EXT_shader_integer_mix                             DONE (all drivers that support GLSL)
 
 GL 4.6, GLSL 4.60 -- all DONE: radeonsi, virgl, zink, iris, crocus/gen7+, d3d12, asahi, r600/evergreen+
@@ -273,7 +273,7 @@ GLES3.2, GLSL ES 3.2 -- all DONE: freedreno/a6xx, radeonsi, virgl, llvmpipe, zin
   GL_EXT_color_buffer_float                             DONE (all drivers)
   GL_KHR_blend_equation_advanced                        DONE (freedreno/a6xx, nvc0, panfrost, crocus/gen4.5+, v3d)
   GL_KHR_debug                                          DONE (all drivers)
-  GL_KHR_robustness                                     DONE (freedreno, nvc0, r600)
+  GL_KHR_robustness                                     DONE (freedreno, nvc0, panfrost, r600)
   GL_KHR_texture_compression_astc_ldr                   DONE (freedreno, r600, v3d, vc4, panfrost, softpipe, lima, crocus/gen6+)
   GL_OES_copy_image                                     DONE (all drivers)
   GL_OES_draw_buffers_indexed                           DONE (all drivers that support GL_ARB_draw_buffers_blend)
