@@ -111,6 +111,9 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
    case nir_instr_type_intrinsic: {
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
+      if (!nir_intrinsic_can_reorder(intrin))
+         return false;
+
       *can_mov_out_of_loop = false;
 
       switch (intrin->intrinsic) {
@@ -128,7 +131,7 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       case nir_intrinsic_load_global_bounded:
          *can_mov_out_of_loop =
             intrin->intrinsic == nir_intrinsic_load_global_bounded;
-         return options & nir_move_load_ssbo && nir_intrinsic_can_reorder(intrin);
+         return options & nir_move_load_ssbo;
 
       case nir_intrinsic_load_input:
       case nir_intrinsic_load_per_primitive_input:
