@@ -108,3 +108,5 @@ $ADB shell "cd ${AOSP_RESULTS}/..; \
 $ADB pull "$AOSP_RESULTS/junit.xml" "$RESULTS_DIR"
 
 section_end cuttlefish_results
+
+exit $EXIT_CODE

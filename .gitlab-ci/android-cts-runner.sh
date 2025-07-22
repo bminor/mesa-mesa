@@ -72,3 +72,5 @@ if [ -n "${ARTIFACTS_BASE_URL:-}" ]; then
 fi
 
 section_end android_cts_test
+
+exit $EXIT_CODE

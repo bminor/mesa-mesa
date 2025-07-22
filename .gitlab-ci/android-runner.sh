@@ -139,12 +139,10 @@ if [ "$OLD_SF_PID" == "$NEW_SF_PID" ]; then
      exit 1
 fi
 
+# These should be the last commands of the script in order to correctly
+# propagate the exit code.
 if [ -n "${ANDROID_CTS_TAG:-}" ]; then
-  # The script sets EXIT_CODE
   . "$(dirname "$0")/android-cts-runner.sh"
 else
-  # The script sets EXIT_CODE
   . "$(dirname "$0")/android-deqp-runner.sh"
 fi
-
-exit $EXIT_CODE
