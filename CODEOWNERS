@@ -156,3 +156,6 @@ gitlab-ci*.yml @eric
 # VMware
 /src/gallium/drivers/svga/ @brianp @charmainel
 /src/gallium/winsys/svga/ @thomash @drawat
+
+# Rust util: peripherally uploaded to crates.io
+src/util/rust @gurchetansingh @aruby @jmacnak @dextero1
