@@ -108,6 +108,39 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
 
       return true;
    }
+   case nir_instr_type_tex:
+      *can_mov_out_of_loop = false;
+
+      switch (nir_instr_as_tex(instr)->op) {
+      case nir_texop_tex:
+      case nir_texop_txb:
+      case nir_texop_txl:
+      case nir_texop_txd:
+      case nir_texop_tg4:
+         return options & nir_move_tex_sample;
+
+      case nir_texop_txf:
+      case nir_texop_txf_ms:
+      case nir_texop_txf_ms_fb:
+      case nir_texop_txf_ms_mcs_intel:
+         return options & nir_move_tex_load;
+
+      case nir_texop_samples_identical: /* this loads fragment mask too */
+      case nir_texop_fragment_fetch_amd:
+      case nir_texop_fragment_mask_fetch_amd:
+         return options & nir_move_tex_load_fragment_mask;
+
+      case nir_texop_lod:
+         return options & nir_move_tex_lod;
+
+      case nir_texop_txs:
+      case nir_texop_query_levels:
+      case nir_texop_texture_samples:
+         return options & nir_move_tex_query;
+
+      default:
+         return false;
+      }
    case nir_instr_type_intrinsic: {
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
@@ -117,6 +150,33 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       *can_mov_out_of_loop = false;
 
       switch (intrin->intrinsic) {
+      case nir_intrinsic_image_load:
+      case nir_intrinsic_image_deref_load:
+      case nir_intrinsic_bindless_image_load:
+      case nir_intrinsic_image_sparse_load:
+      case nir_intrinsic_image_deref_sparse_load:
+      case nir_intrinsic_bindless_image_sparse_load:
+         return options & nir_move_load_image;
+
+      case nir_intrinsic_image_fragment_mask_load_amd:
+      case nir_intrinsic_image_deref_fragment_mask_load_amd:
+      case nir_intrinsic_bindless_image_fragment_mask_load_amd:
+      case nir_intrinsic_image_samples_identical: /* this loads fragment mask too */
+      case nir_intrinsic_image_deref_samples_identical:
+      case nir_intrinsic_bindless_image_samples_identical:
+         return options & nir_move_load_image_fragment_mask;
+
+      case nir_intrinsic_image_size:
+      case nir_intrinsic_image_deref_size:
+      case nir_intrinsic_bindless_image_size:
+      case nir_intrinsic_image_samples:
+      case nir_intrinsic_image_deref_samples:
+      case nir_intrinsic_bindless_image_samples:
+      case nir_intrinsic_image_levels:
+      case nir_intrinsic_image_deref_levels:
+      case nir_intrinsic_bindless_image_levels:
+         return options & nir_move_query_image;
+
       case nir_intrinsic_load_input:
       case nir_intrinsic_load_interpolated_input:
       case nir_intrinsic_load_input_vertex:
@@ -125,6 +185,10 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       case nir_intrinsic_load_attribute_pan:
          *can_mov_out_of_loop = true;
          return options & nir_move_load_input;
+
+      case nir_intrinsic_load_global:
+      case nir_intrinsic_load_smem_amd: /* = global + convergent */
+         return options & nir_move_load_global;
 
       case nir_intrinsic_load_ubo:
       case nir_intrinsic_load_ubo_vec4:
@@ -141,6 +205,9 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
          *can_mov_out_of_loop =
             intrin->intrinsic == nir_intrinsic_load_global_bounded;
          return options & nir_move_load_ssbo;
+
+      case nir_intrinsic_load_buffer_amd:
+         return options & nir_move_load_buffer_amd;
 
       case nir_intrinsic_load_frag_coord:
       case nir_intrinsic_load_frag_coord_z:

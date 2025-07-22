@@ -6199,11 +6199,26 @@ typedef enum {
    nir_move_copies =                   BITFIELD_BIT(2),
    nir_move_comparisons =              BITFIELD_BIT(3),
    nir_dont_move_byte_word_vecs =      BITFIELD_BIT(4),
-   nir_move_load_input =               BITFIELD_BIT(5),
-   nir_move_load_ubo =                 BITFIELD_BIT(6),
-   nir_move_load_ssbo =                BITFIELD_BIT(7),
-   nir_move_load_uniform =             BITFIELD_BIT(8),
-   nir_move_load_frag_coord =          BITFIELD_BIT(9),
+
+   /* Tex opcodes */
+   nir_move_tex_sample =               BITFIELD_BIT(8),
+   nir_move_tex_load =                 BITFIELD_BIT(9),
+   nir_move_tex_load_fragment_mask =   BITFIELD_BIT(10),
+   nir_move_tex_lod =                  BITFIELD_BIT(11),
+   nir_move_tex_query =                BITFIELD_BIT(12),
+
+   /* Intrinsics */
+   nir_move_load_image =               BITFIELD_BIT(13),
+   nir_move_load_image_fragment_mask = BITFIELD_BIT(14),
+   nir_move_query_image =              BITFIELD_BIT(15),
+
+   nir_move_load_input =               BITFIELD_BIT(16),
+   nir_move_load_global =              BITFIELD_BIT(17),
+   nir_move_load_ubo =                 BITFIELD_BIT(18),
+   nir_move_load_ssbo =                BITFIELD_BIT(19),
+   nir_move_load_uniform =             BITFIELD_BIT(20),
+   nir_move_load_buffer_amd =          BITFIELD_BIT(21),
+   nir_move_load_frag_coord =          BITFIELD_BIT(22),
 } nir_move_options;
 
 bool nir_can_move_instr(nir_instr *instr, nir_move_options options);
