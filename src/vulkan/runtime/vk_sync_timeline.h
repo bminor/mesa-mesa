@@ -47,6 +47,11 @@ vk_sync_timeline_get_type(const struct vk_sync_type *point_sync_type);
 struct vk_sync_timeline_point {
    struct vk_sync_timeline_state *timeline_state;
 
+   /* Link in pending_points if pending
+    * Link in free_points if refcount == 0
+    *
+    * The vk_sync_timeline_state also holds a reference if pending == true.
+    */
    struct list_head link;
 
    uint64_t value;
@@ -101,9 +106,10 @@ VkResult vk_sync_timeline_alloc_point(struct vk_device *device,
                                       uint64_t value,
                                       struct vk_sync_timeline_point **point_out);
 
-void vk_sync_timeline_point_free(struct vk_device *device,
-                                 struct vk_sync_timeline_point *point);
+void vk_sync_timeline_point_unref(struct vk_device *device,
+                                  struct vk_sync_timeline_point *point);
 
+/* This consumes the reference to point */
 VkResult vk_sync_timeline_point_install(struct vk_device *device,
                                         struct vk_sync_timeline_point *point);
 
@@ -111,9 +117,6 @@ VkResult vk_sync_timeline_get_point(struct vk_device *device,
                                     struct vk_sync_timeline *timeline,
                                     uint64_t wait_value,
                                     struct vk_sync_timeline_point **point_out);
-
-void vk_sync_timeline_point_release(struct vk_device *device,
-                                    struct vk_sync_timeline_point *point);
 
 static inline bool
 vk_sync_type_is_vk_sync_timeline(const struct vk_sync_type *type)

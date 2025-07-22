@@ -191,6 +191,10 @@ vk_sync_timeline_alloc_point_locked(struct vk_device *device,
    }
 
    point->value = value;
+
+   assert(point->refcount == 0);
+   point->refcount++;
+
    *point_out = point;
 
    return VK_SUCCESS;
@@ -212,25 +216,6 @@ vk_sync_timeline_alloc_point(struct vk_device *device,
 }
 
 static void
-vk_sync_timeline_free_point_locked(struct vk_sync_timeline_state *state,
-                                   struct vk_sync_timeline_point *point)
-{
-   assert(point->refcount == 0 && !point->pending);
-   list_add(&point->link, &state->free_points);
-}
-
-void
-vk_sync_timeline_point_free(struct vk_device *device,
-                            struct vk_sync_timeline_point *point)
-{
-   struct vk_sync_timeline_state *state = point->timeline_state;
-
-   mtx_lock(&state->mutex);
-   vk_sync_timeline_free_point_locked(state, point);
-   mtx_unlock(&state->mutex);
-}
-
-static void
 vk_sync_timeline_ref_point_locked(struct vk_sync_timeline_point *point)
 {
    point->refcount++;
@@ -242,8 +227,11 @@ vk_sync_timeline_unref_point_locked(struct vk_sync_timeline_state *state,
 {
    assert(point->refcount > 0);
    point->refcount--;
-   if (point->refcount == 0)
-      vk_sync_timeline_free_point_locked(state, point);
+   if (point->refcount == 0) {
+      /* The pending list also takes a reference so this can't be pending */
+      assert(!point->pending);
+      list_add(&point->link, &state->free_points);
+   }
 }
 
 static void
@@ -259,8 +247,8 @@ vk_sync_timeline_complete_point_locked(struct vk_sync_timeline_state *state,
    point->pending = false;
    list_del(&point->link);
 
-   if (point->refcount == 0)
-      vk_sync_timeline_free_point_locked(state, point);
+   /* Drop the pending reference */
+   vk_sync_timeline_unref_point_locked(state, point);
 }
 
 static VkResult
@@ -285,8 +273,8 @@ vk_sync_timeline_gc_locked(struct vk_device *device,
        * We walk the list in-order so if this time point is still busy so is
        * every following time point
        */
-      assert(point->refcount >= 0);
-      if (point->refcount > 0 && !drain)
+      assert(point->refcount > 0);
+      if (point->refcount > 1 && !drain)
          return VK_SUCCESS;
 
       /* Garbage collect any signaled point. */
@@ -319,7 +307,10 @@ vk_sync_timeline_point_install(struct vk_device *device,
    assert(point->value > state->highest_pending);
    state->highest_pending = point->value;
 
-   assert(point->refcount == 0);
+   /* Adding to the pending list implicitly takes a reference but also this
+    * function is documented to consume the reference to point so we don't
+    * need to do anything to the reference count here.
+    */
    point->pending = true;
    list_addtail(&point->link, &state->pending_points);
 
@@ -374,8 +365,8 @@ vk_sync_timeline_get_point(struct vk_device *device,
 }
 
 void
-vk_sync_timeline_point_release(struct vk_device *device,
-                               struct vk_sync_timeline_point *point)
+vk_sync_timeline_point_unref(struct vk_device *device,
+                             struct vk_sync_timeline_point *point)
 {
    struct vk_sync_timeline_state *state = point->timeline_state;
 
