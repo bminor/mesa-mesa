@@ -217,7 +217,6 @@ struct wait_ctx {
    uint32_t nonzero = 0;
    bool pending_flat_lgkm = false;
    bool pending_flat_vm = false;
-   bool pending_s_buffer_store = false; /* GFX10 workaround */
 
    barrier_info bar[num_barrier_infos];
    uint8_t bar_nonempty = 0;
@@ -237,7 +236,6 @@ struct wait_ctx {
       nonzero |= other->nonzero;
       pending_flat_lgkm |= other->pending_flat_lgkm;
       pending_flat_vm |= other->pending_flat_vm;
-      pending_s_buffer_store |= other->pending_s_buffer_store;
 
       using iterator = std::map<PhysReg, wait_entry>::iterator;
 
@@ -569,27 +567,6 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
 
    check_instr(ctx, imm, instr);
 
-   /* It's required to wait for scalar stores before "writing back" data.
-    * It shouldn't cost anything anyways since we're about to do s_endpgm.
-    */
-   if ((ctx.nonzero & BITFIELD_BIT(wait_type_lgkm)) && instr->opcode == aco_opcode::s_dcache_wb) {
-      assert(ctx.gfx_level >= GFX8);
-      imm.lgkm = 0;
-   }
-
-   if (ctx.gfx_level >= GFX10 && instr->isSMEM()) {
-      /* GFX10: A store followed by a load at the same address causes a problem because
-       * the load doesn't load the correct values unless we wait for the store first.
-       * This is NOT mitigated by an s_nop.
-       *
-       * TODO: Refine this when we have proper alias analysis.
-       */
-      if (ctx.pending_s_buffer_store && !instr->smem().definitions.empty() &&
-          !instr->smem().sync.can_reorder()) {
-         imm.lgkm = 0;
-      }
-   }
-
    if (instr->opcode == aco_opcode::ds_ordered_count &&
        ((instr->ds().offset1 | (instr->ds().offset0 >> 8)) & 0x1)) {
       barrier_info& bar = ctx.bar[barrier_info_release_dep];
@@ -636,10 +613,8 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
 
    if (imm.vm == 0)
       ctx.pending_flat_vm = false;
-   if (imm.lgkm == 0) {
+   if (imm.lgkm == 0)
       ctx.pending_flat_lgkm = false;
-      ctx.pending_s_buffer_store = false;
-   }
 }
 
 void
@@ -810,9 +785,6 @@ gen(Instruction* instr, wait_ctx& ctx)
 
       if (!instr->definitions.empty())
          insert_wait_entry(ctx, instr->definitions[0], event_smem);
-      else if (ctx.gfx_level >= GFX10 && !smem.sync.can_reorder())
-         ctx.pending_s_buffer_store = true;
-
       break;
    }
    case Format::DS: {
