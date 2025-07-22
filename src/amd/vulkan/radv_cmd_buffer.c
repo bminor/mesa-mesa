@@ -2109,20 +2109,15 @@ radv_emit_hw_es(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *sh
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const uint64_t va = radv_shader_get_va(shader);
 
-   if (pdev->info.gfx_level >= GFX12) {
-      gfx12_push_sh_reg(cmd_buffer, shader->info.regs.pgm_lo, va >> 8);
-      gfx12_push_sh_reg(cmd_buffer, shader->info.regs.pgm_lo + 4, S_00B324_MEM_BASE(va >> 40));
-      gfx12_push_sh_reg(cmd_buffer, shader->info.regs.pgm_rsrc1, shader->config.rsrc1);
-      gfx12_push_sh_reg(cmd_buffer, shader->info.regs.pgm_rsrc2, shader->config.rsrc2);
-   } else {
-      radeon_begin(cmd_buffer->cs);
-      radeon_set_sh_reg_seq(shader->info.regs.pgm_lo, 4);
-      radeon_emit(va >> 8);
-      radeon_emit(S_00B324_MEM_BASE(va >> 40));
-      radeon_emit(shader->config.rsrc1);
-      radeon_emit(shader->config.rsrc2);
-      radeon_end();
-   }
+   assert(pdev->info.gfx_level < GFX11);
+
+   radeon_begin(cmd_buffer->cs);
+   radeon_set_sh_reg_seq(shader->info.regs.pgm_lo, 4);
+   radeon_emit(va >> 8);
+   radeon_emit(S_00B324_MEM_BASE(va >> 40));
+   radeon_emit(shader->config.rsrc1);
+   radeon_emit(shader->config.rsrc2);
+   radeon_end();
 }
 
 static void
