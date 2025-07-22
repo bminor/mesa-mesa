@@ -461,24 +461,6 @@ MoveState::upwards_skip(UpwardsCursor& cursor)
    cursor.verify_invariants(block);
 }
 
-bool
-is_done_sendmsg(amd_gfx_level gfx_level, const Instruction* instr)
-{
-   if (gfx_level <= GFX10_3 && instr->opcode == aco_opcode::s_sendmsg)
-      return (instr->salu().imm & sendmsg_id_mask) == sendmsg_gs_done;
-   return false;
-}
-
-bool
-is_pos_prim_export(amd_gfx_level gfx_level, const Instruction* instr)
-{
-   /* Because of NO_PC_EXPORT=1, a done=1 position or primitive export can launch PS waves before
-    * the NGG/VS wave finishes if there are no parameter exports.
-    */
-   return instr->opcode == aco_opcode::exp && instr->exp().dest >= V_008DFC_SQ_EXP_POS &&
-          instr->exp().dest <= V_008DFC_SQ_EXP_PRIM && gfx_level >= GFX10;
-}
-
 memory_sync_info
 get_sync_info_with_hack(const Instruction* instr)
 {
@@ -533,8 +515,6 @@ void
 add_memory_event(amd_gfx_level gfx_level, memory_event_set* set, Instruction* instr,
                  memory_sync_info* sync)
 {
-   set->has_control_barrier |= is_done_sendmsg(gfx_level, instr);
-   set->has_control_barrier |= is_pos_prim_export(gfx_level, instr);
    if (instr->opcode == aco_opcode::p_barrier) {
       Pseudo_barrier_instruction& bar = instr->barrier();
       if (bar.sync.semantics & semantic_acquire)
@@ -542,12 +522,14 @@ add_memory_event(amd_gfx_level gfx_level, memory_event_set* set, Instruction* in
       if (bar.sync.semantics & semantic_release)
          set->bar_release |= bar.sync.storage;
       set->bar_classes |= bar.sync.storage;
-
-      set->has_control_barrier |= bar.exec_scope > scope_invocation;
    }
 
-   if (!sync->storage)
+   if (!sync->storage) {
+      set->has_control_barrier |=
+         is_atomic_or_control_instr(gfx_level, instr, *sync, semantic_acquire | semantic_release) !=
+         0;
       return;
+   }
 
    if (sync->semantics & semantic_acquire)
       set->access_acquire |= sync->storage;

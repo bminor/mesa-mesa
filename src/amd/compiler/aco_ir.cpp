@@ -244,6 +244,46 @@ is_wait_export_ready(amd_gfx_level gfx_level, const Instruction* instr)
                               : !(instr->salu().imm & wait_event_imm_dont_wait_export_ready_gfx11));
 }
 
+static bool
+is_done_sendmsg(amd_gfx_level gfx_level, const Instruction* instr)
+{
+   if (gfx_level <= GFX10_3 && instr->opcode == aco_opcode::s_sendmsg)
+      return (instr->salu().imm & sendmsg_id_mask) == sendmsg_gs_done;
+   return false;
+}
+
+static bool
+is_pos_prim_export(amd_gfx_level gfx_level, const Instruction* instr)
+{
+   /* Because of NO_PC_EXPORT=1, a done=1 position or primitive export can launch PS waves before
+    * the NGG/VS wave finishes if there are no parameter exports.
+    */
+   return gfx_level >= GFX10 && instr->opcode == aco_opcode::exp &&
+          instr->exp().dest >= V_008DFC_SQ_EXP_POS && instr->exp().dest <= V_008DFC_SQ_EXP_PRIM;
+}
+
+uint16_t
+is_atomic_or_control_instr(amd_gfx_level gfx_level, const Instruction* instr, memory_sync_info sync,
+                           unsigned semantic)
+{
+   bool is_acquire = semantic & semantic_acquire;
+   bool is_release = semantic & semantic_release;
+
+   bool is_atomic = sync.semantics & semantic_atomic;
+   // TODO: NIR doesn't have any atomic load/store, so we assume any load/store is atomic
+   is_atomic |= !(sync.semantics & semantic_private) && sync.storage;
+   if (is_atomic) {
+      bool is_load = !instr->definitions.empty() || (sync.semantics & semantic_rmw);
+      bool is_store = instr->definitions.empty() || (sync.semantics & semantic_rmw);
+      return ((is_release && is_store) || (is_acquire && is_load)) ? sync.storage : 0;
+   }
+
+   uint16_t cls = BITFIELD_MASK(storage_count);
+   if (is_release && (is_done_sendmsg(gfx_level, instr) || is_pos_prim_export(gfx_level, instr)))
+      return cls & ~storage_shared;
+   return (instr->isBarrier() && instr->barrier().exec_scope > scope_invocation) ? cls : 0;
+}
+
 memory_sync_info
 get_sync_info(const Instruction* instr)
 {
