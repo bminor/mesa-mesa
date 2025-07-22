@@ -1483,6 +1483,11 @@ zink_destroy_screen(struct pipe_screen *pscreen)
    if (screen->gfx_push_constant_layout)
       VKSCR(DestroyPipelineLayout)(screen->dev, screen->gfx_push_constant_layout, NULL);
 
+   for (unsigned i = 0; i < ARRAY_SIZE(screen->pipeline_libs); i++) {
+      ralloc_free(screen->pipeline_libs[i].table);
+      screen->pipeline_libs[i].table = NULL;
+   }
+
    u_transfer_helper_destroy(pscreen->transfer_helper);
    if (util_queue_is_initialized(&screen->cache_get_thread)) {
       util_queue_finish(&screen->cache_get_thread);
@@ -1496,11 +1501,6 @@ zink_destroy_screen(struct pipe_screen *pscreen)
    }
 #endif
    disk_cache_destroy(screen->disk_cache);
-
-   /* we don't have an API to check if a set is already initialized */
-   for (unsigned i = 0; i < ARRAY_SIZE(screen->pipeline_libs); i++)
-      if (screen->pipeline_libs[i].table)
-         _mesa_set_clear(&screen->pipeline_libs[i], NULL);
 
    zink_bo_deinit(screen);
    util_live_shader_cache_deinit(&screen->shaders);
