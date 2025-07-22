@@ -11,14 +11,15 @@
 #include "Resources.h"
 #include "VkEncoder.h"
 #include "gfxstream_vk_private.h"
+#include "git_sha1.h"
 #include "goldfish_address_space.h"
 #include "goldfish_vk_private_defs.h"
 #include "util/anon_file.h"
+#include "util/detect_os.h"
 #include "util/log.h"
 #include "util/macros.h"
-#include "vulkan/vulkan_core.h"
-#include "util/detect_os.h"
 #include "virtio/virtio-gpu/virgl_hw.h"
+#include "vulkan/vulkan_core.h"
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "vk_format_info.h"
@@ -2118,21 +2119,6 @@ VkResult ResourceTracker::on_vkEnumeratePhysicalDevices(void* context, VkResult,
     }
 }
 
-void ResourceTracker::on_vkGetPhysicalDeviceProperties(void*, VkPhysicalDevice,
-                                                       VkPhysicalDeviceProperties* pProperties) {
-#ifdef LINUX_GUEST_BUILD
-    if (pProperties) {
-        if (VK_PHYSICAL_DEVICE_TYPE_CPU == pProperties->deviceType) {
-            /* For Linux guest: Even if host driver reports DEVICE_TYPE_CPU,
-             * override this to VIRTUAL_GPU, otherwise Linux DRM interfaces
-             * will take unexpected code paths to deal with "software" driver
-             */
-            pProperties->deviceType = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
-        }
-    }
-#endif
-}
-
 void ResourceTracker::on_vkGetPhysicalDeviceFeatures2(void*, VkPhysicalDevice,
                                                       VkPhysicalDeviceFeatures2* pFeatures) {
     if (pFeatures) {
@@ -2153,44 +2139,86 @@ void ResourceTracker::on_vkGetPhysicalDeviceFeatures2KHR(void* context,
 void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                                                         VkPhysicalDevice physicalDevice,
                                                         VkPhysicalDeviceProperties2* pProperties) {
-    if (pProperties) {
-        on_vkGetPhysicalDeviceProperties(context, physicalDevice, &pProperties->properties);
-        VirtGpuDevice* instance = VirtGpuDevice::getInstance();
-        VkPhysicalDeviceDrmPropertiesEXT* drmProps =
-            vk_find_struct(pProperties, PHYSICAL_DEVICE_DRM_PROPERTIES_EXT);
+#ifdef LINUX_GUEST_BUILD
+    if (VK_PHYSICAL_DEVICE_TYPE_CPU == pProperties->properties.deviceType) {
+        /* For Linux guest: Even if host driver reports DEVICE_TYPE_CPU,
+         * override this to VIRTUAL_GPU, otherwise Linux DRM interfaces
+         * will take unexpected code paths to deal with "software" driver
+         */
+        pProperties->properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+    }
+#endif
 
-        if (instance && drmProps) {
-            VirtGpuDrmInfo drmInfo;
-            if (instance->getDrmInfo(&drmInfo)) {
-                drmProps->hasPrimary = drmInfo.hasPrimary;
-                drmProps->hasRender = drmInfo.hasRender;
-                drmProps->primaryMajor = drmInfo.primaryMajor;
-                drmProps->primaryMinor = drmInfo.primaryMinor;
-                drmProps->renderMajor = drmInfo.renderMajor;
-                drmProps->renderMinor = drmInfo.renderMinor;
-            } else {
-                mesa_logd(
-                    "%s: encountered VkPhysicalDeviceDrmPropertiesEXT in pProperties::pNext chain, "
-                    "but failed to query DrmInfo from the VirtGpuDevice",
-                    __func__);
-            }
+    /* Get driverVersion from Mesa version, not host's driverVersion */
+    pProperties->properties.driverVersion = vk_get_driver_version();
+
+    // TODO: VkPhysicalDeviceVulkan12Properties::driverID and
+    // VkPhysicalDeviceDriverProperties::driverID for gfxstream in Mesa
+    VkPhysicalDeviceVulkan12Properties* vulkan12Props =
+        vk_find_struct(pProperties, PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES);
+    if (vulkan12Props) {
+        // TODO: driverId for gfxstream_vk? update conformanceVersion?
+        snprintf(vulkan12Props->driverName, sizeof(vulkan12Props->driverName), "gfxstream");
+        snprintf(vulkan12Props->driverInfo, sizeof(vulkan12Props->driverInfo),
+                 "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
+    }
+    VkPhysicalDeviceDriverProperties* driverProps =
+        vk_find_struct(pProperties, PHYSICAL_DEVICE_DRIVER_PROPERTIES);
+    if (driverProps) {
+        // TODO: driverId for gfxstream_vk? update conformanceVersion?
+        snprintf(driverProps->driverName, sizeof(driverProps->driverName), "gfxstream");
+        snprintf(driverProps->driverInfo, sizeof(driverProps->driverInfo),
+                 "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
+    }
+
+    VirtGpuDevice* instance = VirtGpuDevice::getInstance();
+    if (!instance) {
+        mesa_loge("%s(): Could not get an instance of the VirtGpuDevice", __func__);
+        return;
+    }
+
+    char device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
+    int device_name_len = snprintf(device_name, sizeof(device_name), "Virtio-GPU GFXStream (%s)",
+                                   pProperties->properties.deviceName);
+    if (device_name_len >= (int)VK_MAX_PHYSICAL_DEVICE_NAME_SIZE) {
+        memcpy(device_name + VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 5, "...)", 4);
+        device_name_len = VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1;
+    }
+    memcpy(pProperties->properties.deviceName, device_name, device_name_len + 1);
+
+    VkPhysicalDeviceDrmPropertiesEXT* drmProps =
+        vk_find_struct(pProperties, PHYSICAL_DEVICE_DRM_PROPERTIES_EXT);
+    if (drmProps) {
+        VirtGpuDrmInfo drmInfo;
+        if (instance->getDrmInfo(&drmInfo)) {
+            drmProps->hasPrimary = drmInfo.hasPrimary;
+            drmProps->hasRender = drmInfo.hasRender;
+            drmProps->primaryMajor = drmInfo.primaryMajor;
+            drmProps->primaryMinor = drmInfo.primaryMinor;
+            drmProps->renderMajor = drmInfo.renderMajor;
+            drmProps->renderMinor = drmInfo.renderMinor;
+        } else {
+            mesa_logd(
+                "%s: encountered VkPhysicalDeviceDrmPropertiesEXT in pProperties::pNext chain, "
+                "but failed to query DrmInfo from the VirtGpuDevice",
+                __func__);
         }
+    }
 
-        VkPhysicalDevicePCIBusInfoPropertiesEXT* pciBusInfoProps =
-            vk_find_struct(pProperties, PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT);
-        if (instance && pciBusInfoProps) {
-            VirtGpuPciBusInfo pciBusInfo;
-            if (instance->getPciBusInfo(&pciBusInfo)) {
-                pciBusInfoProps->pciDomain = pciBusInfo.domain;
-                pciBusInfoProps->pciBus = pciBusInfo.bus;
-                pciBusInfoProps->pciDevice = pciBusInfo.device;
-                pciBusInfoProps->pciFunction = pciBusInfo.function;
-            } else {
-                mesa_logd(
-                    "%s: encountered VkPhysicalDevicePCIBusInfoPropertiesEXT in pProperties::pNext "
-                    "chain, but failed to query PciBusInfo from the VirtGpuDevice",
-                    __func__);
-            }
+    VkPhysicalDevicePCIBusInfoPropertiesEXT* pciBusInfoProps =
+        vk_find_struct(pProperties, PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT);
+    if (pciBusInfoProps) {
+        VirtGpuPciBusInfo pciBusInfo;
+        if (instance->getPciBusInfo(&pciBusInfo)) {
+            pciBusInfoProps->pciDomain = pciBusInfo.domain;
+            pciBusInfoProps->pciBus = pciBusInfo.bus;
+            pciBusInfoProps->pciDevice = pciBusInfo.device;
+            pciBusInfoProps->pciFunction = pciBusInfo.function;
+        } else {
+            mesa_logd(
+                "%s: encountered VkPhysicalDevicePCIBusInfoPropertiesEXT in pProperties::pNext "
+                "chain, but failed to query PciBusInfo from the VirtGpuDevice",
+                __func__);
         }
     }
 }

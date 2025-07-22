@@ -164,8 +164,6 @@ class ResourceTracker {
                                          VkPhysicalDeviceFeatures2* pFeatures);
     void on_vkGetPhysicalDeviceFeatures2KHR(void* context, VkPhysicalDevice physicalDevice,
                                             VkPhysicalDeviceFeatures2* pFeatures);
-    void on_vkGetPhysicalDeviceProperties(void* context, VkPhysicalDevice physicalDevice,
-                                          VkPhysicalDeviceProperties* pProperties);
     void on_vkGetPhysicalDeviceProperties2(void* context, VkPhysicalDevice physicalDevice,
                                            VkPhysicalDeviceProperties2* pProperties);
     void on_vkGetPhysicalDeviceProperties2KHR(void* context, VkPhysicalDevice physicalDevice,

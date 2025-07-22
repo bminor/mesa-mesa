@@ -144,6 +144,7 @@ NON_AUTOGEN_ENTRYPOINTS = [
 
     # Use vk_common_* entrypoints; usually just dispatches to the "vk*2()" API variant
     "vkGetDeviceQueue",
+    "vkGetPhysicalDeviceProperties",
 ]
 
 # Handles that need to be translated to/from their corresponding gfxstream object types
