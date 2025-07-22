@@ -29,12 +29,11 @@ enum GfxStreamTransportType {
 
 class GfxStreamConnectionManager {
    public:
-    GfxStreamConnectionManager(GfxStreamTransportType type, VirtGpuCapset capset);
-    ~GfxStreamConnectionManager();
-
     static GfxStreamConnectionManager* getThreadLocalInstance(GfxStreamTransportType type,
                                                               VirtGpuCapset capset);
-    void threadLocalExit();
+
+    GfxStreamConnectionManager(GfxStreamTransportType type, VirtGpuCapset capset);
+    ~GfxStreamConnectionManager();
 
     bool initialize();
     int32_t addConnection(GfxStreamConnectionType type,
