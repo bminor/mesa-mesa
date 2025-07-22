@@ -78,7 +78,6 @@ vc4-rpi3-gl-asan:arm64:
   timeout: 25m
   variables:
     FDO_CI_CONCURRENT: 1
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     DEQP_SUITE: broadcom-rpi3-gl-asan
     DEQP_FRACTION: 5
 
@@ -103,7 +102,6 @@ vc4-rpi3-gl-ubsan:arm64:
   variables:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     DEQP_SUITE: broadcom-rpi3-gl-ubsan
     DEQP_FRACTION: 2
 
@@ -230,7 +228,6 @@ v3d-rpi4-gl-asan:arm64:
   timeout: 25m
   variables:
     FDO_CI_CONCURRENT: 1
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     DEQP_SUITE: broadcom-rpi4-gl-asan
     # FIXME: set to 9 once the new failures are investigated
     DEQP_FRACTION: 30
@@ -257,7 +254,6 @@ v3d-rpi4-gl-ubsan:arm64:
   variables:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     DEQP_SUITE: broadcom-rpi4-gl-ubsan
     DEQP_FRACTION: 6
 
@@ -282,7 +278,6 @@ v3dv-rpi4-vk:arm64:
   timeout: 25m
   parallel: 8
   variables:
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     HWCI_START_WESTON: 1
     DEQP_SUITE: broadcom-rpi4-vk
     DEQP_FRACTION: 3
@@ -336,7 +331,6 @@ v3dv-rpi4-vk-asan:arm64:
   timeout: 25m
   variables:
     FDO_CI_CONCURRENT: 1
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     DEQP_SUITE: broadcom-rpi4-vk-asan
     DEQP_FRACTION: 200
 
@@ -361,7 +355,6 @@ v3dv-rpi4-vk-ubsan:arm64:
   variables:
     # UBSan is quite slow, so restrict to 1 job
     FDO_CI_CONCURRENT: 1
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     DEQP_SUITE: broadcom-rpi4-vk-ubsan
     DEQP_FRACTION: 200
 
@@ -469,7 +462,6 @@ v3dv-rpi5-vk:arm64:
   timeout: 25m
   parallel: 2
   variables:
-    HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
     HWCI_START_WESTON: 1
     DEQP_SUITE: broadcom-rpi5-vk
     DEQP_FRACTION: 6
