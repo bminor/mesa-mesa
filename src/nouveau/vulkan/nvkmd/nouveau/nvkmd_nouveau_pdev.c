@@ -16,6 +16,8 @@
 #include <sys/stat.h>
 #include <xf86drm.h>
 
+#include "clc597.h"
+
 static bool
 drm_device_is_nouveau(const char *path)
 {
@@ -99,6 +101,8 @@ nvkmd_nouveau_try_create_pdev(struct _drmDevice *drm_device,
       .has_alloc_tiled = nouveau_ws_device_has_tiled_bo(ws_dev),
       .has_map_fixed = true,
       .has_overmap = true,
+      .has_compression = ws_dev->nouveau_version >= 0x01000401 &&
+                         ws_dev->info.cls_eng3d >= TURING_A,
    };
 
    /* We get this ourselves */
