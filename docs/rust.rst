@@ -1,6 +1,14 @@
 Rust
 ====
 
+Rust Subproject Names
+---------------------
+
+All Rust subprojects should follow the convention ``NAME-SEMVER-rs``,
+where ``SEMVER`` is the version up to and including the first nonzero
+component.  For example, ``zerocopy-0.8.13`` becomes ``zerocopy-0.8-rs``,
+whereas ``syn-2.0.66`` becomes ``syn-2-rs``.
+
 Rust Update Policy
 ------------------
 
