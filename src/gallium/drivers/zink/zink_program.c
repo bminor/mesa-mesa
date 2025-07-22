@@ -750,7 +750,6 @@ zink_gfx_program_update_optimal(struct zink_context *ctx)
             entry->key = real->shaders;
             real->base.removed = false;
             prog->base.removed = true;
-            zink_gfx_program_reference(screen, &prog, NULL);
             prog = real;
          }
          update_gfx_program_optimal(ctx, prog);
