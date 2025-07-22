@@ -87,7 +87,7 @@ lima_texture_desc_set_res(struct lima_context *ctx, struct LIMA_TEXTURE_DESCRIPT
                        &desc->mip_10};
 
 
-   int max_mips = MIN2(last_level - first_level, sizeof(mips) / sizeof(mips[0]));
+   int max_mips = MIN2(last_level - first_level, ARRAY_SIZE(mips) - 1);
 
    for (int i = 0; i <= max_mips; i++) {
       *mips[i] = base_va + lima_res->levels[first_level + i].offset;
