@@ -146,7 +146,8 @@ VkResult vk_get_bvh_build_pipeline_spv(struct vk_device *device, struct vk_meta_
                                        enum vk_meta_object_key_type type, const uint32_t *spv,
                                        uint32_t spv_size, unsigned push_constant_size,
                                        const struct vk_acceleration_structure_build_args *args,
-                                       uint32_t flags, VkPipeline *pipeline);
+                                       uint32_t flags, VkPipeline *pipeline,
+                                       bool unaligned_dispatch);
 
 void vk_cmd_build_acceleration_structures(VkCommandBuffer cmdbuf,
                                           struct vk_device *device,

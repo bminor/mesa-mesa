@@ -297,7 +297,7 @@ radv_bvh_build_bind_pipeline(VkCommandBuffer commandBuffer, enum radv_meta_objec
    VkPipeline pipeline;
    VkResult result = vk_get_bvh_build_pipeline_spv(
       &device->vk, &device->meta_state.device, (enum vk_meta_object_key_type)type, spirv, spirv_size,
-      push_constants_size, &device->meta_state.accel_struct_build.build_args, flags, &pipeline);
+      push_constants_size, &device->meta_state.accel_struct_build.build_args, flags, &pipeline, false);
 
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);

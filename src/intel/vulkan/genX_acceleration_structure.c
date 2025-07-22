@@ -317,7 +317,7 @@ anv_bvh_build_bind_pipeline(VkCommandBuffer commandBuffer,
                                                    (enum anv_object_key_bvh_type)type,
                                                    spirv, spirv_size, push_constant_size,
                                                    &device->accel_struct_build.build_args,
-                                                   flags, &pipeline);
+                                                   flags, &pipeline, false);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return;
