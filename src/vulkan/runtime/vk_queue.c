@@ -210,8 +210,8 @@ vk_queue_submit_cleanup(struct vk_queue *queue,
    if (submit->_wait_points != NULL) {
       for (uint32_t i = 0; i < submit->wait_count; i++) {
          if (unlikely(submit->_wait_points[i] != NULL)) {
-            vk_sync_timeline_point_release(queue->base.device,
-                                           submit->_wait_points[i]);
+            vk_sync_timeline_point_unref(queue->base.device,
+                                         submit->_wait_points[i]);
          }
       }
    }
@@ -219,8 +219,8 @@ vk_queue_submit_cleanup(struct vk_queue *queue,
    if (submit->_signal_points != NULL) {
       for (uint32_t i = 0; i < submit->signal_count; i++) {
          if (unlikely(submit->_signal_points[i] != NULL)) {
-            vk_sync_timeline_point_free(queue->base.device,
-                                        submit->_signal_points[i]);
+            vk_sync_timeline_point_unref(queue->base.device,
+                                         submit->_signal_points[i]);
          }
       }
    }
@@ -725,6 +725,8 @@ vk_queue_submit_final(struct vk_queue *queue,
 
          vk_sync_timeline_point_install(queue->base.device,
                                         submit->_signal_points[i]);
+
+         /* Installing the point consumes our reference */
          submit->_signal_points[i] = NULL;
       }
    }
