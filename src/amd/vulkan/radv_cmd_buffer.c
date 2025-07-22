@@ -2782,7 +2782,6 @@ radv_emit_fragment_shader(struct radv_cmd_buffer *cmd_buffer)
 
    if (pdev->info.gfx_level >= GFX12) {
       gfx12_push_sh_reg(cmd_buffer, ps->info.regs.pgm_lo, va >> 8);
-      gfx12_push_sh_reg(cmd_buffer, ps->info.regs.pgm_lo + 4, S_00B024_MEM_BASE(va >> 40));
       gfx12_push_sh_reg(cmd_buffer, ps->info.regs.pgm_rsrc1, ps->config.rsrc1);
       gfx12_push_sh_reg(cmd_buffer, ps->info.regs.pgm_rsrc2, ps->config.rsrc2);
    } else {
