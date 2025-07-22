@@ -524,7 +524,7 @@ typedef int lock_cap_t;
  */
 #define SWAP(a, b)                                                             \
    do {                                                                        \
-      __typeof(a) __tmp = (a);                                                 \
+      __typeof__(a) __tmp = (a);                                               \
       (a) = (b);                                                               \
       (b) = __tmp;                                                             \
    } while (0)
