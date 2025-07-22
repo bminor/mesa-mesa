@@ -281,7 +281,7 @@ dzn_pipeline_get_nir_shader(struct dzn_device *device,
       }
 
       if (needs_conv)
-         NIR_PASS_V(*nir, dxil_nir_lower_vs_vertex_conversion, options->vi_conversions);
+         NIR_PASS(_, *nir, dxil_nir_lower_vs_vertex_conversion, options->vi_conversions);
    }
 
    if (cache) {
@@ -966,7 +966,7 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
       };
 
       bool requires_runtime_data;
-      NIR_PASS_V(pipeline->templates.shaders[MESA_SHADER_GEOMETRY].nir, dxil_spirv_nir_lower_yz_flip,
+      NIR_PASS(_, pipeline->templates.shaders[MESA_SHADER_GEOMETRY].nir, dxil_spirv_nir_lower_yz_flip,
                  &conf, &requires_runtime_data);
 
       active_stage_mask |= (1 << MESA_SHADER_GEOMETRY);
@@ -974,7 +974,7 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
 
       if ((active_stage_mask & (1 << MESA_SHADER_FRAGMENT)) &&
           BITSET_TEST(pipeline->templates.shaders[MESA_SHADER_FRAGMENT].nir->info.system_values_read, SYSTEM_VALUE_FRONT_FACE))
-         NIR_PASS_V(pipeline->templates.shaders[MESA_SHADER_FRAGMENT].nir, dxil_nir_forward_front_face);
+         NIR_PASS(_, pipeline->templates.shaders[MESA_SHADER_FRAGMENT].nir, dxil_nir_forward_front_face);
    }
 
    /* Third step: link those NIR shaders. We iterate in reverse order
@@ -1008,7 +1008,7 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
    u_foreach_bit(stage, active_stage_mask) {
       uint8_t bindings_hash[SHA1_DIGEST_LENGTH];
 
-      NIR_PASS_V(pipeline->templates.shaders[stage].nir, adjust_var_bindings, device, layout,
+      NIR_PASS(_, pipeline->templates.shaders[stage].nir, adjust_var_bindings, device, layout,
                  cache ? bindings_hash : NULL);
 
       if (cache) {
@@ -2538,7 +2538,7 @@ dzn_compute_pipeline_compile_shader(struct dzn_device *device,
 
    uint8_t bindings_hash[SHA1_DIGEST_LENGTH], dxil_hash[SHA1_DIGEST_LENGTH];
 
-   NIR_PASS_V(nir, adjust_var_bindings, device, layout, cache ? bindings_hash : NULL);
+   NIR_PASS(_, nir, adjust_var_bindings, device, layout, cache ? bindings_hash : NULL);
 
    if (cache) {
       struct mesa_sha1 dxil_hash_ctx;
