@@ -41,8 +41,16 @@ create_mem_or_close_bo(struct nvkmd_nouveau_dev *dev,
       goto fail_bo;
    }
 
+   /* It should be the caller's responsibility to ensure proper alignment and
+    * this function should be kept pretty simple. However, because dma_buf
+    * imports call this with 0 alignment, we need a minimum alignment for the
+    * memory object initialization. For other cases, we just pass in the given
+    * alignment along the chain. There's no need to re-align here because the
+    * VA allocation at the end aligns the data to va_align_B.
+    */
+   va_align_B = MAX2(dev->base.pdev->bind_align_B, va_align_B);
    nvkmd_mem_init(&dev->base, &mem->base, &nvkmd_nouveau_mem_ops,
-                  mem_flags, size_B, dev->base.pdev->bind_align_B);
+                  mem_flags, size_B, va_align_B);
    mem->bo = bo;
 
    result = nvkmd_dev_alloc_va(&dev->base, log_obj,
@@ -123,11 +131,13 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
    if (force_mem_to_gart(dev->base.pdev, flags))
       domains = NOUVEAU_WS_BO_GART;
 
-   const uint32_t mem_align_B = _dev->pdev->bind_align_B;
-   size_B = align64(size_B, mem_align_B);
-
+   /* Since not all callers care about the alignment and pass in zero to signal
+    * that, we enforce a minimum alignment equal to the system page size here,
+    * which is guaranteed to work.
+    */
    assert(util_is_power_of_two_or_zero64(align_B));
-   const uint64_t va_align_B = MAX2(mem_align_B, align_B);
+   align_B = MAX2(align_B, dev->base.pdev->bind_align_B);
+   size_B = align64(size_B, align_B);
 
    enum nouveau_ws_bo_flags nouveau_flags = domains;
    if (flags & NVKMD_MEM_CAN_MAP)
@@ -152,7 +162,7 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
    }
 
    struct nouveau_ws_bo *bo = nouveau_ws_bo_new_tiled(dev->ws_dev,
-                                                      size_B, mem_align_B,
+                                                      size_B, align_B,
                                                       pte_kind, tile_mode,
                                                       nouveau_flags);
    if (bo == NULL)
@@ -163,7 +173,7 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
       va_flags |= NVKMD_VA_GART;
 
    return create_mem_or_close_bo(dev, log_obj, flags, bo,
-                                 va_flags, va_align_B, mem_out);
+                                 va_flags, align_B, mem_out);
 }
 
 VkResult
