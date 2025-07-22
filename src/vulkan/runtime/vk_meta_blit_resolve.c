@@ -98,9 +98,7 @@ compute_off_scale(uint32_t src_level_size,
       *dst1_out = dst0;
 
       /* Flip the source region */
-      uint32_t tmp = src0;
-      src0 = src1;
-      src1 = tmp;
+      SWAP(src0, src1);
    }
 
    double src_region_size = (double)src1 - (double)src0;

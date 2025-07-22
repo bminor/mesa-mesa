@@ -31,9 +31,7 @@ cmpsel_for_break_if(agx_builder *b, agx_instr *I)
    agx_index f = r0l;
 
    if (I->invert_cond) {
-      agx_index temp = t;
-      t = f;
-      f = temp;
+      SWAP(t, f);
    }
 
    if (I->op == AGX_OPCODE_BREAK_IF_FCMP)

@@ -562,9 +562,7 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                   row_offset = nir_iadd_imm(&b, base_row, row_iter);
 
                   if (layout == GLSL_MATRIX_LAYOUT_ROW_MAJOR) {
-                     nir_def *tmp = col_offset;
-                     col_offset = row_offset;
-                     row_offset = tmp;
+                     SWAP(col_offset, row_offset);
                   }
 
                   col_offset = nir_imul(&b, col_offset, stride);

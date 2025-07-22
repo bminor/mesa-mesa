@@ -1054,9 +1054,7 @@ generate_mipmap_compressed(struct gl_context *ctx, GLenum target,
 
       /* swap src and dest pointers */
       {
-         GLubyte *temp = temp_src;
-         temp_src = temp_dst;
-         temp_dst = temp;
+         SWAP(temp_src, temp_dst);
          temp_src_row_stride = temp_dst_row_stride;
          temp_src_img_stride = temp_dst_img_stride;
       }

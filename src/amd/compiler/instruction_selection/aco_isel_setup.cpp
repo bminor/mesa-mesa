@@ -169,9 +169,7 @@ apply_nuw_to_ssa(isel_context* ctx, nir_def* ssa)
    nir_scalar src1 = nir_scalar_chase_alu_src(scalar, 1);
 
    if (nir_scalar_is_const(src0)) {
-      nir_scalar tmp = src0;
-      src0 = src1;
-      src1 = tmp;
+      std::swap(src0, src1);
    }
 
    uint32_t src1_ub = nir_unsigned_upper_bound(ctx->shader, ctx->range_ht, src1, &ctx->ub_config);

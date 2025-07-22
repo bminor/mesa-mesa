@@ -1020,9 +1020,7 @@ try_find_trip_count_vars_in_logical_op(nir_scalar *cond,
 
       if (!nir_scalar_is_alu(logical_op) || !nir_scalar_is_const(zero)) {
          /* Maybe we had it the wrong way, flip things around */
-         nir_scalar tmp = zero;
-         zero = logical_op;
-         logical_op = tmp;
+         SWAP(zero, logical_op);
 
          /* If we still didn't find what we need then return */
          if (!nir_scalar_is_const(zero))

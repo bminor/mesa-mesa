@@ -64,9 +64,7 @@ phi_web_union(struct phi_web_node *web, unsigned x, unsigned y)
 
    /* Union-by-rank: ensure x.rank >= y.rank */
    if (web[x].rank < web[y].rank) {
-      unsigned temp = x;
-      x = y;
-      y = temp;
+      SWAP(x, y);
    }
 
    web[y].parent = x;

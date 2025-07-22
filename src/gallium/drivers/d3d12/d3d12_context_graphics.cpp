@@ -1319,9 +1319,7 @@ d3d12_set_viewport_states(struct pipe_context *pctx,
 
       bool reverse_depth_range = near_depth > far_depth;
       if (reverse_depth_range) {
-         float tmp = near_depth;
-         near_depth = far_depth;
-         far_depth = tmp;
+         std::swap(near_depth, far_depth);
          ctx->reverse_depth_range |= (1 << (start_slot + i));
       } else
          ctx->reverse_depth_range &= ~(1 << (start_slot + i));
