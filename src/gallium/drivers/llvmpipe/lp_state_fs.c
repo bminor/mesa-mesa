@@ -4036,7 +4036,7 @@ llvmpipe_create_fs_state(struct pipe_context *pipe,
 
    /* lower FRAG_RESULT_COLOR -> DATA[0-7] to correctly handle unused attachments */
    nir_shader *nir = shader->base.ir.nir;
-   NIR_PASS_V(nir, nir_lower_fragcolor, nir->info.fs.color_is_dual_source ? 1 : 8);
+   NIR_PASS(_, nir, nir_lower_fragcolor, nir->info.fs.color_is_dual_source ? 1 : 8);
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    nir_tgsi_scan_shader(nir, &shader->info.base, true);
