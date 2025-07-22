@@ -178,7 +178,7 @@ v3d-rpi4-rusticl:arm64:
   variables:
     DEQP_SUITE: v3d-rusticl
 
-.ci-tron-v3d-rpi4-rusticl:arm64:
+ci-tron-v3d-rpi4-rusticl:arm64:
   extends:
     - .ci-tron-arm64-test-gl
     - .ci-tron-broadcom-rpi4:arm64
@@ -439,7 +439,7 @@ v3d-rpi5-rusticl:arm64:
   variables:
     DEQP_SUITE: v3d-rusticl
 
-.ci-tron-v3d-rpi5-rusticl:arm64:
+ci-tron-v3d-rpi5-rusticl:arm64:
   extends:
     - .ci-tron-arm64-test-gl
     - .ci-tron-broadcom-rpi5:arm64
