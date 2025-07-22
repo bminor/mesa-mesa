@@ -111,7 +111,7 @@ nir_lower_pstipple_impl(nir_function_impl *impl,
    nir_lower_pstipple_block(start, state);
 }
 
-void
+bool
 nir_lower_pstipple_fs(struct nir_shader *shader,
                       unsigned *samplerUnitOut,
                       unsigned fixedUnit,
@@ -127,8 +127,10 @@ nir_lower_pstipple_fs(struct nir_shader *shader,
    assert(bool_type == nir_type_bool1 ||
           bool_type == nir_type_bool32);
 
-   if (shader->info.stage != MESA_SHADER_FRAGMENT)
-      return;
+   if (shader->info.stage != MESA_SHADER_FRAGMENT) {
+      nir_shader_preserve_all_metadata(shader);
+      return false;
+   }
 
    int binding = 0;
    nir_foreach_uniform_variable(var, shader) {
@@ -149,10 +151,13 @@ nir_lower_pstipple_fs(struct nir_shader *shader,
    BITSET_SET(shader->info.samplers_used, binding);
    state.stip_tex = tex_var;
 
+   bool progress = false;
    nir_foreach_function_impl(impl, shader) {
       nir_lower_pstipple_impl(impl, &state);
+      progress |= nir_progress(true, impl, nir_metadata_none);
    }
    *samplerUnitOut = binding;
+   return progress;
 }
 
 typedef struct {
