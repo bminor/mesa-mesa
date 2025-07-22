@@ -4254,6 +4254,10 @@ visit_load_image(struct lp_build_nir_soa_context *bld,
 
    struct lp_img_params params = { 0 };
 
+   /*
+    * XXX the target here may not match what is used to compile the image
+    * function (which is based on the view) due to array mismatch.
+    */
    params.target = glsl_sampler_to_pipe(nir_intrinsic_image_dim(instr),
                                         nir_intrinsic_image_array(instr));
    if (params.target == PIPE_TEXTURE_1D_ARRAY)
@@ -4326,8 +4330,6 @@ visit_store_image(struct lp_build_nir_soa_context *bld,
 
    img_params_init_resource(bld, &params, &instr->src[0]);
 
-   if (params.target == PIPE_TEXTURE_1D_ARRAY)
-      coords[2] = coords[1];
    emit_image_op(bld, &params);
 }
 

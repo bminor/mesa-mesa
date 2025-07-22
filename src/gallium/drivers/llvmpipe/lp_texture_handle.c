@@ -373,7 +373,7 @@ compile_image_function(struct llvmpipe_context *ctx, struct lp_static_texture_st
    lp_disk_cache_find_shader(llvmpipe_screen(ctx->pipe.screen), &cached, cache_key);
    bool needs_caching = !cached.data_size;
 
-   struct gallivm_state *gallivm = gallivm_create("sample_function", get_llvm_context(ctx), &cached);
+   struct gallivm_state *gallivm = gallivm_create("image_function", get_llvm_context(ctx), &cached);
 
    struct lp_image_static_state state = {
       .image_state = local_texture,
@@ -631,7 +631,7 @@ compile_size_function(struct llvmpipe_context *ctx, struct lp_texture_handle_sta
    lp_disk_cache_find_shader(llvmpipe_screen(ctx->pipe.screen), &cached, cache_key);
    bool needs_caching = !cached.data_size;
 
-   struct gallivm_state *gallivm = gallivm_create("sample_function", get_llvm_context(ctx), &cached);
+   struct gallivm_state *gallivm = gallivm_create("size_function", get_llvm_context(ctx), &cached);
 
    struct lp_sampler_static_state state = {
       .texture_state = texture->static_state,
