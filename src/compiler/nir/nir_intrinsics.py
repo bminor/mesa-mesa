@@ -530,7 +530,7 @@ intrinsic("read_getlast_ir3", src_comp=[0], dest_comp=0, bit_sizes=src0, flags=S
 intrinsic("elect", dest_comp=1, flags=SUBGROUP_FLAGS)
 intrinsic("first_invocation", dest_comp=1, bit_sizes=[32], flags=SUBGROUP_FLAGS)
 intrinsic("last_invocation", dest_comp=1, bit_sizes=[32], flags=SUBGROUP_FLAGS)
-intrinsic("inverse_ballot", src_comp=[0], dest_comp=1, flags=[CAN_ELIMINATE])
+intrinsic("inverse_ballot", src_comp=[0], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER])
 
 barrier("begin_invocation_interlock")
 barrier("end_invocation_interlock")
@@ -1781,7 +1781,8 @@ system_value("streamout_offset_amd", 1, indices=[BASE])
 
 # Whether the current invocation index in the subgroup is less than the source. The source must be
 # subgroup uniform and the 8 bits starting at the base bit must be less than or equal to the wave size.
-intrinsic("is_subgroup_invocation_lt_amd", src_comp=[1], dest_comp=1, bit_sizes=[1], indices=[BASE], flags=[CAN_ELIMINATE])
+intrinsic("is_subgroup_invocation_lt_amd", src_comp=[1], dest_comp=1, bit_sizes=[1], indices=[BASE],
+          flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # AMD NGG intrinsics
 
