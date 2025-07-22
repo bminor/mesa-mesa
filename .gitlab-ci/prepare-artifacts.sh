@@ -39,7 +39,6 @@ cp -Rp .gitlab-ci/common install/
 cp -Rp .gitlab-ci/piglit install/
 cp -Rp .gitlab-ci/fossils.yml install/
 cp -Rp .gitlab-ci/fossils install/
-cp -Rp .gitlab-ci/fossilize-runner.sh install/
 cp -Rp .gitlab-ci/crosvm-init.sh install/
 cp -Rp .gitlab-ci/*.txt install/
 cp -Rp .gitlab-ci/report-flakes.py install/
