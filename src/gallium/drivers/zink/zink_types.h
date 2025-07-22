@@ -1303,6 +1303,7 @@ struct zink_resource {
    bool use_damage;
 
    bool copies_warned;
+   bool deleted; //resource_release
    bool swapchain;
    bool dmabuf;
    bool subdata; //doing subdata call
