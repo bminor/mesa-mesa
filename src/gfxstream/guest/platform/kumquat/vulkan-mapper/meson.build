@@ -14,5 +14,10 @@ libgfxstream_vulkan_mapper = static_library(
    include_directories: [inc_src, inc_vulkan_util, inc_gfxstream_vulkan_mapper,
                          inc_include],
    dependencies: [idep_vulkan_util_headers, idep_vulkan_util,
-                  idep_mesautil],
+                  idep_mesautil, dep_virtgpu_kumquat_ffi],
+)
+
+dep_gfxstream_vulkan_mapper = declare_dependency(
+  include_directories : [inc_gfxstream_vulkan_mapper],
+  link_with : [libgfxstream_vulkan_mapper]
 )

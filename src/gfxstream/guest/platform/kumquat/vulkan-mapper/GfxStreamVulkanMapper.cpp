@@ -12,6 +12,7 @@
 
 #include "util/detect_os.h"
 #include "util/log.h"
+#include "virtgpu_kumquat_ffi.h"
 
 #if DETECT_OS_WINDOWS
 #include <io.h>
@@ -28,6 +29,7 @@
 #endif
 
 const char* VK_ICD_FILENAMES = "VK_ICD_FILENAMES";
+constexpr uint32_t kNvidiaVendorId = 0x10de;
 
 #define GET_PROC_ADDR_INSTANCE_LOCAL(x) \
     PFN_vk##x vk_##x = (PFN_vk##x)vk_GetInstanceProcAddr(nullptr, "vk" #x)
@@ -76,16 +78,6 @@ bool GfxStreamVulkanMapper::initialize(DeviceId& deviceId) {
 
     std::vector<const char*> externalMemoryInstanceExtNames = {
         VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
-    };
-
-    std::vector<const char*> externalMemoryDeviceExtNames = {
-        VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-#if DETECT_OS_WINDOWS
-        VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
-#elif DETECT_OS_LINUX
-        VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
-        VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
-#endif
     };
 
     VkInstanceCreateInfo instCi = {
@@ -150,6 +142,20 @@ bool GfxStreamVulkanMapper::initialize(DeviceId& deviceId) {
         if (memcmp(&idProps.driverUUID[0], &deviceId.driverUUID[0], VK_UUID_SIZE)) {
             continue;
         }
+
+        std::vector<const char*> externalMemoryDeviceExtNames;
+        externalMemoryDeviceExtNames.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+
+#if DETECT_OS_WINDOWS
+        externalMemoryDeviceExtNames.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+#elif DETECT_OS_LINUX
+        externalMemoryDeviceExtNames.push_back(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+
+        // Tesla V-100 doesn't work with dma-buf
+        if (deviceProps.properties.vendorID != kNvidiaVendorId) {
+            externalMemoryDeviceExtNames.push_back(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
+        }
+#endif
 
         VkPhysicalDevice physDev = physicalDevices[i];
         uint32_t gfxQueueFamilyIdx = chooseGfxQueueFamily(&mVk, physDev);
@@ -232,9 +238,8 @@ int32_t GfxStreamVulkanMapper::map(struct VulkanMapperData* mapData) {
     };
 
 #elif DETECT_OS_LINUX
-    // check for VIRTGPU_KUMQUAT_HANDLE_TYPE_MEM_DMABUF
     VkExternalMemoryHandleTypeFlagBits flagBits = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-    if (mapData->handleType == 0x1) {
+    if (mapData->handleType == VIRTGPU_KUMQUAT_HANDLE_TYPE_MEM_DMABUF) {
         flagBits = (enum VkExternalMemoryHandleTypeFlagBits)(
             uint32_t(flagBits) | uint32_t(VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT));
     }

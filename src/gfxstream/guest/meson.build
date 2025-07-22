@@ -35,7 +35,6 @@ inc_vulkan_enc = include_directories('vulkan_enc')
 # Subdirectories #
 #================#
 subdir('iostream')
-subdir('vulkan-mapper')
 subdir('platform')
 subdir('GoldfishAddressSpace')
 subdir('connection-manager')
