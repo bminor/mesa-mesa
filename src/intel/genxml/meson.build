@@ -155,7 +155,9 @@ idep_genxml = declare_dependency(
   sources : [gen_xml_pack, gen_xml_video_pack, gen_cl_xml_pack, genX_bits_h, genX_xml_h]
 )
 
-foreach f : gen_xml_files + gen_xml_rt_files
+gen_xml_test_files = ['../decoder/tests/gentest.xml']
+
+foreach f : gen_xml_files + gen_xml_rt_files + gen_xml_test_files
   test(
     'genxml sort @0@'.format(f),
     prog_python,
