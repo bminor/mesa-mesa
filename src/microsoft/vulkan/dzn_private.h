@@ -66,13 +66,6 @@
 #include "spirv_to_dxil.h"
 #include "dzn_abi_helper.h"
 
-#define DZN_SWAP(t, a, b) \
-   do { \
-      t __tmp = a; \
-      a = b; \
-      b = __tmp; \
-   } while (0)
-
 #define dzn_stub() unreachable("Unsupported feature")
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR) || \

@@ -1965,10 +1965,10 @@ adjust_clear_color(struct dzn_physical_device *pdev,
    // manually where it matters, like here, in the clear path.
    if (format == VK_FORMAT_B4G4R4A4_UNORM_PACK16) {
       if (pdev->support_a4b4g4r4) {
-         DZN_SWAP(float, out.float32[0], out.float32[2]);
+         SWAP(out.float32[0], out.float32[2]);
       } else {
-         DZN_SWAP(float, out.float32[0], out.float32[1]);
-         DZN_SWAP(float, out.float32[2], out.float32[3]);
+         SWAP(out.float32[0], out.float32[1]);
+         SWAP(out.float32[2], out.float32[3]);
       }
    }
 
