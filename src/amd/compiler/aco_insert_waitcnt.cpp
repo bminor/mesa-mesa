@@ -45,16 +45,18 @@ enum wait_event : uint32_t {
    event_gds = 1 << 2,
    event_vmem = 1 << 3,
    event_vmem_store = 1 << 4, /* GFX10+ */
-   event_exp_pos = 1 << 6,
-   event_exp_param = 1 << 7,
-   event_exp_mrt_null = 1 << 8,
-   event_gds_gpr_lock = 1 << 9,
-   event_vmem_gpr_lock = 1 << 10,
-   event_sendmsg = 1 << 11,
-   event_ldsdir = 1 << 12,
-   event_vmem_sample = 1 << 13, /* GFX12+ */
-   event_vmem_bvh = 1 << 14,    /* GFX12+ */
-   num_events = 15,
+   event_exp_pos = 1 << 5,
+   event_exp_param = 1 << 6,
+   event_exp_mrt_null = 1 << 7,
+   event_exp_prim = 1 << 8,
+   event_exp_dual_src_blend = 1 << 9,
+   event_gds_gpr_lock = 1 << 10,
+   event_vmem_gpr_lock = 1 << 11,
+   event_sendmsg = 1 << 12,
+   event_ldsdir = 1 << 13,
+   event_vmem_sample = 1 << 14, /* GFX12+ */
+   event_vmem_bvh = 1 << 15,    /* GFX12+ */
+   num_events = 16,
 };
 
 enum counter_type : uint8_t {
@@ -140,7 +142,8 @@ struct target_info {
          max_cnt[i] = max_cnt[i] ? max_cnt[i] - 1 : 0;
 
       events[wait_type_exp] = event_exp_pos | event_exp_param | event_exp_mrt_null |
-                              event_gds_gpr_lock | event_vmem_gpr_lock | event_ldsdir;
+                              event_exp_prim | event_exp_dual_src_blend | event_gds_gpr_lock |
+                              event_vmem_gpr_lock | event_ldsdir;
       events[wait_type_lgkm] = event_smem | event_lds | event_gds | event_sendmsg;
       events[wait_type_vm] = event_vmem;
       events[wait_type_vs] = event_vmem_store;
@@ -724,12 +727,18 @@ gen(Instruction* instr, wait_ctx& ctx)
       Export_instruction& exp_instr = instr->exp();
 
       wait_event ev;
-      if (exp_instr.dest <= 9)
+      if (exp_instr.dest <= V_008DFC_SQ_EXP_NULL)
          ev = event_exp_mrt_null;
-      else if (exp_instr.dest <= 15)
+      else if (exp_instr.dest <= (V_008DFC_SQ_EXP_POS + 4))
          ev = event_exp_pos;
-      else
+      else if (exp_instr.dest == V_008DFC_SQ_EXP_PRIM)
+         ev = event_exp_prim;
+      else if (exp_instr.dest == 21 || exp_instr.dest == 22)
+         ev = event_exp_dual_src_blend;
+      else if (exp_instr.dest >= V_008DFC_SQ_EXP_PARAM)
          ev = event_exp_param;
+      else
+         UNREACHABLE("Invalid export destination");
       update_counters(ctx, ev, instr);
 
       /* insert new entries for exported vgprs */
