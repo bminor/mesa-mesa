@@ -350,6 +350,109 @@ anv_CopyImageToMemory(
    return VK_SUCCESS;
 }
 
+static void
+copy_image_to_image(struct anv_device *device,
+                    struct anv_image *src_image,
+                    struct anv_image *dst_image,
+                    int src_plane, int dst_plane,
+                    const VkImageCopy2 *region,
+                    void *tmp_map)
+{
+   const struct anv_surface *src_anv_surf =
+      &src_image->planes[src_plane].primary_surface;
+   const struct anv_surface *dst_anv_surf =
+      &dst_image->planes[dst_plane].primary_surface;
+   const struct isl_surf *src_surf = &src_anv_surf->isl;
+   const struct isl_surf *dst_surf = &dst_anv_surf->isl;
+   const struct anv_image_binding *src_binding =
+      &src_image->bindings[src_anv_surf->memory_range.binding];
+   const struct anv_image_binding *dst_binding =
+      &dst_image->bindings[dst_anv_surf->memory_range.binding];
+
+   struct isl_tile_info src_tile;
+   struct isl_tile_info dst_tile;
+
+   isl_surf_get_tile_info(src_surf, &src_tile);
+   isl_surf_get_tile_info(dst_surf, &dst_tile);
+
+   uint32_t tile_width_B;
+   uint32_t tile_width_el, tile_height_el;
+   if (src_tile.phys_extent_B.w > dst_tile.phys_extent_B.w) {
+      tile_width_B   = src_tile.phys_extent_B.w;
+      tile_width_el  = src_tile.logical_extent_el.w;
+      tile_height_el = src_tile.logical_extent_el.h;
+   } else {
+      tile_width_B   = dst_tile.phys_extent_B.w;
+      tile_width_el  = dst_tile.logical_extent_el.w;
+      tile_height_el = dst_tile.logical_extent_el.h;
+   }
+
+   /* There is no requirement that the extent be aligned to the texel block
+    * size.
+    */
+   VkOffset3D src_offset_el =
+      vk_offset3d_to_el(src_surf->format, region->srcOffset);
+   VkOffset3D dst_offset_el =
+      vk_offset3d_to_el(src_surf->format, region->dstOffset);
+   VkExtent3D extent_el =
+      vk_extent3d_to_el(src_surf->format, region->extent);
+
+   /* linear-to-linear case */
+   if (tile_width_el == 1 && tile_height_el == 1) {
+      tile_width_el = MIN2(4096 / (src_tile.format_bpb / 8),
+                           extent_el.width);
+      tile_height_el = 4096 / (tile_width_el * (src_tile.format_bpb / 8));
+      tile_width_B = tile_width_el * src_tile.format_bpb / 8;
+   }
+
+   uint32_t layer_count =
+      vk_image_subresource_layer_count(&src_image->vk, &region->srcSubresource);
+   for (uint32_t a = 0; a < layer_count; a++) {
+      for (uint32_t z = 0; z < region->extent.depth; z++) {
+         for (uint32_t y_el = 0; y_el < extent_el.height; y_el += tile_height_el) {
+            for (uint32_t x_el = 0; x_el < extent_el.width; x_el += tile_width_el) {
+               VkOffset3D src_offset = {
+                  .x = src_offset_el.x + x_el,
+                  .y = src_offset_el.y + y_el,
+               };
+               VkOffset3D dst_offset = {
+                  .x = dst_offset_el.x + x_el,
+                  .y = dst_offset_el.y + y_el,
+               };
+               VkExtent3D extent = {
+                  .width  = MIN2(extent_el.width - x_el, tile_width_el),
+                  .height = MIN2(extent_el.height - y_el, tile_height_el),
+                  .depth  = 1,
+               };
+
+               anv_copy_image_memory(device, src_surf,
+                                     src_binding,
+                                     src_anv_surf->memory_range.offset,
+                                     tmp_map,
+                                     tile_width_B, 0,
+                                     &src_offset, &extent,
+                                     region->srcSubresource.mipLevel,
+                                     region->srcSubresource.baseArrayLayer,
+                                     region->srcOffset.z,
+                                     a, z,
+                                     false /* mem_to_img */);
+               anv_copy_image_memory(device, dst_surf,
+                                     dst_binding,
+                                     dst_anv_surf->memory_range.offset,
+                                     tmp_map,
+                                     tile_width_B, 0,
+                                     &dst_offset, &extent,
+                                     region->dstSubresource.mipLevel,
+                                     region->dstSubresource.baseArrayLayer,
+                                     region->dstOffset.z,
+                                     a, z,
+                                     true /* mem_to_img */);
+            }
+         }
+      }
+   }
+}
+
 VkResult
 anv_CopyImageToImage(
     VkDevice                                 _device,
@@ -368,104 +471,23 @@ anv_CopyImageToImage(
    for (uint32_t r = 0; r < pCopyImageToImageInfo->regionCount; r++) {
       const VkImageCopy2 *region = &pCopyImageToImageInfo->pRegions[r];
 
-      const uint32_t src_plane =
-         anv_image_aspect_to_plane(src_image,
-                                   region->srcSubresource.aspectMask);
-      const uint32_t dst_plane =
-         anv_image_aspect_to_plane(dst_image,
-                                   region->srcSubresource.aspectMask);
-      const struct anv_surface *src_anv_surf =
-         &src_image->planes[src_plane].primary_surface;
-      const struct anv_surface *dst_anv_surf =
-         &dst_image->planes[dst_plane].primary_surface;
-      const struct isl_surf *src_surf = &src_anv_surf->isl;
-      const struct isl_surf *dst_surf = &dst_anv_surf->isl;
-      const struct anv_image_binding *src_binding =
-         &src_image->bindings[src_anv_surf->memory_range.binding];
-      const struct anv_image_binding *dst_binding =
-         &dst_image->bindings[dst_anv_surf->memory_range.binding];
+      VkImageAspectFlags src_mask = region->srcSubresource.aspectMask,
+                         dst_mask = region->dstSubresource.aspectMask;
 
-      struct isl_tile_info src_tile;
-      struct isl_tile_info dst_tile;
+      assert(anv_image_aspects_compatible(src_mask, dst_mask));
 
-      isl_surf_get_tile_info(src_surf, &src_tile);
-      isl_surf_get_tile_info(dst_surf, &dst_tile);
-
-      uint32_t tile_width_B;
-      uint32_t tile_width_el, tile_height_el;
-      if (src_tile.phys_extent_B.w > dst_tile.phys_extent_B.w) {
-         tile_width_B   = src_tile.phys_extent_B.w;
-         tile_width_el  = src_tile.logical_extent_el.w;
-         tile_height_el = src_tile.logical_extent_el.h;
-      } else {
-         tile_width_B   = dst_tile.phys_extent_B.w;
-         tile_width_el  = dst_tile.logical_extent_el.w;
-         tile_height_el = dst_tile.logical_extent_el.h;
-      }
-
-      /* There is no requirement that the extent be aligned to the texel block
-       * size.
-       */
-      VkOffset3D src_offset_el =
-         vk_offset3d_to_el(src_surf->format, region->srcOffset);
-      VkOffset3D dst_offset_el =
-         vk_offset3d_to_el(src_surf->format, region->dstOffset);
-      VkExtent3D extent_el =
-         vk_extent3d_to_el(src_surf->format, region->extent);
-
-      /* linear-to-linear case */
-      if (tile_width_el == 1 && tile_height_el == 1) {
-         tile_width_el = MIN2(4096 / (src_tile.format_bpb / 8),
-                              extent_el.width);
-         tile_height_el = 4096 / (tile_width_el * (src_tile.format_bpb / 8));
-         tile_width_B = tile_width_el * src_tile.format_bpb / 8;
-      }
-
-      uint32_t layer_count =
-         vk_image_subresource_layer_count(&src_image->vk, &region->srcSubresource);
-      for (uint32_t a = 0; a < layer_count; a++) {
-         for (uint32_t z = 0; z < region->extent.depth; z++) {
-            for (uint32_t y_el = 0; y_el < extent_el.height; y_el += tile_height_el) {
-               for (uint32_t x_el = 0; x_el < extent_el.width; x_el += tile_width_el) {
-                  VkOffset3D src_offset = {
-                     .x = src_offset_el.x + x_el,
-                     .y = src_offset_el.y + y_el,
-                  };
-                  VkOffset3D dst_offset = {
-                     .x = dst_offset_el.x + x_el,
-                     .y = dst_offset_el.y + y_el,
-                  };
-                  VkExtent3D extent = {
-                     .width  = MIN2(extent_el.width - x_el, tile_width_el),
-                     .height = MIN2(extent_el.height - y_el, tile_height_el),
-                     .depth  = 1,
-                  };
-
-                  anv_copy_image_memory(device, src_surf,
-                                        src_binding,
-                                        src_anv_surf->memory_range.offset,
-                                        tmp_map,
-                                        tile_width_B, 0,
-                                        &src_offset, &extent,
-                                        region->srcSubresource.mipLevel,
-                                        region->srcSubresource.baseArrayLayer,
-                                        region->srcOffset.z,
-                                        a, z,
-                                        false /* mem_to_img */);
-                  anv_copy_image_memory(device, dst_surf,
-                                        dst_binding,
-                                        dst_anv_surf->memory_range.offset,
-                                        tmp_map,
-                                        tile_width_B, 0,
-                                        &dst_offset, &extent,
-                                        region->dstSubresource.mipLevel,
-                                        region->dstSubresource.baseArrayLayer,
-                                        region->dstOffset.z,
-                                        a, z,
-                                        true /* mem_to_img */);
-               }
-            }
+      if (util_bitcount(src_mask) > 1) {
+         anv_foreach_image_aspect_bit(aspect_bit, src_image, src_mask) {
+            int plane = anv_image_aspect_to_plane(src_image,
+                                                  1UL << aspect_bit);
+            copy_image_to_image(device, src_image, dst_image,
+                                plane, plane, region, tmp_map);
          }
+      } else {
+         int src_plane = anv_image_aspect_to_plane(src_image, src_mask);
+         int dst_plane = anv_image_aspect_to_plane(dst_image, dst_mask);
+         copy_image_to_image(device, src_image, dst_image,
+                             src_plane, dst_plane, region, tmp_map);
       }
    }
 
