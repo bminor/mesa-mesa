@@ -126,7 +126,20 @@ llvmpipe_create_image_handle(struct pipe_context *pctx, const struct pipe_image_
    state.static_state.pot_height = false;
    state.static_state.pot_depth = false;
 
-   if (view->u.tex.first_layer == view->u.tex.last_layer) {
+   /*
+    * Rely on single_layer_view to distinguish array and non-array targets,
+    * since there's no target field in pipe_image_view, and there can
+    * be mismatch between resource and view.
+    * We cannot unconditionally demote array to non-array targets if there's
+    * only one layer, since we'd then ignore the layer coord completely and
+    * OOB behavior would be wrong.
+    *
+    * XXX shouldn't we do this in lp_sampler_static_texture_state_image()
+    * in the first place (there's more callers)?
+    */
+   if (view->resource && llvmpipe_resource_is_texture(view->resource) &&
+       view->u.tex.single_layer_view &&
+       view->u.tex.first_layer == view->u.tex.last_layer) {
       if (state.static_state.target == PIPE_TEXTURE_1D_ARRAY)
          state.static_state.target = PIPE_TEXTURE_1D;
       else if (state.static_state.target == PIPE_TEXTURE_2D_ARRAY ||

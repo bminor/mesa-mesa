@@ -337,6 +337,26 @@ lvp_create_imageview(const struct lvp_image_view *iv, VkFormat plane_format, uns
       if (view.resource->target == PIPE_TEXTURE_3D)
          view.u.tex.is_2d_view_of_3d = true;
    }
+
+   if (iv->vk.view_type == VK_IMAGE_VIEW_TYPE_1D ||
+       iv->vk.view_type == VK_IMAGE_VIEW_TYPE_2D) {
+      /*
+       * There's no target field in pipe_image_view, but
+       * there's a single_layer_view which the mesa state tracker
+       * uses for a similar purpose, although not exactly the same,
+       * here we just use it to indicate the view is of a non-array
+       * type.
+       * Note that the layered-ness must match between shader dcl
+       * and view (but not between view and resource).
+       * We ignore VK_IMAGE_VIEW_TYPE_CUBE here, should be fine
+       * since there's no difference in accessing cube and cube arrays
+       * (as layer and face combine into one var), and for size queries
+       * we fix up targets separately (always using array types).
+       */
+      assert(view.u.tex.first_layer == view.u.tex.last_layer);
+      view.u.tex.single_layer_view = 1;
+   }
+
    view.u.tex.level = iv->vk.base_mip_level;
    return view;
 }
