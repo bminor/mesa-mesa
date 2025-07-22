@@ -83,7 +83,7 @@ typedef struct nir_schedule_options {
 
 } nir_schedule_options;
 
-void nir_schedule(nir_shader *shader, const nir_schedule_options *options);
+bool nir_schedule(nir_shader *shader, const nir_schedule_options *options);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1270,7 +1270,7 @@ nir_schedule_validate_uses(nir_schedule_scoreboard *scoreboard)
  * free a register immediately.  The amount below the limit is up to you to
  * tune.
  */
-void
+bool
 nir_schedule(nir_shader *shader,
              const nir_schedule_options *options)
 {
@@ -1286,9 +1286,14 @@ nir_schedule(nir_shader *shader,
       nir_foreach_block(block, impl) {
          nir_schedule_block(scoreboard, block);
       }
+
+      nir_progress(true, impl, nir_metadata_control_flow |
+                               nir_metadata_divergence |
+                               nir_metadata_live_defs);
    }
 
    nir_schedule_validate_uses(scoreboard);
 
    ralloc_free(scoreboard);
+   return true;
 }
