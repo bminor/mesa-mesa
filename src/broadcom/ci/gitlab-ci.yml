@@ -26,7 +26,7 @@ vc4-rpi3-gl:arm64:
     DEQP_SUITE: broadcom-rpi3-gl
     HWCI_START_WESTON: 1
 
-vc4-rpi3-gl-piglit-full:arm64:
+.vc4-rpi3-gl-piglit-full:arm64:
   extends:
     - vc4-rpi3-gl:arm64
     - .vc4-manual-rules
@@ -534,7 +534,7 @@ v3dv-rpi5-vk-full:arm64:
     DEQP_SUITE: broadcom-rpi-skqp
     HWCI_START_WESTON: 1
 
-rpi4-skqp:arm64:
+.rpi4-skqp:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm64-gl
@@ -559,7 +559,7 @@ ci-tron-rpi4-skqp:arm64:
     HWCI_START_WESTON: 1
     FLAKES_CHANNEL: "#videocore-ci"
 
-rpi5-skqp:arm64:
+.rpi5-skqp:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .broadcom-test:arm64-gl
