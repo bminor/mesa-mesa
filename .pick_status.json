@@ -7324,7 +7324,7 @@
         "description": "vulkan/video: Fix h265 level values",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8243145f02c94315de898102f741edfb340c01b3",
         "notes": null
