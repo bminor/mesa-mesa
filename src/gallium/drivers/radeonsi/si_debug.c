@@ -352,7 +352,7 @@ static void si_parse_current_ib(FILE *f, struct radeon_cmdbuf *cs, unsigned begi
    fprintf(f, "------------------ %s begin (dw = %u) ------------------\n", ip_name, begin);
 
    for (unsigned prev_idx = 0; prev_idx < cs->num_prev; ++prev_idx) {
-      struct radeon_cmdbuf_chunk *chunk = &cs->prev[prev_idx];
+      struct ac_cmdbuf *chunk = &cs->prev[prev_idx];
 
       if (begin < chunk->cdw) {
          struct ac_ib_parser ib_parser = {
@@ -1125,7 +1125,7 @@ void si_gather_context_rolls(struct si_context *sctx)
    uint32_t *ib_dw_sizes = alloca(sizeof(ib_dw_sizes[0]) * (cs->num_prev + 1));
 
    for (unsigned i = 0; i < cs->num_prev; i++) {
-      struct radeon_cmdbuf_chunk *chunk = &cs->prev[i];
+      struct ac_cmdbuf *chunk = &cs->prev[i];
 
       ibs[i] = chunk->buf;
       ib_dw_sizes[i] = chunk->cdw;

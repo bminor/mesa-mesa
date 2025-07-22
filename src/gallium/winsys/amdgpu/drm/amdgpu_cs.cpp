@@ -1087,9 +1087,9 @@ static bool amdgpu_cs_check_space(struct radeon_cmdbuf *rcs, unsigned dw)
    /* Allocate a new chunk */
    if (rcs->num_prev >= rcs->max_prev) {
       unsigned new_max_prev = MAX2(1, 2 * rcs->max_prev);
-      struct radeon_cmdbuf_chunk *new_prev;
+      struct ac_cmdbuf *new_prev;
 
-      new_prev = (struct radeon_cmdbuf_chunk*)
+      new_prev = (struct ac_cmdbuf*)
                  REALLOC(rcs->prev, sizeof(*new_prev) * rcs->max_prev,
                          sizeof(*new_prev) * new_max_prev);
       if (!new_prev)

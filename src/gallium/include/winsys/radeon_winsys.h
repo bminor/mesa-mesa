@@ -24,6 +24,7 @@
 #define RADEON_FLUSH_ASYNC_START_NEXT_GFX_IB_NOW                                                   \
    (PIPE_FLUSH_ASYNC | RADEON_FLUSH_START_NEXT_GFX_IB_NOW)
 
+#include "amd/common/ac_cmdbuf.h"
 #include "amd/common/ac_gpu_info.h"
 #include "amd/common/ac_surface.h"
 #include "amd/common/ac_pm4.h"
@@ -208,15 +209,9 @@ enum radeon_ctx_pstate
 struct winsys_handle;
 struct radeon_winsys_ctx;
 
-struct radeon_cmdbuf_chunk {
-   unsigned cdw;    /* Number of used dwords. */
-   unsigned max_dw; /* Maximum number of dwords. */
-   uint32_t *buf;   /* The base pointer of the chunk. */
-};
-
 struct radeon_cmdbuf {
-   struct radeon_cmdbuf_chunk current;
-   struct radeon_cmdbuf_chunk *prev;
+   struct ac_cmdbuf current;
+   struct ac_cmdbuf *prev;
    uint16_t num_prev; /* Number of previous chunks. */
    uint16_t max_prev; /* Space in array pointed to by prev. */
    unsigned prev_dw;  /* Total number of dwords in previous chunks. */
