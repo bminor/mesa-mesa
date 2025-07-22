@@ -7,6 +7,18 @@
       </group>
     </group>
   </struct>
+  <struct name="TEST_DWORD_FIELDS" length="4">
+    <field name="value_dw0" start="0" end="15" type="uint" />
+    <field name="value_dw1" start="32" end="63" type="uint" />
+    <field name="value_dw2" start="72" end="87" type="uint" />
+    <field name="single_bit" start="101" end="101" type="bool" />
+  </struct>
+  <struct name="TEST_OFFSET_BITS" length="6">
+    <field name="header" start="0" end="31" type="uint" />
+    <group count="3" start="48" size="16">
+      <field name="data" start="0" end="15" type="uint" />
+    </group>
+  </struct>
   <struct name="TEST_STRUCT" length="2">
     <field name="number1" start="0" end="15" type="uint" />
     <field name="number2" start="16" end="31" type="uint" />

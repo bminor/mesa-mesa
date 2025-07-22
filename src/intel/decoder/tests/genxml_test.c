@@ -127,6 +127,86 @@ test_two_levels(struct intel_spec *spec) {
    }
 }
 
+static void
+test_dword_fields(struct intel_spec *spec) {
+   struct GFX9_TEST_DWORD_FIELDS test = {
+      .value_dw0 = 0x1234,
+      .value_dw1 = 0xABCDEF00,
+      .value_dw2 = 0x5678,
+      .single_bit = true,
+   };
+
+   uint32_t dw[GFX9_TEST_DWORD_FIELDS_length];
+   GFX9_TEST_DWORD_FIELDS_pack(NULL, dw, &test);
+
+   struct intel_group *group;
+   group = intel_spec_find_struct(spec, "TEST_DWORD_FIELDS");
+
+   assert(group != NULL);
+
+   if (!quiet) {
+      printf("\nTEST_DWORD_FIELDS:\n");
+      intel_print_group(stdout, group, 0, dw, 0, false);
+   }
+
+   struct intel_field_iterator iter;
+   intel_field_iterator_init(&iter, group, dw, 0, false);
+
+   while (intel_field_iterator_next(&iter)) {
+      if (strcmp(iter.name, "value_dw0") == 0) {
+         uint16_t value = iter.raw_value;
+         assert(value == test.value_dw0);
+      } else if (strcmp(iter.name, "value_dw1") == 0) {
+         uint32_t value = iter.raw_value;
+         assert(value == test.value_dw1);
+      } else if (strcmp(iter.name, "value_dw2") == 0) {
+         uint16_t value = iter.raw_value;
+         assert(value == test.value_dw2);
+      } else if (strcmp(iter.name, "single_bit") == 0) {
+         bool value = iter.raw_value;
+         assert(value == test.single_bit);
+      }
+   }
+}
+
+static void
+test_offset_bits(struct intel_spec *spec) {
+   struct GFX9_TEST_OFFSET_BITS test = {
+      .header = 0x12345678,
+   };
+
+   for (int i = 0; i < 3; i++) {
+      test.data[i] = 0x1000 + i;
+   }
+
+   uint32_t dw[GFX9_TEST_OFFSET_BITS_length];
+   GFX9_TEST_OFFSET_BITS_pack(NULL, dw, &test);
+
+   struct intel_group *group;
+   group = intel_spec_find_struct(spec, "TEST_OFFSET_BITS");
+
+   assert(group != NULL);
+
+   if (!quiet) {
+      printf("\nTEST_OFFSET_BITS:\n");
+      intel_print_group(stdout, group, 0, dw, 0, false);
+   }
+
+   struct intel_field_iterator iter;
+   intel_field_iterator_init(&iter, group, dw, 0, false);
+
+   while (intel_field_iterator_next(&iter)) {
+      int idx;
+      if (strcmp(iter.name, "header") == 0) {
+         uint32_t value = iter.raw_value;
+         assert(value == test.header);
+      } else if (sscanf(iter.name, "data[%d]", &idx) == 1) {
+         uint16_t value = iter.raw_value;
+         assert(value == test.data[idx]);
+      }
+   }
+}
+
 int main(int argc, char **argv)
 {
    struct intel_spec *spec = intel_spec_load_filename(GENXML_DIR, GENXML_FILE);
@@ -136,6 +216,8 @@ int main(int argc, char **argv)
 
    test_struct(spec);
    test_two_levels(spec);
+   test_dword_fields(spec);
+   test_offset_bits(spec);
 
    intel_spec_destroy(spec);
 
