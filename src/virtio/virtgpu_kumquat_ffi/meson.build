@@ -5,7 +5,7 @@ inc_virtgpu_kumquat_ffi = include_directories('include')
 
 dep_log = dependency('log',
   version: '>= 0.4.22',
-  fallback: ['log', 'dep_log'],
+  fallback: ['log-0.4-rs', 'dep_log'],
   required: true,
 )
 

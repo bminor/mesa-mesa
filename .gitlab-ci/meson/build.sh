@@ -144,15 +144,15 @@ fi
 # shellcheck disable=2206
 meson_subprojects=(
   perfetto
-  syn
-  paste
-  pest
-  pest_derive
-  pest_generator
-  pest_meta
-  roxmltree
-  rustc-hash
-  indexmap
+  syn-2-rs
+  paste-1-rs
+  pest-2-rs
+  pest_derive-2-rs
+  pest_generator-2-rs
+  pest_meta-2-rs
+  roxmltree-0.20-rs
+  rustc-hash-2-rs
+  indexmap-2-rs
   ${FORCE_FALLBACK_FOR:-}
 )
 

@@ -125,7 +125,7 @@ idep_compiler_rs = declare_dependency(
 
 dep_syn = dependency('syn',
   version : '>= 2.0.15',
-  fallback : ['syn', 'dep_syn'],
+  fallback : ['syn-2-rs', 'dep_syn'],
   required : true,
 )
 

@@ -5,12 +5,12 @@ subdir('latencies')
 
 dep_paste = dependency('paste',
   version : '>= 1.0.14',
-  fallback : ['paste', 'dep_paste'],
+  fallback : ['paste-1-rs', 'dep_paste'],
   required : true,
 )
 
 dep_rustc_hash = dependency('rustc-hash',
-  fallback: ['rustc-hash', 'dep_rustc_hash'],
+  fallback: ['rustc-hash-2-rs', 'dep_rustc_hash'],
   required: true,
 )
 
