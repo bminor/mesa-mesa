@@ -110,20 +110,26 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
    }
    case nir_instr_type_intrinsic: {
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+
+      *can_mov_out_of_loop = false;
+
       switch (intrin->intrinsic) {
       case nir_intrinsic_load_ubo:
       case nir_intrinsic_load_ubo_vec4:
-         *can_mov_out_of_loop = false;
-         return options & nir_move_load_ubo;
       case nir_intrinsic_load_global_constant_offset:
       case nir_intrinsic_load_global_constant_bounded:
+         *can_mov_out_of_loop =
+            intrin->intrinsic == nir_intrinsic_load_global_constant_offset ||
+            intrin->intrinsic == nir_intrinsic_load_global_constant_bounded;
          return options & nir_move_load_ubo;
+
       case nir_intrinsic_load_ssbo:
       case nir_intrinsic_load_ssbo_intel:
-         *can_mov_out_of_loop = false;
-         return (options & nir_move_load_ssbo) && nir_intrinsic_can_reorder(intrin);
       case nir_intrinsic_load_global_bounded:
-         return (options & nir_move_load_ssbo) && nir_intrinsic_can_reorder(intrin);
+         *can_mov_out_of_loop =
+            intrin->intrinsic == nir_intrinsic_load_global_bounded;
+         return options & nir_move_load_ssbo && nir_intrinsic_can_reorder(intrin);
+
       case nir_intrinsic_load_input:
       case nir_intrinsic_load_per_primitive_input:
       case nir_intrinsic_load_interpolated_input:
@@ -134,19 +140,25 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       case nir_intrinsic_load_frag_coord_zw_pan:
       case nir_intrinsic_load_pixel_coord:
       case nir_intrinsic_load_attribute_pan:
+         *can_mov_out_of_loop = true;
          return options & nir_move_load_input;
+
       case nir_intrinsic_load_uniform:
       case nir_intrinsic_load_kernel_input:
+         *can_mov_out_of_loop = true;
          return options & nir_move_load_uniform;
+
       case nir_intrinsic_inverse_ballot:
       case nir_intrinsic_is_subgroup_invocation_lt_amd:
-         *can_mov_out_of_loop = false;
          return options & nir_move_copies;
+
       case nir_intrinsic_load_constant_agx:
       case nir_intrinsic_load_local_pixel_agx:
       case nir_intrinsic_load_back_face_agx:
       case nir_intrinsic_load_shader_output_pan:
+         *can_mov_out_of_loop = true;
          return true;
+
       default:
          return false;
       }
