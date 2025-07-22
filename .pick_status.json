@@ -354,7 +354,7 @@
         "description": "u_gralloc/mapper4: properly expose ChromaSiting types based on api level",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "64d18f84b0b674c4d95fe3b9c92b99b0bada3c53",
         "notes": null
