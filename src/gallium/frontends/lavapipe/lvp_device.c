@@ -2342,6 +2342,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BindImageMemory2(VkDevice _device,
       const VkBindImageMemoryInfo *bind_info = &pBindInfos[i];
       LVP_FROM_HANDLE(lvp_device_memory, mem, bind_info->memory);
       LVP_FROM_HANDLE(lvp_image, image, bind_info->image);
+      uint64_t mem_offset = bind_info->memoryOffset;
       VkBindMemoryStatusKHR *status = (void*)vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS_KHR);
 
       if (!mem) {
@@ -2355,6 +2356,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BindImageMemory2(VkDevice _device,
          assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
          mem = lvp_device_memory_from_handle(wsi_common_get_memory(
             swapchain_info->swapchain, swapchain_info->imageIndex));
+         mem_offset = 0;
 #endif
       }
 
@@ -2366,7 +2368,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BindImageMemory2(VkDevice _device,
             vk_find_struct_const(pBindInfos[i].pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
          uint8_t plane = lvp_image_aspects_to_plane(image, plane_info->planeAspect);
          result = lvp_image_plane_bind(device, &image->planes[plane],
-                                       mem, bind_info->memoryOffset, &offset_B);
+                                       mem, mem_offset, &offset_B);
          if (status)
             *status->pResult = result;
          if (result != VK_SUCCESS)
@@ -2375,7 +2377,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BindImageMemory2(VkDevice _device,
          VkResult fail = VK_SUCCESS;
          for (unsigned plane = 0; plane < image->plane_count; plane++) {
             result = lvp_image_plane_bind(device, &image->planes[plane],
-                                          mem, bind_info->memoryOffset + image->offset, &offset_B);
+                                          mem, mem_offset + image->offset, &offset_B);
             if (status)
                *status->pResult = res;
             if (result != VK_SUCCESS)
