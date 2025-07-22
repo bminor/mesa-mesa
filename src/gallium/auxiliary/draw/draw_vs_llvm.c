@@ -96,7 +96,7 @@ draw_create_vs_llvm(struct draw_context *draw,
       vs->base.state.ir.nir = state->ir.nir;
       nir_shader *nir = state->ir.nir;
       if (!nir->options->lower_uniforms_to_ubo)
-         NIR_PASS_V(state->ir.nir, nir_lower_uniforms_to_ubo, false, false);
+         NIR_PASS(_, state->ir.nir, nir_lower_uniforms_to_ubo, false, false);
       nir_tgsi_scan_shader(state->ir.nir, &vs->base.info, true);
    } else {
       /* we make a private copy of the tokens */
