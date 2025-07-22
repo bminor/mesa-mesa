@@ -324,7 +324,7 @@
         "description": "lima: fix array limit in texture mipmap descriptor",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a3f827319fb62e2af56ac0ad3d50969a4842bb0b",
         "notes": null
