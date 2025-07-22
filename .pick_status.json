@@ -2084,7 +2084,7 @@
         "description": "lavapipe: ensure to use zero memoryOffset for wsi image alias binding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ace49d9e52a6156f114ee00eec759d734bd84fc0",
         "notes": null
