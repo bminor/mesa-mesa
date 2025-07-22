@@ -492,6 +492,25 @@ cs_extract32(struct cs_builder *b, struct cs_index idx, unsigned word)
    return cs_reg32(b, idx.reg + word);
 }
 
+static inline struct cs_index
+cs_extract64(struct cs_builder *b, struct cs_index idx, unsigned word)
+{
+   assert(idx.type == CS_INDEX_REGISTER && "unsupported");
+   assert(word + 1 < idx.size && "overrun");
+
+   return cs_reg64(b, idx.reg + word);
+}
+
+static inline struct cs_index
+cs_extract_tuple(struct cs_builder *b, struct cs_index idx, unsigned word,
+                 unsigned size)
+{
+   assert(idx.type == CS_INDEX_REGISTER && "unsupported");
+   assert(word + size < idx.size && "overrun");
+
+   return cs_reg_tuple(b, idx.reg + word, size);
+}
+
 static inline struct cs_block *
 cs_cur_block(struct cs_builder *b)
 {
