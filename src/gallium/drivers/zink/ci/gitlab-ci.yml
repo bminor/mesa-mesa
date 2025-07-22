@@ -291,8 +291,8 @@ zink-radv-gfx1201-valve:
     - .radv-zink-test-valve
     - .gfx1201-test-valve
     - .zink-radv-valve-manual-rules
-  timeout: 1h 20m
+  timeout: 15m
   variables:
     GPU_VERSION: zink-radv-gfx1201
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 10
     RADV_PERFTEST: hic
