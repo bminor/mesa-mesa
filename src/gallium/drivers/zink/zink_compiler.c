@@ -6440,11 +6440,14 @@ gfx_shader_prune(struct zink_screen *screen, struct zink_shader *shader)
    assert(stage < ZINK_GFX_SHADER_COUNT);
    util_queue_fence_wait(&prog->base.cache_fence);
    unsigned stages_present = prog->stages_present;
+   unsigned stages_remaining = prog->stages_remaining;
    if (prog->shaders[MESA_SHADER_TESS_CTRL] &&
-         prog->shaders[MESA_SHADER_TESS_CTRL]->non_fs.is_generated)
+         prog->shaders[MESA_SHADER_TESS_CTRL]->non_fs.is_generated) {
       stages_present &= ~BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
+      stages_remaining &= ~BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
+   }
    unsigned idx = zink_program_cache_stages(stages_present);
-   if (!prog->base.removed && prog->stages_present == prog->stages_remaining &&
+   if (!prog->base.removed && stages_present == stages_remaining &&
          (stage == MESA_SHADER_FRAGMENT || !shader->non_fs.is_generated)) {
       struct hash_table *ht = &prog->base.ctx->program_cache[idx];
       simple_mtx_lock(&prog->base.ctx->program_lock[idx]);
