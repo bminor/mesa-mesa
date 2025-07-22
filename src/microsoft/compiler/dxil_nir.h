@@ -69,7 +69,7 @@ void
 dxil_reassign_driver_locations(nir_shader* s, nir_variable_mode modes,
    uint64_t other_stage_mask, const BITSET_WORD *other_stage_frac_mask);
 
-void dxil_nir_split_tess_ctrl(nir_shader *nir, nir_function **patch_const_func);
+bool dxil_nir_split_tess_ctrl(nir_shader *nir, nir_function **patch_const_func);
 bool dxil_nir_fixup_tess_level_for_domain(nir_shader *nir);
 bool dxil_nir_set_tcs_patches_in(nir_shader *nir, unsigned num_control_points);
 bool dxil_nir_lower_ubo_array_one_to_static(nir_shader *s);

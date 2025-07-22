@@ -6317,7 +6317,7 @@ optimize_nir(struct nir_shader *s, const struct nir_to_dxil_options *opts)
    bool progress;
    do {
       progress = false;
-      NIR_PASS_V(s, nir_lower_vars_to_ssa);
+      NIR_PASS(progress, s, nir_lower_vars_to_ssa);
       NIR_PASS(progress, s, nir_lower_indirect_derefs, nir_var_function_temp, 4);
       NIR_PASS(progress, s, nir_lower_alu_to_scalar, NULL, NULL);
       NIR_PASS(progress, s, nir_copy_prop);
@@ -6353,7 +6353,7 @@ optimize_nir(struct nir_shader *s, const struct nir_to_dxil_options *opts)
       NIR_PASS(progress, s, nir_opt_loop_unroll);
       NIR_PASS(progress, s, nir_lower_pack);
       NIR_PASS(progress, s, dxil_nir_remove_oob_array_accesses);
-      NIR_PASS_V(s, nir_lower_system_values);
+      NIR_PASS(progress, s, nir_lower_system_values);
    } while (progress);
 
    do {
@@ -6361,7 +6361,7 @@ optimize_nir(struct nir_shader *s, const struct nir_to_dxil_options *opts)
       NIR_PASS(progress, s, nir_opt_algebraic_late);
    } while (progress);
 
-   NIR_PASS_V(s, nir_lower_undef_to_zero);
+   NIR_PASS(_, s, nir_lower_undef_to_zero);
 }
 
 static
@@ -6631,16 +6631,16 @@ nir_to_dxil(struct nir_shader *s, const struct nir_to_dxil_options *opts,
          ((1ull << FRAG_RESULT_STENCIL) | (1ull << FRAG_RESULT_SAMPLE_MASK)) :
          (VARYING_BIT_PRIMITIVE_ID | VARYING_BIT_VIEWPORT | VARYING_BIT_LAYER);
 
-      NIR_PASS_V(s, dxil_nir_fix_io_uint_type, in_mask, out_mask);
+      NIR_PASS(_, s, dxil_nir_fix_io_uint_type, in_mask, out_mask);
    }
 
-   NIR_PASS_V(s, dxil_nir_lower_fquantize2f16);
-   NIR_PASS_V(s, nir_lower_frexp);
-   NIR_PASS_V(s, nir_lower_flrp, 16 | 32 | 64, true);
-   NIR_PASS_V(s, nir_lower_io, nir_var_shader_in | nir_var_shader_out, type_size_vec4, nir_lower_io_lower_64bit_to_32);
-   NIR_PASS_V(s, dxil_nir_ensure_position_writes);
-   NIR_PASS_V(s, dxil_nir_lower_system_values);
-   NIR_PASS_V(s, nir_lower_io_to_scalar, nir_var_shader_in | nir_var_system_value | nir_var_shader_out, NULL, NULL);
+   NIR_PASS(_, s, dxil_nir_lower_fquantize2f16);
+   NIR_PASS(_, s, nir_lower_frexp);
+   NIR_PASS(_, s, nir_lower_flrp, 16 | 32 | 64, true);
+   NIR_PASS(_, s, nir_lower_io, nir_var_shader_in | nir_var_shader_out, type_size_vec4, nir_lower_io_lower_64bit_to_32);
+   NIR_PASS(_, s, dxil_nir_ensure_position_writes);
+   NIR_PASS(_, s, dxil_nir_lower_system_values);
+   NIR_PASS(_, s, nir_lower_io_to_scalar, nir_var_shader_in | nir_var_system_value | nir_var_shader_out, NULL, NULL);
 
    /* Do a round of optimization to try to vectorize loads/stores. Otherwise the addresses used for loads
     * might be too opaque for the pass to see that they're next to each other. */
@@ -6653,7 +6653,7 @@ nir_to_dxil(struct nir_shader *s, const struct nir_to_dxil_options *opts,
       .callback = vectorize_filter,
       .modes = nir_var_mem_ubo | nir_var_mem_ssbo,
    };
-   NIR_PASS_V(s, nir_opt_load_store_vectorize, &vectorize_opts);
+   NIR_PASS(_, s, nir_opt_load_store_vectorize, &vectorize_opts);
 
    /* Now that they're bloated to the max, address bit size restrictions and overall size limitations for
     * a single load/store op. */
@@ -6664,45 +6664,45 @@ nir_to_dxil(struct nir_shader *s, const struct nir_to_dxil_options *opts,
       .may_lower_unaligned_stores_to_atomics = true,
       .cb_data = &mem_size_data
    };
-   NIR_PASS_V(s, nir_lower_mem_access_bit_sizes, &mem_size_options);
+   NIR_PASS(_, s, nir_lower_mem_access_bit_sizes, &mem_size_options);
 
    /* Lastly, conver byte-address UBO loads to vec-addressed. This pass can also deal with selecting sub-
     * components from the load and dealing with vec-straddling loads. */
-   NIR_PASS_V(s, nir_lower_ubo_vec4);
+   NIR_PASS(_, s, nir_lower_ubo_vec4);
 
    if (opts->shader_model_max < SHADER_MODEL_6_6) {
       /* In a later pass, load_helper_invocation will be lowered to sample mask based fallback,
        * so both load- and is- will be emulated eventually.
        */
-      NIR_PASS_V(s, nir_lower_is_helper_invocation);
+      NIR_PASS(_, s, nir_lower_is_helper_invocation);
    }
 
    if (ctx->mod.shader_kind == DXIL_HULL_SHADER)
-      NIR_PASS_V(s, dxil_nir_split_tess_ctrl, &ctx->tess_ctrl_patch_constant_func);
+      NIR_PASS(_, s, dxil_nir_split_tess_ctrl, &ctx->tess_ctrl_patch_constant_func);
 
    if (ctx->mod.shader_kind == DXIL_HULL_SHADER ||
        ctx->mod.shader_kind == DXIL_DOMAIN_SHADER) {
       /* Make sure any derefs are gone after lower_io before updating tess level vars */
-      NIR_PASS_V(s, nir_opt_dce);
-      NIR_PASS_V(s, dxil_nir_fixup_tess_level_for_domain);
+      NIR_PASS(_, s, nir_opt_dce);
+      NIR_PASS(_, s, dxil_nir_fixup_tess_level_for_domain);
    }
 
    optimize_nir(s, opts);
 
-   NIR_PASS_V(s, nir_remove_dead_variables,
+   NIR_PASS(_, s, nir_remove_dead_variables,
               nir_var_function_temp | nir_var_mem_constant | nir_var_mem_shared, NULL);
 
    if (!allocate_sysvalues(ctx))
       return false;
 
-   NIR_PASS_V(s, dxil_nir_lower_sysval_to_load_input, ctx->system_value);
-   NIR_PASS_V(s, nir_opt_dce);
+   NIR_PASS(_, s, dxil_nir_lower_sysval_to_load_input, ctx->system_value);
+   NIR_PASS(_, s, nir_opt_dce);
 
    /* This needs to be after any copy prop is done to prevent these movs from being erased */
-   NIR_PASS_V(s, dxil_nir_move_consts);
-   NIR_PASS_V(s, nir_opt_dce);
+   NIR_PASS(_, s, dxil_nir_move_consts);
+   NIR_PASS(_, s, nir_opt_dce);
 
-   NIR_PASS_V(s, dxil_nir_guess_image_formats);
+   NIR_PASS(_, s, dxil_nir_guess_image_formats);
 
    if (debug_dxil & DXIL_DEBUG_VERBOSE)
       nir_print_shader(s, stderr);

@@ -185,7 +185,7 @@ end_tcs_loop(nir_builder *b, struct tcs_patch_loop_state *state)
  * replace gl_InvocationID. This loop can be terminated when a barrier is hit. If
  * gl_InvocationID is used again after the barrier, then another loop needs to begin.
  */
-void
+bool
 dxil_nir_split_tess_ctrl(nir_shader *nir, nir_function **patch_const_func)
 {
    assert(nir->info.stage == MESA_SHADER_TESS_CTRL);
@@ -288,6 +288,10 @@ dxil_nir_split_tess_ctrl(nir_shader *nir, nir_function **patch_const_func)
    /* If we have more than one loop, SSA needs to be repaired for one loop to use defs from another. */
    if (loop_var)
       nir_repair_ssa_impl(patch_const_func_impl);
+
+   nir_progress(true, patch_const_func_impl, nir_metadata_none);
+   nir_progress(true, entrypoint, nir_metadata_none);
+   return true;
 }
 
 struct remove_tess_level_accesses_data {
