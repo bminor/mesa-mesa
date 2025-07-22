@@ -2331,63 +2331,72 @@ lvp_image_plane_bind(struct lvp_device *device,
    return VK_SUCCESS;
 }
 
-
-VKAPI_ATTR VkResult VKAPI_CALL lvp_BindImageMemory2(VkDevice _device,
-                              uint32_t bindInfoCount,
-                              const VkBindImageMemoryInfo *pBindInfos)
+static VkResult
+lvp_image_bind(struct lvp_device *device,
+               const VkBindImageMemoryInfo *bind_info)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   VkResult res = VK_SUCCESS;
-   for (uint32_t i = 0; i < bindInfoCount; ++i) {
-      const VkBindImageMemoryInfo *bind_info = &pBindInfos[i];
-      LVP_FROM_HANDLE(lvp_device_memory, mem, bind_info->memory);
-      LVP_FROM_HANDLE(lvp_image, image, bind_info->image);
-      uint64_t mem_offset = bind_info->memoryOffset;
-      VkBindMemoryStatusKHR *status = (void*)vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS_KHR);
+   LVP_FROM_HANDLE(lvp_device_memory, mem, bind_info->memory);
+   LVP_FROM_HANDLE(lvp_image, image, bind_info->image);
+   uint64_t mem_offset = bind_info->memoryOffset;
+   VkResult result;
 
-      if (!mem) {
+   if (!mem) {
 #if DETECT_OS_ANDROID
-         /* TODO handle VkNativeBufferANDROID */
-         unreachable("VkBindImageMemoryInfo with no memory");
+      /* TODO handle VkNativeBufferANDROID */
+      unreachable("VkBindImageMemoryInfo with no memory");
 #else
-         const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-            vk_find_struct_const(bind_info->pNext,
-                                 BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
-         assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
-         mem = lvp_device_memory_from_handle(wsi_common_get_memory(
-            swapchain_info->swapchain, swapchain_info->imageIndex));
-         mem_offset = 0;
+      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+         vk_find_struct_const(bind_info->pNext,
+                              BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+      assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
+      mem = lvp_device_memory_from_handle(wsi_common_get_memory(
+         swapchain_info->swapchain, swapchain_info->imageIndex));
+      mem_offset = 0;
 #endif
-      }
+   }
 
-      assert(mem);
-      uint64_t offset_B = 0;
-      VkResult result;
-      if (image->disjoint) {
-         const VkBindImagePlaneMemoryInfo *plane_info =
-            vk_find_struct_const(pBindInfos[i].pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
-         uint8_t plane = lvp_image_aspects_to_plane(image, plane_info->planeAspect);
-         result = lvp_image_plane_bind(device, &image->planes[plane],
-                                       mem, mem_offset, &offset_B);
-         if (status)
-            *status->pResult = result;
+   assert(mem);
+   uint64_t offset_B = 0;
+   if (image->disjoint) {
+      const VkBindImagePlaneMemoryInfo *plane_info =
+         vk_find_struct_const(bind_info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
+      const uint8_t plane =
+         lvp_image_aspects_to_plane(image, plane_info->planeAspect);
+      result = lvp_image_plane_bind(device, &image->planes[plane], mem,
+                                    mem_offset, &offset_B);
+      if (result != VK_SUCCESS)
+         return result;
+   } else {
+      for (unsigned plane = 0; plane < image->plane_count; plane++) {
+         result = lvp_image_plane_bind(device, &image->planes[plane], mem,
+                                       mem_offset + image->offset, &offset_B);
          if (result != VK_SUCCESS)
             return result;
-      } else {
-         VkResult fail = VK_SUCCESS;
-         for (unsigned plane = 0; plane < image->plane_count; plane++) {
-            result = lvp_image_plane_bind(device, &image->planes[plane],
-                                          mem, mem_offset + image->offset, &offset_B);
-            if (status)
-               *status->pResult = res;
-            if (result != VK_SUCCESS)
-               fail = result;
-         }
-         if (fail != VK_SUCCESS)
-            return fail;
       }
    }
-   return res;
+
+   return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+lvp_BindImageMemory2(VkDevice _device,
+                     uint32_t bindInfoCount,
+                     const VkBindImageMemoryInfo *pBindInfos)
+{
+   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VkResult result = VK_SUCCESS;
+
+   for (uint32_t i = 0; i < bindInfoCount; i++) {
+      const VkBindMemoryStatus *bind_status =
+         vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
+      VkResult bind_result = lvp_image_bind(device, &pBindInfos[i]);
+      if (bind_status)
+         *bind_status->pResult = bind_result;
+      if (bind_result != VK_SUCCESS)
+         result = bind_result;
+   }
+
+   return result;
 }
 
 #ifdef PIPE_MEMORY_FD
