@@ -76,6 +76,14 @@ etna_sampler_view_desc(struct pipe_sampler_view *view)
    return (struct etna_sampler_view_desc *)view;
 }
 
+static inline
+uint32_t etna_lod_to_fixp58(float f)
+{
+   f = CLAMP(f, -16.0f, 15.0f + (255.0f / 256.0f));
+
+   return etna_float_to_fixp88(f);
+}
+
 static void *
 etna_create_sampler_state_desc(struct pipe_context *pipe,
                           const struct pipe_sampler_state *ss)
@@ -100,8 +108,8 @@ etna_create_sampler_state_desc(struct pipe_context *pipe,
       VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_UNK21;
       /* no ROUND_UV bit? */
    cs->SAMP_CTRL1 = VIVS_NTE_DESCRIPTOR_SAMP_CTRL1_UNK1;
-   uint32_t min_lod_fp8 = MIN2(etna_float_to_fixp88(ss->min_lod), 0xfff);
-   uint32_t max_lod_fp8 = MIN2(etna_float_to_fixp88(ss->max_lod), 0xfff);
+   uint32_t min_lod_fp8 = etna_lod_to_fixp58(ss->min_lod);
+   uint32_t max_lod_fp8 = etna_lod_to_fixp58(ss->max_lod);
    uint32_t max_lod_min = ss->min_img_filter != ss->mag_img_filter ? 4 : 0;
 
    cs->SAMP_LOD_MINMAX =
