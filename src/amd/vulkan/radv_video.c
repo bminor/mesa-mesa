@@ -1014,6 +1014,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       ext->codedPictureAlignment.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 8 : 64;
       ext->codedPictureAlignment.height = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 2 : 16;
       pCapabilities->pictureAccessGranularity = ext->codedPictureAlignment;
+      if (enc_caps)
+         enc_caps->encodeInputPictureGranularity = pCapabilities->pictureAccessGranularity;
       ext->maxTiles.width = 2;
       ext->maxTiles.height = 16;
       ext->minTileSize.width = 64;
