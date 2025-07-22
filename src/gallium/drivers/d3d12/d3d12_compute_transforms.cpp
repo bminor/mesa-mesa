@@ -380,7 +380,7 @@ get_query_resolve(const nir_shader_compiler_options *options, const d3d12_comput
    b.shader->info.num_ssbos = key->query_resolve.num_subqueries + !key->query_resolve.is_resolve_in_place;
    b.shader->info.num_ubos = 0;
 
-   NIR_PASS_V(b.shader, nir_lower_convert_alu_types, NULL);
+   NIR_PASS(_, b.shader, nir_lower_convert_alu_types, NULL);
 
    return b.shader;
 }
