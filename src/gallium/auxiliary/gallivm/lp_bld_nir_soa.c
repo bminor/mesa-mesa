@@ -5631,7 +5631,7 @@ visit_call(struct lp_build_nir_soa_context *bld,
 
       LLVMValueRef packed_arg = arg[0];
       if (nir_src_num_components(instr->params[i]) > 1)
-         packed_arg = lp_build_gather_values(bld->base.gallivm, arg, nir_src_num_components(instr->params[i]));
+         packed_arg = lp_build_gather_array(bld->base.gallivm, arg, nir_src_num_components(instr->params[i]));
 
       args[i + LP_RESV_FUNC_ARGS] = packed_arg;
    }

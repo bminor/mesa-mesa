@@ -599,6 +599,28 @@ lp_build_gather_values(struct gallivm_state * gallivm,
    return vec;
 }
 
+
+/**
+ * `lp_build_gather_array` has the same function as `lp_build_gather_values`,
+ * but gathers values into an Array instead of a Vector. This function can be
+ * used for values that are not valid Vector element types.
+ */
+LLVMValueRef
+lp_build_gather_array(struct gallivm_state * gallivm,
+                      LLVMValueRef * values,
+                      unsigned value_count)
+{
+   LLVMTypeRef arr_type = LLVMArrayType(LLVMTypeOf(values[0]), value_count);
+   LLVMBuilderRef builder = gallivm->builder;
+   LLVMValueRef arr = LLVMGetUndef(arr_type);
+   unsigned i;
+
+   for (i = 0; i < value_count; i++) {
+      arr = LLVMBuildInsertValue(builder, arr, values[i], i, "");
+   }
+   return arr;
+}
+
 LLVMValueRef
 lp_build_masked_gather(struct gallivm_state *gallivm,
                        unsigned length,

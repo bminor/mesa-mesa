@@ -67,6 +67,11 @@ lp_build_gather_values(struct gallivm_state * gallivm,
                        unsigned value_count);
 
 LLVMValueRef
+lp_build_gather_array(struct gallivm_state * gallivm,
+                      LLVMValueRef * values,
+                      unsigned value_count);
+
+LLVMValueRef
 lp_build_masked_gather(struct gallivm_state *gallivm,
                        unsigned length,
                        unsigned bit_size,
