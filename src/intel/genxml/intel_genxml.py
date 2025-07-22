@@ -30,7 +30,20 @@ def get_value(element: et.Element) -> int:
     return int(element.attrib['value'], 0)
 
 def get_start(element: et.Element) -> int:
-    return int(element.attrib['start'], 0)
+    attrs = element.attrib
+
+    if 'start' in attrs:
+        return int(attrs['start'], 0)
+
+    dword = int(attrs['dword'])
+    offset = 0
+
+    if 'bits' in attrs:
+        offset = int(attrs['bits'].split(':')[1])
+    elif 'offset_bits' in attrs:
+        offset = int(attrs['offset_bits'])
+
+    return dword * 32 + offset
 
 
 BASE_TYPES = {
@@ -87,17 +100,17 @@ GENXML_DESC = {
     'exclude'     : [ 'name', ],
     'enum'        : [ 'name', 'value', 'prefix', ],
     'struct'      : [ 'name', 'length', ],
-    'field'       : [ 'name', 'start', 'end', 'type', 'default', 'prefix', 'nonzero' ],
+    'field'       : [ 'name', 'dword', 'bits', 'start', 'end', 'type', 'default', 'prefix', 'nonzero' ],
     'instruction' : [ 'name', 'bias', 'length', 'engine', ],
     'value'       : [ 'name', 'value', 'dont_use', ],
-    'group'       : [ 'count', 'start', 'size', ],
+    'group'       : [ 'count', 'dword', 'offset_bits', 'start', 'size', ],
     'register'    : [ 'name', 'length', 'num', ],
 }
 
 
 def node_validator(old: et.Element, new: et.Element) -> bool:
     """Compare to ElementTree Element nodes.
-    
+
     There is no builtin equality method, so calling `et.Element == et.Element` is
     equivalent to calling `et.Element is et.Element`. We instead want to compare
     that the contents are the same, including the order of children and attributes
@@ -209,6 +222,7 @@ def genxml_path_to_key(path):
 
 def sort_genxml_files(files):
     files.sort(key=genxml_path_to_key)
+
 
 class GenXml(object):
     def __init__(self, filename, import_xml=False, files=None):
@@ -465,6 +479,58 @@ class GenXml(object):
             return False
         return all(node_validator(old, new)
                    for old, new in zip(self.et.getroot(), other.et.getroot()))
+
+    def normalize_to_old_bits_format(self):
+        def convert_elem(elem):
+            attrs = elem.attrib
+            if elem.tag == 'field' and 'dword' in attrs and 'bits' in attrs:
+                dword = int(attrs['dword'])
+                end_bit, start_bit = map(int, attrs['bits'].split(':'))
+
+                attrs['start'] = str(dword * 32 + start_bit)
+                attrs['end'] = str(dword * 32 + end_bit)
+
+                attrs.pop('dword', None)
+                attrs.pop('bits', None)
+
+            elif elem.tag == 'group' and 'dword' in attrs:
+                dword = int(attrs['dword'])
+                offset_bits = int(attrs.get('offset_bits', 0))
+
+                attrs['start'] = str(dword * 32 + offset_bits)
+
+                attrs.pop('dword', None)
+                attrs.pop('offset_bits', None)
+
+            for child in elem:
+                convert_elem(child)
+        convert_elem(self.et.getroot())
+
+    def normalize_to_new_bits_format(self):
+        def convert_elem(elem):
+            attrs = elem.attrib
+            if elem.tag == 'field' and 'start' in attrs and 'end' in attrs:
+                dword, start = divmod(int(attrs['start']), 32)
+                end = int(attrs['end']) - (dword * 32)
+
+                attrs['dword'] = str(dword)
+                attrs['bits'] = f"{end}:{start}"
+
+                attrs.pop('start', None)
+                attrs.pop('end', None)
+
+            elif elem.tag == 'group' and 'start' in attrs:
+                dword, offset_bits = divmod(int(attrs['start']), 32)
+
+                attrs['dword'] = str(dword)
+                if offset_bits:
+                    attrs['offset_bits'] = str(offset_bits)
+
+                attrs.pop('start', None)
+
+            for child in elem:
+                convert_elem(child)
+        convert_elem(self.et.getroot())
 
     def write_file(self):
         try:

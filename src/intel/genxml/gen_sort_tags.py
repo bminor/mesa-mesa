@@ -18,6 +18,8 @@ def main() -> None:
                         type=pathlib.Path)
     parser.add_argument('--validate', action='store_true')
     parser.add_argument('--quiet', action='store_true')
+    parser.add_argument('--bits-format', choices=['new', 'old'], default='old',
+                        help="'new' for dword/bits; 'old' for start/end (default=%(default)s)")
     args: Args = parser.parse_args()
 
     for filename in args.files:
@@ -25,6 +27,11 @@ def main() -> None:
             print('Processing {}... '.format(filename), end='', flush=True)
 
         genxml = intel_genxml.GenXml(filename)
+
+        if args.bits_format == 'old':
+            genxml.normalize_to_old_bits_format()
+        elif args.bits_format == 'new':
+            genxml.normalize_to_new_bits_format()
 
         if args.validate:
             assert genxml.is_equivalent_xml(genxml.sorted_copy()), \
