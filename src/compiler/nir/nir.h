@@ -6219,6 +6219,10 @@ typedef enum {
    nir_move_load_uniform =             BITFIELD_BIT(20),
    nir_move_load_buffer_amd =          BITFIELD_BIT(21),
    nir_move_load_frag_coord =          BITFIELD_BIT(22),
+
+   /* The following options only impact load_global/ubo/ssbo/smem_amd. */
+   nir_move_only_convergent =          BITFIELD_BIT(30),
+   nir_move_only_divergent =           BITFIELD_BIT(31),
 } nir_move_options;
 
 bool nir_can_move_instr(nir_instr *instr, nir_move_options options);

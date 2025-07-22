@@ -147,6 +147,19 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       if (!nir_intrinsic_can_reorder(intrin))
          return false;
 
+      if (intrin->intrinsic == nir_intrinsic_load_global ||
+          intrin->intrinsic == nir_intrinsic_load_ubo ||
+          intrin->intrinsic == nir_intrinsic_load_ssbo ||
+          intrin->intrinsic == nir_intrinsic_load_smem_amd) {
+         if (intrin->def.divergent) {
+            if (options & nir_move_only_convergent)
+               return false;
+         } else {
+            if (options & nir_move_only_divergent)
+               return false;
+         }
+      }
+
       *can_mov_out_of_loop = false;
 
       switch (intrin->intrinsic) {
@@ -345,7 +358,10 @@ nir_opt_sink(nir_shader *shader, nir_move_options options)
 
    nir_foreach_function_impl(impl, shader) {
       nir_metadata_require(impl,
-                           nir_metadata_control_flow);
+                           nir_metadata_control_flow |
+                           (options & (nir_move_only_convergent |
+                                       nir_move_only_divergent) ?
+                               nir_metadata_divergence : 0));
 
       nir_foreach_block_reverse(block, impl) {
          nir_foreach_instr_reverse_safe(instr, block) {

@@ -138,6 +138,9 @@ nir_opt_move(nir_shader *shader, nir_move_options options)
    bool progress = false;
 
    nir_foreach_function_impl(impl, shader) {
+      if (options & (nir_move_only_convergent | nir_move_only_divergent))
+         nir_metadata_require(impl, nir_metadata_divergence);
+
       bool impl_progress = false;
       nir_foreach_block(block, impl) {
          if (nir_opt_move_block(block, options))
