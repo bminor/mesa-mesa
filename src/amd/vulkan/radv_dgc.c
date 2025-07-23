@@ -3339,38 +3339,38 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint8_t *ptr = set->mapped_ptr + set->stride * index;
    struct radv_compute_pipeline_metadata md;
-   struct radeon_cmdbuf *cs;
+   struct radv_cmd_stream cs;
 
    assert(shader->info.stage == MESA_SHADER_COMPUTE);
    radv_get_compute_shader_metadata(device, shader, &md);
 
-   cs = calloc(1, sizeof(*cs));
-   if (!cs)
+   cs.b = calloc(1, sizeof(*cs.b));
+   if (!cs.b)
       return;
 
-   cs->reserved_dw = cs->max_dw = 32;
-   cs->buf = malloc(cs->max_dw * 4);
-   if (!cs->buf) {
-      free(cs);
+   cs.b->reserved_dw = cs.b->max_dw = 32;
+   cs.b->buf = malloc(cs.b->max_dw * 4);
+   if (!cs.b->buf) {
+      free(cs.b);
       return;
    }
 
-   radv_emit_compute_shader(pdev, cs, shader);
+   radv_emit_compute_shader(pdev, &cs, shader);
 
    memcpy(ptr, &md, sizeof(md));
    ptr += sizeof(md);
 
-   memcpy(ptr, &cs->cdw, sizeof(uint32_t));
+   memcpy(ptr, &cs.b->cdw, sizeof(uint32_t));
    ptr += sizeof(uint32_t);
 
-   memcpy(ptr, cs->buf, cs->cdw * sizeof(uint32_t));
-   ptr += cs->cdw * sizeof(uint32_t);
+   memcpy(ptr, cs.b->buf, cs.b->cdw * sizeof(uint32_t));
+   ptr += cs.b->cdw * sizeof(uint32_t);
 
    set->compute_scratch_size_per_wave = MAX2(set->compute_scratch_size_per_wave, shader->config.scratch_bytes_per_wave);
    set->compute_scratch_waves = MAX2(set->compute_scratch_waves, radv_get_max_scratch_waves(device, shader));
 
-   free(cs->buf);
-   free(cs);
+   free(cs.b->buf);
+   free(cs.b);
 }
 
 static void

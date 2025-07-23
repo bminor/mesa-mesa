@@ -346,17 +346,17 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
 }
 
 void
-radv_sdma_emit_nop(const struct radv_device *device, struct radeon_cmdbuf *cs)
+radv_sdma_emit_nop(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
    /* SDMA NOP acts as a fence command and causes the SDMA engine to wait for pending copy operations. */
-   radeon_check_space(device->ws, cs, 1);
+   radeon_check_space(device->ws, cs->b, 1);
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0));
    radeon_end();
 }
 
 void
-radv_sdma_emit_write_timestamp(struct radeon_cmdbuf *cs, uint64_t va)
+radv_sdma_emit_write_timestamp(struct radv_cmd_stream *cs, uint64_t va)
 {
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_TIMESTAMP, SDMA_TS_SUB_OPCODE_GET_GLOBAL_TIMESTAMP, 0));
@@ -366,7 +366,7 @@ radv_sdma_emit_write_timestamp(struct radeon_cmdbuf *cs, uint64_t va)
 }
 
 void
-radv_sdma_emit_fence(struct radeon_cmdbuf *cs, uint64_t va, uint32_t fence)
+radv_sdma_emit_fence(struct radv_cmd_stream *cs, uint64_t va, uint32_t fence)
 {
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_FENCE, 0, SDMA_FENCE_MTYPE_UC));
@@ -377,7 +377,7 @@ radv_sdma_emit_fence(struct radeon_cmdbuf *cs, uint64_t va, uint32_t fence)
 }
 
 void
-radv_sdma_emit_wait_mem(struct radeon_cmdbuf *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask)
+radv_sdma_emit_wait_mem(struct radv_cmd_stream *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask)
 {
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_POLL_REGMEM, 0, 0) | op << 28 | SDMA_POLL_MEM);
@@ -390,7 +390,7 @@ radv_sdma_emit_wait_mem(struct radeon_cmdbuf *cs, uint32_t op, uint64_t va, uint
 }
 
 void
-radv_sdma_emit_write_data_head(struct radeon_cmdbuf *cs, uint64_t va, uint32_t count)
+radv_sdma_emit_write_data_head(struct radv_cmd_stream *cs, uint64_t va, uint32_t count)
 {
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_WRITE, SDMA_WRITE_SUB_OPCODE_LINEAR, 0));
@@ -401,7 +401,7 @@ radv_sdma_emit_write_data_head(struct radeon_cmdbuf *cs, uint64_t va, uint32_t c
 }
 
 void
-radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbuf *cs, uint64_t src_va, uint64_t dst_va,
+radv_sdma_copy_memory(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t src_va, uint64_t dst_va,
                       uint64_t size)
 {
    if (size == 0)
@@ -428,7 +428,7 @@ radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbuf *cs
       ncopy++;
    }
 
-   radeon_check_space(device->ws, cs, ncopy * 7);
+   radeon_check_space(device->ws, cs->b, ncopy * 7);
 
    radeon_begin(cs);
 
@@ -450,7 +450,7 @@ radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbuf *cs
 }
 
 void
-radv_sdma_fill_memory(const struct radv_device *device, struct radeon_cmdbuf *cs, const uint64_t va,
+radv_sdma_fill_memory(const struct radv_device *device, struct radv_cmd_stream *cs, const uint64_t va,
                       const uint64_t size, const uint32_t value)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -467,7 +467,7 @@ radv_sdma_fill_memory(const struct radv_device *device, struct radeon_cmdbuf *cs
     */
    const uint64_t max_fill_bytes = BITFIELD64_MASK(ver >= SDMA_6_0 ? 30 : 22) & ~0x3;
    const unsigned num_packets = DIV_ROUND_UP(size, max_fill_bytes);
-   ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs, num_packets * 5);
+   ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, num_packets * 5);
 
    radeon_begin(cs);
 
@@ -484,11 +484,11 @@ radv_sdma_fill_memory(const struct radv_device *device, struct radeon_cmdbuf *cs
    }
 
    radeon_end();
-   assert(cs->cdw <= cdw_max);
+   assert(cs->b->cdw <= cdw_max);
 }
 
 static void
-radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct radeon_cmdbuf *cs,
+radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct radv_cmd_stream *cs,
                                       const struct radv_sdma_surf *const src, const struct radv_sdma_surf *const dst,
                                       const VkExtent3D pix_extent)
 {
@@ -524,7 +524,7 @@ radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct r
    dst_off.x *= texel_scale;
    ext.width *= texel_scale;
 
-   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs, 13);
+   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs->b, 13);
 
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR_SUB_WINDOW, 0) | util_logbase2(src->bpp)
@@ -543,11 +543,11 @@ radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct r
    radeon_emit((ext.depth - 1));
    radeon_end();
 
-   assert(cs->cdw == cdw_end);
+   assert(cs->b->cdw == cdw_end);
 }
 
 static void
-radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct radeon_cmdbuf *cs,
+radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct radv_cmd_stream *cs,
                                      const struct radv_sdma_surf *const tiled,
                                      const struct radv_sdma_surf *const linear, const VkExtent3D pix_extent,
                                      const bool detile)
@@ -570,7 +570,7 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    assert(util_is_power_of_two_nonzero(tiled->bpp));
    radv_sdma_check_pitches(linear_pitch, linear_slice_pitch, tiled->bpp, uses_depth);
 
-   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs, 14 + (dcc ? 3 : 0));
+   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs->b, 14 + (dcc ? 3 : 0));
 
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_TILED_SUB_WINDOW, 0) | dcc << 19 | detile << 31 |
@@ -600,11 +600,11 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
    }
 
    radeon_end();
-   assert(cs->cdw <= cdw_end);
+   assert(cs->b->cdw <= cdw_end);
 }
 
 static void
-radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct radeon_cmdbuf *cs,
+radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct radv_cmd_stream *cs,
                                    const struct radv_sdma_surf *const src, const struct radv_sdma_surf *const dst,
                                    const VkExtent3D px_extent)
 {
@@ -639,7 +639,7 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
    assert(util_is_power_of_two_nonzero(src->bpp));
    assert(util_is_power_of_two_nonzero(dst->bpp));
 
-   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs, 15 + (dcc ? 3 : 0));
+   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs->b, 15 + (dcc ? 3 : 0));
 
    radeon_begin(cs);
    radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_T2T_SUB_WINDOW, 0) | dcc << 19 | dcc_dir << 31 |
@@ -678,11 +678,11 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct rade
    }
 
    radeon_end();
-   assert(cs->cdw <= cdw_end);
+   assert(cs->b->cdw <= cdw_end);
 }
 
 void
-radv_sdma_copy_buffer_image(const struct radv_device *device, struct radeon_cmdbuf *cs,
+radv_sdma_copy_buffer_image(const struct radv_device *device, struct radv_cmd_stream *cs,
                             const struct radv_sdma_surf *buf, const struct radv_sdma_surf *img, const VkExtent3D extent,
                             bool to_image)
 {
@@ -715,7 +715,7 @@ radv_sdma_use_unaligned_buffer_image_copy(const struct radv_device *device, cons
 }
 
 void
-radv_sdma_copy_buffer_image_unaligned(const struct radv_device *device, struct radeon_cmdbuf *cs,
+radv_sdma_copy_buffer_image_unaligned(const struct radv_device *device, struct radv_cmd_stream *cs,
                                       const struct radv_sdma_surf *buf, const struct radv_sdma_surf *img_in,
                                       const VkExtent3D base_extent, struct radeon_winsys_bo *temp_bo, bool to_image)
 {
@@ -787,7 +787,7 @@ radv_sdma_copy_buffer_image_unaligned(const struct radv_device *device, struct r
 }
 
 void
-radv_sdma_copy_image(const struct radv_device *device, struct radeon_cmdbuf *cs, const struct radv_sdma_surf *src,
+radv_sdma_copy_image(const struct radv_device *device, struct radv_cmd_stream *cs, const struct radv_sdma_surf *src,
                      const struct radv_sdma_surf *dst, const VkExtent3D extent)
 {
    if (src->is_linear) {
@@ -864,7 +864,7 @@ radv_sdma_use_t2t_scanline_copy(const struct radv_device *device, const struct r
 }
 
 void
-radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radeon_cmdbuf *cs,
+radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radv_cmd_stream *cs,
                                   const struct radv_sdma_surf *src, const struct radv_sdma_surf *dst,
                                   const VkExtent3D extent, struct radeon_winsys_bo *temp_bo)
 {

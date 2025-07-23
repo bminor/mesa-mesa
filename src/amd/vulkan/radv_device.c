@@ -537,7 +537,7 @@ radv_device_init_perf_counter(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   device->perf_counter_lock_cs = calloc(sizeof(struct radeon_cmdbuf *), 2 * PERF_CTR_MAX_PASSES);
+   device->perf_counter_lock_cs = calloc(sizeof(struct radv_cmd_stream *), 2 * PERF_CTR_MAX_PASSES);
    if (!device->perf_counter_lock_cs)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
@@ -558,7 +558,7 @@ radv_device_finish_perf_counter(struct radv_device *device)
 
    for (unsigned i = 0; i < 2 * PERF_CTR_MAX_PASSES; ++i) {
       if (device->perf_counter_lock_cs[i])
-         device->ws->cs_destroy(device->perf_counter_lock_cs[i]);
+         radv_destroy_cmd_stream(device, device->perf_counter_lock_cs[i]);
    }
 
    free(device->perf_counter_lock_cs);
@@ -894,18 +894,21 @@ radv_device_init_cache_key(struct radv_device *device)
 static void
 radv_create_gfx_preamble(struct radv_device *device)
 {
-   struct radeon_cmdbuf *cs = device->ws->cs_create(device->ws, AMD_IP_GFX, false);
-   if (!cs)
+   struct radv_cmd_stream *cs;
+   VkResult result;
+
+   result = radv_create_cmd_stream(device, RADV_QUEUE_GENERAL, false, &cs);
+   if (result != VK_SUCCESS)
       return;
 
-   radeon_check_space(device->ws, cs, 512);
+   radeon_check_space(device->ws, cs->b, 512);
 
    radv_emit_graphics(device, cs);
 
-   device->ws->cs_pad(cs, 0);
+   device->ws->cs_pad(cs->b, 0);
 
-   VkResult result = radv_bo_create(
-      device, NULL, cs->cdw * 4, 4096, device->ws->cs_domain(device->ws),
+   result = radv_bo_create(
+      device, NULL, cs->b->cdw * 4, 4096, device->ws->cs_domain(device->ws),
       RADEON_FLAG_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_READ_ONLY | RADEON_FLAG_GTT_WC,
       RADV_BO_PRIORITY_CS, 0, true, &device->gfx_init);
    if (result != VK_SUCCESS)
@@ -917,12 +920,12 @@ radv_create_gfx_preamble(struct radv_device *device)
       device->gfx_init = NULL;
       goto fail;
    }
-   memcpy(map, cs->buf, cs->cdw * 4);
+   memcpy(map, cs->b->buf, cs->b->cdw * 4);
 
    device->ws->buffer_unmap(device->ws, device->gfx_init, false);
-   device->gfx_init_size_dw = cs->cdw;
+   device->gfx_init_size_dw = cs->b->cdw;
 fail:
-   device->ws->cs_destroy(cs);
+   radv_destroy_cmd_stream(device, cs);
 }
 
 /* For MSAA sample positions. */
@@ -977,7 +980,7 @@ radv_get_default_max_sample_dist(int log_samples)
 }
 
 void
-radv_emit_default_sample_locations(const struct radv_physical_device *pdev, struct radeon_cmdbuf *cs, int nr_samples)
+radv_emit_default_sample_locations(const struct radv_physical_device *pdev, struct radv_cmd_stream *cs, int nr_samples)
 {
    uint64_t centroid_priority;
 

@@ -23,6 +23,7 @@ struct radv_physical_device;
 struct rvcn_sq_var;
 struct radv_cmd_buffer;
 struct radv_image_create_info;
+struct radv_cmd_stream;
 
 #define RADV_ENC_MAX_RATE_LAYER 4
 
@@ -82,8 +83,8 @@ void radv_init_physical_device_decoder(struct radv_physical_device *pdev);
 void radv_video_get_profile_alignments(struct radv_physical_device *pdev, const VkVideoProfileListInfoKHR *profile_list,
                                        uint32_t *width_align_out, uint32_t *height_align_out);
 
-void radv_vcn_sq_header(struct radeon_cmdbuf *cs, struct rvcn_sq_var *sq, unsigned type, bool skip_signature);
-void radv_vcn_sq_tail(struct radeon_cmdbuf *cs, struct rvcn_sq_var *sq);
+void radv_vcn_sq_header(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq, unsigned type, bool skip_signature);
+void radv_vcn_sq_tail(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq);
 void radv_vcn_write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, unsigned value);
 
 void radv_init_physical_device_encoder(struct radv_physical_device *pdevice);

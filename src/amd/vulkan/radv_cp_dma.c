@@ -47,7 +47,7 @@ cp_dma_max_byte_count(enum amd_gfx_level gfx_level)
  * clear value.
  */
 static void
-radv_cs_emit_cp_dma(struct radv_device *device, struct radeon_cmdbuf *cs, bool predicating, uint64_t dst_va,
+radv_cs_emit_cp_dma(struct radv_device *device, struct radv_cmd_stream *cs, bool predicating, uint64_t dst_va,
                     uint64_t src_va, unsigned size, unsigned flags)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -56,7 +56,7 @@ radv_cs_emit_cp_dma(struct radv_device *device, struct radeon_cmdbuf *cs, bool p
 
    assert(size <= cp_dma_max_byte_count(pdev->info.gfx_level));
 
-   radeon_check_space(device->ws, cs, 9);
+   radeon_check_space(device->ws, cs->b, 9);
    if (pdev->info.gfx_level >= GFX9)
       command |= S_415_BYTE_COUNT_GFX9(size);
    else
@@ -106,7 +106,7 @@ static void
 radv_emit_cp_dma(struct radv_cmd_buffer *cmd_buffer, uint64_t dst_va, uint64_t src_va, unsigned size, unsigned flags)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
    bool predicating = cmd_buffer->state.predicating;
 
    radv_cs_emit_cp_dma(device, cs, predicating, dst_va, src_va, size, flags);
@@ -133,7 +133,7 @@ radv_emit_cp_dma(struct radv_cmd_buffer *cmd_buffer, uint64_t dst_va, uint64_t s
 }
 
 void
-radv_cs_cp_dma_prefetch(const struct radv_device *device, struct radeon_cmdbuf *cs, uint64_t va, unsigned size,
+radv_cs_cp_dma_prefetch(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t va, unsigned size,
                         bool predicating)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -146,7 +146,7 @@ radv_cs_cp_dma_prefetch(const struct radv_device *device, struct radeon_cmdbuf *
 
    assert(size <= cp_dma_max_byte_count(gfx_level));
 
-   radeon_check_space(ws, cs, 9);
+   radeon_check_space(ws, cs->b, 9);
 
    uint64_t aligned_va = va & ~(SI_CPDMA_ALIGNMENT - 1);
    uint64_t aligned_size = ((va + size + SI_CPDMA_ALIGNMENT - 1) & ~(SI_CPDMA_ALIGNMENT - 1)) - aligned_va;

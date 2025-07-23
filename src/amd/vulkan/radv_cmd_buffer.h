@@ -575,7 +575,7 @@ struct radv_cmd_buffer {
    } gfx12;
 
    VkCommandBufferUsageFlags usage_flags;
-   struct radeon_cmdbuf *cs;
+   struct radv_cmd_stream *cs;
    struct radv_cmd_state state;
    struct radv_vertex_binding vertex_bindings[MAX_VBS];
    struct radv_streamout_binding streamout_bindings[MAX_SO_BUFFERS];
@@ -620,7 +620,7 @@ struct radv_cmd_buffer {
     */
    struct {
       /** Follower command stream. */
-      struct radeon_cmdbuf *cs;
+      struct radv_cmd_stream *cs;
 
       /** Flush bits for the follower cmdbuf. */
       enum radv_cmd_flush_bits flush_bits;
@@ -888,7 +888,7 @@ struct radv_vbo_info {
 
 void radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t vbo_idx, struct radv_vbo_info *vbo_info);
 
-void radv_emit_compute_shader(const struct radv_physical_device *pdev, struct radeon_cmdbuf *cs,
+void radv_emit_compute_shader(const struct radv_physical_device *pdev, struct radv_cmd_stream *cs,
                               const struct radv_shader *shader);
 
 void radv_upload_indirect_descriptor_sets(struct radv_cmd_buffer *cmd_buffer,

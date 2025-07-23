@@ -16,6 +16,7 @@
 #include "radv_radeon_winsys.h"
 
 struct radv_physical_device;
+struct radv_cmd_stream;
 struct radv_device;
 
 struct radv_queue_ring_info {
@@ -62,12 +63,12 @@ struct radv_queue_state {
    struct radeon_winsys_bo *gds_bo;
    struct radeon_winsys_bo *gds_oa_bo;
 
-   struct radeon_cmdbuf *initial_preamble_cs;
-   struct radeon_cmdbuf *initial_full_flush_preamble_cs;
-   struct radeon_cmdbuf *continue_preamble_cs;
-   struct radeon_cmdbuf *gang_wait_preamble_cs;
-   struct radeon_cmdbuf *gang_wait_postamble_cs;
-   struct radeon_cmdbuf *flush_postamble_cs; /* GFX6 only */
+   struct radv_cmd_stream *initial_preamble_cs;
+   struct radv_cmd_stream *initial_full_flush_preamble_cs;
+   struct radv_cmd_stream *continue_preamble_cs;
+   struct radv_cmd_stream *gang_wait_preamble_cs;
+   struct radv_cmd_stream *gang_wait_postamble_cs;
+   struct radv_cmd_stream *flush_postamble_cs; /* GFX6 only */
 
    /* the uses_shadow_regs here will be set only for general queue */
    bool uses_shadow_regs;
@@ -108,7 +109,7 @@ void radv_queue_finish(struct radv_queue *queue);
 
 enum radeon_ctx_priority radv_get_queue_global_priority(const VkDeviceQueueGlobalPriorityCreateInfo *pObj);
 
-void radv_emit_graphics(struct radv_device *device, struct radeon_cmdbuf *cs);
+void radv_emit_graphics(struct radv_device *device, struct radv_cmd_stream *cs);
 
 bool radv_queue_internal_submit(struct radv_queue *queue, struct radeon_cmdbuf *cs);
 

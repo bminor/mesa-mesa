@@ -56,6 +56,7 @@ static bool
 alloc_transfer_temp_bo(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    if (!cmd_buffer->transfer.copy_temp) {
       const VkResult r =
@@ -69,7 +70,7 @@ alloc_transfer_temp_bo(struct radv_cmd_buffer *cmd_buffer)
       }
    }
 
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, cmd_buffer->transfer.copy_temp);
+   radv_cs_add_buffer(device->ws, cs->b, cmd_buffer->transfer.copy_temp);
    return true;
 }
 
@@ -78,7 +79,7 @@ transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
                            const VkBufferImageCopy2 *region, bool to_image)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer_va, image, region);
    const struct radv_sdma_surf img = radv_sdma_get_surf(device, image, region->imageSubresource, region->imageOffset);
@@ -217,19 +218,20 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
    VK_FROM_HANDLE(radv_image, dst_image, pCopyBufferToImageInfo->dstImage);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    const enum radv_copy_flags src_copy_flags = radv_get_copy_flags_from_bo(src_buffer->bo);
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_buffer->bo);
+   radv_cs_add_buffer(device->ws, cs->b, src_buffer->bo);
 
    for (unsigned r = 0; r < pCopyBufferToImageInfo->regionCount; r++) {
       const VkBufferImageCopy2 *region = &pCopyBufferToImageInfo->pRegions[r];
       const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
       const unsigned bind_idx = dst_image->disjoint ? radv_plane_from_aspect(aspect_mask) : 0;
 
-      radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[bind_idx].bo);
+      radv_cs_add_buffer(device->ws, cs->b, dst_image->bindings[bind_idx].bo);
 
       copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, src_copy_flags, dst_image,
                            pCopyBufferToImageInfo->dstImageLayout, region);
@@ -368,19 +370,20 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
    VK_FROM_HANDLE(radv_image, src_image, pCopyImageToBufferInfo->srcImage);
    VK_FROM_HANDLE(radv_buffer, dst_buffer, pCopyImageToBufferInfo->dstBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    const enum radv_copy_flags dst_copy_flags = radv_get_copy_flags_from_bo(dst_buffer->bo);
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_buffer->bo);
+   radv_cs_add_buffer(device->ws, cs->b, dst_buffer->bo);
 
    for (unsigned r = 0; r < pCopyImageToBufferInfo->regionCount; r++) {
       const VkBufferImageCopy2 *region = &pCopyImageToBufferInfo->pRegions[r];
       const VkImageAspectFlags aspect_mask = region->imageSubresource.aspectMask;
       const unsigned bind_idx = src_image->disjoint ? radv_plane_from_aspect(aspect_mask) : 0;
 
-      radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[bind_idx].bo);
+      radv_cs_add_buffer(device->ws, cs->b, src_image->bindings[bind_idx].bo);
 
       copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags, src_image,
                            pCopyImageToBufferInfo->srcImageLayout, region);
@@ -394,7 +397,7 @@ transfer_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_i
                     struct radv_image *dst_image, VkImageLayout dst_image_layout, const VkImageCopy2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radeon_cmdbuf *cs = cmd_buffer->cs;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
    unsigned int dst_aspect_mask_remaining = region->dstSubresource.aspectMask;
 
    VkImageSubresourceLayers src_subresource = region->srcSubresource;
@@ -650,6 +653,7 @@ radv_CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyI
    VK_FROM_HANDLE(radv_image, dst_image, pCopyImageInfo->dstImage);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    radv_suspend_conditional_rendering(cmd_buffer);
 
@@ -660,8 +664,8 @@ radv_CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyI
       const VkImageAspectFlags dst_aspect_mask = region->dstSubresource.aspectMask;
       const unsigned dst_bind_idx = dst_image->disjoint ? radv_plane_from_aspect(dst_aspect_mask) : 0;
 
-      radv_cs_add_buffer(device->ws, cmd_buffer->cs, src_image->bindings[src_bind_idx].bo);
-      radv_cs_add_buffer(device->ws, cmd_buffer->cs, dst_image->bindings[dst_bind_idx].bo);
+      radv_cs_add_buffer(device->ws, cs->b, src_image->bindings[src_bind_idx].bo);
+      radv_cs_add_buffer(device->ws, cs->b, dst_image->bindings[dst_bind_idx].bo);
 
       copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image, pCopyImageInfo->dstImageLayout,
                  region);

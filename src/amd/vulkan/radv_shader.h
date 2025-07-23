@@ -504,7 +504,7 @@ struct radv_shader_part_cache {
 struct radv_shader_dma_submission {
    struct list_head list;
 
-   struct radeon_cmdbuf *cs;
+   struct radv_cmd_stream *cs;
    struct radeon_winsys_bo *bo;
    uint64_t bo_size;
    char *ptr;

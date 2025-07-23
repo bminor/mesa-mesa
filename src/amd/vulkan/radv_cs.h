@@ -28,7 +28,7 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 }
 
 #define radeon_begin(cs)                                                                                               \
-   struct radeon_cmdbuf *__cs = (cs);                                                                                  \
+   struct radeon_cmdbuf *__cs = (cs)->b;                                                                               \
    uint32_t __cs_num = __cs->cdw;                                                                                      \
    UNUSED uint32_t __cs_reserved_dw = __cs->reserved_dw;                                                               \
    uint32_t *__cs_buf = __cs->buf
@@ -340,7 +340,7 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    } while (0)
 
 ALWAYS_INLINE static void
-radv_cp_wait_mem(struct radeon_cmdbuf *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,
+radv_cp_wait_mem(struct radv_cmd_stream *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,
                  const uint32_t ref, const uint32_t mask)
 {
    assert(op == WAIT_REG_MEM_EQUAL || op == WAIT_REG_MEM_NOT_EQUAL || op == WAIT_REG_MEM_GREATER_OR_EQUAL);
@@ -363,11 +363,11 @@ radv_cp_wait_mem(struct radeon_cmdbuf *cs, const enum radv_queue_family qf, cons
 }
 
 ALWAYS_INLINE static unsigned
-radv_cs_write_data_head(const struct radv_device *device, struct radeon_cmdbuf *cs, const enum radv_queue_family qf,
+radv_cs_write_data_head(const struct radv_device *device, struct radv_cmd_stream *cs, const enum radv_queue_family qf,
                         const unsigned engine_sel, const uint64_t va, const unsigned count, const bool predicating)
 {
    /* Return the correct cdw at the end of the packet so the caller can assert it. */
-   const unsigned cdw_end = radeon_check_space(device->ws, cs, 4 + count);
+   const unsigned cdw_end = radeon_check_space(device->ws, cs->b, 4 + count);
 
    if (qf == RADV_QUEUE_GENERAL || qf == RADV_QUEUE_COMPUTE) {
       radeon_begin(cs);
@@ -386,7 +386,7 @@ radv_cs_write_data_head(const struct radv_device *device, struct radeon_cmdbuf *
 }
 
 ALWAYS_INLINE static void
-radv_cs_write_data(const struct radv_device *device, struct radeon_cmdbuf *cs, const enum radv_queue_family qf,
+radv_cs_write_data(const struct radv_device *device, struct radv_cmd_stream *cs, const enum radv_queue_family qf,
                    const unsigned engine_sel, const uint64_t va, const unsigned count, const uint32_t *dwords,
                    const bool predicating)
 {
@@ -395,24 +395,24 @@ radv_cs_write_data(const struct radv_device *device, struct radeon_cmdbuf *cs, c
    radeon_begin(cs);
    radeon_emit_array(dwords, count);
    radeon_end();
-   assert(cs->cdw == cdw_end);
+   assert(cs->b->cdw == cdw_end);
 }
 
-void radv_cs_emit_write_event_eop(struct radeon_cmdbuf *cs, enum amd_gfx_level gfx_level, enum radv_queue_family qf,
+void radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level, enum radv_queue_family qf,
                                   unsigned event, unsigned event_flags, unsigned dst_sel, unsigned data_sel,
                                   uint64_t va, uint32_t new_fence, uint64_t gfx9_eop_bug_va);
 
-void radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, enum amd_gfx_level gfx_level,
+void radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level,
                               uint32_t *flush_cnt, uint64_t flush_va, enum radv_queue_family qf,
                               enum radv_cmd_flush_bits flush_bits, enum rgp_flush_bits *sqtt_flush_bits,
                               uint64_t gfx9_eop_bug_va);
 
-void radv_emit_cond_exec(const struct radv_device *device, struct radeon_cmdbuf *cs, uint64_t va, uint32_t count);
+void radv_emit_cond_exec(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t va, uint32_t count);
 
-void radv_cs_write_data_imm(struct radeon_cmdbuf *cs, unsigned engine_sel, uint64_t va, uint32_t imm);
+void radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t va, uint32_t imm);
 
 static inline void
-radv_emit_pm4_commands(struct radeon_cmdbuf *cs, const struct ac_pm4_state *pm4)
+radv_emit_pm4_commands(struct radv_cmd_stream *cs, const struct ac_pm4_state *pm4)
 {
    radeon_begin(cs);
    radeon_emit_array(pm4->pm4, pm4->ndw);

@@ -68,7 +68,7 @@ radv_spm_resize_bo(struct radv_device *device)
 }
 
 static void
-radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
+radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
@@ -82,7 +82,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
          if (!num_counters)
             continue;
 
-         radeon_check_space(device->ws, cs, 3 + num_counters * 3);
+         radeon_check_space(device->ws, cs->b, 3 + num_counters * 3);
          radeon_begin(cs);
 
          radeon_set_uconfig_reg(R_030800_GRBM_GFX_INDEX, spm->sq_wgp[instance].grbm_gfx_index);
@@ -105,7 +105,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
       if (!num_counters)
          continue;
 
-      radeon_check_space(device->ws, cs, 3 + num_counters * 3);
+      radeon_check_space(device->ws, cs->b, 3 + num_counters * 3);
       radeon_begin(cs);
 
       radeon_set_uconfig_reg(R_030800_GRBM_GFX_INDEX, S_030800_SH_BROADCAST_WRITES(1) |
@@ -130,7 +130,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
       for (unsigned i = 0; i < block_sel->num_instances; i++) {
          struct ac_spm_block_instance *block_instance = &block_sel->instances[i];
 
-         radeon_check_space(device->ws, cs, 3 + (AC_SPM_MAX_COUNTER_PER_BLOCK * 6));
+         radeon_check_space(device->ws, cs->b, 3 + (AC_SPM_MAX_COUNTER_PER_BLOCK * 6));
          radeon_begin(cs);
 
          radeon_set_uconfig_reg(R_030800_GRBM_GFX_INDEX, block_instance->grbm_gfx_index);
@@ -160,7 +160,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radeon_cmdbuf *cs, enu
 }
 
 static void
-radv_emit_spm_muxsel(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
+radv_emit_spm_muxsel(struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
@@ -190,7 +190,7 @@ radv_emit_spm_muxsel(struct radv_device *device, struct radeon_cmdbuf *cs, enum 
             pdev->info.gfx_level >= GFX11 ? R_03722C_RLC_SPM_SE_MUXSEL_DATA : R_037220_RLC_SPM_SE_MUXSEL_DATA;
       }
 
-      radeon_check_space(device->ws, cs, 3 + spm->num_muxsel_lines[s] * (7 + AC_SPM_MUXSEL_LINE_SIZE));
+      radeon_check_space(device->ws, cs->b, 3 + spm->num_muxsel_lines[s] * (7 + AC_SPM_MUXSEL_LINE_SIZE));
       radeon_begin(cs);
 
       radeon_set_uconfig_reg(R_030800_GRBM_GFX_INDEX, grbm_gfx_index);
@@ -215,7 +215,7 @@ radv_emit_spm_muxsel(struct radv_device *device, struct radeon_cmdbuf *cs, enum 
 }
 
 void
-radv_emit_spm_setup(struct radv_device *device, struct radeon_cmdbuf *cs, enum radv_queue_family qf)
+radv_emit_spm_setup(struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct ac_spm *spm = &device->spm;
@@ -227,7 +227,7 @@ radv_emit_spm_setup(struct radv_device *device, struct radeon_cmdbuf *cs, enum r
    assert(!(ring_size & (SPM_RING_BASE_ALIGN - 1)));
    assert(spm->sample_interval >= 32);
 
-   radeon_check_space(device->ws, cs, 27);
+   radeon_check_space(device->ws, cs->b, 27);
    radeon_begin(cs);
 
    /* Configure the SPM ring buffer. */

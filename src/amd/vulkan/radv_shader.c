@@ -1311,11 +1311,13 @@ radv_init_shader_upload_queue(struct radv_device *device)
 
    for (unsigned i = 0; i < RADV_SHADER_UPLOAD_CS_COUNT; i++) {
       struct radv_shader_dma_submission *submission = calloc(1, sizeof(struct radv_shader_dma_submission));
-      submission->cs = ws->cs_create(ws, AMD_IP_SDMA, false);
-      if (!submission->cs) {
+
+      result = radv_create_cmd_stream(device, RADV_QUEUE_TRANSFER, false, &submission->cs);
+      if (result != VK_SUCCESS) {
          free(submission);
-         return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+         return result;
       }
+
       list_addtail(&submission->list, &device->shader_dma_submissions);
    }
 
@@ -1350,7 +1352,7 @@ radv_destroy_shader_upload_queue(struct radv_device *device)
 
    list_for_each_entry_safe (struct radv_shader_dma_submission, submission, &device->shader_dma_submissions, list) {
       if (submission->cs)
-         ws->cs_destroy(submission->cs);
+         radv_finalize_cmd_stream(device, submission->cs);
       if (submission->bo)
          radv_bo_destroy(device, NULL, submission->bo);
       list_del(&submission->list);
@@ -2506,7 +2508,7 @@ struct radv_shader_dma_submission *
 radv_shader_dma_get_submission(struct radv_device *device, struct radeon_winsys_bo *bo, uint64_t va, uint64_t size)
 {
    struct radv_shader_dma_submission *submission = radv_shader_dma_pop_submission(device);
-   struct radeon_cmdbuf *cs = submission->cs;
+   struct radv_cmd_stream *cs = submission->cs;
    struct radeon_winsys *ws = device->ws;
    VkResult result;
 
@@ -2515,7 +2517,7 @@ radv_shader_dma_get_submission(struct radv_device *device, struct radeon_winsys_
    if (result != VK_SUCCESS)
       goto fail;
 
-   ws->cs_reset(cs);
+   radv_reset_cmd_stream(device, cs);
 
    if (submission->bo_size < size) {
       result = radv_shader_dma_resize_upload_buf(device, submission, size);
@@ -2524,10 +2526,10 @@ radv_shader_dma_get_submission(struct radv_device *device, struct radeon_winsys_
    }
 
    radv_sdma_copy_memory(device, cs, radv_buffer_get_va(submission->bo), va, size);
-   radv_cs_add_buffer(ws, cs, submission->bo);
-   radv_cs_add_buffer(ws, cs, bo);
+   radv_cs_add_buffer(ws, cs->b, submission->bo);
+   radv_cs_add_buffer(ws, cs->b, bo);
 
-   result = ws->cs_finalize(cs);
+   result = radv_finalize_cmd_stream(device, cs);
    if (result != VK_SUCCESS)
       goto fail;
 
@@ -2547,7 +2549,7 @@ bool
 radv_shader_dma_submit(struct radv_device *device, struct radv_shader_dma_submission *submission,
                        uint64_t *upload_seq_out)
 {
-   struct radeon_cmdbuf *cs = submission->cs;
+   struct radv_cmd_stream *cs = submission->cs;
    struct radeon_winsys *ws = device->ws;
    VkResult result;
 
@@ -2566,7 +2568,7 @@ radv_shader_dma_submit(struct radv_device *device, struct radv_shader_dma_submis
    struct radv_winsys_submit_info submit = {
       .ip_type = AMD_IP_SDMA,
       .queue_index = 0,
-      .cs_array = &cs,
+      .cs_array = &cs->b,
       .cs_count = 1,
    };
 

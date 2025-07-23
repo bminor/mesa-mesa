@@ -9,6 +9,8 @@
 
 #include "radv_image.h"
 
+struct radv_cmd_stream;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,36 +59,36 @@ struct radv_sdma_surf radv_sdma_get_buf_surf(uint64_t buffer_va, const struct ra
                                              const VkBufferImageCopy2 *const region);
 struct radv_sdma_surf radv_sdma_get_surf(const struct radv_device *const device, const struct radv_image *const image,
                                          const VkImageSubresourceLayers subresource, const VkOffset3D offset);
-void radv_sdma_copy_buffer_image(const struct radv_device *device, struct radeon_cmdbuf *cs,
+void radv_sdma_copy_buffer_image(const struct radv_device *device, struct radv_cmd_stream *cs,
                                  const struct radv_sdma_surf *buf, const struct radv_sdma_surf *img,
                                  const VkExtent3D extent, bool to_image);
 bool radv_sdma_use_unaligned_buffer_image_copy(const struct radv_device *device, const struct radv_sdma_surf *buf,
                                                const struct radv_sdma_surf *img, const VkExtent3D ext);
-void radv_sdma_copy_buffer_image_unaligned(const struct radv_device *device, struct radeon_cmdbuf *cs,
+void radv_sdma_copy_buffer_image_unaligned(const struct radv_device *device, struct radv_cmd_stream *cs,
                                            const struct radv_sdma_surf *buf, const struct radv_sdma_surf *img_in,
                                            const VkExtent3D copy_extent, struct radeon_winsys_bo *temp_bo,
                                            bool to_image);
-void radv_sdma_copy_image(const struct radv_device *device, struct radeon_cmdbuf *cs, const struct radv_sdma_surf *src,
-                          const struct radv_sdma_surf *dst, const VkExtent3D extent);
+void radv_sdma_copy_image(const struct radv_device *device, struct radv_cmd_stream *cs,
+                          const struct radv_sdma_surf *src, const struct radv_sdma_surf *dst, const VkExtent3D extent);
 bool radv_sdma_use_t2t_scanline_copy(const struct radv_device *device, const struct radv_sdma_surf *src,
                                      const struct radv_sdma_surf *dst, const VkExtent3D extent);
-void radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radeon_cmdbuf *cs,
+void radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radv_cmd_stream *cs,
                                        const struct radv_sdma_surf *src, const struct radv_sdma_surf *dst,
                                        const VkExtent3D extent, struct radeon_winsys_bo *temp_bo);
-void radv_sdma_copy_memory(const struct radv_device *device, struct radeon_cmdbuf *cs, uint64_t src_va, uint64_t dst_va,
-                           uint64_t size);
-void radv_sdma_fill_memory(const struct radv_device *device, struct radeon_cmdbuf *cs, const uint64_t va,
+void radv_sdma_copy_memory(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t src_va,
+                           uint64_t dst_va, uint64_t size);
+void radv_sdma_fill_memory(const struct radv_device *device, struct radv_cmd_stream *cs, const uint64_t va,
                            const uint64_t size, const uint32_t value);
 
-void radv_sdma_emit_nop(const struct radv_device *device, struct radeon_cmdbuf *cs);
+void radv_sdma_emit_nop(const struct radv_device *device, struct radv_cmd_stream *cs);
 
-void radv_sdma_emit_write_timestamp(struct radeon_cmdbuf *cs, uint64_t va);
+void radv_sdma_emit_write_timestamp(struct radv_cmd_stream *cs, uint64_t va);
 
-void radv_sdma_emit_fence(struct radeon_cmdbuf *cs, uint64_t va, uint32_t fence);
+void radv_sdma_emit_fence(struct radv_cmd_stream *cs, uint64_t va, uint32_t fence);
 
-void radv_sdma_emit_wait_mem(struct radeon_cmdbuf *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask);
+void radv_sdma_emit_wait_mem(struct radv_cmd_stream *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask);
 
-void radv_sdma_emit_write_data_head(struct radeon_cmdbuf *cs, uint64_t va, uint32_t count);
+void radv_sdma_emit_write_data_head(struct radv_cmd_stream *cs, uint64_t va, uint32_t count);
 
 #ifdef __cplusplus
 }
