@@ -192,7 +192,7 @@ get_perf_info(const Program& program, const Instruction& instr)
       case instr_class::wmma: {
          /* int8 and (b)f16 have the same performance. */
          uint8_t cost = instr.opcode == aco_opcode::v_wmma_i32_16x16x16_iu4 ? 16 : 32;
-         return {cost, WAIT_USE(valu, cost)};
+         return {4 + cost, WAIT_USE(valu, cost)};
       }
       case instr_class::barrier:
       case instr_class::waitcnt:
