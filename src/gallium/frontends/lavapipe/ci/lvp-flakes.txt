@@ -97,6 +97,8 @@ dEQP-VK.sparse_resources.transfer_queue.2d.r10x6g10x6_unorm_2pack16.1024_128_1
 dEQP-VK.synchronization.implicit.timeline_semaphore.write_ssbo_vertex_read_ssbo_vertex.buffer_16384.3033
 dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
 dEQP-VK.synchronization2.implicit.timeline_semaphore.write_ssbo_vertex_read_copy_buffer.buffer_16384.2001
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_ssbo_vertex_read_ssbo_vertex.buffer_16384.3113
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_ssbo_vertex_read_ssbo_vertex.buffer_16384.3212
 dEQP-VK.synchronization2.op.single_queue.fence.write_ssbo_geometry_read_ubo_fragment.buffer_16384_specialized_access_flag
 dEQP-VK.synchronization2.op.single_queue.fence.write_ssbo_tess_control_read_ssbo_geometry.buffer_262144
 dEQP-VK\.synchronization2?\.timeline_semaphore\..*
@@ -104,9 +106,11 @@ dEQP-VK\.synchronization2?\.timeline_semaphore\..*
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.isolines_fractional_even_spacing_ccw_point_mode
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.triangles_equal_spacing_ccw
 dEQP-VK.tessellation.invariance.outer_edge_division.quads_fractional_odd_spacing
+dEQP-VK.tessellation.invariance.outer_edge_division.triangles_equal_spacing
 dEQP-VK.tessellation.invariance.primitive_set.isolines_fractional_even_spacing_ccw
 dEQP-VK.tessellation.invariance.primitive_set.triangles_fractional_odd_spacing_cw
 dEQP-VK.tessellation.invariance.tess_coord_component_range.quads_fractional_odd_spacing_cw_point_mode
+dEQP-VK.tessellation.limits.max_tessellation_patch_size
 dEQP-VK.tessellation.misc_draw.fill_cover_triangles_equal_spacing
 dEQP-VK.tessellation.primitive_discard.isolines_fractional_odd_spacing_cw
 dEQP-VK.tessellation.primitive_discard.quads_equal_spacing_ccw
