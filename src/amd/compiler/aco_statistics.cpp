@@ -190,8 +190,24 @@ get_perf_info(const Program& program, const Instruction& instr)
       case instr_class::exp: return {0, WAIT_USE(export_gds, 1)};
       case instr_class::vmem: return {0, WAIT_USE(vmem, 1)};
       case instr_class::wmma: {
-         /* int8 and (b)f16 have the same performance. */
-         uint8_t cost = instr.opcode == aco_opcode::v_wmma_i32_16x16x16_iu4 ? 16 : 32;
+         uint8_t cost;
+         if (program.gfx_level < GFX12) {
+            /* int8 and (b)f16 have the same performance. */
+            cost = instr.opcode == aco_opcode::v_wmma_i32_16x16x16_iu4 ? 16 : 32;
+         } else {
+            /* Half the cost of GFX11, int4/8 and (b)f8 twice as fast as (b)f16.*/
+            switch (instr.opcode) {
+            case aco_opcode::v_wmma_f32_16x16x16_f16:
+            case aco_opcode::v_wmma_f32_16x16x16_bf16:
+            case aco_opcode::v_wmma_f16_16x16x16_f16:
+            case aco_opcode::v_wmma_bf16_16x16x16_bf16:
+            case aco_opcode::v_swmmac_f32_16x16x32_f16:
+            case aco_opcode::v_swmmac_f32_16x16x32_bf16:
+            case aco_opcode::v_swmmac_f16_16x16x32_f16:
+            case aco_opcode::v_swmmac_bf16_16x16x32_bf16: cost = 16; break;
+            default: cost = 8; break;
+            }
+         }
          return {4 + cost, WAIT_USE(valu, cost)};
       }
       case instr_class::barrier:
