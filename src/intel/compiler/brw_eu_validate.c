@@ -38,7 +38,6 @@
  * test_eu_validate.cpp) will be rejected.
  */
 
-#include <stdlib.h>
 #include "brw_eu.h"
 #include "brw_disasm_info.h"
 
@@ -97,48 +96,38 @@ typedef struct brw_hw_decoded_inst {
    } src[3];
 } brw_hw_decoded_inst;
 
-/* We're going to do lots of string concatenation, so this should help. */
-struct string {
-   char *str;
-   size_t len;
+struct error {
+   char *msg;
 };
 
 static void
-cat(struct string *dest, const struct string src)
+report_error(struct error *error, const char *msg)
 {
-   dest->str = realloc(dest->str, dest->len + src.len + 1);
-   memcpy(dest->str + dest->len, src.str, src.len);
-   dest->str[dest->len + src.len] = '\0';
-   dest->len = dest->len + src.len;
-}
-#define CAT(dest, src) cat(&dest, (struct string){src, strlen(src)})
+   assert(error);
 
-static bool
-contains(const struct string haystack, const struct string needle)
-{
-   return haystack.str && memmem(haystack.str, haystack.len,
-                                 needle.str, needle.len) != NULL;
+   if (error->msg) {
+      /* Ignore duplicate reports. */
+      if (strstr(error->msg, msg))
+         return;
+      ralloc_asprintf_append(&error->msg, "\tERROR: %s\n", msg);
+   } else {
+      error->msg = ralloc_asprintf(NULL, "\tERROR: %s\n", msg);
+   }
 }
-#define CONTAINS(haystack, needle) \
-   contains(haystack, (struct string){needle, strlen(needle)})
-
-#define error(str)   "\tERROR: " str "\n"
-#define ERROR_INDENT "\t       "
 
 #define ERROR(msg) ERROR_IF(true, msg)
 #define ERROR_IF(cond, msg)                             \
    do {                                                 \
-      if ((cond) && !CONTAINS(error_msg, error(msg))) { \
-         CAT(error_msg, error(msg));                    \
-      }                                                 \
+      if ((cond))                                       \
+         report_error(error, msg);                      \
    } while(0)
 
 #define RETURN_ERROR(msg) RETURN_ERROR_IF(true, msg)
 #define RETURN_ERROR_IF(cond, msg)                      \
    do {                                                 \
-      if ((cond) && !CONTAINS(error_msg, error(msg))) { \
-         CAT(error_msg, error(msg));                    \
-         return error_msg;                              \
+      if ((cond)) {                                     \
+         report_error(error, msg);                      \
+         return;                                        \
       }                                                 \
    } while(0)
 
@@ -248,12 +237,11 @@ src_has_scalar_region(const brw_hw_decoded_inst *inst, int src)
           inst->src[src].hstride == 0;
 }
 
-static struct string
-invalid_values(const struct brw_isa_info *isa, const brw_hw_decoded_inst *inst)
+static void
+invalid_values(const struct brw_isa_info *isa, const brw_hw_decoded_inst *inst,
+               struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    if (devinfo->ver >= 12) {
       unsigned qtr_ctrl = brw_eu_inst_qtr_control(devinfo, inst->raw);
@@ -264,35 +252,30 @@ invalid_values(const struct brw_isa_info *isa, const brw_hw_decoded_inst *inst)
       ERROR_IF(chan_off % inst->exec_size != 0,
                "The execution size must be a factor of the chosen offset");
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 sources_not_null(const struct brw_isa_info *isa,
-                 const brw_hw_decoded_inst *inst)
+                 const brw_hw_decoded_inst *inst,
+                 struct error *error)
 {
-   struct string error_msg = { .str = NULL, .len = 0 };
-
    /* Nothing to test. 3-src instructions can only have GRF sources, and
     * there's no bit to control the file.
     */
    if (inst->num_sources == 3)
-      return (struct string){};
+      return;
 
    /* Nothing to test.  Split sends can only encode a file in sources that are
     * allowed to be NULL.
     */
    if (inst_is_split_send(isa, inst))
-      return (struct string){};
+      return;
 
    if (inst->num_sources >= 1 && inst->opcode != BRW_OPCODE_SYNC)
       ERROR_IF(src0_is_null(inst), "src0 is null");
 
    if (inst->num_sources == 2)
       ERROR_IF(src1_is_null(inst), "src1 is null");
-
-   return error_msg;
 }
 
 static bool
@@ -314,13 +297,12 @@ inst_uses_src_acc(const struct brw_isa_info *isa,
    return src0_is_acc(inst) || (inst->num_sources > 1 && src1_is_acc(inst));
 }
 
-static struct string
+static void
 send_restrictions(const struct brw_isa_info *isa,
-                  const brw_hw_decoded_inst *inst)
+                  const brw_hw_decoded_inst *inst,
+                  struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    if (inst_is_split_send(isa, inst)) {
       ERROR_IF(inst->src[1].file == ARF &&
@@ -377,8 +359,6 @@ send_restrictions(const struct brw_isa_info *isa,
                   "a src and dest overlap");
       }
    }
-
-   return error_msg;
 }
 
 static bool
@@ -634,16 +614,15 @@ is_byte_conversion(const struct brw_isa_info *isa,
  * Checks restrictions listed in "General Restrictions Based on Operand Types"
  * in the "Register Region Restrictions" section.
  */
-static struct string
+static void
 general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
-                                            const brw_hw_decoded_inst *inst)
+                                            const brw_hw_decoded_inst *inst,
+                                            struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   struct string error_msg = { .str = NULL, .len = 0 };
-
    if (inst_is_send(inst))
-      return error_msg;
+      return;
 
    if (devinfo->ver >= 11) {
       /* A register type of B or UB for DPAS actually means 4 bytes packed into
@@ -718,13 +697,13 @@ general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
    }
 
    if (inst->num_sources == 3)
-      return error_msg;
+      return;
 
    if (inst->exec_size == 1)
-      return error_msg;
+      return;
 
    if (!inst->has_dst)
-      return error_msg;
+      return;
 
    if (inst->opcode == BRW_OPCODE_MATH &&
        intel_needs_workaround(devinfo, 22016140776)) {
@@ -770,9 +749,8 @@ general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
 
    if (dst_type_is_byte) {
       if (is_packed(inst->exec_size * dst_stride, inst->exec_size, dst_stride)) {
-         if (!inst_is_raw_move(inst))
-            ERROR("Only raw MOV supports a packed-byte destination");
-         return error_msg;
+         ERROR_IF(!inst_is_raw_move(inst),
+                  "Only raw MOV supports a packed-byte destination");
       }
    }
 
@@ -922,30 +900,27 @@ general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
          }
       }
    }
-
-   return error_msg;
 }
 
 /**
  * Checks restrictions listed in "General Restrictions on Regioning Parameters"
  * in the "Register Region Restrictions" section.
  */
-static struct string
+static void
 general_restrictions_on_region_parameters(const struct brw_isa_info *isa,
-                                          const brw_hw_decoded_inst *inst)
+                                          const brw_hw_decoded_inst *inst,
+                                          struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   struct string error_msg = { .str = NULL, .len = 0 };
-
    if (inst->num_sources == 3)
-      return (struct string){};
+      return;
 
    /* Split sends don't have the bits in the instruction to encode regions so
     * there's nothing to check.
     */
    if (inst_is_split_send(isa, inst))
-      return (struct string){};
+      return;
 
    if (inst->access_mode == BRW_ALIGN_16) {
       if (inst->has_dst && !dst_is_null(inst))
@@ -968,7 +943,7 @@ general_restrictions_on_region_parameters(const struct brw_isa_info *isa,
                   "In Align16 mode, only VertStride of 0, 2, or 4 is allowed");
       }
 
-      return error_msg;
+      return;
    }
 
    for (unsigned i = 0; i < inst->num_sources; i++) {
@@ -1060,8 +1035,6 @@ general_restrictions_on_region_parameters(const struct brw_isa_info *isa,
       ERROR_IF(inst->dst.hstride == 0,
                "Destination Horizontal Stride must not be 0");
    }
-
-   return error_msg;
 }
 
 static bool
@@ -1079,17 +1052,16 @@ is_multiplier_instruction(const brw_hw_decoded_inst *inst)
    }
 }
 
-static struct string
+static void
 special_restrictions_for_mixed_float_mode(const struct brw_isa_info *isa,
-                                          const brw_hw_decoded_inst *inst)
+                                          const brw_hw_decoded_inst *inst,
+                                          struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   struct string error_msg = { .str = NULL, .len = 0 };
-
    /* See instruction_restrictions() for DPAS operand type validation. */
    if (inst->opcode == BRW_OPCODE_DPAS)
-      return error_msg;
+      return;
 
    ERROR_IF(is_pure_bfloat(inst),
             "Instructions with pure bfloat16 operands are not supported.");
@@ -1147,10 +1119,10 @@ special_restrictions_for_mixed_float_mode(const struct brw_isa_info *isa,
 
    const unsigned opcode = inst->opcode;
    if (inst->num_sources >= 3)
-      return error_msg;
+      return;
 
    if (!is_mixed_float(inst))
-      return error_msg;
+      return;
 
    bool is_align16 = inst->access_mode == BRW_ALIGN_16;
 
@@ -1348,8 +1320,6 @@ special_restrictions_for_mixed_float_mode(const struct brw_isa_info *isa,
                   "of 2 on the destination");
       }
    }
-
-   return error_msg;
 }
 
 /**
@@ -1437,22 +1407,24 @@ registers_read(const uint8_t grfs_accessed[static 32])
  * Checks restrictions listed in "Region Alignment Rules" in the "Register
  * Region Restrictions" section.
  */
-static struct string
+static void
 region_alignment_rules(const struct brw_isa_info *isa,
-                       const brw_hw_decoded_inst *inst)
+                       const brw_hw_decoded_inst *inst,
+                       struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
    uint8_t dst_access_mask[32] = {}, src_access_mask[2][32] = {};
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    if (inst->num_sources == 3)
-      return (struct string){};
+      return;
 
    if (inst->access_mode == BRW_ALIGN_16)
-      return (struct string){};
+      return;
 
    if (inst_is_send(inst))
-      return (struct string){};
+      return;
+
+   bool skip_detailed_grf_checks = false;
 
    for (unsigned i = 0; i < inst->num_sources; i++) {
       /* In Direct Addressing mode, a source cannot span more than 2 adjacent
@@ -1479,23 +1451,28 @@ region_alignment_rules(const struct brw_isa_info *isa,
       unsigned hstride_elements = (num_hstride - 1) * hstride;
       unsigned offset = (vstride_elements + hstride_elements) * element_size +
                         subreg;
-      ERROR_IF(offset >= 64 * reg_unit(devinfo),
-               "A source cannot span more than 2 adjacent GRF registers");
+
+      if (offset >= 64 * reg_unit(devinfo)) {
+         ERROR("A source cannot span more than 2 adjacent GRF registers");
+         skip_detailed_grf_checks = true;
+      }
    }
 
    if (!inst->has_dst || dst_is_null(inst))
-      return error_msg;
+      return;
 
    unsigned stride = inst->dst.hstride;
    enum brw_reg_type dst_type = inst->dst.type;
    unsigned element_size = brw_type_size_bytes(dst_type);
    unsigned subreg = inst->dst.subnr;
    unsigned offset = ((inst->exec_size - 1) * stride * element_size) + subreg;
-   ERROR_IF(offset >= 64 * reg_unit(devinfo),
-            "A destination cannot span more than 2 adjacent GRF registers");
+   if (offset >= 64 * reg_unit(devinfo)) {
+      ERROR("A destination cannot span more than 2 adjacent GRF registers");
+      skip_detailed_grf_checks = true;
+   }
 
-   if (error_msg.str)
-      return error_msg;
+   if (skip_detailed_grf_checks)
+      return;
 
    grfs_accessed(devinfo, dst_access_mask, inst->exec_size, element_size, subreg,
                  inst->exec_size == 1 ? 0 : inst->exec_size * stride,
@@ -1530,25 +1507,23 @@ region_alignment_rules(const struct brw_isa_info *isa,
                   "destination registers");
       }
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 vector_immediate_restrictions(const struct brw_isa_info *isa,
-                              const brw_hw_decoded_inst *inst)
+                              const brw_hw_decoded_inst *inst,
+                              struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    if (inst->num_sources == 3 || inst->num_sources == 0 ||
        (devinfo->ver >= 12 && inst_is_send(inst)))
-      return (struct string){};
+      return;
 
    unsigned file = inst->src[inst->num_sources == 1 ? 0 : 1].file;
    if (file != IMM)
-      return (struct string){};
+      return;
 
    enum brw_reg_type dst_type = inst->dst.type;
    unsigned dst_type_size = brw_type_size_bytes(dst_type);
@@ -1588,25 +1563,22 @@ vector_immediate_restrictions(const struct brw_isa_info *isa,
    default:
       break;
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 special_requirements_for_handling_double_precision_data_types(
                                        const struct brw_isa_info *isa,
-                                       const brw_hw_decoded_inst *inst)
+                                       const brw_hw_decoded_inst *inst,
+                                       struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   struct string error_msg = { .str = NULL, .len = 0 };
-
    if (inst->num_sources == 3 || inst->num_sources == 0)
-      return (struct string){};
+      return;
 
    /* Split sends don't have types so there's no doubles there. */
    if (inst_is_split_send(isa, inst))
-      return (struct string){};
+      return;
 
    enum brw_reg_type exec_type = execution_type(inst);
    unsigned exec_type_size = brw_type_size_bytes(exec_type);
@@ -1812,16 +1784,14 @@ special_requirements_for_handling_double_precision_data_types(
                brw_eu_inst_no_dd_clear(devinfo, inst->raw),
                "DepCtrl is not allowed when the execution type is 64-bit");
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 instruction_restrictions(const struct brw_isa_info *isa,
-                         const brw_hw_decoded_inst *inst)
+                         const brw_hw_decoded_inst *inst,
+                         struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    /* From Wa_1604601757:
     *
@@ -2253,27 +2223,25 @@ instruction_restrictions(const struct brw_isa_info *isa,
        *      instructions, the boundaries of a register should not be crossed.
        */
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 send_descriptor_restrictions(const struct brw_isa_info *isa,
-                             const brw_hw_decoded_inst *inst)
+                             const brw_hw_decoded_inst *inst,
+                             struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    if (inst_is_split_send(isa, inst)) {
       /* We can only validate immediate descriptors */
       if (brw_eu_inst_send_sel_reg32_desc(devinfo, inst->raw))
-         return error_msg;
+         return;
    } else if (inst_is_send(inst)) {
       /* We can only validate immediate descriptors */
       if (inst->src[1].file != IMM)
-         return error_msg;
+         return;
    } else {
-      return error_msg;
+      return;
    }
 
    const uint32_t desc = brw_eu_inst_send_desc(devinfo, inst->raw);
@@ -2324,16 +2292,14 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
          break;
       }
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 register_region_special_restrictions(const struct brw_isa_info *isa,
-                                     const brw_hw_decoded_inst *inst)
+                                     const brw_hw_decoded_inst *inst,
+                                     struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    bool format_uses_regions = inst->format == FORMAT_BASIC ||
                               inst->format == FORMAT_BASIC_THREE_SRC;
@@ -2476,16 +2442,14 @@ register_region_special_restrictions(const struct brw_isa_info *isa,
       ERROR_IF(!allowed,
                "Invalid register region for source 1.  See special restrictions section.");
    }
-
-   return error_msg;
 }
 
-static struct string
+static void
 scalar_register_restrictions(const struct brw_isa_info *isa,
-                             const brw_hw_decoded_inst *inst)
+                             const brw_hw_decoded_inst *inst,
+                             struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    /* Restrictions from BSpec 71168 (r55736). */
 
@@ -2557,8 +2521,6 @@ scalar_register_restrictions(const struct brw_isa_info *isa,
           (inst->src[2].file == ARF && inst->src[2].nr == BRW_ARF_SCALAR))
          ERROR("Scalar register not available before Gfx30.");
    }
-
-   return error_msg;
 }
 
 static unsigned
@@ -2595,13 +2557,12 @@ brw_implied_width_for_3src_a1(unsigned v, unsigned h)
    return v/h;
 }
 
-static struct string
+static void
 brw_hw_decode_inst(const struct brw_isa_info *isa,
                    brw_hw_decoded_inst *inst,
-                   const brw_eu_inst *raw)
+                   const brw_eu_inst *raw, struct error *error)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
-   struct string error_msg = { .str = NULL, .len = 0 };
 
    inst->raw = raw;
    inst->opcode = brw_eu_inst_opcode(isa, raw);
@@ -2933,8 +2894,6 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
          inst->cond_modifier = brw_eu_inst_cond_modifier(devinfo, raw);
       }
    }
-
-   return error_msg;
 }
 
 bool
@@ -2943,27 +2902,20 @@ brw_validate_instruction(const struct brw_isa_info *isa,
                          unsigned inst_size,
                          struct disasm_info *disasm)
 {
-   struct string error_msg = { .str = NULL, .len = 0 };
+   struct error error = {};
 
    if (is_unsupported_inst(isa, inst)) {
-      ERROR("Instruction not supported on this Gen");
+      report_error(&error, "Instruction not supported on this Gfx version");
    } else {
       brw_hw_decoded_inst decoded = {};
-      error_msg = brw_hw_decode_inst(isa, &decoded, inst);
+      brw_hw_decode_inst(isa, &decoded, inst, &error);
 
-#define CHECK(func, args...)                             \
-   do {                                                  \
-      struct string __msg = func(isa, &decoded, ##args); \
-      if (__msg.str) {                                   \
-         cat(&error_msg, __msg);                         \
-         free(__msg.str);                                \
-      }                                                  \
-   } while (0)
+#define CHECK(func, args...) func(isa, &decoded, &error, ##args);
 
-      if (error_msg.str == NULL)
+      if (!error.msg)
          CHECK(invalid_values);
 
-      if (error_msg.str == NULL) {
+      if (!error.msg) {
          CHECK(sources_not_null);
          CHECK(send_restrictions);
          CHECK(general_restrictions_based_on_operand_types);
@@ -2981,12 +2933,14 @@ brw_validate_instruction(const struct brw_isa_info *isa,
 #undef CHECK
    }
 
-   if (error_msg.str && disasm) {
-      disasm_insert_error(disasm, offset, inst_size, error_msg.str);
+   if (error.msg) {
+      if (disasm)
+         disasm_insert_error(disasm, offset, inst_size, error.msg);
+      ralloc_free(error.msg);
+      return false;
+   } else {
+      return true;
    }
-   free(error_msg.str);
-
-   return error_msg.len == 0;
 }
 
 bool
