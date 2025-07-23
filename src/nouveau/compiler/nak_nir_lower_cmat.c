@@ -60,7 +60,7 @@ get_nak_cmat_type_for_muladd(struct glsl_cmat_description a_desc,
        k == 16 && glsl_base_type_is_float(c_desc.element_type))
       return NAK_CMAT_TYPE_M16N16K16_FLOAT_SW;
 
-   unreachable("Unable to determine matrix muladd layout!");
+   UNREACHABLE("Unable to determine matrix muladd layout!");
 }
 
 enum nak_matrix_type_layout {
@@ -328,7 +328,7 @@ get_hw_nak_cmat_type(enum nak_cmat_type cmat_type, uint8_t sm)
    case NAK_CMAT_TYPE_M16N16K16_FLOAT_SW:
       return NAK_CMAT_TYPE_M16N8K16_FLOAT;
    default:
-      unreachable("Unknown Matrix muladd type.");
+      UNREACHABLE("Unknown Matrix muladd type.");
    }
 }
 
@@ -557,7 +557,7 @@ lower_cmat_convert(nir_builder *b, nir_intrinsic_instr *intr, nir_def *cmat,
             nir_channel(b, efgh, 3)
          );
       } else {
-         unreachable("unsupported component counts for Matrix layout conversion");
+         UNREACHABLE("unsupported component counts for Matrix layout conversion");
       }
    }
 

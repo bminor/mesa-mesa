@@ -153,7 +153,7 @@ anv_bo_sync_wait(struct vk_device *vk_device,
             break;
 
          default:
-            unreachable("Invalid BO sync state");
+            UNREACHABLE("Invalid BO sync state");
          }
       }
 

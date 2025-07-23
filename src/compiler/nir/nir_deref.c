@@ -237,7 +237,7 @@ nir_deref_instr_has_complex_use(nir_deref_instr *deref,
          default:
             return true;
          }
-         unreachable("Switch default failed");
+         UNREACHABLE("Switch default failed");
       }
 
       default:
@@ -332,7 +332,7 @@ nir_deref_instr_get_const_offset(nir_deref_instr *deref,
          /* A cast doesn't contribute to the offset */
          break;
       default:
-         unreachable("Unsupported deref type");
+         UNREACHABLE("Unsupported deref type");
       }
    }
 
@@ -371,7 +371,7 @@ nir_build_deref_offset(nir_builder *b, nir_deref_instr *deref,
          /* A cast doesn't contribute to the offset */
          break;
       default:
-         unreachable("Unsupported deref type");
+         UNREACHABLE("Unsupported deref type");
       }
    }
 
@@ -475,7 +475,7 @@ nir_fixup_deref_types_instr(UNUSED struct nir_builder *b, nir_instr *instr, UNUS
    } else if (deref->deref_type == nir_deref_type_cast) {
       return false;
    } else {
-      unreachable("Unsupported deref type");
+      UNREACHABLE("Unsupported deref type");
    }
 
    if (deref->type == parent_derived_type)
@@ -606,7 +606,7 @@ compare_deref_paths(nir_deref_path *a_path, nir_deref_path *b_path,
       }
 
       default:
-         unreachable("Invalid deref type");
+         UNREACHABLE("Invalid deref type");
       }
    }
 
@@ -832,7 +832,7 @@ rematerialize_deref_in_block(nir_deref_instr *deref,
       break;
 
    default:
-      unreachable("Invalid deref instruction type");
+      UNREACHABLE("Invalid deref instruction type");
    }
 
    nir_def_init(&new_deref->instr, &new_deref->def,
@@ -931,7 +931,7 @@ nir_deref_instr_fixup_child_types(nir_deref_instr *parent)
       nir_deref_instr *child = nir_instr_as_deref(nir_src_parent_instr(use));
       switch (child->deref_type) {
       case nir_deref_type_var:
-         unreachable("nir_deref_type_var cannot be a child");
+         UNREACHABLE("nir_deref_type_var cannot be a child");
 
       case nir_deref_type_array:
       case nir_deref_type_array_wildcard:

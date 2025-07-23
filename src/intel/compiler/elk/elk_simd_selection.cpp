@@ -132,7 +132,7 @@ elk_simd_should_compile(elk_simd_selection_state &state, unsigned simd)
       start = DEBUG_CS_SIMD8;
       break;
    default:
-      unreachable("unknown shader stage in elk_simd_should_compile");
+      UNREACHABLE("unknown shader stage in elk_simd_should_compile");
    }
 
    const bool env_skip[] = {

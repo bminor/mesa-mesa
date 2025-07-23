@@ -200,7 +200,7 @@ pan_draw_mode(enum mesa_prim mode)
 #undef DEFINE_CASE
 
    default:
-      unreachable("Invalid draw mode");
+      UNREACHABLE("Invalid draw mode");
    }
 }
 

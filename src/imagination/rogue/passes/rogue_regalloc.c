@@ -174,7 +174,7 @@ bool rogue_regalloc(rogue_shader *shader)
       else if (regarray->size == 4)
          raclass = ROGUE_REGALLOC_CLASS_TEMP_4;
       else
-         unreachable("Unsupported regarray size.");
+         UNREACHABLE("Unsupported regarray size.");
 
       ra_set_node_class(ra_graph,
                         base_index,
@@ -211,7 +211,7 @@ bool rogue_regalloc(rogue_shader *shader)
 
    /* TODO: Spilling support. */
    if (!ra_allocate(ra_graph))
-      unreachable("Register allocation failed.");
+      UNREACHABLE("Register allocation failed.");
 
    /* Replace SSA regarray registers with allocated physical registers. */
    for (unsigned u = 0; u < num_parent_regarrays; ++u) {

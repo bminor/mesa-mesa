@@ -138,7 +138,7 @@ nvk_mem_arena_find_mem_by_addr(const struct nvk_mem_arena *arena, uint64_t addr)
             return mem_idx;
       }
 
-      unreachable("Not an arena address");
+      UNREACHABLE("Not an arena address");
    }
 }
 

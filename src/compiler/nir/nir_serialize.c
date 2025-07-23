@@ -173,7 +173,7 @@ decode_num_components_in_3bits(uint8_t value)
    if (value == 6)
       return 16;
 
-   unreachable("invalid num_components encoding");
+   UNREACHABLE("invalid num_components encoding");
    return 0;
 }
 
@@ -953,7 +953,7 @@ write_deref(write_ctx *ctx, const nir_deref_instr *deref)
       break;
 
    default:
-      unreachable("Invalid deref type");
+      UNREACHABLE("Invalid deref type");
    }
 }
 
@@ -1023,7 +1023,7 @@ read_deref(read_ctx *ctx, union packed_instr header)
       break;
 
    default:
-      unreachable("Invalid deref type");
+      UNREACHABLE("Invalid deref type");
    }
 
    if (deref_type == nir_deref_type_var) {
@@ -1213,7 +1213,7 @@ write_load_const(write_ctx *ctx, const nir_load_const_instr *lc)
          header.load_const.packed_value = lc->value[0].b;
          break;
       default:
-         unreachable("invalid bit_size");
+         UNREACHABLE("invalid bit_size");
       }
    }
 
@@ -1264,7 +1264,7 @@ read_load_const(read_ctx *ctx, union packed_instr header)
          lc->value[0].u32 = (uint64_t)header.load_const.packed_value << 13;
          break;
       default:
-         unreachable("invalid bit_size");
+         UNREACHABLE("invalid bit_size");
       }
       break;
 
@@ -1290,7 +1290,7 @@ read_load_const(read_ctx *ctx, union packed_instr header)
          lc->value[0].b = header.load_const.packed_value;
          break;
       default:
-         unreachable("invalid bit_size");
+         UNREACHABLE("invalid bit_size");
       }
       break;
 
@@ -1707,9 +1707,9 @@ write_instr(write_ctx *ctx, const nir_instr *instr)
       write_call(ctx, nir_instr_as_call(instr));
       break;
    case nir_instr_type_parallel_copy:
-      unreachable("Cannot write parallel copies");
+      UNREACHABLE("Cannot write parallel copies");
    default:
-      unreachable("bad instr type");
+      UNREACHABLE("bad instr type");
    }
 }
 
@@ -1761,9 +1761,9 @@ read_instr(read_ctx *ctx, nir_block *block)
       instr = &read_call(ctx)->instr;
       break;
    case nir_instr_type_parallel_copy:
-      unreachable("Cannot read parallel copies");
+      UNREACHABLE("Cannot read parallel copies");
    default:
-      unreachable("bad instr type");
+      UNREACHABLE("bad instr type");
    }
 
    if (unlikely(ctx->nir->has_debug_info)) {
@@ -1883,7 +1883,7 @@ write_cf_node(write_ctx *ctx, nir_cf_node *cf)
       write_loop(ctx, nir_cf_node_as_loop(cf));
       break;
    default:
-      unreachable("bad cf type");
+      UNREACHABLE("bad cf type");
    }
 }
 
@@ -1903,7 +1903,7 @@ read_cf_node(read_ctx *ctx, struct exec_list *list)
       read_loop(ctx, list);
       break;
    default:
-      unreachable("bad cf type");
+      UNREACHABLE("bad cf type");
    }
 }
 

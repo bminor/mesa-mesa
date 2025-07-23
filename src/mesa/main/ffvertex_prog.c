@@ -531,7 +531,7 @@ static GLuint material_attrib( GLuint side, GLuint property )
    case STATE_SHININESS:
       return MAT_ATTRIB_FRONT_SHININESS + side;
    default:
-      unreachable("invalid value");
+      UNREACHABLE("invalid value");
    }
 }
 
@@ -1063,7 +1063,7 @@ static void build_fog( struct tnl_program *p )
       fog = load_input(p, VERT_ATTRIB_FOG, 1);
       break;
    default:
-      unreachable("Bad fog mode in build_fog()");
+      UNREACHABLE("Bad fog mode in build_fog()");
    }
 
    store_output_float(p, VARYING_SLOT_FOGC, fog);

@@ -142,7 +142,7 @@ load_offset_group(nir_builder *b, int ncomponents)
       return nir_imm_ivec2(b, 16, 20);
    default:
       debug_printf("Got %d components\n", ncomponents);
-      unreachable("Unsupported component count");
+      UNREACHABLE("Unsupported component count");
    }
 }
 

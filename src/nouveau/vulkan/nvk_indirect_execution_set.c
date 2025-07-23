@@ -51,7 +51,7 @@ nvk_ies_cs_qmd_init(const struct nvk_physical_device *pdev,
          break;
 
       default:
-         unreachable("Unsupported cbuf type");
+         UNREACHABLE("Unsupported cbuf type");
       }
    }
 
@@ -206,7 +206,7 @@ nvk_ies_set_pipeline(struct nvk_device *dev,
    }
 
    default:
-      unreachable("Invalid indirect execution set type");
+      UNREACHABLE("Invalid indirect execution set type");
    }
 }
 
@@ -227,7 +227,7 @@ nvk_ies_set_shader(struct nvk_device *dev,
    }
 
    default:
-      unreachable("Invalid indirect execution set type");
+      UNREACHABLE("Invalid indirect execution set type");
    }
 }
 
@@ -262,7 +262,7 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
          ies->type = NVK_IES_TYPE_GFX_PIPELINE;
          ies->stride_B = nvk_ies_stride_gfx_pipeline(pdev, pipeline->stages);
       } else {
-         unreachable("Unknown shader stage");
+         UNREACHABLE("Unknown shader stage");
       }
       break;
    }
@@ -287,13 +287,13 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
          ies->type = NVK_IES_TYPE_GFX_SHADER;
          ies->stride_B = nvk_ies_stride_gfx_shader(pdev, stages);
       } else {
-         unreachable("Unknown shader stage");
+         UNREACHABLE("Unknown shader stage");
       }
       break;
    }
 
    default:
-      unreachable("Unknown indirect execution set info type");
+      UNREACHABLE("Unknown indirect execution set info type");
    }
 
    size_t size = ies->count * (size_t)ies->stride_B;
@@ -325,7 +325,7 @@ nvk_CreateIndirectExecutionSetEXT(VkDevice _device,
    }
 
    default:
-      unreachable("Unknown indirect execution set info type");
+      UNREACHABLE("Unknown indirect execution set info type");
    }
 
    *pIndirectExecutionSet = nvk_indirect_execution_set_to_handle(ies);

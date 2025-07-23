@@ -269,7 +269,7 @@ vec4_tcs_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
       break;
    }
    case nir_intrinsic_load_input:
-      unreachable("nir_lower_io should use load_per_vertex_input intrinsics");
+      UNREACHABLE("nir_lower_io should use load_per_vertex_input intrinsics");
       break;
    case nir_intrinsic_load_output:
    case nir_intrinsic_load_per_vertex_output: {

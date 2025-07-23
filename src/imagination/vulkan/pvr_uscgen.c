@@ -48,7 +48,7 @@ static void build_shader(pco_ctx *ctx, nir_shader *nir, pco_binary **binary)
  */
 void pvr_uscgen_nop(pco_ctx *ctx, gl_shader_stage stage, pco_binary **binary)
 {
-   unreachable("finishme: pvr_uscgen_nop");
+   UNREACHABLE("finishme: pvr_uscgen_nop");
 }
 
 /**
@@ -62,7 +62,7 @@ void pvr_uscgen_eot(pco_ctx *ctx,
                     struct pvr_eot_props *props,
                     pco_binary **binary)
 {
-   unreachable("finishme: pvr_uscgen_eot");
+   UNREACHABLE("finishme: pvr_uscgen_eot");
 }
 
 /**
@@ -76,5 +76,5 @@ void pvr_uscgen_tq(pco_ctx *ctx,
                    struct pvr_tq_props *props,
                    pco_binary **binary)
 {
-   unreachable("finishme: pvr_uscgen_tq");
+   UNREACHABLE("finishme: pvr_uscgen_tq");
 }

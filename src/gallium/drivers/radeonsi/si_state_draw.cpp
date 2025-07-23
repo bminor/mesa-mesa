@@ -1805,7 +1805,7 @@ void si_set_vertex_buffer_descriptor(struct si_screen *sscreen, struct si_vertex
       si_set_vb_descriptor<GFX12>(velems, vb, element_index, out);
       break;
    default:
-      unreachable("unhandled gfx level");
+      UNREACHABLE("unhandled gfx level");
    }
 }
 
@@ -2636,7 +2636,7 @@ static void si_invalid_draw_vbo(struct pipe_context *pipe,
                                 const struct pipe_draw_start_count_bias *draws,
                                 unsigned num_draws)
 {
-   unreachable("vertex shader not bound");
+   UNREACHABLE("vertex shader not bound");
 }
 
 static void si_invalid_draw_vertex_state(struct pipe_context *ctx,
@@ -2646,7 +2646,7 @@ static void si_invalid_draw_vertex_state(struct pipe_context *ctx,
                                          const struct pipe_draw_start_count_bias *draws,
                                          unsigned num_draws)
 {
-   unreachable("vertex shader not bound");
+   UNREACHABLE("vertex shader not bound");
 }
 
 extern "C"

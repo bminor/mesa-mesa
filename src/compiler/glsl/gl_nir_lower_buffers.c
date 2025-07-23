@@ -111,9 +111,9 @@ get_block_array_index(nir_builder *b, nir_deref_instr *deref,
     */
 
    if (use_bindings)
-      unreachable("Failed to find the block by binding");
+      UNREACHABLE("Failed to find the block by binding");
    else
-      unreachable("Failed to find the block by name");
+      UNREACHABLE("Failed to find the block by name");
 }
 
 static void
@@ -152,9 +152,9 @@ get_block_index_offset(nir_variable *var,
    }
 
    if (use_bindings)
-      unreachable("Failed to find the block by binding");
+      UNREACHABLE("Failed to find the block by binding");
    else
-      unreachable("Failed to find the block by name");
+      UNREACHABLE("Failed to find the block by name");
 }
 
 static bool
@@ -295,7 +295,7 @@ lower_buffer_interface_derefs_impl(nir_function_impl *impl,
             }
 
             case nir_intrinsic_copy_deref:
-               unreachable("copy_deref should be lowered by now");
+               UNREACHABLE("copy_deref should be lowered by now");
                break;
 
             default:

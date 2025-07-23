@@ -52,7 +52,7 @@ vk_image_sampler_dim(const struct vk_image *image)
       else
          return GLSL_SAMPLER_DIM_2D;
    case VK_IMAGE_TYPE_3D: return GLSL_SAMPLER_DIM_3D;
-   default: unreachable("Invalid image type");
+   default: UNREACHABLE("Invalid image type");
    }
 }
 
@@ -70,7 +70,7 @@ aspect_to_tex_binding(VkImageAspectFlagBits aspect)
    case VK_IMAGE_ASPECT_COLOR_BIT: return BLIT_DESC_BINDING_COLOR;
    case VK_IMAGE_ASPECT_DEPTH_BIT: return BLIT_DESC_BINDING_DEPTH;
    case VK_IMAGE_ASPECT_STENCIL_BIT: return BLIT_DESC_BINDING_STENCIL;
-   default: unreachable("Unsupported aspect");
+   default: UNREACHABLE("Unsupported aspect");
    }
 }
 
@@ -156,7 +156,7 @@ build_tex_resolve(nir_builder *b, nir_deref_instr *t,
             accum = nir_fmin(b, accum, val);
             break;
          default:
-            unreachable("Invalid sample result type");
+            UNREACHABLE("Invalid sample result type");
          }
          break;
 
@@ -172,12 +172,12 @@ build_tex_resolve(nir_builder *b, nir_deref_instr *t,
             accum = nir_fmax(b, accum, val);
             break;
          default:
-            unreachable("Invalid sample result type");
+            UNREACHABLE("Invalid sample result type");
          }
          break;
 
       default:
-         unreachable("Unsupported resolve mode");
+         UNREACHABLE("Unsupported resolve mode");
       }
    }
 
@@ -289,7 +289,7 @@ build_blit_shader(const struct vk_meta_blit_key *key)
          out_comps = 1;
          break;
       default:
-         unreachable("Unsupported aspect");
+         UNREACHABLE("Unsupported aspect");
       }
 
       const bool is_array = key->dim != GLSL_SAMPLER_DIM_3D;

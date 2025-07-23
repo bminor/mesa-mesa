@@ -63,7 +63,7 @@ ComputeCroppingRect( const UINT32 textureWidth,
             break;
          default:
          {
-            unreachable( "Unsupported chroma format idc" );
+            UNREACHABLE( "Unsupported chroma format idc" );
          }
          break;
       }
@@ -1054,7 +1054,7 @@ GetMaxDPBSize( int width, int height, eAVEncH264VLevel level_idc )
          maxDpbMbs = 696320;
          break;
       default:
-         unreachable( "unexpected level_idc" );
+         UNREACHABLE( "unexpected level_idc" );
          break;
    }
    int maxDpbSize = ( maxDpbMbs / numMbs );

@@ -60,7 +60,7 @@ elk_negate_cmod(enum elk_conditional_mod cmod)
    case ELK_CONDITIONAL_LE:
       return ELK_CONDITIONAL_G;
    default:
-      unreachable("Can't negate this cmod");
+      UNREACHABLE("Can't negate this cmod");
    }
 }
 
@@ -198,7 +198,7 @@ elk_set_default_compression_control(struct elk_codegen *p,
       p->current->group = 0;
       break;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    if (p->devinfo->ver <= 6) {
@@ -826,6 +826,6 @@ elk_num_sources_from_inst(const struct elk_isa_info *isa,
    case ELK_MATH_FUNCTION_INT_DIV_REMAINDER:
       return 2;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }

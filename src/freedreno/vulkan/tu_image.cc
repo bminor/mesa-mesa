@@ -287,7 +287,7 @@ tu_image_view_init(struct tu_device *device,
       args.type = FDL_VIEW_TYPE_3D;
       break;
    default:
-      unreachable("unknown view type");
+      UNREACHABLE("unknown view type");
    }
 
    STATIC_ASSERT((unsigned)VK_CHROMA_LOCATION_COSITED_EVEN == (unsigned)FDL_CHROMA_LOCATION_COSITED_EVEN);
@@ -916,7 +916,7 @@ tu_BindImageMemory2(VkDevice _device,
       if (!mem) {
 #if DETECT_OS_ANDROID
          /* TODO handle VkNativeBufferANDROID */
-         unreachable("VkBindImageMemoryInfo with no memory");
+         UNREACHABLE("VkBindImageMemoryInfo with no memory");
 #else
          const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
             vk_find_struct_const(pBindInfos[i].pNext,

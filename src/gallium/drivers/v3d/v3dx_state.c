@@ -172,7 +172,7 @@ translate_stencil_op(enum pipe_stencil_op op)
         case PIPE_STENCIL_OP_DECR_WRAP: return V3D_STENCIL_OP_DECWRAP;
         case PIPE_STENCIL_OP_INVERT:    return V3D_STENCIL_OP_INVERT;
         }
-        unreachable("bad stencil op");
+        UNREACHABLE("bad stencil op");
 }
 
 static void *
@@ -551,7 +551,7 @@ translate_wrap(uint32_t pipe_wrap)
         case PIPE_TEX_WRAP_MIRROR_CLAMP_TO_EDGE:
                 return V3D_WRAP_MODE_MIRROR_ONCE;
         default:
-                unreachable("Unknown wrap mode");
+                UNREACHABLE("Unknown wrap mode");
         }
 }
 

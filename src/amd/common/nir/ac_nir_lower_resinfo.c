@@ -225,7 +225,7 @@ lower_query_size(nir_builder *b, nir_def *desc, nir_src *lod,
       result = nir_vec3(b, width, height, depth);
       break;
    default:
-      unreachable("invalid sampler dim");
+      UNREACHABLE("invalid sampler dim");
    }
 
    return handle_null_desc(b, desc, result);
@@ -352,7 +352,7 @@ static bool lower_resinfo(nir_builder *b, nir_instr *instr, void *data)
             result = query_samples(b, desc, tex->sampler_dim, gfx_level);
             break;
          default:
-            unreachable("shouldn't get here");
+            UNREACHABLE("shouldn't get here");
          }
          break;
 

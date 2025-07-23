@@ -163,7 +163,7 @@ setup_border_color(struct fd_screen *screen,
                clamped = CLAMP(bc->ui[j], 0, 65535);
             break;
          default:
-            unreachable("Unexpected bit size");
+            UNREACHABLE("Unexpected bit size");
          case 32:
             clamped = 0;
             break;
@@ -653,7 +653,7 @@ build_texture_state(struct fd_context *ctx, enum pipe_shader_type type,
       tex_count_reg = REG_A6XX_SP_CS_TSIZE;
       break;
    default:
-      unreachable("bad state block");
+      UNREACHABLE("bad state block");
    }
 
    if (tex->num_samplers > 0) {

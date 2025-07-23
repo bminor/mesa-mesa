@@ -672,7 +672,7 @@ invert_comparison_if_needed(nir_op alu_op, bool invert)
    case nir_op_ine:
       return nir_op_ieq;
    default:
-      unreachable("Unsuported comparison!");
+      UNREACHABLE("Unsuported comparison!");
    }
 }
 
@@ -830,7 +830,7 @@ test_iterations(int32_t iter_int, nir_const_value step,
       add_op = nir_op_iadd;
       break;
    default:
-      unreachable("Unhandled induction variable base type!");
+      UNREACHABLE("Unhandled induction variable base type!");
    }
 
    /* Multiple the iteration count we are testing by the number of times we
@@ -938,7 +938,7 @@ calculate_iterations(nir_scalar basis, nir_scalar limit_basis,
                                      limit_basis, limit, invert_cond,
                                      execution_mode, max_unroll_iterations);
    default:
-      unreachable("Invalid induction variable increment operation.");
+      UNREACHABLE("Invalid induction variable increment operation.");
    }
 
    /* If iter_int is negative the loop is ill-formed or is the conditional is
@@ -1415,7 +1415,7 @@ process_loops(nir_cf_node *cf_node, nir_variable_mode indirect_mask,
       break;
    }
    default:
-      unreachable("unknown cf node type");
+      UNREACHABLE("unknown cf node type");
    }
 
    nir_loop *loop = nir_cf_node_as_loop(cf_node);

@@ -198,7 +198,7 @@ init_slice_info(struct lower_cmat_state *state,
       base_type = GLSL_TYPE_INT;
       break;
    default:
-      unreachable("Invalid cooperative matrix element type.");
+      UNREACHABLE("Invalid cooperative matrix element type.");
    }
 
    unsigned len = elements_per_invocation / packing_factor;
@@ -800,7 +800,7 @@ lower_cmat_instr(nir_builder *b, nir_instr *instr, void *_state)
    }
 
    default:
-      unreachable("invalid cooperative matrix intrinsic");
+      UNREACHABLE("invalid cooperative matrix intrinsic");
    }
 }
 

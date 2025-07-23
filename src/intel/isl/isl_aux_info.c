@@ -31,8 +31,8 @@ UNUSED static void static_assert_func(void) {
    STATIC_ASSERT(ISL_AUX_STATE_ASSERT == ((enum isl_aux_state) 0));
 }
 
-#undef unreachable
-#define unreachable(str) return 0
+#undef UNREACHABLE
+#define UNREACHABLE(str) return 0
 
 #undef assert
 #define assert(cond) do { \
@@ -124,7 +124,7 @@ aux_state_possible(enum isl_aux_state state,
 #endif
    }
 
-   unreachable("Invalid aux state.");
+   UNREACHABLE("Invalid aux state.");
 }
 
 enum isl_aux_state
@@ -201,10 +201,10 @@ isl_aux_get_initial_state(const struct intel_device_info *devinfo,
           */
          return ISL_AUX_STATE_COMPRESSED_NO_CLEAR;
       } else {
-         unreachable("Unsupported gfx version");
+         UNREACHABLE("Unsupported gfx version");
       }
    default:
-      unreachable("Unsupported aux mode");
+      UNREACHABLE("Unsupported aux mode");
    }
 }
 
@@ -246,7 +246,7 @@ isl_aux_prepare_access(enum isl_aux_state initial_state,
 #endif
    }
 
-   unreachable("Invalid aux state.");
+   UNREACHABLE("Invalid aux state.");
 }
 
 enum isl_aux_state
@@ -283,7 +283,7 @@ isl_aux_state_transition_aux_op(enum isl_aux_state initial_state,
 #endif
    }
 
-   unreachable("Invalid aux op.");
+   UNREACHABLE("Invalid aux op.");
 }
 
 enum isl_aux_state
@@ -332,7 +332,7 @@ isl_aux_state_transition_write(enum isl_aux_state initial_state,
 #endif
    }
 
-   unreachable("Invalid aux state.");
+   UNREACHABLE("Invalid aux state.");
 }
 
 bool

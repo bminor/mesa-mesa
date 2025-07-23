@@ -289,14 +289,14 @@ static VkResult pvr_write_compute_query_pds_data_section(
          }
 
          default:
-            unreachable("Unsupported special buffer type.");
+            UNREACHABLE("Unsupported special buffer type.");
          }
 
          entries += sizeof(*special_buff_entry);
          break;
       }
       default:
-         unreachable("Unsupported data section map");
+         UNREACHABLE("Unsupported data section map");
       }
    }
 
@@ -537,7 +537,7 @@ VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Invalid query type");
+      UNREACHABLE("Invalid query type");
    }
 
    result = pvr_cmd_buffer_start_sub_cmd(cmd_buffer,
@@ -795,7 +795,7 @@ VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
    }
 
    default:
-      unreachable("Invalid query type");
+      UNREACHABLE("Invalid query type");
    }
 
 #undef DRIVER_CONST

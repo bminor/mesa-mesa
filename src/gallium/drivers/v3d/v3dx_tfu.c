@@ -73,7 +73,7 @@ v3dX(tfu)(struct pipe_context *pctx,
                 case 4:  pformat = PIPE_FORMAT_R32_FLOAT;            break;
                 case 2:  pformat = PIPE_FORMAT_R16_FLOAT;            break;
                 case 1:  pformat = PIPE_FORMAT_R8_UNORM;             break;
-                default: unreachable("unsupported format bit-size"); break;
+                default: UNREACHABLE("unsupported format bit-size"); break;
                 };
         }
 

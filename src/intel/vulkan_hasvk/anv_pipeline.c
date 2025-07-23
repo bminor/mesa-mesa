@@ -194,7 +194,7 @@ void anv_DestroyPipeline(
    }
 
    default:
-      unreachable("invalid pipeline type");
+      UNREACHABLE("invalid pipeline type");
    }
 
    anv_pipeline_finish(pipeline, device, pAllocator);
@@ -948,7 +948,7 @@ anv_pipeline_add_executable(struct anv_pipeline *pipeline,
                break;
 
             case ANV_DESCRIPTOR_SET_NUM_WORK_GROUPS:
-               unreachable("gl_NumWorkgroups is never pushed");
+               UNREACHABLE("gl_NumWorkgroups is never pushed");
 
             case ANV_DESCRIPTOR_SET_SHADER_CONSTANTS:
                fprintf(stream, "Inline shader constant data (start=%dB)",
@@ -956,7 +956,7 @@ anv_pipeline_add_executable(struct anv_pipeline *pipeline,
                break;
 
             case ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS:
-               unreachable("Color attachments can't be pushed");
+               UNREACHABLE("Color attachments can't be pushed");
 
             default:
                fprintf(stream, "UBO (set=%d binding=%d start=%dB)",
@@ -1081,7 +1081,7 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_pipeline *pipeline,
          break;
       }
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
 
       stages[s].feedback.duration += os_time_get_nano() - stage_start;
@@ -1292,7 +1292,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
          anv_pipeline_link_fs(compiler, &stages[s], state->rp);
          break;
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
 
       next_stage = &stages[s];
@@ -1358,7 +1358,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
                                  &stages[s], prev_stage);
          break;
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
       if (stages[s].code == NULL) {
          ralloc_free(stage_ctx);
@@ -1971,7 +1971,7 @@ VkResult anv_GetPipelineExecutableStatisticsKHR(
       break;
    }
    default:
-      unreachable("invalid pipeline type");
+      UNREACHABLE("invalid pipeline type");
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {

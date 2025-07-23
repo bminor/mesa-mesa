@@ -368,7 +368,7 @@ get_fb0_attachment(struct gl_context *ctx, struct gl_framebuffer *fb,
       case GL_STENCIL:
          return &fb->Attachment[BUFFER_STENCIL];
       default:
-         unreachable("invalid attachment");
+         UNREACHABLE("invalid attachment");
       }
    }
 

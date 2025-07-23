@@ -138,7 +138,7 @@ ac_build_gfx6_fmask_descriptor(const enum amd_gfx_level gfx_level, const struct 
          num_format = V_008F14_IMG_NUM_FORMAT_FMASK_64_16_8;
          break;
       default:
-         unreachable("invalid nr_samples");
+         UNREACHABLE("invalid nr_samples");
       }
    } else {
       switch (FMASK(state->num_samples, state->num_storage_samples)) {
@@ -182,7 +182,7 @@ ac_build_gfx6_fmask_descriptor(const enum amd_gfx_level gfx_level, const struct 
          data_format = V_008F14_IMG_DATA_FORMAT_FMASK64_S16_F8;
          break;
       default:
-         unreachable("invalid nr_samples");
+         UNREACHABLE("invalid nr_samples");
       }
       num_format = V_008F14_IMG_NUM_FORMAT_UINT;
    }
@@ -282,7 +282,7 @@ ac_build_gfx10_fmask_descriptor(const enum amd_gfx_level gfx_level, const struct
       format = V_008F0C_GFX10_FORMAT_FMASK64_S16_F8;
       break;
    default:
-      unreachable("invalid nr_samples");
+      UNREACHABLE("invalid nr_samples");
    }
 #undef FMASK
 

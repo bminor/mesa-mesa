@@ -263,7 +263,7 @@ nir_precomp_index(const nir_shader *lib, const nir_function *func)
       i += nir_precomp_nr_variants(candidate);
    }
 
-   unreachable("function must be in library");
+   UNREACHABLE("function must be in library");
 }
 
 static inline void

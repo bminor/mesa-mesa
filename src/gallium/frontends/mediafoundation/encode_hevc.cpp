@@ -67,7 +67,7 @@ ComputeCroppingRect( const UINT32 textureWidth,
             break;
          default:
          {
-            unreachable( "Unsupported chroma format idc" );
+            UNREACHABLE( "Unsupported chroma format idc" );
          }
          break;
       }
@@ -843,7 +843,7 @@ LevelToLumaPS( eAVEncH265VLevel level_idc )
          maxLumaPs = 35651584;
          break;
       default:
-         unreachable( "unexpected level_idc" );
+         UNREACHABLE( "unexpected level_idc" );
          break;
    }
    return maxLumaPs;

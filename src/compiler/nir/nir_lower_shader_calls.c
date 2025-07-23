@@ -679,7 +679,7 @@ spill_ssa_defs_and_lower_shader_calls(nir_shader *shader, uint32_t num_calls,
          }
 
          case nir_intrinsic_report_ray_intersection:
-            unreachable("Any-hit shaders must be inlined");
+            UNREACHABLE("Any-hit shaders must be inlined");
 
          case nir_intrinsic_execute_callable: {
             nir_rt_execute_callable(b, call->src[0].ssa, call->src[1].ssa, .call_idx = call_idx, .stack_size = offset);
@@ -687,7 +687,7 @@ spill_ssa_defs_and_lower_shader_calls(nir_shader *shader, uint32_t num_calls,
          }
 
          default:
-            unreachable("Invalid shader call instruction");
+            UNREACHABLE("Invalid shader call instruction");
          }
 
          nir_rt_resume(b, .call_idx = call_idx, .stack_size = offset);
@@ -816,7 +816,7 @@ find_resume_instr(nir_function_impl *impl, unsigned call_idx)
             return &resume->instr;
       }
    }
-   unreachable("Couldn't find resume instruction");
+   UNREACHABLE("Couldn't find resume instruction");
 }
 
 /* Walk the CF tree and duplicate the contents of every loop, one half runs on
@@ -931,7 +931,7 @@ cursor_is_after_jump(nir_cursor cursor)
       return nir_block_ends_in_jump(cursor.block);
       ;
    }
-   unreachable("Invalid cursor option");
+   UNREACHABLE("Invalid cursor option");
 }
 
 /** Flattens if ladders leading up to a resume
@@ -1112,7 +1112,7 @@ flatten_resume_if_ladder(nir_builder *b,
       }
 
       case nir_cf_node_function:
-         unreachable("Unsupported CF node type");
+         UNREACHABLE("Unsupported CF node type");
       }
    }
    assert(!before_cursor);
@@ -1571,7 +1571,7 @@ nir_opt_trim_stack_values(nir_shader *shader)
                   new_write_mask |= 1 << swiz_map[idx];
                nir_intrinsic_set_write_mask(use_intrin, new_write_mask);
             } else {
-               unreachable("invalid instruction type");
+               UNREACHABLE("invalid instruction type");
             }
          }
 
@@ -1789,7 +1789,7 @@ find_last_dominant_use_block(nir_function_impl *impl, nir_def *value)
 
       return block;
    }
-   unreachable("Cannot find block");
+   UNREACHABLE("Cannot find block");
 }
 
 /* Put the scratch loads in the branches where they're needed. */

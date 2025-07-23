@@ -122,7 +122,7 @@ addr_format_for_desc_type(VkDescriptorType desc_type,
       return state->desc_addr_format;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 }
 
@@ -409,7 +409,7 @@ build_load_descriptor_mem(nir_builder *b,
    }
 
    default:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 }
 
@@ -675,7 +675,7 @@ build_res_index(nir_builder *b,
       break;
 
    default:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 
    assert(bind_layout->dynamic_offset_index < MAX_DYNAMIC_BUFFERS);
@@ -829,7 +829,7 @@ build_desc_addr_for_res_index(nir_builder *b,
          return nir_vec2(b, res.set_idx, desc_offset);
 
       default:
-         unreachable("Unhandled address format");
+         UNREACHABLE("Unhandled address format");
       }
    }
 
@@ -839,7 +839,7 @@ build_desc_addr_for_res_index(nir_builder *b,
       return nir_vec2(b, res.set_idx, desc_offset);
 
    default:
-      unreachable("Unhandled address format");
+      UNREACHABLE("Unhandled address format");
    }
 }
 
@@ -890,7 +890,7 @@ build_desc_addr_for_binding(nir_builder *b,
    }
 
    default:
-      unreachable("Unhandled address format");
+      UNREACHABLE("Unhandled address format");
    }
 }
 
@@ -1736,7 +1736,7 @@ lower_image_load_intel_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
             1, 32, state);
          break;
       default:
-         unreachable("Invalid surface parameter");
+         UNREACHABLE("Invalid surface parameter");
       }
    } else {
       const struct intel_device_info *devinfo = &state->pdevice->info;
@@ -1801,7 +1801,7 @@ lower_image_load_intel_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
          break;
       }
       default:
-         unreachable("Invalid surface parameter");
+         UNREACHABLE("Invalid surface parameter");
       }
    }
 

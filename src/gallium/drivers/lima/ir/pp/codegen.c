@@ -210,7 +210,7 @@ static ppir_codegen_outmod ppir_codegen_get_outmod(ppir_outmod outmod)
       case ppir_outmod_round:
          return ppir_codegen_outmod_round;
       default:
-         unreachable("invalid ppir_outmod");
+         UNREACHABLE("invalid ppir_outmod");
    }
 }
 

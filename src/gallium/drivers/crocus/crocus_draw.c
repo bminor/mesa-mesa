@@ -68,7 +68,7 @@ can_cut_index_handle_restart_index(struct crocus_context *ice,
    case 4:
       return draw->restart_index == 0xffffffff;
    default:
-      unreachable("illegal index size\n");
+      UNREACHABLE("illegal index size\n");
    }
 
    return false;

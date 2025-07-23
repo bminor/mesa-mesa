@@ -660,7 +660,7 @@ ir3_find_end(struct ir3 *ir)
             return instr;
       }
    }
-   unreachable("couldn't find end instruction");
+   UNREACHABLE("couldn't find end instruction");
 }
 
 static struct ir3_instruction *
@@ -750,7 +750,7 @@ ir3_find_shpe(struct ir3 *ir)
       }
    }
 
-   unreachable("preamble without shpe");
+   UNREACHABLE("preamble without shpe");
 }
 
 struct ir3_instruction *
@@ -870,7 +870,7 @@ ir3_block_get_pred_index(struct ir3_block *block, struct ir3_block *pred)
       }
    }
 
-   unreachable("ir3_block_get_pred_index() invalid predecessor");
+   UNREACHABLE("ir3_block_get_pred_index() invalid predecessor");
 }
 
 static struct ir3_instruction *

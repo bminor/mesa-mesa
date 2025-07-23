@@ -213,7 +213,7 @@ get_deref_node_recur(nir_deref_instr *deref,
       return parent->wildcard;
 
    default:
-      unreachable("Invalid deref type");
+      UNREACHABLE("Invalid deref type");
    }
 }
 
@@ -289,7 +289,7 @@ foreach_deref_node_worker(struct deref_node *node, nir_deref_instr **path,
    }
 
    default:
-      unreachable("Unsupported deref type");
+      UNREACHABLE("Unsupported deref type");
    }
 }
 
@@ -367,7 +367,7 @@ path_may_be_aliased_node(struct deref_node *node, nir_deref_instr **path,
    }
 
    default:
-      unreachable("Unsupported deref type");
+      UNREACHABLE("Unsupported deref type");
    }
 }
 

@@ -272,7 +272,7 @@ get_block_size(unsigned cpp, uint32_t *block_width,
       *block_height = 4;
       break;
    default:
-      unreachable("unknown cpp");
+      UNREACHABLE("unknown cpp");
    }
 }
 
@@ -901,7 +901,7 @@ fdl6_memcpy_linear_to_tiled(uint32_t x_start, uint32_t y_start,
    CASE(16)
 #undef CASE
    default:
-      unreachable("unknown cpp");
+      UNREACHABLE("unknown cpp");
    }
 #endif
 }
@@ -965,7 +965,7 @@ fdl6_memcpy_tiled_to_linear(uint32_t x_start, uint32_t y_start,
    CASE(16)
 #undef CASE
    default:
-      unreachable("unknown cpp");
+      UNREACHABLE("unknown cpp");
    }
 #endif
 }

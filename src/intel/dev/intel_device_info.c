@@ -1938,7 +1938,7 @@ intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min
       break;
    default:
       ret = false;
-      unreachable("Missing");
+      UNREACHABLE("Missing");
    }
    if (!ret) {
       mesa_logw("Could not get intel_device_info.");

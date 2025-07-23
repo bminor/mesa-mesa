@@ -595,7 +595,7 @@ fd2_clear(struct fd_context *ctx, enum fd_buffer_mask buffers,
             depth_clear = (uint32_t)(0xffffffff * depth);
             break;
          default:
-            unreachable("invalid depth");
+            UNREACHABLE("invalid depth");
             break;
          }
 

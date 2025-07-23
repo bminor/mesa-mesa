@@ -415,7 +415,7 @@ fd_msaa_samples(unsigned samples)
 {
    switch (samples) {
    default:
-      unreachable("Unsupported samples");
+      UNREACHABLE("Unsupported samples");
    case 0:
    case 1:
       return MSAA_ONE;
@@ -469,7 +469,7 @@ fd4_stage2shadersb(gl_shader_stage type)
    case MESA_SHADER_KERNEL:
       return SB4_CS_SHADER;
    default:
-      unreachable("bad shader type");
+      UNREACHABLE("bad shader type");
       return (enum a4xx_state_block) ~0;
    }
 }

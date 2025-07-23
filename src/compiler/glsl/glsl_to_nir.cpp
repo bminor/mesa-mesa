@@ -69,7 +69,7 @@ get_param_mode(ir_variable *param)
    case ir_var_shader_storage:
    case ir_var_temporary:
    default:
-      unreachable("Unsupported function param mode");
+      UNREACHABLE("Unsupported function param mode");
    }
 }
 
@@ -330,7 +330,7 @@ nir_visitor::constant_copy(ir_constant *ir, void *mem_ctx)
                break;
 
             default:
-               unreachable("Cannot get here from the first level switch");
+               UNREACHABLE("Cannot get here from the first level switch");
             }
             ret->elements[c] = col_const;
          }
@@ -352,7 +352,7 @@ nir_visitor::constant_copy(ir_constant *ir, void *mem_ctx)
             break;
 
          default:
-            unreachable("Cannot get here from the first level switch");
+            UNREACHABLE("Cannot get here from the first level switch");
          }
       }
       break;
@@ -393,7 +393,7 @@ nir_visitor::constant_copy(ir_constant *ir, void *mem_ctx)
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    return ret;
@@ -525,7 +525,7 @@ nir_visitor::visit(ir_variable *ir)
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    unsigned mem_access = 0;
@@ -590,7 +590,7 @@ nir_visitor::visit(ir_variable *ir)
       var->data.depth_layout = nir_depth_layout_unchanged;
       break;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    var->data.index = ir->data.index;
@@ -816,7 +816,7 @@ nir_visitor::visit(ir_loop_jump *ir)
       type = nir_jump_continue;
       break;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    nir_jump_instr *instr = nir_jump_instr_create(this->shader, type);
@@ -942,7 +942,7 @@ get_reduction_op(enum ir_intrinsic_id id, const glsl_type *type)
 #undef CONV_OP
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
 #undef IR_CASE
@@ -987,7 +987,7 @@ nir_visitor::visit(ir_call *ir)
          else if (ir->return_deref->type == &glsl_type_builtin_float)
              atomic_op = nir_atomic_op_fmin;
          else
-            unreachable("Invalid type");
+            UNREACHABLE("Invalid type");
          break;
       case ir_intrinsic_generic_atomic_max:
          assert(ir->return_deref);
@@ -1001,7 +1001,7 @@ nir_visitor::visit(ir_call *ir)
          else if (ir->return_deref->type == &glsl_type_builtin_float)
              atomic_op = nir_atomic_op_fmax;
          else
-            unreachable("Invalid type");
+            UNREACHABLE("Invalid type");
          break;
       case ir_intrinsic_generic_atomic_exchange:
          op = nir_intrinsic_deref_atomic;
@@ -1065,7 +1065,7 @@ nir_visitor::visit(ir_call *ir)
          else if (ir->return_deref->type == &glsl_type_builtin_uint)
             atomic_op = nir_atomic_op_umin;
          else
-            unreachable("Invalid type");
+            UNREACHABLE("Invalid type");
          break;
       case ir_intrinsic_image_atomic_max:
          op = nir_intrinsic_image_deref_atomic;
@@ -1074,7 +1074,7 @@ nir_visitor::visit(ir_call *ir)
          else if (ir->return_deref->type == &glsl_type_builtin_uint)
             atomic_op = nir_atomic_op_umax;
          else
-            unreachable("Invalid type");
+            UNREACHABLE("Invalid type");
          break;
       case ir_intrinsic_image_atomic_and:
          op = nir_intrinsic_image_deref_atomic;
@@ -1245,7 +1245,7 @@ nir_visitor::visit(ir_call *ir)
          op = nir_intrinsic_quad_swap_diagonal;
          break;
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
 
       nir_intrinsic_instr *instr = nir_intrinsic_instr_create(shader, op);
@@ -1531,7 +1531,7 @@ nir_visitor::visit(ir_call *ir)
             modes = nir_var_image;
             break;
          default:
-               unreachable("invalid intrinsic id for memory barrier");
+               UNREACHABLE("invalid intrinsic id for memory barrier");
          }
 
          nir_scoped_memory_barrier(&b, scope, NIR_MEMORY_ACQ_REL,
@@ -1697,7 +1697,7 @@ nir_visitor::visit(ir_call *ir)
          break;
       }
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
 
       if (ir->return_deref) {
@@ -1887,7 +1887,7 @@ get_instr_def(nir_instr *instr)
          return &tex_instr->def;
 
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 
    return NULL;
@@ -1985,7 +1985,7 @@ nir_visitor::visit(ir_expression *ir)
          op = nir_intrinsic_interp_deref_at_sample;
          break;
       default:
-         unreachable("Invalid interpolation intrinsic");
+         UNREACHABLE("Invalid interpolation intrinsic");
       }
 
       nir_intrinsic_instr *intrin = nir_intrinsic_instr_create(shader, op);
@@ -2245,7 +2245,7 @@ nir_visitor::visit(ir_expression *ir)
          result = nir_ifind_msb(&b, srcs[0]);
          break;
       default:
-         unreachable("Invalid type for findMSB()");
+         UNREACHABLE("Invalid type for findMSB()");
       }
       break;
    case ir_unop_find_lsb:
@@ -2404,7 +2404,7 @@ nir_visitor::visit(ir_expression *ir)
             case 3: result = nir_ball_fequal3(&b, srcs[0], srcs[1]); break;
             case 4: result = nir_ball_fequal4(&b, srcs[0], srcs[1]); break;
             default:
-               unreachable("not reached");
+               UNREACHABLE("not reached");
          }
       } else {
          switch (ir->operands[0]->type->vector_elements) {
@@ -2413,7 +2413,7 @@ nir_visitor::visit(ir_expression *ir)
             case 3: result = nir_ball_iequal3(&b, srcs[0], srcs[1]); break;
             case 4: result = nir_ball_iequal4(&b, srcs[0], srcs[1]); break;
             default:
-               unreachable("not reached");
+               UNREACHABLE("not reached");
          }
       }
       break;
@@ -2425,7 +2425,7 @@ nir_visitor::visit(ir_expression *ir)
             case 3: result = nir_bany_fnequal3(&b, srcs[0], srcs[1]); break;
             case 4: result = nir_bany_fnequal4(&b, srcs[0], srcs[1]); break;
             default:
-               unreachable("not reached");
+               UNREACHABLE("not reached");
          }
       } else {
          switch (ir->operands[0]->type->vector_elements) {
@@ -2434,7 +2434,7 @@ nir_visitor::visit(ir_expression *ir)
             case 3: result = nir_bany_inequal3(&b, srcs[0], srcs[1]); break;
             case 4: result = nir_bany_inequal4(&b, srcs[0], srcs[1]); break;
             default:
-               unreachable("not reached");
+               UNREACHABLE("not reached");
          }
       }
       break;
@@ -2492,7 +2492,7 @@ nir_visitor::visit(ir_expression *ir)
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    /* The bit-size of the NIR SSA value must match the bit-size of the
@@ -2578,7 +2578,7 @@ nir_visitor::visit(ir_texture *ir)
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    if (ir->projector != NULL)

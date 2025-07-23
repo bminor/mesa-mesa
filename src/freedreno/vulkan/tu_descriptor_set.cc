@@ -1244,7 +1244,7 @@ tu_GetDescriptorEXT(
                              pDescriptorInfo->data.pInputAttachmentImage);
       break;
    default:
-      unreachable("unimplemented descriptor type");
+      UNREACHABLE("unimplemented descriptor type");
       break;
    }
 }
@@ -1370,7 +1370,7 @@ tu_update_descriptor_sets(const struct tu_device *device,
             break;
          }
          default:
-            unreachable("unimplemented descriptor type");
+            UNREACHABLE("unimplemented descriptor type");
             break;
          }
          ptr += binding_layout->size / 4;
@@ -1712,7 +1712,7 @@ tu_update_descriptor_set_with_template(
             break;
          }
          default:
-            unreachable("unimplemented descriptor type");
+            UNREACHABLE("unimplemented descriptor type");
             break;
          }
          src = (char *) src + templ->entry[i].src_stride;

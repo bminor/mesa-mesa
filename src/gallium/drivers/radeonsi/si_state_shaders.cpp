@@ -814,7 +814,7 @@ static void si_shader_es(struct si_screen *sscreen, struct si_shader *shader)
       vgpr_comp_cnt = shader->selector->info.uses_primid ? 3 : 2;
       num_user_sgprs = SI_TES_NUM_USER_SGPR;
    } else
-      unreachable("invalid shader selector type");
+      UNREACHABLE("invalid shader selector type");
 
    oc_lds_en = shader->selector->stage == MESA_SHADER_TESS_EVAL ? 1 : 0;
 
@@ -996,7 +996,7 @@ static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
       } else if (es_stage == MESA_SHADER_TESS_EVAL)
          es_vgpr_comp_cnt = shader->key.ge.part.gs.es->info.uses_primid ? 3 : 2;
       else
-         unreachable("invalid shader selector type");
+         UNREACHABLE("invalid shader selector type");
 
       /* If offsets 4, 5 are used, GS_VGPR_COMP_CNT is ignored and
        * VGPR[0:4] are always loaded.
@@ -1342,7 +1342,7 @@ unsigned si_get_num_vertices_per_output_prim(struct si_shader *shader)
    case MESA_PRIM_UNKNOWN:
       return 0;
    default:
-      unreachable("unexpected prim type");
+      UNREACHABLE("unexpected prim type");
    }
 }
 
@@ -1809,7 +1809,7 @@ static void si_shader_vs(struct si_screen *sscreen, struct si_shader *shader,
       vgpr_comp_cnt = enable_prim_id ? 3 : 2;
       num_user_sgprs = SI_TES_NUM_USER_SGPR;
    } else
-      unreachable("invalid shader selector type");
+      UNREACHABLE("invalid shader selector type");
 
    /* VS is required to export at least one param. */
    nparams = MAX2(shader->info.nr_param_exports, 1);

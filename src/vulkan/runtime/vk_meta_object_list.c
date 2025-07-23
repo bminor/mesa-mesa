@@ -39,7 +39,7 @@ vk_meta_destroy_object(struct vk_device *device, struct vk_object_base *obj)
       disp->DestroyShaderEXT(_device, (VkShaderEXT)(uintptr_t)obj, NULL);
       break;
    default:
-      unreachable("Unsupported object type");
+      UNREACHABLE("Unsupported object type");
    }
 }
 

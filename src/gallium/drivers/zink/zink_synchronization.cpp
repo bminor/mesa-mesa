@@ -594,7 +594,7 @@ zink_pipeline_flags_from_stage(VkShaderStageFlagBits stage)
    case VK_SHADER_STAGE_COMPUTE_BIT:
       return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
    default:
-      unreachable("unknown shader stage bit");
+      UNREACHABLE("unknown shader stage bit");
    }
 }
 

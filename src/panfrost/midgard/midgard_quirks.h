@@ -99,7 +99,7 @@ midgard_get_quirks(unsigned gpu_id)
       return 0;
 
    default:
-      unreachable("Invalid Midgard GPU ID");
+      UNREACHABLE("Invalid Midgard GPU ID");
    }
 }
 

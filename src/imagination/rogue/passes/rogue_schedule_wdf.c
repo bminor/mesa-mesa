@@ -56,7 +56,7 @@ bool rogue_schedule_wdf(rogue_shader *shader, bool latency_hiding)
 
    /* TODO: Add support for delayed scheduling (latency hiding). */
    if (latency_hiding)
-      unreachable("Latency hiding is unimplemented.");
+      UNREACHABLE("Latency hiding is unimplemented.");
 
    bool progress = false;
 

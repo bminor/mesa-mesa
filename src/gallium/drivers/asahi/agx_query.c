@@ -418,7 +418,7 @@ agx_get_query_result(struct pipe_context *pctx, struct pipe_query *pquery,
       return true;
 
    default:
-      unreachable("Other queries not yet supported");
+      UNREACHABLE("Other queries not yet supported");
    }
 }
 

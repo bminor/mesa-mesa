@@ -44,7 +44,7 @@ private:
 
    bool load_input(UNUSED nir_intrinsic_instr *intr) override
    {
-      unreachable("load_input must be lowered in GS");
+      UNREACHABLE("load_input must be lowered in GS");
    };
    bool store_output(nir_intrinsic_instr *instr) override;
    bool emit_vertex(nir_intrinsic_instr *instr, bool cut);

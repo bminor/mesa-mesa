@@ -44,7 +44,7 @@ att_set_clear_preload(const VkRenderingAttachmentInfo *att, bool *clear, bool *p
       *preload |= att->storeOp == VK_ATTACHMENT_STORE_OP_NONE;
       break;
    default:
-      unreachable("Unsupported loadOp");
+      UNREACHABLE("Unsupported loadOp");
    }
 }
 

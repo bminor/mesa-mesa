@@ -498,7 +498,7 @@ st_bind_egl_image(struct gl_context *ctx,
             texFormat = MESA_FORMAT_R10G10B10X2_UNORM;
             texObj->RequiredTextureImageUnits = 1;
          } else {
-            unreachable("NV15 emulation requires R10_G10B10_420_UNORM support");
+            UNREACHABLE("NV15 emulation requires R10_G10B10_420_UNORM support");
          }
          break;
       case PIPE_FORMAT_NV20:
@@ -506,7 +506,7 @@ st_bind_egl_image(struct gl_context *ctx,
             texFormat = MESA_FORMAT_R10G10B10X2_UNORM;
             texObj->RequiredTextureImageUnits = 1;
          } else {
-            unreachable("NV20 emulation requires R10_G10B10_422_UNORM support");
+            UNREACHABLE("NV20 emulation requires R10_G10B10_422_UNORM support");
          }
          break;
       case PIPE_FORMAT_P010:
@@ -586,7 +586,7 @@ st_bind_egl_image(struct gl_context *ctx,
          texObj->RequiredTextureImageUnits = 1;
          break;
       default:
-         unreachable("unexpected emulated format");
+         UNREACHABLE("unexpected emulated format");
          break;
       }
    } else {

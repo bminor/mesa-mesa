@@ -433,7 +433,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
           */
          break;
       default:
-         unreachable("Invalid stage for load_output");
+         UNREACHABLE("Invalid stage for load_output");
       }
       break;
    case nir_intrinsic_load_per_view_output:
@@ -496,7 +496,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
                stage == MESA_SHADER_INTERSECTION)
          is_divergent = true;
       else
-         unreachable("Invalid stage for load_primitive_id");
+         UNREACHABLE("Invalid stage for load_primitive_id");
       break;
    case nir_intrinsic_load_tess_level_inner:
    case nir_intrinsic_load_tess_level_outer:
@@ -505,7 +505,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       else if (stage == MESA_SHADER_TESS_EVAL)
          is_divergent = !(options & nir_divergence_single_patch_per_tes_subgroup);
       else
-         unreachable("Invalid stage for load_primitive_tess_level_*");
+         UNREACHABLE("Invalid stage for load_primitive_tess_level_*");
       break;
 
    case nir_intrinsic_load_workgroup_index:
@@ -965,7 +965,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       break;
 #else
       nir_print_instr(&instr->instr, stderr);
-      unreachable("\nNIR divergence analysis: Unhandled intrinsic.");
+      UNREACHABLE("\nNIR divergence analysis: Unhandled intrinsic.");
 #endif
    }
 
@@ -1130,11 +1130,11 @@ visit_jump(nir_jump_instr *jump, struct divergence_state *state)
       /* This totally kills invocations so it doesn't add divergence */
       break;
    case nir_jump_return:
-      unreachable("NIR divergence analysis: Unsupported return instruction.");
+      UNREACHABLE("NIR divergence analysis: Unsupported return instruction.");
       break;
    case nir_jump_goto:
    case nir_jump_goto_if:
-      unreachable("NIR divergence analysis: Unsupported goto_if instruction.");
+      UNREACHABLE("NIR divergence analysis: Unsupported goto_if instruction.");
       break;
    }
    return false;
@@ -1172,7 +1172,7 @@ instr_is_loop_invariant(nir_instr *instr, struct divergence_state *state)
    case nir_instr_type_phi:
    case nir_instr_type_parallel_copy:
    default:
-      unreachable("NIR divergence analysis: Unsupported instruction type.");
+      UNREACHABLE("NIR divergence analysis: Unsupported instruction type.");
    }
 }
 
@@ -1198,7 +1198,7 @@ update_instr_divergence(nir_instr *instr, struct divergence_state *state)
    case nir_instr_type_phi:
    case nir_instr_type_parallel_copy:
    default:
-      unreachable("NIR divergence analysis: Unsupported instruction type.");
+      UNREACHABLE("NIR divergence analysis: Unsupported instruction type.");
    }
 }
 
@@ -1473,7 +1473,7 @@ visit_cf_list(struct exec_list *list, struct divergence_state *state)
          has_changed |= visit_loop(nir_cf_node_as_loop(node), state);
          break;
       case nir_cf_node_function:
-         unreachable("NIR divergence analysis: Unsupported cf_node type.");
+         UNREACHABLE("NIR divergence analysis: Unsupported cf_node type.");
       }
    }
 

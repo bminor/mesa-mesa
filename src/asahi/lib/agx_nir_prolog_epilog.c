@@ -158,7 +158,7 @@ lower_adjacency(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       /* Sequence (0, 2, 4), (6, 8, 10), ... */
       id = nir_imul_imm(b, id, 2);
    } else {
-      unreachable("unknown");
+      UNREACHABLE("unknown");
    }
 
    id = agx_nir_load_vertex_id(b, id, key->sw_index_size_B);

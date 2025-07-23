@@ -65,7 +65,7 @@ src_as_float(const brw_reg &src)
       return src.df;
 
    default:
-      unreachable("Invalid float type.");
+      UNREACHABLE("Invalid float type.");
    }
 }
 

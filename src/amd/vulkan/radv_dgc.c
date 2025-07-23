@@ -3428,7 +3428,7 @@ radv_CreateIndirectExecutionSetEXT(VkDevice _device, const VkIndirectExecutionSe
       break;
    }
    default:
-      unreachable("Invalid IES type");
+      UNREACHABLE("Invalid IES type");
    }
 
    stride = sizeof(struct radv_compute_pipeline_metadata);
@@ -3469,7 +3469,7 @@ radv_CreateIndirectExecutionSetEXT(VkDevice _device, const VkIndirectExecutionSe
       break;
    }
    default:
-      unreachable("Invalid IES type");
+      UNREACHABLE("Invalid IES type");
    }
 
    *pIndirectExecutionSet = radv_indirect_execution_set_to_handle(set);

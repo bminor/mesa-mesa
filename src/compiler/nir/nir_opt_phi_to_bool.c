@@ -185,7 +185,7 @@ phi_to_bool(nir_builder *b, nir_phi_instr *phi, void *unused)
    else if (type == bool_type_float)
       res = nir_b2fN(b, res, bit_size);
    else
-      unreachable("invalid bool_type");
+      UNREACHABLE("invalid bool_type");
 
    nir_foreach_use_safe(src, &phi->def) {
       if (nir_src_parent_instr(src) == &phi->instr ||

@@ -236,7 +236,7 @@ static void pco_print_ref_color(pco_print_state *state, pco_ref ref)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -288,7 +288,7 @@ static void _pco_print_ref(pco_print_state *state, pco_ref ref)
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
       pco_printf(state, "%s", pco_dtype_str(ref.dtype));
       break;
@@ -309,7 +309,7 @@ static void _pco_print_ref(pco_print_state *state, pco_ref ref)
       break;
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    unsigned chans = pco_ref_get_chans(ref);
@@ -410,7 +410,7 @@ static void pco_print_instr_mods(pco_print_state *state,
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
 }
@@ -474,7 +474,7 @@ static void _pco_print_instr(pco_print_state *state, pco_instr *instr)
       }
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
       printed = true;
    } else if (!list_is_empty(&instr->phi_srcs)) {
@@ -548,7 +548,7 @@ static void _pco_print_phase(pco_print_state *state,
    default:
       break;
    }
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -977,7 +977,7 @@ pco_print_func_sig(pco_print_state *state, pco_func *func, bool call)
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
 
@@ -1046,7 +1046,7 @@ static void _pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1214,7 +1214,7 @@ void pco_print_cf_node_name(pco_shader *shader, pco_cf_node *cf_node)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**

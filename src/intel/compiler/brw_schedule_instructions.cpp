@@ -382,7 +382,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
             break;
 
          default:
-            unreachable("Unknown render cache message");
+            UNREACHABLE("Unknown render cache message");
          }
          break;
 
@@ -454,7 +454,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
             break;
 
          default:
-            unreachable("Unknown data cache message");
+            UNREACHABLE("Unknown data cache message");
          }
          break;
 
@@ -488,7 +488,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
             break;
 
          default:
-            unreachable("Unknown data cache message");
+            UNREACHABLE("Unknown data cache message");
          }
          break;
 
@@ -531,7 +531,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
             latency = 1400;
             break;
          default:
-            unreachable("unsupported new data port message instruction");
+            UNREACHABLE("unsupported new data port message instruction");
          }
          break;
 
@@ -551,7 +551,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          break;
 
       default:
-         unreachable("Unknown SFID");
+         UNREACHABLE("Unknown SFID");
       }
       break;
 

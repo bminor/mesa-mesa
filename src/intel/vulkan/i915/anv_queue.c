@@ -54,7 +54,7 @@ anv_i915_create_engine(struct anv_device *device,
          queue->exec_flags = I915_EXEC_BSD | I915_EXEC_BSD_RING1;
          break;
       default:
-         unreachable("Unsupported legacy engine");
+         UNREACHABLE("Unsupported legacy engine");
       }
    } else if (device->physical->has_vm_control) {
       assert(pCreateInfo->queueFamilyIndex < physical->queue.family_count);

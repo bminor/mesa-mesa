@@ -315,7 +315,7 @@ static void run_dcc_address_test(const char *name, const struct radeon_info *inf
       swizzle_modes[num_swizzle_modes++] = ADDR_SW_256KB_R_X;
       break;
    default:
-      unreachable("unhandled gfx level");
+      UNREACHABLE("unhandled gfx level");
    }
 
    if (full) {
@@ -493,7 +493,7 @@ static void run_htile_address_test(const char *name, const struct radeon_info *i
       swizzle_modes[num_swizzle_modes++] = ADDR_SW_256KB_Z_X;
       break;
    default:
-      unreachable("unhandled gfx level");
+      UNREACHABLE("unhandled gfx level");
    }
 
    /* The test coverage is reduced for Gitlab CI because it timeouts. */

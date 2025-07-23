@@ -97,7 +97,7 @@ static void pco_assert(struct val_state *state,
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
 
       printf(" (");
@@ -344,7 +344,7 @@ static inline bool ref_is_in_map(pco_ref ref, enum pco_ref_map ref_maps)
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
 

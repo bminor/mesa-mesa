@@ -104,7 +104,7 @@ v3d_varying_slot_vpm_offset(struct v3d_compile *c, unsigned location, unsigned c
                 used_outputs = c->gs_key->used_outputs;
                 break;
         default:
-                unreachable("Unsupported shader stage");
+                UNREACHABLE("Unsupported shader stage");
         }
 
         for (int i = 0; i < num_used_outputs; i++) {
@@ -572,7 +572,7 @@ v3d_nir_emit_ff_vpm_outputs(struct v3d_compile *c, nir_builder *b,
                 num_used_outputs = c->gs_key->num_used_outputs;
                 break;
         default:
-                unreachable("Unsupported shader stage");
+                UNREACHABLE("Unsupported shader stage");
         }
 
         for (int i = 0; i < num_used_outputs; i++) {

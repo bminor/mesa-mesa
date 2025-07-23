@@ -419,7 +419,7 @@ init_groups(struct gl_context *ctx)
                c->Type = GL_PERCENTAGE_AMD;
                break;
             default:
-               unreachable("Invalid driver query type!");
+               UNREACHABLE("Invalid driver query type!");
          }
 
          c->query_type = info.query_type;

@@ -350,9 +350,9 @@ sampler_mipmap_mode(enum pipe_tex_mipfilter filter)
    case PIPE_TEX_MIPFILTER_NEAREST: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
    case PIPE_TEX_MIPFILTER_LINEAR: return VK_SAMPLER_MIPMAP_MODE_LINEAR;
    case PIPE_TEX_MIPFILTER_NONE:
-      unreachable("PIPE_TEX_MIPFILTER_NONE should be dealt with earlier");
+      UNREACHABLE("PIPE_TEX_MIPFILTER_NONE should be dealt with earlier");
    }
-   unreachable("unexpected filter");
+   UNREACHABLE("unexpected filter");
 }
 
 static VkSamplerAddressMode
@@ -367,7 +367,7 @@ sampler_address_mode(enum pipe_tex_wrap filter)
    case PIPE_TEX_WRAP_MIRROR_CLAMP_TO_BORDER: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE; /* not technically correct, but kinda works */
    default: break;
    }
-   unreachable("unexpected wrap");
+   UNREACHABLE("unexpected wrap");
 }
 
 /* unnormalizedCoordinates only support CLAMP_TO_EDGE or CLAMP_TO_BORDER */
@@ -379,7 +379,7 @@ sampler_address_mode_unnormalized(enum pipe_tex_wrap filter)
    case PIPE_TEX_WRAP_CLAMP_TO_BORDER: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
    default: break;
    }
-   unreachable("unexpected wrap");
+   UNREACHABLE("unexpected wrap");
 }
 
 static VkCompareOp
@@ -395,7 +395,7 @@ compare_op(enum pipe_compare_func op)
       case PIPE_FUNC_GEQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
       case PIPE_FUNC_ALWAYS: return VK_COMPARE_OP_ALWAYS;
    }
-   unreachable("unexpected compare");
+   UNREACHABLE("unexpected compare");
 }
 
 static inline bool
@@ -647,7 +647,7 @@ get_imageview_for_binding(struct zink_context *ctx, gl_shader_stage stage, enum 
    default:
       break;
    }
-   unreachable("ACK");
+   UNREACHABLE("ACK");
    return VK_NULL_HANDLE;
 }
 
@@ -666,7 +666,7 @@ get_bufferview_for_binding(struct zink_context *ctx, gl_shader_stage stage, enum
    default:
       break;
    }
-   unreachable("ACK");
+   UNREACHABLE("ACK");
    return VK_NULL_HANDLE;
 }
 
@@ -2638,7 +2638,7 @@ zink_set_global_binding(struct pipe_context *pctx,
 
    size_t size = ctx->di.global_bindings.capacity;
    if (!util_dynarray_resize(&ctx->di.global_bindings, struct pipe_resource*, first + count + 8))
-      unreachable("zink: out of memory somehow");
+      UNREACHABLE("zink: out of memory somehow");
    if (size != ctx->di.global_bindings.capacity) {
       uint8_t *data = ctx->di.global_bindings.data;
       memset(data + size, 0, ctx->di.global_bindings.capacity - size);
@@ -3439,7 +3439,7 @@ get_access_flags_for_binding(struct zink_context *ctx, enum zink_descriptor_type
    default:
       break;
    }
-   unreachable("ACK");
+   UNREACHABLE("ACK");
    return 0;
 }
 
@@ -4870,7 +4870,7 @@ zink_resource_copy_region(struct pipe_context *pctx,
        */
          assert(src->aspect == dst->aspect);
       } else
-         unreachable("planar formats not yet handled");
+         UNREACHABLE("planar formats not yet handled");
 
 
       region.srcSubresource.aspectMask = src->aspect;

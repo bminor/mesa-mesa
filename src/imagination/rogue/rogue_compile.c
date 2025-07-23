@@ -102,7 +102,7 @@ static void trans_nir_jump(rogue_builder *b, nir_jump_instr *jump)
       break;
    }
 
-   unreachable("Unimplemented NIR jump instruction type.");
+   UNREACHABLE("Unimplemented NIR jump instruction type.");
 }
 
 static void trans_nir_load_const(rogue_builder *b,
@@ -135,7 +135,7 @@ static void trans_nir_load_const(rogue_builder *b,
    }
 
    default:
-      unreachable("Unimplemented NIR load_const bit size.");
+      UNREACHABLE("Unimplemented NIR load_const bit size.");
    }
 }
 
@@ -247,7 +247,7 @@ static void trans_nir_intrinsic_load_input(rogue_builder *b,
       break;
    }
 
-   unreachable("Unimplemented NIR load_input variant.");
+   UNREACHABLE("Unimplemented NIR load_input variant.");
 }
 
 static void trans_nir_intrinsic_store_output_fs(rogue_builder *b,
@@ -305,7 +305,7 @@ static void trans_nir_intrinsic_store_output(rogue_builder *b,
       break;
    }
 
-   unreachable("Unimplemented NIR store_output variant.");
+   UNREACHABLE("Unimplemented NIR store_output variant.");
 }
 
 static inline gl_shader_stage
@@ -325,7 +325,7 @@ pvr_stage_to_mesa(enum pvr_stage_allocation pvr_stage)
       break;
    }
 
-   unreachable("Unsupported pvr_stage_allocation.");
+   UNREACHABLE("Unsupported pvr_stage_allocation.");
 }
 
 static inline enum pvr_stage_allocation
@@ -345,7 +345,7 @@ mesa_stage_to_pvr(gl_shader_stage mesa_stage)
       break;
    }
 
-   unreachable("Unsupported gl_shader_stage.");
+   UNREACHABLE("Unsupported gl_shader_stage.");
 }
 static bool descriptor_is_dynamic(VkDescriptorType type)
 {
@@ -389,7 +389,7 @@ static void trans_nir_intrinsic(rogue_builder *b, nir_intrinsic_instr *intr)
       break;
    }
 
-   unreachable("Unimplemented NIR intrinsic instruction.");
+   UNREACHABLE("Unimplemented NIR intrinsic instruction.");
 }
 
 static void trans_nir_alu_pack_unorm_4x8(rogue_builder *b, nir_alu_instr *alu)
@@ -480,7 +480,7 @@ static void trans_nir_alu_iadd(rogue_builder *b, nir_alu_instr *alu)
       break;
    }
 
-   unreachable("Unsupported bit size.");
+   UNREACHABLE("Unsupported bit size.");
 }
 
 static void trans_nir_alu(rogue_builder *b, nir_alu_instr *alu)
@@ -506,7 +506,7 @@ static void trans_nir_alu(rogue_builder *b, nir_alu_instr *alu)
       break;
    }
 
-   unreachable("Unimplemented NIR ALU instruction.");
+   UNREACHABLE("Unimplemented NIR ALU instruction.");
 }
 
 PUBLIC
@@ -623,7 +623,7 @@ rogue_shader *rogue_nir_to_rogue(rogue_build_ctx *ctx, const nir_shader *nir)
             break;
 
          default:
-            unreachable("Unimplemented NIR instruction type.");
+            UNREACHABLE("Unimplemented NIR instruction type.");
          }
       }
    }

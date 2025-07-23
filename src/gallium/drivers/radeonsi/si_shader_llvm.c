@@ -160,7 +160,7 @@ void si_llvm_create_func(struct si_shader_context *ctx, const char *name, LLVMTy
       call_conv = AC_LLVM_AMDGPU_CS;
       break;
    default:
-      unreachable("Unhandle shader type");
+      UNREACHABLE("Unhandle shader type");
    }
 
    /* Setup the function */
@@ -415,7 +415,7 @@ static LLVMValueRef si_llvm_load_sampler_desc(struct ac_shader_abi *abi, LLVMVal
          is_vec4 = true;
          break;
       default:
-         unreachable("invalid desc");
+         UNREACHABLE("invalid desc");
       }
 
       struct ac_llvm_pointer list = {
@@ -713,7 +713,7 @@ bool si_llvm_build_shader_part(struct si_screen *sscreen, gl_shader_stage stage,
       }
       break;
    default:
-      unreachable("bad shader part");
+      UNREACHABLE("bad shader part");
    }
 
    struct si_shader_context ctx;
@@ -733,7 +733,7 @@ bool si_llvm_build_shader_part(struct si_screen *sscreen, gl_shader_stage stage,
       build = prolog ? si_llvm_build_ps_prolog : si_llvm_build_ps_epilog;
       break;
    default:
-      unreachable("bad shader part");
+      UNREACHABLE("bad shader part");
    }
 
    build(&ctx, key);

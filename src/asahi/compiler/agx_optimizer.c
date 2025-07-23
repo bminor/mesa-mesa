@@ -262,7 +262,7 @@ agx_icond_is_unsigned(enum agx_icond cond)
       return false;
    }
 
-   unreachable("invalid condition");
+   UNREACHABLE("invalid condition");
 }
 
 static bool

@@ -100,7 +100,7 @@ radv_recompute_fs_input_bases_callback(UNUSED nir_builder *b, nir_intrinsic_inst
       new_base = s->num_always_per_vertex + s->num_potentially_per_primitive +
                  util_bitcount64(s->always_per_primitive & location_mask);
    } else {
-      unreachable("invalid FS input");
+      UNREACHABLE("invalid FS input");
    }
 
    if (new_base != old_base) {

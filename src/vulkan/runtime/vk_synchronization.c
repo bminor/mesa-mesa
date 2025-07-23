@@ -359,7 +359,7 @@ vk_common_GetQueueCheckpointDataNV(
     uint32_t*                                   pCheckpointDataCount,
     VkCheckpointDataNV*                         pCheckpointData)
 {
-   unreachable("Entrypoint not implemented");
+   UNREACHABLE("Entrypoint not implemented");
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL

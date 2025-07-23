@@ -147,7 +147,7 @@ emit_const_ptrs(struct fd_ringbuffer *ring, const struct ir3_shader_variant *v,
                 uint32_t dst_offset, uint32_t num, struct fd_bo **bos,
                 uint32_t *offsets)
 {
-   unreachable("shouldn't be called on a6xx");
+   UNREACHABLE("shouldn't be called on a6xx");
 }
 
 static void

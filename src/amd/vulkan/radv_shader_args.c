@@ -872,7 +872,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
       declare_ps_input_vgprs(info, args);
       break;
    default:
-      unreachable("Shader stage not implemented");
+      UNREACHABLE("Shader stage not implemented");
    }
 }
 

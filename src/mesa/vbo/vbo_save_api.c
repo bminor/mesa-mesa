@@ -1108,7 +1108,7 @@ copy_from_current(struct gl_context *ctx)
          save->attrptr[i][0] = save->current[i][0];
          break;
       case 0:
-         unreachable("Unexpected vertex attribute size");
+         UNREACHABLE("Unexpected vertex attribute size");
       }
    }
 }

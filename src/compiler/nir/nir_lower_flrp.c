@@ -396,7 +396,7 @@ convert_flrp_instruction(nir_builder *bld,
    else if (bit_size == 64)
       have_ffma = !bld->shader->options->lower_ffma64;
    else
-      unreachable("invalid bit_size");
+      UNREACHABLE("invalid bit_size");
 
    bld->cursor = nir_before_instr(&alu->instr);
 

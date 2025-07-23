@@ -919,7 +919,7 @@ util_logicop_reads_dest(enum pipe_logicop op)
    case PIPE_LOGICOP_SET:
       return false;
    }
-   unreachable("bad logicop");
+   UNREACHABLE("bad logicop");
 }
 
 static inline bool

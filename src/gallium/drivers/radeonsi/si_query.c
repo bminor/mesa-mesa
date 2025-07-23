@@ -95,7 +95,7 @@ static enum radeon_value_id winsys_id_from_type(unsigned type)
    case SI_QUERY_CS_THREAD_BUSY:
       return RADEON_CS_THREAD_TIME;
    default:
-      unreachable("query type does not correspond to winsys id");
+      UNREACHABLE("query type does not correspond to winsys id");
    }
 }
 
@@ -247,7 +247,7 @@ static bool si_query_sw_begin(struct si_context *sctx, struct si_query *squery)
    case SI_QUERY_GPIN_NUM_SE:
       break;
    default:
-      unreachable("si_query_sw_begin: bad query type");
+      UNREACHABLE("si_query_sw_begin: bad query type");
    }
 
    return true;
@@ -404,7 +404,7 @@ static bool si_query_sw_end(struct si_context *sctx, struct si_query *squery)
    case SI_QUERY_GPIN_NUM_SE:
       break;
    default:
-      unreachable("si_query_sw_end: bad query type");
+      UNREACHABLE("si_query_sw_end: bad query type");
    }
 
    return true;
@@ -1339,7 +1339,7 @@ static void si_get_hw_query_result_shader_params(struct si_context *sctx,
       break;
    }
    default:
-      unreachable("si_get_hw_query_params unsupported");
+      UNREACHABLE("si_get_hw_query_params unsupported");
    }
 }
 

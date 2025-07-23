@@ -312,7 +312,7 @@ static void gfx11_sh_query_get_result_resource(struct si_context *sctx, struct s
          consts.config = 3;
          break;
       default:
-         unreachable("bad query type");
+         UNREACHABLE("bad query type");
       }
    } else {
       /* Check result availability. */

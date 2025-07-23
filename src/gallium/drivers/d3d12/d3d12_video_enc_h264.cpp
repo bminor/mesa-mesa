@@ -305,7 +305,7 @@ d3d12_video_encoder_update_current_rate_control_h264(struct d3d12_video_encoder 
             } break;
             default:
             {
-               unreachable("Unsupported pipe_h2645_enc_picture_type");
+               UNREACHABLE("Unsupported pipe_h2645_enc_picture_type");
             } break;
          }
 
@@ -651,7 +651,7 @@ d3d12_video_encoder_convert_level_h264(uint32_t h264SpecLevel)
       } break;
       default:
       {
-         unreachable("Unsupported H264 level");
+         UNREACHABLE("Unsupported H264 level");
       } break;
    }
 }
@@ -745,7 +745,7 @@ d3d12_video_encoder_convert_from_d3d12_level_h264(D3D12_VIDEO_ENCODER_LEVELS_H26
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_LEVELS_H264 value");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_LEVELS_H264 value");
       } break;
    }
 }
@@ -1138,7 +1138,7 @@ d3d12_video_encoder_convert_profile_to_d3d12_enc_profile_h264(enum pipe_video_pr
       } break;
       default:
       {
-         unreachable("Unsupported pipe_video_profile");
+         UNREACHABLE("Unsupported pipe_video_profile");
       } break;
    }
 }

@@ -1825,7 +1825,7 @@ tu_physical_device_get_global_priority_properties(const struct tu_physical_devic
       props->priorities[2] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
       break;
    default:
-      unreachable("unexpected priority count");
+      UNREACHABLE("unexpected priority count");
       break;
    }
 }

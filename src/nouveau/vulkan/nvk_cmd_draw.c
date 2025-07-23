@@ -907,7 +907,7 @@ nvk_cmd_set_sample_layout(struct nvk_cmd_buffer *cmd,
       break;
 
    default:
-      unreachable("Unknown sample layout");
+      UNREACHABLE("Unknown sample layout");
    }
 
    P_1INC(p, NV9097, CALL_MME_MACRO(NVK_MME_SET_ANTI_ALIAS));
@@ -1885,7 +1885,7 @@ vk_to_nv9097_primitive_topology(VkPrimitiveTopology prim)
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
       return NV9097_BEGIN_OP_PATCH;
    default:
-      unreachable("Invalid primitive topology");
+      UNREACHABLE("Invalid primitive topology");
    }
 }
 
@@ -2337,7 +2337,7 @@ nvk_flush_rs_state(struct nvk_cmd_buffer *cmd)
          break;
       case VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT:
       default:
-         unreachable("Unsupported depth bias representation");
+         UNREACHABLE("Unsupported depth bias representation");
       }
       /* TODO: The blob multiplies by 2 for some reason. We don't. */
       P_IMMD(p, NV9097, SET_DEPTH_BIAS, fui(dyn->rs.depth_bias.constant_factor));
@@ -2370,7 +2370,7 @@ nvk_flush_rs_state(struct nvk_cmd_buffer *cmd)
          break;
 
       default:
-         unreachable("Invalid line rasterization mode");
+         UNREACHABLE("Invalid line rasterization mode");
       }
    }
 
@@ -2522,7 +2522,7 @@ nvk_combine_fs_log2_rates(VkFragmentShadingRateCombinerOpKHR op,
       };
 
    default:
-      unreachable("Invalid FSR combiner op");
+      UNREACHABLE("Invalid FSR combiner op");
    }
 }
 

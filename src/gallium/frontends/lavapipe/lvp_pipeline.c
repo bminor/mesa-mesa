@@ -604,7 +604,7 @@ lvp_shader_compile_stage(struct lvp_device *device, struct lvp_shader *shader, n
       case MESA_SHADER_MESH:
          return device->queue.ctx->create_ms_state(device->queue.ctx, &shstate);
       default:
-         unreachable("illegal shader");
+         UNREACHABLE("illegal shader");
          break;
       }
    }

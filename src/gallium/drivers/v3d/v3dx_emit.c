@@ -74,7 +74,7 @@ v3d_factor(enum pipe_blendfactor factor, bool dst_alpha_one)
                         V3D_BLEND_FACTOR_ZERO :
                         V3D_BLEND_FACTOR_SRC_ALPHA_SATURATE);
         default:
-                unreachable("Bad blend factor");
+                UNREACHABLE("Bad blend factor");
         }
 }
 

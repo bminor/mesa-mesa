@@ -51,7 +51,7 @@ elk_file_from_reg(elk_fs_reg *reg)
    case BAD_FILE:
    case ATTR:
    case UNIFORM:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
    return ELK_ARCHITECTURE_REGISTER_FILE;
 }
@@ -167,7 +167,7 @@ elk_reg_from_fs_reg(const struct intel_device_info *devinfo, elk_fs_inst *inst,
       break;
    case ATTR:
    case UNIFORM:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    /* On HSW+, scalar DF sources can be accessed using the normal <0,1,0>
@@ -944,7 +944,7 @@ elk_fs_generator::generate_tex(elk_fs_inst *inst, struct elk_reg dst,
       simd_mode = ELK_SAMPLER_SIMD_MODE_SIMD16;
       break;
    default:
-      unreachable("Invalid width for texture instruction");
+      UNREACHABLE("Invalid width for texture instruction");
    }
 
    if (devinfo->ver >= 5) {
@@ -995,7 +995,7 @@ elk_fs_generator::generate_tex(elk_fs_inst *inst, struct elk_reg dst,
          msg_type = GFX6_SAMPLER_MESSAGE_SAMPLE_SAMPLEINFO;
          break;
       default:
-	 unreachable("not reached");
+	 UNREACHABLE("not reached");
       }
    } else {
       switch (inst->opcode) {
@@ -1059,7 +1059,7 @@ elk_fs_generator::generate_tex(elk_fs_inst *inst, struct elk_reg dst,
 	 simd_mode = ELK_SAMPLER_SIMD_MODE_SIMD16;
 	 break;
       default:
-	 unreachable("not reached");
+	 UNREACHABLE("not reached");
       }
    }
    assert(msg_type != -1);
@@ -2154,10 +2154,10 @@ elk_fs_generator::generate_code(const elk_cfg_t *cfg, int dispatch_width,
          break;
 
       default:
-         unreachable("Unsupported opcode");
+         UNREACHABLE("Unsupported opcode");
 
       case ELK_SHADER_OPCODE_LOAD_PAYLOAD:
-         unreachable("Should be lowered by lower_load_payload()");
+         UNREACHABLE("Should be lowered by lower_load_payload()");
       }
 
       if (multiple_instructions_emitted)

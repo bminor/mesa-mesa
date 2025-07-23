@@ -170,7 +170,7 @@ vk_image_sanitize_extent(const struct vk_image *image,
    case VK_IMAGE_TYPE_3D:
       return imageExtent;
    default:
-      unreachable("invalid image type");
+      UNREACHABLE("invalid image type");
    }
 }
 
@@ -189,7 +189,7 @@ vk_image_sanitize_offset(const struct vk_image *image,
    case VK_IMAGE_TYPE_3D:
       return imageOffset;
    default:
-      unreachable("invalid image type");
+      UNREACHABLE("invalid image type");
    }
 }
 

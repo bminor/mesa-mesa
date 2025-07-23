@@ -404,7 +404,7 @@ static rogue_regarray *rogue_find_common_regarray(rogue_regarray *regarray,
    for (unsigned u = 0; u < regarray->size; ++u) {
       if (regarray->regs[u]->regarray) {
          if (common_regarray && regarray->regs[u]->regarray != common_regarray)
-            unreachable("Can't have overlapping regarrays.");
+            UNREACHABLE("Can't have overlapping regarrays.");
          else if (!common_regarray)
             common_regarray = regarray->regs[u]->regarray;
       }
@@ -422,7 +422,7 @@ static rogue_regarray *rogue_find_common_regarray(rogue_regarray *regarray,
        * and also registers *beyond* its parent. */
       if ((min_index > min_common_index && max_index > max_common_index) ||
           (min_index < min_common_index && max_index < max_common_index))
-         unreachable("Can't have overflowing partial regarrays.");
+         UNREACHABLE("Can't have overflowing partial regarrays.");
 
       *is_parent = regarray->size > common_regarray->size;
       const rogue_regarray *parent_regarray = *is_parent ? regarray
@@ -750,7 +750,7 @@ void rogue_link_instr_write(rogue_instr *instr)
          } else if (rogue_ref_is_io(&alu->dst[i].ref)) { /* TODO: check WHICH IO
                                                             IT IS */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -774,7 +774,7 @@ void rogue_link_instr_write(rogue_instr *instr)
                                                                 WHICH IO IT IS
                                                               */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -797,7 +797,7 @@ void rogue_link_instr_write(rogue_instr *instr)
          } else if (rogue_ref_is_io(&ctrl->dst[i].ref)) { /* TODO: check WHICH
                                                              IO IT IS */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -821,7 +821,7 @@ void rogue_link_instr_write(rogue_instr *instr)
                                                                 WHICH IO IT IS
                                                               */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -829,7 +829,7 @@ void rogue_link_instr_write(rogue_instr *instr)
    }
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
    }
 }
 
@@ -864,7 +864,7 @@ void rogue_link_instr_use(rogue_instr *instr)
                                                             IT IS */
          } else if (rogue_ref_is_val(&alu->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -893,7 +893,7 @@ void rogue_link_instr_use(rogue_instr *instr)
                                                               */
          } else if (rogue_ref_is_val(&backend->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -931,7 +931,7 @@ void rogue_link_instr_use(rogue_instr *instr)
                                                              IO IT IS */
          } else if (rogue_ref_is_val(&ctrl->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -960,7 +960,7 @@ void rogue_link_instr_use(rogue_instr *instr)
                                                               */
          } else if (rogue_ref_is_val(&bitwise->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -968,7 +968,7 @@ void rogue_link_instr_use(rogue_instr *instr)
    }
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
    }
 }
 
@@ -996,7 +996,7 @@ void rogue_unlink_instr_write(rogue_instr *instr)
          } else if (rogue_ref_is_io(&alu->dst[i].ref)) { /* TODO: check WHICH IO
                                                             IT IS */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -1018,7 +1018,7 @@ void rogue_unlink_instr_write(rogue_instr *instr)
                                                                 WHICH IO IT IS
                                                               */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -1039,7 +1039,7 @@ void rogue_unlink_instr_write(rogue_instr *instr)
          } else if (rogue_ref_is_io(&ctrl->dst[i].ref)) { /* TODO: check WHICH
                                                              IO IT IS */
          } else {
-            unreachable("Unsupported destination reference type.");
+            UNREACHABLE("Unsupported destination reference type.");
          }
       }
 
@@ -1058,7 +1058,7 @@ void rogue_unlink_instr_write(rogue_instr *instr)
             rogue_regarray_write *write = &bitwise->dst_write[i].regarray;
             rogue_unlink_instr_write_regarray(instr, write);
          } else {
-            unreachable("Invalid destination reference type.");
+            UNREACHABLE("Invalid destination reference type.");
          }
       }
 
@@ -1066,7 +1066,7 @@ void rogue_unlink_instr_write(rogue_instr *instr)
    }
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
    }
 }
 
@@ -1097,7 +1097,7 @@ void rogue_unlink_instr_use(rogue_instr *instr)
                                                             IT IS */
          } else if (rogue_ref_is_val(&alu->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -1124,7 +1124,7 @@ void rogue_unlink_instr_use(rogue_instr *instr)
                                                               */
          } else if (rogue_ref_is_val(&backend->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -1158,7 +1158,7 @@ void rogue_unlink_instr_use(rogue_instr *instr)
                                                              IO IT IS */
          } else if (rogue_ref_is_val(&ctrl->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -1185,7 +1185,7 @@ void rogue_unlink_instr_use(rogue_instr *instr)
                                                               */
          } else if (rogue_ref_is_val(&bitwise->src[i].ref)) {
          } else {
-            unreachable("Unsupported source reference type.");
+            UNREACHABLE("Unsupported source reference type.");
          }
       }
 
@@ -1193,7 +1193,7 @@ void rogue_unlink_instr_use(rogue_instr *instr)
    }
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
    }
 }
 

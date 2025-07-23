@@ -198,7 +198,7 @@ emit_atomic(struct ir3_builder *b, nir_atomic_op op,
    case nir_atomic_op_cmpxchg:
       return ir3_ATOMIC_B_CMPXCHG(b, ibo, 0, src0, 0, src1, 0);
    default:
-      unreachable("boo");
+      UNREACHABLE("boo");
    }
 }
 
@@ -548,7 +548,7 @@ emit_intrinsic_atomic_global(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       atomic = ir3_ATOMIC_G_CMPXCHG(b, addr, 0, src1, 0);
       break;
    default:
-      unreachable("Unknown global atomic op");
+      UNREACHABLE("Unknown global atomic op");
    }
 
    atomic->cat6.iim_val = 1;

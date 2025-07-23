@@ -362,7 +362,7 @@ static enum sqtt_gfxip_level ac_gfx_level_to_sqtt_gfxip_level(enum amd_gfx_level
    case GFX12:
       return SQTT_GFXIP_LEVEL_GFXIP_12;
    default:
-      unreachable("Invalid gfx level");
+      UNREACHABLE("Invalid gfx level");
    }
 }
 
@@ -394,7 +394,7 @@ static enum sqtt_memory_type ac_vram_type_to_sqtt_memory_type(uint32_t vram_type
    case AMD_VRAM_TYPE_LPDDR5:
       return SQTT_MEMORY_TYPE_LPDDR5;
    default:
-      unreachable("Invalid vram type");
+      UNREACHABLE("Invalid vram type");
    }
 }
 
@@ -712,7 +712,7 @@ static enum sqtt_version ac_gfx_level_to_sqtt_version(enum amd_gfx_level gfx_lev
    case GFX12:
       return SQTT_VERSION_3_3;
    default:
-      unreachable("Invalid gfx level");
+      UNREACHABLE("Invalid gfx level");
    }
 }
 
@@ -876,7 +876,7 @@ static enum elf_gfxip_level ac_gfx_level_to_elf_gfxip_level(enum amd_gfx_level g
    case GFX12:
       return EF_AMDGPU_MACH_AMDGCN_GFX1200;
    default:
-      unreachable("Invalid gfx level");
+      UNREACHABLE("Invalid gfx level");
    }
 }
 

@@ -66,7 +66,7 @@ uint32_t v3d_simulator_get_mem_free(void);
       v3d_X_sim_thing = &v3d71_simulator_##thing;     \
       break;                                          \
    default:                                           \
-      unreachable("Unsupported hardware generation"); \
+      UNREACHABLE("Unsupported hardware generation"); \
    }                                                  \
    v3d_X_sim_thing;                                   \
 })

@@ -839,7 +839,7 @@ vtn_constant_uint(struct vtn_builder *b, uint32_t value_id)
    case 16: return val->constant->values[0].u16;
    case 32: return val->constant->values[0].u32;
    case 64: return val->constant->values[0].u64;
-   default: unreachable("Invalid bit size");
+   default: UNREACHABLE("Invalid bit size");
    }
 }
 
@@ -857,7 +857,7 @@ vtn_constant_int(struct vtn_builder *b, uint32_t value_id)
    case 16: return val->constant->values[0].i16;
    case 32: return val->constant->values[0].i32;
    case 64: return val->constant->values[0].i64;
-   default: unreachable("Invalid bit size");
+   default: UNREACHABLE("Invalid bit size");
    }
 }
 

@@ -2197,10 +2197,10 @@ isl_format_has_bc_compression(enum isl_format fmt)
    case ISL_TXC_HIZ:
    case ISL_TXC_MCS:
    case ISL_TXC_CCS:
-      unreachable("Should not be called on an aux surface");
+      UNREACHABLE("Should not be called on an aux surface");
    }
 
-   unreachable("bad texture compression mode");
+   UNREACHABLE("bad texture compression mode");
    return false;
 }
 
@@ -3300,7 +3300,7 @@ isl_get_tile_dims(enum isl_tiling tiling, uint32_t cpp,
       *tile_h = 1;
       break;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 

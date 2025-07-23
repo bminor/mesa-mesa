@@ -199,7 +199,7 @@ analyze_boolean_resolves_block(nir_block *block)
             break;
 
          default:
-            unreachable("Invalid boolean flag");
+            UNREACHABLE("Invalid boolean flag");
          }
 
          break;

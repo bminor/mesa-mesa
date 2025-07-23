@@ -65,7 +65,7 @@ lower_load_constant(nir_builder *b, nir_intrinsic_instr *load,
                     const struct lower_descriptors_ctx *ctx)
 {
    assert(load->intrinsic == nir_intrinsic_load_constant);
-   unreachable("todo: stick an address in the root descriptor or something");
+   UNREACHABLE("todo: stick an address in the root descriptor or something");
 
    uint32_t base = nir_intrinsic_base(load);
    uint32_t range = nir_intrinsic_range(load);
@@ -385,7 +385,7 @@ translate_pipeline_stat_bit(enum pipe_statistics_query_index pipe)
       return VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT;
    }
 
-   unreachable("invalid statistic");
+   UNREACHABLE("invalid statistic");
 }
 
 static bool
@@ -547,7 +547,7 @@ try_lower_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
       return try_lower_load_vulkan_descriptor(b, intrin, ctx);
 
    case nir_intrinsic_load_workgroup_size:
-      unreachable("Should have been lowered by nir_lower_cs_intrinsics()");
+      UNREACHABLE("Should have been lowered by nir_lower_cs_intrinsics()");
 
    case nir_intrinsic_load_base_workgroup_id:
       return lower_sysval_to_root_table(b, intrin, cs.base_group);
@@ -784,7 +784,7 @@ lower_ssbo_resource_index(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 
    default:
-      unreachable("Not an SSBO descriptor");
+      UNREACHABLE("Not an SSBO descriptor");
    }
 
    /* Tuck the stride in the top 8 bits of the binding address */
@@ -866,7 +866,7 @@ lower_load_ssbo_descriptor(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 
    default:
-      unreachable("Unknown address mode");
+      UNREACHABLE("Unknown address mode");
    }
 
    nir_def_rewrite_uses(&intrin->def, desc);

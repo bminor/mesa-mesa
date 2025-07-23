@@ -1282,7 +1282,7 @@ v3d71_qpu_add_unpack(const struct v3d_device_info *devinfo, uint64_t packed_inst
 
         case V3D_QPU_A_VFMIN:
         case V3D_QPU_A_VFMAX:
-                unreachable("pending v3d71 update");
+                UNREACHABLE("pending v3d71 update");
                 if (!v3d_qpu_float16_unpack_unpack(op & 0x7,
                                                    &instr->alu.add.a.unpack)) {
                         return false;
@@ -1479,7 +1479,7 @@ v3d71_qpu_mul_unpack(const struct v3d_device_info *devinfo, uint64_t packed_inst
                 break;
 
         case V3D_QPU_M_VFMUL:
-                unreachable("pending v3d71 update");
+                UNREACHABLE("pending v3d71 update");
                 instr->alu.mul.output_pack = V3D_QPU_PACK_NONE;
 
                 if (!v3d_qpu_float16_unpack_unpack(((op & 0x7) - 4) & 7,
@@ -2224,7 +2224,7 @@ v3d71_qpu_mul_pack(const struct v3d_device_info *devinfo,
         }
 
         case V3D_QPU_M_VFMUL: {
-                unreachable("pending v3d71 update");
+                UNREACHABLE("pending v3d71 update");
                 uint32_t packed;
 
                 if (instr->alu.mul.output_pack != V3D_QPU_PACK_NONE)

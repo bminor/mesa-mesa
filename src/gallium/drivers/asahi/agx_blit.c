@@ -537,7 +537,7 @@ agx_blit(struct pipe_context *pipe, const struct pipe_blit_info *info)
       fprintf(stderr, "\n");
       util_dump_blit_info(stderr, info);
       fprintf(stderr, "\n\n");
-      unreachable("Unsupported blit");
+      UNREACHABLE("Unsupported blit");
    }
 
    /* Handle self-blits */

@@ -309,7 +309,7 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
       return "flow";
    }
 
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 /**
@@ -385,7 +385,7 @@ print_memory_logical_source(FILE *file, const brw_inst *inst, unsigned i)
       fprintf(file, " data1: ");
       return false;
    default:
-      unreachable("invalid source");
+      UNREACHABLE("invalid source");
    }
 }
 
@@ -480,7 +480,7 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
       }
       break;
    case IMM:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    if (inst->dst.offset ||
@@ -648,7 +648,7 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
          case BRW_SWAP_VERTICAL:   name = "vertical";   break;
          case BRW_SWAP_DIAGONAL:   name = "diagonal";   break;
          default:
-            unreachable("invalid brw_swap_direction");
+            UNREACHABLE("invalid brw_swap_direction");
          }
          fprintf(file, " (%s)", name);
       }

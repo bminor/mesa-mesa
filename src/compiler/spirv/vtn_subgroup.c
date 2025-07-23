@@ -132,7 +132,7 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
             op = nir_intrinsic_ballot_bit_count_exclusive;
             break;
          default:
-            unreachable("Invalid group operation");
+            UNREACHABLE("Invalid group operation");
          }
          src0 = vtn_get_nir_ssa(b, w[5]);
          break;
@@ -145,7 +145,7 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
          src0 = vtn_get_nir_ssa(b, w[4]);
          break;
       default:
-         unreachable("Unhandled opcode");
+         UNREACHABLE("Unhandled opcode");
       }
 
       nir_intrinsic_instr *intrin =
@@ -228,11 +228,11 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
             op = nir_intrinsic_vote_ieq;
             break;
          default:
-            unreachable("Unhandled type");
+            UNREACHABLE("Unhandled type");
          }
          break;
       default:
-         unreachable("Unhandled opcode");
+         UNREACHABLE("Unhandled opcode");
       }
 
       nir_def *src0;
@@ -275,7 +275,7 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
          op = nir_intrinsic_shuffle_down;
          break;
       default:
-         unreachable("Invalid opcode");
+         UNREACHABLE("Invalid opcode");
       }
       vtn_push_ssa_value(b, w[2],
          vtn_build_subgroup_instr(b, op, vtn_ssa_value(b, w[4]),
@@ -499,7 +499,7 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
          reduction_op = nir_op_ixor;
          break;
       default:
-         unreachable("Invalid reduction operation");
+         UNREACHABLE("Invalid reduction operation");
       }
 
       nir_intrinsic_op op;
@@ -520,7 +520,7 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
          cluster_size = vtn_constant_uint(b, w[6]);
          break;
       default:
-         unreachable("Invalid group operation");
+         UNREACHABLE("Invalid group operation");
       }
 
       vtn_push_ssa_value(b, w[2],
@@ -530,6 +530,6 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
    }
 
    default:
-      unreachable("Invalid SPIR-V opcode");
+      UNREACHABLE("Invalid SPIR-V opcode");
    }
 }

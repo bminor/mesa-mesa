@@ -696,7 +696,7 @@ opt_loop_cf_list(nir_builder *b, struct exec_list *cf_list,
       }
 
       case nir_cf_node_function:
-         unreachable("Invalid cf type");
+         UNREACHABLE("Invalid cf type");
       }
    }
 

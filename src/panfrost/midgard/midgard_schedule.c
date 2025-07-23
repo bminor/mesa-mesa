@@ -1172,7 +1172,7 @@ mir_schedule_zs_write(compiler_context *ctx,
       }
    }
 
-   unreachable("Could not schedule Z/S move to any unit");
+   UNREACHABLE("Could not schedule Z/S move to any unit");
 }
 
 static midgard_bundle
@@ -1211,7 +1211,7 @@ mir_schedule_alu(compiler_context *ctx, midgard_instruction **instructions,
       else if (cond->unit == UNIT_SMUL)
          smul = cond;
       else
-         unreachable("Bad condition");
+         UNREACHABLE("Bad condition");
    }
 
    /* If we have a render target reference, schedule a move for it. Since
@@ -1312,7 +1312,7 @@ mir_schedule_alu(compiler_context *ctx, midgard_instruction **instructions,
       else if (cond->unit == UNIT_SADD)
          sadd = cond;
       else
-         unreachable("Bad condition");
+         UNREACHABLE("Bad condition");
    }
 
    /* Stage 2, let's schedule sadd before vmul for writeout */

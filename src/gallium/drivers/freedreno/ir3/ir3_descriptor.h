@@ -43,7 +43,7 @@ ir3_shader_descriptor_set(enum pipe_shader_type shader)
    case PIPE_SHADER_COMPUTE:   return 0;
    case MESA_SHADER_KERNEL:    return 0;
    default:
-      unreachable("bad shader stage");
+      UNREACHABLE("bad shader stage");
       return ~0;
    }
 }

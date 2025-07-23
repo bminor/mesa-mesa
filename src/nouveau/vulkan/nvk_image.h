@@ -142,7 +142,7 @@ nvk_image_aspects_to_plane(const struct nvk_image *image,
       switch(aspectMask) {
       case VK_IMAGE_ASPECT_DEPTH_BIT: return 0;
       case VK_IMAGE_ASPECT_STENCIL_BIT: return 1;
-      default: unreachable("Not a depth/stencil aspect");
+      default: UNREACHABLE("Not a depth/stencil aspect");
       }
    }
 

@@ -153,7 +153,7 @@ get_rq_deref(nir_builder *b, struct hash_table *ht, nir_def *def,
 
             out_deref = nir_build_deref_array(b, out_deref, index);
          } else {
-            unreachable("Unsupported deref type");
+            UNREACHABLE("Unsupported deref type");
          }
       }
    }
@@ -511,7 +511,7 @@ lower_rq_load(nir_builder *b, struct hash_table *ht, nir_intrinsic_instr *intr)
    case nir_ray_query_value_world_ray_origin:
       return rq_load(b, rq, world_origin);
    default:
-      unreachable("Invalid nir_ray_query_value!");
+      UNREACHABLE("Invalid nir_ray_query_value!");
    }
 
    return NULL;
@@ -1018,7 +1018,7 @@ tu_nir_lower_ray_queries(nir_shader *shader)
                lower_rq_terminate(&builder, query_ht, intrinsic);
                break;
             default:
-               unreachable("Unsupported ray query intrinsic!");
+               UNREACHABLE("Unsupported ray query intrinsic!");
             }
 
             if (new_dest)

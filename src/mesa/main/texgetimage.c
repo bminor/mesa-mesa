@@ -162,7 +162,7 @@ get_tex_depth_stencil(struct gl_context *ctx, GLuint dimensions,
                                                                  src, dest);
                break;
             default:
-               unreachable("bad type in get_tex_depth_stencil()");
+               UNREACHABLE("bad type in get_tex_depth_stencil()");
             }
             if (ctx->Pack.SwapBytes) {
                _mesa_swap4((GLuint *) dest, width);

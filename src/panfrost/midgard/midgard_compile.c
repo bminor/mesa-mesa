@@ -176,7 +176,7 @@ M_LOAD(lea_image, nir_type_uint64);
       case nir_type_int32:                                                     \
          return m_##op##_image_32i(val, address);                              \
       default:                                                                 \
-         unreachable("Invalid image type");                                    \
+         UNREACHABLE("Invalid image type");                                    \
       }                                                                        \
    }
 
@@ -593,7 +593,7 @@ emit_load_const(compiler_context *ctx, nir_load_const_instr *instr)
       RAW_CONST_COPY(8);
       break;
    default:
-      unreachable("Invalid bit_size for load_const instruction\n");
+      UNREACHABLE("Invalid bit_size for load_const instruction\n");
    }
 
    /* Shifted for SSA, +1 for off-by-one */
@@ -1106,7 +1106,7 @@ emit_ubo_read(compiler_context *ctx, nir_instr *instr, unsigned dest,
    else if (bitsize <= 128)
       ins = m_ld_ubo_128(dest, 0);
    else
-      unreachable("Invalid UBO read size");
+      UNREACHABLE("Invalid UBO read size");
 
    ins.constants.u32[0] = offset;
 
@@ -1164,7 +1164,7 @@ emit_global(compiler_context *ctx, nir_instr *instr, bool is_read,
          ins = m_ld_128(srcdest, 0);
          break;
       default:
-         unreachable("Invalid global read size");
+         UNREACHABLE("Invalid global read size");
       }
 
       mir_set_intr_mask(instr, &ins, is_read);
@@ -1212,7 +1212,7 @@ emit_global(compiler_context *ctx, nir_instr *instr, bool is_read,
       else if (bitsize <= 128)
          ins = m_st_128(srcdest, 0);
       else
-         unreachable("Invalid global store size");
+         UNREACHABLE("Invalid global store size");
 
       mir_set_intr_mask(instr, &ins, is_read);
    }
@@ -1246,7 +1246,7 @@ translate_atomic_op(nir_atomic_op op)
    case nir_atomic_op_umax:    return midgard_op_atomic_umax;
    case nir_atomic_op_umin:    return midgard_op_atomic_umin;
    case nir_atomic_op_ixor:    return midgard_op_atomic_xor;
-   default: unreachable("Unexpected atomic");
+   default: UNREACHABLE("Unexpected atomic");
    }
    /* clang-format on */
 }
@@ -1365,7 +1365,7 @@ emit_varying_read(compiler_context *ctx, unsigned dest, unsigned offset,
          ins.op = midgard_op_ld_vary_16;
          break;
       default:
-         unreachable("Attempted to load unknown type");
+         UNREACHABLE("Attempted to load unknown type");
          break;
       }
    } else if (flat) {
@@ -1463,7 +1463,7 @@ emit_attr_read(compiler_context *ctx, unsigned dest, unsigned offset,
       ins.op = midgard_op_ld_attr_32;
       break;
    default:
-      unreachable("Attempted to load unknown type");
+      UNREACHABLE("Attempted to load unknown type");
       break;
    }
 
@@ -1481,7 +1481,7 @@ compute_builtin_arg(nir_intrinsic_op op)
    case nir_intrinsic_load_global_invocation_id:
       return REGISTER_LDST_GLOBAL_THREAD_ID;
    default:
-      unreachable("Invalid compute paramater loaded");
+      UNREACHABLE("Invalid compute paramater loaded");
    }
 }
 
@@ -1560,7 +1560,7 @@ vertex_builtin_arg(nir_intrinsic_op op)
    case nir_intrinsic_load_instance_id:
       return PAN_INSTANCE_ID;
    default:
-      unreachable("Invalid vertex builtin");
+      UNREACHABLE("Invalid vertex builtin");
    }
 }
 
@@ -1614,7 +1614,7 @@ output_load_rt_addr(compiler_context *ctx, nir_intrinsic_instr *instr)
    if (loc == FRAG_RESULT_STENCIL)
       return 0x1E;
 
-   unreachable("Invalid RT to load from");
+   UNREACHABLE("Invalid RT to load from");
 }
 
 static void
@@ -1744,7 +1744,7 @@ emit_intrinsic(compiler_context *ctx, nir_intrinsic_instr *instr)
       } else if (ctx->stage == MESA_SHADER_VERTEX) {
          emit_attr_read(ctx, reg, offset, nr_comp, t);
       } else {
-         unreachable("Unknown load");
+         UNREACHABLE("Unknown load");
       }
 
       break;
@@ -1929,7 +1929,7 @@ emit_intrinsic(compiler_context *ctx, nir_intrinsic_instr *instr)
 
          emit_mir_instruction(ctx, &st);
       } else {
-         unreachable("Unknown store");
+         UNREACHABLE("Unknown store");
       }
 
       break;
@@ -2044,7 +2044,7 @@ midgard_tex_format(enum glsl_sampler_dim dim)
       return 0;
 
    default:
-      unreachable("Unknown sampler dim type");
+      UNREACHABLE("Unknown sampler dim type");
    }
 }
 
@@ -2367,7 +2367,7 @@ emit_jump(compiler_context *ctx, nir_jump_instr *instr)
    }
 
    default:
-      unreachable("Unhandled jump");
+      UNREACHABLE("Unhandled jump");
    }
 }
 
@@ -2400,7 +2400,7 @@ emit_instr(compiler_context *ctx, struct nir_instr *instr)
       break;
 
    default:
-      unreachable("Unhandled instruction type");
+      UNREACHABLE("Unhandled instruction type");
    }
 }
 
@@ -2533,7 +2533,7 @@ reg_mode_for_bitsize(unsigned bitsize)
    case 64:
       return midgard_reg_mode_64;
    default:
-      unreachable("invalid bit size");
+      UNREACHABLE("invalid bit size");
    }
 }
 

@@ -121,7 +121,7 @@ public:
    virtual void update_indirect_addr(PRegister old_reg, PRegister addr) {
       (void)old_reg;
       (void)addr;
-      unreachable("Instruction type has no indirect address");
+      UNREACHABLE("Instruction type has no indirect address");
    };
    const InstrList& required_instr() const { return m_required_instr; }
 
@@ -302,7 +302,7 @@ public:
       case 2:
          return bim_one;
       default:
-         unreachable("Invalid resource offset, scheduler must substitute registers");
+         UNREACHABLE("Invalid resource offset, scheduler must substitute registers");
       }
    }
 

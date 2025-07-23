@@ -63,7 +63,7 @@ va_compose_mkvec_swz_v4i8(bi_index *b, enum bi_swizzle swz)
       B(1, 1, 2, 3);
 
    default:
-      unreachable("Invalid swizzle");
+      UNREACHABLE("Invalid swizzle");
       break;
    }
 

@@ -105,7 +105,7 @@ st_mesa_format_to_pipe_format(const struct st_context *st,
          return st->transcode_etc ? PIPE_FORMAT_DXT1_SRGBA :
                 has_bgra_srgb ? PIPE_FORMAT_B8G8R8A8_SRGB : PIPE_FORMAT_R8G8B8A8_SRGB;
       default:
-         unreachable("Unknown ETC2 format");
+         UNREACHABLE("Unknown ETC2 format");
       }
    }
 
@@ -153,7 +153,7 @@ st_mesa_format_to_pipe_format(const struct st_context *st,
       case MESA_FORMAT_LA_LATC2_SNORM:
          return PIPE_FORMAT_L8A8_SNORM;
       default:
-         unreachable("Unknown RGTC format");
+         UNREACHABLE("Unknown RGTC format");
       }
    }
 

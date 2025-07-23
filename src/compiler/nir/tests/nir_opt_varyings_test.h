@@ -448,7 +448,7 @@ load_input_interp(nir_builder *b, gl_varying_slot slot, unsigned component,
       baryc = nir_load_barycentric_at_offset(b, 32, nir_imm_ivec2(b, 1, 2));
       break;
    default:
-      unreachable("invalid interp mode");
+      UNREACHABLE("invalid interp mode");
    }
 
    switch (interp) {
@@ -474,7 +474,7 @@ load_input_interp(nir_builder *b, gl_varying_slot slot, unsigned component,
                                     INTERP_MODE_NONE);
       break;
    default:
-      unreachable("invalid interp mode");
+      UNREACHABLE("invalid interp mode");
    }
 
    nir_def *def = nir_load_interpolated_input(b, 1, bit_size, baryc, zero);
@@ -522,7 +522,7 @@ load_interpolated_input_tes(nir_builder *b, gl_varying_slot slot,
       remap = remap_wuv;
       break;
    default:
-      unreachable("unexpected TES interp mode");
+      UNREACHABLE("unexpected TES interp mode");
    }
 
    bool use_ffma = interp == INTERP_TES_TRIANGLE_UVW_FFMA ||

@@ -510,7 +510,7 @@ intel_perf_active_queries(struct intel_perf_context *perf_ctx,
       break;
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 }
@@ -711,7 +711,7 @@ snapshot_query_layout(struct intel_perf_context *perf_ctx,
                                            offset + field->location);
          break;
       default:
-         unreachable("Invalid field type");
+         UNREACHABLE("Invalid field type");
       }
    }
 }
@@ -868,7 +868,7 @@ intel_perf_begin_query(struct intel_perf_context *perf_ctx,
       break;
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 
@@ -916,7 +916,7 @@ intel_perf_end_query(struct intel_perf_context *perf_ctx,
       break;
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 }
@@ -1027,7 +1027,7 @@ read_oa_samples_until(struct intel_perf_context *perf_ctx,
       buf->last_timestamp = last_timestamp;
    }
 
-   unreachable("not reached");
+   UNREACHABLE("not reached");
    return OA_READ_STATUS_ERROR;
 }
 
@@ -1077,7 +1077,7 @@ read_oa_samples_for_query(struct intel_perf_context *perf_ctx,
       return false;
    }
 
-   unreachable("invalid read status");
+   UNREACHABLE("invalid read status");
    return false;
 }
 
@@ -1100,7 +1100,7 @@ intel_perf_wait_query(struct intel_perf_context *perf_ctx,
       break;
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 
@@ -1137,7 +1137,7 @@ intel_perf_is_query_ready(struct intel_perf_context *perf_ctx,
               !perf_cfg->vtbl.bo_busy(query->pipeline_stats.bo));
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 
@@ -1428,7 +1428,7 @@ intel_perf_delete_query(struct intel_perf_context *perf_ctx,
       break;
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 
@@ -1477,7 +1477,7 @@ get_oa_counter_data(struct intel_perf_context *perf_ctx,
             break;
          default:
             /* So far we aren't using uint32, double or bool32... */
-            unreachable("unexpected counter data type");
+            UNREACHABLE("unexpected counter data type");
          }
 
          if (counter->offset + counter_size > written)
@@ -1577,7 +1577,7 @@ intel_perf_get_query_data(struct intel_perf_context *perf_ctx,
       break;
 
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 
@@ -1610,7 +1610,7 @@ intel_perf_dump_query(struct intel_perf_context *ctx,
           obj->pipeline_stats.bo ? "yes" : "no");
       break;
    default:
-      unreachable("Unknown query type");
+      UNREACHABLE("Unknown query type");
       break;
    }
 }

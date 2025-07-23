@@ -78,7 +78,7 @@ begin_debug_marker(VkCommandBuffer commandBuffer,
       break;
    }
    default:
-      unreachable("Invalid build step");
+      UNREACHABLE("Invalid build step");
    }
 }
 
@@ -113,7 +113,7 @@ end_debug_marker(VkCommandBuffer commandBuffer)
       trace_intel_end_as_encode(&cmd_buffer->trace, cmd_buffer->state.rt.num_leaves, cmd_buffer->state.rt.num_ir_nodes);
       break;
    default:
-      unreachable("Invalid build step");
+      UNREACHABLE("Invalid build step");
    }
 }
 
@@ -206,7 +206,7 @@ debug_record_as_to_bvh_dump(struct anv_cmd_buffer *cmd_buffer,
          leaf_total_size = sizeof(struct vk_ir_aabb_node) * leaf_count;
          break;
       default:
-         unreachable("invalid geometry type");
+         UNREACHABLE("invalid geometry type");
       }
 
       add_bvh_dump(cmd_buffer, intermediate_as_addr, internal_node_total_size +
@@ -340,7 +340,7 @@ get_bvh_layout(VkGeometryTypeKHR geometry_type, uint32_t leaf_count,
       offset += leaf_count * ANV_RT_INSTANCE_LEAF_SIZE;
       break;
    default:
-      unreachable("Unknown VkGeometryTypeKHR");
+      UNREACHABLE("Unknown VkGeometryTypeKHR");
    }
 
    layout->size = offset;

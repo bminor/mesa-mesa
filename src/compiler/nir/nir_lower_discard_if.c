@@ -132,7 +132,7 @@ lower_discard_if(nir_builder *b, nir_intrinsic_instr *instr, void *cb_data)
       nir_terminate(b);
       break;
    default:
-      unreachable("bad intrinsic");
+      UNREACHABLE("bad intrinsic");
    }
    nir_pop_if(b, if_stmt);
    nir_instr_remove(&instr->instr);

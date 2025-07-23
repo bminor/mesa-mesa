@@ -55,7 +55,7 @@ agx_size_align_16(enum agx_size size)
       return 4;
    }
 
-   unreachable("Invalid size");
+   UNREACHABLE("Invalid size");
 }
 
 /* Keep synced with hash_index */
@@ -586,7 +586,7 @@ agx_size_for_bits(unsigned bits)
    case 64:
       return AGX_SIZE_64;
    default:
-      unreachable("Invalid bitsize");
+      UNREACHABLE("Invalid bitsize");
    }
 }
 
@@ -770,7 +770,7 @@ agx_predecessor_index(agx_block *succ, agx_block *pred)
       index++;
    }
 
-   unreachable("Invalid predecessor");
+   UNREACHABLE("Invalid predecessor");
 }
 
 static inline agx_block *
@@ -998,7 +998,7 @@ agx_builder_insert(agx_cursor *cursor, agx_instr *I)
       return;
    }
 
-   unreachable("Invalid cursor option");
+   UNREACHABLE("Invalid cursor option");
 }
 
 bool agx_instr_accepts_uniform(enum agx_opcode op, unsigned src_index,

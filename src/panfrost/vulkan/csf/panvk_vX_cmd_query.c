@@ -634,7 +634,7 @@ panvk_per_arch(CmdResetQueryPool)(VkCommandBuffer commandBuffer,
       break;
    }
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -656,7 +656,7 @@ panvk_per_arch(CmdBeginQueryIndexedEXT)(VkCommandBuffer commandBuffer,
       break;
    }
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -677,7 +677,7 @@ panvk_per_arch(CmdEndQueryIndexedEXT)(VkCommandBuffer commandBuffer,
       break;
    }
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -718,6 +718,6 @@ panvk_per_arch(CmdCopyQueryPoolResults)(
    }
 #endif
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }

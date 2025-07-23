@@ -116,7 +116,7 @@ shader_io_get_unique_index(gl_varying_slot slot)
       return 13 + (slot - VARYING_SLOT_VAR0);
    }
    default:
-      unreachable("illegal slot in get unique index\n");
+      UNREACHABLE("illegal slot in get unique index\n");
    }
 }
 
@@ -144,7 +144,7 @@ build_local_offset(nir_builder *b, struct state *state, nir_def *vertex,
                                  comp * 4);
       break;
    default:
-      unreachable("bad shader stage");
+      UNREACHABLE("bad shader stage");
    }
 
    nir_def *vertex_offset = nir_imul24(b, vertex, vertex_stride);
@@ -437,7 +437,7 @@ build_per_vertex_offset(nir_builder *b, struct state *state,
                                     comp);
          break;
       default:
-         unreachable("bad shader state");
+         UNREACHABLE("bad shader state");
       }
 
       attr_offset = nir_iadd(b, attr_offset,
@@ -478,7 +478,7 @@ tess_level_components(struct state *state, uint32_t *inner, uint32_t *outer)
       *outer = 2;
       break;
    default:
-      unreachable("bad");
+      UNREACHABLE("bad");
    }
 }
 
@@ -508,7 +508,7 @@ build_tessfactor_base(nir_builder *b, gl_varying_slot slot, uint32_t comp,
       offset = 1 + outer_levels;
       break;
    default:
-      unreachable("bad");
+      UNREACHABLE("bad");
    }
 
    return nir_iadd_imm(b, patch_offset, offset + comp);

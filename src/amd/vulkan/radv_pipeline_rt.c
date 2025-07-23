@@ -140,7 +140,7 @@ radv_create_group_handles(struct radv_device *device, const VkRayTracingPipeline
          }
          break;
       case VK_SHADER_GROUP_SHADER_MAX_ENUM_KHR:
-         unreachable("VK_SHADER_GROUP_SHADER_MAX_ENUM_KHR");
+         UNREACHABLE("VK_SHADER_GROUP_SHADER_MAX_ENUM_KHR");
       }
 
       if (group_info->pShaderGroupCaptureReplayHandle) {
@@ -817,7 +817,7 @@ compute_rt_stack_size(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo, stru
          any_hit_size = MAX2(any_hit_size, size);
          break;
       default:
-         unreachable("Invalid stage type in RT shader");
+         UNREACHABLE("Invalid stage type in RT shader");
       }
    }
    pipeline->stack_size =

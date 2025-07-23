@@ -314,7 +314,7 @@ nvk_get_descriptors_state(struct nvk_cmd_buffer *cmd,
    case VK_PIPELINE_BIND_POINT_COMPUTE:
       return &cmd->state.cs.descriptors;
    default:
-      unreachable("Unhandled bind point");
+      UNREACHABLE("Unhandled bind point");
    }
 }
 
@@ -329,7 +329,7 @@ nvk_get_descriptor_state_for_stages(struct nvk_cmd_buffer *cmd,
       assert(!(stages & ~NVK_SHADER_STAGE_GRAPHICS_BITS));
       return &cmd->state.gfx.descriptors;
    } else {
-      unreachable("Unknown shader stage");
+      UNREACHABLE("Unknown shader stage");
    }
 }
 

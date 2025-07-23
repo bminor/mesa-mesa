@@ -144,7 +144,7 @@ project_src(nir_builder *b, nir_tex_instr *tex)
                                  nir_channel(b, unprojected, 1));
             break;
          default:
-            unreachable("bad texture coord count for array");
+            UNREACHABLE("bad texture coord count for array");
             break;
          }
       }
@@ -1204,7 +1204,7 @@ lower_tex_packing(nir_builder *b, nir_tex_instr *tex,
             break;
          }
          default:
-            unreachable("wrong dest_size");
+            UNREACHABLE("wrong dest_size");
          }
          break;
 
@@ -1217,7 +1217,7 @@ lower_tex_packing(nir_builder *b, nir_tex_instr *tex,
          break;
 
       default:
-         unreachable("unknown base type");
+         UNREACHABLE("unknown base type");
       }
       break;
    }

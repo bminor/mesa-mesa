@@ -4122,7 +4122,7 @@ _mesa_format_from_format_and_type(GLenum format, GLenum type)
     * matches the GL format/type provided. We may need to add a new Mesa
     * format in that case.
     */
-   unreachable("Unsupported format");
+   UNREACHABLE("Unsupported format");
 }
 
 uint32_t

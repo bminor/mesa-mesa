@@ -41,7 +41,7 @@ radv_get_queue_global_priority(const VkDeviceQueueGlobalPriorityCreateInfo *pObj
    case VK_QUEUE_GLOBAL_PRIORITY_LOW:
       return RADEON_CTX_PRIORITY_LOW;
    default:
-      unreachable("Illegal global priority value");
+      UNREACHABLE("Illegal global priority value");
       return RADEON_CTX_PRIORITY_INVALID;
    }
 }
@@ -2146,6 +2146,6 @@ radv_queue_family_to_ring(const struct radv_physical_device *pdev, enum radv_que
    case RADV_QUEUE_VIDEO_ENC:
       return AMD_IP_VCN_ENC;
    default:
-      unreachable("Unknown queue family");
+      UNREACHABLE("Unknown queue family");
    }
 }

@@ -53,7 +53,7 @@ get_bool_convert_opcode(uint32_t dst_bit_size)
    case 8:
       return nir_op_i2i8;
    default:
-      unreachable("invalid boolean bit-size");
+      UNREACHABLE("invalid boolean bit-size");
    }
 }
 

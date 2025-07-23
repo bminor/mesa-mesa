@@ -140,7 +140,7 @@ crocus_target_to_isl_surf_dim(enum pipe_texture_target target)
    case PIPE_MAX_TEXTURE_TYPES:
       break;
    }
-   unreachable("invalid texture type");
+   UNREACHABLE("invalid texture type");
 }
 
 static isl_surf_usage_flags_t
@@ -497,7 +497,7 @@ crocus_resource_configure_aux(struct crocus_screen *screen,
       *alloc_flags |= BO_ALLOC_ZEROED;
       break;
    default:
-      unreachable("non-crocus aux");
+      UNREACHABLE("non-crocus aux");
    }
 
    /* Create the aux_state for the auxiliary buffer. */
@@ -799,7 +799,7 @@ crocus_resource_from_handle(struct pipe_screen *pscreen,
                                                whandle->handle);
       break;
    default:
-      unreachable("invalid winsys handle type");
+      UNREACHABLE("invalid winsys handle type");
    }
    if (!res->bo)
       goto fail;
@@ -1894,7 +1894,7 @@ crocus_memobj_create_from_handle(struct pipe_screen *pscreen,
 
       break;
    default:
-      unreachable("invalid winsys handle type");
+      UNREACHABLE("invalid winsys handle type");
    }
 
    if (!bo) {

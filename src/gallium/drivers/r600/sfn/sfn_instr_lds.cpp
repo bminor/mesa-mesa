@@ -135,7 +135,7 @@ LDSReadInstr::split(std::vector<AluInstr *>& out_block, AluInstr *last_lds_instr
 bool
 LDSReadInstr::do_ready() const
 {
-   unreachable("This instruction is not handled by the scheduler");
+   UNREACHABLE("This instruction is not handled by the scheduler");
    return false;
 }
 
@@ -383,7 +383,7 @@ LDSAtomicInstr::replace_source(PRegister old_src, PVirtualValue new_src)
 bool
 LDSAtomicInstr::do_ready() const
 {
-   unreachable("This instruction is not handled by the scheduler");
+   UNREACHABLE("This instruction is not handled by the scheduler");
    return false;
 }
 

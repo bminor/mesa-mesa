@@ -338,7 +338,7 @@ opencoded_load_format(nir_builder *b, nir_def *rsrc, nir_def *vindex,
          break;
       }
       default:
-         unreachable("invalid fetch format");
+         UNREACHABLE("invalid fetch format");
          break;
       }
    }
@@ -396,7 +396,7 @@ opencoded_load_format(nir_builder *b, nir_def *rsrc, nir_def *vindex,
       }
       break;
    default:
-      unreachable("invalid fetch format");
+      UNREACHABLE("invalid fetch format");
       break;
    }
 

@@ -230,7 +230,7 @@ anv_device_setup_context_or_vm(struct anv_device *device,
    case INTEL_KMD_TYPE_XE:
       return anv_xe_device_setup_vm(device);
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
       return VK_ERROR_UNKNOWN;
    }
 }
@@ -247,7 +247,7 @@ anv_device_destroy_context_or_vm(struct anv_device *device)
    case INTEL_KMD_TYPE_XE:
       return anv_xe_device_destroy_vm(device);
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
       return false;
    }
 }
@@ -418,7 +418,7 @@ VkResult anv_CreateDevice(
       device->vk.check_status = anv_xe_device_check_status;
       break;
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
    }
 
    device->vk.command_buffer_ops = &anv_cmd_buffer_ops;
@@ -2048,7 +2048,7 @@ vk_time_domain_to_clockid(VkTimeDomainKHR domain)
    case VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR:
       return CLOCK_MONOTONIC;
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
       return CLOCK_MONOTONIC;
    }
 }

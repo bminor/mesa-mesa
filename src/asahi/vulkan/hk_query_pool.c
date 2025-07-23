@@ -59,7 +59,7 @@ hk_reports_per_query(struct hk_query_pool *pool)
       // Primitives succeeded and primitives needed
       return 2;
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -494,7 +494,7 @@ hk_cmd_begin_end_query(struct hk_cmd_buffer *cmd, struct hk_query_pool *pool,
    }
 
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 
    /* We need to set available=1 after the graphics work finishes. */

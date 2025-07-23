@@ -225,7 +225,7 @@ void anv_DestroyPipeline(
    }
 
    default:
-      unreachable("invalid pipeline type");
+      UNREACHABLE("invalid pipeline type");
    }
 
    anv_pipeline_finish(pipeline, device);
@@ -1685,7 +1685,7 @@ anv_pipeline_add_executable(struct anv_pipeline *pipeline,
                break;
 
             case ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS:
-               unreachable("Color attachments can't be pushed");
+               UNREACHABLE("Color attachments can't be pushed");
 
             default:
                fprintf(stream, "UBO (set=%d binding=%d start=%dB)",
@@ -1899,7 +1899,7 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
       }
 
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
 
       stages[s].feedback.duration += os_time_get_nano() - stage_start;
@@ -2374,7 +2374,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
          anv_pipeline_link_fs(compiler, stage, state->rp);
          break;
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
 
       next_stage = stage;
@@ -2519,7 +2519,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
                                  &error_str);
          break;
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
       if (stage->code == NULL) {
          if (error_str)
@@ -3762,14 +3762,14 @@ anv_pipeline_compile_ray_tracing(struct anv_ray_tracing_pipeline *pipeline,
          break;
 
       case MESA_SHADER_INTERSECTION:
-         unreachable("These are handled later");
+         UNREACHABLE("These are handled later");
 
       case MESA_SHADER_CALLABLE:
          brw_nir_lower_callable(nir, devinfo);
          break;
 
       default:
-         unreachable("Invalid ray-tracing shader stage");
+         UNREACHABLE("Invalid ray-tracing shader stage");
       }
 
       result = compile_upload_rt_shader(pipeline, cache, nir, &stages[i],
@@ -3839,7 +3839,7 @@ anv_pipeline_compile_ray_tracing(struct anv_ray_tracing_pipeline *pipeline,
       }
 
       default:
-         unreachable("Invalid ray tracing shader group type");
+         UNREACHABLE("Invalid ray tracing shader group type");
       }
    }
 
@@ -4173,7 +4173,7 @@ anv_ray_tracing_pipeline_create(
          break;
 
       default:
-         unreachable("Invalid ray-tracing shader group type");
+         UNREACHABLE("Invalid ray-tracing shader group type");
       }
    }
 
@@ -4384,7 +4384,7 @@ VkResult anv_GetPipelineExecutableStatisticsKHR(
       break;
    }
    default:
-      unreachable("invalid pipeline type");
+      UNREACHABLE("invalid pipeline type");
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
@@ -4623,7 +4623,7 @@ anv_GetRayTracingCaptureReplayShaderGroupHandlesKHR(
     void*                                       pData)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
@@ -4661,7 +4661,7 @@ anv_GetRayTracingShaderGroupStackSizeKHR(
       break;
 
    default:
-      unreachable("Invalid VkShaderGroupShader enum");
+      UNREACHABLE("Invalid VkShaderGroupShader enum");
    }
 
    if (bin == NULL)

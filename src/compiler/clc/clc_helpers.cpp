@@ -534,7 +534,7 @@ public:
             literalType = CLC_SPEC_CONSTANT_HALF;
             break;
          default:
-            unreachable("Unexpected float bit size");
+            UNREACHABLE("Unexpected float bit size");
          }
          break;
       }
@@ -556,7 +556,7 @@ public:
                literalType = CLC_SPEC_CONSTANT_INT64;
                break;
             default:
-               unreachable("Unexpected int bit size");
+               UNREACHABLE("Unexpected int bit size");
             }
          } else {
             switch (sizeInBits) {
@@ -573,13 +573,13 @@ public:
                literalType = CLC_SPEC_CONSTANT_UINT64;
                break;
             default:
-               unreachable("Unexpected uint bit size");
+               UNREACHABLE("Unexpected uint bit size");
             }
          }
          break;
       }
       default:
-         unreachable("Unexpected type opcode");
+         UNREACHABLE("Unexpected type opcode");
       }
    }
 
@@ -605,7 +605,7 @@ public:
                data.type = CLC_SPEC_CONSTANT_BOOL;
                break;
             default:
-               unreachable("Composites and Ops are not directly specializable.");
+               UNREACHABLE("Composites and Ops are not directly specializable.");
             }
          }
       }

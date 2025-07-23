@@ -136,7 +136,7 @@ lower(nir_builder *b, nir_instr *instr, void *data)
 
    /* We must have matched something! */
    fprintf(stderr, "unknown opcode %s\n", func->name);
-   unreachable("invalid nir opcode/intrinsic");
+   UNREACHABLE("invalid nir opcode/intrinsic");
 }
 
 bool

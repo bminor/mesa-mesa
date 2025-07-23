@@ -350,7 +350,7 @@ static void set_random_image_attrs(struct pipe_resource *templ, bool allow_msaa,
       templ->nr_samples = 2 << (rand() % 3);
       break;
    default:
-      unreachable("invalid path");
+      UNREACHABLE("invalid path");
    }
 
    templ->usage = PIPE_USAGE_DEFAULT;

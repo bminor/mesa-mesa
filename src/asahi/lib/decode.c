@@ -84,7 +84,7 @@ _agxdecode_grab_mapped(struct agxdecode_ctx *ctx, uint64_t gpu_va, void **buf,
                        int line, const char *filename)
 {
    if (lib_config.read_gpu_mem)
-      unreachable("you'll have to figure it out.");
+      UNREACHABLE("you'll have to figure it out.");
 
    const struct agx_bo *mem =
       agxdecode_find_mapped_gpu_mem_containing(ctx, gpu_va);
@@ -912,7 +912,7 @@ agxdecode_drm_cmdbuf(struct agxdecode_ctx *ctx,
       } else if (header->cmd_type == DRM_ASAHI_SET_COMPUTE_ATTACHMENTS) {
          agxdecode_drm_attachments("Compute", data, header->size);
       } else {
-         unreachable("Invalid command type");
+         UNREACHABLE("Invalid command type");
       }
 
       offs += header->size;
@@ -1085,7 +1085,7 @@ libagxdecode_init(struct libagxdecode_config *config)
    chip_id_to_params(&lib_params, config->chip_id);
 #else
    /* fopencookie is a glibc extension */
-   unreachable("libagxdecode only available with glibc");
+   UNREACHABLE("libagxdecode only available with glibc");
 #endif
 }
 

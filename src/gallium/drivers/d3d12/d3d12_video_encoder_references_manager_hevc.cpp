@@ -96,7 +96,7 @@ d3d12_video_encoder_friendly_frame_type_hevc(D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC");
       } break;
    }
 }
@@ -248,7 +248,7 @@ d3d12_video_encoder_convert_frame_type_hevc(enum pipe_h2645_enc_picture_type pic
       } break;
       default:
       {
-         unreachable("Unsupported pipe_h2645_enc_picture_type");
+         UNREACHABLE("Unsupported pipe_h2645_enc_picture_type");
       } break;
    }
 }

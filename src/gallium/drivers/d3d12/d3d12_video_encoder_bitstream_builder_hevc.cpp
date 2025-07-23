@@ -45,7 +45,7 @@ convert_profile12_to_stdprofile(D3D12_VIDEO_ENCODER_PROFILE_HEVC profile)
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_PROFILE_HEVC value");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_PROFILE_HEVC value");
       } break;
    }
 }
@@ -55,7 +55,7 @@ dxgi_format_to_pix_bits(DXGI_FORMAT fmt)
 {
    switch (fmt) {
       default:
-         unreachable("Unsupported DXGI_FORMAT");
+         UNREACHABLE("Unsupported DXGI_FORMAT");
       case DXGI_FORMAT_AYUV:
       case DXGI_FORMAT_NV12:
       case DXGI_FORMAT_YUY2:
@@ -160,7 +160,7 @@ d3d12_video_encoder_convert_from_d3d12_level_hevc(D3D12_VIDEO_ENCODER_LEVELS_HEV
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_LEVELS_HEVC value");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_LEVELS_HEVC value");
       } break;        
    }
 }
@@ -225,7 +225,7 @@ d3d12_video_encoder_convert_level_hevc(uint32_t hevcSpecLevel)
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_LEVELS_HEVC value");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_LEVELS_HEVC value");
       } break;        
    }
 }
@@ -253,7 +253,7 @@ d3d12_video_encoder_convert_12cusize_to_pixel_size_hevc(const D3D12_VIDEO_ENCODE
         } break;
         default:
         {
-            unreachable(L"Not a supported cu size");
+            UNREACHABLE(L"Not a supported cu size");
             return 0u;
         } break;            
     }
@@ -282,7 +282,7 @@ d3d12_video_encoder_convert_pixel_size_hevc_to_12cusize(const uint32_t& cuSize)
         } break;
         default:
         {
-            unreachable(L"Not a supported cu size");
+            UNREACHABLE(L"Not a supported cu size");
         } break;            
     }
 }
@@ -310,7 +310,7 @@ d3d12_video_encoder_convert_12tusize_to_pixel_size_hevc(const D3D12_VIDEO_ENCODE
         } break;        
         default:
         {
-            unreachable(L"Not a supported TU size");
+            UNREACHABLE(L"Not a supported TU size");
         } break;            
     }
 }
@@ -338,7 +338,7 @@ d3d12_video_encoder_convert_pixel_size_hevc_to_12tusize(const uint32_t& TUSize)
         } break;        
         default:
         {
-            unreachable(L"Not a supported TU size");
+            UNREACHABLE(L"Not a supported TU size");
         } break;            
     }
 }

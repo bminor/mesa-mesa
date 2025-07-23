@@ -287,7 +287,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
             replacement = nir_iadd_nuw(b, nir_ishl_imm(b, num_ls_out, 4), extra_dw);
          }
       } else {
-         unreachable("no nir_load_lshs_vertex_stride_amd");
+         UNREACHABLE("no nir_load_lshs_vertex_stride_amd");
       }
       break;
    case nir_intrinsic_load_esgs_vertex_stride_amd:

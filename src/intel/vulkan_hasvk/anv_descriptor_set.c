@@ -87,7 +87,7 @@ anv_descriptor_data_for_type(const struct anv_physical_device *device,
       break;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 
    /* On gfx8 and above when we have softpin enabled, we also need to push
@@ -1384,7 +1384,7 @@ anv_descriptor_set_write_image_view(struct anv_device *device,
       break;
 
    default:
-      unreachable("invalid descriptor type");
+      UNREACHABLE("invalid descriptor type");
    }
 
    *desc = (struct anv_descriptor) {

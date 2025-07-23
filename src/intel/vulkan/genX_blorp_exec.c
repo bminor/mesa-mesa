@@ -516,7 +516,7 @@ get_color_aux_op(const struct blorp_params *params)
       return ISL_AUX_OP_NONE;
    }
 
-   unreachable("Invalid value in params->op");
+   UNREACHABLE("Invalid value in params->op");
 }
 
 void

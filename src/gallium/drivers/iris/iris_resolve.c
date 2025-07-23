@@ -696,7 +696,7 @@ iris_hiz_exec(struct iris_context *ice,
       break;
    case ISL_AUX_OP_PARTIAL_RESOLVE:
    case ISL_AUX_OP_NONE:
-      unreachable("Invalid HiZ op");
+      UNREACHABLE("Invalid HiZ op");
    }
 
    //DBG("%s %s to mt %p level %d layers %d-%d\n",
@@ -912,7 +912,7 @@ iris_resource_prepare_access(struct iris_context *ice,
          } else if (isl_aux_usage_has_hiz(res->aux.usage)) {
             iris_hiz_exec(ice, batch, res, level, layer, 1, aux_op);
          } else if (res->aux.usage == ISL_AUX_USAGE_STC_CCS) {
-            unreachable("iris doesn't resolve STC_CCS resources");
+            UNREACHABLE("iris doesn't resolve STC_CCS resources");
          } else {
             assert(isl_aux_usage_has_ccs(res->aux.usage));
             iris_resolve_color(ice, batch, res, level, layer, aux_op);

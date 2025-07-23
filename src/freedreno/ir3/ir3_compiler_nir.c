@@ -1549,7 +1549,7 @@ emit_intrinsic_atomic_shared(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       atomic = ir3_ATOMIC_CMPXCHG(b, src0, 0, src1, 0);
       break;
    default:
-      unreachable("boo");
+      UNREACHABLE("boo");
    }
 
    atomic->cat6.iim_val = 1;
@@ -2324,7 +2324,7 @@ get_reduce_op(nir_op opc)
    case nir_op_ior:  return REDUCE_OP_OR_B;
    case nir_op_ixor: return REDUCE_OP_XOR_B;
    default:
-      unreachable("unknown NIR reduce op");
+      UNREACHABLE("unknown NIR reduce op");
    }
 }
 
@@ -2359,7 +2359,7 @@ get_reduce_identity(nir_op opc, unsigned size)
    case nir_op_ixor:
       return 0;
    default:
-      unreachable("unknown NIR reduce op");
+      UNREACHABLE("unknown NIR reduce op");
    }
 }
 
@@ -2417,7 +2417,7 @@ emit_intrinsic_reduce(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_inclusive_scan: dst = inclusive; break;
    case nir_intrinsic_exclusive_scan: dst = exclusive; break;
    default:
-      unreachable("unknown reduce intrinsic");
+      UNREACHABLE("unknown reduce intrinsic");
    }
 
    return create_multidst_mov(&ctx->build, dst);
@@ -2514,7 +2514,7 @@ emit_intrinsic_reduce_clusters(struct ir3_context *ctx,
       break;
    }
    default:
-      unreachable("unknown reduce intrinsic");
+      UNREACHABLE("unknown reduce intrinsic");
    }
 
    return create_multidst_mov(&ctx->build, dst);
@@ -2542,7 +2542,7 @@ shfl_mode(nir_intrinsic_instr *intr)
    case nir_intrinsic_shuffle_xor_uniform_ir3:
       return SHFL_XOR;
    default:
-      unreachable("unsupported shfl");
+      UNREACHABLE("unsupported shfl");
    }
 }
 
@@ -3496,7 +3496,7 @@ get_tex_dest_type(nir_tex_instr *tex)
       return TYPE_U16;
    case nir_type_invalid:
    default:
-      unreachable("bad dest_type");
+      UNREACHABLE("bad dest_type");
    }
 
    return type;
@@ -4158,7 +4158,7 @@ read_phi_src(struct ir3_context *ctx, struct ir3_block *blk,
       }
    }
 
-   unreachable("couldn't find phi node ir3 block");
+   UNREACHABLE("couldn't find phi node ir3 block");
    return NULL;
 }
 
@@ -4451,7 +4451,7 @@ instr_can_be_predicated(nir_instr *instr)
    }
    }
 
-   unreachable("Checked all cases");
+   UNREACHABLE("Checked all cases");
 }
 
 static bool
@@ -5219,7 +5219,7 @@ uses_store_output(struct ir3_shader_variant *so)
    case MESA_SHADER_KERNEL:
       return false;
    default:
-      unreachable("unknown stage");
+      UNREACHABLE("unknown stage");
    }
 }
 

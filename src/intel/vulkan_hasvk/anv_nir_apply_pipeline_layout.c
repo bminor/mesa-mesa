@@ -75,7 +75,7 @@ addr_format_for_desc_type(VkDescriptorType desc_type,
       return nir_address_format_32bit_index_offset;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 }
 
@@ -318,7 +318,7 @@ build_res_index(nir_builder *b, uint32_t set, uint32_t binding,
    }
 
    default:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 }
 
@@ -372,7 +372,7 @@ build_res_reindex(nir_builder *b, nir_def *orig, nir_def *delta,
                          nir_channel(b, orig, 1));
 
    default:
-      unreachable("Unhandled address format");
+      UNREACHABLE("Unhandled address format");
    }
 }
 
@@ -417,7 +417,7 @@ build_desc_addr(nir_builder *b,
       return index;
 
    default:
-      unreachable("Unhandled address format");
+      UNREACHABLE("Unhandled address format");
    }
 }
 
@@ -832,7 +832,7 @@ lower_get_ssbo_size(nir_builder *b, nir_intrinsic_instr *intrin,
       break;
 
    default:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 
    return true;

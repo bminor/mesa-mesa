@@ -655,7 +655,7 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
       flags |= RADEON_SURF_SET(RADEON_SURF_TYPE_3D, TYPE);
       break;
    default:
-      unreachable("unhandled image type");
+      UNREACHABLE("unhandled image type");
    }
 
    /* Required for clearing/initializing a specific layer on GFX8. */
@@ -1389,7 +1389,7 @@ radv_select_modifier(const struct radv_device *dev, VkFormat format,
          }
       }
    }
-   unreachable("App specified an invalid modifier");
+   UNREACHABLE("App specified an invalid modifier");
 }
 
 VkResult

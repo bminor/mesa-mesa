@@ -35,7 +35,7 @@ vk_descriptor_type_update_size(VkDescriptorType type)
 {
    switch (type) {
    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-      unreachable("handled in caller");
+      UNREACHABLE("handled in caller");
 
    case VK_DESCRIPTOR_TYPE_SAMPLER:
    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:

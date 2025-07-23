@@ -442,7 +442,7 @@ tu_get_image_format_properties(
       format_feature_flags = format_props.optimalTilingFeatures;
       break;
    default:
-      unreachable("bad VkPhysicalDeviceImageFormatInfo2");
+      UNREACHABLE("bad VkPhysicalDeviceImageFormatInfo2");
    }
 
    if (format_feature_flags == 0)
@@ -454,7 +454,7 @@ tu_get_image_format_properties(
 
    switch (info->type) {
    default:
-      unreachable("bad vkimage type\n");
+      UNREACHABLE("bad vkimage type\n");
    case VK_IMAGE_TYPE_1D:
       maxExtent.width = 16384;
       maxExtent.height = 1;

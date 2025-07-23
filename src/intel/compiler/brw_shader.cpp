@@ -60,7 +60,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
       urb_handle = gs_payload().urb_handles;
       break;
    default:
-      unreachable("invalid stage");
+      UNREACHABLE("invalid stage");
    }
 
    const brw_builder bld = brw_builder(this);
@@ -189,7 +189,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
          break;
       }
       case VARYING_SLOT_EDGE:
-         unreachable("unexpected scalar vs output");
+         UNREACHABLE("unexpected scalar vs output");
          break;
 
       default:
@@ -591,7 +591,7 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
       bary = INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE;
       break;
    default:
-      unreachable("invalid intrinsic");
+      UNREACHABLE("invalid intrinsic");
    }
 
    if (mode == INTERP_MODE_NOPERSPECTIVE)
@@ -945,7 +945,7 @@ brw_fb_write_msg_control(const brw_inst *inst,
       else if (inst->group % 16 == 8)
          mctl = BRW_DATAPORT_RENDER_TARGET_WRITE_SIMD8_DUAL_SOURCE_SUBSPAN23;
       else
-         unreachable("Invalid dual-source FB write instruction group");
+         UNREACHABLE("Invalid dual-source FB write instruction group");
    } else {
       assert(inst->group == 0 || (inst->group == 16 && inst->exec_size == 16));
 
@@ -956,7 +956,7 @@ brw_fb_write_msg_control(const brw_inst *inst,
       else if (inst->exec_size == 32)
          mctl = XE2_DATAPORT_RENDER_TARGET_WRITE_SIMD32_SINGLE_SOURCE;
       else
-         unreachable("Invalid FB write execution size");
+         UNREACHABLE("Invalid FB write execution size");
    }
 
    return mctl;

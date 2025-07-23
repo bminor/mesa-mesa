@@ -310,7 +310,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
 
@@ -380,7 +380,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 
    default:
       /* Should have been previously lowered. */
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 
@@ -528,7 +528,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       else if (tctx->stage == MESA_SHADER_FRAGMENT)
          instr = trans_load_input_fs(tctx, intr, dest);
       else
-         unreachable("Unsupported stage for \"nir_intrinsic_load_input\".");
+         UNREACHABLE("Unsupported stage for \"nir_intrinsic_load_input\".");
       break;
 
    case nir_intrinsic_store_output:
@@ -537,7 +537,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       else if (tctx->stage == MESA_SHADER_FRAGMENT)
          instr = trans_store_output_fs(tctx, intr, src[0]);
       else
-         unreachable("Unsupported stage for \"nir_intrinsic_store_output\".");
+         UNREACHABLE("Unsupported stage for \"nir_intrinsic_store_output\".");
       break;
 
    case nir_intrinsic_load_ubo:
@@ -556,7 +556,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       printf("Unsupported intrinsic: \"");
       nir_print_instr(&intr->instr, stdout);
       printf("\"\n");
-      unreachable("");
+      UNREACHABLE("");
       break;
    }
 
@@ -741,7 +741,7 @@ trans_scmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
       break;
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    return pco_scmp(&tctx->b, dest, src0, src1, .tst_op_main = tst_op_main);
@@ -789,7 +789,7 @@ static pco_instr *trans_logical(trans_ctx *tctx,
       break;
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    return pco_logical(&tctx->b, dest, src0, src1, .logiop = logiop);
@@ -1000,7 +1000,7 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       printf("Unsupported alu instruction: \"");
       nir_print_instr(&alu->instr, stdout);
       printf("\"\n");
-      unreachable("");
+      UNREACHABLE("");
    }
 
    if (!pco_ref_is_scalar(dest))
@@ -1077,7 +1077,7 @@ static pco_instr *trans_instr(trans_ctx *tctx, nir_instr *ninstr)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1110,7 +1110,7 @@ static pco_if *trans_if(trans_ctx *tctx, nir_if *nif)
 {
    pco_if *pif = pco_if_create(tctx->func);
 
-   unreachable("finishme: trans_if");
+   UNREACHABLE("finishme: trans_if");
 
    return pif;
 }
@@ -1126,7 +1126,7 @@ static pco_loop *trans_loop(trans_ctx *tctx, nir_loop *nloop)
 {
    pco_loop *loop = pco_loop_create(tctx->func);
 
-   unreachable("finishme: trans_loop");
+   UNREACHABLE("finishme: trans_loop");
 
    return loop;
 }
@@ -1213,7 +1213,7 @@ static pco_block *trans_cf_nodes(trans_ctx *tctx,
       }
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
 
       cf_node->parent = parent_cf_node;

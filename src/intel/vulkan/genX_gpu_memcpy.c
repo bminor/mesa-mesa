@@ -164,7 +164,7 @@ emit_so_memcpy(struct anv_memcpy_state *state,
    case 8:  format = ISL_FORMAT_R32G32_UINT;       break;
    case 16: format = ISL_FORMAT_R32G32B32A32_UINT; break;
    default:
-      unreachable("Invalid size");
+      UNREACHABLE("Invalid size");
    }
 
    uint32_t *dw;

@@ -464,7 +464,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       cs_req_res(&b, CS_COMPUTE_RES);
       break;
    default:
-      unreachable("Unknown subqueue");
+      UNREACHABLE("Unknown subqueue");
       break;
    }
 
@@ -1213,7 +1213,7 @@ get_panthor_group_priority(const VkDeviceQueueCreateInfo *create_info)
    case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
       return PANTHOR_GROUP_PRIORITY_REALTIME;
    default:
-      unreachable("Invalid global priority");
+      UNREACHABLE("Invalid global priority");
    }
 }
 

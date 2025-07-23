@@ -173,7 +173,7 @@ translate_stencil_op(VkStencilOp in)
    case VK_STENCIL_OP_INVERT:
       return MALI_STENCIL_OP_INVERT;
    default:
-      unreachable("Invalid stencil op");
+      UNREACHABLE("Invalid stencil op");
    }
 }
 
@@ -821,7 +821,7 @@ translate_prim_topology(VkPrimitiveTopology in)
    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
    default:
-      unreachable("Invalid primitive type");
+      UNREACHABLE("Invalid primitive type");
    }
 }
 
@@ -875,7 +875,7 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
             cfg.index_type = MALI_INDEX_TYPE_UINT8;
             break;
          default:
-            unreachable("Invalid index size");
+            UNREACHABLE("Invalid index size");
          }
       } else {
          cfg.index_count = draw->info.vertex.count;
@@ -925,7 +925,7 @@ primitive_vertex_count(enum mali_draw_mode in)
    case MALI_DRAW_MODE_TRIANGLE_FAN:
       return 3;
    default:
-      unreachable("Invalid draw mode");
+      UNREACHABLE("Invalid draw mode");
    }
 }
 
@@ -1528,7 +1528,7 @@ panvk_index_minmax_search(struct panvk_cmd_buffer *cmdbuf, uint32_t start,
       MINMAX_SEARCH_CASE(8)
 #undef MINMAX_SEARCH_CASE
    default:
-      unreachable("Invalid index size");
+      UNREACHABLE("Invalid index size");
    }
 }
 

@@ -2014,7 +2014,7 @@ Converter::visit(nir_intrinsic_instr *insn)
          mkOp1(OP_PIXLD, TYPE_U32, newDefs[0], sample)->subOp = NV50_IR_SUBOP_PIXLD_OFFSET;
          mode = NV50_IR_INTERP_OFFSET;
       } else {
-         unreachable("all intrinsics already handled above");
+         UNREACHABLE("all intrinsics already handled above");
       }
 
       loadImm(newDefs[1], mode);
@@ -2369,7 +2369,7 @@ Converter::visit(nir_intrinsic_instr *insn)
          bindless = op == nir_intrinsic_bindless_image_size;
          break;
       default:
-         unreachable("unhandled image opcode");
+         UNREACHABLE("unhandled image opcode");
          break;
       }
 
@@ -2571,7 +2571,7 @@ Converter::convert(nir_load_const_instr *insn, uint8_t idx)
       val = loadImm(getSSA(4), insn->value[idx].u8);
       break;
    default:
-      unreachable("unhandled bit size!\n");
+      UNREACHABLE("unhandled bit size!\n");
    }
    setPosition(bb, true);
    return val;

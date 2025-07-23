@@ -2499,7 +2499,7 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
 
    switch (mip_filter) {
    default:
-      unreachable("Bad mip_filter value in lp_build_sample_soa()");
+      UNREACHABLE("Bad mip_filter value in lp_build_sample_soa()");
    case PIPE_TEX_MIPFILTER_NONE:
       /* always use mip level 0 */
       *ilevel0 = first_level;

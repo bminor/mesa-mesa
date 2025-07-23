@@ -383,7 +383,7 @@ d3d12_video_decoder_store_upper_layer_references(struct d3d12_video_decoder *pD3
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #endif // D3D12_VIDEO_ANY_DECODER_ENABLED
@@ -1115,7 +1115,7 @@ d3d12_video_decoder_prepare_for_decode_frame(struct d3d12_video_decoder *pD3D12D
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #endif // D3D12_VIDEO_ANY_DECODER_ENABLED
@@ -1246,7 +1246,7 @@ d3d12_video_decoder_refresh_dpb_active_references(struct d3d12_video_decoder *pD
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #endif // D3D12_VIDEO_ANY_DECODER_ENABLED
@@ -1288,7 +1288,7 @@ d3d12_video_decoder_get_frame_info(
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #endif // D3D12_VIDEO_ANY_DECODER_ENABLED
@@ -1392,7 +1392,7 @@ d3d12_video_decoder_store_converted_dxva_picparams_from_pipe_input(
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #endif // D3D12_VIDEO_ANY_DECODER_ENABLED
@@ -1442,7 +1442,7 @@ d3d12_video_decoder_prepare_dxva_slices_control(
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #endif // D3D12_VIDEO_ANY_DECODER_ENABLED
@@ -1537,7 +1537,7 @@ d3d12_video_decoder_convert_pipe_video_profile_to_profile_type(enum pipe_video_p
          return d3d12_video_decode_profile_type_vp9;
       default:
       {
-         unreachable("Unsupported pipe video profile");
+         UNREACHABLE("Unsupported pipe video profile");
       } break;
    }
 }
@@ -1587,7 +1587,7 @@ d3d12_video_decoder_resolve_profile(d3d12_video_decode_profile_type profileType,
                return D3D12_VIDEO_DECODE_PROFILE_HEVC_MAIN10;
             default:
             {
-               unreachable("Unsupported decode_format");
+               UNREACHABLE("Unsupported decode_format");
             } break;
          }
       } break;
@@ -1607,14 +1607,14 @@ d3d12_video_decoder_resolve_profile(d3d12_video_decode_profile_type profileType,
                return D3D12_VIDEO_DECODE_PROFILE_VP9_10BIT_PROFILE2;
             default:
             {
-               unreachable("Unsupported decode_format");
+               UNREACHABLE("Unsupported decode_format");
             } break;
          }
       } break;
 #endif
       default:
       {
-         unreachable("Unsupported d3d12_video_decode_profile_type");
+         UNREACHABLE("Unsupported d3d12_video_decode_profile_type");
       } break;
    }
 #else

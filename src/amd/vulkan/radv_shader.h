@@ -714,7 +714,7 @@ radv_get_rt_priority(gl_shader_stage stage)
    case MESA_SHADER_CALLABLE:
       return radv_rt_priority_callable;
    default:
-      unreachable("Unimplemented RT shader stage.");
+      UNREACHABLE("Unimplemented RT shader stage.");
    }
 }
 

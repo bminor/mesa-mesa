@@ -236,7 +236,7 @@ elk_write_shader_relocs(const struct elk_isa_info *isa,
                elk_update_reloc_imm(isa, dst, value);
                break;
             default:
-               unreachable("Invalid relocation type");
+               UNREACHABLE("Invalid relocation type");
             }
             break;
          }

@@ -119,7 +119,7 @@ emit_query_eop_availability(struct anv_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Invalid engine class");
+      UNREACHABLE("Invalid engine class");
    }
 }
 
@@ -253,7 +253,7 @@ VkResult genX(CreateQueryPool)(
       uint64s_per_slot = 1 + 1; /* availability + length of written bitstream data */
       break;
    default:
-      unreachable("Invalid query type");
+      UNREACHABLE("Invalid query type");
    }
 
    if (!vk_multialloc_zalloc2(&ma, &device->vk.alloc, pAllocator,
@@ -748,7 +748,7 @@ VkResult genX(GetQueryPoolResults)(
       }
 
       default:
-         unreachable("invalid pool type");
+         UNREACHABLE("invalid pool type");
       }
 
       if (!write_results)
@@ -847,7 +847,7 @@ emit_zero_queries(struct anv_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -967,7 +967,7 @@ void genX(CmdResetQueryPool)(
          emit_query_mi_flush_availability(cmd_buffer, anv_query_address(pool, firstQuery + i), false);
       break;
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 
    trace_intel_end_query_clear_cs(&cmd_buffer->trace, queryCount);
@@ -1076,7 +1076,7 @@ emit_perf_intel_query(struct anv_cmd_buffer *cmd_buffer,
       }
 
       default:
-         unreachable("Invalid query field");
+         UNREACHABLE("Invalid query field");
          break;
       }
    }
@@ -1284,7 +1284,7 @@ void genX(CmdBeginQueryIndexedEXT)(
             break;
 
          default:
-            unreachable("Invalid query field");
+            UNREACHABLE("Invalid query field");
             break;
          }
       }
@@ -1307,7 +1307,7 @@ void genX(CmdBeginQueryIndexedEXT)(
       emit_query_mi_availability(&b, query_addr, false);
       break;
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 
@@ -1471,7 +1471,7 @@ void genX(CmdEndQueryIndexedEXT)(
             break;
 
          default:
-            unreachable("Invalid query field");
+            UNREACHABLE("Invalid query field");
             break;
          }
       }
@@ -1523,7 +1523,7 @@ void genX(CmdEndQueryIndexedEXT)(
       } else if (pool->codec & VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
          reg_addr = HCP_BITSTREAM_BYTECOUNT_FRAME_REG;
       } else {
-         unreachable("Invalid codec operation");
+         UNREACHABLE("Invalid codec operation");
       }
 
       mi_store(&b, mi_mem64(anv_address_add(query_addr, 8)), mi_reg32(reg_addr));
@@ -1531,7 +1531,7 @@ void genX(CmdEndQueryIndexedEXT)(
       break;
    }
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    /* When multiview is active the spec requires that N consecutive query
@@ -1809,11 +1809,11 @@ copy_query_results_with_cs(struct anv_cmd_buffer *cmd_buffer,
 #endif
 
       case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
-         unreachable("Copy KHR performance query results not implemented");
+         UNREACHABLE("Copy KHR performance query results not implemented");
          break;
 
       default:
-         unreachable("unhandled query type");
+         UNREACHABLE("unhandled query type");
       }
 
       if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
@@ -1982,7 +1982,7 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("unhandled query type");
+      UNREACHABLE("unhandled query type");
    }
 
    *params = (struct anv_query_copy_params) {
@@ -2113,7 +2113,7 @@ genX(CmdWriteAccelerationStructuresPropertiesKHR)(
          query_addr = anv_address_add(query_addr, 8);
          break;
       default:
-         unreachable("unhandled query type");
+         UNREACHABLE("unhandled query type");
       }
 
       mi_store(&b, mi_mem64(query_addr), mi_mem64(anv_address_from_u64(va)));

@@ -4000,7 +4000,7 @@ v3dv_cmd_buffer_begin_query(struct v3dv_cmd_buffer *cmd_buffer,
       break;
    }
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -4138,7 +4138,7 @@ void v3dv_cmd_buffer_end_query(struct v3dv_cmd_buffer *cmd_buffer,
       v3dv_cmd_buffer_end_performance_query(cmd_buffer, pool, query);
       break;
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 

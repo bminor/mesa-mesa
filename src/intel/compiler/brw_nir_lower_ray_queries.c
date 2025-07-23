@@ -144,7 +144,7 @@ get_ray_query_shadow_addr(nir_builder *b,
 
          base_addr = nir_iadd(b, base_addr, mul);
       } else {
-         unreachable("Unsupported deref type");
+         UNREACHABLE("Unsupported deref type");
       }
    }
 
@@ -498,7 +498,7 @@ lower_ray_query_intrinsic(nir_builder *b,
       }
 
       default:
-         unreachable("Invalid ray query");
+         UNREACHABLE("Invalid ray query");
       }
 
       assert(sysval);
@@ -507,7 +507,7 @@ lower_ray_query_intrinsic(nir_builder *b,
    }
 
    default:
-      unreachable("Invalid intrinsic");
+      UNREACHABLE("Invalid intrinsic");
    }
 }
 

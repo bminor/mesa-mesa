@@ -69,7 +69,7 @@ brw_lower_pack(brw_shader &s)
          }
          break;
       default:
-         unreachable("skipped above");
+         UNREACHABLE("skipped above");
       }
 
       inst->remove();

@@ -1742,7 +1742,7 @@ get_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pip
       key = RADV_META_OBJECT_KEY_QUERY_MESH_PRIMS_GEN;
       break;
    default:
-      unreachable("invalid query type");
+      UNREACHABLE("invalid query type");
    }
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
@@ -1771,7 +1771,7 @@ get_pipeline(struct radv_device *device, VkQueryType query_type, VkPipeline *pip
       cs = build_ms_prim_gen_query_shader(device);
       break;
    default:
-      unreachable("invalid query type");
+      UNREACHABLE("invalid query type");
    }
 
    const VkPipelineShaderStageCreateInfo stage_info = {
@@ -1998,7 +1998,7 @@ radv_create_query_pool(struct radv_device *device, const VkQueryPoolCreateInfo *
       pool->stride = 48;
       break;
    default:
-      unreachable("creating unhandled query type");
+      UNREACHABLE("creating unhandled query type");
    }
 
    pool->availability_offset = pool->stride * pCreateInfo->queryCount;
@@ -2425,7 +2425,7 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
          break;
       }
       default:
-         unreachable("trying to get results of unhandled query type");
+         UNREACHABLE("trying to get results of unhandled query type");
       }
 
       if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
@@ -2519,7 +2519,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
       radv_copy_ms_prim_query_result(cmd_buffer, pool, firstQuery, queryCount, dst_va, stride, flags);
       break;
    default:
-      unreachable("trying to get results of unhandled query type");
+      UNREACHABLE("trying to get results of unhandled query type");
    }
 
    radv_resume_conditional_rendering(cmd_buffer);
@@ -2598,7 +2598,7 @@ emit_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_query_pool *poo
       cmd_buffer->video.feedback_query_va = va;
       break;
    default:
-      unreachable("beginning unhandled query type");
+      UNREACHABLE("beginning unhandled query type");
    }
 }
 
@@ -2632,7 +2632,7 @@ emit_end_query(struct radv_cmd_buffer *cmd_buffer, struct radv_query_pool *pool,
       cmd_buffer->video.feedback_query_va = 0;
       break;
    default:
-      unreachable("ending unhandled query type");
+      UNREACHABLE("ending unhandled query type");
    }
 
    cmd_buffer->active_query_flush_bits |=
@@ -2817,7 +2817,7 @@ radv_CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, 
          va += offsetof(struct radv_accel_struct_header, size);
          break;
       default:
-         unreachable("Unhandle accel struct query type.");
+         UNREACHABLE("Unhandle accel struct query type.");
       }
 
       radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));

@@ -324,7 +324,7 @@ radeon_to_amdgpu_pstate(enum radeon_ctx_pstate pstate)
    case RADEON_CTX_PSTATE_PEAK:
       return AMDGPU_CTX_STABLE_PSTATE_PEAK;
    default:
-      unreachable("Invalid pstate");
+      UNREACHABLE("Invalid pstate");
    }
 }
 

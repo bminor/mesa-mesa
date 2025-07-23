@@ -392,7 +392,7 @@ split_block_cursor(nir_cursor cursor,
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    if (_before)
@@ -527,7 +527,7 @@ nir_handle_add_jump(nir_block *block)
       break;
 
    default:
-      unreachable("Invalid jump type");
+      UNREACHABLE("Invalid jump type");
    }
 }
 
@@ -701,7 +701,7 @@ cleanup_cf_node(nir_cf_node *node, nir_function_impl *impl)
       break;
    }
    default:
-      unreachable("Invalid CF node type");
+      UNREACHABLE("Invalid CF node type");
    }
 }
 
@@ -813,10 +813,10 @@ relink_jump_halt_cf_node(nir_cf_node *node, nir_block *end_block)
    }
 
    case nir_cf_node_function:
-      unreachable("Cannot insert a function in a function");
+      UNREACHABLE("Cannot insert a function in a function");
 
    default:
-      unreachable("Invalid CF node type");
+      UNREACHABLE("Invalid CF node type");
    }
 }
 

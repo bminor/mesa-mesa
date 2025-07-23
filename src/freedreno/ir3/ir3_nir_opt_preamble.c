@@ -476,7 +476,7 @@ _rematerialize_def(nir_builder *b, struct hash_table *remap_ht,
       break;
    }
    default:
-      unreachable("should not get here");
+      UNREACHABLE("should not get here");
    }
 
    nir_instr *instr = nir_instr_clone_deep(b->shader, def->parent_instr,

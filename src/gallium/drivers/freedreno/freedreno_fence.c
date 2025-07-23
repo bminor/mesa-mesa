@@ -204,7 +204,7 @@ fd_create_pipe_fence_fd(struct pipe_context *pctx, struct pipe_fence_handle **pf
       break;
    }
    default:
-      unreachable("Unhandled fence type");
+      UNREACHABLE("Unhandled fence type");
    }
 }
 

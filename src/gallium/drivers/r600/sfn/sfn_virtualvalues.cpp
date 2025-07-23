@@ -125,7 +125,7 @@ VirtualValue::from_string(const std::string& s)
 
    default:
       std::cerr << "'" << s << "'";
-      unreachable("Unknown register type");
+      UNREACHABLE("Unknown register type");
    }
 }
 
@@ -249,7 +249,7 @@ Register::print(std::ostream& os) const
       case AddressRegister::idx0: os << "IDX0"; break;
       case AddressRegister::idx1: os << "IDX1"; break;
       default:
-         unreachable("Wrong address ID");
+         UNREACHABLE("Wrong address ID");
       }
       return;
    }
@@ -308,7 +308,7 @@ Register::from_string(const std::string& s)
          pinstr.append(1, s[i]);
          break;
       default:
-         unreachable("Malformed register string");
+         UNREACHABLE("Malformed register string");
       }
    }
 
@@ -598,7 +598,7 @@ InlineConstant::print(std::ostream& os) const
    } else if (sel() >= ALU_SRC_PARAM_BASE && sel() < ALU_SRC_PARAM_BASE + 32) {
       os << "Param" << sel() - ALU_SRC_PARAM_BASE << "." << chanchar[chan()];
    } else {
-      unreachable("Unknown inline constant");
+      UNREACHABLE("Unknown inline constant");
    }
 }
 
@@ -703,7 +703,7 @@ InlineConstant::param_from_string(const std::string& s)
       chan = 3;
       break;
    default:
-      unreachable("unsupported channel char");
+      UNREACHABLE("unsupported channel char");
    }
 
    return new InlineConstant(ALU_SRC_PARAM_BASE + param, chan);
@@ -829,7 +829,7 @@ UniformValue::from_string(const std::string& s, ValueFactory *factory)
       chan = 3;
       break;
    default:
-      unreachable("Unknown channel when reading uniform");
+      UNREACHABLE("Unknown channel when reading uniform");
    }
    if (bufid)
       return new UniformValue(index + 512, chan, bufid, bank);
@@ -912,7 +912,7 @@ LocalArray::element(size_t offset, PVirtualValue indirect, uint32_t chan)
          void visit(const LocalArray& value)
          {
             (void)value;
-            unreachable("An array can't be used as address");
+            UNREACHABLE("An array can't be used as address");
          }
          void visit(const LocalArrayValue& value) { (void)value; }
          void visit(const UniformValue& value) { (void)value; }

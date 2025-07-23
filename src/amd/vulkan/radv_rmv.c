@@ -381,7 +381,7 @@ fill_memory_info(const struct radeon_info *gpu_info, struct vk_rmv_memory_info *
       out_info->size = MIN2((uint64_t)gpu_info->gart_size_kb * 1024ULL, ram_size);
    } break;
    default:
-      unreachable("invalid memory index");
+      UNREACHABLE("invalid memory index");
    }
 }
 
@@ -410,7 +410,7 @@ memory_type_from_vram_type(uint32_t vram_type)
    case AMD_VRAM_TYPE_LPDDR5:
       return VK_RMV_MEMORY_TYPE_LPDDR5;
    default:
-      unreachable("Invalid vram type");
+      UNREACHABLE("Invalid vram type");
    }
 }
 
@@ -929,7 +929,7 @@ radv_rmv_log_submit(struct radv_device *device, enum amd_ip_type type)
       vk_rmv_log_misc_token(&device->vk, VK_RMV_MISC_EVENT_TYPE_SUBMIT_COPY);
       break;
    default:
-      unreachable("invalid ip type");
+      UNREACHABLE("invalid ip type");
    }
 }
 

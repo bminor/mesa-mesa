@@ -73,5 +73,5 @@ va_count_instr_stats(bi_instr *I, struct va_stats *stats)
       return;
    }
 
-   unreachable("Invalid unit");
+   UNREACHABLE("Invalid unit");
 }

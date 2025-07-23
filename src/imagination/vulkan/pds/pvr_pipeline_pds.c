@@ -325,7 +325,7 @@ pvr_find_constant2(uint8_t *const_usage, uint8_t words, const char *const_name)
       }
    }
 
-   unreachable("Unexpected: Space cannot be found for constant");
+   UNREACHABLE("Unexpected: Space cannot be found for constant");
    return ~0;
 }
 
@@ -364,7 +364,7 @@ static uint8_t pvr_get_temps2(struct pvr_temp_usage *temps,
       return i;
    }
 
-   unreachable("Unexpected: Space cannot be found for temps");
+   UNREACHABLE("Unexpected: Space cannot be found for temps");
    return PVR_INVALID_TEMP;
 }
 

@@ -207,7 +207,7 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *_opts)
       return true;
 
    default:
-      unreachable("driver requested lowering for unsupported intrinsic");
+      UNREACHABLE("driver requested lowering for unsupported intrinsic");
    }
 }
 

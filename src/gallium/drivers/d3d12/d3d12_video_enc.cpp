@@ -79,7 +79,7 @@ d3d12_video_encoder_convert_codec_to_d3d12_enc_codec(enum pipe_video_profile pro
       case PIPE_VIDEO_FORMAT_UNKNOWN:
       default:
       {
-         unreachable("Unsupported pipe_video_profile");
+         UNREACHABLE("Unsupported pipe_video_profile");
       } break;
    }
 }
@@ -283,7 +283,7 @@ d3d12_video_encoder_friendly_frame_type_h264(D3D12_VIDEO_ENCODER_FRAME_TYPE_H264
       } break;
       default:
       {
-         unreachable("Unsupported pipe_h2645_enc_picture_type");
+         UNREACHABLE("Unsupported pipe_h2645_enc_picture_type");
       } break;
    }
 }
@@ -308,7 +308,7 @@ d3d12_video_encoder_convert_move_precision(enum pipe_enc_move_info_precision_uni
          } break;
          default:
          {
-            unreachable("Unsupported pipe_enc_move_info");
+            UNREACHABLE("Unsupported pipe_enc_move_info");
             return D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_FULL_PIXEL;
          } break;
       }
@@ -483,7 +483,7 @@ d3d12_video_encoder_get_two_pass_config_from_picparams(struct pipe_picture_desc*
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 return twopass_frame_config;
@@ -600,7 +600,7 @@ d3d12_video_encoder_update_two_pass_frame_settings(struct d3d12_video_encoder *p
 #endif
             default:
             {
-               unreachable("Unsupported pipe_video_format");
+               UNREACHABLE("Unsupported pipe_video_format");
             } break;
          }
       }
@@ -693,7 +693,7 @@ d3d12_video_encoder_update_picparams_tracking(struct d3d12_video_encoder *pD3D12
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 
@@ -733,7 +733,7 @@ d3d12_video_encoder_uses_direct_dpb(enum pipe_video_format codec)
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1068,7 +1068,7 @@ d3d12_video_encoder_create_reference_picture_manager(struct d3d12_video_encoder 
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1117,7 +1117,7 @@ d3d12_video_encoder_get_current_slice_param_settings(struct d3d12_video_encoder 
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 
@@ -1154,7 +1154,7 @@ d3d12_video_encoder_get_current_picture_param_settings1(struct d3d12_video_encod
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
    return curPicParamsData;
@@ -1191,7 +1191,7 @@ d3d12_video_encoder_get_current_picture_param_settings(struct d3d12_video_encode
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
    return curPicParamsData;
@@ -1243,7 +1243,7 @@ d3d12_video_encoder_get_current_rate_control_settings(struct d3d12_video_encoder
          } break;
          default:
          {
-            unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
+            UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
          } break;
       }
    }
@@ -1285,7 +1285,7 @@ d3d12_video_encoder_get_current_rate_control_settings(struct d3d12_video_encoder
          } break;
          default:
          {
-            unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
+            UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
          } break;
       }
    }
@@ -1327,7 +1327,7 @@ d3d12_video_encoder_get_current_level_desc(struct d3d12_video_encoder *pD3D12Enc
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1365,7 +1365,7 @@ d3d12_video_encoder_build_pre_encode_codec_headers(struct d3d12_video_encoder *p
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1407,7 +1407,7 @@ d3d12_video_encoder_get_current_gop_desc(struct d3d12_video_encoder *pD3D12Enc)
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1449,7 +1449,7 @@ d3d12_video_encoder_get_current_codec_config_desc(struct d3d12_video_encoder *pD
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1479,7 +1479,7 @@ d3d12_video_encoder_get_current_codec(struct d3d12_video_encoder *pD3D12Enc)
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -1506,7 +1506,7 @@ d3d12_video_encoder_disable_rc_vbv_sizes(struct D3D12EncodeRateControlState & rc
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE for VBV Sizes");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE for VBV Sizes");
       } break;
    }
 }
@@ -1531,7 +1531,7 @@ d3d12_video_encoder_disable_rc_maxframesize(struct D3D12EncodeRateControlState &
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE for VBV Sizes");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE for VBV Sizes");
       } break;
    }
 }
@@ -1558,7 +1558,7 @@ d3d12_video_encoder_is_qualitylevel_in_range(struct D3D12EncodeRateControlState 
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
       } break;
    }
 }
@@ -1586,7 +1586,7 @@ d3d12_video_encoder_disable_rc_qualitylevels(struct D3D12EncodeRateControlState 
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE");
       } break;
    }
 }
@@ -1619,7 +1619,7 @@ d3d12_video_encoder_disable_rc_minmaxqp(struct D3D12EncodeRateControlState & rcS
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE for VBV Sizes");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE for VBV Sizes");
       } break;
    }
 }
@@ -1942,7 +1942,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 
@@ -2188,7 +2188,7 @@ d3d12_video_encoder_get_current_profile_desc(struct d3d12_video_encoder *pD3D12E
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -2218,7 +2218,7 @@ d3d12_video_encoder_get_current_max_dpb_capacity(struct d3d12_video_encoder *pD3
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -2298,7 +2298,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 
@@ -2768,7 +2768,7 @@ d3d12_video_encoder_calculate_metadata_resolved_buffer_size(enum pipe_video_form
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }
@@ -2817,7 +2817,7 @@ d3d12_video_encoder_calculate_max_slices_count_in_output(
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE");
       } break;
    }
 
@@ -4549,7 +4549,7 @@ d3d12_video_encoder_build_post_encode_codec_bitstream(struct d3d12_video_encoder
       } break;
 #endif
       default:
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
    }
 }
 
@@ -4727,7 +4727,7 @@ d3d12_video_encoder_store_current_picture_references(d3d12_video_encoder *pD3D12
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
 }

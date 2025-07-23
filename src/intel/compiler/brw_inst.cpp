@@ -49,7 +49,7 @@ brw_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
       break;
    case IMM:
    case UNIFORM:
-      unreachable("Invalid destination register file");
+      UNREACHABLE("Invalid destination register file");
    }
 
    this->writes_accumulator = false;
@@ -509,7 +509,7 @@ brw_inst::components_read(unsigned i) const
          return 1;
 
    case BRW_OPCODE_DPAS:
-      unreachable("Do not use components_read() for DPAS.");
+      UNREACHABLE("Do not use components_read() for DPAS.");
 
    default:
       return 1;
@@ -582,7 +582,7 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
           */
          return rcount * sdepth * 4;
       default:
-         unreachable("Invalid source number.");
+         UNREACHABLE("Invalid source number.");
       }
       break;
    }
@@ -633,7 +633,7 @@ namespace {
          case BRW_PREDICATE_ALIGN1_ALL16H:   return 16;
          case BRW_PREDICATE_ALIGN1_ANY32H:   return 32;
          case BRW_PREDICATE_ALIGN1_ALL32H:   return 32;
-         default: unreachable("Unsupported predicate");
+         default: UNREACHABLE("Unsupported predicate");
          }
       }
    }

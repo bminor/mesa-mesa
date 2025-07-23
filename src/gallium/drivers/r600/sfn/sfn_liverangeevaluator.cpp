@@ -365,7 +365,7 @@ LiveRangeInstrVisitor::visit(ControlFlowInstr *instr)
    case ControlFlowInstr::cf_wait_ack:
       break;
    default:
-      unreachable("Flow control unreachanble");
+      UNREACHABLE("Flow control unreachanble");
    }
 }
 
@@ -411,14 +411,14 @@ LiveRangeInstrVisitor::visit(WriteTFInstr *instr)
 void
 LiveRangeInstrVisitor::visit(UNUSED LDSAtomicInstr *instr)
 {
-   unreachable("LDSAtomicInstr must be lowered before scheduling and live "
+   UNREACHABLE("LDSAtomicInstr must be lowered before scheduling and live "
                "range evaluation");
 }
 
 void
 LiveRangeInstrVisitor::visit(UNUSED LDSReadInstr *instr)
 {
-   unreachable("LDSReadInstr must be lowered before scheduling and live "
+   UNREACHABLE("LDSReadInstr must be lowered before scheduling and live "
                "range evaluation");
 }
 

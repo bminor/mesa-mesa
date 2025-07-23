@@ -232,7 +232,7 @@ pack_16bit(nir_builder *b, nir_def *color,
                 results[0] = nir_pack_2x32_to_2x16_v3d(b, channels[0], channels[1]);
                 break;
         default:
-                unreachable("Invalid number of components");
+                UNREACHABLE("Invalid number of components");
         }
 
         return nir_vec(b, results, DIV_ROUND_UP(num_components, 2));
@@ -269,7 +269,7 @@ pack_xbit(nir_builder *b, nir_def *color,
                         return pack_16bit(b, color, num_components, conversion);
                 break;
         default:
-                unreachable("unrecognized bits");
+                UNREACHABLE("unrecognized bits");
         }
 }
 
@@ -313,7 +313,7 @@ v3d42_nir_lower_image_store(nir_builder *b, nir_intrinsic_instr *instr)
                         bits = bits_16;
                         break;
                 default:
-                        unreachable("unrecognized bits");
+                        UNREACHABLE("unrecognized bits");
                 }
 
                 bool pack_mask = false;

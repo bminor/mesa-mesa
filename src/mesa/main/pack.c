@@ -462,7 +462,7 @@ extract_uint_indexes(GLuint n, GLuint indexes[],
          break;
 
       default:
-         unreachable("bad srcType in extract_uint_indexes");
+         UNREACHABLE("bad srcType in extract_uint_indexes");
    }
 }
 
@@ -586,7 +586,7 @@ _mesa_unpack_stencil_span( struct gl_context *ctx, GLuint n,
             }
             break;
          default:
-            unreachable("bad dstType in _mesa_unpack_stencil_span");
+            UNREACHABLE("bad dstType in _mesa_unpack_stencil_span");
       }
 
       free(indexes);
@@ -733,7 +733,7 @@ _mesa_pack_stencil_span( struct gl_context *ctx, GLuint n,
       }
       break;
    default:
-      unreachable("bad type in _mesa_pack_index_span");
+      UNREACHABLE("bad type in _mesa_pack_index_span");
    }
 
    free(stencil);
@@ -1124,7 +1124,7 @@ _mesa_pack_depth_span( struct gl_context *ctx, GLuint n, GLvoid *dest,
       }
       break;
    default:
-      unreachable("bad type in _mesa_pack_depth_span()");
+      UNREACHABLE("bad type in _mesa_pack_depth_span()");
    }
 
    free(depthCopy);
@@ -1720,7 +1720,7 @@ _mesa_unpack_uint_24_8_depth_stencil_row(mesa_format format, uint32_t n,
       unpack_uint_24_8_depth_stencil_Z32_S8X24(src, dst, n);
       break;
    default:
-      unreachable("bad format %s in _mesa_unpack_uint_24_8_depth_stencil_row");
+      UNREACHABLE("bad format %s in _mesa_unpack_uint_24_8_depth_stencil_row");
    }
 }
 
@@ -1794,6 +1794,6 @@ _mesa_unpack_float_32_uint_24_8_depth_stencil_row(mesa_format format, uint32_t n
       unpack_float_32_uint_24_8_Z32_FLOAT_S8X24_UINT(src, dst, n);
       break;
    default:
-      unreachable("bad format %s in _mesa_unpack_uint_24_8_depth_stencil_row");
+      UNREACHABLE("bad format %s in _mesa_unpack_uint_24_8_depth_stencil_row");
    }
 }

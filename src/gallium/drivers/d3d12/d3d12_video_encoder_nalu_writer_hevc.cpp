@@ -212,7 +212,7 @@ d3d12_video_nalu_writer_hevc::write_bytes_from_struct(d3d12_video_encoder_bitstr
         } break;
         default:
         {
-            unreachable("Unsupported NALU value");
+            UNREACHABLE("Unsupported NALU value");
         } break;        
     }
 }

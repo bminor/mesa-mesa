@@ -280,7 +280,7 @@ blend_factor(enum pipe_blendfactor factor)
    case PIPE_BLENDFACTOR_INV_SRC1_ALPHA:
       return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
    }
-   unreachable("unexpected blend factor");
+   UNREACHABLE("unexpected blend factor");
 }
 
 
@@ -294,7 +294,7 @@ blend_op(enum pipe_blend_func func)
    case PIPE_BLEND_MIN: return VK_BLEND_OP_MIN;
    case PIPE_BLEND_MAX: return VK_BLEND_OP_MAX;
    }
-   unreachable("unexpected blend function");
+   UNREACHABLE("unexpected blend function");
 }
 
 static VkLogicOp
@@ -318,7 +318,7 @@ logic_op(enum pipe_logicop func)
    case PIPE_LOGICOP_OR: return VK_LOGIC_OP_OR;
    case PIPE_LOGICOP_SET: return VK_LOGIC_OP_SET;
    }
-   unreachable("unexpected logicop function");
+   UNREACHABLE("unexpected logicop function");
 }
 
 /* from iris */
@@ -473,7 +473,7 @@ compare_op(enum pipe_compare_func func)
    case PIPE_FUNC_GEQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL;
    case PIPE_FUNC_ALWAYS: return VK_COMPARE_OP_ALWAYS;
    }
-   unreachable("unexpected func");
+   UNREACHABLE("unexpected func");
 }
 
 static VkStencilOp
@@ -489,7 +489,7 @@ stencil_op(enum pipe_stencil_op op)
    case PIPE_STENCIL_OP_DECR_WRAP: return VK_STENCIL_OP_DECREMENT_AND_WRAP;
    case PIPE_STENCIL_OP_INVERT: return VK_STENCIL_OP_INVERT;
    }
-   unreachable("unexpected op");
+   UNREACHABLE("unexpected op");
 }
 
 static VkStencilOpState

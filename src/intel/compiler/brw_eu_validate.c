@@ -459,7 +459,7 @@ execution_type(const brw_hw_decoded_inst *inst)
        src1_exec_type == BRW_TYPE_DF)
       return BRW_TYPE_DF;
 
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 /**
@@ -691,7 +691,7 @@ general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
             ERROR_IF(brw_eu_inst_3src_a16_src2_rep_ctrl(devinfo, inst->raw),
                      "RepCtrl must be zero for 64-bit source 2");
             break;
-         default: unreachable("invalid src");
+         default: UNREACHABLE("invalid src");
          }
       }
    }
@@ -2530,7 +2530,7 @@ DST_STRIDE_3SRC(unsigned hstride)
    case BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_1: return 1;
    case BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_2: return 2;
    }
-   unreachable("invalid hstride");
+   UNREACHABLE("invalid hstride");
 }
 
 static unsigned
@@ -2542,7 +2542,7 @@ VSTRIDE_3SRC(unsigned vstride)
    case BRW_ALIGN1_3SRC_VERTICAL_STRIDE_4: return 4;
    case BRW_ALIGN1_3SRC_VERTICAL_STRIDE_8: return 8;
    }
-   unreachable("invalid vstride");
+   UNREACHABLE("invalid vstride");
 }
 
 static inline unsigned

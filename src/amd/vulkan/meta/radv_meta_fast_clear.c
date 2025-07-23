@@ -127,7 +127,7 @@ get_pipeline(struct radv_device *device, enum radv_color_op op, VkPipeline *pipe
          pdev->info.gfx_level >= GFX11 ? V_028808_CB_DCC_DECOMPRESS_GFX11 : V_028808_CB_DCC_DECOMPRESS_GFX8;
       break;
    default:
-      unreachable("Invalid color op");
+      UNREACHABLE("Invalid color op");
    }
 
    const VkGraphicsPipelineCreateInfo pipeline_create_info = {
@@ -335,7 +335,7 @@ radv_process_color_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
       pred_offset = image->dcc_pred_offset;
       break;
    default:
-      unreachable("Invalid color op");
+      UNREACHABLE("Invalid color op");
    }
 
    if (radv_dcc_enabled(image, subresourceRange->baseMipLevel) &&

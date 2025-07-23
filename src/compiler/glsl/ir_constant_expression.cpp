@@ -1001,7 +1001,7 @@ ir_dereference_array::constant_expression_value(void *mem_ctx,
             break;
 
          default:
-            unreachable("Matrix types are either float or double.");
+            UNREACHABLE("Matrix types are either float or double.");
          }
 
          return new(mem_ctx) ir_constant(column_type, &data);

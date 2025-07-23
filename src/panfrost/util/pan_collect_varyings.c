@@ -59,7 +59,7 @@ varying_format(nir_alu_type t, unsigned ncomps)
          return conv[i].formats[ncomps - 1];
    }
 
-   unreachable("Invalid type");
+   UNREACHABLE("Invalid type");
 }
 
 struct slot_info {

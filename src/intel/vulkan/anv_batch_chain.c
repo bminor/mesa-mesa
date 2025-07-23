@@ -1200,7 +1200,7 @@ anv_cmd_buffer_add_secondary(struct anv_cmd_buffer *primary,
       break;
    }
    default:
-      unreachable("Invalid execution mode");
+      UNREACHABLE("Invalid execution mode");
    }
 
    anv_reloc_list_append(&primary->surface_relocs, &secondary->surface_relocs);

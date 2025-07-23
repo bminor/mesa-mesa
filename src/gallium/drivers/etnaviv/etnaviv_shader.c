@@ -401,7 +401,7 @@ etna_shader_stage(struct etna_shader *shader)
    case MESA_SHADER_FRAGMENT:   return "FRAG";
    case MESA_SHADER_COMPUTE:    return "CL";
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
       return NULL;
    }
 }

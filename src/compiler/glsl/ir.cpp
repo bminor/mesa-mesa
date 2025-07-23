@@ -561,7 +561,7 @@ ir_expression::ir_expression(int op, ir_rvalue *op0, ir_rvalue *op1)
          base = GLSL_TYPE_UINT64;
          break;
       default:
-         unreachable("Invalid base type.");
+         UNREACHABLE("Invalid base type.");
       }
 
       this->type = glsl_simple_type(base, op0->type->vector_elements, 1);
@@ -634,7 +634,7 @@ ir_expression::get_num_operands(ir_expression_operation op)
    if (op <= ir_last_quadop)
       return 4;
 
-   unreachable("Could not calculate number of operands");
+   UNREACHABLE("Could not calculate number of operands");
 }
 
 #include "ir_expression_operation_strings.h"

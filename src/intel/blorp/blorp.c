@@ -275,7 +275,7 @@ blorp_hiz_op(struct blorp_batch *batch, struct blorp_surf *surf,
       break;
    case ISL_AUX_OP_PARTIAL_RESOLVE:
    case ISL_AUX_OP_NONE:
-      unreachable("Invalid HiZ op");
+      UNREACHABLE("Invalid HiZ op");
    }
 
    for (uint32_t a = 0; a < num_layers; a++) {

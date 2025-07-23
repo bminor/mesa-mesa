@@ -187,6 +187,6 @@ radv_GetDescriptorEXT(VkDevice _device, const VkDescriptorGetInfoEXT *pDescripto
       break;
    }
    default:
-      unreachable("invalid descriptor type");
+      UNREACHABLE("invalid descriptor type");
    }
 }

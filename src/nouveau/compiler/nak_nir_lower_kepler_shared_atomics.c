@@ -67,7 +67,7 @@ lower_atomic_in_lock(nir_builder *b, nir_intrinsic_instr *intr, nir_def *loaded)
    }
    case nir_atomic_op_fcmpxchg: /* TODO: shared atomic floats */
    default:
-      unreachable("Invalid intrinsic");
+      UNREACHABLE("Invalid intrinsic");
    }
 
    return to_store;

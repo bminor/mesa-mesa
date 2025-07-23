@@ -351,7 +351,7 @@ nir_create_variable_with_location(nir_shader *shader, nir_variable_mode mode, in
       break;
 
    default:
-      unreachable("Unsupported variable mode");
+      UNREACHABLE("Unsupported variable mode");
    }
 
    nir_variable *var = nir_variable_create(shader, mode, type, name);
@@ -370,7 +370,7 @@ nir_create_variable_with_location(nir_shader *shader, nir_variable_mode mode, in
       break;
 
    default:
-      unreachable("Unsupported variable mode");
+      UNREACHABLE("Unsupported variable mode");
    }
 
    return var;
@@ -944,7 +944,7 @@ const_value_float(double d, unsigned bit_size)
    case 32: v.f32 = d;                       break;
    case 64: v.f64 = d;                       break;
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 
@@ -965,7 +965,7 @@ const_value_int(int64_t i, unsigned bit_size)
    case 32: v.i32 = i;     break;
    case 64: v.i64 = i;     break;
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 
@@ -1005,7 +1005,7 @@ nir_alu_binop_identity(nir_op binop, unsigned bit_size)
    case nir_op_ixor:
       return const_value_int(0, bit_size);
    default:
-      unreachable("Invalid reduction operation");
+      UNREACHABLE("Invalid reduction operation");
    }
 }
 
@@ -1059,7 +1059,7 @@ reduce_cursor(nir_cursor cursor)
       return cursor;
 
    default:
-      unreachable("Inavlid cursor option");
+      UNREACHABLE("Inavlid cursor option");
    }
 }
 
@@ -1374,7 +1374,7 @@ nir_instr_def(nir_instr *instr)
       return &nir_instr_as_phi(instr)->def;
 
    case nir_instr_type_parallel_copy:
-      unreachable("Parallel copies are unsupported by this function");
+      UNREACHABLE("Parallel copies are unsupported by this function");
 
    case nir_instr_type_load_const:
       return &nir_instr_as_load_const(instr)->def;
@@ -1387,7 +1387,7 @@ nir_instr_def(nir_instr *instr)
       return NULL;
    }
 
-   unreachable("Invalid instruction type");
+   UNREACHABLE("Invalid instruction type");
 }
 
 bool
@@ -1423,7 +1423,7 @@ nir_const_value_for_float(double f, unsigned bit_size)
    case 16: v.u16 = _mesa_float_to_half(f);  break;
    case 32: v.f32 = f;                       break;
    case 64: v.f64 = f;                       break;
-   default: unreachable("Invalid bit size");
+   default: UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 
@@ -1438,7 +1438,7 @@ nir_const_value_as_float(nir_const_value value, unsigned bit_size)
    case 16: return _mesa_half_to_float(value.u16);
    case 32: return value.f32;
    case 64: return value.f64;
-   default: unreachable("Invalid bit size");
+   default: UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 }
@@ -1840,7 +1840,7 @@ nir_block_cf_tree_next(nir_block *block)
    }
 
    default:
-      unreachable("unknown cf node type");
+      UNREACHABLE("unknown cf node type");
    }
 }
 
@@ -1882,7 +1882,7 @@ nir_block_cf_tree_prev(nir_block *block)
    }
 
    default:
-      unreachable("unknown cf node type");
+      UNREACHABLE("unknown cf node type");
    }
 }
 
@@ -1910,7 +1910,7 @@ nir_cf_node_cf_tree_first(nir_cf_node *node)
    }
 
    default:
-      unreachable("unknown node type");
+      UNREACHABLE("unknown node type");
    }
 }
 
@@ -1941,7 +1941,7 @@ nir_cf_node_cf_tree_last(nir_cf_node *node)
    }
 
    default:
-      unreachable("unknown node type");
+      UNREACHABLE("unknown node type");
    }
 }
 
@@ -2157,7 +2157,7 @@ cursor_next_instr(nir_cursor cursor)
       return cursor_next_instr(cursor);
    }
 
-   unreachable("Inavlid cursor option");
+   UNREACHABLE("Inavlid cursor option");
 }
 
 bool
@@ -2607,7 +2607,7 @@ nir_system_value_from_intrinsic(nir_intrinsic_op intrin)
    case nir_intrinsic_load_sm_id_nv:
       return SYSTEM_VALUE_SM_ID_NV;
    default:
-      unreachable("intrinsic doesn't produce a system value");
+      UNREACHABLE("intrinsic doesn't produce a system value");
    }
 }
 
@@ -2656,7 +2656,7 @@ nir_rewrite_image_intrinsic(nir_intrinsic_instr *intrin, nir_def *src,
       CASE(store_block_agx)
 #undef CASE
    default:
-      unreachable("Unhanded image intrinsic");
+      UNREACHABLE("Unhanded image intrinsic");
    }
 
    if (nir_src_as_deref(intrin->src[0])) {
@@ -2781,7 +2781,7 @@ nir_get_shader_call_payload_src(nir_intrinsic_instr *call)
    case nir_intrinsic_rt_execute_callable:
       return &call->src[1];
    default:
-      unreachable("Not a call intrinsic");
+      UNREACHABLE("Not a call intrinsic");
       return NULL;
    }
 }
@@ -2979,7 +2979,7 @@ nir_get_nir_type_for_glsl_base_type(enum glsl_base_type base_type)
       return nir_type_invalid;
    }
 
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 enum glsl_base_type
@@ -2999,7 +2999,7 @@ nir_get_glsl_base_type_for_nir_type(nir_alu_type base_type)
    case nir_type_float32:  return GLSL_TYPE_FLOAT;
    case nir_type_float16:  return GLSL_TYPE_FLOAT16;
    case nir_type_float64:  return GLSL_TYPE_DOUBLE;
-   default: unreachable("Not a sized nir_alu_type");
+   default: UNREACHABLE("Not a sized nir_alu_type");
    }
    /* clang-format on */
 }
@@ -3016,7 +3016,7 @@ nir_op_vec(unsigned num_components)
    case  5: return nir_op_vec5;
    case  8: return nir_op_vec8;
    case 16: return nir_op_vec16;
-   default: unreachable("bad component count");
+   default: UNREACHABLE("bad component count");
    }
    /* clang-format on */
 }
@@ -3254,7 +3254,7 @@ nir_tex_instr_result_size(const nir_tex_instr *instr)
          ret = 3;
          break;
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
       if (instr->is_array)
          ret++;
@@ -3327,7 +3327,7 @@ nir_tex_instr_is_query(const nir_tex_instr *instr)
    case nir_texop_fragment_fetch_amd:
       return false;
    default:
-      unreachable("Invalid texture opcode");
+      UNREACHABLE("Invalid texture opcode");
    }
 }
 
@@ -3406,10 +3406,10 @@ nir_tex_instr_src_type(const nir_tex_instr *instr, unsigned src)
       return nir_type_uint;
 
    case nir_num_tex_src_types:
-      unreachable("nir_num_tex_src_types is not a valid source type");
+      UNREACHABLE("nir_num_tex_src_types is not a valid source type");
    }
 
-   unreachable("Invalid texture source type");
+   UNREACHABLE("Invalid texture source type");
 }
 
 unsigned
@@ -3704,5 +3704,5 @@ nir_atomic_op_to_alu(nir_atomic_op op)
       return nir_num_opcodes;
    }
 
-   unreachable("Invalid nir_atomic_op");
+   UNREACHABLE("Invalid nir_atomic_op");
 }

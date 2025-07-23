@@ -55,7 +55,7 @@ zink_desc_type_from_vktype(VkDescriptorType type)
    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
       return ZINK_DESCRIPTOR_TYPE_IMAGE;
    default:
-      unreachable("unhandled descriptor type");
+      UNREACHABLE("unhandled descriptor type");
    }
 }
 
@@ -100,7 +100,7 @@ zink_primitive_topology(enum mesa_prim mode)
       return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
 
    default:
-      unreachable("unexpected enum mesa_prim");
+      UNREACHABLE("unexpected enum mesa_prim");
    }
 }
 

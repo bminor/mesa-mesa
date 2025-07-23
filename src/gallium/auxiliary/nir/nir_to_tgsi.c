@@ -828,7 +828,7 @@ ntt_try_store_ssa_in_tgsi_output(struct ntt_compile *c, struct ureg_dst *dst,
    nir_foreach_use_including_if(use, def) {
       return ntt_try_store_in_tgsi_output_with_use(c, dst, use);
    }
-   unreachable("We have one use");
+   UNREACHABLE("We have one use");
 }
 
 static void
@@ -987,7 +987,7 @@ tgsi_texture_type_from_sampler_dim(enum glsl_sampler_dim dim, bool is_array, boo
    case GLSL_SAMPLER_DIM_BUF:
       return TGSI_TEXTURE_BUFFER;
    default:
-      unreachable("unknown sampler dim");
+      UNREACHABLE("unknown sampler dim");
    }
 }
 
@@ -1002,7 +1002,7 @@ tgsi_return_type_from_base_type(enum glsl_base_type type)
    case GLSL_TYPE_FLOAT:
      return TGSI_RETURN_TYPE_FLOAT;
    default:
-      unreachable("unexpected texture type");
+      UNREACHABLE("unexpected texture type");
    }
 }
 
@@ -1704,7 +1704,7 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
          break;
 
       case nir_op_fmod:
-         unreachable("should be handled by .lower_fmod = true");
+         UNREACHABLE("should be handled by .lower_fmod = true");
          break;
 
       case nir_op_fpow:
@@ -1780,7 +1780,7 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
 
       case nir_op_frexp_sig:
       case nir_op_frexp_exp:
-         unreachable("covered by nir_lower_frexp()");
+         UNREACHABLE("covered by nir_lower_frexp()");
          break;
 
       case nir_op_ldexp:
@@ -1794,11 +1794,11 @@ ntt_emit_alu(struct ntt_compile *c, nir_alu_instr *instr)
       case nir_op_vec4:
       case nir_op_vec3:
       case nir_op_vec2:
-         unreachable("covered by nir_lower_vec_to_movs()");
+         UNREACHABLE("covered by nir_lower_vec_to_movs()");
 
       default:
          fprintf(stderr, "Unknown NIR opcode: %s\n", nir_op_infos[instr->op].name);
-         unreachable("Unknown NIR opcode");
+         UNREACHABLE("Unknown NIR opcode");
       }
    }
 
@@ -1964,7 +1964,7 @@ ntt_translate_atomic_op(nir_atomic_op op)
    case nir_atomic_op_ixor: return TGSI_OPCODE_ATOMXOR;
    case nir_atomic_op_ior:  return TGSI_OPCODE_ATOMOR;
    case nir_atomic_op_xchg: return TGSI_OPCODE_ATOMXCHG;
-   default: unreachable("invalid atomic");
+   default: UNREACHABLE("invalid atomic");
    }
 }
 
@@ -2015,7 +2015,7 @@ ntt_emit_mem(struct ntt_compile *c, nir_intrinsic_instr *instr,
    }
 
    default:
-      unreachable("unknown memory type");
+      UNREACHABLE("unknown memory type");
    }
 
    if (is_store) {
@@ -2088,7 +2088,7 @@ ntt_emit_mem(struct ntt_compile *c, nir_intrinsic_instr *instr,
       opcode = TGSI_OPCODE_RESQ;
       break;
    default:
-      unreachable("unknown memory op");
+      UNREACHABLE("unknown memory op");
    }
 
    unsigned qualifier = 0;
@@ -2206,7 +2206,7 @@ ntt_emit_image_load_store(struct ntt_compile *c, nir_intrinsic_instr *instr)
       op = TGSI_OPCODE_ATOMCAS;
       break;
    default:
-      unreachable("bad op");
+      UNREACHABLE("bad op");
    }
 
    struct ntt_insn *insn = ntt_insn(c, op, opcode_dst, srcs[0], srcs[1], srcs[2], srcs[3]);
@@ -2312,13 +2312,13 @@ ntt_emit_load_input(struct ntt_compile *c, nir_intrinsic_instr *instr)
          break;
 
       default:
-         unreachable("bad barycentric interp intrinsic\n");
+         UNREACHABLE("bad barycentric interp intrinsic\n");
       }
       break;
    }
 
    default:
-      unreachable("bad load input intrinsic\n");
+      UNREACHABLE("bad load input intrinsic\n");
    }
 }
 
@@ -2640,7 +2640,7 @@ ntt_emit_intrinsic(struct ntt_compile *c, nir_intrinsic_instr *instr)
       ntt_emit_mem(c, instr, nir_var_uniform);
       break;
    case nir_intrinsic_atomic_counter_pre_dec:
-      unreachable("Should be lowered by ntt_lower_atomic_pre_dec()");
+      UNREACHABLE("Should be lowered by ntt_lower_atomic_pre_dec()");
       break;
 
    case nir_intrinsic_image_load:
@@ -2808,7 +2808,7 @@ ntt_emit_texture(struct ntt_compile *c, nir_tex_instr *instr)
       tex_opcode = TGSI_OPCODE_TXQS;
       break;
    default:
-      unreachable("unsupported tex op");
+      UNREACHABLE("unsupported tex op");
    }
 
    struct ntt_tex_operand_state s = { .i = 0 };
@@ -2864,7 +2864,7 @@ ntt_emit_texture(struct ntt_compile *c, nir_tex_instr *instr)
       tex_type = TGSI_RETURN_TYPE_UINT;
       break;
    default:
-      unreachable("unknown texture type");
+      UNREACHABLE("unknown texture type");
    }
 
    struct ureg_dst tex_dst;
@@ -3019,7 +3019,7 @@ ntt_emit_block(struct ntt_compile *c, nir_block *block)
          fprintf(stderr, "Emitted ureg insn during: ");
          nir_print_instr(instr, stderr);
          fprintf(stderr, "\n");
-         unreachable("emitted ureg insn");
+         UNREACHABLE("emitted ureg insn");
       }
    }
 
@@ -3053,7 +3053,7 @@ ntt_emit_cf_list(struct ntt_compile *c, struct exec_list *list)
          break;
 
       default:
-         unreachable("unknown CF type");
+         UNREACHABLE("unknown CF type");
       }
    }
 }
@@ -3169,7 +3169,7 @@ ntt_emit_cf_list_ureg(struct ntt_compile *c, struct exec_list *list)
          break;
 
       default:
-         unreachable("unknown CF type");
+         UNREACHABLE("unknown CF type");
       }
    }
 }

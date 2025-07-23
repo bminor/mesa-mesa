@@ -1423,7 +1423,7 @@ print_pipeline_stats(struct zink_screen *screen, VkPipeline pipeline, struct uti
             fprintf(f, "%g %s", stats[i].value.f64, stats[i].name);
             break;
          default:
-            unreachable("unknown statistic");
+            UNREACHABLE("unknown statistic");
          }
       }
 
@@ -1572,7 +1572,7 @@ zink_program_descriptor_is_buffer(struct zink_context *ctx, gl_shader_stage stag
       break;
    }
    default:
-      unreachable("unknown shader type");
+      UNREACHABLE("unknown shader type");
    }
    if (!zs)
       return false;
@@ -1841,7 +1841,7 @@ gs_output_to_reduced_prim_type(struct shader_info *info)
       return MESA_PRIM_TRIANGLES;
 
    default:
-      unreachable("unexpected output primitive type");
+      UNREACHABLE("unexpected output primitive type");
    }
 }
 
@@ -2166,7 +2166,7 @@ print_exe_stages(VkShaderStageFlags stages)
       return "FS";
    if (stages == VK_SHADER_STAGE_COMPUTE_BIT)
       return "CS";
-   unreachable("unhandled combination of stages!");
+   UNREACHABLE("unhandled combination of stages!");
 }
 
 static void

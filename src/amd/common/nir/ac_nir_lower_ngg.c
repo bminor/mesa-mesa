@@ -1087,7 +1087,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
          if (s->deferred.uses_tess_primitive_id)
             nir_store_var(b, repacked_variables[2], nir_load_primitive_id(b), 0x1u);
       } else {
-         unreachable("Should be VS or TES.");
+         UNREACHABLE("Should be VS or TES.");
       }
    }
    nir_pop_if(b, if_es_thread);
@@ -1283,7 +1283,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
 
       nir_overwrite_tes_arguments_amd(b, u, v, prim_id, rel_patch_id);
    } else {
-      unreachable("Should be VS or TES.");
+      UNREACHABLE("Should be VS or TES.");
    }
 }
 

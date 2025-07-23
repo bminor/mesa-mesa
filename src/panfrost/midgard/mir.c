@@ -48,7 +48,7 @@ mir_block_add_successor(midgard_block *block, midgard_block *successor)
       return;
    }
 
-   unreachable("Too many successors");
+   UNREACHABLE("Too many successors");
 }
 
 void
@@ -416,7 +416,7 @@ mir_bundle_idx_for_ins(const midgard_instruction *tag, midgard_block *block)
    }
 
    mir_print_instruction(tag);
-   unreachable("Instruction not scheduled in block");
+   UNREACHABLE("Instruction not scheduled in block");
 }
 
 midgard_instruction *

@@ -454,7 +454,7 @@ dri2_add_config(_EGLDisplay *disp, const struct dri_config *dri_config,
 
       _eglLinkConfig(&conf->base);
    } else {
-      unreachable("duplicates should not be possible");
+      UNREACHABLE("duplicates should not be possible");
       return NULL;
    }
 
@@ -877,7 +877,7 @@ dri2_initialize(_EGLDisplay *disp)
       ret = dri2_initialize_android(disp);
       break;
    default:
-      unreachable("Callers ensure we cannot get here.");
+      UNREACHABLE("Callers ensure we cannot get here.");
       return EGL_FALSE;
    }
 
@@ -970,7 +970,7 @@ dri2_display_destroy(_EGLDisplay *disp)
    case _EGL_PLATFORM_DEVICE:
       break;
    default:
-      unreachable("Platform teardown is not properly hooked.");
+      UNREACHABLE("Platform teardown is not properly hooked.");
       break;
    }
 
@@ -1989,7 +1989,7 @@ dri2_create_image_khr_texture(_EGLDisplay *disp, _EGLContext *ctx,
       gl_target = GL_TEXTURE_CUBE_MAP;
       break;
    default:
-      unreachable("Unexpected target in dri2_create_image_khr_texture()");
+      UNREACHABLE("Unexpected target in dri2_create_image_khr_texture()");
       return EGL_NO_IMAGE_KHR;
    }
 

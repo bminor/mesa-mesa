@@ -714,7 +714,7 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_CODEC");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_CODEC");
       } break;
    }
 
@@ -2502,7 +2502,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return D3D12_VIDEO_ENC_AV1_MAX_TEMPORAL_LAYERS;
 #endif
                default:
-                  unreachable("Unsupported pipe_video_format");
+                  UNREACHABLE("Unsupported pipe_video_format");
             }
       } break;
       case PIPE_VIDEO_CAP_ENC_SUPPORTS_FEEDBACK_METADATA:
@@ -2883,7 +2883,7 @@ is_d3d12_video_encode_format_supported(struct pipe_screen *screen,
 #endif
       default:
       {
-         unreachable("Unsupported pipe_video_format");
+         UNREACHABLE("Unsupported pipe_video_format");
       } break;
    }
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;

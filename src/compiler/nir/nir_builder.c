@@ -593,7 +593,7 @@ nir_compare_func(nir_builder *b, enum compare_func func,
    case COMPARE_FUNC_LEQUAL:
       return nir_fge(b, src1, src0);
    }
-   unreachable("bad compare func");
+   UNREACHABLE("bad compare func");
 }
 
 nir_def *
@@ -635,7 +635,7 @@ nir_type_convert(nir_builder *b,
             opcode = nir_op_fneu32;
             break;
          default:
-            unreachable("Invalid Boolean size.");
+            UNREACHABLE("Invalid Boolean size.");
          }
       } else {
          assert(src_base == nir_type_int || src_base == nir_type_uint);
@@ -654,7 +654,7 @@ nir_type_convert(nir_builder *b,
             opcode = nir_op_ine32;
             break;
          default:
-            unreachable("Invalid Boolean size.");
+            UNREACHABLE("Invalid Boolean size.");
          }
       }
 

@@ -177,7 +177,7 @@ bi_${ret} bi_${common_op.replace('.', '_').lower()}${suffix if ops[opcode]['dest
         return (bi_${variant.replace('.', '_').lower()}${to_suffix(ops[opcode])}(${arguments(ops[opcode], temp_dest = temp)}))${"->dest[0]" if temp else ""};
 % endfor
     else
-        unreachable("Invalid parameters for ${common_op}");
+        UNREACHABLE("Invalid parameters for ${common_op}");
 }
 
 %endif

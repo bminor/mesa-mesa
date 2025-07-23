@@ -102,7 +102,7 @@ get_slabs(struct anv_device *device, uint64_t size)
          return slabs;
    }
 
-   unreachable("should have found a valid slab for this size");
+   UNREACHABLE("should have found a valid slab for this size");
    return NULL;
 }
 
@@ -258,7 +258,7 @@ anv_slab_alloc(void *priv,
       alloc_flags |= ANV_BO_ALLOC_DESCRIPTOR_POOL_FLAGS;
       break;
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
       return NULL;
    }
 

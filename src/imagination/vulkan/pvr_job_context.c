@@ -581,7 +581,7 @@ static VkResult pvr_ctx_sr_programs_setup(struct pvr_device *device,
       break;
 
    default:
-      unreachable("Invalid target.");
+      UNREACHABLE("Invalid target.");
       break;
    }
 

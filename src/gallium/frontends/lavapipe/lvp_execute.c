@@ -695,7 +695,7 @@ unbind_graphics_stages(struct rendering_state *state, VkShaderStageFlagBits shad
             state->pctx->bind_ms_state(state->pctx, NULL);
          break;
       default:
-         unreachable("what stage is this?!");
+         UNREACHABLE("what stage is this?!");
       }
       state->shaders[stage] = NULL;
    }
@@ -960,7 +960,7 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
             state->velem.velems[a].instance_divisor = d ? d : UINT32_MAX;
             break;
          default:
-            unreachable("Invalid vertex input rate");
+            UNREACHABLE("Invalid vertex input rate");
          }
 
          if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_VI_BINDING_STRIDES)) {
@@ -2360,7 +2360,7 @@ find_depth_format(VkFormat format, VkImageAspectFlagBits aspect)
       case VK_FORMAT_D16_UNORM_S8_UINT:
          return PIPE_FORMAT_Z16_UNORM;
       default:
-         unreachable("unsupported format/aspect combo");
+         UNREACHABLE("unsupported format/aspect combo");
       }
    }
    assert(aspect == VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -2371,7 +2371,7 @@ find_depth_format(VkFormat format, VkImageAspectFlagBits aspect)
    case VK_FORMAT_S8_UINT:
       return PIPE_FORMAT_S8_UINT;
    default:
-      unreachable("unsupported format/aspect combo");
+      UNREACHABLE("unsupported format/aspect combo");
    }
 }
 
@@ -4041,7 +4041,7 @@ process_sequence_ext(struct rendering_state *state,
                cmd->u.bind_index_buffer2.index_type = VK_INDEX_TYPE_UINT16;
                break;
             default:
-               unreachable("unknown DXGI index type!");
+               UNREACHABLE("unknown DXGI index type!");
             }
          }
          cmd->u.bind_index_buffer2.size = data->size;
@@ -4150,7 +4150,7 @@ process_sequence_ext(struct rendering_state *state,
          break;
       }
       default:
-         unreachable("unknown token type");
+         UNREACHABLE("unknown token type");
          break;
       }
       size += lvp_ext_dgc_token_size(elayout, token);
@@ -4565,7 +4565,7 @@ handle_write_acceleration_structures_properties(struct vk_cmd_queue_entry *cmd, 
          break;
       }
       default:
-         unreachable("Unsupported query type");
+         UNREACHABLE("Unsupported query type");
       }
    }
 }
@@ -5350,7 +5350,7 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
          break;
       default:
          fprintf(stderr, "Unsupported command %s\n", vk_cmd_queue_type_names[cmd->type]);
-         unreachable("Unsupported command");
+         UNREACHABLE("Unsupported command");
          break;
       }
       did_flush = false;

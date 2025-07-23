@@ -349,7 +349,7 @@ count_sequence(nir_const_value c[NIR_MAX_VEC_COMPONENTS],
 
    case nir_type_bool:
    default:
-      unreachable("invalid base type");
+      UNREACHABLE("invalid base type");
    }
 }
 
@@ -407,6 +407,6 @@ negate(nir_const_value dst[NIR_MAX_VEC_COMPONENTS],
 
    case nir_type_bool:
    default:
-      unreachable("invalid base type");
+      UNREACHABLE("invalid base type");
    }
 }

@@ -192,7 +192,7 @@ print_hex_padded_const_value(const nir_const_value *value, unsigned bit_size, FI
       fprintf(fp, "0x%02x", value->u8);
       break;
    default:
-      unreachable("unhandled bit size");
+      UNREACHABLE("unhandled bit size");
    }
 }
 
@@ -213,7 +213,7 @@ print_hex_terse_const_value(const nir_const_value *value, unsigned bit_size, FIL
       fprintf(fp, "0x%x", value->u8);
       break;
    default:
-      unreachable("unhandled bit size");
+      UNREACHABLE("unhandled bit size");
    }
 }
 
@@ -245,7 +245,7 @@ print_int_const_value(const nir_const_value *value, unsigned bit_size, FILE *fp)
       fprintf(fp, "%+d", value->i8);
       break;
    default:
-      unreachable("unhandled bit size");
+      UNREACHABLE("unhandled bit size");
    }
 }
 
@@ -266,7 +266,7 @@ print_uint_const_value(const nir_const_value *value, unsigned bit_size, FILE *fp
       fprintf(fp, "%u", value->u8);
       break;
    default:
-      unreachable("unhandled bit size");
+      UNREACHABLE("unhandled bit size");
    }
 }
 
@@ -309,7 +309,7 @@ print_const_from_load(nir_load_const_instr *instr, print_state *state, nir_alu_t
             break;
 
          default:
-            unreachable("invalid nir alu base type");
+            UNREACHABLE("invalid nir alu base type");
          }
       }
    } else {
@@ -351,7 +351,7 @@ print_const_from_load(nir_load_const_instr *instr, print_state *state, nir_alu_t
             needs_decimal |= v->u8 >= 10;
             break;
          default:
-            unreachable("invalid bit size");
+            UNREACHABLE("invalid bit size");
          }
       }
 
@@ -567,7 +567,7 @@ get_constant_sampler_addressing_mode(enum cl_sampler_addressing_mode mode)
    case SAMPLER_ADDRESSING_MODE_REPEAT_MIRRORED:
       return "repeat_mirrored";
    default:
-      unreachable("Invalid addressing mode");
+      UNREACHABLE("Invalid addressing mode");
    }
 }
 
@@ -580,7 +580,7 @@ get_constant_sampler_filter_mode(enum cl_sampler_filter_mode mode)
    case SAMPLER_FILTER_MODE_LINEAR:
       return "linear";
    default:
-      unreachable("Invalid filter mode");
+      UNREACHABLE("Invalid filter mode");
    }
 }
 
@@ -676,7 +676,7 @@ print_constant(nir_constant *c, const struct glsl_type *type, print_state *state
             break;
 
          default:
-            unreachable("Cannot get here from the first level switch");
+            UNREACHABLE("Cannot get here from the first level switch");
          }
       }
       break;
@@ -724,7 +724,7 @@ print_constant(nir_constant *c, const struct glsl_type *type, print_state *state
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -1070,7 +1070,7 @@ print_deref_link(const nir_deref_instr *instr, bool whole_chain, print_state *st
       break;
 
    default:
-      unreachable("Invalid deref instruction type");
+      UNREACHABLE("Invalid deref instruction type");
    }
 }
 
@@ -1099,7 +1099,7 @@ print_deref_instr(nir_deref_instr *instr, print_state *state)
       fprintf(fp, " = deref_ptr_as_array ");
       break;
    default:
-      unreachable("Invalid deref instruction type");
+      UNREACHABLE("Invalid deref instruction type");
    }
 
    /* Only casts naturally return a pointer type */
@@ -1714,7 +1714,7 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
          else if (cls == nir_preamble_class_sampler)
             fprintf(fp, "class=sampler");
          else
-            unreachable("invalid class");
+            UNREACHABLE("invalid class");
 
          break;
       }
@@ -1869,7 +1869,7 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
       fprintf(fp, "sample_pos_nv ");
       break;
    default:
-      unreachable("Invalid texture operation");
+      UNREACHABLE("Invalid texture operation");
       break;
    }
 
@@ -1958,7 +1958,7 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
          break;
 
       default:
-         unreachable("Invalid texture source type");
+         UNREACHABLE("Invalid texture source type");
          break;
       }
    }
@@ -2194,7 +2194,7 @@ print_instr(const nir_instr *instr, print_state *state, unsigned tabs)
       break;
 
    default:
-      unreachable("Invalid instruction type");
+      UNREACHABLE("Invalid instruction type");
       break;
    }
 
@@ -2381,7 +2381,7 @@ print_cf_node(nir_cf_node *node, print_state *state, unsigned int tabs)
       break;
 
    default:
-      unreachable("Invalid CFG node type");
+      UNREACHABLE("Invalid CFG node type");
    }
 }
 

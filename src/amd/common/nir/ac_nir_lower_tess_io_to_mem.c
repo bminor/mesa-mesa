@@ -804,7 +804,7 @@ lower_hs_output_access(nir_builder *b,
       update_hs_barrier(intrin, st);
       return NIR_LOWER_INSTR_PROGRESS;
    } else {
-      unreachable("intrinsic not supported by lower_hs_output_access");
+      UNREACHABLE("intrinsic not supported by lower_hs_output_access");
    }
 }
 

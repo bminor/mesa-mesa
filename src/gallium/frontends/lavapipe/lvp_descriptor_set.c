@@ -637,7 +637,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_UpdateDescriptorSets(
          break;
 
       default:
-         unreachable("Unsupported descriptor type");
+         UNREACHABLE("Unsupported descriptor type");
          break;
       }
    }
@@ -929,7 +929,7 @@ lvp_descriptor_set_update_with_template(VkDevice _device, VkDescriptorSet descri
          }
 
          default:
-            unreachable("Unsupported descriptor type");
+            UNREACHABLE("Unsupported descriptor type");
             break;
          }
 
@@ -992,7 +992,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDescriptorEXT(
 
    switch (pCreateInfo->type) {
    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK: {
-      unreachable("this is a spec violation");
+      UNREACHABLE("this is a spec violation");
       break;
    }
    case VK_DESCRIPTOR_TYPE_SAMPLER: {
@@ -1131,7 +1131,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDescriptorEXT(
       break;
    }
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
       break;
    }
 }

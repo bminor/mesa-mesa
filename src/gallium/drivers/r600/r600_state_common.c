@@ -885,7 +885,7 @@ r600_shader_precompile_key(const struct pipe_context *ctx,
 		break;
 
 	default:
-		unreachable("bad shader stage");
+		UNREACHABLE("bad shader stage");
 		break;
 	}
 }
@@ -984,7 +984,7 @@ static void *r600_create_shader_state(struct pipe_context *ctx,
 	else if (state->type == PIPE_SHADER_IR_NIR) {
 		sel = r600_create_shader_state_tokens(ctx, state->ir.nir, state->type, pipe_shader_type);
 	} else
-		unreachable("Unknown shader type");
+		UNREACHABLE("Unknown shader type");
 	
 	sel->so = state->stream_output;
 

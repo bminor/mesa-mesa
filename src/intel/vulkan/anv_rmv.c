@@ -72,7 +72,7 @@ fill_memory_info(const struct anv_physical_device *device,
       out_info->size = device->memory.heaps[1].size;
       break;
    default:
-      unreachable("invalid memory index");
+      UNREACHABLE("invalid memory index");
    }
 }
 

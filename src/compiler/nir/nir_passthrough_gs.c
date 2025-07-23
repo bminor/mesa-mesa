@@ -89,7 +89,7 @@ vertices_for_prim(enum mesa_prim prim)
       return 4;
    case MESA_PRIM_PATCHES:
    default:
-      unreachable("unsupported primitive for gs input");
+      UNREACHABLE("unsupported primitive for gs input");
    }
 }
 

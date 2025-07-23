@@ -373,7 +373,7 @@ dead_cf_list(struct exec_list *list, bool *list_ends_in_jump)
       }
 
       default:
-         unreachable("unknown cf node type");
+         UNREACHABLE("unknown cf node type");
       }
 
       prev = cur;

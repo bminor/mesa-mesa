@@ -1246,7 +1246,7 @@ compress_regs_left(struct ra_ctx *ctx, struct ra_file *file,
           reg_file_size(file, cur_reg)) {
          d("ran out of room for interval %u!\n",
            cur_reg->name);
-         unreachable("reg pressure calculation was wrong!");
+         UNREACHABLE("reg pressure calculation was wrong!");
          return 0;
       }
 
@@ -1941,7 +1941,7 @@ handle_precolored_source(struct ra_ctx *ctx, struct ir3_register *src)
       unsigned eviction_count;
       if (!try_evict_regs(ctx, file, src, physreg, &eviction_count, true,
                           false)) {
-         unreachable("failed to evict for precolored source!");
+         UNREACHABLE("failed to evict for precolored source!");
          return;
       }
    }

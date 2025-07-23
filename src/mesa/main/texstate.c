@@ -445,7 +445,7 @@ tex_combine_translate_mode(GLenum envMode, GLenum mode)
    case GL_MODULATE_SIGNED_ADD_ATI: return TEXENV_MODE_MODULATE_SIGNED_ADD_ATI;
    case GL_MODULATE_SUBTRACT_ATI: return TEXENV_MODE_MODULATE_SUBTRACT_ATI;
    default:
-      unreachable("Invalid TexEnv Combine mode");
+      UNREACHABLE("Invalid TexEnv Combine mode");
    }
 }
 
@@ -469,7 +469,7 @@ tex_combine_translate_source(GLenum src)
    case GL_ZERO: return TEXENV_SRC_ZERO;
    case GL_ONE: return TEXENV_SRC_ONE;
    default:
-      unreachable("Invalid TexEnv Combine argument source");
+      UNREACHABLE("Invalid TexEnv Combine argument source");
    }
 }
 
@@ -483,7 +483,7 @@ tex_combine_translate_operand(GLenum operand)
    case GL_SRC_ALPHA: return TEXENV_OPR_ALPHA;
    case GL_ONE_MINUS_SRC_ALPHA: return TEXENV_OPR_ONE_MINUS_ALPHA;
    default:
-      unreachable("Invalid TexEnv Combine argument source");
+      UNREACHABLE("Invalid TexEnv Combine argument source");
    }
 }
 

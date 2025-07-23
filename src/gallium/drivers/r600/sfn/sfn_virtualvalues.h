@@ -25,7 +25,7 @@
 #else
 #define ASSERT_OR_THROW(EXPR, ERROR)                                                     \
    if (!(EXPR))                                                                          \
-   unreachable(ERROR)
+   UNREACHABLE(ERROR)
 #endif
 
 namespace r600 {
@@ -217,8 +217,8 @@ public:
    }
 
 protected:
-   void do_set_chan(UNUSED int c) { unreachable("Address registers must have chan 0");}
-   void set_sel_internal(UNUSED int sel) {unreachable("Address registers don't support sel override");}
+   void do_set_chan(UNUSED int c) { UNREACHABLE("Address registers must have chan 0");}
+   void set_sel_internal(UNUSED int sel) {UNREACHABLE("Address registers don't support sel override");}
 };
 
 

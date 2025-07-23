@@ -611,7 +611,7 @@ _mesa_get_uniform(struct gl_context *ctx, GLuint program, GLint location,
                   break;
                }
                default:
-                  unreachable("invalid uniform type");
+                  UNREACHABLE("invalid uniform type");
                }
                break;
 

@@ -118,7 +118,7 @@ void pvr_uscgen_tq_frag(const struct pvr_tq_shader_properties *shader_props,
 
       if (!layer_props->msaa) {
       } else {
-         unreachable("Unsupported layer property (MSAA).");
+         UNREACHABLE("Unsupported layer property (MSAA).");
       }
    }
 
@@ -129,7 +129,7 @@ void pvr_uscgen_tq_frag(const struct pvr_tq_shader_properties *shader_props,
       break;
 
    default:
-      unreachable("Unsupported layer property (format).");
+      UNREACHABLE("Unsupported layer property (format).");
    }
 
    /* TODO: Select the texture_regs index appropriately. */
@@ -157,7 +157,7 @@ void pvr_uscgen_tq_frag(const struct pvr_tq_shader_properties *shader_props,
          break;
 
       default:
-         unreachable("Unsupported layer property (format).");
+         UNREACHABLE("Unsupported layer property (format).");
       }
 
       outputs = rogue_ssa_vec_regarray(b.shader, channels, output_idx, 0);
@@ -179,7 +179,7 @@ void pvr_uscgen_tq_frag(const struct pvr_tq_shader_properties *shader_props,
    }
 
    default:
-      unreachable("Unsupported layer property (format).");
+      UNREACHABLE("Unsupported layer property (format).");
    }
 
    assert(channels && outputs);

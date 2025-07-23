@@ -323,7 +323,7 @@ fd6_geom_stage(gl_shader_stage type)
    case MESA_SHADER_KERNEL:
       return false;
    default:
-      unreachable("bad shader type");
+      UNREACHABLE("bad shader type");
    }
 }
 
@@ -351,7 +351,7 @@ fd6_stage2shadersb(gl_shader_stage type)
    case MESA_SHADER_KERNEL:
       return SB6_CS_SHADER;
    default:
-      unreachable("bad shader type");
+      UNREACHABLE("bad shader type");
       return (enum a6xx_state_block)~0;
    }
 }
@@ -368,7 +368,7 @@ fd6_gl2spacing(enum gl_tess_spacing spacing)
       return TESS_FRACTIONAL_EVEN;
    case TESS_SPACING_UNSPECIFIED:
    default:
-      unreachable("spacing must be specified");
+      UNREACHABLE("spacing must be specified");
    }
 }
 

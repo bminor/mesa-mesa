@@ -215,7 +215,7 @@ vk_device_init(struct vk_device *device,
       break;
 
    default:
-      unreachable("Invalid timeline mode");
+      UNREACHABLE("Invalid timeline mode");
    }
 
 #if DETECT_OS_ANDROID

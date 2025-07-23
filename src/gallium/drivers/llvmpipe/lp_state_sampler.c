@@ -119,7 +119,7 @@ llvmpipe_bind_sampler_states(struct pipe_context *pipe,
       llvmpipe->dirty |= LP_NEW_MESH_SAMPLER;
       break;
    default:
-      unreachable("Illegal shader type");
+      UNREACHABLE("Illegal shader type");
       break;
    }
 }
@@ -205,7 +205,7 @@ llvmpipe_set_sampler_views(struct pipe_context *pipe,
       llvmpipe->dirty |= LP_NEW_MESH_SAMPLER_VIEW;
       break;
    default:
-      unreachable("Illegal shader type");
+      UNREACHABLE("Illegal shader type");
       break;
    }
 }

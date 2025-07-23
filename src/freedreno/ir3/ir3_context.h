@@ -250,7 +250,7 @@ utype_for_size(unsigned bit_size)
    case 8:
       return TYPE_U8;
    default:
-      unreachable("bad bitsize");
+      UNREACHABLE("bad bitsize");
       return ~0;
    }
 }

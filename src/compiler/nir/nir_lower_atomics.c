@@ -66,7 +66,7 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                              1, intr->def.bit_size);
       break;
    default:
-      unreachable("unsupported atomic type");
+      UNREACHABLE("unsupported atomic type");
    }
 
    nir_def *data = intr->intrinsic == nir_intrinsic_ssbo_atomic ? intr->src[2].ssa : intr->src[1].ssa;
@@ -103,7 +103,7 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                                        .atomic_op = nir_atomic_op_cmpxchg);
          break;
       default:
-         unreachable("unsupported atomic type");
+         UNREACHABLE("unsupported atomic type");
       }
       nir_break_if(b, nir_ieq(b, xchg, before));
       nir_phi_instr_add_src(phi, nir_loop_last_block(loop), xchg);
@@ -147,7 +147,7 @@ lower_atomics(struct nir_builder *b, nir_intrinsic_instr *intr,
       return false;
    case nir_atomic_op_fcmpxchg: /* unimplemented */
    default:
-      unreachable("Invalid nir_atomic_op");
+      UNREACHABLE("Invalid nir_atomic_op");
    }
 }
 

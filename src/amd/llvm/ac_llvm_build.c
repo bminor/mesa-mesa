@@ -163,7 +163,7 @@ int ac_get_elem_bits(struct ac_llvm_context *ctx, LLVMTypeRef type)
    if (type == ctx->f64)
       return 64;
 
-   unreachable("Unhandled type kind in get_elem_bits");
+   UNREACHABLE("Unhandled type kind in get_elem_bits");
 }
 
 unsigned ac_get_type_size(LLVMTypeRef type)
@@ -207,7 +207,7 @@ static LLVMTypeRef to_integer_type_scalar(struct ac_llvm_context *ctx, LLVMTypeR
    else if (t == ctx->f64 || t == ctx->i64)
       return ctx->i64;
    else
-      unreachable("Unhandled integer size");
+      UNREACHABLE("Unhandled integer size");
 }
 
 LLVMTypeRef ac_to_integer_type(struct ac_llvm_context *ctx, LLVMTypeRef t)
@@ -225,7 +225,7 @@ LLVMTypeRef ac_to_integer_type(struct ac_llvm_context *ctx, LLVMTypeRef t)
       case AC_ADDR_SPACE_LDS:
          return ctx->i32;
       default:
-         unreachable("unhandled address space");
+         UNREACHABLE("unhandled address space");
       }
    }
    return to_integer_type_scalar(ctx, t);
@@ -259,7 +259,7 @@ static LLVMTypeRef to_float_type_scalar(struct ac_llvm_context *ctx, LLVMTypeRef
    else if (t == ctx->i64 || t == ctx->f64)
       return ctx->f64;
    else
-      unreachable("Unhandled float size");
+      UNREACHABLE("Unhandled float size");
 }
 
 LLVMTypeRef ac_to_float_type(struct ac_llvm_context *ctx, LLVMTypeRef t)
@@ -503,7 +503,7 @@ LLVMValueRef ac_build_varying_gather_values(struct ac_llvm_context *ctx, LLVMVal
    if (value_count == 1) {
       return values[component];
    } else if (!value_count)
-      unreachable("value_count is 0");
+      UNREACHABLE("value_count is 0");
 
    for (unsigned i = component; i < value_count + component; i++) {
       LLVMValueRef value = values[i];
@@ -527,7 +527,7 @@ LLVMValueRef ac_build_gather_values_extended(struct ac_llvm_context *ctx, LLVMVa
    if (value_count == 1 && !always_vector) {
       return values[0];
    } else if (!value_count)
-      unreachable("value_count is 0");
+      UNREACHABLE("value_count is 0");
 
    for (i = 0; i < value_count; i++) {
       LLVMValueRef value = values[i * value_stride];
@@ -1384,7 +1384,7 @@ LLVMValueRef ac_build_umsb(struct ac_llvm_context *ctx, LLVMValueRef arg, LLVMTy
       zero = ctx->i8_0;
       break;
    default:
-      unreachable("invalid bitsize");
+      UNREACHABLE("invalid bitsize");
       break;
    }
 
@@ -1531,7 +1531,7 @@ static unsigned ac_num_coords(enum ac_image_dim dim)
    case ac_image_2darraymsaa:
       return 4;
    default:
-      unreachable("ac_num_coords: bad dim");
+      UNREACHABLE("ac_num_coords: bad dim");
    }
 }
 
@@ -1550,7 +1550,7 @@ static unsigned ac_num_derivs(enum ac_image_dim dim)
    case ac_image_2dmsaa:
    case ac_image_2darraymsaa:
    default:
-      unreachable("derivatives not supported");
+      UNREACHABLE("derivatives not supported");
    }
 }
 
@@ -1586,7 +1586,7 @@ static const char *get_atomic_name(enum ac_atomic_op op)
    case ac_atomic_fmax:
       return "fmax";
    }
-   unreachable("bad atomic op");
+   UNREACHABLE("bad atomic op");
 }
 
 LLVMValueRef ac_build_image_opcode(struct ac_llvm_context *ctx, struct ac_image_args *a)
@@ -1764,7 +1764,7 @@ LLVMValueRef ac_build_image_opcode(struct ac_llvm_context *ctx, struct ac_image_
       name = "getresinfo";
       break;
    default:
-      unreachable("invalid image opcode");
+      UNREACHABLE("invalid image opcode");
    }
 
    const char *dimname;
@@ -1794,7 +1794,7 @@ LLVMValueRef ac_build_image_opcode(struct ac_llvm_context *ctx, struct ac_image_
       dimname = "2darraymsaa";
       break;
    default:
-      unreachable("invalid dim");
+      UNREACHABLE("invalid dim");
    }
 
    ac_build_type_name_for_intr(data_type, data_type_str, sizeof(data_type_str));
@@ -2186,7 +2186,7 @@ LLVMValueRef ac_build_bit_count(struct ac_llvm_context *ctx, LLVMValueRef src0)
       result = LLVMBuildZExt(ctx->builder, result, ctx->i32, "");
       break;
    default:
-      unreachable("invalid bitsize");
+      UNREACHABLE("invalid bitsize");
       break;
    }
 
@@ -2214,7 +2214,7 @@ LLVMValueRef ac_build_bitfield_reverse(struct ac_llvm_context *ctx, LLVMValueRef
       result = ac_build_intrinsic(ctx, "llvm.bitreverse.i8", ctx->i8, (LLVMValueRef[]){src0}, 1, 0);
       break;
    default:
-      unreachable("invalid bitsize");
+      UNREACHABLE("invalid bitsize");
       break;
    }
 
@@ -2272,7 +2272,7 @@ LLVMValueRef ac_find_lsb(struct ac_llvm_context *ctx, LLVMTypeRef dst_type, LLVM
       zero = ctx->i8_0;
       break;
    default:
-      unreachable("invalid bitsize");
+      UNREACHABLE("invalid bitsize");
    }
 
    LLVMValueRef params[2] = {
@@ -2900,7 +2900,7 @@ static LLVMValueRef get_reduction_identity(struct ac_llvm_context *ctx, nir_op o
       case nir_op_iand:
          return ctx->i1true;
       default:
-         unreachable("bad reduction intrinsic");
+         UNREACHABLE("bad reduction intrinsic");
       }
    } else if (type_size == 1) {
       switch (op) {
@@ -2923,7 +2923,7 @@ static LLVMValueRef get_reduction_identity(struct ac_llvm_context *ctx, nir_op o
       case nir_op_ixor:
          return ctx->i8_0;
       default:
-         unreachable("bad reduction intrinsic");
+         UNREACHABLE("bad reduction intrinsic");
       }
    } else if (type_size == 2) {
       switch (op) {
@@ -2954,7 +2954,7 @@ static LLVMValueRef get_reduction_identity(struct ac_llvm_context *ctx, nir_op o
       case nir_op_ixor:
          return ctx->i16_0;
       default:
-         unreachable("bad reduction intrinsic");
+         UNREACHABLE("bad reduction intrinsic");
       }
    } else if (type_size == 4) {
       switch (op) {
@@ -2985,7 +2985,7 @@ static LLVMValueRef get_reduction_identity(struct ac_llvm_context *ctx, nir_op o
       case nir_op_ixor:
          return ctx->i32_0;
       default:
-         unreachable("bad reduction intrinsic");
+         UNREACHABLE("bad reduction intrinsic");
       }
    } else { /* type_size == 64bit */
       switch (op) {
@@ -3016,7 +3016,7 @@ static LLVMValueRef get_reduction_identity(struct ac_llvm_context *ctx, nir_op o
       case nir_op_ixor:
          return ctx->i64_0;
       default:
-         unreachable("bad reduction intrinsic");
+         UNREACHABLE("bad reduction intrinsic");
       }
    }
 }
@@ -3062,7 +3062,7 @@ static LLVMValueRef ac_build_alu_op(struct ac_llvm_context *ctx, LLVMValueRef lh
    case nir_op_ixor:
       return LLVMBuildXor(ctx->builder, lhs, rhs, "");
    default:
-      unreachable("bad reduction intrinsic");
+      UNREACHABLE("bad reduction intrinsic");
    }
 }
 

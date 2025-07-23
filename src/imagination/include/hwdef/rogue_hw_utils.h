@@ -124,7 +124,7 @@ static void rogue_get_isp_scale_xy_from_samples(const uint32_t samples,
       *y_scale_out = 4;
       break;
    default:
-      unreachable("Unsupported number of samples");
+      UNREACHABLE("Unsupported number of samples");
    }
 }
 

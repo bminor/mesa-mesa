@@ -418,7 +418,7 @@ pvr_spm_get_pbe_packmode(uint32_t dword_count)
    case 4:
       return ROGUE_PBESTATE_PACKMODE_U32U32U32U32;
    default:
-      unreachable("Unsupported dword_count");
+      UNREACHABLE("Unsupported dword_count");
    }
 }
 
@@ -779,7 +779,7 @@ static VkFormat pvr_get_format_from_dword_count(uint32_t dword_count)
    case 4:
       return VK_FORMAT_R32G32B32A32_UINT;
    default:
-      unreachable("Invalid dword_count");
+      UNREACHABLE("Invalid dword_count");
    }
 }
 

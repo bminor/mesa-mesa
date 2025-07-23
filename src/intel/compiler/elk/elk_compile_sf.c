@@ -858,7 +858,7 @@ elk_compile_sf(const struct elk_compiler *compiler,
       elk_emit_anyprim_setup( &c );
       break;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    /* FINISHME: SF programs use calculated jumps (i.e., JMPI with a register

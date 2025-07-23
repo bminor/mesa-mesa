@@ -329,7 +329,7 @@ radv_dump_printf_data(struct radv_device *device, FILE *out)
                break;
             }
             default:
-               unreachable("Unsupported data type");
+               UNREACHABLE("Unsupported data type");
             }
 
             if (lane != lane_count - 1)

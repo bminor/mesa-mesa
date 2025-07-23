@@ -193,7 +193,7 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
       fsv_assert(!include_helpers);
       break;
    default:
-      unreachable("invalid opcode");
+      UNREACHABLE("invalid opcode");
    }
 }
 
@@ -210,7 +210,7 @@ brw_shader_phase_to_string(enum brw_shader_phase phase)
    case BRW_SHADER_PHASE_AFTER_REGALLOC:        return "AFTER_REGALLOC";
    case BRW_SHADER_PHASE_INVALID:               break;
    }
-   unreachable("invalid_phase");
+   UNREACHABLE("invalid_phase");
    return NULL;
 }
 

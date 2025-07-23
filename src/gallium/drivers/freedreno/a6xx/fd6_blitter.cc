@@ -91,7 +91,7 @@ fd6_ifmt(enum a6xx_format fmt)
       return R2D_FLOAT16;
 
    default:
-      unreachable("bad format");
+      UNREACHABLE("bad format");
       return (enum a6xx_2d_ifmt)0;
    }
 }

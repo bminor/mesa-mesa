@@ -721,7 +721,7 @@ void anv_CmdBindPipeline(
    }
 
    default:
-      unreachable("invalid bind point");
+      UNREACHABLE("invalid bind point");
       break;
    }
 
@@ -754,7 +754,7 @@ anv_cmd_buffer_get_pipeline_layout_state(struct anv_cmd_buffer *cmd_buffer,
       return &cmd_buffer->state.rt.base;
 
    default:
-      unreachable("invalid bind point");
+      UNREACHABLE("invalid bind point");
    }
 }
 
@@ -1188,7 +1188,7 @@ anv_isl_format_for_descriptor_type(const struct anv_device *device,
       return ISL_FORMAT_RAW;
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 }
 
@@ -1370,7 +1370,7 @@ anv_cmd_buffer_get_pipe_state(struct anv_cmd_buffer *cmd_buffer,
       return &cmd_buffer->state.rt.base;
       break;
    default:
-      unreachable("invalid bind point");
+      UNREACHABLE("invalid bind point");
    }
 }
 

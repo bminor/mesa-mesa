@@ -207,7 +207,7 @@ nir_gather_output_dependencies(nir_shader *nir, nir_output_deps *deps)
                break;
             }
             default:
-               unreachable("unexpected jump type");
+               UNREACHABLE("unexpected jump type");
             }
             break;
 

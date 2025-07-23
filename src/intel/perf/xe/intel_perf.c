@@ -337,7 +337,7 @@ xe_perf_stream_read_error(int perf_stream_fd, uint8_t *buffer)
    else if (status.oa_status & DRM_XE_OASTATUS_MMIO_TRG_Q_FULL)
       header->type = INTEL_PERF_RECORD_TYPE_MMIO_TRG_Q_FULL;
    else
-      unreachable("missing");
+      UNREACHABLE("missing");
 
    return header->type ? header->size : -1;
 }

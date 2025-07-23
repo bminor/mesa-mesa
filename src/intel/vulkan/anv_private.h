@@ -2245,7 +2245,7 @@ anv_get_first_render_queue_index(struct anv_physical_device *pdevice)
       }
    }
 
-   unreachable("Graphics capable queue family not found");
+   UNREACHABLE("Graphics capable queue family not found");
 }
 
 static inline struct anv_state
@@ -6752,7 +6752,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_video_session_params, vk.base,
       genX_thing = &gfx30_##thing;              \
       break;                                    \
    default:                                     \
-      unreachable("Unknown hardware generation"); \
+      UNREACHABLE("Unknown hardware generation"); \
    }                                            \
    genX_thing;                                  \
 })

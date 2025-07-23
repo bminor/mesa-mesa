@@ -208,7 +208,7 @@ st_set_prog_affected_state_flags(struct gl_program *prog)
       break;
 
    default:
-      unreachable("unhandled shader stage");
+      UNREACHABLE("unhandled shader stage");
    }
 }
 
@@ -249,7 +249,7 @@ delete_variant(struct st_context *st, struct st_variant *v, unsigned stage)
             st->pipe->delete_compute_state(st->pipe, v->driver_shader);
             break;
          default:
-            unreachable("bad shader type in delete_basic_variant");
+            UNREACHABLE("bad shader type in delete_basic_variant");
          }
       } else {
          /* We can't delete a shader with a context different from the one
@@ -294,7 +294,7 @@ st_unbind_program(struct st_context *st, struct gl_program *p)
       ctx->NewDriverState |= ST_NEW_CS_STATE;
       break;
    default:
-      unreachable("invalid shader type");
+      UNREACHABLE("invalid shader type");
    }
 }
 
@@ -535,7 +535,7 @@ st_create_nir_shader(struct st_context *st, struct pipe_shader_state *state)
       break;
    }
    default:
-      unreachable("unsupported shader stage");
+      UNREACHABLE("unsupported shader stage");
       return NULL;
    }
 
@@ -1459,7 +1459,7 @@ st_precompile_shader_variant(struct st_context *st,
    }
 
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 }
 

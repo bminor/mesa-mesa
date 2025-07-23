@@ -373,7 +373,7 @@ begin_transform_feedback(struct gl_context *ctx, GLenum mode, bool no_error)
          return;
       } else {
          /* Stop compiler warnings */
-         unreachable("Error in API use when using KHR_no_error");
+         UNREACHABLE("Error in API use when using KHR_no_error");
       }
    }
 

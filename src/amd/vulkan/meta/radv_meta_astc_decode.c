@@ -74,7 +74,7 @@ get_view_type(const struct radv_image *image)
    case VK_IMAGE_TYPE_3D:
       return VK_IMAGE_VIEW_TYPE_3D;
    default:
-      unreachable("bad VkImageViewType");
+      UNREACHABLE("bad VkImageViewType");
    }
 }
 

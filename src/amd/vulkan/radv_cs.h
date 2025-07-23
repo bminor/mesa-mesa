@@ -358,7 +358,7 @@ radv_cp_wait_mem(struct radeon_cmdbuf *cs, const enum radv_queue_family qf, cons
    } else if (qf == RADV_QUEUE_TRANSFER) {
       radv_sdma_emit_wait_mem(cs, op, va, ref, mask);
    } else {
-      unreachable("unsupported queue family");
+      UNREACHABLE("unsupported queue family");
    }
 }
 
@@ -379,7 +379,7 @@ radv_cs_write_data_head(const struct radv_device *device, struct radeon_cmdbuf *
    } else if (qf == RADV_QUEUE_TRANSFER) {
       radv_sdma_emit_write_data_head(cs, va, count);
    } else {
-      unreachable("unsupported queue family");
+      UNREACHABLE("unsupported queue family");
    }
 
    return cdw_end;

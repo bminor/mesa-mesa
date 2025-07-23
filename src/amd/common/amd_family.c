@@ -64,7 +64,7 @@ const char *ac_get_family_name(enum radeon_family family)
    CASE(GFX1201);
 #undef CASE
    default:
-      unreachable("Unknown GPU family");
+      UNREACHABLE("Unknown GPU family");
    }
 }
 

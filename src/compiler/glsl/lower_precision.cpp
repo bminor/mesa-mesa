@@ -638,7 +638,7 @@ convert_type(bool up, const glsl_type *type)
          new_base_type = GLSL_TYPE_UINT;
          break;
       default:
-         unreachable("invalid type");
+         UNREACHABLE("invalid type");
          return NULL;
       }
    } else {
@@ -653,7 +653,7 @@ convert_type(bool up, const glsl_type *type)
          new_base_type = GLSL_TYPE_UINT16;
          break;
       default:
-         unreachable("invalid type");
+         UNREACHABLE("invalid type");
          return NULL;
       }
    }
@@ -689,7 +689,7 @@ convert_precision(bool up, ir_rvalue *ir)
          op = ir_unop_u2u;
          break;
       default:
-         unreachable("invalid type");
+         UNREACHABLE("invalid type");
          return NULL;
       }
    } else {
@@ -704,7 +704,7 @@ convert_precision(bool up, ir_rvalue *ir)
          op = ir_unop_u2ump;
          break;
       default:
-         unreachable("invalid type");
+         UNREACHABLE("invalid type");
          return NULL;
       }
    }
@@ -743,7 +743,7 @@ lower_precision_visitor::handle_rvalue(ir_rvalue **rvalue)
             for (unsigned i = 0; i < ARRAY_SIZE(value.u16); i++)
                value.u16[i] = const_ir->value.u[i];
          } else {
-            unreachable("invalid type");
+            UNREACHABLE("invalid type");
          }
 
          const_ir->value = value;
@@ -1006,7 +1006,7 @@ lower_constant(ir_constant *ir)
       for (unsigned i = 0; i < ARRAY_SIZE(value.u16); i++)
          value.u16[i] = ir->value.u[i];
    } else {
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
    }
 
    ir->value = value;

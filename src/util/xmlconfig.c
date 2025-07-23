@@ -269,7 +269,7 @@ parseValue(driOptionValue *v, driOptionType type, const char *string)
       v->_string = strndup(string, STRING_CONF_MAXLEN);
       return true;
    case DRI_SECTION:
-      unreachable("shouldn't be parsing values in section declarations");
+      UNREACHABLE("shouldn't be parsing values in section declarations");
    }
 
    if (tail == string)
@@ -414,7 +414,7 @@ driParseOptionInfo(driOptionCache *info,
          break;
 
       case DRI_SECTION:
-         unreachable("handled above");
+         UNREACHABLE("handled above");
       }
 
       /* Built-in default values should always be valid. */
@@ -521,7 +521,7 @@ driGetOptionsXml(const driOptionDescription *configOptions, unsigned numOptions)
          break;
 
       case DRI_SECTION:
-         unreachable("handled above");
+         UNREACHABLE("handled above");
          break;
       }
       ralloc_asprintf_append(&str, "\"");

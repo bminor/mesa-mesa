@@ -1356,7 +1356,7 @@ radv_get_rgp_shader_stage(struct radv_shader *shader)
    case MESA_SHADER_CALLABLE:
       return RGP_HW_STAGE_CS;
    default:
-      unreachable("invalid mesa shader stage");
+      UNREACHABLE("invalid mesa shader stage");
    }
 }
 
@@ -1463,7 +1463,7 @@ radv_add_rt_record(struct radv_device *device, struct rgp_code_object *code_obje
       snprintf(shader_data->rt_shader_name, sizeof(shader_data->rt_shader_name), "_amdgpu_cs_main");
       break;
    default:
-      unreachable("invalid rt stage");
+      UNREACHABLE("invalid rt stage");
    }
    record->num_shaders_combined = 1;
 

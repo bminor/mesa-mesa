@@ -442,7 +442,7 @@ lower_mem_store(nir_builder *b, nir_intrinsic_instr *intrin,
             break;
          }
          default:
-            unreachable("Unsupported unaligned store");
+            UNREACHABLE("Unsupported unaligned store");
          }
       } else {
          nir_def *packed = nir_extract_bits(b, &value, 1, chunk_start * 8,

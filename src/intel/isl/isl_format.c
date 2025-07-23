@@ -1087,7 +1087,7 @@ isl_format_has_color_component(enum isl_format fmt, int component)
    case 3:
       return (fmtl->channels.a.bits + intensity) > 0;
    default:
-      unreachable("Invalid color component: must be 0..3");
+      UNREACHABLE("Invalid color component: must be 0..3");
    }
 }
 
@@ -1111,7 +1111,7 @@ isl_format_get_depth_format(enum isl_format fmt, bool has_stencil)
 {
    switch (fmt) {
    default:
-      unreachable("bad isl depth format");
+      UNREACHABLE("bad isl depth format");
    case ISL_FORMAT_R32_FLOAT_X8X24_TYPELESS:
       assert(has_stencil);
       return 0; /* D32_FLOAT_S8X24_UINT */
@@ -1211,7 +1211,7 @@ isl_format_rgbx_to_rgba(enum isl_format rgbx)
    case ISL_FORMAT_B5G5R5X1_UNORM_SRGB:
       return ISL_FORMAT_B5G5R5A1_UNORM_SRGB;
    default:
-      unreachable("Invalid RGBX format");
+      UNREACHABLE("Invalid RGBX format");
    }
 }
 
@@ -1300,7 +1300,7 @@ pack_channel(const union isl_color_value *value, unsigned i,
       break;
 
    default:
-      unreachable("Invalid channel type");
+      UNREACHABLE("Invalid channel type");
    }
 
    unsigned dword = layout->start_bit / 32;
@@ -1399,7 +1399,7 @@ unpack_channel(union isl_color_value *value,
       break;
 
    default:
-      unreachable("Invalid channel type");
+      UNREACHABLE("Invalid channel type");
    }
 
    for (unsigned i = 0; i < count; i++)

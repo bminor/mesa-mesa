@@ -731,7 +731,7 @@ fd_set_global_binding(struct pipe_context *pctx, unsigned first, unsigned count,
       /* we are screwed no matter what */
       if (!util_dynarray_grow(&ctx->global_bindings, *prscs,
                               (first + count) - old_size))
-         unreachable("out of memory");
+         UNREACHABLE("out of memory");
 
       for (unsigned i = old_size; i < first + count; i++)
          *util_dynarray_element(&ctx->global_bindings,

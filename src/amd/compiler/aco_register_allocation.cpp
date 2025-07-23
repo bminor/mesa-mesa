@@ -711,7 +711,7 @@ add_subdword_operand(ra_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, uns
    else if (instr->opcode == aco_opcode::global_store_short)
       instr->opcode = aco_opcode::global_store_short_d16_hi;
    else
-      unreachable("Something went wrong: Impossible register assignment.");
+      UNREACHABLE("Something went wrong: Impossible register assignment.");
    return;
 }
 
@@ -883,7 +883,7 @@ add_subdword_definition(Program* program, aco_ptr<Instruction>& instr, PhysReg r
    else if (instr->opcode == aco_opcode::ds_read_u16_d16)
       instr->opcode = aco_opcode::ds_read_u16_d16_hi;
    else
-      unreachable("Something went wrong: Impossible register assignment.");
+      UNREACHABLE("Something went wrong: Impossible register assignment.");
 }
 
 void
@@ -3291,7 +3291,7 @@ optimize_encoding_sopk(ra_ctx& ctx, RegisterFile& register_file, aco_ptr<Instruc
    case aco_opcode::s_add_i32: instr->opcode = aco_opcode::s_addk_i32; break;
    case aco_opcode::s_mul_i32: instr->opcode = aco_opcode::s_mulk_i32; break;
    case aco_opcode::s_cselect_b32: instr->opcode = aco_opcode::s_cmovk_i32; break;
-   default: unreachable("illegal instruction");
+   default: UNREACHABLE("illegal instruction");
    }
 }
 

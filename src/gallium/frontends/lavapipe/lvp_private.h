@@ -463,7 +463,7 @@ lvp_pipeline_type_from_bind_point(VkPipelineBindPoint bind_point)
 #ifdef VK_ENABLE_BETA_EXTENSIONS
    case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX: return LVP_PIPELINE_EXEC_GRAPH;
 #endif
-   default: unreachable("Unsupported VkPipelineBindPoint");
+   default: UNREACHABLE("Unsupported VkPipelineBindPoint");
    }
 }
 

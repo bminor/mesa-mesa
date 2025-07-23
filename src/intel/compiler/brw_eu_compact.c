@@ -1555,16 +1555,16 @@ uncompact_immediate(const struct intel_device_info *devinfo,
       case BRW_TYPE_UQ:
       case BRW_TYPE_B:
       case BRW_TYPE_UB:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       default:
-         unreachable("invalid type");
+         UNREACHABLE("invalid type");
       }
    } else {
       /* Replicate the 13th bit into the high 19 bits */
       return (int)(compact_imm << 19) >> 19;
    }
 
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 static bool
@@ -2323,7 +2323,7 @@ compaction_state_init(struct compaction_state *c,
       c->src1_index_table = gfx8_src_index_table;
       break;
    default:
-      unreachable("unknown generation");
+      UNREACHABLE("unknown generation");
    }
 }
 

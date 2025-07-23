@@ -350,7 +350,7 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       case nir_intrinsic_interp_deref_at_centroid:
       case nir_intrinsic_interp_deref_at_sample:
       case nir_intrinsic_interp_deref_at_offset:
-         unreachable("these opcodes should have been lowered");
+         UNREACHABLE("these opcodes should have been lowered");
          break;
       case nir_intrinsic_ordered_add_loop_gfx12_amd:
          info->uses_atomic_ordered_add = true;
@@ -458,7 +458,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       break;
 
    default:
-      unreachable("unexpected shader stage");
+      UNREACHABLE("unexpected shader stage");
    }
 
    /* Get options from shader profiles. */
@@ -695,6 +695,6 @@ si_select_hw_stage(const gl_shader_stage stage, const union si_shader_key *const
    case MESA_SHADER_KERNEL:
       return AC_HW_COMPUTE_SHADER;
    default:
-      unreachable("Unsupported HW stage");
+      UNREACHABLE("Unsupported HW stage");
    }
 }

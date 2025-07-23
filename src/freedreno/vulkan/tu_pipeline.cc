@@ -104,7 +104,7 @@ tu6_load_state_size(struct tu_pipeline *pipeline,
          case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             break;
          default:
-            unreachable("bad descriptor type");
+            UNREACHABLE("bad descriptor type");
          }
          size += count * load_state_size;
       }
@@ -238,7 +238,7 @@ tu6_emit_load_state(struct tu_device *device,
             break;
          }
          default:
-            unreachable("bad descriptor type");
+            UNREACHABLE("bad descriptor type");
          }
       }
    }
@@ -630,7 +630,7 @@ tu6_emit_const(struct tu_cs *cs, uint32_t opcode, enum tu_geom_consts_type type,
          base = const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_PARAM].offset_vec4;
          break;
       default:
-         unreachable("bad consts type");
+         UNREACHABLE("bad consts type");
       }
 
       int32_t adjusted_size = MIN2(base * 4 + size, constlen * 4) - base * 4;
@@ -658,7 +658,7 @@ tu6_emit_const(struct tu_cs *cs, uint32_t opcode, enum tu_geom_consts_type type,
          base = const_state->primitive_param_ubo.idx;
          break;
       default:
-         unreachable("bad consts type");
+         UNREACHABLE("bad consts type");
       }
       if (base == -1)
          return;
@@ -4248,7 +4248,7 @@ vk_shader_stage_to_pipeline_library_flags(VkShaderStageFlagBits stage)
    case VK_SHADER_STAGE_FRAGMENT_BIT:
       return VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
    default:
-      unreachable("Invalid shader stage");
+      UNREACHABLE("Invalid shader stage");
    }
 }
 

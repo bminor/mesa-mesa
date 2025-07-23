@@ -118,7 +118,7 @@ lower_load_kernel_input(nir_builder *b, nir_instr *instr, void *state)
       base_type = GLSL_TYPE_UINT8;
       break;
    default:
-      unreachable("invalid bit size");
+      UNREACHABLE("invalid bit size");
    }
 
    const struct glsl_type *type =

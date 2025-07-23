@@ -1215,7 +1215,7 @@ invert_branch(struct ir3_instruction *branch)
       branch->opc = OPC_BRAA;
       break;
    default:
-      unreachable("can't get here");
+      UNREACHABLE("can't get here");
    }
 
    branch->cat0.inv1 = !branch->cat0.inv1;

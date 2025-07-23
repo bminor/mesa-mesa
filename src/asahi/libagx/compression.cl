@@ -150,7 +150,7 @@ stretched_sa_to_px(ushort2 px, uint samples)
    case  4: return (ushort2)(px.x / 2, px.y / 2);
    case  2: return (ushort2)(px.x, px.y / 2);
    case  1: return px;
-   default: unreachable("invalid sample count");
+   default: UNREACHABLE("invalid sample count");
    }
    /* clang-format on */
 }

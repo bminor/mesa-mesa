@@ -375,7 +375,7 @@ static uint32_t
 vpipe_dmabuf_to_handle(struct vdrm_device *vdev, int fd)
 {
    mesa_loge("%s: unimplemented", __func__);
-   unreachable("unimplemented");
+   UNREACHABLE("unimplemented");
    return 0;
 }
 

@@ -1713,7 +1713,7 @@ store_dest_dstret(struct tgsi_exec_machine *mach,
       break;
 
    default:
-      unreachable("Bad destination file");
+      UNREACHABLE("Bad destination file");
    }
 
    return dst;
@@ -3706,7 +3706,7 @@ exec_load_membuf(struct tgsi_exec_machine *mach,
       break;
 
    default:
-      unreachable("unsupported TGSI_OPCODE_LOAD file");
+      UNREACHABLE("unsupported TGSI_OPCODE_LOAD file");
    }
 
    union tgsi_exec_channel offset;
@@ -3839,7 +3839,7 @@ exec_store_membuf(struct tgsi_exec_machine *mach,
       break;
 
    default:
-      unreachable("unsupported TGSI_OPCODE_STORE file");
+      UNREACHABLE("unsupported TGSI_OPCODE_STORE file");
    }
 
    union tgsi_exec_channel offset;
@@ -4030,7 +4030,7 @@ exec_atomop_membuf(struct tgsi_exec_machine *mach,
                result = fui(uif(val) + r0.f[i]);
             break;
          default:
-            unreachable("bad atomic op");
+            UNREACHABLE("bad atomic op");
          }
          memcpy(ptr[i], &result, sizeof(result));
       }

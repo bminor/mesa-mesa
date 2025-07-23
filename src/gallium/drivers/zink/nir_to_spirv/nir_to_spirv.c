@@ -327,7 +327,7 @@ emit_access_decorations(struct ntv_context *ctx, nir_variable *var, SpvId var_id
           /* no equivalent */
           break;
        default:
-          unreachable("unknown access bit");
+          UNREACHABLE("unknown access bit");
        }
     }
     /* The Simple, GLSL, and Vulkan memory models can assume that aliasing is generally
@@ -399,7 +399,7 @@ get_atomic_op(struct ntv_context *ctx, unsigned bit_size, nir_atomic_op op)
       return SpvOpAtomicCompareExchange;
    default:
       debug_printf("%s - ", nir_intrinsic_infos[op].name);
-      unreachable("unhandled atomic op");
+      UNREACHABLE("unhandled atomic op");
    }
    return 0;
 }
@@ -488,7 +488,7 @@ get_alu_type(struct ntv_context *ctx, nir_alu_type type, unsigned num_components
       return get_fvec_type(ctx, bit_size, num_components);
 
    default:
-      unreachable("unsupported nir_alu_type");
+      UNREACHABLE("unsupported nir_alu_type");
    }
 }
 
@@ -512,7 +512,7 @@ get_storage_class(struct nir_variable *var)
    case nir_var_mem_ssbo:
       return SpvStorageClassStorageBuffer;
    default:
-      unreachable("Unsupported nir_variable_mode");
+      UNREACHABLE("Unsupported nir_variable_mode");
    }
    return 0;
 }
@@ -562,7 +562,7 @@ get_glsl_basetype(struct ntv_context *ctx, enum glsl_base_type type)
       return spirv_builder_type_uint(&ctx->builder, 8);
 
    default:
-      unreachable("unknown GLSL type");
+      UNREACHABLE("unknown GLSL type");
    }
 }
 
@@ -634,7 +634,7 @@ get_glsl_type(struct ntv_context *ctx, const struct glsl_type *type, bool implic
             spirv_builder_emit_member_offset(&ctx->builder, ret, i, offset);
       }
    } else
-      unreachable("Unhandled GLSL type");
+      UNREACHABLE("Unhandled GLSL type");
 
    _mesa_hash_table_insert(ctx->glsl_types[implicit_stride], type, (void *)(uintptr_t)ret);
    return ret;
@@ -788,7 +788,7 @@ emit_interpolation(struct ntv_context *ctx, SpvId var_id,
                                     SpvDecorationNoPerspective);
       break;
    default:
-      unreachable("unknown interpolation value");
+      UNREACHABLE("unknown interpolation value");
    }
 }
 
@@ -901,7 +901,7 @@ emit_output(struct ntv_context *ctx, struct nir_variable *var)
       } else {
          switch (var->data.location) {
          case FRAG_RESULT_COLOR:
-            unreachable("gl_FragColor should be lowered by now");
+            UNREACHABLE("gl_FragColor should be lowered by now");
 
          case FRAG_RESULT_DEPTH:
             spirv_builder_emit_builtin(&ctx->builder, var_id, SpvBuiltInFragDepth);
@@ -1681,7 +1681,7 @@ get_alu_src(struct ntv_context *ctx, nir_alu_instr *alu, unsigned src, SpvId *ra
    else {
       switch (nir_alu_type_get_base_type(type)) {
       case nir_type_bool:
-         unreachable("bool should have bit-size 1");
+         UNREACHABLE("bool should have bit-size 1");
 
       case nir_type_int:
          return bitcast_to_ivec(ctx, *raw_value, bit_size, num_components);
@@ -1693,7 +1693,7 @@ get_alu_src(struct ntv_context *ctx, nir_alu_instr *alu, unsigned src, SpvId *ra
          return bitcast_to_fvec(ctx, *raw_value, bit_size, num_components);
 
       default:
-         unreachable("unknown nir_alu_type");
+         UNREACHABLE("unknown nir_alu_type");
       }
    }
 }
@@ -1741,7 +1741,7 @@ emit_alu(struct ntv_context *ctx, nir_alu_instr *alu)
             float_count++;
             break;
          default:
-            unreachable("this shouldn't happen");
+            UNREACHABLE("this shouldn't happen");
          }
       }
       if (uint_count > int_count && uint_count > float_count)
@@ -2016,7 +2016,7 @@ emit_alu(struct ntv_context *ctx, nir_alu_instr *alu)
    case nir_op_sne:
    case nir_op_slt:
    case nir_op_sge:
-      unreachable("should already be lowered away");
+      UNREACHABLE("should already be lowered away");
 
    case nir_op_fneu:
       assert(nir_op_infos[alu->op].num_inputs == 2);
@@ -2161,7 +2161,7 @@ emit_alu(struct ntv_context *ctx, nir_alu_instr *alu)
       fprintf(stderr, "emit_alu: not implemented (%s)\n",
               nir_op_infos[alu->op].name);
 
-      unreachable("unsupported opcode");
+      UNREACHABLE("unsupported opcode");
       return;
    }
    if (alu->exact)
@@ -2206,7 +2206,7 @@ emit_load_const(struct ntv_context *ctx, nir_load_const_instr *load_const)
             break;
          }
          default:
-            unreachable("this shouldn't happen!");
+            UNREACHABLE("this shouldn't happen!");
          }
       }
    }
@@ -2692,7 +2692,7 @@ emit_load_vec_input(struct ntv_context *ctx, nir_intrinsic_instr *intr, SpvId *v
                                intr->def.num_components);
       break;
    default:
-      unreachable("unknown type passed");
+      UNREACHABLE("unknown type passed");
    }
    if (!*var_id)
       *var_id = create_builtin_var(ctx, var_type,
@@ -2732,7 +2732,7 @@ emit_interpolate(struct ntv_context *ctx, nir_intrinsic_instr *intr)
          src1 = emit_bitcast(ctx, get_fvec_type(ctx, 32, 2), src1);
       break;
    default:
-      unreachable("unknown interp op");
+      UNREACHABLE("unknown interp op");
    }
    nir_alu_type ptype;
    SpvId ptr = get_src(ctx, &intr->src[0], &ptype);
@@ -3156,7 +3156,7 @@ emit_vote(struct ntv_context *ctx, nir_intrinsic_instr *intr)
       op = SpvOpGroupNonUniformAllEqual;
       break;
    default:
-      unreachable("unknown vote intrinsic");
+      UNREACHABLE("unknown vote intrinsic");
    }
    spirv_builder_emit_cap(&ctx->builder, SpvCapabilityGroupNonUniformVote);
    nir_alu_type atype;
@@ -3246,7 +3246,7 @@ emit_derivative(struct ntv_context *ctx, nir_intrinsic_instr *intr)
       op = SpvOpDPdyCoarse;
       break;
    default:
-      unreachable("invalid ddx/ddy");
+      UNREACHABLE("invalid ddx/ddy");
    }
 
    if (op != SpvOpDPdx && op != SpvOpDPdy)
@@ -3296,7 +3296,7 @@ emit_subgroup(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    default:
       fprintf(stderr, "emit_subgroup: reduction op not implemented (%s)\n",
               nir_intrinsic_infos[nir_intrinsic_reduction_op(intr)].name);
-      unreachable("unhandled intrinsic");
+      UNREACHABLE("unhandled intrinsic");
    }
 
    SpvGroupOperation groupop;
@@ -3315,7 +3315,7 @@ emit_subgroup(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    default:
       fprintf(stderr, "emit_subgroup: not implemented (%s)\n",
               nir_intrinsic_infos[intr->intrinsic].name);
-      unreachable("unhandled intrinsic");
+      UNREACHABLE("unhandled intrinsic");
    }
    spirv_builder_emit_cap(&ctx->builder, cluster_size ? SpvCapabilityGroupNonUniformClustered : SpvCapabilityGroupNonUniformArithmetic);
 
@@ -3375,7 +3375,7 @@ emit_subgroup_quad(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    default:
       fprintf(stderr, "emit_subgroup_quad: not implemented (%s)\n",
               nir_intrinsic_infos[intr->intrinsic].name);
-      unreachable("unhandled intrinsic");
+      UNREACHABLE("unhandled intrinsic");
    }
    spirv_builder_emit_cap(&ctx->builder, SpvCapabilityGroupNonUniformQuad);
 
@@ -3408,7 +3408,7 @@ emit_shuffle(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    default:
       fprintf(stderr, "emit_shuffle: not implemented (%s)\n",
               nir_intrinsic_infos[intr->intrinsic].name);
-      unreachable("unhandled intrinsic");
+      UNREACHABLE("unhandled intrinsic");
    }
    nir_alu_type atype, unused;
    SpvId src0 = get_src(ctx, &intr->src[0], &atype);
@@ -3725,7 +3725,7 @@ emit_intrinsic(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    default:
       fprintf(stderr, "emit_intrinsic: not implemented (%s)\n",
               nir_intrinsic_infos[intr->intrinsic].name);
-      unreachable("unsupported intrinsic");
+      UNREACHABLE("unsupported intrinsic");
    }
 }
 
@@ -3901,7 +3901,7 @@ get_tex_srcs(struct ntv_context *ctx, nir_tex_instr *tex,
 
       default:
          fprintf(stderr, "texture source: %d\n", tex->src[i].src_type);
-         unreachable("unknown texture source");
+         UNREACHABLE("unknown texture source");
       }
    }
    return var;
@@ -3944,7 +3944,7 @@ get_texop_dest_type(struct ntv_context *ctx, const nir_tex_instr *tex)
       break;
 
    default:
-      unreachable("unexpected nir_alu_type");
+      UNREACHABLE("unexpected nir_alu_type");
    }
 
    return actual_dest_type;
@@ -4188,7 +4188,7 @@ emit_jump(struct ntv_context *ctx, nir_jump_instr *jump)
       break;
 
    default:
-      unreachable("Unsupported jump type\n");
+      UNREACHABLE("Unsupported jump type\n");
    }
 }
 
@@ -4268,7 +4268,7 @@ emit_deref_array(struct ntv_context *ctx, nir_deref_instr *deref)
    }
 
    default:
-      unreachable("Unsupported nir_variable_mode\n");
+      UNREACHABLE("Unsupported nir_variable_mode\n");
    }
 
    nir_alu_type itype;
@@ -4331,7 +4331,7 @@ emit_deref(struct ntv_context *ctx, nir_deref_instr *deref)
       break;
 
    default:
-      unreachable("unexpected deref_type");
+      UNREACHABLE("unexpected deref_type");
    }
 }
 
@@ -4357,16 +4357,16 @@ emit_block(struct ntv_context *ctx, struct nir_block *block)
          emit_tex(ctx, nir_instr_as_tex(instr));
          break;
       case nir_instr_type_phi:
-         unreachable("nir_instr_type_phi not supported");
+         UNREACHABLE("nir_instr_type_phi not supported");
          break;
       case nir_instr_type_jump:
          emit_jump(ctx, nir_instr_as_jump(instr));
          break;
       case nir_instr_type_call:
-         unreachable("nir_instr_type_call not supported");
+         UNREACHABLE("nir_instr_type_call not supported");
          break;
       case nir_instr_type_parallel_copy:
-         unreachable("nir_instr_type_parallel_copy not supported");
+         UNREACHABLE("nir_instr_type_parallel_copy not supported");
          break;
       case nir_instr_type_deref:
          emit_deref(ctx, nir_instr_as_deref(instr));
@@ -4471,7 +4471,7 @@ emit_cf_list(struct ntv_context *ctx, struct exec_list *list)
          break;
 
       case nir_cf_node_function:
-         unreachable("nir_cf_node_function not supported");
+         UNREACHABLE("nir_cf_node_function not supported");
          break;
       }
    }
@@ -4496,7 +4496,7 @@ get_input_prim_type_mode(enum mesa_prim type)
       return SpvExecutionModeQuads;
       break;
    case MESA_PRIM_POLYGON:
-      unreachable("handle polygons in gs");
+      UNREACHABLE("handle polygons in gs");
       break;
    case MESA_PRIM_LINES_ADJACENCY:
    case MESA_PRIM_LINE_STRIP_ADJACENCY:
@@ -4507,7 +4507,7 @@ get_input_prim_type_mode(enum mesa_prim type)
       break;
    default:
       debug_printf("unknown geometry shader input mode %u\n", type);
-      unreachable("error!");
+      UNREACHABLE("error!");
       break;
    }
 
@@ -4521,7 +4521,7 @@ get_output_prim_type_mode(enum mesa_prim type)
       return SpvExecutionModeOutputPoints;
    case MESA_PRIM_LINES:
    case MESA_PRIM_LINE_LOOP:
-      unreachable("MESA_PRIM_LINES/LINE_LOOP passed as gs output");
+      UNREACHABLE("MESA_PRIM_LINES/LINE_LOOP passed as gs output");
       break;
    case MESA_PRIM_LINE_STRIP:
       return SpvExecutionModeOutputLineStrip;
@@ -4534,19 +4534,19 @@ get_output_prim_type_mode(enum mesa_prim type)
    case MESA_PRIM_QUAD_STRIP:
       return SpvExecutionModeQuads;
    case MESA_PRIM_POLYGON:
-      unreachable("handle polygons in gs");
+      UNREACHABLE("handle polygons in gs");
       break;
    case MESA_PRIM_LINES_ADJACENCY:
    case MESA_PRIM_LINE_STRIP_ADJACENCY:
-      unreachable("handle line adjacency in gs");
+      UNREACHABLE("handle line adjacency in gs");
       break;
    case MESA_PRIM_TRIANGLES_ADJACENCY:
    case MESA_PRIM_TRIANGLE_STRIP_ADJACENCY:
-      unreachable("handle triangle adjacency in gs");
+      UNREACHABLE("handle triangle adjacency in gs");
       break;
    default:
       debug_printf("unknown geometry shader output mode %u\n", type);
-      unreachable("error!");
+      UNREACHABLE("error!");
       break;
    }
 
@@ -4567,7 +4567,7 @@ get_depth_layout_mode(enum gl_frag_depth_layout depth_layout)
    case FRAG_DEPTH_LAYOUT_UNCHANGED:
       return SpvExecutionModeDepthUnchanged;
    default:
-      unreachable("unexpected depth layout");
+      UNREACHABLE("unexpected depth layout");
    }
 }
 
@@ -4579,7 +4579,7 @@ get_primitive_mode(enum tess_primitive_mode primitive_mode)
    case TESS_PRIMITIVE_QUADS: return SpvExecutionModeQuads;
    case TESS_PRIMITIVE_ISOLINES: return SpvExecutionModeIsolines;
    default:
-      unreachable("unknown tess prim type!");
+      UNREACHABLE("unknown tess prim type!");
    }
 }
 
@@ -4594,7 +4594,7 @@ get_spacing(enum gl_tess_spacing spacing)
    case TESS_SPACING_FRACTIONAL_EVEN:
       return SpvExecutionModeSpacingFractionalEven;
    default:
-      unreachable("unknown tess spacing!");
+      UNREACHABLE("unknown tess spacing!");
    }
 }
 
@@ -4763,7 +4763,7 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
       exec_model = SpvExecutionModelGLCompute;
       break;
    default:
-      unreachable("invalid stage");
+      UNREACHABLE("invalid stage");
    }
 
    SpvId type_void = spirv_builder_type_void(&ctx.builder);

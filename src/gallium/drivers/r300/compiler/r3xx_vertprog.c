@@ -212,7 +212,7 @@ ei_math1_select(struct r300_vertex_program_code *vp,
    case RC_MATH_DX: hw_opcode = hw_opcode_dx; break;
    case RC_MATH_FF: hw_opcode = hw_opcode_ff; break;
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
    ei_math1(vp, hw_opcode, vpi, inst);
 }

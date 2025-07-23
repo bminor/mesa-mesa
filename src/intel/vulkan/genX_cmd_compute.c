@@ -73,7 +73,7 @@ genX(cmd_buffer_ensure_cfe_state)(struct anv_cmd_buffer *cmd_buffer,
       case 512:  cfe.StackIDControl = StackIDs512;  break;
       case 1024: cfe.StackIDControl = StackIDs1024; break;
       case 2048: cfe.StackIDControl = StackIDs2048; break;
-      default:   unreachable("invalid stack_ids value");
+      default:   UNREACHABLE("invalid stack_ids value");
       }
 
 #if INTEL_WA_14021821874_GFX_VER || INTEL_WA_14018813551_GFX_VER
@@ -95,7 +95,7 @@ genX(cmd_buffer_ensure_cfe_state)(struct anv_cmd_buffer *cmd_buffer,
 
    comp_state->scratch_size = total_scratch;
 #else
-   unreachable("Invalid call");
+   UNREACHABLE("Invalid call");
 #endif
 }
 
@@ -933,7 +933,7 @@ genX(cmd_buffer_ray_query_globals)(struct anv_cmd_buffer *cmd_buffer)
 
    return anv_cmd_buffer_temporary_state_address(cmd_buffer, state);
 #else
-   unreachable("Not supported");
+   UNREACHABLE("Not supported");
 #endif
 }
 

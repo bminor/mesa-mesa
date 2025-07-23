@@ -405,7 +405,7 @@ vk_subpass_attachment_init(struct vk_subpass_attachment *att,
       break;
 
    default:
-      unreachable("Invalid subpass attachment usage");
+      UNREACHABLE("Invalid subpass attachment usage");
    }
 }
 
@@ -1535,7 +1535,7 @@ vk_command_buffer_get_attachment_layout(const struct vk_command_buffer *cmd_buff
          return a;
       }
    }
-   unreachable("Image not found in attachments");
+   UNREACHABLE("Image not found in attachments");
 }
 
 void

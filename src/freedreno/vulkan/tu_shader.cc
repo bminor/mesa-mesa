@@ -1438,7 +1438,7 @@ tu6_emit_xs(struct tu_cs *cs,
       ));
       break;
    default:
-      unreachable("bad shader stage");
+      UNREACHABLE("bad shader stage");
    }
 
    tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_instrlen, 1);
@@ -1719,7 +1719,7 @@ tu6_tex_opc_to_prefetch_cmd(opc_t tex_opc)
    case OPC_SAM:
       return TEX_PREFETCH_SAM;
    default:
-      unreachable("Unknown tex opc for prefeth cmd");
+      UNREACHABLE("Unknown tex opc for prefeth cmd");
    }
 }
 
@@ -2123,7 +2123,7 @@ primitive_to_tess(enum mesa_prim primitive) {
    case MESA_PRIM_TRIANGLE_STRIP:
       return TESS_CW_TRIS;
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 
@@ -2224,7 +2224,7 @@ tu6_emit_variant(struct tu_cs *cs,
       tu6_emit_fs<CHIP>(cs, xs);
       break;
    default:
-      unreachable("unknown shader stage");
+      UNREACHABLE("unknown shader stage");
    }
 }
 
@@ -2823,7 +2823,7 @@ tu_shader_create(struct tu_device *dev,
          break;
       case TESS_SPACING_UNSPECIFIED:
       default:
-         unreachable("invalid tess spacing");
+         UNREACHABLE("invalid tess spacing");
       }
 
       break;
@@ -2977,7 +2977,7 @@ tu6_get_tessmode(const struct nir_shader *shader)
    case TESS_PRIMITIVE_UNSPECIFIED:
       return IR3_TESS_NONE;
    default:
-      unreachable("bad tessmode");
+      UNREACHABLE("bad tessmode");
    }
 }
 

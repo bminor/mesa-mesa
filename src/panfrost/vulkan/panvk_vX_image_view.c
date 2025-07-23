@@ -39,7 +39,7 @@ panvk_view_type_to_mali_tex_dim(VkImageViewType type)
    case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
       return MALI_TEXTURE_DIMENSION_CUBE;
    default:
-      unreachable("Invalid view type");
+      UNREACHABLE("Invalid view type");
    }
 }
 
@@ -68,7 +68,7 @@ panvk_convert_swizzle(const VkComponentMapping *in, unsigned char *out)
          out[i] = PIPE_SWIZZLE_W;
          break;
       default:
-         unreachable("Invalid swizzle");
+         UNREACHABLE("Invalid swizzle");
       }
    }
 }

@@ -113,7 +113,7 @@ sweep_cf_node(nir_shader *nir, nir_cf_node *cf_node)
       sweep_loop(nir, nir_cf_node_as_loop(cf_node));
       break;
    default:
-      unreachable("Invalid CF node type");
+      UNREACHABLE("Invalid CF node type");
    }
 }
 

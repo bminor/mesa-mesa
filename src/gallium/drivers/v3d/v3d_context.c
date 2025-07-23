@@ -252,7 +252,7 @@ v3d_flag_dirty_sampler_state(struct v3d_context *v3d,
                 v3d->dirty |= V3D_DIRTY_COMPTEX;
                 break;
         default:
-                unreachable("Unsupported shader stage");
+                UNREACHABLE("Unsupported shader stage");
         }
 }
 

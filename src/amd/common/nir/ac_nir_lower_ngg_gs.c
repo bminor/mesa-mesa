@@ -858,7 +858,7 @@ ac_nir_lower_ngg_gs(nir_shader *shader, const ac_nir_lower_ngg_options *options,
    else if (shader->info.gs.output_primitive == MESA_PRIM_TRIANGLE_STRIP)
       state.num_vertices_per_primitive = 3;
    else
-      unreachable("Invalid GS output primitive.");
+      UNREACHABLE("Invalid GS output primitive.");
 
    /* Extract the full control flow. It is going to be wrapped in an if statement. */
    nir_cf_list extracted;

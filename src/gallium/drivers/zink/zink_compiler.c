@@ -329,9 +329,9 @@ replicate_derefs(nir_builder *b, nir_deref_instr *old, nir_deref_instr *new)
    case nir_deref_type_array_wildcard:
    case nir_deref_type_ptr_as_array:
    case nir_deref_type_cast:
-      unreachable("unexpected deref type");
+      UNREACHABLE("unexpected deref type");
    }
-   unreachable("impossible deref type");
+   UNREACHABLE("impossible deref type");
 }
 
 static bool
@@ -486,7 +486,7 @@ lower_pv_mode_gs_instr(nir_builder *b, nir_instr *instr, void *data)
    case nir_intrinsic_store_deref:
       return lower_pv_mode_gs_store(b, intrin, state);
    case nir_intrinsic_copy_deref:
-      unreachable("should be lowered");
+      UNREACHABLE("should be lowered");
    case nir_intrinsic_emit_vertex_with_counter:
    case nir_intrinsic_emit_vertex:
       return lower_pv_mode_gs_emit_vertex(b, intrin, state);
@@ -904,7 +904,7 @@ lower_line_smooth_gs_instr(nir_builder *b, nir_instr *instr, void *data)
    case nir_intrinsic_store_deref:
       return lower_line_smooth_gs_store(b, intrin, state);
    case nir_intrinsic_copy_deref:
-      unreachable("should be lowered");
+      UNREACHABLE("should be lowered");
    case nir_intrinsic_emit_vertex_with_counter:
    case nir_intrinsic_emit_vertex:
       return lower_line_smooth_gs_emit_vertex(b, intrin, state);
@@ -1052,7 +1052,7 @@ lower_64bit_pack_instr(nir_builder *b, nir_instr *instr, void *data)
       dest = nir_vec2(b, nir_unpack_64_2x32_split_x(b, src), nir_unpack_64_2x32_split_y(b, src));
       break;
    default:
-      unreachable("Impossible opcode");
+      UNREACHABLE("Impossible opcode");
    }
    nir_def_replace(&alu_instr->def, dest);
    return true;
@@ -1259,7 +1259,7 @@ amd_varying_expression_max_cost(nir_shader *producer, nir_shader *consumer)
       return 14;
 
    default:
-      unreachable("unexpected shader stage");
+      UNREACHABLE("unexpected shader stage");
    }
 }
 
@@ -2005,7 +2005,7 @@ update_so_info(struct zink_shader *zs, nir_shader *nir, uint64_t outputs_written
       }
       continue;
 out:
-      unreachable("xfb should be inlined by now!");
+      UNREACHABLE("xfb should be inlined by now!");
    }
 }
 
@@ -2262,7 +2262,7 @@ rewrite_atomic_ssbo_instr(nir_builder *b, nir_instr *instr, struct bo_vars *bo)
    else if (intr->intrinsic == nir_intrinsic_ssbo_atomic_swap)
       op = nir_intrinsic_deref_atomic_swap;
    else
-      unreachable("unknown intrinsic");
+      UNREACHABLE("unknown intrinsic");
    nir_def *offset = intr->src[1].ssa;
    nir_src *src = &intr->src[0];
    nir_variable *var = get_bo_var(b->shader, bo, true, src,
@@ -2520,7 +2520,7 @@ clamp_layer_output(nir_shader *vs, nir_shader *fs, unsigned *next_location)
    case MESA_SHADER_TESS_EVAL:
       break;
    default:
-      unreachable("invalid last vertex stage!");
+      UNREACHABLE("invalid last vertex stage!");
    }
    struct clamp_layer_output_state state = {0};
    state.original = nir_find_variable_with_location(vs, nir_var_shader_out, VARYING_SLOT_LAYER);
@@ -2609,7 +2609,7 @@ assign_producer_var_io(gl_shader_stage stage, nir_variable *var, struct io_slot_
    unsigned slot = var->data.location;
    switch (slot) {
    case -1:
-      unreachable("there should be no UINT32_MAX location variables!");
+      UNREACHABLE("there should be no UINT32_MAX location variables!");
       break;
    case VARYING_SLOT_POS:
    case VARYING_SLOT_PSIZ:
@@ -2986,7 +2986,7 @@ rewrite_64bit_type(nir_shader *nir, const struct glsl_type *type, nir_variable *
       base_type = GLSL_TYPE_FLOAT;
       break;
    default:
-      unreachable("unknown 64-bit vertex attribute format!");
+      UNREACHABLE("unknown 64-bit vertex attribute format!");
    }
    if (glsl_type_is_scalar(type))
       return glsl_vector_type(base_type, 2);
@@ -3312,7 +3312,7 @@ zink_get_next_stage(gl_shader_stage stage)
    case MESA_SHADER_KERNEL:
       return 0;
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 }
 
@@ -3823,7 +3823,7 @@ add_derefs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *data)
                load = nir_interp_deref_at_offset(b, num_components, bit_size, &deref->def, interp_intr->src[0].ssa);
                break;
             default:
-               unreachable("unhandled interp!");
+               UNREACHABLE("unhandled interp!");
             }
          } else {
             load = nir_load_deref(b, deref);
@@ -3855,7 +3855,7 @@ add_derefs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nir_instr_remove(&intr->instr);
       return true;
    }
-   unreachable("failed to find variable for explicit io!");
+   UNREACHABLE("failed to find variable for explicit io!");
    return true;
 }
 
@@ -4519,7 +4519,7 @@ static uint32_t
 zink_binding(gl_shader_stage stage, VkDescriptorType type, int index, bool compact_descriptors)
 {
    if (stage == MESA_SHADER_NONE) {
-      unreachable("not supported");
+      UNREACHABLE("not supported");
    } else {
       unsigned base = stage;
       /* clamp compute bindings for better driver efficiency */
@@ -4560,7 +4560,7 @@ zink_binding(gl_shader_stage stage, VkDescriptorType type, int index, bool compa
          return (base * ZINK_MAX_SHADER_IMAGES) + index + (compact_descriptors * (ZINK_GFX_SHADER_COUNT * PIPE_MAX_SAMPLERS));
 
       default:
-         unreachable("unexpected type");
+         UNREACHABLE("unexpected type");
       }
    }
 }
@@ -4594,7 +4594,7 @@ handle_bindless_var(nir_shader *nir, nir_variable *var, const struct glsl_type *
          binding = 3;
          break;
       default:
-         unreachable("unknown");
+         UNREACHABLE("unknown");
    }
    if (!bindless->bindless[binding]) {
       bindless->bindless[binding] = nir_variable_clone(var, nir);

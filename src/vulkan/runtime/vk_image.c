@@ -455,7 +455,7 @@ vk_image_view_init(struct vk_device *device,
          assert(image->create_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
          break;
       default:
-         unreachable("Invalid image view type");
+         UNREACHABLE("Invalid image view type");
       }
    }
 
@@ -619,7 +619,7 @@ vk_image_view_init(struct vk_device *device,
           <= image->mip_levels);
    switch (image->image_type) {
    default:
-      unreachable("bad VkImageType");
+      UNREACHABLE("bad VkImageType");
    case VK_IMAGE_TYPE_1D:
    case VK_IMAGE_TYPE_2D:
       assert(image_view->base_array_layer + image_view->layer_count
@@ -739,10 +739,10 @@ vk_image_layout_is_read_only(VkImageLayout layout,
    case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
    case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
    case VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM:
-      unreachable("Invalid image layout.");
+      UNREACHABLE("Invalid image layout.");
    }
 
-   unreachable("Invalid image layout.");
+   UNREACHABLE("Invalid image layout.");
 }
 
 bool
@@ -1133,8 +1133,8 @@ vk_image_layout_to_usage_flags(VkImageLayout layout,
       return VK_IMAGE_USAGE_TENSOR_ALIASING_BIT_ARM;
 
    case VK_IMAGE_LAYOUT_MAX_ENUM:
-      unreachable("Invalid image layout.");
+      UNREACHABLE("Invalid image layout.");
    }
 
-   unreachable("Invalid image layout.");
+   UNREACHABLE("Invalid image layout.");
 }

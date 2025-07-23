@@ -83,7 +83,7 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**

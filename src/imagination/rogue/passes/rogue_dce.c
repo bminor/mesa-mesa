@@ -80,7 +80,7 @@ static bool rogue_dce_instrs(rogue_shader *shader)
          break;
 
       default:
-         unreachable("Unsupported instruction type.");
+         UNREACHABLE("Unsupported instruction type.");
          return false;
       }
    }

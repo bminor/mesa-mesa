@@ -445,7 +445,7 @@ ir3_tess_mode(enum tess_primitive_mode tess_mode)
    case TESS_PRIMITIVE_QUADS:
       return IR3_TESS_QUADS;
    default:
-      unreachable("bad tessmode");
+      UNREACHABLE("bad tessmode");
    }
 }
 
@@ -461,7 +461,7 @@ ir3_tess_factor_stride(unsigned patch_type)
    case IR3_TESS_QUADS:
       return 28;
    default:
-      unreachable("bad tessmode");
+      UNREACHABLE("bad tessmode");
    }
 }
 
@@ -969,7 +969,7 @@ ir3_shader_stage(struct ir3_shader_variant *v)
    case MESA_SHADER_KERNEL:
       return "CL";
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
       return NULL;
    }
 }

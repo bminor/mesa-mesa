@@ -282,7 +282,7 @@ dump_pc_imm(FILE *fp, uint64_t imm, unsigned branch_offset,
       offs = sx32[high32];
       break;
    default:
-      unreachable("Invalid PC modifier");
+      UNREACHABLE("Invalid PC modifier");
    }
 
    assert((offs & 15) == 0);
@@ -560,7 +560,7 @@ dump_clause(FILE *fp, const uint32_t *words, unsigned *size, unsigned offset,
                done = stop;
                break;
             default:
-               unreachable("[INSTR_INVALID_ENC] Invalid tag bits");
+               UNREACHABLE("[INSTR_INVALID_ENC] Invalid tag bits");
             }
             break;
          case 0x2:

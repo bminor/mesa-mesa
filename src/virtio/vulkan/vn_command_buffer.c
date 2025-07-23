@@ -112,7 +112,7 @@ vn_cmd_get_cached_storage(struct vn_command_buffer *cmd,
       barriers_size = barrier_count * sizeof(VkImageMemoryBarrier2);
       break;
    default:
-      unreachable("invalid barrier_type");
+      UNREACHABLE("invalid barrier_type");
    }
 
    size_t total_size =
@@ -2387,7 +2387,7 @@ vn_CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
       stage_flags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
       break;
    default:
-      unreachable("bad pipeline bind point in the template");
+      UNREACHABLE("bad pipeline bind point in the template");
       break;
    }
    const VkPushDescriptorSetInfo info = {

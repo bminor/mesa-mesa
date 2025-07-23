@@ -218,7 +218,7 @@ agx_dim_info(enum agx_dim dim)
    case AGX_DIM_2D_MS_ARRAY:
       return (struct dim_info){2, true};
    default:
-      unreachable("invalid dim");
+      UNREACHABLE("invalid dim");
    }
 }
 
@@ -326,7 +326,7 @@ agx_read_registers(const agx_instr *I, unsigned s)
                return (2 * 2 * 3) + min;
             }
 
-            unreachable("Invalid texture dimension");
+            UNREACHABLE("Invalid texture dimension");
          } else if (I->lod_mode == AGX_LOD_MODE_AUTO_LOD_BIAS_MIN) {
             return 2;
          } else {

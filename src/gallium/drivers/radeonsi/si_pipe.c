@@ -727,7 +727,7 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
          si_init_draw_functions_GFX12(sctx);
          break;
       default:
-         unreachable("unhandled gfx level");
+         UNREACHABLE("unhandled gfx level");
       }
    }
 

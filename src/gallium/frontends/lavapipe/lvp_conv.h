@@ -129,6 +129,6 @@ static inline enum pipe_swizzle vk_conv_swizzle(VkComponentSwizzle swiz,
    case VK_COMPONENT_SWIZZLE_IDENTITY:
       return identity;
    default:
-      unreachable("Invalid VkComponentSwizzle value");
+      UNREACHABLE("Invalid VkComponentSwizzle value");
    }
 }

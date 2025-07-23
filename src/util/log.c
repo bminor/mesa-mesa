@@ -157,7 +157,7 @@ level_to_str(enum mesa_log_level l)
    case MESA_LOG_DEBUG: return "debug";
    }
 
-   unreachable("bad mesa_log_level");
+   UNREACHABLE("bad mesa_log_level");
 }
 
 enum logger_vasnprintf_affix {
@@ -272,7 +272,7 @@ level_to_syslog(enum mesa_log_level l)
    case MESA_LOG_DEBUG: return LOG_DEBUG;
    }
 
-   unreachable("bad mesa_log_level");
+   UNREACHABLE("bad mesa_log_level");
 }
 
 static void
@@ -305,7 +305,7 @@ level_to_android(enum mesa_log_level l)
    case MESA_LOG_DEBUG: return ANDROID_LOG_DEBUG;
    }
 
-   unreachable("bad mesa_log_level");
+   UNREACHABLE("bad mesa_log_level");
 }
 
 static void

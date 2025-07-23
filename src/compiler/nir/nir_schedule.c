@@ -477,15 +477,15 @@ nir_schedule_calculate_deps(nir_deps_state *state, nir_schedule_node *n)
       break;
 
    case nir_instr_type_call:
-      unreachable("Calls should have been lowered");
+      UNREACHABLE("Calls should have been lowered");
       break;
 
    case nir_instr_type_parallel_copy:
-      unreachable("Parallel copies should have been lowered");
+      UNREACHABLE("Parallel copies should have been lowered");
       break;
 
    case nir_instr_type_phi:
-      unreachable("nir_schedule() should be called after lowering from SSA");
+      UNREACHABLE("nir_schedule() should be called after lowering from SSA");
       break;
 
    case nir_instr_type_intrinsic:

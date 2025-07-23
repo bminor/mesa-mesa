@@ -657,7 +657,7 @@ GENX(pan_decompose_swizzle)(enum mali_rgb_component_order order)
       CASE(0001, 0001, X, Y, Z, W);
       CASE(0000, 0000, X, Y, Z, W);
    default:
-      unreachable("Invalid case for texturing");
+      UNREACHABLE("Invalid case for texturing");
    }
 
 #undef CASE

@@ -272,7 +272,7 @@ vertex_id_for_topology_class(nir_builder *b, nir_def *vert, enum mesa_prim cls)
                                                 flatshade_first);
 
    default:
-      unreachable("invalid topology class");
+      UNREACHABLE("invalid topology class");
    }
 }
 
@@ -693,7 +693,7 @@ agx_nir_create_gs_rast_shader(const nir_shader *gs,
    }
 
    default:
-      unreachable("invalid shape");
+      UNREACHABLE("invalid shape");
    }
 
    u_foreach_bit64(slot, shader->info.outputs_written) {

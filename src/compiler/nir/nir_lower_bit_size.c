@@ -280,7 +280,7 @@ lower_intrinsic_instr(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 
    default:
-      unreachable("Unsupported instruction");
+      UNREACHABLE("Unsupported instruction");
    }
 }
 
@@ -340,7 +340,7 @@ lower_impl(nir_function_impl *impl,
             break;
 
          default:
-            unreachable("Unsupported instruction type");
+            UNREACHABLE("Unsupported instruction type");
          }
          progress = true;
       }

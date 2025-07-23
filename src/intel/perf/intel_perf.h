@@ -661,7 +661,7 @@ intel_perf_query_counter_get_size(const struct intel_perf_query_counter *counter
    case INTEL_PERF_COUNTER_DATA_TYPE_DOUBLE:
       return sizeof(double);
    default:
-      unreachable("invalid counter data type");
+      UNREACHABLE("invalid counter data type");
    }
 }
 

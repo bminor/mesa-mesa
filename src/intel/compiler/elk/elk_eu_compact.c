@@ -1913,7 +1913,7 @@ compaction_state_init(struct compaction_state *c,
       c->src1_index_table = g45_src_index_table;
       break;
    default:
-      unreachable("unknown generation");
+      UNREACHABLE("unknown generation");
    }
 }
 

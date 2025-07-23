@@ -294,7 +294,7 @@ bi_sized_mux_op(unsigned size)
    case 32:
       return BI_OPCODE_MUX_I32;
    default:
-      unreachable("invalid size");
+      UNREACHABLE("invalid size");
    }
 }
 

@@ -129,7 +129,7 @@ brw_compile_tes(const struct brw_compiler *compiler,
       prog_data->domain = INTEL_TESS_DOMAIN_ISOLINE;
       break;
    default:
-      unreachable("invalid domain shader primitive mode");
+      UNREACHABLE("invalid domain shader primitive mode");
    }
 
    if (nir->info.tess.point_mode) {

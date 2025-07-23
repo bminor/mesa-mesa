@@ -4906,7 +4906,7 @@ bind_buffer_range(GLenum target, GLuint index, GLuint buffer, GLintptr offset,
          bind_buffer_range_atomic_buffer(ctx, index, bufObj, offset, size);
          return;
       default:
-         unreachable("invalid BindBufferRange target with KHR_no_error");
+         UNREACHABLE("invalid BindBufferRange target with KHR_no_error");
       }
    } else {
       if (buffer != 0) {

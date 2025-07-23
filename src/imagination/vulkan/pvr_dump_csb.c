@@ -2358,7 +2358,7 @@ static bool dump_first_buffer(struct pvr_dump_buffer_ctx *const ctx,
       break;
 
    default:
-      unreachable("Unknown stream type");
+      UNREACHABLE("Unknown stream type");
    }
 
    if (!ret)

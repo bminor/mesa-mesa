@@ -83,7 +83,7 @@ get_llvm_calling_convention(LLVMValueRef func, gl_shader_stage stage)
       return AC_LLVM_AMDGPU_CS;
       break;
    default:
-      unreachable("Unhandle shader type");
+      UNREACHABLE("Unhandle shader type");
    }
 }
 

@@ -442,7 +442,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
          case 2: op = aco_opcode::buffer_load_format_d16_xy; break;
          case 3: op = aco_opcode::buffer_load_format_d16_xyz; break;
          case 4: op = aco_opcode::buffer_load_format_d16_xyzw; break;
-         default: unreachable("Tex instruction loads more than 4 components.");
+         default: UNREACHABLE("Tex instruction loads more than 4 components.");
          }
       } else {
          switch (util_last_bit(dmask & 0xf)) {
@@ -450,7 +450,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
          case 2: op = aco_opcode::buffer_load_format_xy; break;
          case 3: op = aco_opcode::buffer_load_format_xyz; break;
          case 4: op = aco_opcode::buffer_load_format_xyzw; break;
-         default: unreachable("Tex instruction loads more than 4 components.");
+         default: UNREACHABLE("Tex instruction loads more than 4 components.");
          }
       }
 
@@ -943,7 +943,7 @@ visit_cf_list(isel_context* ctx, struct exec_list* list)
       case nir_cf_node_block: visit_block(ctx, nir_cf_node_as_block(node)); break;
       case nir_cf_node_if: visit_if(ctx, nir_cf_node_as_if(node)); break;
       case nir_cf_node_loop: visit_loop(ctx, nir_cf_node_as_loop(node)); break;
-      default: unreachable("unimplemented cf list type");
+      default: UNREACHABLE("unimplemented cf list type");
       }
    }
 

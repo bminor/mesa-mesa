@@ -657,7 +657,7 @@ kgsl_syncobj_wait(struct tu_device *device,
    }
 
    default:
-      unreachable("invalid syncobj state");
+      UNREACHABLE("invalid syncobj state");
    }
 }
 
@@ -804,7 +804,7 @@ kgsl_syncobj_export(struct kgsl_syncobj *s, int *pFd)
       return VK_SUCCESS;
 
    default:
-      unreachable("Invalid syncobj state");
+      UNREACHABLE("Invalid syncobj state");
    }
 }
 
@@ -895,7 +895,7 @@ kgsl_syncobj_merge(const struct kgsl_syncobj **syncobjs, uint32_t count)
          break;
 
       default:
-         unreachable("invalid syncobj state");
+         UNREACHABLE("invalid syncobj state");
       }
    }
 
@@ -1235,7 +1235,7 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
       break;
 
    default:
-      unreachable("invalid syncobj state");
+      UNREACHABLE("invalid syncobj state");
    }
 
    struct kgsl_gpu_command req = {
@@ -1354,7 +1354,7 @@ kgsl_device_finish(struct tu_device *dev)
 static int
 kgsl_device_get_gpu_timestamp(struct tu_device *dev, uint64_t *ts)
 {
-   unreachable("");
+   UNREACHABLE("");
    return 0;
 }
 

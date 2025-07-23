@@ -216,7 +216,7 @@ fill_state_base_addr(struct anv_cmd_buffer *cmd_buffer,
       sba->BindlessSurfaceStateMOCS = mocs;
       sba->BindlessSurfaceStateBaseAddressModifyEnable = true;
 #else
-      unreachable("Direct descriptor not supported");
+      UNREACHABLE("Direct descriptor not supported");
 #endif
    } else {
       sba->BindlessSurfaceStateBaseAddress =
@@ -2069,7 +2069,7 @@ emit_indirect_descriptor_binding_table_entry(struct anv_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 
    return surface_state.offset;
@@ -2111,7 +2111,7 @@ emit_direct_descriptor_binding_table_entry(struct anv_cmd_buffer *cmd_buffer,
    }
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 
    return desc_offset;
@@ -2444,7 +2444,7 @@ emit_pipe_control(struct anv_batch *batch,
 {
    if ((batch->engine_class == INTEL_ENGINE_CLASS_COPY) ||
        (batch->engine_class == INTEL_ENGINE_CLASS_VIDEO))
-      unreachable("Trying to emit unsupported PIPE_CONTROL command.");
+      UNREACHABLE("Trying to emit unsupported PIPE_CONTROL command.");
 
    const bool trace_flush =
       (bits & (ANV_PIPE_FLUSH_BITS |
@@ -3155,7 +3155,7 @@ genX(cmd_buffer_set_protected_memory)(struct anv_cmd_buffer *cmd_buffer,
          pc.ProtectedMemoryDisable = true;
    }
 #else
-   unreachable("Protected content not supported");
+   UNREACHABLE("Protected content not supported");
 #endif
 }
 
@@ -4691,7 +4691,7 @@ cmd_buffer_barrier(struct anv_cmd_buffer *cmd_buffer,
    }
 
    default:
-      unreachable("Invalid engine class");
+      UNREACHABLE("Invalid engine class");
    }
 }
 
@@ -6200,7 +6200,7 @@ void genX(CmdSetEvent2)(
    }
 
    default:
-      unreachable("Invalid engine class");
+      UNREACHABLE("Invalid engine class");
    }
 }
 
@@ -6246,7 +6246,7 @@ void genX(CmdResetEvent2)(
    }
 
    default:
-      unreachable("Invalid engine class");
+      UNREACHABLE("Invalid engine class");
    }
 }
 
@@ -6303,7 +6303,7 @@ VkResult genX(CmdSetPerformanceOverrideINTEL)(
       break;
 
    default:
-      unreachable("Invalid override");
+      UNREACHABLE("Invalid override");
    }
 
    return VK_SUCCESS;
@@ -6416,7 +6416,7 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
       break;
 
    default:
-      unreachable("invalid");
+      UNREACHABLE("invalid");
    }
 }
 
@@ -6505,7 +6505,7 @@ genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
       blt.DestinationTiling = XY_TILE_LINEAR;
    }
 #else
-   unreachable("Not implemented");
+   UNREACHABLE("Not implemented");
 #endif
 }
 
@@ -6587,7 +6587,7 @@ genX(cmd_buffer_begin_companion_rcs_syncpoint)(
 
    return syncpoint;
 #else
-   unreachable("Not implemented");
+   UNREACHABLE("Not implemented");
 #endif
 }
 
@@ -6616,7 +6616,7 @@ genX(cmd_buffer_end_companion_rcs_syncpoint)(struct anv_cmd_buffer *cmd_buffer,
                    &cmd_buffer->companion_rcs_cmd_buffer->batch);
    mi_store(&b, mi_mem32(xcs_wait_addr), mi_imm(0x1));
 #else
-   unreachable("Not implemented");
+   UNREACHABLE("Not implemented");
 #endif
 }
 
@@ -6719,7 +6719,7 @@ genX(write_trtt_entries)(struct anv_async_submit *submit,
                                 ANV_PIPE_CS_STALL_BIT |
                                 ANV_PIPE_TLB_INVALIDATE_BIT);
 #else
-   unreachable("Not implemented");
+   UNREACHABLE("Not implemented");
 #endif
 }
 

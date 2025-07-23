@@ -290,7 +290,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
          }
 
          case nir_instr_type_parallel_copy:
-            unreachable("Unhanded instruction type");
+            UNREACHABLE("Unhanded instruction type");
          }
       }
    }

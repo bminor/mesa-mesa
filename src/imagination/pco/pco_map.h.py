@@ -50,7 +50,7 @@ ${enum_map.type_to} ${enum_map.name}(${enum_map.type_from} val)
 
       % endfor
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
    % else:
@@ -62,7 +62,7 @@ ${enum_map.type_to} ${enum_map.name}(${enum_map.type_from} val)
 
       % endfor
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
    % endif
 
@@ -124,7 +124,7 @@ static inline unsigned pco_map_reg_index(pco_ref ref)
       return pco_map_idx_bank(ref) | (ref.idx_reg.offset << 3);
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline unsigned pco_map_reg_index_bits(pco_ref ref)
@@ -134,7 +134,7 @@ static inline unsigned pco_map_reg_index_bits(pco_ref ref)
    else if (pco_ref_is_idx_reg(ref))
       return 11;
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline
@@ -195,7 +195,7 @@ enum pco_src_variant pco_igrp_src_variant(const pco_igrp *igrp,
    }
 % endfor
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline
@@ -248,7 +248,7 @@ enum pco_dst_variant pco_igrp_dest_variant(pco_igrp *igrp)
    }
 % endfor
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 % for encode_map in encode_maps.values():
@@ -303,7 +303,7 @@ void pco_map_igrp(pco_igrp *igrp, pco_instr *instr)
           info->type == PCO_OP_TYPE_PSEUDO ? "pseudo" : "hardware",
           info->str);
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline unsigned pco_igrp_hdr_map_encode(uint8_t *bin, pco_igrp *igrp)
@@ -360,7 +360,7 @@ static inline unsigned pco_igrp_hdr_map_encode(uint8_t *bin, pco_igrp *igrp)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 % for encode_map in encode_maps.values():
@@ -378,7 +378,7 @@ unsigned ${encode_map.name}_map_encode(uint8_t *bin, pco_instr *instr, unsigned 
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
    % else:
 unsigned ${encode_map.name}_map_encode(uint8_t *bin, pco_instr *instr)
@@ -406,7 +406,7 @@ unsigned pco_instr_map_encode(uint8_t *bin, pco_igrp *igrp, enum pco_op_phase ph
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline
@@ -462,7 +462,7 @@ unsigned pco_srcs_map_encode(uint8_t *bin, pco_igrp *igrp, bool is_upper)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline
@@ -536,7 +536,7 @@ unsigned pco_dests_map_encode(uint8_t *bin, pco_igrp *igrp)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 #endif /* PCO_MAP_H */"""
 

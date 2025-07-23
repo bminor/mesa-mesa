@@ -1318,7 +1318,7 @@ zink_is_format_supported(struct pipe_screen *pscreen,
          break;
 
       default:
-         unreachable("unknown texture target");
+         UNREACHABLE("unknown texture target");
       }
       u_foreach_bit(b, bind) {
          switch (1<<b) {

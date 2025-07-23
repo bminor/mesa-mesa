@@ -1187,7 +1187,7 @@ dzn_get_most_capable_format_for_casting(VkFormat format, VkImageCreateFlags crea
    case 8: return DXGI_FORMAT_R32G32_FLOAT;
    case 12: return DXGI_FORMAT_R32G32B32_FLOAT;
    case 16: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-   default: unreachable("Unsupported format bit size");;
+   default: UNREACHABLE("Unsupported format bit size");;
    }
 }
 
@@ -1555,7 +1555,7 @@ dzn_physical_device_get_image_format_properties(struct dzn_physical_device *pdev
       properties->imageFormatProperties.maxExtent.depth = max_extent;
       break;
    default:
-      unreachable("bad VkImageType");
+      UNREACHABLE("bad VkImageType");
    }
 
    /* From the Vulkan 1.0 spec, section 34.1.1. Supported Sample Counts:
@@ -3476,7 +3476,7 @@ dzn_sampler_translate_addr_mode(VkSamplerAddressMode in)
    case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
    case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
    case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
-   default: unreachable("Invalid address mode");
+   default: UNREACHABLE("Invalid address mode");
    }
 }
 
@@ -3584,7 +3584,7 @@ dzn_sampler_create(struct dzn_device *device,
          sampler->desc.Flags = D3D12_SAMPLER_FLAG_UINT_BORDER_COLOR;
          break;
       default:
-         unreachable("Unsupported border color");
+         UNREACHABLE("Unsupported border color");
       }
    }
 
@@ -3685,7 +3685,7 @@ dzn_CreateSamplerYcbcrConversion(VkDevice device,
                                  const VkAllocationCallbacks *pAllocator,
                                  VkSamplerYcbcrConversion *pYcbcrConversion)
 {
-   unreachable("Ycbcr sampler conversion is not supported");
+   UNREACHABLE("Ycbcr sampler conversion is not supported");
    return VK_SUCCESS;
 }
 
@@ -3694,7 +3694,7 @@ dzn_DestroySamplerYcbcrConversion(VkDevice device,
                                   VkSamplerYcbcrConversion YcbcrConversion,
                                   const VkAllocationCallbacks *pAllocator)
 {
-   unreachable("Ycbcr sampler conversion is not supported");
+   UNREACHABLE("Ycbcr sampler conversion is not supported");
 }
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL

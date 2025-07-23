@@ -409,7 +409,7 @@ validate_deref_instr(nir_deref_instr *instr, validate_state *state)
          break;
 
       default:
-         unreachable("Invalid deref instruction type");
+         UNREACHABLE("Invalid deref instruction type");
       }
    }
 
@@ -1231,7 +1231,7 @@ collect_blocks(struct exec_list *cf_list, validate_state *state)
          break;
 
       default:
-         unreachable("Invalid CF node type");
+         UNREACHABLE("Invalid CF node type");
       }
    }
 }
@@ -1362,7 +1362,7 @@ validate_block(nir_block *block, validate_state *state)
             break;
 
          default:
-            unreachable("unknown control flow node type");
+            UNREACHABLE("unknown control flow node type");
          }
       } else {
          if (next->type == nir_cf_node_if) {
@@ -1487,7 +1487,7 @@ validate_cf_node(nir_cf_node *node, validate_state *state)
       break;
 
    default:
-      unreachable("Invalid CF node type");
+      UNREACHABLE("Invalid CF node type");
    }
 }
 

@@ -49,7 +49,7 @@ bool rogue_schedule_uvsw(rogue_shader *shader, bool latency_hiding)
 
    /* TODO: Add support for delayed scheduling (latency hiding). */
    if (latency_hiding)
-      unreachable("Latency hiding is unimplemented.");
+      UNREACHABLE("Latency hiding is unimplemented.");
 
    rogue_builder b;
    rogue_builder_init(&b, shader);
@@ -78,7 +78,7 @@ bool rogue_schedule_uvsw(rogue_shader *shader, bool latency_hiding)
       list_last_entry(&final_block->instrs, rogue_instr, link);
 
    if (!rogue_instr_is_nop_end(final_instr))
-      unreachable("UVSW emit/end task need to be the final instruction.");
+      UNREACHABLE("UVSW emit/end task need to be the final instruction.");
 
    b.cursor = rogue_cursor_before_instr(final_instr);
 

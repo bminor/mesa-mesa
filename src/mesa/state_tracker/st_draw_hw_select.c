@@ -644,7 +644,7 @@ hw_select_create_gs(struct st_context *st, union state_key state)
       build_planar_primitive_nir_shader(&b, state, packed);
       break;
    default:
-      unreachable("unexpected primitive");
+      UNREACHABLE("unexpected primitive");
    }
 
    nir_lower_returns(nir);

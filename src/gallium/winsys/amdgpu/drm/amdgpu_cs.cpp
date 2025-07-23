@@ -942,7 +942,7 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
          acs->queue_index = AMDGPU_QUEUE_SDMA;
          break;
       default:
-         unreachable("invalid IP type");
+         UNREACHABLE("invalid IP type");
       }
 
       assert(acs->queue_index < AMDGPU_MAX_QUEUES);

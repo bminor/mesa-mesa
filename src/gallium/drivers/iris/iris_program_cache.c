@@ -205,7 +205,7 @@ iris_upload_shader(struct iris_screen *screen,
                               shader->elk_prog_data, reloc_values,
                               ARRAY_SIZE(reloc_values));
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -294,7 +294,7 @@ iris_blorp_upload_shader(struct blorp_batch *blorp_batch, uint32_t stage,
       assert(screen->elk);
       iris_apply_elk_prog_data(shader, prog_data);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -411,7 +411,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
       struct elk_nir_compiler_opts opts = {};
       elk_preprocess_nir(screen->elk, nir, &opts);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -504,7 +504,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
       assert(program);
       iris_apply_elk_prog_data(shader, &prog_data->base);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 

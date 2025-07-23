@@ -3166,7 +3166,7 @@ apply_load_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
    else if (bits_loaded == 16 && load->isSMEM() && !is_s_buffer)
       load->opcode = sign_ext ? aco_opcode::s_load_sshort : aco_opcode::s_load_ushort;
    else
-      unreachable("Forgot to add opcode above.");
+      UNREACHABLE("Forgot to add opcode above.");
 
    if (dst_bitsize <= 16 && ctx.program->gfx_level >= GFX9) {
       switch (load->opcode) {
@@ -4340,7 +4340,7 @@ to_uniform_bool_instr(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                 pred_instr->definitions[1].physReg() == scc);
          op.setTemp(pred_instr->definitions[1].getTemp());
       } else {
-         unreachable("Invalid operand on uniform bitwise instruction.");
+         UNREACHABLE("Invalid operand on uniform bitwise instruction.");
       }
 
       ctx.uses[op.tempId()]++;
@@ -4792,7 +4792,7 @@ sopc_is_signed(aco_opcode opcode)
       SOPC(ge)
       SOPC(lt)
       SOPC(le)
-   default: unreachable("Not a valid SOPC instruction.");
+   default: UNREACHABLE("Not a valid SOPC instruction.");
    }
 #undef SOPC
 }

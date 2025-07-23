@@ -122,7 +122,7 @@ nvk_descriptor_stride_align_for_type(const struct nvk_physical_device *pdev,
       break;
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 
    assert(*stride <= NVK_MAX_DESCRIPTOR_SIZE);

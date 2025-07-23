@@ -854,7 +854,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       break;
 #endif
    default:
-      unreachable("unsupported operation");
+      UNREACHABLE("unsupported operation");
    }
 
    if (cap && !cap->valid)
@@ -2558,7 +2558,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
       break;
    }
    default:
-      unreachable("unknown operation");
+      UNREACHABLE("unknown operation");
    }
 
    header->total_size += index_codec->size;
@@ -3311,7 +3311,7 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
       size += sizeof(rvcn_dec_message_vp9_t);
       break;
    default:
-      unreachable("unsupported codec.");
+      UNREACHABLE("unsupported codec.");
    }
 
    radv_vid_buffer_upload_alloc(cmd_buffer, FB_BUFFER_SIZE, &fb_offset, &fb_ptr);

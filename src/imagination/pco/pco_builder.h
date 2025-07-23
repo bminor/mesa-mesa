@@ -210,7 +210,7 @@ static inline pco_func *pco_cursor_func(pco_cursor cursor)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -238,7 +238,7 @@ static inline pco_cf_node *pco_cursor_cf_node(pco_cursor cursor)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -274,7 +274,7 @@ static inline pco_block *pco_cursor_block(pco_cursor cursor)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -312,7 +312,7 @@ static inline pco_instr *pco_cursor_instr(pco_cursor cursor)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -355,7 +355,7 @@ static inline pco_igrp *pco_cursor_igrp(pco_cursor cursor)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /* Builder functions. */

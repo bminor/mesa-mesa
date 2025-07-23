@@ -137,7 +137,7 @@ translate_tex_wrap(enum pipe_tex_wrap w, bool using_nearest)
 #endif
 
    default:
-      unreachable("Invalid wrap");
+      UNREACHABLE("Invalid wrap");
    }
 }
 
@@ -168,7 +168,7 @@ pan_pipe_to_mipmode(enum pipe_tex_mipfilter f)
       return MALI_MIPMAP_MODE_NEAREST;
 #endif
    default:
-      unreachable("Invalid");
+      UNREACHABLE("Invalid");
    }
 }
 
@@ -1030,7 +1030,7 @@ panfrost_map_constant_buffer_gpu(struct panfrost_batch *batch,
                                      cb->user_buffer + cb->buffer_offset,
                                      cb->buffer_size, 16);
    } else {
-      unreachable("No constant buffer");
+      UNREACHABLE("No constant buffer");
    }
 }
 
@@ -2016,7 +2016,7 @@ pan_modifier_to_attr_type(uint64_t modifier)
    case DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED:
       return MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
    default:
-      unreachable("Invalid modifier for attribute record");
+      UNREACHABLE("Invalid modifier for attribute record");
    }
 }
 
@@ -3942,7 +3942,7 @@ pan_pipe_to_stencil_op(enum pipe_stencil_op in)
    case PIPE_STENCIL_OP_INVERT:
       return MALI_STENCIL_OP_INVERT;
    default:
-      unreachable("Invalid stencil op");
+      UNREACHABLE("Invalid stencil op");
    }
 }
 

@@ -838,7 +838,7 @@ get_reduction_identity(ReduceOp op, unsigned idx)
    case fmax16: return 0xfc00u;                /* negative infinity */
    case fmax32: return 0xff800000u;            /* negative infinity */
    case fmax64: return idx ? 0xfff00000u : 0u; /* negative infinity */
-   default: unreachable("Invalid reduction operation"); break;
+   default: UNREACHABLE("Invalid reduction operation"); break;
    }
    return 0;
 }

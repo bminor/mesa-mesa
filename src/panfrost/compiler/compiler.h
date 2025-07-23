@@ -161,7 +161,7 @@ bi_apply_swizzle(uint32_t value, enum bi_swizzle swz)
 #undef H
 #undef B
 
-   unreachable("Invalid swizzle");
+   UNREACHABLE("Invalid swizzle");
 }
 
 enum bi_index_type {
@@ -913,7 +913,7 @@ bi_block_add_successor(bi_block *block, bi_block *successor)
       return;
    }
 
-   unreachable("Too many successors");
+   UNREACHABLE("Too many successors");
 }
 
 /* Subset of pan_shader_info needed per-variant, in order to support IDVS */
@@ -1245,7 +1245,7 @@ bi_predecessor_index(bi_block *succ, bi_block *pred)
       index++;
    }
 
-   unreachable("Invalid predecessor");
+   UNREACHABLE("Invalid predecessor");
 }
 
 static inline bi_instr *
@@ -1599,7 +1599,7 @@ bi_builder_insert(bi_cursor *cursor, bi_instr *I)
       return;
    }
 
-   unreachable("Invalid cursor option");
+   UNREACHABLE("Invalid cursor option");
 }
 
 bi_instr *bi_csel_from_mux(bi_builder *b, const bi_instr *I, bool must_sign);

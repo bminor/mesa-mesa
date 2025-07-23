@@ -165,7 +165,7 @@ validate_expand_mode(midgard_src_expand_mode expand_mode,
       break;
 
    default:
-      unreachable("Invalid expand mode");
+      UNREACHABLE("Invalid expand mode");
       break;
    }
 }
@@ -250,7 +250,7 @@ print_ldst_read_reg(FILE *fp, unsigned reg)
       fprintf(fp, "0");
       break;
    default:
-      unreachable("Invalid load/store register read");
+      UNREACHABLE("Invalid load/store register read");
    }
 }
 
@@ -274,7 +274,7 @@ print_tex_reg(FILE *fp, unsigned reg, bool is_write)
       fprintf(fp, "%s%d", str, select);
       break;
    default:
-      unreachable("Invalid texture register");
+      UNREACHABLE("Invalid texture register");
    }
 }
 
@@ -353,7 +353,7 @@ bits_for_mode(midgard_reg_mode mode)
    case midgard_reg_mode_64:
       return 64;
    default:
-      unreachable("Invalid reg mode");
+      UNREACHABLE("Invalid reg mode");
       return 0;
    }
 }
@@ -485,7 +485,7 @@ print_vec_swizzle(FILE *fp, unsigned swizzle, midgard_src_expand_mode expand,
       break;
 
    default:
-      unreachable("Invalid expand mode");
+      UNREACHABLE("Invalid expand mode");
       break;
    }
 
@@ -563,7 +563,7 @@ print_vector_constants(FILE *fp, unsigned src_binary,
             c += !upper * 4;
             break;
          default:
-            unreachable("invalid expand mode");
+            UNREACHABLE("invalid expand mode");
             break;
          }
       } else if (bits == 32 && !expands) {
@@ -590,7 +590,7 @@ print_vector_constants(FILE *fp, unsigned src_binary,
             c += !upper * 8;
             break;
          default:
-            unreachable("invalid expand mode");
+            UNREACHABLE("invalid expand mode");
             break;
          }
 
@@ -1280,7 +1280,7 @@ print_varying_parameters(FILE *fp, midgard_load_store_word *word)
       fprintf(fp, ".perspectivew");
       break;
    default:
-      unreachable("invalid varying modifier");
+      UNREACHABLE("invalid varying modifier");
       break;
    }
 }
@@ -1527,7 +1527,7 @@ print_texture_format(FILE *fp, int format)
       DEFINE_CASE(0, "cube");
 
    default:
-      unreachable("Bad format");
+      UNREACHABLE("Bad format");
    }
 }
 

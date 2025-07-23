@@ -104,7 +104,7 @@ radv_shader_stage_init(const VkShaderCreateInfoEXT *sinfo, struct radv_shader_st
       else if (subgroup_size->requiredSubgroupSize == 64)
          out_stage->key.subgroup_required_size = RADV_REQUIRED_WAVE64;
       else
-         unreachable("Unsupported required subgroup size.");
+         UNREACHABLE("Unsupported required subgroup size.");
    }
 
    if (sinfo->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) {

@@ -424,7 +424,7 @@ emit_ps_color_export(nir_builder *b, lower_ps_state *s, unsigned output_index, u
          pack_op = nir_op_pack_snorm_2x16;
          break;
       default:
-         unreachable("unsupported color export format");
+         UNREACHABLE("unsupported color export format");
          break;
       }
 
@@ -637,7 +637,7 @@ export_ps_outputs(nir_builder *b, lower_ps_state *s)
       case BITFIELD_RANGE(0, 2):
          break;
       default:
-         unreachable("unexpected number of color outputs for dual source blending");
+         UNREACHABLE("unexpected number of color outputs for dual source blending");
       }
    }
 

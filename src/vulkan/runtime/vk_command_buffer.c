@@ -221,7 +221,7 @@ vk_shader_stages_from_bind_point(VkPipelineBindPoint pipelineBindPoint)
              VK_SHADER_STAGE_INTERSECTION_BIT_KHR |
              VK_SHADER_STAGE_CALLABLE_BIT_KHR;
    default:
-      unreachable("unknown bind point!");
+      UNREACHABLE("unknown bind point!");
    }
    return 0;
 }

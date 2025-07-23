@@ -143,7 +143,7 @@ sanitize_cf_list(nir_function_impl* impl, struct exec_list* cf_list)
          }
          break;
       }
-      case nir_cf_node_function: unreachable("Invalid cf type");
+      case nir_cf_node_function: UNREACHABLE("Invalid cf type");
       }
    }
 
@@ -726,7 +726,7 @@ setup_isel_context(Program* program, unsigned shader_count, struct nir_shader* c
       case MESA_SHADER_CALLABLE:
       case MESA_SHADER_INTERSECTION:
       case MESA_SHADER_ANY_HIT: sw_stage = SWStage::RT; break;
-      default: unreachable("Shader stage not implemented");
+      default: UNREACHABLE("Shader stage not implemented");
       }
    }
 

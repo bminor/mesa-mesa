@@ -27,7 +27,7 @@ vk_format_for_size(int bs)
    case 16:
       return VK_FORMAT_R32G32B32A32_UINT;
    default:
-      unreachable("Invalid format block size");
+      UNREACHABLE("Invalid format block size");
    }
 }
 
@@ -440,7 +440,7 @@ radv_get_compat_color_ds_format(VkFormat format)
    case VK_FORMAT_R32_UINT:
       return VK_FORMAT_R32_SFLOAT;
    default:
-      unreachable("invalid color format for color to depth/stencil image copy.");
+      UNREACHABLE("invalid color format for color to depth/stencil image copy.");
    }
 }
 

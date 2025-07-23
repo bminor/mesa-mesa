@@ -107,7 +107,7 @@ jump_target_scope_type(nir_jump_type jump_type)
    case nir_jump_break:    return SCOPE_TYPE_LOOP_BREAK;
    case nir_jump_continue: return SCOPE_TYPE_LOOP_CONT;
    default:
-      unreachable("Unknown jump type");
+      UNREACHABLE("Unknown jump type");
    }
 }
 
@@ -223,10 +223,10 @@ parent_scope_will_sync(nir_cf_node *node, struct scope *parent_scope)
       return false;
 
    case SCOPE_TYPE_LOOP_BREAK:
-      unreachable("Loops must have a continue scope");
+      UNREACHABLE("Loops must have a continue scope");
 
    default:
-      unreachable("Unknown scope type");
+      UNREACHABLE("Unknown scope type");
    }
 }
 
@@ -373,7 +373,7 @@ lower_cf_list(nir_builder *b, nir_def *esc_reg, struct scope *parent_scope,
       }
 
       default:
-         unreachable("Unknown CF node type");
+         UNREACHABLE("Unknown CF node type");
       }
    }
 }

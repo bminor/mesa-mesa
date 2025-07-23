@@ -496,7 +496,7 @@ lower_cubemap_to_array_tex(nir_builder *b, nir_tex_instr *tex)
    case nir_texop_txs:
       return lower_cube_txs(b, tex);
    default:
-      unreachable("Unsupported cupe map texture operation");
+      UNREACHABLE("Unsupported cupe map texture operation");
    }
 }
 

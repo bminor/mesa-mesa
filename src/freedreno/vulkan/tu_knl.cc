@@ -147,7 +147,7 @@ tu_sync_cacheline_to_gpu(void const *p __attribute__((unused)))
     * Seems to be illegal to call from userspace.
     */
    //__asm volatile("mcr p15, 0, %0, c7, c10, 1" : : "r" (p) : "memory");
-   unreachable("Cache line clean is unsupported on ARMv7");
+   UNREACHABLE("Cache line clean is unsupported on ARMv7");
 #endif
 }
 
@@ -164,7 +164,7 @@ tu_sync_cacheline_from_gpu(void const *p __attribute__((unused)))
     * Seems to be illegal to call from userspace.
     */
    //__asm volatile("mcr p15, 0, %0, c7, c14, 1" : : "r" (p) : "memory");
-   unreachable("Cache line invalidate is unsupported on ARMv7");
+   UNREACHABLE("Cache line invalidate is unsupported on ARMv7");
 #endif
 }
 

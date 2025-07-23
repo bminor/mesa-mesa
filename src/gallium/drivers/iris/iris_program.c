@@ -288,7 +288,7 @@ iris_apply_brw_prog_data(struct iris_compiled_shader *shader,
       iris_apply_brw_gs_prog_data(shader, brw_gs_prog_data_const(brw));
       break;
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 
    shader->brw_prog_data = brw;
@@ -490,7 +490,7 @@ iris_apply_elk_prog_data(struct iris_compiled_shader *shader,
       iris_apply_elk_gs_prog_data(shader, elk_gs_prog_data_const(elk));
       break;
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 
    shader->elk_prog_data = elk;
@@ -819,7 +819,7 @@ iris_uses_image_atomic(const nir_shader *shader)
             switch (intrin->intrinsic) {
             case nir_intrinsic_image_deref_atomic:
             case nir_intrinsic_image_deref_atomic_swap:
-               unreachable("Should have been lowered in "
+               UNREACHABLE("Should have been lowered in "
                            "iris_lower_storage_image_derefs");
 
             case nir_intrinsic_image_atomic:
@@ -935,7 +935,7 @@ setup_vec4_image_sysval(uint32_t *sysvals, uint32_t idx,
    for (unsigned i = n; i < 4; ++i)
       sysvals[i] = ELK_PARAM_BUILTIN_ZERO;
 #else
-   unreachable("no elk support");
+   UNREACHABLE("no elk support");
 #endif
 }
 
@@ -1636,7 +1636,7 @@ iris_debug_recompile_brw(struct iris_screen *screen,
       old_key.cs = iris_to_brw_cs_key(screen, old_iris_key);
       break;
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 
    brw_debug_key_recompile(c, dbg, info->stage, &old_key.base, key);
@@ -1688,7 +1688,7 @@ iris_debug_recompile_elk(struct iris_screen *screen,
       old_key.cs = iris_to_elk_cs_key(screen, old_iris_key);
       break;
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 
    elk_debug_key_recompile(c, dbg, info->stage, &old_key.base, key);
@@ -1942,7 +1942,7 @@ iris_compile_vs(struct iris_screen *screen,
          iris_apply_elk_prog_data(shader, &elk_prog_data->base.base);
       }
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -2106,7 +2106,7 @@ iris_compile_tcs(struct iris_screen *screen,
          assert(screen->elk);
          nir = elk_nir_create_passthrough_tcs(mem_ctx, screen->elk, &elk_key);
 #else
-         unreachable("no elk support");
+         UNREACHABLE("no elk support");
 #endif
       }
       source_hash = *(uint32_t*)nir->info.source_blake3;
@@ -2168,7 +2168,7 @@ iris_compile_tcs(struct iris_screen *screen,
          iris_apply_elk_prog_data(shader, &elk_prog_data->base.base);
       }
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -2379,7 +2379,7 @@ iris_compile_tes(struct iris_screen *screen,
          iris_apply_elk_prog_data(shader, &elk_prog_data->base.base);
       }
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -2565,7 +2565,7 @@ iris_compile_gs(struct iris_screen *screen,
          iris_apply_elk_prog_data(shader, &elk_prog_data->base.base);
       }
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -2752,7 +2752,7 @@ iris_compile_fs(struct iris_screen *screen,
          iris_apply_elk_prog_data(shader, &elk_prog_data->base);
       }
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -3016,7 +3016,7 @@ iris_compile_cs(struct iris_screen *screen,
 #ifdef INTEL_USE_ELK
       NIR_PASS(_, nir, elk_nir_lower_cs_intrinsics, devinfo, NULL);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
 
    iris_setup_uniforms(devinfo, mem_ctx, nir,
@@ -3077,7 +3077,7 @@ iris_compile_cs(struct iris_screen *screen,
          iris_apply_elk_prog_data(shader, &elk_prog_data->base);
       }
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -3305,7 +3305,7 @@ iris_create_compute_state(struct pipe_context *ctx,
       break;
 
    default:
-      unreachable("Unsupported IR");
+      UNREACHABLE("Unsupported IR");
    }
 
    /* Most of iris doesn't really care about the difference between compute
@@ -3415,7 +3415,7 @@ iris_compile_shader(void *_job, UNUSED void *_gdata, UNUSED int thread_index)
       break;
 
    default:
-      unreachable("Invalid shader stage.");
+      UNREACHABLE("Invalid shader stage.");
    }
 }
 
@@ -3542,7 +3542,7 @@ iris_create_shader_state(struct pipe_context *ctx,
       break;
 
    default:
-      unreachable("Invalid shader stage.");
+      UNREACHABLE("Invalid shader stage.");
    }
 
    if (screen->precompile) {
@@ -3806,7 +3806,7 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
                     .lower_get_size = true,
                  });
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 
@@ -3902,7 +3902,7 @@ iris_get_cs_dispatch_info(const struct intel_device_info *devinfo,
                                       elk_cs_prog_data(shader->elk_prog_data),
                                       block);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 }
@@ -3920,7 +3920,7 @@ iris_cs_push_const_total_size(const struct iris_compiled_shader *shader,
       return elk_cs_push_const_total_size(elk_cs_prog_data(shader->elk_prog_data),
                                           threads);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 }
@@ -3938,7 +3938,7 @@ iris_fs_barycentric_modes(const struct iris_compiled_shader *shader,
       return elk_wm_prog_data_barycentric_modes(elk_wm_prog_data(shader->elk_prog_data),
                                                 pushed_msaa_flags);
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 }
@@ -3959,7 +3959,7 @@ iris_indirect_ubos_use_sampler(struct iris_screen *screen)
       assert(screen->elk);
       return screen->elk->indirect_ubos_use_sampler;
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 }
@@ -4033,7 +4033,7 @@ iris_compiler_init(struct iris_screen *screen)
       screen->elk->shader_perf_log = iris_shader_perf_log;
       screen->elk->supports_shader_constants = true;
 #else
-      unreachable("no elk support");
+      UNREACHABLE("no elk support");
 #endif
    }
 }

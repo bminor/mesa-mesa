@@ -65,11 +65,11 @@ hash_deref(const void *void_deref)
          continue;
 
       default:
-         unreachable("Invalid deref type");
+         UNREACHABLE("Invalid deref type");
       }
    }
 
-   unreachable("We should have hit a variable dereference");
+   UNREACHABLE("We should have hit a variable dereference");
 }
 
 static bool
@@ -93,11 +93,11 @@ derefs_equal(const void *void_a, const void *void_b)
          continue;
 
       default:
-         unreachable("Invalid deref type");
+         UNREACHABLE("Invalid deref type");
       }
    }
 
-   unreachable("We should have hit a variable dereference");
+   UNREACHABLE("We should have hit a variable dereference");
 }
 
 static nir_def *
@@ -274,7 +274,7 @@ lower_locals_to_regs_block(nir_block *block,
       }
 
       case nir_intrinsic_copy_deref:
-         unreachable("There should be no copies whatsoever at this point");
+         UNREACHABLE("There should be no copies whatsoever at this point");
          break;
 
       default:

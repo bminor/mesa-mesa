@@ -2068,7 +2068,7 @@ bi_schedule_block(bi_context *ctx, bi_block *block)
    }
 
    if (incomplete)
-      unreachable("The above instructions failed to schedule.");
+      UNREACHABLE("The above instructions failed to schedule.");
 #endif
 
    bi_free_worklist(st);

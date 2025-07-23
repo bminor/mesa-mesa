@@ -474,7 +474,7 @@ move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_
          break;
       }
       case nir_cf_node_function:
-         unreachable("Invalid cf type");
+         UNREACHABLE("Invalid cf type");
       }
    }
 

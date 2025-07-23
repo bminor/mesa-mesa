@@ -238,7 +238,7 @@ constant_fold_scalar(nir_scalar s, unsigned invocation_id, nir_shader *shader, n
       return true;
    }
 
-   unreachable("unhandled scalar type");
+   UNREACHABLE("unhandled scalar type");
    return false;
 }
 

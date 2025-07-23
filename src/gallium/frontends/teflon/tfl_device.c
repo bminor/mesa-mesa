@@ -89,7 +89,7 @@ create_resource(struct pipe_context *context, TfLiteTensor tensor)
       bytes = 8;
       break;
    default:
-      unreachable("Unsupported TF type");
+      UNREACHABLE("Unsupported TF type");
    }
 
    return pipe_buffer_create_with_data(context, 0, PIPE_USAGE_DEFAULT, size * bytes, tensor.data.data);

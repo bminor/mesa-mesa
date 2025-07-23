@@ -229,7 +229,7 @@ radv_meta_blit2d_normal_dst(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
 
          radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
       } else
-         unreachable("Processing blit2d with multiple aspects.");
+         UNREACHABLE("Processing blit2d with multiple aspects.");
 
       float vertex_push_constants[4] = {
          rect->src_x,
@@ -368,7 +368,7 @@ get_color_pipeline(struct radv_device *device, enum blit2d_src_type src_type, Vk
       name = "meta_blit2d_buffer_fs";
       break;
    default:
-      unreachable("unknown blit src type\n");
+      UNREACHABLE("unknown blit src type\n");
       break;
    }
 
@@ -508,7 +508,7 @@ get_depth_only_pipeline(struct radv_device *device, enum blit2d_src_type src_typ
       name = "meta_blit2d_depth_buffer_fs";
       break;
    default:
-      unreachable("unknown blit src type\n");
+      UNREACHABLE("unknown blit src type\n");
       break;
    }
 
@@ -666,7 +666,7 @@ get_stencil_only_pipeline(struct radv_device *device, enum blit2d_src_type src_t
       name = "meta_blit2d_stencil_buffer_fs";
       break;
    default:
-      unreachable("unknown blit src type\n");
+      UNREACHABLE("unknown blit src type\n");
       break;
    }
 

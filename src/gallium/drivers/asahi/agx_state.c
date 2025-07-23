@@ -365,7 +365,7 @@ agx_translate_polygon_mode(unsigned mode)
    case PIPE_POLYGON_MODE_LINE:
       return AGX_POLYGON_MODE_LINE;
    default:
-      unreachable("Unsupported polygon mode");
+      UNREACHABLE("Unsupported polygon mode");
    }
 }
 
@@ -453,7 +453,7 @@ agx_wrap_from_pipe(enum pipe_tex_wrap in)
    case PIPE_TEX_WRAP_MIRROR_CLAMP_TO_EDGE:
       return AGX_WRAP_MIRRORED_CLAMP_TO_EDGE;
    default:
-      unreachable("Invalid wrap mode");
+      UNREACHABLE("Invalid wrap mode");
    }
 }
 
@@ -469,7 +469,7 @@ agx_mip_filter_from_pipe(enum pipe_tex_mipfilter in)
       return AGX_MIP_FILTER_NONE;
    }
 
-   unreachable("Invalid mip filter");
+   UNREACHABLE("Invalid mip filter");
 }
 
 static const enum agx_compare_func agx_compare_funcs[PIPE_FUNC_ALWAYS + 1] = {
@@ -635,7 +635,7 @@ agx_translate_tex_dim(enum pipe_texture_target dim, unsigned samples)
       return AGX_TEXTURE_DIMENSION_CUBE_ARRAY;
 
    default:
-      unreachable("Unsupported texture dimension");
+      UNREACHABLE("Unsupported texture dimension");
    }
 }
 
@@ -1981,7 +1981,7 @@ agx_create_shader_state(struct pipe_context *pctx,
          }
          break;
       default:
-         unreachable("Unknown shader stage in shader-db precompile");
+         UNREACHABLE("Unknown shader stage in shader-db precompile");
       }
 
       agx_compile_variant(dev, pctx, so, &key);
@@ -3277,7 +3277,7 @@ agx_default_sample_positions(unsigned nr_samples)
    case 4:
       return 0xeaa26e26;
    default:
-      unreachable("Invalid sample count");
+      UNREACHABLE("Invalid sample count");
    }
 }
 
@@ -3742,7 +3742,7 @@ agx_primitive_for_pipe(enum mesa_prim mode)
    case MESA_PRIM_QUAD_STRIP:
       return AGX_PRIMITIVE_QUAD_STRIP;
    default:
-      unreachable("todo: other primitive types");
+      UNREACHABLE("todo: other primitive types");
    }
 }
 
@@ -5471,7 +5471,7 @@ agx_set_global_binding(struct pipe_context *pipe, unsigned first,
       /* we are screwed no matter what */
       if (!util_dynarray_grow(&ctx->global_buffers, *resources,
                               (first + count) - old_size))
-         unreachable("out of memory");
+         UNREACHABLE("out of memory");
 
       for (unsigned i = old_size; i < first + count; i++)
          *util_dynarray_element(&ctx->global_buffers, struct pipe_resource *,

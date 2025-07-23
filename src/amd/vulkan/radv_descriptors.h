@@ -165,7 +165,7 @@ radv_write_image_descriptor(unsigned *dst, unsigned size, VkDescriptorType descr
       memcpy(dst, descriptor, 64);
       break;
    default:
-      unreachable("Invalid size");
+      UNREACHABLE("Invalid size");
    }
 }
 

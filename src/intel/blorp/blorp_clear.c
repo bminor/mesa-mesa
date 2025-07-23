@@ -285,7 +285,7 @@ get_fast_clear_rect(const struct isl_device *dev,
             case  32: ccs_format = ISL_FORMAT_GFX12_CCS_32BPP_Y0;  break;
             case  64: ccs_format = ISL_FORMAT_GFX12_CCS_64BPP_Y0;  break;
             case 128: ccs_format = ISL_FORMAT_GFX12_CCS_128BPP_Y0; break;
-            default:  unreachable("Invalid surface bpb for fast clearing");
+            default:  UNREACHABLE("Invalid surface bpb for fast clearing");
             }
          } else {
             assert(aux_surf->usage == ISL_SURF_USAGE_CCS_BIT);
@@ -378,7 +378,7 @@ get_fast_clear_rect(const struct isl_device *dev,
          x_scaledown = dev->info->ver >= 20 ? 8 : 1;
          break;
       default:
-         unreachable("Unexpected MCS format for fast clear");
+         UNREACHABLE("Unexpected MCS format for fast clear");
       }
       y_scaledown = dev->info->ver >= 20 ? 4 : 2;
       x_align = x_scaledown * 2;
@@ -1557,7 +1557,7 @@ blorp_mcs_ambiguate(struct blorp_batch *batch,
    case 8:  renderable_format = ISL_FORMAT_R8_UINT;     break;
    case 32: renderable_format = ISL_FORMAT_R32_UINT;    break;
    case 64: renderable_format = ISL_FORMAT_R32G32_UINT; break;
-   default: unreachable("Unexpected MCS format size for ambiguate");
+   default: UNREACHABLE("Unexpected MCS format size for ambiguate");
    }
 
    /* From Bspec 57340 (r59562):

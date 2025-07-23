@@ -42,7 +42,7 @@ vc4_utile_width(int cpp)
         case 8:
                 return 2;
         default:
-                unreachable("unknown cpp");
+                UNREACHABLE("unknown cpp");
         }
 }
 
@@ -58,7 +58,7 @@ vc4_utile_height(int cpp)
         case 8:
                 return 4;
         default:
-                unreachable("unknown cpp");
+                UNREACHABLE("unknown cpp");
         }
 }
 

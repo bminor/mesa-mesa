@@ -66,7 +66,7 @@ format_to_ifmt(enum pipe_format format)
    case 32:
       return is_int ? R2D_INT32 : R2D_FLOAT32;
     default:
-      unreachable("bad format");
+      UNREACHABLE("bad format");
    }
 }
 
@@ -1754,7 +1754,7 @@ copy_format(VkFormat vk_format, VkImageAspectFlags aspect_mask)
       case 8: return PIPE_FORMAT_R32G32_UINT;
       case 16:return PIPE_FORMAT_R32G32B32A32_UINT;
       default:
-         unreachable("unhandled format size");
+         UNREACHABLE("unhandled format size");
       }
    }
 
@@ -1855,7 +1855,7 @@ pack_blit_event_clear_value(const VkClearValue *val, enum pipe_format format, ui
       PACK_F(a8_unorm);
       break;
    default:
-      unreachable("unexpected channel size");
+      UNREACHABLE("unexpected channel size");
    }
 #undef PACK_F
 }

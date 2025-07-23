@@ -338,7 +338,7 @@ hk_buffer_addr_format(VkPipelineRobustnessBufferBehaviorEXT robustness)
    case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT:
       return nir_address_format_64bit_bounded_global;
    default:
-      unreachable("Invalid robust buffer access behavior");
+      UNREACHABLE("Invalid robust buffer access behavior");
    }
 }
 

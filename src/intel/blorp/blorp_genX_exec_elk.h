@@ -405,7 +405,7 @@ blorp_emit_input_varying_data(struct blorp_batch *batch,
                         params->dst.clear_color_addr,
                         clear_color_size);
 #else
-      unreachable("MCS partial resolve is not a thing on SNB and earlier");
+      UNREACHABLE("MCS partial resolve is not a thing on SNB and earlier");
 #endif
    }
 }
@@ -909,7 +909,7 @@ blorp_emit_ps_config(struct blorp_batch *batch,
          ps.RenderTargetFastClearEnable = true;
          break;
       default:
-         unreachable("Invalid fast clear op");
+         UNREACHABLE("Invalid fast clear op");
       }
 
       /* The RENDER_SURFACE_STATE page for TGL says:
@@ -987,7 +987,7 @@ blorp_emit_ps_config(struct blorp_batch *batch,
       case ISL_AUX_OP_NONE:
          break;
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
 
       if (prog_data) {
@@ -1057,7 +1057,7 @@ blorp_emit_ps_config(struct blorp_batch *batch,
          ps.RenderTargetFastClearEnable = true;
          break;
       default:
-         unreachable("Invalid fast clear op");
+         UNREACHABLE("Invalid fast clear op");
       }
    }
 
@@ -1080,7 +1080,7 @@ blorp_emit_ps_config(struct blorp_batch *batch,
       case ISL_AUX_OP_NONE:
          break;
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
 
       if (prog_data) {
@@ -1233,7 +1233,7 @@ blorp_emit_depth_stencil_state(struct blorp_batch *batch,
          ds.DepthTestEnable = false;
          break;
       case ISL_AUX_OP_PARTIAL_RESOLVE:
-         unreachable("Invalid HIZ op");
+         UNREACHABLE("Invalid HIZ op");
       }
    }
 
@@ -1520,7 +1520,7 @@ blorp_emit_surface_state(struct blorp_batch *batch,
                            isl_dev->ss.clear_value_size);
       }
 #else
-      unreachable("Fast clears are only supported on gfx7+");
+      UNREACHABLE("Fast clears are only supported on gfx7+");
 #endif
    }
 
@@ -1799,7 +1799,7 @@ blorp_emit_gfx8_hiz_op(struct blorp_batch *batch,
          break;
       case ISL_AUX_OP_PARTIAL_RESOLVE:
       case ISL_AUX_OP_NONE:
-         unreachable("Invalid HIZ op");
+         UNREACHABLE("Invalid HIZ op");
       }
 
       hzp.NumberofMultisamples = ffs(params->num_samples) - 1;
@@ -2053,7 +2053,7 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
 
 #else /* GFX_VER >= 7 */
 
-   unreachable("Compute blorp is not supported on SNB and earlier");
+   UNREACHABLE("Compute blorp is not supported on SNB and earlier");
 
 #endif /* GFX_VER >= 7 */
 

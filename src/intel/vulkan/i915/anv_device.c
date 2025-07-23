@@ -42,7 +42,7 @@ vk_priority_to_i915(VkQueueGlobalPriorityKHR priority)
    case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
       return INTEL_CONTEXT_REALTIME_PRIORITY;
    default:
-      unreachable("Invalid priority");
+      UNREACHABLE("Invalid priority");
    }
 }
 

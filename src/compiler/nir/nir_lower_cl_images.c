@@ -45,7 +45,7 @@ find_identical_inline_sampler(nir_shader *nir,
       exec_list_push_tail(inline_samplers, &var->node);
       return var;
    }
-   unreachable("Should have at least found the input sampler");
+   UNREACHABLE("Should have at least found the input sampler");
 }
 
 static bool

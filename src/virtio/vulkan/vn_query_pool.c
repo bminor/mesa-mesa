@@ -108,7 +108,7 @@ vn_CreateQueryPool(VkDevice device,
       pool->result_array_size = 1;
       break;
    default:
-      unreachable("bad query type");
+      UNREACHABLE("bad query type");
       break;
    }
 

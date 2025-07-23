@@ -464,7 +464,7 @@ fdl_type_from_pipe_target(enum pipe_texture_target target) {
       return FDL_VIEW_TYPE_3D;
    case PIPE_MAX_TEXTURE_TYPES:
    default:
-      unreachable("bad texture type");
+      UNREACHABLE("bad texture type");
    }
 }
 

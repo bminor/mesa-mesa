@@ -314,7 +314,7 @@ opt_cap_bool(uint32_t val)
 {
    if (val == VIRTGPU_CAP_BOOL_TRUE)  return true;
    if (val == VIRTGPU_CAP_BOOL_FALSE) return false;
-   unreachable("invalid val");
+   UNREACHABLE("invalid val");
 }
 
 static bool

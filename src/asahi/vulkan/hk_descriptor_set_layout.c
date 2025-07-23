@@ -83,7 +83,7 @@ hk_descriptor_stride_align_for_type(
       break;
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 
    assert(*stride <= HK_MAX_DESCRIPTOR_SIZE);

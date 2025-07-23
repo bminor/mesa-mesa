@@ -382,7 +382,7 @@ pandecode_abort_on_fault(struct pandecode_context *ctx, uint64_t jc_gpu_va,
       pandecode_abort_on_fault_v9(ctx, jc_gpu_va);
       break;
    default:
-      unreachable("Unsupported architecture");
+      UNREACHABLE("Unsupported architecture");
    }
 
    simple_mtx_unlock(&ctx->lock);
@@ -410,7 +410,7 @@ pandecode_jc(struct pandecode_context *ctx, uint64_t jc_gpu_va, unsigned gpu_id)
       pandecode_jc_v9(ctx, jc_gpu_va, gpu_id);
       break;
    default:
-      unreachable("Unsupported architecture");
+      UNREACHABLE("Unsupported architecture");
    }
 
    simple_mtx_unlock(&ctx->lock);
@@ -433,7 +433,7 @@ pandecode_interpret_cs(struct pandecode_context *ctx, uint64_t queue_gpu_va,
       pandecode_interpret_cs_v13(ctx, queue_gpu_va, size, gpu_id, regs);
       break;
    default:
-      unreachable("Unsupported architecture");
+      UNREACHABLE("Unsupported architecture");
    }
 
    simple_mtx_unlock(&ctx->lock);
@@ -456,7 +456,7 @@ pandecode_cs_binary(struct pandecode_context *ctx, uint64_t bin_gpu_va,
       pandecode_cs_binary_v13(ctx, bin_gpu_va, size, gpu_id);
       break;
    default:
-      unreachable("Unsupported architecture");
+      UNREACHABLE("Unsupported architecture");
    }
 
    simple_mtx_unlock(&ctx->lock);
@@ -479,7 +479,7 @@ pandecode_cs_trace(struct pandecode_context *ctx, uint64_t trace_gpu_va,
       pandecode_cs_trace_v13(ctx, trace_gpu_va, size, gpu_id);
       break;
    default:
-      unreachable("Unsupported architecture");
+      UNREACHABLE("Unsupported architecture");
    }
 
    simple_mtx_unlock(&ctx->lock);

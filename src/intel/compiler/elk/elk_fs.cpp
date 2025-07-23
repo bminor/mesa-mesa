@@ -88,7 +88,7 @@ elk_fs_inst::init(enum elk_opcode opcode, uint8_t exec_size, const elk_fs_reg &d
       break;
    case IMM:
    case UNIFORM:
-      unreachable("Invalid destination register file");
+      UNREACHABLE("Invalid destination register file");
    }
 
    this->writes_accumulator = false;
@@ -529,7 +529,7 @@ elk_fs_reg::is_contiguous() const
       return true;
    }
 
-   unreachable("Invalid register file");
+   UNREACHABLE("Invalid register file");
 }
 
 unsigned
@@ -909,7 +909,7 @@ elk_fs_inst::size_read(int arg) const
    case ATTR:
       return components_read(arg) * src[arg].component_size(exec_size);
    case MRF:
-      unreachable("MRF registers are not allowed as sources");
+      UNREACHABLE("MRF registers are not allowed as sources");
    }
    return 0;
 }
@@ -931,7 +931,7 @@ namespace {
       case ELK_PREDICATE_ALIGN1_ALL16H:   return 16;
       case ELK_PREDICATE_ALIGN1_ANY32H:   return 32;
       case ELK_PREDICATE_ALIGN1_ALL32H:   return 32;
-      default: unreachable("Unsupported predicate");
+      default: UNREACHABLE("Unsupported predicate");
       }
    }
 
@@ -1063,7 +1063,7 @@ elk_fs_inst::implied_mrf_writes() const
    case ELK_SHADER_OPCODE_GFX4_SCRATCH_WRITE:
       return mlen;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -1149,7 +1149,7 @@ elk_barycentric_mode(nir_intrinsic_instr *intr)
       bary = ELK_BARYCENTRIC_PERSPECTIVE_SAMPLE;
       break;
    default:
-      unreachable("invalid intrinsic");
+      UNREACHABLE("invalid intrinsic");
    }
 
    if (mode == INTERP_MODE_NOPERSPECTIVE)
@@ -2126,7 +2126,7 @@ src_as_uint(const elk_fs_reg &src)
       return src.u64;
 
    default:
-      unreachable("Invalid integer type.");
+      UNREACHABLE("Invalid integer type.");
    }
 }
 
@@ -2153,7 +2153,7 @@ elk_imm_for_type(uint64_t value, enum elk_reg_type type)
       return elk_imm_uq(value);
 
    default:
-      unreachable("Invalid integer type.");
+      UNREACHABLE("Invalid integer type.");
    }
 }
 
@@ -2230,7 +2230,7 @@ elk_fs_visitor::opt_algebraic()
             if (inst->dst.type != inst->src[0].type &&
                 inst->dst.type != ELK_REGISTER_TYPE_DF &&
                 inst->src[0].type != ELK_REGISTER_TYPE_F)
-               unreachable("unimplemented: saturate mixed types");
+               UNREACHABLE("unimplemented: saturate mixed types");
 
             if (elk_saturate_immediate(inst->src[0].type,
                                        &inst->src[0].as_elk_reg())) {
@@ -2487,7 +2487,7 @@ elk_fs_visitor::opt_algebraic()
                break;
             default:
                /* Just in case a future platform re-enables B or UB types. */
-               unreachable("Invalid source size.");
+               UNREACHABLE("Invalid source size.");
             }
 
             inst->opcode = ELK_OPCODE_MOV;
@@ -4172,7 +4172,7 @@ elk_fb_write_msg_control(const elk_fs_inst *inst,
       else if (inst->group % 16 == 8)
          mctl = ELK_DATAPORT_RENDER_TARGET_WRITE_SIMD8_DUAL_SOURCE_SUBSPAN23;
       else
-         unreachable("Invalid dual-source FB write instruction group");
+         UNREACHABLE("Invalid dual-source FB write instruction group");
    } else {
       assert(inst->group == 0 || (inst->group == 16 && inst->exec_size == 16));
 
@@ -4181,7 +4181,7 @@ elk_fb_write_msg_control(const elk_fs_inst *inst,
       else if (inst->exec_size == 8)
          mctl = ELK_DATAPORT_RENDER_TARGET_WRITE_SIMD8_SINGLE_SOURCE_SUBSPAN01;
       else
-         unreachable("Invalid FB write execution size");
+         UNREACHABLE("Invalid FB write execution size");
    }
 
    return mctl;
@@ -5427,7 +5427,7 @@ elk_fs_visitor::dump_instruction_to_file(const elk_backend_instruction *be_inst,
       }
       break;
    case IMM:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    if (inst->dst.offset ||

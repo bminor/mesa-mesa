@@ -24,7 +24,7 @@ agx_print_sized(char prefix, unsigned value, enum agx_size size, FILE *fp)
       return;
    }
 
-   unreachable("Invalid size");
+   UNREACHABLE("Invalid size");
 }
 
 static void
@@ -91,7 +91,7 @@ agx_print_index(agx_index index, bool is_float, FILE *fp)
       break;
 
    default:
-      unreachable("Invalid index type");
+      UNREACHABLE("Invalid index type");
    }
 
    if (index.type == AGX_INDEX_NORMAL) {

@@ -136,7 +136,7 @@ bitset_for_interp(struct coefficient_info *info, enum glsl_interp_mode mode)
    case INTERP_MODE_SMOOTH:         return info->smooth;
    case INTERP_MODE_NOPERSPECTIVE:  return info->noperspective;
    case INTERP_MODE_FLAT:           return info->flat;
-   default:                         unreachable("invalid interp mode");
+   default:                         UNREACHABLE("invalid interp mode");
    }
    /* clang-format on */
 }
@@ -313,7 +313,7 @@ agx_get_cf(agx_context *ctx, gl_varying_slot slot, unsigned offset)
       }
    }
 
-   unreachable("all coefficient registers preassigned");
+   UNREACHABLE("all coefficient registers preassigned");
 }
 
 /* Builds a 64-bit hash table key for an index */
@@ -476,7 +476,7 @@ agx_block_add_successor(agx_block *block, agx_block *successor)
       return;
    }
 
-   unreachable("Too many successors");
+   UNREACHABLE("Too many successors");
 }
 
 /*
@@ -563,7 +563,7 @@ agx_format_for_pipe(enum pipe_format format)
    CASE(RGB9E5);
 
 #undef CASE
-   unreachable("Invalid format");
+   UNREACHABLE("Invalid format");
 }
 
 static agx_index
@@ -611,7 +611,7 @@ agx_interp_for_bary(nir_intrinsic_instr *bary, agx_index *sample_index)
       return AGX_INTERPOLATION_SAMPLE;
 
    default:
-      unreachable("should have been lowered");
+      UNREACHABLE("should have been lowered");
    }
 }
 
@@ -878,10 +878,10 @@ agx_tex_dim(enum glsl_sampler_dim dim, bool array)
       return array ? AGX_DIM_CUBE_ARRAY : AGX_DIM_CUBE;
 
    case GLSL_SAMPLER_DIM_BUF:
-      unreachable("Buffer textures should have been lowered");
+      UNREACHABLE("Buffer textures should have been lowered");
 
    default:
-      unreachable("Invalid sampler dim\n");
+      UNREACHABLE("Invalid sampler dim\n");
    }
 }
 
@@ -965,7 +965,7 @@ translate_atomic_opcode(nir_atomic_op op)
    case nir_atomic_op_ixor:    return AGX_ATOMIC_OPC_XOR;
    case nir_atomic_op_xchg:    return AGX_ATOMIC_OPC_XCHG;
    case nir_atomic_op_cmpxchg: return AGX_ATOMIC_OPC_CMPXCHG;
-   default: unreachable("unknown atomic opcode");
+   default: UNREACHABLE("unknown atomic opcode");
    }
    /* clang-format on */
 }
@@ -1022,7 +1022,7 @@ format_for_bitsize(unsigned bitsize)
    case 32:
       return AGX_FORMAT_I32;
    default:
-      unreachable("should've been lowered");
+      UNREACHABLE("should've been lowered");
    }
 }
 
@@ -1311,7 +1311,7 @@ translate_simd_op(nir_op op)
       CASE(UMIN, umin)
       CASE(UMAX, umax)
    default:
-      unreachable("unknown simd op");
+      UNREACHABLE("unknown simd op");
    }
 #undef CASE
 }
@@ -1750,12 +1750,12 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
    case nir_intrinsic_load_barycentric_sample:
    case nir_intrinsic_load_sample_id:
    case nir_intrinsic_load_sample_pos:
-      unreachable("Sample shading should have been lowered");
+      UNREACHABLE("Sample shading should have been lowered");
 
    default:
       fprintf(stderr, "Unhandled intrinsic %s\n",
               nir_intrinsic_infos[instr->intrinsic].name);
-      unreachable("Unhandled intrinsic");
+      UNREACHABLE("Unhandled intrinsic");
    }
 }
 
@@ -2111,7 +2111,7 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
    case nir_op_u2f16:
    case nir_op_u2f32: {
       if (src_sz == 64)
-         unreachable("64-bit conversions unimplemented");
+         UNREACHABLE("64-bit conversions unimplemented");
 
       enum agx_convert mode = (src_sz == 32)   ? AGX_CONVERT_U32_TO_F
                               : (src_sz == 16) ? AGX_CONVERT_U16_TO_F
@@ -2123,7 +2123,7 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
    case nir_op_i2f16:
    case nir_op_i2f32: {
       if (src_sz == 64)
-         unreachable("64-bit conversions unimplemented");
+         UNREACHABLE("64-bit conversions unimplemented");
 
       enum agx_convert mode = (src_sz == 32)   ? AGX_CONVERT_S32_TO_F
                               : (src_sz == 16) ? AGX_CONVERT_S16_TO_F
@@ -2155,11 +2155,11 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
 
    case nir_op_vec8:
    case nir_op_vec16:
-      unreachable("should've been lowered");
+      UNREACHABLE("should've been lowered");
 
    default:
       fprintf(stderr, "Unhandled ALU op %s\n", nir_op_infos[instr->op].name);
-      unreachable("Unhandled ALU instruction");
+      UNREACHABLE("Unhandled ALU instruction");
    }
 }
 
@@ -2192,7 +2192,7 @@ agx_lod_mode_for_nir(nir_texop op, bool biased, bool min_lod, bool lod_is_zero)
       assert(lod_is_zero && "no mipmapping");
       return AGX_LOD_MODE_AUTO_LOD;
    default:
-      unreachable("Unhandled texture op");
+      UNREACHABLE("Unhandled texture op");
    }
 }
 
@@ -2317,7 +2317,7 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
          break;
 
       default:
-         unreachable("Unexpected texture source");
+         UNREACHABLE("Unexpected texture source");
       }
    }
 
@@ -2551,7 +2551,7 @@ agx_emit_instr(agx_builder *b, struct nir_instr *instr)
       break;
 
    default:
-      unreachable("should've been lowered");
+      UNREACHABLE("should've been lowered");
    }
 }
 
@@ -2766,7 +2766,7 @@ emit_cf_list(agx_context *ctx, struct exec_list *list)
          break;
 
       default:
-         unreachable("Unknown control flow");
+         UNREACHABLE("Unknown control flow");
       }
    }
 
@@ -3769,7 +3769,7 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
                              stderr);
          }
 
-         unreachable("Disassembly error hit.");
+         UNREACHABLE("Disassembly error hit.");
       }
 
       if (selftest) {
@@ -3993,7 +3993,7 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
          info->main_offset = offset;
          info->main_size = binary.size - offset;
       } else {
-         unreachable("General functions not yet supported");
+         UNREACHABLE("General functions not yet supported");
       }
    }
 

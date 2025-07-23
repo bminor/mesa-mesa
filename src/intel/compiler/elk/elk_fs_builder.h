@@ -499,7 +499,7 @@ namespace elk {
             }
 
             default:
-               unreachable("Unsupported 64-bit scan op");
+               UNREACHABLE("Unsupported 64-bit scan op");
             }
          } else {
             set_condmod(mod, emit(opcode, right, left, right));

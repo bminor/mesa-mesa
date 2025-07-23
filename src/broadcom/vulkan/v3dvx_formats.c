@@ -517,7 +517,7 @@ v3dX(get_internal_depth_type)(VkFormat format)
    case VK_FORMAT_D24_UNORM_S8_UINT:
       return V3D_INTERNAL_TYPE_DEPTH_24;
    default:
-      unreachable("Invalid depth format");
+      UNREACHABLE("Invalid depth format");
       break;
    }
 }

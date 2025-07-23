@@ -91,7 +91,7 @@ addr_format_for_desc_type(VkDescriptorType desc_type,
       return ctx->ssbo_addr_format;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 }
 
@@ -233,7 +233,7 @@ addr_format_for_type(VkDescriptorType type, const struct lower_desc_ctx *ctx)
       return ctx->ssbo_addr_format;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
       return ~0;
    }
 }
@@ -327,7 +327,7 @@ build_res_index(nir_builder *b, uint32_t set, uint32_t binding,
 #endif
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 }
 
@@ -362,7 +362,7 @@ build_res_reindex(nir_builder *b, nir_def *orig, nir_def *delta,
 #endif
 
    default:
-      unreachable("Unhandled address format");
+      UNREACHABLE("Unhandled address format");
    }
 }
 
@@ -436,7 +436,7 @@ build_buffer_addr_for_res_index(nir_builder *b, nir_def *res_index,
 #endif
 
    default:
-      unreachable("Unhandled address format");
+      UNREACHABLE("Unhandled address format");
    }
 }
 
@@ -468,7 +468,7 @@ lower_res_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
       break;
 
    default:
-      unreachable("Unhandled resource intrinsic");
+      UNREACHABLE("Unhandled resource intrinsic");
    }
 
    assert(intrin->def.bit_size == res->bit_size);
@@ -772,7 +772,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct lower_desc_ctx *ctx)
          res = load_tex_samples(b, deref, dim, ctx);
          break;
       default:
-         unreachable("Unsupported texture query op");
+         UNREACHABLE("Unsupported texture query op");
       }
 
       nir_def_replace(&tex->def, res);
@@ -1116,7 +1116,7 @@ lower_img_intrinsic(nir_builder *b, nir_intrinsic_instr *intr,
          res = load_img_samples(b, deref, dim, ctx);
          break;
       default:
-         unreachable("Unsupported image query op");
+         UNREACHABLE("Unsupported image query op");
       }
 
       nir_def_replace(&intr->def, res);
@@ -1300,7 +1300,7 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
       dummy_sampler_idx = 0;
       break;
    default:
-      unreachable("unexpected stage");
+      UNREACHABLE("unexpected stage");
    }
    desc_info->dummy_sampler_handle = pan_res_handle(0, dummy_sampler_idx);
 

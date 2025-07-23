@@ -67,7 +67,7 @@ slot_to_vert_attrib(gl_varying_slot slot)
    case VARYING_SLOT_TEX0:
       return VERT_ATTRIB_GENERIC0;
    default:
-      unreachable("unhandled slot");
+      UNREACHABLE("unhandled slot");
    }
 }
 

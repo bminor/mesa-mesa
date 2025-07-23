@@ -57,7 +57,7 @@ static enum ROGUE_TEXSTATE_SWIZ pvr_get_hw_swizzle(VkComponentSwizzle comp,
       else
          return ROGUE_TEXSTATE_SWIZ_SRC_ZERO;
    default:
-      unreachable("Unknown enum pipe_swizzle");
+      UNREACHABLE("Unknown enum pipe_swizzle");
    };
 }
 
@@ -125,7 +125,7 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
             return vk_error(device, VK_ERROR_FORMAT_NOT_SUPPORTED);
          }
       } else {
-         unreachable("Unknown memory layout");
+         UNREACHABLE("Unknown memory layout");
       }
 
       /* When sampling from a combined D/S image, the TPU will default to only

@@ -238,7 +238,7 @@ pan_get_default_swizzle(unsigned components)
    case 4:
       return PAN_V6_SWIZZLE(R, G, B, A);
    default:
-      unreachable("Invalid number of components");
+      UNREACHABLE("Invalid number of components");
    }
 }
 

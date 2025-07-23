@@ -346,7 +346,7 @@ vk_cmd_queue_execute(struct vk_cmd_queue *queue,
 #endif // ${c.guard}
 % endif
 % endfor
-      default: unreachable("Unsupported command");
+      default: UNREACHABLE("Unsupported command");
       }
    }
 }

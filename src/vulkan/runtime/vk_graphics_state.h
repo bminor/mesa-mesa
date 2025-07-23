@@ -414,7 +414,7 @@ vk_rasterization_state_depth_clip_enable(const struct vk_rasterization_state *rs
    case VK_MESA_DEPTH_CLIP_ENABLE_TRUE:      return true;
    case VK_MESA_DEPTH_CLIP_ENABLE_NOT_CLAMP: return !rs->depth_clamp_enable;
    }
-   unreachable("Invalid depth clip enable");
+   UNREACHABLE("Invalid depth clip enable");
 }
 
 /***/

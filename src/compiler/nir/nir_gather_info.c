@@ -93,7 +93,7 @@ get_deref_info(nir_shader *shader, nir_variable *var, nir_deref_instr *deref,
              * to direct deref at a later point.
              */
          } else {
-            unreachable("Unsupported deref type");
+            UNREACHABLE("Unsupported deref type");
          }
       }
    }

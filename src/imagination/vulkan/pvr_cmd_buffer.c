@@ -125,7 +125,7 @@ static void pvr_cmd_buffer_free_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
          break;
 
       default:
-         unreachable("Unsupported sub-command type");
+         UNREACHABLE("Unsupported sub-command type");
       }
    }
 
@@ -300,7 +300,7 @@ static void pvr_cmd_buffer_update_barriers(struct pvr_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Unsupported sub-command type");
+      UNREACHABLE("Unsupported sub-command type");
    }
 
    for (uint32_t i = 0; i < ARRAY_SIZE(state->barriers_needed); i++)
@@ -1066,7 +1066,7 @@ pvr_get_render_target(const struct pvr_render_pass *pass,
       break;
 
    default:
-      unreachable("Unsupported sample count");
+      UNREACHABLE("Unsupported sample count");
       break;
    }
 
@@ -1598,7 +1598,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
             break;
 
          default:
-            unreachable("Unsupported depth stencil format");
+            UNREACHABLE("Unsupported depth stencil format");
          }
 
          job->ds.memlayout = ds_image->memlayout;
@@ -2190,7 +2190,7 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
       break;
 
    default:
-      unreachable("Unsupported sub-command type");
+      UNREACHABLE("Unsupported sub-command type");
    }
 
    state->current_sub_cmd = NULL;
@@ -2414,7 +2414,7 @@ VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Unsupported sub-command type");
+      UNREACHABLE("Unsupported sub-command type");
    }
 
    list_addtail(&sub_cmd->link, &cmd_buffer->sub_cmds);
@@ -2443,7 +2443,7 @@ VkResult pvr_cmd_buffer_alloc_mem(struct pvr_cmd_buffer *cmd_buffer,
    else if (heap == cmd_buffer->device->heaps.usc_heap)
       allocator = &cmd_buffer->device->suballoc_usc;
    else
-      unreachable("Unknown heap type");
+      UNREACHABLE("Unknown heap type");
 
    result =
       pvr_bo_suballoc(allocator, size, cache_line_size, false, &suballoc_bo);
@@ -2495,7 +2495,7 @@ void pvr_CmdBindPipeline(VkCommandBuffer commandBuffer,
       break;
 
    default:
-      unreachable("Invalid bind point.");
+      UNREACHABLE("Invalid bind point.");
       break;
    }
 }
@@ -3482,7 +3482,7 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
       }
 
       default:
-         unreachable("Unsupported data section map");
+         UNREACHABLE("Unsupported data section map");
          break;
       }
    }
@@ -3536,7 +3536,7 @@ static VkResult pvr_setup_descriptor_mappings(
       break;
 
    default:
-      unreachable("Unsupported stage.");
+      UNREACHABLE("Unsupported stage.");
       break;
    }
 
@@ -3581,7 +3581,7 @@ static VkResult pvr_setup_descriptor_mappings(
       }
 
       default:
-         unreachable("Unsupported map entry type.");
+         UNREACHABLE("Unsupported map entry type.");
       }
    }
 
@@ -3972,7 +3972,7 @@ static void pvr_cmd_dispatch(
       state->push_constants.dirty_stages &= ~VK_SHADER_STAGE_COMPUTE_BIT;
    }
 
-   unreachable("compute descriptor support");
+   UNREACHABLE("compute descriptor support");
 
    pvr_compute_update_shared(cmd_buffer, sub_cmd);
    pvr_compute_update_kernel(cmd_buffer, sub_cmd, indirect_addr, workgroup_size);
@@ -4892,7 +4892,7 @@ static void pvr_setup_ppp_control(struct pvr_cmd_buffer *const cmd_buffer)
          break;
 
       default:
-         unreachable("Unsupported cull mode!");
+         UNREACHABLE("Unsupported cull mode!");
       }
    }
 
@@ -5720,7 +5720,7 @@ static uint32_t pvr_get_hw_primitive_topology(VkPrimitiveTopology topology)
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
       return ROGUE_VDMCTRL_PRIMITIVE_TOPOLOGY_PATCH_LIST;
    default:
-      unreachable("Undefined primitive topology");
+      UNREACHABLE("Undefined primitive topology");
    }
 }
 
@@ -6364,7 +6364,7 @@ pvr_execute_deferred_cmd_buffer(struct pvr_cmd_buffer *cmd_buffer,
       }
 
       default:
-         unreachable("Invalid deferred control stream command type.");
+         UNREACHABLE("Invalid deferred control stream command type.");
          break;
       }
    }
@@ -6422,7 +6422,7 @@ static VkResult pvr_execute_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("Unsupported sub-command type");
+      UNREACHABLE("Unsupported sub-command type");
    }
 
    return VK_SUCCESS;
@@ -7227,7 +7227,7 @@ void pvr_CmdWriteTimestamp2(VkCommandBuffer commandBuffer,
                             VkQueryPool queryPool,
                             uint32_t query)
 {
-   unreachable("Timestamp queries are not supported.");
+   UNREACHABLE("Timestamp queries are not supported.");
 }
 
 VkResult pvr_EndCommandBuffer(VkCommandBuffer commandBuffer)

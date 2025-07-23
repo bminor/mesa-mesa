@@ -47,7 +47,7 @@ Convert12ToSpecH264Profiles(D3D12_VIDEO_ENCODER_PROFILE_H264 profile12)
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_PROFILE_H264");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_PROFILE_H264");
       } break;
    }
 }

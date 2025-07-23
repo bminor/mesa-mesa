@@ -416,7 +416,7 @@ get_mod_convert_shaders(struct panfrost_context *ctx,
    } else if (drm_is_mtk_tiled(key->mod)) {
       COMPILE_SHADER(mtk_tiled, detile, key);
    } else {
-      unreachable("Unsupported conversion");
+      UNREACHABLE("Unsupported conversion");
    }
 
 #undef COMPILE_SHADER

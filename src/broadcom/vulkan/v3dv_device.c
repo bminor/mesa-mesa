@@ -1601,7 +1601,7 @@ v3dv_physical_device_device_id(const struct v3dv_physical_device *dev)
    case 71:
       return 0x55701C33; /* Broadcom deviceID for 2712 */
    default:
-      unreachable("Unsupported V3D version");
+      UNREACHABLE("Unsupported V3D version");
    }
 }
 

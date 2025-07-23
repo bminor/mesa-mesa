@@ -306,7 +306,7 @@ create_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
                                           sizeof(float));
                break;
             default:
-               unreachable("unexpected varying slot");
+               UNREACHABLE("unexpected varying slot");
             }
          } else {
             switch (desc.sem.location) {
@@ -359,7 +359,7 @@ create_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
          else if (nir->info.stage == MESA_SHADER_GEOMETRY && !desc.is_output)
             num_vertices = mesa_vertices_per_prim(nir->info.gs.input_primitive);
          else
-            unreachable("unexpected shader stage for per-vertex IO");
+            UNREACHABLE("unexpected shader stage for per-vertex IO");
 
          var_type = glsl_array_type(var_type, num_vertices, 0);
       }
@@ -511,7 +511,7 @@ create_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
          var->data.sample = true;
          break;
       default:
-         unreachable("unexpected barycentric intrinsic");
+         UNREACHABLE("unexpected barycentric intrinsic");
       }
 
       if (var->index == VAR_INDEX_INTERP_AT_PIXEL) {
@@ -692,7 +692,7 @@ st_nir_unlower_io_to_vars(nir_shader *nir)
             nir_io_mix_convergent_flat_with_interpolated));
 
    nir_foreach_variable_with_modes(var, nir, nir_var_shader_in | nir_var_shader_out) {
-      unreachable("the shader should have no IO variables");
+      UNREACHABLE("the shader should have no IO variables");
    }
 
    /* Some drivers can't handle holes in driver locations (bases), so

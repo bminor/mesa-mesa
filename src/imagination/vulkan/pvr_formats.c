@@ -453,7 +453,7 @@ uint32_t pvr_get_pbe_accum_format_size_in_bytes(VkFormat vk_format)
       return 4;
 
    default:
-      unreachable("Unknown pbe accum format. Implementation error");
+      UNREACHABLE("Unknown pbe accum format. Implementation error");
    }
 }
 
@@ -577,7 +577,7 @@ void pvr_get_hw_clear_color(
       break;
 
    default:
-      unreachable("Packing not supported for the accum format.");
+      UNREACHABLE("Packing not supported for the accum format.");
       break;
    }
 
@@ -957,7 +957,7 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       break;
 
    default:
-      unreachable("Invalid image type.");
+      UNREACHABLE("Invalid image type.");
    }
 
    /* The spec says maxMipLevels may be 1 when tiling is VK_IMAGE_TILING_LINEAR

@@ -73,7 +73,7 @@ radv_amdgpu_winsys_query_value(struct radeon_winsys *rws, enum radeon_value_id v
       ac_drm_query_sensor_info(ws->dev, AMDGPU_INFO_SENSOR_GFX_MCLK, 4, &retval);
       return retval;
    default:
-      unreachable("invalid query value");
+      UNREACHABLE("invalid query value");
    }
 
    return 0;

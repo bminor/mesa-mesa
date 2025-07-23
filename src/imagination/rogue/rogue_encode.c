@@ -64,7 +64,7 @@ static unsigned rogue_calc_da(const rogue_instr_group *group)
       }
 
    } else {
-      unreachable("Unsupported instruction group ALU.");
+      UNREACHABLE("Unsupported instruction group ALU.");
    }
 
    return da;
@@ -95,7 +95,7 @@ static enum oporg rogue_calc_oporg(uint64_t alu_phases)
    else if (P0 && !P1 && !P2 && !PBE)
       return OPORG_P0;
 
-   unreachable("Invalid ALU phase combination.");
+   UNREACHABLE("Invalid ALU phase combination.");
 }
 
 static enum opcnt rogue_calc_opcnt(uint64_t bitwise_phases)
@@ -153,7 +153,7 @@ static void rogue_encode_instr_group_header(rogue_instr_group *group,
       break;
 
    default:
-      unreachable("Unsupported condition code.");
+      UNREACHABLE("Unsupported condition code.");
    }
 
    h.cc = cc.cc;
@@ -196,13 +196,13 @@ static void rogue_encode_instr_group_header(rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported ctrl op.");
+         UNREACHABLE("Unsupported ctrl op.");
       }
 #undef OM
       break;
 
    default:
-      unreachable("Unsupported instruction group ALU.");
+      UNREACHABLE("Unsupported instruction group ALU.");
    }
 
    if (group->header.alu != ROGUE_ALU_CONTROL) {
@@ -242,7 +242,7 @@ static unsigned rogue_alu_movc_ft(const rogue_ref *ref)
       break;
    }
 
-   unreachable("Invalid source.");
+   UNREACHABLE("Invalid source.");
 }
 
 #define SM(src_mod) ROGUE_ALU_SRC_MOD_##src_mod
@@ -330,7 +330,7 @@ static void rogue_encode_alu_instr(const rogue_alu_instr *alu,
       else if (rogue_alu_op_mod_is_set(alu, OM(LE)))
          tstop._ = TSTOP_LE;
       else
-         unreachable("Invalid comparison test.");
+         UNREACHABLE("Invalid comparison test.");
 
       instr_encoding->alu.tst.tstop_2_0 = tstop._2_0;
 
@@ -366,7 +366,7 @@ static void rogue_encode_alu_instr(const rogue_alu_instr *alu,
          else if (rogue_alu_op_mod_is_set(alu, OM(S32)))
             instr_encoding->alu.tst.type = TSTTYPE_S32;
          else
-            unreachable("Invalid comparison type.");
+            UNREACHABLE("Invalid comparison type.");
       }
       break;
    }
@@ -443,7 +443,7 @@ static void rogue_encode_alu_instr(const rogue_alu_instr *alu,
       break;
 
    default:
-      unreachable("Unsupported alu op.");
+      UNREACHABLE("Unsupported alu op.");
    }
 }
 #undef OM
@@ -662,7 +662,7 @@ static void rogue_encode_backend_instr(const rogue_backend_instr *backend,
          break;
 
       default:
-         unreachable("Unsupported number of channels.");
+         UNREACHABLE("Unsupported number of channels.");
       }
 
       switch (backend->op) {
@@ -679,7 +679,7 @@ static void rogue_encode_backend_instr(const rogue_backend_instr *backend,
          break;
 
       default:
-         unreachable("Unsupported sampler op.");
+         UNREACHABLE("Unsupported sampler op.");
       }
 
       if (instr_size > 2) {
@@ -752,7 +752,7 @@ static void rogue_encode_backend_instr(const rogue_backend_instr *backend,
       break;
 
    default:
-      unreachable("Unsupported backend op.");
+      UNREACHABLE("Unsupported backend op.");
    }
 }
 #undef OM
@@ -800,7 +800,7 @@ static void rogue_encode_ctrl_instr(const rogue_ctrl_instr *ctrl,
    }
 
    default:
-      unreachable("Unsupported ctrl op.");
+      UNREACHABLE("Unsupported ctrl op.");
    }
 }
 #undef OM
@@ -835,7 +835,7 @@ static void rogue_encode_bitwise_instr(const rogue_bitwise_instr *bitwise,
    }
 
    default:
-      unreachable("Invalid bitwise op.");
+      UNREACHABLE("Invalid bitwise op.");
    }
 }
 
@@ -878,7 +878,7 @@ static void rogue_encode_instr_group_instrs(rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported instruction type.");
+         UNREACHABLE("Unsupported instruction type.");
       }
 
       util_dynarray_append_mem(binary, group->size.instrs[p], &instr_encoding);
@@ -921,7 +921,7 @@ static void rogue_encode_source_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("IS0 set to unsupported value.");
+         UNREACHABLE("IS0 set to unsupported value.");
       }
    }
 
@@ -977,7 +977,7 @@ static void rogue_encode_source_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported source/bytes combination.");
+         UNREACHABLE("Unsupported source/bytes combination.");
       }
       break;
 
@@ -1018,7 +1018,7 @@ static void rogue_encode_source_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported source/bytes combination.");
+         UNREACHABLE("Unsupported source/bytes combination.");
       }
       break;
 
@@ -1071,12 +1071,12 @@ static void rogue_encode_source_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported source/bytes combination.");
+         UNREACHABLE("Unsupported source/bytes combination.");
       }
       break;
 
    default:
-      unreachable("Unsupported source/bytes combination.");
+      UNREACHABLE("Unsupported source/bytes combination.");
    }
 }
 
@@ -1115,7 +1115,7 @@ static void rogue_encode_dest_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported dest/bytes combination.");
+         UNREACHABLE("Unsupported dest/bytes combination.");
       }
       break;
    }
@@ -1153,12 +1153,12 @@ static void rogue_encode_dest_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported dest/bytes combination.");
+         UNREACHABLE("Unsupported dest/bytes combination.");
       }
    } break;
 
    default:
-      unreachable("Unsupported dest/bytes combination.");
+      UNREACHABLE("Unsupported dest/bytes combination.");
    }
 }
 
@@ -1177,7 +1177,7 @@ static void rogue_encode_iss_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported setting for IS1.");
+         UNREACHABLE("Unsupported setting for IS1.");
       }
 
    if (rogue_ref_is_io(&io_sel->iss[2]))
@@ -1190,7 +1190,7 @@ static void rogue_encode_iss_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported setting for IS2.");
+         UNREACHABLE("Unsupported setting for IS2.");
       }
 
    if (rogue_ref_is_io(&io_sel->iss[3]))
@@ -1209,7 +1209,7 @@ static void rogue_encode_iss_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported setting for IS3.");
+         UNREACHABLE("Unsupported setting for IS3.");
       }
 
    if (rogue_ref_is_io(&io_sel->iss[4]))
@@ -1228,7 +1228,7 @@ static void rogue_encode_iss_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported setting for IS4.");
+         UNREACHABLE("Unsupported setting for IS4.");
       }
 
    if (rogue_ref_is_io(&io_sel->iss[5]))
@@ -1247,7 +1247,7 @@ static void rogue_encode_iss_map(const rogue_instr_group *group,
          break;
 
       default:
-         unreachable("Unsupported setting for IS5.");
+         UNREACHABLE("Unsupported setting for IS5.");
       }
 }
 
@@ -1309,7 +1309,7 @@ void rogue_encode_shader(rogue_build_ctx *ctx,
                          struct util_dynarray *binary)
 {
    if (!shader->is_grouped)
-      unreachable("Can't encode shader with ungrouped instructions.");
+      UNREACHABLE("Can't encode shader with ungrouped instructions.");
 
    util_dynarray_init(binary, ctx);
 

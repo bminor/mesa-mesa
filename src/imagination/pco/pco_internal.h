@@ -667,7 +667,7 @@ static inline unsigned pco_igrp_variant(const pco_igrp *igrp,
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /* Motions. */
@@ -808,7 +808,7 @@ static inline pco_block *pco_cf_node_first_block(pco_cf_node *cf_node)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -836,7 +836,7 @@ static inline pco_block *pco_cf_node_last_block(pco_cf_node *cf_node)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static inline struct list_head *pco_parent_cf_node_body(pco_cf_node *cf_node)
@@ -859,7 +859,7 @@ static inline struct list_head *pco_parent_cf_node_body(pco_cf_node *cf_node)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -903,7 +903,7 @@ static inline pco_block *pco_next_block(pco_block *block)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -948,7 +948,7 @@ static inline pco_block *pco_prev_block(pco_block *block)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1087,7 +1087,7 @@ static inline pco_instr *pco_igrp_first_instr(pco_igrp *igrp)
       if (igrp->instrs[p])
          return igrp->instrs[p];
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1102,7 +1102,7 @@ static inline pco_instr *pco_igrp_last_instr(pco_igrp *igrp)
       if (igrp->instrs[p])
          return igrp->instrs[p];
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1259,7 +1259,7 @@ static inline enum pco_bits pco_bits(unsigned bits)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /* PCO ref checkers. */
@@ -1430,7 +1430,7 @@ static inline unsigned pco_ref_get_bits(pco_ref ref)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1461,7 +1461,7 @@ static inline uint64_t pco_ref_get_imm(pco_ref ref)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**
@@ -1578,7 +1578,7 @@ static inline enum pco_movw01 pco_ref_get_movw01(pco_ref ref)
       break;
    }
 
-   unreachable("");
+   UNREACHABLE("");
 }
 
 /**

@@ -1849,13 +1849,13 @@ lower_rt_instruction_monolithic(nir_builder *b, nir_instr *instr, void *data)
       return true;
    }
    case nir_intrinsic_rt_resume:
-      unreachable("nir_intrinsic_rt_resume");
+      UNREACHABLE("nir_intrinsic_rt_resume");
    case nir_intrinsic_rt_return_amd:
-      unreachable("nir_intrinsic_rt_return_amd");
+      UNREACHABLE("nir_intrinsic_rt_return_amd");
    case nir_intrinsic_execute_closest_hit_amd:
-      unreachable("nir_intrinsic_execute_closest_hit_amd");
+      UNREACHABLE("nir_intrinsic_execute_closest_hit_amd");
    case nir_intrinsic_execute_miss_amd:
-      unreachable("nir_intrinsic_execute_miss_amd");
+      UNREACHABLE("nir_intrinsic_execute_miss_amd");
    default:
       return false;
    }

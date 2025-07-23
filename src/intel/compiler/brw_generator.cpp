@@ -61,7 +61,7 @@ brw_math_function(enum opcode op)
    case SHADER_OPCODE_INT_REMAINDER:
       return BRW_MATH_FUNCTION_INT_DIV_REMAINDER;
    default:
-      unreachable("not reached: unknown math function");
+      UNREACHABLE("not reached: unknown math function");
    }
 }
 
@@ -85,7 +85,7 @@ normalize_brw_reg_for_encoding(brw_reg *reg)
    case VGRF:
    case ATTR:
    case UNIFORM:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    return brw_reg;
@@ -1209,7 +1209,7 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
       case SHADER_OPCODE_FIND_LIVE_CHANNEL:
       case SHADER_OPCODE_FIND_LAST_LIVE_CHANNEL:
       case SHADER_OPCODE_LOAD_LIVE_CHANNELS:
-         unreachable("Should be lowered by lower_find_live_channel()");
+         UNREACHABLE("Should be lowered by lower_find_live_channel()");
          break;
 
       case FS_OPCODE_LOAD_LIVE_CHANNELS: {
@@ -1337,10 +1337,10 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
          break;
 
       default:
-         unreachable("Unsupported opcode");
+         UNREACHABLE("Unsupported opcode");
 
       case SHADER_OPCODE_LOAD_PAYLOAD:
-         unreachable("Should be lowered by lower_load_payload()");
+         UNREACHABLE("Should be lowered by lower_load_payload()");
       }
       prev_inst = inst;
 

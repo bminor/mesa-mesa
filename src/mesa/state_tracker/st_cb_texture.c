@@ -156,7 +156,7 @@ st_from_pipe_compression_rate(uint32_t rate)
    case 11: return GL_SURFACE_COMPRESSION_FIXED_RATE_11BPC_EXT;
    case 12: return GL_SURFACE_COMPRESSION_FIXED_RATE_12BPC_EXT;
    default:
-      unreachable("Unexpected value in st_from_pipe_compression_rate");
+      UNREACHABLE("Unexpected value in st_from_pipe_compression_rate");
    }
 }
 
@@ -181,7 +181,7 @@ st_gl_compression_rate_to_pipe(GLint rate)
    case GL_SURFACE_COMPRESSION_FIXED_RATE_11BPC_EXT: return 11;
    case GL_SURFACE_COMPRESSION_FIXED_RATE_12BPC_EXT: return 12;
    default:
-      unreachable("Unexpected value in st_gl_compression_rate_to_pipe()");
+      UNREACHABLE("Unexpected value in st_gl_compression_rate_to_pipe()");
    }
 }
 
@@ -799,7 +799,7 @@ st_UnmapTextureImage(struct gl_context *ctx,
                                         transfer->box.height,
                                         texImage->TexFormat);
             } else {
-               unreachable("unexpected format for a compressed format fallback");
+               UNREACHABLE("unexpected format for a compressed format fallback");
             }
 
             /* Compress it to the target format. */
@@ -855,7 +855,7 @@ st_UnmapTextureImage(struct gl_context *ctx,
                                  transfer->box.width, transfer->box.height,
                                  texImage->TexFormat);
             } else {
-               unreachable("unexpected format for a compressed format fallback");
+               UNREACHABLE("unexpected format for a compressed format fallback");
             }
          }
 

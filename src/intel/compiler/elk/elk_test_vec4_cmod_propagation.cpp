@@ -61,37 +61,37 @@ protected:
    /* Dummy implementation for pure virtual methods */
    virtual dst_reg *make_reg_for_system_value(int /* location */)
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    virtual void setup_payload()
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    virtual void emit_prolog()
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    virtual void emit_program_code()
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    virtual void emit_thread_end()
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    virtual void emit_urb_write_header(int /* mrf */)
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    virtual vec4_instruction *emit_urb_write_opcode(bool /* complete */)
    {
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 };
 

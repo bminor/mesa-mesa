@@ -206,7 +206,7 @@ static inline void rogue_print_ref(FILE *fp, const rogue_ref *ref)
       break;
 
    default:
-      unreachable("Unsupported ref type.");
+      UNREACHABLE("Unsupported ref type.");
    }
 }
 
@@ -442,7 +442,7 @@ void rogue_print_instr(FILE *fp, const rogue_instr *instr)
       break;
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
    }
    RESET(fp);
 
@@ -487,7 +487,7 @@ rogue_print_instr_group_io_sel(FILE *fp, const rogue_instr_group_io_sel *io_sel)
       else if (rogue_ref_is_io(&io_sel->srcs[i]))
          rogue_print_io(fp, io_sel->srcs[i].io);
       else
-         unreachable("Unsupported src map.");
+         UNREACHABLE("Unsupported src map.");
    }
    if (present)
       fputs(" ", fp);
@@ -513,7 +513,7 @@ rogue_print_instr_group_io_sel(FILE *fp, const rogue_instr_group_io_sel *io_sel)
       else if (rogue_ref_is_io(&io_sel->iss[i]))
          rogue_print_io(fp, io_sel->iss[i].io);
       else
-         unreachable("Unsupported iss map.");
+         UNREACHABLE("Unsupported iss map.");
    }
    if (present)
       fputs(" ", fp);
@@ -539,7 +539,7 @@ rogue_print_instr_group_io_sel(FILE *fp, const rogue_instr_group_io_sel *io_sel)
       else if (rogue_ref_is_io(&io_sel->dsts[i]))
          rogue_print_io(fp, io_sel->dsts[i].io);
       else
-         unreachable("Unsupported dst map.");
+         UNREACHABLE("Unsupported dst map.");
    }
    if (present)
       fputs(" ", fp);
@@ -569,7 +569,7 @@ rogue_print_instr_group_header(FILE *fp, const rogue_instr_group *group)
       break;
 
    default:
-      unreachable("Unsupported instruction group ALU.");
+      UNREACHABLE("Unsupported instruction group ALU.");
    }
 
    if (group->header.end)

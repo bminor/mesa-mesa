@@ -62,7 +62,7 @@ pan_unpacked_type_for_format(const struct util_format_description *desc)
    int c = util_format_get_first_non_void_channel(desc->format);
 
    if (c == -1)
-      unreachable("Void format not renderable");
+      UNREACHABLE("Void format not renderable");
 
    bool large = (desc->channel[c].size > 16);
    bool large_norm = (desc->channel[c].size > 8);
@@ -80,7 +80,7 @@ pan_unpacked_type_for_format(const struct util_format_description *desc)
    case UTIL_FORMAT_TYPE_FLOAT:
       return large ? nir_type_float32 : nir_type_float16;
    default:
-      unreachable("Format not renderable");
+      UNREACHABLE("Format not renderable");
    }
 }
 
@@ -371,7 +371,7 @@ pan_unpack_pure(nir_builder *b, nir_def *packed, unsigned size, unsigned nr)
    case 8:
       return pan_unpack_pure_8(b, packed, nr);
    default:
-      unreachable("Unrenderable size");
+      UNREACHABLE("Unrenderable size");
    }
 }
 
@@ -418,7 +418,7 @@ pan_unpack(nir_builder *b, const struct util_format_description *desc,
    }
 
    mesa_loge("%s\n", desc->name);
-   unreachable("Unknown format");
+   UNREACHABLE("Unknown format");
 }
 
 static nir_def *pan_pack(nir_builder *b,
@@ -455,7 +455,7 @@ static nir_def *pan_pack(nir_builder *b,
       case 8:
          return pan_pack_pure_8(b, raw, desc->nr_channels);
       default:
-         unreachable("Unrenderable size");
+         UNREACHABLE("Unrenderable size");
       }
    }
 
@@ -489,7 +489,7 @@ static nir_def *pan_pack(nir_builder *b,
    }
 
    mesa_loge("%s\n", desc->name);
-   unreachable("Unknown format");
+   UNREACHABLE("Unknown format");
 }
 
 static void

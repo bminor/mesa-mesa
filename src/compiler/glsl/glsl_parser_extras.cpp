@@ -659,7 +659,7 @@ mesa_stage_to_gl_stage_bit(unsigned stage)
    case MESA_SHADER_COMPUTE:
       return GL_COMPUTE_SHADER_BIT;
    default:
-      unreachable("glsl parser: invalid shader stage");
+      UNREACHABLE("glsl parser: invalid shader stage");
    }
 }
 

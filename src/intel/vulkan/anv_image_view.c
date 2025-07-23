@@ -16,7 +16,7 @@ remap_swizzle(VkComponentSwizzle swizzle,
    case VK_COMPONENT_SWIZZLE_B:     return format_swizzle.b;
    case VK_COMPONENT_SWIZZLE_A:     return format_swizzle.a;
    default:
-      unreachable("Invalid swizzle");
+      UNREACHABLE("Invalid swizzle");
    }
 }
 

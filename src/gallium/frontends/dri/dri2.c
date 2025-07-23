@@ -617,7 +617,7 @@ to_dri_compression_rate(uint32_t rate)
    case 11: return __DRI_FIXED_RATE_COMPRESSION_11BPC;
    case 12: return __DRI_FIXED_RATE_COMPRESSION_12BPC;
    default:
-      unreachable("invalid compression fixed-rate value");
+      UNREACHABLE("invalid compression fixed-rate value");
    }
 }
 
@@ -642,7 +642,7 @@ from_dri_compression_rate(enum __DRIFixedRateCompression rate)
    case __DRI_FIXED_RATE_COMPRESSION_11BPC: return 11;
    case __DRI_FIXED_RATE_COMPRESSION_12BPC: return 12;
    default:
-      unreachable("invalid compression fixed-rate value");
+      UNREACHABLE("invalid compression fixed-rate value");
    }
 }
 

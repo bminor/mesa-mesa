@@ -743,7 +743,7 @@ mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, unsigned byte
       case 4: op = aco_opcode::buffer_load_format_d16_xy; break;
       case 6: op = aco_opcode::buffer_load_format_d16_xyz; break;
       case 8: op = aco_opcode::buffer_load_format_d16_xyzw; break;
-      default: unreachable("invalid buffer load format size"); break;
+      default: UNREACHABLE("invalid buffer load format size"); break;
       }
    } else {
       assert(info.component_size == 4);
@@ -752,7 +752,7 @@ mubuf_load_format_callback(Builder& bld, const LoadEmitInfo& info, unsigned byte
       case 8: op = aco_opcode::buffer_load_format_xy; break;
       case 12: op = aco_opcode::buffer_load_format_xyz; break;
       case 16: op = aco_opcode::buffer_load_format_xyzw; break;
-      default: unreachable("invalid buffer load format size"); break;
+      default: UNREACHABLE("invalid buffer load format size"); break;
       }
    }
 
@@ -1289,7 +1289,7 @@ get_buffer_store_op(unsigned bytes)
    case 12: return aco_opcode::buffer_store_dwordx3;
    case 16: return aco_opcode::buffer_store_dwordx4;
    }
-   unreachable("Unexpected store size");
+   UNREACHABLE("Unexpected store size");
    return aco_opcode::num_opcodes;
 }
 
@@ -1366,7 +1366,7 @@ resolve_excess_vmem_const_offset(Builder& bld, Temp& voffset, unsigned const_off
       else if (likely(voffset.regClass() == v1))
          voffset = bld.vadd32(bld.def(v1), Operand(voffset), Operand::c32(excess_const_offset));
       else
-         unreachable("Unsupported register class of voffset");
+         UNREACHABLE("Unsupported register class of voffset");
    }
 
    return const_offset;
@@ -1476,7 +1476,7 @@ visit_store_output(isel_context* ctx, nir_intrinsic_instr* instr)
          abort();
       }
    } else {
-      unreachable("Shader stage not implemented");
+      UNREACHABLE("Shader stage not implemented");
    }
 }
 
@@ -1660,7 +1660,7 @@ visit_load_tcs_per_vertex_input(isel_context* ctx, nir_intrinsic_instr* instr)
    if (load_input_from_temps(ctx, instr, dst))
       return;
 
-   unreachable("LDS-based TCS input should have been lowered in NIR.");
+   UNREACHABLE("LDS-based TCS input should have been lowered in NIR.");
 }
 
 void
@@ -1668,7 +1668,7 @@ visit_load_per_vertex_input(isel_context* ctx, nir_intrinsic_instr* instr)
 {
    switch (ctx->shader->info.stage) {
    case MESA_SHADER_TESS_CTRL: visit_load_tcs_per_vertex_input(ctx, instr); break;
-   default: unreachable("Unimplemented shader stage");
+   default: UNREACHABLE("Unimplemented shader stage");
    }
 }
 
@@ -2052,7 +2052,7 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
          case 2: opcode = aco_opcode::buffer_load_format_xy; break;
          case 3: opcode = aco_opcode::buffer_load_format_xyz; break;
          case 4: opcode = aco_opcode::buffer_load_format_xyzw; break;
-         default: unreachable(">4 channel buffer image load");
+         default: UNREACHABLE(">4 channel buffer image load");
          }
       } else {
          switch (util_bitcount(dmask)) {
@@ -2060,7 +2060,7 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
          case 2: opcode = aco_opcode::buffer_load_format_d16_xy; break;
          case 3: opcode = aco_opcode::buffer_load_format_d16_xyz; break;
          case 4: opcode = aco_opcode::buffer_load_format_d16_xyzw; break;
-         default: unreachable(">4 channel buffer image load");
+         default: UNREACHABLE(">4 channel buffer image load");
          }
       }
       aco_ptr<Instruction> load{create_instruction(opcode, Format::MUBUF, 3 + is_sparse, 1)};
@@ -2195,7 +2195,7 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
          case 0x3: opcode = aco_opcode::buffer_store_format_xy; break;
          case 0x7: opcode = aco_opcode::buffer_store_format_xyz; break;
          case 0xf: opcode = aco_opcode::buffer_store_format_xyzw; break;
-         default: unreachable(">4 channel buffer image store");
+         default: UNREACHABLE(">4 channel buffer image store");
          }
       } else {
          switch (dmask) {
@@ -2203,7 +2203,7 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
          case 0x3: opcode = aco_opcode::buffer_store_format_d16_xy; break;
          case 0x7: opcode = aco_opcode::buffer_store_format_d16_xyz; break;
          case 0xf: opcode = aco_opcode::buffer_store_format_d16_xyzw; break;
-         default: unreachable(">4 channel buffer image store");
+         default: UNREACHABLE(">4 channel buffer image store");
          }
       }
       aco_ptr<Instruction> store{create_instruction(opcode, Format::MUBUF, 4, 0)};
@@ -2323,7 +2323,7 @@ translate_buffer_image_atomic_op(const nir_atomic_op op, aco_opcode* buf_op, aco
       *buf_op64 = aco_opcode::buffer_atomic_fmax_x2;
       *image_op = aco_opcode::image_atomic_fmax;
       break;
-   default: unreachable("unsupported atomic operation");
+   default: UNREACHABLE("unsupported atomic operation");
    }
 }
 
@@ -2611,7 +2611,7 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
          case 16:
             op = global ? aco_opcode::global_store_dwordx4 : aco_opcode::flat_store_dwordx4;
             break;
-         default: unreachable("store_global not implemented for this size.");
+         default: UNREACHABLE("store_global not implemented for this size.");
          }
 
          aco_ptr<Instruction> flat{create_instruction(op, format, 3, 0)};
@@ -2745,7 +2745,7 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
          op32 = aco_opcode::num_opcodes;
          op64 = aco_opcode::global_atomic_ordered_add_b64;
          break;
-      default: unreachable("unsupported atomic operation");
+      default: UNREACHABLE("unsupported atomic operation");
       }
 
       aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
@@ -3020,7 +3020,7 @@ translate_nir_scope(mesa_scope scope)
    case SCOPE_DEVICE: return scope_device;
    case SCOPE_SHADER_CALL: return scope_invocation;
    }
-   unreachable("invalid scope");
+   UNREACHABLE("invalid scope");
 }
 
 void
@@ -3199,7 +3199,7 @@ visit_shared_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       op64 = aco_opcode::ds_max_f64;
       op64_rtn = aco_opcode::ds_max_rtn_f64;
       break;
-   default: unreachable("Unhandled shared atomic intrinsic");
+   default: UNREACHABLE("Unhandled shared atomic intrinsic");
    }
 
    bool return_previous = !nir_def_is_unused(&instr->def);
@@ -3251,7 +3251,7 @@ visit_shared_append(isel_context* ctx, nir_intrinsic_instr* instr)
    switch (instr->intrinsic) {
    case nir_intrinsic_shared_append_amd: op = aco_opcode::ds_append; break;
    case nir_intrinsic_shared_consume_amd: op = aco_opcode::ds_consume; break;
-   default: unreachable("not shared_append/consume");
+   default: UNREACHABLE("not shared_append/consume");
    }
 
    Temp tmp = bld.tmp(v1);
@@ -3423,7 +3423,7 @@ visit_store_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
          case 8: op = aco_opcode::scratch_store_dwordx2; break;
          case 12: op = aco_opcode::scratch_store_dwordx3; break;
          case 16: op = aco_opcode::scratch_store_dwordx4; break;
-         default: unreachable("Unexpected store size");
+         default: UNREACHABLE("Unexpected store size");
          }
 
          uint32_t const_offset = base_const_offset + offsets[i];
@@ -3483,7 +3483,7 @@ get_reduce_op(nir_op op, unsigned bit_size)
       CASEF(fmul)
       CASEF(fmin)
       CASEF(fmax)
-   default: unreachable("unknown reduction op");
+   default: UNREACHABLE("unknown reduction op");
 #undef CASEI
 #undef CASEF
    }
@@ -3741,7 +3741,7 @@ inclusive_scan_to_exclusive(isel_context* ctx, ReduceOp op, Definition dst, Temp
    case ixor8:
    case ixor16:
    case ixor32: return bld.vop2(aco_opcode::v_xor_b32, dst, scan, src);
-   default: unreachable("Unsupported op");
+   default: UNREACHABLE("Unsupported op");
    }
 }
 
@@ -3862,22 +3862,22 @@ visit_cmat_muladd(isel_context* ctx, nir_intrinsic_instr* instr)
       switch (type_b) {
       case GLSL_TYPE_FLOAT_E4M3FN: opcode = aco_opcode::v_wmma_f32_16x16x16_fp8_fp8; break;
       case GLSL_TYPE_FLOAT_E5M2: opcode = aco_opcode::v_wmma_f32_16x16x16_fp8_bf8; break;
-      default: unreachable("invalid cmat_muladd_amd type");
+      default: UNREACHABLE("invalid cmat_muladd_amd type");
       }
       break;
    case GLSL_TYPE_FLOAT_E5M2:
       switch (type_b) {
       case GLSL_TYPE_FLOAT_E4M3FN: opcode = aco_opcode::v_wmma_f32_16x16x16_bf8_fp8; break;
       case GLSL_TYPE_FLOAT_E5M2: opcode = aco_opcode::v_wmma_f32_16x16x16_bf8_bf8; break;
-      default: unreachable("invalid cmat_muladd_amd type");
+      default: UNREACHABLE("invalid cmat_muladd_amd type");
       }
       break;
    }
-   default: unreachable("invalid cmat_muladd_amd type");
+   default: UNREACHABLE("invalid cmat_muladd_amd type");
    }
 
    if (opcode == aco_opcode::num_opcodes)
-      unreachable("visit_cmat_muladd: invalid bit size combination");
+      UNREACHABLE("visit_cmat_muladd: invalid bit size combination");
 
    Builder bld(ctx->program, ctx->block);
 
@@ -4041,7 +4041,7 @@ ds_bvh_stack_offset1_gfx11(unsigned stack_size)
    case 16: return 0x10;
    case 32: return 0x20;
    case 64: return 0x30;
-   default: unreachable("invalid stack size");
+   default: UNREACHABLE("invalid stack size");
    }
 }
 
@@ -4563,7 +4563,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       case nir_intrinsic_reduce: aco_op = aco_opcode::p_reduce; break;
       case nir_intrinsic_inclusive_scan: aco_op = aco_opcode::p_inclusive_scan; break;
       case nir_intrinsic_exclusive_scan: aco_op = aco_opcode::p_exclusive_scan; break;
-      default: unreachable("unknown reduce intrinsic");
+      default: UNREACHABLE("unknown reduce intrinsic");
       }
 
       /* Avoid whole wave shift. */
@@ -5156,7 +5156,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       switch (instr->num_components) {
       case 4: emit_ds_bvh_stack_push4_pop1_rtn(ctx, instr, bld); break;
       case 8: emit_ds_bvh_stack_push8_pop1_rtn(ctx, instr, bld); break;
-      default: unreachable("Invalid BVH stack component count!");
+      default: UNREACHABLE("Invalid BVH stack component count!");
       }
       break;
    }

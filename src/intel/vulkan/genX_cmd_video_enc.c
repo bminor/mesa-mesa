@@ -2435,7 +2435,7 @@ handle_inline_query_end(struct anv_cmd_buffer *cmd_buffer,
    } else if (pool->codec & VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
       reg_addr = HCP_BITSTREAM_BYTECOUNT_FRAME_REG;
    } else {
-      unreachable("Invalid codec operation");
+      UNREACHABLE("Invalid codec operation");
    }
 
    mi_store(&b, mi_mem64(anv_address_add(query_addr, 8)), mi_reg32(reg_addr));

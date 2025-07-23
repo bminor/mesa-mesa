@@ -118,7 +118,7 @@ get_loop_instr_count(struct exec_list *cf_list)
          break;
       }
       default:
-         unreachable("Invalid CF node type");
+         UNREACHABLE("Invalid CF node type");
       }
    }
 
@@ -157,7 +157,7 @@ gcm_build_block_info(struct exec_list *cf_list, struct gcm_state *state,
          break;
       }
       default:
-         unreachable("Invalid CF node type");
+         UNREACHABLE("Invalid CF node type");
       }
    }
 }
@@ -378,7 +378,7 @@ gcm_pin_instructions(nir_function_impl *impl, struct gcm_state *state)
             break;
 
          default:
-            unreachable("Invalid instruction type in GCM");
+            UNREACHABLE("Invalid instruction type in GCM");
          }
 
          if (!(instr->pass_flags & GCM_INSTR_PLACED)) {

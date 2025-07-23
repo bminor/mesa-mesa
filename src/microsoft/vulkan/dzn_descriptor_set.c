@@ -80,7 +80,7 @@ desc_type_to_range_type(VkDescriptorType in, bool writeable)
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
       return writeable ? D3D12_DESCRIPTOR_RANGE_TYPE_UAV : D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
    default:
-      unreachable("Unsupported desc type");
+      UNREACHABLE("Unsupported desc type");
    }
 }
 
@@ -1120,7 +1120,7 @@ dzn_bindless_descriptor_set_write_image_view_desc(volatile struct dxil_spirv_bin
       map[desc_offset].texture_idx = iview->srv_bindless_slot;
       break;
    default:
-      unreachable("Unexpected descriptor type");
+      UNREACHABLE("Unexpected descriptor type");
    }
 }
 
@@ -1138,7 +1138,7 @@ dzn_bindless_descriptor_set_write_buffer_view_desc(volatile struct dxil_spirv_bi
       map[desc_offset].texture_idx = bview->uav_bindless_slot;
       break;
    default:
-      unreachable("Unexpected descriptor type");
+      UNREACHABLE("Unexpected descriptor type");
    }
 }
 
@@ -1277,7 +1277,7 @@ dzn_buffer_get_bindless_buffer_descriptor(struct dzn_device *device,
       slot = bdesc->buffer->uav_bindless_slot;
       break;
    default:
-      unreachable("Unexpected descriptor type");
+      UNREACHABLE("Unexpected descriptor type");
    }
 
    struct dzn_buffer_desc local_desc;
@@ -1794,7 +1794,7 @@ dzn_descriptor_pool_create(struct dzn_device *device,
          case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
             break;
          default:
-            unreachable("Unsupported desc type");
+            UNREACHABLE("Unsupported desc type");
          }
       }
    }
@@ -2231,7 +2231,7 @@ dzn_descriptor_set_write(struct dzn_device *device,
       break;
 
    default:
-      unreachable("invalid descriptor type");
+      UNREACHABLE("invalid descriptor type");
       break;
    }
 
@@ -2613,7 +2613,7 @@ dzn_UpdateDescriptorSetWithTemplate(VkDevice _device,
          break;
 
       default:
-         unreachable("invalid descriptor type");
+         UNREACHABLE("invalid descriptor type");
       }
    }
 }

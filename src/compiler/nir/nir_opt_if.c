@@ -49,7 +49,7 @@ find_continue_block(nir_loop *loop)
          return (nir_block *)pred_entry->key;
    }
 
-   unreachable("Continue block not found!");
+   UNREACHABLE("Continue block not found!");
 }
 
 /**
@@ -1354,7 +1354,7 @@ opt_if_cf_list(nir_builder *b, struct exec_list *cf_list,
       }
 
       case nir_cf_node_function:
-         unreachable("Invalid cf type");
+         UNREACHABLE("Invalid cf type");
       }
    }
 
@@ -1390,7 +1390,7 @@ opt_if_regs_cf_list(struct exec_list *cf_list)
       }
 
       case nir_cf_node_function:
-         unreachable("Invalid cf type");
+         UNREACHABLE("Invalid cf type");
       }
    }
 
@@ -1430,7 +1430,7 @@ opt_if_safe_cf_list(nir_builder *b, struct exec_list *cf_list, nir_opt_if_option
       }
 
       case nir_cf_node_function:
-         unreachable("Invalid cf type");
+         UNREACHABLE("Invalid cf type");
       }
    }
 

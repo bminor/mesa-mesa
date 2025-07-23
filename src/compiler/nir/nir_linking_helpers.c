@@ -1227,7 +1227,7 @@ nir_clone_deref_instr(nir_builder *b, nir_variable *var,
    case nir_deref_type_struct:
       return nir_build_deref_struct(b, parent, deref->strct.index);
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
       return NULL;
    }
 }

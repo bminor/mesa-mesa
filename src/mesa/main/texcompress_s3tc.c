@@ -426,6 +426,6 @@ _mesa_unpack_s3tc(uint8_t *dst_row,
       break;
 
    default:
-      unreachable("unexpected format");
+      UNREACHABLE("unexpected format");
    }
 }

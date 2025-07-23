@@ -78,7 +78,7 @@ pan_mod_get_handler(unsigned arch, uint64_t modifier)
    case 13:
       return pan_mod_get_handler_v13(modifier);
    default:
-      unreachable("Unsupported arch");
+      UNREACHABLE("Unsupported arch");
    }
 }
 #endif

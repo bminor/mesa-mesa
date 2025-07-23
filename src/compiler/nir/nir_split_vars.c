@@ -326,7 +326,7 @@ split_struct_derefs_impl(nir_function_impl *impl,
                break;
 
             default:
-               unreachable("Invalid deref type in path");
+               UNREACHABLE("Invalid deref type in path");
             }
          }
 

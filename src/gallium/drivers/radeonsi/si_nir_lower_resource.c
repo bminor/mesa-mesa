@@ -424,7 +424,7 @@ static nir_def *load_sampler_desc(nir_builder *b, nir_def *list, nir_def *index,
       num_channels = 4;
       break;
    default:
-      unreachable("invalid desc type");
+      UNREACHABLE("invalid desc type");
       break;
    }
 

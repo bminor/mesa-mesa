@@ -243,7 +243,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
          break;
       default:
          DBG("poperation->type %d\n", poperation->type);
-         unreachable("Unsupported ML operation type");
+         UNREACHABLE("Unsupported ML operation type");
       }
    }
 
@@ -352,7 +352,7 @@ rkt_ml_subgraph_create(struct pipe_context *pcontext,
       }
       default:
          DBG("poperation->type %d\n", poperations[i].type);
-         unreachable("Unsupported ML operation type");
+         UNREACHABLE("Unsupported ML operation type");
       }
    }
 

@@ -399,7 +399,7 @@ haiku_initialize(_EGLDisplay *disp)
       ret = haiku_initialize_impl(disp, disp->PlatformDisplay);
       break;
    default:
-      unreachable("Callers ensure we cannot get here.");
+      UNREACHABLE("Callers ensure we cannot get here.");
       return EGL_FALSE;
    }
 

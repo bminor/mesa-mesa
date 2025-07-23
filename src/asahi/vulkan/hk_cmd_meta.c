@@ -240,7 +240,7 @@ aspect_format(VkFormat fmt, VkImageAspectFlags aspect)
       case VK_IMAGE_ASPECT_PLANE_2_BIT:
          return ycbcr_info->planes[2].format;
       default:
-         unreachable("invalid ycbcr aspect");
+         UNREACHABLE("invalid ycbcr aspect");
       }
    }
 
@@ -377,7 +377,7 @@ is_format_native(enum pipe_format format)
    case PIPE_FORMAT_B5G5R5A1_UNORM:
       return false;
    default:
-      unreachable("expected canonical");
+      UNREACHABLE("expected canonical");
    }
 }
 
@@ -1319,7 +1319,7 @@ hk_meta_copy_get_image_properties(struct hk_image *img)
          props.depth.component_mask = BITFIELD_BIT(0);
          break;
       default:
-         unreachable("Invalid ZS format");
+         UNREACHABLE("Invalid ZS format");
       }
    }
 

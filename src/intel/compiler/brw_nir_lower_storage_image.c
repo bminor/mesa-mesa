@@ -135,7 +135,7 @@ convert_color_for_load(nir_builder *b, const struct intel_device_info *devinfo,
       break;
 
    default:
-      unreachable("Invalid image channel type");
+      UNREACHABLE("Invalid image channel type");
    }
 
 expand_vec:
@@ -346,7 +346,7 @@ convert_color_for_store(nir_builder *b, const struct intel_device_info *devinfo,
       break;
 
    default:
-      unreachable("Invalid image channel type");
+      UNREACHABLE("Invalid image channel type");
    }
 
    if (image.bits[0] < 32 &&

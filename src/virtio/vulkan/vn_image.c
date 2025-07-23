@@ -874,7 +874,7 @@ vn_image_get_aspect(struct vn_image *img, VkImageAspectFlags aspect)
    default:
       break;
    }
-   unreachable("unexpected aspect");
+   UNREACHABLE("unexpected aspect");
 }
 
 void

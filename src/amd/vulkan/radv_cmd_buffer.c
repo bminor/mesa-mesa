@@ -1258,7 +1258,7 @@ radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
       radeon_emit(sample_locs_pixel[3][1]);
       break;
    default:
-      unreachable("invalid number of samples");
+      UNREACHABLE("invalid number of samples");
    }
 
    if (pdev->info.gfx_level >= GFX12) {
@@ -3012,7 +3012,7 @@ radv_emit_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
          radv_emit_compute_shader(pdev, cmd_buffer->gang.cs, cmd_buffer->state.shaders[MESA_SHADER_TASK]);
          break;
       default:
-         unreachable("invalid bind stage");
+         UNREACHABLE("invalid bind stage");
       }
    }
 
@@ -3155,7 +3155,7 @@ radv_get_depth_clamp_mode(struct radv_cmd_buffer *cmd_buffer)
       mode = RADV_DEPTH_CLAMP_MODE_USER_DEFINED;
       break;
    default:
-      unreachable("invalid depth clamp mode\n");
+      UNREACHABLE("invalid depth clamp mode\n");
    }
 
    if (!d->vk.rs.depth_clamp_enable) {
@@ -3513,7 +3513,7 @@ radv_get_primitive_reset_index(const struct radv_cmd_buffer *cmd_buffer)
    case V_028A7C_VGT_INDEX_32:
       return 0xffffffffu;
    default:
-      unreachable("invalid index type");
+      UNREACHABLE("invalid index type");
    }
 }
 
@@ -5213,7 +5213,7 @@ radv_emit_tess_domain_origin(struct radv_cmd_buffer *cmd_buffer)
       type = V_028B6C_TESS_ISOLINE;
       break;
    default:
-      unreachable("Invalid tess primitive type");
+      UNREACHABLE("Invalid tess primitive type");
    }
 
    switch (tes->info.tes.spacing) {
@@ -5227,7 +5227,7 @@ radv_emit_tess_domain_origin(struct radv_cmd_buffer *cmd_buffer)
       partitioning = V_028B6C_PART_FRAC_EVEN;
       break;
    default:
-      unreachable("Invalid tess spacing type");
+      UNREACHABLE("Invalid tess spacing type");
    }
 
    if (tes->info.tes.point_mode) {
@@ -5672,7 +5672,7 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
       dirty_stages = VK_SHADER_STAGE_COMPUTE_BIT;
       break;
    default:
-      unreachable("Unhandled bind point");
+      UNREACHABLE("Unhandled bind point");
    }
 
    if (internal_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
@@ -7023,7 +7023,7 @@ vk_to_index_type(VkIndexType type)
    case VK_INDEX_TYPE_UINT32:
       return V_028A7C_VGT_INDEX_32;
    default:
-      unreachable("invalid index type");
+      UNREACHABLE("invalid index type");
    }
 }
 
@@ -7039,7 +7039,7 @@ radv_get_vgt_index_size(uint32_t type)
    case V_028A7C_VGT_INDEX_32:
       return 4;
    default:
-      unreachable("invalid index type");
+      UNREACHABLE("invalid index type");
    }
 }
 
@@ -7726,7 +7726,7 @@ radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader,
       /* no-op */
       break;
    default:
-      unreachable("invalid shader stage");
+      UNREACHABLE("invalid shader stage");
    }
 
    cmd_buffer->state.shaders[stage] = shader;
@@ -14498,63 +14498,63 @@ radv_CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer, VkCoverageModulationModeNV coverageModulationMode)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageModulationTableEnable)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
                                      const float *pCoverageModulationTable)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer, VkBool32 representativeFragmentTestEnable)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                              const VkViewportSwizzleNV *pViewportSwizzles)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable)
 {
-   unreachable("Not supported by RADV.");
+   UNREACHABLE("Not supported by RADV.");
 }
 
 VKAPI_ATTR void VKAPI_CALL

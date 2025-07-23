@@ -112,7 +112,7 @@ static inline enum reg_bank rogue_reg_bank_encoding(enum rogue_reg_class class)
       return BANK_VTXIN;
 
    default:
-      unreachable("Unsupported register class.");
+      UNREACHABLE("Unsupported register class.");
    }
 }
 
@@ -833,7 +833,7 @@ static inline enum rogue_reg_class rogue_ref_get_reg_class(const rogue_ref *ref)
       return ref->regarray->regs[0]->class;
    else if (rogue_ref_is_reg(ref))
       return ref->reg->class;
-   unreachable("Ref is not a reg/regarray.");
+   UNREACHABLE("Ref is not a reg/regarray.");
 }
 
 static inline unsigned rogue_ref_get_reg_index(const rogue_ref *ref)
@@ -842,14 +842,14 @@ static inline unsigned rogue_ref_get_reg_index(const rogue_ref *ref)
       return ref->regarray->regs[0]->index;
    else if (rogue_ref_is_reg(ref))
       return ref->reg->index;
-   unreachable("Ref is not a reg/regarray.");
+   UNREACHABLE("Ref is not a reg/regarray.");
 }
 
 static inline unsigned rogue_ref_get_regarray_size(const rogue_ref *ref)
 {
    if (rogue_ref_is_regarray(ref))
       return ref->regarray->size;
-   unreachable("Ref is not a regarray.");
+   UNREACHABLE("Ref is not a regarray.");
 }
 
 #define ROGUE_INTERNAL0_OFFSET 36
@@ -1717,7 +1717,7 @@ static inline enum rogue_io rogue_instr_src_io_src(const rogue_instr *instr,
    }
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
       break;
    }
 
@@ -1741,7 +1741,7 @@ rogue_instr_group_io_sel_ref(rogue_instr_group_io_sel *map, enum rogue_io io)
       return &map->dsts[io - ROGUE_IO_W0];
    else if (rogue_io_is_iss(io))
       return &map->iss[io - ROGUE_IO_IS0];
-   unreachable("Unsupported io.");
+   UNREACHABLE("Unsupported io.");
 }
 
 /** Rogue instruction group. */
@@ -2321,7 +2321,7 @@ static inline bool rogue_dst_reg_replace(rogue_reg_write *write,
       break;
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
       return false;
    }
 
@@ -2358,7 +2358,7 @@ static inline bool rogue_src_reg_replace(rogue_reg_use *use, rogue_reg *new_reg)
       break;
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
       return false;
    }
 
@@ -2419,7 +2419,7 @@ static inline bool rogue_dst_regarray_replace(rogue_regarray_write *write,
       break;
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
       return false;
    }
 
@@ -2457,7 +2457,7 @@ static inline bool rogue_src_regarray_replace(rogue_regarray_use *use,
       break;
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
       return false;
    }
 
@@ -2545,7 +2545,7 @@ static inline bool rogue_src_imm_replace(rogue_imm_use *imm_use,
       break;
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
       return false;
    }
 
@@ -2617,7 +2617,7 @@ static inline unsigned rogue_instr_supported_phases(const rogue_instr *instr)
    }
 
    default:
-      unreachable("Unsupported instruction type.");
+      UNREACHABLE("Unsupported instruction type.");
    }
 
    return supported_phases;

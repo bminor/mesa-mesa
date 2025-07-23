@@ -568,7 +568,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
                start_new_block(out_blocks, Block::alu);
 
                if (!m_current_block->try_reserve_kcache(*group))
-                  unreachable("Scheduling a group in a new block should always succeed");
+                  UNREACHABLE("Scheduling a group in a new block should always succeed");
                alu_groups_ready.erase(alu_groups_ready.begin());
                sfn_log << SfnLog::schedule << "Schedule ALU group\n";
                success = true;

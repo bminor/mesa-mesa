@@ -2804,7 +2804,7 @@ radv_video_enc_control_video_coding(struct radv_cmd_buffer *cmd_buffer, const Vk
       }
       break;
    default:
-      unreachable("Unsupported\n");
+      UNREACHABLE("Unsupported\n");
    }
 
    if (control_info->flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {

@@ -86,7 +86,7 @@ valid_filter_for_float(const struct gl_context *ctx,
    case GL_NEAREST_MIPMAP_NEAREST:
       break;
    default:
-      unreachable("Invalid mag filter");
+      UNREACHABLE("Invalid mag filter");
    }
 
    switch (obj->Sampler.Attrib.MinFilter) {
@@ -104,7 +104,7 @@ valid_filter_for_float(const struct gl_context *ctx,
    case GL_NEAREST_MIPMAP_NEAREST:
       break;
    default:
-      unreachable("Invalid min filter");
+      UNREACHABLE("Invalid min filter");
    }
 
    return true;

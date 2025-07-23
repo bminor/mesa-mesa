@@ -220,7 +220,7 @@ compute_local_index_id(struct lower_intrinsics_state *state, nir_intrinsic_instr
       break;
    }
    default:
-      unreachable("invalid derivative group");
+      UNREACHABLE("invalid derivative group");
    }
 }
 

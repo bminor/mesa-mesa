@@ -200,7 +200,7 @@ render_view_type(VkImageType image_type, unsigned layer_count)
    case VK_IMAGE_TYPE_3D:
       return VK_IMAGE_VIEW_TYPE_3D;
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
 }
 
@@ -305,7 +305,7 @@ vk_packed_int_format_for_size(unsigned size_B)
    case 4:  return VK_FORMAT_R32_UINT;
    case 8:  return VK_FORMAT_R32G32_UINT;
    case 16: return VK_FORMAT_R32G32B32A32_UINT;
-   default: unreachable("Invalid image format size");
+   default: UNREACHABLE("Invalid image format size");
    }
 }
 

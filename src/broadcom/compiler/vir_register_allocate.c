@@ -240,7 +240,7 @@ reconstruct_temp(struct v3d_compile *c, enum v3d_qpu_add_op op)
                 dest = vir_SAMPID(c);
                 break;
         default:
-            unreachable("Unexpected opcode for reconstruction");
+            UNREACHABLE("Unexpected opcode for reconstruction");
         }
 
         return dest;
@@ -1034,7 +1034,7 @@ v3d_ra_select_callback(unsigned int n, BITSET_WORD *regs, void *data)
         if (v3d_ra_select_accum(v3d_ra, regs, &reg))
                 return reg;
 
-        unreachable("RA must pass us at least one possible reg.");
+        UNREACHABLE("RA must pass us at least one possible reg.");
 }
 
 bool

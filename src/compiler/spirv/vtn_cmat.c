@@ -18,7 +18,7 @@ vtn_cooperative_matrix_use_to_glsl(SpvCooperativeMatrixUse use)
    case SpvCooperativeMatrixUseMatrixAccumulatorKHR:
       return GLSL_CMAT_USE_ACCUMULATOR;
    default:
-      unreachable("Unexpected cooperative matrix use");
+      UNREACHABLE("Unexpected cooperative matrix use");
    }
 }
 
@@ -65,7 +65,7 @@ vtn_matrix_layout_to_glsl(SpvCooperativeMatrixLayout layout)
    case SpvCooperativeMatrixLayoutColumnMajorKHR:
       return GLSL_MATRIX_LAYOUT_COLUMN_MAJOR;
    default:
-      unreachable("Unexpected cooperative matrix layout");
+      UNREACHABLE("Unexpected cooperative matrix layout");
    }
 }
 
@@ -220,7 +220,7 @@ vtn_handle_cooperative_instruction(struct vtn_builder *b, SpvOp opcode,
    }
 
    default:
-      unreachable("Unexpected opcode for cooperative matrix instruction");
+      UNREACHABLE("Unexpected opcode for cooperative matrix instruction");
    }
 }
 
@@ -319,7 +319,7 @@ vtn_handle_cooperative_alu(struct vtn_builder *b, struct vtn_value *dest_val,
       }
 
       default:
-         unreachable("invalid cooperative matrix alu instruction");
+         UNREACHABLE("invalid cooperative matrix alu instruction");
       }
 }
 

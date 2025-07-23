@@ -512,7 +512,7 @@ d3d12_is_format_supported(struct pipe_screen *pscreen,
       dim_support = D3D12_FORMAT_SUPPORT1_BUFFER;
       break;
    default:
-      unreachable("Unknown target");
+      UNREACHABLE("Unknown target");
    }
 
    if (bind & PIPE_BIND_DISPLAY_TARGET) {

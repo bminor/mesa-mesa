@@ -65,7 +65,7 @@ read_const_values(nir_const_value *dst, const void *src,
       break;
 
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
 }
 
@@ -106,7 +106,7 @@ write_const_values(void *dst, const nir_const_value *src,
       break;
 
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
 }
 

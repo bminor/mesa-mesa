@@ -2283,7 +2283,7 @@ soft_sy_delay(struct ir3_instruction *instr, struct ir3 *shader)
          case 2: return 60 / 2;
          case 3: return 77 / 2;
          case 4: return 79 / 2;
-         default: unreachable("bad number of components");
+         default: UNREACHABLE("bad number of components");
          }
       } else {
          switch (components) {
@@ -2291,7 +2291,7 @@ soft_sy_delay(struct ir3_instruction *instr, struct ir3 *shader)
          case 2: return 53;
          case 3: return 62;
          case 4: return 64;
-         default: unreachable("bad number of components");
+         default: UNREACHABLE("bad number of components");
          }
       }
    } else {
@@ -2427,7 +2427,7 @@ ir3_cursor_current_block(struct ir3_cursor cursor)
       return cursor.instr->block;
    }
 
-   unreachable("illegal cursor option");
+   UNREACHABLE("illegal cursor option");
 }
 
 static inline struct ir3_cursor
@@ -3299,7 +3299,7 @@ __regmask_file(regmask_t *regmask, enum ir3_reg_file file)
    case IR3_FILE_NONGPR:
       return regmask->nongpr;
    }
-   unreachable("bad file");
+   UNREACHABLE("bad file");
 }
 
 static inline bool

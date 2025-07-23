@@ -330,7 +330,7 @@ util_format_z16_unorm_s8_uint_unpack_z_float(float *restrict dst_row, unsigned d
                                              const uint8_t *restrict src_row, unsigned src_stride,
                                              unsigned width, unsigned height)
 {
-   unreachable("z16_s8 packing/unpacking is not implemented.");
+   UNREACHABLE("z16_s8 packing/unpacking is not implemented.");
 }
 
 void
@@ -338,7 +338,7 @@ util_format_z16_unorm_s8_uint_pack_z_float(uint8_t *restrict dst_row, unsigned d
                                            const float *restrict src_row, unsigned src_stride,
                                            unsigned width, unsigned height)
 {
-   unreachable("z16_s8 packing/unpacking is not implemented.");
+   UNREACHABLE("z16_s8 packing/unpacking is not implemented.");
 }
 
 void
@@ -346,7 +346,7 @@ util_format_z16_unorm_s8_uint_unpack_z_32unorm(uint32_t *restrict dst_row, unsig
                                                const uint8_t *restrict src_row, unsigned src_stride,
                                                unsigned width, unsigned height)
 {
-   unreachable("z16_s8 packing/unpacking is not implemented.");
+   UNREACHABLE("z16_s8 packing/unpacking is not implemented.");
 }
 
 void
@@ -354,7 +354,7 @@ util_format_z16_unorm_s8_uint_pack_z_32unorm(uint8_t *restrict dst_row, unsigned
                                              const uint32_t *restrict src_row, unsigned src_stride,
                                              unsigned width, unsigned height)
 {
-   unreachable("z16_s8 packing/unpacking is not implemented.");
+   UNREACHABLE("z16_s8 packing/unpacking is not implemented.");
 }
 
 void
@@ -362,7 +362,7 @@ util_format_z16_unorm_s8_uint_unpack_s_8uint(uint8_t *restrict dst_row, unsigned
                                              const uint8_t *restrict src_row, unsigned src_stride,
                                              unsigned width, unsigned height)
 {
-   unreachable("z16_s8 packing/unpacking is not implemented.");
+   UNREACHABLE("z16_s8 packing/unpacking is not implemented.");
 }
 
 void
@@ -370,7 +370,7 @@ util_format_z16_unorm_s8_uint_pack_s_8uint(uint8_t *restrict dst_row, unsigned d
                                            const uint8_t *restrict src_row, unsigned src_stride,
                                            unsigned width, unsigned height)
 {
-   unreachable("z16_s8 packing/unpacking is not implemented.");
+   UNREACHABLE("z16_s8 packing/unpacking is not implemented.");
 }
 
 void

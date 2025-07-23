@@ -91,7 +91,7 @@ interp_fs_input(nir_builder *b, unsigned num_components, uint32_t addr,
       }
       return nir_vec(b, comps, num_components);
    } else {
-      unreachable("Unsupported shader model");
+      UNREACHABLE("Unsupported shader model");
    }
 }
 
@@ -263,7 +263,7 @@ lower_fs_input_intrin(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
          interp_loc = NAK_INTERP_LOC_DEFAULT;
          break;
       default:
-         unreachable("Unknown intrinsic");
+         UNREACHABLE("Unknown intrinsic");
       }
 
       nir_def *inv_w = NULL;
@@ -307,7 +307,7 @@ lower_fs_input_intrin(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
          break;
 
       default:
-         unreachable("Unsupported barycentric");
+         UNREACHABLE("Unsupported barycentric");
       }
 
       nir_def *inv_w = NULL;

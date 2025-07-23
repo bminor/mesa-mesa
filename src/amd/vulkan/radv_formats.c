@@ -912,7 +912,7 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    } else if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       format_feature_flags = radv_get_modifier_flags(pdev, format, mod_info->drmFormatModifier, &format_props);
    } else {
-      unreachable("bad VkImageTiling");
+      UNREACHABLE("bad VkImageTiling");
    }
 
    if (format_feature_flags == 0)
@@ -925,7 +925,7 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
 
    switch (info->type) {
    default:
-      unreachable("bad vkimage type\n");
+      UNREACHABLE("bad vkimage type\n");
    case VK_IMAGE_TYPE_1D:
       maxExtent.width = 16384;
       maxExtent.height = 1;

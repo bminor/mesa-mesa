@@ -220,7 +220,7 @@ class LowerSplit64op : public NirLowerInstruction {
             return nir_fadd(b, nir_fmul_imm(b, fhigh, 65536.0 * 65536.0), flow);
          }
          default:
-            unreachable("trying to lower instruction that was not in filter");
+            UNREACHABLE("trying to lower instruction that was not in filter");
          }
       }
       case nir_instr_type_phi: {
@@ -241,7 +241,7 @@ class LowerSplit64op : public NirLowerInstruction {
          return nir_pack_64_2x32_split(b, &phi_lo->def, &phi_hi->def);
       }
       default:
-         unreachable("Trying to lower instruction that was not in filter");
+         UNREACHABLE("Trying to lower instruction that was not in filter");
       }
    }
 };
@@ -349,7 +349,7 @@ LowerSplit64BitVar::split_double_store_deref(nir_intrinsic_instr *intr)
    else if (deref->deref_type == nir_deref_type_array)
       return split_store_deref_array(intr, deref);
    else {
-      unreachable("only splitting of stores to vars and arrays is supported");
+      UNREACHABLE("only splitting of stores to vars and arrays is supported");
    }
 }
 
@@ -362,7 +362,7 @@ LowerSplit64BitVar::split_double_load_deref(nir_intrinsic_instr *intr)
    else if (deref->deref_type == nir_deref_type_array)
       return split_load_deref_array(intr, deref->arr.index);
    else {
-      unreachable("only splitting of loads from vars and arrays is supported");
+      UNREACHABLE("only splitting of loads from vars and arrays is supported");
    }
    m_old_stores.push_back(&intr->instr);
 }

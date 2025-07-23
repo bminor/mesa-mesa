@@ -420,7 +420,7 @@ get_provoking_vertex(struct d3d12_selection_context *sel_ctx, bool *alternate, c
       mode = (enum mesa_prim)dinfo->mode;
       break;
    default:
-      unreachable("Tesselation shaders are not supported");
+      UNREACHABLE("Tesselation shaders are not supported");
    }
 
    bool flatshade_first = sel_ctx->ctx->gfx_pipeline_state.rast &&
@@ -740,7 +740,7 @@ d3d12_compare_shader_keys(struct d3d12_selection_context* sel_ctx, const d3d12_s
          return false;
       break;
    default:
-      unreachable("invalid stage");
+      UNREACHABLE("invalid stage");
    }
    
    if (expect->n_texture_states != have->n_texture_states)
@@ -862,7 +862,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
    case PIPE_SHADER_COMPUTE:
       memset(key->cs.workgroup_size, 0, sizeof(key->cs.workgroup_size));
       break;
-   default: unreachable("Invalid stage type");
+   default: UNREACHABLE("Invalid stage type");
    }
 
    key->n_texture_states = 0;
@@ -1217,7 +1217,7 @@ get_prev_shader(struct d3d12_context *ctx, pipe_shader_type current)
    case PIPE_SHADER_TESS_CTRL:
       return ctx->gfx_stages[PIPE_SHADER_VERTEX];
    default:
-      unreachable("shader type not supported");
+      UNREACHABLE("shader type not supported");
    }
 }
 
@@ -1242,7 +1242,7 @@ get_next_shader(struct d3d12_context *ctx, pipe_shader_type current)
    case PIPE_SHADER_FRAGMENT:
       return NULL;
    default:
-      unreachable("shader type not supported");
+      UNREACHABLE("shader type not supported");
    }
 }
 

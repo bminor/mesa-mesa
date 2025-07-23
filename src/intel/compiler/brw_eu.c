@@ -61,7 +61,7 @@ brw_negate_cmod(enum brw_conditional_mod cmod)
    case BRW_CONDITIONAL_LE:
       return BRW_CONDITIONAL_G;
    default:
-      unreachable("Can't negate this cmod");
+      UNREACHABLE("Can't negate this cmod");
    }
 }
 
@@ -734,6 +734,6 @@ brw_num_sources_from_inst(const struct brw_isa_info *isa,
    case BRW_MATH_FUNCTION_INT_DIV_REMAINDER:
       return 2;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }

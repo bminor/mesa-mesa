@@ -118,7 +118,7 @@ image_binding_grow(const struct anv_device *device,
    switch (binding) {
    case ANV_IMAGE_MEMORY_BINDING_MAIN:
       /* The caller must not pre-translate BINDING_PLANE_i to BINDING_MAIN. */
-      unreachable("ANV_IMAGE_MEMORY_BINDING_MAIN");
+      UNREACHABLE("ANV_IMAGE_MEMORY_BINDING_MAIN");
    case ANV_IMAGE_MEMORY_BINDING_PLANE_0:
    case ANV_IMAGE_MEMORY_BINDING_PLANE_1:
    case ANV_IMAGE_MEMORY_BINDING_PLANE_2:
@@ -129,7 +129,7 @@ image_binding_grow(const struct anv_device *device,
       assert(offset == ANV_OFFSET_IMPLICIT);
       break;
    case ANV_IMAGE_MEMORY_BINDING_END:
-      unreachable("ANV_IMAGE_MEMORY_BINDING_END");
+      UNREACHABLE("ANV_IMAGE_MEMORY_BINDING_END");
    }
 
    struct anv_image_memory_range *container =
@@ -293,7 +293,7 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
    case VK_IMAGE_ASPECT_PLANE_2_BIT:
       break;
    default:
-      unreachable("bad VkImageAspect");
+      UNREACHABLE("bad VkImageAspect");
    }
 
    if (vk_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) {
@@ -334,7 +334,7 @@ choose_isl_tiling_flags(const struct intel_device_info *devinfo,
 
    switch (base_info->tiling) {
    default:
-      unreachable("bad VkImageTiling");
+      UNREACHABLE("bad VkImageTiling");
    case VK_IMAGE_TILING_OPTIMAL:
       flags = ISL_TILING_ANY_MASK;
       break;
@@ -3005,7 +3005,7 @@ anv_get_image_subresource_layout(struct anv_device *device,
          mem_plane = 2;
          break;
       default:
-         unreachable("bad VkImageAspectFlags");
+         UNREACHABLE("bad VkImageAspectFlags");
       }
 
       if (isl_drm_modifier_plane_is_clear_color(image->vk.drm_format_mod,
@@ -3239,7 +3239,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
    switch (layout) {
    /* Invalid layouts */
    case VK_IMAGE_LAYOUT_MAX_ENUM:
-      unreachable("Invalid image layout.");
+      UNREACHABLE("Invalid image layout.");
 
    /* Undefined layouts
     *
@@ -3293,7 +3293,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
       case ISL_AUX_STATE_COMPRESSED_NO_CLEAR:
          return ISL_AUX_STATE_COMPRESSED_NO_CLEAR;
       default:
-         unreachable("unexpected isl_aux_state");
+         UNREACHABLE("unexpected isl_aux_state");
       }
    }
 
@@ -3366,7 +3366,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
          break;
 
       default:
-         unreachable("Unsupported aux usage");
+         UNREACHABLE("Unsupported aux usage");
       }
    }
 
@@ -3418,7 +3418,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
       return ISL_AUX_STATE_COMPRESSED_NO_CLEAR;
 
    default:
-      unreachable("Unsupported aux usage");
+      UNREACHABLE("Unsupported aux usage");
    }
 }
 
@@ -3457,7 +3457,7 @@ anv_layout_to_aux_usage(const struct intel_device_info * const devinfo,
 
    switch (aux_state) {
    case ISL_AUX_STATE_CLEAR:
-      unreachable("We never use this state");
+      UNREACHABLE("We never use this state");
 
    case ISL_AUX_STATE_PARTIAL_CLEAR:
       assert(image->vk.aspects & VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV);
@@ -3491,7 +3491,7 @@ anv_layout_to_aux_usage(const struct intel_device_info * const devinfo,
       return ISL_AUX_USAGE_NONE;
    }
 
-   unreachable("Invalid isl_aux_state");
+   UNREACHABLE("Invalid isl_aux_state");
 }
 
 /**
@@ -3544,7 +3544,7 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
 
    switch (aux_state) {
    case ISL_AUX_STATE_CLEAR:
-      unreachable("We never use this state");
+      UNREACHABLE("We never use this state");
 
    case ISL_AUX_STATE_PARTIAL_CLEAR:
    case ISL_AUX_STATE_COMPRESSED_CLEAR:
@@ -3593,7 +3593,7 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
       return ANV_FAST_CLEAR_NONE;
    }
 
-   unreachable("Invalid isl_aux_state");
+   UNREACHABLE("Invalid isl_aux_state");
 }
 
 bool

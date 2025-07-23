@@ -122,7 +122,7 @@ const_value_for_deref(nir_deref_instr *deref)
       nir_deref_instr *p = path.path[i];
       switch (p->deref_type) {
       case nir_deref_type_var:
-         unreachable("Deref paths can only start with a var deref");
+         UNREACHABLE("Deref paths can only start with a var deref");
 
       case nir_deref_type_array: {
          assert(v == NULL);
@@ -187,7 +187,7 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
                op = nir_intrinsic_terminate;
                break;
             default:
-               unreachable("invalid intrinsic");
+               UNREACHABLE("invalid intrinsic");
             }
             nir_intrinsic_instr *new_instr =
                nir_intrinsic_instr_create(b->shader, op);

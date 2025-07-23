@@ -46,7 +46,7 @@ get_stage_name(enum panvk_utrace_perfetto_stage stage)
       CASE(SYNC_WAIT);
 #undef CASE
    default:
-      unreachable("bad stage");
+      UNREACHABLE("bad stage");
    }
 }
 

@@ -342,7 +342,7 @@ panvk_buffer_ubo_addr_format(VkPipelineRobustnessBufferBehaviorEXT robustness)
       return PAN_ARCH < 9 ? nir_address_format_32bit_index_offset
                            : nir_address_format_vec2_index_32bit_offset;
    default:
-      unreachable("Invalid robust buffer access behavior");
+      UNREACHABLE("Invalid robust buffer access behavior");
    }
 }
 
@@ -358,7 +358,7 @@ panvk_buffer_ssbo_addr_format(VkPipelineRobustnessBufferBehaviorEXT robustness)
       return PAN_ARCH < 9 ? nir_address_format_64bit_bounded_global
                            : nir_address_format_vec2_index_32bit_offset;
    default:
-      unreachable("Invalid robust buffer access behavior");
+      UNREACHABLE("Invalid robust buffer access behavior");
    }
 }
 

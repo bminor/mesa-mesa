@@ -656,7 +656,7 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
             radv_cmd_buffer_resolve_rendering_fs(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout);
             break;
          default:
-            unreachable("Invalid resolve method");
+            UNREACHABLE("Invalid resolve method");
          }
       }
    }

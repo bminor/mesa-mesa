@@ -192,7 +192,7 @@ get_io_offset(nir_builder *b, nir_deref_instr *deref,
          }
          offset = nir_iadd_imm(b, offset, field_offset);
       } else {
-         unreachable("Unsupported deref type");
+         UNREACHABLE("Unsupported deref type");
       }
    }
 
@@ -294,7 +294,7 @@ emit_load(struct lower_io_state *state,
       op = nir_intrinsic_load_uniform;
       break;
    default:
-      unreachable("Unknown variable mode");
+      UNREACHABLE("Unknown variable mode");
    }
 
    nir_intrinsic_instr *load =
@@ -607,7 +607,7 @@ lower_interpolate_at(nir_intrinsic_instr *intrin, struct lower_io_state *state,
       bary_op = nir_intrinsic_load_barycentric_at_offset;
       break;
    default:
-      unreachable("Bogus interpolateAt() intrinsic.");
+      UNREACHABLE("Bogus interpolateAt() intrinsic.");
    }
 
    nir_intrinsic_instr *bary_setup =

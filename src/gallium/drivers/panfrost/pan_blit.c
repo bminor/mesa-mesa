@@ -107,7 +107,7 @@ panfrost_blit(struct pipe_context *pipe, const struct pipe_blit_info *info)
       return;
 
    if (!util_blitter_is_blit_supported(ctx->blitter, info))
-      unreachable("Unsupported blit\n");
+      UNREACHABLE("Unsupported blit\n");
 
    /* Legalize here because it could trigger a recursive blit otherwise */
    struct panfrost_resource *src = pan_resource(info->src.resource);

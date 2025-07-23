@@ -601,7 +601,7 @@ dri_context_error_to_glx_error(unsigned error)
    else if (error == __DRI_CTX_ERROR_UNKNOWN_FLAG)
       return BadValue;
    else
-      unreachable("Impossible DRI context error");
+      UNREACHABLE("Impossible DRI context error");
 }
 
 struct glx_context *
@@ -959,7 +959,7 @@ dri_screen_init(struct glx_screen *psc, struct glx_display *priv, int screen, in
       type = DRI_SCREEN_SWRAST;
       break;
    default:
-      unreachable("unknown glx driver type");
+      UNREACHABLE("unknown glx driver type");
    }
 
    psc->frontend_screen = driCreateNewScreen3(screen, fd,

@@ -2508,7 +2508,7 @@ vn_image_init_format_from_cache(
                break;
             }
             default:
-               unreachable("unexpected format props pNext");
+               UNREACHABLE("unexpected format props pNext");
             }
          }
       }
@@ -2592,7 +2592,7 @@ vn_image_store_format_in_cache(
             break;
          }
          default:
-            unreachable("unexpected format props pNext");
+            UNREACHABLE("unexpected format props pNext");
          }
       }
    }

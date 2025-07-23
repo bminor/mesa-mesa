@@ -246,7 +246,7 @@ negation_exists(nir_const_value v, unsigned bit_size,
          return v.i64 != 0 && v.i64 != INT64_MIN;
 
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 }
 
@@ -286,7 +286,7 @@ negate(nir_const_value v, unsigned bit_size, enum interpreted_type base_type)
       break;
 
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 
    return ret;
@@ -334,7 +334,7 @@ absolute(nir_const_value v, unsigned bit_size, enum interpreted_type base_type)
       break;
 
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 
    return ret;
@@ -410,7 +410,7 @@ value_equal(nir_const_value a, nir_const_value b, unsigned bit_size)
    case 64:
       return a.u64 == b.u64;
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 }
 
@@ -933,7 +933,7 @@ build_imm_reg_for_copy(struct imm *imm)
    case 2:
       return brw_imm_w(imm->w);
    default:
-      unreachable("not implemented");
+      UNREACHABLE("not implemented");
    }
 }
 
@@ -1150,7 +1150,7 @@ add_candidate_immediate(struct table *table, brw_inst *inst, unsigned ip,
    case BRW_TYPE_UB:
    case BRW_TYPE_B:
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    /* It is safe to change the type of the operands of a select instruction
@@ -1212,7 +1212,7 @@ allocate_slots(brw_shader &s,
       }
    }
 
-   unreachable("No free slots found.");
+   UNREACHABLE("No free slots found.");
 }
 
 static void
@@ -1235,7 +1235,7 @@ deallocate_slots(const struct intel_device_info *devinfo,
       }
    }
 
-   unreachable("No such register found.");
+   UNREACHABLE("No such register found.");
 }
 
 static void
@@ -1595,7 +1595,7 @@ brw_opt_combine_constants(brw_shader &s)
                   reg->type = BRW_TYPE_DF;
                   break;
                default:
-                  unreachable("Bad type size");
+                  UNREACHABLE("Bad type size");
                }
             }
          } else if ((link->inst->opcode == BRW_OPCODE_SHL ||

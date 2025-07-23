@@ -1025,7 +1025,7 @@ radv_clear_dcc_comp_to_single(struct radv_cmd_buffer *cmd_buffer, struct radv_im
       format = VK_FORMAT_R32G32B32A32_UINT;
       break;
    default:
-      unreachable("Unsupported number of bytes per pixel");
+      UNREACHABLE("Unsupported number of bytes per pixel");
    }
 
    result = get_clear_dcc_comp_to_single_pipeline(device, is_msaa, &pipeline, &layout);

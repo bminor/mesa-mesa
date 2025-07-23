@@ -1166,7 +1166,7 @@ anv_cmd_buffer_add_secondary(struct anv_cmd_buffer *primary,
       break;
    }
    default:
-      unreachable("Invalid execution mode");
+      UNREACHABLE("Invalid execution mode");
    }
 
    anv_reloc_list_append(&primary->surface_relocs, &primary->vk.pool->alloc,
@@ -1660,7 +1660,7 @@ anv_execbuf_add_sync(struct anv_device *device,
                                      value);
    }
 
-   unreachable("Invalid sync type");
+   UNREACHABLE("Invalid sync type");
 }
 
 static VkResult

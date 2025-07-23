@@ -221,7 +221,7 @@ v3dX(pack_sampler_state)(const struct v3dv_device *device,
       border_color_mode = V3D_BORDER_COLOR_FOLLOWS;
       break;
    default:
-      unreachable("Unknown border color");
+      UNREACHABLE("Unknown border color");
       break;
    }
 

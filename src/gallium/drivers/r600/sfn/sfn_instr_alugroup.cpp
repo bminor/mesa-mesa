@@ -234,7 +234,7 @@ void AluGroup::update_readport_reserver()
          ++bs;
       }
       if (bs == alu_vec_unknown)
-         unreachable("Bank swizzle should have been checked before");
+         UNREACHABLE("Bank swizzle should have been checked before");
    }
 
    if (s_max_slots == 5 && m_slots[4]) {
@@ -248,7 +248,7 @@ void AluGroup::update_readport_reserver()
          ++bs;
       }
       if (bs == sq_alu_scl_unknown)
-         unreachable("Bank swizzle should have been checked before");
+         UNREACHABLE("Bank swizzle should have been checked before");
    }
 }
 

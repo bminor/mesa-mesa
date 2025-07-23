@@ -80,7 +80,7 @@ instr_can_rewrite(const nir_instr *instr)
       return false;
    case nir_instr_type_parallel_copy:
    default:
-      unreachable("Invalid instruction type");
+      UNREACHABLE("Invalid instruction type");
    }
 
    return false;
@@ -187,7 +187,7 @@ hash_deref(uint32_t hash, const nir_deref_instr *instr)
       break;
 
    default:
-      unreachable("Invalid instruction deref type");
+      UNREACHABLE("Invalid instruction deref type");
    }
 
    return hash;
@@ -339,7 +339,7 @@ hash_instr(const void *data)
       hash = hash_tex(hash, nir_instr_as_tex(instr));
       break;
    default:
-      unreachable("Invalid instruction type");
+      UNREACHABLE("Invalid instruction type");
    }
 
    return hash;
@@ -643,7 +643,7 @@ nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2)
          break;
 
       default:
-         unreachable("Invalid instruction deref type");
+         UNREACHABLE("Invalid instruction deref type");
       }
       return true;
    }
@@ -759,10 +759,10 @@ nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2)
    case nir_instr_type_undef:
    case nir_instr_type_parallel_copy:
    default:
-      unreachable("Invalid instruction type");
+      UNREACHABLE("Invalid instruction type");
    }
 
-   unreachable("All cases in the above switch should return");
+   UNREACHABLE("All cases in the above switch should return");
 }
 
 static bool

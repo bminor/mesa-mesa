@@ -123,7 +123,7 @@ get_surftype(enum isl_surf_dim dim, isl_surf_usage_flags_t usage)
 {
    switch (dim) {
    default:
-      unreachable("bad isl_surf_dim");
+      UNREACHABLE("bad isl_surf_dim");
    case ISL_SURF_DIM_1D:
       assert(!(usage & ISL_SURF_USAGE_CUBE_BIT));
       return SURFTYPE_1D;
@@ -445,7 +445,7 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
       s.RenderTargetViewExtent = info->view->array_len - 1;
       break;
    default:
-      unreachable("bad SurfaceType");
+      UNREACHABLE("bad SurfaceType");
    }
 
 #if GFX_VER >= 7
@@ -749,7 +749,7 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
          case ISL_FORMAT_R16_UNORM:
             break;
          default:
-            unreachable("Incompatible HiZ Sampling format");
+            UNREACHABLE("Incompatible HiZ Sampling format");
          }
       }
 
@@ -909,7 +909,7 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
          s.ClearValueAddressEnable = true;
          s.ClearValueAddress = info->clear_address;
 #else
-         unreachable("Only Gfx11 and Gfx12 support indirect clear colors");
+         UNREACHABLE("Only Gfx11 and Gfx12 support indirect clear colors");
 #endif
       }
 

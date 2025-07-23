@@ -90,7 +90,7 @@ load_image_param(nir_builder *b, nir_def *surface_handle, unsigned index)
       num_components = 1;
       break;
    default:
-      unreachable("Invalid param offset");
+      UNREACHABLE("Invalid param offset");
    }
 
    return nir_image_deref_load_param_intel(b, num_components, bit_size,

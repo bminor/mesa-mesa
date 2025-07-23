@@ -180,7 +180,7 @@ nil_to_nvcab5_gob_type(enum nil_gob_type gob_type)
    case NIL_GOB_TYPE_BLACKWELL16_BIT:  return NVCAB5_GOB_KIND(16);
    case NIL_GOB_TYPE_BLACKWELL_Z24:    return NVCAB5_GOB_KIND(24);
    default:
-      unreachable("Invalid GOB type on Blackwell+");
+      UNREACHABLE("Invalid GOB type on Blackwell+");
    }
 #undef NVCAB5_GOB_KIND
 }
@@ -497,7 +497,7 @@ nvk_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
          break;
       case PIPE_FORMAT_Z16_UNORM_S8_UINT:
       case PIPE_FORMAT_S8_UINT_Z24_UNORM:
-         unreachable("Unsupported packed depth/stencil format");
+         UNREACHABLE("Unsupported packed depth/stencil format");
          break;
       default:
          copy.remap = nouveau_copy_remap_format(format.p_format);
@@ -611,7 +611,7 @@ nvk_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
          break;
       case PIPE_FORMAT_Z16_UNORM_S8_UINT:
       case PIPE_FORMAT_S8_UINT_Z24_UNORM:
-         unreachable("Unsupported packed depth/stencil format");
+         UNREACHABLE("Unsupported packed depth/stencil format");
          break;
       default:
          copy.remap = nouveau_copy_remap_format(format.p_format);
@@ -809,7 +809,7 @@ nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
             break;
          case PIPE_FORMAT_Z16_UNORM_S8_UINT:
          case PIPE_FORMAT_S8_UINT_Z24_UNORM:
-            unreachable("Unsupported packed depth/stencil format");
+            UNREACHABLE("Unsupported packed depth/stencil format");
             break;
          default:
             copy.remap = nouveau_copy_remap_format(src_format.p_format);

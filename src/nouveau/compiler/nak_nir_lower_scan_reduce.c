@@ -39,7 +39,7 @@ build_scan_bool(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
          /* The generic path is fine */
          break;
       default:
-         unreachable("Unsupported boolean reduction op");
+         UNREACHABLE("Unsupported boolean reduction op");
       }
    }
 
@@ -54,7 +54,7 @@ build_scan_bool(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
    case nir_intrinsic_reduce:
       break;
    default:
-      unreachable("Unsupported scan/reduce op");
+      UNREACHABLE("Unsupported scan/reduce op");
    }
 
    data = nir_ballot(b, 1, 32, data);
@@ -69,7 +69,7 @@ build_scan_bool(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
       return nir_ine_imm(b, nir_iand_imm(b, count, 1), 0);
    }
    default:
-      unreachable("Unsupported boolean reduction op");
+      UNREACHABLE("Unsupported boolean reduction op");
    }
 }
 
@@ -122,7 +122,7 @@ build_scan_full(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
    }
 
    default:
-      unreachable("Unsupported scan/reduce op");
+      UNREACHABLE("Unsupported scan/reduce op");
    }
 }
 
@@ -186,7 +186,7 @@ build_scan_reduce(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
    }
 
    default:
-      unreachable("Unsupported scan/reduce op");
+      UNREACHABLE("Unsupported scan/reduce op");
    }
 }
 

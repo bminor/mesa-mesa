@@ -20,7 +20,7 @@ translate_sampler_dim(VkImageType type)
    case VK_IMAGE_TYPE_3D:
       return GLSL_SAMPLER_DIM_3D;
    default:
-      unreachable("Unhandled image type");
+      UNREACHABLE("Unhandled image type");
    }
 }
 
@@ -99,7 +99,7 @@ get_pipeline(struct radv_device *device, const struct radv_image_view *src_iview
       fs = radv_meta_nir_build_blit_copy_fragment_shader_stencil(device, tex_dim);
       break;
    default:
-      unreachable("Unhandled aspect");
+      UNREACHABLE("Unhandled aspect");
    }
 
    VkGraphicsPipelineCreateInfo pipeline_create_info = {
@@ -219,7 +219,7 @@ get_pipeline(struct radv_device *device, const struct radv_image_view *src_iview
       render.stencil_attachment_format = VK_FORMAT_S8_UINT;
       break;
    default:
-      unreachable("Unhandled aspect");
+      UNREACHABLE("Unhandled aspect");
    }
 
    result = vk_meta_create_graphics_pipeline(&device->vk, &device->meta_state.device, &pipeline_create_info, &render,

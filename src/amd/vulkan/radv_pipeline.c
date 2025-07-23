@@ -111,7 +111,7 @@ radv_pipeline_destroy(struct radv_device *device, struct radv_pipeline *pipeline
       radv_destroy_ray_tracing_pipeline(device, radv_pipeline_to_ray_tracing(pipeline));
       break;
    default:
-      unreachable("invalid pipeline type");
+      UNREACHABLE("invalid pipeline type");
    }
 
    radv_rmv_log_resource_destroy(device, (uint64_t)radv_pipeline_to_handle(pipeline));
@@ -174,7 +174,7 @@ radv_pipeline_get_shader_key(const struct radv_device *device, const VkPipelineS
       else if (subgroup_size->requiredSubgroupSize == 64)
          key.subgroup_required_size = RADV_REQUIRED_WAVE64;
       else
-         unreachable("Unsupported required subgroup size.");
+         UNREACHABLE("Unsupported required subgroup size.");
    }
 
    if (stage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) {
@@ -867,7 +867,7 @@ radv_GetPipelineExecutablePropertiesKHR(VkDevice _device, const VkPipelineInfoKH
          description = "Vulkan Callable Shader";
          break;
       default:
-         unreachable("Unsupported shader stage");
+         UNREACHABLE("Unsupported shader stage");
       }
 
       props->subgroupSize = shader->info.wave_size;

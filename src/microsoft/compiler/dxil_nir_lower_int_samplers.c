@@ -254,7 +254,7 @@ load_bordercolor(nir_builder *b, nir_tex_instr *tex, const dxil_wrap_sampler_sta
          const_value[i] = nir_const_value_for_uint(border_color[swizzle[i]], 32);
          break;
       default:
-         unreachable("Unexpected swizzle value");
+         UNREACHABLE("Unexpected swizzle value");
       }
    }
 
@@ -491,7 +491,7 @@ lower_sample_to_txf_for_integer_tex_impl(nir_builder *b, nir_instr *instr,
                                     array_index);
             break;
          default:
-            unreachable("unsupported number of non-array coordinates");
+            UNREACHABLE("unsupported number of non-array coordinates");
          }
       }
    }

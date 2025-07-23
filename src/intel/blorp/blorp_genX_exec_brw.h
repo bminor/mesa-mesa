@@ -830,7 +830,7 @@ blorp_emit_ps_config(struct blorp_batch *batch,
          ps.RenderTargetFastClearEnable = true;
          break;
       default:
-         unreachable("Invalid fast clear op");
+         UNREACHABLE("Invalid fast clear op");
       }
 
 #if GFX_VERx10 == 120
@@ -1059,7 +1059,7 @@ blorp_emit_depth_stencil_state(struct blorp_batch *batch,
             ds.DepthTestEnable = false;
             break;
          case ISL_AUX_OP_PARTIAL_RESOLVE:
-            unreachable("Invalid HIZ op");
+            UNREACHABLE("Invalid HIZ op");
          }
       }
 
@@ -1560,7 +1560,7 @@ blorp_emit_gfx8_hiz_op(struct blorp_batch *batch,
          break;
       case ISL_AUX_OP_PARTIAL_RESOLVE:
       case ISL_AUX_OP_NONE:
-         unreachable("Invalid HIZ op");
+         UNREACHABLE("Invalid HIZ op");
       }
 
       hzp.NumberofMultisamples = ffs(params->num_samples) - 1;
@@ -1942,7 +1942,7 @@ xy_bcb_tiling(const struct isl_surf *surf)
       return XY_TILE_Y;
 #endif
    default:
-      unreachable("Invalid tiling for XY_BLOCK_COPY_BLT");
+      UNREACHABLE("Invalid tiling for XY_BLOCK_COPY_BLT");
    }
 }
 
@@ -1957,7 +1957,7 @@ xy_color_depth(const struct isl_format_layout *fmtl)
    case  16: return XY_BPP_16_BIT;
    case   8: return XY_BPP_8_BIT;
    default:
-      unreachable("Invalid bpp");
+      UNREACHABLE("Invalid bpp");
    }
 }
 #endif
@@ -1978,7 +1978,7 @@ xy_bcb_surf_dim(const struct isl_surf *surf)
    case ISL_SURF_DIM_3D:
       return XY_SURFTYPE_3D;
    default:
-      unreachable("Invalid dimensionality for XY_BLOCK_COPY_BLT");
+      UNREACHABLE("Invalid dimensionality for XY_BLOCK_COPY_BLT");
    }
 }
 
@@ -2001,7 +2001,7 @@ xy_aux_mode(const struct blorp_surface_info *info)
    case ISL_AUX_USAGE_NONE:
       return XY_NONE;
    default:
-      unreachable("Unsupported aux mode");
+      UNREACHABLE("Unsupported aux mode");
    }
 }
 #endif // GFX_VER < 20
@@ -2012,7 +2012,7 @@ blorp_xy_block_copy_blt(struct blorp_batch *batch,
                         const struct blorp_params *params)
 {
 #if GFX_VER < 12
-   unreachable("Blitter is only supported on Gfx12+");
+   UNREACHABLE("Blitter is only supported on Gfx12+");
 #else
    UNUSED const struct isl_device *isl_dev = batch->blorp->isl_dev;
 
@@ -2172,7 +2172,7 @@ blorp_xy_fast_color_blit(struct blorp_batch *batch,
                          const struct blorp_params *params)
 {
 #if GFX_VER < 12
-   unreachable("Blitter is only supported on Gfx12+");
+   UNREACHABLE("Blitter is only supported on Gfx12+");
 #else
    UNUSED const struct isl_device *isl_dev = batch->blorp->isl_dev;
    const struct isl_surf *dst_surf = &params->dst.surf;

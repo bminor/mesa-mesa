@@ -138,7 +138,7 @@ static uint32_t
 blorp_get_dynamic_state(struct blorp_batch *batch,
                         enum blorp_dynamic_state name)
 {
-   unreachable("Not implemented");
+   UNREACHABLE("Not implemented");
 }
 
 static void *

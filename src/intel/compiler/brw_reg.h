@@ -256,7 +256,7 @@ phys_file(const struct brw_reg reg)
       return ARF;
 
    default:
-      unreachable("register type should have been lowered");
+      UNREACHABLE("register type should have been lowered");
    }
 }
 
@@ -339,7 +339,7 @@ brw_regs_negative_equal(const struct brw_reg *a, const struct brw_reg *b)
       case BRW_TYPE_UB:
       case BRW_TYPE_B:
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
    } else {
       struct brw_reg tmp = *a;
@@ -384,7 +384,7 @@ brw_int_type(unsigned sz, bool is_signed)
    case 8:
       return (is_signed ? BRW_TYPE_Q : BRW_TYPE_UQ);
    default:
-      unreachable("Not reached.");
+      UNREACHABLE("Not reached.");
    }
 }
 
@@ -557,7 +557,7 @@ brw_vecn_reg(unsigned width, enum brw_reg_file file,
    case 16:
       return brw_vec16_reg(file, nr, subnr);
    default:
-      unreachable("Invalid register width");
+      UNREACHABLE("Invalid register width");
    }
 }
 
@@ -1358,7 +1358,7 @@ horiz_offset(const brw_reg &reg, unsigned delta)
          }
       }
    }
-   unreachable("Invalid register file");
+   UNREACHABLE("Invalid register file");
 }
 
 static inline brw_reg
@@ -1560,7 +1560,7 @@ byte_stride(const brw_reg &reg)
          }
       }
    default:
-      unreachable("Invalid register file");
+      UNREACHABLE("Invalid register file");
    }
 }
 

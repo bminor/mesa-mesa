@@ -49,7 +49,7 @@ NORETURN static void PRINTFLIKE(2, 3)
    bi_print_instr(I, stderr);
    fprintf(stderr, "\n");
 
-   unreachable("Invalid instruction");
+   UNREACHABLE("Invalid instruction");
 }
 
 /*
@@ -435,7 +435,7 @@ va_pack_rhadd(const bi_instr *I)
    case BI_ROUND_RTP:
       return BITFIELD_BIT(30); /* rhadd */
    default:
-      unreachable("Invalid round for HADD");
+      UNREACHABLE("Invalid round for HADD");
    }
 }
 

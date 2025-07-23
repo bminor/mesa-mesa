@@ -67,7 +67,7 @@ static enum radeon_value_id winsys_id_from_type(unsigned type)
 	case R600_QUERY_CURRENT_GPU_SCLK: return RADEON_CURRENT_SCLK;
 	case R600_QUERY_CURRENT_GPU_MCLK: return RADEON_CURRENT_MCLK;
 	case R600_QUERY_CS_THREAD_BUSY: return RADEON_CS_THREAD_TIME;
-	default: unreachable("query type does not correspond to winsys id");
+	default: UNREACHABLE("query type does not correspond to winsys id");
 	}
 }
 
@@ -215,7 +215,7 @@ static bool r600_query_sw_begin(struct r600_common_context *rctx,
 	case R600_QUERY_GPIN_NUM_SE:
 		break;
 	default:
-		unreachable("r600_query_sw_begin: bad query type");
+		UNREACHABLE("r600_query_sw_begin: bad query type");
 	}
 
 	return true;
@@ -367,7 +367,7 @@ static bool r600_query_sw_end(struct r600_common_context *rctx,
 	case R600_QUERY_GPIN_NUM_SE:
 		break;
 	default:
-		unreachable("r600_query_sw_end: bad query type");
+		UNREACHABLE("r600_query_sw_end: bad query type");
 	}
 
 	return true;
@@ -1134,7 +1134,7 @@ static void r600_get_hw_query_params(struct r600_common_context *rctx,
 		break;
 	}
 	default:
-		unreachable("r600_get_hw_query_params unsupported");
+		UNREACHABLE("r600_get_hw_query_params unsupported");
 	}
 }
 

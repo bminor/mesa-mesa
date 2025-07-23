@@ -1141,7 +1141,7 @@ bool si_msaa_resolve_blit_via_CB(struct pipe_context *ctx, const struct pipe_bli
          break;
 
       default:
-         unreachable("unexpected gfx version");
+         UNREACHABLE("unexpected gfx version");
       }
    }
 

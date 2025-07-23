@@ -46,7 +46,7 @@ vertex_element_comp_control(enum isl_format format, unsigned comp)
    case 1: bits = isl_format_layouts[format].channels.g.bits; break;
    case 2: bits = isl_format_layouts[format].channels.b.bits; break;
    case 3: bits = isl_format_layouts[format].channels.a.bits; break;
-   default: unreachable("Invalid component");
+   default: UNREACHABLE("Invalid component");
    }
 
    /*
@@ -474,7 +474,7 @@ genX(raster_polygon_mode)(struct anv_graphics_pipeline *pipeline,
       case _3DPRIM_POLYGON:
          return pipeline->polygon_mode;
       }
-      unreachable("Unsupported GS output topology");
+      UNREACHABLE("Unsupported GS output topology");
    } else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL)) {
       switch (get_tes_prog_data(pipeline)->output_topology) {
       case INTEL_TESS_OUTPUT_TOPOLOGY_POINT:
@@ -487,7 +487,7 @@ genX(raster_polygon_mode)(struct anv_graphics_pipeline *pipeline,
       case INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CCW:
          return pipeline->polygon_mode;
       }
-      unreachable("Unsupported TCS output topology");
+      UNREACHABLE("Unsupported TCS output topology");
    } else {
       switch (primitive_topology) {
       case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
@@ -507,7 +507,7 @@ genX(raster_polygon_mode)(struct anv_graphics_pipeline *pipeline,
          return pipeline->polygon_mode;
 
       default:
-         unreachable("Unsupported primitive topology");
+         UNREACHABLE("Unsupported primitive topology");
       }
    }
 }
@@ -527,14 +527,14 @@ genX(ms_rasterization_mode)(struct anv_graphics_pipeline *pipeline,
          return MSRASTMODE_OFF_PIXEL;
 
       default:
-         unreachable("Unsupported line rasterization mode");
+         UNREACHABLE("Unsupported line rasterization mode");
       }
    } else {
       return pipeline->rasterization_samples > 1 ?
          MSRASTMODE_ON_PATTERN : MSRASTMODE_OFF_PIXEL;
    }
 #else
-   unreachable("Only on gen7");
+   UNREACHABLE("Only on gen7");
 #endif
 }
 
@@ -594,14 +594,14 @@ genX(rasterization_mode)(VkPolygonMode raster_mode,
          break;
 
       default:
-         unreachable("Unsupported line rasterization mode");
+         UNREACHABLE("Unsupported line rasterization mode");
       }
    } else {
       *api_mode = DX100;
       *msaa_rasterization_enable = true;
    }
 #else
-   unreachable("Invalid call");
+   UNREACHABLE("Invalid call");
 #endif
 }
 
@@ -636,7 +636,7 @@ emit_rs_state(struct anv_graphics_pipeline *pipeline,
       break;
 
    default:
-      unreachable("Invalid provoking vertex mode");
+      UNREACHABLE("Invalid provoking vertex mode");
    }
 
 #if GFX_VERx10 == 75
@@ -1047,7 +1047,7 @@ emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
       break;
 
    default:
-      unreachable("Invalid provoking vertex mode");
+      UNREACHABLE("Invalid provoking vertex mode");
    }
 
    clip.MinimumPointWidth = 0.125;
@@ -1244,7 +1244,7 @@ emit_3dstate_streamout(struct anv_graphics_pipeline *pipeline,
          break;
 
       default:
-         unreachable("Invalid provoking vertex mode");
+         UNREACHABLE("Invalid provoking vertex mode");
       }
 
       so.RenderStreamSelect = rs->rasterization_stream;
@@ -1519,7 +1519,7 @@ emit_3dstate_gs(struct anv_graphics_pipeline *pipeline,
          break;
 
       default:
-         unreachable("Invalid provoking vertex mode");
+         UNREACHABLE("Invalid provoking vertex mode");
       }
 
 #if GFX_VER >= 8

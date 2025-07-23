@@ -458,7 +458,7 @@ get_h264_video_mem_size(struct anv_video_session *vid, uint32_t mem_idx)
    case ANV_VID_MEM_H264_MPR_ROW_SCRATCH:
       return width_in_mb * 64 * 2;
    default:
-      unreachable("unknown memory");
+      UNREACHABLE("unknown memory");
    }
 }
 
@@ -510,7 +510,7 @@ get_h265_video_mem_size(struct anv_video_session *vid, uint32_t mem_idx)
       return size;
    }
    default:
-      unreachable("unknown memory");
+      UNREACHABLE("unknown memory");
    }
 
    return size << 6;
@@ -561,7 +561,7 @@ get_vp9_video_mem_size(struct anv_video_session *vid, uint32_t mem_idx)
       size = (width_in_ctb * height_in_ctb * 9);
       break;
    default:
-      unreachable("unknown memory");
+      UNREACHABLE("unknown memory");
    }
 
    return size << 6;
@@ -892,7 +892,7 @@ anv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device,
                                      memory_types);
       break;
    default:
-      unreachable("unknown codec");
+      UNREACHABLE("unknown codec");
    }
 
    return VK_SUCCESS;
@@ -940,7 +940,7 @@ anv_BindVideoSessionMemoryKHR(VkDevice _device,
       }
       break;
    default:
-      unreachable("unknown codec");
+      UNREACHABLE("unknown codec");
    }
    return VK_SUCCESS;
 }
@@ -1078,7 +1078,7 @@ init_all_av1_entry(uint16_t *dst_ptr, int index)
       INIT_TABLE(av1_cdf_intra_coeffs_3);
       break;
    default:
-      unreachable("illegal av1 entry\n");
+      UNREACHABLE("illegal av1 entry\n");
    }
    INIT_TABLE(av1_cdf_intra_part2);
    INIT_TABLE(av1_cdf_inter);

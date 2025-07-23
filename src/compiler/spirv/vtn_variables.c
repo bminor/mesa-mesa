@@ -1936,7 +1936,7 @@ vtn_mode_to_address_format(struct vtn_builder *b, enum vtn_variable_mode mode)
       return nir_address_format_logical;
    }
 
-   unreachable("Invalid variable mode");
+   UNREACHABLE("Invalid variable mode");
 }
 
 static bool
@@ -2315,7 +2315,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
 
    case vtn_variable_mode_phys_ssbo:
    case vtn_variable_mode_generic:
-      unreachable("Should have been caught before");
+      UNREACHABLE("Should have been caught before");
    }
 
    /* Ignore incorrectly generated Undef initializers. */

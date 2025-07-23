@@ -102,7 +102,7 @@ vbo_attrtype_to_integer_flag(GLenum format)
    case GL_UNSIGNED_INT64_ARB:
       return GL_TRUE;
    default:
-      unreachable("Bad vertex attribute type");
+      UNREACHABLE("Bad vertex attribute type");
       return GL_FALSE;
    }
 }
@@ -119,7 +119,7 @@ vbo_attrtype_to_double_flag(GLenum format)
    case GL_DOUBLE:
       return GL_TRUE;
    default:
-      unreachable("Bad vertex attribute type");
+      UNREACHABLE("Bad vertex attribute type");
       return GL_FALSE;
    }
 }
@@ -159,7 +159,7 @@ vbo_get_default_vals_as_union(GLenum format)
    case GL_UNSIGNED_INT64_ARB:
       return (fi_type *)default_uint64;
    default:
-      unreachable("Bad vertex format");
+      UNREACHABLE("Bad vertex format");
       return NULL;
    }
 }

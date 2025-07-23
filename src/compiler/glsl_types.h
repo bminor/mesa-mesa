@@ -203,7 +203,7 @@ glsl_base_type_get_bit_size(const enum glsl_base_type base_type)
       return 64;
 
    default:
-      unreachable("unknown base type");
+      UNREACHABLE("unknown base type");
    }
 
    return 0;
@@ -986,7 +986,7 @@ glsl_floatN_t_type(unsigned bit_size)
    case 32: return &glsl_type_builtin_float;
    case 64: return &glsl_type_builtin_double;
    default:
-      unreachable("Unsupported bit size");
+      UNREACHABLE("Unsupported bit size");
    }
 }
 
@@ -996,7 +996,7 @@ glsl_bfloatN_t_type(unsigned bit_size)
    switch (bit_size) {
    case 16: return &glsl_type_builtin_bfloat16_t;
    default:
-      unreachable("Unsupported bit size");
+      UNREACHABLE("Unsupported bit size");
    }
 }
 
@@ -1009,7 +1009,7 @@ glsl_intN_t_type(unsigned bit_size)
    case 32: return &glsl_type_builtin_int;
    case 64: return &glsl_type_builtin_int64_t;
    default:
-      unreachable("Unsupported bit size");
+      UNREACHABLE("Unsupported bit size");
    }
 }
 
@@ -1022,7 +1022,7 @@ glsl_uintN_t_type(unsigned bit_size)
    case 32: return &glsl_type_builtin_uint;
    case 64: return &glsl_type_builtin_uint64_t;
    default:
-      unreachable("Unsupported bit size");
+      UNREACHABLE("Unsupported bit size");
    }
 }
 

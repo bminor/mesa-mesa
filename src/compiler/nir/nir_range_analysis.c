@@ -287,7 +287,7 @@ analyze_constant(const struct nir_alu_instr *instr, unsigned src,
    }
 
    default:
-      unreachable("Invalid alu source type");
+      UNREACHABLE("Invalid alu source type");
    }
 }
 
@@ -521,7 +521,7 @@ get_fp_key(struct analysis_query *q)
       type_encoding = 3;
       break;
    default:
-      unreachable("Invalid base type.");
+      UNREACHABLE("Invalid base type.");
    }
 
    return ptr | type_encoding;

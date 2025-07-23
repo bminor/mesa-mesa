@@ -3278,7 +3278,7 @@ wsi_wl_image_init(struct wsi_wl_swapchain *chain,
    }
 
    default:
-      unreachable("Invalid buffer type");
+      UNREACHABLE("Invalid buffer type");
    }
 
    if (!image->wayland_buffer.buffer)

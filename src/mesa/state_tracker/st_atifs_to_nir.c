@@ -160,7 +160,7 @@ get_source(struct st_translate *t, GLenum src_type)
       return load_input(t, VARYING_SLOT_COL1);
    } else {
       /* frontend prevents this */
-      unreachable("unknown source");
+      UNREACHABLE("unknown source");
    }
 }
 
@@ -262,7 +262,7 @@ emit_arith_inst(struct st_translate *t,
       return nir_channel_vec4(t->b, nir_fdot4(t->b,src[0], src[1]), 0);
 
    default:
-      unreachable("Unknown ATI_fs opcode");
+      UNREACHABLE("Unknown ATI_fs opcode");
    }
 }
 

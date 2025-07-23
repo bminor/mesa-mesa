@@ -2362,7 +2362,7 @@ lvp_image_bind(struct lvp_device *device,
    if (!mem) {
 #if DETECT_OS_ANDROID
       /* TODO handle VkNativeBufferANDROID */
-      unreachable("VkBindImageMemoryInfo with no memory");
+      UNREACHABLE("VkBindImageMemoryInfo with no memory");
 #else
       const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
          vk_find_struct_const(bind_info->pNext,

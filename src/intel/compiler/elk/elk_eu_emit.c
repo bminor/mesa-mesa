@@ -698,7 +698,7 @@ to_3src_align1_vstride(const struct intel_device_info *devinfo,
    case ELK_VERTICAL_STRIDE_16:
       return ELK_ALIGN1_3SRC_VERTICAL_STRIDE_8;
    default:
-      unreachable("invalid vstride");
+      UNREACHABLE("invalid vstride");
    }
 }
 
@@ -716,7 +716,7 @@ to_3src_align1_hstride(enum elk_horizontal_stride hstride)
    case ELK_HORIZONTAL_STRIDE_4:
       return ELK_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_4;
    default:
-      unreachable("invalid hstride");
+      UNREACHABLE("invalid hstride");
    }
 }
 
@@ -975,7 +975,7 @@ elk_AVG(struct elk_codegen *p, struct elk_reg dest,
    case ELK_REGISTER_TYPE_UD:
       break;
    default:
-      unreachable("Bad type for elk_AVG");
+      UNREACHABLE("Bad type for elk_AVG");
    }
 
    return elk_alu2(p, ELK_OPCODE_AVG, dest, src0, src1);
@@ -2578,7 +2578,7 @@ elk_find_loop_end(struct elk_codegen *p, int start_offset)
 	    return offset;
       }
    }
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 /* After program generation, go back and update the UIP and JIP of
@@ -2851,7 +2851,7 @@ elk_set_memory_fence_message(struct elk_codegen *p,
       elk_inst_set_dp_msg_type(devinfo, insn, GFX7_DATAPORT_DC_MEMORY_FENCE);
       break;
    default:
-      unreachable("Not reached");
+      UNREACHABLE("Not reached");
    }
 
    if (commit_enable)

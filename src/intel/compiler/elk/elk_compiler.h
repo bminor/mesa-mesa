@@ -940,7 +940,7 @@ elk_fs_simd_width_for_ksp(unsigned ksp_idx, bool simd8_enabled,
    case 2:
       return (simd16_enabled && (simd32_enabled || simd8_enabled)) ? 16 : 0;
    default:
-      unreachable("Invalid KSP index");
+      UNREACHABLE("Invalid KSP index");
    }
 }
 

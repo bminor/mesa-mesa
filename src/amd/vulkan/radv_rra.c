@@ -153,7 +153,7 @@ amdgpu_vram_type_to_rra(uint32_t type)
    case AMD_VRAM_TYPE_LPDDR5:
       return RRA_MEMORY_TYPE_LPDDR5;
    default:
-      unreachable("invalid vram type");
+      UNREACHABLE("invalid vram type");
    }
 }
 

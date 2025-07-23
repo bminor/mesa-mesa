@@ -132,7 +132,7 @@ node_for_deref(nir_deref_instr *instr, struct match_node *parent,
       break;
 
    default:
-      unreachable("bad deref type");
+      UNREACHABLE("bad deref type");
    }
 
    assert(idx < parent->num_children);
@@ -251,7 +251,7 @@ _foreach_aliasing(nir_deref_instr **deref, match_cb cb,
       return;
 
    default:
-      unreachable("bad deref type");
+      UNREACHABLE("bad deref type");
    }
 }
 
@@ -382,7 +382,7 @@ try_match_deref(nir_deref_path *base_path, int *path_array_idx,
          continue;
 
       default:
-         unreachable("Invalid deref type in a path");
+         UNREACHABLE("Invalid deref type in a path");
       }
    }
 

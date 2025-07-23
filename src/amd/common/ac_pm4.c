@@ -56,7 +56,7 @@ pairs_packed_opcode_to_regular(unsigned opcode)
    case PKT3_SET_SH_REG_PAIRS_PACKED:
       return PKT3_SET_SH_REG;
    default:
-      unreachable("invalid packed opcode");
+      UNREACHABLE("invalid packed opcode");
    }
 }
 

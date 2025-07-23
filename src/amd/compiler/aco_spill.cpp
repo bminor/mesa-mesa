@@ -1529,7 +1529,7 @@ assign_spill_slots(spill_ctx& ctx, unsigned spills_to_vgpr)
             if (!ctx.is_reloaded[spill_id]) {
                /* never reloaded, so don't spill */
             } else if (!is_assigned[spill_id]) {
-               unreachable("No spill slot assigned for spill id");
+               UNREACHABLE("No spill slot assigned for spill id");
             } else if (ctx.interferences[spill_id].first.type() == RegType::vgpr) {
                spill_vgpr(ctx, block, instructions, *it, slots);
             } else {
@@ -1576,7 +1576,7 @@ assign_spill_slots(spill_ctx& ctx, unsigned spills_to_vgpr)
             assert(ctx.is_reloaded[spill_id]);
 
             if (!is_assigned[spill_id]) {
-               unreachable("No spill slot assigned for spill id");
+               UNREACHABLE("No spill slot assigned for spill id");
             } else if (ctx.interferences[spill_id].first.type() == RegType::vgpr) {
                reload_vgpr(ctx, block, instructions, *it, slots);
             } else {

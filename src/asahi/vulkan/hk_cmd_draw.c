@@ -135,7 +135,7 @@ vk_conv_topology(VkPrimitiveTopology topology)
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
       return MESA_PRIM_PATCHES;
    default:
-      unreachable("invalid");
+      UNREACHABLE("invalid");
    }
 }
 
@@ -1934,7 +1934,7 @@ hk_get_fast_linked(struct hk_device *dev, struct hk_shader *shader, void *key)
    else if (shader->info.stage == MESA_SHADER_FRAGMENT)
       linked = hk_get_fast_linked_locked_fs(dev, shader, key);
    else
-      unreachable("invalid stage");
+      UNREACHABLE("invalid stage");
 
    simple_mtx_unlock(&shader->linked.lock);
    return linked;
@@ -2212,7 +2212,7 @@ translate_hw_primitive_topology(enum mesa_prim prim)
    case MESA_PRIM_TRIANGLE_FAN:
       return AGX_PRIMITIVE_TRIANGLE_FAN;
    default:
-      unreachable("Invalid hardware primitive topology");
+      UNREACHABLE("Invalid hardware primitive topology");
    }
 }
 
@@ -2308,7 +2308,7 @@ hk_default_sample_positions(unsigned nr_samples)
    case 4:
       return 0xeaa26e26;
    default:
-      unreachable("Invalid sample count");
+      UNREACHABLE("Invalid sample count");
    }
 }
 
@@ -3913,7 +3913,7 @@ hk_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer,
                                VkDeviceSize counterBufferOffset,
                                uint32_t counterOffset, uint32_t vertexStride)
 {
-   unreachable("TODO");
+   UNREACHABLE("TODO");
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -4020,11 +4020,11 @@ hk_CmdBeginConditionalRenderingEXT(
    VkCommandBuffer commandBuffer,
    const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin)
 {
-   unreachable("stub");
+   UNREACHABLE("stub");
 }
 
 VKAPI_ATTR void VKAPI_CALL
 hk_CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
 {
-   unreachable("stub");
+   UNREACHABLE("stub");
 }

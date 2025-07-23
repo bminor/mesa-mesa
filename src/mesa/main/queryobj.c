@@ -333,7 +333,7 @@ get_query_result(struct pipe_context *pipe,
          q->Result = data.pipeline_statistics.c_primitives;
          break;
       default:
-         unreachable("invalid pipeline statistics counter");
+         UNREACHABLE("invalid pipeline statistics counter");
       }
       break;
    case PIPE_QUERY_OCCLUSION_PREDICATE:
@@ -448,7 +448,7 @@ store_query_result(struct gl_context *ctx, struct gl_query_object *q,
       result_type = PIPE_QUERY_TYPE_U64;
       break;
    default:
-      unreachable("Unexpected result type");
+      UNREACHABLE("Unexpected result type");
    }
 
    if (pname == GL_QUERY_RESULT_AVAILABLE) {
@@ -1215,7 +1215,7 @@ invalid_enum:
       break;
    }
    default:
-      unreachable("unexpected ptype");
+      UNREACHABLE("unexpected ptype");
    }
 }
 

@@ -544,7 +544,7 @@ translate_stencil_op(VkStencilOp in)
    case VK_STENCIL_OP_INVERT:
       return MALI_STENCIL_OP_INVERT;
    default:
-      unreachable("Invalid stencil op");
+      UNREACHABLE("Invalid stencil op");
    }
 }
 
@@ -576,7 +576,7 @@ translate_prim_topology(VkPrimitiveTopology in)
    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
    default:
-      unreachable("Invalid primitive type");
+      UNREACHABLE("Invalid primitive type");
    }
 }
 
@@ -1589,7 +1589,7 @@ get_first_provoking_vertex(struct panvk_cmd_buffer *cmdbuf)
       case U_TRISTATE_UNSET:
          return true;
       default:
-         unreachable("Invalid u_tristate");
+         UNREACHABLE("Invalid u_tristate");
    }
 }
 

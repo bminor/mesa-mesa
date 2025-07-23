@@ -159,7 +159,7 @@ shared_opcode_for_task_payload(nir_intrinsic_op task_payload_op)
    case nir_intrinsic_store_task_payload:
       return nir_intrinsic_store_shared;
    default:
-      unreachable("Invalid task payload atomic");
+      UNREACHABLE("Invalid task payload atomic");
    }
 }
 

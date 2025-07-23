@@ -170,7 +170,7 @@ to_c_factor(enum pipe_blendfactor factor)
       return MALI_BLEND_OPERAND_C_CONSTANT;
 
    default:
-      unreachable("Unsupported blend factor");
+      UNREACHABLE("Unsupported blend factor");
    }
 }
 
@@ -242,7 +242,7 @@ to_mali_function(enum pipe_blend_func blend_func,
          function->b = MALI_BLEND_OPERAND_B_SRC_MINUS_DEST;
          break;
       default:
-         unreachable("Invalid blend function");
+         UNREACHABLE("Invalid blend function");
       }
    } else if (is_2srcdest(blend_func, src_factor, dest_factor, is_alpha)) {
       /* src*dest + dest*src = 2*src*dest = 0 + dest*(2*src) */
@@ -271,7 +271,7 @@ to_mali_function(enum pipe_blend_func blend_func,
          function->negate_a = true;
          break;
       default:
-         unreachable("Invalid blend function\n");
+         UNREACHABLE("Invalid blend function\n");
       }
    }
 }
@@ -485,7 +485,7 @@ pan_blend_type_from_nir(nir_alu_type nir_type)
    case nir_type_uint16:
       return MALI_REGISTER_FILE_FORMAT_U16;
    default:
-      unreachable("Unsupported blend shader type for NIR alu type");
+      UNREACHABLE("Unsupported blend shader type for NIR alu type");
       return 0;
    }
 }
@@ -529,7 +529,7 @@ logicop_str(enum pipe_logicop logicop)
    case PIPE_LOGICOP_SET:
       return "set";
    default:
-      unreachable("Invalid logicop\n");
+      UNREACHABLE("Invalid logicop\n");
    }
 }
 
@@ -748,7 +748,7 @@ GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
             MALI_REGISTER_FILE_FORMAT_U32;
          break;
       default:
-         unreachable("Invalid format");
+         UNREACHABLE("Invalid format");
       }
 
       cfg.fixed_function.conversion.memory_format =

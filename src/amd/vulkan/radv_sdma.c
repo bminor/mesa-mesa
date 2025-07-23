@@ -255,7 +255,7 @@ radv_sdma_get_tiled_info_dword(const struct radv_device *const device, const str
    } else if (ver >= SDMA_4_0) {
       return info | dimension << 9 | surf->u.gfx9.epitch << 16;
    } else {
-      unreachable("unsupported SDMA version");
+      UNREACHABLE("unsupported SDMA version");
    }
 }
 
@@ -273,7 +273,7 @@ radv_sdma_get_tiled_header_dword(const struct radv_device *const device, const s
       const uint32_t mip_id = subresource.mipLevel;
       return (mip_max - 1) << 20 | mip_id << 24;
    } else {
-      unreachable("unsupported SDMA version");
+      UNREACHABLE("unsupported SDMA version");
    }
 }
 

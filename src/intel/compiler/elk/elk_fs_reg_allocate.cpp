@@ -205,7 +205,7 @@ count_to_loop_end(const elk_bblock_t *block)
             return block->end_ip;
       }
    }
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 void elk_fs_visitor::calculate_payload_ranges(unsigned payload_node_count,

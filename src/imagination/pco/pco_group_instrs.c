@@ -48,7 +48,7 @@ static inline unsigned calc_da(pco_igrp *igrp)
       break;
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    return da;
@@ -102,7 +102,7 @@ static inline void calc_lengths(pco_igrp *igrp, unsigned *offset_bytes)
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
 
       total_length += igrp->enc.len.instrs[phase];

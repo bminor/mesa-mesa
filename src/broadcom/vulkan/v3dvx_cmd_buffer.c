@@ -864,7 +864,7 @@ v3dX(clamp_for_format_and_type)(uint32_t rt_type,
    case V3D_INTERNAL_TYPE_32F:
       return V3D_RENDER_TARGET_TYPE_CLAMP_32F;
    default:
-      unreachable("Unknown internal render target type");
+      UNREACHABLE("Unknown internal render target type");
    }
 
    return V3D_RENDER_TARGET_TYPE_CLAMP_INVALID;
@@ -2331,7 +2331,7 @@ v3d_gs_output_primitive(enum mesa_prim prim_type)
     case MESA_PRIM_TRIANGLE_STRIP:
         return GEOMETRY_SHADER_TRI_STRIP;
     default:
-        unreachable("Unsupported primitive type");
+        UNREACHABLE("Unsupported primitive type");
     }
 }
 
@@ -2366,7 +2366,7 @@ simd_width_to_gs_pack_mode(uint32_t width)
    case 1:
       return V3D_PACK_MODE_1_WAY;
    default:
-      unreachable("Invalid SIMD width");
+      UNREACHABLE("Invalid SIMD width");
    };
 }
 

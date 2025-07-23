@@ -64,7 +64,7 @@ radv_get_pipeline_key(struct radv_device *device, const VkPipelineCreateInfoKHR 
       break;
    }
    default:
-      unreachable("unsupported pipeline create info struct");
+      UNREACHABLE("unsupported pipeline create info struct");
    }
 
    return result;

@@ -37,7 +37,7 @@ _nir_foreach_def(nir_instr *instr, nir_foreach_def_cb cb, void *state)
       return true;
 
    default:
-      unreachable("Invalid instruction type");
+      UNREACHABLE("Invalid instruction type");
    }
 }
 
@@ -139,7 +139,7 @@ nir_foreach_src(nir_instr *instr, nir_foreach_src_cb cb, void *state)
       return true;
 
    default:
-      unreachable("Invalid instruction type");
+      UNREACHABLE("Invalid instruction type");
       break;
    }
 

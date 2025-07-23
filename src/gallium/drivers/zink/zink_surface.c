@@ -60,7 +60,7 @@ vkviewtype_from_pipe(enum pipe_texture_target target, bool need_2D)
       return VK_IMAGE_VIEW_TYPE_3D;
 
    default:
-      unreachable("unsupported target");
+      UNREACHABLE("unsupported target");
    }
 }
 
@@ -189,7 +189,7 @@ componentmapping_to_pipe(VkComponentSwizzle c)
    case VK_COMPONENT_SWIZZLE_A:
       return PIPE_SWIZZLE_W;
    default:
-      unreachable("unknown swizzle");
+      UNREACHABLE("unknown swizzle");
    }
 }
 

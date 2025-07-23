@@ -237,7 +237,7 @@ panvk_image_type_to_mali_tex_dim(VkImageType type)
    case VK_IMAGE_TYPE_3D:
       return MALI_TEXTURE_DIMENSION_3D;
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
 }
 
@@ -568,7 +568,7 @@ get_image_subresource_layout(const struct panvk_image *image,
                memcpy_size->size = slice_layout->size_B / 4;
                break;
             default:
-               unreachable("invalid aspect");
+               UNREACHABLE("invalid aspect");
          }
       } else {
          memcpy_size->size = slice_layout->size_B;
@@ -685,7 +685,7 @@ panvk_image_bind(struct panvk_device *dev,
    if (!mem) {
 #if DETECT_OS_ANDROID
       /* TODO handle VkNativeBufferANDROID when we support ANB */
-      unreachable("VkBindImageMemoryInfo with no memory");
+      UNREACHABLE("VkBindImageMemoryInfo with no memory");
 #else
       const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
          vk_find_struct_const(bind_info->pNext,

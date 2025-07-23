@@ -280,7 +280,7 @@ get_num_results(struct zink_query *q)
    default:
       debug_printf("unknown query: %s\n",
                    util_str_query_type(q->type, true));
-      unreachable("zink: unknown query type");
+      UNREACHABLE("zink: unknown query type");
    }
 }
 
@@ -328,7 +328,7 @@ convert_query_type(struct zink_screen *screen, enum pipe_query_type query_type, 
    default:
       debug_printf("unknown query: %s\n",
                    util_str_query_type(query_type, true));
-      unreachable("zink: unknown query type");
+      UNREACHABLE("zink: unknown query type");
    }
 }
 
@@ -651,7 +651,7 @@ check_query_results(struct zink_query *query, union pipe_query_result *result,
       default:
          debug_printf("unhandled query type: %s\n",
                       util_str_query_type(query->type, true));
-         unreachable("unexpected query type");
+         UNREACHABLE("unexpected query type");
       }
    }
 }

@@ -304,7 +304,7 @@ vir_channels_written(struct qinst *inst)
                         return 0xc;
                 }
         }
-        unreachable("Bad pack field");
+        UNREACHABLE("Bad pack field");
 }
 #endif
 
@@ -992,7 +992,7 @@ v3d_set_prog_data(struct v3d_compile *c,
                 v3d_cs_set_prog_data(c, (struct v3d_compute_prog_data *)prog_data);
                 break;
         default:
-                unreachable("unsupported shader stage");
+                UNREACHABLE("unsupported shader stage");
         }
 }
 
@@ -1680,7 +1680,7 @@ v3d_attempt_compile(struct v3d_compile *c)
         case MESA_SHADER_COMPUTE:
                 break;
         default:
-                unreachable("unsupported shader stage");
+                UNREACHABLE("unsupported shader stage");
         }
 
         switch (c->s->info.stage) {

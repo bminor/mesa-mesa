@@ -307,7 +307,7 @@ get_base_format_for_array_format(mesa_array_format format)
       break;
    }
 
-   unreachable("Unsupported format");
+   UNREACHABLE("Unsupported format");
 }
 
 /**
@@ -427,7 +427,7 @@ _mesa_array_format_flip_channels(mesa_array_format format)
       return format;
    }
 
-   unreachable("Invalid array format");
+   UNREACHABLE("Invalid array format");
 }
 
 static uint32_t

@@ -629,7 +629,7 @@ _mesa_generate_mipmap_level(GLenum target,
       /* no mipmaps, do nothing */
       break;
    default:
-      unreachable("bad tex target in _mesa_generate_mipmaps");
+      UNREACHABLE("bad tex target in _mesa_generate_mipmaps");
    }
 }
 

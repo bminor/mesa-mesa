@@ -780,10 +780,10 @@ init_ici(struct zink_screen *screen, VkImageCreateInfo *ici, const struct pipe_r
       break;
 
    case PIPE_BUFFER:
-      unreachable("PIPE_BUFFER should already be handled");
+      UNREACHABLE("PIPE_BUFFER should already be handled");
 
    default:
-      unreachable("Unknown target");
+      UNREACHABLE("Unknown target");
    }
 
    if (screen->info.have_EXT_sample_locations &&
@@ -884,7 +884,7 @@ get_format_feature_flags(VkImageCreateInfo ici, struct zink_screen *screen, cons
          feats &= screen->modifier_props[templ->format].pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
       break;
    default:
-         unreachable("unknown tiling");
+         UNREACHABLE("unknown tiling");
    }
    return feats;
 }
@@ -916,7 +916,7 @@ get_export_flags(struct zink_screen *screen, const struct pipe_resource *templ, 
           alloc_info->whandle->type == ZINK_EXTERNAL_MEMORY_HANDLE)
          needs_export |= true;
       else
-         unreachable("unknown handle type");
+         UNREACHABLE("unknown handle type");
    }
    if (needs_export) {
       if (alloc_info->whandle && alloc_info->whandle->type == ZINK_EXTERNAL_MEMORY_HANDLE) {
@@ -1571,7 +1571,7 @@ resource_object_create(struct zink_screen *screen, const struct pipe_resource *t
       FREE(obj);
       return NULL;
    default:
-      unreachable("Invalid create object result code");
+      UNREACHABLE("Invalid create object result code");
    }
 }
 
@@ -1841,7 +1841,7 @@ zink_resource_get_param(struct pipe_screen *pscreen, struct pipe_context *pctx,
          aspect = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
          break;
       default:
-         unreachable("how many planes you got in this thing?");
+         UNREACHABLE("how many planes you got in this thing?");
       }
    } else if (util_format_is_yuv(pres->format)) {
       aspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -3137,7 +3137,7 @@ resource_object_add_bind(struct zink_context *ctx, struct zink_resource *res, un
    if (res->base.b.bind & bind)
       return true;
    if (res->obj->is_buffer) {
-      unreachable("zink: all buffers should have this bit");
+      UNREACHABLE("zink: all buffers should have this bit");
       return true;
    }
    assert(!res->obj->dt);

@@ -50,7 +50,7 @@ assert_register_is_aligned(const agx_instr *I, agx_index reg)
       return;
    }
 
-   unreachable("Invalid register size");
+   UNREACHABLE("Invalid register size");
 }
 
 /* Texturing has its own operands */
@@ -169,7 +169,7 @@ agx_pack_pbe_lod(const agx_instr *I, agx_index index, bool *flag)
    else if (index.type == AGX_INDEX_REGISTER)
       *flag = false;
    else
-      unreachable("Invalid PBE LOD type");
+      UNREACHABLE("Invalid PBE LOD type");
 
    return index.value;
 }

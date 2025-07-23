@@ -181,7 +181,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       ));
       break;
    default:
-      unreachable("bad shader stage");
+      UNREACHABLE("bad shader stage");
    }
 
    const struct xs_config<CHIP> *cfg = &xs_configs<CHIP>[type];
@@ -476,7 +476,7 @@ primitive_to_tess(enum mesa_prim primitive)
    case MESA_PRIM_TRIANGLE_STRIP:
       return TESS_CW_TRIS;
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 
@@ -913,7 +913,7 @@ tex_opc_to_prefetch_cmd(opc_t tex_opc)
    case OPC_SAM:
       return TEX_PREFETCH_SAM;
    default:
-      unreachable("Unknown tex opc for prefeth cmd");
+      UNREACHABLE("Unknown tex opc for prefeth cmd");
    }
 }
 

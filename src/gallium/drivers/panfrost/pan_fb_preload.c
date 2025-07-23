@@ -59,7 +59,7 @@ nir_type_to_reg_fmt(nir_alu_type in)
    case nir_type_uint32:
       return MALI_REGISTER_FILE_FORMAT_U32;
    default:
-      unreachable("Invalid type");
+      UNREACHABLE("Invalid type");
    }
 }
 #endif
@@ -422,7 +422,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
          type_str = "int";
          break;
       default:
-         unreachable("Invalid type\n");
+         UNREACHABLE("Invalid type\n");
       }
 
       switch (key->surfaces[i].dim) {
@@ -439,7 +439,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
          dim_str = "3D";
          break;
       default:
-         unreachable("Invalid dim\n");
+         UNREACHABLE("Invalid dim\n");
       }
 
       coord_comps = MAX2(coord_comps, (key->surfaces[i].dim ?: 3) +
@@ -493,7 +493,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
          sampler_dim = GLSL_SAMPLER_DIM_CUBE;
          break;
       default:
-         unreachable("Invalid dimension");
+         UNREACHABLE("Invalid dimension");
       }
 
       nir_tex_instr *tex = nir_tex_instr_create(b.shader, ms ? 3 : 1);

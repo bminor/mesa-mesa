@@ -211,7 +211,7 @@ v3d_translate_pipe_swizzle(enum pipe_swizzle swizzle)
    case PIPE_SWIZZLE_W:
       return 2 + swizzle;
    default:
-      unreachable("unknown swizzle");
+      UNREACHABLE("unknown swizzle");
    }
 }
 
@@ -238,7 +238,7 @@ v3d_hw_prim_type(enum mesa_prim prim_type)
       return 8 + (prim_type - MESA_PRIM_LINES_ADJACENCY);
 
    default:
-      unreachable("Unsupported primitive type");
+      UNREACHABLE("Unsupported primitive type");
    }
 }
 
@@ -253,7 +253,7 @@ v3d_internal_bpp_words(uint32_t internal_bpp)
         case 2 /* V3D_INTERNAL_BPP_128 */:
                 return 4;
         default:
-                unreachable("Unsupported internal BPP");
+                UNREACHABLE("Unsupported internal BPP");
         }
 }
 

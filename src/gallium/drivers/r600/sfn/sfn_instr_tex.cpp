@@ -363,7 +363,7 @@ TexInstr::set_tex_param(const std::string& token)
       set_resource_offset(VirtualValue::from_string(token.substr(3))->as_register());
    else {
       std::cerr << "Token '" << token << "': ";
-      unreachable("Unknown token in tex param");
+      UNREACHABLE("Unknown token in tex param");
    }
 }
 
@@ -830,7 +830,7 @@ TexInstr::Inputs::Inputs(const nir_tex_instr& instr, ValueFactory& vf):
       case nir_tex_src_projector:
       case nir_tex_src_min_lod:
       default:
-         unreachable("unsupported texture input type");
+         UNREACHABLE("unsupported texture input type");
       }
    }
 
@@ -867,7 +867,7 @@ TexInstr::Inputs::get_opcode(const nir_tex_instr& instr) -> Opcode
    case nir_texop_texture_samples:
       return TexInstr::get_nsamples;
    default:
-      unreachable("unsupported texture input opcode");
+      UNREACHABLE("unsupported texture input opcode");
    }
 }
 

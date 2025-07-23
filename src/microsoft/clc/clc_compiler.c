@@ -172,7 +172,7 @@ clc_lower_input_image_deref(nir_builder *b, struct clc_image_lower_context *cont
                case nir_type_float: type = FLOAT4; break;
                case nir_type_int: type = INT4; break;
                case nir_type_uint: type = UINT4; break;
-               default: unreachable("Unsupported image type for load.");
+               default: UNREACHABLE("Unsupported image type for load.");
                }
 
                int image_binding = image_bindings[type];
@@ -243,7 +243,7 @@ clc_lower_input_image_deref(nir_builder *b, struct clc_image_lower_context *cont
             }
 
             default:
-               unreachable("Unsupported image intrinsic");
+               UNREACHABLE("Unsupported image intrinsic");
             }
          } else if (nir_src_parent_instr(src)->type == nir_instr_type_tex) {
             assert(in_var->data.access & ACCESS_NON_WRITEABLE);
@@ -253,7 +253,7 @@ clc_lower_input_image_deref(nir_builder *b, struct clc_image_lower_context *cont
             case nir_type_float: type = FLOAT4; break;
             case nir_type_int: type = INT4; break;
             case nir_type_uint: type = UINT4; break;
-            default: unreachable("Unsupported image format for sample.");
+            default: UNREACHABLE("Unsupported image format for sample.");
             }
 
             int image_binding = image_bindings[type];
@@ -567,7 +567,7 @@ copy_const_initializer(const nir_constant *constant, const struct glsl_type *typ
             *((uint8_t *)data) = constant->values[i].u8;
             break;
          default:
-            unreachable("Invalid base type");
+            UNREACHABLE("Invalid base type");
          }
 
          data += glsl_get_bit_size(type) / 8;
@@ -1202,7 +1202,7 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
             metadata->consts[metadata->num_consts].uav_id = var->data.binding;
             metadata->num_consts++;
          } else
-            unreachable("unexpected constant initializer");
+            UNREACHABLE("unexpected constant initializer");
       }
    }
 

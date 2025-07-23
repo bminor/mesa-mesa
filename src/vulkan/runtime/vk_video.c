@@ -581,7 +581,7 @@ vk_video_session_parameters_init(struct vk_device *device,
       break;
    }
    default:
-      unreachable("Unsupported video codec operation");
+      UNREACHABLE("Unsupported video codec operation");
       break;
    }
    return VK_SUCCESS;
@@ -802,7 +802,7 @@ vk_video_session_parameters_update(struct vk_video_session_parameters *params,
       return update_h265_enc_session_parameters(params, h265_add);
    }
    default:
-      unreachable("Unknown codec\n");
+      UNREACHABLE("Unknown codec\n");
    }
    return result;
 }

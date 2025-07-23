@@ -1734,7 +1734,7 @@ x11_present_to_x11(struct x11_swapchain *chain, uint32_t image_index,
 #ifdef HAVE_X11_DRM
       result = x11_present_to_x11_dri3(chain, image_index, target_msc, present_mode);
 #else
-      unreachable("X11 missing DRI3 support!");
+      UNREACHABLE("X11 missing DRI3 support!");
 #endif
 
    if (result < 0)
@@ -2258,7 +2258,7 @@ fail_image:
    wsi_destroy_image(&chain->base, &image->base);
 
 #else
-   unreachable("SHM support not compiled in");
+   UNREACHABLE("SHM support not compiled in");
 #endif
    return VK_ERROR_INITIALIZATION_FAILED;
 }
@@ -2715,7 +2715,7 @@ x11_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
       }
       image_params = &drm_image_params.base;
 #else
-      unreachable("X11 DRM support missing!");
+      UNREACHABLE("X11 DRM support missing!");
 #endif
    }
 

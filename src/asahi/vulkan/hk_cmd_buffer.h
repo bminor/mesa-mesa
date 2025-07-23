@@ -809,7 +809,7 @@ hk_get_descriptors_state(struct hk_cmd_buffer *cmd,
    case VK_PIPELINE_BIND_POINT_COMPUTE:
       return &cmd->state.cs.descriptors;
    default:
-      unreachable("Unhandled bind point");
+      UNREACHABLE("Unhandled bind point");
    }
 };
 

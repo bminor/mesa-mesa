@@ -602,7 +602,7 @@ lower_images(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
 
    case nir_intrinsic_image_size:
    case nir_intrinsic_image_texel_address:
-      unreachable("should've been lowered");
+      UNREACHABLE("should've been lowered");
 
    default:
       return false;

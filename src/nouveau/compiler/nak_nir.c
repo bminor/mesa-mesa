@@ -55,7 +55,7 @@ nak_nir_workgroup_has_one_subgroup(const nir_shader *nir)
    case MESA_SHADER_TESS_EVAL:
    case MESA_SHADER_GEOMETRY:
    case MESA_SHADER_FRAGMENT:
-      unreachable("Shader stage does not have workgroups");
+      UNREACHABLE("Shader stage does not have workgroups");
       break;
 
    case MESA_SHADER_TESS_CTRL:
@@ -78,7 +78,7 @@ nak_nir_workgroup_has_one_subgroup(const nir_shader *nir)
    }
 
    default:
-      unreachable("Unknown shader stage");
+      UNREACHABLE("Unknown shader stage");
    }
 }
 
@@ -395,7 +395,7 @@ nak_varying_attr_addr(const struct nak_compiler *nak, gl_varying_slot slot)
       case VARYING_SLOT_PRIMITIVE_SHADING_RATE:
          return nak->sm >= 86 ? NAK_ATTR_VPRS_TABLE_INDEX
                               : NAK_ATTR_VIEWPORT_INDEX;
-      default: unreachable("Invalid varying slot");
+      default: UNREACHABLE("Invalid varying slot");
       }
    }
 }
@@ -409,10 +409,10 @@ nak_fs_out_addr(gl_frag_result slot, uint32_t blend_idx)
       return NAK_FS_OUT_DEPTH;
 
    case FRAG_RESULT_STENCIL:
-      unreachable("EXT_shader_stencil_export not supported");
+      UNREACHABLE("EXT_shader_stencil_export not supported");
 
    case FRAG_RESULT_COLOR:
-      unreachable("Vulkan alway uses explicit locations");
+      UNREACHABLE("Vulkan alway uses explicit locations");
 
    case FRAG_RESULT_SAMPLE_MASK:
       assert(blend_idx == 0);
@@ -436,7 +436,7 @@ nak_sysval_attr_addr(const struct nak_compiler *nak, gl_system_value sysval)
    case SYSTEM_VALUE_VERTEX_ID:     return NAK_ATTR_VERTEX_ID;
    case SYSTEM_VALUE_FRONT_FACE:    return NAK_ATTR_FRONT_FACE;
    case SYSTEM_VALUE_LAYER_ID:      return NAK_ATTR_RT_ARRAY_INDEX;
-   default: unreachable("Invalid system value");
+   default: UNREACHABLE("Invalid system value");
    }
 }
 
@@ -455,7 +455,7 @@ nak_sysval_sysval_idx(gl_system_value sysval)
    case SYSTEM_VALUE_SUBGROUP_LE_MASK:       return NAK_SV_LANEMASK_LE;
    case SYSTEM_VALUE_SUBGROUP_GT_MASK:       return NAK_SV_LANEMASK_GT;
    case SYSTEM_VALUE_SUBGROUP_GE_MASK:       return NAK_SV_LANEMASK_GE;
-   default: unreachable("Invalid system value");
+   default: UNREACHABLE("Invalid system value");
    }
 }
 
@@ -1093,7 +1093,7 @@ nak_postprocess_nir(nir_shader *nir,
       break;
 
    default:
-      unreachable("Unsupported shader stage");
+      UNREACHABLE("Unsupported shader stage");
    }
 
    OPT(nir, nir_lower_doubles, NULL, nak->nir_options.lower_doubles_options);

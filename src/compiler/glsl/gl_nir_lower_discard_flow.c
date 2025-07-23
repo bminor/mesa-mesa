@@ -126,7 +126,7 @@ lower_discard_flow(nir_builder *b, nir_cf_node *cf_node,
       return;
    }
    default:
-      unreachable("unknown cf node type");
+      UNREACHABLE("unknown cf node type");
    }
 }
 

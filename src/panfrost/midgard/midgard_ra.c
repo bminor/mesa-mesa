@@ -404,7 +404,7 @@ check_read_class(unsigned *classes, unsigned tag, unsigned node)
    case REG_CLASS_WORK:
       return IS_ALU(tag);
    default:
-      unreachable("Invalid class");
+      UNREACHABLE("Invalid class");
    }
 }
 
@@ -424,7 +424,7 @@ check_write_class(unsigned *classes, unsigned tag, unsigned node)
    case REG_CLASS_WORK:
       return IS_ALU(tag) || (tag == TAG_LOAD_STORE_4);
    default:
-      unreachable("Invalid class");
+      UNREACHABLE("Invalid class");
    }
 }
 
@@ -1232,7 +1232,7 @@ mir_spill_register(compiler_context *ctx, unsigned spill_node,
                    unsigned spill_class, unsigned *spill_count)
 {
    if (spill_class == REG_CLASS_WORK && ctx->inputs->is_blend)
-      unreachable("Blend shader spilling is currently unimplemented");
+      UNREACHABLE("Blend shader spilling is currently unimplemented");
 
    unsigned spill_index = ctx->temp_count;
 

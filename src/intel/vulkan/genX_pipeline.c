@@ -124,7 +124,7 @@ vertex_element_comp_control(enum isl_format format, unsigned comp)
    case 1: bits = isl_format_layouts[format].channels.g.bits; break;
    case 2: bits = isl_format_layouts[format].channels.b.bits; break;
    case 3: bits = isl_format_layouts[format].channels.a.bits; break;
-   default: unreachable("Invalid component");
+   default: UNREACHABLE("Invalid component");
    }
 
    /*
@@ -1864,7 +1864,7 @@ emit_mesh_state(struct anv_graphics_pipeline *pipeline)
       index_format = INDEX_U888X;
       break;
    default:
-      unreachable("invalid index format");
+      UNREACHABLE("invalid index format");
    }
 
    anv_pipeline_emit(pipeline, final.mesh_shader,
@@ -2229,7 +2229,7 @@ genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline)
       }
 
       default:
-         unreachable("Invalid shader group type");
+         UNREACHABLE("Invalid shader group type");
       }
    }
 }
@@ -2239,7 +2239,7 @@ genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline)
 void
 genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline)
 {
-   unreachable("Ray tracing not supported");
+   UNREACHABLE("Ray tracing not supported");
 }
 
 #endif /* GFX_VERx10 >= 125 */

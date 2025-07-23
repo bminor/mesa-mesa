@@ -319,7 +319,7 @@ void anv_CmdBindPipeline(
    }
 
    default:
-      unreachable("invalid bind point");
+      UNREACHABLE("invalid bind point");
       break;
    }
 }
@@ -362,7 +362,7 @@ anv_cmd_buffer_bind_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("invalid bind point");
+      UNREACHABLE("invalid bind point");
    }
 
    VkShaderStageFlags dirty_stages = 0;
@@ -517,7 +517,7 @@ anv_isl_format_for_descriptor_type(const struct anv_device *device,
       return ISL_FORMAT_RAW;
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 }
 
@@ -664,7 +664,7 @@ anv_cmd_buffer_push_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
       break;
 
    default:
-      unreachable("invalid bind point");
+      UNREACHABLE("invalid bind point");
    }
 
    struct anv_push_descriptor_set **push_set =

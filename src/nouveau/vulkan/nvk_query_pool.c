@@ -66,7 +66,7 @@ nvk_CreateQueryPool(VkDevice device,
       reports_per_query = 4;
       break;
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
    pool->query_stride = reports_per_query * sizeof(struct nvk_query_report);
 
@@ -172,7 +172,7 @@ emit_zero_queries(struct nvk_cmd_buffer *cmd, struct nvk_query_pool *pool,
       break;
    }
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 }
 
@@ -481,7 +481,7 @@ nvk_cmd_begin_end_query(struct nvk_cmd_buffer *cmd,
       break;
 
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 
    if (end) {
@@ -662,7 +662,7 @@ nvk_GetQueryPoolResults(VkDevice device,
             cpu_write_query_result(dst, 0, flags, src->timestamp);
          break;
       default:
-         unreachable("Unsupported query type");
+         UNREACHABLE("Unsupported query type");
       }
 
       if (!write_results)

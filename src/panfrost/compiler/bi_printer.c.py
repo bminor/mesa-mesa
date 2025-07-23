@@ -52,7 +52,7 @@ bi_swizzle_as_str(enum bi_swizzle swz)
         case BI_SWIZZLE_B1123: return ".b1123";
         }
 
-        unreachable("Invalid swizzle");
+        UNREACHABLE("Invalid swizzle");
 }
 
 static const char *
@@ -108,7 +108,7 @@ bi_print_index(FILE *fp, bi_index index)
     else if (index.type == BI_INDEX_NORMAL)
         fprintf(fp, "%u", index.value);
     else
-        unreachable("Invalid index");
+        UNREACHABLE("Invalid index");
 
     if (index.offset)
         fprintf(fp, "[%u]", index.offset);
@@ -138,7 +138,7 @@ bi_${mod}_as_str(enum bi_${mod} ${mod})
 % endfor
     }
 
-    unreachable("Invalid ${mod}");
+    UNREACHABLE("Invalid ${mod}");
 };
 % endif
 % endfor
@@ -224,7 +224,7 @@ bi_print_instr(const bi_instr *I, FILE *fp)
         break;
 % endfor
     default:
-        unreachable("Invalid opcode");
+        UNREACHABLE("Invalid opcode");
     }
 
     if (I->branch_target)

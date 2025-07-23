@@ -161,7 +161,7 @@ zink_pipeline_flags_from_pipe_stage(gl_shader_stage pstage)
    case MESA_SHADER_COMPUTE:
       return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
    default:
-      unreachable("unknown shader stage");
+      UNREACHABLE("unknown shader stage");
    }
 }
 
@@ -245,7 +245,7 @@ zink_component_mapping(enum pipe_swizzle swizzle)
    case PIPE_SWIZZLE_0: return VK_COMPONENT_SWIZZLE_ZERO;
    case PIPE_SWIZZLE_1: return VK_COMPONENT_SWIZZLE_ONE;
    default:
-      unreachable("unexpected swizzle");
+      UNREACHABLE("unexpected swizzle");
    }
 }
 

@@ -191,7 +191,7 @@ anv_gfx_state_bit_to_str(enum anv_gfx_state_bits state)
       NAME(TCS_INPUT_VERTICES);
       NAME(COARSE_STATE);
       NAME(MESH_PROVOKING_VERTEX);
-   default: unreachable("invalid state");
+   default: UNREACHABLE("invalid state");
    }
 }
 
@@ -262,7 +262,7 @@ create_bvh_dump_file(struct anv_bvh_dump *bvh)
       dump_sub_directory = "BVH_IR_AS";
       break;
    default:
-      unreachable("invalid dump type");
+      UNREACHABLE("invalid dump type");
    }
 
    create_directory(dump_directory, dump_sub_directory);

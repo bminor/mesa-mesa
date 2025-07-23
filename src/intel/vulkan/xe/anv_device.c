@@ -73,7 +73,7 @@ drm_sched_priority_to_vk_priority(enum drm_sched_priority drm_sched_priority)
    case DRM_SCHED_PRIORITY_HIGH:
       return VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
    default:
-      unreachable("Invalid drm_sched_priority");
+      UNREACHABLE("Invalid drm_sched_priority");
       return VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
    }
 }

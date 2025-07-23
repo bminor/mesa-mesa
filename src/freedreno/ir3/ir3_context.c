@@ -344,7 +344,7 @@ ir3_context_error(struct ir3_context *ctx, const char *format, ...)
    nir_log_shader_annotated(ctx->s, errors);
    ralloc_free(errors);
    ctx->error = true;
-   unreachable("");
+   UNREACHABLE("");
 }
 
 static struct ir3_instruction *
@@ -375,7 +375,7 @@ create_addr0(struct ir3_builder *build, struct ir3_instruction *src, int align)
       instr = ir3_SHL_B(build, instr, 0, immed, 0);
       break;
    default:
-      unreachable("bad align");
+      UNREACHABLE("bad align");
       return NULL;
    }
 

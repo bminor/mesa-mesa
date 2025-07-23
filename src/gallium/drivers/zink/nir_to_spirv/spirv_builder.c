@@ -1683,7 +1683,7 @@ spirv_builder_const_float(struct spirv_builder *b, int width, double val)
       return emit_constant_64(b, type, u_bitcast_d2u(val));
    }
 
-   unreachable("unhandled float-width");
+   UNREACHABLE("unhandled float-width");
 }
 
 SpvId

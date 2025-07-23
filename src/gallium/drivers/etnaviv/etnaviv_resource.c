@@ -51,7 +51,7 @@ static enum etna_surface_layout modifier_to_layout(uint64_t modifier)
    case DRM_FORMAT_MOD_LINEAR:
       return ETNA_LAYOUT_LINEAR;
    default:
-      unreachable("unhandled modifier");
+      UNREACHABLE("unhandled modifier");
    }
 }
 
@@ -390,7 +390,7 @@ etna_layout_multiple(const struct etna_screen *screen,
       *halign = TEXTURE_HALIGN_SPLIT_SUPER_TILED;
       break;
    default:
-      unreachable("Unhandled layout");
+      UNREACHABLE("Unhandled layout");
    }
 }
 

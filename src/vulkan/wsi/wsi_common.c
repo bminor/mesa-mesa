@@ -392,7 +392,7 @@ get_blit_type(const struct wsi_device *wsi,
    }
 #endif
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
 }
 
@@ -424,7 +424,7 @@ configure_image(const struct wsi_swapchain *chain,
    }
 #endif
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
 }
 
@@ -1760,7 +1760,7 @@ wsi_select_memory_type(const struct wsi_device *wsi,
       return wsi_select_memory_type(wsi, req_props, deny_props, type_bits);
    }
 
-   unreachable("No memory type found");
+   UNREACHABLE("No memory type found");
 }
 
 uint32_t
@@ -2149,7 +2149,7 @@ wsi_finish_create_blit_context(const struct wsi_swapchain *chain,
          wsi_cmd_blit_image_to_image(cmd_buffer, wsi, info, image);
          break;
       default:
-         unreachable("Invalid wsi_swapchain_blit_type");
+         UNREACHABLE("Invalid wsi_swapchain_blit_type");
       }
 
       result = wsi->EndCommandBuffer(cmd_buffer);

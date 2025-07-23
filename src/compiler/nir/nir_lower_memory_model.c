@@ -179,7 +179,7 @@ lower_make_visible(nir_cf_node *cf_node, uint32_t *cur_modes)
       break;
    }
    case nir_cf_node_function:
-      unreachable("Invalid cf type");
+      UNREACHABLE("Invalid cf type");
    }
    return progress;
 }
@@ -219,7 +219,7 @@ lower_make_available(nir_cf_node *cf_node, uint32_t *cur_modes)
       break;
    }
    case nir_cf_node_function:
-      unreachable("Invalid cf type");
+      UNREACHABLE("Invalid cf type");
    }
    return progress;
 }

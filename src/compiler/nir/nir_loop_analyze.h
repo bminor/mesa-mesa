@@ -67,7 +67,7 @@ contains_other_jump(nir_cf_node *node, nir_instr *expected_jump)
       return false;
 
    default:
-      unreachable("Unhandled cf node type");
+      UNREACHABLE("Unhandled cf node type");
    }
 }
 

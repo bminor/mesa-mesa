@@ -430,7 +430,7 @@ vk_image_view_type_to_sampler_dim(VkImageViewType view_type)
       return GLSL_SAMPLER_DIM_3D;
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 
@@ -450,7 +450,7 @@ vk_image_view_type_is_array(VkImageViewType view_type)
       return false;
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 

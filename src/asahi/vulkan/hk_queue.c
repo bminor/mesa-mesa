@@ -235,7 +235,7 @@ asahi_fill_sync(struct drm_asahi_sync *sync, struct vk_sync *vk_sync,
                 uint64_t value)
 {
    if (unlikely(!vk_sync_type_is_drm_syncobj(vk_sync->type))) {
-      unreachable("Unsupported sync type");
+      UNREACHABLE("Unsupported sync type");
       return;
    }
 
@@ -943,7 +943,7 @@ translate_priority(VkQueueGlobalPriorityKHR prio)
       return DRM_ASAHI_PRIORITY_LOW;
 
    default:
-      unreachable("Invalid VkQueueGlobalPriorityKHR");
+      UNREACHABLE("Invalid VkQueueGlobalPriorityKHR");
    }
 }
 

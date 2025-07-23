@@ -90,7 +90,7 @@ static void gather_usage_helper(const nir_deref_instr **deref_ptr,
          break;
       }
       default:
-         unreachable("Unhandled deref type in gather_components_used_helper");
+         UNREACHABLE("Unhandled deref type in gather_components_used_helper");
       }
    }
 
@@ -316,7 +316,7 @@ void nir_tgsi_scan_shader(const struct nir_shader *nir,
             info->properties[TGSI_PROPERTY_FS_DEPTH_LAYOUT] = TGSI_FS_DEPTH_LAYOUT_UNCHANGED;
             break;
          default:
-            unreachable("Unknow depth layout");
+            UNREACHABLE("Unknow depth layout");
          }
       }
    }
@@ -485,7 +485,7 @@ void nir_tgsi_scan_shader(const struct nir_shader *nir,
                usagemask |= TGSI_WRITEMASK_W;
                break;
             default:
-               unreachable("error calculating component index");
+               UNREACHABLE("error calculating component index");
             }
          }
 

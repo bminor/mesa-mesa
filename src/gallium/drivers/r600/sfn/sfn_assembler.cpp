@@ -222,7 +222,7 @@ AssamblerVisitor::emit_lds_op(const AluInstr& lds)
       break;
    default:
       std::cerr << "\n R600: error op: " << lds << "\n";
-      unreachable("Unhandled LDS op");
+      UNREACHABLE("Unhandled LDS op");
    }
 
    copy_src(alu.src[0], lds.src(0));
@@ -329,7 +329,7 @@ AssamblerVisitor::emit_alu_op(const AluInstr& ai)
             case 1: kcache_index_mode = bim_zero; break;
             case 2: kcache_index_mode = bim_one; break;
             default:
-               unreachable("Unsupported index mode");
+               UNREACHABLE("Unsupported index mode");
             }
          } else {
             kcache_index_mode = bim_zero;
@@ -955,7 +955,7 @@ AssamblerVisitor::visit(const ControlFlowInstr& instr)
       }
    } break;
    default:
-      unreachable("Unknown CF instruction type");
+      UNREACHABLE("Unknown CF instruction type");
    }
 }
 
@@ -1013,14 +1013,14 @@ void
 AssamblerVisitor::visit(const LDSAtomicInstr& instr)
 {
    (void)instr;
-   unreachable("LDSAtomicInstr must be lowered to ALUInstr");
+   UNREACHABLE("LDSAtomicInstr must be lowered to ALUInstr");
 }
 
 void
 AssamblerVisitor::visit(const LDSReadInstr& instr)
 {
    (void)instr;
-   unreachable("LDSReadInstr must be lowered to ALUInstr");
+   UNREACHABLE("LDSReadInstr must be lowered to ALUInstr");
 }
 
 EBufferIndexMode
@@ -1247,7 +1247,7 @@ void
 EncodeSourceVisitor::visit(const LocalArray& value)
 {
    (void)value;
-   unreachable("An array can't be a source register");
+   UNREACHABLE("An array can't be a source register");
 }
 
 void

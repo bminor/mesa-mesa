@@ -326,7 +326,7 @@ find_push_range_containing(struct agx_compiled_shader *shader, uint8_t table,
          return range;
    }
 
-   unreachable("no containing range");
+   UNREACHABLE("no containing range");
 }
 
 static unsigned

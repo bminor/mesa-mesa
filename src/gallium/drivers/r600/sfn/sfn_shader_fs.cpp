@@ -109,7 +109,7 @@ barycentric_ij_index(nir_intrinsic_instr *intr)
       index = 2;
       break;
    default:
-      unreachable("Unknown interpolator intrinsic");
+      UNREACHABLE("Unknown interpolator intrinsic");
    }
 
    switch (nir_intrinsic_interp_mode(intr)) {
@@ -121,7 +121,7 @@ barycentric_ij_index(nir_intrinsic_instr *intr)
    case INTERP_MODE_FLAT:
    case INTERP_MODE_EXPLICIT:
    default:
-      unreachable("unknown/unsupported mode for load_interpolated");
+      UNREACHABLE("unknown/unsupported mode for load_interpolated");
    }
    return 0;
 }

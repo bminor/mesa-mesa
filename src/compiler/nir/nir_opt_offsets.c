@@ -236,7 +236,7 @@ process_instr(nir_builder *b, nir_instr *instr, void *s)
       return false;
    }
 
-   unreachable("Can't reach here.");
+   UNREACHABLE("Can't reach here.");
 }
 
 bool

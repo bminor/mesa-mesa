@@ -464,7 +464,7 @@ static VkResult pvr_pds_vertex_attrib_programs_create_and_upload(
          break;
 
       default:
-         unreachable("Invalid vertex attrib program type.");
+         UNREACHABLE("Invalid vertex attrib program type.");
       }
 
       input.flags |= extra_flags;
@@ -940,7 +940,7 @@ static VkResult pvr_compute_pipeline_compile(
 
    /* FIXME: Compile and upload the shader. */
    /* FIXME: Initialize the shader state and setup build info. */
-   unreachable("finishme: compute support");
+   UNREACHABLE("finishme: compute support");
 
    result = pvr_pds_descriptor_program_create_and_upload(
       device,
@@ -1529,7 +1529,7 @@ static void pvr_graphics_pipeline_setup_fragment_coeff_program(
             break;
 
          default:
-            unreachable("Unimplemented interpolation type.");
+            UNREACHABLE("Unimplemented interpolation type.");
          }
 
          douti_src.size = ROGUE_PDSINST_DOUTI_SIZE_1D + count - 1;
@@ -1739,7 +1739,7 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
 
@@ -2019,7 +2019,7 @@ pvr_preprocess_shader_data(pco_data *data,
    }
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    pvr_init_descriptors(data, nir, layout);
@@ -2061,7 +2061,7 @@ pvr_postprocess_shader_data(pco_data *data,
    }
 
    default:
-      unreachable("");
+      UNREACHABLE("");
    }
 
    pvr_setup_descriptors(data, nir, layout);
@@ -2404,7 +2404,7 @@ pvr_graphics_pipeline_init(struct pvr_device *device,
          gfx_pipeline->stage_indices[gl_stage] = i;
          break;
       default:
-         unreachable("Unsupported stage.");
+         UNREACHABLE("Unsupported stage.");
       }
    }
 
@@ -2520,6 +2520,6 @@ void pvr_DestroyPipeline(VkDevice _device,
    }
 
    default:
-      unreachable("Unknown pipeline type.");
+      UNREACHABLE("Unknown pipeline type.");
    }
 }

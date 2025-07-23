@@ -645,7 +645,7 @@ search_ssa_to_reg_out(struct ra_ctx *ctx, struct agx_block *blk,
          return reg;
    }
 
-   unreachable("variable not defined in block");
+   UNREACHABLE("variable not defined in block");
 }
 
 /*

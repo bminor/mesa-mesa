@@ -1208,9 +1208,9 @@ vk_queue_submit(struct vk_queue *queue,
       return VK_SUCCESS;
 
    case VK_QUEUE_SUBMIT_MODE_THREADED_ON_DEMAND:
-      unreachable("Invalid vk_queue::submit.mode");
+      UNREACHABLE("Invalid vk_queue::submit.mode");
    }
-   unreachable("Invalid submit mode");
+   UNREACHABLE("Invalid submit mode");
 
 fail:
    vk_queue_submit_destroy(queue, submit);
@@ -1339,9 +1339,9 @@ vk_queue_signal_sync(struct vk_queue *queue,
       return VK_SUCCESS;
 
    case VK_QUEUE_SUBMIT_MODE_THREADED_ON_DEMAND:
-      unreachable("Invalid vk_queue::submit.mode");
+      UNREACHABLE("Invalid vk_queue::submit.mode");
    }
-   unreachable("Invalid timeline mode");
+   UNREACHABLE("Invalid timeline mode");
 }
 
 void
@@ -1559,7 +1559,7 @@ get_cpu_wait_type(struct vk_physical_device *pdevice)
          return *t;
    }
 
-   unreachable("You must have a non-timeline CPU wait sync type");
+   UNREACHABLE("You must have a non-timeline CPU wait sync type");
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL

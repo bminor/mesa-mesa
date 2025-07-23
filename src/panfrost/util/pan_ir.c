@@ -64,7 +64,7 @@ pan_to_bytemask(unsigned bytes, unsigned mask)
    }
 
    default:
-      unreachable("Invalid register mode");
+      UNREACHABLE("Invalid register mode");
    }
 }
 
@@ -80,5 +80,5 @@ pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo, unsigned offs)
          return i;
    }
 
-   unreachable("UBO not pushed");
+   UNREACHABLE("UBO not pushed");
 }

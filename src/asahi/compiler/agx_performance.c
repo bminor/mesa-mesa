@@ -29,7 +29,7 @@ agx_occupancy_for_register_count(unsigned halfregs)
          return occupancies[i];
    }
 
-   unreachable("Register count must be less than the maximum");
+   UNREACHABLE("Register count must be less than the maximum");
 }
 
 unsigned

@@ -43,7 +43,7 @@ anv_create_engine(struct anv_device *device,
    case INTEL_KMD_TYPE_XE:
       return anv_xe_create_engine(device, queue, pCreateInfo);
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
       return VK_ERROR_UNKNOWN;
    }
 }
@@ -60,7 +60,7 @@ anv_destroy_engine(struct anv_queue *queue)
       anv_xe_destroy_engine(device, queue);
       break;
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
    }
 }
 
@@ -163,7 +163,7 @@ anv_QueueWaitIdle(VkQueue _queue)
    case INTEL_KMD_TYPE_I915:
       return vk_common_QueueWaitIdle(_queue);
    default:
-      unreachable("Missing");
+      UNREACHABLE("Missing");
    }
 
    return VK_SUCCESS;

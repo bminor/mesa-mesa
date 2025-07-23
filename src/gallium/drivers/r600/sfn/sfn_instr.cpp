@@ -120,7 +120,7 @@ sel_and_szw_from_string(const std::string& str, RegisterVec4::Swizzle& swz, bool
          swz[i] = 7;
          break;
       default:
-         unreachable("Unknown swizzle character");
+         UNREACHABLE("Unknown swizzle character");
       }
       ++istr;
       ++i;

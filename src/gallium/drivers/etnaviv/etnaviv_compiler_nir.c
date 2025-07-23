@@ -118,7 +118,7 @@ etna_emit_output(struct etna_compile *c, nir_variable *var, struct etna_inst_src
          c->variant->ps_depth_out_reg = src.reg;
          break;
       default:
-         unreachable("Unsupported fs output");
+         UNREACHABLE("Unsupported fs output");
       }
       return;
    }
@@ -1459,7 +1459,7 @@ etna_link_shader(struct etna_shader_link_info *info,
          varying->semantic = VARYING_INTERPOLATION_MODE_FLAT;
          break;
       default:
-         unreachable("unsupported varying interpolation mode");
+         UNREACHABLE("unsupported varying interpolation mode");
       }
 
       /* point/tex coord is an input to the PS without matching VS output,

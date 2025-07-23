@@ -65,7 +65,7 @@ st_convert_image(const struct st_context *st, const struct gl_image_unit *u,
       img->access = PIPE_IMAGE_ACCESS_READ_WRITE;
       break;
    default:
-      unreachable("bad gl_image_unit::Access");
+      UNREACHABLE("bad gl_image_unit::Access");
    }
 
    img->shader_access = 0;

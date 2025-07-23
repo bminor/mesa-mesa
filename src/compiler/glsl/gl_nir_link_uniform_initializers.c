@@ -172,7 +172,7 @@ copy_constant_to_storage(union gl_constant_value *storage,
             assert(!"Should not get here.");
             break;
          case GLSL_TYPE_COOPERATIVE_MATRIX:
-            unreachable("unsupported base type cooperative matrix");
+            UNREACHABLE("unsupported base type cooperative matrix");
          }
          i += dmul;
       }

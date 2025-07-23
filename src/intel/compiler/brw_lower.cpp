@@ -491,7 +491,7 @@ brw_lower_find_live_channel(brw_shader &s)
          break;
 
       default:
-         unreachable("Impossible.");
+         UNREACHABLE("Impossible.");
       }
 
       inst->remove();

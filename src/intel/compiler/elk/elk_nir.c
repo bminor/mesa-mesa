@@ -88,7 +88,7 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
          out_of_bounds = true;
          break;
       default:
-         unreachable("Bogus tessellation domain");
+         UNREACHABLE("Bogus tessellation domain");
       }
    } else if (location == VARYING_SLOT_TESS_LEVEL_OUTER) {
       b->cursor = write ? nir_before_instr(&intr->instr)
@@ -140,7 +140,7 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
          }
          break;
       default:
-         unreachable("Bogus tessellation domain");
+         UNREACHABLE("Bogus tessellation domain");
       }
    } else {
       return false;
@@ -324,7 +324,7 @@ elk_nir_lower_vs_inputs(nir_shader *nir,
                      nir_intrinsic_set_component(load, 1);
                   break;
                default:
-                  unreachable("Invalid system value intrinsic");
+                  UNREACHABLE("Invalid system value intrinsic");
                }
 
                load->num_components = 1;
@@ -861,7 +861,7 @@ lower_bit_size_callback(const nir_instr *instr, UNUSED void *data)
       case nir_op_fcos:
          return 32;
       case nir_op_isign:
-         unreachable("Should have been lowered by nir_opt_algebraic.");
+         UNREACHABLE("Should have been lowered by nir_opt_algebraic.");
       default:
          if (nir_op_infos[alu->op].num_inputs >= 2 &&
              alu->def.bit_size == 8)
@@ -1710,7 +1710,7 @@ get_subgroup_size(const struct shader_info *info, unsigned max_subgroup_size)
       return info->stage == MESA_SHADER_FRAGMENT ? 0 : max_subgroup_size;
 
    case SUBGROUP_SIZE_REQUIRE_4:
-      unreachable("Unsupported subgroup size type");
+      UNREACHABLE("Unsupported subgroup size type");
 
    case SUBGROUP_SIZE_REQUIRE_8:
    case SUBGROUP_SIZE_REQUIRE_16:
@@ -1728,7 +1728,7 @@ get_subgroup_size(const struct shader_info *info, unsigned max_subgroup_size)
       break;
    }
 
-   unreachable("Invalid subgroup size type");
+   UNREACHABLE("Invalid subgroup size type");
 }
 
 unsigned
@@ -1810,7 +1810,7 @@ elk_cmod_for_nir_comparison(nir_op op)
       return ELK_CONDITIONAL_NZ;
 
    default:
-      unreachable("Unsupported NIR comparison op");
+      UNREACHABLE("Unsupported NIR comparison op");
    }
 }
 
@@ -1833,7 +1833,7 @@ elk_lsc_aop_for_nir_intrinsic(const nir_intrinsic_instr *atomic)
          src_idx = 1;
          break;
       default:
-         unreachable("Invalid add atomic opcode");
+         UNREACHABLE("Invalid add atomic opcode");
       }
 
       if (nir_src_is_const(atomic->src[src_idx])) {
@@ -1862,7 +1862,7 @@ elk_lsc_aop_for_nir_intrinsic(const nir_intrinsic_instr *atomic)
    case nir_atomic_op_fadd: return LSC_OP_ATOMIC_FADD;
 
    default:
-      unreachable("Unsupported NIR atomic intrinsic");
+      UNREACHABLE("Unsupported NIR atomic intrinsic");
    }
 }
 
@@ -1899,7 +1899,7 @@ elk_type_for_nir_type(const struct intel_device_info *devinfo,
    case nir_type_uint8:
       return ELK_REGISTER_TYPE_UB;
    default:
-      unreachable("unknown type");
+      UNREACHABLE("unknown type");
    }
 
    return ELK_REGISTER_TYPE_F;

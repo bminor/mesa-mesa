@@ -380,7 +380,7 @@ radv_dynamic_state_mask(VkDynamicState state)
    case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT:
       return RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_SCISSOR_WITH_COUNT;
    default:
-      unreachable("Unhandled dynamic state");
+      UNREACHABLE("Unhandled dynamic state");
    }
 }
 
@@ -568,7 +568,7 @@ shader_stage_to_pipeline_library_flags(VkShaderStageFlagBits stage)
    case VK_SHADER_STAGE_FRAGMENT_BIT:
       return VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
    default:
-      unreachable("Invalid shader stage");
+      UNREACHABLE("Invalid shader stage");
    }
 }
 
@@ -1458,7 +1458,7 @@ radv_graphics_shaders_link(const struct radv_device *device, const struct radv_g
          radv_link_fs(&stages[s], gfx_state);
          break;
       default:
-         unreachable("Invalid graphics shader stage");
+         UNREACHABLE("Invalid graphics shader stage");
       }
 
       next_stage = &stages[s];
@@ -1485,7 +1485,7 @@ radv_graphics_shaders_fill_linked_vs_io_info(struct radv_shader_stage *vs_stage,
       break;
    }
    default:
-      unreachable("invalid next stage for VS");
+      UNREACHABLE("invalid next stage for VS");
    }
 }
 
@@ -2186,7 +2186,7 @@ radv_get_next_stage(gl_shader_stage stage, VkShaderStageFlagBits active_nir_stag
    case MESA_SHADER_FRAGMENT:
       return MESA_SHADER_NONE;
    default:
-      unreachable("invalid graphics shader stage");
+      UNREACHABLE("invalid graphics shader stage");
    }
 }
 

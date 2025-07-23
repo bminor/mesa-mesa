@@ -134,7 +134,7 @@ bi_emit_jump(bi_builder *b, nir_jump_instr *instr)
       branch->branch_target = b->shader->continue_block;
       break;
    default:
-      unreachable("Unhandled jump type");
+      UNREACHABLE("Unhandled jump type");
    }
 
    bi_block_add_successor(b->shader->current_block, branch->branch_target);
@@ -408,7 +408,7 @@ bi_reg_fmt_for_nir(nir_alu_type T)
    case nir_type_uint32:
       return BI_REGISTER_FORMAT_U32;
    default:
-      unreachable("Invalid type for register format");
+      UNREACHABLE("Invalid type for register format");
    }
 }
 
@@ -1599,7 +1599,7 @@ bi_atom_opc_for_nir(nir_atomic_op op)
    case nir_atomic_op_ixor: return BI_ATOM_OPC_AXOR;
    case nir_atomic_op_xchg: return BI_ATOM_OPC_AXCHG;
    case nir_atomic_op_cmpxchg: return BI_ATOM_OPC_AXCHG;
-   default: unreachable("Unexpected computational atomic");
+   default: UNREACHABLE("Unexpected computational atomic");
    }
    /* clang-format on */
 }
@@ -2038,7 +2038,7 @@ bi_subgroup_from_cluster_size(unsigned cluster_size)
    case 4: return BI_SUBGROUP_SUBGROUP4;
    case 8: return BI_SUBGROUP_SUBGROUP8;
    case 16: return BI_SUBGROUP_SUBGROUP16;
-   default: unreachable("Unsupported cluster size");
+   default: UNREACHABLE("Unsupported cluster size");
    }
 }
 
@@ -2072,7 +2072,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       else if (stage == MESA_SHADER_VERTEX)
          bi_emit_load_attr(b, instr);
       else
-         unreachable("Unsupported shader stage");
+         UNREACHABLE("Unsupported shader stage");
       break;
 
    case nir_intrinsic_store_output:
@@ -2082,7 +2082,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       else if (stage == MESA_SHADER_VERTEX)
          bi_emit_store_vary(b, instr);
       else
-         unreachable("Unsupported shader stage");
+         UNREACHABLE("Unsupported shader stage");
       break;
 
    case nir_intrinsic_store_combined_output_pan:
@@ -2145,7 +2145,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
          break;
 
       default:
-         unreachable("Unsupported barrier scope");
+         UNREACHABLE("Unsupported barrier scope");
       }
 
       break;
@@ -2537,7 +2537,7 @@ bi_nir_round(nir_op op)
    case nir_op_ffloor:
       return BI_ROUND_RTN;
    default:
-      unreachable("invalid nir round op");
+      UNREACHABLE("invalid nir round op");
    }
 }
 
@@ -2778,7 +2778,7 @@ bi_translate_cmpf(nir_op op)
       return BI_CMPF_GE;
 
    default:
-      unreachable("invalid comparison");
+      UNREACHABLE("invalid comparison");
    }
 }
 
@@ -3667,7 +3667,7 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
 
    default:
       fprintf(stderr, "Unhandled ALU op %s\n", nir_op_infos[instr->op].name);
-      unreachable("Unknown ALU op");
+      UNREACHABLE("Unknown ALU op");
    }
 }
 
@@ -3696,7 +3696,7 @@ bifrost_tex_format(enum glsl_sampler_dim dim)
       return 0;
 
    default:
-      unreachable("Unknown sampler dim type\n");
+      UNREACHABLE("Unknown sampler dim type\n");
    }
 }
 
@@ -3723,7 +3723,7 @@ valhall_tex_dimension(enum glsl_sampler_dim dim)
       return BI_DIMENSION_CUBE;
 
    default:
-      unreachable("Unknown sampler dim type");
+      UNREACHABLE("Unknown sampler dim type");
    }
 }
 
@@ -3744,7 +3744,7 @@ bi_texture_format(nir_alu_type T, enum bi_clamp clamp)
    case nir_type_int32:
       return BIFROST_TEXTURE_FORMAT_S32;
    default:
-      unreachable("Invalid type for texturing");
+      UNREACHABLE("Invalid type for texturing");
    }
 }
 
@@ -4007,9 +4007,9 @@ bi_tex_op(nir_texop op)
    case nir_texop_query_levels:
    case nir_texop_texture_samples:
    case nir_texop_samples_identical:
-      unreachable("should've been lowered");
+      UNREACHABLE("should've been lowered");
    default:
-      unreachable("unsupported tex op");
+      UNREACHABLE("unsupported tex op");
    }
 }
 
@@ -4058,7 +4058,7 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
    case BIFROST_TEX_OP_GRDESC:
       break;
    default:
-      unreachable("texture op unsupported");
+      UNREACHABLE("texture op unsupported");
    }
 
    /* 32-bit indices to be allocated as consecutive staging registers */
@@ -4161,7 +4161,7 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
          break;
 
       default:
-         unreachable("Unhandled src type in texc emit");
+         UNREACHABLE("Unhandled src type in texc emit");
       }
    }
 
@@ -4445,7 +4445,7 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
          break;
 
       default:
-         unreachable("Unhandled src type in tex emit");
+         UNREACHABLE("Unhandled src type in tex emit");
       }
    }
 
@@ -4599,7 +4599,7 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
                        explicit_offset, !narrow_indices, mask, sr_count);
       break;
    default:
-      unreachable("Unhandled Valhall texture op");
+      UNREACHABLE("Unhandled Valhall texture op");
    }
 
    /* The hardware will write only what we read, and it will into
@@ -4804,7 +4804,7 @@ bi_emit_instr(bi_builder *b, struct nir_instr *instr)
       break;
 
    default:
-      unreachable("should've been lowered");
+      UNREACHABLE("should've been lowered");
    }
 }
 
@@ -4942,7 +4942,7 @@ emit_cf_list(bi_context *ctx, struct exec_list *list)
          break;
 
       default:
-         unreachable("Unknown control flow");
+         UNREACHABLE("Unknown control flow");
       }
    }
 

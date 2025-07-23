@@ -91,7 +91,7 @@ pandecode_rt(struct pandecode_context *ctx, unsigned index, uint64_t gpu_va)
                     "AFRC YUV Color Render Target %d:\n", index);
       break;
    default:
-      unreachable("Invalid writeback mode");
+      UNREACHABLE("Invalid writeback mode");
    }
 #endif
 
@@ -180,7 +180,7 @@ pandecode_zs_crc_ext(struct pandecode_context *ctx, uint64_t gpu_va)
       break;
 
    default:
-      unreachable("Invalid block format");
+      UNREACHABLE("Invalid block format");
    }
 
    switch (zs_crc.s.block_format) {
@@ -201,7 +201,7 @@ pandecode_zs_crc_ext(struct pandecode_context *ctx, uint64_t gpu_va)
 #endif
 
    default:
-      unreachable("Invalid block format");
+      UNREACHABLE("Invalid block format");
    }
 
    pandecode_log(ctx, "\n");
@@ -465,7 +465,7 @@ pandecode_tex_plane(struct pandecode_context *ctx, uint64_t u, unsigned idx)
       break;
 #endif
    default:
-      unreachable("Unknown plane type");
+      UNREACHABLE("Unknown plane type");
    }
 }
 #endif

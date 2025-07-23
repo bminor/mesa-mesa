@@ -354,7 +354,7 @@ brw_write_shader_relocs(const struct brw_isa_info *isa,
                brw_update_reloc_imm(isa, dst, value);
                break;
             default:
-               unreachable("Invalid relocation type");
+               UNREACHABLE("Invalid relocation type");
             }
             break;
          }

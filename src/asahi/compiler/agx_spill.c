@@ -296,7 +296,7 @@ remat_to(agx_builder *b, agx_index dst, struct spill_ctx *ctx, unsigned node)
    case AGX_OPCODE_GET_SR:
       return agx_get_sr_to(b, dst, I->sr);
    default:
-      unreachable("invalid remat");
+      UNREACHABLE("invalid remat");
    }
 }
 

@@ -2597,7 +2597,7 @@ ast_function_expression::hir(exec_list *instructions,
       return value;
    }
 
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 bool

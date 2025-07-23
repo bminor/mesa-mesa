@@ -151,7 +151,7 @@ lp_nir_instr_src_divergent(nir_instr *instr, uint32_t src_index)
    case nir_instr_type_call:
       return true;
    default:
-      unreachable("Unhandled instruction type");
+      UNREACHABLE("Unhandled instruction type");
    }
 }
 
@@ -2880,7 +2880,7 @@ get_src_index(nir_src *src)
       return ((uintptr_t)src - (uintptr_t)&call->params[0]) / sizeof(nir_src);
    }
    default:
-      unreachable("Unhandled instruction type");
+      UNREACHABLE("Unhandled instruction type");
    }
 }
 
@@ -2918,7 +2918,7 @@ get_instr_src_vec(struct lp_build_nir_soa_context *bld, nir_instr *instr, uint32
       break;
    }
    default:
-      unreachable("Unhandled instruction type");
+      UNREACHABLE("Unhandled instruction type");
    }
 
    bool divergent = lp_nir_instr_src_divergent(instr, src_index);
@@ -3320,7 +3320,7 @@ do_alu_action(struct lp_build_nir_soa_context *bld,
       break;
    }
    case nir_op_fisfinite32:
-      unreachable("Should have been lowered in nir_opt_algebraic_late.");
+      UNREACHABLE("Should have been lowered in nir_opt_algebraic_late.");
    case nir_op_flog2:
       result = lp_build_log2_safe(float_bld, src[0]);
       break;
@@ -3773,7 +3773,7 @@ get_deref_offset(struct lp_build_nir_soa_context *bld, nir_deref_instr *instr,
                offset = array_off;
          }
       } else
-         unreachable("Uhandled deref type in get_deref_instr_offset");
+         UNREACHABLE("Uhandled deref type in get_deref_instr_offset");
    }
 
 out:
@@ -4351,7 +4351,7 @@ lp_translate_atomic_op(nir_atomic_op op)
    case nir_atomic_op_fmin: return LLVMAtomicRMWBinOpFMin;
    case nir_atomic_op_fmax: return LLVMAtomicRMWBinOpFMax;
 #endif
-   default:          unreachable("Unexpected atomic");
+   default:          UNREACHABLE("Unexpected atomic");
    }
 }
 
@@ -5558,7 +5558,7 @@ visit_tex(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
          vec_type = bld->uint16_bld.vec_type;
          break;
       default:
-         unreachable("unexpected alu type");
+         UNREACHABLE("unexpected alu type");
       }
       for (int i = 0; i < instr->def.num_components; ++i) {
          if (is_float) {
@@ -5599,7 +5599,7 @@ visit_jump(struct lp_build_nir_soa_context *bld,
       continue_stmt(bld);
       break;
    default:
-      unreachable("Unknown jump instr\n");
+      UNREACHABLE("Unknown jump instr\n");
    }
 }
 
@@ -5621,7 +5621,7 @@ visit_deref(struct lp_build_nir_soa_context *bld,
       break;
    }
    default:
-      unreachable("Unhandled deref_instr deref type");
+      UNREACHABLE("Unhandled deref_instr deref type");
    }
 
    assign_ssa_dest(bld, &instr->def, result);

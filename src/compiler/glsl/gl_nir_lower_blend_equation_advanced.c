@@ -414,7 +414,7 @@ calc_blend_result(nir_builder *b,
          set_lum(b, factor, dst_rgb, src_rgb);
          break;
       case BLEND_NONE:
-         unreachable("not real cases");
+         UNREACHABLE("not real cases");
       }
 
       if (val)

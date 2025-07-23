@@ -1338,12 +1338,12 @@ choose_copy_function(isl_memcpy_type copy_type)
 #if defined(INLINE_SSE41)
       return _memcpy_streaming_load;
 #else
-      unreachable("ISL_MEMCOPY_STREAMING_LOAD requires sse4.1");
+      UNREACHABLE("ISL_MEMCOPY_STREAMING_LOAD requires sse4.1");
 #endif
    case ISL_MEMCPY_INVALID:
-      unreachable("invalid copy_type");
+      UNREACHABLE("invalid copy_type");
    }
-   unreachable("unhandled copy_type");
+   UNREACHABLE("unhandled copy_type");
    return NULL;
 }
 
@@ -1375,7 +1375,7 @@ linear_to_xtiled_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  dst, src, src_pitch, swizzle_bit,
                                  rgba8_copy, rgba8_copy_aligned_dst);
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    } else {
       if (mem_copy == memcpy)
          return linear_to_xtiled(x0, x1, x2, x3, y0, y1,
@@ -1386,7 +1386,7 @@ linear_to_xtiled_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  dst, src, src_pitch, swizzle_bit,
                                  rgba8_copy, rgba8_copy_aligned_dst);
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 }
 
@@ -1418,7 +1418,7 @@ linear_to_ytiled_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  dst, src, src_pitch, swizzle_bit,
                                  rgba8_copy, rgba8_copy_aligned_dst);
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    } else {
       if (mem_copy == memcpy)
          return linear_to_ytiled(x0, x1, x2, x3, y0, y1,
@@ -1428,7 +1428,7 @@ linear_to_ytiled_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  dst, src, src_pitch, swizzle_bit,
                                  rgba8_copy, rgba8_copy_aligned_dst);
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 }
 
@@ -1461,7 +1461,7 @@ linear_to_tile4_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  dst, src, src_pitch, swizzle_bit,
                                  rgba8_copy, rgba8_copy_aligned_dst);
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    } else {
       if (mem_copy == memcpy)
          return linear_to_tile4(x0, x1, x2, x3, y0, y1,
@@ -1471,7 +1471,7 @@ linear_to_tile4_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  dst, src, src_pitch, swizzle_bit,
                                  rgba8_copy, rgba8_copy_aligned_dst);
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 }
 
@@ -1538,7 +1538,7 @@ xtiled_to_linear_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  memcpy, _memcpy_streaming_load);
 #endif
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    } else {
       if (mem_copy == memcpy)
          return xtiled_to_linear(x0, x1, x2, x3, y0, y1,
@@ -1554,7 +1554,7 @@ xtiled_to_linear_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  memcpy, _memcpy_streaming_load);
 #endif
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 }
 
@@ -1592,7 +1592,7 @@ ytiled_to_linear_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  memcpy, _memcpy_streaming_load);
 #endif
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    } else {
       if (mem_copy == memcpy)
          return ytiled_to_linear(x0, x1, x2, x3, y0, y1,
@@ -1608,7 +1608,7 @@ ytiled_to_linear_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  memcpy, _memcpy_streaming_load);
 #endif
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 }
 
@@ -1647,7 +1647,7 @@ tile4_to_linear_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  memcpy, _memcpy_streaming_load);
 #endif
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    } else {
       if (mem_copy == memcpy)
          return tile4_to_linear(x0, x1, x2, x3, y0, y1,
@@ -1663,7 +1663,7 @@ tile4_to_linear_faster(uint32_t x0, uint32_t x1, uint32_t x2, uint32_t x3,
                                  memcpy, _memcpy_streaming_load);
 #endif
       else
-         unreachable("not reached");
+         UNREACHABLE("not reached");
    }
 }
 
@@ -1753,7 +1753,7 @@ linear_to_tiled(uint32_t xt1, uint32_t xt2,
        */
       dst_pitch /= 2;
    } else {
-      unreachable("unsupported tiling");
+      UNREACHABLE("unsupported tiling");
    }
 
    /* Round out to tile boundaries. */
@@ -1863,7 +1863,7 @@ tiled_to_linear(uint32_t xt1, uint32_t xt2,
        */
       src_pitch /= 2;
    } else {
-      unreachable("unsupported tiling");
+      UNREACHABLE("unsupported tiling");
    }
 
 #if defined(INLINE_SSE41)

@@ -365,7 +365,7 @@ scan_declaration(struct tgsi_shader_info *info,
          break;
 
       case TGSI_FILE_NULL:
-         unreachable("unexpected file");
+         UNREACHABLE("unexpected file");
 
       default:
          break;
@@ -539,7 +539,7 @@ scan_declaration(struct tgsi_shader_info *info,
          break;
 
       case TGSI_FILE_NULL:
-         unreachable("unexpected file");
+         UNREACHABLE("unexpected file");
 
       default:
          break;

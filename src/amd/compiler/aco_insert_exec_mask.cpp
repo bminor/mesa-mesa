@@ -728,7 +728,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
       bld.branch(aco_opcode::p_cbranch_nz, bld.scc(cond), block->linear_succs[1],
                  block->linear_succs[0]);
    } else {
-      unreachable("unknown/invalid block type");
+      UNREACHABLE("unknown/invalid block type");
    }
 }
 

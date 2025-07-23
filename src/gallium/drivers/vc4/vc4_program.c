@@ -433,7 +433,7 @@ ntq_emit_tex(struct vc4_compile *c, nir_tex_instr *instr)
                         compare = ntq_get_src(c, instr->src[i].src, 0);
                         break;
                 default:
-                        unreachable("unknown texture source");
+                        UNREACHABLE("unknown texture source");
                 }
         }
 
@@ -1975,7 +1975,7 @@ ntq_emit_jump(struct vc4_compile *c, nir_jump_instr *jump)
                 jump_block = c->loop_cont_block;
                 break;
         default:
-                unreachable("Unsupported jump type\n");
+                UNREACHABLE("Unsupported jump type\n");
         }
 
         qir_SF(c, c->execute);

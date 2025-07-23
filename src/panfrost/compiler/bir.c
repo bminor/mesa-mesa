@@ -59,7 +59,7 @@ bi_is_regfmt_16(enum bi_register_format fmt)
    case BI_REGISTER_FORMAT_AUTO:
       return false;
    default:
-      unreachable("Invalid register format");
+      UNREACHABLE("Invalid register format");
    }
 }
 
@@ -81,7 +81,7 @@ bi_count_staging_registers(const bi_instr *ins)
       return ins->sr_count;
    }
 
-   unreachable("Invalid sr_count");
+   UNREACHABLE("Invalid sr_count");
 }
 
 unsigned
@@ -234,7 +234,7 @@ bi_side_effects(const bi_instr *I)
       return (I->op != BI_OPCODE_LD_TILE);
    }
 
-   unreachable("Invalid message type");
+   UNREACHABLE("Invalid message type");
 }
 
 /* Branch reconvergence is required when the execution mask may change
@@ -288,7 +288,7 @@ bi_csel_for_mux(bool must_sign, bool b32, enum bi_mux mux)
    case BI_MUX_FP_ZERO:
       return b32 ? BI_OPCODE_CSEL_F32 : BI_OPCODE_CSEL_V2F16;
    default:
-      unreachable("No CSEL for MUX.bit");
+      UNREACHABLE("No CSEL for MUX.bit");
    }
 }
 

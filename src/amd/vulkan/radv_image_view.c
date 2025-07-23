@@ -44,7 +44,7 @@ radv_tex_dim(VkImageType image_type, VkImageViewType view_type, unsigned nr_laye
       else
          return V_008F1C_SQ_RSRC_IMG_2D_ARRAY;
    default:
-      unreachable("illegal image type");
+      UNREACHABLE("illegal image type");
    }
 }
 

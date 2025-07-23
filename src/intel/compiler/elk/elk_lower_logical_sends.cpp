@@ -640,7 +640,7 @@ sampler_msg_type(const intel_device_info *devinfo,
       assert(!has_min_lod);
       return GFX6_SAMPLER_MESSAGE_SAMPLE_SAMPLEINFO;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -1311,7 +1311,7 @@ lower_surface_logical_send(const fs_builder &bld, elk_fs_inst *inst)
       break;
 
    default:
-      unreachable("Unsupported surface opcode");
+      UNREACHABLE("Unsupported surface opcode");
    }
 
    uint32_t desc;
@@ -1378,7 +1378,7 @@ lower_surface_logical_send(const fs_builder &bld, elk_fs_inst *inst)
       break;
 
    default:
-      unreachable("Unknown surface logical instruction");
+      UNREACHABLE("Unknown surface logical instruction");
    }
 
    /* Update the original instruction. */
@@ -1503,7 +1503,7 @@ lower_a64_logical_send(const fs_builder &bld, elk_fs_inst *inst)
       break;
 
    default:
-      unreachable("Unknown A64 logical instruction");
+      UNREACHABLE("Unknown A64 logical instruction");
    }
 
    if (bld.shader->stage == MESA_SHADER_FRAGMENT)
@@ -1683,7 +1683,7 @@ lower_interpolator_logical_send(const fs_builder &bld, elk_fs_inst *inst,
       break;
 
    default:
-      unreachable("Invalid interpolator instruction");
+      UNREACHABLE("Invalid interpolator instruction");
    }
 
    const bool dynamic_mode =

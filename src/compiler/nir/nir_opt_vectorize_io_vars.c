@@ -356,7 +356,7 @@ build_array_index(nir_builder *b, nir_deref_instr *deref, nir_def *base,
          nir_amul_imm(b, index, glsl_count_attribute_slots(deref->type, vs_in)));
    }
    default:
-      unreachable("Invalid deref instruction type");
+      UNREACHABLE("Invalid deref instruction type");
    }
 }
 

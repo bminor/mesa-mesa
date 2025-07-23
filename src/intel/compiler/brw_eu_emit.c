@@ -525,7 +525,7 @@ to_3src_align1_vstride(const struct intel_device_info *devinfo,
    case BRW_VERTICAL_STRIDE_16:
       return BRW_ALIGN1_3SRC_VERTICAL_STRIDE_8;
    default:
-      unreachable("invalid vstride");
+      UNREACHABLE("invalid vstride");
    }
 }
 
@@ -538,7 +538,7 @@ to_3src_align1_dst_hstride(enum brw_horizontal_stride hstride)
    case BRW_HORIZONTAL_STRIDE_2:
       return BRW_ALIGN1_3SRC_DST_HORIZONTAL_STRIDE_2;
    default:
-      unreachable("invalid hstride");
+      UNREACHABLE("invalid hstride");
    }
 }
 
@@ -555,7 +555,7 @@ to_3src_align1_hstride(enum brw_horizontal_stride hstride)
    case BRW_HORIZONTAL_STRIDE_4:
       return BRW_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_4;
    default:
-      unreachable("invalid hstride");
+      UNREACHABLE("invalid hstride");
    }
 }
 
@@ -950,7 +950,7 @@ brw_AVG(struct brw_codegen *p, struct brw_reg dest,
    case BRW_TYPE_UD:
       break;
    default:
-      unreachable("Bad type for brw_AVG");
+      UNREACHABLE("Bad type for brw_AVG");
    }
 
    return brw_alu2(p, BRW_OPCODE_AVG, dest, src0, src1);
@@ -1629,7 +1629,7 @@ brw_find_loop_end(struct brw_codegen *p, int start_offset)
 	    return offset;
       }
    }
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 /* After program generation, go back and update the UIP and JIP of

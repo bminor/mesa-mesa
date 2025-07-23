@@ -789,7 +789,7 @@ public:
          case 255:
             return (signext && (data_.i & 0x80000000u) ? 0xffffffff00000000ull : 0ull) | data_.i;
          }
-         unreachable("invalid register for 64-bit constant");
+         UNREACHABLE("invalid register for 64-bit constant");
       } else {
          return data_.i;
       }

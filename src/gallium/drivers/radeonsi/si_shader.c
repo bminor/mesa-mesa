@@ -703,7 +703,7 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
                shader->selector->stage == MESA_SHADER_TESS_EVAL)
          num_vs_outputs = shader->info.nr_param_exports;
       else
-         unreachable("invalid shader key");
+         UNREACHABLE("invalid shader key");
    } else if (shader->selector->stage == MESA_SHADER_FRAGMENT) {
       num_ps_outputs = util_bitcount(shader->selector->info.colors_written) +
                        (shader->info.writes_z ||

@@ -117,7 +117,7 @@ va_fuse_add_imm(bi_instr *I)
       else if (I->op == BI_OPCODE_FADD_IMM_V2F16)
          I->index ^= (1u << 31) | (1u << 15);
       else
-         unreachable("unexpected .neg");
+         UNREACHABLE("unexpected .neg");
    }
 
    I->src[0] = I->src[1 - s];

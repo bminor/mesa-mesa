@@ -180,7 +180,7 @@ nvk_sampler_get_header(const struct nvk_physical_device *pdev,
       SAMP_SET_E(samp, NV9097, 1, MAG_FILTER, MAG_LINEAR);
       break;
    default:
-      unreachable("Invalid filter");
+      UNREACHABLE("Invalid filter");
    }
 
    switch (state->min_filter) {
@@ -194,7 +194,7 @@ nvk_sampler_get_header(const struct nvk_physical_device *pdev,
          SAMP_SET_E(samp, NV9097, 1, MIN_FILTER, MIN_LINEAR);
       break;
    default:
-      unreachable("Invalid filter");
+      UNREACHABLE("Invalid filter");
    }
 
    switch (state->mipmap_mode) {
@@ -205,7 +205,7 @@ nvk_sampler_get_header(const struct nvk_physical_device *pdev,
       SAMP_SET_E(samp, NV9097, 1, MIP_FILTER, MIP_LINEAR);
       break;
    default:
-      unreachable("Invalid mipmap mode");
+      UNREACHABLE("Invalid mipmap mode");
    }
 
    assert(pdev->info.cls_eng3d >= KEPLER_A);
@@ -227,7 +227,7 @@ nvk_sampler_get_header(const struct nvk_physical_device *pdev,
          SAMP_SET_E(samp, NVB197, 1, REDUCTION_FILTER, RED_MAXIMUM);
          break;
       default:
-         unreachable("Invalid reduction mode");
+         UNREACHABLE("Invalid reduction mode");
       }
    }
 

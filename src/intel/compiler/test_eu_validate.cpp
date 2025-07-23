@@ -2859,7 +2859,7 @@ TEST_P(validation_test, gfx11_no_byte_src_1_2)
          brw_eu_inst_set_3src_a1_src1_hstride(&devinfo, last_inst, inst[i].srcs[0].hstride);
          break;
       default:
-         unreachable("invalid opcode");
+         UNREACHABLE("invalid opcode");
       }
 
       brw_eu_inst_set_dst_hstride(&devinfo, last_inst, BRW_HORIZONTAL_STRIDE_1);
@@ -3749,7 +3749,7 @@ TEST_P(validation_test, scalar_register_restrictions)
          break;
       }
       default:
-         unreachable("unexpected opcode in tests");
+         UNREACHABLE("unexpected opcode in tests");
       }
 
       brw_eu_inst_set_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
@@ -3884,7 +3884,7 @@ TEST_P(validation_test, bfloat_restrictions)
          brw_MAD(p, t.dst, t.src0, t.src1, t.src2);
          break;
       default:
-         unreachable("unexpected opcode in tests");
+         UNREACHABLE("unexpected opcode in tests");
       }
 
       if (tests[i].opcode == BRW_OPCODE_MAD) {

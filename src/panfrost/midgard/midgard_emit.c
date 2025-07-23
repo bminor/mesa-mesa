@@ -261,7 +261,7 @@ mir_pack_swizzle(unsigned mask, unsigned *swizzle, unsigned sz,
 
          *expand_mode = hi ? midgard_src_expand_high : midgard_src_expand_low;
       } else if (sz < 32) {
-         unreachable("Cannot encode 8/16 swizzle in 64-bit");
+         UNREACHABLE("Cannot encode 8/16 swizzle in 64-bit");
       }
    } else {
       /* For 32-bit, swizzle packing is stupid-simple. For 16-bit,
@@ -312,7 +312,7 @@ mir_pack_swizzle(unsigned mask, unsigned *swizzle, unsigned sz,
          *expand_mode =
             upper ? midgard_src_expand_high : midgard_src_expand_low;
       } else if (reg_mode == midgard_reg_mode_8) {
-         unreachable("Unhandled reg mode");
+         UNREACHABLE("Unhandled reg mode");
       }
    }
 
@@ -491,7 +491,7 @@ midgard_pack_common_store_mask(midgard_instruction *ins)
       }
       return packed;
    default:
-      unreachable("unexpected ldst opcode");
+      UNREACHABLE("unexpected ldst opcode");
    }
 }
 
@@ -918,7 +918,7 @@ midgard_sampler_type(nir_alu_type t)
    case nir_type_uint:
       return MALI_SAMPLER_UNSIGNED;
    default:
-      unreachable("Unknown sampler type");
+      UNREACHABLE("Unknown sampler type");
    }
 }
 
@@ -1040,6 +1040,6 @@ emit_binary_bundle(compiler_context *ctx, midgard_block *block,
    }
 
    default:
-      unreachable("Unknown midgard instruction type\n");
+      UNREACHABLE("Unknown midgard instruction type\n");
    }
 }

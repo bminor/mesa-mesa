@@ -59,7 +59,7 @@ zink_vktype_to_size_idx(VkDescriptorType type)
       return ZDS_INDEX_STORAGE_TEXELS;
    default: break;
    }
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 static inline enum zink_descriptor_size_index_compact
@@ -84,7 +84,7 @@ zink_vktype_to_size_idx_comp(VkDescriptorType type)
       return ZDS_INDEX_COMP_STORAGE_TEXELS;
    default: break;
    }
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 static inline enum zink_descriptor_size_index
@@ -101,7 +101,7 @@ zink_descriptor_type_to_size_idx(enum zink_descriptor_type type)
       return ZDS_INDEX_STORAGE_IMAGE;
    default: break;
    }
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 static inline enum zink_descriptor_size_index_compact
@@ -116,7 +116,7 @@ zink_descriptor_type_to_size_idx_comp(enum zink_descriptor_type type)
    case ZINK_DESCRIPTOR_TYPE_IMAGE:
    default: break;
    }
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 /* bindless descriptor bindings have their own struct indexing */
@@ -129,7 +129,7 @@ zink_descriptor_type_from_bindless_index(unsigned idx)
    case 2: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
    case 3: return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
    default:
-      unreachable("unknown index");
+      UNREACHABLE("unknown index");
    }
 }
 

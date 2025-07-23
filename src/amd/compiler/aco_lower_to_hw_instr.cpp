@@ -952,7 +952,7 @@ emit_reduction(lower_context* ctx, aco_opcode op, ReduceOp reduce_op, unsigned c
                      false, identity);
       }
       break;
-   default: unreachable("Invalid reduction mode");
+   default: UNREACHABLE("Invalid reduction mode");
    }
 
    if (op == aco_opcode::p_reduce) {
@@ -1418,7 +1418,7 @@ do_copy(lower_context* ctx, Builder& bld, const copy_operation& copy, bool* pres
       } else if (def.regClass().is_subdword()) {
          bld.vop1_sdwa(aco_opcode::v_mov_b32, def, op);
       } else {
-         unreachable("unsupported copy");
+         UNREACHABLE("unsupported copy");
       }
 
       did_copy = true;

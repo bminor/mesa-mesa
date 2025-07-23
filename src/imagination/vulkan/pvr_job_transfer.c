@@ -1832,7 +1832,7 @@ pvr_dma_texture_floats(const struct pvr_transfer_cmd *transfer_cmd,
       }
 
       default:
-         unreachable("Unknown COORD_SET_FLOATS.");
+         UNREACHABLE("Unknown COORD_SET_FLOATS.");
          break;
       }
    }
@@ -4340,7 +4340,7 @@ static VkResult pvr_isp_ctrl_stream(const struct pvr_device_info *dev_info,
                      /* Unreachable since we clamped the value earlier so
                       * reaching this is an implementation error.
                       */
-                     unreachable("num_mapping exceeded max_mappings_per_pb");
+                     UNREACHABLE("num_mapping exceeded max_mappings_per_pb");
                      break;
                   }
                }

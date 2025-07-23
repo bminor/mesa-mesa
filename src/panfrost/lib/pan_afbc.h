@@ -288,7 +288,7 @@ pan_afbc_header_subblock_size(struct pan_afbc_headerblock header,
    case 13: return  (header.u64[1] >> 46)  & mask; break;
    case 14: return  (header.u64[1] >> 52)  & mask; break;
    case 15: return  (header.u64[1] >> 58)  & mask; break;
-   default: unreachable("invalid index"); return 0;
+   default: UNREACHABLE("invalid index"); return 0;
    }
 }
 
@@ -694,10 +694,10 @@ pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
    case PAN_AFBC_MODE_YUV422_1C10:
       return MALI_AFBC_COMPRESSION_MODE_YUV422_1C10;
    case PAN_AFBC_MODE_INVALID:
-      unreachable("Invalid AFBC format");
+      UNREACHABLE("Invalid AFBC format");
    }
 
-   unreachable("all AFBC formats handled");
+   UNREACHABLE("all AFBC formats handled");
 }
 #endif
 

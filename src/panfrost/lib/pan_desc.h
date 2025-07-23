@@ -253,7 +253,7 @@ pan_sample_pattern(unsigned samples)
       return MALI_SAMPLE_PATTERN_D3D_16X_GRID;
 #endif
    default:
-      unreachable("Unsupported sample count");
+      UNREACHABLE("Unsupported sample count");
    }
 }
 

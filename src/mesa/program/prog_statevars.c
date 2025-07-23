@@ -1638,7 +1638,7 @@ _mesa_optimize_state_parameters(struct gl_constants *consts,
                attrib_incr = 1;
                break;
             default:
-               unreachable("unexpected state-var");
+               UNREACHABLE("unexpected state-var");
             }
 
             /* Find all attributes for one light. */

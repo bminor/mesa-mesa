@@ -295,7 +295,7 @@ etna_rs_gen_clear_cmd(struct etna_context *ctx,
       format = RS_FORMAT_64BPP_CLEAR;
       break;
    default:
-      unreachable("bpp not supported for clear by RS");
+      UNREACHABLE("bpp not supported for clear by RS");
       break;
    }
 
@@ -602,7 +602,7 @@ etna_compute_tileoffset(const struct pipe_box *box, enum pipe_format format,
       offset = (y & ~0x3f) * stride + blocksize * ((x & ~0x3f) << 6);
       break;
    default:
-      unreachable("invalid resource layout");
+      UNREACHABLE("invalid resource layout");
    }
 
    return offset;

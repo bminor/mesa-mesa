@@ -979,7 +979,7 @@ lds_op_from_intrinsic(nir_atomic_op op, bool ret)
    case nir_atomic_op_cmpxchg:
       return LDS_CMP_XCHG_RET;
    default:
-      unreachable("Unsupported shared atomic_op opcode");
+      UNREACHABLE("Unsupported shared atomic_op opcode");
    }
 }
 

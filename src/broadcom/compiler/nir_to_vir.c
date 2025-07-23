@@ -98,7 +98,7 @@ v3d_tmu_get_type_from_op(uint32_t tmu_op, bool is_write)
                 return V3D_TMU_OP_TYPE_REGULAR;
 
         default:
-                unreachable("Unknown tmu_op\n");
+                UNREACHABLE("Unknown tmu_op\n");
         }
 }
 static void
@@ -204,7 +204,7 @@ v3d_general_tmu_op_for_atomic(nir_intrinsic_instr *instr)
         case nir_atomic_op_ixor:    return V3D_TMU_OP_WRITE_XOR_READ_NOT;
         case nir_atomic_op_xchg:    return V3D_TMU_OP_WRITE_XCHG_READ_FLUSH;
         case nir_atomic_op_cmpxchg: return V3D_TMU_OP_WRITE_CMPXCHG_READ_FLUSH;
-        default:                    unreachable("unknown atomic op");
+        default:                    UNREACHABLE("unknown atomic op");
         }
 }
 
@@ -234,7 +234,7 @@ v3d_general_tmu_op(nir_intrinsic_instr *instr)
                 return v3d_general_tmu_op_for_atomic(instr);
 
         default:
-                unreachable("unknown intrinsic op");
+                UNREACHABLE("unknown intrinsic op");
         }
 }
 
@@ -681,7 +681,7 @@ ntq_emit_tmu_general(struct v3d_compile *c, nir_intrinsic_instr *instr,
                                         config |= GENERAL_TMU_LOOKUP_TYPE_8BIT_UI;
                                         break;
                                 default:
-                                        unreachable("Unsupported bitsize");
+                                        UNREACHABLE("Unsupported bitsize");
                                 }
                         } else {
                                 assert(type_size == 4);
@@ -944,7 +944,7 @@ ntq_emit_txs(struct v3d_compile *c, nir_tex_instr *instr)
                         break;
 
                 default:
-                        unreachable("Bad sampler type");
+                        UNREACHABLE("Bad sampler type");
                 }
 
                 ntq_store_def(c, &instr->def, i, size);
@@ -1103,7 +1103,7 @@ emit_fragment_varying(struct v3d_compile *c, nir_variable *var,
                 break;
 
         default:
-                unreachable("Bad interp mode");
+                UNREACHABLE("Bad interp mode");
         }
 
         if (input_idx >= 0)
@@ -3809,7 +3809,7 @@ ntq_emit_intrinsic(struct v3d_compile *c, nir_intrinsic_instr *instr)
 
         case nir_intrinsic_emit_vertex:
         case nir_intrinsic_end_primitive:
-                unreachable("Should have been lowered in v3d_nir_lower_io");
+                UNREACHABLE("Should have been lowered in v3d_nir_lower_io");
                 break;
 
         case nir_intrinsic_load_primitive_id: {
@@ -4090,7 +4090,7 @@ ntq_emit_intrinsic(struct v3d_compile *c, nir_intrinsic_instr *instr)
         }
 
         case nir_intrinsic_load_num_subgroups:
-                unreachable("Should have been lowered");
+                UNREACHABLE("Should have been lowered");
                 break;
 
         case nir_intrinsic_load_view_index:
@@ -4421,13 +4421,13 @@ ntq_emit_jump(struct v3d_compile *c, nir_jump_instr *jump)
                 break;
 
         case nir_jump_return:
-                unreachable("All returns should be lowered\n");
+                UNREACHABLE("All returns should be lowered\n");
                 break;
 
         case nir_jump_halt:
         case nir_jump_goto:
         case nir_jump_goto_if:
-                unreachable("not supported\n");
+                UNREACHABLE("not supported\n");
                 break;
         }
 }
@@ -4448,13 +4448,13 @@ ntq_emit_uniform_jump(struct v3d_compile *c, nir_jump_instr *jump)
                 break;
 
         case nir_jump_return:
-                unreachable("All returns should be lowered\n");
+                UNREACHABLE("All returns should be lowered\n");
                 break;
 
         case nir_jump_halt:
         case nir_jump_goto:
         case nir_jump_goto_if:
-                unreachable("not supported\n");
+                UNREACHABLE("not supported\n");
                 break;
         }
 }
@@ -4476,7 +4476,7 @@ ntq_emit_instr(struct v3d_compile *c, nir_instr *instr)
                 break;
 
         case nir_instr_type_undef:
-                unreachable("Should've been lowered by nir_lower_undef_to_zero");
+                UNREACHABLE("Should've been lowered by nir_lower_undef_to_zero");
                 break;
 
         case nir_instr_type_tex:
@@ -4841,7 +4841,7 @@ nir_to_vir(struct v3d_compile *c)
         case MESA_SHADER_COMPUTE:
                 break;
         default:
-                unreachable("unsupported shader stage");
+                UNREACHABLE("unsupported shader stage");
         }
 
         ntq_setup_outputs(c);
@@ -4994,7 +4994,7 @@ v3d_nir_to_vir(struct v3d_compile *c)
         case MESA_SHADER_COMPUTE:
                 break;
         default:
-                unreachable("bad stage");
+                UNREACHABLE("bad stage");
         }
 
         if (V3D_DBG(VIR) ||

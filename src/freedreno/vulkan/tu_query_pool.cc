@@ -310,7 +310,7 @@ tu_CreateQueryPool(VkDevice _device,
       slot_size = sizeof(struct pipeline_stat_query_slot);
       break;
    default:
-      unreachable("Invalid query type");
+      UNREACHABLE("Invalid query type");
    }
 
    struct tu_query_pool *pool = (struct tu_query_pool *)
@@ -890,7 +890,7 @@ tu_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer,
                                                 queryCount, buffer, dstOffset,
                                                 stride, flags);
    case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
-      unreachable("allowCommandBufferQueryCopies is false");
+      UNREACHABLE("allowCommandBufferQueryCopies is false");
    default:
       assert(!"Invalid query type");
    }
@@ -1386,7 +1386,7 @@ tu_CmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer,
       emit_begin_stat_query<CHIP>(cmdbuf, pool, query);
       break;
    case VK_QUERY_TYPE_TIMESTAMP:
-      unreachable("Unimplemented query type");
+      UNREACHABLE("Unimplemented query type");
    default:
       assert(!"Invalid query type");
    }
@@ -1976,7 +1976,7 @@ tu_CmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer,
       emit_end_stat_query<CHIP>(cmdbuf, pool, query);
       break;
    case VK_QUERY_TYPE_TIMESTAMP:
-      unreachable("Unimplemented query type");
+      UNREACHABLE("Unimplemented query type");
    default:
       assert(!"Invalid query type");
    }
@@ -2099,7 +2099,7 @@ tu_CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
          va += offsetof(struct tu_accel_struct_header, size);
          break;
       default:
-         unreachable("Unhandle accel struct query type.");
+         UNREACHABLE("Unhandle accel struct query type.");
       }
 
       tu_cs_emit_pkt7(cs, CP_MEM_TO_MEM, 5);

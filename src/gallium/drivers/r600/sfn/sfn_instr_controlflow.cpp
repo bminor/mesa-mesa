@@ -66,7 +66,7 @@ ControlFlowInstr::do_print(std::ostream& os) const
       os << "WAIT_ACK";
       break;
    default:
-      unreachable("Unknown CF type");
+      UNREACHABLE("Unknown CF type");
    }
 }
 

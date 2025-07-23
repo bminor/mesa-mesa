@@ -369,7 +369,7 @@ init_db_template_entry(struct zink_screen *screen, struct zink_shader *shader, e
        entry->db_size = screen->info.db_props.robustStorageTexelBufferDescriptorSize;
        break;
     default:
-       unreachable("unknown type");
+       UNREACHABLE("unknown type");
     }
     (*entry_idx)++;
 }
@@ -417,7 +417,7 @@ init_template_entry(struct zink_shader *shader, enum zink_descriptor_type type,
        entry->stride = sizeof(VkBufferView);
        break;
     default:
-       unreachable("unknown type");
+       UNREACHABLE("unknown type");
     }
     (*entry_idx)++;
 }
@@ -452,7 +452,7 @@ descriptor_program_num_sizes(VkDescriptorPoolSize *sizes, enum zink_descriptor_t
              !!sizes[ZDS_INDEX_STORAGE_TEXELS].descriptorCount;
    default: break;
    }
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 static uint16_t
@@ -471,7 +471,7 @@ descriptor_program_num_sizes_compact(VkDescriptorPoolSize *sizes, unsigned desc_
    case ZINK_DESCRIPTOR_TYPE_IMAGE:
    default: break;
    }
-   unreachable("unknown type");
+   UNREACHABLE("unknown type");
 }
 
 /* create all the descriptor objects for a program:
@@ -942,7 +942,7 @@ check_pool_alloc(struct zink_context *ctx, struct zink_descriptor_pool_multi *mp
          }
       }
       if (!mpool->pool)
-         unreachable("out of descriptor memory!");
+         UNREACHABLE("out of descriptor memory!");
    }
    struct zink_descriptor_pool *pool = mpool->pool;
    /* allocate up to $current * 10, e.g., 10 -> 100;

@@ -74,7 +74,7 @@ static void
 default_logger_func(void *priv, const char *msg)
 {
    fprintf(stderr, "%s", msg);
-   unreachable("Unhandled error");
+   UNREACHABLE("Unhandled error");
 }
 
 static const struct dxil_logger default_logger = { .priv = NULL, .log = default_logger_func };
@@ -230,7 +230,7 @@ get_shader_kind_str(enum dxil_shader_kind kind)
    case DXIL_COMPUTE_SHADER:
       return "cs";
    default:
-      unreachable("invalid shader kind");
+      UNREACHABLE("invalid shader kind");
    }
 }
 
@@ -422,7 +422,7 @@ nir_atomic_to_dxil_atomic(nir_atomic_op op)
    case nir_atomic_op_umin: return DXIL_ATOMIC_UMIN;
    case nir_atomic_op_umax: return DXIL_ATOMIC_UMAX;
    case nir_atomic_op_xchg: return DXIL_ATOMIC_EXCHANGE;
-   default: unreachable("Unsupported atomic op");
+   default: UNREACHABLE("Unsupported atomic op");
    }
 }
 
@@ -439,7 +439,7 @@ nir_atomic_to_dxil_rmw(nir_atomic_op op)
    case nir_atomic_op_umin: return DXIL_RMWOP_UMIN;
    case nir_atomic_op_umax: return DXIL_RMWOP_UMAX;
    case nir_atomic_op_xchg: return DXIL_RMWOP_XCHG;
-   default: unreachable("Unsupported atomic op");
+   default: UNREACHABLE("Unsupported atomic op");
    }
 }
 
@@ -487,7 +487,7 @@ emit_srv_metadata(struct dxil_module *m, const struct dxil_type *elem_type,
    } else if (res_kind == DXIL_RESOURCE_KIND_RAW_BUFFER)
       fields[8] = NULL;
    else
-      unreachable("Structured buffers not supported yet");
+      UNREACHABLE("Structured buffers not supported yet");
 
    return dxil_get_metadata_node(m, fields, ARRAY_SIZE(fields));
 }
@@ -516,7 +516,7 @@ emit_uav_metadata(struct dxil_module *m, const struct dxil_type *struct_type,
    } else if (res_kind == DXIL_RESOURCE_KIND_RAW_BUFFER)
       fields[10] = NULL;
    else
-      unreachable("Structured buffers not supported yet");
+      UNREACHABLE("Structured buffers not supported yet");
 
    return dxil_get_metadata_node(m, fields, ARRAY_SIZE(fields));
 }
@@ -1073,7 +1073,7 @@ emit_annotate_handle_from_metadata(struct ntd_context *ctx,
       mdnodes = &ctx->sampler_metadata_nodes;
       break;
    default:
-      unreachable("Invalid resource class");
+      UNREACHABLE("Invalid resource class");
    }
 
    const struct dxil_mdnode *mdnode = *util_dynarray_element(mdnodes, const struct dxil_mdnode *, resource_range_id);
@@ -1279,7 +1279,7 @@ emit_createhandle_call_dynamic(struct ntd_context *ctx,
       }
    }
 
-   unreachable("Resource access for undeclared range");
+   UNREACHABLE("Resource access for undeclared range");
 }
 
 static bool
@@ -1413,7 +1413,7 @@ get_value_for_const(struct dxil_module *mod, nir_const_value *c, const struct dx
       mod->feats.doubles = true;
       return dxil_module_get_double_const(mod, c->f64);
    }
-   unreachable("Invalid type");
+   UNREACHABLE("Invalid type");
 }
 
 static const struct dxil_type *
@@ -1655,7 +1655,7 @@ emit_static_indexing_handles(struct ntd_context *ctx)
          handle_array = ctx->image_handles;
          break;
       default:
-         unreachable("Unexpected resource type");
+         UNREACHABLE("Unexpected resource type");
       }
 
       if (last_res_class != res_class)
@@ -1722,7 +1722,7 @@ get_tessellator_domain(enum tess_primitive_mode primitive_mode)
    case TESS_PRIMITIVE_TRIANGLES: return DXIL_TESSELLATOR_DOMAIN_TRI;
    case TESS_PRIMITIVE_ISOLINES: return DXIL_TESSELLATOR_DOMAIN_ISOLINE;
    default:
-      unreachable("Invalid tessellator primitive mode");
+      UNREACHABLE("Invalid tessellator primitive mode");
    }
 }
 
@@ -2253,7 +2253,7 @@ get_src(struct ntd_context *ctx, nir_src *src, unsigned chan,
       return value;
 
    default:
-      unreachable("unexpected nir_alu_type");
+      UNREACHABLE("unexpected nir_alu_type");
    }
 }
 
@@ -2407,7 +2407,7 @@ get_cast_op(nir_alu_instr *alu)
       return DXIL_CAST_UITOFP;
 
    default:
-      unreachable("unexpected cast op");
+      UNREACHABLE("unexpected cast op");
    }
 }
 
@@ -2427,7 +2427,7 @@ get_cast_dest_type(struct ntd_context *ctx, nir_alu_instr *alu)
       return dxil_module_get_float_type(&ctx->mod, dst_bits);
 
    default:
-      unreachable("unknown nir_alu_type");
+      UNREACHABLE("unknown nir_alu_type");
    }
 }
 
@@ -2498,7 +2498,7 @@ get_overload(nir_alu_type alu_type, unsigned bit_size)
       case 32: return DXIL_I32;
       case 64: return DXIL_I64;
       default:
-         unreachable("unexpected bit_size");
+         UNREACHABLE("unexpected bit_size");
       }
    case nir_type_float:
       switch (bit_size) {
@@ -2506,12 +2506,12 @@ get_overload(nir_alu_type alu_type, unsigned bit_size)
       case 32: return DXIL_F32;
       case 64: return DXIL_F64;
       default:
-         unreachable("unexpected bit_size");
+         UNREACHABLE("unexpected bit_size");
       }
    case nir_type_invalid:
       return DXIL_NONE;
    default:
-      unreachable("unexpected output type");
+      UNREACHABLE("unexpected output type");
    }
 }
 
@@ -2986,7 +2986,7 @@ emit_alu(struct ntd_context *ctx, nir_alu_instr *alu)
       case 64:
          one = dxil_module_get_double_const(&ctx->mod, 1.0);
          break;
-      default: unreachable("Invalid float size");
+      default: UNREACHABLE("Invalid float size");
       }
       return emit_binop(ctx, alu, DXIL_BINOP_SDIV, one, src[0]);
    }
@@ -3845,7 +3845,7 @@ emit_load_interpolated_input(struct ntd_context *ctx, nir_intrinsic_instr *intr)
       num_args = 4;
       break;
    default:
-      unreachable("Unsupported interpolation barycentric intrinsic");
+      UNREACHABLE("Unsupported interpolation barycentric intrinsic");
    }
    uint8_t io_index = ctx->mod.input_mappings[nir_intrinsic_base(intr)];
    args[0] = dxil_module_get_int32_const(&ctx->mod, opcode_val);
@@ -3905,7 +3905,7 @@ deref_to_gep(struct ntd_context *ctx, nir_deref_instr *deref)
    case nir_var_mem_constant: var_array = ctx->consts; break;
    case nir_var_mem_shared: var_array = ctx->sharedvars; break;
    case nir_var_function_temp: var_array = ctx->scratchvars; break;
-   default: unreachable("Invalid deref mode");
+   default: UNREACHABLE("Invalid deref mode");
    }
    gep_indices[0] = var_array[var->data.driver_location];
 
@@ -4489,7 +4489,7 @@ emit_load_vulkan_descriptor(struct ntd_context *ctx, nir_intrinsic_instr *intr)
       resource_kind = DXIL_RESOURCE_KIND_RAW_BUFFER;
       break;
    default:
-      unreachable("unknown descriptor type");
+      UNREACHABLE("unknown descriptor type");
       return false;
    }
 
@@ -4702,7 +4702,7 @@ get_reduce_bit_op(nir_op op)
    case nir_op_ixor: return DXIL_WAVE_BIT_OP_XOR;
    case nir_op_iand: return DXIL_WAVE_BIT_OP_AND;
    default:
-      unreachable("Invalid bit op");
+      UNREACHABLE("Invalid bit op");
    }
 }
 
@@ -4746,7 +4746,7 @@ get_reduce_op(nir_op op)
    case nir_op_fmin:
       return DXIL_WAVE_OP_MIN;
    default:
-      unreachable("Unexpected reduction op");
+      UNREACHABLE("Unexpected reduction op");
    }
 }
 
@@ -4826,7 +4826,7 @@ emit_intrinsic(struct ntd_context *ctx, nir_intrinsic_instr *intr)
          return emit_load_unary_external_function(ctx, intr, "dx.op.gsInstanceID",
                                                   DXIL_INTR_GS_INSTANCE_ID, nir_type_int);
       default:
-         unreachable("Unexpected shader kind for invocation ID");
+         UNREACHABLE("Unexpected shader kind for invocation ID");
       }
    case nir_intrinsic_load_view_index:
       ctx->mod.feats.view_id = true;
@@ -5019,7 +5019,7 @@ emit_deref(struct ntd_context* ctx, nir_deref_instr* instr)
          store_def(ctx, &instr->def, 0, dxil_module_get_int_const(&ctx->mod, instr->strct.index, 32));
          return true;
       default:
-         unreachable("Other deref types not supported");
+         UNREACHABLE("Other deref types not supported");
       }
    }
 
@@ -5108,7 +5108,7 @@ emit_jump(struct ntd_context *ctx, nir_jump_instr *instr)
       return emit_branch(ctx, instr->instr.block->successors[0]->index);
 
    default:
-      unreachable("Unsupported jump type\n");
+      UNREACHABLE("Unsupported jump type\n");
    }
 }
 
@@ -5593,11 +5593,11 @@ emit_tex(struct ntd_context *ctx, nir_tex_instr *instr)
          break;
 
       case nir_tex_src_projector:
-         unreachable("Texture projector should have been lowered");
+         UNREACHABLE("Texture projector should have been lowered");
 
       default:
          fprintf(stderr, "texture source: %d\n", instr->src[i].src_type);
-         unreachable("unknown texture source");
+         UNREACHABLE("unknown texture source");
       }
    }
 
@@ -5699,7 +5699,7 @@ emit_tex(struct ntd_context *ctx, nir_tex_instr *instr)
 
    default:
       fprintf(stderr, "texture op: %d\n", instr->op);
-      unreachable("unknown texture op");
+      UNREACHABLE("unknown texture op");
    }
 
    if (!sample)
@@ -5860,7 +5860,7 @@ emit_cf_list(struct ntd_context *ctx, struct exec_list *list)
          break;
 
       default:
-         unreachable("unsupported cf-list node");
+         UNREACHABLE("unsupported cf-list node");
          break;
       }
    }
@@ -6192,7 +6192,7 @@ get_dxil_shader_kind(struct nir_shader *s)
    case MESA_SHADER_COMPUTE:
       return DXIL_COMPUTE_SHADER;
    default:
-      unreachable("unknown shader stage in nir_to_dxil");
+      UNREACHABLE("unknown shader stage in nir_to_dxil");
       return DXIL_COMPUTE_SHADER;
    }
 }

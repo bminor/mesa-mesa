@@ -34,7 +34,7 @@ ssbo_atomic_for_deref(nir_intrinsic_op deref_op)
    case nir_intrinsic_deref_atomic_swap:
       return nir_intrinsic_ssbo_atomic_swap;
    default:
-      unreachable("Invalid SSBO atomic");
+      UNREACHABLE("Invalid SSBO atomic");
    }
 }
 
@@ -56,7 +56,7 @@ global_atomic_for_deref(nir_address_format addr_format,
          return nir_intrinsic_global_atomic_swap_2x32;
 
    default:
-      unreachable("Invalid SSBO atomic");
+      UNREACHABLE("Invalid SSBO atomic");
    }
 }
 
@@ -69,7 +69,7 @@ shared_atomic_for_deref(nir_intrinsic_op deref_op)
    case nir_intrinsic_deref_atomic_swap:
       return nir_intrinsic_shared_atomic_swap;
    default:
-      unreachable("Invalid shared atomic");
+      UNREACHABLE("Invalid shared atomic");
    }
 }
 
@@ -82,7 +82,7 @@ task_payload_atomic_for_deref(nir_intrinsic_op deref_op)
    case nir_intrinsic_deref_atomic_swap:
       return nir_intrinsic_task_payload_atomic_swap;
    default:
-      unreachable("Invalid task payload atomic");
+      UNREACHABLE("Invalid task payload atomic");
    }
 }
 
@@ -158,7 +158,7 @@ build_addr_for_var(nir_builder *b, nir_variable *var,
          break;
 
       default:
-         unreachable("Unsupported variable mode");
+         UNREACHABLE("Unsupported variable mode");
       }
 
       return nir_build_addr_iadd_imm(b, base_addr, addr_format, var->data.mode,
@@ -189,11 +189,11 @@ build_addr_for_var(nir_builder *b, nir_variable *var,
                              var->data.driver_location);
 
       default:
-         unreachable("Unsupported variable mode");
+         UNREACHABLE("Unsupported variable mode");
       }
 
    default:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 }
 
@@ -221,12 +221,12 @@ build_runtime_addr_mode_check(nir_builder *b, nir_def *addr,
                         nir_ieq_imm(b, mode_enum, 0x3));
 
       default:
-         unreachable("Invalid mode check intrinsic");
+         UNREACHABLE("Invalid mode check intrinsic");
       }
    }
 
    default:
-      unreachable("Unsupported address mode");
+      UNREACHABLE("Unsupported address mode");
    }
 }
 
@@ -259,7 +259,7 @@ nir_address_format_bit_size(nir_address_format addr_format)
    case nir_address_format_logical:
       return 32;
    }
-   unreachable("Invalid address format");
+   UNREACHABLE("Invalid address format");
 }
 
 unsigned
@@ -291,7 +291,7 @@ nir_address_format_num_components(nir_address_format addr_format)
    case nir_address_format_logical:
       return 1;
    }
-   unreachable("Invalid address format");
+   UNREACHABLE("Invalid address format");
 }
 
 static nir_def *
@@ -308,7 +308,7 @@ addr_to_index(nir_builder *b, nir_def *addr,
       assert(addr->num_components == 3);
       return nir_trim_vector(b, addr, 2);
    default:
-      unreachable("Invalid address format");
+      UNREACHABLE("Invalid address format");
    }
 }
 
@@ -331,7 +331,7 @@ addr_to_offset(nir_builder *b, nir_def *addr,
    case nir_address_format_62bit_generic:
       return nir_u2u32(b, addr);
    default:
-      unreachable("Invalid address format");
+      UNREACHABLE("Invalid address format");
    }
 }
 
@@ -388,10 +388,10 @@ addr_to_global(nir_builder *b, nir_def *addr,
    case nir_address_format_32bit_offset:
    case nir_address_format_32bit_offset_as_64bit:
    case nir_address_format_logical:
-      unreachable("Cannot get a 64-bit address with this address format");
+      UNREACHABLE("Cannot get a 64-bit address with this address format");
    }
 
-   unreachable("Invalid address format");
+   UNREACHABLE("Invalid address format");
 }
 
 static bool
@@ -682,7 +682,7 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
          }
          break;
       default:
-         unreachable("Unsupported explicit IO variable mode");
+         UNREACHABLE("Unsupported explicit IO variable mode");
       }
       break;
 
@@ -701,12 +701,12 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
          op = nir_intrinsic_load_shared_block_intel;
          break;
       default:
-         unreachable("Unsupported explicit IO variable mode");
+         UNREACHABLE("Unsupported explicit IO variable mode");
       }
       break;
 
    default:
-      unreachable("Invalid intrinsic");
+      UNREACHABLE("Invalid intrinsic");
    }
 
    nir_intrinsic_instr *load = nir_intrinsic_instr_create(b->shader, op);
@@ -900,7 +900,7 @@ build_explicit_io_store(nir_builder *b, nir_intrinsic_instr *intrin,
          }
          break;
       default:
-         unreachable("Unsupported explicit IO variable mode");
+         UNREACHABLE("Unsupported explicit IO variable mode");
       }
       break;
 
@@ -921,12 +921,12 @@ build_explicit_io_store(nir_builder *b, nir_intrinsic_instr *intrin,
          op = nir_intrinsic_store_shared_block_intel;
          break;
       default:
-         unreachable("Unsupported explicit IO variable mode");
+         UNREACHABLE("Unsupported explicit IO variable mode");
       }
       break;
 
    default:
-      unreachable("Invalid intrinsic");
+      UNREACHABLE("Invalid intrinsic");
    }
 
    nir_intrinsic_instr *store = nir_intrinsic_instr_create(b->shader, op);
@@ -1051,7 +1051,7 @@ build_explicit_io_atomic(nir_builder *b, nir_intrinsic_instr *intrin,
       op = task_payload_atomic_for_deref(intrin->intrinsic);
       break;
    default:
-      unreachable("Unsupported explicit IO variable mode");
+      UNREACHABLE("Unsupported explicit IO variable mode");
    }
 
    nir_intrinsic_instr *atomic = nir_intrinsic_instr_create(b->shader, op);
@@ -1135,7 +1135,7 @@ nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
    }
 
    case nir_deref_type_array_wildcard:
-      unreachable("Wildcards should be lowered by now");
+      UNREACHABLE("Wildcards should be lowered by now");
       break;
 
    case nir_deref_type_struct: {
@@ -1152,7 +1152,7 @@ nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
       return base_addr;
    }
 
-   unreachable("Invalid NIR deref type");
+   UNREACHABLE("Invalid NIR deref type");
 }
 
 void
@@ -1331,7 +1331,7 @@ nir_get_explicit_deref_align(nir_deref_instr *deref,
 
    switch (deref->deref_type) {
    case nir_deref_type_var:
-      unreachable("Handled above");
+      UNREACHABLE("Handled above");
 
    case nir_deref_type_array:
    case nir_deref_type_array_wildcard:
@@ -1374,7 +1374,7 @@ nir_get_explicit_deref_align(nir_deref_instr *deref,
       return true;
    }
 
-   unreachable("Invalid deref_instr_type");
+   UNREACHABLE("Invalid deref_instr_type");
 }
 
 static void
@@ -1458,7 +1458,7 @@ lower_explicit_io_array_length(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 
    default:
-      unreachable("Cannot determine SSBO size");
+      UNREACHABLE("Cannot determine SSBO size");
    }
 
    nir_def *remaining = nir_usub_sat(b, size, offset);
@@ -1709,7 +1709,7 @@ lower_vars_to_explicit(nir_shader *shader,
       offset = 0;
       break;
    default:
-      unreachable("Unsupported mode");
+      UNREACHABLE("Unsupported mode");
    }
    nir_foreach_variable_in_list(var, vars) {
       if (var->data.mode != mode)
@@ -1766,7 +1766,7 @@ lower_vars_to_explicit(nir_shader *shader,
    case nir_var_mem_node_payload_in:
       break;
    default:
-      unreachable("Unsupported mode");
+      UNREACHABLE("Unsupported mode");
    }
 
    return progress;
@@ -2028,10 +2028,10 @@ nir_build_addr_ieq(nir_builder *b, nir_def *addr0, nir_def *addr1,
       return nir_ball_iequal(b, nir_unpack_64_2x32(b, addr0), nir_unpack_64_2x32(b, addr1));
 
    case nir_address_format_logical:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 
-   unreachable("Invalid address format");
+   UNREACHABLE("Invalid address format");
 }
 
 nir_def *
@@ -2075,10 +2075,10 @@ nir_build_addr_isub(nir_builder *b, nir_def *addr0, nir_def *addr1,
       return nir_isub(b, nir_channel(b, addr0, 2), nir_channel(b, addr1, 2));
 
    case nir_address_format_logical:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
 
-   unreachable("Invalid address format");
+   UNREACHABLE("Invalid address format");
 }
 
 nir_def *
@@ -2154,7 +2154,7 @@ nir_build_addr_iadd(nir_builder *b, nir_def *addr,
       }
 
    case nir_address_format_logical:
-      unreachable("Unsupported address format");
+      UNREACHABLE("Unsupported address format");
    }
-   unreachable("Invalid address format");
+   UNREACHABLE("Invalid address format");
 }

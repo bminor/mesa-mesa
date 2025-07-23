@@ -499,7 +499,7 @@ crocus_store_register_mem32(struct crocus_batch *batch, uint32_t reg,
       srm.PredicateEnable = predicated;
 #else
       if (predicated)
-         unreachable("unsupported predication");
+         UNREACHABLE("unsupported predication");
 #endif
    }
 }
@@ -5327,7 +5327,7 @@ emit_sol_surface(struct crocus_batch *batch,
       surface_format = ISL_FORMAT_R32G32B32A32_FLOAT;
       break;
    default:
-      unreachable("Invalid vector size for transform feedback output");
+      UNREACHABLE("Invalid vector size for transform feedback output");
    }
 
    UNUSED struct isl_device *isl_dev = &batch->screen->isl_dev;

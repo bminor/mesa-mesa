@@ -415,7 +415,7 @@ build_process_cs_cmd_seq(nir_builder *b, struct nvk_nir_push *p,
       }
 
       default:
-         unreachable("Unsupported indirect token type");
+         UNREACHABLE("Unsupported indirect token type");
       }
    }
 }
@@ -479,7 +479,7 @@ build_gfx_set_exec(nir_builder *b, struct nvk_nir_push *p, nir_def *token_addr,
    }
 
    default:
-      unreachable("Unknown indirect execution set type");
+      UNREACHABLE("Unknown indirect execution set type");
    }
 }
 
@@ -681,7 +681,7 @@ build_process_gfx_cmd_seq(nir_builder *b, struct nvk_nir_push *p,
          break;
 
       default:
-         unreachable("Unsupported indirect token type");
+         UNREACHABLE("Unsupported indirect token type");
       }
    }
 }
@@ -786,7 +786,7 @@ build_process_shader(struct nvk_device *dev,
          build_process_gfx_cmd_seq(b, &push, in_seq_addr, seq_idx,
                                    &in, pdev, info);
       } else {
-         unreachable("Unknown shader stage");
+         UNREACHABLE("Unknown shader stage");
       }
    }
    nir_pop_if(b, NULL);
@@ -799,7 +799,7 @@ build_process_shader(struct nvk_device *dev,
    } else if (info->shaderStages & NVK_SHADER_STAGE_GRAPHICS_BITS) {
       nvk_nir_pad_NOP(b, &push, NV9097);
    } else {
-      unreachable("Unknown shader stage");
+      UNREACHABLE("Unknown shader stage");
    }
 
    /* Replace the out stride with the actual size of a command stream */

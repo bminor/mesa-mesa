@@ -65,7 +65,7 @@ bi_format_for_texs_2d(enum bi_opcode op)
    case BI_OPCODE_TEXS_2D_F16:
       return BIFROST_TEXTURE_FORMAT_F16;
    default:
-      unreachable("Invalid TEXS_2D instruction");
+      UNREACHABLE("Invalid TEXS_2D instruction");
    }
 }
 

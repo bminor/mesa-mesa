@@ -46,15 +46,15 @@ brw_reg_saturate_immediate(brw_reg *reg)
       break;
    case BRW_TYPE_UB:
    case BRW_TYPE_B:
-      unreachable("no UB/B immediates");
+      UNREACHABLE("no UB/B immediates");
    case BRW_TYPE_V:
    case BRW_TYPE_UV:
    case BRW_TYPE_VF:
-      unreachable("unimplemented: saturate vector immediate");
+      UNREACHABLE("unimplemented: saturate vector immediate");
    case BRW_TYPE_HF:
-      unreachable("unimplemented: saturate HF immediate");
+      UNREACHABLE("unimplemented: saturate HF immediate");
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
    }
 
    if (size < 8) {
@@ -100,15 +100,15 @@ brw_reg_negate_immediate(brw_reg *reg)
       return true;
    case BRW_TYPE_UB:
    case BRW_TYPE_B:
-      unreachable("no UB/B immediates");
+      UNREACHABLE("no UB/B immediates");
    case BRW_TYPE_UV:
    case BRW_TYPE_V:
-      unreachable("unimplemented: negate UV/V immediate");
+      UNREACHABLE("unimplemented: negate UV/V immediate");
    case BRW_TYPE_HF:
       reg->ud ^= 0x80008000;
       return true;
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
    }
 
    return false;
@@ -140,7 +140,7 @@ brw_reg_abs_immediate(brw_reg *reg)
       return true;
    case BRW_TYPE_UB:
    case BRW_TYPE_B:
-      unreachable("no UB/B immediates");
+      UNREACHABLE("no UB/B immediates");
    case BRW_TYPE_UQ:
    case BRW_TYPE_UD:
    case BRW_TYPE_UW:
@@ -148,14 +148,14 @@ brw_reg_abs_immediate(brw_reg *reg)
       /* Presumably the absolute value modifier on an unsigned source is a
        * nop, but it would be nice to confirm.
        */
-      unreachable("unimplemented: abs unsigned immediate");
+      UNREACHABLE("unimplemented: abs unsigned immediate");
    case BRW_TYPE_V:
-      unreachable("unimplemented: abs V immediate");
+      UNREACHABLE("unimplemented: abs V immediate");
    case BRW_TYPE_HF:
       reg->ud &= ~0x80008000;
       return true;
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
    }
 
    return false;
@@ -294,7 +294,7 @@ brw_reg::is_contiguous() const
       return true;
    }
 
-   unreachable("Invalid register file");
+   UNREACHABLE("Invalid register file");
 }
 
 unsigned

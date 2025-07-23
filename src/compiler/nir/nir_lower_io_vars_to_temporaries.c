@@ -184,7 +184,7 @@ emit_interp(nir_builder *b, nir_deref_instr **old_interp_deref,
       case nir_deref_type_array_wildcard:
       case nir_deref_type_ptr_as_array:
       case nir_deref_type_cast:
-         unreachable("bad deref type");
+         UNREACHABLE("bad deref type");
       }
 
       old_interp_deref++;

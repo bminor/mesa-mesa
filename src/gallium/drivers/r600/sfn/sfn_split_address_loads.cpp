@@ -91,7 +91,7 @@ public:
       for (auto p : r.parents())
          add_dep(p);
    }
-   void visit(const LocalArray& value) override {(void)value; unreachable("Array is not a value");}
+   void visit(const LocalArray& value) override {(void)value; UNREACHABLE("Array is not a value");}
    void visit(const LocalArrayValue& r) override
    {
       auto& a = r.array();

@@ -124,7 +124,7 @@ visit_cf_list(nir_builder *b, struct exec_list *list, bool *repair_ssa)
          break;
       }
       case nir_cf_node_function:
-         unreachable("Unsupported cf_node type.");
+         UNREACHABLE("Unsupported cf_node type.");
       }
    }
 

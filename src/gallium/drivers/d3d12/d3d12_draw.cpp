@@ -248,7 +248,7 @@ image_view_dimension(enum pipe_texture_target target)
       return D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
    case PIPE_TEXTURE_3D: return D3D12_UAV_DIMENSION_TEXTURE3D;
    default:
-      unreachable("unexpected target");
+      UNREACHABLE("unexpected target");
    }
 }
 
@@ -322,7 +322,7 @@ fill_image_descriptors(struct d3d12_context *ctx,
             break;
          }
          default:
-            unreachable("Unexpected image view dimension");
+            UNREACHABLE("Unexpected image view dimension");
          }
          
          d3d12_transition_flags transition_flags = (d3d12_transition_flags)(D3D12_TRANSITION_FLAG_ACCUMULATE_STATE |
@@ -413,7 +413,7 @@ fill_graphics_state_vars(struct d3d12_context *ctx,
          size += 4;
          break;
       default:
-         unreachable("unknown state variable");
+         UNREACHABLE("unknown state variable");
       }
    }
 
@@ -453,7 +453,7 @@ fill_compute_state_vars(struct d3d12_context *ctx,
          break;
       }
       default:
-         unreachable("unknown state variable");
+         UNREACHABLE("unknown state variable");
       }
    }
 
@@ -663,7 +663,7 @@ topology(enum mesa_prim prim_type, uint8_t patch_vertices)
 
    default:
       debug_printf("mesa_prim: %s\n", u_prim_name(prim_type));
-      unreachable("unexpected enum mesa_prim");
+      UNREACHABLE("unexpected enum mesa_prim");
    }
 }
 
@@ -676,7 +676,7 @@ ib_format(unsigned index_size)
    case 4: return DXGI_FORMAT_R32_UINT;
 
    default:
-      unreachable("unexpected index-buffer size");
+      UNREACHABLE("unexpected index-buffer size");
    }
 }
 

@@ -302,7 +302,7 @@ get_query_resolve(const nir_shader_compiler_options *options, const d3d12_comput
          stride = sizeof(D3D12_QUERY_DATA_PIPELINE_STATISTICS) / sizeof(UINT64);
          break;
       default:
-         unreachable("Unhandled query resolve");
+         UNREACHABLE("Unhandled query resolve");
       }
 
       if (!key->query_resolve.is_resolve_in_place && key->query_resolve.num_subqueries == 1)
@@ -400,7 +400,7 @@ create_compute_transform(const nir_shader_compiler_options *options, const d3d12
    case d3d12_compute_transform_type::query_resolve:
       return get_query_resolve(options, key);
    default:
-      unreachable("Invalid transform");
+      UNREACHABLE("Invalid transform");
    }
 }
 

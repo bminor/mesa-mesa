@@ -129,7 +129,7 @@ get_token_info_size(VkIndirectCommandsTokenTypeEXT type)
       return 0;
    default: break;
    }
-   unreachable("unknown token type");
+   UNREACHABLE("unknown token type");
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateIndirectCommandsLayoutEXT(
@@ -240,13 +240,13 @@ lvp_ext_dgc_token_to_cmd_type(const struct lvp_indirect_command_layout_ext *elay
       return VK_CMD_TRACE_RAYS_KHR;
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV_EXT:
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
-      unreachable("unsupported NV mesh");
+      UNREACHABLE("unsupported NV mesh");
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT:
       return VK_CMD_DRAW_MESH_TASKS_EXT;
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_EXT:
       return VK_CMD_DRAW_MESH_TASKS_INDIRECT_EXT;
    default:
-      unreachable("unknown token type");
+      UNREACHABLE("unknown token type");
    }
    return UINT32_MAX;
 }
@@ -293,7 +293,7 @@ lvp_ext_dgc_token_size(const struct lvp_indirect_command_layout_ext *elayout, co
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT:
       break;
    default:
-      unreachable("unknown type!");
+      UNREACHABLE("unknown type!");
    }
    return size;
 }

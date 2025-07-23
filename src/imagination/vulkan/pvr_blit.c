@@ -136,7 +136,7 @@ VkFormat pvr_get_raw_copy_format(VkFormat format)
    case 16:
       return VK_FORMAT_R32G32B32A32_UINT;
    default:
-      unreachable("Unhandled copy block size.");
+      UNREACHABLE("Unhandled copy block size.");
    }
 }
 
@@ -1563,7 +1563,7 @@ static VkResult pvr_clear_color_attachment_static_create_consts_buffer(
          break;
 
       default:
-         unreachable("Unsupported clear attachment const type.");
+         UNREACHABLE("Unsupported clear attachment const type.");
       }
    }
 

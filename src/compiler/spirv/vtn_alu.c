@@ -149,7 +149,7 @@ vtn_mediump_downconvert(struct vtn_builder *b, enum glsl_base_type base_type, ni
    case GLSL_TYPE_BOOL:
       return def;
    default:
-      unreachable("bad relaxed precision input type");
+      UNREACHABLE("bad relaxed precision input type");
    }
 }
 
@@ -252,7 +252,7 @@ vtn_convert_op_src_type(SpvOp opcode)
    case SpvOpSatConvertUToS:
       return nir_type_uint;
    default:
-      unreachable("Unhandled conversion op");
+      UNREACHABLE("Unhandled conversion op");
    }
 }
 
@@ -273,7 +273,7 @@ vtn_convert_op_dst_type(SpvOp opcode)
    case SpvOpSatConvertSToU:
       return nir_type_uint;
    default:
-      unreachable("Unhandled conversion op");
+      UNREACHABLE("Unhandled conversion op");
    }
 }
 
@@ -608,7 +608,7 @@ vtn_mediump_upconvert(struct vtn_builder *b, enum glsl_base_type base_type, nir_
    case GLSL_TYPE_UINT:
       return nir_u2u32(&b->nb, def);
    default:
-      unreachable("bad relaxed precision output type");
+      UNREACHABLE("bad relaxed precision output type");
    }
 }
 
@@ -664,7 +664,7 @@ vtn_handle_deriv(struct vtn_builder *b, SpvOp opcode, nir_def *src)
       return nir_fadd(&b->nb,
                       nir_fabs(&b->nb, nir_ddx_coarse(&b->nb, src)),
                       nir_fabs(&b->nb, nir_ddy_coarse(&b->nb, src)));
-   default: unreachable("Not a derivative opcode");
+   default: UNREACHABLE("Not a derivative opcode");
    }
 }
 
@@ -990,7 +990,7 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
       switch (op) {
       case nir_op_fge: op = nir_op_flt; break;
       case nir_op_flt: op = nir_op_fge; break;
-      default: unreachable("Impossible opcode.");
+      default: UNREACHABLE("Impossible opcode.");
       }
 
       dest->def =
@@ -1103,7 +1103,7 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    case SpvOpSDotAccSatKHR:
    case SpvOpUDotAccSatKHR:
    case SpvOpSUDotAccSatKHR:
-      unreachable("Should have called vtn_handle_integer_dot instead.");
+      UNREACHABLE("Should have called vtn_handle_integer_dot instead.");
 
    default: {
       bool swap;
@@ -1289,7 +1289,7 @@ vtn_handle_integer_dot(struct vtn_builder *b, SpvOp opcode,
          break;
 
       default:
-         unreachable("Invalid opcode.");
+         UNREACHABLE("Invalid opcode.");
       }
 
       /* The SPV_KHR_integer_dot_product spec says:
@@ -1367,7 +1367,7 @@ vtn_handle_integer_dot(struct vtn_builder *b, SpvOp opcode,
                dest = nir_udot_2x16_uadd(&b->nb, src[0], src[1], zero);
             break;
          default:
-            unreachable("Invalid opcode.");
+            UNREACHABLE("Invalid opcode.");
          }
       } else {
          switch (opcode) {
@@ -1399,7 +1399,7 @@ vtn_handle_integer_dot(struct vtn_builder *b, SpvOp opcode,
                dest = nir_sudot_4x8_iadd(&b->nb, src[0], src[1], zero);
             break;
          default:
-            unreachable("Invalid opcode.");
+            UNREACHABLE("Invalid opcode.");
          }
       }
 

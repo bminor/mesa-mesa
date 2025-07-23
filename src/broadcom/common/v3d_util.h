@@ -46,7 +46,7 @@
                 v3d_X_thing = &v3d71_##thing;                   \
                 break;                                          \
         default:                                                \
-                unreachable("Unsupported hardware generation"); \
+                UNREACHABLE("Unsupported hardware generation"); \
         }                                                       \
         v3d_X_thing;                                            \
 })
@@ -94,7 +94,7 @@ log2_tile_size(uint32_t size)
         case 64:
                 return 3;
         default:
-                unreachable("Unsupported tile width/height");
+                UNREACHABLE("Unsupported tile width/height");
         }
 }
 

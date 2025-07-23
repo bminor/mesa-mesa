@@ -81,7 +81,7 @@ panfrost_analyze_sysvals(struct panfrost_compiled_shader *ss)
          break;
 
       default:
-         unreachable("Invalid sysval");
+         UNREACHABLE("Invalid sysval");
       }
    }
 

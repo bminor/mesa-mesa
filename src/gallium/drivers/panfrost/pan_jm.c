@@ -970,7 +970,7 @@ GENX(jm_launch_draw)(struct panfrost_batch *batch,
 #elif PAN_ARCH >= 6
       tiler = pan_pool_alloc_desc(&batch->pool.base, INDEXED_VERTEX_JOB);
 #else
-      unreachable("IDVS is unsupported on Midgard");
+      UNREACHABLE("IDVS is unsupported on Midgard");
 #endif
    } else {
       vertex = pan_pool_alloc_desc(&batch->pool.base, COMPUTE_JOB);
@@ -1014,7 +1014,7 @@ GENX(jm_launch_draw_indirect)(struct panfrost_batch *batch,
                               unsigned drawid_offset,
                               const struct pipe_draw_indirect_info *indirect)
 {
-   unreachable("draw indirect not implemented for jm");
+   UNREACHABLE("draw indirect not implemented for jm");
 }
 
 void

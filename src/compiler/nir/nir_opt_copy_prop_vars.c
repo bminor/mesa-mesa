@@ -282,7 +282,7 @@ gather_vars_written(struct copy_prop_var_state *state,
    }
 
    default:
-      unreachable("Invalid CF node type");
+      UNREACHABLE("Invalid CF node type");
    }
 
    if (new_written) {
@@ -1483,7 +1483,7 @@ copy_prop_vars_cf_node(struct copy_prop_var_state *state,
    }
 
    default:
-      unreachable("Invalid CF node type");
+      UNREACHABLE("Invalid CF node type");
    }
 }
 

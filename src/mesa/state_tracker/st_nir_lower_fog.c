@@ -62,7 +62,7 @@ fog_result(nir_builder *b, nir_def *color, enum gl_fog_mode fog_mode, struct gl_
       f = nir_fexp2(b, nir_fneg(b, f));
       break;
    default:
-      unreachable("unsupported fog mode");
+      UNREACHABLE("unsupported fog mode");
    }
    f = nir_fsat(b, f);
 

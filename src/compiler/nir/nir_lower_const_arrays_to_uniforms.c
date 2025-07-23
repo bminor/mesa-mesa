@@ -72,7 +72,7 @@ set_const_initialiser(nir_deref_instr **p, nir_constant *top_level_init,
       } else if ((*p)->deref_type == nir_deref_type_struct) {
          ret = ret->elements[(*p)->strct.index];
       } else {
-         unreachable("Unsupported deref type");
+         UNREACHABLE("Unsupported deref type");
       }
    }
 
@@ -395,7 +395,7 @@ nir_lower_const_arrays_to_uniforms(nir_shader *shader,
                new_deref_instr = nir_build_deref_struct(&b, new_deref_instr,
                                                         (*p)->strct.index);
             } else {
-               unreachable("Unsupported deref type");
+               UNREACHABLE("Unsupported deref type");
             }
          }
          nir_deref_path_finish(&path);

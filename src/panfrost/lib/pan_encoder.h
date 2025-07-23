@@ -274,7 +274,7 @@ pan_get_z_internal_format(enum pipe_format fmt)
    case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
       return MALI_Z_INTERNAL_FORMAT_D32;
    default:
-      unreachable("Unsupported depth/stencil format.");
+      UNREACHABLE("Unsupported depth/stencil format.");
    }
 }
 #endif

@@ -33,7 +33,7 @@
          genX_thing = &thing<A7XX>;                                          \
          break;                                                              \
       default:                                                               \
-         unreachable("Unknown hardware generation");                         \
+         UNREACHABLE("Unknown hardware generation");                         \
       }                                                                      \
       genX_thing;                                                            \
    })

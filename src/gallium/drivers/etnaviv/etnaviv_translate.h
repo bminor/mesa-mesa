@@ -539,7 +539,7 @@ translate_texture_compare(enum pipe_compare_func compare_func)
    case PIPE_FUNC_ALWAYS:
       return TEXTURE_COMPARE_FUNC_ALWAYS;
    default:
-      unreachable("Invalid compare func");
+      UNREACHABLE("Invalid compare func");
    }
 }
 

@@ -4273,7 +4273,7 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
       llvmpipe->dirty |= LP_NEW_MESH_CONSTANTS;
       break;
    default:
-      unreachable("Illegal shader type");
+      UNREACHABLE("Illegal shader type");
       break;
    }
 }
@@ -4330,7 +4330,7 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
          llvmpipe->dirty |= LP_NEW_FS_SSBOS;
          break;
       default:
-         unreachable("Illegal shader type");
+         UNREACHABLE("Illegal shader type");
          break;
       }
    }
@@ -4381,7 +4381,7 @@ llvmpipe_set_shader_images(struct pipe_context *pipe,
       llvmpipe->dirty |= LP_NEW_MESH_IMAGES;
       break;
    default:
-      unreachable("Illegal shader type");
+      UNREACHABLE("Illegal shader type");
       break;
    }
 

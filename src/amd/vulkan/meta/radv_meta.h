@@ -149,7 +149,7 @@ radv_meta_get_96bit_channel_format(VkFormat format)
       return VK_FORMAT_R32_SFLOAT;
       break;
    default:
-      unreachable("invalid R32G32B32 format");
+      UNREACHABLE("invalid R32G32B32 format");
    }
 }
 

@@ -261,7 +261,7 @@ _mesa_update_valid_to_render_state(struct gl_context *ctx)
       break;
 
    default:
-      unreachable("Invalid API value in _mesa_update_valid_to_render_state");
+      UNREACHABLE("Invalid API value in _mesa_update_valid_to_render_state");
    }
 
    /* From the GL_NV_fill_rectangle spec:

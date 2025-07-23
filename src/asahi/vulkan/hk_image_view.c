@@ -45,7 +45,7 @@ hk_image_view_type_is_array(VkImageViewType view_type)
       return true;
 
    default:
-      unreachable("Invalid image view type");
+      UNREACHABLE("Invalid image view type");
    }
 }
 
@@ -93,7 +93,7 @@ translate_image_view_type(VkImageViewType view_type, bool msaa, bool layered,
                          : AGX_TEXTURE_DIMENSION_CUBE_ARRAY;
 
    default:
-      unreachable("Invalid image view type");
+      UNREACHABLE("Invalid image view type");
    }
 }
 
@@ -114,7 +114,7 @@ vk_swizzle_to_pipe(VkComponentSwizzle swizzle)
    case VK_COMPONENT_SWIZZLE_ZERO:
       return PIPE_SWIZZLE_0;
    default:
-      unreachable("Invalid component swizzle");
+      UNREACHABLE("Invalid component swizzle");
    }
 }
 
@@ -135,7 +135,7 @@ get_stencil_format(enum pipe_format format)
    case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
       return PIPE_FORMAT_X32_S8X24_UINT;
    default:
-      unreachable("Unsupported depth/stencil format");
+      UNREACHABLE("Unsupported depth/stencil format");
    }
 }
 

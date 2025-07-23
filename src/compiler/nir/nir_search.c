@@ -144,7 +144,7 @@ nir_op_matches_search_op(nir_op nop, uint16_t sop)
       MATCH_FCONV_CASE(b2f)
       MATCH_ICONV_CASE(b2i)
    default:
-      unreachable("Invalid nir_search_op");
+      UNREACHABLE("Invalid nir_search_op");
    }
 
 #undef MATCH_FCONV_CASE
@@ -201,7 +201,7 @@ nir_op_for_search_op(uint16_t sop, unsigned bit_size)
       case 64:                            \
          return nir_op_##op##64;          \
       default:                            \
-         unreachable("Invalid bit size"); \
+         UNREACHABLE("Invalid bit size"); \
       }
 
 #define RET_ICONV_CASE(op)                \
@@ -216,7 +216,7 @@ nir_op_for_search_op(uint16_t sop, unsigned bit_size)
       case 64:                            \
          return nir_op_##op##64;          \
       default:                            \
-         unreachable("Invalid bit size"); \
+         UNREACHABLE("Invalid bit size"); \
       }
 
    switch (sop) {
@@ -230,7 +230,7 @@ nir_op_for_search_op(uint16_t sop, unsigned bit_size)
       RET_FCONV_CASE(b2f)
       RET_ICONV_CASE(b2i)
    default:
-      unreachable("Invalid nir_search_op");
+      UNREACHABLE("Invalid nir_search_op");
    }
 
 #undef RET_FCONV_CASE
@@ -353,12 +353,12 @@ match_value(const nir_algebraic_table *table,
       }
 
       default:
-         unreachable("Invalid alu source type");
+         UNREACHABLE("Invalid alu source type");
       }
    }
 
    default:
-      unreachable("Invalid search value type");
+      UNREACHABLE("Invalid search value type");
    }
 }
 
@@ -542,7 +542,7 @@ construct_value(nir_builder *build,
          break;
 
       default:
-         unreachable("Invalid alu source type");
+         UNREACHABLE("Invalid alu source type");
       }
 
       assert(cval->index ==
@@ -559,7 +559,7 @@ construct_value(nir_builder *build,
    }
 
    default:
-      unreachable("Invalid search value type");
+      UNREACHABLE("Invalid search value type");
    }
 }
 
@@ -583,7 +583,7 @@ dump_value(const nir_algebraic_table *table, const nir_search_value *val)
          fprintf(stderr, "%s", sconst->data.u != 0 ? "True" : "False");
          break;
       default:
-         unreachable("bad const type");
+         UNREACHABLE("bad const type");
       }
       break;
    }

@@ -438,7 +438,7 @@ v3d_isr_hub(struct v3d_hw *v3d)
                  * the future. In any case, note that for this case we would
                  * only be doing debugging log.
                  */
-                unreachable("TFU Conversion Complete interrupt not handled");
+                UNREACHABLE("TFU Conversion Complete interrupt not handled");
         }
 
         handle_mmu_interruptions(v3d, hub_status);

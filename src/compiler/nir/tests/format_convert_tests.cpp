@@ -138,7 +138,7 @@ rand_color(util_format_colorspace colorspace,
             return util_format_srgb_8unorm_to_linear_float(rand_uint(8));
 
          default:
-            unreachable("Unknown colorspace");
+            UNREACHABLE("Unknown colorspace");
          }
       } else {
          assert(colorspace == UTIL_FORMAT_COLORSPACE_RGB);
@@ -184,7 +184,7 @@ rand_color(util_format_colorspace colorspace,
       }
 
    default:
-      unreachable("Invalid format type");
+      UNREACHABLE("Invalid format type");
    }
 }
 
@@ -248,7 +248,7 @@ TEST_P(rgba, pack)
             EXPECT_EQ(*(uint32_t *)expected, packed[0].u32);
             break;
          default:
-            unreachable("Unsupported packed data bit size");
+            UNREACHABLE("Unsupported packed data bit size");
          }
       } else {
          assert(packed_ssa->bit_size == 32);

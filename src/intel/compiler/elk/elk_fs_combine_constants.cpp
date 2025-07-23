@@ -260,7 +260,7 @@ negation_exists(nir_const_value v, unsigned bit_size,
          return v.i64 != 0 && v.i64 != INT64_MIN;
 
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 }
 
@@ -300,7 +300,7 @@ negate(nir_const_value v, unsigned bit_size, enum interpreted_type base_type)
       break;
 
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 
    return ret;
@@ -348,7 +348,7 @@ absolute(nir_const_value v, unsigned bit_size, enum interpreted_type base_type)
       break;
 
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 
    return ret;
@@ -424,7 +424,7 @@ value_equal(nir_const_value a, nir_const_value b, unsigned bit_size)
    case 64:
       return a.u64 == b.u64;
    default:
-      unreachable("unsupported bit-size should have already been filtered.");
+      UNREACHABLE("unsupported bit-size should have already been filtered.");
    }
 }
 
@@ -984,7 +984,7 @@ build_imm_reg_for_copy(struct imm *imm)
    case 2:
       return elk_imm_w(imm->w);
    default:
-      unreachable("not implemented");
+      UNREACHABLE("not implemented");
    }
 }
 
@@ -1049,7 +1049,7 @@ add_candidate_immediate(struct table *table, elk_fs_inst *inst, unsigned ip,
    case ELK_REGISTER_TYPE_UB:
    case ELK_REGISTER_TYPE_B:
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    /* It is safe to change the type of the operands of a select instruction
@@ -1108,7 +1108,7 @@ allocate_slots(struct register_allocation *regs, unsigned num_regs,
       }
    }
 
-   unreachable("No free slots found.");
+   UNREACHABLE("No free slots found.");
 }
 
 static void
@@ -1130,7 +1130,7 @@ deallocate_slots(struct register_allocation *regs, unsigned num_regs,
       }
    }
 
-   unreachable("No such register found.");
+   UNREACHABLE("No such register found.");
 }
 
 static void
@@ -1590,7 +1590,7 @@ elk_fs_visitor::opt_combine_constants()
                   reg->type = ELK_REGISTER_TYPE_DF;
                   break;
                default:
-                  unreachable("Bad type size");
+                  UNREACHABLE("Bad type size");
                }
             }
          } else if ((link->inst->opcode == ELK_OPCODE_SHL ||

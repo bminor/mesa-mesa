@@ -69,7 +69,7 @@ fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
          *blockwidth = 4;
          *blockheight = 2;
       } else {
-         unreachable("bad nr_samples");
+         UNREACHABLE("bad nr_samples");
       }
       return;
    }

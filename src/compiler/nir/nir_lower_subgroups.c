@@ -382,7 +382,7 @@ lower_to_shuffle(nir_builder *b, nir_intrinsic_instr *intrin,
       break;
    }
    default:
-      unreachable("Invalid intrinsic");
+      UNREACHABLE("Invalid intrinsic");
    }
 
    return nir_shuffle(b, intrin->src[0].ssa, index);
@@ -538,7 +538,7 @@ lower_boolean_shuffle(nir_builder *b, nir_intrinsic_instr *intrin,
       index = nir_as_uniform(b, intrin->src[1].ssa);
       break;
    default:
-      unreachable("not a boolean shuffle");
+      UNREACHABLE("not a boolean shuffle");
    }
 
    if (index) {
@@ -646,7 +646,7 @@ lower_boolean_reduce(nir_builder *b, nir_intrinsic_instr *intrin,
             return nir_i2b(b, nir_iand_imm(b, vec_bit_count(b, nir_ballot(b, options->ballot_components, options->ballot_bit_size, intrin->src[0].ssa)),
                                            1));
          else
-            unreachable("bad boolean reduction op");
+            UNREACHABLE("bad boolean reduction op");
       }
 
       if (cluster_size == 4) {
@@ -682,7 +682,7 @@ lower_boolean_reduce(nir_builder *b, nir_intrinsic_instr *intrin,
       val = nir_ishl_imm(b, val, 1);
       break;
    default:
-      unreachable("bad intrinsic");
+      UNREACHABLE("bad intrinsic");
    }
 
    if (op == nir_op_iand) {
@@ -740,7 +740,7 @@ build_scan_full(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
    }
 
    default:
-      unreachable("Unsupported scan/reduce op");
+      UNREACHABLE("Unsupported scan/reduce op");
    }
 }
 
@@ -806,7 +806,7 @@ build_scan_reduce(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
    }
 
    default:
-      unreachable("Unsupported scan/reduce op");
+      UNREACHABLE("Unsupported scan/reduce op");
    }
 }
 
@@ -1109,7 +1109,7 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
          val = nir_inot(b, build_subgroup_ge_mask(b, options));
          break;
       default:
-         unreachable("you seriously can't tell this is unreachable?");
+         UNREACHABLE("you seriously can't tell this is unreachable?");
       }
 
       return uint_to_ballot_type(b, val,
@@ -1194,7 +1194,7 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
       case nir_intrinsic_ballot_find_msb:
          return vec_find_msb(b, int_val);
       default:
-         unreachable("you seriously can't tell this is unreachable?");
+         UNREACHABLE("you seriously can't tell this is unreachable?");
       }
    }
 

@@ -289,7 +289,7 @@ can_convert_load_const(nir_load_const_instr *lc, nir_op op)
             return false;
          break;
       default:
-         unreachable("bad type");
+         UNREACHABLE("bad type");
          return false;
       }
    }

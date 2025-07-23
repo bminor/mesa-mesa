@@ -526,7 +526,7 @@ instr_try_combine(struct set *instr_set, nir_instr *instr1, nir_instr *instr2)
                                    nir_instr_as_phi(instr2));
 
    default:
-      unreachable("Unsupported instruction type");
+      UNREACHABLE("Unsupported instruction type");
    }
 }
 

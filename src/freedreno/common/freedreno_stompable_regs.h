@@ -77,7 +77,7 @@ fd_reg_stomp_allowed(chip CHIP, uint16_t reg)
       break;
    }
    default: {
-      unreachable("Unknown GPU");
+      UNREACHABLE("Unknown GPU");
    }
    }
 

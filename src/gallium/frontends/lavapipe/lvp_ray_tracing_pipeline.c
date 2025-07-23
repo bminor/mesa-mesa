@@ -54,7 +54,7 @@ lvp_init_ray_tracing_groups(struct lvp_pipeline *pipeline,
          }
          break;
       default:
-         unreachable("Unimplemented VkRayTracingShaderGroupTypeKHR");
+         UNREACHABLE("Unimplemented VkRayTracingShaderGroupTypeKHR");
       }
 
       dst->handle.index = p_atomic_inc_return(&pipeline->device->group_handle_alloc);
@@ -430,7 +430,7 @@ lvp_call_ray_tracing_stage(nir_builder *b, struct lvp_ray_tracing_pipeline_compi
       compiler->callable_size = MAX2(compiler->callable_size, stage->scratch_size);
       break;
    default:
-      unreachable("Invalid ray tracing stage");
+      UNREACHABLE("Invalid ray tracing stage");
       break;
    }
 }

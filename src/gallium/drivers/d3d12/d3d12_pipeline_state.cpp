@@ -191,7 +191,7 @@ depth_bias(struct d3d12_rasterizer_state *state, enum mesa_prim reduced_prim)
       return state->base.offset_point;
 
    default:
-      unreachable("unexpected fill mode");
+      UNREACHABLE("unexpected fill mode");
    }
 }
 
@@ -213,7 +213,7 @@ topology_type(enum mesa_prim reduced_prim)
 
    default:
       debug_printf("mesa_prim: %s\n", u_prim_name(reduced_prim));
-      unreachable("unexpected enum mesa_prim");
+      UNREACHABLE("unexpected enum mesa_prim");
    }
 }
 
@@ -231,7 +231,7 @@ d3d12_rtv_format(struct d3d12_context *ctx, unsigned index)
       case DXGI_FORMAT_B8G8R8X8_UNORM:
          return DXGI_FORMAT_R8G8B8A8_UINT;
       default:
-         unreachable("unsupported logic-op format");
+         UNREACHABLE("unsupported logic-op format");
       }
    }
 

@@ -71,7 +71,7 @@ init_dt_type(struct kopper_displaytarget *cdt)
       break;
 #endif
    default:
-      unreachable("unsupported!");
+      UNREACHABLE("unsupported!");
    }
 }
 
@@ -110,7 +110,7 @@ kopper_CreateSurface(struct zink_screen *screen, struct kopper_displaytarget *cd
    }
 #endif
    default:
-      unreachable("unsupported!");
+      UNREACHABLE("unsupported!");
    }
    if (error != VK_SUCCESS) {
       return VK_NULL_HANDLE;
@@ -226,7 +226,7 @@ find_dt_entry(struct zink_screen *screen, const struct kopper_displaytarget *cdt
    }
 #endif
    default:
-      unreachable("unsupported!");
+      UNREACHABLE("unsupported!");
    }
    return he;
 }
@@ -328,7 +328,7 @@ kopper_CreateSwapchain(struct zink_screen *screen, struct kopper_displaytarget *
       cswap->scci.imageExtent.height = h;
       break;
    default:
-      unreachable("unknown display platform");
+      UNREACHABLE("unknown display platform");
    }
 
    error = VKSCR(CreateSwapchainKHR)(screen->dev, &cswap->scci, NULL,
@@ -434,7 +434,7 @@ zink_kopper_displaytarget_create(struct zink_screen *screen, unsigned tex_usage,
             _mesa_hash_table_init(&screen->dts, screen, _mesa_hash_pointer, _mesa_key_pointer_equal);
             break;
          default:
-            unreachable("unknown kopper type");
+            UNREACHABLE("unknown kopper type");
          }
       } else {
          he = find_dt_entry(screen, &k);
@@ -504,7 +504,7 @@ zink_kopper_displaytarget_create(struct zink_screen *screen, unsigned tex_usage,
    }
 #endif
    default:
-      unreachable("unsupported!");
+      UNREACHABLE("unsupported!");
    }
    simple_mtx_unlock(&screen->dt_lock);
 
@@ -602,7 +602,7 @@ kopper_acquire(struct zink_screen *screen, struct zink_resource *res, uint64_t t
          }
          if (ret == VK_NOT_READY || ret == VK_TIMEOUT) {
             if (timeout > 1000000)
-               unreachable("kopper_acquire: updated timeout after failure has become unreasonable large");
+               UNREACHABLE("kopper_acquire: updated timeout after failure has become unreasonable large");
             timeout += 4000;
             continue;
          }

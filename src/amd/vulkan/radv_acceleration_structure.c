@@ -96,7 +96,7 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
          bvh_leaf_size = sizeof(struct radv_gfx12_instance_node) + sizeof(struct radv_gfx12_instance_node_user_data);
          break;
       default:
-         unreachable("Unknown VkGeometryTypeKHR");
+         UNREACHABLE("Unknown VkGeometryTypeKHR");
       }
       bvh_node_size_gcd = RADV_GFX12_BVH_NODE_SIZE;
    } else {
@@ -111,7 +111,7 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
          bvh_leaf_size = sizeof(struct radv_bvh_instance_node);
          break;
       default:
-         unreachable("Unknown VkGeometryTypeKHR");
+         UNREACHABLE("Unknown VkGeometryTypeKHR");
       }
       bvh_node_size_gcd = 64;
    }

@@ -138,7 +138,7 @@ replace_var_declaration(struct lower_distance_state *state, nir_shader *sh,
       old_var = &state->old_distance_in_var;
       new_var = &state->new_distance_in_var;
    } else {
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 
    *old_var = var;

@@ -1834,10 +1834,10 @@ static inline uint32_t xi_argument_format_for_vk_cmd(enum vk_cmd_type cmd)
       case VK_CMD_DRAW_MESH_TASKS_INDIRECT_COUNT_EXT:
          return XI_MESH_3D;
       default:
-         unreachable("unhandled cmd type");
+         UNREACHABLE("unhandled cmd type");
    }
 #else
-   unreachable("unsupported GFX VER");
+   UNREACHABLE("unsupported GFX VER");
 #endif
 }
 
@@ -1864,7 +1864,7 @@ cmd_buffer_set_indirect_stride(struct anv_cmd_buffer *cmd_buffer,
       data_stride = sizeof(VkDrawMeshTasksIndirectCommandEXT);
       break;
    default:
-      unreachable("unhandled cmd type");
+      UNREACHABLE("unhandled cmd type");
    }
 
    bool aligned = stride == data_stride;

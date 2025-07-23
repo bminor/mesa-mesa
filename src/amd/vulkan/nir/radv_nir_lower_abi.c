@@ -135,7 +135,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
             replacement = nir_iadd_imm_nuw(b, n, 1);
          }
       } else
-         unreachable("invalid tessellation shader stage");
+         UNREACHABLE("invalid tessellation shader stage");
       break;
    case nir_intrinsic_load_pipeline_stat_query_enabled_amd:
       replacement = shader_query_bool_setting(b, radv_shader_query_pipeline_stat, s);
@@ -321,7 +321,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
                /* TES won't use this intrinsic, because it can get primitive id directly
                 * instead of using this intrinsic to pass primitive id by LDS.
                 */
-               unreachable("load_provoking_vtx_in_prim_amd is only supported in VS and GS");
+               UNREACHABLE("load_provoking_vtx_in_prim_amd is only supported in VS and GS");
             }
          }
 
@@ -410,7 +410,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
             num_vertices = 3;
             break;
          default:
-            unreachable("invalid GS output primitive");
+            UNREACHABLE("invalid GS output primitive");
             break;
          }
          replacement = nir_imm_int(b, num_vertices);

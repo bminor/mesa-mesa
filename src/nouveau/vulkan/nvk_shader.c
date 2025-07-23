@@ -85,7 +85,7 @@ nvk_ubo_addr_format(const struct nvk_physical_device *pdev,
       case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT:
          return nir_address_format_64bit_bounded_global;
       default:
-         unreachable("Invalid robust buffer access behavior");
+         UNREACHABLE("Invalid robust buffer access behavior");
       }
    }
 }
@@ -105,7 +105,7 @@ nvk_ssbo_addr_format(const struct nvk_physical_device *pdev,
       case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT:
          return nir_address_format_64bit_bounded_global;
       default:
-         unreachable("Invalid robust buffer access behavior");
+         UNREACHABLE("Invalid robust buffer access behavior");
       }
    }
 }
@@ -250,7 +250,7 @@ lower_load_intrinsic(nir_builder *b, nir_intrinsic_instr *load,
                            .align_mul = align_mul,
                            .align_offset = align_offset);
       } else {
-         unreachable("Invalid UBO index");
+         UNREACHABLE("Invalid UBO index");
       }
       nir_def_rewrite_uses(&load->def, val);
       return true;

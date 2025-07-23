@@ -1748,7 +1748,7 @@ heap_type_for_bucket(enum dzn_internal_buf_bucket bucket)
    switch (bucket) {
    case DZN_INTERNAL_BUF_UPLOAD: return D3D12_HEAP_TYPE_UPLOAD;
    case DZN_INTERNAL_BUF_DEFAULT: return D3D12_HEAP_TYPE_DEFAULT;
-   default: unreachable("Invalid value");
+   default: UNREACHABLE("Invalid value");
    }
 }
 
@@ -2721,7 +2721,7 @@ dzn_cmd_buffer_blit_prepare_src_view(struct dzn_cmd_buffer *cmdbuf,
       iview_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
       break;
    default:
-      unreachable("Invalid type");
+      UNREACHABLE("Invalid type");
    }
 
    struct dzn_image_view iview;
@@ -3075,7 +3075,7 @@ get_blit_resolve_mode(VkResolveModeFlagBits mode)
    case VK_RESOLVE_MODE_MIN_BIT: return dzn_blit_resolve_min;
    case VK_RESOLVE_MODE_MAX_BIT: return dzn_blit_resolve_max;
    case VK_RESOLVE_MODE_SAMPLE_ZERO_BIT: return dzn_blit_resolve_sample_zero;
-   default: unreachable("Unexpected resolve mode");
+   default: UNREACHABLE("Unexpected resolve mode");
    }
 }
 
@@ -5506,7 +5506,7 @@ dzn_CmdBindIndexBuffer(VkCommandBuffer commandBuffer,
       cmdbuf->state.ib.view.Format = DXGI_FORMAT_R32_UINT;
       cmdbuf->state.pipeline_variant.ib_strip_cut = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFFFFFF;
       break;
-   default: unreachable("Invalid index type");
+   default: UNREACHABLE("Invalid index type");
    }
 
    cmdbuf->state.dirty |= DZN_CMD_DIRTY_IB;

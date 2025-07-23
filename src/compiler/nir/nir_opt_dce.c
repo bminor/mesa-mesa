@@ -97,7 +97,7 @@ is_live(BITSET_WORD *defs_live, nir_instr *instr)
       return false;
    }
    default:
-      unreachable("unexpected instr type");
+      UNREACHABLE("unexpected instr type");
    }
 }
 
@@ -211,7 +211,7 @@ dce_cf_list(struct exec_list *cf_list, BITSET_WORD *defs_live,
          break;
       }
       case nir_cf_node_function:
-         unreachable("Invalid cf type");
+         UNREACHABLE("Invalid cf type");
       }
    }
 

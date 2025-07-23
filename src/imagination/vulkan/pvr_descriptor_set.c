@@ -81,7 +81,7 @@ static unsigned pvr_descriptor_size(VkDescriptorType type)
    default:
       mesa_loge("Unsupported descriptor type %s.\n",
                 vk_DescriptorType_to_str(type));
-      unreachable("");
+      UNREACHABLE("");
    }
 }
 
@@ -510,7 +510,7 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
          break;
 
       default:
-         unreachable("");
+         UNREACHABLE("");
       }
    }
 

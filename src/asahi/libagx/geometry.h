@@ -62,7 +62,7 @@ agx_gs_rast_vertices(enum agx_gs_shape shape, unsigned max_indices,
       return max_indices * input_primitives;
    }
 
-   unreachable("invalid shape");
+   UNREACHABLE("invalid shape");
 }
 
 static inline unsigned
@@ -81,7 +81,7 @@ agx_gs_rast_instances(enum agx_gs_shape shape, unsigned max_indices,
       return instance_count;
    }
 
-   unreachable("invalid shape");
+   UNREACHABLE("invalid shape");
 }
 
 static inline bool

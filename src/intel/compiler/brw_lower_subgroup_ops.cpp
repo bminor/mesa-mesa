@@ -32,7 +32,7 @@ brw_get_reduction_info(brw_reduce_op red_op, brw_reg_type type)
    case BRW_REDUCE_OP_MIN: info.cond_mod = BRW_CONDITIONAL_L;  break;
    case BRW_REDUCE_OP_MAX: info.cond_mod = BRW_CONDITIONAL_GE; break;
    default:
-      unreachable("invalid reduce op");
+      UNREACHABLE("invalid reduce op");
    }
 
    switch (red_op) {
@@ -102,7 +102,7 @@ brw_get_reduction_info(brw_reduce_op red_op, brw_reg_type type)
    }
 
    default:
-      unreachable("invalid reduce op");
+      UNREACHABLE("invalid reduce op");
    }
 
    /* For some cases above (e.g. all bits zeros, all bits ones, first bit one)
@@ -177,7 +177,7 @@ brw_emit_scan_step(const brw_builder &bld, enum opcode opcode, brw_conditional_m
       }
 
       default:
-         unreachable("Unsupported 64-bit scan op");
+         UNREACHABLE("Unsupported 64-bit scan op");
       }
    } else {
       set_condmod(mod, bld.emit(opcode, right, left, right));

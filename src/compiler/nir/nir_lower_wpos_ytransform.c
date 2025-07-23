@@ -165,7 +165,7 @@ lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
          /* the driver supports lower-left origin, need to invert Y */
          invert = true;
       } else {
-         unreachable("invalid options");
+         UNREACHABLE("invalid options");
       }
    } else {
       /* Fragment shader wants origin in lower-left */
@@ -175,7 +175,7 @@ lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
          /* the driver supports upper-left origin, need to invert Y */
          invert = true;
       } else {
-         unreachable("invalid options");
+         UNREACHABLE("invalid options");
       }
    }
 
@@ -190,7 +190,7 @@ lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
          adjY[0] = -0.5f;
          adjY[1] = 0.5f;
       } else {
-         unreachable("invalid options");
+         UNREACHABLE("invalid options");
       }
    } else {
       /* Fragment shader wants pixel center half integer */
@@ -200,7 +200,7 @@ lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
          /* the driver supports pixel center integer, need to bias X,Y */
          adjX = adjY[0] = adjY[1] = 0.5f;
       } else {
-         unreachable("invalid options");
+         UNREACHABLE("invalid options");
       }
    }
 

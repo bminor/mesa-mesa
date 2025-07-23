@@ -518,7 +518,7 @@ vk_common_CreateShadersEXT(VkDevice _device,
       }
 
       default:
-         unreachable("Unknown shader code type");
+         UNREACHABLE("Unknown shader code type");
       }
 
       if (first_fail_or_success == VK_SUCCESS)

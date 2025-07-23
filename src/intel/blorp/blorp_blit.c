@@ -426,14 +426,14 @@ blorp_nir_encode_msaa(nir_builder *b, nir_def *pos,
          break;
 
       default:
-         unreachable("Invalid number of samples for IMS layout");
+         UNREACHABLE("Invalid number of samples for IMS layout");
       }
 
       return nir_vec2(b, x_out, y_out);
    }
 
    default:
-      unreachable("Invalid MSAA layout");
+      UNREACHABLE("Invalid MSAA layout");
    }
 }
 
@@ -526,14 +526,14 @@ blorp_nir_decode_msaa(nir_builder *b, nir_def *pos,
          break;
 
       default:
-         unreachable("Invalid number of samples for IMS layout");
+         UNREACHABLE("Invalid number of samples for IMS layout");
       }
 
       return nir_vec3(b, x_out, y_out, s_out);
    }
 
    default:
-      unreachable("Invalid MSAA layout");
+      UNREACHABLE("Invalid MSAA layout");
    }
 }
 
@@ -579,7 +579,7 @@ blorp_nir_combine_samples(nir_builder *b, struct blorp_blit_vars *v,
       case nir_type_int:   combine_op = nir_op_imin;  break;
       case nir_type_uint:  combine_op = nir_op_umin;  break;
       case nir_type_float: combine_op = nir_op_fmin;  break;
-      default: unreachable("Invalid dst_type");
+      default: UNREACHABLE("Invalid dst_type");
       }
       break;
 
@@ -588,12 +588,12 @@ blorp_nir_combine_samples(nir_builder *b, struct blorp_blit_vars *v,
       case nir_type_int:   combine_op = nir_op_imax;  break;
       case nir_type_uint:  combine_op = nir_op_umax;  break;
       case nir_type_float: combine_op = nir_op_fmax;  break;
-      default: unreachable("Invalid dst_type");
+      default: UNREACHABLE("Invalid dst_type");
       }
       break;
 
    default:
-      unreachable("Invalid filter");
+      UNREACHABLE("Invalid filter");
    }
 
    /* If true, we inserted an if statement that we need to pop at at the end.
@@ -972,7 +972,7 @@ select_color_channel(struct nir_builder *b, nir_def *color,
       case nir_type_float:
          return nir_imm_float(b, 1);
       default:
-         unreachable("Invalid data type");
+         UNREACHABLE("Invalid data type");
       }
    } else {
       assert((unsigned)(chan - ISL_CHANNEL_SELECT_RED) < 4);
@@ -1016,7 +1016,7 @@ convert_color(struct nir_builder *b, nir_def *color,
    } else if (key->dst_format == ISL_FORMAT_R9G9B9E5_SHAREDEXP) {
       value = nir_format_pack_r9g9b9e5(b, color);
    } else {
-      unreachable("Unsupported format conversion");
+      UNREACHABLE("Unsupported format conversion");
    }
 
    nir_def *out_comps[4];
@@ -1407,7 +1407,7 @@ blorp_build_nir_shader(struct blorp_context *blorp,
       break;
 
    default:
-      unreachable("Invalid blorp filter");
+      UNREACHABLE("Invalid blorp filter");
    }
 
    if (!isl_swizzle_is_identity(key->src_swizzle)) {
@@ -1499,7 +1499,7 @@ blorp_build_nir_shader(struct blorp_context *blorp,
       stencil_out->data.location = FRAG_RESULT_STENCIL;
       nir_store_var(&b, stencil_out, nir_channel(&b, color, 0), 0x1);
    } else {
-      unreachable("Invalid destination usage");
+      UNREACHABLE("Invalid destination usage");
    }
 
    if (bounds_if)
@@ -1793,7 +1793,7 @@ get_red_format_for_rgb_format(enum isl_format format)
       case ISL_SINT:
          return ISL_FORMAT_R8_SINT;
       default:
-         unreachable("Invalid 8-bit RGB channel type");
+         UNREACHABLE("Invalid 8-bit RGB channel type");
       }
    case 16:
       switch (fmtl->channels.r.type) {
@@ -1808,7 +1808,7 @@ get_red_format_for_rgb_format(enum isl_format format)
       case ISL_SINT:
          return ISL_FORMAT_R16_SINT;
       default:
-         unreachable("Invalid 8-bit RGB channel type");
+         UNREACHABLE("Invalid 8-bit RGB channel type");
       }
    case 32:
       switch (fmtl->channels.r.type) {
@@ -1819,10 +1819,10 @@ get_red_format_for_rgb_format(enum isl_format format)
       case ISL_SINT:
          return ISL_FORMAT_R32_SINT;
       default:
-         unreachable("Invalid 8-bit RGB channel type");
+         UNREACHABLE("Invalid 8-bit RGB channel type");
       }
    default:
-      unreachable("Invalid number of red channel bits");
+      UNREACHABLE("Invalid number of red channel bits");
    }
 }
 
@@ -2632,7 +2632,7 @@ get_copy_format_for_bpb(const struct isl_device *isl_dev, unsigned bpb)
       case 96: return ISL_FORMAT_R32G32B32_UINT;
       case 128:return ISL_FORMAT_R32G32B32A32_UINT;
       default:
-         unreachable("Unknown format bpb");
+         UNREACHABLE("Unknown format bpb");
       }
    } else {
       switch (bpb) {
@@ -2645,7 +2645,7 @@ get_copy_format_for_bpb(const struct isl_device *isl_dev, unsigned bpb)
       case 96: return ISL_FORMAT_R32G32B32_UINT;
       case 128:return ISL_FORMAT_R32G32B32A32_UINT;
       default:
-         unreachable("Unknown format bpb");
+         UNREACHABLE("Unknown format bpb");
       }
    }
 }
@@ -2756,7 +2756,7 @@ get_ccs_compatible_uint_format(const struct isl_format_layout *fmtl)
       return ISL_FORMAT_R8_UINT;
 
    default:
-      unreachable("Not a compressible format");
+      UNREACHABLE("Not a compressible format");
    }
 }
 

@@ -412,7 +412,7 @@ d3d12_video_encoder_convert_d3d12_profile_to_spec_profile_av1(D3D12_VIDEO_ENCODE
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_AV1_PROFILE");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_AV1_PROFILE");
       } break;
    }
 }
@@ -427,7 +427,7 @@ d3d12_video_encoder_convert_profile_to_d3d12_enc_profile_av1(enum pipe_video_pro
       } break;
       default:
       {
-         unreachable("Unsupported pipe_video_profile");
+         UNREACHABLE("Unsupported pipe_video_profile");
       } break;
    }
 }
@@ -2114,7 +2114,7 @@ d3d12_video_encoder_looprestorationsize_uint_to_d3d12_av1(uint32_t pixel_size)
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_AV1_PROFILE");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_AV1_PROFILE");
       } break;
    }
 }
@@ -2141,7 +2141,7 @@ d3d12_video_encoder_looprestorationsize_d3d12_to_uint_av1(D3D12_VIDEO_ENCODER_AV
       } break;
       default:
       {
-         unreachable("Unsupported D3D12_VIDEO_ENCODER_AV1_PROFILE");
+         UNREACHABLE("Unsupported D3D12_VIDEO_ENCODER_AV1_PROFILE");
       } break;
    }
 }

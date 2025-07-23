@@ -151,7 +151,7 @@ count_to_loop_end(const bblock_t *block, const brw_ip_ranges &ips)
             return ips.range(block).last();
       }
    }
-   unreachable("not reached");
+   UNREACHABLE("not reached");
 }
 
 void brw_shader::calculate_payload_ranges(bool allow_spilling,

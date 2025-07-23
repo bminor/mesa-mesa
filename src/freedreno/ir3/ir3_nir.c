@@ -1647,7 +1647,7 @@ ir3_nir_intrinsic_barycentric_sysval(nir_intrinsic_instr *intr)
          sysval = SYSTEM_VALUE_BARYCENTRIC_PERSP_SAMPLE;
       break;
    default:
-      unreachable("invalid barycentric intrinsic");
+      UNREACHABLE("invalid barycentric intrinsic");
    }
 
    return sysval;

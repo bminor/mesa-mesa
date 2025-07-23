@@ -1355,7 +1355,7 @@ u_vbuf_get_minmax_index_mapped(const struct pipe_draw_info *info,
       break;
    }
    default:
-      unreachable("bad index size");
+      UNREACHABLE("bad index size");
    }
 }
 

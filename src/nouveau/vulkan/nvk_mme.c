@@ -87,7 +87,7 @@ nvk_mme_test_state_state(void *_ts, uint16_t addr)
    assert(ts->test->init != NULL && "Read uninitialized state");
    for (uint32_t i = 0;; i++) {
       if (ts->test->init[i].mthd == 0)
-         unreachable("Read uninitialized state");
+         UNREACHABLE("Read uninitialized state");
 
       if (ts->test->init[i].mthd == addr)
          return ts->test->init[i].data;

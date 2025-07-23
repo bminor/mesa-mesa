@@ -109,7 +109,7 @@ hk_remove_ext_bo_locked(struct hk_device *dev, struct agx_bo *bo)
       }
    }
 
-   unreachable("BO not found");
+   UNREACHABLE("BO not found");
 }
 
 static void

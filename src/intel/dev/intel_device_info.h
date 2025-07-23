@@ -153,7 +153,7 @@ intel_device_info_dual_subslice_id_bound(const struct intel_device_info *devinfo
             return s * devinfo->max_subslices_per_slice + ss + 1;
       }
    }
-   unreachable("Invalid topology");
+   UNREACHABLE("Invalid topology");
    return 0;
 }
 

@@ -748,7 +748,7 @@ nir_fdot(nir_builder *build, nir_def *src0, nir_def *src1)
    case 16:
       return nir_fdot16(build, src0, src1);
    default:
-      unreachable("bad component size");
+      UNREACHABLE("bad component size");
    }
 
    return NULL;
@@ -774,7 +774,7 @@ nir_bfdot(nir_builder *build, nir_def *src0, nir_def *src1)
    case 16:
       return nir_bfdot16(build, src0, src1);
    default:
-      unreachable("bad component size");
+      UNREACHABLE("bad component size");
    }
 
    return NULL;
@@ -799,7 +799,7 @@ nir_ball_iequal(nir_builder *b, nir_def *src0, nir_def *src1)
    case 16:
       return nir_ball_iequal16(b, src0, src1);
    default:
-      unreachable("bad component size");
+      UNREACHABLE("bad component size");
    }
 }
 
@@ -828,7 +828,7 @@ nir_bany_inequal(nir_builder *b, nir_def *src0, nir_def *src1)
    case 16:
       return nir_bany_inequal16(b, src0, src1);
    default:
-      unreachable("bad component size");
+      UNREACHABLE("bad component size");
    }
 }
 
@@ -1823,7 +1823,7 @@ nir_build_deref_follower(nir_builder *b, nir_deref_instr *parent,
 
    switch (leader->deref_type) {
    case nir_deref_type_var:
-      unreachable("A var dereference cannot have a parent");
+      UNREACHABLE("A var dereference cannot have a parent");
       break;
 
    case nir_deref_type_array:
@@ -1868,7 +1868,7 @@ nir_build_deref_follower(nir_builder *b, nir_deref_instr *parent,
    }
 
    default:
-      unreachable("Invalid deref instruction type");
+      UNREACHABLE("Invalid deref instruction type");
    }
    return NULL;
 }

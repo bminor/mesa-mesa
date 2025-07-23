@@ -2144,7 +2144,7 @@ dri3_free_buffers(struct dri_drawable *driDrawable,
       n_id = (draw->cur_blit_source == LOADER_DRI3_FRONT_ID) ? 0 : 1;
       break;
    default:
-      unreachable("unhandled buffer_type");
+      UNREACHABLE("unhandled buffer_type");
    }
 
    for (buf_id = first_id; buf_id < first_id + n_id; buf_id++)

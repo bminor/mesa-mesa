@@ -669,7 +669,7 @@ iris_rewrite_compute_walker_pc(struct iris_batch *batch,
    for (uint32_t i = 0; i < GENX(COMPUTE_WALKER_length); i++)
       walker[i] |= dwords[i];
 #else
-   unreachable("Unsupported");
+   UNREACHABLE("Unsupported");
 #endif
 }
 
@@ -1015,7 +1015,7 @@ upload_pixel_hashing_tables(struct iris_batch *batch)
       else if (ppipes_of[2] == 1 && ppipes_of[1] == 1 && ppipes_of[0] == 1)
          intel_compute_pixel_hash_table_3way(8, 16, 3, 3, 0, p.ThreeWayTableEntry[0]);
       else
-         unreachable("Illegal fusing.");
+         UNREACHABLE("Illegal fusing.");
    }
 
    iris_emit_cmd(batch, GENX(3DSTATE_3D_MODE), p) {
@@ -1234,7 +1234,7 @@ toggle_protected(struct iris_batch *batch)
    else if (batch->name == IRIS_BATCH_COMPUTE)
       ice = container_of(batch, struct iris_context, batches[IRIS_BATCH_COMPUTE]);
    else
-      unreachable("unhandled batch");
+      UNREACHABLE("unhandled batch");
 
    if (!ice->protected)
       return;
@@ -1256,7 +1256,7 @@ toggle_protected(struct iris_batch *batch)
       pc.ProtectedMemoryEnable = true;
    }
 #else
-   unreachable("Not supported");
+   UNREACHABLE("Not supported");
 #endif
 }
 
@@ -2769,7 +2769,7 @@ fmt_swizzle(const struct iris_format_info *fmt, enum pipe_swizzle swz)
    case PIPE_SWIZZLE_W: return fmt->swizzle.a;
    case PIPE_SWIZZLE_1: return ISL_CHANNEL_SELECT_ONE;
    case PIPE_SWIZZLE_0: return ISL_CHANNEL_SELECT_ZERO;
-   default: unreachable("invalid swizzle");
+   default: UNREACHABLE("invalid swizzle");
    }
 }
 
@@ -6266,7 +6266,7 @@ batch_emit_fast_color_dummy_blit(struct iris_batch *batch)
       blt.DestinationTiling = XY_TILE_LINEAR;
    }
 #else
-   unreachable("Not implemented");
+   UNREACHABLE("Not implemented");
 #endif
 }
 
@@ -6354,7 +6354,7 @@ invalidate_aux_map_state_per_engine(struct iris_batch *batch)
       break;
    }
    default:
-      unreachable("Invalid batch for aux map invalidation");
+      UNREACHABLE("Invalid batch for aux map invalidation");
       break;
    }
 
@@ -6424,7 +6424,7 @@ init_aux_map_state(struct iris_batch *batch)
 #endif
       break;
    default:
-      unreachable("Invalid batch for aux map init.");
+      UNREACHABLE("Invalid batch for aux map init.");
    }
 
    if (reg)
@@ -8836,7 +8836,7 @@ iris_upload_indirect_render_state(struct iris_context *ice,
    count *= draw->instance_count ? draw->instance_count : 1;
    trace_intel_end_draw(&batch->trace, count, 0, 0);
 #else
-   unreachable("Unsupported path");
+   UNREACHABLE("Unsupported path");
 #endif /* GFX_VERx10 >= 125 */
 }
 

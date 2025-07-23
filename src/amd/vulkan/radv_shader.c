@@ -781,7 +781,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       else
          assert(nir->info.mesh.primitive_type == MESA_PRIM_TRIANGLES);
    } else {
-      unreachable("NGG needs to be VS, TES or GS.");
+      UNREACHABLE("NGG needs to be VS, TES or GS.");
    }
 
    ac_nir_lower_ngg_options options = {0};
@@ -831,7 +831,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
                gfx_state->has_multiview_view_index, info->ms.has_query);
       ngg_stage->info.ms.needs_ms_scratch_ring = scratch_ring;
    } else {
-      unreachable("invalid SW stage passed to radv_lower_ngg");
+      UNREACHABLE("invalid SW stage passed to radv_lower_ngg");
    }
 }
 
@@ -1151,7 +1151,7 @@ radv_free_shader_memory(struct radv_device *device, union radv_shader_arena_bloc
       free_list = NULL;
       break;
    default:
-      unreachable("invalid shader arena type");
+      UNREACHABLE("invalid shader arena type");
    }
 
    /* merge with previous hole */
@@ -1862,7 +1862,7 @@ radv_precompute_registers_pgm(const struct radv_device *device, struct radv_shad
       info->regs.pgm_rsrc3 = R_00B8A0_COMPUTE_PGM_RSRC3;
       break;
    default:
-      unreachable("invalid hw stage");
+      UNREACHABLE("invalid hw stage");
       break;
    }
 }
@@ -2162,7 +2162,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
 
       break;
    default:
-      unreachable("unsupported shader type");
+      UNREACHABLE("unsupported shader type");
       break;
    }
 
@@ -2187,7 +2187,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       } else if (es_stage == MESA_SHADER_MESH) {
          es_vgpr_comp_cnt = 0;
       } else {
-         unreachable("Unexpected ES shader stage");
+         UNREACHABLE("Unexpected ES shader stage");
       }
 
       if (stage == MESA_SHADER_MESH && pdev->info.mesh_fast_launch_2) {
@@ -2251,7 +2251,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       } else if (es_stage == MESA_SHADER_TESS_EVAL) {
          es_vgpr_comp_cnt = info->uses_prim_id ? 3 : 2;
       } else {
-         unreachable("invalid shader ES type");
+         UNREACHABLE("invalid shader ES type");
       }
 
       /* If offsets 4, 5 are used, GS_VGPR_COMP_CNT is ignored and
@@ -3696,7 +3696,7 @@ radv_dump_shader_stats(struct radv_device *device, struct radv_pipeline *pipelin
             fprintf(output, "%f", stats[i].value.f64);
             break;
          default:
-            unreachable("Invalid pipeline statistic format");
+            UNREACHABLE("Invalid pipeline statistic format");
          }
          fprintf(output, "\n");
       }

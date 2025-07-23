@@ -349,7 +349,7 @@ get_nop_packet(struct radv_amdgpu_cs *cs)
    case AMDGPU_HW_IP_VCN_ENC:
       return 0; /* NOPs are illegal in encode, so don't pad */
    default:
-      unreachable("Unknown IP type");
+      UNREACHABLE("Unknown IP type");
    }
 }
 
@@ -1579,7 +1579,7 @@ radv_to_amdgpu_priority(enum radeon_ctx_priority radv_priority)
    case RADEON_CTX_PRIORITY_LOW:
       return AMDGPU_CTX_PRIORITY_LOW;
    default:
-      unreachable("Invalid context priority");
+      UNREACHABLE("Invalid context priority");
    }
 }
 
@@ -1686,7 +1686,7 @@ radv_to_amdgpu_pstate(enum radeon_ctx_pstate radv_pstate)
    case RADEON_CTX_PSTATE_PEAK:
       return AMDGPU_CTX_STABLE_PSTATE_PEAK;
    default:
-      unreachable("Invalid pstate");
+      UNREACHABLE("Invalid pstate");
    }
 }
 

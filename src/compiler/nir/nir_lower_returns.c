@@ -261,7 +261,7 @@ lower_returns_in_cf_list(struct exec_list *cf_list,
          break;
 
       default:
-         unreachable("Invalid inner CF node type");
+         UNREACHABLE("Invalid inner CF node type");
       }
    }
 

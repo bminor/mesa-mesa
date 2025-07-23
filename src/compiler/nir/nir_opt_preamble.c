@@ -450,7 +450,7 @@ calculate_can_move_for_cf_list(opt_preamble_ctx *ctx, struct exec_list *list)
       }
 
       default:
-         unreachable("Unexpected CF node type");
+         UNREACHABLE("Unexpected CF node type");
       }
    }
 
@@ -500,7 +500,7 @@ replace_for_block(nir_builder *b, opt_preamble_ctx *ctx,
                assert(else_def == NULL);
                else_def = phi_src->src.ssa;
             } else {
-               unreachable("Invalid predecessor for phi of if");
+               UNREACHABLE("Invalid predecessor for phi of if");
             }
          }
 
@@ -600,7 +600,7 @@ replace_for_cf_list(nir_builder *b, opt_preamble_ctx *ctx,
       }
 
       default:
-         unreachable("Unexpected CF node type");
+         UNREACHABLE("Unexpected CF node type");
       }
    }
 }

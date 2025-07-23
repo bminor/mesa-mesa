@@ -49,7 +49,7 @@ _load_image_param(nir_builder *b, nir_deref_instr *deref, unsigned offset)
       load->num_components = 4;
       break;
    default:
-      unreachable("Invalid param offset");
+      UNREACHABLE("Invalid param offset");
    }
    nir_def_init(&load->instr, &load->def, load->num_components, 32);
 
@@ -333,7 +333,7 @@ convert_color_for_load(nir_builder *b, const struct intel_device_info *devinfo,
       break;
 
    default:
-      unreachable("Invalid image channel type");
+      UNREACHABLE("Invalid image channel type");
    }
 
 expand_vec:
@@ -514,7 +514,7 @@ convert_color_for_store(nir_builder *b, const struct intel_device_info *devinfo,
       break;
 
    default:
-      unreachable("Invalid image channel type");
+      UNREACHABLE("Invalid image channel type");
    }
 
    if (image.bits[0] < 32 &&

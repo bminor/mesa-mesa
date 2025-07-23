@@ -241,7 +241,7 @@ nir_lower_mediump_vars_impl(nir_function_impl *impl, nir_variable_mode modes,
                   break;
                default:
                   nir_print_instr(instr, stderr);
-                  unreachable("unsupported deref type");
+                  UNREACHABLE("unsupported deref type");
                }
             }
 
@@ -275,7 +275,7 @@ nir_lower_mediump_vars_impl(nir_function_impl *impl, nir_variable_mode modes,
                   replace = nir_u2u32(&b, &intrin->def);
                   break;
                default:
-                  unreachable("Invalid 16-bit type");
+                  UNREACHABLE("Invalid 16-bit type");
                }
 
                nir_def_rewrite_uses_after(&intrin->def,
@@ -305,7 +305,7 @@ nir_lower_mediump_vars_impl(nir_function_impl *impl, nir_variable_mode modes,
                   replace = nir_i2imp(&b, data);
                   break;
                default:
-                  unreachable("Invalid 16-bit type");
+                  UNREACHABLE("Invalid 16-bit type");
                }
 
                nir_src_rewrite(&intrin->src[1], replace);
@@ -575,7 +575,7 @@ opt_16bit_src(nir_builder *b, nir_instr *instr, nir_src *src, nir_alu_type src_t
                extract = nir_unpack_32_2x16_split_y(b, extract);
                break;
             default:
-               unreachable("unsupported alu op");
+               UNREACHABLE("unsupported alu op");
             }
 
             new_comps[i] = nir_get_scalar(extract, 0);
@@ -704,7 +704,7 @@ opt_16bit_destination(nir_def *ssa, nir_alu_type dest_type, unsigned exec_mode,
          alu->op = nir_op_pack_32_2x16;
          break;
       default:
-         unreachable("unsupported conversion op");
+         UNREACHABLE("unsupported conversion op");
       };
    }
 

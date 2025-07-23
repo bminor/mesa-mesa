@@ -2399,7 +2399,7 @@ kopperSetSurfaceCreateInfo(void *_draw, struct kopper_loader_info *out)
    EGL_VK_COMP(12);
 #undef EGL_VK_COMP
    default:
-      unreachable("unknown compression rate");
+      UNREACHABLE("unknown compression rate");
    }
 }
 

@@ -173,7 +173,7 @@ v3dv_CmdClearColorImage(VkCommandBuffer commandBuffer,
    for (uint32_t i = 0; i < rangeCount; i++) {
       if (clear_image_tlb(cmd_buffer, image, &clear_value, &pRanges[i]))
          continue;
-      unreachable("Unsupported color clear.");
+      UNREACHABLE("Unsupported color clear.");
    }
 
    cmd_buffer->state.is_transfer = false;
@@ -199,7 +199,7 @@ v3dv_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
    for (uint32_t i = 0; i < rangeCount; i++) {
       if (clear_image_tlb(cmd_buffer, image, &clear_value, &pRanges[i]))
          continue;
-      unreachable("Unsupported depth/stencil clear.");
+      UNREACHABLE("Unsupported depth/stencil clear.");
    }
 
    cmd_buffer->state.is_transfer = false;

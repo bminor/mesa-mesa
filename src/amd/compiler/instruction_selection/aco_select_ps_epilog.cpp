@@ -51,7 +51,7 @@ emit_clamp_alpha_test(isel_context* ctx, const struct aco_ps_epilog_info* info, 
          case COMPARE_FUNC_GREATER: opcode = aco_opcode::v_cmp_nlt_f32; break;
          case COMPARE_FUNC_NOTEQUAL: opcode = aco_opcode::v_cmp_nlg_f32; break;
          case COMPARE_FUNC_GEQUAL: opcode = aco_opcode::v_cmp_nle_f32; break;
-         default: unreachable("invalid alpha func");
+         default: UNREACHABLE("invalid alpha func");
          }
 
          Temp ref = get_arg(ctx, info->alpha_reference);

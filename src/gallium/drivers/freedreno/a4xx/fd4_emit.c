@@ -303,7 +303,7 @@ emit_textures(struct fd_context *ctx, struct fd_ringbuffer *ring,
                break;
 
             default:
-               unreachable("");
+               UNREACHABLE("");
             }
 
             texconst0 =
@@ -532,7 +532,7 @@ fd4_emit_vertex_bufs(struct fd_ringbuffer *ring, struct fd4_emit *emit)
             vtxcnt_regid = vp->inputs[i].regid;
             break;
          default:
-            unreachable("invalid system value");
+            UNREACHABLE("invalid system value");
             break;
          }
       } else if (i < vtx->vtx->num_elements) {

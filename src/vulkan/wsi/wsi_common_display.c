@@ -180,7 +180,7 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
       prop_count = ARRAY_SIZE(connector->plane_property);
       break;
    default:
-      unreachable("unexpected drm object type");
+      UNREACHABLE("unexpected drm object type");
    }
 
    props = drmModeObjectGetProperties(fd, obj_id, type);

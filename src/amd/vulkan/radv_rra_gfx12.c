@@ -142,7 +142,7 @@ rra_gather_bvh_info_gfx12(const uint8_t *bvh, uint32_t node_id, struct rra_bvh_i
       dst->leaf_nodes_size += sizeof(struct radv_gfx12_primitive_node);
       break;
    default:
-      unreachable("Invalid node type");
+      UNREACHABLE("Invalid node type");
       break;
    }
 

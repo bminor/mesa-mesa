@@ -1106,7 +1106,7 @@ bi_register_allocate(bi_context *ctx)
       if (register_demand > regs_to_use) {
          /* spill registers if we can */
          if (ctx->inputs->is_blend)
-            unreachable("Blend shaders may not spill");
+            UNREACHABLE("Blend shaders may not spill");
 
          spill_count = bi_spill_ssa(ctx, regs_to_use, spill_count);
          /* By default, we use packed TLS addressing on Valhall.
@@ -1153,10 +1153,10 @@ bi_register_allocate(bi_context *ctx)
          l = NULL;
 
          if (spill_node == -1)
-            unreachable("Failed to choose spill node\n");
+            UNREACHABLE("Failed to choose spill node\n");
 
          if (ctx->inputs->is_blend)
-            unreachable("Blend shaders may not spill");
+            UNREACHABLE("Blend shaders may not spill");
 
          /* By default, we use packed TLS addressing on Valhall.
           * We cannot cross 16 byte boundaries with packed TLS

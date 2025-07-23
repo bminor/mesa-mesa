@@ -75,7 +75,7 @@ d3d12_query_heap_type(unsigned query_type, unsigned sub_query)
    default:
       debug_printf("unknown query: %s\n",
                    util_str_query_type(query_type, true));
-      unreachable("d3d12: unknown query type");
+      UNREACHABLE("d3d12: unknown query type");
    }
 }
 
@@ -106,7 +106,7 @@ d3d12_query_type(unsigned query_type, unsigned sub_query, unsigned index)
    default:
       debug_printf("unknown query: %s\n",
                    util_str_query_type(query_type, true));
-      unreachable("d3d12: unknown query type");
+      UNREACHABLE("d3d12: unknown query type");
    }
 }
 
@@ -264,7 +264,7 @@ accumulate_subresult_cpu(struct d3d12_context *ctx, struct d3d12_query *q_parent
       default:
          debug_printf("unsupported query type: %s\n",
                       util_str_query_type(q_parent->type, true));
-         unreachable("unexpected query type");
+         UNREACHABLE("unexpected query type");
       }
    }
 
@@ -329,7 +329,7 @@ subquery_should_be_active(struct d3d12_context *ctx, struct d3d12_query *q, unsi
       case 0: return has_xfb;
       case 1: return !has_xfb && has_gs;
       case 2: return !has_xfb && !has_gs;
-      default: unreachable("Invalid subquery for primitives generated");
+      default: UNREACHABLE("Invalid subquery for primitives generated");
       }
       break;
    }

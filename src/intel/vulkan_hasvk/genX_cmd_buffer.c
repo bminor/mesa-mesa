@@ -740,7 +740,7 @@ anv_cmd_predicated_mcs_resolve(struct anv_cmd_buffer *cmd_buffer,
    anv_image_mcs_op(cmd_buffer, image, format, swizzle, aspect,
                     array_layer, 1, resolve_op, NULL, true);
 #else
-   unreachable("MCS resolves are unsupported on Ivybridge and Bay Trail");
+   UNREACHABLE("MCS resolves are unsupported on Ivybridge and Bay Trail");
 #endif
 }
 
@@ -2397,7 +2397,7 @@ emit_binding_table(struct anv_cmd_buffer *cmd_buffer,
             break;
 
          default:
-            unreachable("Invalid descriptor type");
+            UNREACHABLE("Invalid descriptor type");
          }
          assert(surface_state.map);
          bt_map[s] = surface_state.offset + state_offset;
@@ -5907,7 +5907,7 @@ static uint32_t vk_to_intel_index_type(VkIndexType type)
    case VK_INDEX_TYPE_UINT32:
       return INDEX_DWORD;
    default:
-      unreachable("invalid index type");
+      UNREACHABLE("invalid index type");
    }
 }
 
@@ -5958,7 +5958,7 @@ VkResult genX(CmdSetPerformanceOverrideINTEL)(
       break;
 
    default:
-      unreachable("Invalid override");
+      UNREACHABLE("Invalid override");
    }
 
    return VK_SUCCESS;
@@ -6005,7 +6005,7 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
       break;
 
    default:
-      unreachable("invalid");
+      UNREACHABLE("invalid");
    }
 }
 

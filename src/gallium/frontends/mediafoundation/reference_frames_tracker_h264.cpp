@@ -270,7 +270,7 @@ reference_frames_tracker_h264::begin_frame( reference_frames_tracker_dpb_async_t
             assert( entryToRemove != m_PrevFramesInfos.end() );
             if( entryToRemove == m_PrevFramesInfos.end() )
             {
-               unreachable( "Unexpected zero STR" );
+               UNREACHABLE( "Unexpected zero STR" );
             }
             ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( entryToRemove->buffer );
             if( m_upTwoPassDPBManager )
@@ -295,7 +295,7 @@ reference_frames_tracker_h264::begin_frame( reference_frames_tracker_dpb_async_t
             assert( entryToRemove != m_PrevFramesInfos.end() );
             if( entryToRemove == m_PrevFramesInfos.end() )
             {
-               unreachable( "Unexpected LTR replacement in Bitmap but not in PrevFramesInfos" );
+               UNREACHABLE( "Unexpected LTR replacement in Bitmap but not in PrevFramesInfos" );
             }
             ( pAsyncDPBToken )->dpb_buffers_to_release.push_back( entryToRemove->buffer );
             if( m_upTwoPassDPBManager )

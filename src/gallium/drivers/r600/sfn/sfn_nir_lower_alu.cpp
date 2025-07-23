@@ -50,7 +50,7 @@ Lower2x16::lower(nir_instr *instr)
                                       nir_channel(b, src_vec2, 1));
    }
    default:
-      unreachable("Lower2x16 filter doesn't filter correctly");
+      UNREACHABLE("Lower2x16 filter doesn't filter correctly");
    }
 }
 

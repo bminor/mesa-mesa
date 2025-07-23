@@ -212,7 +212,7 @@ si_aco_resolve_symbols(struct si_shader *shader, uint32_t *code_for_write,
          value = code_for_read[symbols[i].offset] + const_offset;
          break;
       default:
-         unreachable("invalid aco symbol");
+         UNREACHABLE("invalid aco symbol");
          break;
       }
 
@@ -345,7 +345,7 @@ si_aco_build_shader_part(struct si_screen *screen, gl_shader_stage stage, bool p
       else
          return si_aco_build_ps_epilog(&options, result);
    default:
-      unreachable("bad shader part");
+      UNREACHABLE("bad shader part");
    }
 
    return false;

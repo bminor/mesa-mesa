@@ -2152,7 +2152,7 @@ void ac_parse_ib_chunk(struct ac_ib_parser *ib)
    else if (ib->ip_type == AMD_IP_VCN_DEC || ib->ip_type == AMD_IP_VCN_ENC)
       parse_vcn_ib(memf, &tmp_ib);
    else
-      unreachable("unsupported IP type");
+      UNREACHABLE("unsupported IP type");
 
    u_memstream_close(&mem);
 

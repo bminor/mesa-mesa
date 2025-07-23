@@ -389,7 +389,7 @@ add_to_entry_key(nir_scalar *offset_defs, uint64_t *offset_defs_mul,
          return 0;
       }
    }
-   unreachable("Unreachable.");
+   UNREACHABLE("Unreachable.");
    return 0;
 }
 
@@ -458,7 +458,7 @@ create_entry_key_from_deref(void *mem_ctx,
          break;
       }
       default:
-         unreachable("Unhandled deref type");
+         UNREACHABLE("Unhandled deref type");
       }
    }
 

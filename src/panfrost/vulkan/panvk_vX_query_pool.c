@@ -57,7 +57,7 @@ panvk_per_arch(CreateQueryPool)(VkDevice _device,
    }
 #endif
    default:
-      unreachable("Unsupported query type");
+      UNREACHABLE("Unsupported query type");
    }
 
    pool->reports_per_query = reports_per_query;
@@ -260,7 +260,7 @@ panvk_per_arch(GetQueryPoolResults)(VkDevice _device, VkQueryPool queryPool,
       }
 #endif
       default:
-         unreachable("Unsupported query type");
+         UNREACHABLE("Unsupported query type");
       }
 
       if (!write_results)

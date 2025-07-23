@@ -99,7 +99,7 @@ static void reserve_iterator(struct rogue_iterator_args *args,
       break;
 
    default:
-      unreachable("Unimplemented interpolation type.");
+      UNREACHABLE("Unimplemented interpolation type.");
    }
 
    /* Number of components in this varying
@@ -304,7 +304,7 @@ static void collect_io_data_vs(struct rogue_common_build_data *common_data,
          unsigned i = (var->data.location - VARYING_SLOT_VAR0) + 1;
          reserve_vs_output(&vs_data->outputs, i, components);
       } else {
-         unreachable("Unsupported vertex output type.");
+         UNREACHABLE("Unsupported vertex output type.");
       }
    }
 
@@ -348,7 +348,7 @@ void rogue_collect_io_data(struct rogue_build_ctx *ctx, nir_shader *nir)
       break;
    }
 
-   unreachable("Unsupported stage.");
+   UNREACHABLE("Unsupported stage.");
 }
 
 /**
@@ -408,7 +408,7 @@ unsigned rogue_output_index_vs(struct rogue_vertex_outputs *outputs,
               (location <= VARYING_SLOT_VAR31)) {
       i = (location - VARYING_SLOT_VAR0) + 1;
    } else {
-      unreachable("Unsupported vertex output type.");
+      UNREACHABLE("Unsupported vertex output type.");
    }
 
    assert(i < outputs->num_output_vars);

@@ -139,7 +139,7 @@ driCreateNewScreen3(int scrn, int fd,
       pscreen = dri_swrast_kms_init_screen(screen, driver_name_is_inferred);
       break;
    default:
-      unreachable("unknown dri screen type");
+      UNREACHABLE("unknown dri screen type");
    }
    if (pscreen == NULL) {
       dri_destroy_screen(screen);

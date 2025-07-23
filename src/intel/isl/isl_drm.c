@@ -57,7 +57,7 @@ isl_tiling_to_i915_tiling(enum isl_tiling tiling)
       return I915_TILING_NONE;
    }
 
-   unreachable("Invalid ISL tiling");
+   UNREACHABLE("Invalid ISL tiling");
 }
 
 enum isl_tiling
@@ -74,7 +74,7 @@ isl_tiling_from_i915_tiling(uint32_t tiling)
       return ISL_TILING_Y0;
    }
 
-   unreachable("Invalid i915 tiling");
+   UNREACHABLE("Invalid i915 tiling");
 }
 
 /** Sentinel is DRM_FORMAT_MOD_INVALID. */

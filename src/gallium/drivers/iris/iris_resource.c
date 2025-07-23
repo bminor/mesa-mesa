@@ -756,7 +756,7 @@ target_to_isl_surf_dim(enum pipe_texture_target target)
    case PIPE_MAX_TEXTURE_TYPES:
       break;
    }
-   unreachable("invalid texture type");
+   UNREACHABLE("invalid texture type");
 }
 
 static bool
@@ -1339,7 +1339,7 @@ iris_resource_from_handle(struct pipe_screen *pscreen,
                                              whandle->handle, flags);
       break;
    default:
-      unreachable("invalid winsys handle type");
+      UNREACHABLE("invalid winsys handle type");
    }
    if (!res->bo)
       goto fail;

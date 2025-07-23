@@ -99,7 +99,7 @@ blorp_nir_mcs_is_clear_color(nir_builder *b,
                          nir_ieq_imm(b, nir_channel(b, mcs, 1), ~0));
 
    default:
-      unreachable("Invalid sample count");
+      UNREACHABLE("Invalid sample count");
    }
 }
 

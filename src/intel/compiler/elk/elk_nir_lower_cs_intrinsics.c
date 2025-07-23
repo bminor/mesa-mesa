@@ -164,7 +164,7 @@ compute_local_index_id(nir_builder *b,
       break;
    }
    default:
-      unreachable("invalid derivative group");
+      UNREACHABLE("invalid derivative group");
    }
 }
 

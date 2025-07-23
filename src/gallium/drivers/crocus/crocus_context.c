@@ -92,7 +92,7 @@ crocus_lost_context_state(struct crocus_batch *batch)
    } else if (batch->name == CROCUS_BATCH_COMPUTE) {
       screen->vtbl.init_compute_context(batch);
    } else {
-      unreachable("unhandled batch reset");
+      UNREACHABLE("unhandled batch reset");
    }
 
    ice->state.dirty = ~0ull;
@@ -175,7 +175,7 @@ crocus_get_sample_position(struct pipe_context *ctx,
    case 4:  INTEL_SAMPLE_POS_4X(u.v._);  break;
    case 8:  INTEL_SAMPLE_POS_8X(u.v._);  break;
    case 16: INTEL_SAMPLE_POS_16X(u.v._); break;
-   default: unreachable("invalid sample count");
+   default: UNREACHABLE("invalid sample count");
    }
 
    out_value[0] = u.a.x[sample_index];
@@ -248,7 +248,7 @@ crocus_destroy_context(struct pipe_context *ctx)
       gfx4_##func(__VA_ARGS__);                         \
       break;                                            \
    default:                                             \
-      unreachable("Unknown hardware generation");       \
+      UNREACHABLE("Unknown hardware generation");       \
    }
 
 /**

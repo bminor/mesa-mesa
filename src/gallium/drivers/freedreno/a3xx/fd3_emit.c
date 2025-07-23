@@ -384,7 +384,7 @@ fd3_emit_vertex_bufs(struct fd_ringbuffer *ring, struct fd3_emit *emit)
             vtxcnt_regid = vp->inputs[i].regid;
             break;
          default:
-            unreachable("invalid system value");
+            UNREACHABLE("invalid system value");
             break;
          }
       } else if (i < vtx->vtx->num_elements) {

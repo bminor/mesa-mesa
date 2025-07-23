@@ -201,7 +201,7 @@ pvr_csb_emit_link_unmarked(struct pvr_csb *csb, pvr_dev_addr_t addr, bool ret)
       break;
 
    default:
-      unreachable("Unknown stream type");
+      UNREACHABLE("Unknown stream type");
       break;
    }
 }
@@ -471,7 +471,7 @@ VkResult pvr_csb_emit_terminate(struct pvr_csb *csb)
       break;
 
    default:
-      unreachable("Unknown stream type");
+      UNREACHABLE("Unknown stream type");
       break;
    }
 

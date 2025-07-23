@@ -876,7 +876,7 @@ print_stage(Stage stage, FILE* output)
       case SWStage::TS: fprintf(output, "TS"); break;
       case SWStage::MS: fprintf(output, "MS"); break;
       case SWStage::RT: fprintf(output, "RT"); break;
-      default: unreachable("invalid SW stage");
+      default: UNREACHABLE("invalid SW stage");
       }
       if (stage.num_sw_stages() > 1)
          fprintf(output, "+");
@@ -893,7 +893,7 @@ print_stage(Stage stage, FILE* output)
    case AC_HW_NEXT_GEN_GEOMETRY_SHADER: fprintf(output, "NEXT_GEN_GEOMETRY_SHADER"); break;
    case AC_HW_PIXEL_SHADER: fprintf(output, "PIXEL_SHADER"); break;
    case AC_HW_COMPUTE_SHADER: fprintf(output, "COMPUTE_SHADER"); break;
-   default: unreachable("invalid HW stage");
+   default: UNREACHABLE("invalid HW stage");
    }
 
    fprintf(output, ")\n");

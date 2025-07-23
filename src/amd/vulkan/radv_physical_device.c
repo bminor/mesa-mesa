@@ -511,7 +511,7 @@ radv_find_memory_index(const struct radv_physical_device *pdev, VkMemoryProperty
          return i;
       }
    }
-   unreachable("invalid memory properties");
+   UNREACHABLE("invalid memory properties");
 }
 
 static void
@@ -1431,7 +1431,7 @@ radv_get_compiler_string(struct radv_physical_device *pdev)
 #if AMD_LLVM_AVAILABLE
    return " (LLVM " MESA_LLVM_VERSION_STRING ")";
 #else
-   unreachable("LLVM is not available");
+   UNREACHABLE("LLVM is not available");
 #endif
 }
 

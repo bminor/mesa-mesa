@@ -116,7 +116,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
    if (gfx_level >= GFX11) {
       switch (dfmt) {
       default:
-         unreachable("bad dfmt");
+         UNREACHABLE("bad dfmt");
       case V_008F0C_BUF_DATA_FORMAT_INVALID:
          return V_008F0C_GFX11_FORMAT_INVALID;
 
@@ -131,7 +131,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_8_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_8_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -149,7 +149,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_8_8_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_8_8_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -167,7 +167,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_8_8_8_8_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_8_8_8_8_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -185,7 +185,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_16_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_16_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -205,7 +205,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_16_16_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_16_16_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -225,7 +225,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_16_16_16_16_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_16_16_16_16_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -237,7 +237,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
       case V_008F0C_BUF_DATA_FORMAT_32:
          switch (nfmt) {
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_32_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -249,7 +249,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
       case V_008F0C_BUF_DATA_FORMAT_32_32:
          switch (nfmt) {
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_32_32_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -261,7 +261,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
       case V_008F0C_BUF_DATA_FORMAT_32_32_32:
          switch (nfmt) {
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_32_32_32_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -273,7 +273,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
       case V_008F0C_BUF_DATA_FORMAT_32_32_32_32:
          switch (nfmt) {
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_32_32_32_32_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -293,7 +293,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          case V_008F0C_BUF_NUM_FORMAT_SSCALED:
             return V_008F0C_GFX11_FORMAT_2_10_10_10_SSCALED;
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_UINT:
             return V_008F0C_GFX11_FORMAT_2_10_10_10_UINT;
          case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -303,7 +303,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
       case V_008F0C_BUF_DATA_FORMAT_10_11_11:
          switch (nfmt) {
          default:
-            unreachable("bad nfmt");
+            UNREACHABLE("bad nfmt");
          case V_008F0C_BUF_NUM_FORMAT_FLOAT:
             return V_008F0C_GFX11_FORMAT_10_11_11_FLOAT;
          }
@@ -312,7 +312,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
       unsigned format;
       switch (dfmt) {
       default:
-         unreachable("bad dfmt");
+         UNREACHABLE("bad dfmt");
       case V_008F0C_BUF_DATA_FORMAT_INVALID:
          format = V_008F0C_GFX10_FORMAT_INVALID;
          break;
@@ -373,7 +373,7 @@ unsigned ac_get_tbuffer_format(enum amd_gfx_level gfx_level, unsigned dfmt, unsi
          format -= 1;
          break;
       default:
-         unreachable("bad nfmt");
+         UNREACHABLE("bad nfmt");
       case V_008F0C_BUF_NUM_FORMAT_UINT:
          break;
       case V_008F0C_BUF_NUM_FORMAT_SINT:
@@ -580,7 +580,7 @@ enum ac_image_dim ac_get_sampler_dim(enum amd_gfx_level gfx_level, enum glsl_sam
    case GLSL_SAMPLER_DIM_SUBPASS_MS:
       return ac_image_2darraymsaa;
    default:
-      unreachable("bad sampler dim");
+      UNREACHABLE("bad sampler dim");
    }
 }
 
@@ -656,7 +656,7 @@ uint16_t ac_get_ps_iter_mask(unsigned ps_iter_samples)
    case 4: return 0x11;
    case 8: return 0x01;
    default:
-      unreachable("invalid sample count");
+      UNREACHABLE("invalid sample count");
    }
 }
 
@@ -885,7 +885,7 @@ unsigned ac_compute_lshs_workgroup_size(enum amd_gfx_level gfx_level, gl_shader_
    else if (stage == MESA_SHADER_TESS_CTRL)
       return hs_workgroup_size;
    else
-      unreachable("invalid LSHS shader stage");
+      UNREACHABLE("invalid LSHS shader stage");
 }
 
 unsigned ac_compute_ngg_workgroup_size(unsigned es_verts, unsigned gs_inst_prims,

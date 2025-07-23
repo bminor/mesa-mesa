@@ -995,7 +995,7 @@ get_interp_vec4_type(struct linkage_info *linkage, unsigned slot,
    else if (load->def.bit_size == 16)
       base = FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL;
    else
-      unreachable("invalid load_interpolated_input type");
+      UNREACHABLE("invalid load_interpolated_input type");
 
    bool linear = nir_intrinsic_interp_mode(baryc) == INTERP_MODE_NOPERSPECTIVE;
 
@@ -1012,7 +1012,7 @@ get_interp_vec4_type(struct linkage_info *linkage, unsigned slot,
    case nir_intrinsic_load_barycentric_sample:
       return base + 2;
    default:
-      unreachable("unexpected barycentric intrinsic");
+      UNREACHABLE("unexpected barycentric intrinsic");
    }
 }
 
@@ -1323,13 +1323,13 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
             else if (intr->def.bit_size == 16)
                fs_vec4_type = FS_VEC4_TYPE_INTERP_FP16;
             else
-               unreachable("invalid load_interpolated_input type");
+               UNREACHABLE("invalid load_interpolated_input type");
          } else {
             fs_vec4_type = get_interp_vec4_type(linkage, slot, intr);
          }
          break;
       default:
-         unreachable("unexpected input load intrinsic");
+         UNREACHABLE("unexpected input load intrinsic");
       }
 
       linkage->fs_vec4_type[sem.location] = fs_vec4_type;
@@ -1421,7 +1421,7 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
          break;
 
       case FS_VEC4_TYPE_NONE:
-         unreachable("unexpected fs_vec4_type");
+         UNREACHABLE("unexpected fs_vec4_type");
       }
 
       if (!linkage->has_flexible_interp &&
@@ -1461,7 +1461,7 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
       else if (intr->def.bit_size == 16)
          BITSET_SET(linkage->flat16_mask, slot);
       else
-         unreachable("invalid load_input type");
+         UNREACHABLE("invalid load_input type");
 
       if (linkage->consumer_stage == MESA_SHADER_TESS_CTRL &&
           intr->intrinsic == nir_intrinsic_load_per_vertex_input) {
@@ -1474,7 +1474,7 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
             else if (intr->def.bit_size == 16)
                BITSET_SET(linkage->cross_invoc16_mask, slot);
             else
-               unreachable("invalid load_input type");
+               UNREACHABLE("invalid load_input type");
          }
       }
    }
@@ -1565,7 +1565,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
             else if (intr->src[0].ssa->bit_size == 16)
                BITSET_SET(linkage->xfb16_only_mask, slot);
             else
-               unreachable("invalid load_input type");
+               UNREACHABLE("invalid load_input type");
          }
       }
    } else {
@@ -1625,7 +1625,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
             else if (value.def->bit_size == 16)
                BITSET_SET(linkage->convergent16_mask, slot);
             else
-               unreachable("invalid store_output type");
+               UNREACHABLE("invalid store_output type");
          }
       } else {
          /* There are multiple stores to the same output. If they store
@@ -1641,7 +1641,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
             else if (value.def->bit_size == 16)
                BITSET_CLEAR(linkage->convergent16_mask, slot);
             else
-               unreachable("invalid store_output type");
+               UNREACHABLE("invalid store_output type");
          }
       }
 
@@ -1656,7 +1656,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
             else if (value.def->bit_size == 16)
                BITSET_SET(linkage->cross_invoc16_mask, slot);
             else
-               unreachable("invalid store_output type");
+               UNREACHABLE("invalid store_output type");
          }
       }
    } else {
@@ -1676,7 +1676,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
       else if (intr->def.bit_size == 16)
          BITSET_SET(linkage->flat16_mask, slot);
       else
-         unreachable("invalid load_input type");
+         UNREACHABLE("invalid load_input type");
    }
    return false;
 }
@@ -1959,7 +1959,7 @@ remove_all_stores(struct linkage_info *linkage, unsigned i,
                else if (iter->instr->src[0].ssa->bit_size == 16)
                   BITSET_SET(linkage->xfb16_only_mask, i);
                else
-                  unreachable("invalid load_input type");
+                  UNREACHABLE("invalid load_input type");
             }
          }
       }
@@ -2187,7 +2187,7 @@ find_per_vertex_load_for_tes_interp(nir_instr *instr)
    }
 
    default:
-      unreachable("unexpected instruction type");
+      UNREACHABLE("unexpected instruction type");
    }
 }
 
@@ -2298,7 +2298,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       }
 
       default:
-         unreachable("unexpected intrinsic");
+         UNREACHABLE("unexpected intrinsic");
       }
       break;
    }
@@ -2338,14 +2338,14 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
                         ->def;
             break;
          default:
-            unreachable("invalid deref type");
+            UNREACHABLE("invalid deref type");
          }
       }
       break;
    }
 
    default:
-      unreachable("unexpected instruction type");
+      UNREACHABLE("unexpected instruction type");
    }
 
    _mesa_hash_table_insert(linkage->clones_ht, ssa->parent_instr, clone);
@@ -2672,7 +2672,7 @@ get_input_qualifier(struct linkage_info *linkage, unsigned i)
       /* Don't deduplicate outputs that are interpolated at offset/sample. */
       return QUAL_SKIP;
    default:
-      unreachable("unexpected barycentric src");
+      UNREACHABLE("unexpected barycentric src");
    }
 
    switch (nir_intrinsic_interp_mode(baryc)) {
@@ -2686,7 +2686,7 @@ get_input_qualifier(struct linkage_info *linkage, unsigned i)
       qual = is_color ? QUAL_COLOR_LINEAR_PIXEL : QUAL_VAR_LINEAR_PIXEL;
       break;
    default:
-      unreachable("unexpected interp mode");
+      UNREACHABLE("unexpected interp mode");
    }
 
    /* The ordering of the "qual" enum was carefully chosen to make this
@@ -3404,7 +3404,7 @@ gather_used_input_loads(nir_instr *instr,
 
       default:
          printf("%u\n", intr->intrinsic);
-         unreachable("unexpected intrinsic");
+         UNREACHABLE("unexpected intrinsic");
       }
    }
 
@@ -3426,12 +3426,12 @@ gather_used_input_loads(nir_instr *instr,
          return;
 
       default:
-         unreachable("unexpected deref type");
+         UNREACHABLE("unexpected deref type");
       }
    }
 
    default:
-      unreachable("unexpected instr type");
+      UNREACHABLE("unexpected instr type");
    }
 }
 
@@ -3639,7 +3639,7 @@ try_move_postdominator(struct linkage_info *linkage,
          remap = remap_wuv;
          break;
       default:
-         unreachable("invalid TES interpolation mode");
+         UNREACHABLE("invalid TES interpolation mode");
       }
 
       nir_def *tesscoord = slot->consumer.tes_load_tess_coord;
@@ -4012,7 +4012,7 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
             /* Inter-shader code motion is unimplemented these. */
             continue;
          default:
-            unreachable("unexpected load intrinsic");
+            UNREACHABLE("unexpected load intrinsic");
          }
       }
 
@@ -4117,7 +4117,7 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
 
                bit_size = intr->def.bit_size;
             } else {
-               unreachable("unexpected instr type");
+               UNREACHABLE("unexpected instr type");
             }
 
             /* Skip unsupported bit sizes and keep searching. */
@@ -4388,7 +4388,7 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
                                                       .interp_mode = INTERP_MODE_NONE);
                   break;
                default:
-                  unreachable("invalid qualifier");
+                  UNREACHABLE("invalid qualifier");
                }
 
                nir_src_rewrite(&intr->src[0], baryc);
@@ -5202,7 +5202,7 @@ default_varying_estimate_instr_cost(nir_instr *instr)
          return 2 * num_dst_dwords;
 
       default:
-         unreachable("unexpected intrinsic");
+         UNREACHABLE("unexpected intrinsic");
       }
 
    case nir_instr_type_deref: {
@@ -5220,12 +5220,12 @@ default_varying_estimate_instr_cost(nir_instr *instr)
          return nir_src_is_const(deref->arr.index) ? 0 : 128;
 
       default:
-         unreachable("unexpected deref type");
+         UNREACHABLE("unexpected deref type");
       }
    }
 
    default:
-      unreachable("unexpected instr type");
+      UNREACHABLE("unexpected instr type");
    }
 }
 

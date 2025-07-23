@@ -26,7 +26,7 @@ vk_image_view_type_to_nil_view_type(VkImageViewType view_type)
    case VK_IMAGE_VIEW_TYPE_2D_ARRAY:   return NIL_VIEW_TYPE_2D_ARRAY;
    case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY: return NIL_VIEW_TYPE_CUBE_ARRAY;
    default:
-      unreachable("Invalid image view type");
+      UNREACHABLE("Invalid image view type");
    }
 }
 
@@ -41,7 +41,7 @@ vk_swizzle_to_pipe(VkComponentSwizzle swizzle)
    case VK_COMPONENT_SWIZZLE_ONE:   return PIPE_SWIZZLE_1;
    case VK_COMPONENT_SWIZZLE_ZERO:  return PIPE_SWIZZLE_0;
    default:
-      unreachable("Invalid component swizzle");
+      UNREACHABLE("Invalid component swizzle");
    }
 }
 

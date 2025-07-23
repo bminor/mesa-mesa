@@ -80,7 +80,7 @@ get_bary_deltas(nir_builder *b, nir_intrinsic_instr *bary, nir_intrinsic_op op, 
 
       break;
    default:
-      unreachable("invalid barycentric op");
+      UNREACHABLE("invalid barycentric op");
    }
 
    return deltas;

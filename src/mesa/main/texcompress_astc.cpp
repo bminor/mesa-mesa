@@ -909,7 +909,7 @@ void Block::decode_cem(InputBitVector in)
             cems[2] = ((cem_base_class + c2) << 2) | m2;
             cems[3] = ((cem_base_class + c3) << 2) | m3;
          } else {
-            unreachable("");
+            UNREACHABLE("");
          }
       }
 
@@ -1194,7 +1194,7 @@ void Block::unquantise_weights()
                D = v >> 3;
                break;
             default:
-               unreachable("");
+               UNREACHABLE("");
             }
             uint16_t T = D * C + B;
             T = T ^ A;
@@ -1224,7 +1224,7 @@ void Block::unquantise_weights()
                D = v >> 2;
                break;
             default:
-               unreachable("");
+               UNREACHABLE("");
             }
             uint16_t T = D * C + B;
             T = T ^ A;
@@ -1244,7 +1244,7 @@ void Block::unquantise_weights()
          case 3: w = v | (v << 3); break;
          case 4: w = (v >> 2) | (v << 2); break;
          case 5: w = (v >> 4) | (v << 1); break;
-         default: unreachable("");
+         default: UNREACHABLE("");
          }
          assert(w < 64);
          if (w > 32)
@@ -1368,7 +1368,7 @@ void Block::unquantise_colour_endpoints()
             D = v >> 6;
             break;
          default:
-            unreachable("");
+            UNREACHABLE("");
          }
          uint16_t T = D * C + B;
          T = T ^ A;
@@ -1409,7 +1409,7 @@ void Block::unquantise_colour_endpoints()
             D = v >> 5;
             break;
          default:
-            unreachable("");
+            UNREACHABLE("");
          }
          uint16_t T = D * C + B;
          T = T ^ A;
@@ -1426,7 +1426,7 @@ void Block::unquantise_colour_endpoints()
          case 6: v = (v << 2) | (v >> 4); break;
          case 7: v = (v << 1) | (v >> 6); break;
          case 8: break;
-         default: unreachable("");
+         default: UNREACHABLE("");
          }
          colour_endpoints[i] = v;
       }

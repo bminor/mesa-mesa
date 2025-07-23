@@ -362,7 +362,7 @@ intel_get_hwconfig_table(int fd, struct intel_device_info *devinfo,
    case INTEL_KMD_TYPE_XE:
       return intel_device_info_xe_query_hwconfig(fd, hwconfig_len);
    default:
-      unreachable("unknown kmd type");
+      UNREACHABLE("unknown kmd type");
       return NULL;
    }
 }

@@ -196,7 +196,7 @@ global_priority_to_group_allow_priority_flag(
    case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
       return PAN_KMOD_GROUP_ALLOW_PRIORITY_REALTIME;
    default:
-      unreachable("Invalid global priority");
+      UNREACHABLE("Invalid global priority");
    }
 }
 
@@ -281,7 +281,7 @@ panvk_queue_destroy(struct vk_queue *queue)
       panvk_per_arch(destroy_gpu_queue)(queue);
       break;
    default:
-      unreachable("Unknown queue family");
+      UNREACHABLE("Unknown queue family");
    }
 }
 

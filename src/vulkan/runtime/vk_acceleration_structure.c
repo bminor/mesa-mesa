@@ -164,7 +164,7 @@ vk_acceleration_structure_build_state_init(struct vk_acceleration_structure_buil
       ir_leaf_size = sizeof(struct vk_ir_instance_node);
       break;
    default:
-      unreachable("Unknown VkGeometryTypeKHR");
+      UNREACHABLE("Unknown VkGeometryTypeKHR");
    }
 
    uint32_t offset = 0;
@@ -426,7 +426,7 @@ vk_fill_geometry_data(VkAccelerationStructureTypeKHR type, uint32_t first_id, ui
          data.stride = sizeof(VkAccelerationStructureInstanceKHR);
       break;
    default:
-      unreachable("Unknown geometryType");
+      UNREACHABLE("Unknown geometryType");
    }
 
    return data;
@@ -1071,7 +1071,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          /* For updates, the leaf node pass never runs, so set leaf_node_count here. */
          bvh_states[i].vk.leaf_node_count = leaf_node_count;
       } else {
-         unreachable("Unknown internal_build_type");
+         UNREACHABLE("Unknown internal_build_type");
       }
 
       if (bvh_states[i].vk.config.internal_type != VK_INTERNAL_BUILD_TYPE_UPDATE) {
@@ -1307,7 +1307,7 @@ vk_common_CmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffe
                                                     const uint32_t *pIndirectStrides,
                                                     const uint32_t *const *ppMaxPrimitiveCounts)
 {
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -1319,7 +1319,7 @@ vk_common_WriteAccelerationStructuresPropertiesKHR(VkDevice _device, uint32_t ac
                                                    size_t stride)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
@@ -1331,7 +1331,7 @@ vk_common_BuildAccelerationStructuresKHR(VkDevice _device,
                                          const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
@@ -1341,7 +1341,7 @@ vk_common_CopyAccelerationStructureKHR(VkDevice _device,
                                        const VkCopyAccelerationStructureInfoKHR *pInfo)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
@@ -1351,7 +1351,7 @@ vk_common_CopyMemoryToAccelerationStructureKHR(VkDevice _device,
                                                const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
@@ -1361,6 +1361,6 @@ vk_common_CopyAccelerationStructureToMemoryKHR(VkDevice _device,
                                                const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }

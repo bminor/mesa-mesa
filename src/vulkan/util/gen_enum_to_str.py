@@ -127,7 +127,7 @@ C_TEMPLATE = Template(textwrap.dedent(u"""\
         case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: return sizeof(VkLayerInstanceCreateInfo);
         case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: return sizeof(VkLayerDeviceCreateInfo);
         default:
-            unreachable("Undefined struct type.");
+            UNREACHABLE("Undefined struct type.");
         }
     }
 

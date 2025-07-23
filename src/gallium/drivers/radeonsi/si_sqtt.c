@@ -725,7 +725,7 @@ si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, enum pipe_shader_type
       case PIPE_SHADER_COMPUTE:
          return RGP_HW_STAGE_CS;
       default:
-         unreachable("invalid mesa shader stage");
+         UNREACHABLE("invalid mesa shader stage");
    }
 }
 

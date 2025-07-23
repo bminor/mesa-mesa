@@ -54,7 +54,7 @@ get_shader_visibility(enum pipe_shader_type stage)
    case PIPE_SHADER_COMPUTE:
       return D3D12_SHADER_VISIBILITY_ALL;
    default:
-      unreachable("unknown shader stage");
+      UNREACHABLE("unknown shader stage");
    }
 }
 

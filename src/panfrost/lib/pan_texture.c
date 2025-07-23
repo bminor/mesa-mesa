@@ -60,7 +60,7 @@ pan_astc_dim_2d(unsigned dim)
    case 12:
       return MALI_ASTC_2D_DIMENSION_12;
    default:
-      unreachable("Invalid ASTC dimension");
+      UNREACHABLE("Invalid ASTC dimension");
    }
 }
 
@@ -77,7 +77,7 @@ pan_astc_dim_3d(unsigned dim)
    case 6:
       return MALI_ASTC_3D_DIMENSION_6;
    default:
-      unreachable("Invalid ASTC dimension");
+      UNREACHABLE("Invalid ASTC dimension");
    }
 }
 #endif
@@ -283,7 +283,7 @@ pan_clump_format(enum pipe_format format)
       case PIPE_FORMAT_R10_G10B10_422_UNORM:
          return MALI_CLUMP_FORMAT_Y10_UV10_422;
       default:
-         unreachable("unhandled clump format");
+         UNREACHABLE("unhandled clump format");
       }
    }
 
@@ -306,7 +306,7 @@ pan_clump_format(enum pipe_format format)
    case 16:
       return MALI_CLUMP_FORMAT_RAW128;
    default:
-      unreachable("Invalid bpp");
+      UNREACHABLE("Invalid bpp");
    }
 }
 
@@ -323,7 +323,7 @@ translate_superblock_size(uint64_t modifier)
    case AFBC_FORMAT_MOD_BLOCK_SIZE_64x4:
       return MALI_AFBC_SUPERBLOCK_SIZE_64X4;
    default:
-      unreachable("Invalid superblock size");
+      UNREACHABLE("Invalid superblock size");
    }
 }
 
@@ -705,7 +705,7 @@ emit_afbc_chroma_2p_plane(const struct pan_image_view *iview,
                           unsigned mip_level, unsigned layer_or_z_slice,
                           void *payload)
 {
-   unreachable("AFBC chroma 2p plane not supported");
+   UNREACHABLE("AFBC chroma 2p plane not supported");
 }
 
 #if PAN_ARCH >= 10
@@ -1147,7 +1147,7 @@ pan_modifier_to_layout(uint64_t modifier)
    else if (modifier == DRM_FORMAT_MOD_LINEAR)
       return MALI_TEXTURE_LAYOUT_LINEAR;
    else
-      unreachable("Invalid modifer");
+      UNREACHABLE("Invalid modifer");
 }
 #endif
 

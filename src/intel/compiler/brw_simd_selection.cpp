@@ -170,7 +170,7 @@ brw_simd_should_compile(brw_simd_selection_state &state, unsigned simd)
       start = DEBUG_RT_SIMD8;
       break;
    default:
-      unreachable("unknown shader stage in brw_simd_should_compile");
+      UNREACHABLE("unknown shader stage in brw_simd_should_compile");
    }
 
    const bool env_skip[] = {

@@ -266,7 +266,7 @@ anv_execbuf_add_sync(struct anv_device *device,
                                      value);
    }
 
-   unreachable("Invalid sync type");
+   UNREACHABLE("Invalid sync type");
 }
 
 static VkResult

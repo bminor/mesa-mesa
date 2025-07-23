@@ -275,7 +275,7 @@ ms_get_out_layout_part(unsigned location,
       }
    }
 
-   unreachable("Couldn't figure out mesh shader output mode.");
+   UNREACHABLE("Couldn't figure out mesh shader output mode.");
 }
 
 static void
@@ -357,7 +357,7 @@ ms_store_arrayed_output(nir_builder *b,
          nir_store_var(b, s->out_variables[idx], val, 0x1);
       }
    } else {
-      unreachable("Invalid MS output mode for store");
+      UNREACHABLE("Invalid MS output mode for store");
    }
 }
 
@@ -441,7 +441,7 @@ ms_load_arrayed_output(nir_builder *b,
       }
       return nir_vec(b, arr, num_components);
    } else {
-      unreachable("Invalid MS output mode for load");
+      UNREACHABLE("Invalid MS output mode for load");
    }
 }
 
@@ -513,7 +513,7 @@ lower_ms_intrinsic(nir_builder *b, nir_instr *instr, void *state)
    case nir_intrinsic_set_vertex_and_primitive_count:
       return lower_ms_set_vertex_and_primitive_count(b, intrin, s);
    default:
-      unreachable("Not a lowerable mesh shader intrinsic.");
+      UNREACHABLE("Not a lowerable mesh shader intrinsic.");
    }
 }
 
@@ -1310,7 +1310,7 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
       else if (l.lds.vtx_attr.mask)
          ms_move_output(&l.lds.vtx_attr, &l.scratch_ring.vtx_attr);
       else
-         unreachable("API shader uses too much shared memory.");
+         UNREACHABLE("API shader uses too much shared memory.");
 
       ms_calculate_arrayed_output_layout(&l, max_vertices, max_primitives);
    }

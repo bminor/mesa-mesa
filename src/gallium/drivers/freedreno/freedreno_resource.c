@@ -522,7 +522,7 @@ fd_try_shadow_resource(struct fd_context *ctx, struct fd_resource *rsc,
       case PIPE_TEXTURE_2D:
          /* TODO */
       default:
-         unreachable("TODO");
+         UNREACHABLE("TODO");
       }
    }
 

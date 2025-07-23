@@ -1337,7 +1337,7 @@ img_copy_view_info(VkImageViewType view_type, VkImageAspectFlags aspects,
          view.plane.format = img_props->plane[2].view_format;
          break;
       default:
-         unreachable("invalid ycbcr aspect");
+         UNREACHABLE("invalid ycbcr aspect");
       }
 
       assert(format_is_supported(view.color.format));

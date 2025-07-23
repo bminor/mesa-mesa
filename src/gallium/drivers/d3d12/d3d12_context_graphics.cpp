@@ -143,7 +143,7 @@ blend_factor_rgb(enum pipe_blendfactor factor)
    case PIPE_BLENDFACTOR_CONST_ALPHA: return D3D12_BLEND_BLEND_FACTOR; /* Doesn't exist in D3D12 */
    case PIPE_BLENDFACTOR_INV_CONST_ALPHA: return D3D12_BLEND_INV_BLEND_FACTOR; /* Doesn't exist in D3D12 */
    }
-   unreachable("unexpected blend factor");
+   UNREACHABLE("unexpected blend factor");
 }
 
 static D3D12_BLEND
@@ -170,7 +170,7 @@ blend_factor_alpha(enum pipe_blendfactor factor)
    case PIPE_BLENDFACTOR_INV_CONST_COLOR:
    case PIPE_BLENDFACTOR_INV_CONST_ALPHA: return D3D12_BLEND_INV_BLEND_FACTOR;
    }
-   unreachable("unexpected blend factor");
+   UNREACHABLE("unexpected blend factor");
 }
 
 static unsigned
@@ -214,7 +214,7 @@ blend_op(enum pipe_blend_func func)
    case PIPE_BLEND_MIN: return D3D12_BLEND_OP_MIN;
    case PIPE_BLEND_MAX: return D3D12_BLEND_OP_MAX;
    }
-   unreachable("unexpected blend function");
+   UNREACHABLE("unexpected blend function");
 }
 
 static D3D12_COMPARISON_FUNC
@@ -230,7 +230,7 @@ compare_op(enum pipe_compare_func op)
       case PIPE_FUNC_GEQUAL: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
       case PIPE_FUNC_ALWAYS: return D3D12_COMPARISON_FUNC_ALWAYS;
    }
-   unreachable("unexpected compare");
+   UNREACHABLE("unexpected compare");
 }
 
 static D3D12_LOGIC_OP
@@ -254,7 +254,7 @@ logic_op(enum pipe_logicop func)
    case PIPE_LOGICOP_OR: return D3D12_LOGIC_OP_OR;
    case PIPE_LOGICOP_SET: return D3D12_LOGIC_OP_SET;
    }
-   unreachable("unexpected logicop function");
+   UNREACHABLE("unexpected logicop function");
 }
 
 static UINT8
@@ -369,7 +369,7 @@ stencil_op(enum pipe_stencil_op op)
    case PIPE_STENCIL_OP_DECR_WRAP: return D3D12_STENCIL_OP_DECR;
    case PIPE_STENCIL_OP_INVERT: return D3D12_STENCIL_OP_INVERT;
    }
-   unreachable("unexpected op");
+   UNREACHABLE("unexpected op");
 }
 
 static d3d12_depth_stencil_op_desc_type
@@ -465,7 +465,7 @@ fill_mode(unsigned mode)
       return D3D12_FILL_MODE_SOLID;
 
    default:
-      unreachable("unsupported fill-mode");
+      UNREACHABLE("unsupported fill-mode");
    }
 }
 
@@ -523,7 +523,7 @@ d3d12_create_rasterizer_state(struct pipe_context *pctx,
       break;
 
    default:
-      unreachable("unsupported cull-mode");
+      UNREACHABLE("unsupported cull-mode");
    }
 
    cso->desc.FrontCounterClockwise = rs_state->front_ccw;
@@ -566,7 +566,7 @@ sampler_address_mode(enum pipe_tex_wrap wrap, enum pipe_tex_filter filter)
    case PIPE_TEX_WRAP_MIRROR_CLAMP_TO_EDGE: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
    case PIPE_TEX_WRAP_MIRROR_CLAMP_TO_BORDER: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE; /* FIXME: Doesn't exist in D3D12 */
    }
-   unreachable("unexpected wrap");
+   UNREACHABLE("unexpected wrap");
 }
 
 static D3D12_FILTER
@@ -637,7 +637,7 @@ d3d12_create_sampler_state(struct pipe_context *pctx,
       desc.MinLOD = 0;
       desc.MaxLOD = 0;
    } else {
-      unreachable("unexpected mip filter");
+      UNREACHABLE("unexpected mip filter");
    }
 
    if (state->compare_mode == PIPE_TEX_COMPARE_R_TO_TEXTURE) {
@@ -645,7 +645,7 @@ d3d12_create_sampler_state(struct pipe_context *pctx,
    } else if (state->compare_mode == PIPE_TEX_COMPARE_NONE) {
       desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
    } else
-      unreachable("unexpected comparison mode");
+      UNREACHABLE("unexpected comparison mode");
 
    desc.MaxAnisotropy = state->max_anisotropy;
    desc.Filter = get_filter(state);
@@ -768,7 +768,7 @@ view_dimension(enum pipe_texture_target target, unsigned samples)
    case PIPE_TEXTURE_CUBE_ARRAY: return D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
    case PIPE_TEXTURE_3D: return D3D12_SRV_DIMENSION_TEXTURE3D;
    default:
-      unreachable("unexpected target");
+      UNREACHABLE("unexpected target");
    }
 }
 
@@ -783,7 +783,7 @@ component_mapping(enum pipe_swizzle swizzle)
    case PIPE_SWIZZLE_0: return D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0;
    case PIPE_SWIZZLE_1: return D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1;
    default:
-      unreachable("unexpected swizzle");
+      UNREACHABLE("unexpected swizzle");
    }
 }
 
@@ -904,7 +904,7 @@ d3d12_init_sampler_view_descriptor(struct d3d12_sampler_view *sampler_view)
                                      1 << D3D12_REQ_BUFFER_RESOURCE_TEXEL_COUNT_2_TO_EXP);
       break;
    default:
-      unreachable("Invalid SRV dimension");
+      UNREACHABLE("Invalid SRV dimension");
    }
 
    screen->dev->CreateShaderResourceView(d3d12_res, &desc,
@@ -1688,7 +1688,7 @@ get_shader_image_emulation_format(enum pipe_format resource_format)
    case DXGI_FORMAT_R11G11B10_FLOAT:
       return PIPE_FORMAT_R11G11B10_FLOAT;
    default:
-      unreachable("Unexpected shader image resource format");
+      UNREACHABLE("Unexpected shader image resource format");
    }
 }
 

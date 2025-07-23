@@ -478,7 +478,7 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
             cselect->operands[0] = Operand::c32(0);
             cselect->operands[1] = instr->operands[!scc_op_idx];
          } else {
-            unreachable("invalid op");
+            UNREACHABLE("invalid op");
          }
          scc_op_idx = 2;
          instr.reset(cselect);

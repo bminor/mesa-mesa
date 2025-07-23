@@ -434,7 +434,7 @@ isl_device_init(struct isl_device *dev,
    do {
       CHOOSE(ISL_TILING_4);
       CHOOSE(ISL_TILING_Y0);
-      unreachable("Cannot find shader tiling");
+      UNREACHABLE("Cannot find shader tiling");
    } while (0);
 #undef CHOOSE
 }
@@ -1081,7 +1081,7 @@ tiling_max_mip_tail(enum isl_tiling tiling,
       break;
 
    default:
-      unreachable("Invalid tiling");
+      UNREACHABLE("Invalid tiling");
    }
 
    assert(dim != ISL_SURF_DIM_1D);
@@ -1125,7 +1125,7 @@ isl_tiling_supports_dimensions(const struct intel_device_info *devinfo,
       return true;
 
    default:
-      unreachable("invalid dimension");
+      UNREACHABLE("invalid dimension");
    }
 }
 
@@ -1238,7 +1238,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(tile_ysyf_2d_8bpp_swiz, 12);
             break;
          default:
-            unreachable("Unsupported format size");
+            UNREACHABLE("Unsupported format size");
          }
          break;
       case ISL_SURF_DIM_3D:
@@ -1255,11 +1255,11 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(skl_tile_ysyf_3d_16_8bpp_swiz, 12);
             break;
          default:
-            unreachable("Unsupported format size");
+            UNREACHABLE("Unsupported format size");
          }
          break;
       default:
-         unreachable("Invalid dimension");
+         UNREACHABLE("Invalid dimension");
       }
 
       phys_B.w = logical_el.width * bs;
@@ -1315,7 +1315,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(_8bpp_swiz[ffs(samples) - 1], tiling_bits);
             break;
          default:
-            unreachable("Unsupported format size");
+            UNREACHABLE("Unsupported format size");
          }
          break;
       }
@@ -1338,13 +1338,13 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(ICL_OR_SKL(tile_ysyf_3d_16_8bpp_swiz), tiling_bits);
             break;
          default:
-            unreachable("Unsupported format size");
+            UNREACHABLE("Unsupported format size");
          }
 #undef ICL_OR_SKL
          break;
 
       default:
-         unreachable("Invalid dimension");
+         UNREACHABLE("Invalid dimension");
       }
 
       const uint32_t tile_size_B = 1u << tiling_bits;
@@ -1370,7 +1370,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(acm_tile64_3d_8bpp_swiz, 16);
             break;
          default:
-            unreachable("Unsupported format size for 3D");
+            UNREACHABLE("Unsupported format size for 3D");
          }
       } else {
          const uint8_t *_128_64bpp_swiz[5] = {
@@ -1423,7 +1423,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(_8bpp_swiz[sample_idx], 16);
             break;
          default:
-            unreachable("Unsupported format size.");
+            UNREACHABLE("Unsupported format size.");
          }
       }
 
@@ -1447,7 +1447,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             SET_SWIZ(xe2_tile64_3d_16_8bpp_swiz, 16);
             break;
          default:
-            unreachable("Unsupported format size for 3D");
+            UNREACHABLE("Unsupported format size for 3D");
          }
       } else {
          if (samples == 1 || msaa_layout == ISL_MSAA_LAYOUT_INTERLEAVED) {
@@ -1464,7 +1464,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
                SET_SWIZ(xe2_tile64_2d_8bpp_swiz, 16);
                break;
             default:
-               unreachable("Unsupported format size.");
+               UNREACHABLE("Unsupported format size.");
             }
          } else if (samples == 2) {
             switch (format_bpb) {
@@ -1482,7 +1482,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
                SET_SWIZ(xe2_tile64_2d_8bpp_2msaa_swiz, 16);
                break;
             default:
-               unreachable("Unsupported format size.");
+               UNREACHABLE("Unsupported format size.");
             }
          } else if (samples == 4) {
             switch (format_bpb) {
@@ -1497,7 +1497,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             case   8:
                SET_SWIZ(xe2_tile64_2d_8bpp_4msaa_swiz, 16);
                break;
-            default: unreachable("Unsupported format size.");
+            default: UNREACHABLE("Unsupported format size.");
             }
          } else if (samples == 8) {
             switch (format_bpb) {
@@ -1510,7 +1510,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             case   8:
                SET_SWIZ(xe2_tile64_2d_16_8bpp_8msaa_swiz, 16);
                break;
-            default: unreachable("Unsupported format size.");
+            default: UNREACHABLE("Unsupported format size.");
             }
          } else if (samples == 16) {
             switch (format_bpb) {
@@ -1525,7 +1525,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
             case   8:
                SET_SWIZ(xe2_tile64_2d_8bpp_16msaa_swiz, 16);
                break;
-            default: unreachable("Unsupported format size.");
+            default: UNREACHABLE("Unsupported format size.");
             }
          }
       }
@@ -1568,7 +1568,7 @@ isl_tiling_get_info(enum isl_tiling tiling,
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    } /* end switch */
 
 #undef SET_SWIZ
@@ -1893,7 +1893,7 @@ isl_choose_array_pitch_span(const struct isl_device *dev,
       return ISL_ARRAY_PITCH_SPAN_COMPACT;
    }
 
-   unreachable("bad isl_dim_layout");
+   UNREACHABLE("bad isl_dim_layout");
    return ISL_ARRAY_PITCH_SPAN_FULL;
 }
 
@@ -2061,7 +2061,7 @@ isl_surf_choose_dim_layout(const struct isl_device *dev,
       }
    }
 
-   unreachable("bad isl_surf_dim");
+   UNREACHABLE("bad isl_surf_dim");
    return ISL_DIM_LAYOUT_GFX4_2D;
 }
 
@@ -2080,7 +2080,7 @@ isl_calc_phys_level0_extent_sa(const struct isl_device *dev,
    const struct isl_format_layout *fmtl = isl_format_get_layout(info->format);
 
    if (isl_format_is_planar(info->format))
-      unreachable("Planar formats unsupported");
+      UNREACHABLE("Planar formats unsupported");
 
    switch (info->dim) {
    case ISL_SURF_DIM_1D:
@@ -2090,7 +2090,7 @@ isl_calc_phys_level0_extent_sa(const struct isl_device *dev,
 
       switch (dim_layout) {
       case ISL_DIM_LAYOUT_GFX4_3D:
-         unreachable("bad isl_dim_layout");
+         UNREACHABLE("bad isl_dim_layout");
 
       case ISL_DIM_LAYOUT_GFX9_1D:
       case ISL_DIM_LAYOUT_GFX4_2D:
@@ -2170,7 +2170,7 @@ isl_calc_phys_level0_extent_sa(const struct isl_device *dev,
       switch (dim_layout) {
       case ISL_DIM_LAYOUT_GFX9_1D:
       case ISL_DIM_LAYOUT_GFX6_STENCIL_HIZ:
-         unreachable("bad isl_dim_layout");
+         UNREACHABLE("bad isl_dim_layout");
 
       case ISL_DIM_LAYOUT_GFX4_2D:
       case ISL_DIM_LAYOUT_GFX4_3D:
@@ -2218,7 +2218,7 @@ isl_get_miptail_level_offset_el(enum isl_tiling tiling,
          *y_offset_el = skl_std_y_2d_miptail_offset_el[row][col][1];
          break;
       default:
-         unreachable("invalid tiling");
+         UNREACHABLE("invalid tiling");
       }
       *z_offset_el = 0;
       break;
@@ -2250,12 +2250,12 @@ isl_get_miptail_level_offset_el(enum isl_tiling tiling,
          *z_offset_el = skl_std_y_3d_miptail_offset_el[row][col][2];
          break;
       default:
-         unreachable("invalid tiling");
+         UNREACHABLE("invalid tiling");
       }
       break;
 
    case ISL_SURF_DIM_1D:
-      unreachable("invalid dimension");
+      UNREACHABLE("invalid dimension");
    }
 }
 
@@ -2852,7 +2852,7 @@ isl_calc_phys_total_extent_el(const struct isl_device *dev,
       return;
    }
 
-   unreachable("invalid value for dim_layout");
+   UNREACHABLE("invalid value for dim_layout");
 }
 
 static uint32_t
@@ -3532,7 +3532,7 @@ get_2d_array_extent(const struct isl_device *isl_dev,
       }
    }
 
-   unreachable("extent not found for given number of tiles.");
+   UNREACHABLE("extent not found for given number of tiles.");
 }
 
 void
@@ -3707,7 +3707,7 @@ isl_surf_get_mcs_surf(const struct isl_device *dev,
    case 8:  mcs_format = ISL_FORMAT_MCS_8X;  break;
    case 16: mcs_format = ISL_FORMAT_MCS_16X; break;
    default:
-      unreachable("Invalid sample count");
+      UNREACHABLE("Invalid sample count");
    }
 
    return isl_surf_init(dev, mcs_surf,
@@ -3942,24 +3942,24 @@ isl_surf_get_ccs_surf(const struct isl_device *dev,
       case 32:    ccs_format = ISL_FORMAT_GFX9_CCS_32BPP;   break;
       case 64:    ccs_format = ISL_FORMAT_GFX9_CCS_64BPP;   break;
       case 128:   ccs_format = ISL_FORMAT_GFX9_CCS_128BPP;  break;
-      default:    unreachable("Unsupported CCS format");
+      default:    UNREACHABLE("Unsupported CCS format");
       }
    } else if (surf->tiling == ISL_TILING_Y0) {
       switch (isl_format_get_layout(surf->format)->bpb) {
       case 32:    ccs_format = ISL_FORMAT_GFX7_CCS_32BPP_Y;    break;
       case 64:    ccs_format = ISL_FORMAT_GFX7_CCS_64BPP_Y;    break;
       case 128:   ccs_format = ISL_FORMAT_GFX7_CCS_128BPP_Y;   break;
-      default:    unreachable("Unsupported CCS format");
+      default:    UNREACHABLE("Unsupported CCS format");
       }
    } else if (surf->tiling == ISL_TILING_X) {
       switch (isl_format_get_layout(surf->format)->bpb) {
       case 32:    ccs_format = ISL_FORMAT_GFX7_CCS_32BPP_X;    break;
       case 64:    ccs_format = ISL_FORMAT_GFX7_CCS_64BPP_X;    break;
       case 128:   ccs_format = ISL_FORMAT_GFX7_CCS_128BPP_X;   break;
-      default:    unreachable("Unsupported CCS format");
+      default:    UNREACHABLE("Unsupported CCS format");
       }
    } else {
-      unreachable("Invalid tiling format");
+      UNREACHABLE("Invalid tiling format");
    }
 
    return isl_surf_init(dev, ccs_surf,
@@ -4017,7 +4017,7 @@ isl_surf_get_ccs_surf(const struct isl_device *dev,
       isl_gfx30_##func(__VA_ARGS__);               \
       break;                                       \
    default:                                        \
-      unreachable("Unknown hardware generation");  \
+      UNREACHABLE("Unknown hardware generation");  \
    }
 
 /**
@@ -4295,7 +4295,7 @@ isl_surf_get_image_offset_sa(const struct isl_surf *surf,
       break;
 
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -4934,7 +4934,7 @@ isl_surf_get_depth_format(const struct isl_device *dev,
 
    switch (surf->format) {
    default:
-      unreachable("bad isl depth format");
+      UNREACHABLE("bad isl depth format");
    case ISL_FORMAT_R32_FLOAT_X8X24_TYPELESS:
       assert(ISL_GFX_VER(dev) < 7);
       return 0; /* D32_FLOAT_S8X24_UINT */
@@ -5031,7 +5031,7 @@ swizzle_select(enum isl_channel_select chan, struct isl_swizzle swizzle)
    case ISL_CHANNEL_SELECT_ALPHA:
       return swizzle.a;
    default:
-      unreachable("Invalid swizzle component");
+      UNREACHABLE("Invalid swizzle component");
    }
 }
 
@@ -5208,7 +5208,7 @@ isl_format_get_aux_map_encoding(enum isl_format format)
    case ISL_FORMAT_YCRCB_NORMAL: return 0x3;
    case ISL_FORMAT_YCRCB_SWAPY: return 0xB;
    default:
-      unreachable("Unsupported aux-map format!");
+      UNREACHABLE("Unsupported aux-map format!");
       return 0;
    }
 }

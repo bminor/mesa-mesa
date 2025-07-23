@@ -1740,7 +1740,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       max_hs_out_vram_dwords_enum = V_03093C_X_1K_DWORDS;
       break;
    default:
-      unreachable("invalid TCS workgroup size");
+      UNREACHABLE("invalid TCS workgroup size");
    }
 
    /* Vega10 should limit num_workgroups to 508 (127 per SE)
@@ -2247,7 +2247,7 @@ int ac_get_gs_table_depth(enum amd_gfx_level gfx_level, enum radeon_family famil
    case CHIP_VEGAM:
       return 32;
    default:
-      unreachable("Unknown GPU");
+      UNREACHABLE("Unknown GPU");
    }
 }
 

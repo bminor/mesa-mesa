@@ -427,7 +427,7 @@ tu_cs_reserve_space(struct tu_cs *cs, uint32_t reserved_size)
 {
    if (tu_cs_get_space(cs) < reserved_size) {
       if (cs->mode == TU_CS_MODE_EXTERNAL) {
-         unreachable("cannot grow external buffer");
+         UNREACHABLE("cannot grow external buffer");
          return VK_ERROR_OUT_OF_HOST_MEMORY;
       }
 

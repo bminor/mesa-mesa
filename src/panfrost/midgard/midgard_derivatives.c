@@ -65,7 +65,7 @@ mir_derivative_mode(nir_intrinsic_op op)
       return TEXTURE_DFDY;
 
    default:
-      unreachable("Invalid derivative op");
+      UNREACHABLE("Invalid derivative op");
    }
 }
 

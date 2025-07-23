@@ -388,7 +388,7 @@ static void si_create_fence_fd(struct pipe_context *ctx, struct pipe_fence_handl
       break;
 
    default:
-      unreachable("bad fence fd type when importing");
+      UNREACHABLE("bad fence fd type when importing");
    }
 
 finish:

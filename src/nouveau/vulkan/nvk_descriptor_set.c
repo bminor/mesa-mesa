@@ -1101,6 +1101,6 @@ nvk_GetDescriptorEXT(VkDevice _device,
       break;
 
    default:
-      unreachable("Unknown descriptor type");
+      UNREACHABLE("Unknown descriptor type");
    }
 }

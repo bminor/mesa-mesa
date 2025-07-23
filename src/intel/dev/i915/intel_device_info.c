@@ -429,7 +429,7 @@ has_bit6_swizzle(int fd)
    };
 
    if (intel_ioctl(fd, DRM_IOCTL_I915_GEM_CREATE, &gem_create)) {
-      unreachable("Failed to create GEM BO");
+      UNREACHABLE("Failed to create GEM BO");
       return false;
    }
 
@@ -445,7 +445,7 @@ has_bit6_swizzle(int fd)
    };
 
    if (intel_ioctl(fd, DRM_IOCTL_I915_GEM_SET_TILING, &set_tiling)) {
-      unreachable("Failed to set BO tiling");
+      UNREACHABLE("Failed to set BO tiling");
       goto close_and_return;
    }
 
@@ -454,7 +454,7 @@ has_bit6_swizzle(int fd)
    };
 
    if (intel_ioctl(fd, DRM_IOCTL_I915_GEM_GET_TILING, &get_tiling)) {
-      unreachable("Failed to get BO tiling");
+      UNREACHABLE("Failed to get BO tiling");
       goto close_and_return;
    }
 
@@ -479,7 +479,7 @@ has_get_tiling(int fd)
    };
 
    if (intel_ioctl(fd, DRM_IOCTL_I915_GEM_CREATE, &gem_create)) {
-      unreachable("Failed to create GEM BO");
+      UNREACHABLE("Failed to create GEM BO");
       return false;
    }
 

@@ -98,7 +98,7 @@ panvk_per_arch(panvk_instr_begin_work)(enum panvk_subqueue_id id,
       trace_begin_sync_wait(&cmdbuf->utrace.uts[id], &cs_info);
       break;
    default:
-      unreachable("unsupported panvk_instr_work_type");
+      UNREACHABLE("unsupported panvk_instr_work_type");
    }
 }
 
@@ -145,6 +145,6 @@ panvk_per_arch(panvk_instr_end_work_async)(
       trace_end_sync_wait(&cmdbuf->utrace.uts[id], &cs_info);
       break;
    default:
-      unreachable("unsupported panvk_instr_work_type");
+      UNREACHABLE("unsupported panvk_instr_work_type");
    }
 }

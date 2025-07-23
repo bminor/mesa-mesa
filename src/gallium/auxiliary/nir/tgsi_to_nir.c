@@ -174,7 +174,7 @@ ttn_get_depth_layout(unsigned tgsi_fs_depth_layout)
    case TGSI_FS_DEPTH_LAYOUT_UNCHANGED:
       return FRAG_DEPTH_LAYOUT_UNCHANGED;
    default:
-      unreachable("bad TGSI FS depth layout");
+      UNREACHABLE("bad TGSI FS depth layout");
    }
 }
 
@@ -191,7 +191,7 @@ ttn_translate_interp_mode(unsigned tgsi_interp)
    case TGSI_INTERPOLATE_COLOR:
       return INTERP_MODE_NONE;
    default:
-      unreachable("bad TGSI interpolation mode");
+      UNREACHABLE("bad TGSI interpolation mode");
    }
 }
 
@@ -450,7 +450,7 @@ ttn_emit_declaration(struct ttn_compile *c)
             var->data.location = idx;
             break;
          default:
-            unreachable("bad declaration file");
+            UNREACHABLE("bad declaration file");
             return;
          }
 
@@ -633,7 +633,7 @@ ttn_src_for_file_and_index(struct ttn_compile *c, unsigned file, unsigned index,
          b->shader->info.fs.uses_sample_shading = true;
          break;
       default:
-         unreachable("bad system value");
+         UNREACHABLE("bad system value");
       }
 
       if (load->num_components == 2)
@@ -674,7 +674,7 @@ ttn_src_for_file_and_index(struct ttn_compile *c, unsigned file, unsigned index,
                                                       c->outputs[index]);
          return nir_src_for_ssa(nir_load_deref(&c->build, deref));
       }
-      unreachable("unsupported output read");
+      UNREACHABLE("unsupported output read");
       break;
 
    case TGSI_FILE_CONSTANT: {
@@ -751,7 +751,7 @@ ttn_src_for_file_and_index(struct ttn_compile *c, unsigned file, unsigned index,
    }
 
    default:
-      unreachable("bad src file");
+      UNREACHABLE("bad src file");
    }
 
 
@@ -1082,7 +1082,7 @@ base_type_for_alu_type(nir_alu_type type)
    case nir_type_uint:
       return GLSL_TYPE_UINT;
    default:
-      unreachable("invalid type");
+      UNREACHABLE("invalid type");
    }
 }
 
@@ -1543,7 +1543,7 @@ ttn_mem(struct ttn_compile *c, nir_def **src)
       addr_src_index = 0;
       break;
    default:
-      unreachable("unexpected memory opcode");
+      UNREACHABLE("unexpected memory opcode");
    }
 
    if (file == TGSI_FILE_BUFFER) {
@@ -1557,7 +1557,7 @@ ttn_mem(struct ttn_compile *c, nir_def **src)
          op = nir_intrinsic_store_ssbo;
          break;
       default:
-         unreachable("unexpected buffer opcode");
+         UNREACHABLE("unexpected buffer opcode");
       }
 
       add_ssbo_var(c, resource_index);
@@ -1588,7 +1588,7 @@ ttn_mem(struct ttn_compile *c, nir_def **src)
          op = nir_intrinsic_image_deref_store;
          break;
       default:
-         unreachable("unexpected file opcode");
+         UNREACHABLE("unexpected file opcode");
       }
 
       instr = nir_intrinsic_instr_create(b->shader, op);
@@ -1634,7 +1634,7 @@ ttn_mem(struct ttn_compile *c, nir_def **src)
 
       instr->num_components = num_components;
    } else {
-      unreachable("unexpected file");
+      UNREACHABLE("unexpected file");
    }
 
 
@@ -2343,7 +2343,7 @@ ttn_compile_init(const void *tgsi_tokens,
          if (value) {
             fprintf(stderr, "tgsi_to_nir: unhandled TGSI property %u = %u\n",
                     i, value);
-            unreachable("unhandled TGSI property");
+            UNREACHABLE("unhandled TGSI property");
          }
       }
    }

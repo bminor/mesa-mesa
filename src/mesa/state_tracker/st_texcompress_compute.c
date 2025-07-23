@@ -188,11 +188,11 @@ bind_compute_state(struct st_context *st,
    }
 
    if (prog->affected_states & ST_NEW_CS_UBOS) {
-      unreachable("Uniform buffer objects not handled");
+      UNREACHABLE("Uniform buffer objects not handled");
    }
 
    if (prog->affected_states & ST_NEW_CS_ATOMICS) {
-      unreachable("Atomic buffer objects not handled");
+      UNREACHABLE("Atomic buffer objects not handled");
    }
 
    if (prog->affected_states & ST_NEW_CS_SSBOS) {

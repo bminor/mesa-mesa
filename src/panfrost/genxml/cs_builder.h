@@ -1100,9 +1100,9 @@ cs_invert_cond(enum mali_cs_condition cond)
    case MALI_CS_CONDITION_GEQUAL:
       return MALI_CS_CONDITION_LESS;
    case MALI_CS_CONDITION_ALWAYS:
-      unreachable("cannot invert ALWAYS");
+      UNREACHABLE("cannot invert ALWAYS");
    default:
-      unreachable("invalid cond");
+      UNREACHABLE("invalid cond");
    }
 }
 
@@ -1146,7 +1146,7 @@ cs_branch_label_cond64(struct cs_builder *b, struct cs_label *label,
       cs_branch_label_cond32(b, label, MALI_CS_CONDITION_EQUAL, val_hi);
       break;
    default:
-      unreachable("unsupported 64bit condition");
+      UNREACHABLE("unsupported 64bit condition");
    }
 
    cs_set_label(b, &false_label);

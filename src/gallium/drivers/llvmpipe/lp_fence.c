@@ -184,7 +184,7 @@ lp_fence_signalled(struct lp_fence *f)
    }
 #endif
 
-   unreachable("Fence is an unknown type");
+   UNREACHABLE("Fence is an unknown type");
    return false;
 }
 
@@ -248,7 +248,7 @@ lp_fence_timedwait(struct lp_fence *f, uint64_t timeout)
    }
 #endif
 
-   unreachable("Fence is an unknown type");
+   UNREACHABLE("Fence is an unknown type");
    return false;
 }
 

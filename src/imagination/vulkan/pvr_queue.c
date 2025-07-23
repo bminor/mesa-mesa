@@ -680,7 +680,7 @@ static VkResult pvr_process_event_cmd(struct pvr_device *device,
    case PVR_EVENT_TYPE_BARRIER:
       return pvr_process_event_cmd_barrier(device, queue, &sub_cmd->barrier);
    default:
-      unreachable("Invalid event sub-command type.");
+      UNREACHABLE("Invalid event sub-command type.");
    };
 }
 

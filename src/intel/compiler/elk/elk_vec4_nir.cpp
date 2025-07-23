@@ -83,7 +83,7 @@ vec4_visitor::nir_emit_cf_list(exec_list *list)
          break;
 
       default:
-         unreachable("Invalid CFG node block");
+         UNREACHABLE("Invalid CFG node block");
       }
    }
 }
@@ -160,7 +160,7 @@ vec4_visitor::nir_emit_instr(nir_instr *instr)
       break;
 
    default:
-      unreachable("VS instruction not yet implemented by NIR->vec4");
+      UNREACHABLE("VS instruction not yet implemented by NIR->vec4");
    }
 }
 
@@ -569,7 +569,7 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
       break;
 
    case nir_intrinsic_load_vertex_id:
-      unreachable("should be lowered by vertex_id_zero_based");
+      UNREACHABLE("should be lowered by vertex_id_zero_based");
 
    case nir_intrinsic_load_vertex_id_zero_base:
    case nir_intrinsic_load_base_vertex:
@@ -577,7 +577,7 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
    case nir_intrinsic_load_base_instance:
    case nir_intrinsic_load_draw_id:
    case nir_intrinsic_load_invocation_id:
-      unreachable("should be lowered by elk_nir_lower_vs_inputs()");
+      UNREACHABLE("should be lowered by elk_nir_lower_vs_inputs()");
 
    case nir_intrinsic_load_uniform: {
       /* Offsets are in bytes but they should always be multiples of 4 */
@@ -751,7 +751,7 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
    }
 
    default:
-      unreachable("Unknown intrinsic");
+      UNREACHABLE("Unknown intrinsic");
    }
 }
 
@@ -857,7 +857,7 @@ vec4_visitor::emit_conversion_from_double(dst_reg dst, src_reg src)
       op = ELK_VEC4_OPCODE_DOUBLE_TO_F32;
       break;
    default:
-      unreachable("Unknown conversion");
+      UNREACHABLE("Unknown conversion");
    }
 
    dst_reg temp = dst_reg(this, glsl_dvec4_type());
@@ -1007,7 +1007,7 @@ try_immediate_source(const nir_alu_instr *instr, src_reg *op,
    }
 
    default:
-      unreachable("Non-32bit type.");
+      UNREACHABLE("Non-32bit type.");
    }
 
    /* If the instruction has more than one source, the instruction format only
@@ -1114,7 +1114,7 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
    case nir_op_vec2:
    case nir_op_vec3:
    case nir_op_vec4:
-      unreachable("not reached: should be handled by lower_vec_to_movs()");
+      UNREACHABLE("not reached: should be handled by lower_vec_to_movs()");
 
    case nir_op_i2f32:
    case nir_op_u2f32:
@@ -1284,7 +1284,7 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
    }
 
    case nir_op_ldexp:
-      unreachable("not reached: should be handled by ldexp_to_arith()");
+      UNREACHABLE("not reached: should be handled by ldexp_to_arith()");
 
    case nir_op_fsqrt:
       inst = emit_math(ELK_SHADER_OPCODE_SQRT, dst, op[0]);
@@ -1487,16 +1487,16 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
    case nir_op_unpack_half_2x16_split_x:
    case nir_op_unpack_half_2x16_split_y:
    case nir_op_pack_half_2x16_split:
-      unreachable("not reached: should not occur in vertex shader");
+      UNREACHABLE("not reached: should not occur in vertex shader");
 
    case nir_op_unpack_snorm_2x16:
    case nir_op_unpack_unorm_2x16:
    case nir_op_pack_snorm_2x16:
    case nir_op_pack_unorm_2x16:
-      unreachable("not reached: should be handled by lower_packing_builtins");
+      UNREACHABLE("not reached: should be handled by lower_packing_builtins");
 
    case nir_op_pack_uvec4_to_uint:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
 
    case nir_op_pack_uvec2_to_uint: {
       dst_reg tmp1 = dst_reg(this, glsl_uint_type());
@@ -1623,7 +1623,7 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
 
    case nir_op_ubitfield_extract:
    case nir_op_ibitfield_extract:
-      unreachable("should have been lowered");
+      UNREACHABLE("should have been lowered");
    case nir_op_ubfe:
    case nir_op_ibfe:
       assert(instr->def.bit_size < 64);
@@ -1649,7 +1649,7 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
       break;
 
    case nir_op_bitfield_insert:
-      unreachable("not reached: should have been lowered");
+      UNREACHABLE("not reached: should have been lowered");
 
    case nir_op_fsign:
        if (type_sz(op[0].type) < 8) {
@@ -1668,7 +1668,7 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
          inst->predicate = ELK_PREDICATE_NORMAL;
          dst.type = ELK_REGISTER_TYPE_F;
       } else {
-          unreachable("Should have been lowered by nir_opt_algebraic.");
+          UNREACHABLE("Should have been lowered by nir_opt_algebraic.");
       }
       break;
 
@@ -1753,17 +1753,17 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
       break;
 
    case nir_op_fdiv:
-      unreachable("not reached: should be lowered by lower_fdiv in the compiler");
+      UNREACHABLE("not reached: should be lowered by lower_fdiv in the compiler");
 
    case nir_op_fmod:
-      unreachable("not reached: should be lowered by lower_fmod in the compiler");
+      UNREACHABLE("not reached: should be lowered by lower_fmod in the compiler");
 
    case nir_op_fsub:
    case nir_op_isub:
-      unreachable("not reached: should be handled by ir_sub_to_add_neg");
+      UNREACHABLE("not reached: should be handled by ir_sub_to_add_neg");
 
    default:
-      unreachable("Unimplemented ALU operation");
+      UNREACHABLE("Unimplemented ALU operation");
    }
 
    /* If we need to do a boolean resolve, replace the result with -(x & 1)
@@ -1796,7 +1796,7 @@ vec4_visitor::nir_emit_jump(nir_jump_instr *instr)
    case nir_jump_return:
       FALLTHROUGH;
    default:
-      unreachable("unknown jump");
+      UNREACHABLE("unknown jump");
    }
 }
 
@@ -1910,13 +1910,13 @@ vec4_visitor::nir_emit_texture(nir_tex_instr *instr)
       }
 
       case nir_tex_src_projector:
-         unreachable("Should be lowered by nir_lower_tex");
+         UNREACHABLE("Should be lowered by nir_lower_tex");
 
       case nir_tex_src_bias:
-         unreachable("LOD bias is not valid for vertex shaders.\n");
+         UNREACHABLE("LOD bias is not valid for vertex shaders.\n");
 
       default:
-         unreachable("unknown texture source");
+         UNREACHABLE("unknown texture source");
       }
    }
 
@@ -1966,9 +1966,9 @@ vec4_visitor::nir_emit_texture(nir_tex_instr *instr)
    }
    case nir_texop_txb:
    case nir_texop_lod:
-      unreachable("Implicit LOD is only valid inside fragment shaders.");
+      UNREACHABLE("Implicit LOD is only valid inside fragment shaders.");
    default:
-      unreachable("Unrecognized tex op");
+      UNREACHABLE("Unrecognized tex op");
    }
 
    vec4_instruction *inst = new(mem_ctx) vec4_instruction(opcode, dest);

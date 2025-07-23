@@ -516,7 +516,7 @@ lower_var_bit_size_types(nir_variable *var, unsigned min_bit_size, unsigned max_
                var->constant_initializer->elements[i]->values[0].i16 = var->constant_initializer->elements[i]->values[0].i8;
             break;
          case GLSL_TYPE_UINT8: base_type = GLSL_TYPE_UINT16; break;
-         default: unreachable("Unexpected base type");
+         default: UNREACHABLE("Unexpected base type");
          }
          break;
       case 32:
@@ -543,10 +543,10 @@ lower_var_bit_size_types(nir_variable *var, unsigned min_bit_size, unsigned max_
             break;
          case GLSL_TYPE_UINT8: base_type = GLSL_TYPE_UINT; break;
          case GLSL_TYPE_UINT16: base_type = GLSL_TYPE_UINT; break;
-         default: unreachable("Unexpected base type");
+         default: UNREACHABLE("Unexpected base type");
          }
          break;
-      default: unreachable("Unexpected min bit size");
+      default: UNREACHABLE("Unexpected min bit size");
       }
       var->type = glsl_type_wrap_in_arrays(glsl_scalar_type(base_type), var->type);
       return true;
@@ -2016,7 +2016,7 @@ get_cast_type(unsigned bit_size)
    case 8:
       return glsl_int8_t_type();
    }
-   unreachable("Invalid bit_size");
+   UNREACHABLE("Invalid bit_size");
 }
 
 static nir_def *
@@ -2420,7 +2420,7 @@ propagate_input_to_output_dependencies(struct dxil_module *mod, nir_intrinsic_in
             }
             break;
          default:
-            unreachable("Don't expect any other jumps");
+            UNREACHABLE("Don't expect any other jumps");
          }
          break;
       }
@@ -2511,7 +2511,7 @@ get_format_for_var(unsigned num_comps, enum glsl_base_type sampled_type)
       case 2: return PIPE_FORMAT_R32G32_SINT;
       case 3: return PIPE_FORMAT_R32G32B32_SINT;
       case 4: return PIPE_FORMAT_R32G32B32A32_SINT;
-      default: unreachable("Invalid num_comps");
+      default: UNREACHABLE("Invalid num_comps");
       }
    case GLSL_TYPE_UINT:
    case GLSL_TYPE_UINT64:
@@ -2521,7 +2521,7 @@ get_format_for_var(unsigned num_comps, enum glsl_base_type sampled_type)
       case 2: return PIPE_FORMAT_R32G32_UINT;
       case 3: return PIPE_FORMAT_R32G32B32_UINT;
       case 4: return PIPE_FORMAT_R32G32B32A32_UINT;
-      default: unreachable("Invalid num_comps");
+      default: UNREACHABLE("Invalid num_comps");
       }
    case GLSL_TYPE_FLOAT:
    case GLSL_TYPE_FLOAT16:
@@ -2531,9 +2531,9 @@ get_format_for_var(unsigned num_comps, enum glsl_base_type sampled_type)
       case 2: return PIPE_FORMAT_R32G32_FLOAT;
       case 3: return PIPE_FORMAT_R32G32B32_FLOAT;
       case 4: return PIPE_FORMAT_R32G32B32A32_FLOAT;
-      default: unreachable("Invalid num_comps");
+      default: UNREACHABLE("Invalid num_comps");
       }
-   default: unreachable("Invalid sampler return type");
+   default: UNREACHABLE("Invalid sampler return type");
    }
 }
 

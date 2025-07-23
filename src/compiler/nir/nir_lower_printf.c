@@ -258,7 +258,7 @@ nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list 
          arg_size = 8;
          break;
       default:
-         unreachable("invalid");
+         UNREACHABLE("invalid");
       }
 
       ASSERTED nir_def *def = va_arg(ap, nir_def *);

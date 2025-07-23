@@ -374,7 +374,7 @@ _mesa_texture_index_to_sampler_dim(gl_texture_index index, bool *is_array)
    case NUM_TEXTURE_TARGETS:
       break;
    }
-   unreachable("unknown texture target");
+   UNREACHABLE("unknown texture target");
 }
 
 static nir_def *

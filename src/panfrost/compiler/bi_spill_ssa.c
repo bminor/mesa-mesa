@@ -333,7 +333,7 @@ remat_to(bi_builder *b, bi_index dst, struct spill_ctx *ctx, unsigned node)
       assert(dst.type == BI_INDEX_NORMAL);
       return bi_mov_i32_to(b, dst, I->src[0]);
    default:
-      unreachable("invalid remat");
+      UNREACHABLE("invalid remat");
    }
 }
 

@@ -197,7 +197,7 @@ to_dxil_shader_stage(VkShaderStageFlagBits in)
    case VK_SHADER_STAGE_GEOMETRY_BIT: return DXIL_SPIRV_SHADER_GEOMETRY;
    case VK_SHADER_STAGE_FRAGMENT_BIT: return DXIL_SPIRV_SHADER_FRAGMENT;
    case VK_SHADER_STAGE_COMPUTE_BIT: return DXIL_SPIRV_SHADER_COMPUTE;
-   default: unreachable("Unsupported stage");
+   default: UNREACHABLE("Unsupported stage");
    }
 }
 
@@ -336,7 +336,7 @@ adjust_to_bindless_cb(struct dxil_spirv_binding_remapping *inout, void *context)
       inout->binding = new_binding;
       break;
    default:
-      unreachable("Invalid binding type");
+      UNREACHABLE("Invalid binding type");
    }
 }
 
@@ -513,7 +513,7 @@ dzn_pipeline_get_gfx_shader_slot(D3D12_PIPELINE_STATE_STREAM_DESC *stream,
       d3d12_gfx_pipeline_state_stream_new_desc(stream, PS, D3D12_SHADER_BYTECODE, desc);
       return desc;
    }
-   default: unreachable("Unsupported stage");
+   default: UNREACHABLE("Unsupported stage");
    }
 }
 
@@ -1217,7 +1217,7 @@ to_prim_topology_type(VkPrimitiveTopology in)
       return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
       return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
-   default: unreachable("Invalid primitive topology");
+   default: UNREACHABLE("Invalid primitive topology");
    }
 }
 
@@ -1240,7 +1240,7 @@ to_prim_topology(VkPrimitiveTopology in, unsigned patch_control_points, bool sup
    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
       assert(patch_control_points);
       return (D3D12_PRIMITIVE_TOPOLOGY)(D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST + patch_control_points - 1);
-   default: unreachable("Invalid primitive topology");
+   default: UNREACHABLE("Invalid primitive topology");
    }
 }
 
@@ -1293,7 +1293,7 @@ translate_polygon_mode(VkPolygonMode in)
    case VK_POLYGON_MODE_POINT:
       /* This is handled elsewhere */
       return D3D12_FILL_MODE_SOLID;
-   default: unreachable("Unsupported polygon mode");
+   default: UNREACHABLE("Unsupported polygon mode");
    }
 }
 
@@ -1306,7 +1306,7 @@ translate_cull_mode(VkCullModeFlags in)
    case VK_CULL_MODE_BACK_BIT: return D3D12_CULL_MODE_BACK;
    /* Front+back face culling is equivalent to 'rasterization disabled' */
    case VK_CULL_MODE_FRONT_AND_BACK: return D3D12_CULL_MODE_NONE;
-   default: unreachable("Unsupported cull mode");
+   default: UNREACHABLE("Unsupported cull mode");
    }
 }
 
@@ -1437,7 +1437,7 @@ translate_stencil_op(VkStencilOp in)
    case VK_STENCIL_OP_INCREMENT_AND_WRAP: return D3D12_STENCIL_OP_INCR;
    case VK_STENCIL_OP_DECREMENT_AND_WRAP: return D3D12_STENCIL_OP_DECR;
    case VK_STENCIL_OP_INVERT: return D3D12_STENCIL_OP_INVERT;
-   default: unreachable("Invalid stencil op");
+   default: UNREACHABLE("Invalid stencil op");
    }
 }
 
@@ -1650,7 +1650,7 @@ translate_blend_factor(VkBlendFactor in, bool is_alpha, bool support_alpha_blend
    case VK_BLEND_FACTOR_SRC1_ALPHA: return D3D12_BLEND_SRC1_ALPHA;
    case VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA: return D3D12_BLEND_INV_SRC1_ALPHA;
    case VK_BLEND_FACTOR_SRC_ALPHA_SATURATE: return D3D12_BLEND_SRC_ALPHA_SAT;
-   default: unreachable("Invalid blend factor");
+   default: UNREACHABLE("Invalid blend factor");
    }
 }
 
@@ -1663,7 +1663,7 @@ translate_blend_op(VkBlendOp in)
    case VK_BLEND_OP_REVERSE_SUBTRACT: return D3D12_BLEND_OP_REV_SUBTRACT;
    case VK_BLEND_OP_MIN: return D3D12_BLEND_OP_MIN;
    case VK_BLEND_OP_MAX: return D3D12_BLEND_OP_MAX;
-   default: unreachable("Invalid blend op");
+   default: UNREACHABLE("Invalid blend op");
    }
 }
 
@@ -1687,7 +1687,7 @@ translate_logic_op(VkLogicOp in)
    case VK_LOGIC_OP_OR_INVERTED: return D3D12_LOGIC_OP_OR_INVERTED;
    case VK_LOGIC_OP_NAND: return D3D12_LOGIC_OP_NAND;
    case VK_LOGIC_OP_SET: return D3D12_LOGIC_OP_SET;
-   default: unreachable("Invalid logic op");
+   default: UNREACHABLE("Invalid logic op");
    }
 }
 
@@ -1946,7 +1946,7 @@ dzn_graphics_pipeline_create(struct dzn_device *device,
          case VK_DYNAMIC_STATE_LINE_WIDTH:
             /* Nothing to do since we just support lineWidth = 1. */
             break;
-         default: unreachable("Unsupported dynamic state");
+         default: UNREACHABLE("Unsupported dynamic state");
          }
       }
    }

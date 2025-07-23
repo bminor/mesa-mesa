@@ -505,7 +505,7 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             break;
          }
          default:
-            unreachable("Unsupported ML operation type");
+            UNREACHABLE("Unsupported ML operation type");
       }
 
       for (int i = 0; i < poperation->output_count; i++) {
@@ -629,7 +629,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
       case PIPE_ML_OPERATION_TYPE_TRANSPOSE:
          break;
       default:
-         unreachable("Unsupported ML operation type");
+         UNREACHABLE("Unsupported ML operation type");
       }
    }
 
@@ -937,7 +937,7 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
                dump_bo(operation->coefficients, "compressed", i, 0, 0, 0);
                break;
             default:
-               unreachable("Unsupported ML operation type");
+               UNREACHABLE("Unsupported ML operation type");
          }
       }
 
@@ -970,7 +970,7 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
             etna_ml_emit_operation_nn(subgraph, operation, i);
             break;
          default:
-            unreachable("Unsupported ML operation type");
+            UNREACHABLE("Unsupported ML operation type");
       }
 
       if (DBG_ENABLED(ETNA_DBG_NPU_NO_BATCHING)) {

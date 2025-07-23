@@ -137,7 +137,7 @@ will_lower_ffma(nir_shader *shader, unsigned bit_size)
    case 64:
       return shader->options->lower_ffma64;
    }
-   unreachable("bad bit size");
+   UNREACHABLE("bad bit size");
 }
 
 static nir_def *

@@ -976,7 +976,7 @@ vstride_from_align1_3src_vstride(const struct intel_device_info *devinfo,
    case ELK_ALIGN1_3SRC_VERTICAL_STRIDE_4: return ELK_VERTICAL_STRIDE_4;
    case ELK_ALIGN1_3SRC_VERTICAL_STRIDE_8: return ELK_VERTICAL_STRIDE_8;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -989,7 +989,7 @@ hstride_from_align1_3src_hstride(enum gfx10_align1_3src_src_horizontal_stride hs
    case ELK_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_2: return ELK_HORIZONTAL_STRIDE_2;
    case ELK_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_4: return ELK_HORIZONTAL_STRIDE_4;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -1002,7 +1002,7 @@ vstride_from_align1_3src_hstride(enum gfx10_align1_3src_src_horizontal_stride hs
    case ELK_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_2: return ELK_VERTICAL_STRIDE_2;
    case ELK_ALIGN1_3SRC_SRC_HORIZONTAL_STRIDE_4: return ELK_VERTICAL_STRIDE_4;
    default:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 
@@ -1027,7 +1027,7 @@ implied_width(enum elk_vertical_stride _vert_stride,
       case ELK_VERTICAL_STRIDE_8: return ELK_WIDTH_8;
       case ELK_VERTICAL_STRIDE_0:
       default:
-         unreachable("not reached");
+         UNREACHABLE("not reached");
       }
 
    } else {

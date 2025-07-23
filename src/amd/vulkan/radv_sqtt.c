@@ -43,7 +43,7 @@ radv_ip_to_queue_family(enum amd_ip_type t)
    case AMD_IP_SDMA:
       return RADV_QUEUE_TRANSFER;
    default:
-      unreachable("Unknown IP type");
+      UNREACHABLE("Unknown IP type");
    }
 }
 
@@ -544,7 +544,7 @@ radv_begin_sqtt(struct radv_queue *queue)
       radeon_emit(0);
       break;
    default:
-      unreachable("Incorrect queue family");
+      UNREACHABLE("Incorrect queue family");
       break;
    }
 
@@ -621,7 +621,7 @@ radv_end_sqtt(struct radv_queue *queue)
       radeon_emit(0);
       break;
    default:
-      unreachable("Incorrect queue family");
+      UNREACHABLE("Incorrect queue family");
       break;
    }
 

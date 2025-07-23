@@ -344,7 +344,7 @@ tu6_tex_filter(VkFilter filter, unsigned aniso)
    case VK_FILTER_CUBIC_EXT:
       return A6XX_TEX_CUBIC;
    default:
-      unreachable("illegal texture filter");
+      UNREACHABLE("illegal texture filter");
       break;
    }
 }
@@ -384,7 +384,7 @@ tu6_polygon_mode(VkPolygonMode mode)
    case VK_POLYGON_MODE_FILL:
       return POLYMODE6_TRIANGLES;
    default:
-      unreachable("bad polygon mode");
+      UNREACHABLE("bad polygon mode");
    }
 }
 

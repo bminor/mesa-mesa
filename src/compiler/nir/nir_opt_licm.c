@@ -115,7 +115,7 @@ visit_cf_list(struct exec_list *list, nir_block *preheader, nir_block *exit)
          break;
       }
       case nir_cf_node_function:
-         unreachable("NIR LICM: Unsupported cf_node type.");
+         UNREACHABLE("NIR LICM: Unsupported cf_node type.");
       }
    }
 

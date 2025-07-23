@@ -1106,7 +1106,7 @@ add_op_as_mul_op(enum v3d_qpu_add_op op)
         case V3D_QPU_A_SUB:
                 return V3D_QPU_M_SUB;
         default:
-                unreachable("unexpected add opcode");
+                UNREACHABLE("unexpected add opcode");
         }
 }
 
@@ -1171,7 +1171,7 @@ mul_op_as_add_op(enum v3d_qpu_mul_op op)
         case V3D_QPU_M_FMOV:
                 return V3D_QPU_A_FMOV;
         default:
-                unreachable("unexpected mov opcode");
+                UNREACHABLE("unexpected mov opcode");
         }
 }
 

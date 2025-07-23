@@ -266,7 +266,7 @@ nvk_get_drm_format_modifier_properties_list(const struct nvk_physical_device *pd
    }
 
    default:
-      unreachable("Invalid structure type");
+      UNREACHABLE("Invalid structure type");
    }
 }
 
@@ -315,7 +315,7 @@ nvk_image_max_dimension(const struct nv_device_info *info,
    case VK_IMAGE_TYPE_3D:
       return 0x4000;
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
 }
 
@@ -477,7 +477,7 @@ nvk_GetPhysicalDeviceImageFormatProperties2(
       maxArraySize = 1;
       break;
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
    if (pImageFormatInfo->tiling == VK_IMAGE_TILING_LINEAR)
       maxArraySize = 1;
@@ -540,7 +540,7 @@ nvk_GetPhysicalDeviceImageFormatProperties2(
          tiling_has_explicit_layout = false;
          break;
       default:
-         unreachable("Unsupported VkImageTiling");
+         UNREACHABLE("Unsupported VkImageTiling");
       }
 
       switch (external_info->handleType) {
@@ -673,7 +673,7 @@ vk_image_type_to_nil_dim(VkImageType type)
    case VK_IMAGE_TYPE_2D:  return NIL_IMAGE_DIM_2D;
    case VK_IMAGE_TYPE_3D:  return NIL_IMAGE_DIM_3D;
    default:
-      unreachable("Invalid image type");
+      UNREACHABLE("Invalid image type");
    }
 }
 

@@ -358,7 +358,7 @@ public:
       case s_lshl:
          return aco_opcode::s_lshl_b32;
       default:
-         unreachable("Unsupported wave specific opcode.");
+         UNREACHABLE("Unsupported wave specific opcode.");
       }
    }
 

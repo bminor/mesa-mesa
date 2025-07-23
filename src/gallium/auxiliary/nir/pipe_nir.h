@@ -43,7 +43,7 @@ pipe_shader_from_nir(struct pipe_context *pipe, nir_shader *nir)
    }
 
    default:
-      unreachable("unexpected shader stage");
+      UNREACHABLE("unexpected shader stage");
    }
 }
 

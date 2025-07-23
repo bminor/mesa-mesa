@@ -3852,7 +3852,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_performance_configuration_intel, base,
       genX_thing = &gfx8_##thing;               \
       break;                                    \
    default:                                     \
-      unreachable("Unknown hardware generation"); \
+      UNREACHABLE("Unknown hardware generation"); \
    }                                            \
    genX_thing;                                  \
 })

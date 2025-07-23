@@ -202,5 +202,5 @@ radv_test::get_pipeline_hash(VkShaderStageFlags stage)
          return stats[i].value.u64;
    }
 
-   unreachable("Driver pipeline hash not found");
+   UNREACHABLE("Driver pipeline hash not found");
 }

@@ -44,7 +44,7 @@ static void pvr_image_init_memlayout(struct pvr_image *image)
 {
    switch (image->vk.tiling) {
    default:
-      unreachable("bad VkImageTiling");
+      UNREACHABLE("bad VkImageTiling");
    case VK_IMAGE_TILING_OPTIMAL:
       if (image->vk.wsi_legacy_scanout)
          image->memlayout = PVR_MEMLAYOUT_LINEAR;

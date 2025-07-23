@@ -588,7 +588,7 @@ evaluate_${name}(nir_const_value *_dst_val,
       % endfor
 
       default:
-         unreachable("unknown bit width");
+         UNREACHABLE("unknown bit width");
       }
    % else:
       ${evaluate_op(op, 0, execution_mode)}
@@ -614,7 +614,7 @@ nir_eval_const_opcode(nir_op op, nir_const_value *dest,
       return;
 % endfor
    default:
-      unreachable("shouldn't get here");
+      UNREACHABLE("shouldn't get here");
    }
 }"""
 

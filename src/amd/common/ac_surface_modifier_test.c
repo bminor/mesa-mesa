@@ -325,7 +325,7 @@ static void test_modifier(const struct radeon_info *info,
                block_size_bits = 18;
                break;
             default:
-               unreachable("invalid swizzle mode");
+               UNREACHABLE("invalid swizzle mode");
             }
          } else {
             switch (surf.u.gfx9.swizzle_mode) {
@@ -365,7 +365,7 @@ static void test_modifier(const struct radeon_info *info,
                block_size_bits = 18;
                break;
             default:
-               unreachable("invalid swizzle mode");
+               UNREACHABLE("invalid swizzle mode");
             }
          }
 

@@ -233,7 +233,7 @@ vn_relax_get_profile(enum vn_relax_reason reason)
       };
    }
 
-   unreachable("unhandled vn_relax_reason");
+   UNREACHABLE("unhandled vn_relax_reason");
 }
 
 struct vn_relax_state

@@ -425,7 +425,7 @@ nouveau_device_new(struct nouveau_object *parent, struct nouveau_device **pdev)
       nvdev->base.info.type = NV_DEVICE_TYPE_SOC;
       break;
    default:
-      unreachable("unhandled nvidia device type");
+      UNREACHABLE("unhandled nvidia device type");
       break;
    }
 

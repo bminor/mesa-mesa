@@ -676,7 +676,7 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
                      else if (src_use == GLSL_CMAT_USE_B)
                         src_use = GLSL_CMAT_USE_A;
                      else
-                        unreachable("unsupported transpose");
+                        UNREACHABLE("unsupported transpose");
                   }
                } else {
                   sat = nir_intrinsic_saturate(intr);

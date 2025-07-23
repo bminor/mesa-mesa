@@ -383,7 +383,7 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
 
    if (nir->info.io_lowered) {
       nir_foreach_variable_with_modes(var, nir, nir_var_shader_in | nir_var_shader_out) {
-         unreachable("no IO variables should be present with lowered IO");
+         UNREACHABLE("no IO variables should be present with lowered IO");
       }
    } else {
       nir_lower_io_passes(nir, false);

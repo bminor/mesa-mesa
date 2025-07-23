@@ -428,11 +428,11 @@ v3dX(clamp_for_format_and_type)(uint32_t rt_type,
         case V3D_INTERNAL_TYPE_32F:
                 return V3D_RENDER_TARGET_TYPE_CLAMP_32F;
         default:
-                unreachable("Unknown internal render target type");
+                UNREACHABLE("Unknown internal render target type");
         }
         return V3D_RENDER_TARGET_TYPE_CLAMP_INVALID;
 #endif
-        unreachable("Wrong V3D_VERSION");
+        UNREACHABLE("Wrong V3D_VERSION");
 }
 
 #if V3D_VERSION >= 71

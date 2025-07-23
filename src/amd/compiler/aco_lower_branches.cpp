@@ -483,7 +483,7 @@ lower_branch_instruction(branch_ctx& ctx, Block& block)
          bld.sopp(aco_opcode::s_cbranch_scc0, target);
       }
       break;
-   default: unreachable("Unknown Pseudo branch instruction!");
+   default: UNREACHABLE("Unknown Pseudo branch instruction!");
    }
 }
 

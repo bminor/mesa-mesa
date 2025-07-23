@@ -612,7 +612,7 @@ iris_bo_busy(struct iris_bo *bo)
       busy = iris_bo_busy_syncobj(bo);
       break;
    default:
-      unreachable("missing");
+      UNREACHABLE("missing");
       busy = true;
    }
 
@@ -676,7 +676,7 @@ get_slabs(struct iris_bufmgr *bufmgr, uint64_t size)
          return slabs;
    }
 
-   unreachable("should have found a valid slab for this size");
+   UNREACHABLE("should have found a valid slab for this size");
 }
 
 /* Return the power of two size of a slab entry matching the input size. */
@@ -1191,7 +1191,7 @@ alloc_fresh_bo(struct iris_bufmgr *bufmgr, uint64_t bo_size, enum bo_alloc_flags
       case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED:
          /* not valid; discrete cards always enable snooping */
       case IRIS_HEAP_MAX:
-         unreachable("invalid heap for BO");
+         UNREACHABLE("invalid heap for BO");
       }
    } else {
       regions[num_regions++] = bufmgr->sys.region;
@@ -1250,7 +1250,7 @@ heap_to_mmap_mode(struct iris_bufmgr *bufmgr, enum iris_heap heap)
       /* compressed bos are not mmaped */
       return IRIS_MMAP_NONE;
    default:
-      unreachable("invalid heap");
+      UNREACHABLE("invalid heap");
    }
 }
 
@@ -1856,7 +1856,7 @@ iris_bo_wait(struct iris_bo *bo, int64_t timeout_ns)
       ret = iris_bo_wait_syncobj(bo, timeout_ns);
       break;
    default:
-      unreachable("missing");
+      UNREACHABLE("missing");
       ret = -1;
    }
 
@@ -1887,7 +1887,7 @@ iris_bufmgr_destroy_global_vm(struct iris_bufmgr *bufmgr)
       iris_xe_destroy_global_vm(bufmgr);
       break;
    default:
-      unreachable("missing");
+      UNREACHABLE("missing");
    }
 }
 
@@ -2385,7 +2385,7 @@ iris_bufmgr_init_global_vm(struct iris_bufmgr *bufmgr)
       /* Xe requires VM */
       return bufmgr->use_global_vm;
    default:
-      unreachable("missing");
+      UNREACHABLE("missing");
       return false;
    }
 }
@@ -2763,7 +2763,7 @@ iris_heap_to_pat_entry(const struct intel_device_info *devinfo,
    case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT:
       return &devinfo->pat.compressed_scanout;
    default:
-      unreachable("invalid heap for platforms using PAT entries");
+      UNREACHABLE("invalid heap for platforms using PAT entries");
    }
 }
 

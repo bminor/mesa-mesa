@@ -71,7 +71,7 @@ screen_create(int gpu_fd, const struct pipe_screen_config *config, struct render
          }
          break;
       default:
-         unreachable("invalid core type");
+         UNREACHABLE("invalid core type");
       }
 
       etna_gpu_del(core);

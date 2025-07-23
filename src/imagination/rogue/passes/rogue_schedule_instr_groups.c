@@ -255,7 +255,7 @@ static void rogue_lower_instr_group_io(rogue_instr *instr,
       break;
 
    default:
-      unreachable("Unsupported instruction group type.");
+      UNREACHABLE("Unsupported instruction group type.");
    }
 }
 
@@ -268,14 +268,14 @@ static inline void rogue_instr_group_put(rogue_instr *instr,
 {
    uint64_t supported_phases = rogue_instr_supported_phases(instr);
    if (!supported_phases)
-      unreachable("Can't schedule pseudo-instructions.");
+      UNREACHABLE("Can't schedule pseudo-instructions.");
    else if (!util_is_power_of_two_or_zero64(supported_phases))
-      unreachable("Multi-phase instructions unsupported.");
+      UNREACHABLE("Multi-phase instructions unsupported.");
 
    enum rogue_instr_phase phase =
       rogue_get_supported_phase(supported_phases, group->header.phases);
    if (phase == ROGUE_INSTR_PHASE_INVALID)
-      unreachable("Failed to schedule group instruction.");
+      UNREACHABLE("Failed to schedule group instruction.");
 
    /* Update phases. */
    instr->group = group;
@@ -351,7 +351,7 @@ static unsigned rogue_reg_bank_bits(const rogue_ref *ref)
    else if (rogue_ref_is_regarray(ref))
       reg = ref->regarray->regs[0];
    else
-      unreachable("Non-register reference.");
+      UNREACHABLE("Non-register reference.");
 
    unsigned bits = util_last_bit(rogue_reg_bank_encoding(reg->class));
    return !bits ? 1 : bits;
@@ -366,7 +366,7 @@ static unsigned rogue_reg_index_bits(const rogue_ref *ref)
    else if (rogue_ref_is_regarray(ref))
       reg = ref->regarray->regs[0];
    else
-      unreachable("Non-register reference.");
+      UNREACHABLE("Non-register reference.");
 
    unsigned bits = util_last_bit(reg->index);
    return !bits ? 1 : bits;
@@ -413,7 +413,7 @@ static void rogue_calc_dsts_size(rogue_instr_group *group)
       return;
    }
 
-   unreachable("Unable to encode instruction group dsts.");
+   UNREACHABLE("Unable to encode instruction group dsts.");
 }
 
 static void rogue_calc_iss_size(rogue_instr_group *group)
@@ -466,7 +466,7 @@ static void rogue_calc_srcs_size(rogue_instr_group *group, bool upper_srcs)
             break;
 
          default:
-            unreachable("IS0 set to unsupported value.");
+            UNREACHABLE("IS0 set to unsupported value.");
          }
       }
    }
@@ -509,7 +509,7 @@ static void rogue_calc_srcs_size(rogue_instr_group *group, bool upper_srcs)
       return;
    }
 
-   unreachable("Unable to encode instruction group srcs.");
+   UNREACHABLE("Unable to encode instruction group srcs.");
 }
 
 #define SM(src_mod) ROGUE_ALU_SRC_MOD_##src_mod
@@ -600,7 +600,7 @@ static void rogue_calc_alu_instrs_size(rogue_instr_group *group,
       break;
 
    default:
-      unreachable("Unsupported alu op.");
+      UNREACHABLE("Unsupported alu op.");
    }
 }
 #undef OM
@@ -698,7 +698,7 @@ static void rogue_calc_backend_instrs_size(rogue_instr_group *group,
       break;
 
    default:
-      unreachable("Unsupported backend op.");
+      UNREACHABLE("Unsupported backend op.");
    }
 }
 #undef OM
@@ -726,7 +726,7 @@ static void rogue_calc_ctrl_instrs_size(rogue_instr_group *group,
       break;
 
    default:
-      unreachable("Unsupported ctrl op.");
+      UNREACHABLE("Unsupported ctrl op.");
    }
 }
 
@@ -748,7 +748,7 @@ static void rogue_calc_bitwise_instrs_size(rogue_instr_group *group,
       break;
 
    default:
-      unreachable("Invalid bitwise op.");
+      UNREACHABLE("Invalid bitwise op.");
    }
 }
 
@@ -779,7 +779,7 @@ static void rogue_calc_instrs_size(rogue_instr_group *group)
          break;
 
       default:
-         unreachable("Unsupported instruction type.");
+         UNREACHABLE("Unsupported instruction type.");
       }
 
       group->size.total += group->size.instrs[p];
@@ -865,7 +865,7 @@ bool rogue_schedule_instr_groups(rogue_shader *shader, bool multi_instr_groups)
       return false;
 
    if (multi_instr_groups) {
-      unreachable("Multi instruction groups are unsupported.");
+      UNREACHABLE("Multi instruction groups are unsupported.");
       return false;
    }
 
@@ -895,7 +895,7 @@ bool rogue_schedule_instr_groups(rogue_shader *shader, bool multi_instr_groups)
             break;
 
          default:
-            unreachable("Unsupported instruction type.");
+            UNREACHABLE("Unsupported instruction type.");
          }
 
          if (!grouping) {

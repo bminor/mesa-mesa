@@ -307,7 +307,7 @@ free_zombie_shaders(struct st_context *st)
          st->pipe->delete_compute_state(st->pipe, entry->shader);
          break;
       default:
-         unreachable("invalid shader type in free_zombie_shaders()");
+         UNREACHABLE("invalid shader type in free_zombie_shaders()");
       }
       free(entry);
    }

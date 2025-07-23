@@ -150,7 +150,7 @@ static uint32_t vk_to_intel_index_type(VkIndexType type)
    case VK_INDEX_TYPE_UINT32:
       return INDEX_DWORD;
    default:
-      unreachable("invalid index type");
+      UNREACHABLE("invalid index type");
    }
 }
 
@@ -253,7 +253,7 @@ get_cps_size(uint32_t size)
    case 4:
       return CPSIZE_4;
    default:
-      unreachable("Invalid size");
+      UNREACHABLE("Invalid size");
    }
 }
 
@@ -450,7 +450,7 @@ anv_raster_polygon_mode(const struct anv_graphics_pipeline *pipeline,
       case MESA_PRIM_TRIANGLES:
          return polygon_mode;
       default:
-         unreachable("invalid primitive type for mesh");
+         UNREACHABLE("invalid primitive type for mesh");
       }
    } else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_GEOMETRY)) {
       switch (get_gs_prog_data(pipeline)->output_topology) {
@@ -471,7 +471,7 @@ anv_raster_polygon_mode(const struct anv_graphics_pipeline *pipeline,
       case _3DPRIM_POLYGON:
          return polygon_mode;
       }
-      unreachable("Unsupported GS output topology");
+      UNREACHABLE("Unsupported GS output topology");
    } else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL)) {
       switch (get_tes_prog_data(pipeline)->output_topology) {
       case INTEL_TESS_OUTPUT_TOPOLOGY_POINT:
@@ -484,7 +484,7 @@ anv_raster_polygon_mode(const struct anv_graphics_pipeline *pipeline,
       case INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CCW:
          return polygon_mode;
       }
-      unreachable("Unsupported TCS output topology");
+      UNREACHABLE("Unsupported TCS output topology");
    } else {
       switch (primitive_topology) {
       case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
@@ -504,7 +504,7 @@ anv_raster_polygon_mode(const struct anv_graphics_pipeline *pipeline,
          return polygon_mode;
 
       default:
-         unreachable("Unsupported primitive topology");
+         UNREACHABLE("Unsupported primitive topology");
       }
    }
 }
@@ -568,7 +568,7 @@ anv_rasterization_mode(VkPolygonMode raster_mode,
          break;
 
       default:
-         unreachable("Unsupported line rasterization mode");
+         UNREACHABLE("Unsupported line rasterization mode");
       }
    } else {
       *api_mode = DX101;
@@ -749,7 +749,7 @@ calculate_tile_dimensions(const struct anv_device *device,
       SET(bit, cmd.TriangleFanProvokingVertexSelect,       2);         \
       break;                                                           \
    default:                                                            \
-      unreachable("Invalid provoking vertex mode");                    \
+      UNREACHABLE("Invalid provoking vertex mode");                    \
    }                                                                   \
 
 #define SETUP_PROVOKING_VERTEX_FSB(bit, cmd, mode)                  \
@@ -767,7 +767,7 @@ calculate_tile_dimensions(const struct anv_device *device,
       SET(bit, cmd.TriangleStripOddProvokingVertexSelect,  1);      \
       break;                                                        \
    default:                                                         \
-      unreachable("Invalid provoking vertex mode");                 \
+      UNREACHABLE("Invalid provoking vertex mode");                 \
    }                                                                \
 
 ALWAYS_INLINE static void
@@ -1034,7 +1034,7 @@ update_provoking_vertex(struct anv_gfx_dynamic_state *hw_state,
       break;
 
    default:
-      unreachable("Invalid provoking vertex mode");
+      UNREACHABLE("Invalid provoking vertex mode");
    }
 }
 
@@ -1894,7 +1894,7 @@ compute_mesh_provoking_vertex(const struct brw_mesh_prog_data *mesh_prog_data,
    case MESA_PRIM_QUAD_STRIP:
       return dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT ? 3 : 0;
    default:
-      unreachable("invalid mesh primitive type");
+      UNREACHABLE("invalid mesh primitive type");
    }
 }
 #endif

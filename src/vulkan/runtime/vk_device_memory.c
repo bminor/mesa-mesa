@@ -79,7 +79,7 @@ vk_device_memory_create(struct vk_device *device,
          mem->ahardware_buffer = ahb_info->buffer;
          break;
 #else
-         unreachable("AHardwareBuffer import requires Android >= 26");
+         UNREACHABLE("AHardwareBuffer import requires Android >= 26");
 #endif /* DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 26 */
       }
 
@@ -122,7 +122,7 @@ vk_device_memory_create(struct vk_device *device,
          }
          break;
 #else
-         unreachable("Win32 platform support disabled");
+         UNREACHABLE("Win32 platform support disabled");
 #endif
       }
 

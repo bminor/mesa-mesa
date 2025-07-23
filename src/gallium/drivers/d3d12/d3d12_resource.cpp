@@ -171,7 +171,7 @@ init_buffer(struct d3d12_screen *screen,
       buf_desc.usage = (pb_usage_flags)(PB_USAGE_GPU_WRITE | PB_USAGE_CPU_READ_WRITE);
       break;
    default:
-      unreachable("Invalid pipe usage");
+      UNREACHABLE("Invalid pipe usage");
    }
 
    /* We can't suballocate buffers that might be bound as a sampler view, *only*
@@ -243,7 +243,7 @@ init_texture(struct d3d12_screen *screen,
       break;
 
    default:
-      unreachable("Invalid texture type");
+      UNREACHABLE("Invalid texture type");
    }
 
    if (templ->bind & PIPE_BIND_SHADER_BUFFER)
@@ -674,7 +674,7 @@ d3d12_resource_from_handle(struct pipe_screen *pscreen,
       res->base.b.depth0 = static_cast<uint16_t>(footprint->Depth);
       break;
    default:
-      unreachable("Invalid dimension");
+      UNREACHABLE("Invalid dimension");
       break;
    }
    res->base.b.nr_samples = static_cast<uint8_t>(incoming_res_desc.SampleDesc.Count);
@@ -1619,7 +1619,7 @@ read_zs_surface(struct d3d12_context *ctx, struct d3d12_resource *res,
                                                     trans->base.b.box.width, trans->base.b.box.height);
       break;
    default:
-      unreachable("Unsupported depth steancil format");
+      UNREACHABLE("Unsupported depth steancil format");
    };
 
    return trans->data;
@@ -1707,7 +1707,7 @@ write_zs_surface(struct pipe_context *pctx, struct d3d12_resource *res,
                                                       trans->base.b.box.height);
       break;
    default:
-      unreachable("Unsupported depth steancil format");
+      UNREACHABLE("Unsupported depth steancil format");
    };
 
    stencil_buffer.unmap();

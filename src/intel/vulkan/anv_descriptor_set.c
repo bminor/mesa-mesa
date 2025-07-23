@@ -122,7 +122,7 @@ anv_indirect_descriptor_data_for_type(VkDescriptorType type)
       break;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 
    /* We also need to push SSBO address ranges so that we can use A64
@@ -188,7 +188,7 @@ anv_direct_descriptor_data_for_type(const struct anv_physical_device *device,
       break;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 
    if (layout_type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_BUFFER) {
@@ -2148,7 +2148,7 @@ anv_image_view_surface_data_for_plane_layout(struct anv_image_view *image_view,
    if (desc_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
       return &image_view->planes[plane].storage.state_data;
 
-   unreachable("Invalid descriptor type");
+   UNREACHABLE("Invalid descriptor type");
 }
 
 static const uint32_t *
@@ -2202,7 +2202,7 @@ anv_descriptor_set_write_image_view(struct anv_device *device,
       break;
 
    default:
-      unreachable("invalid descriptor type");
+      UNREACHABLE("invalid descriptor type");
    }
 
    *desc = (struct anv_descriptor) {
@@ -2347,7 +2347,7 @@ anv_buffer_view_surface_data(struct anv_buffer_view *buffer_view,
    if (desc_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
       return &buffer_view->storage.state_data;
 
-   unreachable("Invalid descriptor type");
+   UNREACHABLE("Invalid descriptor type");
 }
 
 void
@@ -3103,6 +3103,6 @@ void anv_GetDescriptorEXT(
    }
 
    default:
-      unreachable("Invalid descriptor type");
+      UNREACHABLE("Invalid descriptor type");
    }
 }

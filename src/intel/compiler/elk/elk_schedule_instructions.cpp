@@ -459,7 +459,7 @@ elk_schedule_node::set_latency_gfx7(const struct elk_isa_info *isa)
             break;
 
          default:
-            unreachable("Unknown render cache message");
+            UNREACHABLE("Unknown render cache message");
          }
          break;
 
@@ -529,7 +529,7 @@ elk_schedule_node::set_latency_gfx7(const struct elk_isa_info *isa)
             break;
 
          default:
-            unreachable("Unknown data cache message");
+            UNREACHABLE("Unknown data cache message");
          }
          break;
 
@@ -559,7 +559,7 @@ elk_schedule_node::set_latency_gfx7(const struct elk_isa_info *isa)
             break;
 
          default:
-            unreachable("Unknown data cache message");
+            UNREACHABLE("Unknown data cache message");
          }
          break;
 
@@ -572,7 +572,7 @@ elk_schedule_node::set_latency_gfx7(const struct elk_isa_info *isa)
          break;
 
       default:
-         unreachable("Unknown SFID");
+         UNREACHABLE("Unknown SFID");
       }
       break;
 

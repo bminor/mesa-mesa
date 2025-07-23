@@ -874,7 +874,7 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
       gras_lrz_cntl.dir = LRZ_DIR_LE;
       break;
    default:
-      unreachable("bad VK_COMPARE_OP value or uninitialized");
+      UNREACHABLE("bad VK_COMPARE_OP value or uninitialized");
       break;
    };
 

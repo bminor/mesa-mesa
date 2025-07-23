@@ -142,7 +142,7 @@ lower_system_value_instr(nir_builder *b, nir_instr *instr, void *_state)
          return nir_load_barycentric_coord_at_offset(b, 32, intrin->src[1].ssa,
                                                      .interp_mode = interp_mode);
       default:
-         unreachable("Bogus interpolateAt() intrinsic.");
+         UNREACHABLE("Bogus interpolateAt() intrinsic.");
       }
    }
 
@@ -193,7 +193,7 @@ lower_system_value_instr(nir_builder *b, nir_instr *instr, void *_state)
             break;
 
          default:
-            unreachable("unsupported system value array deref");
+            UNREACHABLE("unsupported system value array deref");
          }
       }
       nir_variable *var = deref->var;

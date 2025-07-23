@@ -646,7 +646,7 @@ st_update_array_impl(struct st_context *st)
 void
 st_update_array(struct st_context *st)
 {
-   unreachable("st_init_update_array not called");
+   UNREACHABLE("st_init_update_array not called");
 }
 
 void

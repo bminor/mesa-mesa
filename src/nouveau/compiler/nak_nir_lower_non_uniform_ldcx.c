@@ -184,7 +184,7 @@ hoist_def(nir_def *def, nir_block *target)
       break;
 
    default:
-      unreachable("Cannot hoist instruction");
+      UNREACHABLE("Cannot hoist instruction");
    }
 
    nir_instr_remove(instr);
@@ -480,7 +480,7 @@ lower_cf_list(nir_builder *b, struct exec_list *cf_list,
       }
 
       default:
-         unreachable("Unknown CF node type");
+         UNREACHABLE("Unknown CF node type");
       }
    }
 

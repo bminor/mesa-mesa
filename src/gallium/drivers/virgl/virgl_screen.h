@@ -106,7 +106,7 @@ virgl_shader_stage_convert(enum pipe_shader_type type)
    case PIPE_SHADER_COMPUTE:
       return VIRGL_SHADER_COMPUTE;
    default:
-      unreachable("virgl: unknown shader stage.\n");
+      UNREACHABLE("virgl: unknown shader stage.\n");
    }
 }
 

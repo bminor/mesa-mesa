@@ -84,12 +84,12 @@
       gfx8_##func(__VA_ARGS__);                   \
       break;                                      \
    default:                                       \
-      unreachable("Unknown hardware generation"); \
+      UNREACHABLE("Unknown hardware generation"); \
    }
 
 #ifndef INTEL_USE_ELK
-static inline void gfx8_init_screen_state(struct iris_screen *screen) { unreachable("no elk support"); }
-static inline void gfx8_init_screen_gen_state(struct iris_screen *screen) { unreachable("no elk support"); }
+static inline void gfx8_init_screen_state(struct iris_screen *screen) { UNREACHABLE("no elk support"); }
+static inline void gfx8_init_screen_gen_state(struct iris_screen *screen) { UNREACHABLE("no elk support"); }
 #endif
 
 static const char *

@@ -247,7 +247,7 @@ void
 ReserveReadport::visit(const LocalArray& value)
 {
    (void)value;
-   unreachable("a full array is not available here");
+   UNREACHABLE("a full array is not available here");
 }
 
 void

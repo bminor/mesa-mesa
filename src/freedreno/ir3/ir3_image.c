@@ -125,7 +125,7 @@ ir3_get_type_for_image_intrinsic(const nir_intrinsic_instr *instr)
       break;
 
    default:
-      unreachable("Unhandled NIR image intrinsic");
+      UNREACHABLE("Unhandled NIR image intrinsic");
    }
 
    switch (type) {
@@ -136,7 +136,7 @@ ir3_get_type_for_image_intrinsic(const nir_intrinsic_instr *instr)
    case nir_type_float:
       return bit_size == 16 ? TYPE_F16 : TYPE_F32;
    default:
-      unreachable("bad type");
+      UNREACHABLE("bad type");
    }
 }
 

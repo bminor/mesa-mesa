@@ -427,7 +427,7 @@ vtn_value_type_to_string(enum vtn_value_type t)
    CASE(image_pointer);
    }
 #undef CASE
-   unreachable("unknown value type");
+   UNREACHABLE("unknown value type");
    return "UNKNOWN";
 }
 
@@ -453,7 +453,7 @@ vtn_base_type_to_string(enum vtn_base_type t)
    CASE(cooperative_matrix);
    }
 #undef CASE
-   unreachable("unknown base type");
+   UNREACHABLE("unknown base type");
    return "UNKNOWN";
 }
 
@@ -1111,7 +1111,7 @@ vtn_handle_decoration(struct vtn_builder *b, SpvOp opcode,
          dec->scope = VTN_DEC_EXECUTION_MODE;
          break;
       default:
-         unreachable("Invalid decoration opcode");
+         UNREACHABLE("Invalid decoration opcode");
       }
       dec->decoration = *(w++);
       dec->num_operands = w_end - w;
@@ -1162,7 +1162,7 @@ vtn_handle_decoration(struct vtn_builder *b, SpvOp opcode,
    }
 
    default:
-      unreachable("Unhandled opcode");
+      UNREACHABLE("Unhandled opcode");
    }
 }
 
@@ -3044,7 +3044,7 @@ vtn_mem_semantics_to_nir_mem_semantics(struct vtn_builder *b,
       break;
 
    default:
-      unreachable("Invalid memory order semantics");
+      UNREACHABLE("Invalid memory order semantics");
    }
 
    if (semantics & SpvMemorySemanticsMakeAvailableMask) {
@@ -3931,7 +3931,7 @@ translate_atomic_op(SpvOp opcode)
    case SpvOpAtomicFMaxEXT:             return nir_atomic_op_fmax;
    case SpvOpAtomicFlagTestAndSet:      return nir_atomic_op_cmpxchg;
    default:
-      unreachable("Invalid atomic");
+      UNREACHABLE("Invalid atomic");
    }
 }
 
@@ -4522,7 +4522,7 @@ vtn_handle_atomics(struct vtn_builder *b, SpvOp opcode,
          break;
 
       default:
-         unreachable("Invalid SPIR-V atomic");
+         UNREACHABLE("Invalid SPIR-V atomic");
 
       }
    } else {
@@ -4946,7 +4946,7 @@ vtn_handle_barrier(struct vtn_builder *b, SpvOp opcode,
          nir_end_primitive(&b->nb, stream);
          break;
       default:
-         unreachable("Invalid opcode");
+         UNREACHABLE("Invalid opcode");
       }
       break;
    }
@@ -5008,7 +5008,7 @@ vtn_handle_barrier(struct vtn_builder *b, SpvOp opcode,
    }
 
    default:
-      unreachable("unknown barrier instruction");
+      UNREACHABLE("unknown barrier instruction");
    }
 }
 
@@ -5356,7 +5356,7 @@ vtn_handle_debug_text(struct vtn_builder *b, SpvOp opcode,
       break;
 
    default:
-      unreachable("Unhandled opcode");
+      UNREACHABLE("Unhandled opcode");
    }
 }
 
@@ -6098,7 +6098,7 @@ vtn_handle_ptr(struct vtn_builder *b, SpvOp opcode,
    }
 
    default:
-      unreachable("Invalid ptr operation");
+      UNREACHABLE("Invalid ptr operation");
    }
 
    vtn_push_nir_ssa(b, w[2], def);

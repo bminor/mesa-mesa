@@ -605,7 +605,7 @@ lvp_WriteAccelerationStructuresPropertiesKHR(
    const VkAccelerationStructureKHR *pAccelerationStructures, VkQueryType queryType,
    size_t dataSize, void *pData, size_t stride)
 {
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
@@ -615,7 +615,7 @@ lvp_BuildAccelerationStructuresKHR(
    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos)
 {
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
@@ -635,7 +635,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CopyAccelerationStructureKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation,
                                  const VkCopyAccelerationStructureInfoKHR *pInfo)
 {
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
@@ -643,7 +643,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CopyMemoryToAccelerationStructureKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation,
                                          const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo)
 {
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
@@ -651,7 +651,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CopyAccelerationStructureToMemoryKHR(VkDevice _device, VkDeferredOperationKHR deferredOperation,
                                          const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo)
 {
-   unreachable("Unimplemented");
+   UNREACHABLE("Unimplemented");
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 

@@ -241,7 +241,7 @@ v3d_qpu_cond_name(enum v3d_qpu_cond cond)
         case V3D_QPU_COND_IFNB:
                 return ".ifnb";
         default:
-                unreachable("bad cond value");
+                UNREACHABLE("bad cond value");
         }
 }
 
@@ -264,7 +264,7 @@ v3d_qpu_branch_cond_name(enum v3d_qpu_branch_cond cond)
         case V3D_QPU_BRANCH_COND_ALLNA:
                 return ".allna";
         default:
-                unreachable("bad branch cond value");
+                UNREACHABLE("bad branch cond value");
         }
 }
 
@@ -279,7 +279,7 @@ v3d_qpu_msfign_name(enum v3d_qpu_msfign msfign)
         case V3D_QPU_MSFIGN_Q:
                 return "q";
         default:
-                unreachable("bad branch cond value");
+                UNREACHABLE("bad branch cond value");
         }
 }
 
@@ -296,7 +296,7 @@ v3d_qpu_pf_name(enum v3d_qpu_pf pf)
         case V3D_QPU_PF_PUSHC:
                 return ".pushc";
         default:
-                unreachable("bad pf value");
+                UNREACHABLE("bad pf value");
         }
 }
 
@@ -331,7 +331,7 @@ v3d_qpu_uf_name(enum v3d_qpu_uf uf)
         case V3D_QPU_UF_NORNC:
                 return ".nornc";
         default:
-                unreachable("bad pf value");
+                UNREACHABLE("bad pf value");
         }
 }
 
@@ -346,7 +346,7 @@ v3d_qpu_pack_name(enum v3d_qpu_output_pack pack)
         case V3D_QPU_PACK_H:
                 return ".h";
         default:
-                unreachable("bad pack value");
+                UNREACHABLE("bad pack value");
         }
 }
 
@@ -377,7 +377,7 @@ v3d_qpu_unpack_name(enum v3d_qpu_input_unpack unpack)
         case V3D71_QPU_UNPACK_MAX0:
                 return ".max0";
         default:
-                unreachable("bad unpack value");
+                UNREACHABLE("bad unpack value");
         }
 }
 
@@ -576,7 +576,7 @@ v3d_qpu_cond_invert(enum v3d_qpu_cond cond)
         case V3D_QPU_COND_IFNB:
                 return V3D_QPU_COND_IFB;
         default:
-                unreachable("Non-invertible cond");
+                UNREACHABLE("Non-invertible cond");
         }
 }
 

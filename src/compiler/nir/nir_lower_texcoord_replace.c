@@ -49,7 +49,7 @@ get_io_index(nir_builder *b, nir_deref_instr *deref)
 
          offset = nir_iadd(b, offset, mul);
       } else
-         unreachable("Unsupported deref type");
+         UNREACHABLE("Unsupported deref type");
    }
 
    nir_deref_path_finish(&path);

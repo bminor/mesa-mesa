@@ -173,7 +173,7 @@ panvk_add_wait_event_syncobjs(struct panvk_batch *batch, uint32_t *in_fences,
          in_fences[(*nr_in_fences)++] = op->event->syncobj;
          break;
       default:
-         unreachable("bad panvk_cmd_event_op type\n");
+         UNREACHABLE("bad panvk_cmd_event_op type\n");
       }
    }
 }
@@ -206,7 +206,7 @@ panvk_signal_event_syncobjs(struct panvk_gpu_queue *queue,
          /* Nothing left to do */
          break;
       default:
-         unreachable("bad panvk_cmd_event_op type\n");
+         UNREACHABLE("bad panvk_cmd_event_op type\n");
       }
    }
 }

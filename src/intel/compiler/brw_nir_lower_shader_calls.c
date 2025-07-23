@@ -114,7 +114,7 @@ brw_nir_lower_shader_returns(nir_shader *shader)
 
       default:
         {
-         unreachable("Invalid callable shader stage");
+         UNREACHABLE("Invalid callable shader stage");
          return false;
         }
       }

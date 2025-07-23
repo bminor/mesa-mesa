@@ -89,7 +89,7 @@ xe_gem_create(struct iris_bufmgr *bufmgr,
       gem_create.cpu_caching = DRM_XE_GEM_CPU_CACHING_WB;
       break;
    default:
-      unreachable("missing");
+      UNREACHABLE("missing");
       gem_create.cpu_caching = DRM_XE_GEM_CPU_CACHING_WC;
    }
 

@@ -32,7 +32,7 @@ radv_tex_wrap(VkSamplerAddressMode address_mode)
    case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
       return V_008F30_SQ_TEX_MIRROR_ONCE_LAST_TEXEL;
    default:
-      unreachable("illegal tex wrap mode");
+      UNREACHABLE("illegal tex wrap mode");
       break;
    }
    return 0;
@@ -59,7 +59,7 @@ radv_tex_compare(VkCompareOp op)
    case VK_COMPARE_OP_ALWAYS:
       return V_008F30_SQ_TEX_DEPTH_COMPARE_ALWAYS;
    default:
-      unreachable("illegal compare mode");
+      UNREACHABLE("illegal compare mode");
       break;
    }
    return 0;

@@ -102,7 +102,7 @@ v3dv_get_compatible_tfu_format(struct v3dv_device *device,
    case 4:  vk_format = VK_FORMAT_R32_SFLOAT;           break;
    case 2:  vk_format = VK_FORMAT_R16_SFLOAT;           break;
    case 1:  vk_format = VK_FORMAT_R8_UNORM;             break;
-   default: unreachable("unsupported format bit-size"); break;
+   default: UNREACHABLE("unsupported format bit-size"); break;
    };
 
    if (out_vk_format)
@@ -541,7 +541,7 @@ get_image_format_properties(
       pImageFormatProperties->maxMipLevels = V3D_MAX_MIP_LEVELS;
       break;
    default:
-      unreachable("bad VkImageType");
+      UNREACHABLE("bad VkImageType");
    }
 
    /* Our hw doesn't support 1D compressed textures. */

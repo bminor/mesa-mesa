@@ -375,7 +375,7 @@ gl_shader_stage_to_broadcom(gl_shader_stage stage)
    case MESA_SHADER_COMPUTE:
       return BROADCOM_SHADER_COMPUTE;
    default:
-      unreachable("Unknown gl shader stage");
+      UNREACHABLE("Unknown gl shader stage");
    }
 }
 
@@ -394,7 +394,7 @@ broadcom_shader_stage_to_gl(enum broadcom_shader_stage stage)
    case BROADCOM_SHADER_COMPUTE:
       return MESA_SHADER_COMPUTE;
    default:
-      unreachable("Unknown broadcom shader stage");
+      UNREACHABLE("Unknown broadcom shader stage");
    }
 }
 
@@ -431,7 +431,7 @@ broadcom_binning_shader_stage_for_render_stage(enum broadcom_shader_stage stage)
    case BROADCOM_SHADER_GEOMETRY:
       return BROADCOM_SHADER_GEOMETRY_BIN;
    default:
-      unreachable("Invalid shader stage");
+      UNREACHABLE("Invalid shader stage");
    }
 }
 
@@ -665,7 +665,7 @@ static uint8_t v3dv_plane_from_aspect(VkImageAspectFlags aspect)
    case VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT:
       return 2;
    default:
-      unreachable("invalid image aspect");
+      UNREACHABLE("invalid image aspect");
    }
 }
 

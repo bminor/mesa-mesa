@@ -296,7 +296,7 @@ vk_get_dynamic_graphics_states(BITSET_WORD *dynamic,
       CASE( ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, ATTACHMENT_FEEDBACK_LOOP_ENABLE)
       CASE( DEPTH_CLAMP_RANGE_EXT,        VP_DEPTH_CLAMP_RANGE)
       default:
-         unreachable("Unsupported dynamic graphics state");
+         UNREACHABLE("Unsupported dynamic graphics state");
       }
    }
 
@@ -3077,7 +3077,7 @@ vk_common_CmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer,
                                       uint32_t attachmentCount,
                                       const VkColorBlendAdvancedEXT* pColorBlendAdvanced)
 {
-   unreachable("VK_EXT_blend_operation_advanced unsupported");
+   UNREACHABLE("VK_EXT_blend_operation_advanced unsupported");
 }
 
 void
@@ -3374,7 +3374,7 @@ vk_dynamic_graphic_state_to_str(enum mesa_vk_dynamic_graphics_state state)
       NAME(CB_BLEND_CONSTANTS);
       NAME(ATTACHMENT_FEEDBACK_LOOP_ENABLE);
       NAME(COLOR_ATTACHMENT_MAP);
-   default: unreachable("Invalid state");
+   default: UNREACHABLE("Invalid state");
    }
 
 #undef NAME

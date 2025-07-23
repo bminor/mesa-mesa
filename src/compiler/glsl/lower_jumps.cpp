@@ -492,7 +492,7 @@ retry: /* we get here if we put code after the if inside a branch */
             break;
 
          if(jump_strengths[lower] == strength_break) {
-            unreachable("no lowering of breaks any more");
+            UNREACHABLE("no lowering of breaks any more");
          } else if(jump_strengths[lower] == strength_continue) {
             /* To lower a continue, we create an execute flag (if the
              * loop doesn't have one already) and replace the continue

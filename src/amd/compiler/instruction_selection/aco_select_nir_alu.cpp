@@ -2937,7 +2937,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          Temp one = bld.copy(bld.def(v1), Operand::c32(0x3c00u));
          bld.vop2(aco_opcode::v_cndmask_b32, Definition(dst), Operand::zero(), one, src);
       } else {
-         unreachable("Wrong destination register class for nir_op_b2f16.");
+         UNREACHABLE("Wrong destination register class for nir_op_b2f16.");
       }
       break;
    }
@@ -2952,7 +2952,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          bld.vop2_e64(aco_opcode::v_cndmask_b32, Definition(dst), Operand::zero(),
                       Operand::c32(0x3f800000u), src);
       } else {
-         unreachable("Wrong destination register class for nir_op_b2f32.");
+         UNREACHABLE("Wrong destination register class for nir_op_b2f32.");
       }
       break;
    }
@@ -2970,7 +2970,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             bld.vop2_e64(aco_opcode::v_cndmask_b32, bld.def(v1), Operand::zero(), one, src);
          bld.pseudo(aco_opcode::p_create_vector, Definition(dst), Operand::zero(), upper);
       } else {
-         unreachable("Wrong destination register class for nir_op_b2f64.");
+         UNREACHABLE("Wrong destination register class for nir_op_b2f64.");
       }
       break;
    }
@@ -3024,7 +3024,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          bld.vop2_e64(aco_opcode::v_cndmask_b32, Definition(dst), Operand::zero(), Operand::c32(1u),
                       src);
       } else {
-         unreachable("Invalid register class for b2i32");
+         UNREACHABLE("Invalid register class for b2i32");
       }
       break;
    }
@@ -3471,7 +3471,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
    case nir_op_ubfe:
    case nir_op_ibfe: {
       if (dst.bytes() != 4)
-         unreachable("Unsupported BFE bit size");
+         UNREACHABLE("Unsupported BFE bit size");
 
       if (dst.type() == RegType::sgpr) {
          Temp base = get_alu_src(ctx, instr->src[0]);

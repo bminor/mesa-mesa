@@ -335,7 +335,7 @@ public:
    void visit(LocalArray& value) override
    {
       (void)value;
-      unreachable("An array can't be used as address");
+      UNREACHABLE("An array can't be used as address");
    }
    void visit(LocalArrayValue& value) override;
    void visit(UniformValue& value) override;
@@ -734,7 +734,7 @@ public:
    void visit(const LocalArray& value)
    {
       (void)value;
-      unreachable("An array can't be used as address");
+      UNREACHABLE("An array can't be used as address");
    }
    void visit(const LocalArrayValue& value);
    void visit(const UniformValue& value);
@@ -862,7 +862,7 @@ AluInstr::split(ValueFactory& vf)
       if (!group->add_instruction(instr)) {
          std::cerr << "Unable to schedule '" << *instr << "' into\n" << *group << "\n";
 
-         unreachable("Invalid group instruction");
+         UNREACHABLE("Invalid group instruction");
       }
    }
    group->set_blockid(block_id(), index());
@@ -1036,7 +1036,7 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
 
          if (op_descr.nsrc == -1) {
             std::cerr << "'" << opstr << "'";
-            unreachable("Unknown opcode");
+            UNREACHABLE("Unknown opcode");
             return nullptr;
          }
       } else {
@@ -1055,7 +1055,7 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
 
          if (op_descr.nsrc == -1) {
             std::cerr << "'" << opstr << "'";
-            unreachable("Unknown opcode");
+            UNREACHABLE("Unknown opcode");
             return nullptr;
          }
       } else {
@@ -1156,7 +1156,7 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
             bank_swizzle = alu_vec_210;
          else {
             std::cerr << "'" << bs << "': ";
-            unreachable("Unknowe bankswizzle given");
+            UNREACHABLE("Unknowe bankswizzle given");
          }
       } break;
 
@@ -1178,7 +1178,7 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
             cf = cf_alu_else_after;
          else {
             std::cerr << " '" << cf_str << "' ";
-            unreachable("Unknown tocken in ALU instruction");
+            UNREACHABLE("Unknown tocken in ALU instruction");
          }
       }
       }

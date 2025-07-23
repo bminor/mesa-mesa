@@ -72,7 +72,7 @@ get_load_resource(nir_instr *instr)
             break;
          }
       }
-      unreachable("tex instr should have a resource");
+      UNREACHABLE("tex instr should have a resource");
    }
 
    if (instr->type == nir_instr_type_intrinsic) {

@@ -2872,7 +2872,7 @@ struct ac_pm4_state *ac_emulate_clear_state(const struct radeon_info *info)
    } else if (info->gfx_level == GFX9) {
       gfx9_emulate_clear_state(pm4);
    } else {
-      unreachable("unimplemented");
+      UNREACHABLE("unimplemented");
    }
 
    ac_pm4_finalize(pm4);
@@ -3066,7 +3066,7 @@ struct ac_pm4_state *ac_create_shadowing_ib_preamble(const struct radeon_info *i
       ac_pm4_cmd_add(pm4, PKT3(PKT3_PFP_SYNC_ME, 0, 0));
       ac_pm4_cmd_add(pm4, 0);
    } else {
-      unreachable("invalid chip");
+      UNREACHABLE("invalid chip");
    }
 
    ac_pm4_cmd_add(pm4, PKT3(PKT3_CONTEXT_CONTROL, 1, 0));

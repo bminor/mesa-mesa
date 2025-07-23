@@ -313,7 +313,7 @@ static VkResult lvp_get_image_format_properties(struct lvp_physical_device *phys
         goto unsupported;
       format_feature_flags = format_props.optimalTilingFeatures;
    } else {
-      unreachable("bad VkImageTiling");
+      UNREACHABLE("bad VkImageTiling");
    }
 
    if (format_feature_flags == 0)
@@ -323,7 +323,7 @@ static VkResult lvp_get_image_format_properties(struct lvp_physical_device *phys
    uint32_t max_layers = physical_device->pscreen->caps.max_texture_array_layers;
    switch (info->type) {
    default:
-      unreachable("bad vkimage type\n");
+      UNREACHABLE("bad vkimage type\n");
    case VK_IMAGE_TYPE_1D:
       if (util_format_is_compressed(pformat))
          goto unsupported;

@@ -853,11 +853,11 @@ lower_doubles_instr(nir_builder *b, nir_instr *instr, void *_data)
       case nir_op_fmax:
          return lower_minmax(b, nir_op_fge, src, src1);
       default:
-         unreachable("unhandled opcode");
+         UNREACHABLE("unhandled opcode");
       }
    }
    default:
-      unreachable("unhandled opcode");
+      UNREACHABLE("unhandled opcode");
    }
 }
 

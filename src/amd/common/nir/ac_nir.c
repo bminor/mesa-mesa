@@ -332,7 +332,7 @@ ac_nir_varying_expression_max_cost(nir_shader *producer, nir_shader *consumer)
       return 12;
 
    default:
-      unreachable("unexpected shader stage");
+      UNREACHABLE("unexpected shader stage");
    }
 }
 
@@ -686,7 +686,7 @@ enum gl_access_qualifier ac_nir_get_mem_access_flags(const nir_intrinsic_instr *
          break;
 
       default:
-         unreachable("unexpected store instruction");
+         UNREACHABLE("unexpected store instruction");
       }
    }
 
@@ -762,7 +762,7 @@ summarize_repack(nir_builder *b, nir_def *packed_counts, bool mask_lane_id, unsi
          return nir_msad_4x8(b, nir_unpack_64_2x32_split_y(b, sad_op), nir_imm_int(b, 0), sum);
       }
    } else {
-      unreachable("Unimplemented NGG wave count");
+      UNREACHABLE("Unimplemented NGG wave count");
    }
 }
 

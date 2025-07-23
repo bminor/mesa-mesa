@@ -102,7 +102,7 @@ vn_get_wait_semaphore_count(struct vn_queue_submission *submit,
    case VK_STRUCTURE_TYPE_BIND_SPARSE_INFO:
       return submit->sparse_batches[batch_index].waitSemaphoreCount;
    default:
-      unreachable("unexpected batch type");
+      UNREACHABLE("unexpected batch type");
    }
 }
 
@@ -118,7 +118,7 @@ vn_get_signal_semaphore_count(struct vn_queue_submission *submit,
    case VK_STRUCTURE_TYPE_BIND_SPARSE_INFO:
       return submit->sparse_batches[batch_index].signalSemaphoreCount;
    default:
-      unreachable("unexpected batch type");
+      UNREACHABLE("unexpected batch type");
    }
 }
 
@@ -139,7 +139,7 @@ vn_get_wait_semaphore(struct vn_queue_submission *submit,
       return submit->sparse_batches[batch_index]
          .pWaitSemaphores[semaphore_index];
    default:
-      unreachable("unexpected batch type");
+      UNREACHABLE("unexpected batch type");
    }
 }
 
@@ -160,7 +160,7 @@ vn_get_signal_semaphore(struct vn_queue_submission *submit,
       return submit->sparse_batches[batch_index]
          .pSignalSemaphores[semaphore_index];
    default:
-      unreachable("unexpected batch type");
+      UNREACHABLE("unexpected batch type");
    }
 }
 
@@ -255,7 +255,7 @@ vn_get_signal_semaphore_counter(struct vn_queue_submission *submit,
          .pSignalSemaphoreInfos[sem_index]
          .value;
    default:
-      unreachable("unexpected batch type");
+      UNREACHABLE("unexpected batch type");
    }
 }
 
@@ -739,7 +739,7 @@ vn_queue_submission_add_semaphore_feedback(struct vn_queue_submission *submit,
       }
    }
 
-   unreachable("bad feedback sem");
+   UNREACHABLE("bad feedback sem");
 }
 
 static void
@@ -1638,7 +1638,7 @@ vn_GetFenceStatus(VkDevice device, VkFence _fence)
          result = errno == ETIME ? VK_NOT_READY : VK_ERROR_DEVICE_LOST;
       break;
    default:
-      unreachable("unexpected fence payload type");
+      UNREACHABLE("unexpected fence payload type");
       break;
    }
 

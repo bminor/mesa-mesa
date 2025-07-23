@@ -266,7 +266,7 @@ nir_const_value_for_raw_uint(uint64_t x, unsigned bit_size)
    case 32: v.u32 = (uint32_t)x;  break;
    case 64: v.u64 = x;  break;
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 
@@ -317,7 +317,7 @@ nir_const_value_as_int(nir_const_value value, unsigned bit_size)
    case 32: return value.i32;
    case 64: return value.i64;
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 }
@@ -333,7 +333,7 @@ nir_const_value_as_uint(nir_const_value value, unsigned bit_size)
    case 32: return value.u32;
    case 64: return value.u64;
    default:
-      unreachable("Invalid bit size");
+      UNREACHABLE("Invalid bit size");
    }
    /* clang-format on */
 }
@@ -1274,7 +1274,7 @@ nir_atomic_op_type(nir_atomic_op op)
       return nir_type_uint;
    }
 
-   unreachable("Invalid nir_atomic_op");
+   UNREACHABLE("Invalid nir_atomic_op");
 }
 
 nir_op
@@ -6371,7 +6371,7 @@ nir_deref_count_slots(nir_deref_instr *deref, nir_variable *var)
       case nir_deref_type_var:
          return nir_variable_count_slots(var, deref->type);
       default:
-         unreachable("illegal deref type");
+         UNREACHABLE("illegal deref type");
       }
    }
    return glsl_count_attribute_slots(deref->type, false);

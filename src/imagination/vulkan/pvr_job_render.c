@@ -279,7 +279,7 @@ static inline void pvr_get_samples_in_xy(uint32_t samples,
       *y_out = 4;
       break;
    default:
-      unreachable("Unsupported number of samples");
+      UNREACHABLE("Unsupported number of samples");
    }
 }
 
@@ -1313,7 +1313,7 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
          break;
 
       default:
-         unreachable("Unsupported depth format");
+         UNREACHABLE("Unsupported depth format");
       }
    }
    stream_ptr += pvr_cmd_length(CR_ISP_BGOBJDEPTH);

@@ -83,7 +83,7 @@
       gfx4_##func(__VA_ARGS__);                         \
       break;                                            \
    default:                                             \
-      unreachable("Unknown hardware generation");       \
+      UNREACHABLE("Unknown hardware generation");       \
    }
 
 static const char *

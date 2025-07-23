@@ -838,7 +838,7 @@ radv_pc_get_result(const struct radv_perfcounter_impl *impl, const uint64_t *dat
          result.float64 += radv_pc_sum_reg(impl->regs[2 * i], data) * radv_pc_sum_reg(impl->regs[2 * i + 1], data);
       break;
    default:
-      unreachable("unhandled performance counter operation");
+      UNREACHABLE("unhandled performance counter operation");
    }
    return result;
 }

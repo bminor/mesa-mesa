@@ -264,7 +264,7 @@ static LLVMValueRef emit_b2f(struct ac_llvm_context *ctx, LLVMValueRef src0, uns
    case 64:
       return LLVMBuildSelect(ctx->builder, src0, ctx->f64_1, ctx->f64_0, "");
    default:
-      unreachable("Unsupported bit size.");
+      UNREACHABLE("Unsupported bit size.");
    }
 }
 
@@ -290,7 +290,7 @@ static LLVMValueRef emit_b2i(struct ac_llvm_context *ctx, LLVMValueRef src0, uns
    case 64:
       return LLVMBuildSelect(ctx->builder, src0, ctx->i64_1, ctx->i64_0, "");
    default:
-      unreachable("Unsupported bit size.");
+      UNREACHABLE("Unsupported bit size.");
    }
 }
 
@@ -1650,7 +1650,7 @@ static void visit_store_ssbo(struct ac_nir_context *ctx, nir_intrinsic_instr *in
             data_type = ctx->ac.f32;
             break;
          default:
-            unreachable("Malformed vector store.");
+            UNREACHABLE("Malformed vector store.");
          }
          data = LLVMBuildBitCast(ctx->ac.builder, data, data_type, "");
 
@@ -1759,7 +1759,7 @@ translate_atomic_op(nir_atomic_op op)
    case nir_atomic_op_imin: return LLVMAtomicRMWBinOpMin;
    case nir_atomic_op_imax: return LLVMAtomicRMWBinOpMax;
    case nir_atomic_op_fadd: return LLVMAtomicRMWBinOpFAdd;
-   default: unreachable("Unexpected atomic");
+   default: UNREACHABLE("Unexpected atomic");
    }
 }
 
@@ -1914,7 +1914,7 @@ static LLVMValueRef get_memory_addr(struct ac_nir_context *ctx, nir_intrinsic_in
       return get_shared_mem_ptr(ctx, intr->src[num_src - 1], nir_intrinsic_base(intr));
    }
    default:
-      unreachable("unexpected store intrinsic");
+      UNREACHABLE("unexpected store intrinsic");
    }
 }
 
@@ -1986,7 +1986,7 @@ static LLVMValueRef visit_global_atomic(struct ac_nir_context *ctx,
          data_type = ctx->ac.f64;
          break;
       default:
-         unreachable("Unsupported float bit size");
+         UNREACHABLE("Unsupported float bit size");
       }
 
       data = LLVMBuildBitCast(ctx->ac.builder, data, data_type, "");

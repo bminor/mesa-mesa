@@ -366,7 +366,7 @@ convert_to_lcssa(nir_cf_node *cf_node, lcssa_state *state)
       return;
    }
    default:
-      unreachable("unknown cf node type");
+      UNREACHABLE("unknown cf node type");
    }
 }
 

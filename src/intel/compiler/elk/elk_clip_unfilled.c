@@ -410,7 +410,7 @@ static void emit_primitives( struct elk_clip_compile *c,
       break;
 
    case ELK_CLIP_FILL_MODE_CULL:
-      unreachable("not reached");
+      UNREACHABLE("not reached");
    }
 }
 

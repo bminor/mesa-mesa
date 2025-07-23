@@ -27,7 +27,7 @@ format_for_bits(unsigned bits)
    case 32:  return PIPE_FORMAT_R32_UINT;
    case 64:  return PIPE_FORMAT_R32G32_UINT;
    case 128: return PIPE_FORMAT_R32G32B32A32_UINT;
-   default: unreachable("Unknown number of image format bits");
+   default: UNREACHABLE("Unknown number of image format bits");
    }
 }
 
@@ -46,7 +46,7 @@ sampler_dim_len(enum glsl_sampler_dim dim)
    case GLSL_SAMPLER_DIM_3D:
       return 3;
    default:
-      unreachable("Unhandled sampler dim");
+      UNREACHABLE("Unhandled sampler dim");
       return 1;// Never reached
    }
 }
@@ -100,7 +100,7 @@ load_su_info_clamp(nir_builder *b, nir_deref_instr *deref,
    case 0: return load_su_info(b, deref, clamp_x);
    case 1: return load_su_info(b, deref, clamp_y);
    case 2: return load_su_info(b, deref, clamp_z);
-   default: unreachable("Invalid image dimension");
+   default: UNREACHABLE("Invalid image dimension");
    }
 }
 
@@ -502,7 +502,7 @@ lower_image_access(nir_builder *b, nir_intrinsic_instr *intrin)
       break;
    }
    default:
-      unreachable("Unknown image intrinsic");
+      UNREACHABLE("Unknown image intrinsic");
    }
 }
 

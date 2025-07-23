@@ -178,7 +178,7 @@ def pack_derived(pos, exprs, imm_map, body, pack_exprs):
             first = False
 
     assert (not first)
-    body.append('else unreachable("No pattern match at pos {}");'.format(pos))
+    body.append('else UNREACHABLE("No pattern match at pos {}");'.format(pos))
     body.append('')
 
     assert(pos is not None)
@@ -207,7 +207,7 @@ ${"\\n".join(["    " + x for x in s_body + ["return {};".format( " | ".join(pack
 ${"\\n".join(["        " + x for x in s_body + ["return {};".format(" | ".join(pack_exprs))]])}
 % endfor
     } else {
-        unreachable("No matching state found in ${name}");
+        UNREACHABLE("No matching state found in ${name}");
     }
 % endif
 }
@@ -337,7 +337,7 @@ bi_pack_${'fma' if unit == '*' else 'add'}(bi_instr *I,
 #ifndef NDEBUG
         bi_print_instr(I, stderr);
 #endif
-        unreachable("Cannot pack instruction as ${unit}");
+        UNREACHABLE("Cannot pack instruction as ${unit}");
     }
 }
 """)

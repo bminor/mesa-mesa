@@ -94,7 +94,7 @@ nir_lower_pstipple_block(nir_block *block,
                              nir_imm_floatN_t(b, 0.0, tex->def.bit_size));
       break;
    default:
-      unreachable("Invalid Boolean type.");
+      UNREACHABLE("Invalid Boolean type.");
    }
 
    nir_discard_if(b, condition);
@@ -342,7 +342,7 @@ nir_lower_aapoint_impl(nir_function_impl *impl, lower_aapoint *state,
       comp = nir_slt(b, chan_val_one, dist);
       break;
    default:
-      unreachable("Invalid Boolean type.");
+      UNREACHABLE("Invalid Boolean type.");
    }
 
    nir_discard_if(b, comp);
@@ -398,7 +398,7 @@ nir_lower_aapoint_impl(nir_function_impl *impl, lower_aapoint *state,
       break;
    }
    default:
-      unreachable("Invalid Boolean type.");
+      UNREACHABLE("Invalid Boolean type.");
    }
 
    nir_foreach_block(block, impl) {

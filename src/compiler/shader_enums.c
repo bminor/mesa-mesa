@@ -82,7 +82,7 @@ _mesa_shader_stage_to_string(unsigned stage)
    case MESA_SHADER_CALLABLE:     return "callable";
    }
 
-   unreachable("Unknown shader stage.");
+   UNREACHABLE("Unknown shader stage.");
 }
 
 /**
@@ -110,7 +110,7 @@ _mesa_shader_stage_to_abbrev(unsigned stage)
    case MESA_SHADER_CALLABLE:     return "RCALL";
    }
 
-   unreachable("Unknown shader stage.");
+   UNREACHABLE("Unknown shader stage.");
 }
 
 const char *

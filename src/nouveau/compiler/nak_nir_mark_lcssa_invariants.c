@@ -91,7 +91,7 @@ lower_cf_list(nir_builder *b, struct exec_list *cf_list)
       }
 
       default:
-         unreachable("Unknown CF node type");
+         UNREACHABLE("Unknown CF node type");
       }
    }
 

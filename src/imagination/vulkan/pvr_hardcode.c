@@ -239,7 +239,7 @@ void pvr_hard_code_graphics_shader(const struct pvr_device_info *const dev_info,
       break;
 
    default:
-      unreachable("Unsupported stage.");
+      UNREACHABLE("Unsupported stage.");
    }
 }
 
@@ -316,7 +316,7 @@ void pvr_hard_code_graphics_get_build_info(
       break;
 
    default:
-      unreachable("Unsupported stage.");
+      UNREACHABLE("Unsupported stage.");
    }
 }
 

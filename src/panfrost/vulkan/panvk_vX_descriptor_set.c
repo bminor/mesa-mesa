@@ -697,7 +697,7 @@ panvk_per_arch(descriptor_set_write)(struct panvk_descriptor_set *set,
       break;
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
    return VK_SUCCESS;
 }
@@ -766,7 +766,7 @@ panvk_descriptor_set_copy(const VkCopyDescriptorSet *copy)
    }
 
    default:
-      unreachable("Unsupported descriptor type");
+      UNREACHABLE("Unsupported descriptor type");
    }
 
    return VK_SUCCESS;
@@ -872,7 +872,7 @@ panvk_per_arch(descriptor_set_write_template)(
          break;
 
       default:
-         unreachable("Unsupported descriptor type");
+         UNREACHABLE("Unsupported descriptor type");
       }
    }
 }

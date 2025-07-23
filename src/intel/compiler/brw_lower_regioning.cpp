@@ -421,7 +421,7 @@ namespace {
             return 0x3;
 
          default:
-            unreachable("Unknown invalid execution type source mask.");
+            UNREACHABLE("Unknown invalid execution type source mask.");
          }
       } else {
          return 0;

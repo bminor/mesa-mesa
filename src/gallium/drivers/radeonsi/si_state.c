@@ -2595,7 +2595,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
     * We could implement the full workaround here, but it's a useless case.
     */
    if ((!state->width || !state->height) && (state->nr_cbufs || state->zsbuf.texture)) {
-      unreachable("the framebuffer shouldn't have zero area");
+      UNREACHABLE("the framebuffer shouldn't have zero area");
       return;
    }
 
@@ -3770,7 +3770,7 @@ static void cdna_emu_make_image_descriptor(struct si_screen *screen, struct si_t
       break;
 
    default:
-      unreachable("invalid texture target");
+      UNREACHABLE("invalid texture target");
    }
 
    unsigned stride = desc->block.bits / 8;
@@ -4535,7 +4535,7 @@ static void *si_create_vertex_elements(struct pipe_context *ctx, unsigned count,
             break;
          }
          default:
-            unreachable("bad format type");
+            UNREACHABLE("bad format type");
          }
       } else {
          switch (elements[i].src_format) {
@@ -4543,7 +4543,7 @@ static void *si_create_vertex_elements(struct pipe_context *ctx, unsigned count,
             fix_fetch.u.format = AC_FETCH_FORMAT_FLOAT;
             break;
          default:
-            unreachable("bad other format");
+            UNREACHABLE("bad other format");
          }
       }
 

@@ -1276,7 +1276,7 @@ radv_meta_resolve_compute_type_name(enum radv_meta_resolve_compute_type type)
    case RADV_META_RESOLVE_COMPUTE_FLOAT:
       return "float";
    default:
-      unreachable("invalid compute resolve type");
+      UNREACHABLE("invalid compute resolve type");
    }
 }
 
@@ -1341,7 +1341,7 @@ get_resolve_mode_str(VkResolveModeFlagBits resolve_mode)
    case VK_RESOLVE_MODE_MAX_BIT:
       return "max";
    default:
-      unreachable("invalid resolve mode");
+      UNREACHABLE("invalid resolve mode");
    }
 }
 
@@ -1402,7 +1402,7 @@ radv_meta_nir_build_depth_stencil_resolve_compute_shader(struct radv_device *dev
                outval = nir_umax(&b, outval, si);
             break;
          default:
-            unreachable("invalid resolve mode");
+            UNREACHABLE("invalid resolve mode");
          }
       }
 
@@ -1500,7 +1500,7 @@ radv_meta_nir_build_depth_stencil_resolve_fragment_shader(struct radv_device *de
                outval = nir_umax(&b, outval, si);
             break;
          default:
-            unreachable("invalid resolve mode");
+            UNREACHABLE("invalid resolve mode");
          }
       }
 
