@@ -269,7 +269,7 @@ struct vk_cmd_queue_entry *cmd)
 % if p.len:
    vk_free(queue->alloc, (${remove_suffix(p.decl.replace("const", ""), p.name)})cmd->u.${to_struct_field_name(c.name)}.${to_field_name(p.name)});
 % elif '*' in p.decl:
-   ${get_struct_free(c, p, types)}
+${get_struct_free(c, p, types)}
 % endif
 % endfor
 }
@@ -433,6 +433,19 @@ vk_cmd_enqueue_unless_primary_${c.name}(${c.decl_params()})
 % endfor
 """)
 
+class CodeBuilder:
+    def __init__(self, level):
+        self.variable_index = 0
+        self.code = ""
+        self.level = level
+
+    def add(self, line):
+        self.code += "%s%s\n" % ("   " * self.level, line)
+
+    def get_variable_name(self, name):
+        self.variable_index += 1
+        return "%s%s" % (name, self.variable_index)
+
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
         return text[len(prefix):]
@@ -516,32 +529,31 @@ def get_pnext_member_copy(struct, src_type, member, types, level):
       }
       """ % (pnext_decl, case_stmts)
 
-def get_pnext_member_free(struct_type, types, field_name):
+def get_pnext_member_free(builder, struct_type, types, field_name):
     if not types[struct_type].extended_by:
-        return ""
+        return
 
-    pnext_decl = "const VkBaseInStructure *pnext = %s;" % field_name
-    case_stmts = ""
+    builder.add("const VkBaseInStructure *pnext = %s;" % (field_name))
+    builder.add("if (pnext) {")
+    builder.level += 1
+    builder.add("switch ((int32_t)pnext->sType) {")
+
     for type in types[struct_type].extended_by:
-        guard_pre_stmt = ""
-        guard_post_stmt = ""
         if type.guard is not None:
-            guard_pre_stmt = "#ifdef %s" % type.guard
-            guard_post_stmt = "#endif"
+            builder.code += "#ifdef %s\n" % (type.guard)
 
-        case_stmts += """
-%s
-         case %s:
-            %s
-         break;
-%s
-      """ % (guard_pre_stmt, type.enum, get_struct_free("((%s *)pnext)" % (type.name), type.name, types), guard_post_stmt)
-    return """
-      %s
-      if (pnext) {
-         switch ((int32_t)pnext->sType) {%s}
-      }
-      """ % (pnext_decl, case_stmts)
+        builder.add("case %s:" % (type.enum))
+        builder.level += 1
+        get_struct_free(builder, "((%s *)pnext)" % (type.name), type.name, types)
+        builder.add("break;")
+        builder.level -= 1
+
+        if type.guard is not None:
+            builder.code += "#endif\n"
+
+    builder.add("}")
+    builder.level -= 1
+    builder.add("}")
 
 def get_struct_copy(dst, src_name, src_type, size, types, level=0):
     global tmp_dst_idx
@@ -578,19 +590,20 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
 
 def get_command_struct_free(command, param, types):
     field_name = "cmd->u.%s.%s" % (to_struct_field_name(command.name), to_field_name(param.name))
-    return get_struct_free(field_name, param.type, types)
+    builder = CodeBuilder(1)
+    get_struct_free(builder, field_name, param.type, types)
+    return builder.code
 
-def get_struct_free(field_name, struct_type, types):
-    struct_free = "vk_free(queue->alloc, (void*)%s);" % field_name
-    member_frees = ""
+def get_struct_free(builder, field_name, struct_type, types):
     if (struct_type in types):
         for member in types[struct_type].members:
             member_name = "%s ? %s->%s : NULL" % (field_name, field_name, member.name)
             if member.len and member.len != 'null-terminated':
-                member_frees += "vk_free(queue->alloc, (void*)(%s));\n" % member_name
+                builder.add("vk_free(queue->alloc, (void*)(%s));" % (member_name))
             elif member.name == 'pNext':
-                member_frees += get_pnext_member_free(struct_type, types, member_name)
-    return "%s   %s\n" % (member_frees, struct_free)
+                get_pnext_member_free(builder, struct_type, types, member_name)
+
+    builder.add("vk_free(queue->alloc, (void*)%s);" % (field_name))
 
 EntrypointType = namedtuple('EntrypointType', 'name enum members extended_by guard')
 
