@@ -398,7 +398,9 @@ radv-tahiti-vkd3d:
     - .test-vkd3d-proton
     - .tahiti-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-tahiti
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -409,7 +411,9 @@ radv-hawaii-vkd3d:
     - .test-vkd3d-proton
     - .hawaii-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-hawaii
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -420,7 +424,9 @@ radv-polaris10-vkd3d:
     - .test-vkd3d-proton
     - .polaris10-test-valve-kws
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-polaris10
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -431,7 +437,9 @@ radv-vega10-vkd3d:
     - .test-vkd3d-proton
     - .vega10-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-vega10
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -442,7 +450,9 @@ radv-renoir-vkd3d:
     - .test-vkd3d-proton
     - .renoir-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-renoir
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -453,7 +463,9 @@ radv-navi10-vkd3d:
     - .test-vkd3d-proton
     - .navi10-test-valve-mupuf
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-navi10
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -464,7 +476,9 @@ radv-navi21-vkd3d:
     - .test-vkd3d-proton
     - .navi21-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-navi21
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -475,7 +489,9 @@ radv-vangogh-vkd3d:
     - .test-vkd3d-proton
     - .vangogh-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-vangogh
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -486,7 +502,9 @@ radv-raphael-vkd3d:
     - .test-vkd3d-proton
     - .raphael-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-raphael
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -497,7 +515,9 @@ radv-navi31-vkd3d:
     - .test-vkd3d-proton
     - .navi31-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-navi31
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -508,7 +528,9 @@ radv-gfx1201-vkd3d:
     - .test-vkd3d-proton
     - .gfx1201-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-gfx1201
     # Random tests fail/crash when trying to run them in parallel
     FDO_CI_CONCURRENT: 1
@@ -519,5 +541,7 @@ radv-gfx1201-vkd3d:
     - .test-vkd3d-proton
     - .kabini-test-valve
     - .radv-valve-manual-rules
+  timeout: 10m
   variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8
     GPU_VERSION: radv-kabini
