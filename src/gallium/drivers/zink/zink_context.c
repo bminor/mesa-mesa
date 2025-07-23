@@ -159,6 +159,8 @@ zink_context_destroy(struct pipe_context *pctx)
 
    zink_descriptors_deinit_bindless(ctx);
 
+   u_upload_destroy(pctx->stream_uploader);
+   u_upload_destroy(pctx->const_uploader);
    struct zink_batch_state *bs = ctx->batch_states;
    while (bs) {
       struct zink_batch_state *bs_next = bs->next;
@@ -238,8 +240,6 @@ zink_context_destroy(struct pipe_context *pctx)
       struct zink_gfx_output_key *okey = (void*)he->key;
       VKSCR(DestroyPipeline)(screen->dev, okey->pipeline, NULL);
    }
-   u_upload_destroy(pctx->stream_uploader);
-   u_upload_destroy(pctx->const_uploader);
    slab_destroy_child(&ctx->transfer_pool);
    for (unsigned i = 0; i < ARRAY_SIZE(ctx->program_cache); i++)
       _mesa_hash_table_clear(&ctx->program_cache[i], NULL);
