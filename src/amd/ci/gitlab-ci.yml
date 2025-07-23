@@ -163,6 +163,16 @@ radeonsi-mendocino-glcts-piglit:
     GPU_VERSION: radeonsi-mendocino
     HWCI_START_WESTON: 1
 
+radv-cezanne-vkcts-asan:
+  extends:
+    - .lava-x86_64-test-asan-vk
+    - .radv-cezanne-test:x86_64
+    - .radv-collabora-rules
+  parallel: 2
+  variables:
+    DEQP_SUITE: radv
+    DEQP_FRACTION: 25
+
 ############### VKCTS tests ###############
 
 # VKCTS never finishes on gfx7 due to all the GPU resets and hangs.

@@ -324,6 +324,13 @@
     VK_DRIVER: radeon
     LAVA_FIRMWARE: amdgpu-lava
 
+.radv-cezanne-test:x86_64:
+  extends:
+    - .lava-acer-cp514-3wh-r0qs-guybrush:x86_64
+  variables:
+    DRIVER_NAME: radv
+    GPU_VERSION: radv-cezanne
+
 ############### CI-tron
 .ci-tron-test-amdgpu:
   variables:
