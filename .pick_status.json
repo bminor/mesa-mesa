@@ -664,7 +664,7 @@
         "description": "vk/sync: Pass dependencyFlags in vk_common_CmdPipelineBarrier",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97f0a4494b97d89146cf66dfa0c9b1946bf3fc22",
         "notes": null
