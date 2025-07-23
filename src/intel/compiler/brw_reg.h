@@ -716,13 +716,7 @@ brw_imm_q(int64_t q)
 }
 
 /** Construct int64_t immediate register */
-static inline struct brw_reg
-brw_imm_uq(uint64_t uq)
-{
-   struct brw_reg imm = brw_imm_reg(BRW_TYPE_UQ);
-   imm.u64 = uq;
-   return imm;
-}
+#define brw_imm_uq(uq) brw_imm_u64(uq)
 
 /** Construct integer immediate register */
 static inline struct brw_reg
