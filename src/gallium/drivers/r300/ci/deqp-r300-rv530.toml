@@ -10,6 +10,7 @@ deqp_args = [
 ]
 version_check = "GL ES 2.0.*git"
 renderer_check = "RV530"
+extensions_check = "/install/r300-rv530-gles2-extensions.txt"
 
 [[deqp]]
 deqp = "/deqp-gles/external/openglcts/modules/glcts"

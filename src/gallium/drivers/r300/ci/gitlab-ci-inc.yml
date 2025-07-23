@@ -13,6 +13,7 @@
         - src/gallium/drivers/r300/ci/$GPU_VERSION-fails.txt
         - src/gallium/drivers/r300/ci/$GPU_VERSION-flakes.txt
         - src/gallium/drivers/r300/ci/$GPU_VERSION-skips.txt
+        - src/gallium/drivers/r300/ci/$GPU_VERSION-gles2-extensions.txt
         - src/gallium/winsys/radeon/**/*
       when: on_success
 
