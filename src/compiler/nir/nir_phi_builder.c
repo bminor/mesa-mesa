@@ -96,7 +96,8 @@ nir_phi_builder_create(nir_function_impl *impl)
    pb->shader = impl->function->shader;
    pb->impl = impl;
 
-   assert(impl->valid_metadata & (nir_metadata_control_flow));
+   assert(impl->valid_metadata & (nir_metadata_block_index |
+                                  nir_metadata_dominance));
 
    pb->num_blocks = impl->num_blocks;
    pb->blocks = ralloc_array(pb, nir_block *, pb->num_blocks);
