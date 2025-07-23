@@ -84,7 +84,7 @@ get_load_once_variable(gl_shader_stage stage, nir_intrinsic_instr *intr,
        */
       nir_intrinsic_instr *baryc = nir_src_as_intrinsic(intr->src[0]);
       if (!baryc)
-         return false;
+         return NULL;
 
       enum glsl_interp_mode interp = nir_intrinsic_interp_mode(baryc);
 
