@@ -33,7 +33,7 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 
       /* Shaders are allocated in the 32-bit addr space and high bits are already configured. */
       if (pdev->info.gfx_level >= GFX12) {
-         gfx12_push_sh_reg(cmd_buffer, shader->info.regs.pgm_lo, reloc->va[s] >> 8);
+         gfx12_push_sh_reg(cs, shader->info.regs.pgm_lo, reloc->va[s] >> 8);
       } else {
          radeon_begin(cs);
          radeon_set_sh_reg(shader->info.regs.pgm_lo, reloc->va[s] >> 8);

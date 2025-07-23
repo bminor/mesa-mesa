@@ -627,6 +627,12 @@ radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t
    radeon_end();
 }
 
+static void
+radv_init_cmd_stream(struct radv_cmd_stream *cs)
+{
+   cs->num_buffered_sh_regs = 0;
+}
+
 VkResult
 radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family family, bool is_secondary,
                        struct radv_cmd_stream **cs_out)
@@ -639,6 +645,8 @@ radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family 
    cs = malloc(sizeof(*cs));
    if (!cs)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   radv_init_cmd_stream(cs);
 
    cs->b = ws->cs_create(ws, ip_type, is_secondary);
    if (!cs->b) {
@@ -654,6 +662,8 @@ void
 radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
    struct radeon_winsys *ws = device->ws;
+
+   radv_init_cmd_stream(cs);
 
    ws->cs_reset(cs->b);
 }
