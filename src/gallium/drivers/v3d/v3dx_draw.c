@@ -1205,7 +1205,6 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
                                                    v3d->ssbo[s].sb[i].buffer);
                         struct v3d_resource *rsc= v3d_resource(v3d->ssbo[s].sb[i].buffer);
                         rsc->graphics_written = true;
-                        job->tmu_dirty_rcl = true;
                 }
 
                 BITSET_FOREACH_SET(i, v3d->shaderimg[s].enabled_mask,
@@ -1214,7 +1213,6 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
                                                    v3d->shaderimg[s].si[i].base.resource);
                         struct v3d_resource *rsc= v3d_resource(v3d->shaderimg[s].si[i].base.resource);
                         rsc->graphics_written = true;
-                        job->tmu_dirty_rcl = true;
                 }
         }
 
