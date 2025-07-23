@@ -1567,15 +1567,6 @@ begin(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
 
    radv_enc_op_init(cmd_buffer);
    radv_enc_session_init(cmd_buffer, enc_info);
-   if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
-      radv_enc_slice_control(cmd_buffer, enc_info);
-      radv_enc_spec_misc_h264(cmd_buffer, enc_info);
-      radv_enc_deblocking_filter_h264(cmd_buffer, enc_info);
-   } else if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
-      radv_enc_slice_control_hevc(cmd_buffer, enc_info);
-      radv_enc_spec_misc_hevc(cmd_buffer, enc_info);
-      radv_enc_deblocking_filter_hevc(cmd_buffer, enc_info);
-   }
    radv_enc_layer_control(cmd_buffer, &vid->rc_layer_control);
    radv_enc_rc_session_init(cmd_buffer);
    radv_enc_quality_params(cmd_buffer);
@@ -1658,12 +1649,16 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
       } while (++i < vid->rc_layer_control.num_temporal_layers);
    }
 
-   // encode headers
-   // ctx
    if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
+      radv_enc_slice_control(cmd_buffer, enc_info);
+      radv_enc_spec_misc_h264(cmd_buffer, enc_info);
+      radv_enc_deblocking_filter_h264(cmd_buffer, enc_info);
       radv_enc_headers_h264(cmd_buffer, enc_info);
       radv_enc_ctx(cmd_buffer, enc_info);
    } else if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
+      radv_enc_slice_control_hevc(cmd_buffer, enc_info);
+      radv_enc_spec_misc_hevc(cmd_buffer, enc_info);
+      radv_enc_deblocking_filter_hevc(cmd_buffer, enc_info);
       radv_enc_headers_hevc(cmd_buffer, enc_info);
       radv_enc_ctx(cmd_buffer, enc_info);
    }
