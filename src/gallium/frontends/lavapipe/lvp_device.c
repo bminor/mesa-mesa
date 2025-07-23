@@ -2162,8 +2162,13 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDeviceBufferMemoryRequirements(
    VkBuffer _buffer;
    if (lvp_CreateBuffer(_device, pInfo->pCreateInfo, NULL, &_buffer) != VK_SUCCESS)
       return;
-   LVP_FROM_HANDLE(lvp_buffer, buffer, _buffer);
-   pMemoryRequirements->memoryRequirements.size = buffer->total_size;
+
+   assert(pInfo->pNext == NULL);
+   const VkBufferMemoryRequirementsInfo2 info = {
+      .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
+      .buffer = _buffer,
+   };
+   lvp_GetBufferMemoryRequirements2(_device, &info, pMemoryRequirements);
    lvp_DestroyBuffer(_device, _buffer, NULL);
 }
 
