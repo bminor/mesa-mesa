@@ -2644,7 +2644,7 @@
         "description": "anv: fix format compatibility check typo",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "03cdb3078a344146695a223f23a40cf1dac4e9af",
         "notes": null
