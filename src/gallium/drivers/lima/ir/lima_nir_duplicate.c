@@ -26,7 +26,7 @@
 #include "lima_ir.h"
 
 static bool
-duplicate_def_at_use(nir_builder *b, nir_def *def)
+duplicate_def_at_use(nir_builder *b, nir_def *def, bool duplicate_for_ffma)
 {
    nir_def *last_dupl = NULL;
    nir_instr *last_parent_instr = NULL;
@@ -46,6 +46,12 @@ duplicate_def_at_use(nir_builder *b, nir_def *def)
          } else {
             b->cursor = nir_before_instr(nir_src_parent_instr(use_src));
             last_parent_instr = nir_src_parent_instr(use_src);
+
+            if (duplicate_for_ffma &&
+                last_parent_instr->type == nir_instr_type_alu &&
+                nir_instr_as_alu(last_parent_instr)->op == nir_op_ffma) {
+               last_parent_instr = NULL;
+            }
          }
 
          dupl = nir_instr_def(nir_instr_clone(b->shader, def->parent_instr));
@@ -80,7 +86,7 @@ duplicate_modifier_alu(nir_builder *b, nir_alu_instr *alu, void *unused)
        itr->intrinsic != nir_intrinsic_load_uniform)
       return false;
 
-   return duplicate_def_at_use(b, &alu->def);
+   return duplicate_def_at_use(b, &alu->def, false);
 }
 
 /* Duplicate load inputs for every user.
@@ -107,7 +113,7 @@ duplicate_intrinsic(nir_builder *b, nir_intrinsic_instr *itr,
    if (itr->instr.pass_flags)
       return false;
 
-   return duplicate_def_at_use(b, &itr->def);
+   return duplicate_def_at_use(b, &itr->def, false);
 }
 
 /* Duplicate load uniforms for every user.
@@ -134,4 +140,32 @@ lima_nir_duplicate_load_inputs(nir_shader *shader)
    return nir_shader_intrinsics_pass(shader, duplicate_intrinsic,
                                      nir_metadata_control_flow,
                                      (void *)nir_intrinsic_load_input);
+}
+
+static bool
+duplicate_load_const(nir_builder *b, nir_instr *instr, void *unused)
+{
+   if (instr->type != nir_instr_type_load_const)
+      return false;
+
+   if (instr->pass_flags)
+      return false;
+
+   /* Always clone consts for FFMA sources as well, since it will translate
+    * into 2 PPIR ops and each may need its own const. Redundant consts
+    * will be dropped by PPIR later
+    */
+   return duplicate_def_at_use(b, nir_instr_def(instr), true);
+}
+
+/* Duplicate load consts for every user.
+ * Helps by utilizing the load const instruction slots that would
+ * otherwise stay empty, and reduces register pressure. */
+bool
+lima_nir_duplicate_load_consts(nir_shader *shader)
+{
+   nir_shader_clear_pass_flags(shader);
+
+   return nir_shader_instructions_pass(shader, duplicate_load_const,
+                                       nir_metadata_control_flow, NULL);
 }

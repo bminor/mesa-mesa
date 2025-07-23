@@ -70,7 +70,7 @@ bool lima_nir_lower_fdot(nir_shader *shader);
 bool lima_nir_split_load_input(nir_shader *shader);
 bool lima_nir_split_loads(nir_shader *shader);
 
-void lima_nir_duplicate_load_consts(nir_shader *shader);
+bool lima_nir_duplicate_load_consts(nir_shader *shader);
 bool lima_nir_duplicate_load_inputs(nir_shader *shader);
 bool lima_nir_duplicate_load_uniforms(nir_shader *shader);
 bool lima_nir_duplicate_modifiers(nir_shader *shader);
