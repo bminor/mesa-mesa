@@ -1521,10 +1521,6 @@ try_vectorize_shared2(struct vectorize_ctx *ctx,
    if (diff % stride || diff > 255 * stride)
       return false;
 
-   /* try to avoid creating accesses we can't combine additions/offsets into */
-   if (high->offset > 255 * stride || (st64 && high->offset % stride))
-      return false;
-
    if (first->is_store) {
       if (get_write_mask(low->intrin) != BITFIELD_MASK(low->num_components))
          return false;
