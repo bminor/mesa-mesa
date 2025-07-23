@@ -94,3 +94,44 @@ lima_nir_duplicate_modifiers(nir_shader *shader)
    return nir_shader_alu_pass(shader, duplicate_modifier_alu,
                               nir_metadata_control_flow, NULL);
 }
+
+static bool
+duplicate_intrinsic(nir_builder *b, nir_intrinsic_instr *itr,
+                    void *param)
+{
+   nir_intrinsic_op op = (nir_intrinsic_op)(uintptr_t)param;
+
+   if (itr->intrinsic != op)
+      return false;
+
+   if (itr->instr.pass_flags)
+      return false;
+
+   return duplicate_def_at_use(b, &itr->def);
+}
+
+/* Duplicate load uniforms for every user.
+ * Helps by utilizing the load uniform instruction slots that would
+ * otherwise stay empty, and reduces register pressure. */
+bool
+lima_nir_duplicate_load_uniforms(nir_shader *shader)
+{
+   nir_shader_clear_pass_flags(shader);
+
+   return nir_shader_intrinsics_pass(shader, duplicate_intrinsic,
+                                     nir_metadata_control_flow,
+                                     (void *)nir_intrinsic_load_uniform);
+}
+
+/* Duplicate load inputs for every user.
+ * Helps by utilizing the load input instruction slots that would
+ * otherwise stay empty, and reduces register pressure. */
+bool
+lima_nir_duplicate_load_inputs(nir_shader *shader)
+{
+   nir_shader_clear_pass_flags(shader);
+
+   return nir_shader_intrinsics_pass(shader, duplicate_intrinsic,
+                                     nir_metadata_control_flow,
+                                     (void *)nir_intrinsic_load_input);
+}
