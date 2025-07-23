@@ -407,11 +407,9 @@ apiModifies = {
 }
 
 apiActions = {
-    "vkUpdateDescriptorSets" : ["pDescriptorWrites"],
 }
 
 apiActionsTag = {
-    "vkUpdateDescriptorSets" : "Tag_VkUpdateDescriptorSets",
 }
 
 apiClearModifiers = {
