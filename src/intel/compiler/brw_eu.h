@@ -286,14 +286,6 @@ brw_message_desc_rlen(const struct intel_device_info *devinfo, uint32_t desc)
    return GET_BITS(desc, 24, 20) * reg_unit(devinfo);
 }
 
-static inline bool
-brw_message_desc_header_present(ASSERTED
-                                const struct intel_device_info *devinfo,
-                                uint32_t desc)
-{
-   return GET_BITS(desc, 19, 19);
-}
-
 static inline unsigned
 brw_message_ex_desc(const struct intel_device_info *devinfo,
                     unsigned ex_msg_length)
