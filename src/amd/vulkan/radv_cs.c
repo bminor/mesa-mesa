@@ -628,10 +628,27 @@ radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t
 }
 
 static void
+radv_init_tracked_regs(struct radv_cmd_stream *cs)
+{
+   struct radv_tracked_regs *tracked_regs = &cs->tracked_regs;
+
+   /* Mark all registers as unknown. */
+   memset(tracked_regs->reg_value, 0, RADV_NUM_ALL_TRACKED_REGS * sizeof(uint32_t));
+   BITSET_ZERO(tracked_regs->reg_saved_mask);
+
+   /* 0xffffffff is an impossible value for these registers */
+   memset(tracked_regs->spi_ps_input_cntl, 0xff, sizeof(uint32_t) * 32);
+   memset(tracked_regs->cb_blend_control, 0xff, sizeof(uint32_t) * MAX_RTS);
+   memset(tracked_regs->sx_mrt_blend_opt, 0xff, sizeof(uint32_t) * MAX_RTS);
+}
+
+static void
 radv_init_cmd_stream(struct radv_cmd_stream *cs)
 {
    cs->context_roll_without_scissor_emitted = false;
    cs->num_buffered_sh_regs = 0;
+
+   radv_init_tracked_regs(cs);
 }
 
 VkResult

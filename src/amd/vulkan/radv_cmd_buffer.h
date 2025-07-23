@@ -563,6 +563,8 @@ struct radv_cmd_stream {
 
    bool context_roll_without_scissor_emitted;
 
+   struct radv_tracked_regs tracked_regs;
+
    uint32_t num_buffered_sh_regs;
    struct {
       struct gfx12_reg buffered_sh_regs[64];
@@ -571,8 +573,6 @@ struct radv_cmd_stream {
 
 struct radv_cmd_buffer {
    struct vk_command_buffer vk;
-
-   struct radv_tracked_regs tracked_regs;
 
    VkCommandBufferUsageFlags usage_flags;
    struct radv_cmd_stream *cs;

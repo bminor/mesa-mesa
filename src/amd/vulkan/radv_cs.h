@@ -80,24 +80,24 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 
 #define radeon_set_context_reg_idx(reg, idx, value) __radeon_set_reg(reg, idx, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
 
-#define radeon_opt_set_context_reg(cmdbuf, reg, reg_enum, value)                                                       \
+#define radeon_opt_set_context_reg(cmd_stream, reg, reg_enum, value)                                                   \
    do {                                                                                                                \
-      struct radv_cmd_buffer *__cmdbuf = (cmdbuf);                                                                     \
-      struct radv_tracked_regs *__tracked_regs = &__cmdbuf->tracked_regs;                                              \
+      struct radv_cmd_stream *__cmd_stream = (cmd_stream);                                                             \
+      struct radv_tracked_regs *__tracked_regs = &__cmd_stream->tracked_regs;                                          \
       const uint32_t __value = (value);                                                                                \
       if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
           __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
          radeon_set_context_reg(reg, __value);                                                                         \
          BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
          __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
-         __cmdbuf->cs->context_roll_without_scissor_emitted = true;                                                    \
+         __cmd_stream->context_roll_without_scissor_emitted = true;                                                    \
       }                                                                                                                \
    } while (0)
 
-#define radeon_opt_set_context_reg2(cmdbuf, reg, reg_enum, v1, v2)                                                     \
+#define radeon_opt_set_context_reg2(cmd_stream, reg, reg_enum, v1, v2)                                                 \
    do {                                                                                                                \
-      struct radv_cmd_buffer *__cmdbuf = (cmdbuf);                                                                     \
-      struct radv_tracked_regs *__tracked_regs = &__cmdbuf->tracked_regs;                                              \
+      struct radv_cmd_stream *__cmd_stream = (cmd_stream);                                                             \
+      struct radv_tracked_regs *__tracked_regs = &__cmd_stream->tracked_regs;                                          \
       const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
@@ -107,14 +107,14 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
          BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-         cmdbuf->cs->context_roll_without_scissor_emitted = true;                                                      \
+         cmd_stream->context_roll_without_scissor_emitted = true;                                                      \
       }                                                                                                                \
    } while (0)
 
-#define radeon_opt_set_context_reg3(cmdbuf, reg, reg_enum, v1, v2, v3)                                                 \
+#define radeon_opt_set_context_reg3(cmd_stream, reg, reg_enum, v1, v2, v3)                                             \
    do {                                                                                                                \
-      struct radv_cmd_buffer *__cmdbuf = (cmdbuf);                                                                     \
-      struct radv_tracked_regs *__tracked_regs = &__cmdbuf->tracked_regs;                                              \
+      struct radv_cmd_stream *__cmd_stream = (cmd_stream);                                                             \
+      struct radv_tracked_regs *__tracked_regs = &__cmd_stream->tracked_regs;                                          \
       const uint32_t __v1 = (v1), __v2 = (v2), __v3 = (v3);                                                            \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 2, 0x7) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||        \
@@ -127,14 +127,14 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
-         cmdbuf->cs->context_roll_without_scissor_emitted = true;                                                      \
+         cmd_stream->context_roll_without_scissor_emitted = true;                                                      \
       }                                                                                                                \
    } while (0)
 
-#define radeon_opt_set_context_reg4(cmdbuf, reg, reg_enum, v1, v2, v3, v4)                                             \
+#define radeon_opt_set_context_reg4(cmd_stream, reg, reg_enum, v1, v2, v3, v4)                                         \
    do {                                                                                                                \
-      struct radv_cmd_buffer *__cmdbuf = (cmdbuf);                                                                     \
-      struct radv_tracked_regs *__tracked_regs = &__cmdbuf->tracked_regs;                                              \
+      struct radv_cmd_stream *__cmd_stream = (cmd_stream);                                                             \
+      struct radv_tracked_regs *__tracked_regs = &__cmd_stream->tracked_regs;                                          \
       const uint32_t __v1 = (v1), __v2 = (v2), __v3 = (v3), __v4 = (v4);                                               \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3, 0xf) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||        \
@@ -149,18 +149,18 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                             \
-         cmdbuf->cs->context_roll_without_scissor_emitted = true;                                                      \
+         cmd_stream->context_roll_without_scissor_emitted = true;                                                      \
       }                                                                                                                \
    } while (0)
 
-#define radeon_opt_set_context_regn(cmdbuf, reg, values, saved_values, num)                                            \
+#define radeon_opt_set_context_regn(cmd_stream, reg, values, saved_values, num)                                        \
    do {                                                                                                                \
-      struct radv_cmd_buffer *__cmdbuf = (cmdbuf);                                                                     \
+      struct radv_cmd_stream *__cmd_stream = (cmd_stream);                                                             \
       if (memcmp(values, saved_values, sizeof(uint32_t) * (num))) {                                                    \
          radeon_set_context_reg_seq(reg, num);                                                                         \
          radeon_emit_array(values, num);                                                                               \
          memcpy(saved_values, values, sizeof(uint32_t) * (num));                                                       \
-         __cmdbuf->cs->context_roll_without_scissor_emitted = true;                                                    \
+         __cmd_stream->context_roll_without_scissor_emitted = true;                                                    \
       }                                                                                                                \
    } while (0)
 
@@ -259,9 +259,9 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    } while (0)
 
 /* Set 1 context register optimally. */
-#define __gfx12_opt_set_reg(cmdbuf, reg, reg_enum, value, base_offset)                                                 \
+#define __gfx12_opt_set_reg(cmd_stream, reg, reg_enum, value, base_offset)                                             \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &(cmdbuf)->tracked_regs;                                              \
+      struct radv_tracked_regs *__tracked_regs = &(cmd_stream)->tracked_regs;                                          \
       const uint32_t __value = (value);                                                                                \
       if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
           __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
@@ -272,9 +272,9 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    } while (0)
 
 /* Set 2 context registers optimally. */
-#define __gfx12_opt_set_reg2(cmdbuf, reg, reg_enum, v1, v2, base_offset)                                               \
+#define __gfx12_opt_set_reg2(cmd_stream, reg, reg_enum, v1, v2, base_offset)                                           \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &(cmdbuf)->tracked_regs;                                              \
+      struct radv_tracked_regs *__tracked_regs = &(cmd_stream)->tracked_regs;                                          \
       const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
@@ -312,11 +312,11 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 
 #define gfx12_set_context_reg(reg, value) __gfx12_set_reg(reg, value, SI_CONTEXT_REG_OFFSET)
 
-#define gfx12_opt_set_context_reg(cmdbuf, reg, reg_enum, value)                                                        \
-   __gfx12_opt_set_reg(cmdbuf, reg, reg_enum, value, SI_CONTEXT_REG_OFFSET)
+#define gfx12_opt_set_context_reg(cmd_stream, reg, reg_enum, value)                                                    \
+   __gfx12_opt_set_reg(cmd_stream, reg, reg_enum, value, SI_CONTEXT_REG_OFFSET)
 
-#define gfx12_opt_set_context_reg2(cmdbuf, reg, reg_enum, v1, v2)                                                      \
-   __gfx12_opt_set_reg2(cmdbuf, reg, reg_enum, v1, v2, SI_CONTEXT_REG_OFFSET)
+#define gfx12_opt_set_context_reg2(cmd_stream, reg, reg_enum, v1, v2)                                                  \
+   __gfx12_opt_set_reg2(cmd_stream, reg, reg_enum, v1, v2, SI_CONTEXT_REG_OFFSET)
 
 #define gfx12_end_context_regs() __gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
 
