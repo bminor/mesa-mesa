@@ -57,7 +57,7 @@ lower_formatted_image_load(nir_builder *b,
                            enum pipe_format format)
 {
    if (format == PIPE_FORMAT_NONE)
-      return false;
+      return NULL;
 
    unsigned bits = util_format_get_blocksizebits(format);
 
