@@ -14,6 +14,7 @@ export WESTON_VERSION="14.0.1"
 git clone https://gitlab.freedesktop.org/wayland/weston
 cd weston
 git checkout "$WESTON_VERSION"
+patch -p1 < "$OLDPWD/.gitlab-ci/container/patches/weston-no-xwm.patch"
 meson setup \
     -Dbackend-drm=false \
     -Dbackend-drm-screencast-vaapi=false \
@@ -44,6 +45,7 @@ meson setup \
     -Dwcap-decode=false \
     -Dtests=false \
     -Ddoc=false \
+    -Dno-xwm-decorations=true \
     _build ${EXTRA_MESON_ARGS:-}
 meson install -C _build
 cd ..

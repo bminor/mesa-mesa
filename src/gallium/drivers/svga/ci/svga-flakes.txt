@@ -53,3 +53,14 @@ spec@egl_chromium_sync_control@conformance
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
 spec@egl_khr_gl_colorspace@linear
 spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9
+
+# weston with no xwayland decor
+glx@glx-multithread-buffer
+spec@!opengl 3.2@gl-3.2-adj-prims line cull-back pv-first
+spec@arb_gpu_shader_fp64@shader_storage@layout-std140-fp64-mixed-shader
+spec@arb_shader_storage_buffer_object@layout-std430-write-shader
+spec@arb_tessellation_shader@execution@tcs-input@tcs-input-ivec3
+spec@arb_tessellation_shader@execution@tcs-input@tcs-input-mat4x3_2
+spec@arb_tessellation_shader@execution@tcs-input@tcs-input-uvec3
+spec@glsl-1.50@execution@primitive-id-no-gs-strip
+spec@glsl-1.50@execution@vs-input-arrays
