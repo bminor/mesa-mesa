@@ -694,6 +694,3 @@ glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
 
 # New failures with GL CTS 4.6.6.0 & ES CTS 3.2.12.0
 KHR-GLES31.core.texture_stencil8.multisample,Crash
-
-# Validation error VUID-StandaloneSpirv-None-10684
-KHR-GL46.buffer_storage.map_persistent_texture,Crash
