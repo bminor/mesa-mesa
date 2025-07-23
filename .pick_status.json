@@ -1774,7 +1774,7 @@
         "description": "radv/video: Fix setting H265 encode cu_qp_delta on VCN2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
