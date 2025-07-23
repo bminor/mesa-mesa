@@ -956,18 +956,6 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
 
    unsigned int max_frame_num_bits = sps->log2_max_frame_num_minus4 + 4;
    radv_enc_code_fixed_bits(cmd_buffer, pic->frame_num % (1 << max_frame_num_bits), max_frame_num_bits);
-#if 0
-   if (enc->enc_pic.h264_enc_params.input_picture_structure !=
-       RENCODE_H264_PICTURE_STRUCTURE_FRAME) {
-      radv_enc_code_fixed_bits(cmd_buffer, 0x1, 1);
-      radv_enc_code_fixed_bits(cmd_buffer,
-                                 enc->enc_pic.h264_enc_params.input_picture_structure ==
-                                       RENCODE_H264_PICTURE_STRUCTURE_BOTTOM_FIELD
-                                    ? 1
-                                    : 0,
-                                 1);
-   }
-#endif
 
    if (pic->flags.IdrPicFlag)
       radv_enc_code_ue(cmd_buffer, pic->idr_pic_id);
