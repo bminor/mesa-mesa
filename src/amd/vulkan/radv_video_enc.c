@@ -886,12 +886,12 @@ radv_enc_latency(struct radv_cmd_buffer *cmd_buffer, VkVideoEncodeTuningModeKHR 
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   if (tuning_mode == VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR ||
-       tuning_mode == VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR) {
-      RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.enc_latency);
-      RADEON_ENC_CS(1000);
-      RADEON_ENC_END();
-   }
+   const bool low_latency = tuning_mode == VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR ||
+                            tuning_mode == VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR;
+
+   RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.enc_latency);
+   RADEON_ENC_CS(low_latency ? 1000 : 0);
+   RADEON_ENC_END();
 }
 
 static void
