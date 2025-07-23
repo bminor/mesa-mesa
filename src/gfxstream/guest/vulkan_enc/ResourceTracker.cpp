@@ -2240,18 +2240,6 @@ void ResourceTracker::on_vkGetPhysicalDeviceMemoryProperties2(
     on_vkGetPhysicalDeviceMemoryProperties(nullptr, physdev, &out->memoryProperties);
 }
 
-void ResourceTracker::on_vkGetDeviceQueue(void*, VkDevice device, uint32_t, uint32_t,
-                                          VkQueue* pQueue) {
-    std::lock_guard<std::recursive_mutex> lock(mLock);
-    info_VkQueue[*pQueue].device = device;
-}
-
-void ResourceTracker::on_vkGetDeviceQueue2(void*, VkDevice device, const VkDeviceQueueInfo2*,
-                                           VkQueue* pQueue) {
-    std::lock_guard<std::recursive_mutex> lock(mLock);
-    info_VkQueue[*pQueue].device = device;
-}
-
 VkResult ResourceTracker::on_vkCreateInstance(void* context, VkResult input_result,
                                               const VkInstanceCreateInfo* createInfo,
                                               const VkAllocationCallbacks*, VkInstance* pInstance) {

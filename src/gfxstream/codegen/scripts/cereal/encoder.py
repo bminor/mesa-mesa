@@ -80,8 +80,6 @@ ENCODER_CUSTOM_RESOURCE_POSTPROCESS = [
     "vkCreateDescriptorUpdateTemplateKHR",
     "vkGetPhysicalDeviceExternalSemaphoreProperties",
     "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR",
-    "vkGetDeviceQueue",
-    "vkGetDeviceQueue2",
 ]
 
 ENCODER_EXPLICIT_FLUSHED_APIS = [
