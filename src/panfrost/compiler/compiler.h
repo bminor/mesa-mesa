@@ -402,6 +402,12 @@ bi_is_ssa(bi_index idx)
    return idx.type == BI_INDEX_NORMAL;
 }
 
+static inline bool
+bi_is_zero(const bi_index idx)
+{
+   return idx.type == BI_INDEX_CONSTANT && idx.value == 0;
+}
+
 /* Compares equivalence as references. Does not compare offsets, swizzles, or
  * modifiers. In other words, this forms bi_index equivalence classes by
  * partitioning memory. E.g. -abs(foo[1].yx) == foo.xy but foo != bar */
@@ -1615,6 +1621,18 @@ bi_dontcare(bi_builder *b)
 #define bi_worklist_pop_head(w)         u_worklist_pop_head(w, bi_block, index)
 #define bi_worklist_peek_tail(w)        u_worklist_peek_tail(w, bi_block, index)
 #define bi_worklist_pop_tail(w)         u_worklist_pop_tail(w, bi_block, index)
+
+static inline void
+bi_record_use(bi_instr **uses, BITSET_WORD *multiple, bi_instr *I, unsigned s)
+{
+   unsigned v = I->src[s].value;
+
+   assert(I->src[s].type == BI_INDEX_NORMAL);
+   if (uses[v] && uses[v] != I)
+      BITSET_SET(multiple, v);
+   else
+      uses[v] = I;
+}
 
 /* NIR passes */
 

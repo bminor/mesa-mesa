@@ -6193,8 +6193,8 @@ bi_compile_variant_nir(nir_shader *nir,
    bi_lower_opt_instructions(ctx);
 
    if (ctx->arch >= 9) {
-      va_optimize(ctx);
       va_lower_isel(ctx);
+      va_optimize(ctx);
 
       bi_foreach_instr_global_safe(ctx, I) {
          /* Phis become single moves so shouldn't be affected */

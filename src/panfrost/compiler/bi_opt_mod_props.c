@@ -398,18 +398,6 @@ bi_optimizer_var_tex(bi_context *ctx, bi_instr *var, bi_instr *tex)
    return true;
 }
 
-static void
-bi_record_use(bi_instr **uses, BITSET_WORD *multiple, bi_instr *I, unsigned s)
-{
-   unsigned v = I->src[s].value;
-
-   assert(I->src[s].type == BI_INDEX_NORMAL);
-   if (uses[v] && uses[v] != I)
-      BITSET_SET(multiple, v);
-   else
-      uses[v] = I;
-}
-
 void
 bi_opt_mod_prop_backward(bi_context *ctx)
 {

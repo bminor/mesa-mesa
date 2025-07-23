@@ -21,6 +21,7 @@
  * SOFTWARE.
  */
 
+#include "bi_builder.h"
 #include "va_compiler.h"
 
 /* Valhall specific instruction selection optimizations */
@@ -123,10 +124,215 @@ va_fuse_add_imm(bi_instr *I)
    bi_drop_srcs(I, 1);
 }
 
+enum va_cmp_type {
+   VA_CMP_TYPE_INVALID,
+   VA_CMP_TYPE_F,
+   VA_CMP_TYPE_S,
+   VA_CMP_TYPE_U,
+};
+
+static enum bi_opcode
+va_remap_logical_to_logical_cmp(enum bi_opcode op, enum va_cmp_type type)
+{
+   if (type == VA_CMP_TYPE_F) {
+      switch (op) {
+      case BI_OPCODE_LSHIFT_OR_I32:
+         return BI_OPCODE_FCMP_OR_F32;
+      case BI_OPCODE_LSHIFT_OR_V2I16:
+         return BI_OPCODE_FCMP_OR_V2F16;
+      case BI_OPCODE_LSHIFT_AND_I32:
+         return BI_OPCODE_FCMP_AND_F32;
+      case BI_OPCODE_LSHIFT_AND_V2I16:
+         return BI_OPCODE_FCMP_AND_V2F16;
+      default:
+         return 0;
+      }
+   } else if (type == VA_CMP_TYPE_S) {
+      switch (op) {
+      case BI_OPCODE_LSHIFT_OR_I32:
+         return BI_OPCODE_ICMP_OR_S32;
+      case BI_OPCODE_LSHIFT_OR_V2I16:
+         return BI_OPCODE_ICMP_OR_V2S16;
+      case BI_OPCODE_LSHIFT_OR_V4I8:
+         return BI_OPCODE_ICMP_OR_V4S8;
+      case BI_OPCODE_LSHIFT_AND_I32:
+         return BI_OPCODE_ICMP_AND_S32;
+      case BI_OPCODE_LSHIFT_AND_V2I16:
+         return BI_OPCODE_ICMP_AND_V2S16;
+      case BI_OPCODE_LSHIFT_AND_V4I8:
+         return BI_OPCODE_ICMP_AND_V4S8;
+      default:
+         return 0;
+      }
+   } else if (type == VA_CMP_TYPE_U) {
+      switch (op) {
+      case BI_OPCODE_LSHIFT_OR_I32:
+         return BI_OPCODE_ICMP_OR_U32;
+      case BI_OPCODE_LSHIFT_OR_V2I16:
+         return BI_OPCODE_ICMP_OR_V2U16;
+      case BI_OPCODE_LSHIFT_OR_V4I8:
+         return BI_OPCODE_ICMP_OR_V4U8;
+      case BI_OPCODE_LSHIFT_AND_I32:
+         return BI_OPCODE_ICMP_AND_U32;
+      case BI_OPCODE_LSHIFT_AND_V2I16:
+         return BI_OPCODE_ICMP_AND_V2U16;
+      case BI_OPCODE_LSHIFT_AND_V4I8:
+         return BI_OPCODE_ICMP_AND_V4U8;
+      default:
+         return 0;
+      }
+   }
+
+   assert(0 && "invalid va_cmp_type");
+   return 0;
+}
+
+static bool
+va_cmp_can_fuse(enum bi_opcode op)
+{
+   /* We only allow fusing with OR variants */
+   switch (op) {
+   case BI_OPCODE_FCMP_OR_F32:
+   case BI_OPCODE_FCMP_OR_V2F16:
+   case BI_OPCODE_ICMP_OR_S32:
+   case BI_OPCODE_ICMP_OR_V2S16:
+   case BI_OPCODE_ICMP_OR_V4S8:
+   case BI_OPCODE_ICMP_OR_U32:
+   case BI_OPCODE_ICMP_OR_V2U16:
+   case BI_OPCODE_ICMP_OR_V4U8:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static enum va_cmp_type
+va_cmp_opcode_to_cmp_type(enum bi_opcode op)
+{
+   switch (op) {
+   case BI_OPCODE_FCMP_AND_F32:
+   case BI_OPCODE_FCMP_AND_V2F16:
+   case BI_OPCODE_FCMP_OR_F32:
+   case BI_OPCODE_FCMP_OR_V2F16:
+      return VA_CMP_TYPE_F;
+   case BI_OPCODE_ICMP_AND_S32:
+   case BI_OPCODE_ICMP_AND_V2S16:
+   case BI_OPCODE_ICMP_OR_S32:
+   case BI_OPCODE_ICMP_OR_V2S16:
+   case BI_OPCODE_ICMP_OR_V4S8:
+      return VA_CMP_TYPE_S;
+   case BI_OPCODE_ICMP_AND_U32:
+   case BI_OPCODE_ICMP_AND_V2U16:
+   case BI_OPCODE_ICMP_OR_U32:
+   case BI_OPCODE_ICMP_OR_V2U16:
+   case BI_OPCODE_ICMP_OR_V4U8:
+      return VA_CMP_TYPE_U;
+   default:
+      return VA_CMP_TYPE_INVALID;
+   }
+}
+
+/* LSHIFT_X_F32(FCMP_OR_F32(a, b, 0), FCMP_Y_F32(c, d, e), 0) -> FCMP_X_F32(a,
+ * b, FCMP_Y_F32(c, d, e))) */
+static void
+va_fuse_cmp(bi_context *ctx, bi_instr **lut, const BITSET_WORD *multiple,
+            bi_instr *I)
+{
+   /* Expect SSA values on other sources */
+   if (I->nr_srcs != 3 || !bi_is_ssa(I->src[0]) || !bi_is_ssa(I->src[1]))
+      return;
+
+   bi_instr *src0_ins = lut[I->src[0].value];
+   bi_instr *src1_ins = lut[I->src[1].value];
+
+   enum va_cmp_type cmp_type = va_cmp_opcode_to_cmp_type(src0_ins->op);
+
+   /* Expect both side to use the same form type */
+   if (cmp_type == VA_CMP_TYPE_INVALID ||
+       cmp_type != va_cmp_opcode_to_cmp_type(src1_ins->op))
+      return;
+
+   /* Expect both side to use the same result type */
+   if (src0_ins->result_type != src1_ins->result_type)
+      return;
+
+   /* Ensure we really have a LSHIFT that we can remap (so without shift) */
+   if (!va_remap_logical_to_logical_cmp(I->op, cmp_type) ||
+       !bi_is_zero(I->src[2]))
+      return;
+
+   bi_instr *old_ins;
+   bi_index src2;
+
+   /* Try to fuse general case of LSHIFT_X_F32(FCMP_OR_F32(a, b, 0),
+    * FCMP_Y_F32(c, d, e), 0), otherwise try to fuse LSHIFT_OR_F32(FCMP_Y_F32(c,
+    * d, e), FCMP_OR_F32(a, b, 0), 0) */
+   if (va_cmp_can_fuse(src0_ins->op) &&
+       !BITSET_TEST(multiple, src0_ins->dest[0].value) &&
+       bi_is_zero(src0_ins->src[2])) {
+      old_ins = src0_ins;
+      src2 = src1_ins->dest[0];
+   } else if ((I->op == BI_OPCODE_LSHIFT_OR_I32 ||
+               I->op == BI_OPCODE_LSHIFT_OR_V2I16) &&
+              va_cmp_can_fuse(src1_ins->op) &&
+              !BITSET_TEST(multiple, src1_ins->dest[0].value) &&
+              bi_is_zero(src1_ins->src[2])) {
+      old_ins = src1_ins;
+      src2 = src0_ins->dest[0];
+   } else {
+      return;
+   }
+
+   /* Replace old LSHIFT logic op with the CMP with correct logical op and
+    * accumulate other src */
+   bi_builder b = bi_init_builder(ctx, bi_before_instr(I));
+   bi_instr *new_ins =
+      bi_fcmp_or_f32_to(&b, I->dest[0], old_ins->src[0], old_ins->src[1], src2,
+                        old_ins->cmpf, old_ins->result_type);
+   bi_set_opcode(new_ins, va_remap_logical_to_logical_cmp(I->op, cmp_type));
+
+   /* Remove the old instructions */
+   lut[old_ins->dest[0].value] = NULL;
+   lut[new_ins->dest[0].value] = new_ins;
+   bi_remove_instruction(old_ins);
+   bi_remove_instruction(I);
+}
+
+static void
+va_optimize_forward(bi_context *ctx)
+{
+   unsigned count = ctx->ssa_alloc;
+   bi_instr **lut = calloc(count, sizeof(*lut));
+   bi_instr **uses = calloc(count, sizeof(*uses));
+   BITSET_WORD *multiple = calloc(BITSET_WORDS(count), sizeof(*multiple));
+
+   /* Record usage across blocks */
+   bi_foreach_block(ctx, block) {
+      bi_foreach_instr_in_block(block, I) {
+         bi_foreach_dest(I, d) {
+            lut[I->dest[d].value] = I;
+         }
+
+         bi_foreach_ssa_src(I, s) {
+            bi_record_use(uses, multiple, I, s);
+         }
+      }
+   }
+
+   bi_foreach_instr_global_safe(ctx, I) {
+      va_fuse_cmp(ctx, lut, multiple, I);
+   }
+
+   free(uses);
+   free(multiple);
+}
+
 void
 va_optimize(bi_context *ctx)
 {
    bi_foreach_instr_global(ctx, I) {
       va_fuse_add_imm(I);
    }
+
+   va_optimize_forward(ctx);
 }
