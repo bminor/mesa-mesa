@@ -381,7 +381,8 @@ reg_cp(struct ir3_cp_ctx *ctx, struct ir3_instruction *instr,
           * just somehow don't work out.  This restriction may only
           * apply if the first src is also CONST.
           */
-         if ((opc_cat(instr->opc) == 3) && (n == 2) &&
+         if (ctx->so->compiler->cat3_rel_offset_0_quirk &&
+             (opc_cat(instr->opc) == 3) && (n == 2) &&
              (src_reg->flags & IR3_REG_RELATIV) && (src_reg->array.offset == 0))
             return false;
 

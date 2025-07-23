@@ -304,6 +304,8 @@ struct ir3_compiler {
 
    bool reading_shading_rate_requires_smask_quirk;
 
+   bool cat3_rel_offset_0_quirk;
+
    struct {
       /* The number of cycles needed for the result of one ALU operation to be
        * available to another ALU operation. Only valid when the halfness of the

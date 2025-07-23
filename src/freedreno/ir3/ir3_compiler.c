@@ -330,6 +330,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
    compiler->bool_type = (compiler->gen >= 5) ? TYPE_U16 : TYPE_U32;
    compiler->has_shared_regfile = compiler->gen >= 5;
    compiler->has_bitwise_triops = compiler->gen >= 5;
+   compiler->cat3_rel_offset_0_quirk = compiler->gen <= 5;
 
    /* The driver can't request this unless preambles are supported. */
    if (options->push_ubo_with_preamble)
