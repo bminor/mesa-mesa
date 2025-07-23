@@ -2253,8 +2253,14 @@
       <value name="Mid-cmdbuffer Preemption" value="0" />
       <value name="Object Level Preemption" value="1" />
     </field>
+    <field name="Media And GPGPU Pre-emption Control" dword="0" bits="2:1" type="uint">
+      <value name="Mid-thread Pre-emption" value="0" />
+      <value name="Thread Group Pre-emption" value="1" />
+      <value name="Command Level Pre-emption" value="2" />
+    </field>
     <field name="Disable Preemption and High Priority Pausing due to 3DPRIMITIVE Command" dword="0" bits="10:10" type="bool" />
     <field name="Replay Mode Mask" dword="0" bits="16:16" type="bool" />
+    <field name="Media And GPGPU Pre-emption Control Mask" dword="0" bits="18:17" type="uint" />
     <field name="Disable Preemption and High Priority Pausing due to 3DPRIMITIVE Command Mask" dword="0" bits="26:26" type="bool" />
   </register>
   <register name="FF_MODE2" length="1" num="0x6604">
