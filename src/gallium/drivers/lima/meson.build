@@ -30,9 +30,9 @@ files_lima = files(
   'ir/pp/opt.c',
   'ir/pp/compact.c',
 
+  'ir/lima_nir_duplicate.c',
   'ir/lima_nir_duplicate_consts.c',
   'ir/lima_nir_duplicate_intrinsic.c',
-  'ir/lima_nir_duplicate_modifiers.c',
   'ir/lima_nir_lower_uniform_to_scalar.c',
   'ir/lima_nir_split_load_input.c',
   'ir/lima_nir_split_loads.c',
