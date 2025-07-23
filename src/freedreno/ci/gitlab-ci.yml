@@ -317,5 +317,4 @@ a750-vkd3d:
   timeout: 15m  # base runtime 3min
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 12
-    GPU_VERSION: freedreno-a750
     FDO_CI_CONCURRENT: 1
