@@ -569,11 +569,12 @@ radv_enc_spec_misc_h264(struct radv_cmd_buffer *cmd_buffer, const struct VkVideo
       vk_video_find_h264_enc_std_sps(&cmd_buffer->video.params->vk, pic->seq_parameter_set_id);
    const StdVideoH264PictureParameterSet *pps =
       vk_video_find_h264_enc_std_pps(&cmd_buffer->video.params->vk, pic->pic_parameter_set_id);
+   const VkVideoEncodeH264NaluSliceInfoKHR *slice_info = &h264_picture_info->pNaluSliceEntries[0];
 
    RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.spec_misc_h264);
    RADEON_ENC_CS(pps->flags.constrained_intra_pred_flag); // constrained_intra_pred_flag
    RADEON_ENC_CS(pps->flags.entropy_coding_mode_flag);    // cabac enable
-   RADEON_ENC_CS(0);                                      // cabac init idc
+   RADEON_ENC_CS(slice_info->pStdSliceHeader->cabac_init_idc);
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5)
       RADEON_ENC_CS(pps->flags.transform_8x8_mode_flag);
    RADEON_ENC_CS(1);                                          // half pel enabled
@@ -826,13 +827,16 @@ radv_enc_deblocking_filter_h264(struct radv_cmd_buffer *cmd_buffer, const VkVide
       vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H264_PICTURE_INFO_KHR);
    const VkVideoEncodeH264NaluSliceInfoKHR *h264_slice = &h264_picture_info->pNaluSliceEntries[0];
    const StdVideoEncodeH264SliceHeader *slice = h264_slice->pStdSliceHeader;
+   const StdVideoEncodeH264PictureInfo *pic = h264_picture_info->pStdPictureInfo;
+   const StdVideoH264PictureParameterSet *pps =
+      vk_video_find_h264_enc_std_pps(&cmd_buffer->video.params->vk, pic->pic_parameter_set_id);
 
    RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.deblocking_filter_h264);
    RADEON_ENC_CS(slice->disable_deblocking_filter_idc);
    RADEON_ENC_CS(slice->slice_alpha_c0_offset_div2);
    RADEON_ENC_CS(slice->slice_beta_offset_div2);
-   RADEON_ENC_CS(0); // cb qp offset
-   RADEON_ENC_CS(0); // cr qp offset
+   RADEON_ENC_CS(pps->chroma_qp_index_offset);
+   RADEON_ENC_CS(pps->second_chroma_qp_index_offset);
    RADEON_ENC_END();
 }
 
