@@ -281,7 +281,6 @@ a750-angle:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: tu-angle
-    HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
     DRIVER_NAME: null  # Don't use freedreno skips
 
 a750-gl-cl:
@@ -297,7 +296,6 @@ a750-gl-cl:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 25
     HWCI_START_WESTON: 1
-    HWCI_TEST_SCRIPT: install/deqp-runner.sh
     DEQP_SUITE: freedreno-a750
 
 a750-vk:
@@ -309,7 +307,6 @@ a750-vk:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
     DEQP_SUITE: freedreno-a750-vk
-    HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
 
 a750-vkd3d:
   extends:

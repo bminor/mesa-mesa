@@ -251,7 +251,6 @@
     - .zink-test
   variables:
     VK_DRIVER: freedreno
-    HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
     # Disable reporting, since DUTs don't have internet access
     FLAKES_CHANNEL: ""
 
@@ -265,9 +264,6 @@
     - .ci-tron-test-radv
   variables:
     DEQP_SUITE: zink-radv
-    HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
-
     # Disable reporting, since DUTs don't have internet access
     FLAKES_CHANNEL: ""
-
