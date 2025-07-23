@@ -1313,7 +1313,7 @@ anv_formats_are_compatible(
       isl_format_get_layout(img_view_isl_fmt0);
    const enum isl_format img_isl_fmt0 =
       anv_get_format_plane(physical_device,
-                           img_view_fmt->vk_format, 0, tiling).isl_format;
+                           img_fmt->vk_format, 0, tiling).isl_format;
    const struct isl_format_layout *img_fmt0_layout =
       isl_format_get_layout(img_isl_fmt0);
 
