@@ -184,8 +184,10 @@ lvp_image_create(VkDevice _device,
                                                                &template,
                                                                &image->planes[p].size);
       }
-      if (!image->planes[p].bo)
-         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+      if (!image->planes[p].bo) {
+         result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+         goto fail;
+      }
 
       image->planes[p].size = align64(image->planes[p].size, image->alignment);
 
