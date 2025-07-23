@@ -20,7 +20,10 @@
     CI_TRON_HTTP_ARTIFACT__INSTALL__URL: "https://$PIPELINE_ARTIFACTS_BASE/$S3_ARTIFACT_NAME.tar.zst"
 
     CI_TRON__B2C_MACHINE_REGISTRATION_CMD: "setup --tags $CI_TRON_DUT_SETUP_TAGS"
+
     CI_TRON__B2C_IMAGE_UNDER_TEST: $MESA_IMAGE
+    CI_TRON__B2C_EXEC_SHELL: bash
+    CI_TRON__B2C_EXEC_SHELL_FLAGS: "-euc -o pipefail"
     CI_TRON__B2C_EXEC_CMD: "curl --silent --fail-with-body {{ job.http.url }}$CI_TRON_HTTP_ARTIFACT__INSTALL__PATH | tar --zstd --extract && $SCRIPTS_DIR/common/init-stage2.sh"
 
     # Assume by default this is running deqp, as that's almost always true
