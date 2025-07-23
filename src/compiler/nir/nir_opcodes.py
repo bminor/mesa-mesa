@@ -1584,9 +1584,11 @@ unop("pack_2x16_to_unorm_2x8_v3d", tuint32,
 unop("pack_2x16_to_snorm_2x8_v3d", tuint32,
      "_mesa_half_to_snorm(src0 & 0xffff, 8) | ((uint32_t)(_mesa_half_to_snorm(src0 >> 16, 8)) << 16)")
 
-# v3d-specific (v71) instructions to convert 32-bit floating point to 16 bit unorm/snorm
+# v3d-specific (v71) instructions to convert between 32-bit float and 16-bit unorm/snorm
 unop("f2unorm_16_v3d", tuint32, "_mesa_float_to_unorm16(src0)")
 unop("f2snorm_16_v3d", tuint32, "_mesa_float_to_snorm16(src0)")
+unop("unorm2f_16_v3d", tuint32, "_mesa_unorm_to_float(src0, 16)")
+unop("snorm2f_16_v3d", tuint32, "_mesa_snorm_to_float(src0, 16)")
 
 # v3d-specific (v71) instructions to convert 2x16 bit floating points to 2x10 bit unorm
 unop("pack_2x16_to_unorm_2x10_v3d", tuint32, "pack_2x16_to_unorm_2x10(src0)")
