@@ -129,3 +129,4 @@ dEQP-VK.ssbo.phys.layout.random.8bit.scalar.78
 dEQP-VK.ssbo.phys.layout.random.all_per_block_buffers.22
 dEQP-VK.ssbo.phys.layout.random.all_shared_buffer.3
 dEQP-VK.ubo.random.all_shared_buffer.48
+dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_extent
