@@ -51,17 +51,17 @@ static void insert_pfo(nir_builder *b,
 }
 
 PUBLIC
-void rogue_nir_pfo(nir_shader *shader)
+bool rogue_nir_pfo(nir_shader *shader)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    nir_builder b;
 
    /* Only apply to fragment shaders. */
-   if (shader->info.stage != MESA_SHADER_FRAGMENT)
-      return;
+   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
 
    b = nir_builder_create(impl);
 
+   bool progress = false;
    nir_foreach_block (block, impl) {
       nir_foreach_instr_safe (instr, block) {
          if (instr->type == nir_instr_type_intrinsic) {
@@ -73,6 +73,7 @@ void rogue_nir_pfo(nir_shader *shader)
 
             b.cursor = nir_before_instr(&intr->instr);
             insert_pfo(&b, intr, &intr->src[0]);
+            progress = true;
          } else if (instr->type == nir_instr_type_deref) {
             /* Find variable derefs and update their type. */
             nir_deref_instr *deref = nir_instr_as_deref(instr);
@@ -87,7 +88,10 @@ void rogue_nir_pfo(nir_shader *shader)
 
             deref->type = glsl_uintN_t_type(32);
             out->type = glsl_uintN_t_type(32);
+            progress = true;
          }
       }
    }
+
+   return nir_progress(progress, impl, nir_metadata_control_flow);
 }

@@ -2941,7 +2941,7 @@ nir_shader *rogue_spirv_to_nir(rogue_build_ctx *ctx,
                                struct nir_spirv_specialization *spec);
 
 /* Custom NIR passes. */
-void rogue_nir_pfo(nir_shader *shader);
+bool rogue_nir_pfo(nir_shader *shader);
 
 bool rogue_nir_lower_io(nir_shader *shader);
 
