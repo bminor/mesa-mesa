@@ -82,6 +82,10 @@ struct gfxstream_vk_device {
     struct vk_device_dispatch_table cmd_dispatch;
     struct gfxstream_vk_physical_device* physical_device;
 
+    /* unique queue family indices in which to create the device queues */
+    uint32_t* queue_families;
+    uint32_t queue_family_count;
+
     struct gfxstream_vk_queue* queues;
     uint32_t queue_count;
 
