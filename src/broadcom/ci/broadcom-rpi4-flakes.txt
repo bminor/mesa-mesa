@@ -27,6 +27,7 @@ dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.mat3x2
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.row_major_mat3x2
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.17
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.column_major_lowp_mat3x4
+dEQP-GLES31.functional.synchronization.inter_invocation.image_atomic_overwrite
 dEQP-GLES31.functional.synchronization.inter_invocation.image_overwrite
 dEQP-GLES31.functional.synchronization.inter_invocation.ssbo_atomic_read_write
 
@@ -80,6 +81,7 @@ spec@ext_transform_feedback@order arrays triangles
 spec@ext_transform_feedback@tessellation quads wireframe
 spec@glsl-1.10@execution@built-in-functions@fs-op-div-mat2-float
 spec@glsl-1.10@execution@built-in-functions@vs-op-mult-int-ivec2
+spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 1darray
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 2darray
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 2dshadow
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(bias\) 3d
@@ -147,12 +149,15 @@ dEQP-VK.synchronization.cross_instance.suballocated.write_ssbo_vertex_read_verte
 dEQP-VK.synchronization.op.single_queue.barrier.write_ssbo_compute_read_vertex_input.buffer_262144
 dEQP-VK.synchronization.op.single_queue.binary_semaphore.write_ssbo_vertex_read_vertex_input.buffer_262144
 dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_copy_buffer_read_vertex_input.buffer_262144_opaque_fd
+dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_fragment_read_vertex_input.buffer_262144_opaque_fd
 dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_vertex_read_vertex_input.buffer_262144_opaque_fd
+dEQP-VK.synchronization.timeline_semaphore.device_host.write_copy_buffer_read_vertex_input.buffer_262144
 dEQP-VK.synchronization.timeline_semaphore.device_host.write_ssbo_geometry_read_vertex_input.buffer_262144
 dEQP-VK.synchronization2.basic.timeline_semaphore.chain
 dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
 dEQP-VK.synchronization2.op.single_queue.binary_semaphore.write_ssbo_compute_read_vertex_input.buffer_262144_specialized_access_flag
 dEQP-VK.synchronization2.op.single_queue.event.write_ssbo_compute_read_vertex_input.buffer_16384
+dEQP-VK.synchronization2.op.single_queue.fence.write_ssbo_geometry_read_vertex_input.buffer_16384_specialized_access_flag
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image.image_128x128_r16_uint
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_blit_image_read_copy_image.image_64x64x8_r32_sfloat
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_image_compute_read_image_fragment.image_128_r32_uint
