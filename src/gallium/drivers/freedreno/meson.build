@@ -297,27 +297,6 @@ driver_freedreno = declare_dependency(
   ],
 )
 
-ir3_compiler = executable(
-  'ir3_compiler',
-  ['ir3/ir3_cmdline.c', freedreno_xml_header_files],
-  include_directories : freedreno_includes,
-  dependencies : [
-    idep_nir,
-    idep_vtn,
-    idep_mesautil,
-  ],
-  link_with : [
-    libfreedreno,
-    libfreedreno_drm,
-    libfreedreno_ir3,
-    libfreedreno_layout,
-    libgallium,
-    libglsl_standalone,
-  ],
-  build_by_default : with_tools.contains('freedreno'),
-  install : false,
-)
-
 gmemtool = executable(
   'gmemtool',
   [
