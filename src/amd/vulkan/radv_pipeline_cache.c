@@ -335,7 +335,7 @@ radv_pipeline_cache_object_search(struct radv_device *device, struct vk_pipeline
    *found_in_application_cache = false;
 
    if (radv_is_cache_disabled(device, cache))
-      return false;
+      return NULL;
 
    bool *found = found_in_application_cache;
    if (!cache) {
@@ -349,7 +349,7 @@ radv_pipeline_cache_object_search(struct radv_device *device, struct vk_pipeline
    radv_report_pso_cache_stats(device, pipeline, !!object);
 
    if (!object)
-      return false;
+      return NULL;
 
    return container_of(object, struct radv_pipeline_cache_object, base);
 }
