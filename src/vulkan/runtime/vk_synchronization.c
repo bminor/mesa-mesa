@@ -202,6 +202,7 @@ vk_common_CmdPipelineBarrier(
 
    VkDependencyInfo dep_info = {
       .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+      .dependencyFlags = dependencyFlags,
       .memoryBarrierCount = memoryBarrierCount,
       .pMemoryBarriers = memory_barriers,
       .bufferMemoryBarrierCount = bufferMemoryBarrierCount,
