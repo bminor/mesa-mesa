@@ -359,7 +359,7 @@ init_dri2_configs(int fd)
    /* dlopen/dlsym to avoid linkage */
    egl = dlopen("libEGL.so.1", RTLD_LAZY | RTLD_LOCAL);
    if (!egl)
-      return false;
+      return NULL;
 
    void * (*peglGetProcAddress)(const char *) = dlsym(egl, "eglGetProcAddress");
    EGLDisplay (*peglGetPlatformDisplayEXT)(EGLenum, void *, const EGLint *) = peglGetProcAddress("eglGetPlatformDisplayEXT");
