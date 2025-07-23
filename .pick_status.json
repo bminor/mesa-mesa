@@ -2044,7 +2044,7 @@
         "description": "lavapipe: fix maint4 vkGetDeviceImageMemoryRequirements",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "987e8a5a0c011822f4f964f2ca2f8e250884054d",
         "notes": null
