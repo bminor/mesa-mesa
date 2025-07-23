@@ -154,7 +154,7 @@ zink_create_instance(struct zink_screen *screen, struct zink_instance_info *inst
    GET_PROC_ADDR_INSTANCE_LOCAL(screen, NULL, EnumerateInstanceLayerProperties);
    if (!vk_EnumerateInstanceExtensionProperties ||
        !vk_EnumerateInstanceLayerProperties)
-      return false;
+      return NULL;
 
    // Build up the extensions from the reported ones but only for the unnamed layer
    uint32_t extension_count = 0;
