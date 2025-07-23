@@ -227,7 +227,7 @@ nir_deref_find_descriptor(nir_deref_instr *deref,
 
    nir_intrinsic_instr *intrin = nir_src_as_intrinsic(deref->parent);
    if (!intrin || intrin->intrinsic != nir_intrinsic_load_vulkan_descriptor)
-      return false;
+      return NULL;
 
    return find_descriptor_for_index_src(intrin->src[0], state);
 }
