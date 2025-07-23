@@ -74,49 +74,51 @@ static void rogue_nir_passes(struct rogue_build_ctx *ctx,
 
    nir_validate_shader(nir, "after spirv_to_nir");
 
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    /* Splitting. */
-   NIR_PASS_V(nir, nir_split_var_copies);
-   NIR_PASS_V(nir, nir_split_per_member_structs);
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_split_per_member_structs);
 
    /* Replace references to I/O variables with intrinsics. */
-   NIR_PASS_V(nir,
-              nir_lower_io,
-              nir_var_shader_in | nir_var_shader_out,
-              rogue_glsl_type_size,
-              (nir_lower_io_options)0);
+   NIR_PASS(_,
+            nir,
+            nir_lower_io,
+            nir_var_shader_in | nir_var_shader_out,
+            rogue_glsl_type_size,
+            (nir_lower_io_options)0);
 
    /* Load inputs to scalars (single registers later). */
    /* TODO: Fitrp can process multiple frag inputs at once, scalarise I/O. */
-   NIR_PASS_V(nir, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
 
    /* Optimize GL access qualifiers. */
    const nir_opt_access_options opt_access_options = {
       .is_vulkan = true,
    };
-   NIR_PASS_V(nir, nir_opt_access, &opt_access_options);
+   NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
 
    /* Apply PFO code to the fragment shader output. */
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS_V(nir, rogue_nir_pfo);
+      NIR_PASS(_, nir, rogue_nir_pfo);
 
    /* Load outputs to scalars (single registers later). */
-   NIR_PASS_V(nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
 
    /* Lower ALU operations to scalars. */
-   NIR_PASS_V(nir, nir_lower_alu_to_scalar, NULL, NULL);
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
 
    /* Lower load_consts to scalars. */
-   NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
 
    /* Additional I/O lowering. */
-   NIR_PASS_V(nir,
-              nir_lower_explicit_io,
-              nir_var_mem_ubo,
-              spirv_options.ubo_addr_format);
-   NIR_PASS_V(nir, nir_lower_io_to_scalar, nir_var_mem_ubo, NULL, NULL);
-   NIR_PASS_V(nir, rogue_nir_lower_io);
+   NIR_PASS(_,
+            nir,
+            nir_lower_explicit_io,
+            nir_var_mem_ubo,
+            spirv_options.ubo_addr_format);
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_mem_ubo, NULL, NULL);
+   NIR_PASS(_, nir, rogue_nir_lower_io);
 
    /* Algebraic opts. */
    do {
@@ -127,7 +129,7 @@ static void rogue_nir_passes(struct rogue_build_ctx *ctx,
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
       NIR_PASS(progress, nir, nir_opt_dce);
-      NIR_PASS_V(nir, nir_opt_gcm, false);
+      NIR_PASS(_, nir, nir_opt_gcm, false);
    } while (progress);
 
    /* Late algebraic opts. */
@@ -135,20 +137,21 @@ static void rogue_nir_passes(struct rogue_build_ctx *ctx,
       progress = false;
 
       NIR_PASS(progress, nir, nir_opt_algebraic_late);
-      NIR_PASS_V(nir, nir_opt_constant_folding);
-      NIR_PASS_V(nir, nir_copy_prop);
-      NIR_PASS_V(nir, nir_opt_dce);
-      NIR_PASS_V(nir, nir_opt_cse);
+      NIR_PASS(_, nir, nir_opt_constant_folding);
+      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_dce);
+      NIR_PASS(_, nir, nir_opt_cse);
    } while (progress);
 
    /* Remove unused constant registers. */
-   NIR_PASS_V(nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_dce);
 
    /* Move loads to just before they're needed. */
    /* Disabled for now since we want to try and keep them vectorised and group
     * them. */
    /* TODO: Investigate this further. */
-   /* NIR_PASS_V(nir, nir_opt_move, nir_move_load_ubo | nir_move_load_input); */
+   /* NIR_PASS(_, nir, nir_opt_move, nir_move_load_ubo | nir_move_load_input);
+    */
 
    /* TODO: Re-enable scheduling after register pressure tweaks. */
 #if 0
@@ -156,7 +159,7 @@ static void rogue_nir_passes(struct rogue_build_ctx *ctx,
 	struct nir_schedule_options schedule_options = {
 		.threshold = ROGUE_MAX_REG_TEMP / 2,
 	};
-	NIR_PASS_V(nir, nir_schedule, &schedule_options);
+	NIR_PASS(_, nir, nir_schedule, &schedule_options);
 #endif
 
    /* Assign I/O locations. */
