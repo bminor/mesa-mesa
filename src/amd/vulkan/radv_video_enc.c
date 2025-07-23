@@ -50,7 +50,7 @@
 #define RENCODE_V3_FW_INTERFACE_MINOR_VERSION 27
 
 #define RENCODE_V2_FW_INTERFACE_MAJOR_VERSION 1
-#define RENCODE_V2_FW_INTERFACE_MINOR_VERSION 18
+#define RENCODE_V2_FW_INTERFACE_MINOR_VERSION 20
 
 #define RENCODE_FW_INTERFACE_MAJOR_VERSION 1
 #define RENCODE_FW_INTERFACE_MINOR_VERSION 15
@@ -617,8 +617,9 @@ radv_enc_spec_misc_hevc(struct radv_cmd_buffer *cmd_buffer, const struct VkVideo
       RADEON_ENC_CS(!pps->flags.transform_skip_enabled_flag);
       if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5)
          RADEON_ENC_CS(0);
-      RADEON_ENC_CS(pps->flags.cu_qp_delta_enabled_flag);
    }
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2)
+      RADEON_ENC_CS(pps->flags.cu_qp_delta_enabled_flag);
    RADEON_ENC_END();
 }
 
