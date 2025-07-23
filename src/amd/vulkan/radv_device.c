@@ -537,7 +537,7 @@ radv_device_init_perf_counter(struct radv_device *device)
    if (result != VK_SUCCESS)
       return result;
 
-   device->perf_counter_lock_cs = calloc(sizeof(struct radeon_winsys_cs *), 2 * PERF_CTR_MAX_PASSES);
+   device->perf_counter_lock_cs = calloc(sizeof(struct radeon_cmdbuf *), 2 * PERF_CTR_MAX_PASSES);
    if (!device->perf_counter_lock_cs)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
