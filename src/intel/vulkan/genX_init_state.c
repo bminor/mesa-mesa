@@ -371,6 +371,12 @@ init_common_queue_state(struct anv_queue *queue, struct anv_batch *batch)
    }
 #endif
 
+   /* Always use Thread Group Preemption granularity level for Media/GPGPU */
+   anv_batch_write_reg(batch, GENX(CS_CHICKEN1), cc1) {
+      cc1.MediaAndGPGPUPreemptionControl = ThreadGroupPreemption;
+      cc1.MediaAndGPGPUPreemptionControlMask = 0x3;
+   }
+
    state_system_mem_fence_address_emit(device, batch);
 }
 
