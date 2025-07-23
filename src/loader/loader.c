@@ -145,6 +145,7 @@ nouveau_zink_predicate(int fd, const char *driver)
 #else
 
    bool prefer_zink = false;
+   bool require_zink = false;
 
    /* Enable Zink by default on Turing and later GPUs
     *
@@ -161,14 +162,34 @@ nouveau_zink_predicate(int fd, const char *driver)
       if (ret == 0 && r.value >= 0x160) {
          prefer_zink = true;
       }
+      /* Nouveau GL isn't enabled on anything after Ada */
+      if (ret == 0 && r.value >= 0x1a0) {
+         require_zink = true;
+      }
    }
+   assert(!require_zink || prefer_zink);
 
    prefer_zink = debug_get_bool_option("NOUVEAU_USE_ZINK", prefer_zink);
 
-   if (prefer_zink && !strcmp(driver, "zink"))
+   bool use_zink = prefer_zink;
+   if (require_zink) {
+      /* nouveau_zink_predicate() typically gets called twice but we only want
+       * to warn once.
+       */
+      static bool warned = false;
+      if (!prefer_zink && !warned) {
+         log_(_LOADER_WARNING,
+              "NOUVEAU_USE_ZINK is ignored for Blackwell and later GPUs.\n");
+         warned = true;
+      }
+
+      use_zink = true;
+   }
+
+   if (use_zink && !strcmp(driver, "zink"))
       return true;
 
-   if (!prefer_zink && !strcmp(driver, "nouveau"))
+   if (!use_zink && !strcmp(driver, "nouveau"))
       return true;
    return false;
 #endif
