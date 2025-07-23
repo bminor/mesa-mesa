@@ -95,6 +95,7 @@ try_extract_const_addition(nir_builder *b, opt_offsets_state *state, nir_scalar 
    if (!changed_src0 && !changed_src1)
       return false;
 
+   state->progress = true;
    b->cursor = nir_before_instr(&alu->instr);
    nir_def *r = nir_iadd(b, nir_mov_scalar(b, src[0]),
                          nir_mov_scalar(b, src[1]));
@@ -150,32 +151,80 @@ try_fold_load_store(nir_builder *b,
 }
 
 static bool
+decrease_shared2_offsets(uint32_t offset0, uint32_t offset1, uint32_t stride, uint32_t *excess)
+{
+   /* Make the offsets a multiple of the stride. */
+   if (offset0 % stride != offset1 % stride)
+      return false;
+   *excess = offset0 % stride;
+
+   /* Ensure both offsets are not too large. */
+   uint32_t range = 256 * stride;
+   if (offset0 / range != offset1 / range) {
+      *excess += ROUND_DOWN_TO(MIN2(offset0, offset1), stride);
+      if (offset0 - *excess >= range || offset1 - *excess >= range)
+         return false;
+   } else {
+      *excess += ROUND_DOWN_TO(offset0, range);
+   }
+
+   return true;
+}
+
+static bool
 try_fold_shared2(nir_builder *b,
                  nir_intrinsic_instr *intrin,
                  opt_offsets_state *state,
                  unsigned offset_src_idx)
 {
-   unsigned comp_size = (intrin->intrinsic == nir_intrinsic_load_shared2_amd ? intrin->def.bit_size : intrin->src[0].ssa->bit_size) / 8;
+   bool is_load = intrin->intrinsic == nir_intrinsic_load_shared2_amd;
+   unsigned comp_size = (is_load ? intrin->def.bit_size : intrin->src[0].ssa->bit_size) / 8;
    unsigned stride = (nir_intrinsic_st64(intrin) ? 64 : 1) * comp_size;
    unsigned offset0 = nir_intrinsic_offset0(intrin) * stride;
    unsigned offset1 = nir_intrinsic_offset1(intrin) * stride;
    nir_src *off_src = &intrin->src[offset_src_idx];
 
-   if (!nir_src_is_const(*off_src))
-      return false;
+   uint32_t const_offset = 0;
+   nir_scalar replace_src = { NULL, 0 };
+   bool modified_shader = false;
+   if (!nir_src_is_const(*off_src)) {
+      opt_offsets_state state2 = *state;
+      state2.progress = false;
 
-   unsigned const_offset = nir_src_as_uint(*off_src);
+      uint32_t max = UINT32_MAX - MAX2(offset0, offset1);
+      replace_src = nir_get_scalar(off_src->ssa, 0);
+      if (!try_extract_const_addition(b, state, &replace_src, &const_offset, max, true))
+         return false;
+
+      modified_shader = state2.progress;
+   } else {
+      const_offset = nir_src_as_uint(*off_src);
+   }
+
    offset0 += const_offset;
    offset1 += const_offset;
-   bool st64 = offset0 % (64 * comp_size) == 0 && offset1 % (64 * comp_size) == 0;
-   stride = (st64 ? 64 : 1) * comp_size;
-   if (const_offset % stride || offset0 > 255 * stride || offset1 > 255 * stride)
+
+   uint32_t excess_normal = 0, excess_st64 = 0;
+   bool normal = decrease_shared2_offsets(offset0, offset1, comp_size, &excess_normal);
+   bool st64 = decrease_shared2_offsets(offset0, offset1, 64 * comp_size, &excess_st64);
+   /* Use ST64 if the normal mode is impossible or using ST64 saves an addition. */
+   st64 &= !normal || (excess_normal > 0 && excess_st64 == 0);
+   uint32_t excess = st64 ? excess_st64 : excess_normal;
+   assert(st64 || normal);
+
+   if (excess == const_offset && !modified_shader)
       return false;
 
    b->cursor = nir_before_instr(&intrin->instr);
-   nir_src_rewrite(off_src, nir_imm_zero(b, 1, 32));
-   nir_intrinsic_set_offset0(intrin, offset0 / stride);
-   nir_intrinsic_set_offset1(intrin, offset1 / stride);
+   /* Even if the constant offset doesn't fit in offset0/offset1, this addition is likely to be CSE'd. */
+   if (replace_src.def)
+      nir_src_rewrite(off_src, nir_iadd_imm(b, nir_mov_scalar(b, replace_src), excess));
+   else
+      nir_src_rewrite(off_src, nir_imm_int(b, excess));
+
+   stride = (st64 ? 64 : 1) * comp_size;
+   nir_intrinsic_set_offset0(intrin, (offset0 - excess) / stride);
+   nir_intrinsic_set_offset1(intrin, (offset1 - excess) / stride);
    nir_intrinsic_set_st64(intrin, st64);
 
    return true;
