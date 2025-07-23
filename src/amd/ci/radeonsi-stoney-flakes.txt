@@ -38,9 +38,11 @@ dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_srgb8_a
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32f_rgba16ui.texture3d_to_renderbuffer
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_96_bits.rgb32f_rgb32i.texture3d_to_texture2d
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.at_sample_id.multisample_rbo_2
+dEQP-GLES31.functional.shaders.opaque_type_indexing.sampler.uniform.fragment.sampler2dshadow
 
 glx@glx-visuals-stencil
 spec@!opengl 1.0@gl-1.0-ortho-pos
+spec@!opengl 1.1@draw-pixels
 spec@!opengl 1.2@texture-packed-formats
 spec@amd_shader_trinary_minmax@execution@built-in-functions@fs-mid3-vec4-vec4-vec4
 spec@arb_clear_texture@arb_clear_texture-depth
@@ -52,6 +54,7 @@ spec@arb_gpu_shader5@texturegatheroffset@vs-rgba-0-unorm-2d
 spec@arb_sample_shading@arb_sample_shading-builtin-gl-sample-mask-mrt-alpha-to-coverage
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection \*gradarb 3d
 spec@arb_tessellation_shader@execution@built-in-functions@tcs-op-assign-bitxor-uint-uint
+spec@arb_texture_float@multisample-formats 2 gl_arb_texture_float
 spec@arb_texture_gather@texturegatheroffset@vs-r-red-uint-2darray
 spec@arb_texture_rg@multisample-formats 6 gl_arb_texture_rg-float
 spec@arb_texture_rg@multisample-formats 8 gl_arb_texture_rg
@@ -62,6 +65,7 @@ spec@arb_vertex_buffer_object@vbo-subdata-many drawrangeelements
 spec@ext_external_objects@vk-ping-pong-multi-sem
 spec@ext_external_objects@vk-ping-pong-single-sem
 spec@ext_external_objects@vk-semaphores
+spec@ext_framebuffer_blit@fbo-blit-check-limits
 spec@ext_framebuffer_multisample@accuracy 16 stencil_resolve
 spec@ext_framebuffer_multisample@accuracy 4 depth_draw small depthstencil
 spec@ext_framebuffer_multisample@accuracy 4 depth_resolve small depthstencil
@@ -71,12 +75,16 @@ spec@ext_framebuffer_multisample@accuracy all_samples depth_resolve small depths
 spec@ext_framebuffer_multisample@accuracy all_samples stencil_resolve small depthstencil
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering
 spec@glsl-1.20@execution@built-in-functions@vs-transpose-mat2x4
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture\(\) 1d
 spec@glsl-1.20@execution@variable-indexing@vs-varying-mat2-row-rd
 spec@glsl-1.30@execution@tex-miplevel-selection texture\(\) 1darrayshadow
 spec@glsl-1.30@execution@tex-miplevel-selection texturegrad 2darrayshadow
 spec@glsl-1.30@execution@tex-miplevel-selection texturegradoffset 2d
 spec@glsl-1.30@execution@tex-miplevel-selection texturelodoffset 1d
 spec@glsl-1.30@execution@tex-miplevel-selection texturelodoffset 3d
+spec@glsl-1.30@execution@tex-miplevel-selection textureoffset 2d
+spec@glsl-1.30@execution@tex-miplevel-selection textureoffset 3d
 spec@glsl-1.30@execution@tex-miplevel-selection textureproj\(bias\) 1d_projvec4
 spec@glsl-1.30@execution@tex-miplevel-selection textureprojgradoffset 1d
 spec@glsl-4.30@execution@built-in-functions@cs-op-bitxor-uvec3-uint
+spec@nv_copy_image@nv_copy_image-formats --samples=4

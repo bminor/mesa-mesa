@@ -42,6 +42,7 @@ spec@arb_tessellation_shader@execution@variable-indexing@vs-output-array-vec2-in
 spec@arb_texture_view@rendering-r32ui
 spec@egl_nok_texture_from_pixmap@basic
 spec@ext_disjoint_timer_query@simple
+spec@ext_framebuffer_blit@fbo-blit-check-limits
 spec@ext_framebuffer_blit@fbo-sys-blit
 spec@glsl-1.50@execution@texelfetch@gs-texelfetch-sampler1darray
 spec@glsl-1.50@execution@texelfetch@gs-texelfetch-usampler1d
