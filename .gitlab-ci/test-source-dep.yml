@@ -231,6 +231,8 @@
     - if: $CI_PROJECT_NAMESPACE == "mesa"
       changes: *rustfmt_files
       allow_failure: true
+    - if: $CI_PROJECT_NAMESPACE == "mesa"
+      when: never
     - when: manual
       allow_failure: true
 

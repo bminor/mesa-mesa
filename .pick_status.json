@@ -4,7 +4,7 @@
         "description": "ci: fix rustfmt job rules (one more case)",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f065c2f0ac9ab7563f828484294c73092cf4d3b2",
         "notes": null
