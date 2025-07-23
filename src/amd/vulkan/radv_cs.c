@@ -626,3 +626,51 @@ radv_cs_write_data_imm(struct radeon_cmdbuf *cs, unsigned engine_sel, uint64_t v
    radeon_emit(imm);
    radeon_end();
 }
+
+VkResult
+radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family family, bool is_secondary,
+                       struct radv_cmd_stream **cs_out)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_ip_type ip_type = radv_queue_family_to_ring(pdev, family);
+   struct radeon_winsys *ws = device->ws;
+   struct radv_cmd_stream *cs;
+
+   cs = malloc(sizeof(*cs));
+   if (!cs)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   cs->b = ws->cs_create(ws, ip_type, is_secondary);
+   if (!cs->b) {
+      free(cs);
+      return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+   }
+
+   *cs_out = cs;
+   return VK_SUCCESS;
+}
+
+void
+radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs)
+{
+   struct radeon_winsys *ws = device->ws;
+
+   ws->cs_reset(cs->b);
+}
+
+VkResult
+radv_finalize_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs)
+{
+   struct radeon_winsys *ws = device->ws;
+
+   return ws->cs_finalize(cs->b);
+}
+
+void
+radv_destroy_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs)
+{
+   struct radeon_winsys *ws = device->ws;
+
+   ws->cs_destroy(cs->b);
+   free(cs);
+}

@@ -419,4 +419,13 @@ radv_emit_pm4_commands(struct radeon_cmdbuf *cs, const struct ac_pm4_state *pm4)
    radeon_end();
 }
 
+VkResult radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family family, bool is_secondary,
+                                struct radv_cmd_stream **cs_out);
+
+void radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs);
+
+VkResult radv_finalize_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs);
+
+void radv_destroy_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs);
+
 #endif /* RADV_CS_H */

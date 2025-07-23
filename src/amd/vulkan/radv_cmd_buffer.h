@@ -560,6 +560,10 @@ struct gfx12_reg {
    uint32_t reg_value;
 };
 
+struct radv_cmd_stream {
+   struct radeon_cmdbuf *b;
+};
+
 struct radv_cmd_buffer {
    struct vk_command_buffer vk;
 
