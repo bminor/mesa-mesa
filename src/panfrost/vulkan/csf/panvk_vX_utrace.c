@@ -40,7 +40,8 @@ cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
     */
    const struct cs_index dst_addr_reg = cs_scratch_reg64(b, 0);
    const struct cs_index src_addr_reg = cs_scratch_reg64(b, 2);
-   const uint32_t temp_count = CS_REG_SCRATCH_COUNT - 4;
+   const uint32_t temp_count =
+      MIN2(CS_REG_SCRATCH_COUNT - 4, CS_MAX_REG_TUPLE_SIZE);
 
    while (size) {
       cs_move64_to(b, dst_addr_reg, dst_addr);

@@ -432,12 +432,14 @@ cs_dst64(struct cs_builder *b, struct cs_index dst)
    return cs_dst_tuple(b, dst, 2, BITFIELD_MASK(2));
 }
 
+#define CS_MAX_REG_TUPLE_SIZE 16
+
 static inline struct cs_index
 cs_reg_tuple(ASSERTED struct cs_builder *b, uint8_t reg, uint8_t size)
 {
    assert(reg + size <= b->conf.nr_registers - b->conf.nr_kernel_registers &&
           "overflowed register file");
-   assert(size <= 16 && "unsupported");
+   assert(size <= CS_MAX_REG_TUPLE_SIZE && "unsupported");
 
    return (struct cs_index){
       .type = CS_INDEX_REGISTER,

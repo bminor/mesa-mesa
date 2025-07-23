@@ -4564,7 +4564,7 @@
         "description": "panvk: Fix instrumentation on v12+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "172dead3df385c43c1de8291a3bd154c3f0f6530",
         "notes": null
