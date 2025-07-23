@@ -210,7 +210,7 @@ find_or_allocate_qp(struct zink_context *ctx, struct zink_query *q, unsigned idx
    pool_create.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
    if (screen->info.have_KHR_maintenance9) {
       pool_create.flags = VK_QUERY_POOL_CREATE_RESET_BIT_KHR;
-      vkq_needs_reset = false;
+      *vkq_needs_reset = false;
    }
    pool_create.queryType = vk_query_type;
    pool_create.queryCount = NUM_QUERIES;
