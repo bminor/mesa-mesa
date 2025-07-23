@@ -3041,6 +3041,9 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
       for (unsigned i = 0; i < params->h264_enc.h264_pps_count; i++) {
          params->h264_enc.h264_pps[i].base.pic_init_qp_minus26 = 0;
+         params->h264_enc.h264_pps[i].base.pic_init_qs_minus26 = 0;
+         if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5)
+            params->h264_enc.h264_pps[i].base.flags.transform_8x8_mode_flag = 0;
       }
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
@@ -3054,6 +3057,8 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
          params->h265_enc.h265_pps[i].base.diff_cu_qp_delta_depth = 0;
          params->h265_enc.h265_pps[i].base.init_qp_minus26 = 0;
          params->h265_enc.h265_pps[i].base.flags.dependent_slice_segments_enabled_flag = 1;
+         if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_3)
+            params->h265_enc.h265_pps[i].base.flags.transform_skip_enabled_flag = 0;
       }
       break;
    }
