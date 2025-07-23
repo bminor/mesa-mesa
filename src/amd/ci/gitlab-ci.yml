@@ -8,7 +8,7 @@ radv-stoney-vkcts:
     - .radv-stoney-test:x86_64
   parallel: 5
   variables:
-    DEQP_SUITE: radv-stoney
+    DEQP_SUITE: radv
     DEQP_FRACTION: 18
 
 radv-stoney-angle:
@@ -56,7 +56,7 @@ radv-raven-vkcts:
     - .lava-asus-CM1400CXA-dalboz:x86_64
   parallel: 9
   variables:
-    DEQP_SUITE: radv-raven
+    DEQP_SUITE: radv
     DEQP_FRACTION: 6
 
 amd-raven-skqp:
