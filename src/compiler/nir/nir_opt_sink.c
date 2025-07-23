@@ -362,7 +362,7 @@ nir_opt_sink(nir_shader *shader, nir_move_options options)
 
    nir_foreach_function_impl(impl, shader) {
       nir_metadata_require(impl,
-                           nir_metadata_control_flow |
+                           nir_metadata_block_index | nir_metadata_dominance |
                            (options & (nir_move_only_convergent |
                                        nir_move_only_divergent) ?
                                nir_metadata_divergence : 0));

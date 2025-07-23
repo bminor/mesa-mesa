@@ -587,7 +587,8 @@ nir_opt_vectorize_impl(nir_function_impl *impl,
    struct set instr_set;
    vec_instr_set_init(&instr_set);
 
-   nir_metadata_require(impl, nir_metadata_control_flow);
+   nir_metadata_require(impl,
+                        nir_metadata_block_index | nir_metadata_dominance);
 
    bool progress = false;
 

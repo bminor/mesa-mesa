@@ -151,7 +151,8 @@ nir_repair_ssa_impl(nir_function_impl *impl)
    state.phi_builder = NULL;
    state.progress = false;
 
-   nir_metadata_require(impl, nir_metadata_control_flow);
+   nir_metadata_require(impl,
+                        nir_metadata_block_index | nir_metadata_dominance);
 
    nir_foreach_block_unstructured(block, impl) {
       nir_foreach_instr_safe(instr, block) {

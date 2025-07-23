@@ -1445,7 +1445,8 @@ nir_opt_if(nir_shader *shader, nir_opt_if_options options)
    nir_foreach_function_impl(impl, shader) {
       nir_builder b = nir_builder_create(impl);
 
-      nir_metadata_require(impl, nir_metadata_control_flow);
+      nir_metadata_require(impl,
+                           nir_metadata_block_index | nir_metadata_dominance);
       progress = opt_if_safe_cf_list(&b, &impl->body, options);
       nir_progress(true, impl, nir_metadata_control_flow);
 

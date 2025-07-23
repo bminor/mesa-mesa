@@ -1799,7 +1799,8 @@ nir_opt_stack_loads(nir_shader *shader)
    bool progress = false;
 
    nir_foreach_function_impl(impl, shader) {
-      nir_metadata_require(impl, nir_metadata_control_flow);
+      nir_metadata_require(impl,
+                           nir_metadata_block_index | nir_metadata_dominance);
 
       bool func_progress = false;
       nir_foreach_block_safe(block, impl) {
