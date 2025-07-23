@@ -630,6 +630,7 @@ radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t
 static void
 radv_init_cmd_stream(struct radv_cmd_stream *cs)
 {
+   cs->context_roll_without_scissor_emitted = false;
    cs->num_buffered_sh_regs = 0;
 }
 

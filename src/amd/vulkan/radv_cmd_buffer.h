@@ -453,8 +453,6 @@ struct radv_cmd_state {
    bool inherited_occlusion_queries;
    VkQueryControlFlags inherited_query_control_flags;
 
-   bool context_roll_without_scissor_emitted;
-
    /* SQTT related state. */
    uint32_t current_event_type;
    uint32_t num_events;
@@ -562,6 +560,8 @@ struct gfx12_reg {
 
 struct radv_cmd_stream {
    struct radeon_cmdbuf *b;
+
+   bool context_roll_without_scissor_emitted;
 
    uint32_t num_buffered_sh_regs;
    struct {
