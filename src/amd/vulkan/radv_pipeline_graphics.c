@@ -2849,6 +2849,10 @@ radv_graphics_pipeline_state_finish(struct radv_device *device, struct radv_grap
    if (gfx_state->stages) {
       for (uint32_t i = 0; i < MESA_VULKAN_SHADER_STAGES; i++)
          ralloc_free(gfx_state->stages[i].nir);
+
+      if (gfx_state->stages[MESA_SHADER_GEOMETRY].gs_copy_shader)
+         ralloc_free(gfx_state->stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
+
       free(gfx_state->stages);
    }
 }
@@ -2915,6 +2919,7 @@ radv_generate_graphics_pipeline_state(struct radv_device *device, const VkGraphi
       for (unsigned i = 0; i < MESA_VULKAN_SHADER_STAGES; i++) {
          gfx_state->stages[i].stage = MESA_SHADER_NONE;
          gfx_state->stages[i].nir = NULL;
+         gfx_state->stages[i].gs_copy_shader = NULL;
          gfx_state->stages[i].spirv.size = 0;
          gfx_state->stages[i].next_stage = MESA_SHADER_NONE;
       }
