@@ -414,6 +414,12 @@ find_object_properties(struct wsi_display_connector *connector, int fd, uint32_t
    return ret;
 }
 
+static bool
+find_connector_properties(struct wsi_display_connector *connector, drmModeConnectorPtr drm_connector, int fd)
+{
+   return find_properties(connector, drm_connector->count_props, drm_connector->props, drm_connector->prop_values, fd, DRM_MODE_OBJECT_CONNECTOR);
+}
+
 #define wsi_for_each_display_mode(_mode, _conn)                 \
    list_for_each_entry_safe(struct wsi_display_mode, _mode,     \
                             &(_conn)->display_modes, list)
@@ -611,7 +617,6 @@ wsi_display_is_crtc_available(const struct wsi_display * const wsi,
 
 static struct wsi_display_connector *
 wsi_display_alloc_connector(struct wsi_display *wsi,
-                            int fd,
                             uint32_t connector_id)
 {
    struct wsi_display_connector *connector =
@@ -620,29 +625,12 @@ wsi_display_alloc_connector(struct wsi_display *wsi,
    if (!connector)
       return NULL;
 
-   /* We set this flag because this is the common entrypoint before we start
-    * using atomic capabilities -- it's a simple bool setting in the kernel to
-    * make the properties we start querying be available, and re-setting it is
-    * harmless.  Otherwise, we'd need to push it up to all the entrypoints that
-    * a drm FD comes thorugh.
-    */
-   drmSetClientCap(fd, DRM_CLIENT_CAP_ATOMIC, 1);
-
    connector->id = connector_id;
    connector->wsi = wsi;
    connector->active = false;
    /* XXX use EDID name */
    connector->name = "monitor";
    list_inithead(&connector->display_modes);
-
-   /* note: drmModeConnector has props pointer, the extra
-    * drmModeObjectGetProperties here could be avoided
-    */
-   if (!find_object_properties(connector, fd, DRM_MODE_OBJECT_CONNECTOR)) {
-      mesa_logd("Failed to find properties for connector");
-      vk_free(wsi->alloc, connector);
-      return NULL;
-   }
 
    return connector;
 }
@@ -658,6 +646,14 @@ wsi_display_get_connector(struct wsi_device *wsi_device,
    if (drm_fd < 0)
       return NULL;
 
+   /* We set this flag because this is the common entrypoint before we start
+    * using atomic capabilities -- it's a simple bool setting in the kernel to
+    * make the properties we start querying be available, and re-setting it is
+    * harmless.  Otherwise, we'd need to push it up to all the entrypoints that
+    * a drm FD comes thorugh.
+    */
+   drmSetClientCap(drm_fd, DRM_CLIENT_CAP_ATOMIC, 1);
+
    drmModeConnectorPtr drm_connector =
       drmModeGetConnector(drm_fd, connector_id);
 
@@ -668,12 +664,18 @@ wsi_display_get_connector(struct wsi_device *wsi_device,
       wsi_display_find_connector(wsi_device, connector_id);
 
    if (!connector) {
-      connector = wsi_display_alloc_connector(wsi, drm_fd, connector_id);
+      connector = wsi_display_alloc_connector(wsi, connector_id);
       if (!connector) {
          drmModeFreeConnector(drm_connector);
          return NULL;
       }
       list_addtail(&connector->list, &wsi->connectors);
+   }
+
+   if (!find_connector_properties(connector, drm_connector, drm_fd)) {
+      mesa_logd("Failed to find properties for connector");
+      drmModeFreeConnector(drm_connector);
+      return NULL;
    }
 
    connector->connected = drm_connector->connection != DRM_MODE_DISCONNECTED;
@@ -3604,7 +3606,7 @@ wsi_display_get_output(struct wsi_device *wsi_device,
       connector = wsi_display_find_connector(wsi_device, connector_id);
 
       if (connector == NULL) {
-         connector = wsi_display_alloc_connector(wsi, wsi->fd, connector_id);
+         connector = wsi_display_alloc_connector(wsi, connector_id);
          if (!connector) {
             return NULL;
          }
