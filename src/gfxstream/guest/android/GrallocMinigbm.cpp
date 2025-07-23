@@ -179,7 +179,7 @@ int MinigbmGralloc::getId(const AHardwareBuffer* ahb, uint64_t* id) {
 }
 
 int32_t MinigbmGralloc::getDataspace(const AHardwareBuffer* ahb) {
-#if ANDROID_API_LEVEL >= 34
+#if ANDROID_API_LEVEL >= 35
     return AHardwareBuffer_getDataSpace(ahb);
 #else
     (void)ahb;
