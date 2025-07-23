@@ -49,33 +49,52 @@ impl TryFrom<u64> for SectorLayout {
     }
 }
 
-impl GOBType {
-    fn supports_modifiers(&self) -> bool {
-        matches!(
-            self,
-            GOBType::Linear | GOBType::FermiColor | GOBType::TuringColor2D
-        )
-    }
+struct GOBTypeModifierInfo {
+    gob_type: GOBType,
+    gob_kind_version: GOBKindVersion,
+    sector_layout: SectorLayout,
+}
 
-    fn kind_version(&self) -> GOBKindVersion {
-        match self {
-            GOBType::Linear => {
-                panic!("Linear modifierss are handled elsewhere");
-            }
-            GOBType::FermiZS | GOBType::BlackwellZ24 => {
-                panic!("Modifiers are not supported for Z/S images");
-            }
-            GOBType::FermiColor => GOBKindVersion::Fermi,
-            GOBType::TuringColor2D => GOBKindVersion::Turing,
-            GOBType::Blackwell8Bit | GOBType::Blackwell16Bit => {
-                todo!("We need new modifiers for Blackwell+")
+const GOB_TYPE_MODIFIER_INFOS: [GOBTypeModifierInfo; 2] = [
+    GOBTypeModifierInfo {
+        gob_type: GOBType::FermiColor,
+        gob_kind_version: GOBKindVersion::Fermi,
+        sector_layout: SectorLayout::Desktop,
+    },
+    GOBTypeModifierInfo {
+        gob_type: GOBType::TuringColor2D,
+        gob_kind_version: GOBKindVersion::Turing,
+        sector_layout: SectorLayout::Desktop,
+    },
+];
+
+impl GOBType {
+    fn modifier_info(&self) -> Option<&GOBTypeModifierInfo> {
+        let mut info = None;
+        for entry in &GOB_TYPE_MODIFIER_INFOS {
+            if entry.gob_type == *self {
+                let old = info.replace(entry);
+                debug_assert!(old.is_none());
             }
         }
+        info
+    }
+
+    fn supports_modifiers(&self) -> bool {
+        self.modifier_info().is_some()
+    }
+
+    fn gob_kind_version(&self) -> GOBKindVersion {
+        self.modifier_info()
+            .expect("Unsupported modifier")
+            .gob_kind_version
     }
 
     // For now, this always returns desktop, but will be different for Tegra
     fn sector_layout(&self) -> SectorLayout {
-        SectorLayout::Desktop
+        self.modifier_info()
+            .expect("Unsupported modifier")
+            .sector_layout
     }
 }
 
@@ -180,12 +199,20 @@ impl BlockLinearModifier {
     }
 
     pub fn gob_type(&self) -> GOBType {
-        assert!(self.sector_layout() == SectorLayout::Desktop);
-        match self.gob_kind_version() {
-            GOBKindVersion::Fermi => GOBType::FermiColor,
-            GOBKindVersion::G80 => todo!("Unsupported GOB kind"),
-            GOBKindVersion::Turing => GOBType::TuringColor2D,
+        let gob_kind_version = self.gob_kind_version();
+        let sector_layout = self.sector_layout();
+
+        let mut info = None;
+        for entry in &GOB_TYPE_MODIFIER_INFOS {
+            if entry.gob_kind_version == gob_kind_version
+                && entry.sector_layout == sector_layout
+            {
+                let old = info.replace(entry);
+                debug_assert!(old.is_none());
+            }
         }
+
+        info.expect("Unsupported modifier").gob_type
     }
 
     pub fn tiling(&self) -> Tiling {
@@ -248,7 +275,7 @@ pub fn drm_format_mods_for_format(
         let bl_mod = BlockLinearModifier::block_linear_2d(
             compression_type,
             gob_type.sector_layout(),
-            gob_type.kind_version(),
+            gob_type.gob_kind_version(),
             pte_kind,
             height_log2,
         );
@@ -285,7 +312,7 @@ pub fn drm_format_mod_is_supported(
         return false;
     }
 
-    if bl_mod.gob_kind_version() != gob_type.kind_version() {
+    if bl_mod.gob_kind_version() != gob_type.gob_kind_version() {
         return false;
     }
 
