@@ -453,6 +453,72 @@ VkResult gfxstream_vk_EnumerateDeviceExtensionProperties(VkPhysicalDevice physic
     return vk_outarray_status(&out);
 }
 
+static VkResult gfxstream_vk_queue_init(struct gfxstream_vk_device* dev,
+                                        struct gfxstream_vk_queue* queue,
+                                        const VkDeviceQueueCreateInfo* queue_info,
+                                        uint32_t queue_index) {
+    VkResult result = vk_queue_init(&queue->vk, &dev->vk, queue_info, queue_index);
+    if (result != VK_SUCCESS) return result;
+
+    const VkDeviceQueueInfo2 device_queue_info = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2,
+        .pNext = NULL,
+        .flags = queue_info->flags,
+        .queueFamilyIndex = queue_info->queueFamilyIndex,
+        .queueIndex = queue_index,
+    };
+
+    // Make encoder call to host to get VkQueue internal_object
+    auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
+    vkEnc->vkGetDeviceQueue2(dev->internal_object, &device_queue_info, &queue->internal_object,
+                             true /* do lock */);
+
+    queue->device = dev;
+
+    return VK_SUCCESS;
+}
+
+static void gfxstream_vk_queue_fini(struct gfxstream_vk_queue* queue) {
+    vk_queue_finish(&queue->vk);
+}
+
+static VkResult gfxstream_vk_device_init_queues(struct gfxstream_vk_device* dev,
+                                                const VkDeviceCreateInfo* create_info) {
+    const VkAllocationCallbacks* alloc = &dev->vk.alloc;
+
+    uint32_t count = 0;
+    for (uint32_t i = 0; i < create_info->queueCreateInfoCount; i++)
+        count += create_info->pQueueCreateInfos[i].queueCount;
+
+    struct gfxstream_vk_queue* queues = (struct gfxstream_vk_queue*)vk_zalloc(
+        alloc, sizeof(*queues) * count, GFXSTREAM_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+    if (!queues) return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+    count = 0;
+    for (uint32_t i = 0; i < create_info->queueCreateInfoCount; i++) {
+        VkResult result;
+
+        const VkDeviceQueueCreateInfo* queue_info = &create_info->pQueueCreateInfos[i];
+        for (uint32_t j = 0; j < queue_info->queueCount; j++) {
+            result = gfxstream_vk_queue_init(dev, &queues[count], queue_info, j);
+            if (result != VK_SUCCESS) {
+                for (uint32_t k = 0; k < count; k++) gfxstream_vk_queue_fini(&queues[k]);
+                vk_free(alloc, queues);
+
+                return result;
+            }
+
+            // Move to next queue allocation
+            count++;
+        }
+    }
+
+    dev->queues = queues;
+    dev->queue_count = count;
+
+    return VK_SUCCESS;
+}
+
 VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
                                    const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
@@ -546,35 +612,8 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
         vk_free(pMesaAllocator, gfxstream_device);
     }
 
-    // alloc/init all vk_queue objects
     if (result == VK_SUCCESS) {
-        gfxstream_device->queue_family_count = pCreateInfo->queueCreateInfoCount;
-        gfxstream_device->queue_families = (struct gfxstream_vk_device::queue_family_info*)vk_zalloc(
-            pMesaAllocator, gfxstream_device->queue_family_count * sizeof(*gfxstream_device->queue_families), GFXSTREAM_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-        result = gfxstream_device->queue_families ? VK_SUCCESS : VK_ERROR_OUT_OF_HOST_MEMORY;
-        if (result == VK_SUCCESS) {
-            for (uint32_t qfi = 0; qfi < gfxstream_device->queue_family_count; qfi++) {
-                gfxstream_device->queue_families[qfi].queue_count = pCreateInfo->pQueueCreateInfos[qfi].queueCount;
-                gfxstream_device->queue_families[qfi].queues = (struct gfxstream_vk_queue*)vk_zalloc(
-                    pMesaAllocator, gfxstream_device->queue_families[qfi].queue_count * sizeof(struct gfxstream_vk_queue), GFXSTREAM_DEFAULT_ALIGN, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-                result =gfxstream_device->queue_families[qfi].queues ? VK_SUCCESS : VK_ERROR_OUT_OF_HOST_MEMORY;
-                if (result != VK_SUCCESS) {
-                    break;
-                }
-            }
-            if (result == VK_SUCCESS) {
-                for (uint32_t qfi = 0; qfi < gfxstream_device->queue_family_count; qfi++) {
-                    for (uint32_t queue_index = 0; queue_index < gfxstream_device->queue_families[qfi].queue_count; queue_index++) {
-                        struct gfxstream_vk_queue *gfxstream_queue = &gfxstream_device->queue_families[qfi].queues[queue_index];
-                        result = vk_queue_init(&gfxstream_queue->vk, &gfxstream_device->vk, &pCreateInfo->pQueueCreateInfos[qfi], queue_index);
-                        if (result != VK_SUCCESS) {
-                            break;
-                        }
-                        gfxstream_queue->device = gfxstream_device;
-                    }
-                }
-            }
-        }
+        result = gfxstream_vk_device_init_queues(gfxstream_device, pCreateInfo);
     }
 
     return result;
@@ -585,32 +624,18 @@ void gfxstream_vk_DestroyDevice(VkDevice device, const VkAllocationCallbacks* pA
     VK_FROM_HANDLE(gfxstream_vk_device, gfxstream_device, device);
     if (device == VK_NULL_HANDLE) return;
 
+    const VkAllocationCallbacks* alloc = pAllocator ? pAllocator : &gfxstream_device->vk.alloc;
+
+    for (uint32_t i = 0; i < gfxstream_device->queue_count; i++)
+        gfxstream_vk_queue_fini(&gfxstream_device->queues[i]);
+
     auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
     vkEnc->vkDestroyDevice(gfxstream_device->internal_object, pAllocator, true /* do lock */);
 
-    /* Must destroy device queues manually */
-    vk_foreach_queue_safe(queue, &gfxstream_device->vk) {
-        vk_queue_finish(queue);
-        vk_free(&gfxstream_device->vk.alloc, queue);
-    }
-    vk_free(&gfxstream_device->vk.alloc, gfxstream_device->queue_families);
+    vk_free(alloc, gfxstream_device->queues);
 
     vk_device_finish(&gfxstream_device->vk);
-    vk_free(&gfxstream_device->vk.alloc, gfxstream_device);
-}
-
-void gfxstream_vk_GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo,
-                                  VkQueue* pQueue) {
-    MESA_TRACE_SCOPE("vkGetDeviceQueue2");
-    VK_FROM_HANDLE(gfxstream_vk_device, gfxstream_device, device);
-    assert(pQueueInfo->queueFamilyIndex < gfxstream_device->queue_family_count);
-    assert(pQueueInfo->queueIndex < gfxstream_device->queue_families[pQueueInfo->queueFamilyIndex].queue_count);
-    /* Queue objects must have been allocated during CreateDevice() */
-    struct gfxstream_vk_queue *gfxstream_queue = &gfxstream_device->queue_families[pQueueInfo->queueFamilyIndex].queues[pQueueInfo->queueIndex];
-    auto vkEnc = gfxstream::vk::ResourceTracker::getThreadLocalEncoder();
-    vkEnc->vkGetDeviceQueue2(gfxstream_device->internal_object, pQueueInfo,
-                                &gfxstream_queue->internal_object, true /* do lock */);
-    *pQueue = gfxstream_vk_queue_to_handle(gfxstream_queue);
+    vk_free(alloc, gfxstream_device);
 }
 
 /* The loader wants us to expose a second GetInstanceProcAddr function

@@ -127,7 +127,6 @@ NON_AUTOGEN_ENTRYPOINTS = [
     "vkCreateDevice",
     "vkDestroyDevice",
     # Manual alloc/free + vk_*_init/free() call w/ special params
-    "vkGetDeviceQueue2",
     # Command pool/buffer handling
     "vkCreateCommandPool",
     "vkDestroyCommandPool",
@@ -144,6 +143,7 @@ NON_AUTOGEN_ENTRYPOINTS = [
 
     # Use vk_common_* entrypoints; usually just dispatches to the "vk*2()" API variant
     "vkGetDeviceQueue",
+    "vkGetDeviceQueue2",
     "vkGetPhysicalDeviceProperties",
 ]
 
