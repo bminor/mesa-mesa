@@ -751,7 +751,8 @@ static void parseEncPpsParamsH264(vlVaContext *context, struct vl_rbsp *rbsp)
    pic->deblocking_filter_control_present_flag = vl_rbsp_u(rbsp, 1);
    pic->constrained_intra_pred_flag = vl_rbsp_u(rbsp, 1);
    pic->redundant_pic_cnt_present_flag = vl_rbsp_u(rbsp, 1);
-   if (vl_rbsp_more_data(rbsp)) {
+   pic->more_rbsp_data = vl_rbsp_more_data(rbsp);
+   if (pic->more_rbsp_data) {
       pic->transform_8x8_mode_flag = vl_rbsp_u(rbsp, 1);
       if (vl_rbsp_u(rbsp, 1)) { /* pic_scaling_matrix_present_flag */
          debug_error("PPS scaling matrix not supported");
