@@ -1219,10 +1219,11 @@ update_graph_and_reg_classes_for_inst(struct v3d_compile *c,
                 switch (inst->src[0].index) {
                 case 0:
                         /* V3D 7.x doesn't use rf0 for thread payload */
-                        if (c->devinfo->ver >= 71)
+                        if (c->devinfo->ver >= 71) {
                                 break;
-                        else
+                        } else {
                                 FALLTHROUGH;
+                        }
                 case 1:
                 case 2:
                 case 3: {
