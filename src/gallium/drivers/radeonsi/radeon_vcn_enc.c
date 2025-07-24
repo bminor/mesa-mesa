@@ -38,13 +38,6 @@ static void radeon_vcn_enc_quality_modes(struct radeon_encoder *enc,
    if (enc->enc_pic.rc_session_init.rate_control_method == RENCODE_RATE_CONTROL_METHOD_QUALITY_VBR)
       p->pre_encode_mode = RENCODE_PREENCODE_MODE_4X;
 
-   /* Disabling 2pass encoding for VCN 5.0
-    * This is a temporary limitation only for VCN 5.0 due to HW,
-    * once verified in future VCN 5.X versions, it will be enabled again.
-    */
-   if (sscreen->info.vcn_ip_version >= VCN_5_0_0)
-      p->pre_encode_mode = RENCODE_PREENCODE_MODE_NONE;
-
    p->vbaq_mode = in->vbaq_mode ? RENCODE_VBAQ_AUTO : RENCODE_VBAQ_NONE;
 
    if (enc->enc_pic.rc_session_init.rate_control_method == RENCODE_RATE_CONTROL_METHOD_NONE)
@@ -53,9 +46,15 @@ static void radeon_vcn_enc_quality_modes(struct radeon_encoder *enc,
    enc->enc_pic.quality_params.vbaq_mode = p->vbaq_mode;
    enc->enc_pic.quality_params.scene_change_sensitivity = 0;
    enc->enc_pic.quality_params.scene_change_min_idr_interval = 0;
+
+   /* By default, two_pass_search_center_map_mode is enabled when
+    * pre_encode_mode is enabled, however this doesn't apply to
+    * VCN 5.0.0, where only pre_encode_mode is enabled.
+    */
    enc->enc_pic.quality_params.two_pass_search_center_map_mode =
-      (enc->enc_pic.quality_modes.pre_encode_mode &&
-       !enc->enc_pic.spec_misc.b_picture_enabled) ? 1 : 0;
+      (sscreen->info.vcn_ip_version < VCN_5_0_0 &&
+         enc->enc_pic.quality_modes.pre_encode_mode &&
+         !enc->enc_pic.spec_misc.b_picture_enabled) ? 1 : 0;
    enc->enc_pic.quality_params.vbaq_strength = 0;
 }
 
