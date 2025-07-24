@@ -3091,8 +3091,6 @@ get_affinities(ra_ctx& ctx)
             if (!instr->definitions[1].isKill() && instr->operands[0].isTemp() &&
                 instr->operands[1].isFixed() && instr->operands[1].physReg() == exec)
                ctx.assignments[instr->operands[0].tempId()].set_precolor_affinity(vcc);
-         } else if (instr->opcode == aco_opcode::s_sendmsg) {
-            ctx.assignments[instr->operands[0].tempId()].set_precolor_affinity(m0);
          } else if (instr->format == Format::DS) {
             bool is_vector = false;
             for (unsigned i = 0, vector_begin = 0; i < instr->operands.size(); i++) {
@@ -3101,6 +3099,12 @@ get_affinities(ra_ctx& ctx)
                is_vector = instr->operands[i].isVectorAligned();
                vector_begin = is_vector ? vector_begin : i + 1;
             }
+         }
+
+         /* Collect register-affinities for precolored operands. */
+         for (Operand op : instr->operands) {
+            if (op.isTemp() && op.isPrecolored())
+               ctx.assignments[op.tempId()].set_precolor_affinity(op.physReg());
          }
 
          auto tied_defs = get_tied_defs(instr.get());
