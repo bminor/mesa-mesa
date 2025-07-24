@@ -546,9 +546,9 @@ def get_struct_copy(builder, dst, src_name, src_type, size, types):
 
     builder.add("%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);" % (dst, size))
     builder.add("if (%s == NULL) goto err;" % (dst))
-    builder.add("memcpy((void*)%s, %s, %s);" % (dst, src_name, size))
-    builder.add("%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_dst_name, dst, tmp_dst_name))
-    builder.add("%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_src_name, src_name, tmp_src_name))
+    builder.add("%s *%s = (void *)%s;" % (src_type, tmp_dst_name, dst))
+    builder.add("%s *%s = (void *)%s;" % (src_type, tmp_src_name, src_name))
+    builder.add("memcpy(%s, %s, %s);" % (tmp_dst_name, tmp_src_name, size))
 
     if src_type in types:
         for member in types[src_type].members:
