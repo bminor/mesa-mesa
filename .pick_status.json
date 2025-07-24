@@ -684,7 +684,7 @@
         "description": "nir: Fixup 10/12 bit SW decoder YCbCr formats",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a166d7609fb8448e8b5ece8f6fc0e9c437b2a398",
         "notes": null
