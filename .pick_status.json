@@ -1374,7 +1374,7 @@
         "description": "pan/bi: Properly handle SWZ.v4i8 lowering on v11+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1481b14fcb54af9b2263caddc2788dc11e7dca08",
         "notes": null
