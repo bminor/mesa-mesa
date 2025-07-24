@@ -224,8 +224,6 @@ tu_bo_sync_cache(struct tu_device *dev,
                  VkDeviceSize size,
                  enum tu_mem_sync_op op);
 
-uint32_t tu_get_l1_dcache_size();
-
 void tu_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo);
 
 void tu_bo_set_metadata(struct tu_device *dev, struct tu_bo *bo,

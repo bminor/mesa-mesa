@@ -15,6 +15,7 @@
 #include <poll.h>
 
 #include "git_sha1.h"
+#include "util/cache_ops.h"
 #include "util/u_debug.h"
 #include "util/disk_cache.h"
 #include "util/hex.h"
@@ -1607,7 +1608,7 @@ tu_physical_device_init(struct tu_physical_device *device,
       goto fail_free_name;
    }
 
-   device->level1_dcache_size = tu_get_l1_dcache_size();
+   device->level1_dcache_size = util_cache_granularity();
    device->has_cached_non_coherent_memory =
       device->level1_dcache_size > 0 && !DETECT_ARCH_ARM;
 
