@@ -53,8 +53,9 @@ enum {
    RADV_PREFETCH_GS = (1 << 4),
    RADV_PREFETCH_PS = (1 << 5),
    RADV_PREFETCH_MS = (1 << 6),
-   RADV_PREFETCH_SHADERS = (RADV_PREFETCH_VS | RADV_PREFETCH_TCS | RADV_PREFETCH_TES | RADV_PREFETCH_GS |
-                            RADV_PREFETCH_PS | RADV_PREFETCH_MS)
+   RADV_PREFETCH_GFX_SHADERS = (RADV_PREFETCH_VS | RADV_PREFETCH_TCS | RADV_PREFETCH_TES | RADV_PREFETCH_GS |
+                                RADV_PREFETCH_PS | RADV_PREFETCH_MS),
+   RADV_PREFETCH_GRAPHICS = (RADV_PREFETCH_VBO_DESCRIPTORS | RADV_PREFETCH_GFX_SHADERS),
 };
 
 static void radv_handle_image_transition(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image,
@@ -1780,10 +1781,13 @@ radv_emit_shader_prefetch(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
 }
 
 ALWAYS_INLINE static void
-radv_emit_prefetch_L2(struct radv_cmd_buffer *cmd_buffer, bool first_stage_only)
+radv_emit_graphics_prefetch(struct radv_cmd_buffer *cmd_buffer, bool first_stage_only)
 {
    struct radv_cmd_state *state = &cmd_buffer->state;
-   uint32_t mask = state->prefetch_L2_mask;
+   uint32_t mask = state->prefetch_L2_mask & RADV_PREFETCH_GRAPHICS;
+
+   if (!mask)
+      return;
 
    /* Fast prefetch path for starting draws as soon as possible. */
    if (first_stage_only)
@@ -7896,7 +7900,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
       cmd_buffer->push_constant_stages |= graphics_pipeline->active_stages;
 
       /* Prefetch all pipeline shaders at first draw time. */
-      cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_SHADERS;
+      cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_GFX_SHADERS;
 
       if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
           (!cmd_buffer->state.emitted_graphics_pipeline ||
@@ -11601,18 +11605,16 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
 
       radv_upload_graphics_shader_descriptors(cmd_buffer);
    } else {
-      const bool need_prefetch = has_prefetch && cmd_buffer->state.prefetch_L2_mask;
-
       /* If we don't wait for idle, start prefetches first, then set
        * states, and draw at the end.
        */
       radv_emit_cache_flush(cmd_buffer);
 
-      if (need_prefetch) {
-         /* Only prefetch the vertex shader and VBO descriptors
-          * in order to start the draw as soon as possible.
+      if (has_prefetch) {
+         /* Only prefetch the vertex shader and VBO descriptors in order to start the draw as soon
+          * as possible.
           */
-         radv_emit_prefetch_L2(cmd_buffer, true);
+         radv_emit_graphics_prefetch(cmd_buffer, true);
       }
 
       radv_upload_graphics_shader_descriptors(cmd_buffer);
@@ -11730,14 +11732,13 @@ radv_after_draw(struct radv_cmd_buffer *cmd_buffer, bool dgc)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radeon_info *gpu_info = &pdev->info;
-   bool has_prefetch = pdev->info.gfx_level >= GFX7;
-   /* Start prefetches after the draw has been started. Both will
-    * run in parallel, but starting the draw first is more
-    * important.
+   const bool has_prefetch = pdev->info.gfx_level >= GFX7;
+
+   /* Start prefetches after the draw has been started. Both will run in parallel, but starting the
+    * draw first is more important.
     */
-   if (has_prefetch && cmd_buffer->state.prefetch_L2_mask) {
-      radv_emit_prefetch_L2(cmd_buffer, false);
-   }
+   if (has_prefetch)
+      radv_emit_graphics_prefetch(cmd_buffer, false);
 
    /* Workaround for a VGT hang when streamout is enabled.
     * It must be done after drawing.
