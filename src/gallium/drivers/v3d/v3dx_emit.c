@@ -222,8 +222,11 @@ v3dX(emit_state)(struct pipe_context *pctx)
         struct v3d_job *job = v3d->job;
         bool rasterizer_discard = v3d->rasterizer->base.rasterizer_discard;
 
+        /* Scissor state is part of rasterizer state, but we mark
+         * rasterizer_scissor dirty if needed at v3d_rasterizer_state_bind()
+         */
         if (v3d->dirty & (V3D_DIRTY_SCISSOR | V3D_DIRTY_VIEWPORT |
-                          V3D_DIRTY_RASTERIZER)) {
+                          V3D_DIRTY_RASTERIZER_SCISSOR)) {
                 float *vpscale = v3d->viewport.scale;
                 float *vptranslate = v3d->viewport.translate;
                 float vp_minx = -fabsf(vpscale[0]) + vptranslate[0];

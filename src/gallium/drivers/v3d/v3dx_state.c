@@ -328,6 +328,11 @@ static void
 v3d_rasterizer_state_bind(struct pipe_context *pctx, void *hwcso)
 {
         struct v3d_context *v3d = v3d_context(pctx);
+        struct v3d_rasterizer_state *rasterizer = hwcso;
+        if (v3d->rasterizer == NULL || rasterizer == NULL ||
+            v3d->rasterizer->base.scissor != rasterizer->base.scissor) {
+                v3d->dirty |= V3D_DIRTY_RASTERIZER_SCISSOR;
+        }
         v3d->rasterizer = hwcso;
         v3d->dirty |= V3D_DIRTY_RASTERIZER;
 }
