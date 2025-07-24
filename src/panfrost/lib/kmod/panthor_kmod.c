@@ -171,11 +171,17 @@ panthor_dev_query_props(struct panthor_kmod_dev *panthor_dev)
 
       .allowed_group_priorities_mask = to_kmod_group_allow_priority_flags(
          panthor_dev->props.group_priorities.allowed_mask),
+
+      .supported_bo_flags = PAN_KMOD_BO_FLAG_EXECUTABLE |
+                            PAN_KMOD_BO_FLAG_NO_MMAP |
+                            PAN_KMOD_BO_FLAG_GPU_UNCACHED,
    };
 
-   if (panthor_dev->base.driver.version.major > 1 ||
-       panthor_dev->base.driver.version.minor >= 6)
+   if (pan_kmod_driver_version_at_least(&panthor_dev->base.driver, 1, 6))
       props->timestamp_device_coherent = true;
+
+   if (pan_kmod_driver_version_at_least(&panthor_dev->base.driver, 1, 7))
+      props->supported_bo_flags |= PAN_KMOD_BO_FLAG_WB_MMAP;
 
    static_assert(sizeof(props->texture_features) ==
                     sizeof(panthor_dev->props.gpu.texture_features),
@@ -332,6 +338,11 @@ to_panthor_bo_flags(uint32_t flags)
 
    if (flags & PAN_KMOD_BO_FLAG_NO_MMAP)
       panthor_flags |= DRM_PANTHOR_BO_NO_MMAP;
+
+   if (flags & PAN_KMOD_BO_FLAG_WB_MMAP) {
+      assert(!(flags & PAN_KMOD_BO_FLAG_NO_MMAP));
+      panthor_flags |= DRM_PANTHOR_BO_WB_MMAP;
+   }
 
    return panthor_flags;
 }

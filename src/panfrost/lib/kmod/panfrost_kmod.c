@@ -197,6 +197,12 @@ panfrost_dev_query_props(struct panfrost_kmod_dev *panfrost_dev)
    if (prios & BITFIELD_BIT(PANFROST_JM_CTX_PRIORITY_HIGH))
       props->allowed_group_priorities_mask |=
          PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH;
+
+   props->supported_bo_flags = PAN_KMOD_BO_FLAG_EXECUTABLE |
+                               PAN_KMOD_BO_FLAG_ALLOC_ON_FAULT |
+                               PAN_KMOD_BO_FLAG_NO_MMAP;
+   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 6))
+      props->supported_bo_flags |= PAN_KMOD_BO_FLAG_WB_MMAP;
 }
 
 static struct pan_kmod_dev *
@@ -248,6 +254,11 @@ to_panfrost_bo_flags(struct pan_kmod_dev *dev, uint32_t flags)
 
       if (!(flags & PAN_KMOD_BO_FLAG_EXECUTABLE))
          panfrost_flags |= PANFROST_BO_NOEXEC;
+   }
+
+   if (flags & PAN_KMOD_BO_FLAG_WB_MMAP) {
+      assert(!(flags & PAN_KMOD_BO_FLAG_NO_MMAP));
+      panfrost_flags |= PANFROST_BO_WB_MMAP;
    }
 
    return panfrost_flags;

@@ -102,6 +102,13 @@ enum pan_kmod_bo_flags {
     * is called.
     */
    PAN_KMOD_BO_FLAG_GPU_UNCACHED = BITFIELD_BIT(5),
+
+   /* CPU map the buffer object in userspace by forcing the "Write-Back
+    * Cacheable" cacheability attribute. The mapping otherwise uses the
+    * "Non-Cacheable" attribute if the ACE-Lite coherency protocol isn't
+    * supported by the GPU.
+    */
+   PAN_KMOD_BO_FLAG_WB_MMAP = BITFIELD_BIT(6),
 };
 
 /* Allowed group priority flags. */
@@ -213,6 +220,9 @@ struct pan_kmod_dev_props {
 
    /* A mask of flags containing the allowed group priorities. */
    enum pan_kmod_group_allow_priority_flags allowed_group_priorities_mask;
+
+   /* Mask of BO flags supported by the KMD. */
+   uint32_t supported_bo_flags;
 };
 
 /* Memory allocator for kmod internal allocations. */
