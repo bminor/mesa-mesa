@@ -12535,11 +12535,13 @@ radv_emit_rt_stack_size(struct radv_cmd_buffer *cmd_buffer)
 
 static void
 radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info,
-              struct radv_compute_pipeline *pipeline, struct radv_shader *compute_shader,
-              VkPipelineBindPoint bind_point)
+              struct radv_compute_pipeline *pipeline, VkPipelineBindPoint bind_point)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
+                                           ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
+                                           : cmd_buffer->state.rt_prolog;
    bool has_prefetch = pdev->info.gfx_level >= GFX7;
    bool pipeline_is_dirty = pipeline != cmd_buffer->state.emitted_compute_pipeline;
 
@@ -12647,8 +12649,7 @@ radv_dgc_after_dispatch(struct radv_cmd_buffer *cmd_buffer)
 void
 radv_compute_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info)
 {
-   radv_dispatch(cmd_buffer, info, cmd_buffer->state.compute_pipeline, cmd_buffer->state.shaders[MESA_SHADER_COMPUTE],
-                 VK_PIPELINE_BIND_POINT_COMPUTE);
+   radv_dispatch(cmd_buffer, info, cmd_buffer->state.compute_pipeline, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -12862,7 +12863,7 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
 
    assert(cmd_buffer->cs->cdw <= cdw_max);
 
-   radv_dispatch(cmd_buffer, &info, pipeline, rt_prolog, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+   radv_dispatch(cmd_buffer, &info, pipeline, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
    if (remaining_ray_count) {
       info.blocks[0] = remaining_ray_count;
@@ -12878,7 +12879,7 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
          radeon_end();
       }
 
-      radv_dispatch(cmd_buffer, &info, pipeline, rt_prolog, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+      radv_dispatch(cmd_buffer, &info, pipeline, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
    }
 
    radv_resume_conditional_rendering(cmd_buffer);
