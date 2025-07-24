@@ -323,18 +323,49 @@ panvk_UnmapMemory2KHR(VkDevice _device,
    return VK_SUCCESS;
 }
 
+static VkResult
+sync_memory_ranges(struct panvk_device *device, uint32_t memoryRangeCount,
+                   const VkMappedMemoryRange *pMemoryRanges,
+                   enum pan_kmod_bo_sync_type type)
+{
+   for (uint32_t i = 0; i < memoryRangeCount; i++) {
+      const VkMappedMemoryRange *r = &pMemoryRanges[i];
+      if (r->size == 0)
+         continue;
+
+      VK_FROM_HANDLE(panvk_device_memory, memory, r->memory);
+
+      pan_kmod_queue_bo_map_sync(
+         memory->bo, r->offset, (char *)memory->addr.host + r->offset,
+         vk_device_memory_range(&memory->vk, r->offset, r->size), type);
+   }
+
+   return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_FlushMappedMemoryRanges(VkDevice _device, uint32_t memoryRangeCount,
                               const VkMappedMemoryRange *pMemoryRanges)
 {
-   return VK_SUCCESS;
+   VK_FROM_HANDLE(panvk_device, device, _device);
+
+   return sync_memory_ranges(device, memoryRangeCount, pMemoryRanges,
+                             PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_InvalidateMappedMemoryRanges(VkDevice _device, uint32_t memoryRangeCount,
                                    const VkMappedMemoryRange *pMemoryRanges)
 {
-   return VK_SUCCESS;
+   VK_FROM_HANDLE(panvk_device, device, _device);
+   VkResult result =
+      sync_memory_ranges(device, memoryRangeCount, pMemoryRanges,
+                         PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE);
+
+   if (result == VK_SUCCESS)
+      pan_kmod_flush_bo_map_syncs(device->kmod.dev);
+
+   return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
