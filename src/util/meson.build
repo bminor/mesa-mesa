@@ -25,6 +25,7 @@ files_mesa_util = files(
   'box.h',
   'build_id.c',
   'build_id.h',
+  'cache_ops.h',
   'cnd_monotonic.c',
   'cnd_monotonic.h',
   'compiler.h',
@@ -182,6 +183,26 @@ files_mesa_util = files(
   'mesa_cache_db_multipart.h',
 )
 
+libmesa_util_links = []
+
+if host_machine.cpu_family() == 'aarch64' and cc.get_id() != 'msvc'
+  files_mesa_util += files('cache_ops_aarch64.c')
+elif host_machine.cpu_family() in ['x86', 'x86_64'] and cc.get_id() != 'msvc'
+  files_mesa_util += files('cache_ops_x86.c')
+  if with_clflushopt
+    libmesa_util_clflushopt = static_library(
+      'mesa_util_clflushopt',
+      ['cache_ops_x86_clflushopt.c'],
+      include_directories : [inc_util],
+      c_args : [no_override_init_args] + clflushopt_args,
+      gnu_symbol_visibility : 'hidden',
+    )
+    libmesa_util_links += libmesa_util_clflushopt
+  endif
+else
+  files_mesa_util += files('cache_ops_null.c')
+endif
+
 files_drirc = files('00-mesa-defaults.conf')
 
 if with_amd_vk
@@ -304,13 +325,14 @@ libmesa_util_simd = static_library(
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
 )
+libmesa_util_links += libmesa_util_simd
 
 _libmesa_util = static_library(
   'mesa_util',
   [files_mesa_util, files_debug_stack, format_srgb],
   include_directories : [inc_util, include_directories('format')],
   dependencies : deps_for_libmesa_util,
-  link_with: [libmesa_util_simd],
+  link_with: libmesa_util_links,
   c_args : [c_msvc_compat_args],
   gnu_symbol_visibility : 'hidden',
   build_by_default : false
