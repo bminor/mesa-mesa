@@ -784,7 +784,7 @@
         "description": "lima: ppir: fix check for discard_block in optimization",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fa9ddbe82b369911cca654c21712add432f81657",
         "notes": null
