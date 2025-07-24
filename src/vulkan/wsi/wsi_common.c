@@ -452,44 +452,47 @@ wsi_swapchain_init(const struct wsi_device *wsi,
    chain->blit.type = get_blit_type(wsi, image_params, _device);
 
    chain->blit.queue = VK_NULL_HANDLE;
-   if (chain->blit.type != WSI_SWAPCHAIN_NO_BLIT && wsi->get_blit_queue)
-      chain->blit.queue = wsi->get_blit_queue(_device);
-
-   int cmd_pools_count = chain->blit.queue != VK_NULL_HANDLE ? 1 : wsi->queue_family_count;
-
-   chain->cmd_pools =
-      vk_zalloc(pAllocator, sizeof(VkCommandPool) * cmd_pools_count, 8,
-                VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-   if (!chain->cmd_pools)
-      return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-   const VkCommandPoolCreateFlags cmd_pool_flags =
-      (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) ?
-      VK_COMMAND_POOL_CREATE_PROTECTED_BIT : 0;
-   for (uint32_t i = 0; i < cmd_pools_count; i++) {
-      int queue_family_index = i;
-
-      if (chain->blit.queue != VK_NULL_HANDLE) {
-         VK_FROM_HANDLE(vk_queue, queue, chain->blit.queue);
-         queue_family_index = queue->queue_family_index;
-      } else {
-         /* Queues returned by get_blit_queue() might not be listed in
-          * GetPhysicalDeviceQueueFamilyProperties, so this check is skipped for those queues.
-          */
-         if (!(wsi->queue_supports_blit & BITFIELD64_BIT(queue_family_index)))
-            continue;
+   if (chain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
+      if (wsi->get_blit_queue) {
+         chain->blit.queue = wsi->get_blit_queue(_device);
       }
 
-      const VkCommandPoolCreateInfo cmd_pool_info = {
-         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-         .pNext = NULL,
-         .flags = cmd_pool_flags,
-         .queueFamilyIndex = queue_family_index,
-      };
-      result = wsi->CreateCommandPool(_device, &cmd_pool_info, &chain->alloc,
-                                      &chain->cmd_pools[i]);
-      if (result != VK_SUCCESS)
-         goto fail;
+      int cmd_pools_count = chain->blit.queue != VK_NULL_HANDLE ? 1 : wsi->queue_family_count;
+
+      chain->cmd_pools =
+         vk_zalloc(pAllocator, sizeof(VkCommandPool) * cmd_pools_count, 8,
+                  VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+      if (!chain->cmd_pools)
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+      const VkCommandPoolCreateFlags cmd_pool_flags =
+         (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) ?
+         VK_COMMAND_POOL_CREATE_PROTECTED_BIT : 0;
+      for (uint32_t i = 0; i < cmd_pools_count; i++) {
+         int queue_family_index = i;
+
+         if (chain->blit.queue != VK_NULL_HANDLE) {
+            VK_FROM_HANDLE(vk_queue, queue, chain->blit.queue);
+            queue_family_index = queue->queue_family_index;
+         } else {
+            /* Queues returned by get_blit_queue() might not be listed in
+            * GetPhysicalDeviceQueueFamilyProperties, so this check is skipped for those queues.
+            */
+            if (!(wsi->queue_supports_blit & BITFIELD64_BIT(queue_family_index)))
+               continue;
+         }
+
+         const VkCommandPoolCreateInfo cmd_pool_info = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .pNext = NULL,
+            .flags = cmd_pool_flags,
+            .queueFamilyIndex = queue_family_index,
+         };
+         result = wsi->CreateCommandPool(_device, &cmd_pool_info, &chain->alloc,
+                                       &chain->cmd_pools[i]);
+         if (result != VK_SUCCESS)
+            goto fail;
+      }
    }
 
    result = configure_image(chain, pCreateInfo, image_params,
@@ -579,15 +582,17 @@ wsi_swapchain_finish(struct wsi_swapchain *chain)
    chain->wsi->DestroySemaphore(chain->device, chain->present_id_timeline,
                                 &chain->alloc);
 
-   int cmd_pools_count = chain->blit.queue != VK_NULL_HANDLE ?
-      1 : chain->wsi->queue_family_count;
-   for (uint32_t i = 0; i < cmd_pools_count; i++) {
-      if (!chain->cmd_pools[i])
-         continue;
-      chain->wsi->DestroyCommandPool(chain->device, chain->cmd_pools[i],
-                                     &chain->alloc);
+   if (chain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
+      int cmd_pools_count = chain->blit.queue != VK_NULL_HANDLE ?
+         1 : chain->wsi->queue_family_count;
+      for (uint32_t i = 0; i < cmd_pools_count; i++) {
+         if (!chain->cmd_pools[i])
+            continue;
+         chain->wsi->DestroyCommandPool(chain->device, chain->cmd_pools[i],
+                                       &chain->alloc);
+      }
+      vk_free(&chain->alloc, chain->cmd_pools);
    }
-   vk_free(&chain->alloc, chain->cmd_pools);
 
    vk_object_base_finish(&chain->base);
 }
