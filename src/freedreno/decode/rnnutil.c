@@ -150,6 +150,12 @@ rnn_enumname(struct rnn *rnn, const char *name, uint32_t val)
    return rnndec_decode_enum(rnn->vc, name, val);
 }
 
+int
+rnn_enumval(struct rnn *rnn, const char *enumname, const char *enumval)
+{
+   return rnndec_decode_enum_value(rnn->vc, enumname, enumval);
+}
+
 static struct rnndelem *
 regelem(struct rnndomain *domain, const char *name)
 {

@@ -817,6 +817,12 @@ regbase(const char *name)
    return rnn_regbase(rnn, name);
 }
 
+int
+enumval(const char *enumname, const char *enumval)
+{
+   return rnn_enumval(rnn, enumname, enumval);
+}
+
 static int
 endswith(uint32_t regbase, const char *suffix)
 {
