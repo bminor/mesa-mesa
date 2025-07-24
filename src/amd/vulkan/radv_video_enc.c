@@ -504,10 +504,9 @@ radv_enc_session_init(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEn
    RADEON_ENC_CS(vid->enc_session.padding_height);
    RADEON_ENC_CS(vid->enc_session.pre_encode_mode);
    RADEON_ENC_CS(vid->enc_session.pre_encode_chroma_enabled);
-   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_3) {
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_3)
       RADEON_ENC_CS(vid->enc_session.slice_output_enabled);
-      RADEON_ENC_CS(vid->enc_session.display_remote);
-   }
+   RADEON_ENC_CS(vid->enc_session.display_remote);
    if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_4) {
       RADEON_ENC_CS(vid->enc_session.WA_flags);
       RADEON_ENC_CS(0);
@@ -1719,7 +1718,8 @@ radv_enc_rc_per_pic(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoK
    RADEON_ENC_CS(per_pic->enabled_filler_data);
    RADEON_ENC_CS(per_pic->skip_frame_enable);
    RADEON_ENC_CS(per_pic->enforce_hrd);
-   RADEON_ENC_CS(0xFFFFFFFF); // reserved_0xff
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_3)
+      RADEON_ENC_CS(0xFFFFFFFF); // qvbr_quality_level
    RADEON_ENC_END();
 }
 
