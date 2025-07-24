@@ -33,3 +33,4 @@ spec@nv_texture_env_combine4@nv_texture_env_combine4-combine
 # uprev Piglit in Mesa
 spec@glsl-1.10@execution@built-in-functions@fs-op-div-mat2-mat2
 
+shaders@glsl-max-varyings >max_varying_components
