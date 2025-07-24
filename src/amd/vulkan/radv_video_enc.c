@@ -3048,13 +3048,13 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
       }
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
-      /*
-       * AMD firmware requires these flags to be set in h265 with RC modes,
-       * VCN 3 need 1.27 and VCN 4 needs 1.7 or newer to pass the CTS tests,
-       * dEQP-VK.video.encode.h265_rc_*.
-       */
       for (unsigned i = 0; i < params->h265_enc.h265_pps_count; i++) {
-         params->h265_enc.h265_pps[i].base.flags.cu_qp_delta_enabled_flag = 1;
+         /* cu_qp_delta needs to be enabled if rate control is enabled. VCN2 and newer can also enable
+          * it with rate control disabled. Since we don't know what rate control will be used, we
+          * need to always force enable it.
+          * On VCN1 rate control modes are disabled.
+          */
+         params->h265_enc.h265_pps[i].base.flags.cu_qp_delta_enabled_flag = !!(pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2);
          params->h265_enc.h265_pps[i].base.diff_cu_qp_delta_depth = 0;
          params->h265_enc.h265_pps[i].base.init_qp_minus26 = 0;
          params->h265_enc.h265_pps[i].base.flags.dependent_slice_segments_enabled_flag = 1;

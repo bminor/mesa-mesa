@@ -1011,8 +1011,12 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          pCapabilities->pNext, VIDEO_ENCODE_H265_CAPABILITIES_KHR);
 
       pCapabilities->pictureAccessGranularity.width = VK_VIDEO_H265_CTU_MAX_WIDTH;
-      if (enc_caps)
+      if (enc_caps) {
          enc_caps->encodeInputPictureGranularity = pCapabilities->pictureAccessGranularity;
+         /* VCN1 can't enable rate control modes due to missing cu_qp_delta FW interface. */
+         if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_1_2)
+            enc_caps->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR;
+      }
 
       ext->flags = VK_VIDEO_ENCODE_H265_CAPABILITY_HRD_COMPLIANCE_BIT_KHR |
                    VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR |
