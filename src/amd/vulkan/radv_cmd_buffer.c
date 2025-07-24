@@ -7826,6 +7826,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
       if (cmd_buffer->state.compute_pipeline == compute_pipeline)
          return;
       radv_mark_descriptor_sets_dirty(cmd_buffer, pipelineBindPoint);
+      radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
       radv_bind_shader(cmd_buffer, compute_pipeline->base.shaders[MESA_SHADER_COMPUTE], MESA_SHADER_COMPUTE);
 
@@ -7839,6 +7840,15 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
       if (cmd_buffer->state.rt_pipeline == rt_pipeline)
          return;
       radv_mark_descriptor_sets_dirty(cmd_buffer, pipelineBindPoint);
+
+      /* Raytracing uses compute shaders but has separate bind points and pipelines.
+       * So if we set compute userdata & shader registers we should dirty the raytracing
+       * ones and the other way around.
+       *
+       * We only need to do this when the pipeline is dirty because when we switch between
+       * the two we always need to switch pipelines.
+       */
+      radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
       radv_bind_shader(cmd_buffer, rt_pipeline->base.base.shaders[MESA_SHADER_INTERSECTION], MESA_SHADER_INTERSECTION);
       radv_bind_rt_prolog(cmd_buffer, rt_pipeline->prolog);
@@ -12581,19 +12591,6 @@ radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_inf
       radv_emit_dispatch_packets(cmd_buffer, compute_shader, info);
    }
 
-   if (pipeline_is_dirty) {
-      /* Raytracing uses compute shaders but has separate bind points and pipelines.
-       * So if we set compute userdata & shader registers we should dirty the raytracing
-       * ones and the other way around.
-       *
-       * We only need to do this when the pipeline is dirty because when we switch between
-       * the two we always need to switch pipelines.
-       */
-      radv_mark_descriptor_sets_dirty(cmd_buffer, bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                                     ? VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-                                                     : VK_PIPELINE_BIND_POINT_COMPUTE);
-   }
-
    if (compute_shader->info.cs.regalloc_hang_bug)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
 
@@ -12633,17 +12630,6 @@ radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint
 
       if (has_prefetch)
          radv_emit_shader_prefetch(cmd_buffer, compute_shader);
-
-      /* Raytracing uses compute shaders but has separate bind points and pipelines.
-       * So if we set compute userdata & shader registers we should dirty the raytracing
-       * ones and the other way around.
-       *
-       * We only need to do this when the pipeline is dirty because when we switch between
-       * the two we always need to switch pipelines.
-       */
-      radv_mark_descriptor_sets_dirty(cmd_buffer, bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                                     ? VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-                                                     : VK_PIPELINE_BIND_POINT_COMPUTE);
    }
 }
 
