@@ -443,13 +443,13 @@ convert_yuv_to_rgb(nir_builder *b, nir_tex_instr *tex,
    nir_def *m2 = nir_f2fN(b, nir_build_imm(b, 4, 32, m->v[2]), bit_size);
 
    if (options->lower_sx10_external & (1u << texture_index)) {
-      m0 = nir_fmul_imm(b, m0, 64.0f);
-      m1 = nir_fmul_imm(b, m1, 64.0f);
-      m2 = nir_fmul_imm(b, m2, 64.0f);
+      m0 = nir_fmul_imm(b, m0, 65535.0f / 1023.0f);
+      m1 = nir_fmul_imm(b, m1, 65535.0f / 1023.0f);
+      m2 = nir_fmul_imm(b, m2, 65535.0f / 1023.0f);
    } else if (options->lower_sx12_external & (1u << texture_index)) {
-      m0 = nir_fmul_imm(b, m0, 16.0f);
-      m1 = nir_fmul_imm(b, m1, 16.0f);
-      m2 = nir_fmul_imm(b, m2, 16.0f);
+      m0 = nir_fmul_imm(b, m0, 65535.0f / 4095.0f);
+      m1 = nir_fmul_imm(b, m1, 65535.0f / 4095.0f);
+      m2 = nir_fmul_imm(b, m2, 65535.0f / 4095.0f);
    }
 
    nir_def *result =
