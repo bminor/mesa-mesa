@@ -12088,9 +12088,9 @@ radv_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer _b
    radv_after_draw(cmd_buffer, false);
 }
 
-/* TODO: Use these functions with the normal dispatch path. */
-static void radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point);
-static void radv_dgc_after_dispatch(struct radv_cmd_buffer *cmd_buffer);
+static void radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline,
+                                 VkPipelineBindPoint bind_point);
+static void radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point, bool dgc);
 
 /* VK_EXT_device_generated_commands */
 static void
@@ -12187,9 +12187,23 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
    }
 
    if (rt) {
-      radv_dgc_before_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+      struct radv_compute_pipeline *compute_pipeline = NULL;
+
+      if (pipeline_info) {
+         VK_FROM_HANDLE(radv_pipeline, pipeline, pipeline_info->pipeline);
+         compute_pipeline = &radv_pipeline_to_ray_tracing(pipeline)->base;
+      }
+
+      radv_before_dispatch(cmd_buffer, compute_pipeline, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
    } else if (compute) {
-      radv_dgc_before_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+      struct radv_compute_pipeline *compute_pipeline = NULL;
+
+      if (pipeline_info) {
+         VK_FROM_HANDLE(radv_pipeline, pipeline, pipeline_info->pipeline);
+         compute_pipeline = radv_pipeline_to_compute(pipeline);
+      }
+
+      radv_before_dispatch(cmd_buffer, compute_pipeline, VK_PIPELINE_BIND_POINT_COMPUTE);
    } else {
       struct radv_draw_info info = {
          .count = pGeneratedCommandsInfo->maxSequenceCount,
@@ -12218,14 +12232,14 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
    if (rt) {
       cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
 
-      radv_dgc_after_dispatch(cmd_buffer);
+      radv_after_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, true);
    } else if (compute) {
       cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
 
       if (ies)
          radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-      radv_dgc_after_dispatch(cmd_buffer);
+      radv_after_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, true);
    } else {
       if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IB)) {
          cmd_buffer->state.last_index_type = -1;
@@ -12589,7 +12603,8 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
        * time the CUs are idle is very short. (there are only SET_SH
        * packets between the wait and the draw)
        */
-      radv_emit_compute_pipeline(cmd_buffer, pipeline);
+      if (pipeline)
+         radv_emit_compute_pipeline(cmd_buffer, pipeline);
       if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
          radv_emit_rt_stack_size(cmd_buffer);
       radv_emit_cache_flush(cmd_buffer);
@@ -12612,14 +12627,15 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
 
       radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
 
-      radv_emit_compute_pipeline(cmd_buffer, pipeline);
+      if (pipeline)
+         radv_emit_compute_pipeline(cmd_buffer, pipeline);
       if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
          radv_emit_rt_stack_size(cmd_buffer);
    }
 }
 
 static void
-radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
+radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point, bool dgc)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -12642,7 +12658,7 @@ radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind
    if (compute_shader->info.cs.regalloc_hang_bug)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
 
-   radv_cmd_buffer_after_draw(cmd_buffer, RADV_CMD_FLAG_CS_PARTIAL_FLUSH, false);
+   radv_cmd_buffer_after_draw(cmd_buffer, RADV_CMD_FLAG_CS_PARTIAL_FLUSH, dgc);
 }
 
 static void
@@ -12655,54 +12671,7 @@ radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_inf
 
    radv_before_dispatch(cmd_buffer, pipeline, bind_point);
    radv_emit_dispatch_packets(cmd_buffer, compute_shader, info);
-   radv_after_dispatch(cmd_buffer, bind_point);
-}
-
-static void
-radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_compute_pipeline *pipeline = bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-                                               ? &cmd_buffer->state.rt_pipeline->base
-                                               : cmd_buffer->state.compute_pipeline;
-   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-                                           ? cmd_buffer->state.rt_pipeline->prolog
-                                           : cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
-   bool pipeline_is_dirty = pipeline != cmd_buffer->state.emitted_compute_pipeline;
-
-   /* We will have run the DGC patch shaders before, so we can assume that there is something to
-    * flush. Otherwise, we just split radv_dispatch in two. One pre-dispatch and another one
-    * post-dispatch. */
-
-   if (compute_shader->info.cs.regalloc_hang_bug)
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
-
-   if (pipeline)
-      radv_emit_compute_pipeline(cmd_buffer, pipeline);
-   if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-      radv_emit_rt_stack_size(cmd_buffer);
-   radv_emit_cache_flush(cmd_buffer);
-
-   radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
-
-   if (pipeline_is_dirty) {
-      const bool has_prefetch = pdev->info.gfx_level >= GFX7;
-
-      if (has_prefetch)
-         radv_emit_shader_prefetch(cmd_buffer, compute_shader);
-   }
-}
-
-static void
-radv_dgc_after_dispatch(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_shader *compute_shader = cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
-
-   if (compute_shader->info.cs.regalloc_hang_bug)
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
-
-   radv_cmd_buffer_after_draw(cmd_buffer, RADV_CMD_FLAG_CS_PARTIAL_FLUSH, true);
+   radv_after_dispatch(cmd_buffer, bind_point, false);
 }
 
 void
