@@ -447,9 +447,11 @@ unsigned int radeon_enc_write_pps(struct radeon_encoder *enc, uint8_t nal_byte, 
    radeon_bs_code_fixed_bits(&bs, (enc->enc_pic.spec_misc.deblocking_filter_control_present_flag), 1);
    radeon_bs_code_fixed_bits(&bs, (enc->enc_pic.spec_misc.constrained_intra_pred_flag), 1);
    radeon_bs_code_fixed_bits(&bs, (enc->enc_pic.spec_misc.redundant_pic_cnt_present_flag), 1);
-   radeon_bs_code_fixed_bits(&bs, (enc->enc_pic.spec_misc.transform_8x8_mode), 1);
-   radeon_bs_code_fixed_bits(&bs, 0x0, 1); /* pic_scaling_matrix_present_flag */
-   radeon_bs_code_se(&bs, enc->enc_pic.h264_deblock.cr_qp_offset); /* second_chroma_qp_index_offset */
+   if (enc->enc_pic.h264.desc->pic_ctrl.more_rbsp_data) {
+      radeon_bs_code_fixed_bits(&bs, (enc->enc_pic.spec_misc.transform_8x8_mode), 1);
+      radeon_bs_code_fixed_bits(&bs, 0x0, 1); /* pic_scaling_matrix_present_flag */
+      radeon_bs_code_se(&bs, enc->enc_pic.h264_deblock.cr_qp_offset); /* second_chroma_qp_index_offset */
+   }
 
    radeon_bs_code_fixed_bits(&bs, 0x1, 1);
    radeon_bs_byte_align(&bs);
