@@ -88,6 +88,9 @@ vk_cmd_push_descriptor_set_with_template2_free(
       vk_free(queue->alloc, (void *)pnext->pPushConstantRanges);
       vk_free(queue->alloc, pnext);
    }
+
+   vk_free(queue->alloc, (void *)info->pData);
+   vk_free(queue->alloc, info);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -756,6 +759,9 @@ vk_free_cmd_push_descriptor_set2(struct vk_cmd_queue *queue,
                                  struct vk_cmd_queue_entry *cmd)
 {
    ralloc_free(cmd->driver_data);
+
+   vk_free(queue->alloc, (void *)cmd->u.push_descriptor_set2.push_descriptor_set_info->pDescriptorWrites);
+   vk_free(queue->alloc, cmd->u.push_descriptor_set2.push_descriptor_set_info);
 }
 
 VKAPI_ATTR void VKAPI_CALL vk_cmd_enqueue_CmdPushDescriptorSet2(

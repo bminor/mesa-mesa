@@ -329,10 +329,11 @@ vk_free_queue(struct vk_cmd_queue *queue)
 {
    struct vk_cmd_queue_entry *tmp, *cmd;
    LIST_FOR_EACH_ENTRY_SAFE(cmd, tmp, &queue->cmds, cmd_link) {
-      if (cmd->driver_free_cb)
+      if (cmd->driver_free_cb) {
          cmd->driver_free_cb(queue, cmd);
-      else
-         vk_free(queue->alloc, cmd->driver_data);
+         vk_free(queue->alloc, cmd);
+         continue;
+      }
       switch(cmd->type) {
 % for c in commands:
 % if c.guard is not None:
@@ -348,6 +349,7 @@ vk_free_queue(struct vk_cmd_queue *queue)
       case VK_CMD_TYPE_COUNT:
          break;
       }
+      vk_free(queue->alloc, cmd->driver_data);
       vk_free(queue->alloc, cmd);
    }
 }
