@@ -174,7 +174,7 @@ panfrost_dev_query_props(struct panfrost_kmod_dev *panfrost_dev)
 
    panfrost_dev_query_thread_props(panfrost_dev);
 
-   if (dev->driver.version.major > 1 || dev->driver.version.minor >= 3) {
+   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 3)) {
       props->gpu_can_query_timestamp = true;
       props->timestamp_frequency = panfrost_query_raw(
          fd, DRM_PANFROST_PARAM_SYSTEM_TIMESTAMP_FREQUENCY, true, 0);
@@ -239,7 +239,7 @@ to_panfrost_bo_flags(struct pan_kmod_dev *dev, uint32_t flags)
 {
    uint32_t panfrost_flags = 0;
 
-   if (dev->driver.version.major > 1 || dev->driver.version.minor >= 1) {
+   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 1)) {
       /* The alloc-on-fault feature is only used for the tiler HEAP object,
        * hence the name of the flag on panfrost.
        */
@@ -509,7 +509,7 @@ panfrost_kmod_bo_label(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const c
 {
    char truncated_label[PANFROST_BO_LABEL_MAXLEN];
 
-   if (!(dev->driver.version.major > 1 || dev->driver.version.minor >= 4))
+   if (!pan_kmod_driver_version_at_least(&dev->driver, 1, 4))
       return;
 
    if (strnlen(label, PANFROST_BO_LABEL_MAXLEN) == PANFROST_BO_LABEL_MAXLEN) {

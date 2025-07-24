@@ -451,6 +451,19 @@ struct pan_kmod_driver {
    } version;
 };
 
+static inline bool
+pan_kmod_driver_version_at_least(const struct pan_kmod_driver *driver,
+                                 uint32_t major, uint32_t minor)
+{
+   if (driver->version.major < major)
+      return false;
+
+   if (driver->version.major > major)
+      return true;
+
+   return driver->version.minor >= minor;
+}
+
 /* Device object. */
 struct pan_kmod_dev {
    /* FD attached to the device. */

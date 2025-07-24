@@ -1187,7 +1187,7 @@ panthor_kmod_get_csif_props(const struct pan_kmod_dev *dev)
 static uint64_t
 panthor_kmod_query_timestamp(const struct pan_kmod_dev *dev)
 {
-   if (dev->driver.version.major <= 1 && dev->driver.version.minor < 1)
+   if (!pan_kmod_driver_version_at_least(&dev->driver, 1, 1))
       return 0;
 
    struct drm_panthor_timestamp_info timestamp_info;
@@ -1212,7 +1212,7 @@ panthor_kmod_bo_label(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const ch
 {
    char truncated_label[PANTHOR_BO_LABEL_MAXLEN];
 
-   if (!(dev->driver.version.major > 1 || dev->driver.version.minor >= 4))
+   if (!pan_kmod_driver_version_at_least(&dev->driver, 1, 4))
       return;
 
     if (strnlen(label, PANTHOR_BO_LABEL_MAXLEN) == PANTHOR_BO_LABEL_MAXLEN) {
