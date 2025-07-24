@@ -12567,8 +12567,8 @@ radv_emit_rt_stack_size(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info,
-              struct radv_compute_pipeline *pipeline, VkPipelineBindPoint bind_point)
+radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline,
+                     VkPipelineBindPoint bind_point)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -12596,20 +12596,6 @@ radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_inf
       /* <-- CUs are idle here --> */
 
       radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
-
-      radv_emit_dispatch_packets(cmd_buffer, compute_shader, info);
-      /* <-- CUs are busy here --> */
-
-      /* Start prefetches after the dispatch has been started. Both will run in parallel, but
-       * starting the dispatch first is more important.
-       */
-      if (has_prefetch) {
-         if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            radv_emit_compute_prefetch(cmd_buffer);
-         } else {
-            radv_emit_ray_tracing_prefetch(cmd_buffer);
-         }
-      }
    } else {
       /* If we don't wait for idle, start prefetches first, then set
        * states, and dispatch at the end.
@@ -12629,13 +12615,47 @@ radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_inf
       radv_emit_compute_pipeline(cmd_buffer, pipeline);
       if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
          radv_emit_rt_stack_size(cmd_buffer);
-      radv_emit_dispatch_packets(cmd_buffer, compute_shader, info);
+   }
+}
+
+static void
+radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
+{
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
+                                           ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
+                                           : cmd_buffer->state.rt_prolog;
+   const bool has_prefetch = pdev->info.gfx_level >= GFX7;
+
+   /* Start prefetches after the dispatch has been started. Both will run in parallel, but
+    * starting the dispatch first is more important.
+    */
+   if (has_prefetch) {
+      if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+         radv_emit_compute_prefetch(cmd_buffer);
+      } else {
+         radv_emit_ray_tracing_prefetch(cmd_buffer);
+      }
    }
 
    if (compute_shader->info.cs.regalloc_hang_bug)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
 
    radv_cmd_buffer_after_draw(cmd_buffer, RADV_CMD_FLAG_CS_PARTIAL_FLUSH, false);
+}
+
+static void
+radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info,
+              struct radv_compute_pipeline *pipeline, VkPipelineBindPoint bind_point)
+{
+   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
+                                           ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
+                                           : cmd_buffer->state.rt_prolog;
+
+   radv_before_dispatch(cmd_buffer, pipeline, bind_point);
+   radv_emit_dispatch_packets(cmd_buffer, compute_shader, info);
+   radv_after_dispatch(cmd_buffer, bind_point);
 }
 
 static void
