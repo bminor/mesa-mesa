@@ -252,7 +252,7 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
          to_panvk_physical_device(cmdbuf->vk.base.device->physical);
    struct panvk_cmd_graphics_state *state = &cmdbuf->state.gfx;
    struct pan_fb_info *fbinfo = &state->render.fb.info;
-   uint32_t att_width = 0, att_height = 0;
+   uint32_t att_width = UINT32_MAX, att_height = UINT32_MAX;
 
    state->render.flags = pRenderingInfo->flags;
 
@@ -298,8 +298,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
          continue;
 
       render_state_set_color_attachment(cmdbuf, att, i);
-      att_width = MAX2(iview->vk.extent.width, att_width);
-      att_height = MAX2(iview->vk.extent.height, att_height);
+      att_width = MIN2(iview->vk.extent.width, att_width);
+      att_height = MIN2(iview->vk.extent.height, att_height);
    }
 
    if (pRenderingInfo->pDepthAttachment &&
@@ -310,8 +310,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
       if (iview) {
          assert(iview->vk.image->aspects & VK_IMAGE_ASPECT_DEPTH_BIT);
          render_state_set_z_attachment(cmdbuf, att);
-         att_width = MAX2(iview->vk.extent.width, att_width);
-         att_height = MAX2(iview->vk.extent.height, att_height);
+         att_width = MIN2(iview->vk.extent.width, att_width);
+         att_height = MIN2(iview->vk.extent.height, att_height);
       }
    }
 
@@ -323,8 +323,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
       if (iview) {
          assert(iview->vk.image->aspects & VK_IMAGE_ASPECT_STENCIL_BIT);
          render_state_set_s_attachment(cmdbuf, att);
-         att_width = MAX2(iview->vk.extent.width, att_width);
-         att_height = MAX2(iview->vk.extent.height, att_height);
+         att_width = MIN2(iview->vk.extent.width, att_width);
+         att_height = MIN2(iview->vk.extent.height, att_height);
       }
    }
 
