@@ -720,6 +720,10 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
                     old_fs->prog_data.fs->centroid_flags) {
                         v3d->dirty |= V3D_DIRTY_CENTROID_FLAGS;
                 }
+                if (v3d->prog.fs->prog_data.fs->disable_ez !=
+                    old_fs->prog_data.fs->disable_ez) {
+                   v3d->dirty |= V3D_DIRTY_ZSA;
+                }
         }
 
         if (old_fs && memcmp(v3d->prog.fs->prog_data.fs->input_slots,

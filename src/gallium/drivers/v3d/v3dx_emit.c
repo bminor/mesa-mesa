@@ -289,8 +289,7 @@ v3dX(emit_state)(struct pipe_context *pctx)
 
         if (v3d->dirty & (V3D_DIRTY_RASTERIZER |
                           V3D_DIRTY_ZSA |
-                          V3D_DIRTY_BLEND |
-                          V3D_DIRTY_COMPILED_FS)) {
+                          V3D_DIRTY_BLEND)) {
                 cl_emit(&job->bcl, CFG_BITS, config) {
                         config.enable_forward_facing_primitive =
                                 !rasterizer_discard &&
