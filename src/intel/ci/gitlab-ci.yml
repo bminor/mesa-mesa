@@ -249,7 +249,6 @@ iris-kbl-traces:
 iris-cml-traces:
   variables:
     GPU_VERSION: intel-cml
-    FDO_CI_CONCURRENT: 6  # Higher leads to OOMs
   extends:
     - .iris-cml-test
     - .iris-traces
