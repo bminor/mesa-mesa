@@ -129,11 +129,6 @@ void
 link_util_calculate_subroutine_compat(struct gl_shader_program *prog);
 
 void
-link_util_mark_array_elements_referenced(const struct array_deref_range *dr,
-                                         unsigned count, unsigned array_depth,
-                                         BITSET_WORD *bits);
-
-void
 resource_name_updated(struct gl_resource_name *name);
 
 /**
