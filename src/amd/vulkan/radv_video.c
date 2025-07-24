@@ -750,8 +750,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          enc_caps->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
                                                   VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
       }
-      pCapabilities->minBitstreamBufferOffsetAlignment = 16;
-      pCapabilities->minBitstreamBufferSizeAlignment = 16;
+      pCapabilities->minBitstreamBufferOffsetAlignment = 256;
+      pCapabilities->minBitstreamBufferSizeAlignment = 8;
       if (pdev->info.vcn_ip_version >= VCN_5_0_0)
          pCapabilities->flags |= VK_VIDEO_CAPABILITY_SEPARATE_REFERENCE_IMAGES_BIT_KHR;
    }
