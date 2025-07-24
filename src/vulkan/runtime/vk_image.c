@@ -284,6 +284,25 @@ vk_image_expand_aspect_mask(const struct vk_image *image,
    }
 }
 
+uint32_t
+vk_image_subresource_slice_count(const struct vk_device *device,
+                                 const struct vk_image *image,
+                                 const VkImageSubresourceLayers *range)
+{
+   assert(image->image_type == VK_IMAGE_TYPE_3D);
+
+   bool layers_are_slices = device->enabled_features.maintenance9 &&
+      (image->create_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT);
+   uint32_t slices = u_minify(image->extent.depth, range->mipLevel);
+
+   if (!layers_are_slices) {
+      assert(range->baseArrayLayer == 0);
+      return slices;
+   }
+   return range->layerCount == VK_REMAINING_ARRAY_LAYERS ?
+          slices - range->baseArrayLayer : range->layerCount;
+}
+
 VkExtent3D
 vk_image_extent_to_elements(const struct vk_image *image, VkExtent3D extent)
 {
