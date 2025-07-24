@@ -723,6 +723,25 @@ dump_cp_ucode_dbg(uint32_t *dbg)
    }
 }
 
+const static struct {
+   const char *from;
+   const char *to;
+} index_reg_renames[] = {
+   {"CP_ROQ", "CP_ROQ_DBG"},
+   {"CP_UCODE_DBG_DATA", "CP_SQE_UCODE_DBG"},
+   {"CP_RESOURCE_TBL", "CP_RESOURCE_TABLE_DBG"},
+   {"CP_LPAC_ROQ", "CP_LPAC_ROQ_DBG"},
+   {"CP_BV_DRAW_STATE_ADDR", "CP_BV_DRAW_STATE"},
+   {"CP_BV_ROQ_DBG_ADDR", "CP_BV_ROQ_DBG"},
+   {"CP_BV_SQE_UCODE_DBG_ADDR", "CP_BV_SQE_UCODE_DBG"},
+   {"CP_LPAC_DRAW_STATE_ADDR", "CP_LPAC_DRAW_STATE"},
+   {"CP_SQE_AC_UCODE_DBG_ADDR", "CP_SQE_AC_UCODE_DBG"},
+   {"CP_SQE_AC_STAT_ADDR", "CP_SQE_AC_STAT"},
+   {"CP_LPAC_FIFO_DBG_ADDR", "CP_LPAC_FIFO_DBG"},
+   {"CP_MEMPOOL", "CP_MEM_POOL_DBG"},
+   {"CP_BV_MEMPOOL", "CP_BV_MEM_POOL_DBG"},
+};
+
 static void
 decode_indexed_registers(void)
 {
@@ -733,6 +752,16 @@ decode_indexed_registers(void)
       if (startswith(line, "  - regs-name:")) {
          free(name);
          parseline(line, "  - regs-name: %ms", &name);
+
+         /* kernel is inconsitent, sometimes the name ends in _DATA or _ADDR,
+          * or various other renaming:
+          */
+         for (int i = 0; i < ARRAY_SIZE(index_reg_renames); i++) {
+            if (!strcmp(name, index_reg_renames[i].from)) {
+               free(name);
+               name = strdup(index_reg_renames[i].to);
+            }
+         }
       } else if (startswith(line, "    dwords:")) {
          parseline(line, "    dwords: %u", &sizedwords);
       } else if (startswith(line, "    data: !!ascii85 |")) {
@@ -744,13 +773,13 @@ decode_indexed_registers(void)
          bool dump = verbose || !strcmp(name, "CP_SQE_STAT") ||
                      !strcmp(name, "CP_BV_SQE_STAT") ||
                      !strcmp(name, "CP_DRAW_STATE") ||
-                     !strcmp(name, "CP_ROQ") || 0;
+                     !strcmp(name, "CP_ROQ_DBG") || 0;
 
          if (!strcmp(name, "CP_SQE_STAT") || !strcmp(name, "CP_BV_SQE_STAT"))
             dump_cp_sqe_stat(buf);
 
-         if (!strcmp(name, "CP_UCODE_DBG_DATA") ||
-             !strcmp(name, "CP_BV_SQE_UCODE_DBG_ADDR"))
+         if (!strcmp(name, "CP_UCODE_DBG") ||
+             !strcmp(name, "CP_BV_SQE_UCODE_DBG"))
             dump_cp_ucode_dbg(buf);
 
          if (!strcmp(name, "CP_MEMPOOL"))
@@ -791,7 +820,7 @@ decode_shader_blocks(void)
           * so far) not useful, so skip them if not in verbose mode:
           */
          bool dump = verbose || !strcmp(type, "A6XX_SP_INST_DATA") ||
-                     !strcmp(type, "A6XX_HLSQ_INST_RAM") || 
+                     !strcmp(type, "A6XX_HLSQ_INST_RAM") ||
                      !strcmp(type, "A7XX_SP_INST_DATA") ||
                      !strcmp(type, "A7XX_HLSQ_INST_RAM") || 0;
 
