@@ -956,7 +956,7 @@ emit_atomic_binop(struct ntd_context *ctx,
    const struct dxil_func *func = dxil_get_function(&ctx->mod, "dx.op.atomicBinOp", DXIL_I32);
 
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *opcode =
       dxil_module_get_int32_const(&ctx->mod, DXIL_INTR_ATOMIC_BINOP);
@@ -981,7 +981,7 @@ emit_atomic_cmpxchg(struct ntd_context *ctx,
       dxil_get_function(&ctx->mod, "dx.op.atomicCompareExchange", DXIL_I32);
 
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *opcode =
       dxil_module_get_int32_const(&ctx->mod, DXIL_INTR_ATOMIC_CMPXCHG);
@@ -1790,7 +1790,7 @@ emit_threads(struct ntd_context *ctx)
    const struct dxil_mdnode *threads_y = dxil_get_metadata_int32(&ctx->mod, MAX2(s->info.workgroup_size[1], 1));
    const struct dxil_mdnode *threads_z = dxil_get_metadata_int32(&ctx->mod, MAX2(s->info.workgroup_size[2], 1));
    if (!threads_x || !threads_y || !threads_z)
-      return false;
+      return NULL;
 
    const struct dxil_mdnode *threads_nodes[] = { threads_x, threads_y, threads_z };
    return dxil_get_metadata_node(&ctx->mod, threads_nodes, ARRAY_SIZE(threads_nodes));
@@ -3220,12 +3220,12 @@ call_unary_external_function(struct ntd_context *ctx,
    const struct dxil_func *func =
       dxil_get_function(&ctx->mod, name, overload);
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *opcode =
       dxil_module_get_int32_const(&ctx->mod, dxil_intr);
    if (!opcode)
-      return false;
+      return NULL;
 
    const struct dxil_value *args[] = {opcode};
 
@@ -4302,7 +4302,7 @@ emit_texture_size(struct ntd_context *ctx, struct texop_parameters *params)
 {
    const struct dxil_func *func = dxil_get_function(&ctx->mod, "dx.op.getDimensions", DXIL_NONE);
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *args[] = {
       dxil_module_get_int32_const(&ctx->mod, DXIL_INTR_TEXTURE_SIZE),
@@ -5347,7 +5347,7 @@ emit_sample_grad(struct ntd_context *ctx, struct texop_parameters *params)
 {
    const struct dxil_func *func = dxil_get_function(&ctx->mod, "dx.op.sampleGrad", params->overload);
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *args[17] = {
       dxil_module_get_int32_const(&ctx->mod, DXIL_INTR_SAMPLE_GRAD),
@@ -5367,7 +5367,7 @@ emit_sample_cmp_grad(struct ntd_context *ctx, struct texop_parameters *params)
 {
    const struct dxil_func *func = dxil_get_function(&ctx->mod, "dx.op.sampleCmpGrad", params->overload);
    if (!func)
-      return false;
+      return NULL;
    
    ctx->mod.feats.sample_cmp_bias_gradient = 1;
 
@@ -5390,7 +5390,7 @@ emit_texel_fetch(struct ntd_context *ctx, struct texop_parameters *params)
 {
    const struct dxil_func *func = dxil_get_function(&ctx->mod, "dx.op.textureLoad", params->overload);
    if (!func)
-      return false;
+      return NULL;
 
    if (!params->lod_or_sample)
       params->lod_or_sample = dxil_module_get_undef(&ctx->mod, dxil_module_get_int_type(&ctx->mod, 32));
@@ -5410,7 +5410,7 @@ emit_texture_lod(struct ntd_context *ctx, struct texop_parameters *params, bool 
 {
    const struct dxil_func *func = dxil_get_function(&ctx->mod, "dx.op.calculateLOD", DXIL_F32);
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *args[] = {
       dxil_module_get_int32_const(&ctx->mod, DXIL_INTR_TEXTURE_LOD),
@@ -5431,7 +5431,7 @@ emit_texture_gather(struct ntd_context *ctx, struct texop_parameters *params, un
    const struct dxil_func *func = dxil_get_function(&ctx->mod,
       params->cmp ? "dx.op.textureGatherCmp" : "dx.op.textureGather", params->overload);
    if (!func)
-      return false;
+      return NULL;
 
    const struct dxil_value *args[] = {
       dxil_module_get_int32_const(&ctx->mod, params->cmp ? 

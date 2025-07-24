@@ -3308,7 +3308,7 @@ create_call_instr(struct dxil_module *m,
       instr->call.func = func;
       instr->call.args = ralloc_array(instr, struct dxil_value *, num_args);
       if (!args)
-         return false;
+         return NULL;
       memcpy(instr->call.args, args, sizeof(struct dxil_value *) * num_args);
       instr->call.num_args = num_args;
    }
@@ -3466,7 +3466,7 @@ dxil_emit_load(struct dxil_module *m, const struct dxil_value *ptr,
 
    struct dxil_instr *instr = create_instr(m, INSTR_LOAD, type);
    if (!instr)
-      return false;
+      return NULL;
 
    instr->load.ptr = ptr;
    instr->load.type = type;
@@ -3508,7 +3508,7 @@ dxil_emit_cmpxchg(struct dxil_module *m, const struct dxil_value *cmpval,
    struct dxil_instr *instr = create_instr(m, INSTR_CMPXCHG,
                                            ptr->type->ptr_target_type);
    if (!instr)
-      return false;
+      return NULL;
 
    instr->cmpxchg.cmpval = cmpval;
    instr->cmpxchg.newval = newval;
@@ -3532,7 +3532,7 @@ dxil_emit_atomicrmw(struct dxil_module *m, const struct dxil_value *value,
    struct dxil_instr *instr = create_instr(m, INSTR_ATOMICRMW,
                                            ptr->type->ptr_target_type);
    if (!instr)
-      return false;
+      return NULL;
 
    instr->atomicrmw.value = value;
    instr->atomicrmw.ptr = ptr;
