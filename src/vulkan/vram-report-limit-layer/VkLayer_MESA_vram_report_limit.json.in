@@ -3,7 +3,7 @@
    "layer": {
       "name": "VK_LAYER_MESA_vram_report_limit",
       "type": "GLOBAL",
-      "library_path": "libVkLayer_MESA_vram_report_limit.so",
+      "library_path": "@library_path@",
       "api_version": "1.4.303",
       "implementation_version": "1",
       "description": "Limit reported VRAM",
