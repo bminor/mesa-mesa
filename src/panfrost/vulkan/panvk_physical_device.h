@@ -57,6 +57,14 @@ struct panvk_physical_device {
    char name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
    uint8_t cache_uuid[VK_UUID_SIZE];
 
+   struct {
+      VkMemoryHeap heaps[1];
+      uint32_t heap_count;
+
+      VkMemoryType types[1];
+      uint32_t type_count;
+   } memory;
+
    struct vk_sync_type drm_syncobj_type;
    struct vk_sync_timeline_type sync_timeline_type;
    const struct vk_sync_type *sync_types[3];

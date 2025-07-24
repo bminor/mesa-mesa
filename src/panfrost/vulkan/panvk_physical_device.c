@@ -218,6 +218,47 @@ get_core_masks(struct panvk_physical_device *device,
    return result;
 }
 
+static uint64_t
+get_system_heap_size()
+{
+   struct sysinfo info;
+   sysinfo(&info);
+
+   uint64_t total_ram = (uint64_t)info.totalram * info.mem_unit;
+
+   /* We don't want to burn too much ram with the GPU.  If the user has 4GiB
+    * or less, we use at most half.  If they have more than 4GiB, we use 3/4.
+    */
+   uint64_t available_ram;
+   if (total_ram <= 4ull * 1024 * 1024 * 1024)
+      available_ram = total_ram / 2;
+   else
+      available_ram = total_ram * 3 / 4;
+
+   return available_ram;
+}
+
+static VkResult
+get_device_heaps(struct panvk_physical_device *device,
+                 const struct panvk_instance *instance)
+{
+   device->memory.heap_count = 1;
+   device->memory.heaps[0] = (VkMemoryHeap) {
+      .size = get_system_heap_size(),
+      .flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
+   };
+
+   device->memory.type_count = 1;
+   device->memory.types[0] = (VkMemoryType) {
+      .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+      .heapIndex = 0,
+   };
+
+   return VK_SUCCESS;
+}
+
 static VkResult
 get_device_sync_types(struct panvk_physical_device *device,
                       const struct panvk_instance *instance)
@@ -336,6 +377,10 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    init_shader_caches(device, instance);
 
    result = get_core_masks(device, instance);
+   if (result != VK_SUCCESS)
+      goto fail;
+
+   result = get_device_heaps(device, instance);
    if (result != VK_SUCCESS)
       goto fail;
 
@@ -485,41 +530,26 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
    }
 }
 
-static uint64_t
-get_system_heap_size()
-{
-   struct sysinfo info;
-   sysinfo(&info);
-
-   uint64_t total_ram = (uint64_t)info.totalram * info.mem_unit;
-
-   /* We don't want to burn too much ram with the GPU.  If the user has 4GiB
-    * or less, we use at most half.  If they have more than 4GiB, we use 3/4.
-    */
-   uint64_t available_ram;
-   if (total_ram <= 4ull * 1024 * 1024 * 1024)
-      available_ram = total_ram / 2;
-   else
-      available_ram = total_ram * 3 / 4;
-
-   return available_ram;
-}
-
 VKAPI_ATTR void VKAPI_CALL
 panvk_GetPhysicalDeviceMemoryProperties2(
    VkPhysicalDevice physicalDevice,
    VkPhysicalDeviceMemoryProperties2 *pMemoryProperties)
 {
-   pMemoryProperties->memoryProperties = (VkPhysicalDeviceMemoryProperties){
-      .memoryHeapCount = 1,
-      .memoryHeaps[0].size = get_system_heap_size(),
-      .memoryHeaps[0].flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
-      .memoryTypeCount = 1,
-      .memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
-                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-      .memoryTypes[0].heapIndex = 0,
-   };
+   VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
+
+   pMemoryProperties->memoryProperties.memoryHeapCount =
+      physical_device->memory.heap_count;
+   for (uint32_t i = 0; i < physical_device->memory.heap_count; i++) {
+      pMemoryProperties->memoryProperties.memoryHeaps[i] =
+          physical_device->memory.heaps[i];
+   }
+
+   pMemoryProperties->memoryProperties.memoryTypeCount =
+      physical_device->memory.type_count;
+   for (uint32_t i = 0; i < physical_device->memory.type_count; i++) {
+      pMemoryProperties->memoryProperties.memoryTypes[i] =
+          physical_device->memory.types[i];
+   }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
