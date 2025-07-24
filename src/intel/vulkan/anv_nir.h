@@ -130,6 +130,8 @@ void anv_nir_validate_push_layout(const struct anv_physical_device *pdevice,
 
 bool anv_nir_update_resource_intel_block(nir_shader *shader);
 
+bool anv_nir_lower_unaligned_dispatch(nir_shader *shader);
+
 bool anv_nir_lower_resource_intel(nir_shader *shader,
                                   const struct anv_physical_device *device,
                                   enum anv_descriptor_set_layout_type desc_type);

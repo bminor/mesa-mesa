@@ -414,6 +414,14 @@ brw_wm_prog_key_is_dynamic(const struct brw_wm_prog_key *key)
 
 struct brw_cs_prog_key {
    struct brw_base_prog_key base;
+
+   /**
+    * Lowers unaligned dispatches into aligned one by dispatching one more
+    * extra workgroup and masking off excessive invocations in the shader.
+    */
+   bool lower_unaligned_dispatch:1;
+
+   uint32_t padding:31;
 };
 
 struct brw_bs_prog_key {

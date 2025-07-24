@@ -44,6 +44,7 @@
 #include "vk_pipeline.h"
 #include "vk_render_pass.h"
 #include "vk_util.h"
+#include "vk_shader.h"
 
 /* Eventually, this will become part of anv_CreateShader.  Unfortunately,
  * we can't do that yet because we don't have the ability to copy nir.
@@ -578,13 +579,15 @@ populate_wm_prog_key(struct anv_pipeline_stage *stage,
 
 static void
 populate_cs_prog_key(struct anv_pipeline_stage *stage,
-                     const struct anv_device *device)
+                     const struct anv_device *device,
+                     bool lower_unaligned_dispatch)
 {
    memset(&stage->key, 0, sizeof(stage->key));
 
    populate_base_prog_key(stage, device, INTEL_VUE_LAYOUT_FIXED);
 
    stage->key.base.uses_inline_push_addr = device->info->verx10 >= 125;
+   stage->key.cs.lower_unaligned_dispatch = lower_unaligned_dispatch;
 }
 
 static void
@@ -2115,6 +2118,15 @@ anv_pipeline_nir_preprocess(struct anv_pipeline *pipeline,
    };
    NIR_PASS(_, stage->nir, nir_opt_access, &opt_access_options);
 
+   if (stage->nir->info.stage == MESA_SHADER_COMPUTE &&
+       stage->key.cs.lower_unaligned_dispatch) {
+      NIR_PASS(_, stage->nir, anv_nir_lower_unaligned_dispatch);
+      /* anv_nir_lower_unaligned_dispatch pass uses nir_jump_return that we
+       * need to lower it.
+       */
+      NIR_PASS(_, stage->nir, nir_lower_returns);
+   }
+
    /* Use a separate-shader linking model for pipeline libraries, we do cross
     * stage linking otherwise.
     */
@@ -2633,6 +2645,9 @@ anv_pipeline_compile_cs(struct anv_compute_pipeline *pipeline,
    };
    int64_t pipeline_start = os_time_get_nano();
 
+   const bool lower_unaligned_dispatch =
+      (sinfo->flags & VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA) != 0;
+
    struct anv_device *device = pipeline->base.device;
    const struct brw_compiler *compiler = device->physical->compiler;
 
@@ -2650,7 +2665,7 @@ anv_pipeline_compile_cs(struct anv_compute_pipeline *pipeline,
    };
    anv_stage_write_shader_hash(&stage, device);
 
-   populate_cs_prog_key(&stage, device);
+   populate_cs_prog_key(&stage, device, lower_unaligned_dispatch);
 
    const bool skip_cache_lookup =
       (pipeline->base.flags & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR);

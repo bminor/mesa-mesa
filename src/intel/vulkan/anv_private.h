@@ -251,6 +251,7 @@ get_max_vbs(const struct intel_device_info *devinfo) {
 #define ANV_INLINE_PARAM_PUSH_ADDRESS_OFFSET (0)
 #define ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET (8)
 #define ANV_INLINE_PARAM_MESH_PROVOKING_VERTEX (8)
+#define ANV_INLINE_PARAM_UNALIGNED_INVOCATIONS_X_OFFSET (20)
 
 /* RENDER_SURFACE_STATE is a bit smaller (48b) but since it is aligned to 64
  * and we can't put anything else there we use 64b.
