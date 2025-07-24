@@ -56,8 +56,7 @@ struct assignment {
    union {
       struct {
          bool assigned : 1;
-         bool vcc : 1;
-         bool m0 : 1;
+         bool precolor_affinity : 1;
          bool renamed : 1;
       };
       uint8_t _ = 0;
@@ -70,6 +69,11 @@ struct assignment {
       assigned = true;
       reg = def.physReg();
       rc = def.regClass();
+   }
+   void set_precolor_affinity(PhysReg affinity_reg)
+   {
+      precolor_affinity = true;
+      reg = affinity_reg;
    }
 };
 
@@ -1934,13 +1938,10 @@ get_reg(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
             return affinity.reg;
       }
    }
-   if (ctx.assignments[temp.id()].vcc) {
-      if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, vcc, operand_index))
-         return vcc;
-   }
-   if (ctx.assignments[temp.id()].m0) {
-      if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, m0, operand_index))
-         return m0;
+   if (ctx.assignments[temp.id()].precolor_affinity) {
+      if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, ctx.assignments[temp.id()].reg,
+                            operand_index))
+         return ctx.assignments[temp.id()].reg;
    }
 
    std::optional<PhysReg> res;
@@ -3075,13 +3076,13 @@ get_affinities(ra_ctx& ctx)
             ctx.split_vectors[instr->operands[0].tempId()] = instr.get();
          } else if (instr->isVOPC() && !instr->isVOP3()) {
             if (!instr->isSDWA() || ctx.program->gfx_level == GFX8)
-               ctx.assignments[instr->definitions[0].tempId()].vcc = true;
+               ctx.assignments[instr->definitions[0].tempId()].set_precolor_affinity(vcc);
          } else if (instr->isVOP2() && !instr->isVOP3()) {
             if (instr->operands.size() == 3 && instr->operands[2].isTemp() &&
                 instr->operands[2].regClass().type() == RegType::sgpr)
-               ctx.assignments[instr->operands[2].tempId()].vcc = true;
+               ctx.assignments[instr->operands[2].tempId()].set_precolor_affinity(vcc);
             if (instr->definitions.size() == 2)
-               ctx.assignments[instr->definitions[1].tempId()].vcc = true;
+               ctx.assignments[instr->definitions[1].tempId()].set_precolor_affinity(vcc);
          } else if (instr->opcode == aco_opcode::s_and_b32 ||
                     instr->opcode == aco_opcode::s_and_b64) {
             /* If SCC is used by a branch, we might be able to use
@@ -3089,9 +3090,9 @@ get_affinities(ra_ctx& ctx)
              */
             if (!instr->definitions[1].isKill() && instr->operands[0].isTemp() &&
                 instr->operands[1].isFixed() && instr->operands[1].physReg() == exec)
-               ctx.assignments[instr->operands[0].tempId()].vcc = true;
+               ctx.assignments[instr->operands[0].tempId()].set_precolor_affinity(vcc);
          } else if (instr->opcode == aco_opcode::s_sendmsg) {
-            ctx.assignments[instr->operands[0].tempId()].m0 = true;
+            ctx.assignments[instr->operands[0].tempId()].set_precolor_affinity(m0);
          } else if (instr->format == Format::DS) {
             bool is_vector = false;
             for (unsigned i = 0, vector_begin = 0; i < instr->operands.size(); i++) {
