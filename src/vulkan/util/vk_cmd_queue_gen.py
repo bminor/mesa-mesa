@@ -286,37 +286,7 @@ VkResult vk_enqueue_${to_underscore(c.name)}(struct vk_cmd_queue *queue
    if (!cmd) return VK_ERROR_OUT_OF_HOST_MEMORY;
 
    cmd->type = ${to_enum_name(c.name)};
-   \
-   <% need_error_handling = False %>
-% for p in c.params[1:]:
-% if p.len:
-   if (${p.name}) {
-      ${get_array_copy(c, p)}
-   }\
-   <% need_error_handling = True %>
-% elif '[' in p.decl:
-   memcpy(cmd->u.${to_struct_field_name(c.name)}.${to_field_name(p.name)}, ${p.name},
-          sizeof(*${p.name}) * ${get_array_len(p)});
-% elif p.type == "void":
-   cmd->u.${to_struct_field_name(c.name)}.${to_field_name(p.name)} = (${remove_suffix(p.decl.replace("const", ""), p.name)}) ${p.name};
-% elif '*' in p.decl:
-   ${get_struct_copy("cmd->u.%s.%s" % (to_struct_field_name(c.name), to_field_name(p.name)), p.name, p.type, 'sizeof(%s)' % p.type, types)}\
-   <% need_error_handling = True %>
-% else:
-   cmd->u.${to_struct_field_name(c.name)}.${to_field_name(p.name)} = ${p.name};
-% endif
-% endfor
-
-   list_addtail(&cmd->cmd_link, &queue->cmds);
-   return VK_SUCCESS;
-
-% if need_error_handling:
-err:
-   if (cmd)
-      vk_free_${to_underscore(c.name)}(queue, cmd);
-   return VK_ERROR_OUT_OF_HOST_MEMORY;
-% endif
-}
+${get_params_copy(c, types)}}
 % endif
 % if c.guard is not None:
 #endif // ${c.guard}
@@ -482,52 +452,60 @@ def to_struct_name(name):
 def get_array_len(param):
     return param.decl[param.decl.find("[") + 1:param.decl.find("]")]
 
-def get_array_copy(command, param):
-    field_name = "cmd->u.%s.%s" % (to_struct_field_name(command.name), to_field_name(param.name))
+def get_array_copy(builder, command, param, field_name):
     if param.type == "void":
         field_size = "1"
     else:
         field_size = "sizeof(*%s)" % field_name
-    allocation = "%s = vk_zalloc(queue->alloc, %s * (%s), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);\n   if (%s == NULL) goto err;\n" % (field_name, field_size, param.len, field_name)
-    copy = "memcpy((void*)%s, %s, %s * (%s));" % (field_name, param.name, field_size, param.len)
-    return "%s\n   %s" % (allocation, copy)
 
-def get_array_member_copy(struct, src_name, member, level):
+    builder.add("%s = vk_zalloc(queue->alloc, %s * (%s), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);\n   if (%s == NULL) goto err;" % (
+        field_name, field_size, param.len, field_name
+    ))
+    builder.add("memcpy((void*)%s, %s, %s * (%s));" % (field_name, param.name, field_size, param.len))
+
+def get_array_member_copy(builder, struct, src_name, member):
     field_name = "%s->%s" % (struct, member.name)
     if member.len == "struct-ptr":
         field_size = "sizeof(*%s)" % (field_name)
     else:
         field_size = "sizeof(*%s) * %s->%s" % (field_name, struct, member.len)
-    allocation = "%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);\n   if (%s == NULL) goto err;\n" % (field_name, field_size, field_name)
-    copy = "memcpy((void*)%s, %s->%s, %s);" % (field_name, src_name, member.name, field_size)
-    indent = "   " * (level + 1)
-    return "if (%s->%s) {\n%s%s\n%s%s\n}\n" % (src_name, member.name, indent, allocation, indent, copy)
 
-def get_pnext_member_copy(struct, src_type, member, types, level):
+    builder.add("if (%s->%s) {" % (src_name, member.name))
+    builder.level += 1
+    builder.add("%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);" % (field_name, field_size))
+    builder.add("if (%s == NULL) goto err;" % (field_name))
+    builder.add("memcpy((void*)%s, %s->%s, %s);" % (field_name, src_name, member.name, field_size))
+    builder.level -= 1
+    builder.add("}")
+
+def get_pnext_member_copy(builder, struct, src_type, member, types):
     if not types[src_type].extended_by:
-        return ""
+        return
+
     field_name = "%s->%s" % (struct, member.name)
-    pnext_decl = "const VkBaseInStructure *pnext = %s;" % field_name
+
+    builder.add("const VkBaseInStructure *pnext = %s;" % (field_name))
+    builder.add("if (pnext) {")
+    builder.level += 1
+    builder.add("switch ((int32_t)pnext->sType) {")
+
     case_stmts = ""
     for type in types[src_type].extended_by:
-        guard_pre_stmt = ""
-        guard_post_stmt = ""
         if type.guard is not None:
-            guard_pre_stmt = "#ifdef %s" % type.guard
-            guard_post_stmt = "#endif"
-        case_stmts += """
-%s
-         case %s:
-            %s
-         break;
-%s
-      """ % (guard_pre_stmt, type.enum, get_struct_copy(field_name, "pnext", type.name, "sizeof(%s)" % type.name, types, level + 1), guard_post_stmt)
-    return """
-      %s
-      if (pnext) {
-         switch ((int32_t)pnext->sType) {%s}
-      }
-      """ % (pnext_decl, case_stmts)
+            builder.code += "#ifdef %s\n" % (type.guard)
+
+        builder.add("case %s:" % (type.enum))
+        builder.level += 1
+        get_struct_copy(builder, field_name, "pnext", type.name, "sizeof(%s)" % type.name, types)
+        builder.add("break;")
+        builder.level -= 1
+
+        if type.guard is not None:
+            builder.code += "#endif\n"
+    
+    builder.add("}")
+    builder.level -= 1
+    builder.add("}")
 
 def get_pnext_member_free(builder, struct_type, types, field_name):
     if not types[struct_type].extended_by:
@@ -559,38 +537,38 @@ def get_pnext_member_free(builder, struct_type, types, field_name):
     builder.level -= 1
     builder.add("}")
 
-def get_struct_copy(dst, src_name, src_type, size, types, level=0):
-    global tmp_dst_idx
-    global tmp_src_idx
-
-    level += 1
-
-    tmp_dst_name = "tmp_dst%d" % level
-    tmp_src_name = "tmp_src%d" % level
+def get_struct_copy(builder, dst, src_name, src_type, size, types):
+    tmp_dst_name = builder.get_variable_name("tmp_dst")
+    tmp_src_name = builder.get_variable_name("tmp_src")
     
-    indent = "\n%s" % ("   " * (level + 1))
-    indent_sameline = "\n%s" % ("   " * level)
+    builder.add("if (%s) {" % (src_name))
+    builder.level += 1
 
-    allocation = "%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);%sif (%s == NULL) goto err;\n" % (dst, size, indent, dst)
-    copy = "memcpy((void*)%s, %s, %s);" % (dst, src_name, size)
+    builder.add("%s = vk_zalloc(queue->alloc, %s, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);" % (dst, size))
+    builder.add("if (%s == NULL) goto err;" % (dst))
+    builder.add("memcpy((void*)%s, %s, %s);" % (dst, src_name, size))
+    builder.add("%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_dst_name, dst, tmp_dst_name))
+    builder.add("%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_src_name, src_name, tmp_src_name))
 
-    tmp_dst = "%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_dst_name, dst, tmp_dst_name)
-    tmp_src = "%s *%s = (void *) %s; (void) %s;" % (src_type, tmp_src_name, src_name, tmp_src_name)
-    member_copies = ""
     if src_type in types:
         for member in types[src_type].members:
             if member.len and member.len == 'struct-ptr':
-                member_copies += get_struct_copy("%s->%s" % (tmp_dst_name, member.name), "%s->%s" % (tmp_src_name, member.name), member.type, 'sizeof(%s)' % member.type, types, level + 1)
+                get_struct_copy(builder, "%s->%s" % (tmp_dst_name, member.name), "%s->%s" % (
+                    tmp_src_name, member.name
+                ), member.type, 'sizeof(%s)' % member.type, types)
             elif member.len and member.len == 'null-terminated':
-                member_copies += "%s%s->%s = strdup(%s->%s);" % (indent_sameline, tmp_dst_name, member.name, tmp_src_name, member.name)
+                builder.add("%s->%s = strdup(%s->%s);" % (tmp_dst_name, member.name, tmp_src_name, member.name))
             elif member.len:
-                member_copies += get_array_member_copy(tmp_dst_name, tmp_src_name, member, level + 1)
+                get_array_member_copy(builder, tmp_dst_name, tmp_src_name, member)
             elif member.name == 'pNext':
-                member_copies += get_pnext_member_copy(tmp_dst_name, src_type, member, types, level + 1)
+                get_pnext_member_copy(builder, tmp_dst_name, src_type, member, types)
 
-    null_assignment = "%s = NULL;" % dst
-    if_stmt = "if (%s) {" % src_name
-    return "%s%s%s%s%s%s%s%s%s%s%s%s} else {%s%s%s}" % (if_stmt, indent, allocation, indent, copy, indent, tmp_dst, indent, tmp_src, indent, member_copies, indent_sameline, indent, null_assignment, indent_sameline)
+    builder.level -= 1
+    builder.add("} else {")
+    builder.level += 1
+    builder.add("%s = NULL;" % (dst))
+    builder.level -= 1
+    builder.add("}")
 
 def get_command_struct_free(command, param, types):
     field_name = "cmd->u.%s.%s" % (to_struct_field_name(command.name), to_field_name(param.name))
@@ -634,6 +612,53 @@ def get_struct_free(builder, field_name, nullable, struct_type, types):
     if members and nullable:
         builder.level -= 1
         builder.add("}")
+
+def get_param_copy(builder, command, param, types):
+    dst = "cmd->u.%s.%s" % (to_struct_field_name(command.name), to_field_name(param.name))
+
+    if param.len:
+        builder.add("if (%s) {" % (param.name))
+        builder.level += 1
+        get_array_copy(builder, command, param, dst)
+        builder.level -= 1
+        builder.add("}")
+        return True
+
+    if '[' in param.decl:
+        builder.add("memcpy(%s, %s, sizeof(*%s) * %s);" % (dst, param.name, param.name, get_array_len(param)))
+        return False
+
+    if param.type == "void":
+        builder.add("%s = (%s)%s;" % (dst, remove_suffix(param.decl.replace("const", ""), param.name), param.name))
+        return False
+
+    if '*' in param.decl:
+        get_struct_copy(builder, dst, param.name, param.type, 'sizeof(%s)' % param.type, types)
+        return True
+
+    builder.add("cmd->u.%s.%s = %s;" % (to_struct_field_name(command.name), to_field_name(param.name), param.name))
+    return False
+
+def get_params_copy(command, types):
+    builder = CodeBuilder(1)
+
+    any_needs_error_handling = False
+
+    for param in command.params[1:]:
+        needs_error_handling = get_param_copy(builder, command, param, types)
+        any_needs_error_handling = any_needs_error_handling or needs_error_handling
+
+    builder.code += "\n"
+    builder.add("list_addtail(&cmd->cmd_link, &queue->cmds);")
+    builder.add("return VK_SUCCESS;")
+
+    if any_needs_error_handling:
+        builder.code += "\nerr:\n"
+        builder.add("if (cmd)")
+        builder.add("   vk_free_%s(queue, cmd);" % (to_underscore(command.name)))
+        builder.add("return VK_ERROR_OUT_OF_HOST_MEMORY;")
+
+    return builder.code
 
 EntrypointType = namedtuple('EntrypointType', 'name enum members extended_by guard')
 
@@ -744,14 +769,12 @@ def main():
         'commands': commands,
         'filename': os.path.basename(__file__),
         'to_underscore': to_underscore,
-        'get_array_len': get_array_len,
         'to_struct_field_name': to_struct_field_name,
         'to_field_name': to_field_name,
         'to_field_decl': to_field_decl,
         'to_enum_name': to_enum_name,
         'to_struct_name': to_struct_name,
-        'get_array_copy': get_array_copy,
-        'get_struct_copy': get_struct_copy,
+        'get_params_copy': get_params_copy,
         'get_struct_free': get_command_struct_free,
         'types': types,
         'manual_commands': MANUAL_COMMANDS,
