@@ -3982,7 +3982,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
    }
 
    nir_move_options move_all =
-       nir_move_const_undef | nir_move_load_ubo | nir_move_load_input |
+       nir_move_const_undef | nir_move_load_ubo | nir_move_load_input | nir_move_load_frag_coord |
        nir_move_comparisons | nir_move_copies | nir_move_load_ssbo;
 
    NIR_PASS(_, s, nir_opt_move, move_all);

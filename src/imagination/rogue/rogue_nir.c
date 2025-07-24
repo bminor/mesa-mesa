@@ -150,7 +150,8 @@ static void rogue_nir_passes(struct rogue_build_ctx *ctx,
    /* Disabled for now since we want to try and keep them vectorised and group
     * them. */
    /* TODO: Investigate this further. */
-   /* NIR_PASS(_, nir, nir_opt_move, nir_move_load_ubo | nir_move_load_input);
+   /* NIR_PASS(_, nir, nir_opt_move, nir_move_load_ubo | nir_move_load_input |
+    * nir_move_load_frag_coord);
     */
 
    /* TODO: Re-enable scheduling after register pressure tweaks. */

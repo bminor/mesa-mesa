@@ -3495,7 +3495,7 @@ Converter::run()
       (nir_move_options)(nir_move_const_undef |
                          nir_move_load_ubo |
                          nir_move_load_uniform |
-                         nir_move_load_input);
+                         nir_move_load_input | nir_move_load_frag_coord);
    NIR_PASS(_, nir, nir_opt_sink, move_options);
    NIR_PASS(_, nir, nir_opt_move, move_options);
 

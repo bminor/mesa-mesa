@@ -117,6 +117,14 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       *can_mov_out_of_loop = false;
 
       switch (intrin->intrinsic) {
+      case nir_intrinsic_load_input:
+      case nir_intrinsic_load_interpolated_input:
+      case nir_intrinsic_load_per_vertex_input:
+      case nir_intrinsic_load_per_primitive_input:
+      case nir_intrinsic_load_attribute_pan:
+         *can_mov_out_of_loop = true;
+         return options & nir_move_load_input;
+
       case nir_intrinsic_load_ubo:
       case nir_intrinsic_load_ubo_vec4:
       case nir_intrinsic_load_global_constant_offset:
@@ -133,18 +141,13 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
             intrin->intrinsic == nir_intrinsic_load_global_bounded;
          return options & nir_move_load_ssbo;
 
-      case nir_intrinsic_load_input:
-      case nir_intrinsic_load_per_primitive_input:
-      case nir_intrinsic_load_interpolated_input:
-      case nir_intrinsic_load_per_vertex_input:
       case nir_intrinsic_load_frag_coord:
       case nir_intrinsic_load_frag_coord_z:
       case nir_intrinsic_load_frag_coord_w:
       case nir_intrinsic_load_frag_coord_zw_pan:
       case nir_intrinsic_load_pixel_coord:
-      case nir_intrinsic_load_attribute_pan:
          *can_mov_out_of_loop = true;
-         return options & nir_move_load_input;
+         return options & nir_move_load_frag_coord;
 
       case nir_intrinsic_load_uniform:
       case nir_intrinsic_load_kernel_input:

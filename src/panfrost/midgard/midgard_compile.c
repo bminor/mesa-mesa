@@ -545,8 +545,9 @@ optimise_nir(nir_shader *nir, unsigned quirks, bool is_blend)
    /* Backend scheduler is purely local, so do some global optimizations
     * to reduce register pressure. */
    nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo |
-                               nir_move_load_input | nir_move_comparisons |
-                               nir_move_copies | nir_move_load_ssbo;
+                               nir_move_load_input | nir_move_load_frag_coord |
+                               nir_move_comparisons | nir_move_copies |
+                               nir_move_load_ssbo;
 
    NIR_PASS(_, nir, nir_opt_sink, move_all);
    NIR_PASS(_, nir, nir_opt_move, move_all);

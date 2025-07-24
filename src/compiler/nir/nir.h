@@ -6203,6 +6203,7 @@ typedef enum {
    nir_move_load_ubo =                 BITFIELD_BIT(6),
    nir_move_load_ssbo =                BITFIELD_BIT(7),
    nir_move_load_uniform =             BITFIELD_BIT(8),
+   nir_move_load_frag_coord =          BITFIELD_BIT(9),
 } nir_move_options;
 
 bool nir_can_move_instr(nir_instr *instr, nir_move_options options);

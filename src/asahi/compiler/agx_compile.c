@@ -3273,9 +3273,9 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
 
    /* Cleanup optimizations */
    nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo |
-                               nir_move_load_input | nir_move_comparisons |
-                               nir_move_copies | nir_move_load_ssbo |
-                               nir_move_alu;
+                               nir_move_load_input | nir_move_load_frag_coord |
+                               nir_move_comparisons | nir_move_copies |
+                               nir_move_load_ssbo | nir_move_alu;
 
    NIR_PASS(_, nir, nir_opt_sink, move_all);
    NIR_PASS(_, nir, nir_opt_move, move_all);
@@ -3890,9 +3890,9 @@ agx_preprocess_nir(nir_shader *nir)
 
    /* Move before lowering */
    nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo |
-                               nir_move_load_input | nir_move_comparisons |
-                               nir_move_copies | nir_move_load_ssbo |
-                               nir_move_alu;
+                               nir_move_load_input | nir_move_load_frag_coord |
+                               nir_move_comparisons | nir_move_copies |
+                               nir_move_load_ssbo | nir_move_alu;
 
    NIR_PASS(_, nir, nir_opt_sink, move_all);
    NIR_PASS(_, nir, nir_opt_move, move_all);
