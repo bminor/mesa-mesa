@@ -635,8 +635,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          enc_caps->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
                                                   VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
       }
-      pCapabilities->minBitstreamBufferOffsetAlignment = 16;
-      pCapabilities->minBitstreamBufferSizeAlignment = 16;
+      pCapabilities->minBitstreamBufferOffsetAlignment = 256;
+      pCapabilities->minBitstreamBufferSizeAlignment = 8;
    }
 
    switch (pVideoProfile->videoCodecOperation) {
