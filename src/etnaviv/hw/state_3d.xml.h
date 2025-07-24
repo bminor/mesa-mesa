@@ -8,14 +8,14 @@ http://0x04.net/cgit/index.cgi/rules-ng-ng
 git clone git://0x04.net/rules-ng-ng
 
 The rules-ng-ng source files this header was generated from are:
-- state.xml     (  30672 bytes, from 2025-07-21 18:46:25)
-- common.xml    (  35664 bytes, from 2025-07-21 18:46:25)
-- common_3d.xml (  15069 bytes, from 2025-07-21 18:46:25)
-- state_hi.xml  (  35909 bytes, from 2025-07-21 18:46:25)
+- state.xml     (  30672 bytes, from 2025-07-24 12:59:15)
+- common.xml    (  35664 bytes, from 2025-07-24 12:59:15)
+- common_3d.xml (  15069 bytes, from 2025-07-24 12:59:15)
+- state_hi.xml  (  35909 bytes, from 2025-07-24 12:59:15)
 - copyright.xml (   1597 bytes, from 2024-04-10 16:26:25)
 - state_2d.xml  (  52271 bytes, from 2024-04-10 16:26:25)
-- state_3d.xml  (  89665 bytes, from 2025-07-21 18:46:38)
-- state_blt.xml (  14592 bytes, from 2025-07-21 18:46:25)
+- state_3d.xml  (  90293 bytes, from 2025-07-24 13:02:55)
+- state_blt.xml (  14592 bytes, from 2025-07-24 12:59:15)
 - state_vg.xml  (   5975 bytes, from 2024-04-10 16:26:25)
 
 Copyright (C) 2012-2025 by the following authors:
@@ -723,8 +723,14 @@ DEALINGS IN THE SOFTWARE.
 #define VIVS_PS_ICACHE_PREFETCH_INSTRUCTIONS			0x0000104c
 
 #define VIVS_PS_MSAA_CONFIG					0x00001054
+#define VIVS_PS_MSAA_CONFIG_ALPHA_TO_COVERAGE			0x00001000
+#define VIVS_PS_MSAA_CONFIG_ALPHA_TO_COVERAGE_MASK		0x00008000
 
 #define VIVS_PS_SAMPLER_BASE					0x00001058
+
+#define VIVS_PS_ALPHA_TO_COVERAGE_DITHER(i0)		       (0x00001060 + 0x4*(i0))
+#define VIVS_PS_ALPHA_TO_COVERAGE_DITHER__ESIZE			0x00000004
+#define VIVS_PS_ALPHA_TO_COVERAGE_DITHER__LEN			0x00000008
 
 #define VIVS_PS_VARYING_NUM_COMPONENTS(i0)		       (0x00001080 + 0x4*(i0))
 #define VIVS_PS_VARYING_NUM_COMPONENTS__ESIZE			0x00000004
