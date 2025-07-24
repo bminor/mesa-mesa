@@ -2384,6 +2384,9 @@ wsi_display_surface_create_swapchain(
 {
    struct wsi_display *wsi =
       (struct wsi_display *) wsi_device->wsi[VK_ICD_WSI_PLATFORM_DISPLAY];
+   VkIcdSurfaceDisplay *surface = (VkIcdSurfaceDisplay *) icd_surface;
+   wsi_display_mode *display_mode =
+      wsi_display_mode_from_handle(surface->displayMode);
 
    assert(create_info->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);
 
@@ -2428,9 +2431,14 @@ wsi_display_surface_create_swapchain(
       return VK_ERROR_OUT_OF_HOST_MEMORY;
    }
 
-   VkResult result = wsi_swapchain_init(wsi_device, &chain->base, device,
-                                        create_info, &image_params.base,
-                                        allocator);
+   VkResult result =
+      wsi_display_setup_connector(display_mode->connector, display_mode);
+   if (result != VK_SUCCESS)
+      return result;
+
+   result = wsi_swapchain_init(wsi_device, &chain->base, device,
+                               create_info, &image_params.base,
+                               allocator);
    if (result != VK_SUCCESS) {
       u_cnd_monotonic_destroy(&chain->present_id_cond);
       mtx_destroy(&chain->present_id_mutex);
@@ -2452,13 +2460,6 @@ wsi_display_surface_create_swapchain(
    chain->status = VK_SUCCESS;
 
    chain->surface = (VkIcdSurfaceDisplay *) icd_surface;
-
-   wsi_display_mode *display_mode =
-      wsi_display_mode_from_handle(chain->surface->displayMode);
-
-   result = wsi_display_setup_connector(display_mode->connector, display_mode);
-   if (result != VK_SUCCESS)
-      return result;
 
    p_atomic_inc(&display_mode->connector->refcount);
 
