@@ -6,3 +6,5 @@ dEQP-VK.transform_feedback.primitives_generated_query.get.*reset.*
 
 # Seen in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/1364513
 dEQP-VK.api.image_clearing.dedicated_allocation.clear_color_image.2d.linear.remaining_array_layers.b10g11r11_ufloat_pack32
+
+dEQP-VK.dynamic_rendering.graphics_pipeline_library.suballocation.formats.a8b8g8r8_unorm_pack32.input.load.store.self_dep_clear_draw
