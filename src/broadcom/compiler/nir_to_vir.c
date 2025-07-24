@@ -1780,11 +1780,23 @@ ntq_emit_alu(struct v3d_compile *c, nir_alu_instr *instr)
                 break;
 
         case nir_op_f2unorm_16_v3d:
+                assert(c->devinfo->ver >= 71);
                 result = vir_FTOUNORM16(c, src[0]);
                 break;
 
         case nir_op_f2snorm_16_v3d:
+                assert(c->devinfo->ver >= 71);
                 result = vir_FTOSNORM16(c, src[0]);
+                break;
+
+        case nir_op_snorm2f_16_v3d:
+                assert(c->devinfo->ver >= 71);
+                result = vir_FUNPACKSNORMLO(c, src[0]);
+                break;
+
+        case nir_op_unorm2f_16_v3d:
+                assert(c->devinfo->ver >= 71);
+                result = vir_FUNPACKUNORMLO(c, src[0]);
                 break;
 
         case nir_op_fsat:
