@@ -181,7 +181,7 @@ agx_resource_from_handle(struct pipe_screen *pscreen,
     */
    if (rsc->modifier == DRM_FORMAT_MOD_LINEAR && (whandle->stride % 16) != 0) {
       FREE(rsc);
-      return false;
+      return NULL;
    }
 
    prsc = &rsc->base;
