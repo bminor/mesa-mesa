@@ -40,3 +40,4 @@ spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@egl_chromium_sync_control@conformance
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread
+spec@ext_external_objects@vk-ping-pong-multi-sem

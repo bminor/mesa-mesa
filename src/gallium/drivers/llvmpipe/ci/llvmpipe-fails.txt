@@ -103,3 +103,5 @@ spec@ovr_multiview@compiler@multiple-num-views-in-single-declaration-mismatch.ve
 
 # New failures with GL CTS 4.6.6.0
 KHR-GL45.direct_state_access.vertex_arrays_vertex_buffers_errors,Fail
+
+spec@glsl-1.50@execution@geometry@dynamic_input_array_index,Crash

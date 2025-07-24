@@ -420,14 +420,4 @@ spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 5- Grid: true,Fail
 spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 6- Grid: false,Fail
 spec@arb_sample_locations@test@MSAA: 8- X: 3- Y: 6- Grid: true,Fail
 
-# This is a piglit bug: The tests use more GS input components than GL reports.
-# This started to fail (correctly) when the GLSL linker started checking whether
-# the max GS input component limit is exceeded.
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec2-index-rd,Fail
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec3-index-rd,Fail
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec4-index-rd,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
-
 spec@arb_pipeline_statistics_query@arb_pipeline_statistics_query-clip,Fail

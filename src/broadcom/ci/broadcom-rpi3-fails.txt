@@ -1403,3 +1403,5 @@ gles_wacky_yuv_formats,Fail
 gles_wacky_yuv_formats_cs,Fail
 gles_xfermodes2,Fail
 gles_xfermodes3,Fail
+spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-04,Fail
+spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-05,Fail

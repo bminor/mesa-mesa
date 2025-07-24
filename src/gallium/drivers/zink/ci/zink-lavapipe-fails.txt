@@ -18,8 +18,6 @@ glx@glx_ext_import_context@free context,Fail
 glx@glx_ext_import_context@get context id,Fail
 glx@glx_ext_import_context@get current display,Fail
 glx@glx_ext_import_context@import context- multi process,Fail
-glx@glx_ext_import_context@import context- single process,Fail
-glx@glx_ext_import_context@imported context has same context id,Fail
 glx@glx_ext_import_context@make current- multi process,Fail
 glx@glx_ext_import_context@make current- single process,Fail
 glx@glx_ext_import_context@query context info,Fail
@@ -86,6 +84,7 @@ spec@egl 1.4@eglterminate then unbind context,Fail
 spec@egl_khr_gl_image@egl_khr_gl_renderbuffer_image-clear-shared-image gl_depth_component24,Fail
 spec@egl_khr_surfaceless_context@viewport,Fail
 spec@egl_mesa_configless_context@basic,Fail
+spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 msaa,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 upsample,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 msaa,Fail
@@ -131,6 +130,6 @@ spec@arb_viewport_array@display-list,Fail
 
 # uprev Piglit in Mea
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-export-tex,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode full precision,Fail
+spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgradcube,Fail

@@ -13,7 +13,6 @@ glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
 glx@glx-multi-window-single-context,Fail
-glx@glx-multithread-texture,Crash
 glx@glx-swap-pixmap-bad,Fail
 spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-store,Fail
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-tf-separate,Fail
@@ -401,12 +400,4 @@ spec@!opengl 3.2@gl-3.2-adj-prims pv-last,Fail
 spec@glsl-1.50@execution@geometry@point-size-out,Fail
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs,Fail
 
-# This is a piglit bug: The tests use more GS input components than GL reports.
-# This started to fail (correctly) when the GLSL linker started checking whether
-# the max GS input component limit is exceeded.
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec2-index-rd,Fail
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec3-index-rd,Fail
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec4-index-rd,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Fail
-spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
+spec@arb_fragment_program@fog-modes,Fail

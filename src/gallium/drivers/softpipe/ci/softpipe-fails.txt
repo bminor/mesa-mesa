@@ -865,14 +865,9 @@ glx@glx-visuals-depth -pixmap,Crash
 glx@glx-visuals-stencil,Crash
 glx@glx-visuals-stencil -pixmap,Crash
 
-glx@glx_arb_create_context_no_error@no error,Fail
 
 glx@glx_ext_import_context@free context,Fail
 glx@glx_ext_import_context@get context id,Fail
-glx@glx_ext_import_context@get current display,Fail
-glx@glx_ext_import_context@import context- multi process,Fail
-glx@glx_ext_import_context@import context- single process,Fail
-glx@glx_ext_import_context@imported context has same context id,Fail
 glx@glx_ext_import_context@make current- multi process,Fail
 glx@glx_ext_import_context@make current- single process,Fail
 glx@glx_ext_import_context@query context info,Fail
@@ -1329,3 +1324,10 @@ KHR-GLES31.core.texture_stencil8.multisample,Fail
 dEQP-GLES2.functional.clipping.line.wide_line_clip_viewport_corner,Fail
 dEQP-GLES31.functional.geometry_shading.query.primitives_generated_instanced,Fail
 dEQP-GLES31.functional.geometry_shading.query.primitives_generated_no_amplification,Fail
+spec@arb_internalformat_query2@all internalformat_<x>_size pname checks,Fail
+spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_ALPHA_SIZE,Fail
+spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_BLUE_SIZE,Fail
+spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_DEPTH_SIZE,Fail
+spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_GREEN_SIZE,Fail
+spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_RED_SIZE,Fail
+spec@arb_occlusion_query@occlusion_query_meta_save,Fail

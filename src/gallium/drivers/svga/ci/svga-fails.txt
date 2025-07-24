@@ -1086,3 +1086,5 @@ spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
 spec@ext_texture_integer@fbo-integer-attachments,Fail
 
+spec@glsl-1.50@execution@redeclare-pervertex-subset-vs-to-gs,Fail
+spec@glsl-1.50@transform-feedback-type-and-size,Fail

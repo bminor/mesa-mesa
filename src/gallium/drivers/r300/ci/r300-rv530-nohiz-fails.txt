@@ -898,3 +898,6 @@ spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 2,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 4,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 6,Fail
 
+spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-01,Fail
+spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-04,Fail
+spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-05,Fail
