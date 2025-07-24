@@ -512,7 +512,7 @@ etna_reset_gpu_state(struct etna_context *ctx)
 
    if (VIV_FEATURE(screen, ETNA_FEATURE_MSAA_FRAGMENT_OPERATION)) {
       etna_set_state(stream, VIVS_PS_MSAA_CONFIG, 0x6fffffff & 0xf70fffff & 0xfff6ffff &
-                                                  0xffff6fff & 0xfffff6ff & 0xffffff7f);
+                                                  0xfffff6ff & 0xffffff7f);
 
       etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(0), 0x6e80e680);
       etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(1), 0x2ac42a4c);

@@ -470,6 +470,10 @@ etna_emit_state(struct etna_context *ctx)
 
       /*01030*/ EMIT_STATE(PS_CONTROL_EXT, ctx->framebuffer.PS_CONTROL_EXT);
    }
+   if (unlikely(VIV_FEATURE(screen, ETNA_FEATURE_MSAA_FRAGMENT_OPERATION) &&
+                (dirty & ETNA_DIRTY_BLEND))) {
+      /*01054*/ EMIT_STATE(PS_MSAA_CONFIG, etna_blend_state(ctx->blend)->PS_MSAA_CONFIG);
+   }
    if (unlikely(dirty & (ETNA_DIRTY_ZSA | ETNA_DIRTY_FRAMEBUFFER))) {
       /*01400*/ EMIT_STATE(PE_DEPTH_CONFIG, (etna_zsa_state(ctx->zsa)->PE_DEPTH_CONFIG |
                                              ctx->framebuffer.PE_DEPTH_CONFIG));
