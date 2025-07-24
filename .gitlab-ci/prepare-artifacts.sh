@@ -29,10 +29,11 @@ if [ -z "$ARTIFACTS_DEBUG_SYMBOLS" ]; then
     find install -name \*.so -exec $STRIP --strip-debug {} \;
 fi
 
-# Test runs don't pull down the git tree, so put the dEQP helper
-# script and associated bits there.
 git_sha=$(git rev-parse --short=10 HEAD)
 echo "$(cat VERSION) (git-$git_sha)" > install/VERSION
+
+# Test runs don't pull down the git tree, so put the dEQP helper
+# script and associated bits there.
 cp -Rp .gitlab-ci/bare-metal install/
 cp -Rp .gitlab-ci/common install/
 cp -Rp .gitlab-ci/piglit install/
