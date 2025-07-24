@@ -244,7 +244,7 @@ lima_bo_cache_get(struct lima_screen *screen, uint32_t size, uint32_t flags)
 
    if (!bucket) {
       mtx_unlock(&screen->bo_cache_lock);
-      return false;
+      return NULL;
    }
 
    list_for_each_entry_safe(struct lima_bo, entry, bucket, size_list) {
