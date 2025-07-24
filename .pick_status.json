@@ -2464,7 +2464,7 @@
         "description": "ci/lava: fix heredoc-in-yaml syntax",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "02d07f3380f0183debaf5eeda982226350d70c91",
         "notes": null
