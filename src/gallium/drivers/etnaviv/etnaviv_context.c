@@ -499,8 +499,6 @@ etna_reset_gpu_state(struct etna_context *ctx)
       etna_set_state(stream, VIVS_PS_HALTI3_UNK0103C, 0x76543210);
    }
    if (screen->info->halti >= 4) { /* Only on HALTI4+ */
-      etna_set_state(stream, VIVS_PS_MSAA_CONFIG, 0x6fffffff & 0xf70fffff & 0xfff6ffff &
-                                                  0xffff6fff & 0xfffff6ff & 0xffffff7f);
       etna_set_state(stream, VIVS_PE_HALTI4_UNK014C0, 0x00000000);
    }
    if (screen->info->halti >= 5) { /* Only on HALTI5+ */
@@ -511,6 +509,10 @@ etna_reset_gpu_state(struct etna_context *ctx)
       etna_set_state(stream, VIVS_VS_SAMPLER_BASE, 0x00000020);
       etna_set_state(stream, VIVS_SH_CONFIG, VIVS_SH_CONFIG_RTNE_ROUNDING);
    }
+
+   if (VIV_FEATURE(screen, ETNA_FEATURE_MSAA_FRAGMENT_OPERATION))
+      etna_set_state(stream, VIVS_PS_MSAA_CONFIG, 0x6fffffff & 0xf70fffff & 0xfff6ffff &
+                                                  0xffff6fff & 0xfffff6ff & 0xffffff7f);
 
    if (VIV_FEATURE(screen, ETNA_FEATURE_BUG_FIXES18))
       etna_set_state(stream, VIVS_GL_BUG_FIXES, 0x6);
