@@ -242,19 +242,79 @@ static VkResult
 get_device_heaps(struct panvk_physical_device *device,
                  const struct panvk_instance *instance)
 {
+   int host_coherent_not_cached_idx = -1;
+   int host_cached_not_coherent_idx = -1;
+
    device->memory.heap_count = 1;
    device->memory.heaps[0] = (VkMemoryHeap) {
       .size = get_system_heap_size(),
       .flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
    };
 
-   device->memory.type_count = 1;
-   device->memory.types[0] = (VkMemoryType) {
+   device->memory.type_count = 0;
+
+   /* We don't have VRAM, but we expose a device-local only type so we can
+    * prevent imported dma-bufs that come from other drivers/subsystems from
+    * being CPU-mapped.
+    */
+   device->memory.types[device->memory.type_count++] = (VkMemoryType) {
+      .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+      .heapIndex = 0,
+   };
+
+   if (device->kmod.dev->props.is_io_coherent) {
+      assert(device->memory.type_count < ARRAY_SIZE(device->memory.types));
+      /* If the device is coherent, we just have one memory type that's both
+       * host-cached and host-coherent. */
+      device->memory.types[device->memory.type_count++] = (VkMemoryType) {
+         .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                          VK_MEMORY_PROPERTY_HOST_CACHED_BIT |
+                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+         .heapIndex = 0,
+      };
+   }
+
+   if (!PANVK_DEBUG(NO_WB_MMAP) &&
+       (device->kmod.dev->props.supported_bo_flags & PAN_KMOD_BO_FLAG_WB_MMAP)) {
+      assert(device->memory.type_count < ARRAY_SIZE(device->memory.types));
+      host_cached_not_coherent_idx = device->memory.type_count;
+      device->memory.types[device->memory.type_count++] = (VkMemoryType) {
+         .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                          VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+         .heapIndex = 0,
+      };
+   }
+
+   assert(device->memory.type_count < ARRAY_SIZE(device->memory.types));
+   host_coherent_not_cached_idx = device->memory.type_count;
+   device->memory.types[device->memory.type_count++] = (VkMemoryType) {
       .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
       .heapIndex = 0,
    };
+
+   /* Ideally, we'd place HOST_CACHED first for perf reasons, but there's
+    * so many broken CTS tests (missing or invalid flush/invalidate
+    * calls), and so many added at each version that it gets impossible to
+    * catch up. So, keep things ordered in a way that the first HOST_VISIBLE
+    * type is also the one requiring no CPU cache maintenance if we're asked
+    * to.
+    */
+   if (PANVK_DEBUG(COHERENT_BEFORE_CACHED) &&
+       host_cached_not_coherent_idx != -1 &&
+       host_coherent_not_cached_idx != -1 &&
+       host_coherent_not_cached_idx > host_cached_not_coherent_idx) {
+      VkMemoryType host_cached_not_coherent_type =
+         device->memory.types[host_cached_not_coherent_idx];
+
+      device->memory.types[host_cached_not_coherent_idx] =
+         device->memory.types[host_coherent_not_cached_idx];
+      device->memory.types[host_coherent_not_cached_idx] =
+         host_cached_not_coherent_type;
+   }
 
    return VK_SUCCESS;
 }

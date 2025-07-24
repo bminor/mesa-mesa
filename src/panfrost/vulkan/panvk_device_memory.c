@@ -90,11 +90,16 @@ panvk_AllocateMemory(VkDevice _device,
    }
 
    VK_FROM_HANDLE(panvk_device, device, _device);
+   struct panvk_physical_device *physical_device =
+      to_panvk_physical_device(device->vk.physical);
    struct panvk_device_memory *mem;
    bool can_be_exported = false;
    VkResult result;
 
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
+
+   const VkMemoryType *type =
+      &physical_device->memory.types[pAllocateInfo->memoryTypeIndex];
 
    const VkExportMemoryAllocateInfo *export_info =
       vk_find_struct_const(pAllocateInfo->pNext, EXPORT_MEMORY_ALLOCATE_INFO);
@@ -130,9 +135,19 @@ panvk_AllocateMemory(VkDevice _device,
          goto err_destroy_mem;
       }
    } else {
+      uint32_t bo_flags = 0;
+
+      /* We don't do cached on exported buffers to keep the pre-WB_MMAP
+       * behavior.
+       */
+      if (!can_be_exported &&
+          (type->propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT))
+         bo_flags |= PAN_KMOD_BO_FLAG_WB_MMAP;
+
+      bo_flags = panvk_device_adjust_bo_flags(device, bo_flags);
       mem->bo = pan_kmod_bo_alloc(device->kmod.dev,
                                   can_be_exported ? NULL : device->kmod.vm,
-                                  pAllocateInfo->allocationSize, 0);
+                                  pAllocateInfo->allocationSize, bo_flags);
       if (!mem->bo) {
          result = panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
          goto err_destroy_mem;
@@ -401,8 +416,38 @@ panvk_GetMemoryFdPropertiesKHR(VkDevice _device,
       to_panvk_physical_device(device->vk.physical);
 
    assert(handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
-   pMemoryFdProperties->memoryTypeBits =
-      BITFIELD_MASK(phys_dev->memory.type_count);
+
+   struct pan_kmod_bo *bo = pan_kmod_bo_import(device->kmod.dev, fd, 0);
+   if (!bo)
+      return VK_ERROR_INVALID_EXTERNAL_HANDLE;
+
+   pMemoryFdProperties->memoryTypeBits = 0;
+
+   /* Keep things simple by only allowing host-visible if the BO doesn't require
+    * kernel-side synchronization going through the dma-buf exporter, which is
+    * reflected through the PAN_KMOD_BO_FLAG_FORCE_FULL_KERNEL_SYNC flag.
+    */
+   const bool can_do_host_visible = !(bo->flags & PAN_KMOD_BO_FLAG_NO_MMAP);
+   const bool can_do_host_coherent = !(bo->flags & PAN_KMOD_BO_FLAG_WB_MMAP) ||
+                                     (bo->flags & PAN_KMOD_BO_FLAG_IO_COHERENT);
+   const bool can_do_host_cached = (bo->flags & PAN_KMOD_BO_FLAG_WB_MMAP);
+
+   pMemoryFdProperties->memoryTypeBits = 0;
+   for (uint32_t i = 0; i < phys_dev->memory.type_count; i++) {
+      if (!can_do_host_visible && (phys_dev->memory.types[i].propertyFlags &
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+         continue;
+      if (!can_do_host_coherent && (phys_dev->memory.types[i].propertyFlags &
+                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+         continue;
+      if (!can_do_host_cached && (phys_dev->memory.types[i].propertyFlags &
+                                  VK_MEMORY_PROPERTY_HOST_CACHED_BIT))
+         continue;
+
+      pMemoryFdProperties->memoryTypeBits |= BITFIELD_BIT(i);
+   }
+
+   pan_kmod_bo_put(bo);
    return VK_SUCCESS;
 }
 

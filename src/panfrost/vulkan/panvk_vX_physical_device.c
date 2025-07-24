@@ -808,7 +808,9 @@ panvk_per_arch(get_physical_device_properties)(
       .standardSampleLocations = true,
       .optimalBufferCopyOffsetAlignment = 64,
       .optimalBufferCopyRowPitchAlignment = 64,
-      .nonCoherentAtomSize = 64,
+
+      /* If we can't detect the cacheline size, assume 64 bytes cachelines. */
+      .nonCoherentAtomSize = util_has_cache_ops() ? util_cache_granularity() : 64,
 
       /* Vulkan 1.0 sparse properties */
       .sparseResidencyNonResidentStrict = false,

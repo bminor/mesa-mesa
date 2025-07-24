@@ -32,6 +32,7 @@ enum panvk_debug_flags {
    PANVK_DEBUG_WSI_AFBC = 1 << 13,
    PANVK_DEBUG_NO_WB_MMAP = 1 << 14,
    PANVK_DEBUG_NO_USER_MMAP_SYNC = 1 << 15,
+   PANVK_DEBUG_COHERENT_BEFORE_CACHED = 1 << 16,
 };
 
 extern uint64_t panvk_debug;

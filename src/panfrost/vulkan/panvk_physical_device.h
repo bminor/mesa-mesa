@@ -61,7 +61,7 @@ struct panvk_physical_device {
       VkMemoryHeap heaps[1];
       uint32_t heap_count;
 
-      VkMemoryType types[1];
+      VkMemoryType types[4];
       uint32_t type_count;
    } memory;
 
