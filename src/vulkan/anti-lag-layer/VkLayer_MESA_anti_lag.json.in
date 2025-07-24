@@ -3,7 +3,7 @@
    "layer": {
       "name": "VK_LAYER_MESA_anti_lag",
       "type": "GLOBAL",
-      "library_path": "libVkLayer_MESA_anti_lag.so",
+      "library_path": "@library_path@",
       "api_version": "1.4.303",
       "implementation_version": "1",
       "description": "Open-source implementation of the VK_AMD_anti_lag extension.",
