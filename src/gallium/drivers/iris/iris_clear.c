@@ -458,9 +458,6 @@ can_fast_clear_depth(struct iris_context *ice,
                      float depth)
 {
    struct pipe_resource *p_res = (void *) res;
-   struct pipe_context *ctx = (void *) ice;
-   struct iris_screen *screen = (void *) ctx->screen;
-   const struct intel_device_info *devinfo = screen->devinfo;
 
    if (INTEL_DEBUG(DEBUG_NO_FAST_CLEAR))
       return false;
@@ -481,7 +478,7 @@ can_fast_clear_depth(struct iris_context *ice,
       return false;
    }
 
-   if (!iris_resource_level_has_hiz(devinfo, res, level))
+   if (res->aux.usage == ISL_AUX_USAGE_NONE)
       return false;
 
    /* From the TGL PRM, Vol 9, "Compressed Depth Buffers" (under the

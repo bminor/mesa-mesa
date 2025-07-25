@@ -2081,8 +2081,6 @@ iris_bind_zsa_state(struct pipe_context *ctx, void *state)
 static bool
 want_pma_fix(struct iris_context *ice)
 {
-   UNUSED struct iris_screen *screen = (void *) ice->ctx.screen;
-   UNUSED const struct intel_device_info *devinfo = screen->devinfo;
    const struct iris_fs_data *fs_data =
       iris_fs_data(ice->shaders.prog[MESA_SHADER_FRAGMENT]);
    const struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
@@ -2156,8 +2154,7 @@ want_pma_fix(struct iris_context *ice)
    /* 3DSTATE_DEPTH_BUFFER::SURFACE_TYPE != NULL &&
     * 3DSTATE_DEPTH_BUFFER::HIZ Enable &&
     */
-   if (!zres ||
-       !iris_resource_level_has_hiz(devinfo, zres, cso_fb->zsbuf.level))
+   if (!zres || zres->aux.usage == ISL_AUX_USAGE_NONE)
       return false;
 
    /* 3DSTATE_WM::EDSC_Mode != EDSC_PREPS */
@@ -3926,7 +3923,7 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
 
          view.format = zres->surf.format;
 
-         if (iris_resource_level_has_hiz(devinfo, zres, view.base_level)) {
+         if (zres->aux.usage != ISL_AUX_USAGE_NONE) {
             info.hiz_usage = zres->aux.usage;
             info.hiz_surf = &zres->aux.surf;
             info.hiz_address = zres->aux.bo->address + zres->aux.offset;
@@ -6742,7 +6739,7 @@ calculate_tile_dimensions(struct iris_context *ice,
          /* XXX - Pessimistic, in some cases it might be helpful to neglect
           *       aux surface traffic.
           */
-         if (iris_resource_level_has_hiz(devinfo, zres, cso->zsbuf.level)) {
+         if (zres->aux.usage != ISL_AUX_USAGE_NONE) {
             pixel_size += intel_calculate_surface_pixel_size(&zres->aux.surf);
 
             if (isl_aux_usage_has_ccs(zres->aux.usage)) {
