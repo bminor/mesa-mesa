@@ -271,8 +271,8 @@ update_array_sizes(struct gl_shader_program *prog, nir_variable *var,
 }
 
 static void
-nir_setup_uniform_remap_tables(const struct gl_constants *consts,
-                               struct gl_shader_program *prog)
+setup_uniform_remap_tables(const struct gl_constants *consts,
+                           struct gl_shader_program *prog)
 {
    unsigned total_entries = prog->NumExplicitUniformLocations;
 
@@ -2036,7 +2036,7 @@ gl_nir_link_uniforms(const struct gl_constants *consts,
    if (prog->data->spirv)
       prog->NumUniformRemapTable = state.max_uniform_location;
 
-   nir_setup_uniform_remap_tables(consts, prog);
+   setup_uniform_remap_tables(consts, prog);
    gl_nir_set_uniform_initializers(consts, prog);
 
    _mesa_hash_table_destroy(state.uniform_hash, hash_free_uniform_name);
