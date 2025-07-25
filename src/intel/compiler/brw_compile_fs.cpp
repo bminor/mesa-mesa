@@ -181,12 +181,44 @@ brw_emit_interpolation_setup(brw_shader &s)
    const struct intel_device_info *devinfo = s.devinfo;
    const brw_builder bld = brw_builder(&s);
    brw_builder abld = bld.annotate("compute pixel centers");
+   const struct brw_wm_prog_key *wm_key = (brw_wm_prog_key*) s.key;
+   struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
+
+   brw_reg ub_cps_width, ub_cps_height;
+   {
+      /* The coarse pixel size is delivered as 2 u8 in r1.0 if coarse pixel
+       * dispatch is active. Otherwise we need to build a value ourselves.
+       */
+      brw_builder ubld = bld.exec_all().scalar_group();
+      const brw_reg r1_0 = retype(brw_vec1_reg(FIXED_GRF, 1, 0), BRW_TYPE_UD);
+
+      brw_reg cps_size = ubld.vgrf(BRW_TYPE_UD);
+      switch (wm_prog_data->coarse_pixel_dispatch) {
+      case INTEL_NEVER:
+         ubld.MOV(cps_size, brw_imm_ud(0x00000101));
+         break;
+      case INTEL_SOMETIMES:
+         brw_check_dynamic_msaa_flag(ubld, wm_prog_data,
+                                     INTEL_MSAA_FLAG_COARSE_RT_WRITES);
+
+         set_predicate_inv(BRW_PREDICATE_NORMAL, false,
+                           ubld.MOV(cps_size, r1_0));
+         set_predicate_inv(BRW_PREDICATE_NORMAL, true,
+                           ubld.MOV(cps_size, brw_imm_ud(0x00000101)));
+         break;
+      case INTEL_ALWAYS:
+         ubld.MOV(cps_size, r1_0);
+         break;
+      }
+
+      cps_size = component(cps_size, 0);
+      ub_cps_width = retype(cps_size, BRW_TYPE_UB);
+      ub_cps_height = byte_offset(retype(cps_size, BRW_TYPE_UB), 1);
+   }
 
    s.pixel_x = bld.vgrf(BRW_TYPE_F);
    s.pixel_y = bld.vgrf(BRW_TYPE_F);
 
-   const struct brw_wm_prog_key *wm_key = (brw_wm_prog_key*) s.key;
-   struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
    brw_fs_thread_payload &payload = s.fs_payload();
 
    brw_reg int_sample_offset_x, int_sample_offset_y; /* Used on Gen12HP+ */
@@ -245,11 +277,7 @@ brw_emit_interpolation_setup(brw_shader &s)
       /* In coarse pixel dispatch we have to do the same ADD instruction that
        * we do in normal per pixel dispatch, except this time we're not adding
        * 1 in each direction, but instead the coarse pixel size.
-       *
-       * The coarse pixel size is delivered as 2 u8 in r1.0
        */
-      struct brw_reg r1_0 = retype(brw_vec1_reg(FIXED_GRF, 1, 0), BRW_TYPE_UB);
-
       const brw_builder dbld =
          abld.exec_all().group(MIN2(16, s.dispatch_width) * 2, 0);
 
@@ -258,21 +286,21 @@ brw_emit_interpolation_setup(brw_shader &s)
           * right mask in X.
           */
          int_coarse_offset_x = dbld.vgrf(BRW_TYPE_UW);
-         dbld.AND(int_coarse_offset_x, byte_offset(r1_0, 0), brw_imm_v(0x0f000f00));
+         dbld.AND(int_coarse_offset_x, ub_cps_width, brw_imm_v(0x0f000f00));
 
          /* And the right mask in Y. */
          int_coarse_offset_y = dbld.vgrf(BRW_TYPE_UW);
-         dbld.AND(int_coarse_offset_y, byte_offset(r1_0, 1), brw_imm_v(0x0f0f0000));
+         dbld.AND(int_coarse_offset_y, ub_cps_height, brw_imm_v(0x0f0f0000));
       } else {
          /* To build the array of half bytes we do and AND operation with the
           * right mask in X.
           */
          int_coarse_offset_x = dbld.vgrf(BRW_TYPE_UW);
-         dbld.AND(int_coarse_offset_x, byte_offset(r1_0, 0), brw_imm_v(0x0000f0f0));
+         dbld.AND(int_coarse_offset_x, ub_cps_width, brw_imm_v(0x0000f0f0));
 
          /* And the right mask in Y. */
          int_coarse_offset_y = dbld.vgrf(BRW_TYPE_UW);
-         dbld.AND(int_coarse_offset_y, byte_offset(r1_0, 1), brw_imm_v(0xff000000));
+         dbld.AND(int_coarse_offset_y, ub_cps_height, brw_imm_v(0xff000000));
 
          /* Finally OR the 2 registers. */
          int_coarse_offset_xy = dbld.vgrf(BRW_TYPE_UW);
@@ -283,8 +311,8 @@ brw_emit_interpolation_setup(brw_shader &s)
       half_int_coarse_offset_x = bld.vgrf(BRW_TYPE_UW);
       half_int_coarse_offset_y = bld.vgrf(BRW_TYPE_UW);
 
-      bld.SHR(half_int_coarse_offset_x, suboffset(r1_0, 0), brw_imm_ud(1));
-      bld.SHR(half_int_coarse_offset_y, suboffset(r1_0, 1), brw_imm_ud(1));
+      bld.SHR(half_int_coarse_offset_x, ub_cps_width, brw_imm_ud(1));
+      bld.SHR(half_int_coarse_offset_y, ub_cps_height, brw_imm_ud(1));
    }
 
    brw_reg int_pixel_offset_x, int_pixel_offset_y; /* Used on Gen12HP+ */
@@ -420,6 +448,8 @@ brw_emit_interpolation_setup(brw_shader &s)
        * properly. In the same way we have to add the coarse pixel size to
        * pixels locations, here we recompute the Z value with 2 coefficients
        * in X & Y axis.
+       *
+       * src_z = (x - xstart)*z_cx + (y - ystart)*z_cy + z_c0
        */
       brw_reg coef_payload = brw_vec8_grf(payload.depth_w_coef_reg, 0);
       const brw_reg x_start = devinfo->ver >= 20 ?
@@ -444,19 +474,10 @@ brw_emit_interpolation_setup(brw_shader &s)
       abld.ADD(float_pixel_x, s.pixel_x, negate(x_start));
       abld.ADD(float_pixel_y, s.pixel_y, negate(y_start));
 
-      /* r1.0 - 0:7 ActualCoarsePixelShadingSize.X */
-      const brw_reg u8_cps_width = brw_reg(retype(brw_vec1_grf(1, 0), BRW_TYPE_UB));
-      /* r1.0 - 15:8 ActualCoarsePixelShadingSize.Y */
-      const brw_reg u8_cps_height = byte_offset(u8_cps_width, 1);
-      const brw_reg u32_cps_width = abld.vgrf(BRW_TYPE_UD);
-      const brw_reg u32_cps_height = abld.vgrf(BRW_TYPE_UD);
-      abld.MOV(u32_cps_width, u8_cps_width);
-      abld.MOV(u32_cps_height, u8_cps_height);
-
       const brw_reg f_cps_width = abld.vgrf(BRW_TYPE_F);
       const brw_reg f_cps_height = abld.vgrf(BRW_TYPE_F);
-      abld.MOV(f_cps_width, u32_cps_width);
-      abld.MOV(f_cps_height, u32_cps_height);
+      abld.MOV(f_cps_width, ub_cps_width);
+      abld.MOV(f_cps_height, ub_cps_height);
 
       /* Center in the middle of the coarse pixel. */
       abld.MAD(float_pixel_x, float_pixel_x, f_cps_width, brw_imm_f(0.5f));
