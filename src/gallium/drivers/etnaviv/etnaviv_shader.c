@@ -258,6 +258,15 @@ etna_link_shaders(struct etna_context *ctx, struct compiled_shader_state *cs,
       }
    }
 
+   /* if shader has flat varyings, switch to flat shading */
+   for (int idx = 0; idx < link.num_varyings; ++idx) {
+      if (link.varyings[idx].semantic == VARYING_INTERPOLATION_MODE_FLAT) {
+         cs->PA_CONFIG &= ~VIVS_PA_CONFIG_SHADE_MODEL_SMOOTH;
+         cs->PA_CONFIG |= VIVS_PA_CONFIG_SHADE_MODEL_FLAT;
+         break;
+      }
+   }
+
    cs->GL_VARYING_TOTAL_COMPONENTS =
       VIVS_GL_VARYING_TOTAL_COMPONENTS_NUM(align(total_components, 2));
    memcpy(cs->GL_VARYING_NUM_COMPONENTS, num_components, sizeof(uint32_t) * 2);
