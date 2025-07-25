@@ -1265,10 +1265,10 @@ d3d12_init_screen_base(struct d3d12_screen *screen, struct sw_winsys *winsys, LU
 #ifdef HAVE_GALLIUM_D3D12_GRAPHICS
    d3d12_varying_cache_init(screen);
    mtx_init(&screen->varying_info_mutex, mtx_plain);
-#endif // HAVE_GALLIUM_D3D12_GRAPHICS
 
    for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
       screen->base.nir_options[i] = &screen->nir_options;
+#endif // HAVE_GALLIUM_D3D12_GRAPHICS
 
    slab_create_parent(&screen->transfer_pool, sizeof(struct d3d12_transfer), 16);
 
