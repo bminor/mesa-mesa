@@ -3215,11 +3215,18 @@ visit_access_shared2_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    if (!is_store) {
       Temp dst = get_ssa_temp(ctx, &instr->def);
       if (dst.type() == RegType::sgpr) {
+         /* Similar to load_shared. */
+         bool readfirstlane_for_uniform = ctx->options->gfx_level >= GFX10 &&
+                                          ctx->program->wave_size == 64 &&
+                                          ctx->program->workgroup_size > 64;
+
          emit_split_vector(ctx, ds->definitions[0].getTemp(), dst.size());
          Temp comp[4];
          /* Use scalar v_readfirstlane_b32 for better 32-bit copy propagation */
-         for (unsigned i = 0; i < dst.size(); i++)
-            comp[i] = bld.as_uniform(emit_extract_vector(ctx, ds->definitions[0].getTemp(), i, v1));
+         for (unsigned i = 0; i < dst.size(); i++) {
+            Temp val = emit_extract_vector(ctx, ds->definitions[0].getTemp(), i, v1);
+            comp[i] = emit_vector_as_uniform(ctx, val, bld.tmp(s1), readfirstlane_for_uniform);
+         }
          if (is64bit) {
             Temp comp0 = bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), comp[0], comp[1]);
             Temp comp1 = bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), comp[2], comp[3]);
