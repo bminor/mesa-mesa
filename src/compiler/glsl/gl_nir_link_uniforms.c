@@ -129,6 +129,24 @@ mark_array_elements_referenced(const struct array_deref_range *dr,
    if (count != array_depth)
       return;
 
+   /* Single dimension array fast path. This is the most common path as most
+    * arrays are only one dimension. This path is around 3x faster on large
+    * arrays than _mark_array_elements_referenced().
+    */
+   if (count == 1) {
+      if (dr[0].size == 0)
+         return;
+
+      if (dr[0].index < dr[0].size) {
+         BITSET_SET(bits, dr[0].index);
+      } else {
+         /* Accessed by non-constant index so set everything as referenced */
+         BITSET_SET_RANGE(bits, 0, dr[0].size - 1);
+      }
+
+      return;
+   }
+
    _mark_array_elements_referenced(dr, count, 1, 0, bits);
 }
 
