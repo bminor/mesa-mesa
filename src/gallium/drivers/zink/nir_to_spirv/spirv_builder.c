@@ -469,9 +469,16 @@ spirv_builder_return(struct spirv_builder *b)
 
 SpvId
 spirv_builder_emit_load(struct spirv_builder *b, SpvId result_type,
-                        SpvId pointer)
+                        SpvId pointer, bool coherent)
 {
-   return spirv_builder_emit_unop(b, SpvOpLoad, result_type, pointer);
+   if (coherent) {
+      SpvId scope = spirv_builder_const_int(b, 32, SpvScopeDevice);
+      SpvMemoryAccessMask mask = SpvMemoryAccessNonPrivatePointerMask |
+                                 SpvMemoryAccessMakePointerVisibleMask;
+      return spirv_builder_emit_triop(b, SpvOpLoad, result_type, pointer, mask, scope);
+   } else {
+      return spirv_builder_emit_unop(b, SpvOpLoad, result_type, pointer);
+   }
 }
 
 SpvId
@@ -492,12 +499,21 @@ spirv_builder_emit_load_volatile(struct spirv_builder *b, SpvId result_type, Spv
 }
 
 void
-spirv_builder_emit_store(struct spirv_builder *b, SpvId pointer, SpvId object)
+spirv_builder_emit_store(struct spirv_builder *b, SpvId pointer, SpvId object, bool coherent)
 {
-   spirv_buffer_prepare(&b->instructions, b->mem_ctx, 3);
-   spirv_buffer_emit_word(&b->instructions, SpvOpStore | (3 << 16));
+   unsigned size = coherent ? 5 : 3;
+   spirv_buffer_prepare(&b->instructions, b->mem_ctx, size);
+   spirv_buffer_emit_word(&b->instructions, SpvOpStore | (size << 16));
    spirv_buffer_emit_word(&b->instructions, pointer);
    spirv_buffer_emit_word(&b->instructions, object);
+
+   if (coherent) {
+      SpvMemoryAccessMask mask = SpvMemoryAccessNonPrivatePointerMask |
+                                 SpvMemoryAccessMakePointerAvailableMask;
+      spirv_buffer_emit_word(&b->instructions, mask);
+      SpvId scope = spirv_builder_const_int(b, 32, SpvScopeDevice);
+      spirv_buffer_emit_word(&b->instructions, scope);
+   }
 }
 
 void

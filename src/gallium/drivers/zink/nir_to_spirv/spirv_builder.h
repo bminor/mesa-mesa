@@ -203,7 +203,7 @@ spirv_builder_emit_undef(struct spirv_builder *b, SpvId result_type);
 
 SpvId
 spirv_builder_emit_load(struct spirv_builder *b, SpvId result_type,
-                        SpvId pointer);
+                        SpvId pointer, bool coherent);
 
 SpvId
 spirv_builder_emit_load_aligned(struct spirv_builder *b, SpvId result_type, SpvId pointer, unsigned alignment, bool coherent);
@@ -216,7 +216,7 @@ spirv_builder_emit_atomic_store(struct spirv_builder *b, SpvId pointer, SpvScope
                                 SpvMemorySemanticsMask semantics, SpvId object);
 
 void
-spirv_builder_emit_store(struct spirv_builder *b, SpvId pointer, SpvId object);
+spirv_builder_emit_store(struct spirv_builder *b, SpvId pointer, SpvId object, bool coherent);
 void
 spirv_builder_emit_store_aligned(struct spirv_builder *b, SpvId pointer, SpvId object, unsigned alignment, bool coherent);
 
