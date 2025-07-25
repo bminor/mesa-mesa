@@ -54,9 +54,11 @@ brw_set_dest(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg dest)
       dest.hstride = BRW_HORIZONTAL_STRIDE_2;
    }
 
+   const enum opcode opcode = brw_eu_inst_opcode(p->isa, inst);
+
    if (devinfo->ver >= 12 &&
-       (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SEND ||
-        brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDC)) {
+         (opcode == BRW_OPCODE_SEND ||
+          opcode == BRW_OPCODE_SENDC)) {
       assert(dest.file == FIXED_GRF ||
              dest.file == ADDRESS ||
              dest.file == ARF);
@@ -69,8 +71,8 @@ brw_set_dest(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg dest)
       brw_eu_inst_set_dst_reg_file(devinfo, inst, phys_file(dest));
       brw_eu_inst_set_dst_da_reg_nr(devinfo, inst, phys_nr(devinfo, dest));
 
-   } else if (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDS ||
-              brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDSC) {
+   } else if (opcode == BRW_OPCODE_SENDS ||
+              opcode == BRW_OPCODE_SENDSC) {
       assert(devinfo->ver < 12);
       assert(dest.file == FIXED_GRF ||
              dest.file == ADDRESS ||
@@ -136,10 +138,12 @@ brw_set_src0(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
    if (reg.file == FIXED_GRF)
       assert(reg.nr < XE3_MAX_GRF);
 
-   if (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SEND  ||
-       brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDC ||
-       brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDS ||
-       brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDSC) {
+   const enum opcode opcode = brw_eu_inst_opcode(p->isa, inst);
+
+   if (opcode == BRW_OPCODE_SEND  ||
+       opcode == BRW_OPCODE_SENDC ||
+       opcode == BRW_OPCODE_SENDS ||
+       opcode == BRW_OPCODE_SENDSC) {
       /* Any source modifiers or regions will be ignored, since this just
        * identifies the GRF to start reading the message contents from.
        * Check for some likely failures.
@@ -150,8 +154,8 @@ brw_set_src0(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
    }
 
    if (devinfo->ver >= 12 &&
-       (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SEND ||
-        brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDC)) {
+       (opcode == BRW_OPCODE_SEND ||
+        opcode == BRW_OPCODE_SENDC)) {
       assert(reg.file == ARF || reg.file == FIXED_GRF);
       assert(reg.address_mode == BRW_ADDRESS_DIRECT);
       assert(has_scalar_region(reg) ||
@@ -168,8 +172,8 @@ brw_set_src0(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
       } else {
          assert(reg.subnr == 0);
       }
-   } else if (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDS ||
-              brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDSC) {
+   } else if (opcode == BRW_OPCODE_SENDS ||
+              opcode == BRW_OPCODE_SENDSC) {
       assert(reg.file == FIXED_GRF);
       assert(reg.address_mode == BRW_ADDRESS_DIRECT);
       assert(reg.subnr % 16 == 0);
@@ -261,11 +265,13 @@ brw_set_src1(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
    if (reg.file == FIXED_GRF)
       assert(reg.nr < XE3_MAX_GRF);
 
-   if (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDS ||
-       brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDSC ||
+   const enum opcode opcode = brw_eu_inst_opcode(p->isa, inst);
+
+   if (opcode == BRW_OPCODE_SENDS ||
+       opcode == BRW_OPCODE_SENDSC ||
        (devinfo->ver >= 12 &&
-        (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SEND ||
-         brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDC))) {
+        (opcode == BRW_OPCODE_SEND ||
+         opcode == BRW_OPCODE_SENDC))) {
       assert(reg.file == FIXED_GRF ||
              reg.file == ARF ||
              reg.file == ADDRESS);
