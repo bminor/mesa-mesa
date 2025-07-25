@@ -3112,26 +3112,34 @@ get_affinities(ra_ctx& ctx)
             const Definition& def = instr->definitions[i];
             if (!def.isTemp())
                continue;
-            /* mark last-seen phi operand */
-            auto it = temp_to_phi_resources.find(def.tempId());
-            if (it != temp_to_phi_resources.end() &&
-                def.regClass() == phi_resources[it->second][0].regClass()) {
-               phi_resources[it->second][0] = def.getTemp();
-               /* try to coalesce phi affinities with parallelcopies */
-               Operand op;
-               if (instr->opcode == aco_opcode::p_parallelcopy) {
-                  op = instr->operands[i];
-               } else if (i < tied_defs.size()) {
-                  op = instr->operands[tied_defs[i]];
-               } else if (vop3_can_use_vop2acc(ctx, instr.get())) {
-                  op = instr->operands[2];
-               } else if (i == 0 && sop2_can_use_sopk(ctx, instr.get())) {
-                  op = instr->operands[instr->operands[0].isLiteral()];
-               } else {
-                  continue;
-               }
 
-               if (op.isTemp() && op.isFirstKillBeforeDef() && def.regClass() == op.regClass()) {
+            auto it = temp_to_phi_resources.find(def.tempId());
+            if (it != temp_to_phi_resources.end()) {
+               /* mark last-seen phi operand */
+               phi_resources[it->second][0] = def.getTemp();
+            } else if (!ctx.assignments[def.tempId()].precolor_affinity) {
+               continue;
+            }
+
+            /* try to coalesce affinities with parallelcopies */
+            Operand op;
+            if (instr->opcode == aco_opcode::p_parallelcopy) {
+               op = instr->operands[i];
+            } else if (i < tied_defs.size()) {
+               op = instr->operands[tied_defs[i]];
+            } else if (vop3_can_use_vop2acc(ctx, instr.get())) {
+               op = instr->operands[2];
+            } else if (i == 0 && sop2_can_use_sopk(ctx, instr.get())) {
+               op = instr->operands[instr->operands[0].isLiteral()];
+            } else {
+               continue;
+            }
+
+            if (op.isTemp() && op.isFirstKillBeforeDef() && def.regClass() == op.regClass()) {
+               if (ctx.assignments[def.tempId()].precolor_affinity)
+                  ctx.assignments[op.tempId()].set_precolor_affinity(
+                     ctx.assignments[def.tempId()].reg);
+               if (it != temp_to_phi_resources.end()) {
                   phi_resources[it->second].emplace_back(op.getTemp());
                   temp_to_phi_resources[op.tempId()] = it->second;
                }
