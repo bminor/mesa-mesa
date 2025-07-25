@@ -13,8 +13,11 @@
 #include "vk_object.h"
 #include "vk_util.h"
 
+#include "util/cache_ops.h"
+
 struct image_params {
    struct panvk_image *img;
+   struct pan_kmod_bo *bo;
    void *ptr;
    VkOffset3D offset;
    VkImageSubresourceLayers subres;
@@ -117,6 +120,7 @@ panvk_copy_image_to_from_memory(struct image_params img,
       vk_image_subresource_layer_count(&img.img->vk, &img.subres);
 
    void *img_base_ptr = img.ptr + plane->mem_offset + slice_layout->offset_B;
+
    for (unsigned layer = 0; layer < layer_count; layer++) {
       unsigned img_layer = layer + img.subres.baseArrayLayer;
       void *img_layer_ptr = img_base_ptr +
@@ -195,8 +199,8 @@ img_to_from_mem_with_ds_split(struct image_params img, struct memory_params mem,
 }
 
 static void
-panvk_copy_memory_to_image(struct panvk_image *dst, void *dst_cpu,
-                           const VkMemoryToImageCopy *region,
+panvk_copy_memory_to_image(struct panvk_image *dst, struct pan_kmod_bo *dst_bo,
+                           void *dst_cpu, const VkMemoryToImageCopy *region,
                            VkHostImageCopyFlags flags)
 {
    struct memory_params src_params = {
@@ -206,6 +210,7 @@ panvk_copy_memory_to_image(struct panvk_image *dst, void *dst_cpu,
    };
    struct image_params dst_params = {
       .img = dst,
+      .bo = dst_bo,
       .ptr = dst_cpu,
       .offset = region->imageOffset,
       .subres = region->imageSubresource,
@@ -254,6 +259,8 @@ munmap_planes(struct panvk_image *img,
       if (!plane_ptrs[i])
          continue;
 
+      /* No need to call pan_kmod_flush_bo_map_syncs() even if we've written to
+       * the image. This will be done just before the next submit. */
       ASSERTED int ret =
          os_munmap(plane_ptrs[i], pan_kmod_bo_size(img->planes[i].mem->bo));
       assert(!ret);
@@ -266,6 +273,30 @@ munmap_planes(struct panvk_image *img,
       }
 
       plane_ptrs[i] = NULL;
+   }
+}
+
+static void
+image_sync_subres(struct panvk_image *img, void *plane_cpu_ptr,
+                  const VkImageSubresourceLayers *subres,
+                  enum pan_kmod_bo_sync_type type)
+{
+   unsigned plane_idx =
+      panvk_plane_index(img, subres->aspectMask);
+   assert(plane_idx < PANVK_MAX_PLANES);
+   struct panvk_image_plane *plane = &img->planes[plane_idx];
+   const struct pan_image_layout *plane_layout = &plane->plane.layout;
+   const struct pan_image_slice_layout *slice_layout =
+      &plane_layout->slices[subres->mipLevel];
+   unsigned layer_count = vk_image_subresource_layer_count(&img->vk, subres);
+   uint32_t base = plane->mem_offset + slice_layout->offset_B;
+
+   for (unsigned layer = 0; layer < layer_count; layer++) {
+      unsigned img_layer = layer + subres->baseArrayLayer;
+      uint64_t offset = base + (img_layer * plane_layout->array_stride_B);
+
+      pan_kmod_queue_bo_map_sync(plane->mem->bo, offset, plane_cpu_ptr + offset,
+                                 slice_layout->size_B, type);
    }
 }
 
@@ -284,8 +315,10 @@ panvk_CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo *info)
       if (result != VK_SUCCESS)
          goto out_unmap;
 
-      panvk_copy_memory_to_image(dst, dst_cpu[p], &info->pRegions[i],
-                                 info->flags);
+      panvk_copy_memory_to_image(dst, dst->planes[p].mem->bo, dst_cpu[p],
+                                 &info->pRegions[i], info->flags);
+      image_sync_subres(dst, dst_cpu[p], &info->pRegions[i].imageSubresource,
+                        PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
    }
 
 out_unmap:
@@ -294,7 +327,9 @@ out_unmap:
 }
 
 static void
-panvk_copy_image_to_memory(struct panvk_image *src, void *src_cpu,
+panvk_copy_image_to_memory(struct panvk_image *src,
+                           struct pan_kmod_bo *src_bo,
+                           void *src_cpu,
                            const VkImageToMemoryCopy *region,
                            VkHostImageCopyFlags flags)
 {
@@ -304,6 +339,7 @@ panvk_copy_image_to_memory(struct panvk_image *src, void *src_cpu,
    };
    struct image_params src_params = {
       .img = src,
+      .bo = src_bo,
       .ptr = src_cpu,
       .offset = region->imageOffset,
       .subres = region->imageSubresource,
@@ -316,6 +352,7 @@ panvk_copy_image_to_memory(struct panvk_image *src, void *src_cpu,
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo *info)
 {
+   VK_FROM_HANDLE(panvk_device, dev, device);
    VK_FROM_HANDLE(panvk_image, src, info->srcImage);
    void *src_cpu[PANVK_MAX_PLANES] = {NULL};
    VkResult result = VK_SUCCESS;
@@ -328,8 +365,18 @@ panvk_CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo *info)
       if (result != VK_SUCCESS)
          goto out_unmap;
 
-      panvk_copy_image_to_memory(src, src_cpu[p], &info->pRegions[i],
-                                 info->flags);
+      image_sync_subres(src, src_cpu[p], &info->pRegions[i].imageSubresource,
+                        PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE);
+   }
+
+   pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
+
+   for (unsigned i = 0; i < info->regionCount; i++) {
+      uint8_t p =
+         panvk_plane_index(src, info->pRegions[i].imageSubresource.aspectMask);
+
+      panvk_copy_image_to_memory(src, src->planes[p].mem->bo, src_cpu[p],
+                                 &info->pRegions[i], info->flags);
    }
 
 out_unmap:
@@ -338,8 +385,10 @@ out_unmap:
 }
 
 static void
-panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
-                          struct panvk_image *src, void *src_cpu,
+panvk_copy_image_to_image(struct panvk_image *dst,
+                          struct pan_kmod_bo *dst_bo, void *dst_cpu,
+                          struct panvk_image *src,
+                          struct pan_kmod_bo *src_bo, void *src_cpu,
                           const VkImageCopy2 *region,
                           VkHostImageCopyFlags flags)
 {
@@ -410,6 +459,7 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
       src_cpu + src_plane->mem_offset + src_slice_layout->offset_B;
    void *dst_base_ptr =
       dst_cpu + dst_plane->mem_offset + dst_slice_layout->offset_B;
+
    for (unsigned layer = 0; layer < layer_count; layer++) {
       unsigned src_layer = layer + src_subres.baseArrayLayer;
       unsigned dst_layer = layer + dst_subres.baseArrayLayer;
@@ -493,16 +543,23 @@ panvk_CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *info)
 
    VK_FROM_HANDLE(panvk_image, dst, info->dstImage);
    VK_FROM_HANDLE(panvk_image, src, info->srcImage);
+   struct panvk_device *dev = to_panvk_device(dst->vk.base.device);
    void *src_cpu[PANVK_MAX_PLANES] = {NULL};
    void *dst_cpu[PANVK_MAX_PLANES] = {NULL};
 
    for (unsigned i = 0; i < info->regionCount; i++) {
       u_foreach_bit(a, info->pRegions[i].srcSubresource.aspectMask) {
-         uint8_t src_p = panvk_plane_index(src, 1 << a);
+         VkImageSubresourceLayers subres = info->pRegions[i].srcSubresource;
+         subres.aspectMask = 1 << a;
+         uint8_t src_p = panvk_plane_index(src, subres.aspectMask);
+
 
          result = mmap_plane(src, src_p, PROT_READ, src_cpu);
          if (result != VK_SUCCESS)
             goto out_unmap;
+
+         image_sync_subres(src, src_cpu[src_p], &subres,
+                           PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE);
       }
 
       u_foreach_bit(a, info->pRegions[i].dstSubresource.aspectMask) {
@@ -513,6 +570,9 @@ panvk_CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *info)
             goto out_unmap;
       }
    }
+
+   /* Flush invalidates before reading the source. */
+   pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
 
    for (unsigned i = 0; i < info->regionCount; i++) {
       bool depth_and_stencil =
@@ -529,25 +589,38 @@ panvk_CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *info)
          region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
          src_p = panvk_plane_index(src, VK_IMAGE_ASPECT_DEPTH_BIT);
          dst_p = panvk_plane_index(dst, VK_IMAGE_ASPECT_DEPTH_BIT);
-         panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
-                                   &region, info->flags);
+         panvk_copy_image_to_image(
+            dst, dst->planes[dst_p].mem->bo, dst_cpu[dst_p], src,
+            src->planes[src_p].mem->bo, src_cpu[src_p], &region, info->flags);
+         image_sync_subres(dst, dst_cpu[dst_p], &region.dstSubresource,
+                           PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
 
          region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
          region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
          src_p = panvk_plane_index(src, VK_IMAGE_ASPECT_STENCIL_BIT);
          dst_p = panvk_plane_index(dst, VK_IMAGE_ASPECT_STENCIL_BIT);
-         panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
-                                   &region, info->flags);
+         panvk_copy_image_to_image(
+            dst, dst->planes[dst_p].mem->bo, dst_cpu[dst_p], src,
+            src->planes[src_p].mem->bo, src_cpu[src_p], &region, info->flags);
+         image_sync_subres(dst, dst_cpu[dst_p], &region.dstSubresource,
+                           PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
       } else {
          assert(
             util_bitcount(info->pRegions[i].srcSubresource.aspectMask) == 1 &&
             util_bitcount(info->pRegions[i].dstSubresource.aspectMask) == 1);
 
-         uint8_t src_p = panvk_plane_index(src, info->pRegions[i].srcSubresource.aspectMask);
-         uint8_t dst_p = panvk_plane_index(dst, info->pRegions[i].dstSubresource.aspectMask);
+         uint8_t src_p =
+            panvk_plane_index(src, info->pRegions[i].srcSubresource.aspectMask);
+         uint8_t dst_p =
+            panvk_plane_index(dst, info->pRegions[i].dstSubresource.aspectMask);
 
-         panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
+         panvk_copy_image_to_image(dst, dst->planes[dst_p].mem->bo,
+                                   dst_cpu[dst_p], src,
+                                   src->planes[src_p].mem->bo, src_cpu[src_p],
                                    &info->pRegions[i], info->flags);
+         image_sync_subres(dst, dst_cpu[dst_p],
+                           &info->pRegions[i].dstSubresource,
+                           PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
       }
    }
 
