@@ -4745,19 +4745,6 @@ should_print_nir(UNUSED nir_shader *shader)
    }                                                                                        \
 })
 
-/**
- * Deprecated. Please do not use in newly written code.
- * See https://gitlab.freedesktop.org/mesa/mesa/-/issues/10409
- */
-#define NIR_PASS_V(nir, pass, ...) _PASS(pass, nir, {        \
-   if (should_print_nir(nir))                                \
-      printf("%s\n", #pass);                                 \
-   pass(nir, ##__VA_ARGS__);                                 \
-   nir_validate_shader(nir, "after " #pass " in " __FILE__); \
-   if (should_print_nir(nir))                                \
-      nir_print_shader(nir, stdout);                         \
-})
-
 #define _NIR_LOOP_PASS(progress, idempotent, skip, nir, pass, ...)   \
 do {                                                                 \
    bool nir_loop_pass_progress = false;                              \
