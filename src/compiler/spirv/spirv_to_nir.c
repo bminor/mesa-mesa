@@ -4095,6 +4095,8 @@ vtn_handle_image(struct vtn_builder *b, SpvOp opcode,
       scope = vtn_constant_uint(b, w[4]);
       semantics = vtn_constant_uint(b, w[5]);
       access |= ACCESS_COHERENT;
+      if (opcode == SpvOpAtomicLoad)
+         access |= ACCESS_ATOMIC;
       break;
 
    case SpvOpAtomicStore:
@@ -4102,7 +4104,7 @@ vtn_handle_image(struct vtn_builder *b, SpvOp opcode,
       image = *res_val->image;
       scope = vtn_constant_uint(b, w[2]);
       semantics = vtn_constant_uint(b, w[3]);
-      access |= ACCESS_COHERENT;
+      access |= ACCESS_COHERENT | ACCESS_ATOMIC;
       break;
 
    case SpvOpImageQuerySizeLod:
@@ -4594,6 +4596,8 @@ vtn_handle_atomics(struct vtn_builder *b, SpvOp opcode,
 
       if (ptr->mode != vtn_variable_mode_workgroup)
          access |= ACCESS_COHERENT;
+      if (op == nir_intrinsic_load_deref || op == nir_intrinsic_store_deref)
+         access |= ACCESS_ATOMIC;
       if (ptr->access & ACCESS_NON_UNIFORM)
          access |= ACCESS_NON_UNIFORM;
 
