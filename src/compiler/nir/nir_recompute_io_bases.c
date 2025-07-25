@@ -93,13 +93,27 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
 
          if (mode == nir_var_shader_in) {
             for (unsigned i = 0; i < num_slots; i++) {
-               if (intr->intrinsic == nir_intrinsic_load_per_primitive_input)
-                  BITSET_SET(per_prim_inputs, sem.location + i);
+               unsigned location = sem.location + i;
+               /* GPU like AMD require per primitive inputs come after per
+                * vertex inputs.
+                */
+               if (intr->intrinsic == nir_intrinsic_load_per_primitive_input ||
+                   /* Some fragment shader input varying is per vertex when vertex
+                    * pipeline, per primitive when mesh pipeline. In order to share
+                    * the same fragment shader code, we move these varyings after
+                    * other per vertex varyings by handling them like per primitive
+                    * varyings here.
+                    */
+                   (nir->info.stage == MESA_SHADER_FRAGMENT &&
+                    (location == VARYING_SLOT_PRIMITIVE_ID ||
+                     location == VARYING_SLOT_VIEWPORT ||
+                     location == VARYING_SLOT_LAYER)))
+                  BITSET_SET(per_prim_inputs, location);
                else
-                  BITSET_SET(inputs, sem.location + i);
+                  BITSET_SET(inputs, location);
 
                if (sem.high_dvec2)
-                  BITSET_SET(dual_slot_inputs, sem.location + i);
+                  BITSET_SET(dual_slot_inputs, location);
             }
          } else if (!sem.dual_source_blend_index) {
             for (unsigned i = 0; i < num_slots; i++)
@@ -126,7 +140,7 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
             num_slots = (num_slots + sem.high_16bits + 1) / 2;
 
          if (mode == nir_var_shader_in) {
-            if (intr->intrinsic == nir_intrinsic_load_per_primitive_input) {
+            if (BITSET_TEST(per_prim_inputs, sem.location)){
                nir_intrinsic_set_base(intr,
                                       num_normal_inputs +
                                          BITSET_PREFIX_SUM(per_prim_inputs, sem.location));
