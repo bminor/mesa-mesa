@@ -138,6 +138,18 @@
         *radeon_vcn_file_list
       when: manual
 
+.radeonsi-vaapi-fluster-rules:
+  stage: amd
+  extends:
+    - .test-fluster
+  rules:
+    - !reference [.radeonsi-vaapi-rules, rules]
+    - changes:
+        - src/amd/ci/$GPU_VERSION-fluster-fails.txt
+        - src/amd/ci/$GPU_VERSION-fluster-flakes.txt
+        - src/amd/ci/$GPU_VERSION-fluster-skips.txt
+      when: on_success
+
 .radeonsi-valve-rules:
   stage: amd
   rules:
@@ -496,15 +508,3 @@
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI48
     GPU_VERSION: radv-gfx1201
     FDO_CI_CONCURRENT: 16  # FIXME: Replace with 32 when the zerovram regression is addressed
-
-############### Fluster tests ###############
-.radeonsi-vaapi-fluster-rules:
-  extends:
-    - .test-fluster
-  rules:
-    - !reference [.radeonsi-vaapi-rules, rules]
-    - changes:
-        - src/amd/ci/$GPU_VERSION-fluster-fails.txt
-        - src/amd/ci/$GPU_VERSION-fluster-flakes.txt
-        - src/amd/ci/$GPU_VERSION-fluster-skips.txt
-      when: on_success

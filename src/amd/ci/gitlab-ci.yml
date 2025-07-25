@@ -142,14 +142,13 @@ radeonsi-raven-va:
 
 radeonsi-raven-vaapi-fluster:
   extends:
-    - radeonsi-raven-va
+    - .lava-x86_64-test-video
+    - .radeonsi-raven-test:x86_64
     - .radeonsi-vaapi-fluster-rules
-  timeout: 30m
-  parallel: 2
+    - .lava-hp-x360-14a-cb0001xx-zork:x86_64
   variables:
     DEQP_SUITE: fluster-vaapi
     GPU_VERSION: radeonsi-raven-fluster
-    HWCI_TEST_SCRIPT: install/deqp-runner.sh
 
 radeonsi-mendocino-glcts-piglit:
   extends:
