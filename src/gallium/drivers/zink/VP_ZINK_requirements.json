@@ -427,8 +427,7 @@
                     "extendedDynamicState3DepthClipNegativeOneToOne": true
                 },
                 "VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT": {
-                    "primitiveTopologyListRestart": true,
-                    "primitiveTopologyPatchListRestart": true
+                    "primitiveTopologyListRestart": true
                 },
                 "VkPhysicalDeviceFeatures": {
                     "textureCompressionBC": true
