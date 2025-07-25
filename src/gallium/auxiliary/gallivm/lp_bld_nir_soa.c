@@ -4579,7 +4579,7 @@ visit_shared_store(struct lp_build_nir_soa_context *bld,
    LLVMValueRef val[NIR_MAX_VEC_COMPONENTS] = { NULL };
    get_src_vec(bld, 0, val);
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
-   int writemask = instr->const_index[1];
+   int writemask = nir_intrinsic_write_mask(instr);
    int nc = nir_src_num_components(instr->src[0]);
    int bitsize = nir_src_bit_size(instr->src[0]);
    emit_store_mem(bld, writemask, nc, bitsize, false, true, NULL, offset, val);
@@ -4970,7 +4970,7 @@ visit_payload_store(struct lp_build_nir_soa_context *bld,
    LLVMValueRef val[NIR_MAX_VEC_COMPONENTS] = { NULL };
    get_src_vec(bld, 0, val);
    LLVMValueRef offset = get_src(bld, &instr->src[1], 0);
-   int writemask = instr->const_index[1];
+   int writemask = nir_intrinsic_write_mask(instr);
    int nc = nir_src_num_components(instr->src[0]);
    int bitsize = nir_src_bit_size(instr->src[0]);
    emit_store_mem(bld, writemask, nc, bitsize, true, true, NULL, offset, val);

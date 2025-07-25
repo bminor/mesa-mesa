@@ -33,7 +33,7 @@
  * eg:
  * atomicAdd(a[0], 1) ->
  *
- * uint expected = a[0];
+ * uint expected = atomicLoad(a[0]);
  * while (true) {
  *    uint before = expected;
  *    expected += 1;
@@ -54,17 +54,18 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                            .align_mul = intr->def.bit_size / 8,
                            .align_offset = 0,
                            .offset_shift = nir_intrinsic_offset_shift(intr),
-                           .access = ACCESS_COHERENT);
+                           .access = ACCESS_ATOMIC | ACCESS_COHERENT);
       break;
    case nir_intrinsic_shared_atomic:
       load = nir_load_shared(b, 1, intr->def.bit_size,
                              intr->src[0].ssa,
                              .align_mul = intr->def.bit_size / 8,
-                             .align_offset = 0);
+                             .align_offset = 0,
+                             .access = ACCESS_ATOMIC);
       break;
    case nir_intrinsic_global_atomic:
       load = nir_build_load_global(b, 1, intr->def.bit_size, intr->src[0].ssa,
-                                   .access = ACCESS_COHERENT);
+                                   .access = ACCESS_ATOMIC | ACCESS_COHERENT);
       break;
    default:
       UNREACHABLE("unsupported atomic type");

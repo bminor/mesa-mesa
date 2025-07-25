@@ -57,8 +57,8 @@ usclib_emu_global_atomic_comp_swap(uint32_t addr_lo, uint32_t addr_hi, uint comp
 void
 usclib_barrier(uint num_slots, uint counter_offset)
 {
-   #define load_barrier_counter() nir_load_shared(counter_offset, 0, 4, 0)
-   #define store_barrier_counter(value) nir_store_shared(value, counter_offset, 0, 0x1, 4, 0)
+   #define load_barrier_counter() nir_load_shared(counter_offset, 0, 0, 4, 0)
+   #define store_barrier_counter(value) nir_store_shared(value, counter_offset, 0, 0, 0x1, 4, 0)
 
    bool is_inst_zero = !nir_load_instance_num_pco();
 
@@ -85,5 +85,5 @@ void
 usclib_zero_init_wg_mem(uint count)
 {
    for (unsigned u = 0; u < count; ++u)
-      nir_store_shared(0, u * sizeof(uint32_t), 0, 0x1, 4, 0);
+      nir_store_shared(0, u * sizeof(uint32_t), 0, 0, 0x1, 4, 0);
 }

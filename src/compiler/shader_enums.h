@@ -1199,6 +1199,42 @@ enum gl_access_qualifier
     * Indicates that this load must be skipped by helper invocations.
     */
    ACCESS_SKIP_HELPERS = (1 << 17),
+
+   /**
+    * Indicates that this is an atomic load/store. Atomic RMW, swap, and other
+    * intrinsics which are always atomic such as atomic_counter_read_deref do
+    * not need this flag.
+    *
+    * If this is a vector load/store, then each component is considered its
+    * own atomic access.
+    *
+    * For non-shared load/store, instructions with this flag should also have
+    * ACCESS_COHERENT.
+    *
+    * The differences between atomic and non-atomic accesses can be summarized
+    * as follows:
+    * - Bounds checking of a 64-bit atomic access must be done per-component,
+    *   and not for each 32-bit part.
+    * - Atomics accesses are always coherent. Non-shared atomic load/store
+    *   should have the ACCESS_COHERENT flag.
+    * - Data races do not happen with two atomic accesses, with each access
+    *   instead reading/writing a valid value. Two non-atomic accesses or an
+    *   atomic access and a non-atomic access can data race, which is either
+    *   undefined behaviour or undefined value, depending on
+    *   shader_info::assume_no_data_races.
+    * - Because of data races, atomics are necessary for sychronization
+    *   without barriers. In the Vulkan memory model, synchronizes-with
+    *   relations only form between two memory barriers if control barriers or
+    *   atomic accesses are involved.
+    *
+    * Some hardware can "tear" loads with a subgroup uniform address, which
+    * means that a store from a different subgroup interrupts the load,
+    * causing the result to not be subgroup uniform and instead be a mix of
+    * the old and new values, despite the address being subgroup uniform. If
+    * a load is not atomic and assume_no_data_races=true, we can assume that
+    * the load never tears.
+    */
+   ACCESS_ATOMIC = (1 << 18),
 };
 
 /**

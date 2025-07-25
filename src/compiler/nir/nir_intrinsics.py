@@ -1254,9 +1254,9 @@ load("per_view_output", [1, 1], [BASE, RANGE, COMPONENT, DEST_TYPE, IO_SEMANTICS
 # src[] = { primitive, offset }.
 load("per_primitive_output", [1, 1], [BASE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE])
 # src[] = { offset }.
-load("shared", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
+load("shared", [1], [BASE, ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
 # src[] = { offset }.
-load("task_payload", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
+load("task_payload", [1], [BASE, ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
 # src[] = { offset }.
 load("push_constant", [1], [BASE, RANGE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE, CAN_REORDER])
 # src[] = { offset }.
@@ -1302,9 +1302,9 @@ store("per_primitive_output", [1, 1], [BASE, RANGE, WRITE_MASK, COMPONENT, SRC_T
 # src[] = { value, block_index, offset }
 store("ssbo", [-1, 1], [WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET, OFFSET_SHIFT])
 # src[] = { value, offset }.
-store("shared", [1], [BASE, WRITE_MASK, ALIGN_MUL, ALIGN_OFFSET])
+store("shared", [1], [BASE, ACCESS, WRITE_MASK, ALIGN_MUL, ALIGN_OFFSET])
 # src[] = { value, offset }.
-store("task_payload", [1], [BASE, WRITE_MASK, ALIGN_MUL, ALIGN_OFFSET])
+store("task_payload", [1], [BASE, ACCESS, WRITE_MASK, ALIGN_MUL, ALIGN_OFFSET])
 # src[] = { value, address }.
 store("global", [1], [WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET])
 # src[] = { value, address }.
@@ -1963,10 +1963,10 @@ intrinsic("load_smem_amd", src_comp=[1, 1], dest_comp=0, bit_sizes=[32],
                            flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # src[] = { offset }.
-intrinsic("load_shared2_amd", [1], dest_comp=2, indices=[OFFSET0, OFFSET1, ST64], flags=[CAN_ELIMINATE])
+intrinsic("load_shared2_amd", [1], dest_comp=2, indices=[ACCESS, OFFSET0, OFFSET1, ST64], flags=[CAN_ELIMINATE])
 
 # src[] = { value, offset }.
-intrinsic("store_shared2_amd", [2, 1], indices=[OFFSET0, OFFSET1, ST64])
+intrinsic("store_shared2_amd", [2, 1], indices=[ACCESS, OFFSET0, OFFSET1, ST64])
 
 # Vertex stride in LS-HS buffer
 system_value("lshs_vertex_stride_amd", 1)

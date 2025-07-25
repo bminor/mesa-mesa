@@ -34,11 +34,12 @@ void nir_store_ssbo(uint32_t value,
                     uint offset_shift);
 
 uint32_t
-nir_load_shared(uint offset, uint base, uint align_mul, uint align_offset);
+nir_load_shared(uint offset, uint base, uint access, uint align_mul, uint align_offset);
 
 void nir_store_shared(uint32_t value,
                       uint offset,
                       uint base,
+                      uint access,
                       uint write_mask,
                       uint align_mul,
                       uint align_offset);
