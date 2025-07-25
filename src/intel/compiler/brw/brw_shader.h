@@ -191,8 +191,8 @@ public:
 
    bool source_depth_to_render_target;
 
-   brw_reg pixel_x;
-   brw_reg pixel_y;
+   brw_reg uw_pixel_x;
+   brw_reg uw_pixel_y;
    brw_reg pixel_z;
    brw_reg wpos_w;
    brw_reg pixel_w;

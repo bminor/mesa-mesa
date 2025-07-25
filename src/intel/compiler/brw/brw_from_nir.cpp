@@ -2170,6 +2170,11 @@ emit_pixel_interpolater_alu_at_offset(const brw_builder &bld,
    const brw_reg off_y = bld.vgrf(BRW_TYPE_F);
    bld.ADD(off_y, offset(offs, bld, 1), brw_imm_f(0.5));
 
+   const brw_reg pixel_x = bld.vgrf(BRW_TYPE_F);
+   bld.MOV(pixel_x, shader->uw_pixel_x);
+   const brw_reg pixel_y = bld.vgrf(BRW_TYPE_F);
+   bld.MOV(pixel_y, shader->uw_pixel_y);
+
    /* Process no more than two polygons at a time to avoid hitting
     * regioning restrictions.
     */
@@ -2212,11 +2217,11 @@ emit_pixel_interpolater_alu_at_offset(const brw_builder &bld,
 
       /* Compute X/Y coordinate deltas relative to the origin of the polygon. */
       const brw_reg delta_x = ibld.vgrf(BRW_TYPE_F);
-      ibld.ADD(delta_x, offset(shader->pixel_x, ibld, i), negate(start_x));
+      ibld.ADD(delta_x, offset(pixel_x, ibld, i), negate(start_x));
       ibld.ADD(delta_x, delta_x, offset(off_x, ibld, i));
 
       const brw_reg delta_y = ibld.vgrf(BRW_TYPE_F);
-      ibld.ADD(delta_y, offset(shader->pixel_y, ibld, i), negate(start_y));
+      ibld.ADD(delta_y, offset(pixel_y, ibld, i), negate(start_y));
       ibld.ADD(delta_y, delta_y, offset(off_y, ibld, i));
 
       /* Evaluate the plane equations obtained above for the
@@ -4101,6 +4106,20 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       dest = get_nir_def(ntb, instr->def);
 
    switch (instr->intrinsic) {
+   case nir_intrinsic_load_pixel_coord: {
+      brw_reg comps[2] = { s.uw_pixel_x, s.uw_pixel_y };
+      bld.VEC(retype(dest, BRW_TYPE_UW), comps, 2);
+      break;
+   }
+
+   case nir_intrinsic_load_frag_coord_z:
+      bld.MOV(dest, s.pixel_z);
+      break;
+
+   case nir_intrinsic_load_frag_coord_w:
+      bld.MOV(dest, s.wpos_w);
+      break;
+
    case nir_intrinsic_load_front_face:
       bld.MOV(retype(dest, BRW_TYPE_D), emit_frontfacing_interpolation(ntb));
       break;
@@ -4440,12 +4459,6 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
                                       brw_reg(), /* flag_reg */
                                       interpolation);
       }
-      break;
-   }
-
-   case nir_intrinsic_load_frag_coord: {
-      brw_reg comps[4] = { s.pixel_x, s.pixel_y, s.pixel_z, s.wpos_w };
-      bld.VEC(dest, comps, 4);
       break;
    }
 

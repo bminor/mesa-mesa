@@ -220,8 +220,8 @@ brw_emit_interpolation_setup(brw_shader &s)
       ub_cps_height = byte_offset(retype(cps_size, BRW_TYPE_UB), 1);
    }
 
-   s.pixel_x = bld.vgrf(BRW_TYPE_F);
-   s.pixel_y = bld.vgrf(BRW_TYPE_F);
+   s.uw_pixel_x = abld.vgrf(BRW_TYPE_UW);
+   s.uw_pixel_y = abld.vgrf(BRW_TYPE_UW);
 
    brw_fs_thread_payload &payload = s.fs_payload();
 
@@ -379,9 +379,6 @@ brw_emit_interpolation_setup(brw_shader &s)
       break;
    }
 
-   brw_reg uw_pixel_x = abld.vgrf(BRW_TYPE_UW);
-   brw_reg uw_pixel_y = abld.vgrf(BRW_TYPE_UW);
-
    for (unsigned i = 0; i < DIV_ROUND_UP(s.dispatch_width, 16); i++) {
       const brw_builder hbld = abld.group(MIN2(16, s.dispatch_width), i);
       /* According to the "PS Thread Payload for Normal Dispatch"
@@ -394,8 +391,8 @@ brw_emit_interpolation_setup(brw_shader &s)
                                     brw_vec1_grf(i + 1, 0);
       const struct brw_reg gi_uw = retype(gi_reg, BRW_TYPE_UW);
 
-      brw_reg int_pixel_x = offset(uw_pixel_x, hbld, i);
-      brw_reg int_pixel_y = offset(uw_pixel_y, hbld, i);
+      brw_reg int_pixel_x = offset(s.uw_pixel_x, hbld, i);
+      brw_reg int_pixel_y = offset(s.uw_pixel_y, hbld, i);
 
       if (devinfo->verx10 >= 125) {
          /* We compute two sets of int pixel x/y: one with a 2 byte stride for
@@ -408,12 +405,6 @@ brw_emit_interpolation_setup(brw_shader &s)
          const brw_reg int_pixel_x_4b = dbld.vgrf(BRW_TYPE_UW);
          const brw_reg int_pixel_y_4b = dbld.vgrf(BRW_TYPE_UW);
 
-         hbld.ADD(int_pixel_x,
-                  brw_reg(stride(suboffset(gi_uw, 4), 2, 8, 0)),
-                  int_pixel_offset_x);
-         hbld.ADD(int_pixel_y,
-                  brw_reg(stride(suboffset(gi_uw, 5), 2, 8, 0)),
-                  int_pixel_offset_y);
          dbld.ADD(int_pixel_x_4b,
                   brw_reg(stride(suboffset(gi_uw, 4), 2, 8, 0)),
                   int_pixel_offset_x);
@@ -422,27 +413,18 @@ brw_emit_interpolation_setup(brw_shader &s)
                   int_pixel_offset_y);
 
          if (wm_prog_data->coarse_pixel_dispatch != INTEL_NEVER) {
-            brw_inst *addx = hbld.ADD(int_pixel_x, int_pixel_x,
-                                     horiz_stride(half_int_pixel_offset_x, 0));
-            brw_inst *addy = hbld.ADD(int_pixel_y, int_pixel_y,
-                                     horiz_stride(half_int_pixel_offset_y, 0));
-            if (wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS) {
-               addx->predicate = BRW_PREDICATE_NORMAL;
-               addy->predicate = BRW_PREDICATE_NORMAL;
-            }
-            addx = dbld.ADD(int_pixel_x_4b, int_pixel_x_4b,
-                            horiz_stride(half_int_pixel_offset_x, 0));
-            addy = dbld.ADD(int_pixel_y_4b, int_pixel_y_4b,
-                            horiz_stride(half_int_pixel_offset_y, 0));
+            brw_inst *addx = dbld.ADD(int_pixel_x_4b, int_pixel_x_4b,
+                                      horiz_stride(half_int_pixel_offset_x, 0));
+            brw_inst *addy = dbld.ADD(int_pixel_y_4b, int_pixel_y_4b,
+                                      horiz_stride(half_int_pixel_offset_y, 0));
             if (wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS) {
                addx->predicate = BRW_PREDICATE_NORMAL;
                addy->predicate = BRW_PREDICATE_NORMAL;
             }
          }
 
-         hbld.MOV(offset(s.pixel_x, hbld, i), horiz_stride(int_pixel_x_4b, 2));
-         hbld.MOV(offset(s.pixel_y, hbld, i), horiz_stride(int_pixel_y_4b, 2));
-
+         hbld.MOV(int_pixel_x, horiz_stride(int_pixel_x_4b, 2));
+         hbld.MOV(int_pixel_y, horiz_stride(int_pixel_y_4b, 2));
       } else {
          /* The "Register Region Restrictions" page says for BDW (and newer,
           * presumably):
@@ -466,9 +448,6 @@ brw_emit_interpolation_setup(brw_shader &s)
                                       horiz_stride(half_int_pixel_offset_x, 0));
          hbld.emit(FS_OPCODE_PIXEL_Y, int_pixel_y, int_pixel_xy,
                                       horiz_stride(half_int_pixel_offset_y, 0));
-
-         hbld.MOV(offset(s.pixel_x, hbld, i), int_pixel_x);
-         hbld.MOV(offset(s.pixel_y, hbld, i), int_pixel_y);
       }
    }
 
@@ -503,8 +482,11 @@ brw_emit_interpolation_setup(brw_shader &s)
       const brw_reg float_pixel_x = abld.vgrf(BRW_TYPE_F);
       const brw_reg float_pixel_y = abld.vgrf(BRW_TYPE_F);
 
-      abld.ADD(float_pixel_x, s.pixel_x, negate(x_start));
-      abld.ADD(float_pixel_y, s.pixel_y, negate(y_start));
+      abld.MOV(float_pixel_x, s.uw_pixel_x);
+      abld.MOV(float_pixel_y, s.uw_pixel_y);
+
+      abld.ADD(float_pixel_x, float_pixel_x, negate(x_start));
+      abld.ADD(float_pixel_y, float_pixel_y, negate(y_start));
 
       const brw_reg f_cps_width = abld.vgrf(BRW_TYPE_F);
       const brw_reg f_cps_height = abld.vgrf(BRW_TYPE_F);
@@ -1107,12 +1089,12 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
                            prog_data->coarse_pixel_dispatch != INTEL_NEVER;
 
    prog_data->uses_src_w =
-      BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD);
+      BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD_W);
    prog_data->uses_src_depth =
-      BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
+      BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD_Z) &&
       prog_data->coarse_pixel_dispatch == INTEL_NEVER;
    prog_data->uses_depth_w_coefficients = prog_data->uses_pc_bary_coefficients ||
-      (BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
+      (BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD_Z) &&
        prog_data->coarse_pixel_dispatch != INTEL_NEVER);
 
    calculate_urb_setup(devinfo, key, prog_data, shader, mue_map, per_primitive_offsets);
@@ -1522,6 +1504,9 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
    if (!key->coherent_fb_fetch)
       NIR_PASS(_, nir, brw_nir_lower_fs_load_output, key);
+
+   NIR_PASS(_, nir, nir_opt_frag_coord_to_pixel_coord);
+   NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
 
    /* From the SKL PRM, Volume 7, "Alpha Coverage":
     *  "If Pixel Shader outputs oMask, AlphaToCoverage is disabled in
