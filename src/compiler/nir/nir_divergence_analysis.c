@@ -157,17 +157,15 @@ visit_alu(nir_alu_instr *instr, struct divergence_state *state)
  * wave can "tear" so that different invocations see the pre-store value and
  * the post-store value even though they are loading from the same location.
  * This means we have to assume it's not uniform unless it's readonly.
- *
- * TODO The Vulkan memory model is much more strict here and requires an
- * atomic or volatile load for the data race to be valid, which could allow us
- * to do better if it's in use, however we currently don't have that
- * information plumbed through.
  */
 static bool
 load_may_tear(struct divergence_state *state, nir_intrinsic_instr *instr)
 {
+   uint32_t access = nir_intrinsic_access(instr);
+   bool atomic_volatile = access & (ACCESS_ATOMIC | ACCESS_VOLATILE);
    return (state->options & nir_divergence_uniform_load_tears) &&
-          !(nir_intrinsic_access(instr) & ACCESS_NON_WRITEABLE);
+          !(access & ACCESS_NON_WRITEABLE) &&
+          (!state->shader->info.assume_no_data_races || atomic_volatile);
 }
 
 static bool
