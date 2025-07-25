@@ -537,7 +537,7 @@ if args.escts:
         "--tests-per-group",
         "100",
         "--deqp",
-        "{}/build_es/external/openglcts/modules/glcts".format(glcts_path),
+        "{}/build/external/openglcts/modules/glcts".format(glcts_path),
         "--caselist",
         "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles2-khr-main.txt".format(
             glcts_path
