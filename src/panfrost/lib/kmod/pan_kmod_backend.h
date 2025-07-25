@@ -18,6 +18,8 @@ pan_kmod_dev_init(struct pan_kmod_dev *dev, int fd, uint32_t flags,
    simple_mtx_init(&dev->handle_to_bo.lock, mtx_plain);
    util_sparse_array_init(&dev->handle_to_bo.array,
                           sizeof(struct pan_kmod_bo *), 512);
+   simple_mtx_init(&dev->pending_bo_syncs.lock, mtx_plain);
+   util_dynarray_init(&dev->pending_bo_syncs.array, NULL);
    dev->driver.version.major = version->version_major;
    dev->driver.version.minor = version->version_minor;
    dev->fd = fd;
@@ -32,8 +34,10 @@ pan_kmod_dev_cleanup(struct pan_kmod_dev *dev)
    if (dev->flags & PAN_KMOD_DEV_FLAG_OWNS_FD)
       close(dev->fd);
 
+   util_dynarray_fini(&dev->pending_bo_syncs.array);
    util_sparse_array_finish(&dev->handle_to_bo.array);
    simple_mtx_destroy(&dev->handle_to_bo.lock);
+   simple_mtx_destroy(&dev->pending_bo_syncs.lock);
 }
 
 static inline void *
@@ -91,6 +95,20 @@ pan_kmod_bo_init(struct pan_kmod_bo *bo, struct pan_kmod_dev *dev,
    bo->flags = flags;
    bo->handle = handle;
    p_atomic_set(&bo->refcnt, 1);
+}
+
+void pan_kmod_flush_bo_map_syncs_locked(struct pan_kmod_dev *dev);
+
+static inline void
+pan_kmod_bo_cleanup(struct pan_kmod_bo *bo)
+{
+   if (bo->has_pending_deferred_syncs) {
+      struct pan_kmod_dev *dev = bo->dev;
+
+      simple_mtx_lock(&dev->pending_bo_syncs.lock);
+      pan_kmod_flush_bo_map_syncs_locked(dev);
+      simple_mtx_unlock(&dev->pending_bo_syncs.lock);
+   }
 }
 
 static inline void

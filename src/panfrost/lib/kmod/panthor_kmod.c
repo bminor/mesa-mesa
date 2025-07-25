@@ -13,6 +13,7 @@
 #include "util/libsync.h"
 #include "util/macros.h"
 #include "util/os_time.h"
+#include "util/stack_array.h"
 #include "util/simple_mtx.h"
 #include "util/u_debug.h"
 #include "util/vma.h"
@@ -413,6 +414,8 @@ panthor_kmod_bo_free(struct pan_kmod_bo *bo)
    struct panthor_kmod_bo *panthor_bo =
       container_of(bo, struct panthor_kmod_bo, base);
 
+   pan_kmod_bo_cleanup(bo);
+
    if (!bo->exclusive_vm)
       drmSyncobjDestroy(bo->dev->fd, panthor_bo->sync.handle);
 
@@ -424,6 +427,7 @@ static struct pan_kmod_bo *
 panthor_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, uint64_t size,
                        uint32_t flags)
 {
+   int ret;
    struct panthor_kmod_bo *panthor_bo =
       pan_kmod_dev_alloc(dev, sizeof(*panthor_bo));
    if (!panthor_bo) {
@@ -431,10 +435,28 @@ panthor_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, uint64_t size,
       return NULL;
    }
 
+   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 7)) {
+      struct drm_panthor_bo_query_info args = {
+         .handle = handle,
+      };
+
+      ret = drmIoctl(dev->fd, DRM_IOCTL_PANTHOR_BO_QUERY_INFO, &args);
+      if (ret) {
+         mesa_loge("PANTHOR_BO_QUERY_INFO failed (err=%d)", errno);
+         goto err_free_bo;
+      }
+
+      /* If the BO comes from a different subsystem, we don't allow
+       * mmap() to avoid the CPU-sync churn.
+       */
+      if (args.extra_flags & DRM_PANTHOR_BO_IS_IMPORTED)
+         flags |= PAN_KMOD_BO_FLAG_NO_MMAP;
+   }
+
    /* Create a unsignalled syncobj on import. Will serve as a
     * temporary container for the exported dmabuf sync file.
     */
-   int ret = drmSyncobjCreate(dev->fd, 0, &panthor_bo->sync.handle);
+   ret = drmSyncobjCreate(dev->fd, 0, &panthor_bo->sync.handle);
    if (ret) {
       mesa_loge("drmSyncobjCreate() failed (err=%d)", errno);
       goto err_free_bo;
@@ -580,6 +602,38 @@ panthor_kmod_bo_wait(struct pan_kmod_bo *bo, int64_t timeout_ns,
 
       return false;
    }
+}
+
+static int
+panthor_kmod_flush_bo_map_syncs(struct pan_kmod_dev *dev)
+{
+   STACK_ARRAY(struct drm_panthor_bo_sync_op, panthor_ops,
+               util_dynarray_num_elements(&dev->pending_bo_syncs.array,
+                                          struct pan_kmod_deferred_bo_sync));
+
+   uint32_t panthor_count = 0;
+   util_dynarray_foreach(&dev->pending_bo_syncs.array,
+                         struct pan_kmod_deferred_bo_sync, sync) {
+      panthor_ops[panthor_count++] = (struct drm_panthor_bo_sync_op){
+         .handle = sync->bo->handle,
+         .type = sync->type == PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH
+                    ? DRM_PANTHOR_BO_SYNC_CPU_CACHE_FLUSH
+                    : DRM_PANTHOR_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE,
+         .offset = sync->start,
+         .size = sync->size,
+      };
+   }
+
+   struct drm_panthor_bo_sync req = {
+      .ops = DRM_PANTHOR_OBJ_ARRAY(panthor_count, panthor_ops),
+   };
+   int ret = pan_kmod_ioctl(dev->fd, DRM_IOCTL_PANTHOR_BO_SYNC, &req);
+   if (ret)
+      mesa_loge("DRM_IOCTL_PANTHOR_BO_SYNC failed (err=%d)", errno);
+
+   STACK_ARRAY_FINISH(panthor_ops);
+
+   return ret;
 }
 
 /* Attach a sync to a buffer object. */
@@ -1255,6 +1309,7 @@ const struct pan_kmod_ops panthor_kmod_ops = {
    .bo_export = panthor_kmod_bo_export,
    .bo_get_mmap_offset = panthor_kmod_bo_get_mmap_offset,
    .bo_wait = panthor_kmod_bo_wait,
+   .flush_bo_map_syncs = panthor_kmod_flush_bo_map_syncs,
    .vm_create = panthor_kmod_vm_create,
    .vm_destroy = panthor_kmod_vm_destroy,
    .vm_bind = panthor_kmod_vm_bind,

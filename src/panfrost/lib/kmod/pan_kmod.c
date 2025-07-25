@@ -7,9 +7,11 @@
 #include <string.h>
 #include <xf86drm.h>
 
+#include "util/cache_ops.h"
 #include "util/u_memory.h"
 #include "util/macros.h"
 #include "pan_kmod.h"
+#include "pan_kmod_backend.h"
 
 extern const struct pan_kmod_ops panfrost_kmod_ops;
 extern const struct pan_kmod_ops panthor_kmod_ops;
@@ -204,3 +206,105 @@ err_unlock:
    return NULL;
 }
 
+void
+pan_kmod_flush_bo_map_syncs_locked(struct pan_kmod_dev *dev)
+{
+   ASSERTED int ret = dev->ops->flush_bo_map_syncs(dev);
+   assert(!ret);
+
+   util_dynarray_foreach(&dev->pending_bo_syncs.array,
+                         struct pan_kmod_deferred_bo_sync, sync)
+      sync->bo->has_pending_deferred_syncs = false;
+
+   util_dynarray_clear(&dev->pending_bo_syncs.array);
+}
+
+void
+pan_kmod_flush_bo_map_syncs(struct pan_kmod_dev *dev)
+{
+   if (dev->props.is_io_coherent)
+      return;
+
+   /* Barrier to make sure all flush/invalidate requests are effective. */
+   if (p_atomic_xchg(&dev->pending_bo_syncs.user_cache_ops_pending, false))
+      util_post_flush_inval_fence();
+
+   /* This can be racy, but that's fine, because we expect a future call to
+    * pan_kmod_flush_bo_map_syncs() if new ops are being added while we check
+    * this value.
+    */
+   if (!util_dynarray_num_elements(&dev->pending_bo_syncs.array,
+                                   struct pan_kmod_deferred_bo_sync))
+      return;
+
+   simple_mtx_lock(&dev->pending_bo_syncs.lock);
+   pan_kmod_flush_bo_map_syncs_locked(dev);
+   simple_mtx_unlock(&dev->pending_bo_syncs.lock);
+}
+
+/* Arbitrary limit for now. Pick something bigger or make it configurable if it
+ * becomes problematic.
+ */
+#define MAX_PENDING_SYNC_OPS 4096
+
+void
+pan_kmod_queue_bo_map_sync(struct pan_kmod_bo *bo, uint64_t bo_offset,
+                           void *cpu_ptr, uint64_t range,
+                           enum pan_kmod_bo_sync_type type)
+{
+   struct pan_kmod_dev *dev = bo->dev;
+
+   /* Nothing to do if the buffer is IO coherent or if the BO is not mapped
+    * cacheable.
+    */
+   if (!(bo->flags & PAN_KMOD_BO_FLAG_WB_MMAP) ||
+       (bo->flags & PAN_KMOD_BO_FLAG_IO_COHERENT))
+      return;
+
+   /* If we have userspace cache flushing ops, use them instead of trapping
+    * through to the kernel.
+    */
+   if (pan_kmod_can_sync_bo_map_from_userland(dev)) {
+      /* Pre-flush needs to be executed before each flush/inval operation, but
+       * we can batch the post flush/inval fence. util_pre_flush_fence() being
+       * a NOP on aarch64, it's effectively free there, but we keep it here for
+       * clarity (not sure we care about Mali on x86 to be honest :D).
+       */
+      util_pre_flush_fence();
+
+      if (type == PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH)
+         util_flush_range_no_fence(cpu_ptr, range);
+      else
+         util_flush_inval_range_no_fence(cpu_ptr, range);
+
+      /* The util_pre_flush_inval_fence() is inserted by
+       * pan_kmod_flush_bo_map_syncs() to avoid unnecessary serialization when
+       * flush/invalidate operations are batched.
+       */
+      p_atomic_set(&dev->pending_bo_syncs.user_cache_ops_pending, true);
+      return;
+   }
+
+   simple_mtx_lock(&dev->pending_bo_syncs.lock);
+
+   /* If we reach the limit, flush the pending ops before queuing new ones. */
+   if (util_dynarray_num_elements(&dev->pending_bo_syncs.array,
+                                  struct pan_kmod_deferred_bo_sync) >=
+       MAX_PENDING_SYNC_OPS)
+      pan_kmod_flush_bo_map_syncs_locked(dev);
+
+   uint64_t start = bo_offset & ~((uint64_t)util_cache_granularity() - 1);
+   uint64_t end = ALIGN_POT(bo_offset + range, util_cache_granularity());
+
+   struct pan_kmod_deferred_bo_sync new_sync = {
+      .bo = bo,
+      .start = start,
+      .size = end - start,
+      .type = type,
+   };
+
+   bo->has_pending_deferred_syncs = true;
+   util_dynarray_append(&dev->pending_bo_syncs.array, new_sync);
+
+   simple_mtx_unlock(&dev->pending_bo_syncs.lock);
+}

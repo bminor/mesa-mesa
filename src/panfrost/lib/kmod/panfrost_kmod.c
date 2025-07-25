@@ -12,6 +12,7 @@
 #include "util/hash_table.h"
 #include "util/macros.h"
 #include "util/simple_mtx.h"
+#include "util/stack_array.h"
 
 #include "drm-uapi/panfrost_drm.h"
 
@@ -312,6 +313,7 @@ err_free_bo:
 static void
 panfrost_kmod_bo_free(struct pan_kmod_bo *bo)
 {
+   pan_kmod_bo_cleanup(bo);
    drmCloseBufferHandle(bo->dev->fd, bo->handle);
    pan_kmod_dev_free(bo->dev, bo);
 }
@@ -337,6 +339,24 @@ panfrost_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, uint64_t size
    }
 
    panfrost_bo->offset = get_bo_offset.offset;
+
+   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 6)) {
+      struct drm_panfrost_query_bo_info args = {
+         .handle = handle,
+      };
+
+      ret = drmIoctl(dev->fd, DRM_IOCTL_PANFROST_QUERY_BO_INFO, &args);
+      if (ret) {
+         mesa_loge("PANFROST_BO_QUERY_INFO failed (err=%d)", errno);
+         goto err_free_bo;
+      }
+
+      /* If the BO comes from a different subsystem, we don't allow
+       * mmap() to avoid the CPU-sync churn.
+       */
+      if (args.extra_flags & DRM_PANFROST_BO_IS_IMPORTED)
+         flags |= PAN_KMOD_BO_FLAG_NO_MMAP;
+   }
 
    pan_kmod_bo_init(&panfrost_bo->base, dev, NULL, size,
                     flags | PAN_KMOD_BO_FLAG_IMPORTED, handle);
@@ -378,6 +398,39 @@ panfrost_kmod_bo_wait(struct pan_kmod_bo *bo, int64_t timeout_ns,
 
    assert(errno == ETIMEDOUT || errno == EBUSY);
    return false;
+}
+
+static int
+panfrost_kmod_flush_bo_map_syncs(struct pan_kmod_dev *dev)
+{
+   STACK_ARRAY(struct drm_panfrost_bo_sync_op, panfrost_ops,
+               util_dynarray_num_elements(&dev->pending_bo_syncs.array,
+                                          struct pan_kmod_deferred_bo_sync));
+
+   uint32_t panfrost_count = 0;
+   util_dynarray_foreach(&dev->pending_bo_syncs.array,
+                         struct pan_kmod_deferred_bo_sync, sync) {
+      panfrost_ops[panfrost_count++] = (struct drm_panfrost_bo_sync_op){
+         .handle = sync->bo->handle,
+         .type = sync->type == PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH
+                    ? PANFROST_BO_SYNC_CPU_CACHE_FLUSH
+                    : PANFROST_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE,
+         .offset = sync->start,
+         .size = sync->size,
+      };
+   }
+
+   struct drm_panfrost_sync_bo req = {
+      .ops = (uintptr_t)panfrost_ops,
+      .op_count = panfrost_count,
+   };
+   int ret = pan_kmod_ioctl(dev->fd, DRM_IOCTL_PANFROST_SYNC_BO, &req);
+   if (ret)
+      mesa_loge("DRM_IOCTL_PANFROST_BO_SYNC failed (err=%d)", errno);
+
+   STACK_ARRAY_FINISH(panfrost_ops);
+
+   return ret;
 }
 
 static void
@@ -559,6 +612,7 @@ const struct pan_kmod_ops panfrost_kmod_ops = {
    .bo_import = panfrost_kmod_bo_import,
    .bo_get_mmap_offset = panfrost_kmod_bo_get_mmap_offset,
    .bo_wait = panfrost_kmod_bo_wait,
+   .flush_bo_map_syncs = panfrost_kmod_flush_bo_map_syncs,
    .bo_make_evictable = panfrost_kmod_bo_make_evictable,
    .bo_make_unevictable = panfrost_kmod_bo_make_unevictable,
    .vm_create = panfrost_kmod_vm_create,
