@@ -3231,6 +3231,9 @@ optimize_encoding_vop2(ra_ctx& ctx, RegisterFile& register_file, aco_ptr<Instruc
            std::any_of(instr->operands.begin(), instr->operands.end(), [&](Operand op)
                        { return op.isKillBeforeDef() && op.physReg() == affinity.reg; })))
          return;
+   } else if (ctx.assignments[def_id].precolor_affinity) {
+      if (ctx.assignments[def_id].reg != instr->operands[2].physReg())
+         return;
    }
 
    if (!instr->operands[1].isOfType(RegType::vgpr))
@@ -3276,10 +3279,13 @@ optimize_encoding_sopk(ra_ctx& ctx, RegisterFile& register_file, aco_ptr<Instruc
    unsigned def_id = instr->definitions[0].tempId();
    if (ctx.assignments[def_id].affinity) {
       assignment& affinity = ctx.assignments[ctx.assignments[def_id].affinity];
-      if (affinity.assigned && affinity.reg != instr->operands[!literal_idx].physReg() &&
+      if (affinity.assigned && affinity.reg != op_reg &&
           (!register_file.test(affinity.reg, instr->operands[!literal_idx].bytes()) ||
            std::any_of(instr->operands.begin(), instr->operands.end(), [&](Operand op)
                        { return op.isKillBeforeDef() && op.physReg() == affinity.reg; })))
+         return;
+   } else if (ctx.assignments[def_id].precolor_affinity) {
+      if (ctx.assignments[def_id].reg != op_reg)
          return;
    }
 
