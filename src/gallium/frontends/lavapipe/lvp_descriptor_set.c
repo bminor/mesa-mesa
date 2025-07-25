@@ -176,7 +176,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDescriptorSetLayout(
          break;
       }
 
-      set_layout->shader_stages |= binding->stageFlags;
+      set_layout->shader_stages |= binding->stageFlags & MESA_VK_SHADER_STAGE_ALL;
    }
 
    for (uint32_t i = 0; i < pCreateInfo->bindingCount; i++)
