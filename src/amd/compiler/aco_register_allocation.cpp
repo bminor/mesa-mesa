@@ -3149,21 +3149,24 @@ get_affinities(ra_ctx& ctx)
             continue;
 
          assert(instr->definitions[0].isTemp());
-         auto it = temp_to_phi_resources.find(instr->definitions[0].tempId());
+         Temp def = instr->definitions[0].getTemp();
+         auto it = temp_to_phi_resources.find(def.id());
          unsigned index = phi_resources.size();
          std::vector<Temp>* affinity_related;
          if (it != temp_to_phi_resources.end()) {
             index = it->second;
-            phi_resources[index][0] = instr->definitions[0].getTemp();
+            phi_resources[index][0] = def;
             affinity_related = &phi_resources[index];
          } else {
-            phi_resources.emplace_back(std::vector<Temp>{instr->definitions[0].getTemp()});
+            phi_resources.emplace_back(std::vector<Temp>{def});
             affinity_related = &phi_resources.back();
          }
 
          for (const Operand& op : instr->operands) {
-            if (op.isTemp() && op.isKill() && op.regClass() == instr->definitions[0].regClass()) {
+            if (op.isTemp() && op.isKill() && op.regClass() == def.regClass()) {
                affinity_related->emplace_back(op.getTemp());
+               if (ctx.assignments[def.id()].precolor_affinity)
+                  ctx.assignments[op.tempId()].set_precolor_affinity(ctx.assignments[def.id()].reg);
                if (block.kind & block_kind_loop_header)
                   continue;
                temp_to_phi_resources[op.tempId()] = index;
