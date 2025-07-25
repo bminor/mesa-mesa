@@ -5064,7 +5064,7 @@
         "description": "aco: workaround load tearing for load_shared2_amd",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04956d54ce5b623e7e9276a0eead49c5db15965a",
         "notes": null
