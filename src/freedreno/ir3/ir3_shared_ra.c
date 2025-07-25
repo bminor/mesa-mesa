@@ -362,7 +362,9 @@ find_best_gap(struct ra_ctx *ctx, struct ir3_register *dst, unsigned size,
    if (size > file_size)
       return (physreg_t) ~0;
 
-   unsigned start = ALIGN(ctx->start, align) % (file_size - size + align);
+   unsigned start = ALIGN(ctx->start, align);
+   if (start + size > file_size)
+      start = 0;
    unsigned candidate = start;
    do {
       bool is_available = true;
@@ -393,7 +395,9 @@ find_best_spill_reg(struct ra_ctx *ctx, struct ir3_register *reg,
    unsigned file_size = reg_file_size(reg);
    unsigned min_cost = UINT_MAX;
 
-   unsigned start = ALIGN(ctx->start, align) % (file_size - size + align);
+   unsigned start = ALIGN(ctx->start, align);
+   if (start + size > file_size)
+      start = 0;
    physreg_t candidate = start;
    physreg_t best_reg = (physreg_t)~0;
    do {

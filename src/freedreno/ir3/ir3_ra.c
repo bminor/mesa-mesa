@@ -1330,7 +1330,9 @@ find_best_gap(struct ra_ctx *ctx, struct ra_file *file,
    BITSET_WORD *available =
       is_early_clobber(dst) ? file->available_to_evict : file->available;
 
-   unsigned start = ALIGN(file->start, alignment) % (file_size - size + alignment);
+   unsigned start = ALIGN(file->start, alignment);
+   if (start + size > file_size)
+      start = 0;
    unsigned candidate = start;
    do {
       bool is_available = true;
