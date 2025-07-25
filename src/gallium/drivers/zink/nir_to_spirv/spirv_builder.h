@@ -347,8 +347,8 @@ spirv_builder_emit_image_read(struct spirv_builder *b,
                               SpvId coordinate,
                               SpvId lod,
                               SpvId sample,
-                              SpvId offset,
-                              bool sparse);
+                              bool sparse,
+                              bool coherent);
 
 void
 spirv_builder_emit_image_write(struct spirv_builder *b,
@@ -357,7 +357,7 @@ spirv_builder_emit_image_write(struct spirv_builder *b,
                                SpvId texel,
                                SpvId lod,
                                SpvId sample,
-                               SpvId offset);
+                               bool coherent);
 
 SpvId
 spirv_builder_emit_image_fetch(struct spirv_builder *b,

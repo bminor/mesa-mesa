@@ -1023,8 +1023,8 @@ spirv_builder_emit_image_read(struct spirv_builder *b,
                               SpvId coordinate,
                               SpvId lod,
                               SpvId sample,
-                              SpvId offset,
-                              bool sparse)
+                              bool sparse,
+                              bool coherent)
 {
    SpvId result = spirv_builder_new_id(b);
 
@@ -1041,9 +1041,9 @@ spirv_builder_emit_image_read(struct spirv_builder *b,
       extra_operands[num_extra_operands++] = sample;
       operand_mask |= SpvImageOperandsSampleMask;
    }
-   if (offset) {
-      extra_operands[num_extra_operands++] = offset;
-      operand_mask |= SpvImageOperandsOffsetMask;
+   if (coherent) {
+      extra_operands[num_extra_operands++] = spirv_builder_const_uint(b, 32, SpvScopeDevice);
+      operand_mask |= SpvImageOperandsMakeTexelVisibleMask | SpvImageOperandsNonPrivateTexelMask;
    }
    /* finalize num_extra_operands / extra_operands */
    extra_operands[0] = operand_mask;
@@ -1067,10 +1067,10 @@ spirv_builder_emit_image_write(struct spirv_builder *b,
                                SpvId texel,
                                SpvId lod,
                                SpvId sample,
-                               SpvId offset)
+                               bool coherent)
 {
    SpvImageOperandsMask operand_mask = SpvImageOperandsMaskNone;
-   SpvId extra_operands[5];
+   SpvId extra_operands[7];
    int num_extra_operands = 1;
    if (lod) {
       extra_operands[num_extra_operands++] = lod;
@@ -1080,9 +1080,9 @@ spirv_builder_emit_image_write(struct spirv_builder *b,
       extra_operands[num_extra_operands++] = sample;
       operand_mask |= SpvImageOperandsSampleMask;
    }
-   if (offset) {
-      extra_operands[num_extra_operands++] = offset;
-      operand_mask |= SpvImageOperandsOffsetMask;
+   if (coherent) {
+      extra_operands[num_extra_operands++] = spirv_builder_const_uint(b, 32, SpvScopeDevice);
+      operand_mask |= SpvImageOperandsMakeTexelAvailableMask | SpvImageOperandsNonPrivateTexelMask;
    }
    /* finalize num_extra_operands / extra_operands */
    extra_operands[0] = operand_mask;

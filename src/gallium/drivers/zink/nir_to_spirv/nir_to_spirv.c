@@ -308,6 +308,8 @@ emit_access_decorations(struct ntv_context *ctx, nir_variable *var, SpvId var_id
        switch (1 << bit) {
        case ACCESS_COHERENT:
           /* SpvDecorationCoherent can't be used with vulkan memory model */
+          if (!ctx->sinfo->have_vulkan_memory_model)
+            spirv_builder_emit_decoration(&ctx->builder, var_id, SpvDecorationCoherent);
           break;
        case ACCESS_RESTRICT:
           spirv_builder_emit_decoration(&ctx->builder, var_id, SpvDecorationRestrict);
@@ -2968,7 +2970,8 @@ emit_image_deref_store(struct ntv_context *ctx, nir_intrinsic_instr *intr)
                      glsl_get_sampler_dim(type) == GLSL_SAMPLER_DIM_SUBPASS_MS;
    SpvId sample = use_sample ? get_src(ctx, &intr->src[2], &atype) : 0;
    assert(nir_src_bit_size(intr->src[3]) == glsl_base_type_bit_size(glsl_get_sampler_result_type(type)));
-   spirv_builder_emit_image_write(&ctx->builder, img, coord, texel, 0, sample, 0);
+   bool coherent = ctx->sinfo->have_vulkan_memory_model && (nir_intrinsic_access(intr) & ACCESS_COHERENT);
+   spirv_builder_emit_image_write(&ctx->builder, img, coord, texel, 0, sample, coherent);
 }
 
 static SpvId
@@ -3023,9 +3026,11 @@ emit_image_deref_load(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    SpvId sample = use_sample ? get_src(ctx, &intr->src[2], &atype) : 0;
    SpvId dest_type = spirv_builder_type_vector(&ctx->builder, base_type,
                                                intr->def.num_components);
+
+   bool coherent = ctx->sinfo->have_vulkan_memory_model && (nir_intrinsic_access(intr) & ACCESS_COHERENT);
    SpvId result = spirv_builder_emit_image_read(&ctx->builder,
                                  dest_type,
-                                 img, coord, 0, sample, 0, sparse);
+                                 img, coord, 0, sample, sparse, coherent);
    if (sparse)
       result = extract_sparse_load(ctx, result, dest_type, &intr->def);
 
