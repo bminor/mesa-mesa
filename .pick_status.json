@@ -1644,7 +1644,7 @@
         "description": "zink: create a dummy image for shaderdb runs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0a2c3953948874c8d30bac857ce22fd29be0a968",
         "notes": null

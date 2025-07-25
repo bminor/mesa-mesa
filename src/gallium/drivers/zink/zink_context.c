@@ -5601,10 +5601,23 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
          ctx->base.bind_vertex_elements_state(&ctx->base, state);
       }
       ctx->gfx_pipeline_state.sample_mask = BITFIELD_MASK(32);
+
+      struct pipe_resource templ = {0};
+      templ.width0 = 256;
+      templ.height0 = 256;
+      templ.depth0 = 1;
+      templ.format = PIPE_FORMAT_R8G8B8A8_UNORM;
+      templ.target = PIPE_TEXTURE_2D;
+      templ.bind = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW;
+
+      struct pipe_resource *pres = pscreen->resource_create(pscreen, &templ);
       struct pipe_framebuffer_state fb = {0};
       fb.nr_cbufs = 1;
+      fb.cbufs[0].texture = pres;
+      fb.cbufs[0].format = PIPE_FORMAT_R8G8B8A8_UNORM;
       fb.width = fb.height = 256;
       ctx->base.set_framebuffer_state(&ctx->base, &fb);
+      pipe_resource_reference(&pres, NULL);
       ctx->disable_fs = true;
       struct pipe_depth_stencil_alpha_state dsa = {0};
       void *state = ctx->base.create_depth_stencil_alpha_state(&ctx->base, &dsa);
