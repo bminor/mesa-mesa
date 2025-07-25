@@ -343,13 +343,11 @@ vtn_log_err(struct vtn_builder *b,
 }
 
 static void
-vtn_dump_shader(struct vtn_builder *b, const char *path, const char *prefix)
+vtn_dump_shader(struct vtn_builder *b, const char *path, const char *name)
 {
-   static int idx = 0;
-
    char filename[PATH_MAX];
-   int len = snprintf(filename, sizeof(filename), "%s/%s-%d.spirv",
-                      path, prefix, idx++);
+   int len = snprintf(filename, sizeof(filename), "%s/0x%s.spirv",
+                      path, name);
    if (len < 0 || len >= sizeof(filename))
       return;
 
@@ -7235,15 +7233,18 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
       return NULL;
    }
 
-   const char *dump_path = secure_getenv("MESA_SPIRV_DUMP_PATH");
-   if (dump_path)
-      vtn_dump_shader(b, dump_path, "spirv");
-
    b->shader = nir_shader_create(b, stage, nir_options);
    b->shader->info.float_controls_execution_mode = options->float_controls_execution_mode;
    b->shader->info.cs.shader_index = options->shader_index;
    b->shader->has_debug_info = options->debug_info;
    _mesa_blake3_compute(words, word_count * sizeof(uint32_t), b->shader->info.source_blake3);
+
+   const char *dump_path = secure_getenv("MESA_SPIRV_DUMP_PATH");
+   if (dump_path) {
+      char blake3_str[BLAKE3_HEX_LEN];
+      _mesa_blake3_format(blake3_str, b->shader->info.source_blake3);
+      vtn_dump_shader(b, dump_path, blake3_str);
+   }
 
    /* Skip the SPIR-V header, handled at vtn_create_builder */
    words+= 5;
