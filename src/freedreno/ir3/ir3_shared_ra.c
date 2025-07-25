@@ -693,6 +693,12 @@ get_reg(struct ra_ctx *ctx, struct ir3_register *reg, bool src)
          struct ir3_register *src = reg->instr->srcs[i];
          if (!ra_reg_is_src(src))
             continue;
+         /* When src and dst are overlapping registers with different halfness,
+          * a (ss) sync is necessary. Avoid this to not unnecessarily increase
+          * ss-stall.
+          */
+         if ((reg->flags & IR3_REG_HALF) != (src->flags & IR3_REG_HALF))
+            continue;
          if ((src->flags & IR3_REG_SHARED) && reg_size(src) >= size) {
             struct ra_interval *src_interval = ra_interval_get(ctx, src->def);
             physreg_t src_physreg = ra_interval_get_physreg(src_interval);
