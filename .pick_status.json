@@ -1364,7 +1364,7 @@
         "description": "tu: Fix nullptr dereference in cmd_buffer tracepoint",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ac2046c5b08504bf4c367cd29d3f05c6ab924570",
         "notes": null
