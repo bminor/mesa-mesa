@@ -568,7 +568,6 @@ vn_GetMemoryFdKHR(VkDevice device,
 VkResult
 vn_get_memory_dma_buf_properties(struct vn_device *dev,
                                  int fd,
-                                 uint64_t *out_alloc_size,
                                  uint32_t *out_mem_type_bits)
 {
    VkDevice device = vn_device_to_handle(dev);
@@ -583,13 +582,8 @@ vn_get_memory_dma_buf_properties(struct vn_device *dev,
 
    vn_ring_roundtrip(dev->primary_ring);
 
-   VkMemoryResourceAllocationSizePropertiesMESA alloc_size_props = {
-      .sType =
-         VK_STRUCTURE_TYPE_MEMORY_RESOURCE_ALLOCATION_SIZE_PROPERTIES_MESA,
-   };
    VkMemoryResourcePropertiesMESA props = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_RESOURCE_PROPERTIES_MESA,
-      .pNext = &alloc_size_props,
    };
    result = vn_call_vkGetMemoryResourcePropertiesMESA(
       dev->primary_ring, device, bo->res_id, &props);
@@ -599,7 +593,6 @@ vn_get_memory_dma_buf_properties(struct vn_device *dev,
       return result;
    }
 
-   *out_alloc_size = alloc_size_props.allocationSize;
    *out_mem_type_bits = props.memoryTypeBits;
 
    return VK_SUCCESS;
@@ -613,15 +606,13 @@ vn_GetMemoryFdPropertiesKHR(VkDevice device,
 {
    VN_TRACE_FUNC();
    struct vn_device *dev = vn_device_from_handle(device);
-   uint64_t alloc_size = 0;
    uint32_t mem_type_bits = 0;
    VkResult result = VK_SUCCESS;
 
    if (handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT)
       return vn_error(dev->instance, VK_ERROR_INVALID_EXTERNAL_HANDLE);
 
-   result =
-      vn_get_memory_dma_buf_properties(dev, fd, &alloc_size, &mem_type_bits);
+   result = vn_get_memory_dma_buf_properties(dev, fd, &mem_type_bits);
    if (result != VK_SUCCESS)
       return vn_error(dev->instance, result);
 

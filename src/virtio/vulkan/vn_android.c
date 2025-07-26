@@ -298,23 +298,13 @@ vn_android_image_from_anb_internal(struct vn_device *dev,
       goto fail;
    }
 
-   uint64_t alloc_size = 0;
    uint32_t mem_type_bits = 0;
-   result = vn_get_memory_dma_buf_properties(dev, dma_buf_fd, &alloc_size,
-                                             &mem_type_bits);
+   result = vn_get_memory_dma_buf_properties(dev, dma_buf_fd, &mem_type_bits);
    if (result != VK_SUCCESS)
       goto fail;
 
    const VkMemoryRequirements *mem_req =
       &img->requirements[0].memory.memoryRequirements;
-   if (alloc_size < mem_req->size) {
-      vn_log(dev->instance,
-             "anb: alloc_size(%" PRIu64 ") mem_req->size(%" PRIu64 ")",
-             alloc_size, mem_req->size);
-      result = VK_ERROR_INVALID_EXTERNAL_HANDLE;
-      goto fail;
-   }
-
    mem_type_bits &= mem_req->memoryTypeBits;
    if (!mem_type_bits) {
       vn_log(dev->instance, "anb: no compatible mem type");
@@ -454,33 +444,29 @@ vn_android_device_import_ahb(struct vn_device *dev,
                              struct vn_device_memory *mem,
                              const struct VkMemoryAllocateInfo *alloc_info)
 {
-   const struct vk_device_memory *mem_vk = &mem->base.vk;
-   const native_handle_t *handle = NULL;
-   int dma_buf_fd = -1;
-   int dup_fd = -1;
-   uint64_t alloc_size = 0;
-   uint32_t mem_type_bits = 0;
-   uint32_t mem_type_index = mem_vk->memory_type_index;
-   VkResult result = VK_SUCCESS;
+   struct vk_device_memory *mem_vk = &mem->base.vk;
+   VkResult result;
 
-   handle = AHardwareBuffer_getNativeHandle(mem_vk->ahardware_buffer);
-   dma_buf_fd = vn_android_gralloc_get_dma_buf_fd(handle);
+   const native_handle_t *handle =
+      AHardwareBuffer_getNativeHandle(mem_vk->ahardware_buffer);
+   int dma_buf_fd = vn_android_gralloc_get_dma_buf_fd(handle);
    if (dma_buf_fd < 0)
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
 
-   result = vn_get_memory_dma_buf_properties(dev, dma_buf_fd, &alloc_size,
-                                             &mem_type_bits);
+   uint32_t mem_type_bits = 0;
+   result = vn_get_memory_dma_buf_properties(dev, dma_buf_fd, &mem_type_bits);
    if (result != VK_SUCCESS)
       return result;
 
    const VkMemoryDedicatedAllocateInfo *dedicated_info =
       vk_find_struct_const(alloc_info->pNext, MEMORY_DEDICATED_ALLOCATE_INFO);
 
-   /* If ahb is for an image, finish the deferred image creation first */
+   VkMemoryRequirements mem_reqs;
    if (dedicated_info && dedicated_info->image != VK_NULL_HANDLE) {
       struct vn_image *img = vn_image_from_handle(dedicated_info->image);
-      struct vn_android_image_builder builder;
 
+      /* If ahb is for an image, finish the deferred image creation first */
+      struct vn_android_image_builder builder;
       result = vn_android_get_image_builder(dev, &img->deferred_info->create,
                                             handle, &builder);
       if (result != VK_SUCCESS)
@@ -490,60 +476,26 @@ vn_android_device_import_ahb(struct vn_device *dev,
       if (result != VK_SUCCESS)
          return result;
 
-      const VkMemoryRequirements *mem_req =
-         &img->requirements[0].memory.memoryRequirements;
-      if (alloc_size < mem_req->size) {
-         vn_log(dev->instance,
-                "alloc_size(%" PRIu64 ") mem_req->size(%" PRIu64 ")",
-                alloc_size, mem_req->size);
-         return VK_ERROR_INVALID_EXTERNAL_HANDLE;
-      }
-
-      alloc_size = mem_req->size;
-
-      /* Per spec 11.2.3. Device Memory Allocation
-       *
-       * If the parameters define an export operation and the external handle
-       * type is
-       * VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
-       * implementations should not strictly follow memoryTypeIndex. Instead,
-       * they should modify the allocation internally to use the required
-       * memory type for the application’s given usage. This is because for an
-       * export operation, there is currently no way for the client to know
-       * the memory type index before allocating.
-       */
-      if (!(mem_vk->import_handle_type &
-            VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-         if ((mem_type_bits & mem_req->memoryTypeBits) == 0) {
-            vn_log(dev->instance, "memoryTypeBits: img(0x%X) fd(0x%X)",
-                   mem_req->memoryTypeBits, mem_type_bits);
-            return VK_ERROR_INVALID_EXTERNAL_HANDLE;
-         }
-
-         mem_type_index = ffs(mem_type_bits & mem_req->memoryTypeBits) - 1;
-      }
-   }
-
-   if (dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE) {
+      mem_reqs = img->requirements[0].memory.memoryRequirements;
+      mem_reqs.memoryTypeBits &= mem_type_bits;
+   } else if (dedicated_info && dedicated_info->buffer != VK_NULL_HANDLE) {
       struct vn_buffer *buf = vn_buffer_from_handle(dedicated_info->buffer);
-      const VkMemoryRequirements *mem_req =
-         &buf->requirements.memory.memoryRequirements;
-      if (alloc_size < mem_req->size) {
-         vn_log(dev->instance,
-                "alloc_size(%" PRIu64 ") mem_req->size(%" PRIu64 ")",
-                alloc_size, mem_req->size);
-         return VK_ERROR_INVALID_EXTERNAL_HANDLE;
-      }
-
-      alloc_size = mem_req->size;
-
-      assert((1 << mem_type_index) & mem_req->memoryTypeBits);
+      mem_reqs = buf->requirements.memory.memoryRequirements;
+      mem_reqs.memoryTypeBits &= mem_type_bits;
+   } else {
+      mem_reqs.size = mem_vk->size;
+      mem_reqs.memoryTypeBits = mem_type_bits;
    }
 
-   assert((1 << mem_type_index) & mem_type_bits);
+   if (!mem_reqs.memoryTypeBits)
+      return VK_ERROR_INVALID_EXTERNAL_HANDLE;
 
-   errno = 0;
-   dup_fd = os_dupfd_cloexec(dma_buf_fd);
+   if (!((1 << mem_vk->memory_type_index) & mem_reqs.memoryTypeBits))
+      mem_vk->memory_type_index = ffs(mem_reqs.memoryTypeBits) - 1;
+
+   mem_vk->size = mem_reqs.size;
+
+   int dup_fd = os_dupfd_cloexec(dma_buf_fd);
    if (dup_fd < 0)
       return (errno == EMFILE) ? VK_ERROR_TOO_MANY_OBJECTS
                                : VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -562,8 +514,8 @@ vn_android_device_import_ahb(struct vn_device *dev,
    const VkMemoryAllocateInfo local_alloc_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = dedicated_info,
-      .allocationSize = alloc_size,
-      .memoryTypeIndex = mem_type_index,
+      .allocationSize = mem_vk->size,
+      .memoryTypeIndex = mem_vk->memory_type_index,
    };
    result =
       vn_device_memory_import_dma_buf(dev, mem, &local_alloc_info, dup_fd);
