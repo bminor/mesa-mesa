@@ -575,7 +575,8 @@ get_subdword_operand_stride(amd_gfx_level gfx_level, const aco_ptr<Instruction>&
    assert(gfx_level >= GFX8);
    if (instr->isPseudo()) {
       /* v_readfirstlane_b32 cannot use SDWA */
-      if (instr->opcode == aco_opcode::p_as_uniform)
+      if (instr->opcode == aco_opcode::p_as_uniform ||
+          instr->opcode == aco_opcode::p_permlane64_shared_vgpr)
          return 4;
       else
          return rc.bytes() % 2 == 0 ? 2 : 1;
@@ -684,7 +685,8 @@ DefInfo::get_subdword_definition_info(Program* program, const aco_ptr<Instructio
    stride = rc.bytes() % 2 == 0 ? 2 : 1;
 
    if (instr->isPseudo()) {
-      if (instr->opcode == aco_opcode::p_interp_gfx11) {
+      if (instr->opcode == aco_opcode::p_interp_gfx11 ||
+          instr->opcode == aco_opcode::p_permlane64_shared_vgpr) {
          rc = RegClass(RegType::vgpr, rc.size());
          stride = 4;
       }

@@ -428,6 +428,11 @@ insn("p_bpermute_shared_vgpr")
 # operands: linear VGPR, index * 4, input data, same half (bool)
 insn("p_bpermute_permlane")
 
+# simulates v_permlane64_b32 behavior using shared vgprs (for GFX10/10.3)
+# definitions result VGPR
+# operands: input data
+insn("p_permlane64_shared_vgpr")
+
 # creates a lane mask where only the first active lane is selected
 insn("p_elect")
 

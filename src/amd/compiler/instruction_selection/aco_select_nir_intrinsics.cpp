@@ -3781,6 +3781,9 @@ emit_rotate_by_constant(isel_context* ctx, Temp& dst, Temp src, unsigned cluster
       bool has_wf_dpp = ctx->program->gfx_level >= GFX8 && ctx->program->gfx_level < GFX10;
       if (delta == 32 && ctx->program->gfx_level >= GFX11) {
          dst = bld.vop1(aco_opcode::v_permlane64_b32, bld.def(rc), src);
+      } else if (delta == 32 && can_use_shared_vgprs(ctx)) {
+         enable_shared_vgprs(ctx);
+         dst = bld.pseudo(aco_opcode::p_permlane64_shared_vgpr, bld.def(rc), src);
       } else if (delta == 1 && has_wf_dpp) {
          dst = bld.vop1_dpp(aco_opcode::v_mov_b32, bld.def(rc), src, dpp_wf_rl1);
       } else if (delta == 63 && has_wf_dpp) {
