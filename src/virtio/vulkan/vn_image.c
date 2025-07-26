@@ -804,6 +804,7 @@ vn_image_bind_wsi_memory(struct vn_device *dev,
             swapchain_info->swapchain, swapchain_info->imageIndex));
 #endif
          info->memory = vn_device_memory_to_handle(mem);
+         info->memoryOffset = 0;
       }
       assert(mem && info->memory != VK_NULL_HANDLE);
    }
