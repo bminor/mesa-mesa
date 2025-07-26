@@ -72,8 +72,8 @@ begin_end_tp('cmd_buffer',
     args=[ArgStruct(type='const struct tu_cmd_buffer *', var='cmd'),
           Arg(type='str',                       var='TUdebugFlags', c_format='%s', length_arg='96', copy_func='strncpy'),
           Arg(type='str',                       var='IR3debugFlags', c_format='%s', length_arg='96', copy_func='strncpy')],
-    tp_struct=[Arg(type='const char *',         name='appName',              var='cmd->device->instance->vk.app_info.app_name', c_format='%s'),
-               Arg(type='const char *',         name='engineName',           var='cmd->device->instance->vk.app_info.engine_name', c_format='%s'),
+    tp_struct=[Arg(type='const char *',         name='appName',              var='cmd->device->instance->vk.app_info.app_name ? cmd->device->instance->vk.app_info.app_name : "Unknown"', c_format='%s'),
+               Arg(type='const char *',         name='engineName',           var='cmd->device->instance->vk.app_info.engine_name ? cmd->device->instance->vk.app_info.engine_name : "Unknown"', c_format='%s'),
                Arg(type='VkCommandBufferLevel', name='level',                var='cmd->vk.level', c_format='%s', to_prim_type='vk_CommandBufferLevel_to_str({})'),
                Arg(type='uint8_t',              name='render_pass_continue', var='!!(cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)', c_format='%u')])
 
