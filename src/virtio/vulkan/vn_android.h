@@ -42,9 +42,6 @@ vn_android_device_import_ahb(struct vn_device *dev,
                              struct vn_device_memory *mem,
                              const struct VkMemoryAllocateInfo *alloc_info);
 
-VkFormat
-vn_android_drm_format_to_vk_format(uint32_t format);
-
 uint32_t
 vn_android_get_ahb_buffer_memory_type_bits(struct vn_device *dev);
 
@@ -89,12 +86,6 @@ vn_android_device_import_ahb(
    UNUSED const struct VkMemoryAllocateInfo *alloc_info)
 {
    return VK_ERROR_OUT_OF_HOST_MEMORY;
-}
-
-static inline VkFormat
-vn_android_drm_format_to_vk_format(UNUSED uint32_t format)
-{
-   return VK_FORMAT_UNDEFINED;
 }
 
 static inline uint32_t

@@ -431,13 +431,10 @@ vn_image_deferred_info_init(struct vn_image *img,
          pnext = &info->stencil;
          break;
       case VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID: {
-         const uint32_t drm_format =
+         const uint32_t external_format =
             (uint32_t)((const VkExternalFormatANDROID *)src)->externalFormat;
-         if (drm_format) {
-            info->create.format =
-               vn_android_drm_format_to_vk_format(drm_format);
-            info->from_external_format = true;
-         }
+         if (external_format != 0)
+            info->create.format = external_format;
       } break;
       case VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR:
          img->wsi.is_wsi = true;
@@ -923,11 +920,9 @@ vn_CreateImageView(VkDevice device,
       pAllocator ? pAllocator : &dev->base.vk.alloc;
 
    VkImageViewCreateInfo local_info;
-   if (img->deferred_info && img->deferred_info->from_external_format) {
-      assert(pCreateInfo->format == VK_FORMAT_UNDEFINED);
-
+   if (pCreateInfo->format == VK_FORMAT_UNDEFINED) {
       local_info = *pCreateInfo;
-      local_info.format = img->deferred_info->create.format;
+      local_info.format = img->base.vk.format;
       pCreateInfo = &local_info;
 
       assert(pCreateInfo->format != VK_FORMAT_UNDEFINED);
@@ -1038,8 +1033,7 @@ vn_CreateSamplerYcbcrConversion(
       assert(pCreateInfo->format == VK_FORMAT_UNDEFINED);
 
       local_info = *pCreateInfo;
-      local_info.format =
-         vn_android_drm_format_to_vk_format(ext_info->externalFormat);
+      local_info.format = ext_info->externalFormat;
       local_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
       local_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
       local_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
