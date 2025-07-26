@@ -51,29 +51,44 @@ emit_mbcnt(isel_context* ctx, Temp dst, Operand mask = Operand(), Operand base =
       return bld.vop3(aco_opcode::v_mbcnt_hi_u32_b32_e64, Definition(dst), mask_hi, mbcnt_lo);
 }
 
+bool
+can_use_shared_vgprs(isel_context* ctx)
+{
+   /* Avoid using shared VGPRs for shuffle on GFX10 when the shader consists
+    * of multiple binaries, because the VGPR use is not known when choosing
+    * which registers to use for the shared VGPRs.
+    */
+   return ctx->options->gfx_level >= GFX10 && ctx->options->gfx_level < GFX11 &&
+          ctx->program->wave_size == 64 && !ctx->program->info.ps.has_epilog &&
+          !ctx->program->info.merged_shader_compiled_separately &&
+          !ctx->program->info.vs.has_prolog && ctx->stage != raytracing_cs;
+}
+
+void
+enable_shared_vgprs(isel_context* ctx)
+{
+   assert(can_use_shared_vgprs(ctx));
+   if (ctx->program->config->num_shared_vgprs)
+      return;
+
+   /* We need one pair of shared VGPRs:
+    * Note, that these have twice the allocation granularity of normal VGPRs
+    */
+   ctx->program->config->num_shared_vgprs = 2 * ctx->program->dev.vgpr_alloc_granule;
+}
+
 Temp
 emit_bpermute(isel_context* ctx, Builder& bld, Temp index, Temp data)
 {
    if (index.regClass() == s1)
       return bld.readlane(bld.def(s1), data, index);
 
-   /* Avoid using shared VGPRs for shuffle on GFX10 when the shader consists
-    * of multiple binaries, because the VGPR use is not known when choosing
-    * which registers to use for the shared VGPRs.
-    */
-   const bool avoid_shared_vgprs =
-      ctx->options->gfx_level >= GFX10 && ctx->options->gfx_level < GFX11 &&
-      ctx->program->wave_size == 64 &&
-      (ctx->program->info.ps.has_epilog || ctx->program->info.merged_shader_compiled_separately ||
-       ctx->program->info.vs.has_prolog || ctx->stage == raytracing_cs);
-
-   if (ctx->options->gfx_level <= GFX7 || avoid_shared_vgprs) {
-      /* GFX6-7: there is no bpermute instruction */
-      return bld.pseudo(aco_opcode::p_bpermute_readlane, bld.def(v1), bld.def(bld.lm),
-                        bld.def(bld.lm, vcc), index, data);
-   } else if (ctx->options->gfx_level >= GFX10 && ctx->options->gfx_level <= GFX11_5 &&
-              ctx->program->wave_size == 64) {
-
+   if ((ctx->options->gfx_level >= GFX8 && ctx->options->gfx_level < GFX10) ||
+       ctx->options->gfx_level >= GFX12 || ctx->program->wave_size == 32) {
+      /* wave32 or GFX8-9, GFX12+: bpermute works normally */
+      Temp index_x4 = bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(2u), index);
+      return bld.ds(aco_opcode::ds_bpermute_b32, bld.def(v1), index_x4, data);
+   } else if (ctx->options->gfx_level >= GFX11 || can_use_shared_vgprs(ctx)) {
       /* GFX10-11.5 wave64 mode: emulate full-wave bpermute */
       Temp index_is_lo =
          bld.vopc(aco_opcode::v_cmp_ge_u32, bld.def(bld.lm), Operand::c32(31u), index);
@@ -86,10 +101,7 @@ emit_bpermute(isel_context* ctx, Builder& bld, Temp index, Temp data)
       Operand index_x4 = bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(2u), index);
 
       if (ctx->options->gfx_level <= GFX10_3) {
-         /* We need one pair of shared VGPRs:
-          * Note, that these have twice the allocation granularity of normal VGPRs
-          */
-         ctx->program->config->num_shared_vgprs = 2 * ctx->program->dev.vgpr_alloc_granule;
+         enable_shared_vgprs(ctx);
 
          return bld.pseudo(aco_opcode::p_bpermute_shared_vgpr, bld.def(v1), bld.def(s2),
                            bld.def(s1, scc), index_x4, data, same_half);
@@ -98,9 +110,9 @@ emit_bpermute(isel_context* ctx, Builder& bld, Temp index, Temp data)
                            bld.def(s1, scc), Operand(v1.as_linear()), index_x4, data, same_half);
       }
    } else {
-      /* wave32 or GFX8-9, GFX12+: bpermute works normally */
-      Temp index_x4 = bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(2u), index);
-      return bld.ds(aco_opcode::ds_bpermute_b32, bld.def(v1), index_x4, data);
+      /* GFX6-7: there is no bpermute instruction */
+      return bld.pseudo(aco_opcode::p_bpermute_readlane, bld.def(v1), bld.def(bld.lm),
+                        bld.def(bld.lm, vcc), index, data);
    }
 }
 
