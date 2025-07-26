@@ -149,6 +149,11 @@ gitlab-ci*.yml @eric
 # R300
 /src/gallium/drivers/r300/ @ondracka @gawin
 
+# Venus
+/src/virtio/virtio-gpu/venus_hw.h @zzyiwei @olv
+/src/virtio/venus-protocol/ @zzyiwei @olv
+/src/virtio/vulkan/ @zzyiwei @olv
+
 # VirGL - Video
 /src/gallium/drivers/virgl/virgl_video.* @flynnjiang
 /src/virtio/virtio-gpu/virgl_video_hw.h @flynnjiang
