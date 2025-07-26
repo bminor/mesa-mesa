@@ -21,9 +21,6 @@
 #include "vn_device.h"
 #include "vn_device_memory.h"
 #include "vn_image.h"
-#include "vn_instance.h"
-#include "vn_physical_device.h"
-#include "vn_queue.h"
 
 struct vn_android_gralloc_buffer_properties {
    uint32_t num_planes;
@@ -408,37 +405,6 @@ vn_android_get_wsi_memory_from_bind_info(
    return img->wsi.memory;
 }
 
-static AHardwareBuffer *
-vn_android_ahb_allocate(uint32_t width,
-                        uint32_t height,
-                        uint32_t layers,
-                        uint32_t format,
-                        uint64_t usage)
-{
-   AHardwareBuffer *ahb = NULL;
-   AHardwareBuffer_Desc desc;
-   int ret = 0;
-
-   memset(&desc, 0, sizeof(desc));
-   desc.width = width;
-   desc.height = height;
-   desc.layers = layers;
-   desc.format = format;
-   desc.usage = usage;
-
-   ret = AHardwareBuffer_allocate(&desc, &ahb);
-   if (ret) {
-      /* We just log the error code here for now since the platform falsely
-       * maps all gralloc allocation failures to oom.
-       */
-      vn_log(NULL, "AHB alloc(w=%u,h=%u,l=%u,f=%u,u=%" PRIu64 ") failed(%d)",
-             width, height, layers, format, usage, ret);
-      return NULL;
-   }
-
-   return ahb;
-}
-
 VkResult
 vn_android_device_import_ahb(struct vn_device *dev,
                              struct vn_device_memory *mem,
@@ -525,38 +491,4 @@ vn_android_device_import_ahb(struct vn_device *dev,
    }
 
    return VK_SUCCESS;
-}
-
-uint32_t
-vn_android_get_ahb_buffer_memory_type_bits(struct vn_device *dev)
-{
-   static const uint32_t format = AHARDWAREBUFFER_FORMAT_BLOB;
-   /* ensure dma_buf_memory_type_bits covers host visible usage */
-   static const uint64_t usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER |
-                                 AHARDWAREBUFFER_USAGE_CPU_READ_RARELY |
-                                 AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY;
-   AHardwareBuffer *ahb = vn_android_ahb_allocate(4096, 1, 1, format, usage);
-   if (!ahb)
-      return 0;
-
-   int dma_buf_fd =
-      vn_android_gralloc_get_dma_buf_fd(AHardwareBuffer_getNativeHandle(ahb));
-   if (dma_buf_fd < 0) {
-      AHardwareBuffer_release(ahb);
-      return 0;
-   }
-
-   uint64_t alloc_size = 0;
-   uint32_t mem_type_bits = 0;
-   VkResult ret = vn_get_memory_dma_buf_properties(
-      dev, dma_buf_fd, &alloc_size, &mem_type_bits);
-   /* release ahb first as below no longer needs it */
-   AHardwareBuffer_release(ahb);
-
-   if (ret != VK_SUCCESS) {
-      vn_log(dev->instance, "AHB buffer mem type bits query failed %d", ret);
-      return 0;
-   }
-
-   return mem_type_bits;
 }

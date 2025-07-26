@@ -42,9 +42,6 @@ vn_android_device_import_ahb(struct vn_device *dev,
                              struct vn_device_memory *mem,
                              const struct VkMemoryAllocateInfo *alloc_info);
 
-uint32_t
-vn_android_get_ahb_buffer_memory_type_bits(struct vn_device *dev);
-
 #else
 
 static inline VkResult
