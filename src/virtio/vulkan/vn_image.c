@@ -425,7 +425,8 @@ vn_image_deferred_info_init(struct vn_image *img,
                 ((const VkImageFormatListCreateInfo *)src)->pViewFormats,
                 size);
          info->list.pViewFormats = view_formats;
-      } break;
+         break;
+      }
       case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO:
          memcpy(&info->stencil, src, sizeof(info->stencil));
          pnext = &info->stencil;
@@ -435,10 +436,8 @@ vn_image_deferred_info_init(struct vn_image *img,
             (uint32_t)((const VkExternalFormatANDROID *)src)->externalFormat;
          if (external_format != 0)
             info->create.format = external_format;
-      } break;
-      case VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR:
-         img->wsi.is_wsi = true;
          break;
+      }
       default:
          break;
       }
@@ -678,10 +677,6 @@ vn_CreateImage(VkDevice device,
     * Will have to fix more when renderer handle type is no longer dma_buf.
     */
    if (wsi_info) {
-      assert(wsi_info->blit_src ||
-             wsi_info->scanout ||
-             pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR ||
-             external_info->handleTypes == renderer_handle_type);
       result = vn_wsi_create_image(dev, pCreateInfo, wsi_info, alloc, &img);
    } else if (anb_info) {
       result =
@@ -829,8 +824,7 @@ vn_BindImageMemory2(VkDevice device,
    struct vn_device *dev = vn_device_from_handle(device);
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {
-      struct vn_image *img = vn_image_from_handle(pBindInfos[i].image);
-      if (img->wsi.is_wsi)
+      if (pBindInfos[i].memory == VK_NULL_HANDLE)
          return vn_image_bind_wsi_memory(dev, bindInfoCount, pBindInfos);
    }
 

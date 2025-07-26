@@ -287,8 +287,6 @@ vn_android_image_from_anb_internal(struct vn_device *dev,
       }
    }
 
-   img->wsi.is_wsi = true;
-
    int dma_buf_fd = vn_android_gralloc_get_dma_buf_fd(anb_info->handle);
    if (dma_buf_fd < 0) {
       result = VK_ERROR_INVALID_EXTERNAL_HANDLE;
