@@ -488,7 +488,7 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    nir_def *res;
    switch (tex->op) {
    case nir_texop_txs:
-      res = build_txq_size(b, tex->can_speculate, tex->def.num_components,
+      res = build_txq_size(b, tex->def.num_components, tex->can_speculate,
                            tex_h, lod, nak);
       break;
    case nir_texop_query_levels:
