@@ -304,6 +304,10 @@ StringFromVariant( VARIANT *Value )
    {
       return std::to_string( Value->boolVal );
    }
+   else if ( (Value->vt & (VT_ARRAY | VT_UI1)) == (VT_ARRAY | VT_UI1) && Value->parray )
+   {
+      return "Array Blob mapping";
+   }
    return "Unsupported Variant";
 }
 
@@ -398,12 +402,21 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
       {
          hr = S_OK;
          return hr;
-      }   
+      }
    }
 
    if( m_EncoderCapabilities.m_TwoPassSupport.bits.supports_1pass_recon_writing_skip )
    {
       if( *Api == CODECAPI_AVEncVideoRateControlFramePreAnalysisExternalReconDownscale )
+      {
+         hr = S_OK;
+         return hr;
+      }
+   }
+
+   if (m_EncoderCapabilities.m_HWSupportsVideoEncodeROI.bits.roi_rc_qp_delta_support )
+   {
+      if (*Api == CODECAPI_AVEncVideoInputDeltaQPBlockSettings )
       {
          hr = S_OK;
          return hr;
@@ -876,6 +889,38 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
    {
       Value->vt = VT_BOOL;
       Value->boolVal = m_bRateControlFramePreAnalysisExternalReconDownscale ? VARIANT_TRUE : VARIANT_FALSE;
+   }
+   else if ( *Api == CODECAPI_AVEncVideoInputDeltaQPBlockSettings )
+   {
+      InputQPSettings hevcDeltaQPSettings;
+      hevcDeltaQPSettings.minBlockSize   = 1 << m_EncoderCapabilities.m_HWSupportsVideoEncodeROI.bits.log2_roi_min_block_pixel_size;
+      hevcDeltaQPSettings.maxBlockSize   = hevcDeltaQPSettings.minBlockSize;
+      hevcDeltaQPSettings.stepsBlockSize = 1;
+      hevcDeltaQPSettings.dataType       = CODEC_API_QP_MAP_INT8;
+      hevcDeltaQPSettings.minValue       = static_cast<INT16>(m_uiMinQP);
+      hevcDeltaQPSettings.maxValue       = static_cast<INT16>(m_uiMaxQP);
+      hevcDeltaQPSettings.step          = 1;
+
+      SAFEARRAYBOUND bound = {static_cast<ULONG>(sizeof(hevcDeltaQPSettings)), static_cast<LONG>(0)}; // cElements , lower bound
+      SAFEARRAY* psa = SafeArrayCreate(VT_UI1, 1, &bound); // dims == 1
+      if (!psa) {
+         hr = E_OUTOFMEMORY;
+         CHECKHR_GOTO( hr, done );
+      }
+      void* pData = nullptr;
+      hr = SafeArrayAccessData(psa, &pData);
+      if (SUCCEEDED(hr) && pData)
+      {
+          memcpy(pData, &hevcDeltaQPSettings, sizeof(hevcDeltaQPSettings));
+          SafeArrayUnaccessData(psa);
+      }
+      else
+      {
+          SafeArrayDestroy(psa);
+          CHECKHR_GOTO( hr, done );
+      }
+      Value->vt      = VT_ARRAY | VT_UI1;
+      Value->parray  = psa;
    }
    else
    {

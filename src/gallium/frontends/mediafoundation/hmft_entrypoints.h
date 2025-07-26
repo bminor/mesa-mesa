@@ -407,7 +407,7 @@ typedef struct _inputQPSettings {
     eAVEncVideoQPMapElementDataType dataType;
     INT16                          minValue;
     INT16                          maxValue;
-    UINT16                         steps;
+    UINT16                         step;
 } InputQPSettings;
 
 // MFSampleExtension_VideoEncodeInputDeltaQPMap   {DAB419C3-BF21-4B46-8692-9A7BF0A71769}
