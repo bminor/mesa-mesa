@@ -259,9 +259,9 @@ st_feedback_draw_vbo(struct gl_context *ctx,
 
    /* sampler views */
    struct pipe_sampler_view *views[PIPE_MAX_SAMPLERS];
-   unsigned num_owned_views = 0;
+   unsigned extra_sampler_views = 0;
    unsigned num_views =
-      st_get_sampler_views(st, PIPE_SHADER_VERTEX, prog, views, &num_owned_views);
+      st_get_sampler_views(st, PIPE_SHADER_VERTEX, prog, views, &extra_sampler_views);
 
    draw_set_sampler_views(draw, PIPE_SHADER_VERTEX, views, num_views);
 
@@ -423,9 +423,9 @@ st_feedback_draw_vbo(struct gl_context *ctx,
    draw_set_sampler_views(draw, PIPE_SHADER_VERTEX, NULL, 0);
 
    /* release YUV views back to driver */
-   unsigned base_idx = num_views - num_owned_views;
-   for (unsigned i = 0; i < num_owned_views; i++)
-      pipe->sampler_view_release(pipe, views[base_idx + i]);
+   u_foreach_bit (i, extra_sampler_views) {
+      pipe->sampler_view_release(pipe, views[i]);
+   }
 
    for (unsigned i = 0; i < prog->info.num_ssbos; i++) {
       if (ssbo_transfer[i]) {
