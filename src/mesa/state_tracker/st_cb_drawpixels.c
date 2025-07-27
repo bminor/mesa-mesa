@@ -849,11 +849,11 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
    /* user textures, plus the drawpix textures */
    if (fpv) {
       struct pipe_sampler_view *sampler_views[PIPE_MAX_SAMPLERS];
-      unsigned num_owned_views = 0;
+      unsigned extra_sampler_views = 0;
       /* drawing a color image */
       unsigned num_views =
          st_get_sampler_views(st, PIPE_SHADER_FRAGMENT,
-                              ctx->FragmentProgram._Current, sampler_views, &num_owned_views);
+                              ctx->FragmentProgram._Current, sampler_views, &extra_sampler_views);
 
       num_views = MAX3(fpv->drawpix_sampler + 1, fpv->pixelmap_sampler + 1,
                        num_views);
@@ -866,9 +866,9 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
       st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] = num_views;
 
       /* release YUV views back to driver */
-      unsigned base_idx = num_views - num_owned_views;
-      for (unsigned i = 0; i < num_owned_views; i++)
-         pipe->sampler_view_release(pipe, sampler_views[base_idx + i]);
+      u_foreach_bit (i, extra_sampler_views) {
+         pipe->sampler_view_release(pipe, sampler_views[i]);
+      }
    } else {
       /* drawing a depth/stencil image */
       pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, num_sampler_view,
