@@ -34,11 +34,6 @@ import mako
 from mako.template import Template
 from vk_extensions import Requirements, get_all_required, filter_api
 
-def str_removeprefix(s, prefix):
-    if s.startswith(prefix):
-        return s[len(prefix):]
-    return s
-
 RENAMED_FEATURES = {
     # See https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/17272#note_1446477 for details
     ('BufferDeviceAddressFeaturesEXT', 'bufferDeviceAddressCaptureReplay'): 'bufferDeviceAddressCaptureReplayEXT',
@@ -154,7 +149,7 @@ for (feature_structs, features) in KNOWN_ALIASES:
             RENAMED_FEATURES[rename] = flag
 
 def get_renamed_feature(c_type, feature):
-    return RENAMED_FEATURES.get((str_removeprefix(c_type, 'VkPhysicalDevice'), feature), feature)
+    return RENAMED_FEATURES.get((c_type.removeprefix('VkPhysicalDevice'), feature), feature)
 
 @dataclass
 class FeatureStruct:
@@ -485,12 +480,12 @@ def get_feature_structs_from_xml(xml_files, beta, api='vulkan'):
             if renamed_flag not in features:
                 features[renamed_flag] = f.c_type
             else:
-                a = str_removeprefix(features[renamed_flag], 'VkPhysicalDevice')
-                b = str_removeprefix(f.c_type, 'VkPhysicalDevice')
+                a = features[renamed_flag].removeprefix('VkPhysicalDevice')
+                b = f.c_type.removeprefix('VkPhysicalDevice')
                 if (a, flag) not in RENAMED_FEATURES or (b, flag) not in RENAMED_FEATURES:
                     diagnostics.append(f'{a} and {b} both define {flag}')
 
-            unused_renames.pop((str_removeprefix(f.c_type, 'VkPhysicalDevice'), flag), None)
+            unused_renames.pop((f.c_type.removeprefix('VkPhysicalDevice'), flag), None)
 
     for rename in unused_renames:
         diagnostics.append(f'unused rename {rename}')

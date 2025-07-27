@@ -36,11 +36,6 @@ from mako.template import Template
 
 from vk_extensions import get_all_required, filter_api
 
-def str_removeprefix(s, prefix):
-    if s.startswith(prefix):
-        return s[len(prefix):]
-    return s
-
 # Some extensions have been promoted to core, their properties are renamed
 # in the following hashtable.
 # The hashtable takes the form:
@@ -320,7 +315,7 @@ def get_property_structs(doc, api, beta):
             if "STRUCTURE_TYPE" in str(elem.attrib):
                 s_type = elem.attrib.get("values")
 
-        name = str_removeprefix(full_name, "VkPhysicalDevice")
+        name = full_name.removeprefix("VkPhysicalDevice")
 
         # collect a list of properties
         properties = []
