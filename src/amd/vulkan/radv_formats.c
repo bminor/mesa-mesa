@@ -502,7 +502,7 @@ radv_physical_device_get_format_properties(struct radv_physical_device *pdev, Vk
    }
 
    /* No depth/stencil support yet due to VKCTS issues. */
-   if (!vk_format_is_depth_or_stencil(format)) {
+   if (radv_host_image_copy_enabled(pdev) && !vk_format_is_depth_or_stencil(format)) {
       if (linear & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)
          linear |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
 

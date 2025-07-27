@@ -151,7 +151,7 @@ radv_cooperative_matrix2_nv_enabled(const struct radv_physical_device *pdev)
    return instance->drirc.cooperative_matrix2_nv;
 }
 
-static bool
+bool
 radv_host_image_copy_enabled(const struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
