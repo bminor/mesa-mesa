@@ -634,7 +634,7 @@
         "description": "radv: don't set HOST_IMAGE_TRANSFER_BIT if host_image_copy not enabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d89b11011fa5dcd2eacbc13e4b81cbda590cc91f",
         "notes": null
