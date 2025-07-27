@@ -243,10 +243,10 @@ setup_render_state(struct gl_context *ctx,
 
    /* user textures, plus the bitmap texture */
    {
-      unsigned num_owned_views = 0;
+      unsigned extra_sampler_views = 0;
       struct pipe_sampler_view *sampler_views[PIPE_MAX_SAMPLERS];
       unsigned num_views =
-         st_get_sampler_views(st, PIPE_SHADER_FRAGMENT, fp, sampler_views, &num_owned_views);
+         st_get_sampler_views(st, PIPE_SHADER_FRAGMENT, fp, sampler_views, &extra_sampler_views);
 
       num_views = MAX2(fpv->bitmap_sampler + 1, num_views);
       sampler_views[fpv->bitmap_sampler] = sv;

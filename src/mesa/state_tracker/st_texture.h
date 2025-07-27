@@ -257,7 +257,7 @@ st_get_sampler_views(struct st_context *st,
                      enum pipe_shader_type shader_stage,
                      const struct gl_program *prog,
                      struct pipe_sampler_view **sampler_views,
-                     unsigned *num_owned_views);
+                     unsigned *extra_sampler_views);
 
 void
 st_make_bound_samplers_resident(struct st_context *st,

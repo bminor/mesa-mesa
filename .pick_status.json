@@ -1084,7 +1084,7 @@
         "description": "gallium: Properly handle non-contiguous used sampler view indexes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "73da0dcddcb351f46544b207de55a4cb81654cb8",
         "notes": null
