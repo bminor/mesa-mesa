@@ -199,7 +199,7 @@ agx_split_width(const agx_instr *I)
  * linear-time. Depends on liveness information.
  */
 static unsigned
-agx_calc_register_demand(agx_context *ctx)
+agx_calc_register_demand(agx_context *ctx, bool remat)
 {
    /* Print detailed demand calculation, helpful to debug spilling */
    bool debug = false;
@@ -212,6 +212,9 @@ agx_calc_register_demand(agx_context *ctx)
    enum ra_class *classes = calloc(ctx->alloc, sizeof(enum ra_class));
 
    agx_foreach_instr_global(ctx, I) {
+      if (I->op == AGX_OPCODE_MOV_IMM && remat)
+         continue;
+
       agx_foreach_ssa_dest(I, d) {
          unsigned v = I->dest[d].value;
          assert(widths[v] == 0 && "broken SSA");
@@ -254,6 +257,9 @@ agx_calc_register_demand(agx_context *ctx)
           * set, just skip them so we don't double count.
           */
          if (I->op == AGX_OPCODE_PHI)
+            continue;
+
+         if (I->op == AGX_OPCODE_MOV_IMM && remat)
             continue;
 
          if (debug) {
@@ -1388,16 +1394,41 @@ agx_ra(agx_context *ctx)
     * bound register assignment.
     */
    agx_compute_liveness(ctx);
-   unsigned effective_demand = agx_calc_register_demand(ctx);
+   unsigned effective_demand = agx_calc_register_demand(ctx, false);
    bool spilling = (effective_demand > max_possible_regs);
+   bool remat = false;
 
-   if (spilling) {
-      assert(ctx->key->has_scratch && "internal shaders are unspillable");
-      agx_spill(ctx, max_possible_regs);
+   /* If we need multiple waves, see if we can rematerialize constants to save
+    * waves. If we only have a single wave regardless, this is pointless.
+    */
+   if (effective_demand > agx_round_registers(1) && !spilling) {
+      unsigned effective_demand_remat = agx_calc_register_demand(ctx, true);
+
+      /* Worst-case assume we need 6 16-bit registers for constants, for a
+       * four-source cmpsel where 3 sources are 32-bit constants. Rounded to
+       * ensure live-range splitting works.
+       */
+      if ((effective_demand_remat + 6) < effective_demand) {
+         unsigned l = agx_round_registers(
+            align(agx_round_registers(effective_demand_remat + 6), 16));
+
+         /* Only rematerialize if it actually lets us save a wave */
+         if (l < agx_round_registers(effective_demand)) {
+            remat = true;
+            max_possible_regs = l;
+         }
+      }
+   }
+
+   if (spilling || remat) {
+      assert((remat || ctx->key->has_scratch) &&
+             "internal shaders are unspillable");
+
+      agx_spill(ctx, max_possible_regs, remat);
 
       /* After spilling, recalculate liveness and demand */
       agx_compute_liveness(ctx);
-      effective_demand = agx_calc_register_demand(ctx);
+      effective_demand = agx_calc_register_demand(ctx, false);
 
       /* The resulting program can now be assigned registers */
       assert(effective_demand <= max_possible_regs && "spiller post-condition");
@@ -1459,6 +1490,7 @@ agx_ra(agx_context *ctx)
     */
    unsigned reg_file_alignment = MAX2(max_ncomps, 8);
    assert(util_is_power_of_two_nonzero(reg_file_alignment));
+   assert(reg_file_alignment <= 16 && "max size");
 
    unsigned demand = ALIGN_POT(effective_demand, reg_file_alignment);
    assert(demand <= max_possible_regs && "Invariant");

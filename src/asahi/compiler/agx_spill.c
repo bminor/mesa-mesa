@@ -196,6 +196,9 @@ struct spill_ctx {
 
    /* Base memory index reserved for spilled indices */
    unsigned spill_base;
+
+   /* If true, we cannot use scratch and must only rematerialize. */
+   bool remat_only;
 };
 
 static inline struct spill_block *
@@ -304,6 +307,8 @@ static void
 insert_spill(agx_builder *b, struct spill_ctx *ctx, unsigned node)
 {
    if (!ctx->remat[node]) {
+      assert(!ctx->remat_only && "must have remat something");
+
       agx_index idx = reconstruct_index(ctx, node);
       agx_mov_to(b, agx_index_as_mem(idx, ctx->spill_base), idx);
 
@@ -1159,12 +1164,12 @@ validate_next_use_info(UNUSED agx_context *ctx,
 }
 
 void
-agx_spill(agx_context *ctx, unsigned k)
+agx_spill(agx_context *ctx, unsigned k, bool remat_only)
 {
    void *memctx = ralloc_context(NULL);
 
    /* We need extra registers for memory-memory swaps */
-   k -= 8;
+   k -= remat_only ? 2 : 8;
 
    uint8_t *channels = rzalloc_array(memctx, uint8_t, ctx->alloc);
    dist_t *next_uses = rzalloc_array(memctx, dist_t, ctx->alloc);
@@ -1217,6 +1222,7 @@ agx_spill(agx_context *ctx, unsigned k)
          .W = W,
          .S = S,
          .spill_base = n,
+         .remat_only = remat_only,
       };
 
       compute_w_entry(&sctx);
