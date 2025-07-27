@@ -917,7 +917,7 @@ if get_option('allow-kcmp') \
 endif
 
 # On Windows, a venv has no versioned aliased to 'python'.
-prog_python = find_program('python3', 'python', version : '>= 3.8')
+prog_python = find_program('python3', 'python', version : '>= 3.9')
 
 has_mako = run_command(
   prog_python, '-c',
