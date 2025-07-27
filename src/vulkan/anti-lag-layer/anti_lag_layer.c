@@ -67,8 +67,10 @@ evaluate_frame(device_context *ctx, frame *frame, bool force_wait)
       while (num_timestamps > 0) {
          /* Retreive timestamp results from this queue. */
          ctx->vtable.GetQueryPoolResults(ctx->device, queue_ctx->queryPool, query_idx,
-                                         num_timestamps, sizeof(uint64_t), &query->begin_gpu_ts,
-                                         sizeof(struct query), query_flags);
+                                         num_timestamps,
+                                         sizeof(struct query) * num_timestamps,
+                                         &query->begin_gpu_ts, sizeof(struct query),
+                                         query_flags);
 
          ringbuffer_lock(queue_ctx->queries);
          for (unsigned j = 0; j < num_timestamps; j++) {
