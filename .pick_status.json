@@ -504,7 +504,7 @@
         "description": "vulkan/wsi/x11: Handle VK_NOT_READY in AcquireNextImage()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "899263ecfc8251ffff375d70b4c5d44f192112b0",
         "notes": null
