@@ -1200,14 +1200,27 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
 }
 
 static void
-panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
+panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit,
+                                 const struct vk_queue_submit *vk_submit)
 {
    struct panvk_gpu_queue *queue = submit->queue;
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
    struct pandecode_context *decode_ctx = submit->dev->debug.decode_ctx;
 
    if (PANVK_DEBUG(TRACE)) {
       const struct pan_kmod_dev_props *props =
          &submit->phys_dev->kmod.dev->props;
+
+      /* First we invalidate all desc buffers to make sure we see GPU updates
+       * on those. */
+      for (uint32_t i = 0; i < vk_submit->command_buffer_count; i++) {
+         struct panvk_cmd_buffer *cmdbuf = container_of(
+            vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
+
+         panvk_pool_invalidate_maps(&cmdbuf->desc_pool);
+      }
+
+      pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
 
       for (uint32_t i = 0; i < submit->qsubmit_count; i++) {
          const struct drm_panthor_queue_submit *qsubmit = &submit->qsubmits[i];
@@ -1282,7 +1295,7 @@ panvk_per_arch(gpu_queue_submit)(struct vk_queue *vk_queue, struct vk_queue_subm
       goto out;
 
    panvk_queue_submit_process_signals(&submit, vk_submit);
-   panvk_queue_submit_process_debug(&submit);
+   panvk_queue_submit_process_debug(&submit, vk_submit);
 
 out:
    panvk_queue_submit_cleanup_storage(&submit, &stack_storage);

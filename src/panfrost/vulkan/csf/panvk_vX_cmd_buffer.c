@@ -267,6 +267,9 @@ panvk_per_arch(EndCommandBuffer)(VkCommandBuffer commandBuffer)
       }
    }
 
+   panvk_pool_flush_maps(&cmdbuf->cs_pool);
+   panvk_pool_flush_maps(&cmdbuf->desc_pool);
+
    return vk_command_buffer_end(&cmdbuf->vk);
 }
 
@@ -924,7 +927,8 @@ panvk_create_cmdbuf(struct vk_command_pool *vk_pool, VkCommandBufferLevel level,
       &cmdbuf->state.gfx.dynamic.sl;
 
    struct panvk_pool_properties cs_pool_props = {
-      .create_flags = 0,
+      .create_flags =
+         panvk_device_adjust_bo_flags(device, PAN_KMOD_BO_FLAG_WB_MMAP),
       .slab_size = 64 * 1024,
       .label = "Command buffer CS pool",
       .prealloc = false,
@@ -934,7 +938,8 @@ panvk_create_cmdbuf(struct vk_command_pool *vk_pool, VkCommandBufferLevel level,
    panvk_pool_init(&cmdbuf->cs_pool, device, &pool->cs_bo_pool, NULL, &cs_pool_props);
 
    struct panvk_pool_properties desc_pool_props = {
-      .create_flags = 0,
+      .create_flags =
+         panvk_device_adjust_bo_flags(device, PAN_KMOD_BO_FLAG_WB_MMAP),
       .slab_size = 64 * 1024,
       .label = "Command buffer descriptor pool",
       .prealloc = false,
