@@ -119,16 +119,6 @@ exec_node_insert_node_before(struct exec_node *n, struct exec_node *before)
    n->prev = before;
 }
 
-static inline void
-exec_node_replace_with(struct exec_node *n, struct exec_node *replacement)
-{
-   replacement->prev = n->prev;
-   replacement->next = n->next;
-
-   n->prev->next = replacement;
-   n->next->prev = replacement;
-}
-
 static inline bool
 exec_node_is_tail_sentinel(const struct exec_node *n)
 {
@@ -211,40 +201,16 @@ exec_list_get_head(struct exec_list *list)
    return !exec_list_is_empty(list) ? list->head_sentinel.next : NULL;
 }
 
-static inline const struct exec_node *
-exec_list_get_head_raw_const(const struct exec_list *list)
-{
-   return list->head_sentinel.next;
-}
-
 static inline struct exec_node *
 exec_list_get_head_raw(struct exec_list *list)
 {
    return list->head_sentinel.next;
 }
 
-static inline const struct exec_node *
-exec_list_get_tail_const(const struct exec_list *list)
-{
-   return !exec_list_is_empty(list) ? list->tail_sentinel.prev : NULL;
-}
-
 static inline struct exec_node *
 exec_list_get_tail(struct exec_list *list)
 {
    return !exec_list_is_empty(list) ? list->tail_sentinel.prev : NULL;
-}
-
-static inline const struct exec_node *
-exec_list_get_tail_raw_const(const struct exec_list *list)
-{
-   return list->tail_sentinel.prev;
-}
-
-static inline struct exec_node *
-exec_list_get_tail_raw(struct exec_list *list)
-{
-   return list->tail_sentinel.prev;
 }
 
 static inline unsigned
@@ -278,17 +244,6 @@ exec_list_push_tail(struct exec_list *list, struct exec_node *n)
 
    n->prev->next = n;
    list->tail_sentinel.prev = n;
-}
-
-static inline void
-exec_list_push_degenerate_list_at_head(struct exec_list *list, struct exec_node *n)
-{
-   assert(n->prev->next == n);
-
-   n->prev->next = list->head_sentinel.next;
-   list->head_sentinel.next->prev = n->prev;
-   n->prev = &list->head_sentinel;
-   list->head_sentinel.next = n;
 }
 
 static inline struct exec_node *
@@ -356,28 +311,6 @@ exec_node_insert_list_after(struct exec_node *n, struct exec_list *after)
 }
 
 static inline void
-exec_list_prepend(struct exec_list *list, struct exec_list *source)
-{
-   exec_list_append(source, list);
-   exec_list_move_nodes_to(source, list);
-}
-
-static inline void
-exec_node_insert_list_before(struct exec_node *n, struct exec_list *before)
-{
-   if (exec_list_is_empty(before))
-      return;
-
-   before->tail_sentinel.prev->next = n;
-   before->head_sentinel.next->prev = n->prev;
-
-   n->prev->next = before->head_sentinel.next;
-   n->prev = before->tail_sentinel.prev;
-
-   exec_list_make_empty(before);
-}
-
-static inline void
 exec_list_validate(const struct exec_list *list)
 {
    const struct exec_node *node;
@@ -396,44 +329,6 @@ exec_list_validate(const struct exec_list *list)
       assert(node->prev->next == node);
    }
 }
-
-#define exec_node_typed_forward(__node, __type) \
-   (!exec_node_is_tail_sentinel(__node) ? (__type) (__node) : NULL)
-
-#define exec_node_typed_backward(__node, __type) \
-   (!exec_node_is_head_sentinel(__node) ? (__type) (__node) : NULL)
-
-#define foreach_in_list(__type, __inst, __list)                                           \
-   for (__type *__inst = exec_node_typed_forward((__list)->head_sentinel.next, __type *); \
-        (__inst) != NULL;                                                                 \
-        (__inst) = exec_node_typed_forward((__inst)->next, __type *))
-
-#define foreach_in_list_reverse(__type, __inst, __list)                                      \
-   for (__type *__inst = exec_node_typed_backward((__list)->tail_sentinel.prev, __type *);   \
-        (__inst) != NULL;                                                                    \
-        (__inst) = exec_node_typed_backward((__inst)->prev, __type *))
-
-/**
- * This version is safe even if the current node is removed.
- */
-
-#define foreach_in_list_safe(__type, __node, __list)                                                              \
-   for (__type *__node = exec_node_typed_forward((__list)->head_sentinel.next, __type *),                         \
-               *__next = (__node) ? exec_node_typed_forward((__list)->head_sentinel.next->next, __type *) : NULL; \
-        (__node) != NULL;                                                                                         \
-        (__node) = __next, __next = __next ? exec_node_typed_forward(__next->next, __type *) : NULL)
-
-#define foreach_in_list_reverse_safe(__type, __node, __list)                                                        \
-   for (__type *__node = exec_node_typed_backward((__list)->tail_sentinel.prev, __type *),                          \
-               *__prev = (__node) ? exec_node_typed_backward((__list)->tail_sentinel.prev->prev, __type *) : NULL;  \
-        (__node) != NULL;                                                                                           \
-        (__node) = __prev, __prev = __prev ? exec_node_typed_backward(__prev->prev, __type *) : NULL)
-
-#define foreach_in_list_use_after(__type, __inst, __list)                           \
-   __type *__inst;                                                                  \
-   for ((__inst) = exec_node_typed_forward((__list)->head_sentinel.next, __type *); \
-        (__inst) != NULL;                                                           \
-        (__inst) = exec_node_typed_forward((__inst)->next, __type *))
 
 /**
  * Iterate through two lists at once.  Stops at the end of the shorter list.
@@ -490,11 +385,6 @@ exec_list_validate(const struct exec_list *list)
 #define foreach_list_typed_reverse(type, node, field, list)   \
    for (type * node = exec_node_data_tail(type, list, field); \
         node != NULL;                                         \
-        node = exec_node_data_prev(type, node, field))
-
-#define foreach_list_typed_from_reverse(type, node, field, list, __start) \
-   for (type * node = exec_node_data_backward(type, (__start), field);    \
-        node != NULL;                                                     \
         node = exec_node_data_prev(type, node, field))
 
 /**
