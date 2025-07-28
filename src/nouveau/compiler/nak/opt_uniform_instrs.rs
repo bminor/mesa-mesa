@@ -59,6 +59,16 @@ impl Shader<'_> {
                 | Op::Pin(_)
                 | Op::Unpin(_)
                 | Op::Vote(_) => MappedInstrs::One(instr),
+                Op::Bra(bra) if sm.sm() >= 80 => match &instr.pred.pred_ref {
+                    PredRef::SSA(ssa) if ssa.file() == RegFile::UPred => {
+                        let bra_u = OpBra {
+                            target: bra.target,
+                            cond: instr.pred.into(),
+                        };
+                        MappedInstrs::One(Instr::new_boxed(bra_u))
+                    }
+                    _ => MappedInstrs::One(instr),
+                },
                 _ if instr.is_uniform() => {
                     let mut b = InstrBuilder::new(sm);
                     if should_lower_to_warp(sm, &instr, &r2ur) {

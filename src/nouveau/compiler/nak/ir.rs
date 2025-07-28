@@ -6846,15 +6846,21 @@ impl DisplayOp for OpBSync {
 }
 impl_display_for_op!(OpBSync);
 
+/// Takes the branch when the guard predicate and all sources evaluate to true.
 #[repr(C)]
 #[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpBra {
     pub target: Label,
+
+    /// Can be a UPred if uniform
+    // TODO: actually .u has another form with an additional UPred input.
+    #[src_type(Pred)]
+    pub cond: Src,
 }
 
 impl DisplayOp for OpBra {
     fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "bra {}", self.target)
+        write!(f, "bra {} {}", self.cond, self.target)
     }
 }
 impl_display_for_op!(OpBra);
@@ -8403,6 +8409,19 @@ impl Instr {
         self.op.is_branch()
     }
 
+    /// Returns true if `self`` is a branch instruction that is always taken.
+    /// It returns false for non branch instructions.
+    pub fn is_branch_always_taken(&self) -> bool {
+        if self.pred.is_true() {
+            match &self.op {
+                Op::Bra(bra) => bra.cond.is_true(),
+                _ => self.is_branch(),
+            }
+        } else {
+            false
+        }
+    }
+
     pub fn uses_global_mem(&self) -> bool {
         match &self.op {
             Op::Atom(op) => op.mem_space != MemSpace::Local,
@@ -8616,7 +8635,7 @@ impl BasicBlock {
 
     pub fn falls_through(&self) -> bool {
         if let Some(i) = self.branch() {
-            !i.pred.is_true()
+            !i.is_branch_always_taken()
         } else {
             true
         }

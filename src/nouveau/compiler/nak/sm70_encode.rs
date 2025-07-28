@@ -3609,13 +3609,24 @@ impl SM70Op for OpBra {
     }
 
     fn encode(&self, e: &mut SM70Encoder<'_>) {
-        e.set_opcode(0x947);
+        if self.cond.is_upred_reg() {
+            assert!(e.sm >= 80);
+            e.set_opcode(0x547);
+            e.set_upred_src(24..27, 27, &self.cond);
+            e.set_bit(32, true); // .U
+            e.set_field(87..90, 0x7_u8);
+            e.set_bit(91, true);
+        } else {
+            e.set_opcode(0x947);
+            e.set_bit(32, false); // .U
+            e.set_pred_src(87..90, 90, &self.cond);
+        }
+
         if e.sm >= 100 {
             e.set_rel_offset2(16..24, 34..82, &self.target);
         } else {
             e.set_rel_offset(34..82, &self.target);
         }
-        e.set_field(87..90, 0x7_u8); // TODO: Pred?
     }
 }
 

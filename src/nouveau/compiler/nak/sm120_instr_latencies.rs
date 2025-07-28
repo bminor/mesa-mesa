@@ -171,6 +171,7 @@ fn op_pred_latency(op: &Op) -> PredLatencySM100 {
     use PredLatencySM100::*;
     match op {
         Op::Atom(_) => Decoupled,
+        Op::Bra(_) => Decoupled,
         Op::DSetP(_) => RedirectedFp64,
         Op::FMnMx(_) | Op::FSetP(_) => Dualalu,
         Op::HFma2(_) => Fp16,
@@ -342,6 +343,7 @@ fn op_upred_latency(op: &Op) -> UpredLatencySM100 {
         | Op::LeaX(_)
         | Op::Lop3(_)
         | Op::Mov(_) => Udp,
+        Op::Bra(_) => BraJmp,
         Op::Ldc(_) => UldcMma,
         Op::PLop3(_) => {
             if uniform_op {
