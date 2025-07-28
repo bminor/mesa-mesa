@@ -464,13 +464,18 @@ get_ready_slot(struct ir3_legalize_state *state,
       consumer_alu ? &state->alu_nop : &state->non_alu_nop;
    assert(!(reg->flags & IR3_REG_SHARED));
    if (reg->flags & IR3_REG_HALF) {
-      if (matching_size)
+      if (matching_size) {
+         assert(num < ARRAY_SIZE(nop->half_ready));
          return &nop->half_ready[num];
-      else
+      } else {
+         assert(num / 2 < ARRAY_SIZE(nop->full_ready));
          return &nop->full_ready[num / 2];
+      }
    } else {
-      if (matching_size)
+      if (matching_size) {
+         assert(num < ARRAY_SIZE(nop->full_ready));
          return &nop->full_ready[num];
+      }
       /* If "num" is large enough, then it can't alias a half-reg because only
        * the first half of the full reg speace aliases half regs. Return NULL in
        * this case.
