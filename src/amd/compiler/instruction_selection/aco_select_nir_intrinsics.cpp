@@ -1825,6 +1825,8 @@ get_memory_sync_info(nir_intrinsic_instr* instr, storage_class storage, unsigned
       semantics |= semantic_volatile;
    if (access & ACCESS_CAN_REORDER)
       semantics |= semantic_can_reorder | semantic_private;
+   else if (access & ACCESS_ATOMIC)
+      semantics |= semantic_atomic;
 
    return memory_sync_info(storage, semantics);
 }
@@ -2948,7 +2950,7 @@ visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
                        ? bld.def(RegClass::get(RegType::vgpr, bytes))
                        : Definition(dst);
    Instruction* ds = bld.ds(op, def, address, m, const_offset);
-   ds->ds().sync = memory_sync_info(storage_shared);
+   ds->ds().sync = get_memory_sync_info(instr, storage_shared, 0);
 
    if (m.isUndefined())
       ds->operands.pop_back();
@@ -3001,7 +3003,7 @@ visit_store_shared(isel_context* ctx, nir_intrinsic_instr* instr)
    assert(const_offset <= UINT16_MAX);
 
    Instruction* ds = bld.ds(op, address, data, m, const_offset);
-   ds->ds().sync = memory_sync_info(storage_shared);
+   ds->ds().sync = get_memory_sync_info(instr, storage_shared, 0);
 
    if (m.isUndefined())
       ds->operands.pop_back();
@@ -3215,7 +3217,7 @@ visit_access_shared2_amd(isel_context* ctx, nir_intrinsic_instr* instr)
                            : (is64bit ? aco_opcode::ds_read2_b64 : aco_opcode::ds_read2_b32);
       ds = bld.ds(op, tmp_dst, address, m, offset0, offset1);
    }
-   ds->ds().sync = memory_sync_info(storage_shared);
+   ds->ds().sync = get_memory_sync_info(instr, storage_shared, 0);
    if (m.isUndefined())
       ds->operands.pop_back();
 
