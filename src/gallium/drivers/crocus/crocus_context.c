@@ -182,48 +182,6 @@ crocus_get_sample_position(struct pipe_context *ctx,
    out_value[1] = u.a.y[sample_index];
 }
 
-/**
- * Destroy a context, freeing any associated memory.
- */
-static void
-crocus_destroy_context(struct pipe_context *ctx)
-{
-   struct crocus_context *ice = (struct crocus_context *)ctx;
-   struct crocus_screen *screen = (struct crocus_screen *)ctx->screen;
-
-   blorp_finish(&ice->blorp);
-
-   intel_perf_free_context(ice->perf_ctx);
-   if (ctx->stream_uploader)
-      u_upload_destroy(ctx->stream_uploader);
-
-   if (ice->blitter)
-      util_blitter_destroy(ice->blitter);
-   screen->vtbl.destroy_state(ice);
-
-   util_framebuffer_init(ctx, NULL, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
-   util_unreference_framebuffer_state(&ice->state.framebuffer);
-
-   for (unsigned i = 0; i < ARRAY_SIZE(ice->shaders.scratch_bos); i++) {
-      for (unsigned j = 0; j < ARRAY_SIZE(ice->shaders.scratch_bos[i]); j++)
-         crocus_bo_unreference(ice->shaders.scratch_bos[i][j]);
-   }
-
-   crocus_destroy_program_cache(ice);
-   u_upload_destroy(ice->query_buffer_uploader);
-
-   crocus_bo_unreference(ice->workaround_bo);
-
-   slab_destroy_child(&ice->transfer_pool);
-   slab_destroy_child(&ice->transfer_pool_unsync);
-
-   crocus_batch_free(&ice->batches[CROCUS_BATCH_RENDER]);
-   if (ice->batches[CROCUS_BATCH_COMPUTE].ice)
-      crocus_batch_free(&ice->batches[CROCUS_BATCH_COMPUTE]);
-
-   ralloc_free(ice);
-}
-
 #define genX_call(devinfo, func, ...)                   \
    switch ((devinfo)->verx10) {                         \
    case 80:                                             \
@@ -250,6 +208,49 @@ crocus_destroy_context(struct pipe_context *ctx)
    default:                                             \
       UNREACHABLE("Unknown hardware generation");       \
    }
+
+/**
+ * Destroy a context, freeing any associated memory.
+ */
+static void
+crocus_destroy_context(struct pipe_context *ctx)
+{
+   struct crocus_context *ice = (struct crocus_context *)ctx;
+   struct crocus_screen *screen = (struct crocus_screen *)ctx->screen;
+   const struct intel_device_info *devinfo = &screen->devinfo;
+
+   blorp_finish(&ice->blorp);
+
+   intel_perf_free_context(ice->perf_ctx);
+   if (ctx->stream_uploader)
+      u_upload_destroy(ctx->stream_uploader);
+
+   if (ice->blitter)
+      util_blitter_destroy(ice->blitter);
+   screen->vtbl.destroy_state(ice);
+
+   genX_call(devinfo, crocus_framebuffer_init, ctx, NULL, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
+   util_unreference_framebuffer_state(&ice->state.framebuffer);
+
+   for (unsigned i = 0; i < ARRAY_SIZE(ice->shaders.scratch_bos); i++) {
+      for (unsigned j = 0; j < ARRAY_SIZE(ice->shaders.scratch_bos[i]); j++)
+         crocus_bo_unreference(ice->shaders.scratch_bos[i][j]);
+   }
+
+   crocus_destroy_program_cache(ice);
+   u_upload_destroy(ice->query_buffer_uploader);
+
+   crocus_bo_unreference(ice->workaround_bo);
+
+   slab_destroy_child(&ice->transfer_pool);
+   slab_destroy_child(&ice->transfer_pool_unsync);
+
+   crocus_batch_free(&ice->batches[CROCUS_BATCH_RENDER]);
+   if (ice->batches[CROCUS_BATCH_COMPUTE].ice)
+      crocus_batch_free(&ice->batches[CROCUS_BATCH_COMPUTE]);
+
+   ralloc_free(ice);
+}
 
 /**
  * Create a context.

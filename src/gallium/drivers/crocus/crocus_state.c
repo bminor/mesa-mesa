@@ -3371,6 +3371,45 @@ crocus_set_viewport_states(struct pipe_context *ctx,
       ice->state.dirty |= CROCUS_DIRTY_CC_VIEWPORT;
 }
 
+void
+genX(crocus_framebuffer_init)(struct pipe_context *pctx, const struct pipe_framebuffer_state *fb, struct pipe_surface **cbufs, struct pipe_surface **zsbuf)
+{
+   if (fb) {
+      for (unsigned i = 0; i < fb->nr_cbufs; i++) {
+         if (cbufs[i] && pipe_surface_equal(&fb->cbufs[i], cbufs[i]))
+            continue;
+
+         struct pipe_surface *psurf = fb->cbufs[i].texture ? crocus_create_surface(pctx, fb->cbufs[i].texture, &fb->cbufs[i]) : NULL;
+         if (cbufs[i])
+            crocus_surface_destroy(pctx, cbufs[i]);
+         cbufs[i] = psurf;
+      }
+
+      for (unsigned i = fb->nr_cbufs; i < PIPE_MAX_COLOR_BUFS; i++) {
+         if (cbufs[i])
+            crocus_surface_destroy(pctx, cbufs[i]);
+         cbufs[i] = NULL;
+      }
+
+      if (*zsbuf && pipe_surface_equal(&fb->zsbuf, *zsbuf))
+         return;
+      struct pipe_surface *zsurf = fb->zsbuf.texture ? crocus_create_surface(pctx, fb->zsbuf.texture, &fb->zsbuf) : NULL;
+      if (*zsbuf)
+         crocus_surface_destroy(pctx, *zsbuf);
+      *zsbuf = zsurf;
+   } else {
+      for (unsigned i = 0; i < PIPE_MAX_COLOR_BUFS; i++) {
+         if (cbufs[i])
+            crocus_surface_destroy(pctx, cbufs[i]);
+         cbufs[i] = NULL;
+      }
+      if (*zsbuf)
+         crocus_surface_destroy(pctx, *zsbuf);
+      *zsbuf = NULL;
+   }
+}
+
+
 /**
  * The pipe->set_framebuffer_state() driver hook.
  *
@@ -3432,7 +3471,7 @@ crocus_set_framebuffer_state(struct pipe_context *ctx,
 
    /* wm thread dispatch enable */
    ice->state.dirty |= CROCUS_DIRTY_WM;
-   util_framebuffer_init(ctx, state, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
+   genX(crocus_framebuffer_init)(ctx, state, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
    util_copy_framebuffer_state(cso, state);
    cso->samples = samples;
    cso->layers = layers;
@@ -9231,7 +9270,6 @@ genX(crocus_init_state)(struct crocus_context *ice)
    ctx->create_rasterizer_state = crocus_create_rasterizer_state;
    ctx->create_sampler_state = crocus_create_sampler_state;
    ctx->create_sampler_view = crocus_create_sampler_view;
-   ctx->create_surface = crocus_create_surface;
    ctx->create_vertex_elements_state = crocus_create_vertex_elements;
    ctx->bind_blend_state = crocus_bind_blend_state;
    ctx->bind_depth_stencil_alpha_state = crocus_bind_zsa_state;
