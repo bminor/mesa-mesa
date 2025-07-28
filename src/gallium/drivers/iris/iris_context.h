@@ -1222,9 +1222,10 @@ struct iris_gen_indirect_params {
 };
 
 #define perf_debug(dbg, ...) do {                      \
+   void *__var = (void*)(dbg);                         \
    if (INTEL_DEBUG(DEBUG_PERF))                        \
       dbg_printf(__VA_ARGS__);                         \
-   if (unlikely(dbg))                                  \
+   if (unlikely(__var))                                \
       util_debug_message(dbg, PERF_INFO, __VA_ARGS__); \
 } while(0)
 
