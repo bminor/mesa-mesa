@@ -431,6 +431,8 @@ void i915_init_string_functions(struct i915_context *i915);
 struct pipe_context *i915_create_context(struct pipe_screen *screen, void *priv,
                                          unsigned flags);
 
+void
+i915_framebuffer_init(struct pipe_context *pctx, const struct pipe_framebuffer_state *fb, struct pipe_surface **cbufs, struct pipe_surface **zsbuf);
 /***********************************************************************
  * Inline conversion functions.  These are better-typed than the
  * macros used previously:

@@ -46,6 +46,7 @@
 #include "i915_resource.h"
 #include "i915_state.h"
 #include "i915_state_inlines.h"
+#include "i915_surface.h"
 
 static void i915_delete_fs_state(struct pipe_context *pipe, void *shader);
 
@@ -861,13 +862,51 @@ i915_sampler_view_destroy(struct pipe_context *pipe,
    FREE(view);
 }
 
+void
+i915_framebuffer_init(struct pipe_context *pctx, const struct pipe_framebuffer_state *fb, struct pipe_surface **cbufs, struct pipe_surface **zsbuf)
+{
+   if (fb) {
+      for (unsigned i = 0; i < fb->nr_cbufs; i++) {
+         if (cbufs[i] && pipe_surface_equal(&fb->cbufs[i], cbufs[i]))
+            continue;
+
+         struct pipe_surface *psurf = fb->cbufs[i].texture ? i915_create_surface(pctx, fb->cbufs[i].texture, &fb->cbufs[i]) : NULL;
+         if (cbufs[i])
+            i915_surface_destroy(pctx, cbufs[i]);
+         cbufs[i] = psurf;
+      }
+
+      for (unsigned i = fb->nr_cbufs; i < 1; i++) {
+         if (cbufs[i])
+            i915_surface_destroy(pctx, cbufs[i]);
+         cbufs[i] = NULL;
+      }
+
+      if (*zsbuf && pipe_surface_equal(&fb->zsbuf, *zsbuf))
+         return;
+      struct pipe_surface *zsurf = fb->zsbuf.texture ? i915_create_surface(pctx, fb->zsbuf.texture, &fb->zsbuf) : NULL;
+      if (*zsbuf)
+         i915_surface_destroy(pctx, *zsbuf);
+      *zsbuf = zsurf;
+   } else {
+      for (unsigned i = 0; i < 1; i++) {
+         if (cbufs[i])
+            i915_surface_destroy(pctx, cbufs[i]);
+         cbufs[i] = NULL;
+      }
+      if (*zsbuf)
+         i915_surface_destroy(pctx, *zsbuf);
+      *zsbuf = NULL;
+   }
+}
+
 static void
 i915_set_framebuffer_state(struct pipe_context *pipe,
                            const struct pipe_framebuffer_state *fb)
 {
    struct i915_context *i915 = i915_context(pipe);
 
-   util_framebuffer_init(pipe, fb, i915->fb_cbufs, &i915->fb_zsbuf);
+   i915_framebuffer_init(pipe, fb, i915->fb_cbufs, &i915->fb_zsbuf);
    util_copy_framebuffer_state(&i915->framebuffer, fb);
    if (fb->nr_cbufs) {
       struct i915_surface *surf = i915_surface(i915->fb_cbufs[0]);
