@@ -11,3 +11,5 @@ KHR-Single-GL46.arrays_of_arrays_gl.SubroutineFunctionCalls2
 spec@ext_external_objects@vk-ping-pong-multi-sem
 spec@ext_external_objects@vk-ping-pong-single-sem
 
+# some kind of kernel issue here crashes xwayland
+glx.*
