@@ -599,6 +599,7 @@ update_gfx_program(struct zink_context *ctx, struct zink_gfx_program *prog)
 void
 zink_gfx_program_update(struct zink_context *ctx)
 {
+   assert(!ctx->gfx_stages[MESA_SHADER_TESS_CTRL] || !ctx->gfx_stages[MESA_SHADER_TESS_CTRL]->non_fs.is_generated);
    if (ctx->last_vertex_stage_dirty) {
       gl_shader_stage pstage = ctx->last_vertex_stage->info.stage;
       ctx->dirty_gfx_stages |= BITFIELD_BIT(pstage);
@@ -719,6 +720,7 @@ void
 zink_gfx_program_update_optimal(struct zink_context *ctx)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
+   assert(!ctx->gfx_stages[MESA_SHADER_TESS_CTRL] || !ctx->gfx_stages[MESA_SHADER_TESS_CTRL]->non_fs.is_generated);
    if (ctx->gfx_dirty) {
       struct zink_gfx_program *prog = NULL;
       ctx->gfx_pipeline_state.optimal_key = zink_sanitize_optimal_key(ctx->gfx_stages, ctx->gfx_pipeline_state.shader_keys_optimal.key.val);
@@ -2047,13 +2049,6 @@ zink_bind_tes_state(struct pipe_context *pctx,
    struct zink_context *ctx = zink_context(pctx);
    if (!cso && !ctx->gfx_stages[MESA_SHADER_TESS_EVAL])
       return;
-   if (!!ctx->gfx_stages[MESA_SHADER_TESS_EVAL] != !!cso) {
-      if (!cso) {
-         /* if unsetting a TESS that uses a generated TCS, ensure the TCS is unset */
-         if (ctx->gfx_stages[MESA_SHADER_TESS_CTRL] == ctx->gfx_stages[MESA_SHADER_TESS_EVAL]->non_fs.generated_tcs)
-            ctx->gfx_stages[MESA_SHADER_TESS_CTRL] = NULL;
-      }
-   }
    struct zink_shader *prev_shader = ctx->gfx_stages[MESA_SHADER_TESS_EVAL];
    bind_gfx_stage(ctx, MESA_SHADER_TESS_EVAL, cso);
    bind_last_vertex_stage(ctx, MESA_SHADER_TESS_EVAL, prev_shader);
