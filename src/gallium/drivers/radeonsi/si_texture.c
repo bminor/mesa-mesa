@@ -1314,6 +1314,23 @@ error:
    return NULL;
 }
 
+static enum pipe_format
+si_get_plane_format(enum pipe_format format, unsigned plane)
+{
+   enum pipe_format fmt = util_format_get_plane_format(format, plane);
+
+   switch (fmt) {
+   case PIPE_FORMAT_X6R10_UNORM:
+   case PIPE_FORMAT_X4R12_UNORM:
+      return PIPE_FORMAT_R16_UNORM;
+   case PIPE_FORMAT_X6R10X6G10_UNORM:
+   case PIPE_FORMAT_X4R12X4G12_UNORM:
+      return PIPE_FORMAT_R16G16_UNORM;
+   default:
+      return fmt;
+   }
+}
+
 static enum radeon_surf_mode si_choose_tiling(struct si_screen *sscreen,
                                               const struct pipe_resource *templ,
                                               bool tc_compatible_htile)
@@ -1422,7 +1439,7 @@ si_texture_create_with_modifier(struct pipe_screen *screen,
    /* Compute texture or plane layouts and offsets. */
    for (unsigned i = 0; i < num_planes; i++) {
       plane_templ[i] = *templ;
-      plane_templ[i].format = util_format_get_plane_format(templ->format, i);
+      plane_templ[i].format = si_get_plane_format(templ->format, i);
       plane_templ[i].width0 = util_format_get_plane_width(templ->format, i, templ->width0);
       plane_templ[i].height0 = util_format_get_plane_height(templ->format, i, templ->height0);
 
