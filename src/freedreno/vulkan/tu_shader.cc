@@ -2855,7 +2855,7 @@ tu_shader_create(struct tu_device *dev,
    }
    case MESA_SHADER_FRAGMENT: {
       const struct ir3_shader_variant *fs = shader->variant;
-      shader->fs.per_samp = fs->sample_shading || ir3_key->sample_shading;
+      shader->fs.sample_shading = fs->sample_shading || ir3_key->sample_shading;
       shader->fs.has_fdm = key->fragment_density_map;
       if (fs->has_kill)
          shader->fs.lrz.status |= TU_LRZ_FORCE_DISABLE_WRITE;

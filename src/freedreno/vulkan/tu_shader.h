@@ -95,7 +95,11 @@ struct tu_shader
       } tes;
 
       struct {
-         bool per_samp;
+         /* Set if the FS should be run at sample rate instead of pixel rate (by
+          * sample-rate variable usage, or
+          * VkPipelineMultisampleStateCreateInfo->sampleShadingEnable.
+          */
+         bool sample_shading;
          bool has_fdm;
 
          uint16_t dynamic_input_attachments_used;
@@ -116,7 +120,7 @@ struct tu_shader_key {
    unsigned multiview_mask;
    uint16_t read_only_input_attachments;
    uint8_t max_fdm_layers;
-   bool force_sample_interp;
+   bool force_sample_interp; /* Set when VkPipelineMultisampleStateCreateInfo->sampleShadingEnable */
    bool fragment_density_map;
    bool fdm_per_layer;
    bool dynamic_renderpass;

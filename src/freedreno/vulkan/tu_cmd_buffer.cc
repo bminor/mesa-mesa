@@ -6361,7 +6361,7 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       zmode = A6XX_EARLY_Z_LATE_Z;
 
    if (zmode == A6XX_EARLY_Z_LATE_Z &&
-       (cmd->state.stencil_written_on_depth_fail || fs->fs.per_samp ||
+       (cmd->state.stencil_written_on_depth_fail || fs->fs.sample_shading ||
         !vk_format_has_depth(depth_format) || !ds_test_enable)) {
       zmode = A6XX_LATE_Z;
    }
@@ -6454,7 +6454,7 @@ tu_emit_fdm_params(struct tu_cmd_buffer *cmd,
                    unsigned num_units)
 {
    STATIC_ASSERT(IR3_DP_FS(frag_invocation_count) == IR3_DP_FS_DYNAMIC);
-   tu_cs_emit(cs, fs->fs.per_samp ?
+   tu_cs_emit(cs, fs->fs.sample_shading ?
               cmd->vk.dynamic_graphics_state.ms.rasterization_samples : 1);
    tu_cs_emit(cs, 0);
    tu_cs_emit(cs, 0);
