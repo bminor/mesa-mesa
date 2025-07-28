@@ -926,7 +926,7 @@ emit_fs_inputs(struct fd_ringbuffer *ring, const struct program_builder *b)
    uint32_t ij_regid[IJ_COUNT];
    uint32_t smask_in_regid;
 
-   bool sample_shading = fs->sample_shading | fs->key.sample_shading;
+   bool sample_shading = fs->sample_shading;
    bool enable_varyings = fs->total_in > 0;
 
    samp_id_regid   = ir3_find_sysval_regid(fs, SYSTEM_VALUE_SAMPLE_ID);

@@ -385,7 +385,6 @@ struct ir3_shader_key {
          /*
           * Fragment shader variant parameters:
           */
-         unsigned sample_shading : 1;
          unsigned msaa           : 1;
          /* used when shader needs to handle flat varyings (a4xx)
           * for front/back color inputs to frag shader:
@@ -849,8 +848,10 @@ struct ir3_shader_variant {
     */
    bool has_kill;
 
-   /* Whether the shader should is run at sample rate (set by using a variable
-    * that implicitly enables it)
+   /* Whether the shader should run at sample rate (set by
+    * info->fs.uses_sample_shading, which is set when using a variable that
+    * implicitly enables it, or glMinSampleShading() or
+    * VkPipelineMultisampleStateCreateInfo->sampleShadingEnable forcing it.
     */
    bool sample_shading;
 

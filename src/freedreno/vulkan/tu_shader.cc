@@ -1757,7 +1757,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
    uint32_t ij_regid[IJ_COUNT];
    uint32_t smask_in_regid, shading_rate_regid;
 
-   bool sample_shading = fs->sample_shading | fs->key.sample_shading;
+   bool sample_shading = fs->sample_shading;
    bool enable_varyings = fs->total_in > 0;
 
    samp_id_regid   = ir3_find_sysval_regid(fs, SYSTEM_VALUE_SAMPLE_ID);
@@ -2697,6 +2697,7 @@ tu_shader_create(struct tu_device *dev,
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT && key->force_sample_interp) {
+      nir->info.fs.uses_sample_shading = true;
       nir_foreach_shader_in_variable(var, nir) {
          if (!var->data.centroid)
             var->data.sample = true;
@@ -2855,7 +2856,7 @@ tu_shader_create(struct tu_device *dev,
    }
    case MESA_SHADER_FRAGMENT: {
       const struct ir3_shader_variant *fs = shader->variant;
-      shader->fs.sample_shading = fs->sample_shading || ir3_key->sample_shading;
+      shader->fs.sample_shading = fs->sample_shading;
       shader->fs.has_fdm = key->fragment_density_map;
       if (fs->has_kill)
          shader->fs.lrz.status |= TU_LRZ_FORCE_DISABLE_WRITE;
@@ -3045,8 +3046,6 @@ tu_compile_shaders(struct tu_device *device,
 
    if (nir[MESA_SHADER_GEOMETRY])
       ir3_key.has_gs = true;
-
-   ir3_key.sample_shading = keys[MESA_SHADER_FRAGMENT].force_sample_interp;
 
    if (nir_initial_disasm) {
       for (gl_shader_stage stage = MESA_SHADER_VERTEX;
