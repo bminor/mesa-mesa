@@ -693,19 +693,6 @@ lower_ucp(struct st_context *st,
    }
 }
 
-static bool
-force_persample_shading(struct nir_builder *b, nir_intrinsic_instr *intr,
-                        void *data)
-{
-   if (intr->intrinsic == nir_intrinsic_load_barycentric_pixel ||
-       intr->intrinsic == nir_intrinsic_load_barycentric_centroid) {
-      intr->intrinsic = nir_intrinsic_load_barycentric_sample;
-      return true;
-   }
-
-   return false;
-}
-
 static int
 xfb_compare_dst_offset(const void *a, const void *b)
 {
@@ -1075,8 +1062,6 @@ st_create_fp_variant(struct st_context *st,
 
    if (key->persample_shading) {
       nir_shader *shader = state.ir.nir;
-      nir_shader_intrinsics_pass(shader, force_persample_shading,
-                                 nir_metadata_all, NULL);
 
       /* In addition to requiring per-sample interpolation, sample shading
        * changes the behaviour of gl_SampleMaskIn, so we need per-sample shading
@@ -1084,6 +1069,7 @@ st_create_fp_variant(struct st_context *st,
        * uses_sample_shading won't be set by glsl_to_nir. We need to do so here.
        */
       shader->info.fs.uses_sample_shading = true;
+      nir_lower_sample_shading(shader);
 
       finalize = true;
    }

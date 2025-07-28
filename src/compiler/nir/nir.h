@@ -5417,6 +5417,7 @@ bool nir_lower_uniforms_to_ubo(nir_shader *shader, bool dword_packed, bool load_
 bool nir_lower_is_helper_invocation(nir_shader *shader);
 
 bool nir_lower_single_sampled(nir_shader *shader);
+bool nir_lower_sample_shading(nir_shader *shader);
 
 bool nir_lower_atomics(nir_shader *shader, nir_instr_filter_cb filter);
 

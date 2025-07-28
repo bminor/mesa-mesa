@@ -215,6 +215,7 @@ else
   'nir_lower_returns.c',
   'nir_lower_robust_access.c',
   'nir_lower_samplers.c',
+  'nir_lower_sample_shading.c',
   'nir_lower_scratch.c',
   'nir_lower_scratch_to_var.c',
   'nir_lower_shader_calls.c',
