@@ -847,11 +847,13 @@ v3d_resource_create_with_modifiers(struct pipe_screen *pscreen,
         if (screen->ro && (tmpl->bind & PIPE_BIND_SCANOUT)) {
                 assert(!rsc->tiled);
                 struct winsys_handle handle;
+                uint32_t scanout_height =
+                        align(rsc->size + V3D_TFU_READAHEAD_SIZE, 4096) / 4096;
                 struct pipe_resource scanout_tmpl = {
                         .target = prsc->target,
                         .format = PIPE_FORMAT_RGBA8888_UNORM,
                         .width0 = 1024, /* one page */
-                        .height0 = align(rsc->size, 4096) / 4096,
+                        .height0 = scanout_height,
                         .depth0 = 1,
                         .array_size = 1,
                 };
