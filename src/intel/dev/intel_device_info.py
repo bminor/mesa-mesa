@@ -288,9 +288,6 @@ Struct("intel_device_info",
         Member("bool", "supports_simd16_3src", compiler_field=True),
         Member("bool", "disable_ccs_repack"),
 
-        Member("bool", "has_illegal_ccs_values",
-               comment="True if CCS needs to be initialized before use."),
-
         Member("bool", "has_flat_ccs",
                comment=dedent("""\
                True if CCS uses a flat virtual address translation to a memory

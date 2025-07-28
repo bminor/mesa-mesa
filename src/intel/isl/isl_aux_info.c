@@ -173,7 +173,6 @@ isl_aux_get_initial_state(const struct intel_device_info *devinfo,
           */
          return ISL_AUX_STATE_PASS_THROUGH;
       } else if (devinfo->ver >= 12) {
-         assert(!devinfo->has_illegal_ccs_values);
          /* From Bspec 47709, "MCS/CCS Buffers for Render Target(s)":
           *
           *    "CCS surface does not require initialization. Illegal CCS
