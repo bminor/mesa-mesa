@@ -269,6 +269,7 @@ EXT(EXT_map_buffer_range                    , ARB_map_buffer_range              
 EXT(EXT_memory_object                       , EXT_memory_object                      , GLL, GLC,  x , ES2, 2017)
 EXT(EXT_memory_object_fd                    , EXT_memory_object_fd                   , GLL, GLC,  x , ES2, 2017)
 EXT(EXT_memory_object_win32                 , EXT_memory_object_win32                , GLL, GLC,  x , ES2, 2017)
+EXT(EXT_mesh_shader                         , EXT_mesh_shader                        ,  45,  45,  x ,  32, 2025)
 EXT(EXT_multi_draw_arrays                   , dummy_true                             , GLL,  x , ES1, ES2, 1999)
 EXT(EXT_multi_draw_indirect                 , ARB_draw_indirect                      ,  x ,  x,  x ,   31, 2014)
 EXT(EXT_multisampled_render_to_texture      , EXT_multisampled_render_to_texture     ,  x ,  x ,  x , ES2, 2016)

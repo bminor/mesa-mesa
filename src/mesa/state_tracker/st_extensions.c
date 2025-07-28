@@ -1102,6 +1102,7 @@ void st_init_extensions(struct pipe_screen *screen,
 #else
    EXT_CAP(EXT_memory_object_win32,          memobj);
 #endif
+   EXT_CAP(EXT_mesh_shader,                  mesh_shader);
    EXT_CAP(EXT_multisampled_render_to_texture, surface_sample_count);
    EXT_CAP(EXT_semaphore,                    fence_signal);
 #ifndef _WIN32
