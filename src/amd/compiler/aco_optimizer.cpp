@@ -652,6 +652,60 @@ format_is(Format f1, Format f2)
    return ((Format)((uint32_t)f1 & (uint32_t)f2)) == f2;
 }
 
+bool
+try_vinterp_inreg(opt_ctx& ctx, alu_opt_info& info)
+{
+   if (ctx.program->gfx_level < GFX11 || info.opcode != aco_opcode::v_fma_f32 || info.omod)
+      return false;
+
+   bool fp16 = info.f32_to_f16;
+   for (auto& op_info : info.operands) {
+      if (op_info.abs[0] || op_info.dpp8 || (op_info.dpp16 && !op_info.fi))
+         return false;
+      fp16 |= op_info.f16_to_f32;
+      if (!op_info.op.isOfType(RegType::vgpr))
+         return false;
+   }
+
+   if (info.operands[0].dpp16 == info.operands[1].dpp16)
+      return false;
+
+   bool swap = info.operands[1].dpp16;
+   bool p2 = !info.operands[2].dpp16;
+
+   if (fp16) {
+      if (info.f32_to_f16 != p2 || !info.operands[swap].f16_to_f32 ||
+          info.operands[!swap].f16_to_f32 || info.operands[2].f16_to_f32 == p2)
+         return false;
+   }
+
+   if (p2) {
+      if (info.operands[swap].dpp_ctrl != dpp_quad_perm(2, 2, 2, 2))
+         return false;
+      info.opcode =
+         fp16 ? aco_opcode::v_interp_p2_f16_f32_inreg : aco_opcode::v_interp_p2_f32_inreg;
+   } else {
+      if (info.operands[2].dpp_ctrl != dpp_quad_perm(0, 0, 0, 0))
+         return false;
+      if (info.operands[swap].dpp_ctrl != dpp_quad_perm(1, 1, 1, 1))
+         return false;
+      info.opcode =
+         fp16 ? aco_opcode::v_interp_p10_f16_f32_inreg : aco_opcode::v_interp_p10_f32_inreg;
+   }
+
+   info.f32_to_f16 = false;
+   for (auto& op_info : info.operands) {
+      op_info.dpp16 = false;
+      op_info.f16_to_f32 = false;
+   }
+
+   if (swap)
+      std::swap(info.operands[0], info.operands[1]);
+
+   info.format = Format::VINTERP_INREG;
+   return true;
+}
+
 /* Determine if this alu_opt_info can be represented by a valid ACO IR instruction.
  * info is modified to not duplicate work when it's converted to an ACO IR instruction.
  * If false is returned, info must no longer be used.
@@ -834,6 +888,9 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
          return false;
       }
    }
+
+   /* convert to VINTERP_INREG */
+   try_vinterp_inreg(ctx, info);
 
    /* convert to v_fma_mix */
    bool uses_f2f32 = false;
@@ -1209,10 +1266,6 @@ alu_opt_gather_info(opt_ctx& ctx, Instruction* instr, alu_opt_info& info)
        instr->opcode == aco_opcode::v_mqsad_u32_u8)
       return false;
 
-   /* TODO handle when this is used for output modifiers. */
-   if (instr->isVINTERP_INREG())
-      return false;
-
    switch (instr->opcode) {
    case aco_opcode::s_addk_i32:
    case aco_opcode::s_cmovk_i32:
@@ -1296,7 +1349,33 @@ alu_opt_gather_info(opt_ctx& ctx, Instruction* instr, alu_opt_info& info)
       info.operands.push_back(op_info);
    }
 
-   if (instr->isDPP16()) {
+   if (instr->isVINTERP_INREG()) {
+      switch (instr->opcode) {
+      case aco_opcode::v_interp_p10_f16_f32_inreg:
+         info.operands[0].f16_to_f32 = true;
+         info.operands[2].f16_to_f32 = true;
+         FALLTHROUGH;
+      case aco_opcode::v_interp_p10_f32_inreg:
+         info.operands[0].dpp_ctrl = dpp_quad_perm(1, 1, 1, 1);
+         info.operands[2].dpp_ctrl = dpp_quad_perm(0, 0, 0, 0);
+         info.operands[2].dpp16 = true;
+         info.operands[2].fi = true;
+         break;
+      case aco_opcode::v_interp_p2_f16_f32_inreg:
+         info.operands[0].f16_to_f32 = true;
+         info.f32_to_f16 = true;
+         FALLTHROUGH;
+      case aco_opcode::v_interp_p2_f32_inreg:
+         info.operands[0].dpp_ctrl = dpp_quad_perm(2, 2, 2, 2);
+         break;
+      default: return false;
+      }
+      info.opcode = aco_opcode::v_fma_f32;
+      info.operands[0].dpp16 = true;
+      info.operands[0].fi = true;
+      /* Anything else doesn't make sense before scheduling. */
+      assert(instr->vinterp_inreg().wait_exp == 7);
+   } else if (instr->isDPP16()) {
       info.operands[0].dpp16 = true;
       info.operands[0].dpp_ctrl = instr->dpp16().dpp_ctrl;
       info.operands[0].fi = instr->dpp16().fetch_inactive;
@@ -1489,7 +1568,9 @@ alu_opt_info_to_instr(opt_ctx& ctx, alu_opt_info& info, Instruction* old_instr)
       instr->valu().clamp = info.clamp;
    }
 
-   if (instr->isDPP16()) {
+   if (instr->isVINTERP_INREG()) {
+      instr->vinterp_inreg().wait_exp = 7;
+   } else if (instr->isDPP16()) {
       instr->dpp16().dpp_ctrl = info.operands[0].dpp_ctrl;
       instr->dpp16().fetch_inactive = info.operands[0].fi;
       instr->dpp16().bound_ctrl = info.operands[0].bc;
