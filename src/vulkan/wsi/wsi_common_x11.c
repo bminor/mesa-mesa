@@ -1798,10 +1798,16 @@ x11_acquire_next_image(struct wsi_swapchain *wsi_chain,
    } else {
       result = wsi_queue_pull(&chain->acquire_queue,
                               image_index, timeout);
+
+      /* x11_wait_for_explicit_sync_release_submission() is smart enough to do
+       * this for us but wsi_queue_pull() isn't.
+       */
+      if (result == VK_TIMEOUT && info->timeout == 0)
+         result = VK_NOT_READY;
    }
 
-   if (result == VK_TIMEOUT)
-      return info->timeout ? VK_TIMEOUT : VK_NOT_READY;
+   if (result == VK_TIMEOUT || result == VK_NOT_READY)
+      return result;
 
    if (result < 0) {
       mtx_lock(&chain->thread_state_lock);
