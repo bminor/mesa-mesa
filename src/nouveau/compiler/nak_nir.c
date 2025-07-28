@@ -582,12 +582,16 @@ nak_nir_lower_system_value_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
          val = nir_imm_int(b, 0);
       } else {
          assert(!b->shader->info.workgroup_size_variable);
-         nir_def *tid_x = nak_nir_load_sysval(b, NAK_SV_TID_X,
-                                              ACCESS_CAN_REORDER);
-         nir_def *tid_y = nak_nir_load_sysval(b, NAK_SV_TID_Y,
-                                              ACCESS_CAN_REORDER);
-         nir_def *tid_z = nak_nir_load_sysval(b, NAK_SV_TID_Z,
-                                              ACCESS_CAN_REORDER);
+
+         nir_def *tid_x = b->shader->info.workgroup_size[0] > 1
+            ? nak_nir_load_sysval(b, NAK_SV_TID_X, ACCESS_CAN_REORDER)
+            : nir_imm_int(b, 0);
+         nir_def *tid_y = b->shader->info.workgroup_size[1] > 1
+            ? nak_nir_load_sysval(b, NAK_SV_TID_Y, ACCESS_CAN_REORDER)
+            : nir_imm_int(b, 0);
+         nir_def *tid_z = b->shader->info.workgroup_size[2] > 1
+            ? nak_nir_load_sysval(b, NAK_SV_TID_Z, ACCESS_CAN_REORDER)
+            : nir_imm_int(b, 0);
 
          const uint16_t *wg_size = b->shader->info.workgroup_size;
          nir_def *tid =
