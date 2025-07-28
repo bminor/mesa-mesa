@@ -1274,7 +1274,7 @@
         "description": "docs/features: add missing panvk extension",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef91ad64d5cd3b202dc0b3ddcc29277e2c8b49ec",
         "notes": null
