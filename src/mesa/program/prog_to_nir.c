@@ -25,7 +25,7 @@
 
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
-#include "compiler/glsl/list.h"
+#include "compiler/list.h"
 
 #include "main/mtypes.h"
 #include "main/shader_types.h"

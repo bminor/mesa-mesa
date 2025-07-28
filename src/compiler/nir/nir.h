@@ -30,7 +30,7 @@
 
 #include <stdint.h>
 #include "compiler/glsl_types.h"
-#include "compiler/glsl/list.h"
+#include "compiler/list.h"
 #include "compiler/shader_enums.h"
 #include "compiler/shader_info.h"
 #include "util/bitset.h"

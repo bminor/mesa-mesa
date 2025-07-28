@@ -10,7 +10,7 @@
  * \brief NIR translation functions.
  */
 
-#include "compiler/glsl/list.h"
+#include "compiler/list.h"
 #include "compiler/shader_enums.h"
 #include "hwdef/rogue_hw_defs.h"
 #include "pco.h"

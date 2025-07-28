@@ -165,7 +165,6 @@ files_libglsl = files(
   'ir_visitor.h',
   'linker_util.h',
   'linker_util.cpp',
-  'list.h',
   'lower_builtins.cpp',
   'lower_instructions.cpp',
   'lower_jumps.cpp',

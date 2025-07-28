@@ -23,7 +23,7 @@
  */
 
 #include "nir_builder.h"
-#include "glsl/list.h"
+#include "list.h"
 #include "util/list.h"
 #include "util/ralloc.h"
 #include "glsl_types.h"
