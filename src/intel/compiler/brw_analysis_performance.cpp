@@ -599,10 +599,16 @@ namespace {
                                      30 /* XXX */, 0,
                                      10 /* XXX */, 300 /* XXX */, 0, 0, 0, 0);
             default:
-               return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0,
-                                     0, 450 /* XXX */,
-                                     10 /* XXX */, 300 /* XXX */, 0, 0,
-                                     0, 0);
+               if (devinfo->ver >= 30)
+                  return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0,
+                                        0, 400 /* XXX */,
+                                        10 /* XXX */, 300 /* XXX */, 0, 0,
+                                        0, 0);
+               else
+                  return calculate_desc(info, EU_UNIT_DP_RC, 2, 0, 0,
+                                        0, 450 /* XXX */,
+                                        10 /* XXX */, 300 /* XXX */, 0, 0,
+                                        0, 0);
             }
          case BRW_SFID_SAMPLER: {
             return calculate_desc(info, EU_UNIT_SAMPLER, 2, 0, 0, 0, 16,
