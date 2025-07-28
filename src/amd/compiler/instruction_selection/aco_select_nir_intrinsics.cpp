@@ -2958,9 +2958,10 @@ visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
        * addresses, if another wave writes LDS in between. Use v_readfirstlane instead of
        * p_as_uniform in order to avoid copy-propagation.
        */
-      bool readfirstlane_for_uniform = ctx->options->gfx_level >= GFX10 &&
-                                       ctx->program->wave_size == 64 &&
-                                       ctx->program->workgroup_size > 64;
+      bool atomic = nir_intrinsic_access(instr) & ACCESS_ATOMIC;
+      bool readfirstlane_for_uniform =
+         ctx->options->gfx_level >= GFX10 && ctx->program->wave_size == 64 &&
+         ctx->program->workgroup_size > 64 && (atomic || !ctx->shader->info.assume_no_data_races);
       emit_vector_as_uniform(ctx, def.getTemp(), dst, readfirstlane_for_uniform);
    }
 
@@ -3222,9 +3223,11 @@ visit_access_shared2_amd(isel_context* ctx, nir_intrinsic_instr* instr)
       Temp dst = get_ssa_temp(ctx, &instr->def);
       if (dst.type() == RegType::sgpr) {
          /* Similar to load_shared. */
+         bool atomic = nir_intrinsic_access(instr) & ACCESS_ATOMIC;
          bool readfirstlane_for_uniform = ctx->options->gfx_level >= GFX10 &&
                                           ctx->program->wave_size == 64 &&
-                                          ctx->program->workgroup_size > 64;
+                                          ctx->program->workgroup_size > 64 &&
+                                          (atomic || !ctx->shader->info.assume_no_data_races);
 
          emit_split_vector(ctx, ds->definitions[0].getTemp(), dst.size());
          Temp comp[4];
