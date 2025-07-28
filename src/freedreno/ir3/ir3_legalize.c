@@ -105,6 +105,9 @@ ir3_required_sync_flags(struct ir3_legalize_state *state,
       else
          reg = n->srcs[i - n->dsts_count];
 
+      if (reg->flags & IR3_REG_DUMMY)
+         continue;
+
       if (is_reg_gpr(reg)) {
 
          /* TODO: we probably only need (ss) for alu
@@ -160,7 +163,7 @@ ir3_required_sync_flags(struct ir3_legalize_state *state,
    }
 
    foreach_dst (reg, n) {
-      if (reg->flags & IR3_REG_RT)
+      if (reg->flags & (IR3_REG_RT | IR3_REG_DUMMY))
          continue;
       if (needs_sy_war(state, reg)) {
          flags |= IR3_INSTR_SY;
@@ -530,7 +533,7 @@ delay_update(struct ir3_compiler *compiler,
       return;
 
    foreach_dst_n (dst, n, instr) {
-      if (dst->flags & IR3_REG_RT)
+      if (dst->flags & (IR3_REG_RT | IR3_REG_DUMMY))
          continue;
 
       unsigned elems = post_ra_reg_elems(dst);

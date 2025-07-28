@@ -474,7 +474,7 @@ calculate_deps(struct ir3_postsched_deps_state *state,
     * in the reverse direction) wrote any of our src registers:
     */
    foreach_src_n (reg, i, node->instr) {
-      if (reg->flags & (IR3_REG_CONST | IR3_REG_IMMED))
+      if (reg->flags & (IR3_REG_CONST | IR3_REG_IMMED | IR3_REG_DUMMY))
          continue;
 
       if (reg->flags & IR3_REG_RELATIV) {
@@ -495,7 +495,7 @@ calculate_deps(struct ir3_postsched_deps_state *state,
    foreach_dst_n (reg, i, node->instr) {
       if (reg->wrmask == 0)
          continue;
-      if (reg->flags & IR3_REG_RT)
+      if (reg->flags & (IR3_REG_RT | IR3_REG_DUMMY))
          continue;
       if (reg->flags & IR3_REG_RELATIV) {
          /* mark the entire array as written: */

@@ -185,6 +185,11 @@ typedef enum ir3_register_flags {
     * IR3_REG_FIRST_ALIAS set.
     */
    IR3_REG_FIRST_ALIAS = BIT(22),
+
+   /* Set for registers that should be ignored by all passes. For example, the
+    * dummy src and dst of prefetch sam/ldc/resinfo.
+    */
+   IR3_REG_DUMMY = BIT(23),
 } ir3_register_flags;
 
 struct ir3_register {
@@ -3138,7 +3143,7 @@ ir3_SAM(struct ir3_builder *build, opc_t opc, type_t type, unsigned wrmask,
        * case. It needs to be shared so that we don't accidentally disable early
        * preamble, and this is what the blob does.
        */
-      ir3_src_create(sam, regid(48, 0), IR3_REG_SHARED);
+      ir3_src_create(sam, regid(48, 0), IR3_REG_SHARED | IR3_REG_DUMMY);
    }
    if (src1) {
       __ssa_src(sam, src1, 0);
