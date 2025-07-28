@@ -87,6 +87,13 @@ ForEachMacros: [
   'pan_section_pack',
   'pan_unpack',
   'panvk_cs_reg_upd_ctx',
+  'panvk_priv_mem_readback',
+  'panvk_priv_mem_readback_array',
+  'panvk_priv_mem_rwm',
+  'panvk_priv_mem_rwm_array',
+  'panvk_priv_mem_write',
+  'panvk_priv_mem_write_array',
+  'panvk_priv_mem_write_desc',
   'panvk_shader_foreach_variant',
   'u_foreach_bit',
 ]

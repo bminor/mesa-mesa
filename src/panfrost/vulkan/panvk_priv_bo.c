@@ -106,6 +106,24 @@ err_free_priv_bo:
    return result;
 }
 
+void
+panvk_priv_bo_flush(struct panvk_priv_bo *priv_bo, size_t offset, size_t size)
+{
+   assert(priv_bo->addr.host != NULL);
+   pan_kmod_queue_bo_map_sync(priv_bo->bo, offset, priv_bo->addr.host + offset,
+                              size, PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
+}
+
+void
+panvk_priv_bo_invalidate(struct panvk_priv_bo *priv_bo, size_t offset,
+                         size_t size)
+{
+   assert(priv_bo->addr.host != NULL);
+   pan_kmod_queue_bo_map_sync(priv_bo->bo, offset, priv_bo->addr.host + offset,
+                              size,
+                              PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE);
+}
+
 static void
 panvk_priv_bo_destroy(struct panvk_priv_bo *priv_bo)
 {

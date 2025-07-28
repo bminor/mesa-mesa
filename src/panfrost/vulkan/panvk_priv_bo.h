@@ -37,6 +37,9 @@ panvk_priv_bo_ref(struct panvk_priv_bo *bo)
    return bo;
 }
 
+void panvk_priv_bo_flush(struct panvk_priv_bo *bo, size_t offset, size_t size);
+void panvk_priv_bo_invalidate(struct panvk_priv_bo *bo, size_t offset, size_t size);
+
 void panvk_priv_bo_unref(struct panvk_priv_bo *bo);
 
 #endif

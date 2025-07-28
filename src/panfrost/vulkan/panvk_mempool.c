@@ -279,3 +279,31 @@ panvk_pool_get_bo_handles(struct panvk_pool *pool, uint32_t *handles)
    list_for_each_entry(struct panvk_priv_bo, bo, &pool->big_bos, node)
       handles[idx++] = pan_kmod_bo_handle(bo->bo);
 }
+
+void
+panvk_pool_flush_maps(struct panvk_pool *pool)
+{
+   /* Don't walk the buffers if we know the synchronization is not needed. */
+   if (!(pool->props.create_flags & PAN_KMOD_BO_FLAG_WB_MMAP))
+      return;
+
+   list_for_each_entry(struct panvk_priv_bo, bo, &pool->bos, node)
+      panvk_priv_bo_flush(bo, 0, bo->bo->size);
+
+   list_for_each_entry(struct panvk_priv_bo, bo, &pool->big_bos, node)
+      panvk_priv_bo_flush(bo, 0, bo->bo->size);
+}
+
+void
+panvk_pool_invalidate_maps(struct panvk_pool *pool)
+{
+   /* Don't walk the buffers if we know the synchronization is not needed. */
+   if (!(pool->props.create_flags & PAN_KMOD_BO_FLAG_WB_MMAP))
+      return;
+
+   list_for_each_entry(struct panvk_priv_bo, bo, &pool->bos, node)
+      panvk_priv_bo_invalidate(bo, 0, bo->bo->size);
+
+   list_for_each_entry(struct panvk_priv_bo, bo, &pool->big_bos, node)
+      panvk_priv_bo_invalidate(bo, 0, bo->bo->size);
+}

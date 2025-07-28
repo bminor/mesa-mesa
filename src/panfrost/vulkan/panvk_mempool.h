@@ -27,6 +27,7 @@
 
 #include "panvk_priv_bo.h"
 
+#include "kmod/pan_kmod.h"
 #include "pan_pool.h"
 
 #include "util/list.h"
@@ -125,6 +126,9 @@ panvk_pool_num_bos(struct panvk_pool *pool)
 
 void panvk_pool_get_bo_handles(struct panvk_pool *pool, uint32_t *handles);
 
+void panvk_pool_flush_maps(struct panvk_pool *pool);
+void panvk_pool_invalidate_maps(struct panvk_pool *pool);
+
 enum panvk_priv_mem_flags {
    PANVK_PRIV_MEM_OWNED_BY_POOL = BITFIELD_BIT(0),
 };
@@ -169,6 +173,91 @@ panvk_priv_mem_host_addr(struct panvk_priv_mem mem)
 
    return bo && bo->addr.host ? (uint8_t *)bo->addr.host + mem.offset : NULL;
 }
+
+static inline void
+panvk_priv_mem_flush(struct panvk_priv_mem mem, uint64_t offset, size_t size)
+{
+   struct panvk_priv_bo *bo = panvk_priv_mem_bo(mem);
+
+   pan_kmod_queue_bo_map_sync(bo->bo, mem.offset + offset,
+                              (uint8_t *)panvk_priv_mem_host_addr(mem) + offset,
+                              size, PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH);
+}
+
+static inline void
+panvk_priv_mem_invalidate(struct panvk_priv_mem mem, uint64_t offset, size_t size)
+{
+   struct panvk_priv_bo *bo = panvk_priv_mem_bo(mem);
+
+   pan_kmod_queue_bo_map_sync(bo->bo, mem.offset + offset,
+                              (uint8_t *)panvk_priv_mem_host_addr(mem) + offset,
+                              size,
+                              PAN_KMOD_BO_SYNC_CPU_CACHE_FLUSH_AND_INVALIDATE);
+}
+
+static inline void *
+panvk_priv_mem_write_start(struct panvk_priv_mem mem, uint64_t offset)
+{
+   return (uint8_t *)panvk_priv_mem_host_addr(mem) + offset;
+}
+
+static inline void *
+panvk_priv_mem_write_end(struct panvk_priv_mem mem, uint64_t offset, size_t size)
+{
+   struct panvk_priv_bo *bo = panvk_priv_mem_bo(mem);
+
+   if (bo->bo->flags & PAN_KMOD_BO_FLAG_WB_MMAP)
+      panvk_priv_mem_flush(mem, offset, size);
+
+   return NULL;
+}
+
+#define panvk_priv_mem_write_array(mem__, offset__, type__, count__, name__)   \
+   for (type__ *name__ = panvk_priv_mem_write_start(mem__, offset__); name__;  \
+        name__ = panvk_priv_mem_write_end(mem__, offset__,                     \
+                                          sizeof(*name__) * count__))
+
+#define panvk_priv_mem_write(mem__, offset__, type__, name__)                  \
+   panvk_priv_mem_write_array(mem__, offset__, type__, 1, name__)
+
+#define panvk_priv_mem_write_desc(mem__, offset__, type__, name__)             \
+   panvk_priv_mem_write(mem__, offset__, MALI_##type__##_PACKED_T, pdesc__)    \
+      pan_pack(pdesc__, type__, name__)
+
+static inline const void *
+panvk_priv_mem_readback_start(struct panvk_priv_mem mem, uint64_t offset,
+                              size_t size)
+{
+   struct panvk_priv_bo *bo = panvk_priv_mem_bo(mem);
+
+   assert(bo->bo && bo->addr.host);
+
+   if (bo->bo->flags & PAN_KMOD_BO_FLAG_WB_MMAP) {
+      /* We need to invalidate before we can read back. */
+      panvk_priv_mem_invalidate(mem, offset, size);
+      pan_kmod_flush_bo_map_syncs(bo->bo->dev);
+   }
+
+   return (uint8_t *)panvk_priv_mem_host_addr(mem) + offset;
+}
+
+#define panvk_priv_mem_readback_array(mem__, offset__, type__, count__,        \
+                                      name__)                                  \
+   for (const type__ *name__ = panvk_priv_mem_readback_start(                  \
+           mem__, offset__, sizeof(*name__) * count__);                        \
+        name__; name__ = NULL)
+
+#define panvk_priv_mem_readback(mem__, offset__, type__, name__)               \
+   panvk_priv_mem_readback_array(mem__, offset__, type__, 1, name__)
+
+#define panvk_priv_mem_rmw_array(mem__, offset__, type__, count__, name__)     \
+   for (type__ *name__ = (void *)panvk_priv_mem_readback_start(                \
+           mem__, offset__, sizeof(*name__) * count__);                        \
+        name__; name__ = panvk_priv_mem_write_end(mem__, offset__,             \
+                                                  sizeof(*name__) * count__))
+
+#define panvk_priv_mem_rmw(mem__, offset__, type__, name__)                    \
+   panvk_priv_mem_rmw_array(mem__, offset__, type__, 1, name__)
 
 struct panvk_pool_alloc_info {
    size_t size;
@@ -216,8 +305,10 @@ panvk_pool_upload_aligned(struct panvk_pool *pool, const void *data, size_t sz,
 
    struct panvk_priv_mem mem = panvk_pool_alloc_mem(pool, info);
    void *host_addr = panvk_priv_mem_host_addr(mem);
-   if (likely(host_addr != NULL))
+   if (likely(host_addr != NULL)) {
       memcpy(host_addr, data, sz);
+      panvk_priv_mem_flush(mem, 0, sz);
+   }
    return mem;
 }
 
