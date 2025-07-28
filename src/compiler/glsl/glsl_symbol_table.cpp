@@ -59,23 +59,6 @@ public:
       }
    }
 
-   const glsl_type *get_interface(enum ir_variable_mode mode)
-   {
-      switch (mode) {
-      case ir_var_uniform:
-         return ibu;
-      case ir_var_shader_storage:
-         return iss;
-      case ir_var_shader_in:
-         return ibi;
-      case ir_var_shader_out:
-         return ibo;
-      default:
-         assert(!"Unsupported interface variable mode!");
-         return NULL;
-      }
-   }
-
    symbol_table_entry(ir_variable *v)               :
       v(v), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), a(0) {}
    symbol_table_entry(ir_function *f)               :
