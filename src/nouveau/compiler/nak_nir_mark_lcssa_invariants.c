@@ -108,8 +108,7 @@ nak_nir_mark_lcssa_invariants(nir_shader *shader)
       nir_metadata_require(impl, nir_metadata_divergence);
 
       bool impl_progress = lower_cf_list(&b, &impl->body);
-      progress |= nir_progress(impl_progress, impl,
-                                         nir_metadata_control_flow | nir_metadata_divergence);
+      progress |= nir_progress(impl_progress, impl, nir_metadata_control_flow);
    }
 
    return progress;
