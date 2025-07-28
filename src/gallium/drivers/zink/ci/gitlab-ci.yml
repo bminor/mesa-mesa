@@ -17,11 +17,14 @@ zink-lavapipe:
     # Enable validation (except for on piglit, see deqp-zink-lavapipe.toml), logging
     # to stdout and aborting on unknown failures.
     ZINK_DEBUG: validation
-    XVFB_SCRIPT: "VK_DRIVER=lvp install/deqp-runner.sh"
+    VK_DRIVER: lvp
   script: |
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
-    xvfb-run --server-args='-noreset' bash -c ". $SCRIPTS_DIR/setup-test-env.sh && ${XVFB_SCRIPT}"
+    section_start weston "weston: prepare"
+    . "$CI_PROJECT_DIR/install/common/weston.sh"
+    section_end weston
+    $CI_PROJECT_DIR/install/deqp-runner.sh
 
 zink-venus-lavapipe:
   extends:
@@ -41,14 +44,16 @@ zink-venus-lavapipe:
     LP_NUM_THREADS: 2
     CROSVM_MEMORY: 12288
     CROSVM_CPU: $FDO_CI_CONCURRENT
-    XVFB_SCRIPT: "./install/crosvm-runner.sh ./install/deqp-runner.sh"
     # INFO: Keep Linux version at 6.14 as 6.16 seems to have regressed
     # in virtio gfx device initializaiton
     KERNEL_TAG: "v6.14-mesa-4277"
   script: |
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
-    xvfb-run --server-args='-noreset' bash -c ". $SCRIPTS_DIR/setup-test-env.sh && ${XVFB_SCRIPT}"
+    section_start weston "weston: prepare"
+    . "$CI_PROJECT_DIR/install/common/weston.sh"
+    section_end weston
+    $CI_PROJECT_DIR/install/crosvm-runner.sh $CI_PROJECT_DIR/install/deqp-runner.sh
 
 zink-venus-lavapipe-full:
   extends:
