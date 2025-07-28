@@ -2023,8 +2023,6 @@ static void gfx6_emit_shader_ps(struct si_context *sctx, unsigned index)
    radeon_opt_set_context_reg2(R_0286CC_SPI_PS_INPUT_ENA, SI_TRACKED_SPI_PS_INPUT_ENA,
                                shader->ps.spi_ps_input_ena,
                                shader->ps.spi_ps_input_addr);
-   radeon_opt_set_context_reg(R_0286D8_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
-                              shader->ps.spi_ps_in_control);
    radeon_opt_set_context_reg2(R_028710_SPI_SHADER_Z_FORMAT, SI_TRACKED_SPI_SHADER_Z_FORMAT,
                                shader->ps.spi_shader_z_format,
                                shader->ps.spi_shader_col_format);
@@ -2043,8 +2041,6 @@ static void gfx11_dgpu_emit_shader_ps(struct si_context *sctx, unsigned index)
                              shader->ps.spi_ps_input_ena);
    gfx11_opt_set_context_reg(R_0286D0_SPI_PS_INPUT_ADDR, SI_TRACKED_SPI_PS_INPUT_ADDR,
                              shader->ps.spi_ps_input_addr);
-   gfx11_opt_set_context_reg(R_0286D8_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
-                             shader->ps.spi_ps_in_control);
    gfx11_opt_set_context_reg(R_028710_SPI_SHADER_Z_FORMAT, SI_TRACKED_SPI_SHADER_Z_FORMAT,
                              shader->ps.spi_shader_z_format);
    gfx11_opt_set_context_reg(R_028714_SPI_SHADER_COL_FORMAT, SI_TRACKED_SPI_SHADER_COL_FORMAT,
@@ -2061,8 +2057,6 @@ static void gfx12_emit_shader_ps(struct si_context *sctx, unsigned index)
 
    radeon_begin(&sctx->gfx_cs);
    gfx12_begin_context_regs();
-   gfx12_opt_set_context_reg(R_028640_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
-                             shader->ps.spi_ps_in_control);
    gfx12_opt_set_context_reg(R_028650_SPI_SHADER_Z_FORMAT, SI_TRACKED_SPI_SHADER_Z_FORMAT,
                              shader->ps.spi_shader_z_format);
    gfx12_opt_set_context_reg(R_028654_SPI_SHADER_COL_FORMAT, SI_TRACKED_SPI_SHADER_COL_FORMAT,
@@ -2249,18 +2243,11 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
                        (sscreen->info.gfx_level == GFX11 && !shader->ps.num_interp &&
                         shader->config.lds_size);
 
-      unsigned num_prim_interp = 0;
-      unsigned num_interp = shader->ps.num_interp;
-      if (sscreen->info.gfx_level == GFX10_3) {
-         /* NUM_INTERP / NUM_PRIM_INTERP separately contain
-          * the number of per-vertex and per-primitive PS input attributes.
-          */
-         num_prim_interp = shader->info.num_ps_per_primitive_inputs;
-         num_interp -= num_prim_interp;
-      }
+      /* Set in si_emit_spi_map when gfx10.3 */
+      unsigned num_interp = sscreen->info.gfx_level == GFX10_3 ?
+         0 : shader->ps.num_interp;
 
       shader->ps.spi_ps_in_control = S_0286D8_NUM_INTERP(num_interp) |
-                                     S_0286D8_NUM_PRIM_INTERP(num_prim_interp) |
                                      S_0286D8_PARAM_GEN(param_gen) |
                                      S_0286D8_PS_W32_EN(shader->wave_size == 32);
    }
@@ -5080,10 +5067,38 @@ static void si_emit_spi_map(struct si_context *sctx, unsigned index)
 
    STATIC_ASSERT(NUM_INTERP >= 0 && NUM_INTERP <= 32);
 
+   unsigned spi_ps_in_control = ps->ps.spi_ps_in_control;
    if (sctx->gfx_level >= GFX12) {
       gfx12_opt_push_gfx_sh_reg(R_00B0C4_SPI_SHADER_GS_OUT_CONFIG_PS,
                                 SI_TRACKED_SPI_SHADER_GS_OUT_CONFIG_PS,
                                 vs->ngg.spi_vs_out_config | ps->ps.spi_gs_out_config_ps);
+
+      radeon_begin(&sctx->gfx_cs);
+      radeon_opt_set_context_reg(R_028640_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
+                                 spi_ps_in_control);
+      radeon_end(); /* don't track context rolls on GFX12 */
+   } else {
+      if (sctx->gfx_level == GFX10_3) {
+         /* NUM_INTERP / NUM_PRIM_INTERP separately contain
+          * the number of per-vertex and per-primitive PS input attributes.
+          */
+         unsigned num_prim_interp = ps->info.num_ps_per_primitive_inputs;
+         unsigned num_interp = ps->ps.num_interp - num_prim_interp;
+
+         if (vs->selector->stage == MESA_SHADER_MESH) {
+            num_prim_interp += ps->info.num_ps_maybe_per_primitive_inputs;
+            num_interp -= ps->info.num_ps_maybe_per_primitive_inputs;
+         }
+
+         spi_ps_in_control |=
+            S_0286D8_NUM_INTERP(num_interp) |
+            S_0286D8_NUM_PRIM_INTERP(num_prim_interp);
+      }
+
+      radeon_begin(&sctx->gfx_cs);
+      radeon_opt_set_context_reg(R_0286D8_SPI_PS_IN_CONTROL, SI_TRACKED_SPI_PS_IN_CONTROL,
+                                 spi_ps_in_control);
+      radeon_end_update_context_roll();
    }
 
    if (!NUM_INTERP)
@@ -5097,8 +5112,14 @@ static void si_emit_spi_map(struct si_context *sctx, unsigned index)
       bool non_default_val = G_028644_OFFSET(ps_input_cntl) != 0x20;
 
       if (non_default_val) {
-         if (input.interpolate == INTERP_MODE_FLAT ||
-             (input.interpolate == INTERP_MODE_COLOR && rs->flatshade))
+         bool force_per_prim_input =
+            vs->selector->stage == MESA_SHADER_MESH &&
+            (input.semantic == VARYING_SLOT_PRIMITIVE_ID ||
+             input.semantic == VARYING_SLOT_VIEWPORT);
+
+         if ((input.interpolate == INTERP_MODE_FLAT ||
+              (input.interpolate == INTERP_MODE_COLOR && rs->flatshade)) &&
+             !force_per_prim_input)
             ps_input_cntl |= S_028644_FLAT_SHADE(1);
 
          if (input.fp16_lo_hi_valid) {

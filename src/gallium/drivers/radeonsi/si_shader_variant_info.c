@@ -28,6 +28,13 @@ void si_get_shader_variant_info(struct si_shader *shader,
 
       shader->info.num_ps_per_primitive_inputs =
          util_bitcount64(nir->info.per_primitive_inputs);
+
+      /* gl_Layer is always from shader arg, not varying */
+      uint64_t maybe_per_prim_inputs =
+         nir->info.inputs_read & ~nir->info.per_primitive_inputs &
+         (VARYING_BIT_PRIMITIVE_ID | VARYING_BIT_VIEWPORT);
+      shader->info.num_ps_maybe_per_primitive_inputs =
+         util_bitcount64(maybe_per_prim_inputs);
    }
 
    nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
