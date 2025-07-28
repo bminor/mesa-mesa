@@ -813,14 +813,14 @@ struct reg_link {
    reg_link(elk_fs_inst *inst, unsigned src, bool negate, enum interpreted_type type)
    : inst(inst), src(src), negate(negate), type(type) {}
 
-   struct exec_node link;
+   struct brw_exec_node link;
    elk_fs_inst *inst;
    uint8_t src;
    bool negate;
    enum interpreted_type type;
 };
 
-static struct exec_node *
+static struct brw_exec_node *
 link(void *mem_ctx, elk_fs_inst *inst, unsigned src, bool negate,
      enum interpreted_type type)
 {
@@ -845,7 +845,7 @@ struct imm {
     * A list of fs_regs that refer to this immediate.  If we promote it, we'll
     * have to patch these up to refer to the new GRF.
     */
-   exec_list *uses;
+   brw_exec_list *uses;
 
    /** The immediate value */
    union {
@@ -1350,7 +1350,7 @@ elk_fs_visitor::opt_combine_constants()
       imm->first_use_ip = UINT16_MAX;
       imm->last_use_ip = 0;
 
-      imm->uses = new(const_ctx) exec_list;
+      imm->uses = new(const_ctx) brw_exec_list;
 
       const unsigned first_user = result->values_to_emit[i].first_user;
       const unsigned last_user = first_user +
@@ -1485,7 +1485,7 @@ elk_fs_visitor::opt_combine_constants()
       /* Insert it either before the instruction that generated the immediate
        * or after the last non-control flow instruction of the common ancestor.
        */
-      exec_node *n;
+      brw_exec_node *n;
       elk_bblock_t *insert_block;
       if (imm->inst != nullptr) {
          n = imm->inst;
@@ -1568,7 +1568,7 @@ elk_fs_visitor::opt_combine_constants()
 
    /* Rewrite the immediate sources to refer to the new GRFs. */
    for (int i = 0; i < table.len; i++) {
-      foreach_list_typed(reg_link, link, link, table.imm[i].uses) {
+      brw_foreach_list_typed(reg_link, link, link, table.imm[i].uses) {
          elk_fs_reg *reg = &link->inst->src[link->src];
 
          if (link->inst->opcode == ELK_OPCODE_SEL) {
@@ -1723,9 +1723,9 @@ elk_fs_visitor::opt_combine_constants()
        * is used for membership in that list and in a block list.  So we need
        * to pull them back before rebuilding the CFG.
        */
-      assert(exec_list_length(&instructions) == 0);
+      assert(brw_exec_list_length(&instructions) == 0);
       foreach_block(block, cfg) {
-         exec_list_append(&instructions, &block->instructions);
+         brw_exec_list_append(&instructions, &block->instructions);
       }
 
       delete cfg;

@@ -68,7 +68,7 @@ public:
     * List of either elk_fs_inst or vec4_instruction (inheriting from
     * elk_backend_instruction)
     */
-   exec_list instructions;
+   brw_exec_list instructions;
 
    elk_cfg_t *cfg;
    elk_analysis<elk::idom_tree, elk_backend_shader> idom_analysis;

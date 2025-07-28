@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "compiler/glsl/list.h"
+#include "brw_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +34,7 @@ struct brw_inst;
 struct intel_device_info;
 
 struct inst_group {
-   struct exec_node link;
+   struct brw_exec_node link;
 
    int offset;
 
@@ -52,7 +52,7 @@ struct inst_group {
 };
 
 struct disasm_info {
-   struct exec_list group_list;
+   struct brw_exec_list group_list;
 
    const struct brw_isa_info *isa;
    const struct cfg_t *cfg;

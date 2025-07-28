@@ -110,7 +110,7 @@ brw_generator::~brw_generator()
 {
 }
 
-class ip_record : public exec_node {
+class ip_record : public brw_exec_node {
 public:
    DECLARE_RALLOC_CXX_OPERATORS(ip_record)
 
@@ -147,7 +147,7 @@ brw_generator::patch_halt_jumps()
 
    int ip = p->nr_insn;
 
-   foreach_in_list(ip_record, patch_ip, &discard_halt_patches) {
+   brw_foreach_in_list(ip_record, patch_ip, &discard_halt_patches) {
       brw_eu_inst *patch = &p->store[patch_ip->ip];
 
       assert(brw_eu_inst_opcode(p->isa, patch) == BRW_OPCODE_HALT);

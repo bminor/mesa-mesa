@@ -773,14 +773,14 @@ struct reg_link {
    reg_link(brw_inst *inst, unsigned src, bool negate, enum interpreted_type type)
    : inst(inst), src(src), negate(negate), type(type) {}
 
-   struct exec_node link;
+   struct brw_exec_node link;
    brw_inst *inst;
    uint8_t src;
    bool negate;
    enum interpreted_type type;
 };
 
-static struct exec_node *
+static struct brw_exec_node *
 link(void *mem_ctx, brw_inst *inst, unsigned src, bool negate,
      enum interpreted_type type)
 {
@@ -805,7 +805,7 @@ struct imm {
     * A list of fs_regs that refer to this immediate.  If we promote it, we'll
     * have to patch these up to refer to the new GRF.
     */
-   exec_list *uses;
+   brw_exec_list *uses;
 
    /** The immediate value */
    union {
@@ -1436,7 +1436,7 @@ brw_opt_combine_constants(brw_shader &s)
       imm->first_use_ip = UINT16_MAX;
       imm->last_use_ip = 0;
 
-      imm->uses = new(const_ctx) exec_list;
+      imm->uses = new(const_ctx) brw_exec_list;
 
       const unsigned first_user = result->values_to_emit[i].first_user;
       const unsigned last_user = first_user +
@@ -1573,7 +1573,7 @@ brw_opt_combine_constants(brw_shader &s)
 
    /* Rewrite the immediate sources to refer to the new GRFs. */
    for (int i = 0; i < table.len; i++) {
-      foreach_list_typed(reg_link, link, link, table.imm[i].uses) {
+      brw_foreach_list_typed(reg_link, link, link, table.imm[i].uses) {
          brw_reg *reg = &link->inst->src[link->src];
 
          if (link->inst->opcode == BRW_OPCODE_SEL) {

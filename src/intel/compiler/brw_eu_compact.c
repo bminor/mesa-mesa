@@ -2491,7 +2491,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
    if (disasm) {
       int offset = 0;
 
-      foreach_list_typed(struct inst_group, group, link, &disasm->group_list) {
+      brw_foreach_list_typed(struct inst_group, group, link, &disasm->group_list) {
          while (start_offset + old_ip[offset / sizeof(brw_eu_compact_inst)] *
                 sizeof(brw_eu_inst) != group->offset) {
             assert(start_offset + old_ip[offset / sizeof(brw_eu_compact_inst)] *

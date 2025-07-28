@@ -1182,7 +1182,7 @@ namespace {
                                          delta_sbs[block->num]);
 
             if (sb != out_sbs[block->num]) {
-               foreach_list_typed(bblock_link, child_link, link,
+               brw_foreach_list_typed(bblock_link, child_link, link,
                                   &block->children) {
                   scoreboard &in_sb = in_sbs[child_link->block->num];
                   int delta[IDX(TGL_PIPE_ALL)];

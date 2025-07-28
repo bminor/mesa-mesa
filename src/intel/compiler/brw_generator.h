@@ -70,7 +70,7 @@ private:
 
    unsigned dispatch_width; /**< 8, 16 or 32 */
 
-   exec_list discard_halt_patches;
+   brw_exec_list discard_halt_patches;
    bool debug_flag;
    const char *shader_name;
    gl_shader_stage stage;

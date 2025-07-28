@@ -212,7 +212,7 @@ elk_fs_generator::~elk_fs_generator()
 {
 }
 
-class ip_record : public exec_node {
+class ip_record : public brw_exec_node {
 public:
    DECLARE_RALLOC_CXX_OPERATORS(ip_record)
 
@@ -251,7 +251,7 @@ elk_fs_generator::patch_halt_jumps()
 
    int ip = p->nr_insn;
 
-   foreach_in_list(ip_record, patch_ip, &discard_halt_patches) {
+   brw_foreach_in_list(ip_record, patch_ip, &discard_halt_patches) {
       elk_inst *patch = &p->store[patch_ip->ip];
 
       assert(elk_inst_opcode(p->isa, patch) == ELK_OPCODE_HALT);

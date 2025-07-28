@@ -1178,12 +1178,12 @@ centroid_to_pixel(enum elk_barycentric_mode bary)
 bool
 elk_fs_visitor::mark_last_urb_write_with_eot()
 {
-   foreach_in_list_reverse(elk_fs_inst, prev, &this->instructions) {
+   brw_foreach_in_list_reverse(elk_fs_inst, prev, &this->instructions) {
       if (prev->opcode == ELK_SHADER_OPCODE_URB_WRITE_LOGICAL) {
          prev->eot = true;
 
          /* Delete now dead instructions. */
-         foreach_in_list_reverse_safe(exec_node, dead, &this->instructions) {
+         brw_foreach_in_list_reverse_safe(brw_exec_node, dead, &this->instructions) {
             if (dead == prev)
                break;
             dead->remove();
@@ -5123,7 +5123,7 @@ elk_fs_visitor::lower_simd_width()
           * instructions (this is required for some render target writes), we
           * split from the highest group to lowest.
           */
-         exec_node *const after_inst = inst->next;
+         brw_exec_node *const after_inst = inst->next;
          for (int i = n - 1; i >= 0; i--) {
             /* Emit a copy of the original instruction with the lowered width.
              * If the EOT flag was set throw it away except for the last
@@ -5345,7 +5345,7 @@ elk_fs_visitor::dump_instructions_to_file(FILE *file) const
       fprintf(file, "Maximum %3d registers live at once.\n", max_pressure);
    } else {
       int ip = 0;
-      foreach_in_list(elk_backend_instruction, inst, &instructions) {
+      brw_foreach_in_list(elk_backend_instruction, inst, &instructions) {
          fprintf(file, "%4d: ", ip++);
          dump_instruction(inst, file);
       }

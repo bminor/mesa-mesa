@@ -1118,7 +1118,7 @@ elk_backend_instruction::is_volatile() const
 static bool
 inst_is_in_block(const elk_bblock_t *block, const elk_backend_instruction *inst)
 {
-   const exec_node *n = inst;
+   const brw_exec_node *n = inst;
 
    /* Find the tail sentinel. If the tail sentinel is the sentinel from the
     * list header in the elk_bblock_t, then this instruction is in that basic
@@ -1155,7 +1155,7 @@ elk_backend_instruction::insert_after(elk_bblock_t *block, elk_backend_instructi
 
    adjust_later_block_ips(block, 1);
 
-   exec_node::insert_after(inst);
+   brw_exec_node::insert_after(inst);
 }
 
 void
@@ -1171,7 +1171,7 @@ elk_backend_instruction::insert_before(elk_bblock_t *block, elk_backend_instruct
 
    adjust_later_block_ips(block, 1);
 
-   exec_node::insert_before(inst);
+   brw_exec_node::insert_before(inst);
 }
 
 void
@@ -1197,7 +1197,7 @@ elk_backend_instruction::remove(elk_bblock_t *block, bool defer_later_block_ip_u
       block->end_ip--;
    }
 
-   exec_node::remove();
+   brw_exec_node::remove();
 }
 
 void
@@ -1229,7 +1229,7 @@ elk_backend_shader::dump_instructions_to_file(FILE *file) const
       }
    } else {
       int ip = 0;
-      foreach_in_list(elk_backend_instruction, inst, &instructions) {
+      brw_foreach_in_list(elk_backend_instruction, inst, &instructions) {
          if (!INTEL_DEBUG(DEBUG_OPTIMIZER))
             fprintf(file, "%4d: ", ip++);
          dump_instruction(inst, file);

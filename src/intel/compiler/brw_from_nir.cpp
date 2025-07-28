@@ -426,8 +426,8 @@ brw_from_nir_emit_if(nir_to_brw_state &ntb, nir_if *if_stmt)
            jump->opcode == BRW_OPCODE_CONTINUE)) {
          jump->predicate = iff->predicate;
          jump->predicate_inverse = iff->predicate_inverse;
-         iff->exec_node::remove();
-         endif->exec_node::remove();
+         iff->brw_exec_node::remove();
+         endif->brw_exec_node::remove();
       }
    }
 }
@@ -451,7 +451,7 @@ brw_from_nir_emit_loop(nir_to_brw_state &ntb, nir_loop *loop)
        peep_break->predicate != BRW_PREDICATE_NONE) {
       peep_while->predicate = peep_break->predicate;
       peep_while->predicate_inverse = !peep_break->predicate_inverse;
-      peep_break->exec_node::remove();
+      peep_break->brw_exec_node::remove();
    }
 }
 

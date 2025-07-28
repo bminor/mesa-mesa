@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "compiler/glsl/list.h"
+#include "../compiler/brw_list.h"
 #include "common/intel_bind_timeline.h"
 #include "dev/intel_device_info.h"
 #include "util/bitscan.h"

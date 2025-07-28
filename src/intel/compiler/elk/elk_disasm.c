@@ -2064,14 +2064,14 @@ elk_disassemble_with_errors(const struct elk_isa_info *isa,
    const struct elk_label *root_label =
       elk_label_assembly(isa, assembly, start, end, mem_ctx);
 
-   foreach_list_typed(struct inst_group, group, link,
+   brw_foreach_list_typed(struct inst_group, group, link,
                       &elk_disasm_info->group_list) {
-      struct exec_node *next_node = exec_node_get_next(&group->link);
-      if (exec_node_is_tail_sentinel(next_node))
+      struct brw_exec_node *next_node = brw_exec_node_get_next(&group->link);
+      if (brw_exec_node_is_tail_sentinel(next_node))
          break;
 
       struct inst_group *next =
-         exec_node_data(struct inst_group, next_node, link);
+         brw_exec_node_data(struct inst_group, next_node, link);
 
       int start_offset = group->offset;
       int end_offset = next->offset;

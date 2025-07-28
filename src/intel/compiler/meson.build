@@ -55,6 +55,7 @@ libintel_compiler_brw_files = files(
   'brw_inst.cpp',
   'brw_inst.h',
   'brw_isa_info.h',
+  'brw_list.h',
   'brw_load_reg.cpp',
   'brw_lower.cpp',
   'brw_lower_dpas.cpp',

@@ -609,12 +609,12 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
 bool
 brw_shader::mark_last_urb_write_with_eot()
 {
-   foreach_in_list_reverse(brw_inst, prev, &this->instructions) {
+   brw_foreach_in_list_reverse(brw_inst, prev, &this->instructions) {
       if (prev->opcode == SHADER_OPCODE_URB_WRITE_LOGICAL) {
          prev->eot = true;
 
          /* Delete now dead instructions. */
-         foreach_in_list_reverse_safe(exec_node, dead, &this->instructions) {
+         brw_foreach_in_list_reverse_safe(brw_exec_node, dead, &this->instructions) {
             if (dead == prev)
                break;
             dead->remove();

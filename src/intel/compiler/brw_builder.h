@@ -54,7 +54,7 @@ public:
          block = shader->cfg->last_block();
          cursor = &block->instructions.tail_sentinel;
       } else {
-         cursor = (exec_node *)&shader->instructions.tail_sentinel;
+         cursor = (brw_exec_node *)&shader->instructions.tail_sentinel;
       }
    }
 
@@ -1002,7 +1002,7 @@ private:
                                 uint32_t components) const;
 
    bblock_t *block;
-   exec_node *cursor;
+   brw_exec_node *cursor;
 
    unsigned _dispatch_width;
    unsigned _group;

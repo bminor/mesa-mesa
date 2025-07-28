@@ -113,7 +113,7 @@ public:
    void *mem_ctx;
 
    /** List of brw_inst. */
-   exec_list instructions;
+   brw_exec_list instructions;
 
    cfg_t *cfg;
 

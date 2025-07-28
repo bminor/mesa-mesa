@@ -31,7 +31,7 @@ brw_idom_tree::brw_idom_tree(const brw_shader *s) :
             continue;
 
          bblock_t *new_idom = NULL;
-         foreach_list_typed(bblock_link, parent_link, link, &block->parents) {
+         brw_foreach_list_typed(bblock_link, parent_link, link, &block->parents) {
             if (parent(parent_link->block)) {
                new_idom = (new_idom ? intersect(new_idom, parent_link->block) :
                            parent_link->block);

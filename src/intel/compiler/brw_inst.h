@@ -26,7 +26,7 @@
 
 #include <assert.h>
 #include "brw_reg.h"
-#include "compiler/glsl/list.h"
+#include "brw_list.h"
 
 #define MAX_SAMPLER_MESSAGE_SIZE 11
 
@@ -38,7 +38,7 @@
 
 struct bblock_t;
 
-struct brw_inst : public exec_node {
+struct brw_inst : public brw_exec_node {
 private:
    brw_inst &operator=(const brw_inst &);
 

@@ -36,7 +36,7 @@
  */
 
 static bblock_t *
-pop_stack(exec_list *list)
+pop_stack(brw_exec_list *list)
 {
    bblock_link *link = (bblock_link *)list->get_tail();
    bblock_t *block = link->block;
@@ -45,7 +45,7 @@ pop_stack(exec_list *list)
    return block;
 }
 
-static exec_node *
+static brw_exec_node *
 link(void *mem_ctx, bblock_t *block, enum bblock_link_kind kind)
 {
    bblock_link *l = new(mem_ctx) bblock_link(block, kind);
@@ -53,7 +53,7 @@ link(void *mem_ctx, bblock_t *block, enum bblock_link_kind kind)
 }
 
 void
-push_stack(exec_list *list, void *mem_ctx, bblock_t *block)
+push_stack(brw_exec_list *list, void *mem_ctx, bblock_t *block)
 {
    /* The kind of the link is immaterial, but we need to provide one since
     * this is (ab)using the edge data structure in order to implement a stack.
@@ -78,7 +78,7 @@ bblock_t::add_successor(void *mem_ctx, bblock_t *successor,
 }
 
 void
-bblock_t::insert_before(brw_inst *inst, exec_node *ref)
+bblock_t::insert_before(brw_inst *inst, brw_exec_node *ref)
 {
    assert(inst != ref);
    assert(!inst->block || inst->block == this);
@@ -86,14 +86,14 @@ bblock_t::insert_before(brw_inst *inst, exec_node *ref)
    num_instructions++;
    cfg->total_instructions++;
 
-   ref->exec_node::insert_before(inst);
+   ref->brw_exec_node::insert_before(inst);
    inst->block = this;
 }
 
 void
 bblock_t::remove(brw_inst *inst)
 {
-   if (exec_list_is_singular(&instructions)) {
+   if (brw_exec_list_is_singular(&instructions)) {
       inst->opcode = BRW_OPCODE_NOP;
       inst->resize_sources(0);
       inst->dst = brw_reg();
@@ -106,7 +106,7 @@ bblock_t::remove(brw_inst *inst)
    num_instructions--;
    cfg->total_instructions--;
 
-   inst->exec_node::remove();
+   inst->brw_exec_node::remove();
    inst->block = NULL;
 
    if (num_instructions == 0)
@@ -123,7 +123,7 @@ append_inst(bblock_t *block, brw_inst *inst)
    block->cfg->total_instructions++;
 }
 
-cfg_t::cfg_t(brw_shader *s, exec_list *instructions) :
+cfg_t::cfg_t(brw_shader *s, brw_exec_list *instructions) :
    s(s), total_instructions(0)
 {
    mem_ctx = ralloc_context(NULL);
@@ -139,16 +139,16 @@ cfg_t::cfg_t(brw_shader *s, exec_list *instructions) :
    bblock_t *cur_else = NULL;  /**< BB ending with ELSE. */
    bblock_t *cur_do = NULL;    /**< BB starting with DO. */
    bblock_t *cur_while = NULL; /**< BB immediately following WHILE. */
-   exec_list if_stack, else_stack, do_stack, while_stack;
+   brw_exec_list if_stack, else_stack, do_stack, while_stack;
    bblock_t *next;
 
    set_next_block(&cur, entry, ip);
 
-   foreach_in_list_safe(brw_inst, inst, instructions) {
+   brw_foreach_in_list_safe(brw_inst, inst, instructions) {
       /* set_next_block wants the post-incremented ip */
       ip++;
 
-      inst->exec_node::remove();
+      inst->brw_exec_node::remove();
 
       switch (inst->opcode) {
       case SHADER_OPCODE_FLOW:
@@ -378,7 +378,7 @@ cfg_t::~cfg_t()
 void
 cfg_t::remove_block(bblock_t *block)
 {
-   foreach_list_typed_safe (bblock_link, predecessor, link, &block->parents) {
+   brw_foreach_list_typed_safe (bblock_link, predecessor, link, &block->parents) {
       /* cfg_t::validate checks that predecessor and successor lists are well
        * formed, so it is known that the loop here would find exactly one
        * block. Set old_link_kind to silence "variable used but not set"
@@ -387,7 +387,7 @@ cfg_t::remove_block(bblock_t *block)
       bblock_link_kind old_link_kind = bblock_link_logical;
 
       /* Remove block from all of its predecessors' successor lists. */
-      foreach_list_typed_safe (bblock_link, successor, link,
+      brw_foreach_list_typed_safe (bblock_link, successor, link,
                                &predecessor->block->children) {
          if (block == successor->block) {
             old_link_kind = successor->kind;
@@ -398,11 +398,11 @@ cfg_t::remove_block(bblock_t *block)
       }
 
       /* Add removed-block's successors to its predecessors' successor lists. */
-      foreach_list_typed (bblock_link, successor, link, &block->children) {
+      brw_foreach_list_typed (bblock_link, successor, link, &block->children) {
          bool need_to_link = true;
          bblock_link_kind new_link_kind = MAX2(old_link_kind, successor->kind);
 
-         foreach_list_typed_safe (bblock_link, child, link, &predecessor->block->children) {
+         brw_foreach_list_typed_safe (bblock_link, child, link, &predecessor->block->children) {
             /* There is already a link between the two blocks. If the links
              * are the same kind or the link is logical, do nothing. If the
              * existing link is physical and the proposed new link is logical,
@@ -426,7 +426,7 @@ cfg_t::remove_block(bblock_t *block)
       }
    }
 
-   foreach_list_typed_safe (bblock_link, successor, link, &block->children) {
+   brw_foreach_list_typed_safe (bblock_link, successor, link, &block->children) {
       /* cfg_t::validate checks that predecessor and successor lists are well
        * formed, so it is known that the loop here would find exactly one
        * block. Set old_link_kind to silence "variable used but not set"
@@ -435,7 +435,7 @@ cfg_t::remove_block(bblock_t *block)
       bblock_link_kind old_link_kind = bblock_link_logical;
 
       /* Remove block from all of its childrens' parents lists. */
-      foreach_list_typed_safe (bblock_link, predecessor, link,
+      brw_foreach_list_typed_safe (bblock_link, predecessor, link,
                                &successor->block->parents) {
          if (block == predecessor->block) {
             old_link_kind = predecessor->kind;
@@ -445,11 +445,11 @@ cfg_t::remove_block(bblock_t *block)
       }
 
       /* Add removed-block's predecessors to its successors' predecessor lists. */
-      foreach_list_typed (bblock_link, predecessor, link, &block->parents) {
+      brw_foreach_list_typed (bblock_link, predecessor, link, &block->parents) {
          bool need_to_link = true;
          bblock_link_kind new_link_kind = MAX2(old_link_kind, predecessor->kind);
 
-         foreach_list_typed_safe (bblock_link, parent, link, &successor->block->parents) {
+         brw_foreach_list_typed_safe (bblock_link, parent, link, &successor->block->parents) {
             /* There is already a link between the two blocks. If the links
              * are the same kind or the link is logical, do nothing. If the
              * existing link is physical and the proposed new link is logical,
@@ -519,7 +519,7 @@ cfg_t::dump_cfg()
    for (int b = 0; b < num_blocks; b++) {
       bblock_t *block = this->blocks[b];
 
-      foreach_list_typed_safe (bblock_link, child, link, &block->children) {
+      brw_foreach_list_typed_safe (bblock_link, child, link, &block->children) {
          printf("\t%d -> %d\n", b, child->block->num);
       }
    }
@@ -550,14 +550,14 @@ cfg_t::validate(const char *stage_abbrev)
    unsigned counted_total_instructions = 0;
 
    foreach_block(block, this) {
-      foreach_list_typed(bblock_link, successor, link, &block->children) {
+      brw_foreach_list_typed(bblock_link, successor, link, &block->children) {
          /* Each successor of a block must have one predecessor link back to
           * the block.
           */
          bool successor_links_back_to_predecessor = false;
          bblock_t *succ_block = successor->block;
 
-         foreach_list_typed(bblock_link, predecessor, link, &succ_block->parents) {
+         brw_foreach_list_typed(bblock_link, predecessor, link, &succ_block->parents) {
             if (predecessor->block == block) {
                cfgv_assert(!successor_links_back_to_predecessor);
                cfgv_assert(successor->kind == predecessor->kind);
@@ -570,20 +570,20 @@ cfg_t::validate(const char *stage_abbrev)
          /* Each successor block must appear only once in the list of
           * successors.
           */
-         foreach_list_typed_from(bblock_link, later_successor, link,
+         brw_foreach_list_typed_from(bblock_link, later_successor, link,
                                  &block->children, successor->link.next) {
             cfgv_assert(successor->block != later_successor->block);
          }
       }
 
-      foreach_list_typed(bblock_link, predecessor, link, &block->parents) {
+      brw_foreach_list_typed(bblock_link, predecessor, link, &block->parents) {
          /* Each predecessor of a block must have one successor link back to
           * the block.
           */
          bool predecessor_links_back_to_successor = false;
          bblock_t *pred_block = predecessor->block;
 
-         foreach_list_typed(bblock_link, successor, link, &pred_block->children) {
+         brw_foreach_list_typed(bblock_link, successor, link, &pred_block->children) {
             if (successor->block == block) {
                cfgv_assert(!predecessor_links_back_to_successor);
                cfgv_assert(successor->kind == predecessor->kind);
@@ -596,7 +596,7 @@ cfg_t::validate(const char *stage_abbrev)
          /* Each precessor block must appear only once in the list of
           * precessors.
           */
-         foreach_list_typed_from(bblock_link, later_precessor, link,
+         brw_foreach_list_typed_from(bblock_link, later_precessor, link,
                                  &block->parents, predecessor->link.next) {
             cfgv_assert(predecessor->block != later_precessor->block);
          }
@@ -618,7 +618,7 @@ cfg_t::validate(const char *stage_abbrev)
          /* DO instructions both begin and end a block, so the DO instruction
           * must be the only instruction in the block.
           */
-         cfgv_assert(exec_list_is_singular(&block->instructions));
+         cfgv_assert(brw_exec_list_is_singular(&block->instructions));
 
          /* A block starting with DO should have exactly two successors. One
           * is a physical link to the block starting after the WHILE
@@ -628,7 +628,7 @@ cfg_t::validate(const char *stage_abbrev)
          bblock_t *physical_block = nullptr;
          bblock_t *logical_block = nullptr;
 
-         foreach_list_typed(bblock_link, child, link, &block->children) {
+         brw_foreach_list_typed(bblock_link, child, link, &block->children) {
             if (child->kind == bblock_link_physical) {
                cfgv_assert(physical_block == nullptr);
                physical_block = child->block;
