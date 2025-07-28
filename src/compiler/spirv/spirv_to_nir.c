@@ -45,6 +45,10 @@
 
 #include <stdio.h>
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 /* Table of all implemented capabilities.  These are the capabilities that are
  * implemented in the spirv_to_nir, not what the device supports.
  *
@@ -343,7 +347,7 @@ vtn_dump_shader(struct vtn_builder *b, const char *path, const char *prefix)
 {
    static int idx = 0;
 
-   char filename[1024];
+   char filename[PATH_MAX];
    int len = snprintf(filename, sizeof(filename), "%s/%s-%d.spirv",
                       path, prefix, idx++);
    if (len < 0 || len >= sizeof(filename))
