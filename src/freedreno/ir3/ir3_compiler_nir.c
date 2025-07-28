@@ -6001,7 +6001,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       so->fs.depth_layout = ctx->s->info.fs.depth_layout;
    }
 
-   ctx->so->per_samp = ctx->s->info.fs.uses_sample_shading;
+   ctx->so->sample_shading = ctx->s->info.fs.uses_sample_shading;
 
    if (ctx->has_relative_load_const_ir3) {
       /* NOTE: if relative addressing is used, we set

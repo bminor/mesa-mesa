@@ -849,7 +849,10 @@ struct ir3_shader_variant {
     */
    bool has_kill;
 
-   bool per_samp;
+   /* Whether the shader should is run at sample rate (set by using a variable
+    * that implicitly enables it)
+    */
+   bool sample_shading;
 
    bool post_depth_coverage;
 
