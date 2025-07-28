@@ -114,13 +114,6 @@ struct ir_exec_node {
 #endif
 };
 
-static inline void
-ir_exec_node_init(struct ir_exec_node *n)
-{
-   n->next = NULL;
-   n->prev = NULL;
-}
-
 static inline const struct ir_exec_node *
 ir_exec_node_get_next_const(const struct ir_exec_node *n)
 {
@@ -336,12 +329,6 @@ struct ir_exec_list {
     * Append all nodes from the source list to the end of the target list
     */
    void append_list(ir_exec_list *source);
-
-   /**
-    * Prepend all nodes from the source list to the beginning of the target
-    * list
-    */
-   void prepend_list(ir_exec_list *source);
 #endif
 };
 
@@ -368,13 +355,6 @@ ir_exec_list_is_empty(const struct ir_exec_list *list)
     * because they save a pointer dereference.
     */
    return list->head_sentinel.next == &list->tail_sentinel;
-}
-
-static inline bool
-ir_exec_list_is_singular(const struct ir_exec_list *list)
-{
-   return !ir_exec_list_is_empty(list) &&
-          list->head_sentinel.next->next == &list->tail_sentinel;
 }
 
 static inline const struct ir_exec_node *
@@ -534,13 +514,6 @@ ir_exec_node_insert_list_after(struct ir_exec_node *n, struct ir_exec_list *afte
 }
 
 static inline void
-ir_exec_list_prepend(struct ir_exec_list *list, struct ir_exec_list *source)
-{
-   ir_exec_list_append(source, list);
-   ir_exec_list_move_nodes_to(source, list);
-}
-
-static inline void
 ir_exec_node_insert_list_before(struct ir_exec_node *n, struct ir_exec_list *before)
 {
    if (ir_exec_list_is_empty(before))
@@ -666,11 +639,6 @@ inline void ir_exec_node::insert_after(ir_exec_list *after)
    ir_exec_node_insert_list_after(this, after);
 }
 
-inline void ir_exec_list::prepend_list(ir_exec_list *source)
-{
-   ir_exec_list_prepend(this, source);
-}
-
 inline void ir_exec_node::insert_before(ir_exec_list *before)
 {
    ir_exec_node_insert_list_before(this, before);
@@ -770,11 +738,6 @@ inline void ir_exec_node::insert_before(ir_exec_list *before)
 #define ir_foreach_list_typed_reverse(type, node, field, list)   \
    for (type * node = ir_exec_node_data_tail(type, list, field); \
         node != NULL;                                         \
-        node = ir_exec_node_data_prev(type, node, field))
-
-#define ir_foreach_list_typed_from_reverse(type, node, field, list, __start) \
-   for (type * node = ir_exec_node_data_backward(type, (__start), field);    \
-        node != NULL;                                                     \
         node = ir_exec_node_data_prev(type, node, field))
 
 /**
