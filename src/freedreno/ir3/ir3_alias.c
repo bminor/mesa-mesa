@@ -16,7 +16,7 @@ supports_alias_srcs(struct ir3_instruction *instr)
    if (is_tex_shuffle(instr))
       return false;
    /* Descriptor prefetches don't support alias.tex. */
-   if (instr->opc == OPC_SAM && instr->dsts_count == 0)
+   if (instr->opc == OPC_SAM && has_dummy_dst(instr))
       return false;
    /* Seems to not always work properly. Blob disables it as well. */
    if (instr->opc == OPC_ISAM && (instr->flags & IR3_INSTR_IMM_OFFSET))
