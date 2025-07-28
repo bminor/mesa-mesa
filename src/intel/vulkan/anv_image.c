@@ -312,7 +312,13 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
    if (comp_flags & VK_IMAGE_COMPRESSION_DISABLED_EXT)
       isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
 
-   if (anv_is_storage_format_atomics_emulated(devinfo, vk_format)) {
+   /* We only need software detiling for 64bit atomics and we need to disable
+    * AUX for software detiling, but we don't support sparseImageInt64Atomics,
+    * so don't set the flags when using sparse, as they affect which tiling
+    * format ISL will choose.
+    */
+   if (anv_is_storage_format_atomics_emulated(devinfo, vk_format) &&
+       (vk_create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) == 0) {
       isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT |
                    ISL_SURF_USAGE_SOFTWARE_DETILING;
    }
