@@ -59244,7 +59244,7 @@
         "description": "anv/sparse: we can support R64 and other atomics emulated formats",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
