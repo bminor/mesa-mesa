@@ -954,7 +954,7 @@
         "description": "nak/mark_lcssa_invariants: Invalidate divergence",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1d6082bf56a7a17b20c27285332623aac61f345c",
         "notes": null
