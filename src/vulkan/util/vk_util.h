@@ -308,8 +308,10 @@ struct vk_pipeline_cache_header {
 
 #define typed_memcpy(dest, src, count) do { \
    STATIC_ASSERT(sizeof(*(src)) == sizeof(*(dest))); \
-   if ((dest) != NULL && (src) != NULL && (count) > 0) { \
-       memcpy((dest), (src), (count) * sizeof(*(src))); \
+   uint8_t *d = (uint8_t*)(dest); \
+   const uint8_t *s = (const uint8_t*)(src); \
+   if (d != NULL && s != NULL && (count) > 0) { \
+       memcpy(d, s, (count) * sizeof(*(src))); \
    } \
 } while (0)
 
