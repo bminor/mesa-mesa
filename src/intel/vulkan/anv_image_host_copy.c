@@ -192,6 +192,46 @@ calc_mem_height_pitch_B(enum isl_format format,
       (row_pitch_B * DIV_ROUND_UP(extent_px->height, fmt_layout->bh));
 }
 
+/* TODO: Get rid of this.
+ *
+ * For three component RGB images created with optimal layout, we actually
+ * create an RGBX or RGBA(with swizzle ALPHA_ONE), as the HW cannot handle
+ * tiling of non-power of 2 formats. This is a problem for host image copy, as
+ * the isl_memcpy functions are not prepared to deal with the RGB <-> RGBX
+ * conversion necessary.
+ */
+static bool
+needs_temp_copy(struct anv_image *image, VkHostImageCopyFlags flags)
+{
+   if (image->vk.tiling != VK_IMAGE_TILING_OPTIMAL ||
+       flags & VK_HOST_IMAGE_COPY_MEMCPY_BIT)
+      return false;
+
+   return util_format_get_nr_components(vk_format_to_pipe_format(image->vk.format)) == 3;
+}
+
+static void
+copy_rgb(const uint8_t *from,
+         uint64_t from_row_pitch_B,
+         int bpp_from,
+         uint8_t *to,
+         uint64_t to_row_pitch_B,
+         int bpp_to,
+         const VkExtent3D *extent)
+{
+   int bpp = MIN2(bpp_from, bpp_to);
+
+   for (int y = 0; y < extent->height; y++) {
+      const uint8_t *row_from = from + y * from_row_pitch_B;
+      uint8_t *row_to = to + y * to_row_pitch_B;
+      for (int x = 0; x < extent->width; x++) {
+         memcpy(row_to, row_from, bpp);
+         row_from += bpp_from;
+         row_to += bpp_to;
+      }
+   }
+}
+
 VkResult
 anv_CopyMemoryToImage(
     VkDevice                                 _device,
@@ -199,6 +239,10 @@ anv_CopyMemoryToImage(
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, image, pCopyMemoryToImageInfo->dstImage);
+
+   bool temp_copy = needs_temp_copy(image, pCopyMemoryToImageInfo->flags);
+   void *tmp_mem = NULL;
+   uint64_t tmp_mem_size = 0;
 
    for (uint32_t r = 0; r < pCopyMemoryToImageInfo->regionCount; r++) {
       const VkMemoryToImageCopy *region =
@@ -215,13 +259,50 @@ anv_CopyMemoryToImage(
       void *img_ptr = binding->host_map + binding->map_delta +
                       anv_surf->memory_range.offset;
 
+      enum isl_format mem_format = surf->format;
+
+      uint64_t tmp_copy_row_pitch_B = 0;
+      uint32_t mem_bpp = 0, tmp_copy_bpp = 0;
+
+      if (temp_copy) {
+         const struct isl_format_layout *tmp_copy_fmt_layout =
+            isl_format_get_layout(surf->format);
+         tmp_copy_bpp = tmp_copy_fmt_layout->bpb / 8;
+
+         mem_format =
+            anv_get_format_plane(device->physical, image->vk.format, plane,
+                                 VK_IMAGE_TILING_LINEAR).isl_format;
+
+         const struct isl_format_layout *mem_fmt_layout =
+            isl_format_get_layout(mem_format);
+         mem_bpp = mem_fmt_layout->bpb / 8;
+
+         tmp_copy_row_pitch_B =
+            calc_mem_row_pitch_B(surf->format, 0, &region->imageExtent);
+         uint64_t tmp_copy_height_pitch_B =
+            calc_mem_height_pitch_B(surf->format, tmp_copy_row_pitch_B, 0,
+                                    &region->imageExtent);
+
+         uint64_t tmp_mem_needed_size = tmp_copy_row_pitch_B * tmp_copy_height_pitch_B;
+         if (tmp_mem_needed_size > tmp_mem_size) {
+            void *new_tmp_mem = vk_realloc(&device->vk.alloc, tmp_mem, tmp_mem_needed_size, 8,
+                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (new_tmp_mem == NULL) {
+               vk_free(&device->vk.alloc, tmp_mem);
+               return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+            }
+            tmp_mem = new_tmp_mem;
+            tmp_mem_size = tmp_mem_needed_size;
+         }
+      }
+
       /* Memory distance between each row */
       uint64_t mem_row_pitch_B =
-         calc_mem_row_pitch_B(surf->format, region->memoryRowLength,
+         calc_mem_row_pitch_B(mem_format, region->memoryRowLength,
                               &region->imageExtent);
       /* Memory distance between each slice (1 3D level or 1 array layer) */
       uint64_t mem_height_pitch_B =
-         calc_mem_height_pitch_B(surf->format, mem_row_pitch_B,
+         calc_mem_height_pitch_B(mem_format, mem_row_pitch_B,
                                  region->memoryImageHeight,
                                  &region->imageExtent);
 
@@ -250,10 +331,15 @@ anv_CopyMemoryToImage(
                       mem_ptr,
                       end_tile_B - start_tile_B);
             } else {
+               if (temp_copy) {
+                  copy_rgb(mem_ptr, mem_row_pitch_B, mem_bpp,
+                           tmp_mem, tmp_copy_row_pitch_B, tmp_copy_bpp,
+                           &region->imageExtent);
+               }
                anv_copy_image_memory(device, surf,
                                      binding, anv_surf->memory_range.offset,
-                                     (void *)mem_ptr,
-                                     mem_row_pitch_B,
+                                     temp_copy ? tmp_mem : (void *)mem_ptr,
+                                     temp_copy ? tmp_copy_row_pitch_B : mem_row_pitch_B,
                                      &offset_el,
                                      &extent_el,
                                      region->imageSubresource.mipLevel,
@@ -265,6 +351,8 @@ anv_CopyMemoryToImage(
       }
    }
 
+   vk_free(&device->vk.alloc, tmp_mem);
+
    return VK_SUCCESS;
 }
 
@@ -275,6 +363,10 @@ anv_CopyImageToMemory(
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, image, pCopyImageToMemoryInfo->srcImage);
+
+   bool temp_copy = needs_temp_copy(image, pCopyImageToMemoryInfo->flags);
+   void *tmp_mem = NULL;
+   uint64_t tmp_mem_size = 0;
 
    for (uint32_t r = 0; r < pCopyImageToMemoryInfo->regionCount; r++) {
       const VkImageToMemoryCopy *region =
@@ -291,6 +383,43 @@ anv_CopyImageToMemory(
       const void *img_ptr = binding->host_map + binding->map_delta +
                             anv_surf->memory_range.offset;
 
+      enum isl_format mem_format = surf->format;
+
+      uint64_t tmp_copy_row_pitch_B = 0;
+      uint32_t mem_bpp = 0, tmp_copy_bpp = 0;
+
+      if (temp_copy) {
+         const struct isl_format_layout *tmp_copy_fmt_layout =
+            isl_format_get_layout(surf->format);
+         tmp_copy_bpp = tmp_copy_fmt_layout->bpb / 8;
+
+         mem_format =
+            anv_get_format_plane(device->physical, image->vk.format, plane,
+                                 VK_IMAGE_TILING_LINEAR).isl_format;
+
+         const struct isl_format_layout *mem_fmt_layout =
+            isl_format_get_layout(mem_format);
+         mem_bpp = mem_fmt_layout->bpb / 8;
+
+         tmp_copy_row_pitch_B =
+            calc_mem_row_pitch_B(surf->format, 0, &region->imageExtent);
+         uint64_t tmp_copy_height_pitch_B =
+            calc_mem_height_pitch_B(surf->format, tmp_copy_row_pitch_B, 0,
+                                    &region->imageExtent);
+
+         uint64_t tmp_mem_needed_size = tmp_copy_row_pitch_B * tmp_copy_height_pitch_B;
+         if (tmp_mem_needed_size > tmp_mem_size) {
+            void *new_tmp_mem = vk_realloc(&device->vk.alloc, tmp_mem, tmp_mem_needed_size, 8,
+                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            if (new_tmp_mem == NULL) {
+               vk_free(&device->vk.alloc, tmp_mem);
+               return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+            }
+            tmp_mem = new_tmp_mem;
+            tmp_mem_size = tmp_mem_needed_size;
+         }
+      }
+
       VkOffset3D offset_el =
          vk_offset3d_to_el(surf->format, region->imageOffset);
       VkExtent3D extent_el =
@@ -298,11 +427,11 @@ anv_CopyImageToMemory(
 
       /* Memory distance between each row */
       uint64_t mem_row_pitch_B =
-         calc_mem_row_pitch_B(surf->format, region->memoryRowLength,
+         calc_mem_row_pitch_B(mem_format, region->memoryRowLength,
                               &region->imageExtent);
       /* Memory distance between each slice (1 3D level or 1 array layer) */
       uint64_t mem_height_pitch_B =
-         calc_mem_height_pitch_B(surf->format, mem_row_pitch_B,
+         calc_mem_height_pitch_B(mem_format, mem_row_pitch_B,
                                  region->memoryImageHeight,
                                  &region->imageExtent);
 
@@ -328,18 +457,25 @@ anv_CopyImageToMemory(
             } else {
                anv_copy_image_memory(device, surf,
                                      binding, anv_surf->memory_range.offset,
-                                     mem_ptr,
-                                     mem_row_pitch_B,
+                                     temp_copy ? tmp_mem : mem_ptr,
+                                     temp_copy ? tmp_copy_row_pitch_B : mem_row_pitch_B,
                                      &offset_el,
                                      &extent_el,
                                      region->imageSubresource.mipLevel,
                                      region->imageSubresource.baseArrayLayer,
                                      region->imageOffset.z,
                                      a, z, false /* mem_to_img */);
+               if (temp_copy) {
+                  copy_rgb(tmp_mem, tmp_copy_row_pitch_B, tmp_copy_bpp,
+                           mem_ptr, mem_row_pitch_B, mem_bpp,
+                           &region->imageExtent);
+               }
             }
          }
       }
    }
+
+   vk_free(&device->vk.alloc, tmp_mem);
 
    return VK_SUCCESS;
 }
