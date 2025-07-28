@@ -9,7 +9,7 @@ using namespace aco;
 
 BEGIN_TEST(optimize.neg)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v1: %b, s1: %c, s1: %d = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], s1: %c:s[0], s1: %d:s[1] = p_startpgm
       if (!setup_cs("v1 v1 s1 s1", (amd_gfx_level)i))
          continue;
 
@@ -70,7 +70,7 @@ BEGIN_TEST(optimize.neg)
 END_TEST
 
 BEGIN_TEST(optimize.output_modifiers)
-   //>> v1: %a, v1: %b = p_startpgm
+   //>> v1: %a:v[0], v1: %b:v[1] = p_startpgm
    if (!setup_cs("v1 v1", GFX9))
       return;
 
@@ -256,7 +256,7 @@ END_TEST
 
 BEGIN_TEST(optimize.add_lshl)
    for (unsigned i = GFX8; i <= GFX10; i++) {
-      //>> s1: %a, v1: %b = p_startpgm
+      //>> s1: %a:s[0], v1: %b:v[0] = p_startpgm
       if (!setup_cs("s1 v1", (amd_gfx_level)i))
          continue;
 
@@ -342,7 +342,7 @@ END_TEST
 
 BEGIN_TEST(optimize.bcnt)
    for (unsigned i = GFX8; i <= GFX10; i++) {
-      //>> v1: %a, s1: %b = p_startpgm
+      //>> v1: %a:v[0], s1: %b:s[0] = p_startpgm
       if (!setup_cs("v1 s1", (amd_gfx_level)i))
          continue;
 
@@ -429,7 +429,7 @@ BEGIN_TEST(optimize.clamp)
       aco_print_operand(&cfg.ub, output);
       fprintf(output, "\n");
 
-      //>> v1: %a, v1: %b, v1: %c = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2] = p_startpgm
 
       //! v1: %res0 = @med3 @ub, @lb, %a
       //! p_unit_test 0, %res0
@@ -497,7 +497,7 @@ BEGIN_TEST(optimize.clamp)
 END_TEST
 
 BEGIN_TEST(optimize.add3)
-   //>> v1: %a, v1: %b, v1: %c = p_startpgm
+   //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2] = p_startpgm
    if (!setup_cs("v1 v1 v1", GFX9))
       return;
 
@@ -526,7 +526,7 @@ END_TEST
 
 BEGIN_TEST(optimize.minmax)
    for (unsigned i = GFX10_3; i <= GFX11; i++) {
-      //>> v1: %a, v1: %b, v1: %c = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2] = p_startpgm
       if (!setup_cs("v1 v1 v1", (amd_gfx_level)i))
          continue;
 
@@ -590,7 +590,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_32_24)
    for (unsigned i = GFX8; i <= GFX9; i++) {
-      //>> v1: %a, v1: %b, v1: %c = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2] = p_startpgm
       if (!setup_cs("v1 v1 v1", (amd_gfx_level)i))
          continue;
 
@@ -611,7 +611,7 @@ END_TEST
 
 BEGIN_TEST(optimize.add_lshlrev)
    for (unsigned i = GFX8; i <= GFX10; i++) {
-      //>> v1: %a, v1: %b, s1: %c = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], s1: %c:s[0] = p_startpgm
       if (!setup_cs("v1 v1 s1", (amd_gfx_level)i))
          continue;
 
@@ -749,7 +749,7 @@ BEGIN_TEST(optimize.denorm_propagation)
          fprintf(output, "can_propagate: %u\n", can_propagate);
          //! src, dest, op: $src $dest $op
          //! can_propagate: #can_propagate
-         //>> v1: %a, s2: %b = p_startpgm
+         //>> v1: %a:v[0], s2: %b:s[0-1] = p_startpgm
 
          //; patterns = {'cndmask': 'v1: %{} = v_cndmask_b32 0, {}, %b',
          //;             'min': 'v1: %{} = v_min_f32 0, {}',
@@ -799,7 +799,7 @@ BEGIN_TEST(optimize.denorm_propagation)
 END_TEST
 
 BEGIN_TEST(optimizer.dpp)
-   //>> v1: %a, v1: %b, s2: %c, s1: %d = p_startpgm
+   //>> v1: %a:v[0], v1: %b:v[1], s2: %c:s[0-1], s1: %d:s[2] = p_startpgm
    if (!setup_cs("v1 v1 s2 s1", GFX10_3))
       return;
 
@@ -909,7 +909,7 @@ BEGIN_TEST(optimizer.dpp)
 END_TEST
 
 BEGIN_TEST(optimize.dpp_prop)
-   //>> v1: %a, s1: %b = p_startpgm
+   //>> v1: %a:v[0], s1: %b:s[0] = p_startpgm
    if (!setup_cs("v1 s1", GFX10))
       return;
 
@@ -954,7 +954,7 @@ BEGIN_TEST(optimize.dpp_prop)
 END_TEST
 
 BEGIN_TEST(optimize.casts)
-   //>> v1: %a, v2b: %a16 = p_startpgm
+   //>> v1: %a:v[0], v2b: %a16:v[1][0:16] = p_startpgm
    if (!setup_cs("v1 v2b", GFX10_3))
       return;
 
@@ -1027,7 +1027,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.input_conv.basic)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v2b: %a16 = p_startpgm
+      //>> v1: %a:v[0], v2b: %a16:v[1][0:16] = p_startpgm
       if (!setup_cs("v1 v2b", (amd_gfx_level)i))
          continue;
 
@@ -1062,7 +1062,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.input_conv.precision)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v2b: %a16 = p_startpgm
+      //>> v1: %a:v[0], v2b: %a16:v[1][0:16] = p_startpgm
       if (!setup_cs("v1 v2b", (amd_gfx_level)i))
          continue;
 
@@ -1117,7 +1117,7 @@ BEGIN_TEST(optimize.mad_mix.input_conv.modifiers)
    for (unsigned i = GFX9; i <= GFX11; i++) {
       if (i == GFX10_3)
          continue;
-      //>> v1: %a, v2b: %a16 = p_startpgm
+      //>> v1: %a:v[0], v2b: %a16:v[1][0:16] = p_startpgm
       if (!setup_cs("v1 v2b", (amd_gfx_level)i))
          continue;
 
@@ -1219,7 +1219,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.output_conv.basic)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v1: %b, v1: %c, v2b: %a16, v2b: %b16 = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2], v2b: %a16:v[3][0:16], v2b: %b16:v[4][0:16] = p_startpgm
       if (!setup_cs("v1 v1 v1 v2b v2b", (amd_gfx_level)i))
          continue;
 
@@ -1261,7 +1261,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.output_conv.precision)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v2b: %a16 = p_startpgm
+      //>> v2b: %a16:v[0][0:16] = p_startpgm
       if (!setup_cs("v2b", (amd_gfx_level)i))
          continue;
 
@@ -1285,7 +1285,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.output_conv.modifiers)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v1: %b, v2b: %a16, v2b: %b16 = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v2b: %a16:v[2][0:16], v2b: %b16:v[3][0:16] = p_startpgm
       if (!setup_cs("v1 v1 v2b v2b", (amd_gfx_level)i))
          continue;
 
@@ -1334,7 +1334,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.fma.basic)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v1: %b, v1: %c, v2b: %a16, v2b: %c16 = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2], v2b: %a16:v[3][0:16], v2b: %c16:v[4][0:16] = p_startpgm
       if (!setup_cs("v1 v1 v1 v2b v2b", (amd_gfx_level)i))
          continue;
 
@@ -1389,7 +1389,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.fma.precision)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v1: %b, v1: %c, v2b: %a16, v2b: %b16 = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2], v2b: %a16:v[3][0:16], v2b: %c16:v[4][0:16] = p_startpgm
       if (!setup_cs("v1 v1 v1 v2b v2b", (amd_gfx_level)i))
          continue;
 
@@ -1451,7 +1451,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.clamp)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v2b: %a16 = p_startpgm
+      //>> v1: %a:v[0],  v2b: %b:v[1][0:16] = p_startpgm
       if (!setup_cs("v1 v2b", (amd_gfx_level)i))
          continue;
 
@@ -1478,7 +1478,7 @@ END_TEST
 
 BEGIN_TEST(optimize.mad_mix.cast)
    for (unsigned i = GFX9; i <= GFX10; i++) {
-      //>> v1: %a, v2b: %a16 = p_startpgm
+      //>> v1: %a:v[0],  v2b: %b:v[1][0:16] = p_startpgm
       if (!setup_cs("v1 v2b", (amd_gfx_level)i))
          continue;
 
@@ -1564,7 +1564,7 @@ BEGIN_TEST(optimize.vop3p_constants)
          //; for i in range(36):
          //;    insert_pattern('Expected for %u: $_ / #expected%u' % (i, i))
 
-         //>> v1: %a = p_startpgm
+         //>> v1: %a:v[0] = p_startpgm
          if (!setup_cs("v1", GFX10_3, CHIP_UNKNOWN, variant))
             continue;
 
@@ -1667,7 +1667,7 @@ BEGIN_TEST(optimize.fmamix_two_literals)
     * at least one uncombined use.
     */
    for (unsigned i = GFX10; i <= GFX10_3; i++) {
-      //>> v1: %a, v1: %b = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1] = p_startpgm
       if (!setup_cs("v1 v1", (amd_gfx_level)i))
          continue;
 
@@ -1780,7 +1780,7 @@ END_TEST
 BEGIN_TEST(optimize.fma_opsel)
    /* TODO make these work before GFX11 using SDWA. */
    for (unsigned i = GFX11; i <= GFX11; i++) {
-      //>> v2b: %a, v2b: %b, v1: %c, v1: %d, v1: %e  = p_startpgm
+      //>> v2b: %a:v[0][0:16],  v2b: %b:v[1][0:16],  v1: %c:v[2],  v1: %d:v[3],  v1: %e:v[4] = p_startpgm
       if (!setup_cs("v2b v2b v1 v1 v1", (amd_gfx_level)i))
          continue;
 
@@ -1810,7 +1810,7 @@ BEGIN_TEST(optimize.fma_opsel)
 END_TEST
 
 BEGIN_TEST(optimize.dpp_opsel)
-   //>> v1: %a, v1: %b = p_startpgm
+   //>> v1: %a:v[0], v1: %b:v[1] = p_startpgm
    if (!setup_cs("v1  v1", GFX11))
       return;
 
@@ -1837,7 +1837,7 @@ BEGIN_TEST(optimize.dpp_opsel)
 END_TEST
 
 BEGIN_TEST(optimize.apply_sgpr_swap_opsel)
-   //>> v1: %a, s1: %b = p_startpgm
+   //>> v1: %a:v[0], s1: %b:s[0] = p_startpgm
    if (!setup_cs("v1  s1", GFX11))
       return;
 
@@ -1861,7 +1861,7 @@ END_TEST
 BEGIN_TEST(optimize.max3_opsel)
    /* TODO make these work before GFX11 using SDWA. */
    for (unsigned i = GFX11; i <= GFX11; i++) {
-      //>> v1: %a, v1: %b, v2b: %c = p_startpgm
+      //>> v1: %a:v[0], v1: %b:v[1], v2b: %c:v[2][0:16] = p_startpgm
       if (!setup_cs("v1  v1 v2b", GFX11))
          continue;
 
@@ -1882,7 +1882,7 @@ BEGIN_TEST(optimize.max3_opsel)
 END_TEST
 
 BEGIN_TEST(optimize.neg_mul_opsel)
-   //>> v1: %a, v2b: %b = p_startpgm
+   //>> v1: %a:v[0], v2b: %b:v[1][0:16] = p_startpgm
    if (!setup_cs("v1  v2b", GFX11))
       return;
 
@@ -1903,7 +1903,7 @@ BEGIN_TEST(optimize.neg_mul_opsel)
 END_TEST
 
 BEGIN_TEST(optimize.vinterp_inreg_output_modifiers)
-   //>> v1: %a, v1: %b, v1: %c = p_startpgm
+   //>> v1: %a:v[0], v1: %b:v[1], v1: %c:v[2] = p_startpgm
    if (!setup_cs("v1 v1 v1", GFX11))
       return;
 
@@ -1944,7 +1944,7 @@ BEGIN_TEST(optimize.vinterp_inreg_output_modifiers)
 END_TEST
 
 BEGIN_TEST(optimize.s_pack)
-   //>> s1: %a, s1: %b, s1: %c = p_startpgm
+   //>> s1: %a:s[0], s1: %b:s[1], s1: %c:s[2] = p_startpgm
    if (!setup_cs("s1 s1 s1", GFX11))
       return;
 
@@ -2035,7 +2035,7 @@ BEGIN_TEST(optimizer.trans_inline_constant)
 END_TEST
 
 BEGIN_TEST(optimizer.trans_no_omod)
-   //>> s1: %a = p_startpgm
+   //>> s1: %a:s[0] = p_startpgm
    if (!setup_cs("s1", GFX12))
       return;
 

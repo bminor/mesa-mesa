@@ -5,14 +5,14 @@
  */
 #include "helpers.h"
 
+#include "aco_ir.h"
+
 #include "common/amd_family.h"
 #include "common/nir/ac_nir.h"
-#include "vk_format.h"
 
 #include <llvm-c/Target.h>
 
 #include <mutex>
-#include <sstream>
 #include <stdio.h>
 
 using namespace aco;
@@ -112,11 +112,15 @@ setup_cs(const char* input_spec, enum amd_gfx_level gfx_level, enum radeon_famil
             input_spec++;
       }
 
+      PhysReg sgpr_reg{0};
+      PhysReg vgpr_reg{256};
       aco_ptr<Instruction> startpgm{
          create_instruction(aco_opcode::p_startpgm, Format::PSEUDO, 0, input_classes.size())};
       for (unsigned i = 0; i < input_classes.size(); i++) {
          inputs[i] = bld.tmp(input_classes[i]);
-         startpgm->definitions[i] = Definition(inputs[i]);
+         PhysReg& reg = input_classes[i].type() == RegType::sgpr ? sgpr_reg : vgpr_reg;
+         startpgm->definitions[i] = Definition(inputs[i], reg);
+         reg = reg.advance(input_classes[i].size() * 4);
       }
       bld.insert(std::move(startpgm));
    }
