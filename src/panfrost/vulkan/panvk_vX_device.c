@@ -480,12 +480,15 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 #endif
 
    result = panvk_priv_bo_create(
-      device, pan_sample_positions_buffer_size(), 0,
+      device, pan_sample_positions_buffer_size(),
+      panvk_device_adjust_bo_flags(device, PAN_KMOD_BO_FLAG_WB_MMAP),
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &device->sample_positions);
    if (result != VK_SUCCESS)
       goto err_free_priv_bos;
 
    pan_upload_sample_positions(device->sample_positions->addr.host);
+   panvk_priv_bo_flush(device->sample_positions, 0,
+                       pan_sample_positions_buffer_size());
 
 #if PAN_ARCH >= 10
    result = panvk_per_arch(init_tiler_oom)(device);

@@ -145,8 +145,10 @@ panvk_per_arch(device_draw_context_init)(struct panvk_device *dev)
    if (dev->draw_ctx == NULL)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
+   const uint32_t fns_bo_size = PROVOKING_VERTEX_FN_MAX_SIZE * 2 * MAX_RTS;
    VkResult result = panvk_priv_bo_create(
-      dev, PROVOKING_VERTEX_FN_MAX_SIZE * 2 * MAX_RTS, 0,
+      dev, fns_bo_size,
+      panvk_device_adjust_bo_flags(dev, PAN_KMOD_BO_FLAG_WB_MMAP),
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &dev->draw_ctx->fns_bo);
    if (result != VK_SUCCESS)
       goto free_draw_ctx;
@@ -182,6 +184,8 @@ panvk_per_arch(device_draw_context_init)(struct panvk_device *dev)
                  dump_region_size);
       }
    }
+
+   panvk_priv_bo_flush(dev->draw_ctx->fns_bo, 0, fns_bo_size);
 
    return VK_SUCCESS;
 
