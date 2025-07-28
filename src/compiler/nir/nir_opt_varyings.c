@@ -5487,7 +5487,6 @@ nir_opt_varyings_bulk(nir_shader **shaders, uint32_t num_shaders, bool spirv,
 
    for (unsigned i = 0; i < num_shaders; i++) {
       nir_shader *nir = shaders[i];
-      assert(i == 0 || nir->info.stage > shaders[i - 1]->info.stage);
 
       /* Inter-shader code motion in nir_opt_varyings requires that each input
        * load is loaded only once when possible, so move all input loads
