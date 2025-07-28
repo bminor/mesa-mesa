@@ -25,8 +25,13 @@ glx@glx-destroycontext-1
 
 glx@glx-multithread-texture
 
+# glx-multithread-clearbuffer: ../src/util/u_queue.h:111: util_queue_fence_reset: Assertion `v == 0' failed.
+glx@glx-multithread-clearbuffer
+
 # does not happen very often, but rarely does
 KHR-GL46.limits.max_fragment_interpolation_offset
+
+spec@ext_framebuffer_object@fbo-flushing-2
 
 # no output timeout, probably stuck in some X11 connection thing
 spec@ext_framebuffer_multisample@accuracy all_samples depth_resolve depthstencil

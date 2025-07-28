@@ -12,12 +12,12 @@ zink-lavapipe:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   variables:
     DEQP_SUITE: zink-lavapipe
-    DEQP_FRACTION: 8
     PIGLIT_NO_WINDOW: 1
     # Enable validation (except for on piglit, see deqp-zink-lavapipe.toml), logging
     # to stdout and aborting on unknown failures.
     ZINK_DEBUG: validation
     VK_DRIVER: lvp
+  parallel: 2
   script: |
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
