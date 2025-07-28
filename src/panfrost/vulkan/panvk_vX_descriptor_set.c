@@ -34,7 +34,7 @@
 #include "panvk_priv_bo.h"
 #include "panvk_sampler.h"
 
-static void *
+static const void *
 get_desc_slot_ptr(struct panvk_descriptor_set *set, uint32_t binding,
                   uint32_t elem, struct panvk_subdesc_info subdesc)
 {
@@ -48,12 +48,31 @@ get_desc_slot_ptr(struct panvk_descriptor_set *set, uint32_t binding,
    return (char *)set->descs.host + offset * PANVK_DESCRIPTOR_SIZE;
 }
 
+static void
+write_desc_data(struct panvk_descriptor_set *set, uint32_t binding,
+                uint32_t elem, struct panvk_subdesc_info subdesc,
+                uint32_t desc_offset, const void *desc_data, size_t desc_size)
+{
+   const struct panvk_descriptor_set_binding_layout *binding_layout =
+      &set->layout->bindings[binding];
+
+   uint32_t index = panvk_get_desc_index(binding_layout, elem, subdesc);
+
+   assert(index < set->layout->desc_count);
+   assert(index + DIV_ROUND_UP(desc_size, PANVK_DESCRIPTOR_SIZE) <=
+          set->layout->desc_count);
+
+   uint32_t offset_B = desc_offset + index * PANVK_DESCRIPTOR_SIZE;
+
+   memcpy((char *)set->descs.host + offset_B, desc_data, desc_size);
+}
+
 #define write_desc(set, binding, elem, desc, subdesc)                          \
    do {                                                                        \
       static_assert(sizeof(*(desc)) == PANVK_DESCRIPTOR_SIZE,                  \
                     "wrong descriptor size");                                  \
-      void *__dst = get_desc_slot_ptr(set, binding, elem, subdesc);            \
-      memcpy(__dst, (desc), PANVK_DESCRIPTOR_SIZE);                            \
+      write_desc_data(set, binding, elem, subdesc, 0,                          \
+                      (desc), PANVK_DESCRIPTOR_SIZE);                          \
    } while (0)
 
 #if PAN_ARCH >= 9
@@ -243,16 +262,8 @@ static void
 write_iub(struct panvk_descriptor_set *set, uint32_t binding,
           uint32_t dst_offset, uint32_t count, const void *data)
 {
-   const struct panvk_descriptor_set_binding_layout *binding_layout =
-      &set->layout->bindings[binding];
-
    /* First slot is the actual buffer descriptor. */
-   uint32_t iub_data_offset =
-      panvk_get_desc_index(binding_layout, 1, NO_SUBDESC) *
-      PANVK_DESCRIPTOR_SIZE;
-
-   void *iub_data_host = set->descs.host + iub_data_offset;
-   memcpy(iub_data_host + dst_offset, data, count);
+   write_desc_data(set, binding, 1, NO_SUBDESC, dst_offset, data, count);
 }
 
 static void
@@ -729,16 +740,13 @@ panvk_descriptor_set_copy(const VkCopyDescriptorSet *copy)
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
    case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
       for (uint32_t i = 0; i < copy->descriptorCount; i++) {
-         void *dst = get_desc_slot_ptr(dst_set, copy->dstBinding,
-                                       copy->dstArrayElement + i,
-                                       NO_SUBDESC);
          const void *src = get_desc_slot_ptr(src_set, copy->srcBinding,
                                              copy->srcArrayElement + i,
                                              NO_SUBDESC);
-
-         memcpy(dst, src,
-                PANVK_DESCRIPTOR_SIZE *
-                   panvk_get_desc_stride(src_binding_layout));
+         const size_t copy_size =
+            PANVK_DESCRIPTOR_SIZE * panvk_get_desc_stride(src_binding_layout);
+         write_desc_data(dst_set, copy->dstBinding, copy->dstArrayElement + i,
+                         NO_SUBDESC, 0, src, copy_size);
       }
       break;
 
