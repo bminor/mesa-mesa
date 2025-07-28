@@ -2583,13 +2583,13 @@ struct apply_viewport_state {
 };
 
 /* It's a hardware restriction that the window offset (i.e. common_bin_offset)
- * must be the same for all views. This means that GMEM coordinates cannot be
- * a simple scaling of framebuffer coordinates, because this would require us
- * to scale the window offset and the scale may be different per view. Instead
- * we have to apply a per-bin offset to the GMEM coordinate transform to make
- * sure that the window offset maps to the per-view bin coordinate, which will
- * be the same if there is no offset. Specifically we need an offset o to the
- * transform:
+ * must be the same for all views. This means that rendering coordinates
+ * cannot be a simple scaling of framebuffer coordinates, because this would
+ * require us to scale the window offset and the scale may be different per
+ * view. Instead we have to apply a per-bin offset to the rendering coordinate
+ * transform to make sure that the window offset maps to the per-view bin
+ * coordinate, which will be the same if there is no offset. Specifically we
+ * need an offset o to the transform:
  *
  * x' = s * x + o
  *
