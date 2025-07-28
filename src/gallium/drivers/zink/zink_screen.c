@@ -686,7 +686,7 @@ zink_init_screen_caps(struct zink_screen *screen)
 
    caps->null_textures = screen->info.rb_image_feats.robustImageAccess;
    /* support OVR_multiview and OVR_multiview2 */
-   caps->multiview = screen->info.have_vulkan13 ? 2 * screen->info.feats11.multiview : 0;
+   caps->multiview = screen->info.feats11.multiview;
    caps->texrect = false;
    caps->multi_draw_indirect_partial_stride = false;
    caps->anisotropic_filter = screen->info.feats.features.samplerAnisotropy;
