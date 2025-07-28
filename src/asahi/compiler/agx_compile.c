@@ -3168,23 +3168,8 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
    /* Reassociate before forming preambles because it makes preambles more
     * effective. Clean up after.
     */
-   for (unsigned i = 0; i < 4; ++i) {
-      nir_reassociate_options opts = nir_reassociate_scalar_math;
-      if (i < 2)
-         opts |= nir_reassociate_cse_heuristic;
-
-      NIR_PASS(_, nir, nir_opt_reassociate, opts);
-
-      do {
-         progress = false;
-
-         NIR_PASS(progress, nir, nir_opt_algebraic);
-         NIR_PASS(progress, nir, nir_opt_constant_folding);
-         NIR_PASS(progress, nir, nir_copy_prop);
-         NIR_PASS(progress, nir, nir_opt_cse);
-         NIR_PASS(progress, nir, nir_opt_dce);
-      } while (progress);
-   }
+   nir_opt_reassociate_loop(
+      nir, nir_reassociate_scalar_math | nir_reassociate_cse_heuristic);
 
    /* Lower fmin/fmax before optimizing preambles so we can see across uniform
     * expressions. Do it after nir_opt_reassociate because nir_opt_reassociate

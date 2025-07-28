@@ -6321,6 +6321,8 @@ typedef enum {
 
 bool nir_opt_reassociate(nir_shader *shader, nir_reassociate_options opts);
 
+bool nir_opt_reassociate_loop(nir_shader *shader, nir_reassociate_options opts);
+
 bool nir_opt_reassociate_bfi(nir_shader *shader);
 
 bool nir_opt_rematerialize_compares(nir_shader *shader);
