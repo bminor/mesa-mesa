@@ -22,6 +22,9 @@ struct hk_queue {
       /* Timeline syncobj backing the queue */
       uint32_t syncobj;
 
+      /* Ring-idx used with virtgpu, equal to priority + 1 */
+      uint32_t virt_ring_idx;
+
       /* Current maximum timeline value for the queue's syncobj. If the
        * syncobj's value equals timeline_value, then all work is complete.
        */
