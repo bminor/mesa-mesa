@@ -310,7 +310,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
          break;
 
       default:
-         unreachable();
+         unreachable("");
       }
    }
 
@@ -380,7 +380,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 
    default:
       /* Should have been previously lowered. */
-      unreachable();
+      unreachable("");
    }
 }
 
@@ -556,7 +556,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       printf("Unsupported intrinsic: \"");
       nir_print_instr(&intr->instr, stdout);
       printf("\"\n");
-      unreachable();
+      unreachable("");
       break;
    }
 
@@ -741,7 +741,7 @@ trans_scmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
       break;
 
    default:
-      unreachable();
+      unreachable("");
    }
 
    return pco_scmp(&tctx->b, dest, src0, src1, .tst_op_main = tst_op_main);
@@ -789,7 +789,7 @@ static pco_instr *trans_logical(trans_ctx *tctx,
       break;
 
    default:
-      unreachable();
+      unreachable("");
    }
 
    return pco_logical(&tctx->b, dest, src0, src1, .logiop = logiop);
@@ -1000,7 +1000,7 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       printf("Unsupported alu instruction: \"");
       nir_print_instr(&alu->instr, stdout);
       printf("\"\n");
-      unreachable();
+      unreachable("");
    }
 
    if (!pco_ref_is_scalar(dest))
@@ -1077,7 +1077,7 @@ static pco_instr *trans_instr(trans_ctx *tctx, nir_instr *ninstr)
       break;
    }
 
-   unreachable();
+   unreachable("");
 }
 
 /**
@@ -1213,7 +1213,7 @@ static pco_block *trans_cf_nodes(trans_ctx *tctx,
       }
 
       default:
-         unreachable();
+         unreachable("");
       }
 
       cf_node->parent = parent_cf_node;

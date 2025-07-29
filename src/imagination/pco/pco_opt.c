@@ -105,7 +105,7 @@ static inline bool pco_opt_prep_mods(pco_shader *shader,
                break;
 
             default:
-               unreachable();
+               unreachable("");
             }
 
             /* Source can already have the mod set. */
@@ -140,7 +140,7 @@ static inline bool pco_opt_prep_mods(pco_shader *shader,
             break;
 
          default:
-            unreachable();
+            unreachable("");
          }
 
          pco_builder b = pco_builder_create(func, pco_cursor_before_instr(mod));

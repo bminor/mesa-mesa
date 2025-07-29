@@ -214,7 +214,7 @@ try_opt_quad_vote(nir_builder *b, nir_alu_instr *alu, bool block_has_discard)
             lane = (nir_intrinsic_swizzle_mask(quad_broadcasts[i]) >> (j * 2)) & 0x3;
             break;
          default:
-            unreachable();
+            unreachable("");
          }
          lanes_read |= (1 << lane) << (j * 4);
       }

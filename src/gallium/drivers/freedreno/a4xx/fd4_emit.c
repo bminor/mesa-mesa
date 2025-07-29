@@ -303,7 +303,7 @@ emit_textures(struct fd_context *ctx, struct fd_ringbuffer *ring,
                break;
 
             default:
-               unreachable();
+               unreachable("");
             }
 
             texconst0 =
