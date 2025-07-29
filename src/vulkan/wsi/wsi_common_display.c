@@ -182,6 +182,8 @@ typedef struct wsi_display_connector {
    xcb_randr_output_t           output;
 #endif
    struct wsi_display_connector_metadata metadata;
+   uint32_t                     count_formats;
+   uint32_t                     *formats;
 } wsi_display_connector;
 
 struct wsi_display {
@@ -1357,10 +1359,34 @@ get_sorted_vk_formats(struct wsi_device *wsi_device, VkSurfaceFormatKHR *sorted_
 }
 
 static bool
+wsi_display_setup_crtc(wsi_display_connector *connector);
+
+static bool
 surface_format_supported(VkIcdSurfaceBase *icd_surface, VkSurfaceFormatKHR surface_format)
 {
    VkIcdSurfaceDisplay *surface = (VkIcdSurfaceDisplay *) icd_surface;
    wsi_display_mode *mode = wsi_display_mode_from_handle(surface->displayMode);
+   uint32_t i, drm_format = DRM_FORMAT_INVALID;
+
+   for (i = 0; i < ARRAY_SIZE(available_surface_formats); i++) {
+      if (surface_format.format == available_surface_formats[i].surface_format.format &&
+          surface_format.colorSpace == available_surface_formats[i].surface_format.colorSpace) {
+         drm_format = available_surface_formats[i].drm_format;
+         break;
+      }
+   }
+
+   assert(i != ARRAY_SIZE(available_surface_formats));
+
+   if (!wsi_display_setup_crtc(mode->connector))
+      return false;
+
+   for (i = 0; i < mode->connector->count_formats; i++) {
+      if (mode->connector->formats[i] == drm_format)
+         break;
+   }
+   if (i == mode->connector->count_formats)
+      return false;
 
    if (surface_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
       return true;
@@ -2107,6 +2133,58 @@ wsi_display_select_plane(const struct wsi_display_connector *connector,
    return plane_id;
 }
 
+static bool
+wsi_display_setup_crtc(wsi_display_connector *connector)
+{
+   struct wsi_display *wsi = connector->wsi;
+   bool ret = false;
+
+   if (connector->crtc_id)
+      return true;
+
+   drmModeConnectorPtr drm_connector = drmModeGetConnector(wsi->fd, connector->id);
+
+   if (!drm_connector)
+      return false;
+
+   drmModeResPtr mode_res = drmModeGetResources(wsi->fd);
+   if (!mode_res)
+      return false;
+
+   connector->crtc_id = wsi_display_select_crtc(connector, mode_res, drm_connector);
+   if (!connector->crtc_id ||
+       !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_CRTC))
+      goto bail;
+
+   /* Select the primary plane of that CRTC, and populate the
+    * format/modifier lists for that plane */
+   connector->plane_id = wsi_display_select_plane(connector, mode_res);
+   if (!connector->plane_id ||
+       !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_PLANE))
+      goto bail;
+
+   drmModePlanePtr plane = drmModeGetPlane(wsi->fd, connector->plane_id);
+   if (!plane)
+      goto bail;
+
+   size_t size = sizeof(*plane->formats) * plane->count_formats;
+   connector->formats =
+      vk_zalloc(wsi->alloc, size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (connector->formats) {
+      memcpy(connector->formats, plane->formats, size);
+      connector->count_formats = plane->count_formats;
+   }
+
+   drmModeFreePlane(plane);
+
+   ret = true;
+
+bail:
+   drmModeFreeResources(mode_res);
+   drmModeFreeConnector(drm_connector);
+   return ret;
+}
+
 static VkResult
 wsi_display_setup_connector(wsi_display_connector *connector,
                             wsi_display_mode *display_mode)
@@ -2139,23 +2217,9 @@ wsi_display_setup_connector(wsi_display_connector *connector,
    }
 
    /* Pick a CRTC if we don't have one */
-   if (!connector->crtc_id) {
-      connector->crtc_id = wsi_display_select_crtc(connector, mode_res,
-                                                   drm_connector);
-      if (!connector->crtc_id ||
-          !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_CRTC)) {
-         result = VK_ERROR_SURFACE_LOST_KHR;
-         goto bail_connector;
-      }
-
-      /* Select the primary plane of that CRTC, and populate the
-       * format/modifier lists for that plane */
-      connector->plane_id = wsi_display_select_plane(connector, mode_res);
-      if (!connector->plane_id ||
-          !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_PLANE)) {
-         result = VK_ERROR_SURFACE_LOST_KHR;
-         goto bail_connector;
-      }
+   if (!wsi_display_setup_crtc(connector)) {
+      result = VK_ERROR_SURFACE_LOST_KHR;
+      goto bail_connector;
    }
 
    if (connector->current_mode != display_mode) {
@@ -3127,6 +3191,7 @@ wsi_display_finish_wsi(struct wsi_device *wsi_device,
          wsi_for_each_display_mode(mode, connector) {
             vk_free(wsi->alloc, mode);
          }
+         vk_free(wsi->alloc, connector->formats);
          vk_free(wsi->alloc, connector);
       }
 
