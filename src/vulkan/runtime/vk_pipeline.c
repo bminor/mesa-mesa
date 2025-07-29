@@ -843,6 +843,9 @@ struct vk_pipeline_stage {
 
    struct vk_pipeline_precomp_shader *precomp;
 
+   /* Hash used to lookup the shader */
+   struct vk_shader_pipeline_cache_key shader_key;
+
    struct vk_shader *shader;
 };
 
@@ -2016,7 +2019,7 @@ vk_common_CreateGraphicsPipelines(VkDevice _device,
 
 struct vk_compute_pipeline {
    struct vk_pipeline base;
-   struct vk_shader *shader;
+   struct vk_pipeline_stage stage;
 };
 
 static void
@@ -2027,7 +2030,7 @@ vk_compute_pipeline_destroy(struct vk_device *device,
    struct vk_compute_pipeline *comp_pipeline =
       container_of(pipeline, struct vk_compute_pipeline, base);
 
-   vk_shader_unref(device, comp_pipeline->shader);
+   vk_pipeline_stage_finish(device, &comp_pipeline->stage);
    vk_pipeline_free(device, pAllocator, pipeline);
 }
 
@@ -2044,7 +2047,7 @@ vk_compute_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
       struct vk_compute_pipeline *comp_pipeline =
          container_of(pipeline, struct vk_compute_pipeline, base);
 
-      shader = comp_pipeline->shader;
+      shader = comp_pipeline->stage.shader;
 
       cmd_buffer->pipeline_shader_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
    } else {
@@ -2055,28 +2058,33 @@ vk_compute_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
    ops->cmd_bind_shaders(cmd_buffer, 1, &stage, &shader);
 }
 
-static VkResult
-vk_pipeline_compile_compute_stage(struct vk_device *device,
-                                  struct vk_pipeline_cache *cache,
-                                  struct vk_compute_pipeline *pipeline,
-                                  struct vk_pipeline_layout *pipeline_layout,
-                                  struct vk_pipeline_stage *stage,
-                                  bool *cache_hit)
+static void
+vk_get_compute_pipeline_compile_info(struct vk_pipeline_stage *stage,
+                                     struct vk_device *device,
+                                     const VkComputePipelineCreateInfo *pCreateInfo)
 {
+   VK_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
    const struct vk_device_shader_ops *ops = device->shader_ops;
-   VkResult result;
+
+   *stage = (struct vk_pipeline_stage) { .stage = MESA_SHADER_COMPUTE, };
 
    const VkPushConstantRange *push_range =
       get_push_range_for_stage(pipeline_layout, MESA_SHADER_COMPUTE);
 
-   VkShaderCreateFlagsEXT shader_flags =
-      vk_pipeline_to_shader_flags(pipeline->base.flags, MESA_SHADER_COMPUTE);
+   const VkPipelineCreateFlags2KHR pipeline_flags =
+      vk_compute_pipeline_create_flags(pCreateInfo);
+
+   const VkShaderCreateFlagsEXT shader_flags =
+      vk_pipeline_to_shader_flags(pipeline_flags, MESA_SHADER_COMPUTE);
+
+   vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags, pCreateInfo->pNext,
+                                         &pCreateInfo->stage, stage);
 
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
 
-   _mesa_blake3_update(&blake3_ctx, stage->precomp->cache_key,
-                     sizeof(stage->precomp->cache_key));
+   _mesa_blake3_update(&blake3_ctx, stage->precomp_key,
+                     sizeof(stage->precomp_key));
 
    _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
 
@@ -2096,15 +2104,27 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
    if (push_range != NULL)
       _mesa_blake3_update(&blake3_ctx, push_range, sizeof(*push_range));
 
-   struct vk_shader_pipeline_cache_key shader_key = {
+   stage->shader_key = (struct vk_shader_pipeline_cache_key) {
       .stage = MESA_SHADER_COMPUTE,
    };
-   _mesa_blake3_final(&blake3_ctx, shader_key.blake3);
+   _mesa_blake3_final(&blake3_ctx, stage->shader_key.blake3);
+}
+
+static VkResult
+vk_pipeline_compile_compute_stage(struct vk_device *device,
+                                  struct vk_pipeline_cache *cache,
+                                  struct vk_compute_pipeline *pipeline,
+                                  struct vk_pipeline_layout *pipeline_layout,
+                                  struct vk_pipeline_stage *stage,
+                                  bool *cache_hit)
+{
+   const struct vk_device_shader_ops *ops = device->shader_ops;
+   VkResult result;
 
    if (cache != NULL) {
       struct vk_pipeline_cache_object *cache_obj =
-         vk_pipeline_cache_lookup_object(cache, &shader_key,
-                                         sizeof(shader_key),
+         vk_pipeline_cache_lookup_object(cache, &stage->shader_key,
+                                         sizeof(stage->shader_key),
                                          &pipeline_shader_cache_ops,
                                          cache_hit);
       if (cache_obj != NULL) {
@@ -2125,6 +2145,12 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
                                                         nir_options);
    if (nir == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   const VkPushConstantRange *push_range =
+      get_push_range_for_stage(pipeline_layout, MESA_SHADER_COMPUTE);
+
+   VkShaderCreateFlagsEXT shader_flags =
+      vk_pipeline_to_shader_flags(pipeline->base.flags, MESA_SHADER_COMPUTE);
 
    /* vk_device_shader_ops::compile() consumes the NIR regardless of whether
     * or not it succeeds and only generates shaders on success. Once compile()
@@ -2148,7 +2174,8 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   vk_shader_init_cache_obj(device, shader, &shader_key, sizeof(shader_key));
+   vk_shader_init_cache_obj(device, shader, &stage->shader_key,
+                            sizeof(stage->shader_key));
 
    struct vk_pipeline_cache_object *cache_obj = &shader->pipeline.cache_obj;
    if (cache != NULL)
@@ -2168,7 +2195,7 @@ vk_compute_pipeline_get_executable_properties(
 {
    struct vk_compute_pipeline *comp_pipeline =
       container_of(pipeline, struct vk_compute_pipeline, base);
-   struct vk_shader *shader = comp_pipeline->shader;
+   struct vk_shader *shader = comp_pipeline->stage.shader;
 
    return shader->ops->get_executable_properties(device, shader,
                                                  executable_count,
@@ -2185,7 +2212,7 @@ vk_compute_pipeline_get_executable_statistics(
 {
    struct vk_compute_pipeline *comp_pipeline =
       container_of(pipeline, struct vk_compute_pipeline, base);
-   struct vk_shader *shader = comp_pipeline->shader;
+   struct vk_shader *shader = comp_pipeline->stage.shader;
 
    return shader->ops->get_executable_statistics(device, shader,
                                                  executable_index,
@@ -2203,7 +2230,7 @@ vk_compute_pipeline_get_internal_representations(
 {
    struct vk_compute_pipeline *comp_pipeline =
       container_of(pipeline, struct vk_compute_pipeline, base);
-   struct vk_shader *shader = comp_pipeline->shader;
+   struct vk_shader *shader = comp_pipeline->stage.shader;
 
    return shader->ops->get_executable_internal_representations(
       device, shader, executable_index,
@@ -2218,7 +2245,7 @@ vk_compute_pipeline_get_shader(struct vk_pipeline *pipeline,
       container_of(pipeline, struct vk_compute_pipeline, base);
 
    assert(stage == MESA_SHADER_COMPUTE);
-   return comp_pipeline->shader;
+   return comp_pipeline->stage.shader;
 }
 
 static const struct vk_pipeline_ops vk_compute_pipeline_ops = {
@@ -2241,6 +2268,9 @@ vk_create_compute_pipeline(struct vk_device *device,
    int64_t pipeline_start = os_time_get_nano();
    VkResult result;
 
+   struct vk_pipeline_stage stage;
+   vk_get_compute_pipeline_compile_info(&stage, device, pCreateInfo);
+
    const VkPipelineCreateFlags2KHR pipeline_flags =
       vk_compute_pipeline_create_flags(pCreateInfo);
 
@@ -2252,18 +2282,12 @@ vk_create_compute_pipeline(struct vk_device *device,
       vk_pipeline_zalloc(device, &vk_compute_pipeline_ops,
                          VK_PIPELINE_BIND_POINT_COMPUTE,
                          pipeline_flags, pAllocator, sizeof(*pipeline));
-   if (pipeline == NULL)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   if (pipeline == NULL) {
+      result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+      goto fail_stage;
+   }
 
    pipeline->base.stages = VK_SHADER_STAGE_COMPUTE_BIT;
-
-   struct vk_pipeline_stage stage = {
-      .stage = MESA_SHADER_COMPUTE,
-   };
-
-   vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
-                                         pCreateInfo->pNext,
-                                         &pCreateInfo->stage, &stage);
 
    result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
                                           pCreateInfo->pNext,
@@ -2277,11 +2301,9 @@ vk_create_compute_pipeline(struct vk_device *device,
                                               pipeline_layout, &stage,
                                               &cache_hit);
    if (result != VK_SUCCESS)
-      goto fail_stage;
+      goto fail_pipeline;
 
-   if (stage.precomp != NULL)
-      vk_pipeline_precomp_shader_unref(device, stage.precomp);
-   pipeline->shader = stage.shader;
+   pipeline->stage = vk_pipeline_stage_clone(&stage);
 
    const int64_t pipeline_end = os_time_get_nano();
    if (feedback_info != NULL) {
@@ -2301,14 +2323,16 @@ vk_create_compute_pipeline(struct vk_device *device,
       }
    }
 
+   vk_pipeline_stage_finish(device, &stage);
+
    *pPipeline = vk_pipeline_to_handle(&pipeline->base);
 
    return VK_SUCCESS;
 
-fail_stage:
-   vk_pipeline_stage_finish(device, &stage);
 fail_pipeline:
    vk_pipeline_free(device, pAllocator, &pipeline->base);
+fail_stage:
+   vk_pipeline_stage_finish(device, &stage);
 
    return result;
 }
