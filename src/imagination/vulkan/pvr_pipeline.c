@@ -1739,7 +1739,7 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
          break;
 
       default:
-         unreachable();
+         unreachable("");
       }
    }
 
@@ -2019,7 +2019,7 @@ pvr_preprocess_shader_data(pco_data *data,
    }
 
    default:
-      unreachable();
+      unreachable("");
    }
 
    pvr_init_descriptors(data, nir, layout);
@@ -2061,7 +2061,7 @@ pvr_postprocess_shader_data(pco_data *data,
    }
 
    default:
-      unreachable();
+      unreachable("");
    }
 
    pvr_setup_descriptors(data, nir, layout);

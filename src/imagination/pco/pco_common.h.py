@@ -49,7 +49,7 @@ const char *${enum.name}_str(uint64_t val) {
       break;
    }
 
-   unreachable();
+   unreachable("");
 }
 
 % endfor
