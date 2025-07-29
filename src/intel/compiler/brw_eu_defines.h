@@ -218,6 +218,7 @@ enum ENUM_PACKED opcode {
    BRW_OPCODE_SUBB,
    BRW_OPCODE_ADD3, /* Gen12+ only */
    BRW_OPCODE_DP4,
+   BRW_OPCODE_SRND, /* Xe2+ only */
    BRW_OPCODE_DPH,
    BRW_OPCODE_DP3,
    BRW_OPCODE_DP2,

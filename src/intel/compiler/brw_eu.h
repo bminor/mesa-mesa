@@ -1539,6 +1539,9 @@ brw_eu_inst *brw_DPAS(struct brw_codegen *p, enum gfx12_systolic_depth sdepth,
                    unsigned rcount, struct brw_reg dest, struct brw_reg src0,
                    struct brw_reg src1, struct brw_reg src2);
 
+brw_eu_inst *brw_SRND(struct brw_codegen *p, struct brw_reg dest,
+                   struct brw_reg src0, struct brw_reg src1);
+
 void
 brw_broadcast(struct brw_codegen *p,
               struct brw_reg dst,

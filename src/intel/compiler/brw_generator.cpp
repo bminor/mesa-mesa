@@ -922,6 +922,11 @@ brw_generator::generate_code(const brw_shader &s,
          brw_DP4A(p, dst, src[0], src[1], src[2]);
          break;
 
+      case BRW_OPCODE_SRND:
+         assert(devinfo->ver >= 20);
+         brw_SRND(p, dst, src[0], src[1]);
+         break;
+
       case BRW_OPCODE_LINE:
          brw_LINE(p, dst, src[0], src[1]);
          break;
