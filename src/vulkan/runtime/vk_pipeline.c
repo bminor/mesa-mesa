@@ -41,6 +41,8 @@
 #include "nir_serialize.h"
 #include "nir.h"
 
+#include "shader_enums.h"
+
 #include "util/mesa-sha1.h"
 
 bool
@@ -1143,8 +1145,22 @@ vk_pipeline_to_shader_flags(VkPipelineCreateFlags2KHR pipeline_flags,
    return shader_flags;
 }
 
-/* Specify how linking should be done for graphics stages */
-struct vk_graphics_pipeline_link_info {
+struct vk_graphics_pipeline_compile_info {
+   /* Compacted array of stages */
+   struct vk_pipeline_stage stages[MESA_SHADER_MESH_STAGES];
+   uint32_t stage_count;
+
+   /* Maps gl_shader_stage to the matching index in stages[] */
+   uint32_t stage_to_index[MESA_SHADER_MESH_STAGES];
+
+   /* Imported stages from pipeline libraries */
+   VkShaderStageFlags imported_stages;
+
+   uint32_t set_layout_count;
+   struct vk_descriptor_set_layout *set_layouts[MESA_VK_MAX_DESCRIPTOR_SETS];
+
+   struct vk_graphics_pipeline_state *state;
+
    bool optimize;
 
    uint32_t part_count;
@@ -1153,19 +1169,178 @@ struct vk_graphics_pipeline_link_info {
    VkShaderStageFlags part_stages[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
 };
 
+/* Compute all the state necessary for compilation, this includes precomp
+ * shader hashes, final shader hashes and all the state necessary.
+ */
 static void
-vk_graphics_pipeline_compute_link_info(struct vk_graphics_pipeline_link_info *link_info,
-                                       bool link_time_optimize,
-                                       uint32_t stage_count,
-                                       const struct vk_pipeline_stage *stages)
+vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *info,
+                                      struct vk_device *device,
+                                      struct vk_graphics_pipeline_state *state,
+                                      struct vk_graphics_pipeline_all_state *all_state,
+                                      const VkGraphicsPipelineCreateInfo *pCreateInfo)
 {
-   memset(link_info, 0, sizeof(*link_info));
+   VK_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
 
-   link_info->optimize = link_time_optimize;
+   memset(info, 0, sizeof(*info));
 
-   /* No shader, must be a pipeline library with vertex-input/color-output */
-   if (stage_count == 0)
-      return;
+   info->state = state;
+
+   const VkPipelineCreateFlags2KHR pipeline_flags =
+      vk_graphics_pipeline_create_flags(pCreateInfo);
+
+   const VkPipelineLibraryCreateInfoKHR *libs_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_LIBRARY_CREATE_INFO_KHR);
+
+   if (libs_info) {
+      for (uint32_t i = 0; i < libs_info->libraryCount; i++) {
+         VK_FROM_HANDLE(vk_pipeline, lib_pipeline, libs_info->pLibraries[i]);
+         assert(lib_pipeline->bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
+         assert(lib_pipeline->flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR);
+         struct vk_graphics_pipeline *lib_gfx_pipeline =
+            container_of(lib_pipeline, struct vk_graphics_pipeline, base);
+
+         vk_graphics_pipeline_state_merge(info->state, &lib_gfx_pipeline->lib.state);
+
+         info->set_layout_count = MAX2(info->set_layout_count,
+                                        lib_gfx_pipeline->set_layout_count);
+         for (uint32_t i = 0; i < lib_gfx_pipeline->set_layout_count; i++) {
+            if (lib_gfx_pipeline->set_layouts[i] == NULL)
+               continue;
+
+            if (info->set_layouts[i] == NULL)
+               info->set_layouts[i] = lib_gfx_pipeline->set_layouts[i];
+         }
+
+         for (uint32_t i = 0; i < lib_gfx_pipeline->stage_count; i++) {
+            const struct vk_pipeline_stage *lib_stage =
+               &lib_gfx_pipeline->stages[i];
+
+            /* We shouldn't have duplicated stages in the imported pipeline
+             * but it's cheap enough to protect against it so we may as well.
+             */
+            assert(lib_stage->stage < ARRAY_SIZE(info->stages));
+            assert(vk_pipeline_stage_is_null(&info->stages[lib_stage->stage]));
+            if (!vk_pipeline_stage_is_null(&info->stages[lib_stage->stage]))
+               continue;
+
+            info->stages[lib_stage->stage] = vk_pipeline_stage_clone(lib_stage);
+            info->imported_stages |= mesa_to_vk_shader_stage(lib_stage->stage);
+         }
+      }
+   }
+
+   if (pipeline_layout != NULL) {
+      info->set_layout_count = MAX2(info->set_layout_count,
+                                     pipeline_layout->set_count);
+      for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
+         if (pipeline_layout->set_layouts[i] == NULL)
+            continue;
+
+         if (info->set_layouts[i] == NULL)
+            info->set_layouts[i] = pipeline_layout->set_layouts[i];
+      }
+   }
+
+   VkResult result = vk_graphics_pipeline_state_fill(device, info->state,
+                                                     pCreateInfo,
+                                                     NULL /* driver_rp */,
+                                                     0 /* driver_rp_flags */,
+                                                     all_state,
+                                                     NULL, 0, NULL);
+   /* We provide a all_state so there should not be any allocation, hence no failure.*/
+   assert(result == VK_SUCCESS);
+
+   VkShaderStageFlags all_stages = info->imported_stages;
+   for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+      const VkPipelineShaderStageCreateInfo *stage_info =
+         &pCreateInfo->pStages[i];
+
+      assert(util_bitcount(stage_info->stage) == 1);
+      if (!(info->state->shader_stages & stage_info->stage))
+         continue;
+
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+      assert(vk_device_supports_stage(device, stage));
+
+      /* We don't need to load anything for imported stages, precomp should be
+       * included if
+       * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
+       * provided and shader should obviously be there.
+       */
+      if (info->imported_stages & stage_info->stage)
+         continue;
+
+      info->stages[stage] = (struct vk_pipeline_stage) {
+         .stage = stage,
+      };
+      all_stages |= stage_info->stage;
+
+      vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
+                                            pCreateInfo->pNext,
+                                            stage_info, &info->stages[stage]);
+   }
+
+   /* Compact the array of stages */
+   info->stage_count = 0;
+   for (uint32_t s = 0; s < ARRAY_SIZE(info->stages); s++) {
+      assert(s >= info->stage_count);
+      if (all_stages & mesa_to_vk_shader_stage(s))
+         info->stages[info->stage_count++] = info->stages[s];
+   }
+   for (uint32_t s = info->stage_count; s < ARRAY_SIZE(info->stages); s++)
+      memset(&info->stages[s], 0, sizeof(info->stages[s]));
+
+   /* Sort so we always give the driver shaders in order.
+    *
+    * This makes everything easier for everyone. This also helps stabilize
+    * shader keys so that we get a cache hit even if the client gives us the
+    * stages in a different order.
+    */
+   qsort(info->stages, info->stage_count,
+         sizeof(info->stages[0]), cmp_vk_pipeline_stages);
+
+   for (uint32_t s = 0; s < info->stage_count; s++)
+      info->stage_to_index[info->stages[s].stage] = s;
+
+   /* Decide whether we should apply link-time optimizations. The spec says:
+    *
+    *    VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT specifies that
+    *    pipeline libraries being linked into this library should have link time
+    *    optimizations applied. If this bit is omitted, implementations should
+    *    instead perform linking as rapidly as possible.
+    *
+    *    ...
+    *
+    *    Using VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT (or not) when
+    *    linking pipeline libraries is intended as a performance tradeoff
+    *    between host and device. If the bit is omitted, linking should be
+    *    faster and produce a pipeline more rapidly, but performance of the
+    *    pipeline on the target device may be reduced. If the bit is included,
+    *    linking may be slower but should produce a pipeline with device
+    *    performance comparable to a monolithically created pipeline.
+    *
+    * The key phrase here is "pipeline libraries". When we are linking pipeline
+    * libraries, we look at this bit to determine whether to apply link-time
+    * optimizations. When there are not pipeline libraries, however, we are
+    * compiling a monolithic pipeline, which the last sentence implies should
+    * always have link-time optimizations applied.
+    *
+    * Summarizing, we want to link-time optimize monolithic pipelines and
+    * non-monolithic pipelines with LINK_TIME_OPTIMIZATION_BIT.
+    *
+    * (Strictly speaking, there's a corner case here, where a pipeline without
+    * LINK_TIME_OPTIMIZATION_BIT links pipeline libraries for graphics state but
+    * supplies shaders directly outside of the pipeline library. This logic does
+    * not link those shaders, which is a conservative choice. GPL is a disaster
+    * of combinatoric complexity, and this simplified approach gets good
+    * performance for the cases that actually matter: monolithic, GPL fast link,
+    * GPL optimized link.)
+    */
+   info->optimize =
+      libs_info == NULL ||
+      (pipeline_flags &
+       VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT);
 
    /* Partition the shaders. Whenever pipelines are used,
     * vertex/geometry/fragment stages are always specified together, so should
@@ -1176,61 +1351,121 @@ vk_graphics_pipeline_compute_link_info(struct vk_graphics_pipeline_link_info *li
     * on all hardware, to clean up the I/O mess that applications regularly
     * leave.
     */
-   if (link_time_optimize) {
-      link_info->partition[1] = stage_count;
-      link_info->part_count = 1;
-   } else if (stages[0].stage == MESA_SHADER_FRAGMENT) {
-      assert(stage_count == 1);
-      link_info->partition[1] = stage_count;
-      link_info->part_count = 1;
-   } else if (stages[stage_count - 1].stage == MESA_SHADER_FRAGMENT) {
+   if (info->stage_count == 0) {
+      info->part_count = 0;
+   } else if (info->optimize) {
+      info->partition[1] = info->stage_count;
+      info->part_count = 1;
+   } else if (info->stages[0].stage == MESA_SHADER_FRAGMENT) {
+      assert(info->stage_count == 1);
+      info->partition[1] = info->stage_count;
+      info->part_count = 1;
+   } else if (info->stages[info->stage_count - 1].stage == MESA_SHADER_FRAGMENT) {
       /* In this case we have both geometry stages and fragment */
-      assert(stage_count > 1);
-      link_info->partition[1] = stage_count - 1;
-      link_info->partition[2] = stage_count;
-      link_info->part_count = 2;
+      assert(info->stage_count > 1);
+      info->partition[1] = info->stage_count - 1;
+      info->partition[2] = info->stage_count;
+      info->part_count = 2;
    } else {
       /* In this case we only have geometry stages */
-      link_info->partition[1] = stage_count;
-      link_info->part_count = 1;
+      info->partition[1] = info->stage_count;
+      info->part_count = 1;
    }
 
-   for (uint32_t i = 0; i < link_info->part_count; i++) {
-      for (uint32_t j = link_info->partition[i]; j < link_info->partition[i + 1]; j++) {
-         const struct vk_pipeline_stage *stage = &stages[j];
-         link_info->part_stages[i] |= mesa_to_vk_shader_stage(stage->stage);
+   for (uint32_t i = 0; i < info->part_count; i++) {
+      for (uint32_t j = info->partition[i]; j < info->partition[i + 1]; j++) {
+         const struct vk_pipeline_stage *stage = &info->stages[j];
+         info->part_stages[i] |= mesa_to_vk_shader_stage(stage->stage);
       }
    }
+
+   struct mesa_blake3 blake3_ctx;
+   _mesa_blake3_init(&blake3_ctx);
+   for (uint32_t i = 0; i < info->set_layout_count; i++) {
+      if (info->set_layouts[i] != NULL) {
+         _mesa_blake3_update(&blake3_ctx, info->set_layouts[i]->blake3,
+                             sizeof(info->set_layouts[i]->blake3));
+      }
+   }
+   if (pipeline_layout != NULL) {
+      _mesa_blake3_update(&blake3_ctx, &pipeline_layout->push_ranges,
+                          sizeof(pipeline_layout->push_ranges[0]) *
+                          pipeline_layout->push_range_count);
+   }
+   blake3_hash layout_blake3;
+   _mesa_blake3_final(&blake3_ctx, layout_blake3);
+
+   const struct vk_device_shader_ops *ops = device->shader_ops;
+   for (uint32_t p = 0; p < info->part_count; p++) {
+      /* Don't try to re-compile any fast-link shaders */
+      if (!info->optimize && info->stages[info->partition[p]].shader != NULL)
+         continue;
+
+      _mesa_blake3_init(&blake3_ctx);
+
+      for (uint32_t i = info->partition[p]; i < info->partition[p + 1]; i++) {
+         const struct vk_pipeline_stage *stage = &info->stages[i];
+
+         _mesa_blake3_update(&blake3_ctx, stage->precomp_key,
+                             sizeof(stage->precomp_key));
+
+         VkShaderCreateFlagsEXT shader_flags =
+            vk_pipeline_to_shader_flags(pipeline_flags, stage->stage);
+         _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
+      }
+
+      blake3_hash state_blake3;
+      ops->hash_state(device->physical, info->state,
+                      &device->enabled_features, info->part_stages[p],
+                      state_blake3);
+
+      _mesa_blake3_update(&blake3_ctx, state_blake3, sizeof(state_blake3));
+      _mesa_blake3_update(&blake3_ctx, layout_blake3, sizeof(layout_blake3));
+
+      blake3_hash linked_blake3;
+      _mesa_blake3_final(&blake3_ctx, linked_blake3);
+
+      for (uint32_t i = info->partition[p]; i < info->partition[p + 1]; i++) {
+         struct vk_pipeline_stage *stage = &info->stages[i];
+
+         stage->shader_key.stage = stage->stage;
+         memcpy(stage->shader_key.blake3, linked_blake3, sizeof(blake3_hash));
+      }
+   }
+}
+
+static void
+vk_release_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *info,
+                                          struct vk_device *device,
+                                          const VkAllocationCallbacks *pAllocator)
+{
+   for (uint32_t i = 0; i < ARRAY_SIZE(info->stages); i++)
+      vk_pipeline_stage_finish(device, &info->stages[i]);
 }
 
 static VkResult
 vk_graphics_pipeline_compile_shaders(struct vk_device *device,
                                      struct vk_pipeline_cache *cache,
-                                     struct vk_graphics_pipeline *pipeline,
+                                     VkPipelineCreateFlags2KHR pipeline_flags,
                                      struct vk_pipeline_layout *pipeline_layout,
-                                     const struct vk_graphics_pipeline_state *state,
-                                     const struct vk_graphics_pipeline_link_info *link_info,
-                                     uint32_t stage_count,
-                                     struct vk_pipeline_stage *stages,
-                                     uint32_t set_layout_count,
-                                     struct vk_descriptor_set_layout **set_layouts,
+                                     struct vk_graphics_pipeline_compile_info *compile_info,
                                      VkPipelineCreationFeedback *stage_feedbacks)
 {
    const struct vk_device_shader_ops *ops = device->shader_ops;
    VkResult result;
 
-   if (stage_count == 0)
+   if (compile_info->stage_count == 0)
       return VK_SUCCESS;
 
    /* If we're linking, throw away any previously compiled shaders as they
     * likely haven't been properly linked.  We keep the precompiled shaders
     * and we still look it up in the cache so it may still be fast.
     */
-   if (link_info->optimize) {
-      for (uint32_t i = 0; i < stage_count; i++) {
-         if (stages[i].shader != NULL) {
-            vk_shader_unref(device, stages[i].shader);
-            stages[i].shader = NULL;
+   if (compile_info->optimize) {
+      for (uint32_t i = 0; i < compile_info->stage_count; i++) {
+         if (compile_info->stages[i].shader != NULL) {
+            vk_shader_unref(device, compile_info->stages[i].shader);
+            compile_info->stages[i].shader = NULL;
          }
       }
    }
@@ -1238,17 +1473,17 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
    bool have_all_shaders = true;
    VkShaderStageFlags all_stages = 0;
    struct vk_pipeline_precomp_shader *tcs_precomp = NULL, *tes_precomp = NULL;
-   for (uint32_t i = 0; i < stage_count; i++) {
-      all_stages |= mesa_to_vk_shader_stage(stages[i].stage);
+   for (uint32_t i = 0; i < compile_info->stage_count; i++) {
+      all_stages |= mesa_to_vk_shader_stage(compile_info->stages[i].stage);
 
-      if (stages[i].shader == NULL)
+      if (compile_info->stages[i].shader == NULL)
          have_all_shaders = false;
 
-      if (stages[i].stage == MESA_SHADER_TESS_CTRL)
-         tcs_precomp = stages[i].precomp;
+      if (compile_info->stages[i].stage == MESA_SHADER_TESS_CTRL)
+         tcs_precomp = compile_info->stages[i].precomp;
 
-      if (stages[i].stage == MESA_SHADER_TESS_EVAL)
-         tes_precomp = stages[i].precomp;
+      if (compile_info->stages[i].stage == MESA_SHADER_TESS_EVAL)
+         tes_precomp = compile_info->stages[i].precomp;
    }
 
    /* If we already have a shader for each stage, there's nothing to do. */
@@ -1261,52 +1496,13 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
       vk_pipeline_tess_info_merge(&tess_info, &tes_precomp->tess);
    }
 
-   struct mesa_blake3 blake3_ctx;
-   _mesa_blake3_init(&blake3_ctx);
-   for (uint32_t i = 0; i < set_layout_count; i++) {
-      if (set_layouts[i] != NULL) {
-         _mesa_blake3_update(&blake3_ctx, set_layouts[i]->blake3,
-                           sizeof(set_layouts[i]->blake3));
-      }
-   }
-   if (pipeline_layout != NULL) {
-      _mesa_blake3_update(&blake3_ctx, &pipeline_layout->push_ranges,
-                        sizeof(pipeline_layout->push_ranges[0]) *
-                           pipeline_layout->push_range_count);
-   }
-   blake3_hash layout_blake3;
-   _mesa_blake3_final(&blake3_ctx, layout_blake3);
-
-   for (uint32_t p = 0; p < link_info->part_count; p++) {
+   for (uint32_t p = 0; p < compile_info->part_count; p++) {
       const int64_t part_start = os_time_get_nano();
 
       /* Don't try to re-compile any fast-link shaders */
-      if (!link_info->optimize && stages[link_info->partition[p]].shader != NULL)
+      if (!compile_info->optimize &&
+          compile_info->stages[compile_info->partition[p]].shader != NULL)
          continue;
-
-      struct vk_shader_pipeline_cache_key shader_key = { 0 };
-
-      _mesa_blake3_init(&blake3_ctx);
-
-      for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
-         const struct vk_pipeline_stage *stage = &stages[i];
-
-         _mesa_blake3_update(&blake3_ctx, stage->precomp->cache_key,
-                             sizeof(stage->precomp->cache_key));
-
-         VkShaderCreateFlagsEXT shader_flags =
-            vk_pipeline_to_shader_flags(pipeline->base.flags, stage->stage);
-         _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
-      }
-
-      blake3_hash state_blake3;
-      ops->hash_state(device->physical, state, &device->enabled_features,
-                      link_info->part_stages[p], state_blake3);
-
-      _mesa_blake3_update(&blake3_ctx, state_blake3, sizeof(state_blake3));
-      _mesa_blake3_update(&blake3_ctx, layout_blake3, sizeof(layout_blake3));
-
-      _mesa_blake3_final(&blake3_ctx, shader_key.blake3);
 
       if (cache != NULL) {
          /* From the Vulkan 1.3.278 spec:
@@ -1336,17 +1532,15 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
           */
          bool all_shaders_found = true;
          bool all_cache_hits = true;
-         for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
-            struct vk_pipeline_stage *stage = &stages[i];
-
-            shader_key.stage = stage->stage;
+         for (uint32_t i = compile_info->partition[p]; i < compile_info->partition[p + 1]; i++) {
+            struct vk_pipeline_stage *stage = &compile_info->stages[i];
 
             if (stage->shader) {
                /* If we have a shader from some library pipeline and the key
                 * matches, just use that.
                 */
                if (memcmp(&stage->shader->pipeline.cache_key,
-                          &shader_key, sizeof(shader_key)) == 0)
+                          &stage->shader_key, sizeof(stage->shader_key)) == 0)
                   continue;
 
                /* Otherwise, throw it away */
@@ -1356,8 +1550,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
 
             bool cache_hit = false;
             struct vk_pipeline_cache_object *cache_obj =
-               vk_pipeline_cache_lookup_object(cache, &shader_key,
-                                               sizeof(shader_key),
+               vk_pipeline_cache_lookup_object(cache, &stage->shader_key,
+                                               sizeof(stage->shader_key),
                                                &pipeline_shader_cache_ops,
                                                &cache_hit);
             if (cache_obj != NULL) {
@@ -1376,8 +1570,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
              * in the partition.  Otherwise, we have to go re-compile it all
              * anyway.
              */
-            for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
-               struct vk_pipeline_stage *stage = &stages[i];
+            for (uint32_t i = compile_info->partition[p]; i < compile_info->partition[p + 1]; i++) {
+               struct vk_pipeline_stage *stage = &compile_info->stages[i];
 
                stage_feedbacks[stage->stage].flags |=
                   VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT;
@@ -1387,40 +1581,40 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
          if (all_shaders_found) {
             /* Update duration to take cache lookups into account */
             const int64_t part_end = os_time_get_nano();
-            for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
-               struct vk_pipeline_stage *stage = &stages[i];
+            for (uint32_t i = compile_info->partition[p]; i < compile_info->partition[p + 1]; i++) {
+               struct vk_pipeline_stage *stage = &compile_info->stages[i];
                stage_feedbacks[stage->stage].duration += part_end - part_start;
             }
             continue;
          }
       }
 
-      if (pipeline->base.flags &
+      if (pipeline_flags &
           VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)
          return VK_PIPELINE_COMPILE_REQUIRED;
 
       struct vk_shader_compile_info infos[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
-      for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
-         struct vk_pipeline_stage *stage = &stages[i];
+      for (uint32_t i = compile_info->partition[p]; i < compile_info->partition[p + 1]; i++) {
+         struct vk_pipeline_stage *stage = &compile_info->stages[i];
 
          VkShaderCreateFlagsEXT shader_flags =
-            vk_pipeline_to_shader_flags(pipeline->base.flags, stage->stage);
+            vk_pipeline_to_shader_flags(pipeline_flags, stage->stage);
 
-         if (link_info->partition[p + 1] - link_info->partition[p] > 1)
+         if (compile_info->partition[p + 1] - compile_info->partition[p] > 1)
             shader_flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
 
-         if ((link_info->part_stages[p] & VK_SHADER_STAGE_MESH_BIT_EXT) &&
+         if ((compile_info->part_stages[p] & VK_SHADER_STAGE_MESH_BIT_EXT) &&
              !(all_stages & VK_SHADER_STAGE_TASK_BIT_EXT))
             shader_flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
 
          VkShaderStageFlags next_stage;
          if (stage->stage == MESA_SHADER_FRAGMENT) {
             next_stage = 0;
-         } else if (i + 1 < stage_count) {
+         } else if (i + 1 < compile_info->stage_count) {
             /* We're always linking all the geometry shaders and hashing their
              * hashes together, so this is safe.
              */
-            next_stage = mesa_to_vk_shader_stage(stages[i + 1].stage);
+            next_stage = mesa_to_vk_shader_stage(compile_info->stages[i + 1].stage);
          } else {
             /* We're the last geometry stage */
             next_stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -1433,7 +1627,7 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
          nir_shader *nir =
             vk_pipeline_precomp_shader_get_nir(stage->precomp, nir_options);
          if (nir == NULL) {
-            for (uint32_t j = link_info->partition[p]; j < i; j++)
+            for (uint32_t j = compile_info->partition[p]; j < i; j++)
                ralloc_free(infos[i].nir);
 
             return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -1452,8 +1646,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
             .next_stage_mask = next_stage,
             .nir = nir,
             .robustness = &stage->precomp->rs,
-            .set_layout_count = set_layout_count,
-            .set_layouts = set_layouts,
+            .set_layout_count = compile_info->set_layout_count,
+            .set_layouts = compile_info->set_layouts,
             .push_constant_range_count = push_range != NULL,
             .push_constant_ranges = push_range != NULL ? push_range : NULL,
          };
@@ -1464,21 +1658,21 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
        * returns, we own the shaders but not the NIR in infos.
        */
       struct vk_shader *shaders[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
-      result = ops->compile(device, link_info->partition[p + 1] - link_info->partition[p],
-                            &infos[link_info->partition[p]],
-                            state, &device->enabled_features,
+      result = ops->compile(device,
+                            compile_info->partition[p + 1] - compile_info->partition[p],
+                            &infos[compile_info->partition[p]],
+                            compile_info->state, &device->enabled_features,
                             &device->alloc,
-                            &shaders[link_info->partition[p]]);
+                            &shaders[compile_info->partition[p]]);
       if (result != VK_SUCCESS)
          return result;
 
       const int64_t part_end = os_time_get_nano();
-      for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
-         struct vk_pipeline_stage *stage = &stages[i];
+      for (uint32_t i = compile_info->partition[p]; i < compile_info->partition[p + 1]; i++) {
+         struct vk_pipeline_stage *stage = &compile_info->stages[i];
 
-         shader_key.stage = stage->stage;
-         vk_shader_init_cache_obj(device, shaders[i], &shader_key,
-                                  sizeof(shader_key));
+         vk_shader_init_cache_obj(device, shaders[i], &stage->shader_key,
+                                  sizeof(stage->shader_key));
 
          if (stage->shader == NULL) {
             struct vk_pipeline_cache_object *cache_obj =
@@ -1662,10 +1856,6 @@ vk_create_graphics_pipeline(struct vk_device *device,
       vk_find_struct_const(pCreateInfo->pNext,
                            PIPELINE_CREATION_FEEDBACK_CREATE_INFO);
 
-   const VkPipelineLibraryCreateInfoKHR *libs_info =
-      vk_find_struct_const(pCreateInfo->pNext,
-                           PIPELINE_LIBRARY_CREATE_INFO_KHR);
-
    struct vk_graphics_pipeline *pipeline =
       vk_pipeline_zalloc(device, &vk_graphics_pipeline_ops,
                          VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1673,80 +1863,24 @@ vk_create_graphics_pipeline(struct vk_device *device,
    if (pipeline == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   struct vk_pipeline_stage stages[MESA_SHADER_MESH_STAGES];
-   memset(stages, 0, sizeof(stages));
-
    VkPipelineCreationFeedback stage_feedbacks[MESA_SHADER_MESH_STAGES];
    memset(stage_feedbacks, 0, sizeof(stage_feedbacks));
 
-   struct vk_graphics_pipeline_state state_tmp, *state;
-   struct vk_graphics_pipeline_all_state all_state_tmp, *all_state;
-   if (pipeline->base.flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) {
-      /* For pipeline libraries, the state is stored in the pipeline */
-      state = &pipeline->lib.state;
-      all_state = &pipeline->lib.all_state;
-   } else {
-      /* For linked pipelines, we throw the state away at the end of pipeline
-       * creation and only keep the dynamic state.
-       */
+   const bool is_library = pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;
+
+   struct vk_graphics_pipeline_state state_tmp;
+   struct vk_graphics_pipeline_all_state all_state_tmp;
+   if (!is_library)
       memset(&state_tmp, 0, sizeof(state_tmp));
-      state = &state_tmp;
-      all_state = &all_state_tmp;
-   }
 
-   VkShaderStageFlags imported_stages = 0;
+   struct vk_graphics_pipeline_compile_info compile_info;
+   vk_get_graphics_pipeline_compile_info(
+      &compile_info, device,
+      is_library ? &pipeline->lib.state : &state_tmp,
+      is_library ? &pipeline->lib.all_state : &all_state_tmp,
+      pCreateInfo);
 
-   uint32_t set_layout_count = 0;
-   struct vk_descriptor_set_layout *set_layouts[MESA_VK_MAX_DESCRIPTOR_SETS] = { 0 };
-
-   /* If we have libraries, import them first. */
-   if (libs_info) {
-      for (uint32_t i = 0; i < libs_info->libraryCount; i++) {
-         VK_FROM_HANDLE(vk_pipeline, lib_pipeline, libs_info->pLibraries[i]);
-         assert(lib_pipeline->bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
-         assert(lib_pipeline->flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR);
-         struct vk_graphics_pipeline *lib_gfx_pipeline =
-            container_of(lib_pipeline, struct vk_graphics_pipeline, base);
-
-         vk_graphics_pipeline_state_merge(state, &lib_gfx_pipeline->lib.state);
-
-         set_layout_count = MAX2(set_layout_count,
-                                 lib_gfx_pipeline->set_layout_count);
-         for (uint32_t i = 0; i < lib_gfx_pipeline->set_layout_count; i++) {
-            if (lib_gfx_pipeline->set_layouts[i] == NULL)
-               continue;
-
-            if (set_layouts[i] == NULL)
-               set_layouts[i] = lib_gfx_pipeline->set_layouts[i];
-         }
-
-         for (uint32_t i = 0; i < lib_gfx_pipeline->stage_count; i++) {
-            const struct vk_pipeline_stage *lib_stage =
-               &lib_gfx_pipeline->stages[i];
-
-            /* We shouldn't have duplicated stages in the imported pipeline
-             * but it's cheap enough to protect against it so we may as well.
-             */
-            assert(lib_stage->stage < ARRAY_SIZE(stages));
-            assert(vk_pipeline_stage_is_null(&stages[lib_stage->stage]));
-            if (!vk_pipeline_stage_is_null(&stages[lib_stage->stage]))
-               continue;
-
-            stages[lib_stage->stage] = vk_pipeline_stage_clone(lib_stage);
-            imported_stages |= mesa_to_vk_shader_stage(lib_stage->stage);
-         }
-      }
-   }
-
-   result = vk_graphics_pipeline_state_fill(device, state,
-                                            pCreateInfo,
-                                            NULL /* driver_rp */,
-                                            0 /* driver_rp_flags */,
-                                            all_state,
-                                            NULL, 0, NULL);
-   if (result != VK_SUCCESS)
-      goto fail_stages;
-
+   /* For pipeline libraries, the state is stored in the pipeline */
    if (!(pipeline->base.flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR)) {
       pipeline->linked.dynamic.vi = &pipeline->linked._dynamic_vi;
       pipeline->linked.dynamic.ms.sample_locations =
@@ -1754,18 +1888,6 @@ vk_create_graphics_pipeline(struct vk_device *device,
       vk_dynamic_graphics_state_fill(&pipeline->linked.dynamic, &state_tmp);
    }
 
-   if (pipeline_layout != NULL) {
-      set_layout_count = MAX2(set_layout_count, pipeline_layout->set_count);
-      for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
-         if (pipeline_layout->set_layouts[i] == NULL)
-            continue;
-
-         if (set_layouts[i] == NULL)
-            set_layouts[i] = pipeline_layout->set_layouts[i];
-      }
-   }
-
-   VkShaderStageFlags all_stages = imported_stages;
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage_info =
          &pCreateInfo->pStages[i];
@@ -1773,119 +1895,56 @@ vk_create_graphics_pipeline(struct vk_device *device,
       const int64_t stage_start = os_time_get_nano();
 
       assert(util_bitcount(stage_info->stage) == 1);
-      if (!(state->shader_stages & stage_info->stage))
-         continue;
-
-      mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
-      assert(vk_device_supports_stage(device, stage));
-
-      stage_feedbacks[stage].flags |=
-         VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
 
       /* We don't need to load anything for imported stages, precomp should be
        * included if
        * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
        * provided and shader should obviously be there.
        */
-      if (imported_stages & stage_info->stage)
+      if (compile_info.imported_stages & stage_info->stage)
          continue;
 
-      stages[stage] = (struct vk_pipeline_stage) {
-         .stage = stage,
-      };
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
 
-      vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
-                                            pCreateInfo->pNext,
-                                            stage_info, &stages[stage]);
+      stage_feedbacks[stage].flags |=
+         VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
 
+      stage_feedbacks[stage].flags |= VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+
+      struct vk_pipeline_stage *pipeline_stage =
+         &compile_info.stages[compile_info.stage_to_index[stage]];
       result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
                                              pCreateInfo->pNext,
-                                             stage_info, &stages[stage]);
+                                             stage_info, pipeline_stage);
       if (result != VK_SUCCESS)
          goto fail_stages;
-
-      all_stages |= stage_info->stage;
 
       const int64_t stage_end = os_time_get_nano();
       stage_feedbacks[stage].duration += stage_end - stage_start;
    }
 
-   /* Compact the array of stages */
-   uint32_t stage_count = 0;
-   for (uint32_t s = 0; s < ARRAY_SIZE(stages); s++) {
-      assert(s >= stage_count);
-      if (all_stages & mesa_to_vk_shader_stage(s))
-         stages[stage_count++] = stages[s];
-   }
-   for (uint32_t s = stage_count; s < ARRAY_SIZE(stages); s++)
-      memset(&stages[s], 0, sizeof(stages[s]));
-
-   /* Sort so we always give the driver shaders in order.
-    *
-    * This makes everything easier for everyone.  This also helps stabilize
-    * shader keys so that we get a cache hit even if the client gives us
-    * the stages in a different order.
-    */
-   qsort(stages, stage_count, sizeof(*stages), cmp_vk_pipeline_stages);
-
-   /* Decide whether we should apply link-time optimizations. The spec says:
-    *
-    *    VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT specifies that
-    *    pipeline libraries being linked into this library should have link time
-    *    optimizations applied. If this bit is omitted, implementations should
-    *    instead perform linking as rapidly as possible.
-    *
-    *    ...
-    *
-    *    Using VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT (or not) when
-    *    linking pipeline libraries is intended as a performance tradeoff
-    *    between host and device. If the bit is omitted, linking should be
-    *    faster and produce a pipeline more rapidly, but performance of the
-    *    pipeline on the target device may be reduced. If the bit is included,
-    *    linking may be slower but should produce a pipeline with device
-    *    performance comparable to a monolithically created pipeline.
-    *
-    * The key phrase here is "pipeline libraries". When we are linking pipeline
-    * libraries, we look at this bit to determine whether to apply link-time
-    * optimizations. When there are not pipeline libraries, however, we are
-    * compiling a monolithic pipeline, which the last sentence implies should
-    * always have link-time optimizations applied.
-    *
-    * Summarizing, we want to link-time optimize monolithic pipelines and
-    * non-monolithic pipelines with LINK_TIME_OPTIMIZATION_BIT.
-    *
-    * (Strictly speaking, there's a corner case here, where a pipeline without
-    * LINK_TIME_OPTIMIZATION_BIT links pipeline libraries for graphics state but
-    * supplies shaders directly outside of the pipeline library. This logic does
-    * not link those shaders, which is a conservative choice. GPL is a disaster
-    * of combinatoric complexity, and this simplified approach gets good
-    * performance for the cases that actually matter: monolithic, GPL fast link,
-    * GPL optimized link.)
-    */
-    bool lto = libs_info == NULL ||
-              (pipeline->base.flags &
-               VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT);
-
-    struct vk_graphics_pipeline_link_info link_info;
-    vk_graphics_pipeline_compute_link_info(&link_info, lto,
-                                           stage_count, stages);
-
-   result = vk_graphics_pipeline_compile_shaders(device, cache, pipeline,
-                                                 pipeline_layout, state,
-                                                 &link_info,
-                                                 stage_count, stages,
-                                                 set_layout_count, set_layouts,
+   result = vk_graphics_pipeline_compile_shaders(device, cache,
+                                                 pipeline_flags,
+                                                 pipeline_layout,
+                                                 &compile_info,
                                                  stage_feedbacks);
    if (result != VK_SUCCESS)
       goto fail_stages;
 
    /* Keep a reference on the set layouts */
-   pipeline->set_layout_count = set_layout_count;
-   for (uint32_t i = 0; i < set_layout_count; i++) {
-      if (set_layouts[i] == NULL)
+   pipeline->set_layout_count = compile_info.set_layout_count;
+   for (uint32_t i = 0; i < compile_info.set_layout_count; i++) {
+      if (compile_info.set_layouts[i] == NULL)
          continue;
 
-      pipeline->set_layouts[i] = vk_descriptor_set_layout_ref(set_layouts[i]);
+      pipeline->set_layouts[i] =
+         vk_descriptor_set_layout_ref(compile_info.set_layouts[i]);
+   }
+
+   pipeline->stage_count = compile_info.stage_count;
+   for (uint32_t i = 0; i < compile_info.stage_count; i++) {
+      pipeline->base.stages |= mesa_to_vk_shader_stage(compile_info.stages[i].stage);
+      pipeline->stages[i] = vk_pipeline_stage_clone(&compile_info.stages[i]);
    }
 
    /* Throw away precompiled shaders unless the client explicitly asks us to
@@ -1893,18 +1952,12 @@ vk_create_graphics_pipeline(struct vk_device *device,
     */
    if (!(pipeline_flags &
          VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)) {
-      for (uint32_t i = 0; i < stage_count; i++) {
-         if (stages[i].precomp != NULL) {
-            vk_pipeline_precomp_shader_unref(device, stages[i].precomp);
-            stages[i].precomp = NULL;
+      for (uint32_t i = 0; i < compile_info.stage_count; i++) {
+         if (pipeline->stages[i].precomp != NULL) {
+            vk_pipeline_precomp_shader_unref(device, pipeline->stages[i].precomp);
+            pipeline->stages[i].precomp = NULL;
          }
       }
-   }
-
-   pipeline->stage_count = stage_count;
-   for (uint32_t i = 0; i < stage_count; i++) {
-      pipeline->base.stages |= mesa_to_vk_shader_stage(stages[i].stage);
-      pipeline->stages[i] = stages[i];
    }
 
    const int64_t pipeline_end = os_time_get_nano();
@@ -1925,13 +1978,13 @@ vk_create_graphics_pipeline(struct vk_device *device,
        * cache.
        */
       uint32_t cache_hit_count = 0;
-      for (uint32_t i = 0; i < stage_count; i++) {
-         const mesa_shader_stage stage = stages[i].stage;
+      for (uint32_t i = 0; i < compile_info.stage_count; i++) {
+         const mesa_shader_stage stage = compile_info.stages[i].stage;
          if (stage_feedbacks[stage].flags &
              VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT)
             cache_hit_count++;
       }
-      if (cache_hit_count > 0 && cache_hit_count == stage_count) {
+      if (cache_hit_count > 0 && cache_hit_count == compile_info.stage_count) {
          pipeline_feedback.flags |=
             VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT;
       }
@@ -1952,15 +2005,15 @@ vk_create_graphics_pipeline(struct vk_device *device,
       }
    }
 
+   vk_release_graphics_pipeline_compile_info(&compile_info, device, pAllocator);
+
    *pPipeline = vk_pipeline_to_handle(&pipeline->base);
 
    return VK_SUCCESS;
 
 fail_stages:
-   for (uint32_t i = 0; i < ARRAY_SIZE(stages); i++)
-      vk_pipeline_stage_finish(device, &stages[i]);
-
    vk_graphics_pipeline_destroy(device, &pipeline->base, pAllocator);
+   vk_release_graphics_pipeline_compile_info(&compile_info, device, pAllocator);
 
    return result;
 }
