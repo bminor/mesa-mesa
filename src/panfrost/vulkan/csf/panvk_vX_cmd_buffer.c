@@ -480,41 +480,75 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
 static void
 normalize_dependency(VkPipelineStageFlags2 *src_stages,
                      VkPipelineStageFlags2 *dst_stages,
-                     VkAccessFlags2 *src_access, VkAccessFlags2 *dst_access,
-                     uint32_t src_qfi, uint32_t dst_qfi)
+                     VkPipelineStageFlags2 transition_stages,
+                     VkAccessFlags2 *src_access,
+                     VkAccessFlags2 *dst_access,
+                     VkAccessFlags2 transition_access,
+                     uint32_t src_qfi, uint32_t dst_qfi,
+                     enum panvk_barrier_stage barrier_stage)
 {
+   switch (barrier_stage) {
+   case PANVK_BARRIER_STAGE_FIRST:
+      if (transition_stages) {
+         /* We need to do layout transition, so we want to sync src with layout
+          * transition, and then later layout transition with dst.
+          */
+         *dst_stages = transition_stages;
+         *dst_access = transition_access;
+      }
+      break;
+   case PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION:
+      /* If transition_stages is empty, there was no layout transition and so we
+       * won't be waiting for anything.
+       */
+      *src_stages = transition_stages;
+      *src_access = transition_access;
+      break;
+   }
+
    /* Perform queue family ownership transfer if src and dst are unequal. */
    if (src_qfi != dst_qfi) {
-      /* queue family acquire operation */
-      switch (src_qfi) {
-      case VK_QUEUE_FAMILY_EXTERNAL:
-         /* no execution dependency and no availability operation */
-         *src_stages = VK_PIPELINE_STAGE_2_NONE;
-         *src_access = VK_ACCESS_2_NONE;
-         break;
-      case VK_QUEUE_FAMILY_FOREIGN_EXT:
-         /* treat the foreign queue as the host */
-         *src_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
-         *src_access = VK_ACCESS_2_HOST_WRITE_BIT;
-         break;
-      default:
-         break;
+      /* Only normalize if we're actually syncing acquire, and not layout
+       * transition, with dst.
+       */
+      if (barrier_stage == PANVK_BARRIER_STAGE_FIRST) {
+         /* queue family acquire operation */
+         switch (src_qfi) {
+         case VK_QUEUE_FAMILY_EXTERNAL:
+            /* no execution dependency and no availability operation */
+            *src_stages = VK_PIPELINE_STAGE_2_NONE;
+            *src_access = VK_ACCESS_2_NONE;
+            break;
+         case VK_QUEUE_FAMILY_FOREIGN_EXT:
+            /* treat the foreign queue as the host */
+            *src_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
+            *src_access = VK_ACCESS_2_HOST_WRITE_BIT;
+            break;
+         default:
+            break;
+         }
       }
 
-      /* queue family release operation */
-      switch (dst_qfi) {
-      case VK_QUEUE_FAMILY_EXTERNAL:
-         /* no execution dependency and no visibility operation */
-         *dst_stages = VK_PIPELINE_STAGE_2_NONE;
-         *dst_access = VK_ACCESS_2_NONE;
-         break;
-      case VK_QUEUE_FAMILY_FOREIGN_EXT:
-         /* treat the foreign queue as the host */
-         *dst_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
-         *dst_access = VK_ACCESS_2_HOST_WRITE_BIT;
-         break;
-      default:
-         break;
+      /* Only normalize if we're actually syncing the latest of either src or
+       * layout transition, with release.
+       */
+      if ((barrier_stage == PANVK_BARRIER_STAGE_FIRST && !transition_stages) ||
+          (barrier_stage == PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION && transition_stages)) {
+         /* queue family release operation */
+         switch (dst_qfi) {
+         case VK_QUEUE_FAMILY_EXTERNAL:
+            /* no execution dependency and no visibility operation */
+            *dst_stages = VK_PIPELINE_STAGE_2_NONE;
+            *dst_access = VK_ACCESS_2_NONE;
+            break;
+         case VK_QUEUE_FAMILY_FOREIGN_EXT:
+            /* treat the foreign queue as the host */
+            *dst_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
+            *dst_access = VK_ACCESS_2_HOST_WRITE_BIT;
+            break;
+         default:
+            break;
+         }
       }
    }
 
@@ -527,6 +561,7 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
 
 void
 panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
+                            enum panvk_barrier_stage barrier_stage,
                             const VkDependencyInfo *in,
                             struct panvk_cs_deps *out)
 {
@@ -536,8 +571,11 @@ panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
       VkAccessFlags2 src_access = barrier->srcAccessMask;
       VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access,
-                           VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+      normalize_dependency(&src_stages, &dst_stages, 0,
+                           &src_access, &dst_access, 0,
+                           VK_QUEUE_FAMILY_IGNORED,
+                           VK_QUEUE_FAMILY_IGNORED,
+                           barrier_stage);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
@@ -549,9 +587,11 @@ panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
       VkAccessFlags2 src_access = barrier->srcAccessMask;
       VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access,
+      normalize_dependency(&src_stages, &dst_stages, 0,
+                           &src_access, &dst_access, 0,
                            barrier->srcQueueFamilyIndex,
-                           barrier->dstQueueFamilyIndex);
+                           barrier->dstQueueFamilyIndex,
+                           barrier_stage);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
@@ -563,12 +603,21 @@ panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
       VkAccessFlags2 src_access = barrier->srcAccessMask;
       VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access,
+      VkPipelineStageFlags2 transition_stages;
+      VkAccessFlags2 transition_access;
+      panvk_per_arch(transition_image_layout_sync_scope)(barrier,
+         &transition_stages, &transition_access);
+      normalize_dependency(&src_stages, &dst_stages, transition_stages,
+                           &src_access, &dst_access, transition_access,
                            barrier->srcQueueFamilyIndex,
-                           barrier->dstQueueFamilyIndex);
+                           barrier->dstQueueFamilyIndex,
+                           barrier_stage);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
+
+      if (barrier_stage == PANVK_BARRIER_STAGE_FIRST && transition_stages)
+         out->needs_layout_transitions = true;
    }
 }
 
@@ -693,7 +742,6 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
                                     const VkDependencyInfo *pDependencyInfo)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   struct panvk_cs_deps deps = {0};
 
    /* Intra render pass barriers can be skipped iff we're inside a render
     * pass. */
@@ -701,12 +749,32 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
        (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT))
       return;
 
-   panvk_per_arch(add_cs_deps)(cmdbuf, pDependencyInfo, &deps);
+   struct panvk_cs_deps deps = {0};
+
+   panvk_per_arch(add_cs_deps)(cmdbuf, PANVK_BARRIER_STAGE_FIRST, pDependencyInfo, &deps);
 
    if (deps.needs_draw_flush)
       panvk_per_arch(cmd_flush_draws)(cmdbuf);
 
    panvk_per_arch(emit_barrier)(cmdbuf, deps);
+
+   if (deps.needs_layout_transitions) {
+      for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++) {
+         const VkImageMemoryBarrier2 *barrier = &pDependencyInfo->pImageMemoryBarriers[i];
+
+         panvk_per_arch(cmd_transition_image_layout)(commandBuffer, barrier);
+      }
+
+      struct panvk_cs_deps trans_deps = {0};
+
+      panvk_per_arch(add_cs_deps)(
+         cmdbuf, PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION,
+         pDependencyInfo, &trans_deps);
+
+      assert(!trans_deps.needs_draw_flush);
+
+      panvk_per_arch(emit_barrier)(cmdbuf, trans_deps);
+   }
 }
 
 #if PAN_ARCH >= 11
