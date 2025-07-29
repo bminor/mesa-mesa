@@ -56,7 +56,7 @@
 struct intrinsic_info {
    nir_variable_mode mode; /* 0 if the mode is obtained from the deref. */
    nir_intrinsic_op op;
-   bool is_atomic;
+   bool is_unvectorizable;
    /* Indices into nir_intrinsic::src[] or -1 if not applicable. */
    int resource_src; /* resource (e.g. from vulkan_resource_index) */
    int base_src;     /* offset which it loads/stores from */
@@ -71,9 +71,9 @@ static const struct intrinsic_info *
 get_info(nir_intrinsic_op op)
 {
    switch (op) {
-#define INFO(mode, op, atomic, res, base, deref, val, scale)                                                             \
+#define INFO(mode, op, unvectorizable, res, base, deref, val, scale)                                                     \
    case nir_intrinsic_##op: {                                                                                            \
-      static const struct intrinsic_info op##_info = { mode, nir_intrinsic_##op, atomic, res, base, deref, val, scale }; \
+      static const struct intrinsic_info op##_info = { mode, nir_intrinsic_##op, unvectorizable, res, base, deref, val, scale }; \
       return &op##_info;                                                                                                 \
    }
 #define LOAD(mode, op, res, base, deref, scale)       INFO(mode, load_##op, false, res, base, deref, -1, scale)
@@ -90,6 +90,8 @@ get_info(nir_intrinsic_op op)
       STORE(0, deref, -1, -1, 0, 1, 1)
       LOAD(nir_var_mem_shared, shared, -1, 0, -1, 1)
       STORE(nir_var_mem_shared, shared, -1, 1, -1, 0, 1)
+      INFO(nir_var_mem_shared, load_shared2_amd, true, -1, 0, -1, -1, 1);
+      INFO(nir_var_mem_shared, store_shared2_amd, true, -1, 1, -1, 0, 1)
       LOAD(nir_var_mem_global, global, -1, 0, -1, 1)
       STORE(nir_var_mem_global, global, -1, 1, -1, 0, 1)
       LOAD(nir_var_mem_global, global_constant, -1, 0, -1, 1)
@@ -587,6 +589,9 @@ create_entry(void *mem_ctx,
              const struct intrinsic_info *info,
              nir_intrinsic_instr *intrin)
 {
+   bool is_shared2 = intrin->intrinsic == nir_intrinsic_load_shared2_amd ||
+                     intrin->intrinsic == nir_intrinsic_store_shared2_amd;
+
    struct entry *entry = rzalloc(mem_ctx, struct entry);
    entry->intrin = intrin;
    entry->instr = &intrin->instr;
@@ -594,6 +599,8 @@ create_entry(void *mem_ctx,
    entry->is_store = entry->info->value_src >= 0;
    entry->num_components =
       entry->is_store ? intrin->num_components : nir_def_last_component_read(&intrin->def) + 1;
+   if (is_shared2)
+      entry->num_components = 1;
 
    if (entry->info->deref_src >= 0) {
       entry->deref = nir_src_as_deref(intrin->src[entry->info->deref_src]);
@@ -1028,11 +1035,37 @@ bindings_different_restrict(nir_shader *shader, struct entry *a, struct entry *b
 }
 
 static int64_t
-compare_entries(struct entry *a, struct entry *b)
+may_alias_internal(struct entry *a, struct entry *b, uint32_t a_offset, uint32_t b_offset)
 {
+   /* use adjacency information */
+   /* TODO: we can look closer at the entry keys */
    if (!entry_key_equals(a->key, b->key))
-      return INT64_MAX;
-   return b->offset_signed - a->offset_signed;
+      return true;
+
+   int64_t diff = (b->offset_signed + b_offset) - (a->offset_signed + a_offset);
+
+   /* with atomics, nir_intrinsic_instr::num_components can be 0 */
+   if (diff < 0)
+      return llabs(diff) < MAX2(b->num_components, 1u) * (get_bit_size(b) / 8u);
+   else
+      return diff < MAX2(a->num_components, 1u) * (get_bit_size(a) / 8u);
+}
+
+static unsigned
+parse_shared2_offsets(struct entry *entry, uint32_t offsets[2])
+{
+   if (entry->intrin->intrinsic != nir_intrinsic_load_shared2_amd &&
+       entry->intrin->intrinsic != nir_intrinsic_store_shared2_amd) {
+      offsets[0] = 0;
+      return 1;
+   }
+
+   uint32_t stride = get_bit_size(entry) / 8u;
+   if (nir_intrinsic_st64(entry->intrin))
+      stride *= 64;
+   offsets[0] = nir_intrinsic_offset0(entry->intrin) * stride;
+   offsets[1] = nir_intrinsic_offset1(entry->intrin) * stride;
+   return 2;
 }
 
 static bool
@@ -1071,20 +1104,19 @@ may_alias(nir_shader *shader, struct entry *a, struct entry *b)
          return true;
    }
 
-   /* use adjacency information */
-   /* TODO: we can look closer at the entry keys */
-   int64_t diff = compare_entries(a, b);
-   if (diff != INT64_MAX) {
-      /* with atomics, nir_intrinsic_instr::num_components can be 0 */
-      if (diff < 0)
-         return llabs(diff) < MAX2(b->num_components, 1u) * (get_bit_size(b) / 8u);
-      else
-         return diff < MAX2(a->num_components, 1u) * (get_bit_size(a) / 8u);
+   uint32_t a_offsets[2], b_offsets[2] = { 0, 0 };
+   unsigned a_count = parse_shared2_offsets(a, a_offsets);
+   unsigned b_count = parse_shared2_offsets(b, b_offsets);
+   for (unsigned i = 0; i < a_count; i++) {
+      for (unsigned j = 0; j < b_count; j++) {
+         if (may_alias_internal(a, b, a_offsets[i], b_offsets[j]))
+            return true;
+      }
    }
 
    /* TODO: we can use deref information */
 
-   return true;
+   return false;
 }
 
 static bool
@@ -1216,7 +1248,7 @@ can_vectorize(struct vectorize_ctx *ctx, struct entry *first, struct entry *seco
    /* we can only vectorize non-volatile loads/stores of the same type and with
     * the same access */
    if (first->info != second->info || first->access != second->access ||
-       (first->access & ACCESS_VOLATILE) || first->info->is_atomic)
+       (first->access & ACCESS_VOLATILE) || first->info->is_unvectorizable)
       return false;
 
    if (first->intrin->intrinsic == nir_intrinsic_load_buffer_amd ||

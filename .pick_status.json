@@ -7374,7 +7374,7 @@
         "description": "nir/load_store_vectorize: check for interfering shared2 before vectorizing",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
