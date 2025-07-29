@@ -980,11 +980,13 @@ u_trace_appendv(struct u_trace *ut,
                                tp->flags);
 
    if (ut->utctx->enabled_traces & U_TRACE_TYPE_INDIRECTS) {
+      uint64_t dst_offset = 0;
       for (unsigned i = 0; i < n_indirects; i++) {
-         ut->utctx->capture_data(ut, cs, chunk->indirects,
-                                 ut->utctx->max_indirect_size_bytes * tp_idx,
-                                 addresses[i].bo, addresses[i].offset,
-                                 indirect_sizes_B[i]);
+         ut->utctx->capture_data(
+            ut, cs, chunk->indirects,
+            ut->utctx->max_indirect_size_bytes * tp_idx + dst_offset,
+            addresses[i].bo, addresses[i].offset, indirect_sizes_B[i]);
+         dst_offset += indirect_sizes_B[i];
       }
       chunk->has_indirect |= n_indirects > 0;
    }
