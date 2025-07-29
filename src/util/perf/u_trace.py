@@ -89,7 +89,7 @@ class Tracepoint(object):
         indirect_sizes = []
         for indirect in self.indirect_args:
             indirect.indirect_offset = ' + '.join(indirect_sizes) if len(indirect_sizes) > 0 else 0
-            indirect_sizes.append(f"sizeof({indirect.type}")
+            indirect_sizes.append(f"sizeof({indirect.type})")
 
         self.tp_perfetto = tp_perfetto
         self.tp_markers = tp_markers
