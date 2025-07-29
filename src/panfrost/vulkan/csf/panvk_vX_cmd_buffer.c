@@ -526,12 +526,10 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
 }
 
 void
-panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
+panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
                             const VkDependencyInfo *in,
                             struct panvk_cs_deps *out)
 {
-   memset(out, 0, sizeof(*out));
-
    for (uint32_t i = 0; i < in->memoryBarrierCount; i++) {
       const VkMemoryBarrier2 *barrier = &in->pMemoryBarriers[i];
       VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
@@ -695,7 +693,7 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
                                     const VkDependencyInfo *pDependencyInfo)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   struct panvk_cs_deps deps;
+   struct panvk_cs_deps deps = {0};
 
    /* Intra render pass barriers can be skipped iff we're inside a render
     * pass. */
@@ -703,7 +701,7 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
        (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT))
       return;
 
-   panvk_per_arch(get_cs_deps)(cmdbuf, pDependencyInfo, &deps);
+   panvk_per_arch(add_cs_deps)(cmdbuf, pDependencyInfo, &deps);
 
    if (deps.needs_draw_flush)
       panvk_per_arch(cmd_flush_draws)(cmdbuf);

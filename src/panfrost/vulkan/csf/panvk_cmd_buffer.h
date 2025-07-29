@@ -468,7 +468,7 @@ void panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
                                      enum panvk_subqueue_id subqueue,
                                      struct cs_index scratch_regs);
 
-void panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
+void panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
                                  const VkDependencyInfo *in,
                                  struct panvk_cs_deps *out);
 

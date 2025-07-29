@@ -18,7 +18,7 @@ panvk_per_arch(CmdResetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
    VK_FROM_HANDLE(panvk_event, event, _event);
 
    /* Wrap stageMask with a VkDependencyInfo object so we can re-use
-    * get_cs_deps(). */
+    * add_cs_deps(). */
    const VkMemoryBarrier2 barrier = {
       .srcStageMask = stageMask,
    };
@@ -26,9 +26,9 @@ panvk_per_arch(CmdResetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
       .memoryBarrierCount = 1,
       .pMemoryBarriers = &barrier,
    };
-   struct panvk_cs_deps deps;
+   struct panvk_cs_deps deps = {0};
 
-   panvk_per_arch(get_cs_deps)(cmdbuf, &info, &deps);
+   panvk_per_arch(add_cs_deps)(cmdbuf, &info, &deps);
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
@@ -64,9 +64,9 @@ panvk_per_arch(CmdSetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    VK_FROM_HANDLE(panvk_event, event, _event);
-   struct panvk_cs_deps deps;
+   struct panvk_cs_deps deps = {0};
 
-   panvk_per_arch(get_cs_deps)(cmdbuf, pDependencyInfo, &deps);
+   panvk_per_arch(add_cs_deps)(cmdbuf, pDependencyInfo, &deps);
 
    if (deps.needs_draw_flush)
       panvk_per_arch(cmd_flush_draws)(cmdbuf);
@@ -109,9 +109,9 @@ static void
 cmd_wait_event(struct panvk_cmd_buffer *cmdbuf, struct panvk_event *event,
                const VkDependencyInfo *info)
 {
-   struct panvk_cs_deps deps;
+   struct panvk_cs_deps deps = {0};
 
-   panvk_per_arch(get_cs_deps)(cmdbuf, info, &deps);
+   panvk_per_arch(add_cs_deps)(cmdbuf, info, &deps);
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
