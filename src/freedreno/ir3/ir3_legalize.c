@@ -561,12 +561,20 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
        * this should be a pretty rare case:
        */
       if ((n->flags & IR3_INSTR_SS) && !supports_ss(n)) {
-         struct ir3_instruction *nop;
-         nop = ir3_NOP(&build);
-         nop->flags |= IR3_INSTR_SS;
+         if (last_n && last_n->opc == OPC_NOP) {
+            /* Note that reusing the previous nop isn't just an optimization
+             * but prevents infinitely adding nops when this block is in a loop
+             * and needs to be legalized more than once.
+             */
+            last_n->flags |= IR3_INSTR_SS;
+         } else {
+            struct ir3_instruction *nop = ir3_NOP(&build);
+            nop->flags |= IR3_INSTR_SS;
+            last_n = nop;
+            cycle++;
+         }
+
          n->flags &= ~IR3_INSTR_SS;
-         last_n = nop;
-         cycle++;
       }
 
       unsigned delay = delay_calc(ctx, state, n, cycle);

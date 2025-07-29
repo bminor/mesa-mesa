@@ -6444,7 +6444,7 @@
         "description": "ir3/legalize: prevent infinite loop when inserting (ss)nop",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5993723471a81003bd82d189836ccdd8d085a7b5",
         "notes": null
