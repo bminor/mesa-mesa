@@ -163,6 +163,13 @@ const char *_mesa_shader_stage_to_string(unsigned stage);
  */
 const char *_mesa_shader_stage_to_abbrev(unsigned stage);
 
+
+/**
+ * Translate a gl_shader_stage to a shader stage file extension
+ * that's easily consumed by glslang.
+ */
+const char *_mesa_shader_stage_to_file_ext(unsigned stage);
+
 /**
  * GL related stages (not including CL)
  */
@@ -1530,7 +1537,7 @@ enum float_controls
       FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64 |
       FLOAT_CONTROLS_INF_PRESERVE_FP64 |
       FLOAT_CONTROLS_NAN_PRESERVE_FP64,
-   
+
    FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE =
       FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16 |
       FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32 |

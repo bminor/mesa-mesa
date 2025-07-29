@@ -113,6 +113,33 @@ _mesa_shader_stage_to_abbrev(unsigned stage)
    UNREACHABLE("Unknown shader stage.");
 }
 
+/**
+ * Translate a gl_shader_stage to a shader stage file extension
+ * that's easily consumed by glslang.
+ */
+const char *
+_mesa_shader_stage_to_file_ext(unsigned stage)
+{
+   switch (stage) {
+   case MESA_SHADER_VERTEX:       return "vert";
+   case MESA_SHADER_FRAGMENT:     return "frag";
+   case MESA_SHADER_GEOMETRY:     return "geom";
+   case MESA_SHADER_COMPUTE:      return "comp";
+   case MESA_SHADER_TESS_CTRL:    return "tesc";
+   case MESA_SHADER_TESS_EVAL:    return "tese";
+   case MESA_SHADER_TASK:         return "task";
+   case MESA_SHADER_MESH:         return "mesh";
+   case MESA_SHADER_RAYGEN:       return "rgen";
+   case MESA_SHADER_ANY_HIT:      return "rahit";
+   case MESA_SHADER_CLOSEST_HIT:  return "rchit";
+   case MESA_SHADER_MISS:         return "rmiss";
+   case MESA_SHADER_INTERSECTION: return "rint";
+   case MESA_SHADER_CALLABLE:     return "rcall";
+   }
+
+   UNREACHABLE("Unknown shader stage.");
+}
+
 const char *
 gl_vert_attrib_name(gl_vert_attrib attrib)
 {

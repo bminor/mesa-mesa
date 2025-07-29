@@ -346,8 +346,9 @@ static void
 vtn_dump_shader(struct vtn_builder *b, const char *path, const char *name)
 {
    char filename[PATH_MAX];
-   int len = snprintf(filename, sizeof(filename), "%s/0x%s.spirv",
-                      path, name);
+   const char* stage_ext = _mesa_shader_stage_to_file_ext(b->entry_point_stage);
+   int len = snprintf(filename, sizeof(filename), "%s/0x%s.%s",
+                      path, name, stage_ext);
    if (len < 0 || len >= sizeof(filename))
       return;
 
