@@ -915,6 +915,7 @@ struct Colorspace {
    enum wp_color_manager_v1_primaries primaries;
    enum wp_color_manager_v1_transfer_function tf;
    bool should_use_hdr_metadata;
+   bool needs_extended_range;
 };
 struct Colorspace colorspace_mapping[] = {
    {
@@ -922,48 +923,56 @@ struct Colorspace colorspace_mapping[] = {
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
       .should_use_hdr_metadata = true,
+      .needs_extended_range = true,
    },
    {
       .colorspace = VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_BT709_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_BT709_NONLINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_BT2020_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ,
       .should_use_hdr_metadata = true,
+      .needs_extended_range = false,
    },
    /* VK_COLOR_SPACE_DOLBYVISION_EXT is left out because it's deprecated */
    {
@@ -971,12 +980,14 @@ struct Colorspace colorspace_mapping[] = {
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG,
       .should_use_hdr_metadata = true,
+      .needs_extended_range = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_ADOBE_RGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
       .should_use_hdr_metadata = false,
+      .needs_extended_range = false,
    },
    /* VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT is left out because there's no
     * exactly matching transfer function in the Wayland protocol */
@@ -1022,6 +1033,9 @@ wsi_wl_display_determine_colorspaces(struct wsi_wl_display *display)
       if (!vector_contains(primaries, colorspace_mapping[i].primaries))
          continue;
       if (!vector_contains(tfs, colorspace_mapping[i].tf))
+         continue;
+      if (!display->color_features.extended_target_volume &&
+          colorspace_mapping[i].needs_extended_range)
          continue;
       VkColorSpaceKHR *new_cs = u_vector_add(&display->colorspaces);
       if (!new_cs)
