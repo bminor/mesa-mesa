@@ -7,6 +7,7 @@
 
 #include "nouveau_device.h"
 #include "util/os_misc.h"
+#include "util/drm_is_nouveau.h"
 #include "vk_log.h"
 
 #include <fcntl.h>
@@ -21,15 +22,7 @@ drm_device_is_nouveau(const char *path)
    if (fd < 0)
       return false;
 
-   drmVersionPtr ver = drmGetVersion(fd);
-   if (!ver) {
-      close(fd);
-      return false;
-   }
-
-   const bool is_nouveau = !strncmp("nouveau", ver->name, ver->name_len);
-
-   drmFreeVersion(ver);
+   const bool is_nouveau = drm_fd_is_nouveau(fd);
    close(fd);
 
    return is_nouveau;

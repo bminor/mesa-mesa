@@ -47,6 +47,7 @@
 #include <GL/gl.h>
 #include "mesa_interface.h"
 #include "loader.h"
+#include "util/drm_is_nouveau.h"
 #include "util/libdrm.h"
 #include "util/os_file.h"
 #include "util/os_misc.h"
@@ -138,6 +139,10 @@ iris_predicate(int fd, const char *driver)
 bool
 nouveau_zink_predicate(int fd, const char *driver)
 {
+   /* Never load on nv proprietary driver */
+   if (!drm_fd_is_nouveau(fd))
+      return false;
+
 #if !defined(HAVE_NVK) || !defined(HAVE_ZINK)
    if (!strcmp(driver, "zink"))
       return false;
