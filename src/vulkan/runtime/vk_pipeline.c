@@ -251,16 +251,8 @@ vk_pipeline_hash_shader_stage(VkPipelineCreateFlags2KHR pipeline_flags,
       _mesa_sha1_update(&ctx, iinfo->pIdentifier, iinfo->identifierSize);
    }
 
-   if (rstate) {
-      _mesa_sha1_update(&ctx, &rstate->storage_buffers, sizeof(rstate->storage_buffers));
-      _mesa_sha1_update(&ctx, &rstate->uniform_buffers, sizeof(rstate->uniform_buffers));
-      _mesa_sha1_update(&ctx, &rstate->vertex_inputs, sizeof(rstate->vertex_inputs));
-      _mesa_sha1_update(&ctx, &rstate->images, sizeof(rstate->images));
-      _mesa_sha1_update(&ctx, &rstate->null_uniform_buffer_descriptor,
-                        sizeof(rstate->null_uniform_buffer_descriptor));
-      _mesa_sha1_update(&ctx, &rstate->null_storage_buffer_descriptor,
-                        sizeof(rstate->null_storage_buffer_descriptor));
-   }
+   if (rstate)
+      _mesa_sha1_update(&ctx, rstate, sizeof(*rstate));
 
    _mesa_sha1_update(&ctx, info->pName, strlen(info->pName));
 
@@ -308,12 +300,14 @@ vk_pipeline_robustness_state_fill(const struct vk_device *device,
                                   const void *pipeline_pNext,
                                   const void *shader_stage_pNext)
 {
-   rs->uniform_buffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT;
-   rs->storage_buffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT;
-   rs->vertex_inputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT;
-   rs->images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT;
-   rs->null_uniform_buffer_descriptor = device->enabled_features.nullDescriptor;
-   rs->null_storage_buffer_descriptor = device->enabled_features.nullDescriptor;
+   *rs = (struct vk_pipeline_robustness_state) {
+      .uniform_buffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT,
+      .storage_buffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT,
+      .vertex_inputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT,
+      .images = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT,
+      .null_uniform_buffer_descriptor = device->enabled_features.nullDescriptor,
+      .null_storage_buffer_descriptor = device->enabled_features.nullDescriptor,
+   };
 
    const VkPipelineRobustnessCreateInfoEXT *shader_info =
       vk_find_struct_const(shader_stage_pNext,
