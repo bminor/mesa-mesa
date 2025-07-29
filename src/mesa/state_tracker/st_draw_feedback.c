@@ -198,10 +198,11 @@ st_feedback_draw_vbo(struct gl_context *ctx,
       struct gl_buffer_binding *binding =
          &st->ctx->UniformBufferBindings[prog->sh.UniformBlocks[i]->Binding];
       struct gl_buffer_object *st_obj = binding->BufferObject;
-      struct pipe_resource *buf = st_obj->buffer;
 
-      if (!buf)
+      if (!st_obj || !st_obj->buffer)
          continue;
+
+      struct pipe_resource *buf = st_obj->buffer;
 
       unsigned offset = binding->Offset;
       unsigned size = buf->width0 - offset;
