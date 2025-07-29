@@ -609,10 +609,14 @@ create_entry(void *mem_ctx,
    entry->instr = &intrin->instr;
    entry->info = info;
    entry->is_store = entry->info->value_src >= 0 || is_shared_append;
+
    entry->num_components =
       entry->is_store ? intrin->num_components : nir_def_last_component_read(&intrin->def) + 1;
-   if (is_shared2)
+   /* Some atomics and load_shared2/store_shared2 always use 1 component. */
+   if (entry->num_components == 0 || is_shared2) {
+      assert(entry->info->is_unvectorizable || !entry->is_store);
       entry->num_components = 1;
+   }
 
    if (entry->info->deref_src >= 0) {
       entry->deref = nir_src_as_deref(intrin->src[entry->info->deref_src]);
@@ -1056,11 +1060,9 @@ may_alias_internal(struct entry *a, struct entry *b, uint32_t a_offset, uint32_t
 
    int64_t diff = (b->offset_signed + b_offset) - (a->offset_signed + a_offset);
 
-   /* with atomics, nir_intrinsic_instr::num_components can be 0 */
-   if (diff < 0)
-      return llabs(diff) < MAX2(b->num_components, 1u) * (get_bit_size(b) / 8u);
-   else
-      return diff < MAX2(a->num_components, 1u) * (get_bit_size(a) / 8u);
+   struct entry *first = diff < 0 ? b : a;
+   unsigned size = get_bit_size(first) / 8u * first->num_components;
+   return llabs(diff) < size;
 }
 
 static unsigned
