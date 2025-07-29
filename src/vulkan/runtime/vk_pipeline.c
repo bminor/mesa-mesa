@@ -1287,17 +1287,6 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
       _mesa_blake3_update(&blake3_ctx, state_blake3, sizeof(state_blake3));
       _mesa_blake3_update(&blake3_ctx, layout_blake3, sizeof(layout_blake3));
 
-      if (link_info->part_stages[p] & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
-                                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))
-         _mesa_blake3_update(&blake3_ctx, &tess_info, sizeof(tess_info));
-
-      /* The set of geometry stages used together is used to generate the
-       * nextStage mask as well as VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT.
-       */
-      const VkShaderStageFlags geom_stages =
-         all_stages & ~VK_SHADER_STAGE_FRAGMENT_BIT;
-      _mesa_blake3_update(&blake3_ctx, &geom_stages, sizeof(geom_stages));
-
       _mesa_blake3_final(&blake3_ctx, shader_key.blake3);
 
       if (cache != NULL) {
@@ -1402,14 +1391,16 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
             shader_flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
 
          if ((link_info->part_stages[p] & VK_SHADER_STAGE_MESH_BIT_EXT) &&
-             !(geom_stages & VK_SHADER_STAGE_TASK_BIT_EXT))
+             !(all_stages & VK_SHADER_STAGE_TASK_BIT_EXT))
             shader_flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
 
          VkShaderStageFlags next_stage;
          if (stage->stage == MESA_SHADER_FRAGMENT) {
             next_stage = 0;
          } else if (i + 1 < stage_count) {
-            /* We hash geom_stages above so this is safe */
+            /* We're always linking all the geometry shaders and hashing their
+             * hashes together, so this is safe.
+             */
             next_stage = mesa_to_vk_shader_stage(stages[i + 1].stage);
          } else {
             /* We're the last geometry stage */
