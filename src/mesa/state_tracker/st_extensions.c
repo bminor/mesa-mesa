@@ -323,12 +323,13 @@ void st_init_limits(struct pipe_screen *screen,
       }
    }
 
-   c->MaxUserAssignableUniformLocations =
+   c->MaxUserAssignableUniformLocations = MAX2(
       c->Program[MESA_SHADER_VERTEX].MaxUniformComponents +
       c->Program[MESA_SHADER_TESS_CTRL].MaxUniformComponents +
       c->Program[MESA_SHADER_TESS_EVAL].MaxUniformComponents +
       c->Program[MESA_SHADER_GEOMETRY].MaxUniformComponents +
-      c->Program[MESA_SHADER_FRAGMENT].MaxUniformComponents;
+      c->Program[MESA_SHADER_FRAGMENT].MaxUniformComponents,
+      c->Program[MESA_SHADER_COMPUTE].MaxUniformComponents);
 
    c->GLSLLowerConstArrays =
       screen->caps.prefer_imm_arrays_as_constbuf;
@@ -336,14 +337,32 @@ void st_init_limits(struct pipe_screen *screen,
       screen->caps.glsl_tess_levels_as_inputs;
    c->PrimitiveRestartForPatches = false;
 
-   c->MaxCombinedTextureImageUnits =
-         _min(c->Program[MESA_SHADER_VERTEX].MaxTextureImageUnits +
-              c->Program[MESA_SHADER_TESS_CTRL].MaxTextureImageUnits +
-              c->Program[MESA_SHADER_TESS_EVAL].MaxTextureImageUnits +
-              c->Program[MESA_SHADER_GEOMETRY].MaxTextureImageUnits +
-              c->Program[MESA_SHADER_FRAGMENT].MaxTextureImageUnits +
-              c->Program[MESA_SHADER_COMPUTE].MaxTextureImageUnits,
-              MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+   unsigned vertex_pipeline_max_combined_texture_image_units =
+      c->Program[MESA_SHADER_VERTEX].MaxTextureImageUnits +
+      c->Program[MESA_SHADER_TESS_CTRL].MaxTextureImageUnits +
+      c->Program[MESA_SHADER_TESS_EVAL].MaxTextureImageUnits +
+      c->Program[MESA_SHADER_GEOMETRY].MaxTextureImageUnits +
+      c->Program[MESA_SHADER_FRAGMENT].MaxTextureImageUnits;
+   unsigned compute_pipeline_max_combined_texture_image_units =
+      c->Program[MESA_SHADER_COMPUTE].MaxTextureImageUnits;
+
+   /* GLES spec added all texture image units from all shader stages,
+    * so the minimum value of GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS is
+    * 96 (16 per shader), while GL spec maximum different pipelines
+    * (minimum value is 80).
+    *
+    * There is dEQP test to check this value >=96:
+    *
+    *   dEQP-GLES31.functional.state_query.integer.max_combined_texture_image_units*
+    *
+    * It will fail for driver with max 16 per shader texture image
+    * units (i.e. freedreno) if we use the GL way for GLES.
+    */
+   c->MaxCombinedTextureImageUnits = _mesa_is_api_gles2(api) ?
+      vertex_pipeline_max_combined_texture_image_units +
+      compute_pipeline_max_combined_texture_image_units :
+      MAX2(vertex_pipeline_max_combined_texture_image_units,
+           compute_pipeline_max_combined_texture_image_units);
 
    /* This depends on program constants. */
    c->MaxTextureCoordUnits
@@ -412,13 +431,22 @@ void st_init_limits(struct pipe_screen *screen,
 
    if (can_ubo) {
       extensions->ARB_uniform_buffer_object = GL_TRUE;
-      c->MaxCombinedUniformBlocks = c->MaxUniformBufferBindings =
+      /* API binding point limit */
+      c->MaxUniformBufferBindings =
          c->Program[MESA_SHADER_VERTEX].MaxUniformBlocks +
          c->Program[MESA_SHADER_TESS_CTRL].MaxUniformBlocks +
          c->Program[MESA_SHADER_TESS_EVAL].MaxUniformBlocks +
          c->Program[MESA_SHADER_GEOMETRY].MaxUniformBlocks +
          c->Program[MESA_SHADER_FRAGMENT].MaxUniformBlocks +
          c->Program[MESA_SHADER_COMPUTE].MaxUniformBlocks;
+      /* Shader program limit */
+      c->MaxCombinedUniformBlocks = MAX2(
+         c->Program[MESA_SHADER_VERTEX].MaxUniformBlocks +
+         c->Program[MESA_SHADER_TESS_CTRL].MaxUniformBlocks +
+         c->Program[MESA_SHADER_TESS_EVAL].MaxUniformBlocks +
+         c->Program[MESA_SHADER_GEOMETRY].MaxUniformBlocks +
+         c->Program[MESA_SHADER_FRAGMENT].MaxUniformBlocks,
+         c->Program[MESA_SHADER_COMPUTE].MaxUniformBlocks);
       assert(c->MaxCombinedUniformBlocks <= MAX_COMBINED_UNIFORM_BUFFERS);
    }
 
@@ -495,13 +523,13 @@ void st_init_limits(struct pipe_screen *screen,
          extensions->ARB_shader_storage_buffer_object = GL_TRUE;
    }
 
-   c->MaxCombinedImageUniforms =
-         c->Program[MESA_SHADER_VERTEX].MaxImageUniforms +
-         c->Program[MESA_SHADER_TESS_CTRL].MaxImageUniforms +
-         c->Program[MESA_SHADER_TESS_EVAL].MaxImageUniforms +
-         c->Program[MESA_SHADER_GEOMETRY].MaxImageUniforms +
-         c->Program[MESA_SHADER_FRAGMENT].MaxImageUniforms +
-         c->Program[MESA_SHADER_COMPUTE].MaxImageUniforms;
+   c->MaxCombinedImageUniforms = MAX2(
+      c->Program[MESA_SHADER_VERTEX].MaxImageUniforms +
+      c->Program[MESA_SHADER_TESS_CTRL].MaxImageUniforms +
+      c->Program[MESA_SHADER_TESS_EVAL].MaxImageUniforms +
+      c->Program[MESA_SHADER_GEOMETRY].MaxImageUniforms +
+      c->Program[MESA_SHADER_FRAGMENT].MaxImageUniforms,
+      c->Program[MESA_SHADER_COMPUTE].MaxImageUniforms);
    c->MaxCombinedShaderOutputResources += c->MaxCombinedImageUniforms;
    c->MaxImageUnits = MAX_IMAGE_UNITS;
    if (c->Program[MESA_SHADER_FRAGMENT].MaxImageUniforms &&
