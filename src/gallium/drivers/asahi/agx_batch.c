@@ -659,7 +659,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
 
    uint64_t wait_seqid = p_atomic_read(&screen->flush_wait_seqid);
 
-   struct agx_submit_virt virt = {0};
+   struct agx_submit_virt virt = {.ring_idx = ctx->virt_ring_idx};
 
    /* Elide syncing against our own queue */
    if (wait_seqid && wait_seqid == ctx->flush_my_seqid) {
