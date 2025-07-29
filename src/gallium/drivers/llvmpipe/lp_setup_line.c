@@ -336,7 +336,7 @@ try_setup_line(struct lp_setup_context *setup,
    info.v1 = v1;
    info.v2 = v2;
 
-   const float pixel_offset = setup->multisample ? 0.0 : setup->pixel_offset;
+   const float pixel_offset = setup->pixel_offset;
 
    int x[4], y[4];
    if (setup->rectangular_lines) {

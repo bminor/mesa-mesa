@@ -585,7 +585,7 @@ lp_setup_bind_rasterizer(struct lp_setup_context *setup,
    setup->triangle = first_triangle;
    setup->rect = first_rectangle;
    setup->multisample = rast->multisample;
-   setup->pixel_offset = rast->half_pixel_center ? 0.5f : 0.0f;
+   setup->pixel_offset = !rast->multisample && rast->half_pixel_center ? 0.5f : 0.0f;
    setup->bottom_edge_rule = rast->bottom_edge_rule;
 
    if (setup->scissor_test != rast->scissor) {
