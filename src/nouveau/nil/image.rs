@@ -749,9 +749,15 @@ impl Image {
         }
     }
 
-    fn gb202_choose_pte_kind(_format: Format, _compressed: bool) -> u8 {
+    fn gb202_choose_pte_kind(_format: Format, compressed: bool) -> u8 {
         use nvidia_headers::hwref::tu102::mmu::*;
-        NV_MMU_PTE_KIND_GENERIC_MEMORY.try_into().unwrap()
+        if compressed {
+            NV_MMU_PTE_KIND_GENERIC_MEMORY_COMPRESSIBLE_DISABLE_PLC
+        } else {
+            NV_MMU_PTE_KIND_GENERIC_MEMORY
+        }
+        .try_into()
+        .unwrap()
     }
 
     fn tu102_choose_pte_kind(format: Format, compressed: bool) -> u8 {
@@ -789,7 +795,13 @@ impl Image {
                     NV_MMU_PTE_KIND_ZF32_X24S8
                 }
             }
-            PIPE_FORMAT_Z32_FLOAT => NV_MMU_PTE_KIND_GENERIC_MEMORY,
+            PIPE_FORMAT_Z32_FLOAT => {
+                if compressed {
+                    NV_MMU_PTE_KIND_GENERIC_MEMORY_COMPRESSIBLE_DISABLE_PLC
+                } else {
+                    NV_MMU_PTE_KIND_GENERIC_MEMORY
+                }
+            }
             PIPE_FORMAT_S8_UINT => {
                 if compressed {
                     NV_MMU_PTE_KIND_S8_COMPRESSIBLE_DISABLE_PLC
@@ -797,7 +809,13 @@ impl Image {
                     NV_MMU_PTE_KIND_S8
                 }
             }
-            _ => NV_MMU_PTE_KIND_GENERIC_MEMORY,
+            _ => {
+                if compressed {
+                    NV_MMU_PTE_KIND_GENERIC_MEMORY_COMPRESSIBLE_DISABLE_PLC
+                } else {
+                    NV_MMU_PTE_KIND_GENERIC_MEMORY
+                }
+            }
         }
         .try_into()
         .unwrap()
