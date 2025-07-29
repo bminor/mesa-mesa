@@ -776,6 +776,11 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       to_panvk_instance(dev->vk.physical->instance);
    mesa_shader_stage stage = nir->info.stage;
 
+   const nir_opt_access_options access_options = {
+      .is_vulkan = true,
+   };
+   NIR_PASS(_, nir, nir_opt_access, &access_options);
+
 #if PAN_ARCH >= 10
    if (stage == MESA_SHADER_VERTEX && compile_input->view_mask) {
       nir_lower_multiview_options options = {
