@@ -5424,6 +5424,8 @@ mem_vectorize_cb(unsigned align_mul, unsigned align_offset, unsigned bit_size,
 static void
 bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_modes)
 {
+   unsigned arch = pan_arch(gpu_id);
+
    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
 
    bool progress;
@@ -5434,26 +5436,57 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
       NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
       NIR_PASS(progress, nir, nir_lower_wrmasks, should_split_wrmask, NULL);
 
+      NIR_PASS(_, nir, nir_opt_copy_prop_vars);
+      NIR_PASS(_, nir, nir_opt_dead_write_vars);
+      NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
+
+      NIR_PASS(_, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
+      NIR_PASS(_, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
       NIR_PASS(progress, nir, nir_copy_prop);
-      NIR_PASS(progress, nir, nir_opt_remove_phis);
       NIR_PASS(progress, nir, nir_opt_dce);
-      NIR_PASS(progress, nir, nir_opt_dead_cf);
       NIR_PASS(progress, nir, nir_opt_cse);
 
       nir_opt_peephole_select_options peephole_select_options = {
          .limit = 64,
          .expensive_alu_ok = true,
       };
-      NIR_PASS(progress, nir, nir_opt_peephole_select, &peephole_select_options);
+      NIR_PASS(progress, nir, nir_opt_peephole_select,
+               &peephole_select_options);
+      NIR_PASS(progress, nir, nir_opt_idiv_const, 8);
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
 
-      NIR_PASS(progress, nir, nir_opt_undef);
-      NIR_PASS(progress, nir, nir_lower_undef_to_zero);
+      NIR_PASS(progress, nir, nir_opt_dead_cf);
 
-      NIR_PASS(progress, nir, nir_opt_shrink_vectors, false);
+      bool loop_progress = false;
+      NIR_PASS(loop_progress, nir, nir_opt_loop);
+      progress |= loop_progress;
+
+      if (loop_progress) {
+         /* If nir_opt_loop makes progress, then we need to clean things up
+          * if we want any hope of nir_opt_if or nir_opt_loop_unroll to make
+          * progress.
+          */
+         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_dce);
+      }
+
+      /* XXX: On Bifrost (G52), this cause a failure on
+       * "dEQP-VK.graphicsfuzz.spv-composite-phi" and is related to an unknown
+       * scheduling issue */
+      if (arch >= 9)
+         NIR_PASS(
+            progress, nir, nir_opt_if,
+            nir_opt_if_optimize_phi_true_false | nir_opt_if_avoid_64bit_phis);
+
+      NIR_PASS(progress, nir, nir_opt_phi_to_bool);
       NIR_PASS(progress, nir, nir_opt_loop_unroll);
+      NIR_PASS(progress, nir, nir_opt_remove_phis);
+      NIR_PASS(progress, nir, nir_opt_undef);
    } while (progress);
+
+   NIR_PASS(_, nir, nir_lower_undef_to_zero);
+   NIR_PASS(_, nir, nir_opt_shrink_vectors, false);
 
    nir_load_store_vectorize_options vectorize_opts = {
       .modes = nir_var_mem_global |
