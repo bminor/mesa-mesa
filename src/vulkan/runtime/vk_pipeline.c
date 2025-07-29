@@ -835,32 +835,52 @@ static const struct vk_pipeline_cache_object_ops pipeline_precomp_shader_cache_o
    .destroy = vk_pipeline_precomp_shader_destroy,
 };
 
+struct vk_pipeline_stage {
+   mesa_shader_stage stage;
+
+   /* Hash used to lookup the precomp */
+   uint8_t precomp_key[SHA1_DIGEST_LENGTH];
+
+   struct vk_pipeline_precomp_shader *precomp;
+
+   struct vk_shader *shader;
+};
+
+static void
+vk_pipeline_hash_precomp_shader_stage(struct vk_device *device,
+                                      VkPipelineCreateFlags2KHR pipeline_flags,
+                                      const void *pipeline_info_pNext,
+                                      const VkPipelineShaderStageCreateInfo *info,
+                                      struct vk_pipeline_stage *stage)
+{
+   struct vk_pipeline_robustness_state rs;
+   vk_pipeline_robustness_state_fill(device, &rs, pipeline_info_pNext,
+                                     info->pNext);
+
+   vk_pipeline_hash_shader_stage(pipeline_flags, info,
+                                 &rs, stage->precomp_key);
+}
+
 static VkResult
 vk_pipeline_precompile_shader(struct vk_device *device,
                               struct vk_pipeline_cache *cache,
                               VkPipelineCreateFlags2KHR pipeline_flags,
                               const void *pipeline_info_pNext,
                               const VkPipelineShaderStageCreateInfo *info,
-                              struct vk_pipeline_precomp_shader **ps_out)
+                              struct vk_pipeline_stage *stage)
 {
    const struct vk_device_shader_ops *ops = device->shader_ops;
    VkResult result;
 
-   struct vk_pipeline_robustness_state rs = { 0 };
-   vk_pipeline_robustness_state_fill(device, &rs,
-                                     pipeline_info_pNext,
-                                     info->pNext);
-
-   uint8_t stage_sha1[SHA1_DIGEST_LENGTH];
-   vk_pipeline_hash_shader_stage(pipeline_flags, info, &rs, stage_sha1);
-
    if (cache != NULL) {
       struct vk_pipeline_cache_object *cache_obj =
-         vk_pipeline_cache_lookup_object(cache, stage_sha1, sizeof(stage_sha1),
+         vk_pipeline_cache_lookup_object(cache,
+                                         stage->precomp_key,
+                                         sizeof(stage->precomp_key),
                                          &pipeline_precomp_shader_cache_ops,
                                          NULL /* cache_hit */);
       if (cache_obj != NULL) {
-         *ps_out = vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
+         stage->precomp = vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
          return VK_SUCCESS;
       }
    }
@@ -869,11 +889,15 @@ vk_pipeline_precompile_shader(struct vk_device *device,
        VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)
       return VK_PIPELINE_COMPILE_REQUIRED;
 
-   const mesa_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
+   struct vk_pipeline_robustness_state rs;
+   vk_pipeline_robustness_state_fill(device, &rs,
+                                     pipeline_info_pNext,
+                                     info->pNext);
+
    const struct nir_shader_compiler_options *nir_options =
-      ops->get_nir_options(device->physical, stage, &rs);
+      ops->get_nir_options(device->physical, stage->stage, &rs);
    const struct spirv_to_nir_options spirv_options =
-      ops->get_spirv_options(device->physical, stage, &rs);
+      ops->get_spirv_options(device->physical, stage->stage, &rs);
 
    nir_shader *nir;
    result = vk_pipeline_shader_stage_to_nir(device, pipeline_flags, info,
@@ -885,31 +909,22 @@ vk_pipeline_precompile_shader(struct vk_device *device,
    if (ops->preprocess_nir != NULL)
       ops->preprocess_nir(device->physical, nir, &rs);
 
-   struct vk_pipeline_precomp_shader *shader =
-      vk_pipeline_precomp_shader_create(device, stage_sha1,
-                                        sizeof(stage_sha1),
+   stage->precomp =
+      vk_pipeline_precomp_shader_create(device, stage->precomp_key,
+                                        sizeof(stage->precomp_key),
                                         &rs, nir);
    ralloc_free(nir);
-   if (shader == NULL)
+   if (stage->precomp == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    if (cache != NULL) {
-      struct vk_pipeline_cache_object *cache_obj = &shader->cache_obj;
+      struct vk_pipeline_cache_object *cache_obj = &stage->precomp->cache_obj;
       cache_obj = vk_pipeline_cache_add_object(cache, cache_obj);
-      shader = vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
+      stage->precomp = vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
    }
-
-   *ps_out = shader;
 
    return VK_SUCCESS;
 }
-
-struct vk_pipeline_stage {
-   mesa_shader_stage stage;
-
-   struct vk_pipeline_precomp_shader *precomp;
-   struct vk_shader *shader;
-};
 
 static int
 cmp_vk_pipeline_stages(const void *_a, const void *_b)
@@ -938,9 +953,7 @@ vk_pipeline_stage_finish(struct vk_device *device,
 static struct vk_pipeline_stage
 vk_pipeline_stage_clone(const struct vk_pipeline_stage *in)
 {
-   struct vk_pipeline_stage out = {
-      .stage = in->stage,
-   };
+   struct vk_pipeline_stage out = *in;
 
    if (in->precomp)
       out.precomp = vk_pipeline_precomp_shader_ref(in->precomp);
@@ -1754,18 +1767,19 @@ vk_create_graphics_pipeline(struct vk_device *device,
       if (!vk_pipeline_stage_is_null(&stages[stage]))
          continue;
 
-      struct vk_pipeline_precomp_shader *precomp;
-      result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
-                                             pCreateInfo->pNext,
-                                             stage_info,
-                                             &precomp);
-      if (result != VK_SUCCESS)
-         goto fail_stages;
-
       stages[stage] = (struct vk_pipeline_stage) {
          .stage = stage,
-         .precomp = precomp,
       };
+
+      vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
+                                            pCreateInfo->pNext,
+                                            stage_info, &stages[stage]);
+
+      result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
+                                             pCreateInfo->pNext,
+                                             stage_info, &stages[stage]);
+      if (result != VK_SUCCESS)
+         goto fail_stages;
 
       const int64_t stage_end = os_time_get_nano();
       stage_feedbacks[stage].duration += stage_end - stage_start;
@@ -2222,10 +2236,15 @@ vk_create_compute_pipeline(struct vk_device *device,
    struct vk_pipeline_stage stage = {
       .stage = MESA_SHADER_COMPUTE,
    };
+
+   vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
+                                         pCreateInfo->pNext,
+                                         &pCreateInfo->stage, &stage);
+
    result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
                                           pCreateInfo->pNext,
                                           &pCreateInfo->stage,
-                                          &stage.precomp);
+                                          &stage);
    if (result != VK_SUCCESS)
       goto fail_pipeline;
 
@@ -2924,10 +2943,13 @@ vk_create_rt_pipeline(struct vk_device *device,
          .stage = vk_to_mesa_shader_stage(stage_info->stage),
       };
 
+      vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
+                                            pCreateInfo->pNext, stage_info,
+                                            &stages[i]);
+
       result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
                                              pCreateInfo->pNext,
-                                             stage_info,
-                                             &stages[i].precomp);
+                                             stage_info, &stages[i]);
       if (result != VK_SUCCESS)
          goto fail_stages_compile;
 
