@@ -992,12 +992,9 @@ struct Colorspace colorspace_mapping[] = {
    /* VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT is left out because there's no
     * exactly matching transfer function in the Wayland protocol */
    /* VK_COLOR_SPACE_PASS_THROUGH_EXT is handled elsewhere */
-   {
-      .colorspace = VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT,
-      .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
-      .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_SRGB,
-      .should_use_hdr_metadata = true,
-   },
+   /* VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT is intentionally not added
+    * as it's a bit unclear how exactly it should be used
+    * and whether or not the transfer function should be gamma 2.2 or piece-wise */
    /* VK_COLOR_SPACE_DISPLAY_NATIVE_AMD isn't supported */
    /* VK_COLORSPACE_SRGB_NONLINEAR_KHR is just an alias */
    /* VK_COLOR_SPACE_DCI_P3_LINEAR_EXT is just an alias */
