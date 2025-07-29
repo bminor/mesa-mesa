@@ -226,17 +226,17 @@ __bitset_shl(BITSET_WORD *x, unsigned amount, unsigned n)
 static inline bool
 __bitset_test_range(const BITSET_WORD *r, unsigned start, unsigned end)
 {
-   const unsigned size = end - start + 1;
-   const unsigned start_mod = start % BITSET_WORDBITS;
+   while (start <= end) {
+      unsigned start_mod = start % BITSET_WORDBITS;
+      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1);
 
-   if (start_mod + size <= BITSET_WORDBITS) {
-      return !BITSET_TEST_RANGE_INSIDE_WORD(r, start, end, 0);
-   } else {
-      const unsigned first_size = BITSET_WORDBITS - start_mod;
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(r, start, start + size - 1, 0))
+         return true;
 
-      return __bitset_test_range(r, start, start + first_size - 1) ||
-             __bitset_test_range(r, start + first_size, end);
+      start += size;
    }
+
+   return false;
 }
 
 #define BITSET_TEST_RANGE(x, b, e) \
@@ -245,16 +245,12 @@ __bitset_test_range(const BITSET_WORD *r, unsigned start, unsigned end)
 static inline void
 __bitset_set_range(BITSET_WORD *r, unsigned start, unsigned end)
 {
-   const unsigned size = end - start + 1;
-   const unsigned start_mod = start % BITSET_WORDBITS;
+   while (start <= end) {
+      unsigned start_mod = start % BITSET_WORDBITS;
+      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1);
 
-   if (start_mod + size <= BITSET_WORDBITS) {
-      BITSET_SET_RANGE_INSIDE_WORD(r, start, end);
-   } else {
-      const unsigned first_size = BITSET_WORDBITS - start_mod;
-
-      __bitset_set_range(r, start, start + first_size - 1);
-      __bitset_set_range(r, start + first_size, end);
+      BITSET_SET_RANGE_INSIDE_WORD(r, start, start + size - 1);
+      start += size;
    }
 }
 
@@ -264,16 +260,12 @@ __bitset_set_range(BITSET_WORD *r, unsigned start, unsigned end)
 static inline void
 __bitclear_clear_range(BITSET_WORD *r, unsigned start, unsigned end)
 {
-   const unsigned size = end - start + 1;
-   const unsigned start_mod = start % BITSET_WORDBITS;
+   while (start <= end) {
+      unsigned start_mod = start % BITSET_WORDBITS;
+      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1);
 
-   if (start_mod + size <= BITSET_WORDBITS) {
-      BITSET_CLEAR_RANGE_INSIDE_WORD(r, start, end);
-   } else {
-      const unsigned first_size = BITSET_WORDBITS - start_mod;
-
-      __bitclear_clear_range(r, start, start + first_size - 1);
-      __bitclear_clear_range(r, start + first_size, end);
+      BITSET_CLEAR_RANGE_INSIDE_WORD(r, start, start + size - 1);
+      start += size;
    }
 }
 
