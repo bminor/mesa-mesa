@@ -5455,13 +5455,19 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
       NIR_PASS(progress, nir, nir_opt_loop_unroll);
    } while (progress);
 
-   NIR_PASS(
-      progress, nir, nir_opt_load_store_vectorize,
-      &(const nir_load_store_vectorize_options){
-         .modes = nir_var_mem_global | nir_var_mem_shared | nir_var_shader_temp,
-         .robust_modes = robust2_modes,
-         .callback = mem_vectorize_cb,
-      });
+   nir_load_store_vectorize_options vectorize_opts = {
+      .modes = nir_var_mem_global |
+               nir_var_mem_shared |
+               nir_var_shader_temp,
+      .callback = mem_vectorize_cb,
+      .robust_modes = robust2_modes,
+   };
+
+   /* Only allow vectorization of UBOs when no robustness2 is configured */
+   if (!(robust2_modes & nir_var_mem_ubo))
+      vectorize_opts.modes |= nir_var_mem_ubo;
+
+   NIR_PASS(progress, nir, nir_opt_load_store_vectorize, &vectorize_opts);
    NIR_PASS(progress, nir, nir_lower_pack);
 
    /* nir_lower_pack can generate split operations, execute algebraic again to
