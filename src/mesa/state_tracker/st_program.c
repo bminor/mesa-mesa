@@ -636,6 +636,9 @@ get_nir_shader(struct st_context *st, struct gl_program *prog, bool is_draw)
    if ((!is_draw || !st->ctx->Const.PackedDriverUniformStorage) && prog->nir) {
       nir_shader *nir = prog->nir;
 
+      if (nir->info.stage == MESA_SHADER_VERTEX)
+         assert(prog->base_serialized_nir && prog->base_serialized_nir_size);
+
       /* The first shader variant takes ownership of NIR, so that there is
        * no cloning. Additional shader variants are always generated from
        * serialized NIR to save memory.
@@ -649,8 +652,7 @@ get_nir_shader(struct st_context *st, struct gl_program *prog, bool is_draw)
    const struct nir_shader_compiler_options *options =
       is_draw ? &draw_nir_options : st_get_nir_compiler_options(st, prog->info.stage);
 
-   if (is_draw && st->ctx->Const.PackedDriverUniformStorage &&
-       (!prog->shader_program || prog->shader_program->data->LinkStatus != LINKING_SKIPPED)) {
+   if (is_draw && st->ctx->Const.PackedDriverUniformStorage) {
       assert(prog->base_serialized_nir);
       blob_reader_init(&blob_reader, prog->base_serialized_nir, prog->base_serialized_nir_size);
    } else {
