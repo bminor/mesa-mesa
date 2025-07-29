@@ -1762,6 +1762,7 @@ agx_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
     */
 
    ctx->queue_id = agx_create_command_queue(agx_device(screen), priority);
+   ctx->virt_ring_idx = priority + 1;
 
    pctx->destroy = agx_destroy_context;
    pctx->flush = agx_flush;

@@ -642,7 +642,7 @@ struct agx_context {
    } batches;
 
    /* Queue handle */
-   uint32_t queue_id;
+   uint32_t queue_id, virt_ring_idx;
 
    struct agx_batch *batch;
    struct agx_bo *timestamps;

@@ -83,7 +83,7 @@ static const struct debug_named_value agx_debug_options[] = {
 void
 agx_bo_free(struct agx_device *dev, struct agx_bo *bo)
 {
-   const uint64_t handle = bo->uapi_handle;
+   const uint64_t handle = bo->handle;
 
    if (bo->_map)
       munmap(bo->_map, bo->size);
@@ -505,9 +505,6 @@ agx_open_device(void *memctx, struct agx_device *dev)
          dev->is_virtio = false;
          dev->ops = agx_device_drm_ops;
       } else if (!strcmp(version->name, "virtio_gpu")) {
-         /* TODO: virtio wire protocol is not stable yet */
-         return false;
-
          dev->is_virtio = true;
          if (!agx_virtio_open_device(dev)) {
             fprintf(
