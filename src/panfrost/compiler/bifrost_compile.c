@@ -5249,11 +5249,15 @@ bi_vectorize_filter(const nir_instr *instr, const void *data)
    const nir_alu_instr *alu = nir_instr_as_alu(instr);
 
    switch (alu->op) {
+   case nir_op_pack_uvec2_to_uint:
+   case nir_op_pack_uvec4_to_uint:
+      return 0;
    case nir_op_frcp:
    case nir_op_frsq:
    case nir_op_ishl:
    case nir_op_ishr:
    case nir_op_ushr:
+   case nir_op_b2f16:
    case nir_op_f2i16:
    case nir_op_f2u16:
    case nir_op_extract_u8:
@@ -5283,23 +5287,6 @@ bi_vectorize_filter(const nir_instr *instr, const void *data)
       return 2;
    else
       return 1;
-}
-
-static bool
-bi_scalarize_filter(const nir_instr *instr, const void *data)
-{
-   if (instr->type != nir_instr_type_alu)
-      return false;
-
-   const nir_alu_instr *alu = nir_instr_as_alu(instr);
-
-   switch (alu->op) {
-   case nir_op_pack_uvec2_to_uint:
-   case nir_op_pack_uvec4_to_uint:
-      return false;
-   default:
-      return true;
-   }
 }
 
 /* Ensure we write exactly 4 components */
@@ -5505,7 +5492,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
    if (pan_arch(gpu_id) < 9)
       NIR_PASS(progress, nir, bifrost_nir_opt_boolean_bitwise);
 
-   NIR_PASS(progress, nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
+   NIR_PASS(progress, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
    NIR_PASS(progress, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
    NIR_PASS(progress, nir, nir_lower_bool_to_bitsize);
 
@@ -6045,7 +6032,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_shader_alu_pass, bi_lower_ldexp16,
             nir_metadata_control_flow, NULL);
 
-   NIR_PASS(_, nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
+   NIR_PASS(_, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
    NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
    NIR_PASS(_, nir, nir_lower_flrp, 16 | 32 | 64, false /* always_precise */);
