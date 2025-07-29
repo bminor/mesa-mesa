@@ -26,6 +26,7 @@
 #include "util/u_inlines.h"
 #include "util/u_surface.h"
 #include "pipe/p_state.h"
+#include "util/format/u_format_zs.h"
 #include "frontend/winsys_handle.h"
 #include "vk_android.h"
 
@@ -1021,4 +1022,121 @@ lvp_image_bind_sparse(struct lvp_device *device,
    }
 
    return VK_SUCCESS;
+}
+
+
+static void
+copy_depth_rect(uint8_t * dst,
+                enum pipe_format dst_format,
+                unsigned dst_stride,
+                unsigned dst_x,
+                unsigned dst_y,
+                unsigned width,
+                unsigned height,
+                const uint8_t * src,
+                enum pipe_format src_format,
+                int src_stride,
+                unsigned src_x,
+                unsigned src_y)
+{
+   int src_stride_pos = src_stride < 0 ? -src_stride : src_stride;
+   int src_blocksize = util_format_get_blocksize(src_format);
+   int src_blockwidth = util_format_get_blockwidth(src_format);
+   int src_blockheight = util_format_get_blockheight(src_format);
+   int dst_blocksize = util_format_get_blocksize(dst_format);
+   int dst_blockwidth = util_format_get_blockwidth(dst_format);
+   int dst_blockheight = util_format_get_blockheight(dst_format);
+
+   assert(src_blocksize > 0);
+   assert(src_blockwidth > 0);
+   assert(src_blockheight > 0);
+
+   dst_x /= dst_blockwidth;
+   dst_y /= dst_blockheight;
+   width = (width + src_blockwidth - 1)/src_blockwidth;
+   height = (height + src_blockheight - 1)/src_blockheight;
+   src_x /= src_blockwidth;
+   src_y /= src_blockheight;
+
+   dst += dst_x * dst_blocksize;
+   src += src_x * src_blocksize;
+   dst += dst_y * dst_stride;
+   src += src_y * src_stride_pos;
+
+   if (dst_format == PIPE_FORMAT_S8_UINT) {
+      if (src_format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT) {
+         util_format_z32_float_s8x24_uint_unpack_s_8uint(dst, dst_stride,
+                                                         src, src_stride,
+                                                         width, height);
+      } else if (src_format == PIPE_FORMAT_Z24_UNORM_S8_UINT) {
+         util_format_z24_unorm_s8_uint_unpack_s_8uint(dst, dst_stride,
+                                                      src, src_stride,
+                                                      width, height);
+      } else {
+         abort();
+      }
+   } else if (dst_format == PIPE_FORMAT_Z24X8_UNORM) {
+      util_format_z24_unorm_s8_uint_unpack_z24(dst, dst_stride,
+                                               src, src_stride,
+                                               width, height);
+   } else if (dst_format == PIPE_FORMAT_Z32_FLOAT) {
+      if (src_format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT) {
+         util_format_z32_float_s8x24_uint_unpack_z_float((float *)dst, dst_stride,
+                                                         src, src_stride,
+                                                         width, height);
+      } else {
+         abort();
+      }
+   } else if (dst_format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT) {
+      if (src_format == PIPE_FORMAT_Z32_FLOAT)
+         util_format_z32_float_s8x24_uint_pack_z_float(dst, dst_stride,
+                                                       (float *)src, src_stride,
+                                                       width, height);
+      else if (src_format == PIPE_FORMAT_S8_UINT)
+         util_format_z32_float_s8x24_uint_pack_s_8uint(dst, dst_stride,
+                                                       src, src_stride,
+                                                       width, height);
+      else
+         abort();
+   } else if (dst_format == PIPE_FORMAT_Z24_UNORM_S8_UINT) {
+      if (src_format == PIPE_FORMAT_S8_UINT)
+         util_format_z24_unorm_s8_uint_pack_s_8uint(dst, dst_stride,
+                                                    src, src_stride,
+                                                    width, height);
+      else if (src_format == PIPE_FORMAT_Z24X8_UNORM)
+         util_format_z24_unorm_s8_uint_pack_z24(dst, dst_stride,
+                                                src, src_stride,
+                                                width, height);
+      else
+         abort();
+   }
+}
+
+void
+lvp_image_copy_depth_box(uint8_t *dst,
+               enum pipe_format dst_format,
+               unsigned dst_stride, uint64_t dst_slice_stride,
+               unsigned dst_x, unsigned dst_y, unsigned dst_z,
+               unsigned width, unsigned height, unsigned depth,
+               const uint8_t * src,
+               enum pipe_format src_format,
+               int src_stride, uint64_t src_slice_stride,
+               unsigned src_x, unsigned src_y, unsigned src_z)
+{
+   dst += dst_z * dst_slice_stride;
+   src += src_z * src_slice_stride;
+   for (unsigned z = 0; z < depth; ++z) {
+      copy_depth_rect(dst,
+                      dst_format,
+                      dst_stride,
+                      dst_x, dst_y,
+                      width, height,
+                      src,
+                      src_format,
+                      src_stride,
+                      src_x, src_y);
+
+      dst += dst_slice_stride;
+      src += src_slice_stride;
+   }
 }
