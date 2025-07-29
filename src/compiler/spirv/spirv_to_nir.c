@@ -7247,6 +7247,69 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
       vtn_dump_shader(b, dump_path, blake3_str);
    }
 
+   const char *read_path = secure_getenv("MESA_SPIRV_READ_PATH");
+   if (read_path) {
+      char blake3_str[BLAKE3_HEX_LEN];
+      _mesa_blake3_format(blake3_str, b->shader->info.source_blake3);
+
+      char filename[PATH_MAX];
+      const char *stage_ext = _mesa_shader_stage_to_file_ext(stage);
+      int len = snprintf(filename, sizeof(filename), "%s/0x%s.%s",
+                         read_path, blake3_str, stage_ext);
+
+      if (len < 0 || len >= sizeof(filename)) {
+         vtn_err("Invalid replacement SPIR-V shader file path length: %s/%s.%s",
+                 read_path, blake3_str, stage_ext);
+         goto no_shader_replace;
+      }
+
+      FILE *f = fopen(filename, "rb");
+      if (f == NULL) {
+         vtn_info("Replacement SPIR-V shader file %s not found.", filename);
+         goto no_shader_replace;
+      }
+
+      size_t replacement_size = 0;
+      fseek(f, 0, SEEK_END);
+      replacement_size = ftell(f);
+      if (replacement_size == 0) {
+         vtn_info("Replacement SPIR-V shader file %s is empty.", filename);
+         goto no_shader_replace;
+      }
+
+      uint32_t *replacement_words = malloc(replacement_size);
+      if (replacement_words == NULL) {
+         vtn_err("Failed to allocate memory for replacement SPIR-V shader %s", filename);
+         goto no_shader_replace;
+      }
+
+      fseek(f, 0, SEEK_SET);
+      if (fread((void *)replacement_words, 1, replacement_size, f) != replacement_size) {
+         vtn_err("Failed to read replacement SPIR-V shader file %s", filename);
+         free((void *)replacement_words);
+         fclose(f);
+         goto no_shader_replace;
+      }
+
+      fclose(f);
+
+      vtn_info("Replacing shader 0x%s with contents of %s", blake3_str, filename);
+
+      // re-generate with the replacement SPIR-V
+      ralloc_free(b->shader);
+      ralloc_free(b);
+      nir_shader* result = spirv_to_nir(replacement_words, replacement_size / sizeof(uint32_t),
+                                        spec, num_spec,
+                                        stage, entry_point_name, options,
+                                        nir_options);
+
+      free((void *)replacement_words);
+      return result;
+
+      // default (empty) path if shader replacement fails
+      no_shader_replace: ;
+   }
+
    /* Skip the SPIR-V header, handled at vtn_create_builder */
    words+= 5;
 
