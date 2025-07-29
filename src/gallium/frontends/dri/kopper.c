@@ -596,6 +596,7 @@ kopperSetSwapInterval(struct dri_drawable *drawable, int interval)
                                 drawable->textures[ST_ATTACHMENT_BACK_LEFT] :
                                 drawable->textures[ST_ATTACHMENT_FRONT_LEFT];
 
+   drawable->info.initial_swap_interval = interval;
    /* can't set swap interval on non-windows */
    if (!drawable->window_valid)
       return;
@@ -607,7 +608,6 @@ kopperSetSwapInterval(struct dri_drawable *drawable, int interval)
       struct pipe_screen *pscreen = kopper_get_zink_screen(screen->base.screen);
       zink_kopper_set_swap_interval(pscreen, ptex, interval);
    }
-   drawable->info.initial_swap_interval = interval;
 }
 
 int
