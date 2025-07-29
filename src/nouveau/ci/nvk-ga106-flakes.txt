@@ -29,13 +29,16 @@ dEQP-VK.image.host_image_copy.optimal.image_to_image_copy.transfer_src_optimal.g
 dEQP-VK.memory.pipeline_barrier.host_write_transfer_src.1048576
 
 dEQP-VK.pipeline.*.pipeline_cache.robustness2.storage
+dEQP-VK.pipeline.monolithic.creation_cache_control.compute_pipelines.duplicate_batch_pipelines_no_cache
 
 dEQP-VK.rasterization.primitive_size.points.point_size_10000
 
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_3.a8b8g8r8_uint_pack32.samples_8
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_3.r16g16_unorm.samples_8_baseLayer1
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_3.r32g32b32a32_sint.samples_8_baseLayer1
+dEQP-VK.renderpass.suballocation.multisample_resolve.layers_3.r32g32b32a32_sint.samples_8_resolve_level_4
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_6.r16g16b16a16_sfloat.samples_4_resolve_level_4
+dEQP-VK.renderpass.suballocation.multisample_resolve.layers_6.r32g32b32a32_sfloat.samples_4_resolve_level_4
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_3.a8b8g8r8_unorm_pack32.samples_8_resolve_level_3
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_3.r16g16b16a16_uint.samples_8_baseLayer1
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_3.r32g32b32a32_sfloat.samples_8
@@ -56,3 +59,7 @@ dEQP-VK.sparse_resources.transfer_queue.cube_array.rgba32ui.256_256_6
 dEQP-VK.synchronization.signal_order.shared_timeline_semaphore.write_image_compute_indirect_read_blit_image.image_128x128_r16_uint_opaque_fd
 dEQP-VK.synchronization.signal_order.shared_timeline_semaphore.write_image_fragment_read_image_vertex.image_128x128_r16g16b16a16_uint_opaque_fd
 dEQP-VK.synchronization2.timeline_semaphore.wait_before_signal.write_image_tess_eval_read_image_tess_eval.image_128x128_r16g16b16a16_uint
+
+dEQP-VK.wsi.display.create_display_plane_surface
+dEQP-VK.wsi.display.get_display_plane_properties2
+dEQP-VK.wsi.display.get_display_plane_supported_displays
