@@ -37,6 +37,8 @@ panvk_GetDeviceBufferMemoryRequirements(VkDevice _device,
                                         VkMemoryRequirements2 *pMemoryRequirements)
 {
    VK_FROM_HANDLE(panvk_device, device, _device);
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(device->vk.physical);
 
    /* For sparse resources alignment specifies binding granularity, rather than
     * the alignment requirement. It's up to us to satisfy the alignment
@@ -48,7 +50,8 @@ panvk_GetDeviceBufferMemoryRequirements(VkDevice _device,
          : 64;
    const uint64_t size = align64(pInfo->pCreateInfo->size, align);
 
-   pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
+   pMemoryRequirements->memoryRequirements.memoryTypeBits =
+      BITFIELD_MASK(phys_dev->memory.type_count);
    pMemoryRequirements->memoryRequirements.alignment = align;
    pMemoryRequirements->memoryRequirements.size = size;
 

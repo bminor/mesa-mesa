@@ -817,6 +817,8 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
                                   VkMemoryRequirements2 *pMemoryRequirements)
 {
    VK_FROM_HANDLE(panvk_image, image, pInfo->image);
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(image->vk.base.device->physical);
 
    /* For sparse resources alignment specifies binding granularity, rather than
     * the alignment requirement. It's up to us to satisfy the alignment
@@ -840,7 +842,8 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
          ? align64(size_non_sparse, alignment)
          : size_non_sparse;
 
-   pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
+   pMemoryRequirements->memoryRequirements.memoryTypeBits =
+      BITFIELD_MASK(phys_dev->memory.type_count);
    pMemoryRequirements->memoryRequirements.alignment = alignment;
    pMemoryRequirements->memoryRequirements.size = size;
 

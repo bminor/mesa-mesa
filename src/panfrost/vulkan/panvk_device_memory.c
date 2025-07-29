@@ -396,8 +396,13 @@ panvk_GetMemoryFdPropertiesKHR(VkDevice _device,
                                int fd,
                                VkMemoryFdPropertiesKHR *pMemoryFdProperties)
 {
+   VK_FROM_HANDLE(panvk_device, device, _device);
+   const struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(device->vk.physical);
+
    assert(handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
-   pMemoryFdProperties->memoryTypeBits = 1;
+   pMemoryFdProperties->memoryTypeBits =
+      BITFIELD_MASK(phys_dev->memory.type_count);
    return VK_SUCCESS;
 }
 
