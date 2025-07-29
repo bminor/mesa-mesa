@@ -64,6 +64,9 @@ vk_set_subgroup_size(struct vk_device *device,
                      bool allow_varying,
                      bool require_full);
 
+/* This struct needs to be hashable mem-comparable */
+PRAGMA_DIAGNOSTIC_PUSH
+PRAGMA_DIAGNOSTIC_ERROR(-Wpadded)
 struct vk_pipeline_robustness_state {
    VkPipelineRobustnessBufferBehaviorEXT storage_buffers;
    VkPipelineRobustnessBufferBehaviorEXT uniform_buffers;
@@ -71,7 +74,9 @@ struct vk_pipeline_robustness_state {
    VkPipelineRobustnessImageBehaviorEXT images;
    bool null_uniform_buffer_descriptor;
    bool null_storage_buffer_descriptor;
+   bool _pad[2];
 };
+PRAGMA_DIAGNOSTIC_POP
 
 /** Hash VkPipelineShaderStageCreateInfo info
  *
