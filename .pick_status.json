@@ -5094,7 +5094,7 @@
         "description": "vulkan/wsi: require extended target volume support for scRGB",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4b663d561b877c24fe1f500e14cf7efc62fd5373",
         "notes": null
