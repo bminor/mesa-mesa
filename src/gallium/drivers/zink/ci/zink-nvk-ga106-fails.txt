@@ -44,6 +44,43 @@ dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.n
 KHR-GL46.framebuffer_blit.scissor_blit,Fail
 KHR-GL46.direct_state_access.vertex_arrays_vertex_buffers_errors,Fail
 
+KHR-GL46.shader_image_size.advanced-ms-cs-float,Fail
+KHR-GL46.shader_image_size.advanced-ms-cs-int,Fail
+KHR-GL46.shader_image_size.advanced-ms-cs-uint,Fail
+KHR-GL46.shader_image_size.advanced-ms-fs-float,Fail
+KHR-GL46.shader_image_size.advanced-ms-fs-int,Fail
+KHR-GL46.shader_image_size.advanced-ms-fs-uint,Fail
+KHR-GL46.shader_image_size.advanced-ms-gs-float,Fail
+KHR-GL46.shader_image_size.advanced-ms-gs-int,Fail
+KHR-GL46.shader_image_size.advanced-ms-gs-uint,Fail
+KHR-GL46.shader_image_size.advanced-ms-tcs-float,Fail
+KHR-GL46.shader_image_size.advanced-ms-tcs-int,Fail
+KHR-GL46.shader_image_size.advanced-ms-tcs-uint,Fail
+KHR-GL46.shader_image_size.advanced-ms-tes-float,Fail
+KHR-GL46.shader_image_size.advanced-ms-tes-int,Fail
+KHR-GL46.shader_image_size.advanced-ms-tes-uint,Fail
+KHR-GL46.shader_image_size.advanced-ms-vs-float,Fail
+KHR-GL46.shader_image_size.advanced-ms-vs-int,Fail
+KHR-GL46.shader_image_size.advanced-ms-vs-uint,Fail
+KHR-GL46.shader_image_size.basic-ms-cs-float,Fail
+KHR-GL46.shader_image_size.basic-ms-cs-int,Fail
+KHR-GL46.shader_image_size.basic-ms-cs-uint,Fail
+KHR-GL46.shader_image_size.basic-ms-fs-float,Fail
+KHR-GL46.shader_image_size.basic-ms-fs-int,Fail
+KHR-GL46.shader_image_size.basic-ms-fs-uint,Fail
+KHR-GL46.shader_image_size.basic-ms-gs-float,Fail
+KHR-GL46.shader_image_size.basic-ms-gs-int,Fail
+KHR-GL46.shader_image_size.basic-ms-gs-uint,Fail
+KHR-GL46.shader_image_size.basic-ms-tcs-float,Fail
+KHR-GL46.shader_image_size.basic-ms-tcs-int,Fail
+KHR-GL46.shader_image_size.basic-ms-tcs-uint,Fail
+KHR-GL46.shader_image_size.basic-ms-tes-float,Fail
+KHR-GL46.shader_image_size.basic-ms-tes-int,Fail
+KHR-GL46.shader_image_size.basic-ms-tes-uint,Fail
+KHR-GL46.shader_image_size.basic-ms-vs-float,Fail
+KHR-GL46.shader_image_size.basic-ms-vs-int,Fail
+KHR-GL46.shader_image_size.basic-ms-vs-uint,Fail
+
 spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
 spec@!opengl 1.0@rasterpos,Fail
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail

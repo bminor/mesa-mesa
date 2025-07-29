@@ -2,6 +2,7 @@ dEQP-GLES3.functional.lifetime.delete_bound.framebuffer
 
 KHR-GL46.shader_image_load_store.basic-allFormats-storeGeometryStages
 KHR-GL46.shader_image_load_store.basic-allTargets-loadStoreCS
+KHR-GL46.texture_buffer.texture_buffer_max_size
 
 spec@!opengl 1.0@gl-1.0-front-invalidate-back
 spec@!opengl 1.1@teximage-colors gl_luminance12_alpha4.*
