@@ -1587,13 +1587,13 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
     * these operations uncached.
     */
    unsigned cache_mode =
-      lsc_opcode_is_atomic(op) ? (unsigned) LSC_CACHE(devinfo, STORE, L1UC_L3WB) :
+      lsc_opcode_is_atomic(op) ? LSC_CACHE(devinfo, STORE, L1UC_L3WB) :
       volatile_access ?
          (lsc_opcode_is_store(op) ?
-            (unsigned) LSC_CACHE(devinfo, STORE, L1UC_L3UC) :
-            (unsigned) LSC_CACHE(devinfo, LOAD, L1UC_L3UC)) :
-      lsc_opcode_is_store(op) ? (unsigned) LSC_CACHE(devinfo, STORE, L1STATE_L3MOCS) :
-      (unsigned) LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS);
+            LSC_CACHE(devinfo, STORE, L1UC_L3UC) :
+            LSC_CACHE(devinfo, LOAD, L1UC_L3UC)) :
+      lsc_opcode_is_store(op) ? LSC_CACHE(devinfo, STORE, L1STATE_L3MOCS) :
+      LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS);
 
    /* If we're a fragment shader, we have to predicate with the sample mask to
     * avoid helper invocations in instructions with side effects, unless they
