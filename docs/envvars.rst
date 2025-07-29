@@ -309,6 +309,14 @@ Core Mesa environment variables
 
    see :ref:`Experimenting with Shader Replacements <replacement>`
 
+.. envvar:: MESA_SPIRV_DUMP_PATH
+
+   see :ref:`SPIR-V Shader Capture <spirv_capture>`
+
+.. envvar:: MESA_SPIRV_READ_PATH
+
+   see :ref:`SPIR-V Shader Replacement <spirv_replacement>`
+
 .. envvar:: MESA_VK_VERSION_OVERRIDE
 
    changes the Vulkan physical device version as returned in

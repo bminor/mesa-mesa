@@ -115,6 +115,7 @@ Linux, FreeBSD, and other operating systems.
    gallium/index
    vulkan/index
    nir/index
+   spirv/index
    isl/index
    isaspec
    rusticl
