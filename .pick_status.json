@@ -5354,7 +5354,7 @@
         "description": "nir/opt_varyings: fix build with PRINT_RELOCATE_SLOT",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e3d122ed7b0ddde1cae137e84d9dba603ba58520",
         "notes": null
