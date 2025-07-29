@@ -44,6 +44,11 @@ nir_lower_sample_shading(nir_shader *nir)
    assert(nir->info.stage == MESA_SHADER_FRAGMENT);
    assert(nir->info.fs.uses_sample_shading);
 
+   nir_foreach_shader_in_variable(var, nir) {
+      nir->info.fs.uses_sample_qualifier = true;
+      var->data.sample = true;
+   }
+
    return nir_shader_intrinsics_pass(nir, force_persample_shading,
                                      nir_metadata_all, NULL);
 }
