@@ -162,7 +162,7 @@ static bool lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
                              .io_xfb2 = nir_intrinsic_io_xfb2(intr));
          util_dynarray_append(&state->stores, nir_intrinsic_instr *, store);
       } else {
-         unreachable();
+         unreachable("");
       }
 
       /* Remove the old store. */

@@ -390,7 +390,7 @@ static void gather_data(nir_shader *nir, pco_data *data)
       break;
 
    default:
-      unreachable();
+      unreachable("");
    }
 }
 
