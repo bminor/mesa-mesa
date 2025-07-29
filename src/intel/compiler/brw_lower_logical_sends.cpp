@@ -1589,9 +1589,15 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    unsigned cache_mode =
       lsc_opcode_is_atomic(op) ? LSC_CACHE(devinfo, STORE, L1UC_L3WB) :
       volatile_access ?
-         (lsc_opcode_is_store(op) ?
-            LSC_CACHE(devinfo, STORE, L1UC_L3UC) :
-            LSC_CACHE(devinfo, LOAD, L1UC_L3UC)) :
+         (devinfo->ver >= 20 ?
+            /* Xe2 has a better L3 that can deal with null tiles.*/
+            (lsc_opcode_is_store(op) ?
+               LSC_CACHE(devinfo, STORE, L1UC_L3WB) :
+               LSC_CACHE(devinfo, LOAD, L1UC_L3C)) :
+            /* On older platforms, all caches have to be bypassed. */
+            (lsc_opcode_is_store(op) ?
+               LSC_CACHE(devinfo, STORE, L1UC_L3UC) :
+               LSC_CACHE(devinfo, LOAD, L1UC_L3UC))) :
       lsc_opcode_is_store(op) ? LSC_CACHE(devinfo, STORE, L1STATE_L3MOCS) :
       LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS);
 
