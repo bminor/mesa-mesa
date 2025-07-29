@@ -785,8 +785,32 @@ lvp_CopyMemoryToImageEXT(VkDevice _device, const VkCopyMemoryToImageInfoEXT *pCo
 
       unsigned stride = util_format_get_stride(image->planes[plane].bo->format, copy->memoryRowLength ? copy->memoryRowLength : box.width);
       unsigned layer_stride = util_format_get_2d_size(image->planes[plane].bo->format, stride, copy->memoryImageHeight ? copy->memoryImageHeight : box.height);
-      device->queue.ctx->texture_subdata(device->queue.ctx, image->planes[plane].bo, copy->imageSubresource.mipLevel, 0,
-                                         &box, copy->pHostPointer, stride, layer_stride);
+      if (vk_format_is_depth_or_stencil(image->vk.format) && image->vk.aspects != aspects) {
+         struct pipe_transfer *xfer;
+         const uint8_t *src_data = copy->pHostPointer;
+         uint8_t *dst_data = device->queue.ctx->texture_map(device->queue.ctx,
+                                                      image->planes[plane].bo,
+                                                      copy->imageSubresource.mipLevel,
+                                                      0,
+                                                      &box,
+                                                      &xfer);
+
+         enum pipe_format dst_format = image->planes[plane].bo->format;
+         enum pipe_format src_format = aspects == VK_IMAGE_ASPECT_DEPTH_BIT ? util_format_get_depth_only(dst_format) : PIPE_FORMAT_S8_UINT;
+         const struct vk_image_buffer_layout buffer_layout = vk_memory_to_image_copy_layout(&image->vk, copy);
+         lvp_image_copy_depth_box(dst_data, dst_format,
+                        xfer->stride,
+                        xfer->layer_stride,
+                        0, 0, 0,
+                        copy->imageExtent.width,
+                        copy->imageExtent.height,
+                        box.depth,
+                        src_data, src_format, buffer_layout.row_stride_B, buffer_layout.image_stride_B, 0, 0, 0);
+         pipe_texture_unmap(device->queue.ctx, xfer);
+      } else {
+         device->queue.ctx->texture_subdata(device->queue.ctx, image->planes[plane].bo, copy->imageSubresource.mipLevel, 0,
+                                          &box, copy->pHostPointer, stride, layer_stride);
+      }
    }
    return VK_SUCCESS;
 }
