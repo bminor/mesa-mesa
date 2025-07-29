@@ -1744,7 +1744,7 @@
         "description": "mesa/st: always use base_serialized_nir for draw",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef0c9231a75e78fcf49436d2cfa20dbfb9968e85",
         "notes": null
