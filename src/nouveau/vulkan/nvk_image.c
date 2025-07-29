@@ -817,6 +817,9 @@ nvk_image_init(struct nvk_device *dev,
                           VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR))
       usage |= NIL_IMAGE_USAGE_VIDEO_BIT;
 
+   if (!image->can_compress)
+      usage |= NIL_IMAGE_USAGE_UNCOMPRESSED_BIT;
+
    uint32_t explicit_row_stride_B = 0;
 
    /* This section is removed by the optimizer for non-ANDROID builds */

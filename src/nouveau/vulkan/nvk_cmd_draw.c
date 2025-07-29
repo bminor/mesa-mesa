@@ -1190,7 +1190,7 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
             P_NV9097_SET_COLOR_TARGET_LAYER(p, i, 0);
          }
 
-         P_IMMD(p, NV9097, SET_COLOR_COMPRESSION(i), nil_image->compressed);
+         P_IMMD(p, NV9097, SET_COLOR_COMPRESSION(i), image->is_compressed);
       } else {
          P_MTHD(p, NV9097, SET_COLOR_TARGET_A(i));
          P_NV9097_SET_COLOR_TARGET_A(p, i, 0);
@@ -1280,7 +1280,7 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
       P_IMMD(p, NV9097, SET_ZT_LAYER, base_array_layer);
 
-      P_IMMD(p, NV9097, SET_Z_COMPRESSION, nil_image.compressed);
+      P_IMMD(p, NV9097, SET_Z_COMPRESSION, image->is_compressed);
 
       if (nvk_cmd_buffer_3d_cls(cmd) >= MAXWELL_B) {
          P_IMMD(p, NVC597, SET_ZT_SPARSE, {

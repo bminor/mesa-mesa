@@ -103,6 +103,15 @@ struct nvk_image {
     */
    struct nvk_image_plane linear_tiled_shadow;
    struct nvkmd_mem *linear_tiled_shadow_mem;
+
+   /* This indicates that we would like to compress the image and would prefer
+    * larger pages and a dedicated allocation.
+    */
+   bool can_compress;
+   /* This indicates that we actually have compressed the image. This is set at
+    * bind time.
+    */
+   bool is_compressed;
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(nvk_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
