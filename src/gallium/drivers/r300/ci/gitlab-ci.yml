@@ -3,7 +3,6 @@ include:
 
 .ondracka-generic:
   extends:
-    - .ci-tron-x86_64-test-gl-manual  # use debian-build-x86_64 rather than debian-x86_64
     - .r300-manual-rules
   variables:
     FDO_CI_CONCURRENT: 2
@@ -15,12 +14,14 @@ include:
 
 .ondracka-rv530:
   extends:
+    - .ci-tron-x86_64-test-gl-manual  # use debian-build-x86_64 rather than debian-x86_64
     - .ondracka-generic
   variables:
     CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV530
 
 .ondracka-rv380:
   extends:
+    - .ci-tron-x86_64-test-gl-manual  # use debian-build-x86_64 rather than debian-x86_64
     - .ondracka-generic
   variables:
     CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV380
@@ -36,6 +37,19 @@ r300-rv530-deqp-gles2:
     # see https://gitlab.freedesktop.org/mesa/mesa/-/issues/8093
     RADEON_DEBUG: nohiz
 
+r300-rv530-deqp-gles2-asan:
+  extends:
+    - .ci-tron-x86_64-test-gl-asan-manual
+    - .ondracka-generic
+  variables:
+    CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV530
+    DEQP_SUITE: r300-rv530
+    GPU_VERSION: r300-rv530-nohiz
+    # Only single process can use hiz at a time, and we have some issues
+    # there in depth stencil tests, so it brings flakes,
+    # see https://gitlab.freedesktop.org/mesa/mesa/-/issues/8093
+    RADEON_DEBUG: nohiz
+
 r300-rv380-deqp-gles2:
   extends:
     - .ondracka-rv380
@@ -43,8 +57,18 @@ r300-rv380-deqp-gles2:
     DEQP_SUITE: r300-rv380
     GPU_VERSION: r300-rv380
 
+r300-rv380-deqp-gles2-asan:
+  extends:
+    - .ci-tron-x86_64-test-gl-asan-manual
+    - .ondracka-generic
+  variables:
+    CI_TRON_DUT_SETUP_TAGS: radeon:codename:RV380
+    DEQP_SUITE: r300-rv380
+    GPU_VERSION: r300-rv380
+
 r300-rv410-deqp-piglit:
   extends:
+    - .ci-tron-x86_64-test-gl-manual  # use debian-build-x86_64 rather than debian-x86_64
     - .ondracka-generic
     - .test-piglit
   variables:
@@ -55,6 +79,7 @@ r300-rv410-deqp-piglit:
 
 r300-rs740-deqp-piglit:
   extends:
+    - .ci-tron-x86_64-test-gl-manual  # use debian-build-x86_64 rather than debian-x86_64
     - .ondracka-generic
     - .test-piglit
   variables:
