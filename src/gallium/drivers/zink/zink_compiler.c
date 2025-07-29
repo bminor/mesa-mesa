@@ -3915,6 +3915,11 @@ zink_shader_compile(struct zink_screen *screen, bool can_shobj, struct zink_shad
    bool need_optimize = true;
    bool inlined_uniforms = false;
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT && (zink_fs_key_base(key)->force_persample_interp || zink_fs_key_base(key)->fbfetch_ms)) {
+      nir->info.fs.uses_sample_shading = true;
+      NIR_PASS(_, nir, nir_lower_sample_shading);
+   }
+
    NIR_PASS(_, nir, add_derefs);
    NIR_PASS(_, nir, nir_lower_fragcolor, nir->info.fs.color_is_dual_source ? 1 : 8);
    if (key) {
@@ -4040,12 +4045,6 @@ zink_shader_compile(struct zink_screen *screen, bool can_shobj, struct zink_shad
             NIR_PASS(_, nir, nir_lower_texcoord_replace, zink_fs_key_base(key)->coord_replace_bits, true, false);
          if (zink_fs_key_base(key)->point_coord_yinvert)
             NIR_PASS(_, nir, invert_point_coord);
-         if (zink_fs_key_base(key)->force_persample_interp || zink_fs_key_base(key)->fbfetch_ms) {
-            nir_foreach_shader_in_variable(var, nir)
-               var->data.sample = true;
-            nir->info.fs.uses_sample_qualifier = true;
-            nir->info.fs.uses_sample_shading = true;
-         }
          if (zs->fs.legacy_shadow_mask && !key->base.needs_zs_shader_swizzle)
             NIR_PASS(need_optimize, nir, lower_zs_swizzle_tex, zink_fs_key_base(key)->shadow_needs_shader_swizzle ? extra_data : NULL, true);
          if (nir->info.fs.uses_fbfetch_output) {

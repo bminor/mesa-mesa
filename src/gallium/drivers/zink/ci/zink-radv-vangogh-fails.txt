@@ -9,14 +9,6 @@ glx@extension string sanity,Fail
 spec@arb_framebuffer_object@fbo-blit-scaled-linear,Fail
 
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-tf-separate,Fail
-spec@arb_sample_shading@ignore-centroid-qualifier 2,Fail
-spec@arb_sample_shading@ignore-centroid-qualifier 4,Fail
-spec@arb_sample_shading@ignore-centroid-qualifier 6,Fail
-spec@arb_sample_shading@ignore-centroid-qualifier 8,Fail
-spec@arb_sample_shading@interpolate-at-sample-position 2,Fail
-spec@arb_sample_shading@interpolate-at-sample-position 4,Fail
-spec@arb_sample_shading@interpolate-at-sample-position 6,Fail
-spec@arb_sample_shading@interpolate-at-sample-position 8,Fail
 
 spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgradcube,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@fs-packhalf2x16,Fail
