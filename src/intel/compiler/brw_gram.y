@@ -235,6 +235,9 @@ i965_asm_binary_instruction(int opcode,
    case BRW_OPCODE_MUL:
       brw_MUL(p, dest, src0, src1);
       break;
+   case BRW_OPCODE_SRND:
+      brw_SRND(p, dest, src0, src1);
+      break;
    default:
       fprintf(stderr, "Unsupported binary opcode\n");
    }
@@ -381,7 +384,7 @@ i965_asm_set_instruction_options(struct brw_codegen *p,
 %token <integer> OR
 %token <integer> PLN POP PUSH
 %token <integer> RET RNDD RNDE RNDU RNDZ ROL ROR
-%token <integer> SEL SENDS SENDSC SHL SHR SMOV SUBB SYNC
+%token <integer> SEL SENDS SENDSC SHL SHR SMOV SRND SUBB SYNC
 %token <integer> SEND_GFX4 SENDC_GFX4 SEND_GFX12 SENDC_GFX12
 %token <integer> WAIT WHILE
 %token <integer> XOR
@@ -757,6 +760,7 @@ binaryopcodes:
    | ROL
    | ROR
    | SUBB
+   | SRND
    ;
 
 /* Binary acc instruction */

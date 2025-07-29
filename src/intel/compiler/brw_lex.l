@@ -124,6 +124,7 @@ sendsc          { yylval.integer = BRW_OPCODE_SENDSC; return SENDSC; }
 shl             { yylval.integer = BRW_OPCODE_SHL; return SHL; }
 shr             { yylval.integer = BRW_OPCODE_SHR; return SHR; }
 smov            { yylval.integer = BRW_OPCODE_SMOV; return SMOV; }
+srnd            { yylval.integer = BRW_OPCODE_SRND; return SRND; }
 subb            { yylval.integer = BRW_OPCODE_SUBB; return SUBB; }
 wait            { yylval.integer = BRW_OPCODE_WAIT; return WAIT; }
 while           { yylval.integer = BRW_OPCODE_WHILE; return WHILE; }
