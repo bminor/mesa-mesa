@@ -4246,6 +4246,8 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
          }
 
 #if PRINT_RELOCATE_SLOT
+         unsigned bit_size = nir_intrinsic_infos[intr->intrinsic].has_dest ? intr->def.bit_size : intr->src[0].ssa->bit_size;
+
          assert(bit_size == 16 || bit_size == 32);
 
          fprintf(stderr, "--- relocating: %s.%c%s%s -> %s.%c%s%s FS_VEC4_TYPE_%s\n",
