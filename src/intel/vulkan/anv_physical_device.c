@@ -1568,7 +1568,7 @@ get_properties(const struct anv_physical_device *pdevice,
       props->robustStorageBufferAccessSizeAlignment =
          ANV_SSBO_BOUNDS_CHECK_ALIGNMENT;
       props->robustUniformBufferAccessSizeAlignment =
-         ANV_UBO_ALIGNMENT;
+         ANV_UBO_BOUNDS_CHECK_ALIGNMENT;
    }
 
    /* VK_KHR_vertex_attribute_divisor */

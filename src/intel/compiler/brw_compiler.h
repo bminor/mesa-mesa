@@ -599,17 +599,16 @@ struct brw_stage_prog_data {
 
    mesa_shader_stage stage;
 
-   /* zero_push_reg is a bitfield which indicates what push registers (if any)
-    * should be zeroed by SW at the start of the shader.  The corresponding
-    * push_reg_mask_param specifies the param index (in 32-bit units) where
-    * the actual runtime 64-bit mask will be pushed.  The shader will zero
-    * push reg i if
+   /* If robust_ubo_ranges not 0, push_reg_mask_param specifies the param
+    * index (in 32-bit units) where the 4 UBO range limits will be pushed
+    * as 8-bit integers. The shader will zero byte i of UBO range j if:
     *
-    *    reg_used & zero_push_reg & ~*push_reg_mask_param & (1ull << i)
+    *    (robust_ubo_ranges & (1 << j)) &&
+    *    (i < push_reg_mask_param[j] * 16)
     *
-    * If this field is set, brw_compiler::compact_params must be false.
+    * brw_compiler::compact_params must be false if robust_ubo_ranges used
     */
-   uint64_t zero_push_reg;
+   uint8_t robust_ubo_ranges;
    unsigned push_reg_mask_param;
 
    unsigned curb_read_length;

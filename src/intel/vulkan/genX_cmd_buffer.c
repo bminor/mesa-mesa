@@ -1957,7 +1957,7 @@ emit_dynamic_buffer_binding_table_entry(struct anv_cmd_buffer *cmd_buffer,
     * VkPhysicalDeviceRobustness2PropertiesEXT::robustUniformBufferAccessSizeAlignment
     */
    if (desc->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-      range = align(range, ANV_UBO_ALIGNMENT);
+      range = align(range, ANV_UBO_BOUNDS_CHECK_ALIGNMENT);
 
    struct anv_address address =
       anv_address_add(desc->buffer->address, offset);

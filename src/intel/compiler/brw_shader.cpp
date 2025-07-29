@@ -813,39 +813,99 @@ brw_shader::assign_curb_setup()
       }
    }
 
-   uint64_t want_zero = used & prog_data->zero_push_reg;
-   if (want_zero) {
+   if (prog_data->robust_ubo_ranges) {
       brw_builder ubld = brw_builder(this, 8).exec_all().at_start(cfg->first_block());
+      /* At most we can write 2 GRFs (HW limit), the SIMD width matching the
+       * HW generation depends on the size of the physical register.
+       */
+      const unsigned max_grf_writes = 2 * reg_unit(devinfo);
+      assert(max_grf_writes <= 4);
 
       /* push_reg_mask_param is in 32-bit units */
       unsigned mask_param = prog_data->push_reg_mask_param;
-      struct brw_reg mask = brw_vec1_grf(payload().num_regs + mask_param / 8,
-                                                              mask_param % 8);
+      brw_reg mask = retype(brw_vec1_grf(payload().num_regs + mask_param / 8,
+                                         mask_param % 8), BRW_TYPE_UB);
 
-      brw_reg b32;
-      for (unsigned i = 0; i < 64; i++) {
-         if (i % 16 == 0 && (want_zero & BITFIELD64_RANGE(i, 16))) {
-            brw_reg shifted = ubld.vgrf(BRW_TYPE_W, 2);
-            ubld.SHL(horiz_offset(shifted, 8),
-                     byte_offset(retype(mask, BRW_TYPE_W), i / 8),
-                     brw_imm_v(0x01234567));
-            ubld.SHL(shifted, horiz_offset(shifted, 8), brw_imm_w(8));
+      /* For each 16bit lane, generate an offset in unit of 16B */
+      brw_reg offset_base = ubld.vgrf(BRW_TYPE_UW, max_grf_writes);
+      ubld.MOV(offset_base, brw_imm_uv(0x76543210));
+      ubld.MOV(horiz_offset(offset_base, 8), brw_imm_uv(0xFEDCBA98));
+      if (max_grf_writes > 2)
+         ubld.group(16, 0).ADD(horiz_offset(offset_base, 16), offset_base, brw_imm_uw(16));
 
-            brw_builder ubld16 = ubld.group(16, 0);
-            b32 = ubld16.vgrf(BRW_TYPE_D);
-            ubld16.group(16, 0).ASR(b32, shifted, brw_imm_w(15));
-         }
+      u_foreach_bit(i, prog_data->robust_ubo_ranges) {
+         struct brw_ubo_range *ubo_range = &prog_data->ubo_ranges[i];
 
-         if (want_zero & BITFIELD64_BIT(i)) {
-            assert(i < prog_data->curb_read_length);
-            struct brw_reg push_reg =
-               retype(brw_vec8_grf(payload().num_regs + i, 0), BRW_TYPE_D);
+         unsigned range_start = ubo_push_start[i] / 8;
+         uint64_t want_zero = (used >> range_start) & BITFIELD64_MASK(ubo_range->length);
+         if (!want_zero)
+            continue;
 
-            ubld.AND(push_reg, push_reg, component(b32, i % 16));
-         }
+         const unsigned grf_start = payload().num_regs + range_start;
+         const unsigned grf_end = grf_start + ubo_range->length;
+         const unsigned max_grf_mask = max_grf_writes * 4;
+         unsigned grf = grf_start;
+
+         do {
+            unsigned mask_length = MIN2(grf_end - grf, max_grf_mask);
+            unsigned simd_width_mask = 1 << util_last_bit(mask_length * 2 - 1);
+
+            if (!(want_zero & BITFIELD64_RANGE(grf - grf_start, mask_length))) {
+               grf += max_grf_mask;
+               continue;
+            }
+
+            /* Prepare section of mask, at 1/4 size */
+            brw_builder ubld_mask = ubld.group(simd_width_mask, 0);
+            brw_reg offset_reg = ubld_mask.vgrf(BRW_TYPE_UW);
+            unsigned mask_start = grf, mask_end = grf + mask_length;
+            ubld_mask.ADD(offset_reg, offset_base, brw_imm_uw((mask_start - grf_start) * 2));
+            /* Compare the 16B increments with the value coming from push
+             * constants and store the result into a dword. This expands a
+             * comparison between 2 values in 16B increments into a 32bit mask
+             * where each bit covers 4bits of data in the payload.
+             *
+             * This expension works because of the sign extension guaranteed
+             * by the HW.
+             *
+             * SKL PRMs, Volume 7: 3D-Media-GPGPU, Execution Data Type:
+             *
+             *   "The following rules explain the conversion of multiple
+             *   source operand types, possibly a mix of different types, to
+             *   one common execution type:
+             *      - ...
+             *      - Unsigned integers are converted to signed integers.
+             *      - Byte (B) or Unsigned Byte (UB) values are converted to a Word
+             *        or wider integer execution type.
+             *      - If source operands have different integer widths, use
+             *        the widest width specified to choose the signed integer
+             *        execution type."
+             */
+            brw_reg mask_reg = ubld_mask.vgrf(BRW_TYPE_UD);
+            ubld_mask.CMP(mask_reg, byte_offset(mask, i), offset_reg, BRW_CONDITIONAL_G);
+
+            for (unsigned and_length; grf < mask_end; grf += and_length) {
+               and_length = 1u << (util_last_bit(MIN2(grf_end - grf, max_grf_writes)) - 1);
+
+               if (!(want_zero & BITFIELD64_RANGE(grf - grf_start, and_length)))
+                  continue;
+
+               brw_reg push_reg = retype(brw_vec8_grf(grf, 0), BRW_TYPE_D);
+
+               /* Expand the masking bits one more time (1bit -> 4bit because
+                * UB -> UD) so that now each 8bits of mask cover 32bits of
+                * data to mask, while doing the masking in the payload data.
+                */
+               ubld.group(and_length * 8, 0).AND(
+                  push_reg,
+                  byte_offset(retype(mask_reg, BRW_TYPE_B),
+                              (grf - mask_start) * 8),
+                  push_reg);
+            }
+         } while (grf < grf_end);
       }
 
-      invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
+      invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS | BRW_DEPENDENCY_VARIABLES);
    }
 
    /* This may be updated in assign_urb_setup or assign_vs_urb_setup. */

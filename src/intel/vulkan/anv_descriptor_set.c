@@ -2429,13 +2429,13 @@ anv_descriptor_set_write_buffer(struct anv_device *device,
    struct anv_address bind_addr = anv_address_add(buffer->address, offset);
    desc->bind_range = vk_buffer_range(&buffer->vk, offset, range);
 
-   /* We report a bounds checking alignment of ANV_UBO_ALIGNMENT in
+   /* We report a bounds checking alignment of ANV_UBO_BOUNDS_CHECK_ALIGNMENT in
     * VkPhysicalDeviceRobustness2PropertiesEXT::robustUniformBufferAccessSizeAlignment
     * so align the range to that.
     */
    if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
        type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-      desc->bind_range = align64(desc->bind_range, ANV_UBO_ALIGNMENT);
+      desc->bind_range = align64(desc->bind_range, ANV_UBO_BOUNDS_CHECK_ALIGNMENT);
 
    if (data & ANV_DESCRIPTOR_INDIRECT_ADDRESS_RANGE) {
       struct anv_address_range_descriptor desc_data = {
@@ -3014,7 +3014,7 @@ void anv_GetDescriptorEXT(
           * messages which read an entire register worth at a time.
           */
          if (pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-            range = align64(range, ANV_UBO_ALIGNMENT);
+            range = align64(range, ANV_UBO_BOUNDS_CHECK_ALIGNMENT);
 
          isl_surf_usage_flags_t usage =
             pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ?

@@ -305,7 +305,7 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
          uint32_t bound_range = MIN2(desc->range, desc->buffer->vk.size - offset);
 
          /* Align the range for consistency */
-         bound_range = align(bound_range, ANV_UBO_ALIGNMENT);
+         bound_range = align(bound_range, ANV_UBO_BOUNDS_CHECK_ALIGNMENT);
 
          return bound_range;
       }
@@ -444,42 +444,45 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
          continue;
 
       const struct anv_shader_bin *shader = gfx->shaders[stage];
-      if (shader->prog_data->zero_push_reg) {
+      if (shader->prog_data->robust_ubo_ranges) {
          const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;
          struct anv_push_constants *push = &gfx->base.push_constants;
 
-         push->gfx.push_reg_mask[stage] = 0;
-         /* Start of the current range in the shader, relative to the start of
-          * push constants in the shader.
-          */
-         unsigned range_start_reg = 0;
+         unsigned ubo_range_index = 0;
          for (unsigned i = 0; i < 4; i++) {
             const struct anv_push_range *range = &bind_map->push_ranges[i];
             if (range->length == 0)
                continue;
 
-            /* Never clear this padding register as it might contain payload
-             * data.
-             */
-            if (range->set == ANV_DESCRIPTOR_SET_PER_PRIM_PADDING)
+            /* Skip any push ranges that were not promoted from UBOs */
+            if (range->set >= MAX_SETS)
                continue;
+
+            assert(shader->prog_data->robust_ubo_ranges & (1 << ubo_range_index));
 
             unsigned bound_size =
                get_push_range_bound_size(cmd_buffer, shader, range);
-            if (bound_size >= range->start * 32) {
-               unsigned bound_regs =
-                  MIN2(DIV_ROUND_UP(bound_size, 32) - range->start,
-                       range->length);
-               assert(range_start_reg + bound_regs <= 64);
-               push->gfx.push_reg_mask[stage] |=
-                  BITFIELD64_RANGE(range_start_reg, bound_regs);
+
+            uint8_t range_mask = 0;
+
+            /* Determine the bound length of the range in 16-byte units */
+            if (bound_size > range->start * 32) {
+               bound_size = MIN2(
+                  DIV_ROUND_UP(bound_size - range->start * 32, 16),
+                  2 * range->length);
+               range_mask = (uint8_t) bound_size;
+               assert(bound_size < 256);
             }
 
-            cmd_buffer->state.push_constants_dirty |=
-               mesa_to_vk_shader_stage(stage);
-            gfx->base.push_constants_data_dirty = true;
+            /* Update the pushed bound length constant if it changed */
+            if (range_mask != push->gfx.push_reg_mask[stage][ubo_range_index]) {
+               push->gfx.push_reg_mask[stage][ubo_range_index] = range_mask;
+               cmd_buffer->state.push_constants_dirty |=
+                  mesa_to_vk_shader_stage(stage);
+               gfx->base.push_constants_data_dirty = true;
+            }
 
-            range_start_reg += range->length;
+            ++ubo_range_index;
          }
       }
    }

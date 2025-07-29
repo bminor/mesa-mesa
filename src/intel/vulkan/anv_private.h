@@ -198,6 +198,7 @@ get_max_vbs(const struct intel_device_info *devinfo) {
  * GEM object.
  */
 #define ANV_UBO_ALIGNMENT 64
+#define ANV_UBO_BOUNDS_CHECK_ALIGNMENT 16
 #define ANV_SSBO_ALIGNMENT 4
 #define ANV_SSBO_BOUNDS_CHECK_ALIGNMENT 4
 #define MAX_VIEWS_FOR_PRIMITIVE_REPLICATION 16
@@ -3973,7 +3974,7 @@ struct anv_push_constants {
          uint32_t tcs_input_vertices;
 
          /** Robust access pushed registers. */
-         uint64_t push_reg_mask[MESA_SHADER_STAGES];
+         uint8_t push_reg_mask[MESA_SHADER_STAGES][4];
 
          uint32_t fs_per_prim_remap_offset;
       } gfx;

@@ -273,9 +273,8 @@ anv_nir_compute_push_layout(nir_shader *nir,
       }
 
       const unsigned max_push_buffers = needs_padding_per_primitive ? 3 : 4;
-      unsigned range_start_reg = push_constant_range.length;
 
-      for (int i = 0; i < 4; i++) {
+      for (unsigned i = 0; i < 4; i++) {
          struct brw_ubo_range *ubo_range = &prog_data->ubo_ranges[i];
          if (ubo_range->length == 0)
             continue;
@@ -300,11 +299,8 @@ anv_nir_compute_push_layout(nir_shader *nir,
          /* We only bother to shader-zero pushed client UBOs */
          if (binding->set < MAX_SETS &&
              (robust_flags & BRW_ROBUSTNESS_UBO)) {
-            prog_data->zero_push_reg |= BITFIELD64_RANGE(range_start_reg,
-                                                         ubo_range->length);
+            prog_data->robust_ubo_ranges |= (uint8_t) (1 << i);
          }
-
-         range_start_reg += ubo_range->length;
       }
    } else if (push_constant_range.length > 0) {
       /* For Ivy Bridge, the push constants packets have a different
