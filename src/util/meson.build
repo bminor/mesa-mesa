@@ -120,6 +120,7 @@ files_mesa_util = files(
   'softfloat.h',
   'sparse_array.c',
   'sparse_array.h',
+  'stack_array.h',
   'string_buffer.c',
   'string_buffer.h',
   'strndup.c',
