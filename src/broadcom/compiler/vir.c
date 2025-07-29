@@ -1138,7 +1138,7 @@ v3d_nir_lower_fs_late(struct v3d_compile *c)
          *
          * The SPIR-V compiler will declare VARING_SLOT_CLIP_DIST0 as compact
          * array variable, so we have GL's clip lowering follow suit
-         * (PIPE_CAP_NIR_COMPACT_ARRAYS).
+         * (compact_arrays option at nir_shader_compiler_options)
          */
         if (c->fs_key->ucp_enables)
                 NIR_PASS(_, c->s, nir_lower_clip_fs, c->fs_key->ucp_enables, true, false);
