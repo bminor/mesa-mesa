@@ -250,7 +250,9 @@ sort_entries(const void *a_, const void *b_)
 static unsigned
 get_bit_size(struct entry *entry)
 {
-   unsigned size = entry->is_store ? entry->intrin->src[entry->info->value_src].ssa->bit_size : entry->intrin->def.bit_size;
+   unsigned size = entry->info->value_src >= 0
+                      ? entry->intrin->src[entry->info->value_src].ssa->bit_size
+                      : entry->intrin->def.bit_size;
    return size == 1 ? 32u : size;
 }
 
@@ -592,11 +594,14 @@ create_entry(void *mem_ctx,
    bool is_shared2 = intrin->intrinsic == nir_intrinsic_load_shared2_amd ||
                      intrin->intrinsic == nir_intrinsic_store_shared2_amd;
 
+   bool is_shared_append = intrin->intrinsic == nir_intrinsic_shared_append_amd ||
+                           intrin->intrinsic == nir_intrinsic_shared_consume_amd;
+
    struct entry *entry = rzalloc(mem_ctx, struct entry);
    entry->intrin = intrin;
    entry->instr = &intrin->instr;
    entry->info = info;
-   entry->is_store = entry->info->value_src >= 0;
+   entry->is_store = entry->info->value_src >= 0 || is_shared_append;
    entry->num_components =
       entry->is_store ? intrin->num_components : nir_def_last_component_read(&intrin->def) + 1;
    if (is_shared2)
