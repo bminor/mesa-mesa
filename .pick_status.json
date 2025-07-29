@@ -4574,7 +4574,7 @@
         "description": "u_trace: Indirect capture fixes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0a17035b5cd3e181a2bf4ab6feea8b4d5763b613",
         "notes": null
