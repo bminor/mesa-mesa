@@ -97,6 +97,11 @@ lp_setup_set_alpha_ref_value(struct lp_setup_context *setup,
                              float alpha_ref_value);
 
 void
+lp_setup_set_depth_bounds_test_value(struct lp_setup_context *setup,
+                                     float min_depth_bounds,
+                                     float max_depth_bounds);
+
+void
 lp_setup_set_stencil_ref_values(struct lp_setup_context *setup,
                                 const uint8_t refs[2]);
 

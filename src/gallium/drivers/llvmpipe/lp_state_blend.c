@@ -118,6 +118,10 @@ llvmpipe_create_depth_stencil_state(struct pipe_context *pipe,
       state->depth_writemask = 0;
       state->stencil[0].enabled = 0;
       state->stencil[1].enabled = 0;
+
+      state->depth_bounds_test = 0;
+      state->depth_bounds_min = 0.0;
+      state->depth_bounds_max = 1.0;
    }
 
    if (LP_PERF & PERF_NO_ALPHATEST) {

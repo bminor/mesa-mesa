@@ -756,6 +756,21 @@ lp_setup_set_alpha_ref_value(struct lp_setup_context *setup,
    }
 }
 
+void
+lp_setup_set_depth_bounds_test_value(struct lp_setup_context *setup,
+                                     float min_depth_bounds,
+                                     float max_depth_bounds)
+{
+   LP_DBG(DEBUG_SETUP, "%s %f %f\n",
+          __func__, min_depth_bounds, max_depth_bounds);
+
+   if (setup->fs.current.jit_context.min_depth_bounds != min_depth_bounds ||
+       setup->fs.current.jit_context.max_depth_bounds != max_depth_bounds) {
+      setup->fs.current.jit_context.min_depth_bounds = min_depth_bounds;
+      setup->fs.current.jit_context.max_depth_bounds = max_depth_bounds;
+      setup->dirty |= LP_SETUP_NEW_FS;
+   }
+}
 
 void
 lp_setup_set_stencil_ref_values(struct lp_setup_context *setup,

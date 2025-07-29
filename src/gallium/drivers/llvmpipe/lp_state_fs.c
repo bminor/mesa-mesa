@@ -710,6 +710,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
    LLVMValueRef z_fb, s_fb;
    LLVMValueRef zs_samples = lp_build_const_int32(gallivm, key->zsbuf_nr_samples);
    LLVMValueRef z_out = NULL, s_out = NULL;
+   LLVMValueRef min_depth_bounds = NULL, max_depth_bounds = NULL;
    struct lp_build_for_loop_state loop_state, sample_loop_state = {0};
    struct lp_build_mask_context mask;
    struct nir_shader *nir = shader->base.ir.nir;
@@ -733,6 +734,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
    unsigned depth_mode;
    const struct util_format_description *zs_format_desc = NULL;
    if (key->depth.enabled ||
+       key->depth.depth_bounds_test ||
        key->stencil[0].enabled) {
       zs_format_desc = util_format_description(key->zsbuf_format);
 
@@ -930,6 +932,14 @@ generate_fs_loop(struct gallivm_state *gallivm,
                                 depth_ptr, &sample_offset, 1, "");
    }
 
+   if (key->depth.depth_bounds_test) {
+      min_depth_bounds = lp_jit_context_min_depth_bounds(gallivm, context_type, context_ptr);
+      min_depth_bounds = lp_build_broadcast(gallivm, vec_type, min_depth_bounds);
+
+      max_depth_bounds = lp_jit_context_max_depth_bounds(gallivm, context_type, context_ptr);
+      max_depth_bounds = lp_build_broadcast(gallivm, vec_type, max_depth_bounds);
+   }
+
    if (depth_mode & EARLY_DEPTH_TEST) {
       z = lp_build_depth_clamp(gallivm, builder, key->depth_clamp,
                                key->restrict_depth_values, type,
@@ -950,6 +960,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
                                   stencil_refs,
                                   z, z_fb, s_fb,
                                   facing,
+                                  min_depth_bounds, max_depth_bounds,
                                   &z_value, &s_value,
                                   !key->multisample,
                                   key->restrict_depth_values);
@@ -1376,6 +1387,7 @@ generate_fs_loop(struct gallivm_state *gallivm,
                                   stencil_refs,
                                   z, z_fb, s_fb,
                                   facing,
+                                  min_depth_bounds, max_depth_bounds,
                                   &z_value, &s_value,
                                   false,
                                   key->restrict_depth_values);
@@ -3566,7 +3578,8 @@ generate_fragment(struct llvmpipe_context *lp,
 
          bool do_branch = ((key->depth.enabled
                             || key->stencil[0].enabled
-                            || key->alpha.enabled)
+                            || key->alpha.enabled
+                            || key->depth.depth_bounds_test)
                            && !nir->info.fs.uses_discard);
 
          color_ptr = LLVMBuildLoad2(builder, int8p_type,
@@ -3876,6 +3889,7 @@ generate_variant(struct llvmpipe_context *lp,
          !key->multisample &&
          !key->blend.alpha_to_coverage &&
          !key->depth.enabled &&
+         !key->depth.depth_bounds_test &&
          !nir->info.fs.uses_discard &&
          !(nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK)) &&
          !nir->info.fs.uses_fbfetch_output;
@@ -3946,6 +3960,7 @@ generate_variant(struct llvmpipe_context *lp,
    const bool linear_pipeline =
          !key->stencil[0].enabled &&
          !key->depth.enabled &&
+         !key->depth.depth_bounds_test &&
          !nir->info.fs.uses_discard &&
          !key->blend.logicop_enable &&
          (key->cbuf_format[0] == PIPE_FORMAT_B8G8R8A8_UNORM ||
@@ -4479,12 +4494,14 @@ make_variant_key(struct llvmpipe_context *lp,
       const struct util_format_description *zsbuf_desc =
          util_format_description(zsbuf_format);
 
-      if (lp->depth_stencil->depth_enabled &&
+      if ((lp->depth_stencil->depth_enabled ||
+          lp->depth_stencil->depth_bounds_test) &&
           util_format_has_depth(zsbuf_desc)) {
          key->zsbuf_format = zsbuf_format;
          key->depth.enabled = lp->depth_stencil->depth_enabled;
          key->depth.writemask = lp->depth_stencil->depth_writemask;
          key->depth.func = lp->depth_stencil->depth_func;
+         key->depth.depth_bounds_test = lp->depth_stencil->depth_bounds_test;
       }
       if (lp->depth_stencil->stencil[0].enabled &&
           util_format_has_stencil(zsbuf_desc)) {

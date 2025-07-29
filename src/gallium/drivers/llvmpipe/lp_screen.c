@@ -370,6 +370,7 @@ llvmpipe_init_screen_caps(struct pipe_screen *screen)
    caps->texture_multisample = true;
    caps->sample_shading = true;
    caps->gl_spirv = true;
+   caps->depth_bounds_test = true;
    caps->post_depth_coverage = true;
    caps->shader_clock = true;
    caps->packed_uniforms = true;

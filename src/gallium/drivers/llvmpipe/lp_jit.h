@@ -85,6 +85,8 @@ struct lp_jit_context
 
    struct lp_jit_viewport *viewports;
 
+   float min_depth_bounds, max_depth_bounds;
+
    uint32_t sample_mask;
 };
 
@@ -100,6 +102,8 @@ enum {
    LP_JIT_CTX_U8_BLEND_COLOR,
    LP_JIT_CTX_F_BLEND_COLOR,
    LP_JIT_CTX_VIEWPORTS,
+   LP_JIT_CTX_MIN_DEPTH_BOUNDS,
+   LP_JIT_CTX_MAX_DEPTH_BOUNDS,
    LP_JIT_CTX_SAMPLE_MASK,
    LP_JIT_CTX_COUNT
 };
@@ -121,6 +125,12 @@ enum {
 
 #define lp_jit_context_viewports(_gallivm, _type, _ptr) \
    lp_build_struct_get2(_gallivm, _type, _ptr, LP_JIT_CTX_VIEWPORTS, "viewports")
+
+#define lp_jit_context_min_depth_bounds(_gallivm, _type, _ptr) \
+   lp_build_struct_get2(_gallivm, _type, _ptr, LP_JIT_CTX_MIN_DEPTH_BOUNDS, "min_depth_bounds")
+
+#define lp_jit_context_max_depth_bounds(_gallivm, _type, _ptr) \
+   lp_build_struct_get2(_gallivm, _type, _ptr, LP_JIT_CTX_MAX_DEPTH_BOUNDS, "max_depth_bounds")
 
 #define lp_jit_context_sample_mask(_gallivm, _type, _ptr)                \
    lp_build_struct_get_ptr2(_gallivm, _type, _ptr, LP_JIT_CTX_SAMPLE_MASK, "sample_mask")

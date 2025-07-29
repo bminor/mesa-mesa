@@ -345,6 +345,9 @@ llvmpipe_update_derived(struct llvmpipe_context *llvmpipe)
                                    llvmpipe->depth_stencil->alpha_ref_value);
       lp_setup_set_stencil_ref_values(llvmpipe->setup,
                                       llvmpipe->stencil_ref.ref_value);
+      lp_setup_set_depth_bounds_test_value(llvmpipe->setup,
+                                           llvmpipe->depth_stencil->depth_bounds_min,
+                                           llvmpipe->depth_stencil->depth_bounds_max);
    }
 
    if (llvmpipe->dirty & LP_NEW_FS_CONSTANTS)
