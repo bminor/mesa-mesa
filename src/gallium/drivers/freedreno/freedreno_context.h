@@ -133,7 +133,6 @@ enum fd_dirty_3d_state {
    FD_DIRTY_VIEWPORT = BIT(8),
    FD_DIRTY_VTXSTATE = BIT(9),
    FD_DIRTY_VTXBUF = BIT(10),
-   FD_DIRTY_MIN_SAMPLES = BIT(11),
    FD_DIRTY_SCISSOR = BIT(12),
    FD_DIRTY_STREAMOUT = BIT(13),
    FD_DIRTY_UCP = BIT(14),
@@ -181,7 +180,6 @@ fd_print_dirty_state(BITMASK_ENUM(fd_dirty_3d_state) dirty)
          STATE(VIEWPORT),
          STATE(VTXSTATE),
          STATE(VTXBUF),
-         STATE(MIN_SAMPLES),
          STATE(SCISSOR),
          STATE(STREAMOUT),
          STATE(UCP),
@@ -482,7 +480,6 @@ struct fd_context {
    struct pipe_blend_color blend_color dt;
    struct pipe_stencil_ref stencil_ref dt;
    unsigned sample_mask dt;
-   unsigned min_samples dt;
 
    /* 1x1 grid, max 4x MSAA: */
    uint8_t sample_locations[4] dt;

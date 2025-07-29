@@ -214,7 +214,6 @@ get_program_state(struct fd_context *ctx, const struct pipe_draw_info *info)
     * by not initializing these inline:
     */
    key.key.ucp_enables = ctx->rasterizer->clip_plane_enable;
-   key.key.sample_shading = (ctx->min_samples > 1);
    key.key.msaa = (ctx->framebuffer.samples > 1);
    key.key.rasterflat = ctx->rasterizer->flatshade;
 

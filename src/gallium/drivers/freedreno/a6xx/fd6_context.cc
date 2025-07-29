@@ -156,7 +156,7 @@ setup_state_map(struct fd_context *ctx)
                       BIT(FD6_GROUP_LRZ));
    fd_context_add_map(ctx, FD_DIRTY_PROG | FD_DIRTY_RASTERIZER_CLIP_PLANE_ENABLE,
                       BIT(FD6_GROUP_PROG) | BIT(FD6_GROUP_PROG_KEY));
-   fd_context_add_map(ctx, FD_DIRTY_RASTERIZER | FD_DIRTY_MIN_SAMPLES | FD_DIRTY_FRAMEBUFFER,
+   fd_context_add_map(ctx, FD_DIRTY_RASTERIZER | FD_DIRTY_FRAMEBUFFER,
                       BIT(FD6_GROUP_PROG_KEY));
    if (ctx->screen->driconf.dual_color_blend_by_location) {
       fd_context_add_map(ctx, FD_DIRTY_BLEND_DUAL,
