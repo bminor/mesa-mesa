@@ -39,7 +39,7 @@
 #include "vbo/vbo.h"
 #include "util/list.h"
 #include "cso_cache/cso_context.h"
-
+#include "util/u_cpu_detect.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,8 +52,6 @@ struct gen_mipmap_state;
 struct st_context;
 struct st_program;
 struct u_upload_mgr;
-
-#define ST_THREAD_SCHEDULER_DISABLED 0xffffffff
 
 struct st_bitmap_cache
 {
@@ -141,10 +139,11 @@ struct st_context
    struct draw_stage *selection_stage;  /**< For GL_SELECT rendermode */
    struct draw_stage *rastpos_stage;  /**< For glRasterPos */
 
-   unsigned pin_thread_counter; /* for L3 thread pinning on AMD Zen */
+   unsigned work_counter; /* for L3 thread pinning on AMD Zen and resource pruning */
 
    GLboolean clamp_frag_color_in_shader;
    GLboolean clamp_vert_color_in_shader;
+   bool thread_scheduler_disabled;
    bool has_stencil_export; /**< can do shader stencil export? */
    bool has_time_elapsed;
    bool has_etc1;
@@ -516,6 +515,37 @@ st_api_destroy_drawable(struct pipe_frontend_drawable *drawable);
 
 void
 st_screen_destroy(struct pipe_frontend_screen *fscreen);
+
+static inline void
+st_context_apply_scheduler_policy(struct st_context *st)
+{
+   int cpu = util_get_current_cpu();
+   if (cpu >= 0) {
+      struct pipe_context *pipe = st->pipe;
+      uint16_t L3_cache = util_get_cpu_caps()->cpu_to_L3[cpu];
+
+      if (L3_cache != U_CPU_INVALID_L3) {
+         pipe->set_context_param(pipe,
+                                 PIPE_CONTEXT_PARAM_UPDATE_THREAD_SCHEDULING,
+                                 cpu);
+      }
+   }
+}
+
+static inline void
+st_context_add_work(struct st_context *st)
+{
+
+   /* Apply our thread scheduling policy for better multithreading
+    * performance.
+    */
+   if (unlikely(++st->work_counter % 512 == 0)) {
+      st->work_counter = 0;
+      if (!st->thread_scheduler_disabled)
+         st_context_apply_scheduler_policy(st);
+   }
+}
+
 
 #ifdef __cplusplus
 }

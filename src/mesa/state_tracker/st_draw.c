@@ -55,7 +55,6 @@
 
 #include "pipe/p_context.h"
 #include "pipe/p_defines.h"
-#include "util/u_cpu_detect.h"
 #include "util/u_inlines.h"
 #include "util/format/u_format.h"
 #include "util/u_prim.h"
@@ -87,27 +86,7 @@ st_prepare_draw(struct gl_context *ctx, uint64_t state_mask)
 
    /* Validate state. */
    st_validate_state(st, state_mask);
-
-   /* Apply our thread scheduling policy for better multithreading
-    * performance.
-    */
-   if (unlikely(st->pin_thread_counter != ST_THREAD_SCHEDULER_DISABLED &&
-                /* do it occasionally */
-                ++st->pin_thread_counter % 512 == 0)) {
-      st->pin_thread_counter = 0;
-
-      int cpu = util_get_current_cpu();
-      if (cpu >= 0) {
-         struct pipe_context *pipe = st->pipe;
-         uint16_t L3_cache = util_get_cpu_caps()->cpu_to_L3[cpu];
-
-         if (L3_cache != U_CPU_INVALID_L3) {
-            pipe->set_context_param(pipe,
-                                    PIPE_CONTEXT_PARAM_UPDATE_THREAD_SCHEDULING,
-                                    cpu);
-         }
-      }
-   }
+   st_context_add_work(st);
 }
 
 void

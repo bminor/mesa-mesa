@@ -296,6 +296,7 @@ prepare_compute(struct gl_context *ctx)
       _mesa_update_state(ctx);
 
    st_validate_state(st, ST_PIPELINE_COMPUTE_STATE_MASK);
+   st_context_add_work(st);
 }
 
 static ALWAYS_INLINE void
