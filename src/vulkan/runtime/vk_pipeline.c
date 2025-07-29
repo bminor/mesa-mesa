@@ -667,16 +667,6 @@ struct vk_pipeline_precomp_shader {
    /* Tessellation info if the shader is a tessellation shader */
    struct vk_pipeline_tess_info tess;
 
-   /* Hash of the vk_pipeline_precomp_shader
-    *
-    * This is the hash of the final compiled NIR together with tess info and
-    * robustness state.  It's used as a key for final binary lookups.  By
-    * having this as a separate key, we can de-duplicate cases where you have
-    * different SPIR-V or specialization constants but end up compiling the
-    * same NIR shader in the end anyway.
-    */
-   blake3_hash blake3;
-
    struct blob nir_blob;
 };
 
@@ -736,12 +726,6 @@ vk_pipeline_precomp_shader_create(struct vk_device *device,
 
    vk_pipeline_gather_nir_tess_info(nir, &shader->tess);
 
-   struct mesa_blake3 blake3_ctx;
-   _mesa_blake3_init(&blake3_ctx);
-   _mesa_blake3_update(&blake3_ctx, rs, sizeof(*rs));
-   _mesa_blake3_update(&blake3_ctx, blob.data, blob.size);
-   _mesa_blake3_final(&blake3_ctx, shader->blake3);
-
    shader->nir_blob = blob;
 
    return shader;
@@ -762,7 +746,6 @@ vk_pipeline_precomp_shader_serialize(struct vk_pipeline_cache_object *obj,
    blob_write_uint32(blob, shader->stage);
    blob_write_bytes(blob, &shader->rs, sizeof(shader->rs));
    blob_write_bytes(blob, &shader->tess, sizeof(shader->tess));
-   blob_write_bytes(blob, shader->blake3, sizeof(shader->blake3));
    blob_write_uint64(blob, shader->nir_blob.size);
    blob_write_bytes(blob, shader->nir_blob.data, shader->nir_blob.size);
 
@@ -793,7 +776,6 @@ vk_pipeline_precomp_shader_deserialize(struct vk_pipeline_cache *cache,
    shader->stage = blob_read_uint32(blob);
    blob_copy_bytes(blob, &shader->rs, sizeof(shader->rs));
    blob_copy_bytes(blob, &shader->tess, sizeof(shader->tess));
-   blob_copy_bytes(blob, shader->blake3, sizeof(shader->blake3));
 
    uint64_t nir_size = blob_read_uint64(blob);
    if (blob->overrun || nir_size > SIZE_MAX)
@@ -1272,8 +1254,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
       for (uint32_t i = link_info->partition[p]; i < link_info->partition[p + 1]; i++) {
          const struct vk_pipeline_stage *stage = &stages[i];
 
-         _mesa_blake3_update(&blake3_ctx, stage->precomp->blake3,
-                             sizeof(stage->precomp->blake3));
+         _mesa_blake3_update(&blake3_ctx, stage->precomp->cache_key,
+                             sizeof(stage->precomp->cache_key));
 
          VkShaderCreateFlagsEXT shader_flags =
             vk_pipeline_to_shader_flags(pipeline->base.flags, stage->stage);
@@ -2055,8 +2037,8 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
 
-   _mesa_blake3_update(&blake3_ctx, stage->precomp->blake3,
-                     sizeof(stage->precomp->blake3));
+   _mesa_blake3_update(&blake3_ctx, stage->precomp->cache_key,
+                     sizeof(stage->precomp->cache_key));
 
    _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
 
@@ -2522,8 +2504,8 @@ vk_pipeline_compile_rt_shader(struct vk_device *device,
                       pipeline_flags,
                       push_range, pipeline_layout);
 
-   _mesa_blake3_update(&blake3_ctx, stage->precomp->blake3,
-                       sizeof(stage->precomp->blake3));
+   _mesa_blake3_update(&blake3_ctx, stage->precomp->cache_key,
+                       sizeof(stage->precomp->cache_key));
 
    struct vk_shader_pipeline_cache_key shader_key = {
       .stage = stage->stage,
@@ -2646,8 +2628,8 @@ vk_pipeline_compile_rt_shader_group(struct vk_device *device,
                          push_range, pipeline_layout);
 
       for (uint32_t j = 0; j < stage_count; j++) {
-         _mesa_blake3_update(&blake3_ctx, stages[j].precomp->blake3,
-                             sizeof(stages[j].precomp->blake3));
+         _mesa_blake3_update(&blake3_ctx, stages[j].precomp->cache_key,
+                             sizeof(stages[j].precomp->cache_key));
       }
 
       shader_keys[i] = (struct vk_shader_pipeline_cache_key) {
