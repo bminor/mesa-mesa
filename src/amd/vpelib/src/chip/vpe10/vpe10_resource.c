@@ -1218,6 +1218,8 @@ void vpe10_get_bufs_req(struct vpe_priv *vpe_priv, struct vpe_bufs_req *req)
 
         req->emb_buf_size += emb_req;
     }
+
+    req->cmd_buf_size += VPE_PREDICATION_CMD_SIZE;
 }
 
 enum vpe_status vpe10_check_mirror_rotation_support(const struct vpe_stream *stream)

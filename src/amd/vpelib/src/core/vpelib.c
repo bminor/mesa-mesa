@@ -741,10 +741,6 @@ enum vpe_status vpe_build_commands(
             bufs->cmd_buf.size = vpe_priv->bufs_required.cmd_buf_size;
             bufs->emb_buf.size = vpe_priv->bufs_required.emb_buf_size;
 
-            if (param->predication_info.enable == true) {
-                bufs->cmd_buf.size += VPE_PREDICATION_CMD_SIZE;
-            }
-
             return VPE_STATUS_OK;
         } else if ((bufs->cmd_buf.size < vpe_priv->bufs_required.cmd_buf_size) ||
                    (bufs->emb_buf.size < vpe_priv->bufs_required.emb_buf_size)) {
