@@ -124,6 +124,8 @@ static const struct debug_named_value radeonsi_shader_debug_options[] = {
    {"nooptvariant", DBG(NO_OPT_VARIANT), "Disable compiling optimized shader variants."},
    {"useaco", DBG(USE_ACO), "Use ACO as shader compiler when possible"},
    {"usellvm", DBG(USE_LLVM), "Use LLVM as shader compiler when possible"},
+
+   DEBUG_NAMED_VALUE_END /* must be last */
 };
 
 static const struct debug_named_value test_options[] = {

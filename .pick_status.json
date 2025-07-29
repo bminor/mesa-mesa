@@ -4,7 +4,7 @@
         "description": "radeonsi: Add missing DEBUG_NAMED_VALUE_END to radeonsi_shader_debug_options",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c92fe45a1a661b609c0bf80ac2c1d5f25bcf7da",
         "notes": null
