@@ -248,6 +248,37 @@ trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
    return pco_uvsw_write(&tctx->b, src, vtxout_addr, .rpt = chans);
 }
 
+static pco_instr *trans_uvsw_write(trans_ctx *tctx,
+                                   nir_intrinsic_instr *intr,
+                                   UNUSED pco_ref offset_src,
+                                   pco_ref data_src)
+{
+   unsigned chans = pco_ref_get_chans(data_src);
+
+   nir_src *noffset_src = &intr->src[0];
+   /* TODO: support non-immediate uvsw variant. */
+   assert(nir_src_is_const(*noffset_src));
+   pco_ref vtxout_addr = pco_ref_val8(nir_src_as_uint(*noffset_src));
+
+   return pco_uvsw_write(&tctx->b, data_src, vtxout_addr, .rpt = chans);
+}
+
+static pco_instr *trans_load_vtxin(trans_ctx *tctx,
+                                   nir_intrinsic_instr *intr,
+                                   pco_ref dest,
+                                   UNUSED pco_ref offset_src)
+{
+   unsigned chans = pco_ref_get_chans(dest);
+
+   nir_src *noffset_src = &intr->src[0];
+   /* TODO: support indexed source offset. */
+   assert(nir_src_is_const(*noffset_src));
+   unsigned offset = nir_src_as_uint(*noffset_src);
+   pco_ref src = pco_ref_hwreg_vec(offset, PCO_REG_CLASS_VTXIN, chans);
+
+   return pco_mov(&tctx->b, dest, src, .rpt = chans);
+}
+
 static inline pco_instr *build_itr(pco_builder *b,
                                    pco_ref dest,
                                    enum pco_drc drc,
@@ -1653,6 +1684,14 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
          instr = trans_store_output_fs(tctx, intr, src[0]);
       else
          UNREACHABLE("Unsupported stage for \"nir_intrinsic_store_output\".");
+      break;
+
+   case nir_intrinsic_uvsw_write_pco:
+      instr = trans_uvsw_write(tctx, intr, src[0], src[1]);
+      break;
+
+   case nir_intrinsic_load_vtxin_pco:
+      instr = trans_load_vtxin(tctx, intr, dest, src[0]);
       break;
 
    case nir_intrinsic_load_output:

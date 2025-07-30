@@ -25,8 +25,9 @@
 #include <vulkan/vulkan_core.h>
 
 #include "hwdef/rogue_hw_utils.h"
+#include "pco/pco_data.h"
+#include "pco_uscgen_programs.h"
 #include "pvr_clear.h"
-#include "pvr_hardcode.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
 #include "usc/programs/pvr_shader_factory.h"
@@ -494,43 +495,31 @@ VkResult pvr_device_init_graphics_static_clear_state(struct pvr_device *device)
    struct pvr_device_static_clear_state *state = &device->static_clear_state;
    const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
    struct pvr_pds_vertex_shader_program pds_program;
-   struct util_dynarray passthrough_vert_shader;
+   const pco_precomp_data *precomp_data;
    uint32_t *state_buffer;
    VkResult result;
 
    if (PVR_HAS_FEATURE(dev_info, gs_rta_support)) {
-      struct util_dynarray passthrough_rta_vert_shader;
-
-      util_dynarray_init(&passthrough_rta_vert_shader, NULL);
-      pvr_hard_code_get_passthrough_rta_vertex_shader(
-         dev_info,
-         &passthrough_rta_vert_shader);
+      precomp_data =
+         (pco_precomp_data *)pco_usclib_common[VS_PASSTHROUGH_RTA_COMMON];
 
       result = pvr_gpu_upload_usc(device,
-                                  passthrough_rta_vert_shader.data,
-                                  passthrough_rta_vert_shader.size,
+                                  precomp_data->binary,
+                                  precomp_data->size_dwords * sizeof(uint32_t),
                                   cache_line_size,
                                   &state->usc_multi_layer_vertex_shader_bo);
-      if (result != VK_SUCCESS) {
-         util_dynarray_fini(&passthrough_rta_vert_shader);
+      if (result != VK_SUCCESS)
          return result;
-      }
-
-      util_dynarray_fini(&passthrough_rta_vert_shader);
    } else {
       state->usc_multi_layer_vertex_shader_bo = NULL;
    }
 
-   util_dynarray_init(&passthrough_vert_shader, NULL);
-   pvr_hard_code_get_passthrough_vertex_shader(dev_info,
-                                               &passthrough_vert_shader);
-
+   precomp_data = (pco_precomp_data *)pco_usclib_common[VS_PASSTHROUGH_COMMON];
    result = pvr_gpu_upload_usc(device,
-                               passthrough_vert_shader.data,
-                               passthrough_vert_shader.size,
+                               precomp_data->binary,
+                               precomp_data->size_dwords * sizeof(uint32_t),
                                cache_line_size,
                                &state->usc_vertex_shader_bo);
-   util_dynarray_fini(&passthrough_vert_shader);
    if (result != VK_SUCCESS)
       goto err_free_usc_multi_layer_shader;
 

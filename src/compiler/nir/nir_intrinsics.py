@@ -2755,3 +2755,9 @@ index("bool", "roundzero")
 intrinsic("pack_pco", src_comp=[0], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[FORMAT], bit_sizes=[32])
 intrinsic("unpack_pco", src_comp=[1], dest_comp=0, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[FORMAT], bit_sizes=[32])
 intrinsic("pck_prog_pco", src_comp=[0, 1], dest_comp=0, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[SCALE, ROUNDZERO], bit_sizes=[32])
+
+# uvsw_write_pco(offset/address, data)
+intrinsic("uvsw_write_pco", src_comp=[1, 0], bit_sizes=[32])
+
+# load_vtxin_pco(offset)
+intrinsic("load_vtxin_pco", src_comp=[1], dest_comp=0, bit_sizes=[32])
