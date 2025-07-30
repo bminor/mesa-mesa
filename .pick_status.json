@@ -7864,7 +7864,7 @@
         "description": "zink: do not overwrite existing error for miptail on uncommit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a7f86e38ca25c844d69b230283deba599dc9c289",
         "notes": null
