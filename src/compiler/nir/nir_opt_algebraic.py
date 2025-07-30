@@ -1035,6 +1035,9 @@ optimizations.extend([
 
    (('fsat', ('fmax', a, 'b(is_not_positive)')), ('fsat', a)),
 
+   (('fsat', ('bcsel(is_used_once)', a, b, '#c')), ('bcsel', a, ('fsat', b), ('fsat', c))),
+   (('fsat', ('bcsel(is_used_once)', a, '#b', c)), ('bcsel', a, ('fsat', b), ('fsat', c))),
+
    (('extract_u8', ('imin', ('imax', a, 0), 0xff), 0), ('imin', ('imax', a, 0), 0xff)),
 
    # The ior versions are exact because fmin and fmax will always pick a
