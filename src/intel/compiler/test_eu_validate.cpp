@@ -3921,3 +3921,34 @@ TEST_P(validation_test, bfloat_restrictions)
       clear_instructions(p);
    }
 }
+
+TEST_P(validation_test, srnd_type_and_immediate_restrictions)
+{
+   if (devinfo.ver < 20)
+      return;
+
+   struct brw_reg dst = retype(g0, BRW_TYPE_HF);
+   dst.hstride = 2;
+
+   brw_SRND(p,
+      dst,
+      retype(g0, BRW_TYPE_F),
+      retype(g0, BRW_TYPE_F));
+   EXPECT_TRUE(validate(p));
+   clear_instructions(p);
+
+   brw_SRND(p,
+      dst,
+      retype(g0, BRW_TYPE_F),
+      brw_imm_f(42.0f));
+   EXPECT_TRUE(validate(p));
+   clear_instructions(p);
+
+   /* Invalid type combinations */
+   brw_SRND(p,
+      dst,
+      retype(g0, BRW_TYPE_F),
+      retype(g0, BRW_TYPE_UW));
+   EXPECT_FALSE(validate(p));
+   clear_instructions(p);
+}

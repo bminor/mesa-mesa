@@ -641,6 +641,17 @@ general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
       }
    }
 
+   if (devinfo->ver >= 20) {
+      if (inst->opcode == BRW_OPCODE_SRND) {
+         bool valid = false;
+         if (inst->dst.type == BRW_TYPE_HF &&
+             inst->src[0].type == BRW_TYPE_F &&
+             inst->src[1].type == BRW_TYPE_F)
+            valid = true;
+         ERROR_IF(!valid, "Invalid type combination for SRND.");
+      }
+   }
+
    enum brw_reg_type dst_type = inst->dst.type;
 
    ERROR_IF(brw_type_is_bfloat(dst_type) &&
