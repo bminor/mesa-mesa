@@ -98,6 +98,9 @@ static inline void
 ir3_emit_constant_data(const struct ir3_shader_variant *v,
                        struct fd_ringbuffer *ring)
 {
+   if (v->compiler->options.push_ubo_with_preamble)
+      return;
+
    const struct ir3_const_state *const_state = ir3_const_state(v);
    const struct ir3_ubo_analysis_state *state = &const_state->ubo_state;
 
