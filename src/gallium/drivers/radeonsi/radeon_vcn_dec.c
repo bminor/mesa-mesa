@@ -2758,6 +2758,31 @@ static void radeon_dec_destroy_fence(struct pipe_video_codec *decoder,
    dec->ws->fence_reference(dec->ws, &fence, NULL);
 }
 
+static bool radeon_dec_enable_tier3(struct si_context *sctx, uint32_t codec)
+{
+   if (sctx->vcn_ip_ver < VCN_5_0_0)
+      return false;
+
+   return true;
+}
+
+static bool radeon_dec_enable_tier2(struct si_context *sctx, uint32_t codec)
+{
+   if (sctx->vcn_ip_ver < VCN_3_0_0)
+      return false;
+
+   return codec == RDECODE_CODEC_VP9 || codec == RDECODE_CODEC_AV1 ||
+          codec == RDECODE_CODEC_H265 || codec == RDECODE_CODEC_H264_PERF;
+}
+
+static bool radeon_dec_enable_tier1(struct si_context *sctx, uint32_t codec)
+{
+   if (sctx->vcn_ip_ver > VCN_2_6_0)
+      return false;
+
+   return codec == RDECODE_CODEC_VP9;
+}
+
 /**
  * create and HW decoder
  */
@@ -2937,15 +2962,11 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       }
    }
 
-   if (sctx->vcn_ip_ver >= VCN_5_0_0)
+   if (radeon_dec_enable_tier3(sctx, stream_type))
       dec->dpb_type = DPB_DYNAMIC_TIER_3;
-   else if ((sctx->vcn_ip_ver >= VCN_3_0_0) &&
-         (stream_type == RDECODE_CODEC_VP9 ||
-          stream_type == RDECODE_CODEC_AV1 ||
-        ((stream_type == RDECODE_CODEC_H265) && templ->expect_chunked_decode) ||
-        ((stream_type == RDECODE_CODEC_H264_PERF) && templ->expect_chunked_decode)))
+   else if (radeon_dec_enable_tier2(sctx, stream_type))
       dec->dpb_type = DPB_DYNAMIC_TIER_2;
-   else if (sctx->vcn_ip_ver <= VCN_2_6_0 && stream_type == RDECODE_CODEC_VP9)
+   else if (radeon_dec_enable_tier1(sctx, stream_type))
       dec->dpb_type = DPB_DYNAMIC_TIER_1;
    else
       dec->dpb_type = DPB_MAX_RES;
