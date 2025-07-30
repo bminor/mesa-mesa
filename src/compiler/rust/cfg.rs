@@ -341,6 +341,26 @@ impl<N> CFG<N> {
         }
     }
 
+    /// Returns the loop depth of the given node.  Nodes not in any loops have
+    /// a loop depth of zero.  For nodes inside a loop, this is the count of
+    /// number of loop headers above them in the dominance tree.
+    pub fn loop_depth(&self, idx: usize) -> usize {
+        let mut idx = idx;
+        let mut depth = 0;
+        loop {
+            let lph = self.nodes[idx].lph;
+            if lph == usize::MAX {
+                return depth;
+            }
+
+            depth += 1;
+
+            // Loop headers have themselves as the lph so we need to skip to
+            // the dominator of the loop header for the next iteration.
+            idx = self.nodes[lph].dom;
+        }
+    }
+
     /// Returns the indices of the successors of this node in the CFG.
     pub fn succ_indices(&self, idx: usize) -> &[usize] {
         &self.nodes[idx].succ[..]
