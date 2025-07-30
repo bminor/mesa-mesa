@@ -223,13 +223,17 @@ fn sched_buffer(
 impl Function {
     pub fn opt_instr_sched_postpass(&mut self, sm: &dyn ShaderModel) -> u32 {
         let mut num_static_cycles = 0;
-        for block in &mut self.blocks {
+        for i in 0..self.blocks.len() {
+            let block = &mut self.blocks[i];
+
             let orig_instr_count = block.instrs.len();
             let instrs = std::mem::take(&mut block.instrs);
             let (instrs, cycle_count) = sched_buffer(sm, instrs);
             block.instrs = instrs.collect();
-            num_static_cycles += cycle_count;
             assert_eq!(orig_instr_count, block.instrs.len());
+
+            num_static_cycles +=
+                cycle_count * estimate_block_weight(&self.blocks, i);
         }
         num_static_cycles
     }

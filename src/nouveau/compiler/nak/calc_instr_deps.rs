@@ -4,6 +4,7 @@
 use crate::api::{GetDebugFlags, DEBUG};
 use crate::dataflow::ForwardDataflow;
 use crate::ir::*;
+use crate::opt_instr_sched_common::estimate_block_weight;
 use crate::reg_tracker::RegTracker;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -671,7 +672,8 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
 
 fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
     let mut min_num_static_cycles = 0;
-    for b in f.blocks.iter_mut().rev() {
+    for i in (0..f.blocks.len()).rev() {
+        let b = &mut f.blocks[i];
         let mut cycle = 0_u32;
 
         // Vector mapping IP to start cycle
@@ -772,7 +774,8 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
 
             cycle = min_start;
         }
-        min_num_static_cycles += cycle;
+
+        min_num_static_cycles += cycle * estimate_block_weight(&f.blocks, i);
     }
 
     let max_instr_delay = sm.max_instr_delay();

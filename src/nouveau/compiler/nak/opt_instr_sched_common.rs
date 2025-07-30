@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::ir::*;
+use compiler::cfg::CFG;
 use std::cmp::max;
 use std::cmp::Reverse;
 
@@ -237,6 +238,10 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::PhiDsts(_)
         | Op::RegOut(_) => SideEffect::Barrier,
     }
+}
+
+pub fn estimate_block_weight(cfg: &CFG<BasicBlock>, block_idx: usize) -> u32 {
+    10_u32.pow(cfg.loop_depth(block_idx).try_into().unwrap())
 }
 
 /// Try to guess how many cycles a variable latency instruction will take
