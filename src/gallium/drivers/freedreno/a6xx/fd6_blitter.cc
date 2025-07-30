@@ -496,9 +496,8 @@ emit_blit_buffer(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
 template <chip CHIP>
 static void
-fd6_clear_ubwc(struct fd_batch *batch, struct fd_resource *rsc) assert_dt
+clear_ubwc_setup(struct fd_ringbuffer *ring)
 {
-   struct fd_ringbuffer *ring = fd_batch_get_prologue(batch);
    union pipe_color_union color = {};
 
    emit_blit_setup<CHIP>(ring, PIPE_FORMAT_R8_UNORM, false, &color, 0, ROTATE_0);
@@ -522,6 +521,15 @@ fd6_clear_ubwc(struct fd_batch *batch, struct fd_resource *rsc) assert_dt
            A6XX_GRAS_A2D_SRC_YMIN(0),
            A6XX_GRAS_A2D_SRC_YMAX(0),
    );
+}
+
+template <chip CHIP>
+static void
+fd6_clear_ubwc(struct fd_batch *batch, struct fd_resource *rsc) assert_dt
+{
+   struct fd_ringbuffer *ring = fd_batch_get_prologue(batch);
+
+   clear_ubwc_setup<CHIP>(ring);
 
    unsigned size = rsc->layout.slices[0].offset;
    unsigned offset = 0;
@@ -678,19 +686,13 @@ emit_blit_src(struct fd_ringbuffer *ring, const struct pipe_blit_info *info,
 
 template <chip CHIP>
 static void
-emit_blit_texture(struct fd_context *ctx, struct fd_ringbuffer *ring,
-                  const struct pipe_blit_info *info)
+emit_blit_texture_setup(struct fd_ringbuffer *ring, const struct pipe_blit_info *info)
 {
    const struct pipe_box *sbox = &info->src.box;
    const struct pipe_box *dbox = &info->dst.box;
    struct fd_resource *dst;
    int sx1, sy1, sx2, sy2;
    int dx1, dy1, dx2, dy2;
-
-   if (DEBUG_BLIT) {
-      fprintf(stderr, "texture blit: ");
-      dump_blit_info(info);
-   }
 
    dst = fd_resource(info->dst.resource);
 
@@ -738,6 +740,27 @@ emit_blit_texture(struct fd_context *ctx, struct fd_ringbuffer *ring,
    }
 
    emit_blit_setup<CHIP>(ring, info->dst.format, info->scissor_enable, NULL, 0, rotate);
+}
+
+template <chip CHIP>
+static void
+emit_blit_texture(struct fd_context *ctx, struct fd_ringbuffer *ring,
+                  const struct pipe_blit_info *info)
+{
+   const struct pipe_box *sbox = &info->src.box;
+   const struct pipe_box *dbox = &info->dst.box;
+   struct fd_resource *dst;
+
+   if (DEBUG_BLIT) {
+      fprintf(stderr, "texture blit: ");
+      dump_blit_info(info);
+   }
+
+   emit_blit_texture_setup<CHIP>(ring, info);
+
+   dst = fd_resource(info->dst.resource);
+
+   uint32_t nr_samples = fd_resource_nr_samples(&dst->b.b);
 
    for (unsigned i = 0; i < info->dst.box.depth; i++) {
 
@@ -805,20 +828,11 @@ emit_clear_color(struct fd_ringbuffer *ring, enum pipe_format pfmt,
    }
 }
 
-
 template <chip CHIP>
-void
-fd6_clear_lrz(struct fd_batch *batch, struct fd_resource *zsbuf,
-              struct fd_bo *lrz, double depth)
+static void
+clear_lrz_setup(struct fd_ringbuffer *ring, struct fd_resource *zsbuf,
+                struct fd_bo *lrz, double depth)
 {
-   struct fd_ringbuffer *ring = fd_batch_get_prologue(batch);
-
-   if (DEBUG_BLIT) {
-      fprintf(stderr, "lrz clear:\ndst resource: ");
-      util_dump_resource(stderr, &zsbuf->b.b);
-      fprintf(stderr, "\n");
-   }
-
    OUT_PKT4(ring, REG_A6XX_GRAS_A2D_DEST_TL, 2);
    OUT_RING(ring, A6XX_GRAS_A2D_DEST_TL_X(0) | A6XX_GRAS_A2D_DEST_TL_Y(0));
    OUT_RING(ring, A6XX_GRAS_A2D_DEST_BR_X(zsbuf->lrz_layout.lrz_pitch - 1) |
@@ -840,6 +854,22 @@ fd6_clear_lrz(struct fd_batch *batch, struct fd_resource *zsbuf,
            ),
            A6XX_RB_A2D_DEST_BUFFER_PITCH(zsbuf->lrz_layout.lrz_pitch * 2),
    );
+}
+
+template <chip CHIP>
+void
+fd6_clear_lrz(struct fd_batch *batch, struct fd_resource *zsbuf,
+              struct fd_bo *lrz, double depth)
+{
+   struct fd_ringbuffer *ring = fd_batch_get_prologue(batch);
+
+   if (DEBUG_BLIT) {
+      fprintf(stderr, "lrz clear:\ndst resource: ");
+      util_dump_resource(stderr, &zsbuf->b.b);
+      fprintf(stderr, "\n");
+   }
+
+   clear_lrz_setup<CHIP>(ring, zsbuf, lrz, depth);
 
    /*
     * Blit command:
@@ -1019,17 +1049,11 @@ fd6_clear_buffer(struct pipe_context *pctx,
 }
 
 template <chip CHIP>
-void
-fd6_clear_surface(struct fd_context *ctx, struct fd_ringbuffer *ring,
-                  struct pipe_surface *psurf, const struct pipe_box *box2d,
-                  union pipe_color_union *color, uint32_t unknown_8c01)
+static void
+clear_surface_setup(struct fd_ringbuffer *ring, struct pipe_surface *psurf,
+                    const struct pipe_box *box2d, union pipe_color_union *color,
+                    uint32_t unknown_8c01)
 {
-   if (DEBUG_BLIT) {
-      fprintf(stderr, "surface clear:\ndst resource: ");
-      util_dump_resource(stderr, psurf->texture);
-      fprintf(stderr, "\n");
-   }
-
    uint32_t nr_samples = fd_resource_nr_samples(psurf->texture);
    OUT_PKT4(ring, REG_A6XX_GRAS_A2D_DEST_TL, 2);
    OUT_RING(ring, A6XX_GRAS_A2D_DEST_TL_X(box2d->x * nr_samples) |
@@ -1041,6 +1065,21 @@ fd6_clear_surface(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
    emit_clear_color(ring, psurf->format, &clear_color);
    emit_blit_setup<CHIP>(ring, psurf->format, false, &clear_color, unknown_8c01, ROTATE_0);
+}
+
+template <chip CHIP>
+void
+fd6_clear_surface(struct fd_context *ctx, struct fd_ringbuffer *ring,
+                  struct pipe_surface *psurf, const struct pipe_box *box2d,
+                  union pipe_color_union *color, uint32_t unknown_8c01)
+{
+   if (DEBUG_BLIT) {
+      fprintf(stderr, "surface clear:\ndst resource: ");
+      util_dump_resource(stderr, psurf->texture);
+      fprintf(stderr, "\n");
+   }
+
+   clear_surface_setup<CHIP>(ring, psurf, box2d, color, unknown_8c01);
 
    for (unsigned i = psurf->first_layer; i <= psurf->last_layer;
         i++) {
@@ -1138,9 +1177,9 @@ fd6_clear_texture(struct pipe_context *pctx, struct pipe_resource *prsc,
 }
 
 template <chip CHIP>
-void
-fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
-                 uint32_t base, struct pipe_surface *psurf, uint32_t unknown_8c01)
+static void
+resolve_tile_setup(struct fd_batch *batch, struct fd_ringbuffer *ring,
+                   uint32_t base, struct pipe_surface *psurf, uint32_t unknown_8c01)
 {
    const struct fd_gmem_stateobj *gmem = batch->gmem_state;
    uint64_t gmem_base = batch->ctx->screen->gmem_base + base;
@@ -1156,9 +1195,9 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
 
    OUT_REG(ring,
            A6XX_GRAS_A2D_SRC_XMIN(0),
-           A6XX_GRAS_A2D_SRC_XMAX(pipe_surface_width(psurf) - 1),
+           A6XX_GRAS_A2D_SRC_XMAX(width - 1),
            A6XX_GRAS_A2D_SRC_YMIN(0),
-           A6XX_GRAS_A2D_SRC_YMAX(pipe_surface_height(psurf) - 1),
+           A6XX_GRAS_A2D_SRC_YMAX(height - 1),
    );
 
    /* Enable scissor bit, which will take into account the window scissor
@@ -1189,8 +1228,8 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
            ),
            TPL1_A2D_SRC_TEXTURE_SIZE(
                  CHIP,
-                 .width = pipe_surface_width(psurf),
-                 .height = pipe_surface_height(psurf),
+                 .width = width,
+                 .height = height,
            ),
            TPL1_A2D_SRC_TEXTURE_BASE(
                  CHIP,
@@ -1201,6 +1240,14 @@ fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
                  .pitch = gmem_pitch,
            ),
    );
+}
+
+template <chip CHIP>
+void
+fd6_resolve_tile(struct fd_batch *batch, struct fd_ringbuffer *ring,
+                 uint32_t base, struct pipe_surface *psurf, uint32_t unknown_8c01)
+{
+   resolve_tile_setup<CHIP>(batch, ring, base, psurf, unknown_8c01);
 
    /* sync GMEM writes with CACHE. */
    fd6_cache_inv<CHIP>(batch->ctx, ring);
