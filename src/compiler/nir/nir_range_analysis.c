@@ -603,7 +603,7 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
     * reinterpreted trivially.  The most important cases are between float and
     * non-float.
     */
-   if (alu->op != nir_op_mov && alu->op != nir_op_bcsel) {
+   if (alu->op != nir_op_mov && alu->op != nir_op_bcsel && alu->op != nir_op_vec2) {
       const nir_alu_type use_base_type =
          nir_alu_type_get_base_type(use_type);
       const nir_alu_type src_base_type =
@@ -625,6 +625,10 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
          return;
       case nir_op_mov:
          push_fp_query(state, alu, 0, use_type);
+         return;
+      case nir_op_vec2:
+         push_fp_query(state, alu, 0, use_type);
+         push_fp_query(state, alu, 1, use_type);
          return;
       case nir_op_i2f32:
       case nir_op_u2f32:
@@ -1126,6 +1130,17 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
    case nir_op_mov:
       r = unpack_data(src_res[0]);
       break;
+
+   case nir_op_vec2: {
+      const struct ssa_result_range left = unpack_data(src_res[0]);
+      const struct ssa_result_range right = unpack_data(src_res[1]);
+
+      r.range = union_ranges(left.range, right.range);
+      r.is_integral = left.is_integral && right.is_integral;
+      r.is_a_number = left.is_a_number && right.is_a_number;
+      r.is_finite = left.is_finite && right.is_finite;
+      break;
+   }
 
    case nir_op_fneg:
       r = unpack_data(src_res[0]);
