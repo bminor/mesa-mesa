@@ -716,10 +716,8 @@ agx_pack_texture(void *out, struct agx_resource *rsrc,
       cfg.unk_mipmapped = rsrc->mipmapped;
       cfg.srgb_2_channel = cfg.srgb && util_format_colormask(desc) == 0x3;
 
-      if (rsrc->layout.compressed) {
-         cfg.compressed_1 = true;
-         cfg.extended = true;
-      }
+      cfg.compressed = rsrc->layout.compressed;
+      cfg.extended = cfg.compressed;
 
       cfg.address = agx_map_texture_gpu(rsrc, first_layer);
 
@@ -1259,7 +1257,7 @@ agx_batch_upload_pbe(struct agx_batch *batch, struct agx_pbe_packed *out,
       }
 
       if (tex->layout.compressed && !emrt) {
-         cfg.compressed_1 = true;
+         cfg.compressed = true;
          cfg.extended = true;
 
          cfg.acceleration_buffer =

@@ -328,7 +328,7 @@ pack_texture(struct hk_image_view *view, unsigned view_plane,
       cfg.srgb_2_channel = cfg.srgb && util_format_colormask(desc) == 0x3;
 
       if (layout->compressed) {
-         cfg.compressed_1 = true;
+         cfg.compressed = true;
          cfg.extended = true;
       }
 
@@ -482,7 +482,7 @@ pack_pbe(struct hk_device *dev, struct hk_image_view *view, unsigned view_plane,
       }
 
       if (layout->compressed && usage != HK_DESC_USAGE_EMRT) {
-         cfg.compressed_1 = true;
+         cfg.compressed = true;
          cfg.extended = true;
 
          cfg.acceleration_buffer = base_addr + layout->metadata_offset_B +
