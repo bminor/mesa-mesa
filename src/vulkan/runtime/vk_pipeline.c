@@ -1190,6 +1190,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
                                      const struct vk_graphics_pipeline_link_info *link_info,
                                      uint32_t stage_count,
                                      struct vk_pipeline_stage *stages,
+                                     uint32_t set_layout_count,
+                                     struct vk_descriptor_set_layout **set_layouts,
                                      VkPipelineCreationFeedback *stage_feedbacks)
 {
    const struct vk_device_shader_ops *ops = device->shader_ops;
@@ -1239,10 +1241,10 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
 
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
-   for (uint32_t i = 0; i < pipeline->set_layout_count; i++) {
-      if (pipeline->set_layouts[i] != NULL) {
-         _mesa_blake3_update(&blake3_ctx, pipeline->set_layouts[i]->blake3,
-                           sizeof(pipeline->set_layouts[i]->blake3));
+   for (uint32_t i = 0; i < set_layout_count; i++) {
+      if (set_layouts[i] != NULL) {
+         _mesa_blake3_update(&blake3_ctx, set_layouts[i]->blake3,
+                           sizeof(set_layouts[i]->blake3));
       }
    }
    if (pipeline_layout != NULL) {
@@ -1436,8 +1438,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
             .next_stage_mask = next_stage,
             .nir = nir,
             .robustness = &stage->precomp->rs,
-            .set_layout_count = pipeline->set_layout_count,
-            .set_layouts = pipeline->set_layouts,
+            .set_layout_count = set_layout_count,
+            .set_layouts = set_layouts,
             .push_constant_range_count = push_range != NULL,
             .push_constant_ranges = push_range != NULL ? push_range : NULL,
          };
@@ -1678,6 +1680,9 @@ vk_create_graphics_pipeline(struct vk_device *device,
       all_state = &all_state_tmp;
    }
 
+   uint32_t set_layout_count = 0;
+   struct vk_descriptor_set_layout *set_layouts[MESA_VK_MAX_DESCRIPTOR_SETS] = { 0 };
+
    /* If we have libraries, import them first. */
    if (libs_info) {
       for (uint32_t i = 0; i < libs_info->libraryCount; i++) {
@@ -1689,16 +1694,14 @@ vk_create_graphics_pipeline(struct vk_device *device,
 
          vk_graphics_pipeline_state_merge(state, &lib_gfx_pipeline->lib.state);
 
-         pipeline->set_layout_count = MAX2(pipeline->set_layout_count,
-                                           lib_gfx_pipeline->set_layout_count);
+         set_layout_count = MAX2(set_layout_count,
+                                 lib_gfx_pipeline->set_layout_count);
          for (uint32_t i = 0; i < lib_gfx_pipeline->set_layout_count; i++) {
             if (lib_gfx_pipeline->set_layouts[i] == NULL)
                continue;
 
-            if (pipeline->set_layouts[i] == NULL) {
-               pipeline->set_layouts[i] =
-                  vk_descriptor_set_layout_ref(lib_gfx_pipeline->set_layouts[i]);
-            }
+            if (set_layouts[i] == NULL)
+               set_layouts[i] = lib_gfx_pipeline->set_layouts[i];
          }
 
          for (uint32_t i = 0; i < lib_gfx_pipeline->stage_count; i++) {
@@ -1735,16 +1738,13 @@ vk_create_graphics_pipeline(struct vk_device *device,
    }
 
    if (pipeline_layout != NULL) {
-      pipeline->set_layout_count = MAX2(pipeline->set_layout_count,
-                                        pipeline_layout->set_count);
+      set_layout_count = MAX2(set_layout_count, pipeline_layout->set_count);
       for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
          if (pipeline_layout->set_layouts[i] == NULL)
             continue;
 
-         if (pipeline->set_layouts[i] == NULL) {
-            pipeline->set_layouts[i] =
-               vk_descriptor_set_layout_ref(pipeline_layout->set_layouts[i]);
-         }
+         if (set_layouts[i] == NULL)
+            set_layouts[i] = pipeline_layout->set_layouts[i];
       }
    }
 
@@ -1849,9 +1849,19 @@ vk_create_graphics_pipeline(struct vk_device *device,
                                                  pipeline_layout, state,
                                                  &link_info,
                                                  stage_count, stages,
+                                                 set_layout_count, set_layouts,
                                                  stage_feedbacks);
    if (result != VK_SUCCESS)
       goto fail_stages;
+
+   /* Keep a reference on the set layouts */
+   pipeline->set_layout_count = set_layout_count;
+   for (uint32_t i = 0; i < set_layout_count; i++) {
+      if (set_layouts[i] == NULL)
+         continue;
+
+      pipeline->set_layouts[i] = vk_descriptor_set_layout_ref(set_layouts[i]);
+   }
 
    /* Throw away precompiled shaders unless the client explicitly asks us to
     * keep them.
