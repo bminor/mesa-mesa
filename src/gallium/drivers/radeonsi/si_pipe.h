@@ -256,6 +256,7 @@ enum
 {
    DBG_NO_EFC,
    DBG_LOW_LATENCY_ENCODE,
+   DBG_NO_VIDEO_TILING,
 };
 
 enum

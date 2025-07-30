@@ -1753,6 +1753,8 @@ RadeonSI driver environment variables
       Enable CP register shadowing in kernel queue.
    ``userqnoshadowregs``
       Disable register shadowing in userqueue. This will also disable userqueue mcbp.
+   ``novideotiling``
+      Disable tiling for video.
 
 r600 driver environment variables
 ---------------------------------
