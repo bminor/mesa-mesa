@@ -59,9 +59,7 @@ brw_opt_address_reg_load(brw_shader &s)
    const brw_def_analysis &defs = s.def_analysis.require();
 
    foreach_block(block, s.cfg) {
-      foreach_inst_in_block_safe(brw_inst, inst, block) {
-         progress = opt_address_reg_load_local(s, block, defs) || progress;
-      }
+      progress = opt_address_reg_load_local(s, block, defs) || progress;
    }
 
    if (progress) {
