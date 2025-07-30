@@ -1520,32 +1520,6 @@ tu6_emit_xs(struct tu_cs *cs,
       tu_cs_emit_qw(cs,
                     iova |
                     (uint64_t)A6XX_UBO_1_SIZE(size_vec4s) << 32);
-
-      /* Upload the constant data to the const file if needed. */
-      const struct ir3_ubo_analysis_state *ubo_state = &const_state->ubo_state;
-
-      if (!cs->device->physical_device->info->a7xx.load_shader_consts_via_preamble) {
-         for (int i = 0; i < ubo_state->num_enabled; i++) {
-            if (ubo_state->range[i].ubo.block != offset ||
-                ubo_state->range[i].ubo.bindless) {
-               continue;
-            }
-
-            uint32_t start = ubo_state->range[i].start;
-            uint32_t end = ubo_state->range[i].end;
-            uint32_t size = MIN2(end - start,
-                                 (16 * xs->constlen) - ubo_state->range[i].offset);
-
-            tu_cs_emit_pkt7(cs, tu6_stage2opcode(stage), 3);
-            tu_cs_emit(cs,
-                     CP_LOAD_STATE6_0_DST_OFF(ubo_state->range[i].offset / 16) |
-                     CP_LOAD_STATE6_0_STATE_TYPE(ST6_CONSTANTS) |
-                     CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
-                     CP_LOAD_STATE6_0_STATE_BLOCK(tu6_stage2shadersb(stage)) |
-                     CP_LOAD_STATE6_0_NUM_UNIT(size / 16));
-            tu_cs_emit_qw(cs, iova + start);
-         }
-      }
    }
 
    /* emit statically-known FS driver param */
