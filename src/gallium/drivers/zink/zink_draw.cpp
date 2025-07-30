@@ -1030,6 +1030,16 @@ zink_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
    struct zink_batch_state *bs = ctx->bs;
    struct zink_screen *screen = zink_screen(pctx->screen);
 
+   if (unlikely(ctx->buffer_rebind_counter < screen->buffer_rebind_counter)) {
+      ctx->buffer_rebind_counter = screen->buffer_rebind_counter;
+      zink_rebind_all_buffers(ctx);
+   }
+
+   if (unlikely(ctx->image_rebind_counter < screen->image_rebind_counter)) {
+      ctx->image_rebind_counter = screen->image_rebind_counter;
+      zink_rebind_all_images(ctx);
+   }
+
    if (ctx->render_condition_active)
       zink_start_conditional_render(ctx);
 
