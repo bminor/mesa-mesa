@@ -16,14 +16,6 @@ dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r32g32b32a32_sfloa
 dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r8g8b8a8_unorm,Fail
 dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r16_unorm,Fail
 
-# https://gitlab.freedesktop.org/mesa/mesa/-/issues/13543
-dEQP-VK.ray_query.builtin.rayqueryterminate.ahit.aabbs,Crash
-dEQP-VK.ray_query.builtin.rayqueryterminate.ahit.triangles,Crash
-dEQP-VK.ray_query.builtin.rayqueryterminate.call.aabbs,Crash
-dEQP-VK.ray_query.builtin.rayqueryterminate.call.triangles,Crash
-dEQP-VK.ray_query.builtin.rayqueryterminate.sect.aabbs,Crash
-dEQP-VK.ray_query.builtin.rayqueryterminate.sect.triangles,Crash
-
 # RADV bug
 dEQP-VK.query_pool.statistics_query.clipping_primitives.primary.32bits_cmdcopyquerypoolresults_triangle_list_clear_color_vertex,Fail
 dEQP-VK.query_pool.statistics_query.clipping_primitives.primary.32bits_cmdcopyquerypoolresults_triangle_list_clear_depth_vertex,Fail
