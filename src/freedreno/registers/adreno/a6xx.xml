@@ -1652,10 +1652,13 @@ by a particular renderpass/blit.
 	<!-- array-pitch is size of layer -->
 	<reg32 offset="0x88db" name="RB_RESOLVE_SYSTEM_BUFFER_ARRAY_PITCH" low="0" high="28" shr="6" type="uint" usage="rp_blit"/>
 	<reg64 offset="0x88dc" name="RB_RESOLVE_SYSTEM_FLAG_BUFFER_BASE" type="waddress" align="64" usage="rp_blit"/>
-	<reg32 offset="0x88de" name="RB_RESOLVE_SYSTEM_FLAG_BUFFER_PITCH" usage="rp_blit">
+
+	<bitset name="a6xx_flag_buffer_pitch" inline="yes">
 		<bitfield name="PITCH" low="0" high="10" shr="6" type="uint"/>
-		<bitfield name="ARRAY_PITCH" low="11" high="27" shr="7" type="uint"/>
-	</reg32>
+		<bitfield name="ARRAY_PITCH" low="11" high="28" shr="7" type="uint"/>
+	</bitset>
+
+	<reg32 offset="0x88de" name="RB_RESOLVE_SYSTEM_FLAG_BUFFER_PITCH" type="a6xx_flag_buffer_pitch" usage="rp_blit"/>
 
 	<reg32 offset="0x88df" name="RB_RESOLVE_CLEAR_COLOR_DW0" usage="rp_blit"/>
 	<reg32 offset="0x88e0" name="RB_RESOLVE_CLEAR_COLOR_DW1" usage="rp_blit"/>
@@ -1728,10 +1731,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0x88f0" name="RB_UNKNOWN_88F0" low="0" high="11" usage="cmd"/>
 	<!-- could be for separate stencil? (or may not be a flag buffer at all) -->
 	<reg64 offset="0x88f1" name="RB_UNK_FLAG_BUFFER_BASE" type="waddress" align="64"/>
-	<reg32 offset="0x88f3" name="RB_UNK_FLAG_BUFFER_PITCH">
-		<bitfield name="PITCH" low="0" high="10" shr="6" type="uint"/>
-		<bitfield name="ARRAY_PITCH" low="11" high="23" shr="7" type="uint"/>
-	</reg32>
+	<reg32 offset="0x88f3" name="RB_UNK_FLAG_BUFFER_PITCH" type="a6xx_flag_buffer_pitch"/>
 
 	<reg32 offset="0x88f4" name="RB_VRS_CONFIG" usage="rp_blit">
 		<bitfield name="UNK2" pos="2" type="boolean"/>
@@ -1749,12 +1749,10 @@ by a particular renderpass/blit.
 		<bitfield name="UNK8" low="8" high="10"/>
 		<bitfield name="ARRAY_PITCH" low="11" high="27" shr="7" type="uint"/>
 	</reg32>
+
 	<array offset="0x8903" name="RB_COLOR_FLAG_BUFFER" stride="3" length="8" usage="rp_blit">
 		<reg64 offset="0" name="ADDR" type="waddress" align="64"/>
-		<reg32 offset="2" name="PITCH">
-			<bitfield name="PITCH" low="0" high="10" shr="6" type="uint"/>
-			<bitfield name="ARRAY_PITCH" low="11" high="28" shr="7" type="uint"/>
-		</reg32>
+		<reg32 offset="2" name="PITCH" type="a6xx_flag_buffer_pitch"/>
 	</array>
 	<!-- 0x891b-0x8926 invalid -->
 	<doc>
@@ -1817,7 +1815,7 @@ by a particular renderpass/blit.
 	<reg64 offset="0x8c1e" name="RB_A2D_DEST_BUFFER_BASE_2" type="waddress" align="64" usage="rp_blit"/>
 
 	<reg64 offset="0x8c20" name="RB_A2D_DEST_FLAG_BUFFER_BASE" type="waddress" align="64" usage="rp_blit"/>
-	<reg32 offset="0x8c22" name="RB_A2D_DEST_FLAG_BUFFER_PITCH" low="0" high="7" shr="6" type="uint" usage="rp_blit"/>
+	<reg32 offset="0x8c22" name="RB_A2D_DEST_FLAG_BUFFER_PITCH" type="a6xx_flag_buffer_pitch" usage="rp_blit"/>
 	<!-- this is a guess but seems likely (for NV12 with UBWC): -->
 	<reg64 offset="0x8c23" name="RB_A2D_DEST_FLAG_BUFFER_BASE_1" type="waddress" align="64" usage="rp_blit"/>
 	<reg32 offset="0x8c25" name="RB_A2D_DEST_FLAG_BUFFER_PITCH_1" low="0" high="7" shr="6" type="uint" usage="rp_blit"/>
