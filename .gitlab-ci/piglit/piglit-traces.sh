@@ -93,11 +93,12 @@ else
     # copy-paste from init-stage2.sh, please update accordingly
     {
       WESTON_X11_SOCK="/tmp/.X11-unix/X0"
-      export WAYLAND_DISPLAY=wayland-0
+      WAYLAND_DISPLAY=wayland-0
       export DISPLAY=:0
       mkdir -p /tmp/.X11-unix
 
-      env weston --config="/install/common/weston.ini" -Swayland-0 --use-gl &
+      weston --config="/install/common/weston.ini" --socket="$WAYLAND_DISPLAY" --renderer=gl &
+      export WAYLAND_DISPLAY
 
       while [ ! -S "$WESTON_X11_SOCK" ]; do sleep 1; done
     }

@@ -192,14 +192,15 @@ if [ -n "$HWCI_START_WESTON" ]; then
     echo "Please consider dropping HWCI_START_XORG and instead using Weston XWayland for testing."
     WESTON_X11_SOCK="/tmp/.X11-unix/X1"
   fi
-  export WAYLAND_DISPLAY=wayland-0
+  WAYLAND_DISPLAY=wayland-0
 
   # Display server is Weston Xwayland when HWCI_START_XORG is not set or Xorg when it's
   export DISPLAY=:0
   mkdir -p /tmp/.X11-unix
 
-  env weston --config="/install/common/weston.ini" -Swayland-0 --use-gl &
+  weston --config="/install/common/weston.ini" --socket="$WAYLAND_DISPLAY" --renderer=gl &
   BACKGROUND_PIDS="$! $BACKGROUND_PIDS"
+  export WAYLAND_DISPLAY
 
   while [ ! -S "$WESTON_X11_SOCK" ]; do sleep 1; done
 fi

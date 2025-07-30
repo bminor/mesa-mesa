@@ -42,8 +42,9 @@ llvmpipe:
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
     section_start weston "weston: prepare"
-    weston -Bheadless-backend.so -Swayland-0 --idle-time=0 &
-    export WAYLAND_DISPLAY=wayland-0
+    WAYLAND_DISPLAY=wayland-0
+    weston --backend=headless-backend.so --socket="$WAYLAND_DISPLAY" --idle-time=0 &
+    export WAYLAND_DISPLAY
     section_end weston
     xvfb-run -e results/xvfb.log --server-args='-noreset' bash -c ". $SCRIPTS_DIR/setup-test-env.sh && ${XVFB_SCRIPT}"
 
