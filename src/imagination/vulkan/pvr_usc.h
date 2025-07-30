@@ -18,9 +18,6 @@
 #include "pvr_private.h"
 #include "usc/pvr_uscgen.h"
 
-/* NOP shader generation. */
-pco_shader *pvr_usc_nop(pco_ctx *ctx, mesa_shader_stage stage);
-
 /* EOT shader generation. */
 struct pvr_eot_props {
    unsigned emit_count;

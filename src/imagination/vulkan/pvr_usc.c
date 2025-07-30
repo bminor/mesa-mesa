@@ -49,27 +49,6 @@ static pco_shader *build_shader(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 }
 
 /**
- * Generate a nop (empty) shader.
- *
- * \param ctx PCO context.
- * \param stage Shader stage.
-+ * \return The nop shader.
- */
-pco_shader *pvr_usc_nop(pco_ctx *ctx, mesa_shader_stage stage)
-{
-   nir_builder b =
-      nir_builder_init_simple_shader(stage,
-                                     pco_nir_options(),
-                                     "nop (%s)",
-                                     _mesa_shader_stage_to_string(stage));
-
-   /* Just return. */
-   nir_jump(&b, nir_jump_return);
-
-   return build_shader(ctx, b.shader, &(pco_data){ 0 });
-}
-
-/**
  * Generate an end-of-tile shader.
  *
  * \param ctx PCO context.
