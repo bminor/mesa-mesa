@@ -358,6 +358,9 @@ index("struct glsl_cmat_description", "src_cmat_desc")
 # coordinates in compute.
 index("bool", "explicit_coord")
 
+index("bool", "src_is_reg")
+index("bool", "dst_is_reg")
+
 # The index of the format string used by a printf. (u_printf_info element of the shader)
 index("unsigned", "fmt_idx")
 # for NV coop matrix - num of matrix in load 1/2/4
@@ -388,6 +391,9 @@ intrinsic("load_deref", dest_comp=0, src_comp=[-1],
 intrinsic("store_deref", src_comp=[-1, 0], indices=[WRITE_MASK, ACCESS])
 intrinsic("copy_deref", src_comp=[-1, -1], indices=[DST_ACCESS, SRC_ACCESS])
 intrinsic("memcpy_deref", src_comp=[-1, -1, 1], indices=[DST_ACCESS, SRC_ACCESS])
+
+# Sources: [src, reg_dst], Definition: dst
+intrinsic("parallel_copy", dest_comp=0, src_comp=[-1, -1], indices=[SRC_IS_REG, DST_IS_REG])
 
 # Returns an opaque handle representing a register indexed by BASE. The
 # logically def-use list of a register is given by the use list of this handle.
