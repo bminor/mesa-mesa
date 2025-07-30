@@ -1033,6 +1033,8 @@ optimizations.extend([
    (('fmax', ('ffma(is_used_once)', 'a', ('fneg', a), '#b(is_zero_to_one)'), 0.0),
     ('fsat', ('ffma', a, ('fneg', a), b)), '!options->lower_fsat'),
 
+   (('fsat', ('fmax', a, 'b(is_not_positive)')), ('fsat', a)),
+
    (('extract_u8', ('imin', ('imax', a, 0), 0xff), 0), ('imin', ('imax', a, 0), 0xff)),
 
    # The ior versions are exact because fmin and fmax will always pick a
