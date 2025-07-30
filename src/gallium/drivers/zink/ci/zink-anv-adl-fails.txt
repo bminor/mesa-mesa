@@ -701,9 +701,6 @@ spec@!opengl 1.1@depthstencil-default_fb-blit samples=2,Fail
 spec@arb_sample_shading@samplemask 6,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-deriv-disabled,Fail
 
-# New crash with Xe KMD
-spec@!opengl 1.1@streaming-texture-leak,Crash
-
 # glcts doesn't check for unsupported formats. See discussion in !35524
 KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_array_depth_component16,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_depth_component16,Fail
