@@ -540,19 +540,6 @@ nir_rewrite_uses_to_load_reg(nir_builder *b, nir_def *old,
    nir_foreach_use_including_if_safe(use, old) {
       b->cursor = nir_before_src(use);
 
-      /* If this is a parallel copy, it can just take the register directly */
-      if (!nir_src_is_if(use) &&
-          nir_src_parent_instr(use)->type == nir_instr_type_parallel_copy) {
-
-         nir_parallel_copy_entry *copy_entry =
-            list_entry(use, nir_parallel_copy_entry, src);
-
-         assert(!copy_entry->src_is_reg);
-         copy_entry->src_is_reg = true;
-         nir_src_rewrite(&copy_entry->src, reg);
-         continue;
-      }
-
       /* If the immediate preceding instruction is a load_reg from the same
        * register, use it instead of creating a new load_reg. This helps when
        * a register is referenced in multiple sources in the same instruction,
