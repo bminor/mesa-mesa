@@ -3634,7 +3634,7 @@
         "description": "meson: fix VkLayer_MESA_device_select in the devenv",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "294d8ce80a435a40e89062e3585b7d3a70746ace",
         "notes": null

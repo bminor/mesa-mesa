@@ -51,4 +51,4 @@ configure_file(
   input : 'VkLayer_MESA_device_select.json.in',
   output : '@PLAINNAME@_dev.json',
 )
-devenv.append('VK_ADD_LAYER_PATH', meson.current_build_dir())
+devenv.append('VK_ADD_IMPLICIT_LAYER_PATH', meson.current_build_dir())
