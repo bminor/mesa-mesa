@@ -51,6 +51,9 @@ use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
    if (!reorder || (glc && cb_data->gfx_level < GFX8))
       return false;
 
+   if (intrin->intrinsic == nir_intrinsic_load_ssbo && (access & ACCESS_ATOMIC) && intrin->def.bit_size == 64)
+      return false;
+
    nir_intrinsic_set_access(intrin, access | ACCESS_SMEM_AMD);
    return true;
 }

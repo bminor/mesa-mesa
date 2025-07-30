@@ -638,6 +638,10 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_neede
    else if (idxen)
       vaddr = Operand(info.idx);
 
+   bool atomic64 =
+      (info.sync.semantics & semantic_atomic) && info.component_size == 8 && align_ >= 8;
+   bool use_mtbuf = false;
+
    unsigned bytes_size = 0;
    aco_opcode op;
    if (bytes_needed == 1 || align_ % 2) {
@@ -651,9 +655,11 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_neede
    } else if (bytes_needed <= 4) {
       bytes_size = 4;
       op = aco_opcode::buffer_load_dword;
-   } else if (bytes_needed <= 8) {
+   } else if (bytes_needed <= 8 || atomic64) {
       bytes_size = 8;
-      op = aco_opcode::buffer_load_dwordx2;
+      /* Use MTBUF for 64-bit atomic loads for correct bounds checking. */
+      use_mtbuf = atomic64;
+      op = use_mtbuf ? aco_opcode::tbuffer_load_format_xy : aco_opcode::buffer_load_dwordx2;
    } else if (bytes_needed <= 12 && bld.program->gfx_level > GFX6) {
       bytes_size = 12;
       op = aco_opcode::buffer_load_dwordx3;
@@ -661,19 +667,31 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_neede
       bytes_size = 16;
       op = aco_opcode::buffer_load_dwordx4;
    }
-   aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3 + 2 * info.disable_wqm, 1)};
+   aco_ptr<Instruction> mubuf{
+      create_instruction(op, use_mtbuf ? Format::MTBUF : Format::MUBUF, 3 + 2 * info.disable_wqm, 1)};
    mubuf->operands[0] = Operand(info.resource);
    mubuf->operands[1] = vaddr;
    mubuf->operands[2] = soffset;
-   mubuf->mubuf().offen = offen;
-   mubuf->mubuf().idxen = idxen;
-   mubuf->mubuf().cache = info.cache;
-   mubuf->mubuf().sync = info.sync;
-   mubuf->mubuf().offset = info.const_offset;
+   if (use_mtbuf) {
+      mubuf->mtbuf().offen = offen;
+      mubuf->mtbuf().idxen = idxen;
+      mubuf->mtbuf().cache = info.cache;
+      mubuf->mtbuf().sync = info.sync;
+      mubuf->mtbuf().offset = info.const_offset;
+      mubuf->mtbuf().dfmt = V_008F0C_BUF_DATA_FORMAT_32_32;
+      mubuf->mtbuf().nfmt = V_008F0C_BUF_NUM_FORMAT_UINT;
+      init_disable_wqm(bld, mubuf->mtbuf(), info.disable_wqm);
+   } else {
+      mubuf->mubuf().offen = offen;
+      mubuf->mubuf().idxen = idxen;
+      mubuf->mubuf().cache = info.cache;
+      mubuf->mubuf().sync = info.sync;
+      mubuf->mubuf().offset = info.const_offset;
+      init_disable_wqm(bld, mubuf->mubuf(), info.disable_wqm);
+   }
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
    Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    mubuf->definitions[0] = Definition(val);
-   init_disable_wqm(bld, mubuf->mubuf(), info.disable_wqm);
    bld.insert(std::move(mubuf));
 
    return val;
@@ -2262,10 +2280,16 @@ visit_store_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
 
    memory_sync_info sync = get_memory_sync_info(instr, storage_buffer, 0);
 
+   /* 64-bit atomic stores need to be at most 8 bytes so that they can use MTBUF for correct bounds
+    * checking. */
+   bool use_mtbuf =
+      (sync.semantics & semantic_atomic) && elem_size_bytes == 8 && nir_intrinsic_align(instr) >= 8;
+   unsigned max_size = use_mtbuf ? 8 : 16;
+
    unsigned write_count = 0;
    Temp write_datas[32];
    unsigned offsets[32];
-   split_buffer_store(ctx, instr, false, RegType::vgpr, data, writemask, 16, &write_count,
+   split_buffer_store(ctx, instr, false, RegType::vgpr, data, writemask, max_size, &write_count,
                       write_datas, offsets);
 
    /* GFX6-7 are affected by a hw bug that prevents address clamping to work
@@ -2281,16 +2305,32 @@ visit_store_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
       if (write_datas[i].bytes() < 4)
          type = ac_access_type_store_subdword;
 
-      aco_ptr<Instruction> store{create_instruction(op, Format::MUBUF, 6, 0)};
+      if (use_mtbuf) {
+         assert(write_datas[i].bytes() == 8);
+         op = aco_opcode::tbuffer_store_format_xy;
+      }
+
+      aco_ptr<Instruction> store{
+         create_instruction(op, use_mtbuf ? Format::MTBUF : Format::MUBUF, 6, 0)};
       store->operands[0] = Operand(rsrc);
       store->operands[1] = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
       store->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
       store->operands[3] = Operand(write_datas[i]);
-      store->mubuf().offset = offsets[i];
-      store->mubuf().offen = (offset.type() == RegType::vgpr);
-      store->mubuf().cache = get_cache_flags(ctx, access, type);
-      store->mubuf().sync = sync;
-      init_disable_wqm(bld, store->mubuf(), true);
+      if (use_mtbuf) {
+         store->mtbuf().offset = offsets[i];
+         store->mtbuf().offen = (offset.type() == RegType::vgpr);
+         store->mtbuf().cache = get_cache_flags(ctx, access, type);
+         store->mtbuf().sync = sync;
+         store->mtbuf().dfmt = V_008F0C_BUF_DATA_FORMAT_32_32;
+         store->mtbuf().nfmt = V_008F0C_BUF_NUM_FORMAT_UINT;
+         init_disable_wqm(bld, store->mtbuf(), true);
+      } else {
+         store->mubuf().offset = offsets[i];
+         store->mubuf().offen = (offset.type() == RegType::vgpr);
+         store->mubuf().cache = get_cache_flags(ctx, access, type);
+         store->mubuf().sync = sync;
+         init_disable_wqm(bld, store->mubuf(), true);
+      }
       ctx->block->instructions.emplace_back(std::move(store));
    }
 }
