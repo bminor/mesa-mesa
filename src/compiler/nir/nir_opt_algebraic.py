@@ -914,6 +914,10 @@ optimizations.extend([
    (('umax', ('umin', a, b), a), a),
    (('imin', ('imax', a, b), a), a),
    (('imax', ('imin', a, b), a), a),
+   (('fmax(nsz)', 'a(is_a_number_not_negative)', 'b(is_not_positive)'), ('fmul', a, 1.0)),
+   (('fmin(nsz)', 'a(is_a_number_not_positive)', 'b(is_not_negative)'), ('fmul', a, 1.0)),
+   (('fmax', 'a(is_a_number_not_negative)', 'b(is_lt_zero)'), ('fmul', a, 1.0)),
+   (('fmin', 'a(is_a_number_not_positive)', 'b(is_gt_zero)'), ('fmul', a, 1.0)),
 ])
 
 for op in ['ine', 'ieq', 'ilt', 'ige', 'ult', 'uge', 'bitz', 'bitnz',
