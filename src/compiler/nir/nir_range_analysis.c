@@ -640,6 +640,11 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       case nir_op_fceil:
       case nir_op_ftrunc:
       case nir_op_ffract:
+      case nir_op_f2f16:
+      case nir_op_f2f16_rtz:
+      case nir_op_f2f16_rtne:
+      case nir_op_f2f32:
+      case nir_op_f2f64:
       case nir_op_fdot2:
       case nir_op_fdot3:
       case nir_op_fdot4:
@@ -822,6 +827,32 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
          r.range = ge_zero;
 
       break;
+
+   case nir_op_f2f16:
+   case nir_op_f2f16_rtz:
+   case nir_op_f2f16_rtne:
+   case nir_op_f2f32:
+   case nir_op_f2f64: {
+      r = unpack_data(src_res[0]);
+
+      bool rtz = alu->op == nir_op_f2f16_rtz;
+      if (alu->op != nir_op_f2f16_rtne && alu->op != nir_op_f2f16_rtz) {
+         nir_shader *shader = nir_cf_node_get_function(&alu->instr.block->cf_node)->function->shader;
+         unsigned execution_mode = shader->info.float_controls_execution_mode;
+         rtz = nir_is_rounding_mode_rtz(execution_mode, alu->def.bit_size);
+      }
+
+      if (alu->src[0].src.ssa->bit_size > alu->def.bit_size) {
+         /* Unless we are rounding towards zero, large values can create Inf. */
+         if (!rtz && r.range != eq_zero)
+            r.is_finite = false;
+
+         /* Underflow can create new zeros. */
+         r.range = union_ranges(r.range, eq_zero);
+      }
+
+      break;
+   }
 
    case nir_op_fabs:
       r = unpack_data(src_res[0]);
