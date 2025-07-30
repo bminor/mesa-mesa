@@ -209,6 +209,7 @@ agx_fast_link(struct agx_linked_shader *linked, struct agx_device *dev,
       if (tag_write_disable) {
          reads_tib = false;
          writes_sample_mask = false;
+         linked->no_op = true;
       }
 
       agx_pack(&linked->fragment_control, FRAGMENT_CONTROL, cfg) {

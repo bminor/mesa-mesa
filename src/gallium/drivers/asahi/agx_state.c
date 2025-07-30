@@ -3561,7 +3561,8 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
       .cull = IS_DIRTY(RS),
       .cull_2 = varyings_dirty,
       .fragment_shader =
-         IS_DIRTY(FS) || varyings_dirty || IS_DIRTY(SAMPLE_MASK),
+         (IS_DIRTY(FS) || varyings_dirty || IS_DIRTY(SAMPLE_MASK)) &&
+         !ctx->linked.fs->no_op,
       .occlusion_query = IS_DIRTY(QUERY),
       .output_size = IS_DIRTY(VS_PROG),
       .viewport_count = 1, /* irrelevant */

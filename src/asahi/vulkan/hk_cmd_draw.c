@@ -2374,6 +2374,8 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
       .viewport_count = 1, /* irrelevant */
    };
 
+   dirty.fragment_shader &= !linked_fs->b.no_op;
+
    /* Calculate the update size. If it equals the header, there is nothing to
     * update so early-exit.
     */
