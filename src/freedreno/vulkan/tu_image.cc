@@ -587,7 +587,24 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
 
    const struct util_format_description *desc = util_format_description(image->layout[0].format);
    if (util_format_has_depth(desc) && device->use_lrz) {
+      /* If FDM offset is enabled, then the LRZ image will be shifted over. We
+       * have to overallocate it, but we have no idea how large the tiles it's
+       * used with will be. Try to calculate the worst-case width and height.
+       */
+      uint32_t extra_width = 0, extra_height = 0;
+      if (image->vk.create_flags &
+          VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) {
+         uint32_t gmem_pixels =
+            device->physical_device->gmem_size /
+            (desc->block.bits / 8);
+         extra_width = gmem_pixels /
+            device->physical_device->info->tile_align_h;
+         extra_height = gmem_pixels /
+            device->physical_device->info->tile_align_w;
+      }
+
       fdl6_lrz_layout_init<CHIP>(&image->lrz_layout, &image->layout[0],
+                                 extra_width, extra_height,
                                  device->physical_device->info,
                                  image->total_size, image->vk.array_layers);
 

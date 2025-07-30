@@ -650,6 +650,7 @@ struct tu_bin_size_params {
    bool force_lrz_write_dis;
    enum a6xx_buffers_location buffers_location;
    enum a6xx_lrz_feedback_mask lrz_feedback_zmode_mask;
+   bool force_lrz_dis;
 };
 
 template <chip CHIP>
@@ -674,7 +675,8 @@ tu6_emit_bin_size(struct tu_cs *cs,
                                             .render_mode = p.render_mode,
                                             .force_lrz_write_dis = p.force_lrz_write_dis,
                                             .lrz_feedback_zmode_mask =
-                                               p.lrz_feedback_zmode_mask, ));
+                                               p.lrz_feedback_zmode_mask,
+                                            .force_lrz_dis = p.force_lrz_dis));
    }
 
    tu_cs_emit_regs(cs, RB_CNTL(CHIP,
@@ -1270,6 +1272,17 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
       views <= MAX_HW_SCALED_VIEWS && !cmd->state.rp.shared_viewport &&
       bin_is_scaled;
 
+   /* We cannot support LRZ if we cannot use HW bin scaling and the bin is
+    * scaled (i.e. less than full resolution)
+    */
+   bool disable_lrz = bin_is_scaled && !bin_scale_en;
+
+   /* We cannot support LRZ for the first row and column because the offset
+    * required wouldn't be aligned to HW requirements.
+    */
+   if (fdm_offsets && (tile->pos.x == 0 || tile->pos.y == 0))
+      disable_lrz = true;
+
    tu6_emit_bin_size<CHIP>(
       cs, tiling->tile0.width, tiling->tile0.height,
       {
@@ -1277,10 +1290,11 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
          .force_lrz_write_dis = !phys_dev->info->a6xx.has_lrz_feedback,
          .buffers_location = BUFFERS_IN_GMEM,
          .lrz_feedback_zmode_mask =
-            phys_dev->info->a6xx.has_lrz_feedback
+            phys_dev->info->a6xx.has_lrz_feedback && !bin_is_scaled
                ? (hw_binning ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z :
                   LRZ_FEEDBACK_EARLY_Z_LATE_Z)
                : LRZ_FEEDBACK_NONE,
+         .force_lrz_dis = CHIP >= A7XX && disable_lrz,
       });
 
    tu_cs_emit_regs(cs,

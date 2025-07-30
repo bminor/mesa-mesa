@@ -243,8 +243,8 @@ setup_lrz(struct fd_resource *rsc)
 {
    struct fd_screen *screen = fd_screen(rsc->b.b.screen);
    uint32_t nr_layers = 1;
-   fdl6_lrz_layout_init<CHIP>(&rsc->lrz_layout, &rsc->layout, screen->info, 0,
-                              nr_layers);
+   fdl6_lrz_layout_init<CHIP>(&rsc->lrz_layout, &rsc->layout, 0, 0,
+                              screen->info, 0, nr_layers);
 
    rsc->lrz = fd_bo_new(screen->dev, rsc->lrz_layout.lrz_total_size,
                         FD_BO_NOMAP, "lrz");

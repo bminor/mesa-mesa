@@ -2840,9 +2840,10 @@ tu_shader_create(struct tu_device *dev,
       /* FDM isn't compatible with LRZ, because the LRZ image uses the original
        * resolution and we would need to use the low resolution.
        *
-       * TODO: Use a patchpoint to only disable LRZ for scaled bins.
+       * TODO: Use a patchpoint to only disable LRZ for scaled bins. On a7xx
+       * we use GRAS_SC_BIN_CNTL::FORCE_LRZ_DIS instead.
        */
-      if (key->fragment_density_map)
+      if (key->fragment_density_map && dev->physical_device->info->chip < 7)
          shader->fs.lrz.status = TU_LRZ_FORCE_DISABLE_LRZ;
       if (!fs->fs.early_fragment_tests &&
           (fs->no_earlyz || fs->writes_stencilref)) {
