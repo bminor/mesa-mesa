@@ -5647,6 +5647,8 @@ struct anv_image {
 
    /* Link in the anv_device.image_private_objects list */
    struct list_head link;
+   /* Whether the image was added to anv_device.image_private_objects list */
+   bool device_registered;
    struct anv_image_memory_range av1_cdf_table;
 };
 

@@ -7434,7 +7434,7 @@
         "description": "anv: fix wsi image aliasing",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b21e62b71ae6a7dd3e613e7cf0cd44dcb706366c",
         "notes": null
