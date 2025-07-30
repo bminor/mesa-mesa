@@ -2366,6 +2366,8 @@ handle_vector_operands(ra_ctx& ctx, RegisterFile& register_file,
    for (unsigned i = 0; i < num_operands; i++) {
       vec->operands[i] = instr->operands[operand_index + i];
       vec->operands[i].setFixed(ctx.assignments[vec->operands[i].tempId()].reg);
+      /* The operands might not be late-kill if they are tied to a definition. */
+      vec->operands[i].setLateKill(true);
    }
    Temp vec_temp = ctx.program->allocateTmp(rc);
    ctx.assignments.emplace_back();

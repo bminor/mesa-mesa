@@ -44,7 +44,7 @@
         "description": "aco/ra: set late-kill for operands of temporary p_create_vector",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c279dd6e61414c42731235167ff46441098b24f4",
         "notes": null
