@@ -4402,6 +4402,7 @@ rebind_ubo(struct zink_context *ctx, gl_shader_stage shader, unsigned slot)
    if (res) {
       res->obj->unordered_read = false;
       res->obj->access |= VK_ACCESS_SHADER_READ_BIT;
+      res->obj->access_stage |= mesa_to_vk_shader_stage(shader);
    }
    ctx->invalidate_descriptor_state(ctx, shader, ZINK_DESCRIPTOR_TYPE_UBO, slot, 1);
    return res;
@@ -4424,6 +4425,7 @@ rebind_ssbo(struct zink_context *ctx, gl_shader_stage shader, unsigned slot)
    if (res) {
       res->obj->unordered_read = false;
       res->obj->access |= VK_ACCESS_SHADER_READ_BIT;
+      res->obj->access_stage |= mesa_to_vk_shader_stage(shader);
       if (ctx->writable_ssbos[shader] & BITFIELD_BIT(slot)) {
          res->obj->unordered_write = false;
          res->obj->access |= VK_ACCESS_SHADER_WRITE_BIT;
@@ -4447,6 +4449,7 @@ rebind_tbo(struct zink_context *ctx, gl_shader_stage shader, unsigned slot)
    if (res) {
       res->obj->unordered_read = false;
       res->obj->access |= VK_ACCESS_SHADER_READ_BIT;
+      res->obj->access_stage |= mesa_to_vk_shader_stage(shader);
    }
    ctx->invalidate_descriptor_state(ctx, shader, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
    return res;
@@ -4469,6 +4472,7 @@ rebind_ibo(struct zink_context *ctx, gl_shader_stage shader, unsigned slot)
    if (res) {
       res->obj->unordered_read = false;
       res->obj->access |= VK_ACCESS_SHADER_READ_BIT;
+      res->obj->access_stage |= mesa_to_vk_shader_stage(shader);
       if (image_view->base.access & PIPE_IMAGE_ACCESS_WRITE) {
          res->obj->unordered_write = false;
          res->obj->access |= VK_ACCESS_SHADER_WRITE_BIT;
