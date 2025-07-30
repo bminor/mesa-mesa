@@ -613,8 +613,10 @@ uint16_t vpe_get_num_segments(struct vpe_priv *vpe_priv, const struct vpe_rect *
     return (uint16_t)(max(max(num_seg_src, num_seg_dst), 1));
 }
 
-bool should_generate_cmd_info(enum vpe_stream_type stream_type)
+bool should_generate_cmd_info(struct stream_ctx *stream_ctx)
 {
+    enum vpe_stream_type stream_type = stream_ctx->stream_type;
+
     switch (stream_type) {
     case VPE_STREAM_TYPE_INPUT:
     case VPE_STREAM_TYPE_BG_GEN:

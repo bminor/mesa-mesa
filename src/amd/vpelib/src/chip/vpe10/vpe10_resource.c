@@ -815,6 +815,27 @@ static void build_clamping_params(
     }
 }
 
+static enum mpcc_blend_mode get_blend_mode(
+    enum mpc_mux_topsel topsel, enum mpc_mux_botsel botsel, bool bypass)
+{
+    enum mpcc_blend_mode blend_mode;
+    /* program mux and MPCC_MODE */
+    if (bypass) {
+        blend_mode = MPCC_BLEND_MODE_BYPASS;
+    } else if (botsel != MPC_MUX_BOTSEL_DISABLE) {
+        // ERROR: Actually VPE10 only supports 1 MPCC so botsel should always disable
+        VPE_ASSERT(0);
+        blend_mode = MPCC_BLEND_MODE_TOP_BOT_BLENDING;
+    } else {
+        // single layer, use Top layer bleneded with background color
+        if (topsel != MPC_MUX_TOPSEL_DISABLE)
+            blend_mode = MPCC_BLEND_MODE_TOP_LAYER_ONLY;
+        else // both layer disabled, pure bypass mode
+            blend_mode = MPCC_BLEND_MODE_BYPASS;
+    }
+    return blend_mode;
+}
+
 int32_t vpe10_program_frontend(struct vpe_priv *vpe_priv, uint32_t pipe_idx, uint32_t cmd_idx,
     uint32_t cmd_input_idx, bool seg_only)
 {
@@ -869,9 +890,12 @@ int32_t vpe10_program_frontend(struct vpe_priv *vpe_priv, uint32_t pipe_idx, uin
         dpp->funcs->program_input_transfer_func(dpp, stream_ctx->input_tf);
         dpp->funcs->program_gamut_remap(dpp, stream_ctx->gamut_remap);
 
+        enum mpcc_blend_mode blend_mode = get_blend_mode(
+            MPC_MUX_TOPSEL_DPP0, MPC_MUX_BOTSEL_DISABLE, vpe_priv->init.debug.mpc_bypass == 1);
+
         // for not bypass mode, we always are in single layer coming from DPP and output to OPP
         mpc->funcs->program_mpcc_mux(mpc, MPC_MPCCID_0, MPC_MUX_TOPSEL_DPP0, MPC_MUX_BOTSEL_DISABLE,
-            MPC_MUX_OUTMUX_MPCC0, MPC_MUX_OPPID_OPP0);
+            MPC_MUX_OUTMUX_MPCC0, MPC_MUX_OPPID_OPP0, blend_mode);
 
         // program shaper, 3dlut and 1dlut in MPC for stream before blend
         mpc->funcs->program_movable_cm(

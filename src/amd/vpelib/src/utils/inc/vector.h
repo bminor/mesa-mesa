@@ -66,6 +66,14 @@ void *vpe_vector_get(struct vpe_vector *vector, size_t idx);
 void vpe_vector_push(struct vpe_vector *vector, void *p_element);
 
 /**
+ * Remove elements from the vector by index. (ex. remove idx, idx+1 ... idx+(num_to_erase-1))
+ * @param[in]  vector    vector that we want to push to the end.
+ * @param[in]  idx pointer of the element
+ * @param[in]  number of elements to erase, starting from and including idx
+ */
+void vpe_vector_erase(struct vpe_vector *vector, size_t idx, size_t num_to_erase);
+
+/**
  * Clear the vector.
  * @param[in]  vector vector that we want to clear.
  */

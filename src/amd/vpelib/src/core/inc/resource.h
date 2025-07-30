@@ -163,7 +163,7 @@ void calculate_scaling_ratios(struct scaler_data *scl_data, struct vpe_rect *src
 uint16_t vpe_get_num_segments(struct vpe_priv *vpe_priv, const struct vpe_rect *src,
     const struct vpe_rect *dst, const uint32_t max_seg_width);
 
-bool should_generate_cmd_info(enum vpe_stream_type stream_type);
+bool should_generate_cmd_info(struct stream_ctx *stream_ctx);
 
 enum vpe_status vpe_resource_build_scaling_params(struct segment_ctx *segment);
 

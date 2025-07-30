@@ -67,7 +67,7 @@ void vpe10_construct_mpc(struct vpe_priv *vpe_priv, struct mpc *mpc)
 
 void vpe10_mpc_program_mpcc_mux(struct mpc *mpc, enum mpc_mpccid mpcc_idx,
     enum mpc_mux_topsel topsel, enum mpc_mux_botsel botsel, enum mpc_mux_outmux outmux,
-    enum mpc_mux_oppid oppid)
+    enum mpc_mux_oppid oppid, enum mpcc_blend_mode blend_mode)
 {
     PROGRAM_ENTRY();
 
@@ -77,21 +77,7 @@ void vpe10_mpc_program_mpcc_mux(struct mpc *mpc, enum mpc_mpccid mpcc_idx,
     REG_SET(VPMPCC_BOT_SEL, 0, VPMPCC_BOT_SEL, botsel);
     REG_SET(VPMPC_OUT_MUX, 0, VPMPC_OUT_MUX, outmux);
     REG_SET(VPMPCC_VPOPP_ID, 0, VPMPCC_VPOPP_ID, oppid);
-
-    /* program mux and MPCC_MODE */
-    if (mpc->vpe_priv->init.debug.mpc_bypass) {
-        REG_UPDATE(VPMPCC_CONTROL, VPMPCC_MODE, MPCC_BLEND_MODE_BYPASS);
-    } else if (botsel != MPC_MUX_BOTSEL_DISABLE) {
-        // ERROR: Actually VPE10 only supports 1 MPCC so botsel should always disable
-        VPE_ASSERT(0);
-        REG_UPDATE(VPMPCC_CONTROL, VPMPCC_MODE, MPCC_BLEND_MODE_TOP_BOT_BLENDING);
-    } else {
-        // single layer, use Top layer bleneded with background color
-        if (topsel != MPC_MUX_TOPSEL_DISABLE)
-            REG_UPDATE(VPMPCC_CONTROL, VPMPCC_MODE, MPCC_BLEND_MODE_TOP_LAYER_ONLY);
-        else // both layer disabled, pure bypass mode
-            REG_UPDATE(VPMPCC_CONTROL, VPMPCC_MODE, MPCC_BLEND_MODE_BYPASS);
-    }
+    REG_UPDATE(VPMPCC_CONTROL, VPMPCC_MODE, blend_mode);
 }
 
 void vpe10_mpc_program_mpcc_blending(
