@@ -1680,6 +1680,8 @@ vk_create_graphics_pipeline(struct vk_device *device,
       all_state = &all_state_tmp;
    }
 
+   VkShaderStageFlags imported_stages = 0;
+
    uint32_t set_layout_count = 0;
    struct vk_descriptor_set_layout *set_layouts[MESA_VK_MAX_DESCRIPTOR_SETS] = { 0 };
 
@@ -1717,6 +1719,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
                continue;
 
             stages[lib_stage->stage] = vk_pipeline_stage_clone(lib_stage);
+            imported_stages |= mesa_to_vk_shader_stage(lib_stage->stage);
          }
       }
    }
@@ -1748,6 +1751,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
       }
    }
 
+   VkShaderStageFlags all_stages = imported_stages;
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage_info =
          &pCreateInfo->pStages[i];
@@ -1764,7 +1768,12 @@ vk_create_graphics_pipeline(struct vk_device *device,
       stage_feedbacks[stage].flags |=
          VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
 
-      if (!vk_pipeline_stage_is_null(&stages[stage]))
+      /* We don't need to load anything for imported stages, precomp should be
+       * included if
+       * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
+       * provided and shader should obviously be there.
+       */
+      if (imported_stages & stage_info->stage)
          continue;
 
       stages[stage] = (struct vk_pipeline_stage) {
@@ -1781,6 +1790,8 @@ vk_create_graphics_pipeline(struct vk_device *device,
       if (result != VK_SUCCESS)
          goto fail_stages;
 
+      all_stages |= stage_info->stage;
+
       const int64_t stage_end = os_time_get_nano();
       stage_feedbacks[stage].duration += stage_end - stage_start;
    }
@@ -1789,7 +1800,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
    uint32_t stage_count = 0;
    for (uint32_t s = 0; s < ARRAY_SIZE(stages); s++) {
       assert(s >= stage_count);
-      if (!vk_pipeline_stage_is_null(&stages[s]))
+      if (all_stages & mesa_to_vk_shader_stage(s))
          stages[stage_count++] = stages[s];
    }
    for (uint32_t s = stage_count; s < ARRAY_SIZE(stages); s++)
