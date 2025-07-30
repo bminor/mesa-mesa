@@ -481,12 +481,9 @@ VkResult anv_CreateDevice(
    list_inithead(&device->image_private_objects);
    list_inithead(&device->bvh_dumps);
 
-   if (!anv_slab_bo_init(device))
-      goto fail_vmas;
-
    if (pthread_mutex_init(&device->mutex, NULL) != 0) {
       result = vk_error(device, VK_ERROR_INITIALIZATION_FAILED);
-      goto fail_slab;
+      goto fail_vmas;
    }
 
    pthread_condattr_t condattr;
@@ -512,6 +509,9 @@ VkResult anv_CreateDevice(
    result = anv_bo_cache_init(&device->bo_cache, device);
    if (result != VK_SUCCESS)
       goto fail_queue_cond;
+
+   if (!anv_slab_bo_init(device))
+      goto fail_cache;
 
    anv_bo_pool_init(&device->batch_bo_pool, device, "batch",
                     ANV_BO_ALLOC_BATCH_BUFFER_FLAGS);
@@ -1115,13 +1115,13 @@ VkResult anv_CreateDevice(
    if (device->vk.enabled_extensions.KHR_acceleration_structure)
       anv_bo_pool_finish(&device->bvh_bo_pool);
    anv_bo_pool_finish(&device->batch_bo_pool);
+   anv_slab_bo_deinit(device);
+ fail_cache:
    anv_bo_cache_finish(&device->bo_cache);
  fail_queue_cond:
    pthread_cond_destroy(&device->queue_submit);
  fail_mutex:
    pthread_mutex_destroy(&device->mutex);
-fail_slab:
-   anv_slab_bo_deinit(device);
  fail_vmas:
    util_vma_heap_finish(&device->vma_trtt);
    util_vma_heap_finish(&device->vma_dynamic_visible);

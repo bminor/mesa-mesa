@@ -3274,7 +3274,7 @@
         "description": "anv: fix uninitialized mutex lock in anv_slab_bo_deinit()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3bf6d42fda02f54e6235d2c0fc6a855b2bd75a66",
         "notes": null
