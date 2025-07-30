@@ -14,6 +14,7 @@
 #include "agx_nir_lower_gs.h"
 #include "agx_nir_lower_vbo.h"
 #include "glsl_types.h"
+#include "hk_instance.h"
 #include "libagx.h"
 #include "nir.h"
 #include "nir_builder.h"
@@ -254,18 +255,13 @@ hk_populate_fs_key(struct hk_fs_key *key,
 }
 
 enum hk_feature_key {
-   HK_FEAT_MIN_LOD = BITFIELD_BIT(0),
-   HK_FEAT_CUSTOM_BORDER = BITFIELD_BIT(1),
+   HK_FEAT_CUSTOM_BORDER = BITFIELD_BIT(0),
 };
 
 static enum hk_feature_key
-hk_make_feature_key(const struct vk_features *features)
+hk_make_feature_key(const struct vk_features *feats)
 {
-   if (!features)
-      return ~0U;
-
-   return (features->minLod ? HK_FEAT_MIN_LOD : 0) |
-          (features->customBorderColors ? HK_FEAT_CUSTOM_BORDER : 0);
+   return (!feats || feats->customBorderColors) ? HK_FEAT_CUSTOM_BORDER : 0;
 }
 
 static void
@@ -842,7 +838,10 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
     */
    NIR_PASS(_, nir, agx_nir_lower_texture_early, true /* support_lod_bias */);
 
-   if (features & HK_FEAT_MIN_LOD) {
+   struct hk_instance *instance = hk_physical_device_instance(
+      (struct hk_physical_device *)dev->vk.physical);
+
+   if (instance->image_view_min_lod) {
       NIR_PASS(_, nir, agx_nir_lower_image_view_min_lod);
    }
 

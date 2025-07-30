@@ -651,6 +651,10 @@
    DRI_CONF_OPT_B(hk_fake_minmax, def, \
                   "Fake support for min/max filtering")
 
+#define DRI_CONF_HK_IMAGE_VIEW_MIN_LOD(def) \
+   DRI_CONF_OPT_B(hk_image_view_min_lod, def, \
+                  "Emulate VK_EXT_image_view_min_lod (conformant but slower)")
+
 /**
  * \brief venus specific configuration options
  */
