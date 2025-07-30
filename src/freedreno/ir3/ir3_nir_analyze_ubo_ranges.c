@@ -428,18 +428,11 @@ copy_global_to_uniform(nir_shader *nir, struct ir3_ubo_analysis_state *state)
 }
 
 static bool
-copy_ubo_to_uniform(nir_shader *nir, const struct ir3_const_state *const_state,
-                    bool const_data_via_cp)
+copy_ubo_to_uniform(nir_shader *nir, const struct ir3_const_state *const_state)
 {
    const struct ir3_ubo_analysis_state *state = &const_state->ubo_state;
 
    if (state->num_enabled == 0)
-      return false;
-
-   if (state->num_enabled == 1 &&
-       !state->range[0].ubo.bindless &&
-       state->range[0].ubo.block == const_state->consts_ubo.idx &&
-       const_data_via_cp)
       return false;
 
    nir_function_impl *preamble = nir_shader_get_preamble(nir);
@@ -448,15 +441,6 @@ copy_ubo_to_uniform(nir_shader *nir, const struct ir3_const_state *const_state,
 
    for (unsigned i = 0; i < state->num_enabled; i++) {
       const struct ir3_ubo_range *range = &state->range[i];
-
-      /* The constant_data UBO is pushed in a different path from normal
-       * uniforms, and the state is setup earlier so it makes more sense to let
-       * the CP do it for us.
-       */
-      if (!range->ubo.bindless &&
-          range->ubo.block == const_state->consts_ubo.idx &&
-          const_data_via_cp)
-         continue;
 
       nir_def *ubo = nir_imm_int(b, range->ubo.block);
       if (range->ubo.bindless) {
@@ -736,8 +720,7 @@ ir3_nir_lower_ubo_loads(nir_shader *nir, struct ir3_shader_variant *v)
    }
 
    if (compiler->has_preamble && push_ubos)
-      progress |= copy_ubo_to_uniform(
-         nir, const_state, !compiler->load_shader_consts_via_preamble);
+      progress |= copy_ubo_to_uniform(nir, const_state);
 
    return progress;
 }
