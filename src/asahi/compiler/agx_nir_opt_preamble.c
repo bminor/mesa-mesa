@@ -169,7 +169,7 @@ alu_cost(nir_alu_instr *alu)
    case nir_op_u2fmp:
    case nir_op_u2f16:
    case nir_op_u2f32:
-   case nir_op_interleave_agx:
+   case nir_op_interleave:
       /* IC */
       return 4.0;
 

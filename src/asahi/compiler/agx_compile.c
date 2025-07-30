@@ -1894,7 +1894,7 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
       BINOP(iand, and);
       BINOP(ior, or);
       BINOP(ixor, xor);
-      BINOP(interleave_agx, intl);
+      BINOP(interleave, intl);
 
    case nir_op_fadd:
       if (instr->def.bit_size == 16)
