@@ -5299,7 +5299,8 @@ zink_context_replace_buffer_storage(struct pipe_context *pctx, struct pipe_resou
       num_rebinds = d->bind_count[0] + d->bind_count[1];
       rebind_mask = 0;
    }
-   if (num_rebinds && rebind_buffer(ctx, d, rebind_mask, num_rebinds) < num_rebinds)
+   unsigned rebind_count = num_rebinds ? rebind_buffer(ctx, d, rebind_mask, num_rebinds) : 0;
+   if (rebind_count != d->bind_count[0] + d->bind_count[1])
       ctx->buffer_rebind_counter = p_atomic_inc_return(&screen->buffer_rebind_counter);
 }
 
