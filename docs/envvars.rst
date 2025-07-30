@@ -1755,6 +1755,14 @@ RadeonSI driver environment variables
       Disable register shadowing in userqueue. This will also disable userqueue mcbp.
    ``novideotiling``
       Disable tiling for video.
+   ``nodectier1``
+      Disable tier1 for video decode.
+   ``nodectier2``
+      Disable tier2 for video decode.
+   ``nodectier3``
+      Disable tier3 for video decode.
+   ``noenctier2``
+      Disable tier2 for video encode.
 
 r600 driver environment variables
 ---------------------------------

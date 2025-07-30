@@ -2760,6 +2760,9 @@ static void radeon_dec_destroy_fence(struct pipe_video_codec *decoder,
 
 static bool radeon_dec_enable_tier3(struct si_context *sctx, uint32_t codec)
 {
+   if (sctx->screen->multimedia_debug_flags & DBG(NO_DECODE_TIER3))
+      return false;
+
    if (sctx->vcn_ip_ver < VCN_5_0_0)
       return false;
 
@@ -2768,6 +2771,9 @@ static bool radeon_dec_enable_tier3(struct si_context *sctx, uint32_t codec)
 
 static bool radeon_dec_enable_tier2(struct si_context *sctx, uint32_t codec)
 {
+   if (sctx->screen->multimedia_debug_flags & DBG(NO_DECODE_TIER2))
+      return false;
+
    if (sctx->vcn_ip_ver < VCN_3_0_0)
       return false;
 
@@ -2777,6 +2783,9 @@ static bool radeon_dec_enable_tier2(struct si_context *sctx, uint32_t codec)
 
 static bool radeon_dec_enable_tier1(struct si_context *sctx, uint32_t codec)
 {
+   if (sctx->screen->multimedia_debug_flags & DBG(NO_DECODE_TIER1))
+      return false;
+
    if (sctx->vcn_ip_ver > VCN_2_6_0)
       return false;
 

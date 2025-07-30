@@ -2019,7 +2019,8 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
 
    ac_vcn_enc_init_cmds(&enc->cmd, sscreen->info.vcn_ip_version);
 
-   if (sscreen->info.vcn_ip_version >= VCN_5_0_0)
+   if (sscreen->info.vcn_ip_version >= VCN_5_0_0 &&
+       !(sscreen->multimedia_debug_flags & DBG(NO_ENCODE_TIER2)))
       enc->dpb_type = DPB_TIER_2;
 
    if (enc->dpb_type == DPB_TIER_2)

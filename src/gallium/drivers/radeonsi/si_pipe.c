@@ -129,6 +129,10 @@ static const struct debug_named_value radeonsi_multimedia_debug_options[] = {
    {"noefc", DBG(NO_EFC), "Disable hardware based encoder colour format conversion."},
    {"lowlatencyenc", DBG(LOW_LATENCY_ENCODE), "Enable low latency encoding."},
    {"novideotiling", DBG(NO_VIDEO_TILING), "Disable tiling for video."},
+   {"nodectier1", DBG(NO_DECODE_TIER1), "Disable tier1 for video decode."},
+   {"nodectier2", DBG(NO_DECODE_TIER2), "Disable tier2 for video decode."},
+   {"nodectier3", DBG(NO_DECODE_TIER3), "Disable tier3 for video decode."},
+   {"noenctier2", DBG(NO_ENCODE_TIER2), "Disable tier2 for video encode."},
 
    DEBUG_NAMED_VALUE_END /* must be last */
 };
