@@ -67,6 +67,21 @@ GfxStreamConnectionManager* GfxStreamConnectionManager::getThreadLocalInstance(
     return tls;
 }
 
+void GfxStreamConnectionManager::resetThreadLocalInstance() {
+    if (unlikely(!gfxstream_connection_manager_tls_key_valid)) {
+        return;
+    }
+
+    GfxStreamConnectionManager* tls =
+        (GfxStreamConnectionManager*)tss_get(gfxstream_connection_manager_tls_key);
+    if (unlikely(!tls)) {
+        return;
+    }
+
+    delete tls;
+    tss_set(gfxstream_connection_manager_tls_key, nullptr);
+}
+
 GfxStreamConnectionManager::GfxStreamConnectionManager(GfxStreamTransportType type,
                                                        VirtGpuCapset capset)
     : mTransportType(type), mCapset(capset) {}
