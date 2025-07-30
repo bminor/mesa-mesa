@@ -744,6 +744,16 @@ impl<T: Into<SSARef>> From<T> for SrcRef {
     }
 }
 
+impl From<PredRef> for SrcRef {
+    fn from(value: PredRef) -> Self {
+        match value {
+            PredRef::None => SrcRef::True,
+            PredRef::Reg(reg) => SrcRef::Reg(reg),
+            PredRef::SSA(ssa) => SrcRef::SSA(ssa.into()),
+        }
+    }
+}
+
 impl fmt::Display for SrcRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -1095,6 +1105,14 @@ impl Src {
         self.src_ref.is_bindless_cbuf()
     }
 
+    pub fn is_upred_reg(&self) -> bool {
+        match &self.src_ref {
+            SrcRef::SSA(ssa) => ssa.file() == Some(RegFile::UPred),
+            SrcRef::Reg(reg) => reg.file() == RegFile::UPred,
+            _ => false,
+        }
+    }
+
     pub fn is_predicate(&self) -> bool {
         self.src_ref.is_predicate()
     }
@@ -1115,6 +1133,10 @@ impl Src {
     pub fn is_nonzero(&self) -> bool {
         assert!(self.is_unmodified());
         matches!(self.src_ref, SrcRef::Imm32(x) if x != 0)
+    }
+
+    pub fn is_true(&self) -> bool {
+        self.as_bool() == Some(true)
     }
 
     pub fn is_fneg_zero(&self, src_type: SrcType) -> bool {
@@ -1195,6 +1217,20 @@ impl<T: Into<SrcRef>> From<T> for Src {
         Src {
             src_ref: value.into(),
             src_mod: SrcMod::None,
+            src_swizzle: SrcSwizzle::None,
+        }
+    }
+}
+
+impl From<Pred> for Src {
+    fn from(value: Pred) -> Self {
+        Src {
+            src_ref: value.pred_ref.into(),
+            src_mod: if value.pred_inv {
+                SrcMod::BNot
+            } else {
+                SrcMod::None
+            },
             src_swizzle: SrcSwizzle::None,
         }
     }
