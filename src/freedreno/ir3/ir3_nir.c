@@ -1582,6 +1582,7 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
          ir3_const_reserve_space(&const_state->allocs,
                                  IR3_CONST_ALLOC_PRIMITIVE_PARAM, 2, 1);
          break;
+      case MESA_SHADER_VERTEX:
       case MESA_SHADER_GEOMETRY:
          ir3_const_reserve_space(&const_state->allocs,
                                  IR3_CONST_ALLOC_PRIMITIVE_PARAM, 1, 1);
@@ -1589,18 +1590,18 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
       default:
          break;
       }
-   }
 
-   if (v->type == MESA_SHADER_VERTEX) {
-      ir3_const_reserve_space(&const_state->allocs,
-                              IR3_CONST_ALLOC_PRIMITIVE_PARAM, 1, 1);
-   }
-
-   if ((v->type == MESA_SHADER_TESS_CTRL || v->type == MESA_SHADER_TESS_EVAL ||
-        v->type == MESA_SHADER_GEOMETRY)) {
-      ir3_const_reserve_space(&const_state->allocs,
-                              IR3_CONST_ALLOC_PRIMITIVE_MAP,
-                              DIV_ROUND_UP(v->input_size, 4), 1);
+      switch (v->type) {
+      case MESA_SHADER_TESS_CTRL:
+      case MESA_SHADER_TESS_EVAL:
+      case MESA_SHADER_GEOMETRY:
+         ir3_const_reserve_space(&const_state->allocs,
+                                 IR3_CONST_ALLOC_PRIMITIVE_MAP,
+                                 DIV_ROUND_UP(v->input_size, 4), 1);
+         break;
+      default:
+         break;
+      }
    }
 
    assert(const_state->allocs.max_const_offset_vec4 <= ir3_max_const(v));
