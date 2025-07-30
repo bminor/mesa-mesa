@@ -219,7 +219,7 @@ static void radeon_vcn_enc_get_latency_param(struct radeon_encoder *enc)
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
 
    enc->enc_pic.enc_latency.encode_latency =
-      sscreen->debug_flags & DBG(LOW_LATENCY_ENCODE) ? 1000 : 0;
+      sscreen->multimedia_debug_flags & DBG(LOW_LATENCY_ENCODE) ? 1000 : 0;
 }
 
 static void radeon_vcn_enc_h264_get_session_param(struct radeon_encoder *enc,

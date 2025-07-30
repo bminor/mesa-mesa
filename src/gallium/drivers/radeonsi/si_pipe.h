@@ -186,10 +186,6 @@ enum
    DBG_NO_FAST_DISPLAY_LIST,
    DBG_NO_DMA_SHADERS,
 
-   /* Multimedia options: */
-   DBG_NO_EFC,
-   DBG_LOW_LATENCY_ENCODE,
-
    /* 3D engine options: */
    DBG_NO_NGG,
    DBG_ALWAYS_NGG_CULLING_ALL,
@@ -253,6 +249,13 @@ enum
    DBG_CHECK_IR,
    DBG_MONOLITHIC_SHADERS,
    DBG_NO_OPT_VARIANT,
+};
+
+/* Debug options for multimedia. */
+enum
+{
+   DBG_NO_EFC,
+   DBG_LOW_LATENCY_ENCODE,
 };
 
 enum
@@ -525,6 +528,7 @@ struct si_screen {
    struct nir_shader_compiler_options *nir_options;
    uint64_t debug_flags;
    uint64_t shader_debug_flags;
+   uint64_t multimedia_debug_flags;
    char renderer_string[183];
 
    unsigned pa_sc_raster_config;

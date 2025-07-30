@@ -58,10 +58,6 @@ static const struct debug_named_value radeonsi_debug_options[] = {
    {"nofastdlist", DBG(NO_FAST_DISPLAY_LIST), "Disable fast display lists"},
    {"nodmashaders", DBG(NO_DMA_SHADERS), "Disable uploading shaders via CP DMA and map them directly."},
 
-   /* Multimedia options: */
-   { "noefc", DBG(NO_EFC), "Disable hardware based encoder colour format conversion."},
-   {"lowlatencyenc", DBG(LOW_LATENCY_ENCODE), "Enable low latency encoding."},
-
    /* 3D engine options: */
    {"nongg", DBG(NO_NGG), "Disable NGG and use the legacy pipeline."},
    {"nggc", DBG(ALWAYS_NGG_CULLING_ALL), "Always use NGG culling even when it can hurt."},
@@ -124,6 +120,14 @@ static const struct debug_named_value radeonsi_shader_debug_options[] = {
    {"nooptvariant", DBG(NO_OPT_VARIANT), "Disable compiling optimized shader variants."},
    {"useaco", DBG(USE_ACO), "Use ACO as shader compiler when possible"},
    {"usellvm", DBG(USE_LLVM), "Use LLVM as shader compiler when possible"},
+
+   DEBUG_NAMED_VALUE_END /* must be last */
+};
+
+static const struct debug_named_value radeonsi_multimedia_debug_options[] = {
+   /* Multimedia options: */
+   {"noefc", DBG(NO_EFC), "Disable hardware based encoder colour format conversion."},
+   {"lowlatencyenc", DBG(LOW_LATENCY_ENCODE), "Enable low latency encoding."},
 
    DEBUG_NAMED_VALUE_END /* must be last */
 };
@@ -1299,6 +1303,7 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    sscreen->debug_flags = debug_get_flags_option("R600_DEBUG", radeonsi_debug_options, 0);
    sscreen->debug_flags |= debug_get_flags_option("AMD_DEBUG", radeonsi_debug_options, 0);
    sscreen->shader_debug_flags = debug_get_flags_option("AMD_DEBUG", radeonsi_shader_debug_options, 0);
+   sscreen->multimedia_debug_flags = debug_get_flags_option("AMD_DEBUG", radeonsi_multimedia_debug_options, 0);
    test_flags = debug_get_flags_option("AMD_TEST", test_options, 0);
 
    if (sscreen->debug_flags & DBG(NO_DISPLAY_DCC)) {
