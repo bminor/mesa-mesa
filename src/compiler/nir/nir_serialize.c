@@ -1717,8 +1717,6 @@ write_instr(write_ctx *ctx, const nir_instr *instr)
       blob_write_uint32(ctx->blob, instr->type);
       write_call(ctx, nir_instr_as_call(instr));
       break;
-   case nir_instr_type_parallel_copy:
-      UNREACHABLE("Cannot write parallel copies");
    default:
       UNREACHABLE("bad instr type");
    }
@@ -1771,8 +1769,6 @@ read_instr(read_ctx *ctx, nir_block *block)
    case nir_instr_type_call:
       instr = &read_call(ctx)->instr;
       break;
-   case nir_instr_type_parallel_copy:
-      UNREACHABLE("Cannot read parallel copies");
    default:
       UNREACHABLE("bad instr type");
    }

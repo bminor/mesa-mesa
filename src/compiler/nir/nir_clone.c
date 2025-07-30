@@ -511,8 +511,6 @@ clone_instr(clone_state *state, const nir_instr *instr)
       return &clone_jump(state, nir_instr_as_jump(instr))->instr;
    case nir_instr_type_call:
       return &clone_call(state, nir_instr_as_call(instr))->instr;
-   case nir_instr_type_parallel_copy:
-      UNREACHABLE("Cannot clone parallel copies");
    default:
       UNREACHABLE("bad instr type");
       return NULL;

@@ -1749,7 +1749,6 @@ instr_to_msl(struct nir_to_msl_ctx *ctx, nir_instr *instr)
       // undefs get inlined into their uses (and we shouldn't see them hopefully)
       break;
    case nir_instr_type_phi:
-   case nir_instr_type_parallel_copy:
       assert(!"NIR should be taken out of SSA");
       break;
    }

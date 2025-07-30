@@ -19,14 +19,6 @@ _nir_foreach_def(nir_instr *instr, nir_foreach_def_cb cb, void *state)
       return cb(&nir_instr_as_tex(instr)->def, state);
    case nir_instr_type_phi:
       return cb(&nir_instr_as_phi(instr)->def, state);
-   case nir_instr_type_parallel_copy: {
-      nir_foreach_parallel_copy_entry(entry, nir_instr_as_parallel_copy(instr)) {
-         if (!entry->dest_is_reg && !cb(&entry->dest.def, state))
-            return false;
-      }
-      return true;
-   }
-
    case nir_instr_type_load_const:
       return cb(&nir_instr_as_load_const(instr)->def, state);
    case nir_instr_type_undef:
@@ -112,16 +104,6 @@ nir_foreach_src(nir_instr *instr, nir_foreach_src_cb cb, void *state)
       nir_phi_instr *phi = nir_instr_as_phi(instr);
       nir_foreach_phi_src(src, phi) {
          if (!_nir_visit_src(&src->src, cb, state))
-            return false;
-      }
-      break;
-   }
-   case nir_instr_type_parallel_copy: {
-      nir_parallel_copy_instr *pc = nir_instr_as_parallel_copy(instr);
-      nir_foreach_parallel_copy_entry(entry, pc) {
-         if (!_nir_visit_src(&entry->src, cb, state))
-            return false;
-         if (entry->dest_is_reg && !_nir_visit_src(&entry->dest.reg, cb, state))
             return false;
       }
       break;

@@ -946,7 +946,6 @@ typedef enum ENUM_PACKED {
    nir_instr_type_jump,
    nir_instr_type_undef,
    nir_instr_type_phi,
-   nir_instr_type_parallel_copy,
 } nir_instr_type;
 
 typedef struct nir_instr {
@@ -2779,31 +2778,6 @@ nir_phi_get_src_from_block(nir_phi_instr *phi, nir_block *block)
    return NULL;
 }
 
-typedef struct nir_parallel_copy_entry {
-   struct exec_node node;
-   bool src_is_reg;
-   bool dest_is_reg;
-   nir_src src;
-   union {
-      nir_def def;
-      nir_src reg;
-   } dest;
-} nir_parallel_copy_entry;
-
-#define nir_foreach_parallel_copy_entry(entry, pcopy) \
-   foreach_list_typed(nir_parallel_copy_entry, entry, node, &(pcopy)->entries)
-
-typedef struct nir_parallel_copy_instr {
-   nir_instr instr;
-
-   /* A list of nir_parallel_copy_entrys.  The sources of all of the
-    * entries are copied to the corresponding destinations "in parallel".
-    * In other words, if we have two entries: a -> b and b -> a, the values
-    * get swapped.
-    */
-   struct exec_list entries;
-} nir_parallel_copy_instr;
-
 /* This struct contains metadata for correlating the final nir shader
  * (after many lowering and optimization passes) with the source spir-v
  * or glsl. To avoid adding unnecessary overhead when the driver does not
@@ -2856,9 +2830,6 @@ NIR_DEFINE_CAST(nir_instr_as_undef, nir_instr, nir_undef_instr, instr,
                 type, nir_instr_type_undef)
 NIR_DEFINE_CAST(nir_instr_as_phi, nir_instr, nir_phi_instr, instr,
                 type, nir_instr_type_phi)
-NIR_DEFINE_CAST(nir_instr_as_parallel_copy, nir_instr,
-                nir_parallel_copy_instr, instr,
-                type, nir_instr_type_parallel_copy)
 
 #define NIR_DEFINE_DEF_AS_INSTR(type, suffix)                  \
    static inline type *nir_def_as_##suffix(const nir_def *def) \
@@ -4120,8 +4091,6 @@ nir_tex_instr *nir_tex_instr_create(nir_shader *shader, unsigned num_srcs);
 nir_phi_instr *nir_phi_instr_create(nir_shader *shader);
 nir_phi_src *nir_phi_instr_add_src(nir_phi_instr *instr,
                                    nir_block *pred, nir_def *src);
-
-nir_parallel_copy_instr *nir_parallel_copy_instr_create(nir_shader *shader);
 
 nir_undef_instr *nir_undef_instr_create(nir_shader *shader,
                                         unsigned num_components,

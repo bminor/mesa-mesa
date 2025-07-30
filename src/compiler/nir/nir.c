@@ -1018,17 +1018,6 @@ nir_phi_instr_add_src(nir_phi_instr *instr, nir_block *pred, nir_def *src)
    return phi_src;
 }
 
-nir_parallel_copy_instr *
-nir_parallel_copy_instr_create(nir_shader *shader)
-{
-   nir_parallel_copy_instr *instr =
-      nir_instr_create(shader, nir_instr_type_parallel_copy, sizeof(nir_parallel_copy_instr));
-
-   exec_list_make_empty(&instr->entries);
-
-   return instr;
-}
-
 nir_undef_instr *
 nir_undef_instr_create(nir_shader *shader,
                        unsigned num_components,
@@ -1483,9 +1472,6 @@ nir_instr_def(nir_instr *instr)
 
    case nir_instr_type_phi:
       return &nir_instr_as_phi(instr)->def;
-
-   case nir_instr_type_parallel_copy:
-      UNREACHABLE("Parallel copies are unsupported by this function");
 
    case nir_instr_type_load_const:
       return &nir_instr_as_load_const(instr)->def;
@@ -2898,7 +2884,6 @@ nir_instr_can_speculate(nir_instr *instr)
    case nir_instr_type_call:
    case nir_instr_type_jump:
    case nir_instr_type_phi:
-   case nir_instr_type_parallel_copy:
       return false;
    }
 

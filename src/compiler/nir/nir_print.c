@@ -2121,28 +2121,6 @@ print_phi_instr(nir_phi_instr *instr, print_state *state)
 }
 
 static void
-print_parallel_copy_instr(nir_parallel_copy_instr *instr, print_state *state)
-{
-   FILE *fp = state->fp;
-   nir_foreach_parallel_copy_entry(entry, instr) {
-      if (&entry->node != exec_list_get_head(&instr->entries))
-         fprintf(fp, "; ");
-
-      if (entry->dest_is_reg) {
-         fprintf(fp, "*");
-         print_src(&entry->dest.reg, state, nir_type_invalid);
-      } else {
-         print_def(&entry->dest.def, state);
-      }
-      fprintf(fp, " = ");
-
-      if (entry->src_is_reg)
-         fprintf(fp, "*");
-      print_src(&entry->src, state, nir_type_invalid);
-   }
-}
-
-static void
 print_instr(const nir_instr *instr, print_state *state, unsigned tabs)
 {
    FILE *fp = state->fp;
@@ -2214,10 +2192,6 @@ print_instr(const nir_instr *instr, print_state *state, unsigned tabs)
       print_phi_instr(nir_instr_as_phi(instr), state);
       break;
 
-   case nir_instr_type_parallel_copy:
-      print_parallel_copy_instr(nir_instr_as_parallel_copy(instr), state);
-      break;
-
    default:
       UNREACHABLE("Invalid instruction type");
       break;
@@ -2238,7 +2212,6 @@ block_has_instruction_with_dest(nir_block *block)
       case nir_instr_type_tex:
       case nir_instr_type_undef:
       case nir_instr_type_phi:
-      case nir_instr_type_parallel_copy:
          return true;
 
       case nir_instr_type_intrinsic: {

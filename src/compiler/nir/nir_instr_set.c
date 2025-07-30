@@ -78,7 +78,6 @@ instr_can_rewrite(const nir_instr *instr)
    case nir_instr_type_jump:
    case nir_instr_type_undef:
       return false;
-   case nir_instr_type_parallel_copy:
    default:
       UNREACHABLE("Invalid instruction type");
    }
@@ -757,7 +756,6 @@ nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2)
    case nir_instr_type_call:
    case nir_instr_type_jump:
    case nir_instr_type_undef:
-   case nir_instr_type_parallel_copy:
    default:
       UNREACHABLE("Invalid instruction type");
    }

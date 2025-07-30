@@ -1215,7 +1215,6 @@ instr_is_loop_invariant(nir_instr *instr, struct divergence_state *state)
    case nir_instr_type_call:
       return false;
    case nir_instr_type_phi:
-   case nir_instr_type_parallel_copy:
    default:
       UNREACHABLE("NIR divergence analysis: Unsupported instruction type.");
    }
@@ -1241,7 +1240,6 @@ update_instr_divergence(nir_instr *instr, struct divergence_state *state)
       return false;
    case nir_instr_type_jump:
    case nir_instr_type_phi:
-   case nir_instr_type_parallel_copy:
    default:
       UNREACHABLE("NIR divergence analysis: Unsupported instruction type.");
    }

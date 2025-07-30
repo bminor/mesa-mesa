@@ -52,7 +52,6 @@ typedef struct nir_intrinsic_instr nir_intrinsic_instr;
 typedef struct nir_load_const_instr nir_load_const_instr;
 typedef struct nir_undef_instr nir_undef_instr;
 typedef struct nir_phi_instr nir_phi_instr;
-typedef struct nir_parallel_copy_instr nir_parallel_copy_instr;
 
 typedef struct nir_xfb_info nir_xfb_info;
 typedef struct nir_tcs_info nir_tcs_info;
