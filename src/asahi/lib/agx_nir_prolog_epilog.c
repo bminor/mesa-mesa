@@ -452,11 +452,7 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
       if (key->rt_formats[i] == PIPE_FORMAT_NONE)
          continue;
 
-      /* TODO: Flakes some dEQPs, seems to invoke UB. Revisit later.
-       * dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.77
-       * dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.98
-       */
-      if (0 /* agx_tilebuffer_supports_mask(&tib, i) */) {
+      if (agx_tilebuffer_supports_mask(&tib, i)) {
          colormasks[i] = key->blend.rt[i].colormask;
          opts.rt[i].colormask = (uint8_t)BITFIELD_MASK(4);
       } else {
