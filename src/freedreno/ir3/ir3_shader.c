@@ -172,6 +172,8 @@ ir3_shader_assemble(struct ir3_shader_variant *v)
    if (compiler->gen >= 4)
       v->constlen = align(v->constlen, 4);
 
+   info->constlen = v->constlen;
+
    /* Use the per-wave layout by default on a6xx for compute shaders. It
     * should result in better performance when loads/stores are to a uniform
     * index.

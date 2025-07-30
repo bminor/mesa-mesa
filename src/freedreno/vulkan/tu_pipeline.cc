@@ -4948,6 +4948,7 @@ tu_GetPipelineExecutableStatisticsKHR(
    stats.ldps = exe->stats.ldp_count;
    stats.preamble_inst = exe->stats.preamble_instrs_count;
    stats.early_preamble = exe->stats.early_preamble;
+   stats.constlen = exe->stats.constlen;
 
    for (unsigned i = 0; i < ARRAY_SIZE(exe->stats.instrs_per_cat); ++i) {
       stats.cat[i] = exe->stats.instrs_per_cat[i];

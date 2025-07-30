@@ -19,6 +19,7 @@
       <stat name="LDP Count" display="LDPs">Number of LoaD Private instructions in the final generated shader executable.</stat>
       <stat name="Preamble Instruction Count" display="Preamble inst">Total number of IR3 instructions in the preamble.</stat>
       <stat name="Early preamble" display="Early-preamble" type="bool">Whether the preamble will be executed early.</stat>
+      <stat name="Const file size" display="Constlen">Size of the const file in vec4</stat>
    </isa>
 
    <isa name="AGX2">
