@@ -1073,7 +1073,7 @@ by a particular renderpass/blit.
 			In sysmem mode GRAS_LRZ_CNTL.LRZ_WRITE is not considered.
 		</doc>
 		<bitfield name="LRZ_FEEDBACK_ZMODE_MASK" low="24" high="26" type="a6xx_lrz_feedback_mask"/>
-		<bitfield name="UNK27" pos="27"/>
+		<bitfield name="FORCE_LRZ_DIS" pos="27" type="boolean"/>
 	</reg32>
 
 	<reg32 offset="0x80a2" name="GRAS_SC_RAS_MSAA_CNTL" usage="rp_blit">
