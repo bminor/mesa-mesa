@@ -2853,6 +2853,21 @@ NIR_DEFINE_SRC_AS_CONST(double, float)
 
 #undef NIR_DEFINE_SRC_AS_CONST
 
+#define NIR_DEFINE_DEF_AS_INSTR(type, suffix)                  \
+   static inline type *nir_def_as_##suffix(const nir_def *def) \
+   {                                                           \
+      return nir_instr_as_##suffix(def->parent_instr);         \
+   }
+
+NIR_DEFINE_DEF_AS_INSTR(nir_alu_instr, alu)
+NIR_DEFINE_DEF_AS_INSTR(nir_intrinsic_instr, intrinsic)
+NIR_DEFINE_DEF_AS_INSTR(nir_tex_instr, tex)
+NIR_DEFINE_DEF_AS_INSTR(nir_phi_instr, phi)
+NIR_DEFINE_DEF_AS_INSTR(nir_deref_instr, deref)
+NIR_DEFINE_DEF_AS_INSTR(nir_load_const_instr, load_const)
+
+#undef NIR_DEFINE_DEF_AS_INSTR
+
 typedef struct nir_scalar {
    nir_def *def;
    unsigned comp;
