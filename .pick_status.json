@@ -74,7 +74,7 @@
         "description": "egl: Fix DRI utility function compilation on macOS",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e99446fc5e6b773cd2a77f1315a08b5e200ae5b9",
         "notes": null

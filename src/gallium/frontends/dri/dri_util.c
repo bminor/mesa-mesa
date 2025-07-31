@@ -1058,6 +1058,7 @@ bool
 dri_get_drm_device_info(const char *device_name, uint8_t *device_uuid, uint8_t *driver_uuid,
                         char **vendor_name, char **renderer_name, char **driver_name)
 {
+#ifdef HAVE_LIBDRM
    struct pipe_loader_device *pldev;
    struct pipe_screen *pscreen;
    int fd;
@@ -1095,4 +1096,7 @@ dri_get_drm_device_info(const char *device_name, uint8_t *device_uuid, uint8_t *
    close(fd);
 
    return true;
+#else
+   return false;
+#endif
 }
