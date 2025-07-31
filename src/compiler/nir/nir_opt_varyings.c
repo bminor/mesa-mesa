@@ -5565,4 +5565,16 @@ nir_opt_varyings_bulk(nir_shader **shaders, uint32_t num_shaders, bool spirv,
       if (nir->xfb_info)
          nir_gather_xfb_info_from_intrinsics(nir);
    }
+
+   /* Now that we've picked slots, link interpolation qualifiers. */
+   nir_shader *fs = shaders[num_shaders - 1];
+   if (fs->info.stage == MESA_SHADER_FRAGMENT) {
+      nir_shader *producer = shaders[num_shaders - 2];
+
+      producer->info.known_interpolation_qualifiers =
+         fs->info.known_interpolation_qualifiers;
+
+      producer->info.linear_varyings = fs->info.linear_varyings;
+      producer->info.perspective_varyings = fs->info.perspective_varyings;
+   }
 }
