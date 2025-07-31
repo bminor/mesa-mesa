@@ -97,10 +97,6 @@ pub struct ProgramBuild {
 }
 
 impl ProgramBuild {
-    pub fn spirv_info(&self, kernel: &str, d: &Device) -> Option<&clc_kernel_info> {
-        self.dev_build(d).spirv.as_ref()?.kernel_info(kernel)
-    }
-
     fn args(&self, dev: &Device, kernel: &str) -> Option<Vec<spirv::SPIRVKernelArg>> {
         self.dev_build(dev).spirv.as_ref().map(|s| s.args(kernel))
     }
@@ -137,7 +133,8 @@ impl ProgramBuild {
                     continue;
                 }
 
-                let build_result = convert_spirv_to_nir(self, kernel_name, &args, dev);
+                let build_result =
+                    convert_spirv_to_nir(&build, kernel_name, &args, &self.spec_constants, dev);
                 kernel_info_set.insert(build_result.kernel_info);
 
                 self.builds.get_mut(dev).unwrap().kernels.insert(
@@ -169,16 +166,40 @@ impl ProgramBuild {
         self.builds.get_mut(dev).unwrap()
     }
 
-    pub fn hash_key(&self, dev: &Device, name: &str) -> Option<cache_key> {
-        if let Some(cache) = dev.screen().shader_cache() {
-            let info = self.dev_build(dev);
-            assert_eq!(info.status, CL_BUILD_SUCCESS as cl_build_status);
+    pub fn kernels(&self) -> &[String] {
+        &self.kernels
+    }
 
-            let spirv = info.spirv.as_ref().unwrap();
+    pub fn has_successful_build(&self) -> bool {
+        self.builds.values().any(|b| b.is_success())
+    }
+}
+
+#[derive(Default)]
+pub struct ProgramDevBuild {
+    spirv: Option<spirv::SPIRVBin>,
+    status: cl_build_status,
+    options: String,
+    log: String,
+    bin_type: cl_program_binary_type,
+    pub kernels: HashMap<String, Arc<NirKernelBuilds>>,
+}
+
+impl ProgramDevBuild {
+    pub fn hash_key(
+        &self,
+        cache: Option<&DiskCacheBorrowed>,
+        name: &str,
+        spec_constants: &HashMap<u32, nir_const_value>,
+    ) -> Option<cache_key> {
+        if let Some(cache) = cache {
+            assert_eq!(self.status, CL_BUILD_SUCCESS as cl_build_status);
+
+            let spirv = self.spirv.as_ref().unwrap();
             let mut bin = spirv.to_bin().to_vec();
             bin.extend_from_slice(name.as_bytes());
 
-            for (k, v) in &self.spec_constants {
+            for (k, v) in spec_constants {
                 bin.extend_from_slice(&k.to_ne_bytes());
                 unsafe {
                     // SAFETY: we fully initialize this union
@@ -192,13 +213,19 @@ impl ProgramBuild {
         }
     }
 
-    pub fn kernels(&self) -> &[String] {
-        &self.kernels
+    pub fn kernel_info(&self, kernel_name: &str) -> Option<&clc_kernel_info> {
+        self.spirv.as_ref()?.kernel_info(kernel_name)
     }
 
-    pub fn to_nir(&self, kernel: &str, d: &Device) -> NirShader {
-        let mut spec_constants: Vec<_> = self
-            .spec_constants
+    pub fn to_nir(
+        &self,
+        kernel: &str,
+        d: &Device,
+        spec_constants: &HashMap<u32, nir_const_value>,
+    ) -> NirShader {
+        assert_eq!(self.status, CL_BUILD_SUCCESS as cl_build_status);
+
+        let mut spec_constants: Vec<_> = spec_constants
             .iter()
             .map(|(&id, &value)| nir_spirv_specialization {
                 id: id,
@@ -207,11 +234,8 @@ impl ProgramBuild {
             })
             .collect();
 
-        let info = self.dev_build(d);
-        assert_eq!(info.status, CL_BUILD_SUCCESS as cl_build_status);
-
         let mut log = Platform::dbg().program.then(Vec::new);
-        let nir = info.spirv.as_ref().unwrap().to_nir(
+        let nir = self.spirv.as_ref().unwrap().to_nir(
             kernel,
             d.screen
                 .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE),
@@ -231,22 +255,6 @@ impl ProgramBuild {
         nir.unwrap()
     }
 
-    pub fn has_successful_build(&self) -> bool {
-        self.builds.values().any(|b| b.is_success())
-    }
-}
-
-#[derive(Default)]
-pub struct ProgramDevBuild {
-    spirv: Option<spirv::SPIRVBin>,
-    status: cl_build_status,
-    options: String,
-    log: String,
-    bin_type: cl_program_binary_type,
-    pub kernels: HashMap<String, Arc<NirKernelBuilds>>,
-}
-
-impl ProgramDevBuild {
     fn is_success(&self) -> bool {
         self.status == CL_BUILD_SUCCESS as cl_build_status
     }

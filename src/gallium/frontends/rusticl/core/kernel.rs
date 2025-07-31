@@ -1175,21 +1175,22 @@ impl SPIRVToNirResult {
 }
 
 pub(super) fn convert_spirv_to_nir(
-    build: &ProgramBuild,
+    build: &ProgramDevBuild,
     name: &str,
     args: &[spirv::SPIRVKernelArg],
+    spec_constants: &HashMap<u32, nir_const_value>,
     dev: &'static Device,
 ) -> SPIRVToNirResult {
     let cache = dev.screen().shader_cache();
-    let key = build.hash_key(dev, name);
-    let spirv_info = build.spirv_info(name, dev).unwrap();
+    let key = build.hash_key(cache.as_ref(), name, spec_constants);
+    let spirv_info = build.kernel_info(name).unwrap();
 
     cache
         .as_ref()
         .and_then(|cache| cache.get(&mut key?))
         .and_then(|entry| SPIRVToNirResult::deserialize(&entry, dev, spirv_info))
         .unwrap_or_else(|| {
-            let nir = build.to_nir(name, dev);
+            let nir = build.to_nir(name, dev, spec_constants);
 
             if Platform::dbg().nir {
                 eprintln!("=== Printing nir for '{name}' after spirv_to_nir");
