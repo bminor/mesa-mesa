@@ -1019,6 +1019,12 @@ typedef struct nir_def {
    bool loop_invariant;
 } nir_def;
 
+static inline nir_block *
+nir_def_block(nir_def *def)
+{
+   return def->parent_instr->block;
+}
+
 typedef struct nir_src {
    /* Instruction or if-statement that consumes this value as a source. This
     * should only be accessed through nir_src_* helpers.
