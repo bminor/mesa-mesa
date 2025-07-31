@@ -3413,9 +3413,21 @@ impl<'a> ShaderFromNir<'a> {
                 if intrin.memory_scope() != SCOPE_NONE {
                     let mem_scope = match intrin.memory_scope() {
                         SCOPE_INVOCATION | SCOPE_SUBGROUP => MemScope::CTA,
-                        SCOPE_WORKGROUP | SCOPE_QUEUE_FAMILY | SCOPE_DEVICE => {
-                            MemScope::GPU
+                        // A membar.gpu is very expensive so use .cta whenever
+                        // possible.
+                        // TODO: Figure out under which conditions we can relax
+                        //       them for global memory/images to CTA.
+                        SCOPE_WORKGROUP => {
+                            let global_modes = nir_var_image
+                                | nir_var_mem_global
+                                | nir_var_mem_ssbo;
+                            if intrin.memory_modes() & global_modes != 0 {
+                                MemScope::GPU
+                            } else {
+                                MemScope::CTA
+                            }
                         }
+                        SCOPE_QUEUE_FAMILY | SCOPE_DEVICE => MemScope::GPU,
                         _ => panic!("Unhandled memory scope"),
                     };
                     b.push_op(OpMemBar { scope: mem_scope });
