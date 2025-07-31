@@ -103,17 +103,24 @@ GeometryShader::process_load_input(nir_intrinsic_instr *instr)
        (location >= VARYING_SLOT_VAR0 && location <= VARYING_SLOT_VAR31) ||
        (location >= VARYING_SLOT_TEX0 && location <= VARYING_SLOT_TEX7)) {
 
-      uint64_t bit = 1ull << location;
-      if (!(bit & m_input_mask)) {
-         ShaderInput input(driver_location, location);
-         input.set_ring_offset(16 * driver_location);
-         add_input(input);
-         m_next_input_ring_offset += 16;
-         m_input_mask |= bit;
-      }
+      add_input_at(location, driver_location);
       return true;
    }
+
    return false;
+}
+
+void
+GeometryShader::add_input_at(gl_varying_slot location, unsigned driver_location)
+{
+   uint64_t bit = 1ull << location;
+   if (!(bit & m_input_mask)) {
+      ShaderInput input(driver_location, location);
+      input.set_ring_offset(16 * driver_location);
+      add_input(input);
+      m_next_input_ring_offset += 16;
+      m_input_mask |= bit;
+   }
 }
 
 int
