@@ -3,8 +3,7 @@ include:
 
 # We only have two machines and these boards are EOL.
 # Put it in nightly until we can move to different boards.
-# Temporarly disabled for 2025-07-31 maintainance
-.panfrost-t720-gles2:arm64:
+panfrost-t720-gles2:arm64:
   extends:
     - .lava-arm64-test-gl
     - .panfrost-midgard-manual-rules
@@ -13,8 +12,7 @@ include:
 
 # We only have two machines, which we share with KernelCI.
 # Keep the second t760 job manual.
-# Temporarly disabled for 2025-07-31 maintainance
-.panfrost-t760-gles:arm32:
+panfrost-t760-gles:arm32:
   extends:
     - .lava-arm32-test-gl
     - .panfrost-midgard-manual-rules
@@ -22,8 +20,7 @@ include:
     - .lava-rk3288-veyron-jaq:arm32
   timeout: 1h 30m
 
-# Temporarly disabled for 2025-07-31 maintainance
-.panfrost-t760-traces:arm32:
+panfrost-t760-traces:arm32:
   extends:
     - .lava-arm32-piglit-traces
     - .panfrost-midgard-manual-rules
