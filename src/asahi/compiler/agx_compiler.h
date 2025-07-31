@@ -8,6 +8,7 @@
 
 #include "asahi/isa/agx_minifloat.h"
 #include "compiler/nir/nir.h"
+#include "util/bitset.h"
 #include "util/half_float.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
@@ -458,6 +459,9 @@ typedef struct agx_block {
    /* Liveness analysis results */
    BITSET_WORD *live_in;
    BITSET_WORD *live_out;
+
+   BITSET_DECLARE(reg_live_in, AGX_NUM_REGS);
+   BITSET_DECLARE(reg_live_out, AGX_NUM_REGS);
 
    /* For visited blocks during register assignment and live-out registers, the
     * mapping of registers to SSA names at the end of the block. This is dense,
@@ -1038,6 +1042,7 @@ void agx_ra(agx_context *ctx);
 void agx_lower_64bit_postra(agx_context *ctx);
 void agx_insert_waits(agx_context *ctx);
 void agx_opt_empty_else(agx_context *ctx);
+void agx_opt_register_cache(agx_context *ctx);
 void agx_opt_break_if(agx_context *ctx);
 void agx_opt_jmp_none(agx_context *ctx);
 void agx_pack_binary(agx_context *ctx, struct util_dynarray *emission);
