@@ -124,12 +124,6 @@ lower(agx_builder *b, agx_instr *I)
       swap(b, I->src[0], I->src[1]);
       return (void *)true;
 
-   case AGX_OPCODE_EXPORT:
-      /* We already lowered exports during RA, we just need to remove them late
-       * after inserting waits.
-       */
-      return (void *)true;
-
    default:
       return NULL;
    }

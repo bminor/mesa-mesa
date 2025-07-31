@@ -1174,6 +1174,12 @@ agx_pack_instr(struct util_dynarray *emission, struct util_dynarray *fixups,
       break;
    }
 
+   case AGX_OPCODE_EXPORT:
+      /* Zero-byte pseudo-op. This remains until late for the benefit of
+       * register cache optimizations.
+       */
+      return;
+
    default:
       agx_pack_alu(emission, I);
       return;
