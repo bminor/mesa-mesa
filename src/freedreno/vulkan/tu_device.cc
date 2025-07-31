@@ -2658,8 +2658,6 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    if (result != VK_SUCCESS)
       goto fail_queues;
 
-   util_sparse_array_init(&device->accel_struct_ranges, sizeof(VkDeviceSize), 256);
-
    mtx_init(&device->radix_sort_mutex, mtx_plain);
 
    {
@@ -2948,7 +2946,6 @@ fail_free_zombie_vma:
    u_vector_finish(&device->zombie_vmas);
    ir3_compiler_destroy(device->compiler);
 fail_compiler:
-   util_sparse_array_finish(&device->accel_struct_ranges);
    vk_meta_device_finish(&device->vk, &device->meta);
 fail_queues:
    for (unsigned i = 0; i < TU_MAX_QUEUE_FAMILIES; i++) {
@@ -3000,8 +2997,6 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    tu_destroy_dynamic_rendering(device);
 
    vk_meta_device_finish(&device->vk, &device->meta);
-
-   util_sparse_array_finish(&device->accel_struct_ranges);
 
    ir3_compiler_destroy(device->compiler);
 

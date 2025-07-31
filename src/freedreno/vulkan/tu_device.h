@@ -300,8 +300,6 @@ struct tu_device
    radix_sort_vk_t *radix_sort;
    mtx_t radix_sort_mutex;
 
-   struct util_sparse_array accel_struct_ranges;
-
 #define MIN_SCRATCH_BO_SIZE_LOG2 12 /* A page */
 
    /* Currently the kernel driver uses a 32-bit GPU address space, but it

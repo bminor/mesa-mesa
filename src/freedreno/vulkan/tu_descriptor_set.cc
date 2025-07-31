@@ -1160,15 +1160,16 @@ write_sampler_descriptor(uint32_t *dst, VkSampler _sampler)
 }
 
 static void
-write_accel_struct(uint32_t *dst, uint64_t va, uint64_t size)
+write_accel_struct(uint32_t *dst, uint64_t va)
 {
    dst[0] = A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR) | A6XX_TEX_CONST_0_FMT(FMT6_32_UINT);
 
-   /* The overall range of the entire AS may be more than the max range, but
-    * the SSBO is only used to access the instance descriptors and header.
-    * Make sure that we don't specify a too-large range.
+   /* We don't actually use the bounds checking in the shader, since the
+    * instance array is accessed entirely with a driver-controlled offset.
+    * Therefore just always specify the maximum possible size to avoid having
+    * to keep track of the size.
     */
-   dst[1] = MAX2(DIV_ROUND_UP(size, AS_RECORD_SIZE), MAX_TEXEL_ELEMENTS);
+   dst[1] = MAX_TEXEL_ELEMENTS;
    dst[2] =
       A6XX_TEX_CONST_2_STRUCTSIZETEXELS(AS_RECORD_SIZE / 4) |
       A6XX_TEX_CONST_2_STARTOFFSETTEXELS(0) |
@@ -1229,13 +1230,9 @@ tu_GetDescriptorEXT(
       break;
    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
       if (pDescriptorInfo->data.accelerationStructure == 0) {
-         write_accel_struct(dest, device->null_accel_struct_bo->iova,
-                            device->null_accel_struct_bo->size);
+         write_accel_struct(dest, device->null_accel_struct_bo->iova);
       } else {
-         VkDeviceSize size = *(VkDeviceSize *)
-            util_sparse_array_get(&device->accel_struct_ranges,
-                                  pDescriptorInfo->data.accelerationStructure);
-         write_accel_struct(dest, pDescriptorInfo->data.accelerationStructure, size);
+         write_accel_struct(dest, pDescriptorInfo->data.accelerationStructure);
       }
       break;
    }
@@ -1361,11 +1358,9 @@ tu_update_descriptor_sets(const struct tu_device *device,
             VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, accel_structs->pAccelerationStructures[j]);
             if (accel_struct) {
                write_accel_struct(ptr,
-                                  vk_acceleration_structure_get_va(accel_struct),
-                                  accel_struct->size);
+                                  vk_acceleration_structure_get_va(accel_struct));
             } else {
-               write_accel_struct(ptr, device->null_accel_struct_bo->iova,
-                                  device->null_accel_struct_bo->size);
+               write_accel_struct(ptr, device->null_accel_struct_bo->iova);
             }
             break;
          }
@@ -1703,11 +1698,9 @@ tu_update_descriptor_set_with_template(
             VK_FROM_HANDLE(vk_acceleration_structure, accel_struct, *(const VkAccelerationStructureKHR *)src);
             if (accel_struct) {
                write_accel_struct(ptr,
-                                  vk_acceleration_structure_get_va(accel_struct),
-                                  accel_struct->size);
+                                  vk_acceleration_structure_get_va(accel_struct));
             } else {
-               write_accel_struct(ptr, device->null_accel_struct_bo->iova,
-                                  device->null_accel_struct_bo->size);
+               write_accel_struct(ptr, device->null_accel_struct_bo->iova);
             }
             break;
          }
