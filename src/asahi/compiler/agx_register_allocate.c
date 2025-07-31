@@ -1316,6 +1316,11 @@ lower_exports(agx_context *ctx)
          .src = I->src[0],
       };
 
+      /* The export itself is now trivial, reflect that for correct last-use
+       * tracking later.
+       */
+      I->src[0] = agx_register_like(I->imm, I->src[0]);
+
       /* We cannot use fewer registers than we export */
       ctx->max_reg =
          MAX2(ctx->max_reg, I->imm + agx_size_align_16(I->src[0].size));
