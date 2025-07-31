@@ -413,7 +413,7 @@ replace_scalar_component_uses(nir_builder *b, nir_scalar old, nir_scalar rep)
    }
 
    nir_def *replacement = nir_vec(b, dst, old.def->num_components);
-   nir_def_rewrite_uses_after(old.def, replacement, replacement->parent_instr);
+   nir_def_rewrite_uses_after(old.def, replacement);
 }
 
 static bool
@@ -795,7 +795,7 @@ save_reusable_variables(nir_builder *b, lower_ngg_nogs_state *s)
                      : nir_after_instr(instr);
          nir_store_var(b, saved->var, saved->ssa, BITFIELD_MASK(ssa->num_components));
          nir_def *reloaded = nir_load_var(b, saved->var);
-         nir_def_rewrite_uses_after(ssa, reloaded, reloaded->parent_instr);
+         nir_def_rewrite_uses_after(ssa, reloaded);
       }
 
       /* Look at the next CF node. */

@@ -688,7 +688,7 @@ lower_pntc_read(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *pntc = nir_fadd_imm(b,
                                     nir_fsub(b, nir_trim_vector(b, pos, 2), nir_trim_vector(b, point_center, 2)),
                                     0.5);
-   nir_def_rewrite_uses_after(point_center, pntc, pntc->parent_instr);
+   nir_def_rewrite_uses_after(point_center, pntc);
    return true;
 }
 

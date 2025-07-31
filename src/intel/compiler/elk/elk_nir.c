@@ -157,8 +157,7 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
          nir_src_rewrite(&intr->src[0], src);
       }
    } else if (dest) {
-      nir_def_rewrite_uses_after(&intr->def, dest,
-                                     dest->parent_instr);
+      nir_def_rewrite_uses_after(&intr->def, dest);
    }
 
    return true;
@@ -516,7 +515,7 @@ elk_nir_lower_fs_smooth_interp_gfx4_instr(nir_builder *b, nir_intrinsic_instr *i
    b->cursor = nir_after_instr(&intr->instr);
    nir_def *result = nir_fmul(b, &intr->def, *pixel_w);
 
-   nir_def_rewrite_uses_after(&intr->def, result, result->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, result);
    return true;
 }
 

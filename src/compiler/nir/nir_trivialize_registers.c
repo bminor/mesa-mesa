@@ -101,7 +101,7 @@ trivialize_load(nir_intrinsic_instr *load)
    nir_builder b = nir_builder_at(nir_after_instr(&load->instr));
    nir_def *copy = nir_mov(&b, &load->def);
    copy->divergent = load->def.divergent;
-   nir_def_rewrite_uses_after(&load->def, copy, copy->parent_instr);
+   nir_def_rewrite_uses_after(&load->def, copy);
 
    assert(list_is_singular(&load->def.uses));
 }

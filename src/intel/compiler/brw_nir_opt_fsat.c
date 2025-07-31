@@ -190,7 +190,7 @@ fixup_defs(struct set *fixup)
 
       nir_def *new_fsat = nir_fsat(&b, src_def);
 
-      nir_def_rewrite_uses_after(src_def, new_fsat, new_fsat->parent_instr);
+      nir_def_rewrite_uses_after(src_def, new_fsat);
    }
 }
 

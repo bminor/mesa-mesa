@@ -194,7 +194,7 @@ lower_tex_compare(nir_builder *b, nir_tex_instr *tex, int compare_idx)
 
    nir_def *new_vec = nir_vec(b, new_comps, sparse_tex->def.num_components);
 
-   nir_def_rewrite_uses_after(&tex->def, new_vec, new_vec->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, new_vec);
 }
 
 static bool

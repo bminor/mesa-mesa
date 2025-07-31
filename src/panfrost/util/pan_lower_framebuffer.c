@@ -559,7 +559,7 @@ pan_lower_fb_load(nir_builder *b, nir_intrinsic_instr *intr,
    if (reorder_comps)
       unpacked = pan_unpack_reorder(b, desc, unpacked);
 
-   nir_def_rewrite_uses_after(&intr->def, unpacked, &intr->instr);
+   nir_def_rewrite_uses_after_instr(&intr->def, unpacked, &intr->instr);
 }
 
 struct inputs {

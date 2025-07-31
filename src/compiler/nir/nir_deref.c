@@ -1389,8 +1389,7 @@ opt_load_vec_deref(nir_builder *b, nir_intrinsic_instr *load)
          data = nir_bitcast_vector(b, &load->def, old_bit_size);
       data = resize_vector(b, data, old_num_comps);
 
-      nir_def_rewrite_uses_after(&load->def, data,
-                                 data->parent_instr);
+      nir_def_rewrite_uses_after(&load->def, data);
       return true;
    }
 

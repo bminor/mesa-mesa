@@ -472,7 +472,7 @@ opt_vs_input_to_const(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    }
 
    if (res != &intrin->def) {
-      nir_def_rewrite_uses_after(&intrin->def, res, res->parent_instr);
+      nir_def_rewrite_uses_after(&intrin->def, res);
       return true;
    } else {
       return false;

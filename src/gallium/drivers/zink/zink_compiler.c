@@ -135,8 +135,7 @@ lower_basevertex_instr(nir_builder *b, nir_intrinsic_instr *instr, void *data)
                                           nir_imm_int(b, 0),
                                           NULL);
 
-   nir_def_rewrite_uses_after(&instr->def, composite,
-                                  composite->parent_instr);
+   nir_def_rewrite_uses_after(&instr->def, composite);
    return true;
 }
 
@@ -2824,7 +2823,7 @@ fill_zero_reads(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *dest = &intr->def;
    u_foreach_bit(component, rewrite_mask)
       dest = nir_vector_insert_imm(b, dest, nir_channel(b, zero, component), component);
-   nir_def_rewrite_uses_after(&intr->def, dest, dest->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, dest);
    return true;
 }
 
@@ -3227,7 +3226,7 @@ lower_64bit_vars_function(nir_shader *shader, nir_function_impl *impl, nir_varia
                   }
                   dest = nir_vec(&b, comp, intr->num_components);
                }
-               nir_def_rewrite_uses_after(&intr->def, dest, instr);
+               nir_def_rewrite_uses_after_instr(&intr->def, dest, instr);
             }
             _mesa_set_add(deletes, instr);
             break;
@@ -3486,7 +3485,7 @@ rewrite_tex_dest(nir_builder *b, nir_tex_instr *tex, nir_variable *var, struct z
          dest = nir_f2fN(b, &tex->def, dest_size);
       }
       if (!rewrite_depth)
-         nir_def_rewrite_uses_after(&tex->def, dest, dest->parent_instr);
+         nir_def_rewrite_uses_after(&tex->def, dest);
    }
    return dest;
 }
@@ -3555,7 +3554,7 @@ lower_zs_swizzle_tex_instr(nir_builder *b, nir_instr *instr, void *data)
             tex->component = 0;
             return true;
          }
-         nir_def_rewrite_uses_after(dest, swizzle, swizzle->parent_instr);
+         nir_def_rewrite_uses_after(dest, swizzle);
          return true;
       }
       nir_def *vec[4];
@@ -3576,12 +3575,12 @@ lower_zs_swizzle_tex_instr(nir_builder *b, nir_instr *instr, void *data)
          }
       }
       nir_def *swizzle = nir_vec(b, vec, num_components);
-      nir_def_rewrite_uses_after(dest, swizzle, swizzle->parent_instr);
+      nir_def_rewrite_uses_after(dest, swizzle);
    } else {
       assert(tex->is_shadow);
       nir_def *vec[4] = {dest, dest, dest, dest};
       nir_def *splat = nir_vec(b, vec, num_components);
-      nir_def_rewrite_uses_after(dest, splat, splat->parent_instr);
+      nir_def_rewrite_uses_after(dest, splat);
    }
    return true;
 }
@@ -3617,7 +3616,7 @@ invert_point_coord_instr(nir_builder *b, nir_intrinsic_instr *intr,
    b->cursor = nir_after_instr(&intr->instr);
    nir_def *def = nir_vec2(b, nir_channel(b, &intr->def, 0),
                                   nir_fsub_imm(b, 1.0, nir_channel(b, &intr->def, 1)));
-   nir_def_rewrite_uses_after(&intr->def, def, def->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, def);
    return true;
 }
 
@@ -3644,7 +3643,7 @@ lower_sparse_instr(nir_builder *b, nir_instr *instr, void *data)
       nir_def *res = nir_b2i32(b, nir_is_sparse_resident_zink(b, &tex->def));
       nir_def *vec = nir_vector_insert_imm(b, &tex->def, res,
                                            tex->def.num_components - 1);
-      nir_def_rewrite_uses_after(&tex->def, vec, vec->parent_instr);
+      nir_def_rewrite_uses_after(&tex->def, vec);
       return true;
    }
 
@@ -3654,7 +3653,7 @@ lower_sparse_instr(nir_builder *b, nir_instr *instr, void *data)
       case nir_intrinsic_image_deref_sparse_load: {
          nir_def *res = nir_b2i32(b, nir_is_sparse_resident_zink(b, &intrin->def));
          nir_def *vec = nir_vector_insert_imm(b, &intrin->def, res, 4);
-         nir_def_rewrite_uses_after(&intrin->def, vec, vec->parent_instr);
+         nir_def_rewrite_uses_after(&intrin->def, vec);
          return true;
       }
 
@@ -4181,7 +4180,7 @@ lower_baseinstance_instr(nir_builder *b, nir_intrinsic_instr *intr,
       return false;
    b->cursor = nir_after_instr(&intr->instr);
    nir_def *def = nir_isub(b, &intr->def, nir_load_base_instance(b));
-   nir_def_rewrite_uses_after(&intr->def, def, def->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, def);
    return true;
 }
 
@@ -4658,7 +4657,7 @@ convert_1d_shadow_tex(nir_builder *b, nir_instr *instr, void *data)
       /* take either xz or just x since this is promoted to 2D from 1D */
       uint32_t mask = num_components == 2 ? (1|4) : 1;
       nir_def *dst = nir_channels(b, &tex->def, mask);
-      nir_def_rewrite_uses_after(&tex->def, dst, dst->parent_instr);
+      nir_def_rewrite_uses_after(&tex->def, dst);
    }
    return true;
 }
@@ -4841,7 +4840,7 @@ split_bitfields_instr(nir_builder *b, nir_alu_instr *alu, void *data)
                                           nir_channel(b, alu->src[2].src.ssa, alu->src[2].swizzle[i]));
    }
    nir_def *dest = nir_vec(b, dests, num_components);
-   nir_def_rewrite_uses_after(&alu->def, dest, &alu->instr);
+   nir_def_rewrite_uses_after_instr(&alu->def, dest, &alu->instr);
    nir_instr_remove(&alu->instr);
    return true;
 }
@@ -4863,7 +4862,7 @@ strip_tex_ms_instr(nir_builder *b, nir_instr *in, void *data)
    switch (intr->intrinsic) {
    case nir_intrinsic_image_deref_samples:
       b->cursor = nir_before_instr(in);
-      nir_def_rewrite_uses_after(&intr->def, nir_imm_zero(b, 1, intr->def.bit_size), in);
+      nir_def_rewrite_uses_after_instr(&intr->def, nir_imm_zero(b, 1, intr->def.bit_size), in);
       nir_instr_remove(in);
       break;
    case nir_intrinsic_image_deref_store:
@@ -5982,7 +5981,7 @@ trivial_revectorize_scan(struct nir_builder *b, nir_intrinsic_instr *intr, void 
                   /* detect if the merged instr loaded multiple components and use swizzle mask for rewrite */
                   unsigned use_components = merge_intr == base ? orig_components : merge_intr->def.num_components;
                   nir_def *swiz = nir_channels(b, &base->def, BITFIELD_RANGE(j, use_components));
-                  nir_def_rewrite_uses_after(&merge_intr->def, swiz, merge_intr == base ? swiz->parent_instr : &merge_intr->instr);
+                  nir_def_rewrite_uses_after_instr(&merge_intr->def, swiz, merge_intr == base ? swiz->parent_instr : &merge_intr->instr);
                   j += use_components - 1;
                }
             } else {
@@ -6058,7 +6057,7 @@ flatten_image_arrays_intr(struct nir_builder *b, nir_instr *instr, void *data)
    int parent_size = glsl_array_size(parent->type);
    b->cursor = nir_after_instr(instr);
    nir_deref_instr *new_deref = nir_build_deref_array(b, parent_parent, nir_iadd(b, nir_imul_imm(b, parent->arr.index.ssa, parent_size), deref->arr.index.ssa));
-   nir_def_rewrite_uses_after(&deref->def, &new_deref->def, &new_deref->instr);
+   nir_def_rewrite_uses_after(&deref->def, &new_deref->def);
    _mesa_set_add(data, instr);
    _mesa_set_add(data, &parent->instr);
    return true;

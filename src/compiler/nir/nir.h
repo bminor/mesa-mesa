@@ -4454,8 +4454,14 @@ nir_def_init_for_type(nir_instr *instr, nir_def *def,
 }
 void nir_def_rewrite_uses(nir_def *def, nir_def *new_ssa);
 void nir_def_rewrite_uses_src(nir_def *def, nir_src new_src);
-void nir_def_rewrite_uses_after(nir_def *def, nir_def *new_ssa,
-                                nir_instr *after_me);
+void nir_def_rewrite_uses_after_instr(nir_def *def, nir_def *new_ssa,
+                                      nir_instr *after_me);
+
+static inline void
+nir_def_rewrite_uses_after(nir_def *def, nir_def *new_ssa)
+{
+   nir_def_rewrite_uses_after_instr(def, new_ssa, new_ssa->parent_instr);
+}
 
 static inline void
 nir_def_replace(nir_def *def, nir_def *new_ssa)

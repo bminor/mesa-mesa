@@ -1134,9 +1134,7 @@ lower_gfx7_tex_swizzle(nir_builder *b, nir_tex_instr *tex, unsigned plane,
    nir_def *swiz_tex_res = nir_vec(b, swiz_comps, 4);
 
    /* Rewrite uses before we insert so we don't rewrite this use */
-   nir_def_rewrite_uses_after(&tex->def,
-                                  swiz_tex_res,
-                                  swiz_tex_res->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, swiz_tex_res);
 }
 
 static bool

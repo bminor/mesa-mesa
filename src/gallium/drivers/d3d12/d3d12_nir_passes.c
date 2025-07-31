@@ -124,7 +124,7 @@ lower_pos_read(nir_builder *b, struct nir_intrinsic_instr *intr, void *_var)
 
    pos = nir_vector_insert_imm(b, pos, depth, 2);
 
-   nir_def_rewrite_uses_after(&intr->def, pos, pos->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, pos);
    return true;
 }
 

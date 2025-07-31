@@ -307,7 +307,7 @@ lower_1d(nir_builder *b, nir_tex_instr *tex)
          dst = nir_channel(b, &tex->def, 0);
       }
 
-      nir_def_rewrite_uses_after(&tex->def, dst, dst->parent_instr);
+      nir_def_rewrite_uses_after(&tex->def, dst);
    }
 }
 
@@ -1087,8 +1087,7 @@ swizzle_tg4_broadcom(nir_builder *b, nir_tex_instr *tex)
    unsigned swiz[4] = { 2, 3, 1, 0 };
    nir_def *swizzled = nir_swizzle(b, &tex->def, swiz, 4);
 
-   nir_def_rewrite_uses_after(&tex->def, swizzled,
-                              swizzled->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, swizzled);
 }
 
 static void
@@ -1125,8 +1124,7 @@ swizzle_result(nir_builder *b, nir_tex_instr *tex, const uint8_t swizzle[4])
       }
    }
 
-   nir_def_rewrite_uses_after(&tex->def, swizzled,
-                              swizzled->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, swizzled);
 }
 
 static void
@@ -1147,8 +1145,7 @@ linearize_srgb_result(nir_builder *b, nir_tex_instr *tex)
                               nir_channel(b, rgb, 2),
                               nir_channel(b, &tex->def, 3));
 
-   nir_def_rewrite_uses_after(&tex->def, result,
-                              result->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, result);
 }
 
 /**
@@ -1228,8 +1225,7 @@ lower_tex_packing(nir_builder *b, nir_tex_instr *tex,
       break;
    }
 
-   nir_def_rewrite_uses_after(&tex->def, color,
-                              color->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, color);
    return true;
 }
 
@@ -1352,8 +1348,7 @@ nir_lower_txs_lod(nir_builder *b, nir_tex_instr *tex)
       minified = nir_vec(b, comp, dest_size);
    }
 
-   nir_def_rewrite_uses_after(&tex->def, minified,
-                              minified->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, minified);
    return true;
 }
 
@@ -1372,7 +1367,7 @@ nir_lower_txs_cube_array(nir_builder *b, nir_tex_instr *tex)
                    nir_idiv(b, nir_channel(b, size, 2),
                             nir_imm_int(b, 6)));
 
-   nir_def_rewrite_uses_after(&tex->def, size, size->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, size);
 }
 
 /* Adjust the sample index according to AMD FMASK (fragment mask).
@@ -1483,7 +1478,7 @@ nir_lower_lod_zero_width(nir_builder *b, nir_tex_instr *tex)
    nir_def *def =
       nir_vec2(b, nir_channel(b, &tex->def, 0), adjusted_lod);
 
-   nir_def_rewrite_uses_after(&tex->def, def, def->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, def);
 }
 
 static void

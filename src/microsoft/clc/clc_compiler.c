@@ -338,10 +338,7 @@ clc_lower_64bit_semantics(nir_shader *nir)
                b.cursor = nir_after_instr(instr);
 
                nir_def *i64 = nir_u2u64(&b, &intrinsic->def);
-               nir_def_rewrite_uses_after(
-                  &intrinsic->def,
-                  i64,
-                  i64->parent_instr);
+               nir_def_rewrite_uses_after(&intrinsic->def, i64);
             }
          }
       }

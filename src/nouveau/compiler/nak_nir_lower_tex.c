@@ -419,7 +419,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
          res = nir_bcsel(b, img_is_null, nir_imm_int(b, 0), res);
       }
 
-      nir_def_rewrite_uses_after(&tex->def, res, res->parent_instr);
+      nir_def_rewrite_uses_after(&tex->def, res);
    }
 
    return true;
@@ -585,7 +585,7 @@ shrink_image_load(nir_builder *b, nir_intrinsic_instr *intrin,
                          nir_u2u64(b, data_w));
       }
 
-      nir_def_rewrite_uses_after(&intrin->def, data, data->parent_instr);
+      nir_def_rewrite_uses_after(&intrin->def, data);
       return true;
    }
 
@@ -630,7 +630,7 @@ shrink_image_load(nir_builder *b, nir_intrinsic_instr *intrin,
       comps[old_comps - 1] = nir_channel(b, &intrin->def, new_comps);
 
    nir_def *data = nir_vec(b, comps, old_comps);
-   nir_def_rewrite_uses_after(&intrin->def, data, data->parent_instr);
+   nir_def_rewrite_uses_after(&intrin->def, data);
    return true;
 }
 

@@ -828,13 +828,12 @@ vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
 
    /* update uses */
    if (first == low) {
-      nir_def_rewrite_uses_after(&low->intrin->def, low_def,
+      nir_def_rewrite_uses_after_instr(&low->intrin->def, low_def,
                                  high_def->parent_instr);
       nir_def_rewrite_uses(&high->intrin->def, high_def);
    } else {
       nir_def_rewrite_uses(&low->intrin->def, low_def);
-      nir_def_rewrite_uses_after(&high->intrin->def, high_def,
-                                 high_def->parent_instr);
+      nir_def_rewrite_uses_after(&high->intrin->def, high_def);
    }
 
    /* update the intrinsic */

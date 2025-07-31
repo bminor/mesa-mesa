@@ -268,8 +268,7 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr,
          nir_src_rewrite(&intr->src[0], src);
       }
    } else if (dest) {
-      nir_def_rewrite_uses_after(&intr->def, dest,
-                                     dest->parent_instr);
+      nir_def_rewrite_uses_after(&intr->def, dest);
    }
 
    return true;

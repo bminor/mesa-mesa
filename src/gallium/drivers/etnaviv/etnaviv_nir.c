@@ -68,9 +68,7 @@ etna_lower_io(nir_shader *shader, struct etna_shader_variant *v)
                   if (v->key.front_ccw)
                      nir_def_as_alu(ssa)->op = nir_op_ieq;
 
-                  nir_def_rewrite_uses_after(&intr->def,
-                                                 ssa,
-                                                 ssa->parent_instr);
+                  nir_def_rewrite_uses_after(&intr->def, ssa);
 
                   func_progress = true;
                } break;
@@ -170,9 +168,7 @@ etna_lower_alu_impl(nir_function_impl *impl, bool has_new_transcendentals)
 
             nir_instr_insert_after(instr, &mul->instr);
 
-            nir_def_rewrite_uses_after(ssa, &mul->def,
-                                           &mul->instr);
-
+            nir_def_rewrite_uses_after(ssa, &mul->def);
             progress = true;
          }
       }

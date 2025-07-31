@@ -212,7 +212,7 @@ lower_noperspective_fs(nir_builder *b, nir_intrinsic_instr *intrin,
       fragcoord_w = nir_f2f16(b, fragcoord_w);
 
    nir_def *new_value = nir_fmul(b, &intrin->def, fragcoord_w);
-   nir_def_rewrite_uses_after(&intrin->def, new_value, new_value->parent_instr);
+   nir_def_rewrite_uses_after(&intrin->def, new_value);
 
    return true;
 }

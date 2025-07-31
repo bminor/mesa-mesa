@@ -1877,7 +1877,7 @@ lower_image_size_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
       comps[c] = c == 2 ? image_depth : nir_channel(b, &intrin->def, c);
 
    nir_def *vec = nir_vec(b, comps, intrin->def.num_components);
-   nir_def_rewrite_uses_after(&intrin->def, vec, vec->parent_instr);
+   nir_def_rewrite_uses_after(&intrin->def, vec);
 
    return true;
 }

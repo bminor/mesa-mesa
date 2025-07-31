@@ -985,7 +985,7 @@ crocus_setup_binding_table(const struct intel_device_info *devinfo,
                   val = nir_ishl_imm(&b, val, 32 - width);
                   val = nir_ishr_imm(&b, val, 32 - width);
                }
-               nir_def_rewrite_uses_after(&tex->def, val, val->parent_instr);
+               nir_def_rewrite_uses_after(&tex->def, val);
             }
 
             tex->texture_index =

@@ -52,7 +52,7 @@ nir_lower_frag_shading_rate(nir_builder *b, nir_intrinsic_instr *intr,
    nir_deref_instr *result = nir_build_deref_array(b, lut, &intr->def);
    nir_def *r = nir_build_load_deref(b, 1, 32, &result->def, 0);
 
-   nir_def_rewrite_uses_after(&intr->def, r, r->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, r);
    return true;
 }
 

@@ -122,9 +122,7 @@ nir_lower_array_deref_of_vec_impl(nir_function_impl *impl,
             if (scalar->parent_instr->type == nir_instr_type_undef) {
                nir_def_replace(&intrin->def, scalar);
             } else {
-               nir_def_rewrite_uses_after(&intrin->def,
-                                          scalar,
-                                          scalar->parent_instr);
+               nir_def_rewrite_uses_after(&intrin->def, scalar);
             }
             progress = true;
          }

@@ -390,7 +390,7 @@ static bool lower_image_opcodes(nir_builder *b, nir_instr *instr, void *data)
       case nir_intrinsic_bindless_image_load:
          result = emulated_image_load(b, intr->def.num_components, intr->def.bit_size,
                                       desc, intr->src[1].ssa, access, dim, is_array, true);
-         nir_def_rewrite_uses_after(dst, result, instr);
+         nir_def_rewrite_uses_after_instr(dst, result, instr);
          nir_instr_remove(instr);
          return true;
 
@@ -480,7 +480,7 @@ static bool lower_image_opcodes(nir_builder *b, nir_instr *instr, void *data)
                                          desc, coord,
                                          ACCESS_RESTRICT | ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER,
                                          tex->sampler_dim, tex->is_array, true);
-            nir_def_rewrite_uses_after(dst, result, instr);
+            nir_def_rewrite_uses_after_instr(dst, result, instr);
             nir_instr_remove(instr);
             return true;
 
@@ -488,7 +488,7 @@ static bool lower_image_opcodes(nir_builder *b, nir_instr *instr, void *data)
          case nir_texop_txl:
             result = emulated_tex_level_zero(b, tex->def.num_components, tex->def.bit_size,
                                   desc, sampler_desc, coord, tex->sampler_dim, tex->is_array);
-            nir_def_rewrite_uses_after(dst, result, instr);
+            nir_def_rewrite_uses_after_instr(dst, result, instr);
             nir_instr_remove(instr);
             return true;
 

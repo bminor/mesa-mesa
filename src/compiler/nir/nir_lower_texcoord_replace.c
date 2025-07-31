@@ -118,9 +118,7 @@ nir_lower_texcoord_replace_impl(nir_function_impl *impl,
          nir_def *result = nir_bcsel(&b, cond, nir_channels(&b, new_coord, component_mask),
                                      &intrin->def);
 
-         nir_def_rewrite_uses_after(&intrin->def,
-                                    result,
-                                    result->parent_instr);
+         nir_def_rewrite_uses_after(&intrin->def, result);
       }
    }
 

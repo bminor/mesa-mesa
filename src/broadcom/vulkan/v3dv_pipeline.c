@@ -915,8 +915,7 @@ lower_point_coord_cb(nir_builder *b, nir_intrinsic_instr *intr, void *_state)
    result =
       nir_vector_insert_imm(b, result,
                             nir_fsub_imm(b, 1.0, nir_channel(b, result, 1)), 1);
-   nir_def_rewrite_uses_after(&intr->def,
-                                  result, result->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, result);
    return true;
 }
 

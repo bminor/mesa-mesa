@@ -599,8 +599,7 @@ lower_tex_ycbcr(const struct tu_pipeline_layout *layout,
                                               ycbcr_sampler->ycbcr_range,
                                               &tex->def,
                                               bpcs);
-   nir_def_rewrite_uses_after(&tex->def, result,
-                              result->parent_instr);
+   nir_def_rewrite_uses_after(&tex->def, result);
 
    builder->cursor = nir_before_instr(&tex->instr);
 }

@@ -1084,7 +1084,7 @@ lower_any_hit_for_intersection(nir_shader *any_hit)
             case nir_intrinsic_load_rt_arg_scratch_offset_amd:
                b->cursor = nir_after_instr(instr);
                nir_def *arg_offset = nir_isub(b, &intrin->def, scratch_offset);
-               nir_def_rewrite_uses_after(&intrin->def, arg_offset, arg_offset->parent_instr);
+               nir_def_rewrite_uses_after(&intrin->def, arg_offset);
                break;
 
             default:

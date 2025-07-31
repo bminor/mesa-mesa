@@ -129,8 +129,7 @@ nir_lower_mediump_io(nir_shader *nir, nir_variable_mode modes,
             intr->def.bit_size = 16;
             nir_intrinsic_set_dest_type(intr, (type & ~32) | 16);
             nir_def *dst = convert(&b, &intr->def);
-            nir_def_rewrite_uses_after(&intr->def, dst,
-                                       dst->parent_instr);
+            nir_def_rewrite_uses_after(&intr->def, dst);
          }
 
          if (use_16bit_slots && is_varying &&
@@ -278,9 +277,7 @@ nir_lower_mediump_vars_impl(nir_function_impl *impl, nir_variable_mode modes,
                   UNREACHABLE("Invalid 16-bit type");
                }
 
-               nir_def_rewrite_uses_after(&intrin->def,
-                                          replace,
-                                          replace->parent_instr);
+               nir_def_rewrite_uses_after(&intrin->def, replace);
                progress = true;
                break;
             }

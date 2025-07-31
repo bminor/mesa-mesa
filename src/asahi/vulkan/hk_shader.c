@@ -697,7 +697,7 @@ lower_min_lod(nir_builder *b, nir_tex_instr *tex, UNUSED void *_data)
       nir_def *oob = nir_ine_imm(b, min_lod, 0);
       nir_def *zero = nir_imm_zero(b, old->num_components, old->bit_size);
       nir_def *new_ = nir_bcsel(b, oob, zero, old);
-      nir_def_rewrite_uses_after(old, new_, new_->parent_instr);
+      nir_def_rewrite_uses_after(old, new_);
    } else if (tex->op == nir_texop_txl) {
       assert(other_min_lod == NULL && "txl doesn't have an API min lod");
 
@@ -747,7 +747,7 @@ lower_viewport_fs(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
    nir_def *uvs = nir_load_uvs_index_agx(b, .io_semantics = sem);
    nir_def *def = nir_bcsel(b, nir_ine_imm(b, uvs, 0), orig, nir_imm_int(b, 0));
 
-   nir_def_rewrite_uses_after(orig, def, def->parent_instr);
+   nir_def_rewrite_uses_after(orig, def);
    return true;
 }
 

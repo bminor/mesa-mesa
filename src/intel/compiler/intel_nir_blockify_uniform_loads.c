@@ -93,7 +93,7 @@ rebase_const_offset_ubo_loads_instr(nir_builder *b,
    nir_def *rebase = nir_vec_scalars(b, components, orig_def_components);
    rebase->divergent = false;
 
-   nir_def_rewrite_uses_after(&intrin->def, rebase, rebase->parent_instr);
+   nir_def_rewrite_uses_after(&intrin->def, rebase);
 
    return true;
 }

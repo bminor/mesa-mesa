@@ -303,8 +303,7 @@ lower_phi_instr(nir_builder *b, nir_phi_instr *phi, unsigned bit_size,
    b->cursor = nir_after_instr(&last_phi->instr);
 
    nir_def *new_dest = nir_u2uN(b, &phi->def, old_bit_size);
-   nir_def_rewrite_uses_after(&phi->def, new_dest,
-                              new_dest->parent_instr);
+   nir_def_rewrite_uses_after(&phi->def, new_dest);
 }
 
 static bool

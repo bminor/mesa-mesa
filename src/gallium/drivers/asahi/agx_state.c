@@ -1463,7 +1463,7 @@ agx_nir_lower_point_sprite_zw(nir_builder *b, nir_intrinsic_instr *intr,
    }
 
    nir_def *new_vec = nir_vec(b, &chans[component], intr->def.num_components);
-   nir_def_rewrite_uses_after(&intr->def, new_vec, new_vec->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, new_vec);
    return true;
 }
 

@@ -112,8 +112,7 @@ emit_wpos_adjustment(lower_wpos_ytransform_state *state,
 
    nir_def *new_wpos = nir_vec(b, &wpos[c], intr->num_components);
 
-   nir_def_rewrite_uses_after(&intr->def, new_wpos,
-                              new_wpos->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, new_wpos);
 
    return true;
 }
@@ -263,8 +262,7 @@ lower_load_sample_pos(lower_wpos_ytransform_state *state,
                                  nir_fmax(b, neg_scale, nir_imm_float(b, 0.0)));
    nir_def *flipped_pos = nir_vector_insert_imm(b, pos, flipped_y, 1);
 
-   nir_def_rewrite_uses_after(&intr->def, flipped_pos,
-                              flipped_pos->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, flipped_pos);
 
    return true;
 }

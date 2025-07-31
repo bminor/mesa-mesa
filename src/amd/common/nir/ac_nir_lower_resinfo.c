@@ -368,7 +368,7 @@ static bool lower_resinfo(nir_builder *b, nir_instr *instr, void *data)
    if (dst->bit_size == 16)
       result = nir_u2u16(b, result);
 
-   nir_def_rewrite_uses_after(dst, result, instr);
+   nir_def_rewrite_uses_after_instr(dst, result, instr);
    nir_instr_remove(instr);
    return true;
 }

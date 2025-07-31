@@ -1653,7 +1653,7 @@ is_instr_between(nir_instr *start, nir_instr *end, nir_instr *between)
  * def->parent_instr and that after_me comes after def->parent_instr.
  */
 void
-nir_def_rewrite_uses_after(nir_def *def, nir_def *new_ssa,
+nir_def_rewrite_uses_after_instr(nir_def *def, nir_def *new_ssa,
                            nir_instr *after_me)
 {
    if (def == new_ssa)

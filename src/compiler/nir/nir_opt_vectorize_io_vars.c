@@ -494,9 +494,7 @@ nir_opt_vectorize_io_vars_impl(nir_function_impl *impl, nir_variable_mode modes)
 
             nir_def *new_vec = nir_channels(&b, &intrin->def,
                                             vec4_comp_mask >> new_frac);
-            nir_def_rewrite_uses_after(&intrin->def,
-                                       new_vec,
-                                       new_vec->parent_instr);
+            nir_def_rewrite_uses_after(&intrin->def, new_vec);
 
             progress = true;
             break;

@@ -455,7 +455,7 @@ lower_deref_bit_size(nir_builder *b, nir_intrinsic_instr *intr, void *data)
          intr->def.bit_size = glsl_get_bit_size(var_scalar_type);
          b->cursor = nir_after_instr(&intr->instr);
          nir_def *downcast = nir_type_convert(b, &intr->def, new_type, old_type, nir_rounding_mode_undef);
-         nir_def_rewrite_uses_after(&intr->def, downcast, downcast->parent_instr);
+         nir_def_rewrite_uses_after(&intr->def, downcast);
       }
       else {
          b->cursor = nir_before_instr(&intr->instr);
@@ -1084,7 +1084,7 @@ dxil_nir_lower_double_math_instr(nir_builder *b,
       nir_src_rewrite(&intr->src[0], nir_pack_double_2x32_dxil(b, nir_unpack_64_2x32(b, intr->src[0].ssa)));
       b->cursor = nir_after_instr(instr);
       nir_def *result = nir_pack_64_2x32(b, nir_unpack_double_2x32_dxil(b, &intr->def));
-      nir_def_rewrite_uses_after(&intr->def, result, result->parent_instr);
+      nir_def_rewrite_uses_after(&intr->def, result);
       return true;
    }
 
@@ -1132,7 +1132,7 @@ dxil_nir_lower_double_math_instr(nir_builder *b,
          components[c] = nir_pack_64_2x32(b, unpacked_double);
       }
       nir_def *repacked_dvec = nir_vec(b, components, alu->def.num_components);
-      nir_def_rewrite_uses_after(&alu->def, repacked_dvec, repacked_dvec->parent_instr);
+      nir_def_rewrite_uses_after(&alu->def, repacked_dvec);
       progress = true;
    }
 
@@ -2145,7 +2145,7 @@ lower_inclusive_to_exclusive(nir_builder *b, nir_intrinsic_instr *intr)
 
    nir_def *final_val = nir_build_alu2(b, nir_intrinsic_reduction_op(intr),
                                            &intr->def, intr->src[0].ssa);
-   nir_def_rewrite_uses_after(&intr->def, final_val, final_val->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, final_val);
 }
 
 static bool

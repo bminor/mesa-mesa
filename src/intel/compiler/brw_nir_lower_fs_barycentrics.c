@@ -52,7 +52,7 @@ lower_flat_inputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
                                                    INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST),
                                      last_vtx,
                                      first_vtx);
-   nir_def_rewrite_uses_after(&intrin->def, input_vertex, input_vertex->parent_instr);
+   nir_def_rewrite_uses_after(&intrin->def, input_vertex);
 
    return true;
 }
