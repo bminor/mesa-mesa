@@ -14,7 +14,8 @@ enum panvk_instr_work_type {
    PANVK_INSTR_WORK_TYPE_DISPATCH,
    PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
    PANVK_INSTR_WORK_TYPE_BARRIER,
-   PANVK_INSTR_WORK_TYPE_SYNC_WAIT,
+   PANVK_INSTR_WORK_TYPE_SYNC32_WAIT,
+   PANVK_INSTR_WORK_TYPE_SYNC64_WAIT,
 };
 
 struct panvk_instr_end_args {
@@ -52,6 +53,12 @@ struct panvk_instr_end_args {
       struct {
          uint64_t buffer_gpu;
       } dispatch_indirect;
+
+      struct {
+         struct cs_index addr_regs;
+         struct cs_index val_regs;
+         enum mali_cs_condition cond;
+      } sync;
    };
 };
 
@@ -77,3 +84,24 @@ void panvk_per_arch(panvk_instr_end_work_async)(
    enum panvk_instr_work_type work_type,
    const struct panvk_instr_end_args *const args,
    struct cs_async_op ts_async_op);
+
+#define PANVK_INSTR_SYNC_OPS(__cnt_width)                                      \
+   static inline void panvk_instr_sync##__cnt_width##_wait(                    \
+      struct panvk_cmd_buffer *cmdbuf, enum panvk_subqueue_id id,              \
+      bool reject_error, enum mali_cs_condition cond, struct cs_index ref,     \
+      struct cs_index addr)                                                    \
+   {                                                                           \
+      struct cs_builder *b = panvk_get_cs_builder(cmdbuf, id);                 \
+      panvk_per_arch(panvk_instr_begin_work)(                                  \
+         id, cmdbuf, PANVK_INSTR_WORK_TYPE_SYNC##__cnt_width##_WAIT);          \
+      cs_sync##__cnt_width##_wait(b, reject_error, cond, ref, addr);           \
+      struct panvk_instr_end_args instr_info = {                               \
+         .sync = {.addr_regs = addr, .val_regs = ref, .cond = cond},           \
+      };                                                                       \
+      panvk_per_arch(panvk_instr_end_work)(                                    \
+         id, cmdbuf, PANVK_INSTR_WORK_TYPE_SYNC##__cnt_width##_WAIT,           \
+         &instr_info);                                                         \
+   }
+
+PANVK_INSTR_SYNC_OPS(32)
+PANVK_INSTR_SYNC_OPS(64)

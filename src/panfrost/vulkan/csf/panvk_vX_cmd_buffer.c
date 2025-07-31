@@ -581,7 +581,9 @@ emit_barrier_insert_waits(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
 
       cs_add64(b, wait_val, cs_progress_seqno_reg(b, j),
                cs_state->relative_sync_point);
-      cs_sync64_wait(b, false, MALI_CS_CONDITION_GREATER, wait_val, sync_addr);
+
+      panvk_instr_sync64_wait(cmdbuf, i, false, MALI_CS_CONDITION_GREATER,
+                              wait_val, sync_addr);
    }
 }
 

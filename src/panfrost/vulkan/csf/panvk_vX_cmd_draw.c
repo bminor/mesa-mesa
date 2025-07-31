@@ -3001,8 +3001,10 @@ wait_finish_tiling(struct panvk_cmd_buffer *cmdbuf)
    cs_add64(b, vt_sync_point,
             cs_progress_seqno_reg(b, PANVK_SUBQUEUE_VERTEX_TILER),
             rel_vt_sync_point);
-   cs_sync64_wait(b, false, MALI_CS_CONDITION_GREATER, vt_sync_point,
-                  vt_sync_addr);
+
+   panvk_instr_sync64_wait(cmdbuf, PANVK_SUBQUEUE_FRAGMENT, false,
+                           MALI_CS_CONDITION_GREATER, vt_sync_point,
+                           vt_sync_addr);
 }
 
 static uint32_t
@@ -3117,11 +3119,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
                             length_reg);
 
    /* Wait for the tiling to be done before submitting the fragment job. */
-   panvk_per_arch(panvk_instr_begin_work)(PANVK_SUBQUEUE_FRAGMENT, cmdbuf,
-                                          PANVK_INSTR_WORK_TYPE_SYNC_WAIT);
    wait_finish_tiling(cmdbuf);
-   panvk_per_arch(panvk_instr_end_work)(PANVK_SUBQUEUE_FRAGMENT, cmdbuf,
-                                        PANVK_INSTR_WORK_TYPE_SYNC_WAIT, NULL);
 
    /* Disable the oom handler once the vertex/tiler work has finished.
     * We need to disable the handler at this point as the vertex/tiler subqueue

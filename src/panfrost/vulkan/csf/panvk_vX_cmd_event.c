@@ -6,6 +6,7 @@
 #include "panvk_cmd_buffer.h"
 #include "panvk_entrypoints.h"
 #include "panvk_event.h"
+#include "panvk_instr.h"
 
 #include "util/bitscan.h"
 
@@ -124,7 +125,8 @@ cmd_wait_event(struct panvk_cmd_buffer *cmdbuf, struct panvk_event *event,
                          (j * sizeof(struct panvk_cs_sync32)));
 
          cs_move32_to(b, seqno, 0);
-         cs_sync32_wait(b, false, MALI_CS_CONDITION_GREATER, seqno, sync_addr);
+         panvk_instr_sync32_wait(cmdbuf, i, false, MALI_CS_CONDITION_GREATER,
+                                 seqno, sync_addr);
       }
    }
 }
