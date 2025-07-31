@@ -452,6 +452,9 @@ typedef struct agx_block {
    struct util_dynarray predecessors;
    bool unconditional_jumps;
 
+   /* Could there be masked execution? */
+   bool divergent;
+
    /* Liveness analysis results */
    BITSET_WORD *live_in;
    BITSET_WORD *live_out;

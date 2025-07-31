@@ -2560,6 +2560,9 @@ agx_create_block(agx_context *ctx)
 {
    agx_block *blk = rzalloc(ctx, agx_block);
 
+   /* This is conservative, TODO: divergence analysis */
+   blk->divergent = ctx->total_nesting > 0;
+
    util_dynarray_init(&blk->predecessors, blk);
 
    return blk;
