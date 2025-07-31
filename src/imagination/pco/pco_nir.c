@@ -33,6 +33,7 @@ static const struct spirv_to_nir_options spirv_options = {
 
 /** NIR options. */
 static const nir_shader_compiler_options nir_options = {
+   .discard_is_demote = true,
    .fuse_ffma32 = true,
 
    .has_fused_comp_and_csel = true,
@@ -497,6 +498,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
          .point_coord = true,
       };
       NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
+      NIR_PASS(_, nir, nir_lower_helper_writes, true);
    }
 
    NIR_PASS(_, nir, nir_lower_system_values);

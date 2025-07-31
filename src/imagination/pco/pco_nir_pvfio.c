@@ -447,8 +447,8 @@ static bool is_pfo(const nir_instr *instr, UNUSED const void *cb_data)
    switch (intr->intrinsic) {
    case nir_intrinsic_store_output:
    case nir_intrinsic_load_output:
-   case nir_intrinsic_terminate:
-   case nir_intrinsic_terminate_if:
+   case nir_intrinsic_demote:
+   case nir_intrinsic_demote_if:
       return true;
 
    default:
@@ -507,13 +507,13 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
    case nir_intrinsic_load_output:
       return lower_pfo_load(b, intr, state);
 
-   case nir_intrinsic_terminate:
+   case nir_intrinsic_demote:
       state->has_discards = true;
       state->last_discard_store =
          nir_build_store_reg(b, nir_imm_true(b), state->discard_cond_reg);
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
 
-   case nir_intrinsic_terminate_if: {
+   case nir_intrinsic_demote_if: {
       state->has_discards = true;
       nir_def *val = nir_load_reg(b, state->discard_cond_reg);
       val = nir_ior(b, val, intr->src[0].ssa);
@@ -690,7 +690,7 @@ lower_alpha_to_coverage(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
                        a2c_mask,
                        nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b)));
 
-   nir_terminate_if(b, nir_ieq_imm(b, a2c_mask, 0));
+   nir_demote_if(b, nir_ieq_imm(b, a2c_mask, 0));
 
    return NULL;
 }
