@@ -4520,15 +4520,11 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
    if (pipeline->program.writes_shading_rate !=
           cmd->state.pipeline_writes_shading_rate ||
        pipeline->program.reads_shading_rate !=
-          cmd->state.pipeline_reads_shading_rate ||
-       pipeline->program.accesses_smask !=
-          cmd->state.pipeline_accesses_smask) {
+          cmd->state.pipeline_reads_shading_rate) {
       cmd->state.pipeline_writes_shading_rate =
          pipeline->program.writes_shading_rate;
       cmd->state.pipeline_reads_shading_rate =
          pipeline->program.reads_shading_rate;
-      cmd->state.pipeline_accesses_smask =
-         pipeline->program.accesses_smask;
       cmd->state.dirty |= TU_CMD_DIRTY_SHADING_RATE;
    }
 

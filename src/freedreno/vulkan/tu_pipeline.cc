@@ -2348,7 +2348,6 @@ tu_emit_program_state(struct tu_cs *sub_cs,
       prog->per_layer_viewport;
    prog->writes_shading_rate = last_variant->writes_shading_rate;
    prog->reads_shading_rate = fs->reads_shading_rate;
-   prog->accesses_smask = fs->reads_smask || fs->writes_smask;
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_vertex_input_state[] = {
@@ -3574,8 +3573,7 @@ tu6_fragment_shading_rate_size(struct tu_device *dev,
                                const vk_fragment_shading_rate_state *fsr,
                                bool enable_att_fsr,
                                bool enable_prim_fsr,
-                               bool fs_reads_fsr,
-                               bool sample_shading)
+                               bool fs_reads_fsr)
 {
    return 6;
 }
@@ -3586,8 +3584,7 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
                                const vk_fragment_shading_rate_state *fsr,
                                bool enable_att_fsr,
                                bool enable_prim_fsr,
-                               bool fs_reads_fsr,
-                               bool accesses_smask)
+                               bool fs_reads_fsr)
 {
    /* gl_ShadingRateEXT don't read 1x1 value with null config, so
     * if it is read - we have to emit the config.
@@ -3621,15 +3618,6 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
                  VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
          enable_prim_fsr = false;
       }
-   }
-
-   /* Force 1x1 FSR because we don't support
-    * fragmentShadingRateWithShaderSampleMask.
-    */
-   if (accesses_smask) {
-      enable_att_fsr = enable_prim_fsr = false;
-      frag_width = frag_height = 1;
-      enable_draw_fsr = true;
    }
 
    tu_cs_emit_regs(
@@ -3859,8 +3847,7 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
                       builder->graphics_state.fsr,
                       has_fsr_att,
                       pipeline->program.writes_shading_rate,
-                      pipeline->program.reads_shading_rate,
-                      pipeline->program.accesses_smask);
+                      pipeline->program.reads_shading_rate);
    }
 #undef DRAW_STATE
 #undef DRAW_STATE_COND
@@ -4053,8 +4040,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                &cmd->vk.dynamic_graphics_state.fsr,
                cmd->state.subpass->fsr_attachment != VK_ATTACHMENT_UNUSED,
                cmd->state.program.writes_shading_rate,
-               cmd->state.program.reads_shading_rate,
-               cmd->state.program.accesses_smask);
+               cmd->state.program.reads_shading_rate);
    }
    DRAW_STATE_COND(rast, TU_DYNAMIC_STATE_RAST,
                    cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS |

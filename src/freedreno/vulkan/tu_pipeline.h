@@ -151,7 +151,6 @@ struct tu_program_state
 
       bool writes_shading_rate;
       bool reads_shading_rate;
-      bool accesses_smask;
       bool uses_ray_intersection;
 };
 
