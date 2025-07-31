@@ -58,11 +58,10 @@ static unsigned
 agx_pack_sample_coords(const agx_instr *I, agx_index index, bool *flag,
                        bool *is_16)
 {
-   /* TODO: Do we have a use case for 16-bit coords? */
-   pack_assert_msg(I, index.size == AGX_SIZE_32, "32-bit coordinates");
+   pack_assert_msg(I, index.size <= AGX_SIZE_32, "32-bit coordinates");
    pack_assert_msg(I, index.value < 0x100, "coordinate register bound");
 
-   *is_16 = false;
+   *is_16 = index.size == AGX_SIZE_16;
    *flag = index.discard;
    return index.value;
 }
@@ -913,8 +912,8 @@ agx_pack_instr(struct util_dynarray *emission, struct util_dynarray *fixups,
          (q2 << 30) | (((uint64_t)(T & BITFIELD_MASK(6))) << 32) |
          (((uint64_t)Tt) << 38) |
          (((uint64_t)(I->dim & BITFIELD_MASK(3))) << 40) |
-         (((uint64_t)q3) << 43) | (((uint64_t)I->mask) << 48) |
-         (((uint64_t)lod_mode) << 52) |
+         (((uint64_t)q3) << 43) | (Cs ? BITFIELD64_BIT(47) : 0) |
+         (((uint64_t)I->mask) << 48) | (((uint64_t)lod_mode) << 52) |
          (((uint64_t)(S & BITFIELD_MASK(6))) << 56) | (((uint64_t)St) << 62) |
          (((uint64_t)I->scoreboard) << 63);
 

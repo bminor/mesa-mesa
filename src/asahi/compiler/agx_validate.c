@@ -228,12 +228,12 @@ agx_dim_info(enum agx_dim dim)
  * lower 16-bits are present. LOD queries do not take a layer.
  */
 static unsigned
-agx_coordinate_registers(const agx_instr *I)
+agx_coordinate_registers(const agx_instr *I, enum agx_size size)
 {
    struct dim_info dim = agx_dim_info(I->dim);
    bool has_array = !I->query_lod;
 
-   return 2 * (dim.comps + (has_array && dim.array));
+   return agx_size_align_16(size) * (dim.comps + (has_array && dim.array));
 }
 
 static unsigned
@@ -292,7 +292,7 @@ agx_read_registers(const agx_instr *I, unsigned s)
       if (s == 0)
          return 4 * size /* data */;
       else if (s == 1)
-         return agx_coordinate_registers(I);
+         return agx_coordinate_registers(I, I->src[1].size);
       else
          return size;
 
@@ -300,7 +300,7 @@ agx_read_registers(const agx_instr *I, unsigned s)
    case AGX_OPCODE_TEXTURE_LOAD:
    case AGX_OPCODE_TEXTURE_SAMPLE:
       if (s == 0) {
-         return agx_coordinate_registers(I);
+         return agx_coordinate_registers(I, I->src[0].size);
       } else if (s == 1) {
          /* LOD */
          if (I->lod_mode == AGX_LOD_MODE_LOD_GRAD ||
@@ -341,7 +341,7 @@ agx_read_registers(const agx_instr *I, unsigned s)
 
    case AGX_OPCODE_BLOCK_IMAGE_STORE:
       if (s == 3 && I->explicit_coords)
-         return agx_coordinate_registers(I);
+         return agx_coordinate_registers(I, I->src[3].size);
       else
          return size;
 
