@@ -437,6 +437,7 @@
     - .navi10-test-valve
   variables:
     RUNNER_FARM_LOCATION: keywords
+    GPU_VERSION: radv-navi10
     FDO_CI_CONCURRENT: 16
 
 .navi21-test-valve:
