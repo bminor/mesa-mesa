@@ -1091,7 +1091,7 @@ __glXInitialize(Display * dpy)
 
    return dpyPriv;
 init_fail:
-#if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
+#if defined(GLX_DIRECT_RENDERING) && !defined(GLX_USE_APPLEGL)
    _mesa_set_destroy(dpyPriv->zombieGLXDrawable, free_zombie_glx_drawable);
    __glxHashDestroy(dpyPriv->drawHash);
 #endif
