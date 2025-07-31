@@ -1112,6 +1112,8 @@ struct agx_cycle_estimate {
 
 struct agx_cycle_estimate agx_estimate_cycles(agx_context *ctx);
 
+bool agx_is_alu(const agx_instr *I);
+
 extern int agx_compiler_debug;
 
 #ifdef __cplusplus
