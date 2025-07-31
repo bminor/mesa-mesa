@@ -1867,7 +1867,6 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
          CONDREG(smask_in_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEMASK) |
          CONDREG(samp_id_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEID) |
          CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_PS_INPUT_CNTL_CENTERRHW) |
-         COND(fs->post_depth_coverage, A6XX_RB_PS_INPUT_CNTL_POSTDEPTHCOVERAGE)  |
          COND(fs->frag_face, A6XX_RB_PS_INPUT_CNTL_FACENESS) |
          CONDREG(shading_rate_regid, A6XX_RB_PS_INPUT_CNTL_FOVEATION));
 
