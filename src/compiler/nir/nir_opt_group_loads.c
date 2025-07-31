@@ -57,7 +57,9 @@ typedef struct {
    uint32_t indirection_level;
 } instr_info;
 
-static nir_instr *
+typedef struct opaque_resource opaque_resource;
+
+static opaque_resource *
 get_load_resource(nir_instr *instr)
 {
    if (instr->type == nir_instr_type_tex) {
@@ -67,12 +69,16 @@ get_load_resource(nir_instr *instr)
          switch (tex->src[i].src_type) {
          case nir_tex_src_texture_deref:
          case nir_tex_src_texture_handle:
-            return tex->src[i].src.ssa->parent_instr;
+            return (opaque_resource*)tex->src[i].src.ssa->parent_instr;
          default:
             break;
          }
       }
-      UNREACHABLE("tex instr should have a resource");
+
+      /* Some drivers that don't support indirect resource indexing lower
+       * derefs to the constant texture_index.
+       */
+      return (opaque_resource*)(uintptr_t)tex->texture_index;
    }
 
    if (instr->type == nir_instr_type_intrinsic) {
@@ -106,7 +112,7 @@ get_load_resource(nir_instr *instr)
       /* load_ubo is ignored because it's usually cheap. */
       case nir_intrinsic_load_ssbo:
       case nir_intrinsic_load_global:
-         return nir_instr_as_intrinsic(instr)->src[0].ssa->parent_instr;
+         return (opaque_resource*)nir_instr_as_intrinsic(instr)->src[0].ssa->parent_instr;
       default:
          return NULL;
       }
@@ -396,7 +402,7 @@ process_block(nir_block *block, nir_load_grouping grouping,
 
       set_instr_indices(block, infos);
 
-      nir_instr *resource = NULL;
+      opaque_resource *resource = NULL;
       nir_instr *first_load = NULL, *last_load = NULL;
 
       /* Find the first and last instruction that use the same
@@ -416,7 +422,7 @@ process_block(nir_block *block, nir_load_grouping grouping,
 
          /* Only group load instructions with the same indirection level. */
          if (is_part_of_group(current, NULL, level, infos)) {
-            nir_instr *current_resource;
+            opaque_resource *current_resource;
 
             switch (grouping) {
             case nir_group_all:
