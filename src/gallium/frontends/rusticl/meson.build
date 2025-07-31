@@ -25,6 +25,7 @@ libmesa_rust_files = files(
   'mesa/pipe/transfer.rs',
   'mesa/util.rs',
   'mesa/util/disk_cache.rs',
+  'mesa/util/queue.rs',
   'mesa/util/vm.rs',
 )
 
@@ -286,8 +287,12 @@ rusticl_mesa_bindings = rust.bindgen(
     '--allowlist-var',          'SHA1_.*',
     '--allowlist-function',     'u_.*',
     '--allowlist-function',     'util_format_.*',
+    '--allowlist-function',     'util_queue_.*',
     '--allowlist-function',     'util_vma_.*',
+    '--allowlist-function',     'util_get_cpu_caps',
     '--no-copy',                'util_vma_heap', # it's a linked list
+    '--no-copy',                'util_queue',
+    '--no-copy',                'util_queue_fence',
 
     # CL API
     '--allowlist-type',         'cl_sampler_.*_mode',
