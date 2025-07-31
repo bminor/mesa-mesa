@@ -1342,9 +1342,6 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
    /* All those variables we created should've gone away by now */
    NIR_PASS(_, gs, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
-   NIR_PASS(_, gs, nir_opt_sink, ~0);
-   NIR_PASS(_, gs, nir_opt_move, ~0);
-
    NIR_PASS(_, gs, nir_shader_intrinsics_pass, lower_id,
             nir_metadata_control_flow, NULL);
 
