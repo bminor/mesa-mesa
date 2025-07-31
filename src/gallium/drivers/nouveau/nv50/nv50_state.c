@@ -1006,7 +1006,7 @@ nv50_set_framebuffer_state(struct pipe_context *pipe,
 
    nouveau_bufctx_reset(nv50->bufctx_3d, NV50_BIND_3D_FB);
 
-   util_framebuffer_init(pipe, fb, nv50->fb_cbufs, &nv50->fb_zsbuf);
+   nv50_framebuffer_init(pipe, fb, nv50->fb_cbufs, &nv50->fb_zsbuf);
    util_copy_framebuffer_state(&nv50->framebuffer, fb);
 
    nv50->dirty_3d |= NV50_NEW_3D_FRAMEBUFFER | NV50_NEW_3D_TEXTURES;
