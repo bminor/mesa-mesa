@@ -49,6 +49,10 @@ struct panvk_utrace_cs_info {
    bool capture_data_wait_for_ts;
 };
 
+/* Special value indicating that an indirect capture should be of registers
+ * rather than an address. */
+#define PANVK_UTRACE_CAPTURE_REGISTERS 0x1
+
 void panvk_per_arch(utrace_context_init)(struct panvk_device *dev);
 void panvk_per_arch(utrace_context_fini)(struct panvk_device *dev);
 
