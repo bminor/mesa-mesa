@@ -6904,7 +6904,7 @@
         "description": "lima: ppir: fix store_output optimization for modifiers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d6987daef983c53e44128d71508061cf65bc6487",
         "notes": null
