@@ -794,13 +794,13 @@ iris_clear(struct pipe_context *ctx,
            unsigned stencil)
 {
    struct iris_context *ice = (void *) ctx;
-   struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+   struct iris_framebuffer_state *cso_fb = &ice->state.framebuffer;
 
    assert(buffers != 0);
 
    struct pipe_box box = {
-      .width = cso_fb->width,
-      .height = cso_fb->height,
+      .width = cso_fb->base.width,
+      .height = cso_fb->base.height,
    };
 
    if (scissor_state) {
@@ -811,7 +811,7 @@ iris_clear(struct pipe_context *ctx,
    }
 
    if (buffers & PIPE_CLEAR_DEPTHSTENCIL) {
-      struct pipe_surface *psurf = &cso_fb->zsbuf;
+      struct pipe_surface *psurf = &cso_fb->base.zsbuf;
 
       box.depth = psurf->last_layer - psurf->first_layer + 1;
       box.z = psurf->first_layer,
@@ -822,10 +822,10 @@ iris_clear(struct pipe_context *ctx,
    }
 
    if (buffers & PIPE_CLEAR_COLOR) {
-      for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
+      for (unsigned i = 0; i < cso_fb->base.nr_cbufs; i++) {
          if (buffers & (PIPE_CLEAR_COLOR0 << i)) {
-            struct pipe_surface *psurf = ice->state.fb_cbufs[i];
-            struct iris_surface *isurf = (void *) psurf;
+            struct pipe_surface *psurf = &cso_fb->base.cbufs[i];
+            struct iris_surface *isurf = &cso_fb->i_cbufs[i];
             box.depth = psurf->last_layer - psurf->first_layer + 1,
             box.z = psurf->first_layer,
 

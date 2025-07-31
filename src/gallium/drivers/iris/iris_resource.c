@@ -2819,6 +2819,17 @@ iris_init_screen_resource_functions(struct pipe_screen *pscreen)
 }
 
 void
+iris_surface_destroy(struct iris_surface *surf)
+{
+   pipe_resource_reference(&surf->surface_state.ref.res, NULL);
+   pipe_resource_reference(&surf->surface_state_read.ref.res, NULL);
+   free(surf->surface_state.cpu);
+   surf->surface_state.cpu = NULL;
+   free(surf->surface_state_read.cpu);
+   surf->surface_state_read.cpu = NULL;
+}
+
+void
 iris_init_resource_functions(struct pipe_context *ctx)
 {
    ctx->flush_resource = iris_flush_resource;

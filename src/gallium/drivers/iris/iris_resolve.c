@@ -48,7 +48,7 @@ disable_rb_aux_buffer(struct iris_context *ice,
                       unsigned min_level, unsigned num_levels,
                       const char *usage)
 {
-   struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+   struct iris_framebuffer_state *cso_fb = &ice->state.framebuffer;
    bool found = false;
 
    /* We only need to worry about color compression and fast clears. */
@@ -57,16 +57,13 @@ disable_rb_aux_buffer(struct iris_context *ice,
        tex_res->aux.usage != ISL_AUX_USAGE_FCV_CCS_E)
       return false;
 
-   for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-      struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
-      if (!surf)
-         continue;
-
-      struct iris_resource *rb_res = (void *) surf->base.texture;
+   for (unsigned i = 0; i < cso_fb->base.nr_cbufs; i++) {
+      struct pipe_surface *surf = &cso_fb->base.cbufs[i];
+      struct iris_resource *rb_res = (void *) surf->texture;
 
       if (rb_res->bo == tex_res->bo &&
-          surf->base.level >= min_level &&
-          surf->base.level < min_level + num_levels) {
+          surf->level >= min_level &&
+          surf->level < min_level + num_levels) {
          found = draw_aux_buffer_disabled[i] = true;
       }
    }
@@ -196,7 +193,7 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
                                  struct iris_batch *batch,
                                  bool *draw_aux_buffer_disabled)
 {
-   struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+   struct iris_framebuffer_state *cso_fb = &ice->state.framebuffer;
    struct iris_screen *screen = (void *) ice->ctx.screen;
    const struct intel_device_info *devinfo = screen->devinfo;
    struct iris_uncompiled_shader *ish =
@@ -204,7 +201,7 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
    const nir_shader *nir = ish->nir;
 
    if (ice->state.dirty & IRIS_DIRTY_DEPTH_BUFFER) {
-      struct pipe_surface *zs_surf = &cso_fb->zsbuf;
+      struct pipe_surface *zs_surf = &cso_fb->base.zsbuf;
 
       if (zs_surf) {
          struct iris_resource *z_res, *s_res;
@@ -229,10 +226,10 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
    }
 
    if (devinfo->ver == 8 && nir->info.outputs_read != 0) {
-      for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-         if (cso_fb->cbufs[i].texture) {
-            struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
-            struct iris_resource *res = (void *) cso_fb->cbufs[i].texture;
+      for (unsigned i = 0; i < cso_fb->base.nr_cbufs; i++) {
+         if (cso_fb->base.cbufs[i].texture) {
+            struct iris_surface *surf = &cso_fb->i_cbufs[i];
+            struct iris_resource *res = (void *) cso_fb->base.cbufs[i].texture;
 
             iris_resource_prepare_texture(ice, res, surf->view.format,
                                           surf->view.base_level, 1,
@@ -243,12 +240,12 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
    }
 
    if (ice->state.stage_dirty & IRIS_STAGE_DIRTY_BINDINGS_FS) {
-      for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-         struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
-         if (!surf)
-            continue;
+      for (unsigned i = 0; i < cso_fb->base.nr_cbufs; i++) {
+         struct iris_surface *surf = &cso_fb->i_cbufs[i];
+         struct iris_resource *res = (void *) cso_fb->base.cbufs[i].texture;
 
-         struct iris_resource *res = (void *) surf->base.texture;
+         if (!res)
+            continue;
 
          /* Undocumented workaround:
           *
@@ -336,7 +333,7 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
 {
    struct iris_screen *screen = (void *) ice->ctx.screen;
    const struct intel_device_info *devinfo = screen->devinfo;
-   struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+   struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
 
    // XXX: front buffer drawing?
 
@@ -372,18 +369,18 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
       ice->state.stage_dirty & IRIS_STAGE_DIRTY_BINDINGS_FS;
 
    for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
-      struct iris_surface *surf = (void *) ice->state.fb_cbufs[i];
-      if (!surf)
-         continue;
-
-      struct iris_resource *res = (void *) surf->base.texture;
+      struct pipe_surface *surf = &cso_fb->cbufs[i];
+      struct iris_resource *res = (void *) surf->texture;
       enum isl_aux_usage aux_usage = ice->state.draw_aux_usage[i];
+
+      if (!res)
+         continue;
 
       if (may_have_resolved_color) {
          unsigned num_layers =
-            surf->base.last_layer - surf->base.first_layer + 1;
-         iris_resource_finish_render(ice, res, surf->base.level,
-                                     surf->base.first_layer, num_layers,
+            surf->last_layer - surf->first_layer + 1;
+         iris_resource_finish_render(ice, res, surf->level,
+                                     surf->first_layer, num_layers,
                                      aux_usage);
       }
    }

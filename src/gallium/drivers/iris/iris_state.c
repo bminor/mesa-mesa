@@ -2083,7 +2083,7 @@ want_pma_fix(struct iris_context *ice)
 {
    const struct iris_fs_data *fs_data =
       iris_fs_data(ice->shaders.prog[MESA_SHADER_FRAGMENT]);
-   const struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+   const struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
    const struct iris_depth_stencil_alpha_state *cso_zsa = ice->state.cso_zsa;
    const struct iris_blend_state *cso_blend = ice->state.cso_blend;
 
@@ -3170,17 +3170,14 @@ iris_sampler_view_destroy(struct pipe_context *ctx,
 }
 
 /**
- * The pipe->create_surface() driver hook.
- *
  * In Gallium nomenclature, "surfaces" are a view of a resource that
  * can be bound as a render target or depth/stencil buffer.
  */
-static struct pipe_surface *
-iris_create_surface(struct pipe_context *ctx,
-                    struct pipe_resource *tex,
-                    const struct pipe_surface *tmpl)
+static bool
+iris_create_surface(struct iris_screen *screen,
+                    const struct pipe_surface *tmpl,
+                    struct iris_surface *surf)
 {
-   struct iris_screen *screen = (struct iris_screen *)ctx->screen;
    const struct intel_device_info *devinfo = screen->devinfo;
 
    isl_surf_usage_flags_t usage = 0;
@@ -3198,14 +3195,11 @@ iris_create_surface(struct pipe_context *ctx,
        * hasn't had the opportunity yet.  In the meantime, we need to
        * avoid hitting ISL asserts about unsupported formats below.
        */
-      return NULL;
+      return false;
    }
 
-   struct iris_surface *surf = calloc(1, sizeof(struct iris_surface));
+   struct pipe_resource *tex = (struct pipe_resource *) tmpl->texture;
    struct iris_resource *res = (struct iris_resource *) tex;
-
-   if (!surf)
-      return NULL;
 
    uint32_t array_len = tmpl->last_layer - tmpl->first_layer + 1;
 
@@ -3302,31 +3296,18 @@ iris_create_surface(struct pipe_context *ctx,
 #endif
 
       if (!ok) {
-         free(surf);
-         return NULL;
+         return false;
       }
    }
 
    surf->clear_color = res->aux.clear_color;
 
-   struct pipe_surface *psurf = &surf->base;
-   pipe_reference_init(&psurf->reference, 1);
-   pipe_resource_reference(&psurf->texture, tex);
-   psurf->context = ctx;
-   psurf->format = tmpl->format;
-   psurf->texture = tex;
-   psurf->first_layer = tmpl->first_layer;
-   psurf->last_layer = tmpl->last_layer;
-   psurf->level = tmpl->level;
-
    /* Bail early for depth/stencil - we don't want SURFACE_STATE for them. */
    if (res->surf.usage & (ISL_SURF_USAGE_DEPTH_BIT |
                           ISL_SURF_USAGE_STENCIL_BIT))
-      return psurf;
+      return true;
 
-   /* Fill out a SURFACE_STATE for each possible auxiliary surface mode and
-    * return the pipe_surface.
-    */
+   /* Fill out a SURFACE_STATE for each possible auxiliary surface mode */
    unsigned aux_usages = 0;
 
    if ((res->aux.usage == ISL_AUX_USAGE_CCS_E ||
@@ -3351,7 +3332,7 @@ iris_create_surface(struct pipe_context *ctx,
                        read_surf_tile_x_sa, read_surf_tile_y_sa);
 #endif
 
-   return psurf;
+   return true;
 }
 
 #if GFX_VER < 9
@@ -3647,18 +3628,6 @@ iris_set_patch_vertices(struct pipe_context *ctx, uint8_t patch_vertices)
 }
 
 static void
-iris_surface_destroy(struct pipe_context *ctx, struct pipe_surface *p_surf)
-{
-   struct iris_surface *surf = (void *) p_surf;
-   pipe_resource_reference(&p_surf->texture, NULL);
-   pipe_resource_reference(&surf->surface_state.ref.res, NULL);
-   pipe_resource_reference(&surf->surface_state_read.ref.res, NULL);
-   free(surf->surface_state.cpu);
-   free(surf->surface_state_read.cpu);
-   free(surf);
-}
-
-static void
 iris_set_clip_state(struct pipe_context *ctx,
                     const struct pipe_clip_state *state)
 {
@@ -3796,6 +3765,41 @@ iris_set_viewport_states(struct pipe_context *ctx,
 }
 
 /**
+ * Update the iris_framebuffer_state based on the given pipe_framebuffer_state.
+ */
+static void
+iris_framebuffer_init(struct iris_screen *screen,
+                      struct iris_framebuffer_state *fb,
+                      const struct pipe_framebuffer_state *p_fb)
+{
+   assert(p_fb);
+   for (unsigned i = 0; i < p_fb->nr_cbufs; i++) {
+      if (fb->base.cbufs[i].texture && pipe_surface_equal(&fb->base.cbufs[i], &p_fb->cbufs[i]))
+         continue;
+
+      /* Unbind any previous attachements */
+      if (fb->base.cbufs[i].texture)
+         iris_surface_destroy(&fb->i_cbufs[i]);
+
+      /* Don't create surface for this one. */
+      if (!p_fb->cbufs[i].texture)
+         continue;
+
+      /* Bind new attachements */
+      ASSERTED bool ok =
+         iris_create_surface(screen, &p_fb->cbufs[i], &fb->i_cbufs[i]);
+      assert(ok);
+   }
+
+   /* Unbind any trailing attachements*/
+   for (unsigned i = p_fb->nr_cbufs; i < PIPE_MAX_COLOR_BUFS; i++) {
+      if (fb->base.cbufs[i].texture)
+         iris_surface_destroy(&fb->i_cbufs[i]);
+   }
+   util_copy_framebuffer_state(&fb->base, p_fb);
+}
+
+/**
  * The pipe->set_framebuffer_state() driver hook.
  *
  * Sets the current draw FBO, including color render targets, depth,
@@ -3809,7 +3813,7 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
    struct iris_screen *screen = (struct iris_screen *)ctx->screen;
    const struct intel_device_info *devinfo = screen->devinfo;
    struct isl_device *isl_dev = &screen->isl_dev;
-   struct pipe_framebuffer_state *cso = &ice->state.framebuffer;
+   struct pipe_framebuffer_state *cso = &ice->state.framebuffer.base;
    struct iris_resource *zres;
    struct iris_resource *stencil_res;
    struct iris_resource *new_res = NULL;
@@ -3883,8 +3887,7 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
       ice->state.dirty |= IRIS_DIRTY_RASTER;
    }
 
-   util_framebuffer_init(ctx, state, ice->state.fb_cbufs, &ice->state.fb_zsbuf);
-   util_copy_framebuffer_state(cso, state);
+   iris_framebuffer_init((struct iris_screen *)ctx->screen, &ice->state.framebuffer, state);
    cso->samples = samples;
    cso->layers = layers;
 
@@ -5054,7 +5057,7 @@ iris_populate_fs_key(const struct iris_context *ice,
                      struct iris_fs_prog_key *key)
 {
    struct iris_screen *screen = (void *) ice->ctx.screen;
-   const struct pipe_framebuffer_state *fb = &ice->state.framebuffer;
+   const struct pipe_framebuffer_state *fb = &ice->state.framebuffer.base;
    const struct iris_depth_stencil_alpha_state *zsa = ice->state.cso_zsa;
    const struct iris_rasterizer_state *rast = ice->state.cso_rast;
    const struct iris_blend_state *blend = ice->state.cso_blend;
@@ -5660,14 +5663,14 @@ use_surface_state(struct iris_batch *batch,
 static uint32_t
 use_surface(struct iris_context *ice,
             struct iris_batch *batch,
-            struct pipe_surface *p_surf,
+            struct iris_surface *surf,
+            struct pipe_resource *p_res,
             bool writeable,
             enum isl_aux_usage aux_usage,
             bool is_read_surface,
             enum iris_domain access)
 {
-   struct iris_surface *surf = (void *) p_surf;
-   struct iris_resource *res = (void *) p_surf->texture;
+      struct iris_resource *res = (void *)p_res;
 
    if (GFX_VER == 8 && is_read_surface && !surf->surface_state_read.ref.res) {
       upload_surface_states(ice->state.surface_uploader,
@@ -5837,13 +5840,14 @@ iris_populate_binding_table(struct iris_context *ice,
    }
 
    if (stage == MESA_SHADER_FRAGMENT) {
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct iris_framebuffer_state *cso_fb = &ice->state.framebuffer;
       /* Note that cso_fb->nr_cbufs == fs_key->nr_color_regions. */
-      if (cso_fb->nr_cbufs) {
-         for (unsigned i = 0; i < cso_fb->nr_cbufs; i++) {
+      if (cso_fb->base.nr_cbufs) {
+         for (unsigned i = 0; i < cso_fb->base.nr_cbufs; i++) {
             uint32_t addr;
-            if (cso_fb->cbufs[i].texture) {
-               addr = use_surface(ice, batch, ice->state.fb_cbufs[i], true,
+            if (cso_fb->base.cbufs[i].texture) {
+               addr = use_surface(ice, batch, &cso_fb->i_cbufs[i],
+                                  cso_fb->base.cbufs[i].texture, true,
                                   ice->state.draw_aux_usage[i], false,
                                   IRIS_DOMAIN_RENDER_WRITE);
             } else {
@@ -5864,10 +5868,11 @@ iris_populate_binding_table(struct iris_context *ice,
           IRIS_SURFACE_NOT_USED)
 
    foreach_surface_used(i, IRIS_SURFACE_GROUP_RENDER_TARGET_READ) {
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct iris_framebuffer_state *cso_fb = &ice->state.framebuffer;
       uint32_t addr;
-      if (cso_fb->cbufs[i].texture) {
-         addr = use_surface(ice, batch, ice->state.fb_cbufs[i],
+      if (cso_fb->base.cbufs[i].texture) {
+         addr = use_surface(ice, batch, &cso_fb->i_cbufs[i],
+                            cso_fb->base.cbufs[i].texture,
                             false, ice->state.draw_aux_usage[i], true,
                             IRIS_DOMAIN_SAMPLER_READ);
          push_bt_entry(addr);
@@ -6108,7 +6113,7 @@ iris_restore_render_saved_bos(struct iris_context *ice,
 
    if ((clean & IRIS_DIRTY_DEPTH_BUFFER) &&
        (clean & IRIS_DIRTY_WM_DEPTH_STENCIL)) {
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       pin_depth_and_stencil_buffers(batch, cso_fb->zsbuf.texture, ice->state.cso_zsa);
    }
 
@@ -6705,29 +6710,27 @@ calculate_tile_dimensions(struct iris_context *ice,
     */
    unsigned pixel_size = 0;
 
-   struct pipe_framebuffer_state *cso = &ice->state.framebuffer;
+   struct pipe_framebuffer_state *cso = &ice->state.framebuffer.base;
 
    if (cso->width == 0 || cso->height == 0)
       return false;
 
    for (unsigned i = 0; i < cso->nr_cbufs; i++) {
-      const struct iris_surface *surf = (void *)ice->state.fb_cbufs[i];
+      const struct iris_resource *res = (void *)cso->cbufs[i].texture;
+      if (!res)
+         continue;
 
-      if (surf) {
-         const struct iris_resource *res = (void *)surf->base.texture;
+      pixel_size += intel_calculate_surface_pixel_size(&res->surf);
 
-         pixel_size += intel_calculate_surface_pixel_size(&res->surf);
+      /* XXX - Pessimistic, in some cases it might be helpful to neglect
+         *       aux surface traffic.
+         */
+      if (ice->state.draw_aux_usage[i]) {
+         pixel_size += intel_calculate_surface_pixel_size(&res->aux.surf);
 
-         /* XXX - Pessimistic, in some cases it might be helpful to neglect
-          *       aux surface traffic.
-          */
-         if (ice->state.draw_aux_usage[i]) {
-            pixel_size += intel_calculate_surface_pixel_size(&res->aux.surf);
-
-            if (isl_aux_usage_has_ccs(res->aux.usage)) {
-               pixel_size += DIV_ROUND_UP(intel_calculate_surface_pixel_size(
-                                             &res->surf), aux_scale);
-            }
+         if (isl_aux_usage_has_ccs(res->aux.usage)) {
+            pixel_size += DIV_ROUND_UP(intel_calculate_surface_pixel_size(
+                                          &res->surf), aux_scale);
          }
       }
    }
@@ -7112,7 +7115,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
    bool needs_wa_14018912822 =
       screen->driconf.intel_enable_wa_14018912822 &&
       intel_needs_workaround(batch->screen->devinfo, 14018912822) &&
-      util_framebuffer_get_num_samples(&ice->state.framebuffer) > 1;
+      util_framebuffer_get_num_samples(&ice->state.framebuffer.base) > 1;
 
    if (dirty & IRIS_DIRTY_CC_VIEWPORT) {
       const struct iris_rasterizer_state *cso_rast = ice->state.cso_rast;
@@ -7181,7 +7184,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
    }
 
    if (dirty & IRIS_DIRTY_SF_CL_VIEWPORT) {
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       int32_t x_min, y_min, x_max, y_max;
       uint32_t sf_cl_vp_address;
       uint32_t *vp_map =
@@ -7253,7 +7256,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 
    if (dirty & IRIS_DIRTY_BLEND_STATE) {
       struct iris_blend_state *cso_blend = ice->state.cso_blend;
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       struct iris_depth_stencil_alpha_state *cso_zsa = ice->state.cso_zsa;
 
       bool color_blend_zero = false;
@@ -7367,7 +7370,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 
 #if GFX_VERx10 == 125
    if (dirty & (IRIS_DIRTY_RENDER_BUFFER | IRIS_DIRTY_DEPTH_BUFFER)) {
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       unsigned tile_width, tile_height;
 
       ice->state.use_tbimr = batch->screen->driconf.enable_tbimr &&
@@ -7414,7 +7417,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
    }
 
    if (dirty & IRIS_DIRTY_RENDER_BUFFER)
-      trace_framebuffer_state(&batch->trace, NULL, &ice->state.framebuffer);
+      trace_framebuffer_state(&batch->trace, NULL, &ice->state.framebuffer.base);
 
    if (ice->state.need_border_colors)
       iris_use_pinned_bo(batch, border_color_pool->bo, false, IRIS_DOMAIN_NONE);
@@ -7423,8 +7426,8 @@ iris_upload_dirty_render_state(struct iris_context *ice,
       iris_emit_cmd(batch, GENX(3DSTATE_MULTISAMPLE), ms) {
          ms.PixelLocation =
             ice->state.cso_rast->half_pixel_center ? CENTER : UL_CORNER;
-         if (ice->state.framebuffer.samples > 0)
-            ms.NumberofMultisamples = ffs(ice->state.framebuffer.samples) - 1;
+         if (ice->state.framebuffer.base.samples > 0)
+            ms.NumberofMultisamples = ffs(ice->state.framebuffer.base.samples) - 1;
       }
    }
 
@@ -7469,7 +7472,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 
          if (stage == MESA_SHADER_FRAGMENT) {
             UNUSED struct iris_rasterizer_state *cso = ice->state.cso_rast;
-            struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+            struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
 
             uint32_t ps_state[GENX(3DSTATE_PS_length)] = {0};
             _iris_pack_command(batch, GENX(3DSTATE_PS), ps_state, ps) {
@@ -7802,7 +7805,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 
    if (dirty & IRIS_DIRTY_CLIP) {
       struct iris_rasterizer_state *cso_rast = ice->state.cso_rast;
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
 
       bool gs_or_tes = ice->shaders.prog[MESA_SHADER_GEOMETRY] ||
                        ice->shaders.prog[MESA_SHADER_TESS_EVAL];
@@ -7847,7 +7850,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
        * "This bit MUST not be set when NUM_MULTISAMPLES > 1 OR
        *  FORCED_SAMPLE_COUNT > 1."
        */
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       unsigned samples = util_framebuffer_get_num_samples(cso_fb);
       struct iris_rasterizer_state *cso = ice->state.cso_rast;
 
@@ -8015,7 +8018,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
       struct iris_depth_buffer_state *cso_z = &ice->state.genx->depth_buffer;
 
       /* Do not emit the cso yet. We may need to update clear params first. */
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       struct iris_resource *zres = NULL, *sres = NULL;
       if (cso_fb->zsbuf.texture) {
          iris_get_depth_stencil_resources(cso_fb->zsbuf.texture,
@@ -8062,7 +8065,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
 
    if (dirty & (IRIS_DIRTY_DEPTH_BUFFER | IRIS_DIRTY_WM_DEPTH_STENCIL)) {
       /* Listen for buffer changes, and also write enable changes. */
-      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
+      struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer.base;
       pin_depth_and_stencil_buffers(batch, cso_fb->zsbuf.texture, ice->state.cso_zsa);
    }
 
@@ -9592,7 +9595,12 @@ iris_destroy_state(struct iris_context *ice)
       pipe_so_target_reference(&ice->state.so_target[i], NULL);
    }
 
-   util_unreference_framebuffer_state(&ice->state.framebuffer);
+   for (unsigned i = 0; i < ice->state.framebuffer.base.nr_cbufs; i++) {
+      if (ice->state.framebuffer.base.cbufs[i].texture) {
+         iris_surface_destroy(&ice->state.framebuffer.i_cbufs[i]);
+      }
+   }
+   util_unreference_framebuffer_state(&ice->state.framebuffer.base);
 
    for (int stage = 0; stage < MESA_SHADER_STAGES; stage++) {
       struct iris_shader_state *shs = &ice->state.shaders[stage];
@@ -10724,7 +10732,6 @@ genX(init_state)(struct iris_context *ice)
    ctx->create_rasterizer_state = iris_create_rasterizer_state;
    ctx->create_sampler_state = iris_create_sampler_state;
    ctx->create_sampler_view = iris_create_sampler_view;
-   ctx->create_surface = iris_create_surface;
    ctx->create_vertex_elements_state = iris_create_vertex_elements;
    ctx->bind_blend_state = iris_bind_blend_state;
    ctx->bind_depth_stencil_alpha_state = iris_bind_zsa_state;
@@ -10755,7 +10762,6 @@ genX(init_state)(struct iris_context *ice)
    ctx->sampler_view_destroy = iris_sampler_view_destroy;
    ctx->sampler_view_release = u_default_sampler_view_release;
    ctx->resource_release = u_default_resource_release;
-   ctx->surface_destroy = iris_surface_destroy;
    ctx->draw_vbo = iris_draw_vbo;
    ctx->launch_grid = iris_launch_grid;
    ctx->create_stream_output_target = iris_create_stream_output_target;
