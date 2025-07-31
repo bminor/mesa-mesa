@@ -3320,38 +3320,6 @@ gather_texcoords(nir_builder *b, nir_instr *instr, void *data)
    return false;
 }
 
-static bool
-gather_interp(nir_builder *b, nir_intrinsic_instr *intr, void *data)
-{
-   struct agx_interp_info *masks = data;
-
-   if (intr->intrinsic == nir_intrinsic_load_input) {
-      nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
-      masks->flat |= BITFIELD64_RANGE(sem.location, sem.num_slots);
-   } else if (intr->intrinsic == nir_intrinsic_load_interpolated_input &&
-              nir_intrinsic_interp_mode(nir_src_as_intrinsic(intr->src[0])) ==
-                 INTERP_MODE_NOPERSPECTIVE) {
-      nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
-      masks->linear |= BITFIELD64_RANGE(sem.location, sem.num_slots);
-   }
-
-   return false;
-}
-
-/*
- * Build a bit mask of varyings (by location) that are flatshaded and linear
- * shaded. This information is needed by the driver.
- */
-struct agx_interp_info
-agx_gather_interp_info(nir_shader *nir)
-{
-   assert(nir->info.stage == MESA_SHADER_FRAGMENT);
-
-   struct agx_interp_info masks = {0};
-   nir_shader_intrinsics_pass(nir, gather_interp, nir_metadata_all, &masks);
-   return masks;
-}
-
 /*
  * Build a bit mask of varyings (by location) that are used as texture
  * coordinates. This information is needed by lower_mediump_io.

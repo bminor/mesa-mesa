@@ -1798,7 +1798,11 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
                nir_lower_io_use_interpolated_input_intrinsics);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      struct agx_interp_info interp = agx_gather_interp_info(nir);
+      so->info.uses_fbfetch = nir->info.fs.uses_fbfetch_output;
+      so->info.inputs_linear_shaded = nir->info.linear_varyings;
+      so->info.inputs_flat_shaded = nir->info.inputs_read &
+                                    ~nir->info.linear_varyings &
+                                    ~nir->info.perspective_varyings;
 
       /* Interpolate varyings at fp16 and write to the tilebuffer at fp16. As an
        * exception, interpolate flat shaded at fp32. This works around a
@@ -1810,12 +1814,8 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
 
          NIR_PASS(_, nir, nir_lower_mediump_io,
                   nir_var_shader_in | nir_var_shader_out,
-                  ~(interp.flat | texcoord), false);
+                  ~(so->info.inputs_flat_shaded | texcoord), false);
       }
-
-      so->info.inputs_flat_shaded = interp.flat;
-      so->info.inputs_linear_shaded = interp.linear;
-      so->info.uses_fbfetch = nir->info.fs.uses_fbfetch_output;
    } else if (nir->info.stage == MESA_SHADER_VERTEX ||
               nir->info.stage == MESA_SHADER_TESS_EVAL) {
       so->info.has_edgeflags = nir->info.outputs_written & VARYING_BIT_EDGE;

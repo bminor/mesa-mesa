@@ -1076,8 +1076,10 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
          BITSET_LAST_BIT(shader->info.vs.attrib_components_read), 4);
       kill_psiz = key->vs.kill_psiz;
    } else if (sw_stage == MESA_SHADER_FRAGMENT) {
-      shader->info.fs.interp = agx_gather_interp_info(nir);
       shader->info.fs.writes_memory = nir->info.writes_memory;
+      shader->info.fs.interp.linear = nir->info.linear_varyings;
+      shader->info.fs.interp.flat =
+         ~(nir->info.linear_varyings | nir->info.perspective_varyings);
 
       /* Discards must be lowering before lowering MSAA to handle discards */
       NIR_PASS(_, nir, agx_nir_lower_discard_zs_emit);

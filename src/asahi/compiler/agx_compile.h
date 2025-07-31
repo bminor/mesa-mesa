@@ -314,7 +314,6 @@ struct agx_shader_key {
    };
 };
 
-struct agx_interp_info agx_gather_interp_info(nir_shader *nir);
 uint64_t agx_gather_texcoords(nir_shader *nir);
 
 void agx_preprocess_nir(nir_shader *nir);

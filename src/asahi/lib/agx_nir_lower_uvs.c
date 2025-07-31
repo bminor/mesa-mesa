@@ -218,13 +218,14 @@ agx_assign_uvs(struct agx_varyings_vs *varyings,
 {
    *varyings = (struct agx_varyings_vs){0};
 
-   /* These are always flat-shaded from the FS perspective */
+   /* Layer/viewport always flat-shaded, no other special varyings are */
+   flat_mask &= BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32);
    flat_mask |= VARYING_BIT_LAYER | VARYING_BIT_VIEWPORT;
 
    /* The internal cull distance slots are always linearly-interpolated */
    linear_mask |= BITFIELD64_RANGE(VARYING_SLOT_CULL_PRIMITIVE, 2);
 
-   assert(!(flat_mask & linear_mask));
+   assert(!(flat_mask & linear_mask & layout->written));
 
    /* TODO: Link FP16 varyings */
    unsigned num_32_smooth = 0, num_32_flat = 0, num_32_linear = 0;
