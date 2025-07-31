@@ -84,7 +84,7 @@
         "description": "Guard double include of libdrm.h by defining LIBDRM_H",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4be68b119e62bc54c9e53ac57e0503ea65e3a4b3",
         "notes": null
