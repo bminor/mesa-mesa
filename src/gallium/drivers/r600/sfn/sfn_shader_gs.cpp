@@ -88,11 +88,8 @@ GeometryShader::process_store_output(nir_intrinsic_instr *instr)
 bool
 GeometryShader::process_load_input(nir_intrinsic_instr *instr)
 {
-   auto location = static_cast<gl_varying_slot>(nir_intrinsic_io_semantics(instr).location);
-   auto index = nir_src_as_const_value(instr->src[1]);
-   assert(index);
-
-   auto driver_location = nir_intrinsic_base(instr) + index->u32;
+   auto location =
+      static_cast<gl_varying_slot>(nir_intrinsic_io_semantics(instr).location);
 
    if (location == VARYING_SLOT_POS || location == VARYING_SLOT_PSIZ ||
        location == VARYING_SLOT_FOGC || location == VARYING_SLOT_CLIP_VERTEX ||
@@ -103,10 +100,21 @@ GeometryShader::process_load_input(nir_intrinsic_instr *instr)
        (location >= VARYING_SLOT_VAR0 && location <= VARYING_SLOT_VAR31) ||
        (location >= VARYING_SLOT_TEX0 && location <= VARYING_SLOT_TEX7)) {
 
-      add_input_at(location, driver_location);
+      if (nir_intrinsic_io_semantics(instr).num_slots == 1) {
+         auto index = nir_src_as_const_value(instr->src[1]);
+         auto driver_location = nir_intrinsic_base(instr) + index->u32;
+         add_input_at(location, driver_location);
+      } else {
+         auto base = nir_intrinsic_base(instr);
+         unsigned range = nir_intrinsic_range(instr);
+         for (unsigned i = 0; i < range; ++i) {
+            auto driver_location = base + i;
+            auto array_location = static_cast<gl_varying_slot>(location + i);
+            add_input_at(array_location, driver_location);
+         }
+      }
       return true;
    }
-
    return false;
 }
 
