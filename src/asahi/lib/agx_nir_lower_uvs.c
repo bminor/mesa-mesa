@@ -16,6 +16,20 @@
 #include "nir_intrinsics_indices.h"
 #include "shader_enums.h"
 
+static bool
+inline_uvs_index(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   struct agx_varyings_vs *varyings = data;
+   if (intr->intrinsic != nir_intrinsic_load_uvs_index_agx)
+      return false;
+
+   b->cursor = nir_before_instr(&intr->instr);
+   unsigned slot = nir_intrinsic_io_semantics(intr).location;
+
+   nir_def_replace(&intr->def, nir_imm_intN_t(b, varyings->slots[slot], 16));
+   return true;
+}
+
 struct ctx {
    nir_def *layer, *viewport;
    nir_cursor after_layer_viewport;
@@ -206,6 +220,19 @@ agx_nir_lower_uvs(nir_shader *s, struct agx_unlinked_uvs_layout *layout)
    agx_pack(&layout->vdm, VDM_STATE_VERTEX_OUTPUTS, cfg) {
       cfg.output_count_1 = offs;
       cfg.output_count_2 = offs;
+   }
+
+   /* If we know the interpolation qualifiers in the vertex shader, we can
+    * inline UVS indices to eliminate some indirection.
+    */
+   if (s->info.known_interpolation_qualifiers) {
+      struct agx_varyings_vs v;
+      uint64_t flat = ~(s->info.linear_varyings | s->info.perspective_varyings);
+
+      agx_assign_uvs(&v, layout, flat, s->info.linear_varyings);
+
+      nir_shader_intrinsics_pass(s, inline_uvs_index, nir_metadata_control_flow,
+                                 &v);
    }
 
    return progress;
