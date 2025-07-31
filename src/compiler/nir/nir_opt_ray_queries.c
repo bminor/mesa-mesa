@@ -44,13 +44,12 @@ mark_query_read(struct set *queries,
    nir_variable *query;
    if (rq_def->parent_instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *load_deref =
-         nir_instr_as_intrinsic(rq_def->parent_instr);
+         nir_def_as_intrinsic(rq_def);
       assert(load_deref->intrinsic == nir_intrinsic_load_deref);
 
       query = nir_intrinsic_get_var(load_deref, 0);
    } else if (rq_def->parent_instr->type == nir_instr_type_deref) {
-      query = nir_deref_instr_get_variable(
-         nir_instr_as_deref(rq_def->parent_instr));
+      query = nir_deref_instr_get_variable(nir_def_as_deref(rq_def));
    } else {
       return;
    }
@@ -280,7 +279,7 @@ nir_opt_ray_query_ranges(nir_shader *shader)
             continue;
 
          nir_deref_instr *ray_query_deref =
-            nir_instr_as_deref(intrinsic->src[0].ssa->parent_instr);
+            nir_def_as_deref(intrinsic->src[0].ssa);
 
          if (ray_query_deref->deref_type != nir_deref_type_var)
             continue;
@@ -397,7 +396,7 @@ nir_opt_ray_query_ranges(nir_shader *shader)
       util_dynarray_foreach(&range->instrs, nir_instr *, instr) {
          nir_intrinsic_instr *intrinsic = nir_instr_as_intrinsic(*instr);
          nir_deref_instr *ray_query_deref =
-            nir_instr_as_deref(intrinsic->src[0].ssa->parent_instr);
+            nir_def_as_deref(intrinsic->src[0].ssa);
          if (ray_query_deref->var != range->variable) {
             ray_query_deref->var = range->variable;
             progress = true;

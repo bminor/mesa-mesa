@@ -494,7 +494,7 @@ elk_nir_lower_fs_smooth_interp_gfx4_instr(nir_builder *b, nir_intrinsic_instr *i
    if (intr->intrinsic != nir_intrinsic_load_deref)
       return false;
 
-   nir_deref_instr *deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(intr->src[0].ssa);
    nir_variable *var = nir_deref_instr_get_variable(deref);
 
    if (var->data.interpolation != INTERP_MODE_SMOOTH)

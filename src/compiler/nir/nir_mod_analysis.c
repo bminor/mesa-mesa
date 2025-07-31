@@ -57,7 +57,7 @@ nir_mod_analysis(nir_scalar val, nir_alu_type val_type, unsigned div, unsigned *
    switch (val.def->parent_instr->type) {
    case nir_instr_type_load_const: {
       nir_load_const_instr *load =
-         nir_instr_as_load_const(val.def->parent_instr);
+         nir_def_as_load_const(val.def);
       nir_alu_type base_type = nir_alu_type_get_base_type(val_type);
 
       if (base_type == nir_type_uint) {
@@ -83,7 +83,7 @@ nir_mod_analysis(nir_scalar val, nir_alu_type val_type, unsigned div, unsigned *
    }
 
    case nir_instr_type_alu: {
-      nir_alu_instr *alu = nir_instr_as_alu(val.def->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(val.def);
 
       if (alu->def.num_components != 1)
          return false;

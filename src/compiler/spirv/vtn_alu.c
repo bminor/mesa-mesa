@@ -1147,7 +1147,7 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    case SpvOpISub:
    case SpvOpShiftLeftLogical:
    case SpvOpSNegate: {
-      nir_alu_instr *alu = nir_instr_as_alu(dest->def->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(dest->def);
       vtn_foreach_decoration(b, dest_val, handle_no_wrap, alu);
       break;
    }

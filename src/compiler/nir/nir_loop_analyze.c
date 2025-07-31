@@ -179,7 +179,7 @@ phi_instr_as_alu(nir_phi_instr *phi)
       if (src->src.ssa->parent_instr->type != nir_instr_type_alu)
          return NULL;
 
-      nir_alu_instr *alu = nir_instr_as_alu(src->src.ssa->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(src->src.ssa);
       if (first == NULL) {
          first = alu;
       } else {
@@ -267,7 +267,7 @@ compute_induction_information(loop_info_state *state)
           * of an unnested if rather than in a loop block.
           */
          if (src->parent_instr->type == nir_instr_type_phi) {
-            nir_phi_instr *src_phi = nir_instr_as_phi(src->parent_instr);
+            nir_phi_instr *src_phi = nir_def_as_phi(src);
             nir_alu_instr *src_phi_alu = phi_instr_as_alu(src_phi);
             if (src_phi_alu) {
                src = &src_phi_alu->def;
@@ -276,7 +276,7 @@ compute_induction_information(loop_info_state *state)
 
          if (src->parent_instr->type == nir_instr_type_alu && !var.update_src) {
             var.def = src;
-            nir_alu_instr *alu = nir_instr_as_alu(src->parent_instr);
+            nir_alu_instr *alu = nir_def_as_alu(src);
 
             /* Check for unsupported alu operations */
             if (alu->op != nir_op_iadd && alu->op != nir_op_fadd &&
@@ -589,7 +589,7 @@ try_eval_const_alu(nir_const_value *dest, nir_scalar alu_s, const nir_scalar *or
                    const nir_const_value *replacements,
                    unsigned num_replacements, unsigned execution_mode)
 {
-   nir_alu_instr *alu = nir_instr_as_alu(alu_s.def->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu(alu_s.def);
 
    if (nir_op_infos[alu->op].output_size)
       return false;
@@ -889,7 +889,7 @@ calculate_iterations(nir_scalar basis, nir_scalar limit_basis,
     * condition and if so we assume we need to step the initial value.
     */
    unsigned trip_offset = 0;
-   nir_alu_instr *cond_alu = nir_instr_as_alu(cond.def->parent_instr);
+   nir_alu_instr *cond_alu = nir_def_as_alu(cond.def);
    if (cond_alu->src[0].src.ssa == &alu->def ||
        cond_alu->src[1].src.ssa == &alu->def) {
       trip_offset = 1;
@@ -1305,7 +1305,7 @@ force_unroll_heuristics(loop_info_state *state, nir_block *block)
 
          if (sampler_idx >= 0) {
             nir_deref_instr *deref =
-               nir_instr_as_deref(tex_instr->src[sampler_idx].src.ssa->parent_instr);
+               nir_def_as_deref(tex_instr->src[sampler_idx].src.ssa);
             if (force_unroll_array_access(state, deref, true))
                return true;
          }

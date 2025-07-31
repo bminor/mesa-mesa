@@ -2681,7 +2681,7 @@ set_deref_variables_coherent(nir_shader *s, nir_deref_instr *deref)
 
    /* For derefs with casts, we only support pre-lowered Vulkan accesses */
    assert(deref->deref_type == nir_deref_type_cast);
-   nir_intrinsic_instr *cast_src = nir_instr_as_intrinsic(deref->parent.ssa->parent_instr);
+   nir_intrinsic_instr *cast_src = nir_def_as_intrinsic(deref->parent.ssa);
    assert(cast_src->intrinsic == nir_intrinsic_load_vulkan_descriptor);
    nir_binding binding = nir_chase_binding(cast_src->src[0]);
    set_binding_variables_coherent(s, binding, nir_var_mem_ssbo);
@@ -2772,7 +2772,7 @@ lower_coherent_load_store(nir_builder *b, nir_intrinsic_instr *intr, void *conte
       return false;
    }
 
-   nir_intrinsic_instr *atomic = nir_instr_as_intrinsic(atomic_def->parent_instr);
+   nir_intrinsic_instr *atomic = nir_def_as_intrinsic(atomic_def);
    nir_intrinsic_set_access(atomic, nir_intrinsic_access(intr));
    if (nir_intrinsic_has_image_dim(intr))
       nir_intrinsic_set_image_dim(atomic, nir_intrinsic_image_dim(intr));

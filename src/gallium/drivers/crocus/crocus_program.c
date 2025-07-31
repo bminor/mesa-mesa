@@ -694,7 +694,7 @@ crocus_setup_uniforms(ASSERTED const struct intel_device_info *devinfo,
     */
    if (temp_const_ubo_name != NULL) {
       nir_load_const_instr *const_ubo_index =
-         nir_instr_as_load_const(temp_const_ubo_name->parent_instr);
+         nir_def_as_load_const(temp_const_ubo_name);
       assert(const_ubo_index->def.bit_size == 32);
       const_ubo_index->value[0].u32 = num_cbufs;
    }

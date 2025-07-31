@@ -1012,7 +1012,7 @@ print_deref_link(const nir_deref_instr *instr, bool whole_chain, print_state *st
    }
 
    nir_deref_instr *parent =
-      nir_instr_as_deref(instr->parent.ssa->parent_instr);
+      nir_def_as_deref(instr->parent.ssa);
 
    /* Is the parent we're going to print a bare cast? */
    const bool is_parent_cast =

@@ -83,7 +83,7 @@ src_is_type(nir_src src, nir_alu_type type)
    assert(type != nir_type_invalid);
 
    if (src.ssa->parent_instr->type == nir_instr_type_alu) {
-      nir_alu_instr *src_alu = nir_instr_as_alu(src.ssa->parent_instr);
+      nir_alu_instr *src_alu = nir_def_as_alu(src.ssa);
       nir_alu_type output_type = nir_op_infos[src_alu->op].output_type;
 
       if (type == nir_type_bool) {
@@ -102,7 +102,7 @@ src_is_type(nir_src src, nir_alu_type type)
 
       return nir_alu_type_get_base_type(output_type) == type;
    } else if (src.ssa->parent_instr->type == nir_instr_type_intrinsic) {
-      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(src.ssa->parent_instr);
+      nir_intrinsic_instr *intr = nir_def_as_intrinsic(src.ssa);
 
       if (type == nir_type_bool) {
          return intr->intrinsic == nir_intrinsic_load_front_face ||
@@ -267,7 +267,7 @@ match_value(const nir_algebraic_table *table,
          return false;
 
       return match_expression(table, nir_search_value_as_expression(value),
-                              nir_instr_as_alu(instr->src[src].src.ssa->parent_instr),
+                              nir_def_as_alu(instr->src[src].src.ssa),
                               num_components, new_swizzle, state);
 
    case nir_search_value_variable: {
@@ -320,7 +320,7 @@ match_value(const nir_algebraic_table *table,
       switch (const_val->type) {
       case nir_type_float: {
          nir_load_const_instr *const load =
-            nir_instr_as_load_const(instr->src[src].src.ssa->parent_instr);
+            nir_def_as_load_const(instr->src[src].src.ssa);
 
          /* There are 8-bit and 1-bit integer types, but there are no 8-bit or
           * 1-bit float types.  This prevents potential assertion failures in

@@ -66,7 +66,7 @@ etna_lower_io(nir_shader *shader, struct etna_shader_variant *v)
 
                   nir_def *ssa = nir_ine_imm(&b, &intr->def, 0);
                   if (v->key.front_ccw)
-                     nir_instr_as_alu(ssa->parent_instr)->op = nir_op_ieq;
+                     nir_def_as_alu(ssa)->op = nir_op_ieq;
 
                   nir_def_rewrite_uses_after(&intr->def,
                                                  ssa,
@@ -91,7 +91,7 @@ etna_lower_io(nir_shader *shader, struct etna_shader_variant *v)
                   b.cursor = nir_before_instr(instr);
 
                   nir_def *ssa = nir_mov(&b, intr->src[1].ssa);
-                  nir_alu_instr *alu = nir_instr_as_alu(ssa->parent_instr);
+                  nir_alu_instr *alu = nir_def_as_alu(ssa);
                   alu->src[0].swizzle[0] = 2;
                   alu->src[0].swizzle[2] = 0;
                   nir_src_rewrite(&intr->src[1], ssa);

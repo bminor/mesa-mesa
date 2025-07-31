@@ -49,7 +49,7 @@ nir_lower_interpolation_instr(nir_builder *b, nir_instr *instr, void *cb_data)
       return false;
 
    nir_intrinsic_instr *bary_intrinsic =
-      nir_instr_as_intrinsic(intr->src[0].ssa->parent_instr);
+      nir_def_as_intrinsic(intr->src[0].ssa);
 
    /* Leave VARYING_SLOT_POS alone */
    if (nir_intrinsic_base(intr) == VARYING_SLOT_POS)

@@ -95,7 +95,7 @@ nir_lower_mediump_io(nir_shader *nir, nir_variable_mode modes,
                                  sem.location == FRAG_RESULT_DEPTH);
             if (!sem.medium_precision &&
                 (is_varying || is_fragdepth || val->parent_instr->type != nir_instr_type_alu ||
-                 nir_instr_as_alu(val->parent_instr)->op != upconvert_op)) {
+                 nir_def_as_alu(val)->op != upconvert_op)) {
                continue;
             }
 
@@ -521,7 +521,7 @@ can_opt_16bit_src(nir_def *ssa, nir_alu_type src_type, bool sext_matters)
          else if (opt_i16_u16)
             can_opt &= (const_is_u16(comp) || const_is_i16(comp));
       } else if (nir_scalar_is_alu(comp)) {
-         nir_alu_instr *alu = nir_instr_as_alu(comp.def->parent_instr);
+         nir_alu_instr *alu = nir_def_as_alu(comp.def);
          bool is_16bit = alu->src[0].src.ssa->bit_size == 16;
 
          if ((alu->op == nir_op_f2f32 && is_16bit) ||

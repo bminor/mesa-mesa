@@ -911,9 +911,9 @@ validate_tex_instr(nir_tex_instr *instr, validate_state *state)
       case nir_tex_src_sampler_deref_intrinsic:
       case nir_tex_src_texture_deref_intrinsic: {
          nir_intrinsic_instr *intrin =
-            nir_instr_as_intrinsic(instr->src[i].src.ssa->parent_instr);
+            nir_def_as_intrinsic(instr->src[i].src.ssa);
          nir_deref_instr *deref =
-            nir_instr_as_deref(intrin->src[0].ssa->parent_instr);
+            nir_def_as_deref(intrin->src[0].ssa);
          if (!validate_assert(state, deref))
             break;
 

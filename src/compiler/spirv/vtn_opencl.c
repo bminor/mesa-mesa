@@ -899,7 +899,7 @@ vtn_add_printf_string(struct vtn_builder *b, uint32_t id, u_printf_info *info)
          break;
       }
       vtn_assert(parent.comp == 0);
-      deref = nir_instr_as_deref(parent.def->parent_instr);
+      deref = nir_def_as_deref(parent.def);
    }
 
    vtn_fail_if(deref == NULL || !nir_deref_mode_is(deref, nir_var_mem_constant),

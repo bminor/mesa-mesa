@@ -1031,7 +1031,7 @@ read_deref(read_ctx *ctx, union packed_instr header)
    } else if (deref->deref_type == nir_deref_type_cast) {
       deref->modes = decode_deref_modes(header.deref.modes);
    } else {
-      deref->modes = nir_instr_as_deref(deref->parent.ssa->parent_instr)->modes;
+      deref->modes = nir_def_as_deref(deref->parent.ssa)->modes;
    }
 
    return deref;

@@ -610,7 +610,7 @@ lower_cmat_instr(nir_builder *b,
       const enum glsl_matrix_layout layout = nir_intrinsic_matrix_layout(intr);
 
       nir_deref_instr *deref =
-         nir_instr_as_deref(intr->src[1].ssa->parent_instr);
+         nir_def_as_deref(intr->src[1].ssa);
       nir_def *stride = intr->src[2].ssa;
 
       nir_def *vars[NIR_MAX_VEC_COMPONENTS];

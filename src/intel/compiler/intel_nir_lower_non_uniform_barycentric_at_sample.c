@@ -88,7 +88,7 @@ intel_nir_lower_non_uniform_interpolated_input_instr(nir_builder *b,
    assert(load_ii->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic);
 
    nir_intrinsic_instr *bary =
-      nir_instr_as_intrinsic(load_ii->src[0].ssa->parent_instr);
+      nir_def_as_intrinsic(load_ii->src[0].ssa);
    if (bary->intrinsic != nir_intrinsic_load_barycentric_at_sample)
       return false;
 

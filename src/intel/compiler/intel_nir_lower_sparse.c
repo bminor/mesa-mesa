@@ -87,7 +87,7 @@ lower_sparse_image_load(nir_builder *b, nir_intrinsic_instr *intrin)
                                 intrin->src[1].ssa,
                                 intrin->src[2].ssa,
                                 intrin->src[3].ssa);
-      new_intrin = nir_instr_as_intrinsic(img_load->parent_instr);
+      new_intrin = nir_def_as_intrinsic(img_load);
       nir_intrinsic_set_range_base(new_intrin, nir_intrinsic_range_base(intrin));
    } else {
       img_load = nir_bindless_image_load(b,
@@ -97,7 +97,7 @@ lower_sparse_image_load(nir_builder *b, nir_intrinsic_instr *intrin)
                                          intrin->src[1].ssa,
                                          intrin->src[2].ssa,
                                          intrin->src[3].ssa);
-      new_intrin = nir_instr_as_intrinsic(img_load->parent_instr);
+      new_intrin = nir_def_as_intrinsic(img_load);
    }
 
    nir_intrinsic_set_image_array(new_intrin, nir_intrinsic_image_array(intrin));

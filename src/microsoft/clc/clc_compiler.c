@@ -371,8 +371,7 @@ clc_lower_nonnormalized_samplers(nir_shader *nir,
 
             nir_src *sampler_src = &tex->src[sampler_src_idx].src;
             assert(sampler_src->ssa->parent_instr->type == nir_instr_type_deref);
-            nir_variable *sampler = nir_deref_instr_get_variable(
-               nir_instr_as_deref(sampler_src->ssa->parent_instr));
+            nir_variable *sampler = nir_deref_instr_get_variable(nir_def_as_deref(sampler_src->ssa));
 
             // If the sampler returns ints, we'll handle this in the int lowering pass
             if (nir_alu_type_get_base_type(tex->dest_type) != nir_type_float)

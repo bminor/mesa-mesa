@@ -597,12 +597,12 @@ lvp_nir_lower_ray_queries(struct nir_shader *shader)
                continue;
 
             nir_deref_instr *ray_query_deref =
-               nir_instr_as_deref(intrinsic->src[0].ssa->parent_instr);
+               nir_def_as_deref(intrinsic->src[0].ssa);
             nir_def *index = NULL;
 
             if (ray_query_deref->deref_type == nir_deref_type_array) {
                index = ray_query_deref->arr.index.ssa;
-               ray_query_deref = nir_instr_as_deref(ray_query_deref->parent.ssa->parent_instr);
+               ray_query_deref = nir_def_as_deref(ray_query_deref->parent.ssa);
             }
 
             assert(ray_query_deref->deref_type == nir_deref_type_var);

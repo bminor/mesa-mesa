@@ -628,7 +628,7 @@ visit_load_var(struct lp_build_nir_aos_context *bld,
                nir_intrinsic_instr *instr,
                LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
 {
-   nir_deref_instr *deref = nir_instr_as_deref(instr->src[0].ssa->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(instr->src[0].ssa);
    nir_variable *var = nir_deref_instr_get_variable(deref);
    assert(util_bitcount(deref->modes) == 1);
    nir_variable_mode mode = deref->modes;
@@ -640,7 +640,7 @@ static void
 visit_store_var(struct lp_build_nir_aos_context *bld,
                 nir_intrinsic_instr *instr)
 {
-   nir_deref_instr *deref = nir_instr_as_deref(instr->src[0].ssa->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(instr->src[0].ssa);
    nir_variable *var = nir_deref_instr_get_variable(deref);
    assert(util_bitcount(deref->modes) == 1);
    nir_variable_mode mode = deref->modes;

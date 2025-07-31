@@ -73,7 +73,7 @@ rewrite_derefs_to_per_prim_vars(nir_builder *b,
       return false;
 
    nir_deref_instr *old_deref =
-      nir_instr_as_deref(intrin->src[0].ssa->parent_instr);
+      nir_def_as_deref(intrin->src[0].ssa);
    nir_variable *var = nir_deref_instr_get_variable(old_deref);
    if (var == NULL)
       return false;

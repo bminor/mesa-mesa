@@ -344,7 +344,7 @@ parse_offset(nir_scalar *base, uint64_t *base_mul, uint64_t *offset)
    } while (progress);
 
    if (base->def->parent_instr->type == nir_instr_type_intrinsic) {
-      nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(base->def->parent_instr);
+      nir_intrinsic_instr *intrin = nir_def_as_intrinsic(base->def);
       if (intrin->intrinsic == nir_intrinsic_load_vulkan_descriptor)
          base->def = NULL;
    }

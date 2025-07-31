@@ -633,7 +633,7 @@ v3d_nir_lower_null_pointers_cb(nir_builder *b,
         if (src->ssa->parent_instr->type != nir_instr_type_alu)
                 return false;
 
-        nir_alu_instr *alu = nir_instr_as_alu(src->ssa->parent_instr);
+        nir_alu_instr *alu = nir_def_as_alu(src->ssa);
         if (alu->op != nir_op_bcsel)
                 return false;
 

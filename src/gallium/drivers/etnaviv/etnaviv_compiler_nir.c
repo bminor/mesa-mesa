@@ -822,7 +822,7 @@ static nir_const_value *get_alu_cv(nir_alu_src *src)
 
    if (!cv &&
        (src->src.ssa->parent_instr->type == nir_instr_type_alu)) {
-      nir_alu_instr *parent = nir_instr_as_alu(src->src.ssa->parent_instr);
+      nir_alu_instr *parent = nir_def_as_alu(src->src.ssa);
 
       if ((parent->op == nir_op_fabs) ||
           (parent->op == nir_op_fneg)) {

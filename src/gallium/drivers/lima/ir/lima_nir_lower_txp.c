@@ -50,7 +50,7 @@ get_proj_index(nir_instr *coord_instr, nir_instr *proj_instr,
    if (coord_src_ssa->parent_instr->type != nir_instr_type_intrinsic)
       return NULL;
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(coord_src_ssa->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(coord_src_ssa);
    if (intrin->intrinsic != nir_intrinsic_load_input)
       return NULL;
 

@@ -145,7 +145,7 @@ constant_fold_scalar(nir_scalar s, unsigned invocation_id, nir_shader *shader, n
    memset(dest, 0, sizeof(*dest));
 
    if (nir_scalar_is_alu(s)) {
-      nir_alu_instr *alu = nir_instr_as_alu(s.def->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(s.def);
       nir_const_value sources[NIR_ALU_MAX_INPUTS][NIR_MAX_VEC_COMPONENTS];
       const nir_op_info *op_info = &nir_op_infos[alu->op];
 
@@ -221,7 +221,7 @@ constant_fold_scalar(nir_scalar s, unsigned invocation_id, nir_shader *shader, n
          return true;
       }
       case nir_intrinsic_inverse_ballot: {
-         nir_def *src = nir_instr_as_intrinsic(s.def->parent_instr)->src[0].ssa;
+         nir_def *src = nir_def_as_intrinsic(s.def)->src[0].ssa;
          unsigned comp = invocation_id / src->bit_size;
          unsigned bit = invocation_id % src->bit_size;
          if (!constant_fold_scalar(nir_get_scalar(src, comp), invocation_id, shader, dest, depth + 1))

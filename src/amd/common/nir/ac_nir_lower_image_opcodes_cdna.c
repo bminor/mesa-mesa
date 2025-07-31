@@ -329,7 +329,7 @@ static bool lower_image_opcodes(nir_builder *b, nir_instr *instr, void *data)
 
       case nir_intrinsic_image_deref_load:
       case nir_intrinsic_image_deref_store:
-         deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+         deref = nir_def_as_deref(intr->src[0].ssa);
          access = nir_deref_instr_get_variable(deref)->data.access;
          dim = glsl_get_sampler_dim(deref->type);
          if (dim == GLSL_SAMPLER_DIM_BUF)

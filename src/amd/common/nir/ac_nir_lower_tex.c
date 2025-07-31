@@ -233,7 +233,7 @@ can_move_coord(nir_scalar scalar, coord_info *info)
    if (!nir_scalar_is_intrinsic(scalar))
       return false;
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(scalar.def->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(scalar.def);
    if (intrin->intrinsic == nir_intrinsic_load_input ||
        intrin->intrinsic == nir_intrinsic_load_per_primitive_input) {
       info->bary = NULL;
@@ -250,8 +250,8 @@ can_move_coord(nir_scalar scalar, coord_info *info)
        !nir_scalar_is_intrinsic(coord_y) || coord_y.comp != 1)
       return false;
 
-   nir_intrinsic_instr *intrin_x = nir_instr_as_intrinsic(coord_x.def->parent_instr);
-   nir_intrinsic_instr *intrin_y = nir_instr_as_intrinsic(coord_y.def->parent_instr);
+   nir_intrinsic_instr *intrin_x = nir_def_as_intrinsic(coord_x.def);
+   nir_intrinsic_instr *intrin_y = nir_def_as_intrinsic(coord_y.def);
    if (intrin_x->intrinsic != intrin_y->intrinsic ||
        (intrin_x->intrinsic != nir_intrinsic_load_barycentric_sample &&
         intrin_x->intrinsic != nir_intrinsic_load_barycentric_pixel &&
@@ -291,7 +291,7 @@ build_coordinate(struct move_tex_coords_state *state, nir_scalar scalar, coord_i
    } else {
       res = nir_load_input(b, 1, 32, zero);
    }
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(res->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(res);
    nir_intrinsic_set_base(intrin, nir_intrinsic_base(info.load));
    nir_intrinsic_set_component(intrin, nir_intrinsic_component(info.load) + scalar.comp);
    nir_intrinsic_set_dest_type(intrin, nir_intrinsic_dest_type(info.load));
@@ -398,7 +398,7 @@ move_ddxy(struct move_tex_coords_state *state, nir_function_impl *impl, nir_intr
 
    nir_def *def = nir_vec_scalars(&state->toplevel_b, components, num_components);
    def = _nir_build_ddx(&state->toplevel_b, def->bit_size, def);
-   nir_instr_as_intrinsic(def->parent_instr)->intrinsic = instr->intrinsic;
+   nir_def_as_intrinsic(def)->intrinsic = instr->intrinsic;
    nir_def_rewrite_uses(&instr->def, def);
 
    state->num_wqm_vgprs += num_components;

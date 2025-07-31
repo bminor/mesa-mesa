@@ -189,9 +189,9 @@ gl_nir_inline_functions(nir_shader *shader)
             if (intr->src[0].src_type == nir_tex_src_sampler_deref_intrinsic) {
                assert(intr->src[1].src_type == nir_tex_src_texture_deref_intrinsic);
                nir_intrinsic_instr *intrin =
-                  nir_instr_as_intrinsic(intr->src[0].src.ssa->parent_instr);
+                  nir_def_as_intrinsic(intr->src[0].src.ssa);
                nir_deref_instr *deref =
-                  nir_instr_as_deref(intrin->src[0].ssa->parent_instr);
+                  nir_def_as_deref(intrin->src[0].ssa);
 
                /* check for bindless handles */
                if (!nir_deref_mode_is(deref, nir_var_uniform) ||
@@ -3145,7 +3145,7 @@ validate_sampler_array_indexing(const struct pipe_screen *screen,
                      nir_tex_instr_src_index(tex_instr, nir_tex_src_sampler_deref);
                   if (sampler_idx >= 0) {
                      nir_deref_instr *deref =
-                        nir_instr_as_deref(tex_instr->src[sampler_idx].src.ssa->parent_instr);
+                        nir_def_as_deref(tex_instr->src[sampler_idx].src.ssa);
                      if (is_sampler_array_accessed_indirectly(deref)) {
                         uses_indirect_sampler_array_indexing = true;
                         break;

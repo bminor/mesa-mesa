@@ -829,9 +829,9 @@ ntq_emit_pack_unorm_4x8(struct vc4_compile *c, nir_alu_instr *instr)
          * peek back at what generated its sources.
          */
         if (instr->src[0].src.ssa->parent_instr->type == nir_instr_type_alu &&
-            nir_instr_as_alu(instr->src[0].src.ssa->parent_instr)->op ==
+            nir_def_as_alu(instr->src[0].src.ssa)->op ==
             nir_op_vec4) {
-                vec4 = nir_instr_as_alu(instr->src[0].src.ssa->parent_instr);
+                vec4 = nir_def_as_alu(instr->src[0].src.ssa);
         }
 
         /* If the pack is replicating the same channel 4 times, use the 8888
@@ -1000,7 +1000,7 @@ static struct qreg ntq_emit_bcsel(struct vc4_compile *c, nir_alu_instr *instr,
         if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
                 goto out;
         nir_alu_instr *compare =
-                nir_instr_as_alu(instr->src[0].src.ssa->parent_instr);
+                nir_def_as_alu(instr->src[0].src.ssa);
         if (!compare)
                 goto out;
 

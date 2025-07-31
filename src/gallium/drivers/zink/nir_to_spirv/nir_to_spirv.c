@@ -3795,7 +3795,7 @@ get_tex_srcs(struct ntv_context *ctx, nir_tex_instr *tex,
       nir_const_value *cv;
       switch (tex->src[i].src_type) {
       case nir_tex_src_texture_deref:
-         var = nir_deref_instr_get_variable(nir_instr_as_deref(tex->src[i].src.ssa->parent_instr));
+         var = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[i].src.ssa));
          tex_src->src = get_src(ctx, &tex->src[i].src, &atype);
          break;
       case nir_tex_src_sampler_deref:

@@ -108,7 +108,7 @@ lower_image_to_fragment_mask_load(nir_builder *b, nir_intrinsic_instr *intrin)
                                        .access = nir_intrinsic_access(intrin));
 
    /* fix intrinsic op */
-   nir_intrinsic_instr *fmask_load = nir_instr_as_intrinsic(fmask->parent_instr);
+   nir_intrinsic_instr *fmask_load = nir_def_as_intrinsic(fmask);
    fmask_load->intrinsic = fmask_op;
 
    /* extract real color buffer index from fmask buffer */

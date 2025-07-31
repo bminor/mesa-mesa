@@ -76,10 +76,10 @@ visit_vulkan_resource_index(nir_builder *b, apply_layout_state *state, nir_intri
    }
 
    nir_def *binding_ptr = nir_imul_imm(b, intrin->src[0].ssa, stride);
-   nir_instr_as_alu(binding_ptr->parent_instr)->no_unsigned_wrap = true;
+   nir_def_as_alu(binding_ptr)->no_unsigned_wrap = true;
 
    binding_ptr = nir_iadd_imm(b, binding_ptr, offset);
-   nir_instr_as_alu(binding_ptr->parent_instr)->no_unsigned_wrap = true;
+   nir_def_as_alu(binding_ptr)->no_unsigned_wrap = true;
 
    if (layout->binding[binding].type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
       assert(stride == 16);
@@ -99,7 +99,7 @@ visit_vulkan_resource_reindex(nir_builder *b, apply_layout_state *state, nir_int
       nir_def *binding_ptr = nir_unpack_64_2x32_split_y(b, intrin->src[0].ssa);
 
       nir_def *index = nir_imul_imm(b, intrin->src[1].ssa, 16);
-      nir_instr_as_alu(index->parent_instr)->no_unsigned_wrap = true;
+      nir_def_as_alu(index)->no_unsigned_wrap = true;
 
       binding_ptr = nir_iadd_nuw(b, binding_ptr, index);
 
@@ -111,7 +111,7 @@ visit_vulkan_resource_reindex(nir_builder *b, apply_layout_state *state, nir_int
       nir_def *stride = nir_channel(b, intrin->src[0].ssa, 2);
 
       nir_def *index = nir_imul(b, intrin->src[1].ssa, stride);
-      nir_instr_as_alu(index->parent_instr)->no_unsigned_wrap = true;
+      nir_def_as_alu(index)->no_unsigned_wrap = true;
 
       binding_ptr = nir_iadd_nuw(b, binding_ptr, index);
 
@@ -258,11 +258,11 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
 
       nir_def *tmp = nir_imul_imm(b, deref->arr.index.ssa, array_size);
       if (tmp != deref->arr.index.ssa)
-         nir_instr_as_alu(tmp->parent_instr)->no_unsigned_wrap = true;
+         nir_def_as_alu(tmp)->no_unsigned_wrap = true;
 
       if (index) {
          index = nir_iadd(b, tmp, index);
-         nir_instr_as_alu(index->parent_instr)->no_unsigned_wrap = true;
+         nir_def_as_alu(index)->no_unsigned_wrap = true;
       } else {
          index = tmp;
       }
@@ -272,7 +272,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
 
    nir_def *index_offset = index ? nir_iadd_imm(b, index, offset) : nir_imm_int(b, offset);
    if (index && index_offset != index)
-      nir_instr_as_alu(index_offset->parent_instr)->no_unsigned_wrap = true;
+      nir_def_as_alu(index_offset)->no_unsigned_wrap = true;
 
    if (non_uniform)
       return nir_iadd(b, load_desc_ptr(b, state, desc_set), index_offset);

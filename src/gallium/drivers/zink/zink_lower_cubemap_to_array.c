@@ -53,7 +53,7 @@ lower_cubemap_to_array_filter(const nir_instr *instr, const void *mask)
    const uint32_t *nonseamless_cube_mask = mask;
    if (instr->type == nir_instr_type_tex) {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
-      nir_variable *var = nir_deref_instr_get_variable(nir_instr_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa->parent_instr));
+      nir_variable *var = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa));
 
       if (tex->sampler_dim != GLSL_SAMPLER_DIM_CUBE)
          return false;
@@ -389,7 +389,7 @@ lower_cube_coords(nir_builder *b, nir_def *coord, bool is_array)
 static void
 rewrite_cube_var_type(nir_builder *b, nir_tex_instr *tex)
 {
-   nir_deref_instr *texture_deref = nir_instr_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa->parent_instr);
+   nir_deref_instr *texture_deref = nir_def_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa);
    nir_variable *sampler = nir_deref_instr_get_variable(texture_deref);
    assert(sampler);
    sampler->type = make_2darray_from_cubemap_with_array(sampler->type);

@@ -43,7 +43,7 @@ try_extract_const_addition(nir_builder *b, nir_scalar val, opt_offsets_state *st
    if (!nir_scalar_is_alu(val))
       return val;
 
-   nir_alu_instr *alu = nir_instr_as_alu(val.def->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu(val.def);
    if (alu->op != nir_op_iadd)
       return val;
 

@@ -169,7 +169,7 @@ analyze_constant(const struct nir_alu_instr *instr, unsigned src,
       swizzle[i] = instr->src[src].swizzle[i];
 
    const nir_load_const_instr *const load =
-      nir_instr_as_load_const(instr->src[src].src.ssa->parent_instr);
+      nir_def_as_load_const(instr->src[src].src.ssa);
 
    struct ssa_result_range r = { unknown, false, false, false };
 
@@ -497,7 +497,7 @@ get_fp_key(struct analysis_query *q)
       return 0;
 
    uintptr_t type_encoding;
-   uintptr_t ptr = (uintptr_t)nir_instr_as_alu(src->ssa->parent_instr);
+   uintptr_t ptr = (uintptr_t) nir_def_as_alu(src->ssa);
 
    /* The low 2 bits have to be zero or this whole scheme falls apart. */
    assert((ptr & 0x3) == 0);
@@ -596,7 +596,7 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
    }
 
    const struct nir_alu_instr *const alu =
-      nir_instr_as_alu(instr->src[src].src.ssa->parent_instr);
+      nir_def_as_alu(instr->src[src].src.ssa);
 
    /* Bail if the type of the instruction generating the value does not match
     * the type the value will be interpreted as.  int/uint/bool can be
@@ -1483,7 +1483,7 @@ search_phi_bcsel(nir_scalar scalar, nir_scalar *buf, unsigned buf_size, struct s
    _mesa_set_add(visited, scalar.def);
 
    if (scalar.def->parent_instr->type == nir_instr_type_phi) {
-      nir_phi_instr *phi = nir_instr_as_phi(scalar.def->parent_instr);
+      nir_phi_instr *phi = nir_def_as_phi(scalar.def);
       unsigned num_sources_left = exec_list_length(&phi->srcs);
       if (buf_size >= num_sources_left) {
          unsigned total_added = 0;
@@ -1608,7 +1608,7 @@ get_intrinsic_uub(struct analysis_state *state, struct uub_query q, uint32_t *re
    nir_shader *shader = state->shader;
    const nir_unsigned_upper_bound_config *config = state->config;
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(q.scalar.def->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(q.scalar.def);
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_local_invocation_index:
       /* The local invocation index is used under the hood by RADV for
@@ -2017,7 +2017,7 @@ get_alu_uub(struct analysis_state *state, struct uub_query q, uint32_t *result, 
 static void
 get_phi_uub(struct analysis_state *state, struct uub_query q, uint32_t *result, const uint32_t *src)
 {
-   nir_phi_instr *phi = nir_instr_as_phi(q.scalar.def->parent_instr);
+   nir_phi_instr *phi = nir_def_as_phi(q.scalar.def);
 
    if (exec_list_is_empty(&phi->srcs))
       return;

@@ -290,7 +290,7 @@ gather_intrinsic_info(const nir_shader *nir, const nir_intrinsic_instr *instr, s
    case nir_intrinsic_image_deref_atomic_swap:
    case nir_intrinsic_image_deref_size:
    case nir_intrinsic_image_deref_samples: {
-      nir_variable *var = nir_deref_instr_get_variable(nir_instr_as_deref(instr->src[0].ssa->parent_instr));
+      nir_variable *var = nir_deref_instr_get_variable(nir_def_as_deref(instr->src[0].ssa));
       mark_sampler_desc(var, info);
       break;
    }

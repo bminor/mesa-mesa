@@ -594,12 +594,12 @@ get_deref_tail(nir_deref_instr *deref)
       return deref;
 
    nir_deref_instr *parent =
-      nir_instr_as_deref(deref->parent.ssa->parent_instr);
+      nir_def_as_deref(deref->parent.ssa);
 
    if (parent->deref_type == nir_deref_type_cast &&
        parent->parent.ssa->parent_instr->type == nir_instr_type_deref) {
       nir_deref_instr *grandparent =
-         nir_instr_as_deref(parent->parent.ssa->parent_instr);
+         nir_def_as_deref(parent->parent.ssa);
 
       if (glsl_type_is_cmat(grandparent->type))
          return grandparent;

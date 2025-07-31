@@ -1233,7 +1233,7 @@ ntq_get_alu_parent(nir_src src)
 {
         if (src.ssa->parent_instr->type != nir_instr_type_alu)
                 return NULL;
-        nir_alu_instr *instr = nir_instr_as_alu(src.ssa->parent_instr);
+        nir_alu_instr *instr = nir_def_as_alu(src.ssa);
         if (!instr)
                 return NULL;
 

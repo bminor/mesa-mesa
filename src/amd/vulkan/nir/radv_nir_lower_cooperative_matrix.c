@@ -82,7 +82,7 @@ radv_nir_cmat_length_mul(struct glsl_cmat_description desc, const lower_cmat_par
 static nir_def *
 radv_nir_load_cmat(nir_builder *b, const lower_cmat_params *params, nir_def *src)
 {
-   nir_deref_instr *deref = nir_instr_as_deref(src->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(src);
    struct glsl_cmat_description desc = *glsl_get_cmat_description(deref->type);
    return nir_build_load_deref(b, radv_nir_cmat_length(desc, params), radv_nir_cmat_bits(desc), src, 0);
 }

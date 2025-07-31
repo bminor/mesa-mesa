@@ -79,7 +79,7 @@ brw_nir_ubo_surface_index_is_pushable(nir_src src)
 {
    nir_intrinsic_instr *intrin =
       src.ssa->parent_instr->type == nir_instr_type_intrinsic ?
-      nir_instr_as_intrinsic(src.ssa->parent_instr) : NULL;
+      nir_def_as_intrinsic(src.ssa) : NULL;
 
    if (intrin && intrin->intrinsic == nir_intrinsic_resource_intel) {
       return (nir_intrinsic_resource_access_intel(intrin) &
@@ -100,7 +100,7 @@ brw_nir_ubo_surface_index_get_push_block(nir_src src)
 
    assert(src.ssa->parent_instr->type == nir_instr_type_intrinsic);
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(src.ssa->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(src.ssa);
    assert(intrin->intrinsic == nir_intrinsic_resource_intel);
 
    return nir_intrinsic_resource_block_intel(intrin);
@@ -122,7 +122,7 @@ brw_nir_ubo_surface_index_get_bti(nir_src src)
 
    assert(src.ssa->parent_instr->type == nir_instr_type_intrinsic);
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(src.ssa->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(src.ssa);
    if (!intrin || intrin->intrinsic != nir_intrinsic_resource_intel)
       return UINT32_MAX;
 

@@ -629,7 +629,7 @@ ntr_get_chased_src(struct ntr_compile *c, nir_legacy_src *src)
 {
    if (src->is_ssa) {
       if (src->ssa->parent_instr->type == nir_instr_type_load_const)
-         return ntr_get_load_const_src(c, nir_instr_as_load_const(src->ssa->parent_instr));
+         return ntr_get_load_const_src(c, nir_def_as_load_const(src->ssa));
 
       return c->ssa_temp[src->ssa->index];
    } else {
@@ -695,7 +695,7 @@ ntr_get_ssa_def_decl(struct ntr_compile *c, nir_def *ssa)
    uint32_t writemask;
    /* Fix writemask for nir_intrinsic_load_ubo_vec4 according to uses. */
    if (ssa->parent_instr->type == nir_instr_type_intrinsic &&
-       nir_instr_as_intrinsic(ssa->parent_instr)->intrinsic == nir_intrinsic_load_ubo_vec4)
+       nir_def_as_intrinsic(ssa)->intrinsic == nir_intrinsic_load_ubo_vec4)
       writemask = nir_def_components_read(ssa);
    else
       writemask = BITSET_MASK(ssa->num_components);
@@ -1072,7 +1072,7 @@ ntr_emit_load_input(struct ntr_compile *c, nir_intrinsic_instr *instr)
    case nir_intrinsic_load_interpolated_input: {
       input = ntr_ureg_src_indirect(c, input, instr->src[1], 0);
 
-      nir_intrinsic_instr *bary_instr = nir_instr_as_intrinsic(instr->src[0].ssa->parent_instr);
+      nir_intrinsic_instr *bary_instr = nir_def_as_intrinsic(instr->src[0].ssa);
 
       switch (bary_instr->intrinsic) {
       case nir_intrinsic_load_barycentric_pixel:

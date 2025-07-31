@@ -487,7 +487,7 @@ optimize_extract_to_float(nir_to_brw_state &ntb, const brw_builder &bld,
       return false;
 
    nir_alu_instr *src0 =
-      nir_instr_as_alu(instr->src[0].src.ssa->parent_instr);
+      nir_def_as_alu(instr->src[0].src.ssa);
 
    unsigned bytes;
    bool is_signed;

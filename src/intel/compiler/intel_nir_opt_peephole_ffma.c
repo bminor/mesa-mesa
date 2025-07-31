@@ -143,7 +143,7 @@ any_alu_src_is_a_constant(nir_alu_src srcs[])
    for (unsigned i = 0; i < 2; i++) {
       if (srcs[i].src.ssa->parent_instr->type == nir_instr_type_load_const) {
          nir_load_const_instr *load_const =
-            nir_instr_as_load_const (srcs[i].src.ssa->parent_instr);
+            nir_def_as_load_const(srcs[i].src.ssa);
 
          if (list_is_singular(&load_const->def.uses))
             return true;

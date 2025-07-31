@@ -804,7 +804,7 @@ build_process_shader(struct nvk_device *dev,
 
    /* Replace the out stride with the actual size of a command stream */
    nir_load_const_instr *out_stride_const =
-      nir_instr_as_load_const(out_stride->parent_instr);
+      nir_def_as_load_const(out_stride);
    out_stride_const->value[0].u32 = push.max_dw_count * 4;
 
    /* We also output this stride to go in the layout struct */

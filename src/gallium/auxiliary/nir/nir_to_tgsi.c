@@ -554,7 +554,7 @@ ntt_extract_const_src_offset(nir_src *src)
    nir_scalar s = nir_get_scalar(src->ssa, 0);
 
    while (nir_scalar_is_alu(s)) {
-      nir_alu_instr *alu = nir_instr_as_alu(s.def->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(s.def);
 
       if (alu->op == nir_op_iadd) {
          for (int i = 0; i < 2; i++) {
@@ -1225,7 +1225,7 @@ ntt_get_chased_src(struct ntt_compile *c, nir_legacy_src *src)
 {
    if (src->is_ssa) {
       if (src->ssa->parent_instr->type == nir_instr_type_load_const)
-         return ntt_get_load_const_src(c, nir_instr_as_load_const(src->ssa->parent_instr));
+         return ntt_get_load_const_src(c, nir_def_as_load_const(src->ssa));
 
       return c->ssa_temp[src->ssa->index];
    } else {
@@ -2276,7 +2276,7 @@ ntt_emit_load_input(struct ntt_compile *c, nir_intrinsic_instr *instr)
       input = ntt_ureg_src_indirect(c, input, instr->src[1], 0);
 
       nir_intrinsic_instr *bary_instr =
-         nir_instr_as_intrinsic(instr->src[0].ssa->parent_instr);
+         nir_def_as_intrinsic(instr->src[0].ssa);
 
       switch (bary_instr->intrinsic) {
       case nir_intrinsic_load_barycentric_pixel:

@@ -49,7 +49,7 @@ struct mir_address {
 static bool
 mir_args_ssa(nir_scalar s, unsigned count)
 {
-   nir_alu_instr *alu = nir_instr_as_alu(s.def->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu(s.def);
 
    if (count > nir_op_infos[alu->op].num_inputs)
       return false;

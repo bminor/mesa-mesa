@@ -1449,7 +1449,7 @@ nir_src_as_const_value(nir_src src)
    if (src.ssa->parent_instr->type != nir_instr_type_load_const)
       return NULL;
 
-   nir_load_const_instr *load = nir_instr_as_load_const(src.ssa->parent_instr);
+   nir_load_const_instr *load = nir_def_as_load_const(src.ssa);
 
    return load->value;
 }
@@ -1469,7 +1469,7 @@ nir_src_is_always_uniform(nir_src src)
       return true;
 
    if (src.ssa->parent_instr->type == nir_instr_type_intrinsic) {
-      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(src.ssa->parent_instr);
+      nir_intrinsic_instr *intr = nir_def_as_intrinsic(src.ssa);
       /* As are uniform variables */
       if (intr->intrinsic == nir_intrinsic_load_uniform &&
           nir_src_is_always_uniform(intr->src[0]))
@@ -1487,7 +1487,7 @@ nir_src_is_always_uniform(nir_src src)
 
    /* Operating together uniform expressions produces a uniform result */
    if (src.ssa->parent_instr->type == nir_instr_type_alu) {
-      nir_alu_instr *alu = nir_instr_as_alu(src.ssa->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(src.ssa);
       for (int i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
          if (!nir_src_is_always_uniform(alu->src[i].src))
             return false;
@@ -2928,7 +2928,7 @@ nir_scalar
 nir_scalar_chase_movs(nir_scalar s)
 {
    while (nir_scalar_is_alu(s)) {
-      nir_alu_instr *alu = nir_instr_as_alu(s.def->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(s.def);
       if (alu->op == nir_op_mov) {
          s.def = alu->src[0].src.ssa;
          s.comp = alu->src[0].swizzle[s.comp];

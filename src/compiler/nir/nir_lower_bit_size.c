@@ -70,7 +70,7 @@ before_conversion(nir_builder *bld, nir_alu_type type, unsigned bit_size, nir_de
    if (def->parent_instr->type != nir_instr_type_alu) {
       return NULL;
    }
-   nir_alu_instr *alu_instr = nir_instr_as_alu(def->parent_instr);
+   nir_alu_instr *alu_instr = nir_def_as_alu(def);
    if (alu_instr->op != nir_type_conversion_op((nir_alu_type)(type | bit_size),
                                                (nir_alu_type)(type | def->bit_size),
                                                nir_rounding_mode_undef) ||

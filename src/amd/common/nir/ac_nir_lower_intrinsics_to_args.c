@@ -405,7 +405,7 @@ lower_intrinsic_to_arg(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
                 * to optimize some multiplications (in address calculations) so that
                 * constant additions can be added to the const offset in memory load instructions.
                 */
-               nir_intrinsic_set_arg_upper_bound_u32_amd(nir_instr_as_intrinsic(replacement->parent_instr),
+               nir_intrinsic_set_arg_upper_bound_u32_amd(nir_def_as_intrinsic(replacement),
                                                          2048 / b->shader->info.tess.tcs_vertices_out);
             }
          }

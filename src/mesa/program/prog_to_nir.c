@@ -102,7 +102,7 @@ ptn_get_src(struct ptn_compile *c, const struct prog_src_register *prog_src)
          nir_def *baryc = nir_load_barycentric_pixel(b, 32);
 
          if (slot != VARYING_SLOT_COL0 && slot != VARYING_SLOT_COL1) {
-            nir_intrinsic_set_interp_mode(nir_instr_as_intrinsic(baryc->parent_instr),
+            nir_intrinsic_set_interp_mode(nir_def_as_intrinsic(baryc),
                                           INTERP_MODE_SMOOTH);
          }
 

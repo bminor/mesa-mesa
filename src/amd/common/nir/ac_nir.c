@@ -163,7 +163,7 @@ ac_nir_load_arg_upper_bound(nir_builder *b, const struct ac_shader_args *ac_args
                             unsigned upper_bound)
 {
    nir_def *value = ac_nir_load_arg_at_offset(b, ac_args, arg, 0);
-   nir_intrinsic_set_arg_upper_bound_u32_amd(nir_instr_as_intrinsic(value->parent_instr),
+   nir_intrinsic_set_arg_upper_bound_u32_amd(nir_def_as_intrinsic(value),
                                              upper_bound);
    return value;
 }

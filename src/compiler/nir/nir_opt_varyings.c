@@ -969,7 +969,7 @@ color_uses_shade_model(struct linkage_info *linkage, unsigned i)
       assert(iter->instr->intrinsic == nir_intrinsic_load_interpolated_input);
 
       nir_intrinsic_instr *baryc =
-         nir_instr_as_intrinsic(iter->instr->src[0].ssa->parent_instr);
+         nir_def_as_intrinsic(iter->instr->src[0].ssa);
       if (nir_intrinsic_interp_mode(baryc) == INTERP_MODE_NONE)
          return true;
    }
@@ -985,7 +985,7 @@ get_interp_vec4_type(struct linkage_info *linkage, unsigned slot,
    assert(load->intrinsic == nir_intrinsic_load_interpolated_input);
 
    nir_intrinsic_instr *baryc =
-      nir_instr_as_intrinsic(load->src[0].ssa->parent_instr);
+      nir_def_as_intrinsic(load->src[0].ssa);
    enum fs_vec4_type base;
 
    if (color_uses_shade_model(linkage, slot))
@@ -1038,7 +1038,7 @@ build_convert_inf_to_nan(nir_builder *b, nir_def *x)
 {
    /* Do x*0 + x. The multiplication by 0 can't be optimized out. */
    nir_def *fma = nir_ffma_imm1(b, x, 0, x);
-   nir_instr_as_alu(fma->parent_instr)->exact = true;
+   nir_def_as_alu(fma)->exact = true;
    return fma;
 }
 
@@ -1053,7 +1053,7 @@ is_sysval(nir_instr *instr, gl_system_value sysval)
 
       if (intr->intrinsic == nir_intrinsic_load_deref) {
          nir_deref_instr *deref =
-            nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+            nir_def_as_deref(intr->src[0].ssa);
 
          return nir_deref_mode_is_one_of(deref, nir_var_system_value) &&
                 nir_deref_instr_get_variable(deref)->data.location == sysval;
@@ -2230,7 +2230,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
    switch (ssa->parent_instr->type) {
    case nir_instr_type_load_const:
       clone = nir_build_imm(b, ssa->num_components, ssa->bit_size,
-                            nir_instr_as_load_const(ssa->parent_instr)->value);
+                            nir_def_as_load_const(ssa)->value);
       break;
 
    case nir_instr_type_undef:
@@ -2238,7 +2238,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       break;
 
    case nir_instr_type_alu: {
-      nir_alu_instr *alu = nir_instr_as_alu(ssa->parent_instr);
+      nir_alu_instr *alu = nir_def_as_alu(ssa);
 
       if (alu->instr.pass_flags & FLAG_ALU_IS_TES_INTERP_LOAD) {
          /* We are cloning an interpolated TES load in the producer for
@@ -2256,7 +2256,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
          src[i] = clone_ssa_impl(linkage, b, alu->src[i].src.ssa);
 
       clone = nir_build_alu(b, alu->op, src[0], src[1], src[2], src[3]);
-      nir_alu_instr *alu_clone = nir_instr_as_alu(clone->parent_instr);
+      nir_alu_instr *alu_clone = nir_def_as_alu(clone);
 
       alu_clone->exact = alu->exact;
       alu_clone->no_signed_wrap = alu->no_signed_wrap;
@@ -2275,12 +2275,12 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       /* Clone load_deref of uniform or ubo. It's the only thing that can
        * occur here.
        */
-      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(ssa->parent_instr);
+      nir_intrinsic_instr *intr = nir_def_as_intrinsic(ssa);
 
       switch (intr->intrinsic) {
       case nir_intrinsic_load_deref: {
          nir_def *ssa = clone_ssa_impl(linkage, b, intr->src[0].ssa);
-         clone = nir_load_deref(b, nir_instr_as_deref(ssa->parent_instr));
+         clone = nir_load_deref(b, nir_def_as_deref(ssa));
          break;
       }
 
@@ -2304,7 +2304,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
    }
 
    case nir_instr_type_deref: {
-      nir_deref_instr *deref = nir_instr_as_deref(ssa->parent_instr);
+      nir_deref_instr *deref = nir_def_as_deref(ssa);
       assert(nir_deref_mode_is_one_of(deref, nir_var_uniform | nir_var_mem_ubo));
 
       /* Get the uniform from the original shader. */
@@ -2323,8 +2323,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       } else {
          nir_deref_instr *parent_orig = nir_deref_instr_parent(deref);
          nir_deref_instr *parent_clone =
-            nir_instr_as_deref(clone_ssa_impl(linkage, b, &parent_orig->def)
-                                  ->parent_instr);
+            nir_def_as_deref(clone_ssa_impl(linkage, b, &parent_orig->def));
 
          switch (deref->deref_type) {
          case nir_deref_type_array: {
@@ -2642,7 +2641,7 @@ get_input_qualifier(struct linkage_info *linkage, unsigned i)
        baryc->intrinsic == nir_intrinsic_load_barycentric_at_sample) {
       list_for_each_entry(struct list_node, iter, &slot->consumer.loads, head) {
          nir_intrinsic_instr *bar =
-            nir_instr_as_intrinsic(iter->instr->src[0].ssa->parent_instr);
+            nir_def_as_intrinsic(iter->instr->src[0].ssa);
 
          if (bar->intrinsic != nir_intrinsic_load_barycentric_centroid &&
              bar->intrinsic != nir_intrinsic_load_barycentric_at_offset &&

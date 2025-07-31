@@ -623,10 +623,10 @@ lower_tex_src(nir_builder *b,
    uint8_t plane = tex_instr_get_and_remove_plane_src(instr);
 
    /* We compute first the offsets */
-   nir_deref_instr *deref = nir_instr_as_deref(src->src.ssa->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(src->src.ssa);
    while (deref->deref_type != nir_deref_type_var) {
       nir_deref_instr *parent =
-         nir_instr_as_deref(deref->parent.ssa->parent_instr);
+         nir_def_as_deref(deref->parent.ssa);
 
       assert(deref->deref_type == nir_deref_type_array);
 
@@ -757,7 +757,7 @@ lower_image_deref(nir_builder *b,
 
    while (deref->deref_type != nir_deref_type_var) {
       nir_deref_instr *parent =
-         nir_instr_as_deref(deref->parent.ssa->parent_instr);
+         nir_def_as_deref(deref->parent.ssa);
 
       assert(deref->deref_type == nir_deref_type_array);
 

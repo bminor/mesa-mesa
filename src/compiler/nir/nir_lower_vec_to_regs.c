@@ -89,7 +89,7 @@ try_coalesce(nir_builder *b, nir_def *reg, nir_alu_instr *vec,
       return 0;
 
    nir_alu_instr *src_alu =
-      nir_instr_as_alu(vec->src[start_idx].src.ssa->parent_instr);
+      nir_def_as_alu(vec->src[start_idx].src.ssa);
 
    if (has_replicated_dest(src_alu)) {
       /* The fdot instruction is special: It replicates its result to all

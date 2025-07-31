@@ -1193,7 +1193,7 @@ lower_edb_buffer_tex_instr(nir_builder *b, nir_tex_instr *tex,
                                                        ACCESS_CAN_REORDER,
                                              .dest_type = tex->dest_type);
       if (tex->is_sparse) {
-         nir_intrinsic_instr *intr = nir_instr_as_intrinsic(res->parent_instr);
+         nir_intrinsic_instr *intr = nir_def_as_intrinsic(res);
          intr->intrinsic = nir_intrinsic_bindless_image_sparse_load;
       }
 

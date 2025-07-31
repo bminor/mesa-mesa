@@ -245,7 +245,7 @@ llvmpipe_nir_fn_is_linear_compat(const struct nir_shader *shader,
                if (!nir_src_is_const(intrin->src[0]))
                   return false;
                nir_load_const_instr *load =
-                  nir_instr_as_load_const(intrin->src[0].ssa->parent_instr);
+                  nir_def_as_load_const(intrin->src[0].ssa);
                if (load->value[0].u32 != 0 || load->def.num_components > 1)
                   return false;
             } else if (intrin->intrinsic == nir_intrinsic_store_deref) {
@@ -333,7 +333,7 @@ llvmpipe_nir_fn_is_linear_compat(const struct nir_shader *shader,
                    */
                   if (nir_src_is_const(alu->src[s].src)) {
                      nir_load_const_instr *load =
-                        nir_instr_as_load_const(alu->src[s].src.ssa->parent_instr);
+                        nir_def_as_load_const(alu->src[s].src.ssa);
                      if (!check_load_const_in_zero_one(load)) {
                         return false;
                      }

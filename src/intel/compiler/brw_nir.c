@@ -369,7 +369,7 @@ lower_per_view_outputs(nir_builder *b,
    else {
       nir_def *new_def = nir_load_output(b, intrin->def.num_components,
                                          intrin->def.bit_size, new_offset);
-      new = nir_instr_as_intrinsic(new_def->parent_instr);
+      new = nir_def_as_intrinsic(new_def);
    }
 
    nir_intrinsic_set_base(new, nir_intrinsic_base(intrin));
@@ -2698,7 +2698,7 @@ brw_nir_move_interpolation_to_top(nir_shader *nir)
             if (intrin->intrinsic != nir_intrinsic_load_interpolated_input)
                continue;
             nir_intrinsic_instr *bary_intrinsic =
-               nir_instr_as_intrinsic(intrin->src[0].ssa->parent_instr);
+               nir_def_as_intrinsic(intrin->src[0].ssa);
             nir_intrinsic_op op = bary_intrinsic->intrinsic;
 
             /* Leave interpolateAtSample/Offset() where they are. */

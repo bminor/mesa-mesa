@@ -4351,7 +4351,7 @@ get_branch_condition(struct ir3_context *ctx, nir_src *src, unsigned comp,
    struct ir3_instruction *condition = ir3_get_src(ctx, src)[comp];
 
    if (src->ssa->parent_instr->type == nir_instr_type_alu) {
-      nir_alu_instr *nir_cond = nir_instr_as_alu(src->ssa->parent_instr);
+      nir_alu_instr *nir_cond = nir_def_as_alu(src->ssa);
 
       if (nir_cond->op == nir_op_inot) {
          struct ir3_instruction *inv_cond = get_branch_condition(
@@ -4376,7 +4376,7 @@ fold_conditional_branch(struct ir3_context *ctx, struct nir_src *nir_cond)
    if (nir_cond->ssa->parent_instr->type != nir_instr_type_alu)
       return NULL;
 
-   nir_alu_instr *alu_cond = nir_instr_as_alu(nir_cond->ssa->parent_instr);
+   nir_alu_instr *alu_cond = nir_def_as_alu(nir_cond->ssa);
 
    if ((alu_cond->op != nir_op_iand) && (alu_cond->op != nir_op_ior))
       return NULL;

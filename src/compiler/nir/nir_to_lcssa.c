@@ -224,7 +224,7 @@ convert_loop_exit_for_ssa(nir_def *def, void *void_state)
       return true;
 
    if (def->parent_instr->type == nir_instr_type_deref) {
-      nir_rematerialize_deref_in_use_blocks(nir_instr_as_deref(def->parent_instr));
+      nir_rematerialize_deref_in_use_blocks(nir_def_as_deref(def));
       return true;
    }
 

@@ -30,13 +30,13 @@ lower_immediate_offsets(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
       nir_src *binding = nir_get_io_index_src(intrin);
       const bool has_resource =
          binding->ssa->parent_instr->type == nir_instr_type_intrinsic &&
-         nir_instr_as_intrinsic(binding->ssa->parent_instr)->intrinsic ==
+         nir_def_as_intrinsic(binding->ssa)->intrinsic ==
          nir_intrinsic_resource_intel;
       bool ss_binding = false;
       bool bti_is_const;
       if (has_resource) {
          nir_intrinsic_instr *resource =
-            nir_instr_as_intrinsic(binding->ssa->parent_instr);
+            nir_def_as_intrinsic(binding->ssa);
          ss_binding = (nir_intrinsic_resource_access_intel(resource) &
                        nir_resource_intel_bindless) != 0;
          bti_is_const = nir_src_is_const(resource->src[1]);

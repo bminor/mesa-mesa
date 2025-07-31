@@ -1875,7 +1875,7 @@ static bool
 is_resource_src(nir_src src)
 {
    return src.ssa->parent_instr->type == nir_instr_type_intrinsic &&
-          nir_instr_as_intrinsic(src.ssa->parent_instr)->intrinsic == nir_intrinsic_resource_intel;
+          nir_def_as_intrinsic(src.ssa)->intrinsic == nir_intrinsic_resource_intel;
 }
 
 static elk_fs_reg
@@ -4257,13 +4257,13 @@ try_rebuild_resource(nir_to_elk_state &ntb, const elk::fs_builder &bld, nir_def 
 
       if (def->parent_instr->type == nir_instr_type_load_const) {
          nir_load_const_instr *load_const =
-            nir_instr_as_load_const(def->parent_instr);
+            nir_def_as_load_const(def);
          return elk_imm_ud(load_const->value[0].i32);
       } else {
          assert(def->parent_instr->type == nir_instr_type_intrinsic &&
-                (nir_instr_as_intrinsic(def->parent_instr)->intrinsic ==
+                (nir_def_as_intrinsic(def)->intrinsic ==
                  nir_intrinsic_load_uniform));
-         nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(def->parent_instr);
+         nir_intrinsic_instr *intrin = nir_def_as_intrinsic(def);
          unsigned base_offset = nir_intrinsic_base(intrin);
          unsigned load_offset = nir_src_as_uint(intrin->src[0]);
          elk_fs_reg src(UNIFORM, base_offset / 4, ELK_REGISTER_TYPE_UD);

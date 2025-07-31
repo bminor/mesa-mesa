@@ -67,7 +67,7 @@ get_const_vec(nir_def* vec, nir_const_value* cv[4])
 {
    if (vec->parent_instr->type != nir_instr_type_alu)
       return;
-   nir_alu_instr* vec_instr = nir_instr_as_alu(vec->parent_instr);
+   nir_alu_instr* vec_instr = nir_def_as_alu(vec);
    if (vec_instr->op != nir_op_vec(vec->num_components))
       return;
 

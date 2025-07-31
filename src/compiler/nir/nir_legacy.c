@@ -70,7 +70,7 @@ chase_source_mod(nir_def **ssa, nir_op op, uint8_t *swizzle)
    if ((*ssa)->parent_instr->type != nir_instr_type_alu)
       return false;
 
-   nir_alu_instr *alu = nir_instr_as_alu((*ssa)->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu((*ssa));
    if (alu->op != op)
       return false;
 

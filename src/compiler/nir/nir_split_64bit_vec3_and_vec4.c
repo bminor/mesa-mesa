@@ -273,7 +273,7 @@ nir_split_64bit_vec3_and_vec4_impl(nir_builder *b, nir_instr *instr, void *d)
 
       case nir_intrinsic_load_deref: {
          nir_deref_instr *deref =
-            nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+            nir_def_as_deref(intr->src[0].ssa);
          if (deref->deref_type == nir_deref_type_var)
             return split_load_deref(b, intr, NULL, split_vars);
          else if (deref->deref_type == nir_deref_type_array) {
@@ -284,7 +284,7 @@ nir_split_64bit_vec3_and_vec4_impl(nir_builder *b, nir_instr *instr, void *d)
 
       case nir_intrinsic_store_deref: {
          nir_deref_instr *deref =
-            nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+            nir_def_as_deref(intr->src[0].ssa);
          if (deref->deref_type == nir_deref_type_var)
             return split_store_deref(b, intr, NULL, split_vars);
          else if (deref->deref_type == nir_deref_type_array)

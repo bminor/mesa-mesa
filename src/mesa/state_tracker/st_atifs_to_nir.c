@@ -113,7 +113,7 @@ load_input(struct st_translate *t, gl_varying_slot slot)
    nir_def *baryc = nir_load_barycentric_pixel(t->b, 32);
 
    if (slot != VARYING_SLOT_COL0 && slot != VARYING_SLOT_COL1) {
-      nir_intrinsic_set_interp_mode(nir_instr_as_intrinsic(baryc->parent_instr),
+      nir_intrinsic_set_interp_mode(nir_def_as_intrinsic(baryc),
                                     INTERP_MODE_SMOOTH);
    }
 

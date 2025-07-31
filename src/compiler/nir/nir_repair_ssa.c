@@ -120,7 +120,7 @@ repair_ssa_def(nir_def *def, void *void_state)
             nir_deref_instr_create(state->impl->function->shader,
                                    nir_deref_type_cast);
 
-         nir_deref_instr *deref = nir_instr_as_deref(def->parent_instr);
+         nir_deref_instr *deref = nir_def_as_deref(def);
          cast->modes = deref->modes;
          cast->type = deref->type;
          cast->parent = nir_src_for_ssa(block_def);

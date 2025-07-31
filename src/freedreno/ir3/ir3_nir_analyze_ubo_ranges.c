@@ -217,7 +217,7 @@ handle_partial_const(nir_builder *b, nir_def **srcp, int *offp)
    if ((*srcp)->parent_instr->type != nir_instr_type_alu)
       return;
 
-   nir_alu_instr *alu = nir_instr_as_alu((*srcp)->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu((*srcp));
 
    if (alu->op == nir_op_imad24_ir3) {
       /* This case is slightly more complicated as we need to

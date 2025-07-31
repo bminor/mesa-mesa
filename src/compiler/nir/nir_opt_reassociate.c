@@ -214,7 +214,7 @@ can_reassociate(nir_alu_instr *alu)
 static void
 build_chain(struct chain *c, nir_scalar def, unsigned reserved_count)
 {
-   nir_alu_instr *alu = nir_instr_as_alu(def.def->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu(def.def);
 
    /* Conservative fast math handling: if ANY instruction along the chain is
     * exact, treat the whole chain as exact. Likewise for float controls.

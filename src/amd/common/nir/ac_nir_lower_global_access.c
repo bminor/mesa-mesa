@@ -29,7 +29,7 @@ try_extract_additions(nir_builder *b, nir_scalar scalar, uint64_t *out_const,
    if (!nir_scalar_is_alu(scalar) || nir_scalar_alu_op(scalar) != nir_op_iadd)
       return NULL;
 
-   nir_alu_instr *alu = nir_instr_as_alu(scalar.def->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu(scalar.def);
    nir_scalar src0 = nir_scalar_chase_alu_src(scalar, 0);
    nir_scalar src1 = nir_scalar_chase_alu_src(scalar, 1);
 

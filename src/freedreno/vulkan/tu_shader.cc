@@ -1118,7 +1118,7 @@ lower_ssbo_descriptor_instr(nir_builder *b, nir_intrinsic_instr *intrin,
       nir_def *buffer = intrin->src[buffer_src].ssa;
       assert(buffer->parent_instr->type == nir_instr_type_intrinsic);
       nir_intrinsic_instr *bindless =
-         nir_instr_as_intrinsic(buffer->parent_instr);
+         nir_def_as_intrinsic(buffer);
       assert(bindless->intrinsic == nir_intrinsic_bindless_resource_ir3);
       nir_def *descriptor_idx = bindless->src[0].ssa;
       descriptor_idx = nir_iadd_imm(b, descriptor_idx, 1);

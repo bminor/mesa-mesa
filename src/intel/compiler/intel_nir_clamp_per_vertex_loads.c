@@ -40,7 +40,7 @@ clamp_per_vertex_loads_instr(nir_builder *b, nir_intrinsic_instr *intrin,
    if (intrin->intrinsic != nir_intrinsic_load_deref)
       return false;
 
-   nir_deref_instr *deref = nir_instr_as_deref(intrin->src[0].ssa->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(intrin->src[0].ssa);
    nir_variable *var = nir_deref_instr_get_variable(deref);
    if (var == NULL || (var->data.mode & nir_var_shader_in) == 0)
       return false;

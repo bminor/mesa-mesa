@@ -153,7 +153,7 @@ ir3_bindless_resource(nir_src src)
    if (src.ssa->parent_instr->type != nir_instr_type_intrinsic)
       return NULL;
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(src.ssa->parent_instr);
+   nir_intrinsic_instr *intrin = nir_def_as_intrinsic(src.ssa);
    if (intrin->intrinsic != nir_intrinsic_bindless_resource_ir3)
       return NULL;
 

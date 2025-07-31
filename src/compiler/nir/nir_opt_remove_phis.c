@@ -46,8 +46,8 @@ phi_srcs_equal(nir_def *a, nir_def *b)
 
    /* nir_instrs_equal ignores exact/fast_math */
    if (a->parent_instr->type == nir_instr_type_alu) {
-      nir_alu_instr *a_alu = nir_instr_as_alu(a->parent_instr);
-      nir_alu_instr *b_alu = nir_instr_as_alu(b->parent_instr);
+      nir_alu_instr *a_alu = nir_def_as_alu(a);
+      nir_alu_instr *b_alu = nir_def_as_alu(b);
       if (a_alu->exact != b_alu->exact || a_alu->fp_fast_math != b_alu->fp_fast_math)
          return false;
    }

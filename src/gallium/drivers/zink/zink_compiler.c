@@ -2354,7 +2354,8 @@ remove_bo_access_instr(nir_builder *b, nir_instr *instr, void *data)
                                                             nir_i2iN(b, offset, deref_struct->def.bit_size));
          result[i] = nir_load_deref(b, deref_arr);
          if (intr->intrinsic == nir_intrinsic_load_ssbo)
-            nir_intrinsic_set_access(nir_instr_as_intrinsic(result[i]->parent_instr), nir_intrinsic_access(intr));
+            nir_intrinsic_set_access(nir_def_as_intrinsic(result[i]),
+                                     nir_intrinsic_access(intr));
          offset = nir_iadd_imm(b, offset, 1);
       }
       nir_def *load = nir_vec(b, result, intr->num_components);
@@ -3516,7 +3517,7 @@ lower_zs_swizzle_tex_instr(nir_builder *b, nir_instr *instr, void *data)
    if (handle != -1)
       /* gtfo bindless depth texture mode */
       return false;
-   var = nir_deref_instr_get_variable(nir_instr_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa->parent_instr));
+   var = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa));
    assert(var);
    uint32_t sampler_id = var->data.binding - state->base_sampler_id;
    const struct glsl_type *type = glsl_without_array(var->type);
@@ -3802,7 +3803,7 @@ add_derefs_instr(nir_builder *b, nir_intrinsic_instr *intr, void *data)
          nir_def *load;
          if (is_interp) {
             nir_def *interp = intr->src[0].ssa;
-            nir_intrinsic_instr *interp_intr = nir_instr_as_intrinsic(interp->parent_instr);
+            nir_intrinsic_instr *interp_intr = nir_def_as_intrinsic(interp);
             assert(interp_intr);
             var->data.interpolation = nir_intrinsic_interp_mode(interp_intr);
             switch (interp_intr->intrinsic) {
@@ -4320,7 +4321,7 @@ analyze_io(struct zink_shader *zs, nir_shader *shader)
             nir_tex_instr *tex = nir_instr_as_tex(instr);
             int deref_idx = nir_tex_instr_src_index(tex, nir_tex_src_texture_deref);
             if (deref_idx >= 0) {
-               nir_variable *img = nir_deref_instr_get_variable(nir_instr_as_deref(tex->src[deref_idx].src.ssa->parent_instr));
+               nir_variable *img = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[deref_idx].src.ssa));
                unsigned size = glsl_type_is_array(img->type) ? glsl_get_aoa_size(img->type) : 1;
                BITSET_SET_RANGE(shader->info.textures_used, img->data.driver_location, img->data.driver_location + (size - 1));
             }
@@ -4778,7 +4779,7 @@ match_tex_dests_instr(nir_builder *b, nir_tex_instr *tex, void *data,
          return false;
       var = nir_deref_instr_get_variable(nir_src_as_deref(tex->src[handle].src));
    } else {
-      var = nir_deref_instr_get_variable(nir_instr_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa->parent_instr));
+      var = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa));
    }
    if (pre) {
       flag_shadow_tex_instr(b, tex, var, data);
@@ -5021,7 +5022,7 @@ type_sampler_vars(nir_shader *nir)
             if (instr->type != nir_instr_type_tex)
                continue;
             nir_tex_instr *tex = nir_instr_as_tex(instr);
-            nir_variable *var = nir_deref_instr_get_variable(nir_instr_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa->parent_instr));
+            nir_variable *var = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[nir_tex_instr_src_index(tex, nir_tex_src_texture_deref)].src.ssa));
             assert(var);
             if (glsl_get_sampler_result_type(glsl_without_array(var->type)) != GLSL_TYPE_VOID &&
                 nir_tex_instr_is_query(tex))

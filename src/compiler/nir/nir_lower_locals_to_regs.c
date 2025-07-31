@@ -147,7 +147,7 @@ get_deref_reg_location(nir_deref_instr *deref,
    nir_builder *b = &state->builder;
 
    nir_def *reg = get_reg_for_deref(deref, state);
-   nir_intrinsic_instr *decl = nir_instr_as_intrinsic(reg->parent_instr);
+   nir_intrinsic_instr *decl = nir_def_as_intrinsic(reg);
 
    /* It is possible for a user to create a shader that has an array with a
     * single element and then proceed to access it indirectly.  Indirectly

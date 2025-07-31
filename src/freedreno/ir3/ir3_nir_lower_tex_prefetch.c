@@ -72,7 +72,7 @@ coord_offset(nir_def *ssa, gl_system_value *bary_type)
       return -1;
 
    nir_intrinsic_instr *interp =
-      nir_instr_as_intrinsic(input->src[0].ssa->parent_instr);
+      nir_def_as_intrinsic(input->src[0].ssa);
 
    if (interp->intrinsic != nir_intrinsic_load_barycentric_pixel &&
        interp->intrinsic != nir_intrinsic_load_barycentric_sample &&
