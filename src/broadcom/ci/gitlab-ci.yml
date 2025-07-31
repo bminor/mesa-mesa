@@ -166,7 +166,7 @@ v3d-rpi4-gl-full:arm64:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40
     DEQP_FRACTION: 1
 
-v3d-rpi4-rusticl:arm64:
+.v3d-rpi4-rusticl:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm64-gl
@@ -419,7 +419,7 @@ v3d-rpi5-gl-full:arm64:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 55
     DEQP_FRACTION: 1
 
-v3d-rpi5-rusticl:arm64:
+.v3d-rpi5-rusticl:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .broadcom-test:arm64-gl
