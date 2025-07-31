@@ -78,7 +78,8 @@ nvk_queue_state_update(struct nvk_queue *queue,
 
    uint32_t push_data[64];
    struct nv_push push;
-   nv_push_init(&push, push_data, 64);
+   nv_push_init(&push, push_data, 64,
+                nvk_queue_subchannels_from_engines(queue->engines));
    struct nv_push *p = &push;
 
    if (qs->images.alloc_count > 0) {
@@ -358,7 +359,8 @@ nvk_queue_init_context_state(struct nvk_queue *queue)
 
    uint32_t push_data[4096];
    struct nv_push push;
-   nv_push_init(&push, push_data, ARRAY_SIZE(push_data));
+   nv_push_init(&push, push_data, ARRAY_SIZE(push_data),
+                nvk_queue_subchannels_from_engines(queue->engines));
    struct nv_push *p = &push;
 
    /* M2MF state */

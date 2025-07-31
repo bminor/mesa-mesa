@@ -134,7 +134,7 @@ mme_hw_runner::set_up_hw(uint16_t min_cls, uint16_t max_cls)
 void
 mme_hw_runner::reset_push()
 {
-   nv_push_init(&push, (uint32_t *)push_map, PUSH_SIZE / 4);
+   nv_push_init(&push, (uint32_t *)push_map, PUSH_SIZE / 4, SUBC_MASK_ALL);
    p = &push;
 
    P_MTHD(p, NV9097, SET_OBJECT);

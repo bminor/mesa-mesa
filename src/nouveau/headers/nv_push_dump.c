@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
   fread(data, file_size, 1, file);
   fclose(file);
 
-  nv_push_init(&pushbuf, data, file_size / 4);
+  nv_push_init(&pushbuf, data, file_size / 4, SUBC_MASK_ALL);
   pushbuf.end = pushbuf.limit;
 
   vk_push_print(stdout, &pushbuf, &device_info);

@@ -6,6 +6,7 @@
 #define NVK_QUEUE_H 1
 
 #include "nvk_mem_stream.h"
+#include "nv_push.h"
 
 #include "vk_queue.h"
 #include "nvkmd/nvkmd.h"
@@ -13,7 +14,6 @@
 struct nouveau_ws_bo;
 struct nouveau_ws_context;
 struct novueau_ws_push;
-struct nv_push;
 struct nvk_device;
 struct nvkmd_mem;
 struct nvkmd_ctx;
@@ -77,6 +77,30 @@ nvk_queue_engines_from_queue_flags(VkQueueFlags queue_flags)
       engines |= NVKMD_ENGINE_COPY;
 
    return engines;
+}
+
+static inline uint8_t
+nvk_queue_subchannels_from_engines(enum nvkmd_engines engines)
+{
+   /* Note: These line up with nouveau_ws_context_create */
+   uint8_t subc_mask = 0;
+
+   if (engines & NVKMD_ENGINE_COPY)
+      subc_mask |= BITFIELD_BIT(SUBC_NV90B5);
+
+   if (engines & NVKMD_ENGINE_2D)
+      subc_mask |= BITFIELD_BIT(SUBC_NV902D);
+
+   if (engines & NVKMD_ENGINE_3D)
+      subc_mask |= BITFIELD_BIT(SUBC_NV9097);
+
+   if (engines & NVKMD_ENGINE_M2MF)
+      subc_mask |= BITFIELD_BIT(SUBC_NV9039);
+
+   if (engines & NVKMD_ENGINE_COMPUTE)
+      subc_mask |= BITFIELD_BIT(SUBC_NV90C0);
+
+   return subc_mask;
 }
 
 VkResult nvk_queue_create(struct nvk_device *dev,

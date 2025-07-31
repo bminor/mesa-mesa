@@ -21,16 +21,28 @@ struct nv_push {
 
    /* The value in the last method header, used to avoid read-back */
    uint32_t last_hdr_dw;
+
+#ifndef NDEBUG
+   /* A mask of valid subchannels */
+   uint8_t subc_mask;
+#endif
 };
 
+#define SUBC_MASK_ALL 0xff
+
 static inline void
-nv_push_init(struct nv_push *push, uint32_t *start, size_t dw_count)
+nv_push_init(struct nv_push *push, uint32_t *start,
+             size_t dw_count, uint8_t subc_mask)
 {
    push->start = start;
    push->end = start;
    push->limit = start + dw_count;
    push->last_hdr = NULL;
    push->last_hdr_dw = 0;
+
+#ifndef NDEBUG
+   push->subc_mask = subc_mask;
+#endif
 }
 
 static inline size_t
@@ -101,6 +113,9 @@ static inline void
 __push_hdr(struct nv_push *push, uint32_t hdr)
 {
    __push_verify(push);
+
+   ASSERTED const uint32_t subc = (hdr >> 13) & BITFIELD_MASK(3);
+   assert(push->subc_mask & BITFIELD_BIT(subc));
 
    *push->end = hdr;
    push->last_hdr_dw = hdr;

@@ -655,7 +655,8 @@ nvk_shader_fill_push(struct nvk_device *dev,
    ASSERTED uint16_t max_dw_count = 0;
    uint32_t push_dw[200];
    struct nv_push push, *p = &push;
-   nv_push_init(&push, push_dw, ARRAY_SIZE(push_dw));
+   nv_push_init(&push, push_dw, ARRAY_SIZE(push_dw),
+                nvk_queue_subchannels_from_engines(NVKMD_ENGINE_3D));
 
    const uint32_t type = mesa_to_nv9097_shader_type(shader->info.stage);
 

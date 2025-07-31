@@ -134,6 +134,15 @@ nvk_cmd_buffer_queue_flags(struct nvk_cmd_buffer *cmd)
    return queue_family->queue_flags;
 }
 
+static uint8_t
+nvk_cmd_buffer_subchannel_mask(struct nvk_cmd_buffer *cmd)
+{
+   VkQueueFlags queue_flags = nvk_cmd_buffer_queue_flags(cmd);
+   enum nvkmd_engines engines =
+      nvk_queue_engines_from_queue_flags(queue_flags);
+   return nvk_queue_subchannels_from_engines(engines);
+}
+
 const struct vk_command_buffer_ops nvk_cmd_buffer_ops = {
    .create = nvk_create_cmd_buffer,
    .reset = nvk_reset_cmd_buffer,
@@ -184,15 +193,17 @@ nvk_cmd_buffer_new_push(struct nvk_cmd_buffer *cmd)
 {
    nvk_cmd_buffer_flush_push(cmd, false);
 
+   uint8_t subc_mask = nvk_cmd_buffer_subchannel_mask(cmd);
+
    VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false, &cmd->push_mem);
    if (unlikely(result != VK_SUCCESS)) {
       vk_command_buffer_set_error(&cmd->vk, result);
       STATIC_ASSERT(NVK_CMD_BUFFER_MAX_PUSH <= NVK_CMD_MEM_SIZE / 4);
       cmd->push_mem = NULL;
-      nv_push_init(&cmd->push, push_runout, 0);
+      nv_push_init(&cmd->push, push_runout, 0, subc_mask);
       cmd->push_mem_limit = &push_runout[NVK_CMD_BUFFER_MAX_PUSH];
    } else {
-      nv_push_init(&cmd->push, cmd->push_mem->mem->map, 0);
+      nv_push_init(&cmd->push, cmd->push_mem->mem->map, 0, subc_mask);
       cmd->push_mem_limit =
          (uint32_t *)((char *)cmd->push_mem->mem->map + NVK_CMD_MEM_SIZE);
    }
