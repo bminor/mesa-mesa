@@ -4197,7 +4197,6 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
             continue;
 
          nir_shader *nir = prog->_LinkedShaders[i]->Program->nir;
-         nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
          if (i != first) {
             uint64_t inputs_read = nir->info.inputs_read;

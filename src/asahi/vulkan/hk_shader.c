@@ -1563,9 +1563,6 @@ hk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
                          nir_opts);
 
    for (uint32_t i = 0; i < shader_count; i++) {
-      nir_shader_gather_info(infos[i].nir,
-                             nir_shader_get_entrypoint(infos[i].nir));
-
       VkResult result =
          hk_compile_shader(dev, &infos[i], state, features, pAllocator,
                            (struct hk_api_shader **)&shaders_out[i]);

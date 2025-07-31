@@ -5477,6 +5477,11 @@ nir_opt_varyings_bulk(nir_shader **shaders, uint32_t num_shaders, bool spirv,
       NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_varying_var_mask(nir),
                NULL, NULL);
       NIR_PASS(_, nir, nir_opt_vectorize_io, nir_varying_var_mask(nir), false);
+
+      /* Regather shader info so we have consistent behaviour for
+       * linked/unlinked code paths. Honeykrisp depends on this.
+       */
+      nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
       return;
    }
 
@@ -5550,6 +5555,9 @@ nir_opt_varyings_bulk(nir_shader **shaders, uint32_t num_shaders, bool spirv,
        */
       NIR_PASS(_, nir, nir_recompute_io_bases,
                nir_var_shader_in | nir_var_shader_out);
+
+      /* Regather shader info because the slots info is messed up now. */
+      nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
       /* Regenerate transform feedback info because compaction in
        * nir_opt_varyings always moves them to other slots.
