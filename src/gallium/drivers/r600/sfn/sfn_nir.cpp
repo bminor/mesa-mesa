@@ -275,6 +275,36 @@ private:
    }
 };
 
+class LowerGSArrayInput : public NirLowerInstruction {
+   bool filter(const nir_instr *instr) const override
+   {
+      if (instr->type != nir_instr_type_intrinsic)
+         return false;
+
+      auto intr = nir_instr_as_intrinsic(instr);
+      if (intr->intrinsic != nir_intrinsic_load_per_vertex_input)
+         return false;
+
+      return nir_intrinsic_io_semantics(intr).num_slots != 1;
+   }
+
+   nir_def *lower(nir_instr *instr) override
+   {
+      auto intr = nir_instr_as_intrinsic(instr);
+      auto vbase = nir_r600_indirect_vertex_at_index(b, 32, intr->src[0].ssa);
+      auto new_addr =
+         nir_iadd(b, vbase, nir_ishl(b, intr->src[1].ssa, nir_imm_int(b, 2)));
+      auto io_semantics = nir_intrinsic_io_semantics(intr);
+      return nir_load_r600_indirect_per_vertex_input(b,
+                                                     intr->num_components,
+                                                     intr->def.bit_size,
+                                                     new_addr,
+                                                     nir_imm_zero(b, 1, 32),
+                                                     .base = nir_intrinsic_base(intr),
+                                                     .range = nir_intrinsic_range(intr),
+                                                     .io_semantics = io_semantics);
+   }
+};
 } // namespace r600
 
 static nir_intrinsic_op
@@ -365,6 +395,13 @@ r600_lower_clipvertex_to_clipdist(nir_shader *sh, pipe_stream_output_info& so_in
    int noutputs = util_bitcount64(sh->info.outputs_written);
    bool result = r600::LowerClipvertexWrite(noutputs, so_info).run(sh);
    return result;
+}
+
+static bool
+r600_lower_gs_input_array(nir_shader *sh)
+{
+   assert(sh->info.stage == MESA_SHADER_GEOMETRY);
+   return r600::LowerGSArrayInput().run(sh);
 }
 
 static bool
@@ -919,6 +956,8 @@ r600_lower_and_optimize_nir(nir_shader *sh,
    if (r600_is_last_vertex_stage(sh, *key))
       r600_lower_clipvertex_to_clipdist(sh, *so_info);
 
+   if (sh->info.stage == MESA_SHADER_GEOMETRY)
+      NIR_PASS(_, sh, r600_lower_gs_input_array);
    if (sh->info.stage == MESA_SHADER_TESS_CTRL ||
        sh->info.stage == MESA_SHADER_TESS_EVAL ||
        (sh->info.stage == MESA_SHADER_VERTEX && key->vs.as_ls)) {
