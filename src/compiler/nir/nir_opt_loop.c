@@ -315,7 +315,7 @@ can_constant_fold(nir_scalar scalar, nir_block *loop_header)
 
    if (scalar.def->parent_instr->type == nir_instr_type_phi) {
       /* If this is a phi from anything but the loop header, we cannot constant-fold. */
-      if (scalar.def->parent_instr->block != loop_header)
+      if (nir_def_block(scalar.def) != loop_header)
          return false;
 
       nir_block *preheader = nir_block_cf_tree_prev(loop_header);
@@ -468,7 +468,7 @@ insert_phis_after_terminator_merge(nir_def *def, void *state)
       }
 
       if (nir_src_is_if(src) ||
-          (!nir_src_is_if(src) && nir_src_parent_instr(src)->block != def->parent_instr->block)) {
+          (!nir_src_is_if(src) && nir_src_parent_instr(src)->block != nir_def_block(def))) {
          if (!phi_created) {
             phi_instr = nir_phi_instr_create(m_state->shader);
             nir_def_init(&phi_instr->instr, &phi_instr->def, def->num_components,

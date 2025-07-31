@@ -112,7 +112,7 @@ add_live_handle(nir_def *handle, struct non_uniform_section *nus)
 static bool
 def_needs_hoist(nir_def *def, nir_block *target)
 {
-   return def->parent_instr->block->index > target->index;
+   return nir_def_block(def)->index > target->index;
 }
 
 static bool

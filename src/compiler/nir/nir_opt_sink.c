@@ -344,9 +344,9 @@ get_preferred_block(nir_def *def, bool sink_out_of_loops)
     * This might occasionally increase register pressure, but seems overall
     * the better choice.
     */
-   lca = adjust_block_for_loops(lca, def->parent_instr->block,
+   lca = adjust_block_for_loops(lca, nir_def_block(def),
                                 sink_out_of_loops);
-   assert(nir_block_dominates(def->parent_instr->block, lca));
+   assert(nir_block_dominates(nir_def_block(def), lca));
 
    return lca;
 }

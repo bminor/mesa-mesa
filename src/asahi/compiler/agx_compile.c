@@ -2984,7 +2984,7 @@ optimize_bounds(nir_builder *b, nir_intrinsic_instr *intr, void *data)
             return false;
 
          /* To avoid dominance problems, we must sink loads. */
-         if (this.def->parent_instr->block != intr->instr.block) {
+         if (nir_def_block(this.def) != intr->instr.block) {
             return false;
          }
       }

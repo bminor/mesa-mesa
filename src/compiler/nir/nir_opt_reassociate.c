@@ -321,7 +321,7 @@ find_chains(nir_function_impl *impl, struct hash_table *pair_freq,
          for (unsigned i = 0; i < c.length; ++i) {
             lowest_rank = MIN2(rank(c.srcs[i]), lowest_rank);
             highest_rank = MAX2(rank(c.srcs[i]), highest_rank);
-            local &= c.srcs[i].def->parent_instr->block == block;
+            local &= nir_def_block(c.srcs[i].def) == block;
          }
 
          for (unsigned i = 0; i < c.length; ++i) {

@@ -166,9 +166,9 @@ has_only_sources_less_than(nir_src *src, void *data)
    struct check_sources_state *state = (struct check_sources_state *)data;
 
    /* true if nir_foreach_src should keep going */
-   return state->block != src->ssa->parent_instr->block ||
-          state->infos[src->ssa->parent_instr->index].instr_index <
-          state->first_instr_index;
+   return state->block != nir_def_block(src->ssa) ||
+             state->infos[src->ssa->parent_instr->index].instr_index <
+             state->first_instr_index;
 }
 
 static void

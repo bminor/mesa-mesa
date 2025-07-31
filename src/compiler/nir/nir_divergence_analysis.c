@@ -74,7 +74,7 @@ nir_src_is_divergent(nir_src *src)
       return true;
 
    nir_cf_node *use_node = nir_src_get_block(src)->cf_node.parent;
-   nir_cf_node *def_node = src->ssa->parent_instr->block->cf_node.parent;
+   nir_cf_node *def_node = nir_def_block(src->ssa)->cf_node.parent;
 
    /* Short-cut the common case. */
    if (def_node == use_node)
@@ -121,14 +121,14 @@ src_invariant(nir_src *src, void *loop)
    nir_block *first_block = nir_loop_first_block(loop);
 
    /* Invariant if SSA is defined before the current loop. */
-   if (src->ssa->parent_instr->block->index < first_block->index)
+   if (nir_def_block(src->ssa)->index < first_block->index)
       return true;
 
    if (!src->ssa->loop_invariant)
       return false;
 
    /* The value might be defined in a nested loop. */
-   nir_cf_node *cf_node = src->ssa->parent_instr->block->cf_node.parent;
+   nir_cf_node *cf_node = nir_def_block(src->ssa)->cf_node.parent;
    while (cf_node->type != nir_cf_node_loop)
       cf_node = cf_node->parent;
 

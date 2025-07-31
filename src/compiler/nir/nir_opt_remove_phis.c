@@ -59,7 +59,7 @@ static bool
 src_dominates_block(nir_src *src, void *state)
 {
    nir_block *block = state;
-   return nir_block_dominates(src->ssa->parent_instr->block, block);
+   return nir_block_dominates(nir_def_block(src->ssa), block);
 }
 
 static bool
@@ -120,7 +120,7 @@ remove_phis_instr(nir_builder *b, nir_phi_instr *phi, void *unused)
 
       if (def == NULL) {
          def = src->src.ssa;
-         if (!nir_block_dominates(def->parent_instr->block, block->imm_dom)) {
+         if (!nir_block_dominates(nir_def_block(def), block->imm_dom)) {
             if (!can_rematerialize_phi_src(block->imm_dom, def))
                return false;
             needs_remat = true;

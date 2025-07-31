@@ -668,9 +668,9 @@ gcm_schedule_late_def(nir_def *def, void *void_state)
    }
 
    if (def->parent_instr->pass_flags & GCM_INSTR_SCHEDULE_EARLIER_ONLY &&
-       lca != def->parent_instr->block &&
-       nir_block_dominates(def->parent_instr->block, lca)) {
-      lca = def->parent_instr->block;
+       lca != nir_def_block(def) &&
+       nir_block_dominates(nir_def_block(def), lca)) {
+      lca = nir_def_block(def);
    }
 
    /* We now have the LCA of all of the uses.  If our invariants hold,
@@ -681,7 +681,7 @@ gcm_schedule_late_def(nir_def *def, void *void_state)
    nir_block *best_block =
       gcm_choose_block_for_instr(def->parent_instr, early_block, lca, state);
 
-   if (def->parent_instr->block != best_block)
+   if (nir_def_block(def) != best_block)
       state->progress = true;
 
    def->parent_instr->block = best_block;

@@ -163,7 +163,7 @@ opt_peel_loop_initial_if(nir_loop *loop)
       return false;
 
    nir_phi_instr *cond_phi = nir_def_as_phi(cond);
-   if (cond->parent_instr->block != header_block)
+   if (nir_def_block(cond) != header_block)
       return false;
 
    bool entry_val = false, continue_val = false;
@@ -285,7 +285,7 @@ is_trivial_bcsel(const nir_instr *instr, bool allow_non_phi_src)
 
    for (unsigned i = 0; i < 3; i++) {
       if (!nir_alu_src_is_trivial_ssa(bcsel, i) ||
-          bcsel->src[i].src.ssa->parent_instr->block != instr->block)
+          nir_def_block(bcsel->src[i].src.ssa) != instr->block)
          return false;
 
       if (bcsel->src[i].src.ssa->parent_instr->type != nir_instr_type_phi) {

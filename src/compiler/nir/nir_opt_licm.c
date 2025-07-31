@@ -9,7 +9,7 @@ static bool
 defined_before_loop(nir_src *src, void *state)
 {
    unsigned *loop_preheader_idx = state;
-   return src->ssa->parent_instr->block->index <= *loop_preheader_idx;
+   return nir_def_block(src->ssa)->index <= *loop_preheader_idx;
 }
 
 static bool

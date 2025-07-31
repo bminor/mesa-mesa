@@ -345,7 +345,7 @@ clear_def(nir_def *def, void *state)
          continue;
 
       /* Anything global has already been trivialized and can be ignored */
-      if (parent->block != def->parent_instr->block)
+      if (parent->block != nir_def_block(def))
          continue;
 
       if (def == store->src[0].ssa) {

@@ -50,10 +50,10 @@ ssa_def_dominates_instr(nir_def *def, nir_instr *instr)
 {
    if (instr->index <= def->parent_instr->index) {
       return false;
-   } else if (def->parent_instr->block == instr->block) {
+   } else if (nir_def_block(def) == instr->block) {
       return def->parent_instr->index < instr->index;
    } else {
-      return nir_block_dominates(def->parent_instr->block, instr->block);
+      return nir_block_dominates(nir_def_block(def), instr->block);
    }
 }
 

@@ -48,7 +48,7 @@ remat_ssa_def(nir_builder *b, nir_def *def, struct hash_table *remap_table,
               struct nir_phi_builder *phi_builder, BITSET_WORD *def_blocks)
 {
    memset(def_blocks, 0, BITSET_WORDS(b->impl->num_blocks) * sizeof(BITSET_WORD));
-   BITSET_SET(def_blocks, def->parent_instr->block->index);
+   BITSET_SET(def_blocks, nir_def_block(def)->index);
    BITSET_SET(def_blocks, nir_cursor_current_block(b->cursor)->index);
    struct nir_phi_builder_value *val =
       nir_phi_builder_add_value(phi_builder, def->num_components,
@@ -61,9 +61,8 @@ remat_ssa_def(nir_builder *b, nir_def *def, struct hash_table *remap_table,
    nir_def *new_def = nir_instr_def(clone);
 
    _mesa_hash_table_insert(remap_table, def, new_def);
-   if (nir_cursor_current_block(b->cursor)->index !=
-       def->parent_instr->block->index)
-      nir_phi_builder_value_set_block_def(val, def->parent_instr->block, def);
+   if (nir_cursor_current_block(b->cursor)->index != nir_def_block(def)->index)
+      nir_phi_builder_value_set_block_def(val, nir_def_block(def), def);
    nir_phi_builder_value_set_block_def(val, nir_cursor_current_block(b->cursor),
                                        new_def);
 }
@@ -135,7 +134,7 @@ rewrite_instr_src_from_phi_builder(nir_src *src, void *data)
    nir_def *new_def = nir_phi_builder_value_get_block_def(entry->data, block);
 
    bool can_rewrite = true;
-   if (new_def->parent_instr->block == block && new_def->index != UINT32_MAX)
+   if (nir_def_block(new_def) == block && new_def->index != UINT32_MAX)
       can_rewrite =
          !nir_instr_is_before(nir_src_parent_instr(src), new_def->parent_instr);
 

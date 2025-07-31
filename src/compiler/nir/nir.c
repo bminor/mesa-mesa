@@ -2203,7 +2203,7 @@ nir_function_impl_lower_instructions(nir_function_impl *impl,
       if (new_def && new_def != NIR_LOWER_INSTR_PROGRESS &&
           new_def != NIR_LOWER_INSTR_PROGRESS_REPLACE) {
          assert(old_def != NULL);
-         if (new_def->parent_instr->block != instr->block)
+         if (nir_def_block(new_def) != instr->block)
             preserved = nir_metadata_none;
 
          list_for_each_entry_safe(nir_src, use_src, &old_uses, use_link)

@@ -1744,7 +1744,7 @@ nir_block_loop_depth(nir_block *block)
 static nir_block *
 find_last_dominant_use_block(nir_function_impl *impl, nir_def *value)
 {
-   nir_block *old_block = value->parent_instr->block;
+   nir_block *old_block = nir_def_block(value);
    unsigned old_block_loop_depth = nir_block_loop_depth(old_block);
 
    nir_foreach_block_reverse_safe(block, impl) {

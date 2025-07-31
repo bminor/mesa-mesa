@@ -412,7 +412,7 @@ recompute_phi_divergence_impl(nir_function_impl *impl)
                 * don't want to deal with inserting a r2ur somewhere.
                 */
                if (phi_src->pred->divergent || phi_src->src.ssa->divergent ||
-                   phi_src->src.ssa->parent_instr->block->divergent) {
+                   nir_def_block(phi_src->src.ssa)->divergent) {
                   divergent = true;
                   break;
                }

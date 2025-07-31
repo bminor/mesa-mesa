@@ -370,7 +370,7 @@ ir3_def_is_rematerializable_for_preamble(nir_def *def,
                                                          preamble_defs) &&
             ir3_def_is_rematerializable_for_preamble(intrin->src[1].ssa,
                                                      preamble_defs) &&
-            (def->parent_instr->block->cf_node.parent->type ==
+            (nir_def_block(def)->cf_node.parent->type ==
              nir_cf_node_function ||
              (nir_intrinsic_access(intrin) & ACCESS_CAN_SPECULATE));
       case nir_intrinsic_bindless_resource_ir3:
@@ -404,7 +404,7 @@ static bool
 find_dominated_src(nir_src *src, void *data)
 {
    struct find_insert_block_state *state = data;
-   nir_block *src_block = src->ssa->parent_instr->block;
+   nir_block *src_block = nir_def_block(src->ssa);
 
    if (!state->insert_block) {
       state->insert_block = src_block;

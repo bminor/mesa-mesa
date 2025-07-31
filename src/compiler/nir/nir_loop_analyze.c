@@ -260,7 +260,7 @@ compute_induction_information(loop_info_state *state)
          /* If one of the sources is in an if branch or nested loop then don't
           * attempt to go any further.
           */
-         if (src->parent_instr->block->cf_node.parent != &state->loop->cf_node)
+         if (nir_def_block(src)->cf_node.parent != &state->loop->cf_node)
             break;
 
          /* Detect inductions variables that are incremented in both branches
