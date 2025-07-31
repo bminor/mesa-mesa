@@ -150,7 +150,7 @@ nv50_context_unreference_resources(struct nv50_context *nv50)
    nouveau_bufctx_del(&nv50->bufctx);
    nouveau_bufctx_del(&nv50->bufctx_cp);
 
-   util_framebuffer_init(&nv50->base.pipe, NULL, nv50->fb_cbufs, &nv50->fb_zsbuf);
+   nv50_framebuffer_init(&nv50->base.pipe, NULL, nv50->fb_cbufs, &nv50->fb_zsbuf);
    util_unreference_framebuffer_state(&nv50->framebuffer);
 
    assert(nv50->num_vtxbufs <= PIPE_MAX_ATTRIBS);

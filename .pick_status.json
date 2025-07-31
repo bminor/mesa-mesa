@@ -3144,7 +3144,7 @@
         "description": "nv50: fully migrate away from util_framebuffer_init",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "facb048cdbbe1acffb41cdfbebc9042c1d539cd4",
         "notes": null
