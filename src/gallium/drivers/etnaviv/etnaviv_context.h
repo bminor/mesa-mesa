@@ -215,6 +215,7 @@ struct etna_context {
    bool is_noop;
 
    bool compute_only;
+   bool in_draw_vbo;
 
    /* conditional rendering */
    struct pipe_query *cond_query;
