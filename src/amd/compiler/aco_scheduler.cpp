@@ -200,30 +200,48 @@ MoveState::downwards_init(int current_idx, bool improved_rar_, bool may_form_cla
    return cursor;
 }
 
+bool
+check_dependencies(Instruction* instr, std::vector<bool>& def_dep, std::vector<bool>& op_dep)
+{
+   for (const Definition& def : instr->definitions) {
+      if (def.isTemp() && def_dep[def.tempId()])
+         return true;
+   }
+   for (const Operand& op : instr->operands) {
+      if (op.isTemp() && op_dep[op.tempId()]) {
+         // FIXME: account for difference in register pressure
+         return true;
+      }
+   }
+   return false;
+}
+
 /* If add_to_clause is true, the current clause is extended by moving the
  * instruction at source_idx in front of the clause. Otherwise, the instruction
  * is moved past the end of the clause without extending it */
 MoveResult
 MoveState::downwards_move(DownwardsCursor& cursor, bool add_to_clause)
 {
-   aco_ptr<Instruction>& instr = block->instructions[cursor.source_idx];
-
-   for (const Definition& def : instr->definitions)
-      if (def.isTemp() && depends_on[def.tempId()])
-         return move_fail_ssa;
+   aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
 
    /* check if one of candidate's operands is killed by depending instruction */
-   std::vector<bool>& RAR_deps =
-      improved_rar ? (add_to_clause ? RAR_dependencies_clause : RAR_dependencies) : depends_on;
-   for (const Operand& op : instr->operands) {
-      if (op.isTemp() && RAR_deps[op.tempId()]) {
-         // FIXME: account for difference in register pressure
-         return move_fail_rar;
+   if (add_to_clause) {
+      assert(improved_rar);
+      aco_ptr<Instruction>& instr = block->instructions[cursor.insert_idx_clause];
+      int i = cursor.source_idx;
+      while (should_form_clause(block->instructions[i].get(), instr.get())) {
+         if (check_dependencies(block->instructions[i].get(), depends_on, RAR_dependencies_clause))
+            return move_fail_ssa;
+         i--;
       }
+   } else {
+      std::vector<bool>& RAR_deps = improved_rar ? RAR_dependencies : depends_on;
+      if (check_dependencies(candidate.get(), depends_on, RAR_deps))
+         return move_fail_ssa;
    }
 
    if (add_to_clause) {
-      for (const Operand& op : instr->operands) {
+      for (const Operand& op : candidate->operands) {
          if (op.isTemp()) {
             depends_on[op.tempId()] = true;
             if (op.isFirstKill())
@@ -239,12 +257,12 @@ MoveState::downwards_move(DownwardsCursor& cursor, bool add_to_clause)
    }
 
    /* Check the new demand of the instructions being moved over */
-   const RegisterDemand candidate_diff = get_live_changes(instr.get());
+   const RegisterDemand candidate_diff = get_live_changes(candidate.get());
    if (RegisterDemand(register_pressure - candidate_diff).exceeds(max_registers))
       return move_fail_pressure;
 
    /* New demand for the moved instruction */
-   const RegisterDemand temp = get_temp_registers(instr.get());
+   const RegisterDemand temp = get_temp_registers(candidate.get());
    const RegisterDemand insert_demand =
       add_to_clause ? cursor.insert_demand_clause : cursor.insert_demand;
    const RegisterDemand new_demand = insert_demand + temp;
