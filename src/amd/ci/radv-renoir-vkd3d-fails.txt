@@ -1,5 +1,3 @@
-test_vbv_stride_edge_cases,Fail
-
 test_workgraph_basic,Crash
 test_workgraph_basic_recursion,Crash
 test_workgraph_coalesced_input,Crash

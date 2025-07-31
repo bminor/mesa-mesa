@@ -8,3 +8,5 @@ test_sm67_dynamic_texture_offset,Fail
 test_undefined_read_typed_buffer_as_untyped_dxbc,Fail
 test_undefined_read_typed_buffer_as_untyped_dxil,Fail
 test_line_rasterization,Fail
+
+test_derivative_hoisting_dxbc,Fail
