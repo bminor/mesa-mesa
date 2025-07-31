@@ -148,6 +148,8 @@ struct radv_device {
    struct radv_layer_dispatch_tables layer_dispatch;
 
    struct radeon_winsys_ctx *hw_ctx[RADV_NUM_HW_CTX];
+   struct radeon_winsys_ctx *hw_vcn_enc_ctx;
+
    struct radv_meta_state meta_state;
 
    struct radv_queue *queues[RADV_MAX_QUEUE_FAMILIES];

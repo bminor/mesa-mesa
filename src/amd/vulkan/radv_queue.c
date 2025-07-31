@@ -2017,8 +2017,12 @@ radv_queue_init(struct radv_device *device, struct radv_queue *queue, int idx,
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    queue->priority = radv_get_queue_global_priority(global_priority);
-   queue->hw_ctx = device->hw_ctx[queue->priority];
    queue->state.qf = vk_queue_to_radv(pdev, create_info->queueFamilyIndex);
+
+   if (queue->state.qf == RADV_QUEUE_VIDEO_ENC && device->hw_vcn_enc_ctx)
+      queue->hw_ctx = device->hw_vcn_enc_ctx;
+   else
+      queue->hw_ctx = device->hw_ctx[queue->priority];
 
    VkResult result = vk_queue_init(&queue->vk, &device->vk, create_info, idx);
    if (result != VK_SUCCESS)

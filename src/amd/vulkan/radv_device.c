@@ -1126,6 +1126,8 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
       if (device->hw_ctx[i])
          device->ws->ctx_destroy(device->hw_ctx[i]);
    }
+   if (device->hw_vcn_enc_ctx)
+      device->ws->ctx_destroy(device->hw_vcn_enc_ctx);
 
    mtx_destroy(&device->overallocation_mutex);
    simple_mtx_destroy(&device->ctx_roll_mtx);
@@ -1217,12 +1219,21 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    if (pdev->info.has_kernelq_reg_shadowing || instance->debug_flags & RADV_DEBUG_SHADOW_REGS)
       device->uses_shadow_regs = true;
 
+   bool video_dec_queue = false;
+   bool video_enc_queue = false;
+
    /* Create one context per queue priority. */
    for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
       const VkDeviceQueueCreateInfo *queue_create = &pCreateInfo->pQueueCreateInfos[i];
       const VkDeviceQueueGlobalPriorityCreateInfo *global_priority =
          vk_find_struct_const(queue_create->pNext, DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO);
       enum radeon_ctx_priority priority = radv_get_queue_global_priority(global_priority);
+      enum radv_queue_family qf = vk_queue_to_radv(pdev, queue_create->queueFamilyIndex);
+
+      if (qf == RADV_QUEUE_VIDEO_DEC)
+         video_dec_queue = true;
+      else if (qf == RADV_QUEUE_VIDEO_ENC)
+         video_enc_queue = true;
 
       if (device->hw_ctx[priority])
          continue;
@@ -1230,6 +1241,13 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
       result = device->ws->ctx_create(device->ws, priority, &device->hw_ctx[priority]);
       if (result != VK_SUCCESS)
          goto fail;
+   }
+
+   /* Use extra context to allow use of both VCN instances for transcoding. */
+   if (video_dec_queue && video_enc_queue && pdev->info.ip[AMD_IP_VCN_ENC].num_instances > 1) {
+      result = device->ws->ctx_create(device->ws, RADEON_CTX_PRIORITY_MEDIUM, &device->hw_vcn_enc_ctx);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
    for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
