@@ -573,6 +573,25 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
          else
             shader->info.tess.tcs_cross_invocation_inputs_read |= slot_mask;
       }
+
+      if (shader->info.stage == MESA_SHADER_FRAGMENT &&
+          instr->intrinsic == nir_intrinsic_load_interpolated_input) {
+         nir_intrinsic_instr *bary = nir_src_as_intrinsic(instr->src[0]);
+
+         if (bary && nir_intrinsic_has_interp_mode(bary)) {
+            enum glsl_interp_mode mode = nir_intrinsic_interp_mode(bary);
+
+            if (mode == INTERP_MODE_NOPERSPECTIVE)
+               shader->info.linear_varyings |= slot_mask;
+            else
+               shader->info.perspective_varyings |= slot_mask;
+         } else {
+            /* If the driver is lowering barycentrics, we can't recover the
+             * interpolation qualifiers. Bail.
+             */
+            shader->info.known_interpolation_qualifiers = false;
+         }
+      }
       break;
 
    case nir_intrinsic_load_output:
@@ -1035,6 +1054,9 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
       shader->info.fs.uses_fbfetch_output = false;
       shader->info.fs.needs_coarse_quad_helper_invocations = false;
       shader->info.fs.needs_full_quad_helper_invocations = false;
+
+      /* By definition the fragment shader knows, unless we fail to gather. */
+      shader->info.known_interpolation_qualifiers = true;
    }
    if (shader->info.stage == MESA_SHADER_TESS_CTRL) {
       shader->info.tess.tcs_same_invocation_inputs_read = 0;

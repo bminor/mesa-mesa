@@ -2676,6 +2676,8 @@ print_shader_info(const struct shader_info *info, FILE *fp)
    print_nz_x64(fp, "dual_slot_inputs", info->dual_slot_inputs);
    print_nz_x64(fp, "outputs_written", info->outputs_written);
    print_nz_x64(fp, "outputs_read", info->outputs_read);
+   print_nz_x64(fp, "perspective_varyings", info->perspective_varyings);
+   print_nz_x64(fp, "linear_varyings", info->linear_varyings);
 
    print_nz_bitset(fp, "system_values_read", info->system_values_read, ARRAY_SIZE(info->system_values_read));
 
@@ -2750,6 +2752,7 @@ print_shader_info(const struct shader_info *info, FILE *fp)
 
    print_nz_bool(fp, "first_ubo_is_default_ubo", info->first_ubo_is_default_ubo);
    print_nz_bool(fp, "separate_shader", info->separate_shader);
+   print_nz_bool(fp, "known_interpolation_qualifiers", info->known_interpolation_qualifiers);
    print_nz_bool(fp, "has_transform_feedback_varyings", info->has_transform_feedback_varyings);
    print_nz_bool(fp, "flrp_lowered", info->flrp_lowered);
    print_nz_bool(fp, "io_lowered", info->io_lowered);
