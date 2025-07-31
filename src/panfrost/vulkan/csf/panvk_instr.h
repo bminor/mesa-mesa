@@ -14,6 +14,8 @@ enum panvk_instr_work_type {
    PANVK_INSTR_WORK_TYPE_DISPATCH,
    PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
    PANVK_INSTR_WORK_TYPE_BARRIER,
+   PANVK_INSTR_WORK_TYPE_SYNC32_ADD,
+   PANVK_INSTR_WORK_TYPE_SYNC64_ADD,
    PANVK_INSTR_WORK_TYPE_SYNC32_WAIT,
    PANVK_INSTR_WORK_TYPE_SYNC64_WAIT,
 };
@@ -86,6 +88,24 @@ void panvk_per_arch(panvk_instr_end_work_async)(
    struct cs_async_op ts_async_op);
 
 #define PANVK_INSTR_SYNC_OPS(__cnt_width)                                      \
+   static inline void panvk_instr_sync##__cnt_width##_add(                     \
+      struct panvk_cmd_buffer *cmdbuf, enum panvk_subqueue_id id,              \
+      bool propagate_error, enum mali_cs_sync_scope scope,                     \
+      struct cs_index val, struct cs_index addr, struct cs_async_op async)     \
+   {                                                                           \
+      struct cs_builder *b = panvk_get_cs_builder(cmdbuf, id);                 \
+      panvk_per_arch(panvk_instr_begin_work)(                                  \
+         id, cmdbuf, PANVK_INSTR_WORK_TYPE_SYNC##__cnt_width##_ADD);           \
+      cs_sync##__cnt_width##_add(b, propagate_error, scope, val, addr, async); \
+      struct panvk_instr_end_args instr_info = {                               \
+         .sync = {.addr_regs = addr, .val_regs = val},                         \
+      };                                                                       \
+      async.signal_slot = 0;                                                   \
+      panvk_per_arch(panvk_instr_end_work_async)(                              \
+         id, cmdbuf, PANVK_INSTR_WORK_TYPE_SYNC##__cnt_width##_ADD,            \
+         &instr_info, async);                                                  \
+   }                                                                           \
+                                                                               \
    static inline void panvk_instr_sync##__cnt_width##_wait(                    \
       struct panvk_cmd_buffer *cmdbuf, enum panvk_subqueue_id id,              \
       bool reject_error, enum mali_cs_condition cond, struct cs_index ref,     \

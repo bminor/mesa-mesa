@@ -64,6 +64,40 @@ panvk_instr_end_dispatch_indirect(enum panvk_subqueue_id id,
 }
 
 static void
+panvk_instr_end_sync32_add(enum panvk_subqueue_id id,
+                           struct panvk_utrace_cs_info *cs_info,
+                           const struct panvk_instr_end_args *const args)
+{
+   assert(args->sync.val_regs.size == 1);
+   trace_end_sync32_add(&cs_info->cmdbuf->utrace.uts[id], cs_info,
+                        (struct u_trace_address){
+                           .bo = (void *)PANVK_UTRACE_CAPTURE_REGISTERS,
+                           .offset = args->sync.addr_regs.reg,
+                        },
+                        (struct u_trace_address){
+                           .bo = (void *)PANVK_UTRACE_CAPTURE_REGISTERS,
+                           .offset = args->sync.val_regs.reg,
+                        });
+}
+
+static void
+panvk_instr_end_sync64_add(enum panvk_subqueue_id id,
+                           struct panvk_utrace_cs_info *cs_info,
+                           const struct panvk_instr_end_args *const args)
+{
+   assert(args->sync.val_regs.size == 2);
+   trace_end_sync64_add(&cs_info->cmdbuf->utrace.uts[id], cs_info,
+                        (struct u_trace_address){
+                           .bo = (void *)PANVK_UTRACE_CAPTURE_REGISTERS,
+                           .offset = args->sync.addr_regs.reg,
+                        },
+                        (struct u_trace_address){
+                           .bo = (void *)PANVK_UTRACE_CAPTURE_REGISTERS,
+                           .offset = args->sync.val_regs.reg,
+                        });
+}
+
+static void
 panvk_instr_end_sync32_wait(enum panvk_subqueue_id id,
                             struct panvk_utrace_cs_info *cs_info,
                             const struct panvk_instr_end_args *const args)
@@ -131,6 +165,12 @@ panvk_per_arch(panvk_instr_begin_work)(enum panvk_subqueue_id id,
    case PANVK_INSTR_WORK_TYPE_BARRIER:
       trace_begin_barrier(&cmdbuf->utrace.uts[id], &cs_info);
       break;
+   case PANVK_INSTR_WORK_TYPE_SYNC32_ADD:
+      trace_begin_sync32_add(&cmdbuf->utrace.uts[id], &cs_info);
+      break;
+   case PANVK_INSTR_WORK_TYPE_SYNC64_ADD:
+      trace_begin_sync64_add(&cmdbuf->utrace.uts[id], &cs_info);
+      break;
    case PANVK_INSTR_WORK_TYPE_SYNC32_WAIT:
       trace_begin_sync32_wait(&cmdbuf->utrace.uts[id], &cs_info);
       break;
@@ -182,6 +222,12 @@ panvk_per_arch(panvk_instr_end_work_async)(
       break;
    case PANVK_INSTR_WORK_TYPE_BARRIER:
       panvk_instr_end_barrier(id, &cs_info, args);
+      break;
+   case PANVK_INSTR_WORK_TYPE_SYNC32_ADD:
+      panvk_instr_end_sync32_add(id, &cs_info, args);
+      break;
+   case PANVK_INSTR_WORK_TYPE_SYNC64_ADD:
+      panvk_instr_end_sync64_add(id, &cs_info, args);
       break;
    case PANVK_INSTR_WORK_TYPE_SYNC32_WAIT:
       panvk_instr_end_sync32_wait(id, &cs_info, args);

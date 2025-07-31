@@ -313,8 +313,9 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    cs_add64(b, sync_addr, sync_addr,
             PANVK_SUBQUEUE_COMPUTE * sizeof(struct panvk_cs_sync64));
    cs_move64_to(b, add_val, 1);
-   cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
-                 cs_defer_indirect());
+   panvk_instr_sync64_add(cmdbuf, PANVK_SUBQUEUE_COMPUTE, true,
+                          MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
+                          cs_defer_indirect());
 #else
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);
@@ -332,8 +333,9 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
    cs_case(b, SB_ITER(x)) {                                                    \
-      cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
-                    cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
+      panvk_instr_sync64_add(cmdbuf, PANVK_SUBQUEUE_COMPUTE, true,             \
+                             MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
+                             cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC))); \
    }
 
       CASE(0)

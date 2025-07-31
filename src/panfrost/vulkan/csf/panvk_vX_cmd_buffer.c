@@ -638,8 +638,8 @@ panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
                       offsetof(struct panvk_cs_subqueue_context, syncobjs));
          cs_add64(b, sync_addr, sync_addr, sizeof(struct panvk_cs_sync64) * i);
          cs_move64_to(b, add_val, 1);
-         cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
-                       cs_now());
+         panvk_instr_sync64_add(cmdbuf, i, true, MALI_CS_SYNC_SCOPE_CSG,
+                                add_val, sync_addr, cs_now());
          ++cs_state->relative_sync_point;
       }
    }
