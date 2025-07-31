@@ -3634,7 +3634,7 @@
         "description": "r600/sfn: factor out adding an input in GS",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37ae4df3e4d90a2a474e313d4a563a0bb4c00cfe",
         "notes": null

@@ -24,6 +24,7 @@ private:
 
    bool process_store_output(nir_intrinsic_instr *intr);
    bool process_load_input(nir_intrinsic_instr *intr);
+   void add_input_at(gl_varying_slot location, unsigned driver_location);
 
    void do_finalize() override;
 
