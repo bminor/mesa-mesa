@@ -876,6 +876,7 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    int max_moves = VMEM_MAX_MOVES;
    int clause_max_grab_dist = VMEM_CLAUSE_MAX_GRAB_DIST;
    bool only_clauses = false;
+   bool part_of_clause = false;
    int16_t k = 0;
 
    /* first, check if we have instructions before current to move down */
@@ -904,33 +905,25 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       if (can_stall_prev_smem && ctx.last_SMEM_stall >= 0)
          break;
 
-      bool part_of_clause = false;
-      if (current->isVMEM() == candidate->isVMEM()) {
-         int grab_dist = cursor.insert_idx_clause - candidate_idx;
+      if (should_form_clause(current, candidate.get())) {
          /* We can't easily tell how much this will decrease the def-to-use
           * distances, so just use how far it will be moved as a heuristic. */
-         part_of_clause =
-            grab_dist < clause_max_grab_dist + k && should_form_clause(current, candidate.get());
+         int grab_dist = cursor.insert_idx_clause - candidate_idx;
+         if (grab_dist >= clause_max_grab_dist + k)
+            break;
+
+         part_of_clause = true;
+      } else if (part_of_clause) {
+         break;
       }
 
       /* if current depends on candidate, add additional dependencies and continue */
       bool can_move_down = !is_vmem || part_of_clause || candidate->definitions.empty();
       if (only_clauses) {
-         /* In case of high register pressure, only try to form clauses,
-          * and only if the previous clause is not larger
-          * than the current one will be.
+         /* Once encountering a clause, only try to form clauses.
+          * Any earlier instructions have already been checked.
           */
-         if (part_of_clause) {
-            int clause_size = cursor.insert_idx - cursor.insert_idx_clause;
-            int prev_clause_size = 1;
-            while (should_form_clause(current,
-                                      block->instructions[candidate_idx - prev_clause_size].get()))
-               prev_clause_size++;
-            if (prev_clause_size > clause_size + 1)
-               break;
-         } else {
-            can_move_down = false;
-         }
+         can_move_down = part_of_clause;
       }
       HazardResult haz =
          perform_hazard_query(part_of_clause ? &clause_hq : &indep_hq, candidate.get(), false);
@@ -968,10 +961,12 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
          ctx.mv.downwards_skip(cursor);
          continue;
       }
-      if (part_of_clause)
+      if (part_of_clause) {
          add_to_hazard_query(&indep_hq, candidate_ptr);
-      else
+         only_clauses = true;
+      } else {
          k++;
+      }
       if (candidate_idx < ctx.last_SMEM_dep_idx)
          ctx.last_SMEM_stall++;
    }
