@@ -579,8 +579,8 @@ agx_pack_instr(struct util_dynarray *emission, struct util_dynarray *fixups,
       unsigned C = I->explicit_coords ? coords.value : 0;
 
       uint64_t raw = agx_opcodes_info[I->op].encoding.exact |
-                     ((uint64_t)(D & BITFIELD_MASK(8)) << 7) | (St << 22) |
-                     ((uint64_t)(I->format) << 24) |
+                     ((uint64_t)((D >> 1) & BITFIELD_MASK(7)) << 8) |
+                     (St << 22) | ((uint64_t)(I->format) << 24) |
                      ((uint64_t)(C & BITFIELD_MASK(6)) << 16) |
                      ((uint64_t)(I->pixel_offset & BITFIELD_MASK(7)) << 28) |
                      (load || I->explicit_coords ? (1ull << 35) : 0) |
@@ -627,6 +627,9 @@ agx_pack_instr(struct util_dynarray *emission, struct util_dynarray *fixups,
       bool perspective = (I->op == AGX_OPCODE_ITERPROJ);
       unsigned D = agx_pack_alu_dst(I, I->dest[0]);
       unsigned channels = (I->channels & 0x3);
+
+      /* Destination cache not supported, mask off */
+      D &= ~1;
 
       agx_index src_I = I->src[0];
       pack_assert(I, src_I.type == AGX_INDEX_IMMEDIATE ||
