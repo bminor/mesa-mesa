@@ -1720,7 +1720,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
       agx_emit_store_scratch(b, instr);
       return NULL;
 
-   case nir_intrinsic_load_core_id_agx:
+   case nir_intrinsic_load_core_id:
       return agx_get_sr_to(b, dst, AGX_SR_CORE_ID);
 
    case nir_intrinsic_load_helper_op_id_agx:

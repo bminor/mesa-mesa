@@ -2320,7 +2320,7 @@ intrinsic("stack_map_agx", src_comp=[1, 1])
 intrinsic("stack_unmap_agx", src_comp=[1], dest_comp=1, bit_sizes=[32])
 
 # dst[] = { GPU core ID }.
-system_value("core_id_agx", 1, bit_sizes=[32])
+system_value("core_id", 1, bit_sizes=[32])
 
 # dst[] = { Helper operation type }.
 load("helper_op_id_agx", [], [], [CAN_ELIMINATE])
