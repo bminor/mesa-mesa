@@ -229,6 +229,8 @@ ForEachMacros:
   - agx_foreach_ssa_dest_rev
   - agx_foreach_ssa_src
   - agx_foreach_ssa_src_rev
+  - agx_foreach_reg_src
+  - agx_foreach_reg_dest
   - agx_foreach_successor
   - foreach_next_use
   - libagx_foreach_xfb

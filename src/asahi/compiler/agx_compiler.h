@@ -728,6 +728,10 @@ void agx_block_add_successor(agx_block *block, agx_block *successor);
    agx_foreach_src_rev(ins, v)                                                 \
       if (ins->src[v].type == AGX_INDEX_NORMAL)
 
+#define agx_foreach_reg_src(ins, v)                                            \
+   agx_foreach_src(ins, v)                                                     \
+      if (ins->src[v].type == AGX_INDEX_REGISTER)
+
 #define agx_foreach_ssa_dest(ins, v)                                           \
    agx_foreach_dest(ins, v)                                                    \
       if (ins->dest[v].type == AGX_INDEX_NORMAL)
@@ -735,6 +739,10 @@ void agx_block_add_successor(agx_block *block, agx_block *successor);
 #define agx_foreach_ssa_dest_rev(ins, v)                                       \
    agx_foreach_dest_rev(ins, v)                                                \
       if (ins->dest[v].type == AGX_INDEX_NORMAL)
+
+#define agx_foreach_reg_dest(ins, v)                                           \
+   agx_foreach_dest(ins, v)                                                    \
+      if (ins->dest[v].type == AGX_INDEX_REGISTER)
 
 /* Phis only come at the start (after else instructions) so we stop as soon as
  * we hit a non-phi
