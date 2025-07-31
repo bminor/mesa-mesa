@@ -374,7 +374,7 @@
         "description": "r00/sfn: Fix copy propagation into buffer load address",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "79ca456b4837b3bc21cf9ef3c03c505c4b4909f6",
         "notes": null
