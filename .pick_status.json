@@ -64,7 +64,7 @@
         "description": "Guard call to free_zombie_glx_drawable with condition from its definition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ad9db6b2591b35831e93ebf8efa22691748c87e1",
         "notes": null
