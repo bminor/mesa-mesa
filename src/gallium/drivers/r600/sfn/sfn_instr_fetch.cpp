@@ -124,6 +124,8 @@ FetchInstr::replace_source(PRegister old_src, PVirtualValue new_src)
    bool success = false;
    auto new_reg = new_src->as_register();
    if (new_reg) {
+      if (!new_reg->has_flag(Register::ssa) && new_reg->addr())
+         return false;
       if (old_src->equal_to(*m_src)) {
          m_src->del_use(this);
          m_src = new_reg;
