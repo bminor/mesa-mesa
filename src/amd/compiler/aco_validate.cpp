@@ -805,15 +805,16 @@ validate_ir(Program* program)
          }
          case Format::MTBUF:
          case Format::MUBUF: {
-            check(instr->operands.size() > 1, "VMEM instructions must have at least one operand",
+            unsigned non_mask_ops = instr->operands.size() - (instr_disables_wqm(instr.get()) * 2);
+            check(non_mask_ops > 1, "VMEM instructions must have at least one operand",
                   instr.get());
             check(instr->operands[1].isOfType(RegType::vgpr),
                   "VADDR must be in vgpr for VMEM instructions", instr.get());
             check(instr->operands[0].isOfType(RegType::sgpr), "VMEM resource constant must be sgpr",
                   instr.get());
-            check(instr->operands.size() < 4 || instr->operands[3].isOfType(RegType::vgpr),
+            check(non_mask_ops < 4 || instr->operands[3].isOfType(RegType::vgpr),
                   "VMEM write data must be vgpr", instr.get());
-            if (instr->operands.size() >= 3 && instr->operands[2].isConstant())
+            if (non_mask_ops >= 3 && instr->operands[2].isConstant())
                check(program->gfx_level < GFX12 || instr->operands[2].constantValue() == 0,
                      "VMEM SOFFSET must not be non-zero constant on GFX12+", instr.get());
 

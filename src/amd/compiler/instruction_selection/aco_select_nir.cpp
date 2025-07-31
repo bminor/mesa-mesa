@@ -455,7 +455,8 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
          }
       }
 
-      aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3 + instr->is_sparse, 1)};
+      aco_ptr<Instruction> mubuf{
+         create_instruction(op, Format::MUBUF, 3 + instr->is_sparse + 2 * disable_wqm, 1)};
       mubuf->operands[0] = Operand(resource);
       mubuf->operands[1] = Operand(coords[0]);
       mubuf->operands[2] = Operand::c32(0);
@@ -464,6 +465,12 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
       mubuf->mubuf().tfe = instr->is_sparse;
       if (mubuf->mubuf().tfe)
          mubuf->operands[3] = emit_tfe_init(bld, tmp_dst);
+      if (disable_wqm) {
+         instr_exact_mask(mubuf.get()) = Operand();
+         instr_wqm_mask(mubuf.get()) = Operand();
+         mubuf->mubuf().disable_wqm = true;
+         bld.program->needs_exact = true;
+      }
       ctx->block->instructions.emplace_back(std::move(mubuf));
 
       expand_vector(ctx, tmp_dst, dst, instr->def.num_components, dmask);
