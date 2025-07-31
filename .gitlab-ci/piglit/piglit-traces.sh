@@ -31,6 +31,10 @@ else
     export PIGLIT_REPLAY_EXTRA_ARGS="--keep-image ${PIGLIT_REPLAY_EXTRA_ARGS}"
 fi
 
+if [ -n "${LAVA_HTTP_CACHE_URI:-}" ]; then
+    export PIGLIT_REPLAY_EXTRA_ARGS="--download-caching-proxy-url=${LAVA_HTTP_CACHE_URI} ${PIGLIT_REPLAY_EXTRA_ARGS}"
+fi
+
 # Set up the environment.
 # Modifiying here directly LD_LIBRARY_PATH may cause problems when
 # using a command wrapper. Hence, we will just set it when running the

@@ -1,7 +1,7 @@
 %YAML 1.2
 ---
 traces-db:
-  download-url: "http://caching-proxy/cache/?uri=https://s3.freedesktop.org/mesa-tracie-private/"
+  download-url: "https://s3.freedesktop.org/mesa-tracie-private/"
 
 traces:
   AmnesiaTDD/Amnesia-f700-v2.trace:
