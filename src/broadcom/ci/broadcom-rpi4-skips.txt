@@ -1,5 +1,4 @@
 # Slow piglit tests (> 1 minute to run)
-spec@!opengl 1.1@streaming-texture-leak
 spec@!opengl 1.2@tex3d-maxsize
 
 # Slow CL tests (> 5 minute to run)

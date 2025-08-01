@@ -209,7 +209,6 @@ spec@!opengl 1.1@polygon-mode-offset@config 6: Expected blue pixel in center,Fai
 spec@!opengl 1.1@polygon-mode-offset@config 6: Expected white pixel on right edge,Fail
 spec@!opengl 1.1@polygon-mode-offset@config 6: Expected white pixel on top edge,Fail
 spec@!opengl 1.1@polygon-mode-offset,Fail
-spec@!opengl 1.1@streaming-texture-leak,Crash
 spec@!opengl 2.0@gl-2.0-edgeflag,Fail
 spec@!opengl 2.0@gl-2.0-edgeflag-immediate,Fail
 spec@!opengl 2.1@pbo,Fail
@@ -537,7 +536,6 @@ afbcp-spec@!opengl 1.1@polygon-mode-offset@config 6: Expected blue pixel in cent
 afbcp-spec@!opengl 1.1@polygon-mode-offset@config 6: Expected white pixel on right edge,Fail
 afbcp-spec@!opengl 1.1@polygon-mode-offset@config 6: Expected white pixel on top edge,Fail
 afbcp-spec@!opengl 1.1@polygon-mode-offset,Fail
-afbcp-spec@!opengl 1.1@streaming-texture-leak,Crash
 afbcp-spec@!opengl 2.0@gl-2.0-edgeflag,Fail
 afbcp-spec@!opengl 2.0@gl-2.0-edgeflag-immediate,Fail
 afbcp-spec@!opengl 2.1@pbo,Fail

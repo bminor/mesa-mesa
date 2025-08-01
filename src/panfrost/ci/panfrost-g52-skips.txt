@@ -20,7 +20,6 @@ dEQP-VK.api.object_management.max_concurrent.query_pool
 spec@!opengl 1.1@longprim
 
 # OOMs
-spec@!opengl 1.1@streaming-texture-leak
 tex3d-maxsize
 
 # Takes absurdly long, sometimes flaking due to the 60s timeout

@@ -113,3 +113,10 @@ spec@arb_program_interface_query@arb_program_interface_query-getprogramresourcei
 # but don't swap.
 spec@!opengl 1.0@gl-1.0-swapbuffers-behavior
 spec@!opengl 1.1@read-front
+
+# Skip test everywhere
+# Because even with a 256x256 map, it is over 1 GiB of texture memory
+# allocated
+# Also, individually, it was disabled in most of the tests as it is
+# either too slow or results in an OOM
+spec@!opengl 1.1@streaming-texture-leak
