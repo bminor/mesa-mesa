@@ -8,6 +8,7 @@ KHR-GL46.shader_group_vote.all_invocations
 KHR-GL46.shader_group_vote.all_invocations_equal
 KHR-GL46.shader_group_vote.invocations_with_variables
 KHR-GL46.shader_image_load_store.early-fragment-tests
+KHR-GL46.shader_image_load_store.multiple-uniforms
 KHR-GL46.shader_image_size.advanced-nonMS-tes-float
 KHR-GL46.shader_image_size.advanced-nonMS-tes-int
 KHR-GL46.shader_image_size.advanced-nonMS-tes-uint
@@ -21,6 +22,7 @@ KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_
 KHR-GL46.transform_feedback.draw_xfb_feedbackk_test
 
 KHR-GLES3.packed_depth_stencil.verify_read_pixels.depth24_stencil8
+KHR-GLES31.core.shader_bitfield_operation.bitfieldExtract.int_3
 KHR-GLES31.core.shader_bitfield_operation.bitfieldReverse.uint_3
 KHR-GLES31.core.shader_bitfield_operation.findMSB.ivec2_1
 KHR-GLES31.core.shader_storage_buffer_object.advanced-usage-sync-cs
@@ -52,6 +54,7 @@ dEQP-GLES31.functional.ssbo.layout.single_basic_array.packed.bvec3
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.mediump_uint
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.row_major_mediump_mat4
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.highp_mat3
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.row_major_highp_mat4x3
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.column_major_mediump_mat3x2
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.highp_int
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.lowp_ivec3
