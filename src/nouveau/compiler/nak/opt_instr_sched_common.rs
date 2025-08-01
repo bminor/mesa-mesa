@@ -241,7 +241,8 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
 }
 
 pub fn estimate_block_weight(cfg: &CFG<BasicBlock>, block_idx: usize) -> u64 {
-    10_u64.pow(cfg.loop_depth(block_idx).try_into().unwrap())
+    let loop_depth = cfg.loop_depth(block_idx) as f32;
+    10_f32.powf((loop_depth + 1.0).log2()) as u64
 }
 
 /// Try to guess how many cycles a variable latency instruction will take
