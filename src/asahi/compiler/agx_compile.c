@@ -2936,8 +2936,8 @@ set_speculate(nir_builder *b, nir_instr *instr, UNUSED void *_)
    if (instr->type == nir_instr_type_intrinsic &&
        nir_intrinsic_has_access(nir_instr_as_intrinsic(instr))) {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-      nir_intrinsic_set_access(intr,
-                               ACCESS_CAN_SPECULATE | nir_intrinsic_access(intr));
+      nir_intrinsic_set_access(
+         intr, ACCESS_CAN_SPECULATE | nir_intrinsic_access(intr));
       return true;
    }
 
