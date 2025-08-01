@@ -50,6 +50,33 @@ libagx_copy_query(global uint32_t *availability, global uint64_t *results,
    }
 }
 
+/**
+ * Goes through a series of consecutive query indices in the given pool,
+ * setting all element values to 0 and emitting them as available.
+ */
+KERNEL(32)
+libagx_reset_query(global uint32_t *availability, global uint64_t *results,
+                   global uint16_t *oq_index, uint32_t first_query,
+                   uint16_t reports_per_query, int set_available)
+{
+   uint32_t query = first_query + cl_global_id.x;
+
+   uint64_t value = 0;
+   if (availability) {
+      availability[query] = set_available;
+   } else {
+      value = set_available ? 0 : LIBAGX_QUERY_UNAVAILABLE;
+   }
+
+   global uint64_t *report =
+      query_report(results, oq_index, reports_per_query, query);
+
+   /* XXX: is this supposed to happen on the begin? */
+   for (unsigned j = 0; j < reports_per_query; ++j) {
+      report[j] = value;
+   }
+}
+
 /* TODO: Share with Gallium... */
 enum pipe_query_value_type {
    PIPE_QUERY_TYPE_I32,
