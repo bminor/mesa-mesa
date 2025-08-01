@@ -312,14 +312,13 @@ class LowerGSArrayInput : public NirLowerInstruction {
       auto new_addr =
          nir_iadd(b, vbase, nir_ishl(b, intr->src[1].ssa, nir_imm_int(b, 2)));
       auto io_semantics = nir_intrinsic_io_semantics(intr);
-      return nir_load_r600_indirect_per_vertex_input(b,
-                                                     intr->num_components,
-                                                     intr->def.bit_size,
-                                                     new_addr,
-                                                     nir_imm_zero(b, 1, 32),
-                                                     .base = nir_intrinsic_base(intr),
-                                                     .range = nir_intrinsic_range(intr),
-                                                     .io_semantics = io_semantics);
+      return nir_load_r600_per_vertex_input(b,
+                                            intr->num_components,
+                                            intr->def.bit_size,
+                                            new_addr,
+                                            .base = nir_intrinsic_base(intr),
+                                            .range = nir_intrinsic_range(intr),
+                                            .io_semantics = io_semantics);
    }
    nir_def *m_base_array{nullptr};
 };
