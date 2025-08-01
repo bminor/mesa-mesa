@@ -1472,11 +1472,12 @@ impl Shader<'_> {
             max_gprs += 2;
         }
 
+        let hw_reserved_gprs = self.sm.hw_reserved_gprs();
         if let ShaderStageInfo::Compute(cs_info) = &self.info.stage {
             max_gprs = min(
                 max_gprs,
                 gpr_limit_from_local_size(&cs_info.local_size)
-                    - self.sm.hw_reserved_gprs(),
+                    - hw_reserved_gprs,
             );
         }
 
@@ -1492,6 +1493,17 @@ impl Shader<'_> {
 
             // Re-calculate liveness one last time
             live = SimpleLiveness::for_function(f);
+        } else {
+            // GPRs are allocated in multiple of 8. That means we can give RA a
+            // bit more freedom by making gprs up until the next multiple
+            // available.
+            let next_multiple_gprs = (total_gprs + hw_reserved_gprs)
+                .next_multiple_of(8)
+                - hw_reserved_gprs;
+            let free_gprs = next_multiple_gprs.min(max_gprs) - total_gprs;
+
+            total_gprs += free_gprs;
+            gpr_limit += free_gprs;
         }
 
         self.info.num_gprs = total_gprs.try_into().unwrap();
