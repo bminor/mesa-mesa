@@ -126,7 +126,6 @@ PYTHONPATH=/ /lava/lava_job_submitter.py \
 	--rootfs-url "${ROOTFS_URL}" \
 	--kernel-url-prefix "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}" \
 	--dtb-filename "${DTB}" \
-	--first-stage-init /lava/init-stage1.sh \
 	--env-file dut-env-vars.sh \
 	--jwt-file "${S3_JWT_FILE}" \
 	--kernel-image-name "${KERNEL_IMAGE_NAME}" \

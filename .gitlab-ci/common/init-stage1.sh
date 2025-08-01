@@ -3,10 +3,6 @@
 # Very early init, used to make sure devices and network are set up and
 # reachable.
 
-# When changing this file, you need to bump the following
-# .gitlab-ci/image-tags.yml tags:
-# ALPINE_X86_64_LAVA_TRIGGER_TAG
-
 set -ex
 
 cd /
@@ -21,7 +17,14 @@ mkdir -p /dev/shm
 findmnt --mountpoint /dev/shm || mount -t tmpfs -o noexec,nodev,nosuid tmpfs /dev/shm
 findmnt --mountpoint /tmp || mount -t tmpfs tmpfs /tmp
 
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
+# For the vmware farm, change the nameserver as 8.8.8.8 is off limit.
+# This is temporary and will be reverted once the farm is moved.
+if [ "${FARM:-}" = "vmware" ]; then
+  echo "nameserver 192.19.189.10" > /etc/resolv.conf
+else
+  echo "nameserver 8.8.8.8" > /etc/resolv.conf
+fi
+
 [ -z "$NFS_SERVER_IP" ] || echo "$NFS_SERVER_IP caching-proxy" >> /etc/hosts
 
 # Set the time so we can validate certificates before we fetch anything;

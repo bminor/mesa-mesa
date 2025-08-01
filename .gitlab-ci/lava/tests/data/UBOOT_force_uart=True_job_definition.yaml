@@ -57,8 +57,9 @@ actions:
           format: Lava-Test Test Definition 1.0
         run:
           steps:
-          - echo test UBOOT
-          - echo ZWNobyB0ZXN0IFVCT09U | base64 -d >> /set-job-env-vars.sh
+          - FARM=test_farm . /test_dir/install/common/init-stage1.sh
+          - echo RkFSTT10ZXN0X2Zhcm0gL3Rlc3RfZGlyL2luc3RhbGwvY29tbW9uL2luaXQtc3RhZ2UxLnNo
+            | base64 -d >> /set-job-env-vars.sh
           - export CURRENT_SECTION=dut_boot
           - set -e
           - echo Could not find jwt file, disabling S3 requests...

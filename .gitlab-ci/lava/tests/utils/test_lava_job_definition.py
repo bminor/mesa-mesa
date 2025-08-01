@@ -60,7 +60,6 @@ def job_submitter_factory(mode: Literal["UBOOT", "FASTBOOT"], shell_file):
         device_type=device_type,
         farm="test_farm",
         dtb_filename="my_dtb_filename",
-        first_stage_init=shell_file,
         env_file=shell_file,
         job_timeout_min=job_timeout_min,
         mesa_job_name=mesa_job_name,
@@ -108,8 +107,9 @@ def test_generate_lava_job_definition_sanity(
     # Do not actually connect to the LAVA server
     mock_lava_proxy.return_value = mock_proxy
 
-    init_script_content = f"echo test {mode}"
-    job_submitter = job_submitter_factory(mode, shell_file(init_script_content))
+    farm_env = "FARM=test_farm"
+    init_script = "/install/common/init-stage1.sh"
+    job_submitter = job_submitter_factory(mode, shell_file(init_script))
     job_definition = LAVAJobDefinition(job_submitter).generate_lava_job_definition()
 
     # Load the YAML output and check that it contains the expected keys and values
@@ -184,7 +184,8 @@ def test_generate_lava_job_definition_sanity(
             "test",
         ]
     )
-    assert init_script_content in run_steps
+    assert farm_env in run_steps
+    assert init_script in run_steps
 
 
 # use yaml files from tests/data/ to test the job definition generation
@@ -210,8 +211,8 @@ def test_lava_job_definition(
     # Load the YAML output and check that it contains the expected keys and values
     expected_job_dict = load_yaml_file(f"{mode}_force_uart={force_uart}_job_definition.yaml")
 
-    init_script_content = f"echo test {mode}"
-    job_submitter = job_submitter_factory(mode, shell_file(init_script_content))
+    init_script = f"FARM=test_farm /test_dir/install/common/init-stage1.sh"
+    job_submitter = job_submitter_factory(mode, shell_file(init_script))
     job_definition = LAVAJobDefinition(job_submitter).generate_lava_job_definition()
 
     job_dict = yaml.load(job_definition)

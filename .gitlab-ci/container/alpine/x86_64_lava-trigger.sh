@@ -35,7 +35,6 @@ pip3 install --break-system-packages -r bin/ci/requirements-lava.txt
 
 cp -Rp .gitlab-ci/lava /
 cp -Rp .gitlab-ci/bin/structured_logger.py /lava
-cp -Rp .gitlab-ci/common/init-stage1.sh /lava
 
 . .gitlab-ci/container/container_pre_build.sh
 
