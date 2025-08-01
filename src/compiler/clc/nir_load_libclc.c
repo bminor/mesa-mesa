@@ -22,6 +22,7 @@
  */
 
 #include "nir.h"
+#include "nir_builder.h"
 #include "nir_clc_helpers.h"
 #include "nir_serialize.h"
 #include "nir_spirv.h"
@@ -317,6 +318,13 @@ libclc_add_generic_variants(nir_shader *shader)
    return progress;
 }
 
+static bool
+mark_exact(nir_builder *b, nir_alu_instr *alu, UNUSED void *_)
+{
+   alu->exact = true;
+   return true;
+}
+
 nir_shader *
 nir_load_libclc_shader(unsigned ptr_bit_size,
                        struct disk_cache *disk_cache,
@@ -373,6 +381,16 @@ nir_load_libclc_shader(unsigned ptr_bit_size,
    NIR_PASS(_, nir, nir_lower_returns);
 
    NIR_PASS(_, nir, libclc_add_generic_variants);
+
+   /* libclc relies on precise floating point behaviour to meet CL precision
+    * requirements, but the SPIR-V does not disable contractions etc. Forcing
+    * the exact bit across libclc effectively compiles libclc without fast-math,
+    * which works around a large class of (current and future) libclc bugs.
+    *
+    * Kernels using CL are unaffected, this only affects the high-precision
+    * floating point routines inside libclc. Fast variants bypass libclc anyway.
+    */
+   NIR_PASS(_, nir, nir_shader_alu_pass, mark_exact, nir_metadata_all, NULL);
 
    /* Run some optimization passes. Those used here should be considered safe
     * for all use cases and drivers.
