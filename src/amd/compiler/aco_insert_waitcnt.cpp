@@ -546,25 +546,6 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
       imm.combine(bar.imm[ffs(storage_vgpr_spill) - 1]);
    }
 
-   /* Make sure POPS coherent memory accesses have reached the L2 cache before letting the
-    * overlapping waves proceed into the ordered section.
-    */
-   if (ctx.program->has_pops_overlapped_waves_wait &&
-       (ctx.gfx_level >= GFX11 ? instr->isEXP() && instr->exp().done
-                               : (instr->opcode == aco_opcode::s_sendmsg &&
-                                  instr->salu().imm == sendmsg_ordered_ps_done))) {
-      uint8_t c = counter_vm | counter_vs;
-      /* Await SMEM loads too, as it's possible for an application to create them, like using a
-       * scalarization loop - pointless and unoptimal for an inherently divergent address of
-       * per-pixel data, but still can be done at least synthetically and must be handled correctly.
-       */
-      if (ctx.program->has_smem_buffer_or_global_loads)
-         c |= counter_lgkm;
-
-      u_foreach_bit (i, c & ctx.nonzero)
-         imm[i] = 0;
-   }
-
    check_instr(ctx, imm, instr);
 
    if (instr->opcode == aco_opcode::ds_ordered_count &&
