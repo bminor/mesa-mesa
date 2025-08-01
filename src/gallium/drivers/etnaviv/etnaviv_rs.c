@@ -487,6 +487,9 @@ etna_clear_rs(struct pipe_context *pctx, unsigned buffers, const struct pipe_sci
          if (!psurf->texture)
             continue;
 
+         if (!(buffers & (PIPE_CLEAR_COLOR0 << idx)))
+            continue;
+
          if (etna_resource_get_render_compatible(pctx, psurf->texture)->levels[psurf->level].ts_size)
             need_ts_flush = true;
       }
@@ -511,6 +514,9 @@ etna_clear_rs(struct pipe_context *pctx, unsigned buffers, const struct pipe_sci
          struct pipe_surface *psurf = &ctx->framebuffer_s.cbufs[idx];
 
          if (!psurf->texture)
+            continue;
+
+         if (!(buffers & (PIPE_CLEAR_COLOR0 << idx)))
             continue;
 
          etna_blit_clear_color_rs(pctx, idx, color, use_ts);
