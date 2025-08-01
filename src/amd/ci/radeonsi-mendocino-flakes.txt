@@ -35,6 +35,12 @@ glx@glx-visuals-depth
 glx@glx-visuals-stencil
 
 spec@!opengl 1.0@gl-1.0-readpixsanity
+
+# Flaky on innocent MRs starting 2025-07-31
+spec@arb_shader_image_load_store@coherency
+spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'volatile' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'coherent' qualifier coherency test/256x256
+
 spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@egl_chromium_sync_control@conformance
