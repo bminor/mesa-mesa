@@ -5248,7 +5248,8 @@ batch_execute(struct tc_batch *batch, struct pipe_context *pipe, bool parsing)
 
       tc_assert(call->sentinel == TC_SENTINEL);
 #if TC_DEBUG >= 3
-      tc_printf("CALL: %s", tc_call_names[call->call_id]);
+      if (call->call_id != TC_END_BATCH)
+         tc_printf("CALL: %s", tc_call_names[call->call_id]);
 #endif
       TC_TRACE_SCOPE(call->call_id);
 
