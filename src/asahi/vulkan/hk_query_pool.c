@@ -297,36 +297,26 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
    libagx_write_u32(cmd, agx_1d(1), AGX_BARRIER_ALL, address, value);
 }
 
-/**
- * Goes through a series of consecutive query indices in the given pool,
- * setting all element values to 0 and emitting them as available.
- */
 static void
 emit_zero_queries(struct hk_cmd_buffer *cmd, struct hk_query_pool *pool,
                   uint32_t first_index, uint32_t num_queries,
                   bool set_available)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
+   perf_debug(cmd, "Query pool zero");
 
-   for (uint32_t i = 0; i < num_queries; i++) {
-      uint64_t report = hk_query_report_addr(dev, pool, first_index + i);
+   struct libagx_reset_query_args info = {
+      .availability = hk_has_available(pool) ? pool->bo->va->addr : 0,
+      .results = pool->oq_queries ? dev->occlusion_queries.bo->va->addr
+                                  : pool->bo->va->addr + pool->query_start,
+      .oq_index = pool->oq_queries ? pool->bo->va->addr + pool->query_start : 0,
 
-      uint64_t value = 0;
-      if (hk_has_available(pool)) {
-         uint64_t available = hk_query_available_addr(pool, first_index + i);
-         hk_queue_write(cmd, available, set_available, false);
-      } else {
-         value = set_available ? 0 : LIBAGX_QUERY_UNAVAILABLE;
-      }
+      .first_query = first_index,
+      .reports_per_query = hk_reports_per_query(pool),
+      .set_available = set_available,
+   };
 
-      /* XXX: is this supposed to happen on the begin? */
-      for (unsigned j = 0; j < hk_reports_per_query(pool); ++j) {
-         hk_queue_write(cmd, report + (j * sizeof(struct hk_query_report)),
-                        value, false);
-         hk_queue_write(cmd, report + (j * sizeof(struct hk_query_report)) + 4,
-                        value >> 32, false);
-      }
-   }
+   libagx_reset_query_struct(cmd, agx_1d(num_queries), AGX_BARRIER_ALL, info);
 }
 
 static void
