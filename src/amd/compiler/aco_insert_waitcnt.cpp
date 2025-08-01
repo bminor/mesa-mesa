@@ -53,10 +53,11 @@ enum wait_event : uint32_t {
    event_gds_gpr_lock = 1 << 10,
    event_vmem_gpr_lock = 1 << 11,
    event_sendmsg = 1 << 12,
-   event_ldsdir = 1 << 13,
-   event_vmem_sample = 1 << 14, /* GFX12+ */
-   event_vmem_bvh = 1 << 15,    /* GFX12+ */
-   num_events = 16,
+   event_sendmsg_rtn = 1 << 13,
+   event_ldsdir = 1 << 14,
+   event_vmem_sample = 1 << 15, /* GFX12+ */
+   event_vmem_bvh = 1 << 16,    /* GFX12+ */
+   num_events = 17,
 };
 
 enum counter_type : uint8_t {
@@ -144,13 +145,14 @@ struct target_info {
       events[wait_type_exp] = event_exp_pos | event_exp_param | event_exp_mrt_null |
                               event_exp_prim | event_exp_dual_src_blend | event_gds_gpr_lock |
                               event_vmem_gpr_lock | event_ldsdir;
-      events[wait_type_lgkm] = event_smem | event_lds | event_gds | event_sendmsg;
+      events[wait_type_lgkm] =
+         event_smem | event_lds | event_gds | event_sendmsg | event_sendmsg_rtn;
       events[wait_type_vm] = event_vmem;
       events[wait_type_vs] = event_vmem_store;
       if (gfx_level >= GFX12) {
          events[wait_type_sample] = event_vmem_sample;
          events[wait_type_bvh] = event_vmem_bvh;
-         events[wait_type_km] = event_smem | event_sendmsg;
+         events[wait_type_km] = event_smem | event_sendmsg | event_sendmsg_rtn;
          events[wait_type_lgkm] &= ~events[wait_type_km];
       }
 
@@ -831,8 +833,8 @@ gen(Instruction* instr, wait_ctx& ctx)
    case Format::SOP1: {
       if (instr->opcode == aco_opcode::s_sendmsg_rtn_b32 ||
           instr->opcode == aco_opcode::s_sendmsg_rtn_b64) {
-         update_counters(ctx, event_sendmsg, instr);
-         insert_wait_entry(ctx, instr->definitions[0], event_sendmsg);
+         update_counters(ctx, event_sendmsg_rtn, instr);
+         insert_wait_entry(ctx, instr->definitions[0], event_sendmsg_rtn);
       }
       break;
    }
