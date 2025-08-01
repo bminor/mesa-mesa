@@ -2354,7 +2354,7 @@
         "description": "intel: Re-disable ray tracing on 32 bits",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f0e18c475b71c7804e893ab7c1b70bb548ee6917",
         "notes": null
