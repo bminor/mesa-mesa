@@ -383,7 +383,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    panvk_per_arch(panvk_instr_end_work_async)(
       PANVK_SUBQUEUE_COMPUTE, cmdbuf, PANVK_INSTR_WORK_TYPE_DISPATCH,
-      &instr_info, dev->csf.sb.all_iters_mask);
+      &instr_info, cs_defer(dev->csf.sb.all_iters_mask, 0));
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -408,5 +408,5 @@ panvk_per_arch(CmdDispatchIndirect)(VkCommandBuffer commandBuffer,
                                              }};
    panvk_per_arch(panvk_instr_end_work_async)(
       PANVK_SUBQUEUE_COMPUTE, cmdbuf, PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
-      &instr_info, dev->csf.sb.all_iters_mask);
+      &instr_info, cs_defer(dev->csf.sb.all_iters_mask, 0));
 }

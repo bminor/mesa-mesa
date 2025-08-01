@@ -66,9 +66,9 @@ panvk_per_arch(cmd_meta_compute_end)(
 
 #if PAN_ARCH >= 10
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   panvk_per_arch(panvk_instr_end_work_async)(PANVK_SUBQUEUE_COMPUTE, cmdbuf,
-                                              PANVK_INSTR_WORK_TYPE_META, NULL,
-                                              dev->csf.sb.all_iters_mask);
+   panvk_per_arch(panvk_instr_end_work_async)(
+      PANVK_SUBQUEUE_COMPUTE, cmdbuf, PANVK_INSTR_WORK_TYPE_META, NULL,
+      cs_defer(dev->csf.sb.all_iters_mask, 0));
 #endif
 
    cmdbuf->state.compute.desc_state.sets[0] = save_ctx->set0;
@@ -148,10 +148,10 @@ panvk_per_arch(cmd_meta_gfx_end)(
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    panvk_per_arch(panvk_instr_end_work_async)(
       PANVK_SUBQUEUE_VERTEX_TILER, cmdbuf, PANVK_INSTR_WORK_TYPE_META, NULL,
-      dev->csf.sb.all_iters_mask);
-   panvk_per_arch(panvk_instr_end_work_async)(PANVK_SUBQUEUE_FRAGMENT, cmdbuf,
-                                              PANVK_INSTR_WORK_TYPE_META, NULL,
-                                              dev->csf.sb.all_iters_mask);
+      cs_defer(dev->csf.sb.all_iters_mask, 0));
+   panvk_per_arch(panvk_instr_end_work_async)(
+      PANVK_SUBQUEUE_FRAGMENT, cmdbuf, PANVK_INSTR_WORK_TYPE_META, NULL,
+      cs_defer(dev->csf.sb.all_iters_mask, 0));
 #endif
 
    cmdbuf->state.gfx.desc_state.sets[0] = save_ctx->set0;

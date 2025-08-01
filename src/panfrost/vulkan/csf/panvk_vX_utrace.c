@@ -14,14 +14,22 @@
 
 static void
 cmd_write_timestamp(const struct panvk_device *dev, struct cs_builder *b,
-                    uint64_t addr, uint32_t wait_mask)
+                    uint64_t addr, struct cs_async_op ts_async_op)
 {
    const struct cs_index addr_reg = cs_scratch_reg64(b, 0);
+
+   /* Overwrite the signal_slot. Note that this has no effect in case of
+    * synchronous or indirect syncs. */
+   assert(!ts_async_op.wait_mask ||
+#if PAN_ARCH >= 11
+          ts_async_op.indirect ||
+#endif
+          ts_async_op.signal_slot == 0);
    /* abuse DEFERRED_SYNC */
-   const struct cs_async_op async = cs_defer(wait_mask, SB_ID(DEFERRED_SYNC));
+   ts_async_op.signal_slot = SB_ID(DEFERRED_SYNC);
 
    cs_move64_to(b, addr_reg, addr);
-   cs_store_state(b, addr_reg, 0, MALI_CS_STATE_TIMESTAMP, async);
+   cs_store_state(b, addr_reg, 0, MALI_CS_STATE_TIMESTAMP, ts_async_op);
 }
 
 static void
@@ -90,7 +98,7 @@ panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
    const struct panvk_priv_bo *bo = timestamps;
    const uint64_t addr = bo->addr.dev + offset_B;
 
-   cmd_write_timestamp(dev, b, addr, cs_info->ts_wait_mask);
+   cmd_write_timestamp(dev, b, addr, *cs_info->ts_async_op);
 }
 
 static void

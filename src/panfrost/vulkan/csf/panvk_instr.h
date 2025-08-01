@@ -69,9 +69,11 @@ void panvk_per_arch(panvk_instr_end_work)(
    const struct panvk_instr_end_args *const args);
 
 /**
- * Mark the end of async work with an immediate scoreboard mask.
+ * Mark the end of async work with an async_op. Note that the signal_slot will
+ * be overwritten and should therefore be left as 0.
  */
 void panvk_per_arch(panvk_instr_end_work_async)(
    enum panvk_subqueue_id id, struct panvk_cmd_buffer *cmdbuf,
    enum panvk_instr_work_type work_type,
-   const struct panvk_instr_end_args *const args, unsigned int wait_mask);
+   const struct panvk_instr_end_args *const args,
+   struct cs_async_op ts_async_op);

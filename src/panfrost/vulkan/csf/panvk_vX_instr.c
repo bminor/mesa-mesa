@@ -68,11 +68,12 @@ panvk_per_arch(panvk_instr_begin_work)(enum panvk_subqueue_id id,
                                        struct panvk_cmd_buffer *cmdbuf,
                                        enum panvk_instr_work_type work_type)
 {
+   struct cs_async_op op = cs_now();
    struct panvk_utrace_cs_info cs_info = {
       .cmdbuf = cmdbuf,
       /* For the begin marker, the caller should wait for dependencies before
          calling begin. */
-      .ts_wait_mask = 0,
+      .ts_async_op = &op,
    };
 
    switch (work_type) {
@@ -108,18 +109,20 @@ panvk_per_arch(panvk_instr_end_work)(
    enum panvk_instr_work_type work_type,
    const struct panvk_instr_end_args *const args)
 {
-   panvk_per_arch(panvk_instr_end_work_async)(id, cmdbuf, work_type, args, 0);
+   panvk_per_arch(panvk_instr_end_work_async)(id, cmdbuf, work_type, args,
+                                              cs_now());
 }
 
 void
 panvk_per_arch(panvk_instr_end_work_async)(
    enum panvk_subqueue_id id, struct panvk_cmd_buffer *cmdbuf,
    enum panvk_instr_work_type work_type,
-   const struct panvk_instr_end_args *const args, unsigned int wait_mask)
+   const struct panvk_instr_end_args *const args,
+   struct cs_async_op ts_async_op)
 {
    struct panvk_utrace_cs_info cs_info = {
       .cmdbuf = cmdbuf,
-      .ts_wait_mask = wait_mask,
+      .ts_async_op = &ts_async_op,
    };
 
    switch (work_type) {

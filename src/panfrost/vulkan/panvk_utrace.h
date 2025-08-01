@@ -45,7 +45,7 @@ struct panvk_cmd_buffer;
 
 struct panvk_utrace_cs_info {
    struct panvk_cmd_buffer *cmdbuf;
-   uint32_t ts_wait_mask;
+   struct cs_async_op *ts_async_op;
 };
 
 void panvk_per_arch(utrace_context_init)(struct panvk_device *dev);
