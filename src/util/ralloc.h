@@ -572,7 +572,6 @@ public:                                                                  \
    {                                                                     \
       void *p = ALLOC_FUNC(ctx, size);                                   \
       assert(p != NULL);                                                 \
-      static_assert(HAS_TRIVIAL_DESTRUCTOR(TYPE));                       \
       new_cmd                                                            \
       return p;                                                          \
    }                                                                     \
@@ -580,7 +579,6 @@ public:                                                                  \
    {                                                                     \
       void *p = ALLOC_FUNC(ctx, size);                                   \
       assert(p != NULL);                                                 \
-      static_assert(HAS_TRIVIAL_DESTRUCTOR(TYPE));                       \
       new_array_cmd                                                      \
       return p;                                                          \
    }

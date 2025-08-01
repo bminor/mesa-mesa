@@ -106,6 +106,16 @@ class ir_instruction : public ir_exec_node {
 public:
    enum ir_node_type ir_type;
 
+   /* The linear_ctx this node was allocated with. If NULL, it's not allocated
+    * with linear_ctx.
+    */
+   linear_ctx *node_linalloc;
+
+   DECLARE_RZALLOC_CXX_OPERATORS(ir_instruction)
+   DECLARE_LINEAR_ZALLOC_CXX_OPERATORS(ir_instruction,
+                                       ((ir_instruction*)((uintptr_t)p))->node_linalloc = ctx;,
+                                       UNREACHABLE("don't allocate ir_instruction with new[]");)
+
    /**
     * GCC 4.7+ and clang warn when deleting an ir_instruction unless
     * there's a virtual destructor present.  Because we almost
