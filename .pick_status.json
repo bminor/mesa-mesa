@@ -1494,7 +1494,7 @@
         "description": "tc: also inline depth resolves",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8933b3ed399ff747d64b503171b0cf46d2ca9b04",
         "notes": null

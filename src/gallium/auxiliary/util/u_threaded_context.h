@@ -476,7 +476,7 @@ struct tc_renderpass_info {
       uint8_t data8[8];
    };
    /* only valid if has_resolve is true and the resolve member of pipe_framebuffer_state is NULL */
-   struct pipe_resource *resolve;
+   struct pipe_resource *resolve[2]; //[color, depth]
 };
 
 static inline bool

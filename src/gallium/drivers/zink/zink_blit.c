@@ -348,9 +348,10 @@ zink_blit(struct pipe_context *pctx,
    bool needs_present_readback = false;
 
    if (ctx->awaiting_resolve && ctx->in_rp && ctx->dynamic_fb.tc_info.has_resolve) {
+      bool is_depth = util_format_is_depth_or_stencil(info->src.format);
       struct pipe_resource *resolve = ctx->fb_state.resolve;
       if (!resolve)
-         resolve = ctx->dynamic_fb.tc_info.resolve;
+         resolve = ctx->dynamic_fb.tc_info.resolve[is_depth];
       if (resolve == info->dst.resource) {
          zink_batch_no_rp_safe(ctx);
          ctx->awaiting_resolve = false;
