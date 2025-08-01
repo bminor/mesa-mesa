@@ -130,16 +130,16 @@ struct sched_ctx {
 
 template <typename T>
 void
-move_element(T begin_it, size_t idx, size_t before)
+move_element(T begin_it, size_t idx, size_t before, int num = 1)
 {
    if (idx < before) {
       auto begin = std::next(begin_it, idx);
       auto end = std::next(begin_it, before);
-      std::rotate(begin, begin + 1, end);
+      std::rotate(begin, begin + num, end);
    } else if (idx > before) {
       auto begin = std::next(begin_it, before);
       auto end = std::next(begin_it, idx + 1);
-      std::rotate(begin, end - 1, end);
+      std::rotate(begin, end - num, end);
    }
 }
 
@@ -266,55 +266,58 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
       return move_success;
    }
 
-   aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
+   int clause_begin_idx = cursor.source_idx; /* exclusive */
+   int clause_end_idx = cursor.source_idx;   /* inclusive */
+   int insert_idx = cursor.insert_idx_clause - 1;
 
-   /* check if one of candidate's operands is killed by depending instruction */
-   aco_ptr<Instruction>& instr = block->instructions[cursor.insert_idx_clause];
-   int idx = cursor.source_idx;
-   while (should_form_clause(block->instructions[idx].get(), instr.get())) {
-      if (check_dependencies(block->instructions[idx].get(), depends_on, RAR_dependencies_clause))
+   /* Check if one of candidates' operands is killed by depending instruction. */
+   Instruction* instr = block->instructions[cursor.insert_idx_clause].get();
+   RegisterDemand max_clause_demand;
+   while (should_form_clause(block->instructions[clause_begin_idx].get(), instr)) {
+      Instruction* candidate = block->instructions[clause_begin_idx--].get();
+
+      if (check_dependencies(candidate, depends_on, RAR_dependencies_clause))
          return move_fail_ssa;
-      idx--;
-   }
 
-   for (const Operand& op : candidate->operands) {
-      if (op.isTemp()) {
-         depends_on[op.tempId()] = true;
-         if (op.isFirstKill())
-            RAR_dependencies[op.tempId()] = true;
-      }
+      max_clause_demand.update(candidate->register_demand);
    }
+   int clause_size = clause_end_idx - clause_begin_idx;
+   assert(clause_size > 0);
 
-   /* Check the new demand of the instructions being moved over */
-   RegisterDemand register_pressure = cursor.total_demand;
-   const RegisterDemand candidate_diff = get_live_changes(candidate.get());
-   if (RegisterDemand(register_pressure - candidate_diff).exceeds(max_registers))
+   instr = block->instructions[clause_begin_idx].get();
+   RegisterDemand clause_begin_demand = instr->register_demand - get_temp_registers(instr);
+   instr = block->instructions[clause_end_idx].get();
+   RegisterDemand clause_end_demand = instr->register_demand - get_temp_registers(instr);
+   instr = block->instructions[insert_idx].get();
+   RegisterDemand insert_demand = instr->register_demand - get_temp_registers(instr);
+
+   /* RegisterDemand changes caused by the clause. */
+   RegisterDemand clause_diff = clause_end_demand - clause_begin_demand;
+   /* RegisterDemand changes caused by the instructions being moved over. */
+   RegisterDemand insert_diff = insert_demand - clause_end_demand;
+
+   /* Check the new demand of the instructions being moved over. */
+   if (RegisterDemand(cursor.total_demand - clause_diff).exceeds(max_registers))
       return move_fail_pressure;
 
-   /* New demand for the moved instruction */
-   const RegisterDemand temp = get_temp_registers(candidate.get());
-   const RegisterDemand temp2 =
-      get_temp_registers(block->instructions[cursor.insert_idx_clause - 1].get());
-   const RegisterDemand new_demand =
-      block->instructions[cursor.insert_idx_clause - 1]->register_demand - temp2 + temp;
-
-   if (new_demand.exceeds(max_registers))
+   /* Check max demand for the moved clause instructions. */
+   if (RegisterDemand(max_clause_demand + insert_diff).exceeds(max_registers))
       return move_fail_pressure;
 
-   /* move the candidate below the memory load */
-   move_element(block->instructions.begin(), cursor.source_idx, cursor.insert_idx_clause);
-   cursor.insert_idx_clause--;
+   /* Update register demand. */
+   for (int i = clause_begin_idx + 1; i <= clause_end_idx; i++)
+      block->instructions[i]->register_demand += insert_diff;
+   for (int i = clause_end_idx + 1; i <= insert_idx; i++)
+      block->instructions[i]->register_demand -= clause_diff;
 
-   /* update register pressure */
-   for (int i = cursor.source_idx; i < cursor.insert_idx_clause; i++)
-      block->instructions[i]->register_demand -= candidate_diff;
-   block->instructions[cursor.insert_idx_clause]->register_demand = new_demand;
+   /* Move the clause before the memory instruction. */
+   move_element(block->instructions.begin(), clause_begin_idx + 1, cursor.insert_idx_clause,
+                clause_size);
 
-   /* Update demand for the instructions before the clause. */
-   cursor.total_demand -= candidate_diff;
+   cursor.source_idx = clause_begin_idx;
+   cursor.insert_idx_clause -= clause_size;
+   cursor.total_demand -= clause_diff;
 
-   cursor.source_idx--;
-   cursor.verify_invariants(block);
    return move_success;
 }
 
@@ -964,30 +967,28 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
          continue;
       }
 
-      Instruction* candidate_ptr = candidate.get();
       if (part_of_clause) {
-         if (ctx.mv.downwards_move_clause(cursor) != move_success)
-            break;
-         add_to_hazard_query(&indep_hq, candidate_ptr);
-         only_clauses = true;
-      } else {
-         MoveResult res = ctx.mv.downwards_move(cursor);
-         if (res == move_fail_ssa || res == move_fail_rar) {
-            add_to_hazard_query(&indep_hq, candidate.get());
-            add_to_hazard_query(&clause_hq, candidate.get());
-            ctx.mv.downwards_skip(cursor);
-            continue;
-         } else if (res == move_fail_pressure) {
-            only_clauses = true;
-            add_to_hazard_query(&indep_hq, candidate.get());
-            add_to_hazard_query(&clause_hq, candidate.get());
-            ctx.mv.downwards_skip(cursor);
-            continue;
-         }
-         k++;
-         if (candidate_idx < ctx.last_SMEM_dep_idx)
-            ctx.last_SMEM_stall++;
+         ctx.mv.downwards_move_clause(cursor);
+         break;
       }
+
+      MoveResult res = ctx.mv.downwards_move(cursor);
+      if (res == move_fail_ssa || res == move_fail_rar) {
+         add_to_hazard_query(&indep_hq, candidate.get());
+         add_to_hazard_query(&clause_hq, candidate.get());
+         ctx.mv.downwards_skip(cursor);
+         continue;
+      } else if (res == move_fail_pressure) {
+         only_clauses = true;
+         add_to_hazard_query(&indep_hq, candidate.get());
+         add_to_hazard_query(&clause_hq, candidate.get());
+         ctx.mv.downwards_skip(cursor);
+         continue;
+      }
+      k++;
+
+      if (candidate_idx < ctx.last_SMEM_dep_idx)
+         ctx.last_SMEM_stall++;
    }
 
    /* find the first instruction depending on current or find another VMEM */
@@ -1184,7 +1185,6 @@ schedule_VMEM_store(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    init_hazard_query(ctx, &hq);
 
    DownwardsCursor cursor = ctx.mv.downwards_init(idx, true, true);
-   int skip = 0;
 
    for (int16_t k = 0; k < VMEM_STORE_CLAUSE_MAX_GRAB_DIST;) {
       aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
@@ -1202,11 +1202,9 @@ schedule_VMEM_store(sched_ctx& ctx, Block* block, Instruction* current, int idx)
          break;
       if (ctx.mv.downwards_move_clause(cursor) != move_success)
          break;
-
-      skip++;
    }
 
-   return skip;
+   return cursor.insert_idx - cursor.insert_idx_clause - 1;
 }
 
 void
