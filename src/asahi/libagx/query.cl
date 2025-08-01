@@ -8,6 +8,18 @@
 #include "compiler/libcl/libcl_vk.h"
 #include "query.h"
 
+static inline global uint64_t *
+query_report(global uint64_t *results, global uint16_t *oq_index,
+             uint reports_per_query, uint query)
+{
+   /* For occlusion queries, results[] points to the device global heap. We
+    * need to remap indices according to the query pool's allocation.
+    */
+   uint result_index = oq_index ? oq_index[query] : query;
+
+   return results + (result_index * reports_per_query);
+}
+
 KERNEL(32)
 libagx_copy_query(global uint32_t *availability, global uint64_t *results,
                   global uint16_t *oq_index, uint64_t dst_addr,
@@ -24,15 +36,12 @@ libagx_copy_query(global uint32_t *availability, global uint64_t *results,
    else
       available = (results[query] != LIBAGX_QUERY_UNAVAILABLE);
 
-   if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
-      /* For occlusion queries, results[] points to the device global heap. We
-       * need to remap indices according to the query pool's allocation.
-       */
-      uint result_index = oq_index ? oq_index[query] : query;
-      uint idx = result_index * reports_per_query;
+   global uint64_t *report =
+      query_report(results, oq_index, reports_per_query, query);
 
+   if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
       for (unsigned i = 0; i < reports_per_query; ++i) {
-         vk_write_query(dst, i, flags, results[idx + i]);
+         vk_write_query(dst, i, flags, report[i]);
       }
    }
 
