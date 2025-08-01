@@ -3033,6 +3033,8 @@ optimizations += [
     ('bcsel', a, ('pack_half_2x16_rtz_split', b, d), ('pack_half_2x16_rtz_split', c, e))),
    (('pack_half_2x16_rtz_split', ('bcsel(is_used_once)', a, '#b', c), ('bcsel(is_used_once)', a, '#d', e)),
     ('bcsel', a, ('pack_half_2x16_rtz_split', b, d), ('pack_half_2x16_rtz_split', c, e))),
+
+   (('pack_half_2x16_rtz_split', ('b2f', 'a@1'), ('b2f', a)), ('bcsel', a, 0x3c003c00, 0)),
 ]
 
 # Some operations such as iadd have the property that the bottom N bits of the
