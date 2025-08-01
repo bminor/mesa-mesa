@@ -3942,6 +3942,11 @@ nir_function_impl_add_variable(nir_function_impl *impl, nir_variable *var)
    exec_list_push_tail(&impl->locals, &var->node);
 }
 
+void nir_variable_set_name(nir_variable *var, const char *name);
+void nir_variable_set_namef(nir_variable *var, const char *fmt, ...) PRINTFLIKE(2, 3);
+void nir_variable_append_namef(nir_variable *var, const char *fmt, ...) PRINTFLIKE(2, 3);
+void nir_variable_steal_name(nir_variable *dst, nir_variable *src);
+
 /** creates a variable, sets a few defaults, and adds it to the list */
 nir_variable *nir_variable_create(nir_shader *shader,
                                   nir_variable_mode mode,

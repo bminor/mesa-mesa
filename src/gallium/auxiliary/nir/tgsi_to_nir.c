@@ -301,7 +301,7 @@ ttn_emit_declaration(struct ttn_compile *c)
          case TGSI_FILE_INPUT:
             var->data.read_only = true;
             var->data.mode = nir_var_shader_in;
-            var->name = ralloc_asprintf(var, "in_%d", idx);
+            nir_variable_set_namef(var, "in_%d", idx);
 
             if (c->scan->processor == PIPE_SHADER_FRAGMENT) {
                if (decl->Semantic.Name == TGSI_SEMANTIC_FACE) {
@@ -359,7 +359,7 @@ ttn_emit_declaration(struct ttn_compile *c)
                                             is_array ? array_size : 0);
 
             var->data.mode = nir_var_shader_out;
-            var->name = ralloc_asprintf(var, "out_%d", idx);
+            nir_variable_set_namef(var, "out_%d", idx);
             var->data.index = 0;
             var->data.interpolation =
                ttn_translate_interp_mode(decl->Interp.Interpolate);
@@ -446,7 +446,7 @@ ttn_emit_declaration(struct ttn_compile *c)
             break;
          case TGSI_FILE_CONSTANT:
             var->data.mode = nir_var_uniform;
-            var->name = ralloc_asprintf(var, "uniform_%d", idx);
+            nir_variable_set_namef(var, "uniform_%d", idx);
             var->data.location = idx;
             break;
          default:

@@ -271,7 +271,7 @@ create_or_update_packed_varying(struct lower_packed_varyings_state *state,
       assert(name);
 
       nir_variable *packed_var = rzalloc(state->shader, nir_variable);
-      packed_var->name = ralloc_asprintf(packed_var, "packed:%s", name);
+      nir_variable_set_namef(packed_var, "packed:%s", name);
       packed_var->data.mode = state->mode;
 
       bool is_interpolation_flat =
@@ -316,7 +316,7 @@ create_or_update_packed_varying(struct lower_packed_varyings_state *state,
        */
       if (state->gs_input_vertices == 0 || vertex_index == 0) {
          assert(name);
-         ralloc_asprintf_append((char **) &var->name, ",%s", name);
+         nir_variable_append_namef(var, ",%s", name);
       }
    }
 }

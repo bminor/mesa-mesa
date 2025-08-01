@@ -270,7 +270,7 @@ lower_named_interface_blocks(struct gl_linked_shader *sh)
                glsl_get_struct_field_data(iface_t, i);
 
             nir_variable *new_var = rzalloc(sh->Program->nir, nir_variable);
-            new_var->name = ralloc_strdup(new_var, field_name);
+            nir_variable_set_name(new_var, field_name);
             if (!glsl_type_is_array(var->type)) {
                new_var->type =  glsl_get_struct_field(iface_t, i);
             } else {

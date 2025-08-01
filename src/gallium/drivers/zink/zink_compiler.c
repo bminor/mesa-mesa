@@ -1111,8 +1111,7 @@ zink_create_quads_emulation_gs(const nir_shader_compiler_options *options,
          snprintf(name, sizeof(name), "in_%d", var->data.driver_location);
 
       nir_variable *in = nir_variable_clone(var, nir);
-      ralloc_free(in->name);
-      in->name = ralloc_strdup(in, name);
+      nir_variable_set_name(in, name);
       in->type = glsl_array_type(var->type, 4, false);
       in->data.mode = nir_var_shader_in;
       nir_shader_add_variable(nir, in);
@@ -1123,8 +1122,7 @@ zink_create_quads_emulation_gs(const nir_shader_compiler_options *options,
          snprintf(name, sizeof(name), "out_%d", var->data.driver_location);
 
       nir_variable *out = nir_variable_clone(var, nir);
-      ralloc_free(out->name);
-      out->name = ralloc_strdup(out, name);
+      nir_variable_set_name(out, name);
       out->data.mode = nir_var_shader_out;
       nir_shader_add_variable(nir, out);
 
@@ -2063,7 +2061,7 @@ decompose_attribs(nir_shader *nir, uint32_t decomposed_attrs, uint32_t decompose
       state.needs_w = (decomposed_attrs_without_w & BITFIELD_BIT(location)) != 0 && num_components == 4;
       for (unsigned i = 0; i < (state.needs_w ? num_components - 1 : num_components); i++) {
          split[i+1] = nir_variable_clone(var, nir);
-         split[i+1]->name = ralloc_asprintf(nir, "%s_split%u", var->name, i);
+         nir_variable_set_namef(split[i+1], "%s_split%u", var->name, i);
          if (decomposed_attrs_without_w & BITFIELD_BIT(location))
             split[i+1]->type = !i && num_components == 4 ? var->type : new_type;
          else
@@ -2222,9 +2220,9 @@ get_bo_var(nir_shader *shader, struct bo_vars *bo, bool ssbo, nir_src *src, unsi
       }
       var = nir_variable_clone(var, shader);
       if (ssbo)
-         var->name = ralloc_asprintf(shader, "%s@%u", "ssbos", bit_size);
+         nir_variable_set_namef(var, "%s@%u", "ssbos", bit_size);
       else
-         var->name = ralloc_asprintf(shader, "%s@%u", idx ? "ubos" : "uniform_0", bit_size);
+         nir_variable_set_namef(var, "%s@%u", idx ? "ubos" : "uniform_0", bit_size);
       *ptr = var;
       nir_shader_add_variable(shader, var);
 

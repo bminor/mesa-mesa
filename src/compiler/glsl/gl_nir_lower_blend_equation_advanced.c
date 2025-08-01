@@ -218,7 +218,7 @@ add_temp_var(nir_builder *b, char *name, const struct glsl_type *type)
 {
    nir_variable *var = rzalloc(b->shader, nir_variable);
    var->type = type;
-   var->name = ralloc_strdup(var, name);
+   nir_variable_set_name(var, name);
    var->data.mode = nir_var_function_temp;
    nir_function_impl_add_variable(b->impl, var);
 

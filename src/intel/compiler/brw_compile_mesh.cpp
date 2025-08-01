@@ -269,8 +269,7 @@ brw_nir_lower_mesh_primitive_count(nir_shader *nir)
          nir_create_variable_with_location(nir, nir_var_shader_out,
                                            VARYING_SLOT_PRIMITIVE_COUNT,
                                            glsl_uint_type());
-      final_primitive_count->name = ralloc_strdup(final_primitive_count,
-                                                  "gl_PrimitiveCountNV");
+      nir_variable_set_name(final_primitive_count, "gl_PrimitiveCountNV");
       final_primitive_count->data.interpolation = INTERP_MODE_NONE;
 
       nir_store_var(b, final_primitive_count,

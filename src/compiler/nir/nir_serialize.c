@@ -366,7 +366,7 @@ read_variable(read_ctx *ctx)
 
    if (flags.u.has_name) {
       const char *name = blob_read_string(ctx->blob);
-      var->name = ralloc_strdup(var, name);
+      nir_variable_set_name(var, name);
    } else {
       var->name = NULL;
    }

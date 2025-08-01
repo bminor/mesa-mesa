@@ -154,7 +154,7 @@ nir_variable_clone(const nir_variable *var, nir_shader *shader)
    nir_variable *nvar = rzalloc(shader, nir_variable);
 
    nvar->type = var->type;
-   nvar->name = ralloc_strdup(nvar, var->name);
+   nir_variable_set_name(nvar, var->name);
    nvar->data = var->data;
    nvar->num_state_slots = var->num_state_slots;
    if (var->num_state_slots) {

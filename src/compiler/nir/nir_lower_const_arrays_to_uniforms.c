@@ -207,8 +207,8 @@ lower_const_array_to_uniform(nir_shader *shader, struct var_info *info,
    uni->data.read_only = true;
    uni->data.mode = nir_var_uniform;
    uni->type = info->var->type;
-   uni->name = ralloc_asprintf(uni, "constarray_%x_%u",
-                               *const_count, shader->info.stage);
+   nir_variable_set_namef(uni,"constarray_%x_%u",
+                          *const_count, shader->info.stage);
 
    nir_shader_add_variable(shader, uni);
 

@@ -447,7 +447,7 @@ nir_visitor::visit(ir_variable *ir)
 
    nir_variable *var = rzalloc(shader, nir_variable);
    var->type = ir->type;
-   var->name = ralloc_strdup(var, ir->name);
+   nir_variable_set_name(var, ir->name);
 
    var->data.assigned = ir->data.assigned;
    var->data.read_only = ir->data.read_only;

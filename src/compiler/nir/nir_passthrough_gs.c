@@ -174,8 +174,7 @@ nir_create_passthrough_gs(const nir_shader_compiler_options *options,
          snprintf(name, sizeof(name), "in_%d", var->data.driver_location);
 
       nir_variable *in = nir_variable_clone(var, nir);
-      ralloc_free(in->name);
-      in->name = ralloc_strdup(in, name);
+      nir_variable_set_name(in, name);
       in->type = glsl_array_type(var->type, 6, false);
       in->data.mode = nir_var_shader_in;
       nir_shader_add_variable(nir, in);
@@ -195,8 +194,7 @@ nir_create_passthrough_gs(const nir_shader_compiler_options *options,
          snprintf(name, sizeof(name), "out_%d", var->data.driver_location);
 
       nir_variable *out = nir_variable_clone(var, nir);
-      ralloc_free(out->name);
-      out->name = ralloc_strdup(out, name);
+      nir_variable_set_name(out, name);
       out->data.mode = nir_var_shader_out;
       nir_shader_add_variable(nir, out);
 

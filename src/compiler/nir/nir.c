@@ -267,12 +267,50 @@ nir_shader_add_variable(nir_shader *shader, nir_variable *var)
    exec_list_push_tail(&shader->variables, &var->node);
 }
 
+void
+nir_variable_set_name(nir_variable *var, const char *name)
+{
+   if (var->name)
+      ralloc_free(var->name);
+
+   var->name = ralloc_strdup(var, name);
+}
+
+void
+nir_variable_set_namef(nir_variable *var, const char *fmt, ...)
+{
+   if (var->name)
+      ralloc_free(var->name);
+
+   va_list args;
+   va_start(args, fmt);
+   var->name = ralloc_vasprintf(var, fmt, args);
+   va_end(args);
+}
+
+void
+nir_variable_append_namef(nir_variable *var, const char *fmt, ...)
+{
+   va_list args;
+   va_start(args, fmt);
+   ralloc_vasprintf_append(&var->name, fmt, args);
+   va_end(args);
+}
+
+void
+nir_variable_steal_name(nir_variable *dst, nir_variable *src)
+{
+   ralloc_steal(dst, src->name);
+   dst->name = src->name;
+   src->name = NULL;
+}
+
 nir_variable *
 nir_variable_create(nir_shader *shader, nir_variable_mode mode,
                     const struct glsl_type *type, const char *name)
 {
    nir_variable *var = rzalloc(shader, nir_variable);
-   var->name = ralloc_strdup(var, name);
+   nir_variable_set_name(var, name);
    var->type = type;
    var->data.mode = mode;
    var->data.how_declared = nir_var_declared_normally;
@@ -297,7 +335,7 @@ nir_local_variable_create(nir_function_impl *impl,
                           const struct glsl_type *type, const char *name)
 {
    nir_variable *var = rzalloc(impl->function->shader, nir_variable);
-   var->name = ralloc_strdup(var, name);
+   nir_variable_set_name(var, name);
    var->type = type;
    var->data.mode = nir_var_function_temp;
 
