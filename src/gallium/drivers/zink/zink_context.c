@@ -3322,6 +3322,12 @@ zink_batch_no_rp_safe(struct zink_context *ctx)
       ctx->in_rp = false;
    }
    assert(!ctx->in_rp);
+   for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++)
+      ctx->dynamic_fb.attachments[i].resolveImageView = VK_NULL_HANDLE;
+   if (ctx->fb_state.zsbuf->texture) {
+      ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageView = VK_NULL_HANDLE;
+      ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS + 1].resolveImageView = VK_NULL_HANDLE;
+   }
 }
 
 void
