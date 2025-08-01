@@ -48,7 +48,7 @@ To build Rusticl you need to satisfy the following build dependencies:
 
 The minimum versions to build Rusticl are:
 
--  Rust: 1.78
+-  Rust: 1.82
 -  Meson: 1.7.0
 -  Bindgen: 0.71.1
 -  LLVM: 15.0.0 (recommended 19.0.0)

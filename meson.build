@@ -769,8 +769,8 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
   rustc = meson.get_compiler('rust')
   rust = import('rust')
 
-  if rustc.version().version_compare('< 1.78')
-    error('Mesa requires Rust 1.78.0 or newer')
+  if rustc.version().version_compare('< 1.82')
+    error('Mesa requires Rust 1.82.0 or newer')
   endif
 
   # bindgen 0.71 is the first version that knows about `editions`
