@@ -5136,6 +5136,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       break;
    }
    case nir_intrinsic_end_invocation_interlock: {
+      /* The `done` export exits the POPS ordered section on GFX11+. */
       if (ctx->options->gfx_level < GFX11)
          bld.pseudo(aco_opcode::p_pops_gfx9_ordered_section_done);
       break;
