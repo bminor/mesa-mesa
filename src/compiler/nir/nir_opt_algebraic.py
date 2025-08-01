@@ -3015,6 +3015,19 @@ optimizations += [
     ('fmax', ('f2f16', ('vec2', a, c)), ('f2f16', ('vec2', b, d))), 'options->support_16bit_alu'),
    (('f2f16', ('vec2(is_used_once)', ('fmin(is_used_once)', a, '#b'), ('fmin(is_used_once)', c, '#d'))),
     ('fmin', ('f2f16', ('vec2', a, c)), ('f2f16', ('vec2', b, d))), 'options->support_16bit_alu'),
+
+   (('pack_half_2x16_rtz_split', ('fmax(is_used_once)', a, '#b'), ('fmax(is_used_once)', c, '#d')),
+    ('pack_32_2x16', ('fmax', ('unpack_32_2x16', ('pack_half_2x16_rtz_split', a, c)), ('unpack_32_2x16', ('pack_half_2x16_rtz_split', b, d)))),
+    'options->vectorize_vec2_16bit'),
+   (('pack_half_2x16_rtz_split', ('fmin(is_used_once)', a, '#b'), ('fmin(is_used_once)', c, '#d')),
+    ('pack_32_2x16', ('fmin', ('unpack_32_2x16', ('pack_half_2x16_rtz_split', a, c)), ('unpack_32_2x16', ('pack_half_2x16_rtz_split', b, d)))),
+    'options->vectorize_vec2_16bit'),
+   (('pack_half_2x16_rtz_split', ('fneg(is_used_once)', ('fmax(is_used_once)', a, '#b')), ('fneg(is_used_once)', ('fmax(is_used_once)', c, '#d'))),
+    ('pack_32_2x16', ('fmin', ('fneg', ('unpack_32_2x16', ('pack_half_2x16_rtz_split', a, c))), ('fneg', ('unpack_32_2x16', ('pack_half_2x16_rtz_split', b, d))))),
+    'options->vectorize_vec2_16bit'),
+   (('pack_half_2x16_rtz_split', ('fneg(is_used_once)', ('fmin(is_used_once)', a, '#b')), ('fneg(is_used_once)', ('fmin(is_used_once)', c, '#d'))),
+    ('pack_32_2x16', ('fmax', ('fneg', ('unpack_32_2x16', ('pack_half_2x16_rtz_split', a, c))), ('fneg', ('unpack_32_2x16', ('pack_half_2x16_rtz_split', b, d))))),
+    'options->vectorize_vec2_16bit'),
 ]
 
 # Some operations such as iadd have the property that the bottom N bits of the
