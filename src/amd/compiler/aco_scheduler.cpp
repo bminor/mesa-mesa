@@ -260,6 +260,12 @@ MoveResult
 MoveState::downwards_move_clause(DownwardsCursor& cursor)
 {
    assert(improved_rar);
+   if (cursor.source_idx == cursor.insert_idx_clause - 1) {
+      cursor.insert_idx_clause--;
+      cursor.source_idx--;
+      return move_success;
+   }
+
    aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
 
    /* check if one of candidate's operands is killed by depending instruction */
@@ -303,12 +309,9 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    for (int i = cursor.source_idx; i < cursor.insert_idx_clause; i++)
       block->instructions[i]->register_demand -= candidate_diff;
    block->instructions[cursor.insert_idx_clause]->register_demand = new_demand;
-   if (cursor.source_idx != cursor.insert_idx_clause) {
-      /* Update demand if we moved over any instructions before the clause */
-      cursor.total_demand -= candidate_diff;
-   } else {
-      assert(cursor.total_demand == RegisterDemand{});
-   }
+
+   /* Update demand for the instructions before the clause. */
+   cursor.total_demand -= candidate_diff;
 
    cursor.source_idx--;
    cursor.verify_invariants(block);
