@@ -51,8 +51,6 @@ struct DownwardsCursor {
    RegisterDemand clause_demand;
    /* Maximum demand of instructions from source_idx to insert_idx_clause (both exclusive) */
    RegisterDemand total_demand;
-   /* Register demand immediately before the insert_idx_clause. */
-   RegisterDemand insert_demand_clause;
    /* Register demand immediately before the insert_idx. */
    RegisterDemand insert_demand;
 
@@ -193,9 +191,6 @@ MoveState::downwards_init(int current_idx, bool improved_rar_, bool may_form_cla
    DownwardsCursor cursor(current_idx, block->instructions[current_idx]->register_demand);
    RegisterDemand temp = get_temp_registers(block->instructions[cursor.insert_idx - 1].get());
    cursor.insert_demand = block->instructions[cursor.insert_idx - 1]->register_demand - temp;
-   temp = get_temp_registers(block->instructions[cursor.insert_idx_clause - 1].get());
-   cursor.insert_demand_clause =
-      block->instructions[cursor.insert_idx_clause - 1]->register_demand - temp;
 
    cursor.verify_invariants(block);
    return cursor;
@@ -260,7 +255,6 @@ MoveState::downwards_move(DownwardsCursor& cursor)
 
    cursor.clause_demand -= candidate_diff;
    cursor.insert_demand -= candidate_diff;
-   cursor.insert_demand_clause -= candidate_diff;
 
    cursor.source_idx--;
    cursor.verify_invariants(block);
@@ -301,7 +295,11 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
 
    /* New demand for the moved instruction */
    const RegisterDemand temp = get_temp_registers(candidate.get());
-   const RegisterDemand new_demand = cursor.insert_demand_clause + temp;
+   const RegisterDemand temp2 =
+      get_temp_registers(block->instructions[cursor.insert_idx_clause - 1].get());
+   const RegisterDemand new_demand =
+      block->instructions[cursor.insert_idx_clause - 1]->register_demand - temp2 + temp;
+
    if (new_demand.exceeds(max_registers))
       return move_fail_pressure;
 
@@ -320,7 +318,6 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
       assert(cursor.total_demand == RegisterDemand{});
    }
    cursor.clause_demand.update(new_demand);
-   cursor.insert_demand_clause -= candidate_diff;
 
    cursor.source_idx--;
    cursor.verify_invariants(block);
