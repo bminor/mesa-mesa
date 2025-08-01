@@ -865,7 +865,7 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
       /* Disable pushing constants for this stage if none were loaded in the
        * shader.  If all stages don't load their declared push constants, as
        * is often the case under zink, then we could additionally skip
-       * emitting REG_A7XX_SP_SHARED_CONSTANT_GFX_0 entirely.
+       * emitting REG_A7XX_SP_SHARED_CONSTANT_GFX entirely.
        */
       if (!shader_uses_push_consts(shader))
          const_state->push_consts = (struct tu_push_constant_range) {};
@@ -1894,7 +1894,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
       }
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_0_DISABLE(0), 4);
+   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(0), 4);
    tu_cs_emit(cs, ~varmask[0]);
    tu_cs_emit(cs, ~varmask[1]);
    tu_cs_emit(cs, ~varmask[2]);

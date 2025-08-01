@@ -791,7 +791,7 @@ tu6_emit_vpc_varying_modes(struct tu_cs *cs,
       tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_INTERP_MODE_MODE(0), interp_regs);
       tu_cs_emit_array(cs, interp_modes, interp_regs);
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_REPLACE_MODE_0_MODE(0), interp_regs);
+      tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_REPLACE_MODE_MODE(0), interp_regs);
       tu_cs_emit_array(cs, ps_repl_modes, interp_regs);
    }
 }

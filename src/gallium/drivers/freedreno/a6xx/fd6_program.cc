@@ -652,7 +652,7 @@ emit_vpc(struct fd_ringbuffer *ring, const struct program_builder *b)
 
    emit_vs_system_values(ring, b);
 
-   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_0_DISABLE(0), 4);
+   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(0), 4);
    OUT_RING(ring, ~linkage.varmask[0]);
    OUT_RING(ring, ~linkage.varmask[1]);
    OUT_RING(ring, ~linkage.varmask[2]);
@@ -1376,9 +1376,9 @@ emit_interp_state(struct fd_ringbuffer *ring, const struct fd6_program_state *st
    for (int i = 0; i < 8; i++)
       OUT_RING(ring, vinterp[i]); /* VPC_VARYING_INTERP_MODE[i].MODE */
 
-   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_REPLACE_MODE_0_MODE(0), 8);
+   OUT_PKT4(ring, REG_A6XX_VPC_VARYING_REPLACE_MODE_MODE(0), 8);
    for (int i = 0; i < 8; i++)
-      OUT_RING(ring, vpsrepl[i]); /* VPC_VARYING_REPLACE_MODE_0[i] */
+      OUT_RING(ring, vpsrepl[i]); /* VPC_VARYING_REPLACE_MODE[i] */
 }
 
 template <chip CHIP>

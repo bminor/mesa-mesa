@@ -6117,7 +6117,7 @@ tu7_emit_shared_preamble_consts(
    const struct tu_push_constant_range *shared_consts,
    uint32_t *push_constants)
 {
-   tu_cs_emit_pkt4(cs, REG_A7XX_SP_SHARED_CONSTANT_GFX_0(shared_consts->lo_dwords),
+   tu_cs_emit_pkt4(cs, REG_A7XX_SP_SHARED_CONSTANT_GFX(shared_consts->lo_dwords),
                    shared_consts->dwords);
    tu_cs_emit_array(cs, push_constants + shared_consts->lo_dwords,
                     shared_consts->dwords);

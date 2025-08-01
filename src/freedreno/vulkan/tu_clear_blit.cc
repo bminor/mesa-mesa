@@ -888,7 +888,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
 
    /* REPL_MODE for varying with RECTLIST (2 vertices only) */
    tu_cs_emit_regs(cs, A6XX_VPC_VARYING_INTERP_MODE_MODE(0, 0));
-   tu_cs_emit_regs(cs, A6XX_VPC_VARYING_REPLACE_MODE_0_MODE(0, 2 << 2 | 1 << 0));
+   tu_cs_emit_regs(cs, A6XX_VPC_VARYING_REPLACE_MODE_MODE(0, 2 << 2 | 1 << 0));
 
    tu6_emit_vs<CHIP>(cs, vs, 0);
    tu6_emit_hs<CHIP>(cs, NULL);
