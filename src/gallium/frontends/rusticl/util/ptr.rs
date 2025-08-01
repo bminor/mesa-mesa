@@ -98,28 +98,6 @@ impl<T> CheckedPtr<T> for *mut T {
     }
 }
 
-// While std::mem::offset_of!() is stable from 1.77.0, support for nested fields
-// (required in some rusticl cases) wasn't stabilized until 1.82.0.
-// from https://internals.rust-lang.org/t/discussion-on-offset-of/7440/2
-#[macro_export]
-macro_rules! offset_of {
-    ($Struct:path, $($field:ident).+ $(,)?) => {{
-        // Using a separate function to minimize unhygienic hazards
-        // (e.g. unsafety of #[repr(packed)] field borrows).
-        // Uncomment `const` when `const fn`s can juggle pointers.
-        /*const*/
-        fn offset() -> usize {
-            let u = std::mem::MaybeUninit::<$Struct>::uninit();
-            let f = unsafe { &(*u.as_ptr()).$($field).+ };
-            let o = (f as *const _ as usize).wrapping_sub(&u as *const _ as usize);
-            // Triple check that we are within `u` still.
-            assert!((0..=std::mem::size_of_val(&u)).contains(&o));
-            o
-        }
-        offset()
-    }};
-}
-
 // Adapted from libstd since std::ptr::is_aligned_to is still unstable
 // See https://github.com/rust-lang/rust/issues/96284
 #[must_use]

@@ -412,7 +412,7 @@ macro_rules! impl_cl_type_trait_base {
                     return Err($err);
                 }
 
-                let offset = ::mesa_rust_util::offset_of!($t, $($field).+);
+                let offset = ::std::mem::offset_of!($t, $($field).+);
                 // SAFETY: We offset the pointer back from the ICD specified base type to our
                 //         internal type.
                 let obj_ptr: *const $t = unsafe { self.byte_sub(offset) }.cast();
@@ -427,7 +427,7 @@ macro_rules! impl_cl_type_trait_base {
                 if ptr.is_null() {
                     return std::ptr::null_mut();
                 }
-                let offset = ::mesa_rust_util::offset_of!($t, $($field).+);
+                let offset = ::std::mem::offset_of!($t, $($field).+);
                 // SAFETY: The resulting pointer is safe as we simply offset into the ICD specified
                 //         base type.
                 unsafe { ptr.byte_add(offset) as Self }
