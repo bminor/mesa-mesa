@@ -29,12 +29,19 @@
 #include "vpe10_plane_desc_writer.h"
 #include "vpe10_cmd_builder.h"
 
+#define LOG_INPUT_PLANE  1
+#define LOG_OUTPUT_PLANE 0
+
 /***** Internal helpers *****/
 static void get_np_and_subop(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,
     struct vpe10_plane_desc_header *header);
 
 static enum VPE_PLANE_CFG_ELEMENT_SIZE vpe_get_element_size(
     enum vpe_surface_pixel_format format, int plane_idx);
+
+static void log_plane_desc_event(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,
+    struct vpe10_plane_desc_header *header, struct vpe10_plane_desc_src *src,
+    struct vpe10_plane_desc_dst *dst, uint32_t cmd_idx, uint32_t plane_idx, bool input_flag);
 
 void vpe10_construct_cmd_builder(struct vpe_priv *vpe_priv, struct cmd_builder *builder)
 {
@@ -259,6 +266,8 @@ enum vpe_status vpe10_build_plane_descriptor(
         src.elem_size    = (uint8_t)(vpe_get_element_size(surface_info->format, 0));
 
         plane_desc_writer->add_source(&vpe_priv->plane_desc_writer, &src, true);
+        // log input event - plane0
+        log_plane_desc_event(vpe_priv, cmd_info, &header, &src, &dst, cmd_idx, 0, LOG_INPUT_PLANE);
 
         if (vpe_is_dual_plane_format(surface_info->format)) {
             addrloc = &surface_info->address.video_progressive.chroma_addr;
@@ -273,6 +282,9 @@ enum vpe_status vpe10_build_plane_descriptor(
             src.elem_size    = (uint8_t)(vpe_get_element_size(surface_info->format, 1));
 
             plane_desc_writer->add_source(&vpe_priv->plane_desc_writer, &src, false);
+            // log input event - plane1
+            log_plane_desc_event(
+                vpe_priv, cmd_info, &header, &src, &dst, cmd_idx, 1, LOG_INPUT_PLANE);
         }
     } else {
         addrloc = &surface_info->address.grph.addr;
@@ -287,8 +299,9 @@ enum vpe_status vpe10_build_plane_descriptor(
         src.elem_size    = (uint8_t)(vpe_get_element_size(surface_info->format, 0));
 
         plane_desc_writer->add_source(&vpe_priv->plane_desc_writer, &src, true);
+        // log input event - plane0
+        log_plane_desc_event(vpe_priv, cmd_info, &header, &src, &dst, cmd_idx, 0, LOG_INPUT_PLANE);
     }
-
     surface_info = &vpe_priv->output_ctx.surface;
 
     VPE_ASSERT(surface_info->address.type == VPE_PLN_ADDR_TYPE_GRAPHICS);
@@ -314,7 +327,30 @@ enum vpe_status vpe10_build_plane_descriptor(
 
     plane_desc_writer->add_destination(&vpe_priv->plane_desc_writer, &dst, true);
 
+    // log output event - plane0
+    log_plane_desc_event(vpe_priv, cmd_info, &header, &src, &dst, cmd_idx, 0, LOG_OUTPUT_PLANE);
+
     return vpe_priv->plane_desc_writer.status;
+}
+
+// Function logs plane descriptor information like number of planes, plane
+// descriptor type, base address, pitch, viewport, swizzle, etc. to etw events
+static void log_plane_desc_event(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,
+    struct vpe10_plane_desc_header *header, struct vpe10_plane_desc_src *src,
+    struct vpe10_plane_desc_dst *dst, uint32_t cmd_idx, uint32_t plane_idx, bool input_flag)
+{
+    // check if event is for input or output plane
+    if (input_flag) {
+        vpe_event(VPE_EVENT_PLANE_DESC_INPUT, vpe_priv->pub.level,
+            vpe_priv->vpe_cmd_vector->num_elements, cmd_idx, cmd_info->num_inputs, 0,
+            (header->nps0 + 1), 0, 0, plane_idx, 0, 0, 0, src->base_addr_lo, src->base_addr_hi,
+            src->viewport_x, src->viewport_y, src->viewport_w, src->viewport_h, src->swizzle, 0, 0);
+    } else {
+        vpe_event(VPE_EVENT_PLANE_DESC_OUTPUT, vpe_priv->pub.level,
+            vpe_priv->vpe_cmd_vector->num_elements, cmd_idx, cmd_info->num_outputs, plane_idx,
+            (header->npd0 + 1), 0, 0, dst->base_addr_lo, dst->base_addr_hi, dst->viewport_x,
+            dst->viewport_y, dst->viewport_w, dst->viewport_h, dst->swizzle);
+    }
 }
 
 static void get_np_and_subop(struct vpe_priv *vpe_priv, struct vpe_cmd_info *cmd_info,
