@@ -5224,7 +5224,7 @@
         "description": "etnaviv: blt: Clear only requested color buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d3a5306b91565f04f86f1aa2c40cde58939a0bd9",
         "notes": null

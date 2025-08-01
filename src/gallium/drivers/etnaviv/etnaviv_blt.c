@@ -390,6 +390,9 @@ etna_clear_blt(struct pipe_context *pctx, unsigned buffers, const struct pipe_sc
          if (!surf)
             continue;
 
+         if (!(buffers & (PIPE_CLEAR_COLOR0 << idx)))
+            continue;
+
          etna_blit_clear_color_blt(pctx, idx, color);
 
          if (!etna_resource(surf->prsc)->explicit_flush)
