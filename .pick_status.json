@@ -3694,7 +3694,7 @@
         "description": "compiler/rust: Fix the DFS loop detection algorithm",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "741f7067f1fb5953e84bac0fcb5c6c7df588df48",
         "notes": null
