@@ -151,7 +151,7 @@ pub struct SSARef {
 
 #[cfg(target_arch = "x86_64")]
 const _: () = {
-    debug_assert!(std::mem::size_of::<SSARef>() == 16);
+    debug_assert!(size_of::<SSARef>() == 16);
 };
 
 impl SSARef {

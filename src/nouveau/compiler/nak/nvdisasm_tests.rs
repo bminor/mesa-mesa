@@ -7,7 +7,6 @@ use compiler::cfg::CFGBuilder;
 use rustc_hash::FxBuildHasher;
 
 use std::io::Write;
-use std::mem;
 use std::process;
 use std::process::Command;
 use std::slice;
@@ -22,7 +21,7 @@ fn run_nvdisasm(s: &Shader) -> String {
     let slice_u8: &[u8] = unsafe {
         slice::from_raw_parts(
             code.as_ptr() as *const u8,
-            code.len() * mem::size_of::<u32>(),
+            code.len() * size_of::<u32>(),
         )
     };
 

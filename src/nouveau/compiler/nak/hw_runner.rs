@@ -432,7 +432,7 @@ impl<'a> Runner {
         size = shader_offset + usize::try_from(shader.code_size).unwrap();
 
         let cb0_offset = size.next_multiple_of(256);
-        size = cb0_offset + std::mem::size_of::<CB0>();
+        size = cb0_offset + size_of::<CB0>();
 
         let data_offset = size.next_multiple_of(256);
         size = data_offset + data_size;
@@ -469,10 +469,7 @@ impl<'a> Runner {
         let mut qmd_cbufs: [nak_qmd_cbuf; 8] = Default::default();
         qmd_cbufs[0] = nak_qmd_cbuf {
             index: 0,
-            size: std::mem::size_of::<CB0>()
-                .next_multiple_of(256)
-                .try_into()
-                .unwrap(),
+            size: size_of::<CB0>().next_multiple_of(256).try_into().unwrap(),
             addr: cb0_addr,
         };
         let qmd_info = nak_qmd_info {
@@ -583,7 +580,7 @@ impl<'a> Runner {
         data: &mut [T],
     ) -> io::Result<()> {
         unsafe {
-            let stride = std::mem::size_of::<T>();
+            let stride = size_of::<T>();
             self.run_raw(
                 shader,
                 data.len().try_into().unwrap(),

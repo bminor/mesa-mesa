@@ -600,27 +600,27 @@ pub extern "C" fn nak_fill_qmd(
     unsafe {
         if dev.cls_compute >= clcdc0::BLACKWELL_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd5_0;
-            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            assert!(qmd_size == size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
         } else if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd4_0;
-            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            assert!(qmd_size == size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
         } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd3_0;
-            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            assert!(qmd_size == size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
         } else if dev.cls_compute >= clc3c0::VOLTA_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd2_2;
-            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            assert!(qmd_size == size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
         } else if dev.cls_compute >= clc0c0::PASCAL_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd2_1;
-            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            assert!(qmd_size == size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
         } else if dev.cls_compute >= cla0c0::KEPLER_COMPUTE_A {
             let qmd_out = qmd_out as *mut Qmd0_6;
-            assert!(qmd_size == std::mem::size_of_val(&*qmd_out));
+            assert!(qmd_size == size_of_val(&*qmd_out));
             qmd_out.write(fill_qmd(info, qmd_info));
         } else {
             panic!("Unknown shader model");
