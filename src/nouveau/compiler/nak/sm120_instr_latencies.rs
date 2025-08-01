@@ -428,6 +428,10 @@ impl SM120Latency {
                     || read_latency == RegLatencySM100::Hmma
                 {
                     RegLatencySM100::raw(write_latency, read_latency, false) + 9
+                } else if write_latency == RegLatencySM100::Imma
+                    || read_latency == RegLatencySM100::Imma
+                {
+                    RegLatencySM100::raw(write_latency, read_latency, false) + 5
                 } else {
                     RegLatencySM100::raw(write_latency, read_latency, false) + 1
                 }
