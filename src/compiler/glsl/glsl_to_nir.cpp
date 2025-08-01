@@ -1642,13 +1642,23 @@ nir_visitor::visit(ir_call *ir)
          nir_builder_instr_insert(&b, &instr->instr);
          break;
       }
+      case nir_intrinsic_begin_invocation_interlock: {
+         nir_builder_instr_insert(&b, &instr->instr);
+         nir_scoped_memory_barrier(&b, SCOPE_DEVICE, NIR_MEMORY_ACQUIRE,
+                                   nir_var_image | nir_var_mem_ssbo | nir_var_mem_global);
+         break;
+      }
+      case nir_intrinsic_end_invocation_interlock: {
+         nir_scoped_memory_barrier(&b, SCOPE_DEVICE, NIR_MEMORY_RELEASE,
+                                   nir_var_image | nir_var_mem_ssbo | nir_var_mem_global);
+         nir_builder_instr_insert(&b, &instr->instr);
+         break;
+      }
       case nir_intrinsic_shader_clock:
          nir_intrinsic_set_memory_scope(instr,
             ir->callee->intrinsic_id == ir_intrinsic_shader_clock ?
             SCOPE_SUBGROUP : SCOPE_DEVICE);
          FALLTHROUGH;
-      case nir_intrinsic_begin_invocation_interlock:
-      case nir_intrinsic_end_invocation_interlock:
       case nir_intrinsic_vote_ieq:
       case nir_intrinsic_vote_feq:
       case nir_intrinsic_vote_any:

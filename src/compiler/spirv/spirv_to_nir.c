@@ -6817,9 +6817,13 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
 
    case SpvOpBeginInvocationInterlockEXT:
       nir_begin_invocation_interlock(&b->nb);
+      nir_scoped_memory_barrier(&b->nb, SCOPE_DEVICE, NIR_MEMORY_ACQUIRE,
+                                nir_var_image | nir_var_mem_ssbo | nir_var_mem_global);
       break;
 
    case SpvOpEndInvocationInterlockEXT:
+      nir_scoped_memory_barrier(&b->nb, SCOPE_DEVICE, NIR_MEMORY_RELEASE,
+                                nir_var_image | nir_var_mem_ssbo | nir_var_mem_global);
       nir_end_invocation_interlock(&b->nb);
       break;
 
