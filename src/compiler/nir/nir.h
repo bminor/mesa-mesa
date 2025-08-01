@@ -6138,7 +6138,6 @@ typedef struct nir_lower_printf_options {
 } nir_lower_printf_options;
 
 bool nir_lower_printf(nir_shader *nir, const nir_lower_printf_options *options);
-bool nir_lower_printf_buffer(nir_shader *nir, uint64_t address, uint32_t size);
 
 /* This is here for unit tests. */
 bool nir_opt_comparison_pre_impl(nir_function_impl *impl);

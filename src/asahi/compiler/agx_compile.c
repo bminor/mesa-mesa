@@ -3890,6 +3890,22 @@ agx_preprocess_nir(nir_shader *nir)
    NIR_PASS(_, nir, agx_nir_lower_shared_bitsize);
 }
 
+static bool
+lower_printf_buffer(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_)
+{
+   uint64_t value = 0;
+   if (intr->intrinsic == nir_intrinsic_load_printf_buffer_address)
+      value = LIBAGX_PRINTF_BUFFER_ADDRESS;
+   else if (intr->intrinsic == nir_intrinsic_load_printf_buffer_size)
+      value = LIBAGX_PRINTF_BUFFER_SIZE;
+   else
+      return false;
+
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def_replace(&intr->def, nir_imm_intN_t(b, value, intr->def.bit_size));
+   return true;
+}
+
 void
 agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
                        struct agx_shader_part *out)
@@ -3910,8 +3926,8 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       info->tag_write_disable = !nir->info.writes_memory;
 
-   NIR_PASS(_, nir, nir_lower_printf_buffer, LIBAGX_PRINTF_BUFFER_ADDRESS,
-            LIBAGX_PRINTF_BUFFER_SIZE - 8);
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_printf_buffer,
+            nir_metadata_control_flow, NULL);
 
    NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);

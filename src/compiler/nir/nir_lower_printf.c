@@ -166,39 +166,6 @@ nir_lower_printf(nir_shader *nir, const nir_lower_printf_options *options)
                                      (void *)options);
 }
 
-struct buffer_opts {
-   uint64_t address;
-   uint32_t size;
-};
-
-static bool
-lower_printf_buffer(nir_builder *b, nir_intrinsic_instr *intr, void *_options)
-{
-   const struct buffer_opts *options = _options;
-
-   uint64_t value = 0;
-   if (intr->intrinsic == nir_intrinsic_load_printf_buffer_address)
-      value = options->address;
-   else if (intr->intrinsic == nir_intrinsic_load_printf_buffer_size)
-      value = options->size;
-
-   if (value == 0)
-      return false;
-
-   b->cursor = nir_before_instr(&intr->instr);
-   nir_def_replace(&intr->def, nir_imm_intN_t(b, value, intr->def.bit_size));
-   return true;
-}
-
-bool
-nir_lower_printf_buffer(nir_shader *nir, uint64_t address, uint32_t size)
-{
-   struct buffer_opts opts = { .address = address, .size = size };
-
-   return nir_shader_intrinsics_pass(nir, lower_printf_buffer,
-                                     nir_metadata_control_flow, &opts);
-}
-
 static void
 nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list aq)
 {
