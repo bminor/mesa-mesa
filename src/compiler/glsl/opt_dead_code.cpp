@@ -96,7 +96,6 @@ do_dead_code(ir_exec_list *instructions)
                }
 
                assignment_entry->link.remove();
-               free(assignment_entry);
             }
             progress = true;
 	 }

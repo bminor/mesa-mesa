@@ -44,6 +44,8 @@ struct assignment_entry {
 class ir_variable_refcount_entry
 {
 public:
+   DECLARE_LINEAR_ALLOC_CXX_OPERATORS(ir_variable_refcount_entry,,)
+
    ir_variable_refcount_entry(ir_variable *var);
 
    ir_variable *var; /* The key: the variable's pointer. */
@@ -90,7 +92,7 @@ public:
     */
    struct hash_table *ht;
 
-   void *mem_ctx;
+   linear_ctx *linalloc;
 
    bool global;
 };
