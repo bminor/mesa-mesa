@@ -625,7 +625,7 @@ pub mod cl_slice {
             return true;
         };
         data.is_null()
-            || !mesa_rust_util::ptr::is_aligned(data)
+            || !data.is_aligned()
             || total_size > isize::MAX as usize
             || addr(data).checked_add(total_size).is_none()
     }

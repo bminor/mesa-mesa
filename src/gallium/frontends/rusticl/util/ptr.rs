@@ -120,17 +120,6 @@ macro_rules! offset_of {
     }};
 }
 
-// Adapted from libstd since std::ptr::is_aligned isn't stable until 1.79.0
-// See https://github.com/rust-lang/rust/issues/96284
-#[must_use]
-#[inline]
-pub fn is_aligned<T>(ptr: *const T) -> bool
-where
-    T: Sized,
-{
-    is_aligned_to(ptr, mem::align_of::<T>())
-}
-
 // Adapted from libstd since std::ptr::is_aligned_to is still unstable
 // See https://github.com/rust-lang/rust/issues/96284
 #[must_use]
