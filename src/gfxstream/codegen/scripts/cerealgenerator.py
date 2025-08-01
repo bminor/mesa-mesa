@@ -164,7 +164,7 @@ SUPPORTED_MODULES = {
     # Host dispatch for Linux hosts + and entrypoint for guests
     "VK_KHR_external_memory_fd": ["goldfish_vk_dispatch", "func_table"],
     "VK_QNX_external_memory_screen_buffer": ["goldfish_vk_dispatch"],
-    "VK_ANDROID_external_memory_android_hardware_buffer": ["func_table"],
+    "VK_ANDROID_external_memory_android_hardware_buffer": ["goldfish_vk_dispatch", "func_table"],
     "VK_KHR_android_surface": ["func_table"],
     "VK_EXT_swapchain_maintenance1" : HOST_MODULES,
     "VK_KHR_swapchain" : HOST_MODULES,
