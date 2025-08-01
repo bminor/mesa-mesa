@@ -145,7 +145,7 @@ impl ProgramBuild {
             }
 
             // we want the same (internal) args for every compiled kernel, for now
-            assert!(kernel_info_set.len() == 1);
+            assert_eq!(kernel_info_set.len(), 1);
             let mut kernel_info = kernel_info_set.into_iter().next().unwrap();
 
             // spec: For kernels not created from OpenCL C source and the clCreateProgramWithSource
@@ -221,7 +221,7 @@ impl DeviceProgramBuild {
     pub fn to_nir(
         &self,
         kernel: &str,
-        d: &Device,
+        device: &Device,
         spec_constants: &HashMap<u32, nir_const_value>,
     ) -> NirShader {
         assert_eq!(self.status, CL_BUILD_SUCCESS as cl_build_status);
@@ -238,12 +238,13 @@ impl DeviceProgramBuild {
         let mut log = Platform::dbg().program.then(Vec::new);
         let nir = self.spirv.as_ref().unwrap().to_nir(
             kernel,
-            d.screen
+            device
+                .screen
                 .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE),
-            &d.spirv_caps,
-            &d.lib_clc,
+            &device.spirv_caps,
+            &device.lib_clc,
             &mut spec_constants,
-            d.address_bits(),
+            device.address_bits(),
             log.as_mut(),
         );
 
@@ -570,11 +571,11 @@ impl Program {
 
     pub fn build(
         self: Arc<Self>,
-        devs: Vec<&'static Device>,
+        devices: Vec<&'static Device>,
         options: String,
         callback: Option<ProgramCB>,
     ) -> CLResult<()> {
-        self.set_builds_in_progress(&devs)?;
+        self.set_builds_in_progress(&devices)?;
 
         // If the caller did not provide a callback, block until build finishes.
         if callback.is_none() {
@@ -582,7 +583,7 @@ impl Program {
                 .worker_queue
                 .add_job_sync(create_build_closure(
                     Arc::clone(&self),
-                    devs.clone(),
+                    devices.clone(),
                     options,
                     callback,
                 ))
@@ -592,13 +593,13 @@ impl Program {
             // failure to build the program executable. This error will be
             // returned if clBuildProgram does not return until the build has
             // completed.
-            if !self.all_devices_succeeded(&devs) {
+            if !self.all_devices_succeeded(&devices) {
                 return Err(CL_BUILD_PROGRAM_FAILURE);
             }
         } else {
             self.context.worker_queue.add_job(create_build_closure(
                 Arc::clone(&self),
-                devs,
+                devices,
                 options,
                 callback,
             ));
@@ -609,14 +610,14 @@ impl Program {
 
     fn do_compile(
         &self,
-        dev: &Device,
+        device: &Device,
         options: &str,
         headers: &[HeaderProgram],
-        info: &mut MutexGuard<ProgramBuild>,
+        build_info: &mut MutexGuard<ProgramBuild>,
     ) -> bool {
-        let d = info.dev_build_mut(dev);
+        let device_build = build_info.dev_build_mut(device);
 
-        let val_options = clc_validator_options(dev);
+        let val_options = clc_validator_options(device);
         let (spirv, log) = match &self.src {
             ProgramSourceType::Il(spirv) => {
                 if Platform::dbg().allow_invalid_spirv {
@@ -626,7 +627,7 @@ impl Program {
                 }
             }
             ProgramSourceType::Src(src) => {
-                let args = prepare_options(options, dev);
+                let args = prepare_options(options, device);
                 let headers: Vec<_> = headers
                     .iter()
                     .map(|header| {
@@ -658,9 +659,9 @@ impl Program {
                     &args,
                     &headers,
                     get_disk_cache(),
-                    dev.cl_features(),
-                    &dev.spirv_extensions,
-                    dev.address_bits(),
+                    device.cl_features(),
+                    &device.spirv_extensions,
+                    device.address_bits(),
                 );
 
                 if Platform::dbg().validate_spirv {
@@ -680,28 +681,28 @@ impl Program {
             }
         };
 
-        d.spirv = spirv;
-        d.log = log;
-        options.clone_into(&mut d.options);
+        device_build.spirv = spirv;
+        device_build.log = log;
+        options.clone_into(&mut device_build.options);
 
-        if d.spirv.is_some() {
-            d.status = CL_BUILD_SUCCESS as cl_build_status;
-            d.bin_type = CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT;
+        if device_build.spirv.is_some() {
+            device_build.status = CL_BUILD_SUCCESS as cl_build_status;
+            device_build.bin_type = CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT;
             true
         } else {
-            d.status = CL_BUILD_ERROR;
+            device_build.status = CL_BUILD_ERROR;
             false
         }
     }
 
     pub fn compile(
         self: Arc<Self>,
-        devs: Vec<&'static Device>,
+        devices: Vec<&'static Device>,
         options: String,
         headers: Vec<HeaderProgram>,
         callback: Option<ProgramCB>,
     ) -> CLResult<()> {
-        self.set_builds_in_progress(&devs)?;
+        self.set_builds_in_progress(&devices)?;
 
         // If the caller did not provide a callback, block until compile
         // finishes.
@@ -710,7 +711,7 @@ impl Program {
                 .worker_queue
                 .add_job_sync(create_compile_closure(
                     Arc::clone(&self),
-                    devs.clone(),
+                    devices.clone(),
                     options,
                     headers,
                     callback,
@@ -721,13 +722,13 @@ impl Program {
             // failure to compile the program source. This error will be
             // returned if clCompileProgram does not return until the compile
             // has completed.
-            if !self.all_devices_succeeded(&devs) {
+            if !self.all_devices_succeeded(&devices) {
                 return Err(CL_COMPILE_PROGRAM_FAILURE);
             }
         } else {
             self.context.worker_queue.add_job(create_compile_closure(
                 Arc::clone(&self),
-                devs,
+                devices,
                 options,
                 headers,
                 callback,
@@ -739,13 +740,13 @@ impl Program {
 
     pub fn link(
         context: Arc<Context>,
-        devs: Vec<&'static Device>,
-        progs: Vec<Arc<Self>>,
+        devices: Vec<&'static Device>,
+        input_programs: Vec<Arc<Self>>,
         options: String,
         callback: Option<ProgramCB>,
     ) -> CLResult<(Arc<Self>, cl_int)> {
         // Link can begin, so we must return a valid program object.
-        let builds = devs
+        let builds_by_device = devices
             .iter()
             .map(|&device| {
                 (
@@ -760,16 +761,16 @@ impl Program {
             .collect();
 
         let build = ProgramBuild {
-            builds_by_device: builds,
+            builds_by_device,
             spec_constants: HashMap::new(),
             kernels: Vec::new(),
             kernel_info: HashMap::new(),
         };
 
-        let res = Arc::new(Self {
+        let program = Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Program),
             context: context,
-            devs: devs.clone(),
+            devs: devices.clone(),
             src: ProgramSourceType::Linked,
             build: Mutex::new(build),
         });
@@ -777,12 +778,13 @@ impl Program {
         // If the caller did not provide a callback, block until compile
         // finishes.
         let status = if callback.is_none() {
-            res.context
+            program
+                .context
                 .worker_queue
                 .add_job_sync(create_link_closure(
-                    Arc::clone(&res),
-                    devs.clone(),
-                    progs,
+                    Arc::clone(&program),
+                    devices.clone(),
+                    input_programs,
                     options,
                     callback,
                 ))
@@ -790,16 +792,16 @@ impl Program {
 
             // clLinkProgram returns CL_LINK_PROGRAM_FAILURE if there is a
             // failure to link the compiled binaries and/or libraries.
-            if res.all_devices_succeeded(&devs) {
+            if program.all_devices_succeeded(&devices) {
                 CL_SUCCESS as cl_int
             } else {
                 CL_LINK_PROGRAM_FAILURE
             }
         } else {
-            res.context.worker_queue.add_job(create_link_closure(
-                Arc::clone(&res),
-                devs,
-                progs,
+            program.context.worker_queue.add_job(create_link_closure(
+                Arc::clone(&program),
+                devices,
+                input_programs,
                 options,
                 callback,
             ));
@@ -809,7 +811,7 @@ impl Program {
             CL_SUCCESS as cl_int
         };
 
-        Ok((res, status))
+        Ok((program, status))
     }
 
     /// Performs linking of the provided SPIR-V binaries.
@@ -819,10 +821,10 @@ impl Program {
     fn do_link(
         build: &mut DeviceProgramBuild,
         bins: &[&SPIRVBin],
-        lib: bool,
+        is_lib: bool,
         device_for_validation: Option<&Device>,
     ) {
-        let (spirv, log) = spirv::SPIRVBin::link(&bins, lib);
+        let (spirv, log) = spirv::SPIRVBin::link(&bins, is_lib);
         let (spirv, log) = if let Some(device) = device_for_validation {
             if let Some(spirv) = spirv {
                 let val_options = clc_validator_options(device);
@@ -840,7 +842,7 @@ impl Program {
 
         if build.spirv.is_some() {
             build.status = CL_BUILD_SUCCESS as cl_build_status;
-            build.bin_type = if lib {
+            build.bin_type = if is_lib {
                 CL_PROGRAM_BINARY_TYPE_LIBRARY
             } else {
                 CL_PROGRAM_BINARY_TYPE_EXECUTABLE
@@ -853,9 +855,9 @@ impl Program {
 
     /// Sets the status to "in progress" for the device-specific builds for each
     /// of the provided builds.
-    fn set_builds_in_progress(&self, devs: &[&Device]) -> CLResult<()> {
+    fn set_builds_in_progress(&self, devices: &[&Device]) -> CLResult<()> {
         let mut build_info = self.build_info();
-        for &device in devs {
+        for &device in devices {
             // Iterate separately to set these so we don't leave any permanently
             // set to in progress in the event of encountering a build still in
             // progress.
@@ -937,49 +939,49 @@ fn debug_logging(p: &Program, devs: &[&Device]) {
 /// The returned closure is suitable for adding to an async queue.
 fn create_build_closure(
     program: Arc<Program>,
-    devs: Vec<&'static Device>,
+    devices: Vec<&'static Device>,
     options: String,
     mut callback: Option<ProgramCB>,
 ) -> impl FnMut() + Send + Sync + 'static {
     move || {
-        let lib = options.contains("-create-library");
-        let mut info = program.build_info();
+        let is_lib = options.contains("-create-library");
+        let mut build_info = program.build_info();
 
-        for &dev in &devs {
-            if !program.do_compile(dev, &options, &[], &mut info) {
+        for &device in &devices {
+            if !program.do_compile(device, &options, &[], &mut build_info) {
                 continue;
             }
 
-            let d = info.dev_build_mut(dev);
+            let device_build = build_info.dev_build_mut(device);
             // skip compilation if we already have the right thing.
             if program.is_bin() {
-                if d.bin_type == CL_PROGRAM_BINARY_TYPE_EXECUTABLE && !lib
-                    || d.bin_type == CL_PROGRAM_BINARY_TYPE_LIBRARY && lib
+                if device_build.bin_type == CL_PROGRAM_BINARY_TYPE_EXECUTABLE && !is_lib
+                    || device_build.bin_type == CL_PROGRAM_BINARY_TYPE_LIBRARY && is_lib
                 {
-                    d.status = CL_BUILD_SUCCESS as cl_build_status;
+                    device_build.status = CL_BUILD_SUCCESS as cl_build_status;
                     continue;
                 }
             }
 
-            let spirv = d.spirv.take().unwrap();
+            let spirv = device_build.spirv.take().unwrap();
             let spirvs = [&spirv];
 
             // Don't request validation of the SPIR-V, as we've just done that
             // as part of compilation.
-            Program::do_link(d, &spirvs, lib, None);
+            Program::do_link(device_build, &spirvs, is_lib, None);
         }
 
-        info.rebuild_kernels(&devs, program.is_src());
+        build_info.rebuild_kernels(&devices, program.is_src());
 
         // The callback must be called after we've dropped any mutex locks we're
         // holding.
-        drop(info);
+        drop(build_info);
 
         if let Some(callback) = callback.take() {
             callback.call(program.as_ref());
         }
 
-        debug_logging(&program, &devs);
+        debug_logging(&program, &devices);
     }
 }
 
@@ -989,27 +991,27 @@ fn create_build_closure(
 /// The returned closure is suitable for adding to an async queue.
 fn create_compile_closure(
     program: Arc<Program>,
-    devs: Vec<&'static Device>,
+    devices: Vec<&'static Device>,
     options: String,
     headers: Vec<HeaderProgram>,
     mut callback: Option<ProgramCB>,
 ) -> impl FnMut() + Send + Sync + 'static {
     move || {
-        let mut info = program.build_info();
+        let mut build_info = program.build_info();
 
-        for &dev in &devs {
-            program.do_compile(dev, &options, &headers, &mut info);
+        for &device in &devices {
+            program.do_compile(device, &options, &headers, &mut build_info);
         }
 
         // The callback must be called after we've dropped any mutex locks we're
         // holding.
-        drop(info);
+        drop(build_info);
 
         if let Some(callback) = callback.take() {
             callback.call(&program);
         }
 
-        debug_logging(&program, &devs);
+        debug_logging(&program, &devices);
     }
 }
 
@@ -1021,40 +1023,40 @@ fn create_compile_closure(
 /// The returned closure is suitable for adding to an async queue.
 fn create_link_closure(
     program: Arc<Program>,
-    devs: Vec<&'static Device>,
-    progs: Vec<Arc<Program>>,
+    devices: Vec<&'static Device>,
+    input_programs: Vec<Arc<Program>>,
     options: String,
     mut callback: Option<ProgramCB>,
 ) -> impl FnMut() + Send + Sync + 'static {
     move || {
-        let mut locks: Vec<_> = progs.iter().map(|p| p.build_info()).collect();
-        let lib = options.contains("-create-library");
+        let mut locks: Vec<_> = input_programs.iter().map(|p| p.build_info()).collect();
+        let is_lib = options.contains("-create-library");
 
-        let mut info = program.build_info();
+        let mut build_info = program.build_info();
 
-        for &d in &devs {
+        for &device in &devices {
             let bins: Vec<_> = locks
                 .iter_mut()
-                .map(|l| l.dev_build(d).spirv.as_ref().unwrap())
+                .map(|l| l.dev_build(device).spirv.as_ref().unwrap())
                 .collect();
 
-            let mut build = info.dev_build_mut(d);
+            let mut device_build = build_info.dev_build_mut(device);
 
-            let device_for_validation = Platform::dbg().validate_spirv.then_some(d);
-            Program::do_link(&mut build, &bins, lib, device_for_validation);
+            let device_for_validation = Platform::dbg().validate_spirv.then_some(device);
+            Program::do_link(&mut device_build, &bins, is_lib, device_for_validation);
         }
 
         // Pre build nir kernels
-        info.rebuild_kernels(&devs, false);
+        build_info.rebuild_kernels(&devices, false);
 
         // The callback must be called after we've dropped any mutex locks we're
         // holding.
-        drop(info);
+        drop(build_info);
 
         if let Some(callback) = callback.take() {
             callback.call(&program);
         }
 
-        debug_logging(&program, &devs);
+        debug_logging(&program, &devices);
     }
 }
