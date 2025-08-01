@@ -47,6 +47,9 @@ spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
 wgl@wgl-multi-context-single-window,Fail
 wgl@wgl-multi-window-single-context,Fail
 wgl@wgl-sanity,Fail
+spec@!opengl 1.0@rasterpos,Fail
+spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail
+spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
 
 # glcts failures
 KHR-GL46.direct_state_access.framebuffers_texture_attachment,Fail

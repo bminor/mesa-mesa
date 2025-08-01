@@ -142,6 +142,10 @@ spec@!opengl 1.1@texwrap formats bordercolor-swizzled@GL_RGBA2- swizzled- border
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled@GL_RGBA4- swizzled- border color only,Fail
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled@GL_RGBA8- swizzled- border color only,Fail
 
+spec@!opengl 1.0@rasterpos,Fail
+spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail
+spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
+
 KHR-GL46.direct_state_access.framebuffers_texture_layer_attachment,Fail
 KHR-GL46.ext_texture_shadow_lod.texturelod.samplercubeshadow_fragment,Fail
 KHR-GL46.ext_texture_shadow_lod.texture.samplercubearrayshadow_bias_fragment,Fail
