@@ -266,6 +266,7 @@ impl ShaderBin {
             },
             num_control_barriers: info.num_control_barriers,
             _pad0: Default::default(),
+            _pad1: Default::default(),
             max_warps_per_sm: info.max_warps_per_sm,
             num_instrs: info.num_instrs,
             num_static_cycles: info.num_static_cycles,

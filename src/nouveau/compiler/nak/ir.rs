@@ -8970,7 +8970,7 @@ pub struct ShaderInfo {
     pub num_gprs: u8,
     pub num_control_barriers: u8,
     pub num_instrs: u32,
-    pub num_static_cycles: u32,
+    pub num_static_cycles: u64,
     pub num_spills_to_mem: u32,
     pub num_fills_from_mem: u32,
     pub num_spills_to_reg: u32,

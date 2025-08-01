@@ -10,7 +10,7 @@ use crate::reg_tracker::RegTracker;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::max;
 use std::ops::Range;
-use std::{slice, u32, u8};
+use std::{slice, u8};
 
 #[derive(Clone)]
 enum RegUse<T: Clone> {
@@ -670,7 +670,7 @@ fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
     }
 }
 
-fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
+fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u64 {
     let mut min_num_static_cycles = 0;
     for i in (0..f.blocks.len()).rev() {
         let b = &mut f.blocks[i];
@@ -784,7 +784,12 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
             cycle = min_start;
         }
 
-        min_num_static_cycles += cycle * estimate_block_weight(&f.blocks, i);
+        let block_weight = estimate_block_weight(&f.blocks, i);
+        min_num_static_cycles = u64::from(cycle)
+            .checked_mul(block_weight)
+            .expect("Cycle count estimate overflow")
+            .checked_add(min_num_static_cycles)
+            .expect("Cycle count estimate overflow");
     }
 
     let max_instr_delay = sm.max_instr_delay();
@@ -861,7 +866,7 @@ impl Shader<'_> {
         if DEBUG.serial() {
             self.assign_deps_serial();
         } else {
-            let mut min_num_static_cycles = 0;
+            let mut min_num_static_cycles = 0u64;
             for f in &mut self.functions {
                 assign_barriers(f, self.sm);
                 min_num_static_cycles += calc_delays(f, self.sm);

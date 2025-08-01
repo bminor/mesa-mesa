@@ -146,7 +146,7 @@ struct nak_shader_info {
    uint32_t num_instrs;
 
    /** Number of cycles used by fixed-latency instructions */
-   uint32_t num_static_cycles;
+   uint64_t num_static_cycles;
 
    /** Number of spills from GPRs to Memory */
    uint32_t num_spills_to_mem;
@@ -210,6 +210,8 @@ struct nak_shader_info {
 
       struct nak_xfb_info xfb;
    } vtg;
+
+   uint8_t _pad1[4];
 
    /** Shader header for 3D stages */
    uint32_t hdr[32];

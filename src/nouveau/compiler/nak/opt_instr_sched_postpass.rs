@@ -141,14 +141,14 @@ fn generate_dep_graph(sm: &dyn ShaderModel, instrs: &[Box<Instr>]) -> DepGraph {
 fn generate_order(
     g: &mut DepGraph,
     init_ready_list: Vec<usize>,
-) -> (Vec<usize>, u32) {
+) -> (Vec<usize>, u64) {
     let mut ready_instrs: BinaryHeap<ReadyInstr> = BinaryHeap::new();
     let mut future_ready_instrs: BinaryHeap<FutureReadyInstr> = init_ready_list
         .into_iter()
         .map(|i| FutureReadyInstr::new(g, i))
         .collect();
 
-    let mut current_cycle = 0;
+    let mut current_cycle = 0u32;
     let mut instr_order = Vec::with_capacity(g.nodes.len());
     loop {
         // Move ready instructions to the ready list
@@ -198,13 +198,13 @@ fn generate_order(
         }
     }
 
-    (instr_order, current_cycle)
+    (instr_order, u64::from(current_cycle))
 }
 
 fn sched_buffer(
     sm: &dyn ShaderModel,
     instrs: Vec<Box<Instr>>,
-) -> (impl Iterator<Item = Box<Instr>> + use<>, u32) {
+) -> (impl Iterator<Item = Box<Instr>> + use<>, u64) {
     let mut g = generate_dep_graph(sm, &instrs);
     let init_ready_list = calc_statistics(&mut g);
     // save_graphviz(&instrs, &g).unwrap();
@@ -221,8 +221,8 @@ fn sched_buffer(
 }
 
 impl Function {
-    pub fn opt_instr_sched_postpass(&mut self, sm: &dyn ShaderModel) -> u32 {
-        let mut num_static_cycles = 0;
+    pub fn opt_instr_sched_postpass(&mut self, sm: &dyn ShaderModel) -> u64 {
+        let mut num_static_cycles = 0u64;
         for i in 0..self.blocks.len() {
             let block = &mut self.blocks[i];
 
@@ -232,8 +232,12 @@ impl Function {
             block.instrs = instrs.collect();
             assert_eq!(orig_instr_count, block.instrs.len());
 
-            num_static_cycles +=
-                cycle_count * estimate_block_weight(&self.blocks, i);
+            let block_weight = estimate_block_weight(&self.blocks, i);
+            num_static_cycles = cycle_count
+                .checked_mul(block_weight)
+                .expect("Cycle count estimate overflow")
+                .checked_add(num_static_cycles)
+                .expect("Cycle count estimate overflow");
         }
         num_static_cycles
     }
