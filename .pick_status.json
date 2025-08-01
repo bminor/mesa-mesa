@@ -6274,7 +6274,7 @@
         "description": "panvk: fix a NULL pointer dereference in occlusion queries",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "61534faf4e2b031b64ee387558a44e7e06915c48",
         "notes": null
