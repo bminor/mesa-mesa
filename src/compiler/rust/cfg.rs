@@ -182,46 +182,100 @@ fn loop_detect_dfs<N>(
     id: usize,
     pre: &mut BitSet,
     post: &mut BitSet,
-    loops: &mut BitSet,
+    back_edges: &mut Vec<(usize, usize)>,
 ) {
     if pre.contains(id) {
-        if !post.contains(id) {
-            loops.insert(id);
-        }
         return;
     }
 
     pre.insert(id);
 
-    for s in nodes[id].succ.iter() {
-        loop_detect_dfs(nodes, *s, pre, post, loops);
+    for &s in nodes[id].succ.iter() {
+        if pre.contains(s) && !post.contains(s) {
+            back_edges.push((id, s));
+        }
+        loop_detect_dfs(nodes, s, pre, post, back_edges);
     }
 
     post.insert(id);
 }
 
+/// Computes the set of nodes that reach the given node without going through
+/// stop
+fn reaches_dfs<N>(
+    nodes: &Vec<CFGNode<N>>,
+    id: usize,
+    stop: usize,
+    reaches: &mut BitSet,
+) {
+    if id == stop || reaches.contains(id) {
+        return;
+    }
+
+    reaches.insert(id);
+
+    // Since we're trying to find the set of things that reach the start node,
+    // not the set of things reachable from the start node, walk predecessors.
+    for &s in nodes[id].pred.iter() {
+        reaches_dfs(nodes, s, stop, reaches);
+    }
+}
+
 fn detect_loops<N>(nodes: &mut Vec<CFGNode<N>>) -> bool {
     let mut dfs_pre = BitSet::new();
     let mut dfs_post = BitSet::new();
-    let mut loops = BitSet::new();
-    loop_detect_dfs(nodes, 0, &mut dfs_pre, &mut dfs_post, &mut loops);
+    let mut back_edges = Vec::new();
+    loop_detect_dfs(nodes, 0, &mut dfs_pre, &mut dfs_post, &mut back_edges);
 
-    let mut has_loop = false;
-    nodes[0].lph = usize::MAX;
-    for i in 1..nodes.len() {
-        if loops.contains(i) {
-            // This is a loop header
-            nodes[i].lph = i;
-            has_loop = true;
-        } else {
-            // Otherwise, we have the same loop header as our dominator
-            let dom = nodes[i].dom;
-            let dom_lph = nodes[dom].lph;
-            nodes[i].lph = dom_lph;
+    if back_edges.is_empty() {
+        return false;
+    }
+
+    // Construct a map from nodes N to loop headers H where there is some
+    // back-edge (C, H) such that C is reachable from N without going through H.
+    // By running the DFS backwards, we can do this in O(B * E) time where B is
+    // the number of back-edges and E is the total number of edges.
+    let mut loops = BitSet::new();
+    let mut node_loops: Vec<BitSet<usize>> = Default::default();
+    node_loops.resize_with(nodes.len(), Default::default);
+    for (c, h) in back_edges {
+        // Stash the loop headers while we're here
+        loops.insert(h);
+
+        // re-use dfs_pre for our reaches set
+        dfs_pre.clear();
+        let reaches = &mut dfs_pre;
+        reaches_dfs(nodes, c, h, reaches);
+
+        for n in reaches.iter() {
+            node_loops[n].insert(h);
         }
     }
 
-    has_loop
+    for i in 0..nodes.len() {
+        debug_assert!(nodes[i].lph == usize::MAX);
+
+        if loops.contains(i) {
+            // This is a loop header
+            nodes[i].lph = i;
+            continue;
+        }
+
+        let mut n = i;
+        while n != 0 {
+            let dom = nodes[n].dom;
+            debug_assert!(dom < n);
+
+            if node_loops[i].contains(dom) {
+                nodes[i].lph = dom;
+                break;
+            };
+
+            n = dom;
+        }
+    }
+
+    true
 }
 
 /// A container structure which represents a control-flow graph.  Nodes are
@@ -324,13 +378,26 @@ impl<N> CFG<N> {
     }
 
     /// Returns true if the given node is a loop header.
+    ///
+    /// A node H is a loop header if there is a back-edge terminating at H.
     pub fn is_loop_header(&self, idx: usize) -> bool {
         self.nodes[idx].lph == idx
     }
 
     /// Returns the index of the loop header of the innermost loop containing
-    /// this node, if any.  If this node is not contained in any loops, `None`
+    /// this node, if any. If this node is not contained in any loops, `None`
     /// is returned.
+    ///
+    /// A node N is considered to be contained to be contained in the loop with
+    /// header H if both of the following are true:
+    ///
+    ///  1. H dominates N
+    ///
+    ///  2. There is a back-edge (C, H) in the CFG such that C is reachable
+    ///     from N without going through H.
+    ///
+    /// This matches the definitions given in
+    /// https://www.cs.cornell.edu/courses/cs4120/2023sp/notes.html?id=cflow
     pub fn loop_header_index(&self, idx: usize) -> Option<usize> {
         let lph = self.nodes[idx].lph;
         if lph == usize::MAX {
@@ -460,5 +527,263 @@ impl<K: Eq + Hash, N, H: BuildHasher + Default> CFGBuilder<K, N, H> {
 impl<K, N, H: BuildHasher + Default> Default for CFGBuilder<K, N, H> {
     fn default() -> Self {
         CFGBuilder::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::hash::RandomState;
+
+    fn test_loop_nesting(edges: &[(usize, usize)], expected: &[Option<usize>]) {
+        let mut builder = CFGBuilder::<_, _, RandomState>::new();
+        for i in 0..expected.len() {
+            builder.add_node(i, i);
+        }
+        for &(a, b) in edges {
+            builder.add_edge(a, b);
+        }
+        let cfg = builder.as_cfg();
+
+        let mut lphs = Vec::new();
+        lphs.resize(expected.len(), None);
+        for (i, idx) in cfg.iter().enumerate() {
+            let lph = cfg.loop_header_index(i);
+            lphs[*idx.deref()] = lph.map(|h| cfg[h]);
+        }
+
+        assert_eq!(&lphs, expected);
+    }
+
+    #[test]
+    fn test_loop_simple() {
+        // block 0
+        // loop {
+        //     block 1
+        //     if ... {
+        //         block 2
+        //         break;
+        //     }
+        //     block 3
+        // }
+        // block 4
+        test_loop_nesting(
+            &[(0, 1), (1, 2), (1, 3), (2, 4), (3, 1)],
+            &[None, Some(1), None, Some(1), None, None],
+        );
+    }
+
+    #[test]
+    fn test_loop_simple_nested() {
+        // loop {
+        //     block 0
+        //     loop {
+        //         block 1
+        //         if ... {
+        //             block 2
+        //             break;
+        //         }
+        //         block 3
+        //     }
+        //     block 4
+        //     if ... {
+        //         block 5
+        //         break;
+        //     }
+        //     block 6
+        // }
+        // block 7
+        test_loop_nesting(
+            &[
+                (0, 1),
+                (1, 2),
+                (1, 3),
+                (2, 4),
+                (3, 1),
+                (4, 5),
+                (4, 6),
+                (5, 7),
+                (6, 0),
+            ],
+            &[
+                Some(0),
+                Some(1),
+                Some(0),
+                Some(1),
+                Some(0),
+                None,
+                Some(0),
+                None,
+            ],
+        );
+    }
+
+    #[test]
+    fn test_loop_two_continues() {
+        // loop {
+        //     block 0
+        //     if ... {
+        //         block 1
+        //         continue;
+        //     }
+        //     block 2
+        //     if ... {
+        //         block 3
+        //         break;
+        //     }
+        //     block 4
+        // }
+        // block 5
+        test_loop_nesting(
+            &[(0, 1), (0, 2), (1, 0), (2, 3), (2, 4), (3, 5), (4, 0)],
+            &[Some(0), Some(0), Some(0), None, Some(0), None],
+        );
+    }
+
+    #[test]
+    fn test_loop_two_breaks() {
+        // loop {
+        //     block 0
+        //     if ... {
+        //         block 1
+        //         break;
+        //     }
+        //     block 2
+        //     if ... {
+        //         block 3
+        //         break;
+        //     }
+        //     block 4
+        // }
+        // block 5
+        test_loop_nesting(
+            &[(0, 1), (0, 2), (1, 5), (2, 3), (2, 4), (3, 5), (4, 0)],
+            &[Some(0), None, Some(0), None, Some(0), None],
+        );
+    }
+
+    #[test]
+    fn test_loop_predicated_continue() {
+        // loop {
+        //     block 0
+        //     continue_if(...);
+        //     block 1
+        //     if ... {
+        //         block 2
+        //         break;
+        //     }
+        //     block 3
+        // }
+        // block 4
+        test_loop_nesting(
+            &[(0, 0), (0, 1), (1, 2), (1, 3), (2, 4), (3, 0)],
+            &[Some(0), Some(0), None, Some(0), None],
+        );
+    }
+
+    #[test]
+    fn test_loop_predicated_break() {
+        // block 0
+        // loop {
+        //     block 1
+        //     break_if(...);
+        //     block 2
+        //     if ... {
+        //         block 3
+        //         break;
+        //     }
+        //     block 4
+        // }
+        // block 5
+        test_loop_nesting(
+            &[(0, 1), (1, 2), (1, 5), (2, 3), (2, 4), (3, 5), (4, 1)],
+            &[None, Some(1), Some(1), None, Some(1), None],
+        );
+    }
+
+    #[test]
+    fn test_loop_complex() {
+        // loop {
+        //     block 0
+        //     loop {
+        //         block 1
+        //         if ... {
+        //             block 2
+        //             break;
+        //         }
+        //         block 3
+        //     }
+        //     loop {
+        //         block 4
+        //         break_if(..);
+        //     }
+        //     block 5
+        //     if ... {
+        //         block 6
+        //         break;
+        //     }
+        //     block 7
+        // }
+        // block 8
+        test_loop_nesting(
+            &[
+                (0, 1),
+                (1, 2),
+                (1, 3),
+                (2, 4),
+                (3, 1),
+                (4, 5),
+                (4, 4),
+                (5, 6),
+                (5, 7),
+                (6, 8),
+                (7, 0),
+            ],
+            &[
+                Some(0),
+                Some(1),
+                Some(0),
+                Some(1),
+                Some(4),
+                Some(0),
+                None,
+                Some(0),
+                None,
+            ],
+        );
+    }
+
+    #[test]
+    fn test_simple_irreducible() {
+        // block 0
+        // if ... {
+        //     block 1
+        // }
+        // block 2
+        // if ... {
+        //     block 3
+        // }
+        // block 4
+        test_loop_nesting(
+            &[(0, 1), (0, 2), (1, 2), (2, 3), (2, 4), (3, 4)],
+            &[None, None, None, None, None, None],
+        );
+    }
+
+    #[test]
+    fn test_loop_irreducible() {
+        // block 0
+        // goto_if(...) label;
+        // loop {
+        //     block 1
+        //     break_if(...);
+        // label:
+        //     block 2
+        // }
+        // block 3
+        test_loop_nesting(
+            &[(0, 1), (0, 2), (1, 3), (1, 2), (2, 1)],
+            &[None, Some(1), None, None, None, None],
+        );
     }
 }
