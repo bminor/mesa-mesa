@@ -98,18 +98,6 @@ struct vk_shader_compile_info {
 
 struct vk_shader_ops;
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wpadded"
-#endif
-struct vk_shader_pipeline_cache_key {
-   mesa_shader_stage stage;
-   blake3_hash blake3;
-};
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
 struct vk_shader {
    struct vk_object_base base;
 
@@ -131,7 +119,7 @@ struct vk_shader {
    /* Used for the generic VkPipeline implementation */
    struct {
       struct vk_pipeline_cache_object cache_obj;
-      struct vk_shader_pipeline_cache_key cache_key;
+      blake3_hash cache_key;
    } pipeline;
 };
 

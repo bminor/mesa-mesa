@@ -849,7 +849,7 @@ struct vk_pipeline_stage {
    struct vk_pipeline_precomp_shader *precomp;
 
    /* Hash used to lookup the shader */
-   struct vk_shader_pipeline_cache_key shader_key;
+   blake3_hash shader_key;
 
    struct vk_shader *shader;
 };
@@ -1431,8 +1431,11 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
       for (uint32_t i = info->partition[p]; i < info->partition[p + 1]; i++) {
          struct vk_pipeline_stage *stage = &info->stages[i];
 
-         stage->shader_key.stage = stage->stage;
-         memcpy(stage->shader_key.blake3, linked_blake3, sizeof(blake3_hash));
+         /* Make the per-stage key unique by hashing in the stage */
+         _mesa_blake3_init(&blake3_ctx);
+         _mesa_blake3_update(&blake3_ctx, &stage->stage, sizeof(stage->stage));
+         _mesa_blake3_update(&blake3_ctx, linked_blake3, sizeof(linked_blake3));
+         _mesa_blake3_final(&blake3_ctx, stage->shader_key);
       }
    }
 }
@@ -2139,6 +2142,8 @@ vk_get_compute_pipeline_compile_info(struct vk_pipeline_stage *stage,
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
 
+   _mesa_blake3_update(&blake3_ctx, &stage->stage, sizeof(stage->stage));
+
    _mesa_blake3_update(&blake3_ctx, stage->precomp_key,
                      sizeof(stage->precomp_key));
 
@@ -2160,10 +2165,7 @@ vk_get_compute_pipeline_compile_info(struct vk_pipeline_stage *stage,
    if (push_range != NULL)
       _mesa_blake3_update(&blake3_ctx, push_range, sizeof(*push_range));
 
-   stage->shader_key = (struct vk_shader_pipeline_cache_key) {
-      .stage = MESA_SHADER_COMPUTE,
-   };
-   _mesa_blake3_final(&blake3_ctx, stage->shader_key.blake3);
+   _mesa_blake3_final(&blake3_ctx, stage->shader_key);
 }
 
 static VkResult
@@ -2179,7 +2181,7 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
 
    if (cache != NULL) {
       struct vk_pipeline_cache_object *cache_obj =
-         vk_pipeline_cache_lookup_object(cache, &stage->shader_key,
+         vk_pipeline_cache_lookup_object(cache, stage->shader_key,
                                          sizeof(stage->shader_key),
                                          &pipeline_shader_cache_ops,
                                          cache_hit);
@@ -2606,6 +2608,9 @@ vk_pipeline_hash_rt_shader(struct vk_device *device,
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
 
+   _mesa_blake3_update(&blake3_ctx, &stage->stage,
+                       sizeof(stage->stage));
+
    VkShaderCreateFlagsEXT shader_flags =
       vk_pipeline_to_shader_flags(pipeline_flags, stage->stage);
 
@@ -2616,10 +2621,7 @@ vk_pipeline_hash_rt_shader(struct vk_device *device,
    _mesa_blake3_update(&blake3_ctx, stage->precomp_key,
                        sizeof(stage->precomp_key));
 
-   stage->shader_key = (struct vk_shader_pipeline_cache_key) {
-      .stage = stage->stage,
-   };
-   _mesa_blake3_final(&blake3_ctx, stage->shader_key.blake3);
+   _mesa_blake3_final(&blake3_ctx, stage->shader_key);
 }
 
 static void
@@ -2645,6 +2647,10 @@ vk_pipeline_rehash_rt_linked_shaders(struct vk_device *device,
       struct mesa_blake3 blake3_ctx;
       _mesa_blake3_init(&blake3_ctx);
 
+      assert(mesa_shader_stage_is_rt(stages[i].stage));
+      _mesa_blake3_update(&blake3_ctx, &stages[i].stage,
+                          sizeof(stages[i].stage));
+
       const VkPushConstantRange *push_range =
          get_push_range_for_stage(pipeline_layout, stages[i].stage);
 
@@ -2662,8 +2668,7 @@ vk_pipeline_rehash_rt_linked_shaders(struct vk_device *device,
          }
       }
 
-      assert(mesa_shader_stage_is_rt(stages[i].shader_key.stage));
-      _mesa_blake3_final(&blake3_ctx, stages[i].shader_key.blake3);
+      _mesa_blake3_final(&blake3_ctx, stages[i].shader_key);
    }
 }
 
@@ -2707,13 +2712,17 @@ vk_rt_stage_from_pipeline_stage(struct vk_pipeline_stage *stage)
 static struct vk_pipeline_stage
 vk_pipeline_stage_from_rt_stage(struct vk_rt_stage *stage)
 {
-   return (struct vk_pipeline_stage) {
+   struct vk_pipeline_stage ret = {
       .stage = stage->shader->stage,
-      .shader_key = stage->shader->pipeline.cache_key,
       .shader = vk_shader_ref(stage->shader),
       .linked = stage->linked,
       /* precomp & precomp_key left empty on purpose */
    };
+   assert(sizeof(ret.shader_key) ==
+          sizeof(stage->shader->pipeline.cache_key));
+   memcpy(ret.shader_key, stage->shader->pipeline.cache_key,
+          sizeof(stage->shader->pipeline.cache_key));
+   return ret;
 }
 
 static struct vk_rt_shader_group
@@ -2916,7 +2925,7 @@ vk_pipeline_compile_rt_shader(struct vk_device *device,
    if (cache != NULL) {
       bool cache_hit = false;
       struct vk_pipeline_cache_object *cache_obj =
-         vk_pipeline_cache_lookup_object(cache, &stage->shader_key,
+         vk_pipeline_cache_lookup_object(cache, stage->shader_key,
                                          sizeof(stage->shader_key),
                                          &pipeline_shader_cache_ops,
                                          &cache_hit);
@@ -3019,7 +3028,7 @@ vk_pipeline_compile_rt_shader_group(struct vk_device *device,
          bool cache_hit = false;
          struct vk_pipeline_cache_object *cache_obj =
             vk_pipeline_cache_lookup_object(cache,
-                                            &stages[i].shader_key,
+                                            stages[i].shader_key,
                                             sizeof(stages[i].shader_key),
                                             &pipeline_shader_cache_ops,
                                             &cache_hit);
