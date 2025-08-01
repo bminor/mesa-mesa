@@ -1224,37 +1224,6 @@ bifrost_nir_lower_vs_atomics(nir_shader *shader)
                                      nir_metadata_none, NULL);
 }
 
-static bool
-bifrost_nir_specialize_idvs_impl(nir_builder *b, nir_intrinsic_instr *intr,
-                                 void *data)
-{
-   enum bi_idvs_mode *idvs = data;
-
-   if (intr->intrinsic != nir_intrinsic_load_shader_output_pan)
-      return false;
-
-   unsigned shader_output_val = 0;
-
-   if (*idvs == BI_IDVS_POSITION) {
-      shader_output_val |= VA_SHADER_OUTPUT_POSITION;
-      shader_output_val |= VA_SHADER_OUTPUT_ATTRIB;
-   }
-
-   if (*idvs == BI_IDVS_VARYING)
-      shader_output_val |= VA_SHADER_OUTPUT_VARY;
-
-   b->cursor = nir_before_instr(&intr->instr);
-   nir_def_replace(&intr->def, nir_imm_int(b, shader_output_val));
-   return true;
-}
-
-static bool
-bifrost_nir_specialize_idvs(nir_shader *shader, enum bi_idvs_mode idvs)
-{
-   return nir_shader_intrinsics_pass(shader, bifrost_nir_specialize_idvs_impl,
-                                     nir_metadata_control_flow, &idvs);
-}
-
 static void
 bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
 {
@@ -6090,7 +6059,10 @@ bi_compile_variant_nir(nir_shader *nir,
       if (offset == 0)
          ctx->nir = nir = nir_shader_clone(ctx, nir);
 
-      NIR_PASS(_, nir, bifrost_nir_specialize_idvs, idvs);
+      uint64_t position = VA_SHADER_OUTPUT_POSITION | VA_SHADER_OUTPUT_ATTRIB;
+
+      NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_shader_output_pan,
+               (idvs == BI_IDVS_POSITION) ? position : VA_SHADER_OUTPUT_VARY);
 
       /* After specializing, clean up the mess */
       bool progress = true;
