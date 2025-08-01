@@ -73,7 +73,6 @@ libintel_compiler_brw_files = files(
   'brw_nir_lower_cs_intrinsics.c',
   'brw_nir_lower_alpha_to_coverage.c',
   'brw_nir_lower_fs_barycentrics.c',
-  'brw_nir_lower_fs_msaa.c',
   'brw_nir_lower_immediate_offsets.c',
   'brw_nir_lower_intersection_shader.c',
   'brw_nir_lower_ray_queries.c',

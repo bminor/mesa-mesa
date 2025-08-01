@@ -178,8 +178,6 @@ bool brw_nir_lower_cs_intrinsics(nir_shader *nir,
 bool brw_nir_lower_alpha_to_coverage(nir_shader *shader);
 bool brw_needs_vertex_attributes_bypass(const nir_shader *shader);
 void brw_nir_lower_fs_barycentrics(nir_shader *shader);
-bool brw_nir_lower_fs_msaa(nir_shader *shader,
-                           const struct brw_wm_prog_key *key);
 
 void brw_nir_lower_vs_inputs(nir_shader *nir);
 void brw_nir_lower_vue_inputs(nir_shader *nir,

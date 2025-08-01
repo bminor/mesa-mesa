@@ -1528,7 +1528,27 @@ brw_compile_fs(const struct brw_compiler *compiler,
    }
 
    NIR_PASS(_, nir, brw_nir_move_interpolation_to_top);
-   NIR_PASS(_, nir, brw_nir_lower_fs_msaa, key);
+
+   if (!brw_wm_prog_key_is_dynamic(key)) {
+      uint32_t f = 0;
+
+      if (key->multisample_fbo == INTEL_ALWAYS)
+         f |= INTEL_MSAA_FLAG_MULTISAMPLE_FBO;
+
+      if (key->alpha_to_coverage == INTEL_ALWAYS)
+         f |= INTEL_MSAA_FLAG_ALPHA_TO_COVERAGE;
+
+      if (key->provoking_vertex_last == INTEL_ALWAYS)
+         f |= INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST;
+
+      if (key->persample_interp == INTEL_ALWAYS) {
+         f |= INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH |
+              INTEL_MSAA_FLAG_PERSAMPLE_INTERP;
+      }
+
+      NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_fs_msaa_intel, f);
+   }
+
    brw_postprocess_nir(nir, compiler, debug_enabled,
                        key->base.robust_flags);
 
