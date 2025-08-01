@@ -46,17 +46,13 @@ struct DownwardsCursor {
    int insert_idx_clause; /* First clause instruction */
    int insert_idx;        /* First instruction *after* the clause */
 
-   /* Maximum demand of all clause instructions,
-    * i.e. from insert_idx_clause (inclusive) to insert_idx (exclusive) */
-   RegisterDemand clause_demand;
    /* Maximum demand of instructions from source_idx to insert_idx_clause (both exclusive) */
    RegisterDemand total_demand;
    /* Register demand immediately before the insert_idx. */
    RegisterDemand insert_demand;
 
-   DownwardsCursor(int current_idx, RegisterDemand initial_clause_demand)
-       : source_idx(current_idx - 1), insert_idx_clause(current_idx), insert_idx(current_idx + 1),
-         clause_demand(initial_clause_demand)
+   DownwardsCursor(int current_idx)
+       : source_idx(current_idx - 1), insert_idx_clause(current_idx), insert_idx(current_idx + 1)
    {}
 
    void verify_invariants(const Block* block);
@@ -159,12 +155,6 @@ DownwardsCursor::verify_invariants(const Block* block)
       reference_demand.update(block->instructions[i]->register_demand);
    }
    assert(total_demand == reference_demand);
-
-   reference_demand = {};
-   for (int i = insert_idx_clause; i < insert_idx; ++i) {
-      reference_demand.update(block->instructions[i]->register_demand);
-   }
-   assert(clause_demand == reference_demand);
 #endif
 }
 
@@ -188,7 +178,7 @@ MoveState::downwards_init(int current_idx, bool improved_rar_, bool may_form_cla
       }
    }
 
-   DownwardsCursor cursor(current_idx, block->instructions[current_idx]->register_demand);
+   DownwardsCursor cursor(current_idx);
    RegisterDemand temp = get_temp_registers(block->instructions[cursor.insert_idx - 1].get());
    cursor.insert_demand = block->instructions[cursor.insert_idx - 1]->register_demand - temp;
 
@@ -223,9 +213,12 @@ MoveState::downwards_move(DownwardsCursor& cursor)
    if (check_dependencies(candidate.get(), depends_on, RAR_deps))
       return move_fail_ssa;
 
-   /* Check the new demand of the instructions being moved over */
+   /* Check the new demand of the instructions being moved over:
+    * total_demand doesn't include the current clause which consists of exactly 1 instruction.
+    */
    RegisterDemand register_pressure = cursor.total_demand;
-   register_pressure.update(cursor.clause_demand);
+   assert(cursor.insert_idx_clause == (cursor.insert_idx - 1));
+   register_pressure.update(block->instructions[cursor.insert_idx_clause]->register_demand);
    const RegisterDemand candidate_diff = get_live_changes(candidate.get());
    if (RegisterDemand(register_pressure - candidate_diff).exceeds(max_registers))
       return move_fail_pressure;
@@ -253,7 +246,6 @@ MoveState::downwards_move(DownwardsCursor& cursor)
       assert(cursor.total_demand == RegisterDemand{});
    }
 
-   cursor.clause_demand -= candidate_diff;
    cursor.insert_demand -= candidate_diff;
 
    cursor.source_idx--;
@@ -317,7 +309,6 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    } else {
       assert(cursor.total_demand == RegisterDemand{});
    }
-   cursor.clause_demand.update(new_demand);
 
    cursor.source_idx--;
    cursor.verify_invariants(block);
