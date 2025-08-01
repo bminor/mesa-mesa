@@ -126,6 +126,7 @@ else
   'nir_gather_xfb_info.c',
   'nir_opt_group_loads.c',
   'nir_gs_count_vertices.c',
+  'nir_inline_sysval.c',
   'nir_inline_uniforms.c',
   'nir_instr_set.c',
   'nir_instr_set.h',

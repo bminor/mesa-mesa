@@ -4945,6 +4945,8 @@ void nir_add_inlinable_uniforms(const nir_src *cond, nir_loop_info *info,
                                 uint32_t *uni_offsets, uint8_t *num_offsets,
                                 unsigned max_num_bo, unsigned max_offset);
 
+bool nir_inline_sysval(nir_shader *shader, nir_intrinsic_op op, uint64_t imm);
+
 bool nir_propagate_invariant(nir_shader *shader, bool invariant_prim);
 
 void nir_lower_var_copy_instr(nir_intrinsic_instr *copy, nir_shader *shader);
