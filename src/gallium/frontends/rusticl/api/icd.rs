@@ -31,7 +31,7 @@ const CL_ICD2_TAG_KHR: isize = 0x434C3331;
 const CL_ICD2_TAG_KHR: isize = 0x4F50454E434C3331;
 
 const fn cl_icd_dispatch_default() -> cl_icd_dispatch {
-    const ELEMS: usize = mem::size_of::<cl_icd_dispatch>() / mem::size_of::<Option<fn()>>();
+    const ELEMS: usize = size_of::<cl_icd_dispatch>() / size_of::<Option<fn()>>();
 
     // SAFETY: cl_icd_dispatch is a list of function pointers and we set them all to None
     unsafe { mem::transmute([None::<fn()>; ELEMS]) }

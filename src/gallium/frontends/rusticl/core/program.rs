@@ -16,7 +16,6 @@ use rusticl_opencl_gen::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ffi::CString;
-use std::mem::size_of;
 use std::ptr::addr_of;
 use std::slice;
 use std::sync::Arc;

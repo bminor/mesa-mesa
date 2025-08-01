@@ -21,7 +21,6 @@ use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::cmp;
 use std::cmp::Ordering;
-use std::mem;
 use std::num::NonZeroU64;
 use std::os::raw::c_void;
 use std::ptr;
@@ -2379,7 +2378,7 @@ pub fn svm_alloc(
     // When alignment is 0, the size of the largest supported type is used.
     // In the case of the full profile, that's `long16`.
     let alignment = NonZeroU64::new(alignment.into())
-        .unwrap_or(NonZeroU64::new(mem::size_of::<[u64; 16]>() as u64).unwrap());
+        .unwrap_or(NonZeroU64::new(size_of::<[u64; 16]>() as u64).unwrap());
 
     // size is 0 or > CL_DEVICE_MAX_MEM_ALLOC_SIZE value for any device in context.
     let size = NonZeroU64::new(size as u64).ok_or(CL_INVALID_VALUE)?;
@@ -2677,8 +2676,8 @@ fn enqueue_svm_mem_fill_impl(
             struct Pattern([u8; $bytesize]);
 
             // Just to make sure the compiler didn't generate anything weird.
-            static_assert!($bytesize == mem::size_of::<Pattern>());
-            static_assert!($bytesize == mem::align_of::<Pattern>());
+            static_assert!($bytesize == size_of::<Pattern>());
+            static_assert!($bytesize == align_of::<Pattern>());
 
             // CAST: We don't know exactly which type `pattern` points to, but we know it's an
             // Application Scalar Data Type (cl_char, cl_ulong, etc.) or an Application Vector Data

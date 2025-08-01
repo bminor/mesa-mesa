@@ -16,7 +16,6 @@ use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::cmp;
 use std::ffi::CStr;
-use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
@@ -164,7 +163,7 @@ unsafe impl CLInfoObj<cl_kernel_sub_group_info, (cl_device_id, usize, *const c_v
             return Err(CL_INVALID_OPERATION);
         }
 
-        let usize_byte = mem::size_of::<usize>();
+        let usize_byte = size_of::<usize>();
         // first we have to convert the input to a proper thing
         let input: &[usize] = match q {
             CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE | CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE => {
@@ -382,13 +381,13 @@ fn set_kernel_arg(
             | KernelArgType::Image
             | KernelArgType::RWImage
             | KernelArgType::Texture => {
-                if arg_size != std::mem::size_of::<cl_mem>() {
+                if arg_size != size_of::<cl_mem>() {
                     return Err(CL_INVALID_ARG_SIZE);
                 }
             }
 
             KernelArgType::Sampler => {
-                if arg_size != std::mem::size_of::<cl_sampler>() {
+                if arg_size != size_of::<cl_sampler>() {
                     return Err(CL_INVALID_ARG_SIZE);
                 }
             }

@@ -512,7 +512,7 @@ impl Context {
             ctx.clear_buffer(res, &pattern, offset as u32, size as u32);
         } else {
             let slice = unsafe {
-                slice::from_raw_parts_mut(svm_ptr as *mut _, size / mem::size_of_val(&pattern))
+                slice::from_raw_parts_mut(svm_ptr as *mut _, size / size_of_val(&pattern))
             };
 
             slice.fill(pattern);

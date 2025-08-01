@@ -8,7 +8,6 @@ use mesa_rust_gen::pipe_fd_type::*;
 use mesa_rust_gen::*;
 use mesa_rust_util::has_required_feature;
 
-use std::mem::size_of;
 use std::os::raw::*;
 use std::ptr;
 use std::ptr::*;

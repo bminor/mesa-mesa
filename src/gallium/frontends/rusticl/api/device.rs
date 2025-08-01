@@ -14,7 +14,6 @@ use rusticl_proc_macros::cl_info_entrypoint;
 use std::cmp::min;
 use std::ffi::c_char;
 use std::ffi::CStr;
-use std::mem::size_of;
 use std::ptr;
 
 const SPIRV_SUPPORT_STRING: &CStr =
