@@ -2038,6 +2038,7 @@ radv_get_rel_timeout_for_query(VkQueryType type)
    case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
    case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
    case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+   case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR:
       return radv_get_tdr_timeout_for_ip(AMD_IP_GFX) * 2;
    default:
       return radv_get_tdr_timeout_for_ip(AMD_IP_COMPUTE) * 2;
@@ -2367,11 +2368,13 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
          uint32_t value;
          do {
             value = p_atomic_read(&src32[1]);
-         } while (value != 1 && (flags & VK_QUERY_RESULT_WAIT_BIT));
+         } while (value != 1 && (flags & VK_QUERY_RESULT_WAIT_BIT) && !(timed_out = (atimeout < os_time_get_nano())));
 
          available = value != 0;
 
-         if (!available && !(flags & VK_QUERY_RESULT_PARTIAL_BIT))
+         if (timed_out)
+            result = VK_ERROR_DEVICE_LOST;
+         else if (!available && !(flags & VK_QUERY_RESULT_PARTIAL_BIT))
             result = VK_NOT_READY;
 
          if (flags & VK_QUERY_RESULT_64_BIT) {
