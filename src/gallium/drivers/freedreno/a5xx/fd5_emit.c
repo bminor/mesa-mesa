@@ -41,7 +41,7 @@ fd5_emit_const_user(struct fd_ringbuffer *ring,
                     const struct ir3_shader_variant *v, uint32_t regid,
                     uint32_t sizedwords, const uint32_t *dwords)
 {
-   emit_const_asserts(ring, v, regid, sizedwords);
+   emit_const_asserts(v, regid, sizedwords);
 
    OUT_PKT7(ring, CP_LOAD_STATE4, 3 + sizedwords);
    OUT_RING(ring, CP_LOAD_STATE4_0_DST_OFF(regid / 4) |
@@ -65,7 +65,7 @@ fd5_emit_const_bo(struct fd_ringbuffer *ring,
    uint32_t num_unit = sizedwords / 4;
    assert(num_unit % 4 == 0);
 
-   emit_const_asserts(ring, v, regid, sizedwords);
+   emit_const_asserts(v, regid, sizedwords);
 
    OUT_PKT7(ring, CP_LOAD_STATE4, 3);
    OUT_RING(ring, CP_LOAD_STATE4_0_DST_OFF(dst_off) |

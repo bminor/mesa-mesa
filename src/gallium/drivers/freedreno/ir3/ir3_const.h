@@ -44,8 +44,7 @@ static void emit_const_ptrs(struct fd_ringbuffer *ring,
                             struct fd_bo **bos, uint32_t *offsets);
 
 static void
-emit_const_asserts(struct fd_ringbuffer *ring,
-                   const struct ir3_shader_variant *v, uint32_t regid,
+emit_const_asserts(const struct ir3_shader_variant *v, uint32_t regid,
                    uint32_t sizedwords)
 {
    assert((v->type == MESA_SHADER_VERTEX) ||

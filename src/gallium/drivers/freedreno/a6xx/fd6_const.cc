@@ -80,7 +80,7 @@ fd6_emit_const_user(struct fd_ringbuffer *ring,
                     const struct ir3_shader_variant *v, uint32_t regid,
                     uint32_t sizedwords, const uint32_t *dwords)
 {
-   emit_const_asserts(ring, v, regid, sizedwords);
+   emit_const_asserts(v, regid, sizedwords);
 
    /* NOTE we cheat a bit here, since we know mesa is aligning
     * the size of the user buffer to 16 bytes.  And we want to
@@ -117,7 +117,7 @@ fd6_emit_const_bo(struct fd_ringbuffer *ring,
    uint32_t num_unit = DIV_ROUND_UP(sizedwords, 4);
    assert(num_unit % 4 == 0);
 
-   emit_const_asserts(ring, v, regid, sizedwords);
+   emit_const_asserts(v, regid, sizedwords);
 
    if (fd6_geom_stage(v->type)) {
       OUT_PKT(ring, CP_LOAD_STATE6_GEOM,
