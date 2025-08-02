@@ -15,6 +15,29 @@ When building llvmpipe or lavapipe for Android the ndk-build workflow
 is also used, but there are additional steps required to add the driver
 to the Android OS image.
 
+Preparing offline compilers
+---------------------------
+
+For cross-compiling the nvk driver, mesa_clc compiler binary needs to be
+prepared first:
+
+.. code-block:: sh
+
+    meson setup build-compiler \
+        -Dprefix=/tmp/mesa-compiler \
+        -Dbuildtype=release \
+        -Dstrip=true \
+        -Dplatforms= \
+        -Dgallium-drivers= \
+        -Dvulkan-drivers= \
+        -Dmesa-clc=enabled \
+        -Dinstall-mesa-clc=true
+    meson install -C build-compiler
+    export PATH=/tmp/mesa-compiler/bin:$PATH
+
+For panvk, ``-Dtools=panfrost -Dinstall-precomp-compiler=true`` is
+additionally needed.
+
 Building using the Android NDK
 ------------------------------
 
