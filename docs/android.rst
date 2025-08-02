@@ -72,13 +72,18 @@ one cross-compiling the turnip driver for a stock Pixel phone)
 
     meson setup build-android-aarch64 \
         --cross-file android-aarch64 \
-	-Dplatforms=android \
-	-Dplatform-sdk-version=34 \
-	-Dandroid-stub=true \
-	-Dgallium-drivers= \
-	-Dvulkan-drivers=freedreno \
-	-Dfreedreno-kmds=kgsl
+        -Dplatforms=android \
+        -Dplatform-sdk-version=34 \
+        -Dandroid-stub=true \
+        -Degl=disabled \
+        -Dgallium-drivers= \
+        -Dvulkan-drivers=freedreno \
+        -Dfreedreno-kmds=kgsl
     meson compile -C build-android-aarch64
+
+For drm drivers, ``-Dallow-fallback-for=libdrm`` is needed. Besides,
+``-Dallow-fallback-for=libdrm -Dmesa-clc=system`` is needed by nvk, and
+``-Dprecomp-compiler=system`` is additionally needed by panvk.
 
 Replacing Android drivers on stock Android
 ------------------------------------------
