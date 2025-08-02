@@ -92,6 +92,8 @@ struct fd_ringbuffer_funcs {
     * the kernel would need to do a legacy reloc.
     */
    void (*attach_bo)(struct fd_ringbuffer *ring, struct fd_bo *bo);
+   uint32_t (*attach_ring)(struct fd_ringbuffer *ring, struct fd_ringbuffer *target,
+                           uint32_t cmd_idx, uint64_t *iova);
    void (*assert_attached)(struct fd_ringbuffer *ring, struct fd_bo *bo);
 
    void (*emit_reloc)(struct fd_ringbuffer *ring, const struct fd_reloc *reloc);
@@ -208,6 +210,14 @@ static inline void
 fd_ringbuffer_attach_bo(struct fd_ringbuffer *ring, struct fd_bo *bo)
 {
    ring->funcs->attach_bo(ring, bo);
+}
+
+static inline
+uint32_t fd_ringbuffer_attach_ring(struct fd_ringbuffer *ring,
+                                   struct fd_ringbuffer *target,
+                                   uint32_t cmd_idx, uint64_t *iova)
+{
+   return ring->funcs->attach_ring(ring, target, cmd_idx, iova);
 }
 
 static inline void
