@@ -3,7 +3,6 @@ use crate::api::types::*;
 use crate::api::util::*;
 use crate::core::context::*;
 use crate::core::device::*;
-use crate::core::platform::*;
 use crate::core::program::*;
 
 use mesa_rust::compiler::clc::*;
@@ -302,17 +301,6 @@ fn release_program(program: cl_program) -> CLResult<()> {
     Program::release(program)
 }
 
-fn debug_logging(p: &Program, devs: &[&Device]) {
-    if Platform::dbg().program {
-        for dev in devs {
-            let msg = p.log(dev);
-            if !msg.is_empty() {
-                eprintln!("{}", msg);
-            }
-        }
-    }
-}
-
 #[cl_entrypoint(clBuildProgram)]
 fn build_program(
     program: cl_program,
@@ -348,7 +336,6 @@ fn build_program(
     //• CL_INVALID_OPERATION if the build of a program executable for any of the devices listed in device_list by a previous call to clBuildProgram for program has not completed.
     //• CL_INVALID_OPERATION if program was not created with clCreateProgramWithSource, clCreateProgramWithIL or clCreateProgramWithBinary.
 
-    debug_logging(p, &devs);
     if res {
         Ok(())
     } else {
@@ -368,7 +355,6 @@ fn compile_program(
     pfn_notify: Option<FuncProgramCB>,
     user_data: *mut ::std::os::raw::c_void,
 ) -> CLResult<()> {
-    let mut res = true;
     let p = Program::ref_from_raw(program)?;
     let devs = validate_devices(device_list, num_devices, &p.devs)?;
 
@@ -418,9 +404,7 @@ fn compile_program(
     // CL_COMPILE_PROGRAM_FAILURE if there is a failure to compile the program source. This error
     // will be returned if clCompileProgram does not return until the compile has completed.
     let options = c_string_to_string(options);
-    for dev in &devs {
-        res &= p.compile(dev, &options, &headers);
-    }
+    let res = p.compile(&devs, &options, &headers);
 
     if let Some(cb) = cb_opt {
         cb.call(p);
@@ -429,7 +413,6 @@ fn compile_program(
     // • CL_INVALID_COMPILER_OPTIONS if the compiler options specified by options are invalid.
     // • CL_INVALID_OPERATION if the compilation or build of a program executable for any of the devices listed in device_list by a previous call to clCompileProgram or clBuildProgram for program has not completed.
 
-    debug_logging(p, &devs);
     if res {
         Ok(())
     } else {
@@ -495,7 +478,6 @@ pub fn link_program(
         cb.call(&res);
     }
 
-    debug_logging(&res, &devs);
     Ok((res.into_cl(), code))
 
     //• CL_INVALID_LINKER_OPTIONS if the linker options specified by options are invalid.

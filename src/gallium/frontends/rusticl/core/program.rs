@@ -597,6 +597,8 @@ impl Program {
 
         info.rebuild_kernels(devs, self.is_src());
 
+        debug_logging(self, devs);
+
         res
     }
 
@@ -672,8 +674,15 @@ impl Program {
         }
     }
 
-    pub fn compile(&self, dev: &Device, options: &str, headers: &[spirv::CLCHeader]) -> bool {
-        self.do_compile(dev, options, headers, &mut self.build_info())
+    pub fn compile(&self, devs: &[&Device], options: &str, headers: &[spirv::CLCHeader]) -> bool {
+        let mut res = true;
+        for dev in devs {
+            res &= self.do_compile(dev, options, headers, &mut self.build_info());
+        }
+
+        debug_logging(self, devs);
+
+        res
     }
 
     pub fn link(
@@ -741,13 +750,17 @@ impl Program {
         // Pre build nir kernels
         build.rebuild_kernels(devs, false);
 
-        Arc::new(Self {
+        let res = Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Program),
             context: context,
             devs: devs.to_owned(),
             src: ProgramSourceType::Linked,
             build: Mutex::new(build),
-        })
+        });
+
+        debug_logging(&res, &devs);
+
+        res
     }
 
     pub fn is_bin(&self) -> bool {
@@ -784,5 +797,17 @@ impl Program {
         };
 
         lock.spec_constants.insert(spec_id, val);
+    }
+}
+
+/// Performs debug logging for the provided program and devices.
+fn debug_logging(p: &Program, devs: &[&Device]) {
+    if Platform::dbg().program {
+        for dev in devs {
+            let msg = p.log(dev);
+            if !msg.is_empty() {
+                eprintln!("{}", msg);
+            }
+        }
     }
 }
