@@ -187,9 +187,9 @@ write_constant(write_ctx *ctx, const nir_constant *c)
 }
 
 static nir_constant *
-read_constant(read_ctx *ctx, nir_variable *nvar)
+read_constant(read_ctx *ctx, void *mem_ctx)
 {
-   nir_constant *c = ralloc(nvar, nir_constant);
+   nir_constant *c = ralloc(mem_ctx, nir_constant);
 
    static const nir_const_value zero_vals[ARRAY_SIZE(c->values)] = { 0 };
    blob_copy_bytes(ctx->blob, (uint8_t *)c->values, sizeof(c->values));
@@ -197,9 +197,9 @@ read_constant(read_ctx *ctx, nir_variable *nvar)
    c->num_elements = blob_read_uint32(ctx->blob);
 
    if (c->num_elements) {
-      c->elements = ralloc_array(nvar, nir_constant *, c->num_elements);
+      c->elements = ralloc_array(c, nir_constant *, c->num_elements);
       for (unsigned i = 0; i < c->num_elements; i++) {
-         c->elements[i] = read_constant(ctx, nvar);
+         c->elements[i] = read_constant(ctx, c);
          c->is_null_constant &= c->elements[i]->is_null_constant;
       }
    } else {
@@ -366,7 +366,7 @@ read_variable(read_ctx *ctx)
 
    if (flags.u.has_name) {
       const char *name = blob_read_string(ctx->blob);
-      nir_variable_set_name(var, name);
+      nir_variable_set_name(ctx->nir, var, name);
    } else {
       var->name = NULL;
    }
@@ -390,7 +390,7 @@ read_variable(read_ctx *ctx)
 
    var->num_state_slots = flags.u.num_state_slots;
    if (var->num_state_slots != 0) {
-      var->state_slots = ralloc_array(var, nir_state_slot,
+      var->state_slots = ralloc_array(ctx->nir, nir_state_slot,
                                       var->num_state_slots);
       for (unsigned i = 0; i < var->num_state_slots; i++) {
          blob_copy_bytes(ctx->blob, &var->state_slots[i],
@@ -398,7 +398,7 @@ read_variable(read_ctx *ctx)
       }
    }
    if (flags.u.has_constant_initializer)
-      var->constant_initializer = read_constant(ctx, var);
+      var->constant_initializer = read_constant(ctx, ctx->nir);
    else
       var->constant_initializer = NULL;
 
@@ -409,7 +409,7 @@ read_variable(read_ctx *ctx)
 
    var->num_members = flags.u.num_members;
    if (var->num_members > 0) {
-      var->members = ralloc_array(var, struct nir_variable_data,
+      var->members = ralloc_array(ctx->nir, struct nir_variable_data,
                                   var->num_members);
       blob_copy_bytes(ctx->blob, (uint8_t *)var->members,
                       var->num_members * sizeof(*var->members));

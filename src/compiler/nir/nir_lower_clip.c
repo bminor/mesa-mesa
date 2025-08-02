@@ -54,7 +54,7 @@ create_clipdist_var(nir_shader *shader,
       var->data.mode = nir_var_shader_in;
       shader->num_inputs += MAX2(1, DIV_ROUND_UP(array_size, 4));
    }
-   nir_variable_set_namef(var, "clipdist_%d", slot - VARYING_SLOT_CLIP_DIST0);
+   nir_variable_set_namef(shader, var, "clipdist_%d", slot - VARYING_SLOT_CLIP_DIST0);
    var->data.index = 0;
    var->data.location = slot;
 

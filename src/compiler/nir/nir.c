@@ -269,7 +269,7 @@ nir_shader_add_variable(nir_shader *shader, nir_variable *var)
 }
 
 void
-nir_variable_set_name(nir_variable *var, const char *name)
+nir_variable_set_name(nir_shader *nir, nir_variable *var, const char *name)
 {
    if (var->name && var->name != var->_name_storage)
       ralloc_free(var->name);
@@ -284,12 +284,12 @@ nir_variable_set_name(nir_variable *var, const char *name)
       var->name = var->_name_storage;
       strcpy(var->name, name);
    } else {
-      var->name = ralloc_strdup(var, name);
+      var->name = ralloc_strdup(nir, name);
    }
 }
 
 void
-nir_variable_set_namef(nir_variable *var, const char *fmt, ...)
+nir_variable_set_namef(nir_shader *nir, nir_variable *var, const char *fmt, ...)
 {
    if (var->name && var->name != var->_name_storage)
       ralloc_free(var->name);
@@ -302,7 +302,7 @@ nir_variable_set_namef(nir_variable *var, const char *fmt, ...)
    if (name_size <= ARRAY_SIZE(var->_name_storage))
       var->name = var->_name_storage;
    else
-      var->name = ralloc_size(var, name_size);
+      var->name = ralloc_size(nir, name_size);
 
    if (var->name)
       vsnprintf(var->name, name_size, fmt, args);
@@ -311,7 +311,7 @@ nir_variable_set_namef(nir_variable *var, const char *fmt, ...)
 }
 
 void
-nir_variable_append_namef(nir_variable *var, const char *fmt, ...)
+nir_variable_append_namef(nir_shader *nir, nir_variable *var, const char *fmt, ...)
 {
    va_list args;
    va_start(args, fmt);
@@ -339,11 +339,11 @@ nir_variable_append_namef(nir_variable *var, const char *fmt, ...)
       /* ralloc the appended name. */
       if (var->name == var->_name_storage) {
          /* Move the name from _name_storage to ralloc'd. */
-         var->name = ralloc_size(var, name_size);
+         var->name = ralloc_size(nir, name_size);
          if (var->name)
             memcpy(var->name, var->_name_storage, old_len + 1);
       } else {
-         var->name = reralloc_size(var, var->name, name_size);
+         var->name = reralloc_size(nir, var->name, name_size);
       }
    }
 
@@ -354,8 +354,14 @@ nir_variable_append_namef(nir_variable *var, const char *fmt, ...)
 }
 
 void
-nir_variable_steal_name(nir_variable *dst, nir_variable *src)
+nir_variable_steal_name(nir_shader *nir, nir_variable *dst, nir_variable *src)
 {
+   if (dst == src) {
+      if (dst->name != dst->_name_storage)
+         ralloc_steal(nir, dst->name);
+      return;
+   }
+
    if (!src->name) {
       dst->name = NULL;
       return;
@@ -366,7 +372,7 @@ nir_variable_steal_name(nir_variable *dst, nir_variable *src)
       dst->name = dst->_name_storage;
       strcpy(dst->name, src->name);
    } else {
-      ralloc_steal(dst, src->name);
+      ralloc_steal(nir, src->name);
       dst->name = src->name;
    }
 
@@ -378,7 +384,7 @@ nir_variable_create(nir_shader *shader, nir_variable_mode mode,
                     const struct glsl_type *type, const char *name)
 {
    nir_variable *var = rzalloc(shader, nir_variable);
-   nir_variable_set_name(var, name);
+   nir_variable_set_name(shader, var, name);
    var->type = type;
    var->data.mode = mode;
    var->data.how_declared = nir_var_declared_normally;
@@ -403,7 +409,7 @@ nir_local_variable_create(nir_function_impl *impl,
                           const struct glsl_type *type, const char *name)
 {
    nir_variable *var = rzalloc(impl->function->shader, nir_variable);
-   nir_variable_set_name(var, name);
+   nir_variable_set_name(impl->function->shader, var, name);
    var->type = type;
    var->data.mode = nir_var_function_temp;
 
@@ -420,7 +426,7 @@ nir_state_variable_create(nir_shader *shader,
 {
    nir_variable *var = nir_variable_create(shader, nir_var_uniform, type, name);
    var->num_state_slots = 1;
-   var->state_slots = rzalloc_array(var, nir_state_slot, 1);
+   var->state_slots = rzalloc_array(shader, nir_state_slot, 1);
    memcpy(var->state_slots[0].tokens, tokens,
           sizeof(var->state_slots[0].tokens));
    shader->num_uniforms++;

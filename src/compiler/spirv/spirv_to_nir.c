@@ -2710,8 +2710,7 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
          } else {
             comp = vtn_value(b, w[5], vtn_value_type_constant);
             deref_start = 6;
-            val->constant = nir_constant_clone(comp->constant,
-                                               (nir_variable *)b);
+            val->constant = nir_constant_clone(comp->constant, b->shader);
             c = &val->constant;
          }
 

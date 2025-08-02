@@ -365,7 +365,7 @@ register_state_var(struct texenv_fragment_program *p,
    free(name);
 
    var->num_state_slots = 1;
-   var->state_slots = ralloc_array(var, nir_state_slot, 1);
+   var->state_slots = ralloc_array(p->b->shader, nir_state_slot, 1);
    var->data.driver_location = loc;
    memcpy(var->state_slots[0].tokens, tokens,
           sizeof(var->state_slots[0].tokens));

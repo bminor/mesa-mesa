@@ -3951,10 +3951,14 @@ nir_function_impl_add_variable(nir_function_impl *impl, nir_variable *var)
    exec_list_push_tail(&impl->locals, &var->node);
 }
 
-void nir_variable_set_name(nir_variable *var, const char *name);
-void nir_variable_set_namef(nir_variable *var, const char *fmt, ...) PRINTFLIKE(2, 3);
-void nir_variable_append_namef(nir_variable *var, const char *fmt, ...) PRINTFLIKE(2, 3);
-void nir_variable_steal_name(nir_variable *dst, nir_variable *src);
+void nir_variable_set_name(nir_shader *nir, nir_variable *var,
+                           const char *name);
+void nir_variable_set_namef(nir_shader *nir, nir_variable *var,
+                            const char *fmt, ...) PRINTFLIKE(3, 4);
+void nir_variable_append_namef(nir_shader *nir, nir_variable *var,
+                               const char *fmt, ...) PRINTFLIKE(3, 4);
+void nir_variable_steal_name(nir_shader *nir, nir_variable *dst,
+                             nir_variable *src);
 
 /** creates a variable, sets a few defaults, and adds it to the list */
 nir_variable *nir_variable_create(nir_shader *shader,
@@ -4666,7 +4670,7 @@ nir_function_impl *
 nir_function_impl_clone_remap_globals(nir_shader *shader,
                                       const nir_function_impl *fi,
                                       struct hash_table *remap_table);
-nir_constant *nir_constant_clone(const nir_constant *c, nir_variable *var);
+nir_constant *nir_constant_clone(const nir_constant *c, void *mem_ctx);
 nir_variable *nir_variable_clone(const nir_variable *c, nir_shader *shader);
 
 void nir_shader_replace(nir_shader *dest, nir_shader *src);

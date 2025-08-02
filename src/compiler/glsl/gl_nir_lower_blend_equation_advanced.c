@@ -218,7 +218,7 @@ add_temp_var(nir_builder *b, char *name, const struct glsl_type *type)
 {
    nir_variable *var = rzalloc(b->shader, nir_variable);
    var->type = type;
-   nir_variable_set_name(var, name);
+   nir_variable_set_name(b->shader, var, name);
    var->data.mode = nir_var_function_temp;
    nir_function_impl_add_variable(b->impl, var);
 
@@ -510,7 +510,7 @@ gl_nir_lower_blend_equation_advanced(nir_shader *sh, bool coherent)
                                             glsl_uint_type(),
                                             "gl_AdvancedBlendModeMESA");
    mode->data.how_declared = nir_var_hidden;
-   mode->state_slots = rzalloc_array(mode, nir_state_slot, 1);
+   mode->state_slots = rzalloc_array(sh, nir_state_slot, 1);
    mode->num_state_slots = 1;
    mode->state_slots[0].tokens[0] = STATE_ADVANCED_BLENDING_MODE;
 

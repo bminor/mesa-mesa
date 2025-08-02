@@ -36,10 +36,42 @@
  * earlier, and even many times, trading CPU cycles for memory savings.
  */
 
-#define steal_list(mem_ctx, type, list)        \
-   foreach_list_typed(type, obj, node, list) { \
-      ralloc_steal(mem_ctx, obj);              \
+static void
+sweep_constant(nir_shader *nir, nir_constant *c)
+{
+   ralloc_steal(nir, c);
+
+   if (c->num_elements) {
+      assert(c->elements);
+      ralloc_steal(nir, c->elements);
+      for (unsigned i = 0; i < c->num_elements; i++)
+         sweep_constant(nir, c->elements[i]);
+   } else {
+      assert(!c->elements);
    }
+}
+
+static void
+sweep_variable(nir_shader *nir, nir_variable *var)
+{
+   ralloc_steal(nir, var);
+   nir_variable_steal_name(nir, var, var);
+   ralloc_steal(nir, var->max_ifc_array_access);
+   ralloc_steal(nir, var->state_slots);
+   if (var->constant_initializer)
+      sweep_constant(nir, var->constant_initializer);
+   if (var->pointer_initializer)
+      sweep_variable(nir, var->pointer_initializer);
+   ralloc_steal(nir, var->members);
+}
+
+static void
+sweep_var_list(nir_shader *nir, struct exec_list *list)
+{
+   foreach_list_typed(nir_variable, var, node, list) {
+      sweep_variable(nir, var);
+   }
+}
 
 static void sweep_cf_node(nir_shader *nir, nir_cf_node *cf_node);
 
@@ -122,7 +154,7 @@ sweep_impl(nir_shader *nir, nir_function_impl *impl)
 {
    ralloc_steal(nir, impl);
 
-   steal_list(nir, nir_variable, &impl->locals);
+   sweep_var_list(nir, &impl->locals);
 
    foreach_list_typed(nir_cf_node, cf_node, node, &impl->body) {
       sweep_cf_node(nir, cf_node);
@@ -167,7 +199,7 @@ nir_sweep(nir_shader *nir)
       ralloc_steal(nir, (char *)nir->info.label);
 
    /* Variables are not dead.  Steal them back. */
-   steal_list(nir, nir_variable, &nir->variables);
+   sweep_var_list(nir, &nir->variables);
 
    /* Recurse into functions, stealing their contents back. */
    foreach_list_typed(nir_function, func, node, &nir->functions) {

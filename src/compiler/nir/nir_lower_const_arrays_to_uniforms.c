@@ -102,10 +102,10 @@ rebuild_const_array_initialiser(const struct glsl_type *type, void *mem_ctx)
       ret->num_elements = glsl_get_matrix_columns(type);
 
       if (ret->num_elements) {
-         ret->elements = ralloc_array(mem_ctx, nir_constant *, ret->num_elements);
+         ret->elements = ralloc_array(ret, nir_constant *, ret->num_elements);
 
          for (unsigned i = 0; i < ret->num_elements; i++) {
-            ret->elements[i] = rzalloc(mem_ctx, nir_constant);
+            ret->elements[i] = rzalloc(ret, nir_constant);
          }
       }
 
@@ -116,15 +116,15 @@ rebuild_const_array_initialiser(const struct glsl_type *type, void *mem_ctx)
       ret->num_elements = glsl_get_length(type);
 
       if (ret->num_elements) {
-         ret->elements = ralloc_array(mem_ctx, nir_constant *, ret->num_elements);
+         ret->elements = ralloc_array(ret, nir_constant *, ret->num_elements);
 
          for (unsigned i = 0; i < ret->num_elements; i++) {
             if (glsl_type_is_array(type)) {
                ret->elements[i] =
-                  rebuild_const_array_initialiser(glsl_get_array_element(type), mem_ctx);
+                  rebuild_const_array_initialiser(glsl_get_array_element(type), ret);
             } else {
                ret->elements[i] =
-                  rebuild_const_array_initialiser(glsl_get_struct_field(type, i), mem_ctx);
+                  rebuild_const_array_initialiser(glsl_get_struct_field(type, i), ret);
             }
          }
       }
@@ -171,7 +171,7 @@ lower_const_array_to_uniform(nir_shader *shader, struct var_info *info,
    nir_variable *uni = rzalloc(shader, nir_variable);
 
    /* Rebuild constant initialiser */
-   nir_constant *const_init = rebuild_const_array_initialiser(var->type, uni);
+   nir_constant *const_init = rebuild_const_array_initialiser(var->type, shader);
 
    /* Set constant initialiser */
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
@@ -207,7 +207,7 @@ lower_const_array_to_uniform(nir_shader *shader, struct var_info *info,
    uni->data.read_only = true;
    uni->data.mode = nir_var_uniform;
    uni->type = info->var->type;
-   nir_variable_set_namef(uni,"constarray_%x_%u",
+   nir_variable_set_namef(shader, uni,"constarray_%x_%u",
                           *const_count, shader->info.stage);
 
    nir_shader_add_variable(shader, uni);

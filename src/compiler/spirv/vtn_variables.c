@@ -2183,7 +2183,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
    case vtn_variable_mode_node_payload:
       /* For these, we create the variable normally */
       var->var = rzalloc(b->shader, nir_variable);
-      nir_variable_set_name(var->var, val->name);
+      nir_variable_set_name(b->shader, var->var, val->name);
       var->var->type = vtn_type_get_nir_type(b, var->type, var->mode);
 
       /* This is a total hack but we need some way to flag variables which are
@@ -2205,7 +2205,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
    case vtn_variable_mode_accel_struct:
    case vtn_variable_mode_shader_record:
       var->var = rzalloc(b->shader, nir_variable);
-      nir_variable_set_name(var->var, val->name);
+      nir_variable_set_name(b->shader, var->var, val->name);
 
       var->var->type = vtn_type_get_nir_type(b, var->type, var->mode);
       var->var->interface_type = var->var->type;
@@ -2221,7 +2221,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
    case vtn_variable_mode_task_payload:
       /* Create the variable normally */
       var->var = rzalloc(b->shader, nir_variable);
-      nir_variable_set_name(var->var, val->name);
+      nir_variable_set_name(b->shader, var->var, val->name);
       var->var->type = vtn_type_get_nir_type(b, var->type, var->mode);
       var->var->data.mode = nir_mode;
       if (var->mode == vtn_variable_mode_workgroup &&
@@ -2232,7 +2232,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
    case vtn_variable_mode_input:
    case vtn_variable_mode_output: {
       var->var = rzalloc(b->shader, nir_variable);
-      nir_variable_set_name(var->var, val->name);
+      nir_variable_set_name(b->shader, var->var, val->name);
       var->var->type = vtn_type_get_nir_type(b, var->type, var->mode);
       var->var->data.mode = nir_mode;
 
@@ -2293,7 +2293,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
       if (per_vertex_type->base_type == vtn_base_type_struct &&
           per_vertex_type->block) {
          var->var->num_members = glsl_get_length(per_vertex_type->type);
-         var->var->members = rzalloc_array(var->var, struct nir_variable_data,
+         var->var->members = rzalloc_array(b->shader, struct nir_variable_data,
                                            var->var->num_members);
 
          for (unsigned i = 0; i < var->var->num_members; i++) {
@@ -2399,7 +2399,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
       switch (initializer->value_type) {
       case vtn_value_type_constant:
          var->var->constant_initializer =
-            nir_constant_clone(initializer->constant, var->var);
+            nir_constant_clone(initializer->constant, b->shader);
          break;
       case vtn_value_type_pointer:
          var->var->pointer_initializer = initializer->pointer->var->var;

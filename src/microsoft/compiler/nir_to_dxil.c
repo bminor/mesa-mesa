@@ -1494,7 +1494,7 @@ emit_global_consts(struct ntd_context *ctx)
 
    nir_foreach_variable_with_modes(var, ctx->shader, nir_var_mem_constant) {
       if (!var->name)
-         nir_variable_set_namef(var, "const_%d", var->data.driver_location);
+         nir_variable_set_namef(ctx->shader, var, "const_%d", var->data.driver_location);
 
       const struct dxil_value *agg_vals =
          get_value_for_const_aggregate(&ctx->mod, var->constant_initializer, var->type);
@@ -1525,7 +1525,7 @@ emit_shared_vars(struct ntd_context *ctx)
 
    nir_foreach_variable_with_modes(var, ctx->shader, nir_var_mem_shared) {
       if (!var->name)
-         nir_variable_set_namef(var, "shared_%d", var->data.driver_location);
+         nir_variable_set_namef(ctx->shader, var, "shared_%d", var->data.driver_location);
       const struct dxil_value *gvar = dxil_add_global_ptr_var(&ctx->mod, var->name,
                                                               get_type_for_glsl_type(&ctx->mod, var->type),
                                                               DXIL_AS_GROUPSHARED, 16,

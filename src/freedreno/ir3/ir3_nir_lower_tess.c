@@ -1030,14 +1030,14 @@ ir3_nir_lower_gs(nir_shader *shader)
       exec_list_push_tail(&state.new_outputs, &output->node);
 
       /* Rewrite the original output to be a shadow variable. */
-      nir_variable_set_namef(var, "%s@gs-temp", output->name);
+      nir_variable_set_namef(shader, var, "%s@gs-temp", output->name);
       var->data.mode = nir_var_shader_temp;
 
       /* Clone the shadow variable to create the emit shadow variable that
        * we'll assign in the emit conditionals.
        */
       nir_variable *emit_output = nir_variable_clone(var, shader);
-      nir_variable_set_namef(emit_output, "%s@emit-temp", output->name);
+      nir_variable_set_namef(shader, emit_output, "%s@emit-temp", output->name);
       exec_list_push_tail(&state.emit_outputs, &emit_output->node);
    }
 

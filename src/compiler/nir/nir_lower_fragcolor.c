@@ -66,7 +66,7 @@ lower_fragcolor_intrin(nir_builder *b, nir_intrinsic_instr *instr, void *data)
    const char *name = out->data.index == 0 ? "gl_FragData[0]" : "gl_SecondaryFragDataEXT[0]";
    const char *name_tmpl = out->data.index == 0 ? "gl_FragData[%u]" : "gl_SecondaryFragDataEXT[%u]";
 
-   nir_variable_set_name(out, name);
+   nir_variable_set_name(b->shader, out, name);
 
    /* translate gl_FragColor -> gl_FragData since this is already handled */
    out->data.location = FRAG_RESULT_DATA0;

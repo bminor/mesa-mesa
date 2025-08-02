@@ -120,28 +120,31 @@ gather_constant_initializers(nir_constant *src,
                              nir_variable *var,
                              const struct glsl_type *type,
                              struct field *field,
-                             struct split_var_state *state)
+                             void *mem_ctx)
 {
    if (!src)
       return NULL;
    if (glsl_type_is_array(type)) {
       const struct glsl_type *element = glsl_get_array_element(type);
       assert(src->num_elements == glsl_get_length(type));
-      nir_constant *dst = rzalloc(var, nir_constant);
+      nir_constant *dst = rzalloc(mem_ctx, nir_constant);
       dst->num_elements = src->num_elements;
       if (dst->num_elements) {
-         dst->elements = rzalloc_array(var, nir_constant *, src->num_elements);
+         dst->elements = rzalloc_array(dst, nir_constant *, src->num_elements);
          for (unsigned i = 0; i < src->num_elements; ++i) {
             dst->elements[i] = gather_constant_initializers(src->elements[i], var,
-                                                            element, field, state);
+                                                            element, field, dst);
          }
       }
       return dst;
    } else if (glsl_type_is_struct(type)) {
       const struct glsl_type *element = glsl_get_struct_field(type, field->current_index);
-      return gather_constant_initializers(src->elements[field->current_index], var, element, &field->fields[field->current_index], state);
+      return gather_constant_initializers(src->elements[field->current_index],
+                                          var, element,
+                                          &field->fields[field->current_index],
+                                          mem_ctx);
    } else {
-      return nir_constant_clone(src, var);
+      return nir_constant_clone(src, mem_ctx);
    }
 }
 
@@ -193,7 +196,7 @@ init_field_for_type(struct field *field, struct field *parent,
       field->var->data.ray_query = state->base_var->data.ray_query;
       field->var->constant_initializer = gather_constant_initializers(state->base_var->constant_initializer,
                                                                       field->var, state->base_var->type,
-                                                                      root, state);
+                                                                      root, state->shader);
    }
 }
 

@@ -359,11 +359,12 @@ flatten_var_arrays(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 static void
-flatten_constant_initializer(nir_variable *var, nir_constant *src, nir_constant ***dest, unsigned vector_elements)
+flatten_constant_initializer(nir_shader *nir, nir_constant *src, nir_constant ***dest,
+                             unsigned vector_elements)
 {
    if (src->num_elements == 0) {
       for (unsigned i = 0; i < vector_elements; ++i) {
-         nir_constant *new_scalar = rzalloc(var, nir_constant);
+         nir_constant *new_scalar = rzalloc(nir, nir_constant);
          memcpy(&new_scalar->values[0], &src->values[i], sizeof(src->values[0]));
          new_scalar->is_null_constant = src->values[i].u64 == 0;
 
@@ -372,12 +373,12 @@ flatten_constant_initializer(nir_variable *var, nir_constant *src, nir_constant 
       }
    } else {
       for (unsigned i = 0; i < src->num_elements; ++i)
-         flatten_constant_initializer(var, src->elements[i], dest, vector_elements);
+         flatten_constant_initializer(nir, src->elements[i], dest, vector_elements);
    }
 }
 
 static bool
-flatten_var_array_types(nir_variable *var)
+flatten_var_array_types(nir_shader *nir, nir_variable *var)
 {
    assert(!glsl_type_is_struct(glsl_without_array(var->type)));
    const struct glsl_type *matrix_type = glsl_without_array(var->type);
@@ -389,9 +390,9 @@ flatten_var_array_types(nir_variable *var)
                                                             glsl_get_component_slots(var->type), 0);
    var->type = flattened_type;
    if (var->constant_initializer) {
-      nir_constant **new_elements = ralloc_array(var, nir_constant *, glsl_get_length(flattened_type));
+      nir_constant **new_elements = ralloc_array(nir, nir_constant *, glsl_get_length(flattened_type));
       nir_constant **temp = new_elements;
-      flatten_constant_initializer(var, var->constant_initializer, &temp, glsl_get_vector_elements(matrix_type));
+      flatten_constant_initializer(nir, var->constant_initializer, &temp, glsl_get_vector_elements(matrix_type));
       var->constant_initializer->num_elements = glsl_get_length(flattened_type);
       var->constant_initializer->elements = new_elements;
    }
@@ -403,12 +404,12 @@ dxil_nir_flatten_var_arrays(nir_shader *shader, nir_variable_mode modes)
 {
    bool progress = false;
    nir_foreach_variable_with_modes(var, shader, modes & ~nir_var_function_temp)
-      progress |= flatten_var_array_types(var);
+      progress |= flatten_var_array_types(shader, var);
 
    if (modes & nir_var_function_temp) {
       nir_foreach_function_impl(impl, shader) {
          nir_foreach_function_temp_variable(var, impl)
-            progress |= flatten_var_array_types(var);
+            progress |= flatten_var_array_types(shader, var);
       }
    }
 
@@ -495,7 +496,7 @@ lower_deref_bit_size(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 static bool
-lower_var_bit_size_types(nir_variable *var, unsigned min_bit_size, unsigned max_bit_size)
+lower_var_bit_size_types(nir_shader *nir, nir_variable *var, unsigned min_bit_size, unsigned max_bit_size)
 {
    assert(!glsl_type_is_array_of_arrays(var->type) && !glsl_type_is_struct(var->type));
    const struct glsl_type *type = glsl_without_array(var->type);
@@ -559,8 +560,8 @@ lower_var_bit_size_types(nir_variable *var, unsigned min_bit_size, unsigned max_
       if (var->constant_initializer) {
          unsigned num_elements = var->constant_initializer->num_elements ?
             var->constant_initializer->num_elements * 2 : 2;
-         nir_constant **element_arr = ralloc_array(var, nir_constant *, num_elements);
-         nir_constant *elements = rzalloc_array(var, nir_constant, num_elements);
+         nir_constant **element_arr = ralloc_array(nir, nir_constant *, num_elements);
+         nir_constant *elements = rzalloc_array(nir, nir_constant, num_elements);
          for (unsigned i = 0; i < var->constant_initializer->num_elements; ++i) {
             element_arr[i*2] = &elements[i*2];
             element_arr[i*2+1] = &elements[i*2+1];
@@ -585,12 +586,12 @@ dxil_nir_lower_var_bit_size(nir_shader *shader, nir_variable_mode modes,
 {
    bool progress = false;
    nir_foreach_variable_with_modes(var, shader, modes & ~nir_var_function_temp)
-      progress |= lower_var_bit_size_types(var, min_bit_size, max_bit_size);
+      progress |= lower_var_bit_size_types(shader, var, min_bit_size, max_bit_size);
 
    if (modes & nir_var_function_temp) {
       nir_foreach_function_impl(impl, shader) {
          nir_foreach_function_temp_variable(var, impl)
-            progress |= lower_var_bit_size_types(var, min_bit_size, max_bit_size);
+            progress |= lower_var_bit_size_types(shader, var, min_bit_size, max_bit_size);
       }
    }
 

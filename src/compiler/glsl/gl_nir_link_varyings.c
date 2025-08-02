@@ -644,7 +644,7 @@ resize_tes_inputs(const struct gl_constants *consts,
          var->data.explicit_location = false;
          var->data.mode = nir_var_mem_constant;
 
-         nir_constant *val = rzalloc(var, nir_constant);
+         nir_constant *val = rzalloc(tes->Program->nir, nir_constant);
          val->values[0].i32 = num_vertices;
          var->constant_initializer = val;
 
