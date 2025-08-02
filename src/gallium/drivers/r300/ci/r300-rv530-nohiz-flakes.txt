@@ -39,6 +39,7 @@ spec@glsl-1.10@execution@built-in-functions@fs-op-ge-int-int-using-if
 spec@glsl-1.10@execution@built-in-functions@vs-op-assign-div-mat2-float
 
 # uprev Piglit in Mesa
+spec@!opengl 1.1@tex-upside-down-miptree
 spec@!opengl 1.2@mipmap-setup
 spec@!opengl 1.5@depth-tex-compare
 

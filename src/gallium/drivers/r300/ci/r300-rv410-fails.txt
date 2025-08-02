@@ -1351,3 +1351,5 @@ spec@!opengl 1.1@teximage-scale-bias,Fail
 spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-01,Fail
 spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-04,Fail
 spec@glsl-1.10@execution@glsl-fs-texture2d-mipmap-const-bias-05,Fail
+shaders@glsl-max-varyings,Fail
+spec@!opengl 1.5@depth-tex-compare,Fail

@@ -1329,3 +1329,6 @@ spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTER
 spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_GREEN_SIZE,Fail
 spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_RED_SIZE,Fail
 spec@arb_occlusion_query@occlusion_query_meta_save,Fail
+shaders@glsl-fs-fogscale@vs and fs,Fail
+spec@arb_texture_rectangle@texwrap rect proj bordercolor,Fail
+spec@arb_texture_rectangle@texwrap rect proj bordercolor@GL_RGBA8- projected- border color only,Fail

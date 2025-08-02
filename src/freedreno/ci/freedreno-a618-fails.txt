@@ -226,6 +226,10 @@ spec@arb_base_instance@arb_base_instance-drawarrays,Fail
 spec@ext_base_instance@arb_base_instance-baseinstance-doesnt-affect-gl-instance-id_gles3,Fail
 spec@ext_base_instance@arb_base_instance-drawarrays_gles3,Fail
 
+# New failures appeared after Piglit uprev to 28d1349844eacda869f0f82f551bcd4ac0c4edfe
+spec@arb_gl_spirv@execution@vs-instance-id,Fail
+spec@arb_gl_spirv@execution@xfb@vs_two_sets_mixing_order,Fail
+
 # glcts update
 dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 KHR-GL46.texture_view.view_classes,Fail

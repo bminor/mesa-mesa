@@ -575,3 +575,4 @@ KHR-Single-GL43.arrays_of_arrays_gl.SubroutineArgumentAliasing3_var_type_index_1
 glx@glx-multithread-buffer-busy-tracking-bug,Fail
 spec@arb_es2_compatibility@texwrap formats bordercolor,Fail
 spec@arb_es2_compatibility@texwrap formats bordercolor@GL_RGB565- border color only,Fail
+spec@arb_spirv_extensions@execution@storage_buffer_storage_class@unsized-array,Fail

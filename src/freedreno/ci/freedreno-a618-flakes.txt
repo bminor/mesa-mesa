@@ -227,6 +227,8 @@ spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-fs-getuniformdv
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-gs-getuniformdv
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-vs-getuniformdv
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT
+spec@ext_external_objects@vk-ping-pong-multi-sem
+spec@ext_external_objects@vk-ping-pong-single-sem
 spec@ext_packed_float@query-rgba-signed-components
 
 

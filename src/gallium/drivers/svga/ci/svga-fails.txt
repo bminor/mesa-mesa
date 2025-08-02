@@ -1046,6 +1046,7 @@ spec@nv_copy_image@nv_copy_image-formats --samples=8@Source: GL_RGB32UI/Destinat
 spec@nv_copy_image@nv_copy_image-formats --samples=8@Source: GL_RGB32UI/Destination: GL_RGB32UI,Fail
 
 # uprev Piglit in Mesa
+spec@!opengl es 3.0@gl_vertexid used with gldrawarrays,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_RGB32F/Destination: GL_RGB32I,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_RGB32F/Destination: GL_RGB32UI,Fail
 spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_RGB32I/Destination: GL_RGB32I,Fail
@@ -1067,6 +1068,7 @@ spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32UI/Destin
 spec@arb_copy_image@arb_copy_image-formats --samples=8@Source: GL_RGB32UI/Destination: GL_RGB32UI,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
+spec@arb_gpu_shader_fp64@shader_storage@layout-std430-fp64-mixed-shader,Fail
 spec@arb_sample_shading@samplemask 2@0.500000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2@1.000000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2@noms mask_in_one,Fail
@@ -1082,9 +1084,10 @@ spec@arb_sample_shading@samplemask 8 all@0.500000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 8 all@1.000000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 8 all@noms mask_in_one,Fail
 spec@arb_sample_shading@samplemask 8 all@sample mask_in_one,Fail
+spec@arb_tessellation_shader@execution@16in-1out,Fail
+spec@arb_tessellation_shader@execution@tcs-input@tcs-input-int,Fail
 spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
 spec@ext_texture_integer@fbo-integer-attachments,Fail
+spec@glsl-1.50@execution@geometry@primitive-types gl_lines_adjacency,Fail
 
-spec@glsl-1.50@execution@redeclare-pervertex-subset-vs-to-gs,Fail
-spec@glsl-1.50@transform-feedback-type-and-size,Fail
