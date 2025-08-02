@@ -43,7 +43,7 @@ static nir_variable *
 create_clipdist_var(nir_shader *shader,
                     bool output, gl_varying_slot slot, unsigned array_size)
 {
-   nir_variable *var = rzalloc(shader, nir_variable);
+   nir_variable *var = nir_variable_create_zeroed(shader);
 
    if (output) {
       var->data.driver_location = shader->num_outputs;

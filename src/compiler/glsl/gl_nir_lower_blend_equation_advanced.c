@@ -216,7 +216,7 @@ satv3(nir_builder *b, nir_def *c)
 static nir_variable *
 add_temp_var(nir_builder *b, char *name, const struct glsl_type *type)
 {
-   nir_variable *var = rzalloc(b->shader, nir_variable);
+   nir_variable *var = nir_variable_create_zeroed(b->shader);
    var->type = type;
    nir_variable_set_name(b->shader, var, name);
    var->data.mode = nir_var_function_temp;

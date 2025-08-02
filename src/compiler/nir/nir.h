@@ -3951,6 +3951,7 @@ nir_function_impl_add_variable(nir_function_impl *impl, nir_variable *var)
    exec_list_push_tail(&impl->locals, &var->node);
 }
 
+nir_variable *nir_variable_create_zeroed(nir_shader *nir);
 void nir_variable_set_name(nir_shader *nir, nir_variable *var,
                            const char *name);
 void nir_variable_set_namef(nir_shader *nir, nir_variable *var,

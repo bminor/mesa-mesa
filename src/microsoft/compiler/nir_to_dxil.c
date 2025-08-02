@@ -6437,7 +6437,7 @@ add_sysvalue(struct ntd_context *ctx,
               int driver_location)
 {
 
-   nir_variable *var = rzalloc(ctx->shader, nir_variable);
+   nir_variable *var = nir_variable_create_zeroed(ctx->shader);
    if (!var)
       return NULL;
    var->data.driver_location = driver_location;

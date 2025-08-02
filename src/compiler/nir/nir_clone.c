@@ -151,7 +151,7 @@ nir_constant_clone(const nir_constant *c, void *mem_ctx)
 nir_variable *
 nir_variable_clone(const nir_variable *var, nir_shader *shader)
 {
-   nir_variable *nvar = rzalloc(shader, nir_variable);
+   nir_variable *nvar = nir_variable_create_zeroed(shader);
 
    nvar->type = var->type;
    nir_variable_set_name(shader, nvar, var->name);

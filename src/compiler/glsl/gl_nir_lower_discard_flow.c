@@ -135,7 +135,7 @@ gl_nir_lower_discard_flow(nir_shader *shader)
 {
    nir_function_impl *main = nir_shader_get_entrypoint(shader);
 
-   nir_variable *discarded = rzalloc(shader, nir_variable);
+   nir_variable *discarded = nir_variable_create_zeroed(shader);
    nir_variable_set_name(shader, discarded, "discarded");
    discarded->type = glsl_bool_type();
    discarded->data.mode = nir_var_shader_temp;

@@ -7130,7 +7130,7 @@ vtn_emit_kernel_entry_point_wrapper(struct vtn_builder *b,
          param_type->storage_class == SpvStorageClassFunction;
 
       /* input variable */
-      nir_variable *in_var = rzalloc(b->nb.shader, nir_variable);
+      nir_variable *in_var = nir_variable_create_zeroed(b->nb.shader);
 
       if (is_by_val) {
          in_var->data.mode = nir_var_uniform;

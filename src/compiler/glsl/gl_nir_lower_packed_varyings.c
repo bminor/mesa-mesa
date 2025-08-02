@@ -270,7 +270,7 @@ create_or_update_packed_varying(struct lower_packed_varyings_state *state,
       assert(state->components[slot] != 0);
       assert(name);
 
-      nir_variable *packed_var = rzalloc(state->shader, nir_variable);
+      nir_variable *packed_var = nir_variable_create_zeroed(state->shader);
       nir_variable_set_namef(state->shader, packed_var, "packed:%s", name);
       packed_var->data.mode = state->mode;
 

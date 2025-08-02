@@ -342,7 +342,7 @@ write_variable(write_ctx *ctx, const nir_variable *var)
 static nir_variable *
 read_variable(read_ctx *ctx)
 {
-   nir_variable *var = rzalloc(ctx->nir, nir_variable);
+   nir_variable *var = nir_variable_create_zeroed(ctx->nir);
    read_add_object(ctx, var);
 
    union packed_var flags;

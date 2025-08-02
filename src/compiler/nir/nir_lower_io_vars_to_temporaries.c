@@ -297,7 +297,7 @@ emit_input_copies_impl(struct lower_io_state *state, nir_function_impl *impl)
 static nir_variable *
 create_shadow_temp(struct lower_io_state *state, nir_variable *var)
 {
-   nir_variable *nvar = ralloc(state->shader, nir_variable);
+   nir_variable *nvar = nir_variable_create_zeroed(state->shader);
    memcpy(nvar, var, sizeof *nvar);
    nvar->data.cannot_coalesce = true;
 

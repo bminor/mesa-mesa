@@ -445,7 +445,7 @@ nir_visitor::visit(ir_variable *ir)
    if (ir->data.mode == ir_var_function_out)
       return;
 
-   nir_variable *var = rzalloc(shader, nir_variable);
+   nir_variable *var = nir_variable_create_zeroed(shader);
    var->type = ir->type;
    nir_variable_set_name(shader, var, ir->name);
 

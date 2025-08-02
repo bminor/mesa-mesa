@@ -289,7 +289,7 @@ ttn_emit_declaration(struct ttn_compile *c)
 
       for (i = 0; i < array_size; i++) {
          unsigned idx = decl->Range.First + i;
-         nir_variable *var = rzalloc(b->shader, nir_variable);
+         nir_variable *var = nir_variable_create_zeroed(b->shader);
 
          var->data.driver_location = idx;
 

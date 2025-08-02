@@ -168,7 +168,7 @@ lower_const_array_to_uniform(nir_shader *shader, struct var_info *info,
    if (*const_count == limit)
       return false;
 
-   nir_variable *uni = rzalloc(shader, nir_variable);
+   nir_variable *uni = nir_variable_create_zeroed(shader);
 
    /* Rebuild constant initialiser */
    nir_constant *const_init = rebuild_const_array_initialiser(var->type, shader);
