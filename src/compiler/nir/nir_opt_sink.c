@@ -203,6 +203,8 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
       case nir_intrinsic_load_smem_amd: /* = global + convergent */
          return options & nir_move_load_global;
 
+      case nir_intrinsic_ldc_nv:
+      case nir_intrinsic_ldcx_nv:
       case nir_intrinsic_load_ubo:
       case nir_intrinsic_load_ubo_vec4:
       case nir_intrinsic_load_global_constant_offset:

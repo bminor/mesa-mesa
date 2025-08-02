@@ -1127,6 +1127,8 @@ nak_postprocess_nir(nir_shader *nir,
       }
    } while (progress);
 
+   OPT(nir, nir_opt_move, nir_move_load_ubo);
+
    if (nak->sm < 70) {
       const nir_split_conversions_options split_conv_opts = {
          .callback = split_conversions_cb,
