@@ -47,13 +47,16 @@ Then, create your Meson cross file to use it, something like this
 
 .. code-block:: ini
 
+    [constants]
+    ndk_path = <absolute path to NDK>
+
     [binaries]
-    ar = 'NDKDIR/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar'
-    c = ['ccache', 'NDKDIR/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang']
-    cpp = ['ccache', 'NDKDIR/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '--start-no-unused-arguments', '-static-libstdc++', '--end-no-unused-arguments']
+    ar = ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar'
+    c = ['ccache', ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang']
+    cpp = ['ccache', ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++', '-fno-exceptions', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables', '--start-no-unused-arguments', '-static-libstdc++', '--end-no-unused-arguments']
     c_ld = 'lld'
     cpp_ld = 'lld'
-    strip = 'NDKDIR/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip'
+    strip = ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip'
     # Android doesn't come with a pkg-config, but we need one for Meson to be happy not
     # finding all the optional deps it looks for.  Use system pkg-config pointing at a
     # directory we get to populate with any .pc files we want to add for Android
@@ -64,6 +67,20 @@ Then, create your Meson cross file to use it, something like this
     cpu_family = 'aarch64'
     cpu = 'armv8'
     endian = 'little'
+
+For nvk, below rust toolchain preparation and cross file additions are needed:
+
+.. code-block:: sh
+
+    rustup target add aarch64-linux-android
+
+.. code-block:: ini
+
+    [properties]
+    bindgen_clang_arguments = ['-target', 'aarch64-linux-android', '--sysroot', ndk_path / 'toolchains/llvm/prebuilt/linux-x86_64/sysroot']
+
+    [binaries]
+    rust = ['rustc', '--target', 'aarch64-linux-android']
 
 Now, use that cross file for your Android build directory (as in this
 one cross-compiling the turnip driver for a stock Pixel phone)
