@@ -559,6 +559,62 @@ fd_ringbuffer_sp_assert_attached_nonobj(struct fd_ringbuffer *ring, struct fd_bo
 #endif
 }
 
+static struct fd_bo *
+find_target_bo(struct fd_ringbuffer *target, uint32_t cmd_idx, uint32_t *size)
+{
+   struct fd_ringbuffer_sp *fd_target = to_fd_ringbuffer_sp(target);
+
+   if ((target->flags & FD_RINGBUFFER_GROWABLE) &&
+       (cmd_idx < fd_target->u.nr_cmds)) {
+      *size = fd_target->u.cmds[cmd_idx].size;
+      return fd_target->u.cmds[cmd_idx].ring_bo;
+   } else {
+      *size = offset_bytes(target->cur, target->start);
+      return fd_target->ring_bo;
+   }
+}
+
+static uint32_t
+fd_ringbuffer_sp_attach_ring_nonobj(struct fd_ringbuffer *ring,
+                                    struct fd_ringbuffer *target,
+                                    uint32_t cmd_idx,
+                                    uint64_t *iova)
+{
+   struct fd_ringbuffer_sp *fd_target = to_fd_ringbuffer_sp(target);
+   struct fd_ringbuffer_sp *fd_ring = to_fd_ringbuffer_sp(ring);
+   struct fd_submit_sp *fd_submit = to_fd_submit_sp(fd_ring->u.submit);
+   struct fd_bo *bo;
+   uint32_t size;
+
+   bo = find_target_bo(target, cmd_idx, &size);
+
+   *iova = bo->iova + fd_target->offset;
+
+   fd_ringbuffer_sp_attach_bo_nonobj(ring, bo);
+
+   if (!(target->flags & _FD_RINGBUFFER_OBJECT))
+      return size;
+
+   if (fd_submit->seqno != fd_target->u.last_submit_seqno) {
+      for (unsigned i = 0; i < fd_target->u.nr_reloc_bos; i++) {
+         fd_submit_append_bo(fd_submit, fd_target->u.reloc_bos[i]);
+      }
+      fd_target->u.last_submit_seqno = fd_submit->seqno;
+   }
+
+#ifndef NDEBUG
+   /* Dealing with assert'd BOs is deferred until the submit is known,
+    * since the batch resource tracking attaches BOs directly to
+    * the submit instead of the long lived stateobj
+    */
+   for (unsigned i = 0; i < fd_target->u.nr_assert_bos; i++) {
+      fd_ringbuffer_sp_assert_attached_nonobj(ring, fd_target->u.assert_bos[i]);
+   }
+#endif
+
+   return size;
+}
+
 static void
 fd_ringbuffer_sp_attach_bo_obj(struct fd_ringbuffer *ring, struct fd_bo *bo)
 {
@@ -599,62 +655,29 @@ fd_ringbuffer_sp_assert_attached_obj(struct fd_ringbuffer *ring, struct fd_bo *b
 }
 
 static uint32_t
-fd_ringbuffer_sp_attach_ring(struct fd_ringbuffer *ring,
-                             struct fd_ringbuffer *target,
-                             uint32_t cmd_idx,
-                             uint64_t *iova)
+fd_ringbuffer_sp_attach_ring_obj(struct fd_ringbuffer *ring,
+                                 struct fd_ringbuffer *target,
+                                 uint32_t cmd_idx,
+                                 uint64_t *iova)
 {
    struct fd_ringbuffer_sp *fd_target = to_fd_ringbuffer_sp(target);
+   struct fd_ringbuffer_sp *fd_ring = to_fd_ringbuffer_sp(ring);
    struct fd_bo *bo;
    uint32_t size;
 
-   if ((target->flags & FD_RINGBUFFER_GROWABLE) &&
-       (cmd_idx < fd_target->u.nr_cmds)) {
-      bo = fd_target->u.cmds[cmd_idx].ring_bo;
-      size = fd_target->u.cmds[cmd_idx].size;
-   } else {
-      bo = fd_target->ring_bo;
-      size = offset_bytes(target->cur, target->start);
-   }
+   bo = find_target_bo(target, cmd_idx, &size);
 
    *iova = bo->iova + fd_target->offset;
 
-   if (ring->flags & _FD_RINGBUFFER_OBJECT) {
-      fd_ringbuffer_sp_attach_bo_obj(ring, bo);
-   } else {
-      fd_ringbuffer_sp_attach_bo_nonobj(ring, bo);
-   }
+   fd_ringbuffer_sp_attach_bo_obj(ring, bo);
 
    if (!(target->flags & _FD_RINGBUFFER_OBJECT))
       return size;
 
-   struct fd_ringbuffer_sp *fd_ring = to_fd_ringbuffer_sp(ring);
-
-   if (ring->flags & _FD_RINGBUFFER_OBJECT) {
-      for (unsigned i = 0; i < fd_target->u.nr_reloc_bos; i++) {
-         struct fd_bo *target_bo = fd_target->u.reloc_bos[i];
-         if (!fd_ringbuffer_references_bo(ring, target_bo))
-            APPEND(&fd_ring->u, reloc_bos, fd_bo_ref(target_bo));
-      }
-   } else {
-      struct fd_submit_sp *fd_submit = to_fd_submit_sp(fd_ring->u.submit);
-
-      if (fd_submit->seqno != fd_target->u.last_submit_seqno) {
-         for (unsigned i = 0; i < fd_target->u.nr_reloc_bos; i++) {
-            fd_submit_append_bo(fd_submit, fd_target->u.reloc_bos[i]);
-         }
-         fd_target->u.last_submit_seqno = fd_submit->seqno;
-      }
-
-#ifndef NDEBUG
-      /* Dealing with assert'd BOs is deferred until the submit is known,
-       * since the batch resource tracking attaches BOs directly to
-       * the submit instead of the long lived stateobj
-       */
-      for (unsigned i = 0; i < fd_target->u.nr_assert_bos; i++) {
-         fd_ringbuffer_sp_assert_attached_nonobj(ring, fd_target->u.assert_bos[i]);
-      }
-#endif
+   for (unsigned i = 0; i < fd_target->u.nr_reloc_bos; i++) {
+      struct fd_bo *target_bo = fd_target->u.reloc_bos[i];
+      if (!fd_ringbuffer_references_bo(ring, target_bo))
+         APPEND(&fd_ring->u, reloc_bos, fd_bo_ref(target_bo));
    }
 
    return size;
@@ -726,7 +749,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_nonobj_32 = {
    .attach_bo = fd_ringbuffer_sp_attach_bo_nonobj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_nonobj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_nonobj_32,
-   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_32,
+   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_nonobj_32,
    .cmd_count = fd_ringbuffer_sp_cmd_count,
    .check_size = fd_ringbuffer_sp_check_size,
    .destroy = fd_ringbuffer_sp_destroy,
@@ -737,7 +760,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_obj_32 = {
    .attach_bo = fd_ringbuffer_sp_attach_bo_obj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_obj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_obj_32,
-   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_32,
+   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_obj_32,
    .cmd_count = fd_ringbuffer_sp_cmd_count,
    .destroy = fd_ringbuffer_sp_destroy,
 };
@@ -747,7 +770,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_nonobj_64 = {
    .attach_bo = fd_ringbuffer_sp_attach_bo_nonobj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_nonobj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_nonobj_64,
-   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_64,
+   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_nonobj_64,
    .cmd_count = fd_ringbuffer_sp_cmd_count,
    .check_size = fd_ringbuffer_sp_check_size,
    .destroy = fd_ringbuffer_sp_destroy,
@@ -758,7 +781,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_obj_64 = {
    .attach_bo = fd_ringbuffer_sp_attach_bo_obj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_obj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_obj_64,
-   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_64,
+   .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_obj_64,
    .cmd_count = fd_ringbuffer_sp_cmd_count,
    .destroy = fd_ringbuffer_sp_destroy,
 };

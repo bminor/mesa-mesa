@@ -38,13 +38,25 @@ static void X(fd_ringbuffer_sp_emit_reloc_obj)(struct fd_ringbuffer *ring,
    fd_ringbuffer_sp_attach_bo_obj(ring, reloc->bo);
 }
 
-static uint32_t X(fd_ringbuffer_sp_emit_reloc_ring)(
+static uint32_t X(fd_ringbuffer_sp_emit_reloc_ring_nonobj)(
    struct fd_ringbuffer *ring, struct fd_ringbuffer *target, uint32_t cmd_idx)
 {
    uint64_t iova;
    uint32_t size;
 
-   size = fd_ringbuffer_sp_attach_ring(ring, target, cmd_idx, &iova);
+   size = fd_ringbuffer_sp_attach_ring_nonobj(ring, target, cmd_idx, &iova);
+   X(emit_reloc_common)(ring, iova);
+
+   return size;
+}
+
+static uint32_t X(fd_ringbuffer_sp_emit_reloc_ring_obj)(
+   struct fd_ringbuffer *ring, struct fd_ringbuffer *target, uint32_t cmd_idx)
+{
+   uint64_t iova;
+   uint32_t size;
+
+   size = fd_ringbuffer_sp_attach_ring_obj(ring, target, cmd_idx, &iova);
    X(emit_reloc_common)(ring, iova);
 
    return size;
