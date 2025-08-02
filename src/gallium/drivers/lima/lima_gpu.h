@@ -81,25 +81,6 @@ struct lima_pp_wb_reg {
    uint32_t unused2;
 };
 
-struct lima_render_state {
-   uint32_t blend_color_bg;
-   uint32_t blend_color_ra;
-   uint32_t alpha_blend;
-   uint32_t depth_test;
-   uint32_t depth_range;
-   uint32_t stencil_front;
-   uint32_t stencil_back;
-   uint32_t stencil_test;
-   uint32_t multi_sample;
-   uint32_t shader_address;
-   uint32_t varying_types;
-   uint32_t uniforms_address;
-   uint32_t textures_address;
-   uint32_t aux0;
-   uint32_t aux1;
-   uint32_t varyings_address;
-};
-
 /* plbu commands */
 #define PLBU_CMD_BEGIN(array, max) { \
    int i = 0, max_n = max; \
