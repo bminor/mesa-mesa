@@ -1,4 +1,5 @@
 use crate::api::icd::*;
+use crate::api::types::ProgramCB;
 use crate::core::context::*;
 use crate::core::device::*;
 use crate::core::kernel::*;
@@ -567,14 +568,17 @@ impl Program {
             .any(|k| Arc::strong_count(k) > 1)
     }
 
-    pub fn build(&self, devs: &[&'static Device], options: &str) -> bool {
+    pub fn build(
+        self: Arc<Self>,
+        devs: Vec<&'static Device>,
+        options: String,
+        callback: Option<ProgramCB>,
+    ) -> CLResult<()> {
         let lib = options.contains("-create-library");
         let mut info = self.build_info();
 
-        let mut res = true;
-        for dev in devs {
-            if !self.do_compile(dev, options, &[], &mut info) {
-                res = false;
+        for &dev in &devs {
+            if !self.do_compile(dev, &options, &[], &mut info) {
                 continue;
             }
 
@@ -594,17 +598,29 @@ impl Program {
             // Don't request validation of the SPIR-V, as we've just done that
             // as part of compilation.
             Self::do_link(d, &spirvs, lib, None);
-
-            if d.status == CL_BUILD_ERROR {
-                res = false
-            }
         }
 
-        info.rebuild_kernels(devs, self.is_src());
+        info.rebuild_kernels(&devs, self.is_src());
 
-        debug_logging(self, devs);
+        // The callback must be called after we've dropped any mutex locks we're
+        // holding.
+        drop(info);
 
-        res
+        if let Some(callback) = callback {
+            callback.call(&self);
+        }
+
+        debug_logging(&self, &devs);
+
+        if !self.all_devices_succeeded(&devs) {
+            // clBuildProgram returns CL_BUILD_PROGRAM_FAILURE if there is a
+            // failure to build the program executable. This error will be
+            // returned if clBuildProgram does not return until the build
+            // has completed.
+            return Err(CL_BUILD_PROGRAM_FAILURE);
+        }
+
+        Ok(())
     }
 
     fn do_compile(
@@ -694,28 +710,46 @@ impl Program {
         }
     }
 
-    pub fn compile(&self, devs: &[&Device], options: &str, headers: &[HeaderProgram]) -> bool {
-        let mut res = true;
-        for dev in devs {
-            res &= self.do_compile(dev, options, headers, &mut self.build_info());
+    pub fn compile(
+        self: Arc<Self>,
+        devs: Vec<&Device>,
+        options: String,
+        headers: Vec<HeaderProgram>,
+        callback: Option<ProgramCB>,
+    ) -> CLResult<()> {
+        for &dev in &devs {
+            self.do_compile(dev, &options, &headers, &mut self.build_info());
         }
 
-        debug_logging(self, devs);
+        if let Some(callback) = callback {
+            callback.call(&self);
+        }
 
-        res
+        debug_logging(&self, &devs);
+
+        if !self.all_devices_succeeded(&devs) {
+            // clCompileProgram returns CL_COMPILE_PROGRAM_FAILURE if there is a
+            // failure to compile the program source. This error will be
+            // returned if clCompileProgram does not return until the compile
+            // has completed.
+            return Err(CL_COMPILE_PROGRAM_FAILURE);
+        }
+
+        Ok(())
     }
 
     pub fn link(
         context: Arc<Context>,
-        devs: &[&'static Device],
-        progs: &[Arc<Program>],
+        devs: Vec<&'static Device>,
+        progs: Vec<Arc<Program>>,
         options: String,
-    ) -> Arc<Program> {
+        callback: Option<ProgramCB>,
+    ) -> CLResult<(Arc<Program>, cl_int)> {
         let mut builds = HashMap::new();
         let mut locks: Vec<_> = progs.iter().map(|p| p.build_info()).collect();
         let lib = options.contains("-create-library");
 
-        for &d in devs {
+        for &d in &devs {
             let bins: Vec<_> = locks
                 .iter_mut()
                 .map(|l| l.dev_build(d).spirv.as_ref().unwrap())
@@ -741,19 +775,31 @@ impl Program {
         };
 
         // Pre build nir kernels
-        build.rebuild_kernels(devs, false);
+        build.rebuild_kernels(&devs, false);
 
         let res = Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Program),
             context: context,
-            devs: devs.to_owned(),
+            devs: devs.clone(),
             src: ProgramSourceType::Linked,
             build: Mutex::new(build),
         });
 
+        if let Some(callback) = callback {
+            callback.call(&res);
+        }
+
         debug_logging(&res, &devs);
 
-        res
+        let status = if res.all_devices_succeeded(&devs) {
+            CL_SUCCESS as cl_int
+        } else {
+            // clLinkProgram returns CL_LINK_PROGRAM_FAILURE if there is a
+            // failure to link the compiled binaries and/or libraries.
+            CL_LINK_PROGRAM_FAILURE
+        };
+
+        Ok((res, status))
     }
 
     /// Performs linking of the provided SPIR-V binaries.
@@ -793,6 +839,14 @@ impl Program {
             build.status = CL_BUILD_ERROR;
             build.bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
         };
+    }
+
+    /// Returns `true` if build succeeded for each of the provided devices,
+    /// false otherwise.
+    pub fn all_devices_succeeded(&self, devices: &[&Device]) -> bool {
+        devices
+            .iter()
+            .all(|&device| self.status(device) == CL_BUILD_SUCCESS as cl_build_status)
     }
 
     pub fn is_bin(&self) -> bool {

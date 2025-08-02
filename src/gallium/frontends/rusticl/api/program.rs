@@ -309,7 +309,7 @@ fn build_program(
     pfn_notify: Option<FuncProgramCB>,
     user_data: *mut ::std::os::raw::c_void,
 ) -> CLResult<()> {
-    let p = Program::ref_from_raw(program)?;
+    let p = Program::arc_from_raw(program)?;
     let devs = validate_devices(device_list, num_devices, &p.devs)?;
 
     // SAFETY: The requirements on `ProgramCB::try_new` match the requirements
@@ -321,25 +321,15 @@ fn build_program(
         return Err(CL_INVALID_OPERATION);
     }
 
-    // CL_BUILD_PROGRAM_FAILURE if there is a failure to build the program executable. This error
-    // will be returned if clBuildProgram does not return until the build has completed.
     let options = c_string_to_string(options);
-    let res = p.build(&devs, &options);
-
-    if let Some(cb) = cb_opt {
-        cb.call(p);
-    }
+    let res = p.build(devs, options, cb_opt);
 
     //• CL_INVALID_BINARY if program is created with clCreateProgramWithBinary and devices listed in device_list do not have a valid program binary loaded.
     //• CL_INVALID_BUILD_OPTIONS if the build options specified by options are invalid.
     //• CL_INVALID_OPERATION if the build of a program executable for any of the devices listed in device_list by a previous call to clBuildProgram for program has not completed.
     //• CL_INVALID_OPERATION if program was not created with clCreateProgramWithSource, clCreateProgramWithIL or clCreateProgramWithBinary.
 
-    if res {
-        Ok(())
-    } else {
-        Err(CL_BUILD_PROGRAM_FAILURE)
-    }
+    res
 }
 
 #[cl_entrypoint(clCompileProgram)]
@@ -354,7 +344,7 @@ fn compile_program(
     pfn_notify: Option<FuncProgramCB>,
     user_data: *mut ::std::os::raw::c_void,
 ) -> CLResult<()> {
-    let p = Program::ref_from_raw(program)?;
+    let p = Program::arc_from_raw(program)?;
     let devs = validate_devices(device_list, num_devices, &p.devs)?;
 
     // SAFETY: The requirements on `ProgramCB::try_new` match the requirements
@@ -408,23 +398,13 @@ fn compile_program(
         return Err(CL_INVALID_OPERATION);
     }
 
-    // CL_COMPILE_PROGRAM_FAILURE if there is a failure to compile the program source. This error
-    // will be returned if clCompileProgram does not return until the compile has completed.
     let options = c_string_to_string(options);
-    let res = p.compile(&devs, &options, &headers);
-
-    if let Some(cb) = cb_opt {
-        cb.call(p);
-    }
+    let res = p.compile(devs, options, headers, cb_opt);
 
     // • CL_INVALID_COMPILER_OPTIONS if the compiler options specified by options are invalid.
     // • CL_INVALID_OPERATION if the compilation or build of a program executable for any of the devices listed in device_list by a previous call to clCompileProgram or clBuildProgram for program has not completed.
 
-    if res {
-        Ok(())
-    } else {
-        Err(CL_COMPILE_PROGRAM_FAILURE)
-    }
+    res
 }
 
 pub fn link_program(
@@ -459,31 +439,11 @@ pub fn link_program(
     // CL_INVALID_OPERATION if the compilation or build of a program executable for any of the
     // devices listed in device_list by a previous call to clCompileProgram or clBuildProgram for
     // program has not completed.
-    for d in &devs {
-        if progs
-            .iter()
-            .map(|p| p.status(d))
-            .any(|s| s != CL_BUILD_SUCCESS as cl_build_status)
-        {
-            return Err(CL_INVALID_OPERATION);
-        }
+    if progs.iter().any(|p| !p.all_devices_succeeded(&devs)) {
+        return Err(CL_INVALID_OPERATION);
     }
 
-    // CL_LINK_PROGRAM_FAILURE if there is a failure to link the compiled binaries and/or libraries.
-    let res = Program::link(c, &devs, &progs, c_string_to_string(options));
-    let code = if devs
-        .iter()
-        .map(|d| res.status(d))
-        .all(|s| s == CL_BUILD_SUCCESS as cl_build_status)
-    {
-        CL_SUCCESS as cl_int
-    } else {
-        CL_LINK_PROGRAM_FAILURE
-    };
-
-    if let Some(cb) = cb_opt {
-        cb.call(&res);
-    }
+    let (res, code) = Program::link(c, devs, progs, c_string_to_string(options), cb_opt)?;
 
     Ok((res.into_cl(), code))
 
