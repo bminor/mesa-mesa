@@ -865,6 +865,15 @@ typedef struct nir_variable {
     * variables with a struct or array of array of struct type.
     */
    nir_variable_data *members;
+
+   /**
+    * This is the backing storage for "name" if the name is short enough
+    * to fit in it, so that we don't have to ralloc the name.
+    *
+    * It eliminates 95.6% ralloc calls for variable names when compiling
+    * my GLSL shader-db.
+    */
+   char _name_storage[16];
 } nir_variable;
 
 static inline bool

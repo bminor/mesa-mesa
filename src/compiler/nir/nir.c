@@ -32,6 +32,7 @@
 #include "util/half_float.h"
 #include "util/macros.h"
 #include "util/u_math.h"
+#include "util/u_printf.h"
 #include "util/u_qsort.h"
 #include "nir_builder.h"
 #include "nir_control_flow_private.h"
@@ -270,21 +271,42 @@ nir_shader_add_variable(nir_shader *shader, nir_variable *var)
 void
 nir_variable_set_name(nir_variable *var, const char *name)
 {
-   if (var->name)
+   if (var->name && var->name != var->_name_storage)
       ralloc_free(var->name);
 
-   var->name = ralloc_strdup(var, name);
+   if (!name) {
+      var->name = NULL;
+      return;
+   }
+
+   /* Use _name_storage if the name fits in it. */
+   if (strlen(name) < ARRAY_SIZE(var->_name_storage)) {
+      var->name = var->_name_storage;
+      strcpy(var->name, name);
+   } else {
+      var->name = ralloc_strdup(var, name);
+   }
 }
 
 void
 nir_variable_set_namef(nir_variable *var, const char *fmt, ...)
 {
-   if (var->name)
+   if (var->name && var->name != var->_name_storage)
       ralloc_free(var->name);
 
    va_list args;
    va_start(args, fmt);
-   var->name = ralloc_vasprintf(var, fmt, args);
+   size_t name_size = u_printf_length(fmt, args) + 1;
+
+   /* Use _name_storage if the name fits in it. */
+   if (name_size <= ARRAY_SIZE(var->_name_storage))
+      var->name = var->_name_storage;
+   else
+      var->name = ralloc_size(var, name_size);
+
+   if (var->name)
+      vsnprintf(var->name, name_size, fmt, args);
+
    va_end(args);
 }
 
@@ -293,15 +315,61 @@ nir_variable_append_namef(nir_variable *var, const char *fmt, ...)
 {
    va_list args;
    va_start(args, fmt);
-   ralloc_vasprintf_append(&var->name, fmt, args);
+   size_t old_len = var->name ? strlen(var->name) : 0;
+   size_t append_size = u_printf_length(fmt, args) + 1;
+   size_t name_size = old_len + append_size;
+
+   if (append_size == 1) {
+      /* No change. */
+      va_end(args);
+      return;
+   }
+
+   /* Use _name_storage if the name fits in it. */
+   if (name_size <= ARRAY_SIZE(var->_name_storage)) {
+      if (!var->name) {
+         var->name = var->_name_storage;
+      } else if (var->name != var->_name_storage) {
+         /* Move the name to _name_storage. */
+         memcpy(var->_name_storage, var->name, old_len + 1);
+         ralloc_free(var->name);
+         var->name = var->_name_storage;
+      }
+   } else {
+      /* ralloc the appended name. */
+      if (var->name == var->_name_storage) {
+         /* Move the name from _name_storage to ralloc'd. */
+         var->name = ralloc_size(var, name_size);
+         if (var->name)
+            memcpy(var->name, var->_name_storage, old_len + 1);
+      } else {
+         var->name = reralloc_size(var, var->name, name_size);
+      }
+   }
+
+   /* Append the name. */
+   if (var->name)
+      vsnprintf(var->name + old_len, append_size, fmt, args);
    va_end(args);
 }
 
 void
 nir_variable_steal_name(nir_variable *dst, nir_variable *src)
 {
-   ralloc_steal(dst, src->name);
-   dst->name = src->name;
+   if (!src->name) {
+      dst->name = NULL;
+      return;
+   }
+
+   /* Use _name_storage if the name fits in it. */
+   if (src->name == src->_name_storage) {
+      dst->name = dst->_name_storage;
+      strcpy(dst->name, src->name);
+   } else {
+      ralloc_steal(dst, src->name);
+      dst->name = src->name;
+   }
+
    src->name = NULL;
 }
 
