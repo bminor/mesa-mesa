@@ -271,7 +271,7 @@ nir_shader_add_variable(nir_shader *shader, nir_variable *var)
 nir_variable *
 nir_variable_create_zeroed(nir_shader *nir)
 {
-   return rzalloc(nir, nir_variable);
+   return gc_zalloc_size(nir->gctx, sizeof(nir_variable), 8);
 }
 
 void

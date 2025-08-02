@@ -54,7 +54,7 @@ sweep_constant(nir_shader *nir, nir_constant *c)
 static void
 sweep_variable(nir_shader *nir, nir_variable *var)
 {
-   ralloc_steal(nir, var);
+   gc_mark_live(nir->gctx, var);
    nir_variable_steal_name(nir, var, var);
    ralloc_steal(nir, var->max_ifc_array_access);
    ralloc_steal(nir, var->state_slots);
