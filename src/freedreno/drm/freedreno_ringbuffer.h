@@ -91,7 +91,7 @@ struct fd_ringbuffer_funcs {
     * to track that the bo is used (and not track all the extra info that
     * the kernel would need to do a legacy reloc.
     */
-   void (*emit_bo)(struct fd_ringbuffer *ring, struct fd_bo *bo);
+   void (*attach_bo)(struct fd_ringbuffer *ring, struct fd_bo *bo);
    void (*assert_attached)(struct fd_ringbuffer *ring, struct fd_bo *bo);
 
    void (*emit_reloc)(struct fd_ringbuffer *ring, const struct fd_reloc *reloc);
@@ -207,7 +207,7 @@ struct fd_reloc {
 static inline void
 fd_ringbuffer_attach_bo(struct fd_ringbuffer *ring, struct fd_bo *bo)
 {
-   ring->funcs->emit_bo(ring, bo);
+   ring->funcs->attach_bo(ring, bo);
 }
 
 static inline void

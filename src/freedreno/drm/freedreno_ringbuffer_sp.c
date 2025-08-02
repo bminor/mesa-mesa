@@ -539,7 +539,7 @@ fd_ringbuffer_references_bo(struct fd_ringbuffer *ring, struct fd_bo *bo)
 }
 
 static void
-fd_ringbuffer_sp_emit_bo_nonobj(struct fd_ringbuffer *ring, struct fd_bo *bo)
+fd_ringbuffer_sp_attach_bo_nonobj(struct fd_ringbuffer *ring, struct fd_bo *bo)
 {
    assert(!(ring->flags & _FD_RINGBUFFER_OBJECT));
 
@@ -560,7 +560,7 @@ fd_ringbuffer_sp_assert_attached_nonobj(struct fd_ringbuffer *ring, struct fd_bo
 }
 
 static void
-fd_ringbuffer_sp_emit_bo_obj(struct fd_ringbuffer *ring, struct fd_bo *bo)
+fd_ringbuffer_sp_attach_bo_obj(struct fd_ringbuffer *ring, struct fd_bo *bo)
 {
    assert(ring->flags & _FD_RINGBUFFER_OBJECT);
 
@@ -661,7 +661,7 @@ fd_ringbuffer_sp_destroy(struct fd_ringbuffer *ring)
 
 static const struct fd_ringbuffer_funcs ring_funcs_nonobj_32 = {
    .grow = fd_ringbuffer_sp_grow,
-   .emit_bo = fd_ringbuffer_sp_emit_bo_nonobj,
+   .attach_bo = fd_ringbuffer_sp_attach_bo_nonobj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_nonobj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_nonobj_32,
    .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_32,
@@ -672,7 +672,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_nonobj_32 = {
 
 static const struct fd_ringbuffer_funcs ring_funcs_obj_32 = {
    .grow = fd_ringbuffer_sp_grow,
-   .emit_bo = fd_ringbuffer_sp_emit_bo_obj,
+   .attach_bo = fd_ringbuffer_sp_attach_bo_obj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_obj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_obj_32,
    .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_32,
@@ -682,7 +682,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_obj_32 = {
 
 static const struct fd_ringbuffer_funcs ring_funcs_nonobj_64 = {
    .grow = fd_ringbuffer_sp_grow,
-   .emit_bo = fd_ringbuffer_sp_emit_bo_nonobj,
+   .attach_bo = fd_ringbuffer_sp_attach_bo_nonobj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_nonobj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_nonobj_64,
    .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_64,
@@ -693,7 +693,7 @@ static const struct fd_ringbuffer_funcs ring_funcs_nonobj_64 = {
 
 static const struct fd_ringbuffer_funcs ring_funcs_obj_64 = {
    .grow = fd_ringbuffer_sp_grow,
-   .emit_bo = fd_ringbuffer_sp_emit_bo_obj,
+   .attach_bo = fd_ringbuffer_sp_attach_bo_obj,
    .assert_attached = fd_ringbuffer_sp_assert_attached_obj,
    .emit_reloc = fd_ringbuffer_sp_emit_reloc_obj_64,
    .emit_reloc_ring = fd_ringbuffer_sp_emit_reloc_ring_64,

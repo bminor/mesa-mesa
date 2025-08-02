@@ -28,14 +28,14 @@ static void X(fd_ringbuffer_sp_emit_reloc_nonobj)(struct fd_ringbuffer *ring,
                                                   const struct fd_reloc *reloc)
 {
    X(emit_reloc_common)(ring, reloc->iova);
-   fd_ringbuffer_sp_emit_bo_nonobj(ring, reloc->bo);
+   fd_ringbuffer_sp_attach_bo_nonobj(ring, reloc->bo);
 }
 
 static void X(fd_ringbuffer_sp_emit_reloc_obj)(struct fd_ringbuffer *ring,
                                                const struct fd_reloc *reloc)
 {
    X(emit_reloc_common)(ring, reloc->iova);
-   fd_ringbuffer_sp_emit_bo_obj(ring, reloc->bo);
+   fd_ringbuffer_sp_attach_bo_obj(ring, reloc->bo);
 }
 
 static uint32_t X(fd_ringbuffer_sp_emit_reloc_ring)(
