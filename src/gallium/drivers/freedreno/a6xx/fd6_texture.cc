@@ -269,7 +269,7 @@ fd6_sampler_state_create(struct pipe_context *pctx,
       miplinear = true;
 
    bool needs_border = false;
-   so->texsamp0 =
+   so->descriptor[0] =
       COND(miplinear, A6XX_TEX_SAMP_0_MIPFILTER_LINEAR_NEAR) |
       A6XX_TEX_SAMP_0_XY_MAG(tex_filter(cso->mag_img_filter, aniso)) |
       A6XX_TEX_SAMP_0_XY_MIN(tex_filter(cso->min_img_filter, aniso)) |
@@ -278,18 +278,18 @@ fd6_sampler_state_create(struct pipe_context *pctx,
       A6XX_TEX_SAMP_0_WRAP_T(tex_clamp(cso->wrap_t, &needs_border)) |
       A6XX_TEX_SAMP_0_WRAP_R(tex_clamp(cso->wrap_r, &needs_border));
 
-   so->texsamp1 =
+   so->descriptor[1] =
       COND(cso->min_mip_filter == PIPE_TEX_MIPFILTER_NONE,
            A6XX_TEX_SAMP_1_MIPFILTER_LINEAR_FAR) |
       COND(!cso->seamless_cube_map, A6XX_TEX_SAMP_1_CUBEMAPSEAMLESSFILTOFF) |
       COND(cso->unnormalized_coords, A6XX_TEX_SAMP_1_UNNORM_COORDS);
 
-   so->texsamp0 |= A6XX_TEX_SAMP_0_LOD_BIAS(cso->lod_bias);
-   so->texsamp1 |= A6XX_TEX_SAMP_1_MIN_LOD(cso->min_lod) |
-                   A6XX_TEX_SAMP_1_MAX_LOD(cso->max_lod);
+   so->descriptor[0] |= A6XX_TEX_SAMP_0_LOD_BIAS(cso->lod_bias);
+   so->descriptor[1] |= A6XX_TEX_SAMP_1_MIN_LOD(cso->min_lod) |
+                        A6XX_TEX_SAMP_1_MAX_LOD(cso->max_lod);
 
    if (cso->compare_mode)
-      so->texsamp1 |=
+      so->descriptor[1] |=
          A6XX_TEX_SAMP_1_COMPARE_FUNC((enum adreno_compare_func)cso->compare_func); /* maps 1:1 */
 
    if (needs_border) {
@@ -322,10 +322,10 @@ fd6_sampler_state_create(struct pipe_context *pctx,
       }
 
       if (fast_border_color_enable) {
-         so->texsamp2 = A6XX_TEX_SAMP_2_FASTBORDERCOLOR(fast_border_color) |
-                        A6XX_TEX_SAMP_2_FASTBORDERCOLOREN;
+         so->descriptor[2] = A6XX_TEX_SAMP_2_FASTBORDERCOLOR(fast_border_color) |
+                             A6XX_TEX_SAMP_2_FASTBORDERCOLOREN;
       } else {
-         so->texsamp2 = A6XX_TEX_SAMP_2_BCOLOR(get_bcolor_offset(ctx, cso));
+         so->descriptor[2] = A6XX_TEX_SAMP_2_BCOLOR(get_bcolor_offset(ctx, cso));
       }
    }
 
@@ -334,9 +334,9 @@ fd6_sampler_state_create(struct pipe_context *pctx,
     */
    if (cso->mag_img_filter == PIPE_TEX_FILTER_LINEAR &&
        cso->min_img_filter == PIPE_TEX_FILTER_LINEAR)
-      so->texsamp2 |= A6XX_TEX_SAMP_2_CHROMA_LINEAR;
+      so->descriptor[2] |= A6XX_TEX_SAMP_2_CHROMA_LINEAR;
 
-   so->texsamp2 |=
+   so->descriptor[2] |=
       A6XX_TEX_SAMP_2_REDUCTION_MODE(reduction_mode(cso->reduction_mode));
 
    return so;
@@ -646,10 +646,10 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
          const struct fd6_sampler_stateobj *sampler =
             tex->samplers[i] ? fd6_sampler_stateobj(tex->samplers[i])
                              : &dummy_sampler;
-         OUT_RING(state, sampler->texsamp0);
-         OUT_RING(state, sampler->texsamp1);
-         OUT_RING(state, sampler->texsamp2);
-         OUT_RING(state, sampler->texsamp3);
+         OUT_RING(state, sampler->descriptor[0]);
+         OUT_RING(state, sampler->descriptor[1]);
+         OUT_RING(state, sampler->descriptor[2]);
+         OUT_RING(state, sampler->descriptor[3]);
       }
 
       /* output sampler state: */
