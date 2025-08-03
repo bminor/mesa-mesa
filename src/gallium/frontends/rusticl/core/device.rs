@@ -1142,7 +1142,7 @@ impl DeviceBase {
         }
     }
 
-    pub fn subgroup_sizes(&self) -> impl ExactSizeIterator<Item = usize> {
+    pub fn subgroup_sizes(&self) -> impl ExactSizeIterator<Item = usize> + use<> {
         let subgroup_size = self.screen.compute_caps().subgroup_sizes;
 
         SetBitIndices::from_msb(subgroup_size).map(|bit| 1 << bit)

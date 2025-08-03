@@ -1842,7 +1842,7 @@ impl Kernel {
         self.prog.devs.iter().any(|dev| dev.api_svm_supported())
     }
 
-    pub fn subgroup_sizes(&self, dev: &Device) -> impl ExactSizeIterator<Item = usize> {
+    pub fn subgroup_sizes(&self, dev: &Device) -> impl ExactSizeIterator<Item = usize> + use<> {
         SetBitIndices::from_msb(self.builds.get(dev).unwrap().info.simd_sizes).map(|bit| 1 << bit)
     }
 
