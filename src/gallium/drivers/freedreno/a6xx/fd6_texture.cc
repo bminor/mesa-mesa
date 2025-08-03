@@ -589,6 +589,7 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
 {
    struct fd_ringbuffer *ring = fd_ringbuffer_new_object(ctx->pipe, 32 * 4);
    unsigned opcode, tex_samp_reg, tex_const_reg, tex_count_reg;
+   struct fd_bo *tex_desc = NULL, *samp_desc = NULL;
    enum a6xx_state_block sb;
 
    switch (type) {
@@ -639,18 +640,21 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
    }
 
    if (tex->num_samplers > 0) {
-      struct fd_ringbuffer *state =
-         fd_ringbuffer_new_object(ctx->pipe, tex->num_samplers * 4 * 4);
+      samp_desc = fd_bo_new(ctx->dev, tex->num_samplers * 4 * 4,
+                            FD_BO_GPUREADONLY | FD_BO_HINT_COMMAND,
+                            "samp desc");
+      uint32_t *buf = (uint32_t *)fd_bo_map(samp_desc);
+
       for (unsigned i = 0; i < tex->num_samplers; i++) {
          static const struct fd6_sampler_stateobj dummy_sampler = {};
          const struct fd6_sampler_stateobj *sampler =
             tex->samplers[i] ? fd6_sampler_stateobj(tex->samplers[i])
                              : &dummy_sampler;
-         OUT_RING(state, sampler->descriptor[0]);
-         OUT_RING(state, sampler->descriptor[1]);
-         OUT_RING(state, sampler->descriptor[2]);
-         OUT_RING(state, sampler->descriptor[3]);
+         memcpy(buf, sampler->descriptor, 4 * 4);
+         buf += 4;
       }
+
+      fd_ringbuffer_attach_bo(ring, samp_desc);
 
       /* output sampler state: */
       OUT_PKT7(ring, opcode, 3);
@@ -659,20 +663,21 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
                         CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
                         CP_LOAD_STATE6_0_STATE_BLOCK(sb) |
                         CP_LOAD_STATE6_0_NUM_UNIT(tex->num_samplers));
-      OUT_RB(ring, state); /* SRC_ADDR_LO/HI */
+      OUT_RELOC(ring, samp_desc, 0); /* SRC_ADDR_LO/HI */
 
       OUT_PKT4(ring, tex_samp_reg, 2);
-      OUT_RB(ring, state); /* SRC_ADDR_LO/HI */
+      OUT_RELOC(ring, samp_desc, 0); /* SRC_ADDR_LO/HI */
 
-      fd_ringbuffer_del(state);
+      fd_bo_del(samp_desc);
    }
 
-   unsigned num_textures = tex->num_textures;
+   if (tex->num_textures > 0) {
+      tex_desc = fd_bo_new(ctx->dev, tex->num_textures * 16 * 4,
+                           FD_BO_GPUREADONLY | FD_BO_HINT_COMMAND,
+                           "tex desc");
+      uint32_t *buf = (uint32_t *)fd_bo_map(tex_desc);
 
-   if (num_textures > 0) {
-      struct fd_ringbuffer *state =
-         fd_ringbuffer_new_object(ctx->pipe, num_textures * 16 * 4);
-      for (unsigned i = 0; i < num_textures; i++) {
+      for (unsigned i = 0; i < tex->num_textures; i++) {
          const struct fd6_pipe_sampler_view *view;
 
          if (tex->textures[i]) {
@@ -685,23 +690,11 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
             view = &dummy_view;
          }
 
-         OUT_RING(state, view->descriptor[0]);
-         OUT_RING(state, view->descriptor[1]);
-         OUT_RING(state, view->descriptor[2]);
-         OUT_RING(state, view->descriptor[3]);
-         OUT_RING(state, view->descriptor[4]);
-         OUT_RING(state, view->descriptor[5]);
-         OUT_RING(state, view->descriptor[6]);
-         OUT_RING(state, view->descriptor[7]);
-         OUT_RING(state, view->descriptor[8]);
-         OUT_RING(state, view->descriptor[9]);
-         OUT_RING(state, view->descriptor[10]);
-         OUT_RING(state, view->descriptor[11]);
-         OUT_RING(state, view->descriptor[12]);
-         OUT_RING(state, view->descriptor[13]);
-         OUT_RING(state, view->descriptor[14]);
-         OUT_RING(state, view->descriptor[15]);
+         memcpy(buf, view->descriptor, 16 * 4);
+         buf += 16;
       }
+
+      fd_ringbuffer_attach_bo(ring, tex_desc);
 
       /* emit texture state: */
       OUT_PKT7(ring, opcode, 3);
@@ -709,17 +702,17 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
                         CP_LOAD_STATE6_0_STATE_TYPE(ST6_CONSTANTS) |
                         CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
                         CP_LOAD_STATE6_0_STATE_BLOCK(sb) |
-                        CP_LOAD_STATE6_0_NUM_UNIT(num_textures));
-      OUT_RB(ring, state); /* SRC_ADDR_LO/HI */
+                        CP_LOAD_STATE6_0_NUM_UNIT(tex->num_textures));
+      OUT_RELOC(ring, tex_desc, 0); /* SRC_ADDR_LO/HI */
 
       OUT_PKT4(ring, tex_const_reg, 2);
-      OUT_RB(ring, state); /* SRC_ADDR_LO/HI */
+      OUT_RELOC(ring, tex_desc, 0); /* SRC_ADDR_LO/HI */
 
-      fd_ringbuffer_del(state);
+      fd_bo_del(tex_desc);
    }
 
    OUT_PKT4(ring, tex_count_reg, 1);
-   OUT_RING(ring, num_textures);
+   OUT_RING(ring, tex->num_textures);
 
    return ring;
 }
