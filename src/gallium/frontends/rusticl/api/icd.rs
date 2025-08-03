@@ -481,10 +481,9 @@ macro_rules! impl_cl_type_trait {
     };
 }
 
-// We need those functions exported
-
-#[no_mangle]
-unsafe extern "C" fn clGetPlatformInfo(
+// SAFETY: The OpenCL spec demands this function to be exported with its plain C name
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn clGetPlatformInfo(
     platform: cl_platform_id,
     param_name: cl_platform_info,
     param_value_size: usize,
@@ -502,8 +501,9 @@ unsafe extern "C" fn clGetPlatformInfo(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn clIcdGetPlatformIDsKHR(
+// SAFETY: The OpenCL spec demands this function to be exported with its plain C name
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn clIcdGetPlatformIDsKHR(
     num_entries: cl_uint,
     platforms: *mut cl_platform_id,
     num_platforms: *mut cl_uint,
@@ -519,8 +519,9 @@ macro_rules! cl_ext_func {
 }
 
 #[rustfmt::skip]
-#[no_mangle]
-extern "C" fn clGetExtensionFunctionAddress(
+// SAFETY: The OpenCL spec demands this function to be exported with its plain C name
+#[unsafe(no_mangle)]
+pub extern "C" fn clGetExtensionFunctionAddress(
     function_name: *const c_char,
 ) -> *mut c_void {
     if function_name.is_null() {
