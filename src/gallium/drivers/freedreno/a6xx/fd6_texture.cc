@@ -440,14 +440,10 @@ fd6_sampler_view_update(struct fd_context *ctx,
       format = rsc->b.b.format;
    }
 
-   so->ptr1 = rsc;
-
    if (cso->is_tex2d_from_buf) {
       struct fdl_view_args args = {
          .chip = ctx->screen->gen,
-
-         /* Using relocs for addresses still */
-         .iova = 0,
+         .iova = fd_bo_get_iova(rsc->bo),
          .base_miplevel = 0,
          .level_count = 1,
          .base_array_layer = 0,
@@ -476,8 +472,7 @@ fd6_sampler_view_update(struct fd_context *ctx,
       uint8_t swiz[4] = {cso->swizzle_r, cso->swizzle_g, cso->swizzle_b,
                          cso->swizzle_a};
 
-      /* Using relocs for addresses still */
-      uint64_t iova = cso->u.buf.offset;
+      uint64_t iova = cso->u.buf.offset + fd_bo_get_iova(rsc->bo);
 
       uint32_t size = fd_clamp_buffer_size(cso->format, cso->u.buf.size,
                                            A4XX_MAX_TEXEL_BUFFER_ELEMENTS_UINT);
@@ -486,9 +481,7 @@ fd6_sampler_view_update(struct fd_context *ctx,
    } else {
       struct fdl_view_args args = {
          .chip = ctx->screen->gen,
-
-         /* Using relocs for addresses still */
-         .iova = 0,
+         .iova = fd_bo_get_iova(rsc->bo),
 
          .base_miplevel = fd_sampler_first_level(cso),
          .level_count =
@@ -524,17 +517,6 @@ fd6_sampler_view_update(struct fd_context *ctx,
       fdl6_view_init(&view, layouts, &args,
                      ctx->screen->info->a6xx.has_z24uint_s8uint);
       memcpy(so->descriptor, view.descriptor, sizeof(so->descriptor));
-
-      if (rsc->b.b.format == PIPE_FORMAT_R8_G8B8_420_UNORM) {
-         /* In case of biplanar R8_G8B8, the UBWC metadata address in
-          * dwords 7 and 8, is instead the pointer to the second plane.
-          */
-         so->ptr2 = plane1;
-      } else {
-         if (fd_resource_ubwc_enabled(rsc, fd_sampler_first_level(cso))) {
-            so->ptr2 = rsc;
-         }
-      }
    }
 }
 
@@ -707,24 +689,11 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
          OUT_RING(state, view->descriptor[1]);
          OUT_RING(state, view->descriptor[2]);
          OUT_RING(state, view->descriptor[3]);
-
-         if (view->ptr1) {
-            OUT_RELOC(state, view->ptr1->bo, view->descriptor[4],
-                      (uint64_t)view->descriptor[5] << 32, 0);
-         } else {
-            OUT_RING(state, view->descriptor[4]);
-            OUT_RING(state, view->descriptor[5]);
-         }
-
+         OUT_RING(state, view->descriptor[4]);
+         OUT_RING(state, view->descriptor[5]);
          OUT_RING(state, view->descriptor[6]);
-
-         if (view->ptr2) {
-            OUT_RELOC(state, view->ptr2->bo, view->descriptor[7], 0, 0);
-         } else {
-            OUT_RING(state, view->descriptor[7]);
-            OUT_RING(state, view->descriptor[8]);
-         }
-
+         OUT_RING(state, view->descriptor[7]);
+         OUT_RING(state, view->descriptor[8]);
          OUT_RING(state, view->descriptor[9]);
          OUT_RING(state, view->descriptor[10]);
          OUT_RING(state, view->descriptor[11]);
