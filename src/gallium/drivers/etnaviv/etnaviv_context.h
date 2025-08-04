@@ -242,6 +242,7 @@ struct etna_context {
 
    bool compute_only;
    bool in_draw_vbo;
+   bool needs_gpu_state_reset;
 
    /* conditional rendering */
    struct pipe_query *cond_query;

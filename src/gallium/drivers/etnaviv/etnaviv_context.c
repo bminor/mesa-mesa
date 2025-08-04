@@ -228,6 +228,112 @@ static inline void clear_draw_flag(struct etna_context **ctx_ptr) {
    (ctx)->in_draw_vbo = true
 
 static void
+etna_reset_gpu_state(struct etna_context *ctx)
+{
+   struct etna_cmd_stream *stream = ctx->stream;
+   struct etna_screen *screen = ctx->screen;
+   uint32_t dummy_attribs[VIVS_NFE_GENERIC_ATTRIB__LEN] = { 0 };
+
+   if (ctx->compute_only) {
+      /* compute only context does not make use of any of the dirty state tracking. */
+      assert(ctx->dirty == 0);
+      assert(ctx->dirty_sampler_views == 0);
+      assert(ctx->prev_active_samplers == 0);
+
+      etna_cmd_stream_mark_end_of_context_init(stream);
+
+      return;
+   }
+
+   etna_set_state(stream, VIVS_GL_API_MODE, VIVS_GL_API_MODE_OPENGL);
+   etna_set_state(stream, VIVS_PA_W_CLIP_LIMIT, 0x34000001);
+   etna_set_state(stream, VIVS_PA_FLAGS, 0x00000000); /* blob sets ZCONVERT_BYPASS on GC3000+, this messes up z for us */
+   etna_set_state(stream, VIVS_PA_VIEWPORT_UNK00A80, 0x38a01404);
+   etna_set_state(stream, VIVS_PA_VIEWPORT_UNK00A84, fui(8192.0));
+   etna_set_state(stream, VIVS_PA_ZFARCLIPPING, 0x00000000);
+   etna_set_state(stream, VIVS_RA_HDEPTH_CONTROL, 0x00007000);
+   etna_set_state(stream, VIVS_PS_CONTROL_EXT, 0x00000000);
+
+   /* There is no HALTI0 specific state */
+   if (screen->info->halti >= 1) { /* Only on HALTI1+ */
+      etna_set_state(stream, VIVS_VS_HALTI1_UNK00884, 0x00000808);
+   }
+   if (screen->info->halti >= 2) { /* Only on HALTI2+ */
+      etna_set_state(stream, VIVS_RA_UNK00E0C, 0x00000000);
+   }
+   if (screen->info->halti >= 3) { /* Only on HALTI3+ */
+      etna_set_state(stream, VIVS_PS_HALTI3_UNK0103C, 0x76543210);
+   }
+   if (screen->info->halti >= 4) { /* Only on HALTI4+ */
+      etna_set_state(stream, VIVS_PE_HALTI4_UNK014C0, 0x00000000);
+   }
+   if (screen->info->halti >= 5) { /* Only on HALTI5+ */
+      etna_set_state(stream, VIVS_NTE_DESCRIPTOR_CONTROL,
+                     COND(!DBG_ENABLED(ETNA_DBG_NO_TEXDESC), VIVS_NTE_DESCRIPTOR_CONTROL_ENABLE));
+      etna_set_state(stream, VIVS_FE_HALTI5_UNK007D8, 0x00000002);
+      etna_set_state(stream, VIVS_PS_SAMPLER_BASE, 0x00000000);
+      etna_set_state(stream, VIVS_VS_SAMPLER_BASE, 0x00000020);
+      etna_set_state(stream, VIVS_SH_CONFIG, VIVS_SH_CONFIG_RTNE_ROUNDING);
+   }
+
+   if (VIV_FEATURE(screen, ETNA_FEATURE_MSAA_FRAGMENT_OPERATION)) {
+      etna_set_state(stream, VIVS_PS_MSAA_CONFIG, 0x6fffffff & 0xf70fffff & 0xfff6ffff &
+                                                  0xfffff6ff & 0xffffff7f);
+
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(0), 0x6e80e680);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(1), 0x2ac42a4c);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(2), 0x15fb5d3b);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(3), 0x9d7391f7);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(4), 0x08e691f7);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(5), 0x4ca25d3b);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(6), 0xbf512a4c);
+      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(7), 0x37d9e680);
+   }
+
+   if (VIV_FEATURE(screen, ETNA_FEATURE_BUG_FIXES18))
+      etna_set_state(stream, VIVS_GL_BUG_FIXES, 0x6);
+
+   if (screen->info->halti >= 5 && !DBG_ENABLED(ETNA_DBG_NO_TEXDESC)) {
+      /* TXDESC cache flush - do this once at the beginning, as texture
+       * descriptors are only written by the CPU once, then patched by the kernel
+       * before command stream submission. It does not need flushing if the
+       * referenced image data changes.
+       */
+      etna_set_state(stream, VIVS_NTE_DESCRIPTOR_FLUSH, 0);
+      etna_set_state(stream, VIVS_GL_FLUSH_CACHE,
+            VIVS_GL_FLUSH_CACHE_DESCRIPTOR_UNK12 |
+            VIVS_GL_FLUSH_CACHE_DESCRIPTOR_UNK13);
+
+      /* Icache invalidate (should do this on shader change?) */
+      etna_set_state(stream, VIVS_VS_ICACHE_INVALIDATE,
+            VIVS_VS_ICACHE_INVALIDATE_UNK0 | VIVS_VS_ICACHE_INVALIDATE_UNK1 |
+            VIVS_VS_ICACHE_INVALIDATE_UNK2 | VIVS_VS_ICACHE_INVALIDATE_UNK3 |
+            VIVS_VS_ICACHE_INVALIDATE_UNK4);
+   }
+
+   /* It seems that some GPUs (at least some GC400 have shown this behavior)
+    * come out of reset with random vertex attributes enabled and also don't
+    * disable them on the write to the first config register as normal. Enabling
+    * all attributes seems to provide the GPU with the required edge to actually
+    * disable the unused attributes on the next draw.
+    */
+   if (screen->info->halti >= 5) {
+      etna_set_state_multi(stream, VIVS_NFE_GENERIC_ATTRIB_CONFIG0(0),
+                           VIVS_NFE_GENERIC_ATTRIB__LEN, dummy_attribs);
+   } else {
+      etna_set_state_multi(stream, VIVS_FE_VERTEX_ELEMENT_CONFIG(0),
+                           screen->info->halti >= 0 ? 16 : 12, dummy_attribs);
+   }
+
+   etna_cmd_stream_mark_end_of_context_init(stream);
+
+   ctx->dirty = ~0L;
+   ctx->dirty_sampler_views = ~0L;
+   ctx->prev_active_samplers = ~0L;
+   ctx->needs_gpu_state_reset = false;
+}
+
+static void
 etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
               unsigned drawid_offset,
               const struct pipe_draw_indirect_info *indirect,
@@ -276,6 +382,9 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       BUG("Unsupported draw mode");
       return;
    }
+
+   if (ctx->needs_gpu_state_reset)
+      etna_reset_gpu_state(ctx);
 
    /* Upload a user index buffer. */
    unsigned index_offset = 0;
@@ -479,111 +588,6 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       pipe_resource_reference(&indexbuf, NULL);
 }
 
-static void
-etna_reset_gpu_state(struct etna_context *ctx)
-{
-   struct etna_cmd_stream *stream = ctx->stream;
-   struct etna_screen *screen = ctx->screen;
-   uint32_t dummy_attribs[VIVS_NFE_GENERIC_ATTRIB__LEN] = { 0 };
-
-   if (ctx->compute_only) {
-      /* compute only context does not make use of any of the dirty state tracking. */
-      assert(ctx->dirty == 0);
-      assert(ctx->dirty_sampler_views == 0);
-      assert(ctx->prev_active_samplers == 0);
-
-      etna_cmd_stream_mark_end_of_context_init(stream);
-
-      return;
-   }
-
-   etna_set_state(stream, VIVS_GL_API_MODE, VIVS_GL_API_MODE_OPENGL);
-   etna_set_state(stream, VIVS_PA_W_CLIP_LIMIT, 0x34000001);
-   etna_set_state(stream, VIVS_PA_FLAGS, 0x00000000); /* blob sets ZCONVERT_BYPASS on GC3000+, this messes up z for us */
-   etna_set_state(stream, VIVS_PA_VIEWPORT_UNK00A80, 0x38a01404);
-   etna_set_state(stream, VIVS_PA_VIEWPORT_UNK00A84, fui(8192.0));
-   etna_set_state(stream, VIVS_PA_ZFARCLIPPING, 0x00000000);
-   etna_set_state(stream, VIVS_RA_HDEPTH_CONTROL, 0x00007000);
-   etna_set_state(stream, VIVS_PS_CONTROL_EXT, 0x00000000);
-
-   /* There is no HALTI0 specific state */
-   if (screen->info->halti >= 1) { /* Only on HALTI1+ */
-      etna_set_state(stream, VIVS_VS_HALTI1_UNK00884, 0x00000808);
-   }
-   if (screen->info->halti >= 2) { /* Only on HALTI2+ */
-      etna_set_state(stream, VIVS_RA_UNK00E0C, 0x00000000);
-   }
-   if (screen->info->halti >= 3) { /* Only on HALTI3+ */
-      etna_set_state(stream, VIVS_PS_HALTI3_UNK0103C, 0x76543210);
-   }
-   if (screen->info->halti >= 4) { /* Only on HALTI4+ */
-      etna_set_state(stream, VIVS_PE_HALTI4_UNK014C0, 0x00000000);
-   }
-   if (screen->info->halti >= 5) { /* Only on HALTI5+ */
-      etna_set_state(stream, VIVS_NTE_DESCRIPTOR_CONTROL,
-                     COND(!DBG_ENABLED(ETNA_DBG_NO_TEXDESC), VIVS_NTE_DESCRIPTOR_CONTROL_ENABLE));
-      etna_set_state(stream, VIVS_FE_HALTI5_UNK007D8, 0x00000002);
-      etna_set_state(stream, VIVS_PS_SAMPLER_BASE, 0x00000000);
-      etna_set_state(stream, VIVS_VS_SAMPLER_BASE, 0x00000020);
-      etna_set_state(stream, VIVS_SH_CONFIG, VIVS_SH_CONFIG_RTNE_ROUNDING);
-   }
-
-   if (VIV_FEATURE(screen, ETNA_FEATURE_MSAA_FRAGMENT_OPERATION)) {
-      etna_set_state(stream, VIVS_PS_MSAA_CONFIG, 0x6fffffff & 0xf70fffff & 0xfff6ffff &
-                                                  0xfffff6ff & 0xffffff7f);
-
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(0), 0x6e80e680);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(1), 0x2ac42a4c);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(2), 0x15fb5d3b);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(3), 0x9d7391f7);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(4), 0x08e691f7);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(5), 0x4ca25d3b);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(6), 0xbf512a4c);
-      etna_set_state(stream, VIVS_PS_ALPHA_TO_COVERAGE_DITHER(7), 0x37d9e680);
-   }
-
-   if (VIV_FEATURE(screen, ETNA_FEATURE_BUG_FIXES18))
-      etna_set_state(stream, VIVS_GL_BUG_FIXES, 0x6);
-
-   if (screen->info->halti >= 5 && !DBG_ENABLED(ETNA_DBG_NO_TEXDESC)) {
-      /* TXDESC cache flush - do this once at the beginning, as texture
-       * descriptors are only written by the CPU once, then patched by the kernel
-       * before command stream submission. It does not need flushing if the
-       * referenced image data changes.
-       */
-      etna_set_state(stream, VIVS_NTE_DESCRIPTOR_FLUSH, 0);
-      etna_set_state(stream, VIVS_GL_FLUSH_CACHE,
-            VIVS_GL_FLUSH_CACHE_DESCRIPTOR_UNK12 |
-            VIVS_GL_FLUSH_CACHE_DESCRIPTOR_UNK13);
-
-      /* Icache invalidate (should do this on shader change?) */
-      etna_set_state(stream, VIVS_VS_ICACHE_INVALIDATE,
-            VIVS_VS_ICACHE_INVALIDATE_UNK0 | VIVS_VS_ICACHE_INVALIDATE_UNK1 |
-            VIVS_VS_ICACHE_INVALIDATE_UNK2 | VIVS_VS_ICACHE_INVALIDATE_UNK3 |
-            VIVS_VS_ICACHE_INVALIDATE_UNK4);
-   }
-
-   /* It seems that some GPUs (at least some GC400 have shown this behavior)
-    * come out of reset with random vertex attributes enabled and also don't
-    * disable them on the write to the first config register as normal. Enabling
-    * all attributes seems to provide the GPU with the required edge to actually
-    * disable the unused attributes on the next draw.
-    */
-   if (screen->info->halti >= 5) {
-      etna_set_state_multi(stream, VIVS_NFE_GENERIC_ATTRIB_CONFIG0(0),
-                           VIVS_NFE_GENERIC_ATTRIB__LEN, dummy_attribs);
-   } else {
-      etna_set_state_multi(stream, VIVS_FE_VERTEX_ELEMENT_CONFIG(0),
-                           screen->info->halti >= 0 ? 16 : 12, dummy_attribs);
-   }
-
-   etna_cmd_stream_mark_end_of_context_init(stream);
-
-   ctx->dirty = ~0L;
-   ctx->dirty_sampler_views = ~0L;
-   ctx->prev_active_samplers = ~0L;
-}
-
 void
 etna_flush(struct pipe_context *pctx, struct pipe_fence_handle **fence,
            enum pipe_flush_flags flags, bool internal)
@@ -634,7 +638,7 @@ etna_flush(struct pipe_context *pctx, struct pipe_fence_handle **fence,
 
    _mesa_hash_table_clear(ctx->pending_resources, NULL);
 
-   etna_reset_gpu_state(ctx);
+   ctx->needs_gpu_state_reset = true;
 }
 
 static void
@@ -727,9 +731,7 @@ etna_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    ctx->sample_mask = 0xffff;
 
    ctx->compute_only = compute_only;
-
-   /*  Set sensible defaults for state */
-   etna_reset_gpu_state(ctx);
+   ctx->needs_gpu_state_reset = true;
 
    ctx->in_fence_fd = -1;
 
