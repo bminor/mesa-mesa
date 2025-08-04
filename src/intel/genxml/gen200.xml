@@ -1921,6 +1921,24 @@
   <register name="BLT_TRTT_VA_RANGE" length="1" num="0x4484">
     <field name="TR-VA Base" dword="0" bits="12:0" type="uint" />
   </register>
+  <register name="CACHE_MODE_0" length="1" num="0x7000">
+    <field name="Hierarchical Z RAW Stall Optimization Disable" dword="0" bits="2:2" type="bool" />
+    <field name="Hierarchical Z Disable" dword="0" bits="3:3" type="bool" />
+    <field name="Late Z Alloc Disable" dword="0" bits="4:4" type="bool" />
+    <field name="Msaa Fast Clear Enabled" dword="0" bits="5:5" type="bool" />
+    <field name="Depth Related Cache Pipelined Flush Disable" dword="0" bits="8:8" type="bool" />
+    <field name="Sampler L2 TLB Prefetch Enable" dword="0" bits="9:9" type="bool" />
+    <field name="RCZ PMA Not-Promoted Allocation stall optimization Disable due to change in depth parameters" dword="0" bits="10:10" type="uint" />
+    <field name="Disable Repacking for Compression" dword="0" bits="15:15" type="bool" />
+    <field name="Hierarchical Z RAW Stall Optimization Disable Mask" dword="0" bits="18:18" type="bool" />
+    <field name="Hierarchical Z Disable Mask" dword="0" bits="19:19" type="bool" />
+    <field name="Late Z Alloc Disable Mask" dword="0" bits="20:20" type="bool" />
+    <field name="Msaa Fast Clear Enabled Mask" dword="0" bits="21:21" type="bool" />
+    <field name="Depth Related Cache Pipelined Flush Disable Mask" dword="0" bits="24:24" type="bool" />
+    <field name="Sampler L2 TLB Prefetch Enable Mask" dword="0" bits="25:25" type="bool" />
+    <field name="RCZ PMA Not-Promoted Allocation stall optimization Disable due to change in depth parameters Mask" dword="0" bits="26:26" type="bool" />
+    <field name="Disable Repacking for Compression Mask" dword="0" bits="31:31" type="bool" />
+  </register>
   <register name="COMP_CTX0_TRTT_VA_RANGE" length="1" num="0x4584">
     <field name="TR-VA Base" dword="0" bits="12:0" type="uint" />
   </register>
