@@ -342,6 +342,12 @@ def to_camel(snake_str):
     result = ''.join(word.title() for word in snake_str.split('_'))
     return result if not result[0].isdigit() else '_' + result
 
+def strip_parens(s):
+    s = s.strip()
+    while s.startswith('(') and s.endswith(')'):
+        s = s[1:-1].strip()
+    return s
+
 def glob_match(glob, name):
     if glob.endswith('*'):
         return name.startswith(glob[:-1])
@@ -469,7 +475,7 @@ def parse_header(nvcl, f):
             continue
 
         if line.startswith("#define"):
-            list = line.split();
+            list = [strip_parens(e) for e in line.split()]
             if "_cl_" in list[1]:
                 continue
 
