@@ -11,6 +11,9 @@
 static void
 nouveau_ws_subchan_dealloc(int fd, struct nouveau_ws_object *obj)
 {
+   if (obj->cls == 0)
+      return;
+
    struct {
       struct nvif_ioctl_v0 ioctl;
       struct nvif_ioctl_del del;
