@@ -1584,6 +1584,13 @@ int r600_bytecode_add_gds(struct r600_bytecode *bc, const struct r600_bytecode_g
 		       bc->index_loaded[gds->uav_index_mode - 1]);
 	}
 
+	if (gds->src_gpr >= bc->ngpr) {
+		bc->ngpr = gds->src_gpr + 1;
+	}
+	if (gds->dst_gpr >= bc->ngpr) {
+		bc->ngpr = gds->dst_gpr + 1;
+	}
+
 	if (bc->cf_last == NULL ||
 	    bc->cf_last->op != CF_OP_GDS ||
 	    bc->force_add_cf) {
