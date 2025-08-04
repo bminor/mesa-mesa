@@ -832,9 +832,9 @@ option(
 option(
   'allow-fallback-for',
   type : 'array',
-  value : [],
+  value : ['perfetto'],
   choices : [
-    'libdrm',
+    'libdrm', 'perfetto',
   ],
   description : 'Allows the fallback mechanism if the dependency is not available on the system, or too old.'
 )

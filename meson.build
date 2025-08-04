@@ -2164,11 +2164,15 @@ else
   pre_args += '-DCUSTOM_SHADER_REPLACEMENT'
 endif
 
+allow_fallback_for_perfetto = get_option('allow-fallback-for').contains('perfetto')
 with_perfetto = get_option('perfetto')
 with_datasources = get_option('datasources')
 with_any_datasource = with_datasources.length() != 0
 if with_perfetto
-  dep_perfetto = dependency('perfetto', fallback: ['perfetto', 'dep_perfetto'])
+  dep_perfetto = dependency(
+      'perfetto',
+      fallback: allow_fallback_for_perfetto ? ['perfetto', 'dep_perfetto'] : [],
+  )
   pre_args += '-DHAVE_PERFETTO'
 endif
 
