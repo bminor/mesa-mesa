@@ -35,6 +35,10 @@ dEQP-GLES31.functional.texture.filtering.cube_array.combinations.nearest_nearest
 dEQP-GLES31.functional.texture.filtering.cube_array.formats.srgb8_alpha8_linear_mipmap_linear
 dEQP-GLES31.functional.texture.gather.basic.cube.rgba8ui.texture_swizzle.zero_one_red_green
 
+glx@glx-buffer-age
+glx@glx_ext_no_config_context@no fbconfig
+glx@glx-multithread-texture
+
 spec@!opengl 1.0@rasterpos
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked
 spec@!opengl 1.0@rasterpos@glsl_vs_tes_linke

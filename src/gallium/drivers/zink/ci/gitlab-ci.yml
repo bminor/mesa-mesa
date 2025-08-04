@@ -261,6 +261,7 @@ zink-radv-navi10-valve:
     - .zink-radv-valve-manual-rules
   timeout: 40m
   variables:
+    HWCI_START_WESTON: 1
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     GPU_VERSION: zink-radv-navi10
     RADV_PERFTEST: hic
