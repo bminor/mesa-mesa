@@ -377,7 +377,7 @@ kernel_num_bufs(struct kernel *kernel, enum kernel_buf_type buf_type)
 
 template<chip CHIP>
 static void
-cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
+cs_uav_emit(struct fd_ringbuffer *ring, struct fd_device *dev,
             struct kernel *kernel)
 {
    unsigned num_bufs = kernel_num_bufs(kernel, KERNEL_BUF_UAV);
@@ -386,13 +386,20 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
       return;
    }
 
-   struct fd_ringbuffer *state = fd_submit_new_ringbuffer(
-      submit, kernel->num_bufs * 16 * 4, FD_RINGBUFFER_STREAMING);
+   struct fd_bo *state = fd_bo_new(dev, kernel->num_bufs * 16 * 4,
+                                   FD_BO_GPUREADONLY | FD_BO_HINT_COMMAND,
+                                   "tex_desc");
+
+   fd_ringbuffer_attach_bo(ring, state);
+
+   uint32_t *buf = (uint32_t *)fd_bo_map(state);
 
    for (unsigned i = 0; i < kernel->num_bufs; i++) {
       if (kernel->buf_types[i] != KERNEL_BUF_UAV) {
          continue;
       }
+
+      fd_ringbuffer_attach_bo(ring, kernel->bufs[i]);
 
       /* size is encoded with low 15b in WIDTH and high bits in HEIGHT,
        * in units of elements:
@@ -400,24 +407,21 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
       unsigned sz = kernel->buf_sizes[i];
       unsigned width = sz & MASK(15);
       unsigned height = sz >> 15;
+      uint64_t iova = fd_bo_get_iova(kernel->bufs[i]);
 
-      OUT_RING(state, A6XX_TEX_CONST_0_FMT(FMT6_32_UINT) | A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR));
-      OUT_RING(state, A6XX_TEX_CONST_1_WIDTH(width) | A6XX_TEX_CONST_1_HEIGHT(height));
-      OUT_RING(state, A6XX_TEX_CONST_2_PITCH(0) |
+      uint32_t descriptor[16] = {
+         A6XX_TEX_CONST_0_FMT(FMT6_32_UINT) | A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR),
+         A6XX_TEX_CONST_1_WIDTH(width) | A6XX_TEX_CONST_1_HEIGHT(height),
+         A6XX_TEX_CONST_2_PITCH(0) |
                       A6XX_TEX_CONST_2_STRUCTSIZETEXELS(1) |
-                      A6XX_TEX_CONST_2_TYPE(A6XX_TEX_BUFFER));
-      OUT_RING(state, A6XX_TEX_CONST_3_ARRAY_PITCH(0));
-      OUT_RELOC(state, kernel->bufs[i], 0, 0, 0);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
-      OUT_RING(state, 0x00000000);
+                      A6XX_TEX_CONST_2_TYPE(A6XX_TEX_BUFFER),
+         A6XX_TEX_CONST_3_ARRAY_PITCH(0),
+         (uint32_t)iova,
+         (uint32_t)(iova >> 32),
+      };
+
+      memcpy(buf, descriptor, 16 * 4);
+      buf += 16;
    }
 
    OUT_PKT7(ring, CP_LOAD_STATE6_FRAG, 3);
@@ -426,19 +430,19 @@ cs_ibo_emit(struct fd_ringbuffer *ring, struct fd_submit *submit,
                      CP_LOAD_STATE6_0_STATE_SRC(SS6_INDIRECT) |
                      CP_LOAD_STATE6_0_STATE_BLOCK(SB6_CS_SHADER) |
                      CP_LOAD_STATE6_0_NUM_UNIT(num_bufs));
-   OUT_RB(ring, state);
+   OUT_RELOC(ring, state, 0);
 
    if (CHIP == A6XX) {
       OUT_PKT4(ring, REG_A6XX_SP_CS_UAV_BASE, 2);
    } else {
       OUT_PKT4(ring, REG_A7XX_SP_CS_UAV_BASE, 2);
    }
-   OUT_RB(ring, state);
+   OUT_RELOC(ring, state, 0);
 
    OUT_PKT4(ring, REG_A6XX_SP_CS_USIZE, 1);
    OUT_RING(ring, num_bufs);
 
-   fd_ringbuffer_del(state);
+   fd_bo_del(state);
 }
 
 static void
@@ -544,7 +548,7 @@ a6xx_emit_grid(struct kernel *kernel, uint32_t grid[3],
    cs_restore_emit<CHIP>(ring, a6xx_backend);
    cs_program_emit<CHIP>(ring, kernel);
    cs_const_emit<CHIP>(ring, kernel, grid);
-   cs_ibo_emit<CHIP>(ring, submit, kernel);
+   cs_uav_emit<CHIP>(ring, a6xx_backend->dev, kernel);
    cs_ubo_emit(ring, kernel);
 
    OUT_PKT7(ring, CP_SET_MARKER, 1);
