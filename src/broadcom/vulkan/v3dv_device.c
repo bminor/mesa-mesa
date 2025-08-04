@@ -510,6 +510,12 @@ get_features(const struct v3dv_physical_device *physical_device,
 #ifdef V3DV_USE_WSI_PLATFORM
       /* VK_EXT_swapchain_maintenance1 */
       .swapchainMaintenance1 = true,
+
+      /* VK_KHR_present_id2 */
+      .presentId2 = true,
+
+      /* VK_KHR_present_wait2 */
+      .presentWait2 = true,
 #endif
 
       /* VK_KHR_shader_relaxed_extended_instruction */

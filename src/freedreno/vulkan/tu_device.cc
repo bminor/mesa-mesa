@@ -754,6 +754,12 @@ tu_get_features(struct tu_physical_device *pdevice,
 #ifdef TU_USE_WSI_PLATFORM
    /* VK_EXT_swapchain_maintenance1 */
    features->swapchainMaintenance1 = true;
+
+   /* VK_KHR_present_id2 */
+   features->presentId2 = true;
+
+   /* VK_KHR_present_wait2 */
+   features->presentWait2 = true;
 #endif
 
    /* VK_EXT_texel_buffer_alignment */

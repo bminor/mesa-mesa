@@ -283,6 +283,12 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_KHR_shader_expect_assume */
       .shaderExpectAssume = false,
+
+      /* VK_KHR_present_id2 */
+      .presentId2 = PVR_USE_WSI_PLATFORM,
+
+      /* VK_KHR_present_wait2 */
+      .presentWait2 = PVR_USE_WSI_PLATFORM,
    };
 }
 

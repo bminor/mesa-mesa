@@ -854,7 +854,7 @@
         "description": "vulkan: fix missing presentId2/presentWait2 enable features",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "07881b085e6742e3664671cbe09b4220dbb56308",
         "notes": null
