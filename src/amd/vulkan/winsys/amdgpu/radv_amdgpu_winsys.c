@@ -300,9 +300,6 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
 
    ws->syncobj_sync_type = vk_drm_syncobj_get_type_from_provider(ac_drm_device_get_sync_provider(dev));
    if (ws->syncobj_sync_type.features) {
-      /* multi wait is always supported */
-      ws->syncobj_sync_type.features |= VK_SYNC_FEATURE_GPU_MULTI_WAIT;
-
       if (!ws->info.has_timeline_syncobj && ws->syncobj_sync_type.features & VK_SYNC_FEATURE_TIMELINE) {
          /* Disable timeline feature if it was disabled in the driver. */
          assert(is_virtio);

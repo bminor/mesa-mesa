@@ -1382,11 +1382,6 @@ create_physical_device(struct v3dv_instance *instance,
     */
    device->drm_syncobj_type.features &= ~VK_SYNC_FEATURE_TIMELINE;
 
-   /* Multiwait is required for emulated timeline semaphores and is supported
-    * by the v3d kernel interface.
-    */
-   device->drm_syncobj_type.features |= VK_SYNC_FEATURE_GPU_MULTI_WAIT;
-
    device->sync_timeline_type =
       vk_sync_timeline_get_type(&device->drm_syncobj_type);
 

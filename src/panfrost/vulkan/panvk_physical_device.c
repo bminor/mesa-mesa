@@ -205,11 +205,6 @@ get_device_sync_types(struct panvk_physical_device *device,
        */
       device->drm_syncobj_type.features &= ~VK_SYNC_FEATURE_TIMELINE;
 
-      /* vk_sync_timeline requires VK_SYNC_FEATURE_GPU_MULTI_WAIT.  Panfrost
-       * waits on the underlying dma-fences and supports the feature.
-       */
-      device->drm_syncobj_type.features |= VK_SYNC_FEATURE_GPU_MULTI_WAIT;
-
       device->sync_timeline_type =
          vk_sync_timeline_get_type(&device->drm_syncobj_type);
       device->sync_types[sync_type_count++] = &device->sync_timeline_type.sync;

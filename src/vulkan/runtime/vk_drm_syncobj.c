@@ -403,6 +403,7 @@ vk_drm_syncobj_get_type_from_provider(struct util_sync_provider *sync)
       .size = sizeof(struct vk_drm_syncobj),
       .features = VK_SYNC_FEATURE_BINARY |
                   VK_SYNC_FEATURE_GPU_WAIT |
+                  VK_SYNC_FEATURE_GPU_MULTI_WAIT |
                   VK_SYNC_FEATURE_CPU_RESET |
                   VK_SYNC_FEATURE_CPU_SIGNAL |
                   VK_SYNC_FEATURE_WAIT_PENDING,

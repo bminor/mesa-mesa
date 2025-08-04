@@ -80,7 +80,7 @@ enum vk_sync_features {
    /** Set if this sync supports GPU waits */
    VK_SYNC_FEATURE_GPU_WAIT            = (1 << 2),
 
-   /** Set if a sync type supports multiple GPU waits on one signal state
+   /** Set if a non-timeline sync type supports multiple GPU waits on one signal state
     *
     * The Vulkan spec for VkSemaphore requires GPU wait and signal operations
     * to have a one-to-one relationship.  This formally described by saying
