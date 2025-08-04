@@ -149,10 +149,6 @@ default:
       . ${SCRIPTS_DIR}/setup-test-env.sh
     - eval "$S3_JWT_FILE_SCRIPT"
 
-  after_script:
-    # Work around https://gitlab.com/gitlab-org/gitlab/-/issues/20338
-    - find -name '*.log' -exec mv {} {}.txt \;
-
   # Retry when job fails. Failed jobs can be found in the Mesa CI Daily Reports:
   # https://gitlab.freedesktop.org/mesa/mesa/-/issues/?sort=created_date&state=opened&label_name%5B%5D=CI%20daily
   retry:
