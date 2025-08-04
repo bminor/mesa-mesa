@@ -78,106 +78,12 @@ KHR-GL46.shader_image_size.basic-ms-vs-float,Fail
 KHR-GL46.shader_image_size.basic-ms-vs-int,Fail
 KHR-GL46.shader_image_size.basic-ms-vs-uint,Fail
 
-glx@extension string sanity,Fail
-glx@glx-buffer-age vblank_mode=0,Fail
-glx@glx-buffer-age,Fail
-glx@glx-close-display,Fail
-glx@glx-context-flush-control,Fail
-glx@glx-copy-context-dest-current,Fail
-glx@glx-destroycontext-1,Fail
-glx@glx-destroycontext-2,Fail
-glx@glx-destroycontext-3,Fail
-glx@glx-dont-care-mask,Fail
-glx@glx-egl-switch-context,Fail
-glx@glx-fbconfig-bad,Fail
-glx@glx-fbconfig-compliance,Fail
-glx@glx-fbconfig-sanity,Fail
-glx@glx-fbo-binding,Fail
-glx@glx-make-current,Fail
-glx@glx-make-current-other-thread,Fail
-glx@glx-make-glxdrawable-current,Fail
-glx@glx-multi-context-front,Fail
-glx@glx-multi-context-ib-1,Fail
-glx@glx-multi-context-single-window,Fail
 glx@glx-multi-window-single-context,Fail
-glx@glx-multithread,Fail
-glx@glx-multithread-buffer,Fail
-glx@glx-multithread-buffer-busy-tracking-bug,Fail
-glx@glx-multithread-buffer-refcount-bug,Fail
-glx@glx-multithread-clearbuffer,Fail
-glx@glx-multithread-makecurrent-1,Fail
-glx@glx-multithread-makecurrent-2,Fail
-glx@glx-multithread-makecurrent-3,Fail
-glx@glx-multithread-makecurrent-4,Fail
-glx@glx-multithread-shader-compile,Fail
-glx@glx-multithread-texture,Fail
-glx@glx-pixmap-crosscheck,Fail
-glx@glx-pixmap-life,Fail
-glx@glx-pixmap-multi,Fail
-glx@glx-pixmap13-life,Fail
-glx@glx-query-drawable-glx_fbconfig_id-glxpbuffer,Fail
-glx@glx-query-drawable-glx_fbconfig_id-glxpixmap,Fail
-glx@glx-query-drawable-glx_fbconfig_id-glxwindow,Fail
-glx@glx-query-drawable-glx_fbconfig_id-window,Fail
-glx@glx-query-drawable-glx_height,Fail
-glx@glx-query-drawable-glx_preserved_contents,Fail
-glx@glx-query-drawable-glx_width,Fail
-glx@glx-query-drawable-glxbaddrawable,Fail
-glx@glx-query-drawable-glxpbuffer-glx_height,Fail
-glx@glx-query-drawable-glxpbuffer-glx_width,Fail
-glx@glx-query-drawable-glxpixmap-glx_height,Fail
-glx@glx-query-drawable-glxpixmap-glx_width,Fail
-glx@glx-query-drawable-glxwindow-glx_height,Fail
-glx@glx-query-drawable-glxwindow-glx_width,Fail
-glx@glx-shader-sharing,Fail
-glx@glx-swap-copy,Fail
-glx@glx-swap-exchange,Fail
-glx@glx-swap-pixmap,Fail
 glx@glx-swap-pixmap-bad,Fail
-glx@glx-swap-singlebuffer,Fail
-glx@glx-tfp,Fail
-glx@glx-visuals-depth -pixmap,Fail
-glx@glx-visuals-depth,Fail
-glx@glx-visuals-stencil -pixmap,Fail
-glx@glx-visuals-stencil,Fail
-glx@glx-window-life,Fail
-glx@glx_arb_create_context@color-index render type with 3.0,Fail
-glx@glx_arb_create_context@current with no framebuffer,Fail
-glx@glx_arb_create_context@default major version,Fail
-glx@glx_arb_create_context@default minor version,Fail
-glx@glx_arb_create_context@empty attribute list,Fail
-glx@glx_arb_create_context@forward-compatible flag with 3.0,Fail
-glx@glx_arb_create_context@forward-compatible flag with pre-3.0,Fail
-glx@glx_arb_create_context@invalid attribute,Fail
-glx@glx_arb_create_context@invalid flag,Fail
-glx@glx_arb_create_context@invalid opengl version,Fail
-glx@glx_arb_create_context@invalid render type,Fail
-glx@glx_arb_create_context@null attribute list,Fail
-glx@glx_arb_create_context_es2_profile@indirect rendering es2 profile,Fail
-glx@glx_arb_create_context_es2_profile@invalid opengl es version,Fail
-glx@glx_arb_create_context_no_error@no error,Fail
-glx@glx_arb_create_context_profile@3.2 core profile required,Fail
-glx@glx_arb_create_context_profile@invalid profile,Fail
-glx@glx_arb_create_context_profile@pre-gl3.2 profile,Fail
-glx@glx_arb_create_context_robustness@invalid reset notification strategy,Fail
-glx@glx_arb_create_context_robustness@require gl_arb_robustness,Fail
-glx@glx_arb_sync_control@glxgetmscrateoml,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
 glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
-glx@glx_arb_sync_control@waitformsc,Fail
-glx@glx_ext_import_context@free context,Fail
-glx@glx_ext_import_context@get context id,Fail
-glx@glx_ext_import_context@get current display,Fail
-glx@glx_ext_import_context@import context- multi process,Fail
-glx@glx_ext_import_context@import context- single process,Fail
-glx@glx_ext_import_context@imported context has same context id,Fail
-glx@glx_ext_import_context@make current- multi process,Fail
-glx@glx_ext_import_context@make current- single process,Fail
-glx@glx_ext_import_context@query context info,Fail
-glx@glx_ext_no_config_context@no fbconfig,Fail
-glx@glx_mesa_query_renderer@coverage,Fail
 
 spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
 spec@!opengl 1.0@rasterpos,Fail
@@ -587,8 +493,12 @@ spec@arb_texture_cube_map_array@texsubimage cube_map_array,Fail
 spec@arb_viewport_array@display-list,Fail
 spec@egl 1.4@egl-ext_egl_image_storage,Fail
 spec@egl 1.4@eglterminate then unbind context,Fail
+spec@egl_chromium_sync_control@conformance,Fail
+spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
+spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_ust_test,Fail
 spec@egl_khr_gl_image@egl_khr_gl_renderbuffer_image-clear-shared-image gl_depth_component24,Fail
 spec@egl_khr_surfaceless_context@viewport,Fail
+spec@egl_mesa_configless_context@basic,Fail
 spec@ext_external_objects@vk-image-overwrite,Crash
 spec@ext_external_objects@vk-ping-pong-multi-sem,Fail
 spec@ext_external_objects@vk-ping-pong-single-sem,Fail

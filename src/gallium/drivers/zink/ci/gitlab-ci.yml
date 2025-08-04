@@ -227,6 +227,7 @@ zink-nvk-ga106-valve:
     - .zink-nvk-manual-rules
     - .nvk-ga106-valve
   variables:
+    HWCI_START_WESTON: 1
     GPU_VERSION: zink-nvk-ga106
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40  # usual run time: 32min
 
@@ -237,6 +238,7 @@ zink-nvk-ad106-valve:
     - .zink-nvk-manual-rules
     - .nvk-ad106-valve
   variables:
+    HWCI_START_WESTON: 1
     GPU_VERSION: zink-nvk-ad106
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 40  # usual run time: 32min
 
