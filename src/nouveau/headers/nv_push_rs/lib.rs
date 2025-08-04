@@ -14,6 +14,7 @@ fn class_to_subc(class: u16) -> u8 {
         0x39 => 2,
         0x2d => 3,
         0xb5 => 4,
+        0xb0 => 4,
         _ => panic!("Invalid class: {class}"),
     }
 }

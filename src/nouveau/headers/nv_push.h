@@ -89,6 +89,9 @@ void vk_push_print(FILE *fp, const struct nv_push *push,
 #define SUBC_NV90B5 4
 #define SUBC_NVC1B5 4
 
+/* video decode will get push on sub channel 4 */
+#define SUBC_NVC5B0 4
+
 static inline uint32_t
 NVC0_FIFO_PKHDR_SQ(int subc, int mthd, unsigned size)
 {
