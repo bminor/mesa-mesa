@@ -52,6 +52,12 @@ option(
 )
 
 option(
+  'android-libperfetto',
+  type : 'feature',
+  description : 'Use Android\'s libperfetto',
+)
+
+option(
   'dri-drivers-path',
   type : 'string',
   value : '',

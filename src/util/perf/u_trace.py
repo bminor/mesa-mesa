@@ -673,7 +673,14 @@ perfetto_utils_hdr_template = """\
 #ifndef ${guard_name}
 #define ${guard_name}
 
+#ifndef ANDROID_LIBPERFETTO
 #include <perfetto.h>
+#else
+#include <perfetto/tracing.h>
+#include <perfetto/trace/clock_snapshot.pbzero.h>
+#include <perfetto/trace/gpu/gpu_render_stage_event.pbzero.h>
+#include <perfetto/trace/gpu/vulkan_api_event.pbzero.h>
+#endif
 
 % for header in HEADERS:
 #include "${header.hdr}"

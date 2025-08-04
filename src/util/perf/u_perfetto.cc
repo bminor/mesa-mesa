@@ -23,7 +23,11 @@
 
 #include "u_perfetto.h"
 
+#ifndef ANDROID_LIBPERFETTO
 #include <perfetto.h>
+#else
+#include <perfetto/tracing.h>
+#endif
 
 #include "c11/threads.h"
 #include "util/macros.h"

@@ -2176,6 +2176,10 @@ if with_perfetto
   pre_args += '-DHAVE_PERFETTO'
 endif
 
+if get_option('android-libperfetto').enabled()
+  pre_args += '-DANDROID_LIBPERFETTO'
+endif
+
 with_teflon = get_option('teflon')
 if with_teflon and with_tests
   dep_xtensor = dependency('xtensor')
