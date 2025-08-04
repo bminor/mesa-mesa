@@ -332,6 +332,9 @@ nvk_queue_push(struct nvk_queue *queue, const struct nv_push *push)
    if (vk_queue_is_lost(&queue->vk))
       return VK_ERROR_DEVICE_LOST;
 
+   if (nv_push_dw_count(push) == 0)
+      return VK_SUCCESS;
+
    const bool sync = pdev->debug_flags & NVK_DEBUG_PUSH_SYNC;
 
    result = nvk_mem_stream_push(dev, &queue->push_stream, queue->exec_ctx,
