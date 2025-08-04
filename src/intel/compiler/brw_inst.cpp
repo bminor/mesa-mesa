@@ -188,7 +188,6 @@ brw_inst::is_control_source(unsigned arg) const
    case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
       return arg == 0;
 
-   case SHADER_OPCODE_BROADCAST:
    case SHADER_OPCODE_SHUFFLE:
    case SHADER_OPCODE_QUAD_SWIZZLE:
       return arg == 1;
@@ -198,6 +197,7 @@ brw_inst::is_control_source(unsigned arg) const
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
       return arg == INTERP_SRC_MSG_DESC || arg == INTERP_SRC_NOPERSPECTIVE;
 
+   case SHADER_OPCODE_BROADCAST:
    case SHADER_OPCODE_MOV_INDIRECT:
    case SHADER_OPCODE_CLUSTER_BROADCAST:
       return arg == 1 || arg == 2;
@@ -538,6 +538,7 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
    case SHADER_OPCODE_BARRIER:
       return REG_SIZE;
 
+   case SHADER_OPCODE_BROADCAST:
    case SHADER_OPCODE_MOV_INDIRECT:
       if (arg == 0) {
          assert(src[2].file == IMM);
