@@ -1526,6 +1526,10 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       image->acquired = false;
       image->present_serial = ++swapchain->present_serial;
 
+      /* If we updated the signal_dma_buf semaphore, extract its syncobj and
+       * attach it to the dma-buf before we present so that the present
+       * implicitly syncs on it.
+       */
       if (!explicit_sync) {
 #ifdef HAVE_LIBDRM
          if (has_signal_dma_buf) {

@@ -152,6 +152,13 @@ wsi_prepare_signal_dma_buf_from_semaphore(struct wsi_swapchain *chain,
    return result;
 }
 
+/**
+ * Imports the dma_buf_semaphore's syncobj into the dmabuf so that display
+ * implicit sync waits on it.
+ *
+ * Note that this operation adds this sync point to the implicit fencing of the
+ * dma buf, rather than completely replacing it.
+ */
 VkResult
 wsi_signal_dma_buf_from_semaphore(const struct wsi_swapchain *chain,
                                   const struct wsi_image *image)
@@ -190,6 +197,9 @@ get_sync_file_sync_type(struct vk_device *device,
    return NULL;
 }
 
+/* Extracts a syncobj from a dma-buf into a vk_sync, for the purpose of creating
+ * the AcquireNextImage fence/semaphores.
+ */
 VkResult
 wsi_create_sync_for_dma_buf_wait(const struct wsi_swapchain *chain,
                                  const struct wsi_image *image,
@@ -338,6 +348,10 @@ done:
    return result;
 }
 
+/**
+ * Merges the explicit sync acquire/release timeline points for the image into
+ * vk_sync, for the purpose of creating the AcquireNextImage fence/semaphores.
+ */
 VkResult
 wsi_create_sync_for_image_syncobj(const struct wsi_swapchain *chain,
                                   const struct wsi_image *image,

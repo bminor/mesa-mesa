@@ -1743,6 +1743,11 @@ wsi_display_get_wsi_image(struct wsi_swapchain *drv_chain,
    return &chain->images[image_index].base;
 }
 
+/**
+ * Marks the old image as idle after a pageflip event has indicated that we've
+ * flipped to the new image and are no longer scanning out from the previous
+ * image.
+ */
 static void
 wsi_display_idle_old_displaying(struct wsi_display_image *active_image)
 {
@@ -1762,6 +1767,10 @@ wsi_display_idle_old_displaying(struct wsi_display_image *active_image)
 static VkResult
 _wsi_display_queue_next(struct wsi_swapchain *drv_chain);
 
+/**
+ * Wakes up any vkWaitForPresentKHR() waiters on the last present to this
+ * image.
+ */
 static void
 wsi_display_present_complete(struct wsi_display_swapchain *swapchain,
                              struct wsi_display_image *image)
@@ -1803,6 +1812,8 @@ wsi_display_page_flip_handler2(int fd,
    wsi_display_present_complete(chain, image);
 
    wsi_display_idle_old_displaying(image);
+
+   /* Send the next queued atomic commit now that one has completed. */
    VkResult result = _wsi_display_queue_next(&(chain->base));
    if (result != VK_SUCCESS)
       chain->status = result;
