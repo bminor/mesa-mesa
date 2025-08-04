@@ -249,6 +249,7 @@ zink-radv-polaris10-valve:
     - .zink-radv-valve-manual-rules
   timeout: 40m
   variables:
+    HWCI_START_WESTON: 1
     GPU_VERSION: zink-radv-polaris10
     ZINK_DEBUG: quiet
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30

@@ -1,7 +1,23 @@
-glx@extension string sanity,Fail
+glx@glx-buffer-age vblank_mode=0,Crash
+glx@glx-buffer-age,Crash
+glx@glx-destroycontext-1,Crash
+glx@glx-destroycontext-2,Crash
+glx@glx-destroycontext-3,Crash
+glx@glx-make-current,Crash
+glx@glx-multi-context-front,Crash
+glx@glx-multi-context-ib-1,Crash
+glx@glx-multi-context-single-window,Crash
+glx@glx-multi-window-single-context,Crash
+glx@glx-multithread,Crash
+glx@glx-multithread-buffer,Crash
+glx@glx-multithread-buffer-busy-tracking-bug,Crash
+glx@glx-multithread-texture,Crash
+glx@glx-shader-sharing,Crash
 
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT,Fail
+
+spec@egl_mesa_configless_context@basic,Fail
 
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
