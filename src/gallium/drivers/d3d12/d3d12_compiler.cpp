@@ -402,7 +402,7 @@ cull_mode_lowered(struct d3d12_context *ctx, unsigned fill_mode)
 static unsigned
 get_provoking_vertex(struct d3d12_selection_context *sel_ctx, bool *alternate, const struct pipe_draw_info *dinfo)
 {
-   if (dinfo->mode == GL_PATCHES) {
+   if (dinfo->mode == MESA_PRIM_PATCHES) {
       *alternate = false;
       return 0;
    }
@@ -425,7 +425,7 @@ get_provoking_vertex(struct d3d12_selection_context *sel_ctx, bool *alternate, c
 
    bool flatshade_first = sel_ctx->ctx->gfx_pipeline_state.rast &&
                           sel_ctx->ctx->gfx_pipeline_state.rast->base.flatshade_first;
-   *alternate = (mode == GL_TRIANGLE_STRIP || mode == GL_TRIANGLE_STRIP_ADJACENCY) &&
+   *alternate = (mode == MESA_PRIM_TRIANGLE_STRIP || mode == MESA_PRIM_TRIANGLE_STRIP_ADJACENCY) &&
                 (!gs || gs->is_variant ||
                  gs->initial->info.gs.vertices_out > u_prim_vertex_count(mode)->min);
    return flatshade_first ? 0 : u_prim_vertex_count(mode)->min - 1;

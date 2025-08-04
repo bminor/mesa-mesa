@@ -167,7 +167,7 @@ libnouveau = static_library(
   'nouveau',
   [files_libnouveau, sha1_h],
   include_directories : [
-    inc_src, inc_include, inc_gallium, inc_gallium_aux, inc_mesa,
+    inc_src, inc_include, inc_gallium, inc_gallium_aux,
   ],
   gnu_symbol_visibility : 'hidden',
   link_with : [libnouveauwinsys],

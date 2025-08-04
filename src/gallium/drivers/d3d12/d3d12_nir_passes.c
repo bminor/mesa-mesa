@@ -27,7 +27,7 @@
 #include "nir_builtin_builder.h"
 #include "nir_deref.h"
 #include "nir_format_convert.h"
-#include "program/prog_instruction.h"
+#include "mesa/program/prog_statevars.h"
 #include "dxil_nir.h"
 
 /**

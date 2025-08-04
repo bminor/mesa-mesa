@@ -94,7 +94,7 @@ foreach codec : mft_codecs
     cpp_args : mf_codecs_cpp_args[codec],
     override_options: ['cpp_std=c++20'],
     include_directories : [
-      inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux, inc_util, inc_gallium_winsys, inc_gallium_drivers, inc_gallium_winsys_sw
+      inc_include, inc_src, inc_gallium, inc_gallium_aux, inc_util, inc_gallium_winsys, inc_gallium_drivers, inc_gallium_winsys_sw
     ],
     link_whole : [mediafoundation_st[codec]],
     link_with : link_with_libmediafoundation_gallium,

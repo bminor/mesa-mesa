@@ -32,7 +32,6 @@
 #include "pipe/p_state.h"
 
 #include "compiler/shader_info.h"
-#include "program/prog_statevars.h"
 
 #include "nir.h"
 

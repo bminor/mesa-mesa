@@ -27,7 +27,7 @@
 #include "d3d12_compiler.h"
 #include "d3d12_nir_passes.h"
 #include "dxil_nir.h"
-#include "program/prog_statevars.h"
+#include "mesa/program/prog_statevars.h"
 
 struct output_writes {
    nir_def *val;

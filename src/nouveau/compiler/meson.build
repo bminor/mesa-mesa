@@ -164,7 +164,7 @@ nak_nir_algebraic_c = custom_target(
 _libnak = static_library(
   'nak',
   [libnak_c_files, nak_nir_algebraic_c],
-  include_directories : [inc_include, inc_src, inc_mesa, inc_gallium],
+  include_directories : [inc_include, inc_src, inc_gallium],
   dependencies : libnak_deps,
   link_with : [_libnak_rs],
   c_args : [no_override_init_args],
