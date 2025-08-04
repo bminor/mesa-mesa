@@ -443,7 +443,7 @@ if with_sse41
     'mesa_sse41',
     files('main/sse_minmax.c'),
     c_args : [c_msvc_compat_args, sse41_args],
-    include_directories : [inc_include, inc_src, inc_mapi, inc_mesa, inc_gallium, inc_gallium_aux],
+    include_directories : [inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux],
     gnu_symbol_visibility : 'hidden',
   )
 else
@@ -464,7 +464,7 @@ libmesa = static_library(
   cpp_args : [cpp_msvc_compat_args, _mesa_windows_args],
   gnu_symbol_visibility : 'hidden',
   include_directories : [
-    inc_include, inc_src, inc_mapi, inc_mesa, inc_gallium, inc_gallium_aux,
+    inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux,
     inc_libmesa_asm, include_directories('main'),
   ],
   link_with : [libmesa_sse41],

@@ -56,7 +56,7 @@ if host_machine.system() == 'windows'
     link_args : [va_link_args, ld_args_gc_sections, ld_args_build_id],
     vs_module_defs : vaon12_def,
     include_directories : [
-      inc_include, inc_src, inc_mapi, inc_mesa, inc_gallium, inc_gallium_aux, inc_util, inc_gallium_winsys, inc_gallium_drivers, inc_gallium_winsys_sw
+      inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux, inc_util, inc_gallium_winsys, inc_gallium_drivers, inc_gallium_winsys_sw
     ],
     link_whole : [libva_st],
     link_with : link_with_libva_gallium,
@@ -73,7 +73,7 @@ else
     gnu_symbol_visibility : 'hidden',
     link_args : [va_link_args, ld_args_gc_sections, ld_args_build_id],
     include_directories : [
-      inc_include, inc_src, inc_mapi, inc_mesa, inc_gallium, inc_gallium_aux, inc_util, inc_gallium_winsys, inc_gallium_drivers,
+      inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux, inc_util, inc_gallium_winsys, inc_gallium_drivers,
     ],
     link_whole : [libva_st],
     link_with : link_with_libva_gallium,

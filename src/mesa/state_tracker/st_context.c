@@ -37,7 +37,7 @@
 #include "main/hash.h"
 #include "program/prog_cache.h"
 #include "vbo/vbo.h"
-#include "glapi/glapi.h"
+#include "glapi/glapi/glapi.h"
 #include "st_manager.h"
 #include "st_context.h"
 #include "st_debug.h"

@@ -7,7 +7,6 @@ subdir('android_stub')
 subdir('util')
 
 inc_mesa = include_directories('mesa')
-inc_mapi = include_directories('mesa/glapi')
 inc_src = include_directories('.')
 inc_gallium = include_directories('gallium/include')
 inc_gallium_aux = include_directories('gallium/auxiliary')

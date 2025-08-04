@@ -45,7 +45,7 @@
 #include "main/glconfig.h"
 #include "main/menums.h"
 #include "main/config.h"
-#include "glapi/glapi.h"
+#include "glapi/glapi/glapi.h"
 #include "math/m_matrix.h"	/* GLmatrix */
 #include "compiler/shader_enums.h"
 #include "compiler/shader_info.h"
