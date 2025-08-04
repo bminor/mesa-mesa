@@ -7,6 +7,10 @@ set -ex
 
 section_start rust "Building Rust toolchain"
 
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# DEBIAN_BASE_TAG
+
 # Pick a specific patch version from rustup so the compiler doesn't drift on us.
 RUST_VERSION=1.82.0
 
