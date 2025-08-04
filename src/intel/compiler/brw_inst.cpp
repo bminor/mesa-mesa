@@ -230,9 +230,6 @@ bool
 brw_inst::is_payload(unsigned arg) const
 {
    switch (opcode) {
-   case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
-   case FS_OPCODE_INTERPOLATE_AT_SAMPLE:
-   case FS_OPCODE_INTERPOLATE_AT_SHARED_OFFSET:
    case SHADER_OPCODE_INTERLOCK:
    case SHADER_OPCODE_MEMORY_FENCE:
    case SHADER_OPCODE_BARRIER:
