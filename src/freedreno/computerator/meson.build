@@ -12,6 +12,8 @@ computerator_files = [
 
 computerator_cpp_args = cpp.get_supported_arguments([
   '-Wno-array-bounds',
+  '-Wno-c++11-narrowing',
+  '-Wno-narrowing',
   '-Wno-sign-compare',
 ])
 
