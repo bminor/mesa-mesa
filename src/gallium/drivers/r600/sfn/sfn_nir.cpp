@@ -842,6 +842,8 @@ r600_finalize_nir_common(nir_shader *nir, enum amd_gfx_level gfx_level)
 
 DEBUG_GET_ONCE_NUM_OPTION(skip_opt_start, "R600_SFN_SKIP_OPT_START", -1);
 DEBUG_GET_ONCE_NUM_OPTION(skip_opt_end, "R600_SFN_SKIP_OPT_END", -1);
+DEBUG_GET_ONCE_NUM_OPTION(skip_ra_start, "R600_SFN_SKIP_RA_START", -1);
+DEBUG_GET_ONCE_NUM_OPTION(skip_ra_end, "R600_SFN_SKIP_RA_END", -1);
 
 void
 r600_lower_and_optimize_nir(nir_shader *sh,
@@ -1042,7 +1044,13 @@ r600_schedule_shader(r600::Shader *shader)
       scheduled_shader->print(std::cerr);
    }
 
-   if (!r600::sfn_log.has_debug_flag(r600::SfnLog::nomerge)) {
+   auto sfn_skip_ra_start = debug_get_option_skip_ra_start();
+   auto sfn_skip_ra_end = debug_get_option_skip_ra_end();
+   bool skip_shader_opt_per_id = sfn_skip_ra_start >= 0 &&
+                                 sfn_skip_ra_start <= shader->shader_id() &&
+                                 sfn_skip_ra_end >= shader->shader_id();
+
+   if (!r600::sfn_log.has_debug_flag(r600::SfnLog::nomerge) && !skip_shader_opt_per_id) {
 
       if (r600::sfn_log.has_debug_flag(r600::SfnLog::merge)) {
          r600::sfn_log << r600::SfnLog::merge << "Shader before RA\n";
