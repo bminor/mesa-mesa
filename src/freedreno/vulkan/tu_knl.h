@@ -25,22 +25,6 @@ enum tu_bo_alloc_flags {
    TU_BO_ALLOC_SHAREABLE = 1 << 5,
 };
 
-/* Define tu_timeline_sync type based on drm syncobj for a point type
- * for vk_sync_timeline, and the logic to handle is mostly copied from
- * anv_bo_sync since it seems it can be used by similar way to anv.
- */
-enum tu_timeline_sync_state {
-   /** Indicates that this is a new (or newly reset fence) */
-   TU_TIMELINE_SYNC_STATE_RESET,
-
-   /** Indicates that this fence has been submitted to the GPU but is still
-    * (as far as we know) in use by the GPU.
-    */
-   TU_TIMELINE_SYNC_STATE_SUBMITTED,
-
-   TU_TIMELINE_SYNC_STATE_SIGNALED,
-};
-
 enum tu_mem_sync_op {
    TU_MEM_SYNC_CACHE_TO_GPU,
    TU_MEM_SYNC_CACHE_FROM_GPU,
@@ -127,13 +111,6 @@ struct tu_zombie_vma {
 #endif
    uint64_t iova;
    uint64_t size;
-};
-
-struct tu_timeline_sync {
-   struct vk_sync base;
-
-   enum tu_timeline_sync_state state;
-   uint32_t syncobj;
 };
 
 VkResult

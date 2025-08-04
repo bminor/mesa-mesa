@@ -895,7 +895,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       struct vk_sync *sync = waits[i].sync;
 
       in_syncobjs[i] = (struct drm_msm_gem_submit_syncobj) {
-         .handle = tu_syncobj_from_vk_sync(sync),
+         .handle = vk_sync_as_drm_syncobj(sync)->syncobj,
          .flags = 0,
          .point = waits[i].wait_value,
       };
@@ -905,7 +905,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       struct vk_sync *sync = signals[i].sync;
 
       out_syncobjs[i] = (struct drm_msm_gem_submit_syncobj) {
-         .handle = tu_syncobj_from_vk_sync(sync),
+         .handle = vk_sync_as_drm_syncobj(sync)->syncobj,
          .flags = 0,
          .point = signals[i].signal_value,
       };
@@ -974,35 +974,6 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
 
    if (u_trace_submission_data) {
       u_trace_submission_data->gpu_ts_offset = gpu_offset;
-   }
-
-   for (uint32_t i = 0; i < wait_count; i++) {
-      if (!vk_sync_is_tu_timeline_sync(waits[i].sync))
-         continue;
-
-      struct tu_timeline_sync *sync =
-         container_of(waits[i].sync, struct tu_timeline_sync, base);
-
-      assert(sync->state != TU_TIMELINE_SYNC_STATE_RESET);
-
-      /* Set SIGNALED to the state of the wait timeline sync since this means the syncobj
-       * is done and ready again so this can be garbage-collectioned later.
-       */
-      sync->state = TU_TIMELINE_SYNC_STATE_SIGNALED;
-   }
-
-   for (uint32_t i = 0; i < signal_count; i++) {
-      if (!vk_sync_is_tu_timeline_sync(signals[i].sync))
-         continue;
-
-      struct tu_timeline_sync *sync =
-         container_of(signals[i].sync, struct tu_timeline_sync, base);
-
-      assert(sync->state == TU_TIMELINE_SYNC_STATE_RESET);
-      /* Set SUBMITTED to the state of the signal timeline sync so we could wait for
-       * this timeline sync until completed if necessary.
-       */
-      sync->state = TU_TIMELINE_SYNC_STATE_SUBMITTED;
    }
 
 fail_submit:
@@ -1123,7 +1094,7 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
    device->syncobj_type = vk_drm_syncobj_get_type(fd);
    /* we don't support DRM_CAP_SYNCOBJ_TIMELINE, but drm-shim does */
    if (!(device->syncobj_type.features & VK_SYNC_FEATURE_TIMELINE))
-      device->timeline_type = vk_sync_timeline_get_type(&tu_timeline_sync_type);
+      device->timeline_type = vk_sync_timeline_get_type(&device->syncobj_type);
 
    device->sync_types[0] = &device->syncobj_type;
    device->sync_types[1] = &device->timeline_type.sync;

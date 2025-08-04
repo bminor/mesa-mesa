@@ -49,21 +49,4 @@ fence_before(uint32_t a, uint32_t b)
    return (int32_t)(a - b) < 0;
 }
 
-extern const struct vk_sync_type tu_timeline_sync_type;
-
-static inline bool
-vk_sync_is_tu_timeline_sync(const struct vk_sync *sync)
-{
-   return sync->type == &tu_timeline_sync_type;
-}
-
-static inline struct tu_timeline_sync *
-to_tu_timeline_sync(struct vk_sync *sync)
-{
-   assert(sync->type == &tu_timeline_sync_type);
-   return container_of(sync, struct tu_timeline_sync, base);
-}
-
-uint32_t tu_syncobj_from_vk_sync(struct vk_sync *sync);
-
 #endif
