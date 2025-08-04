@@ -320,6 +320,7 @@ zink-radv-gfx1201-valve:
     - .zink-radv-valve-manual-rules
   timeout: 15m
   variables:
+    HWCI_START_WESTON: 1
     GPU_VERSION: zink-radv-gfx1201
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 10
     RADV_PERFTEST: hic
