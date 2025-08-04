@@ -160,6 +160,7 @@ else
   'nir_lower_const_arrays_to_uniforms.c',
   'nir_lower_continue_constructs.c',
   'nir_lower_convert_alu_types.c',
+  'nir_lower_cooperative_matrix.c',
   'nir_lower_variable_initializers.c',
   'nir_lower_discard_if.c',
   'nir_lower_double_ops.c',
