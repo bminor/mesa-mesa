@@ -204,6 +204,10 @@ isl_get_qpitch(const struct isl_surf *surf)
 UNUSED static uint8_t
 isl_get_render_compression_format(enum isl_format format)
 {
+   /* The spec gives no CMFs to NPOT RGB formats. Remap them to RGBA. */
+   if (isl_format_get_layout(format)->bpb % 3 == 0)
+      format = isl_format_rgb_to_rgba(format);
+
    /* Bspec 63919 (r60413):
     *
     *   Table "[Enumeration] UNIFIED_COMPRESSION_FORMAT"
