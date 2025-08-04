@@ -212,11 +212,11 @@ vk_pipeline_shader_stage_to_nir(struct vk_device *device,
    return VK_SUCCESS;
 }
 
-void
-vk_pipeline_hash_shader_stage(VkPipelineCreateFlags2KHR pipeline_flags,
-                              const VkPipelineShaderStageCreateInfo *info,
-                              const struct vk_pipeline_robustness_state *rstate,
-                              unsigned char *stage_sha1)
+static void
+vk_pipeline_hash_shader_stage_blake3(VkPipelineCreateFlags2KHR pipeline_flags,
+                                     const VkPipelineShaderStageCreateInfo *info,
+                                     const struct vk_pipeline_robustness_state *rstate,
+                                     blake3_hash stage_blake3)
 {
    VK_FROM_HANDLE(vk_shader_module, module, info->module);
 
@@ -231,7 +231,7 @@ vk_pipeline_hash_shader_stage(VkPipelineCreateFlags2KHR pipeline_flags,
       blob_init(&blob);
       nir_serialize(&blob, builtin_nir, false);
       assert(!blob.out_of_memory);
-      _mesa_sha1_compute(blob.data, blob.size, stage_sha1);
+      _mesa_blake3_compute(blob.data, blob.size, stage_blake3);
       blob_finish(&blob);
       return;
    }
@@ -241,51 +241,60 @@ vk_pipeline_hash_shader_stage(VkPipelineCreateFlags2KHR pipeline_flags,
    const VkPipelineShaderStageModuleIdentifierCreateInfoEXT *iinfo =
       vk_find_struct_const(info->pNext, PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT);
 
-   struct mesa_sha1 ctx;
+   struct mesa_blake3 ctx;
 
-   _mesa_sha1_init(&ctx);
+   _mesa_blake3_init(&ctx);
 
    /* We only care about one of the pipeline flags */
    pipeline_flags &= VK_PIPELINE_CREATE_2_VIEW_INDEX_FROM_DEVICE_INDEX_BIT_KHR;
-   _mesa_sha1_update(&ctx, &pipeline_flags, sizeof(pipeline_flags));
+   _mesa_blake3_update(&ctx, &pipeline_flags, sizeof(pipeline_flags));
 
-   _mesa_sha1_update(&ctx, &info->flags, sizeof(info->flags));
+   _mesa_blake3_update(&ctx, &info->flags, sizeof(info->flags));
 
    assert(util_bitcount(info->stage) == 1);
-   _mesa_sha1_update(&ctx, &info->stage, sizeof(info->stage));
+   _mesa_blake3_update(&ctx, &info->stage, sizeof(info->stage));
 
    if (module) {
-      _mesa_sha1_update(&ctx, module->hash, sizeof(module->hash));
+      _mesa_blake3_update(&ctx, module->hash, sizeof(module->hash));
    } else if (minfo) {
-      blake3_hash spirv_hash;
-
-      _mesa_blake3_compute(minfo->pCode, minfo->codeSize, spirv_hash);
-      _mesa_sha1_update(&ctx, spirv_hash, sizeof(spirv_hash));
+      _mesa_blake3_update(&ctx, minfo->pCode, minfo->codeSize);
    } else {
       /* It is legal to pass in arbitrary identifiers as long as they don't exceed
        * the limit. Shaders with bogus identifiers are more or less guaranteed to fail. */
       assert(iinfo);
       assert(iinfo->identifierSize <= VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT);
-      _mesa_sha1_update(&ctx, iinfo->pIdentifier, iinfo->identifierSize);
+      _mesa_blake3_update(&ctx, iinfo->pIdentifier, iinfo->identifierSize);
    }
 
    if (rstate)
-      _mesa_sha1_update(&ctx, rstate, sizeof(*rstate));
+      _mesa_blake3_update(&ctx, rstate, sizeof(*rstate));
 
-   _mesa_sha1_update(&ctx, info->pName, strlen(info->pName));
+   _mesa_blake3_update(&ctx, info->pName, strlen(info->pName));
 
    if (info->pSpecializationInfo) {
-      _mesa_sha1_update(&ctx, info->pSpecializationInfo->pMapEntries,
-                        info->pSpecializationInfo->mapEntryCount *
-                        sizeof(*info->pSpecializationInfo->pMapEntries));
-      _mesa_sha1_update(&ctx, info->pSpecializationInfo->pData,
-                        info->pSpecializationInfo->dataSize);
+      _mesa_blake3_update(&ctx, info->pSpecializationInfo->pMapEntries,
+                          info->pSpecializationInfo->mapEntryCount *
+                          sizeof(*info->pSpecializationInfo->pMapEntries));
+      _mesa_blake3_update(&ctx, info->pSpecializationInfo->pData,
+                          info->pSpecializationInfo->dataSize);
    }
 
    uint32_t req_subgroup_size = get_required_subgroup_size(info);
-   _mesa_sha1_update(&ctx, &req_subgroup_size, sizeof(req_subgroup_size));
+   _mesa_blake3_update(&ctx, &req_subgroup_size, sizeof(req_subgroup_size));
 
-   _mesa_sha1_final(&ctx, stage_sha1);
+   _mesa_blake3_final(&ctx, stage_blake3);
+}
+
+void
+vk_pipeline_hash_shader_stage(VkPipelineCreateFlags2KHR pipeline_flags,
+                              const VkPipelineShaderStageCreateInfo *info,
+                              const struct vk_pipeline_robustness_state *rstate,
+                              unsigned char *stage_sha1)
+{
+   blake3_hash blake_hash;
+
+   vk_pipeline_hash_shader_stage_blake3(pipeline_flags, info, rstate, blake_hash);
+   _mesa_sha1_compute(blake_hash, sizeof(blake_hash), stage_sha1);
 }
 
 static VkPipelineRobustnessBufferBehaviorEXT
@@ -656,11 +665,8 @@ struct vk_pipeline_precomp_shader {
    struct vk_pipeline_cache_object cache_obj;
 
    /* Key for this cache_obj in the pipeline cache.
-    *
-    * This is always the output of vk_pipeline_hash_shader_stage() so it must
-    * be a SHA1 hash.
     */
-   uint8_t cache_key[SHA1_DIGEST_LENGTH];
+   blake3_hash cache_key;
 
    mesa_shader_stage stage;
 
@@ -844,7 +850,7 @@ struct vk_pipeline_stage {
    bool linked;
 
    /* Hash used to lookup the precomp */
-   uint8_t precomp_key[SHA1_DIGEST_LENGTH];
+   blake3_hash precomp_key;
 
    struct vk_pipeline_precomp_shader *precomp;
 
@@ -865,8 +871,8 @@ vk_pipeline_hash_precomp_shader_stage(struct vk_device *device,
    vk_pipeline_robustness_state_fill(device, &rs, pipeline_info_pNext,
                                      info->pNext);
 
-   vk_pipeline_hash_shader_stage(pipeline_flags, info,
-                                 &rs, stage->precomp_key);
+   vk_pipeline_hash_shader_stage_blake3(pipeline_flags, info,
+                                        &rs, stage->precomp_key);
 }
 
 static VkResult
