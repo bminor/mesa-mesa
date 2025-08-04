@@ -173,8 +173,6 @@ brw_inst::is_send() const
    switch (opcode) {
    case SHADER_OPCODE_SEND:
    case SHADER_OPCODE_SEND_GATHER:
-   case SHADER_OPCODE_INTERLOCK:
-   case SHADER_OPCODE_MEMORY_FENCE:
    case SHADER_OPCODE_BARRIER:
       return true;
    case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
