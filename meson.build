@@ -213,9 +213,11 @@ foreach gallium_driver : gallium_drivers
   pre_args += '-DHAVE_@0@'.format(gallium_driver.to_upper())
 endforeach
 with_llvm = with_llvm \
-  .enable_if(with_gallium_radeonsi and amd_with_llvm, error_message : 'RadeonSI Gallium driver configured to require LLVM') \
+  .enable_if(with_gallium_i915, error_message : 'i915 Gallium driver requires LLVM for vertex shaders') \
+  .enable_if(with_gallium_llvmpipe, error_message : 'LLVMPipe Gallium driver requires LLVM') \
+  .enable_if(with_gallium_r300, error_message : 'R300 Gallium driver requires LLVM for vertex shaders') \
   .enable_if(with_gallium_r600 and amd_with_llvm, error_message : 'R600 Gallium driver configured to require LLVM') \
-  .enable_if(with_gallium_llvmpipe, error_message : 'LLVMPipe Gallium driver requires LLVM')
+  .enable_if(with_gallium_radeonsi and amd_with_llvm, error_message : 'RadeonSI Gallium driver configured to require LLVM')
 
 # compatibility for "swrast" as an internal-ish driver name
 with_gallium_swrast = with_gallium_softpipe or with_gallium_llvmpipe
@@ -1778,6 +1780,10 @@ if dep_llvm.found()
     error('Lavapipe and llvmpipe require LLVM draw support.')
   endif
 
+  if (with_gallium_i915 or with_gallium_r300) and not draw_with_llvm
+    error('i915 and R300 require LLVM draw support for vertex shaders.')
+  endif
+
   if host_machine.system() != 'windows'
     # LLVM can be built without rtti, turning off rtti changes the ABI of C++
     # programs, so we need to build all C++ code in mesa without rtti as well to
@@ -1810,7 +1816,7 @@ else
 endif
 amd_with_llvm = amd_with_llvm and dep_llvm.found()
 pre_args += '-DLLVM_AVAILABLE=@0@'.format(dep_llvm.found().to_int())
-pre_args += '-DDRAW_LLVM_AVAILABLE=@0@'.format((dep_llvm.found() and draw_with_llvm).to_int())
+pre_args += '-DDRAW_LLVM_AVAILABLE=@0@'.format(draw_with_llvm.to_int())
 pre_args += '-DAMD_LLVM_AVAILABLE=@0@'.format(amd_with_llvm.to_int())
 pre_args += '-DGALLIVM_USE_ORCJIT=@0@'.format((dep_llvm.found() and llvm_with_orcjit).to_int())
 
