@@ -333,7 +333,7 @@ get_exec_type_size(const brw_inst *inst)
 static inline bool
 is_send(const brw_inst *inst)
 {
-   return inst->mlen || inst->is_send_from_grf();
+   return inst->is_send_from_grf();
 }
 
 /**
