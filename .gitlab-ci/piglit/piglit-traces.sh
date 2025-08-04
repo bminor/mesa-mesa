@@ -90,18 +90,7 @@ elif [ "$PIGLIT_PLATFORM" = "mixed_glx_egl" ]; then
     SANITY_MESA_VERSION_CMD="$SANITY_MESA_VERSION_CMD --platform glx --api gl"
 else
     SANITY_MESA_VERSION_CMD="$SANITY_MESA_VERSION_CMD --platform glx --api gl --profile core"
-    # copy-paste from init-stage2.sh, please update accordingly
-    {
-      WESTON_X11_SOCK="/tmp/.X11-unix/X0"
-      WAYLAND_DISPLAY=wayland-0
-      export DISPLAY=:0
-      mkdir -p /tmp/.X11-unix
-
-      weston --config="/install/common/weston.ini" --socket="$WAYLAND_DISPLAY" --renderer=gl &
-      export WAYLAND_DISPLAY
-
-      while [ ! -S "$WESTON_X11_SOCK" ]; do sleep 1; done
-    }
+    . /install/common/weston.sh --renderer=gl
 fi
 
 # If the job is parallel at the  gitlab job level, will take the corresponding

@@ -41,12 +41,7 @@ llvmpipe:
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
     section_start weston "weston: prepare"
-    WAYLAND_DISPLAY=wayland-0
-    export DISPLAY=:0
-    mkdir -p /tmp/.X11-unix
-    weston --config="$CI_PROJECT_DIR/install/common/weston.ini" --socket="$WAYLAND_DISPLAY" &
-    export WAYLAND_DISPLAY
-    while [ ! -S /tmp/.X11-unix/X0 ]; do sleep 1; done
+    . "$CI_PROJECT_DIR/install/common/weston.sh"
     section_end weston
     $CI_PROJECT_DIR/install/deqp-runner.sh
 
