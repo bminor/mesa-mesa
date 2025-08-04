@@ -495,6 +495,14 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_EXT_mutable_descriptor_type */
       .mutableDescriptorType = PAN_ARCH >= 9,
+
+#ifdef PANVK_USE_WSI_PLATFORM
+      /* VK_KHR_present_id2 */
+      .presentId2 = true,
+
+      /* VK_KHR_present_wait2 */
+      .presentWait2 = true,
+#endif
    };
 }
 

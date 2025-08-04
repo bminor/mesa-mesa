@@ -717,6 +717,12 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_NV_shader_sm_builtins */
       .shaderSMBuiltins = true,
+
+      /* VK_KHR_present_id2 */
+      .presentId2 = supported_extensions->KHR_present_id2,
+
+      /* VK_KHR_present_wait2 */
+      .presentWait2 = supported_extensions->KHR_present_wait2,
    };
 }
 

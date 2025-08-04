@@ -974,6 +974,12 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_KHR_maintenance9 */
       .maintenance9 = true,
+
+      /* VK_KHR_present_id2 */
+      .presentId2 = true,
+
+      /* VK_KHR_present_wait2 */
+      .presentWait2 = true,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
