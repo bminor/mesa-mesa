@@ -132,7 +132,7 @@ a618-gles-asan:
     FDO_CI_CONCURRENT: 2 # We get OOMkills if we go too wide with asan enabled
 
 # Run dEQP EGL window system tests with the window systems available.
-# X11 takes over the screen, wayland is run headless.
+# wayland and xwayland run headless.
 a618-gl:
   extends:
     - .lava-arm64-test-gl
@@ -141,7 +141,6 @@ a618-gl:
   variables:
     DEQP_SUITE: freedreno-a618
     FLAKES_CHANNEL: "#freedreno-ci"
-    HWCI_START_XORG: 1
     HWCI_START_WESTON: 1
     DEQP_FRACTION: 4
 
