@@ -163,8 +163,8 @@
         - src/gbm/**/*
         - src/glx/**/*
         - src/loader/**/*
-        - src/mapi/**/*
         - src/mesa/*
+        - src/mesa/glapi/**/*
         - src/mesa/main/**/*
         - src/mesa/math/**/*
         - src/mesa/program/**/*
