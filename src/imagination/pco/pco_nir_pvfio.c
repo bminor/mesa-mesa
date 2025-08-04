@@ -667,41 +667,33 @@ static bool is_frag_color_out(const nir_instr *instr,
    return location >= FRAG_RESULT_DATA0 && location < FRAG_RESULT_MAX;
 }
 
-static nir_def *
-lower_alpha_to_coverage(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
+static bool lower_demote_samples(nir_builder *b,
+                                 nir_intrinsic_instr *intr,
+                                 UNUSED void *cb_data)
 {
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   if (intr->intrinsic != nir_intrinsic_demote_samples)
+      return false;
 
-   /* "If multiple output colors, alpha for a2c is output color 0." */
-   nir_io_semantics io_sem = nir_intrinsic_io_semantics(intr);
-   if (io_sem.location != FRAG_RESULT_DATA0)
-      return NULL;
-
-   nir_def *input = intr->src[0].ssa;
    b->cursor = nir_before_instr(&intr->instr);
-   nir_def *alpha = input->num_components < 4 ? nir_imm_float(b, 1.0f)
-                                              : nir_channel(b, input, 3);
+   nir_def *to_keep = nir_u2u32(b, nir_inot(b, intr->src[0].ssa));
+   nir_def *sample_mask = nir_load_savmsk_vm_pco(b);
+   nir_def *current_mask =
+      nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b));
+   nir_def *cond = nir_iand(b, to_keep, nir_iand(b, sample_mask, current_mask));
+   nir_demote_if(b, nir_ieq_imm(b, cond, 0));
 
-   nir_def *a2c_mask = nir_u2u32(b, nir_alpha_to_coverage(b, alpha));
+   nir_instr_remove(&intr->instr);
 
-   a2c_mask = nir_iand(b, a2c_mask, nir_load_savmsk_vm_pco(b));
-
-   a2c_mask = nir_iand(b,
-                       a2c_mask,
-                       nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b)));
-
-   nir_demote_if(b, nir_ieq_imm(b, a2c_mask, 0));
-
-   return NULL;
+   return true;
 }
 
-bool pco_nir_lower_alpha_to_coverage(nir_shader *shader)
+bool pco_nir_lower_demote_samples(nir_shader *s)
 {
-   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
-   return nir_shader_lower_instructions(shader,
-                                        is_frag_color_out,
-                                        lower_alpha_to_coverage,
-                                        NULL);
+   assert(s->info.stage == MESA_SHADER_FRAGMENT);
+   return nir_shader_intrinsics_pass(s,
+                                     lower_demote_samples,
+                                     nir_metadata_control_flow,
+                                     NULL);
 }
 
 static nir_def *
