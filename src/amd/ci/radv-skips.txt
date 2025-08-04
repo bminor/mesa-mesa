@@ -52,6 +52,3 @@ dEQP-VK.reconvergence.maximal.compute.nesting4.7.38
 # This test can cause random GPU hangs for very weird reasons, needs to be
 # investigated.
 dEQP-VK.api.command_buffers.many_indirect_disps_on_secondary
-
-# CTS bug
-dEQP-VK.api.debug_utils.long_labels_video_decode
