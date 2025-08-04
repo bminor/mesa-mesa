@@ -147,6 +147,7 @@ deqp-runner \
     --jobs ${FDO_CI_CONCURRENT:-4} \
     $BASELINE \
     ${DEQP_RUNNER_MAX_FAILS:+--max-fails "$DEQP_RUNNER_MAX_FAILS"} \
+    ${DEQP_RUNNER_SHADER_CACHE_DIR:+--shader-cache-dir "$DEQP_RUNNER_SHADER_CACHE_DIR"} \
     ${DEQP_FORCE_ASAN:+--env LD_PRELOAD=libasan.so.8:/install/lib/libdlclose-skip.so}; DEQP_EXITCODE=$?
 
 { set +x; } 2>/dev/null
