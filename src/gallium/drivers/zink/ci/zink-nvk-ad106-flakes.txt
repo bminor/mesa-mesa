@@ -50,12 +50,12 @@ spec@ext_texture_srgb@texwrap formats@GL_SRGB8- NPOT
 spec@ext_texture_srgb@texwrap formats@GL_SRGB8- swizzled
 spec@glsl-1.10@execution@built-in-functions@vs-refract-vec4-vec4-float
 spec@glsl-1.10@execution@glsl-fs-normalmatrix
-spec@glsl-1.10@execution@glsl-vs-uniform-array-1,Fail
+spec@glsl-1.10@execution@glsl-vs-uniform-array-1
 spec@glsl-1.10@execution@vs-loop-complex-unroll-cf-inside-terminator
 spec@glsl-1.20@execution@built-in-functions@vs-op-mult-mat4x2-mat3x4
 spec@glsl-1.20@execution@vs-outerproduct-const-mat2-ivec
 spec@glsl-1.30@execution@built-in-functions@fs-op-div-uint-uvec2
-spec@glsl-1.30@execution@built-in-functions@fs-op-lshift-ivec4-uint,Fail
+spec@glsl-1.30@execution@built-in-functions@fs-op-lshift-ivec4-uint
 spec@glsl-1.30@execution@built-in-functions@fs-sign-int
 spec@glsl-1.30@execution@built-in-functions@vs-min-ivec4-int
 spec@glsl-1.30@execution@built-in-functions@vs-op-assign-rshift-uvec3-int
