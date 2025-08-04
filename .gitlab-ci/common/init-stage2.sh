@@ -166,6 +166,11 @@ fi
 ARCH=$(uname -m)
 export VK_DRIVER_FILES="/install/share/vulkan/icd.d/${VK_DRIVER}_icd.$ARCH.json"
 
+if [ -n "$HWCI_START_WESTON" ] && [ -n "$HWCI_START_XORG" ]; then
+  echo "Please drop HWCI_START_XORG and instead use Weston XWayland for testing."
+  exit 1
+fi
+
 # If we want Xorg to be running for the test, then we start it up before the
 # HWCI_TEST_SCRIPT because we need to use xinit to start X (otherwise
 # without using -displayfd you can race with Xorg's startup), but xinit will eat
@@ -187,12 +192,6 @@ if [ -n "$HWCI_START_XORG" ]; then
 fi
 
 if [ -n "$HWCI_START_WESTON" ]; then
-  if [ -n "$HWCI_START_XORG" ]; then
-    echo "Please consider dropping HWCI_START_XORG and instead using Weston XWayland for testing."
-    # shellcheck disable=2034
-    WESTON_X11_SOCK="/tmp/.X11-unix/X1"
-  fi
-
   . /install/common/weston.sh --renderer=gl
   BACKGROUND_PIDS="$! $BACKGROUND_PIDS"
 fi
