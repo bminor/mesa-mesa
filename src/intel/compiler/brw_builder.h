@@ -851,8 +851,8 @@ public:
       /* BROADCAST will only write a single component after lowering. Munge
        * size_written here to match the allocated size of dst.
        */
-      exec_all().emit(SHADER_OPCODE_BROADCAST, dst, value, index)
-         ->size_written = dst.component_size(xbld.dispatch_width());
+      xbld.emit(SHADER_OPCODE_BROADCAST, dst, value, index,
+                brw_imm_ud(value.component_size(_dispatch_width)));
 
       return component(dst, 0);
    }

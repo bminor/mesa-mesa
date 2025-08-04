@@ -2794,7 +2794,7 @@
         "description": "brw: fix broadcast opcode",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "662339a2ff4db1b8180778a1449f317da3898f8c",
         "notes": null

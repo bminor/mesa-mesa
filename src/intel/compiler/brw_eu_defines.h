@@ -361,6 +361,10 @@ enum opcode {
     * Return the index of the first enabled live channel and assign it to
     * to the first component of the destination.  Frequently used as input
     * for the BROADCAST pseudo-opcode.
+    *
+    * Source 0: A value.
+    * Source 1: Index from Value to broadcast.
+    * Source 2: A size in byte of the value register.
     */
    SHADER_OPCODE_FIND_LIVE_CHANNEL,
 
