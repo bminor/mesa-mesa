@@ -735,7 +735,6 @@ lvp_vk_format_to_pipe_format(VkFormat format)
 {
    /* Some formats cause problems with CTS right now.*/
    switch (format) {
-   case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
    case VK_FORMAT_R8_SRGB:
    case VK_FORMAT_R8G8_SRGB:
    case VK_FORMAT_R64G64B64A64_SFLOAT:
