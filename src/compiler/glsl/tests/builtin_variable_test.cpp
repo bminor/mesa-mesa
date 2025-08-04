@@ -79,6 +79,7 @@ common_builtin::SetUp()
 void
 common_builtin::TearDown()
 {
+   free(this->ctx.screen);
    ralloc_free(this->mem_ctx);
    this->mem_ctx = NULL;
 

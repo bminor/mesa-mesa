@@ -216,6 +216,7 @@ namespace
 
       /* Store the source for printing from later assertions. */
       this->source = source;
+      free(local_ctx.screen);
    }
 
    // A predicate-formatter for asserting that two integers are mutually prime.
