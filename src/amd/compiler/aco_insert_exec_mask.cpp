@@ -722,6 +722,18 @@ process_block(exec_ctx& ctx, Block* block)
    add_branch_code(ctx, block);
 }
 
+template <typename T, typename U>
+bool
+regs_intersect(const T& a, const U& b)
+{
+   const unsigned a_lo = a.physReg();
+   const unsigned a_hi = a_lo + a.size();
+   const unsigned b_lo = b.physReg();
+   const unsigned b_hi = b_lo + b.size();
+
+   return a_hi > b_lo && b_hi > a_lo;
+}
+
 void
 disable_wqm_block(Program* program, Block* block)
 {
@@ -730,9 +742,48 @@ disable_wqm_block(Program* program, Block* block)
 
    Builder bld(program, &instructions);
 
+   unsigned local_exact_and_idx = 0;
+   unsigned local_wqm_mov_idx = 0;
+   Instruction* local_exact_and = nullptr;
+   Instruction* local_wqm_mov = nullptr;
+
    for (unsigned i = 0; i < block->instructions.size(); i++) {
       aco_ptr<Instruction>& instr = block->instructions[i];
       if (!instr_disables_wqm(instr.get())) {
+         for (const Definition& def : instr->definitions) {
+            if (def.physReg() == exec_lo || def.physReg() == exec_hi) {
+               local_exact_and = nullptr;
+               local_wqm_mov = nullptr;
+            } else if (def.physReg() == scc) {
+               local_exact_and = nullptr;
+            } else if (local_exact_and && regs_intersect(def, local_exact_and->operands[0])) {
+               local_exact_and = nullptr;
+            } else if (local_exact_and && regs_intersect(def, local_exact_and->definitions[0])) {
+               local_exact_and = nullptr;
+            } else if (local_wqm_mov && regs_intersect(def, local_wqm_mov->definitions[0])) {
+               local_wqm_mov = nullptr;
+            }
+         }
+
+         for (const Operand& op : instr->operands) {
+            if (op.physReg() == scc) {
+               local_exact_and = nullptr;
+            } else if (local_exact_and && regs_intersect(op, local_exact_and->definitions[0])) {
+               local_exact_and = nullptr;
+            } else if (local_wqm_mov && regs_intersect(op, local_wqm_mov->definitions[0])) {
+               local_wqm_mov = nullptr;
+            }
+         }
+
+         if (instr->opcode == bld.w64or32(Builder::s_and) && instr->operands[1].physReg() == exec) {
+            local_exact_and = instr.get();
+            local_exact_and_idx = instructions.size();
+         } else if (instr->opcode == bld.w64or32(Builder::s_mov) &&
+                    instr->operands[0].physReg() == exec) {
+            local_wqm_mov = instr.get();
+            local_wqm_mov_idx = instructions.size();
+         }
+
          bld.insert(std::move(instr));
          continue;
       }
@@ -742,7 +793,18 @@ disable_wqm_block(Program* program, Block* block)
       assert(exact_mask.hasRegClass() && exact_mask.regClass() == bld.lm);
       assert(wqm_mask.hasRegClass() && wqm_mask.regClass() == bld.lm);
 
-      bld.sop1(Builder::s_mov, Definition(exec, bld.lm), exact_mask);
+      if (local_exact_and && local_exact_and->definitions[0].physReg() != exact_mask.physReg())
+         local_exact_and = nullptr;
+      if (local_wqm_mov && local_wqm_mov->definitions[0].physReg() != wqm_mask.physReg())
+         local_wqm_mov = nullptr;
+
+      if (local_exact_and) {
+         bld.sop1(Builder::s_and_saveexec, Definition(wqm_mask.physReg(), bld.lm),
+                  Definition(scc, s1), Definition(exec, bld.lm), local_exact_and->operands[0],
+                  Operand(exec, bld.lm));
+      } else {
+         bld.sop1(Builder::s_mov, Definition(exec, bld.lm), exact_mask);
+      }
 
       remove_disable_wqm(instr.get());
       bld.insert(std::move(instr));
@@ -759,7 +821,25 @@ disable_wqm_block(Program* program, Block* block)
          bld.insert(std::move(next));
       }
 
-      bld.sop1(Builder::s_mov, Definition(exec, bld.lm), wqm_mask);
+      if (local_exact_and) {
+         bld.sop1(Builder::s_or_saveexec, Definition(exact_mask.physReg(), bld.lm),
+                  Definition(scc, s1), Definition(exec, bld.lm), wqm_mask, Operand(exec, bld.lm));
+
+         if (local_wqm_mov && local_wqm_mov_idx < local_exact_and_idx) {
+            instructions.erase(instructions.begin() + local_exact_and_idx);
+            instructions.erase(instructions.begin() + local_wqm_mov_idx);
+         } else if (local_wqm_mov) {
+            instructions.erase(instructions.begin() + local_wqm_mov_idx);
+            instructions.erase(instructions.begin() + local_exact_and_idx);
+         } else {
+            instructions.erase(instructions.begin() + local_exact_and_idx);
+         }
+      } else {
+         bld.sop1(Builder::s_mov, Definition(exec, bld.lm), wqm_mask);
+      }
+
+      local_exact_and = nullptr;
+      local_wqm_mov = nullptr;
    }
 
    block->instructions = std::move(instructions);
