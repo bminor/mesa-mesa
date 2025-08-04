@@ -1,4 +1,6 @@
-glx@extension string sanity,Fail
+glx@glx-multi-window-single-context,Fail
+
+spec@egl_mesa_configless_context@basic,Fail
 
 # Delta over NAVI10
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6,Fail

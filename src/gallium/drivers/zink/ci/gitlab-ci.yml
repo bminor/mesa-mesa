@@ -274,6 +274,7 @@ zink-radv-vangogh-valve:
     - .vangogh-test-valve
     - .zink-radv-valve-rules
   variables:
+    HWCI_START_WESTON: 1
     GPU_VERSION: zink-radv-vangogh
     CI_TRON_PATTERN__SESSION_REBOOT__REGEX: 'BUG: kernel NULL pointer dereference, address'
     CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 1
