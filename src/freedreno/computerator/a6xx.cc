@@ -112,19 +112,8 @@ a6xx_disassemble(struct kernel *kernel, FILE *out)
 
 template<chip CHIP>
 static void
-cs_program_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
+cs_restore_emit(struct fd_ringbuffer *ring, struct a6xx_backend *a6xx_backend)
 {
-   struct ir3_kernel *ir3_kernel = to_ir3_kernel(kernel);
-   struct a6xx_backend *a6xx_backend = to_a6xx_backend(ir3_kernel->backend);
-   struct ir3_shader_variant *v = ir3_kernel->v;
-   const unsigned *local_size = kernel->local_size;
-   const struct ir3_info *i = &v->info;
-   enum a6xx_threadsize thrsz = i->double_threadsize ? THREAD128 : THREAD64;
-
-   OUT_REG(ring, A6XX_SP_MODE_CNTL(.constant_demotion_enable = true,
-                                      .isammode = ISAMMODE_GL,
-                                      .shared_consts_enable = false));
-
    OUT_PKT4(ring, REG_A6XX_SP_PERFCTR_SHADER_MASK, 1);
    OUT_RING(ring, A6XX_SP_PERFCTR_SHADER_MASK_CS);
 
@@ -139,6 +128,22 @@ cs_program_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
       OUT_PKT4(ring, magic_reg.reg, 1);
       OUT_RING(ring, magic_reg.value);
    }
+}
+
+template<chip CHIP>
+static void
+cs_program_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
+{
+   struct ir3_kernel *ir3_kernel = to_ir3_kernel(kernel);
+   struct a6xx_backend *a6xx_backend = to_a6xx_backend(ir3_kernel->backend);
+   struct ir3_shader_variant *v = ir3_kernel->v;
+   const unsigned *local_size = kernel->local_size;
+   const struct ir3_info *i = &v->info;
+   enum a6xx_threadsize thrsz = i->double_threadsize ? THREAD128 : THREAD64;
+
+   OUT_REG(ring, A6XX_SP_MODE_CNTL(.constant_demotion_enable = true,
+                                      .isammode = ISAMMODE_GL,
+                                      .shared_consts_enable = false));
 
    OUT_REG(ring, SP_UPDATE_CNTL(CHIP,
       .vs_state = true,
@@ -536,6 +541,7 @@ a6xx_emit_grid(struct kernel *kernel, uint32_t grid[3],
       submit, 0,
       (enum fd_ringbuffer_flags)(FD_RINGBUFFER_PRIMARY | FD_RINGBUFFER_GROWABLE));
 
+   cs_restore_emit<CHIP>(ring, a6xx_backend);
    cs_program_emit<CHIP>(ring, kernel);
    cs_const_emit<CHIP>(ring, kernel, grid);
    cs_ibo_emit<CHIP>(ring, submit, kernel);
