@@ -441,19 +441,8 @@ nvk_queue_create(struct nvk_device *dev,
 
    nvk_queue_state_init(&queue->state);
 
-   queue->engines = 0;
-   if (queue_family->queue_flags & VK_QUEUE_GRAPHICS_BIT) {
-      queue->engines |= NVKMD_ENGINE_3D;
-      /* We rely on compute shaders for queries */
-      queue->engines |= NVKMD_ENGINE_COMPUTE;
-   }
-   if (queue_family->queue_flags & VK_QUEUE_COMPUTE_BIT) {
-      queue->engines |= NVKMD_ENGINE_COMPUTE;
-      /* We currently rely on 3D engine MMEs for indirect dispatch */
-      queue->engines |= NVKMD_ENGINE_3D;
-   }
-   if (queue_family->queue_flags & VK_QUEUE_TRANSFER_BIT)
-      queue->engines |= NVKMD_ENGINE_COPY;
+   queue->engines =
+      nvk_queue_engines_from_queue_flags(queue_family->queue_flags);
 
    if (queue->engines) {
       result = nvkmd_dev_create_ctx(dev->nvkmd, &dev->vk.base,

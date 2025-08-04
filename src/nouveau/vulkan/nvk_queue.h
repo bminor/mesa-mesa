@@ -59,6 +59,26 @@ nvk_queue_device(struct nvk_queue *queue)
    return (struct nvk_device *)queue->vk.base.device;
 }
 
+static inline enum nvkmd_engines
+nvk_queue_engines_from_queue_flags(VkQueueFlags queue_flags)
+{
+   enum nvkmd_engines engines = 0;
+   if (queue_flags & VK_QUEUE_GRAPHICS_BIT) {
+      engines |= NVKMD_ENGINE_3D;
+      /* We rely on compute shaders for queries */
+      engines |= NVKMD_ENGINE_COMPUTE;
+   }
+   if (queue_flags & VK_QUEUE_COMPUTE_BIT) {
+      engines |= NVKMD_ENGINE_COMPUTE;
+      /* We currently rely on 3D engine MMEs for indirect dispatch */
+      engines |= NVKMD_ENGINE_3D;
+   }
+   if (queue_flags & VK_QUEUE_TRANSFER_BIT)
+      engines |= NVKMD_ENGINE_COPY;
+
+   return engines;
+}
+
 VkResult nvk_queue_create(struct nvk_device *dev,
                           const VkDeviceQueueCreateInfo *pCreateInfo,
                           uint32_t index_in_family);
