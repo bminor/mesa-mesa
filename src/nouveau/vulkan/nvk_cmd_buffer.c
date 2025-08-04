@@ -120,6 +120,20 @@ nvk_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    memset(&cmd->state, 0, sizeof(cmd->state));
 }
 
+static VkQueueFlags
+nvk_cmd_buffer_queue_flags(struct nvk_cmd_buffer *cmd)
+{
+   const struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+
+   uint32_t queue_family_index = cmd->vk.pool->queue_family_index;
+   assert(queue_family_index < pdev->queue_family_count);
+   const struct nvk_queue_family *queue_family =
+      &pdev->queue_families[queue_family_index];
+
+   return queue_family->queue_flags;
+}
+
 const struct vk_command_buffer_ops nvk_cmd_buffer_ops = {
    .create = nvk_create_cmd_buffer,
    .reset = nvk_reset_cmd_buffer,
@@ -348,6 +362,7 @@ nvk_BeginCommandBuffer(VkCommandBuffer commandBuffer,
                        const VkCommandBufferBeginInfo *pBeginInfo)
 {
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
+   VkQueueFlags queue_flags = nvk_cmd_buffer_queue_flags(cmd);
 
    nvk_reset_cmd_buffer(&cmd->vk, 0);
 
@@ -356,8 +371,11 @@ nvk_BeginCommandBuffer(VkCommandBuffer commandBuffer,
    P_MTHD(p, NV90B5, NOP);
    P_NV90B5_NOP(p, 0);
 
-   nvk_cmd_buffer_begin_compute(cmd, pBeginInfo);
-   nvk_cmd_buffer_begin_graphics(cmd, pBeginInfo);
+   if (queue_flags & VK_QUEUE_COMPUTE_BIT)
+      nvk_cmd_buffer_begin_compute(cmd, pBeginInfo);
+
+   if (queue_flags & VK_QUEUE_GRAPHICS_BIT)
+      nvk_cmd_buffer_begin_graphics(cmd, pBeginInfo);
 
    return VK_SUCCESS;
 }
