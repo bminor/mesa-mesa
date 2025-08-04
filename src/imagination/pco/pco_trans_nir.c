@@ -1859,9 +1859,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
    }
 
-   case nir_intrinsic_alpha_to_coverage_pco:
+   case nir_intrinsic_alpha_to_coverage:
       assert(tctx->stage == MESA_SHADER_FRAGMENT);
-      instr = pco_pck(&tctx->b, dest, src[0], .pck_fmt = PCO_PCK_FMT_COV);
+      instr = pco_pck(&tctx->b,
+                      pco_ref_bits(dest, 32),
+                      src[0],
+                      .pck_fmt = PCO_PCK_FMT_COV);
       break;
 
    case nir_intrinsic_mutex_pco:
@@ -2798,6 +2801,10 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    /* Just consume/treat as 32-bit for now. */
    case nir_op_i2i16:
       instr = pco_mov(&tctx->b, pco_ref_bits(dest, 32), src[0]);
+      break;
+
+   case nir_op_u2u32:
+      instr = pco_mov(&tctx->b, dest, pco_ref_bits(src[0], 32));
       break;
 
    case nir_op_f2i32_rtne:

@@ -682,7 +682,7 @@ lower_alpha_to_coverage(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
    nir_def *alpha = input->num_components < 4 ? nir_imm_float(b, 1.0f)
                                               : nir_channel(b, input, 3);
 
-   nir_def *a2c_mask = nir_alpha_to_coverage_pco(b, alpha);
+   nir_def *a2c_mask = nir_u2u32(b, nir_alpha_to_coverage(b, alpha));
 
    a2c_mask = nir_iand(b, a2c_mask, nir_load_savmsk_vm_pco(b));
 
