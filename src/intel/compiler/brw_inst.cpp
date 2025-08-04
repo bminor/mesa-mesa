@@ -175,8 +175,6 @@ brw_inst::is_send() const
    case SHADER_OPCODE_SEND_GATHER:
    case SHADER_OPCODE_BARRIER:
       return true;
-   case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
-      return src[1].file == VGRF;
    default:
       return false;
    }
