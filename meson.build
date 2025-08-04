@@ -1815,7 +1815,6 @@ else
   draw_with_llvm = false
 endif
 amd_with_llvm = amd_with_llvm and dep_llvm.found()
-pre_args += '-DLLVM_AVAILABLE=@0@'.format(dep_llvm.found().to_int())
 pre_args += '-DDRAW_LLVM_AVAILABLE=@0@'.format(draw_with_llvm.to_int())
 pre_args += '-DAMD_LLVM_AVAILABLE=@0@'.format(amd_with_llvm.to_int())
 pre_args += '-DGALLIVM_USE_ORCJIT=@0@'.format((dep_llvm.found() and llvm_with_orcjit).to_int())
