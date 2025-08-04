@@ -47,15 +47,6 @@ dEQP-VK.synchronization.*_tess_ctrl.*
 dEQP-VK.synchronization.*_tess_eval.*
 dEQP-VK.tessellation.invariance.*
 
-# Intermittent timeouts.  94% CPU used in ir3 create_variant, but no single pass there dominating its time.
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmax_i64vec4_requiredsubgroupsize
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmin_u64vec4_requiredsubgroupsize
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmul_i64vec4_requiredsubgroupsize
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmul_u64vec3_requiredsubgroupsize
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmul_u64vec4_requiredsubgroupsize
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmax_i64vec3
-dEQP-VK.subgroups.clustered.graphics.subgroupclusteredmul_u64vec4
-
 # Updated by ci-collate
 bypass-dEQP-VK.renderpass2.fragment_density_map.2_views.render.non_divisible_density_size.2_samples.static_subsampled_2_2_multiviewport
 dEQP-VK.renderpass2.fragment_density_map.2_views.render.divisible_density_size.2_samples.static_subsampled_1_2_multiviewport

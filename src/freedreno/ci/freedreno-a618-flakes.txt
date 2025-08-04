@@ -374,6 +374,3 @@ angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8_sno
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8i_r16ui.texture2d_to_cubemap
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8ui_r16i.texture2d_to_cubemap
 angle-dEQP-GLES31.functional.state_query.program.tesselation_shader_state_get_programiv
-
-# Intermittent timeouts.  94% CPU used in ir3 create_variant, but no single pass there dominating its time.
-dEQP-VK.subgroups.clustered.compute.subgroupclusteredmul_u64vec4_requiredsubgroupsize
