@@ -1264,7 +1264,9 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
 
    device->syncobj_type = syncobj_type;
 
-   /* we don't support DRM_CAP_SYNCOBJ_TIMELINE, but drm-shim does */
+   /* msm didn't expose DRM_CAP_SYNCOBJ_TIMELINE until kernel 6.15, so emulate timeline
+    * semaphores if necessary.
+    */
    if (!(device->syncobj_type.features & VK_SYNC_FEATURE_TIMELINE))
       device->timeline_type = vk_sync_timeline_get_type(&device->syncobj_type);
 

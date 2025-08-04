@@ -1092,7 +1092,10 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
    device->uche_trap_base = tu_drm_get_uche_trap_base(device);
 
    device->syncobj_type = vk_drm_syncobj_get_type(fd);
-   /* we don't support DRM_CAP_SYNCOBJ_TIMELINE, but drm-shim does */
+
+   /* msm didn't expose DRM_CAP_SYNCOBJ_TIMELINE until kernel 6.15, so emulate timeline
+    * semaphores if necessary.
+    */
    if (!(device->syncobj_type.features & VK_SYNC_FEATURE_TIMELINE))
       device->timeline_type = vk_sync_timeline_get_type(&device->syncobj_type);
 
