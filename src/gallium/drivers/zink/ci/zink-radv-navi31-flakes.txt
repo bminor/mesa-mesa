@@ -35,6 +35,37 @@ dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractiona
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractional_odd_spacing_ccw_point_mode
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractional_odd_spacing_cw_point_mode
 
+glx@glx-buffer-age vblank_mode=0
+glx@glx-close-display
+glx@glx-destroycontext-3
+glx@glx-fbconfig-bad
+glx@glx-make-current-other-thread
+glx@glx-make-glxdrawable-current
+glx@glx-multi-context-single-window
+glx@glx-multithread-makecurrent-3
+glx@glx-multithread-makecurrent-4
+glx@glx-multithread-texture
+glx@glx-pixmap-crosscheck
+glx@glx-pixmap-life
+glx@glx-query-drawable-glx_fbconfig_id-glxpixmap
+glx@glx-query-drawable-glx_fbconfig_id-window
+glx@glx-query-drawable-glx_height
+glx@glx-query-drawable-glxpbuffer-glx_width
+glx@glx-shader-sharing
+glx@glx-visuals-depth -pixmap
+glx@glx-visuals-stencil -pixmap
+glx@glx_arb_create_context@default minor version
+glx@glx_arb_create_context@invalid flag
+glx@glx_arb_create_context@invalid render type
+glx@glx_arb_create_context_profile@3.2 core profile required
+glx@glx_arb_create_context_robustness@invalid reset notification strategy
+glx@glx_arb_sync_control@glxgetmscrateoml
+glx@glx_ext_import_context@free context
+glx@glx_ext_import_context@import context- single process
+glx@glx_ext_import_context@imported context has same context id
+glx@glx_ext_import_context@make current- multi process
+glx@glx_ext_no_config_context@no fbconfig
+
 spec@!opengl 1.0@rasterpos
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6
