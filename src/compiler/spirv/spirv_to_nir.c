@@ -2461,9 +2461,11 @@ vtn_null_constant(struct vtn_builder *b, struct vtn_type *type)
    case vtn_base_type_struct:
       c->is_null_constant = true;
       c->num_elements = type->length;
-      c->elements = ralloc_array(b, nir_constant *, c->num_elements);
-      for (unsigned i = 0; i < c->num_elements; i++)
-         c->elements[i] = vtn_null_constant(b, type->members[i]);
+      if (c->num_elements) {
+         c->elements = ralloc_array(b, nir_constant *, c->num_elements);
+         for (unsigned i = 0; i < c->num_elements; i++)
+            c->elements[i] = vtn_null_constant(b, type->members[i]);
+      }
       break;
 
    default:

@@ -129,9 +129,12 @@ gather_constant_initializers(nir_constant *src,
       assert(src->num_elements == glsl_get_length(type));
       nir_constant *dst = rzalloc(var, nir_constant);
       dst->num_elements = src->num_elements;
-      dst->elements = rzalloc_array(var, nir_constant *, src->num_elements);
-      for (unsigned i = 0; i < src->num_elements; ++i) {
-         dst->elements[i] = gather_constant_initializers(src->elements[i], var, element, field, state);
+      if (dst->num_elements) {
+         dst->elements = rzalloc_array(var, nir_constant *, src->num_elements);
+         for (unsigned i = 0; i < src->num_elements; ++i) {
+            dst->elements[i] = gather_constant_initializers(src->elements[i], var,
+                                                            element, field, state);
+         }
       }
       return dst;
    } else if (glsl_type_is_struct(type)) {

@@ -384,12 +384,14 @@ nir_visitor::constant_copy(ir_constant *ir, void *mem_ctx)
 
    case GLSL_TYPE_STRUCT:
    case GLSL_TYPE_ARRAY:
-      ret->elements = ralloc_array(mem_ctx, nir_constant *,
-                                   ir->type->length);
-      ret->num_elements = ir->type->length;
+      if (ir->type->length) {
+         ret->elements = ralloc_array(mem_ctx, nir_constant *,
+                                      ir->type->length);
+         ret->num_elements = ir->type->length;
 
-      for (i = 0; i < ir->type->length; i++)
-         ret->elements[i] = constant_copy(ir->const_elements[i], mem_ctx);
+         for (i = 0; i < ir->type->length; i++)
+            ret->elements[i] = constant_copy(ir->const_elements[i], mem_ctx);
+      }
       break;
 
    default:

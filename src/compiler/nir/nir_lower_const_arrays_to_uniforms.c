@@ -100,10 +100,13 @@ rebuild_const_array_initialiser(const struct glsl_type *type, void *mem_ctx)
 
    if (glsl_type_is_matrix(type) && glsl_get_matrix_columns(type) > 1) {
       ret->num_elements = glsl_get_matrix_columns(type);
-      ret->elements = ralloc_array(mem_ctx, nir_constant *, ret->num_elements);
 
-      for (unsigned i = 0; i < ret->num_elements; i++) {
-         ret->elements[i] = rzalloc(mem_ctx, nir_constant);
+      if (ret->num_elements) {
+         ret->elements = ralloc_array(mem_ctx, nir_constant *, ret->num_elements);
+
+         for (unsigned i = 0; i < ret->num_elements; i++) {
+            ret->elements[i] = rzalloc(mem_ctx, nir_constant);
+         }
       }
 
       return ret;
@@ -111,15 +114,18 @@ rebuild_const_array_initialiser(const struct glsl_type *type, void *mem_ctx)
 
    if (glsl_type_is_array(type) || glsl_type_is_struct(type)) {
       ret->num_elements = glsl_get_length(type);
-      ret->elements = ralloc_array(mem_ctx, nir_constant *, ret->num_elements);
 
-      for (unsigned i = 0; i < ret->num_elements; i++) {
-         if (glsl_type_is_array(type)) {
-            ret->elements[i] =
-               rebuild_const_array_initialiser(glsl_get_array_element(type), mem_ctx);
-         } else {
-            ret->elements[i] =
-               rebuild_const_array_initialiser(glsl_get_struct_field(type, i), mem_ctx);
+      if (ret->num_elements) {
+         ret->elements = ralloc_array(mem_ctx, nir_constant *, ret->num_elements);
+
+         for (unsigned i = 0; i < ret->num_elements; i++) {
+            if (glsl_type_is_array(type)) {
+               ret->elements[i] =
+                  rebuild_const_array_initialiser(glsl_get_array_element(type), mem_ctx);
+            } else {
+               ret->elements[i] =
+                  rebuild_const_array_initialiser(glsl_get_struct_field(type, i), mem_ctx);
+            }
          }
       }
    }

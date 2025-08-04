@@ -133,9 +133,13 @@ nir_constant_clone(const nir_constant *c, nir_variable *nvar)
    memcpy(nc->values, c->values, sizeof(nc->values));
    nc->is_null_constant = c->is_null_constant;
    nc->num_elements = c->num_elements;
-   nc->elements = ralloc_array(nvar, nir_constant *, c->num_elements);
-   for (unsigned i = 0; i < c->num_elements; i++) {
-      nc->elements[i] = nir_constant_clone(c->elements[i], nvar);
+
+   if (c->num_elements) {
+      nc->elements = ralloc_array(nvar, nir_constant *, c->num_elements);
+      for (unsigned i = 0; i < c->num_elements; i++)
+         nc->elements[i] = nir_constant_clone(c->elements[i], nvar);
+   } else {
+      nc->elements = NULL;
    }
 
    return nc;
