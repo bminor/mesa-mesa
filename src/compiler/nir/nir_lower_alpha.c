@@ -30,6 +30,9 @@ alpha_to_coverage(nir_builder *b, nir_def *alpha, uint8_t nr_samples, bool has_i
 bool
 nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples, bool has_intrinsic)
 {
+   /* If we are not using the intrinsic we need to know the sample count. */
+   assert(has_intrinsic || nr_samples);
+
    /* nir_lower_io_to_temporaries ensures that stores are in the last block */
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    nir_block *block = nir_impl_last_block(impl);
