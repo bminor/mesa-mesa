@@ -44,7 +44,7 @@
 #include "pipe/p_defines.h"
 #include "state_tracker/st_context.h"
 #include "util/u_atomic.h"
-#include <mapi/glapi/glapi.h>
+#include "mesa/glapi/glapi/glapi.h"
 
 #include "hgl/hgl_sw_winsys.h"
 #include "hgl_context.h"

@@ -47,7 +47,7 @@ header = r"""/**
 
 
 #include "api_exec_decl.h"
-#include "glapi/glapi.h"
+#include "glapi/glapi/glapi.h"
 #include "main/context.h"
 #include "dispatch.h"
 

@@ -5,7 +5,7 @@
  *    Chia-I Wu <olv@lunarg.com>
  */
 
-#include "glapi/glapi.h"
+#include "../glapi/glapi.h"
 
 /* REALLY_INITIAL_EXEC implies __GLIBC__ */
 #if defined(USE_X86_ASM) && defined(REALLY_INITIAL_EXEC)

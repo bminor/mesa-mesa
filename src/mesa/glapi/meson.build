@@ -144,7 +144,7 @@ glapi_xml_py_deps = files(
   'new/genCommon.py',
 
   # Symbols
-  '../glx/libgl-symbols.txt',
+  '../../glx/libgl-symbols.txt',
 )
 
 subdir('glapi')

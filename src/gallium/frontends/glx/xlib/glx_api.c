@@ -42,7 +42,7 @@
 #include "main/errors.h"
 #include "main/config.h"
 #include "dispatch.h"
-#include "mapi/glapi/glapi.h"
+#include "mesa/glapi/glapi/glapi.h"
 #include "util/compiler.h"
 #include "util/u_math.h"
 #include "util/u_memory.h"

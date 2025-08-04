@@ -46,7 +46,7 @@
 #include <pipe/p_state.h>
 
 #include "util/u_call_once.h"
-#include "mapi/glapi/glapi.h"
+#include "mesa/glapi/glapi/glapi.h"
 #include "dispatch.h"
 
 #include <GL/mesa_glinterop.h>

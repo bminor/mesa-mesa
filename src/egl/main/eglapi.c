@@ -86,7 +86,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "c11/threads.h"
-#include "mapi/glapi/glapi.h"
+#include "mesa/glapi/glapi/glapi.h"
 #include "util/detect_os.h"
 #include "util/macros.h"
 #include "util/perf/cpu_trace.h"

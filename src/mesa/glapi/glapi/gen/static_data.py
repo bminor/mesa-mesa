@@ -1687,7 +1687,7 @@ function_count = i
 # Exported from libGL.so
 libgl_public_functions = set()
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       '..', '..', '..', 'glx', 'libgl-symbols.txt'), 'r') as f:
+                       '..', '..', '..', '..', 'glx', 'libgl-symbols.txt'), 'r') as f:
     for line in f:
         if len(line) > 3 and line[0:2] == 'gl' and line[2] != 'X':
             libgl_public_functions.add(line[2:].rstrip())

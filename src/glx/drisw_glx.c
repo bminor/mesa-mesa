@@ -43,7 +43,7 @@
 #include "kopper_interface.h"
 #include "loader_dri_helper.h"
 #include "dri_util.h"
-#include "mapi/glapi/glapi.h"
+#include "mesa/glapi/glapi/glapi.h"
 #include "dispatch.h"
 
 static int xshm_error = 0;

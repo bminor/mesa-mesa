@@ -64,7 +64,7 @@
 #include "GL/mesa_glinterop.h"
 #include "pipe-loader/pipe_loader.h"
 #include "loader/loader.h"
-#include "mapi/glapi/glapi.h"
+#include "mesa/glapi/glapi/glapi.h"
 #include "pipe/p_screen.h"
 #include "util/bitscan.h"
 #include "util/driconf.h"
@@ -76,7 +76,6 @@
 #include "util/u_vector.h"
 #include "egl_dri2.h"
 #include "egldefines.h"
-#include "mapi/glapi/glapi.h"
 #include "dispatch.h"
 
 #define NUM_ATTRIBS 16
