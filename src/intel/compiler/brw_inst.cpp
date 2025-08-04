@@ -230,8 +230,6 @@ bool
 brw_inst::is_payload(unsigned arg) const
 {
    switch (opcode) {
-   case SHADER_OPCODE_INTERLOCK:
-   case SHADER_OPCODE_MEMORY_FENCE:
    case SHADER_OPCODE_BARRIER:
       return arg == 0;
 
