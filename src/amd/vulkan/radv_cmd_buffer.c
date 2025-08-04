@@ -8813,8 +8813,12 @@ radv_handle_color_fbfetch_output(struct radv_cmd_buffer *cmd_buffer, uint32_t in
    if (!(image->vk.usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT))
       return;
 
-   if (!radv_layout_dcc_compressed(device, image, att->iview->vk.base_mip_level, att->layout,
-                                   radv_image_queue_family_mask(att->iview->image, cmd_buffer->qf, cmd_buffer->qf)))
+   const uint32_t queue_mask = radv_image_queue_family_mask(att->iview->image, cmd_buffer->qf, cmd_buffer->qf);
+   const bool is_dcc_compressed =
+      radv_layout_dcc_compressed(device, image, att->iview->vk.base_mip_level, att->layout, queue_mask);
+   const enum radv_fmask_compression fmask_comp = radv_layout_fmask_compression(device, image, att->layout, queue_mask);
+
+   if (!is_dcc_compressed && fmask_comp == RADV_FMASK_COMPRESSION_NONE)
       return;
 
    const uint32_t color_att_idx = d->vk.cal.color_map[index];
