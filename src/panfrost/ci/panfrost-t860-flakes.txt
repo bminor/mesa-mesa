@@ -18,3 +18,11 @@ dEQP-GLES3.functional.fragment_out.random..*
 
 # New flake with ES CTS 3.2.12.0
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.copyteximage2d_render
+
+
+# Possible pre-existing flakes introduced during Linux 6.16 testing
+# Seen in https://gitlab.freedesktop.org/mesa/mesa/-/jobs/81742462
+# and https://gitlab.freedesktop.org/mesa/mesa/-/jobs/81742233
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.copytexsubimage2d_render
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_server_sync.textures.copyteximage2d_texsubimage2d_render
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.textures.copyteximage2d_copytexsubimage2d_render
