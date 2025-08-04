@@ -847,7 +847,9 @@ struct vk_pipeline_stage {
    mesa_shader_stage stage;
 
    /* Whether the shader was linked with others (RT pipelines only) */
-   bool linked;
+   bool linked:1;
+   /* Whether the shader was imported from a library (Gfx pipelines only) */
+   bool imported:1;
 
    /* Hash used to lookup the precomp */
    blake3_hash precomp_key;
@@ -1162,9 +1164,6 @@ struct vk_graphics_pipeline_compile_info {
    /* Maps gl_shader_stage to the matching index in stages[] */
    uint32_t stage_to_index[MESA_SHADER_MESH_STAGES];
 
-   /* Imported stages from pipeline libraries */
-   VkShaderStageFlags imported_stages;
-
    uint32_t set_layout_count;
    struct vk_descriptor_set_layout *set_layouts[MESA_VK_MAX_DESCRIPTOR_SETS];
 
@@ -1201,6 +1200,7 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
       vk_find_struct_const(pCreateInfo->pNext,
                            PIPELINE_LIBRARY_CREATE_INFO_KHR);
 
+   VkShaderStageFlags all_stages = 0;
    if (libs_info) {
       for (uint32_t i = 0; i < libs_info->libraryCount; i++) {
          VK_FROM_HANDLE(vk_pipeline, lib_pipeline, libs_info->pLibraries[i]);
@@ -1234,7 +1234,8 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
                continue;
 
             info->stages[lib_stage->stage] = vk_pipeline_stage_clone(lib_stage);
-            info->imported_stages |= mesa_to_vk_shader_stage(lib_stage->stage);
+            info->stages[lib_stage->stage].imported = true;
+            all_stages |= mesa_to_vk_shader_stage(lib_stage->stage);
          }
       }
    }
@@ -1260,7 +1261,6 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
    /* We provide a all_state so there should not be any allocation, hence no failure.*/
    assert(result == VK_SUCCESS);
 
-   VkShaderStageFlags all_stages = info->imported_stages;
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage_info =
          &pCreateInfo->pStages[i];
@@ -1277,7 +1277,7 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
        * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
        * provided and shader should obviously be there.
        */
-      if (info->imported_stages & stage_info->stage)
+      if (info->stages[stage].imported)
          continue;
 
       info->stages[stage] = (struct vk_pipeline_stage) {
@@ -1913,10 +1913,10 @@ vk_create_graphics_pipeline(struct vk_device *device,
        * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
        * provided and shader should obviously be there.
        */
-      if (compile_info.imported_stages & stage_info->stage)
-         continue;
-
       mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+
+      if (compile_info.stages[compile_info.stage_to_index[stage]].imported)
+         continue;
 
       stage_feedbacks[stage].flags |=
          VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
