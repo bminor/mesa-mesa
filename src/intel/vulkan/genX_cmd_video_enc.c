@@ -2306,7 +2306,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
          slice.SliceLoopFilterEnable = slice_header->flags.slice_loop_filter_across_slices_enabled_flag;
          slice.SliceSAOChroma = slice_header->flags.slice_sao_chroma_flag;
          slice.SliceSAOLuma = slice_header->flags.slice_sao_luma_flag;
-         slice.MVDL1Zero = slice_header->flags.mvd_l1_zero_flag;
+         slice.MVDL1Zero = 0; /* Only for decoder */
          slice.CollocatedFromL0 = slice_header->flags.collocated_from_l0_flag;
          /* TODO. Support Low Delay mode */
          slice.LowDelay = false;
