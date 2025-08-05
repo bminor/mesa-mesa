@@ -322,15 +322,23 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
       gfx12_push_sh_reg(sh_offset, va);                                                                                \
    } while (0)
 
-#define gfx12_emit_buffered_sh_regs()                                                                                  \
-   do {                                                                                                                \
-      unsigned __reg_count = __cs->num_buffered_sh_regs;                                                               \
-      if (__reg_count) {                                                                                               \
-         radeon_emit(PKT3(PKT3_SET_SH_REG_PAIRS, __reg_count * 2 - 1, 0) | PKT3_RESET_FILTER_CAM_S(1));                \
-         radeon_emit_array(__cs->gfx12.buffered_sh_regs, __reg_count * 2);                                             \
-         __cs->num_buffered_sh_regs = 0;                                                                               \
-      }                                                                                                                \
-   } while (0)
+ALWAYS_INLINE static void
+radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream *cs)
+{
+   const uint32_t reg_count = cs->num_buffered_sh_regs;
+
+   if (!reg_count)
+      return;
+
+   radeon_check_space(device->ws, cs->b, 1 + reg_count * 2);
+
+   radeon_begin(cs);
+   radeon_emit(PKT3(PKT3_SET_SH_REG_PAIRS, reg_count * 2 - 1, 0) | PKT3_RESET_FILTER_CAM_S(1));
+   radeon_emit_array(cs->gfx12.buffered_sh_regs, reg_count * 2);
+   radeon_end();
+
+   cs->num_buffered_sh_regs = 0;
+}
 
 ALWAYS_INLINE static void
 radv_cp_wait_mem(struct radv_cmd_stream *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,

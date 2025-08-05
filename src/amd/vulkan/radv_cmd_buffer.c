@@ -11727,9 +11727,7 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
    }
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_begin(cs);
-      gfx12_emit_buffered_sh_regs();
-      radeon_end();
+      radv_gfx12_emit_buffered_regs(device, cs);
    }
 
    if (!dgc)
@@ -11801,9 +11799,7 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       radv_flush_constants(cmd_buffer, pc_stages, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_begin(cs);
-      gfx12_emit_buffered_sh_regs();
-      radeon_end();
+      radv_gfx12_emit_buffered_regs(device, cs);
    }
 
    if (!dgc)
