@@ -2463,7 +2463,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
 
          if (anv_graphics_pipeline_skip_shader_compile(pipeline, stages,
                                                        link_optimize, s) ||
-             !gl_shader_stage_can_set_fragment_shading_rate(s))
+             !mesa_shader_stage_can_set_fragment_shading_rate(s))
             continue;
 
          last_psr = &stages[s];

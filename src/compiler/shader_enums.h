@@ -122,7 +122,7 @@ mesa_shader_stage_is_rt(mesa_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_can_set_fragment_shading_rate(mesa_shader_stage stage)
+mesa_shader_stage_can_set_fragment_shading_rate(mesa_shader_stage stage)
 {
    /* According to EXT_fragment_shading_rate :
     *
