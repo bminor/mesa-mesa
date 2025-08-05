@@ -239,7 +239,7 @@ void st_init_limits(struct pipe_screen *screen,
 
          if (!screen->caps.point_size_fixed)
             pc->MaxUniformComponents -= 4;
-      } else if (sh == PIPE_SHADER_FRAGMENT) {
+      } else if (sh == MESA_SHADER_FRAGMENT) {
          if (!screen->caps.alpha_test)
             pc->MaxUniformComponents -= 4;
       }
@@ -1290,7 +1290,7 @@ void st_init_extensions(struct pipe_screen *screen,
    } else {
       /* Optional integer support for GLSL 1.2. */
       if (screen->shader_caps[MESA_SHADER_VERTEX].integers &&
-          screen->shader_caps[PIPE_SHADER_FRAGMENT].integers) {
+          screen->shader_caps[MESA_SHADER_FRAGMENT].integers) {
          consts->NativeIntegers = GL_TRUE;
 
          extensions->EXT_shader_integer_mix = GL_TRUE;
@@ -1567,7 +1567,7 @@ void st_init_extensions(struct pipe_screen *screen,
     * prefer to disable varying packing rather than run the risk of varying
     * packing preventing a shader from running.
     */
-   if (screen->shader_caps[PIPE_SHADER_FRAGMENT].max_tex_indirections <= 8) {
+   if (screen->shader_caps[MESA_SHADER_FRAGMENT].max_tex_indirections <= 8) {
       /* We can't disable varying packing if transform feedback is available,
        * because transform feedback code assumes a packed varying layout.
        */
@@ -1840,7 +1840,7 @@ void st_init_extensions(struct pipe_screen *screen,
       screen->caps.allow_draw_out_of_order;
    consts->GLThreadNopCheckFramebufferStatus = options->glthread_nop_check_framebuffer_status;
 
-   if (screen->shader_caps[PIPE_SHADER_FRAGMENT].integers &&
+   if (screen->shader_caps[MESA_SHADER_FRAGMENT].integers &&
        extensions->ARB_stencil_texturing &&
        screen->caps.doubles &&
        !(screen->nir_options[MESA_SHADER_FRAGMENT]->lower_doubles_options &

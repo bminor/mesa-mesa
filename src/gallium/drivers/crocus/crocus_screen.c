@@ -145,12 +145,12 @@ crocus_init_shader_caps(struct crocus_screen *screen)
 
       if (devinfo->ver < 6 &&
           i != MESA_SHADER_VERTEX &&
-          i != PIPE_SHADER_FRAGMENT)
+          i != MESA_SHADER_FRAGMENT)
          continue;
 
       if (devinfo->ver == 6 &&
           i != MESA_SHADER_VERTEX &&
-          i != PIPE_SHADER_FRAGMENT &&
+          i != MESA_SHADER_FRAGMENT &&
           i != MESA_SHADER_GEOMETRY)
          continue;
 
@@ -181,7 +181,7 @@ crocus_init_shader_caps(struct crocus_screen *screen)
          (devinfo->verx10 >= 75) ? CROCUS_MAX_TEXTURE_SAMPLERS : 16;
 
       if (devinfo->ver >= 7 &&
-          (i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE))
+          (i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE))
          caps->max_shader_images = CROCUS_MAX_TEXTURE_SAMPLERS;
 
       caps->max_shader_buffers =

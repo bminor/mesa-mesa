@@ -905,13 +905,13 @@ csf_emit_shader_regs(struct panfrost_batch *batch, enum pipe_shader_type stage,
 {
    uint64_t resources = panfrost_emit_resources(batch, stage);
 
-   assert(stage == MESA_SHADER_VERTEX || stage == PIPE_SHADER_FRAGMENT ||
+   assert(stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_FRAGMENT ||
           stage == PIPE_SHADER_COMPUTE);
 
 #if PAN_ARCH >= 12
-   unsigned offset = (stage == PIPE_SHADER_FRAGMENT) ? 2 : 0;
+   unsigned offset = (stage == MESA_SHADER_FRAGMENT) ? 2 : 0;
 #else
-   unsigned offset = (stage == PIPE_SHADER_FRAGMENT) ? 4 : 0;
+   unsigned offset = (stage == MESA_SHADER_FRAGMENT) ? 4 : 0;
 #endif
 
    unsigned fau_count = DIV_ROUND_UP(batch->nr_push_uniforms[stage], 2);
@@ -1115,7 +1115,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
-   struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
 
    bool idvs = vs->info.vs.idvs;
    bool fs_required = panfrost_fs_required(
@@ -1135,8 +1135,8 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       panfrost_get_position_shader(batch, info));
 
    if (fs_required) {
-      csf_emit_shader_regs(batch, PIPE_SHADER_FRAGMENT,
-                           batch->rsd[PIPE_SHADER_FRAGMENT]);
+      csf_emit_shader_regs(batch, MESA_SHADER_FRAGMENT,
+                           batch->rsd[MESA_SHADER_FRAGMENT]);
    } else {
       cs_move64_to(b, cs_sr_reg64(b, IDVS, FRAGMENT_SRT), 0);
       cs_move64_to(b, cs_sr_reg64(b, IDVS, FRAGMENT_FAU), 0);
@@ -1180,7 +1180,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
    if (ctx->occlusion_query && ctx->active_queries) {
       struct panfrost_resource *rsrc = pan_resource(ctx->occlusion_query->rsrc);
       cs_move64_to(b, cs_sr_reg64(b, IDVS, OQ), rsrc->plane.base);
-      panfrost_batch_write_rsrc(ctx->batch, rsrc, PIPE_SHADER_FRAGMENT);
+      panfrost_batch_write_rsrc(ctx->batch, rsrc, MESA_SHADER_FRAGMENT);
    }
 
    cs_move32_to(b, cs_sr_reg32(b, IDVS, VARY_SIZE),

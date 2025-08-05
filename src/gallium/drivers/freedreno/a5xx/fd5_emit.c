@@ -301,7 +301,7 @@ emit_border_color(struct fd_context *ctx, struct fd_ringbuffer *ring) assert_dt
    entries = ptr;
 
    setup_border_colors(&ctx->tex[MESA_SHADER_VERTEX], &entries[0]);
-   setup_border_colors(&ctx->tex[PIPE_SHADER_FRAGMENT],
+   setup_border_colors(&ctx->tex[MESA_SHADER_FRAGMENT],
                        &entries[ctx->tex[MESA_SHADER_VERTEX].num_samplers]);
 
    OUT_PKT4(ring, REG_A5XX_TPL1_TP_BORDER_COLOR_BASE_ADDR_LO, 2);
@@ -829,15 +829,15 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       OUT_RING(ring, ctx->tex[MESA_SHADER_VERTEX].num_textures);
    }
 
-   if (ctx->dirty_shader[PIPE_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX) {
+   if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX) {
       needs_border |=
-         emit_textures(ctx, ring, SB4_FS_TEX, &ctx->tex[PIPE_SHADER_FRAGMENT]);
+         emit_textures(ctx, ring, SB4_FS_TEX, &ctx->tex[MESA_SHADER_FRAGMENT]);
    }
 
    OUT_PKT4(ring, REG_A5XX_TPL1_FS_TEX_COUNT, 1);
-   OUT_RING(ring, ctx->shaderimg[PIPE_SHADER_FRAGMENT].enabled_mask
+   OUT_RING(ring, ctx->shaderimg[MESA_SHADER_FRAGMENT].enabled_mask
                      ? ~0
-                     : ctx->tex[PIPE_SHADER_FRAGMENT].num_textures);
+                     : ctx->tex[MESA_SHADER_FRAGMENT].num_textures);
 
    OUT_PKT4(ring, REG_A5XX_TPL1_CS_TEX_COUNT, 1);
    OUT_RING(ring, 0);
@@ -846,12 +846,12 @@ fd5_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       emit_border_color(ctx, ring);
 
    if (!emit->binning_pass) {
-      if (ctx->dirty_shader[PIPE_SHADER_FRAGMENT] & FD_DIRTY_SHADER_SSBO)
-         emit_ssbos(ctx, ring, SB4_SSBO, &ctx->shaderbuf[PIPE_SHADER_FRAGMENT],
+      if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_SSBO)
+         emit_ssbos(ctx, ring, SB4_SSBO, &ctx->shaderbuf[MESA_SHADER_FRAGMENT],
                   fp);
 
-      if (ctx->dirty_shader[PIPE_SHADER_FRAGMENT] & FD_DIRTY_SHADER_IMAGE)
-         fd5_emit_images(ctx, ring, PIPE_SHADER_FRAGMENT, fp);
+      if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_IMAGE)
+         fd5_emit_images(ctx, ring, MESA_SHADER_FRAGMENT, fp);
    }
 }
 

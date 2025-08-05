@@ -745,7 +745,7 @@ static int r600_get_hw_atomic_count(const struct pipe_context *ctx,
 	const struct r600_context *rctx = (struct r600_context *)ctx;
 	int value = 0;
 	switch (shader) {
-	case PIPE_SHADER_FRAGMENT:
+	case MESA_SHADER_FRAGMENT:
 	case PIPE_SHADER_COMPUTE:
 	default:
 		break;
@@ -815,10 +815,10 @@ static inline void r600_shader_selector_key(const struct pipe_context *ctx,
 		key->gs.first_atomic_counter = r600_get_hw_atomic_count(ctx, MESA_SHADER_GEOMETRY);
 		key->gs.tri_strip_adj_fix = rctx->gs_tri_strip_adj_fix;
 		break;
-	case PIPE_SHADER_FRAGMENT: {
+	case MESA_SHADER_FRAGMENT: {
 		if (rctx->ps_shader->info.images_declared)
-			key->ps.image_size_const_offset = util_last_bit(rctx->samplers[PIPE_SHADER_FRAGMENT].views.enabled_mask);
-		key->ps.first_atomic_counter = r600_get_hw_atomic_count(ctx, PIPE_SHADER_FRAGMENT);
+			key->ps.image_size_const_offset = util_last_bit(rctx->samplers[MESA_SHADER_FRAGMENT].views.enabled_mask);
+		key->ps.first_atomic_counter = r600_get_hw_atomic_count(ctx, MESA_SHADER_FRAGMENT);
 		key->ps.color_two_side = rctx->rasterizer && rctx->rasterizer->two_side;
 		key->ps.alpha_to_one = rctx->alpha_to_one &&
 				      rctx->rasterizer && rctx->rasterizer->multisample_enable &&
@@ -866,7 +866,7 @@ r600_shader_precompile_key(const struct pipe_context *ctx,
 	case MESA_SHADER_GEOMETRY:
 		break;
 
-	case PIPE_SHADER_FRAGMENT:
+	case MESA_SHADER_FRAGMENT:
 		key->ps.image_size_const_offset = sel->info.file_max[TGSI_FILE_IMAGE];
 
 		/* This is used for gl_FragColor output expansion to the number
@@ -1035,7 +1035,7 @@ static void *r600_create_shader_state(struct pipe_context *ctx,
 static void *r600_create_ps_state(struct pipe_context *ctx,
 					 const struct pipe_shader_state *state)
 {
-	return r600_create_shader_state(ctx, state, PIPE_SHADER_FRAGMENT);
+	return r600_create_shader_state(ctx, state, MESA_SHADER_FRAGMENT);
 }
 
 static void *r600_create_vs_state(struct pipe_context *ctx,
@@ -1357,7 +1357,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 		}
 
 		else if (info->ps_sample_pos_dirty) {
-			assert(sh == PIPE_SHADER_FRAGMENT);
+			assert(sh == MESA_SHADER_FRAGMENT);
 			if (!size) {
 				ptr = rctx->sample_positions;
 				size = R600_UCP_SIZE;
@@ -1397,7 +1397,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 			assert (size);
 			if (sh == last_vertex_stage)
 				memcpy(ptr, rctx->clip_state.state.ucp, R600_UCP_SIZE);
-			if (sh == PIPE_SHADER_FRAGMENT)
+			if (sh == MESA_SHADER_FRAGMENT)
 				memcpy(ptr, rctx->sample_positions, R600_UCP_SIZE);
 			if (sh == PIPE_SHADER_COMPUTE)
 				memcpy(ptr, rctx->cs_block_grid_sizes, R600_CS_BLOCK_GRID_SIZE);
@@ -1495,7 +1495,7 @@ void eg_setup_buffer_constants(struct r600_context *rctx, int shader_type)
 	uint32_t *constants;
 	uint32_t base_offset;
 
-	if (shader_type == PIPE_SHADER_FRAGMENT) {
+	if (shader_type == MESA_SHADER_FRAGMENT) {
 		images = &rctx->fragment_images;
 	} else if (shader_type == PIPE_SHADER_COMPUTE) {
 		images = &rctx->compute_images;
@@ -1552,7 +1552,7 @@ void r600_set_sample_locations_constant_buffer(struct r600_context *rctx)
 		rctx->sample_positions[4*i + 3] = rctx->sample_positions[4*i + 1] - 0.5f;
 	}
 
-	rctx->driver_consts[PIPE_SHADER_FRAGMENT].ps_sample_pos_dirty = true;
+	rctx->driver_consts[MESA_SHADER_FRAGMENT].ps_sample_pos_dirty = true;
 }
 
 static void update_shader_atom(struct pipe_context *ctx,
@@ -1999,9 +1999,9 @@ static bool r600_update_derived_state(struct r600_context *rctx)
 		need_buf_const = rctx->ps_shader->current->shader.uses_tex_buffers || rctx->ps_shader->current->shader.has_txq_cube_array_z_comp;
 		if (need_buf_const) {
 			if (rctx->b.gfx_level < EVERGREEN)
-				r600_setup_buffer_constants(rctx, PIPE_SHADER_FRAGMENT);
+				r600_setup_buffer_constants(rctx, MESA_SHADER_FRAGMENT);
 			else
-				eg_setup_buffer_constants(rctx, PIPE_SHADER_FRAGMENT);
+				eg_setup_buffer_constants(rctx, MESA_SHADER_FRAGMENT);
 		}
 	}
 

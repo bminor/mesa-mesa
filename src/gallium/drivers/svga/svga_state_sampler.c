@@ -355,7 +355,7 @@ update_sampler_resources(struct svga_context *svga, uint64_t dirty)
       surface = svga_resource_handle(sv->base.texture);
       ret = SVGA3D_vgpu10_SetShaderResources(
                svga->swc,
-               svga_shader_type(PIPE_SHADER_FRAGMENT),
+               svga_shader_type(MESA_SHADER_FRAGMENT),
                unit, /* startView */
                1,
                &sv->id,
@@ -395,7 +395,7 @@ update_samplers(struct svga_context *svga, uint64_t dirty )
          const struct svga_sampler_state *sampler = svga->curr.sampler[shader][i];
 
          /* _NEW_FS */
-         if (shader == PIPE_SHADER_FRAGMENT) {
+         if (shader == MESA_SHADER_FRAGMENT) {
             struct svga_fs_variant *fs =
                svga_fs_variant(svga->state.hw_draw.fs);
 
@@ -493,7 +493,7 @@ update_samplers(struct svga_context *svga, uint64_t dirty )
          return PIPE_OK; /* probably out of memory */
       }
 
-      if (svga->state.hw_draw.samplers[PIPE_SHADER_FRAGMENT][unit]
+      if (svga->state.hw_draw.samplers[MESA_SHADER_FRAGMENT][unit]
           != sampler->id[0]) {
          ret = SVGA3D_vgpu10_SetSamplers(svga->swc,
                                          1, /* count */
@@ -504,10 +504,10 @@ update_samplers(struct svga_context *svga, uint64_t dirty )
             return ret;
 
          /* save the polygon stipple sampler in the hw draw state */
-         svga->state.hw_draw.samplers[PIPE_SHADER_FRAGMENT][unit] =
+         svga->state.hw_draw.samplers[MESA_SHADER_FRAGMENT][unit] =
             sampler->id[0];
       }
-      svga->state.hw_draw.num_samplers[PIPE_SHADER_FRAGMENT]++;
+      svga->state.hw_draw.num_samplers[MESA_SHADER_FRAGMENT]++;
    }
 
    return ret;

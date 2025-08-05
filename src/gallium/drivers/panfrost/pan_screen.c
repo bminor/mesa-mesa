@@ -495,7 +495,7 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
 
       switch (i) {
       case MESA_SHADER_VERTEX:
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
       case PIPE_SHADER_COMPUTE:
          break;
       default:
@@ -515,7 +515,7 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
       caps->max_control_flow_depth = 1024; /* arbitrary */
       /* Used as ABI on Midgard */
       caps->max_inputs = dev->arch >= 9 ? 32 : 16;
-      caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : PIPE_MAX_ATTRIBS;
+      caps->max_outputs = i == MESA_SHADER_FRAGMENT ? 8 : PIPE_MAX_ATTRIBS;
       caps->max_temps = 256; /* arbitrary */
       caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
       STATIC_ASSERT(PAN_MAX_CONST_BUFFERS < 0x100);

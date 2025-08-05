@@ -303,7 +303,7 @@ ttn_emit_declaration(struct ttn_compile *c)
             var->data.mode = nir_var_shader_in;
             nir_variable_set_namef(b->shader, var, "in_%d", idx);
 
-            if (c->scan->processor == PIPE_SHADER_FRAGMENT) {
+            if (c->scan->processor == MESA_SHADER_FRAGMENT) {
                if (decl->Semantic.Name == TGSI_SEMANTIC_FACE) {
                   var->type = glsl_bool_type();
                   if (c->cap_face_is_sysval) {
@@ -367,7 +367,7 @@ ttn_emit_declaration(struct ttn_compile *c)
                               semantic_name == TGSI_SEMANTIC_TESSOUTER ||
                               semantic_name == TGSI_SEMANTIC_PATCH;
 
-            if (c->scan->processor == PIPE_SHADER_FRAGMENT) {
+            if (c->scan->processor == MESA_SHADER_FRAGMENT) {
                switch (semantic_name) {
                case TGSI_SEMANTIC_COLOR: {
                   /* TODO tgsi loses some information, so we cannot
@@ -646,15 +646,15 @@ ttn_src_for_file_and_index(struct ttn_compile *c, unsigned file, unsigned index,
    }
 
    case TGSI_FILE_INPUT:
-      if (c->scan->processor == PIPE_SHADER_FRAGMENT &&
+      if (c->scan->processor == MESA_SHADER_FRAGMENT &&
           c->scan->input_semantic_name[index] == TGSI_SEMANTIC_FACE) {
          assert(!c->cap_face_is_sysval && c->input_var_face);
          return nir_src_for_ssa(ttn_emulate_tgsi_front_face(c));
-      } else if (c->scan->processor == PIPE_SHADER_FRAGMENT &&
+      } else if (c->scan->processor == MESA_SHADER_FRAGMENT &&
           c->scan->input_semantic_name[index] == TGSI_SEMANTIC_POSITION) {
          assert(!c->cap_position_is_sysval && c->input_var_position);
          return nir_src_for_ssa(nir_load_var(&c->build, c->input_var_position));
-      } else if (c->scan->processor == PIPE_SHADER_FRAGMENT &&
+      } else if (c->scan->processor == MESA_SHADER_FRAGMENT &&
           c->scan->input_semantic_name[index] == TGSI_SEMANTIC_PCOORD) {
          assert(!c->cap_point_is_sysval && c->input_var_point);
          return nir_src_for_ssa(nir_load_var(&c->build, c->input_var_point));
@@ -668,7 +668,7 @@ ttn_src_for_file_and_index(struct ttn_compile *c, unsigned file, unsigned index,
       break;
 
    case TGSI_FILE_OUTPUT:
-      if (c->scan->processor == PIPE_SHADER_FRAGMENT) {
+      if (c->scan->processor == MESA_SHADER_FRAGMENT) {
          c->outputs[index]->data.fb_fetch_output = 1;
          nir_deref_instr *deref = nir_build_deref_var(&c->build,
                                                       c->outputs[index]);

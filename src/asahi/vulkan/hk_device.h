@@ -142,7 +142,7 @@ hk_device_scratch_locked(struct hk_device *dev, enum pipe_shader_type stage)
    simple_mtx_assert_locked(&dev->scratch.lock);
 
    switch (stage) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       return &dev->scratch.fs;
    case MESA_SHADER_VERTEX:
       return &dev->scratch.vs;

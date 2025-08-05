@@ -240,7 +240,7 @@ vc4_emit_gl_shader_state(struct vc4_context *vc4,
         }
 
         vc4_write_uniforms(vc4, vc4->prog.fs,
-                           &vc4->constbuf[PIPE_SHADER_FRAGMENT],
+                           &vc4->constbuf[MESA_SHADER_FRAGMENT],
                            &vc4->fragtex);
         vc4_write_uniforms(vc4, vc4->prog.vs,
                            &vc4->constbuf[MESA_SHADER_VERTEX],

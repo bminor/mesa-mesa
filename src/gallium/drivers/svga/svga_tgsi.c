@@ -126,7 +126,7 @@ svga_shader_emit_header(struct svga_shader_emitter *emit)
    memset(&header, 0, sizeof header);
 
    switch (emit->unit) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       header.value = SVGA3D_PS_30;
       break;
    case MESA_SHADER_VERTEX:
@@ -173,7 +173,7 @@ svga_tgsi_vgpu9_translate(struct svga_context *svga,
 
    emit.imm_start = emit.info.file_max[TGSI_FILE_CONSTANT] + 1;
 
-   if (unit == PIPE_SHADER_FRAGMENT)
+   if (unit == MESA_SHADER_FRAGMENT)
       emit.imm_start += key->num_unnormalized_coords;
 
    if (unit == MESA_SHADER_VERTEX) {
@@ -219,7 +219,7 @@ svga_tgsi_vgpu9_translate(struct svga_context *svga,
    memcpy(&variant->key, key, sizeof(*key));
    variant->id = UTIL_BITMASK_INVALID_INDEX;
 
-   if (unit == PIPE_SHADER_FRAGMENT) {
+   if (unit == MESA_SHADER_FRAGMENT) {
       struct svga_fs_variant *fs_variant = svga_fs_variant(variant);
 
       fs_variant->pstipple_sampler_unit = emit.pstipple_sampler_unit;
@@ -433,7 +433,7 @@ svga_tgsi_scan_shader(struct svga_shader *shader)
    /* Convert TGSI outputs semantic.
     * Fragment shader does not have varying outputs but fragment results.
     */
-   if (shader->stage == PIPE_SHADER_FRAGMENT) {
+   if (shader->stage == MESA_SHADER_FRAGMENT) {
       for (unsigned i = 0; i < info->num_outputs; i++) {
          info->output_semantic_name[i] =
             svga_tgsi_to_gl_frag_result_semantic(
@@ -455,7 +455,7 @@ svga_tgsi_scan_shader(struct svga_shader *shader)
    info->constbuf0_num_uniforms = tgsi_info->const_file_max[0] + 1;
 
    switch (tgsi_info->processor) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       info->fs.color0_writes_all_cbufs =
          tgsi_info->properties[TGSI_PROPERTY_FS_COLOR0_WRITES_ALL_CBUFS];
       break;

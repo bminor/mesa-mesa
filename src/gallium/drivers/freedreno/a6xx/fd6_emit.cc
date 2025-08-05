@@ -675,7 +675,7 @@ fd6_emit_3d_state(struct fd_ringbuffer *ring, struct fd6_emit *emit)
          fd6_state_take_group(&emit->state, state, FD6_GROUP_GS_BINDLESS);
          break;
       case FD6_GROUP_FS_BINDLESS:
-         state = fd6_build_bindless_state<CHIP>(ctx, PIPE_SHADER_FRAGMENT, fs->fb_read);
+         state = fd6_build_bindless_state<CHIP>(ctx, MESA_SHADER_FRAGMENT, fs->fb_read);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_FS_BINDLESS);
          break;
       case FD6_GROUP_CONST:
@@ -709,7 +709,7 @@ fd6_emit_3d_state(struct fd_ringbuffer *ring, struct fd6_emit *emit)
          fd6_state_take_group(&emit->state, state, FD6_GROUP_GS_TEX);
          break;
       case FD6_GROUP_FS_TEX:
-         state = tex_state(ctx, PIPE_SHADER_FRAGMENT);
+         state = tex_state(ctx, MESA_SHADER_FRAGMENT);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_FS_TEX);
          break;
       case FD6_GROUP_SO:

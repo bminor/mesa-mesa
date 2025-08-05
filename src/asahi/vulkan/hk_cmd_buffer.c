@@ -645,7 +645,7 @@ hk_reserve_scratch(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
               _mesa_shader_stage_to_abbrev(s->b.info.stage));
 
    switch (s->b.info.stage) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       cs->scratch.fs.main = true;
       cs->scratch.fs.preamble = MAX2(cs->scratch.fs.preamble, preamble_size);
       break;

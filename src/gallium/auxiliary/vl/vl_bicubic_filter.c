@@ -161,12 +161,12 @@ create_frag_shader(struct vl_bicubic_filter *filter, unsigned video_width,
    struct ureg_dst t;
    unsigned i;
 
-   if (screen->shader_caps[PIPE_SHADER_FRAGMENT].max_temps < 23) {
+   if (screen->shader_caps[MESA_SHADER_FRAGMENT].max_temps < 23) {
 
       return NULL;
    }
 
-   shader = ureg_create(PIPE_SHADER_FRAGMENT);
+   shader = ureg_create(MESA_SHADER_FRAGMENT);
    if (!shader) {
       return NULL;
    }
@@ -449,13 +449,13 @@ vl_bicubic_filter_render(struct vl_bicubic_filter *filter,
    filter->pipe->clear_render_target(filter->pipe, dst, &clear_color,
                                      0, 0, pipe_surface_width(dst),
                                      pipe_surface_height(dst), false);
-   filter->pipe->set_constant_buffer(filter->pipe, PIPE_SHADER_FRAGMENT,
+   filter->pipe->set_constant_buffer(filter->pipe, MESA_SHADER_FRAGMENT,
                                      0, false, &cb);
    filter->pipe->bind_rasterizer_state(filter->pipe, filter->rs_state);
    filter->pipe->bind_blend_state(filter->pipe, filter->blend);
-   filter->pipe->bind_sampler_states(filter->pipe, PIPE_SHADER_FRAGMENT,
+   filter->pipe->bind_sampler_states(filter->pipe, MESA_SHADER_FRAGMENT,
                                      0, 1, &filter->sampler);
-   filter->pipe->set_sampler_views(filter->pipe, PIPE_SHADER_FRAGMENT,
+   filter->pipe->set_sampler_views(filter->pipe, MESA_SHADER_FRAGMENT,
                                    0, 1, 0, &src);
    filter->pipe->bind_vs_state(filter->pipe, filter->vs);
    filter->pipe->bind_fs_state(filter->pipe, filter->fs);

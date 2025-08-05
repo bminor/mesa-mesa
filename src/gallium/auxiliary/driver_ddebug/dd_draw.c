@@ -268,7 +268,7 @@ dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
    shader_str[MESA_SHADER_TESS_CTRL] = "TESS_CTRL";
    shader_str[MESA_SHADER_TESS_EVAL] = "TESS_EVAL";
    shader_str[MESA_SHADER_GEOMETRY] = "GEOMETRY";
-   shader_str[PIPE_SHADER_FRAGMENT] = "FRAGMENT";
+   shader_str[MESA_SHADER_FRAGMENT] = "FRAGMENT";
    shader_str[PIPE_SHADER_COMPUTE] = "COMPUTE";
 
    if (sh == MESA_SHADER_TESS_CTRL &&
@@ -283,7 +283,7 @@ dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
               dstate->tess_default_levels[4],
               dstate->tess_default_levels[5]);
 
-   if (sh == PIPE_SHADER_FRAGMENT)
+   if (sh == MESA_SHADER_FRAGMENT)
       if (dstate->rs) {
          unsigned num_viewports = dd_num_active_viewports(dstate);
 

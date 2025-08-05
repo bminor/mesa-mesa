@@ -203,7 +203,7 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
           vscreen->caps.caps.v2.max_vertex_attribs : 32);
 
       switch (i) {
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          caps->max_outputs = vscreen->caps.caps.v1.max_render_targets;
          break;
       case MESA_SHADER_TESS_CTRL:
@@ -238,14 +238,14 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
       int max_shader_buffers = VIRGL_SHADER_STAGE_CAP_V2(max_shader_storage_blocks, i);
       if (max_shader_buffers != INT_MAX) {
          caps->max_shader_buffers = max_shader_buffers;
-      } else if (i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) {
+      } else if (i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) {
          caps->max_shader_buffers = vscreen->caps.caps.v2.max_shader_buffer_frag_compute;
       } else {
          caps->max_shader_buffers = vscreen->caps.caps.v2.max_shader_buffer_other_stages;
       }
 
       caps->max_shader_images =
-         i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE ?
+         i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE ?
          vscreen->caps.caps.v2.max_shader_image_frag_compute :
          vscreen->caps.caps.v2.max_shader_image_other_stages;
 

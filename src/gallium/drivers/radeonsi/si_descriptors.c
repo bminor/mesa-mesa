@@ -480,7 +480,7 @@ static void si_set_sampler_views(struct si_context *sctx, unsigned shader,
                      }
                   }
 
-                  if (shader == PIPE_SHADER_FRAGMENT &&
+                  if (shader == MESA_SHADER_FRAGMENT &&
                       vi_dcc_enabled(tex, sview->base.u.tex.first_level) &&
                       p_atomic_read(&tex->framebuffers_bound))
                      sctx->need_check_render_feedback = true;
@@ -791,7 +791,7 @@ static void si_set_shader_image(struct si_context *ctx, unsigned shader, unsigne
             images->display_dcc_store_mask &= ~(1u << slot);
          }
 
-         if (shader == PIPE_SHADER_FRAGMENT && vi_dcc_enabled(tex, level) &&
+         if (shader == MESA_SHADER_FRAGMENT && vi_dcc_enabled(tex, level) &&
              p_atomic_read(&tex->framebuffers_bound))
             ctx->need_check_render_feedback = true;
       }
@@ -1182,7 +1182,7 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
 void si_get_inline_uniform_state(union si_shader_key *key, enum pipe_shader_type shader,
                                  bool *inline_uniforms, uint32_t **inlined_values)
 {
-   if (shader == PIPE_SHADER_FRAGMENT) {
+   if (shader == MESA_SHADER_FRAGMENT) {
       *inline_uniforms = key->ps.opt.inline_uniforms;
       *inlined_values = key->ps.opt.inlined_uniform_values;
    } else {
@@ -1201,7 +1201,7 @@ void si_invalidate_inlinable_uniforms(struct si_context *sctx, enum pipe_shader_
    si_get_inline_uniform_state(&sctx->shaders[shader].key, shader, &inline_uniforms, &inlined_values);
 
    if (inline_uniforms) {
-      if (shader == PIPE_SHADER_FRAGMENT)
+      if (shader == MESA_SHADER_FRAGMENT)
          sctx->shaders[shader].key.ps.opt.inline_uniforms = false;
       else
          sctx->shaders[shader].key.ge.opt.inline_uniforms = false;
@@ -1255,7 +1255,7 @@ static void si_set_inlinable_constants(struct pipe_context *ctx,
 
    if (!inline_uniforms) {
       /* It's the first time we set the constants. Always update shaders. */
-      if (shader == PIPE_SHADER_FRAGMENT)
+      if (shader == MESA_SHADER_FRAGMENT)
          sctx->shaders[shader].key.ps.opt.inline_uniforms = true;
       else
          sctx->shaders[shader].key.ge.opt.inline_uniforms = true;
@@ -2240,7 +2240,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
                                              sh_base[MESA_SHADER_TESS_EVAL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
-                                             sh_base[PIPE_SHADER_FRAGMENT], gfx);
+                                             sh_base[MESA_SHADER_FRAGMENT], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
                                              sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
@@ -2270,7 +2270,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
                                              sh_base[MESA_SHADER_TESS_EVAL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
-                                             sh_base[PIPE_SHADER_FRAGMENT], gfx);
+                                             sh_base[MESA_SHADER_FRAGMENT], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
                                              sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
@@ -2301,7 +2301,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
                                           sh_base[MESA_SHADER_TESS_EVAL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
-                                          sh_base[PIPE_SHADER_FRAGMENT], gfx);
+                                          sh_base[MESA_SHADER_FRAGMENT], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
                                           sh_base[MESA_SHADER_TESS_CTRL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
@@ -2967,7 +2967,7 @@ void si_init_all_descriptors(struct si_context *sctx)
    si_set_user_data_base(sctx, MESA_SHADER_GEOMETRY,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
                                                NGG_OFF, MESA_SHADER_GEOMETRY));
-   si_set_user_data_base(sctx, PIPE_SHADER_FRAGMENT, R_00B030_SPI_SHADER_USER_DATA_PS_0);
+   si_set_user_data_base(sctx, MESA_SHADER_FRAGMENT, R_00B030_SPI_SHADER_USER_DATA_PS_0);
 }
 
 void si_release_all_descriptors(struct si_context *sctx)

@@ -813,8 +813,8 @@ fd3_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
    if (ctx->dirty_shader[MESA_SHADER_VERTEX] & FD_DIRTY_SHADER_TEX)
       emit_textures(ctx, ring, SB_VERT_TEX, &ctx->tex[MESA_SHADER_VERTEX]);
 
-   if (ctx->dirty_shader[PIPE_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX)
-      emit_textures(ctx, ring, SB_FRAG_TEX, &ctx->tex[PIPE_SHADER_FRAGMENT]);
+   if (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX)
+      emit_textures(ctx, ring, SB_FRAG_TEX, &ctx->tex[MESA_SHADER_FRAGMENT]);
 }
 
 /* emit setup at begin of new cmdstream buffer (don't rely on previous

@@ -165,7 +165,7 @@ svga_init_swtnl(struct svga_context *svga)
    util_blitter_cache_all_shaders(svga->blitter);
 
    const nir_alu_type bool_type =
-      screen->screen.shader_caps[PIPE_SHADER_FRAGMENT].integers ?
+      screen->screen.shader_caps[MESA_SHADER_FRAGMENT].integers ?
       nir_type_bool32 : nir_type_float32;
 
    if (!screen->haveLineSmooth)

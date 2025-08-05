@@ -135,11 +135,11 @@ vc4_has_feature(struct vc4_screen *screen, uint32_t feature)
 static void
 vc4_init_shader_caps(struct vc4_screen *screen)
 {
-        for (unsigned i = 0; i <= PIPE_SHADER_FRAGMENT; i++) {
+        for (unsigned i = 0; i <= MESA_SHADER_FRAGMENT; i++) {
                 struct pipe_shader_caps *caps =
                         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
-                if (i != MESA_SHADER_VERTEX && i != PIPE_SHADER_FRAGMENT)
+                if (i != MESA_SHADER_VERTEX && i != MESA_SHADER_FRAGMENT)
                         continue;
 
                 caps->max_instructions =
@@ -149,7 +149,7 @@ vc4_init_shader_caps(struct vc4_screen *screen)
 
                 caps->max_control_flow_depth = screen->has_control_flow;
                 caps->max_inputs = 8;
-                caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 1 : 8;
+                caps->max_outputs = i == MESA_SHADER_FRAGMENT ? 1 : 8;
                 caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
                 caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
                 caps->max_const_buffers = 1;

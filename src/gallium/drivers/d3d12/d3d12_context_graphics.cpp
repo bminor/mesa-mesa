@@ -1097,7 +1097,7 @@ static void *
 d3d12_create_fs_state(struct pipe_context *pctx,
                       const struct pipe_shader_state *shader)
 {
-   return d3d12_create_shader(d3d12_context(pctx), PIPE_SHADER_FRAGMENT, shader);
+   return d3d12_create_shader(d3d12_context(pctx), MESA_SHADER_FRAGMENT, shader);
 }
 
 static void
@@ -1105,7 +1105,7 @@ d3d12_bind_fs_state(struct pipe_context *pctx,
                     void *fss)
 {
    struct d3d12_context* ctx = d3d12_context(pctx);
-   bind_stage(ctx, PIPE_SHADER_FRAGMENT,
+   bind_stage(ctx, MESA_SHADER_FRAGMENT,
               (struct d3d12_shader_selector *) fss);
    ctx->has_flat_varyings = has_flat_varyings(ctx);
    ctx->missing_dual_src_outputs = missing_dual_src_outputs(ctx) != 0;
@@ -1116,7 +1116,7 @@ static void
 d3d12_delete_fs_state(struct pipe_context *pctx,
                       void *fs)
 {
-   delete_shader(d3d12_context(pctx), PIPE_SHADER_FRAGMENT,
+   delete_shader(d3d12_context(pctx), MESA_SHADER_FRAGMENT,
                  (struct d3d12_shader_selector *) fs);
 }
 
@@ -1950,7 +1950,7 @@ d3d12_clear_render_target(struct pipe_context *pctx,
       util_blitter_save_vertex_elements(ctx->blitter, ctx->gfx_pipeline_state.ves);
       util_blitter_save_stencil_ref(ctx->blitter, &ctx->stencil_ref);
       util_blitter_save_rasterizer(ctx->blitter, ctx->gfx_pipeline_state.rast);
-      util_blitter_save_fragment_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_FRAGMENT]);
+      util_blitter_save_fragment_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_FRAGMENT]);
       util_blitter_save_vertex_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_VERTEX]);
       util_blitter_save_geometry_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_GEOMETRY]);
       util_blitter_save_tessctrl_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_TESS_CTRL]);
@@ -1960,12 +1960,12 @@ d3d12_clear_render_target(struct pipe_context *pctx,
       util_blitter_save_viewport(ctx->blitter, ctx->viewport_states);
       util_blitter_save_scissor(ctx->blitter, ctx->scissor_states);
       util_blitter_save_fragment_sampler_states(ctx->blitter,
-                                                ctx->num_samplers[PIPE_SHADER_FRAGMENT],
-                                                (void **)ctx->samplers[PIPE_SHADER_FRAGMENT]);
+                                                ctx->num_samplers[MESA_SHADER_FRAGMENT],
+                                                (void **)ctx->samplers[MESA_SHADER_FRAGMENT]);
       util_blitter_save_fragment_sampler_views(ctx->blitter,
-                                               ctx->num_sampler_views[PIPE_SHADER_FRAGMENT],
-                                               ctx->sampler_views[PIPE_SHADER_FRAGMENT]);
-      util_blitter_save_fragment_constant_buffer_slot(ctx->blitter, ctx->cbufs[PIPE_SHADER_FRAGMENT]);
+                                               ctx->num_sampler_views[MESA_SHADER_FRAGMENT],
+                                               ctx->sampler_views[MESA_SHADER_FRAGMENT]);
+      util_blitter_save_fragment_constant_buffer_slot(ctx->blitter, ctx->cbufs[MESA_SHADER_FRAGMENT]);
       util_blitter_save_vertex_buffers(ctx->blitter, ctx->vbs, ctx->num_vbs);
       util_blitter_save_sample_mask(ctx->blitter, ctx->gfx_pipeline_state.sample_mask, 0);
       util_blitter_save_so_targets(ctx->blitter, ctx->gfx_pipeline_state.num_so_targets, ctx->so_targets,
@@ -2165,7 +2165,7 @@ d3d12_set_tess_state(struct pipe_context *pctx,
 bool
 d3d12_need_zero_one_depth_range(struct d3d12_context *ctx)
 {
-   struct d3d12_shader_selector *fs = ctx->gfx_stages[PIPE_SHADER_FRAGMENT];
+   struct d3d12_shader_selector *fs = ctx->gfx_stages[MESA_SHADER_FRAGMENT];
 
    /**
     * OpenGL Compatibility spec, section 15.2.3 (Shader Outputs) says

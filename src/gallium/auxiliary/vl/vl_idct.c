@@ -200,7 +200,7 @@ create_mismatch_frag_shader(struct vl_idct *idct)
 
    unsigned i;
 
-   shader = ureg_create(PIPE_SHADER_FRAGMENT);
+   shader = ureg_create(MESA_SHADER_FRAGMENT);
    if (!shader)
       return NULL;
 
@@ -327,7 +327,7 @@ create_stage1_frag_shader(struct vl_idct *idct)
    unsigned i;
    int j;
 
-   shader = ureg_create(PIPE_SHADER_FRAGMENT);
+   shader = ureg_create(MESA_SHADER_FRAGMENT);
    if (!shader)
       return NULL;
 
@@ -820,10 +820,10 @@ vl_idct_flush(struct vl_idct *idct, struct vl_idct_buffer *buffer, unsigned num_
    idct->pipe->bind_rasterizer_state(idct->pipe, idct->rs_state);
    idct->pipe->bind_blend_state(idct->pipe, idct->blend);
 
-   idct->pipe->bind_sampler_states(idct->pipe, PIPE_SHADER_FRAGMENT,
+   idct->pipe->bind_sampler_states(idct->pipe, MESA_SHADER_FRAGMENT,
                                    0, 2, idct->samplers);
 
-   idct->pipe->set_sampler_views(idct->pipe, PIPE_SHADER_FRAGMENT, 0, 2, 0,
+   idct->pipe->set_sampler_views(idct->pipe, MESA_SHADER_FRAGMENT, 0, 2, 0,
                                  buffer->sampler_views.stage[0]);
 
    /* mismatch control */
@@ -848,8 +848,8 @@ vl_idct_prepare_stage2(struct vl_idct *idct, struct vl_idct_buffer *buffer)
 
    /* second stage */
    idct->pipe->bind_rasterizer_state(idct->pipe, idct->rs_state);
-   idct->pipe->bind_sampler_states(idct->pipe, PIPE_SHADER_FRAGMENT,
+   idct->pipe->bind_sampler_states(idct->pipe, MESA_SHADER_FRAGMENT,
                                    0, 2, idct->samplers);
-   idct->pipe->set_sampler_views(idct->pipe, PIPE_SHADER_FRAGMENT,
+   idct->pipe->set_sampler_views(idct->pipe, MESA_SHADER_FRAGMENT,
                                  0, 2, 0, buffer->sampler_views.stage[1]);
 }

@@ -410,7 +410,7 @@ st_update_fragment_samplers(struct st_context *st)
    const struct gl_context *ctx = st->ctx;
 
    update_shader_samplers(st,
-                          PIPE_SHADER_FRAGMENT,
+                          MESA_SHADER_FRAGMENT,
                           ctx->FragmentProgram._Current,
                           st->state.frag_samplers,
                           &st->state.num_frag_samplers);

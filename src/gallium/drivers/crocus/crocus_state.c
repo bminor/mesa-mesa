@@ -2318,7 +2318,7 @@ crocus_bind_sampler_states(struct pipe_context *ctx,
 
    if (dirty) {
 #if GFX_VER <= 5
-      if (p_stage == PIPE_SHADER_FRAGMENT)
+      if (p_stage == MESA_SHADER_FRAGMENT)
          ice->state.dirty |= CROCUS_DIRTY_WM;
       else if (p_stage == MESA_SHADER_VERTEX)
          ice->state.stage_dirty |= CROCUS_STAGE_DIRTY_VS;

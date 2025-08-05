@@ -911,7 +911,7 @@ tc_add_all_gfx_bindings_to_buffer_list(struct threaded_context *tc)
       tc_add_bindings_to_buffer_list(buffer_list, tc->streamout_buffers, PIPE_MAX_SO_BUFFERS);
 
    tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_VERTEX);
-   tc_add_shader_bindings_to_buffer_list(tc, buffer_list, PIPE_SHADER_FRAGMENT);
+   tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_FRAGMENT);
 
    if (tc->seen_tcs)
       tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_TESS_CTRL);
@@ -955,7 +955,7 @@ tc_rebind_buffer(struct threaded_context *tc, uint32_t old_id, uint32_t new_id, 
    unsigned rebound = vbo + so;
 
    rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_VERTEX, rebind_mask);
-   rebound += tc_rebind_shader_bindings(tc, old_id, new_id, PIPE_SHADER_FRAGMENT, rebind_mask);
+   rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_FRAGMENT, rebind_mask);
 
    if (tc->seen_tcs)
       rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_TESS_CTRL, rebind_mask);
@@ -1007,7 +1007,7 @@ tc_is_buffer_bound_for_write(struct threaded_context *tc, uint32_t id)
       return true;
 
    if (tc_is_buffer_shader_bound_for_write(tc, id, MESA_SHADER_VERTEX) ||
-       tc_is_buffer_shader_bound_for_write(tc, id, PIPE_SHADER_FRAGMENT) ||
+       tc_is_buffer_shader_bound_for_write(tc, id, MESA_SHADER_FRAGMENT) ||
        tc_is_buffer_shader_bound_for_write(tc, id, PIPE_SHADER_COMPUTE))
       return true;
 
@@ -5508,13 +5508,13 @@ threaded_context_create(struct pipe_context *pipe,
    /* If you have different limits in each shader stage, set the maximum. */
    struct pipe_screen *screen = pipe->screen;;
    tc->max_const_buffers =
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].max_const_buffers;
+      screen->shader_caps[MESA_SHADER_FRAGMENT].max_const_buffers;
    tc->max_shader_buffers =
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].max_shader_buffers;
+      screen->shader_caps[MESA_SHADER_FRAGMENT].max_shader_buffers;
    tc->max_images =
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].max_shader_images;
+      screen->shader_caps[MESA_SHADER_FRAGMENT].max_shader_images;
    tc->max_samplers =
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].max_texture_samplers;
+      screen->shader_caps[MESA_SHADER_FRAGMENT].max_texture_samplers;
 
    tc->base.set_context_param = tc_set_context_param; /* always set this */
 

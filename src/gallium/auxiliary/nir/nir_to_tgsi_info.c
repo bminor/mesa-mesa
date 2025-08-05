@@ -561,7 +561,7 @@ void nir_tgsi_scan_shader(const struct nir_shader *nir,
             info->writes_edgeflag = true;
             break;
          case TGSI_SEMANTIC_POSITION:
-            if (info->processor == PIPE_SHADER_FRAGMENT) {
+            if (info->processor == MESA_SHADER_FRAGMENT) {
                if (!variable->data.fb_fetch_output)
                   info->writes_z = true;
             } else {
@@ -632,7 +632,7 @@ void nir_tgsi_scan_shader(const struct nir_shader *nir,
    info->num_written_clipdistance = nir->info.clip_distance_array_size;
    info->num_written_culldistance = nir->info.cull_distance_array_size;
 
-   if (info->processor == PIPE_SHADER_FRAGMENT)
+   if (info->processor == MESA_SHADER_FRAGMENT)
       info->uses_kill = nir->info.fs.uses_discard;
 
    nir_function *func = (struct nir_function *)

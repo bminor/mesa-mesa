@@ -1275,7 +1275,7 @@ Shader_tgsi_translate(const unsigned *code,
    /* Header. */
    switch (parser.header.type) {
    case D3D10_SB_PIXEL_SHADER:
-      ureg = ureg_create(PIPE_SHADER_FRAGMENT);
+      ureg = ureg_create(MESA_SHADER_FRAGMENT);
       break;
    case D3D10_SB_VERTEX_SHADER:
       ureg = ureg_create(MESA_SHADER_VERTEX);

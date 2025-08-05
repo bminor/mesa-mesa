@@ -245,7 +245,7 @@ v3d_flag_dirty_sampler_state(struct v3d_context *v3d,
         case MESA_SHADER_GEOMETRY:
                 v3d->dirty |= V3D_DIRTY_GEOMTEX;
                 break;
-        case PIPE_SHADER_FRAGMENT:
+        case MESA_SHADER_FRAGMENT:
                 v3d->dirty |= V3D_DIRTY_FRAGTEX;
                 break;
         case PIPE_SHADER_COMPUTE:

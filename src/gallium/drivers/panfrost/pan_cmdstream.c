@@ -344,7 +344,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
       }
 
 #if PAN_ARCH >= 6
-      struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+      struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
       struct mali_internal_blend_packed *internal_blend_packed =
          (struct mali_internal_blend_packed *)&packed->opaque[2];
 
@@ -474,7 +474,7 @@ panfrost_prepare_fs_state(struct panfrost_context *ctx, uint64_t *blend_shaders,
 {
    struct pipe_rasterizer_state *rast = &ctx->rasterizer->base;
    const struct panfrost_zsa_state *zsa = ctx->depth_stencil;
-   struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
    struct panfrost_blend_state *so = ctx->blend;
    bool alpha_to_coverage = ctx->blend->base.alpha_to_coverage;
    bool msaa = rast->multisample;
@@ -609,7 +609,7 @@ panfrost_emit_frag_shader(struct panfrost_context *ctx,
 {
    const struct panfrost_zsa_state *zsa = ctx->depth_stencil;
    const struct panfrost_rasterizer *rast = ctx->rasterizer;
-   struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
 
    /* We need to merge several several partial renderer state descriptors,
     * so stage to temporary storage rather than reading back write-combine
@@ -657,10 +657,10 @@ static uint64_t
 panfrost_emit_frag_shader_meta(struct panfrost_batch *batch)
 {
    struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_compiled_shader *ss = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *ss = ctx->prog[MESA_SHADER_FRAGMENT];
 
-   panfrost_batch_add_bo(batch, ss->bin.bo, PIPE_SHADER_FRAGMENT);
-   panfrost_batch_add_bo(batch, ss->state.bo, PIPE_SHADER_FRAGMENT);
+   panfrost_batch_add_bo(batch, ss->bin.bo, MESA_SHADER_FRAGMENT);
+   panfrost_batch_add_bo(batch, ss->state.bo, MESA_SHADER_FRAGMENT);
 
    struct pan_ptr xfer;
 
@@ -855,7 +855,7 @@ panfrost_emit_depth_stencil(struct panfrost_batch *batch)
    struct panfrost_context *ctx = batch->ctx;
    const struct panfrost_zsa_state *zsa = ctx->depth_stencil;
    struct panfrost_rasterizer *rast = ctx->rasterizer;
-   struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
    bool back_enab = zsa->base.stencil[1].enabled;
 
    struct pan_ptr T = pan_pool_alloc_desc(&batch->pool.base, DEPTH_STENCIL);
@@ -2682,7 +2682,7 @@ panfrost_emit_varying_descriptor(struct panfrost_batch *batch,
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
-   struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
 
    uint16_t point_coord_mask = 0;
 
@@ -2934,7 +2934,7 @@ panfrost_emit_varying_descriptors(struct panfrost_batch *batch)
    struct panfrost_compiled_shader *vs =
       batch->ctx->prog[MESA_SHADER_VERTEX];
    struct panfrost_compiled_shader *fs =
-      batch->ctx->prog[PIPE_SHADER_FRAGMENT];
+      batch->ctx->prog[MESA_SHADER_FRAGMENT];
 
    const uint32_t vs_out_mask = vs->info.varyings.fixed_varyings;
    const uint32_t fs_in_mask = fs->info.varyings.fixed_varyings;
@@ -2945,7 +2945,7 @@ panfrost_emit_varying_descriptors(struct panfrost_batch *batch)
       pan_pool_alloc_desc_array(&batch->pool.base, fs_in_slots, ATTRIBUTE);
    struct mali_attribute_packed *descs = bufs.cpu;
 
-   batch->nr_varying_attribs[PIPE_SHADER_FRAGMENT] = fs_in_slots;
+   batch->nr_varying_attribs[MESA_SHADER_FRAGMENT] = fs_in_slots;
 
    const uint32_t varying_size = panfrost_vertex_attribute_stride(vs, fs);
 
@@ -2986,7 +2986,7 @@ panfrost_update_shader_state(struct panfrost_batch *batch,
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_compiled_shader *ss = ctx->prog[st];
 
-   bool frag = (st == PIPE_SHADER_FRAGMENT);
+   bool frag = (st == MESA_SHADER_FRAGMENT);
    unsigned dirty_3d = ctx->dirty;
    unsigned dirty = ctx->dirty_shader[st];
 
@@ -3067,7 +3067,7 @@ panfrost_update_state_3d(struct panfrost_batch *batch)
 
 #if PAN_ARCH >= 9
    if ((dirty & (PAN_DIRTY_ZS | PAN_DIRTY_RASTERIZER)) ||
-       (ctx->dirty_shader[PIPE_SHADER_FRAGMENT] & PAN_DIRTY_STAGE_SHADER))
+       (ctx->dirty_shader[MESA_SHADER_FRAGMENT] & PAN_DIRTY_STAGE_SHADER))
       batch->depth_stencil = panfrost_emit_depth_stencil(batch);
 
    if (dirty & PAN_DIRTY_BLEND)
@@ -3190,7 +3190,7 @@ panfrost_update_active_prim(struct panfrost_context *ctx,
 
    if ((ctx->dirty & PAN_DIRTY_RASTERIZER) ||
        (prev_prim != new_prim)) {
-      panfrost_update_shader_variant(ctx, PIPE_SHADER_FRAGMENT);
+      panfrost_update_shader_variant(ctx, MESA_SHADER_FRAGMENT);
    }
 }
 
@@ -3273,7 +3273,7 @@ panfrost_single_draw_direct(struct panfrost_batch *batch,
 
    panfrost_update_state_3d(batch);
    panfrost_update_shader_state(batch, MESA_SHADER_VERTEX);
-   panfrost_update_shader_state(batch, PIPE_SHADER_FRAGMENT);
+   panfrost_update_shader_state(batch, MESA_SHADER_FRAGMENT);
    panfrost_clean_state_3d(ctx);
 
    if (ctx->uncompiled[MESA_SHADER_VERTEX]->xfb) {
@@ -3418,7 +3418,7 @@ panfrost_draw_indirect(struct pipe_context *pipe,
 
    panfrost_update_state_3d(batch);
    panfrost_update_shader_state(batch, MESA_SHADER_VERTEX);
-   panfrost_update_shader_state(batch, PIPE_SHADER_FRAGMENT);
+   panfrost_update_shader_state(batch, MESA_SHADER_FRAGMENT);
    panfrost_clean_state_3d(ctx);
 
    /* Increment transform feedback offsets */
@@ -4376,7 +4376,7 @@ batch_get_polygon_list(struct panfrost_batch *batch)
 
       batch->tiler_ctx.midgard.polygon_list = batch->polygon_list_bo->ptr.gpu;
       panfrost_batch_add_bo(batch, batch->polygon_list_bo,
-                            PIPE_SHADER_FRAGMENT);
+                            MESA_SHADER_FRAGMENT);
 
       if (init_polygon_list && dev->model->quirks.no_hierarchical_tiling) {
          assert(batch->polygon_list_bo->ptr.cpu);

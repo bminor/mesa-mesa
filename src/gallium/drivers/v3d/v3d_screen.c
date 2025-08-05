@@ -125,7 +125,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
 
                 switch (i) {
                 case MESA_SHADER_VERTEX:
-                case PIPE_SHADER_FRAGMENT:
+                case MESA_SHADER_FRAGMENT:
                 case MESA_SHADER_GEOMETRY:
                         break;
                 case PIPE_SHADER_COMPUTE:
@@ -149,7 +149,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
                 case MESA_SHADER_GEOMETRY:
                         caps->max_inputs = V3D_MAX_GS_INPUTS / 4;
                         break;
-                case PIPE_SHADER_FRAGMENT:
+                case MESA_SHADER_FRAGMENT:
                         caps->max_inputs = V3D_MAX_FS_INPUTS / 4;
                         break;
                 default:
@@ -157,7 +157,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
                 }
 
                 caps->max_outputs =
-                        i == PIPE_SHADER_FRAGMENT ? 4 : V3D_MAX_FS_INPUTS / 4;
+                        i == MESA_SHADER_FRAGMENT ? 4 : V3D_MAX_FS_INPUTS / 4;
 
                 caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
                 /* Note: Limited by the offset size in

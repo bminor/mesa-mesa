@@ -33,7 +33,7 @@ FragmentShader::FragmentShader(const r600_shader_key& key):
 void
 FragmentShader::do_get_shader_info(r600_shader *sh_info)
 {
-   sh_info->processor_type = PIPE_SHADER_FRAGMENT;
+   sh_info->processor_type = MESA_SHADER_FRAGMENT;
 
    sh_info->ps_color_export_mask = m_color_export_mask;
    sh_info->ps_export_highest = m_export_highest;

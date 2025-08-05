@@ -776,7 +776,7 @@ svga_new_shader_variant(struct svga_context *svga, enum pipe_shader_type type)
    struct svga_shader_variant *variant;
 
    switch (type) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       variant = CALLOC(1, sizeof(struct svga_fs_variant));
       break;
    case MESA_SHADER_GEOMETRY:

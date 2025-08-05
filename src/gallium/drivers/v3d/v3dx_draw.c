@@ -320,7 +320,7 @@ v3d_emit_wait_for_tf_if_needed(struct v3d_context *v3d, struct v3d_job *job)
                          * read the resource then we could also avoid emitting
                          * the wait.
                          */
-                        if (s == PIPE_SHADER_FRAGMENT)
+                        if (s == MESA_SHADER_FRAGMENT)
                             continue;
 
                         if (v3d_state_reads_resource(v3d, prsc, s)) {
@@ -691,7 +691,7 @@ v3d_emit_gl_shader_state(struct v3d_context *v3d,
         /* Upload the uniforms to the indirect CL first */
         struct v3d_cl_reloc fs_uniforms =
                 v3d_write_uniforms(v3d, job, v3d->prog.fs,
-                                   PIPE_SHADER_FRAGMENT);
+                                   MESA_SHADER_FRAGMENT);
 
         struct v3d_cl_reloc gs_uniforms = { NULL, 0 };
         struct v3d_cl_reloc gs_bin_uniforms = { NULL, 0 };

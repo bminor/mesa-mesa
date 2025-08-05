@@ -169,7 +169,7 @@ create_ref_frag_shader(struct vl_mc *r)
    struct ureg_dst fragment;
    unsigned label;
 
-   shader = ureg_create(PIPE_SHADER_FRAGMENT);
+   shader = ureg_create(MESA_SHADER_FRAGMENT);
    if (!shader)
       return NULL;
 
@@ -320,7 +320,7 @@ create_ycbcr_frag_shader(struct vl_mc *r, float scale, bool invert,
    struct ureg_dst fragment;
    unsigned label;
 
-   shader = ureg_create(PIPE_SHADER_FRAGMENT);
+   shader = ureg_create(MESA_SHADER_FRAGMENT);
    if (!shader)
       return NULL;
 
@@ -620,9 +620,9 @@ vl_mc_render_ref(struct vl_mc *renderer, struct vl_mc_buffer *buffer, struct pip
    renderer->pipe->bind_vs_state(renderer->pipe, renderer->vs_ref);
    renderer->pipe->bind_fs_state(renderer->pipe, renderer->fs_ref);
 
-   renderer->pipe->set_sampler_views(renderer->pipe, PIPE_SHADER_FRAGMENT,
+   renderer->pipe->set_sampler_views(renderer->pipe, MESA_SHADER_FRAGMENT,
                                      0, 1, 0, &ref);
-   renderer->pipe->bind_sampler_states(renderer->pipe, PIPE_SHADER_FRAGMENT,
+   renderer->pipe->bind_sampler_states(renderer->pipe, MESA_SHADER_FRAGMENT,
                                        0, 1, &renderer->sampler_ref);
 
    util_draw_arrays_instanced(renderer->pipe, MESA_PRIM_QUADS, 0, 4, 0,

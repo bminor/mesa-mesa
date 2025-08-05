@@ -749,7 +749,7 @@ etna_emit_state(struct etna_context *ctx)
       if (need_steering)
          etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_UNIFORM);
 
-      etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[PIPE_SHADER_FRAGMENT].cb);
+      etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[MESA_SHADER_FRAGMENT].cb);
 
       if (screen->info->halti >= 5) {
          /* HALTI5 needs to be prompted to pre-fetch shaders */
@@ -770,7 +770,7 @@ etna_emit_state(struct etna_context *ctx)
          etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_UNIFORM);
 
       if (dirty & (uniform_dirty_bits | ctx->shader.fs->uniforms_dirty_bits))
-         etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[PIPE_SHADER_FRAGMENT].cb);
+         etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[MESA_SHADER_FRAGMENT].cb);
    }
 /**** End of state update ****/
 #undef EMIT_STATE

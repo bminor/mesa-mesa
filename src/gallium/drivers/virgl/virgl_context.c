@@ -800,7 +800,7 @@ static void *virgl_create_gs_state(struct pipe_context *ctx,
 static void *virgl_create_fs_state(struct pipe_context *ctx,
                                    const struct pipe_shader_state *shader)
 {
-   return virgl_shader_encoder(ctx, shader, PIPE_SHADER_FRAGMENT);
+   return virgl_shader_encoder(ctx, shader, MESA_SHADER_FRAGMENT);
 }
 
 static void
@@ -896,7 +896,7 @@ static void virgl_bind_fs_state(struct pipe_context *ctx,
    uint32_t handle = (unsigned long)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
-   virgl_encode_bind_shader(vctx, handle, PIPE_SHADER_FRAGMENT);
+   virgl_encode_bind_shader(vctx, handle, MESA_SHADER_FRAGMENT);
 }
 
 static void virgl_clear(struct pipe_context *ctx,
@@ -1410,7 +1410,7 @@ static void virgl_set_shader_buffers(struct pipe_context *ctx,
       }
    }
 
-   uint32_t max_shader_buffer = (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE) ?
+   uint32_t max_shader_buffer = (shader == MESA_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE) ?
       rs->caps.caps.v2.max_shader_buffer_frag_compute :
       rs->caps.caps.v2.max_shader_buffer_other_stages;
    if (!max_shader_buffer)
@@ -1469,7 +1469,7 @@ static void virgl_set_shader_images(struct pipe_context *ctx,
       }
    }
 
-   uint32_t max_shader_images = (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE) ?
+   uint32_t max_shader_images = (shader == MESA_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE) ?
      rs->caps.caps.v2.max_shader_image_frag_compute :
      rs->caps.caps.v2.max_shader_image_other_stages;
    if (!max_shader_images)

@@ -333,7 +333,7 @@ static bool parse_header( struct translate_ctx *ctx )
    enum pipe_shader_type processor;
 
    if (str_match_nocase_whole( &ctx->cur, "FRAG" ))
-      processor = PIPE_SHADER_FRAGMENT;
+      processor = MESA_SHADER_FRAGMENT;
    else if (str_match_nocase_whole( &ctx->cur, "VERT" ))
       processor = MESA_SHADER_VERTEX;
    else if (str_match_nocase_whole( &ctx->cur, "GEOM" ))

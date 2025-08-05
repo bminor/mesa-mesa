@@ -171,7 +171,7 @@ etna_init_single_shader_caps(struct etna_screen *screen, enum pipe_shader_type s
     * of vertex elements - each element defines one vertex shader
     * input register.  For the fragment shader, this is the number
     * of varyings. */
-   caps->max_inputs = shader == PIPE_SHADER_FRAGMENT ?
+   caps->max_inputs = shader == MESA_SHADER_FRAGMENT ?
       screen->specs.max_varyings : screen->specs.vertex_max_elements;
    caps->max_outputs = screen->specs.max_vs_outputs;
    caps->max_temps = 64; /* Max native temporaries. */
@@ -183,13 +183,13 @@ etna_init_single_shader_caps(struct etna_screen *screen, enum pipe_shader_type s
    caps->integers = screen->info->halti >= 2;
 
    caps->max_texture_samplers =
-   caps->max_sampler_views = shader == PIPE_SHADER_FRAGMENT
+   caps->max_sampler_views = shader == MESA_SHADER_FRAGMENT
       ? screen->specs.fragment_sampler_count
       : screen->specs.vertex_sampler_count;
 
    caps->max_const_buffer0_size =
       ubo_enable ? 16384 /* 16384 so state tracker enables UBOs */ :
-      (shader == PIPE_SHADER_FRAGMENT
+      (shader == MESA_SHADER_FRAGMENT
        ? screen->specs.max_ps_uniforms * sizeof(float[4])
        : screen->specs.max_vs_uniforms * sizeof(float[4]));
 
@@ -202,7 +202,7 @@ static void
 etna_init_shader_caps(struct etna_screen *screen)
 {
    etna_init_single_shader_caps(screen, MESA_SHADER_VERTEX);
-   etna_init_single_shader_caps(screen, PIPE_SHADER_FRAGMENT);
+   etna_init_single_shader_caps(screen, MESA_SHADER_FRAGMENT);
 }
 
 static void

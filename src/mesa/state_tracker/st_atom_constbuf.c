@@ -78,14 +78,14 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, gl_shader_st
    struct gl_program_parameter_list *params = prog->Parameters;
 
    assert(shader_type == MESA_SHADER_VERTEX ||
-          shader_type == PIPE_SHADER_FRAGMENT ||
+          shader_type == MESA_SHADER_FRAGMENT ||
           shader_type == MESA_SHADER_GEOMETRY ||
           shader_type == MESA_SHADER_TESS_CTRL ||
           shader_type == MESA_SHADER_TESS_EVAL ||
           shader_type == PIPE_SHADER_COMPUTE);
 
    /* update the ATI constants before rendering */
-   if (shader_type == PIPE_SHADER_FRAGMENT && prog->ati_fs) {
+   if (shader_type == MESA_SHADER_FRAGMENT && prog->ati_fs) {
       struct ati_fragment_shader *ati_fs = prog->ati_fs;
       unsigned c;
 
@@ -323,7 +323,7 @@ st_bind_fs_ubos(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_FRAGMENT];
 
-   st_bind_ubos(st, prog, PIPE_SHADER_FRAGMENT);
+   st_bind_ubos(st, prog, MESA_SHADER_FRAGMENT);
 }
 
 void

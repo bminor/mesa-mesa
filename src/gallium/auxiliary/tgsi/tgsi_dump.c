@@ -425,7 +425,7 @@ iter_declaration(
    }
 
    if (decl->Declaration.Interpolate) {
-      if (iter->processor.Processor == PIPE_SHADER_FRAGMENT &&
+      if (iter->processor.Processor == MESA_SHADER_FRAGMENT &&
           decl->Declaration.File == TGSI_FILE_INPUT)
       {
          TXT( ", " );

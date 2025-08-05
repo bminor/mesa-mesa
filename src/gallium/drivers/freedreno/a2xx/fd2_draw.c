@@ -638,7 +638,7 @@ dirty:
                  FD_DIRTY_BLEND | FD_DIRTY_FRAMEBUFFER | FD_DIRTY_SCISSOR;
 
    ctx->dirty_shader[MESA_SHADER_VERTEX] |= FD_DIRTY_SHADER_PROG;
-   ctx->dirty_shader[PIPE_SHADER_FRAGMENT] |=
+   ctx->dirty_shader[MESA_SHADER_FRAGMENT] |=
       FD_DIRTY_SHADER_PROG | FD_DIRTY_SHADER_CONST;
 
    return true;

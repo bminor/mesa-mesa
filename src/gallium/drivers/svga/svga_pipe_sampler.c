@@ -286,7 +286,7 @@ svga_bind_sampler_states(struct pipe_context *pipe,
    assert(start + num <= PIPE_MAX_SAMPLERS);
 
    /* Pre-VGPU10 only supports FS textures */
-   if (!svga_have_vgpu10(svga) && shader != PIPE_SHADER_FRAGMENT)
+   if (!svga_have_vgpu10(svga) && shader != MESA_SHADER_FRAGMENT)
       return;
 
    for (unsigned i = 0; i < num; i++) {
@@ -404,7 +404,7 @@ svga_set_sampler_views(struct pipe_context *pipe,
    assert(start + num <= ARRAY_SIZE(svga->curr.sampler_views[shader]));
 
    /* Pre-VGPU10 only supports FS textures */
-   if (!svga_have_vgpu10(svga) && shader != PIPE_SHADER_FRAGMENT) {
+   if (!svga_have_vgpu10(svga) && shader != MESA_SHADER_FRAGMENT) {
       for (unsigned i = 0; i < num; i++) {
          struct pipe_sampler_view *view = views[i];
          pipe_sampler_view_reference(&view, NULL);

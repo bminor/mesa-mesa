@@ -193,7 +193,7 @@ nvc0_program_assign_varying_slots(struct nv50_ir_prog_info_out *info)
    if (ret)
       return ret;
 
-   if (info->type == PIPE_SHADER_FRAGMENT)
+   if (info->type == MESA_SHADER_FRAGMENT)
       ret = nvc0_fp_assign_output_slots(info);
    else
       ret = nvc0_sp_assign_output_slots(info);
@@ -702,7 +702,7 @@ nvc0_program_translate(struct nvc0_program *prog, uint16_t chipset,
    case MESA_SHADER_GEOMETRY:
       ret = nvc0_gp_gen_header(prog, &info_out);
       break;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       ret = nvc0_fp_gen_header(prog, &info_out);
       break;
    case PIPE_SHADER_COMPUTE:

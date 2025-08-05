@@ -1862,7 +1862,7 @@ static void emit_decls( struct ureg_program *ureg )
             emit_decl_range( ureg, TGSI_FILE_INPUT, i, 1 );
          }
       }
-   } else if (ureg->processor == PIPE_SHADER_FRAGMENT) {
+   } else if (ureg->processor == MESA_SHADER_FRAGMENT) {
       if (ureg->supports_any_inout_decl_range) {
          for (i = 0; i < ureg->nr_inputs; i++) {
             emit_decl_fs(ureg,
@@ -2117,7 +2117,7 @@ const struct tgsi_token *ureg_finalize( struct ureg_program *ureg )
    case MESA_SHADER_TESS_EVAL:
       ureg_property(ureg, TGSI_PROPERTY_NEXT_SHADER,
                     ureg->next_shader_processor == -1 ?
-                       PIPE_SHADER_FRAGMENT :
+                       MESA_SHADER_FRAGMENT :
                        ureg->next_shader_processor);
       break;
    default:
@@ -2190,7 +2190,7 @@ void *ureg_create_shader( struct ureg_program *ureg,
       return pipe->create_tes_state(pipe, &state);
    case MESA_SHADER_GEOMETRY:
       return pipe->create_gs_state(pipe, &state);
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       return pipe->create_fs_state(pipe, &state);
    default:
       return NULL;

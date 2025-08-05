@@ -482,11 +482,11 @@ agx_blitter_save(struct agx_context *ctx, struct blitter_context *blitter,
 
       util_blitter_save_scissor(blitter, &ctx->scissor[0]);
       util_blitter_save_fragment_shader(
-         blitter, ctx->stage[PIPE_SHADER_FRAGMENT].shader);
+         blitter, ctx->stage[MESA_SHADER_FRAGMENT].shader);
 
       if (op & ASAHI_SAVE_FRAGMENT_CONSTANT) {
          util_blitter_save_fragment_constant_buffer_slot(
-            blitter, ctx->stage[PIPE_SHADER_FRAGMENT].cb);
+            blitter, ctx->stage[MESA_SHADER_FRAGMENT].cb);
       }
    }
 
@@ -496,12 +496,12 @@ agx_blitter_save(struct agx_context *ctx, struct blitter_context *blitter,
 
    if (op & ASAHI_SAVE_TEXTURES) {
       util_blitter_save_fragment_sampler_states(
-         blitter, ctx->stage[PIPE_SHADER_FRAGMENT].sampler_count,
-         (void **)(ctx->stage[PIPE_SHADER_FRAGMENT].samplers));
+         blitter, ctx->stage[MESA_SHADER_FRAGMENT].sampler_count,
+         (void **)(ctx->stage[MESA_SHADER_FRAGMENT].samplers));
 
       util_blitter_save_fragment_sampler_views(
-         blitter, ctx->stage[PIPE_SHADER_FRAGMENT].texture_count,
-         (struct pipe_sampler_view **)ctx->stage[PIPE_SHADER_FRAGMENT].textures);
+         blitter, ctx->stage[MESA_SHADER_FRAGMENT].texture_count,
+         (struct pipe_sampler_view **)ctx->stage[MESA_SHADER_FRAGMENT].textures);
    }
 
    if (!(op & ASAHI_DISABLE_RENDER_COND)) {

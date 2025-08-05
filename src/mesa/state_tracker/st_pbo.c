@@ -260,7 +260,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       cb.buffer_offset = 0;
       cb.buffer_size = sizeof(addr->constants);
 
-      pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, 0, false, &cb);
+      pipe->set_constant_buffer(pipe, MESA_SHADER_FRAGMENT, 0, false, &cb);
 
       pipe_resource_reference(&cb.buffer, NULL);
    }
@@ -641,7 +641,7 @@ st_init_pbo_helpers(struct st_context *st)
    st->pbo.upload_enabled =
       screen->caps.texture_buffer_objects &&
       screen->caps.texture_buffer_offset_alignment >= 1 &&
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].integers;
+      screen->shader_caps[MESA_SHADER_FRAGMENT].integers;
    if (!st->pbo.upload_enabled)
       return;
 
@@ -649,7 +649,7 @@ st_init_pbo_helpers(struct st_context *st)
       st->pbo.upload_enabled &&
       screen->caps.sampler_view_target &&
       screen->caps.framebuffer_no_attachment &&
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].max_shader_images >= 1;
+      screen->shader_caps[MESA_SHADER_FRAGMENT].max_shader_images >= 1;
 
    st->pbo.rgba_only =
       screen->caps.buffer_sampler_view_rgba_only;

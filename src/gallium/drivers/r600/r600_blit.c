@@ -75,7 +75,7 @@ static void r600_blitter_begin(struct pipe_context *ctx, enum r600_blitter_op op
 
 	if (op & R600_SAVE_CONST_BUF0) {
 		util_blitter_save_fragment_constant_buffer_slot(rctx->blitter,
-								&rctx->constbuf_state[PIPE_SHADER_FRAGMENT].cb[0]);
+								&rctx->constbuf_state[MESA_SHADER_FRAGMENT].cb[0]);
 	}
 
 	if (op & R600_SAVE_FRAMEBUFFER)
@@ -83,12 +83,12 @@ static void r600_blitter_begin(struct pipe_context *ctx, enum r600_blitter_op op
 
 	if (op & R600_SAVE_TEXTURES) {
 		util_blitter_save_fragment_sampler_states(
-			rctx->blitter, util_last_bit(rctx->samplers[PIPE_SHADER_FRAGMENT].states.enabled_mask),
-			(void**)rctx->samplers[PIPE_SHADER_FRAGMENT].states.states);
+			rctx->blitter, util_last_bit(rctx->samplers[MESA_SHADER_FRAGMENT].states.enabled_mask),
+			(void**)rctx->samplers[MESA_SHADER_FRAGMENT].states.states);
 
 		util_blitter_save_fragment_sampler_views(
-			rctx->blitter, util_last_bit(rctx->samplers[PIPE_SHADER_FRAGMENT].views.enabled_mask),
-			(struct pipe_sampler_view**)rctx->samplers[PIPE_SHADER_FRAGMENT].views.views);
+			rctx->blitter, util_last_bit(rctx->samplers[MESA_SHADER_FRAGMENT].views.enabled_mask),
+			(struct pipe_sampler_view**)rctx->samplers[MESA_SHADER_FRAGMENT].views.views);
 	}
 
 	if (op & R600_DISABLE_RENDER_COND)

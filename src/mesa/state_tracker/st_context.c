@@ -286,7 +286,7 @@ free_zombie_shaders(struct st_context *st)
          st->ctx->NewDriverState |= ST_NEW_VS_STATE;
          st->pipe->delete_vs_state(st->pipe, entry->shader);
          break;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          st->ctx->NewDriverState |= ST_NEW_FS_STATE;
          st->pipe->delete_fs_state(st->pipe, entry->shader);
          break;
@@ -627,7 +627,7 @@ st_create_context_priv(struct gl_context *ctx, struct pipe_context *pipe,
       screen->caps.call_finalize_nir_in_linker;
 
    st->has_hw_atomics =
-      screen->shader_caps[PIPE_SHADER_FRAGMENT].max_hw_atomic_counters
+      screen->shader_caps[MESA_SHADER_FRAGMENT].max_hw_atomic_counters
       ? true : false;
 
    st->validate_all_dirty_states =

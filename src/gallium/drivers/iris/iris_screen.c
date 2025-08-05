@@ -205,10 +205,10 @@ iris_init_shader_caps(struct iris_screen *screen)
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
-      caps->max_instructions = i == PIPE_SHADER_FRAGMENT ? 1024 : 16384;
+      caps->max_instructions = i == MESA_SHADER_FRAGMENT ? 1024 : 16384;
       caps->max_alu_instructions =
       caps->max_tex_instructions =
-      caps->max_tex_indirections = i == PIPE_SHADER_FRAGMENT ? 1024 : 0;
+      caps->max_tex_indirections = i == MESA_SHADER_FRAGMENT ? 1024 : 0;
 
       caps->max_control_flow_depth = UINT_MAX;
 

@@ -142,7 +142,7 @@ d3d12_init_shader_caps(struct d3d12_screen *screen)
          caps->max_inputs = D3D12_VS_INPUT_REGISTER_COUNT;
          caps->max_outputs = D3D12_VS_OUTPUT_REGISTER_COUNT;
          break;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          caps->max_inputs = D3D12_PS_INPUT_REGISTER_COUNT;
          caps->max_outputs = D3D12_PS_OUTPUT_REGISTER_COUNT;
          break;

@@ -663,7 +663,7 @@ check_register_index(struct svga_shader_emitter_v10 *emit,
            index >= emit->max_vs_inputs) ||
           (emit->unit == MESA_SHADER_GEOMETRY &&
            index >= emit->max_gs_inputs) ||
-          (emit->unit == PIPE_SHADER_FRAGMENT &&
+          (emit->unit == MESA_SHADER_FRAGMENT &&
            index >= VGPU10_MAX_PS_INPUTS) ||
           (emit->unit == MESA_SHADER_TESS_CTRL &&
            index >= VGPU11_MAX_HS_INPUT_CONTROL_POINTS) ||
@@ -686,7 +686,7 @@ check_register_index(struct svga_shader_emitter_v10 *emit,
            index >= emit->max_vs_outputs) ||
           (emit->unit == MESA_SHADER_GEOMETRY &&
            index >= VGPU10_MAX_GS_OUTPUTS) ||
-          (emit->unit == PIPE_SHADER_FRAGMENT &&
+          (emit->unit == MESA_SHADER_FRAGMENT &&
            index >= VGPU10_MAX_PS_OUTPUTS) ||
           (emit->unit == MESA_SHADER_TESS_CTRL &&
            index >= VGPU11_MAX_HS_OUTPUTS + 2) ||
@@ -819,7 +819,7 @@ translate_shader_type(unsigned type)
       return VGPU10_VERTEX_SHADER;
    case MESA_SHADER_GEOMETRY:
       return VGPU10_GEOMETRY_SHADER;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       return VGPU10_PIXEL_SHADER;
    case MESA_SHADER_TESS_CTRL:
       return VGPU10_HULL_SHADER;
@@ -1320,7 +1320,7 @@ emit_dst_register(struct svga_shader_emitter_v10 *emit,
             index = emit->gs.viewport_index_tmp_index;
          }
       }
-      else if (emit->unit == PIPE_SHADER_FRAGMENT) {
+      else if (emit->unit == MESA_SHADER_FRAGMENT) {
          if (sem_name == TGSI_SEMANTIC_POSITION) {
             /* Fragment depth output register */
             operand0.value = 0;
@@ -1561,7 +1561,7 @@ emit_src_register(struct svga_shader_emitter_v10 *emit,
 
    operand0.value = operand1.value = 0;
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT){
+   if (emit->unit == MESA_SHADER_FRAGMENT){
       if (file == TGSI_FILE_INPUT) {
          if (index == emit->fs.face_input_index) {
             /* Replace INPUT[FACE] with TEMP[FACE] */
@@ -4104,7 +4104,7 @@ emit_fragdepth_output_declaration(struct svga_shader_emitter_v10 *emit)
    VGPU10OperandToken0 operand0;
    VGPU10NameToken name_token;
 
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    opcode0.value = operand0.value = name_token.value = 0;
 
@@ -4128,7 +4128,7 @@ emit_samplemask_output_declaration(struct svga_shader_emitter_v10 *emit)
    VGPU10OperandToken0 operand0;
    VGPU10NameToken name_token;
 
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
    assert(emit->version >= 41);
 
    opcode0.value = operand0.value = name_token.value = 0;
@@ -4227,7 +4227,7 @@ emit_vertex_output_declaration(struct svga_shader_emitter_v10 *emit,
    unsigned name, type;
    unsigned final_mask = VGPU10_OPERAND_4_COMPONENT_MASK_ALL;
 
-   assert(emit->unit != PIPE_SHADER_FRAGMENT &&
+   assert(emit->unit != MESA_SHADER_FRAGMENT &&
           emit->unit != PIPE_SHADER_COMPUTE);
 
    switch (semantic_name) {
@@ -4731,7 +4731,7 @@ emit_system_value_declaration(struct svga_shader_emitter_v10 *emit,
                              map_tgsi_semantic_to_sgn_name(semantic_name));
       break;
    case TGSI_SEMANTIC_SAMPLEID:
-      assert(emit->unit == PIPE_SHADER_FRAGMENT);
+      assert(emit->unit == MESA_SHADER_FRAGMENT);
       emit->fs.sample_id_sys_index = index;
       index = alloc_system_value_index(emit, index);
       emit_input_declaration(emit, VGPU10_OPCODE_DCL_INPUT_PS_SIV,
@@ -4791,7 +4791,7 @@ emit_system_value_declaration(struct svga_shader_emitter_v10 *emit,
        * rather than just a generic input name ("v#") so no need to remap the
        * index value.
        */
-      assert(emit->unit == PIPE_SHADER_FRAGMENT);
+      assert(emit->unit == MESA_SHADER_FRAGMENT);
       assert(emit->version >= 50);
       emit->fs.sample_mask_in_sys_index = index;
       emit_input_declaration(emit, VGPU10_OPCODE_DCL_INPUT,
@@ -5494,7 +5494,7 @@ emit_input_declarations(struct svga_shader_emitter_v10 *emit)
       emit->info.indirect_files & (1 << TGSI_FILE_INPUT) ? true : false;
 
    switch (emit->unit) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       emit_fs_input_declarations(emit);
       break;
    case MESA_SHADER_GEOMETRY:
@@ -5534,7 +5534,7 @@ emit_output_declarations(struct svga_shader_emitter_v10 *emit)
       emit->info.indirect_files & (1 << TGSI_FILE_OUTPUT) ? true : false;
 
    switch (emit->unit) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       emit_fs_output_declarations(emit);
       break;
    case MESA_SHADER_GEOMETRY:
@@ -5559,7 +5559,7 @@ emit_output_declarations(struct svga_shader_emitter_v10 *emit)
    if (emit->vposition.so_index != INVALID_INDEX &&
        emit->vposition.out_index != INVALID_INDEX) {
 
-      assert(emit->unit != PIPE_SHADER_FRAGMENT);
+      assert(emit->unit != MESA_SHADER_FRAGMENT);
 
       /* Emit the declaration for the non-adjusted vertex position
        * for stream output purpose
@@ -5575,7 +5575,7 @@ emit_output_declarations(struct svga_shader_emitter_v10 *emit)
    if (emit->clip_dist_so_index != INVALID_INDEX &&
        emit->clip_dist_out_index != INVALID_INDEX) {
 
-      assert(emit->unit != PIPE_SHADER_FRAGMENT);
+      assert(emit->unit != MESA_SHADER_FRAGMENT);
 
       /* Emit the declaration for the clip distance shadow copy which
        * will be used for stream output purpose and for clip distance
@@ -5719,7 +5719,7 @@ emit_temporaries_declaration(struct svga_shader_emitter_v10 *emit)
             emit->gs.viewport_index_tmp_index = total_temps++;
       }
    }
-   else if (emit->unit == PIPE_SHADER_FRAGMENT) {
+   else if (emit->unit == MESA_SHADER_FRAGMENT) {
       if (emit->key.fs.alpha_func != SVGA3D_CMP_ALWAYS ||
           emit->key.fs.write_color0_to_n_cbufs > 1) {
          /* Allocate a temp to hold the output color */
@@ -5990,7 +5990,7 @@ emit_constant_declaration(struct svga_shader_emitter_v10 *emit)
    /* user-defined clip planes */
    if (emit->key.clip_plane_enable) {
       unsigned n = util_bitcount(emit->key.clip_plane_enable);
-      assert(emit->unit != PIPE_SHADER_FRAGMENT &&
+      assert(emit->unit != MESA_SHADER_FRAGMENT &&
              emit->unit != PIPE_SHADER_COMPUTE);
       for (i = 0; i < n; i++) {
          emit->clip_plane_const[i] = total_consts++;
@@ -6781,7 +6781,7 @@ emit_clip_distance_declarations(struct svga_shader_emitter_v10 *emit)
    unsigned index = emit->num_outputs;
    unsigned plane_mask;
 
-   assert(emit->unit != PIPE_SHADER_FRAGMENT);
+   assert(emit->unit != MESA_SHADER_FRAGMENT);
    assert(num_clip_planes <= 8);
 
    if (emit->clip_mode != CLIP_LEGACY &&
@@ -9975,7 +9975,7 @@ emit_mov(struct svga_shader_emitter_v10 *emit,
    const struct tgsi_full_src_register *src = &inst->Src[0];
    const struct tgsi_full_dst_register *dst = &inst->Dst[0];
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT &&
+   if (emit->unit == MESA_SHADER_FRAGMENT &&
        dst->Register.File == TGSI_FILE_OUTPUT &&
        dst->Register.Index == 0 &&
        src->Register.File == TGSI_FILE_CONSTANT &&
@@ -11577,7 +11577,7 @@ emit_vertex(struct svga_shader_emitter_v10 *emit,
 static void
 emit_frontface_instructions(struct svga_shader_emitter_v10 *emit)
 {
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    if (emit->fs.face_input_index != INVALID_INDEX) {
       /* convert vgpu10 boolean face register to gallium +/-1 value */
@@ -11606,7 +11606,7 @@ emit_frontface_instructions(struct svga_shader_emitter_v10 *emit)
 static void
 emit_fragcoord_instructions(struct svga_shader_emitter_v10 *emit)
 {
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    if (emit->fs.fragcoord_input_index != INVALID_INDEX) {
       struct tgsi_full_dst_register tmp_dst =
@@ -11653,7 +11653,7 @@ emit_fragcoord_instructions(struct svga_shader_emitter_v10 *emit)
 static void
 emit_sample_position_instructions(struct svga_shader_emitter_v10 *emit)
 {
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    if (emit->fs.sample_pos_sys_index != INVALID_INDEX) {
       assert(emit->version >= 41);
@@ -11811,7 +11811,7 @@ emit_vertex_attrib_instructions(struct svga_shader_emitter_v10 *emit)
 static void
 emit_default_layer_instructions(struct svga_shader_emitter_v10 *emit)
 {
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    /* immediate for default layer index 0 */
    if (emit->fs.layer_input_index != INVALID_INDEX) {
@@ -12195,7 +12195,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
       emit_atomic_buf_declarations(emit);
    }
 
-   if (emit->unit != PIPE_SHADER_FRAGMENT &&
+   if (emit->unit != MESA_SHADER_FRAGMENT &&
        emit->unit != PIPE_SHADER_COMPUTE) {
       /*
        * Declare clip distance output registers for ClipVertex or
@@ -12216,7 +12216,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
       }
    }
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT &&
+   if (emit->unit == MESA_SHADER_FRAGMENT &&
        emit->key.fs.alpha_func != SVGA3D_CMP_ALWAYS) {
       float alpha = emit->key.fs.alpha_ref;
       emit->fs.alpha_ref_index =
@@ -12234,7 +12234,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
       emit_tcs_default_control_point_output(emit);
    }
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT) {
+   if (emit->unit == MESA_SHADER_FRAGMENT) {
       emit_frontface_instructions(emit);
       emit_fragcoord_instructions(emit);
       emit_sample_position_instructions(emit);
@@ -12327,7 +12327,7 @@ emit_alpha_test_instructions(struct svga_shader_emitter_v10 *emit,
    struct tgsi_full_dst_register color_dst =
       make_dst_output_reg(emit->fs.color_out_index[0]);
 
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    /* dst = src0 'alpha_func' src1 */
    emit_comparison(emit, emit->key.fs.alpha_func, &tmp_dst,
@@ -12376,7 +12376,7 @@ emit_broadcast_color_instructions(struct svga_shader_emitter_v10 *emit,
       color_src = make_src_temp_reg(fs_color_tmp_index);
    }
 
-   assert(emit->unit == PIPE_SHADER_FRAGMENT);
+   assert(emit->unit == MESA_SHADER_FRAGMENT);
 
    for (unsigned i = 0; i < n; i++) {
       unsigned output_reg = emit->fs.color_out_index[i];
@@ -12406,7 +12406,7 @@ emit_post_helpers(struct svga_shader_emitter_v10 *emit)
    if (emit->unit == MESA_SHADER_VERTEX) {
       emit_vertex_instructions(emit);
    }
-   else if (emit->unit == PIPE_SHADER_FRAGMENT) {
+   else if (emit->unit == MESA_SHADER_FRAGMENT) {
       const unsigned fs_color_tmp_index = emit->fs.color_tmp_index;
 
       assert(!(emit->key.fs.white_fragments &&
@@ -12826,7 +12826,7 @@ compute_input_mapping(struct svga_context *svga,
 {
    struct svga_shader *prevShader = NULL;   /* shader in the previous stage */
 
-   if (unit == PIPE_SHADER_FRAGMENT) {
+   if (unit == MESA_SHADER_FRAGMENT) {
       prevShader = svga->curr.gs ?
          &svga->curr.gs->base : (svga->curr.tes ?
          &svga->curr.tes->base : &svga->curr.vs->base);
@@ -12922,7 +12922,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
 
    assert(unit == MESA_SHADER_VERTEX ||
           unit == MESA_SHADER_GEOMETRY ||
-          unit == PIPE_SHADER_FRAGMENT ||
+          unit == MESA_SHADER_FRAGMENT ||
           unit == MESA_SHADER_TESS_CTRL ||
           unit == MESA_SHADER_TESS_EVAL ||
           unit == PIPE_SHADER_COMPUTE);
@@ -13050,7 +13050,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
       emit->key.fs.alpha_func = SVGA3D_CMP_ALWAYS;
    }
 
-   if (unit == PIPE_SHADER_FRAGMENT) {
+   if (unit == MESA_SHADER_FRAGMENT) {
       if (key->fs.light_twoside) {
          tokens = transform_fs_twoside(tokens);
       }
@@ -13182,7 +13182,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
       variant->extra_const_start--;
    }
 
-   if (unit == PIPE_SHADER_FRAGMENT) {
+   if (unit == MESA_SHADER_FRAGMENT) {
       struct svga_fs_variant *fs_variant = svga_fs_variant(variant);
 
       fs_variant->pstipple_sampler_unit = emit->fs.pstipple_sampler_unit;

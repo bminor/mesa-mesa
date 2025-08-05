@@ -294,7 +294,7 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 		caps->max_tex_indirections = 16384;
 		caps->max_control_flow_depth = 32;
 		caps->max_inputs = i == MESA_SHADER_VERTEX ? 16 : 32;
-		caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : 32;
+		caps->max_outputs = i == MESA_SHADER_FRAGMENT ? 8 : 32;
 		caps->max_temps = 256; /* Max native temporaries. */
 
 		caps->max_const_buffer0_size = i == PIPE_SHADER_COMPUTE ?
@@ -316,7 +316,7 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 		caps->max_shader_buffers =
 		caps->max_shader_images =
 			rscreen->b.family >= CHIP_CEDAR &&
-			(i == PIPE_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) ? 8 : 0;
+			(i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) ? 8 : 0;
 
 		if (rscreen->b.family >= CHIP_CEDAR &&
 		    rscreen->has_atomics) {

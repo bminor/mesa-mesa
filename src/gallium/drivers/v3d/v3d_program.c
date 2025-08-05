@@ -605,7 +605,7 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
         }
 
         memset(key, 0, sizeof(*key));
-        v3d_setup_shared_key(v3d, &key->base, &v3d->tex[PIPE_SHADER_FRAGMENT]);
+        v3d_setup_shared_key(v3d, &key->base, &v3d->tex[MESA_SHADER_FRAGMENT]);
         key->ucp_enables = v3d->rasterizer->base.clip_plane_enable;
         key->is_points = (prim_mode == MESA_PRIM_POINTS);
         key->is_lines = (prim_mode >= MESA_PRIM_LINES &&

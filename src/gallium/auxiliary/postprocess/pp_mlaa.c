@@ -105,7 +105,7 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    struct pipe_context *pipe = ppq->p->pipe;
    pipe->set_constant_buffer(pipe, MESA_SHADER_VERTEX, 0, false, &cb);
-   pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, 0, false, &cb);
+   pipe->set_constant_buffer(pipe, MESA_SHADER_FRAGMENT, 0, false, &cb);
 
    mstencil.stencil[0].enabled = 1;
    mstencil.stencil[0].valuemask = mstencil.stencil[0].writemask = ~0;
@@ -132,9 +132,9 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    {
       const struct pipe_sampler_state *samplers[] = {&p->sampler_point};
-      cso_set_samplers(p->cso, PIPE_SHADER_FRAGMENT, 1, samplers);
+      cso_set_samplers(p->cso, MESA_SHADER_FRAGMENT, 1, samplers);
    }
-   pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0, &p->view);
+   pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 1, 0, &p->view);
 
    cso_set_vertex_shader_handle(p->cso, ppq->shaders[n][1]);    /* offsetvs */
    cso_set_fragment_shader_handle(p->cso, ppq->shaders[n][2]);
@@ -162,11 +162,11 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    {
       const struct pipe_sampler_state *samplers[] =
          {&p->sampler_point, &p->sampler_point, &p->sampler};
-      cso_set_samplers(p->cso, PIPE_SHADER_FRAGMENT, 3, samplers);
+      cso_set_samplers(p->cso, MESA_SHADER_FRAGMENT, 3, samplers);
    }
 
    arr[0] = p->view;
-   pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 3, 0, arr);
+   pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 3, 0, arr);
 
    cso_set_vertex_shader_handle(p->cso, ppq->shaders[n][0]);    /* passvs */
    cso_set_fragment_shader_handle(p->cso, ppq->shaders[n][3]);
@@ -193,11 +193,11 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    {
       const struct pipe_sampler_state *samplers[] =
          {&p->sampler_point, &p->sampler_point};
-      cso_set_samplers(p->cso, PIPE_SHADER_FRAGMENT, 2, samplers);
+      cso_set_samplers(p->cso, MESA_SHADER_FRAGMENT, 2, samplers);
    }
 
    arr[1] = p->view;
-   pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 2, 0, arr);
+   pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 2, 0, arr);
 
    cso_set_vertex_shader_handle(p->cso, ppq->shaders[n][1]);    /* offsetvs */
    cso_set_fragment_shader_handle(p->cso, ppq->shaders[n][4]);

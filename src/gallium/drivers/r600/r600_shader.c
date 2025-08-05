@@ -261,7 +261,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 				r600_update_vs_state(ctx, shader);
 		}
 		break;
-	case PIPE_SHADER_FRAGMENT:
+	case MESA_SHADER_FRAGMENT:
 		if (rctx->b.gfx_level >= EVERGREEN) {
 			evergreen_update_ps_state(ctx, shader);
 		} else {

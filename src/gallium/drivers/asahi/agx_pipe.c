@@ -1879,7 +1879,7 @@ agx_init_shader_caps(struct pipe_screen *pscreen)
        * correctly, though. The full 32 is undesirable since it would require
        * shenanigans to handle.
        */
-      caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8
+      caps->max_outputs = i == MESA_SHADER_FRAGMENT ? 8
                           : i == MESA_SHADER_VERTEX ? 24
                                                     : 32;
 

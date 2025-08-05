@@ -53,7 +53,7 @@ bind_shader(struct svga_context *svga,
    case MESA_SHADER_VERTEX:
       svga->pipe.bind_vs_state(&svga->pipe, shader);
       break;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       /**
        * Avoid pipe->bind_fs_state call because it goes through aapoint
        * layer. We loose linked list of all transformed shaders if aapoint
@@ -88,7 +88,7 @@ create_shader(struct svga_context *svga,
    switch (shader_type) {
    case MESA_SHADER_VERTEX:
       return svga->pipe.create_vs_state(&svga->pipe, state);
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       /**
        * Avoid pipe->create_fs_state call because it goes through aapoint
        * layer. We loose linked list of all transformed shaders if aapoint

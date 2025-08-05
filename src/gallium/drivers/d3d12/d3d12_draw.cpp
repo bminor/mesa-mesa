@@ -115,7 +115,7 @@ fill_srv_descriptors(struct d3d12_context *ctx,
             view->texture_generation_id = res->generation_id;
          }
 
-         D3D12_RESOURCE_STATES state = (stage == PIPE_SHADER_FRAGMENT) ?
+         D3D12_RESOURCE_STATES state = (stage == MESA_SHADER_FRAGMENT) ?
                                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE :
                                        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
          if (view->base.texture->target == PIPE_BUFFER) {
@@ -955,7 +955,7 @@ d3d12_draw_vbo(struct pipe_context *pctx,
    }
 
    if (ctx->pstipple.enabled && ctx->gfx_pipeline_state.rast->base.poly_stipple_enable)
-      ctx->shader_dirty[PIPE_SHADER_FRAGMENT] |= D3D12_SHADER_DIRTY_SAMPLER_VIEWS |
+      ctx->shader_dirty[MESA_SHADER_FRAGMENT] |= D3D12_SHADER_DIRTY_SAMPLER_VIEWS |
                                                  D3D12_SHADER_DIRTY_SAMPLERS;
 
    /* this should *really* be fixed at a higher level than here! */

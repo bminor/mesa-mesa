@@ -108,8 +108,8 @@ fd_fs_state_bind(struct pipe_context *pctx, void *hwcso) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    ctx->prog.fs = hwcso;
-   fd_context_dirty_shader(ctx, PIPE_SHADER_FRAGMENT, FD_DIRTY_SHADER_PROG);
-   update_bound_stage(ctx, PIPE_SHADER_FRAGMENT, !!hwcso);
+   fd_context_dirty_shader(ctx, MESA_SHADER_FRAGMENT, FD_DIRTY_SHADER_PROG);
+   update_bound_stage(ctx, MESA_SHADER_FRAGMENT, !!hwcso);
 }
 
 static const char *solid_fs = "FRAG                                        \n"
@@ -187,7 +187,7 @@ fd_prog_blit_fs(struct pipe_context *pctx, int rts, bool depth)
 
    assert(rts <= MAX_RENDER_TARGETS);
 
-   ureg = ureg_create(PIPE_SHADER_FRAGMENT);
+   ureg = ureg_create(MESA_SHADER_FRAGMENT);
    if (!ureg)
       return NULL;
 

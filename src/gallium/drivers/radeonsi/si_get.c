@@ -938,7 +938,7 @@ void si_init_shader_caps(struct si_screen *sscreen)
       caps->max_tex_indirections =
       caps->max_control_flow_depth = 16384;
       caps->max_inputs = i == MESA_SHADER_VERTEX ? SI_MAX_ATTRIBS : 32;
-      caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : 32;
+      caps->max_outputs = i == MESA_SHADER_FRAGMENT ? 8 : 32;
       caps->max_temps = 256; /* Max native temporaries. */
       caps->max_const_buffer0_size = 1 << 26; /* 64 MB */
       caps->max_const_buffers = SI_NUM_CONST_BUFFERS;

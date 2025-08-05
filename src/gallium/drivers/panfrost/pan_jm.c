@@ -543,11 +543,11 @@ jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
          struct panfrost_resource *rsrc =
             pan_resource(ctx->occlusion_query->rsrc);
          cfg.occlusion = rsrc->plane.base;
-         panfrost_batch_write_rsrc(ctx->batch, rsrc, PIPE_SHADER_FRAGMENT);
+         panfrost_batch_write_rsrc(ctx->batch, rsrc, MESA_SHADER_FRAGMENT);
       }
 
 #if PAN_ARCH >= 9
-      struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+      struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
 
       cfg.flags_0.multisample_enable = rast->multisample;
       cfg.flags_1.sample_mask = rast->multisample ? ctx->sample_mask : 0xFFFF;
@@ -625,8 +625,8 @@ jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
          cfg.flags_0.overdraw_alpha0 = panfrost_overdraw_alpha(ctx, 0);
          cfg.flags_0.overdraw_alpha1 = panfrost_overdraw_alpha(ctx, 1);
 
-         jm_emit_shader_env(batch, &cfg.shader, PIPE_SHADER_FRAGMENT,
-                            batch->rsd[PIPE_SHADER_FRAGMENT]);
+         jm_emit_shader_env(batch, &cfg.shader, MESA_SHADER_FRAGMENT,
+                            batch->rsd[MESA_SHADER_FRAGMENT]);
       } else {
          /* These operations need to be FORCE to benefit from the
           * depth-only pass optimizations.
@@ -650,9 +650,9 @@ jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
       }
 #else
       cfg.position = batch->varyings.pos;
-      cfg.state = batch->rsd[PIPE_SHADER_FRAGMENT];
-      cfg.attributes = batch->attribs[PIPE_SHADER_FRAGMENT];
-      cfg.attribute_buffers = batch->attrib_bufs[PIPE_SHADER_FRAGMENT];
+      cfg.state = batch->rsd[MESA_SHADER_FRAGMENT];
+      cfg.attributes = batch->attribs[MESA_SHADER_FRAGMENT];
+      cfg.attribute_buffers = batch->attrib_bufs[MESA_SHADER_FRAGMENT];
       cfg.viewport = batch->viewport;
       cfg.varyings = batch->varyings.fs;
       cfg.varying_buffers = cfg.varyings ? batch->varyings.bufs : 0;
@@ -667,7 +667,7 @@ jm_emit_tiler_draw(struct mali_draw_packed *out, struct panfrost_batch *batch,
          cfg.flat_shading_vertex = rast->flatshade_first ^ (PAN_ARCH <= 5);
       }
 
-      jm_emit_draw_descs(batch, &cfg, PIPE_SHADER_FRAGMENT);
+      jm_emit_draw_descs(batch, &cfg, MESA_SHADER_FRAGMENT);
 #endif
    }
 }
@@ -708,7 +708,7 @@ jm_emit_primitive(struct panfrost_batch *batch,
 
       cfg.job_task_split = 6;
 #else
-      struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+      struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
 
       cfg.allow_rotating_primitives = allow_rotating_primitives(fs, info);
       cfg.primitive_restart = info->primitive_restart;
@@ -759,7 +759,7 @@ jm_emit_malloc_vertex_job(struct panfrost_batch *batch,
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
-   struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *fs = ctx->prog[MESA_SHADER_FRAGMENT];
 
    bool fs_required = panfrost_fs_required(
       fs, ctx->blend, &ctx->pipe_framebuffer, ctx->depth_stencil);

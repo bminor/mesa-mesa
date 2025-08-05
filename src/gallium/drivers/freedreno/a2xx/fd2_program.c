@@ -177,7 +177,7 @@ fd2_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
    if (prog != &ctx->solid_prog && prog != &ctx->blit_prog[0]) {
       patch_fetches(ctx, vpi, ctx->vtx.vtx, &ctx->tex[MESA_SHADER_VERTEX]);
       if (fp)
-         patch_fetches(ctx, fpi, NULL, &ctx->tex[PIPE_SHADER_FRAGMENT]);
+         patch_fetches(ctx, fpi, NULL, &ctx->tex[MESA_SHADER_FRAGMENT]);
    }
 
    emit(ring, MESA_SHADER_VERTEX, vpi,

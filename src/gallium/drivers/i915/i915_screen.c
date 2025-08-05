@@ -281,7 +281,7 @@ i915_init_shader_caps(struct i915_screen *is)
    caps->max_shader_buffers = false;
    caps->max_shader_images = false;
 
-   caps = (struct pipe_shader_caps *)&is->base.shader_caps[PIPE_SHADER_FRAGMENT];
+   caps = (struct pipe_shader_caps *)&is->base.shader_caps[MESA_SHADER_FRAGMENT];
 
    caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
    /* XXX: some of these are just shader model 2.0 values, fix this! */
@@ -558,7 +558,7 @@ i915_screen_create(struct i915_winsys *iws)
    is->base.fence_finish = i915_fence_finish;
 
    is->base.nir_options[MESA_SHADER_VERTEX] = &gallivm_nir_options;
-   is->base.nir_options[PIPE_SHADER_FRAGMENT] = &i915_compiler_options;
+   is->base.nir_options[MESA_SHADER_FRAGMENT] = &i915_compiler_options;
 
    i915_init_screen_resource_functions(is);
 

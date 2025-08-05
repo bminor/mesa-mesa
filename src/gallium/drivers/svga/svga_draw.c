@@ -375,7 +375,7 @@ svga_validate_sampler_resources(struct svga_context *svga,
          }
       }
 
-      if (shader == PIPE_SHADER_FRAGMENT &&
+      if (shader == MESA_SHADER_FRAGMENT &&
           svga->curr.rast->templ.poly_stipple_enable) {
          const unsigned unit =
             svga_fs_variant(svga->state.hw_draw.fs)->pstipple_sampler_unit;

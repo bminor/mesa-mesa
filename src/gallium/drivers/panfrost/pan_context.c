@@ -211,7 +211,7 @@ panfrost_get_blend(struct panfrost_batch *batch, unsigned rti)
    memcpy(pan_blend.constants, ctx->blend_color.color,
           sizeof(pan_blend.constants));
 
-   struct panfrost_compiled_shader *ss = ctx->prog[PIPE_SHADER_FRAGMENT];
+   struct panfrost_compiled_shader *ss = ctx->prog[MESA_SHADER_FRAGMENT];
 
    /* Default for Midgard */
    nir_alu_type col0_type = nir_type_float32;

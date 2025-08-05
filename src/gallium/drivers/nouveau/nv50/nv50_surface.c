@@ -867,7 +867,7 @@ nv50_blitter_make_fp(struct pipe_context *pipe,
 
    const int chipset = nouveau_screen(pipe->screen)->device->chipset;
    const nir_shader_compiler_options *options =
-      nv50_ir_nir_shader_compiler_options(chipset, PIPE_SHADER_FRAGMENT);
+      nv50_ir_nir_shader_compiler_options(chipset, MESA_SHADER_FRAGMENT);
 
    struct nir_builder b =
       nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT, options,

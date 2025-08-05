@@ -195,7 +195,7 @@ svga_get_compiler_options(struct pipe_screen *pscreen,
    else if (sws->have_vgpu10)
       return &svga_vgpu10_compiler_options;
    else {
-      if (shader == PIPE_SHADER_FRAGMENT)
+      if (shader == MESA_SHADER_FRAGMENT)
          return &svga_vgpu9_fragment_compiler_options;
       else
          return &svga_vgpu9_vertex_compiler_options;
@@ -228,7 +228,7 @@ vgpu9_init_shader_caps(struct svga_screen *svgascreen)
    caps->indirect_const_addr = true;
    caps->supported_irs = (1 << PIPE_SHADER_IR_TGSI) | (1 << PIPE_SHADER_IR_NIR);
 
-   caps = (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[PIPE_SHADER_FRAGMENT];
+   caps = (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[MESA_SHADER_FRAGMENT];
 
    caps->max_instructions =
    caps->max_alu_instructions =
@@ -284,7 +284,7 @@ vgpu10_init_shader_caps(struct svga_screen *svgascreen)
        caps->max_control_flow_depth = 64;
 
        switch (i) {
-       case PIPE_SHADER_FRAGMENT:
+       case MESA_SHADER_FRAGMENT:
           caps->max_inputs = VGPU10_MAX_PS_INPUTS;
           caps->max_outputs = VGPU10_MAX_PS_OUTPUTS;
           break;

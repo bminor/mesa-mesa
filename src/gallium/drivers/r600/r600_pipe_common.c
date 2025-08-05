@@ -1212,7 +1212,7 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 
 	uint8_t indirect_supported_mask =
 		(uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES) &
-		~BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+		~BITFIELD_BIT(MESA_SHADER_FRAGMENT);
 	rscreen->nir_options.support_indirect_inputs = indirect_supported_mask;
 	rscreen->nir_options.support_indirect_outputs = indirect_supported_mask;
 

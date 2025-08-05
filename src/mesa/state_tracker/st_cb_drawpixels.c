@@ -834,12 +834,12 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
          if (sv[1])
             samplers[fpv->pixelmap_sampler] = &sampler;
 
-         cso_set_samplers(cso, PIPE_SHADER_FRAGMENT, num, samplers);
+         cso_set_samplers(cso, MESA_SHADER_FRAGMENT, num, samplers);
       } else {
          /* drawing a depth/stencil image */
          const struct pipe_sampler_state *samplers[2] = {&sampler, &sampler};
 
-         cso_set_samplers(cso, PIPE_SHADER_FRAGMENT, num_sampler_view, samplers);
+         cso_set_samplers(cso, MESA_SHADER_FRAGMENT, num_sampler_view, samplers);
       }
    }
 
@@ -852,7 +852,7 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
       unsigned extra_sampler_views = 0;
       /* drawing a color image */
       unsigned num_views =
-         st_get_sampler_views(st, PIPE_SHADER_FRAGMENT,
+         st_get_sampler_views(st, MESA_SHADER_FRAGMENT,
                               ctx->FragmentProgram._Current, sampler_views, &extra_sampler_views);
 
       num_views = MAX3(fpv->drawpix_sampler + 1, fpv->pixelmap_sampler + 1,
@@ -861,9 +861,9 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
       sampler_views[fpv->drawpix_sampler] = sv[0];
       if (sv[1])
          sampler_views[fpv->pixelmap_sampler] = sv[1];
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, num_views, 0,
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, num_views, 0,
                               sampler_views);
-      st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] = num_views;
+      st->state.num_sampler_views[MESA_SHADER_FRAGMENT] = num_views;
 
       /* release YUV views back to driver */
       u_foreach_bit (i, extra_sampler_views) {
@@ -871,10 +871,10 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
       }
    } else {
       /* drawing a depth/stencil image */
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, num_sampler_view,
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, num_sampler_view,
                               0, sv);
-      st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] =
-         MAX2(st->state.num_sampler_views[PIPE_SHADER_FRAGMENT], num_sampler_view);
+      st->state.num_sampler_views[MESA_SHADER_FRAGMENT] =
+         MAX2(st->state.num_sampler_views[MESA_SHADER_FRAGMENT], num_sampler_view);
    }
 
    /* viewport state: viewport matching window dims */
@@ -925,7 +925,7 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
     * use them.
     */
    cso_restore_state(cso, CSO_UNBIND_FS_SAMPLERVIEWS);
-   st->state.num_sampler_views[PIPE_SHADER_FRAGMENT] = 0;
+   st->state.num_sampler_views[MESA_SHADER_FRAGMENT] = 0;
 
    ctx->Array.NewVertexElements = true;
    ctx->NewDriverState |= ST_NEW_VERTEX_ARRAYS |

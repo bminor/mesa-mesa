@@ -104,7 +104,7 @@ void st_bind_fs_ssbos(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_FRAGMENT];
 
-   st_bind_ssbos(st, prog, PIPE_SHADER_FRAGMENT);
+   st_bind_ssbos(st, prog, MESA_SHADER_FRAGMENT);
 }
 
 void st_bind_gs_ssbos(struct st_context *st)

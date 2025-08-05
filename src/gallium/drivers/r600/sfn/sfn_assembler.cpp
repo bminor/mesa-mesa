@@ -132,7 +132,7 @@ AssamblerVisitor::AssamblerVisitor(r600_shader *sh, const r600_shader_key& key,
     ps_alpha_to_one(key.ps.alpha_to_one),
     m_legacy_math_rules(legacy_math_rules)
 {
-   if (m_shader->processor_type == PIPE_SHADER_FRAGMENT)
+   if (m_shader->processor_type == MESA_SHADER_FRAGMENT)
       m_max_color_exports = MAX2(m_key.ps.nr_cbufs, 1);
 
    if (m_shader->processor_type == MESA_SHADER_VERTEX && m_shader->ninput > 0)
@@ -741,7 +741,7 @@ AssamblerVisitor::visit(const FetchInstr& fetch_instr)
    }
 
    m_bc->cf_last->vpm =
-      (m_bc->type == PIPE_SHADER_FRAGMENT) && fetch_instr.has_fetch_flag(FetchInstr::vpm);
+      (m_bc->type == MESA_SHADER_FRAGMENT) && fetch_instr.has_fetch_flag(FetchInstr::vpm);
    m_bc->cf_last->barrier = 1;
 }
 
@@ -820,7 +820,7 @@ AssamblerVisitor::visit(const RatInstr& instr)
              instr.data_swz(2) == PIPE_SWIZZLE_MAX);
    }
 
-   cf->vpm = m_bc->type == PIPE_SHADER_FRAGMENT;
+   cf->vpm = m_bc->type == MESA_SHADER_FRAGMENT;
    cf->barrier = 1;
    cf->mark = instr.need_ack();
    cf->output.elem_size = instr.elm_size();
@@ -929,7 +929,7 @@ AssamblerVisitor::visit(const ControlFlowInstr& instr)
       emit_endif();
       break;
    case ControlFlowInstr::cf_loop_begin: {
-      bool use_vpm = m_shader->processor_type == PIPE_SHADER_FRAGMENT &&
+      bool use_vpm = m_shader->processor_type == MESA_SHADER_FRAGMENT &&
                      instr.has_instr_flag(Instr::vpm) &&
                      !instr.has_instr_flag(Instr::helper);
       emit_loop_begin(use_vpm);
@@ -1005,7 +1005,7 @@ AssamblerVisitor::visit(const GDSInstr& instr)
       m_result = false;
       return;
    }
-   m_bc->cf_last->vpm = PIPE_SHADER_FRAGMENT == m_bc->type;
+   m_bc->cf_last->vpm = MESA_SHADER_FRAGMENT == m_bc->type;
    m_bc->cf_last->barrier = 1;
 }
 
@@ -1130,7 +1130,7 @@ void
 AssamblerVisitor::emit_loop_begin(bool vpm)
 {
    r600_bytecode_add_cfinst(m_bc, CF_OP_LOOP_START_DX10);
-   m_bc->cf_last->vpm = vpm && m_bc->type == PIPE_SHADER_FRAGMENT;
+   m_bc->cf_last->vpm = vpm && m_bc->type == MESA_SHADER_FRAGMENT;
    m_jump_tracker.push(m_bc->cf_last, jt_loop);
    m_callstack.push(FC_LOOP);
    ++m_loop_nesting;

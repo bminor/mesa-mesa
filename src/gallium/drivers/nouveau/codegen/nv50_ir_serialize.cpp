@@ -119,7 +119,7 @@ nv50_ir_prog_info_out_serialize(struct blob *blob,
       case MESA_SHADER_GEOMETRY:
          blob_write_bytes(blob, &info_out->prop.gp, sizeof(info_out->prop.gp));
          break;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          blob_write_bytes(blob, &info_out->prop.fp, sizeof(info_out->prop.fp));
          break;
       case PIPE_SHADER_COMPUTE:
@@ -239,7 +239,7 @@ nv50_ir_prog_info_out_deserialize(void *data, size_t size, size_t offset,
       case MESA_SHADER_GEOMETRY:
          blob_copy_bytes(&reader, &info_out->prop.gp, sizeof(info_out->prop.gp));
          break;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          blob_copy_bytes(&reader, &info_out->prop.fp, sizeof(info_out->prop.fp));
          break;
       case PIPE_SHADER_COMPUTE:

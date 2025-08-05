@@ -422,7 +422,7 @@ lay_out_uniforms(struct agx_compiled_shader *shader, struct state *state)
       }
 
       uniform = AGX_ABI_VUNI_COUNT_GL(count, sw);
-   } else if (state->stage == PIPE_SHADER_FRAGMENT) {
+   } else if (state->stage == MESA_SHADER_FRAGMENT) {
       struct agx_draw_uniforms *u = NULL;
       struct agx_stage_uniforms *s = NULL;
       shader->push[shader->push_range_count++] = (struct agx_push_range){

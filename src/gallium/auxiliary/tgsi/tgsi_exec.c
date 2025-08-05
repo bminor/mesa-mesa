@@ -1227,7 +1227,7 @@ tgsi_exec_machine_create(enum pipe_shader_type shader_type)
          goto fail;
    }
 
-   if (shader_type == PIPE_SHADER_FRAGMENT) {
+   if (shader_type == MESA_SHADER_FRAGMENT) {
       mach->InputSampleOffsetApply = align_malloc(sizeof(apply_sample_offset_func) * PIPE_MAX_SHADER_INPUTS, 16);
       if (!mach->InputSampleOffsetApply)
          goto fail;
@@ -2774,7 +2774,7 @@ exec_declaration(struct tgsi_exec_machine *mach,
       return;
    }
 
-   if (mach->ShaderType == PIPE_SHADER_FRAGMENT) {
+   if (mach->ShaderType == MESA_SHADER_FRAGMENT) {
       if (decl->Declaration.File == TGSI_FILE_INPUT) {
          unsigned first, last, mask;
 
@@ -6076,7 +6076,7 @@ tgsi_exec_machine_run( struct tgsi_exec_machine *mach, int start_pc )
 
 #if 0
    /* we scale from floats in [0,1] to Zbuffer ints in sp_quad_depth_test.c */
-   if (mach->ShaderType == PIPE_SHADER_FRAGMENT) {
+   if (mach->ShaderType == MESA_SHADER_FRAGMENT) {
       /*
        * Scale back depth component.
        */

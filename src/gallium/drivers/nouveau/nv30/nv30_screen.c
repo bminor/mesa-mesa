@@ -68,7 +68,7 @@ nv30_init_shader_caps(struct nv30_screen *screen)
    caps->max_temps = (eng3d->oclass >= NV40_3D_CLASS) ? 32 : 13;
    caps->supported_irs = (1 << PIPE_SHADER_IR_NIR) | (1 << PIPE_SHADER_IR_TGSI);
 
-   caps = (struct pipe_shader_caps *)&screen->base.base.shader_caps[PIPE_SHADER_FRAGMENT];
+   caps = (struct pipe_shader_caps *)&screen->base.base.shader_caps[MESA_SHADER_FRAGMENT];
 
    caps->max_instructions =
    caps->max_alu_instructions =

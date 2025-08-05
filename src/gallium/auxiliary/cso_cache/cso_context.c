@@ -338,7 +338,7 @@ cso_create_context(struct pipe_context *pipe, unsigned flags)
       ctx->sampler_format = true;
 
    ctx->max_fs_samplerviews =
-      pipe->screen->shader_caps[PIPE_SHADER_FRAGMENT].max_texture_samplers;
+      pipe->screen->shader_caps[MESA_SHADER_FRAGMENT].max_texture_samplers;
 
    ctx->max_sampler_seen = -1;
    return &ctx->base;
@@ -420,7 +420,7 @@ cso_unbind_context(struct cso_context *cso)
       struct pipe_stencil_ref sr = {0};
       ctx->base.pipe->set_stencil_ref(ctx->base.pipe, sr);
       ctx->base.pipe->bind_fs_state(ctx->base.pipe, NULL);
-      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, PIPE_SHADER_FRAGMENT, 0, false, NULL);
+      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_FRAGMENT, 0, false, NULL);
       ctx->base.pipe->bind_vs_state(ctx->base.pipe, NULL);
       ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_VERTEX, 0, false, NULL);
       if (ctx->has_geometry_shader) {
@@ -1526,7 +1526,7 @@ cso_set_samplers(struct cso_context *cso,
 static void
 cso_save_fragment_samplers(struct cso_context_priv *ctx)
 {
-   struct sampler_info *info = &ctx->samplers[PIPE_SHADER_FRAGMENT];
+   struct sampler_info *info = &ctx->samplers[MESA_SHADER_FRAGMENT];
    struct sampler_info *saved = &ctx->fragment_samplers_saved;
 
    memcpy(saved->cso_samplers, info->cso_samplers,
@@ -1538,7 +1538,7 @@ cso_save_fragment_samplers(struct cso_context_priv *ctx)
 static void
 cso_restore_fragment_samplers(struct cso_context_priv *ctx)
 {
-   struct sampler_info *info = &ctx->samplers[PIPE_SHADER_FRAGMENT];
+   struct sampler_info *info = &ctx->samplers[MESA_SHADER_FRAGMENT];
    struct sampler_info *saved = &ctx->fragment_samplers_saved;
 
    memcpy(info->cso_samplers, saved->cso_samplers,
@@ -1552,7 +1552,7 @@ cso_restore_fragment_samplers(struct cso_context_priv *ctx)
       }
    }
 
-   cso_single_sampler_done(&ctx->base, PIPE_SHADER_FRAGMENT);
+   cso_single_sampler_done(&ctx->base, MESA_SHADER_FRAGMENT);
 }
 
 
@@ -1726,15 +1726,15 @@ cso_restore_state(struct cso_context *ctx, unsigned unbind)
    if (state_mask & CSO_BIT_VERTEX_SHADER)
       cso_restore_vertex_shader(cso);
    if (unbind & CSO_UNBIND_FS_SAMPLERVIEWS)
-      cso->base.pipe->set_sampler_views(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, 0,
+      cso->base.pipe->set_sampler_views(cso->base.pipe, MESA_SHADER_FRAGMENT, 0, 0,
                                    cso->max_fs_samplerviews, NULL);
    if (unbind & CSO_UNBIND_FS_SAMPLERVIEW0)
-      cso->base.pipe->set_sampler_views(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, 0,
+      cso->base.pipe->set_sampler_views(cso->base.pipe, MESA_SHADER_FRAGMENT, 0, 0,
                                    1, NULL);
    if (state_mask & CSO_BIT_FRAGMENT_SAMPLERS)
       cso_restore_fragment_samplers(cso);
    if (unbind & CSO_UNBIND_FS_IMAGE0)
-      cso->base.pipe->set_shader_images(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, 0, 1, NULL);
+      cso->base.pipe->set_shader_images(cso->base.pipe, MESA_SHADER_FRAGMENT, 0, 0, 1, NULL);
    if (state_mask & CSO_BIT_FRAMEBUFFER)
       cso_restore_framebuffer(cso);
    if (state_mask & CSO_BIT_BLEND)
@@ -1752,7 +1752,7 @@ cso_restore_state(struct cso_context *ctx, unsigned unbind)
    if (unbind & CSO_UNBIND_VS_CONSTANTS)
       cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_VERTEX, 0, false, NULL);
    if (unbind & CSO_UNBIND_FS_CONSTANTS)
-      cso->base.pipe->set_constant_buffer(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, false, NULL);
+      cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_FRAGMENT, 0, false, NULL);
    if (state_mask & CSO_BIT_VERTEX_ELEMENTS)
       cso_restore_vertex_elements(cso);
    if (state_mask & CSO_BIT_STREAM_OUTPUTS)

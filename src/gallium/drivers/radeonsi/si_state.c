@@ -733,7 +733,7 @@ static bool si_check_blend_dst_sampler_noop(struct si_context *sctx)
           sel->info.writes_1_if_tex_is_1 != 0xff) {
          /* Now check if the texture is cleared to 1 */
          int unit = sctx->shader.ps.cso->info.writes_1_if_tex_is_1 - 1;
-         struct si_samplers *samp = &sctx->samplers[PIPE_SHADER_FRAGMENT];
+         struct si_samplers *samp = &sctx->samplers[MESA_SHADER_FRAGMENT];
          if ((1u << unit) & samp->enabled_mask) {
             struct si_texture* tex = (struct si_texture*) samp->views[unit]->texture;
             if (tex->is_depth &&
@@ -1763,13 +1763,13 @@ static void si_bind_dsa_state(struct pipe_context *ctx, void *state)
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
          BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
-         BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+         BITFIELD_BIT(MESA_SHADER_FRAGMENT);
    }
 
    if (old_dsa->depth_enabled != dsa->depth_enabled ||
        old_dsa->stencil_enabled != dsa->stencil_enabled) {
       si_ps_key_update_framebuffer_blend_dsa_rasterizer(sctx);
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
    }
 
    if (sctx->occlusion_query_mode == SI_OCCLUSION_QUERY_MODE_PRECISE_BOOLEAN &&
@@ -2805,7 +2805,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
       BITFIELD_BIT(MESA_SHADER_VERTEX) |
       BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
       BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
-      BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+      BITFIELD_BIT(MESA_SHADER_FRAGMENT);
 
    if (sctx->gfx_level < GFX12 && !sctx->decompression_enabled) {
       /* Prevent textures decompression when the framebuffer state
@@ -3647,7 +3647,7 @@ static void si_set_min_samples(struct pipe_context *ctx, unsigned min_samples)
    sctx->ps_iter_samples = min_samples;
 
    si_ps_key_update_framebuffer_rasterizer_sample_shading(sctx);
-   sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+   sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
 
    si_update_ps_iter_samples(sctx);
 }

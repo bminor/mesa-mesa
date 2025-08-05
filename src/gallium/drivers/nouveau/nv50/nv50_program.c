@@ -260,7 +260,7 @@ nv50_program_assign_varying_slots(struct nv50_ir_prog_info_out *info)
       return nv50_vertprog_assign_slots(info);
    case MESA_SHADER_GEOMETRY:
       return nv50_vertprog_assign_slots(info);
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       return nv50_fragprog_assign_slots(info);
    case PIPE_SHADER_COMPUTE:
       return 0;
@@ -406,7 +406,7 @@ nv50_program_translate(struct nv50_program *prog, uint16_t chipset,
    for (i = 0; i < info_out.io.cullDistances; ++i)
       prog->vp.clip_mode |= 1 << ((info_out.io.clipDistances + i) * 4);
 
-   if (prog->type == PIPE_SHADER_FRAGMENT) {
+   if (prog->type == MESA_SHADER_FRAGMENT) {
       if (info_out.prop.fp.writesDepth) {
          prog->fp.flags[0] |= NV50_3D_FP_CONTROL_EXPORTS_Z;
          prog->fp.flags[1] = 0x11;
@@ -467,7 +467,7 @@ nv50_program_upload_code(struct nv50_context *nv50, struct nv50_program *prog)
    switch (prog->type) {
    case MESA_SHADER_VERTEX:   heap = nv50->screen->vp_code_heap; break;
    case MESA_SHADER_GEOMETRY: heap = nv50->screen->gp_code_heap; break;
-   case PIPE_SHADER_FRAGMENT: heap = nv50->screen->fp_code_heap; break;
+   case MESA_SHADER_FRAGMENT: heap = nv50->screen->fp_code_heap; break;
    case PIPE_SHADER_COMPUTE:  heap = nv50->screen->fp_code_heap; break;
    default:
       assert(!"invalid program type");

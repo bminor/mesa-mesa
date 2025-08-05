@@ -536,7 +536,7 @@ svga_shader_type(enum pipe_shader_type shader)
       return SVGA3D_SHADERTYPE_VS;
    case MESA_SHADER_GEOMETRY:
       return SVGA3D_SHADERTYPE_GS;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       return SVGA3D_SHADERTYPE_PS;
    case MESA_SHADER_TESS_CTRL:
       return SVGA3D_SHADERTYPE_HS;

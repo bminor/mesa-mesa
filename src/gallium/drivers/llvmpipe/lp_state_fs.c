@@ -4263,7 +4263,7 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
    case PIPE_SHADER_COMPUTE:
       llvmpipe->cs_dirty |= LP_CSNEW_CONSTANTS;
       break;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       llvmpipe->dirty |= LP_NEW_FS_CONSTANTS;
       break;
    case PIPE_SHADER_TASK:
@@ -4324,7 +4324,7 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
       case PIPE_SHADER_MESH:
          llvmpipe->dirty |= LP_NEW_MESH_SSBOS;
          break;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          llvmpipe->fs_ssbo_write_mask &= ~(((1 << count) - 1) << start_slot);
          llvmpipe->fs_ssbo_write_mask |= writable_bitmask << start_slot;
          llvmpipe->dirty |= LP_NEW_FS_SSBOS;
@@ -4371,7 +4371,7 @@ llvmpipe_set_shader_images(struct pipe_context *pipe,
    case PIPE_SHADER_COMPUTE:
       llvmpipe->cs_dirty |= LP_CSNEW_IMAGES;
       break;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       llvmpipe->dirty |= LP_NEW_FS_IMAGES;
       break;
    case PIPE_SHADER_TASK:
@@ -4623,7 +4623,7 @@ make_variant_key(struct llvmpipe_context *lp,
    for (unsigned i = 0; i < key->nr_samplers; ++i) {
       if (BITSET_TEST(nir->info.samplers_used, i)) {
          lp_sampler_static_sampler_state(&fs_sampler[i].sampler_state,
-                                         lp->samplers[PIPE_SHADER_FRAGMENT][i]);
+                                         lp->samplers[MESA_SHADER_FRAGMENT][i]);
       }
    }
 
@@ -4641,7 +4641,7 @@ make_variant_key(struct llvmpipe_context *lp,
           */
          if (BITSET_TEST(nir->info.textures_used, i)) {
             lp_sampler_static_texture_state(&fs_sampler[i].texture_state,
-                                  lp->sampler_views[PIPE_SHADER_FRAGMENT][i]);
+                                  lp->sampler_views[MESA_SHADER_FRAGMENT][i]);
          }
       }
    } else {
@@ -4649,7 +4649,7 @@ make_variant_key(struct llvmpipe_context *lp,
       for (unsigned i = 0; i < key->nr_sampler_views; ++i) {
          if (BITSET_TEST(nir->info.samplers_used, i)) {
             lp_sampler_static_texture_state(&fs_sampler[i].texture_state,
-                                 lp->sampler_views[PIPE_SHADER_FRAGMENT][i]);
+                                 lp->sampler_views[MESA_SHADER_FRAGMENT][i]);
          }
       }
    }
@@ -4662,7 +4662,7 @@ make_variant_key(struct llvmpipe_context *lp,
    for (unsigned i = 0; i < key->nr_images; ++i) {
       if (BITSET_TEST(nir->info.images_used, i)) {
          lp_sampler_static_texture_state_image(&lp_image[i].image_state,
-                                      &lp->images[PIPE_SHADER_FRAGMENT][i]);
+                                      &lp->images[MESA_SHADER_FRAGMENT][i]);
       }
    }
 

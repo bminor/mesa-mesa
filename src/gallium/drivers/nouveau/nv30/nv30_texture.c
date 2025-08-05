@@ -195,7 +195,7 @@ nv30_bind_sampler_states(struct pipe_context *pipe,
    case MESA_SHADER_VERTEX:
       nv40_verttex_sampler_states_bind(pipe, num_samplers, samplers);
       break;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       nv30_fragtex_sampler_states_bind(pipe, num_samplers, samplers);
       break;
    default:

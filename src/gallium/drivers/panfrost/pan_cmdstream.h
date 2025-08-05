@@ -311,9 +311,9 @@ panfrost_emit_resources(struct panfrost_batch *batch,
    pan_make_resource_table(T, PAN_TABLE_IMAGE, batch->images[stage],
                            util_last_bit(ctx->image_mask[stage]));
 
-   if (stage == PIPE_SHADER_FRAGMENT) {
+   if (stage == MESA_SHADER_FRAGMENT) {
       pan_make_resource_table(T, PAN_TABLE_ATTRIBUTE, batch->attribs[stage],
-                              batch->nr_varying_attribs[PIPE_SHADER_FRAGMENT]);
+                              batch->nr_varying_attribs[MESA_SHADER_FRAGMENT]);
    } else if (stage == MESA_SHADER_VERTEX) {
       pan_make_resource_table(T, PAN_TABLE_ATTRIBUTE, batch->attribs[stage],
                               ctx->vertex->num_elements);

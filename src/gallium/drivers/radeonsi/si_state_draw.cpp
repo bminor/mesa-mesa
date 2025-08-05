@@ -49,7 +49,7 @@ static bool si_update_shaders(struct si_context *sctx)
    bool is_gs_state_changed =
       (sctx->dirty_shaders_mask & BITFIELD_BIT(MESA_SHADER_GEOMETRY)) != 0;
    bool is_ps_state_changed =
-      (sctx->dirty_shaders_mask & BITFIELD_BIT(PIPE_SHADER_FRAGMENT)) != 0;
+      (sctx->dirty_shaders_mask & BITFIELD_BIT(MESA_SHADER_FRAGMENT)) != 0;
 
    struct pipe_context *ctx = (struct pipe_context *)sctx;
    struct si_shader *old_vs = si_get_vs_inline(sctx, HAS_TESS, HAS_GS)->current;

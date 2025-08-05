@@ -2378,7 +2378,7 @@ static void evergreen_emit_gs_constant_buffers(struct r600_context *rctx, struct
 
 static void evergreen_emit_ps_constant_buffers(struct r600_context *rctx, struct r600_atom *atom)
 {
-	evergreen_emit_constant_buffers(rctx, &rctx->constbuf_state[PIPE_SHADER_FRAGMENT],
+	evergreen_emit_constant_buffers(rctx, &rctx->constbuf_state[MESA_SHADER_FRAGMENT],
 					EG_FETCH_CONSTANTS_OFFSET_PS,
 					R_028140_ALU_CONST_BUFFER_SIZE_PS_0,
 					R_028940_ALU_CONST_CACHE_PS_0,
@@ -2507,7 +2507,7 @@ static void evergreen_emit_tes_sampler_views(struct r600_context *rctx, struct r
 
 static void evergreen_emit_ps_sampler_views(struct r600_context *rctx, struct r600_atom *atom)
 {
-	evergreen_emit_sampler_views(rctx, &rctx->samplers[PIPE_SHADER_FRAGMENT].views,
+	evergreen_emit_sampler_views(rctx, &rctx->samplers[MESA_SHADER_FRAGMENT].views,
 	                             EG_FETCH_CONSTANTS_OFFSET_PS + R600_MAX_CONST_BUFFERS, 0);
 }
 
@@ -2876,7 +2876,7 @@ static void evergreen_emit_tes_sampler_states(struct r600_context *rctx, struct 
 
 static void evergreen_emit_ps_sampler_states(struct r600_context *rctx, struct r600_atom *atom)
 {
-	evergreen_emit_sampler_states(rctx, &rctx->samplers[PIPE_SHADER_FRAGMENT], 0,
+	evergreen_emit_sampler_states(rctx, &rctx->samplers[MESA_SHADER_FRAGMENT], 0,
 	                              R_00A400_TD_PS_SAMPLER0_BORDER_INDEX, 0);
 }
 
@@ -4437,11 +4437,11 @@ static void evergreen_set_shader_buffers(struct pipe_context *ctx,
 	unsigned i, idx;
 	unsigned old_mask;
 
-	if ((shader != PIPE_SHADER_FRAGMENT &&
+	if ((shader != MESA_SHADER_FRAGMENT &&
         shader != PIPE_SHADER_COMPUTE) || count == 0)
 		return;
 
-	if (shader == PIPE_SHADER_FRAGMENT)
+	if (shader == MESA_SHADER_FRAGMENT)
 		istate = &rctx->fragment_buffers;
 	else if (shader == PIPE_SHADER_COMPUTE)
 		istate = &rctx->compute_buffers;
@@ -4519,7 +4519,7 @@ static void evergreen_set_shader_buffers(struct pipe_context *ctx,
 		r600_mark_atom_dirty(rctx, &rctx->cb_misc_state.atom);
 	}
 
-	if (shader == PIPE_SHADER_FRAGMENT)
+	if (shader == MESA_SHADER_FRAGMENT)
 		r600_mark_atom_dirty(rctx, &istate->atom);
 }
 
@@ -4539,17 +4539,17 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 	unsigned old_mask;
 	struct r600_image_state *istate = NULL;
 	int idx;
-	if (shader != PIPE_SHADER_FRAGMENT && shader != PIPE_SHADER_COMPUTE)
+	if (shader != MESA_SHADER_FRAGMENT && shader != PIPE_SHADER_COMPUTE)
 		return;
 	if (!count && !unbind_num_trailing_slots)
 		return;
 
-	if (shader == PIPE_SHADER_FRAGMENT)
+	if (shader == MESA_SHADER_FRAGMENT)
 		istate = &rctx->fragment_images;
 	else if (shader == PIPE_SHADER_COMPUTE)
 		istate = &rctx->compute_images;
 
-	assert (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE);
+	assert (shader == MESA_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE);
 
 	old_mask = istate->enabled_mask;
 	for (i = start_slot, idx = 0; i < start_slot + count; i++, idx++) {
@@ -4733,7 +4733,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 		r600_mark_atom_dirty(rctx, &rctx->cb_misc_state.atom);
 	}
 
-	if (shader == PIPE_SHADER_FRAGMENT)
+	if (shader == MESA_SHADER_FRAGMENT)
 		r600_mark_atom_dirty(rctx, &istate->atom);
 }
 
@@ -4820,7 +4820,7 @@ void evergreen_init_state_functions(struct r600_context *rctx)
 	/* shader const */
 	r600_init_atom(rctx, &rctx->constbuf_state[MESA_SHADER_VERTEX].atom, id++, evergreen_emit_vs_constant_buffers, 0);
 	r600_init_atom(rctx, &rctx->constbuf_state[MESA_SHADER_GEOMETRY].atom, id++, evergreen_emit_gs_constant_buffers, 0);
-	r600_init_atom(rctx, &rctx->constbuf_state[PIPE_SHADER_FRAGMENT].atom, id++, evergreen_emit_ps_constant_buffers, 0);
+	r600_init_atom(rctx, &rctx->constbuf_state[MESA_SHADER_FRAGMENT].atom, id++, evergreen_emit_ps_constant_buffers, 0);
 	r600_init_atom(rctx, &rctx->constbuf_state[MESA_SHADER_TESS_CTRL].atom, id++, evergreen_emit_tcs_constant_buffers, 0);
 	r600_init_atom(rctx, &rctx->constbuf_state[MESA_SHADER_TESS_EVAL].atom, id++, evergreen_emit_tes_constant_buffers, 0);
 	r600_init_atom(rctx, &rctx->constbuf_state[PIPE_SHADER_COMPUTE].atom, id++, evergreen_emit_cs_constant_buffers, 0);
@@ -4831,7 +4831,7 @@ void evergreen_init_state_functions(struct r600_context *rctx)
 	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_GEOMETRY].states.atom, id++, evergreen_emit_gs_sampler_states, 0);
 	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_TESS_CTRL].states.atom, id++, evergreen_emit_tcs_sampler_states, 0);
 	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_TESS_EVAL].states.atom, id++, evergreen_emit_tes_sampler_states, 0);
-	r600_init_atom(rctx, &rctx->samplers[PIPE_SHADER_FRAGMENT].states.atom, id++, evergreen_emit_ps_sampler_states, 0);
+	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_FRAGMENT].states.atom, id++, evergreen_emit_ps_sampler_states, 0);
 	r600_init_atom(rctx, &rctx->samplers[PIPE_SHADER_COMPUTE].states.atom, id++, evergreen_emit_cs_sampler_states, 0);
 	/* resources */
 	r600_init_atom(rctx, &rctx->vertex_buffer_state.atom, id++, evergreen_fs_emit_vertex_buffers, 0);
@@ -4840,7 +4840,7 @@ void evergreen_init_state_functions(struct r600_context *rctx)
 	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_GEOMETRY].views.atom, id++, evergreen_emit_gs_sampler_views, 0);
 	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_TESS_CTRL].views.atom, id++, evergreen_emit_tcs_sampler_views, 0);
 	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_TESS_EVAL].views.atom, id++, evergreen_emit_tes_sampler_views, 0);
-	r600_init_atom(rctx, &rctx->samplers[PIPE_SHADER_FRAGMENT].views.atom, id++, evergreen_emit_ps_sampler_views, 0);
+	r600_init_atom(rctx, &rctx->samplers[MESA_SHADER_FRAGMENT].views.atom, id++, evergreen_emit_ps_sampler_views, 0);
 	r600_init_atom(rctx, &rctx->samplers[PIPE_SHADER_COMPUTE].views.atom, id++, evergreen_emit_cs_sampler_views, 0);
 
 	r600_init_atom(rctx, &rctx->vgt_state.atom, id++, r600_emit_vgt_state, 10);

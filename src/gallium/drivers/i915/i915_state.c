@@ -353,7 +353,7 @@ i915_bind_sampler_states(struct pipe_context *pipe,
                          enum pipe_shader_type shader, unsigned start,
                          unsigned num, void **samplers)
 {
-   if (shader != PIPE_SHADER_FRAGMENT) {
+   if (shader != MESA_SHADER_FRAGMENT) {
       assert(num == 0);
       return;
    }
@@ -784,7 +784,7 @@ i915_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
                        unsigned unbind_num_trailing_slots,
                        struct pipe_sampler_view **views)
 {
-   if (shader != PIPE_SHADER_FRAGMENT) {
+   if (shader != MESA_SHADER_FRAGMENT) {
       /* No support for VS samplers, because it would mean accessing the
        * write-combined maps of the textures, which is very slow.  VS samplers
        * are not a required feature of GL2.1 or GLES2.

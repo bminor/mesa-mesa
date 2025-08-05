@@ -49,7 +49,7 @@ struct u_log_context;
 
 /* Debug flags. */
 #define DBG_VS			(1 << MESA_SHADER_VERTEX)
-#define DBG_PS			(1 << PIPE_SHADER_FRAGMENT)
+#define DBG_PS			(1 << MESA_SHADER_FRAGMENT)
 #define DBG_GS			(1 << MESA_SHADER_GEOMETRY)
 #define DBG_TCS			(1 << MESA_SHADER_TESS_CTRL)
 #define DBG_TES			(1 << MESA_SHADER_TESS_EVAL)

@@ -723,11 +723,11 @@ static void util_blitter_restore_textures_internal(struct blitter_context *blitt
    void *states[2] = {NULL};
    assert(count <= ARRAY_SIZE(states));
    if (ctx->base.saved_num_sampler_states)
-      pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT, 0,
+      pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT, 0,
                                 ctx->base.saved_num_sampler_states,
                                 ctx->base.saved_sampler_states);
    else if (count)
-      pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT, 0,
+      pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT, 0,
                                 count,
                                 states);
 
@@ -735,11 +735,11 @@ static void util_blitter_restore_textures_internal(struct blitter_context *blitt
 
    /* Fragment sampler views. */
    if (ctx->base.saved_num_sampler_views)
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0,
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0,
                               ctx->base.saved_num_sampler_views, 0,
                               ctx->base.saved_sampler_views);
    else if (count)
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0,
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0,
                               0, count,
                               NULL);
 
@@ -759,7 +759,7 @@ void util_blitter_restore_constant_buffer_state(struct blitter_context *blitter)
 {
    struct pipe_context *pipe = blitter->pipe;
 
-   pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, blitter->cb_slot,
+   pipe->set_constant_buffer(pipe, MESA_SHADER_FRAGMENT, blitter->cb_slot,
                              true, &blitter->saved_fs_constant_buffer);
    blitter->saved_fs_constant_buffer.buffer = NULL;
 }
@@ -1523,7 +1523,7 @@ static void util_blitter_clear_custom(struct blitter_context *blitter,
          .user_buffer = color->f,
          .buffer_size = 4 * sizeof(float),
       };
-      pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, blitter->cb_slot,
+      pipe->set_constant_buffer(pipe, MESA_SHADER_FRAGMENT, blitter->cb_slot,
                                 false, &cb);
       bind_fs_clear_color(ctx, true);
    } else {
@@ -2143,8 +2143,8 @@ void util_blitter_blit_generic(struct blitter_context *blitter,
       views[1] = pipe->create_sampler_view(pipe, src->texture, &templ);
 
       count = 2;
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 2, 0, views);
-      pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT, 0, 2, samplers);
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 2, 0, views);
+      pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT, 0, 2, samplers);
 
       pipe_sampler_view_reference(&views[1], NULL);
    } else if (src_has_stencil && dst_has_stencil) {
@@ -2159,15 +2159,15 @@ void util_blitter_blit_generic(struct blitter_context *blitter,
       view = pipe->create_sampler_view(pipe, src->texture, &templ);
 
       count = 1;
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0, &view);
-      pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT,
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 1, 0, &view);
+      pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT,
                                 0, 1, &sampler_state);
 
       pipe_sampler_view_reference(&view, NULL);
    } else {
       count = 1;
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0, &src);
-      pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT,
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 1, 0, &src);
+      pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT,
                                 0, 1, &sampler_state);
    }
 
@@ -2287,7 +2287,7 @@ void util_blitter_generate_mipmap(struct blitter_context *blitter,
    } else {
       sampler_state = ctx->sampler_state_linear;
    }
-   pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT,
+   pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT,
                              0, 1, &sampler_state);
 
    blitter_set_common_draw_rect_state(ctx, false, false);
@@ -2320,7 +2320,7 @@ void util_blitter_generate_mipmap(struct blitter_context *blitter,
       src_templ.format = format;
       src_view = pipe->create_sampler_view(pipe, tex, &src_templ);
 
-      pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0, &src_view);
+      pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 1, 0, &src_view);
 
       do_blits(ctx, &dst_templ, &dstbox, src_view, tex->width0, tex->height0,
                &srcbox, is_depth, false, false, 0);
@@ -2383,7 +2383,7 @@ void util_blitter_clear_render_target(struct blitter_context *blitter,
       .user_buffer = color->f,
       .buffer_size = 4 * sizeof(float),
    };
-   pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, blitter->cb_slot,
+   pipe->set_constant_buffer(pipe, MESA_SHADER_FRAGMENT, blitter->cb_slot,
                              false, &cb);
 
    num_layers = dstsurf->last_layer - dstsurf->first_layer + 1;
@@ -2808,8 +2808,8 @@ util_blitter_stencil_fallback(struct blitter_context *blitter,
       pipe->set_scissor_states(pipe, 0, 1, scissor);
    }
 
-   pipe->set_sampler_views(pipe, PIPE_SHADER_FRAGMENT, 0, 1, 0, &src_view);
-   pipe->bind_sampler_states(pipe, PIPE_SHADER_FRAGMENT, 0, 1, &ctx->sampler_state);
+   pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 1, 0, &src_view);
+   pipe->bind_sampler_states(pipe, MESA_SHADER_FRAGMENT, 0, 1, &ctx->sampler_state);
 
    unsigned stencil_bits =
       util_format_get_component_bits(dst->format,
@@ -2833,7 +2833,7 @@ util_blitter_stencil_fallback(struct blitter_context *blitter,
             .user_buffer = &mask,
             .buffer_size = sizeof(mask),
          };
-         pipe->set_constant_buffer(pipe, PIPE_SHADER_FRAGMENT, blitter->cb_slot,
+         pipe->set_constant_buffer(pipe, MESA_SHADER_FRAGMENT, blitter->cb_slot,
                                  false, &cb);
 
          pipe->bind_depth_stencil_alpha_state(pipe,

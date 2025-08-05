@@ -50,7 +50,7 @@ etna_bind_sampler_states(struct pipe_context *pctx, enum pipe_shader_type shader
    int offset;
 
    switch (shader) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       offset = 0;
       ctx->num_fragment_samplers = num_samplers;
       break;
@@ -331,7 +331,7 @@ etna_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
    ctx->dirty |= ETNA_DIRTY_SAMPLER_VIEWS | ETNA_DIRTY_TEXTURE_CACHES;
 
    switch (shader) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       etna_fragtex_set_sampler_views(ctx, num_views, views);
       break;
    case MESA_SHADER_VERTEX:

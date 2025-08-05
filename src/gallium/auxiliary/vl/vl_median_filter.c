@@ -92,13 +92,13 @@ create_frag_shader(struct vl_median_filter *filter,
       return NULL;
    }
 
-   if (num_offsets > screen->shader_caps[PIPE_SHADER_FRAGMENT].max_temps) {
+   if (num_offsets > screen->shader_caps[MESA_SHADER_FRAGMENT].max_temps) {
 
       FREE(t_array);
       return NULL;
    }
 
-   shader = ureg_create(PIPE_SHADER_FRAGMENT);
+   shader = ureg_create(MESA_SHADER_FRAGMENT);
    if (!shader) {
       FREE(t_array);
       return NULL;
@@ -417,9 +417,9 @@ vl_median_filter_render(struct vl_median_filter *filter,
 
    filter->pipe->bind_rasterizer_state(filter->pipe, filter->rs_state);
    filter->pipe->bind_blend_state(filter->pipe, filter->blend);
-   filter->pipe->bind_sampler_states(filter->pipe, PIPE_SHADER_FRAGMENT,
+   filter->pipe->bind_sampler_states(filter->pipe, MESA_SHADER_FRAGMENT,
                                      0, 1, &filter->sampler);
-   filter->pipe->set_sampler_views(filter->pipe, PIPE_SHADER_FRAGMENT,
+   filter->pipe->set_sampler_views(filter->pipe, MESA_SHADER_FRAGMENT,
                                    0, 1, 0, &src);
    filter->pipe->bind_vs_state(filter->pipe, filter->vs);
    filter->pipe->bind_fs_state(filter->pipe, filter->fs);

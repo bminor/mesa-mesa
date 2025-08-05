@@ -163,7 +163,7 @@ u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
    caps->allow_dynamic_vao_fastpath = true;
 
    caps->max_constant_buffer_size =
-      pscreen->shader_caps[PIPE_SHADER_FRAGMENT].max_const_buffer0_size;
+      pscreen->shader_caps[MESA_SHADER_FRAGMENT].max_const_buffer0_size;
 
    /* accel=0: on CPU, always disabled
     * accel>0: on GPU, enable by default, user can disable it manually

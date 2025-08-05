@@ -212,7 +212,7 @@ softpipe_init_shader_caps(struct softpipe_screen *sp_screen)
             break;
          }
          FALLTHROUGH;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
       case PIPE_SHADER_COMPUTE:
          tgsi_exec_init_shader_caps(caps);
          break;

@@ -50,7 +50,7 @@ void
 etna_blit_save_state(struct etna_context *ctx, bool render_cond)
 {
    util_blitter_save_fragment_constant_buffer_slot(ctx->blitter,
-                                                   ctx->constant_buffer[PIPE_SHADER_FRAGMENT].cb);
+                                                   ctx->constant_buffer[MESA_SHADER_FRAGMENT].cb);
    util_blitter_save_vertex_buffers(ctx->blitter, ctx->vertex_buffer.vb,
                                     ctx->vertex_buffer.count);
    util_blitter_save_vertex_elements(ctx->blitter, ctx->vertex_elements);

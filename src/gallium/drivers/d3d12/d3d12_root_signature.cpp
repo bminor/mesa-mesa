@@ -43,7 +43,7 @@ get_shader_visibility(enum pipe_shader_type stage)
    switch (stage) {
    case MESA_SHADER_VERTEX:
       return D3D12_SHADER_VISIBILITY_VERTEX;
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       return D3D12_SHADER_VISIBILITY_PIXEL;
    case MESA_SHADER_GEOMETRY:
       return D3D12_SHADER_VISIBILITY_GEOMETRY;

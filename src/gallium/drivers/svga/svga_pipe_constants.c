@@ -66,7 +66,7 @@ svga_set_constant_buffer(struct pipe_context *pipe,
    svga->curr.constbufs[shader][index].user_buffer = NULL; /* not used */
 
    if (index == 0) {
-      if (shader == PIPE_SHADER_FRAGMENT)
+      if (shader == MESA_SHADER_FRAGMENT)
          svga->dirty |= SVGA_NEW_FS_CONSTS;
       else if (shader == MESA_SHADER_VERTEX)
          svga->dirty |= SVGA_NEW_VS_CONSTS;
@@ -79,7 +79,7 @@ svga_set_constant_buffer(struct pipe_context *pipe,
       else if (shader == PIPE_SHADER_COMPUTE)
          svga->dirty |= SVGA_NEW_CS_CONSTS;
    } else {
-      if (shader == PIPE_SHADER_FRAGMENT)
+      if (shader == MESA_SHADER_FRAGMENT)
          svga->dirty |= SVGA_NEW_FS_CONST_BUFFER;
       else if (shader == MESA_SHADER_VERTEX)
          svga->dirty |= SVGA_NEW_VS_CONST_BUFFER;

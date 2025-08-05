@@ -587,7 +587,7 @@ ir3_emit_fs_consts(const struct ir3_shader_variant *v,
 {
    assert(v->type == MESA_SHADER_FRAGMENT);
 
-   emit_common_consts(v, ring, ctx, PIPE_SHADER_FRAGMENT);
+   emit_common_consts(v, ring, ctx, MESA_SHADER_FRAGMENT);
 }
 
 static inline struct ir3_driver_params_cs

@@ -1052,8 +1052,8 @@ try_update_scene_state(struct lp_setup_context *setup)
    struct llvmpipe_context *llvmpipe = llvmpipe_context(setup->pipe);
    if (llvmpipe->dirty & LP_NEW_FS_CONSTANTS)
       lp_setup_set_fs_constants(llvmpipe->setup,
-                                ARRAY_SIZE(llvmpipe->constants[PIPE_SHADER_FRAGMENT]),
-                                llvmpipe->constants[PIPE_SHADER_FRAGMENT]);
+                                ARRAY_SIZE(llvmpipe->constants[MESA_SHADER_FRAGMENT]),
+                                llvmpipe->constants[MESA_SHADER_FRAGMENT]);
 
    if (setup->dirty & LP_SETUP_NEW_CONSTANTS) {
       for (unsigned i = 0; i < ARRAY_SIZE(setup->constants); ++i) {

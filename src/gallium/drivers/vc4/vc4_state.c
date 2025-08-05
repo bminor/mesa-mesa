@@ -436,7 +436,7 @@ static struct vc4_texture_stateobj *
 vc4_get_stage_tex(struct vc4_context *vc4, enum pipe_shader_type shader)
 {
         switch (shader) {
-        case PIPE_SHADER_FRAGMENT:
+        case MESA_SHADER_FRAGMENT:
                 vc4->dirty |= VC4_DIRTY_FRAGTEX;
                 return &vc4->fragtex;
                 break;

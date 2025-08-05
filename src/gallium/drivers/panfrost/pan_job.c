@@ -67,7 +67,7 @@ panfrost_batch_add_surface(struct panfrost_batch *batch,
    if (surf->texture) {
       struct panfrost_resource *rsrc = pan_resource(surf->texture);
       pan_legalize_format(batch->ctx, rsrc, surf->format, true, false);
-      panfrost_batch_write_rsrc(batch, rsrc, PIPE_SHADER_FRAGMENT);
+      panfrost_batch_write_rsrc(batch, rsrc, MESA_SHADER_FRAGMENT);
    }
 }
 
@@ -351,7 +351,7 @@ panfrost_batch_add_bo_old(struct panfrost_batch *batch, struct panfrost_bo *bo,
 static uint32_t
 panfrost_access_for_stage(enum pipe_shader_type stage)
 {
-   return (stage == PIPE_SHADER_FRAGMENT) ? PAN_BO_ACCESS_FRAGMENT
+   return (stage == MESA_SHADER_FRAGMENT) ? PAN_BO_ACCESS_FRAGMENT
                                           : PAN_BO_ACCESS_VERTEX_TILER;
 }
 
@@ -447,7 +447,7 @@ panfrost_batch_get_scratchpad(struct panfrost_batch *batch,
                                   MESA_SHADER_VERTEX, "Thread local storage");
 
       if (batch->scratchpad)
-         panfrost_batch_add_bo(batch, batch->scratchpad, PIPE_SHADER_FRAGMENT);
+         panfrost_batch_add_bo(batch, batch->scratchpad, MESA_SHADER_FRAGMENT);
    }
 
    return batch->scratchpad;

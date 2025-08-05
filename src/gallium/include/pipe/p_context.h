@@ -350,7 +350,7 @@ struct pipe_context {
     *                 position contains the corresponding \c pipe_shader_state*
     *                 or \c pipe_compute_state*, or \c NULL.
     *                 E.g. You can retrieve the fragment shader handle with
-    *                      \c handles[PIPE_SHADER_FRAGMENT]
+    *                      \c handles[MESA_SHADER_FRAGMENT]
     */
    void (*link_shader)(struct pipe_context *, void** handles);
    /*@}*/

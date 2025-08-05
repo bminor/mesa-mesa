@@ -202,7 +202,7 @@ translate_src_register(const struct svga_shader_emitter *emit,
    /* Indirect addressing.
     */
    if (reg->Register.Indirect) {
-      if (emit->unit == PIPE_SHADER_FRAGMENT) {
+      if (emit->unit == MESA_SHADER_FRAGMENT) {
          /* Pixel shaders have only loop registers for relative
           * addressing into inputs. Ignore the redundant address
           * register, the contents of aL should be in sync with it.
@@ -1566,7 +1566,7 @@ emit_cmp(struct svga_shader_emitter *emit,
       return emit_conditional(emit, PIPE_FUNC_LESS, dst,
                               src0, zero, src1, src2);
    } else {
-      assert(emit->unit == PIPE_SHADER_FRAGMENT);
+      assert(emit->unit == MESA_SHADER_FRAGMENT);
 
       /* CMP  DST, SRC0, SRC2, SRC1 */
       return submit_op3(emit, inst_token(SVGA3DOP_CMP), dst,
@@ -1996,7 +1996,7 @@ emit_mov(struct svga_shader_emitter *emit,
    const struct tgsi_full_src_register *src = &insn->Src[0];
    const struct tgsi_full_dst_register *dst = &insn->Dst[0];
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT &&
+   if (emit->unit == MESA_SHADER_FRAGMENT &&
        dst->Register.File == TGSI_FILE_OUTPUT &&
        dst->Register.Index == 0 &&
        src->Register.File == TGSI_FILE_CONSTANT &&
@@ -2144,7 +2144,7 @@ emit_arl(struct svga_shader_emitter *emit,
          const struct tgsi_full_instruction *insn)
 {
    ++emit->current_arl;
-   if (emit->unit == PIPE_SHADER_FRAGMENT) {
+   if (emit->unit == MESA_SHADER_FRAGMENT) {
       /* MOVA not present in pixel shader instruction set.
        * Ignore this instruction altogether since it is
        * only used for loop counters -- and for that
@@ -3086,7 +3086,7 @@ emit_ps_postamble(struct svga_shader_emitter *emit)
          /* Potentially override output colors with white for XOR
           * logicop workaround.
           */
-         if (emit->unit == PIPE_SHADER_FRAGMENT &&
+         if (emit->unit == MESA_SHADER_FRAGMENT &&
              emit->key.fs.white_fragments) {
             struct src_register one = get_one_immediate(emit);
 
@@ -3095,7 +3095,7 @@ emit_ps_postamble(struct svga_shader_emitter *emit)
                              emit->true_color_output[i],
                              one))
                return false;
-         } else if (emit->unit == PIPE_SHADER_FRAGMENT &&
+         } else if (emit->unit == MESA_SHADER_FRAGMENT &&
                     i < emit->key.fs.write_color0_to_n_cbufs) {
             /* Write temp color output [0] to true output [i] */
             if (!submit_op1(emit, inst_token(SVGA3DOP_MOV),
@@ -3475,7 +3475,7 @@ emit_adjusted_vertex_attribs(struct svga_shader_emitter *emit)
 static bool
 needs_to_create_common_immediate(const struct svga_shader_emitter *emit)
 {
-   if (emit->unit == PIPE_SHADER_FRAGMENT) {
+   if (emit->unit == MESA_SHADER_FRAGMENT) {
       if (emit->key.fs.light_twoside)
          return true;
 
@@ -3655,7 +3655,7 @@ svga_shader_emit_helpers(struct svga_shader_emitter *emit)
       create_arl_consts(emit);
    }
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT) {
+   if (emit->unit == MESA_SHADER_FRAGMENT) {
       if (!svga_shader_emit_samplers_decl(emit))
          return false;
 
@@ -3702,7 +3702,7 @@ svga_shader_emit_instructions(struct svga_shader_emitter *emit,
    bool helpers_emitted = false;
    unsigned line_nr = 0;
 
-   if (emit->unit == PIPE_SHADER_FRAGMENT && emit->key.fs.pstipple) {
+   if (emit->unit == MESA_SHADER_FRAGMENT && emit->key.fs.pstipple) {
       unsigned unit;
 
       new_tokens = util_pstipple_create_fragment_shader(tokens, &unit, 0,

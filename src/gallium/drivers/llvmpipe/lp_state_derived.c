@@ -343,28 +343,28 @@ llvmpipe_update_derived(struct llvmpipe_context *llvmpipe)
 
    if (llvmpipe->dirty & LP_NEW_FS_CONSTANTS)
       lp_setup_set_fs_constants(llvmpipe->setup,
-                                ARRAY_SIZE(llvmpipe->constants[PIPE_SHADER_FRAGMENT]),
-                                llvmpipe->constants[PIPE_SHADER_FRAGMENT]);
+                                ARRAY_SIZE(llvmpipe->constants[MESA_SHADER_FRAGMENT]),
+                                llvmpipe->constants[MESA_SHADER_FRAGMENT]);
 
    if (llvmpipe->dirty & LP_NEW_FS_SSBOS)
       lp_setup_set_fs_ssbos(llvmpipe->setup,
-                            ARRAY_SIZE(llvmpipe->ssbos[PIPE_SHADER_FRAGMENT]),
-                            llvmpipe->ssbos[PIPE_SHADER_FRAGMENT], llvmpipe->fs_ssbo_write_mask);
+                            ARRAY_SIZE(llvmpipe->ssbos[MESA_SHADER_FRAGMENT]),
+                            llvmpipe->ssbos[MESA_SHADER_FRAGMENT], llvmpipe->fs_ssbo_write_mask);
 
    if (llvmpipe->dirty & LP_NEW_FS_IMAGES)
       lp_setup_set_fs_images(llvmpipe->setup,
-                             ARRAY_SIZE(llvmpipe->images[PIPE_SHADER_FRAGMENT]),
-                             llvmpipe->images[PIPE_SHADER_FRAGMENT]);
+                             ARRAY_SIZE(llvmpipe->images[MESA_SHADER_FRAGMENT]),
+                             llvmpipe->images[MESA_SHADER_FRAGMENT]);
 
    if (llvmpipe->dirty & (LP_NEW_SAMPLER_VIEW))
       lp_setup_set_fragment_sampler_views(llvmpipe->setup,
-                                          llvmpipe->num_sampler_views[PIPE_SHADER_FRAGMENT],
-                                          llvmpipe->sampler_views[PIPE_SHADER_FRAGMENT]);
+                                          llvmpipe->num_sampler_views[MESA_SHADER_FRAGMENT],
+                                          llvmpipe->sampler_views[MESA_SHADER_FRAGMENT]);
 
    if (llvmpipe->dirty & (LP_NEW_SAMPLER))
       lp_setup_set_fragment_sampler_state(llvmpipe->setup,
-                                          llvmpipe->num_samplers[PIPE_SHADER_FRAGMENT],
-                                          llvmpipe->samplers[PIPE_SHADER_FRAGMENT]);
+                                          llvmpipe->num_samplers[MESA_SHADER_FRAGMENT],
+                                          llvmpipe->samplers[MESA_SHADER_FRAGMENT]);
 
    if (llvmpipe->dirty & LP_NEW_VIEWPORT) {
       /*

@@ -110,7 +110,7 @@ scan_src_operand(struct tgsi_shader_info *info,
          info->input_usage_mask[ind] |= usage_mask_after_swizzle;
       }
 
-      if (info->processor == PIPE_SHADER_FRAGMENT) {
+      if (info->processor == MESA_SHADER_FRAGMENT) {
          unsigned name, input;
 
          if (src->Register.Indirect && src->Indirect.ArrayID)
@@ -509,7 +509,7 @@ scan_declaration(struct tgsi_shader_info *info,
             info->writes_edgeflag = true;
             break;
          case TGSI_SEMANTIC_POSITION:
-            if (procType == PIPE_SHADER_FRAGMENT)
+            if (procType == MESA_SHADER_FRAGMENT)
                info->writes_z = true;
             else
                info->writes_position = true;
@@ -610,7 +610,7 @@ tgsi_scan_shader(const struct tgsi_token *tokens,
       return;
    }
    procType = parse.FullHeader.Processor.Processor;
-   assert(procType == PIPE_SHADER_FRAGMENT ||
+   assert(procType == MESA_SHADER_FRAGMENT ||
           procType == MESA_SHADER_VERTEX ||
           procType == MESA_SHADER_GEOMETRY ||
           procType == MESA_SHADER_TESS_CTRL ||

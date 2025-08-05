@@ -86,7 +86,7 @@ CreateEmptyShader(Device *pDevice,
 
    void *handle;
    switch (processor) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       handle = pipe->create_fs_state(pipe, &state);
       break;
    case MESA_SHADER_VERTEX:
@@ -130,7 +130,7 @@ DeleteEmptyShader(Device *pDevice,
 
    assert(handle != NULL);
    switch (processor) {
-   case PIPE_SHADER_FRAGMENT:
+   case MESA_SHADER_FRAGMENT:
       pipe->delete_fs_state(pipe, handle);
       break;
    case MESA_SHADER_VERTEX:
@@ -300,7 +300,7 @@ DestroyShader(D3D10DDI_HDEVICE hDevice,   // IN
 
    if (pShader->handle) {
       switch (pShader->type) {
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          pipe->delete_fs_state(pipe, pShader->handle);
          break;
       case MESA_SHADER_VERTEX:
@@ -996,7 +996,7 @@ CreatePixelShader(D3D10DDI_HDEVICE hDevice,                                // IN
    struct pipe_context *pipe = CastPipeContext(hDevice);
    Shader *pShader = CastShader(hShader);
 
-   pShader->type = PIPE_SHADER_FRAGMENT;
+   pShader->type = MESA_SHADER_FRAGMENT;
    pShader->output_resolved = true;
 
    memset(&pShader->state, 0, sizeof pShader->state);
@@ -1056,7 +1056,7 @@ PsSetShaderResources(D3D10DDI_HDEVICE hDevice,                                  
 {
    LOG_ENTRYPOINT();
 
-   SetShaderResources(PIPE_SHADER_FRAGMENT, hDevice, Offset, NumViews, phShaderResourceViews);
+   SetShaderResources(MESA_SHADER_FRAGMENT, hDevice, Offset, NumViews, phShaderResourceViews);
 }
 
 
@@ -1079,7 +1079,7 @@ PsSetConstantBuffers(D3D10DDI_HDEVICE hDevice,                                  
 {
    LOG_ENTRYPOINT();
 
-   SetConstantBuffers(PIPE_SHADER_FRAGMENT,
+   SetConstantBuffers(MESA_SHADER_FRAGMENT,
                       hDevice, StartBuffer, NumBuffers, phBuffers);
 }
 
@@ -1101,7 +1101,7 @@ PsSetSamplers(D3D10DDI_HDEVICE hDevice,                                       //
 {
    LOG_ENTRYPOINT();
 
-   SetSamplers(PIPE_SHADER_FRAGMENT, hDevice, Offset, NumSamplers, phSamplers);
+   SetSamplers(MESA_SHADER_FRAGMENT, hDevice, Offset, NumSamplers, phSamplers);
 }
 
 

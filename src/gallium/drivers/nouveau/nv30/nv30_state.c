@@ -355,7 +355,7 @@ nv30_set_constant_buffer(struct pipe_context *pipe,
       nv30->vertprog.constbuf_nr = size;
       nv30->dirty |= NV30_NEW_VERTCONST;
    } else
-   if (shader == PIPE_SHADER_FRAGMENT) {
+   if (shader == MESA_SHADER_FRAGMENT) {
       if (pass_reference) {
          pipe_resource_reference(&nv30->fragprog.constbuf, NULL);
          nv30->fragprog.constbuf = buf;

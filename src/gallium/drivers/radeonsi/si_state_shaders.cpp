@@ -2440,7 +2440,7 @@ void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx)
        ps_key->ps.mono.poly_line_smoothing != old_poly_line_smoothing ||
        ps_key->ps.mono.point_smoothing != old_point_smoothing ||
        ps_key->ps.opt.force_front_face_input != old_force_front_face_input)
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
 }
 
 static void si_get_vs_key_outputs(struct si_context *sctx, struct si_shader_selector *vs,
@@ -2675,7 +2675,7 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
    /* Update shaders only if the key changed. */
    if (memcmp(&key->ps.part.epilog, &old_epilog, sizeof(old_epilog)) ||
        key->ps.opt.prefer_mono != old_prefer_mono) {
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
    } else {
       assert(memcmp(&key->ps, &old_key, sizeof(old_key)) == 0);
    }
@@ -2698,7 +2698,7 @@ void si_ps_key_update_rasterizer(struct si_context *sctx)
 
    if (key->ps.part.prolog.flatshade_colors != old_flatshade_colors ||
        key->ps.part.epilog.clamp_color != old_clamp_color)
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
 }
 
 void si_ps_key_update_dsa(struct si_context *sctx)
@@ -2813,7 +2813,7 @@ void si_ps_key_update_framebuffer_rasterizer_sample_shading(struct si_context *s
    /* Update shaders only if the key changed. */
    if (memcmp(&key->ps.part.prolog, &old_prolog, sizeof(old_prolog)) ||
        key->ps.mono.interpolate_at_sample_force_center != old_interpolate_at_sample_force_center)
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_FRAGMENT);
 }
 
 /* Compute the key for the hw shader variant */
@@ -3932,7 +3932,7 @@ static void si_bind_ps_shader(struct pipe_context *ctx, void *state)
    sctx->shader.ps.cso = sel;
    sctx->shader.ps.current = (sel && sel->variants_count) ? sel->variants[0] : NULL;
 
-   si_update_common_shader_state(sctx, sel, PIPE_SHADER_FRAGMENT);
+   si_update_common_shader_state(sctx, sel, MESA_SHADER_FRAGMENT);
    if (sel) {
       if (sctx->ia_multi_vgt_param_key.u.uses_tess)
          si_update_tess_uses_prim_id(sctx);

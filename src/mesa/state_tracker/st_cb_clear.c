@@ -113,7 +113,7 @@ set_clearcolor_fs(struct st_context *st, union pipe_color_union *color)
       .user_buffer = color->f,
       .buffer_size = 4 * sizeof(float),
    };
-   st->pipe->set_constant_buffer(st->pipe, PIPE_SHADER_FRAGMENT, 0,
+   st->pipe->set_constant_buffer(st->pipe, MESA_SHADER_FRAGMENT, 0,
                                 false, &cb);
 
    if (!st->clear.fs) {

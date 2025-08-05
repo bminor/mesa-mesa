@@ -998,7 +998,7 @@ nv50_ir_prog_info_out_print(struct nv50_ir_prog_info_out *info_out)
          INFO("         \"instancesCount\":\"%d\"\n", info_out->prop.gp.instanceCount);
          INFO("         \"maxVertices\":\"%d\"\n", info_out->prop.gp.maxVertices);
          break;
-      case PIPE_SHADER_FRAGMENT:
+      case MESA_SHADER_FRAGMENT:
          INFO("      \"fp\":{\n");
          INFO("         \"numColourResults\":\"%d\"\n", info_out->prop.fp.numColourResults);
          INFO("         \"writesDepth\":\"%s\"\n", info_out->prop.fp.writesDepth ? "true" : "false");
