@@ -4384,7 +4384,7 @@
         "description": "spirv: move cmat store barrier after the store.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b98f87612bc14fe88184dc099d9d4f8e6b3b23cb",
         "notes": null
