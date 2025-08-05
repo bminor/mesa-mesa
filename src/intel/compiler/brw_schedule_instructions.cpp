@@ -268,6 +268,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
       break;
 
    case SHADER_OPCODE_SEND:
+   case SHADER_OPCODE_SEND_GATHER:
       switch (inst->sfid) {
       case BRW_SFID_SAMPLER: {
          unsigned msg_type = (inst->desc >> 12) & 0x1f;
