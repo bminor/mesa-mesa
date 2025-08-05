@@ -326,7 +326,7 @@ cso_create_context(struct pipe_context *pipe, unsigned flags)
          ctx->has_compute_shader = true;
       }
    }
-   if (pipe->screen->shader_caps[PIPE_SHADER_MESH].max_instructions > 0) {
+   if (pipe->screen->shader_caps[MESA_SHADER_MESH].max_instructions > 0) {
       ctx->has_task_mesh_shader = true;
    }
    if (pipe->screen->caps.max_stream_output_buffers != 0) {
@@ -379,7 +379,7 @@ cso_unbind_context(struct cso_context *cso)
                if (!ctx->has_compute_shader)
                   continue;
                break;
-            case PIPE_SHADER_MESH:
+            case MESA_SHADER_MESH:
             case MESA_SHADER_TASK:
                if (!ctx->has_task_mesh_shader)
                   continue;

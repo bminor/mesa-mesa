@@ -1281,7 +1281,7 @@ generate_variant(struct llvmpipe_context *lp,
    memset(variant, 0, sizeof(*variant));
 
    char module_name[64];
-   const char *shname = sh_type == PIPE_SHADER_MESH ? "ms" :
+   const char *shname = sh_type == MESA_SHADER_MESH ? "ms" :
       (sh_type == MESA_SHADER_TASK ? "ts" : "cs");
    snprintf(module_name, sizeof(module_name), "%s%u_variant%u",
             shname, shader->no, shader->variants_created);
@@ -1315,7 +1315,7 @@ generate_variant(struct llvmpipe_context *lp,
 
    lp_jit_init_cs_types(variant);
 
-   if (sh_type == PIPE_SHADER_MESH) {
+   if (sh_type == MESA_SHADER_MESH) {
       struct nir_shader *nir = shader->base.ir.nir;
       int per_prim_count = util_bitcount64(nir->info.per_primitive_outputs);
       int out_count = util_bitcount64(nir->info.outputs_written);
@@ -1969,7 +1969,7 @@ llvmpipe_update_mesh_shader(struct llvmpipe_context *lp)
 {
    if (!lp->mhs)
       return;
-   struct lp_compute_shader_variant *variant = llvmpipe_update_cs_variant(lp, PIPE_SHADER_MESH, lp->mhs);
+   struct lp_compute_shader_variant *variant = llvmpipe_update_cs_variant(lp, MESA_SHADER_MESH, lp->mhs);
    lp_cs_ctx_set_cs_variant(lp->mesh_ctx, variant);
 }
 
@@ -2337,30 +2337,30 @@ llvmpipe_mesh_update_derived(struct llvmpipe_context *llvmpipe)
 {
    if (llvmpipe->dirty & LP_NEW_MESH_CONSTANTS) {
       lp_csctx_set_cs_constants(llvmpipe->mesh_ctx,
-                                ARRAY_SIZE(llvmpipe->constants[PIPE_SHADER_MESH]),
-                                llvmpipe->constants[PIPE_SHADER_MESH]);
+                                ARRAY_SIZE(llvmpipe->constants[MESA_SHADER_MESH]),
+                                llvmpipe->constants[MESA_SHADER_MESH]);
       update_csctx_consts(llvmpipe, llvmpipe->mesh_ctx);
    }
 
    if (llvmpipe->dirty & LP_NEW_MESH_SSBOS) {
       lp_csctx_set_cs_ssbos(llvmpipe->mesh_ctx,
-                            ARRAY_SIZE(llvmpipe->ssbos[PIPE_SHADER_MESH]),
-                            llvmpipe->ssbos[PIPE_SHADER_MESH]);
+                            ARRAY_SIZE(llvmpipe->ssbos[MESA_SHADER_MESH]),
+                            llvmpipe->ssbos[MESA_SHADER_MESH]);
       update_csctx_ssbo(llvmpipe, llvmpipe->mesh_ctx);
    }
 
    if (llvmpipe->dirty & LP_NEW_MESH_SAMPLER_VIEW)
       lp_csctx_set_sampler_views(llvmpipe->mesh_ctx,
-                                 llvmpipe->num_sampler_views[PIPE_SHADER_MESH],
-                                 llvmpipe->sampler_views[PIPE_SHADER_MESH]);
+                                 llvmpipe->num_sampler_views[MESA_SHADER_MESH],
+                                 llvmpipe->sampler_views[MESA_SHADER_MESH]);
 
    if (llvmpipe->dirty & LP_NEW_MESH_SAMPLER)
       lp_csctx_set_sampler_state(llvmpipe->mesh_ctx,
-                                 llvmpipe->num_samplers[PIPE_SHADER_MESH],
-                                 llvmpipe->samplers[PIPE_SHADER_MESH]);
+                                 llvmpipe->num_samplers[MESA_SHADER_MESH],
+                                 llvmpipe->samplers[MESA_SHADER_MESH]);
 
    if (llvmpipe->dirty & LP_NEW_MESH_IMAGES)
       lp_csctx_set_cs_images(llvmpipe->mesh_ctx,
-                              ARRAY_SIZE(llvmpipe->images[PIPE_SHADER_MESH]),
-                              llvmpipe->images[PIPE_SHADER_MESH]);
+                              ARRAY_SIZE(llvmpipe->images[MESA_SHADER_MESH]),
+                              llvmpipe->images[MESA_SHADER_MESH]);
 }

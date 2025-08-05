@@ -115,7 +115,7 @@ llvmpipe_bind_sampler_states(struct pipe_context *pipe,
    case MESA_SHADER_TASK:
       llvmpipe->dirty |= LP_NEW_TASK_SAMPLER;
       break;
-   case PIPE_SHADER_MESH:
+   case MESA_SHADER_MESH:
       llvmpipe->dirty |= LP_NEW_MESH_SAMPLER;
       break;
    default:
@@ -201,7 +201,7 @@ llvmpipe_set_sampler_views(struct pipe_context *pipe,
    case MESA_SHADER_TASK:
       llvmpipe->dirty |= LP_NEW_TASK_SAMPLER_VIEW;
       break;
-   case PIPE_SHADER_MESH:
+   case MESA_SHADER_MESH:
       llvmpipe->dirty |= LP_NEW_MESH_SAMPLER_VIEW;
       break;
    default:
