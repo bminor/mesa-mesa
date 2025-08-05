@@ -1275,7 +1275,7 @@ nv50_ir_generate_code(struct nv50_ir_prog_info *info,
    nv50_ir_init_prog_info(info, info_out);
 
 #define PROG_TYPE_CASE(a, b)                                      \
-   case PIPE_SHADER_##a: type = nv50_ir::Program::TYPE_##b; break
+   case MESA_SHADER_##a: type = nv50_ir::Program::TYPE_##b; break
 
    switch (info->type) {
    PROG_TYPE_CASE(VERTEX, VERTEX);

@@ -271,7 +271,7 @@ DD_CSO_DELETE(vertex_elements)
       struct pipe_context *pipe = dctx->pipe; \
       struct dd_state *hstate = state; \
    \
-      dctx->draw_state.shaders[PIPE_SHADER_##NAME] = hstate; \
+      dctx->draw_state.shaders[MESA_SHADER_##NAME] = hstate; \
       pipe->bind_##name##_state(pipe, hstate ? hstate->cso : NULL); \
    } \
     \
