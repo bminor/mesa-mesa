@@ -1107,7 +1107,9 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    };
 
    uint32_t best_register_pressure = UINT32_MAX;
-   enum brw_instruction_scheduler_mode best_sched = BRW_SCHEDULE_NONE;
+   float best_perf = 0;
+   unsigned best_press_idx = 0;
+   unsigned best_perf_idx = 0;
 
    brw_opt_compact_virtual_grfs(s);
 
@@ -1123,56 +1125,105 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
     * prevent dependencies between the different scheduling modes.
     */
    brw_inst **orig_order = save_instruction_order(s.cfg);
-   brw_inst **best_pressure_order = NULL;
+   brw_inst **orders[ARRAY_SIZE(pre_modes)] = {};
 
    void *scheduler_ctx = ralloc_context(NULL);
    brw_instruction_scheduler *sched = brw_prepare_scheduler(s, scheduler_ctx);
 
-   /* Try each scheduling heuristic to see if it can successfully register
-    * allocate without spilling.  They should be ordered by decreasing
-    * performance but increasing likelihood of allocating.
+   /* Try each scheduling heuristic to choose the one one with the
+    * best trade-off between latency and register pressure, which on
+    * xe3+ is dependent on the thread parallelism that can be achieved
+    * at the GRF register requirement of each ordering of the program
+    * (note that the register requirement of the program can only be
+    * estimated at this point prior to register allocation).
     */
    for (unsigned i = 0; i < ARRAY_SIZE(pre_modes); i++) {
       enum brw_instruction_scheduler_mode sched_mode = pre_modes[i];
 
-      if (devinfo->ver < 30 && sched_mode == BRW_SCHEDULE_PRE_LATENCY)
+      /* Only use the PRE heuristic on pre-xe3 platforms during the
+       * first pass, since the trade-off between EU thread count and
+       * GRF use isn't a concern on platforms that don't support VRT.
+       */
+      if (devinfo->ver < 30 && sched_mode != BRW_SCHEDULE_PRE)
+         continue;
+
+      /* These don't appear to provide much benefit on xe3+.
+       */
+      if (devinfo->ver >= 30 && (sched_mode == BRW_SCHEDULE_PRE_LIFO ||
+                                 sched_mode == BRW_SCHEDULE_NONE))
          continue;
 
       brw_schedule_instructions_pre_ra(s, sched, sched_mode);
       s.shader_stats.scheduler_mode = scheduler_mode_name[sched_mode];
-
       s.debug_optimizer(nir, s.shader_stats.scheduler_mode, 95, i);
+      orders[i] = save_instruction_order(s.cfg);
 
-      if (0) {
-         brw_assign_regs_trivial(s);
-         allocated = true;
-         break;
+      const unsigned press = brw_compute_max_register_pressure(s);
+      if (press < best_register_pressure) {
+         best_register_pressure = press;
+         best_press_idx = i;
       }
 
-      /* We should only spill registers on the last scheduling. */
-      assert(!s.spilled_any_registers);
-
-      allocated = brw_assign_regs(s, false, spill_all);
-      if (allocated)
-         break;
-
-      /* Save the maximum register pressure */
-      uint32_t this_pressure = brw_compute_max_register_pressure(s);
-
-      if (0) {
-         fprintf(stderr, "Scheduler mode \"%s\" spilled, max pressure = %u\n",
-                 scheduler_mode_name[sched_mode], this_pressure);
+      const brw_performance &perf = s.performance_analysis.require();
+      if (perf.throughput > best_perf) {
+         best_perf = perf.throughput;
+         best_perf_idx = i;
       }
 
-      if (this_pressure < best_register_pressure) {
-         best_register_pressure = this_pressure;
-         best_sched = sched_mode;
-         delete[] best_pressure_order;
-         best_pressure_order = save_instruction_order(s.cfg);
+      if (i + 1 < ARRAY_SIZE(pre_modes)) {
+         /* Reset back to the original order before trying the next mode */
+         restore_instruction_order(s, orig_order);
       }
+   }
 
-      /* Reset back to the original order before trying the next mode */
-      restore_instruction_order(s, orig_order);
+   restore_instruction_order(s, orders[best_perf_idx]);
+   s.shader_stats.scheduler_mode = scheduler_mode_name[pre_modes[best_perf_idx]];
+   allocated = brw_assign_regs(s, false, spill_all);
+
+   if (!allocated) {
+      /* Try each scheduling heuristic to see if it can successfully register
+       * allocate without spilling.  They should be ordered by decreasing
+       * performance but increasing likelihood of allocating.
+       */
+      for (unsigned i = 0; i < ARRAY_SIZE(pre_modes); i++) {
+         enum brw_instruction_scheduler_mode sched_mode = pre_modes[i];
+
+         /* The latency-sensitive heuristic is unlikely to be helpful
+          * if we failed to register-allocate.
+          */
+         if (sched_mode == BRW_SCHEDULE_PRE_LATENCY)
+            continue;
+
+         /* Already tried to register-allocate this. */
+         if (i == best_perf_idx)
+            continue;
+
+         if (orders[i]) {
+            /* We already scheduled the program with this mode. */
+            restore_instruction_order(s, orders[i]);
+         } else {
+            restore_instruction_order(s, orig_order);
+            brw_schedule_instructions_pre_ra(s, sched, sched_mode);
+            s.shader_stats.scheduler_mode = scheduler_mode_name[sched_mode];
+            s.debug_optimizer(nir, s.shader_stats.scheduler_mode, 95, i);
+            orders[i] = save_instruction_order(s.cfg);
+
+            const unsigned press = brw_compute_max_register_pressure(s);
+            if (press < best_register_pressure) {
+               best_register_pressure = press;
+               best_press_idx = i;
+            }
+         }
+
+         s.shader_stats.scheduler_mode = scheduler_mode_name[sched_mode];
+
+         /* We should only spill registers on the last scheduling. */
+         assert(!s.spilled_any_registers);
+
+         allocated = brw_assign_regs(s, false, spill_all);
+         if (allocated)
+            break;
+      }
    }
 
    ralloc_free(scheduler_ctx);
@@ -1180,16 +1231,17 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    if (!allocated) {
       if (0) {
          fprintf(stderr, "Spilling - using lowest-pressure mode \"%s\"\n",
-                 scheduler_mode_name[best_sched]);
+                 scheduler_mode_name[pre_modes[best_press_idx]]);
       }
-      restore_instruction_order(s, best_pressure_order);
-      s.shader_stats.scheduler_mode = scheduler_mode_name[best_sched];
+      restore_instruction_order(s, orders[best_press_idx]);
+      s.shader_stats.scheduler_mode = scheduler_mode_name[pre_modes[best_press_idx]];
 
       allocated = brw_assign_regs(s, allow_spilling, spill_all);
    }
 
    delete[] orig_order;
-   delete[] best_pressure_order;
+   for (unsigned i = 0; i < ARRAY_SIZE(orders); i++)
+      delete[] orders[i];
 
    if (!allocated) {
       s.fail("Failure to register allocate.  Reduce number of "
