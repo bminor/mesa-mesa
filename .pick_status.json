@@ -554,7 +554,7 @@
         "description": "tc: don't clobber CSO info when renderpass has ended",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4989a40e890f38de99376bd5344aba05a0ee9fe4",
         "notes": null

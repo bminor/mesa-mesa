@@ -136,6 +136,45 @@ tc_batch_rp_info(struct tc_renderpass_info *info)
 }
 
 static void
+tc_parse_dsa(struct threaded_context *tc, void *dsa)
+{
+   /* dsa info is only ever added during a renderpass;
+      * changes outside of a renderpass reset the data
+      */
+   if (!tc->in_renderpass) {
+      tc->renderpass_info_recording->zsbuf_write_dsa = 0;
+      tc->renderpass_info_recording->zsbuf_read_dsa = 0;
+   }
+   /* let the driver parse its own state */
+   tc->options.dsa_parse(dsa, tc->renderpass_info_recording);
+}
+
+static void
+tc_parse_fs(struct threaded_context *tc, void *fs)
+{
+      /* fs info is only ever added during a renderpass;
+       * changes outside of a renderpass reset the data
+       */
+      if (!tc->in_renderpass) {
+         tc->renderpass_info_recording->cbuf_fbfetch = 0;
+         tc->renderpass_info_recording->zsbuf_write_fs = 0;
+      }
+      /* let the driver parse its own state */
+      tc->options.fs_parse(fs, tc->renderpass_info_recording);
+}
+
+static void
+tc_parse_pending_rp_info(struct threaded_context *tc)
+{
+   if (tc->pending_renderpass_dsa)
+      tc_parse_dsa(tc, tc->pending_renderpass_dsa);
+   if (tc->pending_renderpass_fs)
+      tc_parse_fs(tc, tc->pending_renderpass_fs);
+   tc->pending_renderpass_dsa = NULL;
+   tc->pending_renderpass_fs = NULL;
+}
+
+static void
 tc_sanitize_renderpass_info(struct threaded_context *tc)
 {
    tc->renderpass_info_recording->cbuf_invalidate = 0;
@@ -265,6 +304,8 @@ tc_batch_increment_renderpass_info(struct threaded_context *tc, unsigned batch_i
    /* this is now the current recording renderpass info */
    tc->renderpass_info_recording = &tc_info[batch->renderpass_info_idx].info;
    batch->max_renderpass_info_idx = batch->renderpass_info_idx;
+
+   tc_parse_pending_rp_info(tc);
 }
 
 static ALWAYS_INLINE struct tc_renderpass_info *
@@ -1343,15 +1384,12 @@ TC_CSO_WHOLE(rasterizer)
 TC_CSO_CREATE(depth_stencil_alpha, depth_stencil_alpha)
 TC_CSO_BIND(depth_stencil_alpha,
    if (param && tc->options.parse_renderpass_info) {
-      /* dsa info is only ever added during a renderpass;
-       * changes outside of a renderpass reset the data
-       */
-      if (!tc->in_renderpass) {
-         tc_get_renderpass_info(tc)->zsbuf_write_dsa = 0;
-         tc_get_renderpass_info(tc)->zsbuf_read_dsa = 0;
-      }
-      /* let the driver parse its own state */
-      tc->options.dsa_parse(param, tc_get_renderpass_info(tc));
+      if (tc->renderpass_info_recording->ended)
+         tc->pending_renderpass_dsa = param;
+      else
+         tc_parse_dsa(tc, param);
+   } else {
+      tc->pending_renderpass_dsa = NULL;
    }
 )
 TC_CSO_DELETE(depth_stencil_alpha)
@@ -1359,15 +1397,12 @@ TC_CSO_WHOLE(compute)
 TC_CSO_CREATE(fs, shader)
 TC_CSO_BIND(fs,
    if (param && tc->options.parse_renderpass_info) {
-      /* fs info is only ever added during a renderpass;
-       * changes outside of a renderpass reset the data
-       */
-      if (!tc->in_renderpass) {
-         tc_get_renderpass_info(tc)->cbuf_fbfetch = 0;
-         tc_get_renderpass_info(tc)->zsbuf_write_fs = 0;
-      }
-      /* let the driver parse its own state */
-      tc->options.fs_parse(param, tc_get_renderpass_info(tc));
+      if (tc->renderpass_info_recording->ended)
+         tc->pending_renderpass_fs = param;
+      else
+         tc_parse_fs(tc, param);
+   } else {
+      tc->pending_renderpass_fs = NULL;
    }
 )
 TC_CSO_DELETE(fs)
@@ -1514,6 +1549,7 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
           */
          tc->batch_slots[tc->next].renderpass_info_idx = 0;
          tc->renderpass_info_recording->has_resolve = false;
+         tc_parse_pending_rp_info(tc);
       }
       assert(!tc->renderpass_info_recording->resolve[0] &&
              !tc->renderpass_info_recording->resolve[1]);
