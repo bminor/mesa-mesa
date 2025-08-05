@@ -2180,7 +2180,7 @@ nir_validate_shader(nir_shader *shader, const char *when)
       nir_var_mem_constant |
       nir_var_image;
 
-   if (gl_shader_stage_is_callable(shader->info.stage))
+   if (mesa_shader_stage_is_callable(shader->info.stage))
       valid_modes |= nir_var_shader_call_data;
 
    if (shader->info.stage == MESA_SHADER_ANY_HIT ||

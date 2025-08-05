@@ -331,7 +331,7 @@ nir_opt_access(nir_shader *shader, const nir_opt_access_options *options)
       .shader = shader,
       .vars_written = _mesa_pointer_set_create(NULL),
       .vars_read = _mesa_pointer_set_create(NULL),
-      .has_calls = gl_shader_stage_is_callable(shader->info.stage),
+      .has_calls = mesa_shader_stage_is_callable(shader->info.stage),
    };
 
    bool var_progress = false;
