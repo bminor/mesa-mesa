@@ -113,7 +113,7 @@ vn_android_gralloc_get_dma_buf_fd(const native_handle_t *handle)
    return handle->data[0];
 }
 
-const VkFormat *
+static const VkFormat *
 vn_android_format_to_view_formats(VkFormat format, uint32_t *out_count)
 {
    /* For AHB image prop query and creation, venus overrides the tiling to
