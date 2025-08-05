@@ -164,9 +164,9 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
    sel->screen = sscreen;
    simple_mtx_init(&sel->mutex, mtx_plain);
    sel->const_and_shader_buf_descriptors_index =
-      si_const_and_shader_buffer_descriptors_idx(PIPE_SHADER_COMPUTE);
+      si_const_and_shader_buffer_descriptors_idx(MESA_SHADER_COMPUTE);
    sel->sampler_and_images_descriptors_index =
-      si_sampler_and_image_descriptors_idx(PIPE_SHADER_COMPUTE);
+      si_sampler_and_image_descriptors_idx(MESA_SHADER_COMPUTE);
    sel->info.base.shared_size = cso->static_shared_mem;
    program->shader.selector = &program->sel;
 
@@ -220,7 +220,7 @@ static void si_bind_compute_state(struct pipe_context *ctx, void *state)
    /* Wait because we need active slot usage masks. */
    util_queue_fence_wait(&sel->ready);
 
-   si_update_common_shader_state(sctx, sel, PIPE_SHADER_COMPUTE);
+   si_update_common_shader_state(sctx, sel, MESA_SHADER_COMPUTE);
 
    sctx->compute_shaderbuf_sgprs_dirty = true;
    sctx->compute_image_sgprs_dirty = true;
@@ -842,7 +842,7 @@ static bool si_check_needs_implicit_sync(struct si_context *sctx, uint32_t usage
     * TODO: Bindless textures are not handled, and thus are not synchronized.
     */
    struct si_shader_info *info = &sctx->cs_shader_state.program->sel.info;
-   struct si_samplers *samplers = &sctx->samplers[PIPE_SHADER_COMPUTE];
+   struct si_samplers *samplers = &sctx->samplers[MESA_SHADER_COMPUTE];
    unsigned mask = samplers->enabled_mask & info->base.textures_used;
 
    while (mask) {
@@ -854,7 +854,7 @@ static bool si_check_needs_implicit_sync(struct si_context *sctx, uint32_t usage
          return true;
    }
 
-   struct si_images *images = &sctx->images[PIPE_SHADER_COMPUTE];
+   struct si_images *images = &sctx->images[MESA_SHADER_COMPUTE];
    mask = BITFIELD_MASK(info->base.num_images) & images->enabled_mask;
 
    while (mask) {
@@ -907,9 +907,9 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
       }
 
       if (sctx->gfx_level < GFX11)
-         gfx6_decompress_textures(sctx, 1 << PIPE_SHADER_COMPUTE);
+         gfx6_decompress_textures(sctx, 1 << MESA_SHADER_COMPUTE);
       else if (sctx->gfx_level < GFX12)
-         gfx11_decompress_textures(sctx, 1 << PIPE_SHADER_COMPUTE);
+         gfx11_decompress_textures(sctx, 1 << MESA_SHADER_COMPUTE);
    }
 
    if (info->indirect) {
@@ -996,11 +996,11 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
 
    if (sctx->gfx_level < GFX12) {
       /* Mark displayable DCC as dirty for bound images. */
-      unsigned display_dcc_store_mask = sctx->images[PIPE_SHADER_COMPUTE].display_dcc_store_mask &
+      unsigned display_dcc_store_mask = sctx->images[MESA_SHADER_COMPUTE].display_dcc_store_mask &
                                   BITFIELD_MASK(program->sel.info.base.num_images);
       while (display_dcc_store_mask) {
          struct si_texture *tex = (struct si_texture *)
-            sctx->images[PIPE_SHADER_COMPUTE].views[u_bit_scan(&display_dcc_store_mask)].resource;
+            sctx->images[MESA_SHADER_COMPUTE].views[u_bit_scan(&display_dcc_store_mask)].resource;
 
          si_mark_display_dcc_dirty(sctx, tex);
       }

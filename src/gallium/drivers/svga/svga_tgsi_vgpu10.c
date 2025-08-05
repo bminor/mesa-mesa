@@ -825,7 +825,7 @@ translate_shader_type(unsigned type)
       return VGPU10_HULL_SHADER;
    case MESA_SHADER_TESS_EVAL:
       return VGPU10_DOMAIN_SHADER;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       return VGPU10_COMPUTE_SHADER;
    default:
       assert(!"Unexpected shader type");
@@ -1823,7 +1823,7 @@ emit_src_register(struct svga_shader_emitter_v10 *emit,
          }
       }
    }
-   else if (emit->unit == PIPE_SHADER_COMPUTE) {
+   else if (emit->unit == MESA_SHADER_COMPUTE) {
       if (file == TGSI_FILE_SYSTEM_VALUE) {
          if (index == emit->cs.thread_id_index) {
             operand0.numComponents = VGPU10_OPERAND_4_COMPONENT;
@@ -4228,7 +4228,7 @@ emit_vertex_output_declaration(struct svga_shader_emitter_v10 *emit,
    unsigned final_mask = VGPU10_OPERAND_4_COMPONENT_MASK_ALL;
 
    assert(emit->unit != MESA_SHADER_FRAGMENT &&
-          emit->unit != PIPE_SHADER_COMPUTE);
+          emit->unit != MESA_SHADER_COMPUTE);
 
    switch (semantic_name) {
    case TGSI_SEMANTIC_POSITION:
@@ -4865,7 +4865,7 @@ emit_system_value_declaration(struct svga_shader_emitter_v10 *emit,
       }
       break;
    case TGSI_SEMANTIC_THREAD_ID:
-      assert(emit->unit >= PIPE_SHADER_COMPUTE);
+      assert(emit->unit >= MESA_SHADER_COMPUTE);
       assert(emit->version >= 50);
       emit->cs.thread_id_index = index;
       emit_input_declaration(emit, VGPU10_OPCODE_DCL_INPUT,
@@ -4880,7 +4880,7 @@ emit_system_value_declaration(struct svga_shader_emitter_v10 *emit,
                              map_tgsi_semantic_to_sgn_name(semantic_name));
       break;
    case TGSI_SEMANTIC_BLOCK_ID:
-      assert(emit->unit >= PIPE_SHADER_COMPUTE);
+      assert(emit->unit >= MESA_SHADER_COMPUTE);
       assert(emit->version >= 50);
       emit->cs.block_id_index = index;
       emit_input_declaration(emit, VGPU10_OPCODE_DCL_INPUT,
@@ -4895,7 +4895,7 @@ emit_system_value_declaration(struct svga_shader_emitter_v10 *emit,
                              map_tgsi_semantic_to_sgn_name(semantic_name));
       break;
    case TGSI_SEMANTIC_GRID_SIZE:
-      assert(emit->unit == PIPE_SHADER_COMPUTE);
+      assert(emit->unit == MESA_SHADER_COMPUTE);
       assert(emit->version >= 50);
       emit->cs.grid_size.tgsi_index = index;
       break;
@@ -5037,7 +5037,7 @@ emit_vgpu10_declaration(struct svga_shader_emitter_v10 *emit,
 
    case TGSI_FILE_MEMORY:
       /* Record memory has been used. */
-      if (emit->unit == PIPE_SHADER_COMPUTE &&
+      if (emit->unit == MESA_SHADER_COMPUTE &&
           decl->Declaration.MemType == TGSI_MEMORY_TYPE_SHARED) {
          emit->cs.shared_memory_declared = true;
       }
@@ -5509,7 +5509,7 @@ emit_input_declarations(struct svga_shader_emitter_v10 *emit)
    case MESA_SHADER_TESS_EVAL:
       emit_tes_input_declarations(emit);
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       //XXX emit_cs_input_declarations(emit);
       break;
    default:
@@ -5549,7 +5549,7 @@ emit_output_declarations(struct svga_shader_emitter_v10 *emit)
    case MESA_SHADER_TESS_EVAL:
       emit_tes_output_declarations(emit);
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       //XXX emit_cs_output_declarations(emit);
       break;
    default:
@@ -5991,7 +5991,7 @@ emit_constant_declaration(struct svga_shader_emitter_v10 *emit)
    if (emit->key.clip_plane_enable) {
       unsigned n = util_bitcount(emit->key.clip_plane_enable);
       assert(emit->unit != MESA_SHADER_FRAGMENT &&
-             emit->unit != PIPE_SHADER_COMPUTE);
+             emit->unit != MESA_SHADER_COMPUTE);
       for (i = 0; i < n; i++) {
          emit->clip_plane_const[i] = total_consts++;
       }
@@ -10842,7 +10842,7 @@ emit_barrier(struct svga_shader_emitter_v10 *emit,
                          "barrier instruction is not supported in tessellation control shader\n");
       return true;
    }
-   else if (emit->unit == PIPE_SHADER_COMPUTE) {
+   else if (emit->unit == MESA_SHADER_COMPUTE) {
       if (emit->cs.shared_memory_declared)
          token0.syncThreadGroupShared = 1;
 
@@ -10879,7 +10879,7 @@ emit_memory_barrier(struct svga_shader_emitter_v10 *emit,
    token0.value = 0;
    token0.opcodeType = VGPU10_OPCODE_SYNC;
 
-   if (emit->unit == PIPE_SHADER_COMPUTE) {
+   if (emit->unit == MESA_SHADER_COMPUTE) {
 
       /* For compute shader, issue sync opcode with different options
        * depending on the memory barrier type.
@@ -12156,7 +12156,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
    else if (emit->unit == MESA_SHADER_TESS_EVAL) {
       emit_domain_shader_declarations(emit);
    }
-   else if (emit->unit == PIPE_SHADER_COMPUTE) {
+   else if (emit->unit == MESA_SHADER_COMPUTE) {
       emit_compute_shader_declarations(emit);
    }
 
@@ -12196,7 +12196,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
    }
 
    if (emit->unit != MESA_SHADER_FRAGMENT &&
-       emit->unit != PIPE_SHADER_COMPUTE) {
+       emit->unit != MESA_SHADER_COMPUTE) {
       /*
        * Declare clip distance output registers for ClipVertex or
        * user defined planes
@@ -12204,7 +12204,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
       emit_clip_distance_declarations(emit);
    }
 
-   if (emit->unit == PIPE_SHADER_COMPUTE) {
+   if (emit->unit == MESA_SHADER_COMPUTE) {
       emit_memory_declarations(emit);
 
       if (emit->cs.grid_size.tgsi_index != INVALID_INDEX) {
@@ -12925,7 +12925,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
           unit == MESA_SHADER_FRAGMENT ||
           unit == MESA_SHADER_TESS_CTRL ||
           unit == MESA_SHADER_TESS_EVAL ||
-          unit == PIPE_SHADER_COMPUTE);
+          unit == MESA_SHADER_COMPUTE);
 
    /* These two flags cannot be used together */
    assert(key->vs.need_prescale + key->vs.undo_viewport <= 1);

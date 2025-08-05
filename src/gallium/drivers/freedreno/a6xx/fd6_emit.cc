@@ -770,13 +770,13 @@ fd6_emit_cs_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
       case FD6_GROUP_CS_TEX:
          fd6_state_take_group(
                &state,
-               tex_state(ctx, PIPE_SHADER_COMPUTE),
+               tex_state(ctx, MESA_SHADER_COMPUTE),
                FD6_GROUP_CS_TEX);
          break;
       case FD6_GROUP_CS_BINDLESS:
          fd6_state_take_group(
                &state,
-               fd6_build_bindless_state<CHIP>(ctx, PIPE_SHADER_COMPUTE, false),
+               fd6_build_bindless_state<CHIP>(ctx, MESA_SHADER_COMPUTE, false),
                FD6_GROUP_CS_BINDLESS);
          break;
       default:

@@ -489,14 +489,14 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
    struct panfrost_device *dev = &screen->dev;
    bool is_nofp16 = dev->debug & PAN_DBG_NOFP16;
 
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
       switch (i) {
       case MESA_SHADER_VERTEX:
       case MESA_SHADER_FRAGMENT:
-      case PIPE_SHADER_COMPUTE:
+      case MESA_SHADER_COMPUTE:
          break;
       default:
          continue;

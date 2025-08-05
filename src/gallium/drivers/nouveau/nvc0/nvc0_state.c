@@ -724,7 +724,7 @@ nvc0_cp_state_create(struct pipe_context *pipe,
    prog = CALLOC_STRUCT(nvc0_program);
    if (!prog)
       return NULL;
-   prog->type = PIPE_SHADER_COMPUTE;
+   prog->type = MESA_SHADER_COMPUTE;
 
    prog->cp.smem_size = cso->static_shared_mem;
 
@@ -797,7 +797,7 @@ nvc0_set_constant_buffer(struct pipe_context *pipe,
    const unsigned s = nvc0_shader_stage(shader);
    const unsigned i = index;
 
-   if (unlikely(shader == PIPE_SHADER_COMPUTE)) {
+   if (unlikely(shader == MESA_SHADER_COMPUTE)) {
       if (nvc0->constbuf[s][i].user)
          nvc0->constbuf[s][i].u.buf = NULL;
       else

@@ -1658,7 +1658,7 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
 
    if (pre_gs) {
       compiled->pre_gs =
-         agx_compile_nir(dev, pre_gs, &pctx->debug, PIPE_SHADER_COMPUTE, false,
+         agx_compile_nir(dev, pre_gs, &pctx->debug, MESA_SHADER_COMPUTE, false,
                          true, false, 0, NULL);
    }
 
@@ -2439,7 +2439,7 @@ agx_bind_tes_state(struct pipe_context *pctx, void *cso)
 static void
 agx_bind_cs_state(struct pipe_context *pctx, void *cso)
 {
-   agx_bind_shader_state(pctx, cso, PIPE_SHADER_COMPUTE);
+   agx_bind_shader_state(pctx, cso, MESA_SHADER_COMPUTE);
 }
 
 /* Forward declare because of the recursion hit with geometry shaders */
@@ -2605,7 +2605,7 @@ agx_build_meta_shader_internal(struct agx_context *ctx,
    }
 
    struct agx_compiled_shader *shader = agx_compile_nir(
-      dev, b.shader, NULL, PIPE_SHADER_COMPUTE, internal_kernel,
+      dev, b.shader, NULL, MESA_SHADER_COMPUTE, internal_kernel,
       !prolog && !(b.shader->info.stage == MESA_SHADER_FRAGMENT &&
                    b.shader->info.fs.uses_sample_shading),
       prolog || epilog, cf_base, NULL);
@@ -3056,7 +3056,7 @@ agx_launch_precomp(struct agx_batch *batch, struct agx_grid grid,
 
    agx_batch_add_bo(batch, cs->bo);
    agx_launch_internal(batch, grid, cs->b.workgroup, cs->b.launch,
-                       PIPE_SHADER_COMPUTE, usc);
+                       MESA_SHADER_COMPUTE, usc);
 }
 
 struct asahi_bg_eot
@@ -4170,7 +4170,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
    if (xfb_or_queries) {
       perf_debug(dev, "Geometry shader transform feedback / query program");
       agx_launch(batch, agx_1d(1), agx_workgroup(1, 1, 1), gs->pre_gs, NULL,
-                 PIPE_SHADER_COMPUTE, 0);
+                 MESA_SHADER_COMPUTE, 0);
    }
 
    /* Pre-rast geometry shader */
@@ -5353,7 +5353,7 @@ agx_launch(struct agx_batch *batch, struct agx_grid grid,
    }
 #endif
 
-   uint32_t usc = agx_build_pipeline(batch, cs, linked, PIPE_SHADER_COMPUTE,
+   uint32_t usc = agx_build_pipeline(batch, cs, linked, MESA_SHADER_COMPUTE,
                                      variable_shared_mem, subgroups_per_core);
 
    if (cs)
@@ -5418,7 +5418,7 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
    agx_batch_init_state(batch);
 
    struct agx_uncompiled_shader *uncompiled =
-      ctx->stage[PIPE_SHADER_COMPUTE].shader;
+      ctx->stage[MESA_SHADER_COMPUTE].shader;
 
    /* There is exactly one variant, get it */
    struct agx_compiled_shader *cs =
@@ -5436,7 +5436,7 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
       }
    }
 
-   agx_launch(batch, grid, wg, cs, NULL, PIPE_SHADER_COMPUTE,
+   agx_launch(batch, grid, wg, cs, NULL, MESA_SHADER_COMPUTE,
               info->variable_shared_mem);
 
    /* TODO: Dirty tracking? */

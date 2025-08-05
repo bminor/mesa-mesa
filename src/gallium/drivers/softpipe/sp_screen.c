@@ -200,7 +200,7 @@ softpipe_is_format_supported( struct pipe_screen *screen,
 static void
 softpipe_init_shader_caps(struct softpipe_screen *sp_screen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&sp_screen->base.shader_caps[i];
 
@@ -213,7 +213,7 @@ softpipe_init_shader_caps(struct softpipe_screen *sp_screen)
          }
          FALLTHROUGH;
       case MESA_SHADER_FRAGMENT:
-      case PIPE_SHADER_COMPUTE:
+      case MESA_SHADER_COMPUTE:
          tgsi_exec_init_shader_caps(caps);
          break;
       default:

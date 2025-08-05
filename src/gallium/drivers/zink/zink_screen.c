@@ -496,7 +496,7 @@ have_fp32_filter_linear(struct zink_screen *screen)
 static void
 zink_init_shader_caps(struct zink_screen *screen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 

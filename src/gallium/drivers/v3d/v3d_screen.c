@@ -119,7 +119,7 @@ v3d_has_feature(struct v3d_screen *screen, enum drm_v3d_param feature)
 static void
 v3d_init_shader_caps(struct v3d_screen *screen)
 {
-        for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+        for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
                 struct pipe_shader_caps *caps =
                         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
@@ -128,7 +128,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
                 case MESA_SHADER_FRAGMENT:
                 case MESA_SHADER_GEOMETRY:
                         break;
-                case PIPE_SHADER_COMPUTE:
+                case MESA_SHADER_COMPUTE:
                         if (!screen->has_csd)
                                 continue;
                         break;

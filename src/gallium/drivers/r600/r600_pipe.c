@@ -273,14 +273,14 @@ fail:
 
 static void r600_init_shader_caps(struct r600_screen *rscreen)
 {
-	for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+	for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
 		struct pipe_shader_caps *caps =
 			(struct pipe_shader_caps *)&rscreen->b.b.shader_caps[i];
 
 		switch (i) {
 		case MESA_SHADER_TESS_CTRL:
 		case MESA_SHADER_TESS_EVAL:
-		case PIPE_SHADER_COMPUTE:
+		case MESA_SHADER_COMPUTE:
 			if (rscreen->b.family < CHIP_CEDAR)
 				continue;
 			break;
@@ -297,7 +297,7 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 		caps->max_outputs = i == MESA_SHADER_FRAGMENT ? 8 : 32;
 		caps->max_temps = 256; /* Max native temporaries. */
 
-		caps->max_const_buffer0_size = i == PIPE_SHADER_COMPUTE ?
+		caps->max_const_buffer0_size = i == MESA_SHADER_COMPUTE ?
 			MIN2(rscreen->b.b.compute_caps.max_mem_alloc_size, INT_MAX) :
 			R600_MAX_CONST_BUFFER_SIZE;
 
@@ -316,7 +316,7 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 		caps->max_shader_buffers =
 		caps->max_shader_images =
 			rscreen->b.family >= CHIP_CEDAR &&
-			(i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) ? 8 : 0;
+			(i == MESA_SHADER_FRAGMENT || i == MESA_SHADER_COMPUTE) ? 8 : 0;
 
 		if (rscreen->b.family >= CHIP_CEDAR &&
 		    rscreen->has_atomics) {

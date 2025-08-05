@@ -385,7 +385,7 @@ svga_get_extra_cs_constants(struct svga_context *svga, float *dest)
 
    /* common constants */
    count += svga_get_extra_constants_common(svga, variant,
-                                            PIPE_SHADER_COMPUTE,
+                                            MESA_SHADER_COMPUTE,
                                             dest);
 
    assert(count <= MAX_EXTRA_CONSTS);
@@ -888,7 +888,7 @@ emit_consts_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
           shader == MESA_SHADER_FRAGMENT ||
           shader == MESA_SHADER_TESS_CTRL ||
           shader == MESA_SHADER_TESS_EVAL ||
-          shader == PIPE_SHADER_COMPUTE);
+          shader == MESA_SHADER_COMPUTE);
 
    cbuf = &svga->curr.constbufs[shader][0];
 
@@ -913,7 +913,7 @@ emit_consts_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
       variant = svga->state.hw_draw.tes;
       extra_count = svga_get_extra_tes_constants(svga, (float *) extras);
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       variant = svga->state.hw_draw.cs;
       extra_count = svga_get_extra_cs_constants(svga, (float *) extras);
       break;
@@ -1369,7 +1369,7 @@ emit_cs_consts(struct svga_context *svga, uint64_t dirty)
       return PIPE_OK;
 
    /* SVGA_NEW_CS_CONST_BUFFER */
-   ret = emit_consts_vgpu10(svga, PIPE_SHADER_COMPUTE);
+   ret = emit_consts_vgpu10(svga, MESA_SHADER_COMPUTE);
 
    return ret;
 }
@@ -1389,7 +1389,7 @@ emit_cs_constbuf(struct svga_context *svga, uint64_t dirty)
    /* SVGA_NEW_CS_CONSTBUF
     */
    assert(svga_have_vgpu10(svga));
-   ret = emit_constbuf_vgpu10(svga, PIPE_SHADER_COMPUTE);
+   ret = emit_constbuf_vgpu10(svga, MESA_SHADER_COMPUTE);
 
    return ret;
 }
@@ -1458,7 +1458,7 @@ update_rawbuf(struct svga_context *svga, uint64 dirty)
    };
 
    for (enum pipe_shader_type shader = MESA_SHADER_VERTEX;
-        shader < PIPE_SHADER_COMPUTE; shader++) {
+        shader < MESA_SHADER_COMPUTE; shader++) {
       unsigned rawbuf_mask = svga->state.raw_constbufs[shader];
       unsigned rawbuf_sbuf_mask = svga->state.raw_shaderbufs[shader];
 
@@ -1496,15 +1496,15 @@ struct svga_tracked_state svga_need_rawbuf_srv =
 static enum pipe_error
 update_cs_rawbuf(struct svga_context *svga, uint64 dirty)
 {
-   unsigned rawbuf_mask = svga->state.raw_constbufs[PIPE_SHADER_COMPUTE];
+   unsigned rawbuf_mask = svga->state.raw_constbufs[MESA_SHADER_COMPUTE];
 
-   update_rawbuf_mask(svga, PIPE_SHADER_COMPUTE);
+   update_rawbuf_mask(svga, MESA_SHADER_COMPUTE);
 
    /* if the rawbuf state is different for the shader stage,
     * send SVGA_NEW_RAW_BUFFER to trigger a new shader
     * variant to use srv for ubo access.
     */
-   if (svga->state.raw_constbufs[PIPE_SHADER_COMPUTE] != rawbuf_mask)
+   if (svga->state.raw_constbufs[MESA_SHADER_COMPUTE] != rawbuf_mask)
       svga->dirty |= SVGA_NEW_CS_RAW_BUFFER;
 
    return PIPE_OK;

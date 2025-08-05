@@ -542,7 +542,7 @@ svga_shader_type(enum pipe_shader_type shader)
       return SVGA3D_SHADERTYPE_HS;
    case MESA_SHADER_TESS_EVAL:
       return SVGA3D_SHADERTYPE_DS;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       return SVGA3D_SHADERTYPE_CS;
    default:
       assert(!"Invalid shader type");

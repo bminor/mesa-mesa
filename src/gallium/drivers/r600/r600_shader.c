@@ -268,7 +268,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 			r600_update_ps_state(ctx, shader);
 		}
 		break;
-	case PIPE_SHADER_COMPUTE:
+	case MESA_SHADER_COMPUTE:
 		evergreen_update_ls_state(ctx, shader);
 		break;
 	default:

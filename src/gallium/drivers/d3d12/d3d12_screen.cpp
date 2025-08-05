@@ -127,7 +127,7 @@ d3d12_get_video_mem(struct pipe_screen *pscreen)
 static void
 d3d12_init_shader_caps(struct d3d12_screen *screen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 

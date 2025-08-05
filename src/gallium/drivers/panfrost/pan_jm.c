@@ -330,14 +330,14 @@ GENX(jm_launch_grid)(struct panfrost_batch *batch,
    }
 
    pan_section_pack(t.cpu, COMPUTE_JOB, DRAW, cfg) {
-      cfg.state = batch->rsd[PIPE_SHADER_COMPUTE];
-      cfg.attributes = batch->attribs[PIPE_SHADER_COMPUTE];
-      cfg.attribute_buffers = batch->attrib_bufs[PIPE_SHADER_COMPUTE];
+      cfg.state = batch->rsd[MESA_SHADER_COMPUTE];
+      cfg.attributes = batch->attribs[MESA_SHADER_COMPUTE];
+      cfg.attribute_buffers = batch->attrib_bufs[MESA_SHADER_COMPUTE];
       cfg.thread_storage = batch->tls.gpu;
-      cfg.uniform_buffers = batch->uniform_buffers[PIPE_SHADER_COMPUTE];
-      cfg.push_uniforms = batch->push_uniforms[PIPE_SHADER_COMPUTE];
-      cfg.textures = batch->textures[PIPE_SHADER_COMPUTE];
-      cfg.samplers = batch->samplers[PIPE_SHADER_COMPUTE];
+      cfg.uniform_buffers = batch->uniform_buffers[MESA_SHADER_COMPUTE];
+      cfg.push_uniforms = batch->push_uniforms[MESA_SHADER_COMPUTE];
+      cfg.textures = batch->textures[MESA_SHADER_COMPUTE];
+      cfg.samplers = batch->samplers[MESA_SHADER_COMPUTE];
    }
 
 #if PAN_ARCH == 4
@@ -346,7 +346,7 @@ GENX(jm_launch_grid)(struct panfrost_batch *batch,
 #endif
 #else
    struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_compiled_shader *cs = ctx->prog[PIPE_SHADER_COMPUTE];
+   struct panfrost_compiled_shader *cs = ctx->prog[MESA_SHADER_COMPUTE];
 
    pan_section_pack(t.cpu, COMPUTE_JOB, PAYLOAD, cfg) {
       cfg.workgroup_size_x = info->block[0];
@@ -357,8 +357,8 @@ GENX(jm_launch_grid)(struct panfrost_batch *batch,
       cfg.workgroup_count_y = num_wg[1];
       cfg.workgroup_count_z = num_wg[2];
 
-      jm_emit_shader_env(batch, &cfg.compute, PIPE_SHADER_COMPUTE,
-                         batch->rsd[PIPE_SHADER_COMPUTE]);
+      jm_emit_shader_env(batch, &cfg.compute, MESA_SHADER_COMPUTE,
+                         batch->rsd[MESA_SHADER_COMPUTE]);
 
       /* Workgroups may be merged if the shader does not use barriers
        * or shared memory. This condition is checked against the

@@ -269,7 +269,7 @@ dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
    shader_str[MESA_SHADER_TESS_EVAL] = "TESS_EVAL";
    shader_str[MESA_SHADER_GEOMETRY] = "GEOMETRY";
    shader_str[MESA_SHADER_FRAGMENT] = "FRAGMENT";
-   shader_str[PIPE_SHADER_COMPUTE] = "COMPUTE";
+   shader_str[MESA_SHADER_COMPUTE] = "COMPUTE";
 
    if (sh == MESA_SHADER_TESS_CTRL &&
        !dstate->shaders[MESA_SHADER_TESS_CTRL] &&
@@ -404,7 +404,7 @@ dd_dump_draw_vbo(struct dd_draw_state *dstate, struct pipe_draw_info *info,
 
    fprintf(f, "\n");
    for (sh = 0; sh < PIPE_SHADER_TYPES; sh++) {
-      if (sh == PIPE_SHADER_COMPUTE)
+      if (sh == MESA_SHADER_COMPUTE)
          continue;
 
       dd_dump_shader(dstate, sh, f);
@@ -446,7 +446,7 @@ dd_dump_launch_grid(struct dd_draw_state *dstate, struct pipe_grid_info *info, F
    DUMP(grid_info, info);
    fprintf(f, "\n");
 
-   dd_dump_shader(dstate, PIPE_SHADER_COMPUTE, f);
+   dd_dump_shader(dstate, MESA_SHADER_COMPUTE, f);
    fprintf(f, "\n");
 }
 

@@ -411,7 +411,7 @@ lay_out_uniforms(struct agx_compiled_shader *shader, struct state *state)
          .length = 4,
       };
 
-      bool sw = state->hw_stage == PIPE_SHADER_COMPUTE;
+      bool sw = state->hw_stage == MESA_SHADER_COMPUTE;
       if (sw) {
          shader->push[shader->push_range_count++] = (struct agx_push_range){
             .uniform = AGX_ABI_VUNI_INPUT_ASSEMBLY(count),

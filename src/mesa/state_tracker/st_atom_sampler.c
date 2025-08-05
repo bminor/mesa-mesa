@@ -424,7 +424,7 @@ st_update_compute_samplers(struct st_context *st)
 
    if (ctx->ComputeProgram._Current) {
       update_shader_samplers(st,
-                             PIPE_SHADER_COMPUTE,
+                             MESA_SHADER_COMPUTE,
                              ctx->ComputeProgram._Current, NULL, NULL);
    }
 }

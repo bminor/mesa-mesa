@@ -301,7 +301,7 @@ nvc0_shader_stage(unsigned pipe)
    case MESA_SHADER_TESS_EVAL: return 2;
    case MESA_SHADER_GEOMETRY: return 3;
    case MESA_SHADER_FRAGMENT: return 4;
-   case PIPE_SHADER_COMPUTE: return 5;
+   case MESA_SHADER_COMPUTE: return 5;
    default:
       assert(!"invalid PIPE_SHADER type");
       return 0;

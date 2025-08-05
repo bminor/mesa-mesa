@@ -294,7 +294,7 @@ set_shader_sampler(struct softpipe_context *softpipe,
 void
 softpipe_update_compute_samplers(struct softpipe_context *softpipe)
 {
-   set_shader_sampler(softpipe, PIPE_SHADER_COMPUTE, softpipe->cs->max_sampler);
+   set_shader_sampler(softpipe, MESA_SHADER_COMPUTE, softpipe->cs->max_sampler);
 }
 
 static void

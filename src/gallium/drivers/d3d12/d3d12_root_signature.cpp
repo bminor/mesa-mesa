@@ -51,7 +51,7 @@ get_shader_visibility(enum pipe_shader_type stage)
       return D3D12_SHADER_VISIBILITY_HULL;
    case MESA_SHADER_TESS_EVAL:
       return D3D12_SHADER_VISIBILITY_DOMAIN;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       return D3D12_SHADER_VISIBILITY_ALL;
    default:
       UNREACHABLE("unknown shader stage");
@@ -122,7 +122,7 @@ create_root_signature(struct d3d12_context *ctx, struct d3d12_root_signature_key
 
    unsigned count = key->compute ? 1 : D3D12_GFX_SHADER_STAGES;
    for (unsigned i = 0; i < count; ++i) {
-      unsigned stage = key->compute ? PIPE_SHADER_COMPUTE : i;
+      unsigned stage = key->compute ? MESA_SHADER_COMPUTE : i;
       D3D12_SHADER_VISIBILITY visibility = get_shader_visibility((enum pipe_shader_type)stage);
 
       if (key->stages[i].end_cb_bindings - key->stages[i].begin_cb_bindings > 0) {

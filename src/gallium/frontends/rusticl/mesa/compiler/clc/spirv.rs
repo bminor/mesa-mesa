@@ -350,7 +350,7 @@ impl SPIRVBin {
     }
 
     pub fn get_lib_clc(screen: &PipeScreen, spirv_caps: &spirv_capabilities) -> Option<NirShader> {
-        let nir_options = screen.nir_shader_compiler_options(pipe_shader_type::PIPE_SHADER_COMPUTE);
+        let nir_options = screen.nir_shader_compiler_options(pipe_shader_type::MESA_SHADER_COMPUTE);
         let address_bits = screen.compute_caps().address_bits;
         let spirv_options =
             Self::get_spirv_options(false, ptr::null(), address_bits, spirv_caps, None);

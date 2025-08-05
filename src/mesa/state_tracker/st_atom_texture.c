@@ -401,7 +401,7 @@ st_update_compute_textures(struct st_context *st)
    const struct gl_context *ctx = st->ctx;
 
    if (ctx->ComputeProgram._Current) {
-      update_textures(st, PIPE_SHADER_COMPUTE,
+      update_textures(st, MESA_SHADER_COMPUTE,
                             ctx->ComputeProgram._Current);
    }
 }

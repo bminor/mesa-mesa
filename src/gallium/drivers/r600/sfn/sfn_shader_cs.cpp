@@ -59,7 +59,7 @@ ComputeShader::process_stage_intrinsic(nir_intrinsic_instr *instr)
 void
 ComputeShader::do_get_shader_info(r600_shader *sh_info)
 {
-   sh_info->processor_type = PIPE_SHADER_COMPUTE;
+   sh_info->processor_type = MESA_SHADER_COMPUTE;
 }
 
 bool

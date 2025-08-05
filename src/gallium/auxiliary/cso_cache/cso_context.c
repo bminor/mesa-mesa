@@ -318,9 +318,9 @@ cso_create_context(struct pipe_context *pipe, unsigned flags)
    if (pipe->screen->shader_caps[MESA_SHADER_TESS_CTRL].max_instructions > 0) {
       ctx->has_tessellation = true;
    }
-   if (pipe->screen->shader_caps[PIPE_SHADER_COMPUTE].max_instructions > 0) {
+   if (pipe->screen->shader_caps[MESA_SHADER_COMPUTE].max_instructions > 0) {
       int supported_irs =
-         pipe->screen->shader_caps[PIPE_SHADER_COMPUTE].supported_irs;
+         pipe->screen->shader_caps[MESA_SHADER_COMPUTE].supported_irs;
       if (supported_irs & ((1 << PIPE_SHADER_IR_TGSI) |
                            (1 << PIPE_SHADER_IR_NIR))) {
          ctx->has_compute_shader = true;
@@ -375,7 +375,7 @@ cso_unbind_context(struct cso_context *cso)
                if (!ctx->has_tessellation)
                   continue;
                break;
-            case PIPE_SHADER_COMPUTE:
+            case MESA_SHADER_COMPUTE:
                if (!ctx->has_compute_shader)
                   continue;
                break;
@@ -1141,7 +1141,7 @@ cso_restore_compute_shader(struct cso_context_priv *ctx)
 static void
 cso_save_compute_samplers(struct cso_context_priv *ctx)
 {
-   struct sampler_info *info = &ctx->samplers[PIPE_SHADER_COMPUTE];
+   struct sampler_info *info = &ctx->samplers[MESA_SHADER_COMPUTE];
    struct sampler_info *saved = &ctx->compute_samplers_saved;
 
    memcpy(saved->cso_samplers, info->cso_samplers,
@@ -1153,7 +1153,7 @@ cso_save_compute_samplers(struct cso_context_priv *ctx)
 static void
 cso_restore_compute_samplers(struct cso_context_priv *ctx)
 {
-   struct sampler_info *info = &ctx->samplers[PIPE_SHADER_COMPUTE];
+   struct sampler_info *info = &ctx->samplers[MESA_SHADER_COMPUTE];
    struct sampler_info *saved = &ctx->compute_samplers_saved;
 
    memcpy(info->cso_samplers, saved->cso_samplers,
@@ -1167,7 +1167,7 @@ cso_restore_compute_samplers(struct cso_context_priv *ctx)
       }
    }
 
-   cso_single_sampler_done(&ctx->base, PIPE_SHADER_COMPUTE);
+   cso_single_sampler_done(&ctx->base, MESA_SHADER_COMPUTE);
 }
 
 

@@ -214,7 +214,7 @@ impl ProgramBuild {
         let nir = info.spirv.as_ref().unwrap().to_nir(
             kernel,
             d.screen
-                .nir_shader_compiler_options(pipe_shader_type::PIPE_SHADER_COMPUTE),
+                .nir_shader_compiler_options(pipe_shader_type::MESA_SHADER_COMPUTE),
             &d.spirv_caps,
             &d.lib_clc,
             &mut spec_constants,

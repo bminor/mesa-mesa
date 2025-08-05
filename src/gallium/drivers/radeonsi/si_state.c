@@ -1836,12 +1836,12 @@ static void si_set_active_query_state(struct pipe_context *ctx, bool enable)
 
 void si_save_qbo_state(struct si_context *sctx, struct si_qbo_state *st)
 {
-   si_get_pipe_constant_buffer(sctx, PIPE_SHADER_COMPUTE, 0, &st->saved_const0);
+   si_get_pipe_constant_buffer(sctx, MESA_SHADER_COMPUTE, 0, &st->saved_const0);
 }
 
 void si_restore_qbo_state(struct si_context *sctx, struct si_qbo_state *st)
 {
-   sctx->b.set_constant_buffer(&sctx->b, PIPE_SHADER_COMPUTE, 0, true, &st->saved_const0);
+   sctx->b.set_constant_buffer(&sctx->b, MESA_SHADER_COMPUTE, 0, true, &st->saved_const0);
 }
 
 static void si_emit_db_render_state(struct si_context *sctx, unsigned index)

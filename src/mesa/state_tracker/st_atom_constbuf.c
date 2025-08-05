@@ -82,7 +82,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, gl_shader_st
           shader_type == MESA_SHADER_GEOMETRY ||
           shader_type == MESA_SHADER_TESS_CTRL ||
           shader_type == MESA_SHADER_TESS_EVAL ||
-          shader_type == PIPE_SHADER_COMPUTE);
+          shader_type == MESA_SHADER_COMPUTE);
 
    /* update the ATI constants before rendering */
    if (shader_type == MESA_SHADER_FRAGMENT && prog->ati_fs) {
@@ -359,5 +359,5 @@ st_bind_cs_ubos(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_COMPUTE];
 
-   st_bind_ubos(st, prog, PIPE_SHADER_COMPUTE);
+   st_bind_ubos(st, prog, MESA_SHADER_COMPUTE);
 }

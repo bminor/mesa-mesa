@@ -843,7 +843,7 @@ test_compute_clear_image_shader(struct pipe_context *ctx)
    image.shader_access = image.access = PIPE_IMAGE_ACCESS_READ_WRITE;
    image.format = cb->format;
 
-   ctx->set_shader_images(ctx, PIPE_SHADER_COMPUTE, 0, 1, 0, &image);
+   ctx->set_shader_images(ctx, MESA_SHADER_COMPUTE, 0, 1, 0, &image);
 
    /* Dispatch compute. */
    struct pipe_grid_info info = {0};

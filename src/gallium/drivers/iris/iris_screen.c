@@ -201,7 +201,7 @@ iris_get_video_memory(struct iris_screen *screen)
 static void
 iris_init_shader_caps(struct iris_screen *screen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 

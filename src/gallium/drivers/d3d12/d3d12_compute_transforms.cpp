@@ -486,12 +486,12 @@ d3d12_save_compute_transform_state(struct d3d12_context *ctx, d3d12_compute_tran
    memset(save, 0, sizeof(*save));
    save->cs = ctx->compute_state;
 
-   pipe_resource_reference(&save->cbuf0.buffer, ctx->cbufs[PIPE_SHADER_COMPUTE][1].buffer);
-   save->cbuf0 = ctx->cbufs[PIPE_SHADER_COMPUTE][1];
+   pipe_resource_reference(&save->cbuf0.buffer, ctx->cbufs[MESA_SHADER_COMPUTE][1].buffer);
+   save->cbuf0 = ctx->cbufs[MESA_SHADER_COMPUTE][1];
 
    for (unsigned i = 0; i < ARRAY_SIZE(save->ssbos); ++i) {
-      pipe_resource_reference(&save->ssbos[i].buffer, ctx->ssbo_views[PIPE_SHADER_COMPUTE][i].buffer);
-      save->ssbos[i] = ctx->ssbo_views[PIPE_SHADER_COMPUTE][i];
+      pipe_resource_reference(&save->ssbos[i].buffer, ctx->ssbo_views[MESA_SHADER_COMPUTE][i].buffer);
+      save->ssbos[i] = ctx->ssbo_views[MESA_SHADER_COMPUTE][i];
    }
 
    save->queries_disabled = ctx->queries_disabled;
@@ -505,8 +505,8 @@ d3d12_restore_compute_transform_state(struct d3d12_context *ctx, d3d12_compute_t
 
    ctx->base.bind_compute_state(&ctx->base, save->cs);
 
-   ctx->base.set_constant_buffer(&ctx->base, PIPE_SHADER_COMPUTE, 1, true, &save->cbuf0);
-   ctx->base.set_shader_buffers(&ctx->base, PIPE_SHADER_COMPUTE, 0, ARRAY_SIZE(save->ssbos), save->ssbos, (1u << ARRAY_SIZE(save->ssbos)) - 1);
+   ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, true, &save->cbuf0);
+   ctx->base.set_shader_buffers(&ctx->base, MESA_SHADER_COMPUTE, 0, ARRAY_SIZE(save->ssbos), save->ssbos, (1u << ARRAY_SIZE(save->ssbos)) - 1);
 
    if (ctx->current_predication)
       d3d12_enable_predication(ctx);

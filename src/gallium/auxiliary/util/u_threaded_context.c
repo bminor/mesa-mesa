@@ -932,7 +932,7 @@ tc_add_all_compute_bindings_to_buffer_list(struct threaded_context *tc)
 {
    BITSET_WORD *buffer_list = tc->buffer_lists[tc->next_buf_list].buffer_list;
 
-   tc_add_shader_bindings_to_buffer_list(tc, buffer_list, PIPE_SHADER_COMPUTE);
+   tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_COMPUTE);
    tc->add_all_compute_bindings_to_buffer_list = false;
 }
 
@@ -964,7 +964,7 @@ tc_rebind_buffer(struct threaded_context *tc, uint32_t old_id, uint32_t new_id, 
    if (tc->seen_gs)
       rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_GEOMETRY, rebind_mask);
 
-   rebound += tc_rebind_shader_bindings(tc, old_id, new_id, PIPE_SHADER_COMPUTE, rebind_mask);
+   rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_COMPUTE, rebind_mask);
 
    if (rebound)
       BITSET_SET(tc->buffer_lists[tc->next_buf_list].buffer_list, new_id & TC_BUFFER_ID_MASK);
@@ -1008,7 +1008,7 @@ tc_is_buffer_bound_for_write(struct threaded_context *tc, uint32_t id)
 
    if (tc_is_buffer_shader_bound_for_write(tc, id, MESA_SHADER_VERTEX) ||
        tc_is_buffer_shader_bound_for_write(tc, id, MESA_SHADER_FRAGMENT) ||
-       tc_is_buffer_shader_bound_for_write(tc, id, PIPE_SHADER_COMPUTE))
+       tc_is_buffer_shader_bound_for_write(tc, id, MESA_SHADER_COMPUTE))
       return true;
 
    if (tc->seen_tcs &&

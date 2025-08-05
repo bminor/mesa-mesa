@@ -406,7 +406,7 @@ panfrost_update_shader_variant(struct panfrost_context *ctx,
                                enum pipe_shader_type type)
 {
    /* No shader variants for compute */
-   if (type == PIPE_SHADER_COMPUTE)
+   if (type == MESA_SHADER_COMPUTE)
       return;
 
    /* We need linking information, defer this */
@@ -610,9 +610,9 @@ panfrost_bind_compute_state(struct pipe_context *pipe, void *cso)
    struct panfrost_context *ctx = pan_context(pipe);
    struct panfrost_uncompiled_shader *uncompiled = cso;
 
-   ctx->uncompiled[PIPE_SHADER_COMPUTE] = uncompiled;
+   ctx->uncompiled[MESA_SHADER_COMPUTE] = uncompiled;
 
-   ctx->prog[PIPE_SHADER_COMPUTE] =
+   ctx->prog[MESA_SHADER_COMPUTE] =
       uncompiled ? util_dynarray_begin(&uncompiled->variants) : NULL;
 }
 

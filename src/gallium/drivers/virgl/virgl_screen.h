@@ -103,7 +103,7 @@ virgl_shader_stage_convert(enum pipe_shader_type type)
       return VIRGL_SHADER_GEOMETRY;
    case MESA_SHADER_FRAGMENT:
       return VIRGL_SHADER_FRAGMENT;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       return VIRGL_SHADER_COMPUTE;
    default:
       UNREACHABLE("virgl: unknown shader stage.\n");

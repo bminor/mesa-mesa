@@ -821,7 +821,7 @@ int virgl_encode_shader_state(struct virgl_context *ctx,
 
       virgl_emit_shader_header(ctx, handle, len, virgl_shader_stage_convert(type), offlen, num_tokens);
 
-      if (type == PIPE_SHADER_COMPUTE)
+      if (type == MESA_SHADER_COMPUTE)
          virgl_encoder_write_dword(ctx->cbuf, cs_req_local_mem);
       else
          virgl_emit_shader_streamout(ctx, first_pass ? so_info : NULL);
@@ -1483,7 +1483,7 @@ int virgl_encode_link_shader(struct virgl_context *ctx, uint32_t *handles)
    virgl_encoder_write_dword(ctx->cbuf, handles[MESA_SHADER_GEOMETRY]);
    virgl_encoder_write_dword(ctx->cbuf, handles[MESA_SHADER_TESS_CTRL]);
    virgl_encoder_write_dword(ctx->cbuf, handles[MESA_SHADER_TESS_EVAL]);
-   virgl_encoder_write_dword(ctx->cbuf, handles[PIPE_SHADER_COMPUTE]);
+   virgl_encoder_write_dword(ctx->cbuf, handles[MESA_SHADER_COMPUTE]);
    return 0;
 }
 

@@ -906,7 +906,7 @@ csf_emit_shader_regs(struct panfrost_batch *batch, enum pipe_shader_type stage,
    uint64_t resources = panfrost_emit_resources(batch, stage);
 
    assert(stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_FRAGMENT ||
-          stage == PIPE_SHADER_COMPUTE);
+          stage == MESA_SHADER_COMPUTE);
 
 #if PAN_ARCH >= 12
    unsigned offset = (stage == MESA_SHADER_FRAGMENT) ? 2 : 0;
@@ -928,16 +928,16 @@ GENX(csf_launch_grid)(struct panfrost_batch *batch,
                       const struct pipe_grid_info *info)
 {
    /* Empty compute programs are invalid and don't make sense */
-   if (batch->rsd[PIPE_SHADER_COMPUTE] == 0)
+   if (batch->rsd[MESA_SHADER_COMPUTE] == 0)
       return;
 
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_device *dev = pan_device(ctx->base.screen);
-   struct panfrost_compiled_shader *cs = ctx->prog[PIPE_SHADER_COMPUTE];
+   struct panfrost_compiled_shader *cs = ctx->prog[MESA_SHADER_COMPUTE];
    struct cs_builder *b = batch->csf.cs.builder;
 
-   csf_emit_shader_regs(batch, PIPE_SHADER_COMPUTE,
-                        batch->rsd[PIPE_SHADER_COMPUTE]);
+   csf_emit_shader_regs(batch, MESA_SHADER_COMPUTE,
+                        batch->rsd[MESA_SHADER_COMPUTE]);
 
    cs_move64_to(b, cs_sr_reg64(b, COMPUTE, TSD_0), batch->tls.gpu);
 

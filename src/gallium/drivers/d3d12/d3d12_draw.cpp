@@ -795,7 +795,7 @@ update_draw_indirect_with_sysvals(struct d3d12_context *ctx,
       draw_count_cbuf.buffer_offset = indirect_in->indirect_draw_count_offset;
       draw_count_cbuf.buffer_size = 4;
       draw_count_cbuf.user_buffer = nullptr;
-      ctx->base.set_constant_buffer(&ctx->base, PIPE_SHADER_COMPUTE, 1, false, &draw_count_cbuf);
+      ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, false, &draw_count_cbuf);
    }
    
    pipe_shader_buffer new_cs_ssbos[2];
@@ -815,7 +815,7 @@ update_draw_indirect_with_sysvals(struct d3d12_context *ctx,
    new_cs_ssbos[1].buffer = ctx->base.screen->resource_create(ctx->base.screen, &output_buf_templ);
    new_cs_ssbos[1].buffer_offset = 0;
    new_cs_ssbos[1].buffer_size = output_buf_templ.width0;
-   ctx->base.set_shader_buffers(&ctx->base, PIPE_SHADER_COMPUTE, 0, 2, new_cs_ssbos, 2);
+   ctx->base.set_shader_buffers(&ctx->base, MESA_SHADER_COMPUTE, 0, 2, new_cs_ssbos, 2);
 
    pipe_grid_info grid = {};
    grid.block[0] = grid.block[1] = grid.block[2] = 1;
@@ -863,7 +863,7 @@ update_draw_auto(struct d3d12_context *ctx,
    new_cs_ssbo.buffer = target->fill_buffer;
    new_cs_ssbo.buffer_offset = target->fill_buffer_offset;
    new_cs_ssbo.buffer_size = target->fill_buffer->width0 - new_cs_ssbo.buffer_offset;
-   ctx->base.set_shader_buffers(&ctx->base, PIPE_SHADER_COMPUTE, 0, 1, &new_cs_ssbo, 1);
+   ctx->base.set_shader_buffers(&ctx->base, MESA_SHADER_COMPUTE, 0, 1, &new_cs_ssbo, 1);
 
    pipe_grid_info grid = {};
    grid.block[0] = grid.block[1] = grid.block[2] = 1;
@@ -1352,7 +1352,7 @@ d3d12_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
       if (ctx->compute_pipeline_state.root_signature != root_signature) {
          ctx->compute_pipeline_state.root_signature = root_signature;
          ctx->state_dirty |= D3D12_DIRTY_COMPUTE_ROOT_SIGNATURE;
-         ctx->shader_dirty[PIPE_SHADER_COMPUTE] |= D3D12_SHADER_DIRTY_ALL;
+         ctx->shader_dirty[MESA_SHADER_COMPUTE] |= D3D12_SHADER_DIRTY_ALL;
       }
    }
 
@@ -1414,6 +1414,6 @@ d3d12_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
    ctx->cmdlist_dirty |= D3D12_DIRTY_SHADER;
    batch->pending_memory_barrier = false;
 
-   ctx->shader_dirty[PIPE_SHADER_COMPUTE] = 0;
+   ctx->shader_dirty[MESA_SHADER_COMPUTE] = 0;
    pipe_resource_reference(&patched_indirect, nullptr);
 }

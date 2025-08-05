@@ -139,7 +139,7 @@ crocus_init_shader_caps(struct crocus_screen *screen)
 {
    const struct intel_device_info *devinfo = &screen->devinfo;
 
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
@@ -181,7 +181,7 @@ crocus_init_shader_caps(struct crocus_screen *screen)
          (devinfo->verx10 >= 75) ? CROCUS_MAX_TEXTURE_SAMPLERS : 16;
 
       if (devinfo->ver >= 7 &&
-          (i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE))
+          (i == MESA_SHADER_FRAGMENT || i == MESA_SHADER_COMPUTE))
          caps->max_shader_images = CROCUS_MAX_TEXTURE_SAMPLERS;
 
       caps->max_shader_buffers =

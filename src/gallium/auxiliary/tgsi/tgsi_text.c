@@ -343,7 +343,7 @@ static bool parse_header( struct translate_ctx *ctx )
    else if (str_match_nocase_whole( &ctx->cur, "TESS_EVAL" ))
       processor = MESA_SHADER_TESS_EVAL;
    else if (str_match_nocase_whole( &ctx->cur, "COMP" ))
-      processor = PIPE_SHADER_COMPUTE;
+      processor = MESA_SHADER_COMPUTE;
    else {
       report_error( ctx, "Unknown header" );
       return false;

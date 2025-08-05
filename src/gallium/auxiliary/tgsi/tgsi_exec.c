@@ -1220,7 +1220,7 @@ tgsi_exec_machine_create(enum pipe_shader_type shader_type)
 
    mach->ShaderType = shader_type;
 
-   if (shader_type != PIPE_SHADER_COMPUTE) {
+   if (shader_type != MESA_SHADER_COMPUTE) {
       mach->Inputs = align_malloc(sizeof(struct tgsi_exec_vector) * PIPE_MAX_SHADER_INPUTS, 16);
       mach->Outputs = align_malloc(sizeof(struct tgsi_exec_vector) * PIPE_MAX_SHADER_OUTPUTS, 16);
       if (!mach->Inputs || !mach->Outputs)
@@ -6028,7 +6028,7 @@ tgsi_exec_machine_run( struct tgsi_exec_machine *mach, int start_pc )
          barrier_hit = exec_instruction(mach, mach->Instructions + mach->pc, &mach->pc);
 
          /* for compute shaders if we hit a barrier return now for later rescheduling */
-         if (barrier_hit && mach->ShaderType == PIPE_SHADER_COMPUTE)
+         if (barrier_hit && mach->ShaderType == MESA_SHADER_COMPUTE)
             return 0;
 
 #if DEBUG_EXECUTION

@@ -835,7 +835,7 @@ nv50_cp_state_create(struct pipe_context *pipe,
    prog = CALLOC_STRUCT(nv50_program);
    if (!prog)
       return NULL;
-   prog->type = PIPE_SHADER_COMPUTE;
+   prog->type = MESA_SHADER_COMPUTE;
 
    switch(cso->ir_type) {
    case PIPE_SHADER_IR_TGSI: {
@@ -893,7 +893,7 @@ nv50_set_constant_buffer(struct pipe_context *pipe,
    const unsigned s = nv50_context_shader_stage(shader);
    const unsigned i = index;
 
-   if (unlikely(shader == PIPE_SHADER_COMPUTE)) {
+   if (unlikely(shader == MESA_SHADER_COMPUTE)) {
       if (nv50->constbuf[s][i].user)
          nv50->constbuf[s][i].u.buf = NULL;
       else

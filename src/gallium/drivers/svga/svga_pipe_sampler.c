@@ -511,7 +511,7 @@ svga_cleanup_sampler_state(struct svga_context *svga)
 {
    enum pipe_shader_type shader;
 
-   for (shader = 0; shader <= PIPE_SHADER_COMPUTE; shader++) {
+   for (shader = 0; shader <= MESA_SHADER_COMPUTE; shader++) {
       unsigned i;
 
       for (i = 0; i < svga->state.hw_draw.num_sampler_views[shader]; i++) {

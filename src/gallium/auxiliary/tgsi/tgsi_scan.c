@@ -85,7 +85,7 @@ scan_src_operand(struct tgsi_shader_info *info,
 {
    int ind = src->Register.Index;
 
-   if (info->processor == PIPE_SHADER_COMPUTE &&
+   if (info->processor == MESA_SHADER_COMPUTE &&
        src->Register.File == TGSI_FILE_SYSTEM_VALUE) {
       unsigned name;
 
@@ -615,7 +615,7 @@ tgsi_scan_shader(const struct tgsi_token *tokens,
           procType == MESA_SHADER_GEOMETRY ||
           procType == MESA_SHADER_TESS_CTRL ||
           procType == MESA_SHADER_TESS_EVAL ||
-          procType == PIPE_SHADER_COMPUTE);
+          procType == MESA_SHADER_COMPUTE);
    info->processor = procType;
 
    if (procType == MESA_SHADER_GEOMETRY)

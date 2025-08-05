@@ -203,7 +203,7 @@ fd_query_memory_info(struct pipe_screen *pscreen,
 static void
 fd_init_shader_caps(struct fd_screen *screen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
@@ -216,7 +216,7 @@ fd_init_shader_caps(struct fd_screen *screen)
          if (screen->info->a6xx.is_a702)
             continue;
          break;
-      case PIPE_SHADER_COMPUTE:
+      case MESA_SHADER_COMPUTE:
          if (!has_compute(screen))
             continue;
          break;
@@ -261,7 +261,7 @@ fd_init_shader_caps(struct fd_screen *screen)
       caps->int16 =
       caps->fp16 =
          (is_a5xx(screen) || is_a6xx(screen)) &&
-         (i == PIPE_SHADER_COMPUTE || i == MESA_SHADER_FRAGMENT) &&
+         (i == MESA_SHADER_COMPUTE || i == MESA_SHADER_FRAGMENT) &&
          !FD_DBG(NOFP16);
       caps->glsl_16bit_load_dst = true;
 
@@ -273,7 +273,7 @@ fd_init_shader_caps(struct fd_screen *screen)
          /* tgsi_to_nir doesn't support all stages: */
          COND(i == MESA_SHADER_VERTEX ||
               i == MESA_SHADER_FRAGMENT ||
-              i == PIPE_SHADER_COMPUTE,
+              i == MESA_SHADER_COMPUTE,
               1 << PIPE_SHADER_IR_TGSI);
 
       if (is_a6xx(screen)) {
@@ -302,7 +302,7 @@ fd_init_shader_caps(struct fd_screen *screen)
           * but images also need texture state for read access
           * (isam/isam.3d)
           */
-         if (i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) {
+         if (i == MESA_SHADER_FRAGMENT || i == MESA_SHADER_COMPUTE) {
             caps->max_shader_buffers =
             caps->max_shader_images = 24;
          }

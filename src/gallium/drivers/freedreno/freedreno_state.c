@@ -714,7 +714,7 @@ fd_bind_compute_state(struct pipe_context *pctx, void *state) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    ctx->compute = state;
-   fd_context_dirty_shader(ctx, PIPE_SHADER_COMPUTE, FD_DIRTY_SHADER_PROG);
+   fd_context_dirty_shader(ctx, MESA_SHADER_COMPUTE, FD_DIRTY_SHADER_PROG);
 }
 
 /* used by clover to bind global objects, returning the bo address

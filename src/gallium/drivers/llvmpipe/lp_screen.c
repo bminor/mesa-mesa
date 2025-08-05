@@ -128,7 +128,7 @@ llvmpipe_init_shader_caps(struct pipe_screen *screen)
 
       switch (i) {
       case MESA_SHADER_FRAGMENT:
-      case PIPE_SHADER_COMPUTE:
+      case MESA_SHADER_COMPUTE:
       case PIPE_SHADER_MESH:
       case PIPE_SHADER_TASK:
          gallivm_init_shader_caps(caps);

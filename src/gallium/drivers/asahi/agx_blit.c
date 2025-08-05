@@ -57,7 +57,7 @@ static void *
 asahi_blit_compute_shader(struct pipe_context *ctx, struct asahi_blit_key *key)
 {
    const nir_shader_compiler_options *options =
-      ctx->screen->nir_options[PIPE_SHADER_COMPUTE];
+      ctx->screen->nir_options[MESA_SHADER_COMPUTE];
 
    nir_builder b_ =
       nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, options, "blit_cs");
@@ -244,7 +244,7 @@ static void
 asahi_compute_save(struct agx_context *ctx)
 {
    struct asahi_blitter *blitter = &ctx->compute_blitter;
-   struct agx_stage *stage = &ctx->stage[PIPE_SHADER_COMPUTE];
+   struct agx_stage *stage = &ctx->stage[MESA_SHADER_COMPUTE];
 
    assert(!blitter->active && "recursion detected, driver bug");
 
@@ -278,25 +278,25 @@ asahi_compute_restore(struct agx_context *ctx)
    struct asahi_blitter *blitter = &ctx->compute_blitter;
 
    if (blitter->has_saved_image) {
-      pctx->set_shader_images(pctx, PIPE_SHADER_COMPUTE, 0, 1, 0,
+      pctx->set_shader_images(pctx, MESA_SHADER_COMPUTE, 0, 1, 0,
                               &blitter->saved_image);
       pipe_resource_reference(&blitter->saved_image.resource, NULL);
    }
 
    /* take_ownership=true so do not unreference */
-   pctx->set_constant_buffer(pctx, PIPE_SHADER_COMPUTE, 0, true,
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, true,
                              &blitter->saved_cb);
    blitter->saved_cb.buffer = NULL;
 
    if (blitter->saved_sampler_view) {
-      pctx->set_sampler_views(pctx, PIPE_SHADER_COMPUTE, 0, 1, 0,
+      pctx->set_sampler_views(pctx, MESA_SHADER_COMPUTE, 0, 1, 0,
                               &blitter->saved_sampler_view);
 
       blitter->saved_sampler_view = NULL;
    }
 
    if (blitter->saved_num_sampler_states) {
-      pctx->bind_sampler_states(pctx, PIPE_SHADER_COMPUTE, 0,
+      pctx->bind_sampler_states(pctx, MESA_SHADER_COMPUTE, 0,
                                 blitter->saved_num_sampler_states,
                                 blitter->saved_sampler_states);
    }
@@ -366,7 +366,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
       .buffer_size = sizeof(data),
       .user_buffer = data,
    };
-   ctx->set_constant_buffer(ctx, PIPE_SHADER_COMPUTE, 0, false, &cb);
+   ctx->set_constant_buffer(ctx, MESA_SHADER_COMPUTE, 0, false, &cb);
 
    struct pipe_image_view image = {
       .resource = dst,
@@ -378,7 +378,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
       .u.tex.last_layer = info->dst.box.z + depth - 1,
       .u.tex.single_layer_view = !array,
    };
-   ctx->set_shader_images(ctx, PIPE_SHADER_COMPUTE, 0, 1, 0, &image);
+   ctx->set_shader_images(ctx, MESA_SHADER_COMPUTE, 0, 1, 0, &image);
 
    if (!blitter->sampler[info->filter]) {
       struct pipe_sampler_state sampler_state = {
@@ -396,7 +396,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
          ctx->create_sampler_state(ctx, &sampler_state);
    }
 
-   ctx->bind_sampler_states(ctx, PIPE_SHADER_COMPUTE, 0, 1,
+   ctx->bind_sampler_states(ctx, MESA_SHADER_COMPUTE, 0, 1,
                             &blitter->sampler[info->filter]);
 
    /* Initialize the sampler view. */
@@ -412,7 +412,7 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
    src_templ.u.tex.first_level = info->src.level;
    src_templ.u.tex.last_level = info->src.level;
    src_view = ctx->create_sampler_view(ctx, src, &src_templ);
-   ctx->set_sampler_views(ctx, PIPE_SHADER_COMPUTE, 0, 1, 0, &src_view);
+   ctx->set_sampler_views(ctx, MESA_SHADER_COMPUTE, 0, 1, 0, &src_view);
    ctx->sampler_view_release(ctx, src_view);
 
    struct asahi_blit_key key = {
@@ -447,9 +447,9 @@ asahi_compute_blit(struct pipe_context *ctx, const struct pipe_blit_info *info,
          },
    };
    ctx->launch_grid(ctx, &grid_info);
-   ctx->set_shader_images(ctx, PIPE_SHADER_COMPUTE, 0, 0, 1, NULL);
-   ctx->set_constant_buffer(ctx, PIPE_SHADER_COMPUTE, 0, false, NULL);
-   ctx->set_sampler_views(ctx, PIPE_SHADER_COMPUTE, 0, 0, 1, NULL);
+   ctx->set_shader_images(ctx, MESA_SHADER_COMPUTE, 0, 0, 1, NULL);
+   ctx->set_constant_buffer(ctx, MESA_SHADER_COMPUTE, 0, false, NULL);
+   ctx->set_sampler_views(ctx, MESA_SHADER_COMPUTE, 0, 0, 1, NULL);
 
    asahi_compute_restore(agx_context(ctx));
 }

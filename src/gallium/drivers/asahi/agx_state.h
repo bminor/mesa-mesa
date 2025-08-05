@@ -98,7 +98,7 @@ static_assert(AGX_SYSVAL_STAGE(MESA_SHADER_GEOMETRY) == AGX_SYSVAL_TABLE_GS,
               "fixed enum orderings");
 static_assert(AGX_SYSVAL_STAGE(MESA_SHADER_FRAGMENT) == AGX_SYSVAL_TABLE_FS,
               "fixed enum orderings");
-static_assert(AGX_SYSVAL_STAGE(PIPE_SHADER_COMPUTE) == AGX_SYSVAL_TABLE_CS,
+static_assert(AGX_SYSVAL_STAGE(MESA_SHADER_COMPUTE) == AGX_SYSVAL_TABLE_CS,
               "fixed enum orderings");
 
 /* Root system value table */
@@ -823,7 +823,7 @@ agx_dirty_reset_graphics(struct agx_context *ctx)
    ctx->dirty = 0;
 
    for (unsigned i = 0; i < ARRAY_SIZE(ctx->stage); ++i) {
-      if (i != PIPE_SHADER_COMPUTE)
+      if (i != MESA_SHADER_COMPUTE)
          ctx->stage[i].dirty = 0;
    }
 }

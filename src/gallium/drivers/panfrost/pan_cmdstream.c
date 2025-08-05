@@ -1615,7 +1615,7 @@ panfrost_emit_shared_memory(struct panfrost_batch *batch,
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_device *dev = pan_device(ctx->base.screen);
-   struct panfrost_compiled_shader *ss = ctx->prog[PIPE_SHADER_COMPUTE];
+   struct panfrost_compiled_shader *ss = ctx->prog[MESA_SHADER_COMPUTE];
    struct pan_ptr t = pan_pool_alloc_desc(&batch->pool.base, LOCAL_STORAGE);
 
    struct pan_compute_dim local_size = {grid->block[0], grid->block[1],
@@ -3501,7 +3501,7 @@ panfrost_launch_grid_on_batch(struct pipe_context *pipe,
          continue;
 
       struct panfrost_resource *buffer = pan_resource(*res);
-      panfrost_batch_write_rsrc(batch, buffer, PIPE_SHADER_COMPUTE);
+      panfrost_batch_write_rsrc(batch, buffer, MESA_SHADER_COMPUTE);
    }
 
    if (info->indirect && !PAN_GPU_SUPPORTS_DISPATCH_INDIRECT) {
@@ -3528,7 +3528,7 @@ panfrost_launch_grid_on_batch(struct pipe_context *pipe,
    /* Conservatively assume workgroup size changes every launch */
    ctx->dirty |= PAN_DIRTY_PARAMS;
 
-   panfrost_update_shader_state(batch, PIPE_SHADER_COMPUTE);
+   panfrost_update_shader_state(batch, MESA_SHADER_COMPUTE);
 
    /* We want our compute thread descriptor to be per job.
     * Save the global one, and restore it when we're done emitting
@@ -3539,7 +3539,7 @@ panfrost_launch_grid_on_batch(struct pipe_context *pipe,
 
    /* if indirect, mark the indirect buffer as being read */
    if (info->indirect)
-      panfrost_batch_read_rsrc(batch, pan_resource(info->indirect), PIPE_SHADER_COMPUTE);
+      panfrost_batch_read_rsrc(batch, pan_resource(info->indirect), MESA_SHADER_COMPUTE);
 
    /* launch it */
    JOBX(launch_grid)(batch, info);
@@ -3583,17 +3583,17 @@ panfrost_launch_afbc_conv_shader(struct panfrost_batch *batch, void *cso,
    };
 
    struct panfrost_constant_buffer *pbuf =
-      &batch->ctx->constant_buffer[PIPE_SHADER_COMPUTE];
-   saved_cso = batch->ctx->uncompiled[PIPE_SHADER_COMPUTE];
+      &batch->ctx->constant_buffer[MESA_SHADER_COMPUTE];
+   saved_cso = batch->ctx->uncompiled[MESA_SHADER_COMPUTE];
    util_copy_constant_buffer(&pbuf->cb[0], &saved_const, true);
 
    pctx->bind_compute_state(pctx, cso);
-   pctx->set_constant_buffer(pctx, PIPE_SHADER_COMPUTE, 0, false, cbuf);
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, false, cbuf);
 
    panfrost_launch_grid_on_batch(pctx, batch, &grid);
 
    pctx->bind_compute_state(pctx, saved_cso);
-   pctx->set_constant_buffer(pctx, PIPE_SHADER_COMPUTE, 0, true, &saved_const);
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, true, &saved_const);
 }
 
 #define LAUNCH_AFBC_CONV_SHADER(name, batch, rsrc, consts, nr_blocks)          \
@@ -3625,8 +3625,8 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
                      src->image.props.modifier,
                      u_minify(src->image.props.extent_px.height, level));
 
-   panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
-   panfrost_batch_write_bo(batch, layout, PIPE_SHADER_COMPUTE);
+   panfrost_batch_read_rsrc(batch, src, MESA_SHADER_COMPUTE);
+   panfrost_batch_write_bo(batch, layout, MESA_SHADER_COMPUTE);
 
    LAUNCH_AFBC_CONV_SHADER(size, batch, src, consts, nr_sblocks);
 }
@@ -3661,9 +3661,9 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
       .dst_stride = dst_stride_sb,
    };
 
-   panfrost_batch_read_rsrc(batch, src, PIPE_SHADER_COMPUTE);
-   panfrost_batch_write_bo(batch, dst, PIPE_SHADER_COMPUTE);
-   panfrost_batch_add_bo(batch, layout, PIPE_SHADER_COMPUTE);
+   panfrost_batch_read_rsrc(batch, src, MESA_SHADER_COMPUTE);
+   panfrost_batch_write_bo(batch, dst, MESA_SHADER_COMPUTE);
+   panfrost_batch_add_bo(batch, layout, MESA_SHADER_COMPUTE);
 
    LAUNCH_AFBC_CONV_SHADER(pack, batch, src, consts, nr_sblocks);
 }
@@ -3766,7 +3766,7 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
    panfrost_flush_all_batches(ctx, "mtk_detile pre-barrier");
 
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
-   pipe->set_shader_images(pipe, PIPE_SHADER_COMPUTE, 0, 4, 0, image);
+   pipe->set_shader_images(pipe, MESA_SHADER_COMPUTE, 0, 4, 0, image);
 
    /* launch the compute shader */
    struct pan_mod_convert_shader_data *shader =
@@ -3789,18 +3789,18 @@ panfrost_mtk_detile_compute(struct panfrost_context *ctx, struct pipe_blit_info 
 
    struct pipe_constant_buffer saved_const = {};
    struct panfrost_constant_buffer *pbuf =
-      &batch->ctx->constant_buffer[PIPE_SHADER_COMPUTE];
-   void *saved_cso = batch->ctx->uncompiled[PIPE_SHADER_COMPUTE];
+      &batch->ctx->constant_buffer[MESA_SHADER_COMPUTE];
+   void *saved_cso = batch->ctx->uncompiled[MESA_SHADER_COMPUTE];
    void *cso = shader->mtk_tiled.detile_cso;
    util_copy_constant_buffer(&pbuf->cb[0], &saved_const, true);
 
    pipe->bind_compute_state(pipe, cso);
-   pipe->set_constant_buffer(pipe, PIPE_SHADER_COMPUTE, 0, false, &cbuf);
+   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, false, &cbuf);
 
    panfrost_launch_grid_on_batch(pipe, batch, &grid_info);
 
    pipe->bind_compute_state(pipe, saved_cso);
-   pipe->set_constant_buffer(pipe, PIPE_SHADER_COMPUTE, 0, true, &saved_const);
+   pipe->set_constant_buffer(pipe, MESA_SHADER_COMPUTE, 0, true, &saved_const);
 
    panfrost_resource_restore_format(pan_resource(y_src), &y_src_save);
    panfrost_resource_restore_format(pan_resource(uv_src), &uv_src_save);

@@ -76,7 +76,7 @@ svga_set_constant_buffer(struct pipe_context *pipe,
          svga->dirty |= SVGA_NEW_TCS_CONSTS;
       else if (shader == MESA_SHADER_TESS_EVAL)
          svga->dirty |= SVGA_NEW_TES_CONSTS;
-      else if (shader == PIPE_SHADER_COMPUTE)
+      else if (shader == MESA_SHADER_COMPUTE)
          svga->dirty |= SVGA_NEW_CS_CONSTS;
    } else {
       if (shader == MESA_SHADER_FRAGMENT)
@@ -89,7 +89,7 @@ svga_set_constant_buffer(struct pipe_context *pipe,
          svga->dirty |= SVGA_NEW_TCS_CONST_BUFFER;
       else if (shader == MESA_SHADER_TESS_EVAL)
          svga->dirty |= SVGA_NEW_TES_CONST_BUFFER;
-      else if (shader == PIPE_SHADER_COMPUTE)
+      else if (shader == MESA_SHADER_COMPUTE)
          svga->dirty |= SVGA_NEW_CS_CONST_BUFFER;
 
       /* update bitmask of dirty const buffers */

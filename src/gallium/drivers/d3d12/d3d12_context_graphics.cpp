@@ -1839,7 +1839,7 @@ d3d12_disable_fake_so_buffers(struct d3d12_context *ctx)
       new_cs_ssbos[1].buffer = target->fill_buffer;
       new_cs_ssbos[1].buffer_offset = target->fill_buffer_offset;
       new_cs_ssbos[1].buffer_size = target->fill_buffer->width0 - target->fill_buffer_offset;
-      ctx->base.set_shader_buffers(&ctx->base, PIPE_SHADER_COMPUTE, 0, 2, new_cs_ssbos, 2);
+      ctx->base.set_shader_buffers(&ctx->base, MESA_SHADER_COMPUTE, 0, 2, new_cs_ssbos, 2);
 
       pipe_grid_info grid = {};
       grid.block[0] = grid.block[1] = grid.block[2] = 1;
@@ -1875,13 +1875,13 @@ d3d12_disable_fake_so_buffers(struct d3d12_context *ctx)
       new_cs_ssbos[1].buffer = fake_target->base.buffer;
       new_cs_ssbos[1].buffer_offset = fake_target->base.buffer_offset;
       new_cs_ssbos[1].buffer_size = fake_target->base.buffer_size;
-      ctx->base.set_shader_buffers(&ctx->base, PIPE_SHADER_COMPUTE, 0, 2, new_cs_ssbos, 2);
+      ctx->base.set_shader_buffers(&ctx->base, MESA_SHADER_COMPUTE, 0, 2, new_cs_ssbos, 2);
 
       pipe_constant_buffer cbuf = {};
       cbuf.buffer = fake_target->fill_buffer;
       cbuf.buffer_offset = fake_target->fill_buffer_offset;
       cbuf.buffer_size = fake_target->fill_buffer->width0 - cbuf.buffer_offset;
-      ctx->base.set_constant_buffer(&ctx->base, PIPE_SHADER_COMPUTE, 1, false, &cbuf);
+      ctx->base.set_constant_buffer(&ctx->base, MESA_SHADER_COMPUTE, 1, false, &cbuf);
 
       grid.indirect = fake_target->fill_buffer;
       grid.indirect_offset = fake_target->fill_buffer_offset + 4;

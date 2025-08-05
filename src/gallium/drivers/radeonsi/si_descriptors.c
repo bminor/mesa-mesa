@@ -520,7 +520,7 @@ static void si_set_sampler_views(struct si_context *sctx, unsigned shader,
    samplers->needs_color_decompress_mask &= ~unbound_mask;
 
    sctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
-   if (shader != PIPE_SHADER_COMPUTE)
+   if (shader != MESA_SHADER_COMPUTE)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
 }
 
@@ -643,7 +643,7 @@ static void si_disable_shader_image(struct si_context *ctx, unsigned shader, uns
       images->enabled_mask &= ~(1u << slot);
       images->display_dcc_store_mask &= ~(1u << slot);
       ctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
-      if (shader != PIPE_SHADER_COMPUTE)
+      if (shader != MESA_SHADER_COMPUTE)
          si_mark_atom_dirty(ctx, &ctx->atoms.s.gfx_shader_pointers);
    }
 }
@@ -785,7 +785,7 @@ static void si_set_shader_image(struct si_context *ctx, unsigned shader, unsigne
             images->display_dcc_store_mask |= 1u << slot;
 
             /* Set displayable_dcc_dirty for non-compute stages conservatively (before draw calls). */
-            if (shader != PIPE_SHADER_COMPUTE)
+            if (shader != MESA_SHADER_COMPUTE)
                tex->displayable_dcc_dirty = true;
          } else {
             images->display_dcc_store_mask &= ~(1u << slot);
@@ -799,7 +799,7 @@ static void si_set_shader_image(struct si_context *ctx, unsigned shader, unsigne
 
    images->enabled_mask |= 1u << slot;
    ctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
-   if (shader != PIPE_SHADER_COMPUTE)
+   if (shader != MESA_SHADER_COMPUTE)
       si_mark_atom_dirty(ctx, &ctx->atoms.s.gfx_shader_pointers);
 
    /* Since this can flush, it must be done after enabled_mask is updated. */
@@ -834,7 +834,7 @@ static void si_set_shader_images(struct pipe_context *pipe, enum pipe_shader_typ
    for (i = 0; i < unbind_num_trailing_slots; ++i, ++slot)
       si_set_shader_image(ctx, shader, slot, NULL, false);
 
-   if (shader == PIPE_SHADER_COMPUTE &&
+   if (shader == MESA_SHADER_COMPUTE &&
        ctx->cs_shader_state.program &&
        start_slot < ctx->cs_shader_state.program->sel.cs_num_images_in_user_sgprs)
       ctx->compute_image_sgprs_dirty = true;
@@ -998,7 +998,7 @@ static void si_bind_sampler_states(struct pipe_context *ctx, enum pipe_shader_ty
       si_set_sampler_state_desc(sstates[i], sview, tex, desc->list + desc_slot * 16 + 12);
 
       sctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
-      if (shader != PIPE_SHADER_COMPUTE)
+      if (shader != MESA_SHADER_COMPUTE)
          si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
    }
 }
@@ -1193,7 +1193,7 @@ void si_get_inline_uniform_state(union si_shader_key *key, enum pipe_shader_type
 
 void si_invalidate_inlinable_uniforms(struct si_context *sctx, enum pipe_shader_type shader)
 {
-   if (shader == PIPE_SHADER_COMPUTE)
+   if (shader == MESA_SHADER_COMPUTE)
       return;
 
    bool inline_uniforms;
@@ -1246,7 +1246,7 @@ static void si_set_inlinable_constants(struct pipe_context *ctx,
 {
    struct si_context *sctx = (struct si_context *)ctx;
 
-   if (shader == PIPE_SHADER_COMPUTE)
+   if (shader == MESA_SHADER_COMPUTE)
       return;
 
    bool inline_uniforms;
@@ -1345,7 +1345,7 @@ void si_set_shader_buffers(struct pipe_context *ctx, enum pipe_shader_type shade
 
    assert(start_slot + count <= SI_NUM_SHADER_BUFFERS);
 
-   if (shader == PIPE_SHADER_COMPUTE &&
+   if (shader == MESA_SHADER_COMPUTE &&
        sctx->cs_shader_state.program &&
        start_slot < sctx->cs_shader_state.program->sel.cs_num_shaderbufs_in_user_sgprs)
       sctx->compute_shaderbuf_sgprs_dirty = true;
@@ -1716,7 +1716,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
                                        si_const_and_shader_buffer_descriptors_idx(shader),
                                        BITFIELD64_MASK(SI_NUM_SHADER_BUFFERS), buf,
                                        sctx->const_and_shader_buffers[shader].priority) &&
-             shader == PIPE_SHADER_COMPUTE) {
+             shader == MESA_SHADER_COMPUTE) {
             sctx->compute_shaderbuf_sgprs_dirty = true;
          }
       }
@@ -1741,7 +1741,7 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
                si_set_buf_desc_address(si_resource(buffer), samplers->views[i]->u.buf.offset,
                                        descs->list + desc_slot * 16);
                sctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
-               if (shader != PIPE_SHADER_COMPUTE)
+               if (shader != MESA_SHADER_COMPUTE)
                   si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
 
                radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, si_resource(buffer), RADEON_USAGE_READ |
@@ -1773,14 +1773,14 @@ void si_rebind_buffer(struct si_context *sctx, struct pipe_resource *buf)
                si_set_buf_desc_address(si_resource(buffer), images->views[i].u.buf.offset,
                                        descs->list + desc_slot * 8);
                sctx->descriptors_dirty |= 1u << si_sampler_and_image_descriptors_idx(shader);
-               if (shader != PIPE_SHADER_COMPUTE)
+               if (shader != MESA_SHADER_COMPUTE)
                   si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
 
                radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, si_resource(buffer),
                                          RADEON_USAGE_READWRITE |
                                          RADEON_PRIO_SAMPLER_BUFFER);
 
-               if (shader == PIPE_SHADER_COMPUTE)
+               if (shader == MESA_SHADER_COMPUTE)
                   sctx->compute_image_sgprs_dirty = true;
             }
          }
@@ -2416,7 +2416,7 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
    unsigned num_shaderbufs = shader->cs_num_shaderbufs_in_user_sgprs;
 
    if (num_shaderbufs && sctx->compute_shaderbuf_sgprs_dirty) {
-      struct si_descriptors *desc = si_const_and_shader_buffer_descriptors(sctx, PIPE_SHADER_COMPUTE);
+      struct si_descriptors *desc = si_const_and_shader_buffer_descriptors(sctx, MESA_SHADER_COMPUTE);
 
       radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 +
                             shader->cs_shaderbufs_sgpr_index * 4,
@@ -2431,7 +2431,7 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
    /* Set image descriptors in user SGPRs. */
    unsigned num_images = shader->cs_num_images_in_user_sgprs;
    if (num_images && sctx->compute_image_sgprs_dirty) {
-      struct si_descriptors *desc = si_sampler_and_image_descriptors(sctx, PIPE_SHADER_COMPUTE);
+      struct si_descriptors *desc = si_sampler_and_image_descriptors(sctx, MESA_SHADER_COMPUTE);
 
       radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 +
                             shader->cs_images_sgpr_index * 4,
@@ -2853,7 +2853,7 @@ static void si_emit_gfx_resources_add_all_to_bo_list(struct si_context *sctx, un
 void si_init_all_descriptors(struct si_context *sctx)
 {
    int i;
-   unsigned first_shader = sctx->is_gfx_queue ? 0 : PIPE_SHADER_COMPUTE;
+   unsigned first_shader = sctx->is_gfx_queue ? 0 : MESA_SHADER_COMPUTE;
    unsigned hs_sgpr0, gs_sgpr0;
 
    if (sctx->gfx_level >= GFX12) {
@@ -3077,7 +3077,7 @@ static void si_emit_gfx_resources_add_all_to_bo_list(struct si_context *sctx, un
 
 bool si_compute_resources_check_encrypted(struct si_context *sctx)
 {
-   unsigned sh = PIPE_SHADER_COMPUTE;
+   unsigned sh = MESA_SHADER_COMPUTE;
 
    struct si_shader_info* info = &sctx->cs_shader_state.program->sel.info;
 
@@ -3092,7 +3092,7 @@ bool si_compute_resources_check_encrypted(struct si_context *sctx)
 
 void si_compute_resources_add_all_to_bo_list(struct si_context *sctx)
 {
-   unsigned sh = PIPE_SHADER_COMPUTE;
+   unsigned sh = MESA_SHADER_COMPUTE;
 
    si_buffer_resources_begin_new_cs(sctx, &sctx->const_and_shader_buffers[sh]);
    si_sampler_views_begin_new_cs(sctx, &sctx->samplers[sh]);

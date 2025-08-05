@@ -527,7 +527,7 @@ fd6_emit_cs_user_consts(struct fd_context *ctx,
                         struct fd_ringbuffer *ring,
                         struct fd6_compute_state *cs)
 {
-   emit_user_consts<CHIP>(cs->v, ring, &ctx->constbuf[PIPE_SHADER_COMPUTE]);
+   emit_user_consts<CHIP>(cs->v, ring, &ctx->constbuf[MESA_SHADER_COMPUTE]);
 }
 FD_GENX(fd6_emit_cs_user_consts);
 

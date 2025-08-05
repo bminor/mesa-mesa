@@ -256,7 +256,7 @@ vgpu10_init_shader_caps(struct svga_screen *svgascreen)
 
    assert(sws->have_vgpu10);
 
-    for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+    for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
        struct pipe_shader_caps *caps =
           (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[i];
 
@@ -266,7 +266,7 @@ vgpu10_init_shader_caps(struct svga_screen *svgascreen)
           if (!sws->have_sm5)
              continue;
           break;
-       case PIPE_SHADER_COMPUTE:
+       case MESA_SHADER_COMPUTE:
           if (!sws->have_gl43)
              continue;
           break;

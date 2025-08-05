@@ -746,7 +746,7 @@ static int r600_get_hw_atomic_count(const struct pipe_context *ctx,
 	int value = 0;
 	switch (shader) {
 	case MESA_SHADER_FRAGMENT:
-	case PIPE_SHADER_COMPUTE:
+	case MESA_SHADER_COMPUTE:
 	default:
 		break;
 	case MESA_SHADER_VERTEX:
@@ -840,7 +840,7 @@ static inline void r600_shader_selector_key(const struct pipe_context *ctx,
 		key->tcs.prim_mode = rctx->tes_shader->info.properties[TGSI_PROPERTY_TES_PRIM_MODE];
 		key->tcs.first_atomic_counter = r600_get_hw_atomic_count(ctx, MESA_SHADER_TESS_CTRL);
 		break;
-	case PIPE_SHADER_COMPUTE:
+	case MESA_SHADER_COMPUTE:
 		break;
 	default:
 		assert(0);
@@ -881,7 +881,7 @@ r600_shader_precompile_key(const struct pipe_context *ctx,
 		key->tcs.prim_mode = MESA_PRIM_TRIANGLES;
 		break;
 
-	case PIPE_SHADER_COMPUTE:
+	case MESA_SHADER_COMPUTE:
 		break;
 
 	default:
@@ -1323,8 +1323,8 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 	struct pipe_constant_buffer cb;
 	int start, end;
 
-	start = compute_only ? PIPE_SHADER_COMPUTE : 0;
-	end = compute_only ? PIPE_SHADER_TYPES : PIPE_SHADER_COMPUTE;
+	start = compute_only ? MESA_SHADER_COMPUTE : 0;
+	end = compute_only ? PIPE_SHADER_TYPES : MESA_SHADER_COMPUTE;
 
 	int last_vertex_stage = MESA_SHADER_VERTEX;
 	if (rctx->tes_shader)
@@ -1368,7 +1368,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 		}
 
 		else if (info->cs_block_grid_size_dirty) {
-			assert(sh == PIPE_SHADER_COMPUTE);
+			assert(sh == MESA_SHADER_COMPUTE);
 			if (!size) {
 				ptr = rctx->cs_block_grid_sizes;
 				size = R600_CS_BLOCK_GRID_SIZE;
@@ -1399,7 +1399,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 				memcpy(ptr, rctx->clip_state.state.ucp, R600_UCP_SIZE);
 			if (sh == MESA_SHADER_FRAGMENT)
 				memcpy(ptr, rctx->sample_positions, R600_UCP_SIZE);
-			if (sh == PIPE_SHADER_COMPUTE)
+			if (sh == MESA_SHADER_COMPUTE)
 				memcpy(ptr, rctx->cs_block_grid_sizes, R600_CS_BLOCK_GRID_SIZE);
 			if (sh == MESA_SHADER_TESS_CTRL)
 				memcpy(ptr, rctx->tess_state, R600_TCS_DEFAULT_LEVELS_SIZE);
@@ -1497,7 +1497,7 @@ void eg_setup_buffer_constants(struct r600_context *rctx, int shader_type)
 
 	if (shader_type == MESA_SHADER_FRAGMENT) {
 		images = &rctx->fragment_images;
-	} else if (shader_type == PIPE_SHADER_COMPUTE) {
+	} else if (shader_type == MESA_SHADER_COMPUTE) {
 		images = &rctx->compute_images;
 	}
 
@@ -1673,7 +1673,7 @@ void r600_update_compressed_resource_state(struct r600_context *rctx, bool compu
 		rctx->b.last_compressed_colortex_counter = counter;
 
 		if (compute_only) {
-			r600_update_compressed_colortex_mask(&rctx->samplers[PIPE_SHADER_COMPUTE].views);
+			r600_update_compressed_colortex_mask(&rctx->samplers[MESA_SHADER_COMPUTE].views);
 		} else {
 			for (i = 0; i < PIPE_SHADER_TYPES; ++i) {
 				r600_update_compressed_colortex_mask(&rctx->samplers[i].views);
@@ -1689,7 +1689,7 @@ void r600_update_compressed_resource_state(struct r600_context *rctx, bool compu
 		struct r600_samplerview_state *views = &rctx->samplers[i].views;
 
 		if (compute_only)
-			if (i != PIPE_SHADER_COMPUTE)
+			if (i != MESA_SHADER_COMPUTE)
 				continue;
 		if (views->compressed_depthtex_mask) {
 			r600_decompress_depth_textures(rctx, views);

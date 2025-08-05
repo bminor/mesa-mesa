@@ -147,7 +147,7 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
 
                 v3d_flush_jobs_writing_resource(v3d, view->texture,
                                                 V3D_FLUSH_NOT_CURRENT_JOB,
-                                                s == PIPE_SHADER_COMPUTE);
+                                                s == MESA_SHADER_COMPUTE);
         }
 
         /* Flush writes to UBOs. */
@@ -157,7 +157,7 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                 if (cb->buffer) {
                         v3d_flush_jobs_writing_resource(v3d, cb->buffer,
                                                         V3D_FLUSH_DEFAULT,
-                                                        s == PIPE_SHADER_COMPUTE);
+                                                        s == MESA_SHADER_COMPUTE);
                 }
         }
 
@@ -168,7 +168,7 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                 if (sb->buffer) {
                         v3d_flush_jobs_reading_resource(v3d, sb->buffer,
                                                         V3D_FLUSH_NOT_CURRENT_JOB,
-                                                        s == PIPE_SHADER_COMPUTE);
+                                                        s == MESA_SHADER_COMPUTE);
                 }
         }
 
@@ -179,7 +179,7 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
 
                 v3d_flush_jobs_reading_resource(v3d, view->base.resource,
                                                 V3D_FLUSH_NOT_CURRENT_JOB,
-                                                s == PIPE_SHADER_COMPUTE);
+                                                s == MESA_SHADER_COMPUTE);
         }
 
         /* Flush writes to our vertex buffers (i.e. from transform feedback) */
@@ -312,7 +312,7 @@ v3d_emit_wait_for_tf_if_needed(struct v3d_context *v3d, struct v3d_job *job)
 
         set_foreach(job->tf_write_prscs, entry) {
                 struct pipe_resource *prsc = (struct pipe_resource *)entry->key;
-                for (int s = 0; s < PIPE_SHADER_COMPUTE; s++) {
+                for (int s = 0; s < MESA_SHADER_COMPUTE; s++) {
                         /* Fragment shaders can only start executing after all
                          * binning (and thus TF) is complete.
                          *
@@ -1145,7 +1145,7 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
         /* Before setting up the draw, flush anything writing to the resources
          * that we read from or reading from resources we write to.
          */
-        for (int s = 0; s < PIPE_SHADER_COMPUTE; s++)
+        for (int s = 0; s < MESA_SHADER_COMPUTE; s++)
                 v3d_predraw_check_stage_inputs(pctx, s);
 
         if (indirect && indirect->buffer) {
@@ -1197,7 +1197,7 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
         /* Mark SSBOs and images as being written.  We don't actually know
          * which ones are read vs written, so just assume the worst.
          */
-        for (int s = 0; s < PIPE_SHADER_COMPUTE; s++) {
+        for (int s = 0; s < MESA_SHADER_COMPUTE; s++) {
                 unsigned i;
                 BITSET_FOREACH_SET(i, v3d->ssbo[s].enabled_mask,
                                    PIPE_MAX_SHADER_BUFFERS) {
@@ -1427,7 +1427,7 @@ v3d_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
 
         MESA_TRACE_FUNC();
 
-        v3d_predraw_check_stage_inputs(pctx, PIPE_SHADER_COMPUTE);
+        v3d_predraw_check_stage_inputs(pctx, MESA_SHADER_COMPUTE);
 
         v3d_update_compiled_cs(v3d);
 
@@ -1559,7 +1559,7 @@ v3d_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
 
         struct v3d_cl_reloc uniforms = v3d_write_uniforms(v3d, job,
                                                           v3d->prog.compute,
-                                                          PIPE_SHADER_COMPUTE);
+                                                          MESA_SHADER_COMPUTE);
         v3d_job_add_bo(job, uniforms.bo);
         submit.cfg[6] = uniforms.bo->offset + uniforms.offset;
 
@@ -1603,19 +1603,19 @@ v3d_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
         /* Mark SSBOs as being written.. we don't actually know which ones are
          * read vs written, so just assume the worst
          */
-        BITSET_FOREACH_SET(i, v3d->ssbo[PIPE_SHADER_COMPUTE].enabled_mask,
+        BITSET_FOREACH_SET(i, v3d->ssbo[MESA_SHADER_COMPUTE].enabled_mask,
                            PIPE_MAX_SHADER_BUFFERS) {
                 struct v3d_resource *rsc = v3d_resource(
-                        v3d->ssbo[PIPE_SHADER_COMPUTE].sb[i].buffer);
+                        v3d->ssbo[MESA_SHADER_COMPUTE].sb[i].buffer);
                 rsc->writes++;
                 rsc->compute_written = true;
         }
 
         BITSET_FOREACH_SET(i,
-                           v3d->shaderimg[PIPE_SHADER_COMPUTE].enabled_mask,
+                           v3d->shaderimg[MESA_SHADER_COMPUTE].enabled_mask,
                            PIPE_MAX_SHADER_IMAGES) {
                 struct v3d_resource *rsc = v3d_resource(
-                        v3d->shaderimg[PIPE_SHADER_COMPUTE].si[i].base.resource);
+                        v3d->shaderimg[MESA_SHADER_COMPUTE].si[i].base.resource);
                 rsc->writes++;
                 rsc->compute_written = true;
         }

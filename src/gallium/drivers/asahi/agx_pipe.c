@@ -1864,7 +1864,7 @@ agx_init_shader_caps(struct pipe_screen *pscreen)
 {
    bool is_no16 = agx_device(pscreen)->debug & AGX_DBG_NO16;
 
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&pscreen->shader_caps[i];
 

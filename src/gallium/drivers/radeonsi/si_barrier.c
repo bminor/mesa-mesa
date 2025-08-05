@@ -513,10 +513,10 @@ void si_barrier_before_internal_op(struct si_context *sctx, unsigned flags,
                             SI_BIND_SHADER_BUFFER(MESA_SHADER_FRAGMENT) |
                             SI_BIND_IMAGE_BUFFER(MESA_SHADER_FRAGMENT) |
                             SI_BIND_SAMPLER_BUFFER(MESA_SHADER_FRAGMENT);
-   const unsigned cs_mask = SI_BIND_CONSTANT_BUFFER(PIPE_SHADER_COMPUTE) |
-                            SI_BIND_SHADER_BUFFER(PIPE_SHADER_COMPUTE) |
-                            SI_BIND_IMAGE_BUFFER(PIPE_SHADER_COMPUTE) |
-                            SI_BIND_SAMPLER_BUFFER(PIPE_SHADER_COMPUTE);
+   const unsigned cs_mask = SI_BIND_CONSTANT_BUFFER(MESA_SHADER_COMPUTE) |
+                            SI_BIND_SHADER_BUFFER(MESA_SHADER_COMPUTE) |
+                            SI_BIND_IMAGE_BUFFER(MESA_SHADER_COMPUTE) |
+                            SI_BIND_SAMPLER_BUFFER(MESA_SHADER_COMPUTE);
 
    for (unsigned i = 0; i < num_buffers; i++) {
       struct si_resource *buf = si_resource(buffers[i].buffer);

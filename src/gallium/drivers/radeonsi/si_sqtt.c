@@ -722,7 +722,7 @@ si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, enum pipe_shader_type
          return RGP_HW_STAGE_GS;
       case MESA_SHADER_FRAGMENT:
          return RGP_HW_STAGE_PS;
-      case PIPE_SHADER_COMPUTE:
+      case MESA_SHADER_COMPUTE:
          return RGP_HW_STAGE_CS;
       default:
          UNREACHABLE("invalid mesa shader stage");
@@ -752,7 +752,7 @@ si_sqtt_add_code_object(struct si_context *sctx,
       enum rgp_hardware_stages hw_stage;
 
       if (is_compute) {
-         if (i != PIPE_SHADER_COMPUTE)
+         if (i != MESA_SHADER_COMPUTE)
             continue;
          shader = &sctx->cs_shader_state.program->shader;
          hw_stage = RGP_HW_STAGE_CS;

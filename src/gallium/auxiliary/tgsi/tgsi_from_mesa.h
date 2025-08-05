@@ -66,7 +66,7 @@ pipe_shader_type_from_mesa(gl_shader_stage stage)
    STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_TESS_CTRL == MESA_SHADER_TESS_CTRL);
    STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_TESS_EVAL == MESA_SHADER_TESS_EVAL);
    STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_GEOMETRY == MESA_SHADER_GEOMETRY);
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_COMPUTE == PIPE_SHADER_COMPUTE);
+   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_COMPUTE == MESA_SHADER_COMPUTE);
    return (enum pipe_shader_type)stage;
 }
 

@@ -110,7 +110,7 @@ struct ac_llvm_compiler;
 #define SI_RESOURCE_FLAG_32BIT             (PIPE_RESOURCE_FLAG_DRV_PRIV << 6)
 #define SI_RESOURCE_FLAG_CLEAR             (PIPE_RESOURCE_FLAG_DRV_PRIV << 7)
 
-#define SI_SQTT_STATE_DIRTY_BIT            BITFIELD_BIT(PIPE_SHADER_COMPUTE + 1)
+#define SI_SQTT_STATE_DIRTY_BIT            BITFIELD_BIT(MESA_SHADER_COMPUTE + 1)
 
 enum si_has_gs {
    GS_OFF,

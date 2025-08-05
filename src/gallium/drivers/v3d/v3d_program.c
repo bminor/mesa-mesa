@@ -942,7 +942,7 @@ v3d_update_compiled_cs(struct v3d_context *v3d)
         }
 
         memset(key, 0, sizeof(*key));
-        v3d_setup_shared_key(v3d, key, &v3d->tex[PIPE_SHADER_COMPUTE]);
+        v3d_setup_shared_key(v3d, key, &v3d->tex[MESA_SHADER_COMPUTE]);
 
         struct v3d_compiled_shader *cs =
                 v3d_get_compiled_shader(v3d, key, sizeof(*key),

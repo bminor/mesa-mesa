@@ -473,7 +473,7 @@ svga_init_shader_key_common(const struct svga_context *svga,
          /* Save the uavSpliceIndex which is the index used for the first uav
           * in the draw pipeline. For compute, uavSpliceIndex is always 0.
           */
-         if (shader_type != PIPE_SHADER_COMPUTE)
+         if (shader_type != MESA_SHADER_COMPUTE)
             key->uav_splice_index = svga->state.hw_draw.uavSpliceIndex;
 
          unsigned uav_splice_index = key->uav_splice_index;
@@ -791,7 +791,7 @@ svga_new_shader_variant(struct svga_context *svga, enum pipe_shader_type type)
    case MESA_SHADER_TESS_CTRL:
       variant = CALLOC(1, sizeof(struct svga_tcs_variant));
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       variant = CALLOC(1, sizeof(struct svga_cs_variant));
       break;
    default:

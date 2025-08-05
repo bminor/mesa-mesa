@@ -551,7 +551,7 @@ panfrost_clean_state_3d(struct panfrost_context *ctx)
    ctx->dirty = 0;
 
    for (unsigned i = 0; i < PIPE_SHADER_TYPES; ++i) {
-      if (i != PIPE_SHADER_COMPUTE)
+      if (i != MESA_SHADER_COMPUTE)
          ctx->dirty_shader[i] = 0;
    }
 }

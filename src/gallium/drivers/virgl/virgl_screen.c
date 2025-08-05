@@ -169,7 +169,7 @@ virgl_get_video_param(struct pipe_screen *screen,
 static void
 virgl_init_shader_caps(struct virgl_screen *vscreen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&vscreen->base.shader_caps[i];
 
@@ -179,7 +179,7 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
          if (!vscreen->caps.caps.v1.bset.has_tessellation_shaders)
             continue;
          break;
-      case PIPE_SHADER_COMPUTE:
+      case MESA_SHADER_COMPUTE:
          if (!(vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_COMPUTE_SHADER))
             continue;
          break;
@@ -238,14 +238,14 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
       int max_shader_buffers = VIRGL_SHADER_STAGE_CAP_V2(max_shader_storage_blocks, i);
       if (max_shader_buffers != INT_MAX) {
          caps->max_shader_buffers = max_shader_buffers;
-      } else if (i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE) {
+      } else if (i == MESA_SHADER_FRAGMENT || i == MESA_SHADER_COMPUTE) {
          caps->max_shader_buffers = vscreen->caps.caps.v2.max_shader_buffer_frag_compute;
       } else {
          caps->max_shader_buffers = vscreen->caps.caps.v2.max_shader_buffer_other_stages;
       }
 
       caps->max_shader_images =
-         i == MESA_SHADER_FRAGMENT || i == PIPE_SHADER_COMPUTE ?
+         i == MESA_SHADER_FRAGMENT || i == MESA_SHADER_COMPUTE ?
          vscreen->caps.caps.v2.max_shader_image_frag_compute :
          vscreen->caps.caps.v2.max_shader_image_other_stages;
 

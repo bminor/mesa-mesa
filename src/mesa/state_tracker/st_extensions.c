@@ -206,7 +206,7 @@ void st_init_limits(struct pipe_screen *screen,
       struct gl_program_constants *pc = &c->Program[stage];
 
       if (!screen->nir_options[stage] ||
-          (sh == PIPE_SHADER_COMPUTE && !screen->caps.compute))
+          (sh == MESA_SHADER_COMPUTE && !screen->caps.compute))
          continue;
 
       pc->MaxTextureImageUnits =

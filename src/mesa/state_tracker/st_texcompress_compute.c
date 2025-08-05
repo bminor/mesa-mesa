@@ -150,12 +150,12 @@ bind_compute_state(struct st_context *st,
                    bool cs_handle_from_prog,
                    bool constbuf0_from_prog)
 {
-   assert(prog->info.stage == PIPE_SHADER_COMPUTE);
+   assert(prog->info.stage == MESA_SHADER_COMPUTE);
 
    /* Set compute states in the same order as defined in st_atom_list.h */
 
    assert(prog->affected_states & ST_NEW_CS_STATE);
-   assert(st->shader_has_one_variant[PIPE_SHADER_COMPUTE]);
+   assert(st->shader_has_one_variant[MESA_SHADER_COMPUTE]);
    cso_set_compute_shader_handle(st->cso_context,
                                  cs_handle_from_prog ?
                                  prog->variants->driver_shader : NULL);
@@ -217,7 +217,7 @@ dispatch_compute_state(struct st_context *st,
                        unsigned num_workgroups_y,
                        unsigned num_workgroups_z)
 {
-   assert(prog->info.stage == PIPE_SHADER_COMPUTE);
+   assert(prog->info.stage == MESA_SHADER_COMPUTE);
 
    /* Bind the state */
    bind_compute_state(st, prog, sampler_views, shader_buffers, image_views,

@@ -344,6 +344,6 @@ st_update_cp(struct st_context *st)
 {
    void *shader = st_update_common_program(st,
                                            st->ctx->ComputeProgram._Current,
-                                           PIPE_SHADER_COMPUTE, &st->cp);
+                                           MESA_SHADER_COMPUTE, &st->cp);
    cso_set_compute_shader_handle(st->cso_context, shader);
 }

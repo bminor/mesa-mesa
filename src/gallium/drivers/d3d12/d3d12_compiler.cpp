@@ -734,7 +734,7 @@ d3d12_compare_shader_keys(struct d3d12_selection_context* sel_ctx, const d3d12_s
       if (expect->fs.all != have->fs.all)
          return false;
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       if (memcmp(expect->cs.workgroup_size, have->cs.workgroup_size,
                  sizeof(have->cs.workgroup_size)))
          return false;
@@ -811,7 +811,7 @@ d3d12_shader_key_hash(const d3d12_shader_key *key)
    case MESA_SHADER_FRAGMENT:
       hash += key->fs.all;
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       hash = _mesa_hash_data_with_seed(&key->cs, sizeof(key->cs), hash);
       break;
    case MESA_SHADER_TESS_CTRL:
@@ -859,7 +859,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
       key->ds.tcs_vertices_out = 0;
       key->ds.prev_patch_outputs = 0;
       break;
-   case PIPE_SHADER_COMPUTE:
+   case MESA_SHADER_COMPUTE:
       memset(key->cs.workgroup_size, 0, sizeof(key->cs.workgroup_size));
       break;
    default: UNREACHABLE("Invalid stage type");
@@ -1036,7 +1036,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
       key->fs.remap_front_facing = 1;
    }
 
-   if (stage == PIPE_SHADER_COMPUTE && sel_ctx->variable_workgroup_size) {
+   if (stage == MESA_SHADER_COMPUTE && sel_ctx->variable_workgroup_size) {
       memcpy(key->cs.workgroup_size, sel_ctx->variable_workgroup_size, sizeof(key->cs.workgroup_size));
    }
 
@@ -1137,7 +1137,7 @@ select_shader_variant(struct d3d12_selection_context *sel_ctx, d3d12_shader_sele
       NIR_PASS(_, new_nir_variant, d3d12_lower_image_casts, &image_format_arr);
    }
 
-   if (key.stage == PIPE_SHADER_COMPUTE && sel->workgroup_size_variable) {
+   if (key.stage == MESA_SHADER_COMPUTE && sel->workgroup_size_variable) {
       new_nir_variant->info.workgroup_size[0] = static_cast<uint16_t>(key.cs.workgroup_size[0]);
       new_nir_variant->info.workgroup_size[1] = static_cast<uint16_t>(key.cs.workgroup_size[1]);
       new_nir_variant->info.workgroup_size[2] = static_cast<uint16_t>(key.cs.workgroup_size[2]);
@@ -1464,7 +1464,7 @@ d3d12_create_compute_shader(struct d3d12_context *ctx,
                             const struct pipe_compute_state *shader)
 {
    struct d3d12_shader_selector *sel = rzalloc(nullptr, d3d12_shader_selector);
-   sel->stage = PIPE_SHADER_COMPUTE;
+   sel->stage = MESA_SHADER_COMPUTE;
 
    struct nir_shader *nir = NULL;
 

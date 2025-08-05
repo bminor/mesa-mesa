@@ -927,7 +927,7 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
 
 void si_init_shader_caps(struct si_screen *sscreen)
 {
-   for (unsigned i = 0; i <= PIPE_SHADER_COMPUTE; i++) {
+   for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++) {
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&sscreen->b.shader_caps[i];
 

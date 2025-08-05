@@ -1457,7 +1457,7 @@ static void
 llvmpipe_update_cs(struct llvmpipe_context *lp)
 {
    struct lp_compute_shader_variant *variant;
-   variant = llvmpipe_update_cs_variant(lp, PIPE_SHADER_COMPUTE, lp->cs);
+   variant = llvmpipe_update_cs_variant(lp, MESA_SHADER_COMPUTE, lp->cs);
    /* Bind this variant */
    lp_cs_ctx_set_cs_variant(lp->csctx, variant);
 }
@@ -1643,32 +1643,32 @@ llvmpipe_cs_update_derived(struct llvmpipe_context *llvmpipe)
 {
    if (llvmpipe->cs_dirty & LP_CSNEW_CONSTANTS) {
       lp_csctx_set_cs_constants(llvmpipe->csctx,
-                                ARRAY_SIZE(llvmpipe->constants[PIPE_SHADER_COMPUTE]),
-                                llvmpipe->constants[PIPE_SHADER_COMPUTE]);
+                                ARRAY_SIZE(llvmpipe->constants[MESA_SHADER_COMPUTE]),
+                                llvmpipe->constants[MESA_SHADER_COMPUTE]);
       update_csctx_consts(llvmpipe, llvmpipe->csctx);
    }
 
    if (llvmpipe->cs_dirty & LP_CSNEW_SSBOS) {
       lp_csctx_set_cs_ssbos(llvmpipe->csctx,
-                            ARRAY_SIZE(llvmpipe->ssbos[PIPE_SHADER_COMPUTE]),
-                            llvmpipe->ssbos[PIPE_SHADER_COMPUTE]);
+                            ARRAY_SIZE(llvmpipe->ssbos[MESA_SHADER_COMPUTE]),
+                            llvmpipe->ssbos[MESA_SHADER_COMPUTE]);
       update_csctx_ssbo(llvmpipe, llvmpipe->csctx);
    }
 
    if (llvmpipe->cs_dirty & LP_CSNEW_SAMPLER_VIEW)
       lp_csctx_set_sampler_views(llvmpipe->csctx,
-                                 llvmpipe->num_sampler_views[PIPE_SHADER_COMPUTE],
-                                 llvmpipe->sampler_views[PIPE_SHADER_COMPUTE]);
+                                 llvmpipe->num_sampler_views[MESA_SHADER_COMPUTE],
+                                 llvmpipe->sampler_views[MESA_SHADER_COMPUTE]);
 
    if (llvmpipe->cs_dirty & LP_CSNEW_SAMPLER)
       lp_csctx_set_sampler_state(llvmpipe->csctx,
-                                 llvmpipe->num_samplers[PIPE_SHADER_COMPUTE],
-                                 llvmpipe->samplers[PIPE_SHADER_COMPUTE]);
+                                 llvmpipe->num_samplers[MESA_SHADER_COMPUTE],
+                                 llvmpipe->samplers[MESA_SHADER_COMPUTE]);
 
    if (llvmpipe->cs_dirty & LP_CSNEW_IMAGES)
       lp_csctx_set_cs_images(llvmpipe->csctx,
-                              ARRAY_SIZE(llvmpipe->images[PIPE_SHADER_COMPUTE]),
-                              llvmpipe->images[PIPE_SHADER_COMPUTE]);
+                              ARRAY_SIZE(llvmpipe->images[MESA_SHADER_COMPUTE]),
+                              llvmpipe->images[MESA_SHADER_COMPUTE]);
 
    if (llvmpipe->cs_dirty & (LP_CSNEW_CS |
                              LP_CSNEW_IMAGES |
