@@ -4284,7 +4284,7 @@
         "description": "brw: Refactor copy propagation checks for EOT send restrictions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec2e8bc33f59b55387ed39f0c4374ebdf6216342",
         "notes": null

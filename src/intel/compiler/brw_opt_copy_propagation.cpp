@@ -660,6 +660,39 @@ instruction_requires_packed_data(brw_inst *inst)
    }
 }
 
+/**
+ * Send messages with EOT set are restricted to use g112-g127 (and we
+ * sometimes need g127 for other purposes), so avoid copy propagating
+ * anything that would make it impossible to satisfy that restriction.
+ */
+static bool
+eot_send_has_constraint(brw_shader &s, brw_inst *inst, brw_reg val, int arg)
+{
+   const struct intel_device_info *devinfo = s.devinfo;
+
+   /* Don't propagate things that are already pinned. */
+   if (val.file != VGRF)
+      return true;
+
+   /* We might be propagating from a large register, while the SEND only
+    * is reading a portion of it (say the .A channel in an RGBA value).
+    * We need to pin both split SEND sources in g112-g126/127, so only
+    * allow this if the registers aren't too large.
+    */
+   if (inst->opcode == SHADER_OPCODE_SEND && inst->sources >= 4 &&
+       val.file == VGRF) {
+      int other_src = arg == 2 ? 3 : 2;
+      unsigned other_size = inst->src[other_src].file == VGRF ?
+                            s.alloc.sizes[inst->src[other_src].nr] :
+                            inst->size_read(devinfo, other_src);
+      unsigned prop_src_size = s.alloc.sizes[val.nr];
+      if (other_size + prop_src_size > 15)
+         return true;
+   }
+
+   return false;
+}
+
 static bool
 try_copy_propagate(brw_shader &s, brw_inst *inst,
                    acp_entry *entry, int arg,
@@ -707,27 +740,8 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
     * sometimes need g127 for other purposes), so avoid copy propagating
     * anything that would make it impossible to satisfy that restriction.
     */
-   if (inst->eot) {
-      /* Don't propagate things that are already pinned. */
-      if (entry->src.file != VGRF)
-         return false;
-
-      /* We might be propagating from a large register, while the SEND only
-       * is reading a portion of it (say the .A channel in an RGBA value).
-       * We need to pin both split SEND sources in g112-g126/127, so only
-       * allow this if the registers aren't too large.
-       */
-      if (inst->opcode == SHADER_OPCODE_SEND && inst->sources >= 4 &&
-          entry->src.file == VGRF) {
-         int other_src = arg == 2 ? 3 : 2;
-         unsigned other_size = inst->src[other_src].file == VGRF ?
-                               s.alloc.sizes[inst->src[other_src].nr] :
-                               inst->size_read(devinfo, other_src);
-         unsigned prop_src_size = s.alloc.sizes[entry->src.nr];
-         if (other_size + prop_src_size > 15)
-            return false;
-      }
-   }
+   if (inst->eot && eot_send_has_constraint(s, inst, entry->src, arg))
+      return false;
 
    /* we can't generally copy-propagate UD negations because we
     * can end up accessing the resulting values as signed integers
@@ -1625,27 +1639,8 @@ try_copy_propagate_def(brw_shader &s,
     * sometimes need g127 for other purposes), so avoid copy propagating
     * anything that would make it impossible to satisfy that restriction.
     */
-   if (inst->eot) {
-      /* Don't propagate things that are already pinned. */
-      if (val.file != VGRF)
-         return false;
-
-      /* We might be propagating from a large register, while the SEND only
-       * is reading a portion of it (say the .A channel in an RGBA value).
-       * We need to pin both split SEND sources in g112-g126/127, so only
-       * allow this if the registers aren't too large.
-       */
-      if (inst->opcode == SHADER_OPCODE_SEND && inst->sources >= 4 &&
-          val.file == VGRF) {
-         int other_src = arg == 2 ? 3 : 2;
-         unsigned other_size = inst->src[other_src].file == VGRF ?
-                               s.alloc.sizes[inst->src[other_src].nr] :
-                               inst->size_read(devinfo, other_src);
-         unsigned prop_src_size = s.alloc.sizes[val.nr];
-         if (other_size + prop_src_size > 15)
-            return false;
-      }
-   }
+   if (inst->eot && eot_send_has_constraint(s, inst, val, arg))
+      return false;
 
    /* Reject cases that would violate register regioning restrictions. */
    if (inst->opcode == SHADER_OPCODE_BROADCAST) {
