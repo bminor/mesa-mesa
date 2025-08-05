@@ -565,14 +565,16 @@ GENX(pandecode_shader)(struct pandecode_context *ctx, uint64_t addr,
 
 static unsigned
 pandecode_buffer(struct pandecode_context *ctx,
-                 const struct mali_buffer_packed *cl, uint64_t addr)
+                 const struct mali_buffer_packed *cl, uint64_t addr,
+                 uint64_t entry_size)
 {
    pan_unpack(cl, BUFFER, buffer)
       ;
    DUMP_UNPACKED(ctx, BUFFER, buffer, "Buffer @%" PRIx64 ":\n", addr);
 
-   /* If the address is the following descriptor, this descriptor is an IUB. */
-   if (buffer.address == (addr + 0x20)) {
+   /* If the address is the following descriptor and is within the resource
+    * entry, this descriptor is an IUB. */
+   if (buffer.address == (addr + 0x20) && buffer.address < addr + entry_size) {
       assert((buffer.size % 0x20) == 0);
 
       const uint8_t *cl_bytes = (uint8_t *)cl;
@@ -621,7 +623,7 @@ pandecode_resources(struct pandecode_context *ctx, uint64_t addr, unsigned size)
          break;
       case MALI_DESCRIPTOR_TYPE_BUFFER:
          i += pandecode_buffer(ctx, (const struct mali_buffer_packed *)&cl[i],
-                               addr + i);
+                               addr + i, size);
          break;
       default:
          fprintf(ctx->dump_stream, "Unknown descriptor type %X\n", header.type);
