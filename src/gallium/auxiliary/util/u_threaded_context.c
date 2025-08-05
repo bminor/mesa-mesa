@@ -5696,3 +5696,14 @@ threaded_context_get_renderpass_info(struct threaded_context *tc)
       info = info->next;
    }
 }
+
+bool
+threaded_context_is_buffer_on_busy_list(struct pipe_context *_pipe, struct pipe_resource *resource)
+{
+   struct threaded_context *tc = threaded_context(_pipe);
+   struct threaded_resource *tres = threaded_resource(resource);
+
+   assert(resource->target == PIPE_BUFFER);
+
+   return tc_is_buffer_on_busy_list(tc, tres);
+}

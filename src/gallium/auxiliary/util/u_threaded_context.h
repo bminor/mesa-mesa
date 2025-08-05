@@ -869,6 +869,8 @@ tc_set_vertex_elements_for_call(struct pipe_vertex_buffer *buffers,
    ptr[-1] = state;
 }
 
+bool
+threaded_context_is_buffer_on_busy_list(struct pipe_context *_pipe, struct pipe_resource *resource);
 #ifdef __cplusplus
 }
 #endif
