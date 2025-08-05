@@ -965,7 +965,7 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
 
       if (states & RADV_DYNAMIC_COLOR_WRITE_MASK) {
          for (unsigned i = 0; i < state->cb->attachment_count; i++) {
-            dynamic->vk.cb.attachments[i].write_mask = state->cb->attachments[i].write_mask;
+            dynamic->color_write_mask |= state->cb->attachments[i].write_mask << (4 * i);
          }
       }
 

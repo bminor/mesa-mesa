@@ -63,6 +63,7 @@ struct radv_dynamic_state {
    VkImageAspectFlags feedback_loop_aspects;
 
    uint32_t color_write_enable;
+   uint32_t color_write_mask;
 };
 
 struct radv_multisample_state {
