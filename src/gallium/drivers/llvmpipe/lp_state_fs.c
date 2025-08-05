@@ -4219,7 +4219,7 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
    struct llvmpipe_context *llvmpipe = llvmpipe_context(pipe);
    struct pipe_constant_buffer *constants = &llvmpipe->constants[shader][index];
 
-   assert(shader < PIPE_SHADER_MESH_TYPES);
+   assert(shader < MESA_SHADER_MESH_STAGES);
    assert(index < ARRAY_SIZE(llvmpipe->constants[shader]));
 
    /* note: reference counting */

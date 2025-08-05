@@ -83,7 +83,7 @@ struct cso_context_priv {
 
    struct sampler_info fragment_samplers_saved;
    struct sampler_info compute_samplers_saved;
-   struct sampler_info samplers[PIPE_SHADER_MESH_TYPES];
+   struct sampler_info samplers[MESA_SHADER_MESH_STAGES];
 
    /* Temporary number until cso_single_sampler_done is called.
     * It tracks the highest sampler seen in cso_single_sampler.
@@ -184,13 +184,13 @@ sanitize_hash(struct cso_hash *hash, enum cso_cache_type type,
       return;
 
    if (type == CSO_SAMPLER) {
-      samplers_to_restore = MALLOC((PIPE_SHADER_MESH_TYPES + 2) * PIPE_MAX_SAMPLERS *
+      samplers_to_restore = MALLOC((MESA_SHADER_MESH_STAGES + 2) * PIPE_MAX_SAMPLERS *
                                    sizeof(*samplers_to_restore));
 
       /* Temporarily remove currently bound sampler states from the hash
        * table, to prevent them from being deleted
        */
-      for (int i = 0; i < PIPE_SHADER_MESH_TYPES; i++) {
+      for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
          for (int j = 0; j < PIPE_MAX_SAMPLERS; j++) {
             struct cso_sampler *sampler = ctx->samplers[i].cso_samplers[j];
 
@@ -364,7 +364,7 @@ cso_unbind_context(struct cso_context *cso)
          static void *zeros[PIPE_MAX_SAMPLERS] = { NULL };
          struct pipe_screen *scr = ctx->base.pipe->screen;
          enum pipe_shader_type sh;
-         for (sh = 0; sh < PIPE_SHADER_MESH_TYPES; sh++) {
+         for (sh = 0; sh < MESA_SHADER_MESH_STAGES; sh++) {
             switch (sh) {
             case MESA_SHADER_GEOMETRY:
                if (!ctx->has_geometry_shader)

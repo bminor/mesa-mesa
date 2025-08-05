@@ -1044,7 +1044,7 @@ vk_graphics_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
    const struct vk_device_shader_ops *ops = device->shader_ops;
 
    struct vk_graphics_pipeline *gfx_pipeline = NULL;
-   struct vk_shader *stage_shader[PIPE_SHADER_MESH_TYPES] = { NULL, };
+   struct vk_shader *stage_shader[MESA_SHADER_MESH_STAGES] = { NULL, };
    if (pipeline != NULL) {
       assert(pipeline->bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
       assert(!(pipeline->flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR));
@@ -1629,10 +1629,10 @@ vk_create_graphics_pipeline(struct vk_device *device,
    if (pipeline == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   struct vk_pipeline_stage stages[PIPE_SHADER_MESH_TYPES];
+   struct vk_pipeline_stage stages[MESA_SHADER_MESH_STAGES];
    memset(stages, 0, sizeof(stages));
 
-   VkPipelineCreationFeedback stage_feedbacks[PIPE_SHADER_MESH_TYPES];
+   VkPipelineCreationFeedback stage_feedbacks[MESA_SHADER_MESH_STAGES];
    memset(stage_feedbacks, 0, sizeof(stage_feedbacks));
 
    struct vk_graphics_pipeline_state state_tmp, *state;

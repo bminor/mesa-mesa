@@ -93,9 +93,9 @@ struct pipe_screen {
    void *winsys_priv;
 
    const struct pipe_caps caps;
-   const struct pipe_shader_caps shader_caps[PIPE_SHADER_MESH_TYPES];
+   const struct pipe_shader_caps shader_caps[MESA_SHADER_MESH_STAGES];
    const struct pipe_compute_caps compute_caps;
-   const struct nir_shader_compiler_options *nir_options[PIPE_SHADER_MESH_TYPES];
+   const struct nir_shader_compiler_options *nir_options[MESA_SHADER_MESH_STAGES];
 
    /**
     * Get the fd associated with the screen

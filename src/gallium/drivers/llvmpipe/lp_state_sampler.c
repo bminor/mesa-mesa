@@ -74,7 +74,7 @@ llvmpipe_bind_sampler_states(struct pipe_context *pipe,
 {
    struct llvmpipe_context *llvmpipe = llvmpipe_context(pipe);
 
-   assert(shader < PIPE_SHADER_MESH_TYPES);
+   assert(shader < MESA_SHADER_MESH_STAGES);
    assert(start + num <= ARRAY_SIZE(llvmpipe->samplers[shader]));
 
    draw_flush(llvmpipe->draw);
@@ -138,7 +138,7 @@ llvmpipe_set_sampler_views(struct pipe_context *pipe,
 
    assert(num <= PIPE_MAX_SHADER_SAMPLER_VIEWS);
 
-   assert(shader < PIPE_SHADER_MESH_TYPES);
+   assert(shader < MESA_SHADER_MESH_STAGES);
    assert(start + num <= ARRAY_SIZE(llvmpipe->sampler_views[shader]));
 
    draw_flush(llvmpipe->draw);

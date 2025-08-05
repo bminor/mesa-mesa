@@ -983,7 +983,7 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
                                               screen->num_threads);
    screen->num_threads = MIN2(screen->num_threads, LP_MAX_THREADS);
 
-   for (unsigned i = 0; i < PIPE_SHADER_MESH_TYPES; i++)
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++)
       screen->base.nir_options[i] = &gallivm_nir_options;
 
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)

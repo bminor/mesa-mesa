@@ -180,6 +180,11 @@ const char *_mesa_shader_stage_to_abbrev(unsigned stage);
 #define MESA_SHADER_STAGES (MESA_SHADER_COMPUTE + 1)
 
 /**
+ * GL related stages with mesh shader (not including CL)
+ */
+#define MESA_SHADER_MESH_STAGES (MESA_SHADER_MESH + 1)
+
+/**
  * Vulkan stages (not including CL)
  */
 #define MESA_VULKAN_SHADER_STAGES (MESA_SHADER_CALLABLE + 1)
