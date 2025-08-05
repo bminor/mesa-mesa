@@ -324,7 +324,8 @@ anv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
       if (ext) {
          ext->flags = VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR;
          ext->maxLevelIdc = STD_VIDEO_H265_LEVEL_IDC_5_1;
-         ext->ctbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+         ext->ctbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_KHR |
+                         VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
          ext->transformBlockSizes = VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_4_BIT_KHR |
                                     VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_8_BIT_KHR |
                                     VK_VIDEO_ENCODE_H265_TRANSFORM_BLOCK_SIZE_16_BIT_KHR |
