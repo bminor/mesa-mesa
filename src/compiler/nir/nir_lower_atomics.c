@@ -53,7 +53,8 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                            intr->src[1].ssa,
                            .align_mul = intr->def.bit_size / 8,
                            .align_offset = 0,
-                           .offset_shift = nir_intrinsic_offset_shift(intr));
+                           .offset_shift = nir_intrinsic_offset_shift(intr),
+                           .access = ACCESS_COHERENT);
       break;
    case nir_intrinsic_shared_atomic:
       load = nir_load_shared(b, 1, intr->def.bit_size,
@@ -62,9 +63,8 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                              .align_offset = 0);
       break;
    case nir_intrinsic_global_atomic:
-      load = nir_load_global(b, intr->src[0].ssa,
-                             intr->def.bit_size / 8,
-                             1, intr->def.bit_size);
+      load = nir_build_load_global(b, 1, intr->def.bit_size, intr->src[0].ssa,
+                                   .access = ACCESS_COHERENT);
       break;
    default:
       UNREACHABLE("unsupported atomic type");
