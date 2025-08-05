@@ -460,7 +460,7 @@ draw_set_mapped_constant_buffer(struct draw_context *draw,
                                 unsigned size)
 {
    assert(shader_type == MESA_SHADER_VERTEX ||
-                shader_type == PIPE_SHADER_GEOMETRY ||
+                shader_type == MESA_SHADER_GEOMETRY ||
                 shader_type == MESA_SHADER_TESS_CTRL ||
                 shader_type == MESA_SHADER_TESS_EVAL);
    assert(slot < PIPE_MAX_CONSTANT_BUFFERS);
@@ -479,7 +479,7 @@ draw_set_mapped_shader_buffer(struct draw_context *draw,
                               unsigned size)
 {
    assert(shader_type == MESA_SHADER_VERTEX ||
-                shader_type == PIPE_SHADER_GEOMETRY ||
+                shader_type == MESA_SHADER_GEOMETRY ||
                 shader_type == MESA_SHADER_TESS_CTRL ||
                 shader_type == MESA_SHADER_TESS_EVAL);
    assert(slot < PIPE_MAX_SHADER_BUFFERS);
@@ -763,7 +763,7 @@ draw_texture_sampler(struct draw_context *draw,
    case MESA_SHADER_VERTEX:
       draw->vs.tgsi.sampler = sampler;
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       draw->gs.tgsi.sampler = sampler;
       break;
    default:
@@ -787,7 +787,7 @@ draw_image(struct draw_context *draw,
    case MESA_SHADER_VERTEX:
       draw->vs.tgsi.image = image;
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       draw->gs.tgsi.image = image;
       break;
    default:
@@ -811,7 +811,7 @@ draw_buffer(struct draw_context *draw,
    case MESA_SHADER_VERTEX:
       draw->vs.tgsi.buffer = buffer;
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       draw->gs.tgsi.buffer = buffer;
       break;
    default:

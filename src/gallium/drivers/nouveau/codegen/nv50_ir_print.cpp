@@ -992,7 +992,7 @@ nv50_ir_prog_info_out_print(struct nv50_ir_prog_info_out *info_out)
          INFO("         \"domain\":\"%d\"\n", info_out->prop.tp.domain);
          INFO("         \"outputPrim\":\"%d\"\n", info_out->prop.tp.outputPrim);
          break;
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          INFO("      \"gp\":{\n");
          INFO("         \"outputPrim\":\"%d\"\n", info_out->prop.gp.outputPrim);
          INFO("         \"instancesCount\":\"%d\"\n", info_out->prop.gp.instanceCount);

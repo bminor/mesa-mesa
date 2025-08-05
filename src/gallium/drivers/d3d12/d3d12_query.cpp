@@ -323,7 +323,7 @@ subquery_should_be_active(struct d3d12_context *ctx, struct d3d12_query *q, unsi
    switch (q->type) {
    case PIPE_QUERY_PRIMITIVES_GENERATED: {
       bool has_xfb = !!ctx->gfx_pipeline_state.num_so_targets;
-      struct d3d12_shader_selector *gs = ctx->gfx_stages[PIPE_SHADER_GEOMETRY];
+      struct d3d12_shader_selector *gs = ctx->gfx_stages[MESA_SHADER_GEOMETRY];
       bool has_gs = gs && !gs->is_variant;
       switch (sub_query) {
       case 0: return has_xfb;

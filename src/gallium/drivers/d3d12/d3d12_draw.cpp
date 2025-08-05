@@ -614,8 +614,8 @@ validate_stream_output_targets(struct d3d12_context *ctx)
    unsigned factor = 0;
 
    if (ctx->gfx_pipeline_state.num_so_targets &&
-       ctx->gfx_pipeline_state.stages[PIPE_SHADER_GEOMETRY])
-      factor = ctx->gfx_pipeline_state.stages[PIPE_SHADER_GEOMETRY]->key.gs.stream_output_factor;
+       ctx->gfx_pipeline_state.stages[MESA_SHADER_GEOMETRY])
+      factor = ctx->gfx_pipeline_state.stages[MESA_SHADER_GEOMETRY]->key.gs.stream_output_factor;
 
    if (factor > 1)
       return d3d12_enable_fake_so_buffers(ctx, factor);
@@ -743,7 +743,7 @@ prim_supported(enum mesa_prim prim_type)
 static inline struct d3d12_shader_selector *
 d3d12_last_vertex_stage(struct d3d12_context *ctx)
 {
-   struct d3d12_shader_selector *sel = ctx->gfx_stages[PIPE_SHADER_GEOMETRY];
+   struct d3d12_shader_selector *sel = ctx->gfx_stages[MESA_SHADER_GEOMETRY];
    if (!sel || sel->is_variant)
       sel = ctx->gfx_stages[MESA_SHADER_TESS_EVAL];
    if (!sel)

@@ -1679,7 +1679,7 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
       NIR_PASS(_, gs_copy, agx_nir_lower_uvs, &uvs);
 
       compiled->gs_copy =
-         agx_compile_nir(dev, gs_copy, &pctx->debug, PIPE_SHADER_GEOMETRY,
+         agx_compile_nir(dev, gs_copy, &pctx->debug, MESA_SHADER_GEOMETRY,
                          false, true, false, 0, NULL);
       compiled->gs_copy->so = so;
       compiled->gs_copy->stage = so->type;
@@ -1948,7 +1948,7 @@ agx_create_shader_state(struct pipe_context *pctx,
     * acceptable for now.
     */
    if ((so->type == MESA_SHADER_TESS_CTRL) ||
-       (so->type == PIPE_SHADER_GEOMETRY) ||
+       (so->type == MESA_SHADER_GEOMETRY) ||
        (so->type == PIPE_SHADER_FRAGMENT && !so->info.uses_fbfetch)) {
       union asahi_shader_key key = {0};
       agx_get_shader_variant(agx_screen(pctx->screen), pctx, so, &key);
@@ -2163,14 +2163,14 @@ agx_update_vs(struct agx_batch *batch, unsigned index_size_B)
     */
    if (!((ctx->dirty & (AGX_DIRTY_VS_PROG | AGX_DIRTY_VERTEX | AGX_DIRTY_XFB)) ||
          ctx->stage[MESA_SHADER_TESS_EVAL].dirty ||
-         ctx->stage[PIPE_SHADER_GEOMETRY].dirty ||
+         ctx->stage[MESA_SHADER_GEOMETRY].dirty ||
          ctx->stage[MESA_SHADER_TESS_EVAL].shader ||
-         ctx->stage[PIPE_SHADER_GEOMETRY].shader || ctx->in_tess))
+         ctx->stage[MESA_SHADER_GEOMETRY].shader || ctx->in_tess))
       return false;
 
    struct asahi_vs_shader_key key = {
       .hw = !((ctx->stage[MESA_SHADER_TESS_EVAL].shader && !ctx->in_tess) ||
-              ctx->stage[PIPE_SHADER_GEOMETRY].shader),
+              ctx->stage[MESA_SHADER_GEOMETRY].shader),
    };
 
    agx_update_shader(ctx, &ctx->vs, MESA_SHADER_VERTEX,
@@ -2226,7 +2226,7 @@ agx_update_gs(struct agx_context *ctx, const struct pipe_draw_info *info,
    /* Only proceed if there is a geometry shader. Due to input assembly
     * dependence, we don't bother to dirty track right now.
     */
-   if (!ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+   if (!ctx->stage[MESA_SHADER_GEOMETRY].shader) {
       ctx->gs = NULL;
       return false;
    }
@@ -2234,7 +2234,7 @@ agx_update_gs(struct agx_context *ctx, const struct pipe_draw_info *info,
    /* Transform feedback always happens via the geometry shader, so look there
     * to get the XFB strides.
     */
-   struct agx_uncompiled_shader *gs = ctx->stage[PIPE_SHADER_GEOMETRY].shader;
+   struct agx_uncompiled_shader *gs = ctx->stage[MESA_SHADER_GEOMETRY].shader;
 
    for (unsigned i = 0; i < ctx->streamout.num_targets; ++i) {
       struct agx_streamout_target *tgt =
@@ -2245,7 +2245,7 @@ agx_update_gs(struct agx_context *ctx, const struct pipe_draw_info *info,
    }
 
    ctx->gs = _mesa_hash_table_next_entry(
-                ctx->stage[PIPE_SHADER_GEOMETRY].shader->variants, NULL)
+                ctx->stage[MESA_SHADER_GEOMETRY].shader->variants, NULL)
                 ->data;
    return true;
 }
@@ -2421,7 +2421,7 @@ agx_bind_fs_state(struct pipe_context *pctx, void *cso)
 static void
 agx_bind_gs_state(struct pipe_context *pctx, void *cso)
 {
-   agx_bind_shader_state(pctx, cso, PIPE_SHADER_GEOMETRY);
+   agx_bind_shader_state(pctx, cso, MESA_SHADER_GEOMETRY);
 }
 
 static void
@@ -3860,7 +3860,7 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
     * geometry/tessellation shader. Without a geometry/tessellation shader,
     * they are written along with IA.
     */
-   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader ||
+   if (ctx->stage[MESA_SHADER_GEOMETRY].shader ||
        ctx->stage[MESA_SHADER_TESS_EVAL].shader) {
 
       c_prims = AGX_SCRATCH_PAGE_ADDRESS;
@@ -4065,7 +4065,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
    struct agx_device *dev = agx_device(ctx->base.screen);
    struct agx_compiled_shader *gs = ctx->gs;
 
-   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader->is_xfb_passthrough)
+   if (ctx->stage[MESA_SHADER_GEOMETRY].shader->is_xfb_passthrough)
       perf_debug(dev, "Transform feedbck");
    else
       perf_debug(dev, "Geometry shader");
@@ -4144,7 +4144,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
       PIPE_STAT_QUERY_C_INVOCATIONS,
    };
 
-   bool xfb_or_queries = ctx->stage[PIPE_SHADER_GEOMETRY].shader->has_xfb_info;
+   bool xfb_or_queries = ctx->stage[MESA_SHADER_GEOMETRY].shader->has_xfb_info;
 
    for (unsigned i = 0; i < ARRAY_SIZE(gs_queries); ++i) {
       xfb_or_queries |= (ctx->pipeline_statistics[gs_queries[i]] != NULL);
@@ -4157,7 +4157,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
    /* If there is a count shader, launch it and prefix sum the results. */
    if (gs->gs_count && xfb_or_queries) {
       perf_debug(dev, "Geometry shader count");
-      agx_launch(batch, grid_gs, wg, gs->gs_count, NULL, PIPE_SHADER_GEOMETRY,
+      agx_launch(batch, grid_gs, wg, gs->gs_count, NULL, MESA_SHADER_GEOMETRY,
                  0);
    }
 
@@ -4174,7 +4174,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
    }
 
    /* Pre-rast geometry shader */
-   agx_launch(batch, grid_gs, wg, gs, NULL, PIPE_SHADER_GEOMETRY, 0);
+   agx_launch(batch, grid_gs, wg, gs, NULL, MESA_SHADER_GEOMETRY, 0);
 }
 
 static void
@@ -4271,7 +4271,7 @@ agx_needs_passthrough_gs(struct agx_context *ctx,
    /* If there is already a geometry shader in the pipeline, we do not need to
     * apply a passthrough GS of our own.
     */
-   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader)
+   if (ctx->stage[MESA_SHADER_GEOMETRY].shader)
       return false;
 
    /* Rendering adjacency requires a GS, add a passthrough since we don't have
@@ -4388,7 +4388,7 @@ agx_apply_passthrough_gs(struct agx_context *ctx,
                                          : MESA_SHADER_VERTEX;
    struct agx_uncompiled_shader *prev_cso = ctx->stage[prev_stage].shader;
 
-   assert(ctx->stage[PIPE_SHADER_GEOMETRY].shader == NULL);
+   assert(ctx->stage[MESA_SHADER_GEOMETRY].shader == NULL);
 
    /* Draw with passthrough */
    ctx->base.bind_gs_state(
@@ -4703,7 +4703,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    /* If there's a geometry shader, it will increment the clipper stats.
     * Otherwise, we do when tessellating.
     */
-   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+   if (ctx->stage[MESA_SHADER_GEOMETRY].shader) {
       c_prims = AGX_SCRATCH_PAGE_ADDRESS;
       c_invs = AGX_SCRATCH_PAGE_ADDRESS;
    }
@@ -4959,7 +4959,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
         ((ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES] ||
           ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]) &&
          !ctx->stage[MESA_SHADER_TESS_EVAL].shader &&
-         !ctx->stage[PIPE_SHADER_GEOMETRY].shader))) {
+         !ctx->stage[MESA_SHADER_GEOMETRY].shader))) {
 
       uint64_t ptr;
       if (indirect) {
@@ -4980,13 +4980,13 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
    /* Only the rasterization stream counts */
    if (ctx->active_queries && ctx->prims_generated[0] &&
-       !ctx->stage[PIPE_SHADER_GEOMETRY].shader) {
+       !ctx->stage[MESA_SHADER_GEOMETRY].shader) {
 
       assert(!indirect && "we force a passthrough GS for this");
       agx_primitives_update_direct(ctx, info, draws);
    }
 
-   if (ctx->stage[PIPE_SHADER_GEOMETRY].shader && info->primitive_restart &&
+   if (ctx->stage[MESA_SHADER_GEOMETRY].shader && info->primitive_restart &&
        info->index_size) {
 
       agx_draw_without_restart(batch, info, drawid_offset, indirect, draws);

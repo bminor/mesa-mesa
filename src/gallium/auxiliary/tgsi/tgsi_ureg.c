@@ -2188,7 +2188,7 @@ void *ureg_create_shader( struct ureg_program *ureg,
       return pipe->create_tcs_state(pipe, &state);
    case MESA_SHADER_TESS_EVAL:
       return pipe->create_tes_state(pipe, &state);
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       return pipe->create_gs_state(pipe, &state);
    case PIPE_SHADER_FRAGMENT:
       return pipe->create_fs_state(pipe, &state);

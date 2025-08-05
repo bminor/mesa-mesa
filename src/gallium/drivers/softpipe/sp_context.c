@@ -275,9 +275,9 @@ softpipe_create_context(struct pipe_screen *screen,
                            softpipe->tgsi.sampler[MESA_SHADER_VERTEX]);
 
    draw_texture_sampler(softpipe->draw,
-                        PIPE_SHADER_GEOMETRY,
+                        MESA_SHADER_GEOMETRY,
                         (struct tgsi_sampler *)
-                           softpipe->tgsi.sampler[PIPE_SHADER_GEOMETRY]);
+                           softpipe->tgsi.sampler[MESA_SHADER_GEOMETRY]);
 
    draw_image(softpipe->draw,
               MESA_SHADER_VERTEX,
@@ -285,9 +285,9 @@ softpipe_create_context(struct pipe_screen *screen,
               softpipe->tgsi.image[MESA_SHADER_VERTEX]);
 
    draw_image(softpipe->draw,
-              PIPE_SHADER_GEOMETRY,
+              MESA_SHADER_GEOMETRY,
               (struct tgsi_image *)
-              softpipe->tgsi.image[PIPE_SHADER_GEOMETRY]);
+              softpipe->tgsi.image[MESA_SHADER_GEOMETRY]);
 
    draw_buffer(softpipe->draw,
               MESA_SHADER_VERTEX,
@@ -295,9 +295,9 @@ softpipe_create_context(struct pipe_screen *screen,
               softpipe->tgsi.buffer[MESA_SHADER_VERTEX]);
 
    draw_buffer(softpipe->draw,
-              PIPE_SHADER_GEOMETRY,
+              MESA_SHADER_GEOMETRY,
               (struct tgsi_buffer *)
-              softpipe->tgsi.buffer[PIPE_SHADER_GEOMETRY]);
+              softpipe->tgsi.buffer[MESA_SHADER_GEOMETRY]);
 
    softpipe->vbuf_backend = sp_create_vbuf_backend(softpipe);
    if (!softpipe->vbuf_backend)

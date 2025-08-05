@@ -697,11 +697,11 @@ v3d_emit_gl_shader_state(struct v3d_context *v3d,
         struct v3d_cl_reloc gs_bin_uniforms = { NULL, 0 };
         if (v3d->prog.gs) {
                 gs_uniforms = v3d_write_uniforms(v3d, job, v3d->prog.gs,
-                                                 PIPE_SHADER_GEOMETRY);
+                                                 MESA_SHADER_GEOMETRY);
         }
         if (v3d->prog.gs_bin) {
                 gs_bin_uniforms = v3d_write_uniforms(v3d, job, v3d->prog.gs_bin,
-                                                     PIPE_SHADER_GEOMETRY);
+                                                     MESA_SHADER_GEOMETRY);
         }
 
         struct v3d_cl_reloc vs_uniforms =

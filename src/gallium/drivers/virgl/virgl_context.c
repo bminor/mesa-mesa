@@ -794,7 +794,7 @@ static void *virgl_create_tes_state(struct pipe_context *ctx,
 static void *virgl_create_gs_state(struct pipe_context *ctx,
                                    const struct pipe_shader_state *shader)
 {
-   return virgl_shader_encoder(ctx, shader, PIPE_SHADER_GEOMETRY);
+   return virgl_shader_encoder(ctx, shader, MESA_SHADER_GEOMETRY);
 }
 
 static void *virgl_create_fs_state(struct pipe_context *ctx,
@@ -886,7 +886,7 @@ static void virgl_bind_gs_state(struct pipe_context *ctx,
    uint32_t handle = (unsigned long)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
-   virgl_encode_bind_shader(vctx, handle, PIPE_SHADER_GEOMETRY);
+   virgl_encode_bind_shader(vctx, handle, MESA_SHADER_GEOMETRY);
 }
 
 

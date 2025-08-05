@@ -459,7 +459,7 @@ svga_tgsi_scan_shader(struct svga_shader *shader)
       info->fs.color0_writes_all_cbufs =
          tgsi_info->properties[TGSI_PROPERTY_FS_COLOR0_WRITES_ALL_CBUFS];
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       info->gs.out_prim = tgsi_info->properties[TGSI_PROPERTY_GS_OUTPUT_PRIM];
       info->gs.in_prim = tgsi_info->properties[TGSI_PROPERTY_GS_INPUT_PRIM];
       break;

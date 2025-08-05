@@ -288,7 +288,7 @@ vgpu10_init_shader_caps(struct svga_screen *svgascreen)
           caps->max_inputs = VGPU10_MAX_PS_INPUTS;
           caps->max_outputs = VGPU10_MAX_PS_OUTPUTS;
           break;
-       case PIPE_SHADER_GEOMETRY:
+       case MESA_SHADER_GEOMETRY:
           caps->max_inputs = svgascreen->max_gs_inputs;
           caps->max_outputs = VGPU10_MAX_GS_OUTPUTS;
           break;

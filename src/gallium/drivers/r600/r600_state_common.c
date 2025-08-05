@@ -265,7 +265,7 @@ static void r600_set_clip_state(struct pipe_context *ctx,
 	rctx->clip_state.state = *state;
 	r600_mark_atom_dirty(rctx, &rctx->clip_state.atom);
 	rctx->driver_consts[MESA_SHADER_VERTEX].vs_ucp_dirty = true;
-	rctx->driver_consts[PIPE_SHADER_GEOMETRY].vs_ucp_dirty = true;
+	rctx->driver_consts[MESA_SHADER_GEOMETRY].vs_ucp_dirty = true;
 	if (rctx->b.family >= CHIP_CEDAR)
 		rctx->driver_consts[MESA_SHADER_TESS_EVAL].vs_ucp_dirty = true;
 }
@@ -752,7 +752,7 @@ static int r600_get_hw_atomic_count(const struct pipe_context *ctx,
 	case MESA_SHADER_VERTEX:
 		value = rctx->ps_shader->info.file_count[TGSI_FILE_HW_ATOMIC];
 		break;
-	case PIPE_SHADER_GEOMETRY:
+	case MESA_SHADER_GEOMETRY:
 		value = rctx->ps_shader->info.file_count[TGSI_FILE_HW_ATOMIC] +
 			rctx->vs_shader->info.file_count[TGSI_FILE_HW_ATOMIC];
 		break;
@@ -811,8 +811,8 @@ static inline void r600_shader_selector_key(const struct pipe_context *ctx,
 		key->vs.first_atomic_counter = r600_get_hw_atomic_count(ctx, MESA_SHADER_VERTEX);
 		break;
 	}
-	case PIPE_SHADER_GEOMETRY:
-		key->gs.first_atomic_counter = r600_get_hw_atomic_count(ctx, PIPE_SHADER_GEOMETRY);
+	case MESA_SHADER_GEOMETRY:
+		key->gs.first_atomic_counter = r600_get_hw_atomic_count(ctx, MESA_SHADER_GEOMETRY);
 		key->gs.tri_strip_adj_fix = rctx->gs_tri_strip_adj_fix;
 		break;
 	case PIPE_SHADER_FRAGMENT: {
@@ -863,7 +863,7 @@ r600_shader_precompile_key(const struct pipe_context *ctx,
 		 */
 		break;
 
-	case PIPE_SHADER_GEOMETRY:
+	case MESA_SHADER_GEOMETRY:
 		break;
 
 	case PIPE_SHADER_FRAGMENT:
@@ -989,7 +989,7 @@ static void *r600_create_shader_state(struct pipe_context *ctx,
 	sel->so = state->stream_output;
 
 	switch (pipe_shader_type) {
-	case PIPE_SHADER_GEOMETRY:
+	case MESA_SHADER_GEOMETRY:
 		sel->gs_output_prim =
 			sel->info.properties[TGSI_PROPERTY_GS_OUTPUT_PRIM];
 		sel->gs_max_out_vertices =
@@ -1047,7 +1047,7 @@ static void *r600_create_vs_state(struct pipe_context *ctx,
 static void *r600_create_gs_state(struct pipe_context *ctx,
 					 const struct pipe_shader_state *state)
 {
-	return r600_create_shader_state(ctx, state, PIPE_SHADER_GEOMETRY);
+	return r600_create_shader_state(ctx, state, MESA_SHADER_GEOMETRY);
 }
 
 static void *r600_create_tcs_state(struct pipe_context *ctx,
@@ -1330,7 +1330,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 	if (rctx->tes_shader)
 		last_vertex_stage = MESA_SHADER_TESS_EVAL;
 	if (rctx->gs_shader)
-		last_vertex_stage  = PIPE_SHADER_GEOMETRY;
+		last_vertex_stage  = MESA_SHADER_GEOMETRY;
 
 	for (sh = start; sh < end; sh++) {
 		struct r600_shader_driver_constants_info *info = &rctx->driver_consts[sh];
@@ -1345,7 +1345,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 		size = info->alloc_size;
 		if (info->vs_ucp_dirty) {
 			assert(sh == MESA_SHADER_VERTEX ||
-			       sh == PIPE_SHADER_GEOMETRY ||
+			       sh == MESA_SHADER_GEOMETRY ||
 			       sh == MESA_SHADER_TESS_EVAL);
 			if (!size) {
 				ptr = rctx->clip_state.state.ucp;
@@ -1598,7 +1598,7 @@ static void update_gs_block_state(struct r600_context *rctx, unsigned enable)
 		}
 
 		if (enable) {
-			r600_set_constant_buffer(&rctx->b.b, PIPE_SHADER_GEOMETRY,
+			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_GEOMETRY,
 					R600_GS_RING_CONST_BUFFER, false, &rctx->gs_rings.esgs_ring);
 			if (rctx->tes_shader) {
 				r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_TESS_EVAL,
@@ -1608,7 +1608,7 @@ static void update_gs_block_state(struct r600_context *rctx, unsigned enable)
 							 R600_GS_RING_CONST_BUFFER, false, &rctx->gs_rings.gsvs_ring);
 			}
 		} else {
-			r600_set_constant_buffer(&rctx->b.b, PIPE_SHADER_GEOMETRY,
+			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_GEOMETRY,
 					R600_GS_RING_CONST_BUFFER, false, NULL);
 			r600_set_constant_buffer(&rctx->b.b, MESA_SHADER_VERTEX,
 					R600_GS_RING_CONST_BUFFER, false, NULL);
@@ -2019,9 +2019,9 @@ static bool r600_update_derived_state(struct r600_context *rctx)
 		need_buf_const = rctx->gs_shader->current->shader.uses_tex_buffers || rctx->gs_shader->current->shader.has_txq_cube_array_z_comp;
 		if (need_buf_const) {
 			if (rctx->b.gfx_level < EVERGREEN)
-				r600_setup_buffer_constants(rctx, PIPE_SHADER_GEOMETRY);
+				r600_setup_buffer_constants(rctx, MESA_SHADER_GEOMETRY);
 			else
-				eg_setup_buffer_constants(rctx, PIPE_SHADER_GEOMETRY);
+				eg_setup_buffer_constants(rctx, MESA_SHADER_GEOMETRY);
 		}
 	}
 

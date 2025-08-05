@@ -416,7 +416,7 @@ class Context(Dispatcher):
             return self._state.tcs
         if shader == 'MESA_SHADER_TESS_EVAL':
             return self._state.tes
-        if shader == 'PIPE_SHADER_GEOMETRY':
+        if shader == 'MESA_SHADER_GEOMETRY':
             return self._state.gs
         if shader == 'PIPE_SHADER_FRAGMENT':
             return self._state.fs

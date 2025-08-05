@@ -307,7 +307,7 @@ update_tgsi_samplers( struct softpipe_context *softpipe )
    set_shader_sampler(softpipe, PIPE_SHADER_FRAGMENT,
                       softpipe->fs_variant->info.file_max[TGSI_FILE_SAMPLER]);
    if (softpipe->gs) {
-      set_shader_sampler(softpipe, PIPE_SHADER_GEOMETRY,
+      set_shader_sampler(softpipe, MESA_SHADER_GEOMETRY,
                          softpipe->gs->max_sampler);
    }
 

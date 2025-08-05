@@ -232,7 +232,7 @@ void st_init_limits(struct pipe_screen *screen,
       /* reserve space in the default-uniform for lowered state */
       if (sh == MESA_SHADER_VERTEX ||
           sh == MESA_SHADER_TESS_EVAL ||
-          sh == PIPE_SHADER_GEOMETRY) {
+          sh == MESA_SHADER_GEOMETRY) {
 
          if (!screen->caps.clip_planes)
             pc->MaxUniformComponents -= 4 * MAX_CLIP_PLANES;
@@ -340,7 +340,7 @@ void st_init_limits(struct pipe_screen *screen,
          can_ubo = false;
       }
 
-      if (sh == MESA_SHADER_VERTEX || sh == PIPE_SHADER_GEOMETRY) {
+      if (sh == MESA_SHADER_VERTEX || sh == MESA_SHADER_GEOMETRY) {
          if (screen->caps.viewport_transform_lowered)
             options->LowerBuiltinVariablesXfb |= VARYING_BIT_POS;
          if (screen->caps.psiz_clamped)
@@ -1329,7 +1329,7 @@ void st_init_extensions(struct pipe_screen *screen,
 
    /* OES_geometry_shader requires instancing */
    if ((GLSLVersion >= 400 || ESSLVersion >= 310) &&
-       screen->shader_caps[PIPE_SHADER_GEOMETRY].max_instructions > 0 &&
+       screen->shader_caps[MESA_SHADER_GEOMETRY].max_instructions > 0 &&
        consts->MaxGeometryShaderInvocations >= 32) {
       extensions->OES_geometry_shader = GL_TRUE;
    }

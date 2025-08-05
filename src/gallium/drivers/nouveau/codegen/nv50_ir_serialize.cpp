@@ -116,7 +116,7 @@ nv50_ir_prog_info_out_serialize(struct blob *blob,
       case MESA_SHADER_TESS_EVAL:
          blob_write_bytes(blob, &info_out->prop.tp, sizeof(info_out->prop.tp));
          break;
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          blob_write_bytes(blob, &info_out->prop.gp, sizeof(info_out->prop.gp));
          break;
       case PIPE_SHADER_FRAGMENT:
@@ -236,7 +236,7 @@ nv50_ir_prog_info_out_deserialize(void *data, size_t size, size_t offset,
       case MESA_SHADER_TESS_EVAL:
          blob_copy_bytes(&reader, &info_out->prop.tp, sizeof(info_out->prop.tp));
          break;
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          blob_copy_bytes(&reader, &info_out->prop.gp, sizeof(info_out->prop.gp));
          break;
       case PIPE_SHADER_FRAGMENT:

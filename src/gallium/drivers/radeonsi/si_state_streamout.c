@@ -230,7 +230,7 @@ static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targ
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-         BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
+         BITFIELD_BIT(MESA_SHADER_GEOMETRY);
    }
 
    sctx->streamout.output_prim = output_prim;
@@ -495,7 +495,7 @@ void si_update_prims_generated_query_state(struct si_context *sctx, unsigned typ
       if (si_update_ngg(sctx)) {
          si_shader_change_notify(sctx);
          sctx->dirty_shaders_mask |=
-            (sctx->shader.gs.cso ? BITFIELD_BIT(PIPE_SHADER_GEOMETRY) :
+            (sctx->shader.gs.cso ? BITFIELD_BIT(MESA_SHADER_GEOMETRY) :
                (sctx->shader.tes.cso ? BITFIELD_BIT(MESA_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
       }
    }

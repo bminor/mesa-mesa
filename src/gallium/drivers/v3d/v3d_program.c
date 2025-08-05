@@ -757,7 +757,7 @@ v3d_update_compiled_gs(struct v3d_context *v3d, uint8_t prim_mode)
         }
 
         memset(key, 0, sizeof(*key));
-        v3d_setup_shared_key(v3d, &key->base, &v3d->tex[PIPE_SHADER_GEOMETRY]);
+        v3d_setup_shared_key(v3d, &key->base, &v3d->tex[MESA_SHADER_GEOMETRY]);
         key->base.is_last_geometry_stage = true;
         key->num_used_outputs = v3d->prog.fs->prog_data.fs->num_inputs;
         STATIC_ASSERT(sizeof(key->used_outputs) ==

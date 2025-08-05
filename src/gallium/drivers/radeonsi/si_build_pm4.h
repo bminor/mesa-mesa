@@ -596,7 +596,7 @@ si_get_user_data_base(enum amd_gfx_level gfx_level, enum si_has_tess has_tess,
          return 0;
       }
 
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       if (gfx_level == GFX9) {
          return R_00B330_SPI_SHADER_USER_DATA_ES_0;
       } else {

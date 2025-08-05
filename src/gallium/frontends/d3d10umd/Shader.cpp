@@ -64,7 +64,7 @@ CreateEmptyShader(Device *pDevice,
    const struct tgsi_token *tokens;
    uint nr_tokens;
 
-   if (processor == PIPE_SHADER_GEOMETRY) {
+   if (processor == MESA_SHADER_GEOMETRY) {
       return NULL;
    }
 
@@ -92,7 +92,7 @@ CreateEmptyShader(Device *pDevice,
    case MESA_SHADER_VERTEX:
       handle = pipe->create_vs_state(pipe, &state);
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       handle = pipe->create_gs_state(pipe, &state);
       break;
    default:
@@ -123,7 +123,7 @@ DeleteEmptyShader(Device *pDevice,
 {
    struct pipe_context *pipe = pDevice->pipe;
 
-   if (processor == PIPE_SHADER_GEOMETRY) {
+   if (processor == MESA_SHADER_GEOMETRY) {
       assert(handle == NULL);
       return;
    }
@@ -136,7 +136,7 @@ DeleteEmptyShader(Device *pDevice,
    case MESA_SHADER_VERTEX:
       pipe->delete_vs_state(pipe, handle);
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       pipe->delete_gs_state(pipe, handle);
       break;
    default:
@@ -306,7 +306,7 @@ DestroyShader(D3D10DDI_HDEVICE hDevice,   // IN
       case MESA_SHADER_VERTEX:
          pipe->delete_vs_state(pipe, pShader->handle);
          break;
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          pipe->delete_gs_state(pipe, pShader->handle);
          break;
       default:
@@ -680,7 +680,7 @@ CreateGeometryShader(D3D10DDI_HDEVICE hDevice,                                //
    struct pipe_context *pipe = CastPipeContext(hDevice);
    Shader *pShader = CastShader(hShader);
 
-   pShader->type = PIPE_SHADER_GEOMETRY;
+   pShader->type = MESA_SHADER_GEOMETRY;
    pShader->output_resolved = true;
 
    memset(&pShader->state, 0, sizeof pShader->state);
@@ -743,7 +743,7 @@ GsSetShaderResources(D3D10DDI_HDEVICE hDevice,                                  
 {
    LOG_ENTRYPOINT();
 
-   SetShaderResources(PIPE_SHADER_GEOMETRY, hDevice, Offset, NumViews, phShaderResourceViews);
+   SetShaderResources(MESA_SHADER_GEOMETRY, hDevice, Offset, NumViews, phShaderResourceViews);
 }
 
 
@@ -766,7 +766,7 @@ GsSetConstantBuffers(D3D10DDI_HDEVICE hDevice,                                  
 {
    LOG_ENTRYPOINT();
 
-   SetConstantBuffers(PIPE_SHADER_GEOMETRY,
+   SetConstantBuffers(MESA_SHADER_GEOMETRY,
                       hDevice, StartBuffer, NumBuffers, phBuffers);
 }
 
@@ -789,7 +789,7 @@ GsSetSamplers(D3D10DDI_HDEVICE hDevice,                                       //
 {
    LOG_ENTRYPOINT();
 
-   SetSamplers(PIPE_SHADER_GEOMETRY, hDevice, Offset, NumSamplers, phSamplers);
+   SetSamplers(MESA_SHADER_GEOMETRY, hDevice, Offset, NumSamplers, phSamplers);
 }
 
 
@@ -844,7 +844,7 @@ CreateGeometryShaderWithStreamOutput(
    unsigned num_holes = 0;
    bool all_slot_zero = true;
 
-   pShader->type = PIPE_SHADER_GEOMETRY;
+   pShader->type = MESA_SHADER_GEOMETRY;
 
    memset(&pShader->state, 0, sizeof pShader->state);
    if (pData->pShaderCode) {

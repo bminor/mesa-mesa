@@ -337,7 +337,7 @@ static bool parse_header( struct translate_ctx *ctx )
    else if (str_match_nocase_whole( &ctx->cur, "VERT" ))
       processor = MESA_SHADER_VERTEX;
    else if (str_match_nocase_whole( &ctx->cur, "GEOM" ))
-      processor = PIPE_SHADER_GEOMETRY;
+      processor = MESA_SHADER_GEOMETRY;
    else if (str_match_nocase_whole( &ctx->cur, "TESS_CTRL" ))
       processor = MESA_SHADER_TESS_CTRL;
    else if (str_match_nocase_whole( &ctx->cur, "TESS_EVAL" ))
@@ -730,7 +730,7 @@ parse_register_dcl(
        * the second bracket */
 
       /* tessellation has similar constraints to geometry shader */
-      if ((ctx->processor == PIPE_SHADER_GEOMETRY && is_in) ||
+      if ((ctx->processor == MESA_SHADER_GEOMETRY && is_in) ||
           (ctx->processor == MESA_SHADER_TESS_EVAL && is_in) ||
           (ctx->processor == MESA_SHADER_TESS_CTRL && (is_in || is_out))) {
          brackets[0] = brackets[1];
@@ -1482,7 +1482,7 @@ static bool parse_declaration( struct translate_ctx *ctx )
    cur = ctx->cur;
    eat_opt_white( &cur );
    if (*cur == ',' &&
-       file == TGSI_FILE_OUTPUT && ctx->processor == PIPE_SHADER_GEOMETRY) {
+       file == TGSI_FILE_OUTPUT && ctx->processor == MESA_SHADER_GEOMETRY) {
       cur++;
       eat_opt_white(&cur);
       if (str_match_nocase_whole(&cur, "STREAM")) {
@@ -1756,7 +1756,7 @@ static bool parse_property( struct translate_ctx *ctx )
          return false;
       }
       if (property_name == TGSI_PROPERTY_GS_INPUT_PRIM &&
-          ctx->processor == PIPE_SHADER_GEOMETRY) {
+          ctx->processor == MESA_SHADER_GEOMETRY) {
          ctx->implied_array_size = mesa_vertices_per_prim(values[0]);
       }
       break;

@@ -465,7 +465,7 @@ agx_blitter_save(struct agx_context *ctx, struct blitter_context *blitter,
    util_blitter_save_tesseval_shader(blitter,
                                      ctx->stage[MESA_SHADER_TESS_EVAL].shader);
    util_blitter_save_geometry_shader(blitter,
-                                     ctx->stage[PIPE_SHADER_GEOMETRY].shader);
+                                     ctx->stage[MESA_SHADER_GEOMETRY].shader);
    util_blitter_save_so_targets(blitter, ctx->streamout.num_targets,
                                 ctx->streamout.targets, MESA_PRIM_UNKNOWN);
    util_blitter_save_vertex_buffers(blitter, ctx->vertex_buffers,

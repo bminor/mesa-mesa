@@ -718,7 +718,7 @@ si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, enum pipe_shader_type
             return RGP_HW_STAGE_GS;
          else
             return RGP_HW_STAGE_VS;
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          return RGP_HW_STAGE_GS;
       case PIPE_SHADER_FRAGMENT:
          return RGP_HW_STAGE_PS;

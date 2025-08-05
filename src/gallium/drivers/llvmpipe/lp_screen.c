@@ -136,7 +136,7 @@ llvmpipe_init_shader_caps(struct pipe_screen *screen)
       case MESA_SHADER_TESS_CTRL:
       case MESA_SHADER_TESS_EVAL:
       case MESA_SHADER_VERTEX:
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          draw_init_shader_caps(caps);
 
          if (debug_get_bool_option("DRAW_USE_LLVM", true)) {

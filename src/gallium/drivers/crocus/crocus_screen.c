@@ -151,7 +151,7 @@ crocus_init_shader_caps(struct crocus_screen *screen)
       if (devinfo->ver == 6 &&
           i != MESA_SHADER_VERTEX &&
           i != PIPE_SHADER_FRAGMENT &&
-          i != PIPE_SHADER_GEOMETRY)
+          i != MESA_SHADER_GEOMETRY)
          continue;
 
       caps->max_instructions = i == MESA_SHADER_FRAGMENT ? 1024 : 16384;

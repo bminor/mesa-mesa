@@ -199,7 +199,7 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
       caps->max_inputs =
          vscreen->caps.caps.v1.glsl_level < 150 ?
          vscreen->caps.caps.v2.max_vertex_attribs :
-         (i == MESA_SHADER_VERTEX || i == PIPE_SHADER_GEOMETRY ?
+         (i == MESA_SHADER_VERTEX || i == MESA_SHADER_GEOMETRY ?
           vscreen->caps.caps.v2.max_vertex_attribs : 32);
 
       switch (i) {

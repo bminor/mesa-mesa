@@ -236,7 +236,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 		else
 			evergreen_update_vs_state(ctx, shader);
 		break;
-	case PIPE_SHADER_GEOMETRY:
+	case MESA_SHADER_GEOMETRY:
 		if (rctx->b.gfx_level >= EVERGREEN) {
 			evergreen_update_gs_state(ctx, shader);
 			evergreen_update_vs_state(ctx, shader->gs_copy_shader);

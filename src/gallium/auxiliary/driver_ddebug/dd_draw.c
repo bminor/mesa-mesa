@@ -155,8 +155,8 @@ dd_num_active_viewports(struct dd_draw_state *dstate)
    struct tgsi_shader_info info;
    const struct tgsi_token *tokens;
 
-   if (dstate->shaders[PIPE_SHADER_GEOMETRY])
-      tokens = dstate->shaders[PIPE_SHADER_GEOMETRY]->state.shader.tokens;
+   if (dstate->shaders[MESA_SHADER_GEOMETRY])
+      tokens = dstate->shaders[MESA_SHADER_GEOMETRY]->state.shader.tokens;
    else if (dstate->shaders[MESA_SHADER_TESS_EVAL])
       tokens = dstate->shaders[MESA_SHADER_TESS_EVAL]->state.shader.tokens;
    else if (dstate->shaders[MESA_SHADER_VERTEX])
@@ -267,7 +267,7 @@ dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
    shader_str[MESA_SHADER_VERTEX] = "VERTEX";
    shader_str[MESA_SHADER_TESS_CTRL] = "TESS_CTRL";
    shader_str[MESA_SHADER_TESS_EVAL] = "TESS_EVAL";
-   shader_str[PIPE_SHADER_GEOMETRY] = "GEOMETRY";
+   shader_str[MESA_SHADER_GEOMETRY] = "GEOMETRY";
    shader_str[PIPE_SHADER_FRAGMENT] = "FRAGMENT";
    shader_str[PIPE_SHADER_COMPUTE] = "COMPUTE";
 

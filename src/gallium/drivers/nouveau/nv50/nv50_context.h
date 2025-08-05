@@ -249,7 +249,7 @@ nv50_context_shader_stage(unsigned pipe)
    switch (pipe) {
    case MESA_SHADER_VERTEX: return NV50_SHADER_STAGE_VERTEX;
    case PIPE_SHADER_FRAGMENT: return NV50_SHADER_STAGE_FRAGMENT;
-   case PIPE_SHADER_GEOMETRY: return NV50_SHADER_STAGE_GEOMETRY;
+   case MESA_SHADER_GEOMETRY: return NV50_SHADER_STAGE_GEOMETRY;
    case PIPE_SHADER_COMPUTE: return NV50_SHADER_STAGE_COMPUTE;
    default:
       assert(!"invalid/unhandled shader type");

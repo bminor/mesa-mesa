@@ -312,7 +312,7 @@ cso_create_context(struct pipe_context *pipe, unsigned flags)
    /* Enable for testing: */
    if (0) cso_set_maximum_cache_size(&ctx->cache, 4);
 
-   if (pipe->screen->shader_caps[PIPE_SHADER_GEOMETRY].max_instructions > 0) {
+   if (pipe->screen->shader_caps[MESA_SHADER_GEOMETRY].max_instructions > 0) {
       ctx->has_geometry_shader = true;
    }
    if (pipe->screen->shader_caps[MESA_SHADER_TESS_CTRL].max_instructions > 0) {
@@ -366,7 +366,7 @@ cso_unbind_context(struct cso_context *cso)
          enum pipe_shader_type sh;
          for (sh = 0; sh < PIPE_SHADER_MESH_TYPES; sh++) {
             switch (sh) {
-            case PIPE_SHADER_GEOMETRY:
+            case MESA_SHADER_GEOMETRY:
                if (!ctx->has_geometry_shader)
                   continue;
                break;

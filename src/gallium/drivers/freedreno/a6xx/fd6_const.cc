@@ -355,7 +355,7 @@ fd6_build_user_consts(struct fd6_emit *emit)
          emit_user_consts<CHIP>(emit->ds, constobj, &ctx->constbuf[MESA_SHADER_TESS_EVAL]);
       }
       if (emit->gs) {
-         emit_user_consts<CHIP>(emit->gs, constobj, &ctx->constbuf[PIPE_SHADER_GEOMETRY]);
+         emit_user_consts<CHIP>(emit->gs, constobj, &ctx->constbuf[MESA_SHADER_GEOMETRY]);
       }
    }
    emit_user_consts<CHIP>(emit->fs, constobj, &ctx->constbuf[PIPE_SHADER_FRAGMENT]);

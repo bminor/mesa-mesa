@@ -119,7 +119,7 @@ read_shader(struct agx_screen *screen, struct blob_reader *blob,
    blob_copy_bytes(blob, binary->push,
                    sizeof(binary->push[0]) * binary->push_range_count);
 
-   if (is_root && uncompiled->type == PIPE_SHADER_GEOMETRY) {
+   if (is_root && uncompiled->type == MESA_SHADER_GEOMETRY) {
       blob_copy_bytes(blob, &binary->gs, sizeof(binary->gs));
       binary->pre_gs = read_shader(screen, blob, uncompiled, false);
 
@@ -155,7 +155,7 @@ agx_disk_cache_store(struct disk_cache *cache,
    struct blob blob;
    blob_init(&blob);
 
-   write_shader(&blob, binary, uncompiled->type == PIPE_SHADER_GEOMETRY);
+   write_shader(&blob, binary, uncompiled->type == MESA_SHADER_GEOMETRY);
 
    disk_cache_put(cache, cache_key, blob.data, blob.size, NULL);
    blob_finish(&blob);

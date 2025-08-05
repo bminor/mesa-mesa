@@ -699,7 +699,7 @@ nvc0_program_translate(struct nvc0_program *prog, uint16_t chipset,
    case MESA_SHADER_TESS_EVAL:
       ret = nvc0_tep_gen_header(prog, &info_out);
       break;
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
       ret = nvc0_gp_gen_header(prog, &info_out);
       break;
    case PIPE_SHADER_FRAGMENT:

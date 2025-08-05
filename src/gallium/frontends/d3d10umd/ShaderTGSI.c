@@ -1281,7 +1281,7 @@ Shader_tgsi_translate(const unsigned *code,
       ureg = ureg_create(MESA_SHADER_VERTEX);
       break;
    case D3D10_SB_GEOMETRY_SHADER:
-      ureg = ureg_create(PIPE_SHADER_GEOMETRY);
+      ureg = ureg_create(MESA_SHADER_GEOMETRY);
       break;
    }
 

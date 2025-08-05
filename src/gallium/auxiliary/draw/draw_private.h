@@ -55,7 +55,7 @@ struct gallivm_state;
  * The max stage the draw stores resources for.
  * i.e. vs, tcs, tes, gs. no fs/cs/ms/ts.
  */
-#define DRAW_MAX_SHADER_STAGE (PIPE_SHADER_GEOMETRY + 1)
+#define DRAW_MAX_SHADER_STAGE (MESA_SHADER_GEOMETRY + 1)
 
 /**
  * The largest possible index of a vertex that can be fetched.

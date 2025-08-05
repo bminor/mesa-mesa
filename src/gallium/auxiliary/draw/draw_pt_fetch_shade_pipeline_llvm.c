@@ -431,7 +431,7 @@ llvm_middle_end_bind_parameters(struct draw_pt_middle_end *middle)
    struct draw_llvm *llvm = fpme->llvm;
    unsigned i;
 
-   for (enum pipe_shader_type shader_type = MESA_SHADER_VERTEX; shader_type <= PIPE_SHADER_GEOMETRY; shader_type++) {
+   for (enum pipe_shader_type shader_type = MESA_SHADER_VERTEX; shader_type <= MESA_SHADER_GEOMETRY; shader_type++) {
       for (i = 0; i < ARRAY_SIZE(llvm->jit_resources[shader_type].constants); ++i) {
          /*
           * There could be a potential issue with rounding this up, as the
@@ -645,7 +645,7 @@ llvm_pipeline_generic(struct draw_pt_middle_end *middle,
    if ((opt & PT_SHADE) && gshader) {
       struct draw_vertex_shader *vshader = draw->vs.vertex_shader;
       draw_geometry_shader_run(gshader,
-                               draw->pt.user.constants[PIPE_SHADER_GEOMETRY],
+                               draw->pt.user.constants[MESA_SHADER_GEOMETRY],
                                vert_info,
                                prim_info,
                                tes_shader ? &tes_shader->info : &vshader->info,

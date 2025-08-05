@@ -4245,7 +4245,7 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
 
    switch (shader) {
    case MESA_SHADER_VERTEX:
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
    case MESA_SHADER_TESS_CTRL:
    case MESA_SHADER_TESS_EVAL: {
       const unsigned size = cb ? cb->buffer_size : 0;
@@ -4302,7 +4302,7 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
 
       switch (shader) {
       case MESA_SHADER_VERTEX:
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
       case MESA_SHADER_TESS_CTRL:
       case MESA_SHADER_TESS_EVAL: {
          const unsigned size = buffer ? buffer->buffer_size : 0;
@@ -4362,7 +4362,7 @@ llvmpipe_set_shader_images(struct pipe_context *pipe,
    llvmpipe->num_images[shader] = start_slot + count;
    switch (shader) {
    case MESA_SHADER_VERTEX:
-   case PIPE_SHADER_GEOMETRY:
+   case MESA_SHADER_GEOMETRY:
    case MESA_SHADER_TESS_CTRL:
    case MESA_SHADER_TESS_EVAL:
       draw_set_images(llvmpipe->draw, shader, llvmpipe->images[shader],

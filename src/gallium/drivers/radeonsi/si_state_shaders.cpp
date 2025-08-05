@@ -2379,7 +2379,7 @@ void si_update_ps_inputs_read_or_disabled(struct si_context *sctx)
    if (sctx->ps_inputs_read_or_disabled != ps_inputs_read_or_disabled) {
       sctx->ps_inputs_read_or_disabled = ps_inputs_read_or_disabled;
       sctx->dirty_shaders_mask |=
-         (sctx->shader.gs.cso ? BITFIELD_BIT(PIPE_SHADER_GEOMETRY) :
+         (sctx->shader.gs.cso ? BITFIELD_BIT(MESA_SHADER_GEOMETRY) :
             (sctx->shader.tes.cso ? BITFIELD_BIT(MESA_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
    }
 }
@@ -2432,7 +2432,7 @@ void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx)
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-         BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
+         BITFIELD_BIT(MESA_SHADER_GEOMETRY);
    }
 
    if (ps_key->ps.part.prolog.color_two_side != old_color_two_side ||
@@ -3677,7 +3677,7 @@ void si_update_common_shader_state(struct si_context *sctx, struct si_shader_sel
    else
       sctx->uses_bindless_images &= ~BITFIELD_BIT(type);
 
-   if (type == MESA_SHADER_VERTEX || type == MESA_SHADER_TESS_EVAL || type == PIPE_SHADER_GEOMETRY)
+   if (type == MESA_SHADER_VERTEX || type == MESA_SHADER_TESS_EVAL || type == MESA_SHADER_GEOMETRY)
       sctx->ngg_culling = 0; /* this will be enabled on the first draw if needed */
 
    si_invalidate_inlinable_uniforms(sctx, type);
@@ -3816,7 +3816,7 @@ static void si_bind_gs_shader(struct pipe_context *ctx, void *state)
 #endif
    sctx->ia_multi_vgt_param_key.u.uses_gs = sel != NULL;
 
-   si_update_common_shader_state(sctx, sel, PIPE_SHADER_GEOMETRY);
+   si_update_common_shader_state(sctx, sel, MESA_SHADER_GEOMETRY);
    si_select_draw_vbo(sctx);
 
    ngg_changed = si_update_ngg(sctx);

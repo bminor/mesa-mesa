@@ -299,7 +299,7 @@ nvc0_shader_stage(unsigned pipe)
    case MESA_SHADER_VERTEX: return 0;
    case MESA_SHADER_TESS_CTRL: return 1;
    case MESA_SHADER_TESS_EVAL: return 2;
-   case PIPE_SHADER_GEOMETRY: return 3;
+   case MESA_SHADER_GEOMETRY: return 3;
    case PIPE_SHADER_FRAGMENT: return 4;
    case PIPE_SHADER_COMPUTE: return 5;
    default:

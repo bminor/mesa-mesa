@@ -748,7 +748,7 @@ bool
 draw_gs_init(struct draw_context *draw)
 {
    if (!draw->llvm) {
-      draw->gs.tgsi.machine = tgsi_exec_machine_create(PIPE_SHADER_GEOMETRY);
+      draw->gs.tgsi.machine = tgsi_exec_machine_create(MESA_SHADER_GEOMETRY);
 
       for (unsigned i = 0; i < TGSI_MAX_VERTEX_STREAMS; i++) {
          draw->gs.tgsi.machine->Primitives[i] = align_malloc(
@@ -916,7 +916,7 @@ draw_create_geometry_shader(struct draw_context *draw,
       gs->run = llvm_gs_run;
 
       gs->jit_context = &draw->llvm->gs_jit_context;
-      gs->jit_resources = &draw->llvm->jit_resources[PIPE_SHADER_GEOMETRY];
+      gs->jit_resources = &draw->llvm->jit_resources[MESA_SHADER_GEOMETRY];
 
       llvm_gs->variant_key_size =
          draw_gs_llvm_variant_key_size(

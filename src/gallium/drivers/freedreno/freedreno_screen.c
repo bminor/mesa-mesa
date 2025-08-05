@@ -210,7 +210,7 @@ fd_init_shader_caps(struct fd_screen *screen)
       switch (i) {
       case MESA_SHADER_TESS_CTRL:
       case MESA_SHADER_TESS_EVAL:
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          if (!is_a6xx(screen))
             continue;
          if (screen->info->a6xx.is_a702)
@@ -231,7 +231,7 @@ fd_init_shader_caps(struct fd_screen *screen)
 
       caps->max_control_flow_depth = 8; /* XXX */
 
-      caps->max_inputs = is_a6xx(screen) && i != PIPE_SHADER_GEOMETRY ?
+      caps->max_inputs = is_a6xx(screen) && i != MESA_SHADER_GEOMETRY ?
          screen->info->a6xx.vs_max_inputs_count : 16;
 
       caps->max_outputs =
@@ -573,7 +573,7 @@ fd_init_screen_caps(struct fd_screen *screen)
        * the frontend clip-plane lowering.  So we handle this in the backend
        *
        */
-      screen->base.shader_caps[PIPE_SHADER_GEOMETRY].max_instructions ? 1 :
+      screen->base.shader_caps[MESA_SHADER_GEOMETRY].max_instructions ? 1 :
       /* On a3xx, there is HW support for GL user clip planes that
        * occasionally has to fall back to shader key-based lowering to clip
        * distances in the VS, and we don't support clip distances so that is

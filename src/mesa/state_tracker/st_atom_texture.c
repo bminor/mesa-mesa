@@ -365,7 +365,7 @@ st_update_geometry_textures(struct st_context *st)
    const struct gl_context *ctx = st->ctx;
 
    if (ctx->GeometryProgram._Current) {
-      update_textures(st, PIPE_SHADER_GEOMETRY,
+      update_textures(st, MESA_SHADER_GEOMETRY,
                             ctx->GeometryProgram._Current);
    }
 }

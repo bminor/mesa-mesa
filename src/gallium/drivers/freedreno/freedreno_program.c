@@ -99,8 +99,8 @@ fd_gs_state_bind(struct pipe_context *pctx, void *hwcso) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    ctx->prog.gs = hwcso;
-   fd_context_dirty_shader(ctx, PIPE_SHADER_GEOMETRY, FD_DIRTY_SHADER_PROG);
-   update_bound_stage(ctx, PIPE_SHADER_GEOMETRY, !!hwcso);
+   fd_context_dirty_shader(ctx, MESA_SHADER_GEOMETRY, FD_DIRTY_SHADER_PROG);
+   update_bound_stage(ctx, MESA_SHADER_GEOMETRY, !!hwcso);
 }
 
 static void

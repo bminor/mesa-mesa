@@ -928,7 +928,7 @@ util_make_geometry_passthrough_shader(struct pipe_context *pipe,
 
    unsigned i;
 
-   ureg = ureg_create(PIPE_SHADER_GEOMETRY);
+   ureg = ureg_create(MESA_SHADER_GEOMETRY);
    if (!ureg)
       return NULL;
 

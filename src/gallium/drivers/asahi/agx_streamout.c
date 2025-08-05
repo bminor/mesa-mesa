@@ -167,7 +167,7 @@ agx_primitives_update_direct(struct agx_context *ctx,
                              const struct pipe_draw_start_count_bias *draw)
 {
    assert(ctx->active_queries && ctx->prims_generated[0] && "precondition");
-   assert(!ctx->stage[PIPE_SHADER_GEOMETRY].shader &&
+   assert(!ctx->stage[MESA_SHADER_GEOMETRY].shader &&
           "Geometry shaders use their own counting");
 
    agx_query_increment_cpu(ctx, ctx->prims_generated[0],

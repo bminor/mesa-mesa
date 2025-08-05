@@ -313,7 +313,7 @@ iter_declaration(
     * two dimensional
     */
    if (decl->Declaration.File == TGSI_FILE_INPUT &&
-       (iter->processor.Processor == PIPE_SHADER_GEOMETRY ||
+       (iter->processor.Processor == MESA_SHADER_GEOMETRY ||
         (!patch &&
          (iter->processor.Processor == MESA_SHADER_TESS_CTRL ||
           iter->processor.Processor == MESA_SHADER_TESS_EVAL)))) {

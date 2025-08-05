@@ -47,7 +47,7 @@ static bool si_update_shaders(struct si_context *sctx)
    bool is_tess_state_changed =
       ((sctx->dirty_shaders_mask & (BITFIELD_BIT(MESA_SHADER_TESS_CTRL) | BITFIELD_BIT(MESA_SHADER_TESS_EVAL))) != 0);
    bool is_gs_state_changed =
-      (sctx->dirty_shaders_mask & BITFIELD_BIT(PIPE_SHADER_GEOMETRY)) != 0;
+      (sctx->dirty_shaders_mask & BITFIELD_BIT(MESA_SHADER_GEOMETRY)) != 0;
    bool is_ps_state_changed =
       (sctx->dirty_shaders_mask & BITFIELD_BIT(PIPE_SHADER_FRAGMENT)) != 0;
 
@@ -1023,7 +1023,7 @@ static void si_emit_vs_state(struct si_context *sctx, unsigned index_size)
       unsigned tes_base = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
                                                 MESA_SHADER_TESS_EVAL);
       unsigned gs_base = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
-                                               PIPE_SHADER_GEOMETRY);
+                                               MESA_SHADER_GEOMETRY);
       unsigned gs_copy_base = R_00B130_SPI_SHADER_USER_DATA_VS_0;
 
       radeon_begin(cs);
@@ -2166,7 +2166,7 @@ static void si_draw(struct pipe_context *ctx,
 
       if (gs_tri_strip_adj_fix != sctx->shader.gs.key.ge.mono.u.gs_tri_strip_adj_fix) {
          sctx->shader.gs.key.ge.mono.u.gs_tri_strip_adj_fix = gs_tri_strip_adj_fix;
-         sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
+         sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_GEOMETRY);
       }
    }
 
@@ -2357,7 +2357,7 @@ static void si_draw(struct pipe_context *ctx,
 
       if (needs_shader_update) {
          sctx->dirty_shaders_mask |=
-            (HAS_GS ? BITFIELD_BIT(PIPE_SHADER_GEOMETRY) :
+            (HAS_GS ? BITFIELD_BIT(MESA_SHADER_GEOMETRY) :
                (HAS_TESS ? BITFIELD_BIT(MESA_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
       }
    }

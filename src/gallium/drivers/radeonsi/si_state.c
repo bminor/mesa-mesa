@@ -1417,7 +1417,7 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-         BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
+         BITFIELD_BIT(MESA_SHADER_GEOMETRY);
    }
 
    if (old_rs->line_smooth != rs->line_smooth ||
@@ -1762,7 +1762,7 @@ static void si_bind_dsa_state(struct pipe_context *ctx, void *state)
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-         BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
+         BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
          BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
    }
 
@@ -2804,7 +2804,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
    sctx->dirty_shaders_mask |=
       BITFIELD_BIT(MESA_SHADER_VERTEX) |
       BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
-      BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
+      BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
       BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
 
    if (sctx->gfx_level < GFX12 && !sctx->decompression_enabled) {

@@ -280,7 +280,7 @@ st_update_common_program(struct st_context *st, struct gl_program *prog,
 
    key.st = st->has_shareable_shaders ? NULL : st;
 
-   if (pipe_shader == PIPE_SHADER_GEOMETRY ||
+   if (pipe_shader == MESA_SHADER_GEOMETRY ||
        pipe_shader == MESA_SHADER_TESS_EVAL) {
       key.clamp_color = st->clamp_vert_color_in_shader &&
                         st->ctx->Light._ClampVertexColor &&
@@ -291,7 +291,7 @@ st_update_common_program(struct st_context *st, struct gl_program *prog,
                           VARYING_SLOT_BFC1));
 
       if (st->lower_ucp && st_user_clip_planes_enabled(st->ctx) &&
-          (pipe_shader == PIPE_SHADER_GEOMETRY ||
+          (pipe_shader == MESA_SHADER_GEOMETRY ||
              !st->ctx->GeometryProgram._Current))
          key.lower_ucp = st->ctx->Transform.ClipPlanesEnabled;
 
@@ -314,7 +314,7 @@ st_update_gp(struct st_context *st)
 {
    void *shader = st_update_common_program(st,
                                            st->ctx->GeometryProgram._Current,
-                                           PIPE_SHADER_GEOMETRY, &st->gp);
+                                           MESA_SHADER_GEOMETRY, &st->gp);
    cso_set_geometry_shader_handle(st->cso_context, shader);
 }
 

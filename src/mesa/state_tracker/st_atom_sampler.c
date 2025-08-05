@@ -398,7 +398,7 @@ st_update_geometry_samplers(struct st_context *st)
 
    if (ctx->GeometryProgram._Current) {
       update_shader_samplers(st,
-                             PIPE_SHADER_GEOMETRY,
+                             MESA_SHADER_GEOMETRY,
                              ctx->GeometryProgram._Current, NULL, NULL);
    }
 }

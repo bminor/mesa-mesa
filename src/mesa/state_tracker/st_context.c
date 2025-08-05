@@ -290,7 +290,7 @@ free_zombie_shaders(struct st_context *st)
          st->ctx->NewDriverState |= ST_NEW_FS_STATE;
          st->pipe->delete_fs_state(st->pipe, entry->shader);
          break;
-      case PIPE_SHADER_GEOMETRY:
+      case MESA_SHADER_GEOMETRY:
          st->ctx->NewDriverState |= ST_NEW_GS_STATE;
          st->pipe->delete_gs_state(st->pipe, entry->shader);
          break;

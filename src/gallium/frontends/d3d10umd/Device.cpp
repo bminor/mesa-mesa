@@ -357,7 +357,7 @@ DestroyDevice(D3D10DDI_HDEVICE hDevice)   // IN
                            PIPE_MAX_SHADER_SAMPLER_VIEWS, 0, sampler_views);
    pipe->set_sampler_views(pipe, MESA_SHADER_VERTEX, 0,
                            PIPE_MAX_SHADER_SAMPLER_VIEWS, 0, sampler_views);
-   pipe->set_sampler_views(pipe, PIPE_SHADER_GEOMETRY, 0,
+   pipe->set_sampler_views(pipe, MESA_SHADER_GEOMETRY, 0,
                            PIPE_MAX_SHADER_SAMPLER_VIEWS, 0, sampler_views);
 
    pipe->destroy(pipe);

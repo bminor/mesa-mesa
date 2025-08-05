@@ -728,7 +728,7 @@ i915_set_constant_buffer(struct pipe_context *pipe,
    bool diff = true;
 
    /* XXX don't support geom shaders now */
-   if (shader == PIPE_SHADER_GEOMETRY)
+   if (shader == MESA_SHADER_GEOMETRY)
       return;
 
    if (cb && cb->user_buffer) {

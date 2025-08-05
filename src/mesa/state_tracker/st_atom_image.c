@@ -196,7 +196,7 @@ void st_bind_gs_images(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_GEOMETRY];
 
-   st_bind_images(st, prog, PIPE_SHADER_GEOMETRY);
+   st_bind_images(st, prog, MESA_SHADER_GEOMETRY);
 }
 
 void st_bind_tcs_images(struct st_context *st)

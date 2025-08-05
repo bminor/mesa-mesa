@@ -2244,7 +2244,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
                                              sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
-                                             sh_base[PIPE_SHADER_GEOMETRY], gfx);
+                                             sh_base[MESA_SHADER_GEOMETRY], gfx);
 
       if (sctx->gs_attribute_ring_pointer_dirty) {
          gfx12_push_gfx_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
@@ -2274,7 +2274,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
                                              sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
-                                             sh_base[PIPE_SHADER_GEOMETRY], gfx);
+                                             sh_base[MESA_SHADER_GEOMETRY], gfx);
 
       if (sctx->gs_attribute_ring_pointer_dirty) {
          gfx11_push_gfx_sh_reg(R_00B230_SPI_SHADER_USER_DATA_GS_0 +
@@ -2305,7 +2305,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
                                           sh_base[MESA_SHADER_TESS_CTRL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
-                                          sh_base[PIPE_SHADER_GEOMETRY], gfx);
+                                          sh_base[MESA_SHADER_GEOMETRY], gfx);
 
       if (sctx->gs_attribute_ring_pointer_dirty) {
          assert(sctx->gfx_level >= GFX11);
@@ -2869,7 +2869,7 @@ void si_init_all_descriptors(struct si_context *sctx)
 
    for (i = first_shader; i < SI_NUM_SHADERS; i++) {
       bool is_2nd =
-         sctx->gfx_level >= GFX9 && (i == MESA_SHADER_TESS_CTRL || i == PIPE_SHADER_GEOMETRY);
+         sctx->gfx_level >= GFX9 && (i == MESA_SHADER_TESS_CTRL || i == MESA_SHADER_GEOMETRY);
       unsigned num_sampler_slots = SI_NUM_IMAGE_SLOTS / 2 + SI_NUM_SAMPLERS;
       unsigned num_buffer_slots = SI_NUM_SHADER_BUFFERS + SI_NUM_CONST_BUFFERS;
       int rel_dw_offset;
@@ -2879,7 +2879,7 @@ void si_init_all_descriptors(struct si_context *sctx)
          if (i == MESA_SHADER_TESS_CTRL) {
             rel_dw_offset =
                (hs_sgpr0 - R_00B430_SPI_SHADER_USER_DATA_HS_0) / 4;
-         } else if (sctx->gfx_level >= GFX10) { /* PIPE_SHADER_GEOMETRY */
+         } else if (sctx->gfx_level >= GFX10) { /* MESA_SHADER_GEOMETRY */
             rel_dw_offset =
                (gs_sgpr0 - R_00B230_SPI_SHADER_USER_DATA_GS_0) / 4;
          } else {
@@ -2899,7 +2899,7 @@ void si_init_all_descriptors(struct si_context *sctx)
          if (i == MESA_SHADER_TESS_CTRL) {
             rel_dw_offset =
                (hs_sgpr0 + 4 - R_00B430_SPI_SHADER_USER_DATA_HS_0) / 4;
-         } else if (sctx->gfx_level >= GFX10) { /* PIPE_SHADER_GEOMETRY */
+         } else if (sctx->gfx_level >= GFX10) { /* MESA_SHADER_GEOMETRY */
             rel_dw_offset =
                (gs_sgpr0 + 4 - R_00B230_SPI_SHADER_USER_DATA_GS_0) / 4;
          } else {
@@ -2964,9 +2964,9 @@ void si_init_all_descriptors(struct si_context *sctx)
    si_set_user_data_base(sctx, MESA_SHADER_TESS_CTRL,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
                                                NGG_OFF, MESA_SHADER_TESS_CTRL));
-   si_set_user_data_base(sctx, PIPE_SHADER_GEOMETRY,
+   si_set_user_data_base(sctx, MESA_SHADER_GEOMETRY,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
-                                               NGG_OFF, PIPE_SHADER_GEOMETRY));
+                                               NGG_OFF, MESA_SHADER_GEOMETRY));
    si_set_user_data_base(sctx, PIPE_SHADER_FRAGMENT, R_00B030_SPI_SHADER_USER_DATA_PS_0);
 }
 

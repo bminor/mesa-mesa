@@ -416,7 +416,7 @@ iter_declaration(
          decl->Semantic.Name == TGSI_SEMANTIC_TESSOUTER ||
          decl->Semantic.Name == TGSI_SEMANTIC_TESSINNER;
       if (file == TGSI_FILE_INPUT && !patch && (
-                processor == PIPE_SHADER_GEOMETRY ||
+                processor == MESA_SHADER_GEOMETRY ||
                 processor == MESA_SHADER_TESS_CTRL ||
                 processor == MESA_SHADER_TESS_EVAL)) {
          unsigned vert;
@@ -487,7 +487,7 @@ iter_property(
 {
    struct sanity_check_ctx *ctx = (struct sanity_check_ctx *) iter;
 
-   if (iter->processor.Processor == PIPE_SHADER_GEOMETRY &&
+   if (iter->processor.Processor == MESA_SHADER_GEOMETRY &&
        prop->Property.PropertyName == TGSI_PROPERTY_GS_INPUT_PRIM) {
       ctx->implied_array_size = mesa_vertices_per_prim(prop->u[0].Data);
    }

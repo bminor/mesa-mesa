@@ -1246,7 +1246,7 @@ nv50_ir_init_prog_info(struct nv50_ir_prog_info *info,
       info_out->prop.tp.domain = MESA_PRIM_COUNT;
       info_out->prop.tp.outputPrim = MESA_PRIM_COUNT;
    }
-   if (info->type == PIPE_SHADER_GEOMETRY) {
+   if (info->type == MESA_SHADER_GEOMETRY) {
       info_out->prop.gp.instanceCount = 1;
       info_out->prop.gp.maxVertices = 1;
    }

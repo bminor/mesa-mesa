@@ -172,9 +172,9 @@ u_init_pipe_screen_caps(struct pipe_screen *pscreen, int accel)
    caps->hardware_gl_select =
       !!accel && debug_get_bool_option("MESA_HW_ACCEL_SELECT", accel > 0) &&
       /* internal geometry shader need indirect array access */
-      pscreen->shader_caps[PIPE_SHADER_GEOMETRY].indirect_temp_addr &&
+      pscreen->shader_caps[MESA_SHADER_GEOMETRY].indirect_temp_addr &&
       /* internal geometry shader need SSBO support */
-      pscreen->shader_caps[PIPE_SHADER_GEOMETRY].max_shader_buffers;
+      pscreen->shader_caps[MESA_SHADER_GEOMETRY].max_shader_buffers;
 
    caps->query_timestamp_bits = 64;
 

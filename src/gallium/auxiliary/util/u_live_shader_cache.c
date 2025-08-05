@@ -104,7 +104,7 @@ util_live_shader_cache_get(struct pipe_context *ctx,
    _mesa_sha1_update(&sha1_ctx, ir_binary, ir_size);
    if ((stage == MESA_SHADER_VERTEX ||
         stage == MESA_SHADER_TESS_EVAL ||
-        stage == PIPE_SHADER_GEOMETRY) &&
+        stage == MESA_SHADER_GEOMETRY) &&
        state->stream_output.num_outputs) {
       _mesa_sha1_update(&sha1_ctx, &state->stream_output,
                         sizeof(state->stream_output));

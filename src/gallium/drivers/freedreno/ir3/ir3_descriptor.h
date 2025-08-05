@@ -38,7 +38,7 @@ ir3_shader_descriptor_set(enum pipe_shader_type shader)
    case MESA_SHADER_VERTEX: return 0;
    case MESA_SHADER_TESS_CTRL: return 1;
    case MESA_SHADER_TESS_EVAL: return 2;
-   case PIPE_SHADER_GEOMETRY:  return 3;
+   case MESA_SHADER_GEOMETRY:  return 3;
    case PIPE_SHADER_FRAGMENT:  return 4;
    case PIPE_SHADER_COMPUTE:   return 0;
    case MESA_SHADER_KERNEL:    return 0;
