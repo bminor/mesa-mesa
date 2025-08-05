@@ -1027,16 +1027,12 @@ tc_is_buffer_bound_for_write(struct threaded_context *tc, uint32_t id)
 }
 
 static bool
-tc_is_buffer_busy(struct threaded_context *tc, struct threaded_resource *tbuf,
-                  unsigned map_usage)
+tc_is_buffer_on_busy_list(const struct threaded_context *tc, const struct threaded_resource *tbuf)
 {
-   if (!tc->options.is_resource_busy)
-      return true;
-
    uint32_t id_hash = tbuf->buffer_id_unique & TC_BUFFER_ID_MASK;
 
    for (unsigned i = 0; i < TC_MAX_BUFFER_LISTS; i++) {
-      struct tc_buffer_list *buf_list = &tc->buffer_lists[i];
+      struct tc_buffer_list *buf_list = (void*)&tc->buffer_lists[i];
 
       /* If the buffer is referenced by a batch that hasn't been flushed (by tc or the driver),
        * then the buffer is considered busy. */
@@ -1044,6 +1040,18 @@ tc_is_buffer_busy(struct threaded_context *tc, struct threaded_resource *tbuf,
           BITSET_TEST(buf_list->buffer_list, id_hash))
          return true;
    }
+   return false;
+}
+
+static bool
+tc_is_buffer_busy(struct threaded_context *tc, struct threaded_resource *tbuf,
+                  unsigned map_usage)
+{
+   if (!tc->options.is_resource_busy)
+      return true;
+
+   if (tc_is_buffer_on_busy_list(tc, tbuf))
+      return true;
 
    /* The buffer isn't referenced by any unflushed batch: we can safely ask to the driver whether
     * this buffer is busy or not. */
