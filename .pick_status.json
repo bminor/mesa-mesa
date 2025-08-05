@@ -4794,7 +4794,7 @@
         "description": "libcl: avoid calling UNREACHABLE(str) macro without arguments",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "9ced3148ca18e8b057e7f2a7e773c701b95c8741",
         "notes": null
