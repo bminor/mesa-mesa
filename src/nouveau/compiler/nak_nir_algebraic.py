@@ -40,8 +40,10 @@ algebraic_lowering = [
     (('umax', 'a', 'b'), ('bcsel', ('ult', a, b), b, a), volta),
     (('iadd', 'a@64', ('ineg', 'b@64')), ('isub', a, b)),
 
-    (('iadd', ('iadd(is_used_once)', 'a(is_not_const)', '#b'), 'c(is_not_const)'), ('iadd3', a, b, c)),
-    (('iadd', ('iadd(is_used_once)', 'a(is_not_const)', 'b(is_not_const)'), '#c'), ('iadd3', a, b, c)),
+    (('iadd', ('iadd(is_used_once)', 'a(is_not_const)', '#b'), 'c(is_not_const)'),
+        ('iadd3', a, b, c), 'options->has_iadd3'),
+    (('iadd', ('iadd(is_used_once)', 'a(is_not_const)', 'b(is_not_const)'), '#c'),
+        ('iadd3', a, b, c), 'options->has_iadd3'),
 
     (('iadd(is_used_by_non_ldc_nv)', 'a@32', ('ishl', 'b@32', '#s@32')),
         ('lea_nv', a, b, s), 'nak->sm >= 70'),
