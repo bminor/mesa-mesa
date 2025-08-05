@@ -69,7 +69,6 @@ st_bind_atomics(struct st_context *st, struct gl_program *prog,
                 mesa_shader_stage stage)
 {
    unsigned i;
-   mesa_shader_stage shader_type = pipe_shader_type_from_mesa(stage);
 
    if (!prog || !st->pipe->set_shader_buffers || st->has_hw_atomics)
       return;
@@ -87,11 +86,11 @@ st_bind_atomics(struct st_context *st, struct gl_program *prog,
       st_binding_to_sb(&st->ctx->AtomicBufferBindings[atomic->Binding], &sb,
                        st->ctx->Const.ShaderStorageBufferOffsetAlignment);
 
-      st->pipe->set_shader_buffers(st->pipe, shader_type,
+      st->pipe->set_shader_buffers(st->pipe, stage,
                                    buffer_base + atomic->Binding, 1, &sb, 0x1);
       used_bindings = MAX2(atomic->Binding + 1, used_bindings);
    }
-   st->last_used_atomic_bindings[shader_type] = used_bindings;
+   st->last_used_atomic_bindings[stage] = used_bindings;
 }
 
 void

@@ -743,10 +743,8 @@ get_shader_program_completion_status(struct gl_context *ctx,
       if (linked->Program->variants)
          sh = linked->Program->variants->driver_shader;
 
-      unsigned type = pipe_shader_type_from_mesa(i);
-
       if (sh &&
-          !screen->is_parallel_shader_compilation_finished(screen, sh, type))
+          !screen->is_parallel_shader_compilation_finished(screen, sh, i))
          return false;
    }
    return true;

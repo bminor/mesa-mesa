@@ -1808,7 +1808,7 @@ ntr_should_vectorize_io(unsigned align, unsigned bit_size, unsigned num_componen
 static nir_variable_mode
 ntr_no_indirects_mask(nir_shader *s, struct pipe_screen *screen)
 {
-   unsigned pipe_stage = pipe_shader_type_from_mesa(s->info.stage);
+   unsigned pipe_stage = s->info.stage;
    unsigned indirect_mask = nir_var_shader_in | nir_var_shader_out;
 
    if (!screen->shader_caps[pipe_stage].indirect_temp_addr) {
@@ -2116,7 +2116,7 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen,
    }
 
    c->s = s;
-   c->ureg = ureg_create(pipe_shader_type_from_mesa(s->info.stage));
+   c->ureg = ureg_create(s->info.stage);
    ureg_setup_shader_info(c->ureg, &s->info);
    if (s->info.use_legacy_math_rules && screen->caps.legacy_math_rules)
       ureg_property(c->ureg, TGSI_PROPERTY_LEGACY_MATH_RULES, 1);

@@ -1860,7 +1860,7 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
       NIR_PASS(_, nir, agx_nir_lower_sample_intrinsics, true);
    }
 
-   so->type = pipe_shader_type_from_mesa(nir->info.stage);
+   so->type = nir->info.stage;
 
    if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
       nir->info.stage = MESA_SHADER_VERTEX;

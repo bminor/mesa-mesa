@@ -2410,7 +2410,7 @@ ureg_setup_shader_info(struct ureg_program *ureg,
    switch (info->stage) {
    case MESA_SHADER_VERTEX:
       ureg_setup_clipdist_info(ureg, info);
-      ureg_set_next_shader_processor(ureg, pipe_shader_type_from_mesa(info->next_stage));
+      ureg_set_next_shader_processor(ureg, info->next_stage);
       break;
    case MESA_SHADER_TESS_CTRL:
       ureg_setup_tess_ctrl_shader(ureg, info);
@@ -2418,7 +2418,7 @@ ureg_setup_shader_info(struct ureg_program *ureg,
    case MESA_SHADER_TESS_EVAL:
       ureg_setup_tess_eval_shader(ureg, info);
       ureg_setup_clipdist_info(ureg, info);
-      ureg_set_next_shader_processor(ureg, pipe_shader_type_from_mesa(info->next_stage));
+      ureg_set_next_shader_processor(ureg, info->next_stage);
       break;
    case MESA_SHADER_GEOMETRY:
       ureg_setup_geometry_shader(ureg, info);

@@ -69,23 +69,22 @@ st_unbind_unused_cb0(struct st_context *st, mesa_shader_stage shader_type)
 void
 st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_stage stage)
 {
-   mesa_shader_stage shader_type = pipe_shader_type_from_mesa(stage);
    if (!prog) {
-      st_unbind_unused_cb0(st, shader_type);
+      st_unbind_unused_cb0(st, stage);
       return;
    }
 
    struct gl_program_parameter_list *params = prog->Parameters;
 
-   assert(shader_type == MESA_SHADER_VERTEX ||
-          shader_type == MESA_SHADER_FRAGMENT ||
-          shader_type == MESA_SHADER_GEOMETRY ||
-          shader_type == MESA_SHADER_TESS_CTRL ||
-          shader_type == MESA_SHADER_TESS_EVAL ||
-          shader_type == MESA_SHADER_COMPUTE);
+   assert(stage == MESA_SHADER_VERTEX ||
+          stage == MESA_SHADER_FRAGMENT ||
+          stage == MESA_SHADER_GEOMETRY ||
+          stage == MESA_SHADER_TESS_CTRL ||
+          stage == MESA_SHADER_TESS_EVAL ||
+          stage == MESA_SHADER_COMPUTE);
 
    /* update the ATI constants before rendering */
-   if (shader_type == MESA_SHADER_FRAGMENT && prog->ati_fs) {
+   if (stage == MESA_SHADER_FRAGMENT && prog->ati_fs) {
       struct ati_fragment_shader *ati_fs = prog->ati_fs;
       unsigned c;
 
@@ -144,7 +143,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
             _mesa_upload_state_parameters(st->ctx, params, ptr);
 
          u_upload_unmap(pipe->const_uploader);
-         pipe->set_constant_buffer(pipe, shader_type, 0, true, &cb);
+         pipe->set_constant_buffer(pipe, stage, 0, true, &cb);
 
          /* Set inlinable constants. This is more involved because state
           * parameters are uploaded directly above instead of being loaded
@@ -168,7 +167,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
                values[i] = constbuf[prog->info.inlinable_uniform_dw_offsets[i]].u;
             }
 
-            pipe->set_inlinable_constants(pipe, shader_type,
+            pipe->set_inlinable_constants(pipe, stage,
                                           prog->info.num_inlinable_uniforms,
                                           values);
          }
@@ -183,7 +182,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
          if (params->StateFlags)
             _mesa_load_state_parameters(st->ctx, params);
 
-         pipe->set_constant_buffer(pipe, shader_type, 0, false, &cb);
+         pipe->set_constant_buffer(pipe, stage, 0, false, &cb);
 
          /* Set inlinable constants. */
          unsigned num_inlinable_uniforms = prog->info.num_inlinable_uniforms;
@@ -194,15 +193,15 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_
             for (unsigned i = 0; i < num_inlinable_uniforms; i++)
                values[i] = constbuf[prog->info.inlinable_uniform_dw_offsets[i]].u;
 
-            pipe->set_inlinable_constants(pipe, shader_type,
+            pipe->set_inlinable_constants(pipe, stage,
                                           prog->info.num_inlinable_uniforms,
                                           values);
          }
       }
 
-      st->state.constbuf0_enabled_shader_mask |= 1 << shader_type;
+      st->state.constbuf0_enabled_shader_mask |= 1 << stage;
    } else {
-      st_unbind_unused_cb0(st, shader_type);
+      st_unbind_unused_cb0(st, stage);
    }
 }
 

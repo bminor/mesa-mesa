@@ -581,7 +581,7 @@ void
 st_make_bound_samplers_resident(struct st_context *st,
                                 struct gl_program *prog)
 {
-   mesa_shader_stage shader = pipe_shader_type_from_mesa(prog->info.stage);
+   mesa_shader_stage shader = prog->info.stage;
    struct st_bound_handles *bound_handles = &st->bound_texture_handles[shader];
    struct pipe_context *pipe = st->pipe;
    GLuint64 handle;
@@ -628,7 +628,7 @@ void
 st_make_bound_images_resident(struct st_context *st,
                               struct gl_program *prog)
 {
-   mesa_shader_stage shader = pipe_shader_type_from_mesa(prog->info.stage);
+   mesa_shader_stage shader = prog->info.stage;
    struct st_bound_handles *bound_handles = &st->bound_image_handles[shader];
    struct pipe_context *pipe = st->pipe;
    GLuint64 handle;
