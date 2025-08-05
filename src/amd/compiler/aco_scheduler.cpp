@@ -113,6 +113,7 @@ struct sched_ctx {
    int16_t occupancy_factor;
    int16_t last_SMEM_stall;
    int last_SMEM_dep_idx;
+   int last_VMEM_store_idx;
    MoveState mv;
    bool schedule_pos_exports = true;
    unsigned schedule_pos_export_div = 1;
@@ -1178,9 +1179,15 @@ schedule_position_export(sched_ctx& ctx, Block* block, Instruction* current, int
    }
 }
 
-unsigned
+void
 schedule_VMEM_store(sched_ctx& ctx, Block* block, Instruction* current, int idx)
 {
+   int max_distance = ctx.last_VMEM_store_idx + VMEM_STORE_CLAUSE_MAX_GRAB_DIST;
+   ctx.last_VMEM_store_idx = idx;
+
+   if (max_distance < idx)
+      return;
+
    hazard_query hq;
    init_hazard_query(ctx, &hq);
 
@@ -1191,31 +1198,30 @@ schedule_VMEM_store(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       if (candidate->opcode == aco_opcode::p_logical_start)
          break;
 
-      if (!should_form_clause(current, candidate.get())) {
-         add_to_hazard_query(&hq, candidate.get());
-         ctx.mv.downwards_skip(cursor);
-         k += get_likely_cost(candidate.get());
-         continue;
+      if (should_form_clause(current, candidate.get())) {
+         if (perform_hazard_query(&hq, candidate.get(), false) == hazard_success)
+            ctx.mv.downwards_move_clause(cursor);
+         break;
       }
 
-      if (perform_hazard_query(&hq, candidate.get(), false) != hazard_success)
+      if (candidate->isVMEM() || candidate->isFlatLike())
          break;
-      if (ctx.mv.downwards_move_clause(cursor) != move_success)
-         break;
-   }
 
-   return cursor.insert_idx - cursor.insert_idx_clause - 1;
+      add_to_hazard_query(&hq, candidate.get());
+      ctx.mv.downwards_skip(cursor);
+      k += get_likely_cost(candidate.get());
+   }
 }
 
 void
 schedule_block(sched_ctx& ctx, Program* program, Block* block)
 {
    ctx.last_SMEM_dep_idx = 0;
+   ctx.last_VMEM_store_idx = INT_MAX;
    ctx.last_SMEM_stall = INT16_MIN;
    ctx.mv.block = block;
 
    /* go through all instructions and find memory loads */
-   unsigned num_stores = 0;
    for (unsigned idx = 0; idx < block->instructions.size(); idx++) {
       Instruction* current = block->instructions[idx].get();
 
@@ -1231,7 +1237,10 @@ schedule_block(sched_ctx& ctx, Program* program, Block* block)
       }
 
       if (current->definitions.empty()) {
-         num_stores += current->isVMEM() || current->isFlatLike() ? 1 : 0;
+         if ((current->isVMEM() || current->isFlatLike()) && program->gfx_level >= GFX11) {
+            ctx.mv.current = current;
+            schedule_VMEM_store(ctx, block, current, idx);
+         }
          continue;
       }
 
@@ -1248,18 +1257,6 @@ schedule_block(sched_ctx& ctx, Program* program, Block* block)
       if (current->isLDSDIR() || (current->isDS() && !current->ds().gds)) {
          ctx.mv.current = current;
          schedule_LDS(ctx, block, current, idx);
-      }
-   }
-
-   /* GFX11 benefits from creating VMEM store clauses. */
-   if (num_stores > 1 && program->gfx_level >= GFX11) {
-      for (int idx = block->instructions.size() - 1; idx >= 0; idx--) {
-         Instruction* current = block->instructions[idx].get();
-         if (!current->definitions.empty() || !(current->isVMEM() || current->isFlatLike()))
-            continue;
-
-         ctx.mv.current = current;
-         idx -= schedule_VMEM_store(ctx, block, current, idx);
       }
    }
 
