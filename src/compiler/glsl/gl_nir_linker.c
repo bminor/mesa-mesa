@@ -3858,7 +3858,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
                          num_linked_shaders))
       goto done;
 
-   if (!gl_nir_link_varyings(consts, exts, api, prog))
+   if (!gl_nir_link_varyings(ctx->screen, consts, exts, api, prog))
       goto done;
 
    /* Validation for special cases where we allow sampler array indexing

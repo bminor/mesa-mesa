@@ -340,13 +340,6 @@ void st_init_limits(struct pipe_screen *screen,
          can_ubo = false;
       }
 
-      if (sh == MESA_SHADER_VERTEX || sh == MESA_SHADER_GEOMETRY) {
-         if (screen->caps.viewport_transform_lowered)
-            options->LowerBuiltinVariablesXfb |= VARYING_BIT_POS;
-         if (screen->caps.psiz_clamped)
-            options->LowerBuiltinVariablesXfb |= VARYING_BIT_PSIZ;
-      }
-
       options->LowerPrecisionFloat16 =
          screen->shader_caps[sh].fp16;
       options->LowerPrecisionDerivatives =

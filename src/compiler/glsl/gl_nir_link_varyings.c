@@ -35,6 +35,7 @@
 #include "util/hash_table.h"
 #include "util/u_math.h"
 #include "util/perf/cpu_trace.h"
+#include "pipe/p_screen.h"
 
 #include "nir.h"
 #include "nir_builder.h"
@@ -3463,7 +3464,8 @@ should_add_varying_match_record(nir_variable *const input_var,
  * processing of
  */
 static bool
-assign_initial_varying_locations(const struct gl_constants *consts,
+assign_initial_varying_locations(const struct pipe_screen *screen,
+                                 const struct gl_constants *consts,
                                  const struct gl_extensions *exts,
                                  void *mem_ctx,
                                  struct gl_shader_program *prog,
@@ -3613,12 +3615,17 @@ assign_initial_varying_locations(const struct gl_constants *consts,
        *    before its content is modified by another lowering pass (e.g.
        *    \c gl_Position is transformed by \c nir_lower_viewport_transform).
        */
+      const unsigned lower_builtin_vars_xfb =
+         producer->Stage == MESA_SHADER_VERTEX ||
+         producer->Stage == MESA_SHADER_GEOMETRY ?
+         ((screen->caps.viewport_transform_lowered ? VARYING_BIT_POS : 0) |
+          (screen->caps.psiz_clamped ? VARYING_BIT_PSIZ : 0)) : 0;
       const bool lowered =
          (vm->disable_xfb_packing && xfb_decls[i].is_subscripted) ||
          (matched_candidate->toplevel_var->data.explicit_location &&
           matched_candidate->toplevel_var->data.location < VARYING_SLOT_VAR0 &&
           (!consumer || consumer->Stage == MESA_SHADER_FRAGMENT) &&
-          (consts->ShaderCompilerOptions[producer->Stage].LowerBuiltinVariablesXfb &
+          (lower_builtin_vars_xfb &
               BITFIELD_BIT(matched_candidate->toplevel_var->data.location)));
 
       if (lowered) {
@@ -3912,7 +3919,8 @@ linker_error_io_limit_exceeded(struct gl_shader_program *prog, gl_api api,
 }
 
 static bool
-link_varyings(struct gl_shader_program *prog, unsigned first,
+link_varyings(const struct pipe_screen *screen,
+              struct gl_shader_program *prog, unsigned first,
               unsigned last, const struct gl_constants *consts,
               const struct gl_extensions *exts, gl_api api, void *mem_ctx)
 {
@@ -3984,7 +3992,7 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
    if (last < MESA_SHADER_FRAGMENT &&
        (num_xfb_decls != 0 || prog->SeparateShader)) {
          struct gl_linked_shader *producer = prog->_LinkedShaders[last];
-         if (!assign_initial_varying_locations(consts, exts, mem_ctx, prog,
+         if (!assign_initial_varying_locations(screen, consts, exts, mem_ctx, prog,
                                                producer, NULL, num_xfb_decls,
                                                xfb_decls, &vm))
             return false;
@@ -3997,7 +4005,7 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
 
    if (prog->SeparateShader) {
       struct gl_linked_shader *consumer = linked_shader[0];
-      if (!assign_initial_varying_locations(consts, exts, mem_ctx, prog, NULL,
+      if (!assign_initial_varying_locations(screen, consts, exts, mem_ctx, prog, NULL,
                                             consumer, 0, NULL, &vm))
          return false;
    }
@@ -4013,7 +4021,7 @@ link_varyings(struct gl_shader_program *prog, unsigned first,
             linked_shader[i + 1]->Stage == MESA_SHADER_FRAGMENT ?
             num_xfb_decls : 0;
 
-         if (!assign_initial_varying_locations(consts, exts, mem_ctx, prog,
+         if (!assign_initial_varying_locations(screen, consts, exts, mem_ctx, prog,
                                                linked_shader[i],
                                                linked_shader[i + 1],
                                                stage_num_xfb_decls, xfb_decls,
@@ -4319,7 +4327,8 @@ gl_assign_attribute_or_color_locations(const struct gl_constants *consts,
 }
 
 bool
-gl_nir_link_varyings(const struct gl_constants *consts,
+gl_nir_link_varyings(const struct pipe_screen *screen,
+                     const struct gl_constants *consts,
                      const struct gl_extensions *exts,
                      gl_api api, struct gl_shader_program *prog)
 {
@@ -4346,7 +4355,7 @@ gl_nir_link_varyings(const struct gl_constants *consts,
       last = i;
    }
 
-   bool r = link_varyings(prog, first, last, consts, exts, api, mem_ctx);
+   bool r = link_varyings(screen, prog, first, last, consts, exts, api, mem_ctx);
 
    ralloc_free(mem_ctx);
    return r;
