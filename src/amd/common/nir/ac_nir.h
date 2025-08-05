@@ -186,7 +186,7 @@ typedef struct {
    bool write_pos_to_clipvertex;
    const uint8_t *vs_output_param_offset; /* GFX11+ */
    bool has_param_exports;
-   bool can_cull;
+   bool can_cull; /* if true, cull distances are not exported because the shader culls against them */
    bool disable_streamout;
    bool has_gen_prim_query;
    bool has_xfb_prim_query;
