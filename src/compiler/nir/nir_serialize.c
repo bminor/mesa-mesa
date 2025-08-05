@@ -751,9 +751,12 @@ write_alu(write_ctx *ctx, const nir_alu_instr *alu)
 
          if (packed) {
             src.alu.swizzle_x = alu->src[i].swizzle[0];
-            src.alu.swizzle_y = alu->src[i].swizzle[1];
-            src.alu.swizzle_z = alu->src[i].swizzle[2];
-            src.alu.swizzle_w = alu->src[i].swizzle[3];
+            if (src_channels >= 2)
+               src.alu.swizzle_y = alu->src[i].swizzle[1];
+            if (src_channels >= 3)
+               src.alu.swizzle_z = alu->src[i].swizzle[2];
+            if (src_channels >= 4)
+               src.alu.swizzle_w = alu->src[i].swizzle[3];
          }
 
          write_src_full(ctx, &alu->src[i].src, src);
@@ -810,9 +813,12 @@ read_alu(read_ctx *ctx, union packed_instr header)
 
          if (packed) {
             alu->src[i].swizzle[0] = src.alu.swizzle_x;
-            alu->src[i].swizzle[1] = src.alu.swizzle_y;
-            alu->src[i].swizzle[2] = src.alu.swizzle_z;
-            alu->src[i].swizzle[3] = src.alu.swizzle_w;
+            if (src_channels >= 2)
+               alu->src[i].swizzle[1] = src.alu.swizzle_y;
+            if (src_channels >= 3)
+               alu->src[i].swizzle[2] = src.alu.swizzle_z;
+            if (src_channels >= 4)
+               alu->src[i].swizzle[3] = src.alu.swizzle_w;
          } else {
             /* Load swizzles for vec8 and vec16. */
             for (unsigned o = 0; o < src_channels; o += 8) {
