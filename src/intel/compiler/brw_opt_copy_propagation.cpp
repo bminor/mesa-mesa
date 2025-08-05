@@ -686,7 +686,7 @@ eot_send_has_constraint(brw_shader &s, brw_inst *inst, brw_reg val, int arg)
                             s.alloc.sizes[inst->src[other_src].nr] :
                             (inst->size_read(devinfo, other_src) / REG_SIZE);
       unsigned prop_src_size = s.alloc.sizes[val.nr];
-      if (other_size + prop_src_size > 15)
+      if (other_size + prop_src_size > 15 * reg_unit(devinfo))
          return true;
    }
 
