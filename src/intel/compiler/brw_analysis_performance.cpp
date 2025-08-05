@@ -24,6 +24,7 @@
 #include "brw_eu.h"
 #include "brw_shader.h"
 #include "brw_cfg.h"
+#include <algorithm>
 
 namespace {
    /**
@@ -1001,6 +1002,33 @@ namespace {
    }
 
    /**
+    * Calculate the number of threads of this program that can run
+    * concurrently in an EU based on the estimate of register pressure
+    * derived from liveness information (pre-RA) or on the actual
+    * number of GRFs used if available (post-RA).  Platforms prior to
+    * xe3 don't support VRT so we can just return the constant value
+    * from device info.
+    */
+   unsigned
+   calculate_threads_per_eu(const brw_shader *s)
+   {
+      if (s->devinfo->ver >= 30) {
+         unsigned grf_used = s->grf_used;
+
+         if (!grf_used) {
+            const brw_register_pressure &rp = s->regpressure_analysis.require();
+            const unsigned max_regs_live = *std::max_element(rp.regs_live_at_ip,
+               rp.regs_live_at_ip + s->cfg->total_instructions);
+            grf_used = DIV_ROUND_UP(max_regs_live, reg_unit(s->devinfo));
+         }
+
+         return 32 / MAX2(3, ptl_register_blocks(grf_used) + 1);
+      } else {
+         return s->devinfo->num_thread_per_eu;
+      }
+   }
+
+   /**
     * Estimate the performance of the specified shader.
     */
    void
@@ -1066,7 +1094,8 @@ namespace {
       }
 
       p.latency = elapsed;
-      p.throughput = dispatch_width * calculate_thread_throughput(st, elapsed);
+      p.throughput = dispatch_width * calculate_threads_per_eu(s) *
+                     calculate_thread_throughput(st, elapsed);
    }
 }
 

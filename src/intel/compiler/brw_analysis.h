@@ -550,13 +550,20 @@ struct brw_performance {
 
    /**
     * Estimate of the throughput of the whole program in
-    * invocations-per-cycle units.
+    * invocations-per-cycle-per-EU units.
     *
-    * Note that this might be lower than the ratio between the dispatch
-    * width of the program and its latency estimate in cases where
-    * performance doesn't scale without limits as a function of its thread
-    * parallelism, e.g. due to the existence of a bottleneck in a shared
-    * function.
+    * This gives the expected throughput of a whole EU under the
+    * heuristic assumption that it is fully loaded instead of the
+    * throughput of a single thread, this is in order to be able to
+    * account for the reduction in parallelism that xe3+ EUs
+    * experience with increasing register use.  Earlier platforms use
+    * a fixed factor as EU thread count instead.
+    *
+    * Note that this number might be lower than expected from the
+    * reciprocal of the latency estimate in cases where performance
+    * doesn't scale without limits as a function of its thread
+    * parallelism, e.g. due to the existence of a bottleneck in a
+    * shared function.
     */
    float throughput;
 
