@@ -703,6 +703,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    /* Add some margin of error, though this shouldn't be needed in theory. */
    info->all_vram_visible = info->vram_size_kb * 0.9 < info->vram_vis_size_kb;
 
+   info->virtual_address_max = device_info.virtual_address_max;
+
    /* Set chip identification. */
    info->pci_id = device_info.device_id;
    info->pci_rev_id = device_info.pci_rev;
@@ -1990,6 +1992,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    address32_hi = 0x%x\n", info->address32_hi);
    fprintf(f, "    has_dedicated_vram = %u\n", info->has_dedicated_vram);
    fprintf(f, "    all_vram_visible = %u\n", info->all_vram_visible);
+   fprintf(f, "    virtual_address_max = %" PRIx64 "\n", info->virtual_address_max);
    fprintf(f, "    max_tcc_blocks = %i\n", info->max_tcc_blocks);
    fprintf(f, "    tcc_cache_line_size = %u\n", info->tcc_cache_line_size);
    fprintf(f, "    tcc_rb_non_coherent = %u\n", info->tcc_rb_non_coherent);

@@ -1492,7 +1492,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxMemoryAllocationCount = UINT32_MAX,
       .maxSamplerAllocationCount = 64 * 1024,
       .bufferImageGranularity = 1,
-      .sparseAddressSpaceSize = (1ull << (pdev->info.gfx_level >= GFX9 ? 48 : 40)),
+      .sparseAddressSpaceSize = pdev->info.virtual_address_max,
       .maxBoundDescriptorSets = MAX_SETS,
       .maxPerStageDescriptorSamplers = max_descriptor_set_size,
       .maxPerStageDescriptorUniformBuffers = max_descriptor_set_size,
