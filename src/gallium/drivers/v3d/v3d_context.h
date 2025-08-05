@@ -693,10 +693,10 @@ struct v3d_context {
 
         struct pipe_poly_stipple stipple;
         struct pipe_viewport_state viewport;
-        struct v3d_ssbo_stateobj ssbo[PIPE_SHADER_TYPES];
-        struct v3d_shaderimg_stateobj shaderimg[PIPE_SHADER_TYPES];
-        struct v3d_constbuf_stateobj constbuf[PIPE_SHADER_TYPES];
-        struct v3d_texture_stateobj tex[PIPE_SHADER_TYPES];
+        struct v3d_ssbo_stateobj ssbo[MESA_SHADER_STAGES];
+        struct v3d_shaderimg_stateobj shaderimg[MESA_SHADER_STAGES];
+        struct v3d_constbuf_stateobj constbuf[MESA_SHADER_STAGES];
+        struct v3d_texture_stateobj tex[MESA_SHADER_STAGES];
         struct v3d_vertexbuf_stateobj vertexbuf;
         struct v3d_streamout_stateobj streamout;
         struct v3d_bo *current_oq;

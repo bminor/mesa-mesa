@@ -208,8 +208,8 @@ static const nir_shader_compiler_options gallivm_compiler_options = {
    .has_fused_comp_and_csel = true,
    .max_unroll_iterations = 32,
 
-   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
-   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
 };
 
 

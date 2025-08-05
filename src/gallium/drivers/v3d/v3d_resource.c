@@ -164,7 +164,7 @@ static void
 rebind_sampler_views(struct v3d_context *v3d,
                      struct v3d_resource *rsc)
 {
-        for (int st = 0; st < PIPE_SHADER_TYPES; st++) {
+        for (int st = 0; st < MESA_SHADER_STAGES; st++) {
                 struct v3d_texture_stateobj *tex = v3d->tex + st;
 
                 for (unsigned i = 0; i < tex->num_textures; i++) {

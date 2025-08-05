@@ -131,7 +131,7 @@ struct panfrost_context {
    enum pan_dirty_3d dirty;
 
    /* Per shader stage dirty state */
-   enum pan_dirty_shader dirty_shader[PIPE_SHADER_TYPES];
+   enum pan_dirty_shader dirty_shader[MESA_SHADER_STAGES];
 
    /* Unowned pools, so manage yourself. */
    struct panfrost_pool descs, shaders;
@@ -180,12 +180,12 @@ struct panfrost_context {
     * it is disabled, just equal to plain vertex count */
    unsigned padded_count;
 
-   struct panfrost_constant_buffer constant_buffer[PIPE_SHADER_TYPES];
+   struct panfrost_constant_buffer constant_buffer[MESA_SHADER_STAGES];
    struct panfrost_rasterizer *rasterizer;
    struct panfrost_vertex_state *vertex;
 
-   struct panfrost_uncompiled_shader *uncompiled[PIPE_SHADER_TYPES];
-   struct panfrost_compiled_shader *prog[PIPE_SHADER_TYPES];
+   struct panfrost_uncompiled_shader *uncompiled[MESA_SHADER_STAGES];
+   struct panfrost_compiled_shader *prog[MESA_SHADER_STAGES];
 
    struct pipe_vertex_buffer vertex_buffers[PIPE_MAX_ATTRIBS];
    uint32_t vb_mask;
@@ -193,19 +193,19 @@ struct panfrost_context {
    /* Bound CL global buffers */
    struct util_dynarray global_buffers;
 
-   struct pipe_shader_buffer ssbo[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_BUFFERS];
-   uint32_t ssbo_mask[PIPE_SHADER_TYPES];
+   struct pipe_shader_buffer ssbo[MESA_SHADER_STAGES][PIPE_MAX_SHADER_BUFFERS];
+   uint32_t ssbo_mask[MESA_SHADER_STAGES];
 
-   struct pipe_image_view images[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_IMAGES];
-   uint32_t image_mask[PIPE_SHADER_TYPES];
+   struct pipe_image_view images[MESA_SHADER_STAGES][PIPE_MAX_SHADER_IMAGES];
+   uint32_t image_mask[MESA_SHADER_STAGES];
 
-   struct panfrost_sampler_state *samplers[PIPE_SHADER_TYPES][PIPE_MAX_SAMPLERS];
-   unsigned sampler_count[PIPE_SHADER_TYPES];
-   uint32_t valid_samplers[PIPE_SHADER_TYPES];
+   struct panfrost_sampler_state *samplers[MESA_SHADER_STAGES][PIPE_MAX_SAMPLERS];
+   unsigned sampler_count[MESA_SHADER_STAGES];
+   uint32_t valid_samplers[MESA_SHADER_STAGES];
 
    struct panfrost_sampler_view
-      *sampler_views[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_SAMPLER_VIEWS];
-   unsigned sampler_view_count[PIPE_SHADER_TYPES];
+      *sampler_views[MESA_SHADER_STAGES][PIPE_MAX_SHADER_SAMPLER_VIEWS];
+   unsigned sampler_view_count[MESA_SHADER_STAGES];
 
    struct blitter_context *blitter;
 
@@ -541,7 +541,7 @@ panfrost_dirty_state_all(struct panfrost_context *ctx)
 {
    ctx->dirty = ~0;
 
-   for (unsigned i = 0; i < PIPE_SHADER_TYPES; ++i)
+   for (unsigned i = 0; i < MESA_SHADER_STAGES; ++i)
       ctx->dirty_shader[i] = ~0;
 }
 
@@ -550,7 +550,7 @@ panfrost_clean_state_3d(struct panfrost_context *ctx)
 {
    ctx->dirty = 0;
 
-   for (unsigned i = 0; i < PIPE_SHADER_TYPES; ++i) {
+   for (unsigned i = 0; i < MESA_SHADER_STAGES; ++i) {
       if (i != MESA_SHADER_COMPUTE)
          ctx->dirty_shader[i] = 0;
    }

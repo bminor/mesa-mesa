@@ -121,19 +121,19 @@ struct panfrost_batch {
 
    /* Cached descriptors */
    uint64_t viewport;
-   uint64_t rsd[PIPE_SHADER_TYPES];
-   uint64_t textures[PIPE_SHADER_TYPES];
-   uint64_t samplers[PIPE_SHADER_TYPES];
-   uint64_t attribs[PIPE_SHADER_TYPES];
-   uint64_t attrib_bufs[PIPE_SHADER_TYPES];
-   uint64_t uniform_buffers[PIPE_SHADER_TYPES];
-   uint64_t push_uniforms[PIPE_SHADER_TYPES];
+   uint64_t rsd[MESA_SHADER_STAGES];
+   uint64_t textures[MESA_SHADER_STAGES];
+   uint64_t samplers[MESA_SHADER_STAGES];
+   uint64_t attribs[MESA_SHADER_STAGES];
+   uint64_t attrib_bufs[MESA_SHADER_STAGES];
+   uint64_t uniform_buffers[MESA_SHADER_STAGES];
+   uint64_t push_uniforms[MESA_SHADER_STAGES];
    uint64_t depth_stencil;
    uint64_t blend;
 
-   unsigned nr_push_uniforms[PIPE_SHADER_TYPES];
-   unsigned nr_uniform_buffers[PIPE_SHADER_TYPES];
-   unsigned nr_varying_attribs[PIPE_SHADER_TYPES];
+   unsigned nr_push_uniforms[MESA_SHADER_STAGES];
+   unsigned nr_uniform_buffers[MESA_SHADER_STAGES];
+   unsigned nr_varying_attribs[MESA_SHADER_STAGES];
 
    /* Varying related pointers */
    struct {
@@ -158,10 +158,10 @@ struct panfrost_batch {
    /* Used on Valhall only. Midgard includes attributes in-band with
     * attributes, wildly enough.
     */
-   uint64_t images[PIPE_SHADER_TYPES];
+   uint64_t images[MESA_SHADER_STAGES];
 
    /* SSBOs. */
-   uint64_t ssbos[PIPE_SHADER_TYPES];
+   uint64_t ssbos[MESA_SHADER_STAGES];
 
    /* On Valhall, these are properties of the batch. On Bifrost, they are
     * per draw.

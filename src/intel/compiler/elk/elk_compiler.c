@@ -127,7 +127,7 @@ elk_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
       nir_options->support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
                                              BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
                                              BITFIELD_BIT(MESA_SHADER_FRAGMENT),
-      nir_options->support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+      nir_options->support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
 
       nir_options->force_indirect_unrolling |=
          elk_nir_no_indirect_mask(compiler, i);

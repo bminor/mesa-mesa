@@ -82,7 +82,7 @@ struct virgl_context {
    struct virgl_cmd_buf *cbuf;
    unsigned cbuf_initial_cdw;
 
-   struct virgl_shader_binding_state shader_bindings[PIPE_SHADER_TYPES];
+   struct virgl_shader_binding_state shader_bindings[MESA_SHADER_STAGES];
    struct pipe_shader_buffer atomic_buffers[PIPE_MAX_HW_ATOMIC_BUFFERS];
    uint32_t atomic_buffer_enabled_mask;
 

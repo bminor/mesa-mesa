@@ -556,10 +556,10 @@ struct r600_context {
 	struct r600_cs_shader_state	cs_shader_state;
 	struct r600_shader_stages_state shader_stages;
 	struct r600_gs_rings_state	gs_rings;
-	struct r600_constbuf_state	constbuf_state[PIPE_SHADER_TYPES];
-	struct r600_textures_info	samplers[PIPE_SHADER_TYPES];
+	struct r600_constbuf_state	constbuf_state[MESA_SHADER_STAGES];
+	struct r600_textures_info	samplers[MESA_SHADER_STAGES];
 
-	struct r600_shader_driver_constants_info driver_consts[PIPE_SHADER_TYPES];
+	struct r600_shader_driver_constants_info driver_consts[MESA_SHADER_STAGES];
 
 	/** Vertex buffers for fetch shaders */
 	struct r600_vertexbuf_state	vertex_buffer_state;

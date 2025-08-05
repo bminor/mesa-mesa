@@ -156,7 +156,7 @@ i915_destroy(struct pipe_context *pipe)
    util_unreference_framebuffer_state(&i915->framebuffer);
 
    /* unbind constant buffers */
-   for (i = 0; i < PIPE_SHADER_TYPES; i++) {
+   for (i = 0; i < MESA_SHADER_STAGES; i++) {
       pipe_resource_reference(&i915->constants[i], NULL);
    }
 

@@ -591,7 +591,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
 
    struct pipe_context *pctx = st_context(ctx)->pipe;
    if (pctx->link_shader) {
-      void *driver_handles[PIPE_SHADER_TYPES];
+      void *driver_handles[MESA_SHADER_STAGES];
       memset(driver_handles, 0, sizeof(driver_handles));
 
       for (uint32_t i = 0; i < MESA_SHADER_STAGES; ++i) {

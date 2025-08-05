@@ -264,7 +264,7 @@ d3d12_start_batch(struct d3d12_context *ctx, struct d3d12_batch *batch)
       ctx->cmdlist->SetDescriptorHeaps(2, heaps);
 
       ctx->cmdlist_dirty = ~0;
-      for (int i = 0; i < PIPE_SHADER_TYPES; ++i)
+      for (int i = 0; i < MESA_SHADER_STAGES; ++i)
          ctx->shader_dirty[i] = ~0;
    
       if (!ctx->queries_disabled)

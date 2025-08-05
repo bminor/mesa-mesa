@@ -3689,19 +3689,19 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
 }
 
 static const nir_shader_compiler_options g80_nir_shader_compiler_options =
-nvir_nir_shader_compiler_options(NVISA_G80_CHIPSET, PIPE_SHADER_TYPES);
+nvir_nir_shader_compiler_options(NVISA_G80_CHIPSET, MESA_SHADER_STAGES);
 static const nir_shader_compiler_options g80_fs_nir_shader_compiler_options =
 nvir_nir_shader_compiler_options(NVISA_G80_CHIPSET, MESA_SHADER_FRAGMENT);
 static const nir_shader_compiler_options gf100_nir_shader_compiler_options =
-nvir_nir_shader_compiler_options(NVISA_GF100_CHIPSET, PIPE_SHADER_TYPES);
+nvir_nir_shader_compiler_options(NVISA_GF100_CHIPSET, MESA_SHADER_STAGES);
 static const nir_shader_compiler_options gf100_fs_nir_shader_compiler_options =
 nvir_nir_shader_compiler_options(NVISA_GF100_CHIPSET, MESA_SHADER_FRAGMENT);
 static const nir_shader_compiler_options gm107_nir_shader_compiler_options =
-nvir_nir_shader_compiler_options(NVISA_GM107_CHIPSET, PIPE_SHADER_TYPES);
+nvir_nir_shader_compiler_options(NVISA_GM107_CHIPSET, MESA_SHADER_STAGES);
 static const nir_shader_compiler_options gm107_fs_nir_shader_compiler_options =
 nvir_nir_shader_compiler_options(NVISA_GM107_CHIPSET, MESA_SHADER_FRAGMENT);
 static const nir_shader_compiler_options gv100_nir_shader_compiler_options =
-nvir_nir_shader_compiler_options(NVISA_GV100_CHIPSET, PIPE_SHADER_TYPES);
+nvir_nir_shader_compiler_options(NVISA_GV100_CHIPSET, MESA_SHADER_STAGES);
 static const nir_shader_compiler_options gv100_fs_nir_shader_compiler_options =
 nvir_nir_shader_compiler_options(NVISA_GV100_CHIPSET, MESA_SHADER_FRAGMENT);
 

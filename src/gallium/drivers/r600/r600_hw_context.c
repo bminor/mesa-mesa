@@ -396,7 +396,7 @@ void r600_begin_new_cs(struct r600_context *ctx)
 	r600_vertex_buffers_dirty(ctx);
 
 	/* Re-emit shader resources. */
-	for (shader = 0; shader < PIPE_SHADER_TYPES; shader++) {
+	for (shader = 0; shader < MESA_SHADER_STAGES; shader++) {
 		struct r600_constbuf_state *constbuf = &ctx->constbuf_state[shader];
 		struct r600_textures_info *samplers = &ctx->samplers[shader];
 

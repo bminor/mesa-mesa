@@ -1357,7 +1357,7 @@ zink_screen_init_compiler(struct zink_screen *screen)
    screen->nir_options.support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
                                                  BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
                                                  BITFIELD_BIT(MESA_SHADER_FRAGMENT);
-   screen->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
+   screen->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES);
 }
 
 struct nir_shader *

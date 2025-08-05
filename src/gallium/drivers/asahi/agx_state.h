@@ -413,7 +413,7 @@ struct agx_batch {
    struct agx_varyings_vs linked_varyings;
 
    struct agx_draw_uniforms uniforms;
-   struct agx_stage_uniforms stage_uniforms[PIPE_SHADER_TYPES];
+   struct agx_stage_uniforms stage_uniforms[MESA_SHADER_STAGES];
 
    /* Indirect buffer allocated for geometry shader */
    uint64_t geom_indirect;
@@ -423,10 +423,10 @@ struct agx_batch {
    uint64_t heap;
 
    /* Uploaded descriptors */
-   uint32_t texture_count[PIPE_SHADER_TYPES];
+   uint32_t texture_count[MESA_SHADER_STAGES];
 
-   uint64_t samplers[PIPE_SHADER_TYPES];
-   uint32_t sampler_count[PIPE_SHADER_TYPES];
+   uint64_t samplers[MESA_SHADER_STAGES];
+   uint32_t sampler_count[MESA_SHADER_STAGES];
 
    struct agx_sampler_heap sampler_heap;
 
@@ -647,7 +647,7 @@ struct agx_context {
    float default_outer_level[4];
    float default_inner_level[2];
 
-   struct agx_stage stage[PIPE_SHADER_TYPES];
+   struct agx_stage stage[MESA_SHADER_STAGES];
    struct agx_vertex_elements *attributes;
    struct agx_rasterizer *rast;
    struct agx_zsa *zs;

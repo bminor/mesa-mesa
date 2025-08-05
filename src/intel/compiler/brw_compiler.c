@@ -86,7 +86,7 @@ const struct nir_shader_compiler_options brw_scalar_nir_options = {
    .support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
                               BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
                               BITFIELD_BIT(MESA_SHADER_FRAGMENT),
-   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
    .per_view_unique_driver_locations = true,
    .compact_view_index = true,
 };

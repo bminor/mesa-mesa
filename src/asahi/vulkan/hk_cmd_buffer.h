@@ -276,7 +276,7 @@ struct hk_graphics_state {
    struct agx_varyings_vs linked_varyings;
 
    uint32_t linked_dirty;
-   struct hk_linked_shader *linked[PIPE_SHADER_TYPES];
+   struct hk_linked_shader *linked[MESA_SHADER_STAGES];
    bool generate_primitive_id;
 
    /* Whether blend constants are required by the active blend state */

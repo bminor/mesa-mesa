@@ -109,7 +109,7 @@ softpipe_destroy( struct pipe_context *pipe )
 
    tgsi_exec_machine_destroy(softpipe->fs_machine);
 
-   for (i = 0; i < PIPE_SHADER_TYPES; i++) {
+   for (i = 0; i < MESA_SHADER_STAGES; i++) {
       FREE(softpipe->tgsi.sampler[i]);
       FREE(softpipe->tgsi.image[i]);
       FREE(softpipe->tgsi.buffer[i]);
@@ -189,15 +189,15 @@ softpipe_create_context(struct pipe_screen *screen,
 
    util_init_math();
 
-   for (i = 0; i < PIPE_SHADER_TYPES; i++) {
+   for (i = 0; i < MESA_SHADER_STAGES; i++) {
       softpipe->tgsi.sampler[i] = sp_create_tgsi_sampler();
    }
 
-   for (i = 0; i < PIPE_SHADER_TYPES; i++) {
+   for (i = 0; i < MESA_SHADER_STAGES; i++) {
       softpipe->tgsi.image[i] = sp_create_tgsi_image();
    }
 
-   for (i = 0; i < PIPE_SHADER_TYPES; i++) {
+   for (i = 0; i < MESA_SHADER_STAGES; i++) {
       softpipe->tgsi.buffer[i] = sp_create_tgsi_buffer();
    }
 

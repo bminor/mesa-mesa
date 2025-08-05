@@ -99,7 +99,7 @@ stage_table(nir_builder *b)
    if (stage == MESA_SHADER_VERTEX && b->shader->info.vs.tes_agx)
       stage = MESA_SHADER_TESS_EVAL;
 
-   assert(stage < PIPE_SHADER_TYPES);
+   assert(stage < MESA_SHADER_STAGES);
    return AGX_SYSVAL_STAGE(stage);
 }
 

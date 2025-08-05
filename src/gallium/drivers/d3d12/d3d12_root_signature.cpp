@@ -192,8 +192,8 @@ create_root_signature(struct d3d12_context *ctx, struct d3d12_root_signature_key
             key->stages[i].state_vars_size,
             visibility);
       }
-      assert(num_params < PIPE_SHADER_TYPES * D3D12_NUM_BINDING_TYPES);
-      assert(num_ranges < PIPE_SHADER_TYPES * (D3D12_NUM_BINDING_TYPES + 1));
+      assert(num_params < MESA_SHADER_STAGES * D3D12_NUM_BINDING_TYPES);
+      assert(num_ranges < MESA_SHADER_STAGES * (D3D12_NUM_BINDING_TYPES + 1));
    }
 
    D3D12_VERSIONED_ROOT_SIGNATURE_DESC root_sig_desc;

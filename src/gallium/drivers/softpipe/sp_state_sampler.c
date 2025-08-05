@@ -57,7 +57,7 @@ softpipe_bind_sampler_states(struct pipe_context *pipe,
    struct softpipe_context *softpipe = softpipe_context(pipe);
    unsigned i;
 
-   assert(shader < PIPE_SHADER_TYPES);
+   assert(shader < MESA_SHADER_STAGES);
    assert(start + num <= ARRAY_SIZE(softpipe->samplers[shader]));
 
    draw_flush(softpipe->draw);
@@ -106,7 +106,7 @@ softpipe_set_sampler_views(struct pipe_context *pipe,
    struct softpipe_context *softpipe = softpipe_context(pipe);
    uint i;
 
-   assert(shader < PIPE_SHADER_TYPES);
+   assert(shader < MESA_SHADER_STAGES);
    assert(start + num <= ARRAY_SIZE(softpipe->sampler_views[shader]));
 
    draw_flush(softpipe->draw);

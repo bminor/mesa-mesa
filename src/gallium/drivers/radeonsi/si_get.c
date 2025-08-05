@@ -1325,7 +1325,7 @@ void si_init_screen_caps(struct si_screen *sscreen)
    caps->timer_resolution = DIV_ROUND_UP(1000000, sscreen->info.clock_crystal_freq);
 
    caps->shader_subgroup_size = 64;
-   caps->shader_subgroup_supported_stages = BITFIELD_MASK(PIPE_SHADER_TYPES);
+   caps->shader_subgroup_supported_stages = BITFIELD_MASK(MESA_SHADER_STAGES);
    caps->shader_subgroup_supported_features = BITFIELD_MASK(PIPE_SHADER_SUBGROUP_NUM_FEATURES);
    caps->shader_subgroup_quad_all_stages = true;
 

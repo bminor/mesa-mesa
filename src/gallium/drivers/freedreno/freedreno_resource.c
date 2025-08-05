@@ -80,7 +80,7 @@ rebind_resource_in_ctx(struct fd_context *ctx,
       return;
 
    /* per-shader-stage resources: */
-   for (unsigned stage = 0; stage < PIPE_SHADER_TYPES; stage++) {
+   for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
       /* Constbufs.. note that constbuf[0] is normal uniforms emitted in
        * cmdstream rather than by pointer..
        */

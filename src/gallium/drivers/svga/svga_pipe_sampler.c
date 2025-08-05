@@ -282,7 +282,7 @@ svga_bind_sampler_states(struct pipe_context *pipe,
    struct svga_context *svga = svga_context(pipe);
    bool any_change = false;
 
-   assert(shader < PIPE_SHADER_TYPES);
+   assert(shader < MESA_SHADER_STAGES);
    assert(start + num <= PIPE_MAX_SAMPLERS);
 
    /* Pre-VGPU10 only supports FS textures */
@@ -400,7 +400,7 @@ svga_set_sampler_views(struct pipe_context *pipe,
    unsigned flag_srgb = 0;
    bool any_change = false;
 
-   assert(shader < PIPE_SHADER_TYPES);
+   assert(shader < MESA_SHADER_STAGES);
    assert(start + num <= ARRAY_SIZE(svga->curr.sampler_views[shader]));
 
    /* Pre-VGPU10 only supports FS textures */

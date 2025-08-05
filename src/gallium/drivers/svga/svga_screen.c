@@ -152,7 +152,7 @@ get_bool_cap(struct svga_winsys_screen *sws, SVGA3dDevCapIndex cap,
    .support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |           \
                               BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |           \
                               BITFIELD_BIT(MESA_SHADER_FRAGMENT),             \
-   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES)
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES)
 
 static const nir_shader_compiler_options svga_vgpu9_fragment_compiler_options = {
    COMMON_OPTIONS,

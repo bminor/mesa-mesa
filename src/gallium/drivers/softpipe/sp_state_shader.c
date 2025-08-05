@@ -365,7 +365,7 @@ softpipe_set_constant_buffer(struct pipe_context *pipe,
    unsigned size;
    const void *data;
 
-   assert(shader < PIPE_SHADER_TYPES);
+   assert(shader < MESA_SHADER_STAGES);
 
    if (cb && cb->user_buffer) {
       constants = softpipe_user_buffer_create(pipe->screen,

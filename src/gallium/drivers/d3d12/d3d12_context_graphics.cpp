@@ -2208,7 +2208,7 @@ void
 d3d12_invalidate_context_bindings(struct d3d12_context *ctx, struct d3d12_resource *res) {
    // For each shader type, if the resource is currently bound as CBV, SRV, or UAV
    // set the context shader_dirty bit.
-   for (uint i = 0; i < PIPE_SHADER_TYPES; ++i) {
+   for (uint i = 0; i < MESA_SHADER_STAGES; ++i) {
       if (res->bind_counts[i][D3D12_RESOURCE_BINDING_TYPE_CBV] > 0) {
          ctx->shader_dirty[i] |= D3D12_SHADER_DIRTY_CONSTBUF;
       }

@@ -207,7 +207,7 @@ svga_init_shader_image_functions(struct svga_context *svga)
    }
 
    /* Initialize shader image views */
-   for (unsigned shader = 0; shader < PIPE_SHADER_TYPES; ++shader) {
+   for (unsigned shader = 0; shader < MESA_SHADER_STAGES; ++shader) {
       struct svga_image_view *hw_image_views =
          &svga->state.hw_draw.image_views[shader][0];
       struct svga_image_view *cur_image_views =

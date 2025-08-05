@@ -55,7 +55,7 @@ struct d3d12_resource {
    struct pipe_resource *dt_proxy;
 
    struct util_range valid_buffer_range;
-   uint32_t bind_counts[PIPE_SHADER_TYPES][D3D12_RESOURCE_BINDING_TYPES];
+   uint32_t bind_counts[MESA_SHADER_STAGES][D3D12_RESOURCE_BINDING_TYPES];
    unsigned generation_id;
 };
 
