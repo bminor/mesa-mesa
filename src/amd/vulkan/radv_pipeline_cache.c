@@ -653,7 +653,7 @@ radv_pipeline_cache_get_binaries(struct radv_device *device, const VkAllocationC
    bool complete = true;
    bool is_rt = false;
    for (unsigned i = 0; i < pipeline_obj->num_shaders; i++) {
-      if (gl_shader_stage_is_rt(pipeline_obj->shaders[i]->info.stage)) {
+      if (mesa_shader_stage_is_rt(pipeline_obj->shaders[i]->info.stage)) {
          is_rt = true;
          break;
       }

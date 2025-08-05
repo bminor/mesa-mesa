@@ -554,7 +554,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
 
    radv_init_shader_args(device, stage, args);
 
-   if (gl_shader_stage_is_rt(stage)) {
+   if (mesa_shader_stage_is_rt(stage)) {
       radv_declare_rt_shader_args(gfx_level, args);
       return;
    }
@@ -883,7 +883,7 @@ radv_declare_shader_args(const struct radv_device *device, const struct radv_gra
 {
    declare_shader_args(device, gfx_state, info, stage, previous_stage, args, NULL);
 
-   if (gl_shader_stage_is_rt(stage))
+   if (mesa_shader_stage_is_rt(stage))
       return;
 
    uint32_t num_user_sgprs = args->num_user_sgprs;

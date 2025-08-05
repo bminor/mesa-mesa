@@ -485,7 +485,7 @@ radv_get_wave_size(struct radv_device *device, mesa_shader_stage stage, const st
       return info->wave_size;
    else if (stage == MESA_SHADER_FRAGMENT)
       return pdev->ps_wave_size;
-   else if (gl_shader_stage_is_rt(stage))
+   else if (mesa_shader_stage_is_rt(stage))
       return pdev->rt_wave_size;
    else
       return pdev->ge_wave_size;
@@ -1174,7 +1174,7 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
       gather_shader_info_mesh(device, nir, stage_key, info);
       break;
    default:
-      if (gl_shader_stage_is_rt(nir->info.stage))
+      if (mesa_shader_stage_is_rt(nir->info.stage))
          gather_shader_info_rt(nir, info);
       break;
    }

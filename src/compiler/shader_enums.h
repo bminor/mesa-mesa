@@ -116,7 +116,7 @@ mesa_shader_stage_is_callable(mesa_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_is_rt(mesa_shader_stage stage)
+mesa_shader_stage_is_rt(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_RAYGEN || mesa_shader_stage_is_callable(stage);
 }

@@ -679,7 +679,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
     * with LLVM, which only supports RTNE, or RT, where the mode needs to match
     * across separately compiled stages.
     */
-   if (!radv_use_llvm_for_stage(pdev, stage->stage) && !gl_shader_stage_is_rt(stage->stage))
+   if (!radv_use_llvm_for_stage(pdev, stage->stage) && !mesa_shader_stage_is_rt(stage->stage))
       NIR_PASS(_, stage->nir, ac_nir_opt_pack_half, gfx_level);
 
    NIR_PASS(_, stage->nir, nir_lower_load_const_to_scalar);

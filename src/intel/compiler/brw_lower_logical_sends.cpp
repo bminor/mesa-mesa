@@ -1636,7 +1636,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    /* Disable LSC data port L1 cache scheme for the TGM load/store for RT
     * shaders. (see HSD 18038444588)
     */
-   if (devinfo->ver >= 20 && gl_shader_stage_is_rt(bld.shader->stage) &&
+   if (devinfo->ver >= 20 && mesa_shader_stage_is_rt(bld.shader->stage) &&
        inst->sfid == BRW_SFID_TGM &&
        !lsc_opcode_is_atomic(op)) {
       if (lsc_opcode_is_store(op)) {

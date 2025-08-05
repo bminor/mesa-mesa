@@ -665,7 +665,7 @@ brw_shader::assign_curb_setup()
 
    if (pull_constants) {
       const bool pull_constants_a64 =
-         (gl_shader_stage_is_rt(stage) &&
+         (mesa_shader_stage_is_rt(stage) &&
           brw_bs_prog_data(prog_data)->uses_inline_push_addr) ||
          ((mesa_shader_stage_is_compute(stage) ||
            mesa_shader_stage_is_mesh(stage)) &&
@@ -679,7 +679,7 @@ brw_shader::assign_curb_setup()
           * parameter.
           */
          base_addr =
-            gl_shader_stage_is_rt(stage) ?
+            mesa_shader_stage_is_rt(stage) ?
             retype(bs_payload().inline_parameter, BRW_TYPE_UQ) :
             retype(cs_payload().inline_parameter, BRW_TYPE_UQ);
       } else {
