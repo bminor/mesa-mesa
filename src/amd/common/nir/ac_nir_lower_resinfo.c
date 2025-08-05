@@ -69,10 +69,11 @@ lower_query_size(nir_builder *b, nir_def *desc, nir_src *lod,
       if (gfx_level == GFX8) {
          /* On GFX8, the descriptor contains the size in bytes,
           * but TXQ must return the size in elements.
-          * The stride is always non-zero for resources using TXQ.
+          * The stride is always non-zero for resources using TXQ, except when
+          * using null descriptors in Vulkan, so apply trivial fixup.
           * Divide the size by the stride.
           */
-         size = nir_udiv(b, size, get_field(b, desc, 1, ~C_008F04_STRIDE));
+         size = nir_udiv(b, size, nir_umax_imm(b, get_field(b, desc, 1, ~C_008F04_STRIDE), 1));
       }
       return size;
    }
