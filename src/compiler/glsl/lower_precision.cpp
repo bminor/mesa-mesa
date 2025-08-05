@@ -423,6 +423,7 @@ find_lowerable_rvalues_visitor::visit_enter(ir_expression *ir)
 
 static unsigned
 handle_call(ir_call *ir, const struct set *lowerable_rvalues,
+            const struct pipe_screen *screen, mesa_shader_stage stage,
             const struct gl_shader_compiler_options *options)
 {
    /* The intrinsic call is inside the wrapper imageLoad function that will
@@ -453,7 +454,7 @@ handle_call(ir_call *ir, const struct set *lowerable_rvalues,
 
       assert(i >= 0);
 
-      if (!options->LowerPrecision16BitLoadDst)
+      if (!screen->shader_caps[stage].glsl_16bit_load_dst)
          mediump = false;
       else if (desc->channel[i].pure_integer ||
                desc->channel[i].type == UTIL_FORMAT_TYPE_FLOAT)
@@ -487,7 +488,7 @@ handle_call(ir_call *ir, const struct set *lowerable_rvalues,
           * in the compiler as textureGatherOffsets will end up being passed
           * a temp when its expecting a constant as required by the spec.
           */
-         if (!options->LowerPrecision16BitLoadDst ||
+         if (!screen->shader_caps[stage].glsl_16bit_load_dst ||
              !strcmp(ir->callee_name(), "textureGatherOffsets"))
             return GLSL_PRECISION_HIGH;
 
@@ -566,7 +567,8 @@ find_lowerable_rvalues_visitor::visit_leave(ir_call *ir)
 
    assert(var->data.mode == ir_var_temporary);
 
-   unsigned return_precision = handle_call(ir, lowerable_rvalues, options);
+   unsigned return_precision = handle_call(ir, lowerable_rvalues, screen,
+                                           stage, options);
 
    can_lower_state lower_state =
       handle_precision(var->type, return_precision);
