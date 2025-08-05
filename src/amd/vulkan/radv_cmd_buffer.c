@@ -3543,75 +3543,6 @@ radv_get_primitive_reset_index(const struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_logic_op(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   unsigned cb_color_control = 0;
-
-   if (d->vk.cb.logic_op_enable) {
-      cb_color_control |= S_028808_ROP3(d->vk.cb.logic_op);
-   } else {
-      cb_color_control |= S_028808_ROP3(V_028808_ROP3_COPY);
-   }
-
-   if (pdev->info.has_rbplus) {
-      /* RB+ doesn't work with dual source blending, logic op and CB_RESOLVE. */
-      cb_color_control |= S_028808_DISABLE_DUAL_QUAD(d->mrt0_is_dual_src || d->vk.cb.logic_op_enable ||
-                                                     cmd_buffer->state.custom_blend_mode == V_028808_CB_RESOLVE);
-   }
-
-   if (cmd_buffer->state.custom_blend_mode) {
-      cb_color_control |= S_028808_MODE(cmd_buffer->state.custom_blend_mode);
-   } else {
-      if (d->color_write_mask) {
-         cb_color_control |= S_028808_MODE(V_028808_CB_NORMAL);
-      } else {
-         cb_color_control |= S_028808_MODE(V_028808_CB_DISABLE);
-      }
-   }
-
-   radeon_begin(cmd_buffer->cs);
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_opt_set_context_reg(cmd_buffer, R_028858_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL,
-                                 cb_color_control);
-   } else {
-      radeon_opt_set_context_reg(cmd_buffer, R_028808_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL,
-                                 cb_color_control);
-   }
-   radeon_end();
-}
-
-static void
-radv_emit_color_write(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_binning_settings *settings = &pdev->binning_settings;
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   const uint32_t cb_target_mask = d->color_write_enable & d->color_write_mask;
-
-   if (device->pbb_allowed && settings->context_states_per_bin > 1 &&
-       cmd_buffer->state.last_cb_target_mask != cb_target_mask) {
-      /* Flush DFSM on CB_TARGET_MASK changes. */
-      radeon_begin(cmd_buffer->cs);
-      radeon_event_write(V_028A90_BREAK_BATCH);
-      radeon_end();
-
-      cmd_buffer->state.last_cb_target_mask = cb_target_mask;
-   }
-
-   radeon_begin(cmd_buffer->cs);
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_opt_set_context_reg(cmd_buffer, R_028850_CB_TARGET_MASK, RADV_TRACKED_CB_TARGET_MASK, cb_target_mask);
-   } else {
-      radeon_opt_set_context_reg(cmd_buffer, R_028238_CB_TARGET_MASK, RADV_TRACKED_CB_TARGET_MASK, cb_target_mask);
-   }
-   radeon_end();
-}
-
-static void
 radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -5264,68 +5195,6 @@ radv_emit_tess_domain_origin(struct radv_cmd_buffer *cmd_buffer)
    radeon_end();
 }
 
-static void
-radv_emit_color_blend(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_rendering_state *render = &cmd_buffer->state.render;
-   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   unsigned cb_blend_control[MAX_RTS], sx_mrt_blend_opt[MAX_RTS];
-
-   for (unsigned i = 0; i < MAX_RTS; i++) {
-      cb_blend_control[i] = sx_mrt_blend_opt[i] = 0;
-
-      /* Ignore other blend targets if dual-source blending is enabled to prevent wrong behaviour.
-       */
-      if (i > 0 && d->mrt0_is_dual_src)
-         continue;
-
-      /* Disable logic op for float/srgb formats because it shouldn't be applied. */
-      if (d->vk.cb.logic_op_enable &&
-          (vk_format_is_float(render->color_att[i].format) || vk_format_is_srgb(render->color_att[i].format))) {
-         cb_blend_control[i] |= S_028780_DISABLE_ROP3(1);
-         continue;
-      }
-
-      if (!d->vk.cb.attachments[i].blend_enable) {
-         sx_mrt_blend_opt[i] |= S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_BLEND_DISABLED) |
-                                S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_BLEND_DISABLED);
-         continue;
-      }
-
-      cb_blend_control[i] = d->cb_att[i].cb_blend_control;
-      sx_mrt_blend_opt[i] = d->cb_att[i].sx_mrt_blend_opt;
-   }
-
-   if (pdev->info.has_rbplus) {
-      /* Disable RB+ blend optimizations for dual source blending. */
-      if (d->mrt0_is_dual_src) {
-         for (unsigned i = 0; i < MAX_RTS; i++) {
-            sx_mrt_blend_opt[i] =
-               S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_NONE) | S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_NONE);
-         }
-      }
-
-      /* Disable RB+ blend optimizations on GFX11 when alpha-to-coverage is enabled. */
-      if (gfx_level >= GFX11 && d->vk.ms.alpha_to_coverage_enable) {
-         sx_mrt_blend_opt[0] =
-            S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_NONE) | S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_NONE);
-      }
-   }
-
-   radeon_begin(cmd_buffer->cs);
-   radeon_opt_set_context_regn(cmd_buffer, R_028780_CB_BLEND0_CONTROL, cb_blend_control,
-                               cmd_buffer->tracked_regs.cb_blend_control, MAX_RTS);
-
-   if (pdev->info.has_rbplus) {
-      radeon_opt_set_context_regn(cmd_buffer, R_028760_SX_MRT0_BLEND_OPT, sx_mrt_blend_opt,
-                                  cmd_buffer->tracked_regs.sx_mrt_blend_opt, MAX_RTS);
-   }
-   radeon_end();
-}
-
 static struct radv_shader_part *
 lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 {
@@ -5443,13 +5312,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
    if (states & RADV_DYNAMIC_FRAGMENT_SHADING_RATE)
       radv_emit_fragment_shading_rate(cmd_buffer);
 
-   if (states & (RADV_DYNAMIC_LOGIC_OP | RADV_DYNAMIC_LOGIC_OP_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK |
-                 RADV_DYNAMIC_COLOR_BLEND_EQUATION))
-      radv_emit_logic_op(cmd_buffer);
-
-   if (states & (RADV_DYNAMIC_COLOR_WRITE_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK))
-      radv_emit_color_write(cmd_buffer);
-
    if (states & RADV_DYNAMIC_VERTEX_INPUT)
       radv_emit_vertex_input(cmd_buffer);
 
@@ -5461,10 +5323,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & (RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE))
       radv_emit_depth_clamp_enable(cmd_buffer);
-
-   if (states & (RADV_DYNAMIC_COLOR_BLEND_ENABLE | RADV_DYNAMIC_COLOR_BLEND_EQUATION |
-                 RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE | RADV_DYNAMIC_LOGIC_OP_ENABLE))
-      radv_emit_color_blend(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_POLYGON_MODE |
                  RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
@@ -7390,7 +7248,7 @@ radv_bind_custom_blend_mode(struct radv_cmd_buffer *cmd_buffer, unsigned custom_
 {
    /* Re-emit CB_COLOR_CONTROL when the custom blending mode changes. */
    if (cmd_buffer->state.custom_blend_mode != custom_blend_mode)
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP | RADV_DYNAMIC_LOGIC_OP_ENABLE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CB_RENDER_STATE;
 
    cmd_buffer->state.custom_blend_mode = custom_blend_mode;
 }
@@ -11028,6 +10886,111 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_binning_settings *settings = &pdev->binning_settings;
+   const struct radv_rendering_state *render = &cmd_buffer->state.render;
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+   unsigned cb_blend_control[MAX_RTS], sx_mrt_blend_opt[MAX_RTS];
+   uint32_t cb_color_control = 0;
+
+   const uint32_t cb_target_mask = d->color_write_enable & d->color_write_mask;
+
+   if (device->pbb_allowed && settings->context_states_per_bin > 1 &&
+       cmd_buffer->state.last_cb_target_mask != cb_target_mask) {
+      /* Flush DFSM on CB_TARGET_MASK changes. */
+      radeon_begin(cmd_buffer->cs);
+      radeon_event_write(V_028A90_BREAK_BATCH);
+      radeon_end();
+
+      cmd_buffer->state.last_cb_target_mask = cb_target_mask;
+   }
+
+   if (d->vk.cb.logic_op_enable) {
+      cb_color_control |= S_028808_ROP3(d->vk.cb.logic_op);
+   } else {
+      cb_color_control |= S_028808_ROP3(V_028808_ROP3_COPY);
+   }
+
+   if (cmd_buffer->state.custom_blend_mode) {
+      cb_color_control |= S_028808_MODE(cmd_buffer->state.custom_blend_mode);
+   } else {
+      if (d->color_write_mask) {
+         cb_color_control |= S_028808_MODE(V_028808_CB_NORMAL);
+      } else {
+         cb_color_control |= S_028808_MODE(V_028808_CB_DISABLE);
+      }
+   }
+
+   for (unsigned i = 0; i < MAX_RTS; i++) {
+      cb_blend_control[i] = sx_mrt_blend_opt[i] = 0;
+
+      /* Ignore other blend targets if dual-source blending is enabled to prevent wrong behaviour.
+       */
+      if (i > 0 && d->mrt0_is_dual_src)
+         continue;
+
+      /* Disable logic op for float/srgb formats because it shouldn't be applied. */
+      if (d->vk.cb.logic_op_enable &&
+          (vk_format_is_float(render->color_att[i].format) || vk_format_is_srgb(render->color_att[i].format))) {
+         cb_blend_control[i] |= S_028780_DISABLE_ROP3(1);
+         continue;
+      }
+
+      if (!d->vk.cb.attachments[i].blend_enable) {
+         sx_mrt_blend_opt[i] |= S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_BLEND_DISABLED) |
+                                S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_BLEND_DISABLED);
+         continue;
+      }
+
+      cb_blend_control[i] = d->cb_att[i].cb_blend_control;
+      sx_mrt_blend_opt[i] = d->cb_att[i].sx_mrt_blend_opt;
+   }
+
+   if (pdev->info.has_rbplus) {
+      /* RB+ doesn't work with dual source blending, logic op and CB_RESOLVE. */
+      cb_color_control |= S_028808_DISABLE_DUAL_QUAD(d->mrt0_is_dual_src || d->vk.cb.logic_op_enable ||
+                                                     cmd_buffer->state.custom_blend_mode == V_028808_CB_RESOLVE);
+
+      if (d->mrt0_is_dual_src) {
+         for (unsigned i = 0; i < MAX_RTS; i++) {
+            sx_mrt_blend_opt[i] =
+               S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_NONE) | S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_NONE);
+         }
+      }
+
+      /* Disable RB+ blend optimizations on GFX11 when alpha-to-coverage is enabled. */
+      if (pdev->info.gfx_level >= GFX11 && d->vk.ms.alpha_to_coverage_enable) {
+         sx_mrt_blend_opt[0] =
+            S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_NONE) | S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_NONE);
+      }
+   }
+
+   radeon_begin(cmd_buffer->cs);
+   radeon_opt_set_context_regn(cmd_buffer, R_028780_CB_BLEND0_CONTROL, cb_blend_control,
+                               cmd_buffer->tracked_regs.cb_blend_control, MAX_RTS);
+   if (pdev->info.has_rbplus) {
+      radeon_opt_set_context_regn(cmd_buffer, R_028760_SX_MRT0_BLEND_OPT, sx_mrt_blend_opt,
+                                  cmd_buffer->tracked_regs.sx_mrt_blend_opt, MAX_RTS);
+   }
+
+   if (pdev->info.gfx_level >= GFX12) {
+      radeon_opt_set_context_reg(cmd_buffer, R_028850_CB_TARGET_MASK, RADV_TRACKED_CB_TARGET_MASK, cb_target_mask);
+      radeon_opt_set_context_reg(cmd_buffer, R_028858_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL,
+                                 cb_color_control);
+   } else {
+      radeon_opt_set_context_reg(cmd_buffer, R_028238_CB_TARGET_MASK, RADV_TRACKED_CB_TARGET_MASK, cb_target_mask);
+      radeon_opt_set_context_reg(cmd_buffer, R_028808_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL,
+                                 cb_color_control);
+   }
+   radeon_end();
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_CB_RENDER_STATE;
+}
+
+static void
 radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -11271,6 +11234,11 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
    if (dynamic_states &
        (RADV_DYNAMIC_DISCARD_RECTANGLE | RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE | RADV_DYNAMIC_DISCARD_RECTANGLE_MODE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CLIP_RECTS_STATE;
+
+   if (dynamic_states & (RADV_DYNAMIC_COLOR_WRITE_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_LOGIC_OP |
+                         RADV_DYNAMIC_LOGIC_OP_ENABLE | RADV_DYNAMIC_COLOR_BLEND_ENABLE |
+                         RADV_DYNAMIC_COLOR_BLEND_EQUATION | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CB_RENDER_STATE;
 }
 
 static void
@@ -11375,6 +11343,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
          radv_emit_depth_stencil_state(cmd_buffer);
+
+      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE)
+         radv_emit_cb_render_state(cmd_buffer);
 
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
          radv_emit_msaa_state(cmd_buffer);
