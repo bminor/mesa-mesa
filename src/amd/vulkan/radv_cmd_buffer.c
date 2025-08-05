@@ -978,8 +978,13 @@ radv_emit_descriptors_per_stage(const struct radv_device *device, struct radv_cm
 
    if (indirect_descriptor_sets_offset) {
       radeon_begin(cs);
-      radeon_emit_32bit_pointer(indirect_descriptor_sets_offset, descriptors_state->indirect_descriptor_sets_va,
-                                &pdev->info);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_32bit_pointer(indirect_descriptor_sets_offset, descriptors_state->indirect_descriptor_sets_va,
+                                  &pdev->info);
+      } else {
+         radeon_emit_32bit_pointer(indirect_descriptor_sets_offset, descriptors_state->indirect_descriptor_sets_va,
+                                   &pdev->info);
+      }
       radeon_end();
    } else {
       const struct radv_userdata_locations *locs = &shader->info.user_sgprs_locs;
@@ -997,14 +1002,21 @@ radv_emit_descriptors_per_stage(const struct radv_device *device, struct radv_cm
          const unsigned sh_offset = sh_base + loc->sgpr_idx * 4;
 
          radeon_begin(cs);
-         radeon_set_sh_reg_seq(sh_offset, count);
+         if (pdev->info.gfx_level >= GFX12) {
+            for (int i = 0; i < count; i++) {
+               const uint64_t va = radv_descriptor_get_va(descriptors_state, start + i);
 
-         for (int i = 0; i < count; i++) {
-            uint64_t va = radv_descriptor_get_va(descriptors_state, start + i);
+               gfx12_push_sh_reg(sh_offset + i * 4, va);
+            }
+         } else {
+            radeon_set_sh_reg_seq(sh_offset, count);
 
-            radeon_emit(va);
+            for (int i = 0; i < count; i++) {
+               const uint64_t va = radv_descriptor_get_va(descriptors_state, start + i);
+
+               radeon_emit(va);
+            }
          }
-
          radeon_end();
       }
    }
