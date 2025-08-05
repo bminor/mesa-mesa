@@ -660,7 +660,7 @@ brw_shader::assign_curb_setup()
    const bool pull_constants =
       devinfo->verx10 >= 125 &&
       (mesa_shader_stage_is_compute(stage) ||
-       gl_shader_stage_is_mesh(stage)) &&
+       mesa_shader_stage_is_mesh(stage)) &&
       uniform_push_length;
 
    if (pull_constants) {
@@ -668,7 +668,7 @@ brw_shader::assign_curb_setup()
          (gl_shader_stage_is_rt(stage) &&
           brw_bs_prog_data(prog_data)->uses_inline_push_addr) ||
          ((mesa_shader_stage_is_compute(stage) ||
-           gl_shader_stage_is_mesh(stage)) &&
+           mesa_shader_stage_is_mesh(stage)) &&
           brw_cs_prog_data(prog_data)->uses_inline_push_addr);
       assert(devinfo->has_lsc);
       brw_builder ubld = brw_builder(this, 1).exec_all().at_start(cfg->first_block());

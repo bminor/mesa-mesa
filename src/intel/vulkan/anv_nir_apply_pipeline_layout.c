@@ -2051,7 +2051,7 @@ lower_num_workgroups(nir_builder *b, nir_intrinsic_instr *intrin,
                      struct apply_pipeline_layout_state *state)
 {
    /* For those stages, HW will generate values through payload registers. */
-   if (gl_shader_stage_is_mesh(b->shader->info.stage))
+   if (mesa_shader_stage_is_mesh(b->shader->info.stage))
       return false;
 
    b->cursor = nir_instr_remove(&intrin->instr);

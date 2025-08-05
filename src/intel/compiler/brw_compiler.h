@@ -171,7 +171,7 @@ brw_shader_stage_is_bindless(mesa_shader_stage stage)
 static inline bool
 brw_shader_stage_requires_bindless_resources(mesa_shader_stage stage)
 {
-   return brw_shader_stage_is_bindless(stage) || gl_shader_stage_is_mesh(stage);
+   return brw_shader_stage_is_bindless(stage) || mesa_shader_stage_is_mesh(stage);
 }
 
 static inline bool

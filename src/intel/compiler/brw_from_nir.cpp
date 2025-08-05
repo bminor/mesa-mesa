@@ -218,7 +218,7 @@ emit_system_values_block(nir_to_brw_state &ntb, nir_block *block)
          /* For Task/Mesh, draw_id will be handled later in
           * nir_emit_mesh_task_intrinsic().
           */
-         if (!gl_shader_stage_is_mesh(s.stage))
+         if (!mesa_shader_stage_is_mesh(s.stage))
             UNREACHABLE("should be lowered by brw_nir_lower_vs_inputs().");
          break;
 
@@ -255,7 +255,7 @@ emit_system_values_block(nir_to_brw_state &ntb, nir_block *block)
          break;
 
       case nir_intrinsic_load_workgroup_id:
-         if (gl_shader_stage_is_mesh(s.stage))
+         if (mesa_shader_stage_is_mesh(s.stage))
             UNREACHABLE("should be lowered by nir_lower_compute_system_values().");
          assert(mesa_shader_stage_is_compute(s.stage));
          reg = &ntb.system_values[SYSTEM_VALUE_WORKGROUP_ID];

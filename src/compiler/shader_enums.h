@@ -90,7 +90,7 @@ mesa_shader_stage_is_compute(mesa_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_is_mesh(mesa_shader_stage stage)
+mesa_shader_stage_is_mesh(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_TASK ||
           stage == MESA_SHADER_MESH;

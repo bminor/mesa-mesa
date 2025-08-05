@@ -104,7 +104,7 @@ compile_shader(struct anv_device *device,
       nir_lower_compute_system_values_options options = {
          .has_base_workgroup_id = true,
          .lower_cs_local_id_to_index = true,
-         .lower_workgroup_id_to_index = gl_shader_stage_is_mesh(stage),
+         .lower_workgroup_id_to_index = mesa_shader_stage_is_mesh(stage),
       };
       NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_base_workgroup_id,
