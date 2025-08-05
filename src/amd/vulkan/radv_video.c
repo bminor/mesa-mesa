@@ -1817,8 +1817,6 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct r
    bool lossless = std_pic_info->base_q_idx == 0 && std_pic_info->delta_q_y_dc == 0 &&
                    std_pic_info->delta_q_uv_dc == 0 && std_pic_info->delta_q_uv_ac == 0;
 
-   ac_vcn_vp9_fill_probs_table(probs_ptr);
-
    rvcn_dec_vp9_probs_segment_t *prbs = (rvcn_dec_vp9_probs_segment_t *)(probs_ptr);
    if (std_pic_info->flags.segmentation_enabled) {
 
