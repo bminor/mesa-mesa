@@ -380,7 +380,7 @@ cso_unbind_context(struct cso_context *cso)
                   continue;
                break;
             case PIPE_SHADER_MESH:
-            case PIPE_SHADER_TASK:
+            case MESA_SHADER_TASK:
                if (!ctx->has_task_mesh_shader)
                   continue;
                break;

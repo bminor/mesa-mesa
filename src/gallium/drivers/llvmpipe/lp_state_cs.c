@@ -1282,7 +1282,7 @@ generate_variant(struct llvmpipe_context *lp,
 
    char module_name[64];
    const char *shname = sh_type == PIPE_SHADER_MESH ? "ms" :
-      (sh_type == PIPE_SHADER_TASK ? "ts" : "cs");
+      (sh_type == MESA_SHADER_TASK ? "ts" : "cs");
    snprintf(module_name, sizeof(module_name), "%s%u_variant%u",
             shname, shader->no, shader->variants_created);
 
@@ -1899,7 +1899,7 @@ llvmpipe_update_task_shader(struct llvmpipe_context *lp)
 {
    if (!lp->tss)
       return;
-   struct lp_compute_shader_variant *variant = llvmpipe_update_cs_variant(lp, PIPE_SHADER_TASK, lp->tss);
+   struct lp_compute_shader_variant *variant = llvmpipe_update_cs_variant(lp, MESA_SHADER_TASK, lp->tss);
    lp_cs_ctx_set_cs_variant(lp->task_ctx, variant);
 }
 
@@ -2304,32 +2304,32 @@ llvmpipe_task_update_derived(struct llvmpipe_context *llvmpipe)
 {
    if (llvmpipe->dirty & LP_NEW_TASK_CONSTANTS) {
       lp_csctx_set_cs_constants(llvmpipe->task_ctx,
-                                ARRAY_SIZE(llvmpipe->constants[PIPE_SHADER_TASK]),
-                                llvmpipe->constants[PIPE_SHADER_TASK]);
+                                ARRAY_SIZE(llvmpipe->constants[MESA_SHADER_TASK]),
+                                llvmpipe->constants[MESA_SHADER_TASK]);
       update_csctx_consts(llvmpipe, llvmpipe->task_ctx);
    }
 
    if (llvmpipe->dirty & LP_NEW_TASK_SSBOS) {
       lp_csctx_set_cs_ssbos(llvmpipe->task_ctx,
-                            ARRAY_SIZE(llvmpipe->ssbos[PIPE_SHADER_TASK]),
-                            llvmpipe->ssbos[PIPE_SHADER_TASK]);
+                            ARRAY_SIZE(llvmpipe->ssbos[MESA_SHADER_TASK]),
+                            llvmpipe->ssbos[MESA_SHADER_TASK]);
       update_csctx_ssbo(llvmpipe, llvmpipe->task_ctx);
    }
 
    if (llvmpipe->dirty & LP_NEW_TASK_SAMPLER_VIEW)
       lp_csctx_set_sampler_views(llvmpipe->task_ctx,
-                                 llvmpipe->num_sampler_views[PIPE_SHADER_TASK],
-                                 llvmpipe->sampler_views[PIPE_SHADER_TASK]);
+                                 llvmpipe->num_sampler_views[MESA_SHADER_TASK],
+                                 llvmpipe->sampler_views[MESA_SHADER_TASK]);
 
    if (llvmpipe->dirty & LP_NEW_TASK_SAMPLER)
       lp_csctx_set_sampler_state(llvmpipe->task_ctx,
-                                 llvmpipe->num_samplers[PIPE_SHADER_TASK],
-                                 llvmpipe->samplers[PIPE_SHADER_TASK]);
+                                 llvmpipe->num_samplers[MESA_SHADER_TASK],
+                                 llvmpipe->samplers[MESA_SHADER_TASK]);
 
    if (llvmpipe->dirty & LP_NEW_TASK_IMAGES)
       lp_csctx_set_cs_images(llvmpipe->task_ctx,
-                              ARRAY_SIZE(llvmpipe->images[PIPE_SHADER_TASK]),
-                              llvmpipe->images[PIPE_SHADER_TASK]);
+                              ARRAY_SIZE(llvmpipe->images[MESA_SHADER_TASK]),
+                              llvmpipe->images[MESA_SHADER_TASK]);
 }
 
 void

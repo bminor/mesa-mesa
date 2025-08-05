@@ -4266,7 +4266,7 @@ llvmpipe_set_constant_buffer(struct pipe_context *pipe,
    case MESA_SHADER_FRAGMENT:
       llvmpipe->dirty |= LP_NEW_FS_CONSTANTS;
       break;
-   case PIPE_SHADER_TASK:
+   case MESA_SHADER_TASK:
       llvmpipe->dirty |= LP_NEW_TASK_CONSTANTS;
       break;
    case PIPE_SHADER_MESH:
@@ -4318,7 +4318,7 @@ llvmpipe_set_shader_buffers(struct pipe_context *pipe,
       case MESA_SHADER_COMPUTE:
          llvmpipe->cs_dirty |= LP_CSNEW_SSBOS;
          break;
-      case PIPE_SHADER_TASK:
+      case MESA_SHADER_TASK:
          llvmpipe->dirty |= LP_NEW_TASK_SSBOS;
          break;
       case PIPE_SHADER_MESH:
@@ -4374,7 +4374,7 @@ llvmpipe_set_shader_images(struct pipe_context *pipe,
    case MESA_SHADER_FRAGMENT:
       llvmpipe->dirty |= LP_NEW_FS_IMAGES;
       break;
-   case PIPE_SHADER_TASK:
+   case MESA_SHADER_TASK:
       llvmpipe->dirty |= LP_NEW_TASK_IMAGES;
       break;
    case PIPE_SHADER_MESH:
