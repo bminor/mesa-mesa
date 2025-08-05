@@ -188,7 +188,7 @@ nv30_sampler_state_delete(struct pipe_context *pipe, void *hwcso)
 
 static void
 nv30_bind_sampler_states(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, unsigned start_slot,
+                         mesa_shader_stage shader, unsigned start_slot,
                          unsigned num_samplers, void **samplers)
 {
    switch (shader) {

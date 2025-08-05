@@ -96,7 +96,7 @@ uint32_t ir3_nir_scan_driver_consts(struct ir3_compiler *compiler,
 void ir3_alloc_driver_params(struct ir3_const_allocations *const_alloc,
                              uint32_t *num_driver_params,
                              struct ir3_compiler *compiler,
-                             enum pipe_shader_type shader_type);
+                             mesa_shader_stage shader_type);
 bool ir3_nir_lower_load_constant(nir_shader *nir, struct ir3_shader_variant *v);
 void ir3_nir_analyze_ubo_ranges(nir_shader *nir, struct ir3_shader_variant *v);
 bool ir3_nir_lower_ubo_loads(nir_shader *nir, struct ir3_shader_variant *v);

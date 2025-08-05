@@ -213,7 +213,7 @@ st_convert_sampler_from_unit(const struct st_context *st,
  */
 static void
 update_shader_samplers(struct st_context *st,
-                       enum pipe_shader_type shader_stage,
+                       mesa_shader_stage shader_stage,
                        const struct gl_program *prog,
                        struct pipe_sampler_state *samplers,
                        unsigned *out_num_samplers)

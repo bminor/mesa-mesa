@@ -553,7 +553,7 @@ impl CompilationResult {
         let nir = NirShader::deserialize(
             reader,
             d.screen()
-                .nir_shader_compiler_options(pipe_shader_type::MESA_SHADER_COMPUTE),
+                .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE),
         )?;
         let compiled_args = CompiledKernelArg::deserialize(reader)?;
 
@@ -573,7 +573,7 @@ fn opt_nir(nir: &mut NirShader, dev: &Device, has_explicit_types: bool) {
     let nir_options = unsafe {
         &*dev
             .screen
-            .nir_shader_compiler_options(pipe_shader_type::MESA_SHADER_COMPUTE)
+            .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE)
     };
 
     while {
@@ -813,7 +813,7 @@ fn compile_nir_variant(
     let nir_options = unsafe {
         &*dev
             .screen
-            .nir_shader_compiler_options(pipe_shader_type::MESA_SHADER_COMPUTE)
+            .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE)
     };
 
     if variant == NirKernelVariant::Optimized {

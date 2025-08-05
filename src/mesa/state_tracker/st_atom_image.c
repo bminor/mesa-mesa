@@ -149,7 +149,7 @@ st_convert_image_from_unit(const struct st_context *st,
 
 static void
 st_bind_images(struct st_context *st, struct gl_program *prog,
-               enum pipe_shader_type shader_type)
+               mesa_shader_stage shader_type)
 {
    unsigned i;
    struct pipe_image_view images[MAX_IMAGE_UNIFORMS];

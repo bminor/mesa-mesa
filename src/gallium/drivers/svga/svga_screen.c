@@ -185,7 +185,7 @@ static const nir_shader_compiler_options svga_gl4_compiler_options = {
 
 static const struct nir_shader_compiler_options *
 svga_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_type shader)
+                          mesa_shader_stage shader)
 {
    struct svga_screen *svgascreen = svga_screen(pscreen);
    struct svga_winsys_screen *sws = svgascreen->sws;

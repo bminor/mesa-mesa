@@ -49,8 +49,7 @@ extern "C" {
  * The GLSL linker assumes that if i<j, then the j-th shader is
  * executed later than the i-th shader.
  */
-typedef enum pipe_shader_type
-{
+typedef enum mesa_shader_stage {
    MESA_SHADER_NONE = -1,
    MESA_SHADER_VERTEX = 0,
    PIPE_SHADER_VERTEX = MESA_SHADER_VERTEX,

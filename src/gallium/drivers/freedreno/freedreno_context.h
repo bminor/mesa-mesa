@@ -706,7 +706,7 @@ dirty_shader_to_dirty_state(BITMASK_ENUM(fd_dirty_shader_state) dirty)
 }
 
 static inline void
-fd_context_dirty_shader(struct fd_context *ctx, enum pipe_shader_type shader,
+fd_context_dirty_shader(struct fd_context *ctx, mesa_shader_stage shader,
                         BITMASK_ENUM(fd_dirty_shader_state) dirty)
    assert_dt
 {
@@ -766,7 +766,7 @@ fd_context_add_map(struct fd_context *ctx, uint32_t dirty, uint32_t gen_dirty)
  * specific dirty bit
  */
 static inline void
-fd_context_add_shader_map(struct fd_context *ctx, enum pipe_shader_type shader,
+fd_context_add_shader_map(struct fd_context *ctx, mesa_shader_stage shader,
                           BITMASK_ENUM(fd_dirty_shader_state) dirty, uint32_t gen_dirty)
 {
    u_foreach_bit (b, dirty) {

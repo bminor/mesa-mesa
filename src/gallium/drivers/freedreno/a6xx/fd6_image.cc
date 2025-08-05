@@ -121,7 +121,7 @@ fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
 }
 
 static struct fd6_descriptor_set *
-descriptor_set(struct fd_context *ctx, enum pipe_shader_type shader)
+descriptor_set(struct fd_context *ctx, mesa_shader_stage shader)
    assert_dt
 {
    struct fd6_context *fd6_ctx = fd6_context(ctx);
@@ -184,7 +184,7 @@ validate_buffer_descriptor(struct fd_context *ctx, struct fd6_descriptor_set *se
 /* Build bindless descriptor state, returns ownership of state reference */
 template <chip CHIP>
 struct fd_ringbuffer *
-fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
+fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
                          bool append_fb_read)
 {
    struct fd_shaderbuf_stateobj *bufso = &ctx->shaderbuf[shader];
@@ -375,7 +375,7 @@ fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
 FD_GENX(fd6_build_bindless_state);
 
 static void
-fd6_set_shader_buffers(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd6_set_shader_buffers(struct pipe_context *pctx, mesa_shader_stage shader,
                        unsigned start, unsigned count,
                        const struct pipe_shader_buffer *buffers,
                        unsigned writable_bitmask)
@@ -406,7 +406,7 @@ fd6_set_shader_buffers(struct pipe_context *pctx, enum pipe_shader_type shader,
 }
 
 static void
-fd6_set_shader_images(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd6_set_shader_images(struct pipe_context *pctx, mesa_shader_stage shader,
                       unsigned start, unsigned count,
                       unsigned unbind_num_trailing_slots,
                       const struct pipe_image_view *images)

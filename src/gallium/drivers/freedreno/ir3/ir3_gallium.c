@@ -509,7 +509,7 @@ ir3_set_max_shader_compiler_threads(struct pipe_screen *pscreen,
 static bool
 ir3_is_parallel_shader_compilation_finished(struct pipe_screen *pscreen,
                                             void *shader,
-                                            enum pipe_shader_type shader_type)
+                                            mesa_shader_stage shader_type)
 {
    struct ir3_shader_state *hwcso = (struct ir3_shader_state *)shader;
 

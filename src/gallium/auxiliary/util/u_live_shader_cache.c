@@ -78,7 +78,7 @@ util_live_shader_cache_get(struct pipe_context *ctx,
    struct blob blob = {0};
    unsigned ir_size;
    const void *ir_binary;
-   enum pipe_shader_type stage;
+   mesa_shader_stage stage;
 
    /* Get the shader binary and shader stage. */
    if (state->type == PIPE_SHADER_IR_TGSI) {

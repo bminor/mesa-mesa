@@ -3827,7 +3827,7 @@ iris_set_max_shader_compiler_threads(struct pipe_screen *pscreen,
 static bool
 iris_is_parallel_shader_compilation_finished(struct pipe_screen *pscreen,
                                              void *v_shader,
-                                             enum pipe_shader_type p_stage)
+                                             mesa_shader_stage p_stage)
 {
    struct iris_screen *screen = (struct iris_screen *) pscreen;
 
@@ -4001,7 +4001,7 @@ iris_shader_perf_log(void *data, unsigned *id, const char *fmt, ...)
 
 const struct nir_shader_compiler_options *
 iris_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_type pstage)
+                          mesa_shader_stage pstage)
 {
    struct iris_screen *screen = (struct iris_screen *) pscreen;
    mesa_shader_stage stage = stage_from_pipe(pstage);

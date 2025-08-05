@@ -78,7 +78,7 @@ struct agx_rodata {
 };
 
 struct agx_shader_info {
-   enum pipe_shader_type stage;
+   mesa_shader_stage stage;
    uint32_t binary_size;
 
    union agx_varyings varyings;

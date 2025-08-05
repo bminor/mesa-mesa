@@ -254,7 +254,7 @@ struct agx_compiled_shader {
     * physical shader stage of the compiled shader, for example when executing a
     * tessellation eval shader as a vertex shader.
     */
-   enum pipe_shader_type stage;
+   mesa_shader_stage stage;
 };
 
 struct agx_fast_link_key {
@@ -274,7 +274,7 @@ struct agx_fast_link_key {
 
 struct agx_uncompiled_shader {
    struct pipe_shader_state base;
-   enum pipe_shader_type type;
+   mesa_shader_stage type;
    struct blob early_serialized_nir;
    struct blob serialized_nir;
    uint8_t nir_sha1[20];
@@ -782,7 +782,7 @@ struct agx_compiled_shader *agx_build_meta_shader(struct agx_context *ctx,
 
 void agx_launch(struct agx_batch *batch, struct agx_grid grid,
                 struct agx_workgroup wg, struct agx_compiled_shader *cs,
-                struct agx_linked_shader *linked, enum pipe_shader_type stage,
+                struct agx_linked_shader *linked, mesa_shader_stage stage,
                 unsigned variable_shared_mem);
 
 void agx_launch_precomp(struct agx_batch *batch, struct agx_grid grid,
@@ -1003,17 +1003,17 @@ void agx_upload_vbos(struct agx_batch *batch);
 void agx_upload_uniforms(struct agx_batch *batch);
 
 void agx_set_sampler_uniforms(struct agx_batch *batch,
-                              enum pipe_shader_type stage);
+                              mesa_shader_stage stage);
 
 void agx_set_cbuf_uniforms(struct agx_batch *batch,
-                           enum pipe_shader_type stage);
+                           mesa_shader_stage stage);
 
 void agx_set_ssbo_uniforms(struct agx_batch *batch,
-                           enum pipe_shader_type stage);
+                           mesa_shader_stage stage);
 
 bool agx_nir_lower_point_size(nir_shader *nir, bool insert_write);
 
-bool agx_nir_lower_sysvals(nir_shader *shader, enum pipe_shader_type desc_stage,
+bool agx_nir_lower_sysvals(nir_shader *shader, mesa_shader_stage desc_stage,
                            bool lower_draw_params);
 
 bool agx_nir_layout_uniforms(nir_shader *shader,

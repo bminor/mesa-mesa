@@ -134,7 +134,7 @@ static void translate_image(struct fd4_image *img, struct pipe_image_view *pimg)
 }
 
 static void emit_image_tex(struct fd_ringbuffer *ring, unsigned slot,
-      struct fd4_image *img, enum pipe_shader_type shader)
+      struct fd4_image *img, mesa_shader_stage shader)
 {
    OUT_PKT3(ring, CP_LOAD_STATE4, 2 + 8);
    OUT_RING(ring, CP_LOAD_STATE4_0_DST_OFF(slot) |
@@ -180,7 +180,7 @@ static void emit_image_tex(struct fd_ringbuffer *ring, unsigned slot,
 }
 
 static void emit_image_ssbo(struct fd_ringbuffer *ring, unsigned slot,
-      struct fd4_image *img, enum pipe_shader_type shader)
+      struct fd4_image *img, mesa_shader_stage shader)
 {
    OUT_PKT3(ring, CP_LOAD_STATE4, 2 + 4);
    OUT_RING(ring, CP_LOAD_STATE4_0_DST_OFF(slot) |
@@ -214,7 +214,7 @@ static void emit_image_ssbo(struct fd_ringbuffer *ring, unsigned slot,
  */
 void
 fd4_emit_images(struct fd_context *ctx, struct fd_ringbuffer *ring,
-      enum pipe_shader_type shader,
+      mesa_shader_stage shader,
       const struct ir3_shader_variant *v)
 {
    struct fd_shaderimg_stateobj *so = &ctx->shaderimg[shader];

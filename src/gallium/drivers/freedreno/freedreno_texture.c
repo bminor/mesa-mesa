@@ -31,7 +31,7 @@ fd_sampler_view_destroy(struct pipe_context *pctx,
 }
 
 void
-fd_sampler_states_bind(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd_sampler_states_bind(struct pipe_context *pctx, mesa_shader_stage shader,
                        unsigned start, unsigned nr, void **hwcso) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
@@ -52,7 +52,7 @@ fd_sampler_states_bind(struct pipe_context *pctx, enum pipe_shader_type shader,
 }
 
 void
-fd_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd_set_sampler_views(struct pipe_context *pctx, mesa_shader_stage shader,
                      unsigned start, unsigned nr,
                      unsigned unbind_num_trailing_slots,
                      struct pipe_sampler_view **views) in_dt

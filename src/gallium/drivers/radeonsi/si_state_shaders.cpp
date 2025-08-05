@@ -3663,7 +3663,7 @@ static void si_update_rasterized_prim(struct si_context *sctx)
 }
 
 void si_update_common_shader_state(struct si_context *sctx, struct si_shader_selector *sel,
-                                   enum pipe_shader_type type)
+                                   mesa_shader_stage type)
 {
    si_set_active_descriptors_for_shader(sctx, sel);
 

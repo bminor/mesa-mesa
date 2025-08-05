@@ -102,11 +102,11 @@ struct pstip_stage
    void (*driver_delete_fs_state)(struct pipe_context *, void *);
 
    void (*driver_bind_sampler_states)(struct pipe_context *,
-                                      enum pipe_shader_type,
+                                      mesa_shader_stage,
                                       unsigned, unsigned, void **);
 
    void (*driver_set_sampler_views)(struct pipe_context *,
-                                    enum pipe_shader_type shader,
+                                    mesa_shader_stage shader,
                                     unsigned start, unsigned count,
                                     unsigned unbind_num_trailing_slots,
                                     struct pipe_sampler_view **);
@@ -389,7 +389,7 @@ pstip_delete_fs_state(struct pipe_context *pipe, void *fs)
 
 static void
 pstip_bind_sampler_states(struct pipe_context *pipe,
-                          enum pipe_shader_type shader,
+                          mesa_shader_stage shader,
                           unsigned start, unsigned num, void **sampler)
 {
    struct pstip_stage *pstip = pstip_stage_from_pipe(pipe);
@@ -412,7 +412,7 @@ pstip_bind_sampler_states(struct pipe_context *pipe,
 
 static void
 pstip_set_sampler_views(struct pipe_context *pipe,
-                        enum pipe_shader_type shader,
+                        mesa_shader_stage shader,
                         unsigned start, unsigned num,
                         unsigned unbind_num_trailing_slots,
                         struct pipe_sampler_view **views)

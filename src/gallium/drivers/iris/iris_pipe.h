@@ -27,15 +27,15 @@
 #include "compiler/shader_enums.h"
 
 static inline mesa_shader_stage
-stage_from_pipe(enum pipe_shader_type pstage)
+stage_from_pipe(mesa_shader_stage pstage)
 {
    return (mesa_shader_stage)pstage;
 }
 
-static inline enum pipe_shader_type
+static inline mesa_shader_stage
 stage_to_pipe(mesa_shader_stage stage)
 {
-   return (enum pipe_shader_type)stage;
+   return (mesa_shader_stage)stage;
 }
 
 /**

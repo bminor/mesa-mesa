@@ -254,7 +254,7 @@ st_update_single_texture(struct st_context *st,
 
 unsigned
 st_get_sampler_views(struct st_context *st,
-                     enum pipe_shader_type shader_stage,
+                     mesa_shader_stage shader_stage,
                      const struct gl_program *prog,
                      struct pipe_sampler_view **sampler_views,
                      unsigned *extra_sampler_views);

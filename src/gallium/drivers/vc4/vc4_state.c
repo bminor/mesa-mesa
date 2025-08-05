@@ -372,7 +372,7 @@ vc4_vertex_state_bind(struct pipe_context *pctx, void *hwcso)
 
 static void
 vc4_set_constant_buffer(struct pipe_context *pctx,
-                        enum pipe_shader_type shader, uint index,
+                        mesa_shader_stage shader, uint index,
                         bool take_ownership,
                         const struct pipe_constant_buffer *cb)
 {
@@ -433,7 +433,7 @@ vc4_set_framebuffer_state(struct pipe_context *pctx,
 }
 
 static struct vc4_texture_stateobj *
-vc4_get_stage_tex(struct vc4_context *vc4, enum pipe_shader_type shader)
+vc4_get_stage_tex(struct vc4_context *vc4, mesa_shader_stage shader)
 {
         switch (shader) {
         case MESA_SHADER_FRAGMENT:
@@ -512,7 +512,7 @@ vc4_create_sampler_state(struct pipe_context *pctx,
 
 static void
 vc4_sampler_states_bind(struct pipe_context *pctx,
-                        enum pipe_shader_type shader, unsigned start,
+                        mesa_shader_stage shader, unsigned start,
                         unsigned nr, void **hwcso)
 {
         struct vc4_context *vc4 = vc4_context(pctx);
@@ -636,7 +636,7 @@ vc4_sampler_view_destroy(struct pipe_context *pctx,
 
 static void
 vc4_set_sampler_views(struct pipe_context *pctx,
-                      enum pipe_shader_type shader,
+                      mesa_shader_stage shader,
                       unsigned start, unsigned nr,
                       unsigned unbind_num_trailing_slots,
                       struct pipe_sampler_view **views)

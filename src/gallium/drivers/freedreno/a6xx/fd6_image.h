@@ -14,7 +14,7 @@
 
 template <chip CHIP>
 struct fd_ringbuffer *
-fd6_build_bindless_state(struct fd_context *ctx, enum pipe_shader_type shader,
+fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
                          bool append_fb_read) assert_dt;
 
 void fd6_image_init(struct pipe_context *pctx);

@@ -57,7 +57,7 @@
 
 void *
 CreateEmptyShader(Device *pDevice,
-                  enum pipe_shader_type processor)
+                  mesa_shader_stage processor)
 {
    struct pipe_context *pipe = pDevice->pipe;
    struct ureg_program *ureg;
@@ -119,7 +119,7 @@ CreateEmptyShader(Device *pDevice,
 
 void
 DeleteEmptyShader(Device *pDevice,
-                  enum pipe_shader_type processor, void *handle)
+                  mesa_shader_stage processor, void *handle)
 {
    struct pipe_context *pipe = pDevice->pipe;
 
@@ -156,7 +156,7 @@ DeleteEmptyShader(Device *pDevice,
  */
 
 static void
-SetConstantBuffers(enum pipe_shader_type shader_type,    // IN
+SetConstantBuffers(mesa_shader_stage shader_type,    // IN
                    D3D10DDI_HDEVICE hDevice,             // IN
                    UINT StartBuffer,                     // IN
                    UINT NumBuffers,                      // IN
@@ -191,7 +191,7 @@ SetConstantBuffers(enum pipe_shader_type shader_type,    // IN
  */
 
 static void
-SetSamplers(enum pipe_shader_type shader_type,     // IN
+SetSamplers(mesa_shader_stage shader_type,     // IN
             D3D10DDI_HDEVICE hDevice,              // IN
             UINT Offset,                          // IN
             UINT NumSamplers,                       // IN
@@ -221,7 +221,7 @@ SetSamplers(enum pipe_shader_type shader_type,     // IN
  */
 
 static void
-SetShaderResources(enum pipe_shader_type shader_type,                  // IN
+SetShaderResources(mesa_shader_stage shader_type,                  // IN
                    D3D10DDI_HDEVICE hDevice,                                   // IN
                    UINT Offset,                                                // IN
                    UINT NumViews,                                              // IN

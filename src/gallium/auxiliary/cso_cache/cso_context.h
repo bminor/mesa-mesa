@@ -72,7 +72,7 @@ cso_set_rasterizer(struct cso_context *cso,
 
 void
 cso_set_samplers(struct cso_context *cso,
-                 enum pipe_shader_type shader_stage,
+                 mesa_shader_stage shader_stage,
                  unsigned count,
                  const struct pipe_sampler_state **states);
 
@@ -81,12 +81,12 @@ cso_set_samplers(struct cso_context *cso,
  * samplers one at a time:
  */
 void
-cso_single_sampler(struct cso_context *cso, enum pipe_shader_type shader_stage,
+cso_single_sampler(struct cso_context *cso, mesa_shader_stage shader_stage,
                    unsigned idx, const struct pipe_sampler_state *states);
 
 void
 cso_single_sampler_done(struct cso_context *cso,
-                        enum pipe_shader_type shader_stage);
+                        mesa_shader_stage shader_stage);
 
 void *
 cso_get_vertex_elements_for_bind(struct cso_context *cso,

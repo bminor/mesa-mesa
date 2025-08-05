@@ -349,7 +349,7 @@ panfrost_batch_add_bo_old(struct panfrost_batch *batch, struct panfrost_bo *bo,
 }
 
 static uint32_t
-panfrost_access_for_stage(enum pipe_shader_type stage)
+panfrost_access_for_stage(mesa_shader_stage stage)
 {
    return (stage == MESA_SHADER_FRAGMENT) ? PAN_BO_ACCESS_FRAGMENT
                                           : PAN_BO_ACCESS_VERTEX_TILER;
@@ -357,7 +357,7 @@ panfrost_access_for_stage(enum pipe_shader_type stage)
 
 void
 panfrost_batch_add_bo(struct panfrost_batch *batch, struct panfrost_bo *bo,
-                      enum pipe_shader_type stage)
+                      mesa_shader_stage stage)
 {
    panfrost_batch_add_bo_old(
       batch, bo, PAN_BO_ACCESS_READ | panfrost_access_for_stage(stage));
@@ -365,7 +365,7 @@ panfrost_batch_add_bo(struct panfrost_batch *batch, struct panfrost_bo *bo,
 
 void
 panfrost_batch_write_bo(struct panfrost_batch *batch, struct panfrost_bo *bo,
-                        enum pipe_shader_type stage)
+                        mesa_shader_stage stage)
 {
    panfrost_batch_add_bo_old(
       batch, bo, PAN_BO_ACCESS_WRITE | panfrost_access_for_stage(stage));
@@ -374,7 +374,7 @@ panfrost_batch_write_bo(struct panfrost_batch *batch, struct panfrost_bo *bo,
 void
 panfrost_batch_read_rsrc(struct panfrost_batch *batch,
                          struct panfrost_resource *rsrc,
-                         enum pipe_shader_type stage)
+                         mesa_shader_stage stage)
 {
    uint32_t access = PAN_BO_ACCESS_READ | panfrost_access_for_stage(stage);
 
@@ -393,7 +393,7 @@ panfrost_batch_read_rsrc(struct panfrost_batch *batch,
 void
 panfrost_batch_write_rsrc(struct panfrost_batch *batch,
                           struct panfrost_resource *rsrc,
-                          enum pipe_shader_type stage)
+                          mesa_shader_stage stage)
 {
    uint32_t access = PAN_BO_ACCESS_WRITE | panfrost_access_for_stage(stage);
 
@@ -411,7 +411,7 @@ panfrost_batch_write_rsrc(struct panfrost_batch *batch,
 
 struct panfrost_bo *
 panfrost_batch_create_bo(struct panfrost_batch *batch, size_t size,
-                         uint32_t create_flags, enum pipe_shader_type stage,
+                         uint32_t create_flags, mesa_shader_stage stage,
                          const char *label)
 {
    struct panfrost_bo *bo;

@@ -40,7 +40,7 @@
 
 static void
 st_bind_ssbos(struct st_context *st, struct gl_program *prog,
-              enum pipe_shader_type shader_type)
+              mesa_shader_stage shader_type)
 {
    unsigned i;
    struct pipe_shader_buffer buffers[MAX_SHADER_STORAGE_BUFFERS];

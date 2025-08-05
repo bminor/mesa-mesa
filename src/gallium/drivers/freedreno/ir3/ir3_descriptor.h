@@ -32,7 +32,7 @@
  * across shader stages.
  */
 static inline unsigned
-ir3_shader_descriptor_set(enum pipe_shader_type shader)
+ir3_shader_descriptor_set(mesa_shader_stage shader)
 {
    switch (shader) {
    case MESA_SHADER_VERTEX: return 0;

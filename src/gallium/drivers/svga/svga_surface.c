@@ -506,7 +506,7 @@ struct pipe_surface *
 svga_validate_surface_view(struct svga_context *svga, struct svga_surface *s)
 {
    enum pipe_error ret = PIPE_OK;
-   enum pipe_shader_type shader;
+   mesa_shader_stage shader;
 
    assert(svga_have_vgpu10(svga));
    assert(s);

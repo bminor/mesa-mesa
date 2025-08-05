@@ -117,7 +117,7 @@ struct st_zombie_sampler_view_node
 struct st_zombie_shader_node
 {
    void *shader;
-   enum pipe_shader_type type;
+   mesa_shader_stage type;
    struct list_head node;
 };
 
@@ -477,7 +477,7 @@ st_save_zombie_sampler_view(struct st_context *st,
 
 extern void
 st_save_zombie_shader(struct st_context *st,
-                      enum pipe_shader_type type,
+                      mesa_shader_stage type,
                       struct pipe_shader_state *shader);
 
 

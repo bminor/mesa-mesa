@@ -678,7 +678,7 @@ fd_init_screen_caps(struct fd_screen *screen)
 
 static const struct nir_shader_compiler_options *
 fd_get_compiler_options(struct pipe_screen *pscreen,
-                        enum pipe_shader_type shader)
+                        mesa_shader_stage shader)
 {
    struct fd_screen *screen = fd_screen(pscreen);
 

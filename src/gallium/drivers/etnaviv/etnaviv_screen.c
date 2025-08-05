@@ -151,7 +151,7 @@ etna_screen_get_device_vendor(struct pipe_screen *pscreen)
 }
 
 static void
-etna_init_single_shader_caps(struct etna_screen *screen, enum pipe_shader_type shader)
+etna_init_single_shader_caps(struct etna_screen *screen, mesa_shader_stage shader)
 {
    struct pipe_shader_caps *caps =
       (struct pipe_shader_caps *)&screen->base.shader_caps[shader];

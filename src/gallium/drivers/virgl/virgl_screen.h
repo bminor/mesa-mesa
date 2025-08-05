@@ -90,7 +90,7 @@ virgl_has_scanout_format(struct virgl_screen *vscreen,
                          bool may_emulate_bgra);
 
 static inline enum virgl_shader_stage
-virgl_shader_stage_convert(enum pipe_shader_type type)
+virgl_shader_stage_convert(mesa_shader_stage type)
 {
    switch (type) {
    case MESA_SHADER_VERTEX:

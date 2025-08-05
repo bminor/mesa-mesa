@@ -415,7 +415,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
 
 static uint64_t
 panfrost_emit_compute_shader_meta(struct panfrost_batch *batch,
-                                  enum pipe_shader_type stage)
+                                  mesa_shader_stage stage)
 {
    struct panfrost_compiled_shader *ss = batch->ctx->prog[stage];
 
@@ -971,7 +971,7 @@ static void panfrost_update_sampler_view(struct panfrost_sampler_view *view,
                                          struct pipe_context *pctx);
 
 static uint64_t
-panfrost_emit_images(struct panfrost_batch *batch, enum pipe_shader_type stage)
+panfrost_emit_images(struct panfrost_batch *batch, mesa_shader_stage stage)
 {
    struct panfrost_context *ctx = batch->ctx;
    unsigned last_bit = util_last_bit(ctx->image_mask[stage]);
@@ -1012,7 +1012,7 @@ panfrost_emit_images(struct panfrost_batch *batch, enum pipe_shader_type stage)
 
 static uint64_t
 panfrost_map_constant_buffer_gpu(struct panfrost_batch *batch,
-                                 enum pipe_shader_type st,
+                                 mesa_shader_stage st,
                                  struct panfrost_constant_buffer *buf,
                                  unsigned index)
 {
@@ -1069,7 +1069,7 @@ panfrost_upload_viewport_offset_sysval(struct panfrost_batch *batch,
 
 static void
 panfrost_upload_txs_sysval(struct panfrost_batch *batch,
-                           enum pipe_shader_type st, unsigned int sysvalid,
+                           mesa_shader_stage st, unsigned int sysvalid,
                            struct sysval_uniform *uniform)
 {
    struct panfrost_context *ctx = batch->ctx;
@@ -1111,7 +1111,7 @@ panfrost_upload_txs_sysval(struct panfrost_batch *batch,
 
 static void
 panfrost_upload_image_size_sysval(struct panfrost_batch *batch,
-                                  enum pipe_shader_type st,
+                                  mesa_shader_stage st,
                                   unsigned int sysvalid,
                                   struct sysval_uniform *uniform)
 {
@@ -1144,7 +1144,7 @@ panfrost_upload_image_size_sysval(struct panfrost_batch *batch,
 
 static void
 panfrost_upload_ssbo_sysval(struct panfrost_batch *batch,
-                            enum pipe_shader_type st, unsigned ssbo_id,
+                            mesa_shader_stage st, unsigned ssbo_id,
                             struct sysval_uniform *uniform)
 {
    struct panfrost_context *ctx = batch->ctx;
@@ -1168,7 +1168,7 @@ panfrost_upload_ssbo_sysval(struct panfrost_batch *batch,
 
 static void
 panfrost_upload_sampler_sysval(struct panfrost_batch *batch,
-                               enum pipe_shader_type st, unsigned samp_idx,
+                               mesa_shader_stage st, unsigned samp_idx,
                                struct sysval_uniform *uniform)
 {
    struct panfrost_context *ctx = batch->ctx;
@@ -1282,7 +1282,7 @@ panfrost_xfb_offset(unsigned stride, struct pipe_stream_output_target *target)
 static void
 panfrost_upload_sysvals(struct panfrost_batch *batch, void *ptr_cpu,
                         uint64_t ptr_gpu, struct panfrost_compiled_shader *ss,
-                        enum pipe_shader_type st)
+                        mesa_shader_stage st)
 {
    struct sysval_uniform *uniforms = ptr_cpu;
 
@@ -1422,7 +1422,7 @@ panfrost_emit_ubo(void *base, unsigned index, uint64_t address, size_t size)
 
 #if PAN_ARCH >= 9
 static uint64_t
-panfrost_emit_ssbos(struct panfrost_batch *batch, enum pipe_shader_type st)
+panfrost_emit_ssbos(struct panfrost_batch *batch, mesa_shader_stage st)
 {
    struct panfrost_context *ctx = batch->ctx;
    unsigned ssbo_count = util_last_bit(ctx->ssbo_mask[st]);
@@ -1457,7 +1457,7 @@ panfrost_emit_ssbos(struct panfrost_batch *batch, enum pipe_shader_type st)
 
 static uint64_t
 panfrost_emit_const_buf(struct panfrost_batch *batch,
-                        enum pipe_shader_type stage, unsigned *buffer_count,
+                        mesa_shader_stage stage, unsigned *buffer_count,
                         uint64_t *push_constants, unsigned *pushed_words)
 {
    struct panfrost_context *ctx = batch->ctx;
@@ -1657,7 +1657,7 @@ panfrost_emit_shared_memory(struct panfrost_batch *batch,
 
 #if PAN_ARCH <= 5
 static uint64_t
-panfrost_get_tex_desc(struct panfrost_batch *batch, enum pipe_shader_type st,
+panfrost_get_tex_desc(struct panfrost_batch *batch, mesa_shader_stage st,
                       struct panfrost_sampler_view *view)
 {
    if (!view)
@@ -1881,7 +1881,7 @@ panfrost_emit_null_texture(struct mali_texture_packed *out)
 
 static uint64_t
 panfrost_emit_texture_descriptors(struct panfrost_batch *batch,
-                                  enum pipe_shader_type stage)
+                                  mesa_shader_stage stage)
 {
    struct panfrost_context *ctx = batch->ctx;
 
@@ -1959,7 +1959,7 @@ panfrost_upload_wa_sampler(struct panfrost_batch *batch)
 
 static uint64_t
 panfrost_emit_sampler_descriptors(struct panfrost_batch *batch,
-                                  enum pipe_shader_type stage)
+                                  mesa_shader_stage stage)
 {
    struct panfrost_context *ctx = batch->ctx;
 
@@ -1990,7 +1990,7 @@ panfrost_emit_sampler_descriptors(struct panfrost_batch *batch,
  * descriptor.
  */
 static void
-emit_image_attribs(struct panfrost_context *ctx, enum pipe_shader_type shader,
+emit_image_attribs(struct panfrost_context *ctx, mesa_shader_stage shader,
                    struct mali_attribute_packed *attribs, unsigned first_buf)
 {
    unsigned last_bit = util_last_bit(ctx->image_mask[shader]);
@@ -2021,7 +2021,7 @@ pan_modifier_to_attr_type(uint64_t modifier)
 }
 
 static void
-emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
+emit_image_bufs(struct panfrost_batch *batch, mesa_shader_stage shader,
                 struct mali_attribute_buffer_packed *bufs,
                 unsigned first_image_buf_index)
 {
@@ -2124,7 +2124,7 @@ emit_image_bufs(struct panfrost_batch *batch, enum pipe_shader_type shader,
 
 static uint64_t
 panfrost_emit_image_attribs(struct panfrost_batch *batch, uint64_t *buffers,
-                            enum pipe_shader_type type)
+                            mesa_shader_stage type)
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_compiled_shader *shader = ctx->prog[type];
@@ -2981,7 +2981,7 @@ panfrost_emit_varying_descriptors(struct panfrost_batch *batch)
 
 static inline void
 panfrost_update_shader_state(struct panfrost_batch *batch,
-                             enum pipe_shader_type st)
+                             mesa_shader_stage st)
 {
    struct panfrost_context *ctx = batch->ctx;
    struct panfrost_compiled_shader *ss = ctx->prog[st];

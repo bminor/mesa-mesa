@@ -697,7 +697,7 @@ bool si_sqtt_pipeline_is_registered(struct ac_sqtt *sqtt,
 }
 
 static enum rgp_hardware_stages
-si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, enum pipe_shader_type stage)
+si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, mesa_shader_stage stage)
 {
    switch (stage) {
       case MESA_SHADER_VERTEX:

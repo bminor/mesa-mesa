@@ -83,7 +83,7 @@ agx_upload_uniforms(struct agx_batch *batch)
 }
 
 void
-agx_set_sampler_uniforms(struct agx_batch *batch, enum pipe_shader_type stage)
+agx_set_sampler_uniforms(struct agx_batch *batch, mesa_shader_stage stage)
 {
    struct agx_context *ctx = batch->ctx;
    struct agx_stage *st = &ctx->stage[stage];
@@ -106,7 +106,7 @@ agx_set_sampler_uniforms(struct agx_batch *batch, enum pipe_shader_type stage)
 }
 
 void
-agx_set_cbuf_uniforms(struct agx_batch *batch, enum pipe_shader_type stage)
+agx_set_cbuf_uniforms(struct agx_batch *batch, mesa_shader_stage stage)
 {
    struct agx_stage *st = &batch->ctx->stage[stage];
    struct agx_stage_uniforms *unif = &batch->stage_uniforms[stage];
@@ -118,7 +118,7 @@ agx_set_cbuf_uniforms(struct agx_batch *batch, enum pipe_shader_type stage)
 }
 
 void
-agx_set_ssbo_uniforms(struct agx_batch *batch, enum pipe_shader_type stage)
+agx_set_ssbo_uniforms(struct agx_batch *batch, mesa_shader_stage stage)
 {
    struct agx_stage *st = &batch->ctx->stage[stage];
    struct agx_stage_uniforms *unif = &batch->stage_uniforms[stage];

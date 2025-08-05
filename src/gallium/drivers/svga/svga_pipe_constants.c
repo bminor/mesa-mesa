@@ -24,7 +24,7 @@ struct svga_constbuf
 
 static void
 svga_set_constant_buffer(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, uint index,
+                         mesa_shader_stage shader, uint index,
                          bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {

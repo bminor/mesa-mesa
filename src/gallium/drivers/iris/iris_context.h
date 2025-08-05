@@ -1363,7 +1363,7 @@ bool iris_use_tcs_multi_patch(struct iris_screen *screen);
 bool iris_indirect_ubos_use_sampler(struct iris_screen *screen);
 const struct nir_shader_compiler_options *
 iris_get_compiler_options(struct pipe_screen *pscreen,
-                          enum pipe_shader_type pstage);
+                          mesa_shader_stage pstage);
 
 /* iris_disk_cache.c */
 

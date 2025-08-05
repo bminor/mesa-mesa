@@ -390,7 +390,7 @@ emit_tfbos(struct fd_context *ctx, const struct ir3_shader_variant *v,
 static inline void
 emit_common_consts(const struct ir3_shader_variant *v,
                    struct fd_ringbuffer *ring, struct fd_context *ctx,
-                   enum pipe_shader_type t) assert_dt
+                   mesa_shader_stage t) assert_dt
 {
    enum fd_dirty_shader_state dirty = ctx->dirty_shader[t];
 

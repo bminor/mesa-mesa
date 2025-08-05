@@ -281,7 +281,7 @@ panfrost_vertex_attribute_stride(struct panfrost_compiled_shader *vs,
 
 static inline uint64_t
 panfrost_emit_resources(struct panfrost_batch *batch,
-                        enum pipe_shader_type stage)
+                        mesa_shader_stage stage)
 {
    struct panfrost_context *ctx = batch->ctx;
    struct pan_ptr T;

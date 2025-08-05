@@ -236,7 +236,7 @@ v3d_ensure_prim_counts_allocated(struct v3d_context *ctx)
 
 void
 v3d_flag_dirty_sampler_state(struct v3d_context *v3d,
-                             enum pipe_shader_type shader)
+                             mesa_shader_stage shader)
 {
         switch (shader) {
         case MESA_SHADER_VERTEX:

@@ -263,7 +263,7 @@ lima_set_stencil_ref(struct pipe_context *pctx,
 
 static void
 lima_set_constant_buffer(struct pipe_context *pctx,
-                         enum pipe_shader_type shader, uint index,
+                         mesa_shader_stage shader, uint index,
                          bool pass_reference,
                          const struct pipe_constant_buffer *cb)
 {
@@ -308,7 +308,7 @@ lima_sampler_state_delete(struct pipe_context *pctx, void *sstate)
 
 static void
 lima_sampler_states_bind(struct pipe_context *pctx,
-                        enum pipe_shader_type shader, unsigned start,
+                        mesa_shader_stage shader, unsigned start,
                         unsigned nr, void **hwcso)
 {
    struct lima_context *ctx = lima_context(pctx);
@@ -369,7 +369,7 @@ lima_sampler_view_destroy(struct pipe_context *pctx,
 
 static void
 lima_set_sampler_views(struct pipe_context *pctx,
-                      enum pipe_shader_type shader,
+                      mesa_shader_stage shader,
                       unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
                       struct pipe_sampler_view **views)

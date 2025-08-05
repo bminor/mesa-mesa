@@ -694,7 +694,7 @@ pipe_to_dxil_tex_wrap(enum pipe_tex_wrap wrap)
 
 static void
 d3d12_bind_sampler_states(struct pipe_context *pctx,
-                          enum pipe_shader_type shader,
+                          mesa_shader_stage shader,
                           unsigned start_slot,
                           unsigned num_samplers,
                           void **samplers)
@@ -953,7 +953,7 @@ d3d12_create_sampler_view(struct pipe_context *pctx,
 
 static void
 d3d12_increment_sampler_view_bind_count(struct pipe_context *ctx,
-   enum pipe_shader_type shader_type,
+   mesa_shader_stage shader_type,
    struct pipe_sampler_view *view) {
       struct d3d12_resource *res = d3d12_resource(view->texture);
       if (res)
@@ -962,7 +962,7 @@ d3d12_increment_sampler_view_bind_count(struct pipe_context *ctx,
 
 static void
 d3d12_decrement_sampler_view_bind_count(struct pipe_context *ctx,
-                              enum pipe_shader_type shader_type,
+                              mesa_shader_stage shader_type,
                               struct pipe_sampler_view *view) {
    struct d3d12_resource *res = d3d12_resource(view->texture);
    if (res) {
@@ -973,7 +973,7 @@ d3d12_decrement_sampler_view_bind_count(struct pipe_context *ctx,
 
 static void
 d3d12_set_sampler_views(struct pipe_context *pctx,
-                        enum pipe_shader_type shader_type,
+                        mesa_shader_stage shader_type,
                         unsigned start_slot,
                         unsigned num_views,
                         unsigned unbind_num_trailing_slots,
@@ -1044,7 +1044,7 @@ d3d12_destroy_sampler_view(struct pipe_context *pctx,
 }
 
 static void
-delete_shader(struct d3d12_context *ctx, enum pipe_shader_type stage,
+delete_shader(struct d3d12_context *ctx, mesa_shader_stage stage,
               struct d3d12_shader_selector *shader)
 {
    d3d12_gfx_pipeline_state_cache_invalidate_shader(ctx, stage, shader);
@@ -1063,7 +1063,7 @@ delete_shader(struct d3d12_context *ctx, enum pipe_shader_type stage,
 }
 
 static void
-bind_stage(struct d3d12_context *ctx, enum pipe_shader_type stage,
+bind_stage(struct d3d12_context *ctx, mesa_shader_stage stage,
            struct d3d12_shader_selector *shader)
 {
    assert(stage < D3D12_GFX_SHADER_STAGES);
@@ -1351,7 +1351,7 @@ d3d12_set_scissor_states(struct pipe_context *pctx,
 
 static void
 d3d12_decrement_constant_buffer_bind_count(struct d3d12_context *ctx,
-                                           enum pipe_shader_type shader,
+                                           mesa_shader_stage shader,
                                            struct d3d12_resource *res) {
    assert(res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_CBV] > 0);
    res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_CBV]--;
@@ -1359,14 +1359,14 @@ d3d12_decrement_constant_buffer_bind_count(struct d3d12_context *ctx,
 
 static void
 d3d12_increment_constant_buffer_bind_count(struct d3d12_context *ctx,
-                                           enum pipe_shader_type shader,
+                                           mesa_shader_stage shader,
                                            struct d3d12_resource *res) {
    res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_CBV]++;
 }
 
 static void
 d3d12_set_constant_buffer(struct pipe_context *pctx,
-                          enum pipe_shader_type shader, uint index,
+                          mesa_shader_stage shader, uint index,
                           bool take_ownership,
                           const struct pipe_constant_buffer *buf)
 {
@@ -1583,7 +1583,7 @@ d3d12_set_stream_output_targets(struct pipe_context *pctx,
 
 static void
 d3d12_decrement_ssbo_bind_count(struct d3d12_context *ctx,
-                               enum pipe_shader_type shader,
+                               mesa_shader_stage shader,
                                struct d3d12_resource *res) {
    assert(res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_SSBO] > 0);
    res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_SSBO]--;
@@ -1591,14 +1591,14 @@ d3d12_decrement_ssbo_bind_count(struct d3d12_context *ctx,
 
 static void
 d3d12_increment_ssbo_bind_count(struct d3d12_context *ctx,
-                               enum pipe_shader_type shader,
+                               mesa_shader_stage shader,
                                struct d3d12_resource *res) {
    res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_SSBO]++;
 }
 
 static void
 d3d12_set_shader_buffers(struct pipe_context *pctx,
-                         enum pipe_shader_type shader,
+                         mesa_shader_stage shader,
                          unsigned start_slot, unsigned count,
                          const struct pipe_shader_buffer *buffers,
                          unsigned writable_bitmask)
@@ -1638,7 +1638,7 @@ d3d12_set_shader_buffers(struct pipe_context *pctx,
 
 static void
 d3d12_decrement_image_bind_count(struct d3d12_context *ctx,
-                               enum pipe_shader_type shader,
+                               mesa_shader_stage shader,
                                struct d3d12_resource *res) {
    assert(res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_IMAGE] > 0);
    res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_IMAGE]--;
@@ -1646,7 +1646,7 @@ d3d12_decrement_image_bind_count(struct d3d12_context *ctx,
 
 static void
 d3d12_increment_image_bind_count(struct d3d12_context *ctx,
-                               enum pipe_shader_type shader,
+                               mesa_shader_stage shader,
                                struct d3d12_resource *res) {
    res->bind_counts[shader][D3D12_RESOURCE_BINDING_TYPE_IMAGE]++;
 }
@@ -1694,7 +1694,7 @@ get_shader_image_emulation_format(enum pipe_format resource_format)
 
 static void
 d3d12_set_shader_images(struct pipe_context *pctx,
-                        enum pipe_shader_type shader,
+                        mesa_shader_stage shader,
                         unsigned start_slot, unsigned count,
                         unsigned unbind_num_trailing_slots,
                         const struct pipe_image_view *images)

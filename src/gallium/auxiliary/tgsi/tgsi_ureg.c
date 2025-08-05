@@ -111,7 +111,7 @@ struct hw_atomic_decl {
 
 struct ureg_program
 {
-   enum pipe_shader_type processor;
+   mesa_shader_stage processor;
    bool supports_any_inout_decl_range;
    int next_shader_processor;
 
@@ -2226,14 +2226,14 @@ void ureg_free_tokens( const struct tgsi_token *tokens )
 
 
 struct ureg_program *
-ureg_create(enum pipe_shader_type processor)
+ureg_create(mesa_shader_stage processor)
 {
    return ureg_create_with_screen(processor, NULL);
 }
 
 
 struct ureg_program *
-ureg_create_with_screen(enum pipe_shader_type processor,
+ureg_create_with_screen(mesa_shader_stage processor,
                         struct pipe_screen *screen)
 {
    unsigned i;

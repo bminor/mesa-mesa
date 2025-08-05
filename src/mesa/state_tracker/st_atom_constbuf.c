@@ -52,7 +52,7 @@
  * dangling pointers to old (potentially deleted) shaders in the driver.
  */
 static void
-st_unbind_unused_cb0(struct st_context *st, enum pipe_shader_type shader_type)
+st_unbind_unused_cb0(struct st_context *st, mesa_shader_stage shader_type)
 {
    if (st->state.constbuf0_enabled_shader_mask & (1 << shader_type)) {
       struct pipe_context *pipe = st->pipe;
@@ -69,7 +69,7 @@ st_unbind_unused_cb0(struct st_context *st, enum pipe_shader_type shader_type)
 void
 st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_stage stage)
 {
-   enum pipe_shader_type shader_type = pipe_shader_type_from_mesa(stage);
+   mesa_shader_stage shader_type = pipe_shader_type_from_mesa(stage);
    if (!prog) {
       st_unbind_unused_cb0(st, shader_type);
       return;
@@ -266,7 +266,7 @@ st_update_cs_constants(struct st_context *st)
 
 static void
 st_bind_ubos(struct st_context *st, struct gl_program *prog,
-             enum pipe_shader_type shader_type)
+             mesa_shader_stage shader_type)
 {
    unsigned i;
    struct pipe_constant_buffer cb = { 0 };

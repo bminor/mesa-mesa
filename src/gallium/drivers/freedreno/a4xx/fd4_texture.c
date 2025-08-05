@@ -213,7 +213,7 @@ fd4_sampler_view_create(struct pipe_context *pctx, struct pipe_resource *prsc,
 }
 
 static void
-fd4_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd4_set_sampler_views(struct pipe_context *pctx, mesa_shader_stage shader,
                       unsigned start, unsigned nr,
                       unsigned unbind_num_trailing_slots,
                       struct pipe_sampler_view **views)

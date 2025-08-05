@@ -583,7 +583,7 @@ struct pipe_screen {
     */
    bool (*is_parallel_shader_compilation_finished)(struct pipe_screen *screen,
                                                    void *shader,
-                                                   enum pipe_shader_type shader_type);
+                                                   mesa_shader_stage shader_type);
 
    void (*driver_thread_add_job)(struct pipe_screen *screen,
                                  void *job,

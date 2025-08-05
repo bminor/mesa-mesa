@@ -537,7 +537,7 @@ v3d_screen_is_format_supported(struct pipe_screen *pscreen,
 
 static const struct nir_shader_compiler_options *
 v3d_screen_get_compiler_options(struct pipe_screen *pscreen,
-                                enum pipe_shader_type shader)
+                                mesa_shader_stage shader)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);
         const struct v3d_device_info *devinfo = &screen->devinfo;

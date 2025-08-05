@@ -284,7 +284,7 @@ static void finish_fence(struct rendering_state *state)
 }
 
 static unsigned
-get_pcbuf_size(struct rendering_state *state, enum pipe_shader_type pstage)
+get_pcbuf_size(struct rendering_state *state, mesa_shader_stage pstage)
 {
    enum lvp_pipeline_type type =
       ffs(lvp_pipeline_types_from_shader_stages(mesa_to_vk_shader_stage(pstage))) - 1;
@@ -292,8 +292,8 @@ get_pcbuf_size(struct rendering_state *state, enum pipe_shader_type pstage)
 }
 
 static void
-update_pcbuf(struct rendering_state *state, enum pipe_shader_type pstage,
-             enum pipe_shader_type api_stage)
+update_pcbuf(struct rendering_state *state, mesa_shader_stage pstage,
+             mesa_shader_stage api_stage)
 {
    unsigned size = get_pcbuf_size(state, api_stage);
    if (size) {

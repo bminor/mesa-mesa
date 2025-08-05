@@ -38,7 +38,7 @@ struct d3d12_root_signature {
 };
 
 static D3D12_SHADER_VISIBILITY
-get_shader_visibility(enum pipe_shader_type stage)
+get_shader_visibility(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -123,7 +123,7 @@ create_root_signature(struct d3d12_context *ctx, struct d3d12_root_signature_key
    unsigned count = key->compute ? 1 : D3D12_GFX_SHADER_STAGES;
    for (unsigned i = 0; i < count; ++i) {
       unsigned stage = key->compute ? MESA_SHADER_COMPUTE : i;
-      D3D12_SHADER_VISIBILITY visibility = get_shader_visibility((enum pipe_shader_type)stage);
+      D3D12_SHADER_VISIBILITY visibility = get_shader_visibility((mesa_shader_stage)stage);
 
       if (key->stages[i].end_cb_bindings - key->stages[i].begin_cb_bindings > 0) {
          init_range_root_param(&root_params[num_params++],

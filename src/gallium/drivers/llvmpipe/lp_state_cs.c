@@ -1101,7 +1101,7 @@ llvmpipe_delete_compute_state(struct pipe_context *pipe,
 static struct lp_compute_shader_variant_key *
 make_variant_key(struct llvmpipe_context *lp,
                  struct lp_compute_shader *shader,
-                 enum pipe_shader_type sh_type,
+                 mesa_shader_stage sh_type,
                  char *store)
 {
    struct lp_compute_shader_variant_key *key =
@@ -1268,7 +1268,7 @@ lp_cs_get_ir_cache_key(struct lp_compute_shader_variant *variant,
 static struct lp_compute_shader_variant *
 generate_variant(struct llvmpipe_context *lp,
                  struct lp_compute_shader *shader,
-                 enum pipe_shader_type sh_type,
+                 mesa_shader_stage sh_type,
                  const struct lp_compute_shader_variant_key *key)
 {
    struct llvmpipe_screen *screen = llvmpipe_screen(lp->pipe.screen);
@@ -1359,7 +1359,7 @@ lp_cs_ctx_set_cs_variant(struct lp_cs_context *csctx,
 
 static struct lp_compute_shader_variant *
 llvmpipe_update_cs_variant(struct llvmpipe_context *lp,
-                           enum pipe_shader_type sh_type,
+                           mesa_shader_stage sh_type,
                            struct lp_compute_shader *shader)
 {
    char store[LP_CS_MAX_VARIANT_KEY_SIZE];

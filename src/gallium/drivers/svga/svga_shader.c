@@ -256,7 +256,7 @@ isValidSampleCFormat(enum pipe_format format)
  */
 void
 svga_init_shader_key_common(const struct svga_context *svga,
-                            enum pipe_shader_type shader_type,
+                            mesa_shader_stage shader_type,
                             const struct svga_shader *shader,
                             struct svga_compile_key *key)
 {
@@ -771,7 +771,7 @@ svga_set_shader(struct svga_context *svga,
 
 
 struct svga_shader_variant *
-svga_new_shader_variant(struct svga_context *svga, enum pipe_shader_type type)
+svga_new_shader_variant(struct svga_context *svga, mesa_shader_stage type)
 {
    struct svga_shader_variant *variant;
 
@@ -914,7 +914,7 @@ svga_rebind_shaders(struct svga_context *svga)
 struct svga_shader *
 svga_create_shader(struct pipe_context *pipe,
                    const struct pipe_shader_state *templ,
-                   enum pipe_shader_type stage,
+                   mesa_shader_stage stage,
                    unsigned shader_structlen)
 {
    struct svga_context *svga = svga_context(pipe);

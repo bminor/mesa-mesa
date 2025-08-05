@@ -350,7 +350,7 @@ i915_create_sampler_state(struct pipe_context *pipe,
 
 static void
 i915_bind_sampler_states(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, unsigned start,
+                         mesa_shader_stage shader, unsigned start,
                          unsigned num, void **samplers)
 {
    if (shader != MESA_SHADER_FRAGMENT) {
@@ -718,7 +718,7 @@ i915_delete_vs_state(struct pipe_context *pipe, void *shader)
 
 static void
 i915_set_constant_buffer(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, uint32_t index,
+                         mesa_shader_stage shader, uint32_t index,
                          bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
@@ -779,7 +779,7 @@ i915_set_constant_buffer(struct pipe_context *pipe,
 }
 
 static void
-i915_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
+i915_set_sampler_views(struct pipe_context *pipe, mesa_shader_stage shader,
                        unsigned start, unsigned num,
                        unsigned unbind_num_trailing_slots,
                        struct pipe_sampler_view **views)

@@ -363,7 +363,7 @@ cso_unbind_context(struct cso_context *cso)
          static struct pipe_shader_buffer ssbos[PIPE_MAX_SHADER_BUFFERS] = { 0 };
          static void *zeros[PIPE_MAX_SAMPLERS] = { NULL };
          struct pipe_screen *scr = ctx->base.pipe->screen;
-         enum pipe_shader_type sh;
+         mesa_shader_stage sh;
          for (sh = 0; sh < MESA_SHADER_MESH_STAGES; sh++) {
             switch (sh) {
             case MESA_SHADER_GEOMETRY:
@@ -1366,7 +1366,7 @@ cso_set_vertex_buffers_and_elements(struct cso_context *cso,
 
 
 ALWAYS_INLINE static struct cso_sampler *
-set_sampler(struct cso_context_priv *ctx, enum pipe_shader_type shader_stage,
+set_sampler(struct cso_context_priv *ctx, mesa_shader_stage shader_stage,
             unsigned idx, const struct pipe_sampler_state *templ,
             size_t key_size)
 {
@@ -1399,7 +1399,7 @@ set_sampler(struct cso_context_priv *ctx, enum pipe_shader_type shader_stage,
 
 
 ALWAYS_INLINE static bool
-cso_set_sampler(struct cso_context_priv *ctx, enum pipe_shader_type shader_stage,
+cso_set_sampler(struct cso_context_priv *ctx, mesa_shader_stage shader_stage,
                 unsigned idx, const struct pipe_sampler_state *templ,
                 size_t size)
 {
@@ -1411,7 +1411,7 @@ cso_set_sampler(struct cso_context_priv *ctx, enum pipe_shader_type shader_stage
 
 
 void
-cso_single_sampler(struct cso_context *cso, enum pipe_shader_type shader_stage,
+cso_single_sampler(struct cso_context *cso, mesa_shader_stage shader_stage,
                    unsigned idx, const struct pipe_sampler_state *templ)
 {
    struct cso_context_priv *ctx = (struct cso_context_priv *)cso;
@@ -1437,7 +1437,7 @@ cso_single_sampler(struct cso_context *cso, enum pipe_shader_type shader_stage,
  */
 void
 cso_single_sampler_done(struct cso_context *cso,
-                        enum pipe_shader_type shader_stage)
+                        mesa_shader_stage shader_stage)
 {
    struct cso_context_priv *ctx = (struct cso_context_priv *)cso;
    struct sampler_info *info = &ctx->samplers[shader_stage];
@@ -1454,7 +1454,7 @@ cso_single_sampler_done(struct cso_context *cso,
 
 ALWAYS_INLINE static int
 set_samplers(struct cso_context_priv *ctx,
-             enum pipe_shader_type shader_stage,
+             mesa_shader_stage shader_stage,
              unsigned nr,
              const struct pipe_sampler_state **templates,
              size_t key_size)
@@ -1502,7 +1502,7 @@ set_samplers(struct cso_context_priv *ctx,
  */
 void
 cso_set_samplers(struct cso_context *cso,
-                 enum pipe_shader_type shader_stage,
+                 mesa_shader_stage shader_stage,
                  unsigned nr,
                  const struct pipe_sampler_state **templates)
 {

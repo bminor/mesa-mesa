@@ -556,7 +556,7 @@ struct si_screen {
    /* Force a single shader to use ACO, debug usage. */
    blake3_hash *use_aco_shader_blakes;
    unsigned num_use_aco_shader_blakes;
-   enum pipe_shader_type use_aco_shader_type;
+   mesa_shader_stage use_aco_shader_type;
 
    struct {
 #define OPT_BOOL(name, dflt, description) bool name : 1;

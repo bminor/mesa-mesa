@@ -666,7 +666,7 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
-   enum pipe_shader_type sw_stage = s->info.stage;
+   mesa_shader_stage sw_stage = s->info.stage;
 
    unsigned constant_push_ranges = DIV_ROUND_UP(s->b.info.rodata.size_16, 64);
    unsigned push_ranges = 2;

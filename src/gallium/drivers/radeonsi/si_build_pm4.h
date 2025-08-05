@@ -546,7 +546,7 @@
 static ALWAYS_INLINE unsigned
 si_get_user_data_base(enum amd_gfx_level gfx_level, enum si_has_tess has_tess,
                       enum si_has_gs has_gs, enum si_has_ngg ngg,
-                      enum pipe_shader_type shader)
+                      mesa_shader_stage shader)
 {
    switch (shader) {
    case MESA_SHADER_VERTEX:

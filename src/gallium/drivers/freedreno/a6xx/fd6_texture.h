@@ -110,7 +110,7 @@ struct fd6_texture_state {
 };
 
 struct fd6_texture_state *
-fd6_texture_state(struct fd_context *ctx, enum pipe_shader_type type) assert_dt;
+fd6_texture_state(struct fd_context *ctx, mesa_shader_stage type) assert_dt;
 
 
 static inline void

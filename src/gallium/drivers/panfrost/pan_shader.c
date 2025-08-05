@@ -388,7 +388,7 @@ panfrost_new_variant_locked(struct panfrost_context *ctx,
 
 static void
 panfrost_bind_shader_state(struct pipe_context *pctx, void *hwcso,
-                           enum pipe_shader_type type)
+                           mesa_shader_stage type)
 {
    struct panfrost_context *ctx = pan_context(pctx);
    ctx->uncompiled[type] = hwcso;
@@ -403,7 +403,7 @@ panfrost_bind_shader_state(struct pipe_context *pctx, void *hwcso,
 
 void
 panfrost_update_shader_variant(struct panfrost_context *ctx,
-                               enum pipe_shader_type type)
+                               mesa_shader_stage type)
 {
    /* No shader variants for compute */
    if (type == MESA_SHADER_COMPUTE)

@@ -4423,7 +4423,7 @@ static void evergreen_set_hw_atomic_buffers(struct pipe_context *ctx,
 }
 
 static void evergreen_set_shader_buffers(struct pipe_context *ctx,
-					 enum pipe_shader_type shader, unsigned start_slot,
+					 mesa_shader_stage shader, unsigned start_slot,
 					 unsigned count,
 					 const struct pipe_shader_buffer *buffers,
 					 unsigned writable_bitmask)
@@ -4524,7 +4524,7 @@ static void evergreen_set_shader_buffers(struct pipe_context *ctx,
 }
 
 static void evergreen_set_shader_images(struct pipe_context *ctx,
-					enum pipe_shader_type shader, unsigned start_slot,
+					mesa_shader_stage shader, unsigned start_slot,
 					unsigned count, unsigned unbind_num_trailing_slots,
 					const struct pipe_image_view *images)
 {
@@ -4738,7 +4738,7 @@ static void evergreen_set_shader_images(struct pipe_context *ctx,
 }
 
 static void evergreen_get_pipe_constant_buffer(struct r600_context *rctx,
-					       enum pipe_shader_type shader, uint slot,
+					       mesa_shader_stage shader, uint slot,
 					       struct pipe_constant_buffer *cbuf)
 {
 	struct r600_constbuf_state *state = &rctx->constbuf_state[shader];
@@ -4752,7 +4752,7 @@ static void evergreen_get_pipe_constant_buffer(struct r600_context *rctx,
 }
 
 static void evergreen_get_shader_buffers(struct r600_context *rctx,
-					 enum pipe_shader_type shader,
+					 mesa_shader_stage shader,
 					 uint start_slot, uint count,
 					 struct pipe_shader_buffer *sbuf)
 {

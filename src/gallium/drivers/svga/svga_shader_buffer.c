@@ -65,7 +65,7 @@ svga_create_uav_buffer(struct svga_context *svga,
  */
 static void
 svga_set_shader_buffers(struct pipe_context *pipe,
-                        enum pipe_shader_type shader,
+                        mesa_shader_stage shader,
                         unsigned start, unsigned num,
                         const struct pipe_shader_buffer *buffers,
                         unsigned writeable_bitmask)
@@ -334,7 +334,7 @@ svga_validate_shader_buffer_resources(struct svga_context *svga,
  */
 bool
 svga_shader_buffer_can_use_srv(struct svga_context *svga,
-                               enum pipe_shader_type shader,
+                               mesa_shader_stage shader,
                                unsigned index,
                                struct svga_shader_buffer *buf)
 {
@@ -355,7 +355,7 @@ svga_shader_buffer_can_use_srv(struct svga_context *svga,
  */
 enum pipe_error
 svga_shader_buffer_bind_srv(struct svga_context *svga,
-                            enum pipe_shader_type shader,
+                            mesa_shader_stage shader,
                             unsigned index,
                             struct svga_shader_buffer *buf)
 {
@@ -377,7 +377,7 @@ svga_shader_buffer_bind_srv(struct svga_context *svga,
  */
 enum pipe_error
 svga_shader_buffer_unbind_srv(struct svga_context *svga,
-                              enum pipe_shader_type shader,
+                              mesa_shader_stage shader,
                               unsigned index,
                               struct svga_shader_buffer *buf)
 {

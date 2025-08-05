@@ -430,7 +430,7 @@ fd_dirty_resource(struct fd_context *ctx, struct pipe_resource *prsc,
 
 static inline void
 fd_dirty_shader_resource(struct fd_context *ctx, struct pipe_resource *prsc,
-                         enum pipe_shader_type shader,
+                         mesa_shader_stage shader,
                          BITMASK_ENUM(fd_dirty_shader_state) dirty,
                          bool write)
    assert_dt

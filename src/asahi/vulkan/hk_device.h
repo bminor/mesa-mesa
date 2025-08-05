@@ -137,7 +137,7 @@ VkResult hk_sampler_heap_add(struct hk_device *dev,
 void hk_sampler_heap_remove(struct hk_device *dev, struct hk_rc_sampler *rc);
 
 static inline struct agx_scratch *
-hk_device_scratch_locked(struct hk_device *dev, enum pipe_shader_type stage)
+hk_device_scratch_locked(struct hk_device *dev, mesa_shader_stage stage)
 {
    simple_mtx_assert_locked(&dev->scratch.lock);
 
@@ -152,7 +152,7 @@ hk_device_scratch_locked(struct hk_device *dev, enum pipe_shader_type stage)
 }
 
 static inline void
-hk_device_alloc_scratch(struct hk_device *dev, enum pipe_shader_type stage,
+hk_device_alloc_scratch(struct hk_device *dev, mesa_shader_stage stage,
                         unsigned size)
 {
    simple_mtx_lock(&dev->scratch.lock);

@@ -99,7 +99,7 @@ svga_create_uav_image(struct svga_context *svga,
  */
 static void
 svga_set_shader_images(struct pipe_context *pipe,
-                       enum pipe_shader_type shader,
+                       mesa_shader_stage shader,
                        unsigned start,
                        unsigned num,
                        unsigned unbind_num_trailing_slots,

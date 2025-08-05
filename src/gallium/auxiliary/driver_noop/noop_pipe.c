@@ -603,7 +603,7 @@ static void noop_set_max_shader_compiler_threads(struct pipe_screen *screen,
 
 static bool noop_is_parallel_shader_compilation_finished(struct pipe_screen *screen,
                                                          void *shader,
-                                                         enum pipe_shader_type shader_type)
+                                                         mesa_shader_stage shader_type)
 {
    return true;
 }

@@ -327,7 +327,7 @@ nv30_set_sample_mask(struct pipe_context *pipe, unsigned sample_mask)
 
 static void
 nv30_set_constant_buffer(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, uint index,
+                         mesa_shader_stage shader, uint index,
                          bool pass_reference,
                          const struct pipe_constant_buffer *cb)
 {

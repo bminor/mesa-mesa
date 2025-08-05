@@ -100,7 +100,7 @@ static struct pipe_sampler_view *noop_create_sampler_view(struct pipe_context *c
 }
 
 static void noop_set_sampler_views(struct pipe_context *ctx,
-                                   enum pipe_shader_type shader,
+                                   mesa_shader_stage shader,
                                    unsigned start, unsigned count,
                                    unsigned unbind_num_trailing_slots,
                                    struct pipe_sampler_view **views)
@@ -108,7 +108,7 @@ static void noop_set_sampler_views(struct pipe_context *ctx,
 }
 
 static void noop_bind_sampler_states(struct pipe_context *ctx,
-                                     enum pipe_shader_type shader,
+                                     mesa_shader_stage shader,
                                      unsigned start, unsigned count,
                                      void **states)
 {
@@ -153,7 +153,7 @@ static void noop_set_framebuffer_state(struct pipe_context *ctx,
 }
 
 static void noop_set_constant_buffer(struct pipe_context *ctx,
-                                     enum pipe_shader_type shader, uint index,
+                                     mesa_shader_stage shader, uint index,
                                      bool take_ownership,
                                      const struct pipe_constant_buffer *cb)
 {
@@ -164,7 +164,7 @@ static void noop_set_constant_buffer(struct pipe_context *ctx,
 }
 
 static void noop_set_inlinable_constants(struct pipe_context *ctx,
-                                         enum pipe_shader_type shader,
+                                         mesa_shader_stage shader,
                                          uint num_values, uint32_t *values)
 {
 }
@@ -257,7 +257,7 @@ static void noop_set_window_rectangles(struct pipe_context *ctx,
 }
 
 static void noop_set_shader_buffers(struct pipe_context *ctx,
-                                    enum pipe_shader_type shader,
+                                    mesa_shader_stage shader,
                                     unsigned start_slot, unsigned count,
                                     const struct pipe_shader_buffer *buffers,
                                     unsigned writable_bitmask)
@@ -265,7 +265,7 @@ static void noop_set_shader_buffers(struct pipe_context *ctx,
 }
 
 static void noop_set_shader_images(struct pipe_context *ctx,
-                                   enum pipe_shader_type shader,
+                                   mesa_shader_stage shader,
                                    unsigned start_slot, unsigned count,
                                    unsigned unbind_num_trailing_slots,
                                    const struct pipe_image_view *images)

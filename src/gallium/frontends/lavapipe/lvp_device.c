@@ -308,7 +308,7 @@ assert_memhandle_type(VkExternalMemoryHandleTypeFlags types)
 }
 
 static unsigned min_shader_cap(struct pipe_screen *pscreen,
-                               enum pipe_shader_type shader,
+                               mesa_shader_stage shader,
                                unsigned cap_offset)
 {
    unsigned val = UINT_MAX;

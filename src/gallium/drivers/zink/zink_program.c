@@ -2559,7 +2559,7 @@ zink_set_primitive_emulation_keys(struct zink_context *ctx)
    if (lower_line_stipple || lower_line_smooth ||
        lower_edge_flags || lower_quad_prim ||
        lower_pv_mode || zink_get_gs_key(ctx)->lower_gl_point) {
-      enum pipe_shader_type prev_vertex_stage =
+      mesa_shader_stage prev_vertex_stage =
          ctx->gfx_stages[MESA_SHADER_TESS_EVAL] ?
             MESA_SHADER_TESS_EVAL : MESA_SHADER_VERTEX;
       enum zink_rast_prim zink_prim_type =

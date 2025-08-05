@@ -103,7 +103,7 @@ fd2_sampler_state_create(struct pipe_context *pctx,
 }
 
 static void
-fd2_sampler_states_bind(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd2_sampler_states_bind(struct pipe_context *pctx, mesa_shader_stage shader,
                         unsigned start, unsigned nr, void **hwcso) in_dt
 {
    if (!hwcso)
@@ -183,7 +183,7 @@ fd2_sampler_view_create(struct pipe_context *pctx, struct pipe_resource *prsc,
 }
 
 static void
-fd2_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd2_set_sampler_views(struct pipe_context *pctx, mesa_shader_stage shader,
                       unsigned start, unsigned nr,
                       unsigned unbind_num_trailing_slots,
                       struct pipe_sampler_view **views) in_dt

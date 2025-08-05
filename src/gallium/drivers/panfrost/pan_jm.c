@@ -292,7 +292,7 @@ GENX(jm_emit_fragment_job)(struct panfrost_batch *batch,
 static void
 jm_emit_shader_env(struct panfrost_batch *batch,
                    struct MALI_SHADER_ENVIRONMENT *cfg,
-                   enum pipe_shader_type stage, uint64_t shader_ptr)
+                   mesa_shader_stage stage, uint64_t shader_ptr)
 {
    cfg->resources = panfrost_emit_resources(batch, stage);
    cfg->thread_storage = batch->tls.gpu;
@@ -451,7 +451,7 @@ jm_emit_tiler_desc(struct panfrost_batch *batch)
 #if PAN_ARCH <= 7
 static inline void
 jm_emit_draw_descs(struct panfrost_batch *batch, struct MALI_DRAW *d,
-                   enum pipe_shader_type st)
+                   mesa_shader_stage st)
 {
    d->offset_start = batch->ctx->offset_start;
    d->instance_size =

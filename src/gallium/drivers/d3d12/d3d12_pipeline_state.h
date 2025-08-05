@@ -107,7 +107,7 @@ d3d12_gfx_pipeline_state_cache_invalidate(struct d3d12_context *ctx, const void 
 
 void
 d3d12_gfx_pipeline_state_cache_invalidate_shader(struct d3d12_context *ctx,
-                                                 enum pipe_shader_type stage,
+                                                 mesa_shader_stage stage,
                                                  struct d3d12_shader_selector *selector);
 
 void

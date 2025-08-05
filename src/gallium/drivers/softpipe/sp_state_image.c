@@ -27,7 +27,7 @@
 #include "sp_buffer.h"
 
 static void softpipe_set_shader_images(struct pipe_context *pipe,
-                                       enum pipe_shader_type shader,
+                                       mesa_shader_stage shader,
                                        unsigned start,
                                        unsigned num,
                                        unsigned unbind_num_trailing_slots,
@@ -61,7 +61,7 @@ static void softpipe_set_shader_images(struct pipe_context *pipe,
 }
 
 static void softpipe_set_shader_buffers(struct pipe_context *pipe,
-                                        enum pipe_shader_type shader,
+                                        mesa_shader_stage shader,
                                         unsigned start,
                                         unsigned num,
                                         const struct pipe_shader_buffer *buffers,

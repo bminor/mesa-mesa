@@ -328,7 +328,7 @@ struct r600_pipe_shader_selector {
 
 	unsigned	num_shaders;
 
-	enum pipe_shader_type	type;
+	mesa_shader_stage	type;
         enum pipe_shader_ir ir_type;
 
 	/* geometry shader properties */
@@ -1091,7 +1091,7 @@ void eg_dump_debug_state(struct pipe_context *ctx, FILE *f,
 struct r600_pipe_shader_selector *r600_create_shader_state_tokens(struct pipe_context *ctx,
 								  const void *tokens,
 								  enum pipe_shader_ir,
-								  unsigned pipe_shader_type);
+								  unsigned mesa_shader_stage);
 int r600_shader_select(struct pipe_context *ctx,
 		       struct r600_pipe_shader_selector* sel,
 		       bool *dirty, bool precompile);

@@ -1195,7 +1195,7 @@ static void si_set_max_shader_compiler_threads(struct pipe_screen *screen, unsig
 }
 
 static bool si_is_parallel_shader_compilation_finished(struct pipe_screen *screen, void *shader,
-                                                       enum pipe_shader_type shader_type)
+                                                       mesa_shader_stage shader_type)
 {
    struct si_shader_selector *sel = (struct si_shader_selector *)shader;
 

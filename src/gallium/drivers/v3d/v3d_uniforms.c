@@ -215,7 +215,7 @@ write_tmu_p1(struct v3d_job *job,
 struct v3d_cl_reloc
 v3d_write_uniforms(struct v3d_context *v3d, struct v3d_job *job,
                    struct v3d_compiled_shader *shader,
-                   enum pipe_shader_type stage)
+                   mesa_shader_stage stage)
 {
         struct v3d_device_info *devinfo = &v3d->screen->devinfo;
         struct v3d_constbuf_stateobj *cb = &v3d->constbuf[stage];

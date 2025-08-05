@@ -1026,7 +1026,7 @@ svga_use_sampler_state_mapping(const struct svga_context *svga,
 
 static inline void
 svga_set_curr_shader_use_samplers_flag(struct svga_context *svga,
-                                       enum pipe_shader_type shader_type,
+                                       mesa_shader_stage shader_type,
                                        bool use_samplers)
 {
    svga->curr.use_samplers[shader_type] = use_samplers;
@@ -1035,7 +1035,7 @@ svga_set_curr_shader_use_samplers_flag(struct svga_context *svga,
 
 static inline bool
 svga_curr_shader_use_samplers(const struct svga_context *svga,
-                              enum pipe_shader_type shader_type)
+                              mesa_shader_stage shader_type)
 {
    return svga->curr.use_samplers[shader_type];
 }

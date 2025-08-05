@@ -46,7 +46,7 @@ insert_at_head(struct svga_shader *head, struct svga_shader *shader)
  */
 static void
 bind_shader(struct svga_context *svga,
-            const enum pipe_shader_type shader_type,
+            const mesa_shader_stage shader_type,
             struct svga_shader *shader)
 {
    switch (shader_type) {
@@ -82,7 +82,7 @@ bind_shader(struct svga_context *svga,
  */
 static void *
 create_shader(struct svga_context *svga,
-              const enum pipe_shader_type shader_type,
+              const mesa_shader_stage shader_type,
               struct pipe_shader_state *state)
 {
    switch (shader_type) {

@@ -15,7 +15,7 @@
 #include "freedreno_program.h"
 
 static void
-update_bound_stage(struct fd_context *ctx, enum pipe_shader_type shader,
+update_bound_stage(struct fd_context *ctx, mesa_shader_stage shader,
                    bool bound) assert_dt
 {
    uint32_t bound_shader_stages = ctx->bound_shader_stages;

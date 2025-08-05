@@ -274,7 +274,7 @@ svga_create_sampler_state(struct pipe_context *pipe,
 
 static void
 svga_bind_sampler_states(struct pipe_context *pipe,
-                         enum pipe_shader_type shader,
+                         mesa_shader_stage shader,
                          unsigned start,
                          unsigned num,
                          void **samplers)
@@ -389,7 +389,7 @@ svga_sampler_view_destroy(struct pipe_context *pipe,
 
 static void
 svga_set_sampler_views(struct pipe_context *pipe,
-                       enum pipe_shader_type shader,
+                       mesa_shader_stage shader,
                        unsigned start,
                        unsigned num,
                        unsigned unbind_num_trailing_slots,
@@ -509,7 +509,7 @@ done:
 void
 svga_cleanup_sampler_state(struct svga_context *svga)
 {
-   enum pipe_shader_type shader;
+   mesa_shader_stage shader;
 
    for (shader = 0; shader <= MESA_SHADER_COMPUTE; shader++) {
       unsigned i;

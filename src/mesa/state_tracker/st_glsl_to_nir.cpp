@@ -599,7 +599,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
          if (shader) {
             struct gl_program *p = shader->Program;
             if (p && p->variants) {
-               enum pipe_shader_type type = pipe_shader_type_from_mesa(shader->Stage);
+               mesa_shader_stage type = pipe_shader_type_from_mesa(shader->Stage);
                driver_handles[type] = p->variants->driver_shader;
             }
          }

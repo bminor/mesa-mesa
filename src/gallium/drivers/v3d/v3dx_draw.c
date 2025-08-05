@@ -129,7 +129,7 @@ v3d_start_draw(struct v3d_context *v3d)
 
 static void
 v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
-                               enum pipe_shader_type s)
+                               mesa_shader_stage s)
 {
         struct v3d_context *v3d = v3d_context(pctx);
         unsigned i;
@@ -224,7 +224,7 @@ v3d_predraw_check_outputs(struct pipe_context *pctx)
 static bool
 v3d_state_reads_resource(struct v3d_context *v3d,
                          struct pipe_resource *prsc,
-                         enum pipe_shader_type s)
+                         mesa_shader_stage s)
 {
         struct v3d_resource *rsc = v3d_resource(prsc);
         unsigned i;

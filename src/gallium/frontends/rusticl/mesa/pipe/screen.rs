@@ -293,7 +293,7 @@ impl PipeScreen {
         }
     }
 
-    pub fn shader_caps(&self, t: pipe_shader_type) -> &pipe_shader_caps {
+    pub fn shader_caps(&self, t: mesa_shader_stage) -> &pipe_shader_caps {
         &self.screen().shader_caps[t as usize]
     }
 
@@ -412,7 +412,7 @@ impl PipeScreen {
 
     pub fn nir_shader_compiler_options(
         &self,
-        shader: pipe_shader_type,
+        shader: mesa_shader_stage,
     ) -> *const nir_shader_compiler_options {
         self.screen().nir_options[shader as usize]
     }

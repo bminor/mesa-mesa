@@ -67,7 +67,7 @@ llvmpipe_create_sampler_state(struct pipe_context *pipe,
 
 static void
 llvmpipe_bind_sampler_states(struct pipe_context *pipe,
-                             enum pipe_shader_type shader,
+                             mesa_shader_stage shader,
                              unsigned start,
                              unsigned num,
                              void **samplers)
@@ -127,7 +127,7 @@ llvmpipe_bind_sampler_states(struct pipe_context *pipe,
 
 static void
 llvmpipe_set_sampler_views(struct pipe_context *pipe,
-                           enum pipe_shader_type shader,
+                           mesa_shader_stage shader,
                            unsigned start,
                            unsigned num,
                            unsigned unbind_num_trailing_slots,
@@ -290,7 +290,7 @@ static void
 prepare_shader_sampling(struct llvmpipe_context *lp,
                         unsigned num,
                         struct pipe_sampler_view **views,
-                        enum pipe_shader_type shader_type)
+                        mesa_shader_stage shader_type)
 {
    uint32_t row_stride[PIPE_MAX_TEXTURE_LEVELS];
    uint32_t img_stride[PIPE_MAX_TEXTURE_LEVELS];
@@ -432,7 +432,7 @@ llvmpipe_prepare_tess_eval_sampling(struct llvmpipe_context *lp,
 
 void
 llvmpipe_cleanup_stage_sampling(struct llvmpipe_context *ctx,
-                                enum pipe_shader_type stage)
+                                mesa_shader_stage stage)
 {
    assert(ctx);
    assert(stage < ARRAY_SIZE(ctx->num_sampler_views));
@@ -458,7 +458,7 @@ static void
 prepare_shader_images(struct llvmpipe_context *lp,
                       unsigned num,
                       struct pipe_image_view *views,
-                      enum pipe_shader_type shader_type)
+                      mesa_shader_stage shader_type)
 {
    assert(num <= PIPE_MAX_SHADER_SAMPLER_VIEWS);
    if (!num)
@@ -591,7 +591,7 @@ llvmpipe_prepare_tess_eval_images(struct llvmpipe_context *lp,
 
 void
 llvmpipe_cleanup_stage_images(struct llvmpipe_context *ctx,
-                              enum pipe_shader_type stage)
+                              mesa_shader_stage stage)
 {
    assert(ctx);
    assert(stage < ARRAY_SIZE(ctx->num_images));

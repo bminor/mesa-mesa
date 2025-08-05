@@ -900,7 +900,7 @@ GENX(csf_emit_fragment_job)(struct panfrost_batch *batch,
 }
 
 static void
-csf_emit_shader_regs(struct panfrost_batch *batch, enum pipe_shader_type stage,
+csf_emit_shader_regs(struct panfrost_batch *batch, mesa_shader_stage stage,
                      uint64_t shader)
 {
    uint64_t resources = panfrost_emit_resources(batch, stage);

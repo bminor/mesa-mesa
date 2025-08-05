@@ -29,7 +29,7 @@ _compiler_binding_types = [
   'nir_.*',
   'mesa_scope',
   'mesa_prim',
-  'pipe_shader_type',
+  'mesa_shader_stage',
   'shader_info',
   'tess_primitive_mode',
   'u_printf_info',

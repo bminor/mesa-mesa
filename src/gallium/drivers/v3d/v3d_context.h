@@ -805,7 +805,7 @@ void v3d_set_shader_uniform_dirty_flags(struct v3d_compiled_shader *shader);
 struct v3d_cl_reloc v3d_write_uniforms(struct v3d_context *v3d,
                                        struct v3d_job *job,
                                        struct v3d_compiled_shader *shader,
-                                       enum pipe_shader_type stage);
+                                       mesa_shader_stage stage);
 
 void v3d_flush(struct pipe_context *pctx);
 void v3d_job_init(struct v3d_context *v3d);
@@ -885,7 +885,7 @@ float v3d_get_real_line_width(struct v3d_context *v3d);
 void v3d_ensure_prim_counts_allocated(struct v3d_context *ctx);
 
 void v3d_flag_dirty_sampler_state(struct v3d_context *v3d,
-                                  enum pipe_shader_type shader);
+                                  mesa_shader_stage shader);
 
 void v3d_get_tile_buffer_size(const struct v3d_device_info *devinfo,
                               bool is_msaa,

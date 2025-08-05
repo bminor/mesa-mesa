@@ -203,19 +203,19 @@ panfrost_get_fresh_batch_for_fbo(struct panfrost_context *ctx,
                                  const char *reason);
 
 void panfrost_batch_add_bo(struct panfrost_batch *batch, struct panfrost_bo *bo,
-                           enum pipe_shader_type stage);
+                           mesa_shader_stage stage);
 
 void panfrost_batch_write_bo(struct panfrost_batch *batch,
                              struct panfrost_bo *bo,
-                             enum pipe_shader_type stage);
+                             mesa_shader_stage stage);
 
 void panfrost_batch_read_rsrc(struct panfrost_batch *batch,
                               struct panfrost_resource *rsrc,
-                              enum pipe_shader_type stage);
+                              mesa_shader_stage stage);
 
 void panfrost_batch_write_rsrc(struct panfrost_batch *batch,
                                struct panfrost_resource *rsrc,
-                               enum pipe_shader_type stage);
+                               mesa_shader_stage stage);
 
 bool panfrost_any_batch_reads_rsrc(struct panfrost_context *ctx,
                                    struct panfrost_resource *rsrc);
@@ -225,7 +225,7 @@ bool panfrost_any_batch_writes_rsrc(struct panfrost_context *ctx,
 
 struct panfrost_bo *panfrost_batch_create_bo(struct panfrost_batch *batch,
                                              size_t size, uint32_t create_flags,
-                                             enum pipe_shader_type stage,
+                                             mesa_shader_stage stage,
                                              const char *label);
 
 void panfrost_flush_all_batches(struct panfrost_context *ctx,

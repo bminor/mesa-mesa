@@ -576,7 +576,7 @@ struct si_buffer_resources {
    } while (0)
 
 /* si_descriptors.c */
-void si_get_inline_uniform_state(union si_shader_key *key, enum pipe_shader_type shader,
+void si_get_inline_uniform_state(union si_shader_key *key, mesa_shader_stage shader,
                                  bool *inline_uniforms, uint32_t **inlined_values);
 void si_set_mutable_tex_desc_fields(struct si_screen *sscreen, struct si_texture *tex,
                                     const struct legacy_surf_level *base_level_info,
@@ -585,14 +585,14 @@ void si_set_mutable_tex_desc_fields(struct si_screen *sscreen, struct si_texture
                                     bool is_stencil, uint16_t access, uint32_t * restrict state);
 void si_update_ps_colorbuf0_slot(struct si_context *sctx);
 void si_force_disable_ps_colorbuf0_slot(struct si_context *sctx);
-void si_invalidate_inlinable_uniforms(struct si_context *sctx, enum pipe_shader_type shader);
+void si_invalidate_inlinable_uniforms(struct si_context *sctx, mesa_shader_stage shader);
 void si_get_pipe_constant_buffer(struct si_context *sctx, uint shader, uint slot,
                                  struct pipe_constant_buffer *cbuf);
-void si_set_shader_buffers(struct pipe_context *ctx, enum pipe_shader_type shader,
+void si_set_shader_buffers(struct pipe_context *ctx, mesa_shader_stage shader,
                            unsigned start_slot, unsigned count,
                            const struct pipe_shader_buffer *sbuffers,
                            unsigned writable_bitmask, bool internal_blit);
-void si_get_shader_buffers(struct si_context *sctx, enum pipe_shader_type shader, uint start_slot,
+void si_get_shader_buffers(struct si_context *sctx, mesa_shader_stage shader, uint start_slot,
                            uint count, struct pipe_shader_buffer *sbuf);
 void si_set_ring_buffer(struct si_context *sctx, uint slot, struct pipe_resource *buffer,
                         unsigned stride, unsigned num_records, bool add_tid, bool swizzle,
@@ -679,7 +679,7 @@ bool si_update_spi_tmpring_size(struct si_context *sctx, unsigned bytes);
 bool si_set_tcs_to_fixed_func_shader(struct si_context *sctx);
 void si_update_tess_io_layout_state(struct si_context *sctx);
 void si_update_common_shader_state(struct si_context *sctx, struct si_shader_selector *sel,
-                                   enum pipe_shader_type type);
+                                   mesa_shader_stage type);
 
 /* si_state_draw.cpp */
 void si_cp_dma_prefetch(struct si_context *sctx, struct pipe_resource *buf,

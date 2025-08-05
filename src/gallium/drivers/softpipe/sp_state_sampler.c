@@ -49,7 +49,7 @@
  */
 static void
 softpipe_bind_sampler_states(struct pipe_context *pipe,
-                             enum pipe_shader_type shader,
+                             mesa_shader_stage shader,
                              unsigned start,
                              unsigned num,
                              void **samplers)
@@ -97,7 +97,7 @@ softpipe_sampler_view_destroy(struct pipe_context *pipe,
 
 void
 softpipe_set_sampler_views(struct pipe_context *pipe,
-                           enum pipe_shader_type shader,
+                           mesa_shader_stage shader,
                            unsigned start,
                            unsigned num,
                            unsigned unbind_num_trailing_slots,
@@ -176,7 +176,7 @@ prepare_shader_sampling(
    struct softpipe_context *sp,
    unsigned num,
    struct pipe_sampler_view **views,
-   enum pipe_shader_type shader_type,
+   mesa_shader_stage shader_type,
    struct pipe_resource *mapped_tex[PIPE_MAX_SHADER_SAMPLER_VIEWS])
 {
 

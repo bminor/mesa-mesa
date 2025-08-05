@@ -539,7 +539,7 @@ fd6_sampler_view_update(struct fd_context *ctx,
 }
 
 static void
-fd6_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
+fd6_set_sampler_views(struct pipe_context *pctx, mesa_shader_stage shader,
                       unsigned start, unsigned nr,
                       unsigned unbind_num_trailing_slots,
                       struct pipe_sampler_view **views)
@@ -601,7 +601,7 @@ tex_key_equals(const void *_a, const void *_b)
 }
 
 static struct fd_ringbuffer *
-build_texture_state(struct fd_context *ctx, enum pipe_shader_type type,
+build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
                     struct fd_texture_stateobj *tex)
    assert_dt
 {
@@ -797,7 +797,7 @@ handle_invalidates(struct fd_context *ctx)
 }
 
 struct fd6_texture_state *
-fd6_texture_state(struct fd_context *ctx, enum pipe_shader_type type)
+fd6_texture_state(struct fd_context *ctx, mesa_shader_stage type)
 {
    struct fd_texture_stateobj *tex = &ctx->tex[type];
    struct fd6_context *fd6_ctx = fd6_context(ctx);

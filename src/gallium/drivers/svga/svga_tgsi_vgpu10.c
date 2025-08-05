@@ -12822,7 +12822,7 @@ transform_fs_aapoint(struct svga_context *svga,
 static void
 compute_input_mapping(struct svga_context *svga,
                       struct svga_shader_emitter_v10 *emit,
-                      enum pipe_shader_type unit)
+                      mesa_shader_stage unit)
 {
    struct svga_shader *prevShader = NULL;   /* shader in the previous stage */
 
@@ -12911,7 +12911,7 @@ struct svga_shader_variant *
 svga_tgsi_vgpu10_translate(struct svga_context *svga,
                            const struct svga_shader *shader,
                            const struct svga_compile_key *key,
-                           enum pipe_shader_type unit)
+                           mesa_shader_stage unit)
 {
    struct svga_screen *svgascreen = svga_screen(svga->pipe.screen);
    struct svga_shader_variant *variant = NULL;

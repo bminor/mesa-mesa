@@ -442,7 +442,7 @@ void r600_sampler_states_dirty(struct r600_context *rctx,
 }
 
 static void r600_bind_sampler_states(struct pipe_context *pipe,
-			       enum pipe_shader_type shader,
+			       mesa_shader_stage shader,
 			       unsigned start,
 			       unsigned count, void **states)
 {
@@ -629,7 +629,7 @@ void r600_sampler_views_dirty(struct r600_context *rctx,
 }
 
 static void r600_set_sampler_views(struct pipe_context *pipe,
-				   enum pipe_shader_type shader,
+				   mesa_shader_stage shader,
 				   unsigned start, unsigned count,
 				   unsigned unbind_num_trailing_slots,
 				   struct pipe_sampler_view **views)
@@ -740,7 +740,7 @@ static void r600_update_compressed_colortex_mask(struct r600_samplerview_state *
 }
 
 static int r600_get_hw_atomic_count(const struct pipe_context *ctx,
-				    enum pipe_shader_type shader)
+				    mesa_shader_stage shader)
 {
 	const struct r600_context *rctx = (struct r600_context *)ctx;
 	int value = 0;
@@ -956,11 +956,11 @@ int r600_shader_select(struct pipe_context *ctx,
 
 struct r600_pipe_shader_selector *r600_create_shader_state_tokens(struct pipe_context *ctx,
 								  const void *prog, enum pipe_shader_ir ir,
-								  unsigned pipe_shader_type)
+								  unsigned mesa_shader_stage)
 {
 	struct r600_pipe_shader_selector *sel = CALLOC_STRUCT(r600_pipe_shader_selector);
 
-	sel->type = pipe_shader_type;
+	sel->type = mesa_shader_stage;
 	if (ir == PIPE_SHADER_IR_TGSI) {
 		sel->tokens = tgsi_dup_tokens((const struct tgsi_token *)prog);
 		tgsi_scan_shader(sel->tokens, &sel->info);
@@ -974,21 +974,21 @@ struct r600_pipe_shader_selector *r600_create_shader_state_tokens(struct pipe_co
 
 static void *r600_create_shader_state(struct pipe_context *ctx,
 			       const struct pipe_shader_state *state,
-			       unsigned pipe_shader_type)
+			       unsigned mesa_shader_stage)
 {
 	int i;
 	struct r600_pipe_shader_selector *sel;
 	
 	if (state->type == PIPE_SHADER_IR_TGSI)
-		sel = r600_create_shader_state_tokens(ctx, state->tokens, state->type, pipe_shader_type);
+		sel = r600_create_shader_state_tokens(ctx, state->tokens, state->type, mesa_shader_stage);
 	else if (state->type == PIPE_SHADER_IR_NIR) {
-		sel = r600_create_shader_state_tokens(ctx, state->ir.nir, state->type, pipe_shader_type);
+		sel = r600_create_shader_state_tokens(ctx, state->ir.nir, state->type, mesa_shader_stage);
 	} else
 		UNREACHABLE("Unknown shader type");
 	
 	sel->so = state->stream_output;
 
-	switch (pipe_shader_type) {
+	switch (mesa_shader_stage) {
 	case MESA_SHADER_GEOMETRY:
 		sel->gs_output_prim =
 			sel->info.properties[TGSI_PROPERTY_GS_OUTPUT_PRIM];
@@ -1239,7 +1239,7 @@ void r600_constant_buffers_dirty(struct r600_context *rctx, struct r600_constbuf
 }
 
 static void r600_set_constant_buffer(struct pipe_context *ctx,
-				     enum pipe_shader_type shader, uint index,
+				     mesa_shader_stage shader, uint index,
 				     bool take_ownership,
 				     const struct pipe_constant_buffer *input)
 {

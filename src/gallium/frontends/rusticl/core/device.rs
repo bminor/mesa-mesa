@@ -113,7 +113,7 @@ impl DeviceCaps {
     }
 
     fn shader_caps(screen: &PipeScreen) -> &pipe_shader_caps {
-        screen.shader_caps(pipe_shader_type::MESA_SHADER_COMPUTE)
+        screen.shader_caps(mesa_shader_stage::MESA_SHADER_COMPUTE)
     }
 }
 
@@ -777,7 +777,7 @@ impl DeviceBase {
 
     fn shader_caps(&self) -> &pipe_shader_caps {
         self.screen
-            .shader_caps(pipe_shader_type::MESA_SHADER_COMPUTE)
+            .shader_caps(mesa_shader_stage::MESA_SHADER_COMPUTE)
     }
 
     pub fn address_bits(&self) -> cl_uint {
@@ -892,7 +892,7 @@ impl DeviceBase {
         unsafe {
             *self
                 .screen
-                .nir_shader_compiler_options(pipe_shader_type::MESA_SHADER_COMPUTE)
+                .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE)
         }
     }
 
@@ -1351,7 +1351,7 @@ impl Device {
     fn check_valid(screen: &PipeScreen) -> bool {
         if !screen.caps().compute
             || screen
-                .shader_caps(pipe_shader_type::MESA_SHADER_COMPUTE)
+                .shader_caps(mesa_shader_stage::MESA_SHADER_COMPUTE)
                 .supported_irs
                 & (1 << (pipe_shader_ir::PIPE_SHADER_IR_NIR as i32))
                 == 0
@@ -1362,7 +1362,7 @@ impl Device {
         // CL_DEVICE_MAX_PARAMETER_SIZE
         // For this minimum value, only a maximum of 128 arguments can be passed to a kernel
         if screen
-            .shader_caps(pipe_shader_type::MESA_SHADER_COMPUTE)
+            .shader_caps(mesa_shader_stage::MESA_SHADER_COMPUTE)
             .max_const_buffer0_size
             < 128
         {

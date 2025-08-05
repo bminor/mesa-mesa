@@ -514,7 +514,7 @@ void panfrost_flush(struct pipe_context *pipe, struct pipe_fence_handle **fence,
 bool panfrost_render_condition_check(struct panfrost_context *ctx);
 
 void panfrost_update_shader_variant(struct panfrost_context *ctx,
-                                    enum pipe_shader_type type);
+                                    mesa_shader_stage type);
 
 void panfrost_analyze_sysvals(struct panfrost_compiled_shader *ss);
 
@@ -561,7 +561,7 @@ void panfrost_set_batch_masks_blend(struct panfrost_batch *batch);
 void panfrost_set_batch_masks_zs(struct panfrost_batch *batch);
 
 void panfrost_track_image_access(struct panfrost_batch *batch,
-                                 enum pipe_shader_type stage,
+                                 mesa_shader_stage stage,
                                  struct pipe_image_view *image);
 
 void panfrost_context_reinit(struct panfrost_context *ctx);

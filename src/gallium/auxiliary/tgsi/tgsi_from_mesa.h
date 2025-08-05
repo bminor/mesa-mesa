@@ -58,16 +58,16 @@ tgsi_get_sysval_semantic(unsigned sysval);
 enum tgsi_interpolate_mode
 tgsi_get_interp_mode(enum glsl_interp_mode mode, bool color);
 
-static inline enum pipe_shader_type
+static inline mesa_shader_stage
 pipe_shader_type_from_mesa(mesa_shader_stage stage)
 {
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_VERTEX == MESA_SHADER_VERTEX);
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_FRAGMENT == MESA_SHADER_FRAGMENT);
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_TESS_CTRL == MESA_SHADER_TESS_CTRL);
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_TESS_EVAL == MESA_SHADER_TESS_EVAL);
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_GEOMETRY == MESA_SHADER_GEOMETRY);
-   STATIC_ASSERT((enum pipe_shader_type) MESA_SHADER_COMPUTE == MESA_SHADER_COMPUTE);
-   return (enum pipe_shader_type)stage;
+   STATIC_ASSERT((mesa_shader_stage) MESA_SHADER_VERTEX == MESA_SHADER_VERTEX);
+   STATIC_ASSERT((mesa_shader_stage) MESA_SHADER_FRAGMENT == MESA_SHADER_FRAGMENT);
+   STATIC_ASSERT((mesa_shader_stage) MESA_SHADER_TESS_CTRL == MESA_SHADER_TESS_CTRL);
+   STATIC_ASSERT((mesa_shader_stage) MESA_SHADER_TESS_EVAL == MESA_SHADER_TESS_EVAL);
+   STATIC_ASSERT((mesa_shader_stage) MESA_SHADER_GEOMETRY == MESA_SHADER_GEOMETRY);
+   STATIC_ASSERT((mesa_shader_stage) MESA_SHADER_COMPUTE == MESA_SHADER_COMPUTE);
+   return (mesa_shader_stage)stage;
 }
 
 static inline mesa_shader_stage

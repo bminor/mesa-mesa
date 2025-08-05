@@ -1208,7 +1208,7 @@ tgsi_exec_machine_bind_shader(
 
 
 struct tgsi_exec_machine *
-tgsi_exec_machine_create(enum pipe_shader_type shader_type)
+tgsi_exec_machine_create(mesa_shader_stage shader_type)
 {
    struct tgsi_exec_machine *mach;
 

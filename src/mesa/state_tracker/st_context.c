@@ -209,7 +209,7 @@ st_save_zombie_sampler_view(struct st_context *st,
  */
 void
 st_save_zombie_shader(struct st_context *st,
-                      enum pipe_shader_type type,
+                      mesa_shader_stage type,
                       struct pipe_shader_state *shader)
 {
    struct st_zombie_shader_node *entry;

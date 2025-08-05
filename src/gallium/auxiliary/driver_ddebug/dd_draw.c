@@ -259,7 +259,7 @@ dd_dump_render_condition(struct dd_draw_state *dstate, FILE *f)
 }
 
 static void
-dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
+dd_dump_shader(struct dd_draw_state *dstate, mesa_shader_stage sh, FILE *f)
 {
    int i;
    const char *shader_str[MESA_SHADER_STAGES];

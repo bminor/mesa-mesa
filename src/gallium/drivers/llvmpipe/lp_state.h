@@ -209,7 +209,7 @@ llvmpipe_prepare_tess_eval_sampling(struct llvmpipe_context *ctx,
                                     struct pipe_sampler_view **views);
 void
 llvmpipe_cleanup_stage_sampling(struct llvmpipe_context *ctx,
-                                enum pipe_shader_type stage);
+                                mesa_shader_stage stage);
 
 void
 llvmpipe_prepare_vertex_images(struct llvmpipe_context *lp,
@@ -233,6 +233,6 @@ llvmpipe_prepare_tess_eval_images(struct llvmpipe_context *lp,
 
 void
 llvmpipe_cleanup_stage_images(struct llvmpipe_context *ctx,
-                              enum pipe_shader_type stage);
+                              mesa_shader_stage stage);
 
 #endif

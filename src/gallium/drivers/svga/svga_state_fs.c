@@ -101,7 +101,7 @@ make_fs_key(const struct svga_context *svga,
             struct svga_fragment_shader *fs,
             struct svga_compile_key *key)
 {
-   const enum pipe_shader_type shader = MESA_SHADER_FRAGMENT;
+   const mesa_shader_stage shader = MESA_SHADER_FRAGMENT;
    unsigned i;
 
    memset(key, 0, sizeof *key);

@@ -485,7 +485,7 @@ nvc0_stage_sampler_states_bind(struct nvc0_context *nvc0,
 
 static void
 nvc0_bind_sampler_states(struct pipe_context *pipe,
-                         enum pipe_shader_type shader,
+                         mesa_shader_stage shader,
                          unsigned start, unsigned nr, void **samplers)
 {
    const unsigned s = nvc0_shader_stage(shader);
@@ -566,7 +566,7 @@ nvc0_stage_set_sampler_views(struct nvc0_context *nvc0, int s,
 }
 
 static void
-nvc0_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
+nvc0_set_sampler_views(struct pipe_context *pipe, mesa_shader_stage shader,
                        unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
                        struct pipe_sampler_view **views)
@@ -788,7 +788,7 @@ nvc0_get_compute_state_info(struct pipe_context *pipe, void *hwcso,
 
 static void
 nvc0_set_constant_buffer(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, uint index,
+                         mesa_shader_stage shader, uint index,
                          bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
@@ -1266,7 +1266,7 @@ nvc0_bind_images_range(struct nvc0_context *nvc0, const unsigned s,
 
 static void
 nvc0_set_shader_images(struct pipe_context *pipe,
-                       enum pipe_shader_type shader,
+                       mesa_shader_stage shader,
                        unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
                        const struct pipe_image_view *images)
@@ -1336,7 +1336,7 @@ nvc0_bind_buffers_range(struct nvc0_context *nvc0, const unsigned t,
 
 static void
 nvc0_set_shader_buffers(struct pipe_context *pipe,
-                        enum pipe_shader_type shader,
+                        mesa_shader_stage shader,
                         unsigned start, unsigned nr,
                         const struct pipe_shader_buffer *buffers,
                         unsigned writable_bitmask)

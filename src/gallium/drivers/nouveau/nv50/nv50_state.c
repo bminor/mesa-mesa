@@ -630,7 +630,7 @@ nv50_stage_sampler_states_bind(struct nv50_context *nv50, int s,
 
 static void
 nv50_bind_sampler_states(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, unsigned start,
+                         mesa_shader_stage shader, unsigned start,
                          unsigned num_samplers, void **samplers)
 {
    unsigned s = nv50_context_shader_stage(shader);
@@ -701,7 +701,7 @@ nv50_stage_set_sampler_views(struct nv50_context *nv50, int s,
 }
 
 static void
-nv50_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
+nv50_set_sampler_views(struct pipe_context *pipe, mesa_shader_stage shader,
                        unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
                        struct pipe_sampler_view **views)
@@ -731,7 +731,7 @@ nv50_set_sampler_views(struct pipe_context *pipe, enum pipe_shader_type shader,
 static void *
 nv50_sp_state_create(struct pipe_context *pipe,
                      const struct pipe_shader_state *cso,
-                     enum pipe_shader_type type)
+                     mesa_shader_stage type)
 {
    struct nv50_program *prog;
 
@@ -884,7 +884,7 @@ nv50_get_compute_state_info(struct pipe_context *pipe, void *hwcso,
 
 static void
 nv50_set_constant_buffer(struct pipe_context *pipe,
-                         enum pipe_shader_type shader, uint index,
+                         mesa_shader_stage shader, uint index,
                          bool take_ownership,
                          const struct pipe_constant_buffer *cb)
 {
@@ -1311,7 +1311,7 @@ nv50_bind_images_range(struct nv50_context *nv50,
 
 static void
 nv50_set_shader_images(struct pipe_context *pipe,
-                       enum pipe_shader_type shader,
+                       mesa_shader_stage shader,
                        unsigned start, unsigned nr,
                        unsigned unbind_num_trailing_slots,
                        const struct pipe_image_view *images)
@@ -1376,7 +1376,7 @@ nv50_bind_buffers_range(struct nv50_context *nv50,
 
 static void
 nv50_set_shader_buffers(struct pipe_context *pipe,
-                        enum pipe_shader_type shader,
+                        mesa_shader_stage shader,
                         unsigned start, unsigned nr,
                         const struct pipe_shader_buffer *buffers,
                         unsigned writable_bitmask)

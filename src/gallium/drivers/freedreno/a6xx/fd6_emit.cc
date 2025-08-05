@@ -37,7 +37,7 @@
 /* Helper to get tex stateobj.
  */
 static struct fd_ringbuffer *
-tex_state(struct fd_context *ctx, enum pipe_shader_type type)
+tex_state(struct fd_context *ctx, mesa_shader_stage type)
    assert_dt
 {
    if (ctx->tex[type].num_textures == 0)

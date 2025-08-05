@@ -248,7 +248,7 @@ zink_set_max_shader_compiler_threads(struct pipe_screen *pscreen, unsigned max_t
 }
 
 static bool
-zink_is_parallel_shader_compilation_finished(struct pipe_screen *screen, void *shader, enum pipe_shader_type shader_type)
+zink_is_parallel_shader_compilation_finished(struct pipe_screen *screen, void *shader, mesa_shader_stage shader_type)
 {
    if (shader_type == MESA_SHADER_COMPUTE) {
       struct zink_program *pg = shader;
