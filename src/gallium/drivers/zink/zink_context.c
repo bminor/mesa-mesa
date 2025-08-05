@@ -3032,6 +3032,22 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
             }
          }
       }
+      if (zink_debug & ZINK_DEBUG_RPLOADS) {
+         for (unsigned i = 0; i < ARRAY_SIZE(ctx->dynamic_fb.attachments); i++) {
+            if (ctx->dynamic_fb.attachments[i].loadOp != VK_ATTACHMENT_LOAD_OP_DONT_CARE)
+               continue;
+            ctx->dynamic_fb.attachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            if (i >= PIPE_MAX_COLOR_BUFS) {
+               ctx->dynamic_fb.attachments[i].clearValue.depthStencil.depth = 1.0;
+               ctx->dynamic_fb.attachments[i].clearValue.depthStencil.stencil = 255;
+            } else {
+               ctx->dynamic_fb.attachments[i].clearValue.color.float32[0] = 1.0;
+               ctx->dynamic_fb.attachments[i].clearValue.color.float32[1] = 0.0;
+               ctx->dynamic_fb.attachments[i].clearValue.color.float32[2] = 0.0;
+               ctx->dynamic_fb.attachments[i].clearValue.color.float32[3] = 1.0;
+            }
+         }
+      }
       if (changed_size || changed_layout)
          ctx->rp_changed = true;
       ctx->rp_loadop_changed = false;

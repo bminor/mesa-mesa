@@ -117,6 +117,7 @@ zink_debug_options[] = {
    { "quiet", ZINK_DEBUG_QUIET, "Suppress warnings" },
    { "nopc", ZINK_DEBUG_NOPC, "No precompilation" },
    { "msaaopt", ZINK_DEBUG_MSAAOPT, "Optimize out loads/stores of MSAA attachments" },
+   { "rploads", ZINK_DEBUG_RPLOADS, "Zap renderpass loads for DONT_CARE" },
    DEBUG_NAMED_VALUE_END
 };
 

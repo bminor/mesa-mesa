@@ -323,6 +323,8 @@ variable:
     No precompilation
   ``msaaopt``
     Optimize out loads/stores of MSAA attachments (nonconformant)
+  ``rploads``
+    Zap renderpass loads for DONT_CARE
 
 Vulkan Validation Layers
 ^^^^^^^^^^^^^^^^^^^^^^^^
