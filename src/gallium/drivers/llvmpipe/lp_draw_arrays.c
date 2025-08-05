@@ -113,8 +113,8 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info,
                                       lp->num_sampler_views[PIPE_SHADER_GEOMETRY],
                                       lp->sampler_views[PIPE_SHADER_GEOMETRY]);
    llvmpipe_prepare_tess_ctrl_sampling(lp,
-                                       lp->num_sampler_views[PIPE_SHADER_TESS_CTRL],
-                                       lp->sampler_views[PIPE_SHADER_TESS_CTRL]);
+                                       lp->num_sampler_views[MESA_SHADER_TESS_CTRL],
+                                       lp->sampler_views[MESA_SHADER_TESS_CTRL]);
    llvmpipe_prepare_tess_eval_sampling(lp,
                                        lp->num_sampler_views[PIPE_SHADER_TESS_EVAL],
                                        lp->sampler_views[PIPE_SHADER_TESS_EVAL]);
@@ -126,8 +126,8 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info,
                                     lp->num_images[PIPE_SHADER_GEOMETRY],
                                     lp->images[PIPE_SHADER_GEOMETRY]);
    llvmpipe_prepare_tess_ctrl_images(lp,
-                                     lp->num_images[PIPE_SHADER_TESS_CTRL],
-                                     lp->images[PIPE_SHADER_TESS_CTRL]);
+                                     lp->num_images[MESA_SHADER_TESS_CTRL],
+                                     lp->images[MESA_SHADER_TESS_CTRL]);
    llvmpipe_prepare_tess_eval_images(lp,
                                      lp->num_images[PIPE_SHADER_TESS_EVAL],
                                      lp->images[PIPE_SHADER_TESS_EVAL]);
@@ -170,12 +170,12 @@ llvmpipe_draw_vbo(struct pipe_context *pipe, const struct pipe_draw_info *info,
 
    llvmpipe_cleanup_stage_sampling(lp, MESA_SHADER_VERTEX);
    llvmpipe_cleanup_stage_sampling(lp, PIPE_SHADER_GEOMETRY);
-   llvmpipe_cleanup_stage_sampling(lp, PIPE_SHADER_TESS_CTRL);
+   llvmpipe_cleanup_stage_sampling(lp, MESA_SHADER_TESS_CTRL);
    llvmpipe_cleanup_stage_sampling(lp, PIPE_SHADER_TESS_EVAL);
 
    llvmpipe_cleanup_stage_images(lp, MESA_SHADER_VERTEX);
    llvmpipe_cleanup_stage_images(lp, PIPE_SHADER_GEOMETRY);
-   llvmpipe_cleanup_stage_images(lp, PIPE_SHADER_TESS_CTRL);
+   llvmpipe_cleanup_stage_images(lp, MESA_SHADER_TESS_CTRL);
    llvmpipe_cleanup_stage_images(lp, PIPE_SHADER_TESS_EVAL);
 
    /*

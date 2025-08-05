@@ -63,7 +63,7 @@ fd_set_patch_vertices(struct pipe_context *pctx, uint8_t patch_vertices) in_dt
     * stage as TCS could be NULL (passthrough)
     */
    if (ctx->prog.ds || ctx->prog.hs) {
-      fd_context_dirty_shader(ctx, PIPE_SHADER_TESS_CTRL, FD_DIRTY_SHADER_PROG);
+      fd_context_dirty_shader(ctx, MESA_SHADER_TESS_CTRL, FD_DIRTY_SHADER_PROG);
    }
 }
 
@@ -81,8 +81,8 @@ fd_tcs_state_bind(struct pipe_context *pctx, void *hwcso) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    ctx->prog.hs = hwcso;
-   fd_context_dirty_shader(ctx, PIPE_SHADER_TESS_CTRL, FD_DIRTY_SHADER_PROG);
-   update_bound_stage(ctx, PIPE_SHADER_TESS_CTRL, !!hwcso);
+   fd_context_dirty_shader(ctx, MESA_SHADER_TESS_CTRL, FD_DIRTY_SHADER_PROG);
+   update_bound_stage(ctx, MESA_SHADER_TESS_CTRL, !!hwcso);
 }
 
 static void

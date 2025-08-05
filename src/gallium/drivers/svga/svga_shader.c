@@ -788,7 +788,7 @@ svga_new_shader_variant(struct svga_context *svga, enum pipe_shader_type type)
    case PIPE_SHADER_TESS_EVAL:
       variant = CALLOC(1, sizeof(struct svga_tes_variant));
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       variant = CALLOC(1, sizeof(struct svga_tcs_variant));
       break;
    case PIPE_SHADER_COMPUTE:

@@ -377,7 +377,7 @@ st_update_tessctrl_textures(struct st_context *st)
    const struct gl_context *ctx = st->ctx;
 
    if (ctx->TessCtrlProgram._Current) {
-      update_textures(st, PIPE_SHADER_TESS_CTRL,
+      update_textures(st, MESA_SHADER_TESS_CTRL,
                             ctx->TessCtrlProgram._Current);
    }
 }

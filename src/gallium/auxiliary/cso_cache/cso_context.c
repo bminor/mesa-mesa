@@ -315,7 +315,7 @@ cso_create_context(struct pipe_context *pipe, unsigned flags)
    if (pipe->screen->shader_caps[PIPE_SHADER_GEOMETRY].max_instructions > 0) {
       ctx->has_geometry_shader = true;
    }
-   if (pipe->screen->shader_caps[PIPE_SHADER_TESS_CTRL].max_instructions > 0) {
+   if (pipe->screen->shader_caps[MESA_SHADER_TESS_CTRL].max_instructions > 0) {
       ctx->has_tessellation = true;
    }
    if (pipe->screen->shader_caps[PIPE_SHADER_COMPUTE].max_instructions > 0) {
@@ -370,7 +370,7 @@ cso_unbind_context(struct cso_context *cso)
                if (!ctx->has_geometry_shader)
                   continue;
                break;
-            case PIPE_SHADER_TESS_CTRL:
+            case MESA_SHADER_TESS_CTRL:
             case PIPE_SHADER_TESS_EVAL:
                if (!ctx->has_tessellation)
                   continue;

@@ -761,7 +761,7 @@ static int r600_get_hw_atomic_count(const struct pipe_context *ctx,
 			rctx->vs_shader->info.file_count[TGSI_FILE_HW_ATOMIC] +
 			(rctx->gs_shader ? rctx->gs_shader->info.file_count[TGSI_FILE_HW_ATOMIC] : 0);
 		break;
-	case PIPE_SHADER_TESS_CTRL:
+	case MESA_SHADER_TESS_CTRL:
 		value = rctx->ps_shader->info.file_count[TGSI_FILE_HW_ATOMIC] +
 			rctx->vs_shader->info.file_count[TGSI_FILE_HW_ATOMIC] +
 			(rctx->gs_shader ? rctx->gs_shader->info.file_count[TGSI_FILE_HW_ATOMIC] : 0) +
@@ -836,9 +836,9 @@ static inline void r600_shader_selector_key(const struct pipe_context *ctx,
 		key->tes.as_es = (rctx->gs_shader != NULL);
 		key->tes.first_atomic_counter = r600_get_hw_atomic_count(ctx, PIPE_SHADER_TESS_EVAL);
 		break;
-	case PIPE_SHADER_TESS_CTRL:
+	case MESA_SHADER_TESS_CTRL:
 		key->tcs.prim_mode = rctx->tes_shader->info.properties[TGSI_PROPERTY_TES_PRIM_MODE];
-		key->tcs.first_atomic_counter = r600_get_hw_atomic_count(ctx, PIPE_SHADER_TESS_CTRL);
+		key->tcs.first_atomic_counter = r600_get_hw_atomic_count(ctx, MESA_SHADER_TESS_CTRL);
 		break;
 	case PIPE_SHADER_COMPUTE:
 		break;
@@ -876,7 +876,7 @@ r600_shader_precompile_key(const struct pipe_context *ctx,
 		key->ps.nr_cbufs = sel->info.file_max[TGSI_FILE_OUTPUT] + 1;
 		break;
 
-	case PIPE_SHADER_TESS_CTRL:
+	case MESA_SHADER_TESS_CTRL:
 		/* Prim mode comes from the TES, but we need some valid value. */
 		key->tcs.prim_mode = MESA_PRIM_TRIANGLES;
 		break;
@@ -998,7 +998,7 @@ static void *r600_create_shader_state(struct pipe_context *ctx,
 			sel->info.properties[TGSI_PROPERTY_GS_INVOCATIONS];
 		break;
 	case MESA_SHADER_VERTEX:
-	case PIPE_SHADER_TESS_CTRL:
+	case MESA_SHADER_TESS_CTRL:
 		sel->lds_patch_outputs_written_mask = 0;
 		sel->lds_outputs_written_mask = 0;
 
@@ -1053,7 +1053,7 @@ static void *r600_create_gs_state(struct pipe_context *ctx,
 static void *r600_create_tcs_state(struct pipe_context *ctx,
 					 const struct pipe_shader_state *state)
 {
-	return r600_create_shader_state(ctx, state, PIPE_SHADER_TESS_CTRL);
+	return r600_create_shader_state(ctx, state, MESA_SHADER_TESS_CTRL);
 }
 
 static void *r600_create_tes_state(struct pipe_context *ctx,
@@ -1382,7 +1382,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 			/*
 			 * We'd only really need this for default tcs shader.
 			 */
-			assert(sh == PIPE_SHADER_TESS_CTRL);
+			assert(sh == MESA_SHADER_TESS_CTRL);
 			if (!size) {
 				ptr = rctx->tess_state;
 				size = R600_TCS_DEFAULT_LEVELS_SIZE;
@@ -1401,7 +1401,7 @@ void r600_update_driver_const_buffers(struct r600_context *rctx, bool compute_on
 				memcpy(ptr, rctx->sample_positions, R600_UCP_SIZE);
 			if (sh == PIPE_SHADER_COMPUTE)
 				memcpy(ptr, rctx->cs_block_grid_sizes, R600_CS_BLOCK_GRID_SIZE);
-			if (sh == PIPE_SHADER_TESS_CTRL)
+			if (sh == MESA_SHADER_TESS_CTRL)
 				memcpy(ptr, rctx->tess_state, R600_TCS_DEFAULT_LEVELS_SIZE);
 		}
 		info->texture_const_dirty = false;
@@ -1639,7 +1639,7 @@ static void r600_generate_fixed_func_tcs(struct r600_context *rctx)
 {
 	struct ureg_src const0, const1;
 	struct ureg_dst tessouter, tessinner;
-	struct ureg_program *ureg = ureg_create(PIPE_SHADER_TESS_CTRL);
+	struct ureg_program *ureg = ureg_create(MESA_SHADER_TESS_CTRL);
 
 	if (!ureg)
 		return; /* if we get here, we're screwed */
@@ -2036,7 +2036,7 @@ static bool r600_update_derived_state(struct r600_context *rctx)
 			need_buf_const = rctx->tcs_shader->current->shader.uses_tex_buffers ||
 					 rctx->tcs_shader->current->shader.has_txq_cube_array_z_comp;
 			if (need_buf_const) {
-				eg_setup_buffer_constants(rctx, PIPE_SHADER_TESS_CTRL);
+				eg_setup_buffer_constants(rctx, MESA_SHADER_TESS_CTRL);
 			}
 		}
 	}

@@ -983,7 +983,7 @@ nv50_ir_prog_info_out_print(struct nv50_ir_prog_info_out *info_out)
          INFO("      \"vp\": {\"usesDrawParameters\":\"%s\"}\n",
                info_out->prop.vp.usesDrawParameters ? "true" : "false");
          break;
-      case PIPE_SHADER_TESS_CTRL:
+      case MESA_SHADER_TESS_CTRL:
       case PIPE_SHADER_TESS_EVAL:
          INFO("      \"tp\":{\n");
          INFO("         \"outputPatchSize\":\"%d\"\n", info_out->prop.tp.outputPatchSize);

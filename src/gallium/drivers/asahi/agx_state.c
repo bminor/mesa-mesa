@@ -1947,7 +1947,7 @@ agx_create_shader_state(struct pipe_context *pctx,
     * shader with a default key. This could be improved but hopefully this is
     * acceptable for now.
     */
-   if ((so->type == PIPE_SHADER_TESS_CTRL) ||
+   if ((so->type == MESA_SHADER_TESS_CTRL) ||
        (so->type == PIPE_SHADER_GEOMETRY) ||
        (so->type == PIPE_SHADER_FRAGMENT && !so->info.uses_fbfetch)) {
       union asahi_shader_key key = {0};
@@ -2214,7 +2214,7 @@ agx_update_tcs(struct agx_context *ctx, const struct pipe_draw_info *info)
    assert(info->mode == MESA_PRIM_PATCHES);
 
    ctx->tcs = _mesa_hash_table_next_entry(
-                 ctx->stage[PIPE_SHADER_TESS_CTRL].shader->variants, NULL)
+                 ctx->stage[MESA_SHADER_TESS_CTRL].shader->variants, NULL)
                  ->data;
    return true;
 }
@@ -2427,7 +2427,7 @@ agx_bind_gs_state(struct pipe_context *pctx, void *cso)
 static void
 agx_bind_tcs_state(struct pipe_context *pctx, void *cso)
 {
-   agx_bind_shader_state(pctx, cso, PIPE_SHADER_TESS_CTRL);
+   agx_bind_shader_state(pctx, cso, MESA_SHADER_TESS_CTRL);
 }
 
 static void
@@ -4596,7 +4596,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    agx_update_vs(batch, info->index_size);
    agx_update_tcs(ctx, info);
    /* XXX */
-   ctx->stage[PIPE_SHADER_TESS_CTRL].dirty = ~0;
+   ctx->stage[MESA_SHADER_TESS_CTRL].dirty = ~0;
    ctx->stage[PIPE_SHADER_TESS_EVAL].dirty = ~0;
    agx_update_descriptors(batch, ctx->vs);
    agx_update_descriptors(batch, ctx->tcs);
@@ -4691,7 +4691,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
               MESA_SHADER_VERTEX, 0);
 
    agx_launch(batch, tcs_grid, agx_workgroup(tcs->tess.output_patch_size, 1, 1),
-              ctx->tcs, NULL, PIPE_SHADER_TESS_CTRL, 0);
+              ctx->tcs, NULL, MESA_SHADER_TESS_CTRL, 0);
 
    batch->uniforms.vertex_output_buffer_ptr = 0;
 

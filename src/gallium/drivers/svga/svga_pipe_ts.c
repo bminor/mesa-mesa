@@ -48,7 +48,7 @@ svga_create_tcs_state(struct pipe_context *pipe,
    SVGA_STATS_TIME_PUSH(svga_sws(svga), SVGA_STATS_TIME_CREATETCS);
 
    tcs = (struct svga_tcs_shader *)
-            svga_create_shader(pipe, templ, PIPE_SHADER_TESS_CTRL,
+            svga_create_shader(pipe, templ, MESA_SHADER_TESS_CTRL,
                                sizeof(struct svga_tcs_shader));
    if (!tcs)
       goto done;
@@ -74,7 +74,7 @@ svga_bind_tcs_state(struct pipe_context *pipe, void *shader)
    svga->dirty |= SVGA_NEW_TCS;
 
    /* Check if the shader uses samplers */
-   svga_set_curr_shader_use_samplers_flag(svga, PIPE_SHADER_TESS_CTRL,
+   svga_set_curr_shader_use_samplers_flag(svga, MESA_SHADER_TESS_CTRL,
                                           svga_shader_use_samplers(&tcs->base));
 }
 

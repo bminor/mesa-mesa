@@ -669,7 +669,7 @@ static void
 validate_tess_ctrl_shader_variant(struct d3d12_selection_context *sel_ctx)
 {
    struct d3d12_context *ctx = sel_ctx->ctx;
-   d3d12_shader_selector *tcs = ctx->gfx_stages[PIPE_SHADER_TESS_CTRL];
+   d3d12_shader_selector *tcs = ctx->gfx_stages[MESA_SHADER_TESS_CTRL];
 
    /* Nothing to do if there is a user tess ctrl shader bound */
    if (tcs != NULL && !tcs->is_variant)
@@ -693,7 +693,7 @@ validate_tess_ctrl_shader_variant(struct d3d12_selection_context *sel_ctx)
 
    /* Find/create the proper variant and bind it */
    tcs = variant_needed ? d3d12_get_tcs_variant(ctx, &key) : NULL;
-   ctx->gfx_stages[PIPE_SHADER_TESS_CTRL] = tcs;
+   ctx->gfx_stages[MESA_SHADER_TESS_CTRL] = tcs;
 }
 
 static bool
@@ -721,7 +721,7 @@ d3d12_compare_shader_keys(struct d3d12_selection_context* sel_ctx, const d3d12_s
       if (expect->gs.all != have->gs.all)
          return false;
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       if (expect->hs.all != have->hs.all)
          return false;
       break;
@@ -814,7 +814,7 @@ d3d12_shader_key_hash(const d3d12_shader_key *key)
    case PIPE_SHADER_COMPUTE:
       hash = _mesa_hash_data_with_seed(&key->cs, sizeof(key->cs), hash);
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       hash += static_cast<uint32_t>(key->hs.all);
       break;
    case PIPE_SHADER_TESS_EVAL:
@@ -852,7 +852,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
    case PIPE_SHADER_GEOMETRY:
       key->gs.all = 0;
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       key->hs.all = 0;
       break;
    case PIPE_SHADER_TESS_EVAL:
@@ -893,7 +893,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
    }
 
    if (next) {
-      if (stage == PIPE_SHADER_TESS_CTRL)
+      if (stage == MESA_SHADER_TESS_CTRL)
          key->hs.next_patch_inputs = next->initial->info.patch_outputs_read;
       key->next_varying_inputs = next->initial->info.inputs_read;
       if (BITSET_TEST(next->initial->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID))
@@ -956,7 +956,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
             key->prev_varying_outputs = (key->prev_varying_outputs | VARYING_BIT_VAR(12)) & ~VARYING_BIT_FACE;
          key->prev_varying_outputs |= sel->initial->info.inputs_read & (VARYING_BIT_PNTC | BITFIELD64_RANGE(VARYING_SLOT_TEX0, 8));
       }
-   } else if (stage == PIPE_SHADER_TESS_CTRL) {
+   } else if (stage == MESA_SHADER_TESS_CTRL) {
       if (next && next->initial->info.stage == MESA_SHADER_TESS_EVAL) {
          key->hs.primitive_mode = next->initial->info.tess._primitive_mode;
          key->hs.ccw = next->initial->info.tess.ccw;
@@ -1211,10 +1211,10 @@ get_prev_shader(struct d3d12_context *ctx, pipe_shader_type current)
          return ctx->gfx_stages[PIPE_SHADER_TESS_EVAL];
       FALLTHROUGH;
    case PIPE_SHADER_TESS_EVAL:
-      if (ctx->gfx_stages[PIPE_SHADER_TESS_CTRL])
-         return ctx->gfx_stages[PIPE_SHADER_TESS_CTRL];
+      if (ctx->gfx_stages[MESA_SHADER_TESS_CTRL])
+         return ctx->gfx_stages[MESA_SHADER_TESS_CTRL];
       FALLTHROUGH;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       return ctx->gfx_stages[MESA_SHADER_VERTEX];
    default:
       UNREACHABLE("shader type not supported");
@@ -1226,10 +1226,10 @@ get_next_shader(struct d3d12_context *ctx, pipe_shader_type current)
 {
    switch (current) {
    case MESA_SHADER_VERTEX:
-      if (ctx->gfx_stages[PIPE_SHADER_TESS_CTRL])
-         return ctx->gfx_stages[PIPE_SHADER_TESS_CTRL];
+      if (ctx->gfx_stages[MESA_SHADER_TESS_CTRL])
+         return ctx->gfx_stages[MESA_SHADER_TESS_CTRL];
       FALLTHROUGH;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       if (ctx->gfx_stages[PIPE_SHADER_TESS_EVAL])
          return ctx->gfx_stages[PIPE_SHADER_TESS_EVAL];
       FALLTHROUGH;
@@ -1513,10 +1513,10 @@ d3d12_select_shader_variants(struct d3d12_context *ctx, const struct pipe_draw_i
       next = get_next_shader(ctx, MESA_SHADER_VERTEX);
       select_shader_variant(&sel_ctx, stages[MESA_SHADER_VERTEX], nullptr, next);
    }
-   if (stages[PIPE_SHADER_TESS_CTRL]) {
-      prev = get_prev_shader(ctx, PIPE_SHADER_TESS_CTRL);
-      next = get_next_shader(ctx, PIPE_SHADER_TESS_CTRL);
-      select_shader_variant(&sel_ctx, stages[PIPE_SHADER_TESS_CTRL], prev, next);
+   if (stages[MESA_SHADER_TESS_CTRL]) {
+      prev = get_prev_shader(ctx, MESA_SHADER_TESS_CTRL);
+      next = get_next_shader(ctx, MESA_SHADER_TESS_CTRL);
+      select_shader_variant(&sel_ctx, stages[MESA_SHADER_TESS_CTRL], prev, next);
    }
    if (stages[PIPE_SHADER_TESS_EVAL]) {
       prev = get_prev_shader(ctx, PIPE_SHADER_TESS_EVAL);

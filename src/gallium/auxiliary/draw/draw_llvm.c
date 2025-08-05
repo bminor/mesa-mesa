@@ -3295,11 +3295,11 @@ draw_tcs_llvm_make_variant_key(struct draw_llvm *llvm, char *store)
 
    for (i = 0 ; i < key->nr_samplers; i++) {
       lp_sampler_static_sampler_state(&draw_sampler[i].sampler_state,
-                                      llvm->draw->samplers[PIPE_SHADER_TESS_CTRL][i]);
+                                      llvm->draw->samplers[MESA_SHADER_TESS_CTRL][i]);
    }
    for (i = 0 ; i < key->nr_sampler_views; i++) {
       lp_sampler_static_texture_state(&draw_sampler[i].texture_state,
-                                      llvm->draw->sampler_views[PIPE_SHADER_TESS_CTRL][i]);
+                                      llvm->draw->sampler_views[MESA_SHADER_TESS_CTRL][i]);
    }
 
    draw_image = draw_tcs_llvm_variant_key_images(key);
@@ -3307,7 +3307,7 @@ draw_tcs_llvm_make_variant_key(struct draw_llvm *llvm, char *store)
           key->nr_images * sizeof *draw_image);
    for (i = 0; i < key->nr_images; i++) {
       lp_sampler_static_texture_state_image(&draw_image[i].image_state,
-                                            llvm->draw->images[PIPE_SHADER_TESS_CTRL][i]);
+                                            llvm->draw->images[MESA_SHADER_TESS_CTRL][i]);
    }
    return key;
 }

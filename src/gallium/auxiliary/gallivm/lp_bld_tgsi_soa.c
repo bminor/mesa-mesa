@@ -1524,7 +1524,7 @@ emit_fetch_system_value(
       break;
 
    case TGSI_SEMANTIC_INVOCATIONID:
-      if (info->processor == PIPE_SHADER_TESS_CTRL)
+      if (info->processor == MESA_SHADER_TESS_CTRL)
          res = bld->system_values.invocation_id;
       else
          res = lp_build_broadcast_scalar(&bld_base->uint_bld, bld->system_values.invocation_id);

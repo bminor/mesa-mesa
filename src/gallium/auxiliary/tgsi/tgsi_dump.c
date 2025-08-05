@@ -315,7 +315,7 @@ iter_declaration(
    if (decl->Declaration.File == TGSI_FILE_INPUT &&
        (iter->processor.Processor == PIPE_SHADER_GEOMETRY ||
         (!patch &&
-         (iter->processor.Processor == PIPE_SHADER_TESS_CTRL ||
+         (iter->processor.Processor == MESA_SHADER_TESS_CTRL ||
           iter->processor.Processor == PIPE_SHADER_TESS_EVAL)))) {
       TXT("[]");
    }
@@ -323,7 +323,7 @@ iter_declaration(
    /* all non-patch tess ctrl shader outputs are two dimensional */
    if (decl->Declaration.File == TGSI_FILE_OUTPUT &&
        !patch &&
-       iter->processor.Processor == PIPE_SHADER_TESS_CTRL) {
+       iter->processor.Processor == MESA_SHADER_TESS_CTRL) {
       TXT("[]");
    }
 

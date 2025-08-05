@@ -3851,7 +3851,7 @@ static void si_bind_tcs_shader(struct pipe_context *ctx, void *state)
    si_update_tess_uses_prim_id(sctx);
    si_update_tess_in_out_patch_vertices(sctx);
 
-   si_update_common_shader_state(sctx, sel, PIPE_SHADER_TESS_CTRL);
+   si_update_common_shader_state(sctx, sel, MESA_SHADER_TESS_CTRL);
 
    if (enable_changed)
       sctx->last_tcs = NULL; /* invalidate derived tess state */
@@ -4573,7 +4573,7 @@ static void si_update_tess_in_out_patch_vertices(struct si_context *sctx)
 
       if (sctx->shader.tcs.key.ge.opt.same_patch_vertices != same_patch_vertices) {
          sctx->shader.tcs.key.ge.opt.same_patch_vertices = same_patch_vertices;
-         sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_TESS_CTRL);
+         sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
       }
    } else {
       /* These fields are static for fixed function TCS. So no need to set
@@ -4585,7 +4585,7 @@ static void si_update_tess_in_out_patch_vertices(struct si_context *sctx)
       /* User may only change patch vertices, needs to update fixed func TCS. */
       if (sctx->shader.tcs.cso &&
           sctx->shader.tcs.cso->info.base.tess.tcs_vertices_out != sctx->patch_vertices)
-         sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_TESS_CTRL);
+         sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
    }
 }
 
@@ -4603,7 +4603,7 @@ static void si_set_patch_vertices(struct pipe_context *ctx, uint8_t patch_vertic
          if (sctx->has_tessellation)
             si_update_tess_io_layout_state(sctx);
          else
-            sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_TESS_CTRL);
+            sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
       }
 
       /* Gfx12 programs patch_vertices in VGT_PRIMITIVE_TYPE.NUM_INPUT_CP. Make sure

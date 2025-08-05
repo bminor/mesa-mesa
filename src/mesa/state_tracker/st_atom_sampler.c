@@ -372,7 +372,7 @@ st_update_tessctrl_samplers(struct st_context *st)
 
    if (ctx->TessCtrlProgram._Current) {
       update_shader_samplers(st,
-                             PIPE_SHADER_TESS_CTRL,
+                             MESA_SHADER_TESS_CTRL,
                              ctx->TessCtrlProgram._Current, NULL, NULL);
    }
 }

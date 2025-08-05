@@ -463,7 +463,7 @@ svga_tgsi_scan_shader(struct svga_shader *shader)
       info->gs.out_prim = tgsi_info->properties[TGSI_PROPERTY_GS_OUTPUT_PRIM];
       info->gs.in_prim = tgsi_info->properties[TGSI_PROPERTY_GS_INPUT_PRIM];
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       info->tcs.vertices_out =
          tgsi_info->properties[TGSI_PROPERTY_TCS_VERTICES_OUT];
 

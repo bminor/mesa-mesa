@@ -351,7 +351,7 @@ fd6_build_user_consts(struct fd6_emit *emit)
 
    if (PIPELINE == HAS_TESS_GS) {
       if (emit->hs) {
-         emit_user_consts<CHIP>(emit->hs, constobj, &ctx->constbuf[PIPE_SHADER_TESS_CTRL]);
+         emit_user_consts<CHIP>(emit->hs, constobj, &ctx->constbuf[MESA_SHADER_TESS_CTRL]);
          emit_user_consts<CHIP>(emit->ds, constobj, &ctx->constbuf[PIPE_SHADER_TESS_EVAL]);
       }
       if (emit->gs) {

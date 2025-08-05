@@ -102,7 +102,7 @@ TCSShader::store_tess_factor(nir_intrinsic_instr *instr)
 void
 TCSShader::do_get_shader_info(r600_shader *sh_info)
 {
-   sh_info->processor_type = PIPE_SHADER_TESS_CTRL;
+   sh_info->processor_type = MESA_SHADER_TESS_CTRL;
    sh_info->tcs_prim_mode = m_tcs_prim_mode;
 }
 

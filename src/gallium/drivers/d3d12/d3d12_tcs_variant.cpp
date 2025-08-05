@@ -145,7 +145,7 @@ create_tess_ctrl_shader_variant(struct d3d12_context *ctx, struct d3d12_tcs_vari
    templ.ir.nir = nir;
    templ.stream_output.num_outputs = 0;
 
-   d3d12_shader_selector *tcs = d3d12_create_shader(ctx, PIPE_SHADER_TESS_CTRL, &templ);
+   d3d12_shader_selector *tcs = d3d12_create_shader(ctx, MESA_SHADER_TESS_CTRL, &templ);
    if (tcs) {
       tcs->is_variant = true;
       tcs->tcs_key = *key;

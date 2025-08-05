@@ -324,7 +324,7 @@ st_update_tcp(struct st_context *st)
 {
    void *shader = st_update_common_program(st,
                                            st->ctx->TessCtrlProgram._Current,
-                                           PIPE_SHADER_TESS_CTRL, &st->tcp);
+                                           MESA_SHADER_TESS_CTRL, &st->tcp);
    cso_set_tessctrl_shader_handle(st->cso_context, shader);
 }
 

@@ -412,7 +412,7 @@ class Context(Dispatcher):
     def _get_stage_state(self, shader):
         if shader == 'MESA_SHADER_VERTEX':
             return self._state.vs
-        if shader == 'PIPE_SHADER_TESS_CTRL':
+        if shader == 'MESA_SHADER_TESS_CTRL':
             return self._state.tcs
         if shader == 'PIPE_SHADER_TESS_EVAL':
             return self._state.tes

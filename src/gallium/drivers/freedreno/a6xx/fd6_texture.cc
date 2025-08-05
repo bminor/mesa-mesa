@@ -617,7 +617,7 @@ build_texture_state(struct fd_context *ctx, enum pipe_shader_type type,
       tex_const_reg = REG_A6XX_SP_VS_TEXMEMOBJ_BASE;
       tex_count_reg = REG_A6XX_SP_VS_TSIZE;
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       sb = SB6_HS_TEX;
       opcode = CP_LOAD_STATE6_GEOM;
       tex_samp_reg = REG_A6XX_SP_HS_SAMPLER_BASE;

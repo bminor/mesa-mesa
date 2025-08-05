@@ -1481,7 +1481,7 @@ int virgl_encode_link_shader(struct virgl_context *ctx, uint32_t *handles)
    virgl_encoder_write_dword(ctx->cbuf, handles[MESA_SHADER_VERTEX]);
    virgl_encoder_write_dword(ctx->cbuf, handles[PIPE_SHADER_FRAGMENT]);
    virgl_encoder_write_dword(ctx->cbuf, handles[PIPE_SHADER_GEOMETRY]);
-   virgl_encoder_write_dword(ctx->cbuf, handles[PIPE_SHADER_TESS_CTRL]);
+   virgl_encoder_write_dword(ctx->cbuf, handles[MESA_SHADER_TESS_CTRL]);
    virgl_encoder_write_dword(ctx->cbuf, handles[PIPE_SHADER_TESS_EVAL]);
    virgl_encoder_write_dword(ctx->cbuf, handles[PIPE_SHADER_COMPUTE]);
    return 0;

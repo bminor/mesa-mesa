@@ -45,7 +45,7 @@ static bool si_update_shaders(struct si_context *sctx)
    bool is_vs_state_changed =
       (sctx->dirty_shaders_mask & BITFIELD_BIT(MESA_SHADER_VERTEX)) != 0;
    bool is_tess_state_changed =
-      ((sctx->dirty_shaders_mask & (BITFIELD_BIT(PIPE_SHADER_TESS_CTRL) | BITFIELD_BIT(PIPE_SHADER_TESS_EVAL))) != 0);
+      ((sctx->dirty_shaders_mask & (BITFIELD_BIT(MESA_SHADER_TESS_CTRL) | BITFIELD_BIT(PIPE_SHADER_TESS_EVAL))) != 0);
    bool is_gs_state_changed =
       (sctx->dirty_shaders_mask & BITFIELD_BIT(PIPE_SHADER_GEOMETRY)) != 0;
    bool is_ps_state_changed =

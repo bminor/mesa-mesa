@@ -337,7 +337,7 @@ svga_get_extra_tcs_constants(struct svga_context *svga, float *dest)
 
    /* common constants */
    count += svga_get_extra_constants_common(svga, variant,
-                                            PIPE_SHADER_TESS_CTRL,
+                                            MESA_SHADER_TESS_CTRL,
                                             dest);
 
    assert(count <= MAX_EXTRA_CONSTS);
@@ -886,7 +886,7 @@ emit_consts_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
    assert(shader == MESA_SHADER_VERTEX ||
           shader == PIPE_SHADER_GEOMETRY ||
           shader == PIPE_SHADER_FRAGMENT ||
-          shader == PIPE_SHADER_TESS_CTRL ||
+          shader == MESA_SHADER_TESS_CTRL ||
           shader == PIPE_SHADER_TESS_EVAL ||
           shader == PIPE_SHADER_COMPUTE);
 
@@ -905,7 +905,7 @@ emit_consts_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
       variant = svga->state.hw_draw.gs;
       extra_count = svga_get_extra_gs_constants(svga, (float *) extras);
       break;
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       variant = svga->state.hw_draw.tcs;
       extra_count = svga_get_extra_tcs_constants(svga, (float *) extras);
       break;
@@ -1249,7 +1249,7 @@ emit_tcs_consts(struct svga_context *svga, uint64_t dirty)
 
    /* SVGA_NEW_TCS_CONST_BUFFER */
 
-   ret = emit_consts_vgpu10(svga, PIPE_SHADER_TESS_CTRL);
+   ret = emit_consts_vgpu10(svga, MESA_SHADER_TESS_CTRL);
 
    return ret;
 }
@@ -1269,7 +1269,7 @@ emit_tcs_constbuf(struct svga_context *svga, uint64_t dirty)
    /* SVGA_NEW_TCS_CONSTBUF
     */
    assert(svga_have_vgpu10(svga));
-   ret = emit_constbuf_vgpu10(svga, PIPE_SHADER_TESS_CTRL);
+   ret = emit_constbuf_vgpu10(svga, MESA_SHADER_TESS_CTRL);
 
    return ret;
 }
@@ -1453,7 +1453,7 @@ update_rawbuf(struct svga_context *svga, uint64 dirty)
       SVGA_NEW_VS_RAW_BUFFER,       /* MESA_SHADER_VERTEX */
       SVGA_NEW_FS_RAW_BUFFER,       /* PIPE_SHADER_FRAGMENT */
       SVGA_NEW_GS_RAW_BUFFER,       /* PIPE_SHADER_GEOMETRY */
-      SVGA_NEW_TCS_RAW_BUFFER,      /* PIPE_SHADER_TESS_CTRL */
+      SVGA_NEW_TCS_RAW_BUFFER,      /* MESA_SHADER_TESS_CTRL */
       SVGA_NEW_TES_RAW_BUFFER,      /* PIPE_SHADER_TESS_EVAL */
    };
 

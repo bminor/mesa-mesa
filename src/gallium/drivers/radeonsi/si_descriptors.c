@@ -2242,7 +2242,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
                                              sh_base[PIPE_SHADER_FRAGMENT], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
-                                             sh_base[PIPE_SHADER_TESS_CTRL], gfx);
+                                             sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
                                              sh_base[PIPE_SHADER_GEOMETRY], gfx);
 
@@ -2272,7 +2272,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
                                              sh_base[PIPE_SHADER_FRAGMENT], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
-                                             sh_base[PIPE_SHADER_TESS_CTRL], gfx);
+                                             sh_base[MESA_SHADER_TESS_CTRL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
                                              sh_base[PIPE_SHADER_GEOMETRY], gfx);
 
@@ -2303,7 +2303,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
                                           sh_base[PIPE_SHADER_FRAGMENT], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
-                                          sh_base[PIPE_SHADER_TESS_CTRL], gfx);
+                                          sh_base[MESA_SHADER_TESS_CTRL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(GEOMETRY),
                                           sh_base[PIPE_SHADER_GEOMETRY], gfx);
 
@@ -2869,14 +2869,14 @@ void si_init_all_descriptors(struct si_context *sctx)
 
    for (i = first_shader; i < SI_NUM_SHADERS; i++) {
       bool is_2nd =
-         sctx->gfx_level >= GFX9 && (i == PIPE_SHADER_TESS_CTRL || i == PIPE_SHADER_GEOMETRY);
+         sctx->gfx_level >= GFX9 && (i == MESA_SHADER_TESS_CTRL || i == PIPE_SHADER_GEOMETRY);
       unsigned num_sampler_slots = SI_NUM_IMAGE_SLOTS / 2 + SI_NUM_SAMPLERS;
       unsigned num_buffer_slots = SI_NUM_SHADER_BUFFERS + SI_NUM_CONST_BUFFERS;
       int rel_dw_offset;
       struct si_descriptors *desc;
 
       if (is_2nd) {
-         if (i == PIPE_SHADER_TESS_CTRL) {
+         if (i == MESA_SHADER_TESS_CTRL) {
             rel_dw_offset =
                (hs_sgpr0 - R_00B430_SPI_SHADER_USER_DATA_HS_0) / 4;
          } else if (sctx->gfx_level >= GFX10) { /* PIPE_SHADER_GEOMETRY */
@@ -2896,7 +2896,7 @@ void si_init_all_descriptors(struct si_context *sctx)
       desc->slot_index_to_bind_directly = si_get_constbuf_slot(0);
 
       if (is_2nd) {
-         if (i == PIPE_SHADER_TESS_CTRL) {
+         if (i == MESA_SHADER_TESS_CTRL) {
             rel_dw_offset =
                (hs_sgpr0 + 4 - R_00B430_SPI_SHADER_USER_DATA_HS_0) / 4;
          } else if (sctx->gfx_level >= GFX10) { /* PIPE_SHADER_GEOMETRY */
@@ -2961,9 +2961,9 @@ void si_init_all_descriptors(struct si_context *sctx)
    si_set_user_data_base(sctx, MESA_SHADER_VERTEX,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
                                                sctx->ngg, MESA_SHADER_VERTEX));
-   si_set_user_data_base(sctx, PIPE_SHADER_TESS_CTRL,
+   si_set_user_data_base(sctx, MESA_SHADER_TESS_CTRL,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
-                                               NGG_OFF, PIPE_SHADER_TESS_CTRL));
+                                               NGG_OFF, MESA_SHADER_TESS_CTRL));
    si_set_user_data_base(sctx, PIPE_SHADER_GEOMETRY,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
                                                NGG_OFF, PIPE_SHADER_GEOMETRY));

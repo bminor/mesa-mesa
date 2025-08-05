@@ -2184,7 +2184,7 @@ void *ureg_create_shader( struct ureg_program *ureg,
    switch (ureg->processor) {
    case MESA_SHADER_VERTEX:
       return pipe->create_vs_state(pipe, &state);
-   case PIPE_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_CTRL:
       return pipe->create_tcs_state(pipe, &state);
    case PIPE_SHADER_TESS_EVAL:
       return pipe->create_tes_state(pipe, &state);

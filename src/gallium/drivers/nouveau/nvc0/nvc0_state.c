@@ -687,7 +687,7 @@ static void *
 nvc0_tcp_state_create(struct pipe_context *pipe,
                      const struct pipe_shader_state *cso)
 {
-   return nvc0_sp_state_create(pipe, cso, PIPE_SHADER_TESS_CTRL);
+   return nvc0_sp_state_create(pipe, cso, MESA_SHADER_TESS_CTRL);
 }
 
 static void

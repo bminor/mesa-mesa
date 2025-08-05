@@ -467,7 +467,7 @@ draw_create_tess_ctrl_shader(struct draw_context *draw,
       tcs->tcs_output = align_malloc(sizeof(struct draw_tcs_outputs), 16);
       memset(tcs->tcs_output, 0, sizeof(struct draw_tcs_outputs));
 
-      tcs->jit_resources = &draw->llvm->jit_resources[PIPE_SHADER_TESS_CTRL];
+      tcs->jit_resources = &draw->llvm->jit_resources[MESA_SHADER_TESS_CTRL];
       llvm_tcs->variant_key_size =
          draw_tcs_llvm_variant_key_size(
                                         tcs->info.file_max[TGSI_FILE_SAMPLER]+1,

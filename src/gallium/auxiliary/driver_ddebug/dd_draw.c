@@ -265,14 +265,14 @@ dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
    const char *shader_str[PIPE_SHADER_TYPES];
 
    shader_str[MESA_SHADER_VERTEX] = "VERTEX";
-   shader_str[PIPE_SHADER_TESS_CTRL] = "TESS_CTRL";
+   shader_str[MESA_SHADER_TESS_CTRL] = "TESS_CTRL";
    shader_str[PIPE_SHADER_TESS_EVAL] = "TESS_EVAL";
    shader_str[PIPE_SHADER_GEOMETRY] = "GEOMETRY";
    shader_str[PIPE_SHADER_FRAGMENT] = "FRAGMENT";
    shader_str[PIPE_SHADER_COMPUTE] = "COMPUTE";
 
-   if (sh == PIPE_SHADER_TESS_CTRL &&
-       !dstate->shaders[PIPE_SHADER_TESS_CTRL] &&
+   if (sh == MESA_SHADER_TESS_CTRL &&
+       !dstate->shaders[MESA_SHADER_TESS_CTRL] &&
        dstate->shaders[PIPE_SHADER_TESS_EVAL])
       fprintf(f, "tess_state: {default_outer_level = {%f, %f, %f, %f}, "
               "default_inner_level = {%f, %f}}\n",

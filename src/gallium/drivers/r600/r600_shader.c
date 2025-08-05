@@ -227,7 +227,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 
 	/* Build state. */
 	switch (shader->shader.processor_type) {
-	case PIPE_SHADER_TESS_CTRL:
+	case MESA_SHADER_TESS_CTRL:
 		evergreen_update_hs_state(ctx, shader);
 		break;
 	case PIPE_SHADER_TESS_EVAL:

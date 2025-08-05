@@ -1151,7 +1151,7 @@ util_make_tess_ctrl_passthrough_shader(struct pipe_context *pipe,
    struct ureg_dst dst[PIPE_MAX_SHADER_OUTPUTS];
    struct ureg_src src[PIPE_MAX_SHADER_INPUTS];
 
-   ureg = ureg_create(PIPE_SHADER_TESS_CTRL);
+   ureg = ureg_create(MESA_SHADER_TESS_CTRL);
 
    if (!ureg)
       return NULL;
