@@ -467,8 +467,6 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       struct gl_linked_shader *shader = linked_shader[i];
       nir_shader *nir = shader->Program->nir;
       mesa_shader_stage stage = shader->Stage;
-      const struct gl_shader_compiler_options *options =
-            &ctx->Const.ShaderCompilerOptions[stage];
 
       /* Since IO is lowered, we won't need the IO variables from now on.
        * nir_build_program_resource_list was the last pass that needed them.
@@ -479,12 +477,13 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       /* If there are forms of indirect addressing that the driver
        * cannot handle, perform the lowering pass.
        */
-      if (options->EmitNoIndirectTemp || options->EmitNoIndirectUniform) {
+      if (!ctx->screen->shader_caps[stage].indirect_temp_addr ||
+          !ctx->screen->shader_caps[stage].indirect_const_addr) {
          nir_variable_mode mode = (nir_variable_mode)0;
 
-         mode |= options->EmitNoIndirectTemp ?
+         mode |= !ctx->screen->shader_caps[stage].indirect_temp_addr ?
             nir_var_function_temp : (nir_variable_mode)0;
-         mode |= options->EmitNoIndirectUniform ?
+         mode |= !ctx->screen->shader_caps[stage].indirect_const_addr ?
             nir_var_uniform | nir_var_mem_ubo | nir_var_mem_ssbo :
             (nir_variable_mode)0;
 

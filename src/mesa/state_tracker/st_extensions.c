@@ -336,7 +336,8 @@ void st_init_limits(struct pipe_screen *screen,
          !screen->shader_caps[sh].indirect_const_addr;
 
       if (pc->MaxInstructions &&
-          (options->EmitNoIndirectUniform || pc->MaxUniformBlocks < 12)) {
+          (!screen->shader_caps[sh].indirect_const_addr ||
+           pc->MaxUniformBlocks < 12)) {
          can_ubo = false;
       }
 
