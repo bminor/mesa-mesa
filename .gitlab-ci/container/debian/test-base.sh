@@ -161,7 +161,6 @@ DEPS=(
     xserver-xorg-video-amdgpu
     xserver-xorg-video-ati
     xauth
-    xvfb
     zlib1g
 )
 
