@@ -685,6 +685,8 @@ struct threaded_context {
    struct tc_renderpass_info *renderpass_info_recording;
    /* accessed by driver thread */
    struct tc_renderpass_info *renderpass_info;
+   /* internal-only: if dsa/fs are bound between render passes */
+   void *pending_renderpass_dsa, *pending_renderpass_fs;
 };
 
 
