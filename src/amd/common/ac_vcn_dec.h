@@ -1262,6 +1262,7 @@ struct jpeg_params {
 
 #define RDECODE_SESSION_CONTEXT_SIZE (128 * 1024)
 #define RDECODE_MAX_SUBSAMPLE_SIZE   (2048 * 2 * 4)
+#define RDECODE_IT_SCALING_TABLE_SIZE       992
 
 void ac_vcn_vp9_fill_probs_table(void *ptr);
 
