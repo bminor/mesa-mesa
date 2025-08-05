@@ -568,7 +568,7 @@ struct radv_cmd_stream {
 
    uint32_t num_buffered_sh_regs;
    struct {
-      struct gfx12_reg buffered_sh_regs[64];
+      struct gfx12_reg buffered_sh_regs[256];
    } gfx12;
 };
 

@@ -2030,20 +2030,29 @@ radv_emit_compute_shader(const struct radv_physical_device *pdev, struct radv_cm
    uint64_t va = radv_shader_get_va(shader);
 
    radeon_begin(cs);
-   radeon_set_sh_reg(shader->info.regs.pgm_lo, va >> 8);
+   if (pdev->info.gfx_level >= GFX12) {
+      gfx12_push_sh_reg(shader->info.regs.pgm_lo, va >> 8);
+      gfx12_push_sh_reg(shader->info.regs.pgm_rsrc1, shader->config.rsrc1);
+      gfx12_push_sh_reg(shader->info.regs.pgm_rsrc2, shader->config.rsrc2);
+      gfx12_push_sh_reg(shader->info.regs.pgm_rsrc3, shader->config.rsrc3);
+      gfx12_push_sh_reg(R_00B854_COMPUTE_RESOURCE_LIMITS, shader->info.regs.cs.compute_resource_limits);
+      gfx12_push_sh_reg(R_00B81C_COMPUTE_NUM_THREAD_X, shader->info.regs.cs.compute_num_thread_x);
+      gfx12_push_sh_reg(R_00B820_COMPUTE_NUM_THREAD_Y, shader->info.regs.cs.compute_num_thread_y);
+      gfx12_push_sh_reg(R_00B824_COMPUTE_NUM_THREAD_Z, shader->info.regs.cs.compute_num_thread_z);
+   } else {
+      radeon_set_sh_reg(shader->info.regs.pgm_lo, va >> 8);
+      radeon_set_sh_reg_seq(shader->info.regs.pgm_rsrc1, 2);
+      radeon_emit(shader->config.rsrc1);
+      radeon_emit(shader->config.rsrc2);
+      if (pdev->info.gfx_level >= GFX10)
+         radeon_set_sh_reg(shader->info.regs.pgm_rsrc3, shader->config.rsrc3);
 
-   radeon_set_sh_reg_seq(shader->info.regs.pgm_rsrc1, 2);
-   radeon_emit(shader->config.rsrc1);
-   radeon_emit(shader->config.rsrc2);
-   if (pdev->info.gfx_level >= GFX10) {
-      radeon_set_sh_reg(shader->info.regs.pgm_rsrc3, shader->config.rsrc3);
+      radeon_set_sh_reg(R_00B854_COMPUTE_RESOURCE_LIMITS, shader->info.regs.cs.compute_resource_limits);
+      radeon_set_sh_reg_seq(R_00B81C_COMPUTE_NUM_THREAD_X, 3);
+      radeon_emit(shader->info.regs.cs.compute_num_thread_x);
+      radeon_emit(shader->info.regs.cs.compute_num_thread_y);
+      radeon_emit(shader->info.regs.cs.compute_num_thread_z);
    }
-
-   radeon_set_sh_reg(R_00B854_COMPUTE_RESOURCE_LIMITS, shader->info.regs.cs.compute_resource_limits);
-   radeon_set_sh_reg_seq(R_00B81C_COMPUTE_NUM_THREAD_X, 3);
-   radeon_emit(shader->info.regs.cs.compute_num_thread_x);
-   radeon_emit(shader->info.regs.cs.compute_num_thread_y);
-   radeon_emit(shader->info.regs.cs.compute_num_thread_z);
    radeon_end();
 }
 
@@ -7270,8 +7279,13 @@ radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compu
          const struct radv_shader_info *cs_info = &rt_prolog->info;
 
          radeon_begin(cs);
-         radeon_set_sh_reg(ray_dynamic_callback_stack_base_offset,
-                           rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
+         if (pdev->info.gfx_level >= GFX12) {
+            gfx12_push_sh_reg(ray_dynamic_callback_stack_base_offset,
+                              rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
+         } else {
+            radeon_set_sh_reg(ray_dynamic_callback_stack_base_offset,
+                              rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
+         }
          radeon_end();
       }
 
@@ -7279,8 +7293,13 @@ radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compu
       struct radv_shader *traversal_shader = cmd_buffer->state.shaders[MESA_SHADER_INTERSECTION];
       if (traversal_shader_addr_offset && traversal_shader) {
          uint64_t traversal_va = traversal_shader->va | radv_rt_priority_traversal;
+
          radeon_begin(cs);
-         radeon_emit_64bit_pointer(traversal_shader_addr_offset, traversal_va);
+         if (pdev->info.gfx_level >= GFX12) {
+            gfx12_push_64bit_pointer(traversal_shader_addr_offset, traversal_va);
+         } else {
+            radeon_emit_64bit_pointer(traversal_shader_addr_offset, traversal_va);
+         }
          radeon_end();
       }
    }
@@ -10602,7 +10621,11 @@ radv_emit_task_state(struct radv_cmd_buffer *cmd_buffer)
       shader_query_state |= radv_shader_query_pipeline_stat;
 
    radeon_begin(cmd_buffer->gang.cs);
-   radeon_set_sh_reg(task_state_offset, shader_query_state);
+   if (pdev->info.gfx_level >= GFX12) {
+      gfx12_push_sh_reg(task_state_offset, shader_query_state);
+   } else {
+      radeon_set_sh_reg(task_state_offset, shader_query_state);
+   }
    radeon_end();
 }
 
@@ -11800,6 +11823,9 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 
    if (pdev->info.gfx_level >= GFX12) {
       radv_gfx12_emit_buffered_regs(device, cs);
+
+      if (task_shader)
+         radv_gfx12_emit_buffered_regs(device, cmd_buffer->gang.cs);
    }
 
    if (!dgc)
@@ -12650,8 +12676,13 @@ radv_emit_rt_stack_size(struct radv_cmd_buffer *cmd_buffer)
       rsrc2 |= S_00B12C_SCRATCH_EN(1);
 
    radeon_check_space(device->ws, cs->b, 3);
+
    radeon_begin(cs);
-   radeon_set_sh_reg(rt_prolog->info.regs.pgm_rsrc2, rsrc2);
+   if (pdev->info.gfx_level >= GFX12) {
+      gfx12_push_sh_reg(rt_prolog->info.regs.pgm_rsrc2, rsrc2);
+   } else {
+      radeon_set_sh_reg(rt_prolog->info.regs.pgm_rsrc2, rsrc2);
+   }
    radeon_end();
 }
 
@@ -12726,6 +12757,9 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
          cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
       }
    }
+
+   if (pdev->info.gfx_level >= GFX12)
+      radv_gfx12_emit_buffered_regs(device, cmd_buffer->cs);
 }
 
 static void

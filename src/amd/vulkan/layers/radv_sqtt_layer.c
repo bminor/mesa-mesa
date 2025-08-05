@@ -47,7 +47,11 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
       const uint64_t va = reloc->va[MESA_SHADER_TASK];
 
       radeon_begin(ace_cs);
-      radeon_set_sh_reg(task_shader->info.regs.pgm_lo, va >> 8);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_sh_reg(task_shader->info.regs.pgm_lo, va >> 8);
+      } else {
+         radeon_set_sh_reg(task_shader->info.regs.pgm_lo, va >> 8);
+      }
       radeon_end();
    }
 }

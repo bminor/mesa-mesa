@@ -642,7 +642,7 @@ radv_init_tracked_regs(struct radv_cmd_stream *cs)
    memset(tracked_regs->sx_mrt_blend_opt, 0xff, sizeof(uint32_t) * MAX_RTS);
 }
 
-static void
+void
 radv_init_cmd_stream(struct radv_cmd_stream *cs)
 {
    cs->context_roll_without_scissor_emitted = false;

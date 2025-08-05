@@ -322,6 +322,12 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
       gfx12_push_sh_reg(sh_offset, va);                                                                                \
    } while (0)
 
+#define gfx12_push_64bit_pointer(sh_offset, va)                                                                        \
+   do {                                                                                                                \
+      gfx12_push_sh_reg(sh_offset, va);                                                                                \
+      gfx12_push_sh_reg(sh_offset + 4, va >> 32);                                                                      \
+   } while (0)
+
 ALWAYS_INLINE static void
 radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream *cs)
 {
@@ -422,6 +428,8 @@ radv_emit_pm4_commands(struct radv_cmd_stream *cs, const struct ac_pm4_state *pm
 
 VkResult radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family family, bool is_secondary,
                                 struct radv_cmd_stream **cs_out);
+
+void radv_init_cmd_stream(struct radv_cmd_stream *cs);
 
 void radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs);
 

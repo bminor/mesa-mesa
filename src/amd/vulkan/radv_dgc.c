@@ -7,6 +7,7 @@
 #include "radv_dgc.h"
 #include "meta/radv_meta.h"
 #include "nir/radv_meta_nir.h"
+#include "radv_cs.h"
 #include "radv_debug.h"
 #include "radv_entrypoints.h"
 #include "radv_pipeline_rt.h"
@@ -3378,6 +3379,8 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    struct radv_compute_pipeline_metadata md;
    struct radv_cmd_stream cs;
 
+   radv_init_cmd_stream(&cs);
+
    assert(shader->info.stage == MESA_SHADER_COMPUTE);
    radv_get_compute_shader_metadata(device, shader, &md);
 
@@ -3386,6 +3389,7 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
       return;
 
    cs.b->reserved_dw = cs.b->max_dw = 32;
+
    cs.b->buf = malloc(cs.b->max_dw * 4);
    if (!cs.b->buf) {
       free(cs.b);
@@ -3393,6 +3397,8 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    }
 
    radv_emit_compute_shader(pdev, &cs, shader);
+   if (pdev->info.gfx_level >= GFX12)
+      radv_gfx12_emit_buffered_regs(device, &cs);
 
    memcpy(ptr, &md, sizeof(md));
    ptr += sizeof(md);
