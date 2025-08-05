@@ -916,6 +916,10 @@ dri_create_image(struct dri_screen *screen,
    if (!pscreen->resource_create_with_modifiers && count > 0)
       return NULL;
 
+   if (width > pscreen->caps.max_texture_2d_size ||
+       height > pscreen->caps.max_texture_2d_size)
+      return NULL;
+
    if (pscreen->is_format_supported(pscreen, map->pipe_format, screen->target,
                                     0, 0, PIPE_BIND_RENDER_TARGET))
       tex_usage |= PIPE_BIND_RENDER_TARGET;
