@@ -106,6 +106,12 @@ algebraic_late = [
     (('ffract', a), ('fadd', a, ('fneg', ('ffloor', a))), 'gpu_arch >= 11'),
 ]
 
+# nir_lower_bool_to_bitsize can generate needless conversions.
+for bits in [8, 16, 32]:
+    algebraic_late += [
+        ((f'i2i{bits}', f'a@{bits}'), a)
+    ]
+
 # On v11+, ICMP_OR.v4u8 was removed
 for cond in ['ilt', 'ige', 'ieq', 'ine', 'ult', 'uge']:
     convert_8bit = 'u2u8'
