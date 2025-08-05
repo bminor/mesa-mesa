@@ -7164,7 +7164,7 @@
         "description": "util: avoid calling UNREACHABLE(str) macro without arguments",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "2dcd6bed6a97a5b8f6a1de36c176e7424170fa9b",
         "notes": null
