@@ -1321,8 +1321,6 @@ endif
 
 dep_ws2_32 = cc.find_library('ws2_32', required : with_platform_windows)
 
-# TODO: shared/static? Is this even worth doing?
-
 with_asm_arch = ''
 if host_machine.cpu_family() == 'x86'
   if system_has_kms_drm or host_machine.system() == 'gnu'
