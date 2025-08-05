@@ -17,8 +17,7 @@ panvk_instr_end_barrier(enum panvk_subqueue_id id,
 {
    trace_end_barrier(&cs_info->cmdbuf->utrace.uts[id], cs_info,
                      args->barrier.wait_sb_mask,
-                     args->barrier.wait_subqueue_mask, args->barrier.l2,
-                     args->barrier.lsc, args->barrier.other);
+                     args->barrier.wait_subqueue_mask);
 }
 
 static void
@@ -61,6 +60,16 @@ panvk_instr_end_dispatch_indirect(enum panvk_subqueue_id id,
                                   .bo = NULL,
                                   .offset = args->dispatch_indirect.buffer_gpu,
                                });
+}
+
+static void
+panvk_instr_end_flush_cache(enum panvk_subqueue_id id,
+                            struct panvk_utrace_cs_info *cs_info,
+                            const struct panvk_instr_end_args *const args)
+{
+   trace_end_flush_cache(&cs_info->cmdbuf->utrace.uts[id], cs_info,
+                         args->flush_cache.l2, args->flush_cache.lsc,
+                         args->flush_cache.other);
 }
 
 static void
@@ -165,6 +174,9 @@ panvk_per_arch(panvk_instr_begin_work)(enum panvk_subqueue_id id,
    case PANVK_INSTR_WORK_TYPE_BARRIER:
       trace_begin_barrier(&cmdbuf->utrace.uts[id], &cs_info);
       break;
+   case PANVK_INSTR_WORK_TYPE_FLUSH_CACHE:
+      trace_begin_flush_cache(&cmdbuf->utrace.uts[id], &cs_info);
+      break;
    case PANVK_INSTR_WORK_TYPE_SYNC32_ADD:
       trace_begin_sync32_add(&cmdbuf->utrace.uts[id], &cs_info);
       break;
@@ -222,6 +234,9 @@ panvk_per_arch(panvk_instr_end_work_async)(
       break;
    case PANVK_INSTR_WORK_TYPE_BARRIER:
       panvk_instr_end_barrier(id, &cs_info, args);
+      break;
+   case PANVK_INSTR_WORK_TYPE_FLUSH_CACHE:
+      panvk_instr_end_flush_cache(id, &cs_info, args);
       break;
    case PANVK_INSTR_WORK_TYPE_SYNC32_ADD:
       panvk_instr_end_sync32_add(id, &cs_info, args);

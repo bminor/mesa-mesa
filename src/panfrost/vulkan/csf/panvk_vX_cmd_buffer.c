@@ -150,11 +150,21 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
     * pushed back to main memory after the CPU has written new stuff there. */
    struct cs_index flush_id = cs_scratch_reg32(b, 0);
 
+   panvk_per_arch(panvk_instr_begin_work)(subqueue, cmdbuf,
+                                          PANVK_INSTR_WORK_TYPE_FLUSH_CACHE);
    cs_move32_to(b, flush_id, 0);
    cs_flush_caches(b, MALI_CS_FLUSH_MODE_CLEAN, MALI_CS_FLUSH_MODE_CLEAN,
                    MALI_CS_OTHER_FLUSH_MODE_NONE, flush_id,
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
    cs_wait_slot(b, SB_ID(IMM_FLUSH));
+   struct panvk_instr_end_args instr_info_flush = {
+      .flush_cache = {
+         .l2 = MALI_CS_FLUSH_MODE_CLEAN,
+         .lsc = MALI_CS_FLUSH_MODE_CLEAN,
+         .other = MALI_CS_OTHER_FLUSH_MODE_NONE,
+      }};
+   panvk_per_arch(panvk_instr_end_work)(
+      subqueue, cmdbuf, PANVK_INSTR_WORK_TYPE_FLUSH_CACHE, &instr_info_flush);
 
    /* If this is a secondary command buffer, we don't poison the reg file to
     * preserve the render pass context. We also don't poison the reg file if the
@@ -172,11 +182,11 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       }
    }
 
-   struct panvk_instr_end_args instr_info = {.cmdbuf = {
-                                                .flags = cmdbuf->flags,
-                                             }};
+   struct panvk_instr_end_args instr_info_cmdbuf = {.cmdbuf = {
+                                                       .flags = cmdbuf->flags,
+                                                    }};
    panvk_per_arch(panvk_instr_end_work)(
-      subqueue, cmdbuf, PANVK_INSTR_WORK_TYPE_CMDBUF, &instr_info);
+      subqueue, cmdbuf, PANVK_INSTR_WORK_TYPE_CMDBUF, &instr_info_cmdbuf);
 
    cs_finish(&cmdbuf->state.cs[subqueue].builder);
 }
@@ -621,10 +631,20 @@ panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
       if (!panvk_cache_flush_is_nop(&cache_flush)) {
          struct cs_index flush_id = cs_scratch_reg32(b, 0);
 
+         panvk_per_arch(panvk_instr_begin_work)(
+            i, cmdbuf, PANVK_INSTR_WORK_TYPE_FLUSH_CACHE);
          cs_move32_to(b, flush_id, 0);
          cs_flush_caches(b, cache_flush.l2, cache_flush.lsc, cache_flush.others,
                          flush_id, cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
          cs_wait_slot(b, SB_ID(IMM_FLUSH));
+         struct panvk_instr_end_args instr_info_flush = {
+            .flush_cache = {
+               .l2 = cache_flush.l2,
+               .lsc = cache_flush.lsc,
+               .other = cache_flush.others,
+            }};
+         panvk_per_arch(panvk_instr_end_work)(
+            i, cmdbuf, PANVK_INSTR_WORK_TYPE_FLUSH_CACHE, &instr_info_flush);
       }
 
       /* If no one waits on us, there's no point signaling the sync object. */
@@ -661,11 +681,10 @@ panvk_per_arch(emit_barrier)(struct panvk_cmd_buffer *cmdbuf,
 
    u_foreach_bit(i, utrace_subqueue_mask) {
       struct panvk_instr_end_args info = {
-         .barrier = {.wait_sb_mask = deps.src[i].wait_sb_mask,
-                     .wait_subqueue_mask = deps.dst[i].wait_subqueue_mask,
-                     .l2 = deps.src[i].cache_flush.l2,
-                     .lsc = deps.src[i].cache_flush.lsc,
-                     .other = deps.src[i].cache_flush.others}};
+         .barrier = {
+            .wait_sb_mask = deps.src[i].wait_sb_mask,
+            .wait_subqueue_mask = deps.dst[i].wait_subqueue_mask,
+         }};
       panvk_per_arch(panvk_instr_end_work)(
          i, cmdbuf, PANVK_INSTR_WORK_TYPE_BARRIER, &info);
    }

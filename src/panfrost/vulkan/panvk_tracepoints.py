@@ -202,21 +202,6 @@ def define_tracepoints():
                 var='sync_wait',
                 c_format='0x%x',
             ),
-            Arg(
-                type='uint8_t',
-                var='l2',
-                c_format='%u',
-            ),
-            Arg(
-                type='uint8_t',
-                var='lsc',
-                c_format='%u',
-            ),
-            Arg(
-                type='uint8_t',
-                var='other',
-                c_format='%u',
-            ),
         ],
     )
 
@@ -299,6 +284,27 @@ def define_tracepoints():
             Arg(
                 type='unsigned',
                 var='cond',
+                c_format='%u',
+            ),
+        ],
+    )
+
+    begin_end_tp(
+        'flush_cache',
+        args=[
+            Arg(
+                type='uint8_t',
+                var='l2',
+                c_format='%u',
+            ),
+            Arg(
+                type='uint8_t',
+                var='lsc',
+                c_format='%u',
+            ),
+            Arg(
+                type='uint8_t',
+                var='other',
                 c_format='%u',
             ),
         ],

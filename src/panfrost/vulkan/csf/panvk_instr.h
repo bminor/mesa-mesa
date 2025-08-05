@@ -14,6 +14,7 @@ enum panvk_instr_work_type {
    PANVK_INSTR_WORK_TYPE_DISPATCH,
    PANVK_INSTR_WORK_TYPE_DISPATCH_INDIRECT,
    PANVK_INSTR_WORK_TYPE_BARRIER,
+   PANVK_INSTR_WORK_TYPE_FLUSH_CACHE,
    PANVK_INSTR_WORK_TYPE_SYNC32_ADD,
    PANVK_INSTR_WORK_TYPE_SYNC64_ADD,
    PANVK_INSTR_WORK_TYPE_SYNC32_WAIT,
@@ -26,9 +27,6 @@ struct panvk_instr_end_args {
       struct {
          uint8_t wait_sb_mask;
          uint8_t wait_subqueue_mask;
-         uint8_t l2;
-         uint8_t lsc;
-         uint8_t other;
       } barrier;
 
       struct {
@@ -55,6 +53,12 @@ struct panvk_instr_end_args {
       struct {
          uint64_t buffer_gpu;
       } dispatch_indirect;
+
+      struct {
+         uint8_t l2;
+         uint8_t lsc;
+         uint8_t other;
+      } flush_cache;
 
       struct {
          struct cs_index addr_regs;
