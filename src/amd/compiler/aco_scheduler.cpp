@@ -920,12 +920,6 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       if (candidate->opcode == aco_opcode::p_logical_start)
          break;
 
-      /* break if we'd make the previous SMEM instruction stall */
-      bool can_stall_prev_smem =
-         idx <= ctx.last_SMEM_dep_idx && candidate_idx < ctx.last_SMEM_dep_idx;
-      if (can_stall_prev_smem && ctx.last_SMEM_stall >= 0)
-         break;
-
       if (should_form_clause(current, candidate.get())) {
          /* We can't easily tell how much this will decrease the def-to-use
           * distances, so just use how far it will be moved as a heuristic. */
@@ -937,6 +931,12 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       } else if (part_of_clause) {
          break;
       }
+
+      /* Break if we'd make the previous SMEM instruction stall. */
+      bool can_stall_prev_smem =
+         idx <= ctx.last_SMEM_dep_idx && candidate_idx < ctx.last_SMEM_dep_idx;
+      if (!part_of_clause && can_stall_prev_smem && ctx.last_SMEM_stall >= 0)
+         break;
 
       /* if current depends on candidate, add additional dependencies and continue */
       bool can_move_down = !is_vmem || part_of_clause || candidate->definitions.empty();
@@ -985,10 +985,9 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
             continue;
          }
          k++;
+         if (candidate_idx < ctx.last_SMEM_dep_idx)
+            ctx.last_SMEM_stall++;
       }
-
-      if (candidate_idx < ctx.last_SMEM_dep_idx)
-         ctx.last_SMEM_stall++;
    }
 
    /* find the first instruction depending on current or find another VMEM */
