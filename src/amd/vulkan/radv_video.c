@@ -1966,13 +1966,6 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct r
    return result;
 }
 
-enum {
-   AV1_RESTORE_NONE = 0,
-   AV1_RESTORE_WIENER = 1,
-   AV1_RESTORE_SGRPROJ = 2,
-   AV1_RESTORE_SWITCHABLE = 3,
-};
-
 #define AV1_SUPERRES_NUM       8
 #define AV1_SUPERRES_DENOM_MIN 9
 
