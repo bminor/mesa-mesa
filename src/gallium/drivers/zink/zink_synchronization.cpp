@@ -354,7 +354,7 @@ template <>
 struct update_unordered_access_and_get_cmdbuf<true> {
    static VkCommandBuffer apply(struct zink_context *ctx, struct zink_resource *res, bool usage_matches, bool is_write)
    {
-      assert(!usage_matches);
+      assert(!usage_matches || (res->obj->unordered_write && res->obj->unordered_read));
       res->obj->unordered_write = true;
       res->obj->unordered_read = true;
       ctx->bs->has_unsync = true;
