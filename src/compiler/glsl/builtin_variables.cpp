@@ -1543,9 +1543,6 @@ builtin_variable_generator::add_varying(int slot, const glsl_type *type,
 void
 builtin_variable_generator::generate_varyings()
 {
-   const struct gl_shader_compiler_options *options =
-      &state->consts->ShaderCompilerOptions[state->stage];
-
    /* gl_Position and gl_PointSize are not visible from fragment shaders. */
    if (state->stage != MESA_SHADER_FRAGMENT) {
       add_varying(VARYING_SLOT_POS, vec4_t, GLSL_PRECISION_HIGH, "gl_Position");
@@ -1666,11 +1663,13 @@ builtin_variable_generator::generate_varyings()
          var->data.patch = fields[i].patch;
          var->init_interface_type(per_vertex_out_type);
 
-         var->data.invariant = fields[i].location == VARYING_SLOT_POS &&
-                               options->PositionAlwaysInvariant;
+         var->data.invariant = state->stage == MESA_SHADER_VERTEX &&
+                               fields[i].location == VARYING_SLOT_POS &&
+                               state->consts->VSPositionAlwaysInvariant;
 
-         var->data.precise = fields[i].location == VARYING_SLOT_POS &&
-                               options->PositionAlwaysPrecise;
+         var->data.precise = state->stage == MESA_SHADER_TESS_EVAL &&
+                             fields[i].location == VARYING_SLOT_POS &&
+                             state->consts->TESPositionAlwaysPrecise;
       }
    }
 }

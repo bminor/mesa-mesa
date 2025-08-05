@@ -1284,8 +1284,6 @@ preprocess_shader(const struct pipe_screen *screen,
                   struct gl_shader_program *shader_program,
                   mesa_shader_stage stage)
 {
-   const struct gl_shader_compiler_options *gl_options =
-      &consts->ShaderCompilerOptions[prog->info.stage];
    const nir_shader_compiler_options *options = screen->nir_options[prog->info.stage];
    assert(options);
 

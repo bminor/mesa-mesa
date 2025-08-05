@@ -681,9 +681,9 @@ st_create_context_priv(struct gl_context *ctx, struct pipe_context *pipe,
    ctx->Const.ForceFloat32TexNearest =
       !screen->caps.texture_float_linear;
 
-   ctx->Const.ShaderCompilerOptions[MESA_SHADER_VERTEX].PositionAlwaysInvariant = options->vs_position_always_invariant;
+   ctx->Const.VSPositionAlwaysInvariant = options->vs_position_always_invariant;
 
-   ctx->Const.ShaderCompilerOptions[MESA_SHADER_TESS_EVAL].PositionAlwaysPrecise = options->vs_position_always_precise;
+   ctx->Const.TESPositionAlwaysPrecise = options->vs_position_always_precise;
 
    /* Set which shader types can be compiled at link time. */
    st->shader_has_one_variant[MESA_SHADER_VERTEX] =
