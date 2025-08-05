@@ -27,6 +27,7 @@
 
 #include "main/macros.h"
 #include "main/consts_exts.h"
+#include "pipe/p_screen.h"
 #include "compiler/glsl_types.h"
 #include "ir.h"
 #include "ir_builder.h"
@@ -41,7 +42,9 @@ namespace {
 
 class find_precision_visitor : public ir_rvalue_enter_visitor {
 public:
-   find_precision_visitor(const struct gl_shader_compiler_options *options);
+   find_precision_visitor(const struct pipe_screen *screen,
+                          mesa_shader_stage stage,
+                          const struct gl_shader_compiler_options *options);
    find_precision_visitor(const find_precision_visitor &) = delete;
    ~find_precision_visitor();
    find_precision_visitor & operator=(const find_precision_visitor &) = delete;
@@ -67,6 +70,8 @@ public:
     */
    struct hash_table *clone_ht;
 
+   const struct pipe_screen *screen;
+   mesa_shader_stage stage;
    const struct gl_shader_compiler_options *options;
 };
 
@@ -104,6 +109,8 @@ public:
    };
 
    find_lowerable_rvalues_visitor(struct set *result,
+                                  const struct pipe_screen *screen,
+                                  mesa_shader_stage stage,
                                   const struct gl_shader_compiler_options *options);
 
    static void stack_enter(class ir_instruction *ir, void *data);
@@ -126,6 +133,8 @@ public:
    static parent_relation get_parent_relation(ir_instruction *parent,
                                               ir_instruction *child);
 
+   const struct pipe_screen *screen;
+   mesa_shader_stage stage;
    std::vector<stack_entry> stack;
    struct set *lowerable_rvalues;
    const struct gl_shader_compiler_options *options;
@@ -145,7 +154,7 @@ public:
 };
 
 static bool
-can_lower_type(const struct gl_shader_compiler_options *options,
+can_lower_type(const struct pipe_screen *screen, mesa_shader_stage stage,
                const glsl_type *type)
 {
    /* Don’t lower any expressions involving non-float types except bool and
@@ -165,11 +174,11 @@ can_lower_type(const struct gl_shader_compiler_options *options,
       return true;
 
    case GLSL_TYPE_FLOAT:
-      return options->LowerPrecisionFloat16;
+      return screen->shader_caps[stage].fp16;
 
    case GLSL_TYPE_UINT:
    case GLSL_TYPE_INT:
-      return options->LowerPrecisionInt16;
+      return screen->shader_caps[stage].int16;
 
    default:
       return false;
@@ -177,8 +186,12 @@ can_lower_type(const struct gl_shader_compiler_options *options,
 }
 
 find_lowerable_rvalues_visitor::find_lowerable_rvalues_visitor(struct set *res,
+                                 const struct pipe_screen *screen,
+                                 mesa_shader_stage stage,
                                  const struct gl_shader_compiler_options *opts)
 {
+   this->screen = screen;
+   this->stage = stage;
    lowerable_rvalues = res;
    options = opts;
    callback_enter = stack_enter;
@@ -288,7 +301,7 @@ enum find_lowerable_rvalues_visitor::can_lower_state
 find_lowerable_rvalues_visitor::handle_precision(const glsl_type *type,
                                                  int precision) const
 {
-   if (!can_lower_type(options, type))
+   if (!can_lower_type(screen, stage, type))
       return CANT_LOWER;
 
    switch (precision) {
@@ -330,7 +343,7 @@ find_lowerable_rvalues_visitor::visit(ir_constant *ir)
 {
    stack_enter(ir, this);
 
-   if (!can_lower_type(options, ir->type))
+   if (!can_lower_type(screen, stage, ir->type))
       stack.back().state = CANT_LOWER;
 
    stack_leave(ir, this);
@@ -391,7 +404,7 @@ find_lowerable_rvalues_visitor::visit_enter(ir_expression *ir)
 {
    ir_hierarchical_visitor::visit_enter(ir);
 
-   if (!can_lower_type(options, ir->type))
+   if (!can_lower_type(screen, stage, ir->type))
       stack.back().state = CANT_LOWER;
 
    /* Don't lower precision for derivative calculations */
@@ -601,12 +614,14 @@ find_lowerable_rvalues_visitor::visit_leave(ir_assignment *ir)
    return visit_continue;
 }
 
-void
-find_lowerable_rvalues(const struct gl_shader_compiler_options *options,
+static void
+find_lowerable_rvalues(const struct pipe_screen *screen,
+                       mesa_shader_stage stage,
+                       const struct gl_shader_compiler_options *options,
                        ir_exec_list *instructions,
                        struct set *result)
 {
-   find_lowerable_rvalues_visitor v(result, options);
+   find_lowerable_rvalues_visitor v(result, screen, stage, options);
 
    visit_list_elements(&v, instructions);
 
@@ -912,7 +927,7 @@ find_precision_visitor::map_builtin(linear_ctx *linalloc, ir_function_signature 
       }
    }
 
-   lower_precision(options, &lowered_sig->body);
+   lower_precision(screen, stage, options, &lowered_sig->body);
 
    _mesa_hash_table_clear(clone_ht, NULL);
 
@@ -921,10 +936,14 @@ find_precision_visitor::map_builtin(linear_ctx *linalloc, ir_function_signature 
    return lowered_sig;
 }
 
-find_precision_visitor::find_precision_visitor(const struct gl_shader_compiler_options *options)
+find_precision_visitor::find_precision_visitor(const struct pipe_screen *screen,
+                                               mesa_shader_stage stage,
+                                               const struct gl_shader_compiler_options *options)
    : lowerable_rvalues(_mesa_pointer_set_create(NULL)),
      lowered_builtins(NULL),
      clone_ht(NULL),
+     screen(screen),
+     stage(stage),
      options(options)
 {
 }
@@ -949,8 +968,10 @@ find_precision_visitor::~find_precision_visitor()
  */
 class lower_variables_visitor : public ir_rvalue_enter_visitor {
 public:
-   lower_variables_visitor(const struct gl_shader_compiler_options *options)
-      : options(options) {
+   lower_variables_visitor(const struct pipe_screen *screen,
+                           mesa_shader_stage stage,
+                           const struct gl_shader_compiler_options *options)
+      : screen(screen), stage(stage), options(options) {
       lower_vars = _mesa_pointer_set_create(NULL);
    }
 
@@ -972,6 +993,8 @@ public:
    void convert_split_assignment(ir_dereference *lhs, ir_rvalue *rhs,
                                  bool insert_before);
 
+   const struct pipe_screen *screen;
+   mesa_shader_stage stage;
    const struct gl_shader_compiler_options *options;
    set *lower_vars;
 };
@@ -1019,7 +1042,7 @@ lower_variables_visitor::visit(ir_variable *var)
        !glsl_type_is_32bit(glsl_without_array(var->type)) ||
        (var->data.precision != GLSL_PRECISION_MEDIUM &&
         var->data.precision != GLSL_PRECISION_LOW) ||
-       !can_lower_type(options, var->type))
+       !can_lower_type(screen, stage, var->type))
       return visit_continue;
 
    /* Lower constant initializers. */
@@ -1339,13 +1362,16 @@ lower_variables_visitor::visit_enter(ir_call *ir)
 }
 
 void
-lower_precision(const struct gl_shader_compiler_options *options,
+lower_precision(const struct pipe_screen *screen,
+                mesa_shader_stage stage,
+                const struct gl_shader_compiler_options *options,
                 ir_exec_list *instructions)
 {
-   find_precision_visitor v(options);
-   find_lowerable_rvalues(options, instructions, v.lowerable_rvalues);
+   find_precision_visitor v(screen, stage, options);
+   find_lowerable_rvalues(screen, stage, options, instructions,
+                          v.lowerable_rvalues);
    visit_list_elements(&v, instructions);
 
-   lower_variables_visitor vars(options);
+   lower_variables_visitor vars(screen, stage, options);
    visit_list_elements(&vars, instructions);
 }

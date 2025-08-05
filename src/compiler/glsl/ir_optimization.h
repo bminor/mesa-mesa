@@ -65,7 +65,9 @@ bool propagate_invariance(ir_exec_list *instructions);
 
 namespace ir_builder { class ir_factory; };
 
-void lower_precision(const struct gl_shader_compiler_options *options,
+void lower_precision(const struct pipe_screen *screen,
+                     mesa_shader_stage stage,
+                     const struct gl_shader_compiler_options *options,
                      ir_exec_list *instructions);
 
 #endif /* GLSL_IR_OPTIMIZATION_H */

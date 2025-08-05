@@ -1331,7 +1331,8 @@ preprocess_shader(const struct pipe_screen *screen,
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
    NIR_PASS(_, nir, nir_lower_var_copies);
 
-   if (gl_options->LowerPrecisionFloat16 && gl_options->LowerPrecisionInt16) {
+   if (screen->shader_caps[nir->info.stage].fp16 &&
+       screen->shader_caps[nir->info.stage].int16) {
       NIR_PASS(_, nir, nir_lower_mediump_vars, nir_var_function_temp | nir_var_shader_temp | nir_var_mem_shared);
    }
 

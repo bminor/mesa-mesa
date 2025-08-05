@@ -365,10 +365,11 @@ standalone_compile_shader(const struct standalone_options *_options,
 
    if (options->lower_precision) {
       for (unsigned i = MESA_SHADER_VERTEX; i <= MESA_SHADER_COMPUTE; i++) {
+         ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->fp16 = true;
+         ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->int16 = true;
+
          struct gl_shader_compiler_options *options =
             &ctx->Const.ShaderCompilerOptions[i];
-         options->LowerPrecisionFloat16 = true;
-         options->LowerPrecisionInt16 = true;
          options->LowerPrecisionDerivatives = true;
          options->LowerPrecisionConstants = true;
          options->LowerPrecisionFloat16Uniforms = true;

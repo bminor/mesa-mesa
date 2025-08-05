@@ -173,8 +173,8 @@ namespace
       initialize_context_to_defaults(ctx, API_OPENGLES2);
       ctx->Version = 31;
       for (int i = 0; i < MESA_SHADER_STAGES; i++) {
-         ctx->Const.ShaderCompilerOptions[i].LowerPrecisionFloat16 = true;
-         ctx->Const.ShaderCompilerOptions[i].LowerPrecisionInt16 = true;
+         ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->fp16 = true;
+         ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->int16 = true;
          ctx->screen->nir_options[i] = &compiler_options;
       }
 
