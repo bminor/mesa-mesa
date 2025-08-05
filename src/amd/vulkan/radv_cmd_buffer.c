@@ -249,7 +249,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.ds.stencil.back.op.compare, RADV_DYNAMIC_STENCIL_OP);
 
    RADV_CMP_COPY(vk.cb.logic_op, RADV_DYNAMIC_LOGIC_OP);
-   RADV_CMP_COPY(vk.cb.color_write_enables, RADV_DYNAMIC_COLOR_WRITE_ENABLE);
+   RADV_CMP_COPY(color_write_enable, RADV_DYNAMIC_COLOR_WRITE_ENABLE);
    RADV_CMP_COPY(vk.cb.logic_op_enable, RADV_DYNAMIC_LOGIC_OP_ENABLE);
 
    RADV_CMP_COPY(vk.fsr.fragment_size.width, RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
@@ -3608,17 +3608,13 @@ radv_emit_color_write(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_binning_settings *settings = &pdev->binning_settings;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   uint32_t color_write_enable = 0, color_write_mask = 0;
-
-   u_foreach_bit (i, d->vk.cb.color_write_enables) {
-      color_write_enable |= 0xfu << (i * 4);
-   }
+   uint32_t color_write_mask = 0;
 
    for (unsigned i = 0; i < MAX_RTS; i++) {
       color_write_mask |= d->vk.cb.attachments[i].write_mask << (4 * i);
    }
 
-   const uint32_t cb_target_mask = color_write_enable & color_write_mask;
+   const uint32_t cb_target_mask = d->color_write_enable & color_write_mask;
 
    if (device->pbb_allowed && settings->context_states_per_bin > 1 &&
        cmd_buffer->state.last_cb_target_mask != cb_target_mask) {
@@ -6853,6 +6849,14 @@ radv_handle_rendering_image_transition(struct radv_cmd_buffer *cmd_buffer, struc
    }
 }
 
+static void
+radv_init_default_dynamic_graphics_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   vk_dynamic_graphics_state_init(&cmd_buffer->state.dynamic.vk);
+
+   cmd_buffer->state.dynamic.color_write_enable = 0xffffffffu;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo)
 {
@@ -6892,7 +6896,7 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
    cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_ALL;
 
    if (cmd_buffer->qf == RADV_QUEUE_GENERAL)
-      vk_dynamic_graphics_state_init(&cmd_buffer->state.dynamic.vk);
+      radv_init_default_dynamic_graphics_state(cmd_buffer);
 
    if (cmd_buffer->qf == RADV_QUEUE_COMPUTE || device->vk.enabled_features.taskShader) {
       uint32_t pred_value = 0;
@@ -8379,17 +8383,17 @@ radv_CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmen
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_cmd_state *state = &cmd_buffer->state;
-   uint8_t color_write_enable = 0;
+   uint32_t color_write_enable = 0;
 
    assert(attachmentCount <= MAX_RTS);
 
    for (uint32_t i = 0; i < attachmentCount; i++) {
       if (pColorWriteEnables[i]) {
-         color_write_enable |= BITFIELD_BIT(i);
+         color_write_enable |= BITFIELD_RANGE(i * 4, 4);
       }
    }
 
-   state->dynamic.vk.cb.color_write_enables = color_write_enable;
+   state->dynamic.color_write_enable = color_write_enable;
 
    state->dirty_dynamic |= RADV_DYNAMIC_COLOR_WRITE_ENABLE;
 }

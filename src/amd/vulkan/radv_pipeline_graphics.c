@@ -954,7 +954,9 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
       }
 
       if (states & RADV_DYNAMIC_COLOR_WRITE_ENABLE) {
-         dynamic->vk.cb.color_write_enables = state->cb->color_write_enables;
+         u_foreach_bit (i, state->cb->color_write_enables) {
+            dynamic->color_write_enable |= BITFIELD_RANGE(i * 4, 4);
+         }
       }
 
       if (states & RADV_DYNAMIC_LOGIC_OP_ENABLE) {

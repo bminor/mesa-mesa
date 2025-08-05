@@ -61,6 +61,8 @@ struct radv_dynamic_state {
    struct radv_sample_locations_state sample_location;
 
    VkImageAspectFlags feedback_loop_aspects;
+
+   uint32_t color_write_enable;
 };
 
 struct radv_multisample_state {
