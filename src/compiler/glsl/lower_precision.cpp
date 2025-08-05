@@ -1037,7 +1037,7 @@ lower_variables_visitor::visit(ir_variable *var)
         /* Lower uniforms but not UBOs. */
         (var->data.mode != ir_var_uniform ||
          var->is_in_buffer_block() ||
-         !(options->LowerPrecisionFloat16Uniforms &&
+         !(screen->shader_caps[stage].fp16_const_buffers &&
            glsl_without_array(var->type)->base_type == GLSL_TYPE_FLOAT))) ||
        !glsl_type_is_32bit(glsl_without_array(var->type)) ||
        (var->data.precision != GLSL_PRECISION_MEDIUM &&
