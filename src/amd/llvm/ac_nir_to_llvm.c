@@ -1486,7 +1486,7 @@ static LLVMValueRef build_tex_intrinsic(struct ac_nir_context *ctx, const nir_te
       break;
    case nir_texop_tex:
       if (ctx->stage != MESA_SHADER_FRAGMENT &&
-          (!gl_shader_stage_is_compute(ctx->stage) ||
+          (!mesa_shader_stage_is_compute(ctx->stage) ||
            ctx->info->derivative_group == DERIVATIVE_GROUP_NONE)) {
          assert(!args->lod);
          args->level_zero = true;
@@ -1522,7 +1522,7 @@ static LLVMValueRef build_tex_intrinsic(struct ac_nir_context *ctx, const nir_te
 
    args->attributes = AC_ATTR_INVARIANT_LOAD;
    bool cs_derivs =
-      gl_shader_stage_is_compute(ctx->stage) && ctx->info->derivative_group != DERIVATIVE_GROUP_NONE;
+      mesa_shader_stage_is_compute(ctx->stage) && ctx->info->derivative_group != DERIVATIVE_GROUP_NONE;
    if (ctx->stage == MESA_SHADER_FRAGMENT || cs_derivs) {
       /* Prevent texture instructions with implicit derivatives from being
        * sinked into branches. */
@@ -2766,7 +2766,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       }
       break;
    case nir_intrinsic_load_subgroup_id:
-      assert(gl_shader_stage_is_compute(ctx->stage) && ctx->ac.gfx_level >= GFX12);
+      assert(mesa_shader_stage_is_compute(ctx->stage) && ctx->ac.gfx_level >= GFX12);
       result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.wave.id", ctx->ac.i32, NULL, 0, 0);
       break;
    case nir_intrinsic_first_invocation:

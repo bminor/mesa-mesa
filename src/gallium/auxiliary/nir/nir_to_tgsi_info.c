@@ -320,7 +320,7 @@ void nir_tgsi_scan_shader(const struct nir_shader *nir,
       }
    }
 
-   if (gl_shader_stage_is_compute(nir->info.stage) ||
+   if (mesa_shader_stage_is_compute(nir->info.stage) ||
        gl_shader_stage_is_mesh(nir->info.stage)) {
       info->properties[TGSI_PROPERTY_CS_FIXED_BLOCK_WIDTH] = nir->info.workgroup_size[0];
       info->properties[TGSI_PROPERTY_CS_FIXED_BLOCK_HEIGHT] = nir->info.workgroup_size[1];

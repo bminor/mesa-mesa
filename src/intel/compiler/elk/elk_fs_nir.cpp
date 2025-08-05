@@ -143,7 +143,7 @@ fs_nir_setup_uniforms(elk_fs_visitor &s)
 
    s.uniforms = s.nir->num_uniforms / 4;
 
-   if (gl_shader_stage_is_compute(s.stage)) {
+   if (mesa_shader_stage_is_compute(s.stage)) {
       /* Add uniforms for builtins after regular NIR uniforms. */
       assert(s.uniforms == s.prog_data->nr_params);
 
@@ -163,7 +163,7 @@ emit_work_group_id_setup(nir_to_elk_state &ntb)
    elk_fs_visitor &s = ntb.s;
    const fs_builder &bld = ntb.bld;
 
-   assert(gl_shader_stage_is_compute(s.stage));
+   assert(mesa_shader_stage_is_compute(s.stage));
 
    elk_fs_reg id = bld.vgrf(ELK_REGISTER_TYPE_UD, 3);
 
@@ -240,7 +240,7 @@ emit_system_values_block(nir_to_elk_state &ntb, nir_block *block)
          break;
 
       case nir_intrinsic_load_workgroup_id:
-         assert(gl_shader_stage_is_compute(s.stage));
+         assert(mesa_shader_stage_is_compute(s.stage));
          reg = &ntb.system_values[SYSTEM_VALUE_WORKGROUP_ID];
          if (reg->file == BAD_FILE)
             *reg = emit_work_group_id_setup(ntb);
@@ -2670,7 +2670,7 @@ emit_barrier(nir_to_elk_state &ntb)
    /* Clear the message payload */
    bld.exec_all().group(8, 0).MOV(payload, elk_imm_ud(0u));
 
-   assert(gl_shader_stage_is_compute(s.stage));
+   assert(mesa_shader_stage_is_compute(s.stage));
 
    uint32_t barrier_id_mask;
    switch (devinfo->ver) {

@@ -2105,7 +2105,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
          break;
 
       case SCOPE_WORKGROUP:
-         assert(gl_shader_stage_is_compute(b->shader->stage));
+         assert(mesa_shader_stage_is_compute(b->shader->stage));
          bi_barrier(b);
          /*
           * Blob doesn't seem to do anything for memory barriers, so no need to
@@ -6464,7 +6464,7 @@ bifrost_compile_shader_nir(nir_shader *nir,
       bi_compile_variant(nir, inputs, binary, info, BI_IDVS_NONE);
    }
 
-   if (gl_shader_stage_is_compute(nir->info.stage)) {
+   if (mesa_shader_stage_is_compute(nir->info.stage)) {
       /* Workgroups may be merged if the structure of the workgroup is
        * not software visible. This is true if neither shared memory
        * nor barriers are used. The hardware may be able to optimize

@@ -5990,7 +5990,7 @@ elk_fs_visitor::allocate_registers(bool allow_spilling)
       prog_data->total_scratch = MAX2(elk_get_scratch_size(last_scratch),
                                       prog_data->total_scratch);
 
-      if (gl_shader_stage_is_compute(stage)) {
+      if (mesa_shader_stage_is_compute(stage)) {
          if (devinfo->platform == INTEL_PLATFORM_HSW) {
             /* According to the MEDIA_VFE_STATE's "Per Thread Scratch Space"
              * field documentation, Haswell supports a minimum of 2kB of
@@ -6328,7 +6328,7 @@ elk_fs_visitor::run_fs(bool allow_spilling, bool do_rep_send)
 bool
 elk_fs_visitor::run_cs(bool allow_spilling)
 {
-   assert(gl_shader_stage_is_compute(stage));
+   assert(mesa_shader_stage_is_compute(stage));
    assert(devinfo->ver >= 7);
    const fs_builder bld = fs_builder(this).at_end();
 

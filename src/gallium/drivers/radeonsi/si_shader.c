@@ -1295,7 +1295,7 @@ static void si_assign_param_offsets(nir_shader *nir, struct si_shader *shader,
 
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader)
 {
-   return gl_shader_stage_is_compute(shader->info.stage) &&
+   return mesa_shader_stage_is_compute(shader->info.stage) &&
       shader->info.shared_size > 0 && sscreen->options.clear_lds;
 }
 
@@ -2019,7 +2019,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    }
 
    /* Validate SGPR and VGPR usage for compute to detect compiler bugs. */
-   if (gl_shader_stage_is_compute(nir->info.stage)) {
+   if (mesa_shader_stage_is_compute(nir->info.stage)) {
       unsigned max_vgprs =
          sscreen->info.num_physical_wave64_vgprs_per_simd * (shader->wave_size == 32 ? 2 : 1);
       unsigned max_sgprs = sscreen->info.num_physical_sgprs_per_simd;

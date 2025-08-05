@@ -305,7 +305,7 @@ elk_nir_lower_cs_intrinsics(nir_shader *nir,
    };
 
    /* Constraints from NV_compute_shader_derivatives. */
-   if (gl_shader_stage_is_compute(nir->info.stage) &&
+   if (mesa_shader_stage_is_compute(nir->info.stage) &&
        !nir->info.workgroup_size_variable) {
       if (nir->info.derivative_group == DERIVATIVE_GROUP_QUADS) {
          assert(nir->info.workgroup_size[0] % 2 == 0);

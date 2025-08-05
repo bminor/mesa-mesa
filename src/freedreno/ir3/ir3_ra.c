@@ -2672,7 +2672,7 @@ ir3_ra(struct ir3_shader_variant *v)
    limit_pressure.shared = RA_SHARED_SIZE;
    limit_pressure.shared_half = RA_SHARED_HALF_SIZE;
 
-   if (gl_shader_stage_is_compute(v->type) && v->has_barrier) {
+   if (mesa_shader_stage_is_compute(v->type) && v->has_barrier) {
       calc_limit_pressure_for_cs_with_barrier(v, &limit_pressure);
    }
 

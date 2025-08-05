@@ -2434,7 +2434,7 @@ ntt_emit_load_sysval(struct ntt_compile *c, nir_intrinsic_instr *instr)
 static void
 ntt_emit_barrier(struct ntt_compile *c, nir_intrinsic_instr *intr)
 {
-   bool compute = gl_shader_stage_is_compute(c->s->info.stage);
+   bool compute = mesa_shader_stage_is_compute(c->s->info.stage);
 
    if (nir_intrinsic_memory_scope(intr) != SCOPE_NONE) {
       nir_variable_mode modes = nir_intrinsic_memory_modes(intr);

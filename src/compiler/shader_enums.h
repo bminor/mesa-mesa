@@ -84,7 +84,7 @@ typedef enum mesa_shader_stage {
 } mesa_shader_stage;
 
 static inline bool
-gl_shader_stage_is_compute(mesa_shader_stage stage)
+mesa_shader_stage_is_compute(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_COMPUTE || stage == MESA_SHADER_KERNEL;
 }

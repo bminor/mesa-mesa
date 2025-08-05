@@ -337,7 +337,7 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
       NIR_PASS(_, nir, nir_lower_gs_intrinsics, flags);
    }
 
-   if (gl_shader_stage_is_compute(nir->info.stage)) {
+   if (mesa_shader_stage_is_compute(nir->info.stage)) {
       nir_lower_compute_system_values_options options = {0};
 
       /* gl_LocalInvocationIndex must be derived from gl_LocalInvocationID.xyz to make it correct

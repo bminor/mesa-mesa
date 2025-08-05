@@ -413,7 +413,7 @@ midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 
    /* Could be eventually useful for Vulkan, but we don't expect it to have
     * the support, so limit it to compute */
-   if (gl_shader_stage_is_compute(nir->info.stage)) {
+   if (mesa_shader_stage_is_compute(nir->info.stage)) {
       nir_lower_mem_access_bit_sizes_options mem_size_options = {
          .modes = nir_var_mem_ubo | nir_var_mem_ssbo |
                   nir_var_mem_constant | nir_var_mem_task_payload |

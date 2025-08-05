@@ -153,7 +153,7 @@ brw_from_nir_setup_uniforms(brw_shader &s)
 
    s.uniforms = s.nir->num_uniforms / 4;
 
-   if (gl_shader_stage_is_compute(s.stage) && devinfo->verx10 < 125) {
+   if (mesa_shader_stage_is_compute(s.stage) && devinfo->verx10 < 125) {
       /* Add uniforms for builtins after regular NIR uniforms. */
       assert(s.uniforms == s.prog_data->nr_params);
 
@@ -173,7 +173,7 @@ emit_work_group_id_setup(nir_to_brw_state &ntb)
    brw_shader &s = ntb.s;
    const brw_builder &bld = ntb.bld.scalar_group();
 
-   assert(gl_shader_stage_is_compute(s.stage));
+   assert(mesa_shader_stage_is_compute(s.stage));
 
    brw_reg id = bld.vgrf(BRW_TYPE_UD, 3);
 
@@ -257,7 +257,7 @@ emit_system_values_block(nir_to_brw_state &ntb, nir_block *block)
       case nir_intrinsic_load_workgroup_id:
          if (gl_shader_stage_is_mesh(s.stage))
             UNREACHABLE("should be lowered by nir_lower_compute_system_values().");
-         assert(gl_shader_stage_is_compute(s.stage));
+         assert(mesa_shader_stage_is_compute(s.stage));
          reg = &ntb.system_values[SYSTEM_VALUE_WORKGROUP_ID];
          if (reg->file == BAD_FILE)
             *reg = emit_work_group_id_setup(ntb);
@@ -3040,7 +3040,7 @@ emit_barrier(nir_to_brw_state &ntb)
    if (devinfo->verx10 >= 125) {
       setup_barrier_message_payload_gfx125(bld, payload);
    } else {
-      assert(gl_shader_stage_is_compute(s.stage));
+      assert(mesa_shader_stage_is_compute(s.stage));
 
       brw_reg barrier_id_mask =
          brw_imm_ud(devinfo->ver == 9 ? 0x8f000000u : 0x7f000000u);

@@ -675,7 +675,7 @@ create_shared_block(struct ntv_context *ctx, unsigned bit_size)
    SpvId type = spirv_builder_type_uint(&ctx->builder, bit_size);
    SpvId array;
 
-   assert(gl_shader_stage_is_compute(ctx->nir->info.stage));
+   assert(mesa_shader_stage_is_compute(ctx->nir->info.stage));
    if (ctx->nir->info.cs.has_variable_shared_mem) {
       assert(ctx->shared_mem_size);
       SpvId const_shared_size = emit_uint_const(ctx, 32, ctx->nir->info.shared_size);
@@ -4715,7 +4715,7 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
    spirv_builder_emit_source(&ctx.builder, SpvSourceLanguageUnknown, 0);
 
    SpvAddressingModel model = SpvAddressingModelLogical;
-   if (gl_shader_stage_is_compute(s->info.stage)) {
+   if (mesa_shader_stage_is_compute(s->info.stage)) {
       if (s->info.cs.ptr_size == 32)
          model = SpvAddressingModelPhysical32;
       else if (s->info.cs.ptr_size == 64) {

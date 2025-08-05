@@ -3598,7 +3598,7 @@ static bool
 lower_zs_swizzle_tex(nir_shader *nir, const void *swizzle, bool shadow_only)
 {
    /* We don't use nir_lower_tex to do our swizzling, because of this base_sampler_id. */
-   unsigned base_sampler_id = gl_shader_stage_is_compute(nir->info.stage) ? 0 : PIPE_MAX_SAMPLERS * nir->info.stage;
+   unsigned base_sampler_id = mesa_shader_stage_is_compute(nir->info.stage) ? 0 : PIPE_MAX_SAMPLERS * nir->info.stage;
    struct lower_zs_swizzle_state state = {shadow_only, base_sampler_id, swizzle};
    return nir_shader_instructions_pass(nir, lower_zs_swizzle_tex_instr,
                                        nir_metadata_control_flow,
@@ -4520,7 +4520,7 @@ zink_binding(mesa_shader_stage stage, VkDescriptorType type, int index, bool com
    } else {
       unsigned base = stage;
       /* clamp compute bindings for better driver efficiency */
-      if (gl_shader_stage_is_compute(stage))
+      if (mesa_shader_stage_is_compute(stage))
          base = 0;
       switch (type) {
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -6223,7 +6223,7 @@ zink_shader_init(struct zink_screen *screen, struct zink_shader *zs)
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       zs->flat_flags = zink_flat_flags(nir);
 
-   if (!gl_shader_stage_is_compute(nir->info.stage) && nir->info.separate_shader)
+   if (!mesa_shader_stage_is_compute(nir->info.stage) && nir->info.separate_shader)
       NIR_PASS(_, nir, fixup_io_locations);
 
    NIR_PASS(_, nir, lower_basevertex);

@@ -1054,7 +1054,7 @@ type_size_vec4(const struct glsl_type *type, bool bindless)
 void
 nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
 {
-   if (gl_shader_stage_is_compute(nir->info.stage))
+   if (mesa_shader_stage_is_compute(nir->info.stage))
       return;
 
    bool lower_indirect_inputs =

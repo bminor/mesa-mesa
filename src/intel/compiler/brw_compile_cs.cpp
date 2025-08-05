@@ -61,7 +61,7 @@ cs_fill_push_const_info(const struct intel_device_info *devinfo,
 static bool
 run_cs(brw_shader &s, bool allow_spilling)
 {
-   assert(gl_shader_stage_is_compute(s.stage));
+   assert(mesa_shader_stage_is_compute(s.stage));
 
    s.payload_ = new brw_cs_thread_payload(s);
 

@@ -136,7 +136,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
     * Compute CSOs call this function during create time, so preprocessing
     * happens at CSO create time regardless.
     */
-   if (gl_shader_stage_is_compute(s->info.stage))
+   if (mesa_shader_stage_is_compute(s->info.stage))
       pan_shader_preprocess(s, panfrost_device_gpu_id(dev));
 
    struct pan_compile_inputs inputs = {

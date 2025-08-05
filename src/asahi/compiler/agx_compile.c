@@ -1545,7 +1545,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
 
       /* Nothing to do for subgroup barriers */
       if (nir_intrinsic_execution_scope(instr) >= SCOPE_WORKGROUP) {
-         assert(gl_shader_stage_is_compute(b->shader->nir->info.stage));
+         assert(mesa_shader_stage_is_compute(b->shader->nir->info.stage));
 
          agx_threadgroup_barrier(b);
       }
