@@ -316,49 +316,6 @@ struct gl_extensions
 };
 
 /**
- * Compiler options for a single GLSL shaders type
- */
-struct gl_shader_compiler_options
-{
-   /** Driver-selectable options: */
-   GLboolean EmitNoCont;                  /**< Emit CONT opcode? */
-   GLboolean EmitNoMainReturn;            /**< Emit CONT/RET opcodes? */
-   GLbitfield LowerBuiltinVariablesXfb;   /**< Which builtin variables should
-                                           * be lowered for transform feedback
-                                           **/
-
-   /**
-    * If we can lower the precision of variables based on precision
-    * qualifiers
-    */
-   GLboolean LowerPrecisionFloat16;
-   GLboolean LowerPrecisionInt16;
-   GLboolean LowerPrecisionDerivatives;
-   GLboolean LowerPrecisionFloat16Uniforms;
-   GLboolean LowerPrecision16BitLoadDst;
-
-   /**
-    * This enables lowering of 16b constants.  Some drivers may not
-    * to lower constants to 16b (ie. if the hw can do automatic
-    * narrowing on constant load)
-    */
-   GLboolean LowerPrecisionConstants;
-
-   /**
-    * \name Forms of indirect addressing the driver cannot do.
-    */
-   /*@{*/
-   GLboolean EmitNoIndirectTemp;    /**< No indirect addressing of temps */
-   GLboolean EmitNoIndirectUniform; /**< No indirect addressing of constants */
-   /*@}*/
-
-   GLuint MaxIfDepth;               /**< Maximum nested IF blocks */
-
-   /** Clamp UBO and SSBO block indices so they don't go out-of-bounds. */
-   GLboolean ClampBlockIndicesToArrayBounds;
-};
-
-/**
  * Precision info for shader datatypes.  See glGetShaderPrecisionFormat().
  */
 struct gl_precision
@@ -887,8 +844,6 @@ struct gl_constants
 
    /** GL_KHR_context_flush_control */
    GLenum16 ContextReleaseBehavior;
-
-   struct gl_shader_compiler_options ShaderCompilerOptions[MESA_SHADER_STAGES];
 
    /** (driconf) Force gl_Position to be considered invariant */
    GLboolean VSPositionAlwaysInvariant;

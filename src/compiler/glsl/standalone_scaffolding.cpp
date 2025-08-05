@@ -284,14 +284,6 @@ void initialize_context_to_defaults(struct gl_context *ctx, gl_api api)
    ctx->Const.Program[MESA_SHADER_COMPUTE].MaxInputComponents = 0; /* not used */
    ctx->Const.Program[MESA_SHADER_COMPUTE].MaxOutputComponents = 0; /* not used */
 
-   /* Set up default shader compiler options. */
-   struct gl_shader_compiler_options options;
-   memset(&options, 0, sizeof(options));
-   options.MaxIfDepth = UINT_MAX;
-
-   for (int sh = 0; sh < MESA_SHADER_STAGES; ++sh)
-      memcpy(&ctx->Const.ShaderCompilerOptions[sh], &options, sizeof(options));
-
    ctx->Driver.NewProgram = standalone_new_program;
 }
 

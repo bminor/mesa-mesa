@@ -201,8 +201,6 @@ void st_init_limits(struct pipe_screen *screen,
 
    for (sh = 0; sh < MESA_SHADER_STAGES; ++sh) {
       const mesa_shader_stage stage = tgsi_processor_to_shader_stage(sh);
-      struct gl_shader_compiler_options *options =
-         &c->ShaderCompilerOptions[stage];
       struct gl_program_constants *pc = &c->Program[stage];
 
       if (!screen->nir_options[stage] ||
@@ -320,39 +318,11 @@ void st_init_limits(struct pipe_screen *screen,
          pc->MediumFloat = pc->LowFloat;
       }
 
-      /* TODO: make these more fine-grained if anyone needs it */
-      options->MaxIfDepth =
-         screen->shader_caps[sh].max_control_flow_depth;
-
-      options->EmitNoMainReturn =
-         !screen->shader_caps[sh].subroutines;
-
-      options->EmitNoCont =
-         !screen->shader_caps[sh].cont_supported;
-
-      options->EmitNoIndirectTemp =
-         !screen->shader_caps[sh].indirect_temp_addr;
-      options->EmitNoIndirectUniform =
-         !screen->shader_caps[sh].indirect_const_addr;
-
       if (pc->MaxInstructions &&
           (!screen->shader_caps[sh].indirect_const_addr ||
            pc->MaxUniformBlocks < 12)) {
          can_ubo = false;
       }
-
-      options->LowerPrecisionFloat16 =
-         screen->shader_caps[sh].fp16;
-      options->LowerPrecisionDerivatives =
-         screen->shader_caps[sh].fp16_derivatives;
-      options->LowerPrecisionInt16 =
-         screen->shader_caps[sh].int16;
-      options->LowerPrecisionConstants =
-         screen->shader_caps[sh].glsl_16bit_consts;
-      options->LowerPrecisionFloat16Uniforms =
-         screen->shader_caps[sh].fp16_const_buffers;
-      options->LowerPrecision16BitLoadDst =
-         screen->shader_caps[sh].glsl_16bit_load_dst;
    }
 
    c->MaxUserAssignableUniformLocations =

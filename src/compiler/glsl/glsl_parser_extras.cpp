@@ -2391,14 +2391,11 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
       state->has_implicit_int_to_uint_conversion();
    shader->KHR_shader_subgroup_basic_enable = state->KHR_shader_subgroup_basic_enable;
 
-   struct gl_shader_compiler_options *options =
-      &ctx->Const.ShaderCompilerOptions[shader->Stage];
-
    if (!state->error && !shader->ir->is_empty()) {
       if (state->es_shader &&
           (ctx->screen->shader_caps[shader->Stage].fp16 ||
            ctx->screen->shader_caps[shader->Stage].int16))
-         lower_precision(ctx->screen, shader->Stage, options, shader->ir);
+         lower_precision(ctx->screen, shader->Stage, shader->ir);
 
       lower_builtins(shader->ir);
       assign_subroutine_indexes(state);
