@@ -32,11 +32,8 @@
 #define RADV_VIDEO_AV1_MAX_NUM_REF_FRAME  7
 #define RADV_VIDEO_VP9_MAX_DPB_SLOTS      9
 #define RADV_VIDEO_VP9_MAX_NUM_REF_FRAME  3
-#define FB_BUFFER_OFFSET                  0x1000
 #define FB_BUFFER_SIZE                    2048
 #define FB_BUFFER_SIZE_TONGA              (2048 * 64)
-#define IT_SCALING_TABLE_SIZE             992
-#define RDECODE_SESSION_CONTEXT_SIZE      (128 * 1024)
 
 /* Not 100% sure this isn't too much but works */
 #define VID_DEFAULT_ALIGNMENT 256
@@ -1604,7 +1601,7 @@ get_h264_msg(struct radv_video_session *vid, struct radv_video_session_params *p
    vk_video_derive_h264_scaling_list(sps, pps, &scaling_lists);
    update_h264_scaling(result.scaling_list_4x4, result.scaling_list_8x8, &scaling_lists);
 
-   memset(it_ptr, 0, IT_SCALING_TABLE_SIZE);
+   memset(it_ptr, 0, RDECODE_IT_SCALING_TABLE_SIZE);
    memcpy(it_ptr, result.scaling_list_4x4, 6 * 16);
    memcpy((char *)it_ptr + 96, result.scaling_list_8x8, 2 * 64);
 
@@ -1780,7 +1777,7 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
    const StdVideoH265ScalingLists *scaling_lists = NULL;
    vk_video_derive_h265_scaling_list(sps, pps, &scaling_lists);
    if (scaling_lists) {
-      memcpy(it_ptr, scaling_lists, IT_SCALING_TABLE_SIZE);
+      memcpy(it_ptr, scaling_lists, RDECODE_IT_SCALING_TABLE_SIZE);
       memcpy(result.ucScalingListDCCoefSizeID2, scaling_lists->ScalingListDCCoef16x16, 6);
       memcpy(result.ucScalingListDCCoefSizeID3, scaling_lists->ScalingListDCCoef32x32, 2);
    }
@@ -2775,7 +2772,7 @@ get_uvd_h264_msg(struct radv_video_session *vid, struct radv_video_session_param
    vk_video_derive_h264_scaling_list(sps, pps, &scaling_lists);
    update_h264_scaling(result.scaling_list_4x4, result.scaling_list_8x8, &scaling_lists);
 
-   memset(it_ptr, 0, IT_SCALING_TABLE_SIZE);
+   memset(it_ptr, 0, RDECODE_IT_SCALING_TABLE_SIZE);
    memcpy(it_ptr, result.scaling_list_4x4, 6 * 16);
    memcpy((char *)it_ptr + 96, result.scaling_list_8x8, 2 * 64);
 
@@ -2936,7 +2933,7 @@ get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, str
    const StdVideoH265ScalingLists *scaling_lists = NULL;
    vk_video_derive_h265_scaling_list(sps, pps, &scaling_lists);
    if (scaling_lists) {
-      memcpy(it_ptr, scaling_lists, IT_SCALING_TABLE_SIZE);
+      memcpy(it_ptr, scaling_lists, RDECODE_IT_SCALING_TABLE_SIZE);
       memcpy(result.ucScalingListDCCoefSizeID2, scaling_lists->ScalingListDCCoef16x16, 6);
       memcpy(result.ucScalingListDCCoefSizeID3, scaling_lists->ScalingListDCCoef32x32, 2);
    }
@@ -3214,7 +3211,7 @@ radv_uvd_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    radv_vid_buffer_upload_alloc(cmd_buffer, fb_size, &fb_offset, &fb_ptr);
    fb_bo = cmd_buffer->upload.upload_bo;
    if (have_it(vid)) {
-      radv_vid_buffer_upload_alloc(cmd_buffer, IT_SCALING_TABLE_SIZE, &it_probs_offset, &it_probs_ptr);
+      radv_vid_buffer_upload_alloc(cmd_buffer, RDECODE_IT_SCALING_TABLE_SIZE, &it_probs_offset, &it_probs_ptr);
       it_probs_bo = cmd_buffer->upload.upload_bo;
    }
 
@@ -3298,7 +3295,7 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    radv_vid_buffer_upload_alloc(cmd_buffer, FB_BUFFER_SIZE, &fb_offset, &fb_ptr);
    fb_bo = cmd_buffer->upload.upload_bo;
    if (have_it(vid)) {
-      radv_vid_buffer_upload_alloc(cmd_buffer, IT_SCALING_TABLE_SIZE, &it_probs_offset, &it_probs_ptr);
+      radv_vid_buffer_upload_alloc(cmd_buffer, RDECODE_IT_SCALING_TABLE_SIZE, &it_probs_offset, &it_probs_ptr);
       it_probs_bo = cmd_buffer->upload.upload_bo;
    } else if (have_probs(vid)) {
       size_t sz = 0;
