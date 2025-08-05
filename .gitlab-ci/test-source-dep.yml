@@ -174,7 +174,6 @@
         - src/mesa/swrast/**/*
         - src/mesa/swrast_setup/**/*
         - src/mesa/vbo/**/*
-        - src/mesa/x86/**/*
         - src/mesa/x86-64/**/*
       when: on_success
     - !reference [.gallium-core-rules, rules]

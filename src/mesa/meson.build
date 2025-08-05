@@ -385,11 +385,6 @@ files_libmesa = files(
 )
 
 inc_libmesa_asm = []
-if with_asm_arch == 'x86'
-  files_libmesa += files(
-    'x86/assyntax.h',
-  )
-endif
 
 format_fallback_c = custom_target(
   'format_fallback.c',
