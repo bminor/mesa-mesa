@@ -97,7 +97,7 @@ mesa_shader_stage_is_mesh(mesa_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_uses_workgroup(mesa_shader_stage stage)
+mesa_shader_stage_uses_workgroup(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_COMPUTE ||
           stage == MESA_SHADER_KERNEL ||

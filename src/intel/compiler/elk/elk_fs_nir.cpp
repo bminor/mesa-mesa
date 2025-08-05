@@ -2663,7 +2663,7 @@ emit_barrier(nir_to_elk_state &ntb)
    elk_fs_visitor &s = ntb.s;
 
    /* We are getting the barrier ID from the compute shader header */
-   assert(gl_shader_stage_uses_workgroup(s.stage));
+   assert(mesa_shader_stage_uses_workgroup(s.stage));
 
    elk_fs_reg payload = elk_fs_reg(VGRF, s.alloc.allocate(1), ELK_REGISTER_TYPE_UD);
 
@@ -3973,7 +3973,7 @@ fs_nir_emit_cs_intrinsic(nir_to_elk_state &ntb,
    const fs_builder &bld = ntb.bld;
    elk_fs_visitor &s = ntb.s;
 
-   assert(gl_shader_stage_uses_workgroup(s.stage));
+   assert(mesa_shader_stage_uses_workgroup(s.stage));
    struct elk_cs_prog_data *cs_prog_data = elk_cs_prog_data(s.prog_data);
 
    elk_fs_reg dest;
@@ -4821,7 +4821,7 @@ fs_nir_emit_intrinsic(nir_to_elk_state &ntb,
          break;
 
       if (s.nir->info.shared_size > 0) {
-         assert(gl_shader_stage_uses_workgroup(s.stage));
+         assert(mesa_shader_stage_uses_workgroup(s.stage));
       } else {
          slm_fence = false;
       }

@@ -2914,7 +2914,7 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
    }
 
    /* Now that we have the value, update the workgroup size if needed */
-   if (gl_shader_stage_uses_workgroup(b->entry_point_stage))
+   if (mesa_shader_stage_uses_workgroup(b->entry_point_stage))
       vtn_foreach_decoration(b, val, handle_workgroup_size_decoration_cb,
                              NULL);
 }
@@ -5416,7 +5416,7 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
       break;
 
    case SpvExecutionModeLocalSize:
-      if (gl_shader_stage_uses_workgroup(b->shader->info.stage)) {
+      if (mesa_shader_stage_uses_workgroup(b->shader->info.stage)) {
          b->shader->info.workgroup_size[0] = mode->operands[0];
          b->shader->info.workgroup_size[1] = mode->operands[1];
          b->shader->info.workgroup_size[2] = mode->operands[2];
@@ -5559,12 +5559,12 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
       break;
 
    case SpvExecutionModeDerivativeGroupQuadsKHR:
-      vtn_assert(gl_shader_stage_uses_workgroup(b->shader->info.stage));
+      vtn_assert(mesa_shader_stage_uses_workgroup(b->shader->info.stage));
       b->shader->info.derivative_group = DERIVATIVE_GROUP_QUADS;
       break;
 
    case SpvExecutionModeDerivativeGroupLinearKHR:
-      vtn_assert(gl_shader_stage_uses_workgroup(b->shader->info.stage));
+      vtn_assert(mesa_shader_stage_uses_workgroup(b->shader->info.stage));
       b->shader->info.derivative_group = DERIVATIVE_GROUP_LINEAR;
       break;
 
@@ -5750,7 +5750,7 @@ vtn_handle_execution_mode_id(struct vtn_builder *b, struct vtn_value *entry_poin
 
    switch (mode->exec_mode) {
    case SpvExecutionModeLocalSizeId:
-      if (gl_shader_stage_uses_workgroup(b->shader->info.stage)) {
+      if (mesa_shader_stage_uses_workgroup(b->shader->info.stage)) {
          b->shader->info.workgroup_size[0] = vtn_constant_uint(b, mode->operands[0]);
          b->shader->info.workgroup_size[1] = vtn_constant_uint(b, mode->operands[1]);
          b->shader->info.workgroup_size[2] = vtn_constant_uint(b, mode->operands[2]);
@@ -7292,7 +7292,7 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
                                  vtn_handle_execution_mode_id, NULL);
 
    if (b->workgroup_size_builtin) {
-      vtn_assert(gl_shader_stage_uses_workgroup(stage));
+      vtn_assert(mesa_shader_stage_uses_workgroup(stage));
       vtn_assert(b->workgroup_size_builtin->type->type ==
                  glsl_vector_type(GLSL_TYPE_UINT, 3));
 

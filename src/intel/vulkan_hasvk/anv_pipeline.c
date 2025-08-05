@@ -554,7 +554,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
               pdevice, stage->key.base.robust_flags,
               prog_data, &stage->bind_map, mem_ctx);
 
-   if (gl_shader_stage_uses_workgroup(nir->info.stage)) {
+   if (mesa_shader_stage_uses_workgroup(nir->info.stage)) {
       NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
                nir_var_mem_shared, shared_type_info);
 
@@ -2045,7 +2045,7 @@ VkResult anv_GetPipelineExecutableStatisticsKHR(
       stat->value.u64 = prog_data->total_scratch;
    }
 
-   if (gl_shader_stage_uses_workgroup(exe->stage)) {
+   if (mesa_shader_stage_uses_workgroup(exe->stage)) {
       vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
          VK_COPY_STR(stat->name, "Workgroup Memory Size");
          VK_COPY_STR(stat->description,

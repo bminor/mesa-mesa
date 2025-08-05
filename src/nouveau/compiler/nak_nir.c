@@ -1054,7 +1054,7 @@ nak_postprocess_nir(nir_shader *nir,
     * relies on the workgroup size being the actual HW workgroup size in
     * nir_intrinsic_load_subgroup_id.
     */
-   if (gl_shader_stage_uses_workgroup(nir->info.stage) &&
+   if (mesa_shader_stage_uses_workgroup(nir->info.stage) &&
        nir->info.derivative_group == DERIVATIVE_GROUP_QUADS) {
       assert(nir->info.workgroup_size[0] % 2 == 0);
       assert(nir->info.workgroup_size[1] % 2 == 0);

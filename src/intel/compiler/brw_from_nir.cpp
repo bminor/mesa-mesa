@@ -3032,7 +3032,7 @@ emit_barrier(nir_to_brw_state &ntb)
    brw_shader &s = ntb.s;
 
    /* We are getting the barrier ID from the compute shader header */
-   assert(gl_shader_stage_uses_workgroup(s.stage));
+   assert(mesa_shader_stage_uses_workgroup(s.stage));
 
    /* Zero-initialize the payload */
    brw_reg payload = hbld.MOV(brw_imm_ud(0u));
@@ -4674,7 +4674,7 @@ set_memory_address(nir_to_brw_state &ntb,
 static unsigned
 brw_workgroup_size(brw_shader &s)
 {
-   assert(gl_shader_stage_uses_workgroup(s.stage));
+   assert(mesa_shader_stage_uses_workgroup(s.stage));
    assert(!s.nir->info.workgroup_size_variable);
    const struct brw_cs_prog_data *cs = brw_cs_prog_data(s.prog_data);
    return cs->local_size[0] * cs->local_size[1] * cs->local_size[2];
@@ -4688,7 +4688,7 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
    const brw_builder &bld = ntb.bld;
    brw_shader &s = ntb.s;
 
-   assert(gl_shader_stage_uses_workgroup(s.stage));
+   assert(mesa_shader_stage_uses_workgroup(s.stage));
    struct brw_cs_prog_data *cs_prog_data = brw_cs_prog_data(s.prog_data);
 
    brw_reg dest;
@@ -6119,7 +6119,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
          break;
 
       if (s.nir->info.shared_size > 0) {
-         assert(gl_shader_stage_uses_workgroup(s.stage));
+         assert(mesa_shader_stage_uses_workgroup(s.stage));
       } else {
          slm_fence = false;
       }

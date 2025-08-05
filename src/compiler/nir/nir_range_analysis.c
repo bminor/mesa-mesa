@@ -1664,7 +1664,7 @@ get_intrinsic_uub(struct analysis_state *state, struct uub_query q, uint32_t *re
        * They can safely use the same code path here as variable sized
        * compute-like shader stages.
        */
-      if (!gl_shader_stage_uses_workgroup(shader->info.stage) ||
+      if (!mesa_shader_stage_uses_workgroup(shader->info.stage) ||
           shader->info.workgroup_size_variable) {
          *result = config->max_workgroup_invocations - 1;
       } else {
@@ -1725,7 +1725,7 @@ get_intrinsic_uub(struct analysis_state *state, struct uub_query q, uint32_t *re
    case nir_intrinsic_load_subgroup_id:
    case nir_intrinsic_load_num_subgroups: {
       uint32_t workgroup_size = config->max_workgroup_invocations;
-      if (gl_shader_stage_uses_workgroup(shader->info.stage) &&
+      if (mesa_shader_stage_uses_workgroup(shader->info.stage) &&
           !shader->info.workgroup_size_variable) {
          workgroup_size = shader->info.workgroup_size[0] *
                           shader->info.workgroup_size[1] *

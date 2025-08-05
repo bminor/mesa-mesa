@@ -1405,7 +1405,7 @@ DEFINE_PROG_DATA_DOWNCAST(tcs, prog_data->stage == MESA_SHADER_TESS_CTRL)
 DEFINE_PROG_DATA_DOWNCAST(tes, prog_data->stage == MESA_SHADER_TESS_EVAL)
 DEFINE_PROG_DATA_DOWNCAST(gs,  prog_data->stage == MESA_SHADER_GEOMETRY)
 DEFINE_PROG_DATA_DOWNCAST(wm,  prog_data->stage == MESA_SHADER_FRAGMENT)
-DEFINE_PROG_DATA_DOWNCAST(cs,  gl_shader_stage_uses_workgroup(prog_data->stage))
+DEFINE_PROG_DATA_DOWNCAST(cs,  mesa_shader_stage_uses_workgroup(prog_data->stage))
 
 DEFINE_PROG_DATA_DOWNCAST(vue, prog_data->stage == MESA_SHADER_VERTEX ||
                                prog_data->stage == MESA_SHADER_TESS_CTRL ||

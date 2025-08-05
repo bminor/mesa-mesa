@@ -7204,7 +7204,7 @@ elk_fs_test_dispatch_packing(const fs_builder &bld)
 unsigned
 elk_fs_visitor::workgroup_size() const
 {
-   assert(gl_shader_stage_uses_workgroup(stage));
+   assert(mesa_shader_stage_uses_workgroup(stage));
    const struct elk_cs_prog_data *cs = elk_cs_prog_data(prog_data);
    return cs->local_size[0] * cs->local_size[1] * cs->local_size[2];
 }

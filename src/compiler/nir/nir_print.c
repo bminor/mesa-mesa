@@ -2653,7 +2653,7 @@ print_shader_info(const struct shader_info *info, FILE *fp)
 
    print_nz_bool(fp, "internal", info->internal);
 
-   if (gl_shader_stage_uses_workgroup(info->stage)) {
+   if (mesa_shader_stage_uses_workgroup(info->stage)) {
       fprintf(fp, "workgroup_size: %u, %u, %u%s\n",
               info->workgroup_size[0],
               info->workgroup_size[1],

@@ -382,7 +382,7 @@ public:
    };
 
    elk_cs_thread_payload &cs_payload() {
-      assert(gl_shader_stage_uses_workgroup(stage));
+      assert(mesa_shader_stage_uses_workgroup(stage));
       return *static_cast<elk_cs_thread_payload *>(this->payload_);
    }
 

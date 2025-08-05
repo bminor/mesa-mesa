@@ -31,7 +31,7 @@ unsigned
 elk_required_dispatch_width(const struct shader_info *info)
 {
    if ((int)info->subgroup_size >= (int)SUBGROUP_SIZE_REQUIRE_8) {
-      assert(gl_shader_stage_uses_workgroup(info->stage));
+      assert(mesa_shader_stage_uses_workgroup(info->stage));
       /* These enum values are expressly chosen to be equal to the subgroup
        * size that they require.
        */

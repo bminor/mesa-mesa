@@ -180,7 +180,7 @@ public:
    DEFINE_PAYLOAD_ACCESSOR(brw_gs_thread_payload,  gs_payload,  stage == MESA_SHADER_GEOMETRY);
    DEFINE_PAYLOAD_ACCESSOR(brw_fs_thread_payload,  fs_payload,  stage == MESA_SHADER_FRAGMENT);
    DEFINE_PAYLOAD_ACCESSOR(brw_cs_thread_payload,  cs_payload,
-                           gl_shader_stage_uses_workgroup(stage));
+                           mesa_shader_stage_uses_workgroup(stage));
    DEFINE_PAYLOAD_ACCESSOR(brw_task_mesh_thread_payload, task_mesh_payload,
                            stage == MESA_SHADER_TASK || stage == MESA_SHADER_MESH);
    DEFINE_PAYLOAD_ACCESSOR(brw_bs_thread_payload, bs_payload,

@@ -1136,7 +1136,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    NIR_PASS(_, nir, anv_nir_lower_resource_intel, pdevice,
                stage->bind_map.layout_type);
 
-   if (gl_shader_stage_uses_workgroup(nir->info.stage)) {
+   if (mesa_shader_stage_uses_workgroup(nir->info.stage)) {
       NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
                nir_var_mem_shared, shared_type_info);
 
@@ -4489,7 +4489,7 @@ VkResult anv_GetPipelineExecutableStatisticsKHR(
                 "Number of bytes of workgroup shared memory used by this "
                 "shader including any padding.");
       stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      if (gl_shader_stage_uses_workgroup(exe->stage))
+      if (mesa_shader_stage_uses_workgroup(exe->stage))
          stat->value.u64 = prog_data->total_shared;
       else
          stat->value.u64 = 0;

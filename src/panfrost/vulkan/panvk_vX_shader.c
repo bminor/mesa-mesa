@@ -854,7 +854,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
             nir_metadata_control_flow, NULL);
 #endif
 
-   if (gl_shader_stage_uses_workgroup(stage)) {
+   if (mesa_shader_stage_uses_workgroup(stage)) {
       NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
                shared_type_info);
 
