@@ -119,6 +119,10 @@ vtn_handle_cooperative_instruction(struct vtn_builder *b, SpvOp opcode,
       const SpvCooperativeMatrixLayout layout = vtn_constant_uint(b, w[3]);
       nir_def *stride = count > 4 ? vtn_get_nir_ssa(b, w[4]) : nir_imm_zero(&b->nb, 1, 32);
 
+      nir_deref_instr *src = vtn_get_cmat_deref(b, w[2]);
+      nir_cmat_store(&b->nb, vtn_pointer_to_ssa(b, dest), &src->def, stride,
+                     .matrix_layout = vtn_matrix_layout_to_glsl(layout));
+
       SpvMemoryAccessMask access = SpvMemoryAccessMaskNone;
       if (count > 5) {
          unsigned idx = 5, alignment;
@@ -127,9 +131,6 @@ vtn_handle_cooperative_instruction(struct vtn_builder *b, SpvOp opcode,
          vtn_emit_make_available_barrier(b, access, scope, dest->mode);
       }
 
-      nir_deref_instr *src = vtn_get_cmat_deref(b, w[2]);
-      nir_cmat_store(&b->nb, vtn_pointer_to_ssa(b, dest), &src->def, stride,
-                     .matrix_layout = vtn_matrix_layout_to_glsl(layout));
       break;
    }
 
