@@ -426,8 +426,10 @@ radv_reset_tracked_regs(struct radv_cmd_buffer *cmd_buffer)
    memset(tracked_regs->reg_value, 0, RADV_NUM_ALL_TRACKED_REGS * sizeof(uint32_t));
    BITSET_ZERO(tracked_regs->reg_saved_mask);
 
-   /* 0xffffffff is an impossible value for SPI_PS_INPUT_CNTL_n registers */
+   /* 0xffffffff is an impossible value for these registers */
    memset(tracked_regs->spi_ps_input_cntl, 0xff, sizeof(uint32_t) * 32);
+   memset(tracked_regs->cb_blend_control, 0xff, sizeof(uint32_t) * MAX_RTS);
+   memset(tracked_regs->sx_mrt_blend_opt, 0xff, sizeof(uint32_t) * MAX_RTS);
 }
 
 static void
@@ -3572,9 +3574,11 @@ radv_emit_logic_op(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_begin(cmd_buffer->cs);
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(R_028858_CB_COLOR_CONTROL, cb_color_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_028858_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL,
+                                 cb_color_control);
    } else {
-      radeon_set_context_reg(R_028808_CB_COLOR_CONTROL, cb_color_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_028808_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL,
+                                 cb_color_control);
    }
    radeon_end();
 }
@@ -3600,9 +3604,9 @@ radv_emit_color_write(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_begin(cmd_buffer->cs);
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(R_028850_CB_TARGET_MASK, cb_target_mask);
+      radeon_opt_set_context_reg(cmd_buffer, R_028850_CB_TARGET_MASK, RADV_TRACKED_CB_TARGET_MASK, cb_target_mask);
    } else {
-      radeon_set_context_reg(R_028238_CB_TARGET_MASK, cb_target_mask);
+      radeon_opt_set_context_reg(cmd_buffer, R_028238_CB_TARGET_MASK, RADV_TRACKED_CB_TARGET_MASK, cb_target_mask);
    }
    radeon_end();
 }
@@ -5312,12 +5316,12 @@ radv_emit_color_blend(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radeon_begin(cmd_buffer->cs);
-   radeon_set_context_reg_seq(R_028780_CB_BLEND0_CONTROL, MAX_RTS);
-   radeon_emit_array(cb_blend_control, MAX_RTS);
+   radeon_opt_set_context_regn(cmd_buffer, R_028780_CB_BLEND0_CONTROL, cb_blend_control,
+                               cmd_buffer->tracked_regs.cb_blend_control, MAX_RTS);
 
    if (pdev->info.has_rbplus) {
-      radeon_set_context_reg_seq(R_028760_SX_MRT0_BLEND_OPT, MAX_RTS);
-      radeon_emit_array(sx_mrt_blend_opt, MAX_RTS);
+      radeon_opt_set_context_regn(cmd_buffer, R_028760_SX_MRT0_BLEND_OPT, sx_mrt_blend_opt,
+                                  cmd_buffer->tracked_regs.sx_mrt_blend_opt, MAX_RTS);
    }
    radeon_end();
 }
@@ -9058,6 +9062,10 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
 
       memcpy(primary->tracked_regs.spi_ps_input_cntl, secondary->tracked_regs.spi_ps_input_cntl,
              sizeof(primary->tracked_regs.spi_ps_input_cntl));
+      memcpy(primary->tracked_regs.cb_blend_control, secondary->tracked_regs.cb_blend_control,
+             sizeof(primary->tracked_regs.cb_blend_control));
+      memcpy(primary->tracked_regs.sx_mrt_blend_opt, secondary->tracked_regs.sx_mrt_blend_opt,
+             sizeof(primary->tracked_regs.sx_mrt_blend_opt));
    }
 
    /* After executing commands from secondary buffers we have to dirty
@@ -10832,10 +10840,10 @@ radv_emit_fragment_output_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_end();
    } else {
       radeon_begin(cmd_buffer->cs);
-      radeon_set_context_reg(R_02823C_CB_SHADER_MASK, cmd_buffer->state.cb_shader_mask);
-      radeon_set_context_reg_seq(R_028710_SPI_SHADER_Z_FORMAT, 2);
-      radeon_emit(cmd_buffer->state.spi_shader_z_format);
-      radeon_emit(col_format_compacted); /* SPI_SHADER_COL_FORMAT */
+      radeon_opt_set_context_reg(cmd_buffer, R_02823C_CB_SHADER_MASK, RADV_TRACKED_CB_SHADER_MASK,
+                                 cmd_buffer->state.cb_shader_mask);
+      radeon_opt_set_context_reg2(cmd_buffer, R_028710_SPI_SHADER_Z_FORMAT, RADV_TRACKED_SPI_SHADER_Z_FORMAT,
+                                  cmd_buffer->state.spi_shader_z_format, col_format_compacted);
       radeon_end();
    }
 

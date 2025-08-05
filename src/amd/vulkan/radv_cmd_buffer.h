@@ -301,7 +301,6 @@ enum radv_tracked_reg {
    RADV_TRACKED_SPI_SHADER_IDX_FORMAT,
    RADV_TRACKED_SPI_SHADER_POS_FORMAT,
 
-   RADV_TRACKED_SPI_SHADER_Z_FORMAT,
    RADV_TRACKED_SPI_VS_OUT_CONFIG,
 
    /* 3 consecutive registers */
@@ -352,6 +351,14 @@ enum radv_tracked_reg {
 
    RADV_TRACKED_DB_RENDER_OVERRIDE, /* GFX12+ */
 
+   /* 2 consecutive registers */
+   RADV_TRACKED_SPI_SHADER_Z_FORMAT,
+   RADV_TRACKED_SPI_SHADER_COL_FORMAT,
+
+   RADV_TRACKED_CB_TARGET_MASK,
+   RADV_TRACKED_CB_COLOR_CONTROL,
+   RADV_TRACKED_CB_SHADER_MASK,
+
    RADV_NUM_ALL_TRACKED_REGS,
 };
 
@@ -359,6 +366,8 @@ struct radv_tracked_regs {
    BITSET_DECLARE(reg_saved_mask, RADV_NUM_ALL_TRACKED_REGS);
    uint32_t reg_value[RADV_NUM_ALL_TRACKED_REGS];
    uint32_t spi_ps_input_cntl[32];
+   uint32_t cb_blend_control[MAX_RTS];
+   uint32_t sx_mrt_blend_opt[MAX_RTS];
 };
 
 struct radv_cmd_state {
