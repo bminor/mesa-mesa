@@ -48,7 +48,7 @@ extern "C" {
 static inline const char *
 tr_util_mesa_shader_stage_name(mesa_shader_stage stage)
 {
-   return gl_shader_stage_name(stage);
+   return mesa_shader_stage_name(stage);
 }
 
 

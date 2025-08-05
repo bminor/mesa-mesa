@@ -3393,7 +3393,7 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
             mesa_loge("can't compile a main shader part (type: %s).\n"
                       "This is probably a driver bug, please report "
                       "it to https://gitlab.freedesktop.org/mesa/mesa/-/issues.",
-                      gl_shader_stage_name(shader->selector->stage));
+                      mesa_shader_stage_name(shader->selector->stage));
             FREE(shader);
             return;
          }

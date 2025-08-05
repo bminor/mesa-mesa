@@ -2333,7 +2333,7 @@ vir_get_stage_name(struct v3d_compile *c)
         else if (c->gs_key && c->gs_key->is_coord)
                 return "MESA_SHADER_GEOMETRY_BIN";
         else
-                return gl_shader_stage_name(c->s->info.stage);
+                return mesa_shader_stage_name(c->s->info.stage);
 }
 
 static inline uint32_t

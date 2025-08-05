@@ -5015,7 +5015,7 @@ bi_shader_stage_name(bi_context *ctx)
    else if (ctx->inputs->is_blend)
       return "MESA_SHADER_BLEND";
    else
-      return gl_shader_stage_name(ctx->stage);
+      return mesa_shader_stage_name(ctx->stage);
 }
 
 static void

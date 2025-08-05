@@ -409,7 +409,7 @@ brw_print_vue_map(FILE *fp, const struct intel_vue_map *vue_map,
       }
    } else {
       fprintf(fp, "%s VUE map (%d slots, %s)\n",
-              gl_shader_stage_name(stage), vue_map->num_slots, layout_name);
+              mesa_shader_stage_name(stage), vue_map->num_slots, layout_name);
       for (int i = 0; i < vue_map->num_slots; i++) {
          fprintf(fp, "  [%02d] %s\n", i,
                  varying_name(vue_map->slot_to_varying[i], stage));

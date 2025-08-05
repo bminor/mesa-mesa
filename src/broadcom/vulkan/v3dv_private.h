@@ -444,7 +444,7 @@ broadcom_shader_stage_name(enum broadcom_shader_stage stage)
    case BROADCOM_SHADER_GEOMETRY_BIN:
       return "MESA_SHADER_GEOMETRY_BIN";
    default:
-      return gl_shader_stage_name(broadcom_shader_stage_to_gl(stage));
+      return mesa_shader_stage_name(broadcom_shader_stage_to_gl(stage));
    }
 }
 

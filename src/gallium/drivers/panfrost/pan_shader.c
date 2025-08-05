@@ -225,7 +225,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    screen->vtbl.compile_shader(s, &inputs, &out->binary, &out->info);
 
-   pan_stats_util_debug(dbg, gl_shader_stage_name(s->info.stage),
+   pan_stats_util_debug(dbg, mesa_shader_stage_name(s->info.stage),
                         &out->info.stats);
 
    if (s->info.stage == MESA_SHADER_VERTEX && out->info.vs.idvs) {

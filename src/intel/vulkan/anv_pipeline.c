@@ -92,7 +92,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
       /* src_hash is unknown at the point */
       if (!intel_shader_dump_filter) {
          fprintf(stderr, "NIR (from SPIR-V) for %s shader:\n",
-                 gl_shader_stage_name(stage));
+                 mesa_shader_stage_name(stage));
          nir_print_shader(nir, stderr);
       }
    }

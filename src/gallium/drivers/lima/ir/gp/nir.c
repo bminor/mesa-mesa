@@ -425,7 +425,7 @@ static void gpir_print_shader_db(struct nir_shader *nir, gpir_compiler *comp,
    char *shaderdb;
    ASSERTED int ret = asprintf(&shaderdb,
                                "%s shader: %d inst, %d loops, %d:%d spills:fills\n",
-                               gl_shader_stage_name(info->stage),
+                               mesa_shader_stage_name(info->stage),
                                comp->num_instr,
                                comp->num_loops,
                                comp->num_spills,

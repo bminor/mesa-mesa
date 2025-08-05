@@ -138,7 +138,7 @@ brw_compile_bs(const struct brw_compiler *compiler,
                                    "%s %s shader %s",
                                    shader->info.label ?
                                       shader->info.label : "unnamed",
-                                   gl_shader_stage_name(shader->info.stage),
+                                   mesa_shader_stage_name(shader->info.stage),
                                    shader->info.name);
       g.enable_debug(name);
    }
@@ -157,7 +157,7 @@ brw_compile_bs(const struct brw_compiler *compiler,
                                       "%s %s resume(%u) shader %s",
                                       shader->info.label ?
                                          shader->info.label : "unnamed",
-                                      gl_shader_stage_name(shader->info.stage),
+                                      mesa_shader_stage_name(shader->info.stage),
                                       i, shader->info.name);
          g.enable_debug(name);
       }

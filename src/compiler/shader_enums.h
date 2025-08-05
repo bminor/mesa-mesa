@@ -142,7 +142,7 @@ mesa_shader_stage_can_set_fragment_shading_rate(mesa_shader_stage stage)
 
 typedef short gl_state_index16; /* see enum gl_state_index */
 
-const char *gl_shader_stage_name(mesa_shader_stage stage);
+const char *mesa_shader_stage_name(mesa_shader_stage stage);
 
 /**
  * Translate a mesa_shader_stage to a short shader stage name for debug

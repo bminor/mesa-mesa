@@ -34,7 +34,7 @@
 #define NAME(val) ((((val) < ARRAY_SIZE(names)) && names[(val)]) ? names[(val)] : "UNKNOWN")
 
 const char *
-gl_shader_stage_name(mesa_shader_stage stage)
+mesa_shader_stage_name(mesa_shader_stage stage)
 {
    static const char *names[] = {
       ENUM(MESA_SHADER_VERTEX),

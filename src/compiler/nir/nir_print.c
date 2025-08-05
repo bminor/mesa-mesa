@@ -2637,7 +2637,7 @@ print_nz_bool(FILE *fp, const char *label, bool value)
 static void
 print_shader_info(const struct shader_info *info, FILE *fp)
 {
-   fprintf(fp, "shader: %s\n", gl_shader_stage_name(info->stage));
+   fprintf(fp, "shader: %s\n", mesa_shader_stage_name(info->stage));
 
    if (memcmp(info->source_blake3, &(blake3_hash){ 0 }, sizeof(info->source_blake3))) {
       fprintf(fp, "source_blake3: {");
@@ -2662,9 +2662,9 @@ print_shader_info(const struct shader_info *info, FILE *fp)
    }
 
    if (info->prev_stage != MESA_SHADER_NONE)
-      fprintf(fp, "prev_stage: %s\n", gl_shader_stage_name(info->prev_stage));
+      fprintf(fp, "prev_stage: %s\n", mesa_shader_stage_name(info->prev_stage));
    if (info->next_stage != MESA_SHADER_NONE)
-      fprintf(fp, "next_stage: %s\n", gl_shader_stage_name(info->next_stage));
+      fprintf(fp, "next_stage: %s\n", mesa_shader_stage_name(info->next_stage));
 
    print_nz_unsigned(fp, "num_textures", info->num_textures);
    print_nz_unsigned(fp, "num_ubos", info->num_ubos);

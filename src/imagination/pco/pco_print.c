@@ -1059,7 +1059,7 @@ static void _pco_print_shader_info(pco_print_state *state, pco_shader *shader)
 {
    if (shader->name)
       pco_printfi(state, "name: \"%s\"\n", shader->name);
-   pco_printfi(state, "stage: %s\n", gl_shader_stage_name(shader->stage));
+   pco_printfi(state, "stage: %s\n", mesa_shader_stage_name(shader->stage));
    pco_printfi(state, "internal: %s\n", true_false_str(shader->is_internal));
    /* TODO: more info/stats, e.g. temps/other regs used, etc.? */
 }

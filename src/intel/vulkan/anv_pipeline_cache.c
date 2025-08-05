@@ -141,7 +141,7 @@ anv_shader_bin_create(struct anv_device *device,
 
    shader->stage = stage;
    if(INTEL_DEBUG(DEBUG_SHOW_SHADER_STAGE))
-      fprintf(stderr, "Stage: %s\n", gl_shader_stage_name(shader->stage));
+      fprintf(stderr, "Stage: %s\n", mesa_shader_stage_name(shader->stage));
 
    shader->kernel =
       anv_state_pool_alloc(&device->instruction_state_pool, kernel_size, 64);

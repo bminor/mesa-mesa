@@ -370,7 +370,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
    }
 
 #if 0
-   fprintf(stderr, "stage=%s push ranges:\n", gl_shader_stage_name(nir->info.stage));
+   fprintf(stderr, "stage=%s push ranges:\n", mesa_shader_stage_name(nir->info.stage));
    for (unsigned i = 0; i < ARRAY_SIZE(map->push_ranges); i++)
       fprintf(stderr, "   range%i: %03u-%03u set=%u index=%u\n", i,
               map->push_ranges[i].start,
