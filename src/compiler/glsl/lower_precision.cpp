@@ -408,7 +408,7 @@ find_lowerable_rvalues_visitor::visit_enter(ir_expression *ir)
       stack.back().state = CANT_LOWER;
 
    /* Don't lower precision for derivative calculations */
-   if (!options->LowerPrecisionDerivatives &&
+   if (!screen->shader_caps[stage].fp16_derivatives &&
        (ir->operation == ir_unop_dFdx ||
         ir->operation == ir_unop_dFdx_coarse ||
         ir->operation == ir_unop_dFdx_fine ||
