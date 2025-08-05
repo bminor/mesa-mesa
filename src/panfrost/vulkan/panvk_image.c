@@ -29,6 +29,7 @@
 #include "pan_afbc.h"
 #include "pan_props.h"
 
+#include "panvk_android.h"
 #include "panvk_device.h"
 #include "panvk_device_memory.h"
 #include "panvk_entrypoints.h"
@@ -430,6 +431,11 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    VK_FROM_HANDLE(panvk_device, dev, device);
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
+
+   if (panvk_android_is_gralloc_image(pCreateInfo)) {
+      return panvk_android_create_gralloc_image(device, pCreateInfo, pAllocator,
+                                                pImage);
+   }
 
    const VkImageSwapchainCreateInfoKHR *swapchain_info =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);

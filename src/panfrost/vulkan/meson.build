@@ -176,6 +176,10 @@ if with_platform_wayland
   panvk_deps += dep_wayland_client
 endif
 
+if with_platform_android
+  libpanvk_files += files('panvk_android.c')
+endif
+
 libvulkan_panfrost = shared_library(
   'vulkan_panfrost',
   [libpanvk_files, panvk_entrypoints, panvk_tracepoints],
