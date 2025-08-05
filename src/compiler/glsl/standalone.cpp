@@ -370,10 +370,7 @@ standalone_compile_shader(const struct standalone_options *_options,
          ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->fp16_derivatives = true;
          ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->fp16_const_buffers = true;
          ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->glsl_16bit_load_dst = true;
-
-         struct gl_shader_compiler_options *options =
-            &ctx->Const.ShaderCompilerOptions[i];
-         options->LowerPrecisionConstants = true;
+         ((struct pipe_shader_caps*)&ctx->screen->shader_caps[i])->glsl_16bit_consts = true;
       }
    }
 
