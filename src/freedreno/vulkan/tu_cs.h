@@ -487,6 +487,13 @@ tu_cond_exec_end(struct tu_cs *cs)
    }
 }
 
+static inline void
+tu7_thread_control(struct tu_cs *cs, enum cp_thread thread)
+{
+   tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+   tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(thread));
+}
+
 uint64_t
 tu_cs_emit_data_nop(struct tu_cs *cs,
                     const uint32_t *data,
