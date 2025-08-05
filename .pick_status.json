@@ -3644,7 +3644,7 @@
         "description": "dril: Skip some pipe formats to avoid breaking X",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "642c4cf2b2f3dcd2cc1506a8ff3e143be396444a",
         "notes": null
