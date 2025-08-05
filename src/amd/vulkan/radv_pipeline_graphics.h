@@ -64,6 +64,14 @@ struct radv_dynamic_state {
 
    uint32_t color_write_enable;
    uint32_t color_write_mask;
+
+   bool mrt0_is_dual_src;
+
+   struct {
+      /* For color blend equations. */
+      uint32_t cb_blend_control;
+      uint32_t sx_mrt_blend_opt;
+   } cb_att[MAX_RTS];
 };
 
 struct radv_multisample_state {
@@ -591,6 +599,10 @@ struct radv_ia_multi_vgt_param_helpers radv_compute_ia_multi_vgt_param(const str
                                                                        struct radv_shader *const *shaders);
 
 void radv_get_viewport_xform(const VkViewport *viewport, float scale[3], float translate[3]);
+
+void radv_translate_blend_equation(const struct radv_physical_device *pdev, VkBlendOp eqRGB, VkBlendFactor srcRGB,
+                                   VkBlendFactor dstRGB, VkBlendOp eqA, VkBlendFactor srcA, VkBlendFactor dstA,
+                                   uint32_t *cb_blend_control_out, uint32_t *sx_mrt_blend_opt_out);
 
 struct radv_shader *radv_get_shader(struct radv_shader *const *shaders, mesa_shader_stage stage);
 
