@@ -40,6 +40,16 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
       }
       radeon_end();
    }
+
+   struct radv_shader *task_shader = cmd_buffer->state.shaders[MESA_SHADER_TASK];
+   if (task_shader) {
+      struct radv_cmd_stream *ace_cs = cmd_buffer->gang.cs;
+      const uint64_t va = reloc->va[MESA_SHADER_TASK];
+
+      radeon_begin(ace_cs);
+      radeon_set_sh_reg(task_shader->info.regs.pgm_lo, va >> 8);
+      radeon_end();
+   }
 }
 
 static uint64_t

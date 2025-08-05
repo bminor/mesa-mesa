@@ -3132,17 +3132,6 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
    if (pipeline->sqtt_shaders_reloc) {
       /* Emit shaders relocation because RGP requires them to be contiguous in memory. */
       radv_sqtt_emit_relocated_shaders(cmd_buffer, pipeline);
-
-      struct radv_shader *task_shader = cmd_buffer->state.shaders[MESA_SHADER_TASK];
-      if (task_shader) {
-         const struct radv_sqtt_shaders_reloc *reloc = pipeline->sqtt_shaders_reloc;
-         struct radv_cmd_stream *ace_cs = cmd_buffer->gang.cs;
-         const uint64_t va = reloc->va[MESA_SHADER_TASK];
-
-         radeon_begin(ace_cs);
-         radeon_set_sh_reg(task_shader->info.regs.pgm_lo, va >> 8);
-         radeon_end();
-      }
    }
 
    if (radv_device_fault_detection_enabled(device))
