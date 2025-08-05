@@ -46,12 +46,9 @@ namespace {
 
 class ir_algebraic_visitor : public ir_rvalue_visitor {
 public:
-   ir_algebraic_visitor(bool native_integers,
-                        const struct gl_shader_compiler_options *options)
-      : options(options)
+   ir_algebraic_visitor()
    {
       this->progress = false;
-      this->native_integers = native_integers;
    }
 
    virtual ~ir_algebraic_visitor()
@@ -73,9 +70,6 @@ public:
    ir_rvalue *swizzle_if_required(ir_expression *expr,
 				  ir_rvalue *operand);
 
-   const struct gl_shader_compiler_options *options;
-
-   bool native_integers;
    bool progress;
 };
 
@@ -403,10 +397,9 @@ ir_algebraic_visitor::handle_rvalue(ir_rvalue **rvalue)
 }
 
 bool
-do_algebraic(ir_exec_list *instructions, bool native_integers,
-             const struct gl_shader_compiler_options *options)
+do_algebraic(ir_exec_list *instructions)
 {
-   ir_algebraic_visitor v(native_integers, options);
+   ir_algebraic_visitor v;
 
    visit_list_elements(&v, instructions);
 
