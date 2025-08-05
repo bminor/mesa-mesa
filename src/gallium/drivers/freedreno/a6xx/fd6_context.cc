@@ -181,7 +181,7 @@ setup_state_map(struct fd_context *ctx)
                              BIT(FD6_GROUP_VS_TEX));
    fd_context_add_shader_map(ctx, MESA_SHADER_TESS_CTRL, FD_DIRTY_SHADER_TEX,
                              BIT(FD6_GROUP_HS_TEX));
-   fd_context_add_shader_map(ctx, PIPE_SHADER_TESS_EVAL, FD_DIRTY_SHADER_TEX,
+   fd_context_add_shader_map(ctx, MESA_SHADER_TESS_EVAL, FD_DIRTY_SHADER_TEX,
                              BIT(FD6_GROUP_DS_TEX));
    fd_context_add_shader_map(ctx, PIPE_SHADER_GEOMETRY, FD_DIRTY_SHADER_TEX,
                              BIT(FD6_GROUP_GS_TEX));
@@ -196,7 +196,7 @@ setup_state_map(struct fd_context *ctx)
    fd_context_add_shader_map(ctx, MESA_SHADER_TESS_CTRL,
                              FD_DIRTY_SHADER_SSBO | FD_DIRTY_SHADER_IMAGE,
                              BIT(FD6_GROUP_HS_BINDLESS));
-   fd_context_add_shader_map(ctx, PIPE_SHADER_TESS_EVAL,
+   fd_context_add_shader_map(ctx, MESA_SHADER_TESS_EVAL,
                              FD_DIRTY_SHADER_SSBO | FD_DIRTY_SHADER_IMAGE,
                              BIT(FD6_GROUP_DS_BINDLESS));
    fd_context_add_shader_map(ctx, PIPE_SHADER_GEOMETRY,

@@ -222,7 +222,7 @@ TESShader::process_stage_intrinsic(nir_intrinsic_instr *intr)
 void
 TESShader::do_get_shader_info(r600_shader *sh_info)
 {
-   sh_info->processor_type = PIPE_SHADER_TESS_EVAL;
+   sh_info->processor_type = MESA_SHADER_TESS_EVAL;
    m_export_processor->get_shader_info(sh_info);
 }
 

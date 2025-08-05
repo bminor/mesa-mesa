@@ -703,7 +703,7 @@ static void *
 nvc0_tep_state_create(struct pipe_context *pipe,
                      const struct pipe_shader_state *cso)
 {
-   return nvc0_sp_state_create(pipe, cso, PIPE_SHADER_TESS_EVAL);
+   return nvc0_sp_state_create(pipe, cso, MESA_SHADER_TESS_EVAL);
 }
 
 static void

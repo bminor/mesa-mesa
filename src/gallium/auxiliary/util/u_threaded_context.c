@@ -916,7 +916,7 @@ tc_add_all_gfx_bindings_to_buffer_list(struct threaded_context *tc)
    if (tc->seen_tcs)
       tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_TESS_CTRL);
    if (tc->seen_tes)
-      tc_add_shader_bindings_to_buffer_list(tc, buffer_list, PIPE_SHADER_TESS_EVAL);
+      tc_add_shader_bindings_to_buffer_list(tc, buffer_list, MESA_SHADER_TESS_EVAL);
    if (tc->seen_gs)
       tc_add_shader_bindings_to_buffer_list(tc, buffer_list, PIPE_SHADER_GEOMETRY);
 
@@ -960,7 +960,7 @@ tc_rebind_buffer(struct threaded_context *tc, uint32_t old_id, uint32_t new_id, 
    if (tc->seen_tcs)
       rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_TESS_CTRL, rebind_mask);
    if (tc->seen_tes)
-      rebound += tc_rebind_shader_bindings(tc, old_id, new_id, PIPE_SHADER_TESS_EVAL, rebind_mask);
+      rebound += tc_rebind_shader_bindings(tc, old_id, new_id, MESA_SHADER_TESS_EVAL, rebind_mask);
    if (tc->seen_gs)
       rebound += tc_rebind_shader_bindings(tc, old_id, new_id, PIPE_SHADER_GEOMETRY, rebind_mask);
 
@@ -1016,7 +1016,7 @@ tc_is_buffer_bound_for_write(struct threaded_context *tc, uint32_t id)
       return true;
 
    if (tc->seen_tes &&
-       tc_is_buffer_shader_bound_for_write(tc, id, PIPE_SHADER_TESS_EVAL))
+       tc_is_buffer_shader_bound_for_write(tc, id, MESA_SHADER_TESS_EVAL))
       return true;
 
    if (tc->seen_gs &&

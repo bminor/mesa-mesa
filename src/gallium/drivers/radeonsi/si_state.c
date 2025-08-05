@@ -1416,7 +1416,7 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
    if (old_rs->clip_plane_enable != rs->clip_plane_enable) {
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
-         BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+         BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
          BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
    }
 
@@ -1761,7 +1761,7 @@ static void si_bind_dsa_state(struct pipe_context *ctx, void *state)
       si_update_ps_inputs_read_or_disabled(sctx);
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
-         BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+         BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
          BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
          BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
    }
@@ -2803,7 +2803,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
    si_update_vrs_flat_shading(sctx);
    sctx->dirty_shaders_mask |=
       BITFIELD_BIT(MESA_SHADER_VERTEX) |
-      BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+      BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
       BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
       BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
 

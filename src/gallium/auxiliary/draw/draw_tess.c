@@ -592,7 +592,7 @@ draw_create_tess_eval_shader(struct draw_context *draw,
       tes->tes_input = align_malloc(sizeof(struct draw_tes_inputs), 16);
       memset(tes->tes_input, 0, sizeof(struct draw_tes_inputs));
 
-      tes->jit_resources = &draw->llvm->jit_resources[PIPE_SHADER_TESS_EVAL];
+      tes->jit_resources = &draw->llvm->jit_resources[MESA_SHADER_TESS_EVAL];
       llvm_tes->variant_key_size =
          draw_tes_llvm_variant_key_size(
                                         tes->info.file_max[TGSI_FILE_SAMPLER]+1,

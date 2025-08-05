@@ -142,7 +142,7 @@ make_tes_key(struct svga_context *svga, struct svga_compile_key *key)
    /*
     * SVGA_NEW_TEXTURE_BINDING | SVGA_NEW_SAMPLER
     */
-   svga_init_shader_key_common(svga, PIPE_SHADER_TESS_EVAL, &tes->base, key);
+   svga_init_shader_key_common(svga, MESA_SHADER_TESS_EVAL, &tes->base, key);
 
    assert(svga->curr.tcs);
 

@@ -281,7 +281,7 @@ st_update_common_program(struct st_context *st, struct gl_program *prog,
    key.st = st->has_shareable_shaders ? NULL : st;
 
    if (pipe_shader == PIPE_SHADER_GEOMETRY ||
-       pipe_shader == PIPE_SHADER_TESS_EVAL) {
+       pipe_shader == MESA_SHADER_TESS_EVAL) {
       key.clamp_color = st->clamp_vert_color_in_shader &&
                         st->ctx->Light._ClampVertexColor &&
                         (prog->info.outputs_written &
@@ -334,7 +334,7 @@ st_update_tep(struct st_context *st)
 {
    void *shader = st_update_common_program(st,
                                            st->ctx->TessEvalProgram._Current,
-                                           PIPE_SHADER_TESS_EVAL, &st->tep);
+                                           MESA_SHADER_TESS_EVAL, &st->tep);
    cso_set_tesseval_shader_handle(st->cso_context, shader);
 }
 

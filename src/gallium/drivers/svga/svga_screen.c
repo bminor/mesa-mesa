@@ -262,7 +262,7 @@ vgpu10_init_shader_caps(struct svga_screen *svgascreen)
 
        switch (i) {
        case MESA_SHADER_TESS_CTRL:
-       case PIPE_SHADER_TESS_EVAL:
+       case MESA_SHADER_TESS_EVAL:
           if (!sws->have_sm5)
              continue;
           break;
@@ -296,7 +296,7 @@ vgpu10_init_shader_caps(struct svga_screen *svgascreen)
           caps->max_inputs = VGPU11_MAX_HS_INPUT_CONTROL_POINTS;
           caps->max_outputs = VGPU11_MAX_HS_OUTPUTS;
           break;
-       case PIPE_SHADER_TESS_EVAL:
+       case MESA_SHADER_TESS_EVAL:
           caps->max_inputs = VGPU11_MAX_DS_INPUT_CONTROL_POINTS;
           caps->max_outputs = VGPU11_MAX_DS_OUTPUTS;
           break;

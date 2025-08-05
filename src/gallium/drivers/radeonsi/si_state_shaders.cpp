@@ -2380,7 +2380,7 @@ void si_update_ps_inputs_read_or_disabled(struct si_context *sctx)
       sctx->ps_inputs_read_or_disabled = ps_inputs_read_or_disabled;
       sctx->dirty_shaders_mask |=
          (sctx->shader.gs.cso ? BITFIELD_BIT(PIPE_SHADER_GEOMETRY) :
-            (sctx->shader.tes.cso ? BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
+            (sctx->shader.tes.cso ? BITFIELD_BIT(MESA_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
    }
 }
 
@@ -2431,7 +2431,7 @@ void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx)
    if (vs_key->ge.opt.kill_pointsize != old_kill_pointsize) {
       sctx->dirty_shaders_mask |=
          BITFIELD_BIT(MESA_SHADER_VERTEX) |
-         BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
+         BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
          BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
    }
 
@@ -3677,7 +3677,7 @@ void si_update_common_shader_state(struct si_context *sctx, struct si_shader_sel
    else
       sctx->uses_bindless_images &= ~BITFIELD_BIT(type);
 
-   if (type == MESA_SHADER_VERTEX || type == PIPE_SHADER_TESS_EVAL || type == PIPE_SHADER_GEOMETRY)
+   if (type == MESA_SHADER_VERTEX || type == MESA_SHADER_TESS_EVAL || type == PIPE_SHADER_GEOMETRY)
       sctx->ngg_culling = 0; /* this will be enabled on the first draw if needed */
 
    si_invalidate_inlinable_uniforms(sctx, type);
@@ -3891,7 +3891,7 @@ static void si_bind_tes_shader(struct pipe_context *ctx, void *state)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.tess_io_layout);
    }
 
-   si_update_common_shader_state(sctx, sel, PIPE_SHADER_TESS_EVAL);
+   si_update_common_shader_state(sctx, sel, MESA_SHADER_TESS_EVAL);
    si_select_draw_vbo(sctx);
 
    bool ngg_changed = si_update_ngg(sctx);
@@ -4668,7 +4668,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    struct si_shader_selector *tcs = sctx->shader.tcs.cso;
    bool tess_uses_primid = sctx->ia_multi_vgt_param_key.u.tess_uses_prim_id;
    bool has_primid_instancing_bug = sctx->gfx_level == GFX6 && sctx->screen->info.max_se == 1;
-   unsigned tes_sh_base = sctx->shader_pointers.sh_base[PIPE_SHADER_TESS_EVAL];
+   unsigned tes_sh_base = sctx->shader_pointers.sh_base[MESA_SHADER_TESS_EVAL];
    uint8_t num_tcs_input_cp = sctx->patch_vertices;
 
    assert(sctx->shader.tcs.current);
@@ -4821,7 +4821,7 @@ static void gfx6_emit_tess_io_layout_state(struct si_context *sctx, unsigned ind
    }
 
    /* Set userdata SGPRs for TES. */
-   unsigned tes_sh_base = sctx->shader_pointers.sh_base[PIPE_SHADER_TESS_EVAL];
+   unsigned tes_sh_base = sctx->shader_pointers.sh_base[MESA_SHADER_TESS_EVAL];
    assert(tes_sh_base);
 
    /* TES (as ES or VS) reuses the BaseVertex and DrawID user SGPRs that are used when
@@ -4877,7 +4877,7 @@ static void gfx12_emit_tess_io_layout_state(struct si_context *sctx, unsigned in
                              sctx->tes_offchip_ring_va_sgpr);
 
    /* Set userdata SGPRs for TES. */
-   unsigned tes_sh_base = sctx->shader_pointers.sh_base[PIPE_SHADER_TESS_EVAL];
+   unsigned tes_sh_base = sctx->shader_pointers.sh_base[MESA_SHADER_TESS_EVAL];
    assert(tes_sh_base);
 
    /* TES (as ES or VS) reuses the BaseVertex and DrawID user SGPRs that are used when

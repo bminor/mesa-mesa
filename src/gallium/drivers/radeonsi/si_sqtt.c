@@ -711,7 +711,7 @@ si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, enum pipe_shader_type
             return RGP_HW_STAGE_VS;
       case MESA_SHADER_TESS_CTRL:
          return RGP_HW_STAGE_HS;
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
          if (key->ge.as_es)
             return RGP_HW_STAGE_ES;
          else if (key->ge.as_ngg)

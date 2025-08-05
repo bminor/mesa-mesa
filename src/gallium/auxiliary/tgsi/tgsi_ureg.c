@@ -2114,7 +2114,7 @@ const struct tgsi_token *ureg_finalize( struct ureg_program *ureg )
 
    switch (ureg->processor) {
    case MESA_SHADER_VERTEX:
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       ureg_property(ureg, TGSI_PROPERTY_NEXT_SHADER,
                     ureg->next_shader_processor == -1 ?
                        PIPE_SHADER_FRAGMENT :
@@ -2186,7 +2186,7 @@ void *ureg_create_shader( struct ureg_program *ureg,
       return pipe->create_vs_state(pipe, &state);
    case MESA_SHADER_TESS_CTRL:
       return pipe->create_tcs_state(pipe, &state);
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       return pipe->create_tes_state(pipe, &state);
    case PIPE_SHADER_GEOMETRY:
       return pipe->create_gs_state(pipe, &state);

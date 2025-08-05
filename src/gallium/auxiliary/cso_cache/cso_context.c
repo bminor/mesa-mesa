@@ -371,7 +371,7 @@ cso_unbind_context(struct cso_context *cso)
                   continue;
                break;
             case MESA_SHADER_TESS_CTRL:
-            case PIPE_SHADER_TESS_EVAL:
+            case MESA_SHADER_TESS_EVAL:
                if (!ctx->has_tessellation)
                   continue;
                break;

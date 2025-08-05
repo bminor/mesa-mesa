@@ -2065,12 +2065,12 @@ void si_shader_change_notify(struct si_context *sctx)
                                                sctx->ngg ? NGG_ON : NGG_OFF,
                                                MESA_SHADER_VERTEX));
 
-   si_set_user_data_base(sctx, PIPE_SHADER_TESS_EVAL,
+   si_set_user_data_base(sctx, MESA_SHADER_TESS_EVAL,
                          si_get_user_data_base(sctx->gfx_level,
                                                sctx->shader.tes.cso ? TESS_ON : TESS_OFF,
                                                sctx->shader.gs.cso ? GS_ON : GS_OFF,
                                                sctx->ngg ? NGG_ON : NGG_OFF,
-                                               PIPE_SHADER_TESS_EVAL));
+                                               MESA_SHADER_TESS_EVAL));
 
    /* Update as_* flags in shader keys. Ignore disabled shader stages.
     *   as_ls = VS before TCS
@@ -2238,7 +2238,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(VERTEX),
                                              sh_base[MESA_SHADER_VERTEX], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
-                                             sh_base[PIPE_SHADER_TESS_EVAL], gfx);
+                                             sh_base[MESA_SHADER_TESS_EVAL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
                                              sh_base[PIPE_SHADER_FRAGMENT], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
@@ -2268,7 +2268,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(VERTEX),
                                              sh_base[MESA_SHADER_VERTEX], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
-                                             sh_base[PIPE_SHADER_TESS_EVAL], gfx);
+                                             sh_base[MESA_SHADER_TESS_EVAL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
                                              sh_base[PIPE_SHADER_FRAGMENT], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),
@@ -2299,7 +2299,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(VERTEX),
                                           sh_base[MESA_SHADER_VERTEX], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
-                                          sh_base[PIPE_SHADER_TESS_EVAL], gfx);
+                                          sh_base[MESA_SHADER_TESS_EVAL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
                                           sh_base[PIPE_SHADER_FRAGMENT], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_CTRL),

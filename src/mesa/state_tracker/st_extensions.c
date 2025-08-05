@@ -231,7 +231,7 @@ void st_init_limits(struct pipe_screen *screen,
 
       /* reserve space in the default-uniform for lowered state */
       if (sh == MESA_SHADER_VERTEX ||
-          sh == PIPE_SHADER_TESS_EVAL ||
+          sh == MESA_SHADER_TESS_EVAL ||
           sh == PIPE_SHADER_GEOMETRY) {
 
          if (!screen->caps.clip_planes)

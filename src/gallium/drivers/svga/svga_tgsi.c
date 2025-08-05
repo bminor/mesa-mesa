@@ -478,7 +478,7 @@ svga_tgsi_scan_shader(struct svga_shader *shader)
          }
       }
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       info->tes.prim_mode =
          tgsi_info->properties[TGSI_PROPERTY_TES_PRIM_MODE];
 

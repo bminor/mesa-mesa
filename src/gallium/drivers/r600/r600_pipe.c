@@ -279,7 +279,7 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 
 		switch (i) {
 		case MESA_SHADER_TESS_CTRL:
-		case PIPE_SHADER_TESS_EVAL:
+		case MESA_SHADER_TESS_EVAL:
 		case PIPE_SHADER_COMPUTE:
 			if (rscreen->b.family < CHIP_CEDAR)
 				continue;

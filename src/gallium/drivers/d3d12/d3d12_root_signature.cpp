@@ -49,7 +49,7 @@ get_shader_visibility(enum pipe_shader_type stage)
       return D3D12_SHADER_VISIBILITY_GEOMETRY;
    case MESA_SHADER_TESS_CTRL:
       return D3D12_SHADER_VISIBILITY_HULL;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       return D3D12_SHADER_VISIBILITY_DOMAIN;
    case PIPE_SHADER_COMPUTE:
       return D3D12_SHADER_VISIBILITY_ALL;

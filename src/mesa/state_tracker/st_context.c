@@ -298,7 +298,7 @@ free_zombie_shaders(struct st_context *st)
          st->ctx->NewDriverState |= ST_NEW_TCS_STATE;
          st->pipe->delete_tcs_state(st->pipe, entry->shader);
          break;
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
          st->ctx->NewDriverState |= ST_NEW_TES_STATE;
          st->pipe->delete_tes_state(st->pipe, entry->shader);
          break;

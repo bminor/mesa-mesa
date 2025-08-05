@@ -1832,7 +1832,7 @@ int r600_bytecode_build(struct r600_bytecode *bc)
 		if (bc->stack.max_entries)
 			bc->nstack = bc->stack.max_entries;
 		else if (bc->type == MESA_SHADER_VERTEX ||
-			 bc->type == PIPE_SHADER_TESS_EVAL ||
+			 bc->type == MESA_SHADER_TESS_EVAL ||
 			 bc->type == MESA_SHADER_TESS_CTRL)
 			bc->nstack = 1;
 	}

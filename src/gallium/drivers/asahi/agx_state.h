@@ -92,7 +92,7 @@ static_assert(AGX_SYSVAL_STAGE(MESA_SHADER_VERTEX) == AGX_SYSVAL_TABLE_VS,
               "fixed enum orderings");
 static_assert(AGX_SYSVAL_STAGE(MESA_SHADER_TESS_CTRL) == AGX_SYSVAL_TABLE_TCS,
               "fixed enum orderings");
-static_assert(AGX_SYSVAL_STAGE(PIPE_SHADER_TESS_EVAL) == AGX_SYSVAL_TABLE_TES,
+static_assert(AGX_SYSVAL_STAGE(MESA_SHADER_TESS_EVAL) == AGX_SYSVAL_TABLE_TES,
               "fixed enum orderings");
 static_assert(AGX_SYSVAL_STAGE(PIPE_SHADER_GEOMETRY) == AGX_SYSVAL_TABLE_GS,
               "fixed enum orderings");

@@ -389,7 +389,7 @@ st_update_tesseval_textures(struct st_context *st)
    const struct gl_context *ctx = st->ctx;
 
    if (ctx->TessEvalProgram._Current) {
-      update_textures(st, PIPE_SHADER_TESS_EVAL,
+      update_textures(st, MESA_SHADER_TESS_EVAL,
                             ctx->TessEvalProgram._Current);
    }
 }

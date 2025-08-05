@@ -209,7 +209,7 @@ fd_init_shader_caps(struct fd_screen *screen)
 
       switch (i) {
       case MESA_SHADER_TESS_CTRL:
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
       case PIPE_SHADER_GEOMETRY:
          if (!is_a6xx(screen))
             continue;

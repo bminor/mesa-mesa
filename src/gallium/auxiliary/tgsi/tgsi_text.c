@@ -341,7 +341,7 @@ static bool parse_header( struct translate_ctx *ctx )
    else if (str_match_nocase_whole( &ctx->cur, "TESS_CTRL" ))
       processor = MESA_SHADER_TESS_CTRL;
    else if (str_match_nocase_whole( &ctx->cur, "TESS_EVAL" ))
-      processor = PIPE_SHADER_TESS_EVAL;
+      processor = MESA_SHADER_TESS_EVAL;
    else if (str_match_nocase_whole( &ctx->cur, "COMP" ))
       processor = PIPE_SHADER_COMPUTE;
    else {
@@ -731,7 +731,7 @@ parse_register_dcl(
 
       /* tessellation has similar constraints to geometry shader */
       if ((ctx->processor == PIPE_SHADER_GEOMETRY && is_in) ||
-          (ctx->processor == PIPE_SHADER_TESS_EVAL && is_in) ||
+          (ctx->processor == MESA_SHADER_TESS_EVAL && is_in) ||
           (ctx->processor == MESA_SHADER_TESS_CTRL && (is_in || is_out))) {
          brackets[0] = brackets[1];
          *num_brackets = 1;
@@ -1811,7 +1811,7 @@ static bool translate( struct translate_ctx *ctx )
       return false;
 
    if (ctx->processor == MESA_SHADER_TESS_CTRL ||
-       ctx->processor == PIPE_SHADER_TESS_EVAL)
+       ctx->processor == MESA_SHADER_TESS_EVAL)
        ctx->implied_array_size = 32;
 
    while (*ctx->cur != '\0') {

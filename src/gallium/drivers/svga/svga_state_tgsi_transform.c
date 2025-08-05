@@ -67,7 +67,7 @@ bind_shader(struct svga_context *svga,
    case MESA_SHADER_TESS_CTRL:
       svga->pipe.bind_tcs_state(&svga->pipe, shader);
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       svga->pipe.bind_tes_state(&svga->pipe, shader);
       break;
    default:
@@ -99,7 +99,7 @@ create_shader(struct svga_context *svga,
       return svga->pipe.create_gs_state(&svga->pipe, state);
    case MESA_SHADER_TESS_CTRL:
       return svga->pipe.create_tcs_state(&svga->pipe, state);
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       return svga->pipe.create_tes_state(&svga->pipe, state);
    default:
       return NULL;

@@ -1717,7 +1717,7 @@ agx_get_shader_variant(struct agx_screen *screen, struct pipe_context *pctx,
    if (so->type == PIPE_SHADER_FRAGMENT) {
       memcpy(cloned_key, key, sizeof(struct asahi_fs_shader_key));
    } else if (so->type == MESA_SHADER_VERTEX ||
-              so->type == PIPE_SHADER_TESS_EVAL) {
+              so->type == MESA_SHADER_TESS_EVAL) {
       memcpy(cloned_key, key, sizeof(struct asahi_vs_shader_key));
    } else {
       /* No key */
@@ -1966,7 +1966,7 @@ agx_create_shader_state(struct pipe_context *pctx,
       union asahi_shader_key key = {0};
 
       switch (so->type) {
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
          /* TODO: Tessellation shaders with shader-db */
          return so;
 
@@ -2162,14 +2162,14 @@ agx_update_vs(struct agx_batch *batch, unsigned index_size_B)
     * vb_mask, attributes, vertex_buffers: VERTEX
     */
    if (!((ctx->dirty & (AGX_DIRTY_VS_PROG | AGX_DIRTY_VERTEX | AGX_DIRTY_XFB)) ||
-         ctx->stage[PIPE_SHADER_TESS_EVAL].dirty ||
+         ctx->stage[MESA_SHADER_TESS_EVAL].dirty ||
          ctx->stage[PIPE_SHADER_GEOMETRY].dirty ||
-         ctx->stage[PIPE_SHADER_TESS_EVAL].shader ||
+         ctx->stage[MESA_SHADER_TESS_EVAL].shader ||
          ctx->stage[PIPE_SHADER_GEOMETRY].shader || ctx->in_tess))
       return false;
 
    struct asahi_vs_shader_key key = {
-      .hw = !((ctx->stage[PIPE_SHADER_TESS_EVAL].shader && !ctx->in_tess) ||
+      .hw = !((ctx->stage[MESA_SHADER_TESS_EVAL].shader && !ctx->in_tess) ||
               ctx->stage[PIPE_SHADER_GEOMETRY].shader),
    };
 
@@ -2433,7 +2433,7 @@ agx_bind_tcs_state(struct pipe_context *pctx, void *cso)
 static void
 agx_bind_tes_state(struct pipe_context *pctx, void *cso)
 {
-   agx_bind_shader_state(pctx, cso, PIPE_SHADER_TESS_EVAL);
+   agx_bind_shader_state(pctx, cso, MESA_SHADER_TESS_EVAL);
 }
 
 static void
@@ -3861,7 +3861,7 @@ agx_ia_update(struct agx_batch *batch, const struct pipe_draw_info *info,
     * they are written along with IA.
     */
    if (ctx->stage[PIPE_SHADER_GEOMETRY].shader ||
-       ctx->stage[PIPE_SHADER_TESS_EVAL].shader) {
+       ctx->stage[MESA_SHADER_TESS_EVAL].shader) {
 
       c_prims = AGX_SCRATCH_PAGE_ADDRESS;
       c_invs = AGX_SCRATCH_PAGE_ADDRESS;
@@ -4308,7 +4308,7 @@ agx_needs_passthrough_gs(struct agx_context *ctx,
     * feedback is used, we need a GS.
     */
    struct agx_uncompiled_shader *last_vtx =
-      ctx->stage[PIPE_SHADER_TESS_EVAL].shader
+      ctx->stage[MESA_SHADER_TESS_EVAL].shader
          ?: ctx->stage[MESA_SHADER_VERTEX].shader;
 
    if (last_vtx->has_xfb_info && ctx->streamout.num_targets) {
@@ -4383,8 +4383,8 @@ agx_apply_passthrough_gs(struct agx_context *ctx,
                          const struct pipe_draw_start_count_bias *draws,
                          unsigned num_draws, bool xfb_passthrough)
 {
-   enum pipe_shader_type prev_stage = ctx->stage[PIPE_SHADER_TESS_EVAL].shader
-                                         ? PIPE_SHADER_TESS_EVAL
+   enum pipe_shader_type prev_stage = ctx->stage[MESA_SHADER_TESS_EVAL].shader
+                                         ? MESA_SHADER_TESS_EVAL
                                          : MESA_SHADER_VERTEX;
    struct agx_uncompiled_shader *prev_cso = ctx->stage[prev_stage].shader;
 
@@ -4597,7 +4597,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    agx_update_tcs(ctx, info);
    /* XXX */
    ctx->stage[MESA_SHADER_TESS_CTRL].dirty = ~0;
-   ctx->stage[PIPE_SHADER_TESS_EVAL].dirty = ~0;
+   ctx->stage[MESA_SHADER_TESS_EVAL].dirty = ~0;
    agx_update_descriptors(batch, ctx->vs);
    agx_update_descriptors(batch, ctx->tcs);
 
@@ -4721,7 +4721,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    /* Run TES as VS */
    void *vs_cso = ctx->stage[MESA_SHADER_VERTEX].shader;
-   void *tes_cso = ctx->stage[PIPE_SHADER_TESS_EVAL].shader;
+   void *tes_cso = ctx->stage[MESA_SHADER_TESS_EVAL].shader;
    ctx->base.bind_vs_state(&ctx->base, tes_cso);
    ctx->in_tess = true;
 
@@ -4958,7 +4958,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
         ctx->pipeline_statistics[PIPE_STAT_QUERY_VS_INVOCATIONS] ||
         ((ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES] ||
           ctx->pipeline_statistics[PIPE_STAT_QUERY_C_INVOCATIONS]) &&
-         !ctx->stage[PIPE_SHADER_TESS_EVAL].shader &&
+         !ctx->stage[MESA_SHADER_TESS_EVAL].shader &&
          !ctx->stage[PIPE_SHADER_GEOMETRY].shader))) {
 
       uint64_t ptr;

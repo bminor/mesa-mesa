@@ -154,7 +154,7 @@ d3d12_init_shader_caps(struct d3d12_screen *screen)
          caps->max_inputs = D3D12_HS_CONTROL_POINT_PHASE_INPUT_REGISTER_COUNT;
          caps->max_outputs = D3D12_HS_CONTROL_POINT_PHASE_OUTPUT_REGISTER_COUNT;
          break;
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
          caps->max_inputs = D3D12_DS_INPUT_CONTROL_POINT_REGISTER_COUNT;
          caps->max_outputs = D3D12_DS_OUTPUT_REGISTER_COUNT;
          break;

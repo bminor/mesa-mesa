@@ -1166,20 +1166,20 @@ static void *
 d3d12_create_tes_state(struct pipe_context *pctx,
    const struct pipe_shader_state *shader)
 {
-   return d3d12_create_shader(d3d12_context(pctx), PIPE_SHADER_TESS_EVAL, shader);
+   return d3d12_create_shader(d3d12_context(pctx), MESA_SHADER_TESS_EVAL, shader);
 }
 
 static void
 d3d12_bind_tes_state(struct pipe_context *pctx, void *tess)
 {
-   bind_stage(d3d12_context(pctx), PIPE_SHADER_TESS_EVAL,
+   bind_stage(d3d12_context(pctx), MESA_SHADER_TESS_EVAL,
       (struct d3d12_shader_selector *)tess);
 }
 
 static void
 d3d12_delete_tes_state(struct pipe_context *pctx, void *tes)
 {
-   delete_shader(d3d12_context(pctx), PIPE_SHADER_TESS_EVAL,
+   delete_shader(d3d12_context(pctx), MESA_SHADER_TESS_EVAL,
       (struct d3d12_shader_selector *)tes);
 }
 
@@ -1954,7 +1954,7 @@ d3d12_clear_render_target(struct pipe_context *pctx,
       util_blitter_save_vertex_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_VERTEX]);
       util_blitter_save_geometry_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_GEOMETRY]);
       util_blitter_save_tessctrl_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_TESS_CTRL]);
-      util_blitter_save_tesseval_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_TESS_EVAL]);
+      util_blitter_save_tesseval_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_TESS_EVAL]);
 
       util_blitter_save_framebuffer(ctx->blitter, &ctx->fb);
       util_blitter_save_viewport(ctx->blitter, ctx->viewport_states);

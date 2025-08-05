@@ -385,7 +385,7 @@ st_update_tesseval_samplers(struct st_context *st)
 
    if (ctx->TessEvalProgram._Current) {
       update_shader_samplers(st,
-                             PIPE_SHADER_TESS_EVAL,
+                             MESA_SHADER_TESS_EVAL,
                              ctx->TessEvalProgram._Current, NULL, NULL);
    }
 }

@@ -462,7 +462,7 @@ draw_set_mapped_constant_buffer(struct draw_context *draw,
    assert(shader_type == MESA_SHADER_VERTEX ||
                 shader_type == PIPE_SHADER_GEOMETRY ||
                 shader_type == MESA_SHADER_TESS_CTRL ||
-                shader_type == PIPE_SHADER_TESS_EVAL);
+                shader_type == MESA_SHADER_TESS_EVAL);
    assert(slot < PIPE_MAX_CONSTANT_BUFFERS);
 
    draw_do_flush(draw, DRAW_FLUSH_PARAMETER_CHANGE);
@@ -481,7 +481,7 @@ draw_set_mapped_shader_buffer(struct draw_context *draw,
    assert(shader_type == MESA_SHADER_VERTEX ||
                 shader_type == PIPE_SHADER_GEOMETRY ||
                 shader_type == MESA_SHADER_TESS_CTRL ||
-                shader_type == PIPE_SHADER_TESS_EVAL);
+                shader_type == MESA_SHADER_TESS_EVAL);
    assert(slot < PIPE_MAX_SHADER_BUFFERS);
 
    draw_do_flush(draw, DRAW_FLUSH_PARAMETER_CHANGE);

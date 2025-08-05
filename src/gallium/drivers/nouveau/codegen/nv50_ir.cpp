@@ -1242,7 +1242,7 @@ nv50_ir_init_prog_info(struct nv50_ir_prog_info *info,
 {
    info_out->target = info->target;
    info_out->type = info->type;
-   if (info->type == MESA_SHADER_TESS_CTRL || info->type == PIPE_SHADER_TESS_EVAL) {
+   if (info->type == MESA_SHADER_TESS_CTRL || info->type == MESA_SHADER_TESS_EVAL) {
       info_out->prop.tp.domain = MESA_PRIM_COUNT;
       info_out->prop.tp.outputPrim = MESA_PRIM_COUNT;
    }

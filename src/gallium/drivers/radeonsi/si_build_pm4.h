@@ -578,7 +578,7 @@ si_get_user_data_base(enum amd_gfx_level gfx_level, enum si_has_tess has_tess,
          return R_00B430_SPI_SHADER_USER_DATA_HS_0;
       }
 
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       /* TES can be bound as ES, VS, or not bound. */
       if (has_tess) {
          if (gfx_level >= GFX10) {

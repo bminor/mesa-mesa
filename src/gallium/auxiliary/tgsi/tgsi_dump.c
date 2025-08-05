@@ -316,7 +316,7 @@ iter_declaration(
        (iter->processor.Processor == PIPE_SHADER_GEOMETRY ||
         (!patch &&
          (iter->processor.Processor == MESA_SHADER_TESS_CTRL ||
-          iter->processor.Processor == PIPE_SHADER_TESS_EVAL)))) {
+          iter->processor.Processor == MESA_SHADER_TESS_EVAL)))) {
       TXT("[]");
    }
 

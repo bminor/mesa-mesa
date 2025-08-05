@@ -90,8 +90,8 @@ fd_tes_state_bind(struct pipe_context *pctx, void *hwcso) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    ctx->prog.ds = hwcso;
-   fd_context_dirty_shader(ctx, PIPE_SHADER_TESS_EVAL, FD_DIRTY_SHADER_PROG);
-   update_bound_stage(ctx, PIPE_SHADER_TESS_EVAL, !!hwcso);
+   fd_context_dirty_shader(ctx, MESA_SHADER_TESS_EVAL, FD_DIRTY_SHADER_PROG);
+   update_bound_stage(ctx, MESA_SHADER_TESS_EVAL, !!hwcso);
 }
 
 static void

@@ -100,7 +100,7 @@ llvmpipe_bind_sampler_states(struct pipe_context *pipe,
    case MESA_SHADER_VERTEX:
    case PIPE_SHADER_GEOMETRY:
    case MESA_SHADER_TESS_CTRL:
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       draw_set_samplers(llvmpipe->draw,
                         shader,
                         llvmpipe->samplers[shader],
@@ -183,7 +183,7 @@ llvmpipe_set_sampler_views(struct pipe_context *pipe,
    case MESA_SHADER_VERTEX:
    case PIPE_SHADER_GEOMETRY:
    case MESA_SHADER_TESS_CTRL:
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       draw_set_sampler_views(llvmpipe->draw,
                              shader,
                              llvmpipe->sampler_views[shader],
@@ -426,7 +426,7 @@ llvmpipe_prepare_tess_eval_sampling(struct llvmpipe_context *lp,
                                     unsigned num,
                                     struct pipe_sampler_view **views)
 {
-   prepare_shader_sampling(lp, num, views, PIPE_SHADER_TESS_EVAL);
+   prepare_shader_sampling(lp, num, views, MESA_SHADER_TESS_EVAL);
 }
 
 
@@ -585,7 +585,7 @@ llvmpipe_prepare_tess_eval_images(struct llvmpipe_context *lp,
                                   unsigned num,
                                   struct pipe_image_view *views)
 {
-   prepare_shader_images(lp, num, views, PIPE_SHADER_TESS_EVAL);
+   prepare_shader_images(lp, num, views, MESA_SHADER_TESS_EVAL);
 }
 
 

@@ -675,7 +675,7 @@ validate_tess_ctrl_shader_variant(struct d3d12_selection_context *sel_ctx)
    if (tcs != NULL && !tcs->is_variant)
       return;
 
-   d3d12_shader_selector *tes = ctx->gfx_stages[PIPE_SHADER_TESS_EVAL];
+   d3d12_shader_selector *tes = ctx->gfx_stages[MESA_SHADER_TESS_EVAL];
    struct d3d12_tcs_variant_key key = {0};
 
    bool variant_needed = tes != nullptr;
@@ -725,7 +725,7 @@ d3d12_compare_shader_keys(struct d3d12_selection_context* sel_ctx, const d3d12_s
       if (expect->hs.all != have->hs.all)
          return false;
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       if (expect->ds.tcs_vertices_out != have->ds.tcs_vertices_out ||
           expect->ds.prev_patch_outputs != have->ds.prev_patch_outputs)
          return false;
@@ -817,7 +817,7 @@ d3d12_shader_key_hash(const d3d12_shader_key *key)
    case MESA_SHADER_TESS_CTRL:
       hash += static_cast<uint32_t>(key->hs.all);
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       hash += key->ds.tcs_vertices_out;
       hash += key->ds.prev_patch_outputs;
       break;
@@ -855,7 +855,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
    case MESA_SHADER_TESS_CTRL:
       key->hs.all = 0;
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       key->ds.tcs_vertices_out = 0;
       key->ds.prev_patch_outputs = 0;
       break;
@@ -874,7 +874,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
       key->prev_has_frac_outputs = prev->has_frac_outputs;
       key->prev_varying_frac_outputs = prev->varying_frac_outputs;
 
-      if (stage == PIPE_SHADER_TESS_EVAL)
+      if (stage == MESA_SHADER_TESS_EVAL)
          key->ds.prev_patch_outputs = prev->initial->info.patch_outputs_written;
 
       /* Set the provoking vertex based on the previous shader output. Only set the
@@ -903,7 +903,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
    }
 
    if (stage == PIPE_SHADER_GEOMETRY ||
-       ((stage == MESA_SHADER_VERTEX || stage == PIPE_SHADER_TESS_EVAL) &&
+       ((stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_TESS_EVAL) &&
           (!next || next->stage == PIPE_SHADER_FRAGMENT))) {
       key->last_vertex_processing_stage = 1;
       key->invert_depth = sel_ctx->ctx->reverse_depth_range;
@@ -969,7 +969,7 @@ d3d12_fill_shader_key(struct d3d12_selection_context *sel_ctx,
          key->hs.spacing = TESS_SPACING_EQUAL;
       }
       key->hs.patch_vertices_in = MAX2(sel_ctx->ctx->patch_vertices, 1);
-   } else if (stage == PIPE_SHADER_TESS_EVAL) {
+   } else if (stage == MESA_SHADER_TESS_EVAL) {
       if (prev && prev->initial->info.stage == MESA_SHADER_TESS_CTRL)
          key->ds.tcs_vertices_out = prev->initial->info.tess.tcs_vertices_out;
       else
@@ -1207,10 +1207,10 @@ get_prev_shader(struct d3d12_context *ctx, pipe_shader_type current)
          return ctx->gfx_stages[PIPE_SHADER_GEOMETRY];
       FALLTHROUGH;
    case PIPE_SHADER_GEOMETRY:
-      if (ctx->gfx_stages[PIPE_SHADER_TESS_EVAL])
-         return ctx->gfx_stages[PIPE_SHADER_TESS_EVAL];
+      if (ctx->gfx_stages[MESA_SHADER_TESS_EVAL])
+         return ctx->gfx_stages[MESA_SHADER_TESS_EVAL];
       FALLTHROUGH;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       if (ctx->gfx_stages[MESA_SHADER_TESS_CTRL])
          return ctx->gfx_stages[MESA_SHADER_TESS_CTRL];
       FALLTHROUGH;
@@ -1230,10 +1230,10 @@ get_next_shader(struct d3d12_context *ctx, pipe_shader_type current)
          return ctx->gfx_stages[MESA_SHADER_TESS_CTRL];
       FALLTHROUGH;
    case MESA_SHADER_TESS_CTRL:
-      if (ctx->gfx_stages[PIPE_SHADER_TESS_EVAL])
-         return ctx->gfx_stages[PIPE_SHADER_TESS_EVAL];
+      if (ctx->gfx_stages[MESA_SHADER_TESS_EVAL])
+         return ctx->gfx_stages[MESA_SHADER_TESS_EVAL];
       FALLTHROUGH;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       if (ctx->gfx_stages[PIPE_SHADER_GEOMETRY])
          return ctx->gfx_stages[PIPE_SHADER_GEOMETRY];
       FALLTHROUGH;
@@ -1518,10 +1518,10 @@ d3d12_select_shader_variants(struct d3d12_context *ctx, const struct pipe_draw_i
       next = get_next_shader(ctx, MESA_SHADER_TESS_CTRL);
       select_shader_variant(&sel_ctx, stages[MESA_SHADER_TESS_CTRL], prev, next);
    }
-   if (stages[PIPE_SHADER_TESS_EVAL]) {
-      prev = get_prev_shader(ctx, PIPE_SHADER_TESS_EVAL);
-      next = get_next_shader(ctx, PIPE_SHADER_TESS_EVAL);
-      select_shader_variant(&sel_ctx, stages[PIPE_SHADER_TESS_EVAL], prev, next);
+   if (stages[MESA_SHADER_TESS_EVAL]) {
+      prev = get_prev_shader(ctx, MESA_SHADER_TESS_EVAL);
+      next = get_next_shader(ctx, MESA_SHADER_TESS_EVAL);
+      select_shader_variant(&sel_ctx, stages[MESA_SHADER_TESS_EVAL], prev, next);
    }
    if (stages[PIPE_SHADER_GEOMETRY]) {
       prev = get_prev_shader(ctx, PIPE_SHADER_GEOMETRY);

@@ -230,7 +230,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 	case MESA_SHADER_TESS_CTRL:
 		evergreen_update_hs_state(ctx, shader);
 		break;
-	case PIPE_SHADER_TESS_EVAL:
+	case MESA_SHADER_TESS_EVAL:
 		if (key.tes.as_es)
 			evergreen_update_es_state(ctx, shader);
 		else

@@ -175,7 +175,7 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
 
       switch (i) {
       case MESA_SHADER_TESS_CTRL:
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
          if (!vscreen->caps.caps.v1.bset.has_tessellation_shaders)
             continue;
          break;
@@ -212,7 +212,7 @@ virgl_init_shader_caps(struct virgl_screen *vscreen)
             break;
          }
          FALLTHROUGH;
-      case PIPE_SHADER_TESS_EVAL:
+      case MESA_SHADER_TESS_EVAL:
          if (vscreen->caps.caps.v2.host_feature_check_version >= 19) {
             caps->max_outputs = vscreen->caps.caps.v2.max_tes_outputs;
             break;

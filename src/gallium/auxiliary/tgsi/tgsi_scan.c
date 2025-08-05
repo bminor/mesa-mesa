@@ -614,7 +614,7 @@ tgsi_scan_shader(const struct tgsi_token *tokens,
           procType == MESA_SHADER_VERTEX ||
           procType == PIPE_SHADER_GEOMETRY ||
           procType == MESA_SHADER_TESS_CTRL ||
-          procType == PIPE_SHADER_TESS_EVAL ||
+          procType == MESA_SHADER_TESS_EVAL ||
           procType == PIPE_SHADER_COMPUTE);
    info->processor = procType;
 

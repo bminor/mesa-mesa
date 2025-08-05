@@ -667,7 +667,7 @@ check_register_index(struct svga_shader_emitter_v10 *emit,
            index >= VGPU10_MAX_PS_INPUTS) ||
           (emit->unit == MESA_SHADER_TESS_CTRL &&
            index >= VGPU11_MAX_HS_INPUT_CONTROL_POINTS) ||
-          (emit->unit == PIPE_SHADER_TESS_EVAL &&
+          (emit->unit == MESA_SHADER_TESS_EVAL &&
            index >= VGPU11_MAX_DS_INPUT_CONTROL_POINTS)) {
          emit->register_overflow = true;
       }
@@ -690,7 +690,7 @@ check_register_index(struct svga_shader_emitter_v10 *emit,
            index >= VGPU10_MAX_PS_OUTPUTS) ||
           (emit->unit == MESA_SHADER_TESS_CTRL &&
            index >= VGPU11_MAX_HS_OUTPUTS + 2) ||
-          (emit->unit == PIPE_SHADER_TESS_EVAL &&
+          (emit->unit == MESA_SHADER_TESS_EVAL &&
            index >= VGPU11_MAX_DS_OUTPUTS)) {
          emit->register_overflow = true;
       }
@@ -823,7 +823,7 @@ translate_shader_type(unsigned type)
       return VGPU10_PIXEL_SHADER;
    case MESA_SHADER_TESS_CTRL:
       return VGPU10_HULL_SHADER;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       return VGPU10_DOMAIN_SHADER;
    case PIPE_SHADER_COMPUTE:
       return VGPU10_COMPUTE_SHADER;
@@ -1276,7 +1276,7 @@ emit_dst_register(struct svga_shader_emitter_v10 *emit,
    if (file == TGSI_FILE_OUTPUT) {
       if (emit->unit == MESA_SHADER_VERTEX ||
           emit->unit == PIPE_SHADER_GEOMETRY ||
-          emit->unit == PIPE_SHADER_TESS_EVAL) {
+          emit->unit == MESA_SHADER_TESS_EVAL) {
          if (index == emit->vposition.out_index &&
              emit->vposition.tmp_index != INVALID_INDEX) {
             /* replace OUTPUT[POS] with TEMP[POS].  We need to store the
@@ -1762,7 +1762,7 @@ emit_src_register(struct svga_shader_emitter_v10 *emit,
          }
       }
    }
-   else if (emit->unit == PIPE_SHADER_TESS_EVAL) {
+   else if (emit->unit == MESA_SHADER_TESS_EVAL) {
       if (file == TGSI_FILE_SYSTEM_VALUE) {
          if (index == emit->tes.tesscoord_sys_index) {
             /**
@@ -3198,7 +3198,7 @@ emit_domain_shader_declarations(struct svga_shader_emitter_v10 *emit)
 {
    VGPU10OpcodeToken0 opcode0;
 
-   assert(emit->unit == PIPE_SHADER_TESS_EVAL);
+   assert(emit->unit == MESA_SHADER_TESS_EVAL);
 
    /* Emit the input control point count */
    assert(emit->key.tes.vertices_per_patch >= 0 &&
@@ -4850,7 +4850,7 @@ emit_system_value_declaration(struct svga_shader_emitter_v10 *emit,
       if (emit->unit == MESA_SHADER_TESS_CTRL) {
          emit->tcs.prim_id_index = index;
       }
-      else if (emit->unit == PIPE_SHADER_TESS_EVAL) {
+      else if (emit->unit == MESA_SHADER_TESS_EVAL) {
          emit->tes.prim_id_index = index;
          emit_input_declaration(emit, VGPU10_OPCODE_DCL_INPUT,
                                 VGPU10_OPERAND_TYPE_INPUT_PRIMITIVEID,
@@ -5506,7 +5506,7 @@ emit_input_declarations(struct svga_shader_emitter_v10 *emit)
    case MESA_SHADER_TESS_CTRL:
       emit_tcs_input_declarations(emit);
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       emit_tes_input_declarations(emit);
       break;
    case PIPE_SHADER_COMPUTE:
@@ -5546,7 +5546,7 @@ emit_output_declarations(struct svga_shader_emitter_v10 *emit)
    case MESA_SHADER_TESS_CTRL:
       emit_tcs_output_declarations(emit);
       break;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       emit_tes_output_declarations(emit);
       break;
    case PIPE_SHADER_COMPUTE:
@@ -5744,7 +5744,7 @@ emit_temporaries_declaration(struct svga_shader_emitter_v10 *emit)
          emit->fs.sample_pos_tmp_index = total_temps++;
       }
    }
-   else if (emit->unit == PIPE_SHADER_TESS_EVAL) {
+   else if (emit->unit == MESA_SHADER_TESS_EVAL) {
       if (emit->vposition.need_prescale) {
          emit->vposition.tmp_index = total_temps++;
          emit->vposition.prescale_scale_index = total_temps++;
@@ -6841,7 +6841,7 @@ emit_clip_distance_from_vpos(struct svga_shader_emitter_v10 *emit,
 
    assert(emit->unit == MESA_SHADER_VERTEX ||
           emit->unit == PIPE_SHADER_GEOMETRY ||
-          emit->unit == PIPE_SHADER_TESS_EVAL);
+          emit->unit == MESA_SHADER_TESS_EVAL);
 
    for (i = 0; i < num_clip_planes; i++) {
       struct tgsi_full_dst_register dst;
@@ -6881,7 +6881,7 @@ emit_clip_vertex_instructions(struct svga_shader_emitter_v10 *emit)
 
    assert(emit->unit == MESA_SHADER_VERTEX ||
           emit->unit == PIPE_SHADER_GEOMETRY ||
-          emit->unit == PIPE_SHADER_TESS_EVAL);
+          emit->unit == MESA_SHADER_TESS_EVAL);
 
    assert(emit->clip_mode == CLIP_VERTEX);
 
@@ -12153,7 +12153,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
       /* Set the current tcs phase to control point phase */
       emit->tcs.control_point_phase = true;
    }
-   else if (emit->unit == PIPE_SHADER_TESS_EVAL) {
+   else if (emit->unit == MESA_SHADER_TESS_EVAL) {
       emit_domain_shader_declarations(emit);
    }
    else if (emit->unit == PIPE_SHADER_COMPUTE) {
@@ -12246,7 +12246,7 @@ emit_pre_helpers(struct svga_shader_emitter_v10 *emit)
       if (emit->info.uses_vertexid)
          emit_vertex_id_nobase_instruction(emit);
    }
-   else if (emit->unit == PIPE_SHADER_TESS_EVAL) {
+   else if (emit->unit == MESA_SHADER_TESS_EVAL) {
       emit_temp_tessfactor_instructions(emit);
    }
 
@@ -12437,7 +12437,7 @@ emit_post_helpers(struct svga_shader_emitter_v10 *emit)
          emit_clipping_instructions(emit);
       }
    }
-   else if (emit->unit == PIPE_SHADER_TESS_EVAL) {
+   else if (emit->unit == MESA_SHADER_TESS_EVAL) {
       emit_vertex_instructions(emit);
    }
 
@@ -12832,7 +12832,7 @@ compute_input_mapping(struct svga_context *svga,
          &svga->curr.tes->base : &svga->curr.vs->base);
    } else if (unit == PIPE_SHADER_GEOMETRY) {
       prevShader = svga->curr.tes ? &svga->curr.tes->base : &svga->curr.vs->base;
-   } else if (unit == PIPE_SHADER_TESS_EVAL) {
+   } else if (unit == MESA_SHADER_TESS_EVAL) {
       assert(svga->curr.tcs);
       prevShader = &svga->curr.tcs->base;
    } else if (unit == MESA_SHADER_TESS_CTRL) {
@@ -12924,7 +12924,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
           unit == PIPE_SHADER_GEOMETRY ||
           unit == PIPE_SHADER_FRAGMENT ||
           unit == MESA_SHADER_TESS_CTRL ||
-          unit == PIPE_SHADER_TESS_EVAL ||
+          unit == MESA_SHADER_TESS_EVAL ||
           unit == PIPE_SHADER_COMPUTE);
 
    /* These two flags cannot be used together */
@@ -13096,7 +13096,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
    determine_clipping_mode(emit);
 
    if (unit == PIPE_SHADER_GEOMETRY || unit == MESA_SHADER_VERTEX ||
-       unit == MESA_SHADER_TESS_CTRL || unit == PIPE_SHADER_TESS_EVAL) {
+       unit == MESA_SHADER_TESS_CTRL || unit == MESA_SHADER_TESS_EVAL) {
       if (shader->stream_output != NULL || emit->clip_mode == CLIP_DISTANCE) {
          /* if there is stream output declarations associated
           * with this shader or the shader writes to ClipDistance
@@ -13203,7 +13203,7 @@ svga_tgsi_vgpu10_translate(struct svga_context *svga,
 
       fs_variant->fs_shadow_compare_units = emit->shadow_compare_units;
    }
-   else if (unit == PIPE_SHADER_TESS_EVAL) {
+   else if (unit == MESA_SHADER_TESS_EVAL) {
       struct svga_tes_variant *tes_variant = svga_tes_variant(variant);
 
       /* Keep track in the tes variant some of the layout parameters.

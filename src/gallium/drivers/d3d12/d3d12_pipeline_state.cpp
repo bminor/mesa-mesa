@@ -295,8 +295,8 @@ create_gfx_pipeline_state(struct d3d12_context *ctx)
       last_vertex_stage_nir = shader->nir;
    }
 
-   if (state->stages[PIPE_SHADER_TESS_EVAL]) {
-      auto shader = state->stages[PIPE_SHADER_TESS_EVAL];
+   if (state->stages[MESA_SHADER_TESS_EVAL]) {
+      auto shader = state->stages[MESA_SHADER_TESS_EVAL];
       pso_desc.DS = D3D12_SHADER_BYTECODE{ shader->bytecode, shader->bytecode_length };
       last_vertex_stage_nir = shader->nir;
    }

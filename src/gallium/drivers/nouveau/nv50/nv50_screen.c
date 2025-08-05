@@ -108,7 +108,7 @@ nv50_init_shader_caps(struct nv50_screen *screen)
       struct pipe_shader_caps *caps =
          (struct pipe_shader_caps *)&screen->base.base.shader_caps[i];
 
-      if (i == MESA_SHADER_TESS_CTRL || i == PIPE_SHADER_TESS_EVAL)
+      if (i == MESA_SHADER_TESS_CTRL || i == MESA_SHADER_TESS_EVAL)
          continue;
 
       caps->max_instructions =

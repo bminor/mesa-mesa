@@ -97,7 +97,7 @@ virgl_shader_stage_convert(enum pipe_shader_type type)
       return VIRGL_SHADER_VERTEX;
    case MESA_SHADER_TESS_CTRL:
       return VIRGL_SHADER_TESS_CTRL;
-   case PIPE_SHADER_TESS_EVAL:
+   case MESA_SHADER_TESS_EVAL:
       return VIRGL_SHADER_TESS_EVAL;
    case PIPE_SHADER_GEOMETRY:
       return VIRGL_SHADER_GEOMETRY;

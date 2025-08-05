@@ -212,7 +212,7 @@ void st_bind_tes_images(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_TESS_EVAL];
 
-   st_bind_images(st, prog, PIPE_SHADER_TESS_EVAL);
+   st_bind_images(st, prog, MESA_SHADER_TESS_EVAL);
 }
 
 void st_bind_cs_images(struct st_context *st)
