@@ -5,7 +5,7 @@
  *    Chia-I Wu <olv@lunarg.com>
  */
 
-#include "../glapi/glapi.h"
+#include "glapi/glapi_priv.h"
 
 struct mapi_stub {
    size_t name_offset;
@@ -20,11 +20,12 @@ _mesa_noop_entrypoint(const char *name);
 #define MAPI_TMP_PUBLIC_STUBS
 #include "shared_glapi_mapi_tmp.h"
 
-/* REALLY_INITIAL_EXEC implies __GLIBC__ */
-#if defined(USE_X86_ASM) && defined(REALLY_INITIAL_EXEC)
-#include "../entry_x86_tls.h"
+#if defined(_GLAPI_ENTRY_ARCH_TLS_H)
+#include _GLAPI_ENTRY_ARCH_TLS_H
 #define MAPI_TMP_STUB_ASM_GCC
 #include "shared_glapi_mapi_tmp.h"
+
+#if DETECT_ARCH_X86
 
 #ifndef GLX_X86_READONLY_TEXT
 __asm__(".balign 16\n"
@@ -88,12 +89,7 @@ entry_generate_or_patch(int slot, char *code, size_t size)
    return entry;
 }
 
-#elif defined(USE_X86_64_ASM) && defined(REALLY_INITIAL_EXEC)
-#include "../entry_x86-64_tls.h"
-#define MAPI_TMP_STUB_ASM_GCC
-#include "shared_glapi_mapi_tmp.h"
-
-#include <string.h>
+#elif DETECT_ARCH_X86_64
 
 static void
 entry_patch_public(void)
@@ -109,12 +105,7 @@ entry_get_public(int slot)
    return (_glapi_proc) (x86_64_entry_start + slot * 32);
 }
 
-#elif defined(USE_PPC64LE_ASM) && UTIL_ARCH_LITTLE_ENDIAN && defined(REALLY_INITIAL_EXEC)
-#include "../entry_ppc64le_tls.h"
-#define MAPI_TMP_STUB_ASM_GCC
-#include "shared_glapi_mapi_tmp.h"
-
-#include <string.h>
+#elif DETECT_ARCH_PPC_64 && UTIL_ARCH_LITTLE_ENDIAN
 
 static void
 entry_patch_public(void)
@@ -132,6 +123,12 @@ entry_get_public(int slot)
 
 #else
 
+#error "Unsupported architecture for:" _GLAPI_ENTRY_ARCH_TLS_H
+
+#endif
+
+#else /* !defined(_GLAPI_ENTRY_ARCH_TLS_H) */
+
 /* C version of the public entries */
 #define MAPI_TMP_DEFINES
 #define MAPI_TMP_PUBLIC_ENTRIES
@@ -148,7 +145,7 @@ entry_get_public(int slot)
    return public_entries[slot];
 }
 
-#endif /* asm */
+#endif /* defined(_GLAPI_ENTRY_ARCH_TLS_H) */
 
 /* Current dispatch and current context variables */
 __THREAD_INITIAL_EXEC struct _glapi_table *_mesa_glapi_tls_Dispatch
@@ -278,7 +275,3 @@ _mesa_glapi_get_dispatch(void)
 {
    return _mesa_glapi_tls_Dispatch;
 }
-
-#if defined(_WIN32) && defined(_WINDOWS_)
-#error "Should not include <windows.h> here"
-#endif

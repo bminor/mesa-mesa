@@ -305,6 +305,11 @@ if freedreno_kmds.length() != 0 and freedreno_kmds != [ 'msm' ] and with_freedre
   endif
 endif
 
+pre_args += ['-DMESA_SYSTEM_HAS_KMS_DRM=@0@'.format(system_has_kms_drm.to_int())]
+if host_machine.cpu_family() == 'x86' and with_glx_read_only_text
+    pre_args += ['-DGLX_X86_READONLY_TEXT']
+endif
+
 with_vdrm = [
   with_amdgpu_virtio,
   freedreno_kmds.contains('virtio'),
@@ -1326,10 +1331,6 @@ if host_machine.cpu_family() == 'x86'
   if system_has_kms_drm or host_machine.system() == 'gnu'
     with_asm_arch = 'x86'
     pre_args += ['-DUSE_X86_ASM']
-
-    if with_glx_read_only_text
-      pre_args += ['-DGLX_X86_READONLY_TEXT']
-    endif
   endif
 elif host_machine.cpu_family() == 'x86_64'
   if system_has_kms_drm

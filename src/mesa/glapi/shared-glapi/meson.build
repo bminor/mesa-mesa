@@ -20,7 +20,7 @@ libglapi = static_library(
   ],
   gnu_symbol_visibility : 'hidden',
   link_args : [ld_args_gc_sections],
-  include_directories : [inc_src, inc_include],
+  include_directories : [inc_mesa, inc_src, inc_include],
   dependencies : [dep_thread, idep_mesautil],
   install : false,
 )
