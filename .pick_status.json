@@ -4554,7 +4554,7 @@
         "description": "panvk: Fix IUB decode",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fb38f10240611319d9bb934c28990f60a4dc0ed2",
         "notes": null
