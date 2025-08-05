@@ -3894,7 +3894,7 @@
         "description": "ac/nir: Avoid 0/0 when computing texel buffer size on Polaris.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
