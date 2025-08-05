@@ -138,7 +138,7 @@ d3d12_init_shader_caps(struct d3d12_screen *screen)
       caps->max_control_flow_depth = INT_MAX;
 
       switch (i) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          caps->max_inputs = D3D12_VS_INPUT_REGISTER_COUNT;
          caps->max_outputs = D3D12_VS_OUTPUT_REGISTER_COUNT;
          break;

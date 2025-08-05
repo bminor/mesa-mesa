@@ -77,7 +77,7 @@ st_upload_constants(struct st_context *st, struct gl_program *prog, gl_shader_st
 
    struct gl_program_parameter_list *params = prog->Parameters;
 
-   assert(shader_type == PIPE_SHADER_VERTEX ||
+   assert(shader_type == MESA_SHADER_VERTEX ||
           shader_type == PIPE_SHADER_FRAGMENT ||
           shader_type == PIPE_SHADER_GEOMETRY ||
           shader_type == PIPE_SHADER_TESS_CTRL ||
@@ -314,7 +314,7 @@ st_bind_vs_ubos(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_VERTEX];
 
-   st_bind_ubos(st, prog, PIPE_SHADER_VERTEX);
+   st_bind_ubos(st, prog, MESA_SHADER_VERTEX);
 }
 
 void

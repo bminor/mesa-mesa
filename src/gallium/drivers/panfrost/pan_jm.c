@@ -468,13 +468,13 @@ jm_emit_vertex_draw(struct panfrost_batch *batch,
                     struct mali_draw_packed *section)
 {
    pan_pack(section, DRAW, cfg) {
-      cfg.state = batch->rsd[PIPE_SHADER_VERTEX];
-      cfg.attributes = batch->attribs[PIPE_SHADER_VERTEX];
-      cfg.attribute_buffers = batch->attrib_bufs[PIPE_SHADER_VERTEX];
+      cfg.state = batch->rsd[MESA_SHADER_VERTEX];
+      cfg.attributes = batch->attribs[MESA_SHADER_VERTEX];
+      cfg.attribute_buffers = batch->attrib_bufs[MESA_SHADER_VERTEX];
       cfg.varyings = batch->varyings.vs;
       cfg.varying_buffers = cfg.varyings ? batch->varyings.bufs : 0;
       cfg.thread_storage = batch->tls.gpu;
-      jm_emit_draw_descs(batch, &cfg, PIPE_SHADER_VERTEX);
+      jm_emit_draw_descs(batch, &cfg, MESA_SHADER_VERTEX);
    }
 }
 
@@ -758,7 +758,7 @@ jm_emit_malloc_vertex_job(struct panfrost_batch *batch,
                           bool secondary_shader, void *job)
 {
    struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_compiled_shader *vs = ctx->prog[PIPE_SHADER_VERTEX];
+   struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
    struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
 
    bool fs_required = panfrost_fs_required(
@@ -808,7 +808,7 @@ jm_emit_malloc_vertex_job(struct panfrost_batch *batch,
                       fs_required, u_reduced_prim(info->mode));
 
    pan_section_pack(job, MALLOC_VERTEX_JOB, POSITION, cfg) {
-      jm_emit_shader_env(batch, &cfg, PIPE_SHADER_VERTEX,
+      jm_emit_shader_env(batch, &cfg, MESA_SHADER_VERTEX,
                          panfrost_get_position_shader(batch, info));
    }
 
@@ -820,7 +820,7 @@ jm_emit_malloc_vertex_job(struct panfrost_batch *batch,
       if (!secondary_shader)
          continue;
 
-      jm_emit_shader_env(batch, &cfg, PIPE_SHADER_VERTEX,
+      jm_emit_shader_env(batch, &cfg, MESA_SHADER_VERTEX,
                          panfrost_get_varying_shader(batch));
    }
 }
@@ -876,8 +876,8 @@ GENX(jm_launch_xfb)(struct panfrost_batch *batch,
       cfg.workgroup_count_y = info->instance_count;
       cfg.workgroup_count_z = 1;
 
-      jm_emit_shader_env(batch, &cfg.compute, PIPE_SHADER_VERTEX,
-                         batch->rsd[PIPE_SHADER_VERTEX]);
+      jm_emit_shader_env(batch, &cfg.compute, MESA_SHADER_VERTEX,
+                         batch->rsd[MESA_SHADER_VERTEX]);
 
       /* TODO: Indexing. Also, this is a legacy feature... */
       cfg.compute.attribute_offset = batch->ctx->offset_start;
@@ -938,7 +938,7 @@ GENX(jm_launch_draw)(struct panfrost_batch *batch,
                      unsigned vertex_count)
 {
    struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_compiled_shader *vs = ctx->prog[PIPE_SHADER_VERTEX];
+   struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
    bool secondary_shader = vs->info.vs.secondary_enable;
    bool idvs = vs->info.vs.idvs;
 
@@ -1030,5 +1030,5 @@ GENX(jm_emit_write_timestamp)(struct panfrost_batch *batch,
 
    pan_jc_add_job(&batch->jm.jobs.vtc_jc, MALI_JOB_TYPE_WRITE_VALUE, false,
                   false, 0, 0, &job, false);
-   panfrost_batch_write_rsrc(batch, dst, PIPE_SHADER_VERTEX);
+   panfrost_batch_write_rsrc(batch, dst, MESA_SHADER_VERTEX);
 }

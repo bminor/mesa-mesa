@@ -228,7 +228,7 @@ static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targ
    if (!!sctx->streamout.enabled_mask != !!enabled_mask) {
       /* to keep/remove streamout shader code as an optimization */
       sctx->dirty_shaders_mask |=
-         BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+         BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
          BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
    }
@@ -496,7 +496,7 @@ void si_update_prims_generated_query_state(struct si_context *sctx, unsigned typ
          si_shader_change_notify(sctx);
          sctx->dirty_shaders_mask |=
             (sctx->shader.gs.cso ? BITFIELD_BIT(PIPE_SHADER_GEOMETRY) :
-               (sctx->shader.tes.cso ? BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) : BITFIELD_BIT(PIPE_SHADER_VERTEX)));
+               (sctx->shader.tes.cso ? BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
       }
    }
 }

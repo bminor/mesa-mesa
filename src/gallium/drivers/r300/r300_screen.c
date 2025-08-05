@@ -423,7 +423,7 @@ static void r300_init_shader_caps(struct r300_screen* r300screen)
    bool is_r500 = r300screen->caps.is_r500;
 
    struct pipe_shader_caps *caps =
-      (struct pipe_shader_caps *)&r300screen->screen.shader_caps[PIPE_SHADER_VERTEX];
+      (struct pipe_shader_caps *)&r300screen->screen.shader_caps[MESA_SHADER_VERTEX];
 
    if (r300screen->caps.has_tcl) {
       caps->max_instructions =

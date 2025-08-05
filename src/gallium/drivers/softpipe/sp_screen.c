@@ -205,7 +205,7 @@ softpipe_init_shader_caps(struct softpipe_screen *sp_screen)
          (struct pipe_shader_caps *)&sp_screen->base.shader_caps[i];
 
       switch(i) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
       case PIPE_SHADER_GEOMETRY:
          if (sp_screen->use_llvm) {
             draw_init_shader_caps(caps);

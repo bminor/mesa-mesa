@@ -639,7 +639,7 @@ static void *
 nvc0_vp_state_create(struct pipe_context *pipe,
                      const struct pipe_shader_state *cso)
 {
-   return nvc0_sp_state_create(pipe, cso, PIPE_SHADER_VERTEX);
+   return nvc0_sp_state_create(pipe, cso, MESA_SHADER_VERTEX);
 }
 
 static void

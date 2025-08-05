@@ -469,7 +469,7 @@ ir3_fixup_shader_state(struct pipe_context *pctx, struct ir3_shader_key *key)
       }
 
       if (ir3_shader_key_changes_vs(ctx->last.key, key)) {
-         fd_context_dirty_shader(ctx, PIPE_SHADER_VERTEX, FD_DIRTY_SHADER_PROG);
+         fd_context_dirty_shader(ctx, MESA_SHADER_VERTEX, FD_DIRTY_SHADER_PROG);
       }
 
       /* NOTE: currently only a6xx has gs/tess, but needs no

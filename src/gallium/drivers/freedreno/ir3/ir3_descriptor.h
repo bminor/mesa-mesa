@@ -35,7 +35,7 @@ static inline unsigned
 ir3_shader_descriptor_set(enum pipe_shader_type shader)
 {
    switch (shader) {
-   case PIPE_SHADER_VERTEX: return 0;
+   case MESA_SHADER_VERTEX: return 0;
    case PIPE_SHADER_TESS_CTRL: return 1;
    case PIPE_SHADER_TESS_EVAL: return 2;
    case PIPE_SHADER_GEOMETRY:  return 3;

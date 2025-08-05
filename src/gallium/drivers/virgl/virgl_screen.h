@@ -93,7 +93,7 @@ static inline enum virgl_shader_stage
 virgl_shader_stage_convert(enum pipe_shader_type type)
 {
    switch (type) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       return VIRGL_SHADER_VERTEX;
    case PIPE_SHADER_TESS_CTRL:
       return VIRGL_SHADER_TESS_CTRL;

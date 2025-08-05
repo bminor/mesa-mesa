@@ -573,14 +573,14 @@ svga_translate_decl_sm30(struct svga_shader_emitter *emit,
          break;
 
       case TGSI_FILE_INPUT:
-         if (emit->unit == PIPE_SHADER_VERTEX)
+         if (emit->unit == MESA_SHADER_VERTEX)
             ok = vs30_input(emit, decl->Semantic, idx);
          else
             ok = ps30_input(emit, decl->Semantic, idx);
          break;
 
       case TGSI_FILE_OUTPUT:
-         if (emit->unit == PIPE_SHADER_VERTEX)
+         if (emit->unit == MESA_SHADER_VERTEX)
             ok = vs30_output(emit, decl->Semantic, idx);
          else
             ok = ps30_output(emit, decl->Semantic, idx);

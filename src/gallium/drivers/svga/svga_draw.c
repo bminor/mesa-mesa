@@ -338,7 +338,7 @@ svga_validate_sampler_resources(struct svga_context *svga,
    assert(svga_have_vgpu10(svga));
 
    if (pipe_type == SVGA_PIPE_GRAPHICS) {
-      first_shader = PIPE_SHADER_VERTEX;
+      first_shader = MESA_SHADER_VERTEX;
       last_shader = PIPE_SHADER_COMPUTE;
    }
    else {
@@ -421,7 +421,7 @@ svga_validate_constant_buffers(struct svga_context *svga,
    assert(svga_have_vgpu10(svga));
 
    if (pipe_type == SVGA_PIPE_GRAPHICS) {
-      first_shader = PIPE_SHADER_VERTEX;
+      first_shader = MESA_SHADER_VERTEX;
       last_shader = PIPE_SHADER_COMPUTE;
    }
    else {
@@ -523,7 +523,7 @@ svga_validate_image_views(struct svga_context *svga,
    assert(svga_have_gl43(svga));
 
    if (pipe_type == SVGA_PIPE_GRAPHICS) {
-      first_shader = PIPE_SHADER_VERTEX;
+      first_shader = MESA_SHADER_VERTEX;
       last_shader = PIPE_SHADER_COMPUTE;
    }
    else {
@@ -562,7 +562,7 @@ svga_validate_shader_buffers(struct svga_context *svga,
    assert(svga_have_gl43(svga));
 
    if (pipe_type == SVGA_PIPE_GRAPHICS) {
-      first_shader = PIPE_SHADER_VERTEX;
+      first_shader = MESA_SHADER_VERTEX;
       last_shader = PIPE_SHADER_COMPUTE;
    }
    else {

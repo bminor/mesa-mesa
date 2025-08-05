@@ -72,8 +72,8 @@ fd_vs_state_bind(struct pipe_context *pctx, void *hwcso) in_dt
 {
    struct fd_context *ctx = fd_context(pctx);
    ctx->prog.vs = hwcso;
-   fd_context_dirty_shader(ctx, PIPE_SHADER_VERTEX, FD_DIRTY_SHADER_PROG);
-   update_bound_stage(ctx, PIPE_SHADER_VERTEX, !!hwcso);
+   fd_context_dirty_shader(ctx, MESA_SHADER_VERTEX, FD_DIRTY_SHADER_PROG);
+   update_bound_stage(ctx, MESA_SHADER_VERTEX, !!hwcso);
 }
 
 static void
@@ -160,7 +160,7 @@ fd_prog_blit_vs(struct pipe_context *pctx)
 {
    struct ureg_program *ureg;
 
-   ureg = ureg_create(PIPE_SHADER_VERTEX);
+   ureg = ureg_create(MESA_SHADER_VERTEX);
    if (!ureg)
       return NULL;
 

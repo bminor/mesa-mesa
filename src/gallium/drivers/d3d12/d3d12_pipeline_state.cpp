@@ -283,8 +283,8 @@ create_gfx_pipeline_state(struct d3d12_context *ctx)
 
    nir_shader *last_vertex_stage_nir = NULL;
 
-   if (state->stages[PIPE_SHADER_VERTEX]) {
-      auto shader = state->stages[PIPE_SHADER_VERTEX];
+   if (state->stages[MESA_SHADER_VERTEX]) {
+      auto shader = state->stages[MESA_SHADER_VERTEX];
       pso_desc.VS = D3D12_SHADER_BYTECODE { shader->bytecode, shader->bytecode_length };
       last_vertex_stage_nir = shader->nir;
    }
@@ -347,7 +347,7 @@ create_gfx_pipeline_state(struct d3d12_context *ctx)
    D3D12_INPUT_LAYOUT_DESC& input_layout = (D3D12_INPUT_LAYOUT_DESC&)pso_desc.InputLayout;
    input_layout.pInputElementDescs = state->ves->elements;
    input_layout.NumElements = state->ves->num_elements;
-   copy_input_attribs(state->ves->elements, input_attribs, &input_layout, state->stages[PIPE_SHADER_VERTEX]->nir);
+   copy_input_attribs(state->ves->elements, input_attribs, &input_layout, state->stages[MESA_SHADER_VERTEX]->nir);
 
    pso_desc.IBStripCutValue = state->ib_strip_cut_value;
 

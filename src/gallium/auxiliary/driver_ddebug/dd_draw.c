@@ -159,8 +159,8 @@ dd_num_active_viewports(struct dd_draw_state *dstate)
       tokens = dstate->shaders[PIPE_SHADER_GEOMETRY]->state.shader.tokens;
    else if (dstate->shaders[PIPE_SHADER_TESS_EVAL])
       tokens = dstate->shaders[PIPE_SHADER_TESS_EVAL]->state.shader.tokens;
-   else if (dstate->shaders[PIPE_SHADER_VERTEX])
-      tokens = dstate->shaders[PIPE_SHADER_VERTEX]->state.shader.tokens;
+   else if (dstate->shaders[MESA_SHADER_VERTEX])
+      tokens = dstate->shaders[MESA_SHADER_VERTEX]->state.shader.tokens;
    else
       return 1;
 
@@ -264,7 +264,7 @@ dd_dump_shader(struct dd_draw_state *dstate, enum pipe_shader_type sh, FILE *f)
    int i;
    const char *shader_str[PIPE_SHADER_TYPES];
 
-   shader_str[PIPE_SHADER_VERTEX] = "VERTEX";
+   shader_str[MESA_SHADER_VERTEX] = "VERTEX";
    shader_str[PIPE_SHADER_TESS_CTRL] = "TESS_CTRL";
    shader_str[PIPE_SHADER_TESS_EVAL] = "TESS_EVAL";
    shader_str[PIPE_SHADER_GEOMETRY] = "GEOMETRY";

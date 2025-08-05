@@ -183,7 +183,7 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
         }
 
         /* Flush writes to our vertex buffers (i.e. from transform feedback) */
-        if (s == PIPE_SHADER_VERTEX) {
+        if (s == MESA_SHADER_VERTEX) {
                 BITSET_FOREACH_SET(i, v3d->vertexbuf.enabled_mask,
                                    PIPE_MAX_ATTRIBS) {
                         struct pipe_vertex_buffer *vb = &v3d->vertexbuf.vb[i];
@@ -230,7 +230,7 @@ v3d_state_reads_resource(struct v3d_context *v3d,
         unsigned i;
 
         /* Vertex buffers */
-        if (s == PIPE_SHADER_VERTEX) {
+        if (s == MESA_SHADER_VERTEX) {
                 BITSET_FOREACH_SET(i, v3d->vertexbuf.enabled_mask,
                                    PIPE_MAX_ATTRIBS) {
                         struct pipe_vertex_buffer *vb = &v3d->vertexbuf.vb[i];
@@ -706,10 +706,10 @@ v3d_emit_gl_shader_state(struct v3d_context *v3d,
 
         struct v3d_cl_reloc vs_uniforms =
                 v3d_write_uniforms(v3d, job, v3d->prog.vs,
-                                   PIPE_SHADER_VERTEX);
+                                   MESA_SHADER_VERTEX);
         struct v3d_cl_reloc cs_uniforms =
                 v3d_write_uniforms(v3d, job, v3d->prog.cs,
-                                   PIPE_SHADER_VERTEX);
+                                   MESA_SHADER_VERTEX);
 
         /* Update the cache dirty flag based on the shader progs data */
         job->tmu_dirty_rcl |= v3d->prog.cs->prog_data.vs->base.tmu_dirty_rcl;
@@ -1176,7 +1176,7 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          * on the last submitted render, rather than tracking the last
          * rendering to each texture's BO.
          */
-        if (v3d->tex[PIPE_SHADER_VERTEX].num_textures || (indirect && indirect->buffer)) {
+        if (v3d->tex[MESA_SHADER_VERTEX].num_textures || (indirect && indirect->buffer)) {
                 static bool warned = false;
                 if (!warned) {
                         perf_debug("Blocking binner on last render due to "

@@ -99,7 +99,7 @@ static void
 lima_init_shader_caps(struct pipe_screen *screen)
 {
    struct pipe_shader_caps *caps =
-      (struct pipe_shader_caps *)&screen->shader_caps[PIPE_SHADER_VERTEX];
+      (struct pipe_shader_caps *)&screen->shader_caps[MESA_SHADER_VERTEX];
 
    caps->max_instructions =
    caps->max_alu_instructions =

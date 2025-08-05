@@ -271,7 +271,7 @@ fd_init_shader_caps(struct fd_screen *screen)
       caps->supported_irs =
          (1 << PIPE_SHADER_IR_NIR) |
          /* tgsi_to_nir doesn't support all stages: */
-         COND(i == PIPE_SHADER_VERTEX ||
+         COND(i == MESA_SHADER_VERTEX ||
               i == PIPE_SHADER_FRAGMENT ||
               i == PIPE_SHADER_COMPUTE,
               1 << PIPE_SHADER_IR_TGSI);

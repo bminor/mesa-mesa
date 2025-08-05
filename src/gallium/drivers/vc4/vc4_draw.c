@@ -243,10 +243,10 @@ vc4_emit_gl_shader_state(struct vc4_context *vc4,
                            &vc4->constbuf[PIPE_SHADER_FRAGMENT],
                            &vc4->fragtex);
         vc4_write_uniforms(vc4, vc4->prog.vs,
-                           &vc4->constbuf[PIPE_SHADER_VERTEX],
+                           &vc4->constbuf[MESA_SHADER_VERTEX],
                            &vc4->verttex);
         vc4_write_uniforms(vc4, vc4->prog.cs,
-                           &vc4->constbuf[PIPE_SHADER_VERTEX],
+                           &vc4->constbuf[MESA_SHADER_VERTEX],
                            &vc4->verttex);
 
         vc4->last_index_bias = index_bias + extra_index_bias;

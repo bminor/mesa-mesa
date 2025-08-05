@@ -610,7 +610,7 @@ build_texture_state(struct fd_context *ctx, enum pipe_shader_type type,
    enum a6xx_state_block sb;
 
    switch (type) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       sb = SB6_VS_TEX;
       opcode = CP_LOAD_STATE6_GEOM;
       tex_samp_reg = REG_A6XX_SP_VS_SAMPLER_BASE;

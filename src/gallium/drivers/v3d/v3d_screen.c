@@ -124,7 +124,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
                         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
                 switch (i) {
-                case PIPE_SHADER_VERTEX:
+                case MESA_SHADER_VERTEX:
                 case PIPE_SHADER_FRAGMENT:
                 case PIPE_SHADER_GEOMETRY:
                         break;
@@ -143,7 +143,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
                 caps->max_control_flow_depth = UINT_MAX;
 
                 switch (i) {
-                case PIPE_SHADER_VERTEX:
+                case MESA_SHADER_VERTEX:
                         caps->max_inputs = V3D_MAX_VS_INPUTS / 4;
                         break;
                 case PIPE_SHADER_GEOMETRY:
@@ -173,7 +173,7 @@ v3d_init_shader_caps(struct v3d_screen *screen)
 
                 caps->max_shader_buffers =
                         screen->has_cache_flush &&
-                        (i != PIPE_SHADER_VERTEX && i != PIPE_SHADER_GEOMETRY) ?
+                        (i != MESA_SHADER_VERTEX && i != PIPE_SHADER_GEOMETRY) ?
                         PIPE_MAX_SHADER_BUFFERS : 0;
 
                 caps->max_shader_images =

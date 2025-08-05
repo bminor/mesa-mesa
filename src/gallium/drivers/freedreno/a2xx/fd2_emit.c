@@ -138,7 +138,7 @@ static void
 emit_textures(struct fd_ringbuffer *ring, struct fd_context *ctx)
 {
    struct fd_texture_stateobj *fragtex = &ctx->tex[PIPE_SHADER_FRAGMENT];
-   struct fd_texture_stateobj *verttex = &ctx->tex[PIPE_SHADER_VERTEX];
+   struct fd_texture_stateobj *verttex = &ctx->tex[MESA_SHADER_VERTEX];
    texmask emitted = 0;
    unsigned i;
 
@@ -180,7 +180,7 @@ fd2_emit_state_binning(struct fd_context *ctx,
 
    if (dirty & (FD_DIRTY_PROG | FD_DIRTY_CONST)) {
       emit_constants(ring, VS_CONST_BASE * 4,
-                     &ctx->constbuf[PIPE_SHADER_VERTEX],
+                     &ctx->constbuf[MESA_SHADER_VERTEX],
                      (dirty & FD_DIRTY_PROG) ? ctx->prog.vs : NULL);
    }
 
@@ -348,7 +348,7 @@ fd2_emit_state(struct fd_context *ctx, const enum fd_dirty_3d_state dirty)
 
    if (dirty & (FD_DIRTY_PROG | FD_DIRTY_CONST)) {
       emit_constants(ring, VS_CONST_BASE * 4,
-                     &ctx->constbuf[PIPE_SHADER_VERTEX],
+                     &ctx->constbuf[MESA_SHADER_VERTEX],
                      (dirty & FD_DIRTY_PROG) ? ctx->prog.vs : NULL);
       emit_constants(ring, PS_CONST_BASE * 4,
                      &ctx->constbuf[PIPE_SHADER_FRAGMENT],

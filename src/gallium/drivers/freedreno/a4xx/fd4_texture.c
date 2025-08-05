@@ -226,7 +226,7 @@ fd4_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
 
    if (shader == PIPE_SHADER_FRAGMENT) {
       sampler_swizzles = fd4_ctx->fsampler_swizzles;
-   } else if (shader == PIPE_SHADER_VERTEX) {
+   } else if (shader == MESA_SHADER_VERTEX) {
       sampler_swizzles = fd4_ctx->vsampler_swizzles;
    } else if (shader == PIPE_SHADER_COMPUTE) {
       sampler_swizzles = fd4_ctx->csampler_swizzles;
@@ -276,7 +276,7 @@ fd4_set_sampler_views(struct pipe_context *pctx, enum pipe_shader_type shader,
 
    if (shader == PIPE_SHADER_FRAGMENT) {
       fd4_ctx->fastc_srgb = astc_srgb;
-   } else if (shader == PIPE_SHADER_VERTEX) {
+   } else if (shader == MESA_SHADER_VERTEX) {
       fd4_ctx->vastc_srgb = astc_srgb;
    } else if (shader == PIPE_SHADER_COMPUTE) {
       fd4_ctx->castc_srgb = astc_srgb;

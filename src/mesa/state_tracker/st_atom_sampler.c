@@ -358,7 +358,7 @@ st_update_vertex_samplers(struct st_context *st)
    const struct gl_context *ctx = st->ctx;
 
    update_shader_samplers(st,
-                          PIPE_SHADER_VERTEX,
+                          MESA_SHADER_VERTEX,
                           ctx->VertexProgram._Current,
                           st->state.vert_samplers,
                           &st->state.num_vert_samplers);

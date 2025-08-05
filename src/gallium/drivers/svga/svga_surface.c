@@ -522,7 +522,7 @@ svga_validate_surface_view(struct svga_context *svga, struct svga_surface *s)
     * associated resource. We will then use the cloned surface view for
     * render target.
     */
-   for (shader = PIPE_SHADER_VERTEX; shader <= PIPE_SHADER_COMPUTE; shader++) {
+   for (shader = MESA_SHADER_VERTEX; shader <= PIPE_SHADER_COMPUTE; shader++) {
       if (svga_check_sampler_view_resource_collision(svga, s->handle, shader)) {
          SVGA_DBG(DEBUG_VIEWS,
                   "same resource used in shaderResource and renderTarget 0x%x\n",

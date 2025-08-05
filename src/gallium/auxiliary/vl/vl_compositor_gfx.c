@@ -60,7 +60,7 @@ create_vert_shader(struct vl_compositor *c)
    struct ureg_dst o_vpos, o_vtex, o_color;
    struct ureg_dst o_vtop, o_vbottom;
 
-   shader = ureg_create(PIPE_SHADER_VERTEX);
+   shader = ureg_create(MESA_SHADER_VERTEX);
    if (!shader)
       return NULL;
 

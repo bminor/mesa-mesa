@@ -293,7 +293,7 @@ static void r600_init_shader_caps(struct r600_screen *rscreen)
 		caps->max_tex_instructions =
 		caps->max_tex_indirections = 16384;
 		caps->max_control_flow_depth = 32;
-		caps->max_inputs = i == PIPE_SHADER_VERTEX ? 16 : 32;
+		caps->max_inputs = i == MESA_SHADER_VERTEX ? 16 : 32;
 		caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8 : 32;
 		caps->max_temps = 256; /* Max native temporaries. */
 

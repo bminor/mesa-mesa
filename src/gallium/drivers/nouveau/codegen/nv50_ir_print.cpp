@@ -979,7 +979,7 @@ nv50_ir_prog_info_out_print(struct nv50_ir_prog_info_out *info_out)
 
    INFO("   \"prop\":{\n");
    switch (info_out->type) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          INFO("      \"vp\": {\"usesDrawParameters\":\"%s\"}\n",
                info_out->prop.vp.usesDrawParameters ? "true" : "false");
          break;

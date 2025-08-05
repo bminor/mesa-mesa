@@ -104,7 +104,7 @@ panfrost_get_index_buffer(struct panfrost_batch *batch,
 
    if (!info->has_user_indices) {
       /* Only resources can be directly mapped */
-      panfrost_batch_read_rsrc(batch, rsrc, PIPE_SHADER_VERTEX);
+      panfrost_batch_read_rsrc(batch, rsrc, MESA_SHADER_VERTEX);
       return rsrc->plane.base + offset;
    } else {
       /* Otherwise, we need to upload to transient memory */

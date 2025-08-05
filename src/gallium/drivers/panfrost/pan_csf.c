@@ -905,7 +905,7 @@ csf_emit_shader_regs(struct panfrost_batch *batch, enum pipe_shader_type stage,
 {
    uint64_t resources = panfrost_emit_resources(batch, stage);
 
-   assert(stage == PIPE_SHADER_VERTEX || stage == PIPE_SHADER_FRAGMENT ||
+   assert(stage == MESA_SHADER_VERTEX || stage == PIPE_SHADER_FRAGMENT ||
           stage == PIPE_SHADER_COMPUTE);
 
 #if PAN_ARCH >= 12
@@ -1079,8 +1079,8 @@ GENX(csf_launch_xfb)(struct panfrost_batch *batch,
    cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Y), info->instance_count);
    cs_move32_to(b, cs_sr_reg32(b, COMPUTE, JOB_SIZE_Z), 1);
 
-   csf_emit_shader_regs(batch, PIPE_SHADER_VERTEX,
-                        batch->rsd[PIPE_SHADER_VERTEX]);
+   csf_emit_shader_regs(batch, MESA_SHADER_VERTEX,
+                        batch->rsd[MESA_SHADER_VERTEX]);
    /* force a barrier to avoid read/write sync issues with buffers */
    cs_wait_slot(b, 2);
 
@@ -1114,7 +1114,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
                     const struct pipe_draw_info *info, unsigned drawid_offset)
 {
    struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_compiled_shader *vs = ctx->prog[PIPE_SHADER_VERTEX];
+   struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
    struct panfrost_compiled_shader *fs = ctx->prog[PIPE_SHADER_FRAGMENT];
 
    bool idvs = vs->info.vs.idvs;
@@ -1131,7 +1131,7 @@ csf_emit_draw_state(struct panfrost_batch *batch,
       cs_vt_start(batch->csf.cs.builder, cs_now());
    }
 
-   csf_emit_shader_regs(batch, PIPE_SHADER_VERTEX,
+   csf_emit_shader_regs(batch, MESA_SHADER_VERTEX,
       panfrost_get_position_shader(batch, info));
 
    if (fs_required) {
@@ -1357,7 +1357,7 @@ csf_emit_draw_id_register(struct panfrost_batch *batch, unsigned offset)
 {
    struct cs_builder *b = batch->csf.cs.builder;
    struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_uncompiled_shader *vs = ctx->uncompiled[PIPE_SHADER_VERTEX];
+   struct panfrost_uncompiled_shader *vs = ctx->uncompiled[MESA_SHADER_VERTEX];
 
    if (!BITSET_TEST(vs->nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID))
       return cs_undef();
@@ -1695,5 +1695,5 @@ GENX(csf_emit_write_timestamp)(struct panfrost_batch *batch,
    cs_move64_to(b, address, dst->plane.base + offset);
    cs_store_state(b, address, 0, MALI_CS_STATE_TIMESTAMP, cs_now());
 
-   panfrost_batch_write_rsrc(batch, dst, PIPE_SHADER_VERTEX);
+   panfrost_batch_write_rsrc(batch, dst, MESA_SHADER_VERTEX);
 }

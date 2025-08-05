@@ -249,7 +249,7 @@ panfrost_get_position_shader(struct panfrost_batch *batch,
                              const struct pipe_draw_info *info)
 {
    /* IDVS/points vertex shader */
-   uint64_t vs_ptr = batch->rsd[PIPE_SHADER_VERTEX];
+   uint64_t vs_ptr = batch->rsd[MESA_SHADER_VERTEX];
 
    /* IDVS/triangle vertex shader */
    if (vs_ptr && info->mode != MESA_PRIM_POINTS)
@@ -262,7 +262,7 @@ panfrost_get_position_shader(struct panfrost_batch *batch,
 static inline uint64_t
 panfrost_get_varying_shader(struct panfrost_batch *batch)
 {
-   return batch->rsd[PIPE_SHADER_VERTEX] + (2 * pan_size(SHADER_PROGRAM));
+   return batch->rsd[MESA_SHADER_VERTEX] + (2 * pan_size(SHADER_PROGRAM));
 }
 #endif
 
@@ -314,7 +314,7 @@ panfrost_emit_resources(struct panfrost_batch *batch,
    if (stage == PIPE_SHADER_FRAGMENT) {
       pan_make_resource_table(T, PAN_TABLE_ATTRIBUTE, batch->attribs[stage],
                               batch->nr_varying_attribs[PIPE_SHADER_FRAGMENT]);
-   } else if (stage == PIPE_SHADER_VERTEX) {
+   } else if (stage == MESA_SHADER_VERTEX) {
       pan_make_resource_table(T, PAN_TABLE_ATTRIBUTE, batch->attribs[stage],
                               ctx->vertex->num_elements);
 

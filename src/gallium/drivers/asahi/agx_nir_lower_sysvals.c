@@ -381,7 +381,7 @@ lay_out_uniforms(struct agx_compiled_shader *shader, struct state *state)
 {
    unsigned uniform = 0;
 
-   if (state->stage == PIPE_SHADER_VERTEX ||
+   if (state->stage == MESA_SHADER_VERTEX ||
        state->stage == PIPE_SHADER_TESS_EVAL) {
       unsigned count =
          DIV_ROUND_UP(BITSET_LAST_BIT(shader->attrib_components_read), 4);

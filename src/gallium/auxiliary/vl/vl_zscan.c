@@ -60,7 +60,7 @@ create_vert_shader(struct vl_zscan *zscan)
    struct ureg_dst *o_vtex;
    unsigned i;
 
-   shader = ureg_create(PIPE_SHADER_VERTEX);
+   shader = ureg_create(MESA_SHADER_VERTEX);
    if (!shader)
       return NULL;
 

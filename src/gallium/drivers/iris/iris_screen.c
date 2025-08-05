@@ -212,7 +212,7 @@ iris_init_shader_caps(struct iris_screen *screen)
 
       caps->max_control_flow_depth = UINT_MAX;
 
-      caps->max_inputs = i == PIPE_SHADER_VERTEX ? 16 : 32;
+      caps->max_inputs = i == MESA_SHADER_VERTEX ? 16 : 32;
       caps->max_outputs = 32;
       caps->max_const_buffer0_size = 16 * 1024 * sizeof(float);
       caps->max_const_buffers = 16;

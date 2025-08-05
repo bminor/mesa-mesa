@@ -611,7 +611,7 @@ tgsi_scan_shader(const struct tgsi_token *tokens,
    }
    procType = parse.FullHeader.Processor.Processor;
    assert(procType == PIPE_SHADER_FRAGMENT ||
-          procType == PIPE_SHADER_VERTEX ||
+          procType == MESA_SHADER_VERTEX ||
           procType == PIPE_SHADER_GEOMETRY ||
           procType == PIPE_SHADER_TESS_CTRL ||
           procType == PIPE_SHADER_TESS_EVAL ||

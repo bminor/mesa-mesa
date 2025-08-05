@@ -431,7 +431,7 @@ agx_bind_rasterizer_state(struct pipe_context *pctx, void *cso)
 static bool
 has_edgeflags(struct agx_context *ctx, enum mesa_prim mode)
 {
-   return ctx->stage[PIPE_SHADER_VERTEX].shader->info.has_edgeflags &&
+   return ctx->stage[MESA_SHADER_VERTEX].shader->info.has_edgeflags &&
           mode == MESA_PRIM_TRIANGLES &&
           (ctx->rast->base.fill_front != PIPE_POLYGON_MODE_FILL);
 }
@@ -1716,7 +1716,7 @@ agx_get_shader_variant(struct agx_screen *screen, struct pipe_context *pctx,
 
    if (so->type == PIPE_SHADER_FRAGMENT) {
       memcpy(cloned_key, key, sizeof(struct asahi_fs_shader_key));
-   } else if (so->type == PIPE_SHADER_VERTEX ||
+   } else if (so->type == MESA_SHADER_VERTEX ||
               so->type == PIPE_SHADER_TESS_EVAL) {
       memcpy(cloned_key, key, sizeof(struct asahi_vs_shader_key));
    } else {
@@ -1952,7 +1952,7 @@ agx_create_shader_state(struct pipe_context *pctx,
        (so->type == PIPE_SHADER_FRAGMENT && !so->info.uses_fbfetch)) {
       union asahi_shader_key key = {0};
       agx_get_shader_variant(agx_screen(pctx->screen), pctx, so, &key);
-   } else if (so->type == PIPE_SHADER_VERTEX) {
+   } else if (so->type == MESA_SHADER_VERTEX) {
       union asahi_shader_key key = {
          .vs.hw = next_stage == MESA_SHADER_FRAGMENT,
       };
@@ -2173,7 +2173,7 @@ agx_update_vs(struct agx_batch *batch, unsigned index_size_B)
               ctx->stage[PIPE_SHADER_GEOMETRY].shader),
    };
 
-   agx_update_shader(ctx, &ctx->vs, PIPE_SHADER_VERTEX,
+   agx_update_shader(ctx, &ctx->vs, MESA_SHADER_VERTEX,
                      (union asahi_shader_key *)&key);
 
    struct agx_device *dev = agx_device(ctx->base.screen);
@@ -2199,7 +2199,7 @@ agx_update_vs(struct agx_batch *batch, unsigned index_size_B)
    void *old = ctx->linked.vs;
 
    ctx->linked.vs =
-      asahi_fast_link(ctx, ctx->stage[PIPE_SHADER_VERTEX].shader, &link_key);
+      asahi_fast_link(ctx, ctx->stage[MESA_SHADER_VERTEX].shader, &link_key);
 
    agx_batch_add_bo(batch, ctx->vs->bo);
    if (ctx->linked.vs)
@@ -2396,7 +2396,7 @@ agx_bind_shader_state(struct pipe_context *pctx, void *cso,
 {
    struct agx_context *ctx = agx_context(pctx);
 
-   if (stage == PIPE_SHADER_VERTEX)
+   if (stage == MESA_SHADER_VERTEX)
       ctx->dirty |= AGX_DIRTY_VS_PROG;
    else if (stage == PIPE_SHADER_FRAGMENT)
       ctx->dirty |= AGX_DIRTY_FS_PROG;
@@ -2409,7 +2409,7 @@ agx_bind_shader_state(struct pipe_context *pctx, void *cso,
 static void
 agx_bind_vs_state(struct pipe_context *pctx, void *cso)
 {
-   agx_bind_shader_state(pctx, cso, PIPE_SHADER_VERTEX);
+   agx_bind_shader_state(pctx, cso, MESA_SHADER_VERTEX);
 }
 
 static void
@@ -2961,7 +2961,7 @@ agx_build_pipeline(struct agx_batch *batch, struct agx_compiled_shader *cs,
          batch->fs_preamble_scratch =
             MAX2(batch->fs_preamble_scratch, preamble_size);
          break;
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          agx_scratch_alloc(&ctx->scratch_vs, max_scratch_size, max_subgroups);
          batch->vs_scratch = true;
          batch->vs_preamble_scratch =
@@ -3494,7 +3494,7 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
       agx_push(out, VDM_STATE_VERTEX_SHADER_WORD_1, cfg) {
          cfg.pipeline =
             agx_build_pipeline(batch, vs, ctx->gs ? NULL : ctx->linked.vs,
-                               PIPE_SHADER_VERTEX, 0, 0);
+                               MESA_SHADER_VERTEX, 0, 0);
       }
 
       agx_push_packed(out, vs->uvs.vdm, VDM_STATE_VERTEX_OUTPUTS);
@@ -4309,7 +4309,7 @@ agx_needs_passthrough_gs(struct agx_context *ctx,
     */
    struct agx_uncompiled_shader *last_vtx =
       ctx->stage[PIPE_SHADER_TESS_EVAL].shader
-         ?: ctx->stage[PIPE_SHADER_VERTEX].shader;
+         ?: ctx->stage[MESA_SHADER_VERTEX].shader;
 
    if (last_vtx->has_xfb_info && ctx->streamout.num_targets) {
       *xfb_only = true;
@@ -4385,7 +4385,7 @@ agx_apply_passthrough_gs(struct agx_context *ctx,
 {
    enum pipe_shader_type prev_stage = ctx->stage[PIPE_SHADER_TESS_EVAL].shader
                                          ? PIPE_SHADER_TESS_EVAL
-                                         : PIPE_SHADER_VERTEX;
+                                         : MESA_SHADER_VERTEX;
    struct agx_uncompiled_shader *prev_cso = ctx->stage[prev_stage].shader;
 
    assert(ctx->stage[PIPE_SHADER_GEOMETRY].shader == NULL);
@@ -4688,7 +4688,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    batch->uniforms.tess_params = state;
 
    agx_launch(batch, vs_grid, agx_workgroup(64, 1, 1), ctx->vs, ctx->linked.vs,
-              PIPE_SHADER_VERTEX, 0);
+              MESA_SHADER_VERTEX, 0);
 
    agx_launch(batch, tcs_grid, agx_workgroup(tcs->tess.output_patch_size, 1, 1),
               ctx->tcs, NULL, PIPE_SHADER_TESS_CTRL, 0);
@@ -4720,7 +4720,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    ctx->dirty |= AGX_DIRTY_RS;
 
    /* Run TES as VS */
-   void *vs_cso = ctx->stage[PIPE_SHADER_VERTEX].shader;
+   void *vs_cso = ctx->stage[MESA_SHADER_VERTEX].shader;
    void *tes_cso = ctx->stage[PIPE_SHADER_TESS_EVAL].shader;
    ctx->base.bind_vs_state(&ctx->base, tes_cso);
    ctx->in_tess = true;
@@ -5013,8 +5013,8 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    /* Update shaders first so we can use them after */
    if (agx_update_vs(batch, info->index_size)) {
       ctx->dirty |= AGX_DIRTY_VS | AGX_DIRTY_VS_PROG;
-      ctx->stage[PIPE_SHADER_VERTEX].dirty = ~0;
-   } else if (ctx->stage[PIPE_SHADER_VERTEX].dirty ||
+      ctx->stage[MESA_SHADER_VERTEX].dirty = ~0;
+   } else if (ctx->stage[MESA_SHADER_VERTEX].dirty ||
               (ctx->dirty & AGX_DIRTY_VERTEX))
       ctx->dirty |= AGX_DIRTY_VS;
 

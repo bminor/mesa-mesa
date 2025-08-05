@@ -614,7 +614,7 @@ v3d_get_sand8_vs(struct pipe_context *pctx)
                 return v3d->sand8_blit_vs;
 
         const struct nir_shader_compiler_options *options =
-                pscreen->nir_options[PIPE_SHADER_VERTEX];
+                pscreen->nir_options[MESA_SHADER_VERTEX];
 
         nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX,
                                                        options,
@@ -891,7 +891,7 @@ v3d_get_sand30_vs(struct pipe_context *pctx)
                 return v3d->sand30_blit_vs;
 
         const struct nir_shader_compiler_options *options =
-                pscreen->nir_options[PIPE_SHADER_VERTEX];
+                pscreen->nir_options[MESA_SHADER_VERTEX];
 
         nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX,
                                                        options,

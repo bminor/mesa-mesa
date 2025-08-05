@@ -1873,14 +1873,14 @@ agx_init_shader_caps(struct pipe_screen *pscreen)
 
       caps->max_control_flow_depth = 1024;
 
-      caps->max_inputs = i == PIPE_SHADER_VERTEX ? 16 : 32;
+      caps->max_inputs = i == MESA_SHADER_VERTEX ? 16 : 32;
 
       /* For vertex, the spec min/max is 16. We need more to handle dmat3
        * correctly, though. The full 32 is undesirable since it would require
        * shenanigans to handle.
        */
       caps->max_outputs = i == PIPE_SHADER_FRAGMENT ? 8
-                          : i == PIPE_SHADER_VERTEX ? 24
+                          : i == MESA_SHADER_VERTEX ? 24
                                                     : 32;
 
       caps->max_temps = 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */

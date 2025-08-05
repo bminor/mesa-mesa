@@ -649,7 +649,7 @@ hk_reserve_scratch(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       cs->scratch.fs.main = true;
       cs->scratch.fs.preamble = MAX2(cs->scratch.fs.preamble, preamble_size);
       break;
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       cs->scratch.vs.main = true;
       cs->scratch.vs.preamble = MAX2(cs->scratch.vs.preamble, preamble_size);
       break;

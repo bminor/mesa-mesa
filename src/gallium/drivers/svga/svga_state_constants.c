@@ -264,7 +264,7 @@ svga_get_extra_vs_constants(const struct svga_context *svga, float *dest)
 
    /* common constants */
    count += svga_get_extra_constants_common(svga, variant,
-                                            PIPE_SHADER_VERTEX, dest);
+                                            MESA_SHADER_VERTEX, dest);
 
    assert(count <= MAX_EXTRA_CONSTS);
 
@@ -408,7 +408,7 @@ emit_const_range(struct svga_context *svga,
    unsigned i, j;
    enum pipe_error ret;
 
-   assert(shader == PIPE_SHADER_VERTEX ||
+   assert(shader == MESA_SHADER_VERTEX ||
           shader == PIPE_SHADER_FRAGMENT);
    assert(!svga_have_vgpu10(svga));
 
@@ -446,7 +446,7 @@ emit_const_range(struct svga_context *svga,
          if (SVGA_DEBUG & DEBUG_CONSTS)
             debug_printf("%s %s %d: %f %f %f %f\n",
                          __func__,
-                         shader == PIPE_SHADER_VERTEX ? "VERT" : "FRAG",
+                         shader == MESA_SHADER_VERTEX ? "VERT" : "FRAG",
                          offset + i,
                          values[i][0],
                          values[i][1],
@@ -465,7 +465,7 @@ emit_const_range(struct svga_context *svga,
             if (SVGA_DEBUG & DEBUG_CONSTS)
                debug_printf("%s %s %d: %f %f %f %f\n",
                             __func__,
-                            shader == PIPE_SHADER_VERTEX ? "VERT" : "FRAG",
+                            shader == MESA_SHADER_VERTEX ? "VERT" : "FRAG",
                             offset + j,
                             values[j][0],
                             values[j][1],
@@ -572,7 +572,7 @@ emit_consts_vgpu9(struct svga_context *svga, enum pipe_shader_type shader)
       unsigned count;
 
       switch (shader) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          variant = svga->state.hw_draw.vs;
          count = svga_get_extra_vs_constants(svga, (float *) extras);
          break;
@@ -883,7 +883,7 @@ emit_consts_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
    unsigned extra_count, extra_size, extra_offset;
    const struct svga_shader_variant *variant;
 
-   assert(shader == PIPE_SHADER_VERTEX ||
+   assert(shader == MESA_SHADER_VERTEX ||
           shader == PIPE_SHADER_GEOMETRY ||
           shader == PIPE_SHADER_FRAGMENT ||
           shader == PIPE_SHADER_TESS_CTRL ||
@@ -893,7 +893,7 @@ emit_consts_vgpu10(struct svga_context *svga, enum pipe_shader_type shader)
    cbuf = &svga->curr.constbufs[shader][0];
 
    switch (shader) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       variant = svga->state.hw_draw.vs;
       extra_count = svga_get_extra_vs_constants(svga, (float *) extras);
       break;
@@ -1113,9 +1113,9 @@ emit_vs_consts(struct svga_context *svga, uint64_t dirty)
    /* SVGA_NEW_VS_CONST_BUFFER
     */
    if (svga_have_vgpu10(svga)) {
-      ret = emit_consts_vgpu10(svga, PIPE_SHADER_VERTEX);
+      ret = emit_consts_vgpu10(svga, MESA_SHADER_VERTEX);
    } else {
-      ret = emit_consts_vgpu9(svga, PIPE_SHADER_VERTEX);
+      ret = emit_consts_vgpu9(svga, MESA_SHADER_VERTEX);
    }
 
    return ret;
@@ -1136,7 +1136,7 @@ emit_vs_constbuf(struct svga_context *svga, uint64_t dirty)
    /* SVGA_NEW_FS_CONSTBUF
     */
    assert(svga_have_vgpu10(svga));
-   ret = emit_constbuf_vgpu10(svga, PIPE_SHADER_VERTEX);
+   ret = emit_constbuf_vgpu10(svga, MESA_SHADER_VERTEX);
 
    return ret;
 }
@@ -1450,14 +1450,14 @@ static enum pipe_error
 update_rawbuf(struct svga_context *svga, uint64 dirty)
 {
    uint64_t rawbuf_dirtybit[] = {
-      SVGA_NEW_VS_RAW_BUFFER,       /* PIPE_SHADER_VERTEX */
+      SVGA_NEW_VS_RAW_BUFFER,       /* MESA_SHADER_VERTEX */
       SVGA_NEW_FS_RAW_BUFFER,       /* PIPE_SHADER_FRAGMENT */
       SVGA_NEW_GS_RAW_BUFFER,       /* PIPE_SHADER_GEOMETRY */
       SVGA_NEW_TCS_RAW_BUFFER,      /* PIPE_SHADER_TESS_CTRL */
       SVGA_NEW_TES_RAW_BUFFER,      /* PIPE_SHADER_TESS_EVAL */
    };
 
-   for (enum pipe_shader_type shader = PIPE_SHADER_VERTEX;
+   for (enum pipe_shader_type shader = MESA_SHADER_VERTEX;
         shader < PIPE_SHADER_COMPUTE; shader++) {
       unsigned rawbuf_mask = svga->state.raw_constbufs[shader];
       unsigned rawbuf_sbuf_mask = svga->state.raw_shaderbufs[shader];

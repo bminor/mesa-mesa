@@ -239,7 +239,7 @@ v3d_flag_dirty_sampler_state(struct v3d_context *v3d,
                              enum pipe_shader_type shader)
 {
         switch (shader) {
-        case PIPE_SHADER_VERTEX:
+        case MESA_SHADER_VERTEX:
                 v3d->dirty |= V3D_DIRTY_VERTTEX;
                 break;
         case PIPE_SHADER_GEOMETRY:

@@ -494,7 +494,7 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
       switch (i) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
       case PIPE_SHADER_FRAGMENT:
       case PIPE_SHADER_COMPUTE:
          break;
@@ -506,7 +506,7 @@ panfrost_init_shader_caps(struct panfrost_screen *screen)
        * fragment shaders. Side effects in the geometry pipeline cause
        * trouble with IDVS and conflict with our transform feedback lowering.
        */
-      bool allow_side_effects = (i != PIPE_SHADER_VERTEX);
+      bool allow_side_effects = (i != MESA_SHADER_VERTEX);
 
       caps->max_instructions =
       caps->max_alu_instructions =

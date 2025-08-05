@@ -440,7 +440,7 @@ vc4_get_stage_tex(struct vc4_context *vc4, enum pipe_shader_type shader)
                 vc4->dirty |= VC4_DIRTY_FRAGTEX;
                 return &vc4->fragtex;
                 break;
-        case PIPE_SHADER_VERTEX:
+        case MESA_SHADER_VERTEX:
                 vc4->dirty |= VC4_DIRTY_VERTTEX;
                 return &vc4->verttex;
                 break;

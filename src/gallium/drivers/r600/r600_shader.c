@@ -245,7 +245,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 			r600_update_vs_state(ctx, shader->gs_copy_shader);
 		}
 		break;
-	case PIPE_SHADER_VERTEX:
+	case MESA_SHADER_VERTEX:
 		export_shader = key.vs.as_es;
 		if (rctx->b.gfx_level >= EVERGREEN) {
 			if (key.vs.as_ls)
@@ -759,7 +759,7 @@ int generate_gs_copy_shader(struct r600_context *rctx,
 
 	ctx.shader = &cshader->shader;
 	ctx.bc = &ctx.shader->bc;
-	ctx.type = ctx.bc->type = PIPE_SHADER_VERTEX;
+	ctx.type = ctx.bc->type = MESA_SHADER_VERTEX;
 
 	r600_bytecode_init(ctx.bc, rctx->b.gfx_level, rctx->b.family,
 			   rctx->screen->has_compressed_msaa_texturing);

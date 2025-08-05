@@ -144,7 +144,7 @@ hk_device_scratch_locked(struct hk_device *dev, enum pipe_shader_type stage)
    switch (stage) {
    case PIPE_SHADER_FRAGMENT:
       return &dev->scratch.fs;
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       return &dev->scratch.vs;
    default:
       return &dev->scratch.cs;

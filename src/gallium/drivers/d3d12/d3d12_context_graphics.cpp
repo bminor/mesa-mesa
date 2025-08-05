@@ -1074,14 +1074,14 @@ static void *
 d3d12_create_vs_state(struct pipe_context *pctx,
                       const struct pipe_shader_state *shader)
 {
-   return d3d12_create_shader(d3d12_context(pctx), PIPE_SHADER_VERTEX, shader);
+   return d3d12_create_shader(d3d12_context(pctx), MESA_SHADER_VERTEX, shader);
 }
 
 static void
 d3d12_bind_vs_state(struct pipe_context *pctx,
                     void *vss)
 {
-   bind_stage(d3d12_context(pctx), PIPE_SHADER_VERTEX,
+   bind_stage(d3d12_context(pctx), MESA_SHADER_VERTEX,
               (struct d3d12_shader_selector *) vss);
 }
 
@@ -1089,7 +1089,7 @@ static void
 d3d12_delete_vs_state(struct pipe_context *pctx,
                       void *vs)
 {
-   delete_shader(d3d12_context(pctx), PIPE_SHADER_VERTEX,
+   delete_shader(d3d12_context(pctx), MESA_SHADER_VERTEX,
                  (struct d3d12_shader_selector *) vs);
 }
 
@@ -1951,7 +1951,7 @@ d3d12_clear_render_target(struct pipe_context *pctx,
       util_blitter_save_stencil_ref(ctx->blitter, &ctx->stencil_ref);
       util_blitter_save_rasterizer(ctx->blitter, ctx->gfx_pipeline_state.rast);
       util_blitter_save_fragment_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_FRAGMENT]);
-      util_blitter_save_vertex_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_VERTEX]);
+      util_blitter_save_vertex_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_VERTEX]);
       util_blitter_save_geometry_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_GEOMETRY]);
       util_blitter_save_tessctrl_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_TESS_CTRL]);
       util_blitter_save_tesseval_shader(ctx->blitter, ctx->gfx_stages[PIPE_SHADER_TESS_EVAL]);

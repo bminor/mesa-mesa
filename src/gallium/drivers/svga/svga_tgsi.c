@@ -129,7 +129,7 @@ svga_shader_emit_header(struct svga_shader_emitter *emit)
    case PIPE_SHADER_FRAGMENT:
       header.value = SVGA3D_PS_30;
       break;
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       header.value = SVGA3D_VS_30;
       break;
    }
@@ -176,7 +176,7 @@ svga_tgsi_vgpu9_translate(struct svga_context *svga,
    if (unit == PIPE_SHADER_FRAGMENT)
       emit.imm_start += key->num_unnormalized_coords;
 
-   if (unit == PIPE_SHADER_VERTEX) {
+   if (unit == MESA_SHADER_VERTEX) {
       emit.imm_start += key->vs.need_prescale ? 2 : 0;
    }
 
@@ -411,7 +411,7 @@ svga_tgsi_scan_shader(struct svga_shader *shader)
    /* Convert TGSI inputs semantic.
     * Vertex shader does not have varying inputs but vertex attributes.
     */
-   if (shader->stage == PIPE_SHADER_VERTEX) {
+   if (shader->stage == MESA_SHADER_VERTEX) {
       for (unsigned i = 0; i < info->num_inputs; i++) {
          info->input_semantic_name[i] =
             svga_tgsi_to_gl_vert_attrib_semantic(

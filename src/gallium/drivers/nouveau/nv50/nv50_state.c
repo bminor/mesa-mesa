@@ -782,7 +782,7 @@ static void *
 nv50_vp_state_create(struct pipe_context *pipe,
                      const struct pipe_shader_state *cso)
 {
-   return nv50_sp_state_create(pipe, cso, PIPE_SHADER_VERTEX);
+   return nv50_sp_state_create(pipe, cso, MESA_SHADER_VERTEX);
 }
 
 static void

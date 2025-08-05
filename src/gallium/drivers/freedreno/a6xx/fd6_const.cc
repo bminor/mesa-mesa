@@ -347,7 +347,7 @@ fd6_build_user_consts(struct fd6_emit *emit)
    struct fd_ringbuffer *constobj =
       fd_submit_new_ringbuffer(ctx->batch->submit, sz, FD_RINGBUFFER_STREAMING);
 
-   emit_user_consts<CHIP>(emit->vs, constobj, &ctx->constbuf[PIPE_SHADER_VERTEX]);
+   emit_user_consts<CHIP>(emit->vs, constobj, &ctx->constbuf[MESA_SHADER_VERTEX]);
 
    if (PIPELINE == HAS_TESS_GS) {
       if (emit->hs) {

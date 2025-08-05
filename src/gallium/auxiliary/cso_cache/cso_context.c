@@ -422,7 +422,7 @@ cso_unbind_context(struct cso_context *cso)
       ctx->base.pipe->bind_fs_state(ctx->base.pipe, NULL);
       ctx->base.pipe->set_constant_buffer(ctx->base.pipe, PIPE_SHADER_FRAGMENT, 0, false, NULL);
       ctx->base.pipe->bind_vs_state(ctx->base.pipe, NULL);
-      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, PIPE_SHADER_VERTEX, 0, false, NULL);
+      ctx->base.pipe->set_constant_buffer(ctx->base.pipe, MESA_SHADER_VERTEX, 0, false, NULL);
       if (ctx->has_geometry_shader) {
          ctx->base.pipe->bind_gs_state(ctx->base.pipe, NULL);
       }
@@ -1750,7 +1750,7 @@ cso_restore_state(struct cso_context *ctx, unsigned unbind)
    if (state_mask & CSO_BIT_VIEWPORT)
       cso_restore_viewport(cso);
    if (unbind & CSO_UNBIND_VS_CONSTANTS)
-      cso->base.pipe->set_constant_buffer(cso->base.pipe, PIPE_SHADER_VERTEX, 0, false, NULL);
+      cso->base.pipe->set_constant_buffer(cso->base.pipe, MESA_SHADER_VERTEX, 0, false, NULL);
    if (unbind & CSO_UNBIND_FS_CONSTANTS)
       cso->base.pipe->set_constant_buffer(cso->base.pipe, PIPE_SHADER_FRAGMENT, 0, false, NULL);
    if (state_mask & CSO_BIT_VERTEX_ELEMENTS)

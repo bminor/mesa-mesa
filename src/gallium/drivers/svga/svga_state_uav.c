@@ -343,7 +343,7 @@ svga_create_uav_list(struct svga_context *svga,
    svga->state.uav_timestamp[pipe_type]++;
 
    if (pipe_type == SVGA_PIPE_GRAPHICS) {
-      first_shader = PIPE_SHADER_VERTEX;
+      first_shader = MESA_SHADER_VERTEX;
       last_shader = PIPE_SHADER_COMPUTE;
    } else {
       first_shader = PIPE_SHADER_COMPUTE;
@@ -593,7 +593,7 @@ svga_save_uav_state(struct svga_context *svga,
    unsigned i;
 
    if (pipe_type == SVGA_PIPE_GRAPHICS) {
-      first_shader = PIPE_SHADER_VERTEX;
+      first_shader = MESA_SHADER_VERTEX;
       last_shader = PIPE_SHADER_COMPUTE;
    } else {
       first_shader = PIPE_SHADER_COMPUTE;
@@ -702,7 +702,7 @@ need_to_set_uav(struct svga_context *svga,
       return true;
 
    /* If image views are different */
-   for (enum pipe_shader_type shader = PIPE_SHADER_VERTEX;
+   for (enum pipe_shader_type shader = MESA_SHADER_VERTEX;
         shader < PIPE_SHADER_COMPUTE; shader++) {
       unsigned num_image_views = svga->curr.num_image_views[shader];
       if ((num_image_views != svga->state.hw_draw.num_image_views[shader]) ||

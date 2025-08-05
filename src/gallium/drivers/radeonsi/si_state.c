@@ -1415,7 +1415,7 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
    /* Used by si_get_vs_key_outputs in si_update_shaders: */
    if (old_rs->clip_plane_enable != rs->clip_plane_enable) {
       sctx->dirty_shaders_mask |=
-         BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+         BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
          BITFIELD_BIT(PIPE_SHADER_GEOMETRY);
    }
@@ -1760,7 +1760,7 @@ static void si_bind_dsa_state(struct pipe_context *ctx, void *state)
       si_ps_key_update_dsa(sctx);
       si_update_ps_inputs_read_or_disabled(sctx);
       sctx->dirty_shaders_mask |=
-         BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+         BITFIELD_BIT(MESA_SHADER_VERTEX) |
          BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
          BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
          BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
@@ -2802,7 +2802,7 @@ static void si_set_framebuffer_state(struct pipe_context *ctx,
    si_update_ps_inputs_read_or_disabled(sctx);
    si_update_vrs_flat_shading(sctx);
    sctx->dirty_shaders_mask |=
-      BITFIELD_BIT(PIPE_SHADER_VERTEX) |
+      BITFIELD_BIT(MESA_SHADER_VERTEX) |
       BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) |
       BITFIELD_BIT(PIPE_SHADER_GEOMETRY) |
       BITFIELD_BIT(PIPE_SHADER_FRAGMENT);
@@ -4686,7 +4686,7 @@ static void si_bind_vertex_elements(struct pipe_context *ctx, void *state)
        memcmp(old->fix_fetch, v->fix_fetch, sizeof(v->fix_fetch[0]) *
               MAX2(old->count, v->count))) {
       si_vs_key_update_inputs(sctx);
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_VERTEX);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
    }
 
    if (v->instance_divisor_is_fetched) {
@@ -4766,7 +4766,7 @@ static void si_set_vertex_buffers(struct pipe_context *ctx, unsigned count,
     */
    if (sctx->vertex_elements->vb_alignment_check_mask & unaligned) {
       si_vs_key_update_inputs(sctx);
-      sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_VERTEX);
+      sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
    }
 }
 

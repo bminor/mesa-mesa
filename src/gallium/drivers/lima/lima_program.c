@@ -94,7 +94,7 @@ const void *
 lima_program_get_compiler_options(enum pipe_shader_type shader)
 {
    switch (shader) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       return &vs_nir_options;
    case PIPE_SHADER_FRAGMENT:
       return &fs_nir_options;

@@ -357,7 +357,7 @@ struct ureg_src
 ureg_DECL_vs_input( struct ureg_program *ureg,
                     unsigned index )
 {
-   assert(ureg->processor == PIPE_SHADER_VERTEX);
+   assert(ureg->processor == MESA_SHADER_VERTEX);
    assert(index / 32 < ARRAY_SIZE(ureg->vs_inputs));
 
    ureg->vs_inputs[index/32] |= 1 << (index % 32);
@@ -1856,7 +1856,7 @@ static void emit_decls( struct ureg_program *ureg )
     */
    qsort(ureg->input, ureg->nr_inputs, sizeof(ureg->input[0]), input_sort);
 
-   if (ureg->processor == PIPE_SHADER_VERTEX) {
+   if (ureg->processor == MESA_SHADER_VERTEX) {
       for (i = 0; i < PIPE_MAX_ATTRIBS; i++) {
          if (ureg->vs_inputs[i/32] & (1u << (i%32))) {
             emit_decl_range( ureg, TGSI_FILE_INPUT, i, 1 );
@@ -2113,7 +2113,7 @@ const struct tgsi_token *ureg_finalize( struct ureg_program *ureg )
    const struct tgsi_token *tokens;
 
    switch (ureg->processor) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
    case PIPE_SHADER_TESS_EVAL:
       ureg_property(ureg, TGSI_PROPERTY_NEXT_SHADER,
                     ureg->next_shader_processor == -1 ?
@@ -2182,7 +2182,7 @@ void *ureg_create_shader( struct ureg_program *ureg,
       state.stream_output = *so;
 
    switch (ureg->processor) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       return pipe->create_vs_state(pipe, &state);
    case PIPE_SHADER_TESS_CTRL:
       return pipe->create_tcs_state(pipe, &state);

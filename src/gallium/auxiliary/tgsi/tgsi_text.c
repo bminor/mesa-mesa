@@ -335,7 +335,7 @@ static bool parse_header( struct translate_ctx *ctx )
    if (str_match_nocase_whole( &ctx->cur, "FRAG" ))
       processor = PIPE_SHADER_FRAGMENT;
    else if (str_match_nocase_whole( &ctx->cur, "VERT" ))
-      processor = PIPE_SHADER_VERTEX;
+      processor = MESA_SHADER_VERTEX;
    else if (str_match_nocase_whole( &ctx->cur, "GEOM" ))
       processor = PIPE_SHADER_GEOMETRY;
    else if (str_match_nocase_whole( &ctx->cur, "TESS_CTRL" ))
@@ -1273,7 +1273,7 @@ static bool parse_declaration( struct translate_ctx *ctx )
    }
 
    is_vs_input = (file == TGSI_FILE_INPUT &&
-                  ctx->processor == PIPE_SHADER_VERTEX);
+                  ctx->processor == MESA_SHADER_VERTEX);
 
    cur = ctx->cur;
    eat_opt_white( &cur );

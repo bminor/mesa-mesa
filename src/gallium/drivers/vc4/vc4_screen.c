@@ -139,7 +139,7 @@ vc4_init_shader_caps(struct vc4_screen *screen)
                 struct pipe_shader_caps *caps =
                         (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
-                if (i != PIPE_SHADER_VERTEX && i != PIPE_SHADER_FRAGMENT)
+                if (i != MESA_SHADER_VERTEX && i != PIPE_SHADER_FRAGMENT)
                         continue;
 
                 caps->max_instructions =

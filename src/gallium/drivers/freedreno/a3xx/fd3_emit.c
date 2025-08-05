@@ -810,8 +810,8 @@ fd3_emit_state(struct fd_context *ctx, struct fd_ringbuffer *ring,
    if (dirty & FD_DIRTY_TEX)
       fd_wfi(ctx->batch, ring);
 
-   if (ctx->dirty_shader[PIPE_SHADER_VERTEX] & FD_DIRTY_SHADER_TEX)
-      emit_textures(ctx, ring, SB_VERT_TEX, &ctx->tex[PIPE_SHADER_VERTEX]);
+   if (ctx->dirty_shader[MESA_SHADER_VERTEX] & FD_DIRTY_SHADER_TEX)
+      emit_textures(ctx, ring, SB_VERT_TEX, &ctx->tex[MESA_SHADER_VERTEX]);
 
    if (ctx->dirty_shader[PIPE_SHADER_FRAGMENT] & FD_DIRTY_SHADER_TEX)
       emit_textures(ctx, ring, SB_FRAG_TEX, &ctx->tex[PIPE_SHADER_FRAGMENT]);

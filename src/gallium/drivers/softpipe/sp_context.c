@@ -270,9 +270,9 @@ softpipe_create_context(struct pipe_screen *screen,
       goto fail;
 
    draw_texture_sampler(softpipe->draw,
-                        PIPE_SHADER_VERTEX,
+                        MESA_SHADER_VERTEX,
                         (struct tgsi_sampler *)
-                           softpipe->tgsi.sampler[PIPE_SHADER_VERTEX]);
+                           softpipe->tgsi.sampler[MESA_SHADER_VERTEX]);
 
    draw_texture_sampler(softpipe->draw,
                         PIPE_SHADER_GEOMETRY,
@@ -280,9 +280,9 @@ softpipe_create_context(struct pipe_screen *screen,
                            softpipe->tgsi.sampler[PIPE_SHADER_GEOMETRY]);
 
    draw_image(softpipe->draw,
-              PIPE_SHADER_VERTEX,
+              MESA_SHADER_VERTEX,
               (struct tgsi_image *)
-              softpipe->tgsi.image[PIPE_SHADER_VERTEX]);
+              softpipe->tgsi.image[MESA_SHADER_VERTEX]);
 
    draw_image(softpipe->draw,
               PIPE_SHADER_GEOMETRY,
@@ -290,9 +290,9 @@ softpipe_create_context(struct pipe_screen *screen,
               softpipe->tgsi.image[PIPE_SHADER_GEOMETRY]);
 
    draw_buffer(softpipe->draw,
-              PIPE_SHADER_VERTEX,
+              MESA_SHADER_VERTEX,
               (struct tgsi_buffer *)
-              softpipe->tgsi.buffer[PIPE_SHADER_VERTEX]);
+              softpipe->tgsi.buffer[MESA_SHADER_VERTEX]);
 
    draw_buffer(softpipe->draw,
               PIPE_SHADER_GEOMETRY,

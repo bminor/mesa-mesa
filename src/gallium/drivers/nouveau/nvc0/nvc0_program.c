@@ -186,7 +186,7 @@ nvc0_program_assign_varying_slots(struct nv50_ir_prog_info_out *info)
 {
    int ret;
 
-   if (info->type == PIPE_SHADER_VERTEX)
+   if (info->type == MESA_SHADER_VERTEX)
       ret = nvc0_vp_assign_input_slots(info);
    else
       ret = nvc0_sp_assign_input_slots(info);
@@ -690,7 +690,7 @@ nvc0_program_translate(struct nvc0_program *prog, uint16_t chipset,
    prog->vp.edgeflag = info_out.io.edgeFlagIn;
 
    switch (prog->type) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       ret = nvc0_vp_gen_header(prog, &info_out);
       break;
    case PIPE_SHADER_TESS_CTRL:

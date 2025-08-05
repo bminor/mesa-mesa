@@ -770,7 +770,7 @@ i915_set_constant_buffer(struct pipe_context *pipe,
    i915->current.num_user_constants[shader] = new_num;
 
    if (diff)
-      i915->dirty |= shader == PIPE_SHADER_VERTEX ? I915_NEW_VS_CONSTANTS
+      i915->dirty |= shader == MESA_SHADER_VERTEX ? I915_NEW_VS_CONSTANTS
                                                   : I915_NEW_FS_CONSTANTS;
 
    if (cb && cb->user_buffer) {

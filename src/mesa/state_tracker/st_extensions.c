@@ -230,7 +230,7 @@ void st_init_limits(struct pipe_screen *screen,
          screen->shader_caps[sh].max_const_buffer0_size / 4;
 
       /* reserve space in the default-uniform for lowered state */
-      if (sh == PIPE_SHADER_VERTEX ||
+      if (sh == MESA_SHADER_VERTEX ||
           sh == PIPE_SHADER_TESS_EVAL ||
           sh == PIPE_SHADER_GEOMETRY) {
 
@@ -340,7 +340,7 @@ void st_init_limits(struct pipe_screen *screen,
          can_ubo = false;
       }
 
-      if (sh == PIPE_SHADER_VERTEX || sh == PIPE_SHADER_GEOMETRY) {
+      if (sh == MESA_SHADER_VERTEX || sh == PIPE_SHADER_GEOMETRY) {
          if (screen->caps.viewport_transform_lowered)
             options->LowerBuiltinVariablesXfb |= VARYING_BIT_POS;
          if (screen->caps.psiz_clamped)
@@ -1289,7 +1289,7 @@ void st_init_extensions(struct pipe_screen *screen,
       }
    } else {
       /* Optional integer support for GLSL 1.2. */
-      if (screen->shader_caps[PIPE_SHADER_VERTEX].integers &&
+      if (screen->shader_caps[MESA_SHADER_VERTEX].integers &&
           screen->shader_caps[PIPE_SHADER_FRAGMENT].integers) {
          consts->NativeIntegers = GL_TRUE;
 
@@ -1632,7 +1632,7 @@ void st_init_extensions(struct pipe_screen *screen,
        extensions->ARB_uniform_buffer_object &&
        (extensions->NV_primitive_restart ||
         consts->PrimitiveRestartFixedIndex) &&
-       screen->shader_caps[PIPE_SHADER_VERTEX].max_texture_samplers >= 16 &&
+       screen->shader_caps[MESA_SHADER_VERTEX].max_texture_samplers >= 16 &&
        /* Requirements for ETC2 emulation. */
        screen->is_format_supported(screen, PIPE_FORMAT_R8G8B8A8_UNORM,
                                    PIPE_TEXTURE_2D, 0, 0,

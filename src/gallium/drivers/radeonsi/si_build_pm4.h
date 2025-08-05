@@ -549,7 +549,7 @@ si_get_user_data_base(enum amd_gfx_level gfx_level, enum si_has_tess has_tess,
                       enum pipe_shader_type shader)
 {
    switch (shader) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       /* VS can be bound as VS, ES, LS, or GS. */
       if (has_tess) {
          if (gfx_level >= GFX10) {

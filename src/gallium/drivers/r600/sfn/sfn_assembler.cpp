@@ -135,7 +135,7 @@ AssamblerVisitor::AssamblerVisitor(r600_shader *sh, const r600_shader_key& key,
    if (m_shader->processor_type == PIPE_SHADER_FRAGMENT)
       m_max_color_exports = MAX2(m_key.ps.nr_cbufs, 1);
 
-   if (m_shader->processor_type == PIPE_SHADER_VERTEX && m_shader->ninput > 0)
+   if (m_shader->processor_type == MESA_SHADER_VERTEX && m_shader->ninput > 0)
       r600_bytecode_add_cfinst(m_bc, CF_OP_CALL_FS);
 }
 

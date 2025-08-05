@@ -109,7 +109,7 @@ nv50_ir_prog_info_out_serialize(struct blob *blob,
    blob_write_bytes(blob, info_out->out, info_out->numOutputs * sizeof(info_out->out[0]));
 
    switch(info_out->type) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          blob_write_bytes(blob, &info_out->prop.vp, sizeof(info_out->prop.vp));
          break;
       case PIPE_SHADER_TESS_CTRL:
@@ -229,7 +229,7 @@ nv50_ir_prog_info_out_deserialize(void *data, size_t size, size_t offset,
    blob_copy_bytes(&reader, info_out->out, info_out->numOutputs * sizeof(info_out->out[0]));
 
    switch(info_out->type) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          blob_copy_bytes(&reader, &info_out->prop.vp, sizeof(info_out->prop.vp));
          break;
       case PIPE_SHADER_TESS_CTRL:

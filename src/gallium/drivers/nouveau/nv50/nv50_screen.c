@@ -116,7 +116,7 @@ nv50_init_shader_caps(struct nv50_screen *screen)
       caps->max_tex_instructions =
       caps->max_tex_indirections = 16384;
       caps->max_control_flow_depth = 4;
-      caps->max_inputs = i == PIPE_SHADER_VERTEX ? 32 : 15;
+      caps->max_inputs = i == MESA_SHADER_VERTEX ? 32 : 15;
       caps->max_outputs = 16;
       caps->max_const_buffer0_size = 65536;
       caps->max_const_buffers = NV50_MAX_PIPE_CONSTBUFS;

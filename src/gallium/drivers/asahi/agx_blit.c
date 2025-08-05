@@ -459,7 +459,7 @@ agx_blitter_save(struct agx_context *ctx, struct blitter_context *blitter,
                  enum asahi_blitter_op op)
 {
    util_blitter_save_vertex_shader(blitter,
-                                   ctx->stage[PIPE_SHADER_VERTEX].shader);
+                                   ctx->stage[MESA_SHADER_VERTEX].shader);
    util_blitter_save_tessctrl_shader(blitter,
                                      ctx->stage[PIPE_SHADER_TESS_CTRL].shader);
    util_blitter_save_tesseval_shader(blitter,

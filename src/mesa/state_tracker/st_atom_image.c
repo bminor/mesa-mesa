@@ -180,7 +180,7 @@ void st_bind_vs_images(struct st_context *st)
    struct gl_program *prog =
       st->ctx->_Shader->CurrentProgram[MESA_SHADER_VERTEX];
 
-   st_bind_images(st, prog, PIPE_SHADER_VERTEX);
+   st_bind_images(st, prog, MESA_SHADER_VERTEX);
 }
 
 void st_bind_fs_images(struct st_context *st)

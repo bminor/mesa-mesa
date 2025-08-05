@@ -296,7 +296,7 @@ static inline unsigned
 nvc0_shader_stage(unsigned pipe)
 {
    switch (pipe) {
-   case PIPE_SHADER_VERTEX: return 0;
+   case MESA_SHADER_VERTEX: return 0;
    case PIPE_SHADER_TESS_CTRL: return 1;
    case PIPE_SHADER_TESS_EVAL: return 2;
    case PIPE_SHADER_GEOMETRY: return 3;

@@ -410,8 +410,8 @@ panfrost_update_shader_variant(struct panfrost_context *ctx,
       return;
 
    /* We need linking information, defer this */
-   if ((type == PIPE_SHADER_FRAGMENT && !ctx->uncompiled[PIPE_SHADER_VERTEX]) ||
-       (type == PIPE_SHADER_VERTEX && !ctx->uncompiled[PIPE_SHADER_FRAGMENT]))
+   if ((type == PIPE_SHADER_FRAGMENT && !ctx->uncompiled[MESA_SHADER_VERTEX]) ||
+       (type == MESA_SHADER_VERTEX && !ctx->uncompiled[PIPE_SHADER_FRAGMENT]))
       return;
 
    /* Also defer, happens with GALLIUM_HUD */
@@ -446,7 +446,7 @@ panfrost_update_shader_variant(struct panfrost_context *ctx,
 static void
 panfrost_bind_vs_state(struct pipe_context *pctx, void *hwcso)
 {
-   panfrost_bind_shader_state(pctx, hwcso, PIPE_SHADER_VERTEX);
+   panfrost_bind_shader_state(pctx, hwcso, MESA_SHADER_VERTEX);
 
    /* Fragment shaders are linked with vertex shaders */
    struct panfrost_context *ctx = pan_context(pctx);
@@ -460,7 +460,7 @@ panfrost_bind_fs_state(struct pipe_context *pctx, void *hwcso)
 
    /* Vertex shaders are linked with fragment shaders */
    struct panfrost_context *ctx = pan_context(pctx);
-   panfrost_update_shader_variant(ctx, PIPE_SHADER_VERTEX);
+   panfrost_update_shader_variant(ctx, MESA_SHADER_VERTEX);
 }
 
 static void *

@@ -289,7 +289,7 @@ lima_pack_vs_cmd(struct lima_context *ctx, const struct pipe_draw_info *info,
                  const struct pipe_draw_start_count_bias *draw)
 {
    struct lima_context_constant_buffer *ccb =
-      ctx->const_buffer + PIPE_SHADER_VERTEX;
+      ctx->const_buffer + MESA_SHADER_VERTEX;
    struct lima_vs_compiled_shader *vs = ctx->vs;
    struct lima_job *job = lima_job_get(ctx);
 
@@ -820,7 +820,7 @@ static void
 lima_update_gp_uniform(struct lima_context *ctx)
 {
    struct lima_context_constant_buffer *ccb =
-      ctx->const_buffer + PIPE_SHADER_VERTEX;
+      ctx->const_buffer + MESA_SHADER_VERTEX;
    struct lima_vs_compiled_shader *vs = ctx->vs;
    int uniform_size = MIN2(vs->state.uniform_size, ccb->size);
 
@@ -1004,11 +1004,11 @@ lima_draw_vbo_update(struct pipe_context *pctx,
    lima_update_gp_attribute_info(ctx, info, draw);
 
    if ((ctx->dirty & LIMA_CONTEXT_DIRTY_CONST_BUFF &&
-        ctx->const_buffer[PIPE_SHADER_VERTEX].dirty) ||
+        ctx->const_buffer[MESA_SHADER_VERTEX].dirty) ||
        ctx->dirty & LIMA_CONTEXT_DIRTY_VIEWPORT ||
        ctx->dirty & LIMA_CONTEXT_DIRTY_COMPILED_VS) {
       lima_update_gp_uniform(ctx);
-      ctx->const_buffer[PIPE_SHADER_VERTEX].dirty = false;
+      ctx->const_buffer[MESA_SHADER_VERTEX].dirty = false;
    }
 
    lima_update_varying(ctx, info, draw);

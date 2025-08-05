@@ -256,7 +256,7 @@ static int
 nv50_program_assign_varying_slots(struct nv50_ir_prog_info_out *info)
 {
    switch (info->type) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       return nv50_vertprog_assign_slots(info);
    case PIPE_SHADER_GEOMETRY:
       return nv50_vertprog_assign_slots(info);
@@ -332,7 +332,7 @@ nv50_program_translate(struct nv50_program *prog, uint16_t chipset,
    struct nv50_ir_prog_info *info;
    struct nv50_ir_prog_info_out info_out = {};
    int i, ret;
-   const uint8_t map_undef = (prog->type == PIPE_SHADER_VERTEX) ? 0x40 : 0x80;
+   const uint8_t map_undef = (prog->type == MESA_SHADER_VERTEX) ? 0x40 : 0x80;
 
    info = CALLOC_STRUCT(nv50_ir_prog_info);
    if (!info)
@@ -465,7 +465,7 @@ nv50_program_upload_code(struct nv50_context *nv50, struct nv50_program *prog)
    uint8_t prog_type;
 
    switch (prog->type) {
-   case PIPE_SHADER_VERTEX:   heap = nv50->screen->vp_code_heap; break;
+   case MESA_SHADER_VERTEX:   heap = nv50->screen->vp_code_heap; break;
    case PIPE_SHADER_GEOMETRY: heap = nv50->screen->gp_code_heap; break;
    case PIPE_SHADER_FRAGMENT: heap = nv50->screen->fp_code_heap; break;
    case PIPE_SHADER_COMPUTE:  heap = nv50->screen->fp_code_heap; break;

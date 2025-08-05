@@ -144,12 +144,12 @@ crocus_init_shader_caps(struct crocus_screen *screen)
          (struct pipe_shader_caps *)&screen->base.shader_caps[i];
 
       if (devinfo->ver < 6 &&
-          i != PIPE_SHADER_VERTEX &&
+          i != MESA_SHADER_VERTEX &&
           i != PIPE_SHADER_FRAGMENT)
          continue;
 
       if (devinfo->ver == 6 &&
-          i != PIPE_SHADER_VERTEX &&
+          i != MESA_SHADER_VERTEX &&
           i != PIPE_SHADER_FRAGMENT &&
           i != PIPE_SHADER_GEOMETRY)
          continue;

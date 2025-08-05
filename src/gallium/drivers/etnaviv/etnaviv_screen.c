@@ -201,7 +201,7 @@ etna_init_single_shader_caps(struct etna_screen *screen, enum pipe_shader_type s
 static void
 etna_init_shader_caps(struct etna_screen *screen)
 {
-   etna_init_single_shader_caps(screen, PIPE_SHADER_VERTEX);
+   etna_init_single_shader_caps(screen, MESA_SHADER_VERTEX);
    etna_init_single_shader_caps(screen, PIPE_SHADER_FRAGMENT);
 }
 

@@ -135,7 +135,7 @@ llvmpipe_init_shader_caps(struct pipe_screen *screen)
          break;
       case PIPE_SHADER_TESS_CTRL:
       case PIPE_SHADER_TESS_EVAL:
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
       case PIPE_SHADER_GEOMETRY:
          draw_init_shader_caps(caps);
 

@@ -80,7 +80,7 @@ util_make_vertex_passthrough_shader_with_so(struct pipe_context *pipe,
    struct ureg_program *ureg;
    unsigned i;
 
-   ureg = ureg_create( PIPE_SHADER_VERTEX );
+   ureg = ureg_create( MESA_SHADER_VERTEX );
    if (!ureg)
       return NULL;
 

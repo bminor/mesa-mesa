@@ -2007,7 +2007,7 @@ static void si_mark_shader_pointers_dirty(struct si_context *sctx, unsigned shad
    sctx->shader_pointers_dirty |=
       BITFIELD_RANGE(SI_DESCS_FIRST_SHADER + shader * SI_NUM_SHADER_DESCS, SI_NUM_SHADER_DESCS);
 
-   if (shader == PIPE_SHADER_VERTEX)
+   if (shader == MESA_SHADER_VERTEX)
       sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
 
    si_mark_atom_dirty(sctx, &sctx->atoms.s.gfx_shader_pointers);
@@ -2058,12 +2058,12 @@ static void si_set_user_data_base(struct si_context *sctx, unsigned shader, uint
  */
 void si_shader_change_notify(struct si_context *sctx)
 {
-   si_set_user_data_base(sctx, PIPE_SHADER_VERTEX,
+   si_set_user_data_base(sctx, MESA_SHADER_VERTEX,
                          si_get_user_data_base(sctx->gfx_level,
                                                sctx->shader.tes.cso ? TESS_ON : TESS_OFF,
                                                sctx->shader.gs.cso ? GS_ON : GS_OFF,
                                                sctx->ngg ? NGG_ON : NGG_OFF,
-                                               PIPE_SHADER_VERTEX));
+                                               MESA_SHADER_VERTEX));
 
    si_set_user_data_base(sctx, PIPE_SHADER_TESS_EVAL,
                          si_get_user_data_base(sctx->gfx_level,
@@ -2236,7 +2236,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
    /* Set shader pointers. */
    if (sctx->gfx_level >= GFX12) {
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(VERTEX),
-                                             sh_base[PIPE_SHADER_VERTEX], gfx);
+                                             sh_base[MESA_SHADER_VERTEX], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
                                              sh_base[PIPE_SHADER_TESS_EVAL], gfx);
       gfx12_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
@@ -2266,7 +2266,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
       }
    } else if (sctx->screen->info.has_set_sh_pairs_packed) {
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(VERTEX),
-                                             sh_base[PIPE_SHADER_VERTEX], gfx);
+                                             sh_base[MESA_SHADER_VERTEX], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
                                              sh_base[PIPE_SHADER_TESS_EVAL], gfx);
       gfx11_push_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
@@ -2297,7 +2297,7 @@ static void si_emit_graphics_shader_pointers(struct si_context *sctx, unsigned i
    } else {
       radeon_begin(&sctx->gfx_cs);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(VERTEX),
-                                          sh_base[PIPE_SHADER_VERTEX], gfx);
+                                          sh_base[MESA_SHADER_VERTEX], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(TESS_EVAL),
                                           sh_base[PIPE_SHADER_TESS_EVAL], gfx);
       si_emit_consecutive_shader_pointers(sctx, SI_DESCS_SHADER_MASK(FRAGMENT),
@@ -2958,9 +2958,9 @@ void si_init_all_descriptors(struct si_context *sctx)
    sctx->atoms.s.gfx_shader_pointers.emit = si_emit_graphics_shader_pointers;
 
    /* Set default and immutable mappings. */
-   si_set_user_data_base(sctx, PIPE_SHADER_VERTEX,
+   si_set_user_data_base(sctx, MESA_SHADER_VERTEX,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
-                                               sctx->ngg, PIPE_SHADER_VERTEX));
+                                               sctx->ngg, MESA_SHADER_VERTEX));
    si_set_user_data_base(sctx, PIPE_SHADER_TESS_CTRL,
                          si_get_user_data_base(sctx->gfx_level, TESS_OFF, GS_OFF,
                                                NGG_OFF, PIPE_SHADER_TESS_CTRL));

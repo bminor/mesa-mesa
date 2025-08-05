@@ -97,7 +97,7 @@ panfrost_clear(struct pipe_context *pipe, unsigned buffers,
 bool
 panfrost_writes_point_size(struct panfrost_context *ctx)
 {
-   struct panfrost_compiled_shader *vs = ctx->prog[PIPE_SHADER_VERTEX];
+   struct panfrost_compiled_shader *vs = ctx->prog[MESA_SHADER_VERTEX];
    assert(vs != NULL);
 
    return vs->info.vs.writes_point_size && ctx->active_prim == MESA_PRIM_POINTS;

@@ -167,7 +167,7 @@ VertexExportForFs::finalize()
 void
 VertexShader::do_get_shader_info(r600_shader *sh_info)
 {
-   sh_info->processor_type = PIPE_SHADER_VERTEX;
+   sh_info->processor_type = MESA_SHADER_VERTEX;
    sh_info->vs_draw_parameters_enabled =
       m_vertex_id != nullptr || m_draw_parameters_enabled;
    m_export_stage->get_shader_info(sh_info);

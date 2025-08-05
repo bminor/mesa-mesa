@@ -700,7 +700,7 @@ static enum rgp_hardware_stages
 si_sqtt_pipe_to_rgp_shader_stage(union si_shader_key *key, enum pipe_shader_type stage)
 {
    switch (stage) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          if (key->ge.as_ls)
             return RGP_HW_STAGE_LS;
          else if (key->ge.as_es)

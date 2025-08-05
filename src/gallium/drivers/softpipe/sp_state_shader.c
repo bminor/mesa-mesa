@@ -389,7 +389,7 @@ softpipe_set_constant_buffer(struct pipe_context *pipe,
       pipe_resource_reference(&softpipe->constants[shader][index], constants);
    }
 
-   if (shader == PIPE_SHADER_VERTEX || shader == PIPE_SHADER_GEOMETRY) {
+   if (shader == MESA_SHADER_VERTEX || shader == PIPE_SHADER_GEOMETRY) {
       draw_set_mapped_constant_buffer(softpipe->draw, shader, index, data, size);
    }
 

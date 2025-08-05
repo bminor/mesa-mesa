@@ -747,7 +747,7 @@ d3d12_last_vertex_stage(struct d3d12_context *ctx)
    if (!sel || sel->is_variant)
       sel = ctx->gfx_stages[PIPE_SHADER_TESS_EVAL];
    if (!sel)
-      sel = ctx->gfx_stages[PIPE_SHADER_VERTEX];
+      sel = ctx->gfx_stages[MESA_SHADER_VERTEX];
    return sel;
 }
 
@@ -759,10 +759,10 @@ update_draw_indirect_with_sysvals(struct d3d12_context *ctx,
    struct pipe_draw_indirect_info *indirect_out)
 {
    if (*indirect_inout == nullptr ||
-      ctx->gfx_stages[PIPE_SHADER_VERTEX] == nullptr)
+      ctx->gfx_stages[MESA_SHADER_VERTEX] == nullptr)
       return false;
 
-   auto sys_values_read = ctx->gfx_stages[PIPE_SHADER_VERTEX]->initial->info.system_values_read;
+   auto sys_values_read = ctx->gfx_stages[MESA_SHADER_VERTEX]->initial->info.system_values_read;
    bool any =  BITSET_TEST(sys_values_read, SYSTEM_VALUE_VERTEX_ID_ZERO_BASE) ||
                BITSET_TEST(sys_values_read, SYSTEM_VALUE_BASE_VERTEX) ||
                BITSET_TEST(sys_values_read, SYSTEM_VALUE_FIRST_VERTEX) ||
@@ -839,7 +839,7 @@ update_draw_auto(struct d3d12_context *ctx,
 {
    if (*indirect_inout == nullptr ||
        (*indirect_inout)->count_from_stream_output == nullptr ||
-       ctx->gfx_stages[PIPE_SHADER_VERTEX] == nullptr)
+       ctx->gfx_stages[MESA_SHADER_VERTEX] == nullptr)
       return false;
 
    d3d12_compute_transform_save_restore save;

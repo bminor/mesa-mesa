@@ -75,7 +75,7 @@ softpipe_bind_sampler_states(struct pipe_context *pipe,
       softpipe->num_samplers[shader] = j;
    }
 
-   if (shader == PIPE_SHADER_VERTEX || shader == PIPE_SHADER_GEOMETRY) {
+   if (shader == MESA_SHADER_VERTEX || shader == PIPE_SHADER_GEOMETRY) {
       draw_set_samplers(softpipe->draw,
                         shader,
                         softpipe->samplers[shader],
@@ -152,7 +152,7 @@ softpipe_set_sampler_views(struct pipe_context *pipe,
       softpipe->num_sampler_views[shader] = j;
    }
 
-   if (shader == PIPE_SHADER_VERTEX || shader == PIPE_SHADER_GEOMETRY) {
+   if (shader == MESA_SHADER_VERTEX || shader == PIPE_SHADER_GEOMETRY) {
       draw_set_sampler_views(softpipe->draw,
                              shader,
                              softpipe->sampler_views[shader],
@@ -299,7 +299,7 @@ softpipe_prepare_vertex_sampling(struct softpipe_context *sp,
                                  unsigned num,
                                  struct pipe_sampler_view **views)
 {
-   prepare_shader_sampling(sp, num, views, PIPE_SHADER_VERTEX,
+   prepare_shader_sampling(sp, num, views, MESA_SHADER_VERTEX,
                            sp->mapped_vs_tex);
 }
 
@@ -309,7 +309,7 @@ softpipe_cleanup_vertex_sampling(struct softpipe_context *ctx)
    unsigned i;
    for (i = 0; i < ARRAY_SIZE(ctx->mapped_vs_tex); i++) {
       sp_sampler_view_display_target_unmap(
-         ctx, ctx->sampler_views[PIPE_SHADER_VERTEX][i]);
+         ctx, ctx->sampler_views[MESA_SHADER_VERTEX][i]);
       pipe_resource_reference(&ctx->mapped_vs_tex[i], NULL);
    }
 }

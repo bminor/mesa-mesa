@@ -1288,7 +1288,7 @@ emit_ssg(struct svga_shader_emitter *emit,
    SVGA3dShaderDestToken temp1 = get_temp(emit);
    struct src_register zero, one;
 
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       /* SGN  DST, SRC0, TMP0, TMP1 */
       return submit_op3(emit, inst_token(SVGA3DOP_SGN), dst, src0,
                          src(temp0), src(temp1));
@@ -1494,7 +1494,7 @@ emit_select(struct svga_shader_emitter *emit,
    /* There are some SVGA instructions which implement some selects
     * directly, but they are only available in the vertex shader.
     */
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       switch (compare_func) {
       case PIPE_FUNC_GEQUAL:
          return submit_op2(emit, inst_token(SVGA3DOP_SGE), dst, src0, src1);
@@ -1556,7 +1556,7 @@ emit_cmp(struct svga_shader_emitter *emit,
    const struct src_register src2 =
       translate_src_register(emit, &insn->Src[2]);
 
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       struct src_register zero = get_zero_immediate(emit);
       /* We used to simulate CMP with SLT+LRP.  But that didn't work when
        * src1 or src2 was Inf/NaN.  In particular, GLSL sqrt(0) failed
@@ -2262,7 +2262,7 @@ static bool
 emit_dst_insn(struct svga_shader_emitter *emit,
               const struct tgsi_full_instruction *insn)
 {
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       /* SVGA/DX9 has a DST instruction, but only for vertex shaders:
        */
       return emit_simple_instruction(emit, SVGA3DOP_DST, insn);
@@ -2405,7 +2405,7 @@ static bool
 emit_lit(struct svga_shader_emitter *emit,
          const struct tgsi_full_instruction *insn)
 {
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       /* SVGA/DX9 has a LIT instruction, but only for vertex shaders:
        */
       return emit_simple_instruction(emit, SVGA3DOP_LIT, insn);
@@ -2681,7 +2681,7 @@ emit_trunc_round(struct svga_shader_emitter *emit,
    /*
     * Now we need to multiply t1 by the sign of the original value.
    */
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       /* For VS: use SGN instruction */
       /* Need two extra/dummy registers: */
       SVGA3dShaderDestToken t2 = get_temp(emit), t3 = get_temp(emit),
@@ -2767,7 +2767,7 @@ emit_call(struct svga_shader_emitter *emit,
 static bool
 emit_end(struct svga_shader_emitter *emit)
 {
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       return emit_vs_postamble(emit);
    } else {
       return emit_ps_postamble(emit);
@@ -3507,7 +3507,7 @@ needs_to_create_common_immediate(const struct svga_shader_emitter *emit)
              == PIPE_TEX_COMPARE_R_TO_TEXTURE)
             return true;
       }
-   } else if (emit->unit == PIPE_SHADER_VERTEX) {
+   } else if (emit->unit == MESA_SHADER_VERTEX) {
       if (emit->info.opcode_count[TGSI_OPCODE_CMP] >= 1)
          return true;
       if (emit->key.vs.adjust_attrib_range ||
@@ -3675,7 +3675,7 @@ svga_shader_emit_helpers(struct svga_shader_emitter *emit)
             return false;
       }
    } else {
-      assert(emit->unit == PIPE_SHADER_VERTEX);
+      assert(emit->unit == MESA_SHADER_VERTEX);
       if (emit->key.vs.adjust_attrib_range) {
          if (!emit_adjusted_vertex_attribs(emit) ||
              emit->key.vs.adjust_attrib_w_1) {
@@ -3725,7 +3725,7 @@ svga_shader_emit_instructions(struct svga_shader_emitter *emit,
    tgsi_parse_init(&parse, tokens);
    emit->internal_imm_count = 0;
 
-   if (emit->unit == PIPE_SHADER_VERTEX) {
+   if (emit->unit == MESA_SHADER_VERTEX) {
       ret = emit_vs_preamble(emit);
       if (!ret)
          goto done;

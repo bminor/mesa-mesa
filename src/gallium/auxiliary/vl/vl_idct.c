@@ -148,7 +148,7 @@ create_mismatch_vert_shader(struct vl_idct *idct)
    struct ureg_dst t_tex;
    struct ureg_dst o_vpos, o_addr[2];
 
-   shader = ureg_create(PIPE_SHADER_VERTEX);
+   shader = ureg_create(MESA_SHADER_VERTEX);
    if (!shader)
       return NULL;
 
@@ -264,7 +264,7 @@ create_stage1_vert_shader(struct vl_idct *idct)
    struct ureg_dst t_tex, t_start;
    struct ureg_dst o_vpos, o_l_addr[2], o_r_addr[2];
 
-   shader = ureg_create(PIPE_SHADER_VERTEX);
+   shader = ureg_create(MESA_SHADER_VERTEX);
    if (!shader)
       return NULL;
 

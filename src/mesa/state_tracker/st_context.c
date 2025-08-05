@@ -282,7 +282,7 @@ free_zombie_shaders(struct st_context *st)
       list_del(&entry->node);  // remove this entry from the list
 
       switch (entry->type) {
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          st->ctx->NewDriverState |= ST_NEW_VS_STATE;
          st->pipe->delete_vs_state(st->pipe, entry->shader);
          break;

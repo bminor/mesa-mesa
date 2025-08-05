@@ -175,7 +175,7 @@ fd2_program_emit(struct fd_context *ctx, struct fd_ringbuffer *ring,
 
    /* clear/gmem2mem/mem2gmem need to be changed to remove this condition */
    if (prog != &ctx->solid_prog && prog != &ctx->blit_prog[0]) {
-      patch_fetches(ctx, vpi, ctx->vtx.vtx, &ctx->tex[PIPE_SHADER_VERTEX]);
+      patch_fetches(ctx, vpi, ctx->vtx.vtx, &ctx->tex[MESA_SHADER_VERTEX]);
       if (fp)
          patch_fetches(ctx, fpi, NULL, &ctx->tex[PIPE_SHADER_FRAGMENT]);
    }

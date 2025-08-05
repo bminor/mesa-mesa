@@ -224,7 +224,7 @@ static void *vc4_get_yuv_vs(struct pipe_context *pctx)
            return vc4->yuv_linear_blit_vs;
 
    const struct nir_shader_compiler_options *options =
-           pscreen->nir_options[PIPE_SHADER_VERTEX];
+           pscreen->nir_options[MESA_SHADER_VERTEX];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_VERTEX, options,
                                                   "linear_blit_vs");

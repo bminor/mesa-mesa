@@ -89,7 +89,7 @@ CreateEmptyShader(Device *pDevice,
    case PIPE_SHADER_FRAGMENT:
       handle = pipe->create_fs_state(pipe, &state);
       break;
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       handle = pipe->create_vs_state(pipe, &state);
       break;
    case PIPE_SHADER_GEOMETRY:
@@ -133,7 +133,7 @@ DeleteEmptyShader(Device *pDevice,
    case PIPE_SHADER_FRAGMENT:
       pipe->delete_fs_state(pipe, handle);
       break;
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       pipe->delete_vs_state(pipe, handle);
       break;
    case PIPE_SHADER_GEOMETRY:
@@ -303,7 +303,7 @@ DestroyShader(D3D10DDI_HDEVICE hDevice,   // IN
       case PIPE_SHADER_FRAGMENT:
          pipe->delete_fs_state(pipe, pShader->handle);
          break;
-      case PIPE_SHADER_VERTEX:
+      case MESA_SHADER_VERTEX:
          pipe->delete_vs_state(pipe, pShader->handle);
          break;
       case PIPE_SHADER_GEOMETRY:
@@ -544,7 +544,7 @@ CreateVertexShader(D3D10DDI_HDEVICE hDevice,                                  //
    struct pipe_context *pipe = CastPipeContext(hDevice);
    Shader *pShader = CastShader(hShader);
 
-   pShader->type = PIPE_SHADER_VERTEX;
+   pShader->type = MESA_SHADER_VERTEX;
    pShader->output_resolved = true;
 
    memset(&pShader->state, 0, sizeof pShader->state);
@@ -606,7 +606,7 @@ VsSetShaderResources(D3D10DDI_HDEVICE hDevice,                                  
 {
    LOG_ENTRYPOINT();
 
-   SetShaderResources(PIPE_SHADER_VERTEX, hDevice, Offset, NumViews, phShaderResourceViews);
+   SetShaderResources(MESA_SHADER_VERTEX, hDevice, Offset, NumViews, phShaderResourceViews);
 
 }
 
@@ -630,7 +630,7 @@ VsSetConstantBuffers(D3D10DDI_HDEVICE hDevice,                                  
 {
    LOG_ENTRYPOINT();
 
-   SetConstantBuffers(PIPE_SHADER_VERTEX,
+   SetConstantBuffers(MESA_SHADER_VERTEX,
                       hDevice, StartBuffer, NumBuffers, phBuffers);
 }
 
@@ -653,7 +653,7 @@ VsSetSamplers(D3D10DDI_HDEVICE hDevice,                                       //
 {
    LOG_ENTRYPOINT();
 
-   SetSamplers(PIPE_SHADER_VERTEX, hDevice, Offset, NumSamplers, phSamplers);
+   SetSamplers(MESA_SHADER_VERTEX, hDevice, Offset, NumSamplers, phSamplers);
 
 }
 

@@ -2074,7 +2074,7 @@ static void r300_set_constant_buffer(struct pipe_context *pipe,
         return;
 
     switch (shader) {
-        case PIPE_SHADER_VERTEX:
+        case MESA_SHADER_VERTEX:
             cbuf = (struct r300_constant_buffer*)r300->vs_constants.state;
             break;
         case PIPE_SHADER_FRAGMENT:
@@ -2097,11 +2097,11 @@ static void r300_set_constant_buffer(struct pipe_context *pipe,
     }
 
     if (shader == PIPE_SHADER_FRAGMENT ||
-        (shader == PIPE_SHADER_VERTEX && r300->screen->caps.has_tcl)) {
+        (shader == MESA_SHADER_VERTEX && r300->screen->caps.has_tcl)) {
         cbuf->ptr = mapped;
     }
 
-    if (shader == PIPE_SHADER_VERTEX) {
+    if (shader == MESA_SHADER_VERTEX) {
         if (r300->screen->caps.has_tcl) {
             struct r300_vertex_shader *vs = r300_vs(r300);
 
@@ -2119,7 +2119,7 @@ static void r300_set_constant_buffer(struct pipe_context *pipe,
             }
             r300_mark_atom_dirty(r300, &r300->vs_constants);
         } else if (r300->draw) {
-            draw_set_mapped_constant_buffer(r300->draw, PIPE_SHADER_VERTEX,
+            draw_set_mapped_constant_buffer(r300->draw, MESA_SHADER_VERTEX,
                 0, mapped, cb->buffer_size);
         }
     } else if (shader == PIPE_SHADER_FRAGMENT) {

@@ -50,7 +50,7 @@ bind_shader(struct svga_context *svga,
             struct svga_shader *shader)
 {
    switch (shader_type) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       svga->pipe.bind_vs_state(&svga->pipe, shader);
       break;
    case PIPE_SHADER_FRAGMENT:
@@ -86,7 +86,7 @@ create_shader(struct svga_context *svga,
               struct pipe_shader_state *state)
 {
    switch (shader_type) {
-   case PIPE_SHADER_VERTEX:
+   case MESA_SHADER_VERTEX:
       return svga->pipe.create_vs_state(&svga->pipe, state);
    case PIPE_SHADER_FRAGMENT:
       /**

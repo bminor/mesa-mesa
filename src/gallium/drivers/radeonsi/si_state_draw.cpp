@@ -43,7 +43,7 @@ template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_
 static bool si_update_shaders(struct si_context *sctx)
 {
    bool is_vs_state_changed =
-      (sctx->dirty_shaders_mask & BITFIELD_BIT(PIPE_SHADER_VERTEX)) != 0;
+      (sctx->dirty_shaders_mask & BITFIELD_BIT(MESA_SHADER_VERTEX)) != 0;
    bool is_tess_state_changed =
       ((sctx->dirty_shaders_mask & (BITFIELD_BIT(PIPE_SHADER_TESS_CTRL) | BITFIELD_BIT(PIPE_SHADER_TESS_EVAL))) != 0);
    bool is_gs_state_changed =
@@ -1019,7 +1019,7 @@ static void si_emit_vs_state(struct si_context *sctx, unsigned index_size)
 
       /* These are all constant expressions. */
       unsigned vs_base = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
-                                               PIPE_SHADER_VERTEX);
+                                               MESA_SHADER_VERTEX);
       unsigned tes_base = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
                                                 PIPE_SHADER_TESS_EVAL);
       unsigned gs_base = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
@@ -1401,7 +1401,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
    }
 
    unsigned sh_base_reg = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
-                                                PIPE_SHADER_VERTEX);
+                                                MESA_SHADER_VERTEX);
    bool render_cond_bit = sctx->render_cond_enabled;
    const unsigned tracked_base_vertex_reg =
       HAS_TESS ? SI_TRACKED_SPI_SHADER_USER_DATA_LS__BASE_VERTEX :
@@ -1846,7 +1846,7 @@ static bool si_upload_and_prefetch_VB_descriptors(struct si_context *sctx,
    unsigned count = IS_DRAW_VERTEX_STATE ? util_bitcount_fast<POPCNT>(partial_velem_mask) :
                                            sctx->num_vertex_elements;
    unsigned sh_base = si_get_user_data_base(GFX_VERSION, HAS_TESS, HAS_GS, NGG,
-                                            PIPE_SHADER_VERTEX);
+                                            MESA_SHADER_VERTEX);
    unsigned num_vbos_in_user_sgprs = si_num_vbos_in_user_sgprs_inline(GFX_VERSION);
 
    assert(count <= SI_MAX_ATTRIBS);
@@ -2296,7 +2296,7 @@ static void si_draw(struct pipe_context *ctx,
          /* Update shaders to disable VS input lowering. */
          if (sctx->uses_nontrivial_vs_inputs) {
             si_vs_key_update_inputs(sctx);
-            sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_VERTEX);
+            sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
          }
       }
    } else {
@@ -2306,7 +2306,7 @@ static void si_draw(struct pipe_context *ctx,
          /* Update shaders to possibly enable VS input lowering. */
          if (sctx->uses_nontrivial_vs_inputs) {
             si_vs_key_update_inputs(sctx);
-            sctx->dirty_shaders_mask |= BITFIELD_BIT(PIPE_SHADER_VERTEX);
+            sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
          }
       }
    }
@@ -2358,7 +2358,7 @@ static void si_draw(struct pipe_context *ctx,
       if (needs_shader_update) {
          sctx->dirty_shaders_mask |=
             (HAS_GS ? BITFIELD_BIT(PIPE_SHADER_GEOMETRY) :
-               (HAS_TESS ? BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) : BITFIELD_BIT(PIPE_SHADER_VERTEX)));
+               (HAS_TESS ? BITFIELD_BIT(PIPE_SHADER_TESS_EVAL) : BITFIELD_BIT(MESA_SHADER_VERTEX)));
       }
    }
 

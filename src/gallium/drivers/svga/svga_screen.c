@@ -210,7 +210,7 @@ vgpu9_init_shader_caps(struct svga_screen *svgascreen)
    assert(!sws->have_vgpu10);
 
    struct pipe_shader_caps *caps =
-      (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[PIPE_SHADER_VERTEX];
+      (struct pipe_shader_caps *)&svgascreen->screen.shader_caps[MESA_SHADER_VERTEX];
 
    caps->max_instructions =
    caps->max_alu_instructions =
