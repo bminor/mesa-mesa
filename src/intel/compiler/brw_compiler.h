@@ -162,21 +162,21 @@ struct brw_compiler {
 #define BRW_SUBGROUP_SIZE 32
 
 static inline bool
-brw_shader_stage_is_bindless(gl_shader_stage stage)
+brw_shader_stage_is_bindless(mesa_shader_stage stage)
 {
    return stage >= MESA_SHADER_RAYGEN &&
           stage <= MESA_SHADER_CALLABLE;
 }
 
 static inline bool
-brw_shader_stage_requires_bindless_resources(gl_shader_stage stage)
+brw_shader_stage_requires_bindless_resources(mesa_shader_stage stage)
 {
    return brw_shader_stage_is_bindless(stage) || gl_shader_stage_is_mesh(stage);
 }
 
 static inline bool
 brw_shader_stage_has_inline_data(const struct intel_device_info *devinfo,
-                                 gl_shader_stage stage)
+                                 mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_MESH || stage == MESA_SHADER_TASK ||
           (stage == MESA_SHADER_COMPUTE && devinfo->verx10 >= 125);
@@ -586,7 +586,7 @@ struct brw_stage_prog_data {
 
    unsigned nr_params;       /**< number of float params/constants */
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /* zero_push_reg is a bitfield which indicates what push registers (if any)
     * should be zeroed by SW at the start of the shader.  The corresponding
@@ -1096,7 +1096,7 @@ typedef enum
     ~VARYING_BIT_POS & ~VARYING_BIT_FACE)
 
 void brw_print_vue_map(FILE *fp, const struct intel_vue_map *vue_map,
-                       gl_shader_stage stage);
+                       mesa_shader_stage stage);
 
 /**
  * Convert a VUE slot number into a byte offset within the VUE.
@@ -1414,10 +1414,10 @@ brw_device_sha1_update(struct mesa_sha1 *sha1_ctx,
                        const struct intel_device_info *devinfo);
 
 unsigned
-brw_prog_data_size(gl_shader_stage stage);
+brw_prog_data_size(mesa_shader_stage stage);
 
 unsigned
-brw_prog_key_size(gl_shader_stage stage);
+brw_prog_key_size(mesa_shader_stage stage);
 
 struct brw_compile_params {
    void *mem_ctx;
@@ -1624,7 +1624,7 @@ brw_compile_bs(const struct brw_compiler *compiler,
                struct brw_compile_bs_params *params);
 
 void brw_debug_key_recompile(const struct brw_compiler *c, void *log,
-                             gl_shader_stage stage,
+                             mesa_shader_stage stage,
                              const struct brw_base_prog_key *old_key,
                              const struct brw_base_prog_key *key);
 
@@ -1661,7 +1661,7 @@ brw_cs_get_dispatch_info(const struct intel_device_info *devinfo,
  */
 static inline bool
 brw_stage_has_packed_dispatch(ASSERTED const struct intel_device_info *devinfo,
-                              gl_shader_stage stage, unsigned max_polygons,
+                              mesa_shader_stage stage, unsigned max_polygons,
                               const struct brw_stage_prog_data *prog_data)
 {
    /* The code below makes assumptions about the hardware's thread dispatch

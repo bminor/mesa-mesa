@@ -81,7 +81,7 @@ struct lower_distance_state {
    /**
     * Type of shader we are compiling (e.g. MESA_SHADER_VERTEX)
     */
-   gl_shader_stage shader_stage;
+   mesa_shader_stage shader_stage;
    const char *in_name;
    int total_size;
    int offset;

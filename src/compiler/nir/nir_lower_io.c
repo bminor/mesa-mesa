@@ -64,7 +64,7 @@ add_variable_name(struct lower_io_state *state, const char *name)
  * the vertex index within the primitive.
  */
 bool
-nir_is_arrayed_io(const nir_variable *var, gl_shader_stage stage)
+nir_is_arrayed_io(const nir_variable *var, mesa_shader_stage stage)
 {
    if (var->data.patch || !glsl_type_is_array(var->type))
       return false;

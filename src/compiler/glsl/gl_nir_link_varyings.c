@@ -74,7 +74,7 @@ compare_attr(const void *a, const void *b)
  * geometry shader inputs).
  */
 static const struct glsl_type *
-get_varying_type(const nir_variable *var, gl_shader_stage stage)
+get_varying_type(const nir_variable *var, mesa_shader_stage stage)
 {
    const struct glsl_type *type = var->type;
    if (nir_is_arrayed_io(var, stage)) {
@@ -147,8 +147,8 @@ cross_validate_types_and_qualifiers(const struct gl_constants *consts,
                                     struct gl_shader_program *prog,
                                     const nir_variable *input,
                                     const nir_variable *output,
-                                    gl_shader_stage consumer_stage,
-                                    gl_shader_stage producer_stage)
+                                    mesa_shader_stage consumer_stage,
+                                    mesa_shader_stage producer_stage)
 {
    /* Check that the types match between stages.
     */
@@ -355,8 +355,8 @@ cross_validate_front_and_back_color(const struct gl_constants *consts,
                                     const nir_variable *input,
                                     const nir_variable *front_color,
                                     const nir_variable *back_color,
-                                    gl_shader_stage consumer_stage,
-                                    gl_shader_stage producer_stage)
+                                    mesa_shader_stage consumer_stage,
+                                    mesa_shader_stage producer_stage)
 {
    if (front_color != NULL && front_color->data.assigned)
       cross_validate_types_and_qualifiers(consts, prog, input, front_color,
@@ -368,7 +368,7 @@ cross_validate_front_and_back_color(const struct gl_constants *consts,
 }
 
 static unsigned
-compute_variable_location_slot(nir_variable *var, gl_shader_stage stage)
+compute_variable_location_slot(nir_variable *var, mesa_shader_stage stage)
 {
    unsigned location_start = VARYING_SLOT_VAR0;
 
@@ -416,7 +416,7 @@ check_location_aliasing(struct explicit_location_info explicit_locations[][4],
                         bool sample,
                         bool patch,
                         struct gl_shader_program *prog,
-                        gl_shader_stage stage)
+                        mesa_shader_stage stage)
 {
    unsigned last_comp;
    unsigned base_type_bit_size;
@@ -742,8 +742,8 @@ validate_explicit_variable_location(const struct gl_constants *consts,
 bool
 gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_constants *consts,
                                                             struct gl_shader_program *prog,
-                                                            gl_shader_stage first_stage,
-                                                            gl_shader_stage last_stage)
+                                                            mesa_shader_stage first_stage,
+                                                            mesa_shader_stage last_stage)
 {
    /* VS inputs and FS outputs are validated in
     * assign_attribute_or_color_locations()
@@ -755,7 +755,7 @@ gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_cons
 
    struct explicit_location_info explicit_locations[MAX_VARYING][4];
 
-   gl_shader_stage stages[2] = { first_stage, last_stage };
+   mesa_shader_stage stages[2] = { first_stage, last_stage };
    bool validate_stage[2] = { validate_first_stage, validate_last_stage };
    nir_variable_mode var_mode[2] = { nir_var_shader_in, nir_var_shader_out };
 
@@ -763,7 +763,7 @@ gl_nir_validate_first_and_last_interface_explicit_locations(const struct gl_cons
       if (!validate_stage[i])
          continue;
 
-      gl_shader_stage stage = stages[i];
+      mesa_shader_stage stage = stages[i];
 
       struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
       assert(sh);
@@ -2449,8 +2449,8 @@ struct varying_matches
     */
    unsigned matches_capacity;
 
-   gl_shader_stage producer_stage;
-   gl_shader_stage consumer_stage;
+   mesa_shader_stage producer_stage;
+   mesa_shader_stage consumer_stage;
 };
 
 /**
@@ -2514,8 +2514,8 @@ varying_matches_not_xfb_comparator(const void *x_generic, const void *y_generic)
 }
 
 static bool
-is_unpackable_tess(gl_shader_stage producer_stage,
-                   gl_shader_stage consumer_stage)
+is_unpackable_tess(mesa_shader_stage producer_stage,
+                   mesa_shader_stage consumer_stage)
 {
    if (consumer_stage == MESA_SHADER_TESS_EVAL ||
        consumer_stage == MESA_SHADER_TESS_CTRL ||
@@ -2529,8 +2529,8 @@ static void
 init_varying_matches(void *mem_ctx, struct varying_matches *vm,
                      const struct gl_constants *consts,
                      const struct gl_extensions *exts,
-                     gl_shader_stage producer_stage,
-                     gl_shader_stage consumer_stage,
+                     mesa_shader_stage producer_stage,
+                     mesa_shader_stage consumer_stage,
                      bool sso)
 {
    /* Tessellation shaders treat inputs and outputs as shared memory and can
@@ -3098,7 +3098,7 @@ struct tfeedback_candidate_generator_state {
     */
    struct hash_table *tfeedback_candidates;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /**
     * Pointer to the toplevel variable that is being traversed.
@@ -3895,7 +3895,7 @@ remove_unused_shader_inputs_and_outputs(struct gl_shader_program *prog,
 
 static void
 linker_error_io_limit_exceeded(struct gl_shader_program *prog, gl_api api,
-                               gl_shader_stage stage, unsigned num_comps,
+                               mesa_shader_stage stage, unsigned num_comps,
                                unsigned max_comps, const char *in_or_out_name)
 {
    if (api == API_OPENGLES2 || prog->IsES) {

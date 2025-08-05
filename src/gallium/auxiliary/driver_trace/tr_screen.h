@@ -46,7 +46,7 @@ extern "C" {
 #define TRACE_FLAG_USER_BUFFER  (1 << 31)
 
 static inline const char *
-tr_util_pipe_shader_type_name(gl_shader_stage stage)
+tr_util_pipe_shader_type_name(mesa_shader_stage stage)
 {
    return gl_shader_stage_name(stage);
 }

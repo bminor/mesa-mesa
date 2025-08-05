@@ -348,7 +348,7 @@ struct ra_ctx {
    struct ir3_block *block;
 
    const struct ir3_compiler *compiler;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /* Pending moves of top-level intervals that will be emitted once we're
     * finished:

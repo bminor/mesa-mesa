@@ -181,10 +181,10 @@ get_additional_semantic_info(nir_shader *s, nir_variable *var, struct semantic_i
    return next_row;
 }
 
-typedef void (*semantic_info_proc)(nir_variable *var, struct semantic_info *info, gl_shader_stage stage);
+typedef void (*semantic_info_proc)(nir_variable *var, struct semantic_info *info, mesa_shader_stage stage);
 
 static void
-get_semantic_vs_in_name(nir_variable *var, struct semantic_info *info, gl_shader_stage stage)
+get_semantic_vs_in_name(nir_variable *var, struct semantic_info *info, mesa_shader_stage stage)
 {
    strcpy(info->name, "TEXCOORD");
    info->index = var->data.driver_location;
@@ -192,7 +192,7 @@ get_semantic_vs_in_name(nir_variable *var, struct semantic_info *info, gl_shader
 }
 
 static void
-get_semantic_sv_name(nir_variable *var, struct semantic_info *info, gl_shader_stage stage)
+get_semantic_sv_name(nir_variable *var, struct semantic_info *info, mesa_shader_stage stage)
 {
    if (stage != MESA_SHADER_VERTEX)
       info->interpolation = get_interpolation(var);
@@ -327,7 +327,7 @@ get_semantic_name(nir_variable *var, struct semantic_info *info,
 }
 
 static void
-get_semantic_in_name(nir_variable *var, struct semantic_info *info, gl_shader_stage stage)
+get_semantic_in_name(nir_variable *var, struct semantic_info *info, mesa_shader_stage stage)
 {
    const struct glsl_type *type = var->type;
    if (nir_is_arrayed_io(var, stage) &&

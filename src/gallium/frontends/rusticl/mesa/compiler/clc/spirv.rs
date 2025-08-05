@@ -339,7 +339,7 @@ impl SPIRVBin {
                 self.spirv.size / 4,
                 spec_constants.as_mut_ptr(),
                 spec_constants.len() as u32,
-                gl_shader_stage::MESA_SHADER_KERNEL,
+                mesa_shader_stage::MESA_SHADER_KERNEL,
                 c_entry.as_ptr(),
                 &spirv_options,
                 nir_options,

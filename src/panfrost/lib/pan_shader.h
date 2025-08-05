@@ -134,7 +134,7 @@ pan_shader_prepare_midgard_rsd(const struct pan_shader_info *info,
 #define pan_preloads(reg) (preload & BITFIELD64_BIT(reg))
 
 static void
-pan_make_preload(gl_shader_stage stage, uint64_t preload,
+pan_make_preload(mesa_shader_stage stage, uint64_t preload,
                  struct MALI_PRELOAD *out)
 {
    switch (stage) {

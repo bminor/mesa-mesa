@@ -155,7 +155,7 @@ struct gl_shader
     * Must be the first field.
     */
    GLenum16 Type;
-   gl_shader_stage Stage;
+   mesa_shader_stage Stage;
    GLuint Name;  /**< AKA the handle */
    GLint RefCount;  /**< Reference count */
    GLchar *Label;   /**< GL_KHR_debug */
@@ -248,7 +248,7 @@ struct gl_shader
  */
 struct gl_linked_shader
 {
-   gl_shader_stage Stage;
+   mesa_shader_stage Stage;
 
    struct gl_program *Program;  /**< Post-compile assembly code */
 

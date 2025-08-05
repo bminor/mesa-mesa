@@ -190,7 +190,7 @@ elk_fs_generator::elk_fs_generator(const struct elk_compiler *compiler,
                            const struct elk_compile_params *params,
                            struct elk_stage_prog_data *prog_data,
                            bool runtime_check_aads_emit,
-                           gl_shader_stage stage)
+                           mesa_shader_stage stage)
 
    : compiler(compiler), params(params),
      devinfo(compiler->devinfo),

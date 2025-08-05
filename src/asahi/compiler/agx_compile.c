@@ -1322,7 +1322,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
    agx_index dst = nir_intrinsic_infos[instr->intrinsic].has_dest
                       ? agx_def_index(&instr->def)
                       : agx_null();
-   gl_shader_stage stage = b->shader->stage;
+   mesa_shader_stage stage = b->shader->stage;
 
    switch (instr->intrinsic) {
    case nir_intrinsic_load_barycentric_pixel:

@@ -144,11 +144,11 @@ tu_spirv_to_nir(struct tu_device *dev,
                 VkPipelineCreateFlags2KHR pipeline_flags,
                 const VkPipelineShaderStageCreateInfo *stage_info,
                 const struct tu_shader_key *key,
-                gl_shader_stage stage);
+                mesa_shader_stage stage);
 
 void
 tu6_emit_xs(struct tu_cs *cs,
-            gl_shader_stage stage,
+            mesa_shader_stage stage,
             const struct ir3_shader_variant *xs,
             const struct tu_pvtmem_config *pvtmem,
             uint64_t binary_iova);

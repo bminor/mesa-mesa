@@ -114,7 +114,7 @@ fd6_emit_shader(struct fd_context *ctx, struct fd_ringbuffer *ring,
       fd_emit_string5(ring, name, strlen(name));
 #endif
 
-   gl_shader_stage type = so->type;
+   mesa_shader_stage type = so->type;
    if (type == MESA_SHADER_KERNEL)
       type = MESA_SHADER_COMPUTE;
 

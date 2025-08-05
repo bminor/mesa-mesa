@@ -117,7 +117,7 @@ public:
 
    cfg_t *cfg;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    bool debug_enabled;
 
    /* VGRF allocation. */

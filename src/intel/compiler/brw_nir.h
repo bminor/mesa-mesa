@@ -288,7 +288,7 @@ void brw_nir_adjust_payload(nir_shader *shader);
 
 static inline nir_variable_mode
 brw_nir_no_indirect_mask(const struct brw_compiler *compiler,
-                         gl_shader_stage stage)
+                         mesa_shader_stage stage)
 {
    nir_variable_mode indirect_mask = (nir_variable_mode) 0;
 

@@ -46,12 +46,12 @@ struct vk_physical_device;
 struct vk_pipeline;
 struct vk_pipeline_robustness_state;
 
-int vk_shader_cmp_graphics_stages(gl_shader_stage a, gl_shader_stage b);
+int vk_shader_cmp_graphics_stages(mesa_shader_stage a, mesa_shader_stage b);
 
 #define VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA 0x1000
 
 struct vk_shader_compile_info {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    VkShaderCreateFlagsEXT flags;
    VkShaderStageFlags next_stage_mask;
    struct nir_shader *nir;
@@ -72,7 +72,7 @@ struct vk_shader_ops;
 #pragma GCC diagnostic error "-Wpadded"
 #endif
 struct vk_shader_pipeline_cache_key {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    blake3_hash blake3;
 };
 #ifdef __GNUC__
@@ -84,7 +84,7 @@ struct vk_shader {
 
    const struct vk_shader_ops *ops;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /* Used for the generic VkPipeline implementation */
    struct {
@@ -150,13 +150,13 @@ struct vk_shader_ops {
 
 void *vk_shader_zalloc(struct vk_device *device,
                        const struct vk_shader_ops *ops,
-                       gl_shader_stage stage,
+                       mesa_shader_stage stage,
                        const VkAllocationCallbacks *alloc,
                        size_t size);
 void *vk_shader_multizalloc(struct vk_device *device,
                             struct vk_multialloc *ma,
                             const struct vk_shader_ops *ops,
-                            gl_shader_stage stage,
+                            mesa_shader_stage stage,
                             const VkAllocationCallbacks *alloc);
 void vk_shader_free(struct vk_device *device,
                     const VkAllocationCallbacks *alloc,
@@ -178,7 +178,7 @@ struct vk_device_shader_ops {
     */
    const struct nir_shader_compiler_options *(*get_nir_options)(
       struct vk_physical_device *device,
-      gl_shader_stage stage,
+      mesa_shader_stage stage,
       const struct vk_pipeline_robustness_state *rs);
 
    /** Retrieves a SPIR-V options struct
@@ -188,7 +188,7 @@ struct vk_device_shader_ops {
     */
    struct spirv_to_nir_options (*get_spirv_options)(
       struct vk_physical_device *device,
-      gl_shader_stage stage,
+      mesa_shader_stage stage,
       const struct vk_pipeline_robustness_state *rs);
 
    /** Preprocesses a NIR shader
@@ -255,7 +255,7 @@ struct vk_device_shader_ops {
     */
    void (*cmd_bind_shaders)(struct vk_command_buffer *cmd_buffer,
                             uint32_t stage_count,
-                            const gl_shader_stage *stages,
+                            const mesa_shader_stage *stages,
                             struct vk_shader ** const shaders);
 
    /** Sets dynamic state */

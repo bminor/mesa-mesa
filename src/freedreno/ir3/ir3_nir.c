@@ -968,7 +968,7 @@ lower_ucp_vs(struct ir3_shader_variant *so)
    if (!so->key.ucp_enables)
       return false;
 
-   gl_shader_stage last_geom_stage;
+   mesa_shader_stage last_geom_stage;
 
    if (so->key.has_gs) {
       last_geom_stage = MESA_SHADER_GEOMETRY;
@@ -1508,7 +1508,7 @@ void
 ir3_alloc_driver_params(struct ir3_const_allocations *const_alloc,
                         uint32_t *num_driver_params,
                         struct ir3_compiler *compiler,
-                        gl_shader_stage shader_stage)
+                        mesa_shader_stage shader_stage)
 {
    if (*num_driver_params == 0)
       return;

@@ -698,7 +698,7 @@ radv_get_push_constants_state(const struct radv_cmd_buffer *cmd_buffer, VkPipeli
 }
 
 static inline bool
-radv_cmdbuf_has_stage(const struct radv_cmd_buffer *cmd_buffer, gl_shader_stage stage)
+radv_cmdbuf_has_stage(const struct radv_cmd_buffer *cmd_buffer, mesa_shader_stage stage)
 {
    return !!(cmd_buffer->state.active_stages & mesa_to_vk_shader_stage(stage));
 }

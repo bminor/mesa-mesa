@@ -337,7 +337,7 @@ hk_CmdPipelineBarrier2(VkCommandBuffer commandBuffer,
 
 void
 hk_cmd_bind_shaders(struct vk_command_buffer *vk_cmd, uint32_t stage_count,
-                    const gl_shader_stage *stages,
+                    const mesa_shader_stage *stages,
                     struct vk_shader **const shaders)
 {
    struct hk_cmd_buffer *cmd = container_of(vk_cmd, struct hk_cmd_buffer, vk);

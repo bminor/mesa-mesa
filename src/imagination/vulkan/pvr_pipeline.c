@@ -527,7 +527,7 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
    struct pvr_device *const device,
    const VkAllocationCallbacks *const allocator,
    const struct vk_pipeline_layout *const layout,
-   gl_shader_stage stage,
+   mesa_shader_stage stage,
    pco_data *data,
    struct pvr_stage_allocation_descriptor_state *const descriptor_state)
 {
@@ -1942,7 +1942,7 @@ static void pvr_setup_descriptors(pco_data *data,
                                   nir_shader *nir,
                                   struct vk_pipeline_layout *layout)
 {
-   gl_shader_stage stage = nir->info.stage;
+   mesa_shader_stage stage = nir->info.stage;
 
    for (unsigned desc_set = 0; desc_set < layout->set_count; ++desc_set) {
       const struct pvr_descriptor_set_layout *set_layout =
@@ -2103,7 +2103,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
 
    struct pvr_pds_coeff_loading_program frag_coeff_program = { 0 };
 
-   for (gl_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
+   for (mesa_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
       size_t stage_index = gfx_pipeline->stage_indices[stage];
 
       /* Skip unused/inactive stages. */
@@ -2124,7 +2124,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       pco_preprocess_nir(pco_ctx, nir_shaders[stage]);
    }
 
-   for (gl_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
+   for (mesa_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
       if (!nir_shaders[stage])
          continue;
 
@@ -2134,7 +2134,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       producer = nir_shaders[stage];
    }
 
-   for (gl_shader_stage stage = MESA_SHADER_STAGES; stage-- > 0;) {
+   for (mesa_shader_stage stage = MESA_SHADER_STAGES; stage-- > 0;) {
       if (!nir_shaders[stage])
          continue;
 
@@ -2144,7 +2144,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       consumer = nir_shaders[stage];
    }
 
-   for (gl_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
+   for (mesa_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
       if (!nir_shaders[stage])
          continue;
 
@@ -2163,7 +2163,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
                                   layout);
    }
 
-   for (gl_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
+   for (mesa_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
       pco_shader **pco = &pco_shaders[stage];
 
       /* Skip unused/inactive stages. */
@@ -2385,7 +2385,7 @@ pvr_graphics_pipeline_init(struct pvr_device *device,
 
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       VkShaderStageFlagBits vk_stage = pCreateInfo->pStages[i].stage;
-      gl_shader_stage gl_stage = vk_to_mesa_shader_stage(vk_stage);
+      mesa_shader_stage gl_stage = vk_to_mesa_shader_stage(vk_stage);
       /* From the Vulkan 1.2.192 spec for VkPipelineShaderStageCreateInfo:
        *
        *    "stage must not be VK_SHADER_STAGE_ALL_GRAPHICS,

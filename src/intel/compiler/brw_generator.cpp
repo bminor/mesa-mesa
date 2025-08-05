@@ -94,7 +94,7 @@ normalize_brw_reg_for_encoding(brw_reg *reg)
 brw_generator::brw_generator(const struct brw_compiler *compiler,
                            const struct brw_compile_params *params,
                            struct brw_stage_prog_data *prog_data,
-                           gl_shader_stage stage)
+                           mesa_shader_stage stage)
 
    : compiler(compiler), params(params),
      devinfo(compiler->devinfo),

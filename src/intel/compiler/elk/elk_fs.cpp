@@ -7178,7 +7178,7 @@ static UNUSED void
 elk_fs_test_dispatch_packing(const fs_builder &bld)
 {
    const elk_fs_visitor *shader = static_cast<const elk_fs_visitor *>(bld.shader);
-   const gl_shader_stage stage = shader->stage;
+   const mesa_shader_stage stage = shader->stage;
    const bool uses_vmask =
       stage == MESA_SHADER_FRAGMENT &&
       elk_wm_prog_data(shader->stage_prog_data)->uses_vmask;

@@ -145,7 +145,7 @@ void
 zink_update_vk_sample_locations(struct zink_context *ctx);
 
 static inline VkPipelineStageFlags
-zink_pipeline_flags_from_pipe_stage(gl_shader_stage pstage)
+zink_pipeline_flags_from_pipe_stage(mesa_shader_stage pstage)
 {
    switch (pstage) {
    case MESA_SHADER_VERTEX:

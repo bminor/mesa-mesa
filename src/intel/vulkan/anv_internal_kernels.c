@@ -51,7 +51,7 @@ lower_base_workgroup_id(nir_builder *b, nir_intrinsic_instr *intrin,
 static struct anv_shader_bin *
 compile_shader(struct anv_device *device,
                enum anv_internal_kernel_name shader_name,
-               gl_shader_stage stage,
+               mesa_shader_stage stage,
                const char *name,
                const void *hash_key,
                uint32_t hash_key_size,
@@ -250,7 +250,7 @@ anv_device_get_internal_shader(struct anv_device *device,
          char name[40];
       } key;
 
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
 
       uint32_t        send_count;
    } internal_kernels[] = {

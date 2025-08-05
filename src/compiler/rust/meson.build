@@ -19,7 +19,7 @@ _compiler_binding_types = [
   'gl_access_qualifier',
   'gl_frag_result',
   'gl_interp_mode',
-  'gl_shader_stage',
+  'mesa_shader_stage',
   'gl_subgroup_size',
   'gl_system_value',
   'gl_tess_spacing',

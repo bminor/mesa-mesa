@@ -31,7 +31,7 @@ void
 st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
 {
    struct pipe_screen *screen = st->screen;
-   gl_shader_stage stage = nir->info.stage;
+   mesa_shader_stage stage = nir->info.stage;
 
    MESA_TRACE_FUNC();
 

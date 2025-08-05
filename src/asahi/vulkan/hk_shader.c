@@ -104,7 +104,7 @@ hk_physical_device_compiler_flags(const struct hk_physical_device *pdev)
 }
 
 const nir_shader_compiler_options *
-hk_get_nir_options(struct vk_physical_device *vk_pdev, gl_shader_stage stage,
+hk_get_nir_options(struct vk_physical_device *vk_pdev, mesa_shader_stage stage,
                    UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    return &agx_nir_options;
@@ -112,7 +112,7 @@ hk_get_nir_options(struct vk_physical_device *vk_pdev, gl_shader_stage stage,
 
 static struct spirv_to_nir_options
 hk_get_spirv_options(struct vk_physical_device *vk_pdev,
-                     UNUSED gl_shader_stage stage,
+                     UNUSED mesa_shader_stage stage,
                      const struct vk_pipeline_robustness_state *rs)
 {
    return (struct spirv_to_nir_options){
@@ -971,7 +971,7 @@ DERIVE_HASH_TABLE(hk_fast_link_key_vs);
 DERIVE_HASH_TABLE(hk_fast_link_key_fs);
 
 static VkResult
-hk_init_link_ht(struct hk_shader *shader, gl_shader_stage sw_stage)
+hk_init_link_ht(struct hk_shader *shader, mesa_shader_stage sw_stage)
 {
    simple_mtx_init(&shader->linked.lock, mtx_plain);
 
@@ -1064,7 +1064,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
                nir_shader *nir, VkShaderCreateFlagsEXT shader_flags,
                const struct vk_pipeline_robustness_state *rs,
                const union hk_key *key, enum hk_feature_key features,
-               struct hk_shader *shader, gl_shader_stage sw_stage, bool hw,
+               struct hk_shader *shader, mesa_shader_stage sw_stage, bool hw,
                nir_xfb_info *xfb_info, unsigned set_count)
 {
    unsigned nr_vbos = 0;
@@ -1311,7 +1311,7 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
                    info->set_layouts, features);
    }
 
-   gl_shader_stage sw_stage = nir->info.stage;
+   mesa_shader_stage sw_stage = nir->info.stage;
 
    union hk_key key_tmp, *key = NULL;
    if (sw_stage == MESA_SHADER_FRAGMENT) {
@@ -1640,7 +1640,7 @@ hk_deserialize_api_shader(struct vk_device *vk_dev, struct blob_reader *blob,
 {
    struct hk_device *dev = container_of(vk_dev, struct hk_device, vk);
 
-   gl_shader_stage stage = blob_read_uint8(blob);
+   mesa_shader_stage stage = blob_read_uint8(blob);
    if (blob->overrun)
       return vk_error(dev, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
 

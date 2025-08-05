@@ -65,6 +65,6 @@ bool radv_use_dgc_predication(struct radv_cmd_buffer *cmd_buffer,
                               const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo);
 
 struct radv_shader *radv_dgc_get_shader(const VkGeneratedCommandsPipelineInfoEXT *pipeline_info,
-                                        const VkGeneratedCommandsShaderInfoEXT *eso_info, gl_shader_stage stage);
+                                        const VkGeneratedCommandsShaderInfoEXT *eso_info, mesa_shader_stage stage);
 
 #endif /* RADV_DGC_H */

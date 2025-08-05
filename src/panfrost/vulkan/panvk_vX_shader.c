@@ -364,7 +364,7 @@ panvk_buffer_ssbo_addr_format(VkPipelineRobustnessBufferBehaviorEXT robustness)
 
 static const nir_shader_compiler_options *
 panvk_get_nir_options(UNUSED struct vk_physical_device *vk_pdev,
-                      UNUSED gl_shader_stage stage,
+                      UNUSED mesa_shader_stage stage,
                       UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    struct panvk_physical_device *phys_dev = to_panvk_physical_device(vk_pdev);
@@ -373,7 +373,7 @@ panvk_get_nir_options(UNUSED struct vk_physical_device *vk_pdev,
 
 static struct spirv_to_nir_options
 panvk_get_spirv_options(UNUSED struct vk_physical_device *vk_pdev,
-                        UNUSED gl_shader_stage stage,
+                        UNUSED mesa_shader_stage stage,
                         const struct vk_pipeline_robustness_state *rs)
 {
    return (struct spirv_to_nir_options){
@@ -768,7 +768,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 {
    struct panvk_instance *instance =
       to_panvk_instance(dev->vk.physical->instance);
-   gl_shader_stage stage = nir->info.stage;
+   mesa_shader_stage stage = nir->info.stage;
 
 #if PAN_ARCH >= 10
    if (stage == MESA_SHADER_VERTEX && compile_input->view_mask) {
@@ -1607,7 +1607,7 @@ panvk_deserialize_shader(struct vk_device *vk_dev, struct blob_reader *blob,
    struct panvk_device *device = to_panvk_device(vk_dev);
    struct panvk_shader *shader;
 
-   gl_shader_stage stage = blob_read_uint8(blob);
+   mesa_shader_stage stage = blob_read_uint8(blob);
    if (blob->overrun)
       return vk_error(device, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
 
@@ -1912,7 +1912,7 @@ panvk_shader_get_executable_internal_representations(
 
 #if PAN_ARCH < 9
 static mali_pixel_format
-get_varying_format(gl_shader_stage stage, gl_varying_slot loc,
+get_varying_format(mesa_shader_stage stage, gl_varying_slot loc,
                    enum pipe_format pfmt)
 {
    switch (loc) {
@@ -2132,7 +2132,7 @@ static const struct vk_shader_ops panvk_shader_ops = {
 };
 
 static void
-panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const gl_shader_stage stage,
+panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const mesa_shader_stage stage,
                       struct panvk_shader *shader)
 {
    switch (stage) {
@@ -2165,7 +2165,7 @@ panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const gl_shader_stage stage,
 
 static void
 panvk_cmd_bind_shaders(struct vk_command_buffer *vk_cmd, uint32_t stage_count,
-                       const gl_shader_stage *stages,
+                       const mesa_shader_stage *stages,
                        struct vk_shader **const shaders)
 {
    struct panvk_cmd_buffer *cmd =

@@ -43,7 +43,7 @@ struct table_state {
 };
 
 struct state {
-   gl_shader_stage stage, hw_stage;
+   mesa_shader_stage stage, hw_stage;
 
    /* Array of nir_intrinsic_instr's to fix up at the end */
    struct util_dynarray loads;
@@ -95,7 +95,7 @@ load_sysval_indirect(nir_builder *b, unsigned dim, unsigned bitsize,
 static unsigned
 stage_table(nir_builder *b)
 {
-   gl_shader_stage stage = b->shader->info.stage;
+   mesa_shader_stage stage = b->shader->info.stage;
    if (stage == MESA_SHADER_VERTEX && b->shader->info.vs.tes_agx)
       stage = MESA_SHADER_TESS_EVAL;
 

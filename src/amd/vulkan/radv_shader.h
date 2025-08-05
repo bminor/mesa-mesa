@@ -46,7 +46,7 @@ enum {
 #define RADV_STAGE_MASK ((1 << MESA_VULKAN_SHADER_STAGES) - 1)
 
 #define radv_foreach_stage(stage, stage_bits)                                                                          \
-   for (gl_shader_stage stage, __tmp = (gl_shader_stage)((stage_bits) & RADV_STAGE_MASK);                              \
+   for (mesa_shader_stage stage, __tmp = (mesa_shader_stage)((stage_bits) & RADV_STAGE_MASK);                              \
         stage = ffs(__tmp) - 1, __tmp; __tmp &= ~(1 << (stage)))
 
 enum radv_nggc_settings {
@@ -257,8 +257,8 @@ struct radv_shader_layout {
 };
 
 struct radv_shader_stage {
-   gl_shader_stage stage;
-   gl_shader_stage next_stage;
+   mesa_shader_stage stage;
+   mesa_shader_stage next_stage;
 
    struct {
       const struct vk_object_base *object;
@@ -339,7 +339,7 @@ struct radv_vs_prolog_key {
    bool as_ls;
    bool is_ngg;
    bool wave32;
-   gl_shader_stage next_stage;
+   mesa_shader_stage next_stage;
 };
 
 enum radv_shader_binary_type { RADV_BINARY_TYPE_LEGACY, RADV_BINARY_TYPE_RTLD };
@@ -608,7 +608,7 @@ unsigned radv_get_max_waves(const struct radv_device *device, const struct ac_sh
 
 unsigned radv_get_max_scratch_waves(const struct radv_device *device, struct radv_shader *shader);
 
-const char *radv_get_shader_name(const struct radv_shader_info *info, gl_shader_stage stage);
+const char *radv_get_shader_name(const struct radv_shader_info *info, mesa_shader_stage stage);
 
 unsigned radv_compute_spi_ps_input(const struct radv_physical_device *pdev,
                                    const struct radv_graphics_state_key *gfx_state,
@@ -619,7 +619,7 @@ bool radv_can_dump_shader(struct radv_device *device, nir_shader *nir);
 bool radv_can_dump_shader_stats(struct radv_device *device, nir_shader *nir);
 
 VkResult radv_dump_shader_stats(struct radv_device *device, struct radv_pipeline *pipeline, struct radv_shader *shader,
-                                gl_shader_stage stage, FILE *output);
+                                mesa_shader_stage stage, FILE *output);
 
 /* Returns true on success and false on failure */
 bool radv_shader_reupload(struct radv_device *device, struct radv_shader *shader);
@@ -700,7 +700,7 @@ enum radv_rt_priority {
 };
 
 static inline enum radv_rt_priority
-radv_get_rt_priority(gl_shader_stage stage)
+radv_get_rt_priority(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_RAYGEN:
@@ -739,7 +739,7 @@ uint32_t radv_get_user_sgpr(const struct radv_shader *shader, int idx);
 void radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_shader_config *config,
                                       struct radv_shader_info *info);
 
-void radv_set_stage_key_robustness(const struct vk_pipeline_robustness_state *rs, gl_shader_stage stage,
+void radv_set_stage_key_robustness(const struct vk_pipeline_robustness_state *rs, mesa_shader_stage stage,
                                    struct radv_shader_stage_key *key);
 
 #endif /* RADV_SHADER_H */

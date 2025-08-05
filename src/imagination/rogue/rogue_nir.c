@@ -63,7 +63,7 @@ static int rogue_glsl_type_size(const struct glsl_type *type, bool bindless)
  */
 static void rogue_nir_passes(struct rogue_build_ctx *ctx,
                              nir_shader *nir,
-                             gl_shader_stage stage)
+                             mesa_shader_stage stage)
 {
    bool progress;
 
@@ -207,7 +207,7 @@ static void rogue_nir_passes(struct rogue_build_ctx *ctx,
  */
 PUBLIC
 nir_shader *rogue_spirv_to_nir(rogue_build_ctx *ctx,
-                               gl_shader_stage stage,
+                               mesa_shader_stage stage,
                                const char *entry,
                                unsigned spirv_size,
                                const uint32_t *spirv_data,

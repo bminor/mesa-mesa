@@ -1701,7 +1701,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
 void
 hk_cmd_bind_graphics_shader(struct hk_cmd_buffer *cmd,
-                            const gl_shader_stage stage,
+                            const mesa_shader_stage stage,
                             struct hk_api_shader *shader)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
@@ -1946,7 +1946,7 @@ hk_update_fast_linked(struct hk_cmd_buffer *cmd, struct hk_shader *shader,
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_linked_shader *new = hk_get_fast_linked(dev, shader, key);
-   gl_shader_stage stage = shader->info.stage;
+   mesa_shader_stage stage = shader->info.stage;
 
    if (cmd->state.gfx.linked[stage] != new) {
       cmd->state.gfx.linked[stage] = new;

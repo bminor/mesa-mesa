@@ -464,7 +464,7 @@ st_create_nir_shader(struct st_context *st, struct pipe_shader_state *state)
 
    assert(state->type == PIPE_SHADER_IR_NIR);
    nir_shader *nir = state->ir.nir;
-   gl_shader_stage stage = nir->info.stage;
+   mesa_shader_stage stage = nir->info.stage;
 
    /* Renumber SSA defs to make it easier to run diff on printed NIR. */
    nir_foreach_function_impl(impl, nir) {

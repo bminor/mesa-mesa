@@ -52,7 +52,7 @@
  * \return A nir_shader* if successful, or NULL if unsuccessful.
  */
 nir_shader *pvr_spirv_to_nir(rogue_build_ctx *ctx,
-                             gl_shader_stage stage,
+                             mesa_shader_stage stage,
                              const VkPipelineShaderStageCreateInfo *create_info)
 {
    VK_FROM_HANDLE(vk_shader_module, module, create_info->module);

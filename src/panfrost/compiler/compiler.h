@@ -948,7 +948,7 @@ typedef struct {
    const struct pan_compile_inputs *inputs;
    nir_shader *nir;
    struct bi_shader_info info;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    struct list_head blocks; /* list of bi_block */
    uint32_t quirks;
    unsigned arch;

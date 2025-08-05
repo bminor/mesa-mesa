@@ -393,7 +393,7 @@ extern enum ir3_shader_debug ir3_shader_debug;
 extern const char *ir3_shader_override_path;
 
 static inline bool
-shader_debug_enabled(gl_shader_stage type, bool internal)
+shader_debug_enabled(mesa_shader_stage type, bool internal)
 {
    if (internal)
       return !!(ir3_shader_debug & IR3_DBG_SHADER_INTERNAL);

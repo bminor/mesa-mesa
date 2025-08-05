@@ -11,7 +11,7 @@
 
 static const nir_shader_compiler_options *
 blorp_nir_options_brw(struct blorp_context *blorp,
-                      gl_shader_stage stage)
+                      mesa_shader_stage stage)
 {
    const struct brw_compiler *compiler = blorp->compiler->brw;
    return compiler->nir_options[stage];

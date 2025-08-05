@@ -30,7 +30,7 @@
 struct ir3_legalize_ctx {
    struct ir3_compiler *compiler;
    struct ir3_shader_variant *so;
-   gl_shader_stage type;
+   mesa_shader_stage type;
    int max_bary;
    bool early_input_release;
    bool has_inputs;
@@ -427,7 +427,7 @@ ir3_merge_pred_legalize_states(struct ir3_legalize_state *state,
                         &pstate->needs_ss_or_sy_scalar_war);
    }
 
-   gl_shader_stage stage = block->shader->type;
+   mesa_shader_stage stage = block->shader->type;
 
    if (stage == MESA_SHADER_TESS_CTRL || stage == MESA_SHADER_GEOMETRY) {
       if (block == ir3_start_block(block->shader)) {

@@ -5273,7 +5273,7 @@ visit_txs(struct lp_build_nir_soa_context *bld, nir_tex_instr *instr)
 }
 
 static enum lp_sampler_lod_property
-lp_build_nir_lod_property(gl_shader_stage stage, nir_src lod_src)
+lp_build_nir_lod_property(mesa_shader_stage stage, nir_src lod_src)
 {
    enum lp_sampler_lod_property lod_property;
 
@@ -5291,7 +5291,7 @@ lp_build_nir_lod_property(gl_shader_stage stage, nir_src lod_src)
 }
 
 uint32_t
-lp_build_nir_sample_key(gl_shader_stage stage, nir_tex_instr *instr)
+lp_build_nir_sample_key(mesa_shader_stage stage, nir_tex_instr *instr)
 {
    uint32_t sample_key = 0;
 

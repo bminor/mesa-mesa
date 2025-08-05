@@ -231,7 +231,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    struct si_shader_args *args = s->args;
    struct si_shader_selector *sel = shader->selector;
    union si_shader_key *key = &shader->key;
-   gl_shader_stage stage = b->shader->info.stage;
+   mesa_shader_stage stage = b->shader->info.stage;
 
    b->cursor = nir_before_instr(instr);
 

@@ -1000,7 +1000,7 @@ main(int argc, char **argv)
 
    /* figure out what sort of input we are dealing with: */
    if (!(check_extension(infile, ".rd") || check_extension(infile, ".rd.gz"))) {
-      gl_shader_stage shader = ~0;
+      mesa_shader_stage shader = ~0;
       int ret;
       if (check_extension(infile, ".vo")) {
          shader = MESA_SHADER_VERTEX;

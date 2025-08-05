@@ -776,7 +776,7 @@ get_variable_mode_str(nir_variable_mode mode, bool want_local_global_mode)
 }
 
 static const char *
-get_location_str(unsigned location, gl_shader_stage stage,
+get_location_str(unsigned location, mesa_shader_stage stage,
                  nir_variable_mode mode, char *buf)
 {
    switch (stage) {

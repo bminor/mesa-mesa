@@ -28,7 +28,7 @@ static inline void
 blorp_nir_init_shader(nir_builder *b,
                       struct blorp_context *blorp,
                       void *mem_ctx,
-                      gl_shader_stage stage,
+                      mesa_shader_stage stage,
                       const char *name)
 {
    const nir_shader_compiler_options *nir_options =

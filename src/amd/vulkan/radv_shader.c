@@ -49,7 +49,7 @@
 #endif
 
 static void
-get_nir_options_for_stage(struct radv_physical_device *pdev, gl_shader_stage stage)
+get_nir_options_for_stage(struct radv_physical_device *pdev, mesa_shader_stage stage)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    nir_shader_compiler_options *options = &pdev->nir_options[stage];
@@ -71,7 +71,7 @@ get_nir_options_for_stage(struct radv_physical_device *pdev, gl_shader_stage sta
 void
 radv_get_nir_options(struct radv_physical_device *pdev)
 {
-   for (gl_shader_stage stage = MESA_SHADER_VERTEX; stage < MESA_VULKAN_SHADER_STAGES; stage++)
+   for (mesa_shader_stage stage = MESA_SHADER_VERTEX; stage < MESA_VULKAN_SHADER_STAGES; stage++)
       get_nir_options_for_stage(pdev, stage);
 }
 
@@ -111,7 +111,7 @@ is_meta_shader(nir_shader *nir)
 }
 
 static uint64_t
-radv_dump_flag_for_stage(const gl_shader_stage stage)
+radv_dump_flag_for_stage(const mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -1367,7 +1367,7 @@ radv_destroy_shader_upload_queue(struct radv_device *device)
 }
 
 static bool
-radv_should_use_wgp_mode(const struct radv_device *device, gl_shader_stage stage, const struct radv_shader_info *info)
+radv_should_use_wgp_mode(const struct radv_device *device, mesa_shader_stage stage, const struct radv_shader_info *info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    enum amd_gfx_level chip = pdev->info.gfx_level;
@@ -1963,7 +1963,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    }
 
    const struct radv_shader_info *info = &binary->info;
-   gl_shader_stage stage = binary->info.stage;
+   mesa_shader_stage stage = binary->info.stage;
    bool scratch_enabled = config->scratch_bytes_per_wave > 0;
    const bool trap_enabled = !!device->trap_handler_shader;
    /* On GFX12, TRAP_PRESENT doesn't exist for compute shaders and it's enabled by default. */
@@ -2031,7 +2031,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       config->rsrc2 |= S_00B22C_USER_SGPR_MSB_GFX9(args->num_user_sgprs >> 5);
    }
 
-   gl_shader_stage es_stage = MESA_SHADER_NONE;
+   mesa_shader_stage es_stage = MESA_SHADER_NONE;
    if (pdev->info.gfx_level >= GFX9) {
       es_stage = stage == MESA_SHADER_GEOMETRY ? info->gs.es_type : stage;
    }
@@ -2625,7 +2625,7 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    const struct radeon_info *gpu_info = &pdev->info;
    const enum amd_gfx_level gfx_level = gpu_info->gfx_level;
    const uint8_t wave_size = info->wave_size;
-   gl_shader_stage stage = info->stage;
+   mesa_shader_stage stage = info->stage;
    unsigned max_simd_waves = gpu_info->max_waves_per_simd;
    unsigned lds_per_workgroup = 0;
    unsigned waves_per_workgroup = 1;
@@ -3074,7 +3074,7 @@ radv_fill_nir_compiler_options(struct radv_nir_compiler_options *options, struct
 }
 
 void
-radv_set_stage_key_robustness(const struct vk_pipeline_robustness_state *rs, gl_shader_stage stage,
+radv_set_stage_key_robustness(const struct vk_pipeline_robustness_state *rs, mesa_shader_stage stage,
                               struct radv_shader_stage_key *key)
 {
    if (rs->storage_buffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2)
@@ -3088,7 +3088,7 @@ radv_set_stage_key_robustness(const struct vk_pipeline_robustness_state *rs, gl_
 }
 
 static struct radv_shader_binary *
-shader_compile(struct radv_device *device, struct nir_shader *const *shaders, int shader_count, gl_shader_stage stage,
+shader_compile(struct radv_device *device, struct nir_shader *const *shaders, int shader_count, mesa_shader_stage stage,
                const struct radv_shader_info *info, const struct radv_shader_args *args,
                const struct radv_shader_stage_key *stage_key, struct radv_nir_compiler_options *options)
 {
@@ -3136,7 +3136,7 @@ radv_shader_nir_to_asm(struct radv_device *device, struct radv_shader_stage *pl_
                        struct nir_shader *const *shaders, int shader_count,
                        const struct radv_graphics_state_key *gfx_state, bool keep_shader_info, bool keep_statistic_info)
 {
-   gl_shader_stage stage = shaders[shader_count - 1]->info.stage;
+   mesa_shader_stage stage = shaders[shader_count - 1]->info.stage;
    struct radv_shader_info *info = &pl_stage->info;
 
    bool dump_shader = false;
@@ -3177,7 +3177,7 @@ radv_create_trap_handler_shader(struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   gl_shader_stage stage = MESA_SHADER_COMPUTE;
+   mesa_shader_stage stage = MESA_SHADER_COMPUTE;
    struct radv_shader_stage_key stage_key = {0};
    struct radv_shader_info info = {0};
    struct radv_nir_compiler_options options = {0};
@@ -3490,7 +3490,7 @@ radv_find_shader(struct radv_device *device, uint64_t pc)
 }
 
 const char *
-radv_get_shader_name(const struct radv_shader_info *info, gl_shader_stage stage)
+radv_get_shader_name(const struct radv_shader_info *info, mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -3628,7 +3628,7 @@ radv_get_tess_wg_info(const struct radv_physical_device *pdev, const ac_nir_tess
 
 VkResult
 radv_dump_shader_stats(struct radv_device *device, struct radv_pipeline *pipeline, struct radv_shader *shader,
-                       gl_shader_stage stage, FILE *output)
+                       mesa_shader_stage stage, FILE *output)
 {
    VkPipelineExecutablePropertiesKHR *props = NULL;
    uint32_t prop_count = 0;

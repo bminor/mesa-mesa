@@ -324,7 +324,7 @@ init_db_template_entry(struct zink_screen *screen, struct zink_shader *shader, e
                        unsigned idx, struct zink_descriptor_template *entry, unsigned *entry_idx)
 {
     int index = shader->bindings[type][idx].index;
-    gl_shader_stage stage = clamp_stage(&shader->info);
+    mesa_shader_stage stage = clamp_stage(&shader->info);
     entry->count = shader->bindings[type][idx].size;
 
     switch (shader->bindings[type][idx].type) {
@@ -379,7 +379,7 @@ init_template_entry(struct zink_shader *shader, enum zink_descriptor_type type,
                     unsigned idx, VkDescriptorUpdateTemplateEntry *entry, unsigned *entry_idx)
 {
     int index = shader->bindings[type][idx].index;
-    gl_shader_stage stage = clamp_stage(&shader->info);
+    mesa_shader_stage stage = clamp_stage(&shader->info);
     entry->dstArrayElement = 0;
     entry->dstBinding = shader->bindings[type][idx].binding;
     entry->descriptorCount = shader->bindings[type][idx].size;
@@ -526,7 +526,7 @@ zink_descriptor_program_init(struct zink_context *ctx, struct zink_program *pg)
       if (!shader)
          continue;
 
-      gl_shader_stage stage = clamp_stage(&shader->info);
+      mesa_shader_stage stage = clamp_stage(&shader->info);
       VkShaderStageFlagBits stage_flags = mesa_to_vk_shader_stage(stage);
       /* uniform ubos handled in push */
       if (shader->has_uniforms) {
@@ -1466,7 +1466,7 @@ zink_descriptors_update(struct zink_context *ctx, bool is_compute)
 
 /* called from gallium descriptor change hooks, e.g., set_sampler_views */
 void
-zink_context_invalidate_descriptor_state(struct zink_context *ctx, gl_shader_stage shader, enum zink_descriptor_type type, unsigned start, unsigned count)
+zink_context_invalidate_descriptor_state(struct zink_context *ctx, mesa_shader_stage shader, enum zink_descriptor_type type, unsigned start, unsigned count)
 {
    if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start)
       ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
@@ -1474,7 +1474,7 @@ zink_context_invalidate_descriptor_state(struct zink_context *ctx, gl_shader_sta
       ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
 }
 void
-zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, gl_shader_stage shader, enum zink_descriptor_type type, unsigned start, unsigned count)
+zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, mesa_shader_stage shader, enum zink_descriptor_type type, unsigned start, unsigned count)
 {
    if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start)
       ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;

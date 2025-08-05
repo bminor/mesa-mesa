@@ -2787,7 +2787,7 @@ ast_fully_specified_type::glsl_type(const char **name,
  * this function will produce undefined results.
  */
 static bool
-is_varying_var(ir_variable *var, gl_shader_stage target)
+is_varying_var(ir_variable *var, mesa_shader_stage target)
 {
    switch (target) {
    case MESA_SHADER_VERTEX:

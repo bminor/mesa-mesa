@@ -652,7 +652,7 @@ struct ir3_shader_variant {
    struct ir3_shader_variant *next;
 
    /* replicated here to avoid passing extra ptrs everywhere: */
-   gl_shader_stage type;
+   mesa_shader_stage type;
    struct ir3_compiler *compiler;
 
    char *name;
@@ -992,7 +992,7 @@ ir3_has_binning_vs(const struct ir3_shader_key *key)
  * generated.
  */
 struct ir3_shader {
-   gl_shader_stage type;
+   mesa_shader_stage type;
 
    /* shader id (for debug): */
    uint32_t id;
@@ -1191,7 +1191,7 @@ int ir3_glsl_type_size(const struct glsl_type *type, bool bindless);
 
 void ir3_shader_get_subgroup_size(const struct ir3_compiler *compiler,
                                   const struct ir3_shader_options *options,
-                                  gl_shader_stage stage,
+                                  mesa_shader_stage stage,
                                   unsigned *subgroup_size,
                                   unsigned *max_subgroup_size);
 

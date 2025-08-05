@@ -81,7 +81,7 @@ extern void _mesa_glsl_error(YYLTYPE *locp, _mesa_glsl_parse_state *state,
 
 
 struct _mesa_glsl_parse_state {
-   _mesa_glsl_parse_state(struct gl_context *_ctx, gl_shader_stage stage,
+   _mesa_glsl_parse_state(struct gl_context *_ctx, mesa_shader_stage stage,
                           void *mem_ctx);
 
    DECLARE_RZALLOC_CXX_OPERATORS(_mesa_glsl_parse_state);
@@ -404,7 +404,7 @@ struct _mesa_glsl_parse_state {
    /* Bitfield of ir_variable_mode to zero init */
    uint32_t zero_init;
    unsigned gl_version;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /**
     * Default uniform layout qualifiers tracked during parsing.

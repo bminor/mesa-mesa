@@ -31,7 +31,7 @@
 #include "nir_serialize.h"
 
 nir_builder MUST_CHECK PRINTFLIKE(3, 4)
-   nir_builder_init_simple_shader(gl_shader_stage stage,
+   nir_builder_init_simple_shader(mesa_shader_stage stage,
                                   const nir_shader_compiler_options *options,
                                   const char *name, ...)
 {

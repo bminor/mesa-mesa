@@ -155,7 +155,7 @@ struct tu_program_state
 };
 
 struct tu_pipeline_executable {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct ir3_info stats;
    bool is_binning;
@@ -299,7 +299,7 @@ struct tu_pvtmem_config {
 template <chip CHIP>
 void
 tu6_emit_xs_config(struct tu_cs *cs,
-                   gl_shader_stage stage,
+                   mesa_shader_stage stage,
                    const struct ir3_shader_variant *xs);
 
 template <chip CHIP>

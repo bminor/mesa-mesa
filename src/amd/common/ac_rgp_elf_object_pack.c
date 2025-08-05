@@ -48,7 +48,7 @@ char hw_stage_symbol_string[RGP_HW_STAGE_MAX][16] = {
 };
 
 static const char *
-get_api_stage_string(gl_shader_stage stage)
+get_api_stage_string(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -82,7 +82,7 @@ get_hw_stage_symbol(struct rgp_code_object_record *record, unsigned index)
 }
 
 static const char *
-rt_subtype_from_stage(gl_shader_stage stage)
+rt_subtype_from_stage(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_RAYGEN:

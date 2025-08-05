@@ -60,7 +60,7 @@ nvk_physical_device_compiler_flags(const struct nvk_physical_device *pdev)
 
 static const nir_shader_compiler_options *
 nvk_get_nir_options(struct vk_physical_device *vk_pdev,
-                    gl_shader_stage stage,
+                    mesa_shader_stage stage,
                     UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    const struct nvk_physical_device *pdev =
@@ -112,7 +112,7 @@ nvk_ssbo_addr_format(const struct nvk_physical_device *pdev,
 
 static struct spirv_to_nir_options
 nvk_get_spirv_options(struct vk_physical_device *vk_pdev,
-                      UNUSED gl_shader_stage stage,
+                      UNUSED mesa_shader_stage stage,
                       const struct vk_pipeline_robustness_state *rs)
 {
    const struct nvk_physical_device *pdev =
@@ -603,7 +603,7 @@ nvk_shader_upload(struct nvk_device *dev, struct nvk_shader *shader)
 }
 
 uint32_t
-mesa_to_nv9097_shader_type(gl_shader_stage stage)
+mesa_to_nv9097_shader_type(mesa_shader_stage stage)
 {
    static const uint32_t mesa_to_nv9097[] = {
       [MESA_SHADER_VERTEX]    = NV9097_SET_PIPELINE_SHADER_TYPE_VERTEX,
@@ -617,14 +617,14 @@ mesa_to_nv9097_shader_type(gl_shader_stage stage)
 }
 
 uint32_t
-nvk_pipeline_bind_group(gl_shader_stage stage)
+nvk_pipeline_bind_group(mesa_shader_stage stage)
 {
    return stage;
 }
 
 uint16_t
 nvk_max_shader_push_dw(const struct nvk_physical_device *pdev,
-                       gl_shader_stage stage, bool last_vtgm)
+                       mesa_shader_stage stage, bool last_vtgm)
 {
    if (stage == MESA_SHADER_COMPUTE)
       return 0;

@@ -709,7 +709,7 @@ struct elk_stage_prog_data {
 
    unsigned nr_params;       /**< number of float params/constants */
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /* zero_push_reg is a bitfield which indicates what push registers (if any)
     * should be zeroed by SW at the start of the shader.  The corresponding
@@ -1192,7 +1192,7 @@ typedef enum
     ~VARYING_BIT_POS & ~VARYING_BIT_FACE)
 
 void elk_print_vue_map(FILE *fp, const struct intel_vue_map *vue_map,
-                       gl_shader_stage stage);
+                       mesa_shader_stage stage);
 
 /**
  * Convert a VUE slot number into a byte offset within the VUE.
@@ -1449,10 +1449,10 @@ uint64_t
 elk_get_compiler_config_value(const struct elk_compiler *compiler);
 
 unsigned
-elk_prog_data_size(gl_shader_stage stage);
+elk_prog_data_size(mesa_shader_stage stage);
 
 unsigned
-elk_prog_key_size(gl_shader_stage stage);
+elk_prog_key_size(mesa_shader_stage stage);
 
 struct elk_compile_params {
    void *mem_ctx;
@@ -1652,7 +1652,7 @@ elk_compile_ff_gs_prog(struct elk_compiler *compiler,
 		       unsigned *final_assembly_size);
 
 void elk_debug_key_recompile(const struct elk_compiler *c, void *log,
-                             gl_shader_stage stage,
+                             mesa_shader_stage stage,
                              const struct elk_base_prog_key *old_key,
                              const struct elk_base_prog_key *key);
 
@@ -1689,7 +1689,7 @@ elk_cs_get_dispatch_info(const struct intel_device_info *devinfo,
  */
 static inline bool
 elk_stage_has_packed_dispatch(ASSERTED const struct intel_device_info *devinfo,
-                              gl_shader_stage stage,
+                              mesa_shader_stage stage,
                               const struct elk_stage_prog_data *prog_data)
 {
    /* The code below makes assumptions about the hardware's thread dispatch

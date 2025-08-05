@@ -927,7 +927,7 @@ associate_uniform_storage(struct gl_context *ctx,
                           struct gl_program *prog)
 {
    struct gl_program_parameter_list *params = prog->Parameters;
-   gl_shader_stage shader_type = prog->info.stage;
+   mesa_shader_stage shader_type = prog->info.stage;
 
    _mesa_disallow_parameter_storage_realloc(params);
 

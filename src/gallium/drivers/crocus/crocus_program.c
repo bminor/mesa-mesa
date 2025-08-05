@@ -150,7 +150,7 @@ gfx6_ff_gs_xfb_setup(const struct pipe_stream_output_info *so_info,
 static void
 crocus_populate_sampler_prog_key_data(struct crocus_context *ice,
                                       const struct intel_device_info *devinfo,
-                                      gl_shader_stage stage,
+                                      mesa_shader_stage stage,
                                       struct crocus_uncompiled_shader *ish,
                                       bool uses_texture_gather,
                                       struct elk_sampler_prog_key_data *key)
@@ -1069,7 +1069,7 @@ crocus_debug_recompile(struct crocus_context *ice,
  *
  * This stage is the one which will feed stream output and the rasterizer.
  */
-static gl_shader_stage
+static mesa_shader_stage
 last_vue_stage(struct crocus_context *ice)
 {
    if (ice->shaders.uncompiled[MESA_SHADER_GEOMETRY])
@@ -1330,7 +1330,7 @@ crocus_update_compiled_vs(struct crocus_context *ice)
  * Get the shader_info for a given stage, or NULL if the stage is disabled.
  */
 const struct shader_info *
-crocus_get_shader_info(const struct crocus_context *ice, gl_shader_stage stage)
+crocus_get_shader_info(const struct crocus_context *ice, mesa_shader_stage stage)
 {
    const struct crocus_uncompiled_shader *ish = ice->shaders.uncompiled[stage];
 
@@ -1985,7 +1985,7 @@ update_last_vue_map(struct crocus_context *ice,
 
 static void
 crocus_update_pull_constant_descriptors(struct crocus_context *ice,
-                                        gl_shader_stage stage)
+                                        mesa_shader_stage stage)
 {
    struct crocus_compiled_shader *shader = ice->shaders.prog[stage];
 
@@ -2014,7 +2014,7 @@ crocus_update_pull_constant_descriptors(struct crocus_context *ice,
  * Get the prog_data for a given stage, or NULL if the stage is disabled.
  */
 static struct elk_vue_prog_data *
-get_vue_prog_data(struct crocus_context *ice, gl_shader_stage stage)
+get_vue_prog_data(struct crocus_context *ice, mesa_shader_stage stage)
 {
    if (!ice->shaders.prog[stage])
       return NULL;
@@ -2442,7 +2442,7 @@ crocus_update_compiled_shaders(struct crocus_context *ice)
    if (!ice->shaders.prog[MESA_SHADER_VERTEX])
       return false;
 
-   gl_shader_stage last_stage = last_vue_stage(ice);
+   mesa_shader_stage last_stage = last_vue_stage(ice);
    struct crocus_compiled_shader *shader = ice->shaders.prog[last_stage];
    struct crocus_uncompiled_shader *ish = ice->shaders.uncompiled[last_stage];
    update_last_vue_map(ice, shader->prog_data);
@@ -2624,7 +2624,7 @@ crocus_fill_cs_push_const_buffer(struct elk_cs_prog_data *cs_prog_data,
 struct crocus_bo *
 crocus_get_scratch_space(struct crocus_context *ice,
                          unsigned per_thread_scratch,
-                         gl_shader_stage stage)
+                         mesa_shader_stage stage)
 {
    struct crocus_screen *screen = (struct crocus_screen *)ice->ctx.screen;
    struct crocus_bufmgr *bufmgr = screen->bufmgr;
@@ -2915,7 +2915,7 @@ crocus_create_compute_state(struct pipe_context *ctx,
  * Frees the crocus_uncompiled_shader.
  */
 static void
-crocus_delete_shader_state(struct pipe_context *ctx, void *state, gl_shader_stage stage)
+crocus_delete_shader_state(struct pipe_context *ctx, void *state, mesa_shader_stage stage)
 {
    struct crocus_uncompiled_shader *ish = state;
    struct crocus_context *ice = (void *) ctx;
@@ -2979,7 +2979,7 @@ crocus_delete_cs_state(struct pipe_context *ctx, void *state)
 static void
 bind_shader_state(struct crocus_context *ice,
                   struct crocus_uncompiled_shader *ish,
-                  gl_shader_stage stage)
+                  mesa_shader_stage stage)
 {
    uint64_t dirty_bit = CROCUS_STAGE_DIRTY_UNCOMPILED_VS << stage;
    const uint64_t nos = ish ? ish->nos : 0;

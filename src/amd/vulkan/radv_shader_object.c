@@ -123,7 +123,7 @@ static VkResult
 radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct radv_device *device,
                                  const VkShaderCreateInfoEXT *pCreateInfo)
 {
-   gl_shader_stage stage = vk_to_mesa_shader_stage(pCreateInfo->stage);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(pCreateInfo->stage);
    struct radv_shader_stage stages[MESA_VULKAN_SHADER_STAGES];
 
    for (unsigned i = 0; i < MESA_VULKAN_SHADER_STAGES; i++) {
@@ -440,7 +440,7 @@ radv_shader_object_create_linked(VkDevice _device, uint32_t createInfoCount, con
 
    for (unsigned i = 0; i < createInfoCount; i++) {
       const VkShaderCreateInfoEXT *pCreateInfo = &pCreateInfos[i];
-      gl_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->stage);
+      mesa_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->stage);
 
       radv_shader_stage_init(pCreateInfo, &stages[s]);
    }
@@ -497,7 +497,7 @@ radv_shader_object_create_linked(VkDevice _device, uint32_t createInfoCount, con
 
    for (unsigned i = 0; i < createInfoCount; i++) {
       const VkShaderCreateInfoEXT *pCreateInfo = &pCreateInfos[i];
-      gl_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->stage);
+      mesa_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->stage);
       struct radv_shader_object *shader_obj;
 
       shader_obj = vk_zalloc2(&device->vk.alloc, pAllocator, sizeof(*shader_obj), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);

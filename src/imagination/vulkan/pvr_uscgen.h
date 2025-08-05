@@ -17,7 +17,7 @@
 #include "pco/pco.h"
 
 /* NOP shader generation. */
-void pvr_uscgen_nop(pco_ctx *ctx, gl_shader_stage stage, pco_binary **binary);
+void pvr_uscgen_nop(pco_ctx *ctx, mesa_shader_stage stage, pco_binary **binary);
 
 /* EOT shader generation. */
 struct pvr_eot_props {

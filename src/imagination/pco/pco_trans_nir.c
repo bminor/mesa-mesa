@@ -30,7 +30,7 @@ typedef struct _trans_ctx {
    pco_shader *shader; /** Current shader. */
    pco_func *func; /** Current function. */
    pco_builder b; /** Builder. */
-   gl_shader_stage stage; /** Shader stage. */
+   mesa_shader_stage stage; /** Shader stage. */
 
    BITSET_WORD *float_types; /** NIR SSA float vars. */
    BITSET_WORD *int_types; /** NIR SSA int vars. */

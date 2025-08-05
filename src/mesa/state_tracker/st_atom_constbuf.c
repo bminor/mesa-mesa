@@ -67,7 +67,7 @@ st_unbind_unused_cb0(struct st_context *st, enum pipe_shader_type shader_type)
  * constant buffer.
  */
 void
-st_upload_constants(struct st_context *st, struct gl_program *prog, gl_shader_stage stage)
+st_upload_constants(struct st_context *st, struct gl_program *prog, mesa_shader_stage stage)
 {
    enum pipe_shader_type shader_type = pipe_shader_type_from_mesa(stage);
    if (!prog) {

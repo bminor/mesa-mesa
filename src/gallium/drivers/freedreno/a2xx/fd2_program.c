@@ -36,7 +36,7 @@ fd2_shader_state_delete(struct pipe_context *pctx, void *hwcso)
 }
 
 static void
-emit(struct fd_ringbuffer *ring, gl_shader_stage type,
+emit(struct fd_ringbuffer *ring, mesa_shader_stage type,
      struct ir2_shader_info *info, struct util_dynarray *patches)
 {
    unsigned i;

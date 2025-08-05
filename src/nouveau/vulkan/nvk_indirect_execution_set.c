@@ -76,16 +76,16 @@ uint16_t
 nvk_ies_gfx_pipeline_max_dw_count(const struct nvk_physical_device *pdev,
                                   VkShaderStageFlags stages)
 {
-   gl_shader_stage last_vtgm = MESA_SHADER_VERTEX;
+   mesa_shader_stage last_vtgm = MESA_SHADER_VERTEX;
    u_foreach_bit(s, stages) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
       if (stage != MESA_SHADER_FRAGMENT)
          last_vtgm = stage;
    }
 
    uint16_t push_dw = 0;
    u_foreach_bit(s, stages) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
       push_dw += nvk_max_shader_push_dw(pdev, stage, stage == last_vtgm);
    }
 
@@ -106,10 +106,10 @@ nvk_ies_set_gfx_pipeline(struct nvk_device *dev,
                          uint32_t index,
                          struct vk_pipeline *pipeline)
 {
-   gl_shader_stage last_vtgm = MESA_SHADER_VERTEX;
+   mesa_shader_stage last_vtgm = MESA_SHADER_VERTEX;
    struct nvk_shader *type_shader[6] = {};
    u_foreach_bit(s, pipeline->stages) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
       struct vk_shader *vk_shader = vk_pipeline_get_shader(pipeline, stage);
       struct nvk_shader *shader =
          container_of(vk_shader, struct nvk_shader, vk);
@@ -152,7 +152,7 @@ nvk_ies_gfx_shader_max_dw_count(const struct nvk_physical_device *pdev,
    /* Each entry is a single shader so take the max */
    uint16_t max_push_dw = 0;
    u_foreach_bit(s, stages) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(1 << s);
       uint16_t push_dw = nvk_max_shader_push_dw(pdev, stage, last_vtgm);
       max_push_dw = MAX2(max_push_dw, push_dw);
    }

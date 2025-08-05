@@ -865,7 +865,7 @@ unsigned ac_compute_cs_workgroup_size(const uint16_t sizes[3], bool variable, un
    return sizes[0] * sizes[1] * sizes[2];
 }
 
-unsigned ac_compute_lshs_workgroup_size(enum amd_gfx_level gfx_level, gl_shader_stage stage,
+unsigned ac_compute_lshs_workgroup_size(enum amd_gfx_level gfx_level, mesa_shader_stage stage,
                                         unsigned tess_num_patches,
                                         unsigned tess_patch_in_vtx,
                                         unsigned tess_patch_out_vtx)
@@ -1352,7 +1352,7 @@ ac_legacy_gs_compute_subgroup_info(enum mesa_prim input_prim, unsigned gs_vertic
  * upload depend on the subgroup size.
  */
 bool
-ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, gl_shader_stage es_stage, bool is_gs,
+ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, mesa_shader_stage es_stage, bool is_gs,
                              enum mesa_prim input_prim, unsigned gs_vertices_out, unsigned gs_invocations,
                              unsigned max_workgroup_size, unsigned wave_size, unsigned esgs_vertex_stride,
                              unsigned ngg_lds_vertex_size, unsigned ngg_lds_scratch_size, bool tess_turns_off_ngg,

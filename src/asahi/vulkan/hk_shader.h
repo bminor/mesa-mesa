@@ -105,7 +105,7 @@ struct hk_shader_info {
    /* Transform feedback buffer strides */
    uint8_t xfb_stride[MAX_XFB_BUFFERS];
 
-   gl_shader_stage stage : 8;
+   mesa_shader_stage stage : 8;
    uint8_t clip_distance_array_size;
    uint8_t cull_distance_array_size;
    uint8_t set_count;
@@ -204,7 +204,7 @@ static const char *hk_gs_variant_name[] = {
 /* clang-format on */
 
 static inline unsigned
-hk_num_variants(gl_shader_stage stage)
+hk_num_variants(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -365,7 +365,7 @@ void hk_api_shader_destroy(struct vk_device *vk_dev,
                            const VkAllocationCallbacks *pAllocator);
 
 const nir_shader_compiler_options *
-hk_get_nir_options(struct vk_physical_device *vk_pdev, gl_shader_stage stage,
+hk_get_nir_options(struct vk_physical_device *vk_pdev, mesa_shader_stage stage,
                    UNUSED const struct vk_pipeline_robustness_state *rs);
 
 struct hk_api_shader *hk_meta_shader(struct hk_device *dev,

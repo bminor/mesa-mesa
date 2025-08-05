@@ -83,7 +83,7 @@ _mesa_reference_shader_program(struct gl_context *ctx,
 }
 
 extern struct gl_shader *
-_mesa_new_shader(GLuint name, gl_shader_stage type);
+_mesa_new_shader(GLuint name, mesa_shader_stage type);
 
 extern void
 _mesa_delete_shader(struct gl_context *ctx, struct gl_shader *sh);
@@ -121,7 +121,7 @@ extern void
 _mesa_delete_shader_program(struct gl_context *ctx,
                             struct gl_shader_program *shProg);
 
-static inline gl_shader_stage
+static inline mesa_shader_stage
 _mesa_shader_enum_to_shader_stage(GLenum v)
 {
    switch (v) {
@@ -145,7 +145,7 @@ _mesa_shader_enum_to_shader_stage(GLenum v)
 /* 8 bytes + another underscore */
 #define MESA_SUBROUTINE_PREFIX_LEN 9
 static inline const char *
-_mesa_shader_stage_to_subroutine_prefix(gl_shader_stage stage)
+_mesa_shader_stage_to_subroutine_prefix(mesa_shader_stage stage)
 {
   switch (stage) {
   case MESA_SHADER_VERTEX:
@@ -165,7 +165,7 @@ _mesa_shader_stage_to_subroutine_prefix(gl_shader_stage stage)
   }
 }
 
-static inline gl_shader_stage
+static inline mesa_shader_stage
 _mesa_shader_stage_from_subroutine_uniform(GLenum subuniform)
 {
    switch (subuniform) {
@@ -185,7 +185,7 @@ _mesa_shader_stage_from_subroutine_uniform(GLenum subuniform)
    UNREACHABLE("not reached");
 }
 
-static inline gl_shader_stage
+static inline mesa_shader_stage
 _mesa_shader_stage_from_subroutine(GLenum subroutine)
 {
    switch (subroutine) {
@@ -207,7 +207,7 @@ _mesa_shader_stage_from_subroutine(GLenum subroutine)
 }
 
 static inline GLenum
-_mesa_shader_stage_to_subroutine(gl_shader_stage stage)
+_mesa_shader_stage_to_subroutine(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -228,7 +228,7 @@ _mesa_shader_stage_to_subroutine(gl_shader_stage stage)
 }
 
 static inline GLenum
-_mesa_shader_stage_to_subroutine_uniform(gl_shader_stage stage)
+_mesa_shader_stage_to_subroutine_uniform(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:

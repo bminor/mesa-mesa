@@ -1376,7 +1376,7 @@ anv_scratch_pool_finish(struct anv_device *device, struct anv_scratch_pool *pool
 
 struct anv_bo *
 anv_scratch_pool_alloc(struct anv_device *device, struct anv_scratch_pool *pool,
-                       gl_shader_stage stage, unsigned per_thread_scratch)
+                       mesa_shader_stage stage, unsigned per_thread_scratch)
 {
    if (per_thread_scratch == 0)
       return NULL;

@@ -185,7 +185,7 @@ _mesa_set_program_error(struct gl_context *ctx, GLint pos, const char *string)
  * Initialize a new gl_program object.
  */
 struct gl_program *
-_mesa_init_gl_program(struct gl_program *prog, gl_shader_stage stage,
+_mesa_init_gl_program(struct gl_program *prog, mesa_shader_stage stage,
                       GLuint id, bool is_arb_asm)
 {
    if (!prog)
@@ -219,7 +219,7 @@ _mesa_init_gl_program(struct gl_program *prog, gl_shader_stage stage,
 }
 
 struct gl_program *
-_mesa_new_program(struct gl_context *ctx, gl_shader_stage stage, GLuint id,
+_mesa_new_program(struct gl_context *ctx, mesa_shader_stage stage, GLuint id,
                   bool is_arb_asm)
 {
    struct gl_program *prog;

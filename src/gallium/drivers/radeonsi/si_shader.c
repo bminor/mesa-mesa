@@ -115,7 +115,7 @@ unsigned si_shader_io_get_unique_index(unsigned semantic)
 
 unsigned si_get_max_workgroup_size(const struct si_shader *shader)
 {
-   gl_shader_stage stage = shader->is_gs_copy_shader ?
+   mesa_shader_stage stage = shader->is_gs_copy_shader ?
       MESA_SHADER_VERTEX : shader->selector->stage;
 
    assert(shader->wave_size);
@@ -159,7 +159,7 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
    return max_work_group_size;
 }
 
-static unsigned get_lds_granularity(struct si_screen *screen, gl_shader_stage stage)
+static unsigned get_lds_granularity(struct si_screen *screen, mesa_shader_stage stage)
 {
    return screen->info.gfx_level >= GFX11 && stage == MESA_SHADER_FRAGMENT ? 1024 :
           screen->info.gfx_level >= GFX7 ? 512 : 256;
@@ -422,7 +422,7 @@ static int upload_binary_elf(struct si_screen *sscreen, struct si_shader *shader
 
 static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shader *shader)
 {
-   gl_shader_stage stage =
+   mesa_shader_stage stage =
       shader->is_gs_copy_shader ? MESA_SHADER_VERTEX : shader->selector->stage;
 
    if (sscreen->info.gfx_level >= GFX9 && stage <= MESA_SHADER_GEOMETRY &&
@@ -564,7 +564,7 @@ static void print_disassembly(const char *disasm, size_t nbytes,
 
 static void si_shader_dump_disassembly(struct si_screen *screen,
                                        const struct si_shader_binary *binary,
-                                       gl_shader_stage stage, unsigned wave_size,
+                                       mesa_shader_stage stage, unsigned wave_size,
                                        struct util_debug_callback *debug, const char *name,
                                        FILE *file)
 {
@@ -728,7 +728,7 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
                       stages[shader->selector->stage], shader->wave_size);
 }
 
-bool si_can_dump_shader(struct si_screen *sscreen, gl_shader_stage stage,
+bool si_can_dump_shader(struct si_screen *sscreen, mesa_shader_stage stage,
                         enum si_shader_dump_type dump_type)
 {
    static uint64_t filter[] = {
@@ -818,7 +818,7 @@ const char *si_get_shader_name(const struct si_shader *shader)
 void si_shader_dump(struct si_screen *sscreen, struct si_shader *shader,
                     struct util_debug_callback *debug, FILE *file, bool check_debug_option)
 {
-   gl_shader_stage stage = shader->selector->stage;
+   mesa_shader_stage stage = shader->selector->stage;
 
    if (!check_debug_option || si_can_dump_shader(sscreen, stage, SI_DUMP_SHADER_KEY))
       si_dump_shader_key(shader, file);
@@ -878,7 +878,7 @@ static void si_dump_shader_key_vs(const union si_shader_key *key, FILE *f)
 static void si_dump_shader_key(const struct si_shader *shader, FILE *f)
 {
    const union si_shader_key *key = &shader->key;
-   gl_shader_stage stage = shader->selector->stage;
+   mesa_shader_stage stage = shader->selector->stage;
 
    fprintf(f, "SHADER KEY\n");
    fprintf(f, "  source_blake3 = {");
@@ -2101,7 +2101,7 @@ out:
  */
 static struct si_shader_part *
 si_get_shader_part(struct si_screen *sscreen, struct si_shader_part **list,
-                   gl_shader_stage stage, bool prolog, union si_shader_part_key *key,
+                   mesa_shader_stage stage, bool prolog, union si_shader_part_key *key,
                    struct ac_llvm_compiler *compiler, struct util_debug_callback *debug,
                    const char *name)
 {

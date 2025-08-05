@@ -43,7 +43,7 @@ struct spirv_shader;
 
 struct tgsi_token;
 
-static inline gl_shader_stage
+static inline mesa_shader_stage
 clamp_stage(const shader_info *info)
 {
    return info->stage == MESA_SHADER_KERNEL ? MESA_SHADER_COMPUTE : info->stage;

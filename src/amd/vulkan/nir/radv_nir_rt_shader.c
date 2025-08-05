@@ -1917,7 +1917,7 @@ lower_rt_instructions_monolithic(nir_shader *shader, struct radv_device *device,
 static nir_def *
 select_next_shader(nir_builder *b, nir_def *shader_addr, unsigned wave_size)
 {
-   gl_shader_stage stage = b->shader->info.stage;
+   mesa_shader_stage stage = b->shader->info.stage;
    nir_def *prio = nir_iand_imm(b, shader_addr, radv_rt_priority_mask);
    nir_def *ballot = nir_ballot(b, 1, wave_size, nir_imm_bool(b, true));
    nir_def *ballot_traversal = nir_ballot(b, 1, wave_size, nir_ieq_imm(b, prio, radv_rt_priority_traversal));

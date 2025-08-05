@@ -46,7 +46,7 @@ static void build_shader(pco_ctx *ctx, nir_shader *nir, pco_binary **binary)
  * \param stage Shader stage.
  * \param binary Output shader binary.
  */
-void pvr_uscgen_nop(pco_ctx *ctx, gl_shader_stage stage, pco_binary **binary)
+void pvr_uscgen_nop(pco_ctx *ctx, mesa_shader_stage stage, pco_binary **binary)
 {
    UNREACHABLE("finishme: pvr_uscgen_nop");
 }

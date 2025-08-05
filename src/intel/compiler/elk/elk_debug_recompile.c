@@ -197,7 +197,7 @@ debug_cs_recompile(const struct elk_compiler *c, void *log,
 
 void
 elk_debug_key_recompile(const struct elk_compiler *c, void *log,
-                        gl_shader_stage stage,
+                        mesa_shader_stage stage,
                         const struct elk_base_prog_key *old_key,
                         const struct elk_base_prog_key *key)
 {

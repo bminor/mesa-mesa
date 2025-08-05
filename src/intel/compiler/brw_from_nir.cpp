@@ -8011,7 +8011,7 @@ static UNUSED void
 brw_test_dispatch_packing(const brw_builder &bld)
 {
    const brw_shader *shader = bld.shader;
-   const gl_shader_stage stage = shader->stage;
+   const mesa_shader_stage stage = shader->stage;
    const bool uses_vmask =
       stage == MESA_SHADER_FRAGMENT &&
       brw_wm_prog_data(shader->prog_data)->uses_vmask;

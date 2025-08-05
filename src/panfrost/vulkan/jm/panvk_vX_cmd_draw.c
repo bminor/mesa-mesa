@@ -411,7 +411,7 @@ panvk_draw_prepare_tiler_context(struct panvk_cmd_buffer *cmdbuf,
 }
 
 static mali_pixel_format
-panvk_varying_hw_format(gl_shader_stage stage, gl_varying_slot loc,
+panvk_varying_hw_format(mesa_shader_stage stage, gl_varying_slot loc,
                         enum pipe_format pfmt)
 {
    switch (loc) {

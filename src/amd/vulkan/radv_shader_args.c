@@ -197,7 +197,7 @@ declare_vs_input_vgprs(enum amd_gfx_level gfx_level, const struct radv_shader_in
 }
 
 static void
-declare_streamout_sgprs(const struct radv_shader_info *info, struct radv_shader_args *args, gl_shader_stage stage)
+declare_streamout_sgprs(const struct radv_shader_info *info, struct radv_shader_args *args, mesa_shader_stage stage)
 {
    int i;
 
@@ -300,7 +300,7 @@ declare_ngg_sgprs(const struct radv_shader_info *info, struct radv_shader_args *
 }
 
 static void
-radv_init_shader_args(const struct radv_device *device, gl_shader_stage stage, struct radv_shader_args *args)
+radv_init_shader_args(const struct radv_device *device, mesa_shader_stage stage, struct radv_shader_args *args)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    memset(args, 0, sizeof(*args));
@@ -520,7 +520,7 @@ declare_unmerged_vs_tes_gs_args(const enum amd_gfx_level gfx_level, const struct
 
 static void
 declare_shader_args(const struct radv_device *device, const struct radv_graphics_state_key *gfx_state,
-                    const struct radv_shader_info *info, gl_shader_stage stage, gl_shader_stage previous_stage,
+                    const struct radv_shader_info *info, mesa_shader_stage stage, mesa_shader_stage previous_stage,
                     struct radv_shader_args *args, struct user_sgpr_info *user_sgpr_info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -878,7 +878,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
 
 void
 radv_declare_shader_args(const struct radv_device *device, const struct radv_graphics_state_key *gfx_state,
-                         const struct radv_shader_info *info, gl_shader_stage stage, gl_shader_stage previous_stage,
+                         const struct radv_shader_info *info, mesa_shader_stage stage, mesa_shader_stage previous_stage,
                          struct radv_shader_args *args)
 {
    declare_shader_args(device, gfx_state, info, stage, previous_stage, args, NULL);

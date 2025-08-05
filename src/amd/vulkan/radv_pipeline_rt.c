@@ -75,7 +75,7 @@ radv_generate_rt_shaders_key(const struct radv_device *device, const VkRayTracin
 
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage = &pCreateInfo->pStages[i];
-      gl_shader_stage s = vk_to_mesa_shader_stage(stage->stage);
+      mesa_shader_stage s = vk_to_mesa_shader_stage(stage->stage);
 
       stage_keys[s] = radv_pipeline_get_shader_key(device, stage, create_flags, pCreateInfo->pNext);
    }
@@ -303,7 +303,7 @@ radv_init_rt_stage_hashes(const struct radv_device *device, VkPipelineCreateFlag
    } else {
       for (uint32_t idx = 0; idx < pCreateInfo->stageCount; idx++) {
          const VkPipelineShaderStageCreateInfo *sinfo = &pCreateInfo->pStages[idx];
-         gl_shader_stage s = vk_to_mesa_shader_stage(sinfo->stage);
+         mesa_shader_stage s = vk_to_mesa_shader_stage(sinfo->stage);
          struct mesa_sha1 ctx;
 
          _mesa_sha1_init(&ctx);
@@ -620,7 +620,7 @@ radv_rt_compile_shaders(struct radv_device *device, struct vk_pipeline_cache *ca
       int64_t stage_start = os_time_get_nano();
 
       struct radv_shader_stage *stage = &stages[i];
-      gl_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->pStages[i].stage);
+      mesa_shader_stage s = vk_to_mesa_shader_stage(pCreateInfo->pStages[i].stage);
       radv_pipeline_stage_init(pipeline->base.base.create_flags, &pCreateInfo->pStages[i], pipeline_layout,
                                &stage_keys[s], stage);
 

@@ -76,8 +76,8 @@ protected:
       return UINT_MAX;
    }
 
-   void create_shaders(gl_shader_stage producer_stage,
-                       gl_shader_stage consumer_stage)
+   void create_shaders(mesa_shader_stage producer_stage,
+                       mesa_shader_stage consumer_stage)
    {
       _producer_builder =
          nir_builder_init_simple_shader(producer_stage, &options,

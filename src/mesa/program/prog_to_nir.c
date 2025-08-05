@@ -807,7 +807,7 @@ prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
       ctx->screen->nir_options[prog->info.stage];
    struct ptn_compile *c;
    struct nir_shader *s;
-   gl_shader_stage stage = prog->info.stage;
+   mesa_shader_stage stage = prog->info.stage;
 
    c = rzalloc(NULL, struct ptn_compile);
    if (!c)

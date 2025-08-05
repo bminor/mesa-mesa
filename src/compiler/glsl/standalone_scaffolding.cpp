@@ -104,7 +104,7 @@ _mesa_shader_debug(struct gl_context *, GLenum, GLuint *,
 }
 
 struct gl_shader *
-_mesa_new_shader(GLuint name, gl_shader_stage stage)
+_mesa_new_shader(GLuint name, mesa_shader_stage stage)
 {
    struct gl_shader *shader;
 
@@ -181,7 +181,7 @@ _mesa_clear_shader_program_data(struct gl_context *ctx,
 
 
 static void
-init_gl_program(struct gl_program *prog, bool is_arb_asm, gl_shader_stage stage)
+init_gl_program(struct gl_program *prog, bool is_arb_asm, mesa_shader_stage stage)
 {
    prog->RefCount = 1;
    prog->Format = GL_PROGRAM_FORMAT_ASCII_ARB;
@@ -190,7 +190,7 @@ init_gl_program(struct gl_program *prog, bool is_arb_asm, gl_shader_stage stage)
 }
 
 static struct gl_program *
-standalone_new_program(UNUSED struct gl_context *ctx, gl_shader_stage stage,
+standalone_new_program(UNUSED struct gl_context *ctx, mesa_shader_stage stage,
                        UNUSED GLuint id, bool is_arb_asm)
 {
    struct gl_program *prog = rzalloc(NULL, struct gl_program);

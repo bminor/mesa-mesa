@@ -41,7 +41,7 @@ static bool
 bi_lower_divergent_indirects_impl(nir_builder *b, nir_intrinsic_instr *intr,
                                   void *data)
 {
-   gl_shader_stage stage = b->shader->info.stage;
+   mesa_shader_stage stage = b->shader->info.stage;
    nir_src *offset;
 
    /* Not all indirect access needs this workaround */

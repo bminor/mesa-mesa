@@ -416,7 +416,7 @@ mem_update(void *dst, const void *src, size_t size)
 
 static void
 set_dirty_for_bind_map(struct anv_cmd_buffer *cmd_buffer,
-                       gl_shader_stage stage,
+                       mesa_shader_stage stage,
                        const struct anv_pipeline_bind_map *map)
 {
    assert(stage < ARRAY_SIZE(cmd_buffer->state.surface_sha1s));

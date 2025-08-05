@@ -1209,7 +1209,7 @@ cp_im_loadi(uint32_t *dwords, uint32_t sizedwords, int level)
    uint32_t start = dwords[1] >> 16;
    uint32_t size = dwords[1] & 0xffff;
    const char *type = NULL, *ext = NULL;
-   gl_shader_stage disasm_type;
+   mesa_shader_stage disasm_type;
 
    switch (dwords[0]) {
    case 0:
@@ -1286,13 +1286,13 @@ enum adreno_state_block {
  */
 
 static void
-a3xx_get_state_type(uint32_t *dwords, gl_shader_stage *stage,
+a3xx_get_state_type(uint32_t *dwords, mesa_shader_stage *stage,
                     enum state_t *state, enum state_src_t *src)
 {
    unsigned state_block_id = (dwords[0] >> 19) & 0x7;
    unsigned state_type = dwords[1] & 0x3;
    static const struct {
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
       enum state_t state;
    } lookup[0xf][0x3] = {
       [SB_VERT_TEX][0] = {MESA_SHADER_VERTEX, TEX_SAMP},
@@ -1331,10 +1331,10 @@ _get_state_src(unsigned dword0)
 
 static void
 _get_state_type(unsigned state_block_id, unsigned state_type,
-                gl_shader_stage *stage, enum state_t *state)
+                mesa_shader_stage *stage, enum state_t *state)
 {
    static const struct {
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
       enum state_t state;
    } lookup[0x10][0x4] = {
       // SB4_VS_TEX:
@@ -1407,7 +1407,7 @@ _get_state_type(unsigned state_block_id, unsigned state_type,
 }
 
 static void
-a4xx_get_state_type(uint32_t *dwords, gl_shader_stage *stage,
+a4xx_get_state_type(uint32_t *dwords, mesa_shader_stage *stage,
                     enum state_t *state, enum state_src_t *src)
 {
    unsigned state_block_id = (dwords[0] >> 18) & 0xf;
@@ -1417,7 +1417,7 @@ a4xx_get_state_type(uint32_t *dwords, gl_shader_stage *stage,
 }
 
 static void
-a6xx_get_state_type(uint32_t *dwords, gl_shader_stage *stage,
+a6xx_get_state_type(uint32_t *dwords, mesa_shader_stage *stage,
                     enum state_t *state, enum state_src_t *src)
 {
    unsigned state_block_id = (dwords[0] >> 18) & 0xf;
@@ -1568,7 +1568,7 @@ dump_bindless_descriptors(bool is_compute, int level)
 static void
 cp_load_state(uint32_t *dwords, uint32_t sizedwords, int level)
 {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    enum state_t state;
    enum state_src_t src;
    uint32_t num_unit = (dwords[0] >> 22) & 0x1ff;

@@ -89,7 +89,7 @@ iris_disk_cache_store(struct disk_cache *cache,
    if (!cache)
       return;
 
-   gl_shader_stage stage = ish->nir->info.stage;
+   mesa_shader_stage stage = ish->nir->info.stage;
    const struct brw_stage_prog_data *brw = shader->brw_prog_data;
 #ifdef INTEL_USE_ELK
    const struct elk_stage_prog_data *elk = shader->elk_prog_data;
@@ -194,7 +194,7 @@ iris_disk_cache_retrieve(struct iris_screen *screen,
 {
 #ifdef ENABLE_SHADER_CACHE
    struct disk_cache *cache = screen->disk_cache;
-   gl_shader_stage stage = ish->nir->info.stage;
+   mesa_shader_stage stage = ish->nir->info.stage;
 
    if (!cache)
       return false;

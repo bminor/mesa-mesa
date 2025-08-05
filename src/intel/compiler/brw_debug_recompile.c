@@ -167,7 +167,7 @@ debug_cs_recompile(const struct brw_compiler *c, void *log,
 
 void
 brw_debug_key_recompile(const struct brw_compiler *c, void *log,
-                        gl_shader_stage stage,
+                        mesa_shader_stage stage,
                         const struct brw_base_prog_key *old_key,
                         const struct brw_base_prog_key *key)
 {

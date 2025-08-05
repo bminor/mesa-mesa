@@ -43,7 +43,7 @@ struct aco_vs_prolog_info {
    uint32_t misaligned_mask;
    uint32_t unaligned_mask;
    bool is_ngg;
-   gl_shader_stage next_stage;
+   mesa_shader_stage next_stage;
 };
 
 struct aco_ps_epilog_info {

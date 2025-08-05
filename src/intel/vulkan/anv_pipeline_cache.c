@@ -98,7 +98,7 @@ anv_shader_bin_rewrite_embedded_samplers(struct anv_device *device,
 
 static struct anv_shader_bin *
 anv_shader_bin_create(struct anv_device *device,
-                      gl_shader_stage stage,
+                      mesa_shader_stage stage,
                       const void *key_data, uint32_t key_size,
                       const void *kernel_data, uint32_t kernel_size,
                       const struct brw_stage_prog_data *prog_data_in,
@@ -362,7 +362,7 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
    struct anv_device *device =
       container_of(cache->base.device, struct anv_device, vk);
 
-   gl_shader_stage stage = blob_read_uint32(blob);
+   mesa_shader_stage stage = blob_read_uint32(blob);
 
    uint32_t kernel_size = blob_read_uint32(blob);
    const void *kernel_data = blob_read_bytes(blob, kernel_size);

@@ -112,7 +112,7 @@ struct radv_graphics_pipeline {
    uint32_t db_render_control;
 
    /* Last pre-PS API stage */
-   gl_shader_stage last_vgt_api_stage;
+   mesa_shader_stage last_vgt_api_stage;
 
    unsigned rast_prim;
 
@@ -173,7 +173,7 @@ struct radv_graphics_lib_pipeline {
 RADV_DECL_PIPELINE_DOWNCAST(graphics_lib, RADV_PIPELINE_GRAPHICS_LIB)
 
 static inline bool
-radv_pipeline_has_stage(const struct radv_graphics_pipeline *pipeline, gl_shader_stage stage)
+radv_pipeline_has_stage(const struct radv_graphics_pipeline *pipeline, mesa_shader_stage stage)
 {
    return pipeline->base.shaders[stage];
 }
@@ -589,7 +589,7 @@ struct radv_ia_multi_vgt_param_helpers radv_compute_ia_multi_vgt_param(const str
 
 void radv_get_viewport_xform(const VkViewport *viewport, float scale[3], float translate[3]);
 
-struct radv_shader *radv_get_shader(struct radv_shader *const *shaders, gl_shader_stage stage);
+struct radv_shader *radv_get_shader(struct radv_shader *const *shaders, mesa_shader_stage stage);
 
 struct radv_ps_epilog_state {
    uint8_t color_attachment_count;

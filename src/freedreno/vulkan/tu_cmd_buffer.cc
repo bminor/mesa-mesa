@@ -5942,7 +5942,7 @@ TU_GENX(tu_CmdNextSubpass2);
 static uint32_t
 tu6_user_consts_size(const struct tu_const_state *const_state,
                      bool ldgk,
-                     gl_shader_stage type)
+                     mesa_shader_stage type)
 {
    uint32_t dwords = 0;
 
@@ -5965,7 +5965,7 @@ static void
 tu6_emit_per_stage_push_consts(struct tu_cs *cs,
                                const struct tu_const_state *const_state,
                                const struct ir3_const_state *ir_const_state,
-                               gl_shader_stage type,
+                               mesa_shader_stage type,
                                uint32_t *push_constants)
 {
    if (const_state->push_consts.type == IR3_PUSH_CONSTS_PER_STAGE) {
@@ -5995,7 +5995,7 @@ static void
 tu6_emit_inline_ubo(struct tu_cs *cs,
                     const struct tu_const_state *const_state,
                     unsigned constlen,
-                    gl_shader_stage type,
+                    mesa_shader_stage type,
                     struct tu_descriptor_state *descriptors)
 {
    assert(const_state->num_inline_ubos == 0 || !cs->device->physical_device->info->a7xx.load_shader_consts_via_preamble);
@@ -6034,7 +6034,7 @@ tu7_emit_inline_ubo(struct tu_cs *cs,
                     const struct tu_const_state *const_state,
                     const struct ir3_const_state *ir_const_state,
                     unsigned constlen,
-                    gl_shader_stage type,
+                    mesa_shader_stage type,
                     struct tu_descriptor_state *descriptors)
 {
    uint64_t addresses[7] = {0};
@@ -6070,7 +6070,7 @@ tu_emit_inline_ubo(struct tu_cs *cs,
                    const struct tu_const_state *const_state,
                    const struct ir3_const_state *ir_const_state,
                    unsigned constlen,
-                   gl_shader_stage type,
+                   mesa_shader_stage type,
                    struct tu_descriptor_state *descriptors)
 {
    if (!const_state->num_inline_ubos)
@@ -6142,7 +6142,7 @@ tu6_const_size(struct tu_cmd_buffer *cmd,
          tu6_user_consts_size(&cmd->state.shaders[MESA_SHADER_COMPUTE]->const_state, ldgk, MESA_SHADER_COMPUTE);
    } else {
       for (uint32_t type = MESA_SHADER_VERTEX; type <= MESA_SHADER_FRAGMENT; type++)
-         dwords += tu6_user_consts_size(&cmd->state.shaders[type]->const_state, ldgk, (gl_shader_stage) type);
+         dwords += tu6_user_consts_size(&cmd->state.shaders[type]->const_state, ldgk, (mesa_shader_stage) type);
    }
 
    return dwords;
@@ -6189,11 +6189,11 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
             &cmd->state.program.link[type];
          tu6_emit_per_stage_push_consts(&cs, &link->tu_const_state,
                                         &link->const_state,
-                                        (gl_shader_stage) type,
+                                        (mesa_shader_stage) type,
                                         cmd->push_constants);
          tu_emit_inline_ubo(&cs, &link->tu_const_state,
                             &link->const_state, link->constlen,
-                            (gl_shader_stage) type, descriptors);
+                            (mesa_shader_stage) type, descriptors);
       }
    }
 
@@ -7446,7 +7446,7 @@ tu_emit_compute_driver_params(struct tu_cmd_buffer *cmd,
                               struct tu_cs *cs,
                               const struct tu_dispatch_info *info)
 {
-   gl_shader_stage type = MESA_SHADER_COMPUTE;
+   mesa_shader_stage type = MESA_SHADER_COMPUTE;
    const struct tu_shader *shader = cmd->state.shaders[MESA_SHADER_COMPUTE];
    const struct ir3_shader_variant *variant = shader->variant;
    const struct ir3_const_state *const_state = variant->const_state;

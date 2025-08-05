@@ -315,15 +315,15 @@ struct vk_pipeline_cache_header {
    } \
 } while (0)
 
-static inline gl_shader_stage
+static inline mesa_shader_stage
 vk_to_mesa_shader_stage(VkShaderStageFlagBits vk_stage)
 {
    assert(util_bitcount((uint32_t) vk_stage) == 1);
-   return (gl_shader_stage) (ffs((uint32_t) vk_stage) - 1);
+   return (mesa_shader_stage) (ffs((uint32_t) vk_stage) - 1);
 }
 
 static inline VkShaderStageFlagBits
-mesa_to_vk_shader_stage(gl_shader_stage mesa_stage)
+mesa_to_vk_shader_stage(mesa_shader_stage mesa_stage)
 {
    return (VkShaderStageFlagBits) (1 << ((uint32_t) mesa_stage));
 }

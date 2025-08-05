@@ -24,7 +24,7 @@ struct ac_nir_context {
    struct ac_shader_abi *abi;
    const struct ac_shader_args *args;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    shader_info *info;
 
    LLVMValueRef *ssa_defs;

@@ -909,7 +909,7 @@ calculate_curbe_offsets(struct crocus_batch *batch)
 
 static void
 upload_shader_consts(struct crocus_context *ice,
-                     gl_shader_stage stage,
+                     mesa_shader_stage stage,
                      uint32_t *map,
                      unsigned start)
 {
@@ -2302,7 +2302,7 @@ crocus_bind_sampler_states(struct pipe_context *ctx,
                            void **states)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
-   gl_shader_stage stage = stage_from_pipe(p_stage);
+   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
 
    assert(start + count <= CROCUS_MAX_TEXTURE_SAMPLERS);
@@ -2593,7 +2593,7 @@ crocus_upload_border_color(struct crocus_batch *batch,
  */
 static void
 crocus_upload_sampler_states(struct crocus_context *ice,
-                             struct crocus_batch *batch, gl_shader_stage stage)
+                             struct crocus_batch *batch, mesa_shader_stage stage)
 {
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
    const struct shader_info *info = crocus_get_shader_info(ice, stage);
@@ -3040,7 +3040,7 @@ crocus_set_shader_images(struct pipe_context *ctx,
    struct crocus_context *ice = (struct crocus_context *) ctx;
    struct crocus_screen *screen = (struct crocus_screen *)ctx->screen;
    const struct intel_device_info *devinfo = &screen->devinfo;
-   gl_shader_stage stage = stage_from_pipe(p_stage);
+   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
    struct crocus_genx_state *genx = ice->state.genx;
    struct isl_image_param *image_params = genx->shaders[stage].image_param;
@@ -3135,7 +3135,7 @@ crocus_set_sampler_views(struct pipe_context *ctx,
                          struct pipe_sampler_view **views)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
-   gl_shader_stage stage = stage_from_pipe(p_stage);
+   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
 
    shs->bound_sampler_views &= ~u_bit_consecutive(start, count);
@@ -3509,7 +3509,7 @@ crocus_set_constant_buffer(struct pipe_context *ctx,
                            const struct pipe_constant_buffer *input)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
-   gl_shader_stage stage = stage_from_pipe(p_stage);
+   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
    struct pipe_constant_buffer *cbuf = &shs->constbufs[index];
 
@@ -3549,7 +3549,7 @@ crocus_set_constant_buffer(struct pipe_context *ctx,
 
 static void
 upload_sysvals(struct crocus_context *ice,
-               gl_shader_stage stage)
+               mesa_shader_stage stage)
 {
    UNUSED struct crocus_genx_state *genx = ice->state.genx;
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
@@ -3638,7 +3638,7 @@ crocus_set_shader_buffers(struct pipe_context *ctx,
                           unsigned writable_bitmask)
 {
    struct crocus_context *ice = (struct crocus_context *) ctx;
-   gl_shader_stage stage = stage_from_pipe(p_stage);
+   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct crocus_shader_state *shs = &ice->state.shaders[stage];
 
    unsigned modified_bits = u_bit_consecutive(start_slot, count);
@@ -4704,7 +4704,7 @@ crocus_emit_sbe(struct crocus_batch *batch, const struct crocus_context *ice)
 static void
 crocus_populate_vs_key(const struct crocus_context *ice,
                        const struct shader_info *info,
-                       gl_shader_stage last_stage,
+                       mesa_shader_stage last_stage,
                        struct elk_vs_prog_key *key)
 {
    const struct crocus_rasterizer_state *cso_rast = ice->state.cso_rast;
@@ -4752,7 +4752,7 @@ crocus_populate_tcs_key(const struct crocus_context *ice,
 static void
 crocus_populate_tes_key(const struct crocus_context *ice,
                         const struct shader_info *info,
-                        gl_shader_stage last_stage,
+                        mesa_shader_stage last_stage,
                         struct elk_tes_prog_key *key)
 {
    const struct crocus_rasterizer_state *cso_rast = ice->state.cso_rast;
@@ -4773,7 +4773,7 @@ crocus_populate_tes_key(const struct crocus_context *ice,
 static void
 crocus_populate_gs_key(const struct crocus_context *ice,
                        const struct shader_info *info,
-                       gl_shader_stage last_stage,
+                       mesa_shader_stage last_stage,
                        struct elk_gs_prog_key *key)
 {
    const struct crocus_rasterizer_state *cso_rast = ice->state.cso_rast;
@@ -5394,7 +5394,7 @@ emit_sol_surface(struct crocus_batch *batch,
 static void
 crocus_populate_binding_table(struct crocus_context *ice,
                               struct crocus_batch *batch,
-                              gl_shader_stage stage, bool ff_gs)
+                              mesa_shader_stage stage, bool ff_gs)
 {
    struct crocus_compiled_shader *shader = ff_gs ? ice->shaders.ff_gs_prog : ice->shaders.prog[stage];
    struct crocus_shader_state *shs = ff_gs ? NULL : &ice->state.shaders[stage];

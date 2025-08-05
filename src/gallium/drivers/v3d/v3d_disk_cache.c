@@ -34,7 +34,7 @@
 #ifdef ENABLE_SHADER_CACHE
 
 static uint32_t
-v3d_key_size(gl_shader_stage stage)
+v3d_key_size(mesa_shader_stage stage)
 {
         static const int key_size[] = {
                 [MESA_SHADER_VERTEX] = sizeof(struct v3d_vs_key),

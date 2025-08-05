@@ -140,7 +140,7 @@ _mesa_spirv_link_shaders(struct gl_context *ctx, struct gl_shader_program *prog)
 
    for (unsigned i = 0; i < prog->NumShaders; i++) {
       struct gl_shader *shader = prog->Shaders[i];
-      gl_shader_stage shader_type = shader->Stage;
+      mesa_shader_stage shader_type = shader->Stage;
 
       /* We only support one shader per stage. The gl_spirv spec doesn't seem
        * to prevent this, but the way the API is designed, requiring all shaders
@@ -196,7 +196,7 @@ _mesa_spirv_link_shaders(struct gl_context *ctx, struct gl_shader_program *prog)
    /* Some shaders have to be linked with some other shaders present. */
    if (!prog->SeparateShader) {
       static const struct {
-         gl_shader_stage a, b;
+         mesa_shader_stage a, b;
       } stage_pairs[] = {
          { MESA_SHADER_GEOMETRY, MESA_SHADER_VERTEX },
          { MESA_SHADER_TESS_EVAL, MESA_SHADER_VERTEX },
@@ -205,8 +205,8 @@ _mesa_spirv_link_shaders(struct gl_context *ctx, struct gl_shader_program *prog)
       };
 
       for (unsigned i = 0; i < ARRAY_SIZE(stage_pairs); i++) {
-         gl_shader_stage a = stage_pairs[i].a;
-         gl_shader_stage b = stage_pairs[i].b;
+         mesa_shader_stage a = stage_pairs[i].a;
+         mesa_shader_stage b = stage_pairs[i].b;
          if ((prog->data->linked_stages & ((1 << a) | (1 << b))) == (1 << a)) {
             ralloc_asprintf_append(&prog->data->InfoLog,
                                    "%s shader must be linked with %s shader\n",
@@ -232,7 +232,7 @@ _mesa_spirv_link_shaders(struct gl_context *ctx, struct gl_shader_program *prog)
 nir_shader *
 _mesa_spirv_to_nir(struct gl_context *ctx,
                    const struct gl_shader_program *prog,
-                   gl_shader_stage stage,
+                   mesa_shader_stage stage,
                    const nir_shader_compiler_options *options)
 {
    struct gl_linked_shader *linked_shader = prog->_LinkedShaders[stage];

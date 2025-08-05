@@ -113,7 +113,7 @@ iris_delete_shader_variant(struct iris_compiled_shader *shader)
 struct iris_compiled_shader *
 iris_create_shader_variant(const struct iris_screen *screen,
                            void *mem_ctx,
-                           gl_shader_stage stage,
+                           mesa_shader_stage stage,
                            enum iris_program_cache_id cache_id,
                            uint32_t key_size,
                            const void *key)

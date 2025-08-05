@@ -12,7 +12,7 @@
 
 static const nir_shader_compiler_options *
 blorp_nir_options_elk(struct blorp_context *blorp,
-                      gl_shader_stage stage)
+                      mesa_shader_stage stage)
 {
    const struct elk_compiler *compiler = blorp->compiler->elk;
    return compiler->nir_options[stage];

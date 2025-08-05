@@ -256,7 +256,7 @@ vk_queue_to_radv(const struct radv_physical_device *pdev, int queue_family_index
  * specific shader stage (developers only).
  */
 static inline bool
-radv_use_llvm_for_stage(const struct radv_physical_device *pdev, UNUSED gl_shader_stage stage)
+radv_use_llvm_for_stage(const struct radv_physical_device *pdev, UNUSED mesa_shader_stage stage)
 {
    return pdev->use_llvm;
 }

@@ -186,7 +186,7 @@ elk_get_compiler_config_value(const struct elk_compiler *compiler)
 }
 
 unsigned
-elk_prog_data_size(gl_shader_stage stage)
+elk_prog_data_size(mesa_shader_stage stage)
 {
    static const size_t stage_sizes[] = {
       [MESA_SHADER_VERTEX]       = sizeof(struct elk_vs_prog_data),
@@ -201,7 +201,7 @@ elk_prog_data_size(gl_shader_stage stage)
 }
 
 unsigned
-elk_prog_key_size(gl_shader_stage stage)
+elk_prog_key_size(mesa_shader_stage stage)
 {
    static const size_t stage_sizes[] = {
       [MESA_SHADER_VERTEX]       = sizeof(struct elk_vs_prog_key),

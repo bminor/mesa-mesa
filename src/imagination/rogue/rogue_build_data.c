@@ -333,7 +333,7 @@ static void collect_io_data_vs(struct rogue_common_build_data *common_data,
 PUBLIC
 void rogue_collect_io_data(struct rogue_build_ctx *ctx, nir_shader *nir)
 {
-   gl_shader_stage stage = nir->info.stage;
+   mesa_shader_stage stage = nir->info.stage;
    struct rogue_common_build_data *common_data = &ctx->common_data[stage];
 
    /* Collect stage-specific data. */

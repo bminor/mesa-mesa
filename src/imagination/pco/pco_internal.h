@@ -337,7 +337,7 @@ typedef struct _pco_shader {
    pco_ctx *ctx; /** Compiler context. */
    nir_shader *nir; /** Source NIR shader. */
 
-   gl_shader_stage stage; /** Shader stage. */
+   mesa_shader_stage stage; /** Shader stage. */
    const char *name; /** Shader name. */
    bool is_internal; /** Whether this is an internal shader. */
    bool is_grouped; /** Whether the shader uses igrps. */

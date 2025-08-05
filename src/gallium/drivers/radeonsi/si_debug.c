@@ -764,7 +764,7 @@ static unsigned si_identity(unsigned slot)
    return slot;
 }
 
-static void si_dump_descriptors(struct si_context *sctx, gl_shader_stage stage,
+static void si_dump_descriptors(struct si_context *sctx, mesa_shader_stage stage,
                                 const struct si_shader_info *info, struct u_log_context *log)
 {
    struct si_descriptors *descs =
@@ -843,7 +843,7 @@ struct si_shader_inst {
 static void si_add_split_disasm(struct si_screen *screen, struct ac_rtld_binary *rtld_binary,
                                 struct si_shader_binary *binary, uint64_t *addr, unsigned *num,
                                 struct si_shader_inst *instructions,
-                                gl_shader_stage stage, unsigned wave_size)
+                                mesa_shader_stage stage, unsigned wave_size)
 {
    if (!ac_rtld_open(rtld_binary, (struct ac_rtld_open_info){
                                      .info = &screen->info,
@@ -895,7 +895,7 @@ static void si_print_annotated_shader(struct si_shader *shader, struct ac_wave_i
       return;
 
    struct si_screen *screen = shader->selector->screen;
-   gl_shader_stage stage = shader->selector->stage;
+   mesa_shader_stage stage = shader->selector->stage;
    uint64_t start_addr = shader->bo->gpu_address;
    uint64_t end_addr = start_addr + shader->bo->b.b.width0;
    unsigned i;

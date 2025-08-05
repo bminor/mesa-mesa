@@ -103,8 +103,8 @@ struct radv_shader_info {
    struct radv_vs_output_info outinfo;
    unsigned workgroup_size;
    bool force_vrs_per_vertex;
-   gl_shader_stage stage;
-   gl_shader_stage next_stage;
+   mesa_shader_stage stage;
+   mesa_shader_stage next_stage;
    enum radv_shader_type type;
    uint32_t user_data_0;
    bool inputs_linked;
@@ -319,7 +319,7 @@ struct radv_shader_info {
    } regs;
 };
 
-void radv_nir_shader_info_init(gl_shader_stage stage, gl_shader_stage next_stage, struct radv_shader_info *info);
+void radv_nir_shader_info_init(mesa_shader_stage stage, mesa_shader_stage next_stage, struct radv_shader_info *info);
 
 void radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *nir,
                                const struct radv_shader_layout *layout, const struct radv_shader_stage_key *stage_key,

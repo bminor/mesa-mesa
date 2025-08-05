@@ -207,7 +207,7 @@ static void
 use_program_stage(struct gl_context *ctx, GLenum type,
                   struct gl_shader_program *shProg,
                   struct gl_pipeline_object *pipe) {
-   gl_shader_stage stage = _mesa_shader_enum_to_shader_stage(type);
+   mesa_shader_stage stage = _mesa_shader_enum_to_shader_stage(type);
    struct gl_program *prog = NULL;
    if (shProg && shProg->_LinkedShaders[stage])
       prog = shProg->_LinkedShaders[stage]->Program;

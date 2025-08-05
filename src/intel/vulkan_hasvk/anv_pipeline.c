@@ -55,7 +55,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
 {
    const struct anv_physical_device *pdevice = device->physical;
    const struct elk_compiler *compiler = pdevice->compiler;
-   gl_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
    const nir_shader_compiler_options *nir_options =
       compiler->nir_options[stage];
 
@@ -335,7 +335,7 @@ populate_cs_prog_key(const struct anv_device *device,
 }
 
 struct anv_pipeline_stage {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    VkPipelineCreateFlags2KHR pipeline_flags;
    const VkPipelineShaderStageCreateInfo *info;
@@ -345,7 +345,7 @@ struct anv_pipeline_stage {
    union elk_any_prog_key key;
 
    struct {
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
       unsigned char sha1[20];
    } cache_key;
 
@@ -1166,7 +1166,7 @@ anv_graphics_pipeline_load_cached_shaders(struct anv_graphics_pipeline *pipeline
    return false;
 }
 
-static const gl_shader_stage graphics_shader_order[] = {
+static const mesa_shader_stage graphics_shader_order[] = {
    MESA_SHADER_VERTEX,
    MESA_SHADER_TESS_CTRL,
    MESA_SHADER_TESS_EVAL,
@@ -1182,7 +1182,7 @@ anv_graphics_pipeline_load_nir(struct anv_graphics_pipeline *pipeline,
                                void *pipeline_ctx)
 {
    for (unsigned i = 0; i < ARRAY_SIZE(graphics_shader_order); i++) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       if (!stages[s].info)
          continue;
 
@@ -1229,7 +1229,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
    const struct elk_compiler *compiler = pipeline->base.device->physical->compiler;
    struct anv_pipeline_stage stages[ANV_GRAPHICS_SHADER_STAGE_COUNT] = {};
    for (uint32_t i = 0; i < info->stageCount; i++) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(info->pStages[i].stage);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(info->pStages[i].stage);
       stages[stage].stage = stage;
       stages[stage].pipeline_flags = pipeline_flags;
       stages[stage].info = &info->pStages[i];
@@ -1271,7 +1271,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
    /* Walk backwards to link */
    struct anv_pipeline_stage *next_stage = NULL;
    for (int i = ARRAY_SIZE(graphics_shader_order) - 1; i >= 0; i--) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       if (!stages[s].info)
          continue;
 
@@ -1300,7 +1300,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
 
    struct anv_pipeline_stage *prev_stage = NULL;
    for (unsigned i = 0; i < ARRAY_SIZE(graphics_shader_order); i++) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       if (!stages[s].info)
          continue;
 
@@ -1328,7 +1328,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
 
    prev_stage = NULL;
    for (unsigned i = 0; i < ARRAY_SIZE(graphics_shader_order); i++) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       if (!stages[s].info)
          continue;
 
@@ -1410,7 +1410,7 @@ done:
       uint32_t stage_count = create_feedback->pipelineStageCreationFeedbackCount;
       assert(stage_count == 0 || info->stageCount == stage_count);
       for (uint32_t i = 0; i < stage_count; i++) {
-         gl_shader_stage s = vk_to_mesa_shader_stage(info->pStages[i].stage);
+         mesa_shader_stage s = vk_to_mesa_shader_stage(info->pStages[i].stage);
          create_feedback->pPipelineStageCreationFeedbacks[i] = stages[s].feedback;
       }
    }
@@ -1911,7 +1911,7 @@ VkResult anv_GetPipelineExecutablePropertiesKHR(
 
    util_dynarray_foreach (&pipeline->executables, struct anv_pipeline_executable, exe) {
       vk_outarray_append_typed(VkPipelineExecutablePropertiesKHR, &out, props) {
-         gl_shader_stage stage = exe->stage;
+         mesa_shader_stage stage = exe->stage;
          props->stages = mesa_to_vk_shader_stage(stage);
 
          unsigned simd_width = exe->stats.dispatch_width;

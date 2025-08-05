@@ -2017,7 +2017,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
    bi_index dst = nir_intrinsic_infos[instr->intrinsic].has_dest
                      ? bi_def_index(&instr->def)
                      : bi_null();
-   gl_shader_stage stage = b->shader->stage;
+   mesa_shader_stage stage = b->shader->stage;
 
    switch (instr->intrinsic) {
    case nir_intrinsic_load_barycentric_pixel:

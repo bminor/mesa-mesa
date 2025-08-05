@@ -785,7 +785,7 @@ void anv_scratch_pool_finish(struct anv_device *device,
                              struct anv_scratch_pool *pool);
 struct anv_bo *anv_scratch_pool_alloc(struct anv_device *device,
                                       struct anv_scratch_pool *pool,
-                                      gl_shader_stage stage,
+                                      mesa_shader_stage stage,
                                       unsigned per_thread_scratch);
 
 /** Implements a BO cache that ensures a 1-1 mapping of GEM BOs to anv_bos */
@@ -978,7 +978,7 @@ anv_device_search_for_kernel(struct anv_device *device,
 struct anv_shader_bin *
 anv_device_upload_kernel(struct anv_device *device,
                          struct vk_pipeline_cache *cache,
-                         gl_shader_stage stage,
+                         mesa_shader_stage stage,
                          const void *key_data, uint32_t key_size,
                          const void *kernel_data, uint32_t kernel_size,
                          const struct elk_stage_prog_data *prog_data,
@@ -2743,8 +2743,8 @@ struct anv_event {
 #define ANV_STAGE_MASK ((1 << MESA_VULKAN_SHADER_STAGES) - 1)
 
 #define anv_foreach_stage(stage, stage_bits)                         \
-   for (gl_shader_stage stage,                                       \
-        __tmp = (gl_shader_stage)((stage_bits) & ANV_STAGE_MASK);    \
+   for (mesa_shader_stage stage,                                       \
+        __tmp = (mesa_shader_stage)((stage_bits) & ANV_STAGE_MASK);    \
         stage = __builtin_ffs(__tmp) - 1, __tmp;                     \
         __tmp &= ~(1 << (stage)))
 
@@ -2765,7 +2765,7 @@ struct anv_pipeline_bind_map {
 struct anv_shader_bin {
    struct vk_pipeline_cache_object base;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct anv_state kernel;
    uint32_t kernel_size;
@@ -2783,7 +2783,7 @@ struct anv_shader_bin {
 
 struct anv_shader_bin *
 anv_shader_bin_create(struct anv_device *device,
-                      gl_shader_stage stage,
+                      mesa_shader_stage stage,
                       const void *key, uint32_t key_size,
                       const void *kernel, uint32_t kernel_size,
                       const struct elk_stage_prog_data *prog_data,
@@ -2805,7 +2805,7 @@ anv_shader_bin_unref(struct anv_device *device, struct anv_shader_bin *shader)
 }
 
 struct anv_pipeline_executable {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct elk_compile_stats stats;
 
@@ -2921,7 +2921,7 @@ ANV_DECL_PIPELINE_DOWNCAST(compute, ANV_PIPELINE_COMPUTE)
 
 static inline bool
 anv_pipeline_has_stage(const struct anv_graphics_pipeline *pipeline,
-                       gl_shader_stage stage)
+                       mesa_shader_stage stage)
 {
    return (pipeline->active_stages & mesa_to_vk_shader_stage(stage)) != 0;
 }

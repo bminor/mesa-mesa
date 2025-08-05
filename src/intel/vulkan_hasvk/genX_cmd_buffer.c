@@ -2465,7 +2465,7 @@ flush_descriptor_sets(struct anv_cmd_buffer *cmd_buffer,
       if (!shaders[i])
          continue;
 
-      gl_shader_stage stage = shaders[i]->stage;
+      mesa_shader_stage stage = shaders[i]->stage;
       VkShaderStageFlags vk_stage = mesa_to_vk_shader_stage(stage);
       if ((vk_stage & dirty) == 0)
          continue;
@@ -2504,7 +2504,7 @@ flush_descriptor_sets(struct anv_cmd_buffer *cmd_buffer,
          if (!shaders[i])
             continue;
 
-         gl_shader_stage stage = shaders[i]->stage;
+         mesa_shader_stage stage = shaders[i]->stage;
 
          result = emit_samplers(cmd_buffer, pipe_state, shaders[i],
                                 &cmd_buffer->state.samplers[stage]);
@@ -2712,7 +2712,7 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
 
 static void
 cmd_buffer_emit_push_constant(struct anv_cmd_buffer *cmd_buffer,
-                              gl_shader_stage stage,
+                              mesa_shader_stage stage,
                               struct anv_address *buffers,
                               unsigned buffer_count)
 {

@@ -109,7 +109,7 @@ generate_math2_gfx4(struct elk_codegen *p,
 static void
 generate_tex(struct elk_codegen *p,
              struct elk_vue_prog_data *prog_data,
-             gl_shader_stage stage,
+             mesa_shader_stage stage,
              vec4_instruction *inst,
              struct elk_reg dst,
              struct elk_reg src,

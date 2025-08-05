@@ -7,7 +7,7 @@
 #include "sfn_nir.h"
 
 bool
-r600_lower_tess_io_filter(const nir_instr *instr, gl_shader_stage stage)
+r600_lower_tess_io_filter(const nir_instr *instr, mesa_shader_stage stage)
 {
    if (instr->type != nir_instr_type_intrinsic)
       return false;

@@ -422,7 +422,7 @@ crocus_draw_vbo(struct pipe_context *ctx,
 
    if (ice->state.dirty & CROCUS_DIRTY_RENDER_RESOLVES_AND_FLUSHES) {
       bool draw_aux_buffer_disabled[ELK_MAX_DRAW_BUFFERS] = { };
-      for (gl_shader_stage stage = 0; stage < MESA_SHADER_COMPUTE; stage++) {
+      for (mesa_shader_stage stage = 0; stage < MESA_SHADER_COMPUTE; stage++) {
          if (ice->shaders.prog[stage])
             crocus_predraw_resolve_inputs(ice, batch, draw_aux_buffer_disabled,
                                           stage, true);

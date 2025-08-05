@@ -194,7 +194,7 @@ struct midgard_shader_info {
 };
 
 struct pan_shader_info {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    unsigned work_reg_count;
    unsigned tls_size;
    unsigned wls_size;

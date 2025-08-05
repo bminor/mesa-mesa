@@ -34,7 +34,7 @@
 
 nir_shader *
 pvr_spirv_to_nir(rogue_build_ctx *ctx,
-                 gl_shader_stage stage,
+                 mesa_shader_stage stage,
                  const VkPipelineShaderStageCreateInfo *create_info);
 
 rogue_shader *pvr_nir_to_rogue(rogue_build_ctx *ctx, nir_shader *nir);

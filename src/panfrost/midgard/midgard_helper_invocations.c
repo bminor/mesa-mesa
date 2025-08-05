@@ -64,7 +64,7 @@
 
 /* Does a block use helpers directly */
 static bool
-mir_block_uses_helpers(gl_shader_stage stage, midgard_block *block)
+mir_block_uses_helpers(mesa_shader_stage stage, midgard_block *block)
 {
    mir_foreach_instr_in_block(block, ins) {
       if (ins->type != TAG_TEXTURE_4)

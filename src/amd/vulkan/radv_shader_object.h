@@ -16,7 +16,7 @@
 struct radv_shader_object {
    struct vk_object_base base;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    VkShaderCodeTypeEXT code_type;
 

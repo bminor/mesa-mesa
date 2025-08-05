@@ -1814,7 +1814,7 @@ typedef struct rogue_build_ctx rogue_build_ctx;
 
 /** Rogue shader object. */
 typedef struct rogue_shader {
-   gl_shader_stage stage; /** Shader stage. */
+   mesa_shader_stage stage; /** Shader stage. */
 
    rogue_build_ctx *ctx; /** Build context. */
 
@@ -1874,7 +1874,7 @@ static inline void rogue_clear_reg_use(rogue_shader *shader,
  * \param[in] stage The shader stage.
  * \return The new shader.
  */
-rogue_shader *rogue_shader_create(void *mem_ctx, gl_shader_stage stage);
+rogue_shader *rogue_shader_create(void *mem_ctx, mesa_shader_stage stage);
 
 rogue_reg *rogue_ssa_reg(rogue_shader *shader, unsigned index);
 
@@ -2933,7 +2933,7 @@ unsigned rogue_ubo_reg(rogue_ubo_data *ubo_data,
                        unsigned offset_bytes);
 
 nir_shader *rogue_spirv_to_nir(rogue_build_ctx *ctx,
-                               gl_shader_stage stage,
+                               mesa_shader_stage stage,
                                const char *entry,
                                unsigned spirv_size,
                                const uint32_t *spirv_data,

@@ -470,7 +470,7 @@ struct si_shader_selector {
    struct si_screen *screen;
    struct util_queue_fence ready;
    struct si_compiler_ctx_state compiler_ctx_state;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    simple_mtx_t mutex;
    union si_shader_key *keys;
@@ -900,7 +900,7 @@ int si_shader_binary_upload(struct si_screen *sscreen, struct si_shader *shader,
                             uint64_t scratch_va);
 int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shader,
                                uint64_t scratch_va, int64_t bo_offset);
-bool si_can_dump_shader(struct si_screen *sscreen, gl_shader_stage stage,
+bool si_can_dump_shader(struct si_screen *sscreen, mesa_shader_stage stage,
                         enum si_shader_dump_type dump_type);
 void si_shader_dump(struct si_screen *sscreen, struct si_shader *shader,
                     struct util_debug_callback *debug, FILE *f, bool check_debug_option);

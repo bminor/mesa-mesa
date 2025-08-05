@@ -129,7 +129,7 @@ setup_cs(const char* input_spec, enum amd_gfx_level gfx_level, enum radeon_famil
 }
 
 bool
-setup_nir_cs(enum amd_gfx_level gfx_level, gl_shader_stage stage, enum radeon_family family, const char* subvariant)
+setup_nir_cs(enum amd_gfx_level gfx_level, mesa_shader_stage stage, enum radeon_family family, const char* subvariant)
 {
    if (!set_variant(gfx_level, subvariant))
       return false;

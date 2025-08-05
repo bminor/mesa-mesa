@@ -5081,7 +5081,7 @@ vertices_in_from_spv_execution_mode(struct vtn_builder *b,
    }
 }
 
-gl_shader_stage
+mesa_shader_stage
 vtn_stage_for_execution_model(SpvExecutionModel model)
 {
    switch (model) {
@@ -5132,7 +5132,7 @@ vtn_handle_entry_point(struct vtn_builder *b, const uint32_t *w,
    entry_point->name = vtn_string_literal(b, &w[3], count - 3, &name_words);
    entry_point->is_entrypoint = true;
 
-   gl_shader_stage stage = vtn_stage_for_execution_model(w[1]);
+   mesa_shader_stage stage = vtn_stage_for_execution_model(w[1]);
    vtn_fail_if(stage == MESA_SHADER_NONE,
                "Unsupported execution model: %s (%u)",
                spirv_executionmodel_to_string(w[1]), w[1]);
@@ -6952,7 +6952,7 @@ is_glslang(const struct vtn_builder *b)
 
 struct vtn_builder*
 vtn_create_builder(const uint32_t *words, size_t word_count,
-                   gl_shader_stage stage, const char *entry_point_name,
+                   mesa_shader_stage stage, const char *entry_point_name,
                    const struct spirv_to_nir_options *options)
 {
    /* Initialize the vtn_builder object */
@@ -7197,7 +7197,7 @@ can_remove(nir_variable *var, void *data)
 nir_shader *
 spirv_to_nir(const uint32_t *words, size_t word_count,
              struct nir_spirv_specialization *spec, unsigned num_spec,
-             gl_shader_stage stage, const char *entry_point_name,
+             mesa_shader_stage stage, const char *entry_point_name,
              const struct spirv_to_nir_options *options,
              const nir_shader_compiler_options *nir_options)
 

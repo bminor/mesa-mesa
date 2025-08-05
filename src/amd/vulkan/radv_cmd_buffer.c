@@ -2178,7 +2178,7 @@ radv_emit_hw_ngg(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *e
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const uint64_t va = radv_shader_get_va(shader);
-   gl_shader_stage es_type;
+   mesa_shader_stage es_type;
    const struct gfx10_ngg_info *ngg_state = &shader->info.ngg_info;
 
    if (shader->info.stage == MESA_SHADER_GEOMETRY) {
@@ -7702,7 +7702,7 @@ radv_bind_rt_prolog(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *rt_p
 
 /* This function binds/unbinds a shader to the cmdbuffer state. */
 static void
-radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader, gl_shader_stage stage)
+radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader, mesa_shader_stage stage)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
@@ -10860,7 +10860,7 @@ radv_emit_streamout_enable_state(struct radv_cmd_buffer *cmd_buffer)
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_STREAMOUT_ENABLE;
 }
 
-static gl_shader_stage
+static mesa_shader_stage
 radv_cmdbuf_get_last_vgt_api_stage(const struct radv_cmd_buffer *cmd_buffer)
 {
    if (cmd_buffer->state.active_stages & VK_SHADER_STAGE_MESH_BIT_EXT)
@@ -11504,7 +11504,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    }
 
    /* Determine the last VGT shader. */
-   const gl_shader_stage last_vgt_api_stage = radv_cmdbuf_get_last_vgt_api_stage(cmd_buffer);
+   const mesa_shader_stage last_vgt_api_stage = radv_cmdbuf_get_last_vgt_api_stage(cmd_buffer);
 
    assume(last_vgt_api_stage != MESA_SHADER_NONE);
    if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
@@ -14483,7 +14483,7 @@ radv_CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const
    VkShaderStageFlagBits bound_stages = 0;
 
    for (uint32_t i = 0; i < stageCount; i++) {
-      const gl_shader_stage stage = vk_to_mesa_shader_stage(pStages[i]);
+      const mesa_shader_stage stage = vk_to_mesa_shader_stage(pStages[i]);
 
       if (!pShaders) {
          cmd_buffer->state.shader_objs[stage] = NULL;

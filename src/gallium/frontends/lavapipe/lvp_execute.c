@@ -613,7 +613,7 @@ handle_graphics_stages(struct rendering_state *state, VkShaderStageFlagBits shad
 {
    u_foreach_bit(b, shader_stages) {
       VkShaderStageFlagBits vk_stage = (1 << b);
-      gl_shader_stage stage = vk_to_mesa_shader_stage(vk_stage);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(vk_stage);
 
       state->has_pcbuf[stage] = false;
 
@@ -662,7 +662,7 @@ static void
 unbind_graphics_stages(struct rendering_state *state, VkShaderStageFlagBits shader_stages)
 {
    u_foreach_bit(vkstage, shader_stages) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(1<<vkstage);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(1<<vkstage);
       state->has_pcbuf[stage] = false;
       switch (stage) {
       case MESA_SHADER_FRAGMENT:
@@ -702,7 +702,7 @@ unbind_graphics_stages(struct rendering_state *state, VkShaderStageFlagBits shad
 }
 
 static void
-handle_graphics_pushconsts(struct rendering_state *state, gl_shader_stage stage, struct lvp_shader *shader)
+handle_graphics_pushconsts(struct rendering_state *state, mesa_shader_stage stage, struct lvp_shader *shader)
 {
    state->has_pcbuf[stage] = shader->push_constant_size > 0;
    if (!state->has_pcbuf[stage])
@@ -1096,7 +1096,7 @@ static void
 handle_set_stage_buffer(struct rendering_state *state,
                         struct pipe_resource *bo,
                         size_t offset,
-                        gl_shader_stage stage,
+                        mesa_shader_stage stage,
                         uint32_t index)
 {
    state->const_buffer[stage][index].buffer = bo;
@@ -1113,7 +1113,7 @@ handle_set_stage_buffer(struct rendering_state *state,
 static void handle_set_stage(struct rendering_state *state,
                              struct lvp_descriptor_set *set,
                              enum lvp_pipeline_type pipeline_type,
-                             gl_shader_stage stage,
+                             mesa_shader_stage stage,
                              uint32_t index)
 {
    state->desc_sets[pipeline_type][index] = set;
@@ -3825,7 +3825,7 @@ handle_shaders(struct vk_cmd_queue_entry *cmd, struct rendering_state *state)
    unsigned new_stages = 0;
    unsigned null_stages = 0;
    for (unsigned i = 0; i < bind->stage_count; i++) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(bind->stages[i]);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(bind->stages[i]);
       assert(stage != MESA_SHADER_NONE && stage <= MESA_SHADER_MESH);
       LVP_FROM_HANDLE(lvp_shader, shader, bind->shaders ? bind->shaders[i] : VK_NULL_HANDLE);
       if (stage == MESA_SHADER_FRAGMENT) {
@@ -4345,7 +4345,7 @@ handle_descriptor_buffer_offsets(struct vk_cmd_queue_entry *cmd, struct renderin
          } else {
             /* set for all stages */
             u_foreach_bit(stage, set_layout->shader_stages) {
-               gl_shader_stage pstage = vk_to_mesa_shader_stage(1<<stage);
+               mesa_shader_stage pstage = vk_to_mesa_shader_stage(1<<stage);
                handle_set_stage_buffer(state, state->desc_buffers[dbo->pBufferIndices[i]], dbo->pOffsets[i], pstage, idx);
             }
          }
@@ -4355,7 +4355,7 @@ handle_descriptor_buffer_offsets(struct vk_cmd_queue_entry *cmd, struct renderin
 }
 
 static void *
-lvp_push_internal_buffer(struct rendering_state *state, gl_shader_stage stage, uint32_t size)
+lvp_push_internal_buffer(struct rendering_state *state, mesa_shader_stage stage, uint32_t size)
 {
    if (!size)
       return NULL;

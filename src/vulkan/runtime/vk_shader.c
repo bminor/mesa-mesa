@@ -41,7 +41,7 @@ static void
 vk_shader_init(struct vk_shader *shader,
                struct vk_device *device,
                const struct vk_shader_ops *ops,
-               gl_shader_stage stage)
+               mesa_shader_stage stage)
 {
    vk_object_base_init(device, &shader->base, VK_OBJECT_TYPE_SHADER_EXT);
    shader->ops = ops;
@@ -51,7 +51,7 @@ vk_shader_init(struct vk_shader *shader,
 void *
 vk_shader_zalloc(struct vk_device *device,
                  const struct vk_shader_ops *ops,
-                 gl_shader_stage stage,
+                 mesa_shader_stage stage,
                  const VkAllocationCallbacks *alloc,
                  size_t size)
 {
@@ -79,7 +79,7 @@ void *
 vk_shader_multizalloc(struct vk_device *device,
                       struct vk_multialloc *ma,
                       const struct vk_shader_ops *ops,
-                      gl_shader_stage stage,
+                      mesa_shader_stage stage,
                       const VkAllocationCallbacks *alloc)
 {
    struct vk_shader *shader =
@@ -103,7 +103,7 @@ vk_shader_free(struct vk_device *device,
 }
 
 int
-vk_shader_cmp_graphics_stages(gl_shader_stage a, gl_shader_stage b)
+vk_shader_cmp_graphics_stages(mesa_shader_stage a, mesa_shader_stage b)
 {
    static const int stage_order[MESA_SHADER_MESH + 1] = {
       [MESA_SHADER_VERTEX] = 1,
@@ -122,7 +122,7 @@ vk_shader_cmp_graphics_stages(gl_shader_stage a, gl_shader_stage b)
 }
 
 struct stage_idx {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    uint32_t idx;
 };
 
@@ -140,7 +140,7 @@ vk_shader_to_nir(struct vk_device *device,
 {
    const struct vk_device_shader_ops *ops = device->shader_ops;
 
-   const gl_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
+   const mesa_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
    const nir_shader_compiler_options *nir_options =
       ops->get_nir_options(device->physical, stage, rs);
    struct spirv_to_nir_options spirv_options =
@@ -598,7 +598,7 @@ vk_common_CmdBindShadersEXT(VkCommandBuffer commandBuffer,
    struct vk_device *device = cmd_buffer->base.device;
    const struct vk_device_shader_ops *ops = device->shader_ops;
 
-   STACK_ARRAY(gl_shader_stage, stages, stageCount);
+   STACK_ARRAY(mesa_shader_stage, stages, stageCount);
    STACK_ARRAY(struct vk_shader *, shaders, stageCount);
 
    VkShaderStageFlags vk_stages = 0;

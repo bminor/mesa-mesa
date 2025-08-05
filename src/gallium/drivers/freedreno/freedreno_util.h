@@ -458,7 +458,7 @@ fd_clamp_buffer_size(enum pipe_format format, uint32_t size,
  */
 
 static inline enum a4xx_state_block
-fd4_stage2shadersb(gl_shader_stage type)
+fd4_stage2shadersb(mesa_shader_stage type)
 {
    switch (type) {
    case MESA_SHADER_VERTEX:

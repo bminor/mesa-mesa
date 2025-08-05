@@ -36,7 +36,7 @@
  * bitfield corresponding to this variable.
  */
 static uint64_t
-get_variable_io_mask(nir_variable *var, gl_shader_stage stage)
+get_variable_io_mask(nir_variable *var, mesa_shader_stage stage)
 {
    if (var->data.location < 0)
       return 0;
@@ -326,7 +326,7 @@ static void
 get_unmoveable_components_masks(nir_shader *shader,
                                 nir_variable_mode mode,
                                 struct assigned_comps *comps,
-                                gl_shader_stage stage,
+                                mesa_shader_stage stage,
                                 bool default_to_smooth_interp)
 {
    nir_foreach_variable_with_modes_safe(var, shader, mode) {
@@ -423,7 +423,7 @@ remap_slots_and_components(nir_shader *shader, nir_variable_mode mode,
                            uint64_t *slots_used, uint64_t *out_slots_read,
                            uint32_t *p_slots_used, uint32_t *p_out_slots_read)
 {
-   const gl_shader_stage stage = shader->info.stage;
+   const mesa_shader_stage stage = shader->info.stage;
    uint64_t out_slots_read_tmp[2] = { 0 };
    uint64_t slots_used_tmp[2] = { 0 };
 
@@ -1484,7 +1484,7 @@ nir_sort_variables_by_location(nir_shader *shader, nir_variable_mode mode)
 
 void
 nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode,
-                            unsigned *size, gl_shader_stage stage)
+                            unsigned *size, mesa_shader_stage stage)
 {
    unsigned location = 0;
    unsigned assigned_locations[VARYING_SLOT_TESS_MAX][2];

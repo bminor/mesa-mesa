@@ -1026,7 +1026,7 @@ fill_block(void *mem_ctx, const struct gl_constants *consts, const char *name,
            unsigned binding_offset,
            unsigned linearized_index,
            struct gl_shader_program *prog,
-           const gl_shader_stage stage,
+           const mesa_shader_stage stage,
            enum block_type block_type)
 {
    struct gl_uniform_block *block = &blocks[*block_index];
@@ -1136,7 +1136,7 @@ fill_block_array(struct uniform_block_array_elements *ub_array,
                  struct gl_uniform_buffer_variable *variables,
                  unsigned *variable_index, unsigned binding_offset,
                  struct gl_shader_program *prog,
-                 const gl_shader_stage stage, enum block_type block_type,
+                 const mesa_shader_stage stage, enum block_type block_type,
                  unsigned *block_index, unsigned first_index)
 {
    for (unsigned j = 0; j < ub_array->num_array_elements; j++) {

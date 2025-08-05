@@ -138,17 +138,17 @@ void __lvp_finishme(const char *file, int line, const char *format, ...)
 #define LVP_STAGE_MASK_GFX (BITFIELD_MASK(MESA_SHADER_MESH_STAGES) & ~BITFIELD_BIT(MESA_SHADER_COMPUTE))
 
 #define lvp_foreach_stage(stage, stage_bits)                         \
-   for (gl_shader_stage stage,                                       \
-        __tmp = (gl_shader_stage)((stage_bits) & LVP_STAGE_MASK);    \
+   for (mesa_shader_stage stage,                                       \
+        __tmp = (mesa_shader_stage)((stage_bits) & LVP_STAGE_MASK);    \
         stage = ffs(__tmp) - 1, __tmp;                     \
         __tmp &= ~(1 << (stage)))
 
 #define lvp_forall_stage(stage)                                      \
-   for (gl_shader_stage stage = MESA_SHADER_VERTEX; stage < LVP_SHADER_STAGES; stage++)
+   for (mesa_shader_stage stage = MESA_SHADER_VERTEX; stage < LVP_SHADER_STAGES; stage++)
 
 #define lvp_forall_gfx_stage(stage)                                  \
-   for (gl_shader_stage stage,                                       \
-           __tmp = (gl_shader_stage)(LVP_STAGE_MASK_GFX);            \
+   for (mesa_shader_stage stage,                                       \
+           __tmp = (mesa_shader_stage)(LVP_STAGE_MASK_GFX);            \
         stage = ffs(__tmp) - 1, __tmp;                               \
         __tmp &= ~(1 << (stage)))
 
@@ -513,7 +513,7 @@ struct lvp_pipeline {
    void *state_data;
    bool force_min_sample;
    struct lvp_shader shaders[LVP_SHADER_STAGES];
-   gl_shader_stage last_vertex;
+   mesa_shader_stage last_vertex;
    struct vk_graphics_pipeline_state graphics_state;
    VkGraphicsPipelineLibraryFlagsEXT stages;
    bool line_smooth;

@@ -1341,7 +1341,7 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
    struct intel_cs_dispatch_info dispatch =
       brw_cs_get_dispatch_info(device->info, cs_prog_data, NULL);
 
-   const gl_shader_stage s = MESA_SHADER_RAYGEN;
+   const mesa_shader_stage s = MESA_SHADER_RAYGEN;
    struct anv_state *surfaces = &cmd_buffer->state.binding_tables[s];
    struct anv_state *samplers = &cmd_buffer->state.samplers[s];
    struct brw_rt_raygen_trampoline_params trampoline_params = {

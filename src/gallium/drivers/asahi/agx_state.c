@@ -1937,7 +1937,7 @@ agx_create_shader_state(struct pipe_context *pctx,
    }
 
    agx_shader_initialize(dev, so, nir, ctx->support_lod_bias, ctx->robust);
-   gl_shader_stage next_stage = nir->info.next_stage;
+   mesa_shader_stage next_stage = nir->info.next_stage;
 
    /* We're done with the NIR, throw it away */
    ralloc_free(nir);

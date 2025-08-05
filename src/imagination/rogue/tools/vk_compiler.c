@@ -58,7 +58,7 @@ static const struct option cmdline_opts[] = {
 };
 
 typedef struct compiler_opts {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    char *file;
    char *entry;
    char *out_file;

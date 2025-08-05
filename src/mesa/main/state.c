@@ -410,7 +410,7 @@ update_program(struct gl_context *ctx)
 static GLbitfield
 update_single_program_constants(struct gl_context *ctx,
                                 struct gl_program *prog,
-                                gl_shader_stage stage)
+                                mesa_shader_stage stage)
 {
    if (prog) {
       const struct gl_program_parameter_list *params = prog->Parameters;

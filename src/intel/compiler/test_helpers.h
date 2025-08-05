@@ -129,7 +129,7 @@ protected:
    }
 
    brw_builder
-   make_shader(gl_shader_stage stage = MESA_SHADER_FRAGMENT,
+   make_shader(mesa_shader_stage stage = MESA_SHADER_FRAGMENT,
                unsigned dispatch_width = 0)
    {
       if (dispatch_width == 0)

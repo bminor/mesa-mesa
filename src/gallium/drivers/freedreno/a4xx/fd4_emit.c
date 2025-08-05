@@ -74,7 +74,7 @@ fd4_emit_const_bo(struct fd_ringbuffer *ring,
 }
 
 static void
-fd4_emit_const_ptrs(struct fd_ringbuffer *ring, gl_shader_stage type,
+fd4_emit_const_ptrs(struct fd_ringbuffer *ring, mesa_shader_stage type,
                     uint32_t regid, uint32_t num, struct fd_bo **bos,
                     uint32_t *offsets)
 {

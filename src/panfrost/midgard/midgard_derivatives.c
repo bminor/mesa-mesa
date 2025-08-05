@@ -73,7 +73,7 @@ mir_derivative_mode(nir_intrinsic_op op)
  * implicitly */
 
 bool
-mir_op_computes_derivatives(gl_shader_stage stage, unsigned op)
+mir_op_computes_derivatives(mesa_shader_stage stage, unsigned op)
 {
    /* Only fragment shaders may compute derivatives, but the sense of
     * "normal" changes in vertex shaders on certain GPUs */

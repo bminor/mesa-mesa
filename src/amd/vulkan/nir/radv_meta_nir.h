@@ -22,7 +22,7 @@ struct radv_device;
 struct radeon_surf;
 
 nir_builder PRINTFLIKE(3, 4)
-   radv_meta_nir_init_shader(struct radv_device *dev, gl_shader_stage stage, const char *name, ...);
+   radv_meta_nir_init_shader(struct radv_device *dev, mesa_shader_stage stage, const char *name, ...);
 
 nir_shader *radv_meta_nir_build_vs_generate_vertices(struct radv_device *dev);
 nir_shader *radv_meta_nir_build_fs_noop(struct radv_device *dev);

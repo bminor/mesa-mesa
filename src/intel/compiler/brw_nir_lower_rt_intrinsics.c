@@ -78,7 +78,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
    nir_def *hotzone_addr = brw_nir_rt_sw_hotzone_addr(b, devinfo);
    nir_def *hotzone = nir_load_global(b, hotzone_addr, 16, 4, 32);
 
-   gl_shader_stage stage = b->shader->info.stage;
+   mesa_shader_stage stage = b->shader->info.stage;
    struct brw_nir_rt_mem_ray_defs world_ray_in = {};
    struct brw_nir_rt_mem_ray_defs object_ray_in = {};
    struct brw_nir_rt_mem_hit_defs hit_in = {};

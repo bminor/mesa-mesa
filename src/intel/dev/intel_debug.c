@@ -153,7 +153,7 @@ static const struct debug_control simd_control[] = {
 };
 
 uint64_t
-intel_debug_flag_for_shader_stage(gl_shader_stage stage)
+intel_debug_flag_for_shader_stage(mesa_shader_stage stage)
 {
    uint64_t flags[] = {
       [MESA_SHADER_VERTEX] = DEBUG_VS,

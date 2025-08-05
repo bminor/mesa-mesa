@@ -665,7 +665,7 @@ nvk_CmdPipelineBarrier2(VkCommandBuffer commandBuffer,
 void
 nvk_cmd_bind_shaders(struct vk_command_buffer *vk_cmd,
                      uint32_t stage_count,
-                     const gl_shader_stage *stages,
+                     const mesa_shader_stage *stages,
                      struct vk_shader ** const shaders)
 {
    struct nvk_cmd_buffer *cmd = container_of(vk_cmd, struct nvk_cmd_buffer, vk);
@@ -700,7 +700,7 @@ nvk_cmd_dirty_cbufs_for_descriptors(struct nvk_cmd_buffer *cmd,
 
    uint32_t groups = 0;
    u_foreach_bit(i, stages & NVK_VK_GRAPHICS_STAGE_BITS) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(1 << i);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(1 << i);
       uint32_t g = nvk_cbuf_binding_for_stage(stage);
       groups |= BITFIELD_BIT(g);
    }

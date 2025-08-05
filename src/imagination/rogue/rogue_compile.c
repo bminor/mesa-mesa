@@ -308,7 +308,7 @@ static void trans_nir_intrinsic_store_output(rogue_builder *b,
    UNREACHABLE("Unimplemented NIR store_output variant.");
 }
 
-static inline gl_shader_stage
+static inline mesa_shader_stage
 pvr_stage_to_mesa(enum pvr_stage_allocation pvr_stage)
 {
    switch (pvr_stage) {
@@ -329,7 +329,7 @@ pvr_stage_to_mesa(enum pvr_stage_allocation pvr_stage)
 }
 
 static inline enum pvr_stage_allocation
-mesa_stage_to_pvr(gl_shader_stage mesa_stage)
+mesa_stage_to_pvr(mesa_shader_stage mesa_stage)
 {
    switch (mesa_stage) {
    case MESA_SHADER_VERTEX:
@@ -345,7 +345,7 @@ mesa_stage_to_pvr(gl_shader_stage mesa_stage)
       break;
    }
 
-   UNREACHABLE("Unsupported gl_shader_stage.");
+   UNREACHABLE("Unsupported mesa_shader_stage.");
 }
 static bool descriptor_is_dynamic(VkDescriptorType type)
 {
@@ -571,7 +571,7 @@ static bool ssa_def_cb(nir_def *ssa, void *state)
 PUBLIC
 rogue_shader *rogue_nir_to_rogue(rogue_build_ctx *ctx, const nir_shader *nir)
 {
-   gl_shader_stage stage = nir->info.stage;
+   mesa_shader_stage stage = nir->info.stage;
    rogue_shader *shader = rogue_shader_create(ctx, stage);
    if (!shader)
       return NULL;

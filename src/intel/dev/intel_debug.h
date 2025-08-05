@@ -190,7 +190,7 @@ extern uint32_t intel_shader_dump_filter;
       dbg_printf(__VA_ARGS__);         \
 } while(0)
 
-extern uint64_t intel_debug_flag_for_shader_stage(gl_shader_stage stage);
+extern uint64_t intel_debug_flag_for_shader_stage(mesa_shader_stage stage);
 
 extern void process_intel_debug_variable(void);
 

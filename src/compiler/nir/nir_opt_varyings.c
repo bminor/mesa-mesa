@@ -660,8 +660,8 @@ struct linkage_info {
    bool always_interpolate_convergent_fs_inputs;
    bool group_tes_inputs_into_pos_var_groups;
 
-   gl_shader_stage producer_stage;
-   gl_shader_stage consumer_stage;
+   mesa_shader_stage producer_stage;
+   mesa_shader_stage consumer_stage;
    nir_builder producer_builder;
    nir_builder consumer_builder;
    unsigned max_varying_expression_cost;

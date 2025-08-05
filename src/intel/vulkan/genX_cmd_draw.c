@@ -311,7 +311,7 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
 
 static void
 cmd_buffer_emit_push_constant(struct anv_cmd_buffer *cmd_buffer,
-                              gl_shader_stage stage,
+                              mesa_shader_stage stage,
                               struct anv_address *buffers,
                               unsigned buffer_count)
 {
@@ -395,7 +395,7 @@ cmd_buffer_emit_push_constant_all(struct anv_cmd_buffer *cmd_buffer,
 
    const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
 
-   gl_shader_stage stage = vk_to_mesa_shader_stage(shader_mask);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(shader_mask);
 
    const struct anv_pipeline_bind_map *bind_map =
       &gfx->shaders[stage]->bind_map;
@@ -584,7 +584,7 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
 static inline uint64_t
 get_mesh_task_push_addr64(struct anv_cmd_buffer *cmd_buffer,
                           struct anv_cmd_graphics_state *gfx,
-                          gl_shader_stage stage)
+                          mesa_shader_stage stage)
 {
    const struct anv_shader_bin *shader = gfx->shaders[stage];
    const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;

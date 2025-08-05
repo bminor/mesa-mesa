@@ -119,7 +119,7 @@ get_block_array_index(nir_builder *b, nir_deref_instr *deref,
 static void
 get_block_index_offset(nir_variable *var,
                        const struct gl_shader_program *shader_program,
-                       gl_shader_stage stage,
+                       mesa_shader_stage stage,
                        unsigned *index, unsigned *offset)
 {
 

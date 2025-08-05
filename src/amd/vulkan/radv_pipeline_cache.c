@@ -365,7 +365,7 @@ radv_graphics_pipeline_cache_search(struct radv_device *device, struct vk_pipeli
       return false;
 
    for (unsigned i = 0; i < pipeline_obj->num_shaders; i++) {
-      gl_shader_stage s = pipeline_obj->shaders[i]->info.stage;
+      mesa_shader_stage s = pipeline_obj->shaders[i]->info.stage;
       if (s == MESA_SHADER_VERTEX && i > 0) {
          /* The GS copy-shader is a VS placed after all other stages */
          assert(i == pipeline_obj->num_shaders - 1 && pipeline->base.shaders[MESA_SHADER_GEOMETRY]);
@@ -539,7 +539,7 @@ radv_ray_tracing_pipeline_cache_insert(struct radv_device *device, struct vk_pip
 }
 
 nir_shader *
-radv_pipeline_cache_lookup_nir(struct radv_device *device, struct vk_pipeline_cache *cache, gl_shader_stage stage,
+radv_pipeline_cache_lookup_nir(struct radv_device *device, struct vk_pipeline_cache *cache, mesa_shader_stage stage,
                                const blake3_hash key)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -704,7 +704,7 @@ radv_pipeline_cache_get_binaries(struct radv_device *device, const VkAllocationC
 
       for (unsigned i = 0; i < pipeline_obj->num_shaders; i++) {
          struct radv_shader *shader = pipeline_obj->shaders[i];
-         gl_shader_stage s = shader->info.stage;
+         mesa_shader_stage s = shader->info.stage;
 
          if (s == MESA_SHADER_VERTEX && i > 0) {
             /* The GS copy-shader is a VS placed after all other stages */

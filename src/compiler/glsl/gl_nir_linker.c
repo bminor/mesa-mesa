@@ -1061,7 +1061,7 @@ nir_build_program_resource_list(const struct gl_constants *consts,
                continue;
 
             GLenum type =
-               _mesa_shader_stage_to_subroutine_uniform((gl_shader_stage)j);
+               _mesa_shader_stage_to_subroutine_uniform((mesa_shader_stage)j);
             /* add shader subroutines */
             if (!link_util_add_program_resource(prog, resource_set,
                                                 type, uniform, 0))
@@ -1130,7 +1130,7 @@ nir_build_program_resource_list(const struct gl_constants *consts,
       const int i = u_bit_scan(&mask);
       struct gl_program *p = prog->_LinkedShaders[i]->Program;
 
-      GLuint type = _mesa_shader_stage_to_subroutine((gl_shader_stage)i);
+      GLuint type = _mesa_shader_stage_to_subroutine((mesa_shader_stage)i);
       for (unsigned j = 0; j < p->sh.NumSubroutineFunctions; j++) {
          if (!link_util_add_program_resource(prog, resource_set,
                                              type,
@@ -1282,7 +1282,7 @@ preprocess_shader(const struct pipe_screen *screen,
                   const struct gl_extensions *exts,
                   struct gl_program *prog,
                   struct gl_shader_program *shader_program,
-                  gl_shader_stage stage)
+                  mesa_shader_stage stage)
 {
    const struct gl_shader_compiler_options *gl_options =
       &consts->ShaderCompilerOptions[prog->info.stage];
@@ -3550,7 +3550,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
          goto done;
       }
 
-      gl_shader_stage shader_type = prog->Shaders[i]->Stage;
+      mesa_shader_stage shader_type = prog->Shaders[i]->Stage;
       shader_list[shader_type][num_shaders[shader_type]] = prog->Shaders[i];
       num_shaders[shader_type]++;
    }
@@ -3818,8 +3818,8 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
     * is no cross validation for these.
     */
    if (!gl_nir_validate_first_and_last_interface_explicit_locations(consts, prog,
-                                                                    (gl_shader_stage)first,
-                                                                    (gl_shader_stage)last))
+                                                                    (mesa_shader_stage)first,
+                                                                    (mesa_shader_stage)last))
       goto done;
 
    if (prog->SeparateShader)

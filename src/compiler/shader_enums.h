@@ -82,23 +82,23 @@ typedef enum pipe_shader_type
 
    /* must be last so it doesn't affect the GL pipeline */
    MESA_SHADER_KERNEL = 14,
-} gl_shader_stage;
+} mesa_shader_stage;
 
 static inline bool
-gl_shader_stage_is_compute(gl_shader_stage stage)
+gl_shader_stage_is_compute(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_COMPUTE || stage == MESA_SHADER_KERNEL;
 }
 
 static inline bool
-gl_shader_stage_is_mesh(gl_shader_stage stage)
+gl_shader_stage_is_mesh(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_TASK ||
           stage == MESA_SHADER_MESH;
 }
 
 static inline bool
-gl_shader_stage_is_graphics(gl_shader_stage stage)
+gl_shader_stage_is_graphics(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -115,7 +115,7 @@ gl_shader_stage_is_graphics(gl_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_uses_workgroup(gl_shader_stage stage)
+gl_shader_stage_uses_workgroup(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_COMPUTE ||
           stage == MESA_SHADER_KERNEL ||
@@ -124,7 +124,7 @@ gl_shader_stage_uses_workgroup(gl_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_is_callable(gl_shader_stage stage)
+gl_shader_stage_is_callable(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_ANY_HIT ||
           stage == MESA_SHADER_CLOSEST_HIT ||
@@ -134,13 +134,13 @@ gl_shader_stage_is_callable(gl_shader_stage stage)
 }
 
 static inline bool
-gl_shader_stage_is_rt(gl_shader_stage stage)
+gl_shader_stage_is_rt(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_RAYGEN || gl_shader_stage_is_callable(stage);
 }
 
 static inline bool
-gl_shader_stage_can_set_fragment_shading_rate(gl_shader_stage stage)
+gl_shader_stage_can_set_fragment_shading_rate(mesa_shader_stage stage)
 {
    /* According to EXT_fragment_shading_rate :
     *
@@ -160,16 +160,16 @@ gl_shader_stage_can_set_fragment_shading_rate(gl_shader_stage stage)
 
 typedef short gl_state_index16; /* see enum gl_state_index */
 
-const char *gl_shader_stage_name(gl_shader_stage stage);
+const char *gl_shader_stage_name(mesa_shader_stage stage);
 
 /**
- * Translate a gl_shader_stage to a short shader stage name for debug
+ * Translate a mesa_shader_stage to a short shader stage name for debug
  * printouts and error messages.
  */
 const char *_mesa_shader_stage_to_string(unsigned stage);
 
 /**
- * Translate a gl_shader_stage to a shader stage abbreviation (VS, GS, FS)
+ * Translate a mesa_shader_stage to a shader stage abbreviation (VS, GS, FS)
  * for debug printouts and error messages.
  */
 const char *_mesa_shader_stage_to_abbrev(unsigned stage);
@@ -485,7 +485,7 @@ typedef enum
 #define MAX_VARYINGS_INCL_PATCH (VARYING_SLOT_TESS_MAX - VARYING_SLOT_VAR0)
 
 const char *gl_varying_slot_name_for_stage(gl_varying_slot slot,
-                                           gl_shader_stage stage);
+                                           mesa_shader_stage stage);
 
 /**
  * Determine if the given gl_varying_slot appears in the fragment shader.

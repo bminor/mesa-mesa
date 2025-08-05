@@ -52,7 +52,7 @@ struct ntv_context {
 
    SpvId GLSL_std_450;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    const struct zink_shader_info *sinfo;
 
    SpvId ubos[PIPE_MAX_CONSTANT_BUFFERS][5]; //8, 16, 32, unused, 64

@@ -6477,7 +6477,7 @@ struct sysvalue_name {
    gl_system_value value;
    int slot;
    char *name;
-   gl_shader_stage only_in_shader;
+   mesa_shader_stage only_in_shader;
 } possible_sysvalues[] = {
    {SYSTEM_VALUE_VERTEX_ID_ZERO_BASE, -1, "SV_VertexID", MESA_SHADER_NONE},
    {SYSTEM_VALUE_INSTANCE_ID, -1, "SV_InstanceID", MESA_SHADER_NONE},

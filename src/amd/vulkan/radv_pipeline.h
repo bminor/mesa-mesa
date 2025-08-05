@@ -91,7 +91,7 @@ void radv_pipeline_stage_init(VkPipelineCreateFlags2 pipeline_flags, const VkPip
                               const struct radv_pipeline_layout *layout, const struct radv_shader_stage_key *stage_key,
                               struct radv_shader_stage *out_stage);
 
-void radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, gl_shader_stage stage,
+void radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, mesa_shader_stage stage,
                              struct radv_shader_layout *layout);
 
 void radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_state_key *gfx_state,

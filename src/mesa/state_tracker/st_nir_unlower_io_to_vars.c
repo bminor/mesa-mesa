@@ -24,7 +24,7 @@ struct io_desc {
 #define VAR_INDEX_INTERP_AT_PIXEL   1
 #define VAR_INTERP_UNDEF            INTERP_MODE_COUNT
 
-static bool var_is_per_vertex(gl_shader_stage stage, nir_variable *var)
+static bool var_is_per_vertex(mesa_shader_stage stage, nir_variable *var)
 {
    return ((stage == MESA_SHADER_TESS_CTRL ||
             stage == MESA_SHADER_GEOMETRY) &&
@@ -38,7 +38,7 @@ static bool var_is_per_vertex(gl_shader_stage stage, nir_variable *var)
 }
 
 static const struct glsl_type *
-get_var_slot_type(gl_shader_stage stage, nir_variable *var)
+get_var_slot_type(mesa_shader_stage stage, nir_variable *var)
 {
    if (var_is_per_vertex(stage, var)) {
       assert(glsl_type_is_array(var->type));
@@ -49,7 +49,7 @@ get_var_slot_type(gl_shader_stage stage, nir_variable *var)
 }
 
 static unsigned
-get_var_num_slots(gl_shader_stage stage, nir_variable *var,
+get_var_num_slots(mesa_shader_stage stage, nir_variable *var,
                   bool is_driver_location)
 {
    const struct glsl_type *type = get_var_slot_type(stage, var);

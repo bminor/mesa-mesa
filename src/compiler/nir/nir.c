@@ -195,7 +195,7 @@ nir_component_mask_reinterpret(nir_component_mask_t mask,
 
 nir_shader *
 nir_shader_create(void *mem_ctx,
-                  gl_shader_stage stage,
+                  mesa_shader_stage stage,
                   const nir_shader_compiler_options *options,
                   shader_info *si)
 {
@@ -3597,7 +3597,7 @@ nir_instr_xfb_write_mask(nir_intrinsic_instr *instr)
  * Whether an output slot is consumed by fixed-function logic.
  */
 bool
-nir_slot_is_sysval_output(gl_varying_slot slot, gl_shader_stage next_shader)
+nir_slot_is_sysval_output(gl_varying_slot slot, mesa_shader_stage next_shader)
 {
    switch (next_shader) {
    case MESA_SHADER_FRAGMENT:
@@ -3647,7 +3647,7 @@ nir_slot_is_sysval_output(gl_varying_slot slot, gl_shader_stage next_shader)
  * Pass MESA_SHADER_NONE if the next shader is unknown.
  */
 bool
-nir_slot_is_varying(gl_varying_slot slot, gl_shader_stage next_shader)
+nir_slot_is_varying(gl_varying_slot slot, mesa_shader_stage next_shader)
 {
    bool unknown = next_shader == MESA_SHADER_NONE;
    bool exactly_before_fs = next_shader == MESA_SHADER_FRAGMENT || unknown;
@@ -3680,7 +3680,7 @@ nir_slot_is_varying(gl_varying_slot slot, gl_shader_stage next_shader)
 
 bool
 nir_slot_is_sysval_output_and_varying(gl_varying_slot slot,
-                                      gl_shader_stage next_shader)
+                                      mesa_shader_stage next_shader)
 {
    return nir_slot_is_sysval_output(slot, next_shader) &&
           nir_slot_is_varying(slot, next_shader);
@@ -3691,7 +3691,7 @@ nir_slot_is_sysval_output_and_varying(gl_varying_slot slot,
  * stage. If the instruction has no other use, it's removed.
  */
 bool
-nir_remove_varying(nir_intrinsic_instr *intr, gl_shader_stage next_shader)
+nir_remove_varying(nir_intrinsic_instr *intr, mesa_shader_stage next_shader)
 {
    nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
 
@@ -3713,7 +3713,7 @@ nir_remove_varying(nir_intrinsic_instr *intr, gl_shader_stage next_shader)
  * logic. If the instruction has no other use, it's removed.
  */
 bool
-nir_remove_sysval_output(nir_intrinsic_instr *intr, gl_shader_stage next_shader)
+nir_remove_sysval_output(nir_intrinsic_instr *intr, mesa_shader_stage next_shader)
 {
    nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
 

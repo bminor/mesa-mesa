@@ -439,7 +439,7 @@ radv_add_split_disasm(const char *disasm, uint64_t start_addr, unsigned *num, st
 }
 
 static void
-radv_dump_annotated_shader(const struct radv_shader *shader, gl_shader_stage stage, struct ac_wave_info *waves,
+radv_dump_annotated_shader(const struct radv_shader *shader, mesa_shader_stage stage, struct ac_wave_info *waves,
                            unsigned num_waves, FILE *f)
 {
    uint64_t start_addr, end_addr;
@@ -520,7 +520,7 @@ radv_dump_spirv(const struct radv_shader *shader, const char *sha1, const char *
 
 static void
 radv_dump_shader(struct radv_device *device, struct radv_pipeline *pipeline, struct radv_shader *shader,
-                 gl_shader_stage stage, const char *dump_dir, FILE *f)
+                 mesa_shader_stage stage, const char *dump_dir, FILE *f)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 

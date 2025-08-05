@@ -57,7 +57,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
 {
    const struct anv_physical_device *pdevice = device->physical;
    const struct brw_compiler *compiler = pdevice->compiler;
-   gl_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
    const nir_shader_compiler_options *nir_options =
       compiler->nir_options[stage];
 
@@ -228,7 +228,7 @@ void anv_DestroyPipeline(
 }
 
 struct anv_pipeline_stage {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    VkPipelineCreateFlags2KHR pipeline_flags;
    struct vk_pipeline_robustness_state rstate;
@@ -245,7 +245,7 @@ struct anv_pipeline_stage {
    union brw_any_prog_key key;
 
    struct {
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
       unsigned char sha1[20];
    } cache_key;
 
@@ -1798,7 +1798,7 @@ static bool
 anv_graphics_pipeline_skip_shader_compile(struct anv_graphics_base_pipeline *pipeline,
                                           struct anv_pipeline_stage *stages,
                                           bool link_optimize,
-                                          gl_shader_stage stage)
+                                          mesa_shader_stage stage)
 {
    /* Always skip non active stages */
    if (!anv_pipeline_base_has_stage(pipeline, stage))
@@ -2046,7 +2046,7 @@ anv_graphics_pipeline_load_cached_shaders(struct anv_graphics_base_pipeline *pip
    return false;
 }
 
-static const gl_shader_stage graphics_shader_order[] = {
+static const mesa_shader_stage graphics_shader_order[] = {
    MESA_SHADER_VERTEX,
    MESA_SHADER_TESS_CTRL,
    MESA_SHADER_TESS_EVAL,
@@ -2210,7 +2210,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
     */
    uint32_t shader_count = anv_graphics_pipeline_imported_shader_count(stages);
    for (uint32_t i = 0; i < info->stageCount; i++) {
-      gl_shader_stage stage = vk_to_mesa_shader_stage(info->pStages[i].stage);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(info->pStages[i].stage);
 
       /* If a pipeline library is loaded in this stage, we should ignore the
        * pStages[] entry of the same stage.
@@ -2347,7 +2347,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
    /* Walk backwards to link */
    struct anv_pipeline_stage *next_stage = NULL;
    for (int i = ARRAY_SIZE(graphics_shader_order) - 1; i >= 0; i--) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       if (anv_graphics_pipeline_skip_shader_compile(pipeline, stages,
                                                     link_optimize, s))
          continue;
@@ -2402,7 +2402,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
 
    struct anv_pipeline_stage *prev_stage = NULL;
    for (unsigned i = 0; i < ARRAY_SIZE(graphics_shader_order); i++) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       if (anv_graphics_pipeline_skip_shader_compile(pipeline, stages,
                                                     link_optimize, s))
          continue;
@@ -2458,7 +2458,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
       struct anv_pipeline_stage *last_psr = NULL;
 
       for (unsigned i = 0; i < ARRAY_SIZE(graphics_shader_order); i++) {
-         gl_shader_stage s =
+         mesa_shader_stage s =
             graphics_shader_order[ARRAY_SIZE(graphics_shader_order) - i - 1];
 
          if (anv_graphics_pipeline_skip_shader_compile(pipeline, stages,
@@ -2479,7 +2479,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_base_pipeline *pipeline,
 
    prev_stage = NULL;
    for (unsigned i = 0; i < ARRAY_SIZE(graphics_shader_order); i++) {
-      gl_shader_stage s = graphics_shader_order[i];
+      mesa_shader_stage s = graphics_shader_order[i];
       struct anv_pipeline_stage *stage = &stages[s];
 
       if (anv_graphics_pipeline_skip_shader_compile(pipeline, stages, link_optimize, s))
@@ -3850,7 +3850,7 @@ anv_pipeline_compile_ray_tracing(struct anv_ray_tracing_pipeline *pipeline,
       uint32_t stage_count = create_feedback->pipelineStageCreationFeedbackCount;
       assert(stage_count == 0 || info->stageCount == stage_count);
       for (uint32_t i = 0; i < stage_count; i++) {
-         gl_shader_stage s = vk_to_mesa_shader_stage(info->pStages[i].stage);
+         mesa_shader_stage s = vk_to_mesa_shader_stage(info->pStages[i].stage);
          create_feedback->pPipelineStageCreationFeedbacks[i] = stages[s].feedback;
       }
    }
@@ -4304,7 +4304,7 @@ VkResult anv_GetPipelineExecutablePropertiesKHR(
 
    util_dynarray_foreach (&pipeline->executables, struct anv_pipeline_executable, exe) {
       vk_outarray_append_typed(VkPipelineExecutablePropertiesKHR, &out, props) {
-         gl_shader_stage stage = exe->stage;
+         mesa_shader_stage stage = exe->stage;
          props->stages = mesa_to_vk_shader_stage(stage);
 
          unsigned simd_width = exe->stats.dispatch_width;

@@ -104,7 +104,7 @@ get_required_subgroup_size(const void *info_pNext)
 
 enum gl_subgroup_size
 vk_get_subgroup_size(uint32_t spirv_version,
-                     gl_shader_stage stage,
+                     mesa_shader_stage stage,
                      const void *info_pNext,
                      bool allow_varying,
                      bool require_full)
@@ -136,7 +136,7 @@ vk_pipeline_shader_stage_to_nir(struct vk_device *device,
                                 void *mem_ctx, nir_shader **nir_out)
 {
    VK_FROM_HANDLE(vk_shader_module, module, info->module);
-   const gl_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
+   const mesa_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
 
    assert(info->sType == VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
 
@@ -650,7 +650,7 @@ struct vk_pipeline_precomp_shader {
     */
    uint8_t cache_key[SHA1_DIGEST_LENGTH];
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct vk_pipeline_robustness_state rs;
 
@@ -877,7 +877,7 @@ vk_pipeline_precompile_shader(struct vk_device *device,
        VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)
       return VK_PIPELINE_COMPILE_REQUIRED;
 
-   const gl_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
+   const mesa_shader_stage stage = vk_to_mesa_shader_stage(info->stage);
    const struct nir_shader_compiler_options *nir_options =
       ops->get_nir_options(device->physical, stage, &rs);
    const struct spirv_to_nir_options spirv_options =
@@ -913,7 +913,7 @@ vk_pipeline_precompile_shader(struct vk_device *device,
 }
 
 struct vk_pipeline_stage {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct vk_pipeline_precomp_shader *precomp;
    struct vk_shader *shader;
@@ -1003,7 +1003,7 @@ vk_graphics_pipeline_destroy(struct vk_device *device,
 
 static bool
 vk_device_supports_stage(struct vk_device *device,
-                         gl_shader_stage stage)
+                         mesa_shader_stage stage)
 {
    const struct vk_features *features = &device->physical->supported_features;
 
@@ -1026,7 +1026,7 @@ vk_device_supports_stage(struct vk_device *device,
    }
 }
 
-static const gl_shader_stage all_gfx_stages[] = {
+static const mesa_shader_stage all_gfx_stages[] = {
    MESA_SHADER_VERTEX,
    MESA_SHADER_TESS_CTRL,
    MESA_SHADER_TESS_EVAL,
@@ -1057,12 +1057,12 @@ vk_graphics_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
    }
 
    uint32_t stage_count = 0;
-   gl_shader_stage stages[ARRAY_SIZE(all_gfx_stages)];
+   mesa_shader_stage stages[ARRAY_SIZE(all_gfx_stages)];
    struct vk_shader *shaders[ARRAY_SIZE(all_gfx_stages)];
 
    VkShaderStageFlags vk_stages = 0;
    for (uint32_t i = 0; i < ARRAY_SIZE(all_gfx_stages); i++) {
-      gl_shader_stage stage = all_gfx_stages[i];
+      mesa_shader_stage stage = all_gfx_stages[i];
       if (!vk_device_supports_stage(device, stage)) {
          assert(stage_shader[stage] == NULL);
          continue;
@@ -1087,7 +1087,7 @@ vk_graphics_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
 
 static VkShaderCreateFlagsEXT
 vk_pipeline_to_shader_flags(VkPipelineCreateFlags2KHR pipeline_flags,
-                            gl_shader_stage stage)
+                            mesa_shader_stage stage)
 {
    VkShaderCreateFlagsEXT shader_flags = 0;
 
@@ -1578,7 +1578,7 @@ vk_graphics_pipeline_get_internal_representations(
 
 static struct vk_shader *
 vk_graphics_pipeline_get_shader(struct vk_pipeline *pipeline,
-                                gl_shader_stage stage)
+                                mesa_shader_stage stage)
 {
    struct vk_graphics_pipeline *gfx_pipeline =
       container_of(pipeline, struct vk_graphics_pipeline, base);
@@ -1730,7 +1730,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
       if (!(state->shader_stages & stage_info->stage))
          continue;
 
-      gl_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
       assert(vk_device_supports_stage(device, stage));
 
       stage_feedbacks[stage].flags |=
@@ -1857,7 +1857,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
        */
       uint32_t cache_hit_count = 0;
       for (uint32_t i = 0; i < stage_count; i++) {
-         const gl_shader_stage stage = stages[i].stage;
+         const mesa_shader_stage stage = stages[i].stage;
          if (stage_feedbacks[stage].flags &
              VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT)
             cache_hit_count++;
@@ -1875,7 +1875,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
              pCreateInfo->stageCount);
       for (uint32_t i = 0;
            i < feedback_info->pipelineStageCreationFeedbackCount; i++) {
-         const gl_shader_stage stage =
+         const mesa_shader_stage stage =
             vk_to_mesa_shader_stage(pCreateInfo->pStages[i].stage);
 
          feedback_info->pPipelineStageCreationFeedbacks[i] =
@@ -1985,7 +1985,7 @@ vk_compute_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
       cmd_buffer->pipeline_shader_stages &= ~VK_SHADER_STAGE_COMPUTE_BIT;
    }
 
-   gl_shader_stage stage = MESA_SHADER_COMPUTE;
+   mesa_shader_stage stage = MESA_SHADER_COMPUTE;
    ops->cmd_bind_shaders(cmd_buffer, 1, &stage, &shader);
 }
 
@@ -2154,7 +2154,7 @@ vk_compute_pipeline_get_internal_representations(
 
 static struct vk_shader *
 vk_compute_pipeline_get_shader(struct vk_pipeline *pipeline,
-                               gl_shader_stage stage)
+                               mesa_shader_stage stage)
 {
    struct vk_compute_pipeline *comp_pipeline =
       container_of(pipeline, struct vk_compute_pipeline, base);

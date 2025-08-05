@@ -31,7 +31,7 @@ struct radv_shader_context {
    const struct radv_shader_info *shader_info;
    const struct radv_shader_args *args;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    unsigned max_workgroup_size;
    LLVMContextRef context;
@@ -63,7 +63,7 @@ create_llvm_function(struct ac_llvm_context *ctx, LLVMModuleRef module, LLVMBuil
 }
 
 static enum ac_llvm_calling_convention
-get_llvm_calling_convention(LLVMValueRef func, gl_shader_stage stage)
+get_llvm_calling_convention(LLVMValueRef func, mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -89,13 +89,13 @@ get_llvm_calling_convention(LLVMValueRef func, gl_shader_stage stage)
 
 /* Returns whether the stage is a stage that can be directly before the GS */
 static bool
-is_pre_gs_stage(gl_shader_stage stage)
+is_pre_gs_stage(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_TESS_EVAL;
 }
 
 static void
-create_function(struct radv_shader_context *ctx, gl_shader_stage stage, bool has_previous_stage)
+create_function(struct radv_shader_context *ctx, mesa_shader_stage stage, bool has_previous_stage)
 {
    if (ctx->ac.gfx_level >= GFX10) {
       if (is_pre_gs_stage(stage) && ctx->shader_info->is_ngg) {

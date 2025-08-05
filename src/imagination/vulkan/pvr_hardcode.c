@@ -73,7 +73,7 @@ static const struct pvr_hard_coding_data {
       } compute;
 
       struct {
-         /* Mask of MESA_SHADER_* (gl_shader_stage). */
+         /* Mask of MESA_SHADER_* (mesa_shader_stage). */
          uint32_t flags;
 
          uint8_t *const *const vert_shaders;
@@ -211,7 +211,7 @@ pvr_hard_code_graphics_get_flags(const struct pvr_device_info *const dev_info)
 
 void pvr_hard_code_graphics_shader(const struct pvr_device_info *const dev_info,
                                    uint32_t pipeline_n,
-                                   gl_shader_stage stage,
+                                   mesa_shader_stage stage,
                                    struct util_dynarray *shader_out)
 {
    const struct pvr_hard_coding_data *const data =
@@ -276,7 +276,7 @@ void pvr_hard_code_graphics_fragment_state(
 void pvr_hard_code_graphics_get_build_info(
    const struct pvr_device_info *const dev_info,
    uint32_t pipeline_n,
-   gl_shader_stage stage,
+   mesa_shader_stage stage,
    struct rogue_common_build_data *const common_build_data,
    struct rogue_build_data *const build_data,
    struct pvr_explicit_constant_usage *const explicit_const_usage)

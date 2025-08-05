@@ -132,7 +132,7 @@ radv_dgc_use_preamble(const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo)
 
 struct radv_shader *
 radv_dgc_get_shader(const VkGeneratedCommandsPipelineInfoEXT *pipeline_info,
-                    const VkGeneratedCommandsShaderInfoEXT *eso_info, gl_shader_stage stage)
+                    const VkGeneratedCommandsShaderInfoEXT *eso_info, mesa_shader_stage stage)
 {
    if (pipeline_info) {
       VK_FROM_HANDLE(radv_pipeline, pipeline, pipeline_info->pipeline);
@@ -411,7 +411,7 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
             for (unsigned i = 0; i < eso_info->shaderCount; ++i) {
                VK_FROM_HANDLE(radv_shader_object, shader_object, eso_info->pShaders[i]);
                struct radv_shader *shader = shader_object->shader;
-               gl_shader_stage stage = shader->info.stage;
+               mesa_shader_stage stage = shader->info.stage;
 
                shaders[stage] = shader;
             }
@@ -1576,7 +1576,7 @@ dgc_get_push_constant_stages(struct dgc_cmdbuf *cs)
 }
 
 static nir_def *
-dgc_get_upload_sgpr(struct dgc_cmdbuf *cs, nir_def *param_offset, gl_shader_stage stage)
+dgc_get_upload_sgpr(struct dgc_cmdbuf *cs, nir_def *param_offset, mesa_shader_stage stage)
 {
    const struct radv_indirect_command_layout *layout = cs->layout;
    nir_builder *b = cs->b;
@@ -1593,7 +1593,7 @@ dgc_get_upload_sgpr(struct dgc_cmdbuf *cs, nir_def *param_offset, gl_shader_stag
 }
 
 static nir_def *
-dgc_get_inline_sgpr(struct dgc_cmdbuf *cs, nir_def *param_offset, gl_shader_stage stage)
+dgc_get_inline_sgpr(struct dgc_cmdbuf *cs, nir_def *param_offset, mesa_shader_stage stage)
 {
    const struct radv_indirect_command_layout *layout = cs->layout;
    nir_builder *b = cs->b;
@@ -1610,7 +1610,7 @@ dgc_get_inline_sgpr(struct dgc_cmdbuf *cs, nir_def *param_offset, gl_shader_stag
 }
 
 static nir_def *
-dgc_get_inline_mask(struct dgc_cmdbuf *cs, nir_def *param_offset, gl_shader_stage stage)
+dgc_get_inline_mask(struct dgc_cmdbuf *cs, nir_def *param_offset, mesa_shader_stage stage)
 {
    const struct radv_indirect_command_layout *layout = cs->layout;
    nir_builder *b = cs->b;
@@ -1693,7 +1693,7 @@ dgc_alloc_push_constant(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *se
 
 static void
 dgc_emit_push_constant_for_stage(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *sequence_id,
-                                 const struct dgc_pc_params *params, gl_shader_stage stage)
+                                 const struct dgc_pc_params *params, mesa_shader_stage stage)
 {
    const struct radv_indirect_command_layout *layout = cs->layout;
    VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, layout->vk.layout);
@@ -3047,7 +3047,7 @@ radv_prepare_dgc_graphics(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedC
    const VkGeneratedCommandsShaderInfoEXT *eso_info =
       vk_find_struct_const(pGeneratedCommandsInfo->pNext, GENERATED_COMMANDS_SHADER_INFO_EXT);
 
-   const gl_shader_stage first_stage =
+   const mesa_shader_stage first_stage =
       (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_MESH)) ? MESA_SHADER_MESH : MESA_SHADER_VERTEX;
    struct radv_shader *first_shader = radv_dgc_get_shader(pipeline_info, eso_info, first_stage);
 
@@ -3206,7 +3206,7 @@ radv_prepare_dgc(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsIn
          for (unsigned i = 0; i < eso_info->shaderCount; ++i) {
             VK_FROM_HANDLE(radv_shader_object, shader_object, eso_info->pShaders[i]);
             struct radv_shader *shader = shader_object->shader;
-            gl_shader_stage stage = shader->info.stage;
+            mesa_shader_stage stage = shader->info.stage;
 
             shaders[stage] = shader;
          }

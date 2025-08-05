@@ -668,7 +668,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
 }
 
 enum ac_hw_stage
-si_select_hw_stage(const gl_shader_stage stage, const union si_shader_key *const key,
+si_select_hw_stage(const mesa_shader_stage stage, const union si_shader_key *const key,
                    const enum amd_gfx_level gfx_level)
 {
    switch (stage) {

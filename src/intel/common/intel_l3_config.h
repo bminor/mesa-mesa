@@ -124,7 +124,7 @@ void intel_get_urb_config(const struct intel_device_info *devinfo,
 static inline bool
 intel_urb_setup_changed(const struct intel_urb_config *a,
                         const struct intel_urb_config *b,
-                        gl_shader_stage stage)
+                        mesa_shader_stage stage)
 {
    if (a->size[stage] != b->size[stage] ||
        a->entries[stage] != b->entries[stage] ||

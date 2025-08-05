@@ -175,7 +175,7 @@ void
 iris_predraw_resolve_inputs(struct iris_context *ice,
                             struct iris_batch *batch,
                             bool *draw_aux_buffer_disabled,
-                            gl_shader_stage stage,
+                            mesa_shader_stage stage,
                             bool consider_framebuffer)
 {
    struct iris_shader_state *shs = &ice->state.shaders[stage];
@@ -288,7 +288,7 @@ iris_predraw_resolve_framebuffer(struct iris_context *ice,
 
 void
 iris_postdraw_update_image_resolve_tracking(struct iris_context *ice,
-                                            gl_shader_stage stage)
+                                            mesa_shader_stage stage)
 {
    struct iris_screen *screen = (void *) ice->ctx.screen;
    ASSERTED const struct intel_device_info *devinfo = screen->devinfo;
@@ -389,7 +389,7 @@ iris_postdraw_update_resolve_tracking(struct iris_context *ice)
    }
 
    if (devinfo->ver >= 12) {
-      for (gl_shader_stage stage = 0; stage < MESA_SHADER_COMPUTE; stage++) {
+      for (mesa_shader_stage stage = 0; stage < MESA_SHADER_COMPUTE; stage++) {
          iris_postdraw_update_image_resolve_tracking(ice, stage);
       }
    }
@@ -479,7 +479,7 @@ flush_ssbos(struct iris_batch *batch,
 void
 iris_predraw_flush_buffers(struct iris_context *ice,
                            struct iris_batch *batch,
-                           gl_shader_stage stage)
+                           mesa_shader_stage stage)
 {
    struct iris_shader_state *shs = &ice->state.shaders[stage];
 

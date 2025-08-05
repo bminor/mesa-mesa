@@ -193,7 +193,7 @@ remap_patch_urb_offsets(nir_block *block, nir_builder *b,
 
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
-      gl_shader_stage stage = b->shader->info.stage;
+      mesa_shader_stage stage = b->shader->info.stage;
 
       if ((stage == MESA_SHADER_TESS_CTRL && is_output(intrin)) ||
           (stage == MESA_SHADER_TESS_EVAL && is_input(intrin))) {

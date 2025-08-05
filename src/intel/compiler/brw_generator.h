@@ -14,7 +14,7 @@ public:
    brw_generator(const struct brw_compiler *compiler,
                 const struct brw_compile_params *params,
                 struct brw_stage_prog_data *prog_data,
-                gl_shader_stage stage);
+                mesa_shader_stage stage);
    ~brw_generator();
 
    void enable_debug(const char *shader_name);
@@ -73,7 +73,7 @@ private:
    brw_exec_list discard_halt_patches;
    bool debug_flag;
    const char *shader_name;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    void *mem_ctx;
 };
 

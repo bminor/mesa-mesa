@@ -992,7 +992,7 @@ void anv_scratch_pool_finish(struct anv_device *device,
                              struct anv_scratch_pool *pool);
 struct anv_bo *anv_scratch_pool_alloc(struct anv_device *device,
                                       struct anv_scratch_pool *pool,
-                                      gl_shader_stage stage,
+                                      mesa_shader_stage stage,
                                       unsigned per_thread_scratch);
 uint32_t anv_scratch_pool_get_surf(struct anv_device *device,
                                    struct anv_scratch_pool *pool,
@@ -4623,7 +4623,7 @@ anv_cmd_buffer_descriptor_buffer_address(struct anv_cmd_buffer *cmd_buffer,
 
 static inline bool
 anv_cmd_buffer_has_gfx_stage(struct anv_cmd_buffer *cmd_buffer,
-                             gl_shader_stage stage)
+                             mesa_shader_stage stage)
 {
    return cmd_buffer->state.gfx.shaders[stage] != NULL;
 }
@@ -4827,8 +4827,8 @@ struct anv_event {
 #define ANV_STAGE_MASK ((1 << MESA_VULKAN_SHADER_STAGES) - 1)
 
 #define anv_foreach_stage(stage, stage_bits)                         \
-   for (gl_shader_stage stage,                                       \
-        __tmp = (gl_shader_stage)((stage_bits) & ANV_STAGE_MASK);    \
+   for (mesa_shader_stage stage,                                       \
+        __tmp = (mesa_shader_stage)((stage_bits) & ANV_STAGE_MASK);    \
         stage = __builtin_ffs(__tmp) - 1, __tmp;                     \
         __tmp &= ~(1 << (stage)))
 
@@ -4864,7 +4864,7 @@ struct anv_push_descriptor_info {
 };
 
 struct anv_shader_upload_params {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    const void *key_data;
    uint32_t key_size;
@@ -4915,7 +4915,7 @@ anv_device_get_embedded_samplers(struct anv_device *device,
 struct anv_shader_bin {
    struct vk_pipeline_cache_object base;
 
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct anv_state kernel;
    uint32_t kernel_size;
@@ -4954,7 +4954,7 @@ anv_shader_bin_unref(struct anv_device *device, struct anv_shader_bin *shader)
 }
 
 struct anv_pipeline_executable {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    struct brw_compile_stats stats;
 
@@ -5283,14 +5283,14 @@ anv_pipeline_to_graphics_base(struct anv_pipeline *pipeline)
 
 static inline bool
 anv_pipeline_has_stage(const struct anv_graphics_pipeline *pipeline,
-                       gl_shader_stage stage)
+                       mesa_shader_stage stage)
 {
    return (pipeline->base.base.active_stages & mesa_to_vk_shader_stage(stage)) != 0;
 }
 
 static inline bool
 anv_pipeline_base_has_stage(const struct anv_graphics_base_pipeline *pipeline,
-                            gl_shader_stage stage)
+                            mesa_shader_stage stage)
 {
    return (pipeline->base.active_stages & mesa_to_vk_shader_stage(stage)) != 0;
 }
@@ -5309,7 +5309,7 @@ anv_pipeline_is_mesh(const struct anv_graphics_pipeline *pipeline)
 
 static inline bool
 anv_gfx_has_stage(const struct anv_cmd_graphics_state *gfx,
-                  gl_shader_stage stage)
+                  mesa_shader_stage stage)
 {
    return (gfx->active_stages & mesa_to_vk_shader_stage(stage)) != 0;
 }

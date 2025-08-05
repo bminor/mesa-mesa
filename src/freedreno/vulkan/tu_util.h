@@ -141,10 +141,10 @@ tu_framebuffer_tiling_config(struct tu_framebuffer *fb,
 #define TU_STAGE_MASK ((1 << MESA_SHADER_STAGES) - 1)
 
 #define tu_foreach_stage(stage, stage_bits)                                  \
-   for (gl_shader_stage stage,                                               \
-        __tmp = (gl_shader_stage) ((stage_bits) &TU_STAGE_MASK);             \
-        stage = (gl_shader_stage) (__builtin_ffs(__tmp) - 1), __tmp;         \
-        __tmp = (gl_shader_stage) (__tmp & ~(1 << (stage))))
+   for (mesa_shader_stage stage,                                               \
+        __tmp = (mesa_shader_stage) ((stage_bits) &TU_STAGE_MASK);             \
+        stage = (mesa_shader_stage) (__builtin_ffs(__tmp) - 1), __tmp;         \
+        __tmp = (mesa_shader_stage) (__tmp & ~(1 << (stage))))
 
 static inline enum a3xx_msaa_samples
 tu_msaa_samples(uint32_t samples)
@@ -154,7 +154,7 @@ tu_msaa_samples(uint32_t samples)
 }
 
 static inline uint32_t
-tu6_stage2opcode(gl_shader_stage stage)
+tu6_stage2opcode(mesa_shader_stage stage)
 {
    if (stage == MESA_SHADER_FRAGMENT || stage == MESA_SHADER_COMPUTE)
       return CP_LOAD_STATE6_FRAG;
@@ -162,13 +162,13 @@ tu6_stage2opcode(gl_shader_stage stage)
 }
 
 static inline enum a6xx_state_block
-tu6_stage2texsb(gl_shader_stage stage)
+tu6_stage2texsb(mesa_shader_stage stage)
 {
    return (enum a6xx_state_block) (SB6_VS_TEX + stage);
 }
 
 static inline enum a6xx_state_block
-tu6_stage2shadersb(gl_shader_stage stage)
+tu6_stage2shadersb(mesa_shader_stage stage)
 {
    return (enum a6xx_state_block) (SB6_VS_SHADER + stage);
 }

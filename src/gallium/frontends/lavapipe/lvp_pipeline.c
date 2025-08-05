@@ -49,7 +49,7 @@ shader_destroy(struct lvp_device *device, struct lvp_shader *shader, bool locked
 {
    if (!shader->pipeline_nir)
       return;
-   gl_shader_stage stage = shader->pipeline_nir->nir->info.stage;
+   mesa_shader_stage stage = shader->pipeline_nir->nir->info.stage;
    cso_destroy_func destroy[] = {
       device->queue.ctx->delete_vs_state,
       device->queue.ctx->delete_tcs_state,
@@ -279,7 +279,7 @@ compile_spirv(struct lvp_device *pdevice,
               const VkPipelineShaderStageCreateInfo *sinfo,
               nir_shader **nir)
 {
-   gl_shader_stage stage = vk_to_mesa_shader_stage(sinfo->stage);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(sinfo->stage);
    assert(stage <= LVP_SHADER_STAGES && stage != MESA_SHADER_NONE);
    VkResult result;
 
@@ -476,7 +476,7 @@ static VkResult
 lvp_shader_compile_to_ir(struct lvp_pipeline *pipeline, const void *pipeline_pNext,
                          const VkPipelineShaderStageCreateInfo *sinfo)
 {
-   gl_shader_stage stage = vk_to_mesa_shader_stage(sinfo->stage);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(sinfo->stage);
    assert(stage <= LVP_SHADER_STAGES && stage != MESA_SHADER_NONE);
    nir_shader *nir;
    VkResult result = lvp_spirv_to_nir(pipeline, pipeline_pNext, sinfo, &nir);
@@ -562,7 +562,7 @@ lvp_shader_xfb_init(struct lvp_shader *shader)
 static void
 lvp_pipeline_xfb_init(struct lvp_pipeline *pipeline)
 {
-   gl_shader_stage stage = MESA_SHADER_VERTEX;
+   mesa_shader_stage stage = MESA_SHADER_VERTEX;
    if (pipeline->shaders[MESA_SHADER_GEOMETRY].pipeline_nir)
       stage = MESA_SHADER_GEOMETRY;
    else if (pipeline->shaders[MESA_SHADER_TESS_EVAL].pipeline_nir)
@@ -834,7 +834,7 @@ lvp_graphics_pipeline_init(struct lvp_pipeline *pipeline,
 
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *sinfo = &pCreateInfo->pStages[i];
-      gl_shader_stage stage = vk_to_mesa_shader_stage(sinfo->stage);
+      mesa_shader_stage stage = vk_to_mesa_shader_stage(sinfo->stage);
       if (stage == MESA_SHADER_FRAGMENT) {
          if (!(pipeline->stages & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT))
             continue;
@@ -919,7 +919,7 @@ lvp_pipeline_shaders_compile(struct lvp_pipeline *pipeline, bool locked)
       if (!pipeline->shaders[i].pipeline_nir)
          continue;
 
-      gl_shader_stage stage = i;
+      mesa_shader_stage stage = i;
       assert(stage == pipeline->shaders[i].pipeline_nir->nir->info.stage);
 
       pipeline->shaders[stage].shader_cso = lvp_shader_compile(pipeline->device, &pipeline->shaders[stage],
@@ -1137,7 +1137,7 @@ static VkShaderEXT
 create_shader_object(struct lvp_device *device, const VkShaderCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator)
 {
    nir_shader *nir = NULL;
-   gl_shader_stage stage = vk_to_mesa_shader_stage(pCreateInfo->stage);
+   mesa_shader_stage stage = vk_to_mesa_shader_stage(pCreateInfo->stage);
    assert(stage <= LVP_SHADER_STAGES && stage != MESA_SHADER_NONE);
    if (pCreateInfo->codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
       VkShaderModuleCreateInfo minfo = {

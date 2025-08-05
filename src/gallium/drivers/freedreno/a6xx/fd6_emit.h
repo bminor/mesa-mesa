@@ -310,7 +310,7 @@ fd6_emit_blit(struct fd_context *ctx, struct fd_ringbuffer *ring)
 }
 
 static inline bool
-fd6_geom_stage(gl_shader_stage type)
+fd6_geom_stage(mesa_shader_stage type)
 {
    switch (type) {
    case MESA_SHADER_VERTEX:
@@ -328,13 +328,13 @@ fd6_geom_stage(gl_shader_stage type)
 }
 
 static inline uint32_t
-fd6_stage2opcode(gl_shader_stage type)
+fd6_stage2opcode(mesa_shader_stage type)
 {
    return fd6_geom_stage(type) ? CP_LOAD_STATE6_GEOM : CP_LOAD_STATE6_FRAG;
 }
 
 static inline enum a6xx_state_block
-fd6_stage2shadersb(gl_shader_stage type)
+fd6_stage2shadersb(mesa_shader_stage type)
 {
    switch (type) {
    case MESA_SHADER_VERTEX:

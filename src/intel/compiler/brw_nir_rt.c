@@ -88,7 +88,7 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
       metadata &= nir_metadata_control_flow;
    }
 
-   gl_shader_stage stage = shader->info.stage;
+   mesa_shader_stage stage = shader->info.stage;
    nir_def *hit_attrib_addr = NULL;
    if (num_ray_hit_attrib_vars > 0) {
       assert(stage == MESA_SHADER_ANY_HIT ||

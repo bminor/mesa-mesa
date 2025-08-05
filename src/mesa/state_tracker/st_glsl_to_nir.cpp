@@ -466,7 +466,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
    for (unsigned i = 0; i < num_shaders; i++) {
       struct gl_linked_shader *shader = linked_shader[i];
       nir_shader *nir = shader->Program->nir;
-      gl_shader_stage stage = shader->Stage;
+      mesa_shader_stage stage = shader->Stage;
       const struct gl_shader_compiler_options *options =
             &ctx->Const.ShaderCompilerOptions[stage];
 

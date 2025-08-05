@@ -1828,7 +1828,7 @@ v3d_attempt_compile(struct v3d_compile *c)
 }
 
 uint32_t
-v3d_prog_data_size(gl_shader_stage stage)
+v3d_prog_data_size(mesa_shader_stage stage)
 {
         static const int prog_data_size[] = {
                 [MESA_SHADER_VERTEX] = sizeof(struct v3d_vs_prog_data),

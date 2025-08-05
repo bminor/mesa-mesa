@@ -200,7 +200,7 @@ static void rogue_shader_destructor(void *ptr)
  * \return The new shader.
  */
 PUBLIC
-rogue_shader *rogue_shader_create(void *mem_ctx, gl_shader_stage stage)
+rogue_shader *rogue_shader_create(void *mem_ctx, mesa_shader_stage stage)
 {
    rogue_debug_init();
 

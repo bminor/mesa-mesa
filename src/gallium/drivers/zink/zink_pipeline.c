@@ -837,7 +837,7 @@ zink_create_gfx_pipeline_library(struct zink_screen *screen, struct zink_gfx_pro
 }
 
 VkPipeline
-zink_create_gfx_pipeline_separate(struct zink_screen *screen, struct zink_shader_object *objs, VkPipelineLayout layout, gl_shader_stage stage)
+zink_create_gfx_pipeline_separate(struct zink_screen *screen, struct zink_shader_object *objs, VkPipelineLayout layout, mesa_shader_stage stage)
 {
    return create_gfx_pipeline_library(screen, objs, BITFIELD_BIT(stage), layout, VK_NULL_HANDLE);
 }

@@ -274,7 +274,7 @@ _mesa_init_current(struct gl_context *ctx)
  * Important: drivers should override these with actual limits.
  */
 static void
-init_program_limits(struct gl_constants *consts, gl_shader_stage stage,
+init_program_limits(struct gl_constants *consts, mesa_shader_stage stage,
                     struct gl_program_constants *prog)
 {
    prog->MaxInstructions = MAX_PROGRAM_INSTRUCTIONS;

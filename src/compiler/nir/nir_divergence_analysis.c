@@ -39,7 +39,7 @@
  */
 
 struct divergence_state {
-   const gl_shader_stage stage;
+   const mesa_shader_stage stage;
    nir_shader *shader;
    nir_function_impl *impl;
    nir_divergence_options options;
@@ -180,7 +180,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       return false;
 
    nir_divergence_options options = state->options;
-   gl_shader_stage stage = state->stage;
+   mesa_shader_stage stage = state->stage;
    bool is_divergent = false;
    switch (instr->intrinsic) {
    case nir_intrinsic_shader_clock:
@@ -1059,7 +1059,7 @@ nir_variable_is_uniform(nir_shader *shader, nir_variable *var,
    }
 
    nir_divergence_options options = state->options;
-   gl_shader_stage stage = shader->info.stage;
+   mesa_shader_stage stage = shader->info.stage;
 
    if (stage == MESA_SHADER_FRAGMENT &&
        (options & nir_divergence_single_prim_per_subgroup) &&

@@ -286,7 +286,7 @@ brw_device_sha1(char *hex,
 }
 
 unsigned
-brw_prog_data_size(gl_shader_stage stage)
+brw_prog_data_size(mesa_shader_stage stage)
 {
    static const size_t stage_sizes[] = {
       [MESA_SHADER_VERTEX]       = sizeof(struct brw_vs_prog_data),
@@ -310,7 +310,7 @@ brw_prog_data_size(gl_shader_stage stage)
 }
 
 unsigned
-brw_prog_key_size(gl_shader_stage stage)
+brw_prog_key_size(mesa_shader_stage stage)
 {
    static const size_t stage_sizes[] = {
       [MESA_SHADER_VERTEX]       = sizeof(struct brw_vs_prog_key),

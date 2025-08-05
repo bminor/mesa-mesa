@@ -218,7 +218,7 @@ dzn_pipeline_get_nir_shader(struct dzn_device *device,
                             const uint8_t *hash,
                             VkPipelineCreateFlags2KHR pipeline_flags,
                             const VkPipelineShaderStageCreateInfo *stage_info,
-                            gl_shader_stage stage,
+                            mesa_shader_stage stage,
                             const struct dzn_nir_options *options,
                             struct dxil_spirv_metadata *metadata,
                             nir_shader **nir)
@@ -490,7 +490,7 @@ dzn_pipeline_compile_shader(struct dzn_device *device,
 
 static D3D12_SHADER_BYTECODE *
 dzn_pipeline_get_gfx_shader_slot(D3D12_PIPELINE_STATE_STREAM_DESC *stream,
-                                 gl_shader_stage in)
+                                 mesa_shader_stage in)
 {
    switch (in) {
    case MESA_SHADER_VERTEX: {
@@ -518,7 +518,7 @@ dzn_pipeline_get_gfx_shader_slot(D3D12_PIPELINE_STATE_STREAM_DESC *stream,
 }
 
 struct dzn_cached_dxil_shader_header {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    size_t size;
    uint8_t data[0];
 };
@@ -526,7 +526,7 @@ struct dzn_cached_dxil_shader_header {
 static VkResult
 dzn_pipeline_cache_lookup_dxil_shader(struct vk_pipeline_cache *cache,
                                       const uint8_t *dxil_hash,
-                                      gl_shader_stage *stage,
+                                      mesa_shader_stage *stage,
                                       D3D12_SHADER_BYTECODE *bc)
 {
    *stage = MESA_SHADER_NONE;
@@ -576,7 +576,7 @@ out:
 static void
 dzn_pipeline_cache_add_dxil_shader(struct vk_pipeline_cache *cache,
                                    const uint8_t *dxil_hash,
-                                   gl_shader_stage stage,
+                                   mesa_shader_stage stage,
                                    const D3D12_SHADER_BYTECODE *bc)
 {
    size_t size = sizeof(struct dzn_cached_dxil_shader_header) +
@@ -655,7 +655,7 @@ dzn_pipeline_cache_lookup_gfx_pipeline(struct dzn_graphics_pipeline *pipeline,
 
    u_foreach_bit(s, info->stages) {
       uint8_t *dxil_hash = (uint8_t *)cached_blob->data + offset;
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
 
       D3D12_SHADER_BYTECODE *slot =
          dzn_pipeline_get_gfx_shader_slot(stream_desc, s);
@@ -771,16 +771,16 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
    const uint8_t *dxil_hashes[MESA_VULKAN_SHADER_STAGES] = { 0 };
    uint8_t attribs_hash[SHA1_DIGEST_LENGTH];
    uint8_t pipeline_hash[SHA1_DIGEST_LENGTH];
-   gl_shader_stage last_raster_stage = MESA_SHADER_NONE;
+   mesa_shader_stage last_raster_stage = MESA_SHADER_NONE;
    uint32_t active_stage_mask = 0;
    VkResult ret;
 
-   /* First step: collect stage info in a table indexed by gl_shader_stage
+   /* First step: collect stage info in a table indexed by mesa_shader_stage
     * so we can iterate over stages in pipeline order or reverse pipeline
     * order.
     */
    for (uint32_t i = 0; i < info->stageCount; i++) {
-      gl_shader_stage stage =
+      mesa_shader_stage stage =
          vk_to_mesa_shader_stage(info->pStages[i].stage);
 
       assert(stage <= MESA_SHADER_FRAGMENT);
@@ -982,9 +982,9 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
     */
    uint32_t link_mask = active_stage_mask;
    while (link_mask != 0) {
-      gl_shader_stage stage = util_last_bit(link_mask) - 1;
+      mesa_shader_stage stage = util_last_bit(link_mask) - 1;
       link_mask &= ~BITFIELD_BIT(stage);
-      gl_shader_stage prev_stage = util_last_bit(link_mask) - 1;
+      mesa_shader_stage prev_stage = util_last_bit(link_mask) - 1;
 
       struct dxil_spirv_runtime_conf conf = {
          .runtime_data_cbv = {
@@ -1023,7 +1023,7 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
          _mesa_sha1_final(&dxil_hash_ctx, stages[stage].dxil_hash);
          dxil_hashes[stage] = stages[stage].dxil_hash;
 
-         gl_shader_stage cached_stage;
+         mesa_shader_stage cached_stage;
          D3D12_SHADER_BYTECODE bc;
          ret = dzn_pipeline_cache_lookup_dxil_shader(cache, stages[stage].dxil_hash, &cached_stage, &bc);
          if (ret != VK_SUCCESS)
@@ -1064,7 +1064,7 @@ dzn_graphics_pipeline_compile_shaders(struct dzn_device *device,
 
    /* Last step: translate NIR shaders into DXIL modules */
    u_foreach_bit(stage, active_stage_mask) {
-      gl_shader_stage prev_stage =
+      mesa_shader_stage prev_stage =
          util_last_bit(active_stage_mask & BITFIELD_MASK(stage)) - 1;
       uint32_t prev_stage_output_clip_size = 0;
       if (stage == MESA_SHADER_FRAGMENT) {
@@ -2443,7 +2443,7 @@ dzn_pipeline_cache_lookup_compute_pipeline(struct vk_pipeline_cache *cache,
    assert(cached_blob->size == SHA1_DIGEST_LENGTH);
 
    const uint8_t *dxil_hash = cached_blob->data;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    VkResult ret =
       dzn_pipeline_cache_lookup_dxil_shader(cache, dxil_hash, &stage, dxil);
@@ -2549,7 +2549,7 @@ dzn_compute_pipeline_compile_shader(struct dzn_device *device,
       _mesa_sha1_update(&dxil_hash_ctx, bindings_hash, sizeof(bindings_hash));
       _mesa_sha1_final(&dxil_hash_ctx, dxil_hash);
 
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
 
       ret = dzn_pipeline_cache_lookup_dxil_shader(cache, dxil_hash, &stage, shader);
       if (ret != VK_SUCCESS)

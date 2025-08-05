@@ -483,7 +483,7 @@ typedef struct agx_block {
 
 typedef struct {
    nir_shader *nir;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    bool is_preamble;
    unsigned scratch_size_B;
 

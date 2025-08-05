@@ -237,8 +237,8 @@ static bool si_lower_intrinsics(nir_shader *nir)
                                         NULL);
 }
 
-static bool can_lower_mediump_io(gl_shader_stage prev_stage, bool prev_stage_has_xfb,
-                                 gl_shader_stage next_stage, bool config_option)
+static bool can_lower_mediump_io(mesa_shader_stage prev_stage, bool prev_stage_has_xfb,
+                                 mesa_shader_stage next_stage, bool config_option)
 {
    /* This is the filter that determines when mediump IO is lowered.
     *

@@ -137,7 +137,7 @@ radv_pipeline_get_shader_key(const struct radv_device *device, const VkPipelineS
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   gl_shader_stage s = vk_to_mesa_shader_stage(stage->stage);
+   mesa_shader_stage s = vk_to_mesa_shader_stage(stage->stage);
    struct vk_pipeline_robustness_state rs;
    struct radv_shader_stage_key key = {0};
 
@@ -225,7 +225,7 @@ radv_pipeline_stage_init(VkPipelineCreateFlags2 pipeline_flags, const VkPipeline
 }
 
 void
-radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, gl_shader_stage stage,
+radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, mesa_shader_stage stage,
                         struct radv_shader_layout *layout)
 {
    layout->num_sets = pipeline_layout->num_sets;
@@ -740,7 +740,7 @@ radv_get_executable_count(struct radv_pipeline *pipeline)
 }
 
 static struct radv_shader *
-radv_get_shader_from_executable_index(struct radv_pipeline *pipeline, int index, gl_shader_stage *stage)
+radv_get_shader_from_executable_index(struct radv_pipeline *pipeline, int index, mesa_shader_stage *stage)
 {
    if (pipeline->type == RADV_PIPELINE_RAY_TRACING) {
       struct radv_ray_tracing_pipeline *rt_pipeline = radv_pipeline_to_ray_tracing(pipeline);
@@ -794,7 +794,7 @@ radv_GetPipelineExecutablePropertiesKHR(VkDevice _device, const VkPipelineInfoKH
       if (!props)
          continue;
 
-      gl_shader_stage stage;
+      mesa_shader_stage stage;
       struct radv_shader *shader = radv_get_shader_from_executable_index(pipeline, executable_idx, &stage);
 
       props->stages = mesa_to_vk_shader_stage(stage);
@@ -884,7 +884,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
 {
    VK_FROM_HANDLE(radv_device, device, _device);
    VK_FROM_HANDLE(radv_pipeline, pipeline, pExecutableInfo->pipeline);
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    struct radv_shader *shader =
       radv_get_shader_from_executable_index(pipeline, pExecutableInfo->executableIndex, &stage);
 
@@ -1070,7 +1070,7 @@ radv_GetPipelineExecutableInternalRepresentationsKHR(
    VK_FROM_HANDLE(radv_device, device, _device);
    VK_FROM_HANDLE(radv_pipeline, pipeline, pExecutableInfo->pipeline);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    struct radv_shader *shader =
       radv_get_shader_from_executable_index(pipeline, pExecutableInfo->executableIndex, &stage);
 

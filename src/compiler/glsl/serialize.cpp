@@ -1234,7 +1234,7 @@ get_shader_info_and_pointer_sizes(size_t *s_info_size, size_t *s_info_ptrs,
 
 static void
 create_linked_shader_and_program(struct gl_context *ctx,
-                                 gl_shader_stage stage,
+                                 mesa_shader_stage stage,
                                  struct gl_shader_program *prog,
                                  struct blob_reader *metadata)
 {
@@ -1341,7 +1341,7 @@ deserialize_glsl_program(struct blob_reader *blob, struct gl_context *ctx,
    unsigned mask = prog->data->linked_stages;
    while (mask) {
       const int j = u_bit_scan(&mask);
-      create_linked_shader_and_program(ctx, (gl_shader_stage) j, prog,
+      create_linked_shader_and_program(ctx, (mesa_shader_stage) j, prog,
                                        blob);
    }
 

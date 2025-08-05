@@ -63,7 +63,7 @@ static bool
 lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 {
    lower_abi_state *s = (lower_abi_state *)state;
-   gl_shader_stage stage = b->shader->info.stage;
+   mesa_shader_stage stage = b->shader->info.stage;
 
    b->cursor = nir_before_instr(&intrin->instr);
 

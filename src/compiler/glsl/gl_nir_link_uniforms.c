@@ -1306,7 +1306,7 @@ static int
 nir_link_uniform(const struct gl_constants *consts,
                  struct gl_shader_program *prog,
                  struct gl_program *stage_program,
-                 gl_shader_stage stage,
+                 mesa_shader_stage stage,
                  const struct glsl_type *type,
                  unsigned index_in_parent,
                  int location,

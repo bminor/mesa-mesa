@@ -45,7 +45,7 @@
 #include "brw_nir.h"
 
 static unsigned
-get_var_slots(gl_shader_stage stage, const nir_variable *var)
+get_var_slots(mesa_shader_stage stage, const nir_variable *var)
 {
    const struct glsl_type *type = var->type;
 
@@ -369,7 +369,7 @@ brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
 }
 
 static const char *
-varying_name(brw_varying_slot slot, gl_shader_stage stage)
+varying_name(brw_varying_slot slot, mesa_shader_stage stage)
 {
    assume(slot < BRW_VARYING_SLOT_COUNT);
 
@@ -385,7 +385,7 @@ varying_name(brw_varying_slot slot, gl_shader_stage stage)
 
 void
 brw_print_vue_map(FILE *fp, const struct intel_vue_map *vue_map,
-                  gl_shader_stage stage)
+                  mesa_shader_stage stage)
 {
    const char *layout_name =
       vue_map->layout == INTEL_VUE_LAYOUT_FIXED ? "fixed" :

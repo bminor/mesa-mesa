@@ -2583,7 +2583,7 @@ assign_track_slot_mask(struct io_slot_map *io, nir_variable *var, unsigned slot,
 }
 
 static void
-assign_slot_io(gl_shader_stage stage, struct io_slot_map *io, nir_variable *var, unsigned slot)
+assign_slot_io(mesa_shader_stage stage, struct io_slot_map *io, nir_variable *var, unsigned slot)
 {
    unsigned num_slots;
    if (nir_is_arrayed_io(var, stage))
@@ -2602,7 +2602,7 @@ assign_slot_io(gl_shader_stage stage, struct io_slot_map *io, nir_variable *var,
 }
 
 static void
-assign_producer_var_io(gl_shader_stage stage, nir_variable *var, struct io_slot_map *io)
+assign_producer_var_io(mesa_shader_stage stage, nir_variable *var, struct io_slot_map *io)
 {
    unsigned slot = var->data.location;
    switch (slot) {
@@ -2637,7 +2637,7 @@ assign_producer_var_io(gl_shader_stage stage, nir_variable *var, struct io_slot_
 }
 
 ALWAYS_INLINE static bool
-is_texcoord(gl_shader_stage stage, const nir_variable *var)
+is_texcoord(mesa_shader_stage stage, const nir_variable *var)
 {
    if (stage != MESA_SHADER_FRAGMENT)
       return false;
@@ -2646,7 +2646,7 @@ is_texcoord(gl_shader_stage stage, const nir_variable *var)
 }
 
 static bool
-assign_consumer_var_io(gl_shader_stage stage, nir_variable *var, struct io_slot_map *io)
+assign_consumer_var_io(mesa_shader_stage stage, nir_variable *var, struct io_slot_map *io)
 {
    unsigned slot = var->data.location;
    switch (slot) {
@@ -3291,7 +3291,7 @@ zink_shader_dump(const struct zink_shader *zs, void *words, size_t size, const c
 }
 
 static VkShaderStageFlagBits
-zink_get_next_stage(gl_shader_stage stage)
+zink_get_next_stage(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
@@ -4513,7 +4513,7 @@ lower_bindless_io(nir_shader *shader)
 }
 
 static uint32_t
-zink_binding(gl_shader_stage stage, VkDescriptorType type, int index, bool compact_descriptors)
+zink_binding(mesa_shader_stage stage, VkDescriptorType type, int index, bool compact_descriptors)
 {
    if (stage == MESA_SHADER_NONE) {
       UNREACHABLE("not supported");
@@ -5144,7 +5144,7 @@ struct rework_io_state {
    bool indirect_only;
    unsigned location;
    nir_variable_mode mode;
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
    nir_shader *nir;
    const char *name;
 
@@ -6433,7 +6433,7 @@ gfx_shader_prune(struct zink_screen *screen, struct zink_shader *shader)
    simple_mtx_unlock(&shader->lock);
    if (!prog)
       return false;
-   gl_shader_stage stage = shader->info.stage;
+   mesa_shader_stage stage = shader->info.stage;
    assert(stage < ZINK_GFX_SHADER_COUNT);
    util_queue_fence_wait(&prog->base.cache_fence);
    unsigned stages_present = prog->stages_present;

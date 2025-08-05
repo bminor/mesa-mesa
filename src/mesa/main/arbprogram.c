@@ -391,7 +391,7 @@ set_program_string(struct gl_program *prog, GLenum target, GLenum format, GLsize
 #ifdef ENABLE_SHADER_CACHE
    GLcharARB *replacement;
 
-   gl_shader_stage stage = _mesa_program_enum_to_shader_stage(target);
+   mesa_shader_stage stage = _mesa_program_enum_to_shader_stage(target);
 
    blake3_hash blake3;
    _mesa_blake3_compute(string, len, blake3);

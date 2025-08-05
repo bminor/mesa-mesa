@@ -120,7 +120,7 @@ struct nak_xfb_info {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Wpadded"
 struct nak_shader_info {
-   gl_shader_stage stage;
+   mesa_shader_stage stage;
 
    /** Shader model */
    uint8_t sm;

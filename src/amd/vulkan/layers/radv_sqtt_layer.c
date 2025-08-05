@@ -43,7 +43,7 @@ radv_sqtt_emit_relocated_shaders(struct radv_cmd_buffer *cmd_buffer, struct radv
 }
 
 static uint64_t
-radv_sqtt_shader_get_va_reloc(struct radv_pipeline *pipeline, gl_shader_stage stage)
+radv_sqtt_shader_get_va_reloc(struct radv_pipeline *pipeline, mesa_shader_stage stage)
 {
    if (pipeline->type == RADV_PIPELINE_GRAPHICS) {
       struct radv_graphics_pipeline *graphics_pipeline = radv_pipeline_to_graphics(pipeline);

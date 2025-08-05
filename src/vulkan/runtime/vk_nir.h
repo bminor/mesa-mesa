@@ -43,7 +43,7 @@ nir_vk_is_not_xfb_output(nir_variable *var, void *data);
 nir_shader *
 vk_spirv_to_nir(struct vk_device *device,
                 const uint32_t *spirv_data, size_t spirv_size_B,
-                gl_shader_stage stage, const char *entrypoint_name,
+                mesa_shader_stage stage, const char *entrypoint_name,
                 enum gl_subgroup_size subgroup_size,
                 const VkSpecializationInfo *spec_info,
                 const struct spirv_to_nir_options *spirv_options,

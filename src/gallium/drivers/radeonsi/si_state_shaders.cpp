@@ -27,7 +27,7 @@ static void si_update_tess_in_out_patch_vertices(struct si_context *sctx);
 unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *shader)
 {
    struct si_shader_info *info = &shader->selector->info;
-   gl_shader_stage stage = shader->selector->stage;
+   mesa_shader_stage stage = shader->selector->stage;
 
    struct si_shader_selector *prev_sel = NULL;
    if (stage == MESA_SHADER_TESS_CTRL)
@@ -988,7 +988,7 @@ static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
 
    if (sscreen->info.gfx_level >= GFX9) {
       unsigned input_prim = sel->info.base.gs.input_primitive;
-      gl_shader_stage es_stage = shader->key.ge.part.gs.es->stage;
+      mesa_shader_stage es_stage = shader->key.ge.part.gs.es->stage;
       unsigned es_vgpr_comp_cnt, gs_vgpr_comp_cnt;
 
       if (es_stage == MESA_SHADER_VERTEX) {
@@ -1397,11 +1397,11 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
 {
    const struct si_shader_selector *gs_sel = shader->selector;
    const struct si_shader_info *gs_info = &gs_sel->info;
-   const gl_shader_stage gs_stage = shader->selector->stage;
+   const mesa_shader_stage gs_stage = shader->selector->stage;
    const struct si_shader_selector *es_sel =
       shader->previous_stage_sel ? shader->previous_stage_sel : shader->selector;
    const struct si_shader_info *es_info = &es_sel->info;
-   const gl_shader_stage es_stage = es_sel->stage;
+   const mesa_shader_stage es_stage = es_sel->stage;
    unsigned num_user_sgprs;
    unsigned es_vgpr_comp_cnt, gs_vgpr_comp_cnt;
    uint64_t va;
@@ -3266,7 +3266,7 @@ int si_shader_select(struct pipe_context *ctx, struct si_shader_ctx_state *state
 
 static void si_parse_next_shader_property(nir_shader *nir, union si_shader_key *key)
 {
-   gl_shader_stage next_shader = nir->info.next_stage;
+   mesa_shader_stage next_shader = nir->info.next_stage;
    bool writes_position = nir->info.outputs_written & VARYING_BIT_POS;
    assert(!nir->xfb_info || nir->xfb_info->buffers_written);
 
@@ -3411,7 +3411,7 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
    sel->nir = NULL;
 }
 
-void si_schedule_initial_compile(struct si_context *sctx, gl_shader_stage stage,
+void si_schedule_initial_compile(struct si_context *sctx, mesa_shader_stage stage,
                                  struct util_queue_fence *ready_fence,
                                  struct si_compiler_ctx_state *compiler_ctx_state, void *job,
                                  util_queue_execute_func execute)

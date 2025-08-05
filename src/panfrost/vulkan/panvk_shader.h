@@ -380,7 +380,7 @@ struct panvk_shader {
 };
 
 static inline unsigned
-panvk_shader_num_variants(gl_shader_stage stage)
+panvk_shader_num_variants(mesa_shader_stage stage)
 {
    if (stage == MESA_SHADER_VERTEX)
       return PANVK_VS_VARIANTS;
