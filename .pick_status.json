@@ -564,7 +564,7 @@
         "description": "zink: fix assert for unsynchronized non-GENERAL image barriers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "213874d42bc9fd5397a9006e301e032eb48a948f",
         "notes": null
