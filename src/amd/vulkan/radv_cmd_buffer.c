@@ -1280,16 +1280,25 @@ static void
 radv_emit_inline_push_consts(const struct radv_device *device, struct radv_cmd_stream *cs,
                              const struct radv_shader *shader, int idx, const uint32_t *values)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_userdata_info *loc = &shader->info.user_sgprs_locs.shader_data[idx];
    const uint32_t base_reg = shader->info.user_data_0;
+   const uint32_t sh_offset = base_reg + loc->sgpr_idx * 4;
 
    if (loc->sgpr_idx == -1)
       return;
 
    radeon_check_space(device->ws, cs->b, 2 + loc->num_sgprs);
+
    radeon_begin(cs);
-   radeon_set_sh_reg_seq(base_reg + loc->sgpr_idx * 4, loc->num_sgprs);
-   radeon_emit_array(values, loc->num_sgprs);
+   if (pdev->info.gfx_level >= GFX12) {
+      for (uint32_t i = 0; i < loc->num_sgprs; i++) {
+         gfx12_push_sh_reg(sh_offset + i * 4, values[i]);
+      }
+   } else {
+      radeon_set_sh_reg_seq(sh_offset, loc->num_sgprs);
+      radeon_emit_array(values, loc->num_sgprs);
+   }
    radeon_end();
 }
 
