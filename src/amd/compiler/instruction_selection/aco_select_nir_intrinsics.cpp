@@ -906,7 +906,8 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
    if (use_mubuf) {
       assert(bld.program->gfx_level == GFX6 || addr.type() != RegType::vgpr);
 
-      aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3, 1)};
+      aco_ptr<Instruction> mubuf{
+         create_instruction(op, Format::MUBUF, 3 + 2 * info.disable_wqm, 1)};
       mubuf->operands[0] = Operand(get_mubuf_global_rsrc(bld, addr));
       if (addr.type() == RegType::vgpr)
          mubuf->operands[1] = Operand(addr);
@@ -919,12 +920,12 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
       mubuf->mubuf().cache = info.cache;
       mubuf->mubuf().offset = const_offset;
       mubuf->mubuf().addr64 = addr.type() == RegType::vgpr;
-      mubuf->mubuf().disable_wqm = false;
       mubuf->mubuf().sync = info.sync;
       mubuf->definitions[0] = Definition(val);
+      init_disable_wqm(bld, mubuf->mubuf(), info.disable_wqm);
       bld.insert(std::move(mubuf));
    } else {
-      aco_ptr<Instruction> flat{create_instruction(op, format, 2, 1)};
+      aco_ptr<Instruction> flat{create_instruction(op, format, 2 + 2 * info.disable_wqm, 1)};
       if (addr.regClass() == s2) {
          assert(global && offset.id() && offset.type() == RegType::vgpr);
          flat->operands[0] = Operand(offset);
@@ -939,6 +940,7 @@ global_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_need
       assert(global || !const_offset);
       flat->flatlike().offset = const_offset;
       flat->definitions[0] = Definition(val);
+      init_disable_wqm(bld, flat->flatlike(), info.disable_wqm);
       bld.insert(std::move(flat));
    }
 
@@ -2328,6 +2330,7 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
    info.sync = get_memory_sync_info(instr, storage_buffer, 0);
    info.offset_src = &instr->src[1];
    info.cache = get_cache_flags(ctx, access, ac_access_type_load);
+   info.disable_wqm = access & ACCESS_SKIP_HELPERS;
 
    if (access & ACCESS_SMEM_AMD) {
       assert(component_size >= 4 ||
