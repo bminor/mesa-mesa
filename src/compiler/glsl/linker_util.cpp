@@ -27,6 +27,7 @@
 #include "linker_util.h"
 #include "util/bitscan.h"
 #include "util/set.h"
+#include "util/u_range_remap.h"
 #include "main/consts_exts.h"
 
 void
@@ -249,24 +250,41 @@ link_util_find_empty_block(struct gl_shader_program *prog,
 }
 
 void
-link_util_update_empty_uniform_locations(struct gl_shader_program *prog)
+link_util_update_empty_uniform_locations(const struct gl_constants *consts,
+                                         struct gl_shader_program *prog)
 {
-   struct empty_uniform_block *current_block = NULL;
-
-   for (unsigned i = 0; i < prog->NumUniformRemapTable; i++) {
-      /* We found empty space in UniformRemapTable. */
-      if (prog->UniformRemapTable[i] == NULL) {
+   int prev_end = -1;
+   list_for_each_entry_safe(struct range_entry, e, prog->UniformRemapTable, node) {
+      unsigned next_slot = prev_end + 1;
+      if (e->start > next_slot) {
          /* We've found the beginning of a new continous block of empty slots */
-         if (!current_block || current_block->start + current_block->slots != i) {
-            current_block = rzalloc(prog, struct empty_uniform_block);
-            current_block->start = i;
-            ir_exec_list_push_tail(&prog->EmptyUniformLocations,
+         struct empty_uniform_block *current_block =
+            rzalloc(prog, struct empty_uniform_block);
+         current_block->start = next_slot;
+         current_block->slots = e->start - next_slot;
+         ir_exec_list_push_tail(&prog->EmptyUniformLocations,
                                 &current_block->link);
-         }
-
-         /* The current block continues, so we simply increment its slots */
-         current_block->slots++;
       }
+
+      prev_end = e->end;
+   }
+
+   /* Add the remaining continous block of empty slots */
+   unsigned next_slot = prev_end + 1;
+   /* Some drivers assign a max assignable value greater than max block size
+    * so we work around this by taking the max of either to get the remaining
+    * empty slots.
+    */
+   unsigned max_slot = MAX2(consts->MaxUniformBlockSize,
+                            consts->MaxUserAssignableUniformLocations) - 1;
+   if (max_slot >= next_slot) {
+      struct empty_uniform_block *current_block =
+         rzalloc(prog, struct empty_uniform_block);
+      current_block->start = next_slot;
+      current_block->slots = max_slot + 1 - next_slot;
+
+      ir_exec_list_push_tail(&prog->EmptyUniformLocations,
+                             &current_block->link);
    }
 }
 

@@ -34,6 +34,7 @@
 #include "main/context.h"
 #include "main/shaderobj.h"
 #include "util/glheader.h"
+#include "util/u_range_remap.h"
 #include "util/perf/cpu_trace.h"
 #include "pipe/p_screen.h"
 
@@ -2769,48 +2770,68 @@ link_intrastage_shaders(void *mem_ctx,
  * Initializes explicit location slots to INACTIVE_UNIFORM_EXPLICIT_LOCATION
  * for a variable, checks for overlaps between other uniforms using explicit
  * locations.
+ * If return_zero bool is true zero will be returned if the uniform was
+ * already processed for a different stage.
  */
 static int
 reserve_explicit_locations(struct gl_shader_program *prog,
-                           struct string_to_uint_map *map, nir_variable *var)
+                           struct string_to_uint_map *map,
+                           const struct glsl_type *type,
+                           int location, char **var_name,
+                           size_t name_length, bool return_zero)
 {
-   unsigned slots = glsl_type_uniform_locations(var->type);
-   unsigned max_loc = var->data.location + slots - 1;
-   unsigned return_value = slots;
+   if (glsl_type_is_struct_or_ifc(type) ||
+       (glsl_type_is_array(type) &&
+        (glsl_type_is_array(glsl_get_array_element(type)) ||
+         glsl_type_is_struct_or_ifc(glsl_get_array_element(type))))) {
 
-   /* Resize remap table if locations do not fit in the current one. */
-   if (max_loc + 1 > prog->NumUniformRemapTable) {
-      prog->UniformRemapTable =
-         reralloc(prog, prog->UniformRemapTable,
-                  struct gl_uniform_storage *,
-                  max_loc + 1);
+      unsigned length = glsl_get_length(type);
+      if (glsl_type_is_unsized_array(type))
+         length = 1;
 
-      if (!prog->UniformRemapTable) {
-         linker_error(prog, "Out of memory during linking.\n");
-         return -1;
-      }
+      int location_count = 0;
+      for (unsigned i = 0; i < length; i++) {
+         const struct glsl_type *field_type;
+         size_t new_length = name_length;
 
-      /* Initialize allocated space. */
-      for (unsigned i = prog->NumUniformRemapTable; i < max_loc + 1; i++)
-         prog->UniformRemapTable[i] = NULL;
+         if (glsl_type_is_struct_or_ifc(type)) {
+            field_type = glsl_get_struct_field(type, i);
 
-      prog->NumUniformRemapTable = max_loc + 1;
-   }
+            /* Append '.field' to the current variable name. */
+            if (var_name) {
+               ralloc_asprintf_rewrite_tail(var_name, &new_length, ".%s",
+                                            glsl_get_struct_elem_name(type, i));
+            }
+         } else {
+            field_type = glsl_get_array_element(type);
 
-   for (unsigned i = 0; i < slots; i++) {
-      unsigned loc = var->data.location + i;
-
-      /* Check if location is already used. */
-      if (prog->UniformRemapTable[loc] == INACTIVE_UNIFORM_EXPLICIT_LOCATION) {
-
-         /* Possibly same uniform from a different stage, this is ok. */
-         unsigned hash_loc;
-         if (string_to_uint_map_get(map, &hash_loc, var->name) &&
-             hash_loc == loc - i) {
-            return_value = 0;
-            continue;
+            /* Append the subscript to the current variable name */
+            if (var_name)
+               ralloc_asprintf_rewrite_tail(var_name, &new_length, "[%u]", i);
          }
 
+         int entries = reserve_explicit_locations(prog, map, field_type,
+                                                  location + location_count,
+                                                  var_name, new_length, false);
+         if (entries == -1)
+            return -1;
+
+         location_count += entries;
+      }
+
+      return location_count;
+   }
+
+   unsigned slots = glsl_type_uniform_locations(type);
+   unsigned max_loc = location + slots - 1;
+   unsigned return_value = slots;
+
+   struct range_entry *re =
+      util_range_remap(location, prog->UniformRemapTable);
+   if (!re) {
+      re = util_range_insert_remap(location, max_loc,
+                                   prog->UniformRemapTable, NULL);
+      if (!re) {
          /* ARB_explicit_uniform_location specification states:
           *
           *     "No two default-block uniform variables in the program can have
@@ -2820,18 +2841,42 @@ reserve_explicit_locations(struct gl_shader_program *prog,
          linker_error(prog,
                       "location qualifier for uniform %s overlaps "
                       "previously used location\n",
-                      var->name);
+                      *var_name);
          return -1;
       }
 
-      /* Initialize location as inactive before optimization
-       * rounds and location assignment.
-       */
-      prog->UniformRemapTable[loc] = INACTIVE_UNIFORM_EXPLICIT_LOCATION;
+      prog->NumUniformRemapTable += slots;
    }
 
+   /* Check if location is already used. */
+   if (re->ptr == INACTIVE_UNIFORM_EXPLICIT_LOCATION) {
+      /* Possibly same uniform from a different stage, this is ok. */
+      unsigned hash_loc;
+      if (string_to_uint_map_get(map, &hash_loc, *var_name) &&
+          hash_loc == location) {
+         return return_zero ? 0 : return_value;
+      } else {
+         /* ARB_explicit_uniform_location specification states:
+          *
+          *     "No two default-block uniform variables in the program can have
+          *     the same location, even if they are unused, otherwise a compiler
+          *     or linker error will be generated."
+          */
+         linker_error(prog,
+                      "location qualifier for uniform %s overlaps "
+                      "previously used location\n",
+                      *var_name);
+         return -1;
+      }
+   }
+
+   /* Initialize location as inactive before optimization
+    * rounds and location assignment.
+    */
+   re->ptr = INACTIVE_UNIFORM_EXPLICIT_LOCATION;
+
    /* Note, base location used for arrays. */
-   string_to_uint_map_put(map, var->data.location, var->name);
+   string_to_uint_map_put(map, location, *var_name);
 
    return return_value;
 }
@@ -2895,13 +2940,16 @@ reserve_subroutine_explicit_locations(struct gl_shader_program *prog,
  * inactive array elements that may get trimmed away.
  */
 static void
-check_explicit_uniform_locations(const struct gl_extensions *exts,
+check_explicit_uniform_locations(const struct gl_constants *consts,
+                                 const struct gl_extensions *exts,
                                  struct gl_shader_program *prog)
 {
    prog->NumExplicitUniformLocations = 0;
 
-   if (!exts->ARB_explicit_uniform_location)
+   if (!exts->ARB_explicit_uniform_location) {
+      link_util_update_empty_uniform_locations(consts, prog);
       return;
+   }
 
    /* This map is used to detect if overlapping explicit locations
     * occur with the same uniform (from different stage) or a different one.
@@ -2926,8 +2974,14 @@ check_explicit_uniform_locations(const struct gl_extensions *exts,
             if (glsl_type_is_subroutine(glsl_without_array(var->type)))
                ret = reserve_subroutine_explicit_locations(prog, p, var);
             else {
+               char *name_tmp = ralloc_strdup(NULL, var->name);
                int slots = reserve_explicit_locations(prog, uniform_map,
-                                                      var);
+                                                      var->type,
+                                                      var->data.location,
+                                                      &name_tmp,
+                                                      strlen(name_tmp), true);
+               ralloc_free(name_tmp);
+
                if (slots != -1) {
                   ret = true;
                   entries_total += slots;
@@ -2941,7 +2995,7 @@ check_explicit_uniform_locations(const struct gl_extensions *exts,
       }
    }
 
-   link_util_update_empty_uniform_locations(prog);
+   link_util_update_empty_uniform_locations(consts, prog);
 
    string_to_uint_map_dtor(uniform_map);
    prog->NumExplicitUniformLocations = entries_total;
@@ -3705,7 +3759,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    if (!prog->data->LinkStatus)
       goto done;
 
-   check_explicit_uniform_locations(exts, prog);
+   check_explicit_uniform_locations(consts, exts, prog);
 
    link_assign_subroutine_types(prog);
    verify_subroutine_associated_funcs(prog);

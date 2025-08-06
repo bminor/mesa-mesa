@@ -37,6 +37,7 @@
 #include "program/program.h"
 #include "string_to_uint_map.h"
 #include "util/bitscan.h"
+#include "util/u_range_remap.h"
 
 
 static void
@@ -574,6 +575,33 @@ enum uniform_remap_type
 };
 
 static void
+write_uniform_remap_list(struct blob *metadata,
+                          unsigned num_uniform_remap_table,
+                          gl_uniform_storage *uniform_storage,
+                          struct list_head *uniform_remap_list)
+{
+   blob_write_uint32(metadata, num_uniform_remap_table);
+   blob_write_uint32(metadata, list_length(uniform_remap_list));
+
+   list_for_each_entry_safe(struct range_entry, entry, uniform_remap_list, node) {
+      gl_uniform_storage *u = (gl_uniform_storage *)entry->ptr;
+      uint32_t offset = u - uniform_storage;
+
+      if (u == INACTIVE_UNIFORM_EXPLICIT_LOCATION) {
+         blob_write_uint32(metadata, remap_type_inactive_explicit_location);
+      } else if (u == NULL) {
+         blob_write_uint32(metadata, remap_type_null_ptr);
+      } else {
+         blob_write_uint32(metadata, remap_type_uniform_offset);
+         blob_write_uint32(metadata, offset);
+      }
+
+      blob_write_uint32(metadata, entry->start);
+      blob_write_uint32(metadata, entry->end);
+   }
+}
+
+static void
 write_uniform_remap_table(struct blob *metadata,
                           unsigned num_entries,
                           gl_uniform_storage *uniform_storage,
@@ -618,9 +646,9 @@ static void
 write_uniform_remap_tables(struct blob *metadata,
                            struct gl_shader_program *prog)
 {
-   write_uniform_remap_table(metadata, prog->NumUniformRemapTable,
-                             prog->data->UniformStorage,
-                             prog->UniformRemapTable);
+   write_uniform_remap_list(metadata, prog->NumUniformRemapTable,
+                            prog->data->UniformStorage,
+                            prog->UniformRemapTable);
 
    for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
@@ -630,6 +658,38 @@ write_uniform_remap_tables(struct blob *metadata,
                                    prog->data->UniformStorage,
                                    sh->Program->sh.SubroutineUniformRemapTable);
       }
+   }
+}
+
+static void
+read_uniform_remap_list(struct blob_reader *metadata,
+                        struct gl_shader_program *prog,
+                        unsigned *num_entries,
+                        struct list_head *remap_list,
+                        gl_uniform_storage *uniform_storage)
+{
+   unsigned num = blob_read_uint32(metadata);
+   *num_entries = num;
+
+   unsigned num_list_entries = blob_read_uint32(metadata);
+
+   for (unsigned i = 0; i < num_list_entries; i++) {
+      gl_uniform_storage *uniform;
+      enum uniform_remap_type type =
+         (enum uniform_remap_type) blob_read_uint32(metadata);
+
+      if (type == remap_type_inactive_explicit_location) {
+         uniform = INACTIVE_UNIFORM_EXPLICIT_LOCATION;
+      } else if (type == remap_type_null_ptr) {
+         uniform = NULL;
+      } else {
+         uint32_t uni_offset = blob_read_uint32(metadata);
+         uniform = uniform_storage + uni_offset;
+      }
+
+      unsigned start = blob_read_uint32(metadata);
+      unsigned end = blob_read_uint32(metadata);
+      util_range_insert_remap(start, end, remap_list, uniform);
    }
 }
 
@@ -673,9 +733,9 @@ static void
 read_uniform_remap_tables(struct blob_reader *metadata,
                           struct gl_shader_program *prog)
 {
-   prog->UniformRemapTable =
-      read_uniform_remap_table(metadata, prog, &prog->NumUniformRemapTable,
-                               prog->data->UniformStorage);
+   read_uniform_remap_list(metadata, prog, &prog->NumUniformRemapTable,
+                           prog->UniformRemapTable,
+                           prog->data->UniformStorage);
 
    for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
@@ -949,7 +1009,8 @@ read_program_resource_data(struct blob_reader *metadata,
       if (type == uniform_not_remapped) {
          res->Data = &prog->data->UniformStorage[blob_read_uint32(metadata)];
       } else {
-         res->Data = prog->UniformRemapTable[blob_read_uint32(metadata)];
+         res->Data = util_range_remap(blob_read_uint32(metadata),
+                                      prog->UniformRemapTable)->ptr;
       }
       break;
    }

@@ -116,7 +116,8 @@ link_util_find_empty_block(struct gl_shader_program *prog,
                            struct gl_uniform_storage *uniform);
 
 void
-link_util_update_empty_uniform_locations(struct gl_shader_program *prog);
+link_util_update_empty_uniform_locations(const struct gl_constants *consts,
+                                         struct gl_shader_program *prog);
 
 void
 link_util_check_subroutine_resources(struct gl_shader_program *prog);

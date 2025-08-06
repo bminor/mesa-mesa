@@ -34,6 +34,7 @@
 #include <string.h>
 #include "util/ralloc.h"
 #include "util/strtod.h"
+#include "util/u_range_remap.h"
 #include "main/mtypes.h"
 #include "string_to_uint_map.h"
 #include "pipe/p_screen.h"
@@ -161,7 +162,8 @@ _mesa_clear_shader_program_data(struct gl_context *ctx,
    shProg->data->NumUniformStorage = 0;
    shProg->data->UniformStorage = NULL;
    shProg->NumUniformRemapTable = 0;
-   shProg->UniformRemapTable = NULL;
+   shProg->UniformRemapTable =
+      util_reset_range_remap(shProg->UniformRemapTable);
 
    ralloc_free(shProg->data->InfoLog);
    shProg->data->InfoLog = ralloc_strdup(shProg->data, "");
@@ -284,6 +286,8 @@ void initialize_context_to_defaults(struct gl_context *ctx, gl_api api)
    ctx->Const.Program[MESA_SHADER_COMPUTE].MaxInputComponents = 0; /* not used */
    ctx->Const.Program[MESA_SHADER_COMPUTE].MaxOutputComponents = 0; /* not used */
 
+   ctx->Const.MaxUniformBlockSize = 16384;
+
    ctx->Driver.NewProgram = standalone_new_program;
 }
 
@@ -303,6 +307,7 @@ standalone_create_shader_program(void)
    whole_program->FragDataBindings = new string_to_uint_map;
    whole_program->FragDataIndexBindings = new string_to_uint_map;
 
+   whole_program->UniformRemapTable = util_create_range_remap();
    ir_exec_list_make_empty(&whole_program->EmptyUniformLocations);
 
    return whole_program;
@@ -327,6 +332,7 @@ standalone_destroy_shader_program(struct gl_shader_program *whole_program)
    delete whole_program->FragDataBindings;
    delete whole_program->FragDataIndexBindings;
 
+   ralloc_free(whole_program->UniformRemapTable);
    ralloc_free(whole_program);
 }
 

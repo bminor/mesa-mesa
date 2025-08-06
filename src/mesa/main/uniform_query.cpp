@@ -36,6 +36,7 @@
 #include "compiler/glsl/ir.h"
 #include "compiler/glsl/glsl_parser_extras.h"
 #include "util/bitscan.h"
+#include "util/u_range_remap.h"
 
 #include "state_tracker/st_context.h"
 
@@ -200,25 +201,23 @@ validate_uniform_parameters(GLint location, GLsizei count,
       return NULL;
    }
 
-   /* Check that the given location is in bounds of uniform remap table.
-    * Unlinked programs will have NumUniformRemapTable == 0, so we can take
-    * the shProg->data->LinkStatus check out of the main path.
-    */
-   if (unlikely(location >= (GLint) shProg->NumUniformRemapTable)) {
+   if (location == -1) {
+      if (!shProg->data->LinkStatus)
+         _mesa_error(ctx, GL_INVALID_OPERATION, "%s(program not linked)",
+                     caller);
+
+      return NULL;
+   }
+
+   /* Check that the given location is in bounds of uniform remap table */
+   if (unlikely(location >= 0 &&
+       (shProg->UniformRemapTable == NULL || list_is_empty(shProg->UniformRemapTable)))) {
       if (!shProg->data->LinkStatus)
          _mesa_error(ctx, GL_INVALID_OPERATION, "%s(program not linked)",
                      caller);
       else
          _mesa_error(ctx, GL_INVALID_OPERATION, "%s(location=%d)",
                      caller, location);
-
-      return NULL;
-   }
-
-   if (location == -1) {
-      if (!shProg->data->LinkStatus)
-         _mesa_error(ctx, GL_INVALID_OPERATION, "%s(program not linked)",
-                     caller);
 
       return NULL;
    }
@@ -236,7 +235,14 @@ validate_uniform_parameters(GLint location, GLsizei count,
     *         - if count is greater than one, and the uniform declared in the
     *           shader is not an array variable,
     */
-   if (location < -1 || !shProg->UniformRemapTable[location]) {
+   struct gl_uniform_storage *uni = NULL;
+   if (location >= 0) {
+      struct range_entry *e =
+         util_range_remap(location, shProg->UniformRemapTable);
+      uni = e ? (struct gl_uniform_storage *)e->ptr : NULL;
+   }
+
+   if (!uni) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(location=%d)",
                   caller, location);
       return NULL;
@@ -253,11 +259,8 @@ validate_uniform_parameters(GLint location, GLsizei count,
     *     no error is generated."
     *
     */
-   if (shProg->UniformRemapTable[location] ==
-       INACTIVE_UNIFORM_EXPLICIT_LOCATION)
+   if (uni == INACTIVE_UNIFORM_EXPLICIT_LOCATION)
       return NULL;
-
-   struct gl_uniform_storage *const uni = shProg->UniformRemapTable[location];
 
    /* Even though no location is assigned to a built-in uniform and this
     * function should already have returned NULL, this test makes it explicit
@@ -1449,10 +1452,10 @@ _mesa_uniform(GLint location, GLsizei count, const GLvoid *values,
       if (location == -1)
          return;
 
-      if (location >= (int)shProg->NumUniformRemapTable)
-         return;
+      struct range_entry *e =
+         util_range_remap(location, shProg->UniformRemapTable);
+      uni = e ? (struct gl_uniform_storage *)e->ptr : NULL;
 
-      uni = shProg->UniformRemapTable[location];
       if (!uni || uni == INACTIVE_UNIFORM_EXPLICIT_LOCATION)
          return;
 
@@ -2019,7 +2022,10 @@ _mesa_uniform_handle(GLint location, GLsizei count, const GLvoid *values,
       if (location == -1)
          return;
 
-      uni = shProg->UniformRemapTable[location];
+      struct range_entry *e =
+         util_range_remap(location, shProg->UniformRemapTable);
+      uni = e ? (struct gl_uniform_storage *)e->ptr : NULL;
+
       if (!uni || uni == INACTIVE_UNIFORM_EXPLICIT_LOCATION)
          return;
 

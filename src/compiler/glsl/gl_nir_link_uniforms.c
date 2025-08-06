@@ -27,6 +27,7 @@
 #include "linker_util.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
+#include "util/u_range_remap.h"
 #include "main/consts_exts.h"
 #include "main/shader_types.h"
 
@@ -280,17 +281,12 @@ setup_uniform_remap_tables(const struct gl_constants *consts,
     * that we can keep track of unused uniforms with explicit locations.
     */
    assert(!prog->data->spirv ||
-          (prog->data->spirv && !prog->UniformRemapTable));
-   if (!prog->UniformRemapTable) {
-      prog->UniformRemapTable = rzalloc_array(prog,
-                                              struct gl_uniform_storage *,
-                                              prog->NumUniformRemapTable);
-   }
+          (prog->data->spirv && list_is_empty(prog->UniformRemapTable)));
 
    union gl_constant_value *data =
       rzalloc_array(prog->data,
                     union gl_constant_value, prog->data->NumUniformDataSlots);
-   if (!prog->UniformRemapTable || !data) {
+   if (!data) {
       linker_error(prog, "Out of memory during linking.\n");
       return;
    }
@@ -321,19 +317,17 @@ setup_uniform_remap_tables(const struct gl_constants *consts,
       unsigned num_slots = glsl_get_component_slots(uniform->type);
 
       uniform->storage = &data[data_pos];
+      data_pos += num_slots * entries;
 
-      /* Set remap table entries point to correct gl_uniform_storage. */
-      for (unsigned j = 0; j < entries; j++) {
-         unsigned element_loc = uniform->remap_location + j;
-         prog->UniformRemapTable[element_loc] = uniform;
-
-         data_pos += num_slots;
-      }
+      /* Set remap table entry to the correct gl_uniform_storage. */
+      util_range_insert_remap(uniform->remap_location,
+                              uniform->remap_location + entries - 1,
+                              prog->UniformRemapTable, uniform);
    }
 
    /* Reserve locations for rest of the uniforms. */
    if (prog->data->spirv)
-      link_util_update_empty_uniform_locations(prog);
+      link_util_update_empty_uniform_locations(consts, prog);
 
    for (unsigned i = 0; i < prog->data->NumUniformStorage; i++) {
       struct gl_uniform_storage *uniform = &prog->data->UniformStorage[i];
@@ -365,35 +359,24 @@ setup_uniform_remap_tables(const struct gl_constants *consts,
 
       unsigned location =
          link_util_find_empty_block(prog, &prog->data->UniformStorage[i]);
-
       if (location == -1) {
-         location = prog->NumUniformRemapTable;
+         linker_error(prog, "Unable to find empty block for %u entries",
+                      MAX2(1, prog->data->UniformStorage[i].array_elements));
+      }
 
-         /* resize remap table to fit new entries */
-         prog->UniformRemapTable =
-            reralloc(prog,
-                     prog->UniformRemapTable,
-                     struct gl_uniform_storage *,
-                     prog->NumUniformRemapTable + entries);
-         prog->NumUniformRemapTable += entries;
+      unsigned num_slots = glsl_get_component_slots(uniform->type);
+      if (uniform->block_index == -1) {
+         uniform->storage = &data[data_pos];
+         data_pos += num_slots * entries;
       }
 
       /* set the base location in remap table for the uniform */
       uniform->remap_location = location;
 
-      unsigned num_slots = glsl_get_component_slots(uniform->type);
-
-      if (uniform->block_index == -1)
-         uniform->storage = &data[data_pos];
-
-      /* Set remap table entries point to correct gl_uniform_storage. */
-      for (unsigned j = 0; j < entries; j++) {
-         unsigned element_loc = uniform->remap_location + j;
-         prog->UniformRemapTable[element_loc] = uniform;
-
-         if (uniform->block_index == -1)
-            data_pos += num_slots;
-      }
+      /* Set remap table entry to the correct gl_uniform_storage. */
+      util_range_insert_remap(uniform->remap_location,
+                              uniform->remap_location + entries - 1,
+                              prog->UniformRemapTable, uniform);
    }
 
    /* Verify that total amount of entries for explicit and implicit locations
