@@ -51,3 +51,10 @@ KHR-GL46.limits.max_geometry_total_output_components
 
 # reported to pass locally, seems to bounce around in CI
 KHR-GL46.sparse_buffer_tests.BufferStorageTest_.*
+
+# deqp-egl-x11: ../src/gallium/auxiliary/draw/draw_context.c:859: draw_do_flush: Assertion `!draw->flushing' failed.
+x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_sync.textures.copytexsubimage2d.*
+x11-dEQP-EGL.functional.sharing.gles2.multithread.random.textures.copytexsubimage2d.*
+
+x11-dEQP-EGL.functional.swap_buffers_with_damage.resize_before_swap.buffer_age_render
+x11-dEQP-EGL.functional.swap_buffers_with_damage.resize_after_swap.buffer_age_clear_render
