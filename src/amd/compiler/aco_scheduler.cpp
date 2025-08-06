@@ -901,7 +901,6 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    int max_moves = VMEM_MAX_MOVES;
    int clause_max_grab_dist = VMEM_CLAUSE_MAX_GRAB_DIST;
    bool only_clauses = false;
-   bool part_of_clause = false;
    int16_t k = 0;
 
    /* first, check if we have instructions before current to move down */
@@ -920,7 +919,7 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       aco_ptr<Instruction>& candidate = block->instructions[candidate_idx];
       bool is_vmem = candidate->isVMEM() || candidate->isFlatLike();
 
-      /* break when encountering another VMEM instruction, logical_start or barriers */
+      /* Break when encountering another VMEM instruction, logical_start or barriers. */
       if (candidate->opcode == aco_opcode::p_logical_start)
          break;
 
@@ -931,27 +930,25 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
          if (grab_dist >= clause_max_grab_dist + k)
             break;
 
-         part_of_clause = true;
-      } else if (part_of_clause) {
+         if (perform_hazard_query(&clause_hq, candidate.get(), false) == hazard_success)
+            ctx.mv.downwards_move_clause(cursor);
+
+         /* We move the entire clause at once.
+          * Break as any earlier instructions have already been checked.
+          */
          break;
       }
 
       /* Break if we'd make the previous SMEM instruction stall. */
       bool can_stall_prev_smem =
          idx <= ctx.last_SMEM_dep_idx && candidate_idx < ctx.last_SMEM_dep_idx;
-      if (!part_of_clause && can_stall_prev_smem && ctx.last_SMEM_stall >= 0)
+      if (can_stall_prev_smem && ctx.last_SMEM_stall >= 0)
          break;
 
-      /* if current depends on candidate, add additional dependencies and continue */
-      bool can_move_down = !is_vmem || part_of_clause || candidate->definitions.empty();
-      if (only_clauses) {
-         /* Once encountering a clause, only try to form clauses.
-          * Any earlier instructions have already been checked.
-          */
-         can_move_down = part_of_clause;
-      }
-      HazardResult haz =
-         perform_hazard_query(part_of_clause ? &clause_hq : &indep_hq, candidate.get(), false);
+      /* If current depends on candidate, add additional dependencies and continue. */
+      bool can_move_down = !only_clauses && (!is_vmem || candidate->definitions.empty());
+
+      HazardResult haz = perform_hazard_query(&indep_hq, candidate.get(), false);
       if (haz == hazard_fail_reorder_ds || haz == hazard_fail_spill ||
           haz == hazard_fail_reorder_sendmsg || haz == hazard_fail_barrier ||
           haz == hazard_fail_export)
@@ -960,17 +957,10 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
          break;
 
       if (!can_move_down) {
-         if (part_of_clause)
-            break;
          add_to_hazard_query(&indep_hq, candidate.get());
          add_to_hazard_query(&clause_hq, candidate.get());
          ctx.mv.downwards_skip(cursor);
          continue;
-      }
-
-      if (part_of_clause) {
-         ctx.mv.downwards_move_clause(cursor);
-         break;
       }
 
       MoveResult res = ctx.mv.downwards_move(cursor);
