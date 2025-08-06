@@ -865,7 +865,6 @@ panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
                                const struct vk_queue_submit *vk_submit)
 {
    MESA_TRACE_FUNC();
-   struct panvk_device *dev = submit->dev;
 
    if (!submit->utrace.queue_mask)
       return;
@@ -876,6 +875,7 @@ panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
     */
    struct panvk_utrace_flush_data *next = submit->utrace.data_storage;
    submit->utrace.data[submit->utrace.last_subqueue] = next++;
+   submit->utrace.data[submit->utrace.last_subqueue]->free_self = true;
 
    u_foreach_bit(i, submit->utrace.queue_mask) {
       if (i != submit->utrace.last_subqueue)
@@ -886,12 +886,8 @@ panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
          .subqueue = i,
          .sync = wait ? submit->queue->utrace.sync : NULL,
          .wait_value = wait ? submit->queue->utrace.next_value : 0,
+         .free_self = false,
       };
-   }
-
-   if (submit->utrace.needs_clone) {
-      struct panvk_pool *clone_pool = &submit->utrace.data_storage->clone_pool;
-      panvk_per_arch(utrace_clone_init_pool)(clone_pool, dev);
    }
 }
 
@@ -964,17 +960,30 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
          if (!u_trace_has_points(ut))
             continue;
 
-         const bool free_data = ut == submit->utrace.last_ut;
+         /* The last subqueue frees the flush data itself. */
+         bool free_data = ut == submit->utrace.last_ut;
 
          struct u_trace clone_ut;
          if (!(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
             u_trace_init(&clone_ut, &dev->utrace.utctx);
 
-            struct panvk_pool *clone_pool =
-               &submit->utrace.data_storage->clone_pool;
+            const uint64_t root_buf_size = sizeof(uint64_t) * 1024;
+            struct panvk_utrace_buf *cs_root_buf =
+               panvk_utrace_create_buffer(&dev->utrace.utctx, root_buf_size);
+            assert(cs_root_buf);
+            /* For every sq, the cs buffer needs to be freed. */
+            free_data = true;
+
+            const struct cs_buffer cs_root = (struct cs_buffer){
+               .cpu = cs_root_buf->host,
+               .gpu = cs_root_buf->dev,
+               .capacity = root_buf_size / sizeof(uint64_t),
+            };
+
+            submit->utrace.data[j]->clone_cs_root = cs_root_buf;
             struct cs_builder clone_builder;
-            panvk_per_arch(utrace_clone_init_builder)(&clone_builder,
-                                                      clone_pool);
+            panvk_per_arch(utrace_clone_init_builder)(&clone_builder, dev,
+                                                      &cs_root);
 
             u_trace_clone_append(
                u_trace_begin_iterator(ut), u_trace_end_iterator(ut), &clone_ut,

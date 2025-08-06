@@ -111,8 +111,11 @@ panvk_utrace_delete_flush_data(struct u_trace_context *utctx, void *flush_data)
 {
    struct panvk_utrace_flush_data *data = flush_data;
 
-   if (data->clone_pool.dev)
-      panvk_pool_cleanup(&data->clone_pool);
+   if (data->clone_cs_root) {
+      panvk_utrace_delete_buffer(utctx, data->clone_cs_root);
+      data->clone_cs_root = NULL;
+   }
 
-   free(data);
+   if (data->free_self)
+      free(data);
 }

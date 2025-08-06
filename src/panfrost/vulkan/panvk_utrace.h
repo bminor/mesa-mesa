@@ -20,7 +20,8 @@ struct panvk_utrace_flush_data {
    struct vk_sync *sync;
    uint64_t wait_value;
 
-   struct panvk_pool clone_pool;
+   struct panvk_utrace_buf *clone_cs_root;
+   bool free_self;
 };
 
 struct panvk_utrace_buf {
@@ -68,11 +69,11 @@ void panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
                                         uint64_t to_offset, uint64_t size_B);
 
 struct cs_builder;
+struct cs_buffer;
 
-void panvk_per_arch(utrace_clone_init_pool)(struct panvk_pool *pool,
-                                            struct panvk_device *dev);
 void panvk_per_arch(utrace_clone_init_builder)(struct cs_builder *b,
-                                               struct panvk_pool *pool);
+                                               struct panvk_device *dev,
+                                               const struct cs_buffer *cs_root);
 void panvk_per_arch(utrace_clone_finish_builder)(struct cs_builder *b);
 
 #else /* PAN_ARCH >= 10 */

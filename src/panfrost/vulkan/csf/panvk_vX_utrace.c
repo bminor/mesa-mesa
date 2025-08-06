@@ -241,47 +241,18 @@ panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
 }
 
 void
-panvk_per_arch(utrace_clone_init_pool)(struct panvk_pool *pool,
-                                       struct panvk_device *dev)
-{
-   const struct panvk_pool_properties pool_props = {
-      .slab_size = 64 * 1024,
-      .label = "utrace clone pool",
-      .owns_bos = true,
-   };
-   panvk_pool_init(pool, dev, NULL, NULL, &pool_props);
-}
-
-static struct cs_buffer
-alloc_clone_buffer(void *cookie)
-{
-   struct panvk_pool *pool = cookie;
-   const uint32_t size = 4 * 1024;
-   const uint32_t alignment = 64;
-
-   struct pan_ptr ptr = pan_pool_alloc_aligned(&pool->base, size, alignment);
-
-   return (struct cs_buffer){
-      .cpu = ptr.cpu,
-      .gpu = ptr.gpu,
-      .capacity = size,
-   };
-}
-
-void
 panvk_per_arch(utrace_clone_init_builder)(struct cs_builder *b,
-                                          struct panvk_pool *pool)
+                                          struct panvk_device *dev,
+                                          const struct cs_buffer *cs_root)
 {
    const struct drm_panthor_csif_info *csif_info =
-      panthor_kmod_get_csif_props(pool->dev->kmod.dev);
+      panthor_kmod_get_csif_props(dev->kmod.dev);
    const struct cs_builder_conf builder_conf = {
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
-      .alloc_buffer = alloc_clone_buffer,
-      .cookie = pool,
       .ls_sb_slot = SB_ID(LS),
    };
-   cs_builder_init(b, &builder_conf, (struct cs_buffer){0});
+   cs_builder_init(b, &builder_conf, *cs_root);
 }
 
 void
