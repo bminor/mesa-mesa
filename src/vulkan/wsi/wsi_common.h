@@ -71,6 +71,12 @@ struct wsi_image_create_info {
 struct wsi_memory_allocate_info {
     VkStructureType sType;
     const void *pNext;
+    /**
+     * If set, then the driver needs to do implicit synchronization on this BO.
+     *
+     * For DRM drivers, this flag will only get set before linux 6.0, at which
+     * point DMA_BUF_IOCTL_IMPORT_SYNC_FILE was added.
+     */
     bool implicit_sync;
 };
 

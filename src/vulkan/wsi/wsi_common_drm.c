@@ -746,7 +746,10 @@ wsi_create_native_image_mem(const struct wsi_swapchain *chain,
    const struct wsi_memory_allocate_info memory_wsi_info = {
       .sType = VK_STRUCTURE_TYPE_WSI_MEMORY_ALLOCATE_INFO_MESA,
       .pNext = NULL,
-      .implicit_sync = !info->explicit_sync,
+      /* Ask for the driver to add implicit sync to the image if we're not
+       * handling implict sync ourselves.
+       */
+      .implicit_sync = !info->explicit_sync && !chain->dma_buf_semaphore,
    };
    const VkExportMemoryAllocateInfo memory_export_info = {
       .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
