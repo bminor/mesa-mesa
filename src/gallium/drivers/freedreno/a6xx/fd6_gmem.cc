@@ -1091,7 +1091,7 @@ fd6_build_preemption_preamble(struct fd_context *ctx)
          .reg = REG_A6XX_VSC_CHANNEL_VISIBILITY(0),
          .cnt = 32,
       ))
-      .add(CP_MEM_TO_REG_SRC(
+      .add(A5XX_CP_MEM_TO_REG_SRC(
          control_ptr(fd6_context(ctx), vsc_state),
       ));
 
@@ -1202,7 +1202,7 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
             .reg = REG_A6XX_VSC_CHANNEL_VISIBILITY(0),
             .cnt = 32,
          ))
-         .add(CP_REG_TO_MEM_DEST(
+         .add(A5XX_CP_REG_TO_MEM_DEST(
             control_ptr(fd6_context(batch->ctx), vsc_state)
          ));
    } else {

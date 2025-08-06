@@ -1264,7 +1264,7 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 	</reg32>
 </domain>
 
-<domain name="CP_REG_TO_MEM" width="32">
+<domain name="CP_REG_TO_MEM" width="32" prefix="chip">
 	<reg32 offset="0" name="0">
 		<bitfield name="REG" low="0" high="17" type="hex"/>
 		<!-- number of registers/dwords copied is max(CNT, 1). -->
@@ -1272,8 +1272,12 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<bitfield name="64B" pos="30" type="boolean"/>
 		<bitfield name="ACCUMULATE" pos="31" type="boolean"/>
 	</reg32>
-	<reg32 offset="1" name="DEST32" type="waddress" varset="chip" variants="A2XX-A4XX"/>
-	<reg64 offset="1" name="DEST" type="waddress" varset="chip" variants="A5XX-"/>
+	<stripe varset="chip" variants="A2XX-A4XX">
+		<reg32 offset="1" name="DEST" type="address"/>
+	</stripe>
+	<stripe varset="chip" variants="A5XX-">
+		<reg64 offset="1" name="DEST" type="address"/>
+	</stripe>
 </domain>
 
 <domain name="CP_REG_TO_MEM_OFFSET_REG" width="32">
@@ -1323,8 +1327,12 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<!-- does the same thing as CP_MEM_TO_MEM::UNK31 -->
 		<bitfield name="UNK31" pos="31" type="boolean"/>
 	</reg32>
-	<reg32 offset="1" name="SRC32" type="address" varset="chip" variants="A2XX-A4XX"/>
-	<reg64 offset="1" name="SRC" type="address" varset="chip" variants="A5XX-"/>
+	<stripe varset="chip" variants="A2XX-A4XX">
+		<reg32 offset="1" name="SRC" type="address"/>
+	</stripe>
+	<stripe varset="chip" variants="A5XX-">
+		<reg64 offset="1" name="SRC" type="address"/>
+	</stripe>
 </domain>
 
 <domain name="CP_MEM_TO_MEM" width="32">
@@ -1406,8 +1414,12 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 </domain>
 
 <domain name="CP_MEM_WRITE" width="32">
-	<reg32 offset="0" name="ADDR32" varset="chip" variants="A2XX-A4XX" type="waddress"/>
-	<reg64 offset="0" name="ADDR" varset="chip" variants="A5XX-" type="waddress"/>
+	<stripe varset="chip" variants="A2XX-A4XX">
+		<reg32 offset="0" name="ADDR" type="address"/>
+	</stripe>
+	<stripe varset="chip" variants="A5XX-">
+		<reg64 offset="0" name="ADDR" type="address"/>
+	</stripe>
 	<!-- followed by the DWORDs to write -->
 </domain>
 

@@ -407,7 +407,7 @@ fd6_emit_streamout(fd_cs &cs, struct fd6_emit *emit) assert_dt
          assert(so->offsets[i] == 0);
 
          fd_pkt7(cs, CP_MEM_WRITE, 3)
-            .add(CP_MEM_WRITE_ADDR(offset_bo))
+            .add(A5XX_CP_MEM_WRITE_ADDR(offset_bo))
             .add(target->base.buffer_offset);
 
          fd_pkt4(cs, 1)
@@ -419,7 +419,7 @@ fd6_emit_streamout(fd_cs &cs, struct fd6_emit *emit) assert_dt
                .shift_by_2 = CHIP == A6XX,
                .unk31 = true,
             ))
-            .add(CP_MEM_TO_REG_SRC(offset_bo));
+            .add(A5XX_CP_MEM_TO_REG_SRC(offset_bo));
       }
 
       // After a draw HW would write the new offset to offset_bo
