@@ -2282,9 +2282,9 @@ struct gl_pipeline_object
     *
     * There is a separate program set for each shader stage.
     */
-   struct gl_program *CurrentProgram[MESA_SHADER_STAGES];
+   struct gl_program *CurrentProgram[MESA_SHADER_MESH_STAGES];
 
-   struct gl_shader_program *ReferencedPrograms[MESA_SHADER_STAGES];
+   struct gl_shader_program *ReferencedPrograms[MESA_SHADER_MESH_STAGES];
 
    /**
     * Program used by glUniform calls.
@@ -2903,7 +2903,7 @@ struct gl_driver_flags
    uint64_t NewFragClamp;
 
    /** Shader constants (uniforms, program parameters, state constants) */
-   uint64_t NewShaderConstants[MESA_SHADER_STAGES];
+   uint64_t NewShaderConstants[MESA_SHADER_MESH_STAGES];
 
    /** For GL_CLAMP emulation */
    uint64_t NewSamplersWithClamp;
@@ -3506,7 +3506,7 @@ struct gl_context
     */
    struct gl_image_unit ImageUnits[MAX_IMAGE_UNITS];
 
-   struct gl_subroutine_index_binding SubroutineIndex[MESA_SHADER_STAGES];
+   struct gl_subroutine_index_binding SubroutineIndex[MESA_SHADER_MESH_STAGES];
    /*@}*/
 
    struct gl_meta_state *Meta;  /**< for "meta" operations */

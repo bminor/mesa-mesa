@@ -246,12 +246,12 @@ struct dd_draw_state
    struct pipe_stream_output_target *so_targets[PIPE_MAX_SO_BUFFERS];
    unsigned so_offsets[PIPE_MAX_SO_BUFFERS];
 
-   struct dd_state *shaders[MESA_SHADER_STAGES];
-   struct pipe_constant_buffer constant_buffers[MESA_SHADER_STAGES][PIPE_MAX_CONSTANT_BUFFERS];
-   struct pipe_sampler_view *sampler_views[MESA_SHADER_STAGES][PIPE_MAX_SAMPLERS];
-   struct dd_state *sampler_states[MESA_SHADER_STAGES][PIPE_MAX_SAMPLERS];
-   struct pipe_image_view shader_images[MESA_SHADER_STAGES][PIPE_MAX_SHADER_IMAGES];
-   struct pipe_shader_buffer shader_buffers[MESA_SHADER_STAGES][PIPE_MAX_SHADER_BUFFERS];
+   struct dd_state *shaders[MESA_SHADER_MESH_STAGES];
+   struct pipe_constant_buffer constant_buffers[MESA_SHADER_MESH_STAGES][PIPE_MAX_CONSTANT_BUFFERS];
+   struct pipe_sampler_view *sampler_views[MESA_SHADER_MESH_STAGES][PIPE_MAX_SAMPLERS];
+   struct dd_state *sampler_states[MESA_SHADER_MESH_STAGES][PIPE_MAX_SAMPLERS];
+   struct pipe_image_view shader_images[MESA_SHADER_MESH_STAGES][PIPE_MAX_SHADER_IMAGES];
+   struct pipe_shader_buffer shader_buffers[MESA_SHADER_MESH_STAGES][PIPE_MAX_SHADER_BUFFERS];
 
    struct dd_state *velems;
    struct dd_state *rs;
@@ -280,8 +280,8 @@ struct dd_draw_state_copy
     * these variables, which serve as storage.
     */
    struct dd_query render_cond;
-   struct dd_state shaders[MESA_SHADER_STAGES];
-   struct dd_state sampler_states[MESA_SHADER_STAGES][PIPE_MAX_SAMPLERS];
+   struct dd_state shaders[MESA_SHADER_MESH_STAGES];
+   struct dd_state sampler_states[MESA_SHADER_MESH_STAGES][PIPE_MAX_SAMPLERS];
    struct dd_state velems;
    struct dd_state rs;
    struct dd_state dsa;

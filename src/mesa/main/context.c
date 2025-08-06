@@ -429,9 +429,9 @@ _mesa_init_constants(struct gl_constants *consts, gl_api api)
 
    /* GL_ARB_explicit_uniform_location, GL_MAX_UNIFORM_LOCATIONS */
    consts->MaxUserAssignableUniformLocations =
-      4 * MESA_SHADER_STAGES * MAX_UNIFORMS;
+      4 * MESA_SHADER_MESH_STAGES * MAX_UNIFORMS;
 
-   for (i = 0; i < MESA_SHADER_STAGES; i++)
+   for (i = 0; i < MESA_SHADER_MESH_STAGES; i++)
       init_program_limits(consts, i, &consts->Program[i]);
 
    consts->MaxProgramMatrices = MAX_PROGRAM_MATRICES;

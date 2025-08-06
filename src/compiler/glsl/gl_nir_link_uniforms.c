@@ -222,7 +222,7 @@ update_array_sizes(struct gl_shader_program *prog, nir_variable *var,
    struct uniform_array_info *ainfo = NULL;
    int words = BITSET_WORDS(glsl_array_size(var->type));
    int max_array_size = 0;
-   for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+   for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
       if (!sh)
          continue;
@@ -740,7 +740,7 @@ struct nir_link_uniforms_state {
    int top_level_array_stride;
 
    struct type_tree_entry *current_type;
-   struct hash_table *referenced_uniforms[MESA_SHADER_STAGES];
+   struct hash_table *referenced_uniforms[MESA_SHADER_MESH_STAGES];
    struct hash_table *uniform_hash;
 };
 
@@ -1650,7 +1650,7 @@ gl_nir_link_uniforms(const struct gl_constants *consts,
 
    if (!prog->data->spirv) {
       /* Gather information on uniform use */
-      for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+      for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
          struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
          if (!sh)
             continue;
@@ -1665,7 +1665,7 @@ gl_nir_link_uniforms(const struct gl_constants *consts,
 
       if(!consts->DisableUniformArrayResize) {
          /* Resize uniform arrays based on the maximum array index */
-         for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+         for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
             struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
             if (!sh)
                continue;
@@ -1681,7 +1681,7 @@ gl_nir_link_uniforms(const struct gl_constants *consts,
    if (!prog->data->spirv) {
       struct set *storage_counted =
          _mesa_set_create(NULL, _mesa_hash_string, _mesa_key_string_equal);
-      for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+      for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
          struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
          if (!sh)
             continue;
@@ -1717,7 +1717,7 @@ gl_nir_link_uniforms(const struct gl_constants *consts,
    state.uniform_hash = _mesa_hash_table_create(NULL, _mesa_hash_string,
                                                 _mesa_key_string_equal);
 
-   for (unsigned shader_type = 0; shader_type < MESA_SHADER_STAGES; shader_type++) {
+   for (unsigned shader_type = 0; shader_type < MESA_SHADER_MESH_STAGES; shader_type++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[shader_type];
       if (!sh)
          continue;

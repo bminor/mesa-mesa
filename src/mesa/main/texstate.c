@@ -732,7 +732,7 @@ update_program_texture_state(struct gl_context *ctx, struct gl_program **prog,
 {
    int i;
 
-   for (i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       GLbitfield mask;
       GLuint s;
 
@@ -891,7 +891,7 @@ fix_missing_textures_for_atifs(struct gl_context *ctx,
 GLbitfield
 _mesa_update_texture_state(struct gl_context *ctx)
 {
-   struct gl_program *prog[MESA_SHADER_STAGES];
+   struct gl_program *prog[MESA_SHADER_MESH_STAGES];
    int i;
    int old_max_unit = ctx->Texture._MaxEnabledTexImageUnit;
    BITSET_DECLARE(enabled_texture_units, MAX_COMBINED_TEXTURE_IMAGE_UNITS);

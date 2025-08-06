@@ -199,7 +199,7 @@ struct st_context
     * This means it has only 1 variant, not counting glBitmap and
     * glDrawPixels.
     */
-   bool shader_has_one_variant[MESA_SHADER_STAGES];
+   bool shader_has_one_variant[MESA_SHADER_MESH_STAGES];
 
    bool needs_texcoord_semantic;
    bool apply_texture_swizzle_to_border_color;
@@ -227,8 +227,8 @@ struct st_context
       struct pipe_sampler_state frag_samplers[PIPE_MAX_SAMPLERS];
       GLuint num_vert_samplers;
       GLuint num_frag_samplers;
-      GLuint num_sampler_views[MESA_SHADER_STAGES];
-      unsigned num_images[MESA_SHADER_STAGES];
+      GLuint num_sampler_views[MESA_SHADER_MESH_STAGES];
+      unsigned num_images[MESA_SHADER_MESH_STAGES];
       struct pipe_clip_state clip;
       unsigned constbuf0_enabled_shader_mask;
       unsigned fb_width;
@@ -274,7 +274,7 @@ struct st_context
          struct gl_program *fp;  /**< Currently bound fragment program */
          struct gl_program *cp;   /**< Currently bound compute program */
       };
-      struct gl_program *current_program[MESA_SHADER_STAGES];
+      struct gl_program *current_program[MESA_SHADER_MESH_STAGES];
    };
 
    struct st_common_variant *vp_variant;
@@ -365,8 +365,8 @@ struct st_context
 
    bool uses_user_vertex_buffers;
 
-   unsigned last_used_atomic_bindings[MESA_SHADER_STAGES];
-   unsigned last_num_ssbos[MESA_SHADER_STAGES];
+   unsigned last_used_atomic_bindings[MESA_SHADER_MESH_STAGES];
+   unsigned last_num_ssbos[MESA_SHADER_MESH_STAGES];
 
    int32_t draw_stamp;
    int32_t read_stamp;
@@ -377,8 +377,8 @@ struct st_context
 
    /* Array of bound texture/image handles which are resident in the context.
     */
-   struct st_bound_handles bound_texture_handles[MESA_SHADER_STAGES];
-   struct st_bound_handles bound_image_handles[MESA_SHADER_STAGES];
+   struct st_bound_handles bound_texture_handles[MESA_SHADER_MESH_STAGES];
+   struct st_bound_handles bound_image_handles[MESA_SHADER_MESH_STAGES];
 
    /* Winsys buffers */
    struct list_head winsys_buffers;

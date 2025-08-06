@@ -199,7 +199,7 @@ void st_init_limits(struct pipe_screen *screen,
 
    c->PointSizeFixed = screen->caps.point_size_fixed != PIPE_POINT_SIZE_LOWER_ALWAYS;
 
-   for (sh = 0; sh < MESA_SHADER_STAGES; ++sh) {
+   for (sh = 0; sh < MESA_SHADER_MESH_STAGES; ++sh) {
       struct gl_program_constants *pc = &c->Program[sh];
 
       if (!screen->shader_caps[sh].max_instructions)

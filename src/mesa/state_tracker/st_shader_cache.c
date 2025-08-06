@@ -213,7 +213,7 @@ st_load_nir_from_disk_cache(struct gl_context *ctx,
    if (prog->data->LinkStatus != LINKING_SKIPPED)
       return false;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i] == NULL)
          continue;
 

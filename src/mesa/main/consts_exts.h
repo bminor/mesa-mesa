@@ -438,7 +438,7 @@ struct gl_constants
    } ViewportBounds;                         /**< GL_ARB_viewport_array */
    GLuint MaxWindowRectangles;               /**< GL_EXT_window_rectangles */
 
-   struct gl_program_constants Program[MESA_SHADER_STAGES];
+   struct gl_program_constants Program[MESA_SHADER_MESH_STAGES];
    GLuint MaxProgramMatrices;
    GLuint MaxProgramMatrixStackDepth;
 

@@ -485,7 +485,7 @@ st_destroy_bound_texture_handles(struct st_context *st)
 {
    unsigned i;
 
-   for (i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       st_destroy_bound_texture_handles_per_stage(st, i);
    }
 }
@@ -525,7 +525,7 @@ st_destroy_bound_image_handles(struct st_context *st)
 {
    unsigned i;
 
-   for (i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       st_destroy_bound_image_handles_per_stage(st, i);
    }
 }

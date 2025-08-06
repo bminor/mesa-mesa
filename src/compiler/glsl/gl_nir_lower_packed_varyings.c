@@ -1028,9 +1028,9 @@ gl_nir_lower_packed_varyings(const struct gl_constants *consts,
                                            locations_used);
 
    /* Determine if the shader interface is exposed to api query */
-   struct gl_linked_shader *linked_shaders[MESA_SHADER_STAGES];
+   struct gl_linked_shader *linked_shaders[MESA_SHADER_MESH_STAGES];
    unsigned num_shaders = 0;
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i])
          linked_shaders[num_shaders++] = prog->_LinkedShaders[i];
    }

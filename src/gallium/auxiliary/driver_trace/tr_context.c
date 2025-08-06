@@ -755,7 +755,7 @@ trace_context_link_shader(struct pipe_context *_pipe, void **shaders)
 
    trace_dump_call_begin("pipe_context", "link_shader");
    trace_dump_arg(ptr, pipe);
-   trace_dump_arg_array(ptr, shaders, MESA_SHADER_STAGES);
+   trace_dump_arg_array(ptr, shaders, MESA_SHADER_MESH_STAGES);
    pipe->link_shader(pipe, shaders);
    trace_dump_call_end();
 }

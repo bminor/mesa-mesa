@@ -470,7 +470,7 @@ _mesa_update_valid_to_render_state(struct gl_context *ctx)
    if (shader->Flags & GLSL_LOG) {
       struct gl_program **prog = shader->CurrentProgram;
 
-      for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+      for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
 	 if (prog[i] == NULL || prog[i]->_Used)
 	    continue;
 
@@ -486,7 +486,7 @@ _mesa_update_valid_to_render_state(struct gl_context *ctx)
 	 _mesa_append_uniforms_to_file(prog[i]);
       }
 
-      for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+      for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
 	 if (prog[i] != NULL)
 	    prog[i]->_Used = GL_TRUE;
       }

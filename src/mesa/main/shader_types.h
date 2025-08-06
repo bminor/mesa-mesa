@@ -464,7 +464,7 @@ struct gl_shader_program
     * \c MESA_SHADER_* defines.  Entries for non-existent stages will be
     * \c NULL.
     */
-   struct gl_linked_shader *_LinkedShaders[MESA_SHADER_STAGES];
+   struct gl_linked_shader *_LinkedShaders[MESA_SHADER_MESH_STAGES];
 
    unsigned GLSL_Version; /**< GLSL version used for linking */
 };
@@ -687,7 +687,7 @@ struct gl_active_atomic_buffer
    GLuint MinimumSize;
 
    /** Shader stages making use of it. */
-   GLboolean StageReferences[MESA_SHADER_STAGES];
+   GLboolean StageReferences[MESA_SHADER_MESH_STAGES];
 };
 
 struct gl_resource_name
@@ -793,7 +793,7 @@ struct gl_uniform_storage {
     */
    unsigned array_elements;
 
-   struct gl_opaque_uniform_index opaque[MESA_SHADER_STAGES];
+   struct gl_opaque_uniform_index opaque[MESA_SHADER_MESH_STAGES];
 
    /**
     * Mask of shader stages (1 << MESA_SHADER_xxx) where this uniform is used.

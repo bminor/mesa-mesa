@@ -757,7 +757,7 @@ gl_nir_validate_interstage_uniform_blocks(struct gl_shader_program *prog,
    struct hash_table *ht = _mesa_hash_table_create(mem_ctx, _mesa_hash_string,
                                                    _mesa_key_string_equal);
 
-   for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (stages[i] == NULL)
          continue;
 

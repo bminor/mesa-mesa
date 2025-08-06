@@ -557,22 +557,22 @@ disable_varying_optimizations_for_sso(struct gl_shader_program *prog)
    unsigned first, last;
    assert(prog->SeparateShader);
 
-   first = MESA_SHADER_STAGES;
+   first = MESA_SHADER_MESH_STAGES;
    last = 0;
 
    /* Determine first and last stage. Excluding the compute stage */
    for (unsigned i = 0; i < MESA_SHADER_COMPUTE; i++) {
       if (!prog->_LinkedShaders[i])
          continue;
-      if (first == MESA_SHADER_STAGES)
+      if (first == MESA_SHADER_MESH_STAGES)
          first = i;
       last = i;
    }
 
-   if (first == MESA_SHADER_STAGES)
+   if (first == MESA_SHADER_MESH_STAGES)
       return;
 
-   for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+   for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
       if (!prog->_LinkedShaders[stage])
          continue;
 
@@ -984,22 +984,22 @@ nir_build_program_resource_list(const struct gl_constants *consts,
    if (rebuild_resourse_list)
       init_program_resource_list(prog);
 
-   int input_stage = MESA_SHADER_STAGES, output_stage = 0;
+   int input_stage = MESA_SHADER_MESH_STAGES, output_stage = 0;
 
    /* Determine first input and final output stage. These are used to
     * detect which variables should be enumerated in the resource list
     * for GL_PROGRAM_INPUT and GL_PROGRAM_OUTPUT.
     */
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (!prog->_LinkedShaders[i])
          continue;
-      if (input_stage == MESA_SHADER_STAGES)
+      if (input_stage == MESA_SHADER_MESH_STAGES)
          input_stage = i;
       output_stage = i;
    }
 
    /* Empty shader, no resources. */
-   if (input_stage == MESA_SHADER_STAGES && output_stage == 0)
+   if (input_stage == MESA_SHADER_MESH_STAGES && output_stage == 0)
       return;
 
    struct set *resource_set = _mesa_pointer_set_create(NULL);
@@ -1055,7 +1055,7 @@ nir_build_program_resource_list(const struct gl_constants *consts,
       struct gl_uniform_storage *uniform = &prog->data->UniformStorage[i];
 
       if (uniform->hidden) {
-         for (int j = MESA_SHADER_VERTEX; j < MESA_SHADER_STAGES; j++) {
+         for (int j = MESA_SHADER_VERTEX; j < MESA_SHADER_MESH_STAGES; j++) {
             if (!uniform->opaque[j].active ||
                 glsl_get_base_type(uniform->type) != GLSL_TYPE_SUBROUTINE)
                continue;
@@ -1445,12 +1445,12 @@ void
 gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
                                struct gl_shader_program *prog, bool spirv)
 {
-   nir_shader *shaders[MESA_SHADER_STAGES];
+   nir_shader *shaders[MESA_SHADER_MESH_STAGES];
    unsigned num_shaders = 0;
    unsigned max_ubos = UINT_MAX;
    unsigned max_uniform_comps = UINT_MAX;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *shader = prog->_LinkedShaders[i];
 
       if (!shader)
@@ -1486,12 +1486,12 @@ gl_nir_link_spirv(const struct pipe_screen *screen,
                   struct gl_shader_program *prog,
                   const struct gl_nir_linker_options *options)
 {
-   struct gl_linked_shader *linked_shader[MESA_SHADER_STAGES];
+   struct gl_linked_shader *linked_shader[MESA_SHADER_MESH_STAGES];
    unsigned num_shaders = 0;
 
    MESA_TRACE_FUNC();
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i]) {
          linked_shader[num_shaders++] = prog->_LinkedShaders[i];
 
@@ -1506,7 +1506,7 @@ gl_nir_link_spirv(const struct pipe_screen *screen,
 
    gl_nir_lower_optimize_varyings(consts, prog, true);
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *shader = prog->_LinkedShaders[i];
       if (shader) {
          const nir_remove_dead_variables_options opts = {
@@ -1908,7 +1908,7 @@ cross_validate_uniforms(const struct gl_constants *consts,
    void *mem_ctx = ralloc_context(NULL);
    struct hash_table *variables =
       _mesa_hash_table_create(mem_ctx, _mesa_hash_string, _mesa_key_string_equal);
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i] == NULL)
          continue;
 
@@ -3075,7 +3075,7 @@ check_image_resources(const struct gl_constants *consts,
    if (!exts->ARB_shader_image_load_store)
       return;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
       if (!sh)
          continue;
@@ -3126,7 +3126,7 @@ validate_sampler_array_indexing(const struct pipe_screen *screen,
                                 const struct gl_constants *consts,
                                 struct gl_shader_program *prog)
 {
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i] == NULL)
          continue;
 
@@ -3527,10 +3527,10 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
 
    /* Separate the shaders into groups based on their type.
     */
-   struct gl_shader **shader_list[MESA_SHADER_STAGES];
-   unsigned num_shaders[MESA_SHADER_STAGES];
+   struct gl_shader **shader_list[MESA_SHADER_MESH_STAGES];
+   unsigned num_shaders[MESA_SHADER_MESH_STAGES];
 
-   for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       shader_list[i] = (struct gl_shader **)
          calloc(prog->NumShaders, sizeof(struct gl_shader *));
       num_shaders[i] = 0;
@@ -3640,7 +3640,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
 
    /* Link all shaders for a particular stage and validate the result.
     */
-   for (int stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+   for (int stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
       if (num_shaders[stage] > 0) {
          struct gl_linked_shader *const sh =
             link_intrastage_shaders(mem_ctx, ctx, prog, shader_list[stage],
@@ -3659,7 +3659,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
 
    /* Link all shaders for a particular stage and validate the result.
     */
-   for (int stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+   for (int stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[stage];
       if (sh) {
          nir_shader *shader = sh->Program->nir;
@@ -3712,7 +3712,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    if (!prog->data->LinkStatus)
       goto done;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i] == NULL)
          continue;
 
@@ -3730,12 +3730,12 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    /* Validate the inputs of each stage with the output of the preceding
     * stage.
     */
-   unsigned prev = MESA_SHADER_STAGES;
+   unsigned prev = MESA_SHADER_MESH_STAGES;
    for (unsigned i = 0; i <= MESA_SHADER_FRAGMENT; i++) {
       if (prog->_LinkedShaders[i] == NULL)
          continue;
 
-      if (prev == MESA_SHADER_STAGES) {
+      if (prev == MESA_SHADER_MESH_STAGES) {
          prev = i;
          continue;
       }
@@ -3771,14 +3771,14 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
       break;
    }
 
-   unsigned first = MESA_SHADER_STAGES;
+   unsigned first = MESA_SHADER_MESH_STAGES;
    unsigned last = 0;
 
    /* Determine first and last stage. */
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (!prog->_LinkedShaders[i])
          continue;
-      if (first == MESA_SHADER_STAGES)
+      if (first == MESA_SHADER_MESH_STAGES)
          first = i;
       last = i;
    }
@@ -3824,10 +3824,10 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    if (prog->SeparateShader)
       disable_varying_optimizations_for_sso(prog);
 
-   struct gl_linked_shader *linked_shader[MESA_SHADER_STAGES];
+   struct gl_linked_shader *linked_shader[MESA_SHADER_MESH_STAGES];
    unsigned num_linked_shaders = 0;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i]) {
          linked_shader[num_linked_shaders++] = prog->_LinkedShaders[i];
 
@@ -3880,7 +3880,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    if (num_linked_shaders == 1)
       gl_nir_opts(linked_shader[0]->Program->nir);
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *shader = prog->_LinkedShaders[i];
       if (shader) {
          if (consts->GLSLLowerConstArrays) {
@@ -3965,7 +3965,7 @@ gl_nir_link_glsl(struct gl_context *ctx, struct gl_shader_program *prog)
    }
 
 done:
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       free(shader_list[i]);
    }
 

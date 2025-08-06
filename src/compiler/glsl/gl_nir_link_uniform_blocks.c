@@ -262,13 +262,13 @@ static bool
 nir_interstage_cross_validate_uniform_blocks(struct gl_shader_program *prog,
                                              enum block_type block_type)
 {
-   int *interfaceBlockStageIndex[MESA_SHADER_STAGES];
+   int *interfaceBlockStageIndex[MESA_SHADER_MESH_STAGES];
    struct gl_uniform_block *blks = NULL;
    unsigned *num_blks = block_type == BLOCK_SSBO ? &prog->data->NumShaderStorageBlocks :
       &prog->data->NumUniformBlocks;
 
    unsigned max_num_buffer_blocks = 0;
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (prog->_LinkedShaders[i]) {
          if (block_type == BLOCK_SSBO) {
             max_num_buffer_blocks +=
@@ -280,7 +280,7 @@ nir_interstage_cross_validate_uniform_blocks(struct gl_shader_program *prog,
       }
    }
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
 
       interfaceBlockStageIndex[i] = malloc(max_num_buffer_blocks * sizeof(int));
@@ -328,7 +328,7 @@ nir_interstage_cross_validate_uniform_blocks(struct gl_shader_program *prog,
 
    /* Update per stage block pointers to point to the program list.
     */
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       for (unsigned j = 0; j < *num_blks; j++) {
          int stage_index = interfaceBlockStageIndex[i][j];
 
@@ -345,7 +345,7 @@ nir_interstage_cross_validate_uniform_blocks(struct gl_shader_program *prog,
       }
    }
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       free(interfaceBlockStageIndex[i]);
    }
 
@@ -1250,7 +1250,7 @@ gl_nir_link_uniform_blocks(const struct gl_constants *consts,
 {
    void *mem_ctx = ralloc_context(NULL);
    bool ret = false;
-   for (int stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+   for (int stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
       struct gl_linked_shader *const linked = prog->_LinkedShaders[stage];
       struct gl_uniform_block *ubo_blocks = NULL;
       unsigned num_ubo_blocks = 0;

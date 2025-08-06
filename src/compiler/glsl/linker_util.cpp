@@ -299,7 +299,7 @@ link_util_check_uniform_resources(const struct gl_constants *consts,
    unsigned total_uniform_blocks = 0;
    unsigned total_shader_storage_blocks = 0;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
 
       if (sh == NULL)

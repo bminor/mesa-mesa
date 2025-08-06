@@ -787,7 +787,7 @@ log_uniform(const void *values, enum glsl_base_type basicType,
 static void
 log_program_parameters(const struct gl_shader_program *shProg)
 {
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (shProg->_LinkedShaders[i] == NULL)
 	 continue;
 
@@ -1273,7 +1273,7 @@ _mesa_flush_vertices_for_uniforms(struct gl_context *ctx,
    while (mask) {
       unsigned index = u_bit_scan(&mask);
 
-      assert(index < MESA_SHADER_STAGES);
+      assert(index < MESA_SHADER_MESH_STAGES);
       new_driver_state |= ctx->DriverFlags.NewShaderConstants[index];
    }
 
@@ -1532,7 +1532,7 @@ _mesa_uniform(GLint location, GLsizei count, const GLvoid *values,
 
       shProg->SamplersValidated = GL_TRUE;
 
-      for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+      for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
          struct gl_linked_shader *const sh = shProg->_LinkedShaders[i];
 
          /* If the shader stage doesn't use the sampler uniform, skip this. */
@@ -1589,7 +1589,7 @@ _mesa_uniform(GLint location, GLsizei count, const GLvoid *values,
     * uniforms to image units present in the shader data structure.
     */
    if (glsl_type_is_image(uni->type)) {
-      for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+      for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
          struct gl_linked_shader *sh = shProg->_LinkedShaders[i];
 
          /* If the shader stage doesn't use the image uniform, skip this. */
@@ -2114,7 +2114,7 @@ _mesa_uniform_handle(GLint location, GLsizei count, const GLvoid *values,
       /* Mark this bindless sampler as not bound to a texture unit because
        * it refers to a texture handle.
        */
-      for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+      for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
          struct gl_linked_shader *const sh = shProg->_LinkedShaders[i];
 
          /* If the shader stage doesn't use the sampler uniform, skip this. */
@@ -2137,7 +2137,7 @@ _mesa_uniform_handle(GLint location, GLsizei count, const GLvoid *values,
       /* Mark this bindless image as not bound to an image unit because it
        * refers to a texture handle.
        */
-      for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+      for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
          struct gl_linked_shader *sh = shProg->_LinkedShaders[i];
 
          /* If the shader stage doesn't use the sampler uniform, skip this. */

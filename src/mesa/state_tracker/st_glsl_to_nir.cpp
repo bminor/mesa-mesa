@@ -400,7 +400,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
                     struct gl_shader_program *shader_program)
 {
    struct st_context *st = st_context(ctx);
-   struct gl_linked_shader *linked_shader[MESA_SHADER_STAGES];
+   struct gl_linked_shader *linked_shader[MESA_SHADER_MESH_STAGES];
    unsigned num_shaders = 0;
 
    /* Return early if we are loading the shader from on-disk cache */
@@ -417,7 +417,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
          return GL_FALSE;
    }
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       if (shader_program->_LinkedShaders[i])
          linked_shader[num_shaders++] = shader_program->_LinkedShaders[i];
    }
@@ -604,10 +604,10 @@ st_link_glsl_to_nir(struct gl_context *ctx,
 
    struct pipe_context *pctx = st_context(ctx)->pipe;
    if (pctx->link_shader) {
-      void *driver_handles[MESA_SHADER_STAGES];
+      void *driver_handles[MESA_SHADER_MESH_STAGES];
       memset(driver_handles, 0, sizeof(driver_handles));
 
-      for (uint32_t i = 0; i < MESA_SHADER_STAGES; ++i) {
+      for (uint32_t i = 0; i < MESA_SHADER_MESH_STAGES; ++i) {
          struct gl_linked_shader *shader = shader_program->_LinkedShaders[i];
          if (shader) {
             struct gl_program *p = shader->Program;

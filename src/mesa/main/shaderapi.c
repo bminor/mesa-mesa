@@ -221,7 +221,7 @@ _mesa_init_shader_state(struct gl_context *ctx)
 void
 _mesa_free_shader_state(struct gl_context *ctx)
 {
-   for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       _mesa_reference_program(ctx, &ctx->Shader.CurrentProgram[i], NULL);
       _mesa_reference_shader_program(ctx,
                                      &ctx->Shader.ReferencedPrograms[i],
@@ -722,7 +722,7 @@ get_shader_program_completion_status(struct gl_context *ctx,
    if (!screen->is_parallel_shader_compilation_finished)
       return true;
 
-   for (unsigned i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *linked = shprog->_LinkedShaders[i];
       void *sh = NULL;
 
@@ -1255,7 +1255,7 @@ update_programs_in_pipeline(void *data, void *userData)
       (struct update_programs_in_pipeline_params *) userData;
    struct gl_pipeline_object *obj = (struct gl_pipeline_object *) data;
 
-   for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+   for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
       if (obj->CurrentProgram[stage] &&
           obj->CurrentProgram[stage]->Id == params->shProg->Name) {
          struct gl_program *prog = params->shProg->_LinkedShaders[stage]->Program;
@@ -1348,7 +1348,7 @@ link_program(struct gl_context *ctx, struct gl_shader_program *shProg,
 
    unsigned programs_in_use = 0;
    if (ctx->_Shader)
-      for (unsigned stage = 0; stage < MESA_SHADER_STAGES; stage++) {
+      for (unsigned stage = 0; stage < MESA_SHADER_MESH_STAGES; stage++) {
          if (ctx->_Shader->CurrentProgram[stage] &&
              ctx->_Shader->CurrentProgram[stage]->Id == shProg->Name) {
             programs_in_use |= 1 << stage;
@@ -1497,7 +1497,7 @@ void
 _mesa_use_shader_program(struct gl_context *ctx,
                          struct gl_shader_program *shProg)
 {
-   for (int i = 0; i < MESA_SHADER_STAGES; i++) {
+   for (int i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_program *new_prog = NULL;
       if (shProg && shProg->_LinkedShaders[i])
          new_prog = shProg->_LinkedShaders[i]->Program;

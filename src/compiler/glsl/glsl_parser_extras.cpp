@@ -67,7 +67,7 @@ _mesa_glsl_parse_state::_mesa_glsl_parse_state(struct gl_context *_ctx,
      api(_ctx->API), cs_input_local_size_specified(false), cs_input_local_size(),
      switch_state(), warnings_enabled(true)
 {
-   assert(stage < MESA_SHADER_STAGES);
+   assert(stage < MESA_SHADER_MESH_STAGES);
    this->stage = stage;
 
    this->scanner = NULL;
