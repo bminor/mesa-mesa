@@ -681,6 +681,7 @@ panvk_image_bind(struct panvk_device *dev,
                  const VkBindImageMemoryInfo *bind_info) {
    VK_FROM_HANDLE(panvk_image, image, bind_info->image);
    VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
+   uint64_t offset = bind_info->memoryOffset;
 
    if (!mem) {
 #if DETECT_OS_ANDROID
@@ -694,6 +695,7 @@ panvk_image_bind(struct panvk_device *dev,
       VkDeviceMemory mem_handle = wsi_common_get_memory(
          swapchain_info->swapchain, swapchain_info->imageIndex);
       mem = panvk_device_memory_from_handle(mem_handle);
+      offset = 0;
 #endif
    }
 
@@ -705,12 +707,12 @@ panvk_image_bind(struct panvk_device *dev,
       const uint8_t plane =
          panvk_plane_index(image->vk.format, plane_info->planeAspect);
       return panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                    mem->addr.dev, bind_info->memoryOffset);
+                                    mem->addr.dev, offset);
    } else {
       for (unsigned plane = 0; plane < image->plane_count; plane++) {
          VkResult result =
             panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                   mem->addr.dev, bind_info->memoryOffset);
+                                   mem->addr.dev, offset);
          if (result != VK_SUCCESS)
             return result;
       }
