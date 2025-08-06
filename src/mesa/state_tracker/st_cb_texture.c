@@ -2284,6 +2284,7 @@ st_TexSubImage(struct gl_context *ctx, GLuint dims,
    memset(&src_templ, 0, sizeof(src_templ));
    src_templ.target = gl_target_to_pipe(gl_target);
    src_templ.format = src_format;
+   src_templ.flags = PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED;
    src_templ.bind = PIPE_BIND_SAMPLER_VIEW;
    src_templ.usage = PIPE_USAGE_STAGING;
 
@@ -2328,7 +2329,7 @@ st_TexSubImage(struct gl_context *ctx, GLuint dims,
       height = 1;
    }
 
-   map = pipe_texture_map_3d(pipe, src, 0, PIPE_MAP_WRITE, 0, 0, 0,
+   map = pipe_texture_map_3d(pipe, src, 0, PIPE_MAP_WRITE | PIPE_MAP_UNSYNCHRONIZED, 0, 0, 0,
                               width, height, depth, &transfer);
    if (!map) {
       _mesa_unmap_teximage_pbo(ctx, unpack);

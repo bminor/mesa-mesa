@@ -481,7 +481,7 @@ sw_decode_astc(struct st_context *st,
    /* Create the destination */
    struct pipe_resource *rgba8_tex =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R8G8B8A8_UNORM, 0,
-                        width_px, height_px, 1, 1, 0, 0,
+                        width_px, height_px, 1, 1, 0, PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED,
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
    if (!rgba8_tex)
@@ -490,7 +490,7 @@ sw_decode_astc(struct st_context *st,
    /* Temporarily map the destination and decode into the returned pointer */
    struct pipe_transfer *rgba8_xfer;
    void *rgba8_map = pipe_texture_map(st->pipe, rgba8_tex, 0, 0,
-                                      PIPE_MAP_WRITE, 0, 0,
+                                      PIPE_MAP_WRITE | PIPE_MAP_UNSYNCHRONIZED, 0, 0,
                                       width_px, height_px, &rgba8_xfer);
    if (!rgba8_map) {
       pipe_resource_reference(&rgba8_tex, NULL);

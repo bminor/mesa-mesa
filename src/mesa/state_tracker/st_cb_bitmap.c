@@ -140,7 +140,7 @@ st_make_bitmap_texture(struct gl_context *ctx, GLsizei width, GLsizei height,
     * Create texture to hold bitmap pattern.
     */
    pt = st_texture_create(st, st->internal_target, st->bitmap.tex_format,
-                          0, width, height, 1, 1, 0, 0,
+                          0, width, height, 1, 1, 0, PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED,
                           PIPE_BIND_SAMPLER_VIEW, false,
                           PIPE_COMPRESSION_FIXED_RATE_NONE);
    if (!pt) {
@@ -149,7 +149,7 @@ st_make_bitmap_texture(struct gl_context *ctx, GLsizei width, GLsizei height,
    }
 
    dest = pipe_texture_map(st->pipe, pt, 0, 0,
-                            PIPE_MAP_WRITE,
+                            PIPE_MAP_WRITE | PIPE_MAP_UNSYNCHRONIZED,
                             0, 0, width, height, &transfer);
 
    /* Put image into texture transfer */
@@ -373,7 +373,7 @@ reset_cache(struct st_context *st)
    cache->texture = st_texture_create(st, st->internal_target,
                                       st->bitmap.tex_format, 0,
                                       BITMAP_CACHE_WIDTH, BITMAP_CACHE_HEIGHT,
-                                      1, 1, 0, 0,
+                                      1, 1, 0, PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED,
                                       PIPE_BIND_SAMPLER_VIEW,
                                       false,
                                       PIPE_COMPRESSION_FIXED_RATE_NONE);
@@ -416,7 +416,7 @@ create_cache_trans(struct st_context *st)
     * Subsequent glBitmap calls will write into the texture image.
     */
    cache->buffer = pipe_texture_map(pipe, cache->texture, 0, 0,
-                                     PIPE_MAP_WRITE, 0, 0,
+                                     PIPE_MAP_WRITE | PIPE_MAP_UNSYNCHRONIZED, 0, 0,
                                      BITMAP_CACHE_WIDTH,
                                      BITMAP_CACHE_HEIGHT, &cache->trans);
 

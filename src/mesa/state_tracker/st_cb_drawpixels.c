@@ -439,12 +439,12 @@ internal_format(struct gl_context *ctx, GLenum format, GLenum type)
  */
 static struct pipe_resource *
 alloc_texture(struct st_context *st, GLsizei width, GLsizei height,
-              enum pipe_format texFormat, unsigned bind)
+              enum pipe_format texFormat, unsigned flags, unsigned bind)
 {
    struct pipe_resource *pt;
 
    pt = st_texture_create(st, st->internal_target, texFormat, 0,
-                          width, height, 1, 1, 0, 0, bind, false,
+                          width, height, 1, 1, 0, flags, bind, false,
                           PIPE_COMPRESSION_FIXED_RATE_NONE);
 
    return pt;
@@ -631,7 +631,7 @@ make_texture(struct st_context *st,
       return NULL;
 
    /* alloc temporary texture */
-   pt = alloc_texture(st, width, height, pipeFormat, PIPE_BIND_SAMPLER_VIEW);
+   pt = alloc_texture(st, width, height, pipeFormat, PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED, PIPE_BIND_SAMPLER_VIEW);
    if (!pt) {
       _mesa_unmap_pbo_source(ctx, unpack);
       return NULL;
@@ -647,7 +647,7 @@ make_texture(struct st_context *st,
 
       /* map texture transfer */
       dest = pipe_texture_map(pipe, pt, 0, 0,
-                              PIPE_MAP_WRITE | PIPE_MAP_DISCARD_WHOLE_RESOURCE,
+                              PIPE_MAP_WRITE | PIPE_MAP_DISCARD_WHOLE_RESOURCE | PIPE_MAP_UNSYNCHRONIZED,
                               0, 0, width, height, &transfer);
       if (!dest) {
          pipe_resource_reference(&pt, NULL);
@@ -1833,7 +1833,7 @@ st_CopyPixels(struct gl_context *ctx, GLint srcx, GLint srcy,
    readH = MAX2(0, readH);
 
    /* Allocate the temporary texture. */
-   pt = alloc_texture(st, width, height, srcFormat, srcBind);
+   pt = alloc_texture(st, width, height, srcFormat, 0, srcBind);
    if (!pt)
       return;
 
