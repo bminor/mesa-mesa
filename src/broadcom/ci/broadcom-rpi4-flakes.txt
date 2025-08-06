@@ -15,6 +15,8 @@ KHR-GLES31.core.texture_cube_map_array.image_op_compute_sh
 arm32-KHR-GLES31.core.shader_image_load_store.advanced-copyImage-cs
 dEQP-GLES3.functional.buffer.write.recreate_store.random_4
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube
+dEQP-GLES31.functional.atomic_counter.get_dec_branch.1_counter_1_call_10_threads
+dEQP-GLES31.functional.atomic_counter.inc_dec_branch.1_counter_1_call_5000_threads
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_10x6_rgba.rgba_astc_10x6_khr_rgba_astc_10x6_khr.cubemap_to_texture3d
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_8x5_rgba.rgba_astc_8x5_khr_srgb8_alpha8_astc_8x5_khr.cubemap_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba_astc_10x6_khr_rgba32f.cubemap_to_texture3d
@@ -27,6 +29,7 @@ dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.mat3x2
 dEQP-GLES31.functional.ssbo.layout.instance_array_basic_type.std430.row_major_mat3x2
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.17
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.shared.column_major_lowp_mat3x4
+dEQP-GLES31.functional.synchronization.inter_invocation.image_atomic_alias_write
 dEQP-GLES31.functional.synchronization.inter_invocation.image_atomic_overwrite
 dEQP-GLES31.functional.synchronization.inter_invocation.image_overwrite
 dEQP-GLES31.functional.synchronization.inter_invocation.ssbo_atomic_read_write

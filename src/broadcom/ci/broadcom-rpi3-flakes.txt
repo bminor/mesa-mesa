@@ -6,6 +6,7 @@ dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.add_constant
 dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.add_zero_zero
 dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.reverse_subtract_one_minus_dst_color_one_minus_constant_alpha
 dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.reverse_subtract_src_alpha_one_minus_constant_color
+dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.subtract_one_minus_src_color_one_minus_dst_alpha
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.dst.one_minus_constant_color_src_alpha
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.dst.one_one_minus_constant_alpha
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.one_minus_dst_color_one_minus_constant_color
@@ -16,8 +17,10 @@ dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.zero_one_minus_
 dEQP-GLES2.functional.fragment_ops.depth_stencil.random.1
 dEQP-GLES2.functional.fragment_ops.depth_stencil.random.17
 dEQP-GLES2.functional.fragment_ops.depth_stencil.random.3
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_equal_depth_always
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_less_depth_never
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_less_no_depth
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_never_depth_equal
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_never_depth_gequal
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_depth_funcs.stencil_notequal_depth_notequal
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_replace_incr
@@ -67,13 +70,17 @@ dEQP-GLES2.functional.shaders.random.conditionals.combined.95
 dEQP-GLES2.functional.shaders.random.conditionals.fragment.82
 dEQP-GLES2.functional.shaders.random.conditionals.vertex.62
 dEQP-GLES2.functional.shaders.random.conditionals.vertex.70
+dEQP-GLES2.functional.shaders.random.conditionals.vertex.79
 dEQP-GLES2.functional.shaders.random.conditionals.vertex.83
 dEQP-GLES2.functional.shaders.random.exponential.fragment.33
 dEQP-GLES2.functional.shaders.random.scalar_conversion.fragment.17
 dEQP-GLES2.functional.shaders.random.scalar_conversion.vertex.43
+dEQP-GLES2.functional.shaders.random.swizzle.vertex.40
 dEQP-GLES2.functional.shaders.random.texture.fragment.2
+dEQP-GLES2.functional.shaders.random.trigonometric.fragment.16
 dEQP-GLES2.functional.shaders.random.trigonometric.fragment.50
 dEQP-GLES2.functional.shaders.random.trigonometric.fragment.79
+dEQP-GLES2.functional.texture.completeness.2d.empty_object
 dEQP-GLES2.functional.texture.filtering.2d.linear_mipmap_linear_linear_mirror_rgba8888
 dEQP-GLES2.functional.texture.filtering.2d.linear_mipmap_nearest_linear_clamp_rgba8888
 dEQP-GLES2.functional.texture.filtering.2d.nearest_linear_mirror_rgb888_pot
@@ -188,6 +195,7 @@ wayland-dEQP-EGL.functional.wide_color.window_8888_colorspace_srgb
 wayland-dEQP-EGL.functional.wide_color.window_888_colorspace_srgb
 
 spec@arb_color_buffer_float@gl_rgba8-render
+x11-dEQP-EGL.functional.color_clears.multi_context.gles2.rgb888_window
 x11-dEQP-EGL.functional.color_clears.single_context.gles2.rgba8888_window
 x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.programs.link.19
 x11-dEQP-EGL.functional.wide_color.pbuffer_8888_colorspace_srgb
