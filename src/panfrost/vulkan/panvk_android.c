@@ -306,3 +306,36 @@ panvk_android_create_gralloc_image(VkDevice device,
 
    return VK_SUCCESS;
 }
+
+VkResult
+panvk_android_get_wsi_memory(struct panvk_device *dev,
+                             const VkBindImageMemoryInfo *bind_info,
+                             VkDeviceMemory *out_mem_handle)
+{
+   VK_FROM_HANDLE(panvk_image, img, bind_info->image);
+   VkResult result;
+
+   struct panvk_android_deferred_image *deferred =
+      container_of(img, struct panvk_android_deferred_image, base);
+   assert(deferred->create_info && !deferred->initialized);
+
+   const VkNativeBufferANDROID *anb =
+      vk_find_struct_const(bind_info->pNext, NATIVE_BUFFER_ANDROID);
+
+   /* Inject ANB into the deferred pNext chain to leverage the existing common
+    * Android helper vk_android_get_anb_layout, which could be refactored to
+    * take ANB directly instead.
+    */
+   VkNativeBufferANDROID local_anb = *anb;
+   local_anb.pNext = deferred->create_info->pNext;
+   deferred->create_info->pNext = &local_anb;
+   result = panvk_android_anb_init(dev, deferred->create_info, anb,
+                                   &dev->vk.alloc, img);
+   if (result != VK_SUCCESS)
+      return result;
+
+   deferred->initialized = true;
+   *out_mem_handle = img->vk.anb_memory;
+
+   return VK_SUCCESS;
+}

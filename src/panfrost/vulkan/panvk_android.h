@@ -11,6 +11,8 @@
 #include "util/detect_os.h"
 #include "vulkan/vulkan.h"
 
+struct panvk_device;
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 bool panvk_android_is_gralloc_image(const VkImageCreateInfo *pCreateInfo);
@@ -18,6 +20,10 @@ bool panvk_android_is_gralloc_image(const VkImageCreateInfo *pCreateInfo);
 VkResult panvk_android_create_gralloc_image(
    VkDevice device, const VkImageCreateInfo *pCreateInfo,
    const VkAllocationCallbacks *pAllocator, VkImage *pImage);
+
+VkResult panvk_android_get_wsi_memory(struct panvk_device *dev,
+                                      const VkBindImageMemoryInfo *bind_info,
+                                      VkDeviceMemory *out_mem_handle);
 
 #else /* VK_USE_PLATFORM_ANDROID_KHR */
 
@@ -32,6 +38,14 @@ panvk_android_create_gralloc_image(VkDevice device,
                                    const VkImageCreateInfo *pCreateInfo,
                                    const VkAllocationCallbacks *pAllocator,
                                    VkImage *pImage)
+{
+   return VK_ERROR_FEATURE_NOT_PRESENT;
+}
+
+static inline VkResult
+panvk_android_get_wsi_memory(struct panvk_device *dev,
+                             const VkBindImageMemoryInfo *bind_info,
+                             VkDeviceMemory *out_mem_handle)
 {
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }

@@ -639,27 +639,31 @@ panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
    *pSparseMemoryRequirementCount = 0;
 }
 
-static void
+static VkResult
 panvk_image_bind(struct panvk_device *dev,
-                 const VkBindImageMemoryInfo *bind_info) {
+                 const VkBindImageMemoryInfo *bind_info)
+{
    VK_FROM_HANDLE(panvk_image, image, bind_info->image);
    VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
    uint64_t offset = bind_info->memoryOffset;
 
    if (!mem) {
-#if DETECT_OS_ANDROID
-      /* TODO handle VkNativeBufferANDROID when we support ANB */
-      UNREACHABLE("VkBindImageMemoryInfo with no memory");
+      VkDeviceMemory mem_handle;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+      VkResult result =
+         panvk_android_get_wsi_memory(dev, bind_info, &mem_handle);
+      if (result != VK_SUCCESS)
+         return result;
 #else
       const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
          vk_find_struct_const(bind_info->pNext,
                               BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
       assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
-      VkDeviceMemory mem_handle = wsi_common_get_memory(
-         swapchain_info->swapchain, swapchain_info->imageIndex);
+      mem_handle = wsi_common_get_memory(swapchain_info->swapchain,
+                                         swapchain_info->imageIndex);
+#endif
       mem = panvk_device_memory_from_handle(mem_handle);
       offset = 0;
-#endif
    }
 
    assert(mem);
@@ -677,6 +681,8 @@ panvk_image_bind(struct panvk_device *dev,
                                 mem->addr.dev, offset);
       }
    }
+
+   return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -684,14 +690,17 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                        const VkBindImageMemoryInfo *pBindInfos)
 {
    VK_FROM_HANDLE(panvk_device, dev, device);
+   VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < bindInfoCount; i++) {
       const VkBindMemoryStatus *bind_status =
          vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
-      panvk_image_bind(dev, &pBindInfos[i]);
+      VkResult bind_result = panvk_image_bind(dev, &pBindInfos[i]);
       if (bind_status)
-         *bind_status->pResult = VK_SUCCESS;
+         *bind_status->pResult = bind_result;
+      if (bind_result != VK_SUCCESS)
+         result = bind_result;
    }
 
-   return VK_SUCCESS;
+   return result;
 }
