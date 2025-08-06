@@ -7748,6 +7748,9 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
       } else {
          const VkCommandBufferInheritanceRenderingInfo *inheritance_info =
             vk_get_command_buffer_inheritance_rendering_info(cmd_buffer->vk.level, pBeginInfo);
+         const VkCustomResolveCreateInfoEXT *crc_info =
+            vk_find_struct_const(pBeginInfo->pInheritanceInfo->pNext, CUSTOM_RESOLVE_CREATE_INFO_EXT);
+         const bool custom_resolve = crc_info && crc_info->customResolve;
 
          radv_cmd_buffer_reset_rendering(cmd_buffer);
          struct radv_rendering_state *render = &cmd_buffer->state.render;
@@ -7755,11 +7758,21 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
          render->view_mask = inheritance_info->viewMask;
          render->max_samples = inheritance_info->rasterizationSamples;
          render->color_att_count = inheritance_info->colorAttachmentCount;
-         for (uint32_t i = 0; i < render->color_att_count; i++) {
-            render->color_att[i] = (struct radv_attachment){
-               .format = inheritance_info->pColorAttachmentFormats[i],
-            };
+
+         if (custom_resolve) {
+            for (uint32_t i = 0; i < crc_info->colorAttachmentCount; i++) {
+               render->color_att[i] = (struct radv_attachment){
+                  .format = crc_info->pColorAttachmentFormats[i],
+               };
+            }
+         } else {
+            for (uint32_t i = 0; i < render->color_att_count; i++) {
+               render->color_att[i] = (struct radv_attachment){
+                  .format = inheritance_info->pColorAttachmentFormats[i],
+               };
+            }
          }
+
          assert(inheritance_info->depthAttachmentFormat == VK_FORMAT_UNDEFINED ||
                 inheritance_info->stencilAttachmentFormat == VK_FORMAT_UNDEFINED ||
                 inheritance_info->depthAttachmentFormat == inheritance_info->stencilAttachmentFormat);
@@ -10124,6 +10137,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    render->active = true;
    render->has_image_views = true;
    render->has_input_attachment_concurrent_writes = has_input_attachment_concurrent_writes;
+   render->has_custom_resolves = !!(pRenderingInfo->flags & VK_RENDERING_CUSTOM_RESOLVE_BIT_EXT);
    render->area = pRenderingInfo->renderArea;
    render->view_mask = pRenderingInfo->viewMask;
    render->layer_count = pRenderingInfo->layerCount;
@@ -10244,10 +10258,79 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdEndRendering2KHR(VkCommandBuffer commandBuffer, const VkRenderingEndInfoKHR *pRenderingEndInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   const struct radv_rendering_state *render = &cmd_buffer->state.render;
 
    radv_mark_noncoherent_rb(cmd_buffer);
-   radv_cmd_buffer_resolve_rendering(cmd_buffer);
+
+   if (!render->has_custom_resolves)
+      radv_cmd_buffer_resolve_rendering(cmd_buffer);
+
    radv_cmd_buffer_reset_rendering(cmd_buffer);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+radv_CmdBeginCustomResolveEXT(VkCommandBuffer commandBuffer, const VkBeginCustomResolveInfoEXT *pBeginCustomResolveInfo)
+{
+   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   const struct radv_rendering_state *render = &cmd_buffer->state.render;
+
+   STACK_ARRAY(VkRenderingAttachmentInfo, color_atts, render->color_att_count);
+   struct VkRenderingAttachmentInfo depth_att = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+   };
+   struct VkRenderingAttachmentInfo stencil_att = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+   };
+
+   for (uint32_t i = 0; i < render->color_att_count; i++) {
+      color_atts[i] = (VkRenderingAttachmentInfo){
+         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+      };
+
+      if (render->color_att[i].resolve_mode != VK_RESOLVE_MODE_CUSTOM_BIT_EXT)
+         continue;
+
+      struct radv_image_view *iview = render->color_att[i].resolve_iview;
+
+      color_atts[i].imageView = radv_image_view_to_handle(iview);
+      color_atts[i].imageLayout = render->color_att[i].resolve_layout;
+   }
+
+   if (render->ds_att.resolve_mode == VK_RESOLVE_MODE_CUSTOM_BIT_EXT ||
+       render->ds_att.stencil_resolve_mode == VK_RESOLVE_MODE_CUSTOM_BIT_EXT) {
+      struct radv_image_view *iview = render->ds_att.resolve_iview;
+
+      if (vk_format_has_depth(iview->vk.format)) {
+         depth_att.imageView = radv_image_view_to_handle(iview);
+         depth_att.imageLayout = render->ds_att.resolve_layout;
+      }
+
+      if (vk_format_has_stencil(iview->vk.format)) {
+         stencil_att.imageView = radv_image_view_to_handle(iview);
+         stencil_att.imageLayout = render->ds_att.stencil_resolve_layout;
+      }
+   }
+
+   VkRenderingInfo rendering_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+      .flags = VK_RENDERING_RESUMING_BIT | VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR,
+      .renderArea = render->area,
+      .layerCount = render->layer_count,
+      .viewMask = render->view_mask,
+      .colorAttachmentCount = render->color_att_count,
+      .pColorAttachments = color_atts,
+      .pDepthAttachment = &depth_att,
+      .pStencilAttachment = &stencil_att,
+   };
+
+   const VkRenderingEndInfoKHR end_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_KHR,
+   };
+
+   radv_CmdEndRendering2KHR(radv_cmd_buffer_to_handle(cmd_buffer), &end_info);
+   radv_CmdBeginRendering(radv_cmd_buffer_to_handle(cmd_buffer), &rendering_info);
+
+   STACK_ARRAY_FINISH(color_atts);
 }
 
 static void
