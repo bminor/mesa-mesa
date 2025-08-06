@@ -585,22 +585,13 @@ impl Program {
 
             let spirv = d.spirv.take().unwrap();
             let spirvs = [&spirv];
-            let (spirv, log) = spirv::SPIRVBin::link(&spirvs, lib);
 
-            d.log.push_str(&log);
-            d.spirv = spirv;
+            // Don't request validation of the SPIR-V, as we've just done that
+            // as part of compilation.
+            Self::do_link(d, &spirvs, lib, None);
 
-            if d.spirv.is_some() {
-                d.bin_type = if lib {
-                    CL_PROGRAM_BINARY_TYPE_LIBRARY
-                } else {
-                    CL_PROGRAM_BINARY_TYPE_EXECUTABLE
-                };
-                d.status = CL_BUILD_SUCCESS as cl_build_status;
-            } else {
-                d.status = CL_BUILD_ERROR;
-                d.bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
-                res = false;
+            if d.status == CL_BUILD_ERROR {
+                res = false
             }
         }
 
@@ -710,43 +701,16 @@ impl Program {
                 .map(|l| l.dev_build(d).spirv.as_ref().unwrap())
                 .collect();
 
-            let (spirv, log) = spirv::SPIRVBin::link(&bins, lib);
-            let (spirv, log) = if Platform::dbg().validate_spirv {
-                if let Some(spirv) = spirv {
-                    let val_options = clc_validator_options(d);
-                    let (res, spirv_msgs) = spirv.validate(&val_options);
-                    (res.then_some(spirv), format!("{}\n{}", log, spirv_msgs))
-                } else {
-                    (None, log)
-                }
-            } else {
-                (spirv, log)
+            let mut build = DeviceProgramBuild {
+                status: CL_BUILD_IN_PROGRESS,
+                bin_type: CL_PROGRAM_BINARY_TYPE_NONE,
+                ..Default::default()
             };
 
-            let status;
-            let bin_type;
-            if spirv.is_some() {
-                status = CL_BUILD_SUCCESS as cl_build_status;
-                bin_type = if lib {
-                    CL_PROGRAM_BINARY_TYPE_LIBRARY
-                } else {
-                    CL_PROGRAM_BINARY_TYPE_EXECUTABLE
-                };
-            } else {
-                status = CL_BUILD_ERROR;
-                bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
-            };
+            let device_for_validation = Platform::dbg().validate_spirv.then_some(d);
+            Self::do_link(&mut build, &bins, lib, device_for_validation);
 
-            builds.insert(
-                d,
-                DeviceProgramBuild {
-                    spirv: spirv,
-                    status: status,
-                    log: log,
-                    bin_type: bin_type,
-                    ..Default::default()
-                },
-            );
+            builds.insert(d, build);
         }
 
         let mut build = ProgramBuild {
@@ -770,6 +734,45 @@ impl Program {
         debug_logging(&res, &devs);
 
         res
+    }
+
+    /// Performs linking of the provided SPIR-V binaries.
+    ///
+    /// The resulting SPIR-V binary is placed in the provided device build and
+    /// its status is updated.
+    fn do_link(
+        build: &mut DeviceProgramBuild,
+        bins: &[&SPIRVBin],
+        lib: bool,
+        device_for_validation: Option<&Device>,
+    ) {
+        let (spirv, log) = spirv::SPIRVBin::link(&bins, lib);
+        let (spirv, log) = if let Some(device) = device_for_validation {
+            if let Some(spirv) = spirv {
+                let val_options = clc_validator_options(device);
+                let (res, spirv_msgs) = spirv.validate(&val_options);
+                (res.then_some(spirv), format!("{}\n{}", log, spirv_msgs))
+            } else {
+                (None, log)
+            }
+        } else {
+            (spirv, log)
+        };
+
+        build.spirv = spirv;
+        build.log.push_str(&log);
+
+        if build.spirv.is_some() {
+            build.status = CL_BUILD_SUCCESS as cl_build_status;
+            build.bin_type = if lib {
+                CL_PROGRAM_BINARY_TYPE_LIBRARY
+            } else {
+                CL_PROGRAM_BINARY_TYPE_EXECUTABLE
+            };
+        } else {
+            build.status = CL_BUILD_ERROR;
+            build.bin_type = CL_PROGRAM_BINARY_TYPE_NONE;
+        };
     }
 
     pub fn is_bin(&self) -> bool {
