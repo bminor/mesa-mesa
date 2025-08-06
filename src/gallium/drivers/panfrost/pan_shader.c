@@ -200,9 +200,11 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
                panfrost_device_gpu_prod_id(dev) < 0x700);
    }
 
-   if (s->info.stage == MESA_SHADER_VERTEX)
-      NIR_PASS(_, s, pan_nir_lower_static_noperspective,
+   if (s->info.stage == MESA_SHADER_VERTEX) {
+      NIR_PASS(_, s, nir_inline_sysval,
+               nir_intrinsic_load_noperspective_varyings_pan,
                key->vs.noperspective_varyings);
+   }
 
    NIR_PASS(_, s, panfrost_nir_lower_sysvals, dev->arch, &out->sysvals);
 

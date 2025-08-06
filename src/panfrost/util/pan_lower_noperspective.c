@@ -295,31 +295,3 @@ pan_nir_lower_noperspective_fs(nir_shader *shader)
 
    return true;
 }
-
-static bool
-lower_static_noperspective(nir_builder *b, nir_intrinsic_instr *intrin,
-                           void *data)
-{
-   uint32_t *noperspective_varyings = data;
-
-   if (intrin->intrinsic != nir_intrinsic_load_noperspective_varyings_pan)
-      return false;
-
-   b->cursor = nir_after_instr(&intrin->instr);
-   nir_def *val = nir_imm_int(b, *noperspective_varyings);
-   nir_def_replace(&intrin->def, val);
-
-   return true;
-}
-
-/**
- * Lower loads from the noperspective_varyings_pan sysval to a constant.
- */
-bool
-pan_nir_lower_static_noperspective(nir_shader *shader,
-                                   uint32_t noperspective_varyings)
-{
-   return nir_shader_intrinsics_pass(shader, lower_static_noperspective,
-                                     nir_metadata_control_flow,
-                                     (void *)&noperspective_varyings);
-}

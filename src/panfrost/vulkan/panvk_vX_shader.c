@@ -927,9 +927,11 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    if (PAN_ARCH < 9 && stage == MESA_SHADER_VERTEX)
       NIR_PASS(_, nir, pan_lower_image_index, MAX_VS_ATTRIBS);
 
-   if (noperspective_varyings && stage == MESA_SHADER_VERTEX)
-      NIR_PASS(_, nir, pan_nir_lower_static_noperspective,
+   if (noperspective_varyings && stage == MESA_SHADER_VERTEX) {
+      NIR_PASS(_, nir, nir_inline_sysval,
+               nir_intrinsic_load_noperspective_varyings_pan,
                *noperspective_varyings);
+   }
 
    struct panvk_lower_sysvals_context lower_sysvals_ctx = {
       .shader = shader,

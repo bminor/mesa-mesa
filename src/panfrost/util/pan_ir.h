@@ -350,8 +350,6 @@ bool pan_nir_lower_image_ms(nir_shader *shader);
 bool pan_nir_lower_frag_coord_zw(nir_shader *shader);
 bool pan_nir_lower_noperspective_vs(nir_shader *shader);
 bool pan_nir_lower_noperspective_fs(nir_shader *shader);
-bool pan_nir_lower_static_noperspective(nir_shader *shader,
-                                        uint32_t noperspective_varyings);
 
 bool pan_lower_helper_invocation(nir_shader *shader);
 bool pan_lower_sample_pos(nir_shader *shader);
