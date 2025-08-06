@@ -1513,6 +1513,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    const bool transpose = flags & MEMORY_FLAG_TRANSPOSE;
    const bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
    const bool volatile_access = flags & MEMORY_FLAG_VOLATILE_ACCESS;
+   const bool coherent_access = flags & MEMORY_FLAG_COHERENT_ACCESS;
    const brw_reg data0 = inst->src[MEMORY_LOGICAL_DATA0];
    const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
    const bool has_side_effects = inst->has_side_effects();
@@ -1598,6 +1599,10 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
             (lsc_opcode_is_store(op) ?
                LSC_CACHE(devinfo, STORE, L1UC_L3UC) :
                LSC_CACHE(devinfo, LOAD, L1UC_L3UC))) :
+      /* Skip L1 for coherent accesses */
+      coherent_access ? (lsc_opcode_is_store(op) ?
+                         LSC_CACHE(devinfo, STORE, L1UC_L3WB) :
+                         LSC_CACHE(devinfo, LOAD, L1UC_L3C)) :
       lsc_opcode_is_store(op) ? LSC_CACHE(devinfo, STORE, L1STATE_L3MOCS) :
       LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS);
 

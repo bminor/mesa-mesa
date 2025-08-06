@@ -720,6 +720,8 @@ enum memory_flags {
    MEMORY_FLAG_INCLUDE_HELPERS = 1 << 1,
    /** Whether memory access is marked volatile by GLSL/SPIR-V. */
    MEMORY_FLAG_VOLATILE_ACCESS = 1 << 2,
+   /** Whether memory access is marked coherent by GLSL/SPIR-V. */
+   MEMORY_FLAG_COHERENT_ACCESS = 1 << 3,
 };
 
 enum rt_logical_srcs {

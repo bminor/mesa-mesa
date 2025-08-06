@@ -7101,11 +7101,14 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
       (nir_intrinsic_access(instr) & ACCESS_INCLUDE_HELPERS);
    const bool volatile_access = nir_intrinsic_has_access(instr) &&
       (nir_intrinsic_access(instr) & ACCESS_VOLATILE);
+   const bool coherent_access = nir_intrinsic_has_access(instr) &&
+      (nir_intrinsic_access(instr) & ACCESS_COHERENT);
    const unsigned align =
       nir_intrinsic_has_align(instr) ? nir_intrinsic_align(instr) : 0;
    const unsigned logical_flags =
       (include_helpers ? MEMORY_FLAG_INCLUDE_HELPERS : 0) |
-      (volatile_access ? MEMORY_FLAG_VOLATILE_ACCESS : 0);
+      (volatile_access ? MEMORY_FLAG_VOLATILE_ACCESS : 0) |
+      (coherent_access ? MEMORY_FLAG_COHERENT_ACCESS : 0);
    bool no_mask_handle = false;
    int data_src = -1;
 
