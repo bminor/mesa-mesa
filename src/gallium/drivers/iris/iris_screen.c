@@ -182,14 +182,9 @@ iris_get_video_memory(struct iris_screen *screen)
       const unsigned gpu_mappable_megabytes =
          (devinfo->aperture_bytes * 3 / 4) / (1024 * 1024);
 
-      const long system_memory_pages = sysconf(_SC_PHYS_PAGES);
-      const long system_page_size = sysconf(_SC_PAGE_SIZE);
-
-      if (system_memory_pages <= 0 || system_page_size <= 0)
+      uint64_t system_memory_bytes;
+      if (!os_get_total_physical_memory(&system_memory_bytes))
          return -1;
-
-      const uint64_t system_memory_bytes =
-         (uint64_t) system_memory_pages * (uint64_t) system_page_size;
 
       const unsigned system_memory_megabytes =
          (unsigned) (system_memory_bytes / (1024 * 1024));
