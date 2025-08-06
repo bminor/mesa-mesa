@@ -2835,21 +2835,28 @@ tc_texture_map(struct pipe_context *_pipe,
    struct threaded_context *tc = threaded_context(_pipe);
    struct threaded_resource *tres = threaded_resource(resource);
    struct pipe_context *pipe = tc->pipe;
+   bool is_internal_unsynchronized = usage & PIPE_MAP_UNSYNCHRONIZED &&
+                                     resource->flags & PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED;
 
    if (tc->options.parse_renderpass_info && TC_RENDERPASS_INFO_HAS_WORK(tc->renderpass_info_recording->data32[0]))
       tc_check_fb_access(tc, NULL, resource);
 
-   tc_sync_msg(tc, "texture");
-   tc_set_driver_thread(tc);
-   /* block all unsync texture subdata during map */
-   tc_set_resource_batch_usage_persistent(tc, resource, true);
+   /* this can only be hit for internal use */
+   if (is_internal_unsynchronized) {
+      usage |= TC_TRANSFER_MAP_THREADED_UNSYNC;
+   } else {
+      tc_sync_msg(tc, "texture");
+      tc_set_driver_thread(tc);
+      /* block all unsync texture subdata during map */
+      tc_set_resource_batch_usage_persistent(tc, resource, true);
+   }
 
    tc->bytes_mapped_estimate += box->width;
 
    void *ret = pipe->texture_map(pipe, tres->latest ? tres->latest : resource,
                                  level, usage, box, transfer);
 
-   if (!(usage & TC_TRANSFER_MAP_THREADED_UNSYNC))
+   if (is_internal_unsynchronized && !(usage & TC_TRANSFER_MAP_THREADED_UNSYNC))
       tc_clear_driver_thread(tc);
 
    return ret;

@@ -518,7 +518,8 @@ enum pipe_flush_flags
 #define PIPE_RESOURCE_FLAG_UNMAPPABLE            (1 << 8) /* implies staging transfers due to VK interop */
 #define PIPE_RESOURCE_FLAG_FIXED_ADDRESS         (1 << 9) /* virtual memory address never changes */
 #define PIPE_RESOURCE_FLAG_FRONTEND_VM           (1 << 10) /* the frontend assigns addresses */
-#define PIPE_RESOURCE_FLAG_DRV_PRIV              (1 << 11) /* driver/winsys private */
+#define PIPE_RESOURCE_FLAG_MAP_UNSYNCHRONIZED    (1 << 11) /* the texture can be mapped UNSYNCHRONIZED */
+#define PIPE_RESOURCE_FLAG_DRV_PRIV              (1 << 12) /* driver/winsys private */
 #define PIPE_RESOURCE_FLAG_FRONTEND_PRIV         (1 << 24) /* gallium frontend private */
 
 /**
