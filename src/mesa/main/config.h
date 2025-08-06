@@ -165,17 +165,14 @@
 #define MAX_UNIFORMS                   4096
 #define MAX_UNIFORM_BUFFERS            15 /* + 1 default uniform buffer */
 #define MAX_SHADER_STORAGE_BUFFERS     16
-/* 6 is for vertex, hull, domain, geometry, fragment, and compute shader. */
-#define MAX_COMBINED_UNIFORM_BUFFERS   (MAX_UNIFORM_BUFFERS * 6)
-#define MAX_COMBINED_SHADER_STORAGE_BUFFERS   (MAX_SHADER_STORAGE_BUFFERS * 6)
+#define MAX_COMBINED_UNIFORM_BUFFERS   (MAX_UNIFORM_BUFFERS * MESA_SHADER_MESH_STAGES)
+#define MAX_COMBINED_SHADER_STORAGE_BUFFERS   (MAX_SHADER_STORAGE_BUFFERS * MESA_SHADER_MESH_STAGES)
 #define MAX_ATOMIC_COUNTERS            4096
-/* 6 is for vertex, hull, domain, geometry, fragment, and compute shader. */
-#define MAX_COMBINED_ATOMIC_BUFFERS    (MAX_UNIFORM_BUFFERS * 6)
+#define MAX_COMBINED_ATOMIC_BUFFERS    (MAX_UNIFORM_BUFFERS * MESA_SHADER_MESH_STAGES)
 /* Size of an atomic counter in bytes according to ARB_shader_atomic_counters */
 #define ATOMIC_COUNTER_SIZE            4
 #define MAX_IMAGE_UNIFORMS             32
-/* 6 is for vertex, hull, domain, geometry, fragment, and compute shader. */
-#define MAX_IMAGE_UNITS                (MAX_IMAGE_UNIFORMS * 6)
+#define MAX_IMAGE_UNITS                (MAX_IMAGE_UNIFORMS * MESA_SHADER_MESH_STAGES)
 /*@}*/
 
 /**
@@ -213,8 +210,7 @@
 
 /** For GL_ARB_vertex_shader */
 /*@{*/
-/* 6 is for vertex, hull, domain, geometry, fragment, and compute shader. */
-#define MAX_COMBINED_TEXTURE_IMAGE_UNITS (MAX_TEXTURE_IMAGE_UNITS * 6)
+#define MAX_COMBINED_TEXTURE_IMAGE_UNITS (MAX_TEXTURE_IMAGE_UNITS * MESA_SHADER_MESH_STAGES)
 /*@}*/
 
 
