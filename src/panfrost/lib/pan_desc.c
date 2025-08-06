@@ -274,7 +274,7 @@ GENX(pan_emit_afbc_s_attachment)(const struct pan_fb_info *fb,
                           &body_offset, &hdr_row_stride);
    pan_cast_and_pack(payload, AFBC_S_TARGET, cfg) {
       cfg.msaa = mali_sampling_mode(s);
-      cfg.write_format = translate_zs_format(s->format);
+      cfg.write_format = translate_s_format(s->format);
       cfg.block_format = get_afbc_block_format(pref.image->props.modifier);
       cfg.header = header;
       cfg.body_offset = body_offset;
