@@ -1821,6 +1821,9 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
 
    Temp resource = bld.as_uniform(get_ssa_temp(ctx, instr->src[0].ssa));
 
+   enum gl_access_qualifier access = nir_intrinsic_access(instr);
+   bool disable_wqm = access & ACCESS_SKIP_HELPERS;
+
    if (dim == GLSL_SAMPLER_DIM_BUF) {
       Temp vindex = emit_extract_vector(ctx, get_ssa_temp(ctx, instr->src[1].ssa), 0, v1);
 
@@ -1842,17 +1845,19 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
          default: UNREACHABLE(">4 channel buffer image load");
          }
       }
-      aco_ptr<Instruction> load{create_instruction(opcode, Format::MUBUF, 3 + is_sparse, 1)};
+      aco_ptr<Instruction> load{
+         create_instruction(opcode, Format::MUBUF, 3 + is_sparse + 2 * disable_wqm, 1)};
       load->operands[0] = Operand(resource);
       load->operands[1] = Operand(vindex);
       load->operands[2] = Operand::c32(0);
       load->definitions[0] = Definition(tmp);
       load->mubuf().idxen = true;
-      load->mubuf().cache = get_cache_flags(ctx, nir_intrinsic_access(instr), ac_access_type_load);
+      load->mubuf().cache = get_cache_flags(ctx, access, ac_access_type_load);
       load->mubuf().sync = sync;
       load->mubuf().tfe = is_sparse;
       if (load->mubuf().tfe)
          load->operands[3] = emit_tfe_init(bld, tmp);
+      init_disable_wqm(bld, load->mubuf(), disable_wqm);
       ctx->block->instructions.emplace_back(std::move(load));
    } else {
       std::vector<Temp> coords = get_image_coords(ctx, instr);
@@ -1867,8 +1872,8 @@ visit_image_load(isel_context* ctx, nir_intrinsic_instr* instr)
 
       Operand vdata = is_sparse ? emit_tfe_init(bld, tmp) : Operand(v1);
       MIMG_instruction* load =
-         emit_mimg(bld, opcode, {tmp}, resource, Operand(s4), coords, false, vdata);
-      load->cache = get_cache_flags(ctx, nir_intrinsic_access(instr), ac_access_type_load);
+         emit_mimg(bld, opcode, {tmp}, resource, Operand(s4), coords, disable_wqm, vdata);
+      load->cache = get_cache_flags(ctx, access, ac_access_type_load);
       load->a16 = instr->src[1].ssa->bit_size == 16;
       load->d16 = d16;
       load->dmask = dmask;

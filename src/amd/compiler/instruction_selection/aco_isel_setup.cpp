@@ -340,6 +340,18 @@ skip_uniformize_merge_phi(nir_def* ssa, unsigned depth)
    return true;
 }
 
+bool
+intrinsic_try_skip_helpers(nir_intrinsic_instr* intr, UNUSED void* data)
+{
+   switch (intr->intrinsic) {
+   case nir_intrinsic_bindless_image_load:
+   case nir_intrinsic_bindless_image_fragment_mask_load_amd:
+   case nir_intrinsic_bindless_image_sparse_load:
+      return !(nir_intrinsic_access(intr) & ACCESS_SMEM_AMD);
+   default: return false;
+   }
+}
+
 } /* end namespace */
 
 void
@@ -370,6 +382,7 @@ init_context(isel_context* ctx, nir_shader* shader)
    if (shader->info.stage == MESA_SHADER_FRAGMENT) {
       nir_opt_load_skip_helpers_options skip_helper_options = {};
       skip_helper_options.no_add_divergence = true;
+      skip_helper_options.intrinsic_cb = intrinsic_try_skip_helpers;
       nir_opt_load_skip_helpers(shader, &skip_helper_options);
    }
 
