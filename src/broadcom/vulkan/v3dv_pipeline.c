@@ -496,7 +496,7 @@ pipeline_get_descriptor_map(struct v3dv_pipeline *pipeline,
                             bool is_sampler)
 {
    enum broadcom_shader_stage broadcom_stage =
-      gl_shader_stage_to_broadcom(gl_stage);
+      mesa_shader_stage_to_broadcom(gl_stage);
 
    assert(pipeline->shared_data &&
           pipeline->shared_data->maps[broadcom_stage]);
@@ -2215,7 +2215,7 @@ write_creation_feedback(struct v3dv_pipeline *pipeline,
 
       for (uint32_t i = 0; i < feedback_stage_count; i++) {
          mesa_shader_stage s = vk_to_mesa_shader_stage(stages[i].stage);
-         enum broadcom_shader_stage bs = gl_shader_stage_to_broadcom(s);
+         enum broadcom_shader_stage bs = mesa_shader_stage_to_broadcom(s);
 
          create_feedback->pPipelineStageCreationFeedbacks[i] =
             pipeline->stages[bs]->feedback;
@@ -2452,7 +2452,7 @@ pipeline_compile_graphics(struct v3dv_pipeline *pipeline,
          p_atomic_inc_return(&physical_device->next_program_id);
 
       enum broadcom_shader_stage broadcom_stage =
-         gl_shader_stage_to_broadcom(stage);
+         mesa_shader_stage_to_broadcom(stage);
 
       p_stage->pipeline = pipeline;
       p_stage->stage = broadcom_stage;
@@ -3197,7 +3197,7 @@ pipeline_compile_compute(struct v3dv_pipeline *pipeline,
 
    p_stage->program_id = p_atomic_inc_return(&physical_device->next_program_id);
    p_stage->pipeline = pipeline;
-   p_stage->stage = gl_shader_stage_to_broadcom(stage);
+   p_stage->stage = mesa_shader_stage_to_broadcom(stage);
    p_stage->entrypoint = sinfo->pName;
    p_stage->module = vk_shader_module_from_handle(sinfo->module);
    p_stage->spec_info = sinfo->pSpecializationInfo;

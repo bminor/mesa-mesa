@@ -363,7 +363,7 @@ enum broadcom_shader_stage {
 
 /* Assumes that coordinate shaders will be custom-handled by the caller */
 static inline enum broadcom_shader_stage
-gl_shader_stage_to_broadcom(mesa_shader_stage stage)
+mesa_shader_stage_to_broadcom(mesa_shader_stage stage)
 {
    switch (stage) {
    case MESA_SHADER_VERTEX:
