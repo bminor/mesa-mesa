@@ -1642,7 +1642,8 @@ emit_intrinsic(compiler_context *ctx, nir_intrinsic_instr *instr)
 
       ins.dest_type = ins.src_types[1] = nir_type_uint | instr->def.bit_size;
 
-      ins.mask = BITFIELD_MASK(instr->def.num_components);
+      assert(instr->def.num_components <= 4);
+      ins.mask = (uint16_t)BITFIELD_MASK(instr->def.num_components);
       emit_mir_instruction(ctx, &ins);
       break;
    }
