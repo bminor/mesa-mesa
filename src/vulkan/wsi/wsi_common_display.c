@@ -316,6 +316,9 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
       prop_id[GAMMA_LUT] = -1;
       prop_id[DEGAMMA_LUT] = -1;
       prop_id[CTM] = -1;
+   } else if (type == DRM_MODE_OBJECT_CONNECTOR) {
+      prop_id[HDR_OUTPUT_METADATA] = -1;
+      prop_id[Colorspace] = -1;
    }
 
    /* Walk the list of properties seeing if their names match one of the
