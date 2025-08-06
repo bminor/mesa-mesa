@@ -142,6 +142,8 @@ files_mesa_util = files(
   'u_pointer.h',
   'u_queue.c',
   'u_queue.h',
+  'u_range_remap.c',
+  'u_range_remap.h',
   'u_string.c',
   'u_string.h',
   'u_thread.c',
