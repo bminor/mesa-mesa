@@ -25,6 +25,12 @@ VkResult panvk_android_get_wsi_memory(struct panvk_device *dev,
                                       const VkBindImageMemoryInfo *bind_info,
                                       VkDeviceMemory *out_mem_handle);
 
+bool panvk_android_is_ahb_memory(const VkMemoryAllocateInfo *pAllocateInfo);
+
+VkResult panvk_android_allocate_ahb_memory(
+   VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+   const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory);
+
 #else /* VK_USE_PLATFORM_ANDROID_KHR */
 
 static inline bool
@@ -46,6 +52,21 @@ static inline VkResult
 panvk_android_get_wsi_memory(struct panvk_device *dev,
                              const VkBindImageMemoryInfo *bind_info,
                              VkDeviceMemory *out_mem_handle)
+{
+   return VK_ERROR_FEATURE_NOT_PRESENT;
+}
+
+static inline bool
+panvk_android_is_ahb_memory(const VkMemoryAllocateInfo *pAllocateInfo)
+{
+   return false;
+}
+
+static inline VkResult
+panvk_android_allocate_ahb_memory(VkDevice device,
+                                  const VkMemoryAllocateInfo *pAllocateInfo,
+                                  const VkAllocationCallbacks *pAllocator,
+                                  VkDeviceMemory *pMemory)
 {
    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
