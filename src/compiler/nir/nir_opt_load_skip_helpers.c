@@ -156,6 +156,9 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
                set_src_needs_helpers(&intr->src[0], &hs);
             } else if (instr_never_needs_helpers(instr)) {
                continue;
+            } else if (hs.options->intrinsic_cb &&
+                       hs.options->intrinsic_cb(intr, hs.options->intrinsic_cb_data)) {
+               nir_instr_worklist_push_tail(hs.load_instrs, instr);
             } else {
                /* All I/O addresses need helpers because getting them wrong
                 * may cause a fault.
@@ -188,7 +191,7 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
 
       while (!nir_instr_worklist_is_empty(hs.load_instrs)) {
          nir_instr *instr = nir_instr_worklist_pop_head(hs.load_instrs);
-         nir_tex_instr *tex = nir_instr_as_tex(instr);
+         nir_def *def = nir_instr_def(instr);
 
          /* If a load is uniform, we don't want to set skip_helpers because
           * then it might not be uniform if the helpers don't fetch.  Also,
@@ -206,12 +209,20 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
           * always leave skip_helpers=false on all uniform load ops, we'll
           * have valid helper data in this load op.
           */
-         if (!tex->def.divergent && hs.options->no_add_divergence)
+         if (hs.options->no_add_divergence && !def->divergent)
             continue;
 
-         if (!def_needs_helpers(&tex->def, &hs) && !tex->skip_helpers) {
-            tex->skip_helpers = true;
-            progress = true;
+         if (!def_needs_helpers(def, &hs)) {
+            if (instr->type == nir_instr_type_tex) {
+               nir_tex_instr *tex = nir_instr_as_tex(instr);
+               progress |= !tex->skip_helpers;
+               tex->skip_helpers = true;
+            } else if (instr->type == nir_instr_type_intrinsic) {
+               nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+               enum gl_access_qualifier access = nir_intrinsic_access(intr);
+               progress |= !(access & ACCESS_SKIP_HELPERS);
+               nir_intrinsic_set_access(intr, access | ACCESS_SKIP_HELPERS);
+            }
          }
       }
    }

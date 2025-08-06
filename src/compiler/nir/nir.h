@@ -6379,8 +6379,13 @@ bool nir_opt_ray_queries(nir_shader *shader);
 
 bool nir_opt_ray_query_ranges(nir_shader *shader);
 
+typedef bool (*nir_skip_helpers_instrinsic_cb)(
+   nir_intrinsic_instr *intr, void *data);
+
 typedef struct nir_opt_load_skip_helpers_options {
    bool no_add_divergence : 1;
+   nir_skip_helpers_instrinsic_cb intrinsic_cb;
+   void *intrinsic_cb_data;
 } nir_opt_load_skip_helpers_options;
 
 bool nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options *options);
