@@ -262,7 +262,7 @@ static void
 dd_dump_shader(struct dd_draw_state *dstate, mesa_shader_stage sh, FILE *f)
 {
    int i;
-   const char *shader_str[MESA_SHADER_STAGES];
+   const char *shader_str[MESA_SHADER_MESH_STAGES];
 
    shader_str[MESA_SHADER_VERTEX] = "VERTEX";
    shader_str[MESA_SHADER_TESS_CTRL] = "TESS_CTRL";
@@ -270,6 +270,8 @@ dd_dump_shader(struct dd_draw_state *dstate, mesa_shader_stage sh, FILE *f)
    shader_str[MESA_SHADER_GEOMETRY] = "GEOMETRY";
    shader_str[MESA_SHADER_FRAGMENT] = "FRAGMENT";
    shader_str[MESA_SHADER_COMPUTE] = "COMPUTE";
+   shader_str[MESA_SHADER_TASK] = "TASK";
+   shader_str[MESA_SHADER_MESH] = "MESH";
 
    if (sh == MESA_SHADER_TESS_CTRL &&
        !dstate->shaders[MESA_SHADER_TESS_CTRL] &&
