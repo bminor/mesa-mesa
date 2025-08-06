@@ -24,6 +24,27 @@
 #include "nir.h"
 #include "nir_worklist.h"
 
+static bool
+instr_never_needs_helpers(nir_instr *instr)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   if (intr->intrinsic == nir_intrinsic_store_scratch)
+      return false;
+
+   if (nir_intrinsic_has_access(intr) && (nir_intrinsic_access(intr) & ACCESS_INCLUDE_HELPERS))
+      return false;
+
+   bool is_store = !nir_intrinsic_infos[intr->intrinsic].has_dest;
+   bool is_atomic = nir_intrinsic_has_atomic_op(intr);
+
+   /* Stores and atomics must already disable helper lanes. */
+   return is_store || is_atomic;
+}
+
 struct helper_state {
    BITSET_WORD *needs_helpers;
    nir_instr_worklist *worklist;
@@ -42,7 +63,8 @@ static inline bool
 set_src_needs_helpers(nir_src *src, void *_data)
 {
    struct helper_state *hs = _data;
-   if (!BITSET_TEST(hs->needs_helpers, src->ssa->index)) {
+   if (!BITSET_TEST(hs->needs_helpers, src->ssa->index) &&
+       !instr_never_needs_helpers(src->ssa->parent_instr)) {
       BITSET_SET(hs->needs_helpers, src->ssa->index);
       nir_instr_worklist_push_tail(hs->worklist, src->ssa->parent_instr);
    }
@@ -132,6 +154,8 @@ nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
                 * So the condition must be correct for helpers too.
                 */
                set_src_needs_helpers(&intr->src[0], &hs);
+            } else if (instr_never_needs_helpers(instr)) {
+               continue;
             } else {
                /* All I/O addresses need helpers because getting them wrong
                 * may cause a fault.
