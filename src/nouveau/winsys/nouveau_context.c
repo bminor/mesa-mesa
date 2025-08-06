@@ -132,6 +132,13 @@ nouveau_ws_3d_context_init(struct nouveau_ws_device *dev,
    uint32_t classes[NOUVEAU_WS_CONTEXT_MAX_CLASSES];
    uint32_t base;
 
+   req.fb_ctxdma_handle = 0xffffffff;
+   if (engines == NOUVEAU_WS_ENGINE_COPY && dev->info.has_transfer_queue) {
+      req.tt_ctxdma_handle = NOUVEAU_FIFO_ENGINE_CE;
+   } else {
+      req.tt_ctxdma_handle = NOUVEAU_FIFO_ENGINE_GR;
+   }
+
    int ret = drmCommandWriteRead(dev->fd, DRM_NOUVEAU_CHANNEL_ALLOC, &req, sizeof(req));
    if (ret)
       return ret;
