@@ -804,12 +804,6 @@ finish_program(isel_context* ctx)
              instr->opcode == aco_opcode::p_logical_start)
             break;
 
-         /* Only end WQM if we don't disable wqm anyway. We can schedule loads with disable_wqm
-          * upwards, but the exec write from p_end_wqm is a barrrier.
-          */
-         if ((instr->isVMEM() || instr->isFlatLike()) && !instr_disables_wqm(instr.get()))
-            break;
-
          ++it;
 
          /* End WQM after: */
