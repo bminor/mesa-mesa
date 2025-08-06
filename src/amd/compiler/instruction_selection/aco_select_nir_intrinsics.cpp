@@ -286,6 +286,7 @@ struct LoadEmitInfo {
 
    ac_hw_cache_flags cache = {{0, 0, 0, 0, 0}};
    bool split_by_component_stride = true;
+   bool disable_wqm = false;
    unsigned swizzle_component_size = 0;
    memory_sync_info sync;
    Temp soffset = Temp(0, s1);
@@ -620,7 +621,7 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_neede
       bytes_size = 16;
       op = aco_opcode::buffer_load_dwordx4;
    }
-   aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3, 1)};
+   aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 3 + 2 * info.disable_wqm, 1)};
    mubuf->operands[0] = Operand(info.resource);
    mubuf->operands[1] = vaddr;
    mubuf->operands[2] = soffset;
@@ -632,6 +633,7 @@ mubuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_neede
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
    Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
    mubuf->definitions[0] = Definition(val);
+   init_disable_wqm(bld, mubuf->mubuf(), info.disable_wqm);
    bld.insert(std::move(mubuf));
 
    return val;
@@ -1470,8 +1472,8 @@ get_atomic_cache_flags(isel_context* ctx, bool return_previous)
 
 void
 load_buffer(isel_context* ctx, unsigned num_components, unsigned component_size, Temp dst,
-            Temp rsrc, Temp offset, unsigned align_mul, unsigned align_offset,
-            unsigned access = ACCESS_CAN_REORDER, memory_sync_info sync = memory_sync_info())
+            Temp rsrc, Temp offset, unsigned align_mul, unsigned align_offset, unsigned access,
+            memory_sync_info sync = memory_sync_info())
 {
    Builder bld(ctx->program, ctx->block);
 
@@ -1493,6 +1495,7 @@ load_buffer(isel_context* ctx, unsigned num_components, unsigned component_size,
    info.sync = sync;
    info.align_mul = align_mul;
    info.align_offset = align_offset;
+   info.disable_wqm = access & ACCESS_SKIP_HELPERS;
    if (use_smem)
       emit_load(ctx, bld, info, smem_load_params);
    else
