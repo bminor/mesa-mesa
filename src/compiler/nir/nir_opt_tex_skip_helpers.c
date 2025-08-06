@@ -125,6 +125,13 @@ nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
             nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
             if (nir_intrinsic_has_semantic(intr, NIR_INTRINSIC_SUBGROUP)) {
                nir_foreach_src(instr, set_src_needs_helpers, &hs);
+            } else if (intr->intrinsic == nir_intrinsic_terminate_if) {
+               /* Unlike demote, terminate disables invocations completely.
+                * For example, a subgroup operation after terminate should
+                * include helpers, but not the invocations that were terminated.
+                * So the condition must be correct for helpers too.
+                */
+               set_src_needs_helpers(&intr->src[0], &hs);
             } else {
                /* All I/O addresses need helpers because getting them wrong
                 * may cause a fault.
