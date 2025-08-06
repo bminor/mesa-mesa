@@ -1760,10 +1760,7 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
           */
          if (m < instr->srcs_count) {
             struct ir3_register *reg = instr->srcs[m];
-            if (instr->dsts[0]->flags & IR3_REG_SHARED) {
-               if ((flags & IR3_REG_CONST) && (reg->flags & IR3_REG_CONST))
-                  return false;
-            } else {
+            if (!(instr->dsts[0]->flags & IR3_REG_SHARED)) {
                if ((flags & (IR3_REG_CONST | IR3_REG_SHARED)) &&
                    (reg->flags & (IR3_REG_CONST | IR3_REG_SHARED)))
                   return false;
