@@ -361,7 +361,7 @@ static bool do_winsys_init(struct radeon_drm_winsys *ws)
                         &ws->info.max_gpu_freq_mhz);
    ws->info.max_gpu_freq_mhz /= 1000;
 
-   ws->num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+   ws->num_cpus = util_get_cpu_caps()->nr_cpus;
 
    /* Generation-specific queries. */
    if (ws->gen == DRV_R300) {
