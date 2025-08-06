@@ -5924,7 +5924,7 @@
         "description": "panvk: ensure wsi memory is bound at offset 0",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "187956bd51ad1ade4bf6f7a2b289aea29340e718",
         "notes": null
