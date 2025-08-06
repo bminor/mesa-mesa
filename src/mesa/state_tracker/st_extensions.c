@@ -111,7 +111,7 @@ void st_init_limits(struct pipe_screen *screen,
                     struct gl_constants *c, struct gl_extensions *extensions,
                     gl_api api)
 {
-   unsigned sh;
+   mesa_shader_stage sh;
    bool can_ubo = true;
    int temp;
 
