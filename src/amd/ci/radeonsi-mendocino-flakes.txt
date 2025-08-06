@@ -1,6 +1,8 @@
 dEQP-GLES3.functional.occlusion_query.all_occluders
 dEQP-GLES3.functional.occlusion_query.conservative_all_occluders
 dEQP-GLES3.functional.occlusion_query.conservative_depth_clear_stencil_clear
+dEQP-GLES3.functional.occlusion_query.conservative_depth_clear_stencil_write
+dEQP-GLES3.functional.occlusion_query.conservative_depth_clear_stencil_write_stencil_clear
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write_depth_clear
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_clear
@@ -16,6 +18,7 @@ dEQP-GLES3.functional.occlusion_query.depth_clear_stencil_clear
 dEQP-GLES3.functional.occlusion_query.depth_clear_stencil_write
 dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear
 dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear_stencil_write
+dEQP-GLES3.functional.occlusion_query.depth_write_stencil_write
 dEQP-GLES3.functional.occlusion_query.depth_write_stencil_write_stencil_clear
 dEQP-GLES3.functional.occlusion_query.scissor
 dEQP-GLES3.functional.occlusion_query.scissor_depth_write_stencil_clear
@@ -45,5 +48,6 @@ spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -s
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@egl_chromium_sync_control@conformance
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
+spec@ext_external_objects@vk-ping-pong-single-sem
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread
 spec@ext_external_objects@vk-ping-pong-multi-sem
