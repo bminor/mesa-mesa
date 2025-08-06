@@ -347,6 +347,7 @@ intrinsic_try_skip_helpers(nir_intrinsic_instr* intr, UNUSED void* data)
    case nir_intrinsic_load_ssbo:
    case nir_intrinsic_load_ubo:
    case nir_intrinsic_load_constant:
+   case nir_intrinsic_load_scratch:
    case nir_intrinsic_bindless_image_load:
    case nir_intrinsic_bindless_image_fragment_mask_load_amd:
    case nir_intrinsic_bindless_image_sparse_load:

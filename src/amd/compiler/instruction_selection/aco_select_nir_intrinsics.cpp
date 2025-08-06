@@ -732,13 +732,14 @@ scratch_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_nee
    }
    RegClass rc = RegClass::get(RegType::vgpr, bytes_size);
    Temp val = rc == info.dst.regClass() ? info.dst : bld.tmp(rc);
-   aco_ptr<Instruction> flat{create_instruction(op, Format::SCRATCH, 2, 1)};
+   aco_ptr<Instruction> flat{create_instruction(op, Format::SCRATCH, 2 + 2 * info.disable_wqm, 1)};
    Temp offset = info.offset.getTemp();
    flat->operands[0] = offset.regClass() == s1 ? Operand(v1) : Operand(offset);
    flat->operands[1] = offset.regClass() == s1 ? Operand(offset) : Operand(s1);
    flat->scratch().sync = info.sync;
    flat->scratch().offset = info.const_offset;
    flat->definitions[0] = Definition(val);
+   init_disable_wqm(bld, flat->scratch(), info.disable_wqm);
    bld.insert(std::move(flat));
 
    return val;
@@ -3207,6 +3208,7 @@ visit_load_scratch(isel_context* ctx, nir_intrinsic_instr* instr)
    info.cache = get_cache_flags(ctx, ACCESS_IS_SWIZZLED_AMD, ac_access_type_load);
    info.swizzle_component_size = ctx->program->gfx_level <= GFX8 ? 4 : 0;
    info.sync = memory_sync_info(storage_scratch, semantic_private);
+   info.disable_wqm = nir_intrinsic_access(instr) & ACCESS_SKIP_HELPERS;
    if (ctx->program->gfx_level >= GFX9) {
       if (nir_src_is_const(instr->src[0])) {
          info.const_offset = nir_src_as_uint(instr->src[0]);
