@@ -2327,6 +2327,7 @@ zink_buffer_map(struct pipe_context *pctx,
                     const struct pipe_box *box,
                     struct pipe_transfer **transfer)
 {
+   MESA_TRACE_FUNC();
    struct zink_context *ctx = zink_context(pctx);
    struct zink_screen *screen = zink_screen(pctx->screen);
    struct zink_resource *res = zink_resource(pres);
@@ -2539,6 +2540,7 @@ zink_image_map(struct pipe_context *pctx,
                   const struct pipe_box *box,
                   struct pipe_transfer **transfer)
 {
+   MESA_TRACE_FUNC();
    struct zink_context *ctx = zink_context(pctx);
    struct zink_screen *screen = zink_screen(pctx->screen);
    struct zink_resource *res = zink_resource(pres);

@@ -64,6 +64,7 @@
 #include "zink_instance.h"
 #include "zink_shader_keys.h"
 #include "vk_dispatch_table.h"
+#include "util/perf/cpu_trace.h"
 
 #include "renderdoc_app.h"
 

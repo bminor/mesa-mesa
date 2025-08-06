@@ -2419,6 +2419,7 @@ zink_screen_import_dmabuf_semaphore(struct zink_screen *screen, struct zink_reso
 bool
 zink_screen_timeline_wait(struct zink_screen *screen, uint64_t batch_id, uint64_t timeout)
 {
+   MESA_TRACE_FUNC();
    VkSemaphoreWaitInfo wi = {0};
 
    if (zink_screen_check_last_finished(screen, batch_id))

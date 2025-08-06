@@ -1365,6 +1365,7 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
                                  const struct pipe_vertex_buffer *buffers,
                                  bool optimal)
 {
+   MESA_TRACE_FUNC();
    struct zink_context *ctx = zink_context(pctx);
    const bool have_input_state = zink_screen(pctx->screen)->info.have_EXT_vertex_input_dynamic_state;
    const bool need_state_change = !zink_screen(pctx->screen)->info.have_EXT_extended_dynamic_state &&

@@ -719,6 +719,7 @@ replace_separable_prog(struct zink_context *ctx, struct hash_entry *entry, struc
 void
 zink_gfx_program_update_optimal(struct zink_context *ctx)
 {
+   MESA_TRACE_FUNC();
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    assert(!ctx->gfx_stages[MESA_SHADER_TESS_CTRL] || !ctx->gfx_stages[MESA_SHADER_TESS_CTRL]->non_fs.is_generated);
    if (ctx->gfx_dirty) {

@@ -59,6 +59,7 @@ reset_obj_list(struct zink_screen *screen, struct zink_batch_state *bs, struct z
 void
 zink_reset_batch_state(struct zink_context *ctx, struct zink_batch_state *bs)
 {
+   MESA_TRACE_FUNC();
    struct zink_screen *screen = zink_screen(ctx->base.screen);
 
    VkResult result = VKSCR(ResetCommandPool)(screen->dev, bs->cmdpool, 0);
@@ -420,6 +421,7 @@ find_unused_state(struct zink_batch_state *bs)
 static struct zink_batch_state *
 get_batch_state(struct zink_context *ctx)
 {
+   MESA_TRACE_FUNC();
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_batch_state *bs = NULL;
 
@@ -509,6 +511,7 @@ zink_batch_bind_db(struct zink_context *ctx)
 void
 zink_start_batch(struct zink_context *ctx)
 {
+   MESA_TRACE_FUNC();
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    zink_reset_batch(ctx);
    struct zink_batch_state *bs = ctx->bs;
@@ -572,6 +575,7 @@ zink_start_batch(struct zink_context *ctx)
 static void
 post_submit(void *data, void *gdata, int thread_index)
 {
+   MESA_TRACE_FUNC();
    struct zink_batch_state *bs = data;
    struct zink_screen *screen = zink_screen(bs->ctx->base.screen);
 
@@ -607,6 +611,7 @@ typedef enum {
 static void
 submit_queue(void *data, void *gdata, int thread_index)
 {
+   MESA_TRACE_FUNC();
    struct zink_batch_state *bs = data;
    struct zink_context *ctx = bs->ctx;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
@@ -797,6 +802,7 @@ end:
 void
 zink_end_batch(struct zink_context *ctx)
 {
+   MESA_TRACE_FUNC();
    if (!ctx->queries_disabled)
       zink_suspend_queries(ctx);
 
@@ -1050,6 +1056,7 @@ batch_reference_resource_move_internal(struct zink_batch_state *bs, struct zink_
 bool
 zink_batch_reference_resource_move(struct zink_context *ctx, struct zink_resource *res)
 {
+   MESA_TRACE_FUNC();
    struct zink_batch_state *bs = ctx->bs;
 
    /* swapchains are special */
@@ -1159,6 +1166,7 @@ zink_batch_usage_check_completion(struct zink_context *ctx, const struct zink_ba
 static void
 batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait)
 {
+   MESA_TRACE_FUNC();
    if (!zink_batch_usage_exists(u))
       return;
    /* this batch state was already completed and reset */

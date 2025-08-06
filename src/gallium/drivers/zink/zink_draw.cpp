@@ -338,6 +338,7 @@ zink_draw(struct pipe_context *pctx,
           struct pipe_vertex_state *vstate,
           uint32_t partial_velem_mask)
 {
+   MESA_TRACE_FUNC();
    if (!dindirect && (!draws[0].count || !dinfo->instance_count))
       return;
 
@@ -976,6 +977,7 @@ template <util_popcnt HAS_POPCNT>
 static void
 zink_bind_vertex_state(struct zink_context *ctx, struct pipe_vertex_state *vstate, uint32_t partial_velem_mask)
 {
+   MESA_TRACE_FUNC();
    struct zink_vertex_state *zstate = (struct zink_vertex_state *)vstate;
    VkCommandBuffer cmdbuf = ctx->bs->cmdbuf;
    if (!vstate->input.vbuffer.buffer.resource)
@@ -1000,6 +1002,7 @@ zink_draw_vertex_state(struct pipe_context *pctx,
                        const struct pipe_draw_start_count_bias *draws,
                        unsigned num_draws)
 {
+   MESA_TRACE_FUNC();
    struct pipe_draw_info dinfo = {};
 
    dinfo.mode = info.mode;
@@ -1026,6 +1029,7 @@ template <bool BATCH_CHANGED>
 static void
 zink_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
 {
+   MESA_TRACE_FUNC();
    struct zink_context *ctx = zink_context(pctx);
    struct zink_batch_state *bs = ctx->bs;
    struct zink_screen *screen = zink_screen(pctx->screen);

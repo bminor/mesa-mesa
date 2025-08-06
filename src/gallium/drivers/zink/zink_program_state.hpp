@@ -105,6 +105,7 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
                       struct zink_gfx_pipeline_state *state,
                       enum mesa_prim mode)
 {
+   MESA_TRACE_FUNC();
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    bool uses_dynamic_stride = state->uses_dynamic_stride;
 
