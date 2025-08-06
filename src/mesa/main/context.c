@@ -314,11 +314,19 @@ init_program_limits(struct gl_constants *consts, mesa_shader_stage stage,
       prog->MaxOutputComponents = 16 * 4; /* old limit not to break tnl and swrast */
       break;
    case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_TASK:
       prog->MaxParameters = 0; /* not meaningful for compute shaders */
       prog->MaxAttribs = 0; /* not meaningful for compute shaders */
       prog->MaxUniformComponents = 4 * MAX_UNIFORMS;
       prog->MaxInputComponents = 0; /* not meaningful for compute shaders */
       prog->MaxOutputComponents = 0; /* not meaningful for compute shaders */
+      break;
+   case MESA_SHADER_MESH:
+      prog->MaxParameters = 0;
+      prog->MaxAttribs = 0;
+      prog->MaxUniformComponents = 4 * MAX_UNIFORMS;
+      prog->MaxInputComponents = 0;
+      prog->MaxOutputComponents = 16 * 4;
       break;
    default:
       assert(0 && "Bad shader stage in init_program_limits()");
