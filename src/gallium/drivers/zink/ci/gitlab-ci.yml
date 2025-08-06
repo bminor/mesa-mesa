@@ -289,10 +289,10 @@ zink-radv-navi31-valve:
     - .radv-zink-test-valve
     - .navi31-test-valve
     - .zink-radv-valve-manual-rules
-  timeout: 1h 20m
+  timeout: 15m
   variables:
     GPU_VERSION: zink-radv-navi31
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 75
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 10
     RADV_PERFTEST: hic
 
 zink-radv-cezanne:
