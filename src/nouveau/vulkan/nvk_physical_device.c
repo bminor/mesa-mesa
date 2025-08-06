@@ -1634,7 +1634,12 @@ nvk_GetPhysicalDeviceQueueFamilyProperties2(
       vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p) {
          p->queueFamilyProperties.queueFlags = queue_family->queue_flags;
          p->queueFamilyProperties.queueCount = queue_family->queue_count;
-         p->queueFamilyProperties.timestampValidBits = 64;
+         if (queue_family->queue_flags & VK_QUEUE_GRAPHICS_BIT) {
+            p->queueFamilyProperties.timestampValidBits = 64;
+         } else {
+            /* TODO: Timestamps on non-graphics queues */
+            p->queueFamilyProperties.timestampValidBits = 0;
+         }
          p->queueFamilyProperties.minImageTransferGranularity =
             (VkExtent3D){1, 1, 1};
 
