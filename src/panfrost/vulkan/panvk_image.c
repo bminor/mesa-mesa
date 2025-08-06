@@ -400,7 +400,7 @@ panvk_image_get_total_size(const struct panvk_image *image)
    return size;
 }
 
-static VkResult
+VkResult
 panvk_image_init(struct panvk_image *image,
                  const VkImageCreateInfo *pCreateInfo)
 {

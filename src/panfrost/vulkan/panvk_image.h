@@ -62,4 +62,7 @@ panvk_plane_index(VkFormat format, VkImageAspectFlags aspect_mask)
    }
 }
 
+VkResult panvk_image_init(struct panvk_image *image,
+                          const VkImageCreateInfo *pCreateInfo);
+
 #endif
