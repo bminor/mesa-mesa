@@ -850,6 +850,7 @@ print_access(enum gl_access_qualifier access, print_state *state, const char *se
       { ACCESS_IN_BOUNDS, "in-bounds" },
       { ACCESS_KEEP_SCALAR, "keep-scalar" },
       { ACCESS_SMEM_AMD, "smem-amd" },
+      { ACCESS_SKIP_HELPERS, "skip-helpers" },
    };
 
    bool first = true;

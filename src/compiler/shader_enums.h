@@ -1167,6 +1167,11 @@ enum gl_access_qualifier
     * Indicates that this load will use SMEM.
     */
    ACCESS_SMEM_AMD = (1 << 16),
+
+   /**
+    * Indicates that this load must be skipped by helper invocations.
+    */
+   ACCESS_SKIP_HELPERS = (1 << 17),
 };
 
 /**

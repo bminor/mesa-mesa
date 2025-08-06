@@ -973,6 +973,10 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
 #endif
    }
 
+   if (nir_intrinsic_has_access(instr) &&
+       (nir_intrinsic_access(instr) & ACCESS_SKIP_HELPERS))
+      is_divergent = true;
+
    instr->def.divergent = is_divergent;
    return is_divergent;
 }
