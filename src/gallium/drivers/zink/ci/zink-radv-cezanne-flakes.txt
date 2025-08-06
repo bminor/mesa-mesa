@@ -34,6 +34,7 @@ KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_rgba8_sno
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_rectangle_rgb565
 
 dEQP-GLES3.functional.default_vertex_attrib.ivec4.vertex_attribi_4iv
+dEQP-GLES3.functional.draw_buffers_indexed.overwrite_common.common_advanced_blend_eq_buffer_blend_eq
 dEQP-GLES3.functional.draw_buffers_indexed.random.max_implementation_draw_buffers.2
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.cubemap_to_cubemap
 dEQP-GLES31.functional.draw_base_vertex.draw_elements_base_vertex.triangle_strip.instanced_attributes
@@ -45,11 +46,15 @@ dEQP-GLES31.functional.draw_base_vertex.draw_range_elements_base_vertex.triangle
 
 glx@glx-buffer-age
 glx@glx-multi-context-ib-1
+glx@glx-multithread-texture
 glx@glx-swap-singlebuffer
 glx@glx-visuals-stencil
+spec@!opengl 1.1@depthstencil-default_fb-copypixels samples=6
 spec@arb_depth_buffer_float@fbo-depth-gl_depth32f_stencil8-tex1d
 spec@arb_depth_buffer_float@fbo-depth-gl_depth_component32f-tex1d
 spec@arb_depth_texture@fbo-depth-gl_depth_component16-tex1d
+spec@arb_depth_texture@fbo-depth-gl_depth_component32-tex1d
+spec@arb_fragment_program@fog-modes
 spec@arb_shader_atomic_counters@unused-result
 spec@arb_shader_image_load_store@coherency
 spec@arb_shader_image_load_store@shader-mem-barrier
@@ -70,6 +75,7 @@ spec@arb_shader_image_load_store@shader-mem-barrier@Tessellation evaluation shad
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'coherent' qualifier memory barrier test/modulus=64
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'volatile' qualifier memory barrier test/modulus=64
 spec@arb_shader_storage_buffer_object@execution@ssbo-atomiccompswap-int
+spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative
 spec@arb_texture_cube_map@copyteximage cube samples=2
 spec@arb_texture_cube_map@copyteximage cube samples=4
 spec@arb_texture_cube_map@copyteximage cube samples=6
@@ -91,4 +97,5 @@ spec@ext_texture_array@copyteximage 2d_array samples=2
 spec@ext_texture_array@copyteximage 2d_array samples=4
 spec@ext_texture_array@copyteximage 2d_array samples=6
 spec@ext_texture_array@copyteximage 2d_array samples=8
+spec@glsl-1.50@execution@built-in-functions@gs-op-sub-ivec2-ivec2
 spec@glsl-4.30@execution@built-in-functions@cs-op-selection-bool-bvec4-bvec4
