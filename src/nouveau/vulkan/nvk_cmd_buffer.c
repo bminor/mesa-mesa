@@ -529,6 +529,10 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
                        const VkDependencyInfo *dep,
                        bool wait)
 {
+   VkQueueFlags queue_flags = nvk_cmd_buffer_queue_flags(cmd);
+   enum nvkmd_engines engines =
+      nvk_queue_engines_from_queue_flags(queue_flags);
+
    enum nvk_barrier barriers = 0;
 
    /* For asymmetric, we don't know what the access flags will be yet.
@@ -563,6 +567,9 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
       barriers |= nvk_barrier_flushes_waits(bar->srcStageMask,
                                             bar->srcAccessMask);
    }
+
+   if (!(engines & (NVKMD_ENGINE_3D | NVKMD_ENGINE_COMPUTE)))
+      barriers &= ~NVK_BARRIER_FLUSH_SHADER_DATA;
 
    if (!barriers)
       return;
@@ -654,6 +661,20 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
                                              bar->dstAccessMask);
       }
    }
+
+   VkQueueFlags queue_flags = nvk_cmd_buffer_queue_flags(cmd);
+   enum nvkmd_engines engines =
+      nvk_queue_engines_from_queue_flags(queue_flags);
+
+   if (!(engines & (NVKMD_ENGINE_3D | NVKMD_ENGINE_COMPUTE)))
+      barriers &= ~(NVK_BARRIER_INVALIDATE_TEX_DATA |
+                    NVK_BARRIER_INVALIDATE_RASTER_CACHE |
+                    NVK_BARRIER_INVALIDATE_SHADER_DATA |
+                    NVK_BARRIER_INVALIDATE_CONSTANT |
+                    NVK_BARRIER_INVALIDATE_MME_DATA);
+
+   if (!(engines & NVKMD_ENGINE_COMPUTE))
+      barriers &= ~NVK_BARRIER_INVALIDATE_QMD_DATA;
 
    if (!barriers)
       return;
