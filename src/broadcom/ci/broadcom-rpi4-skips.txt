@@ -3,6 +3,8 @@ spec@!opengl 1.2@tex3d-maxsize
 
 # Slow CL tests (> 5 minute to run)
 program@execute@builtin@builtin-float-lgamma_r-1.0.generated
+program@execute@builtin@builtin-float-pow-1.0.generated
+program@execute@builtin@builtin-float-powr-1.0.generated
 program@execute@builtin@builtin-float-sincos-1.0.generated
 
 # Versions / Extensions not supported
