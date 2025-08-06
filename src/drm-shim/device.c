@@ -103,7 +103,7 @@ drm_shim_device_init(void)
     * with EINVAL.
     */
 
-   shim_page_size = sysconf(_SC_PAGE_SIZE);
+   shim_page_size = sysconf(_SC_PAGESIZE);
 
    util_vma_heap_init(&shim_device.mem_heap, shim_page_size,
                       SHIM_MEM_SIZE - shim_page_size);
