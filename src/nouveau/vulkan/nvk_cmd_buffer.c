@@ -525,6 +525,10 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
                        const VkDependencyInfo *dep,
                        bool wait)
 {
+   VkQueueFlags queue_flags = nvk_cmd_buffer_queue_flags(cmd);
+   enum nvkmd_engines engines =
+      nvk_queue_engines_from_queue_flags(queue_flags);
+
    enum nvk_barrier barriers = 0;
 
    for (uint32_t i = 0; i < dep->memoryBarrierCount; i++) {
@@ -548,18 +552,16 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
    if (!barriers)
       return;
 
-   struct nv_push *p = nvk_cmd_buffer_push(cmd, 4);
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, 2);
 
    if (barriers & NVK_BARRIER_FLUSH_SHADER_DATA) {
-      assert(barriers & (NVK_BARRIER_RENDER_WFI | NVK_BARRIER_COMPUTE_WFI));
-      if (barriers & NVK_BARRIER_RENDER_WFI) {
+      /* This is also implicitly a WFI */
+      if (engines & NVKMD_ENGINE_3D) {
          P_IMMD(p, NVA097, INVALIDATE_SHADER_CACHES, {
             .data = DATA_TRUE,
             .flush_data = FLUSH_DATA_TRUE,
          });
-      }
-
-      if (barriers & NVK_BARRIER_COMPUTE_WFI) {
+      } else {
          P_IMMD(p, NVA0C0, INVALIDATE_SHADER_CACHES, {
             .data = DATA_TRUE,
             .flush_data = FLUSH_DATA_TRUE,
