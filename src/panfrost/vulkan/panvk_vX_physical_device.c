@@ -177,6 +177,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .EXT_ycbcr_2plane_444_formats = PAN_ARCH >= 10,
       .EXT_ycbcr_image_arrays = PAN_ARCH >= 10,
       .EXT_inline_uniform_block = true,
+      .ANDROID_external_memory_android_hardware_buffer = has_gralloc,
       .ANDROID_native_buffer = has_gralloc,
       .GOOGLE_decorate_string = true,
       .GOOGLE_hlsl_functionality1 = true,

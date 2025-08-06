@@ -589,7 +589,8 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
       switch (ext->sType) {
       case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: {
          VkMemoryDedicatedRequirements *dedicated = (void *)ext;
-         dedicated->requiresDedicatedAllocation = false;
+         dedicated->requiresDedicatedAllocation =
+            vk_image_is_android_hardware_buffer(&image->vk);
          dedicated->prefersDedicatedAllocation = dedicated->requiresDedicatedAllocation;
          break;
       }

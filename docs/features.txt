@@ -671,7 +671,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_EXT_vertex_input_dynamic_state                     DONE (anv, hk, lvp, nvk, panvk, radv, tu, vn)
   VK_EXT_ycbcr_image_arrays                             DONE (anv, hasvk, hk, lvp, nvk, panvk/v10+, radv, vn)
   VK_EXT_zero_initialize_device_memory                  DONE (nvk, radv)
-  VK_ANDROID_external_memory_android_hardware_buffer    DONE (anv, radv, tu, vn)
+  VK_ANDROID_external_memory_android_hardware_buffer    DONE (anv, panvk, radv, tu, vn)
   VK_ANDROID_native_buffer                              DONE (anv, panvk, radv, tu, v3dv, vn)
   VK_GOOGLE_decorate_string                             DONE (anv, hasvk, hk, lvp, nvk, panvk, radv, tu, vn)
   VK_GOOGLE_hlsl_functionality1                         DONE (anv, hasvk, hk, lvp, nvk, panvk, radv, tu, vn)

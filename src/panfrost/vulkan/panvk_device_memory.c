@@ -7,6 +7,7 @@
 
 #include "vulkan/util/vk_util.h"
 
+#include "panvk_android.h"
 #include "panvk_device.h"
 #include "panvk_device_memory.h"
 #include "panvk_entrypoints.h"
@@ -46,6 +47,11 @@ panvk_AllocateMemory(VkDevice _device,
                      const VkAllocationCallbacks *pAllocator,
                      VkDeviceMemory *pMem)
 {
+   if (panvk_android_is_ahb_memory(pAllocateInfo)) {
+      return panvk_android_allocate_ahb_memory(_device, pAllocateInfo,
+                                               pAllocator, pMem);
+   }
+
    VK_FROM_HANDLE(panvk_device, device, _device);
    struct panvk_instance *instance =
       to_panvk_instance(device->vk.physical->instance);
