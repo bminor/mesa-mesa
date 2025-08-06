@@ -2323,7 +2323,7 @@ emit_load_deref(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    }
    SpvId result;
 
-   if (nir_intrinsic_access(intr) & ACCESS_COHERENT)
+   if (nir_intrinsic_access(intr) & (ACCESS_COHERENT | ACCESS_ATOMIC))
       result = emit_atomic(ctx, SpvOpAtomicLoad, type, ptr, 0, 0);
    else
       result = spirv_builder_emit_load(&ctx->builder, type, ptr, false);
@@ -2365,7 +2365,10 @@ emit_store_deref(struct ntv_context *ctx, nir_intrinsic_instr *intr)
                val = emit_bitcast(ctx, result_type, val);
             SpvId member = spirv_builder_emit_access_chain(&ctx->builder, ptr_type,
                                                            ptr, &idx, 1);
-            spirv_builder_emit_store(&ctx->builder, member, val, false);
+            if (nir_intrinsic_access(intr) & (ACCESS_COHERENT | ACCESS_ATOMIC))
+               spirv_builder_emit_atomic_store(&ctx->builder, member, SpvScopeDevice, 0, val);
+            else
+               spirv_builder_emit_store(&ctx->builder, member, val, false);
          }
       return;
 
@@ -2383,7 +2386,7 @@ emit_store_deref(struct ntv_context *ctx, nir_intrinsic_instr *intr)
       else
          result = emit_bitcast(ctx, type, src);
    }
-   if (nir_intrinsic_access(intr) & ACCESS_COHERENT)
+   if (nir_intrinsic_access(intr) & (ACCESS_COHERENT | ACCESS_ATOMIC))
       spirv_builder_emit_atomic_store(&ctx->builder, ptr, SpvScopeDevice, 0, result);
    else
       spirv_builder_emit_store(&ctx->builder, ptr, result, false);
@@ -2406,10 +2409,17 @@ emit_load_special(struct ntv_context *ctx, nir_intrinsic_instr *intr, SpvId bloc
    SpvId constituents[NIR_MAX_VEC_COMPONENTS];
    /* need to convert array -> vec */
    bool coherent = ctx->sinfo->have_vulkan_memory_model && storage_class == SpvStorageClassWorkgroup;
+   bool atomic = storage_class == SpvStorageClassWorkgroup && nir_intrinsic_access(intr) & ACCESS_ATOMIC;
    for (unsigned i = 0; i < num_components; i++) {
       SpvId member = spirv_builder_emit_access_chain(&ctx->builder, ptr_type,
                                                      block, &offset, 1);
-      constituents[i] = spirv_builder_emit_load(&ctx->builder, uint_type, member, coherent);
+      if (atomic) {
+         constituents[i] = spirv_builder_emit_triop(&ctx->builder, SpvOpAtomicLoad, uint_type, member,
+                                                    emit_uint_const(ctx, 32, SpvScopeWorkgroup), emit_uint_const(ctx, 32, 0));
+
+      } else {
+         constituents[i] = spirv_builder_emit_load(&ctx->builder, uint_type, member, coherent);
+      }
       offset = emit_binop(ctx, SpvOpIAdd, spirv_builder_type_uint(&ctx->builder, 32), offset, emit_uint_const(ctx, 32, 1));
    }
    SpvId result;
@@ -2445,6 +2455,7 @@ emit_store_special(struct ntv_context *ctx, nir_intrinsic_instr *intr, SpvId blo
    if (otype != nir_type_uint)
       offset = bitcast_to_uvec(ctx, offset, nir_src_bit_size(intr->src[1]), 1);
    bool coherent = ctx->sinfo->have_vulkan_memory_model && storage_class == SpvStorageClassWorkgroup;
+   bool atomic = storage_class == SpvStorageClassWorkgroup && nir_intrinsic_access(intr) & ACCESS_ATOMIC;
    /* this is a partial write, so we have to loop and do a per-component write */
    u_foreach_bit(i, wrmask) {
       SpvId mask_offset = emit_binop(ctx, SpvOpIAdd, spirv_builder_type_uint(&ctx->builder, 32), offset, emit_uint_const(ctx, 32, i));
@@ -2455,7 +2466,10 @@ emit_store_special(struct ntv_context *ctx, nir_intrinsic_instr *intr, SpvId blo
          val = emit_bitcast(ctx, get_alu_type(ctx, nir_type_uint, 1, bit_size), val);
       SpvId member = spirv_builder_emit_access_chain(&ctx->builder, ptr_type,
                                                      block, &mask_offset, 1);
-      spirv_builder_emit_store(&ctx->builder, member, val, coherent);
+      if (atomic)
+         spirv_builder_emit_atomic_store(&ctx->builder, member, SpvScopeWorkgroup, 0, val);
+      else
+         spirv_builder_emit_store(&ctx->builder, member, val, coherent);
    }
 }
 
@@ -2550,7 +2564,11 @@ emit_load_global(struct ntv_context *ctx, nir_intrinsic_instr *intr)
                                                    dest_type);
    nir_alu_type atype;
    SpvId ptr = emit_bitcast(ctx, pointer_type, get_src(ctx, &intr->src[0], &atype));
-   SpvId result = spirv_builder_emit_load_aligned(&ctx->builder, dest_type, ptr, intr->def.bit_size / 8, coherent);
+   SpvId result;
+   if (nir_intrinsic_access(intr) & ACCESS_ATOMIC)
+      result = emit_atomic(ctx, SpvOpAtomicLoad, dest_type, ptr, 0, 0);
+   else
+      result = spirv_builder_emit_load_aligned(&ctx->builder, dest_type, ptr, intr->def.bit_size / 8, coherent);
    store_def(ctx, intr->def.index, result, nir_type_uint);
 }
 
@@ -2569,7 +2587,10 @@ emit_store_global(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    if (atype != nir_type_uint)
       param = emit_bitcast(ctx, dest_type, param);
    SpvId ptr = emit_bitcast(ctx, pointer_type, get_src(ctx, &intr->src[1], &atype));
-   spirv_builder_emit_store_aligned(&ctx->builder, ptr, param, bit_size / 8, coherent);
+   if (nir_intrinsic_access(intr) & ACCESS_ATOMIC)
+      spirv_builder_emit_atomic_store(&ctx->builder, ptr, SpvScopeDevice, 0, param);
+   else
+      spirv_builder_emit_store_aligned(&ctx->builder, ptr, param, bit_size / 8, coherent);
 }
 
 static void
@@ -2957,10 +2978,8 @@ emit_image_deref_store(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    SpvId img_var = get_src(ctx, &intr->src[0], &atype);
    nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
    nir_variable *var = nir_deref_instr_get_variable(deref);
-   SpvId img_type = find_image_type(ctx, var);
    const struct glsl_type *type = glsl_without_array(var->type);
    SpvId base_type = get_glsl_basetype(ctx, glsl_get_sampler_result_type(type));
-   SpvId img = spirv_builder_emit_load(&ctx->builder, img_type, img_var, false);
    SpvId coord = get_image_coords(ctx, type, &intr->src[1]);
    SpvId texel = get_src(ctx, &intr->src[3], &atype);
    /* texel type must match image type */
@@ -2972,8 +2991,18 @@ emit_image_deref_store(struct ntv_context *ctx, nir_intrinsic_instr *intr)
                      glsl_get_sampler_dim(type) == GLSL_SAMPLER_DIM_SUBPASS_MS;
    SpvId sample = use_sample ? get_src(ctx, &intr->src[2], &atype) : 0;
    assert(nir_src_bit_size(intr->src[3]) == glsl_base_type_bit_size(glsl_get_sampler_result_type(type)));
-   bool coherent = ctx->sinfo->have_vulkan_memory_model && (nir_intrinsic_access(intr) & ACCESS_COHERENT);
-   spirv_builder_emit_image_write(&ctx->builder, img, coord, texel, 0, sample, coherent);
+
+   uint32_t access = nir_intrinsic_access(intr);
+   if (access & ACCESS_ATOMIC) {
+      sample = sample ? sample : emit_uint_const(ctx, 32, 0);
+      SpvId texel_ptr = spirv_builder_emit_image_texel_pointer(&ctx->builder, base_type, img_var, coord, sample);
+      spirv_builder_emit_atomic_store(&ctx->builder, texel_ptr, SpvScopeDevice, 0, texel);
+   } else {
+      bool coherent = ctx->sinfo->have_vulkan_memory_model && (access & ACCESS_COHERENT);
+      SpvId img_type = find_image_type(ctx, var);
+      SpvId img = spirv_builder_emit_load(&ctx->builder, img_type, img_var, false);
+      spirv_builder_emit_image_write(&ctx->builder, img, coord, texel, 0, sample, coherent);
+   }
 }
 
 static SpvId
@@ -3018,10 +3047,8 @@ emit_image_deref_load(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
    nir_variable *var = nir_deref_instr_get_variable(deref);
    bool mediump = (var->data.precision == GLSL_PRECISION_MEDIUM || var->data.precision == GLSL_PRECISION_LOW);
-   SpvId img_type = find_image_type(ctx, var);
    const struct glsl_type *type = glsl_without_array(var->type);
    SpvId base_type = get_glsl_basetype(ctx, glsl_get_sampler_result_type(type));
-   SpvId img = spirv_builder_emit_load(&ctx->builder, img_type, img_var, false);
    SpvId coord = get_image_coords(ctx, type, &intr->src[1]);
    bool use_sample = glsl_get_sampler_dim(type) == GLSL_SAMPLER_DIM_MS ||
                      glsl_get_sampler_dim(type) == GLSL_SAMPLER_DIM_SUBPASS_MS;
@@ -3029,12 +3056,22 @@ emit_image_deref_load(struct ntv_context *ctx, nir_intrinsic_instr *intr)
    SpvId dest_type = spirv_builder_type_vector(&ctx->builder, base_type,
                                                intr->def.num_components);
 
-   bool coherent = ctx->sinfo->have_vulkan_memory_model && (nir_intrinsic_access(intr) & ACCESS_COHERENT);
-   SpvId result = spirv_builder_emit_image_read(&ctx->builder,
-                                 dest_type,
-                                 img, coord, 0, sample, sparse, coherent);
-   if (sparse)
-      result = extract_sparse_load(ctx, result, dest_type, &intr->def);
+   SpvId result;
+   uint32_t access = nir_intrinsic_access(intr);
+   if (access & ACCESS_ATOMIC) {
+      assert(!sparse);
+      sample = sample ? sample : emit_uint_const(ctx, 32, 0);
+      SpvId texel_ptr = spirv_builder_emit_image_texel_pointer(&ctx->builder, base_type, img_var, coord, sample);
+      result = emit_atomic(ctx, SpvOpAtomicLoad, dest_type, texel_ptr, 0, 0);
+   } else {
+      bool coherent = ctx->sinfo->have_vulkan_memory_model && (access & ACCESS_COHERENT);
+      SpvId img_type = find_image_type(ctx, var);
+      SpvId img = spirv_builder_emit_load(&ctx->builder, img_type, img_var, false);
+      result = spirv_builder_emit_image_read(&ctx->builder, dest_type,
+                                             img, coord, 0, sample, sparse, coherent);
+      if (sparse)
+         result = extract_sparse_load(ctx, result, dest_type, &intr->def);
+   }
 
    if (!sparse && mediump) {
       spirv_builder_emit_decoration(&ctx->builder, result,
