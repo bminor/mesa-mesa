@@ -3141,6 +3141,18 @@ vtn_translate_scope(struct vtn_builder *b, SpvScope scope)
 }
 
 static void
+optimize_barrier(nir_memory_semantics *semantics, nir_variable_mode *modes)
+{
+   nir_memory_semantics vis_avail = NIR_MEMORY_MAKE_AVAILABLE | NIR_MEMORY_MAKE_VISIBLE;
+
+   /* Shared access is always workgroup coherent in NIR. */
+   if (*modes == nir_var_mem_shared)
+      *semantics &= ~vis_avail;
+   if ((*semantics & vis_avail) == *semantics)
+      *modes &= ~nir_var_mem_shared;
+}
+
+static void
 vtn_emit_scoped_control_barrier(struct vtn_builder *b, SpvScope exec_scope,
                                 SpvScope mem_scope,
                                 SpvMemorySemanticsMask semantics)
@@ -3150,12 +3162,17 @@ vtn_emit_scoped_control_barrier(struct vtn_builder *b, SpvScope exec_scope,
    nir_variable_mode modes = vtn_mem_semantics_to_nir_var_modes(b, semantics);
    mesa_scope nir_exec_scope = vtn_translate_scope(b, exec_scope);
 
+   optimize_barrier(&nir_semantics, &modes);
+
    /* Memory semantics is optional for OpControlBarrier. */
    mesa_scope nir_mem_scope;
    if (nir_semantics == 0 || modes == 0)
       nir_mem_scope = SCOPE_NONE;
    else
       nir_mem_scope = vtn_translate_scope(b, mem_scope);
+
+   if (nir_mem_scope <= SCOPE_INVOCATION && nir_exec_scope <= SCOPE_INVOCATION)
+      return;
 
    nir_barrier(&b->nb, .execution_scope=nir_exec_scope, .memory_scope=nir_mem_scope,
                        .memory_semantics=nir_semantics, .memory_modes=modes);
@@ -3168,6 +3185,8 @@ vtn_emit_memory_barrier(struct vtn_builder *b, SpvScope scope,
    nir_variable_mode modes = vtn_mem_semantics_to_nir_var_modes(b, semantics);
    nir_memory_semantics nir_semantics =
       vtn_mem_semantics_to_nir_mem_semantics(b, semantics);
+
+   optimize_barrier(&nir_semantics, &modes);
 
    /* No barrier to add. */
    if (nir_semantics == 0 || modes == 0)

@@ -1058,6 +1058,9 @@ enum gl_access_qualifier
     * This means that the memory scope is the current device. It indicates
     * that reads and writes are coherent with reads and writes from other
     * shader invocations and other workgroups.
+    *
+    * This is not necessary for shared access. It is always workgroup
+    * coherent.
     */
    ACCESS_COHERENT      = (1 << 0),
 
