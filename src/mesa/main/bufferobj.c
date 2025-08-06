@@ -360,7 +360,9 @@ bufferobj_data(struct gl_context *ctx,
          obj->buffer = screen->resource_create(screen, &buffer);
 
          if (obj->buffer && data)
-            pipe_buffer_write(pipe, obj->buffer, 0, size, data);
+            pipe->buffer_subdata(pipe, obj->buffer,
+                                 PIPE_MAP_WRITE | PIPE_MAP_DISCARD_WHOLE_RESOURCE | PIPE_MAP_UNSYNCHRONIZED,
+                                 0, size, data);
       }
 
       if (!obj->buffer) {
