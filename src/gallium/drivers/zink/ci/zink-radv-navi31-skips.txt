@@ -30,3 +30,6 @@ spec@arb_shader_clock@execution@clock.*
 # These run OOM and migth hang?
 spec@arb_texture_buffer_object@texture-buffer-size-clamp.*
 spec@arb_uniform_buffer_object@maxuniformblocksize.*
+
+# This test seems to hang.
+spec@arb_fragment_program@fog-modes

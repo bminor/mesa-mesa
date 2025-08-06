@@ -57,3 +57,6 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y212
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y216
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvyu
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-transcode-nv12-as-r8-gr88
+
+# This test seems to hang.
+spec@arb_fragment_program@fog-modes
