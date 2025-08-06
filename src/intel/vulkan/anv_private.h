@@ -1285,7 +1285,7 @@ struct anv_shader {
 
    void *code;
 
-   struct anv_state kernel;
+   struct anv_shader_alloc kernel;
 
    const struct brw_stage_prog_data *prog_data;
 
@@ -2540,7 +2540,6 @@ struct anv_device {
     struct anv_state_pool                       general_state_pool;
     struct anv_state_pool                       aux_tt_pool;
     struct anv_state_pool                       dynamic_state_pool;
-    struct anv_state_pool                       instruction_state_pool;
     struct anv_state_pool                       binding_table_pool;
     struct anv_state_pool                       scratch_surface_state_pool;
     struct anv_state_pool                       internal_surface_state_pool;
@@ -5220,7 +5219,9 @@ struct anv_shader_internal {
 
    mesa_shader_stage stage;
 
-   struct anv_state kernel;
+   void *code;
+
+   struct anv_shader_alloc kernel;
    uint32_t kernel_size;
 
    const struct brw_stage_prog_data *prog_data;

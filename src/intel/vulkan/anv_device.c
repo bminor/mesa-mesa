@@ -112,6 +112,32 @@ get_bo_from_pool(struct intel_batch_decode_bo *ret,
    return false;
 }
 
+/* Shader heap: find the backing BO for a GPU VA */
+static bool
+get_bo_from_shader_heap(struct intel_batch_decode_bo *ret,
+                        const struct anv_device *device,
+                        uint64_t address)
+{
+   unsigned i;
+   BITSET_FOREACH_SET(i, device->shader_heap.allocated_bos, ANV_SHADER_HEAP_MAX_BOS) {
+      struct anv_bo *bo = device->shader_heap.bos[i].bo;
+
+      /* Match the 48b-addressing convention used elsewhere */
+      uint64_t base = intel_48b_address(bo->offset);
+      uint64_t size = bo->size;
+
+      if (address >= base && address < base + size) {
+         *ret = (struct intel_batch_decode_bo) {
+            .addr = base,
+            .size = size,
+            .map  = bo->map,
+         };
+         return true;
+      }
+   }
+   return false;
+}
+
 /* Finding a buffer for batch decoding */
 static struct intel_batch_decode_bo
 decode_get_bo(void *v_batch, bool ppgtt, uint64_t address)
@@ -123,7 +149,7 @@ decode_get_bo(void *v_batch, bool ppgtt, uint64_t address)
 
    if (get_bo_from_pool(&ret_bo, &device->dynamic_state_pool.block_pool, address))
       return ret_bo;
-   if (get_bo_from_pool(&ret_bo, &device->instruction_state_pool.block_pool, address))
+   if (get_bo_from_shader_heap(&ret_bo, device, address))
       return ret_bo;
    if (get_bo_from_pool(&ret_bo, &device->binding_table_pool.block_pool, address))
       return ret_bo;
@@ -551,13 +577,9 @@ VkResult anv_CreateDevice(
    if (result != VK_SUCCESS)
       goto fail_dynamic_state_pool;
 
-   result = anv_state_pool_init(&device->instruction_state_pool, device,
-                                &(struct anv_state_pool_params) {
-                                   .name         = "instruction pool",
-                                   .base_address = device->physical->va.instruction_state_pool.addr,
-                                   .block_size   = 16384,
-                                   .max_size     = device->physical->va.instruction_state_pool.size,
-                                });
+   result = anv_shader_heap_init(&device->shader_heap, device,
+                                 device->physical->va.instruction_state_pool,
+                                 21 /* 2MiB */, 27 /* 64MiB */);
    if (result != VK_SUCCESS)
       goto fail_custom_border_color_pool;
 
@@ -573,7 +595,7 @@ VkResult anv_CreateDevice(
                                       .max_size     = device->physical->va.scratch_surface_state_pool.size,
                                    });
       if (result != VK_SUCCESS)
-         goto fail_instruction_state_pool;
+         goto fail_shader_vma_heap;
 
       result = anv_state_pool_init(&device->internal_surface_state_pool, device,
                                    &(struct anv_state_pool_params) {
@@ -1094,8 +1116,8 @@ VkResult anv_CreateDevice(
  fail_scratch_surface_state_pool:
    if (device->info->verx10 >= 125)
       anv_state_pool_finish(&device->scratch_surface_state_pool);
- fail_instruction_state_pool:
-   anv_state_pool_finish(&device->instruction_state_pool);
+ fail_shader_vma_heap:
+      anv_shader_heap_finish(&device->shader_heap);
  fail_custom_border_color_pool:
    anv_state_reserved_array_pool_finish(&device->custom_border_colors);
  fail_dynamic_state_pool:
@@ -1251,7 +1273,8 @@ void anv_DestroyDevice(
    anv_state_pool_finish(&device->internal_surface_state_pool);
    if (device->physical->indirect_descriptors)
       anv_state_pool_finish(&device->bindless_surface_state_pool);
-   anv_state_pool_finish(&device->instruction_state_pool);
+
+   anv_shader_heap_finish(&device->shader_heap);
    anv_state_pool_finish(&device->dynamic_state_pool);
    anv_state_pool_finish(&device->general_state_pool);
 

@@ -23,7 +23,7 @@ anv_shader_destroy(struct vk_device *vk_device,
    for (uint32_t i = 0; i < shader->bind_map.embedded_sampler_count; i++)
       anv_embedded_sampler_unref(device, shader->embedded_samplers[i]);
 
-   anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
+   anv_shader_heap_free(&device->shader_heap, shader->kernel);
    anv_reloc_list_finish(&shader->relocs);
    vk_shader_free(vk_device, pAllocator, vk_shader);
 }
@@ -629,10 +629,9 @@ anv_shader_create(struct anv_device *device,
    memcpy(shader->code, shader_data->code,
           shader_data->prog_data.base.program_size);
 
-   shader->kernel =
-      anv_state_pool_alloc(&device->instruction_state_pool,
-                           shader_data->prog_data.base.program_size, 64);
-   ANV_DMR_SP_ALLOC(&device->vk.base, &device->instruction_state_pool, shader->kernel);
+   shader->kernel = anv_shader_heap_alloc(&device->shader_heap,
+                                          shader_data->prog_data.base.program_size,
+                                          64, false, 0);
    if (shader->kernel.alloc_size == 0) {
       result = vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
       goto error_embedded_samplers;
@@ -688,8 +687,9 @@ anv_shader_create(struct anv_device *device,
    if (result != VK_SUCCESS)
       goto error_state;
 
-   memcpy(shader->kernel.map, shader_data->code,
-          shader_data->prog_data.base.program_size);
+   anv_shader_heap_upload(&device->shader_heap,
+                          shader->kernel, shader_data->code,
+                          shader_data->prog_data.base.program_size);
 
    if (mesa_shader_stage_is_rt(shader->vk.stage)) {
       const struct brw_bs_prog_data *bs_prog_data =
@@ -717,8 +717,7 @@ anv_shader_create(struct anv_device *device,
    return VK_SUCCESS;
 
  error_state:
-   ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
-   anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
+   anv_shader_heap_free(&device->shader_heap, shader->kernel);
  error_embedded_samplers:
    for (uint32_t s = 0; s < shader->bind_map.embedded_sampler_count; s++)
       anv_embedded_sampler_unref(device, shader->embedded_samplers[s]);

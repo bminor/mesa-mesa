@@ -352,6 +352,27 @@ out:
    return result;
 }
 
+static VkResult
+pin_shader_heap(struct anv_device *device,
+                struct anv_execbuf *execbuf,
+                struct anv_shader_heap *heap)
+{
+   VkResult result = VK_SUCCESS;
+
+   simple_mtx_lock(&heap->mutex);
+
+   unsigned i;
+   BITSET_FOREACH_SET(i, heap->allocated_bos, ANV_SHADER_HEAP_MAX_BOS) {
+      result = anv_execbuf_add_bo(device, execbuf, heap->bos[i].bo, NULL, 0);
+      if (result != VK_SUCCESS)
+         goto out;
+   }
+
+out:
+   simple_mtx_unlock(&heap->mutex);
+   return result;
+}
+
 static uint32_t
 calc_batch_start_offset(struct anv_bo *bo)
 {
@@ -414,7 +435,7 @@ setup_execbuf_for_cmd_buffers(struct anv_execbuf *execbuf,
    if (result != VK_SUCCESS)
       return result;
 
-   result = pin_state_pool(device, execbuf, &device->instruction_state_pool);
+   result = pin_shader_heap(device, execbuf, &device->shader_heap);
    if (result != VK_SUCCESS)
       return result;
 
