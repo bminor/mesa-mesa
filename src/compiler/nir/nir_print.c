@@ -1997,6 +1997,10 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
    if (instr->is_sparse) {
       fprintf(fp, ", sparse");
    }
+
+   if (instr->skip_helpers) {
+      fprintf(fp, ", skip_helpers");
+   }
 }
 
 static void
