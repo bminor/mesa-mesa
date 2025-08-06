@@ -48,8 +48,8 @@ instr_never_needs_helpers(nir_instr *instr)
 struct helper_state {
    BITSET_WORD *needs_helpers;
    nir_instr_worklist *worklist;
-   nir_instr_worklist *tex_instrs;
-   bool no_add_divergence;
+   nir_instr_worklist *load_instrs;
+   nir_opt_load_skip_helpers_options *options;
 };
 
 static inline bool
@@ -72,7 +72,7 @@ set_src_needs_helpers(nir_src *src, void *_data)
 }
 
 bool
-nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
+nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options *options)
 {
    /* This is only useful on fragment shaders */
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);
@@ -84,13 +84,13 @@ nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
       .needs_helpers = rzalloc_array(NULL, BITSET_WORD,
                                      BITSET_WORDS(impl->ssa_alloc)),
       .worklist = nir_instr_worklist_create(),
-      .tex_instrs = nir_instr_worklist_create(),
-      .no_add_divergence = no_add_divergence,
+      .load_instrs = nir_instr_worklist_create(),
+      .options = options,
    };
 
    /* First, add subgroup ops and anything that might cause side effects */
    nir_foreach_block(block, impl) {
-      /* Control-flow is hard.  Given that this is only for texture ops, we
+      /* Control-flow is hard.  Given that this is only for load ops, we
        * can afford to be conservative and assume that any control-flow is
        * potentially going to affect helpers.
        */
@@ -106,7 +106,7 @@ nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
             /* Stash texture instructions so we don't have to walk the whole
              * shader again just to set the skip_helpers bit.
              */
-            nir_instr_worklist_push_tail(hs.tex_instrs, instr);
+            nir_instr_worklist_push_tail(hs.load_instrs, instr);
 
             for (uint32_t i = 0; i < tex->num_srcs; i++) {
                switch (tex->src[i].src_type) {
@@ -178,35 +178,35 @@ nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
 
    bool progress = false;
 
-   /* We only need to run the worklist if we have textures */
-   if (!nir_instr_worklist_is_empty(hs.tex_instrs)) {
+   /* We only need to run the worklist if we have loads */
+   if (!nir_instr_worklist_is_empty(hs.load_instrs)) {
       while (!nir_instr_worklist_is_empty(hs.worklist)) {
          nir_instr *instr = nir_instr_worklist_pop_head(hs.worklist);
          assert(nir_foreach_def(instr, def_needs_helpers, &hs));
          nir_foreach_src(instr, set_src_needs_helpers, &hs);
       }
 
-      while (!nir_instr_worklist_is_empty(hs.tex_instrs)) {
-         nir_instr *instr = nir_instr_worklist_pop_head(hs.tex_instrs);
+      while (!nir_instr_worklist_is_empty(hs.load_instrs)) {
+         nir_instr *instr = nir_instr_worklist_pop_head(hs.load_instrs);
          nir_tex_instr *tex = nir_instr_as_tex(instr);
 
-         /* If a texture uniform, we don't want to set skip_helpers because
+         /* If a load is uniform, we don't want to set skip_helpers because
           * then it might not be uniform if the helpers don't fetch.  Also,
-          * for uniform texture results, we shouldn't be burning any more
+          * for uniform load results, we shouldn't be burning any more
           * memory by executing the helper pixels unless the hardware is
           * really dumb.
           *
-          * NOTE: Any texture instruction that doesn't have skip_helpers set
+          * NOTE: Any load instruction that doesn't have skip_helpers set
           * then relies on correct parameters in those helper invocations.
           * If we're depending on those helpers to keep things uniform, then
           * leaving skip_helpers=false adds dependencies.  However, in order
-          * for the texture result to be uniform, all parameters must be
+          * for the load result to be uniform, all parameters must be
           * uniform so they either have to come from other uniform things or
           * subgroup ops which uniformize values.  Therefore, as long as we
-          * always leave skip_helpers=false on all uniform texture ops, we'll
-          * have valid helper data in this texture op.
+          * always leave skip_helpers=false on all uniform load ops, we'll
+          * have valid helper data in this load op.
           */
-         if (!tex->def.divergent && hs.no_add_divergence)
+         if (!tex->def.divergent && hs.options->no_add_divergence)
             continue;
 
          if (!def_needs_helpers(&tex->def, &hs) && !tex->skip_helpers) {
@@ -216,7 +216,7 @@ nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence)
       }
    }
 
-   nir_instr_worklist_destroy(hs.tex_instrs);
+   nir_instr_worklist_destroy(hs.load_instrs);
    nir_instr_worklist_destroy(hs.worklist);
    ralloc_free(hs.needs_helpers);
 

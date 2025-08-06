@@ -1032,8 +1032,14 @@ nak_postprocess_nir(nir_shader *nir,
 
    OPT(nir, nir_convert_to_lcssa, true, true);
    nir_divergence_analysis(nir);
-   if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      OPT(nir, nir_opt_tex_skip_helpers, true);
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      nir_opt_load_skip_helpers_options skip_helper_options = {
+         .no_add_divergence = true,
+      };
+      OPT(nir, nir_opt_load_skip_helpers, &skip_helper_options);
+   }
+
    OPT(nir, nak_nir_lower_scan_reduce, nak);
 
    nak_optimize_nir(nir, nak);

@@ -2462,7 +2462,7 @@ typedef struct nir_tex_instr {
 
    /** True if helper invocation loads can be skipped
     *
-    * This is set by nir_opt_tex_skip_helpers().
+    * This is set by nir_opt_load_skip_helpers().
     */
    unsigned skip_helpers : 1;
 
@@ -6379,7 +6379,11 @@ bool nir_opt_ray_queries(nir_shader *shader);
 
 bool nir_opt_ray_query_ranges(nir_shader *shader);
 
-bool nir_opt_tex_skip_helpers(nir_shader *shader, bool no_add_divergence);
+typedef struct nir_opt_load_skip_helpers_options {
+   bool no_add_divergence : 1;
+} nir_opt_load_skip_helpers_options;
+
+bool nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options *options);
 
 void nir_sweep(nir_shader *shader);
 
