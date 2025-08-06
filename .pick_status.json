@@ -6814,7 +6814,7 @@
         "description": "panvk: fix EXT_texture_compression_astc_support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ad6e1afe7475d6a99d1bb3ecf25356bd6eaeccc3",
         "notes": null
