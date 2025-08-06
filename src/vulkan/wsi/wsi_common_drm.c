@@ -174,62 +174,6 @@ out:
    return result;
 }
 
-static VkResult
-prepare_signal_dma_buf_from_semaphore(struct wsi_swapchain *chain,
-                                      const struct wsi_image *image)
-{
-   VkResult result;
-
-   if (!(chain->wsi->semaphore_export_handle_types &
-         VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT))
-      return VK_ERROR_FEATURE_NOT_PRESENT;
-
-   int sync_file_fd = -1;
-   result = wsi_dma_buf_export_sync_file(image->dma_buf_fd, &sync_file_fd);
-   if (result != VK_SUCCESS)
-      return result;
-
-   result = wsi_dma_buf_import_sync_file(image->dma_buf_fd, sync_file_fd);
-   close(sync_file_fd);
-   if (result != VK_SUCCESS)
-      return result;
-
-   /* If we got here, all our checks pass.  Create the actual semaphore */
-   const VkExportSemaphoreCreateInfo export_info = {
-      .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
-      .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
-   };
-   const VkSemaphoreCreateInfo semaphore_info = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-      .pNext = &export_info,
-   };
-   result = chain->wsi->CreateSemaphore(chain->device, &semaphore_info,
-                                        &chain->alloc,
-                                        &chain->dma_buf_semaphore);
-   if (result != VK_SUCCESS)
-      return result;
-
-   return VK_SUCCESS;
-}
-
-VkResult
-wsi_prepare_signal_dma_buf_from_semaphore(struct wsi_swapchain *chain,
-                                          const struct wsi_image *image)
-{
-   VkResult result;
-
-   /* We cache result - 1 in the swapchain */
-   if (unlikely(chain->signal_dma_buf_from_semaphore == 0)) {
-      result = prepare_signal_dma_buf_from_semaphore(chain, image);
-      assert(result <= 0);
-      chain->signal_dma_buf_from_semaphore = (int)result - 1;
-   } else {
-      result = (VkResult)(chain->signal_dma_buf_from_semaphore + 1);
-   }
-
-   return result;
-}
-
 /**
  * Imports the dma_buf_semaphore's syncobj into the dmabuf so that display
  * implicit sync waits on it.
@@ -399,6 +343,46 @@ wsi_destroy_image_explicit_sync_drm(const struct wsi_swapchain *chain,
          image->explicit_sync[i].semaphore = VK_NULL_HANDLE;
       }
    }
+}
+
+/**
+ * Sets up the semaphore for WSI-internal implicit sync handling if the WSI
+ * backend is not doing explicit sync.
+ */
+VkResult
+wsi_drm_init_swapchain_implicit_sync(struct wsi_swapchain *chain)
+{
+   /* We don't need implicit sync if explicit sync is available through the
+    * window system protocol.
+    */
+   if (chain->image_info.explicit_sync)
+      return VK_SUCCESS;
+
+   /* If semaphores don't support sync FD or if the kernel doesn't support
+    * sync file import/export, then WSI will fall back to requesting BO-based
+    * implicit sync from the driver.
+    */
+   if (!(chain->wsi->semaphore_export_handle_types &
+         VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT))
+      return VK_SUCCESS;
+
+   VkResult result =
+      wsi_drm_check_dma_buf_sync_file_import_export(chain->wsi, chain->device);
+   if (result == VK_ERROR_FEATURE_NOT_PRESENT)
+      return VK_SUCCESS;
+
+   /* If we got here, all our checks pass.  Create the actual semaphore */
+   const VkExportSemaphoreCreateInfo export_info = {
+      .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
+      .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+   };
+   const VkSemaphoreCreateInfo semaphore_info = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      .pNext = &export_info,
+   };
+   return chain->wsi->CreateSemaphore(chain->device, &semaphore_info,
+                                      &chain->alloc,
+                                      &chain->dma_buf_semaphore);
 }
 
 static VkResult

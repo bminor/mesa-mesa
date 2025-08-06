@@ -500,6 +500,12 @@ wsi_swapchain_init(const struct wsi_device *wsi,
    if (result != VK_SUCCESS)
       goto fail;
 
+#ifdef HAVE_LIBDRM
+   result = wsi_drm_init_swapchain_implicit_sync(chain);
+   if (result != VK_SUCCESS)
+      goto fail;
+#endif
+
    return VK_SUCCESS;
 
 fail:
@@ -1485,7 +1491,6 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 
       VkFence fence = swapchain->fences[image_index];
 
-      bool has_signal_dma_buf = false;
       bool explicit_sync = swapchain->image_info.explicit_sync;
       if (explicit_sync) {
          /* We will signal this acquire value ourselves when GPU work is done. */
@@ -1500,20 +1505,11 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          submit_info.signalSemaphoreCount = 1;
          submit_info.pSignalSemaphores = &image->explicit_sync[WSI_ES_ACQUIRE].semaphore;
          __vk_append_struct(&submit_info, &timeline_submit_info);
-      } else {
 #ifdef HAVE_LIBDRM
-         result = wsi_prepare_signal_dma_buf_from_semaphore(swapchain, image);
-         if (result == VK_SUCCESS) {
-            assert(submit_info.signalSemaphoreCount == 0);
-            submit_info.signalSemaphoreCount = 1;
-            submit_info.pSignalSemaphores = &swapchain->dma_buf_semaphore;
-            has_signal_dma_buf = true;
-         } else if (result == VK_ERROR_FEATURE_NOT_PRESENT) {
-            result = VK_SUCCESS;
-            has_signal_dma_buf = false;
-         } else {
-            goto fail_present;
-         }
+      } else if (swapchain->dma_buf_semaphore) {
+         assert(submit_info.signalSemaphoreCount == 0);
+         submit_info.signalSemaphoreCount = 1;
+         submit_info.pSignalSemaphores = &swapchain->dma_buf_semaphore;
 #endif
       }
 
@@ -1532,13 +1528,11 @@ wsi_common_queue_present(const struct wsi_device *wsi,
        */
       if (!explicit_sync) {
 #ifdef HAVE_LIBDRM
-         if (has_signal_dma_buf) {
+         if (swapchain->dma_buf_semaphore) {
             result = wsi_signal_dma_buf_from_semaphore(swapchain, image);
             if (result != VK_SUCCESS)
                goto fail_present;
          }
-#else
-         assert(!has_signal_dma_buf);
 #endif
       }
 

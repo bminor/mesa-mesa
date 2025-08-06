@@ -409,6 +409,9 @@ wsi_drm_wait_for_explicit_sync_release(struct wsi_swapchain *chain,
                                        uint64_t rel_timeout_ns,
                                        uint32_t *image_index);
 
+VkResult
+wsi_drm_init_swapchain_implicit_sync(struct wsi_swapchain *chain);
+
 #endif
 
 struct wsi_interface {
