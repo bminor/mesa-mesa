@@ -200,10 +200,9 @@ void st_init_limits(struct pipe_screen *screen,
    c->PointSizeFixed = screen->caps.point_size_fixed != PIPE_POINT_SIZE_LOWER_ALWAYS;
 
    for (sh = 0; sh < MESA_SHADER_STAGES; ++sh) {
-      const mesa_shader_stage stage = tgsi_processor_to_shader_stage(sh);
-      struct gl_program_constants *pc = &c->Program[stage];
+      struct gl_program_constants *pc = &c->Program[sh];
 
-      if (!screen->nir_options[stage] ||
+      if (!screen->nir_options[sh] ||
           (sh == MESA_SHADER_COMPUTE && !screen->caps.compute))
          continue;
 

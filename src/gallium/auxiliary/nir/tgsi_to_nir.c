@@ -2251,8 +2251,8 @@ ttn_compile_init(const void *tgsi_tokens,
    if (!options)
       options = screen->nir_options[scan.processor];
 
-   c->build = nir_builder_init_simple_shader(tgsi_processor_to_shader_stage(scan.processor),
-                                             options, "TTN%d", (int)p_atomic_inc_return(&ttn_sh_counter));
+   c->build = nir_builder_init_simple_shader(scan.processor, options, "TTN%d",
+                                             (int)p_atomic_inc_return(&ttn_sh_counter));
 
    s = c->build.shader;
    _mesa_blake3_compute(&scan, sizeof(scan), s->info.source_blake3);
@@ -2311,7 +2311,7 @@ ttn_compile_init(const void *tgsi_tokens,
             s->info.vs.window_space_position = value;
          break;
       case TGSI_PROPERTY_NEXT_SHADER:
-         s->info.next_stage = tgsi_processor_to_shader_stage(value);
+         s->info.next_stage = value;
          break;
       case TGSI_PROPERTY_VS_BLIT_SGPRS_AMD:
          if (s->info.stage == MESA_SHADER_VERTEX)

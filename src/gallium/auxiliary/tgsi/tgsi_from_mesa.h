@@ -58,12 +58,6 @@ tgsi_get_sysval_semantic(unsigned sysval);
 enum tgsi_interpolate_mode
 tgsi_get_interp_mode(enum glsl_interp_mode mode, bool color);
 
-static inline mesa_shader_stage
-tgsi_processor_to_shader_stage(unsigned processor)
-{
-   return (mesa_shader_stage)processor;
-}
-
 #ifdef __cplusplus
 }
 #endif
