@@ -284,7 +284,7 @@ exit_mutex:
 bool
 os_get_total_physical_memory(uint64_t *size)
 {
-#if DETECT_OS_LINUX || DETECT_OS_CYGWIN || DETECT_OS_SOLARIS || DETECT_OS_HURD || DETECT_OS_MANAGARM
+#if HAVE_SYSCONF
    const long phys_pages = sysconf(_SC_PHYS_PAGES);
    const long page_size = sysconf(_SC_PAGESIZE);
 
@@ -412,7 +412,7 @@ os_get_available_system_memory(uint64_t *size)
 bool
 os_get_page_size(uint64_t *size)
 {
-#if DETECT_OS_POSIX_LITE && !DETECT_OS_APPLE && !DETECT_OS_HAIKU
+#if HAVE_SYSCONF
    const long page_size = sysconf(_SC_PAGESIZE);
 
    if (page_size <= 0)

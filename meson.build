@@ -1414,6 +1414,7 @@ functions_to_detect = {
   'qsort_s': '',
   'posix_fallocate': '',
   'secure_getenv': '',
+  'sysconf': '#include <unistd.h>',
 }
 
 foreach f, prefix: functions_to_detect
