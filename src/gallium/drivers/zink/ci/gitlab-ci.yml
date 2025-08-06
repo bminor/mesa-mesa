@@ -288,7 +288,7 @@ zink-radv-navi31-valve:
   extends:
     - .radv-zink-test-valve
     - .navi31-test-valve
-    - .zink-radv-valve-manual-rules
+    - .zink-radv-valve-rules
   timeout: 15m
   variables:
     GPU_VERSION: zink-radv-navi31
