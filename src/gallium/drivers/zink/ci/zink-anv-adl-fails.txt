@@ -658,6 +658,9 @@ KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_2d
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_cube_map_array_depth_component16,Fail
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_cube_map_depth_component16,Fail
 
+# glcts: ../src/intel/compiler/brw_eu_emit.c:64: brw_set_dest: Assertion `dest.subnr == 0' failed.
+KHR-GLES31.core.texture_stencil8.multisample,Crash
+
 # EGL
 wayland-dEQP-EGL.functional.resize.surface_size.grow,Fail
 wayland-dEQP-EGL.functional.resize.surface_size.shrink,Fail

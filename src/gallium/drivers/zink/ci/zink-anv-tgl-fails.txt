@@ -576,6 +576,10 @@ spec@arb_viewport_array@display-list,Fail
 glx@glx-multi-window-single-context,Fail
 spec@arb_timer_query@timestamp-get,Fail
 
+# uprev Piglit in Mesa
+spec@arb_shader_storage_buffer_object@max-ssbo-size@fs,Crash
+spec@arb_shader_storage_buffer_object@max-ssbo-size@vs,Crash
+
 # glcts: ../../src/intel/vulkan/anv_sparse.c:970: vk_bind_to_anv_vm_bind: Assertion `vk_bind->memoryOffset + vk_bind->size <= anv_bind.bo->size' failed.
 # Also related to https://gitlab.freedesktop.org/mesa/mesa/-/issues/11073
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor,Crash
@@ -584,10 +588,6 @@ KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor,Crash
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment,Fail
 
 KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup,Fail
-
-# uprev Piglit in Mesa
-spec@arb_shader_storage_buffer_object@max-ssbo-size@fs,Crash
-spec@arb_shader_storage_buffer_object@max-ssbo-size@vs,Crash
 
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rg8i,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment_texture_2d_multisample_array_rg16i,Fail

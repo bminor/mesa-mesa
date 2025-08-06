@@ -76,11 +76,17 @@ KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_multisample_*
 spec@amd_pinned_memory@offset=0
 spec@amd_pinned_memory@map-buffer offset=0
 
+spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-fs-getuniformdv
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-gs-getuniformdv
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-vs-getuniformdv
+spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-wrong-type-setter
 
 # Fails in the pre-merge job and passes in the nightly
 KHR-GL46.shader_viewport_layer_array.ShaderViewportIndexTestCase
+
+# CTS bug, depends on the caselists
+# https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5941
+KHR-GL46.direct_state_access.vertex_arrays_vertex_buffers_errors
 
 # Found an i915 error state at /sys/devices/pci0000:00/0000:00:02.0/drm/card0/error size=27622.
 # Saved to the job artifacts at /first.i915_error_state

@@ -49,6 +49,10 @@ spec@arb_tessellation_shader@execution@variable-indexing@tcs-patch-vec4-index-wr
 # Fails in the pre-merge job and passes in the nightly
 KHR-GL46.shader_viewport_layer_array.ShaderViewportIndexTestCase
 
+# glcts: ../src/intel/compiler/brw_opt_combine_constants.cpp:1238: void deallocate_slots(const intel_device_info*, register_allocation*, unsigned int, unsigned int, unsigned int, unsigned int):
+# Assertion `!"No such register found."' failed.
+KHR-GL46.gpu_shader_fp64.builtin.inverse_dmat4
+
 # Discovered after decreasing the fraction
 spec@arb_timer_query@timestamp-get
 
