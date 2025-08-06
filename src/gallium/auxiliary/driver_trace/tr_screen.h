@@ -37,14 +37,6 @@
 extern "C" {
 #endif
 
-
-/**
- * It often happens that new data is written directly to the user buffers
- * without mapping/unmapping. This flag marks user buffers, so that their
- * contents can be dumped before being used by the pipe context.
- */
-#define TRACE_FLAG_USER_BUFFER  (1 << 31)
-
 static inline const char *
 tr_util_mesa_shader_stage_name(mesa_shader_stage stage)
 {
