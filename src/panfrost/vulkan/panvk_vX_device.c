@@ -385,9 +385,9 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    const struct drm_panthor_csif_info *csif_info =
       panthor_kmod_get_csif_props(device->kmod.dev);
 
-   assert(csif_info->scoreboard_slot_count < UINT8_MAX);
+   assert(csif_info->scoreboard_slot_count <= 16);
    device->csf.sb.count = csif_info->scoreboard_slot_count;
-   device->csf.sb.all_mask = BITFIELD_MASK(device->csf.sb.count);
+   device->csf.sb.all_mask = (uint16_t)BITFIELD_MASK(csif_info->scoreboard_slot_count);
 
    assert(device->csf.sb.count > PANVK_SB_ITER_START);
    device->csf.sb.iter_count = device->csf.sb.count - PANVK_SB_ITER_START;
