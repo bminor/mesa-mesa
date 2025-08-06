@@ -45,6 +45,7 @@ extern "C" {
 /**
  * Shader stages.
  *
+ * For vertex/tessallation/geometry/fragment shaders:
  * The order must match how shaders are ordered in the pipeline.
  * The GLSL linker assumes that if i<j, then the j-th shader is
  * executed later than the i-th shader.
@@ -57,11 +58,10 @@ typedef enum mesa_shader_stage {
    MESA_SHADER_GEOMETRY = 3,
    MESA_SHADER_FRAGMENT = 4,
    MESA_SHADER_COMPUTE = 5,
+   MESA_SHADER_TASK = 6,
+   MESA_SHADER_MESH = 7,
 
    /* Vulkan-only stages. */
-   MESA_SHADER_TASK         = 6,
-   MESA_SHADER_MESH         = 7,
-
    MESA_SHADER_RAYGEN       = 8,
    MESA_SHADER_ANY_HIT      = 9,
    MESA_SHADER_CLOSEST_HIT  = 10,
