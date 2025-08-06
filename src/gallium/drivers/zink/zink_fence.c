@@ -129,10 +129,17 @@ tc_fence_finish(struct zink_context *ctx, struct zink_tc_fence *mfence, uint64_t
 static bool
 fence_wait(struct zink_screen *screen, struct zink_fence *fence, uint64_t timeout_ns)
 {
+   struct zink_batch_state *bs = zink_batch_state(fence);
    if (screen->device_lost)
       return true;
    if (p_atomic_read(&fence->completed))
       return true;
+
+   if (screen->threaded_submit) {
+      int64_t abs_timeout = os_time_get_absolute_timeout(timeout_ns);
+      if (!util_queue_fence_wait_timeout(&bs->flush_completed, abs_timeout))
+         return false;
+   }
 
    assert(fence->batch_id);
    assert(fence->submitted);
@@ -141,7 +148,7 @@ fence_wait(struct zink_screen *screen, struct zink_fence *fence, uint64_t timeou
 
    if (success) {
       p_atomic_set(&fence->completed, true);
-      zink_batch_state(fence)->usage.usage = 0;
+      bs->usage.usage = 0;
       zink_screen_update_last_finished(screen, fence->batch_id);
    }
    return success;

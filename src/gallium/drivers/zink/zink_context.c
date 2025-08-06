@@ -4078,7 +4078,7 @@ zink_flush(struct pipe_context *pctx,
       if (deferred && !(flags & PIPE_FLUSH_FENCE_FD) && pfence)
          deferred_fence = true;
       else
-         flush_batch(ctx, true);
+         flush_batch(ctx, false);
    }
 
    if (pfence) {
