@@ -24,6 +24,7 @@
 #include "util/pan_ir.h"
 #include "util/perf/u_trace.h"
 
+#include "util/simple_mtx.h"
 #include "util/u_printf.h"
 #include "util/vma.h"
 
@@ -98,6 +99,10 @@ struct panvk_device {
 #ifdef HAVE_PERFETTO
       struct panvk_utrace_perfetto utp;
 #endif
+      /* Timestamp + indirect data storage */
+      struct util_vma_heap copy_buf_heap;
+      struct panvk_priv_bo *copy_buf_heap_bo;
+      simple_mtx_t copy_buf_heap_lock;
    } utrace;
 
    struct panvk_device_draw_context* draw_ctx;

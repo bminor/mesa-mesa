@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 Google LLC
+ * Copyright 2025 Arm Ltd.
  * SPDX-License-Identifier: MIT
  */
 
@@ -10,7 +11,6 @@
 #include "genxml/cs_builder.h"
 #include "panvk_cmd_buffer.h"
 #include "panvk_device.h"
-#include "panvk_priv_bo.h"
 
 static void
 cmd_write_timestamp(const struct panvk_device *dev, struct cs_builder *b,
@@ -134,8 +134,8 @@ panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
    struct panvk_cmd_buffer *cmdbuf = cs_info->cmdbuf;
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct cs_builder *b = get_builder(cmdbuf, ut);
-   const struct panvk_priv_bo *bo = timestamps;
-   const uint64_t addr = bo->addr.dev + offset_B;
+   const struct panvk_utrace_buf *buf = timestamps;
+   const uint64_t addr = buf->dev + offset_B;
 
    cmd_write_timestamp(dev, b, addr, *cs_info->ts_async_op);
 }
@@ -149,8 +149,8 @@ panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
     * panvk_cmd_buffer so we can pass additional parameters. */
    struct panvk_utrace_cs_info *cs_info = cs;
    struct cs_builder *b = get_builder(cs_info->cmdbuf, ut);
-   const struct panvk_priv_bo *dst_bo = dst_buffer;
-   const uint64_t dst_addr = dst_bo->addr.dev + dst_offset_B;
+   const struct panvk_utrace_buf *dst_buf = dst_buffer;
+   const uint64_t dst_addr = dst_buf->dev + dst_offset_B;
    const uint64_t src_addr = src_offset_B;
 
    /* src_offset_B is absolute, src_buffer is used to indicate register capture */
@@ -165,6 +165,26 @@ panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
                     cs_info->capture_data_wait_for_ts);
 }
 
+static uint32_t
+get_utrace_clone_mem_size()
+{
+   const char *v = getenv("PANVK_UTRACE_CLONE_MEM_SIZE");
+   if (v) {
+      uint32_t size = 0;
+      sscanf(v, "%u", &size);
+      if (size > 0) {
+         return size;
+      }
+      sscanf(v, "0x%x", &size);
+      if (size > 0) {
+         mesa_logi("selected utrace mem size = 0x%x (%u) hex", size, size);
+         return size;
+      }
+   }
+   /* 10 MB default */
+   return 0xa00000;
+}
+
 void
 panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
 {
@@ -174,12 +194,35 @@ panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
                         panvk_utrace_record_ts, panvk_utrace_read_ts,
                         panvk_utrace_capture_data, panvk_utrace_get_data,
                         panvk_utrace_delete_flush_data);
+
+   VkResult result = panvk_priv_bo_create(dev, get_utrace_clone_mem_size(), 0,
+                                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
+                                          &dev->utrace.copy_buf_heap_bo);
+   assert(result == VK_SUCCESS);
+   if (result != VK_SUCCESS)
+      return;
+
+   simple_mtx_init(&dev->utrace.copy_buf_heap_lock, mtx_plain);
+
+   simple_mtx_lock(&dev->utrace.copy_buf_heap_lock);
+   util_vma_heap_init(&dev->utrace.copy_buf_heap,
+                      dev->utrace.copy_buf_heap_bo->addr.dev,
+                      dev->utrace.copy_buf_heap_bo->bo->size);
+   simple_mtx_unlock(&dev->utrace.copy_buf_heap_lock);
 }
 
 void
 panvk_per_arch(utrace_context_fini)(struct panvk_device *dev)
 {
    u_trace_context_fini(&dev->utrace.utctx);
+
+   simple_mtx_lock(&dev->utrace.copy_buf_heap_lock);
+   util_vma_heap_finish(&dev->utrace.copy_buf_heap);
+   simple_mtx_unlock(&dev->utrace.copy_buf_heap_lock);
+
+   panvk_priv_bo_unref(dev->utrace.copy_buf_heap_bo);
+
+   simple_mtx_destroy(&dev->utrace.copy_buf_heap_lock);
 }
 
 void
@@ -189,10 +232,10 @@ panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
                                    uint64_t to_offset, uint64_t size_B)
 {
    struct cs_builder *b = cmdstream;
-   const struct panvk_priv_bo *src_bo = ts_from;
-   const struct panvk_priv_bo *dst_bo = ts_to;
-   const uint64_t src_addr = src_bo->addr.dev + from_offset;
-   const uint64_t dst_addr = dst_bo->addr.dev + to_offset;
+   const struct panvk_utrace_buf *src_buf = ts_from;
+   const struct panvk_utrace_buf *dst_buf = ts_to;
+   const uint64_t src_addr = src_buf->dev + from_offset;
+   const uint64_t dst_addr = dst_buf->dev + to_offset;
 
    cmd_copy_data(b, dst_addr, src_addr, size_B, false);
 }

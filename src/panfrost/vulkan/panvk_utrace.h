@@ -23,6 +23,12 @@ struct panvk_utrace_flush_data {
    struct panvk_pool clone_pool;
 };
 
+struct panvk_utrace_buf {
+   uint64_t dev;
+   uint64_t size;
+   void *host;
+};
+
 void *panvk_utrace_create_buffer(struct u_trace_context *utctx,
                                  uint64_t size_B);
 
