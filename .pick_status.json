@@ -3144,7 +3144,7 @@
         "description": "rusticl: use pipe_sampler_view_release",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a245ed462ac9729b2c3d568ed0c9e0cd3eb70273",
         "notes": null

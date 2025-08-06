@@ -660,7 +660,7 @@ fn has_required_cbs(context: &pipe_context) -> bool {
         & has_required_feature!(context, launch_grid)
         & has_required_feature!(context, memory_barrier)
         & has_required_feature!(context, resource_copy_region)
-        // implicitly used through pipe_sampler_view_reference
+        // implicitly used through pipe_sampler_view_release
         & has_required_feature!(context, sampler_view_destroy)
         & has_required_feature!(context, set_constant_buffer)
         & has_required_feature!(context, set_global_binding)
