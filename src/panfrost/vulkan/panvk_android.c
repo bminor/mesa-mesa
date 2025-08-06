@@ -40,13 +40,100 @@ panvk_android_is_gralloc_image(const VkImageCreateInfo *pCreateInfo)
    return false;
 }
 
+struct panvk_android_deferred_image {
+   struct panvk_image base;
+
+   VkImageCreateInfo *create_info;
+   bool initialized;
+};
+
 static VkResult
 panvk_android_create_deferred_image(VkDevice device,
                                     const VkImageCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator,
                                     VkImage *pImage)
 {
-   return VK_ERROR_FEATURE_NOT_PRESENT;
+   VK_FROM_HANDLE(panvk_device, dev, device);
+
+   /* collect all dynamic array infos */
+   uint32_t queue_family_count = 0;
+   uint32_t view_format_count = 0;
+
+   if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT)
+      queue_family_count = pCreateInfo->queueFamilyIndexCount;
+
+   const VkImageFormatListCreateInfo *raw_list =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_FORMAT_LIST_CREATE_INFO);
+   if (raw_list)
+      view_format_count = raw_list->viewFormatCount;
+
+   /* Extend below when panvk supports more extensions that interact with ANB or
+    * AHB. e.g. VK_EXT_image_compression_control
+    */
+   VK_MULTIALLOC(ma);
+   VK_MULTIALLOC_DECL(&ma, struct panvk_android_deferred_image, deferred, 1);
+   VK_MULTIALLOC_DECL(&ma, VkImageCreateInfo, create_info, 1);
+   VK_MULTIALLOC_DECL(&ma, VkImageFormatListCreateInfo, list_info, 1);
+   VK_MULTIALLOC_DECL(&ma, VkImageStencilUsageCreateInfo, stencil_info, 1);
+   VK_MULTIALLOC_DECL(&ma, uint32_t, queue_families, queue_family_count);
+   VK_MULTIALLOC_DECL(&ma, uint32_t, view_formats, view_format_count);
+
+   if (!vk_multialloc_zalloc2(&ma, &dev->vk.alloc, pAllocator,
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT))
+      return panvk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   vk_image_init(&dev->vk, &deferred->base.vk, pCreateInfo);
+
+   /* prepare the deferred VkImageCreateInfo chain */
+   *create_info = *pCreateInfo;
+   create_info->pNext = NULL;
+   create_info->tiling = deferred->base.vk.tiling =
+      VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+   if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
+      typed_memcpy(queue_families, pCreateInfo->pQueueFamilyIndices,
+                   pCreateInfo->queueFamilyIndexCount);
+      create_info->pQueueFamilyIndices = queue_families;
+   }
+
+   /* Per spec section 12.3. Images
+    *
+    * - If tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags contains
+    *   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, then the pNext chain must include a
+    *   VkImageFormatListCreateInfo structure with non-zero viewFormatCount.
+    *
+    * ANB and aliased ANB always chain proper format list for mutable swapchain
+    * image support, but AHB is allowed to mutate without an explicit format
+    * list due to legacy spec issue. So we chain a view format of the create
+    * format itself to satisfy VK_EXT_image_drm_format_modifier VUs.
+    */
+   if (view_format_count ||
+       deferred->base.vk.create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) {
+      if (view_format_count) {
+         typed_memcpy(view_formats, raw_list->pViewFormats, view_format_count);
+      } else {
+         view_format_count = 1;
+         view_formats = &create_info->format;
+      }
+      *list_info = (VkImageFormatListCreateInfo){
+         .sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
+         .viewFormatCount = view_format_count,
+         .pViewFormats = view_formats,
+      };
+      __vk_append_struct(create_info, list_info);
+   }
+
+   if (deferred->base.vk.stencil_usage) {
+      *stencil_info = (VkImageStencilUsageCreateInfo){
+         .sType = VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO,
+         .stencilUsage = deferred->base.vk.stencil_usage,
+      };
+      __vk_append_struct(create_info, stencil_info);
+   }
+
+   deferred->create_info = create_info;
+   *pImage = panvk_image_to_handle(&deferred->base);
+
+   return VK_SUCCESS;
 }
 
 static inline uint32_t
