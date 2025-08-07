@@ -130,7 +130,7 @@ util_fast_log2(float x)
 static inline int
 util_ifloor(float f)
 {
-#if defined(USE_X86_ASM) && defined(__GNUC__) && defined(__i386__)
+#if DETECT_ARCH_X86 && DETECT_CC_GCC
    /*
     * IEEE floor for computers that round to nearest or even.
     * 'f' must be between -4194304 and 4194303.

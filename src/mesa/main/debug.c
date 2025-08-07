@@ -134,7 +134,7 @@ void _mesa_print_info( struct gl_context *ctx )
     */
    _mesa_debug(NULL, "Mesa GL_EXTENSIONS = %s\n", ctx->Extensions.String);
 
-#if DETECT_ARCH_X86 || DETECT_ARCH_X86_64
+#if DETECT_ARCH_X86
    _mesa_debug(NULL, "Mesa x86-optimized: YES\n");
 #else
    _mesa_debug(NULL, "Mesa x86-optimized: NO\n");
