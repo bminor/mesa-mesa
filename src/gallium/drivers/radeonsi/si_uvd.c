@@ -111,8 +111,6 @@ static struct pb_buffer_lean *si_uvd_set_dtb(struct ruvd_msg *msg, struct vl_vid
    enum ruvd_surface_type type =
       (sscreen->info.gfx_level >= GFX9) ? RUVD_SURFACE_TYPE_GFX9 : RUVD_SURFACE_TYPE_LEGACY;
 
-   msg->body.decode.dt_field_mode = buf->base.interlaced;
-
    si_uvd_set_dt_surfaces(msg, &luma->surface, (chroma) ? &chroma->surface : NULL, type);
 
    return luma->buffer.buf;

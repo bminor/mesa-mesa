@@ -127,16 +127,11 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
          return PIPE_VIDEO_VPP_BLEND_MODE_NONE;
       case PIPE_VIDEO_CAP_PREFERRED_FORMAT:
          return PIPE_FORMAT_NV12;
-      case PIPE_VIDEO_CAP_PREFERS_INTERLACED:
-         return false;
       case PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE:
          return true;
       case PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME:
          /* true: VPP flush function will be called within vaEndPicture() */
          /* false: VPP flush function will be skipped */
-         return false;
-      case PIPE_VIDEO_CAP_SUPPORTS_INTERLACED:
-         /* for VPE we prefer non-interlaced buffer */
          return false;
       case PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_INPUT:
          if (debug_get_bool_option("AMDGPU_SIVPE_SUPPORT_HDR_INPUT", false))
@@ -200,10 +195,6 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             return PIPE_FORMAT_P010;
          else
             return PIPE_FORMAT_NV12;
-      case PIPE_VIDEO_CAP_PREFERS_INTERLACED:
-         return false;
-      case PIPE_VIDEO_CAP_SUPPORTS_INTERLACED:
-         return false;
       case PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE:
          return true;
       case PIPE_VIDEO_CAP_STACKED_FRAMES:
@@ -509,16 +500,6 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
       else
          return PIPE_FORMAT_NV12;
 
-   case PIPE_VIDEO_CAP_PREFERS_INTERLACED:
-      return false;
-   case PIPE_VIDEO_CAP_SUPPORTS_INTERLACED: {
-      enum pipe_video_format format = u_reduce_video_profile(profile);
-
-      if (format >= PIPE_VIDEO_FORMAT_HEVC)
-         return false;
-
-      return true;
-   }
    case PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE:
       return true;
    case PIPE_VIDEO_CAP_MAX_LEVEL:
