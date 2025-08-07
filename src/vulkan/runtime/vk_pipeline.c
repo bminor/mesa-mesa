@@ -45,6 +45,22 @@
 
 #include "util/mesa-sha1.h"
 
+struct vk_pipeline_binary {
+   struct vk_object_base base;
+
+   blake3_hash key;
+
+   size_t size;
+
+   /* The first byte is boolean of whether the binary is precomp or not,
+    * following by the serialized data.
+    */
+   uint8_t data[];
+};
+
+VK_DEFINE_NONDISP_HANDLE_CASTS(vk_pipeline_binary, base, VkPipelineBinaryKHR,
+                               VK_OBJECT_TYPE_PIPELINE_BINARY_KHR);
+
 bool
 vk_pipeline_shader_stage_is_null(const VkPipelineShaderStageCreateInfo *info)
 {
@@ -533,11 +549,10 @@ vk_shader_init_cache_obj(struct vk_device *device, struct vk_shader *shader,
 }
 
 static struct vk_pipeline_cache_object *
-vk_pipeline_shader_deserialize(struct vk_pipeline_cache *cache,
+vk_pipeline_shader_deserialize(struct vk_device *device,
                                const void *key_data, size_t key_size,
                                struct blob_reader *blob)
 {
-   struct vk_device *device = cache->base.device;
    const struct vk_device_shader_ops *ops = device->shader_ops;
 
    /* TODO: Do we really want to always use the latest version? */
@@ -556,6 +571,15 @@ vk_pipeline_shader_deserialize(struct vk_pipeline_cache *cache,
    return &shader->pipeline.cache_obj;
 }
 
+static struct vk_pipeline_cache_object *
+vk_pipeline_shader_deserialize_cb(struct vk_pipeline_cache *cache,
+                                  const void *key_data, size_t key_size,
+                                  struct blob_reader *blob)
+{
+   return vk_pipeline_shader_deserialize(cache->base.device,
+                                         key_data, key_size, blob);
+}
+
 static void
 vk_pipeline_shader_destroy(struct vk_device *device,
                            struct vk_pipeline_cache_object *object)
@@ -568,7 +592,7 @@ vk_pipeline_shader_destroy(struct vk_device *device,
 
 static const struct vk_pipeline_cache_object_ops pipeline_shader_cache_ops = {
    .serialize = vk_pipeline_shader_serialize,
-   .deserialize = vk_pipeline_shader_deserialize,
+   .deserialize = vk_pipeline_shader_deserialize_cb,
    .destroy = vk_pipeline_shader_destroy,
 };
 
@@ -761,12 +785,10 @@ vk_pipeline_precomp_shader_serialize(struct vk_pipeline_cache_object *obj,
 }
 
 static struct vk_pipeline_cache_object *
-vk_pipeline_precomp_shader_deserialize(struct vk_pipeline_cache *cache,
+vk_pipeline_precomp_shader_deserialize(struct vk_device *device,
                                        const void *key_data, size_t key_size,
                                        struct blob_reader *blob)
 {
-   struct vk_device *device = cache->base.device;
-
    struct vk_pipeline_precomp_shader *shader =
       vk_zalloc(&device->alloc, sizeof(*shader), 8,
                 VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
@@ -809,6 +831,15 @@ fail_shader:
    return NULL;
 }
 
+static struct vk_pipeline_cache_object *
+vk_pipeline_precomp_shader_deserialize_cb(struct vk_pipeline_cache *cache,
+                                          const void *key_data, size_t key_size,
+                                          struct blob_reader *blob)
+{
+   return vk_pipeline_precomp_shader_deserialize(cache->base.device,
+                                                 key_data, key_size, blob);
+}
+
 static void
 vk_pipeline_precomp_shader_destroy(struct vk_device *device,
                                    struct vk_pipeline_cache_object *obj)
@@ -839,7 +870,7 @@ vk_pipeline_precomp_shader_get_nir(const struct vk_pipeline_precomp_shader *shad
 
 static const struct vk_pipeline_cache_object_ops pipeline_precomp_shader_cache_ops = {
    .serialize = vk_pipeline_precomp_shader_serialize,
-   .deserialize = vk_pipeline_precomp_shader_deserialize,
+   .deserialize = vk_pipeline_precomp_shader_deserialize_cb,
    .destroy = vk_pipeline_precomp_shader_destroy,
 };
 
@@ -938,6 +969,63 @@ vk_pipeline_precompile_shader(struct vk_device *device,
       cache_obj = vk_pipeline_cache_add_object(cache, cache_obj);
       stage->precomp = vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
    }
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+vk_pipeline_load_precomp_from_binary(struct vk_device *device,
+                                     struct vk_pipeline_stage *stage,
+                                     struct vk_pipeline_binary *binary)
+{
+   struct vk_pipeline_cache_object *cache_obj;
+   if (device->mem_cache) {
+      cache_obj = vk_pipeline_cache_create_and_insert_object(
+         device->mem_cache,
+         binary->key, sizeof(binary->key),
+         binary->data, binary->size,
+         &pipeline_precomp_shader_cache_ops);
+   } else {
+      struct blob_reader reader;
+      blob_reader_init(&reader, binary->data, binary->size);
+      cache_obj = vk_pipeline_precomp_shader_deserialize(
+         device, binary->key, sizeof(binary->key), &reader);
+   }
+
+   if (cache_obj == NULL)
+      return vk_error(device, VK_ERROR_UNKNOWN);
+
+   stage->precomp = vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
+   memcpy(stage->precomp_key, stage->precomp->cache_key,
+          sizeof(stage->precomp_key));
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+vk_pipeline_load_shader_from_binary(struct vk_device *device,
+                                    struct vk_pipeline_stage *stage,
+                                    struct vk_pipeline_binary *binary)
+{
+   struct vk_pipeline_cache_object *cache_obj;
+   if (device->mem_cache) {
+      cache_obj = vk_pipeline_cache_create_and_insert_object(
+         device->mem_cache,
+         binary->key, sizeof(binary->key),
+         binary->data, binary->size,
+         &pipeline_shader_cache_ops);
+   } else {
+      struct blob_reader reader;
+      blob_reader_init(&reader, binary->data, binary->size);
+      cache_obj = vk_pipeline_shader_deserialize(
+         device, binary->key, sizeof(binary->key), &reader);
+   }
+   if (cache_obj == NULL)
+      return vk_error(device, VK_ERROR_UNKNOWN);
+
+   stage->shader = vk_shader_from_cache_obj(cache_obj);
+   memcpy(stage->shader_key, stage->shader->pipeline.cache_key,
+          sizeof(stage->shader_key));
 
    return VK_SUCCESS;
 }
@@ -1169,6 +1257,7 @@ struct vk_graphics_pipeline_compile_info {
 
    struct vk_graphics_pipeline_state *state;
 
+   bool retain_precomp;
    bool optimize;
 
    uint32_t part_count;
@@ -1195,6 +1284,14 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
 
    const VkPipelineCreateFlags2KHR pipeline_flags =
       vk_graphics_pipeline_create_flags(pCreateInfo);
+
+   info->retain_precomp =
+      (pipeline_flags &
+       VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
+
+   const VkPipelineBinaryInfoKHR *bin_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_BINARY_INFO_KHR);
 
    const VkPipelineLibraryCreateInfoKHR *libs_info =
       vk_find_struct_const(pCreateInfo->pNext,
@@ -1284,6 +1381,17 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
          .stage = stage,
       };
       all_stages |= stage_info->stage;
+
+      /*
+       *  "If a VkPipelineBinaryInfoKHR structure with a binaryCount greater
+       *   than 0 is included in the pNext chain of any Vk*PipelineCreateInfo
+       *   structure when creating a pipeline, implementations must use the
+       *   data in pPipelineBinaries instead of recalculating it. Any shader
+       *   module identifiers or shader modules declared in
+       *   VkPipelineShaderStageCreateInfo instances are ignored."
+       */
+      if (bin_info != NULL && bin_info->binaryCount > 0)
+         continue;
 
       vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
                                             pCreateInfo->pNext,
@@ -1864,6 +1972,10 @@ vk_create_graphics_pipeline(struct vk_device *device,
    const VkPipelineCreateFlags2KHR pipeline_flags =
       vk_graphics_pipeline_create_flags(pCreateInfo);
 
+   const VkPipelineBinaryInfoKHR *bin_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_BINARY_INFO_KHR);
+
    const VkPipelineCreationFeedbackCreateInfo *feedback_info =
       vk_find_struct_const(pCreateInfo->pNext,
                            PIPELINE_CREATION_FEEDBACK_CREATE_INFO);
@@ -1900,48 +2012,93 @@ vk_create_graphics_pipeline(struct vk_device *device,
       vk_dynamic_graphics_state_fill(&pipeline->linked.dynamic, &state_tmp);
    }
 
-   for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-      const VkPipelineShaderStageCreateInfo *stage_info =
-         &pCreateInfo->pStages[i];
+   if (bin_info != NULL && bin_info->binaryCount > 0) {
+      const uint32_t expected_binary_count = compile_info.retain_precomp ?
+         (2 * pCreateInfo->stageCount) : pCreateInfo->stageCount;
 
-      const int64_t stage_start = os_time_get_nano();
+      if (bin_info->binaryCount < expected_binary_count) {
+         result = vk_error(device, VK_ERROR_UNKNOWN);
+      } else {
+         uint32_t binary_index = 0;
+         for (uint32_t i = 0; i < compile_info.stage_count; i++) {
+            if (compile_info.stages[i].imported)
+               continue;
 
-      assert(util_bitcount(stage_info->stage) == 1);
+            const int64_t stage_start = os_time_get_nano();
 
-      /* We don't need to load anything for imported stages, precomp should be
-       * included if
-       * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
-       * provided and shader should obviously be there.
-       */
-      mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+            mesa_shader_stage stage = compile_info.stages[i].stage;
 
-      if (compile_info.stages[compile_info.stage_to_index[stage]].imported)
-         continue;
+            if (compile_info.retain_precomp) {
+               VK_FROM_HANDLE(vk_pipeline_binary, binary,
+                              bin_info->pPipelineBinaries[binary_index++]);
 
-      stage_feedbacks[stage].flags |=
-         VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+               result = vk_pipeline_load_precomp_from_binary(
+                  device, &compile_info.stages[i], binary);
+               if (result != VK_SUCCESS)
+                  goto fail_stages;
+            }
 
-      stage_feedbacks[stage].flags |= VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+            VK_FROM_HANDLE(vk_pipeline_binary, binary,
+                           bin_info->pPipelineBinaries[binary_index++]);
+            result = vk_pipeline_load_shader_from_binary(
+               device, &compile_info.stages[i], binary);
+            if (result != VK_SUCCESS)
+               goto fail_stages;
 
-      struct vk_pipeline_stage *pipeline_stage =
-         &compile_info.stages[compile_info.stage_to_index[stage]];
-      result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
-                                             pCreateInfo->pNext,
-                                             stage_info, pipeline_stage);
+
+            stage_feedbacks[stage].flags |=
+               VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+
+            stage_feedbacks[stage].flags |= VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+
+            const int64_t stage_end = os_time_get_nano();
+            stage_feedbacks[stage].duration += stage_end - stage_start;
+         }
+      }
+   } else {
+      for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+         const VkPipelineShaderStageCreateInfo *stage_info =
+            &pCreateInfo->pStages[i];
+
+         const int64_t stage_start = os_time_get_nano();
+
+         assert(util_bitcount(stage_info->stage) == 1);
+
+         mesa_shader_stage stage = vk_to_mesa_shader_stage(stage_info->stage);
+
+         /* We don't need to load anything for imported stages, precomp should be
+          * included if
+          * VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT was
+          * provided and shader should obviously be there.
+          */
+         if (compile_info.stages[compile_info.stage_to_index[stage]].imported)
+            continue;
+
+         stage_feedbacks[stage].flags |=
+            VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+
+         stage_feedbacks[stage].flags |= VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT;
+
+         struct vk_pipeline_stage *pipeline_stage =
+            &compile_info.stages[compile_info.stage_to_index[stage]];
+         result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
+                                                pCreateInfo->pNext,
+                                                stage_info, pipeline_stage);
+         if (result != VK_SUCCESS)
+            goto fail_stages;
+
+         const int64_t stage_end = os_time_get_nano();
+         stage_feedbacks[stage].duration += stage_end - stage_start;
+      }
+
+      result = vk_graphics_pipeline_compile_shaders(device, cache,
+                                                    pipeline_flags,
+                                                    pipeline_layout,
+                                                    &compile_info,
+                                                    stage_feedbacks);
       if (result != VK_SUCCESS)
          goto fail_stages;
-
-      const int64_t stage_end = os_time_get_nano();
-      stage_feedbacks[stage].duration += stage_end - stage_start;
    }
-
-   result = vk_graphics_pipeline_compile_shaders(device, cache,
-                                                 pipeline_flags,
-                                                 pipeline_layout,
-                                                 &compile_info,
-                                                 stage_feedbacks);
-   if (result != VK_SUCCESS)
-      goto fail_stages;
 
    /* Keep a reference on the set layouts */
    pipeline->set_layout_count = compile_info.set_layout_count;
@@ -1962,8 +2119,7 @@ vk_create_graphics_pipeline(struct vk_device *device,
    /* Throw away precompiled shaders unless the client explicitly asks us to
     * keep them.
     */
-   if (!(pipeline_flags &
-         VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)) {
+   if (!compile_info.retain_precomp) {
       for (uint32_t i = 0; i < compile_info.stage_count; i++) {
          if (pipeline->stages[i].precomp != NULL) {
             vk_pipeline_precomp_shader_unref(device, pipeline->stages[i].precomp);
@@ -2133,45 +2289,62 @@ vk_get_compute_pipeline_compile_info(struct vk_pipeline_stage *stage,
 
    *stage = (struct vk_pipeline_stage) { .stage = MESA_SHADER_COMPUTE, };
 
-   const VkPushConstantRange *push_range =
-      get_push_range_for_stage(pipeline_layout, MESA_SHADER_COMPUTE);
+   const VkPipelineBinaryInfoKHR *bin_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_BINARY_INFO_KHR);
 
-   const VkPipelineCreateFlags2KHR pipeline_flags =
-      vk_compute_pipeline_create_flags(pCreateInfo);
+   /*
+    *  "If a VkPipelineBinaryInfoKHR structure with a binaryCount greater
+    *   than 0 is included in the pNext chain of any Vk*PipelineCreateInfo
+    *   structure when creating a pipeline, implementations must use the
+    *   data in pPipelineBinaries instead of recalculating it. Any shader
+    *   module identifiers or shader modules declared in
+    *   VkPipelineShaderStageCreateInfo instances are ignored."
+    *
+    * There is no point in computing a precomp/shader hash at this point,
+    * since we don't have any information.
+    */
+   if (bin_info == NULL || bin_info->binaryCount == 0) {
+      const VkPushConstantRange *push_range =
+         get_push_range_for_stage(pipeline_layout, MESA_SHADER_COMPUTE);
 
-   const VkShaderCreateFlagsEXT shader_flags =
-      vk_pipeline_to_shader_flags(pipeline_flags, MESA_SHADER_COMPUTE);
+      const VkPipelineCreateFlags2KHR pipeline_flags =
+         vk_compute_pipeline_create_flags(pCreateInfo);
 
-   vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags, pCreateInfo->pNext,
-                                         &pCreateInfo->stage, stage);
+      const VkShaderCreateFlagsEXT shader_flags =
+         vk_pipeline_to_shader_flags(pipeline_flags, MESA_SHADER_COMPUTE);
 
-   struct mesa_blake3 blake3_ctx;
-   _mesa_blake3_init(&blake3_ctx);
+      vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags, pCreateInfo->pNext,
+                                            &pCreateInfo->stage, stage);
 
-   _mesa_blake3_update(&blake3_ctx, &stage->stage, sizeof(stage->stage));
+      struct mesa_blake3 blake3_ctx;
+      _mesa_blake3_init(&blake3_ctx);
 
-   _mesa_blake3_update(&blake3_ctx, stage->precomp_key,
-                     sizeof(stage->precomp_key));
+      _mesa_blake3_update(&blake3_ctx, &stage->stage, sizeof(stage->stage));
 
-   _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
+      _mesa_blake3_update(&blake3_ctx, stage->precomp_key,
+                          sizeof(stage->precomp_key));
 
-   blake3_hash features_blake3;
-   ops->hash_state(device->physical, NULL /* state */,
-                   &device->enabled_features, VK_SHADER_STAGE_COMPUTE_BIT,
-                   features_blake3);
-   _mesa_blake3_update(&blake3_ctx, features_blake3, sizeof(features_blake3));
+      _mesa_blake3_update(&blake3_ctx, &shader_flags, sizeof(shader_flags));
 
-   for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
-      if (pipeline_layout->set_layouts[i] != NULL) {
-         _mesa_blake3_update(&blake3_ctx,
-                             pipeline_layout->set_layouts[i]->blake3,
-                             sizeof(pipeline_layout->set_layouts[i]->blake3));
+      blake3_hash features_blake3;
+      ops->hash_state(device->physical, NULL /* state */,
+                      &device->enabled_features, VK_SHADER_STAGE_COMPUTE_BIT,
+                      features_blake3);
+      _mesa_blake3_update(&blake3_ctx, features_blake3, sizeof(features_blake3));
+
+      for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
+         if (pipeline_layout->set_layouts[i] != NULL) {
+            _mesa_blake3_update(&blake3_ctx,
+                                pipeline_layout->set_layouts[i]->blake3,
+                                sizeof(pipeline_layout->set_layouts[i]->blake3));
+         }
       }
-   }
-   if (push_range != NULL)
-      _mesa_blake3_update(&blake3_ctx, push_range, sizeof(*push_range));
+      if (push_range != NULL)
+         _mesa_blake3_update(&blake3_ctx, push_range, sizeof(*push_range));
 
-   _mesa_blake3_final(&blake3_ctx, stage->shader_key);
+      _mesa_blake3_final(&blake3_ctx, stage->shader_key);
+   }
 }
 
 static VkResult
@@ -2338,6 +2511,10 @@ vk_create_compute_pipeline(struct vk_device *device,
    const VkPipelineCreateFlags2KHR pipeline_flags =
       vk_compute_pipeline_create_flags(pCreateInfo);
 
+   const VkPipelineBinaryInfoKHR *bin_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_BINARY_INFO_KHR);
+
    const VkPipelineCreationFeedbackCreateInfo *feedback_info =
       vk_find_struct_const(pCreateInfo->pNext,
                            PIPELINE_CREATION_FEEDBACK_CREATE_INFO);
@@ -2353,19 +2530,28 @@ vk_create_compute_pipeline(struct vk_device *device,
 
    pipeline->base.stages = VK_SHADER_STAGE_COMPUTE_BIT;
 
-   result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
-                                          pCreateInfo->pNext,
-                                          &pCreateInfo->stage,
-                                          &stage);
-   if (result != VK_SUCCESS)
-      goto fail_pipeline;
-
    bool cache_hit;
-   result = vk_pipeline_compile_compute_stage(device, cache, pipeline,
-                                              pipeline_layout, &stage,
-                                              &cache_hit);
-   if (result != VK_SUCCESS)
-      goto fail_pipeline;
+   if (bin_info != NULL && bin_info->binaryCount > 0) {
+      VK_FROM_HANDLE(vk_pipeline_binary, binary,
+                     bin_info->pPipelineBinaries[0]);
+
+      result = vk_pipeline_load_shader_from_binary(device, &stage, binary);
+      if (result != VK_SUCCESS)
+         goto fail_pipeline;
+   } else {
+      result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
+                                             pCreateInfo->pNext,
+                                             &pCreateInfo->stage,
+                                             &stage);
+      if (result != VK_SUCCESS)
+         goto fail_pipeline;
+
+      result = vk_pipeline_compile_compute_stage(device, cache, pipeline,
+                                                 pipeline_layout, &stage,
+                                                 &cache_hit);
+      if (result != VK_SUCCESS)
+         goto fail_pipeline;
+   }
 
    pipeline->stage = vk_pipeline_stage_clone(&stage);
 
@@ -2468,6 +2654,7 @@ vk_cmd_unbind_pipelines_for_stages(struct vk_command_buffer *cmd_buffer,
 
 struct vk_rt_stage {
    bool linked : 1;
+   bool imported : 1;
    struct vk_shader *shader;
 };
 
@@ -2633,6 +2820,7 @@ vk_pipeline_hash_rt_shader(struct vk_device *device,
 static void
 vk_pipeline_rehash_rt_linked_shaders(struct vk_device *device,
                                      VkPipelineCreateFlags2KHR pipeline_flags,
+                                     const VkPipelineBinaryInfoKHR *bin_info,
                                      struct vk_pipeline_layout *pipeline_layout,
                                      struct vk_pipeline_stage *stages,
                                      uint32_t stage_count,
@@ -2650,31 +2838,35 @@ vk_pipeline_rehash_rt_linked_shaders(struct vk_device *device,
       if (!(mesa_to_vk_shader_stage(stages[i].stage) & linked_stages))
          continue;
 
-      struct mesa_blake3 blake3_ctx;
-      _mesa_blake3_init(&blake3_ctx);
+      stages[i].linked = true;
 
-      assert(mesa_shader_stage_is_rt(stages[i].stage));
-      _mesa_blake3_update(&blake3_ctx, &stages[i].stage,
-                          sizeof(stages[i].stage));
+      if (bin_info == NULL || bin_info->binaryCount == 0) {
+         struct mesa_blake3 blake3_ctx;
+         _mesa_blake3_init(&blake3_ctx);
 
-      const VkPushConstantRange *push_range =
-         get_push_range_for_stage(pipeline_layout, stages[i].stage);
+         assert(mesa_shader_stage_is_rt(stages[i].stage));
+         _mesa_blake3_update(&blake3_ctx, &stages[i].stage,
+                             sizeof(stages[i].stage));
 
-      VkShaderCreateFlagsEXT shader_flags =
-         vk_pipeline_to_shader_flags(pipeline_flags, stages[i].stage);
+         const VkPushConstantRange *push_range =
+            get_push_range_for_stage(pipeline_layout, stages[i].stage);
 
-      hash_rt_parameters(&blake3_ctx, shader_flags, pipeline_flags,
-                         push_range, pipeline_layout);
+         VkShaderCreateFlagsEXT shader_flags =
+            vk_pipeline_to_shader_flags(pipeline_flags, stages[i].stage);
 
-      /* Tie the shader to all the other shaders we're linking with */
-      for (uint32_t j = 0; j < stage_count; j++) {
-         if (mesa_to_vk_shader_stage(stages[j].stage) & linked_stages) {
-            _mesa_blake3_update(&blake3_ctx, stages[j].precomp_key,
-                                sizeof(stages[j].precomp_key));
+         hash_rt_parameters(&blake3_ctx, shader_flags, pipeline_flags,
+                            push_range, pipeline_layout);
+
+         /* Tie the shader to all the other shaders we're linking with */
+         for (uint32_t j = 0; j < stage_count; j++) {
+            if (mesa_to_vk_shader_stage(stages[j].stage) & linked_stages) {
+               _mesa_blake3_update(&blake3_ctx, stages[j].precomp_key,
+                                   sizeof(stages[j].precomp_key));
+            }
          }
-      }
 
-      _mesa_blake3_final(&blake3_ctx, stages[i].shader_key);
+         _mesa_blake3_final(&blake3_ctx, stages[i].shader_key);
+      }
    }
 }
 
@@ -2722,6 +2914,7 @@ vk_pipeline_stage_from_rt_stage(struct vk_rt_stage *stage)
       .stage = stage->shader->stage,
       .shader = vk_shader_ref(stage->shader),
       .linked = stage->linked,
+      .imported = true,
       /* precomp & precomp_key left empty on purpose */
    };
    assert(sizeof(ret.shader_key) ==
@@ -2745,6 +2938,7 @@ vk_rt_shader_group_from_compile_info(struct vk_rt_group_compile_info *group_info
       assert(group_info->stages[i].shader != NULL);
 
       group.stages[i] = (struct vk_rt_stage) {
+         .imported = true,
          .linked = group_info->stages[i].linked,
          .shader = vk_shader_ref(group_info->stages[i].shader),
       };
@@ -2798,6 +2992,10 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
    const VkPipelineCreateFlags2KHR pipeline_flags =
       vk_rt_pipeline_create_flags(pCreateInfo);
 
+   const VkPipelineBinaryInfoKHR *bin_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_BINARY_INFO_KHR);
+
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage_info =
          &pCreateInfo->pStages[i];
@@ -2806,12 +3004,14 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
          .stage = vk_to_mesa_shader_stage(stage_info->stage),
       };
 
-      vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
-                                            pCreateInfo->pNext, stage_info,
-                                            &info->stages[i]);
+      if (bin_info == NULL || bin_info->binaryCount == 0) {
+         vk_pipeline_hash_precomp_shader_stage(device, pipeline_flags,
+                                               pCreateInfo->pNext, stage_info,
+                                               &info->stages[i]);
 
-      vk_pipeline_hash_rt_shader(device, pipeline_flags, pipeline_layout,
-                                 &info->stages[i]);
+         vk_pipeline_hash_rt_shader(device, pipeline_flags, pipeline_layout,
+                                    &info->stages[i]);
+      }
    }
 
    for (uint32_t i = 0; i < pCreateInfo->groupCount; i++) {
@@ -2848,8 +3048,8 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
 
       VkShaderStageFlags group_all_stages = 0;
       for (uint32_t s = 0; s < group->stage_count; s++) {
-         group->stages[s] =
-            vk_pipeline_stage_clone(&info->stages[group->stage_indices[s]]);
+         group->stages[s] = vk_pipeline_stage_clone(
+            &info->stages[group->stage_indices[s]]);
          group_all_stages |= mesa_to_vk_shader_stage(group->stages[s].stage);
       }
 
@@ -2858,7 +3058,7 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
          ops->get_rt_group_linking(device->physical, group_all_stages) : 0;
 
       /* Compute shader hashes for the linked stages */
-      vk_pipeline_rehash_rt_linked_shaders(device, pipeline_flags,
+      vk_pipeline_rehash_rt_linked_shaders(device, pipeline_flags, bin_info,
                                            pipeline_layout,
                                            group->stages, group->stage_count,
                                            group_linked_stages);
@@ -3266,6 +3466,10 @@ vk_create_rt_pipeline(struct vk_device *device,
    const VkPipelineCreateFlags2KHR pipeline_flags =
       vk_rt_pipeline_create_flags(pCreateInfo);
 
+   const VkPipelineBinaryInfoKHR *bin_info =
+      vk_find_struct_const(pCreateInfo->pNext,
+                           PIPELINE_BINARY_INFO_KHR);
+
    const VkPipelineCreationFeedbackCreateInfo *feedback_info =
       vk_find_struct_const(pCreateInfo->pNext,
                            PIPELINE_CREATION_FEEDBACK_CREATE_INFO);
@@ -3293,6 +3497,8 @@ vk_create_rt_pipeline(struct vk_device *device,
 
    uint32_t stack_max[MESA_SHADER_KERNEL] = { 0 };
 
+   uint32_t binary_index = 0;
+
    /* Load/Compile individual shaders */
    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
       const VkPipelineShaderStageCreateInfo *stage_info =
@@ -3300,25 +3506,38 @@ vk_create_rt_pipeline(struct vk_device *device,
 
       pipeline->base.stages |= pCreateInfo->pStages[i].stage;
 
-      result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
-                                             pCreateInfo->pNext,
-                                             stage_info, &compile_info.stages[i]);
-      if (result != VK_SUCCESS)
-         goto fail_stages_compile;
-
       VkPipelineCreationFeedback feedback = { 0 };
-      result = vk_pipeline_compile_rt_shader(device, cache,
-                                             pipeline_flags,
-                                             pipeline_layout,
-                                             &compile_info.stages[i],
-                                             &feedback);
+      if (bin_info != NULL && bin_info->binaryCount > 0) {
+         VK_FROM_HANDLE(vk_pipeline_binary, binary,
+                        bin_info->pPipelineBinaries[binary_index++]);
 
-      if ((feedback.flags &
-           VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT) == 0 &&
-          (pipeline->base.flags &
-           VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
-         result = VK_PIPELINE_COMPILE_REQUIRED;
-         goto fail_stages_compile;
+         result = vk_pipeline_load_shader_from_binary(device,
+                                                      &compile_info.stages[i],
+                                                      binary);
+         if (result != VK_SUCCESS)
+            goto fail_stages_compile;
+      } else {
+         result = vk_pipeline_precompile_shader(device, cache, pipeline_flags,
+                                                pCreateInfo->pNext,
+                                                stage_info, &compile_info.stages[i]);
+         if (result != VK_SUCCESS)
+            goto fail_stages_compile;
+
+         assert(compile_info.stages[i].precomp != NULL);
+
+         result = vk_pipeline_compile_rt_shader(device, cache,
+                                                pipeline_flags,
+                                                pipeline_layout,
+                                                &compile_info.stages[i],
+                                                &feedback);
+
+         if ((feedback.flags &
+              VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT) == 0 &&
+             (pipeline->base.flags &
+              VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
+            result = VK_PIPELINE_COMPILE_REQUIRED;
+            goto fail_stages_compile;
+         }
       }
 
       if (result != VK_SUCCESS)
@@ -3368,17 +3587,30 @@ vk_create_rt_pipeline(struct vk_device *device,
       if (linked_stage_count > 0) {
          assert(linked_stage_count > 1);
 
-         bool cache_hit;
-         result = vk_pipeline_compile_rt_shader_group(device, cache,
-                                                      pipeline_flags,
-                                                      pipeline_layout,
-                                                      linked_stage_count,
-                                                      linked_stages,
-                                                      &cache_hit);
-         if (result != VK_SUCCESS)
-            goto fail_stages_compile;
+         if (bin_info != NULL && bin_info->binaryCount > 0) {
+            for (uint32_t s = 0; s < linked_stage_count; s++) {
+               VK_FROM_HANDLE(vk_pipeline_binary, binary,
+                              bin_info->pPipelineBinaries[binary_index++]);
 
-         all_cache_hit &= cache_hit;
+               result = vk_pipeline_load_shader_from_binary(device,
+                                                            &linked_stages[s],
+                                                            binary);
+               if (result != VK_SUCCESS)
+                  goto fail_stages_compile;
+            }
+         } else {
+            bool cache_hit;
+            result = vk_pipeline_compile_rt_shader_group(device, cache,
+                                                         pipeline_flags,
+                                                         pipeline_layout,
+                                                         linked_stage_count,
+                                                         linked_stages,
+                                                         &cache_hit);
+            if (result != VK_SUCCESS)
+               goto fail_stages_compile;
+
+            all_cache_hit &= cache_hit;
+         }
 
          /* Discard the precomps */
          for (uint32_t s = 0; s < linked_stage_count; s++) {
@@ -3393,6 +3625,7 @@ vk_create_rt_pipeline(struct vk_device *device,
             assert(compile_info.groups[i].stages[s].shader != NULL);
             group->stages[s] = (struct vk_rt_stage) {
                .shader = vk_shader_ref(compile_info.groups[i].stages[s].shader),
+               .imported = compile_info.groups[i].stages[s].imported,
             };
          } else {
             for (uint32_t j = 0; j < linked_stage_count; j++) {
@@ -3711,4 +3944,541 @@ vk_common_CmdSetRayTracingPipelineStackSizeKHR(
    const struct vk_device_shader_ops *ops = device->shader_ops;
 
    ops->cmd_set_stack_size(cmd_buffer, pipelineStackSize);
+}
+
+static VkResult
+vk_create_pipeline_binary(struct vk_device *device,
+                          const void *key, size_t key_size,
+                          const void *data, size_t data_size,
+                          const VkAllocationCallbacks *alloc,
+                          VkPipelineBinaryKHR *out_binary_h)
+{
+   struct vk_pipeline_binary *binary =
+      vk_object_alloc(device, alloc, sizeof(*binary) + data_size,
+                      VK_OBJECT_TYPE_PIPELINE_BINARY_KHR);
+   if (binary == NULL)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   assert(key_size == sizeof(binary->key));
+   memcpy(binary->key, key, key_size);
+
+   binary->size = data_size;
+   memcpy(binary->data, data, data_size);
+
+   *out_binary_h = vk_pipeline_binary_to_handle(binary);
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+vk_create_pipeline_binary_from_precomp(struct vk_device *device,
+                                       struct vk_pipeline_precomp_shader *precomp,
+                                       const VkAllocationCallbacks *alloc,
+                                       VkPipelineBinaryKHR *out_binary_h)
+{
+   VkResult result = VK_SUCCESS;
+
+   struct blob blob;
+   blob_init(&blob);
+
+   if (!vk_pipeline_precomp_shader_serialize(&precomp->cache_obj, &blob))
+      result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   if (result == VK_SUCCESS) {
+      result = vk_create_pipeline_binary(device,
+                                         precomp->cache_key,
+                                         sizeof(precomp->cache_key),
+                                         blob.data, blob.size,
+                                         alloc, out_binary_h);
+   }
+
+   blob_finish(&blob);
+
+   return result;
+}
+
+static VkResult
+vk_create_pipeline_binary_from_shader(struct vk_device *device,
+                                      struct vk_shader *shader,
+                                      const VkAllocationCallbacks *alloc,
+                                      VkPipelineBinaryKHR *out_binary_h)
+{
+   VkResult result = VK_SUCCESS;
+
+   struct blob blob;
+   blob_init(&blob);
+
+   if (!shader->ops->serialize(device, shader, &blob))
+      result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   if (result == VK_SUCCESS) {
+      result = vk_create_pipeline_binary(device,
+                                         shader->pipeline.cache_key,
+                                         sizeof(shader->pipeline.cache_key),
+                                         blob.data, blob.size,
+                                         alloc, out_binary_h);
+   }
+
+   blob_finish(&blob);
+
+   return result;
+}
+
+static VkResult
+vk_lookup_create_precomp_binary(struct vk_device *device,
+                                struct vk_pipeline_cache *cache,
+                                const void *key, uint32_t key_size,
+                                const VkAllocationCallbacks *alloc,
+                                VkPipelineBinaryKHR *out_binary_h)
+{
+   struct vk_pipeline_cache_object *cache_obj =
+      vk_pipeline_cache_lookup_object(cache, key, key_size,
+                                      &pipeline_precomp_shader_cache_ops,
+                                      NULL);
+   if (cache_obj == NULL)
+      return VK_PIPELINE_BINARY_MISSING_KHR;
+
+   struct vk_pipeline_precomp_shader *precomp =
+      vk_pipeline_precomp_shader_from_cache_obj(cache_obj);
+   VkResult result = vk_create_pipeline_binary_from_precomp(
+      device, precomp, alloc, out_binary_h);
+   vk_pipeline_precomp_shader_unref(device, precomp);
+
+   return result;
+}
+
+static VkResult
+vk_lookup_create_shader_binary(struct vk_device *device,
+                               struct vk_pipeline_cache *cache,
+                               const void *key, uint32_t key_size,
+                               const VkAllocationCallbacks *alloc,
+                               VkPipelineBinaryKHR *out_binary_h)
+{
+   struct vk_pipeline_cache_object *cache_obj =
+      vk_pipeline_cache_lookup_object(cache, key, key_size,
+                                      &pipeline_shader_cache_ops,
+                                      NULL);
+   if (cache_obj == NULL)
+      return VK_PIPELINE_BINARY_MISSING_KHR;
+
+   struct vk_shader *shader = vk_shader_from_cache_obj(cache_obj);
+   VkResult result = vk_create_pipeline_binary_from_shader(
+      device, shader, alloc, out_binary_h);
+   vk_shader_unref(device, shader);
+
+   return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_CreatePipelineBinariesKHR(
+    VkDevice                                    _device,
+    const VkPipelineBinaryCreateInfoKHR*        pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipelineBinaryHandlesInfoKHR*             pBinaries)
+{
+   VK_FROM_HANDLE(vk_device, device, _device);
+   VK_FROM_HANDLE(vk_pipeline, pipeline, pCreateInfo->pipeline);
+   VK_OUTARRAY_MAKE_TYPED(VkPipelineBinaryKHR, out,
+                          pBinaries->pPipelineBinaries,
+                          &pBinaries->pipelineBinaryCount);
+   VkResult success_or_first_fail = VK_SUCCESS;
+
+   /* VkPipelineBinaryCreateInfoKHR:
+    *
+    *    "When pPipelineCreateInfo is not NULL, an implementation will attempt
+    *    to retrieve pipeline binary data from an internal cache external to
+    *    the application if pipelineBinaryInternalCache is VK_TRUE.
+    *    Applications can use this to determine if a pipeline can be created
+    *    without compilation.  If the implementation fails to create a
+    *    pipeline binary due to missing an internal cache entry,
+    *    VK_PIPELINE_BINARY_MISSING_KHR is returned. If creation succeeds, the
+    *    resulting binary can be used to create a pipeline.
+    *    VK_PIPELINE_BINARY_MISSING_KHR may be returned for any reason in this
+    *    situation, even if creating a pipeline binary with the same
+    *    parameters that succeeded earlier."
+    */
+   if (pCreateInfo->pPipelineCreateInfo &&
+       device->physical->properties.pipelineBinaryInternalCache) {
+      assert(device->mem_cache != NULL);
+      struct vk_pipeline_cache *cache = device->mem_cache;
+      const VkBaseInStructure *next = pCreateInfo->pPipelineCreateInfo->pNext;
+
+      switch (next->sType) {
+      case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO: {
+         struct vk_graphics_pipeline_state state_tmp;
+         struct vk_graphics_pipeline_all_state all_state_tmp;
+         memset(&state_tmp, 0, sizeof(state_tmp));
+         struct vk_graphics_pipeline_compile_info info;
+         vk_get_graphics_pipeline_compile_info(
+            &info, device, &state_tmp, &all_state_tmp,
+            pCreateInfo->pPipelineCreateInfo->pNext);
+
+         for (uint32_t i = 0; i < info.stage_count; i++) {
+            if (info.stages[i].imported)
+               continue;
+
+            if (info.retain_precomp) {
+               vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+                  VkResult result = vk_lookup_create_precomp_binary(
+                     device, cache,
+                     info.stages[i].precomp_key,
+                     sizeof(info.stages[i].precomp_key),
+                     pAllocator, binary);
+                  if (result != VK_SUCCESS) {
+                     *binary = VK_NULL_HANDLE;
+                     if (success_or_first_fail == VK_SUCCESS)
+                        success_or_first_fail = result;
+                  }
+               }
+            }
+
+            vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+               VkResult result = vk_lookup_create_shader_binary(
+                  device, cache,
+                  info.stages[i].shader_key,
+                  sizeof(info.stages[i].shader_key),
+                  pAllocator, binary);
+               if (result != VK_SUCCESS) {
+                  *binary = VK_NULL_HANDLE;
+                  if (success_or_first_fail == VK_SUCCESS)
+                     success_or_first_fail = result;
+               }
+            }
+         }
+
+         vk_release_graphics_pipeline_compile_info(&info, device, pAllocator);
+         break;
+      }
+
+      case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO: {
+         vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+            struct vk_pipeline_stage info;
+            vk_get_compute_pipeline_compile_info(
+               &info, device, pCreateInfo->pPipelineCreateInfo->pNext);
+
+            VkResult result = vk_lookup_create_shader_binary(
+               device, cache,
+               info.shader_key, sizeof(info.shader_key),
+               pAllocator, binary);
+            if (result != VK_SUCCESS) {
+               *binary = VK_NULL_HANDLE;
+               if (success_or_first_fail == VK_SUCCESS)
+                  success_or_first_fail = result;
+            }
+
+            vk_pipeline_stage_finish(device, &info);
+         }
+         break;
+      }
+
+      case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR: {
+         struct vk_rt_pipeline_compile_info info;
+         VkResult result = vk_get_rt_pipeline_compile_info(
+            &info, device, pCreateInfo->pPipelineCreateInfo->pNext, pAllocator);
+         if (result != VK_SUCCESS)
+            return result;
+
+         for (uint32_t i = 0; i < info.stage_count; i++) {
+            if (info.stages[i].imported)
+               continue;
+
+            vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+               result = vk_lookup_create_shader_binary(
+                  device, cache,
+                  info.stages[i].shader_key, sizeof(info.stages[i].shader_key),
+                  pAllocator, binary);
+               if (result != VK_SUCCESS) {
+                  *binary = VK_NULL_HANDLE;
+                  if (success_or_first_fail == VK_SUCCESS)
+                     success_or_first_fail = result;
+               }
+            }
+         }
+
+         for (uint32_t i = 0; i < info.group_count; i++) {
+            for (uint32_t s = 0; s < info.groups[i].stage_count; s++) {
+               if (!info.groups[i].stages[s].linked)
+                  continue;
+
+               vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+                  result = vk_lookup_create_shader_binary(
+                     device, cache,
+                     info.groups[i].stages[s].shader_key,
+                     sizeof(info.groups[i].stages[s].shader_key),
+                     pAllocator, binary);
+                  if (result != VK_SUCCESS) {
+                     *binary = VK_NULL_HANDLE;
+                     if (success_or_first_fail == VK_SUCCESS)
+                        success_or_first_fail = result;
+                  }
+               }
+            }
+         }
+
+         vk_release_rt_pipeline_compile_info(&info, device, pAllocator);
+         break;
+      }
+
+      default:
+         UNREACHABLE("Unsupported pNext");
+      }
+   } else if (pipeline != NULL) {
+      switch (pipeline->bind_point) {
+      case VK_PIPELINE_BIND_POINT_GRAPHICS: {
+         struct vk_graphics_pipeline *gfx_pipeline =
+            container_of(pipeline, struct vk_graphics_pipeline, base);
+
+         for (uint32_t i = 0; i < gfx_pipeline->stage_count; i++) {
+            if (gfx_pipeline->stages[i].imported)
+               continue;
+
+            if (gfx_pipeline->stages[i].precomp) {
+               vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+                  VkResult result = vk_create_pipeline_binary_from_precomp(
+                     device, gfx_pipeline->stages[i].precomp,
+                     pAllocator, binary);
+                  if (result != VK_SUCCESS) {
+                     *binary = VK_NULL_HANDLE;
+                     if (success_or_first_fail == VK_SUCCESS)
+                        success_or_first_fail = result;
+                  }
+               }
+            }
+
+            vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+               VkResult result = vk_create_pipeline_binary_from_shader(
+                  device, gfx_pipeline->stages[i].shader,
+                  pAllocator, binary);
+               if (result != VK_SUCCESS) {
+                  *binary = VK_NULL_HANDLE;
+                  if (success_or_first_fail == VK_SUCCESS)
+                     success_or_first_fail = result;
+               }
+            }
+         }
+         break;
+      }
+
+      case VK_PIPELINE_BIND_POINT_COMPUTE: {
+         struct vk_compute_pipeline *cs_pipeline =
+            container_of(pipeline, struct vk_compute_pipeline, base);
+
+         vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+            VkResult result = vk_create_pipeline_binary_from_shader(
+               device, cs_pipeline->stage.shader,
+               pAllocator, binary);
+            if (result != VK_SUCCESS) {
+               *binary = VK_NULL_HANDLE;
+               if (success_or_first_fail == VK_SUCCESS)
+                  success_or_first_fail = result;
+            }
+         }
+         break;
+      }
+
+      case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR: {
+         struct vk_rt_pipeline *rt_pipeline =
+            container_of(pipeline, struct vk_rt_pipeline, base);
+
+         for (uint32_t i = 0; i < rt_pipeline->stage_count; i++) {
+            if (rt_pipeline->stages[i].imported)
+               continue;
+
+            vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+               VkResult result = vk_create_pipeline_binary_from_shader(
+                  device, rt_pipeline->stages[i].shader,
+                  pAllocator, binary);
+               if (result != VK_SUCCESS) {
+                  *binary = VK_NULL_HANDLE;
+                  if (success_or_first_fail == VK_SUCCESS)
+                     success_or_first_fail = result;
+               }
+            }
+         }
+
+         for (uint32_t i = 0; i < rt_pipeline->group_count; i++) {
+            for (uint32_t s = 0; s < rt_pipeline->groups[i].stage_count; s++) {
+               if (!rt_pipeline->groups[i].stages[s].linked)
+                  continue;
+
+               vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+                  VkResult result = vk_create_pipeline_binary_from_shader(
+                     device, rt_pipeline->groups[i].stages[s].shader,
+                     pAllocator, binary);
+                  if (result != VK_SUCCESS) {
+                     *binary = VK_NULL_HANDLE;
+                     if (success_or_first_fail == VK_SUCCESS)
+                        success_or_first_fail = result;
+                  }
+               }
+            }
+         }
+         break;
+      }
+
+      default:
+         UNREACHABLE("Unsupported pipeline");
+      }
+   } else {
+      assert(pCreateInfo->pKeysAndDataInfo != NULL);
+
+      for (uint32_t i = 0; i < pCreateInfo->pKeysAndDataInfo->binaryCount; i++) {
+         vk_outarray_append_typed(VkPipelineBinaryKHR, &out, binary) {
+            VkResult result = vk_create_pipeline_binary(
+               device,
+               pCreateInfo->pKeysAndDataInfo->pPipelineBinaryKeys[i].key,
+               pCreateInfo->pKeysAndDataInfo->pPipelineBinaryKeys[i].keySize,
+               pCreateInfo->pKeysAndDataInfo->pPipelineBinaryData[i].pData,
+               pCreateInfo->pKeysAndDataInfo->pPipelineBinaryData[i].dataSize,
+               pAllocator, binary);
+            if (result != VK_SUCCESS) {
+               *binary = VK_NULL_HANDLE;
+               if (success_or_first_fail == VK_SUCCESS)
+                  success_or_first_fail = result;
+            }
+         }
+      }
+   }
+
+   return success_or_first_fail != VK_SUCCESS ?
+      success_or_first_fail : vk_outarray_status(&out);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vk_common_DestroyPipelineBinaryKHR(
+    VkDevice                                    _device,
+    VkPipelineBinaryKHR                         pipelineBinary,
+    const VkAllocationCallbacks*                pAllocator)
+{
+   VK_FROM_HANDLE(vk_device, device, _device);
+   VK_FROM_HANDLE(vk_pipeline_binary, binary, pipelineBinary);
+
+   if (binary == NULL)
+      return;
+
+   vk_object_free(device, pAllocator, binary);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_GetPipelineKeyKHR(
+    VkDevice                                    _device,
+    const VkPipelineCreateInfoKHR*              pPipelineCreateInfo,
+    VkPipelineBinaryKeyKHR*                     pPipelineKey)
+{
+   VK_FROM_HANDLE(vk_device, device, _device);
+
+   STATIC_ASSERT(sizeof(pPipelineKey->key) == sizeof(blake3_hash));
+
+   if (pPipelineCreateInfo == NULL) {
+      struct vk_physical_device *physical_device = device->physical;
+      _mesa_blake3_compute(physical_device->properties.shaderBinaryUUID,
+                           sizeof(physical_device->properties.shaderBinaryUUID),
+                           pPipelineKey->key);
+      pPipelineKey->keySize = sizeof(blake3_hash);
+      return VK_SUCCESS;
+   }
+
+   const VkBaseInStructure *next = pPipelineCreateInfo->pNext;
+
+   struct mesa_blake3 blake3_ctx;
+   _mesa_blake3_init(&blake3_ctx);
+
+   switch (next->sType) {
+   case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO: {
+      struct vk_graphics_pipeline_state state_tmp;
+      struct vk_graphics_pipeline_all_state all_state_tmp;
+      memset(&state_tmp, 0, sizeof(state_tmp));
+      struct vk_graphics_pipeline_compile_info info;
+      vk_get_graphics_pipeline_compile_info(&info, device,
+                                            &state_tmp, &all_state_tmp,
+                                            pPipelineCreateInfo->pNext);
+      for (uint32_t i = 0; i < info.stage_count; i++) {
+         _mesa_blake3_update(&blake3_ctx, &info.stages[i].shader_key,
+                             sizeof(info.stages[i].shader_key));
+      }
+      vk_release_graphics_pipeline_compile_info(&info, device, NULL);
+      break;
+   }
+
+   case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO: {
+      struct vk_pipeline_stage info;
+      vk_get_compute_pipeline_compile_info(&info, device,
+                                           pPipelineCreateInfo->pNext);
+      _mesa_blake3_update(&blake3_ctx, &info.shader_key,
+                          sizeof(info.shader_key));
+      vk_pipeline_stage_finish(device, &info);
+      break;
+   }
+
+   case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR: {
+      struct vk_rt_pipeline_compile_info info;
+      VkResult result =
+         vk_get_rt_pipeline_compile_info(&info, device,
+                                         pPipelineCreateInfo->pNext, NULL);
+      if (result != VK_SUCCESS)
+         return result;
+      for (uint32_t i = 0; i < info.stage_count; i++) {
+         _mesa_blake3_update(&blake3_ctx, &info.stages[i].shader_key,
+                             sizeof(info.stages[i].shader_key));
+      }
+      for (uint32_t i = 0; i < info.group_count; i++) {
+         for (uint32_t s = 0; s < info.groups[i].stage_count; s++) {
+            if (!info.groups[i].stages[s].linked)
+               continue;
+            _mesa_blake3_update(&blake3_ctx,
+                                &info.groups[i].stages[s].shader_key,
+                                sizeof(info.groups[i].stages[s].shader_key));
+         }
+      }
+      vk_release_rt_pipeline_compile_info(&info, device, NULL);
+      break;
+   }
+
+   default:
+      UNREACHABLE("Unsupported pNext");
+   }
+
+   pPipelineKey->keySize = sizeof(blake3_hash);
+   _mesa_blake3_final(&blake3_ctx, pPipelineKey->key);
+
+   return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_GetPipelineBinaryDataKHR(
+    VkDevice                                    device,
+    const VkPipelineBinaryDataInfoKHR*          pInfo,
+    VkPipelineBinaryKeyKHR*                     pPipelineBinaryKey,
+    size_t*                                     pPipelineBinaryDataSize,
+    void*                                       pPipelineBinaryData)
+{
+   VK_FROM_HANDLE(vk_pipeline_binary, binary, pInfo->pipelineBinary);
+
+   pPipelineBinaryKey->keySize = sizeof(binary->key);
+   memcpy(pPipelineBinaryKey->key, binary->key, sizeof(binary->key));
+
+   if (*pPipelineBinaryDataSize == 0) {
+      *pPipelineBinaryDataSize = binary->size;
+      return VK_SUCCESS;
+   }
+
+   VkResult result =
+      *pPipelineBinaryDataSize < binary->size ?
+      VK_ERROR_NOT_ENOUGH_SPACE_KHR : VK_SUCCESS;
+
+   *pPipelineBinaryDataSize = binary->size;
+   if (result == VK_SUCCESS)
+      memcpy(pPipelineBinaryData, binary->data, binary->size);
+
+   return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_ReleaseCapturedPipelineDataKHR(
+    VkDevice                                    device,
+    const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
+    const VkAllocationCallbacks*                pAllocator)
+{
+   /* NO-OP */
+   return VK_SUCCESS;
 }
