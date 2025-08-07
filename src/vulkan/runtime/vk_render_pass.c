@@ -1633,8 +1633,14 @@ transition_attachment(struct vk_command_buffer *cmd_buffer,
        */
       if (image_view->image->image_type == VK_IMAGE_TYPE_3D) {
          assert(view == 0);
-         range.baseArrayLayer = 0;
-         range.layerCount = image_view->extent.depth;
+         if (image_view->view_type == VK_IMAGE_VIEW_TYPE_2D &&
+             cmd_buffer->base.device->enabled_features.maintenance9) {
+            range.baseArrayLayer = image_view->base_array_layer;
+            range.layerCount = image_view->layer_count;
+         } else {
+            range.baseArrayLayer = 0;
+            range.layerCount = image_view->extent.depth;
+         }
       } else if (pass->is_multiview) {
          range.baseArrayLayer = image_view->base_array_layer + view;
          range.layerCount = 1;
