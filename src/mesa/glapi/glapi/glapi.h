@@ -69,13 +69,8 @@ typedef void (*_glapi_nop_handler_proc)(const char *name);
 
 struct _glapi_table;
 
-#if DETECT_OS_WINDOWS
-extern __THREAD_INITIAL_EXEC struct _glapi_table * _mesa_glapi_tls_Dispatch;
-extern __THREAD_INITIAL_EXEC void * _mesa_glapi_tls_Context;
-#else
 _GLAPI_EXPORT extern __THREAD_INITIAL_EXEC struct _glapi_table * _mesa_glapi_tls_Dispatch;
 _GLAPI_EXPORT extern __THREAD_INITIAL_EXEC void * _mesa_glapi_tls_Context;
-#endif
 
 #if DETECT_OS_WINDOWS && !defined(MAPI_MODE_SHARED_GLAPI)
 # define GET_DISPATCH() _mesa_glapi_get_dispatch()
