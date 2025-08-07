@@ -2904,7 +2904,7 @@
         "description": "zink: don't access ctx in submit_queue",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "63e17ccc0a2ed5e762aedfa71d9133672e77aa24",
         "notes": null

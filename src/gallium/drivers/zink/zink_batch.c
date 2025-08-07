@@ -646,7 +646,7 @@ submit_queue(void *data, void *gdata, int thread_index)
    for (unsigned i = 0; i < ARRAY_SIZE(si); i++)
       si[i].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
    if (bs->sparse_semaphore)
-      util_dynarray_append(&ctx->bs->acquires, VkSemaphore, bs->sparse_semaphore);
+      util_dynarray_append(&bs->acquires, VkSemaphore, bs->sparse_semaphore);
    si[ZINK_SUBMIT_WAIT_ACQUIRE].waitSemaphoreCount = util_dynarray_num_elements(&bs->acquires, VkSemaphore);
    si[ZINK_SUBMIT_WAIT_ACQUIRE].pWaitSemaphores = bs->acquires.data;
    while (util_dynarray_num_elements(&bs->acquire_flags, VkPipelineStageFlags) < si[ZINK_SUBMIT_WAIT_ACQUIRE].waitSemaphoreCount) {
@@ -782,7 +782,7 @@ submit_queue(void *data, void *gdata, int thread_index)
    _mesa_set_clear(&bs->dmabuf_exports, NULL);
 
    if (bs->sparse_semaphore)
-      (void)util_dynarray_pop(&ctx->bs->acquires, VkSemaphore);
+      (void)util_dynarray_pop(&bs->acquires, VkSemaphore);
 
    bs->usage.submit_count++;
 end:
