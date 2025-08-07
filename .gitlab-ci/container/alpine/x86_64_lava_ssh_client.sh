@@ -2,6 +2,10 @@
 
 # This is a ci-templates build script to generate a container for LAVA SSH client.
 
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# ALPINE_X86_64_LAVA_SSH_TAG
+
 # shellcheck disable=SC1091
 set -e
 
