@@ -583,7 +583,8 @@ impl Program {
                 }
             }
 
-            let spirvs = [d.spirv.as_ref().unwrap()];
+            let spirv = d.spirv.take().unwrap();
+            let spirvs = [&spirv];
             let (spirv, log) = spirv::SPIRVBin::link(&spirvs, lib);
 
             d.log.push_str(&log);
