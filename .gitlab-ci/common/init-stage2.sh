@@ -108,9 +108,6 @@ export PATH=/usr/local/bin:$PATH
 # Store Mesa's disk cache under /tmp, rather than sending it out over NFS.
 export XDG_CACHE_HOME=/tmp
 
-# Make sure Python can find all our imports
-export PYTHONPATH=$(python3 -c "import sys;print(\":\".join(sys.path))")
-
 # If we need to specify a driver, it means several drivers could pick up this gpu;
 # ensure that the other driver can't accidentally be used
 if [ -n "$MESA_LOADER_DRIVER_OVERRIDE" ]; then
