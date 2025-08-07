@@ -111,6 +111,9 @@ struct vk_video_session {
    };
 };
 
+VK_DEFINE_NONDISP_HANDLE_CASTS(vk_video_session, base, VkVideoSessionKHR,
+                               VK_OBJECT_TYPE_VIDEO_SESSION_KHR);
+
 struct vk_video_session_parameters {
    struct vk_object_base base;
    VkVideoCodecOperationFlagsKHR op;
@@ -177,13 +180,15 @@ struct vk_video_session_parameters {
    };
 };
 
+VK_DEFINE_NONDISP_HANDLE_CASTS(vk_video_session_parameters, base,
+                               VkVideoSessionParametersKHR,
+                               VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR);
+
 VkResult vk_video_session_init(struct vk_device *device,
                                struct vk_video_session *vid,
                                const VkVideoSessionCreateInfoKHR *create_info);
 
 void *vk_video_session_parameters_create(struct vk_device *device,
-                                         const struct vk_video_session *vid,
-                                         const struct vk_video_session_parameters *templ,
                                          const VkVideoSessionParametersCreateInfoKHR *create_info,
                                          const VkAllocationCallbacks *alloc,
                                          size_t size);

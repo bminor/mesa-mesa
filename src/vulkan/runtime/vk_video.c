@@ -453,12 +453,14 @@ vk_video_deep_copy_av1_seq_hdr(struct vk_video_av1_seq_hdr *dst,
 
 void *
 vk_video_session_parameters_create(struct vk_device *device,
-                                   const struct vk_video_session *vid,
-                                   const struct vk_video_session_parameters *templ,
                                    const VkVideoSessionParametersCreateInfoKHR *create_info,
                                    const VkAllocationCallbacks *alloc,
                                    size_t size)
 {
+   VK_FROM_HANDLE(vk_video_session, vid, create_info->videoSession);
+   VK_FROM_HANDLE(vk_video_session_parameters, templ,
+                  create_info->videoSessionParametersTemplate);
+
    struct vk_video_session_parameters *params =
       vk_object_zalloc(device, alloc, size,
                        VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR);

@@ -75,12 +75,9 @@ anv_CreateVideoSessionParametersKHR(VkDevice _device,
                                      VkVideoSessionParametersKHR *pVideoSessionParameters)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
-   ANV_FROM_HANDLE(anv_video_session, vid, pCreateInfo->videoSession);
-   ANV_FROM_HANDLE(anv_video_session_params, templ, pCreateInfo->videoSessionParametersTemplate);
 
    struct anv_video_session_params *params =
-      vk_video_session_parameters_create(&device->vk, &vid->vk,
-                                         templ ? &templ->vk : NULL,
+      vk_video_session_parameters_create(&device->vk,
                                          pCreateInfo, pAllocator,
                                          sizeof(*params));
    if (!params)

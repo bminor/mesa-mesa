@@ -643,14 +643,11 @@ radv_CreateVideoSessionParametersKHR(VkDevice _device, const VkVideoSessionParam
                                      VkVideoSessionParametersKHR *pVideoSessionParameters)
 {
    VK_FROM_HANDLE(radv_device, device, _device);
-   VK_FROM_HANDLE(radv_video_session, vid, pCreateInfo->videoSession);
-   VK_FROM_HANDLE(radv_video_session_params, templ, pCreateInfo->videoSessionParametersTemplate);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    struct radv_video_session_params *params =
-      vk_video_session_parameters_create(&device->vk, &vid->vk, templ ? &templ->vk : NULL,
-                                         pCreateInfo, pAllocator, sizeof(*params));
+      vk_video_session_parameters_create(&device->vk, pCreateInfo, pAllocator, sizeof(*params));
    if (!params)
       return vk_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
 
