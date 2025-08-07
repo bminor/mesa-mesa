@@ -1485,7 +1485,7 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
       const struct pipe_vertex_buffer *vb = buffers + i;
       struct pipe_vertex_buffer *ctx_vb = &ctx->vertex_buffers[i];
       update_existing_vbo(ctx, i);
-      ctx_vb->buffer.resource = vb->buffer.resource;
+      memcpy(ctx_vb, vb, sizeof(*vb));
 
       if (vb->buffer.resource) {
          struct zink_resource *res = zink_resource(vb->buffer.resource);
@@ -1494,7 +1494,6 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
          res->gfx_barrier |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
          res->barrier_access[0] |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
          update_buf_bind_count(ctx, res, false, false);
-         ctx_vb->buffer_offset = vb->buffer_offset;
          /* fastpath for viewperf */
          if (res->obj->access != VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT || res->obj->access_stage != VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
             /* always barrier before possible rebind */
