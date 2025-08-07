@@ -6064,7 +6064,7 @@
         "description": "meson,nvk: Require rustc-hash 2.0 or later",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1f979d84a78bfdd308f107ae6ce3f779d9411bf",
         "notes": null
