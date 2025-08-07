@@ -4633,7 +4633,7 @@ struct anv_cmd_buffer {
 
    struct {
       struct anv_video_session *vid;
-      struct anv_video_session_params *params;
+      struct vk_video_session_parameters *params;
    } video;
 
    /**
@@ -6766,10 +6766,6 @@ struct anv_video_session {
    BITSET_DECLARE(copy_seg_probs, 4);
 };
 
-struct anv_video_session_params {
-   struct vk_video_session_parameters vk;
-};
-
 void anv_init_av1_cdf_tables(struct anv_cmd_buffer *cmd,
                              struct anv_video_session *vid);
 
@@ -6949,9 +6945,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_performance_configuration_intel, base,
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_video_session, vk.base,
                                VkVideoSessionKHR,
                                VK_OBJECT_TYPE_VIDEO_SESSION_KHR)
-VK_DEFINE_NONDISP_HANDLE_CASTS(anv_video_session_params, vk.base,
-                               VkVideoSessionParametersKHR,
-                               VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR)
 
 #define anv_genX(devinfo, thing) ({             \
    __typeof(&gfx9_##thing) genX_thing;          \

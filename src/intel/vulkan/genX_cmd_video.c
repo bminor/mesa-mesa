@@ -34,7 +34,8 @@ genX(CmdBeginVideoCodingKHR)(VkCommandBuffer commandBuffer,
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    ANV_FROM_HANDLE(anv_video_session, vid, pBeginInfo->videoSession);
-   ANV_FROM_HANDLE(anv_video_session_params, params, pBeginInfo->videoSessionParameters);
+   VK_FROM_HANDLE(vk_video_session_parameters, params,
+                  pBeginInfo->videoSessionParameters);
 
    cmd_buffer->video.vid = vid;
    cmd_buffer->video.params = params;
@@ -173,7 +174,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
 {
    ANV_FROM_HANDLE(anv_buffer, src_buffer, frame_info->srcBuffer);
    struct anv_video_session *vid = cmd_buffer->video.vid;
-   struct anv_video_session_params *params = cmd_buffer->video.params;
+   struct vk_video_session_parameters *params = cmd_buffer->video.params;
 
    const struct VkVideoDecodeH265PictureInfoKHR *h265_pic_info =
       vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_H265_PICTURE_INFO_KHR);
@@ -181,7 +182,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
    const StdVideoH265SequenceParameterSet *sps;
    const StdVideoH265PictureParameterSet *pps;
 
-   vk_video_get_h265_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, h265_pic_info, &sps, &pps);
+   vk_video_get_h265_parameters(&vid->vk, params, frame_info, h265_pic_info, &sps, &pps);
 
    struct vk_video_h265_reference ref_slots[2][8] = { 0 };
    uint8_t dpb_idx[ANV_VIDEO_H265_MAX_NUM_REF_FRAME] = { 0,};
@@ -890,14 +891,14 @@ anv_h264_decode_video(struct anv_cmd_buffer *cmd_buffer,
 {
    ANV_FROM_HANDLE(anv_buffer, src_buffer, frame_info->srcBuffer);
    struct anv_video_session *vid = cmd_buffer->video.vid;
-   struct anv_video_session_params *params = cmd_buffer->video.params;
+   struct vk_video_session_parameters *params = cmd_buffer->video.params;
    const struct VkVideoDecodeH264PictureInfoKHR *h264_pic_info =
       vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_H264_PICTURE_INFO_KHR);
 
    const StdVideoH264SequenceParameterSet *sps;
    const StdVideoH264PictureParameterSet *pps;
 
-   vk_video_get_h264_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, h264_pic_info, &sps, &pps);
+   vk_video_get_h264_parameters(&vid->vk, params, frame_info, h264_pic_info, &sps, &pps);
 
    uint8_t dpb_slots[ANV_VIDEO_H264_MAX_DPB_SLOTS] = { 0,};
 
@@ -2606,10 +2607,10 @@ anv_av1_decode_video(struct anv_cmd_buffer *cmd_buffer,
    const VkVideoDecodeAV1PictureInfoKHR *av1_pic_info =
       vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_AV1_PICTURE_INFO_KHR);
    struct anv_video_session *vid = cmd_buffer->video.vid;
-   struct anv_video_session_params *params = cmd_buffer->video.params;
+   struct vk_video_session_parameters *params = cmd_buffer->video.params;
    const StdVideoAV1SequenceHeader *seq_hdr;
 
-   vk_video_get_av1_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, &seq_hdr);
+   vk_video_get_av1_parameters(&vid->vk, params, frame_info, &seq_hdr);
 
    anv_av1_calculate_xstep_qn(cmd_buffer, frame_info, seq_hdr);
 

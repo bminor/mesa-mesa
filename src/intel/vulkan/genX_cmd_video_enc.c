@@ -385,13 +385,13 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
    ANV_FROM_HANDLE(anv_buffer, dst_buffer, enc_info->dstBuffer);
 
    struct anv_video_session *vid = cmd->video.vid;
-   struct anv_video_session_params *params = cmd->video.params;
+   struct vk_video_session_parameters *params = cmd->video.params;
 
    const struct VkVideoEncodeH264PictureInfoKHR *frame_info =
       vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H264_PICTURE_INFO_KHR);
 
-   const StdVideoH264SequenceParameterSet *sps = vk_video_find_h264_enc_std_sps(&params->vk, frame_info->pStdPictureInfo->seq_parameter_set_id);
-   const StdVideoH264PictureParameterSet *pps = vk_video_find_h264_enc_std_pps(&params->vk, frame_info->pStdPictureInfo->pic_parameter_set_id);
+   const StdVideoH264SequenceParameterSet *sps = vk_video_find_h264_enc_std_sps(params, frame_info->pStdPictureInfo->seq_parameter_set_id);
+   const StdVideoH264PictureParameterSet *pps = vk_video_find_h264_enc_std_pps(params, frame_info->pStdPictureInfo->pic_parameter_set_id);
    const StdVideoEncodeH264ReferenceListsInfo *ref_list_info = frame_info->pStdPictureInfo->pRefLists;
 
    const struct anv_image_view *iv = anv_image_view_from_handle(enc_info->srcPictureResource.imageViewBinding);
@@ -1398,14 +1398,14 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 #if GFX_VER >= 12
    ANV_FROM_HANDLE(anv_buffer, dst_buffer, enc_info->dstBuffer);
    struct anv_video_session *vid = cmd->video.vid;
-   struct anv_video_session_params *params = cmd->video.params;
+   struct vk_video_session_parameters *params = cmd->video.params;
 
    const struct VkVideoEncodeH265PictureInfoKHR *frame_info =
       vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H265_PICTURE_INFO_KHR);
 
-   const StdVideoH265VideoParameterSet *vps = vk_video_find_h265_enc_std_vps(&params->vk, frame_info->pStdPictureInfo->sps_video_parameter_set_id);
-   const StdVideoH265SequenceParameterSet *sps = vk_video_find_h265_enc_std_sps(&params->vk, frame_info->pStdPictureInfo->pps_seq_parameter_set_id);
-   const StdVideoH265PictureParameterSet *pps = vk_video_find_h265_enc_std_pps(&params->vk, frame_info->pStdPictureInfo->pps_pic_parameter_set_id);
+   const StdVideoH265VideoParameterSet *vps = vk_video_find_h265_enc_std_vps(params, frame_info->pStdPictureInfo->sps_video_parameter_set_id);
+   const StdVideoH265SequenceParameterSet *sps = vk_video_find_h265_enc_std_sps(params, frame_info->pStdPictureInfo->pps_seq_parameter_set_id);
+   const StdVideoH265PictureParameterSet *pps = vk_video_find_h265_enc_std_pps(params, frame_info->pStdPictureInfo->pps_pic_parameter_set_id);
    const StdVideoEncodeH265ReferenceListsInfo *ref_list_info = frame_info->pStdPictureInfo->pRefLists;
 
    const struct anv_image_view *iv = anv_image_view_from_handle(enc_info->srcPictureResource.imageViewBinding);
