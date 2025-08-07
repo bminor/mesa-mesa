@@ -215,6 +215,13 @@ panvk_utrace_perfetto_end_event(
       return;
    }
 
+   uint64_t duration = ts_ns - ev->begin_ns;
+   /* Drop unwritten and zero duration events.
+    * If the timestamp wraps around, end can be before start. Also drop those. */
+   if (duration == 0 || ts_ns == 0 || ts_ns < ev->begin_ns) {
+      return;
+   }
+
    PanVKRenderpassDataSource::Trace(
       [=](PanVKRenderpassDataSource::TraceContext ctx) {
          struct panvk_utrace_perfetto *utp = &dev->utrace.utp;
