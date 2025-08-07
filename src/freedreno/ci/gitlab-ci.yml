@@ -240,10 +240,10 @@ a660-gl-cl:
     - .lava-arm64-test-gl
     - .lava-sm8350-hdk:arm64
     - .test-piglit
-    - .collabora-freedreno-rules
+    - .collabora-freedreno-manual-rules
   rules:
-    - !reference [.collabora-freedreno-rules, rules]
-    - !reference [.rusticl-rules, rules]
+    - !reference [.collabora-freedreno-manual-rules, rules]
+    - !reference [.rusticl-manual-rules, rules]
   parallel: 3
   variables:
     DEQP_SUITE: freedreno-a660
