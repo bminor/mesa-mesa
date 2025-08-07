@@ -270,6 +270,20 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
       bool revectorize = false;
 
       if (nir->options->lower_doubles_options) {
+         /* 64-bit subgroup ops like vote_feq and inclusive_scan are secretly
+          * fp64 operations, so lower them first to make the ALU operation
+          * appear for nir_lower_doubles to lower after.
+          */
+         nir_lower_subgroups_options subgroup_opts = {0};
+         subgroup_opts.subgroup_size = nir->options->subgroup_size;
+         subgroup_opts.ballot_bit_size = nir->options->ballot_bit_size;
+         subgroup_opts.ballot_components = nir->options->ballot_components;
+         subgroup_opts.lower_fp64 = true;
+
+         if (subgroup_opts.ballot_bit_size) {
+            NIR_PASS(lowered_64bit_ops, nir, nir_lower_subgroups, &subgroup_opts);
+         }
+
          /* nir_lower_doubles is not prepared for vector ops, so if the backend doesn't
           * request lower_alu_to_scalar until now, lower all 64 bit ops, and try to
           * vectorize them afterwards again */
