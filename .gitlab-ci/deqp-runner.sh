@@ -63,9 +63,7 @@ if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
     BASELINE="--baseline $INSTALL/$GPU_VERSION-fails.txt"
 fi
 
-# Default to an empty known flakes file if it doesn't exist.
-touch $INSTALL/$GPU_VERSION-flakes.txt
-
+touch /flakes.txt
 cat $INSTALL/all-skips.txt > /skips.txt
 
 add_if_exists() {
@@ -80,6 +78,7 @@ for prefix in \
   "$DRIVER_NAME" \
   "$GPU_VERSION" \
   ; do
+  add_if_exists "$prefix" flakes
   add_if_exists "$prefix" skips
 done
 
@@ -140,7 +139,7 @@ deqp-runner \
     --suite $INSTALL/deqp-$DEQP_SUITE.toml \
     --output $RESULTS_DIR \
     --skips /skips.txt \
-    --flakes $INSTALL/$GPU_VERSION-flakes.txt \
+    --flakes /flakes.txt \
     --testlog-to-xml /deqp-tools/testlog-to-xml \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $((CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
