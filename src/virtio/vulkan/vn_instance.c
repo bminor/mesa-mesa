@@ -268,9 +268,6 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                   const VkAllocationCallbacks *pAllocator,
                   VkInstance *pInstance)
 {
-   vn_trace_init();
-   VN_TRACE_FUNC();
-
    const VkAllocationCallbacks *alloc =
       pAllocator ? pAllocator : vk_default_allocator();
    struct vn_instance *instance;
@@ -295,6 +292,9 @@ vn_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
       vk_free(alloc, instance);
       return vn_error(NULL, result);
    }
+
+   /* util_cpu_trace_init is called by vk_instance_init */
+   VN_TRACE_FUNC();
 
    VkInstance instance_handle = vn_instance_to_handle(instance);
    /* ring_idx = 0 reserved for CPU timeline */
