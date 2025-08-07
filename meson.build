@@ -1326,49 +1326,6 @@ endif
 
 dep_ws2_32 = cc.find_library('ws2_32', required : with_platform_windows)
 
-with_asm_arch = ''
-if host_machine.cpu_family() == 'x86'
-  if system_has_kms_drm or host_machine.system() == 'gnu'
-    with_asm_arch = 'x86'
-    pre_args += ['-DUSE_X86_ASM']
-  endif
-elif host_machine.cpu_family() == 'x86_64'
-  if system_has_kms_drm
-    with_asm_arch = 'x86_64'
-    pre_args += ['-DUSE_X86_64_ASM']
-  endif
-elif host_machine.cpu_family() == 'arm'
-  if system_has_kms_drm
-    with_asm_arch = 'arm'
-    pre_args += ['-DUSE_ARM_ASM']
-  endif
-elif host_machine.cpu_family() == 'aarch64'
-  if system_has_kms_drm
-    with_asm_arch = 'aarch64'
-    pre_args += ['-DUSE_AARCH64_ASM']
-  endif
-elif host_machine.cpu_family() == 'sparc64'
-  if system_has_kms_drm
-    with_asm_arch = 'sparc'
-    pre_args += ['-DUSE_SPARC_ASM']
-  endif
-elif host_machine.cpu_family() == 'ppc64' and host_machine.endian() == 'little'
-  if system_has_kms_drm
-    with_asm_arch = 'ppc64le'
-    pre_args += ['-DUSE_PPC64LE_ASM']
-  endif
-elif host_machine.cpu_family() == 'mips64' and host_machine.endian() == 'little'
-  if system_has_kms_drm
-    with_asm_arch = 'mips64el'
-    pre_args += ['-DUSE_MIPS64EL_ASM']
-  endif
-elif host_machine.cpu_family() == 'loongarch64'
-  if system_has_kms_drm
-    with_asm_arch = 'loongarch64'
-    pre_args += ['-DUSE_LOONGARCH64_ASM']
-  endif
-endif
-
 # Check for standard headers and functions
 if (cc.has_header_symbol('sys/sysmacros.h', 'major') and
   cc.has_header_symbol('sys/sysmacros.h', 'minor') and
