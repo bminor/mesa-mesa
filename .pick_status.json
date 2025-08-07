@@ -5644,7 +5644,7 @@
         "description": "zink: fix data race in descriptor_util_pool_key_get",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
