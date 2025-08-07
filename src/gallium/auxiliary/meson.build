@@ -385,8 +385,6 @@ if draw_with_llvm
 endif
 
 files_libgalliumvl = files(
-  'vl/vl_bicubic_filter.c',
-  'vl/vl_bicubic_filter.h',
   'vl/vl_codec.c',
   'vl/vl_codec.h',
   'vl/vl_compositor.c',
@@ -406,12 +404,8 @@ files_libgalliumvl = files(
   'vl/vl_deint_filter_cs.h',
   'vl/vl_idct.c',
   'vl/vl_idct.h',
-  'vl/vl_matrix_filter.c',
-  'vl/vl_matrix_filter.h',
   'vl/vl_mc.c',
   'vl/vl_mc.h',
-  'vl/vl_median_filter.c',
-  'vl/vl_median_filter.h',
   'vl/vl_mpeg12_bitstream.c',
   'vl/vl_mpeg12_bitstream.h',
   'vl/vl_mpeg12_decoder.c',
