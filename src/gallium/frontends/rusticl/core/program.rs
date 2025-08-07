@@ -90,7 +90,7 @@ pub struct Program {
 impl_cl_type_trait!(cl_program, Program, CL_INVALID_PROGRAM);
 
 pub struct ProgramBuild {
-    pub builds: HashMap<&'static Device, ProgramDevBuild>,
+    pub builds_by_device: HashMap<&'static Device, DeviceProgramBuild>,
     pub kernel_info: HashMap<String, Arc<KernelInfo>>,
     spec_constants: HashMap<u32, nir_const_value>,
     kernels: Vec<String>,
@@ -103,7 +103,7 @@ impl ProgramBuild {
 
     fn rebuild_kernels(&mut self, devs: &[&'static Device], is_src: bool) {
         let mut kernels: Vec<_> = self
-            .builds
+            .builds_by_device
             .values()
             .filter_map(|b| b.spirv.as_ref())
             .flat_map(|s| s.kernels())
@@ -125,7 +125,7 @@ impl ProgramBuild {
 
             // TODO: we could run this in parallel?
             for dev in devs {
-                let Some(build) = self.builds.get_mut(dev) else {
+                let Some(build) = self.builds_by_device.get_mut(dev) else {
                     continue;
                 };
 
@@ -137,7 +137,7 @@ impl ProgramBuild {
                     convert_spirv_to_nir(&build, kernel_name, &args, &self.spec_constants, dev);
                 kernel_info_set.insert(build_result.kernel_info);
 
-                self.builds.get_mut(dev).unwrap().kernels.insert(
+                self.builds_by_device.get_mut(dev).unwrap().kernels.insert(
                     kernel_name.clone(),
                     Arc::new(build_result.nir_kernel_builds),
                 );
@@ -158,12 +158,12 @@ impl ProgramBuild {
         }
     }
 
-    fn dev_build(&self, dev: &Device) -> &ProgramDevBuild {
-        self.builds.get(dev).unwrap()
+    fn dev_build(&self, dev: &Device) -> &DeviceProgramBuild {
+        self.builds_by_device.get(dev).unwrap()
     }
 
-    fn dev_build_mut(&mut self, dev: &Device) -> &mut ProgramDevBuild {
-        self.builds.get_mut(dev).unwrap()
+    fn dev_build_mut(&mut self, dev: &Device) -> &mut DeviceProgramBuild {
+        self.builds_by_device.get_mut(dev).unwrap()
     }
 
     pub fn kernels(&self) -> &[String] {
@@ -171,12 +171,12 @@ impl ProgramBuild {
     }
 
     pub fn has_successful_build(&self) -> bool {
-        self.builds.values().any(|b| b.is_success())
+        self.builds_by_device.values().any(|b| b.is_success())
     }
 }
 
 #[derive(Default)]
-pub struct ProgramDevBuild {
+pub struct DeviceProgramBuild {
     spirv: Option<spirv::SPIRVBin>,
     status: cl_build_status,
     options: String,
@@ -185,7 +185,7 @@ pub struct ProgramDevBuild {
     pub kernels: HashMap<String, Arc<NirKernelBuilds>>,
 }
 
-impl ProgramDevBuild {
+impl DeviceProgramBuild {
     pub fn hash_key(
         &self,
         cache: Option<&DiskCacheBorrowed>,
@@ -309,12 +309,12 @@ fn prepare_options(options: &str, dev: &Device) -> Vec<CString> {
 impl Program {
     fn create_default_builds(
         devs: &[&'static Device],
-    ) -> HashMap<&'static Device, ProgramDevBuild> {
+    ) -> HashMap<&'static Device, DeviceProgramBuild> {
         devs.iter()
             .map(|&d| {
                 (
                     d,
-                    ProgramDevBuild {
+                    DeviceProgramBuild {
                         status: CL_BUILD_NONE,
                         ..Default::default()
                     },
@@ -327,7 +327,7 @@ impl Program {
         Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Program),
             build: Mutex::new(ProgramBuild {
-                builds: Self::create_default_builds(&context.devs),
+                builds_by_device: Self::create_default_builds(&context.devs),
                 spec_constants: HashMap::new(),
                 kernels: Vec::new(),
                 kernel_info: HashMap::new(),
@@ -410,14 +410,14 @@ impl Program {
         let mut errors = vec![CL_SUCCESS as cl_int; devs.len()];
         for (idx, (&d, b)) in devs.iter().zip(bins).enumerate() {
             let build = match Self::spirv_from_bin_for_dev(d, b) {
-                Ok((spirv, bin_type)) => ProgramDevBuild {
+                Ok((spirv, bin_type)) => DeviceProgramBuild {
                     spirv: Some(spirv),
                     bin_type: bin_type,
                     ..Default::default()
                 },
                 Err(err) => {
                     errors[idx] = err;
-                    ProgramDevBuild {
+                    DeviceProgramBuild {
                         status: CL_BUILD_ERROR,
                         ..Default::default()
                     }
@@ -432,7 +432,7 @@ impl Program {
         }
 
         let mut build = ProgramBuild {
-            builds: builds,
+            builds_by_device: builds,
             spec_constants: HashMap::new(),
             kernels: Vec::new(),
             kernel_info: HashMap::new(),
@@ -456,7 +456,7 @@ impl Program {
             context: context,
             src: ProgramSourceType::Il(SPIRVBin::from_bin(spirv)),
             build: Mutex::new(ProgramBuild {
-                builds: builds,
+                builds_by_device: builds,
                 spec_constants: HashMap::new(),
                 kernels: Vec::new(),
                 kernel_info: HashMap::new(),
@@ -738,7 +738,7 @@ impl Program {
 
             builds.insert(
                 d,
-                ProgramDevBuild {
+                DeviceProgramBuild {
                     spirv: spirv,
                     status: status,
                     log: log,
@@ -749,7 +749,7 @@ impl Program {
         }
 
         let mut build = ProgramBuild {
-            builds: builds,
+            builds_by_device: builds,
             spec_constants: HashMap::new(),
             kernels: Vec::new(),
             kernel_info: HashMap::new(),

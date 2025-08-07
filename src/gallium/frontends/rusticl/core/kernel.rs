@@ -1175,7 +1175,7 @@ impl SPIRVToNirResult {
 }
 
 pub(super) fn convert_spirv_to_nir(
-    build: &ProgramDevBuild,
+    build: &DeviceProgramBuild,
     name: &str,
     args: &[spirv::SPIRVKernelArg],
     spec_constants: &HashMap<u32, nir_const_value>,
@@ -1239,7 +1239,7 @@ impl Kernel {
     pub fn new(name: String, prog: Arc<Program>, prog_build: &ProgramBuild) -> Arc<Kernel> {
         let kernel_info = Arc::clone(prog_build.kernel_info.get(&name).unwrap());
         let builds = prog_build
-            .builds
+            .builds_by_device
             .iter()
             .filter_map(|(&dev, b)| b.kernels.get(&name).map(|k| (dev, Arc::clone(k))))
             .collect();
