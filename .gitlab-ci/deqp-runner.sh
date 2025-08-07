@@ -66,21 +66,29 @@ fi
 # Default to an empty known flakes file if it doesn't exist.
 touch $INSTALL/$GPU_VERSION-flakes.txt
 
+cat $INSTALL/all-skips.txt > /skips.txt
 
-if [ -n "$DRIVER_NAME" ] && [ -e "$INSTALL/$DRIVER_NAME-skips.txt" ]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$DRIVER_NAME-skips.txt"
-fi
+add_if_exists() {
+  prefix=$1
+  kind=$2
+  if [ -e "$INSTALL/$prefix-$kind.txt" ]; then
+    cat "$INSTALL/$prefix-$kind.txt" >> "/$kind.txt"
+  fi
+}
 
-if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$GPU_VERSION-skips.txt"
-fi
+for prefix in \
+  "$DRIVER_NAME" \
+  "$GPU_VERSION" \
+  ; do
+  add_if_exists "$prefix" skips
+done
 
 if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [[ $CI_JOB_NAME != *full* ]]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$GPU_VERSION-slow-skips.txt"
+    cat "$INSTALL/$GPU_VERSION-slow-skips.txt" >> /skips.txt
 fi
 
 if [ -n "${ANGLE_TAG:-}" ]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/angle-skips.txt"
+    cat "$INSTALL/angle-skips.txt" >> /skips.txt
 fi
 
 # Set the path to VK validation layer settings (in case it ends up getting loaded)
@@ -131,7 +139,7 @@ deqp-runner \
     suite \
     --suite $INSTALL/deqp-$DEQP_SUITE.toml \
     --output $RESULTS_DIR \
-    --skips $INSTALL/all-skips.txt $DEQP_SKIPS \
+    --skips /skips.txt \
     --flakes $INSTALL/$GPU_VERSION-flakes.txt \
     --testlog-to-xml /deqp-tools/testlog-to-xml \
     --fraction-start ${CI_NODE_INDEX:-1} \
