@@ -334,8 +334,6 @@ extern "C" {
 void
 tu_perfetto_init(void)
 {
-   util_perfetto_init();
-
    {
    perfetto::DataSourceDescriptor dsd;
 #if DETECT_OS_ANDROID

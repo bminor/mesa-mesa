@@ -265,8 +265,6 @@ extern "C" {
 void
 fd_perfetto_init(void)
 {
-   util_perfetto_init();
-
    perfetto::DataSourceDescriptor dsd;
 #if DETECT_OS_ANDROID
    // Android tooling expects this data source name

@@ -53,8 +53,6 @@ PERFETTO_DEFINE_DATA_SOURCE_STATIC_MEMBERS(FdMemoryDataSource);
 extern "C" void
 fd_drm_perfetto_init(void)
 {
-   util_perfetto_init();
-
    perfetto::DataSourceDescriptor dsd;
    dsd.set_name("gpu.memory.msm");
    FdMemoryDataSource::Register(dsd);
