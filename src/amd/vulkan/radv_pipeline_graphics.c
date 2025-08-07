@@ -480,11 +480,6 @@ radv_compute_ia_multi_vgt_param(const struct radv_device *device, struct radv_sh
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_ia_multi_vgt_param_helpers ia_multi_vgt_param = {0};
 
-   ia_multi_vgt_param.ia_switch_on_eoi = false;
-   if (shaders[MESA_SHADER_FRAGMENT] && shaders[MESA_SHADER_FRAGMENT]->info.ps.prim_id_input)
-      ia_multi_vgt_param.ia_switch_on_eoi = true;
-   if (shaders[MESA_SHADER_GEOMETRY] && shaders[MESA_SHADER_GEOMETRY]->info.uses_prim_id)
-      ia_multi_vgt_param.ia_switch_on_eoi = true;
    if (shaders[MESA_SHADER_TESS_CTRL]) {
       const struct radv_shader *tes = radv_get_shader(shaders, MESA_SHADER_TESS_EVAL);
 
@@ -492,9 +487,12 @@ radv_compute_ia_multi_vgt_param(const struct radv_device *device, struct radv_sh
       if (shaders[MESA_SHADER_TESS_CTRL]->info.uses_prim_id || tes->info.uses_prim_id ||
           (tes->info.merged_shader_compiled_separately && shaders[MESA_SHADER_GEOMETRY]->info.uses_prim_id))
          ia_multi_vgt_param.ia_switch_on_eoi = true;
+      if (shaders[MESA_SHADER_FRAGMENT] && shaders[MESA_SHADER_FRAGMENT]->info.ps.prim_id_input)
+         ia_multi_vgt_param.ia_switch_on_eoi = true;
+      if (shaders[MESA_SHADER_GEOMETRY] && shaders[MESA_SHADER_GEOMETRY]->info.uses_prim_id)
+         ia_multi_vgt_param.ia_switch_on_eoi = true;
    }
 
-   ia_multi_vgt_param.partial_vs_wave = false;
    if (shaders[MESA_SHADER_TESS_CTRL]) {
       /* Bug with tessellation and GS on Bonaire and older 2 SE chips. */
       if ((pdev->info.family == CHIP_TAHITI || pdev->info.family == CHIP_PITCAIRN ||
