@@ -432,6 +432,14 @@ fn set_kernel_arg(
                 } else {
                     // SAFETY: as above
                     let buffer = Buffer::arc_from_raw(unsafe { *ptr })?;
+                    // We are required to prevent mutable access to immutable memory objects,
+                    // however no explicit error code has been specified yet.
+                    if arg.kind == KernelArgType::MemGlobal
+                        && bit_check(buffer.flags, CL_MEM_IMMUTABLE_EXT)
+                    {
+                        return Err(CL_INVALID_ARG_VALUE);
+                    }
+
                     KernelArgValue::Buffer(Arc::downgrade(&buffer))
                 }
             }
@@ -446,8 +454,13 @@ fn set_kernel_arg(
                 // of CL_MEM_WRITE_ONLY or if the image argument is declared with the write_only
                 // qualifier and arg_value refers to an image object created with cl_mem_flags
                 // of CL_MEM_READ_ONLY.
+                // We are required to prevent mutable access to immutable memory objects, however no
+                // explicit error code has been specified yet.
                 if arg.kind == KernelArgType::Texture && bit_check(img.flags, CL_MEM_WRITE_ONLY)
-                    || arg.kind == KernelArgType::Image && bit_check(img.flags, CL_MEM_READ_ONLY)
+                    || arg.kind == KernelArgType::Image
+                        && bit_check(img.flags, CL_MEM_READ_ONLY | CL_MEM_IMMUTABLE_EXT)
+                    || arg.kind == KernelArgType::RWImage
+                        && bit_check(img.flags, CL_MEM_IMMUTABLE_EXT)
                 {
                     return Err(CL_INVALID_ARG_VALUE);
                 }

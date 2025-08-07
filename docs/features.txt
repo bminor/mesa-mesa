@@ -885,7 +885,7 @@ Rusticl extensions:
   cl_ext_image_raw10_raw12                              not started
   cl_ext_image_requirements_info                        not started
   cl_ext_image_unorm_int_2_101010                       DONE
-  cl_ext_immutable_memory_objects                       not started
+  cl_ext_immutable_memory_objects                       DONE
   cl_ext_migrate_memobject                              not started
   cl_arm_non_uniform_work_group_size                    not started
   cl_arm_shared_virtual_memory                          in progress (nvc0)

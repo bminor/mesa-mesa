@@ -33,11 +33,18 @@ enum MemFlagValidationType {
 
     /// For when the memory object is imported.
     Imported,
+
+    /// For when he memory object is sub-allocated from an existing memory object.
+    SubAlloc,
 }
 
 fn validate_mem_flags(flags: cl_mem_flags, validation: MemFlagValidationType) -> CLResult<()> {
     let mut valid_flags = cl_bitfield::from(
-        CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_KERNEL_READ_AND_WRITE,
+        CL_MEM_READ_WRITE
+            | CL_MEM_WRITE_ONLY
+            | CL_MEM_READ_ONLY
+            | CL_MEM_KERNEL_READ_AND_WRITE
+            | CL_MEM_IMMUTABLE_EXT,
     );
 
     if validation != MemFlagValidationType::Imported {
@@ -72,12 +79,32 @@ fn validate_mem_flags_create(
     let host_read_write_group =
         cl_bitfield::from(CL_MEM_HOST_WRITE_ONLY | CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS);
 
+    let write_flags_group =
+        cl_bitfield::from(CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_HOST_WRITE_ONLY);
+
     if (flags & read_write_group).count_ones() > 1
         || (flags & alloc_host_group).count_ones() > 1
         || (flags & copy_host_group).count_ones() > 1
         || (flags & host_read_write_group).count_ones() > 1
     {
         return Err(CL_INVALID_VALUE);
+    }
+
+    // CL_INVALID_VALUE if CL_MEM_IMMUTABLE_EXT is set in flags and CL_MEM_READ_WRITE,
+    // CL_MEM_WRITE_ONLY, or CL_MEM_HOST_WRITE_ONLY is set in flags
+    if flags & cl_mem_flags::from(CL_MEM_IMMUTABLE_EXT) != 0 {
+        if flags & write_flags_group != 0 {
+            return Err(CL_INVALID_VALUE);
+        }
+
+        // CL_INVALID_VALUE .. if CL_MEM_IMMUTABLE_EXT is set in flags and none of the following
+        // conditions are met:
+        //   CL_MEM_COPY_HOST_PTR or CL_MEM_USE_HOST_PTR is set in flags
+        //   the image is being created from another memory object (buffer or image)
+        //   properties includes an external memory handle
+        if validation == MemFlagValidationType::Plain && flags & copy_host_group == 0 {
+            return Err(CL_INVALID_VALUE);
+        }
     }
 
     validate_mem_flags(flags, validation)
@@ -108,7 +135,9 @@ fn validate_map_flags(m: &MemBase, map_flags: cl_mem_flags) -> CLResult<()> {
       bit_check(map_flags, CL_MAP_READ) ||
       // or if buffer has been created with CL_MEM_HOST_READ_ONLY or CL_MEM_HOST_NO_ACCESS and
       // CL_MAP_WRITE or CL_MAP_WRITE_INVALIDATE_REGION is set in map_flags.
-      bit_check(m.flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS) &&
+      // CL_INVALID_OPERATION if buffer was created with CL_MEM_IMMUTABLE_EXT in flags and
+      // CL_MAP_WRITE or CL_MAP_WRITE_INVALIDATE_REGION is set in map_flags.
+      bit_check(m.flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS | CL_MEM_IMMUTABLE_EXT) &&
       bit_check(map_flags, CL_MAP_WRITE | CL_MAP_WRITE_INVALIDATE_REGION)
     {
         return Err(CL_INVALID_OPERATION);
@@ -119,8 +148,11 @@ fn validate_map_flags(m: &MemBase, map_flags: cl_mem_flags) -> CLResult<()> {
 
 fn filter_image_access_flags(flags: cl_mem_flags) -> cl_mem_flags {
     flags
-        & (CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_READ_ONLY | CL_MEM_KERNEL_READ_AND_WRITE)
-            as cl_mem_flags
+        & (CL_MEM_READ_WRITE
+            | CL_MEM_WRITE_ONLY
+            | CL_MEM_READ_ONLY
+            | CL_MEM_KERNEL_READ_AND_WRITE
+            | CL_MEM_IMMUTABLE_EXT) as cl_mem_flags
 }
 
 fn inherit_mem_flags(mut flags: cl_mem_flags, mem: &MemBase) -> cl_mem_flags {
@@ -222,7 +254,9 @@ fn validate_matching_buffer_flags(mem: &MemBase, flags: cl_mem_flags) -> CLResul
       // or if mem_object was created with CL_MEM_HOST_READ_ONLY and flags specifies CL_MEM_HOST_WRITE_ONLY
       bit_check(mem.flags, CL_MEM_HOST_READ_ONLY) && bit_check(flags, CL_MEM_HOST_WRITE_ONLY) ||
       // or if mem_object was created with CL_MEM_HOST_NO_ACCESS and_flags_ specifies CL_MEM_HOST_READ_ONLY or CL_MEM_HOST_WRITE_ONLY.
-      bit_check(mem.flags, CL_MEM_HOST_NO_ACCESS) && bit_check(flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+      bit_check(mem.flags, CL_MEM_HOST_NO_ACCESS) && bit_check(flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_WRITE_ONLY) ||
+      // CL_INVALID_VALUE if buffer was created with CL_MEM_IMMUTABLE_EXT and flags specifies CL_MEM_READ_WRITE, CL_MEM_WRITE_ONLY, or CL_MEM_HOST_WRITE_ONLY.
+      bit_check(mem.flags, CL_MEM_IMMUTABLE_EXT) && bit_check(flags, CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_HOST_WRITE_ONLY)
     {
         return Err(CL_INVALID_VALUE);
     }
@@ -377,7 +411,7 @@ fn create_sub_buffer(
     validate_matching_buffer_flags(&b, flags)?;
 
     flags = inherit_mem_flags(flags, &b);
-    validate_mem_flags_create(flags, MemFlagValidationType::Plain)?;
+    validate_mem_flags_create(flags, MemFlagValidationType::SubAlloc)?;
 
     let (offset, size) = match buffer_create_type {
         CL_BUFFER_CREATE_TYPE_REGION => {
@@ -462,6 +496,7 @@ fn validate_image_desc(
     image_desc: *const cl_image_desc,
     host_ptr: *mut ::std::os::raw::c_void,
     elem_size: usize,
+    flags: cl_mem_flags,
     devs: &[&Device],
 ) -> CLResult<(cl_image_desc, Option<Mem>)> {
     // CL_INVALID_IMAGE_DESCRIPTOR if values specified in image_desc are not valid
@@ -544,6 +579,13 @@ fn validate_image_desc(
         } {
             return Err(CL_INVALID_OPERATION);
         }
+
+        // CL_INVALID_VALUE if CL_MEM_IMMUTABLE_EXT is not set in flags and mem_object was created
+        // with CL_MEM_IMMUTABLE_EXT
+        if bit_check(p.flags, CL_MEM_IMMUTABLE_EXT) && !bit_check(flags, CL_MEM_IMMUTABLE_EXT) {
+            return Err(CL_INVALID_VALUE);
+        }
+
         Some(p)
     } else {
         None
@@ -817,7 +859,8 @@ fn create_image_with_properties(
         .ok_or(CL_INVALID_OPERATION)?;
 
     let (format, elem_size) = validate_image_format(image_format)?;
-    let (desc, parent) = validate_image_desc(image_desc, host_ptr, elem_size.into(), &c.devs)?;
+    let (desc, parent) =
+        validate_image_desc(image_desc, host_ptr, elem_size.into(), flags, &c.devs)?;
 
     // validate host_ptr before merging flags
     validate_host_ptr(host_ptr, flags)?;
@@ -830,7 +873,14 @@ fn create_image_with_properties(
         flags = CL_MEM_READ_WRITE.into();
     }
 
-    validate_mem_flags_create(flags, MemFlagValidationType::Plain)?;
+    validate_mem_flags_create(
+        flags,
+        if parent.is_some() {
+            MemFlagValidationType::SubAlloc
+        } else {
+            MemFlagValidationType::Plain
+        },
+    )?;
 
     let filtered_flags = filter_image_access_flags(flags);
     // CL_IMAGE_FORMAT_NOT_SUPPORTED if there are no devices in context that support image_format.
@@ -1176,7 +1226,12 @@ fn enqueue_write_buffer(
 
     // CL_INVALID_OPERATION if clEnqueueWriteBuffer is called on buffer which has been created with
     // CL_MEM_HOST_READ_ONLY or CL_MEM_HOST_NO_ACCESS.
-    if bit_check(b.flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS) {
+    // CL_INVALID_OPERATION if clEnqueueWriteBuffer is called on buffer which has been created with
+    // CL_MEM_IMMUTABLE_EXT.
+    if bit_check(
+        b.flags,
+        CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS | CL_MEM_IMMUTABLE_EXT,
+    ) {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -1216,6 +1271,11 @@ fn enqueue_copy_buffer(
     // are not the same
     if q.context != src.context || q.context != dst.context {
         return Err(CL_INVALID_CONTEXT);
+    }
+
+    // CL_INVALID_OPERATION if dst_buffer was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(dst.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
     }
 
     // CL_INVALID_VALUE if src_offset, dst_offset, size, src_offset + size or dst_offset + size
@@ -1396,7 +1456,12 @@ fn enqueue_write_buffer_rect(
 
     // CL_INVALID_OPERATION if clEnqueueWriteBufferRect is called on buffer which has been created
     // with CL_MEM_HOST_READ_ONLY or CL_MEM_HOST_NO_ACCESS.
-    if bit_check(buf.flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS) {
+    // CL_INVALID_OPERATION if clEnqueueWriteBufferRect is called on buffer which has been created
+    // with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(
+        buf.flags,
+        CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS | CL_MEM_IMMUTABLE_EXT,
+    ) {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -1514,6 +1579,11 @@ fn enqueue_copy_buffer_rect(
     // CL_INVALID_VALUE if src_origin, dst_origin, or region is NULL.
     if src_origin.is_null() || dst_origin.is_null() || region.is_null() {
         return Err(CL_INVALID_VALUE);
+    }
+
+    // CL_INVALID_OPERATION if dst_buffer was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(dst.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
     }
 
     let r = unsafe { CLVec::from_raw(region) };
@@ -1643,6 +1713,11 @@ fn enqueue_fill_buffer(
     let q = Queue::arc_from_raw(command_queue)?;
     let b = Buffer::arc_from_raw(buffer)?;
     let evs = event_list_from_cl(&q, num_events_in_wait_list, event_wait_list)?;
+
+    // CL_INVALID_OPERATION if buffer was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(b.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
+    }
 
     // CL_INVALID_VALUE if offset or offset + size require accessing elements outside the buffer
     // buffer object respectively.
@@ -1851,7 +1926,12 @@ fn enqueue_write_image(
 
     // CL_INVALID_OPERATION if clEnqueueWriteImage is called on image which has been created with
     // CL_MEM_HOST_READ_ONLY or CL_MEM_HOST_NO_ACCESS.
-    if bit_check(i.flags, CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS) {
+    // CL_INVALID_OPERATION if clEnqueueWriteImage is called on image which has been created with
+    // CL_MEM_IMMUTABLE_EXT.
+    if bit_check(
+        i.flags,
+        CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS | CL_MEM_IMMUTABLE_EXT,
+    ) {
         return Err(CL_INVALID_OPERATION);
     }
 
@@ -1930,6 +2010,11 @@ fn enqueue_copy_image(
         return Err(CL_INVALID_CONTEXT);
     }
 
+    // CL_INVALID_OPERATION if dst_image was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(dst_image.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
+    }
+
     // CL_IMAGE_FORMAT_MISMATCH if src_image and dst_image do not use the same image format.
     if src_image.image_format != dst_image.image_format {
         return Err(CL_IMAGE_FORMAT_MISMATCH);
@@ -1996,6 +2081,11 @@ fn enqueue_fill_image(
     // CL_INVALID_CONTEXT if the context associated with command_queue and image are not the same
     if i.context != q.context {
         return Err(CL_INVALID_CONTEXT);
+    }
+
+    // CL_INVALID_OPERATION if image was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(i.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
     }
 
     // Not supported with depth stencil or msaa images.
@@ -2067,6 +2157,11 @@ fn enqueue_copy_buffer_to_image(
         return Err(CL_INVALID_CONTEXT);
     }
 
+    // CL_INVALID_OPERATION if dst_image was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(dst.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
+    }
+
     // Not supported with depth stencil or msaa images.
     if dst.image_format.image_channel_order == CL_DEPTH_STENCIL || dst.image_desc.num_samples > 0 {
         return Err(CL_INVALID_OPERATION);
@@ -2125,6 +2220,11 @@ fn enqueue_copy_image_to_buffer(
     // are not the same
     if q.context != src.context || q.context != dst.context {
         return Err(CL_INVALID_CONTEXT);
+    }
+
+    // CL_INVALID_OPERATION if dst_buffer was created with CL_MEM_IMMUTABLE_EXT.
+    if bit_check(dst.flags, CL_MEM_IMMUTABLE_EXT) {
+        return Err(CL_INVALID_OPERATION);
     }
 
     // Not supported with depth stencil or msaa images.
@@ -2392,6 +2492,11 @@ pub fn svm_alloc(
 
     // flags does not contain CL_MEM_SVM_FINE_GRAIN_BUFFER but does contain CL_MEM_SVM_ATOMICS.
     if !bit_check(flags, CL_MEM_SVM_FINE_GRAIN_BUFFER) && bit_check(flags, CL_MEM_SVM_ATOMICS) {
+        return Err(CL_INVALID_VALUE);
+    }
+
+    // flags contains CL_MEM_IMMUTABLE_EXT.
+    if bit_check(flags, CL_MEM_IMMUTABLE_EXT) {
         return Err(CL_INVALID_VALUE);
     }
 

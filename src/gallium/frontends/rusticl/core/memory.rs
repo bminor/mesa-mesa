@@ -837,6 +837,8 @@ impl MemBase {
         } else {
             let res_type = if bit_check(flags, CL_MEM_ALLOC_HOST_PTR) {
                 ResourceType::Staging
+            } else if bit_check(flags, CL_MEM_IMMUTABLE_EXT) {
+                ResourceType::Immutable
             } else {
                 ResourceType::Normal
             };
@@ -960,6 +962,8 @@ impl MemBase {
 
         let res_type = if bit_check(flags, CL_MEM_ALLOC_HOST_PTR) {
             ResourceType::Staging
+        } else if bit_check(flags, CL_MEM_IMMUTABLE_EXT) {
+            ResourceType::Immutable
         } else {
             ResourceType::Normal
         };

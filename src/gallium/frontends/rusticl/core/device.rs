@@ -286,7 +286,7 @@ impl DeviceBase {
                     cl_mem_type_to_texture_target(t),
                     PIPE_BIND_SAMPLER_VIEW,
                 ) {
-                    flags |= CL_MEM_READ_ONLY;
+                    flags |= CL_MEM_READ_ONLY | CL_MEM_IMMUTABLE_EXT;
                 }
 
                 // TODO: cl_khr_srgb_image_writes
@@ -623,6 +623,7 @@ impl DeviceBase {
         add_ext(1, 0, 0, "cl_khr_spirv_no_integer_wrap_decoration");
         add_ext(1, 0, 0, "cl_khr_spirv_queries");
         add_ext(1, 0, 0, "cl_khr_suggested_local_work_size");
+        add_ext(1, 0, 0, "cl_ext_immutable_memory_objects");
 
         add_feat(2, 0, 0, "__opencl_c_integer_dot_product_input_4x8bit");
         add_feat(
