@@ -115,8 +115,6 @@ variables:
   # Re-enable farm with `git mv .ci-farms{-disabled,}/$farm_name`
   # NEVER MIX FARM MAINTENANCE WITH ANY OTHER CHANGE IN THE SAME MERGE REQUEST!
   ARTIFACTS_BASE_URL: https://${CI_PROJECT_ROOT_NAMESPACE}.${CI_PAGES_DOMAIN}/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts
-  # Python scripts for structured logger
-  PYTHONPATH: $CI_PROJECT_DIR/install
   # No point in continuing once the device is lost
   MESA_VK_ABORT_ON_DEVICE_LOSS: 1
   # Avoid the wall of "Unsupported SPIR-V capability" warnings in CI job log, hiding away useful output
