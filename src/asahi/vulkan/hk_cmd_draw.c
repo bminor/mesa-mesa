@@ -1306,13 +1306,13 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
 
       uint32_t alloc = 0;
       uint32_t tcs_out_offs = alloc;
-      alloc += unrolled_patches * args.tcs_stride_el * 4 * 32;
+      alloc += unrolled_patches * args.tcs_stride_el * sizeof(uint32_t);
 
       uint32_t patch_coord_offs = alloc;
-      alloc += unrolled_patches * 4 * 32;
+      alloc += unrolled_patches * sizeof(uint32_t);
 
       uint32_t count_offs = alloc;
-      alloc += unrolled_patches * sizeof(uint32_t) * 32;
+      alloc += unrolled_patches * sizeof(uint32_t);
 
       /* Single API draw */
       uint32_t draw_offs = alloc;
