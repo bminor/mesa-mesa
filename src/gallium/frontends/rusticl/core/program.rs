@@ -260,6 +260,11 @@ impl DeviceProgramBuild {
     }
 }
 
+pub struct HeaderProgram {
+    pub name: CString,
+    pub program: Arc<Program>,
+}
+
 fn prepare_options(options: &str, dev: &Device) -> Vec<CString> {
     let mut options = options.to_owned();
     if !options.contains("-cl-std=") {
@@ -606,7 +611,7 @@ impl Program {
         &self,
         dev: &Device,
         options: &str,
-        headers: &[spirv::CLCHeader],
+        headers: &[HeaderProgram],
         info: &mut MutexGuard<ProgramBuild>,
     ) -> bool {
         let d = info.dev_build_mut(dev);
@@ -622,6 +627,21 @@ impl Program {
             }
             ProgramSourceType::Src(src) => {
                 let args = prepare_options(options, dev);
+                let headers: Vec<_> = headers
+                    .iter()
+                    .map(|header| {
+                        // We should have already verified that the header
+                        // program is source-based.
+                        let ProgramSourceType::Src(header_src) = &header.program.src else {
+                            panic!("mismatch between program source type and header source type");
+                        };
+
+                        spirv::CLCHeader {
+                            name: &header.name,
+                            source: &header_src,
+                        }
+                    })
+                    .collect();
 
                 if Platform::dbg().clc {
                     let src = src.to_string_lossy();
@@ -636,7 +656,7 @@ impl Program {
                 let (spirv, msgs) = spirv::SPIRVBin::from_clc(
                     src,
                     &args,
-                    headers,
+                    &headers,
                     get_disk_cache(),
                     dev.cl_features(),
                     &dev.spirv_extensions,
@@ -674,7 +694,7 @@ impl Program {
         }
     }
 
-    pub fn compile(&self, devs: &[&Device], options: &str, headers: &[spirv::CLCHeader]) -> bool {
+    pub fn compile(&self, devs: &[&Device], options: &str, headers: &[HeaderProgram]) -> bool {
         let mut res = true;
         for dev in devs {
             res &= self.do_compile(dev, options, headers, &mut self.build_info());

@@ -5,7 +5,6 @@ use crate::core::context::*;
 use crate::core::device::*;
 use crate::core::program::*;
 
-use mesa_rust::compiler::clc::*;
 use mesa_rust_util::string::*;
 use rusticl_opencl_gen::*;
 use rusticl_proc_macros::cl_entrypoint;
@@ -377,16 +376,24 @@ fn compile_program(
     // and header_include_names are ignored.
     if !p.is_il() {
         for h in 0..num_input_headers as usize {
-            // SAFETY: have to trust the application here
-            let header = Program::ref_from_raw(unsafe { *input_headers.add(h) })?;
-            match &header.src {
-                ProgramSourceType::Src(src) => headers.push(spirv::CLCHeader {
-                    // SAFETY: have to trust the application here
-                    name: unsafe { CStr::from_ptr(*header_include_names.add(h)).to_owned() },
-                    source: src,
-                }),
-                _ => return Err(CL_INVALID_OPERATION),
+            // SAFETY: The OpenCL spec requires that num_input_headers give the
+            // number of `cl_program` objects in input_headers. It is up to the
+            // caller to ensure that this requirement is met.
+            let header = Program::arc_from_raw(unsafe { *input_headers.add(h) })?;
+            if !header.is_src() {
+                // The OpenCL spec specifies that headers must be created with
+                // clCreateProgramWithSource, but does not specify an error code
+                // to return if they are not.
+                return Err(CL_INVALID_OPERATION);
             }
+
+            headers.push(HeaderProgram {
+                // SAFETY: The OpenCL spec requires that there be a
+                // one-to-one correspondence between input_headers and
+                // header_include_names, containing valid C strings.
+                name: unsafe { CStr::from_ptr(*header_include_names.add(h)).to_owned() },
+                program: header,
+            });
         }
     }
 

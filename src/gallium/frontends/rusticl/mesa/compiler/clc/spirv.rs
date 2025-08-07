@@ -41,7 +41,7 @@ pub struct SPIRVKernelArg {
 }
 
 pub struct CLCHeader<'a> {
-    pub name: CString,
+    pub name: &'a CString,
     pub source: &'a CString,
 }
 
