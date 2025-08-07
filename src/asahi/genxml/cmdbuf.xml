@@ -411,7 +411,7 @@
   </struct>
 
   <!-- PPP state starts -->
-  <struct name="PPP Header" size="4">
+  <struct name="PPP Header" size="4" align="4">
     <field name="Fragment control" size="1" start="0" type="bool"/>
     <field name="Fragment control 2" size="1" start="1" type="bool"/>
     <field name="Fragment front face" size="1" start="2" type="bool"/>

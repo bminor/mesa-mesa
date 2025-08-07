@@ -991,7 +991,8 @@ agx_upload_viewport_scissor(struct agx_pool *pool, struct agx_batch *batch,
    };
 
    size_t size = agx_ppp_update_size(&present);
-   struct agx_ptr T = agx_pool_alloc_aligned(&batch->pool, size, 64);
+   struct agx_ptr T =
+      agx_pool_alloc_aligned(&batch->pool, size, AGX_PPP_HEADER_ALIGN);
    struct agx_ppp_update ppp = agx_new_ppp_update(T, size, &present);
 
    agx_ppp_push(&ppp, DEPTH_BIAS_SCISSOR, cfg) {
@@ -3331,7 +3332,8 @@ agx_batch_init_state(struct agx_batch *batch)
    };
 
    size_t size = agx_ppp_update_size(&present);
-   struct agx_ptr T = agx_pool_alloc_aligned(&batch->pool, size, 64);
+   struct agx_ptr T =
+      agx_pool_alloc_aligned(&batch->pool, size, AGX_PPP_HEADER_ALIGN);
    struct agx_ppp_update ppp = agx_new_ppp_update(T, size, &present);
 
    /* clang-format off */
@@ -3566,7 +3568,8 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
    };
 
    size_t size = agx_ppp_update_size(&dirty);
-   struct agx_ptr T = agx_pool_alloc_aligned(&batch->pool, size, 64);
+   struct agx_ptr T =
+      agx_pool_alloc_aligned(&batch->pool, size, AGX_PPP_HEADER_ALIGN);
    struct agx_ppp_update ppp = agx_new_ppp_update(T, size, &dirty);
 
    if (dirty.fragment_control) {
