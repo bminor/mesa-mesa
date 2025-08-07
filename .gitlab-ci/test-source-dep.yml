@@ -169,12 +169,8 @@
         - src/mesa/main/**/*
         - src/mesa/math/**/*
         - src/mesa/program/**/*
-        - src/mesa/sparc/**/*
         - src/mesa/state_tracker/**/*
-        - src/mesa/swrast/**/*
-        - src/mesa/swrast_setup/**/*
         - src/mesa/vbo/**/*
-        - src/mesa/x86-64/**/*
       when: on_success
     - !reference [.gallium-core-rules, rules]
 
