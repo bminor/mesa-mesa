@@ -42,6 +42,14 @@ fn validate_mem_flags(flags: cl_mem_flags, import: bool) -> CLResult<()> {
         );
     }
 
+    if flags & !valid_flags != 0 {
+        return Err(CL_INVALID_VALUE);
+    }
+
+    Ok(())
+}
+
+fn validate_mem_flags_create(flags: cl_mem_flags, import: bool) -> CLResult<()> {
     let read_write_group =
         cl_bitfield::from(CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_READ_ONLY);
 
@@ -52,15 +60,15 @@ fn validate_mem_flags(flags: cl_mem_flags, import: bool) -> CLResult<()> {
     let host_read_write_group =
         cl_bitfield::from(CL_MEM_HOST_WRITE_ONLY | CL_MEM_HOST_READ_ONLY | CL_MEM_HOST_NO_ACCESS);
 
-    if (flags & !valid_flags != 0)
-        || (flags & read_write_group).count_ones() > 1
+    if (flags & read_write_group).count_ones() > 1
         || (flags & alloc_host_group).count_ones() > 1
         || (flags & copy_host_group).count_ones() > 1
         || (flags & host_read_write_group).count_ones() > 1
     {
         return Err(CL_INVALID_VALUE);
     }
-    Ok(())
+
+    validate_mem_flags(flags, import)
 }
 
 fn validate_map_flags_common(map_flags: cl_mem_flags) -> CLResult<()> {
@@ -280,7 +288,7 @@ fn create_buffer_with_properties(
     let c = Context::arc_from_raw(context)?;
 
     // CL_INVALID_VALUE if values specified in flags are not valid as defined in the Memory Flags table.
-    validate_mem_flags(flags, false)?;
+    validate_mem_flags_create(flags, false)?;
 
     // CL_INVALID_BUFFER_SIZE if size is 0
     if size == 0 {
@@ -357,7 +365,7 @@ fn create_sub_buffer(
     validate_matching_buffer_flags(&b, flags)?;
 
     flags = inherit_mem_flags(flags, &b);
-    validate_mem_flags(flags, false)?;
+    validate_mem_flags_create(flags, false)?;
 
     let (offset, size) = match buffer_create_type {
         CL_BUFFER_CREATE_TYPE_REGION => {
@@ -810,7 +818,7 @@ fn create_image_with_properties(
         flags = CL_MEM_READ_WRITE.into();
     }
 
-    validate_mem_flags(flags, false)?;
+    validate_mem_flags_create(flags, false)?;
 
     let filtered_flags = filter_image_access_flags(flags);
     // CL_IMAGE_FORMAT_NOT_SUPPORTED if there are no devices in context that support image_format.
@@ -3046,7 +3054,7 @@ fn create_from_gl(
 
     // CL_INVALID_VALUE if values specified in flags are not valid or if value specified in
     // texture_target is not one of the values specified in the description of texture_target.
-    validate_mem_flags(flags, true)?;
+    validate_mem_flags_create(flags, true)?;
 
     // CL_INVALID_MIP_LEVEL if miplevel is greather than zero and the OpenGL
     // implementation does not support creating from non-zero mipmap levels.
