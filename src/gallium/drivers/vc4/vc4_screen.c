@@ -466,8 +466,6 @@ vc4_screen_create(int fd, const struct pipe_screen_config *config,
         struct pipe_screen *pscreen;
         int err;
 
-        util_cpu_trace_init();
-
         pscreen = &screen->base;
 
         pscreen->destroy = vc4_screen_destroy;

@@ -764,8 +764,6 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
         struct v3d_screen *screen = rzalloc(NULL, struct v3d_screen);
         struct pipe_screen *pscreen;
 
-        util_cpu_trace_init();
-
         pscreen = &screen->base;
 
         pscreen->destroy = v3d_screen_destroy;
