@@ -1175,13 +1175,6 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
       ir3_setup_const_state(s, so, ir3_const_state_mut(so));
    }
 
-   /* reassociate constants and scalar operations together in groups of
-    * associative ALU ops.  Do this before preamble to give more chances to
-    * hoist to preamble.
-    */
-   progress |= OPT(s, nir_opt_reassociate_loop,
-                   nir_reassociate_scalar_math | nir_reassociate_cse_heuristic);
-
    /* Cleanup code leftover from lowering passes before opt_preamble */
    if (progress) {
       ir3_optimize_loop(so->compiler, options, s);

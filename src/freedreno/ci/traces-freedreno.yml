@@ -26,7 +26,7 @@ traces:
     freedreno-a530:
       checksum: e3370ce93f56703e0c827a36dca2256d
     freedreno-a618:
-      checksum: 6fd0222ebd706f792aa05b1fc8d41ab7
+      checksum: eaedce6c69165b08a63a57b9c9901230
     zink-a618:
       checksum: 45bdbb33bf87ed114bd548248be13408
       label: [skip, broken]
@@ -54,7 +54,7 @@ traces:
     freedreno-a530:
       checksum: b0a10ed261fdfeba76de4de5c2bd0aae
     freedreno-a618:
-      checksum: bce9a4f5f4c70cec484712254b7f915c
+      checksum: 747fa9a4e47bbb37c24c3376a3f8255b
     zink-a618:
       label: [skip, slow]
       checksum: ade41e6fe932552914c678155149babb
@@ -77,7 +77,7 @@ traces:
     freedreno-a530:
       label: [unsupported]
     freedreno-a618:
-      checksum: be6f39a5e970efdb72d6bfc6e144c6da
+      checksum: 17c6a6dd333514b125cc18282ce24ba8
     zink-a618:
       label: [skip, flakes]
       checksum: 96f7f231042f892c7d11c91defd7ecc1
@@ -103,7 +103,7 @@ traces:
       checksum: 1ae49af7017ae2a08fbb1caf377ada91
       label: [skip, slow]
     freedreno-a618:
-      checksum: e44a7227c8d080e16ed373496fe3b6cb
+      checksum: 47016a34553e5a28e2e1e0b92d11c92f
     zink-a618:
       label: [crash, skip]
       checksum: 5cd30bb46cbabc0d77cc4aacbcd7c0c2
@@ -126,7 +126,7 @@ traces:
       label: [skip, slow]
       text: 2 minute runtime on db820c
     freedreno-a618:
-      checksum: eeb2e6bcd89f6b3e455691a58eeab733
+      checksum: e0b4cb968d2653a568f0ea5eeee4d39a
     zink-a618:
       label: [skip, timeout]
 
@@ -153,9 +153,9 @@ traces:
       checksum: 2a53e6086588f4675ae3dcda9f26603b
       label: [skip, slow]
     freedreno-a618:
-      checksum: f463be29a333b1866da407eb323f867f
+      checksum: 730692659fbb9eefa44d6b1a2df2fa8e
     zink-a618:
-      checksum: 2a31ee1a56b755dcf5975b31eacbec32
+      checksum: 552e62fabd05ebfbb6d7bdd574b4e1c7
 
   behdad-glyphy/glyphy-v2.trace:
     freedreno-a306:
@@ -164,10 +164,10 @@ traces:
       checksum: 3a37faf7ec62d48dada63f157f30d876
     freedreno-a618:
       label: [no-perf]
-      checksum: 42b070ccc03915125a1d4b98c2bcffd7
+      checksum: d25edb433abfcde517b626b3071906ff
     zink-a618:
       label: [no-perf]
-      checksum: 42b070ccc03915125a1d4b98c2bcffd7
+      checksum: d25edb433abfcde517b626b3071906ff
 
   glxgears/glxgears-2-v2.trace:
     freedreno-a306:
@@ -190,9 +190,9 @@ traces:
     freedreno-a530:
       checksum: 88188447495b819e5814368486deb0a0
     freedreno-a618:
-      checksum: 24c35a9fe9ee5f5ccfec23f4cd54e974
+      checksum: eb810bd258c06f873a2d9718c5209c6d
     zink-a618:
-      checksum: cb943dd61361e72cdedf2e9db7b38c3e
+      checksum: eefcef0b1167c1140c298f3908c31195
 
 # gimark requires an environment var to work around a bug, disable for now
 #  gputest/gimark-v2.trace:
@@ -242,9 +242,9 @@ traces:
       checksum: ef9cec3c226477e908d4bb2ffe9e8eb9
       text: Looks fine, but totally different shape from the rendering on i965.
     freedreno-a618:
-      checksum: 63c5cc2289771f34645ac859874f92de
+      checksum: e4da2cf366cb68833569105d37aaa50d
     zink-a618:
-      checksum: 63c5cc2289771f34645ac859874f92de
+      checksum: e4da2cf366cb68833569105d37aaa50d
 
   gputest/plot3d-v2.trace:
     freedreno-a306:
@@ -263,9 +263,9 @@ traces:
       label: [unsupported]
       text: Requires GL4 for tess.
     freedreno-a618:
-      checksum: 9a3a1ba0bf326aee13797f634afd052f
+      checksum: 92312303aa8279214f0a300a625efa87
     zink-a618:
-      checksum: 9a3a1ba0bf326aee13797f634afd052f
+      checksum: 92312303aa8279214f0a300a625efa87
 
   gputest/triangle-v2.trace:
     freedreno-a306:
@@ -283,9 +283,9 @@ traces:
     freedreno-a530:
       checksum: aab5c853e383e1cda56663d65f6925ad
     freedreno-a618:
-      checksum: 2e4f7b19a865d2345e952b0721fc5362
+      checksum: 83fd7bce0fc1e1f30bd143b7d30ca890
     zink-a618:
-      checksum: 873a94da6be13419f76867ae6e339443
+      checksum: 5263f9d22462a6f48f5ca9e91d146f06
 
   humus/CelShading-v2.trace:
     freedreno-a306:
@@ -338,9 +338,9 @@ traces:
     freedreno-a530:
       checksum: 0fb847eb10e74da0483a17e782f2a22a
     freedreno-a618:
-      checksum: 9099f7d4c082d741f1c52f5f9a4211ab
+      checksum: 5f1a655e62eab99d53dab88b634afed3
     zink-a618:
-      checksum: 9099f7d4c082d741f1c52f5f9a4211ab
+      checksum: 5f1a655e62eab99d53dab88b634afed3
 
   humus/VolumetricFogging2-v2.trace:
     freedreno-a306:
@@ -379,10 +379,10 @@ traces:
     freedreno-a530:
       label: [skip]
     freedreno-a618:
-      checksum: ecbcc9d262908cea8993df2ed40a26e7
+      checksum: dd05d3e98eb93c0e520c1359de18e9fb
     zink-a618:
       label: [no-perf]
-      checksum: ecbcc9d262908cea8993df2ed40a26e7
+      checksum: dd05d3e98eb93c0e520c1359de18e9fb
 
   pathfinder/canvas_moire-v2.trace:
     freedreno-a306:
@@ -487,7 +487,7 @@ traces:
       text: text is prone to occasional misrendering, particularly in the lower left
       checksum: ae37867b1a9a94d2be9ff6c7e2009813
     zink-a618:
-      checksum: 32cf337ffebb83536321a55091a38c54
+      checksum: ae37867b1a9a94d2be9ff6c7e2009813
 
   unvanquished/unvanquished-ultra.trace:
     freedreno-a306:
@@ -495,9 +495,9 @@ traces:
     freedreno-a530:
       label: [unsupported]
     freedreno-a618:
-      checksum: 0bd5cd4835c8105353f02877de1ae906
+      checksum: a71d1ad391162acef60cbb2804d0cf64
     zink-a618:
-      checksum: d2ea0b27d3f850dd3ab899c83c14098e
+      checksum: b487c2784d458dff4a12f65e5cc46ac1
 
   warzone2100/warzone2100-default.trace:
     freedreno-a306:
