@@ -263,6 +263,7 @@
     - .test-piglit
     - .ci-tron-test-radv
   variables:
+    DRIVER_NAME: zink-radv
     DEQP_SUITE: zink-radv
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     # Disable reporting, since DUTs don't have internet access

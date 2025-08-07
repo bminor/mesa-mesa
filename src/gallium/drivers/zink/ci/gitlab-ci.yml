@@ -305,6 +305,7 @@ zink-radv-cezanne:
   parallel: 4
   variables:
     DEQP_SUITE: zink-radv
+    DRIVER_NAME: zink-radv
     GPU_VERSION: zink-radv-cezanne
     HWCI_START_WESTON: 1
 
