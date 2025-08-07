@@ -1341,21 +1341,40 @@ resource_release(struct zink_context *ctx, struct zink_resource *res)
 }
 
 ALWAYS_INLINE static void
-update_res_bind_count(struct zink_context *ctx, struct zink_resource *res, bool is_compute, bool decrement)
+update_img_bind_count(struct zink_context *ctx, struct zink_resource *res, bool is_compute, bool decrement)
 {
+   assert(!res->obj->is_buffer);
    if (decrement) {
       assert(res->bind_count[is_compute]);
       if (!--res->bind_count[is_compute])
          _mesa_set_remove_key(ctx->need_barriers[is_compute], res);
-      if (res->obj->is_buffer) {
-         /* if hit while blitting, this will be triggered again after blitting */
-         if (res->deleted && !res->all_binds && !ctx->blitting)
-            resource_release(ctx, res);
-      } else {
-         check_resource_for_batch_ref(ctx, res);
-      }
+      check_resource_for_batch_ref(ctx, res);
    } else
       res->bind_count[is_compute]++;
+}
+
+ALWAYS_INLINE static void
+update_buf_bind_count(struct zink_context *ctx, struct zink_resource *res, bool is_compute, bool decrement)
+{
+   assert(res->obj->is_buffer);
+   if (decrement) {
+      assert(res->bind_count[is_compute]);
+      if (!--res->bind_count[is_compute])
+         _mesa_set_remove_key(ctx->need_barriers[is_compute], res);
+      /* if hit while blitting, this will be triggered again after blitting */
+      if (res->deleted && !res->all_binds && !ctx->blitting)
+         resource_release(ctx, res);
+   } else
+      res->bind_count[is_compute]++;
+}
+
+ALWAYS_INLINE static void
+update_res_bind_count(struct zink_context *ctx, struct zink_resource *res, bool is_compute, bool decrement)
+{
+   if (res->obj->is_buffer)
+      update_buf_bind_count(ctx, res, is_compute, decrement);
+   else
+      update_img_bind_count(ctx, res, is_compute, decrement);
 }
 
 static void
@@ -1381,7 +1400,7 @@ update_existing_vbo(struct zink_context *ctx, unsigned slot)
       res->gfx_barrier &= ~VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
       res->barrier_access[0] &= ~VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
    }
-   update_res_bind_count(ctx, res, false, true);
+   update_buf_bind_count(ctx, res, false, true);
 }
 
 ALWAYS_INLINE static void
@@ -1412,7 +1431,7 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
          res->vbo_bind_count++;
          res->gfx_barrier |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
          res->barrier_access[0] |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-         update_res_bind_count(ctx, res, false, false);
+         update_buf_bind_count(ctx, res, false, false);
          ctx_vb->buffer_offset = vb->buffer_offset;
          /* fastpath for viewperf */
          if (res->obj->access != VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT || res->obj->access_stage != VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
@@ -1541,7 +1560,7 @@ unbind_ubo(struct zink_context *ctx, struct zink_resource *res, mesa_shader_stag
    unbind_buffer_descriptor_stage(res, pstage);
    if (!res->ubo_bind_count[pstage == MESA_SHADER_COMPUTE])
       res->barrier_access[pstage == MESA_SHADER_COMPUTE] &= ~VK_ACCESS_UNIFORM_READ_BIT;
-   update_res_bind_count(ctx, res, pstage == MESA_SHADER_COMPUTE, true);
+   update_buf_bind_count(ctx, res, pstage == MESA_SHADER_COMPUTE, true);
 }
 
 static void
@@ -1591,7 +1610,7 @@ zink_set_constant_buffer_internal(struct pipe_context *pctx,
             new_res->ubo_bind_mask[shader] |= BITFIELD_BIT(index);
             new_res->gfx_barrier |= zink_pipeline_flags_from_pipe_stage(shader);
             new_res->barrier_access[shader == MESA_SHADER_COMPUTE] |= VK_ACCESS_UNIFORM_READ_BIT;
-            update_res_bind_count(ctx, new_res, shader == MESA_SHADER_COMPUTE, false);
+            update_buf_bind_count(ctx, new_res, shader == MESA_SHADER_COMPUTE, false);
          }
          zink_screen(ctx->base.screen)->buffer_barrier(ctx, new_res, VK_ACCESS_UNIFORM_READ_BIT,
                                       new_res->gfx_barrier);
@@ -1686,7 +1705,7 @@ unbind_ssbo(struct zink_context *ctx, struct zink_resource *res, mesa_shader_sta
       res->barrier_access[pstage == MESA_SHADER_COMPUTE] &= ~VK_ACCESS_SHADER_WRITE_BIT;
    unbind_buffer_descriptor_stage(res, pstage);
    unbind_buffer_descriptor_reads(res, pstage == MESA_SHADER_COMPUTE);
-   update_res_bind_count(ctx, res, pstage == MESA_SHADER_COMPUTE, true);
+   update_buf_bind_count(ctx, res, pstage == MESA_SHADER_COMPUTE, true);
 }
 
 ALWAYS_INLINE static void
@@ -1719,7 +1738,7 @@ zink_set_shader_buffers_internal(struct pipe_context *pctx,
             new_res->ssbo_bind_mask[p_stage] |= BITFIELD_BIT(slot);
             new_res->ssbo_bind_count[p_stage == MESA_SHADER_COMPUTE]++;
             new_res->gfx_barrier |= zink_pipeline_flags_from_pipe_stage(p_stage);
-            update_res_bind_count(ctx, new_res, p_stage == MESA_SHADER_COMPUTE, false);
+            update_buf_bind_count(ctx, new_res, p_stage == MESA_SHADER_COMPUTE, false);
          }
          VkAccessFlags access = VK_ACCESS_SHADER_READ_BIT;
          if (ctx->writable_ssbos[p_stage] & BITFIELD64_BIT(slot)) {
@@ -4481,7 +4500,7 @@ zink_set_stream_output_targets(struct pipe_context *pctx,
             struct zink_resource *so = zink_resource(ctx->so_targets[i]->buffer);
             if (so) {
                so->so_bind_count--;
-               update_res_bind_count(ctx, so, false, true);
+               update_buf_bind_count(ctx, so, false, true);
             }
          }
          pipe_so_target_reference(&ctx->so_targets[i], NULL);
@@ -4498,7 +4517,7 @@ zink_set_stream_output_targets(struct pipe_context *pctx,
          struct zink_resource *so = zink_resource(ctx->so_targets[i]->buffer);
          if (so) {
             so->so_bind_count++;
-            update_res_bind_count(ctx, so, false, false);
+            update_buf_bind_count(ctx, so, false, false);
          }
       }
       for (unsigned i = num_targets; i < ctx->num_so_targets; i++) {
@@ -4506,7 +4525,7 @@ zink_set_stream_output_targets(struct pipe_context *pctx,
             struct zink_resource *so = zink_resource(ctx->so_targets[i]->buffer);
             if (so) {
                so->so_bind_count--;
-               update_res_bind_count(ctx, so, false, true);
+               update_buf_bind_count(ctx, so, false, true);
             }
          }
          pipe_so_target_reference(&ctx->so_targets[i], NULL);
