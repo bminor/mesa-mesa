@@ -134,12 +134,12 @@ void _mesa_print_info( struct gl_context *ctx )
     */
    _mesa_debug(NULL, "Mesa GL_EXTENSIONS = %s\n", ctx->Extensions.String);
 
-#if defined(USE_X86_ASM)
+#if DETECT_ARCH_X86 || DETECT_ARCH_X86_64
    _mesa_debug(NULL, "Mesa x86-optimized: YES\n");
 #else
    _mesa_debug(NULL, "Mesa x86-optimized: NO\n");
 #endif
-#if defined(USE_SPARC_ASM)
+#if DETECT_ARCH_SPARC64
    _mesa_debug(NULL, "Mesa sparc-optimized: YES\n");
 #else
    _mesa_debug(NULL, "Mesa sparc-optimized: NO\n");
