@@ -178,66 +178,6 @@ zink_create_vertex_elements_state(struct pipe_context *pctx,
 }
 
 static void
-zink_bind_vertex_elements_state(struct pipe_context *pctx,
-                                void *cso)
-{
-   struct zink_context *ctx = zink_context(pctx);
-   struct zink_gfx_pipeline_state *state = &ctx->gfx_pipeline_state;
-   ctx->element_state = cso;
-   if (cso) {
-      if (state->element_state != &ctx->element_state->hw_state) {
-         ctx->vertex_state_changed = true;
-         ctx->vertex_buffers_dirty = ctx->element_state->hw_state.num_bindings > 0;
-      }
-      state->element_state = &ctx->element_state->hw_state;
-      if (zink_screen(pctx->screen)->optimal_keys)
-         return;
-      const struct zink_vs_key *vs = zink_get_vs_key(ctx);
-      uint32_t decomposed_attrs = 0, decomposed_attrs_without_w = 0;
-      switch (vs->size) {
-      case 1:
-         decomposed_attrs = vs->u8.decomposed_attrs;
-         decomposed_attrs_without_w = vs->u8.decomposed_attrs_without_w;
-         break;
-      case 2:
-         decomposed_attrs = vs->u16.decomposed_attrs;
-         decomposed_attrs_without_w = vs->u16.decomposed_attrs_without_w;
-         break;
-      case 4:
-         decomposed_attrs = vs->u32.decomposed_attrs;
-         decomposed_attrs_without_w = vs->u32.decomposed_attrs_without_w;
-         break;
-      }
-      if (ctx->element_state->decomposed_attrs != decomposed_attrs ||
-          ctx->element_state->decomposed_attrs_without_w != decomposed_attrs_without_w) {
-         unsigned size = MAX2(ctx->element_state->decomposed_attrs_size, ctx->element_state->decomposed_attrs_without_w_size);
-         struct zink_shader_key *key = (struct zink_shader_key *)zink_set_vs_key(ctx);
-         key->size -= 2 * key->key.vs.size;
-         switch (size) {
-         case 1:
-            key->key.vs.u8.decomposed_attrs = ctx->element_state->decomposed_attrs;
-            key->key.vs.u8.decomposed_attrs_without_w = ctx->element_state->decomposed_attrs_without_w;
-            break;
-         case 2:
-            key->key.vs.u16.decomposed_attrs = ctx->element_state->decomposed_attrs;
-            key->key.vs.u16.decomposed_attrs_without_w = ctx->element_state->decomposed_attrs_without_w;
-            break;
-         case 4:
-            key->key.vs.u32.decomposed_attrs = ctx->element_state->decomposed_attrs;
-            key->key.vs.u32.decomposed_attrs_without_w = ctx->element_state->decomposed_attrs_without_w;
-            break;
-         default: break;
-         }
-         key->key.vs.size = size;
-         key->size += 2 * size;
-      }
-   } else {
-     state->element_state = NULL;
-     ctx->vertex_buffers_dirty = false;
-   }
-}
-
-static void
 zink_delete_vertex_elements_state(struct pipe_context *pctx,
                                   void *ves)
 {
@@ -854,7 +794,6 @@ void
 zink_context_state_init(struct pipe_context *pctx)
 {
    pctx->create_vertex_elements_state = zink_create_vertex_elements_state;
-   pctx->bind_vertex_elements_state = zink_bind_vertex_elements_state;
    pctx->delete_vertex_elements_state = zink_delete_vertex_elements_state;
 
    pctx->create_blend_state = zink_create_blend_state;
