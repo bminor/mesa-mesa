@@ -136,15 +136,17 @@ class LowerSplit64op : public NirLowerInstruction {
          auto alu = nir_instr_as_alu(instr);
          switch (alu->op) {
          case nir_op_bcsel:
-         case nir_op_b2f64:
             return alu->def.bit_size == 64;
          case nir_op_f2i32:
          case nir_op_f2u32:
          case nir_op_f2i64:
          case nir_op_f2u64:
-         case nir_op_u2f64:
-         case nir_op_i2f64:
             return nir_src_bit_size(alu->src[0].src) == 64;
+         case nir_op_i2f64:
+         case nir_op_u2f64:
+            return nir_src_bit_size(alu->src[0].src) >= 32;
+         case nir_op_b2f64:
+            return true;
          default:
             return false;
          }
@@ -206,19 +208,19 @@ class LowerSplit64op : public NirLowerInstruction {
          }        
          case nir_op_u2f64: {
             auto src = nir_ssa_for_alu_src(b, alu, 0);
-            auto low = nir_unpack_64_2x32_split_x(b, src);
-            auto high = nir_unpack_64_2x32_split_y(b, src);
-            auto flow = nir_u2f64(b, low);
-            auto fhigh = nir_u2f64(b, high);
-            return nir_fadd(b, nir_fmul_imm(b, fhigh, 65536.0 * 65536.0), flow);
+            if (src->bit_size == 64) {
+               return lower_i64_to_f64(src, nir_op_u2f64);
+            } else {
+               return lower_i32_to_f64(src, nir_op_u2f32);
+            }
          }
          case nir_op_i2f64: {
             auto src = nir_ssa_for_alu_src(b, alu, 0);
-            auto low = nir_unpack_64_2x32_split_x(b, src);
-            auto high = nir_unpack_64_2x32_split_y(b, src);
-            auto flow = nir_u2f64(b, low);
-            auto fhigh = nir_i2f64(b, high);
-            return nir_fadd(b, nir_fmul_imm(b, fhigh, 65536.0 * 65536.0), flow);
+            if (src->bit_size == 64) {
+               return lower_i64_to_f64(src, nir_op_i2f64);
+            } else {
+               return lower_i32_to_f64(src, nir_op_i2f32);
+            }
          }
          case nir_op_b2f64: {
             auto src = nir_b2b32(b, nir_ssa_for_alu_src(b, alu, 0));
@@ -250,6 +252,22 @@ class LowerSplit64op : public NirLowerInstruction {
       default:
          UNREACHABLE("Trying to lower instruction that was not in filter");
       }
+   }
+
+   nir_def *lower_i64_to_f64(nir_def *src, nir_op op)
+   {
+      auto flow = nir_i2f64(b, nir_unpack_64_2x32_split_x(b, src));
+      auto fhigh = nir_build_alu1(b, op, nir_unpack_64_2x32_split_y(b, src));
+      return nir_fadd(b, nir_fmul_imm(b, fhigh, 65536.0 * 65536.0), flow);
+   }
+
+   nir_def *lower_i32_to_f64(nir_def *src, nir_op op)
+   {
+      auto tmplo = nir_u2f32(b, nir_iand(b, src, nir_imm_int(b, 0x000000ff)));
+      auto tmphi =
+         nir_build_alu1(b, op, nir_iand(b, src, nir_imm_int(b, 0xffffff00)));
+      auto f64 = nir_f2f64(b, nir_vec2(b, tmplo, tmphi));
+      return nir_fadd(b, nir_channel(b, f64, 0), nir_channel(b, f64, 1));
    }
 };
 

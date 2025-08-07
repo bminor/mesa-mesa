@@ -1358,8 +1358,6 @@ emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
 static bool
 emit_alu_f2f64(const nir_alu_instr& alu, Shader& shader);
 static bool
-emit_alu_i2f64(const nir_alu_instr& alu, EAluOp op, Shader& shader);
-static bool
 emit_alu_f2f32(const nir_alu_instr& alu, Shader& shader);
 static bool
 emit_alu_abs64(const nir_alu_instr& alu, Shader& shader);
@@ -1491,10 +1489,6 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
          return emit_alu_op2_64bit(*alu, op2_min_64, shader, false);
       case nir_op_f2f64:
          return emit_alu_f2f64(*alu, shader);
-      case nir_op_i2f64:
-         return emit_alu_i2f64(*alu, op1_int_to_flt, shader);
-      case nir_op_u2f64:
-         return emit_alu_i2f64(*alu, op1_uint_to_flt, shader);
       case nir_op_f2f32:
          return emit_alu_f2f32(*alu, shader);
       case nir_op_fabs:
@@ -2142,69 +2136,6 @@ emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
    if (ir)
       ir->set_alu_flag(alu_last_instr);
    shader.emit_instruction(group);
-   return true;
-}
-
-static bool
-emit_alu_i2f64(const nir_alu_instr& alu, EAluOp op, Shader& shader)
-{
-   /* int 64 to f64 should have been lowered, so we only handle i32 to f64 */
-   auto& value_factory = shader.value_factory();
-   auto group = new AluGroup();
-   AluInstr *ir = nullptr;
-
-   assert(alu.def.num_components == 1);
-
-   auto tmpx = value_factory.temp_register();
-   shader.emit_instruction(new AluInstr(op2_and_int,
-                                        tmpx,
-                                        value_factory.src(alu.src[0], 0),
-                                        value_factory.literal(0xffffff00),
-                                        AluInstr::write));
-   auto tmpy = value_factory.temp_register();
-   shader.emit_instruction(new AluInstr(op2_and_int,
-                                        tmpy,
-                                        value_factory.src(alu.src[0], 0),
-                                        value_factory.literal(0xff),
-                                        AluInstr::last_write));
-
-   auto tmpx2 = value_factory.temp_register();
-   auto tmpy2 = value_factory.temp_register();
-   shader.emit_instruction(new AluInstr(op, tmpx2, tmpx, AluInstr::last_write));
-   shader.emit_instruction(new AluInstr(op, tmpy2, tmpy, AluInstr::last_write));
-
-   auto tmpx3 = value_factory.temp_register(0);
-   auto tmpy3 = value_factory.temp_register(1);
-   auto tmpz3 = value_factory.temp_register(2);
-   auto tmpw3 = value_factory.temp_register(3);
-
-   ir = new AluInstr(op1_flt32_to_flt64, tmpx3, tmpx2, AluInstr::write);
-   group->add_instruction(ir);
-   ir = new AluInstr(op1_flt32_to_flt64, tmpy3, value_factory.zero(), AluInstr::write);
-   group->add_instruction(ir);
-   ir = new AluInstr(op1_flt32_to_flt64, tmpz3, tmpy2, AluInstr::write);
-   group->add_instruction(ir);
-   ir =
-      new AluInstr(op1_flt32_to_flt64, tmpw3, value_factory.zero(), AluInstr::last_write);
-   group->add_instruction(ir);
-   shader.emit_instruction(group);
-
-   group = new AluGroup();
-
-   ir = new AluInstr(op2_add_64,
-                     value_factory.dest(alu.def, 0, pin_chan),
-                     tmpy3,
-                     tmpw3,
-                     AluInstr::write);
-   group->add_instruction(ir);
-   ir = new AluInstr(op2_add_64,
-                     value_factory.dest(alu.def, 1, pin_chan),
-                     tmpx3,
-                     tmpz3,
-                     AluInstr::write);
-   group->add_instruction(ir);
-   shader.emit_instruction(group);
-
    return true;
 }
 
