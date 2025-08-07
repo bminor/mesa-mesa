@@ -317,7 +317,7 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
       }
    }
 
-   if (layout->layer_first) {
+   if (layout->layer_first && !explicit_layout) {
       layout->layer_size = align64(layout->size, 4096);
       layout->size = layout->layer_size * params->array_size;
    }
