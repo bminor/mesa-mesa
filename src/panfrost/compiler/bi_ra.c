@@ -693,6 +693,7 @@ bi_instr *
 bi_load_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset)
 {
    if (b->shader->arch >= 9) {
+      assert(offset < 0x8000);  /* valhall has 16 bit signed offset */
       return bi_load_to(b, bits, src, bi_tls_ptr(false), bi_tls_ptr(true),
                         BI_SEG_TL, offset);
    } else {
@@ -705,6 +706,7 @@ void
 bi_store_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset)
 {
    if (b->shader->arch >= 9) {
+      assert(offset < 0x8000);  /* valhall has 16 bit signed offset */
       bi_store(b, bits, src, bi_tls_ptr(false), bi_tls_ptr(true), BI_SEG_TL,
                offset);
    } else {
@@ -712,13 +714,49 @@ bi_store_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset)
    }
 }
 
-/* Once we've chosen a spill node, spill it and returns bytes spilled */
+static void
+bi_compute_reg_alignment(bi_context *ctx)
+{
+   unsigned idx;
+   unsigned count;
+   ctx->reg_alignment = rzalloc_array(ctx, uint8_t, ctx->ssa_alloc);
+   bi_foreach_instr_global(ctx, I) {
+      bi_foreach_ssa_dest(I, d) {
+         idx = I->dest[d].value;
+         count = bi_count_write_registers(I, d);
+         if (count == 3) count = 4;
+         assert(idx < ctx->ssa_alloc);
+         ctx->reg_alignment[idx] = MAX2(count*4, ctx->reg_alignment[idx]);
+      }
+      bi_foreach_ssa_src(I, s) {
+         idx = I->src[s].value;
+         count = bi_count_read_index(I, I->src[s]);
+         if (count == 3) count = 4;
+         assert(idx < ctx->ssa_alloc);
+         ctx->reg_alignment[idx] = MAX2(count*4, ctx->reg_alignment[idx]);
+      }
+   }
+}
+
+/* Once we've chosen a spill node, spill it and return new (aligned) offset */
 
 static unsigned
 bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset)
 {
    bi_builder b = {.shader = ctx};
+   unsigned alignment = 4;
    unsigned channels = 0;
+
+   /* first figure out the alignment we will need, based on the
+    * maximum count we see
+    */
+   if (ctx->arch >= 9) {
+      if (!ctx->reg_alignment)
+         bi_compute_reg_alignment(ctx);
+      assert(index.value < ctx->ssa_alloc);
+      alignment = ctx->reg_alignment[index.value];
+   }
+   offset = ALIGN_POT(offset, alignment);
 
    /* Spill after every store, fill before every load */
    bi_foreach_instr_global_safe(ctx, I) {
@@ -737,7 +775,6 @@ bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset)
 
          b.cursor = bi_after_instr(I);
          bi_store_tl(&b, bits, tmp, offset + 4 * extra);
-
          ctx->spills++;
          channels = MAX2(channels, extra + count);
       }
@@ -755,7 +792,7 @@ bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset)
       }
    }
 
-   return (channels * 4);
+   return offset + (channels * 4);
 }
 
 /*
@@ -868,6 +905,10 @@ bi_is_tied(const bi_instr *I)
 static void
 bi_coalesce_tied(bi_context *ctx)
 {
+   if (ctx->reg_alignment) {
+      ralloc_free(ctx->reg_alignment);
+      ctx->reg_alignment = NULL;
+   }
    bi_foreach_instr_global(ctx, I) {
       if (!bi_is_tied(I))
          continue;
@@ -1158,15 +1199,7 @@ bi_register_allocate(bi_context *ctx)
          if (ctx->inputs->is_blend)
             UNREACHABLE("Blend shaders may not spill");
 
-         /* By default, we use packed TLS addressing on Valhall.
-          * We cannot cross 16 byte boundaries with packed TLS
-          * addressing. Align to ensure this doesn't happen. This
-          * could be optimized a bit.
-          */
-         if (ctx->arch >= 9)
-            spill_count = ALIGN_POT(spill_count, 16);
-
-         spill_count +=
+         spill_count =
             bi_spill_register(ctx, bi_get_index(spill_node), spill_count);
 
          /* In case the spill affected an instruction with tied
@@ -1179,6 +1212,8 @@ bi_register_allocate(bi_context *ctx)
    assert(success);
    assert(l != NULL);
 
+   if (ctx->arch >= 9)
+      spill_count = ALIGN_POT(spill_count, 16);
    ctx->info.tls_size = spill_count;
    bi_install_registers(ctx, l);
 

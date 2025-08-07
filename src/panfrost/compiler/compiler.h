@@ -1070,6 +1070,9 @@ typedef struct {
    unsigned loop_count;
    unsigned spills;
    unsigned fills;
+
+   /* alignment needed for registers during register allocation */
+   uint8_t *reg_alignment;
 } bi_context;
 
 static inline enum bi_round
