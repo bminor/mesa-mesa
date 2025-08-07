@@ -2215,18 +2215,21 @@ emit_alu_f2f64(const nir_alu_instr& alu, Shader& shader)
    auto group = new AluGroup();
    AluInstr *ir = nullptr;
 
-   assert(alu.def.num_components == 1);
+   assert(alu.def.num_components < 3);
 
-   ir = new AluInstr(op1_flt32_to_flt64,
-                     value_factory.dest(alu.def, 0, pin_chan),
-                     value_factory.src(alu.src[0], 0),
-                     AluInstr::write);
-   group->add_instruction(ir);
-   ir = new AluInstr(op1_flt32_to_flt64,
-                     value_factory.dest(alu.def, 1, pin_chan),
-                     value_factory.zero(),
-                     AluInstr::last_write);
-   group->add_instruction(ir);
+   for (int i = 0; i < alu.def.num_components; ++i) {
+      ir = new AluInstr(op1_flt32_to_flt64,
+                        value_factory.dest(alu.def, 2 * i, pin_chan),
+                        value_factory.src(alu.src[0], 2 * i),
+                        AluInstr::write);
+      group->add_instruction(ir);
+      ir = new AluInstr(op1_flt32_to_flt64,
+                        value_factory.dest(alu.def, 2 * i + 1, pin_chan),
+                        value_factory.zero(),
+                        AluInstr::write);
+      group->add_instruction(ir);
+   }
+   ir->set_alu_flag(alu_last_instr);
    shader.emit_instruction(group);
    return true;
 }
