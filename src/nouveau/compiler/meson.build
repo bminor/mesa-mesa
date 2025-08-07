@@ -8,6 +8,7 @@ dep_paste = dependency('paste',
 )
 
 dep_rustc_hash = dependency('rustc-hash',
+  version: '>= 2.0',
   fallback: ['rustc-hash', 'dep_rustc_hash'],
   required: true,
 )
