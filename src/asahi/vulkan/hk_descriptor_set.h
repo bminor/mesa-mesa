@@ -16,9 +16,6 @@
 #include "util/list.h"
 #include "util/vma.h"
 
-/* Stride of the image heap, equal to the size of a texture/PBE descriptor */
-#define HK_IMAGE_STRIDE (24)
-
 struct hk_descriptor_set_layout;
 
 struct hk_sampled_image_descriptor {
