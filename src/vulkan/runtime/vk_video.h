@@ -188,6 +188,8 @@ VkResult vk_video_session_init(struct vk_device *device,
                                struct vk_video_session *vid,
                                const VkVideoSessionCreateInfoKHR *create_info);
 
+void vk_video_session_finish(struct vk_video_session *vid);
+
 void *vk_video_session_parameters_create(struct vk_device *device,
                                          const VkVideoSessionParametersCreateInfoKHR *create_info,
                                          const VkAllocationCallbacks *alloc,

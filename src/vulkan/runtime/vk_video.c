@@ -119,6 +119,12 @@ vk_video_session_init(struct vk_device *device,
    return VK_SUCCESS;
 }
 
+void
+vk_video_session_finish(struct vk_video_session *vid)
+{
+   vk_object_base_finish(&vid->base);
+}
+
 static void
 vk_video_deep_copy_h264_sps(struct vk_video_h264_sps *dst,
                             const StdVideoH264SequenceParameterSet *src)

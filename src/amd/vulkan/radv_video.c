@@ -633,7 +633,7 @@ radv_DestroyVideoSessionKHR(VkDevice _device, VkVideoSessionKHR _session, const 
    if (!_session)
       return;
 
-   vk_object_base_finish(&vid->vk.base);
+   vk_video_session_finish(&vid->vk);
    vk_free2(&device->vk.alloc, pAllocator, vid);
 }
 
