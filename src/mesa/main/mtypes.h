@@ -1050,9 +1050,8 @@ struct gl_texture_object
    /* When non-negative, samplers should use this layer instead of the one
     * specified by the GL state.
     *
-    * This is used for EGL images and VDPAU interop, where imported
-    * pipe_resources may be cube, 3D, or array textures (containing layers
-    * with different fields in the case of VDPAU) even though the GL state
+    * This is used for EGL images interop, where imported pipe_resources
+    * may be cube, 3D, or array textures even though the GL state
     * describes one non-array texture per field.
     */
    int layer_override;
@@ -3623,15 +3622,6 @@ struct gl_context
     */
    bool invalidate_on_gl_viewport;
 
-   /*@}*/
-
-   /**
-    * \name NV_vdpau_interop
-    */
-   /*@{*/
-   const void *vdpDevice;
-   const void *vdpGetProcAddress;
-   struct set *vdpSurfaces;
    /*@}*/
 
    /**

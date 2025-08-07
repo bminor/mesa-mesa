@@ -122,7 +122,6 @@ glapi_xml_py_deps = files(
   'glapi/gen/NV_conditional_render.xml',
   'glapi/gen/NV_primitive_restart.xml',
   'glapi/gen/NV_texture_barrier.xml',
-  'glapi/gen/NV_vdpau_interop.xml',
   'glapi/gen/NV_viewport_swizzle.xml',
   'glapi/gen/OES_EGL_image.xml',
   'glapi/gen/OES_fixed_point.xml',

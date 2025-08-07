@@ -11111,8 +11111,6 @@
 
 <xi:include href="EXT_transform_feedback.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
-<xi:include href="NV_vdpau_interop.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-
 <xi:include href="EXT_external_objects.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 <xi:include href="EXT_external_objects_fd.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 <xi:include href="EXT_external_objects_win32.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>

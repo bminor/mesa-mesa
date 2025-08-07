@@ -644,7 +644,6 @@ vdpau = get_option('gallium-vdpau') \
 dep_vdpau = dependency('vdpau', version : '>= 1.5', required : vdpau)
 if dep_vdpau.found()
   dep_vdpau = dep_vdpau.partial_dependency(compile_args : true)
-  pre_args += '-DHAVE_ST_VDPAU'
 endif
 with_gallium_vdpau = dep_vdpau.found()
 
