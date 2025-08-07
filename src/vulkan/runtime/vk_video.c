@@ -451,15 +451,19 @@ vk_video_deep_copy_av1_seq_hdr(struct vk_video_av1_seq_hdr *dst,
    }
 }
 
-VkResult
-vk_video_session_parameters_init(struct vk_device *device,
-                                 struct vk_video_session_parameters *params,
-                                 const struct vk_video_session *vid,
-                                 const struct vk_video_session_parameters *templ,
-                                 const VkVideoSessionParametersCreateInfoKHR *create_info)
+void *
+vk_video_session_parameters_create(struct vk_device *device,
+                                   const struct vk_video_session *vid,
+                                   const struct vk_video_session_parameters *templ,
+                                   const VkVideoSessionParametersCreateInfoKHR *create_info,
+                                   const VkAllocationCallbacks *alloc,
+                                   size_t size)
 {
-   memset(params, 0, sizeof(*params));
-   vk_object_base_init(device, &params->base, VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR);
+   struct vk_video_session_parameters *params =
+      vk_object_zalloc(device, alloc, size,
+                       VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR);
+   if (params == NULL)
+      return NULL;
 
    params->op = vid->op;
    params->luma_bit_depth = vid->luma_bit_depth;
@@ -479,9 +483,8 @@ vk_video_session_parameters_init(struct vk_device *device,
       params->h264_dec.h264_sps = vk_alloc(&device->alloc, sps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       params->h264_dec.h264_pps = vk_alloc(&device->alloc, pps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!params->h264_dec.h264_sps || !params->h264_dec.h264_pps) {
-         vk_free(&device->alloc, params->h264_dec.h264_sps);
-         vk_free(&device->alloc, params->h264_dec.h264_pps);
-         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+         vk_video_session_parameters_destroy(device, alloc, params);
+         return NULL;
       }
 
       init_add_h264_dec_session_parameters(params, h264_create->pParametersAddInfo, templ);
@@ -503,10 +506,8 @@ vk_video_session_parameters_init(struct vk_device *device,
       params->h265_dec.h265_sps = vk_alloc(&device->alloc, sps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       params->h265_dec.h265_pps = vk_alloc(&device->alloc, pps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!params->h265_dec.h265_sps || !params->h265_dec.h265_pps || !params->h265_dec.h265_vps) {
-         vk_free(&device->alloc, params->h265_dec.h265_vps);
-         vk_free(&device->alloc, params->h265_dec.h265_sps);
-         vk_free(&device->alloc, params->h265_dec.h265_pps);
-         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+         vk_video_session_parameters_destroy(device, alloc, params);
+         return NULL;
       }
 
       init_add_h265_dec_session_parameters(params, h265_create->pParametersAddInfo, templ);
@@ -537,9 +538,8 @@ vk_video_session_parameters_init(struct vk_device *device,
       params->h264_enc.h264_sps = vk_alloc(&device->alloc, sps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       params->h264_enc.h264_pps = vk_alloc(&device->alloc, pps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!params->h264_enc.h264_sps || !params->h264_enc.h264_pps) {
-         vk_free(&device->alloc, params->h264_enc.h264_sps);
-         vk_free(&device->alloc, params->h264_enc.h264_pps);
-         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+         vk_video_session_parameters_destroy(device, alloc, params);
+         return NULL;
       }
 
       params->h264_enc.profile_idc = vid->h264.profile_idc;
@@ -562,10 +562,8 @@ vk_video_session_parameters_init(struct vk_device *device,
       params->h265_enc.h265_sps = vk_alloc(&device->alloc, sps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       params->h265_enc.h265_pps = vk_alloc(&device->alloc, pps_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!params->h265_enc.h265_sps || !params->h265_enc.h265_pps || !params->h265_enc.h265_vps) {
-         vk_free(&device->alloc, params->h265_enc.h265_vps);
-         vk_free(&device->alloc, params->h265_enc.h265_sps);
-         vk_free(&device->alloc, params->h265_enc.h265_pps);
-         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+         vk_video_session_parameters_destroy(device, alloc, params);
+         return NULL;
       }
 
       init_add_h265_enc_session_parameters(params, h265_create->pParametersAddInfo, templ);
@@ -584,36 +582,38 @@ vk_video_session_parameters_init(struct vk_device *device,
       UNREACHABLE("Unsupported video codec operation");
       break;
    }
-   return VK_SUCCESS;
+
+   return params;
 }
 
 void
-vk_video_session_parameters_finish(struct vk_device *device,
-                                   struct vk_video_session_parameters *params)
+vk_video_session_parameters_destroy(struct vk_device *device,
+                                    const VkAllocationCallbacks *alloc,
+                                    struct vk_video_session_parameters *params)
 {
    switch (params->op) {
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
-      vk_free(&device->alloc, params->h264_dec.h264_sps);
-      vk_free(&device->alloc, params->h264_dec.h264_pps);
+      vk_free2(&device->alloc, alloc, params->h264_dec.h264_sps);
+      vk_free2(&device->alloc, alloc, params->h264_dec.h264_pps);
       break;
    case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
-      vk_free(&device->alloc, params->h265_dec.h265_vps);
-      vk_free(&device->alloc, params->h265_dec.h265_sps);
-      vk_free(&device->alloc, params->h265_dec.h265_pps);
+      vk_free2(&device->alloc, alloc, params->h265_dec.h265_vps);
+      vk_free2(&device->alloc, alloc, params->h265_dec.h265_sps);
+      vk_free2(&device->alloc, alloc, params->h265_dec.h265_pps);
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
-      vk_free(&device->alloc, params->h264_enc.h264_sps);
-      vk_free(&device->alloc, params->h264_enc.h264_pps);
+      vk_free2(&device->alloc, alloc, params->h264_enc.h264_sps);
+      vk_free2(&device->alloc, alloc, params->h264_enc.h264_pps);
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
-      vk_free(&device->alloc, params->h265_enc.h265_vps);
-      vk_free(&device->alloc, params->h265_enc.h265_sps);
-      vk_free(&device->alloc, params->h265_enc.h265_pps);
+      vk_free2(&device->alloc, alloc, params->h265_enc.h265_vps);
+      vk_free2(&device->alloc, alloc, params->h265_enc.h265_sps);
+      vk_free2(&device->alloc, alloc, params->h265_enc.h265_pps);
       break;
    default:
       break;
    }
-   vk_object_base_finish(&params->base);
+   vk_object_free(device, alloc, params);
 }
 
 static VkResult

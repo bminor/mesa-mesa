@@ -181,17 +181,19 @@ VkResult vk_video_session_init(struct vk_device *device,
                                struct vk_video_session *vid,
                                const VkVideoSessionCreateInfoKHR *create_info);
 
-VkResult vk_video_session_parameters_init(struct vk_device *device,
-                                          struct vk_video_session_parameters *params,
-                                          const struct vk_video_session *vid,
-                                          const struct vk_video_session_parameters *templ,
-                                          const VkVideoSessionParametersCreateInfoKHR *create_info);
+void *vk_video_session_parameters_create(struct vk_device *device,
+                                         const struct vk_video_session *vid,
+                                         const struct vk_video_session_parameters *templ,
+                                         const VkVideoSessionParametersCreateInfoKHR *create_info,
+                                         const VkAllocationCallbacks *alloc,
+                                         size_t size);
 
 VkResult vk_video_session_parameters_update(struct vk_video_session_parameters *params,
                                             const VkVideoSessionParametersUpdateInfoKHR *update);
 
-void vk_video_session_parameters_finish(struct vk_device *device,
-                                        struct vk_video_session_parameters *params);
+void vk_video_session_parameters_destroy(struct vk_device *device,
+                                         const VkAllocationCallbacks *alloc,
+                                         struct vk_video_session_parameters *params);
 
 void vk_video_derive_h264_scaling_list(const StdVideoH264SequenceParameterSet *sps,
                                        const StdVideoH264PictureParameterSet *pps,

@@ -77,20 +77,14 @@ anv_CreateVideoSessionParametersKHR(VkDevice _device,
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_video_session, vid, pCreateInfo->videoSession);
    ANV_FROM_HANDLE(anv_video_session_params, templ, pCreateInfo->videoSessionParametersTemplate);
+
    struct anv_video_session_params *params =
-      vk_alloc2(&device->vk.alloc, pAllocator, sizeof(*params), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+      vk_video_session_parameters_create(&device->vk, &vid->vk,
+                                         templ ? &templ->vk : NULL,
+                                         pCreateInfo, pAllocator,
+                                         sizeof(*params));
    if (!params)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   VkResult result = vk_video_session_parameters_init(&device->vk,
-                                                      &params->vk,
-                                                      &vid->vk,
-                                                      templ ? &templ->vk : NULL,
-                                                      pCreateInfo);
-   if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, pAllocator, params);
-      return result;
-   }
 
    *pVideoSessionParameters = anv_video_session_params_to_handle(params);
    return VK_SUCCESS;
@@ -105,8 +99,7 @@ anv_DestroyVideoSessionParametersKHR(VkDevice _device,
    ANV_FROM_HANDLE(anv_video_session_params, params, _params);
    if (!_params)
       return;
-   vk_video_session_parameters_finish(&device->vk, &params->vk);
-   vk_free2(&device->vk.alloc, pAllocator, params);
+   vk_video_session_parameters_destroy(&device->vk, pAllocator, &params->vk);
 }
 
 VkResult

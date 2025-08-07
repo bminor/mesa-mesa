@@ -647,17 +647,12 @@ radv_CreateVideoSessionParametersKHR(VkDevice _device, const VkVideoSessionParam
    VK_FROM_HANDLE(radv_video_session_params, templ, pCreateInfo->videoSessionParametersTemplate);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
    struct radv_video_session_params *params =
-      vk_alloc2(&device->vk.alloc, pAllocator, sizeof(*params), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+      vk_video_session_parameters_create(&device->vk, &vid->vk, templ ? &templ->vk : NULL,
+                                         pCreateInfo, pAllocator, sizeof(*params));
    if (!params)
       return vk_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   VkResult result =
-      vk_video_session_parameters_init(&device->vk, &params->vk, &vid->vk, templ ? &templ->vk : NULL, pCreateInfo);
-   if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, pAllocator, params);
-      return result;
-   }
 
    radv_video_patch_session_parameters(device, &params->vk);
 
@@ -672,8 +667,7 @@ radv_DestroyVideoSessionParametersKHR(VkDevice _device, VkVideoSessionParameters
    VK_FROM_HANDLE(radv_device, device, _device);
    VK_FROM_HANDLE(radv_video_session_params, params, _params);
 
-   vk_video_session_parameters_finish(&device->vk, &params->vk);
-   vk_free2(&device->vk.alloc, pAllocator, params);
+   vk_video_session_parameters_destroy(&device->vk, pAllocator, &params->vk);
 }
 
 static VkResult
