@@ -196,8 +196,8 @@ struct pvr_device {
 
    /* Compute shaders for queries. */
    struct pvr_compute_query_shader availability_shader;
-   struct pvr_compute_query_shader *copy_results_shaders;
-   struct pvr_compute_query_shader *reset_queries_shaders;
+   struct pvr_compute_query_shader reset_queries_shader;
+   struct pvr_compute_query_shader copy_results_shader;
 
    struct pvr_suballocator suballoc_general;
    struct pvr_suballocator suballoc_pds;
@@ -510,7 +510,7 @@ struct pvr_sub_cmd_gfx {
     */
    bool frag_uses_texture_rw;
 
-   bool has_occlusion_query;
+   bool has_query;
 
    bool wait_on_previous_transfer;
 

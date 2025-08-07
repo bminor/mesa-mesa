@@ -88,7 +88,7 @@ enum pvr_sub_cmd_type {
    PVR_SUB_CMD_TYPE_GRAPHICS,
    PVR_SUB_CMD_TYPE_COMPUTE,
    PVR_SUB_CMD_TYPE_TRANSFER,
-   PVR_SUB_CMD_TYPE_OCCLUSION_QUERY,
+   PVR_SUB_CMD_TYPE_QUERY,
    PVR_SUB_CMD_TYPE_EVENT,
 };
 
@@ -110,7 +110,7 @@ enum pvr_job_type {
    PVR_JOB_TYPE_FRAG,
    PVR_JOB_TYPE_COMPUTE,
    PVR_JOB_TYPE_TRANSFER,
-   PVR_JOB_TYPE_OCCLUSION_QUERY,
+   PVR_JOB_TYPE_QUERY,
    PVR_JOB_TYPE_MAX
 };
 
@@ -128,8 +128,7 @@ enum pvr_pipeline_stage_bits {
    /* Note that this doesn't map to VkPipelineStageFlagBits so be careful with
     * this.
     */
-   PVR_PIPELINE_STAGE_OCCLUSION_QUERY_BIT =
-      BITFIELD_BIT(PVR_JOB_TYPE_OCCLUSION_QUERY),
+   PVR_PIPELINE_STAGE_QUERY_BIT = BITFIELD_BIT(PVR_JOB_TYPE_QUERY),
 };
 
 #define PVR_PIPELINE_STAGE_ALL_GRAPHICS_BITS \

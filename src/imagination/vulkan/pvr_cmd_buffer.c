@@ -104,7 +104,7 @@ static void pvr_cmd_buffer_free_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
          break;
 
       case PVR_SUB_CMD_TYPE_COMPUTE:
-      case PVR_SUB_CMD_TYPE_OCCLUSION_QUERY:
+      case PVR_SUB_CMD_TYPE_QUERY:
          pvr_csb_finish(&sub_cmd->compute.control_stream);
          break;
 
@@ -286,9 +286,9 @@ static void pvr_cmd_buffer_update_barriers(struct pvr_cmd_buffer *cmd_buffer,
       barriers = PVR_PIPELINE_STAGE_COMPUTE_BIT;
       break;
 
-   case PVR_SUB_CMD_TYPE_OCCLUSION_QUERY:
+   case PVR_SUB_CMD_TYPE_QUERY:
    case PVR_SUB_CMD_TYPE_TRANSFER:
-      /* Compute jobs are used for occlusion queries but to copy the results we
+      /* Compute jobs are used for queries but to copy the results we
        * have to sync with transfer jobs because vkCmdCopyQueryPoolResults() is
        * deemed as a transfer operation by the spec.
        */
@@ -674,7 +674,8 @@ static VkResult pvr_setup_texture_state_words(
 
    pvr_csb_pack (&descriptor->sampler.words[1],
                  TEXSTATE_SAMPLER_WORD1,
-                 sampler) {}
+                 sampler) {
+   }
 
    return VK_SUCCESS;
 }
@@ -1086,7 +1087,7 @@ static void pvr_setup_pbe_state(
       break;
    }
 
-#define PVR_DEC_IF_NOT_ZERO(_v) (((_v) > 0) ? (_v) - 1 : 0)
+#define PVR_DEC_IF_NOT_ZERO(_v) (((_v) > 0) ? (_v)-1 : 0)
 
    render_params.min_x_clip = MAX2(0, render_area->offset.x);
    render_params.min_y_clip = MAX2(0, render_area->offset.y);
@@ -2205,7 +2206,7 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
             query_pool = gfx_sub_cmd->query_pool;
          }
 
-         gfx_sub_cmd->has_occlusion_query = true;
+         gfx_sub_cmd->has_query = true;
 
          util_dynarray_clear(&state->query_indices);
       }
@@ -2256,7 +2257,7 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
       break;
    }
 
-   case PVR_SUB_CMD_TYPE_OCCLUSION_QUERY:
+   case PVR_SUB_CMD_TYPE_QUERY:
    case PVR_SUB_CMD_TYPE_COMPUTE: {
       struct pvr_sub_cmd_compute *const compute_sub_cmd = &sub_cmd->compute;
 
@@ -2331,7 +2332,7 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
          .type = PVR_EVENT_TYPE_BARRIER,
          .barrier = {
             .wait_for_stage_mask = PVR_PIPELINE_STAGE_FRAG_BIT,
-            .wait_at_stage_mask = PVR_PIPELINE_STAGE_OCCLUSION_QUERY_BIT,
+            .wait_at_stage_mask = PVR_PIPELINE_STAGE_QUERY_BIT,
          },
       };
 
@@ -2487,7 +2488,7 @@ VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
       util_dynarray_init(&sub_cmd->gfx.sec_query_indices, NULL);
       break;
 
-   case PVR_SUB_CMD_TYPE_OCCLUSION_QUERY:
+   case PVR_SUB_CMD_TYPE_QUERY:
    case PVR_SUB_CMD_TYPE_COMPUTE:
       pvr_csb_init(device,
                    PVR_CMD_STREAM_TYPE_COMPUTE,
@@ -3895,7 +3896,8 @@ static VkResult pvr_setup_descriptor_mappings(
 
             pvr_csb_pack (&point_sampler_words[1],
                           TEXSTATE_SAMPLER_WORD1,
-                          sampler) {}
+                          sampler) {
+            }
 
             struct pvr_suballoc_bo *point_sampler_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,
@@ -3930,7 +3932,8 @@ static VkResult pvr_setup_descriptor_mappings(
 
             pvr_csb_pack (&ia_sampler_words[1],
                           TEXSTATE_SAMPLER_WORD1,
-                          sampler) {}
+                          sampler) {
+            }
 
             struct pvr_suballoc_bo *ia_sampler_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,
@@ -7121,7 +7124,7 @@ static VkResult pvr_execute_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
       primary_sub_cmd->gfx = sec_sub_cmd->gfx;
       break;
 
-   case PVR_SUB_CMD_TYPE_OCCLUSION_QUERY:
+   case PVR_SUB_CMD_TYPE_QUERY:
    case PVR_SUB_CMD_TYPE_COMPUTE:
       primary_sub_cmd->compute = sec_sub_cmd->compute;
       break;

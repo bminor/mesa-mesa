@@ -273,6 +273,7 @@ lower_alu_instr_width(nir_builder *b, nir_instr *instr, void *_data)
    case nir_op_unpack_snorm_2x16:
    case nir_op_mqsad_4x8:
    case nir_op_uadd64_32:
+   case nir_op_umad64_32:
       /* There is no scalar version of these ops, unless we were to break it
        * down to bitshifts and math (which is definitely not intended).
        */

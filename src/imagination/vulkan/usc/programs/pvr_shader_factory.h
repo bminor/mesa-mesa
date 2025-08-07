@@ -31,30 +31,6 @@
 #include "util/bitscan.h"
 #include "util/u_math.h"
 
-/* Occlusion query availability writes. */
-enum pvr_query_availability_write_pool_const {
-   PVR_QUERY_AVAILABILITY_WRITE_INDEX_COUNT,
-   PVR_QUERY_AVAILABILITY_WRITE_COUNT,
-};
-
-/* Copy query pool results. */
-enum pvr_copy_query_pool_const {
-   PVR_COPY_QUERY_POOL_RESULTS_INDEX_COUNT,
-   PVR_COPY_QUERY_POOL_RESULTS_BASE_ADDRESS_LOW,
-   PVR_COPY_QUERY_POOL_RESULTS_BASE_ADDRESS_HIGH,
-   PVR_COPY_QUERY_POOL_RESULTS_DEST_STRIDE,
-   PVR_COPY_QUERY_POOL_RESULTS_PARTIAL_RESULT_FLAG,
-   PVR_COPY_QUERY_POOL_RESULTS_64_BIT_FLAG,
-   PVR_COPY_QUERY_POOL_RESULTS_WITH_AVAILABILITY_FLAG,
-   PVR_COPY_QUERY_POOL_RESULTS_COUNT,
-};
-
-/* Reset query pool. */
-enum pvr_reset_query_pool_pool_const {
-   PVR_RESET_QUERY_POOL_INDEX_COUNT,
-   PVR_RESET_QUERY_POOL_COUNT,
-};
-
 /* ClearAttachments. */
 enum pvr_clear_attachment_const {
    PVR_CLEAR_ATTACHMENT_CONST_COMPONENT_0 = 0, /* Don't change. Indexes array.

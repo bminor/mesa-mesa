@@ -2761,3 +2761,12 @@ intrinsic("uvsw_write_pco", src_comp=[1, 0], bit_sizes=[32])
 
 # load_vtxin_pco(offset)
 intrinsic("load_vtxin_pco", src_comp=[1], dest_comp=0, bit_sizes=[32])
+
+# load_coeff_pco(offset)
+intrinsic("load_coeff_pco", src_comp=[1], dest_comp=0, bit_sizes=[32])
+
+# dma_ld_pco(address)
+intrinsic("dma_ld_pco", src_comp=[2], dest_comp=0, flags=[CAN_ELIMINATE], bit_sizes=[32])
+
+# dma_st_pco(address_data)
+intrinsic("dma_st_pco", src_comp=[0], bit_sizes=[32])

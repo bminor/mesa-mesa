@@ -263,10 +263,11 @@ static pco_instr *trans_uvsw_write(trans_ctx *tctx,
    return pco_uvsw_write(&tctx->b, data_src, vtxout_addr, .rpt = chans);
 }
 
-static pco_instr *trans_load_vtxin(trans_ctx *tctx,
-                                   nir_intrinsic_instr *intr,
-                                   pco_ref dest,
-                                   UNUSED pco_ref offset_src)
+static pco_instr *trans_load_reg(trans_ctx *tctx,
+                                 nir_intrinsic_instr *intr,
+                                 pco_ref dest,
+                                 UNUSED pco_ref offset_src,
+                                 enum pco_reg_class class)
 {
    unsigned chans = pco_ref_get_chans(dest);
 
@@ -274,7 +275,7 @@ static pco_instr *trans_load_vtxin(trans_ctx *tctx,
    /* TODO: support indexed source offset. */
    assert(nir_src_is_const(*noffset_src));
    unsigned offset = nir_src_as_uint(*noffset_src);
-   pco_ref src = pco_ref_hwreg_vec(offset, PCO_REG_CLASS_VTXIN, chans);
+   pco_ref src = pco_ref_hwreg_vec(offset, class, chans);
 
    return pco_mov(&tctx->b, dest, src, .rpt = chans);
 }
@@ -1691,7 +1692,11 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_load_vtxin_pco:
-      instr = trans_load_vtxin(tctx, intr, dest, src[0]);
+      instr = trans_load_reg(tctx, intr, dest, src[0], PCO_REG_CLASS_VTXIN);
+      break;
+
+   case nir_intrinsic_load_coeff_pco:
+      instr = trans_load_reg(tctx, intr, dest, src[0], PCO_REG_CLASS_COEFF);
       break;
 
    case nir_intrinsic_load_output:
@@ -1795,6 +1800,35 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_store_scratch:
       instr = trans_scratch(tctx, dest, src[1], src[0]);
       break;
+
+   case nir_intrinsic_dma_ld_pco: {
+      unsigned chans = pco_ref_get_chans(dest);
+
+      instr = pco_ld(&tctx->b,
+                     dest,
+                     pco_ref_drc(PCO_DRC_0),
+                     pco_ref_imm8(chans),
+                     src[0]);
+
+      break;
+   }
+
+   case nir_intrinsic_dma_st_pco: {
+      unsigned chans = pco_ref_get_chans(src[0]) - 2;
+
+      pco_ref data_comp =
+         pco_ref_new_ssa(tctx->func, pco_ref_get_bits(src[0]), chans);
+      pco_comp(&tctx->b, data_comp, src[0], pco_ref_val16(2));
+
+      instr = pco_st32(&tctx->b,
+                       data_comp,
+                       pco_ref_drc(PCO_DRC_0),
+                       pco_ref_imm8(chans),
+                       src[0],
+                       pco_ref_null());
+
+      break;
+   }
 
    /* Vertex sysvals. */
    case nir_intrinsic_load_vertex_id:
@@ -2675,6 +2709,28 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       break;
    }
 
+   case nir_op_umad64_32: {
+      pco_ref dest_comps[2] = {
+         [0] = pco_ref_new_ssa32(tctx->func),
+         [1] = pco_ref_new_ssa32(tctx->func),
+      };
+
+      pco_imadd64(&tctx->b,
+                  dest_comps[0],
+                  dest_comps[1],
+                  src[0],
+                  src[1],
+                  src[2],
+                  src[3],
+                  pco_ref_null());
+
+      /* TODO: mark this vec as being non-contiguous,
+       * add pass for expanding.
+       */
+      instr = pco_trans_nir_vec(tctx, dest, 2, dest_comps);
+      break;
+   }
+
    case nir_op_imul:
       instr = pco_imul32(&tctx->b, dest, src[0], src[1], pco_ref_null());
       break;
@@ -2711,6 +2767,16 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                           pco_zero,
                           pco_zero,
                           pco_ref_null());
+      break;
+
+   case nir_op_imad:
+      instr = pco_imadd32(&tctx->b,
+                          dest,
+                          src[0],
+                          src[1],
+                          src[2],
+                          pco_ref_null(),
+                          .s = true);
       break;
 
    /* Set-on (float) comparisons. */

@@ -6,6 +6,7 @@
 #ifndef PCO_LIBCL_H
 #define PCO_LIBCL_H
 
+#include "common/pvr_iface.h"
 #include "compiler/libcl/libcl.h"
 #include "compiler/shader_enums.h"
 #include "pco/pco_common.h"
@@ -58,4 +59,39 @@ uint3 nir_load_vtxin_pco__3(uint offset);
 uint4 nir_load_vtxin_pco__4(uint offset);
 
 #define nir_load_vtxin_pco(n, ...) CAT2(nir_load_vtxin_pco__, n)(__VA_ARGS__)
+
+uint nir_load_coeff_pco__1(uint offset);
+uint2 nir_load_coeff_pco__2(uint offset);
+uint3 nir_load_coeff_pco__3(uint offset);
+uint4 nir_load_coeff_pco__4(uint offset);
+
+#define nir_load_coeff_pco(n, ...) CAT2(nir_load_coeff_pco__, n)(__VA_ARGS__)
+
+uint nir_load_preamble__1(uint base, uint preamble_class);
+uint4 nir_load_preamble__4(uint base, uint preamble_class);
+
+#define nir_load_preamble(n, ...) CAT2(nir_load_preamble__, n)(__VA_ARGS__)
+
+void nir_store_preamble(uint data, uint base, uint preamble_class);
+
+uint nir_dma_ld_pco__1(uint2 addr);
+uint2 nir_dma_ld_pco__2(uint2 addr);
+uint3 nir_dma_ld_pco__3(uint2 addr);
+uint4 nir_dma_ld_pco__4(uint2 addr);
+
+#define nir_dma_ld_pco(n, ...) CAT2(nir_dma_ld_pco__, n)(__VA_ARGS__)
+
+void nir_dma_st_pco__1(uint3 addr_data);
+void nir_dma_st_pco__2(uint4 addr_data);
+
+#define SELECT_ARGS_ST(addr, ...) \
+   ((CAT2(uint, NUM_ARGS_PLUS_2(__VA_ARGS__)))(addr, __VA_ARGS__))
+
+/* clang-format off */
+#define nir_dma_st_pco(addr, ...) SELECT_NAME(nir_dma_st_pco, __, __VA_ARGS__)SELECT_ARGS_ST(addr, __VA_ARGS__)
+/* clang-format on */
+
+uint2 nir_uadd64_32(uint lo, uint hi, uint offset);
+uint nir_imad(uint a, uint b, uint c);
+uint2 nir_umad64_32(uint a, uint b, uint lo, uint hi);
 #endif /* PCO_LIBCL_H */

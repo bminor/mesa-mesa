@@ -375,16 +375,15 @@ static VkResult pvr_process_transfer_cmds(struct pvr_device *device,
    return result;
 }
 
-static VkResult
-pvr_process_occlusion_query_cmd(struct pvr_device *device,
-                                struct pvr_queue *queue,
-                                struct pvr_sub_cmd_compute *sub_cmd)
+static VkResult pvr_process_query_cmd(struct pvr_device *device,
+                                      struct pvr_queue *queue,
+                                      struct pvr_sub_cmd_compute *sub_cmd)
 {
    struct vk_sync *sync;
    VkResult result;
 
    /* TODO: Currently we add barrier event sub commands to handle the sync
-    * necessary for the different occlusion query types. Would we get any speed
+    * necessary for the different query types. Would we get any speed
     * up in processing the queue by doing that sync here without using event sub
     * commands?
     */
@@ -397,17 +396,17 @@ pvr_process_occlusion_query_cmd(struct pvr_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   result = pvr_compute_job_submit(
-      queue->query_ctx,
-      sub_cmd,
-      queue->next_job_wait_sync[PVR_JOB_TYPE_OCCLUSION_QUERY],
-      sync);
+   result =
+      pvr_compute_job_submit(queue->query_ctx,
+                             sub_cmd,
+                             queue->next_job_wait_sync[PVR_JOB_TYPE_QUERY],
+                             sync);
    if (result != VK_SUCCESS) {
       vk_sync_destroy(&device->vk, sync);
       return result;
    }
 
-   pvr_update_job_syncs(device, queue, sync, PVR_JOB_TYPE_OCCLUSION_QUERY);
+   pvr_update_job_syncs(device, queue, sync, PVR_JOB_TYPE_QUERY);
 
    return result;
 }
@@ -423,10 +422,10 @@ pvr_process_event_cmd_barrier(struct pvr_device *device,
    uint32_t src_wait_count = 0;
    VkResult result;
 
-   assert(!(src_mask & ~(PVR_PIPELINE_STAGE_ALL_BITS |
-                         PVR_PIPELINE_STAGE_OCCLUSION_QUERY_BIT)));
-   assert(!(dst_mask & ~(PVR_PIPELINE_STAGE_ALL_BITS |
-                         PVR_PIPELINE_STAGE_OCCLUSION_QUERY_BIT)));
+   assert(!(src_mask &
+            ~(PVR_PIPELINE_STAGE_ALL_BITS | PVR_PIPELINE_STAGE_QUERY_BIT)));
+   assert(!(dst_mask &
+            ~(PVR_PIPELINE_STAGE_ALL_BITS | PVR_PIPELINE_STAGE_QUERY_BIT)));
 
    u_foreach_bit (stage, src_mask) {
       if (queue->last_job_signal_sync[stage]) {
@@ -494,7 +493,7 @@ pvr_process_event_cmd_set_or_reset(struct pvr_device *device,
                                    const enum pvr_event_state new_event_state)
 {
    /* Not PVR_JOB_TYPE_MAX since that also includes
-    * PVR_JOB_TYPE_OCCLUSION_QUERY so no stage in the src mask.
+    * PVR_JOB_TYPE_QUERY so no stage in the src mask.
     */
    struct vk_sync_wait waits[PVR_NUM_SYNC_PIPELINE_STAGES];
    struct vk_sync_signal signal;
@@ -696,12 +695,12 @@ static VkResult pvr_process_cmd_buffer(struct pvr_device *device,
                              link) {
       switch (sub_cmd->type) {
       case PVR_SUB_CMD_TYPE_GRAPHICS: {
-         /* If the fragment job utilizes occlusion queries, for data integrity
-          * it needs to wait for the occlusion query to be processed.
+         /* If the fragment job utilizes queries, for data integrity
+          * it needs to wait for the query to be processed.
           */
-         if (sub_cmd->gfx.has_occlusion_query) {
+         if (sub_cmd->gfx.has_query) {
             struct pvr_sub_cmd_event_barrier barrier = {
-               .wait_for_stage_mask = PVR_PIPELINE_STAGE_OCCLUSION_QUERY_BIT,
+               .wait_for_stage_mask = PVR_PIPELINE_STAGE_QUERY_BIT,
                .wait_at_stage_mask = PVR_PIPELINE_STAGE_FRAG_BIT,
             };
 
@@ -761,9 +760,8 @@ static VkResult pvr_process_cmd_buffer(struct pvr_device *device,
          break;
       }
 
-      case PVR_SUB_CMD_TYPE_OCCLUSION_QUERY:
-         result =
-            pvr_process_occlusion_query_cmd(device, queue, &sub_cmd->compute);
+      case PVR_SUB_CMD_TYPE_QUERY:
+         result = pvr_process_query_cmd(device, queue, &sub_cmd->compute);
          break;
 
       case PVR_SUB_CMD_TYPE_EVENT:
@@ -847,11 +845,10 @@ static VkResult pvr_process_queue_signals(struct pvr_queue *queue,
       uint32_t wait_count = 0;
 
       for (uint32_t i = 0; i < PVR_JOB_TYPE_MAX; i++) {
-         /* Exception for occlusion query jobs since that's something internal,
+         /* Exception for query jobs since that's something internal,
           * so the user provided syncs won't ever have it as a source stage.
           */
-         if (!(signal_stage_src & BITFIELD_BIT(i)) &&
-             i != PVR_JOB_TYPE_OCCLUSION_QUERY)
+         if (!(signal_stage_src & BITFIELD_BIT(i)) && i != PVR_JOB_TYPE_QUERY)
             continue;
 
          if (!queue->last_job_signal_sync[i])

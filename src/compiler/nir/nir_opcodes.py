@@ -645,6 +645,12 @@ dst.x = sum & 0xffffffff;
 dst.y = sum >> 32;
 """)
 
+opcode("umad64_32", 2, tuint32, [1, 1, 1, 1], [tuint32, tuint32, tuint32, tuint32], False, "", """
+uint64_t sum = ((uint64_t)src0.x * (uint64_t)src1.x) + ((uint64_t)src3.x << 32 | (uint64_t)src2.x);
+dst.x = sum & 0xffffffff;
+dst.y = sum >> 32;
+""")
+
 binop("fsub", tfloat, "", """
 if (nir_is_rounding_mode_rtz(execution_mode, bit_size)) {
    if (bit_size == 64)

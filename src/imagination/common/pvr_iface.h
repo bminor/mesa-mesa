@@ -1,0 +1,61 @@
+/*
+ * Copyright © 2025 Imagination Technologies Ltd.
+ * SPDX-License-Identifier: MIT
+ */
+
+#ifndef PVR_IFACE_H
+#define PVR_IFACE_H
+
+/**
+ * \file pvr_iface.h
+ *
+ * \brief USC program interface.
+ */
+
+/** Query availability shader data; shared registers. */
+enum pvr_query_availability_data {
+   PVR_QUERY_AVAILABILITY_DATA_INDEX_COUNT,
+
+   PVR_QUERY_AVAILABILITY_DATA_INDEX_BO_LO,
+   PVR_QUERY_AVAILABILITY_DATA_INDEX_BO_HI,
+
+   PVR_QUERY_AVAILABILITY_DATA_BO_LO,
+   PVR_QUERY_AVAILABILITY_DATA_BO_HI,
+
+   _PVR_QUERY_AVAILABILITY_DATA_COUNT,
+};
+
+/** Query copy shader data; shared registers. */
+enum pvr_query_copy_data {
+   PVR_QUERY_COPY_DATA_INDEX_COUNT,
+
+   PVR_QUERY_COPY_DATA_DEST_BO_LO,
+   PVR_QUERY_COPY_DATA_DEST_BO_HI,
+
+   PVR_QUERY_COPY_DATA_AVAILABILITY_BO_LO,
+   PVR_QUERY_COPY_DATA_AVAILABILITY_BO_HI,
+
+   PVR_QUERY_COPY_DATA_RESULT_BO_LO,
+   PVR_QUERY_COPY_DATA_RESULT_BO_HI,
+
+   PVR_QUERY_COPY_DATA_DEST_STRIDE,
+
+   PVR_QUERY_COPY_DATA_FLAGS,
+
+   _PVR_QUERY_COPY_DATA_COUNT,
+};
+
+/** Query reset shader data; shared registers. */
+enum pvr_query_reset_data {
+   PVR_QUERY_RESET_DATA_INDEX_COUNT,
+
+   PVR_QUERY_RESET_DATA_RESULT_BO_LO,
+   PVR_QUERY_RESET_DATA_RESULT_BO_HI,
+
+   PVR_QUERY_RESET_DATA_AVAILABILITY_BO_LO,
+   PVR_QUERY_RESET_DATA_AVAILABILITY_BO_HI,
+
+   _PVR_QUERY_RESET_DATA_COUNT,
+};
+
+#endif /* PVR_IFACE_H */
