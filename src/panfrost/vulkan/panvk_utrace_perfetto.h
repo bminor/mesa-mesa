@@ -51,6 +51,10 @@ struct panvk_utrace_perfetto {
    uint64_t next_clock_snapshot;
    uint64_t event_id;
 
+   /* Use this to reject unwritten timestamps with leftover data from previous
+    * submissions. */
+   uint64_t base_ts_ns;
+
    struct panvk_utrace_perfetto_queue queues[PANVK_UTRACE_PERFETTO_QUEUE_COUNT];
 };
 

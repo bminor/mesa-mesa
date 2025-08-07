@@ -51,6 +51,8 @@ panvk_utrace_create_buffer(struct u_trace_context *utctx, uint64_t size_B)
       .size = size_B,
    };
 
+   memset(addr_host, 0, size_B);
+
    return container;
 }
 
