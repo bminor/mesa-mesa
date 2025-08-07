@@ -5843,8 +5843,7 @@ zink_update_barriers(struct zink_context *ctx, bool is_compute,
                update_res_sampler_layouts(ctx, res);
          }
          if (zink_resource_access_is_write(res->barrier_access[is_compute]) ||
-             // TODO: figure out a way to link up layouts between unordered and main cmdbuf
-             res->base.b.target != PIPE_BUFFER)
+             (res->base.b.target != PIPE_BUFFER && !general_layout))
             res->obj->unordered_write = false;
          res->obj->unordered_read = false;
          /* always barrier on draw if this resource has either multiple image write binds or
