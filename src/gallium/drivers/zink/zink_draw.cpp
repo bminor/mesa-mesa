@@ -91,7 +91,9 @@ ALWAYS_INLINE static void
 check_buffer_barrier(struct zink_context *ctx, struct pipe_resource *pres, VkAccessFlags flags, VkPipelineStageFlags pipeline)
 {
    struct zink_resource *res = zink_resource(pres);
-   zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, flags, pipeline);
+   /* fastpath for viewperf */
+   if (res->obj->access != flags || res->obj->access_stage != pipeline)
+      zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, flags, pipeline);
    if (!ctx->unordered_blitting)
       res->obj->unordered_read = false;
 }
