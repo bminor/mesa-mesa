@@ -321,12 +321,18 @@ fn build_program(
         return Err(CL_INVALID_OPERATION);
     }
 
+    if p.any_device_in_progress(&devs) {
+        // CL_INVALID_OPERATION if the build of a program executable for any of
+        // the devices listed in device_list by a previous call to
+        // clBuildProgram for program has not completed.
+        return Err(CL_INVALID_OPERATION);
+    }
+
     let options = c_string_to_string(options);
     let res = p.build(devs, options, cb_opt);
 
     //• CL_INVALID_BINARY if program is created with clCreateProgramWithBinary and devices listed in device_list do not have a valid program binary loaded.
     //• CL_INVALID_BUILD_OPTIONS if the build options specified by options are invalid.
-    //• CL_INVALID_OPERATION if the build of a program executable for any of the devices listed in device_list by a previous call to clBuildProgram for program has not completed.
     //• CL_INVALID_OPERATION if program was not created with clCreateProgramWithSource, clCreateProgramWithIL or clCreateProgramWithBinary.
 
     res
@@ -398,11 +404,18 @@ fn compile_program(
         return Err(CL_INVALID_OPERATION);
     }
 
+    if p.any_device_in_progress(&devs) {
+        // CL_INVALID_OPERATION if the compilation or build of a program
+        // executable for any of the devices listed in device_list by a previous
+        // call to clCompileProgram or clBuildProgram for program has not
+        // completed.
+        return Err(CL_INVALID_OPERATION);
+    }
+
     let options = c_string_to_string(options);
     let res = p.compile(devs, options, headers, cb_opt);
 
     // • CL_INVALID_COMPILER_OPTIONS if the compiler options specified by options are invalid.
-    // • CL_INVALID_OPERATION if the compilation or build of a program executable for any of the devices listed in device_list by a previous call to clCompileProgram or clBuildProgram for program has not completed.
 
     res
 }
