@@ -594,7 +594,6 @@ static void
 intel_driver_ds_init_once(void)
 {
 #ifdef HAVE_PERFETTO
-   util_perfetto_init();
    perfetto::DataSourceDescriptor dsd;
 #if DETECT_OS_ANDROID
    // Android tooling expects this data source name
