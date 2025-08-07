@@ -8,8 +8,7 @@ foreach d : [[with_gallium_r300 or with_gallium_radeonsi or with_gallium_r600, '
              [with_gallium_radeonsi, 'amdgpu_winsys_create'],
              [with_gallium_nouveau, 'nouveau_drm_screen_create'],
              [with_gallium_freedreno, 'fd_drm_screen_create_renderonly'],
-             [amd_with_llvm and with_gallium_radeonsi, 'ac_init_shared_llvm_once'],
-             [with_gallium_vdpau, 'vdp_imp_device_create_x11']]
+             [amd_with_llvm and with_gallium_radeonsi, 'ac_init_shared_llvm_once']]
   if d[0]
     sym_config.set(d[1], d[1] + ';')
   else
@@ -214,12 +213,6 @@ if with_gallium_va
   subdir('frontends/va')
   if not with_dri
     subdir('targets/va')
-  endif
-endif
-if with_gallium_vdpau
-  subdir('frontends/vdpau')
-  if not with_dri
-    subdir('targets/vdpau')
   endif
 endif
 if with_gallium_mediafoundation

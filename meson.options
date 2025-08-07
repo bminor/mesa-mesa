@@ -103,20 +103,6 @@ option(
 )
 
 option(
-  'gallium-vdpau',
-  type : 'feature',
-  deprecated: {'true': 'enabled', 'false': 'disabled'},
-  description : 'enable gallium vdpau frontend.',
-)
-
-option(
-  'vdpau-libs-path',
-  type : 'string',
-  value : '',
-  description : 'path to put vdpau libraries. defaults to $libdir/vdpau.'
-)
-
-option(
   'gallium-va',
   type : 'feature',
   deprecated: {'true': 'enabled', 'false': 'disabled'},
@@ -717,7 +703,7 @@ option(
   description : 'List of codecs to build support for. ' +
                 'Distros might want to consult their legal department before ' +
                 'enabling these. This is used for all video APIs (vaapi, ' +
-                'vdpau, vulkan). Non-patent encumbered codecs will be ' +
+                'vulkan). Non-patent encumbered codecs will be ' +
                 'enabled by default with the all_free default value.'
 )
 

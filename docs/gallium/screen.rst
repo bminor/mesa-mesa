@@ -557,7 +557,7 @@ Capability about the features and limits of the driver/GPU.
 
 * ``pipe_caps.cl_gl_sharing``: True if driver supports everything required by a frontend implementing the CL extension, and
   also supports importing/exporting all of pipe_texture_target via dma buffers.
-* ``pipe_caps.prefer_compute_for_multimedia``: Whether VDPAU and VAAPI
+* ``pipe_caps.prefer_compute_for_multimedia``: Whether VAAPI
   should use a compute-based blit instead of pipe_context::blit and compute pipeline for compositing images.
 * ``pipe_caps.fragment_shader_interlock``: True if fragment shader interlock
   functionality is supported.

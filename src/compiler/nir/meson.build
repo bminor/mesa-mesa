@@ -80,7 +80,6 @@ with_nir_headers_only = (
   gallium_drivers == ['d3d12'] and
   get_option('gallium-d3d12-graphics').disabled() and
   not [
-    with_gallium_vdpau,
     with_gallium_va,
     with_any_vk,
     with_gallium_st_d3d10umd,

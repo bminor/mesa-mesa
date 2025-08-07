@@ -628,30 +628,6 @@ if with_gallium_d3d12 and not _with_gallium_d3d12_video.disabled()
   pre_args += '-DHAVE_GALLIUM_D3D12_VIDEO'
 endif
 
-_vdpau_drivers = [
-  with_gallium_d3d12_video,
-  with_gallium_nouveau,
-  with_gallium_r600,
-  with_gallium_radeonsi,
-  with_gallium_virgl,
-]
-
-vdpau = get_option('gallium-vdpau') \
-  .require(system_has_kms_drm, error_message : 'VDPAU state tracker can only be build on unix-like OSes.') \
-  .require(with_platform_x11, error_message : 'VDPAU state tracker requires X11 support.') \
-  .require(_vdpau_drivers.contains(true), error_message : 'VDPAU state tracker requires at least one of the following gallium drivers: r600, radeonsi, nouveau, d3d12 (with option gallium-d3d12-video, virgl).')
-
-dep_vdpau = dependency('vdpau', version : '>= 1.5', required : vdpau)
-if dep_vdpau.found()
-  dep_vdpau = dep_vdpau.partial_dependency(compile_args : true)
-endif
-with_gallium_vdpau = dep_vdpau.found()
-
-vdpau_drivers_path = get_option('vdpau-libs-path')
-if vdpau_drivers_path == ''
-  vdpau_drivers_path = join_paths(get_option('libdir'), 'vdpau')
-endif
-
 # GLSL has interesting version output and Meson doesn't parse it correctly as of
 # Meson 1.4.0
 prog_glslang = find_program(
@@ -2091,8 +2067,7 @@ if with_platform_x11
     # needed for GL sharing extension
     dep_x11 = dependency('x11', version : dep_xlib_version)
   endif
-  if (with_any_vk or with_glx == 'dri' or with_egl or
-       (with_gallium_vdpau or with_gallium_va))
+  if (with_any_vk or with_glx == 'dri' or with_egl or with_gallium_va)
     dep_xcb = dependency('xcb')
     dep_xcb_keysyms = dependency('xcb-keysyms', required : false)
     with_xcb_keysyms = dep_xcb_keysyms.found()
@@ -2128,8 +2103,7 @@ if with_platform_x11
   endif
   if (with_egl or
       with_dri or
-      with_any_vk or
-      with_gallium_vdpau)
+      with_any_vk)
     dep_xcb_xfixes = dependency('xcb-xfixes')
   endif
   if with_any_vk
@@ -2363,9 +2337,6 @@ summary(vulkan_summary, section: 'Vulkan', bool_yn: true, list_sep: ' ')
 
 video_summary = {'Codecs': _codecs.length() != 0 ? _codecs : false}
 video_apis = []
-if with_gallium_vdpau
-  video_apis += 'vdpau'
-endif
 if with_gallium_va
   video_apis += 'va'
 endif
@@ -2390,9 +2361,6 @@ if with_gallium
   gallium_summary += {'Platforms': _platforms}
 
   gallium_frontends = ['mesa']
-  if with_gallium_vdpau
-    gallium_frontends += 'vdpau'
-  endif
   if with_gallium_va
     gallium_frontends += 'va'
   endif

@@ -135,7 +135,6 @@ each directory.
          -  **hgl** - Haiku OpenGL
          -  **lavapipe** - Vulkan frontend, software Vulkan rasterizer using LLVMpipe.
          -  **va** - VA-API frontend
-         -  **vdpau** - VDPAU frontend
          -  **wgl** - Windows WGL frontend
 
       -  **winsys** - The device drivers are platform-independent, the
