@@ -2639,8 +2639,7 @@ sampler_count(struct agx_context *ctx, mesa_shader_stage stage)
 }
 
 static inline enum agx_sampler_states
-translate_sampler_state_count(struct agx_context *ctx,
-                              mesa_shader_stage stage)
+translate_sampler_state_count(struct agx_context *ctx, mesa_shader_stage stage)
 {
    /* Clamp to binding table maximum, anything larger will be bindless */
    return agx_translate_sampler_state_count(MIN2(sampler_count(ctx, stage), 16),
@@ -2894,8 +2893,8 @@ agx_update_descriptors(struct agx_batch *batch, struct agx_compiled_shader *cs)
 static uint32_t
 agx_build_pipeline(struct agx_batch *batch, struct agx_compiled_shader *cs,
                    struct agx_linked_shader *linked,
-                   mesa_shader_stage phys_stage,
-                   unsigned variable_shared_mem, size_t max_subgroups)
+                   mesa_shader_stage phys_stage, unsigned variable_shared_mem,
+                   size_t max_subgroups)
 {
    struct agx_context *ctx = batch->ctx;
    struct agx_device *dev = agx_device(ctx->base.screen);
@@ -4384,8 +4383,8 @@ agx_apply_passthrough_gs(struct agx_context *ctx,
                          unsigned num_draws, bool xfb_passthrough)
 {
    mesa_shader_stage prev_stage = ctx->stage[MESA_SHADER_TESS_EVAL].shader
-                                         ? MESA_SHADER_TESS_EVAL
-                                         : MESA_SHADER_VERTEX;
+                                     ? MESA_SHADER_TESS_EVAL
+                                     : MESA_SHADER_VERTEX;
    struct agx_uncompiled_shader *prev_cso = ctx->stage[prev_stage].shader;
 
    assert(ctx->stage[MESA_SHADER_GEOMETRY].shader == NULL);

@@ -1002,14 +1002,11 @@ agx_transfer(struct pipe_transfer *p)
 void agx_upload_vbos(struct agx_batch *batch);
 void agx_upload_uniforms(struct agx_batch *batch);
 
-void agx_set_sampler_uniforms(struct agx_batch *batch,
-                              mesa_shader_stage stage);
+void agx_set_sampler_uniforms(struct agx_batch *batch, mesa_shader_stage stage);
 
-void agx_set_cbuf_uniforms(struct agx_batch *batch,
-                           mesa_shader_stage stage);
+void agx_set_cbuf_uniforms(struct agx_batch *batch, mesa_shader_stage stage);
 
-void agx_set_ssbo_uniforms(struct agx_batch *batch,
-                           mesa_shader_stage stage);
+void agx_set_ssbo_uniforms(struct agx_batch *batch, mesa_shader_stage stage);
 
 bool agx_nir_lower_point_size(nir_shader *nir, bool insert_write);
 
