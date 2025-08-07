@@ -1955,8 +1955,8 @@ agx_init_compute_caps(struct pipe_screen *pscreen)
    caps->max_compute_units = agx_get_num_cores(dev);
 
    caps->subgroup_sizes = 32;
-
-   caps->max_variable_threads_per_block = 1024; // TODO
+   caps->max_variable_threads_per_block = 1024;
+   caps->max_subgroups = caps->max_variable_threads_per_block / 32;
 }
 
 static void
@@ -1999,6 +1999,12 @@ agx_init_screen_caps(struct pipe_screen *pscreen)
 
    /* Timer resolution is the length of a single tick in nanos */
    caps->timer_resolution = agx_gpu_timestamp_to_ns(agx_device(pscreen), 1);
+
+   caps->shader_subgroup_size = 32;
+   caps->shader_subgroup_supported_stages = BITFIELD_MASK(MESA_SHADER_STAGES);
+   caps->shader_subgroup_supported_features =
+      BITFIELD_MASK(PIPE_SHADER_SUBGROUP_NUM_FEATURES);
+   caps->shader_subgroup_quad_all_stages = true;
 
    caps->sampler_view_target = true;
    caps->texture_swizzle = true;
