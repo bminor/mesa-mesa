@@ -226,17 +226,6 @@ spec@arb_base_instance@arb_base_instance-drawarrays,Fail
 spec@ext_base_instance@arb_base_instance-baseinstance-doesnt-affect-gl-instance-id_gles3,Fail
 spec@ext_base_instance@arb_base_instance-drawarrays_gles3,Fail
 
-# Bad assumptions in piglit about layout of multiplanar formats,
-# it should use separate buffers per plane:
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-export,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p010,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p012,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p016,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
-
 # glcts update
 dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 KHR-GL46.texture_view.view_classes,Fail
