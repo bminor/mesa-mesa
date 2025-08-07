@@ -204,7 +204,12 @@ _mesa_trace_scope_end(UNUSED void **scope)
 static inline void
 util_cpu_trace_init()
 {
+#if defined(HAVE_PERFETTO)
    util_perfetto_init();
+#elif DETECT_OS_ANDROID && !defined(__cplusplus)
+   atrace_init();
+#endif /* HAVE_PERFETTO */
+
    util_gpuvis_init();
 }
 
