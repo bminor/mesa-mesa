@@ -205,7 +205,9 @@ lower_subgroup_filter(const nir_instr *instr, UNUSED const void *data)
 
    switch (nir_intrinsic_reduction_op(intr)) {
    case nir_op_imul:
-      /* no imul hardware scan, always lower it */
+   case nir_op_fmin:
+   case nir_op_fmax:
+      /* no hardware scan for this opcode, always lower it */
       return true;
 
    case nir_op_iadd:
