@@ -28,6 +28,7 @@ const LUID_SIZE: usize = PIPE_LUID_SIZE as usize;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ResourceType {
+    Immutable,
     Normal,
     Staging,
 }
@@ -41,6 +42,9 @@ impl ResourceType {
                 tmpl.bind |= PIPE_BIND_LINEAR;
             }
             Self::Normal => {}
+            Self::Immutable => {
+                tmpl.set_usage(pipe_resource_usage::PIPE_USAGE_IMMUTABLE);
+            }
         }
     }
 }
