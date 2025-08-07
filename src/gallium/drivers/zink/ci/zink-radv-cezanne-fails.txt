@@ -5,14 +5,8 @@ KHR-GL46.geometry_shader.rendering.rendering.triangles_with_adjacency_input_tria
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6,Fail
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=8,Fail
 
-glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
-glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
-glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
-glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
 glx@glx-multi-window-single-context,Fail
-glx@glx-swap-pixmap-bad,Fail
 spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-store,Fail
-spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_mesa_configless_context@basic,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p010,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p016,Fail

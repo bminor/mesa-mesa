@@ -1,3 +1,9 @@
+glx@glx-swap-pixmap-bad,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
+
 # kopper
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_ust_test,Fail
 
@@ -319,6 +325,7 @@ spec@arb_shader_texture_lod@execution@arb_shader_texture_lod-texgradcube,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@fs-packhalf2x16,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@vs-packhalf2x16,Fail
 spec@egl 1.4@eglterminate then unbind context,Fail
+spec@egl_chromium_sync_control@conformance,Fail
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
 spec@egl_khr_gl_image@egl_khr_gl_renderbuffer_image-clear-shared-image gl_depth_component24,Fail
 spec@egl_khr_surfaceless_context@viewport,Fail

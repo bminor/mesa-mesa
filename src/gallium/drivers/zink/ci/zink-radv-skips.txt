@@ -5,8 +5,10 @@ spec@arb_gpu_shader_fp64@execution@glsl-fs-loop-unroll-mul-fp64
 # Kopper regression
 glx@glx-tfp
 
-# Exclude GLX tests.
-glx@glx.*
+# sometimes crashes, and takes down xwayland with it:
+# ERROR - Piglit error: egl-create-largest-pbuffer-surface: ../src/vulkan/runtime/vk_image.c:57: vk_image_init: Assertion `pCreateInfo->extent.width > 0' failed.
+# Xwayland: ../src/gallium/drivers/zink/zink_resource.c:1351: create_image: Assertion `mod == alloc_info->whandle->modifier || !winsys_modifier' failed.
+spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
 
 spec@egl_nok_texture_from_pixmap@basic
 
