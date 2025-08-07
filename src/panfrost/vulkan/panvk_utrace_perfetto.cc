@@ -304,8 +304,6 @@ panvk_utrace_perfetto_init(struct panvk_device *dev, uint32_t queue_count)
    for (uint32_t i = 0; i < ARRAY_SIZE(utp->stage_iids); i++)
       utp->stage_iids[i] = next_iid++;
 
-   util_perfetto_init();
-
    static once_flag register_ds_once = ONCE_FLAG_INIT;
    call_once(&register_ds_once, register_data_source);
 }
