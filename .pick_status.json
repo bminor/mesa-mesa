@@ -5364,7 +5364,7 @@
         "description": "freedreno/layout: Don't align explicit layouts to page size",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "27b0f64b3ed04c7ebf98405cd5515af44be9ee24",
         "notes": null
