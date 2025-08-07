@@ -103,8 +103,8 @@ msm_ioctl_get_param(int fd, unsigned long request, void *arg)
    case MSM_PARAM_CHIP_ID:
       gp->value = device_info->chip_id;
       return 0;
-   case MSM_PARAM_NR_RINGS:
-      gp->value = 1;
+   case MSM_PARAM_PRIORITIES:
+      gp->value = 3;
       return 0;
    case MSM_PARAM_MAX_FREQ:
       gp->value = 1000000;
