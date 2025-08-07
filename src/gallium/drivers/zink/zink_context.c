@@ -1409,7 +1409,13 @@ zink_bind_vertex_elements_state(struct pipe_context *pctx,
 {
    struct zink_context *ctx = zink_context(pctx);
    struct zink_gfx_pipeline_state *state = &ctx->gfx_pipeline_state;
+   unsigned old_num_bindings = state->element_state ? state->element_state->num_bindings : 0;
    ctx->element_state = cso;
+   /* existing vbos will be replaced on next set_vb call */
+   for (unsigned i = ctx->element_state ? ctx->element_state->hw_state.num_bindings : 0; i < old_num_bindings; i++) {
+      update_existing_vbo(ctx, i);
+      ctx->vertex_buffers[i].buffer.resource = NULL;
+   }
    if (cso) {
       if (state->element_state != &ctx->element_state->hw_state) {
          ctx->vertex_state_changed = true;
@@ -1474,7 +1480,6 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
    const bool have_input_state = zink_screen(pctx->screen)->info.have_EXT_vertex_input_dynamic_state;
    const bool need_state_change = !zink_screen(pctx->screen)->info.have_EXT_extended_dynamic_state &&
                                   !have_input_state;
-   unsigned last_count = util_last_bit(ctx->gfx_pipeline_state.vertex_buffers_enabled_mask);
    uint32_t enabled_buffers = BITFIELD_MASK(num_buffers);
 
    assert(!num_buffers || buffers);
@@ -1504,10 +1509,7 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
          enabled_buffers &= ~BITFIELD_BIT(i);
       }
    }
-   for (unsigned i = num_buffers; i < last_count; i++) {
-      update_existing_vbo(ctx, i);
-      ctx->vertex_buffers[i].buffer.resource = NULL;
-   }
+
    if (!optimal) {
       if (need_state_change)
          ctx->vertex_state_changed = true;
