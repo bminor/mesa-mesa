@@ -499,7 +499,7 @@ impl NirKernelBuild {
             // TODO bind as constant buffer
             let res = dev
                 .screen()
-                .resource_create_buffer(len, ResourceType::Normal, PIPE_BIND_GLOBAL, 0)
+                .resource_create_buffer(len, ResourceType::Immutable, PIPE_BIND_GLOBAL, 0)
                 .unwrap();
 
             dev.helper_ctx()
