@@ -1477,9 +1477,6 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
 {
    MESA_TRACE_FUNC();
    struct zink_context *ctx = zink_context(pctx);
-   const bool have_input_state = zink_screen(pctx->screen)->info.have_EXT_vertex_input_dynamic_state;
-   const bool need_state_change = !zink_screen(pctx->screen)->info.have_EXT_extended_dynamic_state &&
-                                  !have_input_state;
    uint32_t enabled_buffers = BITFIELD_MASK(num_buffers);
 
    assert(!num_buffers || buffers);
@@ -1511,17 +1508,20 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
    }
 
    if (!optimal) {
+      const bool have_input_state = zink_screen(pctx->screen)->info.have_EXT_vertex_input_dynamic_state;
+      const bool need_state_change = !zink_screen(pctx->screen)->info.have_EXT_extended_dynamic_state &&
+                                     !have_input_state;
       if (need_state_change)
          ctx->vertex_state_changed = true;
       else if (!have_input_state && ctx->gfx_pipeline_state.vertex_buffers_enabled_mask != enabled_buffers)
          ctx->vertex_state_changed = true;
-   }
-   ctx->gfx_pipeline_state.vertex_buffers_enabled_mask = enabled_buffers;
-   ctx->vertex_buffers_dirty = num_buffers > 0;
+      ctx->gfx_pipeline_state.vertex_buffers_enabled_mask = enabled_buffers;
 #ifndef NDEBUG
-   u_foreach_bit(b, enabled_buffers)
-      assert(ctx->vertex_buffers[b].buffer.resource);
+      u_foreach_bit(b, enabled_buffers)
+         assert(ctx->vertex_buffers[b].buffer.resource);
 #endif
+   }
+   ctx->vertex_buffers_dirty = num_buffers > 0;
 }
 
 static void
