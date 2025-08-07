@@ -1873,6 +1873,257 @@ track_last(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
    } while (progress);
 }
 
+/* An instruction where we may insert nops without increasing the runtime nop
+ * count. These are of the form `(rptN)nop` and `(nopN)foo`. We can insert nops
+ * after them while decreasing their rpt/nop count without affecting the runtime
+ * behavior.
+ */
+struct nop_insert_point {
+   struct ir3_instruction *instr;
+
+   /* The maximum number of nops that can be inserted after `instr` without
+    * pushing any subsequent alias sequences over the next cache line. Since
+    * inserting nops at an earlier insert point affects all later ones, the
+    * max_nops value of the last insert point is the maximum for all insert
+    * points. This is taken into account when iterating insert points so that we
+    * only have to update the last insert point whenever we encounter an alias
+    * sequence.
+    */
+   unsigned max_nops;
+};
+
+struct alias_align_ctx {
+   DECLARE_ARRAY(struct nop_insert_point, nop_insert_points);
+};
+
+#define ICACHE_LINE_INSTRS 16
+
+static unsigned
+icache_line(unsigned ip)
+{
+   return ip / ICACHE_LINE_INSTRS;
+}
+
+static uint8_t *
+extra_nops(struct ir3_instruction *instr)
+{
+   if (instr->opc == OPC_NOP) {
+      return &instr->repeat;
+   }
+
+   return &instr->nop;
+}
+
+static bool
+is_insert_point(struct ir3_instruction *instr)
+{
+   uint8_t *instr_extra_nops = extra_nops(instr);
+   return *instr_extra_nops != 0;
+}
+
+static void
+update_last_insert_point_max_nops(struct alias_align_ctx *ctx,
+                                  unsigned max_nops)
+{
+   if (max_nops == 0) {
+      /* If we cannot insert more nops at the last insert point, we cannot
+       * insert more anywhere.
+       */
+      ctx->nop_insert_points_count = 0;
+   } else if (ctx->nop_insert_points_count != 0) {
+      struct nop_insert_point *last_nop_insert_point =
+         &ctx->nop_insert_points[ctx->nop_insert_points_count - 1];
+      last_nop_insert_point->max_nops =
+         MIN2(last_nop_insert_point->max_nops, max_nops);
+   }
+}
+
+static void
+insert_nops(struct ir3_cursor cursor, unsigned n)
+{
+   struct ir3_builder b = ir3_builder_at(cursor);
+
+   for (unsigned i = 0; i < n; i++) {
+      ir3_NOP(&b);
+   }
+}
+
+/* There seems to be a hardware bug that sometimes causes a GPU hang when an
+ * alias...sam sequence crosses an instruction cache line boundary. This pass
+ * inserts padding nops to ensure no such sequence cross a cache line.
+ *
+ * While the number of nops we have to insert is fixed at this point, we can try
+ * to minimize the number of nops executed at runtime by replacing nops encoded
+ * in instructions by standalone nops. That is, if this pass has to insert one
+ * nop, it will try to make one of the following replacements:
+ * - (rptN)nop -> (rptN-1)nop; nop
+ * - (nopN)foo -> (nopN-1)foo; nop
+ *
+ * It does so by keeping track of "insert points". Each insert point keeps track
+ * of the instruction and the maximum number of nops that can be inserted there
+ * without pushing any subsequent alias sequences over the next cache line.
+ * Whenever we need to insert nops, we first try it at the encountered insert
+ * points and only if that doesn't work, we insert them right before the first
+ * alias. The pass makes sure the insert points are only visited a bounded
+ * number of times in total to keep the whole pass O(n).
+ */
+static void
+align_aliases(struct ir3 *ir)
+{
+   if (!ir->compiler->has_alias_tex) {
+      return;
+   }
+
+   struct alias_align_ctx *ctx = rzalloc(ir, struct alias_align_ctx);
+   unsigned ip = 0;
+
+   foreach_block (block, &ir->block_list) {
+      bool in_alias_sequence = false;
+
+      foreach_instr (instr, &block->instr_list) {
+         if (instr->opc == OPC_META_TEX_PREFETCH) {
+            /* These will not be part of the final binary. */
+            continue;
+         }
+
+         instr->ip = ip++;
+
+         if (is_insert_point(instr)) {
+            struct nop_insert_point nop_insert_point = {
+               .instr = instr,
+
+               /* This will be set when we encounter the next alias sequence. */
+               .max_nops = ~0,
+            };
+
+            array_insert(ctx, ctx->nop_insert_points, nop_insert_point);
+            continue;
+         }
+
+         if (instr->opc != OPC_ALIAS || instr->cat7.alias_scope != ALIAS_TEX) {
+            in_alias_sequence = false;
+            continue;
+         }
+
+         if (in_alias_sequence) {
+            /* We only have to handle the first alias. */
+            continue;
+         }
+
+         in_alias_sequence = true;
+         unsigned num_aliases = instr->cat7.alias_table_size_minus_one + 1;
+         unsigned last_ip = instr->ip + num_aliases;
+         unsigned num_aliases_first_icache_line =
+            num_aliases - (last_ip % ICACHE_LINE_INSTRS);
+
+         if (icache_line(instr->ip) != icache_line(last_ip)) {
+            unsigned nops_left = num_aliases_first_icache_line;
+            assert(nops_left > 0);
+
+            /* Maximum number of nops we can still insert without pushing any
+             * existing sequences over the next cache line. Will be set to the
+             * minimum of the insert points we encounter.
+             */
+            unsigned max_nops = ~0;
+
+            /* First try to insert nops at the available insert points. */
+            for (unsigned i = ctx->nop_insert_points_count; i > 0; i--) {
+               /* Every iteration, we either:
+                * 1. Break because max_nops has become zero, which removes all
+                *    insert points;
+                * 2. Pop the current insert point because it has no nops left;
+                * 3. Break because we're done, this may leave the last insert
+                *    point in the list but will have decreased the number of
+                *    nops available there.
+                *
+                * This ensures that every insert point is encountered at most a
+                * constant number of times (and this constant is bounded by the
+                * maximum number of nops that can be inserted at any insert
+                * point, which is 6 for (rpt6)nop). This means that the *total*
+                * number of iterations for this loop is O(n) and hence the whole
+                * pass is O(n).
+                */
+               assert(i == ctx->nop_insert_points_count);
+
+               struct nop_insert_point *nop_insert_point =
+                  &ctx->nop_insert_points[i - 1];
+
+               max_nops = MIN2(max_nops, nop_insert_point->max_nops);
+
+               uint8_t *instr_extra_nops = extra_nops(nop_insert_point->instr);
+               unsigned num_nops = MIN3(*instr_extra_nops, nops_left, max_nops);
+               assert(num_nops != 0);
+
+               insert_nops(ir3_after_instr(nop_insert_point->instr), num_nops);
+               *instr_extra_nops -= num_nops;
+               nops_left -= num_nops;
+
+               /* If max_nops == ~0, then nop_insert_point->max_nops == ~0. This
+                * means that nop_insert_point is currently unconstrained because
+                * we didn't encounter a subsequent sequence yet (other than the
+                * current one). Leave it unconstrained, if it hasn't been
+                * removed when we're done inserting nops, it will be updated
+                * when we finish handling this instruction.
+                */
+               if (max_nops != ~0) {
+                  max_nops -= num_nops;
+                  nop_insert_point->max_nops = max_nops;
+               }
+
+               if (max_nops == 0) {
+                  /* 1. If we cannot insert more nops at the last insert point,
+                   * we cannot insert more anywhere.
+                   */
+                  ctx->nop_insert_points_count = 0;
+                  break;
+               }
+
+               if (*instr_extra_nops == 0) {
+                  /* 2. The insert point is all used up, remove it. */
+                  ctx->nop_insert_points_count--;
+
+                  /* Since we only set max_nops on the last insert point, we
+                   * have to propagate it now to the new last.
+                   */
+                  update_last_insert_point_max_nops(ctx, max_nops);
+               } else {
+                  /* The current insert point has nops left so we should have
+                   * used them if needed.
+                   */
+                  assert(nops_left == 0);
+               }
+
+               if (nops_left == 0) {
+                  /* 3. All necessary nops inserted. */
+                  break;
+               }
+            }
+
+            /* Then, insert any remaining nops before the first alias. */
+            insert_nops(ir3_before_instr(instr), nops_left);
+
+            instr->ip += num_aliases_first_icache_line;
+            assert(util_is_aligned(instr->ip, ICACHE_LINE_INSTRS));
+
+            last_ip = instr->ip + num_aliases;
+            assert(icache_line(instr->ip) == icache_line(last_ip));
+
+            ip = instr->ip + 1;
+         }
+
+         /* Calculate how many nops we can insert before the first alias without
+          * moving the whole sequence over the next cache line. This allows us
+          * to insert nops for subsequent aliases before this one.
+          */
+         unsigned max_nops =
+            ICACHE_LINE_INSTRS - 1 - last_ip % ICACHE_LINE_INSTRS;
+         update_last_insert_point_max_nops(ctx, max_nops);
+      }
+   }
+
+   ralloc_free(ctx);
+}
+
 bool
 ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
 {
@@ -2033,6 +2284,7 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
       track_last(ctx, ir, so);
 
    ir3_insert_alias_tex(ir);
+   align_aliases(ir);
    ir3_count_instructions(ir);
    resolve_jumps(ir);
 
