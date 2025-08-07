@@ -124,14 +124,18 @@ static void
 resource_check_defer_buffer_barrier(struct zink_context *ctx, struct zink_resource *res, VkPipelineStageFlags pipeline)
 {
    assert(res->obj->is_buffer);
-   if (res->bind_count[0] - res->so_bind_count > 0) {
-      if ((res->vbo_bind_mask && !(pipeline & VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)) ||
-          (util_bitcount(res->vbo_bind_mask) != res->bind_count[0] && !is_shader_pipline_stage(pipeline)))
-         /* gfx rebind */
+   /* streamout binds have their own sync: ignore */
+   unsigned bind_count0 = res->bind_count[0] - res->so_bind_count;
+   if (bind_count0 > 0) {
+      /* if has vbo binds and is not a vbo barrier... */
+      if ((res->vbo_bind_count && !(pipeline & VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)) ||
+         /* or if has more than just vbo binds and is not a gfx stage */
+          (res->vbo_bind_count != bind_count0 && !is_shader_pipline_stage(pipeline)))
+         /* sync on next draw */
          _mesa_set_add(ctx->need_barriers[0], res);
    }
    if (res->bind_count[1] && !(pipeline & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT))
-      /* compute rebind */
+      /* if writing from non-compute and has compute binds, sync on next dispatch */
       _mesa_set_add(ctx->need_barriers[1], res);
 }
 
@@ -445,9 +449,9 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
    if (!GENERAL && !res->obj->needs_zs_evaluate && !zink_resource_image_needs_barrier(res, new_layout, flags, pipeline) &&
        (res->queue == zink_screen(ctx->base.screen)->gfx_queue || res->queue == VK_QUEUE_FAMILY_IGNORED))
       return;
-   enum zink_resource_access rw = is_write ? ZINK_RESOURCE_ACCESS_RW : ZINK_RESOURCE_ACCESS_WRITE;
-   bool completed = zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, rw);
-   bool usage_matches = !completed && zink_resource_usage_matches(res, ctx->bs);
+   bool has_usage = zink_resource_has_usage(res);
+   bool completed = !has_usage || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, ZINK_RESOURCE_ACCESS_RW);
+   bool usage_matches = zink_resource_usage_matches(res, ctx->bs);
    VkCommandBuffer cmdbuf = GENERAL && new_layout == VK_IMAGE_LAYOUT_GENERAL ?
                             (UNSYNCHRONIZED ? ctx->bs->unsynchronized_cmdbuf : is_write ? zink_get_cmdbuf(ctx, NULL, res) : zink_get_cmdbuf(ctx, res, NULL)) :
                             update_unordered_access_and_get_cmdbuf<UNSYNCHRONIZED>::apply(ctx, res, usage_matches, is_write);
@@ -614,13 +618,12 @@ void
 zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline)
 {
    bool is_write = zink_resource_access_is_write(flags);
-   enum zink_resource_access rw = is_write ? ZINK_RESOURCE_ACCESS_RW : ZINK_RESOURCE_ACCESS_WRITE;
    bool has_usage = zink_resource_has_usage(res);
-   bool completed = !has_usage || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, rw);
-   bool usage_matches = !completed && zink_resource_usage_matches(res, ctx->bs);
+   bool completed = !has_usage || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, ZINK_RESOURCE_ACCESS_RW);
+   bool usage_matches = zink_resource_usage_matches(res, ctx->bs);
    if (!usage_matches) {
       res->obj->unordered_write = true;
-      if (is_write || !has_usage || zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, ZINK_RESOURCE_ACCESS_RW))
+      if (is_write || completed)
          res->obj->unordered_read = true;
    }
    bool unordered_usage_matches = res->obj->unordered_access && usage_matches;
@@ -682,7 +685,7 @@ zink_resource_memory_barrier(struct zink_context *ctx, struct zink_resource *res
       zink_cmd_debug_marker_end(ctx, cmdbuf, marker);
    }
 
-   if (!UNSYNCHRONIZED) {
+   if (!UNSYNCHRONIZED && (is_write || res->write_bind_count[0] || res->write_bind_count[1])) {
       if (GENERAL_IMAGE)
          resource_defer_image_barrier(ctx, res, pipeline);
       else
