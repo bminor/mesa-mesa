@@ -1384,7 +1384,7 @@ update_existing_vbo(struct zink_context *ctx, unsigned slot)
    update_res_bind_count(ctx, res, false, true);
 }
 
-static void
+ALWAYS_INLINE static void
 zink_set_vertex_buffers_internal(struct pipe_context *pctx,
                                  unsigned num_buffers,
                                  const struct pipe_vertex_buffer *buffers,
