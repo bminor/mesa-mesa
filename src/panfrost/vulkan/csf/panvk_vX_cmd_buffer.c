@@ -433,18 +433,17 @@ collect_cache_flush_info(enum panvk_subqueue_id subqueue,
 
 static void
 collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
-                VkPipelineStageFlags2 src_stages,
-                VkPipelineStageFlags2 dst_stages, VkAccessFlags2 src_access,
-                VkAccessFlags2 dst_access, struct panvk_cs_deps *deps)
+                struct panvk_sync_scope src, struct panvk_sync_scope dst,
+                struct panvk_cs_deps *deps)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
    uint32_t wait_masks[PANVK_SUBQUEUE_COUNT] = {0};
-   add_execution_dependency(wait_masks, src_stages, dst_stages);
+   add_execution_dependency(wait_masks, src.stages, dst.stages);
 
    /* within a render pass */
    if (cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) {
-      if (should_split_render_pass(wait_masks, src_access, dst_access)) {
+      if (should_split_render_pass(wait_masks, src.access, dst.access)) {
          deps->needs_draw_flush = true;
       } else {
          /* skip the tiler subqueue self-wait because we use the same
@@ -470,39 +469,34 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
          deps->src[i].wait_sb_mask |= dev->csf.sb.all_iters_mask;
       }
 
-      collect_cache_flush_info(i, &deps->src[i].cache_flush, src_access,
-                               dst_access);
+      collect_cache_flush_info(i, &deps->src[i].cache_flush, src.access,
+                               dst.access);
 
       deps->dst[i].wait_subqueue_mask |= wait_masks[i];
    }
 }
 
 static void
-normalize_dependency(VkPipelineStageFlags2 *src_stages,
-                     VkPipelineStageFlags2 *dst_stages,
-                     VkPipelineStageFlags2 transition_stages,
-                     VkAccessFlags2 *src_access,
-                     VkAccessFlags2 *dst_access,
-                     VkAccessFlags2 transition_access,
+normalize_dependency(struct panvk_sync_scope *src,
+                     struct panvk_sync_scope *dst,
+                     struct panvk_sync_scope transition,
                      uint32_t src_qfi, uint32_t dst_qfi,
                      enum panvk_barrier_stage barrier_stage)
 {
    switch (barrier_stage) {
    case PANVK_BARRIER_STAGE_FIRST:
-      if (transition_stages) {
+      if (transition.stages) {
          /* We need to do layout transition, so we want to sync src with layout
           * transition, and then later layout transition with dst.
           */
-         *dst_stages = transition_stages;
-         *dst_access = transition_access;
+         *dst = transition;
       }
       break;
    case PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION:
-      /* If transition_stages is empty, there was no layout transition and so we
+      /* If transition.stages is empty, there was no layout transition and so we
        * won't be waiting for anything.
        */
-      *src_stages = transition_stages;
-      *src_access = transition_access;
+      *src = transition;
       break;
    }
 
@@ -516,13 +510,11 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
          switch (src_qfi) {
          case VK_QUEUE_FAMILY_EXTERNAL:
             /* no execution dependency and no availability operation */
-            *src_stages = VK_PIPELINE_STAGE_2_NONE;
-            *src_access = VK_ACCESS_2_NONE;
+            *src = (struct panvk_sync_scope){VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE};
             break;
          case VK_QUEUE_FAMILY_FOREIGN_EXT:
             /* treat the foreign queue as the host */
-            *src_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
-            *src_access = VK_ACCESS_2_HOST_WRITE_BIT;
+            *src = (struct panvk_sync_scope){VK_PIPELINE_STAGE_2_HOST_BIT, VK_ACCESS_2_HOST_WRITE_BIT};
             break;
          default:
             break;
@@ -532,19 +524,17 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
       /* Only normalize if we're actually syncing the latest of either src or
        * layout transition, with release.
        */
-      if ((barrier_stage == PANVK_BARRIER_STAGE_FIRST && !transition_stages) ||
-          (barrier_stage == PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION && transition_stages)) {
+      if ((barrier_stage == PANVK_BARRIER_STAGE_FIRST && !transition.stages) ||
+          (barrier_stage == PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION && transition.stages)) {
          /* queue family release operation */
          switch (dst_qfi) {
          case VK_QUEUE_FAMILY_EXTERNAL:
             /* no execution dependency and no visibility operation */
-            *dst_stages = VK_PIPELINE_STAGE_2_NONE;
-            *dst_access = VK_ACCESS_2_NONE;
+            *dst = (struct panvk_sync_scope){VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE};
             break;
          case VK_QUEUE_FAMILY_FOREIGN_EXT:
             /* treat the foreign queue as the host */
-            *dst_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
-            *dst_access = VK_ACCESS_2_HOST_WRITE_BIT;
+            *dst = (struct panvk_sync_scope){VK_PIPELINE_STAGE_2_HOST_BIT, VK_ACCESS_2_HOST_WRITE_BIT};
             break;
          default:
             break;
@@ -552,11 +542,10 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
       }
    }
 
-   *src_stages = vk_expand_src_stage_flags2(*src_stages);
-   *dst_stages = vk_expand_dst_stage_flags2(*dst_stages);
-
-   *src_access = vk_filter_src_access_flags2(*src_stages, *src_access);
-   *dst_access = vk_filter_dst_access_flags2(*dst_stages, *dst_access);
+   src->stages = vk_expand_src_stage_flags2(src->stages);
+   src->access = vk_filter_src_access_flags2(src->stages, src->access);
+   dst->stages = vk_expand_dst_stage_flags2(dst->stages);
+   dst->access = vk_filter_dst_access_flags2(dst->stages, dst->access);
 }
 
 void
@@ -567,56 +556,43 @@ panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
 {
    for (uint32_t i = 0; i < in->memoryBarrierCount; i++) {
       const VkMemoryBarrier2 *barrier = &in->pMemoryBarriers[i];
-      VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
-      VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
-      VkAccessFlags2 src_access = barrier->srcAccessMask;
-      VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, 0,
-                           &src_access, &dst_access, 0,
+      struct panvk_sync_scope src = {barrier->srcStageMask, barrier->srcAccessMask};
+      struct panvk_sync_scope dst = {barrier->dstStageMask, barrier->dstAccessMask};
+      normalize_dependency(&src, &dst, (struct panvk_sync_scope){0},
                            VK_QUEUE_FAMILY_IGNORED,
                            VK_QUEUE_FAMILY_IGNORED,
                            barrier_stage);
 
-      collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
-                      out);
+      collect_cs_deps(cmdbuf, src, dst, out);
    }
 
    for (uint32_t i = 0; i < in->bufferMemoryBarrierCount; i++) {
       const VkBufferMemoryBarrier2 *barrier = &in->pBufferMemoryBarriers[i];
-      VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
-      VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
-      VkAccessFlags2 src_access = barrier->srcAccessMask;
-      VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, 0,
-                           &src_access, &dst_access, 0,
+      struct panvk_sync_scope src = {barrier->srcStageMask, barrier->srcAccessMask};
+      struct panvk_sync_scope dst = {barrier->dstStageMask, barrier->dstAccessMask};
+      normalize_dependency(&src, &dst, (struct panvk_sync_scope){0},
                            barrier->srcQueueFamilyIndex,
                            barrier->dstQueueFamilyIndex,
                            barrier_stage);
 
-      collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
-                      out);
+      collect_cs_deps(cmdbuf, src, dst, out);
    }
 
    for (uint32_t i = 0; i < in->imageMemoryBarrierCount; i++) {
       const VkImageMemoryBarrier2 *barrier = &in->pImageMemoryBarriers[i];
-      VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
-      VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
-      VkAccessFlags2 src_access = barrier->srcAccessMask;
-      VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      VkPipelineStageFlags2 transition_stages;
-      VkAccessFlags2 transition_access;
+      struct panvk_sync_scope src = {barrier->srcStageMask, barrier->srcAccessMask};
+      struct panvk_sync_scope dst = {barrier->dstStageMask, barrier->dstAccessMask};
+      struct panvk_sync_scope transition;
       panvk_per_arch(transition_image_layout_sync_scope)(barrier,
-         &transition_stages, &transition_access);
-      normalize_dependency(&src_stages, &dst_stages, transition_stages,
-                           &src_access, &dst_access, transition_access,
+         &transition.stages, &transition.access);
+      normalize_dependency(&src, &dst, transition,
                            barrier->srcQueueFamilyIndex,
                            barrier->dstQueueFamilyIndex,
                            barrier_stage);
 
-      collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
-                      out);
+      collect_cs_deps(cmdbuf, src, dst, out);
 
-      if (barrier_stage == PANVK_BARRIER_STAGE_FIRST && transition_stages)
+      if (barrier_stage == PANVK_BARRIER_STAGE_FIRST && transition.stages)
          out->needs_layout_transitions = true;
    }
 }

@@ -27,6 +27,11 @@
 #include "util/list.h"
 #include "util/perf/u_trace.h"
 
+struct panvk_sync_scope {
+   VkPipelineStageFlags2 stages;
+   VkAccessFlags2 access;
+};
+
 #define MAX_VBS 16
 #define MAX_RTS 8
 #define MAX_LAYERS_PER_TILER_DESC 8
