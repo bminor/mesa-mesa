@@ -202,9 +202,10 @@ descriptor_util_pool_key_get(struct zink_screen *screen, enum zink_descriptor_ty
       hash = hash_descriptor_pool_key(&key);
       simple_mtx_lock(&screen->desc_pool_keys_lock);
       struct set_entry *he = _mesa_set_search_pre_hashed(&screen->desc_pool_keys[type], hash, &key);
-      simple_mtx_unlock(&screen->desc_pool_keys_lock);
-      if (he)
+      if (he) {
+         simple_mtx_unlock(&screen->desc_pool_keys_lock);
          return (void*)he->key;
+      }
    }
 
    struct zink_descriptor_pool_key *pool_key = rzalloc(screen, struct zink_descriptor_pool_key);
@@ -213,7 +214,6 @@ descriptor_util_pool_key_get(struct zink_screen *screen, enum zink_descriptor_ty
    assert(pool_key->num_type_sizes);
    memcpy(pool_key->sizes, sizes, num_type_sizes * sizeof(VkDescriptorPoolSize));
    if (type != ZINK_DESCRIPTOR_TYPE_UNIFORMS) {
-      simple_mtx_lock(&screen->desc_pool_keys_lock);
       _mesa_set_add_pre_hashed(&screen->desc_pool_keys[type], hash, pool_key);
       pool_key->id = screen->desc_pool_keys[type].entries - 1;
       simple_mtx_unlock(&screen->desc_pool_keys_lock);
