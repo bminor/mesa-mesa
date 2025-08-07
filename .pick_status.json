@@ -4844,7 +4844,7 @@
         "description": "vulkan/render_pass: fixup renderpasses barriers for 2D views of 3D images",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "595889018ad4fa3e2c593a13d640c9eee26336c7",
         "notes": null
