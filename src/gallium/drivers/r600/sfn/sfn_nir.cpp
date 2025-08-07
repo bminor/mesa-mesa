@@ -938,7 +938,6 @@ r600_lower_and_optimize_nir(nir_shader *sh,
 
    if (lower_64bit_io_to_vec2) {
       NIR_PASS(_, sh, r600::r600_nir_split_64bit_io);
-      NIR_PASS(_, sh, r600::r600_split_64bit_alu_and_phi);
       NIR_PASS(_, sh, nir_split_64bit_vec3_and_vec4);
       NIR_PASS(_, sh, nir_lower_int64);
    }
