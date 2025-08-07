@@ -6269,6 +6269,8 @@ bi_compile_variant_nir(nir_shader *nir,
    if (bifrost_debug & BIFROST_DBG_SHADERS && !skip_internal)
       bi_print_shader(ctx, stdout);
 
+   bi_opt_control_flow(ctx);
+
    if (ctx->arch >= 9) {
       va_assign_slots(ctx);
       va_insert_flow_control_nops(ctx);

@@ -722,6 +722,12 @@ bi_is_scheduling_barrier(const bi_instr *I)
    return I->op == BI_OPCODE_NOP && I->scheduling_barrier;
 }
 
+static inline bool
+bi_is_branch(const bi_instr *I)
+{
+   return I != NULL && bi_opcode_props[I->op].branch;
+}
+
 /*
  * Safe helpers to remove destinations/sources at the end of the
  * destination/source array when changing opcodes. Unlike adding
@@ -1351,6 +1357,7 @@ void bi_analyze_helper_terminate(bi_context *ctx);
 void bi_mark_clauses_td(bi_context *ctx);
 
 void bi_analyze_helper_requirements(bi_context *ctx);
+void bi_opt_control_flow(bi_context *ctx);
 void bi_opt_copy_prop(bi_context *ctx);
 void bi_opt_dce(bi_context *ctx, bool partial);
 void bi_opt_cse(bi_context *ctx);
