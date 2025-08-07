@@ -58,11 +58,7 @@ findmnt -n tmpfs ${SHADER_CACHE_HOME} || findmnt -n tmpfs ${SHADER_CACHE_DIR} ||
     mount -t tmpfs -o nosuid,nodev,size=2G,mode=1755 tmpfs ${SHADER_CACHE_DIR}
 }
 
-BASELINE=""
-if [ -e "$INSTALL/$GPU_VERSION-fails.txt" ]; then
-    BASELINE="--baseline $INSTALL/$GPU_VERSION-fails.txt"
-fi
-
+touch /fails.txt
 touch /flakes.txt
 cat $INSTALL/all-skips.txt > /skips.txt
 
@@ -79,6 +75,7 @@ add_if_exists() {
   echo "$DRIVER_NAME"
   echo "$GPU_VERSION"
 } | sort -u | while read -r prefix; do
+  add_if_exists "$prefix" fails
   add_if_exists "$prefix" flakes
   add_if_exists "$prefix" skips
 done
@@ -139,13 +136,13 @@ deqp-runner \
     suite \
     --suite $INSTALL/deqp-$DEQP_SUITE.toml \
     --output $RESULTS_DIR \
+    --baseline /fails.txt \
     --skips /skips.txt \
     --flakes /flakes.txt \
     --testlog-to-xml /deqp-tools/testlog-to-xml \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $((CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
     --jobs ${FDO_CI_CONCURRENT:-4} \
-    $BASELINE \
     ${DEQP_RUNNER_MAX_FAILS:+--max-fails "$DEQP_RUNNER_MAX_FAILS"} \
     ${DEQP_RUNNER_SHADER_CACHE_DIR:+--shader-cache-dir "$DEQP_RUNNER_SHADER_CACHE_DIR"} \
     ${DEQP_FORCE_ASAN:+--env LD_PRELOAD=libasan.so.8:/install/lib/libdlclose-skip.so}; DEQP_EXITCODE=$?
