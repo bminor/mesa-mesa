@@ -26,6 +26,7 @@
 #include "vk_log.h"
 #include "vk_alloc.h"
 #include "vk_device.h"
+#include "vk_common_entrypoints.h"
 #include "util/vl_rbsp.h"
 #include "util/vl_bitstream.h"
 
@@ -807,6 +808,49 @@ vk_video_session_parameters_update(struct vk_video_session_parameters *params,
       UNREACHABLE("Unknown codec\n");
    }
    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_CreateVideoSessionParametersKHR(VkDevice _device,
+   const VkVideoSessionParametersCreateInfoKHR *pCreateInfo,
+   const VkAllocationCallbacks *pAllocator,
+   VkVideoSessionParametersKHR *pVideoSessionParameters)
+{
+   VK_FROM_HANDLE(vk_device, device, _device);
+
+   struct vk_video_session_parameters *params =
+      vk_video_session_parameters_create(device, pCreateInfo, pAllocator,
+                                         sizeof(*params));
+   if (!params)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   *pVideoSessionParameters = vk_video_session_parameters_to_handle(params);
+
+   return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vk_common_UpdateVideoSessionParametersKHR(VkDevice _device,
+    VkVideoSessionParametersKHR videoSessionParameters,
+    const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo)
+{
+   VK_FROM_HANDLE(vk_video_session_parameters, params, videoSessionParameters);
+
+   return vk_video_session_parameters_update(params, pUpdateInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vk_common_DestroyVideoSessionParametersKHR(VkDevice _device,
+    VkVideoSessionParametersKHR videoSessionParameters,
+    const VkAllocationCallbacks *pAllocator)
+{
+   VK_FROM_HANDLE(vk_device, device, _device);
+   VK_FROM_HANDLE(vk_video_session_parameters, params, videoSessionParameters);
+
+   if (params == NULL)
+      return;
+
+   vk_video_session_parameters_destroy(device, pAllocator, params);
 }
 
 const uint8_t h264_scaling_list_default_4x4_intra[] =
